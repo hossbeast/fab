@@ -31,19 +31,19 @@ typedef struct value_store value_store;
 xapi value_store_create(value_store ** const restrict store)
   __attribute__((nonnull));
 
-/// value_store_free
+/// value_store_xfree
 //
 // SUMMARY
-//  free a value_store with free semantics
+//  free a value_store
 //
-void value_store_free(value_store * const restrict);
+xapi value_store_xfree(value_store * const restrict store);
 
-/// value_store_ifree
+/// value_store_ixfree
 //
 // SUMMARY
-//  free a value_store with ifree semantics
+//  free a value_store, zero its reference
 //
-void value_store_ifree(value_store ** const)
+xapi value_store_ixfree(value_store ** const store)
   __attribute__((nonnull));
 
 #endif

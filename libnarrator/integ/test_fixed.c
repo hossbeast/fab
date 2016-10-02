@@ -56,7 +56,7 @@ static xapi test_basic()
   assert(N->fixed.s == narrator_fixed_buffer(N));
 
 finally:
-  fatal(narrator_release, N);
+  fatal(narrator_xfree, N);
 coda;
 }
 
@@ -76,7 +76,7 @@ static xapi test_constrained()
   assert(N->fixed.s == narrator_fixed_buffer(N));
 
 finally:
-  fatal(narrator_release, N);
+  fatal(narrator_xfree, N);
 coda;
 }
 

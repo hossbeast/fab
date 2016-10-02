@@ -48,8 +48,8 @@ xapi fd_cleanup()
 {
   enter;
 
-  fatal(narrator_release, g_narrator_stdout);
-  fatal(narrator_release, g_narrator_stderr);
+  fatal(narrator_xfree, g_narrator_stdout);
+  fatal(narrator_xfree, g_narrator_stderr);
 
   finally : coda;
 }

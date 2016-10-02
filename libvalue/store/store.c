@@ -53,7 +53,7 @@ xapi store_string(value_store * const restrict stor, value ** rv)
   val = 0;
 
 finally:
-  xfree(val);
+  wfree(val);
   psfree(ps);
 coda;
 }
@@ -99,8 +99,8 @@ xapi store_map(value_store * const restrict stor, value ** rv)
   list * vals = 0;
 
   fatal(xmalloc, &val, sizeof(*val));
-  fatal(list_create, &keys, 0);
-  fatal(list_create, &vals, 0);
+  fatal(list_create, &keys);
+  fatal(list_create, &vals);
 
   val->keys = keys;
   val->vals = vals;
@@ -117,9 +117,9 @@ xapi store_map(value_store * const restrict stor, value ** rv)
   val = 0;
 
 finally:
-  xfree(val);
-  list_free(keys);
-  list_free(vals);
+  wfree(val);
+  fatal(list_xfree, keys);
+  fatal(list_xfree, vals);
 coda;
 }
 
@@ -131,7 +131,7 @@ xapi store_list(value_store * const restrict stor, value ** rv)
   list * li = 0;
 
   fatal(xmalloc, &val, sizeof(*val));
-  fatal(list_create, &li, 0);
+  fatal(list_create, &li);
 
   val->l = li;
   val->type = VALUE_TYPE_LIST;
@@ -144,8 +144,8 @@ xapi store_list(value_store * const restrict stor, value ** rv)
   val = 0;
 
 finally:
-  xfree(val);
-  list_free(li);
+  wfree(val);
+  fatal(list_xfree, li);
 coda;
 }
 
@@ -158,27 +158,35 @@ API xapi value_store_create(value_store ** const restrict stor)
   enter;
 
   fatal(xmalloc, stor, sizeof(**stor));
-  fatal(list_create, &(*stor)->values, xfree);
-  fatal(list_create, &(*stor)->lists, (void*) list_free);
-  fatal(list_create, &(*stor)->strings, (void*) psfree);
+  fatal(list_createx, &(*stor)->values, wfree, 0, 0);
+  fatal(list_createx, &(*stor)->lists, 0, (void*)list_xfree, 0);
+  fatal(list_createx, &(*stor)->strings, (void*)psfree, 0, 0);
 
   finally : coda;
 }
 
-API void value_store_free(value_store * const restrict stor)
+API xapi value_store_xfree(value_store * const restrict stor)
 {
+  enter;
+
   if(stor)
   {
-    list_free(stor->values);
-    list_free(stor->lists);
-    list_free(stor->strings);
+    fatal(list_xfree, stor->values);
+    fatal(list_xfree, stor->lists);
+    fatal(list_xfree, stor->strings);
   }
 
-  free(stor);
+  wfree(stor);
+
+  finally : coda;
 }
 
-API void value_store_ifree(value_store ** const stor)
+API xapi value_store_ixfree(value_store ** const stor)
 {
-  value_store_free(*stor);
+  enter;
+
+  fatal(value_store_xfree, *stor);
   *stor = 0;
+
+  finally : coda;
 }

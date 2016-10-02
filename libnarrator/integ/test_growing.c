@@ -56,7 +56,7 @@ static xapi test_basic()
   assert(N->growing.s == narrator_growing_buffer(N));
 
 finally:
-  fatal(narrator_release, N);
+  fatal(narrator_xfree, N);
 coda;
 }
 

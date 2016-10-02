@@ -15,9 +15,13 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#include "xlinux.h"
-#include "valyria.h"
-#include "xlinux/LIB.errtab.h"
+#include "xapi.h"
+#include "xlinux/load.h"
+#include "narrator/load.h"
+#include "valyria/load.h"
+#include "yyutil/load.h"
+
+#include "xapi/SYS.errtab.h"
 
 #include "internal.h"
 #include "load.internal.h"
@@ -32,7 +36,10 @@ API xapi value_load()
   {
     // dependencies
     fatal(xlinux_load);
+    fatal(narrator_load);
     fatal(valyria_load);
+    fatal(yyutil_load);
+
     // modules
   }
   handles++;
@@ -47,13 +54,16 @@ API xapi value_unload()
   if(--handles == 0)
   {
     // modules
+
     // dependencies
     fatal(xlinux_unload);
     fatal(valyria_unload);
+    fatal(narrator_unload);
+    fatal(yyutil_unload);
   }
   else if(handles < 0)
   {
-    tfails(perrtab_LIB, LIB_AUNLOAD, "library", "libvalue");
+    tfails(perrtab_SYS, SYS_AUNLOAD, "library", "libvalue");
   }
 
   finally : coda;

@@ -122,7 +122,7 @@ xapi narrator_seek(struct narrator * const restrict n, off_t offset, int whence,
 xapi narrator_reset(struct narrator * const restrict n)
   __attribute__((nonnull));
 
-/// narrator_dispose
+/// narrator_xfree
 //
 // SUMMARY
 //  release resources associated with a narrator
@@ -133,16 +133,13 @@ xapi narrator_reset(struct narrator * const restrict n)
 // REMARKS
 //  sets *n = 0
 //
-xapi narrator_release(struct narrator * restrict n);
+xapi narrator_xfree(struct narrator * restrict n);
 
-///
+/// narrator_ixfree
 //
-// SUMMARY
-//  
+// narrator_xfree(*n) ; *n = 0;
 //
-// PARAMETERS
-//
-xapi narrator_dispose(struct narrator ** restrict n)
+xapi narrator_ixfree(struct narrator ** const restrict n)
   __attribute__((nonnull));
 
 /// read-only singleton narrators that write to fixed file descriptors

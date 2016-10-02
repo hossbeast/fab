@@ -169,29 +169,37 @@ API xapi graph_create(graph ** const restrict g, xapi (* say)(struct vertex * co
   enter;
 
   fatal(xmalloc, g, sizeof(**g));
-  fatal(list_create, &(*g)->vertices, (void*)vertex_free);
-  fatal(list_create, &(*g)->edges, (void*)free);
+  fatal(list_createx, &(*g)->vertices, 0, (void*)vertex_xfree, 0);
+  fatal(list_createx, &(*g)->edges, (void*)wfree, 0, 0);
 
   (*g)->say = say;
 
   finally : coda;
 }
 
-API void graph_free(graph * const restrict g)
+API xapi graph_xfree(graph * const restrict g)
 {
+  enter;
+
   if(g)
   {
-    list_free(g->vertices);
-    list_free(g->edges);
+    fatal(list_xfree, g->vertices);
+    fatal(list_xfree, g->edges);
   }
 
-  free(g);
+  wfree(g);
+
+  finally : coda;
 }
 
-API void graph_ifree(graph ** const restrict g)
+API xapi graph_ixfree(graph ** const restrict g)
 {
-  graph_free(*g);
+  enter;
+
+  fatal(graph_xfree, *g);
   *g = 0;
+
+  finally : coda;
 }
 
 xapi graph_vertex_create(graph * const restrict g, struct vertex ** const restrict v)
@@ -206,7 +214,7 @@ xapi graph_vertex_create(graph * const restrict g, struct vertex ** const restri
   lv = 0;
 
 finally:
-  vertex_free(lv);
+  fatal(vertex_xfree, lv);
 coda;
 }
 
@@ -238,7 +246,7 @@ API xapi graph_relate(graph * const restrict g, vertex * const restrict A, verte
   }
 
 finally:
-  free(e);
+  wfree(e);
 coda;
 }
 
@@ -293,6 +301,6 @@ finally:
     xapi_infos("path", narrator_fixed_buffer(N));
   }
 
-  narrator_free(N);
+  fatal(narrator_xfree, N);
 coda;
 }

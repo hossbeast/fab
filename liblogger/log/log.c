@@ -106,9 +106,13 @@ static xapi finish()
 // public
 //
 
-void log_teardown()
+xapi log_cleanup()
 {
-  narrator_ifree(&storage_narrator);
+  enter;
+
+  fatal(narrator_ixfree, &storage_narrator);
+
+  finally : coda;
 }
 
 //

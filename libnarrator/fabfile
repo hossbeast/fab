@@ -122,9 +122,9 @@ $lflags_xapi_devel  = [ $lopts $libxapi_xapi_devel $libxlinux_xapi_devel [ -Wl,-
 [ $libnarrator_eapi_final ] :^ [ $libxlinux_eapi_final ]
 [ $libnarrator_eapi_debug ] :^ [ $libxlinux_eapi_debug ]
 [ $libnarrator_eapi_devel ] :^ [ $libxlinux_eapi_devel ]
-[ $libnarrator_xapi_final ] :^ [ $libxapi_xapi_final $libxlinux_xapi_final ]
-[ $libnarrator_xapi_debug ] :^ [ $libxapi_xapi_debug $libxlinux_xapi_debug ]
-[ $libnarrator_xapi_devel ] :^ [ $libxapi_xapi_devel $libxlinux_xapi_devel ]
+[ $libnarrator_xapi_final ] :^ [ $libxlinux_xapi_final $libxapi_xapi_final ]
+[ $libnarrator_xapi_debug ] :^ [ $libxlinux_xapi_debug $libxapi_xapi_debug ]
+[ $libnarrator_xapi_devel ] :^ [ $libxlinux_xapi_devel $libxapi_xapi_devel ]
 
 ##
 ## tasks

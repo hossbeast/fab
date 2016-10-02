@@ -186,7 +186,7 @@ static xapi __attribute__((nonnull)) category_list_merge(list * const restrict A
   qsort_r(bx, c, sizeof(*bx), compar, (void*)0);
 
   // walk the lists, write to C, and verify that the common elements appear in the same order
-  list_clear(C);
+  fatal(list_recycle, C);
 
   x = 0;
   y = 0;
@@ -246,9 +246,9 @@ static xapi __attribute__((nonnull)) category_list_merge(list * const restrict A
   }
 
 finally:
-  dictionary_free(common);
-  free(ax);
-  free(bx);
+  fatal(dictionary_xfree, common);
+  wfree(ax);
+  wfree(bx);
 coda;
 }
 
@@ -260,22 +260,26 @@ xapi category_setup()
 {
   enter;
 
-  fatal(list_create, &registered, 0);
-  fatal(list_create, &registering, 0);
-  fatal(list_create, &activated, 0);
+  fatal(list_create, &registered);
+  fatal(list_create, &registering);
+  fatal(list_create, &activated);
   fatal(map_create, &activated_byname);
   fatal(map_create, &activated_byid);
 
   finally : coda;
 }
 
-void category_teardown()
+xapi category_cleanup()
 {
-  list_ifree(&registered);
-  list_ifree(&registering);
-  list_ifree(&activated);
-  map_ifree(&activated_byname);
-  map_ifree(&activated_byid);
+  enter;
+
+  fatal(list_ixfree, &registered);
+  fatal(list_ixfree, &registering);
+  fatal(list_ixfree, &activated);
+  fatal(map_ixfree, &activated_byname);
+  fatal(map_ixfree, &activated_byid);
+
+  finally : coda;
 }
 
 xapi category_say_verbose(logger_category * const restrict cat, narrator * restrict N)
@@ -323,7 +327,9 @@ API xapi categories_report_verbose()
     int y;
     for(y = x + 1; y < list_size(activated); y++)
     {
-      if(strcmp(list_get(activated, x)->name, list_get(activated, y)->name))
+      logger_category * A = list_get(activated, x);
+      logger_category * B = list_get(activated, y);
+      if(strcmp(A->name, B->name))
         break;
     }
 
@@ -355,7 +361,7 @@ API xapi categories_activate()
   map * activating_byid = 0;
   list * sublist = 0;
 
-  fatal(list_create, &activating, 0);
+  fatal(list_create, &activating);
   fatal(map_create, &activating_byname);
   fatal(map_create, &activating_byid);
 
@@ -366,16 +372,18 @@ API xapi categories_activate()
   for(x = 0; x < list_size(activating); x++)
   {
     // whether any category in the name-group has no id assigned
-    int anyzero = !list_get(activating, x)->id;
+    int anyzero = !((logger_category *)list_get(activating, x))->id;
 
     // find the bounds of the name-group
     int y;
     for(y = x + 1; y < list_size(activating); y++)
     {
-      if(strcmp(list_get(activating, x)->name, list_get(activating, y)->name))
+      logger_category * A = list_get(activating, x);
+      logger_category * B = list_get(activating, y);
+      if(strcmp(A->name, B->name))
         break;
 
-      anyzero |= !list_get(activating, y)->id;
+      anyzero |= !B->id;
     }
 
     // assign the id as the next unused bit from the mask
@@ -388,7 +396,9 @@ API xapi categories_activate()
     // assign the id to all members of the name-group
     int i;
     for(i = x; i < y; i++)
-      list_get(activating, i)->id = id;
+    {
+      ((logger_category *)list_get(activating, i))->id = id;
+    }
 
     logger_category * category = list_get(activating, x);
     char * name = category->name;
@@ -401,20 +411,21 @@ API xapi categories_activate()
       // in rank order
       fatal(list_sublist, activating, x, y - x, &sublist);
 
-      int compar(const logger_category * A, const logger_category * B, void * arg)
+      int compar(const void * A, const void * B, void * arg)
       {
-        return A->rank - B->rank;
+        return ((const logger_category *)A)->rank - ((const logger_category *)B)->rank;
       }
       list_sort(sublist, compar, 0);
 
       uint32_t attr = 0;
       for(i = 0; i < list_size(sublist); i++)
-        attr = attr_combine(attr, list_get(sublist, i)->attr);
+        attr = attr_combine(attr, ((logger_category *)list_get(sublist, i))->attr);
 
       for(i = 0; i < list_size(sublist); i++)
       {
-        list_get(sublist, i)->namel = namel;
-        list_get(sublist, i)->attr = attr;
+        logger_category * A = list_get(sublist, i);
+        A->namel = namel;
+        A->attr = attr;
       }
     }
 
@@ -438,14 +449,14 @@ API xapi categories_activate()
   activated_byid = activating_byid;
   activating_byid = T;
 
-  list_ifree(&registered);
-  list_ifree(&registering);
+  fatal(list_ixfree, &registered);
+  fatal(list_ixfree, &registering);
 
 finally:
-  list_free(activating);
-  map_free(activating_byname);
-  map_free(activating_byid);
-  list_free(sublist);
+  fatal(list_xfree, activating);
+  fatal(map_xfree, activating_byname);
+  fatal(map_xfree, activating_byid);
+  fatal(list_xfree, sublist);
 coda;
 }
 
@@ -466,7 +477,9 @@ API xapi logger_categories_report()
     int y;
     for(y = x + 1; y < list_size(activated); y++)
     {
-      if(strcmp(list_get(activated, x)->name, list_get(activated, y)->name))
+      logger_category * A = list_get(activated, x);
+      logger_category * B = list_get(activated, y);
+      if(strcmp(A->name, B->name))
         break;
     }
 
@@ -489,13 +502,13 @@ API xapi logger_category_register(logger_category * logs)
   enter;
 
   if(!registered)
-    fatal(list_create, &registered, 0);
+    fatal(list_create, &registered);
 
   if(!registering)
-    fatal(list_create, &registering, 0);
+    fatal(list_create, &registering);
 
   list * tmp = 0;
-  fatal(list_create, &tmp, 0);
+  fatal(list_create, &tmp);
   while(logs->name)
   {
     fatal(list_push, tmp, logs);
@@ -521,7 +534,7 @@ API xapi logger_category_register(logger_category * logs)
 #endif
 
 finally:
-  list_free(tmp);
+  fatal(list_xfree, tmp);
 coda;
 }
 

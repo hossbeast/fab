@@ -39,7 +39,7 @@ static xapi unit_setup(xunit_unit * unit)
   xproxy(value_load);
 }
 
-static xapi unit_release(xunit_unit * unit)
+static xapi unit_cleanup(xunit_unit * unit)
 {
   xproxy(value_unload);
 }
@@ -98,7 +98,7 @@ static xapi merge_test_one(xunit_test * test)
   fatal(assert_entryf, B, x++, "foo", 5);
 
 finally:
-  value_store_free(stor);
+  fatal(value_store_xfree, stor);
 coda;
 }
 
@@ -125,7 +125,7 @@ static xapi merge_test_two(xunit_test * test)
   fatal(assert_entryf, B, x++, "foo", 20);
 
 finally:
-  value_store_free(stor);
+  fatal(value_store_xfree, stor);
 coda;
 }
 
@@ -153,7 +153,7 @@ static xapi merge_test_three(xunit_test * test)
   fatal(assert_entryf, B, x++, "qux", 5);
 
 finally:
-  value_store_free(stor);
+  fatal(value_store_xfree, stor);
 coda;
 }
 
@@ -181,7 +181,7 @@ static xapi merge_test_four(xunit_test * test)
   fatal(assert_entryf, B, x++, "foo", 20);
 
 finally:
-  value_store_free(stor);
+  fatal(value_store_xfree, stor);
 coda;
 }
 
@@ -213,7 +213,7 @@ static xapi merge_test_five(xunit_test * test)
   fatal(assert_entryf, B, x++, "foo", 20);
 
 finally:
-  value_store_free(stor);
+  fatal(value_store_xfree, stor);
 coda;
 }
 
@@ -244,7 +244,7 @@ static xapi merge_test_six(xunit_test * test)
   fatal(assert_entryf, B, x++, "zod", 5);
 
 finally:
-  value_store_free(stor);
+  fatal(value_store_xfree, stor);
 coda;
 }
 
@@ -254,7 +254,7 @@ coda;
 
 xunit_unit xunit = {
     setup : unit_setup
-  , release : unit_release 
+  , cleanup : unit_cleanup
   , tests : (xunit_test*[]) {
       (xunit_test[]){{
           entry : merge_test_one

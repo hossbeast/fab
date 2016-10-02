@@ -1,12 +1,14 @@
 #include "MORIA.errtab.h"
 #define APIDATA
-etable errtab_MORIA = {
+errtab errtab_MORIA = {
    .name = "MORIA"
  , .min = ERRMIN_MORIA
  , .max = ERRMAX_MORIA
- , .v =  (typeof(((etable*)0)->v[0])[]) {
-#define _E(a, b, c) [ a + (ERRMIN_MORIA * -1) ] = { .name = #b, .desc = c, .str = #b " : " c },
+ , .v =  (typeof(((errtab*)0)->v[0])[]) {
+#define _E(a, b, c) [ a - ERRMIN_MORIA ] = { .name = #b, .desc = c, .str ="MORIA_" #b " : " c, .exit = a },
 ETABLE_MORIA
 #undef _E
 }};
-etable * APIDATA perrtab_MORIA = &errtab_MORIA;
+#if XAPI_STACKTRACE
+errtab * APIDATA perrtab_MORIA = &errtab_MORIA;
+#endif

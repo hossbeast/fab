@@ -66,12 +66,16 @@ static xapi test_setup()
   finally : coda;
 }
 
-static void test_teardown()
+static xapi test_cleanup()
 {
-  narrator_ifree(&N);
-  stream_teardown();
-  category_teardown();
-  log_teardown();
+  enter;
+
+  fatal(narrator_ixfree, &N);
+  fatal(stream_cleanup);
+  fatal(category_cleanup);
+  fatal(log_cleanup);
+
+  finally : coda;
 }
 
 static xapi test_log()
@@ -134,7 +138,7 @@ int main()
 
   for(x = 0; x < sizeof(tests) / sizeof(tests[0]); x++)
   {
-    test_teardown();
+    fatal(test_cleanup);
     fatal(test_setup);
 
     xapi exit;
@@ -142,19 +146,19 @@ int main()
     {
       // propagate unexpected errors
       if(xapi_exit_errtab(exit) != perrtab_LOGGER)
-        tfail(0, 0);
+        fail(0);
 
       // print the stacktrace to stdout
       xapi_backtrace_to(1);
       xapi_calltree_unwind();
     }
 
-    assert_exit(exit, perrtab_LOGGER, tests[x].expected);
+    assert_exit(tests[x].expected, exit);
     success;
   }
 
 finally:
-  test_teardown();
+  fatal(test_cleanup);
 
   if(XAPI_UNWINDING)
   {

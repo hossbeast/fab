@@ -61,7 +61,7 @@ static xapi test_interval_say()
   }
 
 finally:
-  fatal(narrator_release, N);
+  fatal(narrator_xfree, N);
 coda;
 }
 
@@ -95,7 +95,7 @@ static xapi test_bytesize_say()
   }
 
 finally:
-  fatal(narrator_release, N);
+  fatal(narrator_xfree, N);
 coda;
 }
 
@@ -131,7 +131,7 @@ static xapi test_elapsed_say()
   }
 
 finally:
-  fatal(narrator_release, N);
+  fatal(narrator_xfree, N);
 coda;
 }
 

@@ -18,9 +18,6 @@
 #include <string.h>
 
 #include "xapi.h"
-
-struct value;
-#define LIST_ELEMENT_TYPE struct value
 #include "valyria/list.h"
 #include "valyria/pstring.h"
 
@@ -42,8 +39,9 @@ struct search_context
   size_t idx;
 };
 
-static int config_query_compare(void * ud, const value * el, size_t idx)
+static int config_query_compare(void * ud, const void * _el, size_t idx)
 {
+  const value * el = _el;
   struct search_context * ctx = ud;
   ctx->idx = idx;
 

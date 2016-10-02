@@ -89,7 +89,7 @@ xapi growing_seek(narrator_growing * const restrict n, off_t offset, int whence,
 
 void growing_destroy(narrator_growing * const restrict n)
 {
-  xfree(n->s);
+  wfree(n->s);
 }
 
 //
@@ -109,7 +109,7 @@ API xapi narrator_growing_create(narrator ** const restrict rv)
   n = 0;
 
 finally:
-  fatal(narrator_release, n);
+  fatal(narrator_xfree, n);
 coda;
 }
 

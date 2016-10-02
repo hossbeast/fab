@@ -64,7 +64,7 @@ API xapi narrator_unload()
   }
   else if(handles < 0)
   {
-    tfails(perrtab_SYS, SYS_AUNLOAD, "library", "libnarrator");
+    fails(SYS_AUNLOAD, "library", "libnarrator");
   }
 
   finally : coda;

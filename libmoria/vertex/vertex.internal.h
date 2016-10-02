@@ -50,16 +50,16 @@ xapi vertex_create(vertex ** const restrict v)
 /// vertex_free
 //
 // SUMMARY
-//  free a vertex with free semantics
+//  free a vertex
 //
-void vertex_free(vertex * restrict v);
+xapi vertex_xfree(vertex * restrict v);
 
 /// vertex_ifree
 //
 // SUMMARY
-//  free a vertex with ifree semantics
+//  free a vertex, zero its reference
 //
-void vertex_ifree(vertex ** const restrict v)
+xapi vertex_ixfree(vertex ** const restrict v)
   __attribute__((nonnull));
 
 #endif

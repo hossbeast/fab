@@ -410,7 +410,7 @@ int main()
 
   struct {
     xapi (*entry)();
-    int expected;
+    xapi expected;
   } tests[] = {
       { entry : test_category_list_merge_success }
     , { entry : test_category_list_merge_success_two }
@@ -434,21 +434,21 @@ int main()
     {
       // propagate unexpected errors
       if(xapi_exit_errtab(exit) != perrtab_LOGGER)
-        tfail(0, 0);
+        fail(0);
 
       // print the stacktrace to stdout
       xapi_backtrace_to(1);
       xapi_calltree_unwind();
     }
 
-    assert_exit(exit, perrtab_LOGGER, tests[x].expected);
+    assert_exit(tests[x].expected, exit);
     success;
 
-    category_teardown();
+    fatal(category_cleanup);
   }
 
 finally:
-  category_teardown();
+  fatal(category_cleanup);
 
   if(XAPI_UNWINDING)
   {

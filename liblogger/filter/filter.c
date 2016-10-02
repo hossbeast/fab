@@ -61,7 +61,7 @@ coda;
 
 void filter_free(filter * filter)
 {
-  free(filter);
+  wfree(filter);
 }
 
 void __attribute__((unused)) filter_ifree(filter ** filter)
@@ -417,14 +417,14 @@ API xapi logger_filter_clear(const int stream_id)
   {
     stream * streamp = 0;
     fatal(stream_byid, stream_id, &streamp);
-    list_clear(streamp->filters);
+    fatal(list_recycle, streamp->filters);
   }
   else
   {
     int x;
     for(x = 0; x < array_size(g_streams); x++)
     {
-      list_clear(((stream *)array_get(g_streams, x))->filters);
+      fatal(list_recycle, ((stream *)array_get(g_streams, x))->filters);
     }
   }
   

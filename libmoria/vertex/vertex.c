@@ -34,27 +34,35 @@ xapi vertex_create(vertex ** const restrict v)
   enter;
 
   fatal(xmalloc, v, sizeof(**v));
-  fatal(list_create, &(*v)->up, 0);
-  fatal(list_create, &(*v)->down, 0);
+  fatal(list_create, &(*v)->up);
+  fatal(list_create, &(*v)->down);
 
   finally : coda;
 }
 
-void vertex_free(vertex * const restrict v)
+xapi vertex_xfree(vertex * const restrict v)
 {
+  enter;
+
   if(v)
   {
-    list_free(v->up);
-    list_free(v->down);
+    fatal(list_xfree, v->up);
+    fatal(list_xfree, v->down);
   }
 
-  free(v);
+  wfree(v);
+
+  finally : coda;
 }
 
-void vertex_ifree(vertex ** const restrict v)
+xapi vertex_ixfree(vertex ** const restrict v)
 {
-  vertex_free(*v);
+  enter;
+
+  fatal(vertex_xfree, *v);
   *v = 0;
+
+  finally : coda;
 }
 
 //

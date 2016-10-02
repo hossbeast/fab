@@ -22,7 +22,4 @@
 #define API __attribute__((visibility("protected")))
 #define APIDATA
 
-#undef perrtab
-#define perrtab perrtab_MORIA
-
 #endif

@@ -78,12 +78,12 @@ extern struct array * g_streams;
 //
 xapi stream_setup(void);
 
-/// stream_teardown
+/// stream_cleanup
 //
 // SUMMARY
 //  module cleanup
 //
-void stream_teardown(void);
+xapi stream_cleanup(void);
 
 /// streams_activate
 //

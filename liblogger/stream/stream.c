@@ -23,7 +23,8 @@
 #include "xlinux/xstring.h"
 #include "xlinux/xstdlib.h"
 #include "narrator.h"
-#include "narrator/file.h"
+#include "narrator/fd.h"
+#include "narrator/rolling.h"
 #include "narrator/fixed.h"
 #include "narrator/record.h"
 #include "valyria/pstring.h"
@@ -209,7 +210,7 @@ static xapi __attribute__((nonnull)) stream_write(stream * const restrict stream
   }
 
   // message terminator
-  if(streamp->type == LOGGER_STREAM_FD)
+  if(streamp->type == LOGGER_STREAM_FD || streamp->type == LOGGER_STREAM_ROLLING)
   {
     sayc('\n');
   }
@@ -233,12 +234,17 @@ static xapi __attribute__((nonnull)) stream_initialize(stream * const restrict s
     streamp->namel = strlen(streamp->name);
   }
   streamp->attr = def->attr;
-  fatal(list_create, &streamp->filters, filter_free);
+  fatal(list_createx, &streamp->filters, filter_free, 0, 0);
 
   streamp->type = def->type;
   if(def->type == LOGGER_STREAM_FD)
   {
-    fatal(narrator_file_create, &streamp->narrator_owned, def->fd);
+    fatal(narrator_fd_create, &streamp->narrator_owned, def->fd);
+    streamp->narrator_base = streamp->narrator_owned;
+  }
+  else if(def->type == LOGGER_STREAM_ROLLING)
+  {
+    fatal(narrator_rolling_create, &streamp->narrator_owned, def->path_base, def->file_mode, def->threshold, def->max_files);
     streamp->narrator_base = streamp->narrator_owned;
   }
   else if(def->type == LOGGER_STREAM_NARRATOR)
@@ -285,16 +291,21 @@ finally:
 coda;
 }
 
-static void __attribute__((nonnull)) stream_destroy(stream * const restrict streamp)
+static xapi __attribute__((nonnull)) stream_xdestroy(stream * const restrict streamp)
 {
+  enter;
+
   if(streamp)
   {
-    xfree(streamp->name);
-    list_free(streamp->filters);
-    narrator_free(streamp->narrator);
-    narrator_free(streamp->narrator_owned);
-    xfree(streamp->expr);
+    wfree(streamp->name);
+    wfree(streamp->expr);
+
+    fatal(list_xfree, streamp->filters);
+    fatal(narrator_xfree, streamp->narrator);
+    fatal(narrator_xfree, streamp->narrator_owned);
   }
+
+  finally : coda;
 }
 
 //
@@ -305,18 +316,22 @@ xapi stream_setup()
 {
   enter;
 
-  fatal(array_createx, &g_streams, sizeof(stream), stream_destroy, 0);
-  fatal(list_create, &registered, 0);
+  fatal(array_createx, &g_streams, sizeof(stream), 0, stream_xdestroy, 0);
+  fatal(list_create, &registered);
   fatal(map_create, &streams_byid);
 
   finally : coda;
 }
 
-void stream_teardown()
+xapi stream_cleanup()
 {
-  array_ifree(&g_streams);
-  map_ifree(&streams_byid);
-  list_ifree(&registered);
+  enter;
+
+  fatal(array_ixfree, &g_streams);
+  fatal(map_ixfree, &streams_byid);
+  fatal(list_ixfree, &registered);
+
+  finally : coda;
 }
 
 xapi streams_activate()
@@ -336,7 +351,7 @@ xapi streams_activate()
     }
   }
 
-  list_ifree(&registered);
+  fatal(list_ixfree, &registered);
 
   finally : coda;
 }
@@ -464,7 +479,7 @@ xapi stream_say(stream * const restrict streamp, narrator * restrict N)
   says(" ]");
 
   if(streamp->type == LOGGER_STREAM_FD)
-    sayf(", fd : %d", narrator_file_fd(streamp->narrator_base));
+    sayf(", fd : %d", narrator_fd_fd(streamp->narrator_base));
   else if(streamp->type == LOGGER_STREAM_NARRATOR)
     sayf(", narrator : %p", streamp->narrator_base);
 

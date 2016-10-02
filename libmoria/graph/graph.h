@@ -50,19 +50,19 @@ typedef struct graph graph;
 xapi graph_create(graph ** const restrict g, xapi (* say)(struct vertex * const restrict v, struct narrator * const restrict N))
   __attribute__((nonnull(1)));
 
-/// graph_free
+/// graph_xfree
 //
 // SUMMARY
-//  free a graph with free semantics
+//  free a graph
 //
-void graph_free(graph * const restrict g);
+xapi graph_xfree(graph * const restrict g);
 
 /// graph_ifree
 //
 // SUMMARY
-//  free a graph with ifree semantics
+//  free a graph, zero its reference
 //
-void graph_ifree(graph ** const restrict g)
+xapi graph_ixfree(graph ** const restrict g)
   __attribute__((nonnull));
 
 /// graph_vertex_create

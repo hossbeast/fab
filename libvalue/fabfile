@@ -129,9 +129,9 @@ $lflags_xapi_devel  = [ $lopts $libxapi_xapi_devel $libxlinux_xapi_devel $libnar
 [ $libvalue_eapi_final ] :^ [ $libxlinux_eapi_final $libnarrator_eapi_final $libvalyria_eapi_final $libyyutil_eapi_final ]
 [ $libvalue_eapi_debug ] :^ [ $libxlinux_eapi_debug $libnarrator_eapi_debug $libvalyria_eapi_debug $libyyutil_eapi_debug ]
 [ $libvalue_eapi_devel ] :^ [ $libxlinux_eapi_devel $libnarrator_eapi_devel $libvalyria_eapi_devel $libyyutil_eapi_devel ]
-[ $libvalue_xapi_final ] :^ [ $libxapi_xapi_final $libxlinux_xapi_final $libnarrator_xapi_final $libvalyria_xapi_final $libyyutil_xapi_final ]
-[ $libvalue_xapi_debug ] :^ [ $libxapi_xapi_debug $libxlinux_xapi_debug $libnarrator_xapi_debug $libvalyria_xapi_debug $libyyutil_xapi_debug ]
-[ $libvalue_xapi_devel ] :^ [ $libxapi_xapi_devel $libxlinux_xapi_devel $libnarrator_xapi_devel $libvalyria_xapi_devel $libyyutil_xapi_devel ]
+[ $libvalue_xapi_final ] :^ [ $libxlinux_xapi_final $libnarrator_xapi_final $libvalyria_xapi_final $libyyutil_xapi_final $libxapi_xapi_final ]
+[ $libvalue_xapi_debug ] :^ [ $libxlinux_xapi_debug $libnarrator_xapi_debug $libvalyria_xapi_debug $libyyutil_xapi_debug $libxapi_xapi_debug ]
+[ $libvalue_xapi_devel ] :^ [ $libxlinux_xapi_devel $libnarrator_xapi_devel $libvalyria_xapi_devel $libyyutil_xapi_devel $libxapi_xapi_devel ]
 
 ##
 ## tasks
@@ -182,15 +182,15 @@ $lflags_xapi_devel  = [ $lopts $libxapi_xapi_devel $libxlinux_xapi_devel $libnar
 [ @test ] : [ $* ~ lsr l/test\/test_ sx/c/xapi.xunit.so sy ]
 {
   [ $xunit_valgrind_runner ] [ $xunit_xapi_devel ] [
-  ] [ $libxlinux_xapi_devel $libvalyria_xapi_devel $libvalue_xapi_devel ~ fi ] [
-  ] [ $liblogger_xapi_devel $libnarrator_xapi_devel $liblorien_xapi_devel $libyyutil_xapi_devel ~ fi ] [
+  ] [ $libxlinux_xapi_devel $libvalyria_xapi_devel $libyyutil_xapi_devel $libvalue_xapi_devel ~ fi ] [
+  ] [ $liblogger_xapi_devel $libnarrator_xapi_devel $liblorien_xapi_devel ~ fi ] [
   ] [ $@ ~ rx/ineed fi ]
 }
 
 [ @test.fast ] : [ $* ~ lsr l/test\/test_ sx/c/xapi.xunit.so sy ]
 {
   [ $xunit_xapi_devel ] [
-  ] [ $libxlinux_xapi_devel $libvalyria_xapi_devel $libvalue_xapi_devel ~ fi ] [
-  ] [ $liblogger_xapi_devel $libnarrator_xapi_devel $liblorien_xapi_devel $libyyutil_xapi_devel ~ fi ] [
+  ] [ $libxlinux_xapi_devel $libvalyria_xapi_devel $libyyutil_xapi_devel $libvalue_xapi_devel ~ fi ] [
+  ] [ $liblogger_xapi_devel $libnarrator_xapi_devel $liblorien_xapi_devel ~ fi ] [
   ] [ $@ ~ rx/ineed fi ]
 }

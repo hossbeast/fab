@@ -28,10 +28,10 @@ struct narrator;
 /*
  * options and modifiers that can be applied to a log message
  */
-#define LOGGER_STREAM_TABLE(x)                                                      \
-  LOGGER_STREAM_DEF(FD            , 0x01  , x)  /* write to a file descriptor */    \
-  LOGGER_STREAM_DEF(RING          , 0x02  , x)  /* write to a ring buffer */        \
-  LOGGER_STREAM_DEF(FILE          , 0x03  , x)  /* write to a rolling logfile  */   \
+#define LOGGER_STREAM_TABLE(x)                                                          \
+  LOGGER_STREAM_DEF(FD            , 0x01  , x)  /* write to a file descriptor */        \
+  LOGGER_STREAM_DEF(RING          , 0x02  , x)  /* write to a ring buffer */            \
+  LOGGER_STREAM_DEF(ROLLING       , 0x03  , x)  /* write to a rolling set of files */   \
   LOGGER_STREAM_DEF(NARRATOR      , 0x04  , x)  /* write to a narrator */
 
 enum {
@@ -63,6 +63,12 @@ typedef struct logger_stream
   union {
     int fd;                       // LOGGER_STREAM_FD
     struct narrator * narrator;   // LOGGER_STREAM_NARRATOR
+    struct {                      // LOGGER_STREAM_ROLLING
+      char *    path_base;
+      mode_t    file_mode;
+      uint32_t  threshold;
+      uint16_t  max_files;
+    };
   };
 
   // (returns) unique id
@@ -72,7 +78,7 @@ typedef struct logger_stream
 /// logger_stream_register
 //
 // SUMMARY
-//  provide a list of streams for writingn log messages to
+//  provide a list of streams for writing log messages to
 //  
 // PARAMETERS
 //  streams    - sentinel-terminated list of stream definitions

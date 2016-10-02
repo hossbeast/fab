@@ -42,7 +42,7 @@ xapi nullity_setup()
 
 xapi nullity_cleanup()
 {
-  xproxy(narrator_release, g_narrator_nullity);
+  xproxy(narrator_xfree, g_narrator_nullity);
 }
 
 xapi nullity_vsayf(narrator_nullity * const restrict n, const char * const restrict fmt, va_list va)
@@ -78,15 +78,8 @@ API xapi narrator_nullity_create(narrator ** const restrict rv)
 {
   enter;
 
-  narrator * n = 0;
-  fatal(xmalloc, &n, sizeof(*n));
-
-  n->type = NARRATOR_NULLITY;
+  fatal(xmalloc, rv, sizeof(**rv));
+  (*rv)->type = NARRATOR_NULLITY;
   
-  *rv = n;
-  n = 0;
-
-finally:
-  fatal(narrator_release, n);
-coda;
+  finally : coda;
 }

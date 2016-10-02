@@ -1,12 +1,14 @@
 #include "LOGGER.errtab.h"
 #define APIDATA
-etable errtab_LOGGER = {
+errtab errtab_LOGGER = {
    .name = "LOGGER"
  , .min = ERRMIN_LOGGER
  , .max = ERRMAX_LOGGER
- , .v =  (typeof(((etable*)0)->v[0])[]) {
-#define _E(a, b, c) [ a + (ERRMIN_LOGGER * -1) ] = { .name = #b, .desc = c, .str = #b " : " c },
+ , .v =  (typeof(((errtab*)0)->v[0])[]) {
+#define _E(a, b, c) [ a - ERRMIN_LOGGER ] = { .name = #b, .desc = c, .str ="LOGGER_" #b " : " c, .exit = a },
 ETABLE_LOGGER
 #undef _E
 }};
-etable * APIDATA perrtab_LOGGER = &errtab_LOGGER;
+#if XAPI_STACKTRACE
+errtab * APIDATA perrtab_LOGGER = &errtab_LOGGER;
+#endif

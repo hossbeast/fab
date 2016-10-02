@@ -53,15 +53,15 @@ APIDATA size_t        g_logvsl;
 
 void arguments_teardown()
 {
-  free(g_argvs);
+  wfree(g_argvs);
   int x;
   for(x = 0; x < g_argc; x++)
-    free(g_argv[x]);
-  free(g_argv);
+    wfree(g_argv[x]);
+  wfree(g_argv);
   for(x = 0; x < g_logc; x++)
-    free(g_logv[x]);
-  free(g_logv);
-  free(g_logvs);
+    wfree(g_logv[x]);
+  wfree(g_logv);
+  wfree(g_logvs);
 }
 
 xapi arguments_finalize()
@@ -311,9 +311,9 @@ finally:
   fatal(ixclose, &fd);
 
 #if __linux__
-  free(auxv);
+  wfree(auxv);
 #endif
-  free(argvs);
+  wfree(argvs);
 coda;
 }
 

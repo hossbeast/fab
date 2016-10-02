@@ -37,16 +37,16 @@ extern int category_name_max_length;
 /// category_setup
 //
 // SUMMARY
-//
+//  module initialization
 //
 xapi category_setup(void);
 
-/// category_teardown
+/// category_cleanup
 //
 // SUMMARY
-//  
+//  release resources owned by this module
 //
-void category_teardown(void);
+xapi category_cleanup(void);
 
 /// categories_activate
 //

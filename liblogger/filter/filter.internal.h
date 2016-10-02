@@ -57,7 +57,7 @@ void filter_free(filter * filterp);
 /// filter_ifree
 //
 // SUMMARY
-//  free a filter with ifree semantics
+//  free a filter with iwfree semantics
 //
 void filter_ifree(filter ** const restrict filterp)
   __attribute__((nonnull));

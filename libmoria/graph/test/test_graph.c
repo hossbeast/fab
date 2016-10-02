@@ -147,7 +147,7 @@ static xapi graph_test_entry(graph_test * test)
   if((exit = invoke(graph_traverse, g, root->v, (void*)vertex_say, test->skip, test->finish, test->stop, test->attrs, N)))
   {
     // unexpected error
-    if(xapi_exit_errtab(exit) != perrtab_MORIA || xapi_exit_errcode(exit) != MORIA_CYCLE)
+    if(exit != MORIA_CYCLE)
       fail(0);
 
     // cycle not expected for this test
@@ -166,7 +166,7 @@ static xapi graph_test_entry(graph_test * test)
   else if(test->cycle || test->cycle_path)
   {
     // appropriate exit status
-    assert_exit(exit, perrtab_MORIA, MORIA_CYCLE);
+    assert_exit(MORIA_CYCLE, exit);
 
     // appropriate error message
     if(test->cycle_path)
@@ -191,9 +191,9 @@ static xapi graph_test_entry(graph_test * test)
   }
 
 finally:
-  graph_free(g);
-  dictionary_free(items);
-  narrator_free(N);
+  fatal(graph_xfree, g);
+  fatal(dictionary_xfree, items);
+  fatal(narrator_xfree, N);
 coda;
 }
 

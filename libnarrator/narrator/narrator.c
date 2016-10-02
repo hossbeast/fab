@@ -34,7 +34,7 @@
 // api
 //
 
-API xapi narrator_release(narrator * restrict n)
+API xapi narrator_xfree(narrator * restrict n)
 {
   enter;
 
@@ -56,17 +56,17 @@ API xapi narrator_release(narrator * restrict n)
     else if(n->type == NARRATOR_ROLLING)
       fatal(rolling_xdestroy, &n->rolling);
 
-    xfree(n);
+    wfree(n);
   }
 
   finally : coda;
 }
 
-API xapi narrator_dispose(narrator ** const restrict n)
+API xapi narrator_ixfree(narrator ** const restrict n)
 {
   enter;
 
-  fatal(narrator_release, *n);
+  fatal(narrator_xfree, *n);
   *n = 0;
 
   finally : coda;

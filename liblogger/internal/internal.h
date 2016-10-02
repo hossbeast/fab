@@ -25,10 +25,7 @@
 #define API __attribute__((visibility("protected")))
 #define APIDATA
 
-// default error table
-#undef perrtab
 // modules should #include LOGGER.errtab.h directly in order to get the dependency
 #include "LOGGER.errtab.h"
-#define perrtab perrtab_LOGGER
 
 #endif

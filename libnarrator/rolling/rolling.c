@@ -174,8 +174,8 @@ xapi rolling_xdestroy(narrator_rolling * const restrict n)
 {
   enter;
 
-  xfree(n->directory);
-  xfree(n->name_base);
+  wfree(n->directory);
+  wfree(n->name_base);
   if(n->fd != -1)
     fatal(xclose, n->fd);
 

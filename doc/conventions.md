@@ -47,19 +47,18 @@ xapi bits_say(const uint64_t bits, narrator * const restrict _narrator) notnull(
 
 # module lifecycle management
 
-single-invocation initialization and teardown
-
-## setup / teardown / release
+single-invocation setup and teardown
 
 ```
-xapi module_setup()         # affirmative initialization
-void module_teardown()      # affirmative resource cleanup
-xapi module_release()       # affirmative resource cleanup that may fail (close, dlclose)
+xapi module_setup()             # affirmative initialization
+void module_teardown()          # affirmative resource cleanup
+xapi module_cleanup()           # affirmative resource cleanup that may fail (close, dlclose)
+xapi module_finalize()          # late binding / finish initialization
 ```
 
 ## load / unload
 
-reference-counted initialization and teardown
+reference-counted setup and teardown
 
 ```
 xapi libname_load()         # increment reference count, initialization on zero
@@ -68,37 +67,39 @@ xapi libname_unload()       # decrement reference count, release on zero
 
 # object lifecycle management
 
-## alloc / create / mk / free / ifree / reset / clear
-
-default strategy for heap allocated objects
+## object allocation and initialization
 
 ```
-xapi foo_alloc(foo ** const) notnull        # allocate foo
-xapi foo_create(foo ** const) notnull       # synonym
-xapi foo_mk(foo ** rv, foo * e) notnull(1)  # like _alloc, reuse an existing instance
-void foo_free(foo *)                        # release resources
-void foo_ifree(foo ** const ) notnull       # safe and idempotent free
-void foo_reset(foo *) notnull               # set lengths to zero, preserve allocations
-void foo_clear(foo *) notnull               # synonym
+xapi foo_alloc(foo ** const) notnull          # allocate foo
+xapi foo_create(foo ** const) notnull         # synonym
+xapi foo_mk(foo ** rv, foo * e) notnull(1)    # like _alloc, reuse an existing instance
+xapi foo_initialize(foo *)                    # does not allocate foo
 ```
 
-## dispose / recycle
+## releasing resources
 
-when releasing resources can fail (like file descriptors)
-
-```
-xapi foo_dispose(foo *)       # idempotent like ifree, can fail
-xapi foo_recycle(foo *)       # idempotent like reset, can fail
-```
-
-## initialize / destroy / finalize
-
-for statically allocated objects
+X - can fail
+F - frees foo
+G - guarded
+I - idempotent
 
 ```
-xapi foo_initialize(foo *)    # does not allocate foo
-void foo_destroy(foo *)       # does not free foo
-xapi foo_finalize(foo *)      # late binding / finish initialization
+void foo_free(foo *)                          #  FG
+void foo_ifree(foo ** const ) notnull         #  FGI
+
+xapi foo_xfree(foo *)                         # XFG
+xapi foo_ixfree(foo ** const) notnull         # XFGI (calls release)
+
+void foo_destroy(foo * const)  notnull        #
+xapi foo_xdestroy(foo * const) notnull        # X
+```
+
+## restoring an object to its initial state
+
+```
+void foo_reset(foo *) notnull                 #    I set lengths to zero, preserve allocations
+void foo_clear(foo *) notnull                 #    I synonym
+xapi foo_recycle(foo *) notnull               # X  I like reset, can fail
 ```
 
 # function naming
@@ -152,7 +153,7 @@ _name_ x (extra)
 
 # testing
 
-All tests use xunit, except those in the eventual dependencies of xunit (xapi, xlinux, logger, valyria, narrator)
+All tests use xunit, except those in the transitive dependencies of xunit (xapi, xlinux, logger, valyria, narrator)
 
 ## unit tests
 
@@ -186,4 +187,15 @@ module
   integ
     test_foo.c
     test_bar.c
+```
+
+## examples
+
+are NOT run automatically
+
+```
+module
+  example
+    example_foo.c
+    example_bar.c
 ```

@@ -18,8 +18,10 @@
 #ifndef _LOGGER_LOG_INTERNAL_H
 #define _LOGGER_LOG_INTERNAL_H
 
+#include "xapi.h"
+
 #include "log.h"
 
-void log_teardown(void);
+xapi log_cleanup(void);
 
 #endif

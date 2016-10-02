@@ -26,9 +26,6 @@ struct value;
 #include "VALUE.errtab.h"
 #include "merge.internal.h"
 
-#undef perrtab
-#define perrtab perrtab_VALUE
-
 static xapi merge(value * const restrict dst, const value * const restrict src)
 {
   enter;
@@ -39,7 +36,9 @@ static xapi merge(value * const restrict dst, const value * const restrict src)
     int y = src->keys->l - 1;
     for(; x >= 0 && y >= 0;)
     {
-      int d = pscmp(list_get(src->keys, y)->s, list_get(dst->keys, x)->s);
+      value * A = list_get(src->keys, y);
+      value * B = list_get(dst->keys, x);
+      int d = pscmp(A->s, B->s);
       if(d < 0)
       {
         x--;

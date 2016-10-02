@@ -73,7 +73,7 @@ xapi record_seek(narrator_record * const restrict n, off_t offset, int whence, o
 
 void record_destroy(narrator_record * const restrict n)
 {
-  xfree(n->s);
+  wfree(n->s);
 }
 
 //
@@ -94,7 +94,7 @@ API xapi narrator_record_create(narrator ** const restrict rv, narrator * const 
   n = 0;
 
 finally:
-  fatal(narrator_release, n);
+  fatal(narrator_xfree, n);
 coda;
 }
 

@@ -16,11 +16,12 @@
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
 #include "xapi.h"
-#include "xapi/errtab.h"
-#include "xapi/SYS.errtab.h"
-
 #include "xlinux/load.h"
 #include "narrator/load.h"
+#include "valyria/load.h"
+
+#include "xapi/errtab.h"
+#include "xapi/SYS.errtab.h"
 
 #include "internal.h"
 #include "load.internal.h"
@@ -47,6 +48,7 @@ API xapi logger_load()
     // dependencies
     fatal(xlinux_load);
     fatal(narrator_load);
+    fatal(valyria_load);
 
     // modules
     fatal(category_setup);
@@ -68,18 +70,19 @@ API xapi logger_unload()
   if(--handles == 0)
   {
     // modules
-    category_teardown();
-    stream_teardown();
+    fatal(category_cleanup);
+    fatal(stream_cleanup);
     arguments_teardown();
-    log_teardown();
+    fatal(log_cleanup);
 
     // dependencies
     fatal(xlinux_unload);
     fatal(narrator_unload);
+    fatal(valyria_unload);
   }
   else if(handles < 0)
   {
-    tfails(perrtab_SYS, SYS_AUNLOAD, "library", "liblogger");
+    fails(SYS_AUNLOAD, "library", "liblogger");
   }
 
   finally : coda;

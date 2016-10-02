@@ -55,9 +55,13 @@ static xapi suite_setup()
   finally : coda;
 }
 
-static void suite_teardown()
+static xapi suite_cleanup()
 {
-  category_teardown();
+  enter;
+
+  fatal(category_cleanup);
+
+  finally : coda;
 }
 
 static xapi test_filter_parse()
@@ -151,12 +155,12 @@ static xapi test_filters_would()
     , { expr : (char*[]) { "+BAR", 0 }          , ids : L_DELTA, would : 0 }
   };
 
-  fatal(list_create, &filters, filter_free);
+  fatal(list_createx, &filters, filter_free, 0, 0);
 
   int x;
   for(x = 0; x < sizeof(tests) / sizeof(tests[0]); x++)
   {
-    list_clear(filters);
+    fatal(list_recycle, filters);
 
     char ** expr;
     for(expr = tests[x].expr; *expr; expr++)
@@ -179,7 +183,7 @@ finally:
   }
 
   filter_free(filterp);
-  list_free(filters);
+  fatal(list_xfree, filters);
 coda;
 }
 
@@ -208,19 +212,19 @@ int main()
     {
       // propagate unexpected errors
       if(xapi_exit_errtab(exit) != perrtab_LOGGER)
-        tfail(0, 0);
+        fail(0);
 
       // print the stacktrace to stdout
       xapi_backtrace_to(1);
       xapi_calltree_unwind();
     }
 
-    assert_exit(exit, perrtab_LOGGER, tests[x].expected);
+    assert_exit(tests[x].expected, exit);
     success;
   }
 
 finally:
-  suite_teardown();
+  fatal(suite_cleanup);
 
   if(XAPI_UNWINDING)
   {
