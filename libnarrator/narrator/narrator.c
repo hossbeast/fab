@@ -22,19 +22,22 @@
 #include "xlinux/xstdlib.h"
 
 #include "internal.h"
-#include "file.internal.h"
+#include "fd.internal.h"
 #include "fixed.internal.h"
 #include "growing.internal.h"
 #include "multi.internal.h"
 #include "nullity.internal.h"
 #include "record.internal.h"
+#include "rolling.internal.h"
 
 //
 // api
 //
 
-API void narrator_free(narrator * restrict n)
+API xapi narrator_release(narrator * restrict n)
 {
+  enter;
+
   if(n)
   {
     // dispatch
@@ -42,23 +45,31 @@ API void narrator_free(narrator * restrict n)
       growing_destroy(&n->growing);
     else if(n->type == NARRATOR_FIXED)
       fixed_destroy(&n->fixed);
-    else if(n->type == NARRATOR_FILE)
-      file_destroy(&n->file);
+    else if(n->type == NARRATOR_FD)
+      fd_destroy(&n->fd);
     else if(n->type == NARRATOR_MULTI)
       multi_destroy(&n->multi);
     else if(n->type == NARRATOR_NULLITY)
       nullity_destroy(&n->nullity);
     else if(n->type == NARRATOR_RECORD)
       record_destroy(&n->record);
+    else if(n->type == NARRATOR_ROLLING)
+      fatal(rolling_xdestroy, &n->rolling);
+
+    xfree(n);
   }
 
-  xfree(n);
+  finally : coda;
 }
 
-API void narrator_ifree(narrator ** const restrict n)
+API xapi narrator_dispose(narrator ** const restrict n)
 {
-  narrator_free(*n);
+  enter;
+
+  fatal(narrator_release, *n);
   *n = 0;
+
+  finally : coda;
 }
 
 API xapi narrator_seek(narrator * const restrict n, off_t offset, int whence, off_t * restrict res)
@@ -70,14 +81,16 @@ API xapi narrator_seek(narrator * const restrict n, off_t offset, int whence, of
     fatal(growing_seek, &n->growing, offset, whence, res);
   else if(n->type == NARRATOR_FIXED)
     fatal(fixed_seek, &n->fixed, offset, whence, res);
-  else if(n->type == NARRATOR_FILE)
-    fatal(file_seek, &n->file, offset, whence, res);
+  else if(n->type == NARRATOR_FD)
+    fatal(fd_seek, &n->fd, offset, whence, res);
   else if(n->type == NARRATOR_MULTI)
     fatal(multi_seek, &n->multi, offset, whence, res);
   else if(n->type == NARRATOR_NULLITY)
     fatal(nullity_seek, &n->nullity, offset, whence, res);
   else if(n->type == NARRATOR_RECORD)
     fatal(record_seek, &n->record, offset, whence, res);
+  else if(n->type == NARRATOR_ROLLING)
+    fatal(rolling_seek, &n->rolling, offset, whence, res);
 
   finally : coda;
 }
@@ -114,14 +127,16 @@ API xapi narrator_vsayf(narrator * const restrict n, const char * const restrict
     fatal(growing_vsayf, &n->growing, fmt, va);
   else if(n->type == NARRATOR_FIXED)
     fatal(fixed_vsayf, &n->fixed, fmt, va);
-  else if(n->type == NARRATOR_FILE)
-    fatal(file_vsayf, &n->file, fmt, va);
+  else if(n->type == NARRATOR_FD)
+    fatal(fd_vsayf, &n->fd, fmt, va);
   else if(n->type == NARRATOR_MULTI)
     fatal(multi_vsayf, &n->multi, fmt, va);
   else if(n->type == NARRATOR_NULLITY)
     fatal(nullity_vsayf, &n->nullity, fmt, va);
   else if(n->type == NARRATOR_RECORD)
     fatal(record_vsayf, &n->record, fmt, va);
+  else if(n->type == NARRATOR_ROLLING)
+    fatal(rolling_vsayf, &n->rolling, fmt, va);
 
   finally : coda;
 }
@@ -134,14 +149,16 @@ API xapi narrator_sayw(narrator * const restrict n, const char * const restrict 
     fatal(growing_sayw, &n->growing, b, l);
   else if(n->type == NARRATOR_FIXED)
     fatal(fixed_sayw, &n->fixed, b, l);
-  else if(n->type == NARRATOR_FILE)
-    fatal(file_sayw, &n->file, b, l);
+  else if(n->type == NARRATOR_FD)
+    fatal(fd_sayw, &n->fd, b, l);
   else if(n->type == NARRATOR_MULTI)
     fatal(multi_sayw, &n->multi, b, l);
   else if(n->type == NARRATOR_NULLITY)
     fatal(nullity_sayw, &n->nullity, b, l);
   else if(n->type == NARRATOR_RECORD)
     fatal(record_sayw, &n->record, b, l);
+  else if(n->type == NARRATOR_ROLLING)
+    fatal(rolling_sayw, &n->rolling, b, l);
 
   finally : coda;
 }

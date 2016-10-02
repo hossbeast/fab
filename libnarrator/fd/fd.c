@@ -23,7 +23,7 @@
 #include "xlinux/xstdlib.h"
 
 #include "internal.h"
-#include "file/file.internal.h"
+#include "fd/fd.internal.h"
 
 #define restrict __restrict
 
@@ -34,38 +34,42 @@ APIDATA narrator * g_narrator_stderr;
 // public
 //
 
-xapi file_setup()
+xapi fd_setup()
 {
   enter;
 
-  fatal(narrator_file_create, &g_narrator_stdout, 1);
-  fatal(narrator_file_create, &g_narrator_stderr, 2);
+  fatal(narrator_fd_create, &g_narrator_stdout, 1);
+  fatal(narrator_fd_create, &g_narrator_stderr, 2);
 
   finally : coda;
 }
 
-void file_teardown()
+xapi fd_cleanup()
 {
-  narrator_free(g_narrator_stdout);
-  narrator_free(g_narrator_stderr);
+  enter;
+
+  fatal(narrator_release, g_narrator_stdout);
+  fatal(narrator_release, g_narrator_stderr);
+
+  finally : coda;
 }
 
-xapi file_vsayf(narrator_file * const restrict n, const char * const restrict fmt, va_list va)
+xapi fd_vsayf(narrator_fd * const restrict n, const char * const restrict fmt, va_list va)
 {
   xproxy(xvdprintf, n->fd, fmt, va);
 }
 
-xapi file_sayw(narrator_file * const restrict n, const char * const restrict b, size_t l)
+xapi fd_sayw(narrator_fd * const restrict n, const char * const restrict b, size_t l)
 {
   xproxy(axwrite, n->fd, b, l);
 }
 
-xapi file_seek(narrator_file * const restrict n, off_t offset, int whence, off_t * restrict res)
+xapi fd_seek(narrator_fd * const restrict n, off_t offset, int whence, off_t * restrict res)
 {
   xproxy(xlseek, n->fd, offset, whence, res);
 }
 
-void file_destroy(narrator_file * n)
+void fd_destroy(narrator_fd * const restrict n)
 {
 }
 
@@ -73,18 +77,18 @@ void file_destroy(narrator_file * n)
 // api
 //
 
-API xapi narrator_file_create(narrator ** const restrict n, int fd)
+API xapi narrator_fd_create(narrator ** const restrict n, int fd)
 {
   enter;
 
   fatal(xmalloc, n, sizeof(**n));
-  (*n)->type = NARRATOR_FILE;
-  (*n)->file.fd = fd;
+  (*n)->type = NARRATOR_FD;
+  (*n)->fd.fd = fd;
 
   finally : coda;
 }
 
-API int narrator_file_fd(narrator * const restrict n)
+API int narrator_fd_fd(narrator * const restrict n)
 {
-  return n->file.fd;
+  return n->fd.fd;
 }

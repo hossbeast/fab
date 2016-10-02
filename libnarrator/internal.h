@@ -15,8 +15,8 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef _NARRATE_INTERNAL_H
-#define _NARRATE_INTERNAL_H
+#ifndef _NARRATOR_INTERNAL_H
+#define _NARRATOR_INTERNAL_H
 
 #include <stdint.h>
 
@@ -28,20 +28,22 @@
 #define APIDATA
 
 // structure definitions
+#include "fd.internal.h"
 #include "fixed.internal.h"
 #include "growing.internal.h"
-#include "file.internal.h"
 #include "multi.internal.h"
 #include "nullity.internal.h"
 #include "record.internal.h"
+#include "rolling.internal.h"
 
 #define NARRATOR_TYPE_TABLE(x)      \
   NARRATOR_TYPE_DEF(FIXED   , 1, x) \
   NARRATOR_TYPE_DEF(GROWING , 2, x) \
-  NARRATOR_TYPE_DEF(FILE    , 3, x) \
+  NARRATOR_TYPE_DEF(FD      , 3, x) \
   NARRATOR_TYPE_DEF(MULTI   , 4, x) \
   NARRATOR_TYPE_DEF(NULLITY , 5, x) \
-  NARRATOR_TYPE_DEF(RECORD  , 6, x)
+  NARRATOR_TYPE_DEF(RECORD  , 6, x) \
+  NARRATOR_TYPE_DEF(ROLLING , 7, x)
 
 enum {
 #define NARRATOR_TYPE_DEF(a, b, x) NARRATOR_ ## a = b,
@@ -56,16 +58,17 @@ NARRATOR_TYPE_TABLE(0)
 //
 typedef struct narrator
 {
+  uint8_t type;       // one of NARRATOR_*
+
   union {
     narrator_fixed fixed;
     narrator_growing growing;
-    narrator_file file;
+    narrator_fd fd;
     narrator_multi multi;
     narrator_nullity nullity;
     narrator_record record;
+    narrator_rolling rolling;
   };
-
-  uint8_t type;       // one of NARRATOR_*
 } narrator;
 
 #endif

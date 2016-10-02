@@ -67,9 +67,9 @@ static xapi test_basic()
   fatal(validate, 2, N0, N1);
 
 finally:
-  narrator_free(N);
-  narrator_free(N0);
-  narrator_free(N1);
+  fatal(narrator_release, N);
+  fatal(narrator_release, N0);
+  fatal(narrator_release, N1);
 coda;
 }
 

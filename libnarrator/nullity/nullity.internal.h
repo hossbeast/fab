@@ -34,12 +34,12 @@ typedef struct narrator_nullity
 //
 xapi nullity_setup(void);
 
-/// nullity_teardown
+/// nullity_cleanup
 //
 // SUMMARY
 //  module cleanup
 //
-void nullity_teardown(void);
+xapi nullity_cleanup(void);
 
 /// nullity_say
 //
@@ -66,7 +66,8 @@ xapi nullity_seek(narrator_nullity * const restrict n, off_t offset, int whence,
 // SUMMARY
 //  destroy a nullity narrator
 //
-void nullity_destroy(narrator_nullity * restrict n);
+void nullity_destroy(narrator_nullity * const restrict n)
+  __attribute__((nonnull));
 
 #undef restrict
 #endif

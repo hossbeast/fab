@@ -71,7 +71,8 @@ xapi multi_seek(narrator_multi * const restrict n, off_t offset, int whence, off
 // SUMMARY
 //  destroy a multi narrator
 //
-void multi_destroy(narrator_multi * restrict n);
+void multi_destroy(narrator_multi * const restrict n)
+  __attribute__((nonnull));
 
 #undef restrict
 #endif

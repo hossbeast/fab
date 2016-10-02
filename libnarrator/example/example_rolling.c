@@ -15,57 +15,47 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#include "xapi.h"
-#include "xapi/SYS.errtab.h"
+#include <stdio.h>
+#include <fcntl.h>
 
-#include "xlinux/load.h"
+#include "xapi.h"
+#include "xapi/trace.h"
 
 #include "internal.h"
-#include "load.internal.h"
-#include "nullity.internal.h"
-#include "fd.internal.h"
+#include "narrator/rolling.h"
 
-static int handles;
-
-//
-// api
-//
-
-API xapi narrator_load()
+static xapi exercise_rolling()
 {
   enter;
 
-  if(handles == 0)
+  narrator * N = 0;
+  fatal(narrator_rolling_create, &N, "/tmp/foo", S_IRUSR | S_IWUSR, 45, 2);
+
+  int x;
+  for(x = 0; x < 100; x++)
   {
-    // dependencies
-    fatal(xlinux_load);
-
-    // modules
-    fatal(nullity_setup);
-    fatal(fd_setup);
+    says("foo bar baz qux");
   }
-  handles++;
 
-  finally : coda;
+finally:
+  fatal(narrator_release, N);
+coda;
 }
 
-API xapi narrator_unload()
+int main()
 {
   enter;
 
-  if(--handles == 0)
-  {
-    // modules
-    fatal(nullity_cleanup);
-    fatal(fd_cleanup);
+  xapi R = 0;
+  fatal(exercise_rolling);
 
-    // dependencies
-    fatal(xlinux_unload);
-  }
-  else if(handles < 0)
+finally:
+  if(XAPI_UNWINDING)
   {
-    tfails(perrtab_SYS, SYS_AUNLOAD, "library", "libnarrator");
+//    xapi_backtrace();
   }
+conclude(&R);
 
-  finally : coda;
+  xapi_teardown();
+  return !!R;
 }

@@ -15,64 +15,77 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef _NARRATOR_GROWING_INTERNAL_H
-#define _NARRATOR_GROWING_INTERNAL_H
+#ifndef _NARRATOR_FD_INTERNAL_H
+#define _NARRATOR_FD_INTERNAL_H
 
 #include <sys/types.h>
-#include <stdarg.h>
 
 #include "xapi.h"
-#include "growing.h"
+#include "fd.h"
 
-typedef struct narrator_growing
+typedef struct narrator_fd
 {
-  char *  s;    // the buffer
-  size_t  l;    // position
-  size_t  a;    // allocated size
-  size_t  m;    // maximum position
-} narrator_growing;
+  int fd;           // file descriptor
+} narrator_fd;
 
 #define restrict __restrict
 
-/// growing_say
+/// fd_setup
 //
 // SUMMARY
-//  write to the narrator
+//  module initialization
+//
+xapi fd_setup(void);
+
+/// fd_cleanup
+//
+// SUMMARY
+//  module cleanup
+//
+xapi fd_cleanup(void);
+
+/// fd_say
+//
+// SUMMARY
+//  write to a fd_narrator
 //
 // PARAMETERS
-//  n     - growing narrator
+//  n     - fd narrator
 //  [fmt] - printf-style format string
 //  [va]  - varargs
 //  [b]   - buffer
 //  [l]   - size of buffer
-// 
+//
 
-xapi growing_vsayf(narrator_growing * const restrict n, const char * const restrict fmt, va_list va)
+xapi fd_vsayf(narrator_fd * const restrict n, const char * const restrict fmt, va_list va)
   __attribute__((nonnull));
 
-xapi growing_sayw(narrator_growing * const restrict n, const char * const restrict b, size_t l)
+xapi fd_sayw(narrator_fd * const restrict n, const char * const restrict b, size_t l)
   __attribute__((nonnull));
 
-/// growing_seek
+/// fd_seek
 //
 // SUMMARY
-//  reposition the narrator to offset according to whence
+//  reposition a fd narrator
 //
 // PARAMETERS
-//  n      - growing narrator
+//  n      - narrator
 //  offset - byte offset
 //  whence - one of NARRATOR_SEEK_*, indicates how offset is interpreted
 //  [res]  - (returns) the resulting absolute offset
 //
-xapi growing_seek(narrator_growing * const restrict n, off_t offset, int whence, off_t * restrict res)
+// REMARKS
+//  support depends on the underlying fd
+//
+xapi fd_seek(narrator_fd * const restrict n, off_t offset, int whence, off_t * restrict res)
   __attribute__((nonnull(1)));
 
-/// narrator_destroy
+/// fd_destroy
 //
 // SUMMARY
-//  destroy a growing narrator
+//  destroy a fd narrator
 //
-void growing_destroy(narrator_growing * const restrict n)
+void fd_destroy(narrator_fd * const restrict n)
   __attribute__((nonnull));
 
 #undef restrict

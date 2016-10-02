@@ -70,7 +70,8 @@ xapi fixed_seek(narrator_fixed * const restrict n, off_t offset, int whence, off
 // SUMMARY
 //  destroy a fixed narrator
 //
-void fixed_destroy(narrator_fixed * restrict n);
+void fixed_destroy(narrator_fixed * const restrict n)
+  __attribute__((nonnull));
 
 #undef restrict
 #endif

@@ -34,19 +34,8 @@ SUMMARY
 
 #include "xapi.h"
 
-/// narrator_load
-//
-// SUMMARY
-//  initialize the library
-//
-xapi narrator_load(void);
-
-/// narrator_unload
-//
-// SUMMARY
-//  release the library
-//
-xapi narrator_unload(void);
+struct narrator;
+typedef struct narrator narrator;
 
 //
 // write to the active narration
@@ -57,9 +46,6 @@ xapi narrator_unload(void);
 #define says(...)        fatal(narrator_says , N, ##__VA_ARGS__)
 #define sayw(...)        fatal(narrator_sayw , N, ##__VA_ARGS__)
 #define sayc(...)        fatal(narrator_sayc , N, ##__VA_ARGS__)
-
-struct narrator;
-typedef struct narrator narrator;
 
 #define restrict __restrict
 
@@ -136,19 +122,27 @@ xapi narrator_seek(struct narrator * const restrict n, off_t offset, int whence,
 xapi narrator_reset(struct narrator * const restrict n)
   __attribute__((nonnull));
 
-/// narrator_free
+/// narrator_dispose
 //
 // SUMMARY
-//  free a narrator with free semantics
+//  release resources associated with a narrator
 //
-void narrator_free(struct narrator * restrict n);
+// PARAMETERS
+//  [n]  - pointer to a narrator, or a pointer to null
+//
+// REMARKS
+//  sets *n = 0
+//
+xapi narrator_release(struct narrator * restrict n);
 
-/// narrator_ifree
+///
 //
 // SUMMARY
-//  free a narrator with ifree semantics
+//  
 //
-void narrator_ifree(struct narrator ** const restrict n)
+// PARAMETERS
+//
+xapi narrator_dispose(struct narrator ** restrict n)
   __attribute__((nonnull));
 
 /// read-only singleton narrators that write to fixed file descriptors

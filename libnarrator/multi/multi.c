@@ -79,7 +79,7 @@ xapi multi_seek(narrator_multi * const restrict n, off_t offset, int whence, off
   finally : coda;
 }
 
-void multi_destroy(narrator_multi * n)
+void multi_destroy(narrator_multi * const restrict n)
 {
   xfree(n->v);
 }
@@ -102,7 +102,7 @@ API xapi narrator_multi_create(narrator ** const restrict rv)
   n = 0;
 
 finally:
-  narrator_free(n);
+  fatal(narrator_release, n);
 coda;
 }
 

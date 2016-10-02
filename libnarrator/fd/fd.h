@@ -15,31 +15,40 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#include <stdio.h>
+#ifndef _NARRATOR_FD_H
+#define _NARRATOR_FD_H
 
-#include "xapi.h"
-#include "xapi/trace.h"
+/*
 
-#include "internal.h"
-#include "narrator/file.h"
+MODULE
+ narrator/fd
 
-#include "test_util.h"
+SUMMARY
+ narrator that passes all writes to a file descriptor
 
-int main()
-{
-  enter;
+*/
 
-  xapi R = 0;
+#define restrict __restrict
 
-  success;
+/// narrator_fd_create
+//
+// SUMMARY
+//  allocate a fd narrator
+//
+// PARAMETERS
+//  n  - (returns) narrator
+//  fd - file descriptor
+//
+xapi narrator_fd_create(narrator ** const restrict n, int fd)
+  __attribute__((nonnull));
 
-finally:
-  if(XAPI_UNWINDING)
-  {
-    xapi_backtrace();
-  }
-conclude(&R);
+/// narrator_fd_fd
+//
+// SUMMARY
+//  get the file descriptor for a fd narrator
+//
+int narrator_fd_fd(narrator * const restrict n)
+  __attribute__((nonnull));
 
-  xapi_teardown();
-  return !!R;
-}
+#undef restrict
+#endif

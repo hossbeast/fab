@@ -70,9 +70,9 @@ xapi fixed_seek(narrator_fixed * const restrict n, off_t offset, int whence, off
   finally : coda;
 }
 
-void fixed_destroy(narrator_fixed * n)
+void fixed_destroy(narrator_fixed * const restrict n)
 {
-  free(n->s);
+  xfree(n->s);
 }
 
 //
@@ -95,7 +95,7 @@ API xapi narrator_fixed_create(narrator ** const restrict rv, size_t size)
   n = 0;
 
 finally:
-  narrator_free(n);
+  fatal(narrator_release, n);
 coda;
 }
 

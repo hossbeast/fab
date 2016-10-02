@@ -15,39 +15,43 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef _NARRATOR_FILE_H
-#define _NARRATOR_FILE_H
+#ifndef _NARRATOR_ROLLING_H
+#define _NARRATOR_ROLLING_H
 
 /*
 
 MODULE
- narrator/file
+ narrator/rolling
 
 SUMMARY
- narrator that passes all writes to a file descriptor
+ narrator that writes to a rolling set of files
+
+REMARKS
+ unlinks existing files before writing to them
 
 */
 
 #define restrict __restrict
 
-/// narrator_file_create
+/// narrator_rolling_create
 //
 // SUMMARY
-//  allocate a file narrator
+//  allocate a rolling narrator
 //
 // PARAMETERS
-//  n  - (returns) narrator
-//  fd - file descriptor
+//  n           - (returns) narrator
+//  path_base   - base path for files
+//  mode        - file mode creation bits (from fcntl.h)
+//  threshold   - rollover after a file exceeds this size
+//  max_files   - reset the file counter to zero after this many files
 //
-xapi narrator_file_create(narrator ** const restrict n, int fd)
-  __attribute__((nonnull));
-
-/// narrator_file_fd
-//
-// SUMMARY
-//  get the file descriptor for a file narrator
-//
-int narrator_file_fd(narrator * const restrict n)
+xapi narrator_rolling_create(
+    narrator ** const restrict n
+  , const char * const restrict path_base
+  , mode_t mode
+  , uint32_t threshold
+  , uint16_t max_files
+)
   __attribute__((nonnull));
 
 #undef restrict

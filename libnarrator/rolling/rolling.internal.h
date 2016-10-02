@@ -15,77 +15,65 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef _NARRATOR_FILE_INTERNAL_H
-#define _NARRATOR_FILE_INTERNAL_H
+#ifndef _NARRATOR_ROLLING_INTERNAL_H
+#define _NARRATOR_ROLLING_INTERNAL_H
 
 #include <sys/types.h>
+#include <fcntl.h>
 
 #include "xapi.h"
-#include "file.h"
+#include "rolling.h"
 
-typedef struct narrator_file
+typedef struct narrator_rolling
 {
   int fd;           // file descriptor
-} narrator_file;
+  size_t written;
+  uint16_t counter;
+  int scanned;
+
+  uint16_t max_files;
+  uint32_t threshold;
+  mode_t mode;
+  char * directory;
+  char * name_base;
+} narrator_rolling;
 
 #define restrict __restrict
 
-/// file_setup
+/// rolling_say
 //
 // SUMMARY
-//  module initialization
-//
-xapi file_setup(void);
-
-/// file_teardown
-//
-// SUMMARY
-//  module cleanup
-//
-void file_teardown(void);
-
-/// file_say
-//
-// SUMMARY
-//  write to a file_narrator
+//  write to a rolling_narrator
 //
 // PARAMETERS
-//  n     - file narrator
+//  n     - rolling narrator
 //  [fmt] - printf-style format string
 //  [va]  - varargs
 //  [b]   - buffer
 //  [l]   - size of buffer
 //
 
-xapi file_vsayf(narrator_file * const restrict n, const char * const restrict fmt, va_list va)
+xapi rolling_vsayf(narrator_rolling * const restrict n, const char * const restrict fmt, va_list va)
   __attribute__((nonnull));
 
-xapi file_sayw(narrator_file * const restrict n, const char * const restrict b, size_t l)
+xapi rolling_sayw(narrator_rolling * const restrict n, const char * const restrict b, size_t l)
   __attribute__((nonnull));
 
-/// file_seek
+/// rolling_seek
 //
 // SUMMARY
-//  reposition a file narrator
+//  returns ENOTSUPP
 //
-// PARAMETERS
-//  n      - narrator
-//  offset - byte offset
-//  whence - one of NARRATOR_SEEK_*, indicates how offset is interpreted
-//  [res]  - (returns) the resulting absolute offset
-//
-// REMARKS
-//  not supported for all file types
-//
-xapi file_seek(narrator_file * const restrict n, off_t offset, int whence, off_t * restrict res)
+xapi rolling_seek(narrator_rolling * const restrict n, off_t offset, int whence, off_t * restrict res)
   __attribute__((nonnull(1)));
 
-/// file_destroy
+/// rolling_xdestroy
 //
 // SUMMARY
-//  destroy a file narrator
+//  release resources owned by a rolling narrator, does not free n
 //
-void file_destroy(narrator_file * restrict n);
+xapi rolling_xdestroy(narrator_rolling * const restrict n)
+  __attribute__((nonnull));
 
 #undef restrict
 #endif

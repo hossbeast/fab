@@ -68,7 +68,8 @@ xapi record_seek(narrator_record * const restrict n, off_t offset, int whence, o
 // SUMMARY
 //  destroy a record narrator
 //
-void record_destroy(narrator_record * restrict n);
+void record_destroy(narrator_record * const restrict n)
+  __attribute__((nonnull));
 
 #undef restrict
 #endif

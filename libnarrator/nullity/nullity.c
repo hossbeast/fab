@@ -40,9 +40,9 @@ xapi nullity_setup()
   finally : coda;
 }
 
-void nullity_teardown()
+xapi nullity_cleanup()
 {
-  narrator_free(g_narrator_nullity);
+  xproxy(narrator_release, g_narrator_nullity);
 }
 
 xapi nullity_vsayf(narrator_nullity * const restrict n, const char * const restrict fmt, va_list va)
@@ -66,7 +66,7 @@ xapi nullity_seek(narrator_nullity * const restrict n, off_t offset, int whence,
   finally : coda;
 }
 
-void nullity_destroy(narrator_nullity * n)
+void nullity_destroy(narrator_nullity * const restrict n)
 {
 }
 
@@ -87,6 +87,6 @@ API xapi narrator_nullity_create(narrator ** const restrict rv)
   n = 0;
 
 finally:
-  narrator_free(n);
+  fatal(narrator_release, n);
 coda;
 }
