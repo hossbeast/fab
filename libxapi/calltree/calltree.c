@@ -26,6 +26,7 @@
 #include "mm.internal.h"
 #include "frame.internal.h"
 #include "info.internal.h"
+#include "exit.internal.h"
 
 #if XAPI_RUNTIME_CHECKS
 # include "frame.internal.h"
@@ -46,12 +47,6 @@ __thread int g_intent_to_fail;
 
 static void calltree_freeze(struct memblk * const restrict mb, calltree * restrict ct)
 {
-  /*
-  ** etab is allocated outside of the memblk and must be handled specially
-  */
-  if(ct->exit_table)
-    ct->exit_table = (void*)(intptr_t)ct->exit_table->id;
-
   int x;
   for(x = 0; x < ct->frames.l; x++)
     frame_freeze(mb, &ct->frames.v[x]);
@@ -64,9 +59,6 @@ static void calltree_freeze(struct memblk * const restrict mb, calltree * restri
 //
 static void calltree_unfreeze(struct memblk * const restrict mb, calltree * restrict ct)
 {
-  if(ct->exit_table)
-    ct->exit_table = xapi_errtab_byid((intptr_t)ct->exit_table);
-
   memblk_unfreeze(mb, &ct->frames.v);
   int x;
   for(x = 0; x < ct->frames.l; x++)
@@ -79,9 +71,6 @@ static void calltree_unfreeze(struct memblk * const restrict mb, calltree * rest
 //
 static void __attribute__((nonnull)) calltree_thaw(char * const restrict mb, calltree * restrict ct)
 {
-  if(ct->exit_table)
-    ct->exit_table = xapi_errtab_byid((intptr_t)ct->exit_table);
-
   memblk_thaw(mb, &ct->frames.v);
   int x;
   for(x = 0; x < ct->frames.l; x++)
@@ -134,8 +123,9 @@ API void xapi_calltree_unwind()
   g_fail_intent = 0;
 
 #if XAPI_RUNTIME_CHECKS
-  xapi_stack_raised_etab = 0;
-  xapi_stack_raised_code = 0;
+//  xapi_stack_raised_etab = 0;
+//  xapi_stack_raised_code = 0;
+  xapi_stack_raised_exit = 0;
 #endif
 }
 
@@ -168,15 +158,15 @@ API calltree * xapi_calltree_thaw(char * const restrict mb)
 
 API xapi_code xapi_calltree_errcode()
 {
-  return g_calltree->exit_code;
+  return xapi_exit_errcode(g_calltree->exit);
 }
 
 API xapi xapi_calltree_errval()
 {
-  return g_calltree->exit_value;
+  return g_calltree->exit;
 }
 
-API const etable * xapi_calltree_errtab()
+API const errtab * xapi_calltree_errtab()
 {
-  return g_calltree->exit_table;
+  return xapi_exit_errtab(g_calltree->exit);
 }

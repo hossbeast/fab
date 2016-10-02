@@ -15,17 +15,18 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
+#include <inttypes.h>
 #include <stdio.h>
 #include <string.h>
-#include <inttypes.h>
 
 #include "internal.h"
-#include "errtab/XAPI.errtab.h"
 #include "trace.internal.h"
-#include "frame.internal.h"
-#include "info.internal.h"
 #include "calltree.internal.h"
 #include "error.internal.h"
+#include "errtab/XAPI.errtab.h"
+#include "exit.internal.h"
+#include "frame.internal.h"
+#include "info.internal.h"
 
 #include "macros.h"
 #include "strutil.h"
@@ -38,61 +39,64 @@
 // static
 //
 
-static size_t error_trace(char * const dst, const size_t sz, const error * const restrict e)
+static size_t error_trace(char * const dst, const size_t sz, xapi e)
 {
   size_t z = 0;
+
+  const errtab * etab  = xapi_exit_errtab(e);
+  const xapi_code code = xapi_exit_errcode(e);
 
   if(0)
   {
 
   }
 #if XAPI_RUNTIME_CHECKS
-  else if(e->etab == perrtab_XAPI && (e->code == XAPI_NOCODE || e->code == XAPI_NOTABLE))
+  else if(etab == perrtab_XAPI && (code == XAPI_NOCODE || code == XAPI_NOTABLE))
   {
     SAY("[%s:%s] %s"
-      , e->etab->name
-      , e->code > e->etab->max ? "UNKNWN" : e->etab->v[e->code + (e->etab->min * -1)].name
-      , e->code > e->etab->max ? "unspecified error" : e->etab->v[e->code + (e->etab->min * -1)].desc
+      , etab->name
+      , code > etab->max ? "UNKNWN" : etab->v[code + (etab->min * -1)].name
+      , code > etab->max ? "unspecified error" : etab->v[code + (etab->min * -1)].desc
     );
   }
 #endif
 #if 0
-  else if(e->etab && e->code && e->msg)
+  else if(etab && code && e->msg)
   {
     SAY("[%s:%s] %.*s"
-      , e->etab->name
-      , e->code > e->etab->max ? "UNKNWN" : e->etab->v[e->code + (e->etab->min * -1)].name
+      , etab->name
+      , code > etab->max ? "UNKNWN" : etab->v[code + (etab->min * -1)].name
       , (int)e->msgl, e->msg 
     );
   }
 #endif
-  else if(e->etab && e->code)
+  else if(etab && code)
   {
     SAY("[%s:%s] %s"
-      , e->etab->name
-      , e->code > e->etab->max ? "UNKNWN" : e->etab->v[e->code + (e->etab->min * -1)].name
-      , e->code > e->etab->max ? "unspecified error" : e->etab->v[e->code + (e->etab->min * -1)].desc
+      , etab->name
+      , code > etab->max ? "UNKNWN" : etab->v[code + (etab->min * -1)].name
+      , code > etab->max ? "unspecified error" : etab->v[code + (etab->min * -1)].desc
     );
   }
 #if 0
-  else if(e->etab && e->msg)
+  else if(etab && e->msg)
   {
     SAY("[%s] %.*s"
-      , e->etab->name
+      , etab->name
       , (int)e->msgl, e->msg 
     );
   }
-  else if(e->code && e->msg)
+  else if(code && e->msg)
   {
     SAY("[%d] %.*s"
-      , e->code
+      , code
       , (int)e->msgl, e->msg 
     );
   }
 #endif
-  else if(e->code)
+  else if(code)
   {
-    SAY("[%d]", e->code);
+    SAY("[%d]", code);
   }
 
   return z;
@@ -214,7 +218,7 @@ static size_t calltree_trace_frames(char * const dst, const size_t sz, calltree 
   }
 
   SAY("%*s", level * 2, "");
-  z += error_trace(dst + z, sz - z, ct->frames.v[a].error);
+  z += error_trace(dst + z, sz - z, ct->frames.v[a].exit);
   SAY("\n");
 
   // main sequence
@@ -266,7 +270,7 @@ static size_t calltree_trace_pithy(calltree * const restrict ct, char * const ds
     skip_to = x + 1;
   }
 
-  z += error_trace(dst + z, sz - z, ct->frames.v[0].error);
+  z += error_trace(dst + z, sz - z, ct->frames.v[0].exit);
 
   info * nfo = 0;
 

@@ -7,7 +7,7 @@ libxapi is an error handling library for xapi code.
 
 ## Usage
 
-First, specify a table of error codes that your component can encounter.
+First, specify a set of error codes that your component can encounter in an errtab file.
 
     # APP.errtab
     1 FOO  the foo has failed
@@ -34,11 +34,11 @@ Use the fail macro to throw an error, and use the fatal macro to invoke other xa
 When an error is thrown, the callstack unwinds and the function returns an exit value : an unsigned
 integer that encodes the error table (in the high bits) and error code (in the low bits).
 
-### XAPI_MODE_ERRCODE
+### XAPI_MODE_ERRORCODE
 
-If you compile with -DXAPI_MODE_ERRCODE, unwinding is accomplished by means of the exit value.
+If you compile with -DXAPI_MODE_ERRORCODE, unwinding is accomplished by means of the exit value.
 
-It is not necessary to link with libxapi-xapi.so when compiling with -DXAPI_MODE_ERRCODE
+It is not necessary to link with libxapi-xapi.so when compiling with -DXAPI_MODE_ERRORCODE
 
 ### XAPI_MODE_STACKTRACE
 
@@ -100,10 +100,10 @@ You must link with libxapi-xapi-devel.so when compiling with -DXAPI_MODE_STACKTR
 * xapi/exit.h
   * getting strings from exit values
 * xapi/errtab.h
-  * registering etables for exit value resolution
-  * getting strings from exit values, in the context of an etable
+  * registering error tables for exit value resolution
+  * getting strings from exit values
 
-## fail after finally
+## Fail after finally
 
 A xapi function consists of two sections, the body and the finally block. fail/finally may be used
 in either block. The only difference is that, if fail is invoked in the finally block, the remainder
@@ -119,18 +119,28 @@ body block, and a subframe, for the finally block.
 
 In this case, the exit value encodes the original error.
 
+## Error tables
+
+errtab files are translated to a .c and an .h file. The .c file contains a table with all of the
+error codes, and the .h file contains macros for each error code (e.g. APP_BADARGS)
+
+In ERRORCODE mode, the error table is not required, and the .c file can be ignored, if desired.
+
+In STACKTRACE mode, the error table should be registered with libxapi by calling
+xapi_errtab_register.
+
 ## Reserved words
 
 The following is a list of the reserved words.
 
-* xapi
-* enter
-* fatal
-* fail
-* finally
 * coda
-* invoke
 * conclude
+* enter
+* fail
+* fatal
+* finally
+* invoke
+* xapi
 * xproxy
 
 ## Notes

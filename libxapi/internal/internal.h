@@ -25,8 +25,4 @@
 #define API __attribute__((visibility("protected")))
 #define APIDATA
 
-// default error table
-#undef perrtab
-#define perrtab perrtab_XAPI
-
 #endif

@@ -24,8 +24,10 @@ SUMMARY
 
 */
 
+xapi err;
 static int beta()
 {
+  err = TEST_ERROR_ONE;
   return 42;
 }
 
@@ -33,7 +35,7 @@ static xapi alpha()
 {
   enter;
 
-  fatalize(TEST_ERROR_ONE, beta);
+  tfatalize(perrtab_TEST, err, beta);
 
   finally : coda;
 }
@@ -55,7 +57,7 @@ int main()
 
   // invoke the function, collect its exit status
   xapi exit = test_fatalize();
-  assert_exit(exit, perrtab_TEST, TEST_ERROR_ONE);
+  assert_exit(TEST_ERROR_ONE, exit);
 
   // victory
   succeed;

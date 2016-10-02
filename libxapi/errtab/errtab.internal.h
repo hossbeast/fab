@@ -20,7 +20,7 @@
 
 #include "errtab.h"
 
-extern etable **  tab;
+extern errtab **  tab;
 extern size_t     tabl;
 
 /// errtab_teardown

@@ -30,7 +30,8 @@ typedef struct frame
 {
   xapi_frame_index parent_index;
 
-  struct error *  error;  // (optional) error
+//  struct error *  error;  // (optional) error
+  xapi            exit;   // (optional) exit value
 
   char *          file;   // file name
   size_t          filel;
@@ -59,8 +60,9 @@ extern __thread struct frame_addresses
 
 extern __thread void * xapi_calling_frame_address;
 extern __thread void * xapi_caller_frame_address;
-extern __thread const etable * xapi_stack_raised_etab;
-extern __thread int xapi_stack_raised_code;
+//extern __thread const errtab * xapi_stack_raised_etab;
+//extern __thread int xapi_stack_raised_code;
+extern __thread xapi xapi_stack_raised_exit;
 #endif
 
 // per-thread flag which signals the users intent to fail

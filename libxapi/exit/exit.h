@@ -32,7 +32,7 @@
 //  exit - exit value
 //
 // RETURNS
-//  error name or null if no such etable is registered
+//  error name or null if no such errtab is registered
 //
 const char * xapi_exit_errname(const xapi exit);
 
@@ -45,7 +45,7 @@ const char * xapi_exit_errname(const xapi exit);
 //  exit - exit value
 //
 // RETURNS
-//  error description or null if no such etable is registered
+//  error description or null if no such errtab is registered
 //
 const char * xapi_exit_errdesc(const xapi exit);
 
@@ -58,7 +58,7 @@ const char * xapi_exit_errdesc(const xapi exit);
 //  exit - exit value
 //
 // RETURNS
-//  error string or null if no such etable is registered
+//  error string or null if no such errtab is registered
 //
 const char * xapi_exit_errstr(const xapi exit);
 
@@ -71,9 +71,9 @@ const char * xapi_exit_errstr(const xapi exit);
 //  exit - exit value
 //
 // RETURNS
-//  error table or null if no such etable is registered
+//  error table or null if no such errtab is registered
 //
-const etable * xapi_exit_errtab(const xapi exit);
+const errtab * xapi_exit_errtab(const xapi exit);
 
 /// xapi_exit_errcode
 //
@@ -84,7 +84,7 @@ const etable * xapi_exit_errtab(const xapi exit);
 //  exit - exit value
 //
 // RETURNS
-//  error code or zero if no such etable is registered
+//  error code or zero if no such errtab is registered
 //
 xapi_code xapi_exit_errcode(const xapi exit);
 
@@ -97,7 +97,7 @@ xapi_code xapi_exit_errcode(const xapi exit);
 //  exit - exit value
 //
 // RETURNS
-//  error table name or null if no such etable is registered
+//  error table name or null if no such errtab is registered
 //
 const char * xapi_exit_errtab_name(const xapi exit);
 
@@ -110,9 +110,9 @@ const char * xapi_exit_errtab_name(const xapi exit);
 //  exit - exit value
 //
 // RETURNS
-//  error table id or zero if no such etable is registered
+//  error table id or zero if no such errtab is registered
 //
-xapi_etable_id xapi_exit_errtab_id(const xapi exit);
+xapi_errtab_id xapi_exit_errtab_id(const xapi exit);
 
 /// xapi_exit_synth
 //
@@ -126,7 +126,7 @@ xapi_etable_id xapi_exit_errtab_id(const xapi exit);
 // RETURNS
 //  exit value
 //
-xapi xapi_exit_synth(const etable * const restrict etab, const xapi_code errcode)
+xapi xapi_exit_synth(const errtab * const restrict etab, const xapi_code errcode)
   __attribute__((nonnull));
 
 #undef restrict

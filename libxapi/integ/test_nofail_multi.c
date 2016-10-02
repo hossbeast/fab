@@ -63,7 +63,7 @@ int main()
   for(x = 0; x < expected; x++)
   {
     xapi exit = foo();
-    assert_exit(exit, 0, 0);
+    assert_exit(0, exit);
   }
 
   assertf(beta_count == expected

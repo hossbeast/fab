@@ -24,9 +24,6 @@
 #include "xapi/XAPI.errtab.h"
 #include "integ/errtab/TEST.errtab.h"
 
-#undef perrtab
-#define perrtab perrtab_TEST
-
 #define MMS(a) a, strlen(a)
 #define QUOTE(x) #x
 #define XQUOTE(x) QUOTE(x)
@@ -50,54 +47,24 @@ xapi-enabled function
     }                                                      \
   } while(0)
 
-#if XAPI_MODE_STACKTRACE || XAPI_MODE_STACKTRACE_CHECKS
-#define assert_etab(exit, etab)                       \
-  assertf(                                            \
-      xapi_exit_errtab(exit) == etab                  \
-    , "expected etab : %s, actual etab : %s"          \
+#if XAPI_STACKTRACE
+#define assert_exit(expected, actual)                                   \
+  assertf(                                                              \
+      expected == actual                                                \
+    , "expected exit : %s(%d), actual exit : %s(%d)"                    \
+    , #expected                                                         \
+    , expected                                                          \
+    , xapi_exit_errname(actual)                                         \
+    , actual                                                            \
   )
-#endif
-#if XAPI_MODE_ERRORCODE
-#define assert_etab(etab)
-#endif
-
-#if XAPI_MODE_STACKTRACE || XAPI_MODE_STACKTRACE_CHECKS
-#define assert_code(exit, ecode)                              \
-  assertf(                                                    \
-      xapi_exit_errcode(exit) == ecode                        \
-    , "expected code : %s(%d), actual code : %s(%d)"          \
-    , #ecode                                                  \
-    , ecode                                                   \
-    , xapi_exit_errname(exit)                                 \
-    , xapi_exit_errcode(exit)                                 \
+#else
+#define assert_exit(expected, actual)                                   \
+  assertf(                                                              \
+      expected == actual                                                \
+    , "expected exit : %d, actual exit : %d"                            \
+    , expected                                                          \
+    , actual                                                            \
   )
-#endif
-#if XAPI_MODE_ERRORCODE
-#define assert_code(exit, ecode)                      \
-  assertf(                                            \
-      ((exit) & 0xFFFF) == ecode                      \
-    , "expected code : %d, actual code : %d"          \
-    , ecode                                           \
-    , (exit) & 0xFFFF                                 \
-  )
-#endif
-
-#if XAPI_MODE_STACKTRACE || XAPI_MODE_STACKTRACE_CHECKS
-#define assert_exit(exit, etab, ecode)                                                  \
-  assertf(                                                                              \
-      xapi_exit_errtab(exit) == etab && xapi_exit_errcode(exit) == ecode                \
-    , "expected exit : %s/%s(%d), actual exit : %s/%s(%d)"                              \
-    , ({ const char * s = 0; if(etab) { s = xapi_errtab_name(etab ?: (void*)1); } s; }) \
-    , #ecode                                                                            \
-    , ecode                                                                             \
-    , xapi_exit_errtab_name(exit)                                                       \
-    , xapi_exit_errname(exit)                                                           \
-    , xapi_exit_errcode(exit)                                                           \
-  )
-#endif
-#if XAPI_MODE_ERRORCODE
-#define assert_exit(exit, etab, ecode)          \
-  assert_code(exit, ecode)
 #endif
 
 #if XAPI_MODE_STACKTRACE || XAPI_MODE_STACKTRACE_CHECKS

@@ -41,9 +41,7 @@ struct frame; // has location information and a set of infos
 typedef struct calltree
 {
   // error on the top frame, placed here as a convenience
-  xapi        exit_value;
-  xapi_code   exit_code;
-  const struct etable * exit_table;
+  xapi exit;
 
   struct
   {

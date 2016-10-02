@@ -15,50 +15,9 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#include "test.h"
+#ifndef _XAPI_EXIT_INTERNAL_H
+#define _XAPI_EXIT_INTERNAL_H
 
-/*
+#include "exit.h"
 
-SUMMARY
-  exercise the conclude macro
-
-*/
-
-static xapi beta()
-{
-  enter;
-
-  finally : coda;
-}
-
-static xapi alpha()
-{
-  enter;
-
-  fatal(beta);
-
-  finally : coda;
-}
-
-static uint32_t r;
-static int foo()
-{
-  enter;
-
-  fatal(alpha);
-
-  finally : conclude(&r);
-  return r;
-}
-
-int main()
-{
-#if XAPI_STACKTRACE
-  xapi_errtab_register(perrtab_TEST);
 #endif
-
-  xapi exit = foo();
-  assert_exit(0, exit);
-
-  succeed;
-}

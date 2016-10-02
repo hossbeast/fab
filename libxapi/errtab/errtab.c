@@ -23,11 +23,11 @@
 #include "errtab/XAPI.errtab.h"
 #include "mm/mm.internal.h"
 
-etable **         tab;
+errtab **         tab;
 size_t            tabl;
 static size_t     taba;
 
-static etable *   tab_stat[1];
+static errtab *   tab_stat[1];
 
 #define restrict __restrict
 
@@ -35,13 +35,25 @@ static etable *   tab_stat[1];
 // static
 //
 
+static void errtab_prepare(errtab * const restrict etab, xapi_errtab_id id)
+{
+  etab->id = id;
+
+  int x;
+  for(x = 0; x <= (etab->max - etab->min); x++)
+  {
+    etab->v[x].exit &= 0xFFFF;
+    etab->v[x].exit |= ((etab->id) << 16);
+  }
+}
+
 static void __attribute__((constructor)) init()
 {
   tab_stat[0] = perrtab_XAPI;
-  tab_stat[0]->id = 1;
-
   tab = tab_stat;
   tabl = 1;
+
+  errtab_prepare(tab[0], 1);
 }
 
 
@@ -62,11 +74,11 @@ void errtab_teardown()
 // api
 //
 
-API xapi xapi_errtab_register(etable * const etab)
+API xapi xapi_errtab_register(errtab * const etab)
 {
   enter;
 
-  etable * reg[2];
+  errtab * reg[2];
   size_t regl = 0;
 
   if(tab == tab_stat)
@@ -90,23 +102,13 @@ API xapi xapi_errtab_register(etable * const etab)
     }
 
     tab[tabl++] = reg[x];
-    reg[x]->id = tabl;
+    errtab_prepare(reg[x], tabl);
   }
 
   finally : coda;
 }
 
-API const char * xapi_errtab_name(const etable * const restrict etab)
-{
-  return etab->name;
-}
-
-API xapi_etable_id xapi_errtab_id(const etable * const restrict etab)
-{
-  return etab->id;
-}
-
-API const etable * xapi_errtab_byid(const xapi_etable_id id)
+API const errtab * xapi_errtab_byid(const xapi_errtab_id id)
 {
   if(id < 1 || id > tabl)
     return 0;
@@ -118,7 +120,7 @@ API const etable * xapi_errtab_byid(const xapi_etable_id id)
 // exit value api
 //
 
-API const char * xapi_errtab_errname(const etable * const restrict etab, const xapi exit)
+API const char * xapi_errtab_errname(const errtab * const restrict etab, const xapi exit)
 {
   xapi_code code = exit & 0xFFFF;   // error code
 
@@ -128,7 +130,7 @@ API const char * xapi_errtab_errname(const etable * const restrict etab, const x
   return etab->v[code + (etab->min * -1)].name;
 }
 
-API const char * xapi_errtab_errdesc(const etable * const restrict etab, const xapi exit)
+API const char * xapi_errtab_errdesc(const errtab * const restrict etab, const xapi exit)
 {
   xapi_code code = exit & 0xFFFF;   // error code
 
@@ -138,7 +140,7 @@ API const char * xapi_errtab_errdesc(const etable * const restrict etab, const x
   return etab->v[code + (etab->min * -1)].desc;
 }
 
-API const char * xapi_errtab_errstr(const etable * const restrict etab, const xapi exit)
+API const char * xapi_errtab_errstr(const errtab * const restrict etab, const xapi exit)
 {
   xapi_code code = exit & 0xFFFF;   // error code
 
@@ -148,7 +150,7 @@ API const char * xapi_errtab_errstr(const etable * const restrict etab, const xa
   return etab->v[code + (etab->min * -1)].str;
 }
 
-API xapi_code xapi_errtab_errcode(const etable * const restrict etab, const xapi exit)
+API xapi_code xapi_errtab_errcode(const errtab * const restrict etab, const xapi exit)
 {
   xapi_code code = exit & 0xFFFF;   // error code
 

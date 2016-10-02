@@ -112,7 +112,7 @@ int main()
 
   // alpha should propagate the error from epsilon
   xapi exit = zeta();
-  assert_exit(exit, perrtab_TEST, TEST_ERROR_ONE);
+  assert_exit(TEST_ERROR_ONE, exit);
 
   succeed;
 }

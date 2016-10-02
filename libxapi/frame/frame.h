@@ -36,7 +36,7 @@ REMARKS
 #include <stdint.h>
 #define restrict __restrict
 
-struct etable;
+struct errtab;
 struct stack;
 
 typedef int_fast32_t xapi_frame_index;
@@ -99,8 +99,7 @@ xapi xapi_frame_errval(xapi_frame_index index);
 //  to a calltree frame
 //
 // PARAMETERS
-//  [etab]         - errtab table (nonnull when code is nonzero)
-//  [code]         - error code (nonzero when raising a new error)
+//  [exit]         - exit value (nonzero when raising a new error)
 //  parent_index   -
 //  [key]          - key for a single, optional kvp to apply to the frame
 //  [vstr]         - value string
@@ -112,18 +111,16 @@ xapi xapi_frame_errval(xapi_frame_index index);
 //  func           - function name
 //
 void xapi_frame_set(
-    const struct etable * const restrict etab
-  , const xapi_code code
+    const xapi exit
   , const xapi_frame_index parent_index
   , const char * const restrict file
   , const int line
   , const char * const restrict func
 )
-  __attribute__((nonnull(6)));
+  __attribute__((nonnull(5)));
 
 void xapi_frame_set_infos(
-    const struct etable * const restrict etab
-  , const xapi_code code
+    const xapi exit
   , const xapi_frame_index parent_index
   , const char * const restrict key
   , const char * const restrict vstr
@@ -131,11 +128,10 @@ void xapi_frame_set_infos(
   , const int line
   , const char * const restrict func
 )
-  __attribute__((nonnull(8)));
+  __attribute__((nonnull(7)));
 
 void xapi_frame_set_infow(
-    const struct etable * const restrict etab
-  , const xapi_code code
+    const xapi exit
   , const xapi_frame_index parent_index
   , const char * const restrict key
   , const char * const restrict vbuf
@@ -144,11 +140,10 @@ void xapi_frame_set_infow(
   , const int line
   , const char * const restrict func
 )
-  __attribute__((nonnull(9)));
+  __attribute__((nonnull(8)));
 
 void xapi_frame_set_infof(
-    const struct etable * const restrict etab
-  , const xapi_code code
+    const xapi exit
   , const xapi_frame_index parent_index
   , const char * const restrict key
   , const char * const restrict vfmt
@@ -157,7 +152,7 @@ void xapi_frame_set_infof(
   , const char * const restrict func
   , ...
 )
-  __attribute__((nonnull(8)));
+  __attribute__((nonnull(7)));
 
 ///
 //
@@ -165,7 +160,7 @@ void xapi_frame_set_infof(
 //
 xapi_code xapi_calltree_errcode(void);
 xapi xapi_calltree_errval(void);
-const etable * xapi_calltree_errtab(void);
+const errtab * xapi_calltree_errtab(void);
 
 #undef restrict
 #endif

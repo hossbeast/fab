@@ -111,16 +111,16 @@ int main()
 
   // invoke the function, collect its exit status
   xapi exit = test_fail();
-  assert_exit(exit, perrtab_TEST, TEST_ERROR_ONE);
+  assert_exit(TEST_ERROR_ONE, exit);
 
   exit = test_fails();
-  assert_exit(exit, perrtab_TEST, TEST_ERROR_ONE);
+  assert_exit(TEST_ERROR_ONE, exit);
 
   exit = test_failf();
-  assert_exit(exit, perrtab_TEST, TEST_ERROR_ONE);
+  assert_exit(TEST_ERROR_ONE, exit);
 
   exit = test_fail_intent();
-  assert_exit(exit, perrtab_TEST, TEST_ERROR_ONE);
+  assert_exit(TEST_ERROR_ONE, exit);
 
   // victory
   succeed;

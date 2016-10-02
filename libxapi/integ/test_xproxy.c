@@ -52,7 +52,7 @@ int main()
 #endif
 
   xapi exit = foo();
-  assert_exit(exit, 0, 0);
+  assert_exit(0, exit);
 
   succeed;
 }

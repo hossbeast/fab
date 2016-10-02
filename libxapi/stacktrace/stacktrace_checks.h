@@ -102,7 +102,7 @@ when calling non-xapi code, you have a couple of options.
     xapi_info_adds("function", __FUNCTION__);                                                 \
     xapi_info_addf("expected caller", "%p", __builtin_frame_address(1));                      \
     xapi_info_addf("recorded caller", "%p", xapi_calling_frame_address);                      \
-    tfail(perrtab_XAPI, XAPI_NOFATAL);                                                        \
+    fail(XAPI_NOFATAL);                                                                       \
   }
 
 #define enter_nochecks                                                                        \
@@ -123,14 +123,14 @@ when calling non-xapi code, you have a couple of options.
       func(__VA_ARGS__);                                                        \
       if(xapi_caller_frame_address != calling_frame_address)                    \
       {                                                                         \
-        XAPI_FRAME_SET(perrtab_XAPI, XAPI_ILLFATAL);                            \
+        XAPI_FRAME_SET(XAPI_ILLFATAL);                                          \
         xapi_infos("function", #func);                                          \
         xapi_infof("expected caller", "%p", calling_frame_address);             \
         xapi_infof("recorded caller", "%p", xapi_caller_frame_address);         \
       }                                                                         \
       else if(xapi_top_frame_index != __xapi_current_frame)                     \
       {                                                                         \
-        XAPI_FRAME_SET(0, 0);                                                   \
+        XAPI_FRAME_SET(0);                                                      \
       }                                                                         \
       xapi __r = 0;                                                             \
       if(xapi_top_frame_index != __xapi_current_frame)                          \

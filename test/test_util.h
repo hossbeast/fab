@@ -44,7 +44,7 @@ void ufailf_info(const char * const restrict expfmt, const char * const restrict
 void ufails_info(const char * const restrict exp, const char * const restrict act);
 
 #define ufail()                   \
-  tfail(perrtab_TEST, TEST_FAIL)
+  fail(TEST_FAIL)
 
 #define ufailf(expfmt, actfmt, ...)               \
   do {                                            \
@@ -82,17 +82,14 @@ void ufails_info(const char * const restrict exp, const char * const restrict ac
     }                                         \
   } while(0)
 
-#define assert_exit(exit, etab, ecode)                                        \
-  assertf(                                                                    \
-         (ecode | xapi_exit_errcode(exit)) == 0                               \
-      || (xapi_exit_errtab(exit) == etab && xapi_exit_errcode(exit) == ecode) \
-    , "%s/%s(%d)", "%s/%s(%d)"                                                \
-    , etab ? xapi_errtab_name(etab) : 0                                       \
-    , etab ? xapi_errtab_errname(etab, ecode) : 0                             \
-    , ecode                                                                   \
-    , xapi_exit_errtab_name(exit)                                             \
-    , xapi_exit_errname(exit)                                                 \
-    , xapi_exit_errcode(exit)                                                 \
+#define assert_exit(expected, actual)                                 \
+  assertf(                                                            \
+      expected == actual                                              \
+    , "%s(%d)", "%s(%d)"                                              \
+    , xapi_exit_errname(expected)                                     \
+    , expected                                                        \
+    , xapi_exit_errname(actual)                                       \
+    , actual                                                          \
   )
 
 #define success                                                        \

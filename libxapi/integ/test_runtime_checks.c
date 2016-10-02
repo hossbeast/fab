@@ -87,6 +87,7 @@ finally:
 coda;
 }
 
+#if 0
 static xapi test_illfail_noetab()
 {
   enter;
@@ -105,23 +106,26 @@ static xapi test_illfail_nocode()
   finally : coda;
 }
 #endif
+#endif
 
 int main()
 {
 #if XAPI_MODE_STACKTRACE_CHECKS
   // verify NOFATAL
   xapi exit = test_nofatal();
-  assert_exit(exit, perrtab_XAPI, XAPI_NOFATAL);
+  assert_exit(XAPI_NOFATAL, exit);
 
   // verify ILLFATAL
   exit = test_illfatal();
-  assert_exit(exit, perrtab_XAPI, XAPI_ILLFATAL);
+  assert_exit(XAPI_ILLFATAL, exit);
 
+#if 0
   exit = test_illfail_noetab();
   assert_exit(exit, perrtab_XAPI, XAPI_NOTABLE);
 
   exit = test_illfail_nocode();
   assert_exit(exit, perrtab_XAPI, XAPI_NOCODE);
+#endif
 #endif
 
   // victory

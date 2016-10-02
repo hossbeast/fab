@@ -33,33 +33,34 @@ XAPI_MODE_STACKTRACE_CHECKS
 XAPI_MODE_STACKTRACE
 XAPI_MODE_ERRORCODE
 
-STACKTRACE* modes require a runtime link against libxapi.so, ERRCODE does not
+STACKTRACE* modes require a runtime link against libxapi.so, ERRORCODE does not
 
 */
 
 // return type for xapi functions, called its exit value
 typedef uint32_t xapi;
 
-// types for components of xapi exit value
+// types for the components of an xapi
 typedef uint16_t xapi_code;
-typedef uint16_t xapi_etable_id;
+typedef uint16_t xapi_errtab_id;
 
 // error table struct
-typedef struct etable
+typedef struct errtab
 {
   // indexed by lower uint16 of the error code + (min * -1)
   struct
   {
-    char * name;         // e.g. ENOMEM
-    char * desc;         // e.g. Not enough space
-    char * str;          // e.g. ENOMEM : Not enough space
+    xapi   exit;         // exit value for the error, nonzero, set by libxapi
+    char * name;         // e.g. KERNEL_ENOMEM
+    char * desc;         // e.g. out of memory
+    char * str;          // e.g. KERNEL_ENOMEM : out of memory
   } * v;
 
+  xapi_errtab_id  id;    // upper bits of an exit value, nonzero, set by libxapi
   char *          name;  // e.g. "PCRE", "SYS", "FAB", "LW"
-  xapi_etable_id  id;    // upper uint16 of an exit value, nonzero
   xapi_code       min;   // min err
   xapi_code       max;   // max err
-} etable;
+} errtab;
 
 // pull in the appropriate implementation
 #if XAPI_MODE_STACKTRACE_CHECKS

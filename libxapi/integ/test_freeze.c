@@ -75,7 +75,7 @@ int main()
 #endif
 
   xapi exit = foo();
-  assert_exit(exit, perrtab_TEST, TEST_ERROR_ONE);
+  assert_exit(TEST_ERROR_ONE, exit);
 
 #if XAPI_STACKTRACE
   struct calltree * ct = xapi_calltree_thaw(space);

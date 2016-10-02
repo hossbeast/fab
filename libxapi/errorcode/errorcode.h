@@ -37,34 +37,26 @@
 /// fail
 //
 // SUMMARY
-//  fail the current frame with the specified error code
+//  fail the current frame with the specified exit value
 //
 // ARGUMENTS
-//  etab    - error table
-//  code    - error code
-//  [table] - discarded
-//  [key]   - discarded
-//  [vstr]  - discarded
-//  [vlen]  - discarded
-//  [vfmt]  - discarded
+//  [etab] - ignored
+//  exit   - exit value
 //
-#define tfail(etab, code)                          \
-  do {                                             \
-    __xapi_r[0] = (code) & 0xFFFF;                 \
-    if(etab) {                                     \
-      __xapi_r[0] |= (((etable *)etab)->id << 16); \
-    }                                              \
-    goto XAPI_FINALIZE;                            \
+#define fail(exit)                \
+  do {                            \
+    __xapi_r[0] = exit;           \
+    goto XAPI_FINALIZE;           \
   } while(0)
 
-#define tfails(etab, code, key, vstr)       tfail(etab, code)
-#define tfailw(etab, code, key, vbuf, vlen) tfail(etab, code)
-#define tfailf(etab, code, key, vfmt, ...)  tfail(etab, code)
+#define fails(exit, key, vstr)       fail(exit)
+#define failw(exit, key, vbuf, vlen) fail(exit)
+#define failf(exit, key, vfmt, ...)  fail(exit)
 
-#define fail(code)                   tfail(0, code)
-#define fails(code, key, vstr)       tfail(0, code)
-#define failw(code, key, vbuf, vlen) tfail(0, code)
-#define failf(code, key, vfmt, ...)  tfail(0, code)
+#define tfail(etab, exit)              fail(exit)
+#define tfails(etab, exit, key, vstr)  fails(exit, key, vstr)
+#define tfailw(etab, exit, vbuf, vlen) failw(exit, vbuf, vlen)
+#define tfailf(etab, exit, vfmt, ...)  failf(exit, vfmt, ##__VA_ARGS__)
 
 /*
 ** called elsewhere in the stack
@@ -99,13 +91,18 @@
 //  invoke a non-xapi-enabled function and if it fails, fail the current frame with the specified
 //  error code, which is evaluated after the function returns
 //
-#define tfatalize(perrtab, code, func, ...)   \
-  do {                                        \
-    if(func(__VA_ARGS__) != 0)                \
-      tfail(perrtab, code);                   \
+// PARAMETERS
+//  [etab] - ignored
+//  exit   - 
+//
+#define fatalize(exit, func, ...)           \
+  do {                                      \
+    if(func(__VA_ARGS__) != 0)              \
+      fail(exit);                           \
   } while(0)
 
-#define fatalize(code, func, ...)  tfatalize (perrtab, code, func, ##__VA_ARGS__)
+#define tfatalize(errtab, exit, func, ...)  \
+  fatalize(exit, func, ##__VA_ARGS__)
 
 /// xproxy
 //

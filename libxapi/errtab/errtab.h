@@ -35,7 +35,7 @@
 // NOTES
 //  not threadsafe
 //
-xapi xapi_errtab_register(etable * const restrict etab)
+xapi xapi_errtab_register(errtab * const restrict etab)
   __attribute__((nonnull));
 
 /// xapi_errtab_byid
@@ -43,29 +43,7 @@ xapi xapi_errtab_register(etable * const restrict etab)
 // SUMMARY
 //  lookup an error table by id
 //
-const etable * xapi_errtab_byid(const xapi_etable_id id)
-  __attribute__((nonnull));
-
-/// xapi_errtab_name
-//
-// SUMMARY
-//  get the name for an etab
-//
-// PARAMETERS
-//  [etab] - error table
-//
-const char * xapi_errtab_name(const etable * const restrict etab)
-  __attribute__((nonnull));
-
-/// xapi_errtab_name
-//
-// SUMMARY
-//  get the id for an etab
-//
-// PARAMETERS
-//  [etab] - error table
-//
-xapi_etable_id xapi_errtab_id(const etable * const restrict etab)
+const errtab * xapi_errtab_byid(const xapi_errtab_id id)
   __attribute__((nonnull));
 
 //
@@ -75,49 +53,49 @@ xapi_etable_id xapi_errtab_id(const etable * const restrict etab)
 /// xapi_errtab_errname
 //
 // SUMMARY
-//  get the error name from an exit value and etable, e.g. "ENOMEM"
+//  get the error name from an exit value and errtab, e.g. "ENOMEM"
 //
 // PARAMETERS
-//  [etab] - etable
+//  [etab] - errtab
 //  exit   - exit value
 //
-const char * xapi_errtab_errname(const etable * const restrict etab, const xapi exit)
+const char * xapi_errtab_errname(const errtab * const restrict etab, const xapi exit)
   __attribute__((nonnull));
 
 /// xapi_errtab_errdesc
 //
 // SUMMARY
-//  get the error description from an exit value and etable, e.g. "out of memory"
+//  get the error description from an exit value and errtab, e.g. "out of memory"
 //
 // PARAMETERS
-//  [etab] - etable
+//  [etab] - errtab
 //  exit   - exit value
 //
-const char * xapi_errtab_errdesc(const etable * const restrict etab, const xapi exit)
+const char * xapi_errtab_errdesc(const errtab * const restrict etab, const xapi exit)
   __attribute__((nonnull));
 
 /// xapi_errtab_errstr
 //
 // SUMMARY
-//  get the error string from an exit value and etable, e.g. "ENOMEM : out of memory"
+//  get the error string from an exit value and errtab, e.g. "ENOMEM : out of memory"
 //
 // PARAMETERS
-//  [etab] - etable
+//  [etab] - errtab
 //  exit   - exit value
 //
-const char * xapi_errtab_errstr(const etable * const restrict etab, const xapi exit)
+const char * xapi_errtab_errstr(const errtab * const restrict etab, const xapi exit)
   __attribute__((nonnull));
 
 /// xapi_errtab_errcode
 //
 // SUMMARY
-//  get the error code from an exit value and etable, e.g. SYS_ENOMEM
+//  get the error code from an exit value and errtab, e.g. SYS_ENOMEM
 //
 // PARAMETERS
-//  [etab] - etable
+//  [etab] - errtab
 //  exit   - exit value
 //
-xapi_code xapi_errtab_errcode(const etable * const restrict etab, const xapi exit)
+xapi_code xapi_errtab_errcode(const errtab * const restrict etab, const xapi exit)
   __attribute__((nonnull));
 
 #undef restrict

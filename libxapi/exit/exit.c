@@ -28,7 +28,7 @@
 
 API const char * xapi_exit_errname(const xapi exit)
 {
-  xapi_etable_id id = exit >> 16;     // table id
+  xapi_errtab_id id = exit >> 16;     // table id
 
   if(id < 1 || id > tabl)
     return 0;
@@ -38,7 +38,7 @@ API const char * xapi_exit_errname(const xapi exit)
 
 API const char * xapi_exit_errdesc(const xapi exit)
 {
-  xapi_etable_id id = exit >> 16;     // table id
+  xapi_errtab_id id = exit >> 16;     // table id
 
   if(id < 1 || id > tabl)
     return 0;
@@ -48,7 +48,7 @@ API const char * xapi_exit_errdesc(const xapi exit)
 
 API const char * xapi_exit_errstr(const xapi exit)
 {
-  xapi_etable_id id = exit >> 16;     // table id
+  xapi_errtab_id id = exit >> 16;     // table id
 
   if(id < 1 || id > tabl)
     return 0;
@@ -56,9 +56,9 @@ API const char * xapi_exit_errstr(const xapi exit)
   return xapi_errtab_errstr(tab[id - 1], exit);
 }
 
-API const etable * xapi_exit_errtab(const xapi exit)
+API const errtab * xapi_exit_errtab(const xapi exit)
 {
-  xapi_etable_id id = exit >> 16;     // table id
+  xapi_errtab_id id = exit >> 16;     // table id
 
   if(id < 1 || id > tabl)
     return 0;
@@ -68,7 +68,7 @@ API const etable * xapi_exit_errtab(const xapi exit)
 
 API xapi_code xapi_exit_errcode(const xapi exit)
 {
-  xapi_etable_id id = exit >> 16;     // table id
+  xapi_errtab_id id = exit >> 16;     // table id
 
   if(id < 1 || id > tabl)
     return 0;
@@ -78,25 +78,25 @@ API xapi_code xapi_exit_errcode(const xapi exit)
 
 API const char * xapi_exit_errtab_name(const xapi exit)
 {
-  xapi_etable_id id = exit >> 16;     // table id
+  xapi_errtab_id id = exit >> 16;     // table id
 
   if(id < 1 || id > tabl)
     return 0;
 
-  return xapi_errtab_name(tab[id - 1]);
+  return tab[id - 1]->name;
 }
 
-API xapi_etable_id xapi_exit_errtab_id(const xapi exit)
+API xapi_errtab_id xapi_exit_errtab_id(const xapi exit)
 {
-  xapi_etable_id id = exit >> 16;     // table id
+  xapi_errtab_id id = exit >> 16;     // table id
 
   if(id < 1 || id > tabl)
     return 0;
 
-  return xapi_errtab_id(tab[id - 1]);
+  return tab[id - 1]->id;
 }
 
-API xapi xapi_exit_synth(const etable * const restrict etab, const xapi_code errcode)
+API xapi xapi_exit_synth(const errtab * const restrict etab, const xapi_code errcode)
 {
   return ((etab->id) << 16) | errcode;
 }

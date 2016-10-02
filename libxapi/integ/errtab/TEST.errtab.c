@@ -1,12 +1,14 @@
 #include "TEST.errtab.h"
 #define APIDATA
-etable errtab_TEST = {
+errtab errtab_TEST = {
    .name = "TEST"
  , .min = ERRMIN_TEST
  , .max = ERRMAX_TEST
- , .v =  (typeof(((etable*)0)->v[0])[]) {
-#define _E(a, b, c) [ a + (ERRMIN_TEST * -1) ] = { .name = #b, .desc = c, .str = #b " : " c },
+ , .v =  (typeof(((errtab*)0)->v[0])[]) {
+#define _E(a, b, c) [ a - ERRMIN_TEST ] = { .name = #b, .desc = c, .str ="TEST_" #b " : " c, .exit = a },
 ETABLE_TEST
 #undef _E
 }};
-etable * APIDATA perrtab_TEST = &errtab_TEST;
+#if XAPI_STACKTRACE
+errtab * APIDATA perrtab_TEST = &errtab_TEST;
+#endif

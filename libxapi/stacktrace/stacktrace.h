@@ -95,7 +95,7 @@ when calling non-xapi code, you have a couple of options.
       xapi __r = 0;                                         \
       if(xapi_top_frame_index != __xapi_current_frame)      \
       {                                                     \
-        XAPI_FRAME_SET(0, 0);                               \
+        XAPI_FRAME_SET(0);                                  \
         __r = xapi_frame_errval(__xapi_current_frame + 1);  \
       }                                                     \
       __r;                                                  \

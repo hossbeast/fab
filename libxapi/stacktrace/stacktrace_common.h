@@ -27,6 +27,7 @@
 // declarations of frame-manipulation functions (application-visible but not directly called)
 #include "xapi/frame.h"
 #include "xapi/info.h"
+#include "xapi/exit.h"
 
 #define restrict __restrict
 
@@ -37,57 +38,57 @@
 /// fail
 //
 // SUMMARY
-//  fail the current frame with the specified error and the prevailing error table
+//  fail the current frame with the specified exit value
 //
 // REMARKS
 //  it is possible to inline a single info kvp with a fail call. If more than one info kvp
 //  is to be applied, use xapi_info
 //
 // PARAMETERS 
-//  [etab]  - error table, otherwise use the prevailing error table
-//  code    - error code
+//  [etab]  - 
+//  exit    - error code
 //  [key]   - key for an info kvp to add to the frame
 //  [vstr]  - value string
 //  [vbuf]  - value buffer
 //  [vbufl] - value buffer length
 //  [vfmt]  - value in printf-style
 //
-#define tfail(etab, code)                               \
-  do {                                                  \
-    /* populate the current stack frame */              \
-    XAPI_FRAME_SET(etab, code);                         \
-    /* jump to the finally label */                     \
-    goto XAPI_FINALIZE;                                 \
+#define fail(exit)                               \
+  do {                                           \
+    /* populate the current stack frame */       \
+    XAPI_FRAME_SET(exit);                        \
+    /* jump to the finally label */              \
+    goto XAPI_FINALIZE;                          \
   } while(0)
 
-#define tfails(etab, code, key, vstr)   \
-  do {                                                    \
-    /* populate the current stack frame */                \
-    XAPI_FRAME_SET_INFOS(etab, code, key, vstr);          \
-    /* jump to the finally label */                       \
-    goto XAPI_FINALIZE;                                   \
+#define fails(exit, key, vstr)                   \
+  do {                                           \
+    /* populate the current stack frame */       \
+    XAPI_FRAME_SET_INFOS(exit, key, vstr);       \
+    /* jump to the finally label */              \
+    goto XAPI_FINALIZE;                          \
   } while(0)
 
-#define tfailw(etab, code, key, vbuf, vlen)               \
-  do {                                                    \
-    /* populate the current stack frame */                \
-    XAPI_FRAME_SET_INFOW(etab, code, key, vbuf, vlen);    \
-    /* jump to the finally label */                       \
-    goto XAPI_FINALIZE;                                   \
+#define failw(exit, key, vbuf, vlen)               \
+  do {                                             \
+    /* populate the current stack frame */         \
+    XAPI_FRAME_SET_INFOW(exit, key, vbuf, vlen);   \
+    /* jump to the finally label */                \
+    goto XAPI_FINALIZE;                            \
   } while(0)
 
-#define tfailf(etab, code, key, vfmt, ...)                      \
-  do {                                                          \
-    /* populate the current stack frame */                      \
-    XAPI_FRAME_SET_INFOF(etab, code, key, vfmt, ##__VA_ARGS__); \
-    /* jump to the finally label */                             \
-    goto XAPI_FINALIZE;                                         \
+#define failf(exit, key, vfmt, ...)                         \
+  do {                                                      \
+    /* populate the current stack frame */                  \
+    XAPI_FRAME_SET_INFOF(exit, key, vfmt, ##__VA_ARGS__);   \
+    /* jump to the finally label */                         \
+    goto XAPI_FINALIZE;                                     \
   } while(0)
 
-#define fail(code)                    tfail (perrtab, code)
-#define fails(code, key, vstr)        tfails(perrtab, code, key, vstr)
-#define failw(code, key, vbuf, vbufl) tfailw(perrtab, code, key, vbuf, vbufl)
-#define failf(code, key, vfmt, ...)   tfailf(perrtab, code, key, vfmt, ##__VA_ARGS__)
+#define tfail(etab, code)              fail(xapi_exit_synth(etab, code))
+#define tfails(etab, code, key, vstr)  fails(xapi_exit_synth(etab, code), key, vstr)
+#define tfailw(etab, code, vbuf, vlen) failw(xapi_exit_synth(etab, code), vbuf, vlen)
+#define tfailf(etab, code, vfmt, ...)  failf(xapi_exit_synth(etab, code), vfmt, ##__VA_ARGS__)
 
 /// invoke
 //
@@ -119,7 +120,7 @@
 //
 // SUMMARY
 //  invoke a non-xapi function which follows the nonzero-return-error pattern and, if it fails,
-//  capture its error code and fail the current frame using that code and the prevailing error table
+//  capture its error code and fail the current frame using that code and the specified error table
 //
 // REMARKS
 //  fatalize is typically used in a small wrapper for some underlying function. A new frame is not
@@ -127,15 +128,16 @@
 //
 // PARAMETERS
 //  [etab] - error table
-//  code   - error code returned from the function
+//  code   - exit value, evaluated after the function returns
 //
-#define tfatalize(etab, code, func, ...)                          \
-  do {                                                            \
-    if(func(__VA_ARGS__))                                         \
-      tfail(etab, code);                                          \
+#define fatalize(exit, func, ...)                   \
+  do {                                              \
+    if(func(__VA_ARGS__))                           \
+      fail(exit);                                   \
   } while(0)
 
-#define fatalize(code, func, ...)  tfatalize (perrtab, code, func, ##__VA_ARGS__)
+#define tfatalize(etab, code, func, ...)             \
+  fatalize(xapi_exit_synth(etab, code), func, ##__VA_ARGS__)
 
 /// finally
 //
@@ -178,20 +180,20 @@ XAPI_LEAVE:                         \
   (*r) = xapi_frame_leave(__xapi_topframe)
 
 // call xapi_frame_set with the current location
-#define XAPI_FRAME_SET(etab, code)  \
-  xapi_frame_set(etab, code, __xapi_f1 ? __xapi_current_frame : -1, __FILE__, __LINE__, __FUNCTION__)
+#define XAPI_FRAME_SET(exit)  \
+  xapi_frame_set(exit, __xapi_f1 ? __xapi_current_frame : -1, __FILE__, __LINE__, __FUNCTION__)
 
 // call xapi_frame_set with the current location, and a single key/value info pair
-#define XAPI_FRAME_SET_INFOS(etab, code, key, vstr) \
-  xapi_frame_set_infos(etab, code, __xapi_f1 ? __xapi_current_frame : -1, key, vstr, __FILE__, __LINE__, __FUNCTION__)
+#define XAPI_FRAME_SET_INFOS(exit, key, vstr) \
+  xapi_frame_set_infos(exit, __xapi_f1 ? __xapi_current_frame : -1, key, vstr, __FILE__, __LINE__, __FUNCTION__)
 
 // call xapi_frame_set with the current location, and a single key/value info pair
-#define XAPI_FRAME_SET_INFOW(etab, code, key, vbuf, vlen) \
-  xapi_frame_set_infow(etab, code, __xapi_f1 ? __xapi_current_frame : -1, key, vbuf, vlen, __FILE__, __LINE__, __FUNCTION__)
+#define XAPI_FRAME_SET_INFOW(exit, key, vbuf, vlen) \
+  xapi_frame_set_infow(exit, __xapi_f1 ? __xapi_current_frame : -1, key, vbuf, vlen, __FILE__, __LINE__, __FUNCTION__)
 
 // call xapi_frame_set with the current location, and a single key/value info pair
-#define XAPI_FRAME_SET_INFOF(etab, code, key, vfmt, ...)  \
-  xapi_frame_set_infof(etab, code, __xapi_f1 ? __xapi_current_frame : -1, key, vfmt, __FILE__, __LINE__, __FUNCTION__, ##__VA_ARGS__)
+#define XAPI_FRAME_SET_INFOF(exit, key, vfmt, ...)  \
+  xapi_frame_set_infof(exit, __xapi_f1 ? __xapi_current_frame : -1, key, vfmt, __FILE__, __LINE__, __FUNCTION__, ##__VA_ARGS__)
 
 /*
 ** called after finally
@@ -273,7 +275,7 @@ XAPI_LEAVE:                         \
 //  errtab  - pointer to error table
 //  errcode - error code
 //
-#define XAPI_THROWING(c) (XAPI_UNWINDING && XAPI_ERRTAB == (perrtab) && XAPI_ERRCODE == (c))
+#define XAPI_THROWING(c) (XAPI_UNWINDING && XAPI_ERRVAL == (c))
 
 #undef restrict
 #endif

@@ -92,7 +92,7 @@ int main()
 
   // zeta fails
   xapi exit = zeta();
-  assert_exit(exit, perrtab_TEST, TEST_ERROR_ONE);
+  assert_exit(TEST_ERROR_ONE, exit);
 
   // alpha dead area should have been skipped
   assertf(alpha_finally_count == 1
