@@ -49,8 +49,8 @@ struct map
   size_t      size;           // number of active entries
   uint32_t    attr;           // options and modifiers
   size_t      vsz;            // for MAP_PRIMARY, size of values
-  void (*free_value)(MAP_VALUE_TYPE *);
-  xapi (*xfree_value)(MAP_VALUE_TYPE *);
+  void (*free_value)(void *);
+  xapi (*xfree_value)(void *);
 
   size_t      table_size;     // table length, in elements (always a power of two)
   size_t      overflow_size;  // size at which to rehash
@@ -81,8 +81,8 @@ xapi map_allocate(
     struct map ** const restrict m
   , uint32_t attr
   , size_t vsz
-  , void (*free_value)(MAP_VALUE_TYPE *)
-  , xapi (*xfree_value)(MAP_VALUE_TYPE *)
+  , void * free_value
+  , void * xfree_value
   , size_t capacity
 )
   __attribute__((nonnull(1)));
@@ -99,7 +99,7 @@ xapi map_allocate(
 //  [r]   - pointer to value
 //  [rv]  - (returns) pointer to map-owned value
 //
-xapi map_put(struct map * const restrict m, const char * const restrict key, size_t keyl, MAP_VALUE_TYPE * r, MAP_VALUE_TYPE * const * const restrict rv)
+xapi map_put(struct map * const restrict m, const char * const restrict key, size_t keyl, void * r, void * const * const restrict rv)
   __attribute__((nonnull(1,2)));
 
 #undef restrict

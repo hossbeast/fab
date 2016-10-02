@@ -76,7 +76,7 @@ static xapi list_assure(list * const restrict li, size_t len)
 // SUMMARY
 //  overwrite elements in the list
 //
-static void list_update(list * const restrict li, size_t index, size_t len, LIST_ELEMENT_TYPE * const * const el, LIST_ELEMENT_TYPE ** const restrict rv)
+static void list_update(list * const restrict li, size_t index, size_t len, void * el, void ** const restrict rv)
 {
   // copy the elements into place
   if(el)
@@ -154,8 +154,8 @@ xapi list_allocate(
     list ** const restrict rv
   , uint32_t attr
   , size_t esz
-  , void (*free_element)(LIST_ELEMENT_TYPE *)
-  , xapi (*xfree_element)(LIST_ELEMENT_TYPE *)
+  , void * free_element
+  , void * xfree_element
   , size_t capacity
 )
 {
@@ -179,7 +179,7 @@ finally:
 coda;
 }
 
-xapi list_put(list * const restrict li, size_t index, size_t len, LIST_ELEMENT_TYPE * const * const el, LIST_ELEMENT_TYPE ** const restrict rv)
+xapi list_put(list * const restrict li, size_t index, size_t len, void * el, void ** const restrict rv)
 {
   enter;
 
@@ -191,7 +191,7 @@ xapi list_put(list * const restrict li, size_t index, size_t len, LIST_ELEMENT_T
   finally : coda;
 }
 
-xapi list_add(list * const restrict li, size_t index, size_t len, LIST_ELEMENT_TYPE * const * const el, LIST_ELEMENT_TYPE ** const restrict rv)
+xapi list_add(list * const restrict li, size_t index, size_t len, void * el, void ** const restrict rv)
 {
   enter;
 
@@ -217,8 +217,8 @@ xapi list_add(list * const restrict li, size_t index, size_t len, LIST_ELEMENT_T
 
 API xapi list_createx(
     list** const restrict li
-  , void (*free_element)(LIST_ELEMENT_TYPE *)
-  , xapi (*xfree_element)(LIST_ELEMENT_TYPE *)
+  , void * free_element
+  , void * xfree_element
   , size_t capacity
 )
 {
@@ -269,16 +269,16 @@ API xapi list_recycle(list * const restrict li)
   finally : coda;
 }
 
-API LIST_ELEMENT_TYPE * list_get(const list * const restrict li, int x)
+API void * list_get(const list * const restrict li, int x)
 {
   return ELEMENT(li, x);
 }
 
-API xapi list_shift(list * const restrict li, LIST_ELEMENT_TYPE ** const restrict el)
+API xapi list_shift(list * const restrict li, void ** const restrict el)
 {
   enter;
 
-  LIST_ELEMENT_TYPE * e = 0;
+  void * e = 0;
   if(li->l)
   {
     e = ELEMENT(li, 0);
@@ -301,7 +301,7 @@ API xapi list_shift(list * const restrict li, LIST_ELEMENT_TYPE ** const restric
   finally : coda;
 }
 
-API xapi list_pop(list * const restrict li, LIST_ELEMENT_TYPE ** const restrict el)
+API xapi list_pop(list * const restrict li, void ** const restrict el)
 {
   enter;
 
@@ -321,47 +321,47 @@ API xapi list_pop(list * const restrict li, LIST_ELEMENT_TYPE ** const restrict 
   finally : coda;
 }
 
-API xapi list_push(list * const restrict li, LIST_ELEMENT_TYPE * const el)
+API xapi list_push(list * const restrict li, void * el)
 {
   xproxy(list_add, li, li->l, 1, &el, 0);
 }
 
-API xapi list_push_range(list * const restrict li, LIST_ELEMENT_TYPE * const * const el, size_t len)
+API xapi list_push_range(list * const restrict li, void * el, size_t len)
 {
   xproxy(list_add, li, li->l, len, el, 0);
 }
 
-API xapi list_unshift(list * const restrict li, LIST_ELEMENT_TYPE * const el)
+API xapi list_unshift(list * const restrict li, void * el)
 {
   xproxy(list_add, li, 0, 1, &el, 0);
 }
 
-API xapi list_unshift_range(list * const restrict li, LIST_ELEMENT_TYPE * const * const el, size_t len)
+API xapi list_unshift_range(list * const restrict li, void * el, size_t len)
 {
   xproxy(list_add, li, 0, len, el, 0);
 }
 
-API xapi list_insert(list * const restrict li, size_t index, LIST_ELEMENT_TYPE * const el)
+API xapi list_insert(list * const restrict li, size_t index, void * el)
 {
   xproxy(list_add, li, index, 1, &el, 0);
 }
 
-API xapi list_insert_range(list * const restrict li, size_t index, LIST_ELEMENT_TYPE * const * const el, size_t len)
+API xapi list_insert_range(list * const restrict li, size_t index, void * el, size_t len)
 {
   xproxy(list_add, li, index, len, el, 0);
 }
 
-API xapi list_set(list * const restrict li, size_t index, LIST_ELEMENT_TYPE * const el)
+API xapi list_set(list * const restrict li, size_t index, void * el)
 {
   xproxy(list_put, li, index, 1, &el, 0);  
 }
 
-API xapi list_set_range(list * const restrict li, size_t index, LIST_ELEMENT_TYPE * const * const el, size_t len)
+API xapi list_set_range(list * const restrict li, size_t index, void * el, size_t len)
 {
   xproxy(list_put, li, index, len, el, 0);  
 }
 
-API void list_sort(list * const restrict li, int (*compar)(const LIST_ELEMENT_TYPE *, const LIST_ELEMENT_TYPE *, void *), void * arg)
+API void list_sort(list * const restrict li, int (*compar)(const void *, const void *, void *), void * arg)
 {
   if(li->attr & LIST_PRIMARY)
   {
@@ -372,7 +372,7 @@ API void list_sort(list * const restrict li, int (*compar)(const LIST_ELEMENT_TY
   {
     int lcompar(const void * A, const void * B, void * arg)
     {
-      return compar(*(const LIST_ELEMENT_TYPE **)A, *(const LIST_ELEMENT_TYPE **)B, arg);
+      return compar(*(const void **)A, *(const void **)B, arg);
     };
 
     qsort_r(li->v, li->l, ELEMENT_SIZE(li), lcompar, arg);
@@ -400,7 +400,7 @@ API xapi list_sublist(list * const restrict li, size_t index, size_t len, list *
 
 struct context
 {
-  int (*compar)(void *, const LIST_ELEMENT_TYPE *, size_t);
+  int (*compar)(void *, const void *, size_t);
   const char * v;
   size_t esz;
   void * ud;
@@ -413,12 +413,12 @@ static int pcompar(struct context * ctx, const void * el)
 
 static int scompar(struct context * ctx, const void * el)
 {
-  return ctx->compar(ctx->ud, *(const LIST_ELEMENT_TYPE **)el, ((char*)el - ctx->v) / ctx->esz);
+  return ctx->compar(ctx->ud, *(const void **)el, ((char*)el - ctx->v) / ctx->esz);
 }
 
-API LIST_ELEMENT_TYPE * list_search(list * const restrict li, void * ud, int (*compar)(void *, const LIST_ELEMENT_TYPE *, size_t))
+API void * list_search(list * const restrict li, void * ud, int (*compar)(void *, const void *, size_t))
 {
-  LIST_ELEMENT_TYPE * elp = 0;
+  void * elp = 0;
 
   struct context ctx = { v : li->v, ud : ud, esz : ELEMENT_SIZE(li), compar : compar };
 
@@ -431,7 +431,7 @@ API LIST_ELEMENT_TYPE * list_search(list * const restrict li, void * ud, int (*c
 
     void * res;
     if((res = bsearch(&ctx, li->v, li->l, ctx.esz, (void*)scompar)))
-      elp = *(LIST_ELEMENT_TYPE **)res;
+      elp = *(void **)res;
   }
 
   return elp;

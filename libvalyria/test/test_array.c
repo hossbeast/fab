@@ -21,10 +21,7 @@
 #include "xapi.h"
 #include "xapi/trace.h"
 
-struct item;
-#define ARRAY_ELEMENT_TYPE struct item
 #include "array.h"
-
 #include "test_util.h"
 
 typedef struct item
@@ -112,7 +109,7 @@ static xapi test_set()
 
   fatal(validate, ar);
 
-  array_set_range(ar, 0, sizeof(itemps) / sizeof(itemps[0]), itemps);
+  fatal(array_set_range, ar, 0, sizeof(itemps) / sizeof(itemps[0]), itemps);
   itemps[0]->x = 10;
   itemps[1]->x = 20;
   itemps[2]->x = 30;

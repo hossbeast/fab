@@ -38,20 +38,20 @@ API xapi dictionary_create(dictionary ** const restrict m, size_t vsz)
 API xapi dictionary_createx(
     dictionary ** const restrict m
   , size_t vsz
-  , void (*free_value)(DICTIONARY_VALUE_TYPE *)
-  , xapi (*xfree_value)(DICTIONARY_VALUE_TYPE *)
+  , void * free_value
+  , void * xfree_value
   , size_t capacity
 )
 {
   xproxy(map_allocate, (void*)m, MAP_PRIMARY, vsz, free_value, xfree_value, capacity);
 }
 
-API xapi dictionary_set(dictionary * const restrict m, const char * const restrict key, size_t keyl, DICTIONARY_VALUE_TYPE * const * const restrict value)
+API xapi dictionary_set(dictionary * const restrict m, const char * const restrict key, size_t keyl, void * const restrict value)
 {
   xproxy(map_put, m, key, keyl, 0, value);
 }
 
-API DICTIONARY_VALUE_TYPE * dictionary_get(const dictionary* const restrict m, const char * const restrict k, size_t kl)
+API void * dictionary_get(const dictionary* const restrict m, const char * const restrict k, size_t kl)
 {
   return map_get(m, k, kl);
 }
@@ -76,7 +76,7 @@ API xapi dictionary_keys(const dictionary * const restrict m, const char *** con
   xproxy(map_keys, m, keys, keysl);
 }
 
-API xapi dictionary_values(const dictionary* const restrict m, DICTIONARY_VALUE_TYPE *** restrict values, size_t * const restrict valuesl)
+API xapi dictionary_values(const dictionary* const restrict m, void * restrict values, size_t * const restrict valuesl)
 {
   xproxy(map_values, m, values, valuesl);
 }
@@ -101,7 +101,7 @@ API const char * dictionary_table_key(const dictionary * const restrict m, size_
   return map_table_key(m, x);
 }
 
-API DICTIONARY_VALUE_TYPE * dictionary_table_value(const dictionary * const restrict m, size_t x)
+API void * dictionary_table_value(const dictionary * const restrict m, size_t x)
 {
   return map_table_value(m, x);
 }

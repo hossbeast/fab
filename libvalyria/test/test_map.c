@@ -20,14 +20,11 @@
 
 #include "xapi.h"
 #include "xapi/trace.h"
-
 #include "xlinux/xstdlib.h"
 
-struct item;
-#define MAP_VALUE_TYPE struct item
 #include "map.h"
-
 #include "test_util.h"
+
 #include "macros.h"
 
 struct item
@@ -37,7 +34,7 @@ struct item
 };
 typedef struct item item;
 
-static void destructor(item * value)
+static void destructor(void * value)
 {
   free(value);
 }

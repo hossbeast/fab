@@ -20,13 +20,9 @@
 
 #include "xapi.h"
 #include "xapi/trace.h"
-
 #include "xlinux/xstdlib.h"
 
-struct item;
-#define LIST_ELEMENT_TYPE struct item
 #include "list.h"
-
 #include "test_util.h"
 
 typedef struct item
@@ -65,7 +61,7 @@ static xapi test_basic()
   item * itemp = 0;
   item * itemps[2];
 
-  fatal(list_createx, &listp, (void*)free, 0, 0);
+  fatal(list_createx, &listp, wfree, 0, 0);
 
   fatal(xmalloc, &itemp, sizeof(*itemp));
   itemp->x = 4;
@@ -159,10 +155,10 @@ static xapi test_insertion_sort()
       size_t lx = 0;
       int lc = 0;
 
-      int compar(void * ud, const item * el, size_t idx)
+      int compar(void * ud, const void * el, size_t idx)
       {
         lx = idx;
-        return lc = itemp->x - el->x;
+        return lc = itemp->x - ((item*)el)->x;
       };
 
       fatal(xmalloc, &itemp, sizeof(*itemp));

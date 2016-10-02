@@ -38,10 +38,6 @@ struct list;    // list.h
 #define LIST_PRIMARY    0x01  /* primary storage of elements in the list */
 #define LIST_SECONDARY  0x02  /* not the primary storage of elements in the list */
 
-#ifndef LIST_ELEMENT_TYPE
-# define LIST_ELEMENT_TYPE void
-#endif
-
 struct list_internals
 {
   char *   v;     // storage
@@ -49,8 +45,8 @@ struct list_internals
 
   uint32_t attr;
   size_t   esz;   // element size, for primary storage
-  void (*free_element)(LIST_ELEMENT_TYPE *);
-  xapi (*xfree_element)(LIST_ELEMENT_TYPE *);
+  void (*free_element)(void *);
+  xapi (*xfree_element)(void *);
 };
 
 #define restrict __restrict
@@ -75,8 +71,8 @@ xapi list_allocate(
     struct list ** const restrict li
   , uint32_t attr
   , size_t esz
-  , void (*free_element)(LIST_ELEMENT_TYPE *)
-  , xapi (*xfree_element)(LIST_ELEMENT_TYPE *)
+  , void * free_element
+  , void * xfree_element
   , size_t capacity
 )
   __attribute__((nonnull(1)));
@@ -93,7 +89,7 @@ xapi list_allocate(
 //  [el]  - pointer to the first element to add
 //  [rv]  - (returns) pointers to elements
 //
-xapi list_add(struct list * const restrict li, size_t index, size_t len, LIST_ELEMENT_TYPE * const * const el, LIST_ELEMENT_TYPE ** const restrict rv)
+xapi list_add(struct list * const restrict li, size_t index, size_t len, void * el, void ** const restrict rv)
   __attribute__((nonnull(1)));
 
 /// list_put
@@ -108,7 +104,7 @@ xapi list_add(struct list * const restrict li, size_t index, size_t len, LIST_EL
 //  [el]  - pointer to the first element to write
 //  [rv]  - (returns) pointers to elements
 //
-xapi list_put(struct list * const restrict li, size_t index, size_t len, LIST_ELEMENT_TYPE * const * const el, LIST_ELEMENT_TYPE ** const restrict rv)
+xapi list_put(struct list * const restrict li, size_t index, size_t len, void * el, void ** const restrict rv)
   __attribute__((nonnull(1)));
 
 #undef restrict

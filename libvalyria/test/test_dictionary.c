@@ -15,18 +15,17 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#include <stdlib.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 #include "xapi.h"
 #include "xapi/trace.h"
+#include "xlinux/xstdlib.h"
 
-struct item;
-#define DICTIONARY_VALUE_TYPE struct item
 #include "dictionary.h"
+#include "test_util.h"
 
 #include "macros.h"
-#include "test_util.h"
 
 struct item
 {

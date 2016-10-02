@@ -39,10 +39,6 @@ REMARKS
 struct dictionary;
 typedef struct dictionary dictionary;
 
-#ifndef DICTIONARY_VALUE_TYPE
-# define DICTIONARY_VALUE_TYPE void
-#endif
-
 #define restrict __restrict
 
 /// dictionary_create
@@ -63,8 +59,8 @@ xapi dictionary_create(dictionary ** const restrict m, size_t vsz)
 xapi dictionary_createx(
     dictionary ** const restrict m
   , size_t vsz
-  , void (*free_value)(DICTIONARY_VALUE_TYPE *)
-  , xapi (*xfree_value)(DICTIONARY_VALUE_TYPE *)
+  , void * free_value
+  , void * xfree_value
   , size_t capacity
 )
   __attribute__((nonnull(1)));
@@ -95,7 +91,7 @@ xapi dictionary_ixfree(dictionary ** const restrict dictionary)
 //  keyl  - key length
 //  value - (returns) pointer to value
 //
-xapi dictionary_set(dictionary * const restrict m, const char * const restrict key, size_t keyl, DICTIONARY_VALUE_TYPE * const * const restrict value)
+xapi dictionary_set(dictionary * const restrict m, const char * const restrict key, size_t keyl, void * const restrict value)
   __attribute__((nonnull));
 
 /// dictionary_get
@@ -111,7 +107,7 @@ xapi dictionary_set(dictionary * const restrict m, const char * const restrict k
 // RETURNS
 //  pointer to element or 0
 //
-DICTIONARY_VALUE_TYPE * dictionary_get(const dictionary * const restrict m, const char * const restrict key, size_t keyl)
+void * dictionary_get(const dictionary * const restrict m, const char * const restrict key, size_t keyl)
   __attribute__((nonnull));
 
 /// dictionary_recycle
@@ -166,7 +162,7 @@ xapi dictionary_keys(const dictionary * const restrict m, const char *** const r
 //  values  - (returns) list, to be freed by the caller
 //  valuesl - (returns) size of list
 //
-xapi dictionary_values(const dictionary * const restrict m, DICTIONARY_VALUE_TYPE *** restrict values, size_t * const restrict valuesl)
+xapi dictionary_values(const dictionary * const restrict m, void * restrict values, size_t * const restrict valuesl)
   __attribute__((nonnull));
 
 /// dictionary_table_size
@@ -201,7 +197,7 @@ const char * dictionary_table_key(const dictionary * const restrict m, size_t x)
 //  m - dictionary
 //  x - slot index, 0 <= x < dictionary_table_size
 //
-DICTIONARY_VALUE_TYPE * dictionary_table_value(const dictionary * const restrict m, size_t x)
+void * dictionary_table_value(const dictionary * const restrict m, size_t x)
   __attribute__((nonnull));
 
 #undef restrict

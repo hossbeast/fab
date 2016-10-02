@@ -34,8 +34,8 @@ API xapi array_create(array ** const restrict ar, size_t esz)
 API xapi array_createx(
     array ** const restrict ar
   , size_t esz
-  , void (*free_element)(ARRAY_ELEMENT_TYPE *)
-  , xapi (*xfree_element)(ARRAY_ELEMENT_TYPE *)
+  , void * free_element
+  , void * xfree_element
   , size_t capacity
 )
 {
@@ -62,67 +62,67 @@ API xapi array_recycle(array * const restrict ar)
   xproxy(list_recycle, (void*)ar);
 }
 
-API ARRAY_ELEMENT_TYPE * array_get(const array * const restrict ar, int x)
+API void * array_get(const array * const restrict ar, int x)
 {
   return list_get((void*)ar, x);
 }
 
-API xapi array_shift(array * const restrict ar, ARRAY_ELEMENT_TYPE ** const restrict el)
+API xapi array_shift(array * const restrict ar, void ** const restrict el)
 {
   xproxy(list_shift, (void*)ar, el);
 }
 
-API xapi array_pop(array * const restrict ar, ARRAY_ELEMENT_TYPE ** const restrict el)
+API xapi array_pop(array * const restrict ar, void ** const restrict el)
 {
   xproxy(list_pop, (void*)ar, el);
 }
 
-API xapi array_push(array * const restrict ar, ARRAY_ELEMENT_TYPE ** const restrict el)
+API xapi array_push(array * const restrict ar, void * const restrict el)
 {
   xproxy(list_add, (void*)ar, ar->l, 1, 0, el);
 }
 
-API xapi array_push_range(array * const restrict ar, size_t len, ARRAY_ELEMENT_TYPE ** const restrict el)
+API xapi array_push_range(array * const restrict ar, size_t len, void * restrict el)
 {
   xproxy(list_add, (void*)ar, ar->l, len, 0, el);
 }
 
-API xapi array_unshift(array * const restrict ar, ARRAY_ELEMENT_TYPE ** const restrict el)
+API xapi array_unshift(array * const restrict ar, void * restrict el)
 {
   xproxy(list_add, (void*)ar, 0, 1, 0, el);
 }
 
-API xapi array_unshift_range(array * const restrict ar, size_t len, ARRAY_ELEMENT_TYPE ** const restrict el)
+API xapi array_unshift_range(array * const restrict ar, size_t len, void ** const restrict el)
 {
   xproxy(list_add, (void*)ar, 0, len, 0, el);
 }
 
-API xapi array_insert(array * const restrict ar, size_t index, ARRAY_ELEMENT_TYPE ** const restrict el)
+API xapi array_insert(array * const restrict ar, size_t index, void * restrict el)
 {
   xproxy(list_add, (void*)ar, index, 1, 0, el);
 }
 
-API xapi array_insert_range(array * const restrict ar, size_t index, size_t len, ARRAY_ELEMENT_TYPE ** const restrict el)
+API xapi array_insert_range(array * const restrict ar, size_t index, size_t len, void * restrict el)
 {
   xproxy(list_add, (void*)ar, index, len, 0, el);
 }
 
-xapi array_set(array * const restrict ar, size_t index, ARRAY_ELEMENT_TYPE ** const restrict el)
+xapi array_set(array * const restrict ar, size_t index, void * restrict el)
 {
   xproxy(list_put, (void*)ar, index, 1, 0, el);
 }
 
-xapi array_set_range(array * const restrict ar, size_t index, size_t len, ARRAY_ELEMENT_TYPE ** const restrict el)
+xapi array_set_range(array * const restrict ar, size_t index, size_t len, void * restrict el)
 {
   xproxy(list_put, (void*)ar, index, len, 0, el);
 }
 
-API void array_sort(array * const restrict ar, int (*compar)(const ARRAY_ELEMENT_TYPE *, const ARRAY_ELEMENT_TYPE *, void *), void * arg)
+API void array_sort(array * const restrict ar, int (*compar)(const void *, const void *, void *), void * arg)
 {
   list_sort((void*)ar, compar, arg);
 }
 
-API ARRAY_ELEMENT_TYPE * array_search(array * const restrict ar, void * ud, int (*compar)(void *, const ARRAY_ELEMENT_TYPE *, size_t))
+API void * array_search(array * const restrict ar, void * ud, int (*compar)(void *, const void *, size_t))
 {
   return list_search((void*)ar, ud, compar);
 }

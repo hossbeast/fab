@@ -43,10 +43,6 @@ typedef struct array
   ARRAY_INTERNALS;
 } array;
 
-#ifndef ARRAY_ELEMENT_TYPE
-# define ARRAY_ELEMENT_TYPE void
-#endif
-
 #define restrict __restrict
 
 /// array_create
@@ -70,8 +66,8 @@ xapi array_create(array ** const restrict ar, size_t esz)
 xapi array_createx(
     array ** const restrict ar
   , size_t esz
-  , void (*free_element)(ARRAY_ELEMENT_TYPE *)
-  , xapi (*xfree_element)(ARRAY_ELEMENT_TYPE *)
+  , void * free_element
+  , void * xfree_element
   , size_t capacity
 )
   __attribute__((nonnull(1)));
@@ -111,7 +107,7 @@ size_t array_size(const array * const ar)
 // RETURNS
 //  pointer to element
 //
-ARRAY_ELEMENT_TYPE * array_get(const array * const restrict ar, int x)
+void * array_get(const array * const restrict ar, int x)
   __attribute__((nonnull));
 
 /// array_shift
@@ -126,7 +122,7 @@ ARRAY_ELEMENT_TYPE * array_get(const array * const restrict ar, int x)
 // REMARKS
 //  destroy_element is called before this function returns
 //
-xapi array_shift(array * const restrict ar, ARRAY_ELEMENT_TYPE ** const restrict el)
+xapi array_shift(array * const restrict ar, void ** const restrict el)
   __attribute__((nonnull(1)));
 
 /// array_pop
@@ -141,7 +137,7 @@ xapi array_shift(array * const restrict ar, ARRAY_ELEMENT_TYPE ** const restrict
 // REMARKS
 //  destroy_element is called before this function returns
 //
-xapi array_pop(array * const restrict ar, ARRAY_ELEMENT_TYPE ** const restrict el)
+xapi array_pop(array * const restrict ar, void ** const restrict el)
   __attribute__((nonnull(1)));
 
 /// array_push
@@ -153,7 +149,7 @@ xapi array_pop(array * const restrict ar, ARRAY_ELEMENT_TYPE ** const restrict e
 //  ar - array
 //  el - (returns) pointer to element
 //
-xapi array_push(array * const restrict ar, ARRAY_ELEMENT_TYPE ** const restrict el)
+xapi array_push(array * const restrict ar, void * const restrict el)
   __attribute__((nonnull));
 
 /// array_push_range
@@ -166,7 +162,7 @@ xapi array_push(array * const restrict ar, ARRAY_ELEMENT_TYPE ** const restrict 
 //  len - number of elements
 //  el  - (returns) pointers to elements
 //
-xapi array_push_range(array * const restrict ar, size_t len, ARRAY_ELEMENT_TYPE ** const restrict el)
+xapi array_push_range(array * const restrict ar, size_t len, void * el)
   __attribute__((nonnull));
 
 /// array_unshift
@@ -178,7 +174,7 @@ xapi array_push_range(array * const restrict ar, size_t len, ARRAY_ELEMENT_TYPE 
 //  ar - array
 //  el - (returns) pointer to element
 //
-xapi array_unshift(array * const restrict ar, ARRAY_ELEMENT_TYPE ** const restrict el)
+xapi array_unshift(array * const restrict ar, void * restrict el)
   __attribute__((nonnull));
 
 /// array_unshift_range
@@ -194,7 +190,7 @@ xapi array_unshift(array * const restrict ar, ARRAY_ELEMENT_TYPE ** const restri
 //  len - number of elements
 //  el  - (returns) pointers to elements
 //
-xapi array_unshift_range(array * const restrict ar, size_t len, ARRAY_ELEMENT_TYPE ** const restrict el)
+xapi array_unshift_range(array * const restrict ar, size_t len, void ** const restrict el)
   __attribute__((nonnull));
 
 /// array_insert
@@ -207,7 +203,7 @@ xapi array_unshift_range(array * const restrict ar, size_t len, ARRAY_ELEMENT_TY
 //  index - 0 <= index <= array_size(s)
 //  el    - (returns) pointer to element
 //
-xapi array_insert(array * const restrict ar, size_t index, ARRAY_ELEMENT_TYPE ** const restrict el)
+xapi array_insert(array * const restrict ar, size_t index, void * restrict el)
   __attribute__((nonnull));
 
 /// array_insert_range
@@ -221,7 +217,7 @@ xapi array_insert(array * const restrict ar, size_t index, ARRAY_ELEMENT_TYPE **
 //  len   - number of elements to insert
 //  el    - (returns) pointers to elements
 //
-xapi array_insert_range(array * const restrict ar, size_t index, size_t len, ARRAY_ELEMENT_TYPE ** const restrict el)
+xapi array_insert_range(array * const restrict ar, size_t index, size_t len, void * restrict el)
   __attribute__((nonnull));
 
 /// array_set
@@ -237,7 +233,7 @@ xapi array_insert_range(array * const restrict ar, size_t index, size_t len, ARR
 //  index - 0 <= index < array_size(s)
 //  el    - (returns) pointer to the element
 //
-xapi array_set(array * const restrict ar, size_t index, ARRAY_ELEMENT_TYPE ** const restrict el)
+xapi array_set(array * const restrict ar, size_t index, void * restrict el)
   __attribute__((nonnull));
 
 /// array_set_range
@@ -254,7 +250,7 @@ xapi array_set(array * const restrict ar, size_t index, ARRAY_ELEMENT_TYPE ** co
 //  len   - number of elements to insert
 //  el    - (returns) pointers to the elements
 //
-xapi array_set_range(array * const restrict ar, size_t index, size_t len, ARRAY_ELEMENT_TYPE ** const restrict el)
+xapi array_set_range(array * const restrict ar, size_t index, size_t len, void * restrict el)
   __attribute__((nonnull));
 
 /// array_recycle
@@ -286,7 +282,7 @@ xapi array_recycle(array * const ar)
 //  compar - comparison function
 //  [arg]  - passed to compar
 //
-void array_sort(array * const restrict ar, int (*compar)(const ARRAY_ELEMENT_TYPE *, const ARRAY_ELEMENT_TYPE *, void *), void * arg)
+void array_sort(array * const restrict ar, int (*compar)(const void *, const void *, void *), void * arg)
   __attribute__((nonnull(1, 2)));
 
 /// array_search
@@ -306,7 +302,7 @@ void array_sort(array * const restrict ar, int (*compar)(const ARRAY_ELEMENT_TYP
 //   idx   - element index
 //   [ud]  - user data
 //
-ARRAY_ELEMENT_TYPE * array_search(array * const restrict ar, void * ud, int (*compar)(void *, const ARRAY_ELEMENT_TYPE *, size_t))
+void * array_search(array * const restrict ar, void * ud, int (*compar)(void *, const void *, size_t))
   __attribute__((nonnull(1,3)));
 
 #undef restrict

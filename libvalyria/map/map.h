@@ -39,10 +39,6 @@ REMARKS
 struct map;
 typedef struct map map;
 
-#ifndef MAP_VALUE_TYPE
-# define MAP_VALUE_TYPE void
-#endif
-
 #define restrict __restrict
 
 /// map_create
@@ -61,8 +57,8 @@ xapi map_create(map ** const restrict m)
 
 xapi map_createx(
     map ** const restrict m
-  , void (*free_value)(MAP_VALUE_TYPE *)
-  , xapi (*xfree_value)(MAP_VALUE_TYPE *)
+  , void * free_value
+  , void * xfree_value
   , size_t capacity
 )
   __attribute__((nonnull(1)));
@@ -93,7 +89,7 @@ xapi map_ixfree(map ** const restrict map)
 //  keyl   - key length
 //  value  - pointer to value
 //
-xapi map_set(map * const restrict m, const char * const restrict key, size_t keyl, MAP_VALUE_TYPE * const restrict value)
+xapi map_set(map * const restrict m, const char * const restrict key, size_t keyl, void * const restrict value)
   __attribute__((nonnull));
 
 /// map_get
@@ -115,7 +111,7 @@ xapi map_set(map * const restrict m, const char * const restrict key, size_t key
 // SUMMARY
 //  returns pointer to the stored value, or 0 if not found
 //
-MAP_VALUE_TYPE * map_get(const map * const restrict m, const char * const restrict key, size_t keyl)
+void * map_get(const map * const restrict m, const char * const restrict key, size_t keyl)
   __attribute__((nonnull));
 
 /// map_recycle
@@ -146,18 +142,15 @@ xapi map_delete(map * const restrict m, const char * const restrict key, size_t 
 size_t map_size(const map * const restrict m)
   __attribute__((nonnull));
 
-/// map_values
+/// map_keys
 //
 // SUMMARY
-//  returns a list of values in the map
+//  returns a list of keys in the map
 //
 // PARAMETERS
 //  m      - map
 //  list   - (returns) list, to be freed by the caller
 //  listl  - (returns) size of list
-//
-// RETURNS
-//  xapi semantics
 //
 xapi map_keys(const map * const restrict m, const char *** const restrict keys, size_t * const restrict keysl)
   __attribute__((nonnull));
@@ -172,10 +165,7 @@ xapi map_keys(const map * const restrict m, const char *** const restrict keys, 
 //  list   - (returns) list, to be freed by the caller
 //  listl  - (returns) size of list
 //
-// RETURNS
-//  xapi semantics
-//
-xapi map_values(const map * const restrict m, MAP_VALUE_TYPE *** restrict values, size_t * const restrict valuesl)
+xapi map_values(const map * const restrict m, void * restrict values, size_t * const restrict valuesl)
   __attribute__((nonnull));
 
 /// map_table_size
@@ -210,7 +200,7 @@ const char * map_table_key(const map * const restrict m, size_t x)
 //  m - map
 //  x - slot index
 //
-MAP_VALUE_TYPE * map_table_value(const map * const restrict m, size_t x)
+void * map_table_value(const map * const restrict m, size_t x)
   __attribute__((nonnull));
 
 #undef restrict

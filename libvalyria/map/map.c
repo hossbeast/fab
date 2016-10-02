@@ -160,8 +160,8 @@ xapi map_allocate(
     map ** const restrict m
   , uint32_t attr
   , size_t vsz
-  , void (*free_value)(MAP_VALUE_TYPE *)
-  , xapi (*xfree_value)(MAP_VALUE_TYPE *)
+  , void * free_value
+  , void * xfree_value
   , size_t capacity
 )
 {
@@ -199,8 +199,8 @@ xapi map_put(
     map * const restrict m
   , const char * const restrict k
   , size_t kl
-  , MAP_VALUE_TYPE * const restrict v
-  , MAP_VALUE_TYPE * const * const restrict rv
+  , void * const restrict v
+  , void * const * const restrict rv
 )
 {
   enter;
@@ -317,8 +317,8 @@ API xapi map_create(map ** const restrict m)
 
 API xapi map_createx(
     map ** const restrict m
-  , void (*free_value)(MAP_VALUE_TYPE *)
-  , xapi (*xfree_value)(MAP_VALUE_TYPE *)
+  , void * free_value
+  , void * xfree_value
   , size_t capacity
 )
 {
@@ -329,7 +329,7 @@ API xapi map_createx(
   finally : coda;
 }
 
-API xapi map_set(map* const restrict m, const char * const restrict k, size_t kl, MAP_VALUE_TYPE * const restrict v)
+API xapi map_set(map* const restrict m, const char * const restrict k, size_t kl, void * const restrict v)
 {
   enter;
 
@@ -338,7 +338,7 @@ API xapi map_set(map* const restrict m, const char * const restrict k, size_t kl
   finally : coda;
 }
 
-API MAP_VALUE_TYPE * map_get(const map* const restrict m, const char * const restrict k, size_t kl)
+API void * map_get(const map* const restrict m, const char * const restrict k, size_t kl)
 {
   // perform probe
   size_t i = 0;
@@ -418,9 +418,11 @@ API xapi map_keys(const map * const restrict m, const char *** const restrict ke
   finally : coda;
 }
 
-API xapi map_values(const map* const restrict m, MAP_VALUE_TYPE *** restrict values, size_t * const restrict valuesl)
+API xapi map_values(const map* const restrict m, void * restrict _values, size_t * const restrict valuesl)
 {
   enter;
+
+  void *** values = _values;
 
   fatal(xmalloc, values, m->size * sizeof(*values));
   (*valuesl) = 0;
@@ -489,7 +491,7 @@ API const char * map_table_key(const map * const restrict m, size_t x)
   return 0;
 }
 
-API MAP_VALUE_TYPE * map_table_value(const map * const restrict m, size_t x)
+API void * map_table_value(const map * const restrict m, size_t x)
 {
   if(m->tk[x] && m->tk[x]->l && !m->tk[x]->d)
     return VALUE(m, m->tv, x);
