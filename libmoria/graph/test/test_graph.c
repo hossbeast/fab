@@ -36,13 +36,12 @@ struct item;
 
 #include "narrator.h"
 #include "narrator/fixed.h"
-#include "logger.h"
 
 #define VERTEX_VALUE_TYPE struct item
 #include "internal.h"
 #include "graph.internal.h"
 #include "vertex.internal.h"
-#include "errtab/LORIEN.errtab.h"
+#include "errtab/MORIA.errtab.h"
 
 #include "macros.h"
 
@@ -101,7 +100,7 @@ static xapi graph_test_entry(graph_test * test)
   dictionary * items = 0;
   narrator * N = 0;
 
-  fatal(xapi_errtab_register, perrtab_LORIEN);  
+  fatal(xapi_errtab_register, perrtab_MORIA);  
 
   fatal(graph_create, &g, vertex_say);
   fatal(dictionary_create, &items, sizeof(item));
@@ -148,7 +147,7 @@ static xapi graph_test_entry(graph_test * test)
   if((exit = invoke(graph_traverse, g, root->v, (void*)vertex_say, test->skip, test->finish, test->stop, test->attrs, N)))
   {
     // unexpected error
-    if(xapi_exit_errtab(exit) != perrtab_LORIEN || xapi_exit_errcode(exit) != LORIEN_CYCLE)
+    if(xapi_exit_errtab(exit) != perrtab_MORIA || xapi_exit_errcode(exit) != MORIA_CYCLE)
       fail(0);
 
     // cycle not expected for this test
@@ -167,7 +166,7 @@ static xapi graph_test_entry(graph_test * test)
   else if(test->cycle || test->cycle_path)
   {
     // appropriate exit status
-    assert_exit(exit, perrtab_LORIEN, LORIEN_CYCLE);
+    assert_exit(exit, perrtab_MORIA, MORIA_CYCLE);
 
     // appropriate error message
     if(test->cycle_path)

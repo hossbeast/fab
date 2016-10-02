@@ -167,8 +167,12 @@ int main(int argc, char** argv, char ** envp)
           , 100 * ((double)xunit_assertions_passed / (double)(xunit_assertions_passed + xunit_assertions_failed))
           , xunit_assertions_passed + xunit_assertions_failed
         );
-
         fatal(elapsed_say, &test_start, &test_end, log_narrator(&token));
+        if((*test)->name)
+        {
+          logf(0, " for %s", (*test)->name);
+        }
+
         fatal(log_finish, &token);
 
         unit_assertions_passed += xunit_assertions_passed;

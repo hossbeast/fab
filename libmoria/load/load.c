@@ -1,41 +1,63 @@
 /* Copyright (c) 2012-2015 Todd Freed <todd.freed@gmail.com>
 
    This file is part of fab.
-
+   
    fab is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
    the Free Software Foundation, either version 3 of the License, or
    (at your option) any later version.
-
+   
    fab is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
    GNU General Public License for more details.
-
+   
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#include <stdarg.h>
+#include "xapi.h"
+#include "xlinux.h"
+#include "xlinux/LIB.errtab.h"
 
-#include "test_util.h"
+#include "internal.h"
+#include "load.internal.h"
 
-#define restrict __restrict
+//
+// api
+//
 
-void ufailf_info(const char * const restrict expfmt, const char * const restrict actfmt, ...)
+static int handles;
+
+API xapi valyria_load()
 {
-  va_list va;
-  va_start(va, actfmt);
+  enter;
 
-  xapi_fail_intent();
-  xapi_info_vaddf("expected", expfmt, va);
-  xapi_info_vaddf("actual", actfmt, va);
+  if(handles++ == 0)
+  {
+    // dependencies
+    fatal(xlinux_load);
 
-  va_end(va);
+    // modules
+    // error tables
+  }
+
+  finally : coda;
 }
 
-void ufails_info(const char * const restrict exp, const char * const restrict act)
+API xapi valyria_unload()
 {
-  xapi_fail_intent();
-  xapi_info_adds("expected", exp);
-  xapi_info_adds("actual", act);
+  enter;
+
+  if(--handles == 0)
+  {
+    // modules
+    // dependencies
+    fatal(xlinux_unload);
+  }
+  else if(handles < 0)
+  {
+    tfails(perrtab_LIB, LIB_AUNLOAD, "library", "libvalyria");
+  }
+
+  finally : coda;
 }

@@ -15,49 +15,14 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef _LORIEN_VERTEX_H
-#define _LORIEN_VERTEX_H
+#ifndef _MORIA_INTERNAL_H
+#define _MORIA_INTERNAL_H
 
-/*
+// visibility declaration macros
+#define API __attribute__((visibility("protected")))
+#define APIDATA
 
-MODULE
- vertex
+#undef perrtab
+#define perrtab perrtab_MORIA
 
-SUMMARY
-
-REMARKS
-
-*/
-
-struct graph;
-struct vertex;
-typedef struct vertex vertex;
-
-#ifndef VERTEX_VALUE_TYPE 
-# define VERTEX_VALUE_TYPE void
-#endif
-
-#define restrict __restrict
-
-/// vertex_value_set
-//
-// SUMMARY
-//  set the value for the vertex
-//
-// PARAMETERS
-//  v       - 
-//  [value] - 
-//
-void vertex_value_set(vertex * const restrict v, VERTEX_VALUE_TYPE * value)
-  __attribute__((nonnull(1)));
-
-/// vertex_value
-//
-// SUMMARY
-//  get the value for the vertex
-//
-VERTEX_VALUE_TYPE * vertex_value(vertex * const restrict v)
-  __attribute__((nonnull));
-
-#undef restrict
 #endif

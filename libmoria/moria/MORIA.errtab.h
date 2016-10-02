@@ -1,0 +1,1 @@
+../errtab/MORIA.errtab.h

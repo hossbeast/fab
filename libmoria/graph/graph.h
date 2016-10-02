@@ -15,8 +15,8 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef _LORIEN_GRAPH_H
-#define _LORIEN_GRAPH_H
+#ifndef _MORIA_GRAPH_H
+#define _MORIA_GRAPH_H
 
 /*
 

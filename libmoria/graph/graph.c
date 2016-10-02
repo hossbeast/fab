@@ -28,7 +28,7 @@
 #include "internal.h"
 #include "graph.internal.h"
 #include "vertex.internal.h"
-#include "errtab/LORIEN.errtab.h"
+#include "errtab/MORIA.errtab.h"
 
 typedef struct edge
 {
@@ -85,7 +85,7 @@ printf("visit %d\n", vvisit);
 #endif
 
   if(v->guard)  // cycle detected
-    fail(LORIEN_CYCLE);
+    fail(MORIA_CYCLE);
 
   v->guard = 1; // descend
 
@@ -151,7 +151,7 @@ printf("visit %d\n", vvisit);
   v->guard = 0; // ascend
 
 finally:
-  if(XAPI_THROWING(LORIEN_CYCLE))
+  if(XAPI_THROWING(MORIA_CYCLE))
   {
     if((*stackz) < sizeof((*stack)) / sizeof((*stack)[0]))
       (*stack)[(*stackz)++] = v;
@@ -278,7 +278,7 @@ API xapi graph_traverse(
   ); 
 
 finally:
-  if(XAPI_THROWING(LORIEN_CYCLE))
+  if(XAPI_THROWING(MORIA_CYCLE))
   {
     fatal(narrator_fixed_create, &N, 4096);
 
