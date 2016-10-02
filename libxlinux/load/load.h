@@ -15,23 +15,23 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef _VALYRIA_H
-#define _VALYRIA_H
+#ifndef _XLINUX_LOAD_H
+#define _XLINUX_LOAD_H
 
 #include "xapi.h"
 
-/// valyria_load
+/// xlinux_load
 //
 // SUMMARY
 //  initialize the library
 //
-xapi valyria_load(void);
+xapi xlinux_load(void);
 
-/// valyria_unload
+/// xlinux_unload
 //
 // SUMMARY
 //  release the library
 //
-xapi valyria_unload(void);
+xapi xlinux_unload(void);
 
 #endif

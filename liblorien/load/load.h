@@ -15,47 +15,23 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
+#ifndef _LORIEN_LOAD_H
+#define _LORIEN_LOAD_H
+
 #include "xapi.h"
-#include "xlinux.h"
-#include "xlinux/LIB.errtab.h"
 
-#include "internal.h"
-
+/// lorien_load
 //
-// api
+// SUMMARY
+//  initialize the library
 //
+xapi lorien_load(void);
 
-static int handles;
+/// lorien_unload
+//
+// SUMMARY
+//  release the library
+//
+xapi lorien_unload(void);
 
-API xapi valyria_load()
-{
-  enter;
-
-  if(handles++ == 0)
-  {
-    // dependencies
-    fatal(xlinux_load);
-
-    // modules
-  }
-
-  finally : coda;
-}
-
-API xapi valyria_unload()
-{
-  enter;
-
-  if(--handles == 0)
-  {
-    // modules
-    // dependencies
-    fatal(xlinux_unload);
-  }
-  else if(handles < 0)
-  {
-    tfails(perrtab_LIB, LIB_AUNLOAD, "library", "libvalyria");
-  }
-
-  finally : coda;
-}
+#endif

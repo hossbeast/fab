@@ -75,20 +75,6 @@ LOGGER_ATTR_TABLE(0, 0)
 //
 int g_logger_default_stderr;
 
-/// logger_load
-//
-// SUMMARY
-//  load the library
-//
-xapi logger_load(void);
-
-/// logger_unload
-//
-// SUMMARY
-//  release the library
-//
-xapi logger_unload(void);
-
 /// logger_arguments_setup
 //
 // SUMMARY

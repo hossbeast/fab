@@ -21,7 +21,7 @@
 #include "xapi.h"
 #include "xapi/exit.h"
 #include "xlinux/xstdlib.h"
-#include "xlinux/SYS.errtab.h"
+#include "xlinux/KERNEL.errtab.h"
 
 #include "internal.h"
 #include "yyutil/parser.h"
@@ -101,7 +101,7 @@ API xapi yyu_reduce(int (*parser)(void *, yyu_extra *), yyu_extra * pp, xapi syn
     if(r == 2)
     {
       // memory exhaustion error from the parser
-      tfail(perrtab_SYS, SYS_ENOMEM);
+      tfail(perrtab_KERNEL, KERNEL_ENOMEM);
     }
     else if(XAPI_UNWINDING)
     {

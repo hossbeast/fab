@@ -18,9 +18,6 @@
 #ifndef _YYUTIL_INTERNAL_H
 #define _YYUTIL_INTERNAL_H
 
-// public api
-#include "yyutil.h"
-
 // visibility declaration macros
 #define API __attribute__((visibility("protected")))
 #define APIDATA

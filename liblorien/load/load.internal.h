@@ -15,23 +15,9 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef _XLINUX_H
-#define _XLINUX_H
+#ifndef _LORIEN_LOAD_INTERNAL_H
+#define _LORIEN_LOAD_INTERNAL_H
 
-#include "xapi.h"
-
-/// xlinux_load
-//
-// SUMMARY
-//  initialize the library
-//
-xapi xlinux_load(void);
-
-/// xlinux_unload
-//
-// SUMMARY
-//  release the library
-//
-xapi xlinux_unload(void);
+#include "load.h"
 
 #endif

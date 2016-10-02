@@ -26,8 +26,6 @@ struct canon_test;
 #include "xunit.h"
 #include "xunit/assert.h"
 
-#include "logger.h"
-
 typedef struct canon_test
 {
   xunit_test;

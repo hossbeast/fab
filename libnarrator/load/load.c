@@ -16,55 +16,53 @@
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
 #include "xapi.h"
-#include "xapi/errtab.h"
-#include "xlinux.h"
-#include "xlinux/LIB.errtab.h"
-#include "narrator.h"
+#include "xapi/SYS.errtab.h"
+
+#include "xlinux/load.h"
 
 #include "internal.h"
-#include "errtab/LORIEN.errtab.h"
-#include "graph.internal.h"
-#include "vertex.internal.h"
+#include "load.internal.h"
+#include "nullity.internal.h"
+#include "file.internal.h"
+
+static int handles;
 
 //
 // api
 //
 
-static int handles;
-
-API xapi lorien_load()
+API xapi narrator_load()
 {
   enter;
 
-  if(handles++ == 0)
+  if(handles == 0)
   {
     // dependencies
     fatal(xlinux_load);
-    fatal(narrator_load);
 
     // modules
-#ifdef XAPI_STACKTRACE
-    fatal(xapi_errtab_register, perrtab_LORIEN);
-#endif
+    fatal(nullity_setup);
+    fatal(file_setup);
   }
+  handles++;
 
   finally : coda;
 }
 
-API xapi lorien_unload()
+API xapi narrator_unload()
 {
   enter;
 
   if(--handles == 0)
   {
-    // modules
-    // dependencies
+    nullity_teardown();
+    file_teardown();
+
     fatal(xlinux_unload);
-    fatal(narrator_unload);
   }
   else if(handles < 0)
   {
-    tfails(perrtab_LIB, LIB_AUNLOAD, "library", "liblorien");
+    tfails(perrtab_SYS, SYS_AUNLOAD, "library", "libnarrator");
   }
 
   finally : coda;

@@ -18,9 +18,6 @@
 #ifndef _VALYRIA_INTERNAL_H
 #define _VALYRIA_INTERNAL_H
 
-// public api
-#include "valyria.h"
-
 // visibility declaration macros
 #define API __attribute__((visibility("protected")))
 #define APIDATA

@@ -16,13 +16,11 @@
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
 #include "xapi.h"
-#include "xapi/errtab.h"
 #include "xlinux.h"
 #include "xlinux/LIB.errtab.h"
-#include "logger.h"
 
 #include "internal.h"
-#include "logging.internal.h"
+#include "load.internal.h"
 
 //
 // api
@@ -30,7 +28,7 @@
 
 static int handles;
 
-API xapi yyutil_load()
+API xapi valyria_load()
 {
   enter;
 
@@ -38,16 +36,14 @@ API xapi yyutil_load()
   {
     // dependencies
     fatal(xlinux_load);
-    fatal(logger_load);
 
     // modules
-    fatal(logging_setup);
   }
 
   finally : coda;
 }
 
-API xapi yyutil_unload()
+API xapi valyria_unload()
 {
   enter;
 
@@ -56,11 +52,10 @@ API xapi yyutil_unload()
     // modules
     // dependencies
     fatal(xlinux_unload);
-    fatal(logger_unload);
   }
   else if(handles < 0)
   {
-    tfails(perrtab_LIB, LIB_AUNLOAD, "library", "libyyutil");
+    tfails(perrtab_LIB, LIB_AUNLOAD, "library", "libvalyria");
   }
 
   finally : coda;

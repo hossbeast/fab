@@ -26,8 +26,6 @@ struct rebase_test;
 #include "xunit.h"
 #include "xunit/assert.h"
 
-#include "logger.h"
-
 typedef struct rebase_test
 {
   xunit_test;

@@ -15,14 +15,9 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef _LORIEN_INTERNAL_H
-#define _LORIEN_INTERNAL_H
+#ifndef _YYUTIL_LOAD_INTERNAL_H
+#define _YYUTIL_LOAD_INTERNAL_H
 
-// visibility declaration macros
-#define API __attribute__((visibility("protected")))
-#define APIDATA
-
-#undef perrtab
-#define perrtab perrtab_LORIEN
+#include "load.h"
 
 #endif

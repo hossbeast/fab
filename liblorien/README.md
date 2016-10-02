@@ -1,3 +1,3 @@
 # liblorien
 
-library of data structures using libxapi / libxlinux / liblogger
+library of file-system based data structures and algorithms

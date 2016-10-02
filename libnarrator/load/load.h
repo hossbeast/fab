@@ -15,14 +15,23 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef _LORIEN_INTERNAL_H
-#define _LORIEN_INTERNAL_H
+#ifndef _NARRATOR_LOAD_H
+#define _NARRATOR_LOAD_H
 
-// visibility declaration macros
-#define API __attribute__((visibility("protected")))
-#define APIDATA
+#include "xapi.h"
 
-#undef perrtab
-#define perrtab perrtab_LORIEN
+/// narrator_load
+//
+// SUMMARY
+//  initialize the library
+//
+xapi narrator_load(void);
+
+/// narrator_unload
+//
+// SUMMARY
+//  release the library
+//
+xapi narrator_unload(void);
 
 #endif

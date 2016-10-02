@@ -15,14 +15,23 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef _LORIEN_INTERNAL_H
-#define _LORIEN_INTERNAL_H
+#ifndef _VALYRIA_LOAD_H
+#define _VALYRIA_LOAD_H
 
-// visibility declaration macros
-#define API __attribute__((visibility("protected")))
-#define APIDATA
+#include "xapi.h"
 
-#undef perrtab
-#define perrtab perrtab_LORIEN
+/// valyria_load
+//
+// SUMMARY
+//  initialize the library
+//
+xapi valyria_load(void);
+
+/// valyria_unload
+//
+// SUMMARY
+//  release the library
+//
+xapi valyria_unload(void);
 
 #endif

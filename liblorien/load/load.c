@@ -15,14 +15,45 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef _LORIEN_INTERNAL_H
-#define _LORIEN_INTERNAL_H
+#include "xapi.h"
+#include "xlinux.h"
+#include "xlinux/LIB.errtab.h"
 
-// visibility declaration macros
-#define API __attribute__((visibility("protected")))
-#define APIDATA
+#include "internal.h"
+#include "load.internal.h"
 
-#undef perrtab
-#define perrtab perrtab_LORIEN
+//
+// api
+//
 
-#endif
+static int handles;
+
+API xapi lorien_load()
+{
+  enter;
+
+  if(handles++ == 0)
+  {
+    // dependencies
+    fatal(xlinux_load);
+  }
+
+  finally : coda;
+}
+
+API xapi lorien_unload()
+{
+  enter;
+
+  if(--handles == 0)
+  {
+    // dependencies
+    fatal(xlinux_unload);
+  }
+  else if(handles < 0)
+  {
+    tfails(perrtab_LIB, LIB_AUNLOAD, "library", "liblorien");
+  }
+
+  finally : coda;
+}

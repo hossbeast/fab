@@ -18,63 +18,20 @@
 #include <string.h>
 
 #include "xapi.h"
-
-#include "xlinux.h"
+#include "xapi/SYS.errtab.h"
 #include "xlinux/xstdlib.h"
-#include "xlinux/LIB.errtab.h"
 
 #include "internal.h"
-#include "growing/growing.internal.h"
-#include "file/file.internal.h"
-#include "fixed/fixed.internal.h"
-#include "multi/multi.internal.h"
-
-#include "nullity/nullity.internal.h"
-#include "file/file.internal.h"
-#include "record/record.internal.h"
-
-static int handles;
+#include "file.internal.h"
+#include "fixed.internal.h"
+#include "growing.internal.h"
+#include "multi.internal.h"
+#include "nullity.internal.h"
+#include "record.internal.h"
 
 //
 // api
 //
-
-API xapi narrator_load()
-{
-  enter;
-
-  if(handles == 0)
-  {
-    // dependencies
-    fatal(xlinux_load);
-
-    // modules
-    fatal(nullity_setup);
-    fatal(file_setup);
-  }
-  handles++;
-
-  finally : coda;
-}
-
-API xapi narrator_unload()
-{
-  enter;
-
-  if(--handles == 0)
-  {
-    nullity_teardown();
-    file_teardown();
-
-    fatal(xlinux_unload);
-  }
-  else if(handles < 0)
-  {
-    tfails(perrtab_LIB, LIB_AUNLOAD, "library", "libnarrator");
-  }
-
-  finally : coda;
-}
 
 API void narrator_free(narrator * restrict n)
 {

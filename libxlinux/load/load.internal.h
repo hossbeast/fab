@@ -15,23 +15,25 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef _YYUTIL_H
-#define _YYUTIL_H
+#ifndef _XLINUX_FMT_INTERNAL_H
+#define _XLINUX_FMT_INTERNAL_H
+
+#include <stdarg.h>
 
 #include "xapi.h"
 
-/// yyutil_load
+#define restrict __restrict
+
+/// fmt_apply
 //
 // SUMMARY
-//  initialize the library
 //
-xapi yyutil_load(void);
+//
+// PARAMETERS
+//
+//
+xapi fmt_apply(char * const restrict dst, size_t dst_size, const char * const restrict fmt, va_list va)
+  __attribute__((nonnull));
 
-/// yyutil_unload
-//
-// SUMMARY
-//  release the library
-//
-xapi yyutil_unload(void);
-
+#undef restrict
 #endif
