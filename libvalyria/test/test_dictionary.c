@@ -128,8 +128,8 @@ static xapi validate(dictionary * dp)
   }
 
 finally:
-  free(keys);
-  free(values);
+  wfree(keys);
+  wfree(values);
 coda;
 }
 

@@ -54,7 +54,7 @@ xapi ixstrndup(char** s1, const char* s2, const size_t l);
 
 /// ixsprintf
 //
-// - free(*s)
+// - wfree(*s)
 // - allocate(*s)
 // - sprintf(fmt, ...) -> *s
 //

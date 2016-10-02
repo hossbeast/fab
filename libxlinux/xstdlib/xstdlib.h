@@ -52,19 +52,19 @@ xapi xmalloc(void* target, size_t size)
 xapi xrealloc(void* target, size_t es, size_t ec, size_t oec)
   __attribute__((nonnull));
 
-/// xfree
+/// wfree
 //
 // SUMMARY
 //  xproxy for free
 //
-void xfree(void* target);
+void wfree(void* target);
 
-/// ifree
+/// iwfree
 //
 // SUMMARY
-//  does this: free(*target); *target = 0;
+//  does this: wfree(*target); *target = 0;
 //
-void ifree(void* target)
+void iwfree(void* target)
   __attribute__((nonnull));
 
 /// xqsort_r

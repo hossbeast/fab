@@ -47,7 +47,7 @@ static xapi validate(list * listp)
     item * B = list_get(listp, x);
 
     if(B->x <= A->x)
-      tfail(perrtab_TEST, TEST_FAIL);
+      fail(TEST_FAIL);
   }
 
   finally : coda;
@@ -102,7 +102,7 @@ static xapi test_basic()
 
 finally:
   fatal(list_xfree, listp);
-  free(itemp);
+  wfree(itemp);
 coda;
 }
 
@@ -147,7 +147,7 @@ static xapi test_insertion_sort()
   for(x = 0; x < sentinel(items); x++)
   {
     fatal(list_ixfree, &listp);
-    fatal(list_createx, &listp, (void*)free, 0, 0);
+    fatal(list_createx, &listp, (void*)wfree, 0, 0);
 
     int y;
     for(y = 0; y < sentinel(items[x]); y++)
@@ -178,7 +178,7 @@ static xapi test_insertion_sort()
 
 finally:
   fatal(list_xfree, listp);
-  free(itemp);
+  wfree(itemp);
 coda;
 }
 
@@ -195,7 +195,7 @@ static xapi test_set()
   item * itemp = 0;
   item * itemps[3];
 
-  fatal(list_createx, &listp, (void*)free, 0, 0);
+  fatal(list_createx, &listp, (void*)wfree, 0, 0);
 
   fatal(xmalloc, &itemps[0], sizeof(**itemps));
   itemps[0]->x = 1;
@@ -220,7 +220,7 @@ static xapi test_set()
 
 finally:
   fatal(list_xfree, listp);
-  free(itemp);
+  wfree(itemp);
 coda;
 }
 

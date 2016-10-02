@@ -85,7 +85,7 @@ finally :
 coda;
 }
 
-void API ifree(void* target)
+void API iwfree(void* target)
 {
   void** t = (void**)target;
 
@@ -96,13 +96,13 @@ void API ifree(void* target)
   }
   else
   {
-    free(*t);
+    wfree(*t);
   }
 
   *t = 0;
 }
 
-void API xfree(void* target)
+void API wfree(void* target)
 {
   if(policy)
   {

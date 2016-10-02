@@ -153,9 +153,9 @@ API void psfree(pstring * ps)
 {
   if(ps)
   {
-    free(ps->s);
+    wfree(ps->s);
   }
-  free(ps);
+  wfree(ps);
 }
 
 API void psifree(pstring ** ps)

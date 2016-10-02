@@ -80,7 +80,7 @@ void memblk_free(memblk * mb);
 /// memblk_xfree
 //
 // SUMMARY
-//  free an memblk with xfree semantics
+//  free an memblk with wfree semantics
 //
 void memblk_xfree(memblk ** mb)
   __attribute__((nonnull));

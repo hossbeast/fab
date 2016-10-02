@@ -293,11 +293,11 @@ finally:
   for(x = 0; x < ksl; x++)
   {
     // free_element was called for these values when they were deleted
-    xfree(ks[x]);
+    wfree(ks[x]);
   }
 
-  xfree(ks);
-  xfree(vs);
+  wfree(ks);
+  wfree(vs);
 coda;
 }
 
@@ -456,14 +456,14 @@ API xapi map_xfree(map* const restrict m)
           fatal(m->xfree_value, VALUE(m, m->tv, x));
       }
 
-      xfree(m->tk[x]);
+      wfree(m->tk[x]);
     }
 
-    xfree(m->tk);
-    xfree(m->tv);
+    wfree(m->tk);
+    wfree(m->tv);
   }
 
-  xfree(m);
+  wfree(m);
 
   finally : coda;
 }

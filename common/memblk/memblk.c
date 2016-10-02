@@ -23,7 +23,7 @@
 
 #include "xlinux/xstdlib.h"
 #include "xlinux/xmman.h"
-#include "xlinux/SYS.errtab.h"
+#include "xlinux/KERNEL.errtab.h"
 #include "xlinux/mempolicy.h"
 #include "xlinux/xuio.h"
 
@@ -100,7 +100,7 @@ xapi memblk_alloc(memblk * restrict mb, void * restrict p, size_t sz)
 
   // request is too large to satisfy
   if(sz > MEMBLOCK_LARGE)
-    tfail(perrtab_SYS, SYS_ENOMEM);
+    tfail(perrtab_KERNEL, KERNEL_ENOMEM);
 
   /* current block is full */
   if(mb->blocksl == 0 || ((mb->blocks[mb->blocksl - 1].l + sz) > mb->blocks[mb->blocksl - 1].a))
@@ -172,13 +172,13 @@ void memblk_free(memblk * mb)
       }
       else
       {
-        free(mb->blocks[x].s);
+        wfree(mb->blocks[x].s);
       }
     }
 
-    free(mb->blocks);
+    wfree(mb->blocks);
   }
-  free(mb);
+  wfree(mb);
 }
 
 void memblk_xfree(memblk ** mb)
@@ -216,6 +216,6 @@ xapi memblk_writeto(memblk * const restrict mb, const int fd)
   fatal(axwritev, fd, iov, mb->blocksl);
 
 finally:
-  free(iov);
+  wfree(iov);
 coda;
 }

@@ -38,7 +38,7 @@ API xapi ixstrncat(char** s1, const char* s2, int s2len)
   fatal(xmalloc, s1, s1len + s2len + 1);
   if(o)
     memcpy(*s1, o, s1len);
-  xfree(o);
+  wfree(o);
   memcpy((*s1) + s1len, s2, s2len);
 
   finally : coda;
@@ -60,7 +60,7 @@ API xapi ixstrcat(char** s1, const char* s2)
   if(o)
     memcpy(*s1, o, s1len);
 
-  xfree(o);
+  wfree(o);
   memcpy((*s1) + s1len, s2, s2len);
 
   finally : coda;
@@ -84,7 +84,7 @@ API xapi ixstrcatf(char** s, char* fmt, ...)
   if(o)
     memcpy(*s, o, len);
 
-  xfree(o);
+  wfree(o);
   va_start(va, fmt);
   vsprintf((*s) + len, fmt, va);
   va_end(va);
@@ -112,7 +112,7 @@ API xapi ixstrndup(char** s1, const char* s2, const size_t l)
   }
   else
   {
-    xfree(*s1);
+    wfree(*s1);
     *s1 = 0;
 
     fatal(ixstrncat, s1, s2, l);
@@ -130,7 +130,7 @@ API xapi ixsprintf(char** s, char* fmt, ...)
   int req = vsnprintf(0, 0, fmt, va);
   va_end(va);
 
-  xfree(*s);
+  wfree(*s);
   fatal(xmalloc, s, req + 1);
 
   va_start(va, fmt);

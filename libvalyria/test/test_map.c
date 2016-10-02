@@ -36,7 +36,7 @@ typedef struct item item;
 
 static void destructor(void * value)
 {
-  free(value);
+  wfree(value);
 }
 
 static xapi validate(map * mapp)
@@ -113,8 +113,8 @@ static xapi validate(map * mapp)
   }
 
 finally:
-  free(keys);
-  free(values);
+  wfree(keys);
+  wfree(values);
 coda;
 }
 
@@ -154,7 +154,7 @@ finally:
   }
 
   fatal(map_xfree, mapp);
-  free(itemp);
+  wfree(itemp);
 
 conclude(&r);
 

@@ -25,7 +25,7 @@
 $basename     = [ valyria ]
 $libname_eapi = [ lib $basename .so ~ j ]
 $libname_xapi = [ lib $basename -xapi .so ~ j ]
-$libdeps_dirs = [ $dlibxapi $dlibxlinux $dlibnarrator ]
+$libdeps_dirs = [ $dlibxapi $dlibxlinux ]
 $copts        = [ -fPIC [ $* ~ lsr c -d s/^/-I ] [ $libdeps_dirs ~ s/^/-I ] ]
 
 # cflags variants
@@ -37,12 +37,12 @@ $cflags_xapi_debug = [ $cflags_xapi_debug $copts ]
 $cflags_xapi_devel = [ $cflags_xapi_devel $copts ]
 
 $lopts              = [ -shared [ -Wl,--version-script=$*/exports ~ j ] ]
-$lflags_eapi_final  = [ $lopts $libxlinux_eapi_final $libnarrator_eapi_final [ -Wl,-soname,libvalyria.so ~ j ] ]
-$lflags_eapi_debug  = [ $lopts $libxlinux_eapi_debug $libnarrator_eapi_debug [ -Wl,-soname,libvalyria.so ~ j ] ]
-$lflags_eapi_devel  = [ $lopts $libxlinux_eapi_devel $libnarrator_eapi_devel [ -Wl,-soname,libvalyria-devel.so ~ j ] ]
-$lflags_xapi_final  = [ $lopts $libxapi_xapi_final $libxlinux_xapi_final $libnarrator_xapi_final [ -Wl,-soname,libvalyria-xapi.so ~ j ] ]
-$lflags_xapi_debug  = [ $lopts $libxapi_xapi_debug $libxlinux_xapi_debug $libnarrator_xapi_debug [ -Wl,-soname,libvalyria-xapi.so ~ j ] ]
-$lflags_xapi_devel  = [ $lopts $libxapi_xapi_devel $libxlinux_xapi_devel $libnarrator_xapi_devel [ -Wl,-soname,libvalyria-xapi-devel.so ~ j ] ]
+$lflags_eapi_final  = [ $lopts $libxlinux_eapi_final [ -Wl,-soname,libvalyria.so ~ j ] ]
+$lflags_eapi_debug  = [ $lopts $libxlinux_eapi_debug [ -Wl,-soname,libvalyria.so ~ j ] ]
+$lflags_eapi_devel  = [ $lopts $libxlinux_eapi_devel [ -Wl,-soname,libvalyria-devel.so ~ j ] ]
+$lflags_xapi_final  = [ $lopts $libxapi_xapi_final $libxlinux_xapi_final [ -Wl,-soname,libvalyria-xapi.so ~ j ] ]
+$lflags_xapi_debug  = [ $lopts $libxapi_xapi_debug $libxlinux_xapi_debug [ -Wl,-soname,libvalyria-xapi.so ~ j ] ]
+$lflags_xapi_devel  = [ $lopts $libxapi_xapi_devel $libxlinux_xapi_devel [ -Wl,-soname,libvalyria-xapi-devel.so ~ j ] ]
 
 # source files, filter out tests
 +[@std.c]($dext = [ eapi.final.pic.o ]; $rdirs = [ $* ~ ls l/test d ]; $cc; $cflags = $cflags_eapi_final)
@@ -63,7 +63,7 @@ $lflags_xapi_devel  = [ $lopts $libxapi_xapi_devel $libxlinux_xapi_devel $libnar
 ##
 
 # default NOFILE target - build everything
-[ @all ] : [ @release @test.fast ]
+[ @all ] : [ @release @test ]
 
 [ @release ] : [ @release.eapi @release.xapi ]
 [ @release.eapi ] : [ @final.eapi @debug.eapi @devel.eapi ]
@@ -126,9 +126,9 @@ $lflags_xapi_devel  = [ $lopts $libxapi_xapi_devel $libxlinux_xapi_devel $libnar
 [ $libvalyria_eapi_final ] :^ [ $libxlinux_eapi_final ]
 [ $libvalyria_eapi_debug ] :^ [ $libxlinux_eapi_debug ]
 [ $libvalyria_eapi_devel ] :^ [ $libxlinux_eapi_devel ]
-[ $libvalyria_xapi_final ] :^ [ $libxapi_xapi_final $libxlinux_xapi_final ]
-[ $libvalyria_xapi_debug ] :^ [ $libxapi_xapi_debug $libxlinux_xapi_debug ]
-[ $libvalyria_xapi_devel ] :^ [ $libxapi_xapi_devel $libxlinux_xapi_devel ]
+[ $libvalyria_xapi_final ] :^ [ $libxlinux_xapi_final $libxapi_xapi_final ]
+[ $libvalyria_xapi_debug ] :^ [ $libxlinux_xapi_debug $libxapi_xapi_debug ]
+[ $libvalyria_xapi_devel ] :^ [ $libxlinux_xapi_devel $libxapi_xapi_devel ]
 
 ##
 ## tasks

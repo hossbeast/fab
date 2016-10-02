@@ -237,9 +237,9 @@ API xapi list_xfree(list * const restrict li)
   if(li)
   {
     fatal(list_recycle, li);
-    free(li->v);
+    wfree(li->v);
   }
-  free(li);
+  wfree(li);
 
   finally : coda;
 }

@@ -56,7 +56,7 @@ API xapi valyria_unload()
   }
   else if(handles < 0)
   {
-    tfails(perrtab_SYS, SYS_AUNLOAD, "library", "libvalyria");
+    fails(SYS_AUNLOAD, "library", "libvalyria");
   }
 
   finally : coda;
