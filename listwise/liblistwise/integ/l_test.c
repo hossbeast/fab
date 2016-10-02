@@ -19,7 +19,7 @@
 
 xunit_unit xunit = {
     .setup = listwise_test_setup
-  , .release = listwise_test_release
+  , .cleanup = listwise_test_cleanup
   , .tests = (struct xunit_test*[]) {
       (listwise_test[]){{ .entry = listwise_test_entry
         , .init = (char*[]) { "ao", "ob", "c", "od", 0 }

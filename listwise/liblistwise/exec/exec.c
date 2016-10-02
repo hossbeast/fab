@@ -18,7 +18,7 @@
 #include <string.h>
 
 #include "xapi.h"
-#include "xlinux.h"
+#include "xlinux/xstdlib.h"
 #include "narrator.h"
 #include "narrator/fixed.h"
 
@@ -218,8 +218,8 @@ API xapi listwise_exec_transform(
 finally:
   fatal(log_finish, &token);
 
-  narrator_free(N);
-  free(ovec);
+  fatal(narrator_xfree, N);
+  wfree(ovec);
 #if SANITY
   sanityblock_free(sb);
 #endif

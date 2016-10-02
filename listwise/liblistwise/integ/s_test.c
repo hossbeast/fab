@@ -19,7 +19,7 @@
 
 xunit_unit xunit = {
     .setup = listwise_test_setup
-  , .release = listwise_test_release
+  , .cleanup = listwise_test_cleanup
   , .tests = (xunit_test*[]) {
 
 /* s : SELECTION_STAGE | WINDOWS_STAGE | MODIFIERS_CANHAVE | ARGS_CANHAVE | OPERATION_INPLACE */

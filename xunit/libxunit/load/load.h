@@ -15,49 +15,23 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
+#ifndef _XUNIT_LOAD_H
+#define _XUNIT_LOAD_H
+
 #include "xapi.h"
-#include "xapi/errtab.h"
-#include "xlinux/LIB.errtab.h"
-#include "logger.h"
 
-#include "internal.h"
-#include "XUNIT.errtab.h"
-
-static int handles;
-
+/// xunit_load
 //
-// api
+// SUMMARY
+//  initialize the library
 //
+xapi xunit_load(void);
 
-API xapi xunit_load()
-{
-  enter;
+/// xunit_unload
+//
+// SUMMARY
+//  release the library
+//
+xapi xunit_unload(void);
 
-  if(handles == 0)
-  {
-    // dependencies
-    fatal(logger_load);
-
-    // modules
-    fatal(xapi_errtab_register, perrtab_XUNIT);
-  }
-  handles++;
-
-  finally : coda;
-}
-
-API xapi xunit_unload()
-{
-  enter;
-
-  if(--handles == 0)
-  {
-    fatal(logger_unload);
-  }
-  else if(handles < 0)
-  {
-    tfails(perrtab_LIB, LIB_AUNLOAD, "library", "libxunit");
-  }
-
-  finally : coda;
-}
+#endif

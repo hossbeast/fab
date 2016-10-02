@@ -18,15 +18,18 @@
 #include <stdio.h>
 #include <dlfcn.h>
 
-#define perrtab perrtab_MAIN
 #include "xapi.h"
+
+#include "xlinux/load.h"
+#include "logger/load.h"
+#include "xunit/load.h"
+#include "narrator/load.h"
+
 #include "xapi/trace.h"
 #include "xapi/calltree.h"
-#include "xlinux.h"
 #include "xlinux/xstdlib.h"
 #include "xlinux/xtime.h"
 #include "xlinux/xdlfcn.h"
-#include "xunit.h"
 #include "xunit/assert.h"
 #include "xunit/XUNIT.errtab.h"
 #include "logger.h"
@@ -58,6 +61,7 @@ int main(int argc, char** argv, char ** envp)
 
   // load libraries
   fatal(logger_load);
+  fatal(narrator_load);
   fatal(xlinux_load);
   fatal(xunit_load);
 
@@ -90,11 +94,11 @@ int main(int argc, char** argv, char ** envp)
 
     if(xunit)
     {
-      logf(L_DLOAD, "loaded %s -> xunit : { setup : %p, teardown : %p, release : %p, tests : %zu }"
+      logf(L_DLOAD, "loaded %s -> xunit : { setup : %p, teardown : %p, cleanup : %p, tests : %zu }"
         , g_args.objects[x]
         , xunit->setup
         , xunit->teardown
-        , xunit->release
+        , xunit->cleanup
         , sentinel(xunit->tests)
       );
     }
@@ -204,8 +208,8 @@ int main(int argc, char** argv, char ** envp)
       if(xunit->teardown)
         xunit->teardown(xunit);
 
-      if(xunit->release)
-        fatal(xunit->release, xunit);
+      if(xunit->cleanup)
+        fatal(xunit->cleanup, xunit);
     }
   }
 
@@ -250,11 +254,13 @@ finally:
   for(x = 0; x < g_args.objectsl; x++)
     fatal(ixdlclose, &objects[x]);
 #endif
-  free(objects);
+  wfree(objects);
 
   args_teardown();
-  fatal(xunit_unload);
   fatal(logger_unload);
+  fatal(narrator_unload);
+  fatal(xlinux_unload);
+  fatal(xunit_unload);
 
 conclude(&R);
   xapi_teardown();

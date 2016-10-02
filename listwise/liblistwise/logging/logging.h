@@ -27,12 +27,8 @@ extern logger_category * listwise_logs;
 #define L_PARSE     listwise_logs[1].id
 #define L_EXEC      listwise_logs[2].id
 #define L_OPINFO    listwise_logs[3].id
-#if DEBUG || DEVEL
-#define L_TOKENS    listwise_logs[4].id
-#define L_STATES    listwise_logs[5].id
 #if SANITY
 #define L_SANITY    listwise_logs[6].id
-#endif
 #endif
 
 #endif

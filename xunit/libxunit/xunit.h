@@ -20,20 +20,6 @@
 
 #include "xapi.h"
 
-/// xunit_setup
-//
-// SUMMARY
-//  initialize the library
-//
-xapi xunit_load(void);
-
-/// xunit_unload
-//
-// SUMMARY
-//  release the library
-//
-xapi xunit_unload(void);
-
 #ifndef TEST_TYPE
 # define TEST_TYPE struct xunit_test
 #endif
@@ -46,7 +32,7 @@ struct xunit_test;
 
 typedef xapi (*xunit_unit_setup)(UNIT_TYPE*);
 typedef void (*xunit_unit_teardown)(UNIT_TYPE*);
-typedef xapi (*xunit_unit_release)(UNIT_TYPE*);
+typedef xapi (*xunit_unit_cleanup)(UNIT_TYPE*);
 typedef xapi (*xunit_test_entry)(TEST_TYPE*);
 
 /// xunit_unit
@@ -58,7 +44,7 @@ typedef struct xunit_unit
 {
   xunit_unit_setup      setup;
   xunit_unit_teardown   teardown;
-  xunit_unit_release    release;
+  xunit_unit_cleanup    cleanup;
   struct xunit_test **  tests;    // sentinel-terminated list of pointers to tests
 } xunit_unit;
 

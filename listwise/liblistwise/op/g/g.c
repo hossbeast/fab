@@ -31,7 +31,7 @@
 
 #include "xlinux/xfcntl.h"
 #include "xlinux/xunistd.h"
-#include "xlinux/SYS.errtab.h"
+#include "xlinux/KERNEL.errtab.h"
 
 #include "listwise/operator.h"
 #include "listwise/fs.h"
@@ -101,7 +101,7 @@ static xapi gobble(lwx* lx, char * path, char * fmt, char * flags)
     }
     else
     {
-      tfail(perrtab_SYS, errno);
+      tfail(perrtab_KERNEL, errno);
     }
   }
 

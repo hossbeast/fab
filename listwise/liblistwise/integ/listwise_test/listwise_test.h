@@ -26,7 +26,7 @@ struct listwise_test;
 #include "xunit/assert.h"
 
 xapi listwise_test_setup(xunit_unit *);
-xapi listwise_test_release(xunit_unit *);
+xapi listwise_test_cleanup(xunit_unit *);
 xapi listwise_test_entry(struct listwise_test*)
   __attribute__((nonnull));
 

@@ -18,7 +18,6 @@
 #include <stdarg.h>
 #include <inttypes.h>
 
-#include "xlinux.h"
 #include "narrator.h"
 
 #include "internal.h"

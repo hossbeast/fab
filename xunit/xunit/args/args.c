@@ -23,8 +23,6 @@
 
 #include "xapi.h"
 #include "errtab/MAIN.errtab.h"
-#undef perrtab
-#define perrtab perrtab_MAIN
 #include "xlinux/xstring.h"
 #include "xlinux/xstdlib.h"
 #include "logger.h"
@@ -246,7 +244,7 @@ void args_teardown()
 {
   int x;
   for(x = 0; x < g_args.objectsl; x++)
-    free(g_args.objects[x]);
+    wfree(g_args.objects[x]);
 
-  free(g_args.objects);
+  wfree(g_args.objects);
 }

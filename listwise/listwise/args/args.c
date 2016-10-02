@@ -35,8 +35,6 @@
 #include "listwise/transform.h"
 
 #include "errtab/MAIN.errtab.h"
-#undef perrtab
-#define perrtab perrtab_MAIN
 #include "args.h"
 #include "logging.h"
 
@@ -509,7 +507,7 @@ void args_teardown()
 {
   int x;
   for(x = 0; x < g_args.inputsl; x++)
-    free(g_args.inputs[x].s);
+    wfree(g_args.inputs[x].s);
 
-  free(g_args.inputs);
+  wfree(g_args.inputs);
 }

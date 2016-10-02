@@ -79,9 +79,9 @@ xapi op_exec(operation* o, lwx* ls, int** ovec, int* ovec_len)
 
     if(def)
     {
-      ifree(&r);
-      ifree(&rtypes);
-      ifree(&rls);
+      iwfree(&r);
+      iwfree(&rtypes);
+      iwfree(&rls);
 
       // call the reflection method on the appropriate object
       fatal(def->reflect, *(void**)ls->s[0].s[x].s, prop, &r, &rtypes, &rls, &rl);
@@ -129,9 +129,9 @@ xapi op_exec(operation* o, lwx* ls, int** ovec, int* ovec_len)
     fatal(lstack_selection_stage, ls, last[x]);
 
 finally:
-  free(r);
-  free(rtypes);
-  free(rls);
-  free(last);
+  wfree(r);
+  wfree(rtypes);
+  wfree(rls);
+  wfree(last);
 coda;
 }

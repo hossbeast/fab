@@ -154,7 +154,7 @@ xapi op_exec(operation* o, lwx* ls, int** ovec, int* ovec_len)
   fatal(lstack_selection_stage, ls, ls->s[0].l - 1);
 
   finally:
-    free(Ts);
-    free(Tt);
+    wfree(Ts);
+    wfree(Tt);
   coda;
 }

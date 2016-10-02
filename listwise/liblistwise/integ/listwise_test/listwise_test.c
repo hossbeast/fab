@@ -20,6 +20,7 @@
 
 #include "xapi.h"
 #include "logger.h"
+#include "load.internal.h"
 
 #include "internal.h"
 #include "listwise_test.h"
@@ -29,12 +30,16 @@ xapi listwise_test_setup(xunit_unit * unit)
 {
   enter;
 
+  // load libraries
   fatal(listwise_load);
+
+  // re-initialize logging
+  fatal(logger_finalize);
 
   finally : coda;
 }
 
-xapi listwise_test_release(xunit_unit * unit)
+xapi listwise_test_cleanup(xunit_unit * unit)
 {
   enter;
 

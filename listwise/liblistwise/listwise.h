@@ -31,20 +31,6 @@ typedef struct lwx lwx;
 
 #define restrict __restrict
 
-/// listwise_load
-//
-// SUMMARY
-//  initialize the library
-//
-xapi listwise_load(void);
-
-/// listwise_unload
-//
-// SUMMARY
-//  free resources used by the library
-//
-xapi listwise_unload(void);
-
 /// listwise_exec
 //
 // SUMMARY
@@ -90,7 +76,7 @@ void lwx_free(struct lwx * const restrict);
 /// lwx_ifree
 //
 // SUMMARY
-//  free an lw context with ifree semantics
+//  free an lw context with iwfree semantics
 //
 void lwx_ifree(struct lwx ** const restrict)
   __attribute__((nonnull));

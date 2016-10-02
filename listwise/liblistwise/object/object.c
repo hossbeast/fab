@@ -41,9 +41,9 @@ xapi object_setup()
   finally : coda;
 }
 
-void object_teardown()
+xapi object_cleanup()
 {
-  map_ifree(&object_registry);
+  xproxy(map_ixfree, &object_registry);
 }
 
 //

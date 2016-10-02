@@ -34,12 +34,15 @@ _E(-31, PCRE_ERROR_JIT_BADOPTION, "") \
 _E(-32, PCRE_ERROR_BADLENGTH, "") \
 _E(-33, PCRE_ERROR_UNSET, "") \
 
+#if XAPI_STACKTRACE
+#else
 enum {
 #define _E(a, b, c) PCRE_ ## b = a,
 ETABLE_PCRE
 #undef _E
 };
+#endif
 #define ERRMIN_PCRE -33
 #define ERRMAX_PCRE -1
-extern etable * perrtab_PCRE;
+extern errtab * perrtab_PCRE;
 #endif

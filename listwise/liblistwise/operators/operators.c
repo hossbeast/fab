@@ -216,13 +216,13 @@ xapi operators_release()
   for(x = 0; x < g_dls_l; x++)
     fatal(xdlclose, g_dls[x]);
 
-  ifree(&g_dls);
+  iwfree(&g_dls);
   g_dls_l = 0;
   g_dls_a = 0;
 
-  ifree(&g_ops);
-  ifree(&g_ops_by_s);
-  ifree(&g_ops_by_mnemonic);
+  iwfree(&g_ops);
+  iwfree(&g_ops_by_s);
+  iwfree(&g_ops_by_mnemonic);
   g_ops_a = 0;
   g_ops_l = 0;
 

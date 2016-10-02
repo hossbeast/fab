@@ -1,17 +1,17 @@
 /* Copyright (c) 2012-2015 Todd Freed <todd.freed@gmail.com>
 
    This file is part of fab.
-   
+
    fab is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
    the Free Software Foundation, either version 3 of the License, or
    (at your option) any later version.
-   
+
    fab is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
    GNU General Public License for more details.
-   
+
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
@@ -25,8 +25,7 @@
 #include <errno.h>
 
 #include "xapi.h"
-#include "xlinux.h"
-#include "xlinux/SYS.errtab.h"
+#include "xlinux/KERNEL.errtab.h"
 #include "xlinux/xstdlib.h"
 #include "xlinux/xstring.h"
 
@@ -235,7 +234,7 @@ for(x = 0; x < il; x++)
     printf(">");
   else
     printf(" ");
-  
+
   if(i[x].t == SLASH)
     printf("[%d] SLASH", x);
   else if(i[x].t == DOT)
@@ -326,7 +325,7 @@ for(x = 0; x < il; x++)
       {
         if(errno != ENOENT && errno != EACCES && errno != ENOTDIR)
         {
-          tfail(perrtab_SYS, errno);
+          tfail(perrtab_KERNEL, errno);
         }
       }
       else
@@ -388,7 +387,7 @@ printf("%7s : %s\n", "final", dst);
 
 finally:
   for(x = 0; x < ia; x++)
-    xfree(i[x].s);
-  xfree(i);
+    wfree(i[x].s);
+  wfree(i);
 coda;
 }

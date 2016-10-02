@@ -1,12 +1,14 @@
 #include "XUNIT.errtab.h"
 #define APIDATA
-etable errtab_XUNIT = {
+errtab errtab_XUNIT = {
    .name = "XUNIT"
  , .min = ERRMIN_XUNIT
  , .max = ERRMAX_XUNIT
- , .v =  (typeof(((etable*)0)->v[0])[]) {
-#define _E(a, b, c) [ a + (ERRMIN_XUNIT * -1) ] = { .name = #b, .desc = c, .str = #b " : " c },
+ , .v =  (typeof(((errtab*)0)->v[0])[]) {
+#define _E(a, b, c) [ a - ERRMIN_XUNIT ] = { .name = #b, .desc = c, .str ="XUNIT_" #b " : " c, .exit = a },
 ETABLE_XUNIT
 #undef _E
 }};
-etable * APIDATA perrtab_XUNIT = &errtab_XUNIT;
+#if XAPI_STACKTRACE
+errtab * APIDATA perrtab_XUNIT = &errtab_XUNIT;
+#endif

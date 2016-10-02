@@ -24,6 +24,7 @@
 #include <unistd.h>
 
 #include "xlinux/xunistd.h"
+#include "xlinux/xstdlib.h"
 
 #include "lorien/canon.h"
 #include "lorien/rebase.h"
@@ -163,6 +164,6 @@ xapi op_exec(operation* o, lwx* lx, int** ovec, int* ovec_len)
   LSTACK_ITEREND
 
 finally:
-  free(cwd);
+  wfree(cwd);
 coda;
 }

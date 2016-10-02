@@ -23,6 +23,7 @@
 #include <sys/types.h>
 
 #include "xapi.h"
+#include "xlinux/xstdlib.h"
 #include "xlinux/xpwd.h"
 #include "xlinux/xgrp.h"
 #include "xlinux/xtime.h"
@@ -307,6 +308,6 @@ API xapi fs_statfmt(
   }
 
 finally:
-  free(cwd);
+  wfree(cwd);
 coda;
 }

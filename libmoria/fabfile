@@ -128,9 +128,9 @@ $lflags_xapi_devel  = [ $lopts $libxapi_xapi_devel $libxlinux_xapi_devel $libnar
 [ $libmoria_eapi_final ] :^ [ $libxlinux_eapi_final $libnarrator_eapi_final $libvalyria_eapi_final ]
 [ $libmoria_eapi_debug ] :^ [ $libxlinux_eapi_debug $libnarrator_eapi_final $libvalyria_eapi_final ]
 [ $libmoria_eapi_devel ] :^ [ $libxlinux_eapi_devel $libnarrator_eapi_final $libvalyria_eapi_final ]
-[ $libmoria_xapi_final ] :^ [ $libxapi_xapi_final $libxlinux_xapi_final $libnarrator_xapi_final $libvalyria_xapi_final ]
-[ $libmoria_xapi_debug ] :^ [ $libxapi_xapi_debug $libxlinux_xapi_debug $libnarrator_xapi_debug $libvalyria_xapi_debug ]
-[ $libmoria_xapi_devel ] :^ [ $libxapi_xapi_devel $libxlinux_xapi_devel $libnarrator_xapi_devel $libvalyria_xapi_devel ]
+[ $libmoria_xapi_final ] :^ [ $libxlinux_xapi_final $libnarrator_xapi_final $libvalyria_xapi_final $libxapi_xapi_final ]
+[ $libmoria_xapi_debug ] :^ [ $libxlinux_xapi_debug $libnarrator_xapi_debug $libvalyria_xapi_debug $libxapi_xapi_debug ]
+[ $libmoria_xapi_devel ] :^ [ $libxlinux_xapi_devel $libnarrator_xapi_devel $libvalyria_xapi_devel $libxapi_xapi_devel ]
 
 ##
 ## tasks
@@ -178,4 +178,9 @@ $lflags_xapi_devel  = [ $lopts $libxapi_xapi_devel $libxlinux_xapi_devel $libnar
 [ @test ] : [ $* ~ lsr l/test\/test_ sx/c/xapi.xunit.so sy ]
 {
   [ $xunit_valgrind_runner ] [ $xunit_xapi_devel ] [ $@ ~ rx/ineed fi ]
+}
+
+[ @test.fast ] : [ $* ~ lsr l/test\/test_ sx/c/xapi.xunit.so sy ]
+{
+  [ $xunit_xapi_devel ] [ $@ ~ rx/ineed fi ]
 }

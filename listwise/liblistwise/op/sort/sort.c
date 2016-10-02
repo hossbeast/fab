@@ -161,8 +161,8 @@ static xapi op_exec(operation* o, lwx* lx, int** ovec, int* ovec_len, int mode)
   }
 
 finally:
-  free(mema);
-  free(memb);
+  wfree(mema);
+  wfree(memb);
 coda;
 }
 

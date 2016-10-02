@@ -2,9 +2,9 @@
 #define transform_yyHEADER_H 1
 #define transform_yyIN_HEADER 1
 
-#line 6 "transform/transform.lex.h"
+#line 6 "listwise/liblistwise/transform/transform.lex.h"
 
-#line 8 "transform/transform.lex.h"
+#line 8 "listwise/liblistwise/transform/transform.lex.h"
 
 #define  YY_INT_ALIGNED short int
 
@@ -376,8 +376,8 @@ extern int transform_yylex \
 #undef YY_DECL
 #endif
 
-#line 384 "transform/transform.l"
+#line 384 "listwise/liblistwise/transform/transform.l"
 
-#line 382 "transform/transform.lex.h"
+#line 382 "listwise/liblistwise/transform/transform.lex.h"
 #undef transform_yyIN_HEADER
 #endif /* transform_yyHEADER_H */

@@ -58,13 +58,13 @@ void sanityblock_free(sanityblock * const sb)
     int x;
     for(x = 0; x < sb->s_stringsa; x++)
     {
-      free(sb->s_strings[x].s);
-      free(sb->s_strings[x].o);
+      wfree(sb->s_strings[x].s);
+      wfree(sb->s_strings[x].o);
     }
 
-    free(sb->s_strings);
+    wfree(sb->s_strings);
   }
-  free(sb);
+  wfree(sb);
 }
 
 xapi sanity(struct lwx * const restrict ls, sanityblock * const restrict sb)

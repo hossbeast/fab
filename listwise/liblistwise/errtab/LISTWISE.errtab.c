@@ -1,12 +1,14 @@
 #include "LISTWISE.errtab.h"
 #define APIDATA
-etable errtab_LISTWISE = {
+errtab errtab_LISTWISE = {
    .name = "LISTWISE"
  , .min = ERRMIN_LISTWISE
  , .max = ERRMAX_LISTWISE
- , .v =  (typeof(((etable*)0)->v[0])[]) {
-#define _E(a, b, c) [ a + (ERRMIN_LISTWISE * -1) ] = { .name = #b, .desc = c, .str = #b " : " c },
+ , .v =  (typeof(((errtab*)0)->v[0])[]) {
+#define _E(a, b, c) [ a - ERRMIN_LISTWISE ] = { .name = #b, .desc = c, .str ="LISTWISE_" #b " : " c, .exit = a },
 ETABLE_LISTWISE
 #undef _E
 }};
-etable * APIDATA perrtab_LISTWISE = &errtab_LISTWISE;
+#if XAPI_STACKTRACE
+errtab * APIDATA perrtab_LISTWISE = &errtab_LISTWISE;
+#endif

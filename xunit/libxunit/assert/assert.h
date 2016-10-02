@@ -28,6 +28,9 @@ SUMMARY
 
 */
 
+#include "xapi.h"
+#include "xapi/exit.h"
+
 #include "xunit.h"
 #include "xunit/XUNIT.errtab.h"
 
@@ -43,7 +46,7 @@ extern __thread uint32_t xunit_assertions_failed;
 #define ufail()                       \
   do {                                \
     xunit_assertions_failed++;        \
-    tfail(perrtab_XUNIT, XUNIT_FAIL); \
+    fail(XUNIT_FAIL); \
   } while(0)
 
 #define ufailf(expfmt, actfmt, ...)                   \
@@ -82,17 +85,14 @@ extern __thread uint32_t xunit_assertions_failed;
       xunit_assertions_passed++;              \
   } while(0)
 
-#define assert_exit(exit, etab, ecode)                                        \
-  assertf(                                                                    \
-         (ecode | xapi_exit_errcode(exit)) == 0                               \
-      || (xapi_exit_errtab(exit) == etab && xapi_exit_errcode(exit) == ecode) \
-    , "%s/%s(%d)", "%s/%s(%d)"                                                \
-    , etab ? xapi_errtab_name(etab) : 0                                       \
-    , etab ? xapi_errtab_errname(etab, ecode) : 0                             \
-    , ecode                                                                   \
-    , xapi_exit_errtab_name(exit)                                             \
-    , xapi_exit_errname(exit)                                                 \
-    , xapi_exit_errcode(exit)                                                 \
+#define assert_exit(expected, actual)                                 \
+  assertf(                                                            \
+      expected == actual                                              \
+    , "%s(%d)", "%s(%d)"                                              \
+    , xapi_exit_errname(expected)                                     \
+    , expected                                                        \
+    , xapi_exit_errname(actual)                                       \
+    , actual                                                          \
   )
 
 #endif

@@ -22,7 +22,6 @@
 #include "listwise/lwx.h"
 
 #include "macros.h"
-#include "xlinux.h"
 
 /*
 

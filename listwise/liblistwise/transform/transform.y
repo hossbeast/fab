@@ -305,8 +305,8 @@ arg
 		}
 
 		$$->l += $2->l;
-		free($2->s);
-		free($2);
+		wfree($2->s);
+		wfree($2);
 	}
 	| arg I64
 	{

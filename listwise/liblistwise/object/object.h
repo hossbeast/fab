@@ -112,7 +112,7 @@ typedef struct listwise_object
   //  rls      - list of lengths of length rl
   //  rl       - number of returned objects/strings
   //
-  // *r, *rtypes, and *rls are free()'d by the caller (liblistwise) after invoking this method
+  // *r, *rtypes, and *rls are wfree()'d by the caller (liblistwise) after invoking this method
   //
   // RETURNS
   //  0 on error, 1 otherwise

@@ -15,16 +15,23 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef _LISTWISE_INTERNAL_H
-#define _LISTWISE_INTERNAL_H
+#ifndef _LISTWISE_LOAD_H
+#define _LISTWISE_LOAD_H
 
-#include "listwise.h"
+#include "xapi.h"
 
-// visibility declarations
-#define API __attribute__((visibility("protected")))
-#define APIDATA
+/// listwise_load
+//
+// SUMMARY
+//  initialize the library
+//
+xapi listwise_load(void);
 
-// error tables
-#include "errtab/LISTWISE.errtab.h"
+/// listwise_unload
+//
+// SUMMARY
+//  free resources used by the library
+//
+xapi listwise_unload(void);
 
 #endif

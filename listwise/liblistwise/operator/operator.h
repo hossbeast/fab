@@ -32,11 +32,6 @@
 #include "listwise/selection.h"
 #include "listwise/window.h"
 
-// default error table
-#ifndef perrtab
-#define perrtab perrtab_LISTWISE
-#endif
-
 #define restrict __restrict
 
 /*

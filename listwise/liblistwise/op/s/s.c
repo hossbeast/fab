@@ -223,6 +223,6 @@ xapi op_exec(operation* o, lwx* lx, int** ovec, int* ovec_len)
   LSTACK_ITEREND
 
 finally:
-  free(ss);
+  wfree(ss);
 coda;
 }

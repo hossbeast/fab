@@ -15,22 +15,27 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
+#include <errno.h>
+#include <fcntl.h>
+#include <getopt.h>
 #include <stdarg.h>
 #include <stdio.h>
-#include <errno.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <sys/mman.h>
-#include <unistd.h>
 #include <stdlib.h>
 #include <string.h>
-#include <getopt.h>
-#include <fcntl.h>
+#include <sys/mman.h>
+#include <sys/stat.h>
+#include <sys/types.h>
 #include <sys/uio.h>
+#include <unistd.h>
 
 #include "xapi.h"
+#include "listwise/load.h"
+#include "logger/load.h"
+#include "valyria/load.h"
+#include "xlinux/load.h"
+
+#include "logger.h"
 #include "xapi/trace.h"
-#include "xlinux.h"
 #include "xlinux/xfcntl.h"
 #include "xlinux/xstat.h"
 #include "xlinux/xunistd.h"
@@ -46,8 +51,6 @@
 #include "args.h"
 #include "logging.h"
 #include "errtab/MAIN.errtab.h"
-#undef perrtab
-#define perrtab perrtab_MAIN
 
 /// snarf
 //
@@ -145,14 +148,15 @@ int main(int argc, char ** argv, char ** envp)
   lwx * lx = 0;               // list stack
 
   // load libraries
-  fatal(logger_load);
-  fatal(xlinux_load);
   fatal(listwise_load);
+  fatal(logger_load);
+  fatal(valyria_load);
+  fatal(xlinux_load);
 
   // logging
   fatal(logging_setup);
   fatal(logger_arguments_setup, envp);
-  fatal(logger_initialize);
+  fatal(logger_finalize);
 
   // locals
   fatal(lwx_alloc, &lx);
@@ -364,9 +368,10 @@ finally:
   args_teardown();
 
   // libraries
-  fatal(logger_unload);
-  fatal(xlinux_unload);
   fatal(listwise_unload);
+  fatal(logger_unload);
+  fatal(valyria_unload);
+  fatal(xlinux_unload);
 
 conclude(&R);
 

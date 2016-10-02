@@ -22,7 +22,7 @@
 #include "narrator.h"
 
 #include "xlinux/xstdlib.h"
-#include "xlinux/SYS.errtab.h"
+#include "xlinux/KERNEL.errtab.h"
 
 #include "internal.h"
 #include "transform.internal.h"
@@ -135,7 +135,7 @@ static xapi reduce(transform_xtra * pp)
     if(r == 2)
     {
       // memory exhaustion error from the parser
-      tfail(perrtab_SYS, ENOMEM);
+      tfail(perrtab_KERNEL, ENOMEM);
     }
     else if(XAPI_UNWINDING)
     {
@@ -206,8 +206,8 @@ static xapi parse(transform_parser ** restrict p, const char * const restrict s,
     , .inputstr       = transform_inputstr
     , .lvalstr        = transform_lvalstr
 #if DEBUG || DEVEL
-    , .state_logs     = L_LISTWISE | L_STATES
-    , .token_logs     = L_LISTWISE | L_TOKENS
+    , .state_logs     = L_LISTWISE
+    , .token_logs     = L_LISTWISE
 #endif
   };
 
@@ -216,7 +216,7 @@ static xapi parse(transform_parser ** restrict p, const char * const restrict s,
     b = strstr(s, "\n") + 1;
 
   if((state = transform_yy_scan_string(b, (*p)->p)) == 0)
-    tfail(perrtab_SYS, ENOMEM);
+    tfail(perrtab_KERNEL, ENOMEM);
 
   // results struct for this parse
   pp.scanner = (*p)->p;
@@ -388,7 +388,7 @@ API xapi transform_parser_create(transform_parser ** restrict p)
   fatal(xmalloc, p, sizeof(**p));
 
   if(transform_yylex_init(&(*p)->p) != 0)
-    tfail(perrtab_SYS, ENOMEM);
+    fail(KERNEL_ENOMEM);
 
   finally : coda;
 }
@@ -400,7 +400,7 @@ API void transform_parser_free(transform_parser * restrict p)
     transform_yylex_destroy(p->p);
   }
 
-  free(p);
+  wfree(p);
 }
 
 API void transform_parser_ifree(transform_parser ** const restrict p)
@@ -434,45 +434,45 @@ API void transform_free(transform * restrict g)
     int x;
     for(x = 0; x < g->argsl; x++)
     {
-      free(g->args[x]->s);
-      free(g->args[x]->refs.v);
+      wfree(g->args[x]->s);
+      wfree(g->args[x]->refs.v);
 
       if(g->args[x]->itype == ITYPE_RE)
       {
-        free(g->args[x]->re.c_pcre);
-        free(g->args[x]->re.c_pcre_extra);
+        wfree(g->args[x]->re.c_pcre);
+        wfree(g->args[x]->re.c_pcre_extra);
       }
 
-      free(g->args[x]);
+      wfree(g->args[x]);
     }
 
-    free(g->args);
+    wfree(g->args);
 
     for(x = 0; x < g->opsl; x++)
     {
       int y;
       for(y = 0; y < g->ops[x]->argsl; y++)
       {
-        free(g->ops[x]->args[y]->s);
-        free(g->ops[x]->args[y]->refs.v);
+        wfree(g->ops[x]->args[y]->s);
+        wfree(g->ops[x]->args[y]->refs.v);
 
         if(g->ops[x]->args[y]->itype == ITYPE_RE)
         {
-          free(g->ops[x]->args[y]->re.c_pcre);
-          free(g->ops[x]->args[y]->re.c_pcre_extra);
+          wfree(g->ops[x]->args[y]->re.c_pcre);
+          wfree(g->ops[x]->args[y]->re.c_pcre_extra);
         }
 
-        free(g->ops[x]->args[y]);
+        wfree(g->ops[x]->args[y]);
       }
 
-      free(g->ops[x]->args);
-      free(g->ops[x]);
+      wfree(g->ops[x]->args);
+      wfree(g->ops[x]);
     }
 
-    free(g->ops);
+    wfree(g->ops);
   }
 
-  free(g);
+  wfree(g);
 }
 
 API void transform_ifree(transform ** const restrict g)

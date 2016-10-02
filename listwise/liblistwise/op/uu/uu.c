@@ -123,6 +123,6 @@ xapi op_exec(operation* o, lwx* lx, int** ovec, int* ovec_len)
   }
 
 finally :
-  free(mema);
+  wfree(mema);
 coda;
 }

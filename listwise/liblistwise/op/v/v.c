@@ -27,7 +27,6 @@
 #include "listwise/window.h"
 
 #include "macros.h"
-#include "xlinux.h"
 
 /*
 

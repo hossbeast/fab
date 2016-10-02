@@ -61,7 +61,7 @@ void transform_parser_free(struct transform_parser * restrict);
 /// transform_parser_ifree
 //
 // SUMMARY
-//  free a transform-string parser with ifree semantics
+//  free a transform-string parser with iwfree semantics
 //
 void transform_parser_ifree(struct transform_parser ** const restrict)
   __attribute__((nonnull));
@@ -94,7 +94,7 @@ void transform_free(transform * restrict);
 /// transform_ifree
 //
 // SUMMARY
-//  free a transform with ifree semantics
+//  free a transform with iwfree semantics
 //
 void transform_ifree(transform ** const restrict)
   __attribute__((nonnull));

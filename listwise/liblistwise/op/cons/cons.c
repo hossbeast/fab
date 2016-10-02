@@ -24,7 +24,6 @@
 #include "listwise/operator.h"
 
 #include "parseint.h"
-#include "xlinux.h"
 
 /*
 

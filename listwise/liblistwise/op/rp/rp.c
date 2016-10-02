@@ -23,7 +23,7 @@
 #include <dirent.h>
 
 #include "xlinux/xstdlib.h"
-#include "xlinux/SYS.errtab.h"
+#include "xlinux/KERNEL.errtab.h"
 
 #include "listwise/operator.h"
 #include "listwise/logging.h"
@@ -69,7 +69,7 @@ xapi op_exec(operation* o, lwx* ls, int** ovec, int* ovec_len)
     int l;
     fatal(lstack_getstring, ls, 0, x, &s, &l);
 
-    ifree(&ss);
+    iwfree(&ss);
     if((ss = realpath(s, 0)))
     {
       fatal(lstack_writes
@@ -86,12 +86,12 @@ xapi op_exec(operation* o, lwx* ls, int** ovec, int* ovec_len)
     }
     else
     {
-      tfail(perrtab_SYS, errno);
+      tfail(perrtab_KERNEL, errno);
     }
   }
   LSTACK_ITEREND
 
 finally:
-  free(ss);
+  wfree(ss);
 coda;
 }

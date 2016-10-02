@@ -28,6 +28,6 @@ struct map; // map.h
 struct map * object_registry;
 
 xapi object_setup(void);
-void object_teardown(void);
+xapi object_cleanup(void);
 
 #endif

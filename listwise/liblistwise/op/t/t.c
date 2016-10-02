@@ -21,7 +21,6 @@
 #include "listwise/operator.h"
 #include "listwise/lwx.h"
 
-#include "xlinux.h"
 
 /*
 

@@ -1,17 +1,17 @@
 /* Copyright (c) 2012-2015 Todd Freed <todd.freed@gmail.com>
 
    This file is part of fab.
-   
+
    fab is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
    the Free Software Foundation, either version 3 of the License, or
    (at your option) any later version.
-   
+
    fab is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
    GNU General Public License for more details.
-   
+
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
@@ -142,7 +142,7 @@ API xapi path_create(path ** const p, const char * const in_base, const char * c
   //
   fatal(canon, buf, 0, in_base, 0, (*p)->can, 512, 0, CAN_REALPATH);
 
-  // 
+  //
   // absolute path - close to the users representation - but forced to absolute notation
   //  - will always begin with a slash (FORCE_DOT)
   //  - all dots and dotdots resolved
@@ -150,12 +150,12 @@ API xapi path_create(path ** const p, const char * const in_base, const char * c
   //
   fatal(canon, buf, 0, in_base, 0, (*p)->abs, 512, 0, CAN_FORCE_DOT | CAN_INIT_DOT | CAN_NEXT_DOT | CAN_NEXT_SYM);
 
-  // 
+  //
   // absolute path rebased to cwd
   //
   fatal(rebase, (*p)->abs, 0, cwd, 0, (*p)->rel_cwd, 512, 0);
 
-  // 
+  //
   // absolute path rebased to /..
   //
   fatal(rebase, (*p)->abs, 0, "/..", 0, (*p)->rel_nofile, 512, 0);
@@ -212,10 +212,10 @@ API void path_free(path * const p)
     // free all the strings
     int x;
     for(x = 0; x < sizeof(p->strings) / sizeof(p->strings[0]); x++)
-      free(p->strings[x]);
+      wfree(p->strings[x]);
   }
 
-  free(p);
+  wfree(p);
 }
 
 API void path_xfree(path ** const p)
@@ -244,7 +244,7 @@ API xapi path_copy(path ** const B, const path * const A)
       (*B)->strings[x] = z;
     }
   }
-  
+
   finally : coda;
 }
 

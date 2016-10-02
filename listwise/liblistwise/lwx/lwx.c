@@ -48,8 +48,8 @@ xapi lwx_setup()
 void lwx_teardown()
 {
   if(listwise_identity)
-    free(listwise_identity->s);
-  ifree(&listwise_identity);
+    wfree(listwise_identity->s);
+  iwfree(&listwise_identity);
 }
 
 ///
@@ -95,25 +95,25 @@ API void lwx_free(lwx * lx)
     {
       for(y = 0; y < lx->s[x].a; y++)
       {
-        free(lx->s[x].s[y].s);
-        free(lx->s[x].t[y].s);
+        wfree(lx->s[x].s[y].s);
+        wfree(lx->s[x].t[y].s);
 
         if(x == 0)
         {
-          free(lx->win.s[y].storage[0].s);
-          free(lx->win.s[y].storage[1].s);
+          wfree(lx->win.s[y].storage[0].s);
+          wfree(lx->win.s[y].storage[1].s);
         }
       }
 
-      free(lx->s[x].s);
-      free(lx->s[x].t);
+      wfree(lx->s[x].s);
+      wfree(lx->s[x].t);
     }
 
-    free(lx->s);
-    free(lx->win.s);
-    free(lx->sel.storage[0].s);
-    free(lx->sel.storage[1].s);
-    free(lx);
+    wfree(lx->s);
+    wfree(lx->win.s);
+    wfree(lx->sel.storage[0].s);
+    wfree(lx->sel.storage[1].s);
+    wfree(lx);
   }
 }
 

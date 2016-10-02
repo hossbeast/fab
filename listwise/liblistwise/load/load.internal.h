@@ -15,16 +15,9 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef _LISTWISE_INTERNAL_H
-#define _LISTWISE_INTERNAL_H
+#ifndef _LISTWISE_LOAD_INTERNAL_H
+#define _LISTWISE_LOAD_INTERNAL_H
 
-#include "listwise.h"
-
-// visibility declarations
-#define API __attribute__((visibility("protected")))
-#define APIDATA
-
-// error tables
-#include "errtab/LISTWISE.errtab.h"
+#include "load.h"
 
 #endif
