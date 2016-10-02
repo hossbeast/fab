@@ -24,6 +24,8 @@
 #include "errtab/KERNEL.errtab.h"
 #include "mempolicy/mempolicy.internal.h"
 
+#include "fmt.internal.h"
+
 API xapi xmalloc(void* target, size_t size)
 {
   enter;
@@ -147,7 +149,7 @@ API xapi xqsort_r(void * base, size_t nmemb, size_t size, xapi (*xcompar)(const 
   finally : coda;
 }
 
-API xapi xreadlink(const char * pathname, char * buf, size_t bufsiz, ssize_t * r)
+API xapi xreadlinks(const char * pathname, char * buf, size_t bufsiz, ssize_t * r)
 {
   enter;
 
@@ -159,6 +161,32 @@ API xapi xreadlink(const char * pathname, char * buf, size_t bufsiz, ssize_t * r
     fail(errno);
 
 finally:
-  xapi_infos("path", pathname);
+  xapi_infos("pathname", pathname);
 coda;
+}
+
+API xapi xreadlinkf(const char * pathname_fmt, char * buf, size_t bufsiz, ssize_t * r, ...)
+{
+  enter;
+
+  va_list va;
+  va_start(va, r);
+
+  fatal(xreadlinkvf, pathname_fmt, buf, bufsiz, r, va);
+
+finally:
+  va_end(va);
+coda;
+}
+
+API xapi xreadlinkvf(const char * pathname_fmt, char * buf, size_t bufsiz, ssize_t * r, va_list va)
+{
+  enter;
+
+  char pathname[512];
+
+  fatal(fmt_apply, pathname, sizeof(pathname), pathname_fmt, va);
+  fatal(xreadlinks, pathname, buf, bufsiz, r);
+
+  finally : coda;
 }

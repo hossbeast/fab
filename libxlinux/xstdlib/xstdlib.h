@@ -15,11 +15,12 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef _XMEM_H
-#define _XMEM_H
+#ifndef _XSTDLIB_H
+#define _XSTDLIB_H
 
 #include <stdlib.h>
 #include <sys/types.h>
+#include <stdarg.h>
 
 #include "xapi.h"
 
@@ -79,7 +80,16 @@ xapi xqsort_r(void * base, size_t nmemb, size_t size, xapi (*xcompar)(const void
 // SUMMARY
 //  proxy for readlink
 //
-xapi xreadlink(const char * pathname, char * buf, size_t bufsiz, ssize_t * r)
+// VARIANTS
+//  s/f/vf - different ways of providing pathname
+//
+xapi xreadlinks(const char * pathname, char * buf, size_t bufsiz, ssize_t * r)
+  __attribute__((nonnull(1, 2)));
+
+xapi xreadlinkf(const char * pathname_fmt, char * buf, size_t bufsiz, ssize_t * r, ...)
+  __attribute__((nonnull(1, 2)));
+
+xapi xreadlinkvf(const char * pathname_fmt, char * buf, size_t bufsiz, ssize_t * r, va_list va)
   __attribute__((nonnull(1, 2)));
 
 #endif

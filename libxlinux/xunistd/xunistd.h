@@ -121,7 +121,16 @@ xapi ixclose(int * const restrict fd)
 // SUMMARY
 //  proxy for symlink
 //
-xapi xsymlink(const char * restrict target, const char * restrict linkpath)
+// VARIANTS
+//  s/f/vf - different ways to pass parameters
+//
+xapi xsymlinks(const char * restrict target, const char * restrict linkpath)
+  __attribute__((nonnull));
+
+xapi xsymlinkf(const char * restrict target_fmt, const char * restrict linkpath_fmt, ...)
+  __attribute__((nonnull(1, 2)));
+
+xapi xsymlinkvf(const char * restrict target_fmt, const char * restrict linkpath_fmt, va_list va)
   __attribute__((nonnull));
 
 /// uxsymlink
@@ -129,7 +138,16 @@ xapi xsymlink(const char * restrict target, const char * restrict linkpath)
 // SUMMARY
 //  proxy for symlink which only fails when errno != EEXIST
 //
-xapi uxsymlink(const char * restrict target, const char * restrict linkpath)
+// VARIANTS
+//  s/f/vf - different ways to pass
+//
+xapi uxsymlinks(const char * restrict target, const char * restrict linkpath)
+  __attribute__((nonnull));
+
+xapi uxsymlinkf(const char * restrict target_fmt, const char * restrict linkpath_fmt, ...)
+  __attribute__((nonnull(1, 2)));
+
+xapi uxsymlinkvf(const char * restrict target_fmt, const char * restrict linkpath_fmt, va_list va)
   __attribute__((nonnull));
 
 /// xunlink
@@ -140,9 +158,6 @@ xapi uxsymlink(const char * restrict target, const char * restrict linkpath)
 // VARIANTS
 //  s/f/vf - different ways to pass path
 //
-xapi xunlink(const char * restrict pathname)
-  __attribute__((nonnull));
-
 xapi xunlinks(const char * restrict pathname)
   __attribute__((nonnull));
 
@@ -160,9 +175,6 @@ xapi xunlinkvf(const char * restrict fmt, va_list va)
 // VARIANTS
 //  s/f/vf - different ways to pass path
 //
-xapi uxunlink(const char * const restrict pathname)
-  __attribute__((nonnull));
-
 xapi uxunlinks(const char * const restrict pathname)
   __attribute__((nonnull));
 
@@ -298,6 +310,14 @@ xapi xsetsid(void);
 xapi xexecv(const char * path, char * const argv[])
   __attribute__((nonnull(1)));
 
+/// xexecvp
+//
+// SUMMARY
+//  xapi proxy for execvp
+//
+xapi xexecvp(const char * file, char * const argv[])
+  __attribute__((nonnull(1)));
+
 /// xchdir
 //
 // SUMMARY
@@ -306,9 +326,6 @@ xapi xexecv(const char * path, char * const argv[])
 // VARIANTS
 //  s/f/vf - different ways to pass path
 //
-xapi xchdir(const char * const restrict path)
-  __attribute__((nonnull));
-
 xapi xchdirs(const char * const restrict path)
   __attribute__((nonnull));
 

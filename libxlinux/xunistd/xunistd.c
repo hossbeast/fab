@@ -23,6 +23,12 @@
 #include "errtab/KERNEL.errtab.h"
 #include "errtab/XLINUX.errtab.h"
 
+#include "fmt.internal.h"
+
+//
+// api
+//
+
 API xapi xread(int fd, void * buf, size_t count, ssize_t * bytes)
 {
   enter;
@@ -168,30 +174,87 @@ finally:
 coda;
 }
 
-API xapi xsymlink(const char * target, const char * linkpath)
+API xapi xsymlinks(const char * target, const char * linkpath)
 {
   enter;
 
   fatalize(errno, symlink, target, linkpath);
 
 finally:
-  xapi_infof("path", "%s", linkpath);
+  xapi_infos("target", target);
+  xapi_infos("linkpath", linkpath);
 coda;
 }
 
-API xapi uxsymlink(const char * target, const char * linkpath)
+API xapi xsymlinkf(const char * restrict target_fmt, const char * restrict linkpath_fmt, ...)
+{
+  enter;
+
+  va_list va;
+  va_start(va, linkpath_fmt);
+
+  fatal(xsymlinkvf, target_fmt, linkpath_fmt, va);
+
+finally:
+  va_end(va);
+coda;
+}
+
+API xapi xsymlinkvf(const char * restrict target_fmt, const char * restrict linkpath_fmt, va_list va)
+{
+  enter;
+
+  char target[512];
+  char linkpath[512];
+
+  fatal(fmt_apply, target, sizeof(target), target_fmt, va);
+  fatal(fmt_apply, linkpath, sizeof(linkpath), linkpath_fmt, va);
+
+  fatal(xsymlinks, target, linkpath);
+
+  finally : coda;
+}
+
+API xapi uxsymlinks(const char * target, const char * linkpath)
 {
   enter;
 
   if(symlink(target, linkpath) != 0 && errno != EEXIST)
     fail(errno);
 
-  finally : coda;
+finally:
+  xapi_infos("target", target);
+  xapi_infos("linkpath", linkpath);
+coda;
 }
 
-API xapi xunlink(const char * pathname)
+API xapi uxsymlinkf(const char * restrict target_fmt, const char * restrict linkpath_fmt, ...)
 {
-  xproxy(xunlinks, pathname);
+  enter;
+
+  va_list va;
+  va_start(va, linkpath_fmt);
+
+  fatal(uxsymlinkvf, target_fmt, linkpath_fmt, va);
+
+finally:
+  va_end(va);
+coda;
+}
+
+API xapi uxsymlinkvf(const char * restrict target_fmt, const char * restrict linkpath_fmt, va_list va)
+{
+  enter;
+
+  char target[512];
+  char linkpath[512];
+
+  fatal(fmt_apply, target, sizeof(target), target_fmt, va);
+  fatal(fmt_apply, linkpath, sizeof(linkpath), linkpath_fmt, va);
+
+  fatal(uxsymlinks, target, linkpath);
+
+  finally : coda;
 }
 
 API xapi xunlinks(const char * paths)
@@ -202,7 +265,7 @@ API xapi xunlinks(const char * paths)
     fail(errno);
 
 finally:
-  xapi_infof("path", "%s", paths);
+  xapi_infos("path", paths);
 coda;
 }
 
@@ -211,15 +274,7 @@ API xapi xunlinkvf(const char * fmt, va_list va)
   enter;
 
   char space[512];
-  size_t sz = vsnprintf(space, sizeof(space), fmt, va);
-  if(sz >= sizeof(space))
-  {
-    xapi_fail_intent();
-    xapi_info_addf("max size", "%zu", sizeof(space));
-    xapi_info_addf("actual size", "%zu", sz);
-    tfail(perrtab_XLINUX, XLINUX_NAMETOOLONG);
-  }
-
+  fatal(fmt_apply, space, sizeof(space), fmt, va);
   fatal(xunlinks, space);
 
   finally : coda;
@@ -236,7 +291,7 @@ API xapi xunlinkf(const char * fmt, ...)
   finally : coda;
 }
 
-API xapi uxunlink(const char * const restrict path)
+API xapi uxunlinks(const char * const restrict path)
 {
   enter;
 
@@ -246,11 +301,6 @@ API xapi uxunlink(const char * const restrict path)
 finally:
   xapi_infof("path", "%s", path);
 coda;
-}
-
-API xapi uxunlinks(const char * const restrict path)
-{
-  xproxy(uxunlink, path);
 }
 
 API xapi uxunlinkf(const char * const restrict fmt, ...)
@@ -271,15 +321,7 @@ API xapi uxunlinkvf(const char * const restrict fmt, va_list va)
   enter;
 
   char space[512];
-  size_t sz = vsnprintf(space, sizeof(space), fmt, va);
-  if(sz >= sizeof(space))
-  {
-    xapi_fail_intent();
-    xapi_info_addf("max size", "%zu", sizeof(space));
-    xapi_info_addf("actual size", "%zu", sz);
-    tfail(perrtab_XLINUX, XLINUX_NAMETOOLONG);
-  }
-
+  fatal(fmt_apply, space, sizeof(space), fmt, va);
   fatal(uxunlinks, space);
 
   finally : coda;
@@ -464,7 +506,18 @@ finally:
 coda;
 }
 
-API xapi xchdir(const char * const restrict path)
+API xapi xexecvp(const char * file, char * const argv[])
+{
+  enter;
+
+  fatalize(errno, execvp, file, argv);
+
+finally:
+  xapi_infos("file", file);
+coda;
+}
+
+API xapi xchdirs(const char * const restrict path)
 {
   enter;
 
@@ -473,11 +526,6 @@ API xapi xchdir(const char * const restrict path)
 finally:
   xapi_infof("path", "%s", path);
 coda;
-}
-
-API xapi xchdirs(const char * const restrict path)
-{
-  xproxy(xchdir, path);
 }
 
 API xapi xchdirf(const char * const restrict fmt, ...)
@@ -498,15 +546,7 @@ API xapi xchdirvf(const char * const restrict fmt, va_list va)
   enter;
 
   char space[512];
-  size_t sz = vsnprintf(space, sizeof(space), fmt, va);
-  if(sz >= sizeof(space))
-  {
-    xapi_fail_intent();
-    xapi_info_addf("max size", "%zu", sizeof(space));
-    xapi_info_addf("actual size", "%zu", sz);
-    tfail(perrtab_XLINUX, XLINUX_NAMETOOLONG);
-  }
-
+  fatal(fmt_apply, space, sizeof(space), fmt, va);
   fatal(xchdirs, space);
 
   finally : coda;
