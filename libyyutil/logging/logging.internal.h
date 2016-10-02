@@ -25,7 +25,7 @@
 extern logger_category * categories;
 
 #define L_YYUTIL    categories[0].id
-#if DEBUG || DEVEL
+#if DEBUG || DEVEL || XUNIT
 #define L_TOKENS    categories[1].id
 #define L_STATES    categories[2].id
 #endif

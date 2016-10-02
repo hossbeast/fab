@@ -15,7 +15,7 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef _LISTWISE_LOGGING_H
-#define _LISTWISE_LOGGING_H
+#ifndef _YYUTIL_LOGGING_H
+#define _YYUTIL_LOGGING_H
 
 #endif

@@ -26,6 +26,7 @@
 
 #include "internal.h"
 #include "yyutil/scanner.h"
+#include "logging.internal.h"
 
 #include "macros.h"
 #include "strutil.h"
@@ -58,6 +59,7 @@ static xapi __attribute__((nonnull)) ptoken(
 {
   enter;
 
+#if DEBUG || DEVEL || XUNIT
   if(log_would(xtra->token_logs))
   {
     // token source string
@@ -76,7 +78,7 @@ static xapi __attribute__((nonnull)) ptoken(
     if(xtra->inputstr)
       xtra->inputstr(xtra, &cbuf, &clen);
 
-    logf(xtra->token_logs
+    logf(xtra->token_logs | L_YYUTIL | L_TOKENS
       , "%8s ) '%.*s'%s%.*s%s %*s @ %s%.*s%s[%3d,%3d - %3d,%3d]"
       , xtra->tokname(token) ?: ""  // token name
       , alen                        // escaped string from which the token was scanned
@@ -97,6 +99,7 @@ static xapi __attribute__((nonnull)) ptoken(
       , lloc->l_col + 1
     );
   }
+#endif
 
   finally : coda;
 }
@@ -153,6 +156,7 @@ API xapi yyu_pushstate(const int state, yyu_extra * const xtra)
 {
   enter;
 
+#if DEBUG || DEVEL || XUNIT
   if(log_would(xtra->state_logs))
   {
     int al = snprintf(xtra->space, sizeof(xtra->space), "%s -> %s"
@@ -160,7 +164,7 @@ API xapi yyu_pushstate(const int state, yyu_extra * const xtra)
       , xtra->statename(state)
     );
 
-    logf(xtra->state_logs
+    logf(xtra->state_logs | L_YYUTIL | L_STATES
       , "(%2d) %.*s %*s @ %*s "
       , xtra->states_n
       , al
@@ -171,6 +175,7 @@ API xapi yyu_pushstate(const int state, yyu_extra * const xtra)
       , ""
     );
   }
+#endif
 
   xtra->states[xtra->states_n++] = state;
 
@@ -186,9 +191,12 @@ API xapi yyu_popstate(yyu_extra * const xtra)
 {
   enter;
 
+#if DEBUG || DEVEL || XUNIT
   int x = yyu_nstate(xtra, 0);
+#endif
   xtra->states_n--;
 
+#if DEBUG || DEVEL || XUNIT
   if(log_would(xtra->state_logs))
   {
     int al = snprintf(xtra->space, sizeof(xtra->space), "%s <- %s"
@@ -196,7 +204,7 @@ API xapi yyu_popstate(yyu_extra * const xtra)
       , xtra->statename(x)
     );
 
-    logf(xtra->state_logs
+    logf(xtra->state_logs | L_YYUTIL | L_STATES
       , "(%2d) %.*s %*s @ %*s "
       , xtra->states_n
       , al
@@ -207,6 +215,7 @@ API xapi yyu_popstate(yyu_extra * const xtra)
       , ""
     );
   }
+#endif
 
   finally : coda;
 }

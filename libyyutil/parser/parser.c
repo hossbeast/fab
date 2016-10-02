@@ -101,21 +101,17 @@ API xapi yyu_reduce(int (*parser)(void *, yyu_extra *), yyu_extra * pp, xapi syn
     if(r == 2)
     {
       // memory exhaustion error from the parser
-      tfail(perrtab_KERNEL, KERNEL_ENOMEM);
+      fail(KERNEL_ENOMEM);
     }
     else if(XAPI_UNWINDING)
     {
       // fail from within a lexer or parser rule
-      tfail(0, 0);
+      fail(0);
     }
     else if(pp->gramerr)
     {
       // failure to reduce from the parser
-#if XAPI_STACKTRACE
-      tfails(xapi_exit_errtab(syntax_error), xapi_exit_errcode(syntax_error), "message", pp->error_str);
-#else
-      tfails(0, syntax_error, "message", pp->error_str);
-#endif
+      fails(syntax_error, "message", pp->error_str);
     }
   }
 
@@ -142,5 +138,5 @@ coda;
 
 API void yyu_extra_destroy(yyu_extra * const xtra)
 {
-  xfree(xtra->last_lval);
+  wfree(xtra->last_lval);
 }
