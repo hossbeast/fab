@@ -20,7 +20,7 @@
 
 #include "internal.h"
 #include "xstat/xstat.h"
-#include "errtab/SYS.errtab.h"
+#include "errtab/KERNEL.errtab.h"
 
 #define restrict __restrict
 

@@ -19,7 +19,7 @@
 
 #include "internal.h"
 #include "xgrp/xgrp.h"
-#include "errtab/SYS.errtab.h"
+#include "errtab/KERNEL.errtab.h"
 
 API xapi uxgetgrgid_r(gid_t gid, struct group * grp, char * buf, size_t buflen, struct group ** result)
 {

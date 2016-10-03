@@ -18,14 +18,9 @@
 #ifndef _XLINUX_INTERNAL_H
 #define _XLINUX_INTERNAL_H
 
-//
-// api
-//
-#include "xlinux.h"
-
 // facilitates fatalize(errno ... idiom
 #undef perrtab
-#define perrtab perrtab_SYS
+#define perrtab perrtab_KERNEL
 
 #define API __attribute__((visibility("protected")))
 #define APIDATA

@@ -20,7 +20,7 @@
 
 #include "internal.h"
 #include "xuio/xuio.h"
-#include "errtab/SYS.errtab.h"
+#include "errtab/KERNEL.errtab.h"
 #include "errtab/XLINUX.errtab.h"
 
 API xapi xreadv(int fd, const struct iovec * iov, int iovcnt)

@@ -19,7 +19,7 @@
 
 #include "internal.h"
 #include "xpwd/xpwd.h"
-#include "errtab/SYS.errtab.h"
+#include "errtab/KERNEL.errtab.h"
 
 API xapi uxgetpwuid_r(uid_t uid, struct passwd * pwd, char * buf, size_t buflen, struct passwd ** result)
 {

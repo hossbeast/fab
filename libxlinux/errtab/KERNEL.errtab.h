@@ -1,7 +1,7 @@
-#ifndef _SYS_ERRTAB_H
-#define _SYS_ERRTAB_H
+#ifndef _KERNEL_ERRTAB_H
+#define _KERNEL_ERRTAB_H
 #include "xapi.h"
-#define ETABLE_SYS \
+#define ETABLE_KERNEL \
 _E(1, EPERM, "Operation not permitted") \
 _E(2, ENOENT, "No such file or directory") \
 _E(3, ESRCH, "No such process") \
@@ -130,11 +130,11 @@ _E(132, ERFKILL, "Operation not possible due to RF-kill") \
 _E(133, EHWPOISON, "Memory page has hardware error") \
 
 enum {
-#define _E(a, b, c) SYS_ ## b = a,
-ETABLE_SYS
+#define _E(a, b, c) KERNEL_ ## b = a,
+ETABLE_KERNEL
 #undef _E
 };
-#define ERRMIN_SYS 1
-#define ERRMAX_SYS 133
-extern etable * perrtab_SYS;
+#define ERRMIN_KERNEL 1
+#define ERRMAX_KERNEL 133
+extern etable * perrtab_KERNEL;
 #endif

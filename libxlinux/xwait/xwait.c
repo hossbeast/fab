@@ -20,7 +20,7 @@
 
 #include "internal.h"
 #include "xwait/xwait.h"
-#include "errtab/SYS.errtab.h"
+#include "errtab/KERNEL.errtab.h"
 
 API xapi xwait(int * status)
 {

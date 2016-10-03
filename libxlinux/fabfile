@@ -82,8 +82,8 @@ $lflags_xapi_devel = [ $lflags $libxapi_xapi_devel [ -Wl,-soname,libxlinux-xapi-
 ## formulas
 ##
 
-# the SYS errtab is generated from available system header files
-[ $*/errtab/SYS.errtab ~ j ] : [ /usr/include/asm-generic/errno-base.h /usr/include/asm-generic/errno.h ]
+# the KERNEL errtab is generated from available system header files
+[ $*/errtab/KERNEL.errtab ~ j ] : [ /usr/include/asm-generic/errno-base.h /usr/include/asm-generic/errno.h ]
 {
   exec > [ $@ ]
 
@@ -92,9 +92,9 @@ $lflags_xapi_devel = [ $lflags $libxapi_xapi_devel [ -Wl,-soname,libxlinux-xapi-
 }
 
 # compiled sys errtab
-+[@std.xapi.errtab]($dext = [ xapi.final.pic.o ]; $apidata = [ 1 ]; $paths = [[ $*/errtab/SYS.errtab ~ j ] [ $*/error/XAPI.errtab ~ j]]; $cc; $cflags = $cflags_xapi_final)
-+[@std.xapi.errtab]($dext = [ xapi.debug.pic.o ]; $apidata = [ 1 ]; $paths = [[ $*/errtab/SYS.errtab ~ j ] [ $*/error/XAPI.errtab ~ j]]; $cc; $cflags = $cflags_xapi_debug)
-+[@std.xapi.errtab]($dext = [ xapi.devel.pic.o ]; $apidata = [ 1 ]; $paths = [[ $*/errtab/SYS.errtab ~ j ] [ $*/error/XAPI.errtab ~ j]]; $cc; $cflags = $cflags_xapi_devel)
++[@std.xapi.errtab]($dext = [ xapi.final.pic.o ]; $apidata = [ 1 ]; $paths = [[ $*/errtab/KERNEL.errtab ~ j ] [ $*/error/XAPI.errtab ~ j]]; $cc; $cflags = $cflags_xapi_final)
++[@std.xapi.errtab]($dext = [ xapi.debug.pic.o ]; $apidata = [ 1 ]; $paths = [[ $*/errtab/KERNEL.errtab ~ j ] [ $*/error/XAPI.errtab ~ j]]; $cc; $cflags = $cflags_xapi_debug)
++[@std.xapi.errtab]($dext = [ xapi.devel.pic.o ]; $apidata = [ 1 ]; $paths = [[ $*/errtab/KERNEL.errtab ~ j ] [ $*/error/XAPI.errtab ~ j]]; $cc; $cflags = $cflags_xapi_devel)
 
 # library exports
 [ $*/exports ~ j ] : [ $* ~ lsr lx/c ]
@@ -107,32 +107,32 @@ $lflags_xapi_devel = [ $lflags $libxapi_xapi_devel [ -Wl,-soname,libxlinux-xapi-
 }
 
 # link the library
-[ $libxlinux_eapi_final ] : [ [ $*/exports ~ j ] [ $* ~ lsr sx/c/eapi.final.pic.o sy ] [ $*/errtab/SYS.errtab.eapi.final.pic.o ~ j ] ]
+[ $libxlinux_eapi_final ] : [ [ $*/exports ~ j ] [ $* ~ lsr sx/c/eapi.final.pic.o sy ] [ $*/errtab/KERNEL.errtab.eapi.final.pic.o ~ j ] ]
 {
   [ $cc ] [ $cflags_eapi_final ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw lx/o ss u fi ] [ $lflags_eapi_final ~ fi ]
 }
 
-[ $libxlinux_eapi_debug ] : [ [ $*/exports ~ j ] [ $* ~ lsr sx/c/eapi.debug.pic.o sy ] [ $*/errtab/SYS.errtab.eapi.debug.pic.o ~ j ] ]
+[ $libxlinux_eapi_debug ] : [ [ $*/exports ~ j ] [ $* ~ lsr sx/c/eapi.debug.pic.o sy ] [ $*/errtab/KERNEL.errtab.eapi.debug.pic.o ~ j ] ]
 {
   [ $cc ] [ $cflags_eapi_debug ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw lx/o ss u fi ] [ $lflags_eapi_debug ~ fi ]
 }
 
-[ $libxlinux_eapi_devel ] : [ [ $*/exports ~ j ] [ $* ~ lsr sx/c/eapi.devel.pic.o sy ] [ $*/errtab/SYS.errtab.eapi.devel.pic.o ~ j ] ]
+[ $libxlinux_eapi_devel ] : [ [ $*/exports ~ j ] [ $* ~ lsr sx/c/eapi.devel.pic.o sy ] [ $*/errtab/KERNEL.errtab.eapi.devel.pic.o ~ j ] ]
 {
   [ $cc ] [ $cflags_eapi_devel ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw lx/o ss u fi ] [ $lflags_eapi_devel ~ fi ]
 }
 
-[ $libxlinux_xapi_final ] : [ [ $*/exports ~ j ] [ $* ~ lsr sx/c/xapi.final.pic.o sy ] [ $*/errtab/SYS.errtab.xapi.final.pic.o ~ j ] ]
+[ $libxlinux_xapi_final ] : [ [ $*/exports ~ j ] [ $* ~ lsr sx/c/xapi.final.pic.o sy ] [ $*/errtab/KERNEL.errtab.xapi.final.pic.o ~ j ] ]
 {
   [ $cc ] [ $cflags_xapi_final ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw lx/o ss u fi ] [ $lflags_xapi_final ~ fi ]
 }
 
-[ $libxlinux_xapi_debug ] : [ [ $*/exports ~ j ] [ $* ~ lsr sx/c/xapi.debug.pic.o sy ] [ $*/errtab/SYS.errtab.xapi.debug.pic.o ~ j ] ]
+[ $libxlinux_xapi_debug ] : [ [ $*/exports ~ j ] [ $* ~ lsr sx/c/xapi.debug.pic.o sy ] [ $*/errtab/KERNEL.errtab.xapi.debug.pic.o ~ j ] ]
 {
   [ $cc ] [ $cflags_xapi_debug ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw lx/o ss u fi ] [ $lflags_xapi_debug ~ fi ]
 }
 
-[ $libxlinux_xapi_devel ] : [ [ $*/exports ~ j ] [ $* ~ lsr sx/c/xapi.devel.pic.o sy ] [ $*/errtab/SYS.errtab.xapi.devel.pic.o ~ j ] ]
+[ $libxlinux_xapi_devel ] : [ [ $*/exports ~ j ] [ $* ~ lsr sx/c/xapi.devel.pic.o sy ] [ $*/errtab/KERNEL.errtab.xapi.devel.pic.o ~ j ] ]
 {
   [ $cc ] [ $cflags_xapi_devel ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw lx/o ss u fi ] [ $lflags_xapi_devel ~ fi ]
 }

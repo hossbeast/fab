@@ -20,7 +20,7 @@
 
 #include "internal.h"
 #include "xunistd/xunistd.h"
-#include "errtab/SYS.errtab.h"
+#include "errtab/KERNEL.errtab.h"
 #include "errtab/XLINUX.errtab.h"
 
 API xapi xread(int fd, void * buf, size_t count, ssize_t * bytes)

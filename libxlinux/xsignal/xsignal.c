@@ -20,7 +20,7 @@
 
 #include "internal.h"
 #include "xsignal/xsignal.h"
-#include "errtab/SYS.errtab.h"
+#include "errtab/KERNEL.errtab.h"
 
 API xapi xkill(pid_t pid, int sig)
 {

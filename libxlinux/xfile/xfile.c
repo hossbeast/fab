@@ -20,7 +20,7 @@
 
 #include "internal.h"
 #include "xfile/xfile.h"
-#include "errtab/SYS.errtab.h"
+#include "errtab/KERNEL.errtab.h"
 
 API xapi xflock(int fd, int operation)
 {

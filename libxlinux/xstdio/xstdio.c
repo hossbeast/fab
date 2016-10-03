@@ -21,7 +21,7 @@
 
 #include "internal.h"
 #include "xstdio/xstdio.h"
-#include "errtab/SYS.errtab.h"
+#include "errtab/KERNEL.errtab.h"
 
 #define restrict __restrict
 

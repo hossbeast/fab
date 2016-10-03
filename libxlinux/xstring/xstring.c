@@ -22,7 +22,7 @@
 
 #include "internal.h"
 #include "xstring/xstring.h"
-#include "errtab/SYS.errtab.h"
+#include "errtab/KERNEL.errtab.h"
 #include "xstdlib.h"
 
 API xapi ixstrncat(char** s1, const char* s2, int s2len)

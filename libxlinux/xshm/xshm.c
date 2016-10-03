@@ -19,7 +19,7 @@
 
 #include "internal.h"
 #include "xshm/xshm.h"
-#include "errtab/SYS.errtab.h"
+#include "errtab/KERNEL.errtab.h"
 
 API xapi uxshmget(key_t key, size_t size, int shmflg, int * const restrict shmid)
 {

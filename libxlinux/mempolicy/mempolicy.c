@@ -17,7 +17,7 @@
 
 #include "internal.h"
 #include "mempolicy/mempolicy.internal.h"
-#include "errtab/SYS.errtab.h"
+#include "errtab/KERNEL.errtab.h"
 #include "errtab/XLINUX.errtab.h"
 #include "xstdlib.h"
 

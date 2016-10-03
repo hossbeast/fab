@@ -1,1 +1,0 @@
-../errtab/SYS.errtab.h

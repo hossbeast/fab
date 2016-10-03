@@ -21,7 +21,7 @@
 
 #include "internal.h"
 #include "xdlfcn/xdlfcn.h"
-#include "errtab/SYS.errtab.h"
+#include "errtab/KERNEL.errtab.h"
 #include "errtab/XLINUX.errtab.h"
 
 #undef perrtab

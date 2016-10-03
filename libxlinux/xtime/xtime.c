@@ -19,7 +19,7 @@
 
 #include "internal.h"
 #include "xtime/xtime.h"
-#include "errtab/SYS.errtab.h"
+#include "errtab/KERNEL.errtab.h"
 
 API xapi xlocaltime_r(const time_t * timep, struct tm * result)
 {

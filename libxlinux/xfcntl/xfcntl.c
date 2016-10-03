@@ -19,7 +19,7 @@
 
 #include "internal.h"
 #include "xfcntl/xfcntl.h"
-#include "errtab/SYS.errtab.h"
+#include "errtab/KERNEL.errtab.h"
 
 API xapi xopen(const char * path, int flags, int * const fd)
 {

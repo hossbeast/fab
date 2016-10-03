@@ -1,1 +1,0 @@
-../errtab/LIB.errtab.h

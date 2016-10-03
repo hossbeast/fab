@@ -17,7 +17,7 @@
 
 #include "internal.h"
 #include "xdirent/xdirent.h"
-#include "errtab/SYS.errtab.h"
+#include "errtab/KERNEL.errtab.h"
 
 API xapi xopendir(const char * name, DIR ** dd)
 {
