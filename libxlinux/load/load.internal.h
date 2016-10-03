@@ -15,25 +15,9 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef _XLINUX_FMT_INTERNAL_H
-#define _XLINUX_FMT_INTERNAL_H
+#ifndef _XLINUX_LOAD_INTERNAL_H
+#define _XLINUX_LOAD_INTERNAL_H
 
-#include <stdarg.h>
+#include "load.h"
 
-#include "xapi.h"
-
-#define restrict __restrict
-
-/// fmt_apply
-//
-// SUMMARY
-//
-//
-// PARAMETERS
-//
-//
-xapi fmt_apply(char * const restrict dst, size_t dst_size, const char * const restrict fmt, va_list va)
-  __attribute__((nonnull));
-
-#undef restrict
 #endif

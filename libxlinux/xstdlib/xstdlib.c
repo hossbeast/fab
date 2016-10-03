@@ -190,3 +190,15 @@ API xapi xreadlinkvf(const char * pathname_fmt, char * buf, size_t bufsiz, ssize
 
   finally : coda;
 }
+
+API xapi xrealpath(const char * const restrict path, char * const restrict resolved_path)
+{
+  enter;
+
+  if(realpath(path, resolved_path) == 0)
+  {
+    tfail(perrtab_KERNEL, errno);
+  }
+
+  finally : coda;
+}

@@ -92,4 +92,12 @@ xapi xreadlinkf(const char * pathname_fmt, char * buf, size_t bufsiz, ssize_t * 
 xapi xreadlinkvf(const char * pathname_fmt, char * buf, size_t bufsiz, ssize_t * r, va_list va)
   __attribute__((nonnull(1, 2)));
 
+/// xrealpath
+//
+// SUMMARY
+//  proxy for realpath
+//
+xapi xrealpath(const char * const restrict path, char * const restrict resolved_path)
+  __attribute__((nonnull));
+
 #endif

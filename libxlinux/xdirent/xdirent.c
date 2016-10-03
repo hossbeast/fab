@@ -53,3 +53,13 @@ API xapi xreaddir_r(DIR * dirp, struct dirent * entry, struct dirent ** result)
 
   finally : coda;
 }
+
+API xapi xclosedir(DIR * dd)
+{
+  enter;
+
+  if(closedir(dd) != 0)
+    tfail(perrtab_KERNEL, errno);
+
+  finally : coda;
+}

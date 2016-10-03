@@ -29,14 +29,16 @@
 // SUMMARY
 //  proxy for opendir
 //
-xapi xopendir(const char * name, DIR ** dd);
+xapi xopendir(const char * name, DIR ** dd)
+  __attribute__((nonnull));
 
 /// uxopendir
 //
 // SUMMARY
 //  proxy for opendir that fails only when errno != ENOENT
 //
-xapi uxopendir(const char * name, DIR ** dd);
+xapi uxopendir(const char * name, DIR ** dd)
+  __attribute__((nonnull));
 
 /// xreaddir_r
 //
@@ -44,5 +46,13 @@ xapi uxopendir(const char * name, DIR ** dd);
 //  proxy for readdir_r
 //
 xapi xreaddir_r(DIR * dirp, struct dirent * entry, struct dirent ** result);
+
+/// xclosedir
+//
+// SUMMARY
+//  proxy for closedir
+//
+xapi xclosedir(DIR * dd)
+  __attribute__((nonnull));
 
 #endif
