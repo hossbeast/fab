@@ -30,7 +30,7 @@ API xapi xvdprintf(int fd, const char * const restrict fmt, va_list va)
   enter;
 
   if(vdprintf(fd, fmt, va) < 0)
-    fail(errno);
+    tfail(perrtab_KERNEL, errno);
 
 finally:
   xapi_infof("fd", "%d", fd);

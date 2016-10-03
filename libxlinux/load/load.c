@@ -57,7 +57,7 @@ API xapi xlinux_unload()
   }
   else if(handles < 0)
   {
-    tfails(perrtab_SYS, SYS_AUNLOAD, "library", "libxlinux");
+    fails(SYS_AUNLOAD, "library", "libxlinux");
   }
 
   finally : coda;

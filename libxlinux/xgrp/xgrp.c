@@ -35,7 +35,7 @@ API xapi uxgetgrgid_r(gid_t gid, struct group * grp, char * buf, size_t buflen, 
   }
   else
   {
-    fail(errno);
+    tfail(perrtab_KERNEL, errno);
   }
 
 finally :
@@ -49,7 +49,7 @@ API xapi xgetgrgid(gid_t gid, struct group ** const grp)
 
   errno = 0;
   if(((*grp) = getgrgid(gid)) == 0)
-    fail(errno);
+    tfail(perrtab_KERNEL, errno);
 
   finally : coda;
 }

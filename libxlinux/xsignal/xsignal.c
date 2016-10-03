@@ -26,7 +26,7 @@ API xapi xkill(pid_t pid, int sig)
 {
   enter;
 
-  fatalize(errno, kill, pid, sig);
+  tfatalize(perrtab_KERNEL, errno, kill, pid, sig);
 
 finally:
   xapi_infof("pid", "%ld", (long)pid);
@@ -40,11 +40,11 @@ API xapi uxkill(pid_t pid, int sig, int * r)
 
   if(r && ((*r) = kill(pid, sig)) == -1 && errno != ESRCH)
   {
-    fail(errno);
+    tfail(perrtab_KERNEL, errno);
   }
   else if(!r && kill(pid, sig) == -1 && errno != ESRCH)
   {
-    fail(errno);
+    tfail(perrtab_KERNEL, errno);
   }
 
   finally : coda;
@@ -54,7 +54,7 @@ API xapi xsigaction(int signum, const struct sigaction * act, struct sigaction *
 {
   enter;
 
-  fatalize(errno, sigaction, signum, act, oldact);
+  tfatalize(perrtab_KERNEL, errno, sigaction, signum, act, oldact);
 
 finally:
   xapi_infof("sig", "%d", signum);
@@ -65,7 +65,7 @@ API xapi xsigprocmask(int how, const sigset_t * set, sigset_t * oldset)
 {
   enter;
 
-  fatalize(errno, sigprocmask, how, set, oldset);
+  tfatalize(perrtab_KERNEL, errno, sigprocmask, how, set, oldset);
 
   finally : coda;
 }
@@ -82,7 +82,7 @@ API xapi uxsigsuspend(const sigset_t * mask)
     }
     else
     {
-      fail(errno);
+      tfail(perrtab_KERNEL, errno);
     }
   }
 

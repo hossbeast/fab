@@ -129,12 +129,141 @@ _E(131, ENOTRECOVERABLE, "State not recoverable") \
 _E(132, ERFKILL, "Operation not possible due to RF-kill") \
 _E(133, EHWPOISON, "Memory page has hardware error") \
 
+#if XAPI_STACKTRACE
+#define KERNEL_EPERM perrtab_KERNEL->v[1 - ERRMIN_KERNEL].exit
+#define KERNEL_ENOENT perrtab_KERNEL->v[2 - ERRMIN_KERNEL].exit
+#define KERNEL_ESRCH perrtab_KERNEL->v[3 - ERRMIN_KERNEL].exit
+#define KERNEL_EINTR perrtab_KERNEL->v[4 - ERRMIN_KERNEL].exit
+#define KERNEL_EIO perrtab_KERNEL->v[5 - ERRMIN_KERNEL].exit
+#define KERNEL_ENXIO perrtab_KERNEL->v[6 - ERRMIN_KERNEL].exit
+#define KERNEL_ENOEXEC perrtab_KERNEL->v[8 - ERRMIN_KERNEL].exit
+#define KERNEL_EBADF perrtab_KERNEL->v[9 - ERRMIN_KERNEL].exit
+#define KERNEL_ECHILD perrtab_KERNEL->v[10 - ERRMIN_KERNEL].exit
+#define KERNEL_EAGAIN perrtab_KERNEL->v[11 - ERRMIN_KERNEL].exit
+#define KERNEL_ENOMEM perrtab_KERNEL->v[12 - ERRMIN_KERNEL].exit
+#define KERNEL_EACCES perrtab_KERNEL->v[13 - ERRMIN_KERNEL].exit
+#define KERNEL_EFAULT perrtab_KERNEL->v[14 - ERRMIN_KERNEL].exit
+#define KERNEL_ENOTBLK perrtab_KERNEL->v[15 - ERRMIN_KERNEL].exit
+#define KERNEL_EBUSY perrtab_KERNEL->v[16 - ERRMIN_KERNEL].exit
+#define KERNEL_EEXIST perrtab_KERNEL->v[17 - ERRMIN_KERNEL].exit
+#define KERNEL_EXDEV perrtab_KERNEL->v[18 - ERRMIN_KERNEL].exit
+#define KERNEL_ENODEV perrtab_KERNEL->v[19 - ERRMIN_KERNEL].exit
+#define KERNEL_ENOTDIR perrtab_KERNEL->v[20 - ERRMIN_KERNEL].exit
+#define KERNEL_EISDIR perrtab_KERNEL->v[21 - ERRMIN_KERNEL].exit
+#define KERNEL_EINVAL perrtab_KERNEL->v[22 - ERRMIN_KERNEL].exit
+#define KERNEL_ENFILE perrtab_KERNEL->v[23 - ERRMIN_KERNEL].exit
+#define KERNEL_EMFILE perrtab_KERNEL->v[24 - ERRMIN_KERNEL].exit
+#define KERNEL_ENOTTY perrtab_KERNEL->v[25 - ERRMIN_KERNEL].exit
+#define KERNEL_ETXTBSY perrtab_KERNEL->v[26 - ERRMIN_KERNEL].exit
+#define KERNEL_EFBIG perrtab_KERNEL->v[27 - ERRMIN_KERNEL].exit
+#define KERNEL_ENOSPC perrtab_KERNEL->v[28 - ERRMIN_KERNEL].exit
+#define KERNEL_ESPIPE perrtab_KERNEL->v[29 - ERRMIN_KERNEL].exit
+#define KERNEL_EROFS perrtab_KERNEL->v[30 - ERRMIN_KERNEL].exit
+#define KERNEL_EMLINK perrtab_KERNEL->v[31 - ERRMIN_KERNEL].exit
+#define KERNEL_EPIPE perrtab_KERNEL->v[32 - ERRMIN_KERNEL].exit
+#define KERNEL_EDOM perrtab_KERNEL->v[33 - ERRMIN_KERNEL].exit
+#define KERNEL_ERANGE perrtab_KERNEL->v[34 - ERRMIN_KERNEL].exit
+#define KERNEL_EDEADLK perrtab_KERNEL->v[35 - ERRMIN_KERNEL].exit
+#define KERNEL_ENAMETOOLONG perrtab_KERNEL->v[36 - ERRMIN_KERNEL].exit
+#define KERNEL_ENOLCK perrtab_KERNEL->v[37 - ERRMIN_KERNEL].exit
+#define KERNEL_ENOSYS perrtab_KERNEL->v[38 - ERRMIN_KERNEL].exit
+#define KERNEL_ENOTEMPTY perrtab_KERNEL->v[39 - ERRMIN_KERNEL].exit
+#define KERNEL_ELOOP perrtab_KERNEL->v[40 - ERRMIN_KERNEL].exit
+#define KERNEL_ENOMSG perrtab_KERNEL->v[42 - ERRMIN_KERNEL].exit
+#define KERNEL_EIDRM perrtab_KERNEL->v[43 - ERRMIN_KERNEL].exit
+#define KERNEL_ECHRNG perrtab_KERNEL->v[44 - ERRMIN_KERNEL].exit
+#define KERNEL_ELNRNG perrtab_KERNEL->v[48 - ERRMIN_KERNEL].exit
+#define KERNEL_EUNATCH perrtab_KERNEL->v[49 - ERRMIN_KERNEL].exit
+#define KERNEL_ENOCSI perrtab_KERNEL->v[50 - ERRMIN_KERNEL].exit
+#define KERNEL_EBADE perrtab_KERNEL->v[52 - ERRMIN_KERNEL].exit
+#define KERNEL_EBADR perrtab_KERNEL->v[53 - ERRMIN_KERNEL].exit
+#define KERNEL_EXFULL perrtab_KERNEL->v[54 - ERRMIN_KERNEL].exit
+#define KERNEL_ENOANO perrtab_KERNEL->v[55 - ERRMIN_KERNEL].exit
+#define KERNEL_EBADRQC perrtab_KERNEL->v[56 - ERRMIN_KERNEL].exit
+#define KERNEL_EBADSLT perrtab_KERNEL->v[57 - ERRMIN_KERNEL].exit
+#define KERNEL_EBFONT perrtab_KERNEL->v[59 - ERRMIN_KERNEL].exit
+#define KERNEL_ENOSTR perrtab_KERNEL->v[60 - ERRMIN_KERNEL].exit
+#define KERNEL_ENODATA perrtab_KERNEL->v[61 - ERRMIN_KERNEL].exit
+#define KERNEL_ETIME perrtab_KERNEL->v[62 - ERRMIN_KERNEL].exit
+#define KERNEL_ENOSR perrtab_KERNEL->v[63 - ERRMIN_KERNEL].exit
+#define KERNEL_ENONET perrtab_KERNEL->v[64 - ERRMIN_KERNEL].exit
+#define KERNEL_ENOPKG perrtab_KERNEL->v[65 - ERRMIN_KERNEL].exit
+#define KERNEL_EREMOTE perrtab_KERNEL->v[66 - ERRMIN_KERNEL].exit
+#define KERNEL_ENOLINK perrtab_KERNEL->v[67 - ERRMIN_KERNEL].exit
+#define KERNEL_EADV perrtab_KERNEL->v[68 - ERRMIN_KERNEL].exit
+#define KERNEL_ESRMNT perrtab_KERNEL->v[69 - ERRMIN_KERNEL].exit
+#define KERNEL_ECOMM perrtab_KERNEL->v[70 - ERRMIN_KERNEL].exit
+#define KERNEL_EPROTO perrtab_KERNEL->v[71 - ERRMIN_KERNEL].exit
+#define KERNEL_EMULTIHOP perrtab_KERNEL->v[72 - ERRMIN_KERNEL].exit
+#define KERNEL_EDOTDOT perrtab_KERNEL->v[73 - ERRMIN_KERNEL].exit
+#define KERNEL_EBADMSG perrtab_KERNEL->v[74 - ERRMIN_KERNEL].exit
+#define KERNEL_EOVERFLOW perrtab_KERNEL->v[75 - ERRMIN_KERNEL].exit
+#define KERNEL_ENOTUNIQ perrtab_KERNEL->v[76 - ERRMIN_KERNEL].exit
+#define KERNEL_EBADFD perrtab_KERNEL->v[77 - ERRMIN_KERNEL].exit
+#define KERNEL_EREMCHG perrtab_KERNEL->v[78 - ERRMIN_KERNEL].exit
+#define KERNEL_ELIBACC perrtab_KERNEL->v[79 - ERRMIN_KERNEL].exit
+#define KERNEL_ELIBBAD perrtab_KERNEL->v[80 - ERRMIN_KERNEL].exit
+#define KERNEL_ELIBSCN perrtab_KERNEL->v[81 - ERRMIN_KERNEL].exit
+#define KERNEL_ELIBMAX perrtab_KERNEL->v[82 - ERRMIN_KERNEL].exit
+#define KERNEL_ELIBEXEC perrtab_KERNEL->v[83 - ERRMIN_KERNEL].exit
+#define KERNEL_EILSEQ perrtab_KERNEL->v[84 - ERRMIN_KERNEL].exit
+#define KERNEL_ERESTART perrtab_KERNEL->v[85 - ERRMIN_KERNEL].exit
+#define KERNEL_ESTRPIPE perrtab_KERNEL->v[86 - ERRMIN_KERNEL].exit
+#define KERNEL_EUSERS perrtab_KERNEL->v[87 - ERRMIN_KERNEL].exit
+#define KERNEL_ENOTSOCK perrtab_KERNEL->v[88 - ERRMIN_KERNEL].exit
+#define KERNEL_EDESTADDRREQ perrtab_KERNEL->v[89 - ERRMIN_KERNEL].exit
+#define KERNEL_EMSGSIZE perrtab_KERNEL->v[90 - ERRMIN_KERNEL].exit
+#define KERNEL_EPROTOTYPE perrtab_KERNEL->v[91 - ERRMIN_KERNEL].exit
+#define KERNEL_ENOPROTOOPT perrtab_KERNEL->v[92 - ERRMIN_KERNEL].exit
+#define KERNEL_EPROTONOSUPPORT perrtab_KERNEL->v[93 - ERRMIN_KERNEL].exit
+#define KERNEL_ESOCKTNOSUPPORT perrtab_KERNEL->v[94 - ERRMIN_KERNEL].exit
+#define KERNEL_EOPNOTSUPP perrtab_KERNEL->v[95 - ERRMIN_KERNEL].exit
+#define KERNEL_EPFNOSUPPORT perrtab_KERNEL->v[96 - ERRMIN_KERNEL].exit
+#define KERNEL_EAFNOSUPPORT perrtab_KERNEL->v[97 - ERRMIN_KERNEL].exit
+#define KERNEL_EADDRINUSE perrtab_KERNEL->v[98 - ERRMIN_KERNEL].exit
+#define KERNEL_EADDRNOTAVAIL perrtab_KERNEL->v[99 - ERRMIN_KERNEL].exit
+#define KERNEL_ENETDOWN perrtab_KERNEL->v[100 - ERRMIN_KERNEL].exit
+#define KERNEL_ENETUNREACH perrtab_KERNEL->v[101 - ERRMIN_KERNEL].exit
+#define KERNEL_ENETRESET perrtab_KERNEL->v[102 - ERRMIN_KERNEL].exit
+#define KERNEL_ECONNABORTED perrtab_KERNEL->v[103 - ERRMIN_KERNEL].exit
+#define KERNEL_ECONNRESET perrtab_KERNEL->v[104 - ERRMIN_KERNEL].exit
+#define KERNEL_ENOBUFS perrtab_KERNEL->v[105 - ERRMIN_KERNEL].exit
+#define KERNEL_EISCONN perrtab_KERNEL->v[106 - ERRMIN_KERNEL].exit
+#define KERNEL_ENOTCONN perrtab_KERNEL->v[107 - ERRMIN_KERNEL].exit
+#define KERNEL_ESHUTDOWN perrtab_KERNEL->v[108 - ERRMIN_KERNEL].exit
+#define KERNEL_ETOOMANYREFS perrtab_KERNEL->v[109 - ERRMIN_KERNEL].exit
+#define KERNEL_ETIMEDOUT perrtab_KERNEL->v[110 - ERRMIN_KERNEL].exit
+#define KERNEL_ECONNREFUSED perrtab_KERNEL->v[111 - ERRMIN_KERNEL].exit
+#define KERNEL_EHOSTDOWN perrtab_KERNEL->v[112 - ERRMIN_KERNEL].exit
+#define KERNEL_EHOSTUNREACH perrtab_KERNEL->v[113 - ERRMIN_KERNEL].exit
+#define KERNEL_EALREADY perrtab_KERNEL->v[114 - ERRMIN_KERNEL].exit
+#define KERNEL_EINPROGRESS perrtab_KERNEL->v[115 - ERRMIN_KERNEL].exit
+#define KERNEL_ESTALE perrtab_KERNEL->v[116 - ERRMIN_KERNEL].exit
+#define KERNEL_EUCLEAN perrtab_KERNEL->v[117 - ERRMIN_KERNEL].exit
+#define KERNEL_ENOTNAM perrtab_KERNEL->v[118 - ERRMIN_KERNEL].exit
+#define KERNEL_ENAVAIL perrtab_KERNEL->v[119 - ERRMIN_KERNEL].exit
+#define KERNEL_EISNAM perrtab_KERNEL->v[120 - ERRMIN_KERNEL].exit
+#define KERNEL_EREMOTEIO perrtab_KERNEL->v[121 - ERRMIN_KERNEL].exit
+#define KERNEL_EDQUOT perrtab_KERNEL->v[122 - ERRMIN_KERNEL].exit
+#define KERNEL_ENOMEDIUM perrtab_KERNEL->v[123 - ERRMIN_KERNEL].exit
+#define KERNEL_EMEDIUMTYPE perrtab_KERNEL->v[124 - ERRMIN_KERNEL].exit
+#define KERNEL_ECANCELED perrtab_KERNEL->v[125 - ERRMIN_KERNEL].exit
+#define KERNEL_ENOKEY perrtab_KERNEL->v[126 - ERRMIN_KERNEL].exit
+#define KERNEL_EKEYEXPIRED perrtab_KERNEL->v[127 - ERRMIN_KERNEL].exit
+#define KERNEL_EKEYREVOKED perrtab_KERNEL->v[128 - ERRMIN_KERNEL].exit
+#define KERNEL_EKEYREJECTED perrtab_KERNEL->v[129 - ERRMIN_KERNEL].exit
+#define KERNEL_EOWNERDEAD perrtab_KERNEL->v[130 - ERRMIN_KERNEL].exit
+#define KERNEL_ENOTRECOVERABLE perrtab_KERNEL->v[131 - ERRMIN_KERNEL].exit
+#define KERNEL_ERFKILL perrtab_KERNEL->v[132 - ERRMIN_KERNEL].exit
+#define KERNEL_EHWPOISON perrtab_KERNEL->v[133 - ERRMIN_KERNEL].exit
+#else
 enum {
 #define _E(a, b, c) KERNEL_ ## b = a,
 ETABLE_KERNEL
 #undef _E
 };
+#endif
 #define ERRMIN_KERNEL 1
 #define ERRMAX_KERNEL 133
-extern etable * perrtab_KERNEL;
+extern errtab * perrtab_KERNEL;
 #endif

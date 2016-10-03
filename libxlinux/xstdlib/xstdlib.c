@@ -38,7 +38,7 @@ API xapi xmalloc(void* target, size_t size)
   }
   else if((mem = calloc(size, 1)) == 0)
   {
-    fail(errno);
+    tfail(perrtab_KERNEL, errno);
   }
   else
   {
@@ -63,7 +63,7 @@ API xapi xrealloc(void* target, size_t es, size_t ec, size_t oec)
     void** t = ((void**)target);
     void * mem = 0;
     if((mem = realloc(*t, es * ec)) == 0)
-      fail(errno);
+      tfail(perrtab_KERNEL, errno);
     *t = mem;
 
     if(es * ec)
@@ -75,7 +75,7 @@ API xapi xrealloc(void* target, size_t es, size_t ec, size_t oec)
       }
       else
       {
-        fail(errno);
+        tfail(perrtab_KERNEL, errno);
       }
     }
   }
@@ -158,7 +158,7 @@ API xapi xreadlinks(const char * pathname, char * buf, size_t bufsiz, ssize_t * 
     r = &lr;
 
   if((*r = readlink(pathname, buf, bufsiz)) == -1)
-    fail(errno);
+    tfail(perrtab_KERNEL, errno);
 
 finally:
   xapi_infos("pathname", pathname);

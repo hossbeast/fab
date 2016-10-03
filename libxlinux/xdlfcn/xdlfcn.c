@@ -24,9 +24,6 @@
 #include "errtab/KERNEL.errtab.h"
 #include "errtab/XLINUX.errtab.h"
 
-#undef perrtab
-#define perrtab perrtab_XLINUX
-
 API xapi xdlopen(const char * filename, int flag, void ** dl)
 {
   enter;

@@ -26,7 +26,7 @@ API xapi uxshmget(key_t key, size_t size, int shmflg, int * const restrict shmid
   enter;
 
   if((*shmid = shmget(key, size, shmflg)) == -1 && errno != ENOENT)
-    fail(errno);
+    tfail(perrtab_KERNEL, errno);
 
 finally:
   xapi_infof("key", "0x%08lx", (long)key);
@@ -39,7 +39,7 @@ API xapi xshmget(key_t key, size_t size, int shmflg, int * const restrict shmid)
   enter;
 
   if((*shmid = shmget(key, size, shmflg)) == -1)
-    fail(errno);
+    tfail(perrtab_KERNEL, errno);
 
 finally:
   xapi_infof("key", "0x%08lx", (long)key);
@@ -51,7 +51,7 @@ API xapi xshmctl(int shmid, int cmd, struct shmid_ds * const restrict buf)
 {
   enter;
 
-  fatalize(errno, shmctl, shmid, cmd, buf);
+  tfatalize(perrtab_KERNEL, errno, shmctl, shmid, cmd, buf);
 
   finally : coda;
 }
@@ -61,7 +61,7 @@ API xapi xshmat(int shmid, const void * shmaddr, int shmflg, void ** const restr
   enter;
 
   if((*addr = shmat(shmid, shmaddr, shmflg)) == (void*)-1)
-    fail(errno);
+    tfail(perrtab_KERNEL, errno);
 
   finally : coda;
 }
@@ -71,7 +71,7 @@ API xapi xshmdt(const void * shmaddr)
   enter;
 
   if(shmaddr)
-    fatalize(errno, shmdt, shmaddr); 
+    tfatalize(perrtab_KERNEL, errno, shmdt, shmaddr); 
 
   finally : coda; 
 }

@@ -24,7 +24,7 @@ API xapi xopendir(const char * name, DIR ** dd)
   enter;
 
   if(((*dd) = opendir(name)) == 0)
-    fail(errno);
+    tfail(perrtab_KERNEL, errno);
 
 finally:
   xapi_infof("path", "%s", name);
@@ -36,7 +36,7 @@ API xapi uxopendir(const char * name, DIR ** dd)
   enter;
 
   if(((*dd) = opendir(name)) == 0 && errno != ENOENT)
-    fail(errno);
+    tfail(perrtab_KERNEL, errno);
 
 finally:
   xapi_infof("path", "%s", name);

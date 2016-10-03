@@ -27,7 +27,7 @@ API xapi xreadv(int fd, const struct iovec * iov, int iovcnt)
 {
   enter;
 
-  fatalize(errno, readv, fd, iov, iovcnt);
+  tfatalize(perrtab_KERNEL, errno, readv, fd, iov, iovcnt);
 
   finally : coda;
 }
@@ -39,7 +39,7 @@ API xapi axreadv(int fd, const struct iovec * iov, int iovcnt)
   ssize_t expected = 0;
   ssize_t actual;
   if((actual = readv(fd, iov, iovcnt)) == -1)
-    fail(errno);
+    tfail(perrtab_KERNEL, errno);
 
   int x;
   for(x = 0; x < iovcnt; x++)
@@ -50,7 +50,7 @@ API xapi axreadv(int fd, const struct iovec * iov, int iovcnt)
     xapi_fail_intent();
     xapi_info_addf("expected", "%zd", expected);
     xapi_info_addf("actual", "%zd", actual);
-    tfail(perrtab_XLINUX, XLINUX_LESS);
+    fail(XLINUX_LESS);
   }
 
   finally : coda;
@@ -60,7 +60,7 @@ API xapi xwritev(int fd, const struct iovec * iov, int iovcnt)
 {
   enter;
 
-  fatalize(errno, writev, fd, iov, iovcnt);
+  tfatalize(perrtab_KERNEL, errno, writev, fd, iov, iovcnt);
 
   finally :  coda;
 }
@@ -72,7 +72,7 @@ API xapi axwritev(int fd, const struct iovec * iov, int iovcnt)
   ssize_t expected = 0;
   ssize_t actual;
   if((actual = writev(fd, iov, iovcnt)) == -1)
-    fail(errno);
+    tfail(perrtab_KERNEL, errno);
 
   int x;
   for(x = 0; x < iovcnt; x++)
@@ -83,7 +83,7 @@ API xapi axwritev(int fd, const struct iovec * iov, int iovcnt)
     xapi_fail_intent();
     xapi_info_addf("expected", "%zd", expected);
     xapi_info_addf("actual", "%zd", actual);
-    tfail(perrtab_XLINUX, XLINUX_LESS);
+    fail(XLINUX_LESS);
   }
 
   finally : coda;

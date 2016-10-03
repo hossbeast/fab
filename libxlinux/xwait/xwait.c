@@ -27,7 +27,7 @@ API xapi xwait(int * status)
   enter;
 
   if(wait(status) == -1)
-    fail(errno);
+    tfail(perrtab_KERNEL, errno);
 
   finally : coda;
 }
@@ -37,7 +37,7 @@ API xapi xwaitpid(pid_t pid, int * status, int options)
   enter;
 
   if(waitpid(pid, status, options) == -1)
-    fail(errno);
+    tfail(perrtab_KERNEL, errno);
 
   finally : coda;
 }

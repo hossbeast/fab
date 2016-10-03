@@ -21,9 +21,6 @@
 #include "xftw/xftw.h"
 #include "errtab/XLINUX.errtab.h"
 
-#undef perrtab
-#define perrtab perrtab_XLINUX
-
 API xapi xnftw(const char *dirpath, xapi (*xfn) (const char *fpath, const struct stat *sb, int typeflag, struct FTW *ftwbuf), int nopenfd, int flags)
 {
   enter;

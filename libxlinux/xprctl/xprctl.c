@@ -26,7 +26,7 @@ API xapi xprctl(int option, unsigned long arg2, unsigned long arg3, unsigned lon
 {
   enter;
 
-  fatalize(errno, prctl, option, arg2, arg3, arg4, arg5);
+  tfatalize(perrtab_KERNEL, errno, prctl, option, arg2, arg3, arg4, arg5);
 
   finally : coda;
 }

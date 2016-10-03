@@ -39,7 +39,7 @@ xapi fmt_apply(char * const restrict dst, size_t dst_size, const char * const re
     xapi_fail_intent();
     xapi_info_addf("max size", "%zu", dst_size);
     xapi_info_addf("actual size", "%zu", sz);
-    tfail(perrtab_XLINUX, XLINUX_NAMETOOLONG);
+    fail(XLINUX_NAMETOOLONG);
   }
 
   finally : coda;

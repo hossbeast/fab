@@ -29,7 +29,7 @@ API xapi xstat(const char * path, struct stat * buf)
   enter;
 
   if(stat(path, buf) != 0)
-    fail(errno);
+    tfail(perrtab_KERNEL, errno);
   
 finally:
   xapi_infof("path", "%s", path);
@@ -43,7 +43,7 @@ API xapi uxstat(const char * path, struct stat * buf, int * r)
   if((r && ((*r) = stat(path, buf)) != 0) || (!r && stat(path, buf) != 0))
   {
     if(errno != ENOENT && errno != ENOTDIR)
-      fail(errno);
+      tfail(perrtab_KERNEL, errno);
 
     memset(buf, 0, sizeof(*buf));
   }
@@ -58,7 +58,7 @@ API xapi xlstat(const char * path, struct stat * buf, int * r)
   enter;
 
   if((r && ((*r) = lstat(path, buf)) != 0) || (!r && lstat(path, buf) != 0))
-    fail(errno);
+    tfail(perrtab_KERNEL, errno);
   
 finally:
   xapi_infof("path", "%s", path);
@@ -72,7 +72,7 @@ API xapi uxlstat(const char * path, struct stat * buf, int * r)
   if((r && ((*r) = lstat(path, buf)) != 0) || (!r && lstat(path, buf) != 0))
   {
     if(errno != ENOENT && errno != ENOTDIR)
-      fail(errno);
+      tfail(perrtab_KERNEL, errno);
 
     memset(buf, 0, sizeof(*buf));
   }
@@ -87,7 +87,7 @@ API xapi xfstat(int fd, struct stat * buf)
   enter;
 
   if(fstat(fd, buf) != 0)
-    fail(errno);
+    tfail(perrtab_KERNEL, errno);
   
   finally : coda;
 }
@@ -99,7 +99,7 @@ API xapi uxfstat(int fd, struct stat * buf)
   if(fstat(fd, buf) != 0)
   {
     if(errno != ENOENT && errno != ENOTDIR)
-      fail(errno);
+      tfail(perrtab_KERNEL, errno);
 
     memset(buf, 0, sizeof(*buf));
   }
@@ -113,7 +113,7 @@ API xapi xfutimens(int fd, const struct timespec times[2])
 {
   enter;
 
-  fatalize(errno, futimens, fd, times);
+  tfatalize(perrtab_KERNEL, errno, futimens, fd, times);
 
   finally : coda;
 }
@@ -122,7 +122,7 @@ API xapi xutimensat(int dirfd, const char * const restrict pathname, const struc
 {
   enter;
 
-  fatalize(errno, utimensat, dirfd, pathname, times, flags);
+  tfatalize(perrtab_KERNEL, errno, utimensat, dirfd, pathname, times, flags);
 
   finally : coda;
 }
@@ -134,7 +134,7 @@ API xapi uxutimensat(int dirfd, const char * const restrict pathname, const stru
   if((r && ((*r) = utimensat(dirfd, pathname, times, flags)) != 0) || (!r && utimensat(dirfd, pathname, times, flags) != 0))
   {
     if(errno != ENOENT)
-      fail(errno);
+      tfail(perrtab_KERNEL, errno);
   }
 
 finally:
@@ -146,7 +146,7 @@ API xapi xmkdir(const char * pathname, mode_t mode)
 {
   enter;
 
-  fatalize(errno, mkdir, pathname, mode);
+  tfatalize(perrtab_KERNEL, errno, mkdir, pathname, mode);
 
 finally:
   xapi_infos("path", pathname);
@@ -158,7 +158,7 @@ API xapi uxmkdir(const char * pathname, mode_t mode)
   enter;
 
   if(mkdir(pathname, mode) != 0 && errno != EEXIST)
-    fail(errno);
+    tfail(perrtab_KERNEL, errno);
 
 finally:
   xapi_infos("path", pathname);
@@ -169,7 +169,7 @@ API xapi xfchmod(int fd, mode_t mode)
 {
   enter;
 
-  fatalize(errno, fchmod, fd, mode);
+  tfatalize(perrtab_KERNEL, errno, fchmod, fd, mode);
 
 finally:
   xapi_infof("fd", "%d", fd);

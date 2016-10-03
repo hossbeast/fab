@@ -26,7 +26,7 @@ API xapi xflock(int fd, int operation)
 {
   enter;
 
-  fatalize(errno, flock, fd, operation);
+  tfatalize(perrtab_KERNEL, errno, flock, fd, operation);
 
   finally : coda;
 }

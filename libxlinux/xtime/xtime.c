@@ -26,7 +26,7 @@ API xapi xlocaltime_r(const time_t * timep, struct tm * result)
   enter;
 
   if(localtime_r(timep, result) == 0)
-    fail(errno);
+    tfail(perrtab_KERNEL, errno);
 
   finally : coda;
 }
@@ -35,7 +35,7 @@ API xapi xclock_gettime(clockid_t clk_id, struct timespec * tp)
 {
   enter;
 
-  fatalize(errno, clock_gettime, clk_id, tp);
+  tfatalize(perrtab_KERNEL, errno, clock_gettime, clk_id, tp);
 
   finally : coda;
 }

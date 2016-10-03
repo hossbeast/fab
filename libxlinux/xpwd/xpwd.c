@@ -35,7 +35,7 @@ API xapi uxgetpwuid_r(uid_t uid, struct passwd * pwd, char * buf, size_t buflen,
   }
   else
   {
-    fail(errno);
+    tfail(perrtab_KERNEL, errno);
   }
 
 finally :
@@ -49,7 +49,7 @@ API xapi xgetpwuid(uid_t uid, struct passwd ** const pwd)
 
   errno = 0;
   if(((*pwd) = getpwuid(uid)) == 0)
-    fail(errno);
+    tfail(perrtab_KERNEL, errno);
 
   finally : coda;
 }

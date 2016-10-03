@@ -26,10 +26,10 @@ API xapi xopen(const char * path, int flags, int * const fd)
   enter;
 
   if(fd && (*fd = open(path, flags)) == -1)
-    fail(errno);
+    tfail(perrtab_KERNEL, errno);
 
   else if(!fd && open(path, flags) == -1)
-    fail(errno);
+    tfail(perrtab_KERNEL, errno);
 
 finally:
   xapi_infof("path", "%s", path);
@@ -43,7 +43,7 @@ API xapi uxopen(const char * path, int flags, int * const fd)
   if((*fd = open(path, flags)) == -1)
   {
     if(errno != ENOENT)
-      fail(errno);
+      tfail(perrtab_KERNEL, errno);
 
     *fd = -1;
   }
@@ -58,10 +58,10 @@ API xapi xopen_mode(const char * path, int flags, mode_t mode, int * const fd)
   enter;
 
   if(fd && (*fd = open(path, flags, mode)) == -1)
-    fail(errno);
+    tfail(perrtab_KERNEL, errno);
 
   else if(!fd && open(path, flags, mode) == -1)
-    fail(errno);
+    tfail(perrtab_KERNEL, errno);
 
 finally:
   xapi_infof("path", "%s", path);
@@ -75,7 +75,7 @@ API xapi uxopen_mode(const char * path, int flags, mode_t mode, int * const fd)
   if((*fd = open(path, flags, mode)) == -1)
   {
     if(errno != ENOENT)
-      fail(errno);
+      tfail(perrtab_KERNEL, errno);
 
     *fd = -1;
   }
