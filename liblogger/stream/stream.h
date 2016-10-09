@@ -59,6 +59,7 @@ typedef struct logger_stream
   uint32_t attr;            // e.g. L_RED | L_TRACE
 
   char * expr;              // e.g. +INFO
+  char ** exprs;            // e.g. (char *[]) { "+INFO", "+WARN", 0 }
   
   union {
     int fd;                       // LOGGER_STREAM_FD

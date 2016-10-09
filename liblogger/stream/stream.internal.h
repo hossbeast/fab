@@ -48,8 +48,8 @@ typedef struct stream
   // category definitions and attributes at the log site
   uint32_t attr;
 
-  // filter expression
-  char * expr;
+  // filter expressions
+  struct list * exprs;
 
   // the filters determine which log messages are emitted to the stream
   struct list * filters;

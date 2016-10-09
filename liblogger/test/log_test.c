@@ -41,7 +41,7 @@ static logger_category * categories = (logger_category []) {
 };
 
 static logger_stream * streams = (logger_stream []) {
-    { name : "foo", type : LOGGER_STREAM_NARRATOR, expr : "+FOO" }
+    { name : "foo", type : LOGGER_STREAM_NARRATOR, expr : "+FOO", exprs : (char*[]) { "+FOO", 0 } }
   , { }
 };
 

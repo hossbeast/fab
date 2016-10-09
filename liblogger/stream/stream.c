@@ -236,6 +236,7 @@ static xapi __attribute__((nonnull)) stream_initialize(stream * const restrict s
   enter;
 
   filter * filterp = 0;
+  char * expr = 0;
 
   streamp->id = id;
   if(def->name)
@@ -267,12 +268,31 @@ static xapi __attribute__((nonnull)) stream_initialize(stream * const restrict s
   }
   fatal(narrator_record_create, &streamp->narrator, streamp->narrator_base);
 
-  // save the expression for late binding
+  // save filter expressions for late binding
+  fatal(list_createx, &streamp->exprs, wfree, 0, 0);
+
   if(def->expr)
-    fatal(ixstrdup, &streamp->expr, def->expr);
+  {
+    fatal(ixstrdup, &expr, def->expr);
+    fatal(list_push, streamp->exprs, expr);
+    expr = 0;
+  }
+
+  if(def->exprs)
+  {
+    char ** exprs = def->exprs;
+    while(*exprs)
+    {
+      fatal(ixstrdup, &expr, *exprs);
+      fatal(list_push, streamp->exprs, expr);
+      expr = 0;
+      exprs++;
+    }
+  }
 
 finally:
   filter_free(filterp);
+  wfree(expr);
 coda;
 }
 
@@ -281,16 +301,15 @@ static xapi __attribute__((nonnull)) stream_finalize(stream * const restrict str
   enter;
 
   filter * filterp = 0;
+  int x;
 
   // parse and attach to just this stream
-  if(streamp->expr)
+  for(x = 0; x < streamp->exprs->l; x++)
   {
-    fatal(filter_parses, streamp->expr, &filterp, 0);
+    fatal(filter_parses, list_get(streamp->exprs, x), &filterp, 0);
 
     if(!filterp)
-    {
-      fails(LOGGER_BADFILTER, "expr", streamp->expr);
-    }
+      fails(LOGGER_BADFILTER, "expr", list_get(streamp->exprs, x));
 
     fatal(stream_filter_push, streamp, filterp);
     filterp = 0;
@@ -308,11 +327,11 @@ static xapi __attribute__((nonnull)) stream_xdestroy(stream * const restrict str
   if(streamp)
   {
     wfree(streamp->name);
-    wfree(streamp->expr);
 
     fatal(list_xfree, streamp->filters);
     fatal(narrator_xfree, streamp->narrator);
     fatal(narrator_xfree, streamp->narrator_owned);
+    fatal(list_xfree, streamp->exprs);
   }
 
   finally : coda;
