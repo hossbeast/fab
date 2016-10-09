@@ -55,6 +55,12 @@ uint32_t attr_combine(uint32_t A, uint32_t B)
     A |= (B & DATESTAMP_OPT);
   }
 
+  if(B & PROCESSID_OPT)
+  {
+    A &= ~PROCESSID_OPT;
+    A |= (B & PROCESSID_OPT);
+  }
+
   return A;
 }
 
@@ -107,6 +113,15 @@ xapi attr_say(uint32_t attr, narrator * const restrict N)
     wrote = 1;
 
     says(DATESTAMP_VALUE(attr));
+  }
+
+  if(attr & PROCESSID_OPT)
+  {
+    if(wrote)
+      sayc(',');
+    wrote = 1;
+
+    says(PROCESSID_VALUE(attr));
   }
 
   finally : coda;

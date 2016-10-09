@@ -28,6 +28,7 @@
 //
 
 APIDATA int g_logger_default_stderr;
+APIDATA char * g_logger_process_name;
 
 API xapi logger_finalize()
 {

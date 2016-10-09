@@ -52,7 +52,9 @@ struct narrator; // libnarrator
   LOGGER_ATTR_DEF(DISCOVERY_OFF , 0x00000100 , x , y)  /* (default) */                            \
   LOGGER_ATTR_DEF(DISCOVERY     , 0x00000200 , x , y)  /* include discovery info */               \
   LOGGER_ATTR_DEF(DATESTAMP_OFF , 0x00000400 , x , y)  /* (default) */                            \
-  LOGGER_ATTR_DEF(DATESTAMP     , 0x00000800 , x , y)  /* include timestamp */
+  LOGGER_ATTR_DEF(DATESTAMP     , 0x00000800 , x , y)  /* include timestamp */                    \
+  LOGGER_ATTR_DEF(PROCESSID_OFF , 0x00001000 , x , y)  /* (default) */                            \
+  LOGGER_ATTR_DEF(PROCESSID     , 0x00002000 , x , y)  /* include process identifier */
 
 enum {
 #define LOGGER_ATTR_DEF(a, b, x, y) L_ ## a = UINT32_C(b),
@@ -74,6 +76,12 @@ LOGGER_ATTR_TABLE(0, 0)
 //  an application using liblogger should export this and set it to nonzero
 //
 int g_logger_default_stderr;
+
+/// g_logger_process_name
+//
+//
+//
+char * g_logger_process_name;
 
 /// logger_arguments_setup
 //

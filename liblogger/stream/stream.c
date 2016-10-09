@@ -166,6 +166,16 @@ static xapi __attribute__((nonnull)) stream_write(stream * const restrict stream
     prev = 1;
   }
 
+  if((attr & PROCESSID_OPT) == L_PROCESSID)
+  {
+    if(prev)
+      says(" ");
+    sayf("%5ld/%-5ld", getpgid(0), getpid());
+    if(g_logger_process_name)
+      sayf("/%4s", g_logger_process_name);
+    prev = 1;
+  }
+
   if(prev)
     says(" ");
 
