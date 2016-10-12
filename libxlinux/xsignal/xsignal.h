@@ -70,4 +70,12 @@ xapi xsigprocmask(int how, const sigset_t * set, sigset_t * oldset);
 xapi uxsigsuspend(const sigset_t * mask)
   __attribute__((nonnull));
 
+xapi xsigwaitinfo(const sigset_t * mask, siginfo_t * info)
+  __attribute__((nonnull));
+
+xapi uxsigwaitinfo(const sigset_t * mask, siginfo_t * info)
+  __attribute__((nonnull));
+
+xapi xsignal(int signum, sighandler_t handler);
+
 #endif

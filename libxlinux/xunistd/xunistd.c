@@ -152,7 +152,8 @@ API xapi xclose(int fd)
 {
   enter;
 
-  tfatalize(perrtab_KERNEL, errno, close, fd);
+  if(fd != -1)
+    tfatalize(perrtab_KERNEL, errno, close, fd);
 
 finally:
   xapi_infof("fd", "%d", fd);
@@ -163,11 +164,8 @@ API xapi ixclose(int * fd)
 {
   enter;
 
-  if(*fd != -1)
-  {
-    tfatalize(perrtab_KERNEL, errno, close, *fd);
-    *fd = -1;
-  }
+  fatal(xclose, *fd);
+  *fd = -1;
 
 finally:
   xapi_infof("fd", "%d", *fd);

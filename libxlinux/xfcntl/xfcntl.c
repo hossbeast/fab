@@ -21,6 +21,8 @@
 #include "xfcntl/xfcntl.h"
 #include "errtab/KERNEL.errtab.h"
 
+#include "fmt.internal.h"
+
 API xapi xopen(const char * path, int flags, int * const fd)
 {
   enter;
@@ -34,6 +36,32 @@ API xapi xopen(const char * path, int flags, int * const fd)
 finally:
   xapi_infof("path", "%s", path);
 coda;
+}
+
+API xapi xopenf(const char * path_fmt, int flags, int * const fd, ...)
+{
+  enter;
+
+  va_list va;
+  va_start(va, fd);
+
+  fatal(xopenvf, path_fmt, flags, fd, va);
+
+finally:
+  va_end(va);
+coda;
+}
+
+API xapi xopenvf(const char * path_fmt, int flags, int * const fd, va_list va)
+{
+  enter;
+
+  char path[512];
+
+  fatal(fmt_apply, path, sizeof(path), path_fmt, va);
+  fatal(xopen, path, flags, fd);
+
+  finally : coda;
 }
 
 API xapi uxopen(const char * path, int flags, int * const fd)

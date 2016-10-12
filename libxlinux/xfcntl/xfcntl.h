@@ -21,6 +21,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+#include <stdarg.h>
 
 #include "xapi.h"
 
@@ -37,6 +38,13 @@ xapi xopen(const char * path, int flags, int * const fd);
 //  proxy for open that only fails when errno != ENOENT
 //
 xapi uxopen(const char * path, int flags, int * const fd);
+
+xapi xopenf(const char * path_fmt, int flags, int * const fd, ...)
+  __attribute__((nonnull(1)));
+
+xapi xopenvf(const char * path_fmt, int flags, int * const fd, va_list va)
+  __attribute__((nonnull(1)));
+
 
 /// xopen_mode
 //

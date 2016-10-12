@@ -17,6 +17,7 @@
 
 #include <errno.h>
 #include <signal.h>
+#include <string.h>
 
 #include "internal.h"
 #include "xsignal/xsignal.h"
@@ -87,4 +88,46 @@ API xapi uxsigsuspend(const sigset_t * mask)
   }
 
   finally : coda;
+}
+
+API xapi xsigwaitinfo(const sigset_t * mask, siginfo_t * info)
+{
+  enter;
+
+  tfatalize(perrtab_KERNEL, errno, sigwaitinfo, mask, info);
+
+  finally : coda;
+}
+
+API xapi uxsigwaitinfo(const sigset_t * mask, siginfo_t * info)
+{
+  enter;
+
+  if(sigwaitinfo(mask, info))
+  {
+    if(errno == EINTR)
+    {
+      memset(info, 0, sizeof(*info));
+    }
+    else
+    {
+      tfail(perrtab_KERNEL, errno);
+    }
+  }
+
+  finally : coda;
+}
+
+API xapi xsignal(int signum, sighandler_t handler)
+{
+  enter;
+
+  if(signal(signum, handler) == SIG_ERR)
+  {
+    tfail(perrtab_KERNEL, errno);
+  }
+
+finally:
+  xapi_infof("sig", "%d", signum);
+coda;
 }
