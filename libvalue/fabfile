@@ -25,7 +25,7 @@
 $basename     = [ value ]
 $libname_eapi = [ lib $basename .so ~ j ]
 $libname_xapi = [ lib $basename -xapi .so ~ j ]
-$libdeps_dirs = [ $dlibxapi $dlibxlinux $dlibnarrator $dlibvalyria $dlibyyutil $dlibxunit ]
+$libdeps_dirs = [ $dlibxapi $dlibxlinux $dlibnarrator $dlibvalyria $dlibyyutil $dlibxunit $dliblogger ]
 $copts        = [ -fPIC [ $* ~ lsr c -d s/^/-I ] [ $libdeps_dirs ~ s/^/-I ] ]
 
 # cflags variants
@@ -38,12 +38,12 @@ $cflags_xapi_devel = [ $cflags_xapi_devel $copts ]
 $cflags_xapi_xunit = [ $cflags_xapi_xunit $copts -fPIC ]
 
 $lopts              = [ -shared [ -Wl,--version-script=$*/exports ~ j ] ]
-$lflags_eapi_final  = [ $lopts $libxlinux_eapi_final $libnarrator_eapi_final $libvalyria_eapi_final $libyyutil_eapi_final [ -Wl,-soname,libvalue.so ~ j ] ]
-$lflags_eapi_debug  = [ $lopts $libxlinux_eapi_debug $libnarrator_eapi_debug $libvalyria_eapi_debug $libyyutil_eapi_debug [ -Wl,-soname,libvalue.so ~ j ] ]
-$lflags_eapi_devel  = [ $lopts $libxlinux_eapi_devel $libnarrator_eapi_devel $libvalyria_eapi_devel $libyyutil_eapi_devel [ -Wl,-soname,libvalue-devel.so ~ j ] ]
-$lflags_xapi_final  = [ $lopts $libxapi_xapi_final $libxlinux_xapi_final $libnarrator_xapi_final $libvalyria_xapi_final $libyyutil_xapi_final [ -Wl,-soname,libvalue-xapi.so ~ j ] ]
-$lflags_xapi_debug  = [ $lopts $libxapi_xapi_debug $libxlinux_xapi_debug $libnarrator_xapi_debug $libvalyria_xapi_debug $libyyutil_xapi_debug [ -Wl,-soname,libvalue-xapi.so ~ j ] ]
-$lflags_xapi_devel  = [ $lopts $libxapi_xapi_devel $libxlinux_xapi_devel $libnarrator_xapi_devel $libvalyria_xapi_devel $libyyutil_xapi_devel [ -Wl,-soname,libvalue-xapi-devel.so ~ j ] ]
+$lflags_eapi_final  = [ $lopts $libxlinux_eapi_final $libnarrator_eapi_final $libvalyria_eapi_final $libyyutil_eapi_final $liblogger_eapi_final [ -Wl,-soname,libvalue.so ~ j ] ]
+$lflags_eapi_debug  = [ $lopts $libxlinux_eapi_debug $libnarrator_eapi_debug $libvalyria_eapi_debug $libyyutil_eapi_debug $liblogger_eapi_debug [ -Wl,-soname,libvalue.so ~ j ] ]
+$lflags_eapi_devel  = [ $lopts $libxlinux_eapi_devel $libnarrator_eapi_devel $libvalyria_eapi_devel $libyyutil_eapi_devel $liblogger_eapi_devel [ -Wl,-soname,libvalue-devel.so ~ j ] ]
+$lflags_xapi_final  = [ $lopts $libxapi_xapi_final $libxlinux_xapi_final $libnarrator_xapi_final $libvalyria_xapi_final $libyyutil_xapi_final $liblogger_xapi_final [ -Wl,-soname,libvalue-xapi.so ~ j ] ]
+$lflags_xapi_debug  = [ $lopts $libxapi_xapi_debug $libxlinux_xapi_debug $libnarrator_xapi_debug $libvalyria_xapi_debug $libyyutil_xapi_debug $liblogger_xapi_debug [ -Wl,-soname,libvalue-xapi.so ~ j ] ]
+$lflags_xapi_devel  = [ $lopts $libxapi_xapi_devel $libxlinux_xapi_devel $libnarrator_xapi_devel $libvalyria_xapi_devel $libyyutil_xapi_devel $liblogger_xapi_devel [ -Wl,-soname,libvalue-xapi-devel.so ~ j ] ]
 
 # source files, filter out tests
 +[@std.c]($dext = [ eapi.final.pic.o ]; $rdirs = $*; $cc; $cflags = $cflags_eapi_final)
@@ -181,16 +181,22 @@ $lflags_xapi_devel  = [ $lopts $libxapi_xapi_devel $libxlinux_xapi_devel $libnar
 
 [ @test ] : [ $* ~ lsr l/test\/test_ sx/c/xapi.xunit.so sy ]
 {
-  [ $xunit_valgrind_runner ] [ $xunit_xapi_devel ] [
-  ] [ $libxlinux_xapi_devel $libvalyria_xapi_devel $libyyutil_xapi_devel $libvalue_xapi_devel ~ fi ] [
-  ] [ $liblogger_xapi_devel $libnarrator_xapi_devel $liblorien_xapi_devel ~ fi ] [
-  ] [ $@ ~ rx/ineed fi ]
+  (
+    [ $xunit_valgrind_runner ] [ $xunit_xapi_devel ] [
+    ] [ $libxlinux_xapi_devel $libvalyria_xapi_devel $libyyutil_xapi_devel $libvalue_xapi_devel ~ fi ] [
+    ] [ $liblogger_xapi_devel $libnarrator_xapi_devel $liblorien_xapi_devel ~ fi ] [
+    ] [ $@ ~ rx/ineed fi ] +TEST +UNIT +SUITE
+  ) | tee /dev/fd/501
+  > exit ${PIPESTATUS[0]}
 }
 
 [ @test.fast ] : [ $* ~ lsr l/test\/test_ sx/c/xapi.xunit.so sy ]
 {
-  [ $xunit_xapi_devel ] [
-  ] [ $libxlinux_xapi_devel $libvalyria_xapi_devel $libyyutil_xapi_devel $libvalue_xapi_devel ~ fi ] [
-  ] [ $liblogger_xapi_devel $libnarrator_xapi_devel $liblorien_xapi_devel ~ fi ] [
-  ] [ $@ ~ rx/ineed fi ]
+  (
+    [ $xunit_xapi_devel ] [
+    ] [ $libxlinux_xapi_devel $libvalyria_xapi_devel $libyyutil_xapi_devel $libvalue_xapi_devel ~ fi ] [
+    ] [ $liblogger_xapi_devel $libnarrator_xapi_devel $liblorien_xapi_devel ~ fi ] [
+    ] [ $@ ~ rx/ineed fi ]
+  ) | tee /dev/fd/501
+  > exit ${PIPESTATUS[0]}
 }

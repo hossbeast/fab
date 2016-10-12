@@ -90,6 +90,22 @@ xapi store_boolean(value_store * const restrict stor, value ** rv)
   finally : coda;
 }
 
+xapi store_integer(value_store * const restrict stor, value ** rv)
+{
+  enter;
+
+  value * val = 0;
+
+  fatal(xmalloc, &val, sizeof(*val));
+  val->type = VALUE_TYPE_INTEGER;
+
+  fatal(list_push, stor->values, val);
+  *rv = val;
+  val = 0;
+
+  finally : coda;
+}
+
 xapi store_map(value_store * const restrict stor, value ** rv)
 {
   enter;
@@ -133,7 +149,7 @@ xapi store_list(value_store * const restrict stor, value ** rv)
   fatal(xmalloc, &val, sizeof(*val));
   fatal(list_create, &li);
 
-  val->l = li;
+  val->els = li;
   val->type = VALUE_TYPE_LIST;
 
   fatal(list_push, stor->lists, li);

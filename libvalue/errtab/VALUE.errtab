@@ -16,4 +16,3 @@
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
 1 DIFFTYPE  cant merge values of differing type
-2 BADTYPE   merge trees must have aggregate type

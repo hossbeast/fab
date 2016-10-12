@@ -22,10 +22,16 @@
 
 struct value; // value.h
 
+#define MERGE_OPT   UINT16_C(0x000F)
+
+// get the name of a modifier or option from its value
+#define VALUE_ATTR_DEF(a, b, x, m) ((x) & (m)) == (b) ? "VALUE_" #a :
+#define MERGE_VALUE(x) VALUE_ATTR_TABLE(x, MERGE_OPT) "NONE"
+
 /// value_merge
 //
 // SUMMARY
-//  combine two value trees
+//  combine two value trees from the same value_store
 //
 // PARAMETERS
 //  dst - destination tree

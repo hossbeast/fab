@@ -49,6 +49,13 @@ xapi store_float(value_store * const restrict stor, value ** rv)
 xapi store_boolean(value_store * const restrict stor, value ** rv)
   __attribute__((nonnull));
 
+/// store_integer
+//
+//
+//
+xapi store_integer(value_store * const restrict stor, value ** rv)
+  __attribute__((nonnull));
+
 /// store_map
 //
 //

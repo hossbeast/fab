@@ -15,6 +15,8 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
+#include <inttypes.h>
+
 #include "valyria/list.h"
 #include "valyria/pstring.h"
 #include "narrator.h"
@@ -35,10 +37,10 @@ static xapi __attribute__((nonnull)) say_value_verbose(const value * const restr
   if(val->type == VALUE_TYPE_LIST)
   {
     sayf("%s [", VALUE_TYPE_STRING(val->type));
-    for(x = 0; x < val->l->l; x++)
+    for(x = 0; x < val->els->l; x++)
     {
       sayf("\n%*s", (level + 1) * 2, "");
-      fatal(say_value_verbose, list_get(val->l, x), level + 1, N);
+      fatal(say_value_verbose, list_get(val->els, x), level + 1, N);
     }
     sayf("\n%*s]", level * 2, "");
   }
@@ -82,10 +84,10 @@ static xapi __attribute__((nonnull)) say_value_canon(const value * const restric
   if(val->type == VALUE_TYPE_LIST)
   {
     says("[");
-    for(x = 0; x < val->l->l; x++)
+    for(x = 0; x < val->els->l; x++)
     {
       sayf("\n%*s", (level + 1) * 2, "");
-      fatal(say_value_canon, list_get(val->l, x), level + 1, N);
+      fatal(say_value_canon, list_get(val->els, x), level + 1, N);
     }
     sayf("\n%*s]", level * 2, "");
   }
@@ -97,7 +99,7 @@ static xapi __attribute__((nonnull)) say_value_canon(const value * const restric
     {
       sayf("\n%*s", (level + 1) * 2, "");
       fatal(say_value_canon, list_get(val->keys, x), level + 1, N);
-      sayf(" : ");
+      sayf(" ");
       fatal(say_value_canon, list_get(val->vals, x), level + 1, N);
     }
     sayf("\n%*s}", level * 2, "");
@@ -110,12 +112,17 @@ static xapi __attribute__((nonnull)) say_value_canon(const value * const restric
 
   else if(val->type == VALUE_TYPE_FLOAT)
   {
-    sayf("%f", val->f);
+    sayf("%.2f", val->f);
   }
 
   else if(val->type == VALUE_TYPE_BOOLEAN)
   {
     sayf("%s", val->b ? "true" : "false");
+  }
+
+  else if(val->type == VALUE_TYPE_INTEGER)
+  {
+    sayf("%"PRId64, val->i);
   }
 
   finally : coda;
@@ -171,20 +178,23 @@ API int value_cmp(const value * const restrict A, const value * const restrict B
     return pscmp(A->s, B->s);
 
   else if(A->type == VALUE_TYPE_FLOAT)
-    return (int)(A->f - B->f);
+    return A->f > B->f ? 1 : A->f < B->f ? -1 : 0;
 
   else if(A->type == VALUE_TYPE_BOOLEAN)
     return (int)(A->b - B->b);
 
+  else if(A->type == VALUE_TYPE_INTEGER)
+    return A->i > B->i ? 1 : A->i < B->i ? -1 : 0;
+
   else if(A->type == VALUE_TYPE_LIST)
   {
-    if((d = A->l->l - B->l->l))
+    if((d = A->els->l - B->els->l))
       return d;
 
     int x;
-    for(x = 0; x < A->l->l; x++)
+    for(x = 0; x < A->els->l; x++)
     {
-      if((d = value_cmp(list_get(A->l, x), list_get(B->l, x))))
+      if((d = value_cmp(list_get(A->els, x), list_get(B->els, x))))
         return d;
     }
   }

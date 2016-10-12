@@ -22,9 +22,11 @@
 #include "yyutil/load.h"
 
 #include "xapi/SYS.errtab.h"
+#include "xapi/errtab.h"
 
 #include "internal.h"
 #include "load.internal.h"
+#include "VALUE.errtab.h"
 
 static int handles;
 
@@ -41,6 +43,9 @@ API xapi value_load()
     fatal(yyutil_load);
 
     // modules
+#if XAPI_STACKTRACE
+    fatal(xapi_errtab_register, perrtab_VALUE);
+#endif
   }
   handles++;
 
@@ -54,7 +59,6 @@ API xapi value_unload()
   if(--handles == 0)
   {
     // modules
-
     // dependencies
     fatal(xlinux_unload);
     fatal(valyria_unload);

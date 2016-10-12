@@ -26,41 +26,77 @@ struct value;
 #include "VALUE.errtab.h"
 #include "merge.internal.h"
 
-static xapi merge(value * const restrict dst, const value * const restrict src)
+#include "logger.h"
+#include "narrator.h"
+
+static xapi merge(value * const restrict dst, const value * const restrict src, uint16_t attr);
+static xapi merge(value * const restrict dst, const value * const restrict src, uint16_t attr)
 {
   enter;
 
-  if(dst->type == VALUE_TYPE_MAP)
+  if(src->type != dst->type)
+    fail(VALUE_DIFFTYPE);
+
+  else if(dst->type == VALUE_TYPE_MAP)
   {
-    int x = dst->keys->l - 1;
-    int y = src->keys->l - 1;
-    for(; x >= 0 && y >= 0;)
+    if((attr & MERGE_OPT) == VALUE_MERGE_SET)
     {
-      value * A = list_get(src->keys, y);
-      value * B = list_get(dst->keys, x);
-      int d = pscmp(A->s, B->s);
-      if(d < 0)
+      dst->keys = src->keys;
+      dst->vals = src->vals;
+    }
+    else // VALUE_MERGE_ADD
+    {
+      int x = dst->keys->l - 1;
+      int y = src->keys->l - 1;
+      for(; x >= 0 && y >= 0;)
       {
-        x--;
+        value * src_key = list_get(src->keys, y);
+        value * dst_key = list_get(dst->keys, x);
+        int d = pscmp(src_key->s, dst_key->s);
+        if(d < 0)
+        {
+          x--;
+        }
+        else if(d > 0)
+        {
+          fatal(list_replicate, dst->keys, x + 1, src->keys, y, 1);
+          fatal(list_replicate, dst->vals, x + 1, src->vals, y, 1);
+          y--;
+        }
+        else
+        {
+          uint16_t dt = ((value*)list_get(dst->vals, x))->type;
+          uint16_t st = ((value*)list_get(src->vals, y))->type;
+
+          if((dt & 0xF0) ^ (st & 0xF0))
+            fail(VALUE_DIFFTYPE);
+          else if(dt & 0xF00)
+            fatal(list_splice, dst->vals, x, src->vals, y, 1);
+          else
+            fatal(merge, list_get(dst->vals, x), list_get(src->vals, y), src_key->attr);
+
+          x--;
+          y--;
+        }
       }
-      else if(d > 0)
+
+      if(x == -1 && y >= 0)
       {
-        fatal(list_replicate, dst->keys, x + 1, src->keys, y, 1);
-        fatal(list_replicate, dst->vals, x + 1, src->vals, y, 1);
-        y--;
-      }
-      else
-      {
-        fatal(list_splice, dst->vals, x, src->vals, y, 1);
-        x--;
-        y--;
+        fatal(list_replicate, dst->keys, 0, src->keys, 0, y + 1);
+        fatal(list_replicate, dst->vals, 0, src->vals, 0, y + 1);
       }
     }
-
-    if(x == -1 && y >= 0)
+  }
+  else if(dst->type == VALUE_TYPE_LIST)
+  {
+    if((attr & MERGE_OPT) == VALUE_MERGE_SET)
     {
-      fatal(list_replicate, dst->keys, 0, src->keys, 0, y + 1);
-      fatal(list_replicate, dst->vals, 0, src->vals, 0, y + 1);
+      fatal(list_splice, dst->els, 0, src->els, 0, src->els->l);
+      fatal(list_truncate, dst->els, src->els->l);
+    }
+    else // VALUE_MERGE_ADD
+    {
+      fatal(list_replicate, dst->els, dst->els->l, src->els, 0, src->els->l);
     }
   }
 
@@ -71,13 +107,7 @@ API xapi value_merge(value * const restrict dst, const value * const restrict sr
 {
   enter;
 
-  if(src->type != dst->type)
-    fail(VALUE_DIFFTYPE);
-
-  if(src->type != VALUE_TYPE_MAP)
-    fail(VALUE_BADTYPE);
-
-  fatal(merge, dst, src);
+  fatal(merge, dst, src, 0);
 
   finally : coda;
 }

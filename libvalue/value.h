@@ -29,23 +29,37 @@ struct yyu_location;
 struct value_store;
 struct narrator;
 
-#define VALUE_TYPE_TABLE(x)       \
-  /* aggregates */                \
-  VALUE_TYPE(LIST   , 1 , x)      \
-  VALUE_TYPE(MAP    , 2 , x)      \
-  /* scalars */                   \
-  VALUE_TYPE(STRING , 3 , x)      \
-  VALUE_TYPE(FLOAT  , 4 , x)      \
-  VALUE_TYPE(BOOLEAN, 5 , x)
+#define VALUE_TYPE_TABLE(x)           \
+  /* aggregates */                    \
+  VALUE_TYPE(LIST   , 0x010 , x)      \
+  VALUE_TYPE(MAP    , 0x020 , x)      \
+  /* scalars */                       \
+  VALUE_TYPE(STRING , 0x100 , x)      \
+  VALUE_TYPE(FLOAT  , 0x201 , x)      \
+  VALUE_TYPE(BOOLEAN, 0x300 , x)      \
+  VALUE_TYPE(INTEGER, 0x401 , x)
 
 enum {
-#define VALUE_TYPE(a, b, x) VALUE_TYPE_ ## a = (b),
+#define VALUE_TYPE(a, b, x) VALUE_TYPE_ ## a = UINT16_C(b),
 VALUE_TYPE_TABLE(0)
 #undef VALUE_TYPE
 };
 
 #define VALUE_TYPE(a, b, x) (x) == b ? "VALUE_TYPE_" #a :
 #define VALUE_TYPE_STRING(x) VALUE_TYPE_TABLE(x) "UNKNOWN"
+
+/*
+ * options and modifiers
+ */
+#define VALUE_ATTR_TABLE(x, y)                                                  \
+  VALUE_ATTR_DEF(MERGE_ADD     , 0x0000 , x , y)  /* (default) add elements */  \
+  VALUE_ATTR_DEF(MERGE_SET     , 0x0001 , x , y)  /* set elements */            \
+
+enum {
+#define VALUE_ATTR_DEF(a, b, x, y) VALUE_ ## a = UINT16_C(b),
+VALUE_ATTR_TABLE(0, 0)
+#undef VALUE_ATTR_DEF
+};
 
 typedef struct value_location {
   int f_lin;
@@ -59,18 +73,20 @@ typedef struct value_location {
 } value_location;
 
 typedef struct value {
-  uint8_t type;           // one of VALUE_TYPE_*
+  uint16_t type;           // one of VALUE_TYPE_*
   value_location loc;
+  uint16_t attr;           // bitwise combo of VALUE_*
 
   union {
-    struct list * l;
-    struct {
+    struct list * els;      // list
+    struct {                // map
       struct list * keys;
       struct list * vals;
     };
-    struct pstring * s;
-    float f;
-    int b;
+    struct pstring * s;     // string
+    double f;               // float
+    uint8_t b;              // bool
+    int64_t i;              // integer
   };
 } value;
 
