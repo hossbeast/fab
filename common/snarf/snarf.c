@@ -22,15 +22,12 @@
 
 #include "snarf.h"
 
-xapi snarf(const char * const restrict path, char ** const restrict dst, size_t * const restrict dstlp)
+static xapi snarf(int fd, char ** const restrict dst, size_t * restrict dstlp)
 {
   enter;
 
-  int fd = -1;
   size_t dstl = 0;
   size_t dsta = 0;
-
-  fatal(xopen, path, O_RDONLY, &fd);
 
   do
   {
@@ -50,6 +47,31 @@ xapi snarf(const char * const restrict path, char ** const restrict dst, size_t 
 
   if(dstlp)
     *dstlp = dstl;
+
+  finally : coda;
+}
+
+xapi usnarfs(const char * const restrict path, char ** const restrict dst, size_t * const restrict dstlp)
+{
+  enter;
+
+  int fd = -1;
+  fatal(uxopen, path, O_RDONLY, &fd);
+  if(fd != -1)
+    fatal(snarf, fd, dst, dstlp);
+
+finally:
+  fatal(ixclose, &fd);
+coda;
+}
+
+xapi snarfs(const char * const restrict path, char ** const restrict dst, size_t * const restrict dstlp)
+{
+  enter;
+
+  int fd = -1;
+  fatal(xopen, path, O_RDONLY, &fd);
+  fatal(snarf, fd, dst, dstlp);
 
 finally:
   fatal(ixclose, &fd);

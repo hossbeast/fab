@@ -125,7 +125,7 @@ API xapi logger_arguments_setup(char ** restrict envp)
 #endif
 
   // read into argvs - single string containing entire cmdline
-  fatal(snarf, "/proc/self/cmdline", &argvs, &argvsl);
+  fatal(snarfs, "/proc/self/cmdline", &argvs, &argvsl);
 
   // locate binary and interpreter, if any
   for(x = -1; x < (int)argvsl; x = y)

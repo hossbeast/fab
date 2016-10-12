@@ -88,7 +88,7 @@ xapi config_parser_test_entry(config_parser_test * test)
   fatal(config_parser_create, &parser);
 
   // load the config text
-  fatal(snarf, test->config_path, &text, &len);
+  fatal(snarfs, test->config_path, &text, &len);
 
   // parse
   value * root = 0;

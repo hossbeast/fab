@@ -83,19 +83,19 @@ xapi config_load()
   fatal(value_store_create, &store);
 
   // system
-  fatal(snarf, SYSTEM_CONFIG_PATH, &text, &textl);
+  fatal(snarfs, SYSTEM_CONFIG_PATH, &text, &textl);
   fatal(config_parser_parse, &parser, &store, text, textl, &cfg);
   eff = cfg;
 
   // user
   ifree(&text);
-  fatal(snarf, USER_CONFIG_PATH, &text, &textl);
+  fatal(snarfs, USER_CONFIG_PATH, &text, &textl);
   fatal(config_parser_parse, &parser, &store, text, textl, &cfg);
   fatal(apply, eff, cfg);
 
   // project
   ifree(&text);
-  fatal(snarf, PROJECT_CONFIG_PATH, &text, &textl);
+  fatal(snarfs, PROJECT_CONFIG_PATH, &text, &textl);
   fatal(config_parser_parse, &parser, &store, text, textl, &cfg);
   fatal(apply, eff, cfg);
 
