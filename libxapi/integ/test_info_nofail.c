@@ -63,7 +63,7 @@ static xapi alpha()
 {
   enter;
 
-  // beta calls delta, which fails
+  // beta fails
   fatal(beta);
 
 finally :
@@ -96,10 +96,10 @@ finally:
   assertf(strstr(space, "epsilon") == 0, "expected no epsilon, actual trace\n**\n%.*s\n**\n", (int)z, space);
   assertf(strstr(space, "delta") == 0, "expected no delta, actual trace\n**\n%.*s\n**\n", (int)z, space);
 
-  assertf(strstr(space, "beta(beta=beta"), "expected kvp beta=beta, actual trace\n**\n%.*s\n**\n", (int)z, space);
-  assertf(strstr(space, "alpha1=alpha1"), "expected kvp alpha1=alpha1, actual trace\n**\n%.*s\n**\n", (int)z, space);
-  assertf(strstr(space, "alpha2=alpha2"), "expected kvp alpha2=alpha2, actual trace\n**\n%.*s\n**\n", (int)z, space);
-  assertf(strstr(space, "zeta(zeta=zeta"), "expected kvp zeta=zeta, actual trace\n**\n%.*s\n**\n", (int)z, space);
+  assertf(sameline(space, "ERROR_ONE", "beta=beta"), "expected kvp beta=beta, actual trace\n**\n%.*s\n**\n", (int)z, space);
+  assertf(sameline(space, "ERROR_ONE", "alpha1=alpha1"), "expected kvp alpha1=alpha1, actual trace\n**\n%.*s\n**\n", (int)z, space);
+  assertf(sameline(space, "ERROR_ONE", "alpha2=alpha2"), "expected kvp alpha2=alpha2, actual trace\n**\n%.*s\n**\n", (int)z, space);
+  assertf(sameline(space, "ERROR_ONE", "zeta=zeta"), "expected kvp zeta=zeta, actual trace\n**\n%.*s\n**\n", (int)z, space);
 #endif
 coda;
 }

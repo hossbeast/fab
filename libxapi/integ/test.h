@@ -47,6 +47,28 @@ xapi-enabled function
     }                                                      \
   } while(0)
 
+static inline int sameline(const char * restrict s, const char * restrict a, const char * restrict b)
+{
+  char * as = strstr(s, a);
+  size_t al = strlen(a);
+  char * bs = strstr(s, b);
+
+  if(!as || !bs)
+    return 0;
+
+  if(bs <= (as + al))
+    return 0;
+
+  char * x;
+  for(x = as + al; x != bs; x++)
+  {
+    if(*x == '\n')
+      return 0;
+  }
+
+  return 1;
+}
+
 #if XAPI_STACKTRACE
 #define assert_exit(expected, actual)                                   \
   assertf(                                                              \

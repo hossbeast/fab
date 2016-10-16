@@ -47,7 +47,7 @@ $lflags_xapi_devel  = [ $lflags_xapi_devel $lflags [ "-Wl,-soname," libxapi-xapi
 ## dependencies
 ##
 
-[ @all ] : [ @release @test ]
+[ @all ] : [ @release @test.verbose ]
 [ @release ] : [ @release.xapi ]
 [ @release.xapi ] : [ @final.xapi @debug.xapi @devel.xapi ]
 [ @final.xapi ] : [ $libxapi_xapi_final ]

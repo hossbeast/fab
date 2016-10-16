@@ -39,6 +39,23 @@
 // static
 //
 
+/// calltree_locate_substack
+//
+// SUMMARY
+//  returns the greatest parent index within the window, or -1
+//
+static int calltree_locate_substack(calltree * const restrict ct, int a, int b)
+{
+  int x;
+  for(x = b; x > a; x--)
+  {
+    if(ct->frames.v[x].parent_index > a)
+      return x;
+  }
+
+  return -1;
+}
+
 static size_t error_trace(char * const dst, const size_t sz, xapi e)
 {
   size_t z = 0;
@@ -102,6 +119,82 @@ static size_t error_trace(char * const dst, const size_t sz, xapi e)
   return z;
 }
 
+static size_t infos_trace(char * const dst, const size_t sz, calltree * const restrict ct, int a1, int b1, int a2, int b2)
+{
+  info * nfo = 0;
+
+  size_t z = 0;
+  int x;
+  for(x = a1; x <= b2; x++)
+  {
+    if(x == b1)
+      x = a2;
+
+    int y;
+    for(y = 0; y < ct->frames.v[x].infos.l; y++)
+    {
+      // determine whether an info by this name has already been used
+      int xx;
+      for(xx = x + 1; xx < ct->frames.l; xx++)
+      {
+        int yy;
+        for(yy = 0; yy < ct->frames.v[xx].infos.l; yy++)
+        {
+          if(estrcmp(
+              ct->frames.v[x].infos.v[y].ks
+            , ct->frames.v[x].infos.v[y].kl
+            , ct->frames.v[xx].infos.v[yy].ks
+            , ct->frames.v[xx].infos.v[yy].kl
+            , 0) == 0)
+          {
+            break;
+          }
+        }
+        if(yy < ct->frames.v[xx].infos.l)
+        {
+          break;
+        }
+      }
+
+      if(xx == ct->frames.l)
+      {
+        if(nfo)
+        {
+          if(z == 0)
+            SAY(" with ");
+          else
+            SAY(", ");
+
+          SAY("%.*s=%.*s"
+            , (int)nfo->kl
+            , nfo->ks
+            , (int)nfo->vl
+            , nfo->vs
+          );
+        }
+        nfo = &ct->frames.v[x].infos.v[y];
+      }
+    }
+  }
+
+  if(nfo)
+  {
+    if(z == 0)
+      SAY(" with ");
+    else
+      SAY(" and ");
+
+    SAY("%.*s=%.*s"
+      , (int)nfo->kl
+      , nfo->ks
+      , (int)nfo->vl
+      , nfo->vs
+    );
+  }
+
+  return z;
+}
+
 static size_t frame_trace_function(char * const dst, const size_t sz, frame * f)
 {
   size_t z = 0;
@@ -110,6 +203,7 @@ static size_t frame_trace_function(char * const dst, const size_t sz, frame * f)
   return z;
 }
 
+#if 1
 static size_t frame_trace_info(char * const dst, const size_t sz, frame * f)
 {
   size_t z = 0;
@@ -130,6 +224,7 @@ static size_t frame_trace_info(char * const dst, const size_t sz, frame * f)
 
   return z;
 }
+#endif
 
 static size_t frame_trace_location(char * const dst, const size_t sz, frame * f)
 {
@@ -155,12 +250,15 @@ static size_t frame_trace(char * const dst, const size_t sz, frame * f, int loc,
     SAY("in ");
 
   z += frame_trace_function(dst + z, sz - z, f);
+
+#if 1
   if(f->infos.l)
   {
     SAY("(");
     z += frame_trace_info(dst + z, sz - z, f);
     SAY(")");
   }
+#endif
 
   if(loc && f->file)
   {
@@ -169,23 +267,6 @@ static size_t frame_trace(char * const dst, const size_t sz, frame * f, int loc,
   }
 
   return z;
-}
-
-/// calltree_locate_substack
-//
-// SUMMARY
-//  returns the greatest parent index within the window, or -1
-//
-static int calltree_locate_substack(calltree * const restrict ct, int a, int b)
-{
-  int x;
-  for(x = b; x > a; x--)
-  {
-    if(ct->frames.v[x].parent_index > a)
-      return x;
-  }
-
-  return -1;
 }
 
 /// calltree_trace_frames
@@ -219,6 +300,8 @@ static size_t calltree_trace_frames(char * const dst, const size_t sz, calltree 
 
   SAY("%*s", level * 2, "");
   z += error_trace(dst + z, sz - z, ct->frames.v[a].exit);
+  z += infos_trace(dst + z, sz - z, ct, a, b0 + 1, b1 + 1, b);
+
   SAY("\n");
 
   // main sequence
@@ -258,22 +341,22 @@ static size_t calltree_trace(char * const dst, const size_t sz, calltree * const
 
 static size_t calltree_trace_pithy(calltree * const restrict ct, char * const dst, const size_t sz)
 {
-  int x;
   size_t z = 0;
 
-  int skip_at = -1;
-  int skip_to = -1;
+  int b1 = -1;
+  int a2 = -1;
 
+  int x;
   if((x = calltree_locate_substack(ct, 0, ct->frames.l - 1)) != -1)
   {
-    skip_at = ct->frames.v[x].parent_index;
-    skip_to = x + 1;
+    b1 = ct->frames.v[x].parent_index;
+    a2 = x + 1;
   }
 
   z += error_trace(dst + z, sz - z, ct->frames.v[0].exit);
+  z += infos_trace(dst + z, sz - z, ct, 0, b1, a2, ct->frames.l - 1);
 
-  info * nfo = 0;
-
+#if 0
   size_t zt = z;
   for(x = 0; x < ct->frames.l; x++)
   {
@@ -341,6 +424,8 @@ static size_t calltree_trace_pithy(calltree * const restrict ct, char * const ds
       , nfo->vs
     );
   }
+  info * nfo = 0;
+#endif
 
   return z;
 }
