@@ -16,9 +16,6 @@
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
 #include "xapi.h"
-
-struct value;
-#define LIST_ELEMENT_TYPE struct value
 #include "valyria/list.h"
 #include "valyria/pstring.h"
 

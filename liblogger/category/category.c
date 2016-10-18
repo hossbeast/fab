@@ -30,8 +30,6 @@
 #include "log/log.internal.h"
 #include "attr/attr.internal.h"
 #include "logging.internal.h"
-
-#define LIST_ELEMENT_TYPE logger_category
 #include "valyria/list.h"
 
 /// location
@@ -45,8 +43,6 @@ struct location {
   int bxl;    // number of elements in B
 };
 
-typedef struct location location;
-#define DICTIONARY_VALUE_TYPE struct location
 #include "valyria/dictionary.h"
 
 #include "valyria/map.h"

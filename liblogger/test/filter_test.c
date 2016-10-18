@@ -27,8 +27,6 @@
 #include "LOGGER.errtab.h"
 #include "filter.internal.h"
 #include "category.internal.h"
-
-#define LIST_ELEMENT_TYPE filter
 #include "valyria/list.h"
 
 #include "test_util.h"

@@ -26,9 +26,6 @@
 #include "xunit/assert.h"
 #include "narrator.h"
 
-struct value;
-#define LIST_ELEMENT_TYPE struct value
-
 #include "valyria/list.h"
 #include "valyria/pstring.h"
 

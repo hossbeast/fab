@@ -29,15 +29,10 @@ struct graph_test;
 #define TEST_TYPE struct graph_test
 #include "xunit.h"
 #include "xunit/assert.h"
-
-struct item;
-#define DICTIONARY_VALUE_TYPE struct item
 #include "valyria/dictionary.h"
 
 #include "narrator.h"
 #include "narrator/fixed.h"
-
-#define VERTEX_VALUE_TYPE struct item
 #include "internal.h"
 #include "graph.internal.h"
 #include "vertex.internal.h"
@@ -86,7 +81,7 @@ static xapi vertex_say(vertex * const restrict v, narrator * const restrict N)
 {
   enter;
 
-  sayc(vertex_value(v)->label);
+  sayc(((item*)vertex_value(v))->label);
 
   finally : coda;
 }

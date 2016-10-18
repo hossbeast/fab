@@ -25,8 +25,6 @@
 #include "errtab/LOGGER.errtab.h"
 #include "category.internal.h"
 #include "stream.internal.h"
-
-#define ARRAY_ELEMENT_TYPE stream
 #include "valyria/array.h"
 
 #include "valyria/list.h"

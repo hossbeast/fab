@@ -20,8 +20,6 @@
 #include "internal.h"
 #include "object.internal.h"
 #include "errtab/LISTWISE.errtab.h"
-
-#define MAP_VALUE_TYPE listwise_object
 #include "valyria/map.h"
 
 #include "macros.h"
