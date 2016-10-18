@@ -19,6 +19,7 @@
 #define _PARSEINT
 
 #include <inttypes.h>
+#include "xapi.h"
 
 /// parseint
 //
@@ -48,7 +49,20 @@ int parseint(
   , uint8_t           max
   , void*             r
   , int*              rn
-) __attribute__((nonnull(2)));
+)
+  __attribute__((nonnull(2)));
+
+xapi xparseint(
+    const char* const s
+  , char*             f
+  , intmax_t          lo
+  , intmax_t          hi
+  , uint8_t           min
+  , uint8_t           max
+  , void*             r
+  , int*              rn
+)
+  __attribute__((nonnull(2)));
 
 int parseuint(
     const char* const s
@@ -59,7 +73,19 @@ int parseuint(
   , uint8_t           max
   , void*             r
   , int*              rn
-) __attribute__((nonnull(2)));
+)
+  __attribute__((nonnull(2)));
 
+xapi xparseuint(
+    const char* const s
+  , char*             f
+  , uintmax_t         lo
+  , uintmax_t         hi
+  , uint8_t           min
+  , uint8_t           max
+  , void*             r
+  , int*              rn
+)
+  __attribute__((nonnull(2)));
 
 #endif

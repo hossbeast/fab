@@ -20,6 +20,9 @@
 #include <stdio.h>
 #include <errno.h>
 
+#include "xapi.h"
+#include "xapi/SYS.errtab.h"
+
 #include "parseint.h"
 
 int parseint(const char* const s, char* f, intmax_t lo, intmax_t hi, uint8_t min, uint8_t max, void* r, int* rn)
@@ -256,4 +259,24 @@ printf("parseuint('%s', '%s', %"PRIuMAX", %"PRIuMAX", %hhu, %hhu, %p, %p)", s, f
     *rn = tn;
 
   return 0;
+}
+
+xapi xparseint(const char* const s, char* f, intmax_t lo, intmax_t hi, uint8_t min, uint8_t max, void* r, int* rn)
+{
+  enter;
+
+  if(parseint(s, f, lo, hi, min, max, r, rn))
+    fail(SYS_INVALID);
+
+  finally : coda;
+}
+
+xapi xparseuint(const char* const s, char* f, uintmax_t lo, uintmax_t hi, uint8_t min, uint8_t max, void* r, int* rn)
+{
+  enter;
+
+  if(parseuint(s, f, lo, hi, min, max, r, rn))
+    fail(SYS_INVALID);
+
+  finally : coda;
 }
