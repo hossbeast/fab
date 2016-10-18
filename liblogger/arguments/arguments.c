@@ -73,8 +73,12 @@ xapi arguments_finalize()
   int x;
   for(x = 0; x < g_logc; x++)
   {
-    fatal(filter_parses, g_logv[x], &filterp, 0);
-    if(filterp)
+    if(filterp == 0)
+      fatal(xmalloc, &filterp, sizeof(*filterp));
+
+    filter_parses(g_logv[x], filterp);
+
+    if(filterp->v)
     {
       fatal(filter_push, 0, filterp);
       filterp = 0;
@@ -240,9 +244,7 @@ API xapi logger_arguments_setup(char ** restrict envp)
   // process g_argv, splicing out recognized logger-options
   for(x = 0; x < g_argc; x++)
   {
-    size_t used = 0;
-    fatal(filter_parses, g_argv[x], 0, &used);
-    if(used)
+    if(filter_parses(g_argv[x], 0))
     {
       if(g_logc == g_logva)
       {

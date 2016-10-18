@@ -69,9 +69,11 @@ xapi categories_activate(void);
 // PARAMETERS
 //  name     - name of the category to lookup
 //  namel    - name length or 0 for strlen
-//  category - (returns) category definition
 //
-xapi category_byname(const char * const restrict name, size_t namel, logger_category ** const restrict category)
+// RETURNS
+//  category definition, or null if no such category was found
+//
+logger_category * category_byname(const char * const restrict name, size_t namel)
   __attribute__((nonnull));
 
 /// category_byid
@@ -83,8 +85,10 @@ xapi category_byname(const char * const restrict name, size_t namel, logger_cate
 //  id       - id
 //  category - (returns) category definition
 //
-xapi category_byid(uint64_t id, logger_category ** const restrict category)
-  __attribute__((nonnull));
+// RETURNS
+//  category definition, or null if no such category was found
+//
+logger_category * category_byid(uint64_t id);
 
 /// category_report_verbose
 //

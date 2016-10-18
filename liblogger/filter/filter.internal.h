@@ -75,19 +75,57 @@ xapi filter_say(filter * filterp, struct narrator * N)
 // SUMMARY
 //  parse a filter expression
 //
-// REMARKS
-//  ignores leading whitespace
-//
 // PARAMETERS
-//  expr    - filter expression
-//  [exprl] - expr length
-//  [res]   - (returns) if parsing was successful, returns the filter
-//  [off]   - (returns) if parsing was successful, returns number of bytes used
+//  expr         - filter expression
+//  exprl        - expr length
+//  [filterp]    - (returns) if parsing was successful, returns the filter
 //
-xapi filter_parses(const char * const restrict expr, filter ** const restrict res, size_t * const restrict off)
+// RETURNS
+//  true if the expression was valid syntactically
+//
+// REMARKS
+//  to check whether ANY categories were resolved, check filterp->v
+//  it is not possible to check whether ALL categories were resolved
+//
+int filter_parses(const char * const restrict expr, filter * const restrict filterp)
   __attribute__((nonnull(1)));
 
-xapi filter_parsew(const char * const restrict expr, size_t exprl, filter ** const restrict res, size_t * const restrict off)
+int filter_parsew(const char * const restrict expr, size_t exprl, filter * const restrict filterp)
+  __attribute__((nonnull(1)));
+
+/// filter_expr_parse
+//
+// SUMMARY
+//  parse a whitespace-delimited list of filter expressions
+//
+// PARAMETERS
+//  expr       - space-delimited filter exprs
+//  exprl      - expr length
+//  [filters]  - (returns) parsed filters
+//  [filtersz] - size of filters in elements
+//
+// RETURNS
+//  -1 if any syntax errors in the expression were encountered, otherwise a number <= filtersz of elements in filters
+//  that were written to
+//
+int filter_expr_parse(const char * const restrict expr, size_t exprl, filter * filters, size_t filtersz)
+  __attribute__((nonnull(1)));
+
+/// filter_expr_process
+//
+// SUMMARY
+//  process a whitespace-delimited list of filter expressions
+//
+// PARAMETERS
+//
+// RETURNS
+//
+xapi filter_expr_process(
+    const char * const restrict expr
+  , size_t exprl
+  , struct list * const restrict list
+  , xapi (*listop)(struct list * const restrict, void *)
+)
   __attribute__((nonnull(1)));
 
 /// filter_push

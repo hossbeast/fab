@@ -33,7 +33,7 @@ struct narrator;
 #define DATESTAMP_OPT UINT32_C(0x00000C00)
 #define PROCESSID_OPT UINT32_C(0x00003000)
 
-// get the name of a color from its constant
+// get the name of a modifier or option from its value
 #define LOGGER_ATTR_DEF(a, b, x, m) (x & m) == b ? "L_" #a : 
 #define COLOR_VALUE(x)      LOGGER_ATTR_TABLE(x, COLOR_OPT) "NONE"
 #define CATEGORY_VALUE(x)   LOGGER_ATTR_TABLE(x, CATEGORY_OPT) "NONE"

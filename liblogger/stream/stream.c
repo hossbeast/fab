@@ -149,8 +149,7 @@ static xapi __attribute__((nonnull)) stream_write(stream * const restrict stream
       bit <<= 1;
     }
 
-    logger_category * category = 0;
-    fatal(category_byid, bit, &category);
+    logger_category * category = category_byid(bit);
     if(prev)
       says(" ");
     if(category)
@@ -192,8 +191,7 @@ static xapi __attribute__((nonnull)) stream_write(stream * const restrict stream
       {
         if(bit & ids)
         {
-          logger_category * category = 0;
-          fatal(category_byid, bit, &category);
+          logger_category * category = category_byid(bit);
 
           if((bit - 1) & ids)
             says(" | ");
@@ -229,7 +227,6 @@ static xapi __attribute__((nonnull)) stream_initialize(stream * const restrict s
 {
   enter;
 
-  filter * filterp = 0;
   char * expr = 0;
 
   streamp->id = id;
@@ -285,7 +282,6 @@ static xapi __attribute__((nonnull)) stream_initialize(stream * const restrict s
   }
 
 finally:
-  filter_free(filterp);
   wfree(expr);
 coda;
 }
@@ -294,24 +290,14 @@ static xapi __attribute__((nonnull)) stream_finalize(stream * const restrict str
 {
   enter;
 
-  filter * filterp = 0;
   int x;
-
-  // parse and attach to just this stream
   for(x = 0; x < streamp->exprs->l; x++)
   {
-    fatal(filter_parses, list_get(streamp->exprs, x), &filterp, 0);
-
-    if(!filterp)
-      fails(LOGGER_BADFILTER, "expr", list_get(streamp->exprs, x));
-
-    fatal(stream_filter_push, streamp, filterp);
-    filterp = 0;
+    char * expr = list_get(streamp->exprs, x);
+    fatal(filter_expr_process, expr, strlen(expr), streamp->filters, list_push);
   }
 
-finally:
-  filter_free(filterp);
-coda;
+  finally : coda;
 }
 
 static xapi __attribute__((nonnull)) stream_xdestroy(stream * const restrict streamp)
@@ -405,8 +391,7 @@ xapi streams_write(const uint64_t ids, const uint32_t site_attr, const char * co
   {
     if(copy & bit)
     {
-      logger_category * category = 0;
-      fatal(category_byid, bit, &category);
+      logger_category * category = category_byid(bit);
       if(category)
         base_attr = attr_combine(base_attr, category->attr);
 

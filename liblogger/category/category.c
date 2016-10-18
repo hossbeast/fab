@@ -36,12 +36,12 @@
 //
 // tracks two sequences of elements with the same name that are common to both lists
 //
-struct location {
+typedef struct location {
   int ax;     // index of the first element in A
   int axl;    // number of elements in A
   int bx;     // index of the first element in B
   int bxl;    // number of elements in B
-};
+} location;
 
 #include "valyria/dictionary.h"
 
@@ -347,7 +347,7 @@ API xapi categories_activate()
 {
   enter;
 
-  category_name_max_length = 0;
+  category_name_max_length = 8;
 
   // mask of category ids that have been assigned
   uint64_t used_category_ids_mask = 0;
@@ -534,21 +534,13 @@ finally:
 coda;
 }
 
-API xapi category_byname(const char * const restrict name, size_t namel, logger_category ** const restrict category)
+API logger_category * category_byname(const char * const restrict name, size_t namel)
 {
-  enter;
-
   namel = namel ?: strlen(name);
-  *category = map_get(activated_byname, name, namel);
-
-  finally : coda;
+  return map_get(activated_byname, name, namel);
 }
 
-API xapi category_byid(uint64_t id, logger_category ** const restrict category)
+API logger_category * category_byid(uint64_t id)
 {
-  enter;
-
-  *category = map_get(activated_byid, MM(id));
-
-  finally : coda;
+  return map_get(activated_byid, MM(id));
 }

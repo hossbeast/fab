@@ -66,8 +66,6 @@ static xapi test_filter_parse()
 {
   enter;
 
-  filter * filterp = 0;
-
   struct {
     char * expr;  // expression
 
@@ -81,14 +79,11 @@ static xapi test_filter_parse()
     , { expr : "-BAR"           , v : L_BAR                 , m : ' ' , o : '-' , off : 4 }
     , { expr : "-BAR%"          , v : L_BAR                 , m : '%' , o : '-' , off : 5 }
     , { expr : "+DELTA,A,BAR^"  , v : L_A | L_BAR | L_DELTA , m : '^' , o : '+' , off : 13 }
-    , { expr : "-BAR  "         , v : L_BAR                 , m : ' ' , o : '-' , off : 4 }
-    , { expr : "  -BAR"         , v : L_BAR                 , m : ' ' , o : '-' , off : 6 }
     , { expr : "+BAR,,BAR"      , v : L_BAR                 , m : ' ' , o : '+' , off : 9 }
     , { expr : "+BAR||BAR"      , v : L_BAR                 , m : ' ' , o : '+' , off : 9 }
     , { expr : "+|BAR||BAR|"    , v : L_BAR                 , m : ' ' , o : '+' , off : 11 }
     , { expr : "+DELTA%"        , v : L_DELTA               , m : '%' , o : '+' , off : 7 }
     , { expr : "+DELTA|%"       , v : L_DELTA               , m : '%' , o : '+' , off : 8 }
-    , { expr : "+A +BAR"        , v : L_A                   , m : ' ' , o : '+' , off : 2 }
     , { expr : "--foo" }
     , { expr : "-bar" }
     , { expr : "+bar" }
@@ -99,35 +94,66 @@ static xapi test_filter_parse()
   int x;
   for(x = 0; x < sizeof(tests) / sizeof(tests[0]); x++)
   {
-    size_t off = 0;
-    fatal(filter_parses, tests[x].expr, &filterp, &off);
+    filter f;
+    int r = filter_parses(tests[x].expr, &f);
 
+    assertf(!!r == !!tests[x].v, !!tests[x].v ? "parsed" : "not parsed", !!r ? "parsed" : "not parsed");
     if(tests[x].v)
     {
-      assertf(filterp, "parsed", "not parsed");
-      assertf(filterp->v == tests[x].v, "ids 0x%"PRIx64, "ids 0x%"PRIx64, tests[x].v, filterp->v);
-      assertf(filterp->m == tests[x].m, "mode %c", "mode %c", tests[x].m, filterp->m);
-      assertf(filterp->o == tests[x].o, "operation %c", "operation %c", tests[x].o, filterp->o);
+      assertf(f.v == tests[x].v, "ids 0x%"PRIx64, "ids 0x%"PRIx64, tests[x].v, f.v);
+      assertf(f.m == tests[x].m, "mode %c", "mode %c", tests[x].m, f.m);
+      assertf(f.o == tests[x].o, "operation %c", "operation %c", tests[x].o, f.o);
     }
-    else
-    {
-      assertf(filterp == 0, "%p", "%p", 0, filterp);
-    }
-
-    assertf(off == tests[x].off, "offset %zu", "offset %zu", tests[x].off, off);
-
-    filter_ifree(&filterp);
   }
 
 finally:
-  if(XAPI_UNWINDING)
+  xapi_infos("input", tests[x].expr);
+  xapi_infof("case", "%d", x);
+coda;
+}
+
+static xapi test_filter_expr_parse()
+{
+  enter;
+
+  struct {
+    char * expr;  // expression
+    char n;       // expected number of filters
+  } tests[] = {
+      { expr : "+A"                     , n : 1 }
+    , { expr : " +A"                    , n : 1 }
+    , { expr : "+A "                    , n : 1 }
+    , { expr : "+A,BAR -DELTA"          , n : 2 }
+    , { expr : " +A,BAR -DELTA"         , n : 2 }
+    , { expr : "+A,BAR        +BAR%"    , n : 2 }
+    , { expr : "+A,BAR -DELTA "         , n : 2 }
+    , { expr : "+A,BAR -DELTA +BAR%"    , n : 3 }
+    , { expr : "+A,BAR -DELTA +BAR%		" , n : 3 }
+    , { expr : "--foo" }
+    , { expr : "-bar" }
+    , { expr : "+bar" }
+  };
+
+  int x;
+  for(x = 0; x < sizeof(tests) / sizeof(tests[0]); x++)
   {
-    xapi_infos("test", "test_filter_parse");
-    xapi_infos("input", tests[x].expr);
-    xapi_infof("case", "%d", x);
+    filter filters[4];
+    int r = filter_expr_parse(MMS(tests[x].expr), filters, sizeof(filters) / sizeof(*filters));
+
+    if(tests[x].n)
+    {
+      assertf(r >= 0, "parsed", "not parsed");
+      assertf(r == tests[x].n, "%d filters", "%d filters", tests[x].n, r);
+    }
+    else
+    {
+      assertf(r < 0, "not parsed", "parsed");
+    }
   }
 
-  filter_free(filterp);
+finally:
+  xapi_infos("input", tests[x].expr);
+  xapi_infof("case", "%d", x);
 coda;
 }
 
@@ -136,11 +162,10 @@ static xapi test_filters_would()
   enter;
 
   list * filters = 0;
-  filter * filterp = 0;
+  int x = -1;
 
   struct {
     char ** expr;
-
     uint64_t ids;
     int would;
   } tests[] = {
@@ -155,32 +180,20 @@ static xapi test_filters_would()
 
   fatal(list_createx, &filters, filter_free, 0, 0);
 
-  int x;
   for(x = 0; x < sizeof(tests) / sizeof(tests[0]); x++)
   {
     fatal(list_recycle, filters);
 
     char ** expr;
     for(expr = tests[x].expr; *expr; expr++)
-    {
-      fatal(filter_parses, *expr, &filterp, 0);
-      fatal(list_push, filters, filterp);
-      filterp = 0;
-    }
+      fatal(filter_expr_process, *expr, strlen(*expr), filters, list_push);
 
-    int would = filters_would(filters, tests[x].ids);
-
-    assertf(would == tests[x].would, "%s", "%s", tests[x].would ? "true" : "false", would ? "true" : "false");
+    int actual = filters_would(filters, tests[x].ids);
+    assertf(actual == tests[x].would, "%s", "%s", tests[x].would ? "true" : "false", actual ? "true" : "false");
   }
 
 finally:
-  if(XAPI_UNWINDING)
-  {
-    xapi_infos("test", __FUNCTION__);
-    xapi_infof("case", "%d", x);
-  }
-
-  filter_free(filterp);
+  xapi_infof("case", "%d", x);
   fatal(list_xfree, filters);
 coda;
 }
@@ -201,6 +214,7 @@ int main()
   } tests[] = {
       { entry : test_filter_parse }
     , { entry : test_filters_would }
+    , { entry : test_filter_expr_parse }
   };
 
   for(x = 0; x < sizeof(tests) / sizeof(tests[0]); x++)
