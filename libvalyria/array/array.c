@@ -126,3 +126,8 @@ API void * array_search(array * const restrict ar, void * ud, int (*compar)(void
 {
   return list_search((void*)ar, ud, compar);
 }
+
+API xapi array_truncate(array * const restrict ar, size_t len)
+{
+  xproxy(list_truncate, (void*)ar, len);
+}

@@ -253,14 +253,6 @@ xapi array_set(array * const restrict ar, size_t index, void * restrict el)
 xapi array_set_range(array * const restrict ar, size_t index, size_t len, void * restrict el)
   __attribute__((nonnull));
 
-/// array_recycle
-//
-// SUMMARY
-//  reset the number of elements in the array - the allocation remains intact
-//
-xapi array_recycle(array * const restrict ar)
-  __attribute__((nonnull));
-
 /// array_clear
 //
 // SUMMARY
@@ -270,6 +262,17 @@ xapi array_recycle(array * const restrict ar)
 //  allocations remain intact
 //
 xapi array_recycle(array * const ar)
+  __attribute__((nonnull));
+
+/// array_truncate
+//
+// SUMMARY
+//  set the size of the list
+//
+// PARAMETERS
+//  len - new size of the array, 0 <= len <= li->l
+//
+xapi array_truncate(array * const restrict ar, size_t len)
   __attribute__((nonnull));
 
 /// array_sort

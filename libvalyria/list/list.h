@@ -93,6 +93,17 @@ xapi list_ixfree(list ** const restrict li)
 xapi list_recycle(list * const restrict li)
   __attribute__((nonnull));
 
+/// list_truncate
+//
+// SUMMARY
+//  set the size of the list
+//
+// PARAMETERS
+//  len - new size of the list, 0 <= len <= li->l
+//
+xapi list_truncate(list * const restrict li, size_t len)
+  __attribute__((nonnull));
+
 /// list_size
 //
 // SUMMARY
@@ -195,7 +206,7 @@ xapi list_unshift_range(list * const restrict li, void * el, size_t len)
 //
 // PARAMETERS
 //  s     - list
-//  index - 0 <= index <= list_size(s)
+//  index - 0 <= index <= li->l
 //  el    - pointer to element to insert
 //
 xapi list_insert(list * const restrict li, size_t index, void * el)
@@ -208,7 +219,7 @@ xapi list_insert(list * const restrict li, size_t index, void * el)
 //
 // PARAMETERS
 //  li    - list
-//  index - 0 <= index <= list_size(s)
+//  index - 0 <= index <= li->l
 //  el    - pointer to the first element to insert
 //  len   - number of elements to insert
 //
@@ -225,7 +236,7 @@ xapi list_insert_range(list * const restrict li, size_t index, void * el, size_t
 //
 // PARAMETERS
 //  li    - list
-//  index - 0 <= index < list_size(s)
+//  index - 0 <= index < li->l
 //  el    - pointer to the element to place
 //
 xapi list_set(list * const restrict li, size_t index, void * el)
@@ -241,7 +252,7 @@ xapi list_set(list * const restrict li, size_t index, void * el)
 //
 // PARAMETERS
 //  li    - list
-//  index - 0 <= index < list_size(s)
+//  index - 0 <= index < li->l
 //  el    - pointer to the first element to place
 //  len   - number of elements to place
 //
@@ -299,9 +310,9 @@ xapi list_sublist(list * const restrict lip, size_t index, size_t len, list ** c
 //
 // PARAMETERS
 //  dst       - list to copy to
-//  dst_index - 0 <= dst_index <= list_size(dst)
+//  dst_index - 0 <= dst_index <= dst->l
 //  src       - list to copy from
-//  src_index - 0 <= src_index <= list_size(src)
+//  src_index - 0 <= src_index <= src->l
 //  len       - number >= 0 of elements to copy
 //
 xapi list_splice(list * const restrict dst, size_t dst_index, list * const restrict src, size_t src_index, size_t len)
@@ -314,9 +325,9 @@ xapi list_splice(list * const restrict dst, size_t dst_index, list * const restr
 //
 // PARAMETERS
 //  dst       - list to copy to
-//  dst_index - 0 <= dst_index <= list_size(dst)
+//  dst_index - 0 <= dst_index <= dst->l
 //  src       - list to copy from
-//  src_index - 0 <= src_index <= list_size(src)
+//  src_index - 0 <= src_index <= src->l
 //  len       - number >= 0 of elements to copy
 //
 xapi list_replicate(list * const restrict dst, size_t dst_index, list * const restrict src, size_t src_index, size_t len)

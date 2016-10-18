@@ -263,7 +263,7 @@ API xapi list_recycle(list * const restrict li)
 {
   enter;
 
-  fatal(list_free_range, li, 0, li->l);
+  fatal(list_truncate, li, li->l);
   li->l = 0;
 
   finally : coda;
@@ -463,6 +463,16 @@ API xapi list_replicate(list * const restrict dst, size_t dst_index, list * cons
   
   list_move(dst, dst_index, src, src_index, len);
   dst->l += len;
+
+  finally : coda;
+}
+
+API xapi list_truncate(list * const restrict li, size_t len)
+{
+  enter;
+
+  fatal(list_free_range, li, 0, len);
+  li->l = len;
 
   finally : coda;
 }
