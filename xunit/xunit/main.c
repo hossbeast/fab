@@ -48,6 +48,7 @@ int main(int argc, char** argv, char ** envp)
   xapi R;
   char space[4096];
   size_t tracesz = 0;
+  Dl_info nfo;
 
   uint32_t suite_assertions_passed = 0;
   uint32_t suite_assertions_failed = 0;
@@ -109,8 +110,6 @@ int main(int argc, char** argv, char ** envp)
 
     if(xunit)
     {
-      suite_units++;
-
       struct timespec unit_start;
       struct timespec unit_end;
       fatal(xclock_gettime, CLOCK_MONOTONIC_RAW, &unit_start);
@@ -140,13 +139,20 @@ int main(int argc, char** argv, char ** envp)
         struct timespec test_end;
         fatal(xclock_gettime, CLOCK_MONOTONIC_RAW, &test_start);
 
+        const char * name = 0;
+        if(!(name = (*test)->name))
+        {
+          int r = dladdr((*test)->entry, &nfo);
+          if(r && nfo.dli_sname)
+            name = nfo.dli_sname;
+        }
+
         if(invoke((*test)->entry, (*test)))
         {
           // add identifying info
-          if((*test)->name)
-            xapi_info_adds("test", (*test)->name);
-
-          xapi_info_adds("object", g_args.objects[x]);
+          if(name)
+            xapi_info_adds("name", name);
+          xapi_info_addf("test", "%zu", test - xunit->tests);
 
           // propagate non-unit-testing errors
           if(XAPI_ERRTAB != perrtab_XUNIT || XAPI_ERRCODE != XUNIT_FAIL)
@@ -172,10 +178,8 @@ int main(int argc, char** argv, char ** envp)
           , xunit_assertions_passed + xunit_assertions_failed
         );
         fatal(elapsed_say, &test_start, &test_end, log_narrator(&token));
-        if((*test)->name)
-        {
-          logf(0, " for %s", (*test)->name);
-        }
+        if(name)
+          logf(0, " for %s", name);
 
         fatal(log_finish, &token);
 

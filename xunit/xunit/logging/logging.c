@@ -30,7 +30,7 @@ logger_category * categories = (logger_category []) {
 };
 
 logger_stream * streams = (logger_stream []) {
-    { name : "console"  , type : LOGGER_STREAM_FD , fd : 1, expr : "+ERROR|FAIL|SUITE", attr : L_CATEGORY }
+    { name : "console"  , type : LOGGER_STREAM_FD , fd : 1, expr : "+ERROR|FAIL|SUITE" }
   , { }
 };
 
