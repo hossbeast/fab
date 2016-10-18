@@ -124,6 +124,7 @@ do                                          \
                                             \
     (Cur).s = YYRHSLOC(Rhs, 1).s;           \
     (Cur).e = YYRHSLOC(Rhs, N).e;           \
+    (Cur).l = (Cur).e - (Cur).s;            \
   }                                         \
   else                                      \
   {                                         \
@@ -133,6 +134,7 @@ do                                          \
     (Cur).l_col = YYRHSLOC(Rhs, 0).l_col;   \
                                             \
     (Cur).s = YYRHSLOC(Rhs, 0).e;           \
+    (Cur).l = 0;                            \
   }                                         \
 } while(0)
 
