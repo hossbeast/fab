@@ -39,7 +39,7 @@ struct search_context
   size_t idx;
 };
 
-static int config_query_compare(void * ud, const void * _el, size_t idx)
+static int value_query_compare(void * ud, const void * _el, size_t idx)
 {
   const value * el = _el;
   struct search_context * ctx = ud;
@@ -53,31 +53,29 @@ static int config_query_compare(void * ud, const void * _el, size_t idx)
 // api
 //
 
-API xapi value_query(value * restrict val, const char * const restrict query, value ** restrict rv)
+API value * value_query(value * restrict val, const char * const restrict query)
 {
-  enter;
+  const char * start = query;
+  const char * end = 0;
 
-  const char * start;
-  const char * end = query - 1;
-
-  do
+  while(val && val->type == VALUE_TYPE_MAP && *start)
   {
-    start = end + 1;
-
-    if((end = strchr(start, '.')) == 0)
-      end = start + strlen(start);
-
-    if(val->type != VALUE_TYPE_MAP)
-      val = 0;
+    end = start + 1;
+    while(*end && *end != '.')
+      end++;
 
     struct search_context ctx = { key : start, len : end - start };
-    if(list_search(val->keys, &ctx, config_query_compare))
-      val = list_get(val->vals, ctx.idx);
-    else
-      val = 0;
-  } while(val && *end);
+    if(!list_search(val->keys, &ctx, value_query_compare))
+      break;
 
-  *rv = val;
+    val = list_get(val->vals, ctx.idx);
+    start = end;
+    if(*start == '.')
+      start++;
+  }
 
-  finally : coda;
+  if(!*start)
+    return val;
+
+  return 0;
 }
