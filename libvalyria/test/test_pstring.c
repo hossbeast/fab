@@ -56,7 +56,7 @@ static xapi test_basic()
   fatal(psloads, ps, "1234567890");
   fatal(assert_contents, ps);
 
-  fatal(psclear, ps);
+  psclear(ps);
   fatal(psloadc, ps, '1');
   fatal(pscatf, ps, "%s", "234567890");
   fatal(assert_contents, ps);

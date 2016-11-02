@@ -140,13 +140,9 @@ API xapi psmkc(pstring ** restrict ps, pstring * restrict e, int c)
   finally : coda;
 }
 
-API xapi psclear(pstring * restrict ps)
+API void psclear(pstring * restrict ps)
 {
-  enter;
-
   ps->l = 0;
-
-  finally : coda;
 }
 
 API void psfree(pstring * ps)

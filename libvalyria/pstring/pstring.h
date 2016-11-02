@@ -117,7 +117,7 @@ void psifree(pstring ** const restrict ps)
 // PARAMETERS
 //  p - pstring
 //
-xapi psclear(pstring * restrict p)
+void psclear(pstring * restrict p)
   __attribute__((nonnull));
 
 /// psload
