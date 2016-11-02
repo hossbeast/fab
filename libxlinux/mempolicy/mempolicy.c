@@ -34,6 +34,11 @@ __thread size_t policiesa;
 
 #define restrict __restrict
 
+void mempolicy_teardown()
+{
+  wfree(policies);
+}
+
 API xapi mempolicy_push(mempolicy * plc, int * const restrict mpc)
 {
   enter;

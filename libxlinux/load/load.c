@@ -23,6 +23,7 @@
 #include "load.internal.h"
 #include "errtab/XLINUX.errtab.h"
 #include "errtab/KERNEL.errtab.h"
+#include "mempolicy.internal.h"
 
 static int handles;
 
@@ -53,7 +54,7 @@ API xapi xlinux_unload()
 
   if(--handles == 0)
   {
-
+    mempolicy_teardown();
   }
   else if(handles < 0)
   {

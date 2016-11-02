@@ -24,4 +24,11 @@ struct mempolicy;
 
 extern __thread struct mempolicy * policy;
 
+/// mempolicy_teardown
+//
+// SUMMARY
+//  release resources
+//
+void mempolicy_teardown(void);
+
 #endif
