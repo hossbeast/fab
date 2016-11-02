@@ -26,7 +26,12 @@ MODULE
 SUMMARY
  test assertions that fail with XUNIT_FAIL
 
+REMARKS
+ macros instead of static inline to preserve file name and line number
+
 */
+
+#include <string.h>
 
 #include "xapi.h"
 #include "xapi/exit.h"
@@ -43,16 +48,15 @@ void xunit_fails_info(const char * const restrict exp, const char * const restri
 extern __thread uint32_t xunit_assertions_passed;
 extern __thread uint32_t xunit_assertions_failed;
 
+/// ufail
+//
+// SUMMARY
+//  raise a unit test assertion failure
+//
 #define ufail()                       \
   do {                                \
     xunit_assertions_failed++;        \
     fail(XUNIT_FAIL); \
-  } while(0)
-
-#define ufailf(expfmt, actfmt, ...)                   \
-  do {                                                \
-    xunit_failf_info(expfmt, actfmt, ##__VA_ARGS__);  \
-    ufail();                                          \
   } while(0)
 
 #define ufails(exp, act, ...)                     \
@@ -61,6 +65,17 @@ extern __thread uint32_t xunit_assertions_failed;
     ufail();                                      \
   } while(0)
 
+#define ufailf(expfmt, actfmt, ...)                   \
+  do {                                                \
+    xunit_failf_info(expfmt, actfmt, ##__VA_ARGS__);  \
+    ufail();                                          \
+  } while(0)
+
+/// assert
+//
+// SUMMARY
+//  raise a unit test assertion failure if a condition is false
+//
 #define assert(bool)              \
   do {                            \
     if(!(bool))                   \
@@ -85,14 +100,27 @@ extern __thread uint32_t xunit_assertions_failed;
       xunit_assertions_passed++;              \
   } while(0)
 
-#define assert_exit(expected, actual)                                 \
-  assertf(                                                            \
-      expected == actual                                              \
-    , "%s(%d)", "%s(%d)"                                              \
-    , xapi_exit_errname(expected)                                     \
-    , expected                                                        \
-    , xapi_exit_errname(actual)                                       \
-    , actual                                                          \
+/// assert_exit
+//
+// SUMMARY
+//  special-purpose assert for exit values
+//
+#define assert_exit(expected, actual)         \
+  assertf(                                    \
+      expected == actual                      \
+    , "%s(%d)", "%s(%d)"                      \
+    , xapi_exit_errname(expected)             \
+    , expected                                \
+    , xapi_exit_errname(actual)               \
+    , actual                                  \
   )
+
+/// assert_str
+//
+// SUMMARY
+//  special-purpose assert for strings
+//
+#define assert_strs(exp, act, ...)            \
+  asserts(strcmp(act, exp) == 0, exp, act)
 
 #endif
