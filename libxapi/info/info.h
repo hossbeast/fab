@@ -31,6 +31,8 @@
 //  When staging infos in this way, call xapi_info_add* directly, instead of xapi_info*, which can only
 //  be used to apply infos to the current frame while failing
 //
+//  xapi_fail_intent may safely be called more than once
+//
 void xapi_fail_intent(void);
 
 /// xapi_info_adds

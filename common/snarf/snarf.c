@@ -56,7 +56,7 @@ xapi usnarfs(const char * const restrict path, char ** const restrict dst, size_
   enter;
 
   int fd = -1;
-  fatal(uxopen, path, O_RDONLY, &fd);
+  fatal(uxopens, &fd, O_RDONLY, path);
   if(fd != -1)
     fatal(snarf, fd, dst, dstlp);
 
@@ -70,7 +70,7 @@ xapi snarfs(const char * const restrict path, char ** const restrict dst, size_t
   enter;
 
   int fd = -1;
-  fatal(xopen, path, O_RDONLY, &fd);
+  fatal(xopens, &fd, O_RDONLY, path);
   fatal(snarf, fd, dst, dstlp);
 
 finally:

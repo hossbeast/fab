@@ -30,34 +30,67 @@
 // SUMMARY
 //  proxy for open
 //
-xapi xopen(const char * path, int flags, int * const fd);
-
-/// uxopen
+// VARIANTS
+//  s/f/vf - different ways to pass path
 //
-// SUMMARY
-//  proxy for open that only fails when errno != ENOENT
-//
-xapi uxopen(const char * path, int flags, int * const fd);
+xapi xopens(int * fd, int flags, const char * path)
+  __attribute__((nonnull(3)));
 
-xapi xopenf(const char * path_fmt, int flags, int * const fd, ...)
-  __attribute__((nonnull(1)));
+xapi xopenf(int * fd, int flags, const char * path_fmt, ...)
+  __attribute__((nonnull(3)));
 
-xapi xopenvf(const char * path_fmt, int flags, int * const fd, va_list va)
-  __attribute__((nonnull(1)));
-
+xapi xopenvf(int * fd, int flags, const char * path_fmt, va_list va)
+  __attribute__((nonnull(3)));
 
 /// xopen_mode
 //
 // SUMMARY
 //  proxy for open
 //
-xapi xopen_mode(const char * path, int flags, mode_t mode, int * const fd);
+// VARIANTS
+//  s/f/vf - different ways to pass path
+//
+xapi xopen_modes(int * fd, int flags, mode_t mode, const char * path)
+  __attribute__((nonnull(4)));
+
+xapi xopen_modef(int * fd, int flags, mode_t mode, const char * path_fmt, ...)
+  __attribute__((nonnull(4)));
+
+xapi xopen_modevf(int * fd, int flags, mode_t mode, const char * path_fmt, va_list va)
+  __attribute__((nonnull(4)));
+
+/// uxopen
+//
+// SUMMARY
+//  proxy for open that only fails when errno not in { ENOENT, EEXIST }
+//
+// VARIANTS
+//  s/f/vf - different ways to pass path
+//
+xapi uxopens(int * fd, int flags, const char * path)
+  __attribute__((nonnull(3)));
+
+xapi uxopenf(int * fd, int flags, const char * path_fmt, ...)
+  __attribute__((nonnull(3)));
+
+xapi uxopenvf(int * fd, int flags, const char * path_fmt, va_list va)
+  __attribute__((nonnull(3)));
 
 /// xopen_mode
 //
 // SUMMARY
-//  proxy for open that only fails when errno != ENOENT
+//  proxy for open that only fails when errno not in { ENOENT, EEXIST }
 //
-xapi uxopen_mode(const char * path, int flags, mode_t mode, int * const fd);
+// VARIANTS
+//  s/f/vf - different ways to pass path
+//
+xapi uxopen_modes(int * fd, int flags, mode_t mode, const char * path)
+  __attribute__((nonnull(4)));
+
+xapi uxopen_modef(int * fd, int flags, mode_t mode, const char * path_fmt, ...)
+  __attribute__((nonnull(4)));
+
+xapi uxopen_modevf(int * fd, int flags, mode_t mode, const char * path_fmt, va_list va)
+  __attribute__((nonnull(4)));
 
 #endif

@@ -99,7 +99,7 @@ $oplist_xapi_debug = [ $* ~ ??, s,$,/op lsr l,/test.c v sxf,c,xapi.debug.so sy ]
 $oplist_xapi_devel = [ $* ~ ??, s,$,/op lsr l,/test.c v sxf,c,xapi.devel.so sy ]
 
 # build library and all operators
-[ @release ] : [ @all @test ]
+[ @release ] : [ @all @test.fast ]
 [ @all ] : [ @all.eapi @all.xapi ]
 [ @all.eapi ] : [ @final.eapi @debug.eapi @devel.eapi ]
 [ @all.xapi ] : [ @final.xapi @debug.xapi @devel.xapi ]
@@ -476,6 +476,7 @@ $oplist_xapi_devel = [ $* ~ ??, s,$,/op lsr l,/test.c v sxf,c,xapi.devel.so sy ]
 }
 
 [ @test ] : [ @integ ]
+[ @test.fast ] : [ @integ.fast ]
 [ @integ ] : [  $*/integ ~ j ls m/test.c$ sx/c/xapi.xunit.so ]
 {
   [ $xunit_valgrind_runner ] [ $xunit_xapi_devel ] [ $libyyutil_xapi_devel ] [ $liblorien_xapi_devel ] [ $liblistwise_xapi_devel ] [ $@ ~ rx/ineed fi ]

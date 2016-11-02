@@ -33,7 +33,7 @@ API xapi touchw(mode_t mode, const char * const path, size_t pathl)
   int fd = -1;
 
   // touch stamp file
-  fatal(xopen_mode, path, O_CREAT | O_WRONLY, mode, &fd);
+  fatal(xopen_modes, &fd, O_CREAT | O_WRONLY, mode, path);
   fatal(xfutimens, fd, 0);
 
 finally:

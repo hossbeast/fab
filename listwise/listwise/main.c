@@ -72,7 +72,7 @@ static int snarf(char * path, int bang, pstring * mem)
   if(strcmp(path, "-") == 0)
     path = "/dev/fd/0";
 
-  fatal(xopen, path, O_RDONLY | O_NONBLOCK, &fd);
+  fatal(xopens, &fd, O_RDONLY | O_NONBLOCK, path);
   fatal(xfstat, fd, &st);
 
   if(S_ISREG(st.st_mode) || S_ISFIFO(st.st_mode))
@@ -170,7 +170,7 @@ int main(int argc, char ** argv, char ** envp)
   // read transform-expr from stdin
   if(g_args.stdin_init_list_items)
   {
-    fatal(psclear, temp);
+    psclear(temp);
     fatal(snarf, "-", 0, temp);
 
     char delim = g_args.stdin_linewise ? '\n' : 0;
@@ -195,7 +195,7 @@ int main(int argc, char ** argv, char ** envp)
     }
     else if(g_args.inputs[x].type == INPUT_TYPE_INIT_LIST_FILE)
     {
-      fatal(psclear, temp);
+      psclear(temp);
       fatal(snarf, g_args.inputs[x].s, g_args.inputs[x].bang, temp);
 
       char delim = g_args.inputs[x].linewise ? '\n' : 0;
@@ -225,7 +225,7 @@ int main(int argc, char ** argv, char ** envp)
     }
     else if(g_args.inputs[x].type == INPUT_TYPE_HYBRID_FILE)
     {
-      fatal(psclear, temp);
+      psclear(temp);
       fatal(snarf, g_args.inputs[x].s, g_args.inputs[x].bang, temp);
 
       // read transform-expr until 3 consecutive newlines

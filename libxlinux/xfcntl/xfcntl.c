@@ -23,7 +23,7 @@
 
 #include "fmt.internal.h"
 
-API xapi xopen(const char * path, int flags, int * const fd)
+API xapi xopens(int * fd, int flags, const char * path)
 {
   enter;
 
@@ -38,39 +38,39 @@ finally:
 coda;
 }
 
-API xapi xopenf(const char * path_fmt, int flags, int * const fd, ...)
+API xapi xopenf(int * fd, int flags, const char * path_fmt, ...)
 {
   enter;
 
   va_list va;
-  va_start(va, fd);
+  va_start(va, path_fmt);
 
-  fatal(xopenvf, path_fmt, flags, fd, va);
+  fatal(xopenvf, fd, flags, path_fmt, va);
 
 finally:
   va_end(va);
 coda;
 }
 
-API xapi xopenvf(const char * path_fmt, int flags, int * const fd, va_list va)
+API xapi xopenvf(int * fd, int flags, const char * path_fmt, va_list va)
 {
   enter;
 
   char path[512];
 
   fatal(fmt_apply, path, sizeof(path), path_fmt, va);
-  fatal(xopen, path, flags, fd);
+  fatal(xopens, fd, flags, path);
 
   finally : coda;
 }
 
-API xapi uxopen(const char * path, int flags, int * const fd)
+API xapi uxopens(int * fd, int flags, const char * path)
 {
   enter;
 
   if((*fd = open(path, flags)) == -1)
   {
-    if(errno != ENOENT)
+    if(errno != ENOENT && errno != EEXIST)
       tfail(perrtab_KERNEL, errno);
 
     *fd = -1;
@@ -81,7 +81,33 @@ finally:
 coda;
 }
 
-API xapi xopen_mode(const char * path, int flags, mode_t mode, int * const fd)
+API xapi uxopenf(int * fd, int flags, const char * path_fmt, ...)
+{
+  enter;
+
+  va_list va;
+  va_start(va, path_fmt);
+  fatal(uxopenvf, fd, flags, path_fmt, va);
+
+finally:
+  va_end(va);
+coda;
+}
+
+API xapi uxopenvf(int * fd, int flags, const char * path_fmt, va_list va)
+{
+  enter;
+
+  char path[512];
+  fatal(fmt_apply, path, sizeof(path), path_fmt, va);
+  fatal(uxopens, fd, flags, path);
+
+finally:
+  va_end(va);
+coda;
+}
+
+API xapi xopen_modes(int * fd, int flags, mode_t mode, const char * path)
 {
   enter;
 
@@ -96,13 +122,41 @@ finally:
 coda;
 }
 
-API xapi uxopen_mode(const char * path, int flags, mode_t mode, int * const fd)
+API xapi xopen_modef(int * fd, int flags, mode_t mode, const char * path_fmt, ...)
+{
+  enter;
+
+  va_list va;
+  va_start(va, path_fmt);
+
+  fatal(xopen_modevf, fd, flags, mode, path_fmt, va);
+
+finally:
+  va_end(va);
+coda;
+}
+
+API xapi xopen_modevf(int * fd, int flags, mode_t mode, const char * path_fmt, va_list va)
+{
+  enter;
+
+  char path[512];
+
+  fatal(fmt_apply, path, sizeof(path), path_fmt, va);
+  fatal(xopen_modes, fd, flags, mode, path);
+
+finally:
+  va_end(va);
+coda;
+}
+
+API xapi uxopen_modes(int * fd, int flags, mode_t mode, const char * path)
 {
   enter;
 
   if((*fd = open(path, flags, mode)) == -1)
   {
-    if(errno != ENOENT)
+    if(errno != ENOENT && errno != EEXIST)
       tfail(perrtab_KERNEL, errno);
 
     *fd = -1;
@@ -110,5 +164,33 @@ API xapi uxopen_mode(const char * path, int flags, mode_t mode, int * const fd)
 
 finally:
   xapi_infof("path", "%s", path);
+coda;
+}
+
+API xapi uxopen_modef(int * fd, int flags, mode_t mode, const char * path_fmt, ...)
+{
+  enter;
+
+  va_list va;
+  va_start(va, path_fmt);
+
+  fatal(uxopen_modevf, fd, flags, mode, path_fmt, va);
+
+finally:
+  va_end(va);
+coda;
+}
+
+API xapi uxopen_modevf(int * fd, int flags, mode_t mode, const char * path_fmt, va_list va)
+{
+  enter;
+
+  char path[512];
+
+  fatal(fmt_apply, path, sizeof(path), path_fmt, va);
+  fatal(uxopen_modes, fd, flags, mode, path);
+
+finally:
+  va_end(va);
 coda;
 }

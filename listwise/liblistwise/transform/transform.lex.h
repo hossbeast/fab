@@ -12,8 +12,8 @@
 
 #define FLEX_SCANNER
 #define YY_FLEX_MAJOR_VERSION 2
-#define YY_FLEX_MINOR_VERSION 5
-#define YY_FLEX_SUBMINOR_VERSION 39
+#define YY_FLEX_MINOR_VERSION 6
+#define YY_FLEX_SUBMINOR_VERSION 0
 #if YY_FLEX_SUBMINOR_VERSION > 0
 #define FLEX_BETA
 #endif
@@ -170,7 +170,7 @@ struct yy_buffer_state
 	/* Number of characters read into yy_ch_buf, not including EOB
 	 * characters.
 	 */
-	yy_size_t yy_n_chars;
+	int yy_n_chars;
 
 	/* Whether we "own" the buffer - i.e., we know we created it,
 	 * and can realloc() it to grow it, and should free() it to
@@ -220,7 +220,7 @@ void *transform_yyalloc (yy_size_t ,yyscan_t yyscanner );
 void *transform_yyrealloc (void *,yy_size_t ,yyscan_t yyscanner );
 void transform_yyfree (void * ,yyscan_t yyscanner );
 
-#define transform_yywrap(yyscanner) 1
+#define transform_yywrap(yyscanner) (/*CONSTCOND*/1)
 #define YY_SKIP_YYWRAP
 
 #define yytext_ptr yytext_r
@@ -284,11 +284,11 @@ void transform_yyset_extra (YY_EXTRA_TYPE user_defined ,yyscan_t yyscanner );
 
 FILE *transform_yyget_in (yyscan_t yyscanner );
 
-void transform_yyset_in  (FILE * in_str ,yyscan_t yyscanner );
+void transform_yyset_in  (FILE * _in_str ,yyscan_t yyscanner );
 
 FILE *transform_yyget_out (yyscan_t yyscanner );
 
-void transform_yyset_out  (FILE * out_str ,yyscan_t yyscanner );
+void transform_yyset_out  (FILE * _out_str ,yyscan_t yyscanner );
 
 yy_size_t transform_yyget_leng (yyscan_t yyscanner );
 
@@ -296,11 +296,11 @@ char *transform_yyget_text (yyscan_t yyscanner );
 
 int transform_yyget_lineno (yyscan_t yyscanner );
 
-void transform_yyset_lineno (int line_number ,yyscan_t yyscanner );
+void transform_yyset_lineno (int _line_number ,yyscan_t yyscanner );
 
 int transform_yyget_column  (yyscan_t yyscanner );
 
-void transform_yyset_column (int column_no ,yyscan_t yyscanner );
+void transform_yyset_column (int _column_no ,yyscan_t yyscanner );
 
 YYSTYPE * transform_yyget_lval (yyscan_t yyscanner );
 
@@ -376,7 +376,7 @@ extern int transform_yylex \
 #undef YY_DECL
 #endif
 
-#line 384 "listwise/liblistwise/transform/transform.l"
+#line 385 "listwise/liblistwise/transform/transform.l"
 
 #line 382 "listwise/liblistwise/transform/transform.lex.h"
 #undef transform_yyIN_HEADER

@@ -90,7 +90,7 @@ static xapi gobble(lwx* lx, char * path, char * fmt, char * flags)
     xref = strstr(space, "%x");
   }
 
-  fatal(xopen, path, O_RDONLY, &fd);
+  fatal(xopens, &fd, O_RDONLY, path);
   fatal(xlseek, fd, 0, SEEK_END, &size);
 
   if((addr = mmap(0, size, PROT_READ, MAP_PRIVATE, fd, 0)) == MAP_FAILED)

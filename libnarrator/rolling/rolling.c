@@ -52,7 +52,7 @@ static xapi __attribute__((nonnull)) rollover(narrator_rolling * const restrict 
     fatal(uxunlinks, space);
 
   fatal(ixclose, &n->fd);
-  fatal(xopen_mode, space, O_CREAT | O_WRONLY, n->mode, &n->fd);
+  fatal(xopen_modes, &n->fd, O_CREAT | O_WRONLY, n->mode, space);
 
   if(append)
   {

@@ -149,7 +149,7 @@ API xapi logger_arguments_setup(char ** restrict envp)
         */
 
         fatal(ixclose, &fd);
-        fatal(xopen, "/proc/self/auxv", O_RDONLY, &fd);
+        fatal(xopens, &fd, O_RDONLY, "/proc/self/auxv");
         do
         {
           size_t newa = auxva ?: 100;
