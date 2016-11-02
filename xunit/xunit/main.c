@@ -173,7 +173,7 @@ int main(int argc, char** argv, char ** envp)
         // report for this test
         fatal(log_xstart, L_TEST, xunit_assertions_failed == 0 ? L_GREEN : L_RED, &token);
         logf(0
-          , "  %%%6.2f pass rate on %6d assertions in "
+          , "  %%%6.2f pass rate on %6d assertions over "
           , 100 * ((double)xunit_assertions_passed / (double)(xunit_assertions_passed + xunit_assertions_failed))
           , xunit_assertions_passed + xunit_assertions_failed
         );
@@ -194,13 +194,14 @@ int main(int argc, char** argv, char ** envp)
       // report for this module
       fatal(log_xstart, L_UNIT, unit_assertions_failed == 0 ? L_GREEN : L_RED, &token);
       logf(0
-        , " %%%6.2f pass rate on %6d assertions by %3d tests in "
+        , " %%%6.2f pass rate on %6d assertions by %3d tests over "
         , 100 * ((double)unit_assertions_passed / (double)(unit_assertions_passed + unit_assertions_failed))
         , unit_assertions_passed + unit_assertions_failed
         , sentinel(xunit->tests)
       );
 
       fatal(elapsed_say, &unit_start, &unit_end, log_narrator(&token));
+      logf(0, " in %s", g_args.objects[x]);
       fatal(log_finish, &token);
 
       suite_assertions_passed += unit_assertions_passed;
@@ -222,7 +223,7 @@ int main(int argc, char** argv, char ** envp)
   // summary report
   fatal(log_xstart, L_SUITE, suite_assertions_failed == 0 ? L_GREEN : L_RED, &token);
   logf(0
-    , "%%%6.2f pass rate on %6d assertions by %3d tests from %4d units in "
+    , "%%%6.2f pass rate on %6d assertions by %3d tests from %4d units over "
     , 100 * ((double)suite_assertions_passed / (double)(suite_assertions_passed + suite_assertions_failed))
     , (suite_assertions_passed + suite_assertions_failed)
     , suite_tests
