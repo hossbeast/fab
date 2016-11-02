@@ -223,13 +223,13 @@ static xapi __attribute__((nonnull)) stream_write(stream * const restrict stream
   finally : coda;
 }
 
-static xapi __attribute__((nonnull)) stream_initialize(stream * const restrict streamp, uint32_t id, const logger_stream * restrict def)
+static xapi __attribute__((nonnull)) stream_initialize(stream * const restrict streamp, const logger_stream * restrict def)
 {
   enter;
 
   char * expr = 0;
 
-  streamp->id = id;
+  streamp->id = def->id;
   if(def->name)
   {
     fatal(ixstrdup, &streamp->name, def->name);
@@ -353,9 +353,12 @@ xapi streams_activate()
   {
     for(x = 0; x < registered->l; x++)
     {
+      logger_stream * def = list_get(registered, x);
+      def->id = x + 1;
+
       stream * streamp = 0;
       fatal(array_push, g_streams, &streamp);
-      fatal(stream_initialize, streamp, x, (logger_stream*)list_get(registered, x));
+      fatal(stream_initialize, streamp, def);
       fatal(map_set, streams_byid, MM(streamp->id), streamp);
     }
   }
