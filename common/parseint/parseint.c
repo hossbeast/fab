@@ -40,7 +40,7 @@ printf("parseint('%s', '%s', %"PRIdMAX", %"PRIdMAX", %hhu, %hhu, %p, %p)", s, f,
     if(sscanf(s, "%"SCNdMAX"%n", &tr, &tn) != 1)
     {
 #if DBUG_PARSEINT
-  printf("not numeric\n");
+printf("not numeric at %s:%d\n", __FILE__, __LINE__);
 #endif
       return 1;
     }
@@ -50,7 +50,7 @@ printf("parseint('%s', '%s', %"PRIdMAX", %"PRIdMAX", %hhu, %hhu, %p, %p)", s, f,
     if(sscanf(s, "%"SCNiMAX"%n", &tr, &tn) != 1)
     {
 #if DBUG_PARSEINT
-  printf("not numeric\n");
+printf("not numeric at %s:%d\n", __FILE__, __LINE__);
 #endif
       return 1;
     }
@@ -59,35 +59,35 @@ printf("parseint('%s', '%s', %"PRIdMAX", %"PRIdMAX", %hhu, %hhu, %p, %p)", s, f,
   if(errno == ERANGE)         /* larger, or smaller, than intmax can hold */
   {
 #if DBUG_PARSEINT
-  printf(" = ERANGE\n");
+printf(" = ERANGE at %s:%d\n", __FILE__, __LINE__);
 #endif
     return 1;
   }
   else if(tr < lo)            /* minimum value threshold  */
   {
 #if DBUG_PARSEINT
-  printf(" < lo\n");
+printf(" < lo at %s:%d\n", __FILE__, __LINE__);
 #endif
     return 1;
   }
   else if(tr > hi)            /* maximum value threshold  */
   {
 #if DBUG_PARSEINT
-  printf(" > hi\n");
+printf(" > hi at %s:%d\n", __FILE__, __LINE__);
 #endif
     return 1;
   }
   else if(tn < min)           /* minimum length threshold */
   {
 #if DBUG_PARSEINT
-  printf(" < min\n");
+printf(" < min at %s:%d\n", __FILE__, __LINE__);
 #endif
     return 1;
   }
   else if(tn > max)           /* maximum length threshold */
   {
 #if DBUG_PARSEINT
-  printf(" > max\n");
+printf(" > max at %s:%d\n", __FILE__, __LINE__);
 #endif
     return 1;
   }
@@ -95,7 +95,7 @@ printf("parseint('%s', '%s', %"PRIdMAX", %"PRIdMAX", %hhu, %hhu, %p, %p)", s, f,
   if(strstr(f, "ll") == f)
   {
 #if DBUG_PARSEINT
-printf(" = %"PRIdMAX"\n", tr);
+printf(" = %"PRIdMAX" at %s:%d\n", tr, __FILE__, __LINE__);
 #endif
     if(r)
       *(signed long long*)r = tr;
@@ -103,7 +103,7 @@ printf(" = %"PRIdMAX"\n", tr);
   else if(strstr(f, "l") == f)
   {
 #if DBUG_PARSEINT
-printf(" = %" "l" "d" "\n", (signed long)tr);
+printf(" = %" "l" "d" " at %s:%d\n", (signed long)tr, __FILE__, __LINE__);
 #endif
     if(r)
       *(signed long*)r = tr;
@@ -111,7 +111,7 @@ printf(" = %" "l" "d" "\n", (signed long)tr);
   else if(strstr(f, "hh") == f)
   {
 #if DBUG_PARSEINT
-printf(" = %" "hh" "d" "\n", (signed char)tr);
+printf(" = %" "hh" "d" " at %s:%d\n", (signed char)tr, __FILE__, __LINE__);
 #endif
     if(r)
       *(signed char*)r = tr;
@@ -119,7 +119,7 @@ printf(" = %" "hh" "d" "\n", (signed char)tr);
   else if(strstr(f, "h") == f)
   {
 #if DBUG_PARSEINT
-printf(" = %" "h" "d" "\n", (signed short)tr);
+printf(" = %" "h" "d" " at %s:%d\n", (signed short)tr, __FILE__, __LINE__);
 #endif
     if(r)
       *(signed short*)r = tr;
@@ -127,7 +127,7 @@ printf(" = %" "h" "d" "\n", (signed short)tr);
   else
   {
 #if DBUG_PARSEINT
-printf(" = %" "" "d" "\n", (signed int)tr);
+printf(" = %" "" "d" " at %s:%d\n", (signed int)tr, __FILE__, __LINE__);
 #endif
     if(r)
       *(signed int*)r = tr;
@@ -154,7 +154,7 @@ printf("parseuint('%s', '%s', %"PRIuMAX", %"PRIuMAX", %hhu, %hhu, %p, %p)", s, f
     if(sscanf(s, "%"SCNoMAX"%n", &tr, &tn) != 1)
     {
 #if DBUG_PARSEINT
-  printf("not numeric\n");
+printf("not numeric at %s:%d\n", __FILE__, __LINE__);
 #endif
       return 1;
     }
@@ -164,7 +164,7 @@ printf("parseuint('%s', '%s', %"PRIuMAX", %"PRIuMAX", %hhu, %hhu, %p, %p)", s, f
     if(sscanf(s, "%"SCNuMAX"%n", &tr, &tn) != 1)
     {
 #if DBUG_PARSEINT
-  printf("not numeric\n");
+printf("not numeric at %s:%d\n", __FILE__, __LINE__);
 #endif
       return 1;
     }
@@ -174,7 +174,7 @@ printf("parseuint('%s', '%s', %"PRIuMAX", %"PRIuMAX", %hhu, %hhu, %p, %p)", s, f
     if(sscanf(s, "%"SCNxMAX"%n", &tr, &tn) != 1)
     {
 #if DBUG_PARSEINT
-  printf("not numeric\n");
+printf("not numeric at %s:%d\n", __FILE__, __LINE__);
 #endif
       return 1;
     }
@@ -183,35 +183,35 @@ printf("parseuint('%s', '%s', %"PRIuMAX", %"PRIuMAX", %hhu, %hhu, %p, %p)", s, f
   if(errno == ERANGE)         /* larger, or smaller, than intmax can hold */
   {
 #if DBUG_PARSEINT
-  printf(" = ERANGE\n");
+printf(" = ERANGE at %s:%d\n", __FILE__, __LINE__);
 #endif
     return 1;
   }
   else if(tr < lo)            /* minimum value threshold  */
   {
 #if DBUG_PARSEINT
-  printf(" %"PRIuMAX" < lo\n", tr);
+printf(" %"PRIuMAX" < lo at %s:%d\n", tr, __FILE__, __LINE__);
 #endif
     return 1;
   }
   else if(tr > hi)            /* maximum value threshold  */
   {
 #if DBUG_PARSEINT
-  printf(" %"PRIuMAX" > hi\n", tr);
+printf(" %"PRIuMAX" > hi at %s:%d\n", tr, __FILE__, __LINE__);
 #endif
     return 1;
   }
   else if(tn < min)           /* minimum length threshold */
   {
 #if DBUG_PARSEINT
-  printf(" %hhu < min\n", tn);
+printf(" %hhu < min at %s:%d\n", tn, __FILE__, __LINE__);
 #endif
     return 1;
   }
   else if(tn > max)           /* maximum length threshold */
   {
 #if DBUG_PARSEINT
-  printf(" %hhu > max\n", tn);
+printf(" %hhu > max at %s:%d\n", tn, __FILE__, __LINE__);
 #endif
     return 1;
   }
@@ -221,35 +221,35 @@ printf("parseuint('%s', '%s', %"PRIuMAX", %"PRIuMAX", %hhu, %hhu, %p, %p)", s, f
     if(strstr(f, "ll") == f)
     {
 #if DBUG_PARSEINT
-  printf(" = %"PRIdMAX"\n", tr);
+printf(" = %"PRIdMAX" at %s:%d\n", tr, __FILE__, __LINE__);
 #endif
       *(unsigned long long*)r = tr;
     }
     else if(strstr(f, "l") == f)
     {
 #if DBUG_PARSEINT
-  printf(" = %" "l" "d" "\n", (unsigned long)tr);
+printf(" = %" "l" "d" " at %s:%d\n", (unsigned long)tr, __FILE__, __LINE__);
 #endif
       *(unsigned long*)r = tr;
     }
     else if(strstr(f, "hh") == f)
     {
 #if DBUG_PARSEINT
-  printf(" = %" "hh" "d" "\n", (unsigned char)tr);
+printf(" = %" "hh" "d" " at %s:%d\n", (unsigned char)tr, __FILE__, __LINE__);
 #endif
       *(unsigned char*)r = tr;
     }
     else if(strstr(f, "h") == f)
     {
 #if DBUG_PARSEINT
-  printf(" = %" "h" "d" "\n", (unsigned short)tr);
+printf(" = %" "h" "d" " at %s:%d\n", (unsigned short)tr, __FILE__, __LINE__);
 #endif
       *(unsigned short*)r = tr;
     }
     else
     {
 #if DBUG_PARSEINT
-  printf(" = %" "" "d" "\n", (unsigned int)tr);
+printf(" = %" "" "d" " at %s:%d\n", (unsigned int)tr, __FILE__, __LINE__);
 #endif
       *(unsigned int*)r = tr;
     }
