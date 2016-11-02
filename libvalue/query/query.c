@@ -16,6 +16,7 @@
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
 #include <string.h>
+#include <inttypes.h>
 
 #include "xapi.h"
 #include "valyria/list.h"
@@ -25,6 +26,7 @@
 #include "query.internal.h"
 
 #include "strutil.h"
+#include "parseint.h"
 
 #define restrict __restrict
 
@@ -53,29 +55,41 @@ static int value_query_compare(void * ud, const void * _el, size_t idx)
 // api
 //
 
-API value * value_query(value * restrict val, const char * const restrict query)
+API value * value_query(const value * restrict val, const char * const restrict query)
 {
   const char * start = query;
   const char * end = 0;
 
-  while(val && val->type == VALUE_TYPE_MAP && *start)
+  while(val && (val->type & VALUE_TYPE_AGGREGATE) && *start)
   {
     end = start + 1;
     while(*end && *end != '.')
       end++;
 
-    struct search_context ctx = { key : start, len : end - start };
-    if(!list_search(val->keys, &ctx, value_query_compare))
-      break;
+    if(val->type == VALUE_TYPE_MAP)
+    {
+      struct search_context ctx = { key : start, len : end - start };
+      if(!list_search(val->keys, &ctx, value_query_compare))
+        break;
 
-    val = list_get(val->vals, ctx.idx);
+      val = list_get(val->vals, ctx.idx);
+    }
+    else if(val->type == VALUE_TYPE_LIST)
+    {
+      uint16_t idx;
+      if(parseuint(start, SCNu16, 0, UINT16_MAX, end - start, end - start, &idx, 0))
+        break;
+
+      val = list_get(val->els, idx);
+    }
+
     start = end;
     if(*start == '.')
       start++;
   }
 
   if(!*start)
-    return val;
+    return (value*) val;
 
   return 0;
 }

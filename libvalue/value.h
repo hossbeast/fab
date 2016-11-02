@@ -48,6 +48,9 @@ VALUE_TYPE_TABLE(0)
 #define VALUE_TYPE(a, b, x) (x) == b ? "VALUE_TYPE_" #a :
 #define VALUE_TYPE_STRING(x) VALUE_TYPE_TABLE(x) "UNKNOWN"
 
+#define VALUE_TYPE_SCALAR     0xF00
+#define VALUE_TYPE_AGGREGATE  0x0F0
+
 /*
  * options and modifiers
  */

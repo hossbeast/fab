@@ -36,7 +36,7 @@ struct value;
 // RETURNS
 //  value matching the query, if any
 //
-struct value * value_query(struct value * restrict val, const char * const restrict query)
+struct value * value_query(const struct value * restrict val, const char * const restrict query)
   __attribute__((nonnull));
 
 #undef restrict

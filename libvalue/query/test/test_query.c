@@ -218,6 +218,106 @@ finally:
 coda;
 }
 
+static xapi query_test_list(xunit_test * test)
+{
+  enter;
+
+  value * list = 0;
+  value * one;
+  value * two;
+  value * three;
+  value * exp;
+  value * act;
+  value_store * stor = 0;
+  narrator * N0 = 0;
+  narrator * N1 = 0;
+
+  fatal(value_store_create, &stor);
+  fatal(narrator_fixed_create, &N0, 1024);
+  fatal(narrator_fixed_create, &N1, 1024);
+
+  // tree [ 1 true 3 ]
+  fatal(value_integer_mk, stor, 0, &one, 1);
+  fatal(value_list_mkv, stor, 0, list, &list, one);
+  fatal(value_boolean_mk, stor, 0, &two, 1);
+  fatal(value_list_mkv, stor, 0, list, &list, two);
+  fatal(value_integer_mk, stor, 0, &three, 3);
+  fatal(value_list_mkv, stor, 0, list, &list, three);
+
+  // act
+  exp = one;
+  act = value_query(list, "0");
+
+  // assert
+  fatal(narrator_reset, N0); fatal(value_say, exp, N0);
+  fatal(narrator_reset, N1); fatal(value_say, act, N1);
+  assertf(value_cmp(exp, act) == 0, "%s", "%s", narrator_fixed_buffer(N0), narrator_fixed_buffer(N1));
+
+  // act
+  exp = two;
+  act = value_query(list, "1");
+
+  // assert
+  fatal(narrator_reset, N0); fatal(value_say, exp, N0);
+  fatal(narrator_reset, N1); fatal(value_say, act, N1);
+  assertf(value_cmp(exp, act) == 0, "%s", "%s", narrator_fixed_buffer(N0), narrator_fixed_buffer(N1));
+
+  // act
+  exp = three;
+  act = value_query(list, "2");
+
+  // assert
+  fatal(narrator_reset, N0); fatal(value_say, exp, N0);
+  fatal(narrator_reset, N1); fatal(value_say, act, N1);
+  assertf(value_cmp(exp, act) == 0, "%s", "%s", narrator_fixed_buffer(N0), narrator_fixed_buffer(N1));
+
+finally:
+  fatal(value_store_xfree, stor);
+  fatal(narrator_xfree, N0);
+  fatal(narrator_xfree, N1);
+coda;
+}
+
+static xapi query_test_list_nomatch(xunit_test * test)
+{
+  enter;
+
+  value * list = 0;
+  value * one;
+  value * two;
+  value * three;
+  value * act;
+  value_store * stor = 0;
+  narrator * N0 = 0;
+
+  fatal(value_store_create, &stor);
+  fatal(narrator_fixed_create, &N0, 1024);
+
+  // tree [ 1 true 3 ]
+  fatal(value_integer_mk, stor, 0, &one, 1);
+  fatal(value_list_mkv, stor, 0, list, &list, one);
+  fatal(value_boolean_mk, stor, 0, &two, 1);
+  fatal(value_list_mkv, stor, 0, list, &list, two);
+  fatal(value_integer_mk, stor, 0, &three, 3);
+  fatal(value_list_mkv, stor, 0, list, &list, three);
+
+  // act
+  act = value_query(list, "7");
+
+  // assert
+  if(act)
+  {
+    fatal(narrator_reset, N0);
+    fatal(value_say, act, N0);
+  }
+  assertf(act == 0, "%s", "%s", "(nomatch)", narrator_fixed_buffer(N0));
+
+finally:
+  fatal(value_store_xfree, stor);
+  fatal(narrator_xfree, N0);
+coda;
+}
+
 //
 // public
 //
@@ -229,6 +329,8 @@ xunit_unit xunit = {
       (xunit_test[]){{ entry : query_test_map_one_level }}
     , (xunit_test[]){{ entry : query_test_map_two_levels }}
     , (xunit_test[]){{ entry : query_test_map_nomatch }}
+    , (xunit_test[]){{ entry : query_test_list }}
+    , (xunit_test[]){{ entry : query_test_list_nomatch }}
     , 0
   }
 };

@@ -81,7 +81,8 @@ xapi value_float_mk(
 xapi value_boolean_mk(
     struct value_store * const restrict stor
   , const struct yyu_location * const restrict loc
-  , struct value ** rv, const int b
+  , struct value ** rv
+  , const int b
 )
   __attribute__((nonnull(1, 3)));
 
