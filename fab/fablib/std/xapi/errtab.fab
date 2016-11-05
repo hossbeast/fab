@@ -66,11 +66,18 @@ $errtabpaths = [
   > sed -e 's/^\([-0-9]\+\)[\t ]\+\([^\t ]\+\)\([\t ]\+\(.*\)\)\?/_E(\1, \2, "\4") \\/p; d'
 
   > echo
+  > echo "#if XAPI_STACKTRACE"
+
+  cat [ $@ ~ rx/ineed uu fi ] | \
+  > sed -e "s/^\([0-9]\+\)[\t ]\+\([^\t ]\+\)[\t ]\+\(.*\)/#define ${pfx}_\2 perrtab_${pfx}->v[\1 - ERRMIN_${pfx}].exit/p; d"
+
+  > echo "#else"
   > echo "enum {"
   > echo "#define _E(a, b, c) ${pfx}_ ## b = a,"
   > echo "ETABLE_${pfx}"
   > echo "#undef _E"
   > echo "};"
+  > echo "#endif"
 
   > echo -n "#define ERRMIN_${pfx} "
   cat [ $@ ~ rx/ineed uu fi ] | \
@@ -80,28 +87,25 @@ $errtabpaths = [
   cat [ $@ ~ rx/ineed uu fi ] | \
   > perl -e '$max=-0xFFFF;while(<>){ if(/^([^\t ]+)/ && int($1)) { $max = [$max,$1]->[$max < $1] } } print $max, "\n"'
 
-  > echo "extern etable * perrtab_${pfx};"
+  > echo "extern errtab * perrtab_${pfx};"
   > echo "#endif"
 
   > exec >${cfl}
   > echo "#include \"${hin}\""
   > echo "#define APIDATA"
-  > echo "etable errtab_${pfx} = {"
+  > echo "errtab errtab_${pfx} = {"
   > echo "   .name = \"${pfx}\""
   > echo " , .min = ERRMIN_${pfx}"
   > echo " , .max = ERRMAX_${pfx}"
-  > echo " , .v =  (typeof(((etable*)0)->v[0])[]) {"
-  > echo "#define _E(a, b, c) [ a + (ERRMIN_${pfx} * -1) ] = { .name = #b, .desc = c, .str = #b \" : \" c },"
+  > echo " , .v =  (typeof(((errtab*)0)->v[0])[]) {"
+  > echo "#define _E(a, b, c) [ a - ERRMIN_${pfx} ] = { .name = #b, .desc = c, .str =\"${pfx}_\" #b \" : \" c, .exit = a },"
   > echo "ETABLE_${pfx}"
   > echo "#undef _E"
   > echo "}};"
-  > echo "#if XAPI_MODE_STACKTRACE"
-  > echo "etable * ${api} perrtab_${pfx} = &errtab_${pfx};"
+  > echo "#if XAPI_STACKTRACE"
+  > echo "errtab * ${api} perrtab_${pfx} = &errtab_${pfx};"
   > echo "#endif"
 }
-
-# echo "etable * ${api} perrtab = &errtab_${pfx};"
-# echo "#extern etable * perrtab;"
 
 # cc : errors.c -> errors.o @ std.c
 +[@std.c](-$cobjpaths; $cfabpaths = [ $errtabpaths ~ sx/errtab/errtab.c ]; $cc $cflags; $cdscpaths)
