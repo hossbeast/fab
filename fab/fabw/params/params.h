@@ -15,22 +15,39 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef _LOGGING_H
-#define _LOGGING_H
+#ifndef _PARAMS_H
+#define _PARAMS_H
 
-#include "logger.h"
-#include "logger/category.h"
+#include "xapi.h"
 
-extern logger_category * categories;
+extern struct g_params
+{
+  //
+  // non-configurable execution parameters
+  //
 
-#define L_ERROR categories[0x00].id
-#define L_IPC   categories[0x01].id
+  char *          cwd;         // cwd
+  char *          exedir;      // location of the binary executable
+} g_params;
 
-/// logging_setup
+xapi params_setup(void);
+void params_teardown(void);
+
+
+/// params_parse
 //
-// SUMMARY
-//  register logging categories
+// parses command-line options, populating g_params.
 //
-xapi logging_setup(void);
+// Prints the usage statement and terminates the program if options are
+// invalid, for example required options are not present, or invalid
+// parameters are given to an option
+//
+xapi params_setup(void);
+
+/// params_teardown
+//
+// free g_params
+//
+void params_teardown(void);
 
 #endif

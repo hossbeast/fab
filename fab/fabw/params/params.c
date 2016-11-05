@@ -15,10 +15,38 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef _FABW_GLOBAL_H
-#define _FABW_GLOBAL_H
+#include <unistd.h>
 
-#undef perrtab
-#define perrtab perrtab_FAB
+#include "xapi.h"
+#include "xlinux/xstdlib.h"
+#include "xlinux/xstring.h"
 
-#endif
+#include "params.h"
+
+struct g_params g_params;
+
+//
+// public
+//
+
+xapi params_setup()
+{
+  enter;
+
+  char space[512];
+
+  // exedir is the path to directory containing the executing binary
+  ssize_t r = 0;
+  fatal(xreadlinks, "/proc/self/exe", space, sizeof(space), &r);
+  while(space[r] != '/')
+    r--;
+
+  fatal(ixstrndup, &g_params.exedir, space, r);
+
+  finally : coda;
+}
+
+void params_teardown()
+{
+  iwfree(&g_params.exedir);
+}

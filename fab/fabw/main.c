@@ -27,17 +27,23 @@
 #include <sys/wait.h>
 
 #include "xapi.h"
+#include "xlinux/load.h"
+#include "logger/load.h"
+#include "narrator/load.h"
+
 #include "xapi/trace.h"
-#include "xlinux.h"
-#include "xlinux/SYS.errtab.h"
+#include "xapi/SYS.errtab.h"
+#include "xlinux/xsignal.h"
+#include "xlinux/xunistd.h"
+#include "xlinux/xwait.h"
+#include "xlinux/xfcntl.h"
+#include "narrator.h"
+#include "logger.h"
+#include "logger/arguments.h"
+#include "fab/ipc.h"
 
-#include "fabcore.h"
-#include "fabcore/params.h"
-#include "fabcore/FAB.errtab.h"
-#include "fabcore/ipc.h"
-
-#include "global.h"
 #include "logging.h"
+#include "params.h"
 
 #include "parseint.h"
 #include "macros.h"
@@ -47,46 +53,49 @@ int main(int argc, char ** argv, char ** envp)
   enter;
 
   xapi R = 0;
-  char ipcdir[512];
+
+  char space[512];
+  char * fabd_path = 0;
 
   int token = 0;
   int fd = -1;
   pid_t child_pid = -1;
+  pid_t client_pid = -1;
   char hash[9] = { 0 };
 
   // load libraries
+  fatal(logger_load);
+  fatal(narrator_load);
   fatal(xlinux_load);
-  fatal(fabcore_load);
 
-#if 0
+  // logging
+  fatal(logging_setup);
+  fatal(logger_arguments_setup, envp);
+  fatal(logger_finalize);
+
+  // modules
+  fatal(params_setup);
+
   // std file descriptors
-  int x;
-  for(x = 0; x < 3; x++)
-    close(x);
-
-  fatal(xopen, "/dev/null", O_RDONLY, 0);
-  fatal(xopen, "/dev/null", O_WRONLY, 0);
-  fatal(xopen, "/dev/null", O_WRONLY, 0);
-#endif
+  fatal(xclose, 0);
+  fatal(xopens, 0, O_RDONLY, "/dev/null");
 
   // required second argument : ipc hash
   uint32_t u32;
-  if(argc < 2 || parseuint(argv[1], SCNx32, 1, UINT32_MAX, 1, UINT8_MAX, &u32, 0) != 0)
-    fail(FAB_BADARGS);
-  snprintf(hash, sizeof(hash), "%08x", u32);
-  snprintf(ipcdir, sizeof(ipcdir), "%s/%s", XQUOTE(FABIPCDIR), hash);
+  if(argc < 2 || parseuint(g_argv[1], SCNx32, 1, UINT32_MAX, 1, UINT8_MAX, &u32, 0) != 0)
+    tfail(perrtab_SYS, SYS_BADARGS);
+  snprintf(hash, sizeof(hash), "%x", u32);
 
 #if DEBUG || DEVEL
-  char space[4096];
-  snprintf(space, sizeof(space), "%ld/%ld/%s", (long)getpgid(0), (long)getpid(), "fabw");
-  dprintf(1, "%s%*s started\n", space, (int)MAX(0, 20 - strlen(space)), "");
+  logs(L_IPC, "started");
 #endif
 
-  // block FABSIG signals
+  // block libfab signals
   sigset_t app_set;
   sigemptyset(&app_set);
-  sigaddset(&app_set, FABSIG_SYN);
-  sigaddset(&app_set, FABSIG_ACK);
+  sigaddset(&app_set, FABIPC_SIGSYN);
+  sigaddset(&app_set, FABIPC_SIGACK);
+  sigaddset(&app_set, FABIPC_SIGEND);
 
   fatal(xsigprocmask, SIG_SETMASK, &app_set, 0);
 
@@ -96,13 +105,36 @@ int main(int argc, char ** argv, char ** envp)
   {
 #if DEVEL
     snprintf(space, sizeof(space), "%s/../fabd/fabd.devel", g_params.exedir);
-    char * argvp[] = { space, hash, "+ALL", (void*)0 };
-    execv(space, argvp);
-#else
-    execlp("fabd", "fabd", hash, (void*)0);
+    fabd_path = space;
 #endif
 
-    tfail(perrtab_SYS, errno);
+    char * argv[] = {
+#if DEVEL
+        "fabd.devel"
+#else
+        "fabd"
+#endif
+      , hash, (void*)0
+    };
+
+#if DEVEL
+    fatal(log_start, L_IPC, &token);
+    logs(0, "execv(");
+    logs(0, fabd_path ?: "fabd");
+    int x;
+    for(x = 0; x < sentinel(argv); x++)
+    {
+      logs(0, ",");
+      logs(0, argv[x]);
+    }
+    logs(0, ")");
+    fatal(log_finish, &token);
+#endif
+
+    if(fabd_path)
+      fatal(execv, fabd_path, argv);
+    else
+      fatal(execvp, "fabd", argv);
   }
 
   // suspend execution pending child status change
@@ -111,35 +143,61 @@ int main(int argc, char ** argv, char ** envp)
 
   // if fabd terminated abnormally
   if(WIFEXITED(status)) { }
-  else if(WEXITSTATUS(status))
+  else if(WEXITSTATUS(status) || WIFSIGNALED(status))
   {
-    printf("fabd : exited status %d\n", WEXITSTATUS(status));
+    if(WEXITSTATUS(status))
+      xlogf(L_ERROR, L_RED, "fabd : exited status %d", WEXITSTATUS(status));
+    else if(WIFSIGNALED(status))
+      xlogf(L_ERROR, L_RED, "fabd : term signal %d %s", WTERMSIG(status), strsignal(WTERMSIG(status)));
   }
-  else if(WIFSIGNALED(status))
-  {
-    printf("fabd : term signal %d %s\n", WTERMSIG(status), strsignal(WTERMSIG(status)));
-  }
-  
+
+  // record the exit status
+  snprintf(space, sizeof(space), "%s/%s/fabd/exit", XQUOTE(FABIPCDIR), hash);
+  fatal(xopen_modes, &fd, O_CREAT | O_WRONLY, FABIPC_MODE_DATA, space);
+  fatal(axwrite, fd, &status, sizeof(status));
+  fatal(ixclose, &fd);
+
+  // signal a client, if any
+  snprintf(space, sizeof(space), "%s/%s/client/pid", XQUOTE(FABIPCDIR), hash);
+  fatal(xopens, &fd, O_RDONLY, space);
+  fatal(axread, fd, &client_pid, sizeof(client_pid));
+#if DEVEL
+logf(L_IPC, "sending %s/%d to %d", FABIPC_SIGNAME(FABIPC_SIGEND), FABIPC_SIGEND, client_pid);
+#endif
+  fatal(uxkill, client_pid, FABIPC_SIGEND, 0);
+
 finally:
   fatal(log_finish, &token);
 
-#if XAPI_STACKTRACE
+#if DEBUG || DEVEL
+  xapi_infos("name", "fabw");
+  xapi_infof("pgid", "%ld", (long)getpgid(0));
+  xapi_infof("pid", "%ld", (long)getpid());
+  xapi_infos("hash", hash);
+#endif
+
   if(XAPI_UNWINDING)
   {
-    xapi_infos("name", "fabw");
-    xapi_infof("pid", "%ld", (long)getpid());
-    xapi_infos("hash", hash);
-
-    xapi_backtrace_to(1);
-  }
+    size_t tracesz;
+#if DEBUG || DEVEL
+    tracesz = xapi_trace_full(space, sizeof(space));
+#else
+    tracesz = xapi_trace_pithy(space, sizeof(space));
 #endif
+
+    xlogw(L_ERROR, L_RED, space, tracesz);
+  }
 
   // locals
   fatal(ixclose, &fd);
 
+  // modules
+  params_teardown();
+
   // libraries
+  fatal(logger_unload);
+  fatal(narrator_unload);
   fatal(xlinux_unload);
-  fatal(fabcore_unload);
 
 conclude(&R);
   xapi_teardown();
