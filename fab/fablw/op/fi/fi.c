@@ -110,7 +110,7 @@ int op_exec_fi(operation* o, lwx * lx, int** ovec, int* ovec_len, void ** udata)
   else if(o->argsl == 1)
   {
     lwx_setflags(lx, INTERPOLATE_DELIM_CUST);
-    free(lwx_getptr(lx));
+    wfree(lwx_getptr(lx));
     lwx_setptr(lx, strdup(o->args[0]->s));
   }
 
