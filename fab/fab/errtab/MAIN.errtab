@@ -15,23 +15,4 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#include "xapi.h"
-#include "xlinux.h"
-#include "xlinux/SYS.errtab.h"
-#include "logger.h"
-
-#include "fabcore/sigbank.h"
-#include "fabcore/params.h"
-#include "fabcore/identity.h"
-
-#include "global.h"
-#include "launchp.h"
-#include "logging.h"
-
-#include "macros.h"
-
-#define restrict __restrict
-
-//
-// public
-//
+1   BADARGS   failed to parse command-line arguments

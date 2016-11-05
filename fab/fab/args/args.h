@@ -22,7 +22,7 @@
 
 #include "xapi.h"
 
-struct request;
+struct fab_request;
 struct memblk;
 
 #define MODE_TABLE(x)                                                                                           \
@@ -135,12 +135,12 @@ xapi args_report(void);
 //
 void args_teardown(void);
 
-/// args_collate_request
+/// args_request_collate
 //
 // SUMMARY
 //  build a fab request from g_args
 //
-xapi args_collate_request(struct memblk * const restrict mb, struct request ** const restrict req)
+xapi args_request_collate(struct memblk * const restrict mb, struct fab_request ** const restrict request)
   __attribute__((nonnull));
 
 #endif

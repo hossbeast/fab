@@ -25,7 +25,7 @@ logger_category * categories = (logger_category[]) {
     { name : "ERROR" , description : "errors leading to shutdown" }
   , { name : "INFO"  , description : "program flow" }
   , { name : "ARGS"  , description : "program arguments report" }
-
+  , { name : "PARAMS", description : "program parameters report" }
 #if DEBUG || DEVEL
   , { name : "IPC"   , description : "signal-exchange" }
 #endif
@@ -33,9 +33,14 @@ logger_category * categories = (logger_category[]) {
 };
 
 logger_stream * streams = (logger_stream []) {
-    { name : "console"  , type : LOGGER_STREAM_FD , fd : 1  , expr : "+ERROR,INFO" }
+    { name : "console"  , type : LOGGER_STREAM_FD , fd : 1  , expr : "+ERROR,INFO", attr : L_PROCESSID | L_CATEGORY }
   , { }
 };
+
+// while misconfigured, log any messages to stderr
+int g_logger_default_stderr = 1;
+
+char * g_logger_process_name = "fab";
 
 xapi logging_setup()
 {

@@ -15,11 +15,9 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef _FAB_GLOBAL_H
-#define _FAB_GLOBAL_H
+#ifndef _FABCORE_PARAMS_INTERNAL_H
+#define _FABCORE_PARAMS_INTERNAL_H
 
-#include "fabcore/FAB.errtab.h"
-#undef perrtab
-#define perrtab perrtab_FAB
+#include "params.h"
 
 #endif

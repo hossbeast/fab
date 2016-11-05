@@ -28,35 +28,26 @@
 #include "xlinux/xstdlib.h"
 #include "xlinux/mempolicy.h"
 
-#include "listwise.h"
-#include "listwise/operator.h"
-#include "listwise/operators.h"
-#include "listwise/transform.h"
-
 #include "narrator.h"
 #include "narrator/units.h"
 
-#include "fabcore/FAB.errtab.h"
-#include "fabcore/params.h"
-#include "fabcore/request.h"
+#include "fab/request.h"
 
 #include "logger.h"
 #include "logger/filter.h"
 #include "logger/category.h"
 #include "logger/arguments.h"
 
-#include "global.h"
 #include "args.h"
 #include "logging.h"
+#include "params.h"
+#include "errtab/MAIN.errtab.h"
 
 #include "macros.h"
 #include "assure.h"
 #include "memblk.h"
 
 #define restrict __restrict
-
-#undef perrtab
-#define perrtab perrtab_FAB
 
 struct g_args * g_args;
 
@@ -232,6 +223,11 @@ static xapi target_say(struct target * t, narrator * const restrict N)
 // [[ public ]]
 //
 
+void args_teardown()
+{
+  wfree(g_args);
+}
+
 xapi args_parse()
 {
   enter;
@@ -376,13 +372,13 @@ xapi args_parse()
       int n = 0;
       if(sscanf(optarg, "%d%n", &g_args->concurrency, &n) != 1 || n < -1)
       {
-        failf(FAB_BADARGS, "badly formed option for -j : '%s'", optarg);
+        failf(MAIN_BADARGS, "badly formed option for -j : '%s'", optarg);
       }
     }
     else if(x == 'k')
     {
       g_args->mode_build = MODE_BUILD_BUILDSCRIPT;
-      ifree(&g_args->buildscript_path);
+      iwfree(&g_args->buildscript_path);
       fatal(ixstrdup, &g_args->buildscript_path, optarg);
     }
     else if(x == 'p')
@@ -402,11 +398,11 @@ xapi args_parse()
     {
       if(optopt)
       {
-        failf(FAB_BADARGS, "unknown switch", "-%c", optopt);
+        failf(MAIN_BADARGS, "unknown switch", "-%c", optopt);
       }
       else
       {
-        fails(FAB_BADARGS, "unknown argument", g_argv[optind-1]);
+        fails(MAIN_BADARGS, "unknown argument", g_argv[optind-1]);
       }
     }
     else
@@ -491,7 +487,21 @@ finally:
 coda;
 }
 
-xapi args_collate_request(memblk * const restrict mb, request ** const restrict req)
+static xapi config_merge(fab_request * restrict request, const char * restrict fmt, ...)
+{
+  enter;
+
+  va_list va;
+  va_start(va, fmt);
+
+  fatal(fab_request_commandvf, request, FABCORE_CONFIGURATION_MERGE, fmt, va);
+
+finally:
+  va_end(va);
+coda;
+}
+
+xapi args_request_collate(memblk * const restrict mb, fab_request ** const restrict request)
 {
   enter;
 
@@ -499,60 +509,62 @@ xapi args_collate_request(memblk * const restrict mb, request ** const restrict 
   int mpc = 0;
 
   fatal(mempolicy_push, memblk_getpolicy(mb), &mpc);
-  fatal(request_create, req, g_params.pid);
+  fatal(fab_request_create, request, g_params.pid);
+
+  // overwrite logging filters
+  fatal(config_merge, *request, "logging.console.filters [ \"%s\" ]", g_logvsl ? g_logvs : "+ERROR,INFO");
 
   if(g_args->mode_build)
-    fatal(request_commandu8, *req, FABCORE_MODE_BUILD, g_args->mode_build);
+    fatal(fab_request_commandu8, *request, FABCORE_MODE_BUILD, g_args->mode_build);
 
 #if DEVEL
-  if(g_args->mode_license)
-    fatal(request_commandu8, *req, FABCORE_MODE_LICENSE, g_args->mode_license);
+  if(g_args->mode_license == MODE_LICENSE_FAB)
+    fatal(fab_request_commandf, *request, FABCORE_CONFIGURATION_MERGE, "license_mode \"fab\"", g_args->mode_license);
+  else // MODE_LICENSE_STD
+    fatal(fab_request_commandf, *request, FABCORE_CONFIGURATION_MERGE, "license_mode \"standard\"");
 #endif
 
   if(g_args->buildscript_path || g_args->buildscript_runtime_varsl)
   {
     if(!g_args->buildscript_path)
-      failf(FAB_BADARGS, "error", "-K is specified together with -k");
+      failf(MAIN_BADARGS, "error", "-K is specified along with -k");
 
-    fatal(request_commands, *req, FABCORE_BUILDSCRIPT_PATH, g_args->buildscript_path);
-    fatal(request_command, *req, FABCORE_BUILDSCRIPT_VARS | FABCORE_CLEAR);
+    fatal(fab_request_commands, *request, FABCORE_BUILDSCRIPT_PATH, g_args->buildscript_path);
+    fatal(fab_request_command, *request, FABCORE_BUILDSCRIPT_VARS | FABCORE_CLEAR);
 
     for(x = 0; x < g_args->buildscript_runtime_varsl; x++)
-      fatal(request_commands, *req, FABCORE_BUILDSCRIPT_VARS | FABCORE_PUSH, g_args->buildscript_runtime_vars[x]);
+      fatal(fab_request_commands, *request, FABCORE_BUILDSCRIPT_VARS | FABCORE_PUSH, g_args->buildscript_runtime_vars[x]);
   }
 
   if(g_args->targetsl)
   {
-    fatal(request_command, *req, FABCORE_CLEAR | FABCORE_TARGET_FABRICATE);
-    fatal(request_command, *req, FABCORE_CLEAR | FABCORE_TARGET_FABRICATE_EXACT);
-    fatal(request_command, *req, FABCORE_CLEAR | FABCORE_TARGET_FABRICATE_NOFILE);
-    fatal(request_command, *req, FABCORE_CLEAR | FABCORE_TARGET_INVALIDATE);
+    fatal(fab_request_command, *request, FABCORE_CLEAR | FABCORE_TARGET_FABRICATE);
+    fatal(fab_request_command, *request, FABCORE_CLEAR | FABCORE_TARGET_FABRICATE_EXACT);
+    fatal(fab_request_command, *request, FABCORE_CLEAR | FABCORE_TARGET_FABRICATE_NOFILE);
+    fatal(fab_request_command, *request, FABCORE_CLEAR | FABCORE_TARGET_INVALIDATE);
 
     for(x = 0; x < g_args->targetsl; x++)
     {
       if(g_args->targets[x].lists & TARGET_FABRICATE)
-        fatal(request_command_target, *req, FABCORE_TARGET_FABRICATE | FABCORE_PUSH, g_args->targets[x].mode, g_args->targets[x].text);
+        fatal(fab_request_command_target, *request, FABCORE_TARGET_FABRICATE | FABCORE_PUSH, g_args->targets[x].mode, g_args->targets[x].text);
 
       if(g_args->targets[x].lists & TARGET_FABRICATE_EXACT)
-        fatal(request_command_target, *req, FABCORE_TARGET_FABRICATE_EXACT | FABCORE_PUSH, g_args->targets[x].mode, g_args->targets[x].text);
+        fatal(fab_request_command_target, *request, FABCORE_TARGET_FABRICATE_EXACT | FABCORE_PUSH, g_args->targets[x].mode, g_args->targets[x].text);
 
       if(g_args->targets[x].lists & TARGET_FABRICATE_NOFILE)
-        fatal(request_command_target, *req, FABCORE_TARGET_FABRICATE_NOFILE | FABCORE_PUSH, g_args->targets[x].mode, g_args->targets[x].text);
+        fatal(fab_request_command_target, *request, FABCORE_TARGET_FABRICATE_NOFILE | FABCORE_PUSH, g_args->targets[x].mode, g_args->targets[x].text);
 
       if(g_args->targets[x].lists & TARGET_INVALIDATE)
-        fatal(request_command_target, *req, FABCORE_TARGET_INVALIDATE | FABCORE_PUSH, g_args->targets[x].mode, g_args->targets[x].text);
+        fatal(fab_request_command_target, *request, FABCORE_TARGET_INVALIDATE | FABCORE_PUSH, g_args->targets[x].mode, g_args->targets[x].text);
     }
   }
 
+  fatal(fab_request_command, *request, FABCORE_CONFIGURATION_APPLY);
+
   if(g_args->invalidate_all)
-    fatal(request_command, *req, FABCORE_INVALIDATE_ALL);
+    fatal(fab_request_command, *request, FABCORE_INVALIDATE_ALL);
 
 finally:
   mempolicy_unwind(&mpc);
 coda;
-}
-
-void args_teardown()
-{
-  xfree(g_args);
 }

@@ -13,20 +13,25 @@ in order, later files take precedence
 $HOME/.fabconfig
 $PROJECT/.fabconfig
 
-# shit you can configure
+# configuration keys
 
-#filesystem - invalidation methods
+ mode :- exec | generate | buildscript
+ buildscript.path "/foo/bar"
+ buildscript.runtime-vars [ foo bar ]
+ targets [ "./foo" ]
+ concurrency : unbounded | heuristic | <integer>
+ license : std | fab
+ backtrace : pithy | full
 
-filesystem.home.path
+## logging filters
+
+ logging.console.filters [ "+IPC" ]
+
+## filesystem - invalidation methods
 
 filesystem {
-  "/" {
-    invalidation stat
-  }
-
   "/mnt/remote" {
-    path /
-    invalidation notify
+    invalidation stat | content | notify | always | never
   }
 }
 

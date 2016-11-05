@@ -22,6 +22,7 @@
 +[ $dfab ]()      @fab
 +[ $dfabw ]()     @fabw
 +[ $dfabd ]()     @fabd
++[ $dlibfab]()    @libfab
 
 # variables
 $sdirs = [ $dfabd [ $dfabroot/common ~ j ] ~ lsr c -d ]
@@ -63,11 +64,11 @@ $faboplist_xapi_devel = [ $dfabroot/fablw/op ~ j lsr sx/c/xapi.devel.so sy ]
 [ @all ] : [ @all.xapi ]
 [ @all.xapi ] : [ @final.xapi @debug.xapi @devel.xapi ]
 [ @final ] : [ @final.xapi ]
-[ @final.xapi ] : [ @fab.final @fabw.final @fabd.final $faboplist_xapi_final ]
+[ @final.xapi ] : [ @fab.final @fabw.final @fabd.final @libfab.final $faboplist_xapi_final ]
 [ @debug ] : [ @debug.xapi ]
-[ @debug.xapi ] : [ @fab.debug @fabw.debug @fabd.debug $faboplist_xapi_debug ]
+[ @debug.xapi ] : [ @fab.debug @fabw.debug @fabd.debug @libfab.debug $faboplist_xapi_debug ]
 [ @devel ] : [ @devel.xapi ]
-[ @devel.xapi ] : [ @fab.devel @fabw.devel @fabd.devel $faboplist_xapi_devel ]
+[ @devel.xapi ] : [ @fab.devel @fabw.devel @fabd.devel @libfab.devel $faboplist_xapi_devel ]
 
 #
 # standard files - fPIC compilation

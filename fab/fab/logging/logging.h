@@ -25,11 +25,12 @@
 
 extern struct logger_category * categories;
 
-#define L_ERROR categories[0x00].id
-#define L_INFO  categories[0x01].id
-#define L_ARGS  categories[0x02].id
+#define L_ERROR   categories[0x00].id
+#define L_INFO    categories[0x01].id
+#define L_ARGS    categories[0x02].id
+#define L_PARAMS  categories[0x03].id
 #if DEBUG || DEVEL
-#define L_IPC   categories[0x03].id
+#define L_IPC     categories[0x04].id
 #endif
 
 /// logging_setup
