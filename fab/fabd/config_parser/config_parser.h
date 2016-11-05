@@ -36,19 +36,19 @@ typedef struct config_parser config_parser;
 xapi config_parser_create(config_parser ** const restrict p)
   __attribute__((nonnull));
 
-/// config_parser_free
+/// config_parser_xfree
 //
 // SUMMARY
 //  free a config parser with free semantics
 //
-void config_parser_free(config_parser * const restrict);
+xapi config_parser_xfree(config_parser * const restrict);
 
-/// config_parser_ifree
+/// config_parser_ixfree
 //
 // SUMMARY
-//  free a config parser with ifree semantics
+//  free a config parser with iwfree semantics
 //
-void config_parser_ifree(config_parser ** const restrict)
+xapi config_parser_ixfree(config_parser ** const restrict)
   __attribute__((nonnull));
 
 /// config_parse

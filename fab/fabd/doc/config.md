@@ -1,28 +1,41 @@
-# configuration
+# configuration keys
 
-## set / push / pop / shift / unshift
+logging.console.filters [ "+ERROR|WARN" ]
+logging.logfile.filters [ "+ERROR|WARN" "+CONFIG%" ]
 
-* logger ring size
-* logger ring filters
-* buildscript variables
-* buildscript output path
-* backtrace mode
-* concurrency setting
+filesystems."/".invalidate "stat|content|notify|always|never"
 
-$logger.ring.size
-@logger.ring.filters
-$mode
-$buildscript.vars
-$buildscript.path
-$concurrency
+build.targets.fabricate [ ]
+build.targets.fabricate-exact [ ]
+build.targets.fabricate-nofile [ ]
+build.mode "script|plan|exec"
+
+license "std|fab"
+node.invalidate [ ]
+concurrency "unbounded|umlimited|infinite|percpu" | <integer>
+
+buildscript.path ""
+buildscript.runtime-vars [ ]
 
 * lines to output when build fails
 * bytes to output when build fails
 
-## set
+# client commands
 
-* per-filesystem invalidation settings
+* execute the build
+* kill the daemon
+* merge this config
+* apply config
+* invalidate these nodes
 
-filesystem.0
-  path : ""
-  invalidation : "stat|content|notify|always|never"
+## maybe
+
+* run discovery
+
+## someday
+
+* so many graph operations are possible
+** shortest path between X and Y
+
+* print summary about these nodes
+* print dependencies of these nodes

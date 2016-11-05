@@ -19,36 +19,35 @@
 #include "xapi/exit.h"
 
 #include "xlinux/xstdlib.h"
-#include "xlinux/SYS.errtab.h"
+#include "xlinux/KERNEL.errtab.h"
+
+#include "narrator.h"
 
 #include "valyria/map.h"
 #include "valyria/list.h"
 #include "valyria/pstring.h"
 
 #include "value.h"
-#include "value/value_store.h"
-
-#include "fabcore.h"
-#include "fabcore/logging.h"
+#include "value/store.h"
 
 struct config_xtra;
 #define YYU_EXTRA_TYPE struct config_xtra
 #include "internal.h"
+#include "logging.h"
 #include "config_parser.internal.h"
 #include "config_parser/config.tab.h"
 #include "config_parser/config.lex.h"
 #include "config_parser/config.tokens.h"
 #include "config_parser/config.states.h"
-#include "config/CONFIG.errtab.h"
-
-#undef perrtab
-#define perrtab perrtab_CONFIG
+#include "errtab/CONFIG.errtab.h"
 
 #define restrict __restrict
 
 struct config_parser
 {
   void * p;
+
+  value_store * stor;
 };
 
 //
@@ -82,25 +81,36 @@ xapi config_parser_create(config_parser ** const parser)
   enter;
 
   fatal(xmalloc, parser, sizeof(**parser));
-  tfatalize(perrtab_SYS, ENOMEM, config_yylex_init, &(*parser)->p);
+  tfatalize(perrtab_KERNEL, ENOMEM, config_yylex_init, &(*parser)->p);
+
+  fatal(value_store_create, &(*parser)->stor);
 
   finally : coda;
 }
 
-void config_parser_free(config_parser* const p)
+xapi config_parser_xfree(config_parser* const p)
 {
+  enter;
+
   if(p)
   {
     config_yylex_destroy(p->p);
+    fatal(value_store_xfree, p->stor);
   }
 
-  free(p);
+  wfree(p);
+
+  finally : coda;
 }
 
-void config_parser_ifree(config_parser ** const p)
+xapi config_parser_ixfree(config_parser ** const p)
 {
-  config_parser_free(*p);
+  enter;
+
+  fatal(config_parser_xfree, *p);
   *p = 0;
+
+  finally : coda;
 }
 
 xapi config_parser_parse(
@@ -133,17 +143,18 @@ xapi config_parser_parse(
       .tokname      = tokenname
     , .statename    = statename
     , .lvalstr      = lvalstr
-#if DEBUG || DEVEL
-    , .state_logs   = L_CONFIG | L_STATES
-    , .token_logs   = L_CONFIG | L_TOKENS
+#if DEBUG || DEVEL || XUNIT
+    , .state_logs   = L_CONFIG
+    , .token_logs   = L_CONFIG
 #endif
   };
 
   // create state specific to this parse
   if((state = config_yy_scan_bytes(text, len, (*parser)->p)) == 0)
-    tfail(perrtab_SYS, SYS_ENOMEM);
+    fail(KERNEL_ENOMEM);
 
   pp.scanner = (*parser)->p;
+  pp.stor = (*parser)->stor;
 
   // make available to the lexer
   config_yyset_extra(&pp, (*parser)->p);
@@ -153,6 +164,13 @@ xapi config_parser_parse(
 
   if(pp.root)
   {
+#if 0
+    int token;
+    fatal(log_start, 0, &token);
+    fatal(value_say, pp.root, log_narrator(&token));
+    fatal(log_finish, &token);
+#endif
+
     // create copy of the path
 //    fatal(ixstrdup, &pp.config->canpath, path);
 
@@ -169,7 +187,7 @@ finally:
   config_yy_delete_buffer(state, (*parser)->p);
   yyu_extra_destroy(&pp.yyu);
 
-  config_parser_free(lp);
-  value_store_free(lvs);
+  fatal(config_parser_xfree, lp);
+  fatal(value_store_xfree, lvs);
 coda;
 }

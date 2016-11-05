@@ -22,52 +22,131 @@
 
 struct value;   // libvalue
 
+#define CONFIG_QUERY_NOTNULL 0x10000
+
 #define restrict __restrict
+
+/// g_config
+//
+// root of the active config tree
+//
+struct value * g_config;
 
 /// config_setup
 //
 // SUMMARY
-//  initialize the config module
+//  initializes the config module, does not apply any config files
 //
 xapi config_setup(void);
 
-/// config_load
-//
-// SUMMARY
-//  (re)-load the config files, discard
-//
-xapi config_load(void);
-
-/// config_teardown
+/// config_cleanup
 //
 // SUMMARY
 //  free resources
 //
-void config_teardown(void);
+xapi config_cleanup(void);
+
+/// config_report
+//
+// SUMMARY
+//  log the active config with L_CONFIG
+//
+xapi config_report(void);
+
+/// config_load
+//
+// SUMMARY
+//  reset the staging config, reload the config files and apply them to the staging config
+//
+xapi config_load(void);
 
 /// config_apply
 //
 // SUMMARY
-//  apply new config
+//  cumulatively apply additional config to the staging config
 //
 // PARAMETERS
-//  src
-//  len
+//  text - configuration text to apply
 //
-xapi config_apply(const char * const restrict src, size_t len)
+xapi config_apply(const char * const restrict text)
+  __attribute__((nonnull));
+
+/// config_reconfigure
+//
+// SUMMARY
+//  promoate the staging config to the active config, reconfigure subsystems, and call config_report
+//
+xapi config_reconfigure(xapi * restrict res)
   __attribute__((nonnull));
 
 /// config_query
 //
 // SUMMARY
-//  query the config tree for a value
+//  query a config tree
 //
 // PARAMETERS
-//  query - query
-//  val   - (returns) the value
+//  base   - config tree to query
+//  path   - path from the root of the config tree
+//  query  - path from base
+//  [opts] - bitwise combo of VALUE_TYPE_* and CONFIG_QUERY_*
+//  val    - (returns) the value
 //
-xapi config_query(const char * const restrict query, struct value ** const restrict val)
+// ERRORS
+//  CONFIG_ILLEGAL - opts inclues VALUE_TYPE_* and the query matched a value of some other type, or opts includes
+//                   CONFIG_QUERY_NOTNULL, and the query did not match any value
+//
+xapi config_query(const struct value * restrict base, const char * restrict path, const char * restrict query, uint32_t opts, struct value ** const restrict val)
   __attribute__((nonnull));
+
+/// config_invalid
+//
+// SUMMARY
+//  fail with CONFIG_ILLEGAL
+//
+// PARAMETERS
+//  val    - invalid config object
+//  path   - path from the root of the config tree
+//
+xapi config_invalid(struct value * restrict val, const char * restrict path)
+  __attribute__((nonnull));
+
+#if 0
+/// config_list_get
+//
+// SUMMARY
+//  get an element from a config list
+//
+// PARAMETERS
+//  list   - config list
+//  index  - index of the element to get
+//  [opts] - bitwise combo of VALUE_TYPE_* and CONFIG_QUERY_*
+//  val    - (returns) the value
+//
+// ERRORS
+//  CONFIG_ILLEGAL - opts inclues VALUE_TYPE_* and the query matched a value of some other type, or opts includes
+//                   CONFIG_QUERY_NOTNULL, and the query did not match any value
+//
+xapi config_list_get(struct value * const restrict list, size_t index, uint32_t opts, struct value ** const restrict val)
+  __attribute__((nonnull));
+
+/// config_value_query
+//
+// SUMMARY
+//  query a config tree
+//
+// PARAMETERS
+//  base   - config tree to query
+//  query  - query
+//  [opts] - bitwise combo of VALUE_TYPE_* and CONFIG_QUERY_*
+//  val    - (returns) the value
+//
+// ERRORS
+//  CONFIG_ILLEGAL - opts inclues VALUE_TYPE_* and the query matched a value of some other type, or opts includes
+//                   CONFIG_QUERY_NOTNULL, and the query did not match any value
+//
+xapi config_value_query(struct value * base, const char * const restrict query, uint32_t opts, struct value ** const restrict val)
+  __attribute__((nonnull));
+#endif
 
 #undef restrict
 #endif

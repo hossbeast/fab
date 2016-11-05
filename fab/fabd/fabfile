@@ -25,7 +25,7 @@
 $copts = [
   [ -DFABVERSIONS="\""$VERSIONS"\"" ~ j ]
   [ -DFABVERSIONN="\""$VERSIONN"\"" ~ j ]
-  [ [ $* ~ lsr c -d ] $dlibxapi $dlibxlinux $dliblistwise $dlibvalyria $dlibvalue $dliblogger $dlibnarrator $dlibfabcore $dliblorien $dlibyyutil ~ s/^/-I ]
+  [ [ $* ~ lsr c -d ] $dlibxapi $dlibxlinux $dliblistwise $dlibvalyria $dlibvalue $dliblogger $dlibnarrator $dlibfab $dliblorien $dlibyyutil ~ s/^/-I ]
 ]
 
 $params = [
@@ -45,17 +45,17 @@ $params_devel = [
 $cflags_xapi_final = [ $cflags_xapi_final $copts $params ]
 $cflags_xapi_debug = [ $cflags_xapi_debug $copts $params ]
 $cflags_xapi_devel = [ $cflags_xapi_devel $copts $params_devel ]
-$cflags_xapi_xunit = [ $cflags_xapi_xunit $copts $params_xunit -fPIC ]
+$cflags_xapi_xunit = [ $cflags_xapi_xunit $copts -fPIC ]
 
 $rpath = [ 
-  [ $dlibxapi $dlibxlinux $dliblistwise $dlibvalyria $dlibvalue $dliblogger $dlibxunit $dlibnarrator $dlibfabcore $dliblorien $dlibyyutil ~ [ ?{ [ rb{$*} ~ j ] "s{^}{'-Wl,-rpath,$ORIGIN/}" "s{$}{'}" ~ fi ] ]
+  [ $dlibxapi $dlibxlinux $dliblistwise $dlibvalyria $dlibvalue $dliblogger $dlibxunit $dlibnarrator $dlibfab $dliblorien $dlibyyutil ~ [ ?{ [ rb{$*} ~ j ] "s{^}{'-Wl,-rpath,$ORIGIN/}" "s{$}{'}" ~ fi ] ]
 ]
 
 # -lrt required for glibc < 2.17 as per man clock_gettime
 $lopts             = [ -lrt ]
-$lflags_xapi_final = [ $lflags_xapi_final $lopts $libxapi_xapi_final $libxlinux_xapi_final $liblistwise_xapi_final $libvalyria_xapi_final $libvalue_xapi_final $liblogger_xapi_final $libnarrator_xapi_final $liblorien_xapi_final $libfabcore_xapi_final $libyyutil_xapi_final ]
-$lflags_xapi_debug = [ $lflags_xapi_debug $lopts $libxapi_xapi_debug $libxlinux_xapi_debug $liblistwise_xapi_debug $libvalyria_xapi_debug $libvalue_xapi_debug $liblogger_xapi_debug $libnarrator_xapi_debug $liblorien_xapi_debug $libfabcore_xapi_debug $libyyutil_xapi_debug ]
-$lflags_xapi_devel = [ $lflags_xapi_devel $lopts $libxapi_xapi_devel $libxlinux_xapi_devel $liblistwise_xapi_devel $libvalyria_xapi_devel $libvalue_xapi_devel $liblogger_xapi_devel $libnarrator_xapi_devel $liblorien_xapi_devel $libfabcore_xapi_devel $libyyutil_xapi_devel $rpath ]
+$lflags_xapi_final = [ $lflags_xapi_final $lopts $libxapi_xapi_final $libxlinux_xapi_final $liblistwise_xapi_final $libvalyria_xapi_final $libvalue_xapi_final $liblogger_xapi_final $libnarrator_xapi_final $liblorien_xapi_final $libfab_xapi_final $libyyutil_xapi_final ]
+$lflags_xapi_debug = [ $lflags_xapi_debug $lopts $libxapi_xapi_debug $libxlinux_xapi_debug $liblistwise_xapi_debug $libvalyria_xapi_debug $libvalue_xapi_debug $liblogger_xapi_debug $libnarrator_xapi_debug $liblorien_xapi_debug $libfab_xapi_debug $libyyutil_xapi_debug ]
+$lflags_xapi_devel = [ $lflags_xapi_devel $lopts $libxapi_xapi_devel $libxlinux_xapi_devel $liblistwise_xapi_devel $libvalyria_xapi_devel $libvalue_xapi_devel $liblogger_xapi_devel $libnarrator_xapi_devel $liblorien_xapi_devel $libfab_xapi_devel $libyyutil_xapi_devel $rpath ]
 
 # standard files - standard compilation
 +[@std.c]($dext = [ xapi.final.o ]; $rdirs = $*; $cc; $cflags = $cflags_xapi_final)
@@ -98,21 +98,21 @@ $lflags_xapi_devel = [ $lflags_xapi_devel $lopts $libxapi_xapi_devel $libxlinux_
 # executables
 #  -export-dynamic enables dloaded code (in particular, the fab-specific operator so's) to bind to symbols in the executable.
 #
-[ $fabd_final ] :^ [ $libxapi_xapi_final $libxlinux_xapi_final $liblistwise_xapi_final $libvalyria_xapi_final $libvalue_xapi_final $liblogger_xapi_final $libnarrator_xapi_final $liblorien_xapi_final $libfabcore_xapi_final ]
-[ $fabd_debug ] :^ [ $libxapi_xapi_debug $libxlinux_xapi_debug $liblistwise_xapi_debug $libvalyria_xapi_debug $libvalue_xapi_debug $liblogger_xapi_debug $libnarrator_xapi_debug $liblorien_xapi_debug $libfabcore_xapi_debug ]
-[ $fabd_devel ] :^ [ $libxapi_xapi_devel $libxlinux_xapi_devel $liblistwise_xapi_devel $libvalyria_xapi_devel $libvalue_xapi_devel $liblogger_xapi_devel $libnarrator_xapi_devel $liblorien_xapi_devel $libfabcore_xapi_devel ]
+[ $fabd_final ] :^ [ $libxapi_xapi_final $libxlinux_xapi_final $liblistwise_xapi_final $libvalyria_xapi_final $libvalue_xapi_final $liblogger_xapi_final $libnarrator_xapi_final $liblorien_xapi_final $libfab_xapi_final ]
+[ $fabd_debug ] :^ [ $libxapi_xapi_debug $libxlinux_xapi_debug $liblistwise_xapi_debug $libvalyria_xapi_debug $libvalue_xapi_debug $liblogger_xapi_debug $libnarrator_xapi_debug $liblorien_xapi_debug $libfab_xapi_debug ]
+[ $fabd_devel ] :^ [ $libxapi_xapi_devel $libxlinux_xapi_devel $liblistwise_xapi_devel $libvalyria_xapi_devel $libvalue_xapi_devel $liblogger_xapi_devel $libnarrator_xapi_devel $liblorien_xapi_devel $libfab_xapi_devel ]
 
-[ $fabd_final ] : [ $*/main.xapi.final.o ~ j ] 
+[ $fabd_final ] : [[ $*/main.xapi.final.o ~ j ] ]
 {
   [ $cc ] [ $cflags_xapi_final -export-dynamic ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw rx lx/o uu fi ] [ $lflags_xapi_final ~ fi ]
 }
 
-[ $fabd_debug ] : [ $*/main.xapi.debug.o ~ j ] 
+[ $fabd_debug ] : [[ $*/main.xapi.debug.o ~ j ] ]
 {
   [ $cc ] [ $cflags_xapi_debug -export-dynamic ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw rx lx/o uu fi ] [ $lflags_xapi_debug ~ fi ]
 }
 
-[ $fabd_devel ] : [ $*/main.xapi.devel.o ~ j ] 
+[ $fabd_devel ] : [[ $*/main.xapi.devel.o ~ j ] ]
 {
   [ $cc ] [ $cflags_xapi_devel -export-dynamic ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw rx lx/o uu fi ] [ $lflags_xapi_devel ~ fi ]
 }
@@ -154,23 +154,29 @@ $lflags_xapi_devel = [ $lflags_xapi_devel $lopts $libxapi_xapi_devel $libxlinux_
 # unit tests
 #
 
-[ $* ~ lsr l/test\/test_ sx/c/xapi.xunit.so sy dj shift ] :: [ $< ~ sx/so/pic.o ]
+[ $* ~ lsr l/test\/test_ sx/c/xapi.xunit.so sy dj shift ] :: [ [ $< ~ sx/so/pic.o ] ]
 {
   [ $cc ] [ $cflags -shared ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw lx/o uu fi ]
 }
 
-[ @test ] : [ $* ~ lsr l/test\/test_ sx/c/xapi.xunit.so sy ]
-{
-  [ $xunit_valgrind_runner ] [ $xunit_xapi_devel ] [
-  ] [ $libxlinux_xapi_devel $libvalyria_xapi_devel $libvalue_xapi_devel ] [
-  ] [ $liblogger_xapi_devel $libnarrator_xapi_devel $liblorien_xapi_devel $libfabcore_xapi_devel $libyyutil_xapi_devel ] [
-  ] [ $@ ~ rx/ineed fi ]
-}
-
 [ @test.fast ] : [ $* ~ lsr l/test\/test_ sx/c/xapi.xunit.so sy ]
 {
-  [ $xunit_xapi_devel ] [
-  ] [ $libxlinux_xapi_devel $libvalyria_xapi_devel $libvalue_xapi_devel ~ fi ] [
-  ] [ $liblogger_xapi_devel $libnarrator_xapi_devel $liblorien_xapi_devel $libfabcore_xapi_devel $libyyutil_xapi_devel ~ fi ] [
-  ] [ $@ ~ rx/ineed fi ]
+  (
+    [ $xunit_xapi_devel ] [
+    ] [ $libxlinux_xapi_devel $libvalyria_xapi_devel $libyyutil_xapi_devel $libvalue_xapi_devel ~ fi ] [
+    ] [ $liblogger_xapi_devel $libnarrator_xapi_devel $liblorien_xapi_devel $libfab_xapi_devel ~ fi ] [
+    ] [ $@ ~ rx/ineed fi ] +CONFIG% +TEST +UNIT
+  ) | tee /dev/fd/501
+  > exit ${PIPESTATUS[0]}
+}
+
+[ @test ] : [ $* ~ lsr l/test\/test_ sx/c/xapi.xunit.so sy ]
+{
+  (
+    [ $xunit_valgrind_runner ] [ $xunit_xapi_devel ] [
+    ] [ $libxlinux_xapi_devel $libvalyria_xapi_devel $libyyutil_xapi_devel $libvalue_xapi_devel ~ fi ] [
+    ] [ $liblogger_xapi_devel $libnarrator_xapi_devel $liblorien_xapi_devel $libfab_xapi_devel ~ fi ] [
+    ] [ $@ ~ rx/ineed fi ] +CONFIG% +TEST +UNIT
+  ) | tee /dev/fd/501
+  > exit ${PIPESTATUS[0]}
 }

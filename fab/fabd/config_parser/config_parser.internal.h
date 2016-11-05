@@ -33,6 +33,8 @@ typedef struct config_xtra
     yyu_extra yyu;
   };
 
+  struct value_store * stor; // value store
+
   struct value *      root; // (returns) root of the parsed tree
 } config_xtra;
 

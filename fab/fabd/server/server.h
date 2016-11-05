@@ -22,19 +22,21 @@
 
 #include "xapi.h"
 
-struct request;
-struct response;
+struct fab_request;
+struct fab_response;
 struct memblk;
 
-typedef struct server
+typedef struct fab_server
 {
   char *    ipcdir;
   char      hash[8];
-  pid_t     pid;        // client process id
+  pid_t     client_pid; // client process id
 
-  int       shmid;
-  void *    shmaddr;    // request shm, after a request has been received, and before a response has been sent
-} server;
+  void *    request_shm;
+  void *    response_shm;
+
+  int       client_cwd; // fs operations are resolved relative to client cwd
+} fab_server;
 
 #define restrict __restrict
 
@@ -45,33 +47,37 @@ typedef struct server
 //
 // PARAMETERS
 //  server - (returns) server instance
-//  ipcdir - 
+//  ipcdir - ipcdir for the project, e.g. /var/run/fab/<hash>
+//  hash   - 
 //
-xapi server_create(server ** const restrict server, char * const restrict ipcdir, const char hash[8])
+xapi fab_server_create(fab_server ** const restrict server, char * const restrict ipcdir, const char hash[8])
   __attribute__((nonnull));
 
-xapi server_dispose(server ** const restrict server)
+/// fab_server_xfree
+//
+// SUMMARY
+//  
+//
+xapi fab_server_xfree(fab_server * const restrict server);
+
+xapi fab_server_ixfree(fab_server ** const restrict server)
   __attribute__((nonnull));
 
-xapi server_ready(server * const restrict server)
+/// fab_server_ready
+//
+// SUMMARY
+//  notify the client that we are ready to begin processing requests
+//
+xapi fab_server_ready(fab_server * const restrict server)
   __attribute__((nonnull));
 
-xapi server_validate(server * const restrict server, pid_t pid)
+xapi fab_server_receive(fab_server * const restrict server, int daemon, struct fab_request ** const restrict req)
   __attribute__((nonnull));
 
-xapi server_redirect(server * const restrict server)
+xapi fab_server_respond(fab_server * const restrict server, struct memblk * const restrict mb, struct fab_response * const restrict response)
   __attribute__((nonnull));
 
-xapi server_receive(server * const restrict server, struct request ** const restrict req)
-  __attribute__((nonnull));
-
-xapi server_respond(server * const restrict server, struct memblk * const restrict mb, struct response * const restrict resp)
-  __attribute__((nonnull));
-
-xapi server_release(server * const restrict server)
-  __attribute__((nonnull));
-
-xapi server_dispatch(server * const restrict server, struct request * const restrict req, struct memblk * const restrict mb, struct response ** const restrict resp)
+xapi fab_server_dispatch(fab_server * const restrict server, struct fab_request * const restrict req, struct memblk * const restrict mb, struct fab_response ** const restrict response)
   __attribute__((nonnull));
 
 #undef restrict

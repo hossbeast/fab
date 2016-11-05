@@ -19,16 +19,13 @@
 
 #include "xlinux/xfcntl.h"
 #include "xlinux/xunistd.h"
-
+#include "logger.h"
 #include "narrator.h"
 #include "narrator/units.h"
-#include "logger.h"
 
-#include "fabcore/params.h"
-#include "fabcore/logging.h"
-
-#include "global.h"
 #include "usage.h"
+#include "logging.h"
+#include "params.h"
 
 //
 // public
@@ -45,7 +42,7 @@ xapi usage_report()
   if(log_would(L_USAGE))
   {
     // check memory usage
-    fatal(uxopen, "/proc/self/statm", O_RDONLY, &fd);
+    fatal(uxopens, &fd, O_RDONLY, "/proc/self/statm");
 
     long pages = 0;
     if(fd != -1)

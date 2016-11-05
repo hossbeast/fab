@@ -15,14 +15,19 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-%code top {
+%code requires {
   #include <stdint.h>
   #include <string.h>
 
+  #include "value.h"
+  #include "value/make.h"
+  #include "valyria/list.h"
+  #include "valyria/pstring.h"
+
   #include "config_parser.internal.h"
+}
 
-  struct value;
-
+%code top {
   int config_yylex(void *, void*, void*);
 }
 
@@ -40,7 +45,15 @@
 %union {
   uint8_t     u8;
   int64_t     i64;
-  long double fp;
+  double      fp;
+
+  value * key;
+
+  struct {
+    value * key;
+    value * val;
+    uint16_t attr;
+  } mapping;
 
   struct value * val;
 }
@@ -50,6 +63,8 @@
 %token ','
 %token '{'
 %token '}'
+%token '+'
+%token '='
 
 /* terminals */
 %token        STR
@@ -66,7 +81,9 @@
 %type <val> boolean
 %type <val> integer
 %type <val> float
-%type <val> value
+%type <val> value scalar aggregate
+%type <mapping> mapping
+%type <key> key
 
 %%
 utterance
@@ -74,15 +91,27 @@ utterance
   {
     xtra->root = $1;
   }
+  | value
+  {
+    xtra->root = $1;
+  }
   ;
 
 value
-  : array
-  | object
-  | string
+  : scalar
+  | aggregate
+  ;
+
+scalar
+  : string
   | boolean
   | integer
   | float
+  ;
+
+aggregate
+  : array
+  | object
   ;
 
 array
@@ -94,7 +123,13 @@ array
 
 list
   : list value
+  {
+    YFATAL(value_list_mkv, xtra->stor, &@$, $1, &$$, $2);
+  }
   | value
+  {
+    YFATAL(value_list_mkv, xtra->stor, &@$, 0, &$$, $1);
+  }
   ;
 
 object
@@ -105,8 +140,72 @@ object
   ;
 
 map
-  : map string value
-  | string value
+  : map mapping
+  {
+    if($2.key->els->l == 1)
+    {
+      YFATAL(value_map_mkv, xtra->stor, &@$, $1, &$$, list_get($2.key->els, 0), $2.val, $2.attr);
+    }
+    else
+    {
+      YFATAL(value_map_mkv, xtra->stor, &@$, 0, &$$, list_get($2.key->els, $2.key->els->l - 1), $2.val, $2.attr);
+
+      int x;
+      for(x = $2.key->els->l - 2; x > 0; x--)
+        YFATAL(value_map_mkv, xtra->stor, &@$, 0, &$$, list_get($2.key->els, x), $$, 0);
+
+      YFATAL(value_map_mkv, xtra->stor, &@$, $1, &$$, list_get($2.key->els, 0), $$, 0);
+    }
+  }
+  | mapping
+  {
+    if($1.key->els->l == 1)
+    {
+      YFATAL(value_map_mkv, xtra->stor, &@$, 0, &$$, list_get($1.key->els, 0), $1.val, $1.attr);
+    }
+    else
+    {
+      YFATAL(value_map_mkv, xtra->stor, &@$, 0, &$$, list_get($1.key->els, $1.key->els->l - 1), $1.val, $1.attr);
+
+      int x;
+      for(x = $1.key->els->l - 2; x > 0; x--)
+        YFATAL(value_map_mkv, xtra->stor, &@$, 0, &$$, list_get($1.key->els, x), $$, 0);
+
+      YFATAL(value_map_mkv, xtra->stor, &@$, 0, &$$, list_get($1.key->els, 0), $$, 0);
+    }
+  }
+  ;
+
+mapping
+  : key '+' '=' aggregate
+  {
+    $$.key = $1;
+    $$.val = $4;
+    $$.attr = VALUE_MERGE_ADD;
+  }
+  | key '=' aggregate
+  {
+    $$.key = $1;
+    $$.val = $3;
+    $$.attr = VALUE_MERGE_SET;
+  }
+  | key value
+  {
+    $$.key = $1;
+    $$.val = $2;
+    $$.attr = 0;
+  }
+  ;
+
+key
+  : key '.' string
+  {
+    YFATAL(value_list_mkv, xtra->stor, &@$, $1, &$$, $3);
+  }
+  | string
+  {
+    YFATAL(value_list_mkv, xtra->stor, &@$, 0, &$$, $1);
+  }
   ;
 
 string
@@ -123,49 +222,56 @@ quoted_string
   {
     $$ = $2;
   }
+  | '"' '"'
+  {
+    $$ = 0;
+  }
   ;
 
 strparts
   : strparts strpart
+  {
+    YFATAL(value_string_mkv, xtra->stor, &@$, $1, &$$, $2);
+  }
   | strpart
   ;
 
 strpart
   : STR
   {
-    $$ = 0;
+    YFATAL(value_string_mkw, xtra->stor, &@$, 0, &$$, @1.s, @1.l);
   }
   | CREF
   {
-
+    YFATAL(value_string_mkc, xtra->stor, &@$, 0, &$$, $1);
   }
   | HREF
   {
-
+    YFATAL(value_string_mkc, xtra->stor, &@$, 0, &$$, $1);
   }
   ;
 
 boolean
   : BOOL
   {
-
+    YFATAL(value_boolean_mk, xtra->stor, &@$, &$$, $1);
   }
   ;
 
 integer
   : INT
   {
-
+    YFATAL(value_integer_mk, xtra->stor, &@$, &$$, $1);
   }
   | HEX
   {
-
+    YFATAL(value_integer_mk, xtra->stor, &@$, &$$, $1);
   }
   ;
 
 float
   : FLOAT
   {
-
+    YFATAL(value_float_mk, xtra->stor, &@$, &$$, $1);
   }
   ;

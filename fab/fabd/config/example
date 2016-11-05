@@ -1,9 +1,9 @@
 filesystem {
-	path : a b c ~ rp
-	invalidate-method : inotify
-	hook : Q
-}
+  "/" {
+    invalidate notify
+  }
 
-filesystem {
-	foo : bar
+  "/mnt/remote" {
+    invalidate stat
+  }
 }

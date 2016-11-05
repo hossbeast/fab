@@ -15,22 +15,22 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#include <string.h>
-#include <stdio.h>
 #include <signal.h>
-#include <time.h>
+#include <stdio.h>
+#include <string.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <time.h>
 
 #include "xapi.h"
-#include "xlinux/xstat.h"
+
+#include "lorien/mkdirp.h"
+#include "lorien/rmdirp.h"
 #include "xlinux/xftw.h"
+#include "xlinux/xstat.h"
 
-#include "fabcore/dirutil.h"
-
-#include "global.h"
-#include "logging.h"
 #include "tmp.h"
+#include "logging.h"
 
 #include "macros.h"
 
@@ -63,14 +63,12 @@ xapi tmp_cleanup(pid_t * pids, size_t pidsl)
     enter;
 
     if(typeflag != FTW_D)
-      fails(FAB_BADTMP, "error", "not a directory");
+      logf(L_WARN | L_TMP, "not a directory %s", fpath);
 
     pid_t pid = 0;
     int n = 0;
     if(sscanf(fpath + ftwbuf->base, "%d%n", &pid, &n) != 1 || (ftwbuf->base + n) != strlen(fpath))
-    {
-      fails(FAB_BADTMP, "error", "not numeric"); // dirname consists of something other than <pid>
-    }
+      logf(L_WARN | L_TMP, "expected pid, actual %s", fpath);
 
     // not presently executing
     if(kill(pid, 0) == 0)
@@ -98,9 +96,7 @@ xapi tmp_cleanup(pid_t * pids, size_t pidsl)
 
       // directory is for del, does not contain a stamp file, or the stamp file is older than the expiration policy
       if(r)
-      {
-        fatal(rmdir_recursive, fpath, 1);
-      }
+        fatal(rmdirp, fpath, 1);
     }
 
   finally :

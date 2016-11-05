@@ -1,8 +1,8 @@
-/* A Bison parser, made by GNU Bison 3.0.2.  */
+/* A Bison parser, made by GNU Bison 3.0.4.  */
 
 /* Bison interface for Yacc-like parsers in C
 
-   Copyright (C) 1984, 1989-1990, 2000-2013 Free Software Foundation, Inc.
+   Copyright (C) 1984, 1989-1990, 2000-2015 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -30,8 +30,8 @@
    This special exception was added by the Free Software Foundation in
    version 2.2 of Bison.  */
 
-#ifndef YY_CONFIG_YY_CONFIG_PARSER_CONFIG_TAB_H_INCLUDED
-# define YY_CONFIG_YY_CONFIG_PARSER_CONFIG_TAB_H_INCLUDED
+#ifndef YY_CONFIG_YY_FAB_FABD_CONFIG_PARSER_CONFIG_TAB_H_INCLUDED
+# define YY_CONFIG_YY_FAB_FABD_CONFIG_PARSER_CONFIG_TAB_H_INCLUDED
 /* Debug traces.  */
 #ifndef YYDEBUG
 # define YYDEBUG 0
@@ -39,6 +39,20 @@
 #if YYDEBUG
 extern int config_yydebug;
 #endif
+/* "%code requires" blocks.  */
+#line 18 "fab/fabd/config_parser/config.y" /* yacc.c:1909  */
+
+  #include <stdint.h>
+  #include <string.h>
+
+  #include "value.h"
+  #include "value/make.h"
+  #include "valyria/list.h"
+  #include "valyria/pstring.h"
+
+  #include "config_parser.internal.h"
+
+#line 56 "fab/fabd/config_parser/config.tab.h" /* yacc.c:1909  */
 
 /* Token type.  */
 #ifndef YYTOKENTYPE
@@ -57,19 +71,29 @@ extern int config_yydebug;
 
 /* Value type.  */
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
-typedef union YYSTYPE YYSTYPE;
+
 union YYSTYPE
 {
-#line 40 "config_parser/config.y" /* yacc.c:1909  */
+#line 45 "fab/fabd/config_parser/config.y" /* yacc.c:1909  */
 
   uint8_t     u8;
   int64_t     i64;
-  long double fp;
+  double      fp;
+
+  value * key;
+
+  struct {
+    value * key;
+    value * val;
+    uint16_t attr;
+  } mapping;
 
   struct value * val;
 
-#line 72 "config_parser/config.tab.h" /* yacc.c:1909  */
+#line 94 "fab/fabd/config_parser/config.tab.h" /* yacc.c:1909  */
 };
+
+typedef union YYSTYPE YYSTYPE;
 # define YYSTYPE_IS_TRIVIAL 1
 # define YYSTYPE_IS_DECLARED 1
 #endif
@@ -92,4 +116,4 @@ struct YYLTYPE
 
 int config_yyparse (void* scanner, config_xtra * xtra);
 
-#endif /* !YY_CONFIG_YY_CONFIG_PARSER_CONFIG_TAB_H_INCLUDED  */
+#endif /* !YY_CONFIG_YY_FAB_FABD_CONFIG_PARSER_CONFIG_TAB_H_INCLUDED  */

@@ -20,74 +20,68 @@
 #include "xapi/exit.h"
 #include "xapi/calltree.h"
 
-#include "xlinux/xfcntl.h"
-#include "xlinux/xunistd.h"
-#include "xlinux/xstdlib.h"
-#include "xlinux/xstring.h"
-#include "xlinux/xshm.h"
-#include "xlinux/xsignal.h"
-
-#include "xlinux/mempolicy.h"
+#include "fab/command.h"
+#include "fab/ipc.h"
+#include "fab/request.h"
+#include "fab/response.h"
+#include "fab/sigbank.h"
 #include "listwise/LISTWISE.errtab.h"
 #include "listwise/PCRE.errtab.h"
-#include "narrator.h"
 #include "logger.h"
+#include "logger/stream.h"
+#include "narrator.h"
+#include "xlinux/KERNEL.errtab.h"
+#include "xlinux/mempolicy.h"
+#include "xlinux/xfcntl.h"
+#include "xlinux/xshm.h"
+#include "xlinux/xsignal.h"
+#include "xlinux/xstdlib.h"
+#include "xlinux/xstring.h"
+#include "xlinux/xunistd.h"
 
-#include "fabcore/params.h"
-#include "fabcore/logging.h"
-#include "fabcore/request.h"
-#include "fabcore/response.h"
-#include "fabcore/ipc.h"
-#include "fabcore/sigbank.h"
-
-#include "global.h"
 #include "server.h"
+#include "config.h"
+#include "errtab/FABD.errtab.h"
+#include "logging.h"
+#include "params.h"
 
-#include "memblk.h"
-#include "memblk.def.h"
 #include "macros.h"
-
-// errors to report and continue
-static int fab_trap[] = {
-    [ ERRMAX_FAB + 1] = 0
-
-  , [ FAB_SYNTAX ] = 1
-  , [ FAB_ILLBYTE ] = 1
-  , [ FAB_UNSATISFIED ] = 1
-  , [ FAB_CMDFAIL ] = 1
-  , [ FAB_NOINVOKE ] = 1
-  , [ FAB_BADPLAN ] = 1
-  , [ FAB_CYCLE ] = 1
-  , [ FAB_NOSELECT ] = 1
-  , [ FAB_DSCPARSE ] = 1
-};
+#include "memblk.def.h"
+#include "memblk.h"
 
 //
 // static
 //
 
-/// pid_load
+/// load_client_pid
 //
 // SUMMARY
 //  load the client pid
 //
-static xapi pid_load(server * const restrict server)
+static xapi load_client_pid(fab_server * const restrict server, pid_t expected_client_pid)
 {
   enter;
 
   int fd = -1;
-  char space[512];
 
   // load fab/pid
-  snprintf(space, sizeof(space), "%s/client/pid", server->ipcdir);
-  fatal(xopen, space, O_RDONLY, &fd);
-  fatal(axread, fd, &server->pid, sizeof(server->pid));
-  if(server->pid <= 0)
+
+  fatal(xopenf, &fd, O_RDONLY, "%s/client/pid", server->ipcdir);
+  fatal(axread, fd, &server->client_pid, sizeof(server->client_pid));
+  if(server->client_pid <= 0)
   {
     xapi_fail_intent();
-    xapi_info_adds("expected pid", "> 0");
-    xapi_info_addf("actual pid", "%ld", (long)server->pid);
-    fail(FAB_BADIPC);
+    xapi_info_adds("expected client pid", "> 0");
+    xapi_info_addf("actual client pid", "%ld", (long)server->client_pid);
+    fail(FABD_BADIPC);
+  }
+
+  if(expected_client_pid && expected_client_pid != server->client_pid)
+  {
+    xapi_fail_intent();
+    xapi_info_addf("expected client pid", "%ld", expected_client_pid);
+    xapi_info_addf("actual client pid", "%ld", server->client_pid);
+    fail(FABD_BADIPC);
   }
 
 finally:
@@ -100,9 +94,24 @@ coda;
 // SUMMARY
 //  determine whether an error should be trapped
 //
-static int handle(request * const restrict req, memblk * const restrict mb, response ** const restrict resp)
+static int handle(fab_request * const restrict request, memblk * const restrict mb, fab_response ** const restrict response)
 {
   enter;
+
+  int x;
+  for(x = 0; x < request->commandsl; x++)
+  {
+    fab_command * cmd = request->commands[x];
+    if((cmd->attrs & FABCORE_COMMAND_OPT) == FABCORE_CONFIGURATION_MERGE)
+    {
+      fatal(config_apply, cmd->text);
+    }
+    else if((cmd->attrs & FABCORE_COMMAND_OPT) == FABCORE_CONFIGURATION_APPLY)
+    {
+      xapi res;
+      fatal(config_reconfigure, &res);
+    }
+  }
 
 #if 0
   x = 0;
@@ -172,77 +181,7 @@ static int handle(request * const restrict req, memblk * const restrict mb, resp
   finally : coda;
 }
 
-//
-// public
-//
-
-xapi server_create(server ** const restrict server, char * const restrict ipcdir, const char hash[8])
-{
-  enter;
-
-  fatal(xmalloc, server, sizeof(**server));
-  fatal(ixstrdup, &(*server)->ipcdir, ipcdir); 
-  memcpy((*server)->hash, hash, sizeof((*server)->hash));
-
-  // lazy destroy the response shm
-  fatal(uxshmget, ftok((*server)->ipcdir, FABIPC_RESPONSE), 0, 0, &(*server)->shmid);
-  if((*server)->shmid != -1)
-    fatal(xshmctl, (*server)->shmid, IPC_RMID, 0);
-  (*server)->shmid = -1;
-
-  finally : coda;
-}
-
-xapi server_dispose(server ** const restrict server)
-{
-  enter;
-
-  if(*server)
-  {
-    ifree(&(*server)->ipcdir);
-    fatal(ixshmdt, &(*server)->shmaddr);
-
-    if((*server)->shmid != -1)
-      fatal(xshmctl, (*server)->shmid, IPC_RMID, 0);
-    (*server)->shmid = -1;
-
-    xfree(*server);
-  }
-
-  *server = 0;
-
-  finally : coda;
-}
-
-xapi server_ready(server * const restrict server)
-{
-  enter;
-
-  fatal(pid_load, server);
-  fatal(xkill, server->pid, FABSIG_ACK);
-
-  finally : coda;
-}
-
-xapi server_validate(server * const restrict server, pid_t pid)
-{
-  enter;
-
-  // verify the client
-  fatal(pid_load, server);
-  fatal(xkill, server->pid, 0);
-
-  if(pid != server->pid)
-  {
-    xapi_fail_intent();
-
-    fail(FAB_BADIPC);
-  }
-
-  finally : coda;
-}
-
-xapi server_redirect(server * const restrict server)
+static xapi redirect(fab_server * const restrict server)
 {
   enter;
 
@@ -251,12 +190,12 @@ xapi server_redirect(server * const restrict server)
 
   // redirect stdout/stderr to the client
   snprintf(space, sizeof(space), "%s/client/out", server->ipcdir);
-  fatal(xopen, space, O_RDWR, &fd);
+  fatal(xopens, &fd, O_RDWR, space);
   fatal(xdup2, fd, 1);
   fatal(ixclose, &fd);
 
   snprintf(space, sizeof(space), "%s/client/err", server->ipcdir);
-  fatal(xopen, space, O_RDWR, &fd);
+  fatal(xopens, &fd, O_RDWR, space);
   fatal(xdup2, fd, 2);
 
 finally:
@@ -264,107 +203,178 @@ finally:
 coda;
 }
 
-xapi server_receive(server * const restrict server, request ** const restrict req)
+
+//
+// public
+//
+
+xapi fab_server_create(fab_server ** const restrict server, char * const restrict ipcdir, const char hash[8])
 {
   enter;
 
-  int token = 0;
-
-  // get the request shm
-  int shmid;
-  fatal(xshmget, ftok(server->ipcdir, FABIPC_REQUEST), 0, 0, &shmid);
-  fatal(xshmat, shmid, 0, 0, &server->shmaddr);
-
-  *req = server->shmaddr;
-  request_thaw(*req, server->shmaddr);
-
-#if DEBUG || DEVEL
-  fatal(log_start, L_IPC, &token);
-  logf(0, "%ld/%ld/%s ", getpgid(0), getpid(), "fabd");
-  off_t off = 0;
-  fatal(narrator_seek, log_narrator(&token), 0, NARRATOR_SEEK_CUR, &off);
-  logf(0, "%*s request ", MAX(0, 20 - off), "");
-  fatal(request_say, *req, log_narrator(&token));
-  fatal(log_finish, &token);
-#endif
-
-finally:
-  fatal(log_finish, &token);
-coda;
-}
-
-xapi server_respond(server * const restrict server, memblk * const restrict mb, response * const restrict resp)
-{
-  enter;
-
-  int token = 0;
-
-  // release the request
-  fatal(ixshmdt, &server->shmaddr);
-
-  // create the shm for the response
-  fatal(xshmget, ftok(server->ipcdir, FABIPC_RESPONSE), memblk_size(mb), IPC_CREAT | IPC_EXCL | FABIPC_DATA, &server->shmid);
-  fatal(xshmat, server->shmid, 0, 0, &server->shmaddr);
-
-#if DEBUG || DEVEL
-  fatal(log_start, L_IPC, &token);
-  logf(0, "%ld/%ld/%s ", getpgid(0), getpid(), "fabd");
-  off_t off = 0;
-  fatal(narrator_seek, log_narrator(&token), 0, NARRATOR_SEEK_CUR, &off);
-  logf(0, "%*s response ", MAX(0, 20 - off), "");
-  fatal(response_say, resp, log_narrator(&token));
-  fatal(log_finish, &token);
-#endif
-
-  // write the response to shm
-  response_freeze(resp, mb);
-  memblk_copyto(mb, server->shmaddr, memblk_size(mb));
-
-  // awaken client and await response
-  fatal(sigbank_exchange, server->pid, FABSIG_SYN, (int[]) { FABSIG_ACK, 0 }, 0, 0, 0);
-
-  // destroy the response
-  fatal(xshmctl, server->shmid, IPC_RMID, 0);
-  server->shmid = -1;
-  fatal(ixshmdt, &server->shmaddr);
-
-finally:
-  fatal(log_finish, &token);
-coda;
-}
-
-xapi server_release(server * const restrict server)
-{
-  enter;
-
-  if(server->shmaddr)
-    fatal(ixshmdt, &server->shmaddr);
+  fatal(xmalloc, server, sizeof(**server));
+  fatal(ixstrdup, &(*server)->ipcdir, ipcdir); 
+  memcpy((*server)->hash, hash, sizeof((*server)->hash));
+  (*server)->client_cwd = -1;
 
   finally : coda;
 }
 
-xapi server_dispatch(server * const restrict server, request * const restrict req, memblk * const restrict mb, response ** const restrict resp)
+xapi fab_server_xfree(fab_server * const restrict server)
+{
+  enter;
+
+  if(server)
+  {
+    iwfree(&server->ipcdir);
+    fatal(ixshmdt, &server->request_shm);
+    fatal(ixshmdt, &server->response_shm);
+    fatal(ixclose, &server->client_cwd);
+  }
+
+  wfree(server);
+
+  finally : coda;
+}
+
+xapi fab_server_ixfree(fab_server ** const restrict server)
+{
+  enter;
+
+  fatal(fab_server_xfree, *server);
+  *server = 0;
+
+  finally : coda;
+}
+
+xapi fab_server_ready(fab_server * const restrict server)
+{
+  enter;
+
+  fatal(load_client_pid, server, 0);
+  fatal(xkill, server->client_pid, FABIPC_SIGACK);
+
+  finally : coda;
+}
+
+xapi fab_server_receive(fab_server * const restrict server, int daemon, fab_request ** const restrict request)
+{
+  enter;
+
+  int token = 0;
+  int sig;
+  pid_t client_pid;
+  int shmid = -1;
+  int fd = -1;
+
+//printf("server waiting for SYN(%d)\n", FABIPC_SIGSYN);
+  fatal(sigbank_receive, &sig, &client_pid);
+//printf("server received %d\n", sig);
+
+  if(sig == SIGINT || sig == SIGQUIT || sig == SIGTERM)
+  {
+    *request = 0;
+    goto XAPI_FINALIZE;
+  }
+
+  fatal(logger_streams_report);
+
+  // validate the sender
+  fatal(load_client_pid, server, client_pid);
+  fatal(xkill, server->client_pid, 0);
+  fatal(sigbank_assert, FABIPC_SIGSYN, sig, 0, client_pid);
+
+  // redirect output to the client
+  if(daemon)
+    fatal(redirect, server);
+
+  // get a fd to the clients cwd
+  fatal(ixclose, &server->client_cwd);
+  fatal(xopenf, &server->client_cwd, O_RDONLY, "%s/client/cwd", server->ipcdir);
+
+  // get the request shm
+  fatal(xopenf, &fd, O_RDONLY, "%s/client/request_shmid", server->ipcdir);
+  fatal(axread, fd, &shmid, sizeof(shmid));
+  fatal(xshmat, shmid, 0, 0, &server->request_shm);
+
+  fab_request_thaw(server->request_shm, server->request_shm);
+  *request = server->request_shm;
+
+#if DEBUG || DEVEL || XAPI
+  fatal(log_start, L_IPC, &token);
+  logf(0, "request ");
+  fatal(fab_request_say, *request, log_narrator(&token));
+  fatal(log_finish, &token);
+#endif
+
+finally:
+  fatal(log_finish, &token);
+  fatal(ixclose, &fd);
+coda;
+}
+
+xapi fab_server_respond(fab_server * const restrict server, memblk * const restrict mb, fab_response * const restrict response)
+{
+  enter;
+
+  int token = 0;
+  int shmid = -1;
+  int fd = -1;
+  int sig;
+  pid_t pid;
+
+  // release the request
+  fatal(ixshmdt, &server->request_shm);
+
+  // create the shm for the response
+  fatal(xshmget, ftok(server->ipcdir, FABIPC_TOKRES), memblk_size(mb), IPC_CREAT | IPC_EXCL | FABIPC_MODE_DATA, &shmid);
+  fatal(xshmat, shmid, 0, 0, &server->response_shm);
+  fatal(xshmctl, shmid, IPC_RMID, 0);
+  int shmid_tmp = shmid;
+  shmid = -1;
+
+  // save the shmid for the client
+  fatal(xopen_modef, &fd, O_CREAT | O_WRONLY, FABIPC_MODE_DATA, "%s/fabd/response_shmid", server->ipcdir);
+  fatal(axwrite, fd, &shmid_tmp, sizeof(shmid_tmp));
+  fatal(ixclose, &fd);
+
+#if DEBUG || DEVEL
+  fatal(log_start, L_IPC, &token);
+  logf(0, "response ");
+  fatal(fab_response_say, response, log_narrator(&token));
+  fatal(log_finish, &token);
+#endif
+
+  // write the response to shm
+  fab_response_freeze(response, mb);
+  memblk_copyto(mb, server->response_shm, memblk_size(mb));
+
+  // awaken client and await response
+  fatal(sigbank_exchange, FABIPC_SIGACK, server->client_pid, &sig, &pid);
+  fatal(sigbank_assert, FABIPC_SIGACK, sig, server->client_pid, pid);
+
+  // detach the response
+  fatal(ixshmdt, &server->response_shm);
+
+finally:
+  fatal(log_finish, &token);
+  if(shmid != -1)
+    fatal(xshmctl, shmid, IPC_RMID, 0);
+coda;
+}
+
+xapi fab_server_dispatch(fab_server * const restrict server, fab_request * const restrict request, memblk * const restrict mb, fab_response ** const restrict response)
 {
   enter;
 
   int mpc = 0;
 
-  fatal(xchdirf, "%s/client/cwd", server->ipcdir);
-
   // handle this request
   xapi exit = 0;
-  if((exit = invoke(handle, req, mb, resp)))
+  if((exit = invoke(handle, request, mb, response)))
   {
-    if(xapi_exit_errtab(exit) == perrtab_FAB && fab_trap[xapi_exit_errcode(exit)])
-    {
-    }
-    else if(xapi_exit_errtab(exit) == perrtab_LISTWISE)
-    {
-    }
-    else if(xapi_exit_errtab(exit) == perrtab_PCRE)
-    {
-    }
-    else
+    // propagate unrecoverable errors
+    if(xapi_exit_errtab(exit) == perrtab_KERNEL)
     {
       fail(0);  // propagate unhandled errors
     }
@@ -375,12 +385,19 @@ xapi server_dispatch(server * const restrict server, request * const restrict re
 
     // build an error response
     fatal(mempolicy_push, memblk_getpolicy(mb), &mpc);
-    fatal(response_create, resp);
-    fatal(response_error, *resp, exit, trace, tracesz);
+    fatal(fab_response_create, response);
+    fatal(fab_response_error, *response, exit, trace, tracesz);
+  }
+
+  // build a success response
+  if(*response == 0)
+  {
+    fatal(mempolicy_push, memblk_getpolicy(mb), &mpc);
+    fatal(fab_response_create, response);
+    fatal(fab_response_success, *response);
   }
 
 finally:
-  fatal(xchdir, "/");
   mempolicy_unwind(&mpc);
 coda;
 }

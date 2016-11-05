@@ -15,64 +15,66 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#include <stdlib.h>
-#include <inttypes.h>
-#include <stdio.h>
-#include <signal.h>
-#include <string.h>
-#include <unistd.h>
 #include <fcntl.h>
-#include <sys/types.h>
+#include <inttypes.h>
+#include <signal.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <sys/stat.h>
+#include <sys/types.h>
+#include <unistd.h>
 
 #include "xapi.h"
-#include "xapi/trace.h"
-#include "xapi/calltree.h"
+#include "fab/load.h"
+#include "listwise/load.h"
+#include "logger/load.h"
+#include "lorien/load.h"
+#include "narrator/load.h"
+#include "valyria/load.h"
+#include "xlinux/load.h"
+#include "yyutil/load.h"
 
-#include "xlinux.h"
-#include "xlinux/xfcntl.h"
-#include "xlinux/xunistd.h"
-#include "xlinux/xprctl.h"
-#include "xlinux/xstat.h"
-
-#include "narrator.h"
-#include "valyria.h"
+#include "fab/ipc.h"
+#include "fab/identity.h"
+#include "fab/request.h"
+#include "fab/response.h"
+#include "fab/sigbank.h"
+#include "listwise.h"
+#include "listwise/LISTWISE.errtab.h"
+#include "listwise/PCRE.errtab.h"
+#include "listwise/lstack.h"
+#include "listwise/object.h"
+#include "listwise/operators.h"
 #include "logger.h"
 #include "logger/filter.h"
 #include "logger/stream.h"
-#include "lorien.h"
-#include "yyutil.h"
-#include "listwise.h"
+#include "logger/arguments.h"
+#include "lorien/touch.h"
+#include "narrator.h"
+#include "xapi/SYS.errtab.h"
+#include "xapi/calltree.h"
+#include "xapi/errtab.h"
+#include "xapi/trace.h"
+#include "xlinux/xfcntl.h"
+#include "xlinux/xprctl.h"
+#include "xlinux/xstat.h"
+#include "xlinux/xunistd.h"
 
-#include "listwise/object.h"
-#include "listwise/operators.h"
-#include "listwise/lstack.h"
-#include "listwise/LISTWISE.errtab.h"
-#include "listwise/PCRE.errtab.h"
-
-#include "fabcore.h"
-#include "fabcore/identity.h"
-#include "fabcore/path.h"
-#include "fabcore/params.h"
-#include "fabcore/sigbank.h"
-#include "fabcore/ipc.h"
-#include "fabcore/request.h"
-#include "fabcore/response.h"
-#include "fabcore/logging.h"
-
-#include "global.h"
-#include "logging.h"
-#include "server.h"
-#include "usage.h"
-#include "logging.h"
-#include "tmp.h"
-#include "server.h"
 #include "config.h"
+#include "errtab/CONFIG.errtab.h"
+#include "logging.h"
+#include "logging.h"
+#include "server.h"
+#include "tmp.h"
+#include "usage.h"
+#include "filesystem.h"
 
-#include "parseint.h"
+#include "cksum.h"
 #include "macros.h"
 #include "memblk.h"
-#include "cksum.h"
+#include "params.h"
+#include "parseint.h"
 
 static pid_t fab_pids[3];      // most recent fab pids
 
@@ -81,45 +83,32 @@ int main(int argc, char** argv, char ** envp)
   enter;
 
   xapi R = 0;
+  char trace[1024];
+  size_t tracesz = 0;
   int token = 0;
-  char space[2048];
-  char space2[2048];
   char ipcdir[512];
   char hash[9] = { 0 };
   int fd = -1;
-  size_t tracesz = 0;
 
-  server * server = 0;
+  fab_server * server = 0;
   memblk * mb = 0;
 
-  // redirect stdout/stderr to the client
-  snprintf(space, sizeof(space), "/dev/pts/20");
-  fatal(xopen, space, O_RDWR, &fd);
-  fatal(xdup2, fd, 1);
-  fatal(ixclose, &fd);
-
-  snprintf(space, sizeof(space), "/dev/pts/20");
-  fatal(xopen, space, O_RDWR, &fd);
-  fatal(xdup2, fd, 2);
-  fatal(ixclose, &fd);
-
   // libraries
-  fatal(xlinux_load);
+  fatal(fab_load);
   fatal(listwise_load);
-  fatal(valyria_load);
   fatal(logger_load);
-  fatal(narrator_load);
-  fatal(fabcore_load);
   fatal(lorien_load);
+  fatal(narrator_load);
+  fatal(valyria_load);
+  fatal(xlinux_load);
   fatal(yyutil_load);
 
-  // logging
-  fatal(logging_setup);
-  fatal(logger_arguments_setup, envp);
-  fatal(logger_initialize);
-
   // modules
+  fatal(xapi_errtab_register, perrtab_CONFIG);
   fatal(sigbank_setup, "fabd");
+  fatal(params_setup);
+  fatal(filesystem_setup);
+  fatal(logger_arguments_setup, envp);
 
   // locals
   fatal(memblk_mk, &mb);
@@ -137,80 +126,94 @@ int main(int argc, char** argv, char ** envp)
   int daemon = 1;
 
 #if DEVEL
-  if(argc > 2)
-    if(strcmp(argv[2], "--nodaemon") == 0)
+  int x;
+  for(x = 2; x < g_argc; x++)
+  {
+    if(strcmp(g_argv[x], "--nodaemon") == 0 || strcmp(g_argv[x], "--no-daemon") == 0)
+    {
       daemon = 0;
+      break;
+    }
+  }
 #endif
 
+  // allow creation of world+rw files
   // close standard file descriptors
+  umask(0);
   fatal(xclose, 0);
-  fatal(xopen, "/dev/null", O_RDONLY, 0);
+  fatal(xopens, 0, O_RDONLY, "/dev/null");
 
   // get ipc dir
   uint32_t u32;
-  if(argc < 2 || parseuint(argv[1], SCNx32, 1, UINT32_MAX, 1, UINT8_MAX, &u32, 0) != 0)
-    fail(FAB_BADARGS);
-  snprintf(hash, sizeof(hash), "%08x", u32);
+  if(argc < 2 || parseuint(g_argv[1], SCNx32, 1, UINT32_MAX, 1, UINT8_MAX, &u32, 0) != 0)
+    fail(SYS_BADARGS);
+  snprintf(hash, sizeof(hash), "%x", u32);
   snprintf(ipcdir, sizeof(ipcdir), "%s/%s", XQUOTE(FABIPCDIR), hash);
 
+  // core file goes in cwd
+  fatal(xchdirf, "%s/fabd", ipcdir);
+
+  // logging, with per-ipc logfiles
+  fatal(logging_setup, hash);
+  fatal(logger_finalize);
+
 #if DEBUG || DEVEL
-  fatal(log_start, L_IPC, &token);
-  logf(0, "%ld/%ld/%s ", getpgid(0), getpid(), "fabd");
-  off_t off = 0;
-  fatal(narrator_seek, log_narrator(&token), 0, NARRATOR_SEEK_CUR, &off);
-  logf(0, "%*s started", MAX(0, 20 - off), "");
-  fatal(log_finish, &token);
+  logs(L_IPC, "started");
 #endif
 
-  // exclusive lock
-  pid_t pgid;
-  fatal(ipc_lock_obtain, &pgid, "%s/fabd/lock", ipcdir);
-  if(pgid && pgid != g_params.pgid)
-    failf(FAB_FABDLOCK, "pgid", "%ld", (long)pgid);
+  fatal(params_report);
 
-  // allow creation of world-rw files
-  umask(0);
-  fatal(xchdir, "/");
-  fatal(identity_assume_fabsys);
+  // load the initial config
+  fatal(config_load);
 
+#if 0
   // create symlink for dsc in hashdir
   snprintf(space, sizeof(space), "%s/dsc", ipcdir);
   snprintf(space2, sizeof(space2), XQUOTE(FABTMPDIR) "/pid/%d/dsc", g_params.pid);
   fatal(uxunlink, space);
   fatal(xsymlink, space2, space);
-
-#if __linux__
-  // arrange to terminate if the parent fabw process dies
-  fatal(xprctl, PR_SET_PDEATHSIG, SIGTERM, 0, 0, 0);
 #endif
 
-  fatal(server_create, &server, ipcdir, hash);
+#if DEVEL
+  #if __linux__
+  // arrange to terminate if the parent fabw process dies
+  fatal(xprctl, PR_SET_PDEATHSIG, SIGTERM, 0, 0, 0);
+  #endif
+#endif
+
+  // take the fabd lock, since it will not have been inherited
+  if(!daemon)
+  {
+    pid_t pgid = 0;
+    fatal(ipc_lock_obtain, &pgid, "%s/fabd/lock", ipcdir);
+    while(pgid)
+    {
+      fatal(ipc_lock_release, "%s/fabd/lock", ipcdir);
+      fatal(ipc_lock_obtain, &pgid, "%s/fabd/lock", ipcdir);
+    }
+  }
+
+  fatal(fab_server_create, &server, ipcdir, hash);
+
+  // prepare to receive requests
+  fatal(identity_assume_fabsys);
 
   if(daemon)
-    fatal(server_ready, server);
+    fatal(fab_server_ready, server);
 
-  while(1)
+  fab_request * request;
+  do
   {
-    // receive a signal from fab
-    int signum = 0;
-    pid_t pid = 0;
-    fatal(sigbank_receive, (int[]){ FABSIG_SYN, 0 }, 0, &signum, &pid);
+    fatal(fab_server_receive, server, daemon, &request);
 
-    if(signum == SIGINT || signum == SIGQUIT || signum == SIGTERM)
-      break;
+    if(request)
+    {
+      fab_response * response = 0;
+      fatal(fab_server_dispatch, server, request, mb, &response);
 
-    fatal(server_validate, server, pid);
-
-    if(daemon)
-      fatal(server_redirect, server);
-
-    request * req;
-    response * resp = 0;
-    fatal(server_receive, server, &req);
-    fatal(server_dispatch, server, req, mb, &resp);
-
-    // task complete
-    fatal(server_respond, server, mb, resp);
+      // task complete
+      fatal(fab_server_respond, server, mb, response);
+    }
 
     fatal(usage_report);
 
@@ -219,15 +222,11 @@ int main(int argc, char** argv, char ** envp)
 
     // cycle fab pids
     memmove(&fab_pids[1], &fab_pids[0], sizeof(*fab_pids) * ((sizeof(fab_pids) / sizeof(fab_pids[0])) - 1));
-    fab_pids[0] = server->pid;
-  }
+    fab_pids[0] = server->client_pid;
+  } while(request);
 
-  // touch stamp file
-  snprintf(space, sizeof(space), XQUOTE(FABTMPDIR) "/pid/%d/stamp", g_params.pid);
-  fatal(ixclose, &fd);
-  fatal(uxopen_mode, space, O_CREAT | O_RDWR, FABIPC_DATA, &fd);
-  if(fd != -1)
-    fatal(xfutimens, fd, 0);
+  // update stamp file
+  fatal(touchf, FABIPC_MODE_DATA, XQUOTE(FABTMPDIR) "/pid/%d/stamp", g_params.pid);
 
   // cycle in my own pid
   memmove(&fab_pids[1], &fab_pids[0], sizeof(*fab_pids) * ((sizeof(fab_pids) / sizeof(fab_pids[0])) - 1));
@@ -241,22 +240,28 @@ finally:
 
 #if DEBUG || DEVEL
   xapi_infos("name", "fabd");
+  xapi_infof("pgid", "%ld", (long)getpgid(0));
   xapi_infof("pid", "%ld", (long)getpid());
   xapi_infos("hash", hash);
 #endif
 
   if(XAPI_UNWINDING)
   {
-    tracesz = xapi_trace_full(space, sizeof(space));
-    xlogw(L_ERROR, L_RED, space, tracesz);
+#if DEBUG || DEVEL || XAPI
+    tracesz = xapi_trace_full(trace, sizeof(trace));
+#else
+    tracesz = xapi_trace_pithy(trace, sizeof(trace));
+#endif
+
+    xlogw(L_ERROR, L_RED, trace, tracesz);
   }
 
   // locals
 //  map_free(rmap);
 //  map_free(vmap);
 //  fabd_handler_context_free(ctx);
-  fatal(ixclose, &fd);
-  fatal(server_dispose, &server);
+  fatal(xclose, fd);
+  fatal(fab_server_xfree, server);
   fatal(memblk_free, mb);
 
   // modules
@@ -264,15 +269,20 @@ finally:
 //  fml_teardown();
 //  ff_teardown();
 //  selector_teardown();
+  sigbank_teardown();
+  params_teardown();
+  fatal(config_cleanup);
+  fatal(filesystem_cleanup);
 
   // libraries
-  fatal(xlinux_unload);
+  fatal(fab_unload);
   fatal(listwise_unload);
-  fatal(valyria_unload);
   fatal(logger_unload);
-  fatal(narrator_unload);
-  fatal(fabcore_unload);
   fatal(lorien_unload);
+  fatal(narrator_unload);
+  fatal(valyria_unload);
+  fatal(xlinux_unload);
+  fatal(yyutil_unload);
 
 conclude(&R);
   xapi_teardown();

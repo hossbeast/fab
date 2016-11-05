@@ -17,6 +17,7 @@
 
 %{
   #include <stdio.h>
+  #include <strings.h>
 
   struct config_xtra;
   #define YYU_EXTRA_TYPE struct config_xtra
@@ -25,10 +26,9 @@
   #include "config_parser.internal.h"
   #include "config_parser/config.tab.h"
   #include "config_parser/config.tokens.h"
-  #include "CONFIG.errtab.h"
+  #include "errtab/CONFIG.errtab.h"
 
-  #undef perrtab
-  #define perrtab perrtab_CONFIG
+  #include "parseint.h"
 
   /// LEX
   //
@@ -94,13 +94,18 @@
         lval->u8 = '"';
     }
     else if(token == HREF)
-      sscanf(text + vdel, "%hhx", &lval->u8);
+      fatal(xparseint, text + vdel, "hhx", 0, UINT8_MAX, 0, UINT8_MAX, &lval->u8, 0);
     else if(token == INT)
-      sscanf(text + vdel, "%"SCNd64, &lval->i64);
+      fatal(xparseint, text + vdel, SCNd64, INT64_MIN, INT64_MAX, 0, UINT8_MAX, &lval->i64, 0);
     else if(token == HEX)
-      sscanf(text + vdel, "%"SCNx64, &lval->i64);
+      fatal(xparseint, text + vdel, SCNx64, INT64_MIN, INT64_MAX, 0, UINT8_MAX, &lval->i64, 0);
     else if(token == FLOAT)
-      sscanf(text + vdel, "%Lf", &lval->fp);
+      sscanf(text + vdel, "%lf", &lval->fp);
+    else if(token == BOOL)
+    {
+      if(strcasecmp(text + vdel, "true") == 0 || strcasecmp(text + vdel, "yes") == 0 || strcasecmp(text + vdel, "on"))
+        lval->u8 = 1;
+    }
 
     fatal(yyu_lexify, token, lval, sizeof(*lval), lloc, xtra, text, leng, ldel, 0);
 
@@ -139,19 +144,20 @@ ILL   [\x00-\x08\x0B-\x1F\x7F-\xFF]
 <INITIAL>[\r\t ]+                                       { LOCWRITE; }
 
  /* tokens */
-<INITIAL>[[\]{}]                                        { lenter; LEX(yytext[0]); yield(yytext[0]); finally : lcoda; }
-<INITIAL>(?i:true|false)                                { lenter; LEX(BOOL); yield(BOOL); finally : lcoda; }
+<INITIAL>[[\]{}.+=]                                     { lenter; LEX(yytext[0]); yield(yytext[0]); finally : lcoda; }
+<INITIAL>(?i:true|false|yes|no|on|off)                  { lenter; LEX(BOOL); yield(BOOL); finally : lcoda; }
 <INITIAL>[0-9]+                                         { lenter; LEX(INT); yield(INT); finally : lcoda; }
 <INITIAL>[-][0-9]+                                      { lenter; LEX(INT); yield(INT); finally : lcoda; }
 <INITIAL>(?i:0x[a-f0-9]+)                               { lenter; LEX(HEX); yield(HEX); finally : lcoda; }
 <INITIAL>[+-]?[0-9]+[.][0-9]+                           { lenter; LEX(FLOAT); yield(FLOAT); finally : lcoda; }
+<INITIAL>[a-zA-Z_][-a-zA-Z0-9_]*                        { lenter; LEX(STR); yield(STR); finally : lcoda; }
 <INITIAL>["]                                            { lenter; PUSHSTATE(quoted); LEX(yytext[0]); yield(yytext[0]); finally : lcoda; }
 
 <quoted>["]                                             { lenter; POPSTATE; LEX(yytext[0]); yield(yytext[0]); finally : lcoda; }
 <quoted>\\[\\"abtnvfrs0]                                { lenter; LEXV(CREF, 1); yield(CREF); finally : lcoda; }
 <quoted>(?i:\\x[0-9a-f]{2})                             { lenter; LEXV(HREF, 2); yield(HREF); finally : lcoda; }
 <quoted>(?i:\\x\{[0-9a-f]{1,2}\})                       { lenter; LEXV(HREF, 3); yield(HREF); finally : lcoda; }
-<quoted,INITIAL>[^\n"\x00-\x1F\x7F-\xFF]+               { lenter; LEX(STR); yield(STR); finally : lcoda; }
+<quoted>[^"\x00-\x1F\x7F-\xFF]+                         { lenter; LEX(STR); yield(STR); finally : lcoda; }
 
 <*>[\x00-\x1F\x7F-\xFF]                                 {
                                                           lenter;
@@ -159,7 +165,6 @@ ILL   [\x00-\x08\x0B-\x1F\x7F-\xFF]
                                                             { POPSTATE; }
                                                           LOCWRITE;
                                                           failf(CONFIG_ILLBYTE, "byte", "0x%02hhx", yytext[0]);
-                                                          yield(0); /* return end-of-input */
                                                           finally : lcoda;
                                                         }
 <*>[\x20-\x7E]                                          {

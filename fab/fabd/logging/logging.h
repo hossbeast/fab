@@ -20,11 +20,42 @@
 
 #include "xapi.h"
 
+#include "logger.h"
+#include "logger/category.h"
+
+struct value;
+
+extern struct logger_category * categories;
+
+#define L_ERROR   categories[0].id
+#define L_WARN    categories[1].id
+#define L_CONFIG  categories[2].id
+#define L_PARAMS  categories[3].id
+#define L_TMP     categories[4].id
+#define L_USAGE   categories[5].id
+#if DEBUG || DEVEL || XAPI
+#define L_IPC     categories[6].id
+#endif
+
 /// logging_setup
 //
 // SUMMARY
 //  register logging categories
 //
-xapi logging_setup(void);
+xapi logging_setup(char * const restrict hash);
+
+xapi logging_config_validate(struct value * restrict config_staging);
+
+/// logging_reconfigure
+//
+// SUMMARY
+//  apply new configuration
+//  
+// PARAMETERS
+//  config - root of the effective config tree
+//  dry    - if true, do not commit the new config
+//
+xapi logging_reconfigure(const struct value * restrict config, uint32_t dry)
+  __attribute__((nonnull));
 
 #endif

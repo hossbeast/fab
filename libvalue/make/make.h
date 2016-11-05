@@ -161,6 +161,15 @@ xapi value_string_mkv(
 //  v - key from value
 //  s - key from string
 //
+xapi value_map_mk(
+    struct value_store * const restrict stor
+  , const struct yyu_location * const restrict loc
+  , struct value * e
+  , struct value ** rv
+  , uint16_t attr
+)
+  __attribute__((nonnull(1, 4)));
+
 xapi value_map_mkv(
     struct value_store * const restrict stor
   , const struct yyu_location * const restrict loc

@@ -2,9 +2,9 @@
 #define config_yyHEADER_H 1
 #define config_yyIN_HEADER 1
 
-#line 6 "config_parser/config.lex.h"
+#line 6 "fab/fabd/config_parser/config.lex.h"
 
-#line 8 "config_parser/config.lex.h"
+#line 8 "fab/fabd/config_parser/config.lex.h"
 
 #define  YY_INT_ALIGNED short int
 
@@ -12,8 +12,8 @@
 
 #define FLEX_SCANNER
 #define YY_FLEX_MAJOR_VERSION 2
-#define YY_FLEX_MINOR_VERSION 5
-#define YY_FLEX_SUBMINOR_VERSION 39
+#define YY_FLEX_MINOR_VERSION 6
+#define YY_FLEX_SUBMINOR_VERSION 0
 #if YY_FLEX_SUBMINOR_VERSION > 0
 #define FLEX_BETA
 #endif
@@ -170,7 +170,7 @@ struct yy_buffer_state
 	/* Number of characters read into yy_ch_buf, not including EOB
 	 * characters.
 	 */
-	yy_size_t yy_n_chars;
+	int yy_n_chars;
 
 	/* Whether we "own" the buffer - i.e., we know we created it,
 	 * and can realloc() it to grow it, and should free() it to
@@ -220,7 +220,7 @@ void *config_yyalloc (yy_size_t ,yyscan_t yyscanner );
 void *config_yyrealloc (void *,yy_size_t ,yyscan_t yyscanner );
 void config_yyfree (void * ,yyscan_t yyscanner );
 
-#define config_yywrap(yyscanner) 1
+#define config_yywrap(yyscanner) (/*CONSTCOND*/1)
 #define YY_SKIP_YYWRAP
 
 #define yytext_ptr yytext_r
@@ -261,11 +261,11 @@ void config_yyset_extra (YY_EXTRA_TYPE user_defined ,yyscan_t yyscanner );
 
 FILE *config_yyget_in (yyscan_t yyscanner );
 
-void config_yyset_in  (FILE * in_str ,yyscan_t yyscanner );
+void config_yyset_in  (FILE * _in_str ,yyscan_t yyscanner );
 
 FILE *config_yyget_out (yyscan_t yyscanner );
 
-void config_yyset_out  (FILE * out_str ,yyscan_t yyscanner );
+void config_yyset_out  (FILE * _out_str ,yyscan_t yyscanner );
 
 yy_size_t config_yyget_leng (yyscan_t yyscanner );
 
@@ -273,11 +273,11 @@ char *config_yyget_text (yyscan_t yyscanner );
 
 int config_yyget_lineno (yyscan_t yyscanner );
 
-void config_yyset_lineno (int line_number ,yyscan_t yyscanner );
+void config_yyset_lineno (int _line_number ,yyscan_t yyscanner );
 
 int config_yyget_column  (yyscan_t yyscanner );
 
-void config_yyset_column (int column_no ,yyscan_t yyscanner );
+void config_yyset_column (int _column_no ,yyscan_t yyscanner );
 
 YYSTYPE * config_yyget_lval (yyscan_t yyscanner );
 
@@ -353,8 +353,8 @@ extern int config_yylex \
 #undef YY_DECL
 #endif
 
-#line 179 "config_parser/config.l"
+#line 185 "fab/fabd/config_parser/config.l"
 
-#line 359 "config_parser/config.lex.h"
+#line 359 "fab/fabd/config_parser/config.lex.h"
 #undef config_yyIN_HEADER
 #endif /* config_yyHEADER_H */

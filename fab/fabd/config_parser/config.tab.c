@@ -1,8 +1,8 @@
-/* A Bison parser, made by GNU Bison 3.0.2.  */
+/* A Bison parser, made by GNU Bison 3.0.4.  */
 
 /* Bison implementation for Yacc-like parsers in C
 
-   Copyright (C) 1984, 1989-1990, 2000-2013 Free Software Foundation, Inc.
+   Copyright (C) 1984, 1989-1990, 2000-2015 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -44,7 +44,7 @@
 #define YYBISON 1
 
 /* Bison version.  */
-#define YYBISON_VERSION "3.0.2"
+#define YYBISON_VERSION "3.0.4"
 
 /* Skeleton name.  */
 #define YYSKELETON_NAME "yacc.c"
@@ -59,18 +59,11 @@
 #define YYPULL 1
 
 /* "%code top" blocks.  */
-#line 18 "config_parser/config.y" /* yacc.c:316  */
-
-  #include <stdint.h>
-  #include <string.h>
-
-  #include "config_parser.internal.h"
-
-  struct value;
+#line 30 "fab/fabd/config_parser/config.y" /* yacc.c:316  */
 
   int config_yylex(void *, void*, void*);
 
-#line 74 "config_parser/config.tab.c" /* yacc.c:316  */
+#line 67 "fab/fabd/config_parser/config.tab.c" /* yacc.c:316  */
 
 /* Substitute the variable and function names.  */
 #define yyparse         config_yyparse
@@ -82,7 +75,7 @@
 
 /* Copy the first part of user declarations.  */
 
-#line 86 "config_parser/config.tab.c" /* yacc.c:339  */
+#line 79 "fab/fabd/config_parser/config.tab.c" /* yacc.c:339  */
 
 # ifndef YY_NULLPTR
 #  if defined __cplusplus && 201103L <= __cplusplus
@@ -102,8 +95,8 @@
 
 /* In a future release of Bison, this section will be replaced
    by #include "config.tab.h".  */
-#ifndef YY_CONFIG_YY_CONFIG_PARSER_CONFIG_TAB_H_INCLUDED
-# define YY_CONFIG_YY_CONFIG_PARSER_CONFIG_TAB_H_INCLUDED
+#ifndef YY_CONFIG_YY_FAB_FABD_CONFIG_PARSER_CONFIG_TAB_H_INCLUDED
+# define YY_CONFIG_YY_FAB_FABD_CONFIG_PARSER_CONFIG_TAB_H_INCLUDED
 /* Debug traces.  */
 #ifndef YYDEBUG
 # define YYDEBUG 0
@@ -111,6 +104,20 @@
 #if YYDEBUG
 extern int config_yydebug;
 #endif
+/* "%code requires" blocks.  */
+#line 18 "fab/fabd/config_parser/config.y" /* yacc.c:355  */
+
+  #include <stdint.h>
+  #include <string.h>
+
+  #include "value.h"
+  #include "value/make.h"
+  #include "valyria/list.h"
+  #include "valyria/pstring.h"
+
+  #include "config_parser.internal.h"
+
+#line 121 "fab/fabd/config_parser/config.tab.c" /* yacc.c:355  */
 
 /* Token type.  */
 #ifndef YYTOKENTYPE
@@ -129,19 +136,29 @@ extern int config_yydebug;
 
 /* Value type.  */
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
-typedef union YYSTYPE YYSTYPE;
+
 union YYSTYPE
 {
-#line 40 "config_parser/config.y" /* yacc.c:355  */
+#line 45 "fab/fabd/config_parser/config.y" /* yacc.c:355  */
 
   uint8_t     u8;
   int64_t     i64;
-  long double fp;
+  double      fp;
+
+  value * key;
+
+  struct {
+    value * key;
+    value * val;
+    uint16_t attr;
+  } mapping;
 
   struct value * val;
 
-#line 144 "config_parser/config.tab.c" /* yacc.c:355  */
+#line 159 "fab/fabd/config_parser/config.tab.c" /* yacc.c:355  */
 };
+
+typedef union YYSTYPE YYSTYPE;
 # define YYSTYPE_IS_TRIVIAL 1
 # define YYSTYPE_IS_DECLARED 1
 #endif
@@ -164,11 +181,11 @@ struct YYLTYPE
 
 int config_yyparse (void* scanner, config_xtra * xtra);
 
-#endif /* !YY_CONFIG_YY_CONFIG_PARSER_CONFIG_TAB_H_INCLUDED  */
+#endif /* !YY_CONFIG_YY_FAB_FABD_CONFIG_PARSER_CONFIG_TAB_H_INCLUDED  */
 
 /* Copy the second part of user declarations.  */
 
-#line 172 "config_parser/config.tab.c" /* yacc.c:358  */
+#line 189 "fab/fabd/config_parser/config.tab.c" /* yacc.c:358  */
 
 #ifdef short
 # undef short
@@ -410,18 +427,18 @@ union yyalloc
 #endif /* !YYCOPY_NEEDED */
 
 /* YYFINAL -- State number of the termination state.  */
-#define YYFINAL  13
+#define YYFINAL  35
 /* YYLAST -- Last index in YYTABLE.  */
-#define YYLAST   52
+#define YYLAST   85
 
 /* YYNTOKENS -- Number of terminals.  */
-#define YYNTOKENS  17
+#define YYNTOKENS  20
 /* YYNNTS -- Number of nonterminals.  */
-#define YYNNTS  15
+#define YYNNTS  19
 /* YYNRULES -- Number of rules.  */
-#define YYNRULES  27
+#define YYNRULES  36
 /* YYNSTATES -- Number of states.  */
-#define YYNSTATES  37
+#define YYNSTATES  50
 
 /* YYTRANSLATE[YYX] -- Symbol number corresponding to YYX as returned
    by yylex, with out-of-bounds checking.  */
@@ -438,13 +455,13 @@ static const yytype_uint8 yytranslate[] =
        0,     2,     2,     2,     2,     2,     2,     2,     2,     2,
        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
-       2,     2,     2,     2,    16,     2,     2,     2,     2,     2,
-       2,     2,     2,     2,     4,     2,     2,     2,     2,     2,
+       2,     2,     2,     2,    19,     2,     2,     2,     2,     2,
+       2,     2,     2,     7,     4,     2,    18,     2,     2,     2,
        2,     2,     2,     2,     2,     2,     2,     2,     3,     2,
+       2,     8,     2,     2,     2,     2,     2,     2,     2,     2,
        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
-       2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
-       2,    14,     2,    15,     2,     2,     2,     2,     2,     2,
+       2,    16,     2,    17,     2,     2,     2,     2,     2,     2,
        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
        2,     2,     2,     5,     2,     6,     2,     2,     2,     2,
@@ -460,17 +477,18 @@ static const yytype_uint8 yytranslate[] =
        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
-       2,     2,     2,     2,     2,     2,     1,     2,     7,     8,
-       9,    10,    11,    12,    13
+       2,     2,     2,     2,     2,     2,     1,     2,     9,    10,
+      11,    12,    13,    14,    15
 };
 
 #if YYDEBUG
   /* YYRLINE[YYN] -- Source line where rule number YYN was defined.  */
-static const yytype_uint8 yyrline[] =
+static const yytype_uint16 yyrline[] =
 {
-       0,    73,    73,    80,    81,    82,    83,    84,    85,    89,
-      96,    97,   101,   108,   109,   113,   114,   118,   122,   129,
-     130,   134,   138,   142,   149,   156,   160,   167
+       0,    90,    90,    94,   101,   102,   106,   107,   108,   109,
+     113,   114,   118,   125,   129,   136,   143,   160,   180,   186,
+     192,   201,   205,   212,   213,   217,   221,   225,   232,   236,
+     240,   244,   248,   255,   262,   266,   273
 };
 #endif
 
@@ -479,11 +497,12 @@ static const yytype_uint8 yyrline[] =
    First, the terminals, then, starting at YYNTOKENS, nonterminals.  */
 static const char *const yytname[] =
 {
-  "$end", "error", "$undefined", "':'", "','", "'{'", "'}'", "STR",
-  "BOOL", "INT", "HEX", "FLOAT", "CREF", "HREF", "'['", "']'", "'\"'",
-  "$accept", "utterance", "value", "array", "list", "object", "map",
-  "string", "unquoted_string", "quoted_string", "strparts", "strpart",
-  "boolean", "integer", "float", YY_NULLPTR
+  "$end", "error", "$undefined", "':'", "','", "'{'", "'}'", "'+'", "'='",
+  "STR", "BOOL", "INT", "HEX", "FLOAT", "CREF", "HREF", "'['", "']'",
+  "'.'", "'\"'", "$accept", "utterance", "value", "scalar", "aggregate",
+  "array", "list", "object", "map", "mapping", "key", "string",
+  "unquoted_string", "quoted_string", "strparts", "strpart", "boolean",
+  "integer", "float", YY_NULLPTR
 };
 #endif
 
@@ -492,17 +511,17 @@ static const char *const yytname[] =
    (internal) symbol number NUM (which must be that of a token).  */
 static const yytype_uint16 yytoknum[] =
 {
-       0,   256,   257,    58,    44,   123,   125,   258,   259,   260,
-     261,   262,   263,   264,    91,    93,    34
+       0,   256,   257,    58,    44,   123,   125,    43,    61,   258,
+     259,   260,   261,   262,   263,   264,    91,    93,    46,    34
 };
 # endif
 
-#define YYPACT_NINF -14
+#define YYPACT_NINF -36
 
 #define yypact_value_is_default(Yystate) \
-  (!!((Yystate) == (-14)))
+  (!!((Yystate) == (-36)))
 
-#define YYTABLE_NINF -1
+#define YYTABLE_NINF -7
 
 #define yytable_value_is_error(Yytable_value) \
   0
@@ -511,10 +530,11 @@ static const yytype_uint16 yytoknum[] =
      STATE-NUM.  */
 static const yytype_int8 yypact[] =
 {
-      -2,   -14,   -14,   -14,    37,     4,    -2,    27,   -14,   -14,
-     -14,    35,   -14,   -14,    27,    -2,   -14,   -14,   -14,   -14,
-      27,   -14,   -14,   -14,   -14,   -14,   -14,   -14,   -14,   -14,
-     -14,    -4,   -14,    14,   -14,   -14,   -14
+      58,     6,   -36,   -36,   -36,   -36,   -36,   -36,   -36,    58,
+      13,     4,   -36,   -36,   -36,   -36,   -36,     6,   -36,    33,
+       7,   -36,   -36,   -36,   -36,   -36,   -36,    -1,   -36,   -36,
+      45,   -36,   -36,    66,   -36,   -36,   -36,     2,     1,     6,
+     -36,   -36,   -36,   -36,   -36,   -36,     1,   -36,   -36,   -36
 };
 
   /* YYDEFACT[STATE-NUM] -- Default reduction number in state STATE-NUM.
@@ -522,73 +542,83 @@ static const yytype_int8 yypact[] =
      means the default is an error.  */
 static const yytype_uint8 yydefact[] =
 {
-       0,    21,    22,    23,     0,     0,     2,     0,    15,    16,
-      17,     0,    20,     1,     0,     0,    24,    25,    26,    27,
-       0,    14,     3,     4,     5,     6,     7,     8,    18,    19,
-      13,     0,    11,     0,    12,     9,    10
+       0,     0,    30,    33,    34,    35,    36,    31,    32,     0,
+       0,     0,     3,     4,     5,    10,    11,     2,    17,     0,
+      22,    23,    24,    25,     7,     8,     9,     0,    22,    14,
+       0,     6,    27,     0,    29,     1,    16,     0,     0,     0,
+      20,    15,    12,    13,    26,    28,     0,    19,    21,    18
 };
 
   /* YYPGOTO[NTERM-NUM].  */
 static const yytype_int8 yypgoto[] =
 {
-     -14,   -14,   -13,   -14,   -14,   -14,     1,     0,   -14,   -14,
-     -14,    41,   -14,   -14,   -14
+     -36,   -36,    -7,   -36,   -35,   -36,   -36,   -36,    15,     9,
+     -36,     0,   -36,   -36,   -36,    -9,   -36,   -36,   -36
 };
 
   /* YYDEFGOTO[NTERM-NUM].  */
 static const yytype_int8 yydefgoto[] =
 {
-      -1,     5,    21,    22,    33,    23,     6,    24,     8,     9,
-      11,    10,    25,    26,    27
+      -1,    11,    12,    13,    14,    15,    30,    16,    17,    18,
+      19,    28,    21,    22,    33,    23,    24,    25,    26
 };
 
   /* YYTABLE[YYPACT[STATE-NUM]] -- What to do in state STATE-NUM.  If
      positive, shift that token.  If negative, reduce the rule whose
      number is the opposite.  If YYTABLE_NINF, syntax error.  */
-static const yytype_uint8 yytable[] =
+static const yytype_int8 yytable[] =
 {
-       7,    30,    34,     1,    13,     1,    14,    32,     2,     3,
-       2,     3,     4,     0,     4,     7,    31,     0,     0,    15,
-      36,     1,    16,    17,    18,    19,     2,     3,    20,    35,
-       4,    14,    15,     0,     1,    16,    17,    18,    19,     2,
-       3,    20,     1,     4,     1,    12,     0,     2,     3,     2,
-       3,    28,    29
+      20,    34,    29,    47,    35,    41,     1,    -6,     2,    31,
+      46,    49,    40,     7,     8,     2,    27,     9,    10,    31,
+       7,     8,     2,    43,    45,    10,    36,     7,     8,     0,
+      31,     0,    32,     0,     0,     0,    36,     0,     1,    48,
+      37,    38,     2,     3,     4,     5,     6,     7,     8,     9,
+       1,    39,    10,     0,     2,     3,     4,     5,     6,     7,
+       8,     9,    42,     1,    10,     0,     0,     2,     3,     4,
+       5,     6,     7,     8,     9,     2,     0,    10,     0,     0,
+       7,     8,     0,     0,     0,    44
 };
 
 static const yytype_int8 yycheck[] =
 {
-       0,    14,     6,     7,     0,     7,     6,    20,    12,    13,
-      12,    13,    16,    -1,    16,    15,    15,    -1,    -1,     5,
-      33,     7,     8,     9,    10,    11,    12,    13,    14,    15,
-      16,    31,     5,    -1,     7,     8,     9,    10,    11,    12,
-      13,    14,     7,    16,     7,     4,    -1,    12,    13,    12,
-      13,    16,    11
+       0,    10,     9,    38,     0,     6,     5,     0,     9,     9,
+       8,    46,    19,    14,    15,     9,     1,    16,    19,    19,
+      14,    15,     9,    30,    33,    19,    17,    14,    15,    -1,
+      30,    -1,    19,    -1,    -1,    -1,    27,    -1,     5,    39,
+       7,     8,     9,    10,    11,    12,    13,    14,    15,    16,
+       5,    18,    19,    -1,     9,    10,    11,    12,    13,    14,
+      15,    16,    17,     5,    19,    -1,    -1,     9,    10,    11,
+      12,    13,    14,    15,    16,     9,    -1,    19,    -1,    -1,
+      14,    15,    -1,    -1,    -1,    19
 };
 
   /* YYSTOS[STATE-NUM] -- The (internal number of the) accessing
      symbol of state STATE-NUM.  */
 static const yytype_uint8 yystos[] =
 {
-       0,     7,    12,    13,    16,    18,    23,    24,    25,    26,
-      28,    27,    28,     0,    24,     5,     8,     9,    10,    11,
-      14,    19,    20,    22,    24,    29,    30,    31,    16,    28,
-      19,    23,    19,    21,     6,    15,    19
+       0,     5,     9,    10,    11,    12,    13,    14,    15,    16,
+      19,    21,    22,    23,    24,    25,    27,    28,    29,    30,
+      31,    32,    33,    35,    36,    37,    38,    28,    31,    22,
+      26,    31,    19,    34,    35,     0,    29,     7,     8,    18,
+      22,     6,    17,    22,    19,    35,     8,    24,    31,    24
 };
 
   /* YYR1[YYN] -- Symbol number of symbol that rule YYN derives.  */
 static const yytype_uint8 yyr1[] =
 {
-       0,    17,    18,    19,    19,    19,    19,    19,    19,    20,
-      21,    21,    22,    23,    23,    24,    24,    25,    26,    27,
-      27,    28,    28,    28,    29,    30,    30,    31
+       0,    20,    21,    21,    22,    22,    23,    23,    23,    23,
+      24,    24,    25,    26,    26,    27,    28,    28,    29,    29,
+      29,    30,    30,    31,    31,    32,    33,    33,    34,    34,
+      35,    35,    35,    36,    37,    37,    38
 };
 
   /* YYR2[YYN] -- Number of symbols on the right hand side of rule YYN.  */
 static const yytype_uint8 yyr2[] =
 {
-       0,     2,     1,     1,     1,     1,     1,     1,     1,     3,
-       2,     1,     3,     3,     2,     1,     1,     1,     3,     2,
-       1,     1,     1,     1,     1,     1,     1,     1
+       0,     2,     1,     1,     1,     1,     1,     1,     1,     1,
+       1,     1,     3,     2,     1,     3,     2,     1,     4,     3,
+       2,     3,     1,     1,     1,     1,     3,     2,     2,     1,
+       1,     1,     1,     1,     1,     1,     1
 };
 
 
@@ -1184,10 +1214,10 @@ YYLTYPE yylloc = yyloc_default;
   yychar = YYEMPTY; /* Cause a token to be read.  */
 
 /* User initialization code.  */
-#line 38 "config_parser/config.y" /* yacc.c:1429  */
+#line 43 "fab/fabd/config_parser/config.y" /* yacc.c:1429  */
 { memset(&yylloc, 0, sizeof(yylloc)); }
 
-#line 1191 "config_parser/config.tab.c" /* yacc.c:1429  */
+#line 1221 "fab/fabd/config_parser/config.tab.c" /* yacc.c:1429  */
   yylsp[0] = yylloc;
   goto yysetstate;
 
@@ -1374,95 +1404,223 @@ yyreduce:
   switch (yyn)
     {
         case 2:
-#line 74 "config_parser/config.y" /* yacc.c:1646  */
+#line 91 "fab/fabd/config_parser/config.y" /* yacc.c:1646  */
     {
     xtra->root = (yyvsp[0].val);
   }
-#line 1382 "config_parser/config.tab.c" /* yacc.c:1646  */
+#line 1412 "fab/fabd/config_parser/config.tab.c" /* yacc.c:1646  */
     break;
 
-  case 9:
-#line 90 "config_parser/config.y" /* yacc.c:1646  */
+  case 3:
+#line 95 "fab/fabd/config_parser/config.y" /* yacc.c:1646  */
     {
-    (yyval.val) = (yyvsp[-1].val);
+    xtra->root = (yyvsp[0].val);
   }
-#line 1390 "config_parser/config.tab.c" /* yacc.c:1646  */
+#line 1420 "fab/fabd/config_parser/config.tab.c" /* yacc.c:1646  */
     break;
 
   case 12:
-#line 102 "config_parser/config.y" /* yacc.c:1646  */
+#line 119 "fab/fabd/config_parser/config.y" /* yacc.c:1646  */
     {
     (yyval.val) = (yyvsp[-1].val);
   }
-#line 1398 "config_parser/config.tab.c" /* yacc.c:1646  */
+#line 1428 "fab/fabd/config_parser/config.tab.c" /* yacc.c:1646  */
+    break;
+
+  case 13:
+#line 126 "fab/fabd/config_parser/config.y" /* yacc.c:1646  */
+    {
+    YFATAL(value_list_mkv, xtra->stor, &(yyloc), (yyvsp[-1].val), &(yyval.val), (yyvsp[0].val));
+  }
+#line 1436 "fab/fabd/config_parser/config.tab.c" /* yacc.c:1646  */
+    break;
+
+  case 14:
+#line 130 "fab/fabd/config_parser/config.y" /* yacc.c:1646  */
+    {
+    YFATAL(value_list_mkv, xtra->stor, &(yyloc), 0, &(yyval.val), (yyvsp[0].val));
+  }
+#line 1444 "fab/fabd/config_parser/config.tab.c" /* yacc.c:1646  */
+    break;
+
+  case 15:
+#line 137 "fab/fabd/config_parser/config.y" /* yacc.c:1646  */
+    {
+    (yyval.val) = (yyvsp[-1].val);
+  }
+#line 1452 "fab/fabd/config_parser/config.tab.c" /* yacc.c:1646  */
+    break;
+
+  case 16:
+#line 144 "fab/fabd/config_parser/config.y" /* yacc.c:1646  */
+    {
+    if((yyvsp[0].mapping).key->els->l == 1)
+    {
+      YFATAL(value_map_mkv, xtra->stor, &(yyloc), (yyvsp[-1].val), &(yyval.val), list_get((yyvsp[0].mapping).key->els, 0), (yyvsp[0].mapping).val, (yyvsp[0].mapping).attr);
+    }
+    else
+    {
+      YFATAL(value_map_mkv, xtra->stor, &(yyloc), 0, &(yyval.val), list_get((yyvsp[0].mapping).key->els, (yyvsp[0].mapping).key->els->l - 1), (yyvsp[0].mapping).val, (yyvsp[0].mapping).attr);
+
+      int x;
+      for(x = (yyvsp[0].mapping).key->els->l - 2; x > 0; x--)
+        YFATAL(value_map_mkv, xtra->stor, &(yyloc), 0, &(yyval.val), list_get((yyvsp[0].mapping).key->els, x), (yyval.val), 0);
+
+      YFATAL(value_map_mkv, xtra->stor, &(yyloc), (yyvsp[-1].val), &(yyval.val), list_get((yyvsp[0].mapping).key->els, 0), (yyval.val), 0);
+    }
+  }
+#line 1473 "fab/fabd/config_parser/config.tab.c" /* yacc.c:1646  */
+    break;
+
+  case 17:
+#line 161 "fab/fabd/config_parser/config.y" /* yacc.c:1646  */
+    {
+    if((yyvsp[0].mapping).key->els->l == 1)
+    {
+      YFATAL(value_map_mkv, xtra->stor, &(yyloc), 0, &(yyval.val), list_get((yyvsp[0].mapping).key->els, 0), (yyvsp[0].mapping).val, (yyvsp[0].mapping).attr);
+    }
+    else
+    {
+      YFATAL(value_map_mkv, xtra->stor, &(yyloc), 0, &(yyval.val), list_get((yyvsp[0].mapping).key->els, (yyvsp[0].mapping).key->els->l - 1), (yyvsp[0].mapping).val, (yyvsp[0].mapping).attr);
+
+      int x;
+      for(x = (yyvsp[0].mapping).key->els->l - 2; x > 0; x--)
+        YFATAL(value_map_mkv, xtra->stor, &(yyloc), 0, &(yyval.val), list_get((yyvsp[0].mapping).key->els, x), (yyval.val), 0);
+
+      YFATAL(value_map_mkv, xtra->stor, &(yyloc), 0, &(yyval.val), list_get((yyvsp[0].mapping).key->els, 0), (yyval.val), 0);
+    }
+  }
+#line 1494 "fab/fabd/config_parser/config.tab.c" /* yacc.c:1646  */
     break;
 
   case 18:
-#line 123 "config_parser/config.y" /* yacc.c:1646  */
+#line 181 "fab/fabd/config_parser/config.y" /* yacc.c:1646  */
     {
-    (yyval.val) = (yyvsp[-1].val);
+    (yyval.mapping).key = (yyvsp[-3].key);
+    (yyval.mapping).val = (yyvsp[0].val);
+    (yyval.mapping).attr = VALUE_MERGE_ADD;
   }
-#line 1406 "config_parser/config.tab.c" /* yacc.c:1646  */
+#line 1504 "fab/fabd/config_parser/config.tab.c" /* yacc.c:1646  */
+    break;
+
+  case 19:
+#line 187 "fab/fabd/config_parser/config.y" /* yacc.c:1646  */
+    {
+    (yyval.mapping).key = (yyvsp[-2].key);
+    (yyval.mapping).val = (yyvsp[0].val);
+    (yyval.mapping).attr = VALUE_MERGE_SET;
+  }
+#line 1514 "fab/fabd/config_parser/config.tab.c" /* yacc.c:1646  */
+    break;
+
+  case 20:
+#line 193 "fab/fabd/config_parser/config.y" /* yacc.c:1646  */
+    {
+    (yyval.mapping).key = (yyvsp[-1].key);
+    (yyval.mapping).val = (yyvsp[0].val);
+    (yyval.mapping).attr = 0;
+  }
+#line 1524 "fab/fabd/config_parser/config.tab.c" /* yacc.c:1646  */
     break;
 
   case 21:
-#line 135 "config_parser/config.y" /* yacc.c:1646  */
+#line 202 "fab/fabd/config_parser/config.y" /* yacc.c:1646  */
     {
-    (yyval.val) = 0;
+    YFATAL(value_list_mkv, xtra->stor, &(yyloc), (yyvsp[-2].key), &(yyval.key), (yyvsp[0].val));
   }
-#line 1414 "config_parser/config.tab.c" /* yacc.c:1646  */
+#line 1532 "fab/fabd/config_parser/config.tab.c" /* yacc.c:1646  */
     break;
 
   case 22:
-#line 139 "config_parser/config.y" /* yacc.c:1646  */
+#line 206 "fab/fabd/config_parser/config.y" /* yacc.c:1646  */
     {
-
+    YFATAL(value_list_mkv, xtra->stor, &(yyloc), 0, &(yyval.key), (yyvsp[0].val));
   }
-#line 1422 "config_parser/config.tab.c" /* yacc.c:1646  */
-    break;
-
-  case 23:
-#line 143 "config_parser/config.y" /* yacc.c:1646  */
-    {
-
-  }
-#line 1430 "config_parser/config.tab.c" /* yacc.c:1646  */
-    break;
-
-  case 24:
-#line 150 "config_parser/config.y" /* yacc.c:1646  */
-    {
-
-  }
-#line 1438 "config_parser/config.tab.c" /* yacc.c:1646  */
-    break;
-
-  case 25:
-#line 157 "config_parser/config.y" /* yacc.c:1646  */
-    {
-
-  }
-#line 1446 "config_parser/config.tab.c" /* yacc.c:1646  */
+#line 1540 "fab/fabd/config_parser/config.tab.c" /* yacc.c:1646  */
     break;
 
   case 26:
-#line 161 "config_parser/config.y" /* yacc.c:1646  */
+#line 222 "fab/fabd/config_parser/config.y" /* yacc.c:1646  */
     {
-
+    (yyval.val) = (yyvsp[-1].val);
   }
-#line 1454 "config_parser/config.tab.c" /* yacc.c:1646  */
+#line 1548 "fab/fabd/config_parser/config.tab.c" /* yacc.c:1646  */
     break;
 
   case 27:
-#line 168 "config_parser/config.y" /* yacc.c:1646  */
+#line 226 "fab/fabd/config_parser/config.y" /* yacc.c:1646  */
     {
-
+    (yyval.val) = 0;
   }
-#line 1462 "config_parser/config.tab.c" /* yacc.c:1646  */
+#line 1556 "fab/fabd/config_parser/config.tab.c" /* yacc.c:1646  */
+    break;
+
+  case 28:
+#line 233 "fab/fabd/config_parser/config.y" /* yacc.c:1646  */
+    {
+    YFATAL(value_string_mkv, xtra->stor, &(yyloc), (yyvsp[-1].val), &(yyval.val), (yyvsp[0].val));
+  }
+#line 1564 "fab/fabd/config_parser/config.tab.c" /* yacc.c:1646  */
+    break;
+
+  case 30:
+#line 241 "fab/fabd/config_parser/config.y" /* yacc.c:1646  */
+    {
+    YFATAL(value_string_mkw, xtra->stor, &(yyloc), 0, &(yyval.val), (yylsp[0]).s, (yylsp[0]).l);
+  }
+#line 1572 "fab/fabd/config_parser/config.tab.c" /* yacc.c:1646  */
+    break;
+
+  case 31:
+#line 245 "fab/fabd/config_parser/config.y" /* yacc.c:1646  */
+    {
+    YFATAL(value_string_mkc, xtra->stor, &(yyloc), 0, &(yyval.val), (yyvsp[0].u8));
+  }
+#line 1580 "fab/fabd/config_parser/config.tab.c" /* yacc.c:1646  */
+    break;
+
+  case 32:
+#line 249 "fab/fabd/config_parser/config.y" /* yacc.c:1646  */
+    {
+    YFATAL(value_string_mkc, xtra->stor, &(yyloc), 0, &(yyval.val), (yyvsp[0].u8));
+  }
+#line 1588 "fab/fabd/config_parser/config.tab.c" /* yacc.c:1646  */
+    break;
+
+  case 33:
+#line 256 "fab/fabd/config_parser/config.y" /* yacc.c:1646  */
+    {
+    YFATAL(value_boolean_mk, xtra->stor, &(yyloc), &(yyval.val), (yyvsp[0].u8));
+  }
+#line 1596 "fab/fabd/config_parser/config.tab.c" /* yacc.c:1646  */
+    break;
+
+  case 34:
+#line 263 "fab/fabd/config_parser/config.y" /* yacc.c:1646  */
+    {
+    YFATAL(value_integer_mk, xtra->stor, &(yyloc), &(yyval.val), (yyvsp[0].i64));
+  }
+#line 1604 "fab/fabd/config_parser/config.tab.c" /* yacc.c:1646  */
+    break;
+
+  case 35:
+#line 267 "fab/fabd/config_parser/config.y" /* yacc.c:1646  */
+    {
+    YFATAL(value_integer_mk, xtra->stor, &(yyloc), &(yyval.val), (yyvsp[0].i64));
+  }
+#line 1612 "fab/fabd/config_parser/config.tab.c" /* yacc.c:1646  */
+    break;
+
+  case 36:
+#line 274 "fab/fabd/config_parser/config.y" /* yacc.c:1646  */
+    {
+    YFATAL(value_float_mk, xtra->stor, &(yyloc), &(yyval.val), (yyvsp[0].fp));
+  }
+#line 1620 "fab/fabd/config_parser/config.tab.c" /* yacc.c:1646  */
     break;
 
 
-#line 1466 "config_parser/config.tab.c" /* yacc.c:1646  */
+#line 1624 "fab/fabd/config_parser/config.tab.c" /* yacc.c:1646  */
       default: break;
     }
   /* User semantic actions sometimes alter yychar, and that requires
