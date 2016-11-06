@@ -157,17 +157,3 @@ $lflags_xapi_devel  = [ $lopts $libxapi_xapi_devel $libxlinux_xapi_devel $liblog
 {
   install -d                                   [ $destdir/$incdir/yyutil ]
 }
-
-#
-# unit tests
-#
-
-#[ $* ~ lsr m/test.c$ sx/c/xapi.xunit.so dj shift ] :: [ $< ~ sx/so/pic.o ]
-#{
-#  [ $cc ] [ $cflags -shared ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw lx/o uu fi ]
-#}
-#
-#[ @test ] : [ $* ~ lsr m/test.c$ sx/c/xapi.xunit.so ]
-#{
-#  [ $xunit_valgrind_runner ] [ $xunit_xapi_devel ] [ $@ ~ rx/ineed fi ]
-#}

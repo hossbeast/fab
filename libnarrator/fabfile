@@ -195,20 +195,18 @@ $lflags_xapi_devel  = [ $lopts $libxapi_xapi_devel $libxlinux_xapi_devel [ -Wl,-
 
 [ @test ] : [ $*/integ ~ j lsr sx/c/test sy ]
 {
-  set -e
-  for x in [ $@ ~ rx/ineed fi ] ; do [ $xunit_valgrind_runner ] $x ; done
+  (
+    set -e
+    for x in [ $@ ~ rx/ineed fi ] ; do [ $xunit_valgrind_runner ] $x ; done
+  ) | tee /dev/fd/501
+  > exit ${PIPESTATUS[0]}
 }
 
 [ @test.fast ] : [ $*/integ ~ j lsr sx/c/test sy ]
 {
-  set -e
-  [ $@ ~ rx/ineed fi/; ]
-}
-
-[ @test.verbose ] : [ $*/integ ~ j lsr sx/c/test sy ]
-{
-  set -e
   (
+    set -e
     [ $@ ~ rx/ineed fi/; ]
   ) | tee /dev/fd/501
+  > exit ${PIPESTATUS[0]}
 }

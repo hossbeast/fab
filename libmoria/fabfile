@@ -177,7 +177,10 @@ $lflags_xapi_devel  = [ $lopts $libxapi_xapi_devel $libxlinux_xapi_devel $libnar
 
 [ @test ] : [ $* ~ lsr l/test\/test_ sx/c/xapi.xunit.so sy ]
 {
-  [ $xunit_valgrind_runner ] [ $xunit_xapi_devel ] [ $@ ~ rx/ineed fi ]
+  (
+    [ $xunit_valgrind_runner ] [ $xunit_xapi_devel ] [ $@ ~ rx/ineed fi ] +UNIT
+  ) | tee /dev/fd/501
+  > exit ${PIPESTATUS[0]}
 }
 
 [ @test.fast ] : [ $* ~ lsr l/test\/test_ sx/c/xapi.xunit.so sy ]

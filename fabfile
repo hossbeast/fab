@@ -35,7 +35,8 @@
 +[ $dxunit ]()        @xunit
 
 # build artifacts
-[ @all ] : [ @final @debug @devel ]
+[ @all ] : [ @release @test ]
+[ @release ] : [ @final @debug @devel ]
 [ @final ] : [
   @fabcore.final @liblistwise.final @liblogger.final @liblorien.final @libmoria.final
   @libnarrator.final @libvalue.final @libvalyria.final @libxapi.final @libxlinux.final @libxunit.final
@@ -74,6 +75,7 @@
 # doc
 [ @install.man ] : [ @fabcore.install.man @listwise.install.man ]
 
-# unit tests
-[ @test ] : [ @xunit.devel @libxunit.devel @liblistwise.test @common.test ]
-[ @test.more ] : [ @xunit.devel @libxunit.devel @liblistwise.test.more @common.test.more ]
+# non-xunit tests
+[ @test ] : [ @fabcore.test @liblistwise.test @liblogger.test @liblorien.test @libmoria.test @libnarrator.test ]
+[ @test ] : [ @libvalue.test @libvalyria.test @libxapi.test @libxlinux.test @libxunit.test @libyyutil.test @listwise.test ]
+[ @test ] : [ @xunit.test ]

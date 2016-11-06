@@ -47,7 +47,7 @@ $lflags_xapi_devel  = [ $lflags_xapi_devel $lflags [ "-Wl,-soname," libxapi-xapi
 ## dependencies
 ##
 
-[ @all ] : [ @release @test.verbose ]
+[ @all ] : [ @release @test ]
 [ @release ] : [ @release.xapi ]
 [ @release.xapi ] : [ @final.xapi @debug.xapi @devel.xapi ]
 [ @final.xapi ] : [ $libxapi_xapi_final ]
@@ -144,15 +144,8 @@ $lflags_xapi_devel  = [ $lflags_xapi_devel $lflags [ "-Wl,-soname," libxapi-xapi
 }
 
 [ @test ] : [ @test.stacktrace_checks @test.stacktrace @test.errorcode ]
-[ @test.verbose ] : [ @test.stacktrace_checks.verbose @test.stacktrace.verbose @test.errorcode.verbose ]
 
 [ @test.stacktrace ] : [ $*/integ ~ j lsr l/errtab v sx/c/stacktrace sy ]
-{
-  set -e
-  [ $@ ~ rx/ineed fi/; ]
-}
-
-[ @test.stacktrace.verbose ] : [ $*/integ ~ j lsr l/errtab v sx/c/stacktrace sy ]
 {
   set -e
   (
@@ -163,24 +156,12 @@ $lflags_xapi_devel  = [ $lflags_xapi_devel $lflags [ "-Wl,-soname," libxapi-xapi
 [ @test.stacktrace_checks ] : [ $*/integ ~ j lsr l/errtab v sx/c/stacktrace_checks sy ]
 {
   set -e
-  [ $@ ~ rx/ineed fi/; ]
-}
-
-[ @test.stacktrace_checks.verbose ] : [ $*/integ ~ j lsr l/errtab v sx/c/stacktrace_checks sy ]
-{
-  set -e
   (
     [ $@ ~ rx/ineed fi/; ]
   ) | tee /dev/fd/501
 }
 
 [ @test.errorcode ] : [ $*/integ ~ j lsr l/errtab v sx/c/errorcode sy ]
-{
-  set -e
-  [ $@ ~ rx/ineed fi/; ]
-}
-
-[ @test.errorcode.verbose ] : [ $*/integ ~ j lsr l/errtab v sx/c/errorcode sy ]
 {
   set -e
   (
