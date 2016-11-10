@@ -49,7 +49,7 @@ static int calltree_locate_substack(calltree * const restrict ct, int a, int b)
   int x;
   for(x = b; x > a; x--)
   {
-    if(ct->frames.v[x].parent_index > a)
+    if(ct->frames.v[x].parent_index >= a)
       return x;
   }
 
