@@ -25,16 +25,16 @@
 /*
 
 SUMMARY
- call fail in a finally block during unwinding
+ call fail in a finally block during unwinding, assert the proper call path
 
 */
 
-int delta_count;
+int delta_live;
 static xapi delta(int num)
 {
   enter;
 
-  delta_count++;
+  delta_live++;
   fail(TEST_ERROR_ONE);
 
 finally:
@@ -42,13 +42,13 @@ finally:
 coda;
 }
 
-int beta_count;
-int beta_dead_count;
+int beta_live;
+int beta_dead;
 static xapi beta()
 {
   enter;
 
-  beta_count++;
+  beta_live++;
   fatal(delta, __LINE__);
 
 finally:
@@ -56,7 +56,7 @@ finally:
   fatal(delta, __LINE__);
 
   // this line should not be hit
-  beta_dead_count = 1;
+  beta_dead = 1;
 coda;
 }
 
@@ -64,20 +64,9 @@ static xapi alpha()
 {
   enter;
 
-#if XAPI_STACKTRACE
-  char space[4096];
-  size_t z;
-#endif
-
   fatal(beta);
 
-finally:
-#if XAPI_STACKTRACE
-  z = xapi_trace_full(space, sizeof(space));
-  write(1, space, z);
-  write(1, "\n", 1);
-#endif
-coda;
+  finally : coda;
 }
 
 int main()
@@ -91,22 +80,13 @@ int main()
   assert_exit(TEST_ERROR_ONE, exit);
 
   // dead area should have been skipped
-  assertf(beta_dead_count == 0
-    , "expected beta-dead-count : 0, actual beta-dead-count : %d"
-    , beta_dead_count
-  );
+  assertf(beta_dead == 0, "expected beta-dead : 0, actual : %d", beta_dead);
 
   // beta should have been run once
-  assertf(beta_count == 1
-    , "expected beta-count : 1, actual beta-count : %d"
-    , beta_count
-  );
+  assertf(beta_live == 1, "expected beta-live : 1, actual : %d", beta_live);
 
   // delta should have been run twice
-  assertf(delta_count == 2
-    , "expected delta-count : 2, actual delta-count : %d"
-    , delta_count
-  );
+  assertf(delta_live == 2, "expected delta-live : 2, actual : %d", delta_live);
 
   succeed;
 }

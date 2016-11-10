@@ -25,7 +25,7 @@ SUMMARY
 
 */
 
-static xapi ababab()
+static xapi kappa()
 {
   enter;
 
@@ -38,7 +38,7 @@ static xapi baz()
 {
   enter;
 
-  fatal(ababab);
+  fatal(kappa);
 
   finally : coda;
 }
@@ -52,7 +52,7 @@ static xapi bar()
   finally : coda;
 }
 
-int delta_count;
+static int delta_count;
 static xapi delta()
 {
   enter;
@@ -72,7 +72,7 @@ static xapi qux()
   finally : coda;
 }
 
-int epsilon_count;
+static int epsilon_count;
 static xapi epsilon()
 {
   enter;
@@ -88,7 +88,7 @@ finally:
 coda;
 }
 
-int beta_count;
+static int beta_count;
 static xapi beta()
 {
   enter;
@@ -99,7 +99,7 @@ static xapi beta()
   finally : coda;
 }
 
-int alpha_dead_count;
+static int alpha_dead;
 static xapi alpha()
 {
   enter;
@@ -112,7 +112,7 @@ finally :
   fatal(epsilon);
 
   // this line should not be hit
-  alpha_dead_count = 1;
+  alpha_dead = 1;
 coda;
 }
 
@@ -125,6 +125,38 @@ static xapi zeta()
   finally : coda;
 }
 
+static int fi_live;
+static int fi_dead;
+static xapi fi()
+{
+  enter;
+
+  fi_live++;
+  fail(TEST_ERROR_TWO);
+  fi_dead++;
+
+  finally : coda;
+}
+
+static int lambda_live_one;
+static int lambda_dead_one;
+static int lambda_live_two;
+static int lambda_dead_two;
+static xapi lambda()
+{
+  enter;
+
+  lambda_live_one++;
+  fail(TEST_ERROR_ONE);
+  lambda_dead_one++;
+
+finally:
+  lambda_live_two++;
+  fatal(fi);
+  lambda_dead_two++;
+coda;
+}
+
 int main()
 {
 #if XAPI_STACKTRACE
@@ -135,29 +167,21 @@ int main()
   xapi exit = zeta();
   assert_exit(TEST_ERROR_ONE, exit);
 
-  // alpha dead area should have been skipped
-  assertf(alpha_dead_count == 0
-    , "expected alpha-dead-count : 0, actual alpha-dead-count : %d"
-    , alpha_dead_count
-  );
+  assertf(alpha_dead == 0, "expected alpha-dead : 0, actual : %d", alpha_dead);
+  assertf(beta_count == 1, "expected beta-count : 1, actual : %d", beta_count);
+  assertf(delta_count == 1, "expected delta-count : 1, actual : %d", delta_count);
+  assertf(epsilon_count == 1, "expected epsilon-count : 1, actual : %d", epsilon_count);
 
-  // beta should have been run once
-  assertf(beta_count == 1
-    , "expected beta-count : 1, actual beta-count : %d"
-    , beta_count
-  );
+  // lambda has a subsequence rooted at frame 0
+  exit = lambda();
+  assert_exit(TEST_ERROR_ONE, exit);
 
-  // delta should have been run once
-  assertf(delta_count == 1
-    , "expected delta-count : 1, actual delta-count : %d"
-    , delta_count
-  );
-
-  // epsilon should have been run once
-  assertf(epsilon_count == 1
-    , "expected epsilon-count : 1, actual epsilon-count : %d"
-    , epsilon_count
-  );
+  assertf(fi_live == 1, "expected fi-live : 1, actual : %d", fi_live);
+  assertf(fi_dead == 0, "expected fi-dead : 0, actual %d", fi_dead);
+  assertf(lambda_live_one == 1, "expected lambda-live-one : 1, actual %d", lambda_live_one);
+  assertf(lambda_dead_one == 0, "expected lambda-dead-one : 0, actual %d", lambda_dead_one);
+  assertf(lambda_live_two == 1, "expected lambda-live-two : 1, actual %d", lambda_live_two);
+  assertf(lambda_dead_two == 0, "expected lambda-dead-two : 0, actual %d", lambda_dead_two);
 
   succeed;
 }
