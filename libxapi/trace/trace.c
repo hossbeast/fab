@@ -93,44 +93,68 @@ static size_t error_trace(char * const dst, const size_t sz, xapi e)
   return z;
 }
 
-static size_t infos_trace(char * const dst, const size_t sz, calltree * const restrict ct, int a1, int b1, int a2, int b2)
+/// infos_trace
+//
+// SUMMARY
+//  write a summary of the infos in a sequence of frames in a calltree. The sequence is
+//  contiguous but may contain a hole, which is skipped
+//
+// PARAMETERS
+//  dst - buffer to write to
+//  sz  - size of dst
+//  ct  - calltree
+//  a1  - index of the first frame in the sequence
+//  a2  - index of the last frame in the hole, or -1
+//  b2  - index of the first frame in the hole
+//  b1  - index of the last frame in the sequence
+//
+// RETURNS
+//  number of bytes written to dst
+//
+static size_t infos_trace(char * const dst, const size_t sz, calltree * const restrict ct, int a1, int a2, int b2, int b1);
+static size_t infos_trace(char * const dst, const size_t sz, calltree * const restrict ct, int a1, int a2, int b2, int b1)
 {
   info * nfo = 0;
-
   size_t z = 0;
   int x;
-  for(x = a1; x <= b2; x++)
-  {
-    if(x == b1)
-      x = a2;
+  int y;
+  int i;
+  int j;
 
-    int y;
+//printf("infos a1:%d a2:%d b2:%d b1:%d\n", a1, a2, b2, b1);
+
+  for(x = a1; x <= b1; x++)
+  {
+    if(x == a2) // skip the subsequence
+      x = b2;
+
     for(y = 0; y < ct->frames.v[x].infos.l; y++)
     {
-      // determine whether an info by this name has already been used
-      int xx;
-      for(xx = x + 1; xx < ct->frames.l; xx++)
+      // determine whether an info by this name was already used on this sequence
+      for(i = a1; i < x; i++)
       {
-        int yy;
-        for(yy = 0; yy < ct->frames.v[xx].infos.l; yy++)
+        if(i == a2)
+          i = b2;
+
+        for(j = 0; j < ct->frames.v[i].infos.l; j++)
         {
           if(estrcmp(
               ct->frames.v[x].infos.v[y].ks
             , ct->frames.v[x].infos.v[y].kl
-            , ct->frames.v[xx].infos.v[yy].ks
-            , ct->frames.v[xx].infos.v[yy].kl
+            , ct->frames.v[i].infos.v[j].ks
+            , ct->frames.v[i].infos.v[j].kl
             , 0) == 0)
           {
             break;
           }
         }
-        if(yy < ct->frames.v[xx].infos.l)
+        if(j < ct->frames.v[i].infos.l)
         {
           break;
         }
       }
 
-      if(xx == ct->frames.l)
+      if(i == x)
       {
         if(nfo)
         {
@@ -246,167 +270,79 @@ static size_t frame_trace(char * const dst, const size_t sz, frame * f, int loc,
 /// calltree_trace_frames
 //
 // SUMMARY
-// 
+//  write a trace of a sequence of frames in a calltree
 //
 // PARAMETERS
 //  dst   - buffer to write to
 //  sz    - size of dst
-//  ct    - 
-//  a     - start index, inclusive
-//  b     - end index, inclusive
+//  ct    - calltree
+//  a     - index of the first frame in the sequence
+//  b     - index of the last frame in the sequence
 //  level - indentation
 //
-static size_t calltree_trace_frames(char * const dst, const size_t sz, calltree * const restrict ct, int a, int b, int level);
-static size_t calltree_trace_frames(char * const dst, const size_t sz, calltree * const restrict ct, int a, int b, int level)
+// RETURNS
+//  number of bytes written to dst
+//
+static size_t calltree_trace_frames(char * const dst, const size_t sz, calltree * const restrict ct, int a1, int b1, int level);
+static size_t calltree_trace_frames(char * const dst, const size_t sz, calltree * const restrict ct, int a1, int b1, int level)
 {
   int x;
   size_t z = 0;
 
-  int b0 = b; // end index for the main sequence
-  int b1 = b; // end index for the subsequence
+  int a2 = -1; // start index for the subsequence
+  int b2 = -1; // end index for the subsequence
 
-  // find the bounds of the substack, if any
-  if((x = calltree_locate_substack(ct, a, b)) != -1)
+  if((x = calltree_locate_substack(ct, a1, b1)) != -1)
   {
-    b0 = ct->frames.v[x].parent_index;
-    b1 = x;
+    a2 = ct->frames.v[x].parent_index + 1;
+    b2 = x;
   }
 
   SAY("%*s", level * 2, "");
-  z += error_trace(dst + z, sz - z, ct->frames.v[a].exit);
-  z += infos_trace(dst + z, sz - z, ct, a, b0 + 1, b1 + 1, b);
+  z += error_trace(dst + z, sz - z, ct->frames.v[a1].exit);
+  z += infos_trace(dst + z, sz - z, ct, a1, a2, b2, b1);
 
   SAY("\n");
 
   // main sequence
-  for(x = a; x <= b0; x++)
+  for(x = a1; x <= b1; x++)
   {
+    if(a2 != -1 && x == a2)
+      break;
+
     SAY("%*s", level * 2, "");
-    SAY(" %2d : ", b0 - x + (b - b1));
+    if(a2 != -1)
+      SAY(" %2d : ", b1 - x - ((b2 - a2) + 1));
+    else
+      SAY(" %2d : ", b1 - x);
+
     z += frame_trace(dst + z, sz - z, &ct->frames.v[x], 1, 1, level);
 
-    if((x + 1) <= b0)
+    if(x < b1)
       SAY("\n");
   }
 
-  // subsequence
-  if(b0 != b)
+  if(a2 != -1)
   {
-    SAY("\n");
-    z += calltree_trace_frames(dst + z, sz - z, ct, b0 + 1, b1, level + 1);
-  }
+    // subsequence
+    z += calltree_trace_frames(dst + z, sz - z, ct, a2, b2, level + 1);
 
-  // trailing sequence
-  for(x = b1 + 1; x <= b; x++)
-  {
-    SAY("\n");
-    SAY("%*s", level * 2, "");
-    SAY(" %2d : ", b - x);
-    z += frame_trace(dst + z, sz - z, &ct->frames.v[x], 1, 1, level);
-  }
+    // trailing segment of the main sequence
+    if(b1 != b2)
+      SAY("\n");
 
-  return z;
-}
-
-static size_t calltree_trace(char * const dst, const size_t sz, calltree * const restrict ct)
-{
-  return calltree_trace_frames(dst, sz, ct, 0, ct->frames.l - 1, 0);
-}
-
-static size_t calltree_trace_pithy(calltree * const restrict ct, char * const dst, const size_t sz)
-{
-  size_t z = 0;
-
-  int b1 = -1;
-  int a2 = -1;
-
-  int x;
-  if((x = calltree_locate_substack(ct, 0, ct->frames.l - 1)) != -1)
-  {
-    b1 = ct->frames.v[x].parent_index;
-    a2 = x + 1;
-  }
-
-  z += error_trace(dst + z, sz - z, ct->frames.v[0].exit);
-  z += infos_trace(dst + z, sz - z, ct, 0, b1, a2, ct->frames.l - 1);
-
-#if 0
-  size_t zt = z;
-  for(x = 0; x < ct->frames.l; x++)
-  {
-    int y;
-    for(y = 0; y < ct->frames.v[x].infos.l; y++)
+    for(x = b2 + 1; x <= b1; x++)
     {
-      // determine whether an info by this name has already been used
-      int xx;
-      for(xx = x + 1; xx < ct->frames.l; xx++)
-      {
-        int yy;
-        for(yy = 0; yy < ct->frames.v[xx].infos.l; yy++)
-        {
-          if(estrcmp(
-              ct->frames.v[x].infos.v[y].ks
-            , ct->frames.v[x].infos.v[y].kl
-            , ct->frames.v[xx].infos.v[yy].ks
-            , ct->frames.v[xx].infos.v[yy].kl
-            , 0) == 0)
-          {
-            break;
-          }
-        }
-        if(yy < ct->frames.v[xx].infos.l)
-        {
-          break;
-        }
-      }
+      SAY("%*s", level * 2, "");
+      SAY(" %2d : ", b1 - x);
+      z += frame_trace(dst + z, sz - z, &ct->frames.v[x], 1, 1, level);
 
-      if(xx == ct->frames.l)
-      {
-        if(nfo)
-        {
-          if(z == zt)
-            SAY(" with ");
-          else
-            SAY(", ");
-
-          SAY("%.*s=%.*s"
-            , (int)nfo->kl
-            , nfo->ks
-            , (int)nfo->vl
-            , nfo->vs
-          );
-        }
-        nfo = &ct->frames.v[x].infos.v[y];
-      }
+      if(x < b1)
+        SAY("\n");
     }
-
-    if(x == skip_at)
-      x = skip_to - 1; // x incremented by the loop
   }
-
-  if(nfo)
-  {
-    if(z == zt)
-      SAY(" with ");
-    else
-      SAY(" and ");
-
-    SAY("%.*s=%.*s"
-      , (int)nfo->kl
-      , nfo->ks
-      , (int)nfo->vl
-      , nfo->vs
-    );
-  }
-  info * nfo = 0;
-#endif
 
   return z;
-}
-
-static size_t calltree_trace_full(calltree * const restrict ct, char * const dst, const size_t sz)
-{
-  return calltree_trace(dst, sz, ct);
 }
 
 //
@@ -415,22 +351,37 @@ static size_t calltree_trace_full(calltree * const restrict ct, char * const dst
 
 API size_t xapi_trace_calltree_pithy(calltree * const restrict ct, char * const restrict dst, const size_t sz)
 {
-  return calltree_trace_pithy(ct, dst, sz);
+  size_t z = 0;
+
+  int a2 = -1; // start index for the subsequence
+  int b2 = -1; // end index for the subsequence
+
+  int x;
+  if((x = calltree_locate_substack(ct, 0, ct->frames.l - 1)) != -1)
+  {
+    a2 = ct->frames.v[x].parent_index + 1;
+    b2 = x;
+  }
+
+  z += error_trace(dst + z, sz - z, ct->frames.v[0].exit);
+  z += infos_trace(dst + z, sz - z, ct, 0, a2, b2, ct->frames.l - 1);
+
+  return z;
 }
 
 API size_t xapi_trace_calltree_full(calltree * const restrict ct, char * const restrict dst, const size_t sz)
 {
-  return calltree_trace_full(ct, dst, sz);
+  return calltree_trace_frames(dst, sz, ct, 0, ct->frames.l - 1, 0);
 }
 
 API size_t xapi_trace_pithy(char * const dst, const size_t sz)
 {
-  return calltree_trace_pithy(g_calltree, dst, sz);
+  return xapi_trace_calltree_pithy(g_calltree, dst, sz);
 }
 
 API size_t xapi_trace_full(char * const dst, const size_t sz)
 {
-  return calltree_trace_full(g_calltree, dst, sz);
+  return xapi_trace_calltree_full(g_calltree, dst, sz);
 }
 
 API void xapi_pithytrace_to(int fd)
