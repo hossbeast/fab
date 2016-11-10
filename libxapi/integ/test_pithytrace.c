@@ -25,42 +25,37 @@
 /*
 
 SUMMARY
- call fail in a finally block during unwinding
+ contents of the pithytrace
 
 */
 
-int delta_count;
-static xapi delta(int num)
+static xapi fi()
 {
   enter;
 
-  delta_count++;
   fail(TEST_ERROR_ONE);
 
 finally:
-  xapi_infof("num", "%d", num);
+  xapi_infof("foo", "%d", 42);
+  xapi_infof("bar", "%d", 27);
 coda;
 }
 
-int beta_count;
-int beta_dead_count;
 static xapi beta()
 {
   enter;
 
-  beta_count++;
-  fatal(delta, __LINE__);
+  fatal(fi);
 
-finally:
-  // delta should fail, and beta should terminate
-  fatal(delta, __LINE__);
-
-  // this line should not be hit
-  beta_dead_count = 1;
-coda;
+  finally : coda;
 }
 
-static xapi alpha()
+/// test_basic
+//
+// SUMMARY
+//  verify infos from other frames are present
+//
+static xapi test_basic()
 {
   enter;
 
@@ -74,8 +69,141 @@ static xapi alpha()
 finally:
 #if XAPI_STACKTRACE
   z = xapi_trace_pithy(space, sizeof(space));
-  write(1, space, z);
-  write(1, "\n", 1);
+  assertf(strstr(space, "foo=42"), "expected foo=42, actual trace\n**\n%.*s\n**\n", (int)z, space);
+  assertf(strstr(space, "bar=27"), "expected bar=27, actual trace\n**\n%.*s\n**\n", (int)z, space);
+#endif
+coda;
+}
+
+static xapi epsilon()
+{
+  enter;
+
+  xapi_fail_intent();
+  xapi_info_adds("foo", "42");
+  fail(TEST_ERROR_TWO);
+
+  finally : coda;
+}
+
+/// test_masking
+//
+// SUMMARY
+//  verify that infos from lower frames mask infos in higher frames with the same key
+//
+static xapi test_masking()
+{
+  enter;
+
+#if XAPI_STACKTRACE
+  char space[4096];
+  size_t z;
+#endif
+
+  fatal(epsilon);
+
+finally:
+#if XAPI_STACKTRACE
+  xapi_infos("foo", "87");
+
+  z = xapi_trace_pithy(space, sizeof(space));
+  assertf(strstr(space, "foo=42"), "expected foo=42, actual trace\n**\n%.*s\n**\n", (int)z, space);
+  assertf(!strstr(space, "foo=87"), "expected !foo=87, actual trace\n**\n%.*s\n**\n", (int)z, space);
+#endif
+coda;
+}
+
+static xapi lambda()
+{
+  enter;
+
+  fail(TEST_ERROR_TWO);
+
+finally:
+  xapi_info_adds("bar", "38");
+coda;
+}
+
+static xapi zeta()
+{
+  enter;
+
+  fail(TEST_ERROR_ONE);
+
+finally:
+  xapi_infos("foo", "42");
+  fatal(lambda);
+coda;
+}
+
+/// test_substack_0_skip
+//
+// SUMMARY
+//  verify infos are skipped in a substack rooted at frame 0
+//
+static xapi test_substack_0_skip()
+{
+  enter;
+
+#if XAPI_STACKTRACE
+  char space[4096];
+  size_t z;
+#endif
+
+  fatal(zeta);
+
+finally:
+#if XAPI_STACKTRACE
+  z = xapi_trace_pithy(space, sizeof(space));
+  assertf(strstr(space, "foo=42"), "expected foo=42, actual trace\n**\n%.*s\n**\n", (int)z, space);
+  assertf(!strstr(space, "bar"), "expected !bar, actual trace\n**\n%.*s\n**\n", (int)z, space);
+#endif
+coda;
+}
+
+static xapi bar()
+{
+  enter;
+
+  xapi_fail_intent();
+  xapi_info_adds("foo", "42");
+  fail(TEST_ERROR_ONE);
+
+  finally : coda;
+}
+
+static xapi theta()
+{
+  enter;
+
+  fatal(bar);
+
+finally:
+  fatal(lambda);
+coda;
+}
+
+/// test_substack_1_skip
+//
+// SUMMARY
+//  verify infos are skipped in a substack rooted at frame 1
+//
+static xapi test_substack_1_skip()
+{
+  enter;
+
+#if XAPI_STACKTRACE
+  char space[4096];
+  size_t z;
+#endif
+
+  fatal(theta);
+
+finally:
+#if XAPI_STACKTRACE
+  z = xapi_trace_pithy(space, sizeof(space));
+  assertf(strstr(space, "foo=42"), "expected foo=42, actual trace\n**\n%.*s\n**\n", (int)z, space);
+  assertf(!strstr(space, "bar"), "expected !bar, actual trace\n**\n%.*s\n**\n", (int)z, space);
 #endif
 coda;
 }
@@ -86,27 +214,17 @@ int main()
   xapi_errtab_register(perrtab_TEST);
 #endif
 
-  // alpha should fail
-  xapi exit = alpha();
+  xapi exit = test_basic();
   assert_exit(TEST_ERROR_ONE, exit);
 
-  // dead area should have been skipped
-  assertf(beta_dead_count == 0
-    , "expected beta-dead-count : 0, actual beta-dead-count : %d"
-    , beta_dead_count
-  );
+  exit = test_masking();
+  assert_exit(TEST_ERROR_TWO, exit);
 
-  // beta should have been run once
-  assertf(beta_count == 1
-    , "expected beta-count : 1, actual beta-count : %d"
-    , beta_count
-  );
+  exit = test_substack_0_skip();
+  assert_exit(TEST_ERROR_ONE, exit);
 
-  // delta should have been run twice
-  assertf(delta_count == 2
-    , "expected delta-count : 2, actual delta-count : %d"
-    , delta_count
-  );
+  exit = test_substack_1_skip();
+  assert_exit(TEST_ERROR_ONE, exit);
 
   succeed;
 }
