@@ -86,26 +86,6 @@ finally:
   assertf(strstr(space, "function=gamma_xapi"), "expected function, actual trace\n**\n%.*s\n**\n", (int)z, space);
 coda;
 }
-
-#if 0
-static xapi test_illfail_noetab()
-{
-  enter;
-
-  tfail(0, XAPI_ILLFATAL);
-
-  finally : coda;
-}
-
-static xapi test_illfail_nocode()
-{
-  enter;
-
-  tfail(perrtab_XAPI, 0);
-
-  finally : coda;
-}
-#endif
 #endif
 
 int main()
@@ -118,14 +98,6 @@ int main()
   // verify ILLFATAL
   exit = test_illfatal();
   assert_exit(XAPI_ILLFATAL, exit);
-
-#if 0
-  exit = test_illfail_noetab();
-  assert_exit(exit, perrtab_XAPI, XAPI_NOTABLE);
-
-  exit = test_illfail_nocode();
-  assert_exit(exit, perrtab_XAPI, XAPI_NOCODE);
-#endif
 #endif
 
   // victory

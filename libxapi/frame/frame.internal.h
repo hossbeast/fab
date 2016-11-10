@@ -30,7 +30,6 @@ typedef struct frame
 {
   xapi_frame_index parent_index;
 
-//  struct error *  error;  // (optional) error
   xapi            exit;   // (optional) exit value
 
   char *          file;   // file name

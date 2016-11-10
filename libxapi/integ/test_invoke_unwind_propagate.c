@@ -42,21 +42,10 @@ static xapi alpha()
 {
   enter;
 
-#if XAPI_STACKTRACE
-  char space[4096];
-  size_t z;
-#endif
-
   int exit;
   if((exit = invoke(beta)))
   {
     assert_exit(TEST_ERROR_ONE, exit);
-
-#if XAPI_STACKTRACE
-    z = xapi_trace_full(space, sizeof(space));
-    write(1, space, z);
-    write(1, "\n", 1);
-#endif
 
     // propagate
     fail(exit);

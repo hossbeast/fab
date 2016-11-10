@@ -77,16 +77,6 @@ static size_t error_trace(char * const dst, const size_t sz, xapi e)
     );
   }
 #endif
-#if 0
-  else if(etab && code && e->msg)
-  {
-    SAY("[%s:%s] %.*s"
-      , etab->name
-      , code > etab->max ? "UNKNWN" : etab->v[code + (etab->min * -1)].name
-      , (int)e->msgl, e->msg 
-    );
-  }
-#endif
   else if(etab && code)
   {
     SAY("[%s:%s] %s"
@@ -95,22 +85,6 @@ static size_t error_trace(char * const dst, const size_t sz, xapi e)
       , code > etab->max ? "unspecified error" : etab->v[code + (etab->min * -1)].desc
     );
   }
-#if 0
-  else if(etab && e->msg)
-  {
-    SAY("[%s] %.*s"
-      , etab->name
-      , (int)e->msgl, e->msg 
-    );
-  }
-  else if(code && e->msg)
-  {
-    SAY("[%d] %.*s"
-      , code
-      , (int)e->msgl, e->msg 
-    );
-  }
-#endif
   else if(code)
   {
     SAY("[%d]", code);
@@ -476,7 +450,6 @@ API void xapi_fulltrace_to(int fd)
 API void xapi_backtrace_to(int fd)
 {
   char space[4096];
-
   size_t z = xapi_trace_full(space, sizeof(space));
   dprintf(fd, "%.*s\n", (int)z, space);
 }

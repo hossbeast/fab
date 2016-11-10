@@ -68,20 +68,9 @@ static xapi zeta()
 {
   enter;
 
-#if XAPI_STACKTRACE
-  char space[4096];
-  size_t z;
-#endif
-
   fatal(alpha);
 
-finally:
-#if XAPI_STACKTRACE
-  z = xapi_trace_full(space, sizeof(space));
-  write(1, space, z);
-  write(1, "\n", 1);
-#endif
-coda;
+  finally : coda;
 }
 
 int main()

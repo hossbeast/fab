@@ -46,9 +46,6 @@ static xapi alpha(int num)
   finally : coda;
 }
 
-char space[4096 << 2];
-char space2[4096];
-
 static xapi foo()
 {
   enter;
@@ -61,9 +58,12 @@ static xapi foo()
 
 finally:
 #if XAPI_STACKTRACE
-  mb = xapi_calltree_freeze();
-  memblk_copyto(mb, space, sizeof(space));
-  xapi_calltree_unfreeze();
+  {
+    char space[4096 << 2];
+    mb = xapi_calltree_freeze();
+    memblk_copyto(mb, space, sizeof(space));
+    xapi_calltree_unfreeze();
+  }
 #endif
 coda;
 }
@@ -76,12 +76,6 @@ int main()
 
   xapi exit = foo();
   assert_exit(TEST_ERROR_ONE, exit);
-
-#if XAPI_STACKTRACE
-  struct calltree * ct = xapi_calltree_thaw(space);
-  size_t z = xapi_trace_calltree_full(ct, space2, sizeof(space2));
-  printf("reconstituted trace\n%.*s\n", (int)z, space2);
-#endif
 
   succeed;
 }
