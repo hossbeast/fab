@@ -153,7 +153,7 @@ void frame_unfreeze(memblk * const restrict mb, frame * restrict f)
     info_unfreeze(mb, &f->infos.v[x]);
 }
 
-void frame_thaw(char * const restrict mb, frame * restrict f)
+void frame_thaw(void * restrict mb, frame * restrict f)
 {
   memblk_thaw(mb, &f->file);
   memblk_thaw(mb, &f->func);

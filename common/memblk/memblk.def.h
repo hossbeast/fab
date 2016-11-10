@@ -81,16 +81,15 @@ void memblk_unfreeze(memblk * const restrict mb, void * restrict p)
 //  mb - pointer to memory consolidated from an memblk (memblk_writeto, memblk_copyto)
 //  p  - pointer to pointer to memory allocated with mb (T**)
 //
-void memblk_thaw(char * const restrict mb, void * restrict p)
+void memblk_thaw(void * restrict mb, void * restrict p)
   __attribute__((nonnull));
-
 
 /// memblk_copyto
 //
 // SUMMARY
 //  consolidate the memblk
 //
-void memblk_copyto(memblk * const restrict mb, char * const restrict dst, size_t sz)
+void memblk_copyto(memblk * const restrict mb, void * restrict dst, size_t sz)
   __attribute__((nonnull));
 
 /// memblk_size

@@ -69,12 +69,14 @@ static void calltree_unfreeze(struct memblk * const restrict mb, calltree * rest
 //
 //
 //
-static void __attribute__((nonnull)) calltree_thaw(char * const restrict mb, calltree * restrict ct)
+static void * __attribute__((nonnull)) calltree_thaw(calltree * restrict ct)
 {
-  memblk_thaw(mb, &ct->frames.v);
+  memblk_thaw(ct, &ct->frames.v);
   int x;
   for(x = 0; x < ct->frames.l; x++)
-    frame_thaw(mb, &ct->frames.v[x]);
+    frame_thaw(ct, &ct->frames.v[x]);
+
+  return ct;
 }
 
 //
@@ -123,8 +125,6 @@ API void xapi_calltree_unwind()
   g_fail_intent = 0;
 
 #if XAPI_RUNTIME_CHECKS
-//  xapi_stack_raised_etab = 0;
-//  xapi_stack_raised_code = 0;
   xapi_stack_raised_exit = 0;
 #endif
 }
@@ -133,7 +133,7 @@ API memblk * xapi_calltree_freeze()
 {
   memblk * const mb = &mm_mb;
 
-  // freze the root calltree
+  // freeze the calltree on this thread
   calltree_freeze(mb, g_calltree);
 
   return mb;
@@ -146,15 +146,22 @@ API void xapi_calltree_unfreeze()
   calltree_unfreeze(mb, g_calltree);
 }
 
-API calltree * xapi_calltree_thaw(char * const restrict mb)
+API calltree * xapi_calltree_thaw(void * mb)
 {
-  g_calltree = (void*)mb;
-  calltree_thaw(mb, g_calltree);
-
-  return g_calltree;
+  return calltree_thaw(g_calltree = mb);
 }
 
-// unwind inspection
+API calltree * xapi_calltree_export(void * dst, size_t sz)
+{
+  if(memblk_size(&mm_mb) > sz)
+    return 0;
+
+  memblk * mb = xapi_calltree_freeze();
+  memblk_copyto(mb, dst, sz);
+  xapi_calltree_unfreeze();
+
+  return calltree_thaw(dst);
+}
 
 API xapi_code xapi_calltree_errcode()
 {

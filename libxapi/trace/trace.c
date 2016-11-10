@@ -1,17 +1,17 @@
 /* Copyright (c) 2012-2015 Todd Freed <todd.freed@gmail.com>
 
    This file is part of fab.
-   
+
    fab is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
    the Free Software Foundation, either version 3 of the License, or
    (at your option) any later version.
-   
+
    fab is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
    GNU General Public License for more details.
-   
+
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
@@ -41,8 +41,8 @@
 
 /// calltree_locate_substack
 //
-// SUMMARY
-//  returns the greatest parent index within the window, or -1
+// RETURNS
+//  greatest parent index within the window, or -1
 //
 static int calltree_locate_substack(calltree * const restrict ct, int a, int b)
 {
@@ -121,12 +121,10 @@ static size_t infos_trace(char * const dst, const size_t sz, calltree * const re
   int i;
   int j;
 
-//printf("infos a1:%d a2:%d b2:%d b1:%d\n", a1, a2, b2, b1);
-
   for(x = a1; x <= b1; x++)
   {
     if(x == a2) // skip the subsequence
-      x = b2;
+      x = b2 + 1;
 
     for(y = 0; y < ct->frames.v[x].infos.l; y++)
     {
@@ -201,29 +199,6 @@ static size_t frame_trace_function(char * const dst, const size_t sz, frame * f)
   return z;
 }
 
-#if 1
-static size_t frame_trace_info(char * const dst, const size_t sz, frame * f)
-{
-  size_t z = 0;
-
-  int y;
-  for(y = 0; y < f->infos.l; y++)
-  {
-    if(y)
-      SAY(", ");
-
-    SAY("%.*s=%.*s"
-      , (int)f->infos.v[y].kl
-      , f->infos.v[y].ks
-      , (int)f->infos.v[y].vl
-      , f->infos.v[y].vs
-    );
-  }
-
-  return z;
-}
-#endif
-
 static size_t frame_trace_location(char * const dst, const size_t sz, frame * f)
 {
   size_t z = 0;
@@ -248,15 +223,6 @@ static size_t frame_trace(char * const dst, const size_t sz, frame * f, int loc,
     SAY("in ");
 
   z += frame_trace_function(dst + z, sz - z, f);
-
-#if 1
-  if(f->infos.l)
-  {
-    SAY("(");
-    z += frame_trace_info(dst + z, sz - z, f);
-    SAY(")");
-  }
-#endif
 
   if(loc && f->file)
   {
@@ -418,4 +384,44 @@ API void xapi_fulltrace()
 API void xapi_backtrace()
 {
   xapi_backtrace_to(2);
+}
+
+API size_t xapi_trace_info(const char * restrict key, char * const restrict dst, const size_t sz)
+{
+  int a1 = 0;
+  int a2 = -1; // start index for the subsequence
+  int b2 = -1; // end index for the subsequence
+  int b1 = g_calltree->frames.l - 1;
+
+  int x;
+  if((x = calltree_locate_substack(g_calltree, a1, b1)) != -1)
+  {
+    a2 = g_calltree->frames.v[x].parent_index + 1;
+    b2 = x;
+  }
+
+  for(x = a1; x <= b1; x++)
+  {
+    if(x == a2)
+      x = b2 + 1;
+
+    int y;
+    for(y = 0; y < g_calltree->frames.v[x].infos.l; y++)
+    {
+      if(estrcmp(
+          g_calltree->frames.v[x].infos.v[y].ks
+        , g_calltree->frames.v[x].infos.v[y].kl
+        , key
+        , strlen(key)
+        , 0) == 0)
+      {
+        size_t len = MIN(g_calltree->frames.v[x].infos.v[y].vl, sz - 1);
+        memcpy(dst, g_calltree->frames.v[x].infos.v[y].vs, len);
+        dst[len] = 0;
+        return len;
+      }
+    }
+  }
+
+  return 0;
 }

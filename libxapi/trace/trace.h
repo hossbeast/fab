@@ -1,17 +1,17 @@
 /* Copyright (c) 2012-2015 Todd Freed <todd.freed@gmail.com>
 
    This file is part of fab.
-   
+
    fab is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
    the Free Software Foundation, either version 3 of the License, or
    (at your option) any later version.
-   
+
    fab is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
    GNU General Public License for more details.
-   
+
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
@@ -94,6 +94,22 @@ size_t xapi_trace_calltree_pithy(struct calltree * const restrict cs, char * con
 // SEE xapi_trace_full
 //
 size_t xapi_trace_calltree_full(struct calltree * const restrict cs, char * const restrict dst, const size_t sz)
+  __attribute__((nonnull));
+
+/// xapi_trace_info
+//
+// SUMMARY
+//  get the value of an info kvp while unwinding
+//
+// PARAMETERS
+//  key - info name
+//  dst - buffer to write the value to
+//  sz  - size of dst
+//
+// RETURNS
+//  number of bytes < sz written to dst
+//
+size_t xapi_trace_info(const char * restrict key, char * const restrict dst, const size_t sz)
   __attribute__((nonnull));
 
 #undef restrict

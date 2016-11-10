@@ -90,7 +90,7 @@ static xapi graph_test_entry(graph_test * test)
 {
   enter;
 
-  char space[512];
+  char space[128];
   graph * g = 0;
   dictionary * items = 0;
   narrator * N = 0;
@@ -150,7 +150,7 @@ static xapi graph_test_entry(graph_test * test)
       fail(0);
 
     // save the trace
-    xapi_trace_full(space, sizeof(space));
+    xapi_trace_info("path", space, sizeof(space));
     xapi_calltree_unwind();
   }
 
@@ -165,24 +165,7 @@ static xapi graph_test_entry(graph_test * test)
 
     // appropriate error message
     if(test->cycle_path)
-    {
-      char * marker = "in graph_traverse(path=";
-      char * actual = strstr(space, marker);
-      char * end = 0;
-      if(actual)
-      {
-        actual += strlen(marker);
-        end = strstr(actual, ")");
-      }
-      if(actual == 0 || end == 0 || end - actual != strlen(test->cycle_path))
-      {
-        ufailf("expected cycle %s", "actual cycle %s", test->cycle_path, "(not reported)");
-      }
-      else if(memcmp(actual, test->cycle_path, end - actual))
-      {
-        ufailf("expected cycle %s", "actual cycle %.*s", test->cycle_path, (int)(end - actual), actual);
-      }
-    }
+      assert_strs(test->cycle_path, space);
   }
 
 finally:

@@ -36,9 +36,6 @@ void memblk_freeze(memblk * const restrict mb, void * restrict _p)
       ptrdiff_t delta = (char*)*p - mb->blocks[x].s;
       if(delta >= 0 && delta < mb->blocks[x].l)
       {
-#if 0
-printf("%p -> %zu\n", *p, (size_t)(mb->blocks[x].o + delta));
-#endif
         (*p) = (void*)(intptr_t)(mb->blocks[x].o + delta);
         return;
       }
@@ -61,9 +58,6 @@ void memblk_unfreeze(memblk * const restrict mb, void * restrict _p)
 
       if(delta >= 0 && delta < mb->blocks[x].l)
       {
-#if 0
-printf("%zu -> %p\n", (size_t)*p, mb->blocks[x].s + delta);
-#endif
         *p = mb->blocks[x].s + delta;
         return;
       }
@@ -73,20 +67,17 @@ printf("%zu -> %p\n", (size_t)*p, mb->blocks[x].s + delta);
   }
 }
 
-void memblk_thaw(char * const restrict mb, void * restrict _p)
+void memblk_thaw(void * restrict mb, void * restrict _p)
 {
   void ** p = _p;
 
   if(*p)
   {
-#if 0
-printf("%p -> %p\n", *p, mb + (size_t)(intptr_t)*p);
-#endif
     *p = mb + (size_t)(intptr_t)*p;
   }
 }
 
-void memblk_copyto(memblk * const restrict mb, char * const restrict dst, size_t sz)
+void memblk_copyto(memblk * const restrict mb, void * restrict dst, size_t sz)
 {
   int x;
   for(x = 0; x < mb->blocksl; x++)
