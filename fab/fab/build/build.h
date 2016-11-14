@@ -15,28 +15,14 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef _LOGGING_H
-#define _LOGGING_H
+#ifndef _BUILD_COMMAND_H
+#define _BUILD_COMMAND_H
 
 #include "xapi.h"
 
-#include "logger.h"
-#include "logger/category.h"
+struct command;
+struct command * build_command;
 
-extern struct logger_category * categories;
-
-#define L_ERROR   categories[0x0].id
-#define L_ARGS    categories[0x1].id
-#define L_PARAMS  categories[0x2].id
-#if DEBUG || DEVEL
-#define L_IPC     categories[0x3].id
-#endif
-
-/// logging_setup
-//
-// SUMMARY
-//  register logging categories
-//
-xapi logging_setup(void);
+xapi build_command_cleanup(void);
 
 #endif

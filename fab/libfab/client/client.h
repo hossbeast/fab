@@ -71,11 +71,11 @@ xapi fab_client_dispose(fab_client ** const restrict client)
 xapi fab_client_verify(fab_client * const restrict client)
   __attribute__((nonnull));
 
-/// fab_client_request_make
+/// fab_client_make_request
 //
 // SUMMARY
 //
-xapi fab_client_request_make(fab_client * const restrict client, struct memblk * const restrict mb, struct fab_request * const restrict request)
+xapi fab_client_make_request(fab_client * const restrict client, struct memblk * const restrict mb, struct fab_request * const restrict request)
   __attribute__((nonnull));
 
 /// fab_client_terminatep

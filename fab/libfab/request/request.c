@@ -28,13 +28,22 @@
 #include "memblk.def.h"
 #include "assure.h"
 
+const char ** fab_attr_names = (const char *[]) {
+#define FAB_ATTR(a, b, c, x) [c] = #b,
+FAB_ATTR_TABLE(ATTR_TARGET_OPT)
+#undef FAB_ATTR
+};
+
+#define FAB_ATTR(a, b, c, x) + 1
+size_t fab_attr_num = 0 + FAB_ATTR_TABLE(ATTR_TARGET_OPT);
+
 #define restrict __restrict
 
 //
 // static
 //
 
-static xapi __attribute__((nonnull)) push(fab_request * const restrict request, fab_command * const restrict cmd)
+static xapi __attribute__((nonnull)) push(fab_request * restrict request, fab_command * restrict cmd)
 {
   enter;
 
@@ -49,17 +58,16 @@ static xapi __attribute__((nonnull)) push(fab_request * const restrict request, 
 //
 //
 
-API xapi fab_request_create(fab_request ** const restrict request, pid_t client_pid)
+API xapi fab_request_create(fab_request ** restrict request)
 {
   enter;
 
   fatal(xmalloc, request, sizeof(**request));
-  (*request)->client_pid = client_pid;
 
   finally : coda;
 }
 
-API void fab_request_free(fab_request * const restrict request)
+API void fab_request_free(fab_request * restrict request)
 {
   if(request)
   {
@@ -73,13 +81,13 @@ API void fab_request_free(fab_request * const restrict request)
   wfree(request);
 }
 
-API void fab_request_ifree(fab_request ** const restrict request)
+API void fab_request_ifree(fab_request ** restrict request)
 {
   fab_request_free(*request);
   *request = 0;
 }
 
-API void fab_request_freeze(fab_request * const restrict request, memblk * const restrict mb)
+API void fab_request_freeze(fab_request * restrict request, memblk * restrict mb)
 {
   size_t x;
   for(x = 0; x < request->commandsl; x++)
@@ -91,7 +99,7 @@ API void fab_request_freeze(fab_request * const restrict request, memblk * const
   memblk_freeze(mb, &request->commands);
 }
 
-API void fab_request_thaw(fab_request * const restrict request, char * const restrict mb)
+API void fab_request_thaw(fab_request * restrict request, void * restrict mb)
 {
   memblk_thaw(mb, &request->commands);
 
@@ -103,30 +111,34 @@ API void fab_request_thaw(fab_request * const restrict request, char * const res
   }
 }
 
-API xapi fab_request_say(const fab_request * const restrict request, struct narrator * const restrict N)
+API xapi fab_request_say(const fab_request * restrict request, struct narrator * restrict N)
 {
   enter;
 
-  sayf("client_pid %ld, commands [ ", request->client_pid);
+  says("commands [ ");
 
   size_t x;
   for(x = 0; x < request->commandsl; x++)
-    fatal(command_say, request->commands[x], N);
+  {
+    if(x)
+      says(" ");
 
-  sayf(" ]");
+    fatal(command_say, request->commands[x], N);
+  }
+
+  says(" ]");
 
   finally : coda;
 }
 
-
-
-API xapi fab_request_command(fab_request * const restrict request, uint32_t attrs)
+API xapi fab_request_select(fab_request * restrict req, uint32_t attr, const char * restrict target)
 {
   enter;
 
   fab_command * cmd = 0;
-  fatal(command_create, &cmd, attrs);
-  fatal(push, request, cmd);
+
+  fatal(command_creates, &cmd, FAB_COMMAND_SELECT, attr, target);
+  fatal(push, req, cmd);
   cmd = 0;
 
 finally:
@@ -134,7 +146,110 @@ finally:
 coda;
 }
 
-API xapi fab_request_commands(fab_request * const restrict request, uint32_t attrs, const char * const restrict text)
+API xapi fab_request_build(fab_request * restrict req)
+{
+  enter;
+
+  fab_command * cmd = 0;
+  fatal(command_create, &cmd, FAB_COMMAND_BUILD, 0);
+  fatal(push, req, cmd);
+  cmd = 0;
+
+finally:
+  command_free(cmd);
+coda;
+}
+
+API xapi fab_request_plan(fab_request * restrict req)
+{
+  enter;
+
+  fab_command * cmd = 0;
+  fatal(command_create, &cmd, FAB_COMMAND_PLAN, 0);
+  fatal(push, req, cmd);
+  cmd = 0;
+
+finally:
+  command_free(cmd);
+coda;
+}
+
+API xapi fab_request_script(fab_request * restrict req)
+{
+  enter;
+
+  fab_command * cmd = 0;
+  fatal(command_create, &cmd, FAB_COMMAND_SCRIPT, 0);
+  fatal(push, req, cmd);
+  cmd = 0;
+
+finally:
+  command_free(cmd);
+coda;
+}
+
+API xapi fab_request_invalidate(fab_request * restrict req, const char * restrict text)
+{
+  enter;
+
+  fab_command * cmd = 0;
+  fatal(command_creates, &cmd, FAB_COMMAND_SCRIPT, 0, text);
+  fatal(push, req, cmd);
+  cmd = 0;
+
+finally:
+  command_free(cmd);
+coda;
+}
+
+API xapi fab_request_invalidate_all(fab_request * restrict req)
+{
+  enter;
+
+  fab_command * cmd = 0;
+  fatal(command_create, &cmd, FAB_COMMAND_INVALIDATE_ALL, 0);
+  fatal(push, req, cmd);
+  cmd = 0;
+
+finally:
+  command_free(cmd);
+coda;
+}
+
+API xapi fab_request_config_stagef(fab_request * restrict req, const char * restrict fmt, ...)
+{
+  enter;
+
+  va_list va;
+  va_start(va, fmt);
+
+  fab_command * cmd = 0;
+  fatal(command_createvf, &cmd, FAB_COMMAND_CONFIG_STAGE, 0, fmt, va);
+  fatal(push, req, cmd);
+  cmd = 0;
+
+finally:
+  va_end(va);
+  command_free(cmd);
+coda;
+}
+
+API xapi fab_request_config_apply(fab_request * restrict req)
+{
+  enter;
+
+  fab_command * cmd = 0;
+  fatal(command_create, &cmd, FAB_COMMAND_CONFIG_APPLY, 0);
+  fatal(push, req, cmd);
+  cmd = 0;
+
+finally:
+  command_free(cmd);
+coda;
+}
+
+#if 0
+API xapi fab_request_commands(fab_request * restrict request, uint32_t attrs, const char * restrict text)
 {
   enter;
 
@@ -148,7 +263,7 @@ finally:
 coda;
 }
 
-API xapi fab_request_commandf(fab_request * const restrict request, uint32_t attrs, const char * const restrict fmt, ...)
+API xapi fab_request_commandf(fab_request * restrict request, uint32_t attrs, const char * restrict fmt, ...)
 {
   enter;
 
@@ -161,7 +276,7 @@ finally:
 coda;
 }
 
-API xapi fab_request_commandvf(fab_request * const restrict request, uint32_t attrs, const char * const restrict fmt, va_list va)
+API xapi fab_request_commandvf(fab_request * restrict request, uint32_t attrs, const char * restrict fmt, va_list va)
 {
   enter;
 
@@ -175,7 +290,7 @@ finally:
 coda;
 }
 
-API xapi fab_request_commandu8(fab_request * const restrict request, uint32_t attrs, uint8_t value)
+API xapi fab_request_commandu8(fab_request * restrict request, uint32_t attrs, uint8_t value)
 {
   enter;
 
@@ -189,7 +304,7 @@ finally:
 coda;
 }
 
-API xapi fab_request_command_target(fab_request * const restrict request, uint32_t attrs, uint8_t opt, const char * const restrict text)
+API xapi fab_request_command_target(fab_request * restrict request, uint32_t attrs, uint8_t opt, const char * restrict text)
 {
   enter;
 
@@ -202,3 +317,4 @@ finally:
   command_free(cmd);
 coda;
 }
+#endif

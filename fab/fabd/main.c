@@ -247,7 +247,7 @@ finally:
     tracesz = xapi_trace_pithy(space, sizeof(space));
 #endif
 
-    xlogw(L_ERROR, L_RED, space, tracesz);
+    logf(L_ERROR, "\n%.*s", (int)tracesz, space);
   }
 
   // locals

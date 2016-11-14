@@ -15,12 +15,20 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef _FAB_COMMAND_INTERNAL_H
-#define _FAB_COMMAND_INTERNAL_H
+#ifndef FAB_COMMAND_INTERNAL_H
+#define FAB_COMMAND_INTERNAL_H
 
-#include <stdarg.h>
+#include <stdint.h>
+
+#include "xapi.h"
 
 #include "command.h"
+#include "command.def.h"
+
+struct narrator;
+struct memblk;
+
+typedef struct fab_command fab_command;
 
 void command_free(fab_command * const restrict cmd)
   __attribute__((nonnull));
@@ -51,19 +59,19 @@ void command_thaw(fab_command * const restrict cmd, char * const restrict mb)
 xapi command_say(const fab_command * const restrict cmd, struct narrator * const restrict N)
   __attribute__((nonnull));
 
-xapi command_create(fab_command ** const restrict cmd, uint32_t attrs)
+xapi command_create(fab_command ** const restrict cmd, uint8_t type, uint32_t attrs)
   __attribute__((nonnull));
 
-xapi command_creates(fab_command ** const restrict ret, uint32_t attrs, const char * const restrict text)
+xapi command_creates(fab_command ** const restrict ret, uint8_t type, uint32_t attrs, const char * const restrict text)
   __attribute__((nonnull));
 
-xapi command_createvf(fab_command ** const restrict ret, uint32_t attrs, const char * const restrict fmt, va_list va)
-  __attribute__((nonnull(1, 3)));
+xapi command_createvf(fab_command ** const restrict ret, uint8_t type, uint32_t attrs, const char * const restrict fmt, va_list va)
+  __attribute__((nonnull(1, 4)));
 
-xapi command_createu8(fab_command ** const restrict cmd, uint32_t attrs, uint8_t value)
+xapi command_createu8(fab_command ** const restrict cmd, uint8_t type, uint32_t attrs, uint8_t value)
   __attribute__((nonnull));
 
-xapi command_create_target(fab_command ** const restrict ret, uint32_t attrs, uint8_t opt, const char * const restrict text)
+xapi command_create_target(fab_command ** const restrict ret, uint8_t type, uint32_t attrs, uint8_t opt, const char * const restrict text)
   __attribute__((nonnull));
 
 #endif

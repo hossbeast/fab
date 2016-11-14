@@ -406,7 +406,7 @@ finally:
 coda;
 }
 
-API xapi fab_client_request_make(fab_client * const restrict client, memblk * const restrict mb, fab_request * const restrict request)
+API xapi fab_client_make_request(fab_client * const restrict client, memblk * const restrict mb, fab_request * const restrict request)
 {
   enter;
 

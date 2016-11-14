@@ -20,7 +20,6 @@
 #include "xapi.h"
 #include "xlinux/xstdlib.h"
 #include "xlinux/xstring.h"
-#include "lorien/canon.h"
 #include "logger.h"
 
 #include "params.h"
@@ -50,6 +49,7 @@ xapi params_setup()
   // exedir is the canonical path to directory containing the executing binary
   ssize_t r = 0;
   fatal(xreadlinks, "/proc/self/exe", space, sizeof(space), &r);
+  r--;
   while(space[r] != '/')
     r--;
 

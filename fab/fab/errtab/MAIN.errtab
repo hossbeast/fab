@@ -16,3 +16,4 @@
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
 1   BADARGS   failed to parse command-line arguments
+2   NOCOMMAND specify a subcommand

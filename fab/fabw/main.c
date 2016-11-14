@@ -117,7 +117,7 @@ int main(int argc, char ** argv, char ** envp)
       , hash, (void*)0
     };
 
-#if DEVEL
+#if DEBUG || DEVEL
     fatal(log_start, L_IPC, &token);
     logs(0, "execv(");
     logs(0, fabd_path ?: "fabd");
@@ -141,6 +141,7 @@ int main(int argc, char ** argv, char ** envp)
   int status;
   fatal(xwaitpid, child_pid, &status, 0);
 
+#if DEBUG || DEVEL
   // if fabd terminated abnormally
   if(WIFEXITED(status)) { }
   else if(WEXITSTATUS(status) || WIFSIGNALED(status))
@@ -150,6 +151,7 @@ int main(int argc, char ** argv, char ** envp)
     else if(WIFSIGNALED(status))
       xlogf(L_ERROR, L_RED, "fabd : term signal %d %s", WTERMSIG(status), strsignal(WTERMSIG(status)));
   }
+#endif
 
   // record the exit status
   fatal(xopen_modef, &fd, O_CREAT | O_WRONLY, FABIPC_MODE_DATA, "%s/%s/fabd/exit", XQUOTE(FABIPCDIR), hash);
@@ -159,9 +161,6 @@ int main(int argc, char ** argv, char ** envp)
   // signal a client, if any
   fatal(xopenf, &fd, O_RDONLY, "%s/%s/client/pid", XQUOTE(FABIPCDIR), hash);
   fatal(axread, fd, &client_pid, sizeof(client_pid));
-#if DEVEL
-logf(L_IPC, "sending %s/%d to %d", FABIPC_SIGNAME(FABIPC_SIGEND), FABIPC_SIGEND, client_pid);
-#endif
   fatal(uxkill, client_pid, FABIPC_SIGEND, 0);
 
 finally:

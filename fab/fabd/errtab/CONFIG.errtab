@@ -18,5 +18,6 @@
 1   SYNTAX    config could not be parsed
 2   ILLBYTE   config contains illegal byte(s)
 3   NOTMAP    top-level config value is not a map
-4   ILLEGAL   config value missing but required or of an incompatible type
-5   INVALID   config value outside the acceptable range
+4   MISSING   config value missing but required
+5   INCOMPAT  config value of an incompatible type
+6   INVALID   config value outside of acceptable range

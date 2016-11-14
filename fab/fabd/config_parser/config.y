@@ -81,7 +81,7 @@
 %type <val> boolean
 %type <val> integer
 %type <val> float
-%type <val> value scalar aggregate
+%type <val> value
 %type <mapping> mapping
 %type <key> key
 
@@ -95,22 +95,15 @@ utterance
   {
     xtra->root = $1;
   }
+  |
   ;
 
 value
-  : scalar
-  | aggregate
-  ;
-
-scalar
   : string
   | boolean
   | integer
   | float
-  ;
-
-aggregate
-  : array
+  | array
   | object
   ;
 

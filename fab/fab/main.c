@@ -29,12 +29,13 @@
 #include "xapi.h"
 #include "fab/load.h"
 #include "logger/load.h"
-#include "lorien/load.h"
+#include "valyria/load.h"
 #include "narrator/load.h"
 #include "xlinux/load.h"
 
 #include "xapi/trace.h"
 #include "xapi/SYS.errtab.h"
+#include "xapi/errtab.h"
 #include "xlinux/xtime.h"
 #include "xlinux/xsignal.h"
 #include "xlinux/xunistd.h"
@@ -55,6 +56,8 @@
 #include "args.h"
 #include "params.h"
 #include "logging.h"
+#include "build.h"
+#include "MAIN.errtab.h"
 
 #include "macros.h"
 #include "memblk.h"
@@ -73,9 +76,9 @@ int main(int argc, char** argv, char ** envp)
   enter;
 
   xapi R = 0;
-  int token = 0;
   char space[512];
   char * fabw_path = 0;
+  const command * cmd = 0;
 
   memblk * mb = 0;
   fab_client * client = 0;
@@ -84,15 +87,14 @@ int main(int argc, char** argv, char ** envp)
   int fd = -1;
   size_t tracesz = 0;
 
-  struct timespec time_start = {};
-  struct timespec time_end = {};
-
   // libraries
   fatal(fab_load);
   fatal(logger_load);
-  fatal(lorien_load);
+  fatal(valyria_load);
   fatal(narrator_load);
   fatal(xlinux_load);
+
+  xapi_errtab_register(perrtab_MAIN);
 
   // logging
   fatal(logging_setup);
@@ -101,16 +103,12 @@ int main(int argc, char** argv, char ** envp)
 
   // modules
   fatal(params_setup);
+  fatal(params_report);
   fatal(sigbank_setup, "fab");
 
-  // locals
-  fatal(xclock_gettime, CLOCK_MONOTONIC_RAW, &time_start);
-  fatal(memblk_mk, &mb);
-
-  // parse cmdline arguments into the block
-  fatal(args_parse);
-  fatal(args_report);
-  fatal(params_report);
+  // parse cmdline arguments
+  fatal(args_parse, &cmd);
+  fatal(args_report, cmd);
 
   // ensure fabd can write to my stdout/stderr
   fatal(xfchmod, 1, 0777);
@@ -136,17 +134,11 @@ int main(int argc, char** argv, char ** envp)
   fatal(fab_client_prepare, client);
   fatal(fab_client_launchp, client);
 
-  fatal(args_request_collate, mb, &request);
-  fatal(fab_client_request_make, client, mb, request);
+  fatal(memblk_mk, &mb);
+  fatal(args_collate, cmd, mb, &request);
+  fatal(fab_client_make_request, client, mb, request);
 
 finally:
-  // stop the clock
-  fatal(xclock_gettime, CLOCK_MONOTONIC_RAW, &time_end);
-  fatal(log_start, L_INFO, &token);
-  logs(0, "elapsed : ");
-  fatal(elapsed_say, &time_start, &time_end, log_narrator(&token));
-  fatal(log_finish, &token);
-
 #if DEBUG || DEVEL
   if(log_would(L_IPC))
   {
@@ -157,13 +149,11 @@ finally:
   }
 #endif
 
-  // when failing due to an error propagated from fabd (fabd_error), do not log the
-  // stacktrace, because fabd will have already done that
   if(XAPI_UNWINDING)
   {
     if(XAPI_ERRVAL == FAB_FABDEXIT || XAPI_ERRVAL == FAB_UNSUCCESS)
     {
-      // it is assumed that on an orderly shutdown fabd has already backtraced to our stdout
+      // on orderly shutdown fabd has already backtraced to our stdout
     }
     else
     {
@@ -175,6 +165,11 @@ finally:
 
       xlogw(L_ERROR, L_RED, space, tracesz);
     }
+
+    if(XAPI_ERRVAL == MAIN_BADARGS)
+    {
+      fatal(args_usage, cmd, 0, 0);
+    }
   }
 
   // locals
@@ -184,13 +179,13 @@ finally:
 
   // module teardown
   sigbank_teardown();
-  args_teardown();
   params_teardown();
+  fatal(build_command_cleanup);
 
   // libraries
   fatal(fab_unload);
   fatal(logger_unload);
-  fatal(lorien_unload);
+  fatal(valyria_unload);
   fatal(narrator_unload);
   fatal(xlinux_unload);
 

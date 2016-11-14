@@ -22,92 +22,13 @@
 
 #include "xapi.h"
 
-struct fab_request;
-struct memblk;
-
-#define MODE_TABLE(x)                                                                                           \
-/* execution modes */                                                                                           \
-  _MODE(MODE_BUILD_EXEC                 , 0x01  , x)    /* execute the buildplan */                             \
-  _MODE(MODE_BUILD_GENERATE             , 0x02  , x)    /* (only) generate the buildplan */                     \
-  _MODE(MODE_BUILD_BUILDSCRIPT          , 0x03  , x)    /* create a buildscript from the buildplan */
-
-#if DEBUG || DEVEL
-#define MODE_TABLE_DEBUG(x)                                                                                     \
-/* error reporting modes */                                                                                     \
-  _MODE(MODE_BACKTRACE_FULL             , 0x0b  , x)    /* report on immediate error condition only */          \
-  _MODE(MODE_BACKTRACE_PITHY            , 0x0c  , x)    /* unwind stack when reporting errors */
-#endif
-#if DEVEL
-#define MODE_TABLE_DEVEL(x)                                                                                     \
-/* buildscript license modes */                                                                                 \
-  _MODE(MODE_LICENSE_STD                , 0x10  , x)    /* buildscripts have the standard license  */           \
-  _MODE(MODE_LICENSE_FAB                , 0x11  , x)    /* buildscripts have the fab license */
-#endif
-
-enum {
-#define _MODE(a, b, c) a = b,
-#if DEBUG || DEVEL
-MODE_TABLE_DEBUG(0)
-#endif
-#if DEVEL
-MODE_TABLE_DEVEL(0)
-#endif
-MODE_TABLE(0)
-#undef _MODE
-};
-
-#define _MODE(a, b, c) (c) == b ? #a :
-#if DEBUG && DEVEL
-# define MODE_STR(x) MODE_TABLE(x) MODE_TABLE_DEBUG(x) MODE_TABLE_DEVEL(x) "UNKNWN"
-#elif DEBUG
-# define MODE_STR(x) MODE_TABLE(x) MODE_TABLE_DEBUG(x) "UNKNWN"
-#elif DEVEL
-# define MODE_STR(x) MODE_TABLE(x) MODE_TABLE_DEVEL(x) "UNKNWN"
-#else
-# define MODE_STR(x) MODE_TABLE(x) "UNKNWN"
-#endif
-
-#define TARGET_TABLE(x)                       \
-  TARGET(FABRICATE              , 0x01  , x)  \
-  TARGET(FABRICATE_EXACT        , 0x02  , x)  \
-  TARGET(FABRICATE_NOFILE       , 0x04  , x)  \
-  TARGET(INVALIDATE             , 0x08  , x)
-
-enum {
-#define TARGET(a, b, x) TARGET_ ## a = UINT8_C(b),
-TARGET_TABLE(0)
-#undef TARGET
-};
-
-#define TARGET(a, b, x) (x) == b ? #a :
-#define TARGET_STR(x) TARGET_TABLE(x) "UNKNOWN"
-
-extern struct g_args
+typedef struct command
 {
-  int                 mode_build;                 // buildplan mode
-#if DEBUG || DEVEL
-  int                 mode_backtrace;             // backtrace reporting mode
-#endif
-#if DEVEL
-  int                 mode_license;               // buildscript license mode
-#endif
-
-  int                 concurrency;                // concurrency setting
-  int                 procs;                      // 
-
-  char *              buildscript_path;           // path to buildscript
-  char **             buildscript_runtime_vars;   // buildscript variables that are settable at runtime
-  size_t              buildscript_runtime_varsl;
-
-  struct target {                                 // selectors for build targets
-    char *  text;
-    char    mode;     // + or -
-    uint8_t lists;    // bitwise combo of TARGET_*
-  } *                 targets;
-  size_t              targetsl;
-
-  int                 invalidate_all;             // invalidate all nodes (-B)
-} * g_args;
+  xapi (*args_parse)(const char ** restrict argv, size_t argc);
+  xapi __attribute__((nonnull)) (*usage_say)(struct narrator * restrict);
+  xapi __attribute__((nonnull)) (*command_say)(struct narrator * restrict);
+  xapi __attribute__((nonnull)) (*collate)(struct fab_request * restrict req, int * restrict config_applied);
+} command;
 
 /// args_parse
 //
@@ -119,28 +40,36 @@ extern struct g_args
 //  invalid, for example required options are not present, or invalid
 //  parameters are given to an option
 //
-xapi args_parse(void);
+// PARAMETERS
+//  cmd - (returns) subcommand dispatch
+//
+xapi args_parse(const struct command ** cmd)
+  __attribute__((nonnull));
+
+/// args_usage
+//
+// SUMMARY
+//  
+//
+// PARAMETERS
+//  cmd - subcommand dispatch 
+//
+xapi args_usage(const struct command * restrict cmd, int version, int logcats);
 
 /// args_report
 //
 // SUMMARY
 //  log a summary of args as-parsed
 //
-xapi args_report(void);
-
-/// args_teardown
-//
-// SUMMARY
-//  free g_args
-//
-void args_teardown(void);
+xapi args_report(const struct command * restrict cmd)
+  __attribute__((nonnull));
 
 /// args_request_collate
 //
 // SUMMARY
 //  build a fab request from g_args
 //
-xapi args_request_collate(struct memblk * const restrict mb, struct fab_request ** const restrict request)
+xapi args_collate(const command * restrict cmd, struct memblk * const restrict mb, struct fab_request ** const restrict req)
   __attribute__((nonnull));
 
 #endif

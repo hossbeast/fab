@@ -56,7 +56,11 @@ void config_cursor_mark(config_cursor * restrict cursor)
 
 const char * config_cursor_query(const config_cursor * restrict cursor)
 {
-  return cursor->path->s + cursor->mark;
+  int del = cursor->mark;
+  if(cursor->mark != 0 && cursor->path->l > cursor->mark)
+    del++;
+
+  return cursor->path->s + del;
 }
 
 const char * config_cursor_path(const config_cursor * restrict cursor)
@@ -110,9 +114,6 @@ xapi config_cursor_pushs(config_cursor * restrict cursor, const char * restrict 
   const char * end = 0;
 
   cursor->path->l = cursor->mark;
-
-  if(*start && cursor->mark)
-    cursor->mark++;
 
   while(*start)
   {

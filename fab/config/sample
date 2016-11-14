@@ -1,12 +1,30 @@
-# filesystem declaration identifies a subset of the filesystem and attaches
-# attributes to it
+logging.console.filters [ "+IPC" ]
 
+# filesystem declaration attaches attributes to a subset of the filesystem
 filesystem {
-	path : /
-	invalidation : notify		# stat, content, notify, valid, invalid
+	"/" {
+    invalidation notify	| stat | content | always | never
+  }
 }
 
-filesystem {
-	path : /mnt/remote
-	invalidation : stat
+buildscript {
+  path "/foo/bar"
+  runtime-vars [ foo bar ]
+}
+
+concurrency unbounded | heuristic | <integer>
+
+license std | fab
+
+cycles fail | warn | deal
+
+onfail {
+  lines 5
+  bytes 7
+  command true | false
+}
+
+alias {
+  fabj "fab foo bar"
+  fabk "fab baz foo"
 }

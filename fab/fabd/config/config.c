@@ -113,7 +113,7 @@ static xapi validate(value * restrict val, const char * restrict path, uint32_t 
     xapi_info_adds("expected", VALUE_TYPE_STRING(type));
     xapi_info_adds("actual", VALUE_TYPE_STRING(val->type));
 
-    fatal(config_throw, CONFIG_ILLEGAL, val, path);
+    fatal(config_throw, CONFIG_INCOMPAT, val, path);
   }
   else if(notnull && !val)
   {
@@ -121,7 +121,7 @@ static xapi validate(value * restrict val, const char * restrict path, uint32_t 
     xapi_info_adds("expected", "(any)");
     xapi_info_adds("actual", "(none)");
 
-    fatal(config_throw, CONFIG_ILLEGAL, val, path);
+    fatal(config_throw, CONFIG_MISSING, val, path);
   }
 
   finally : coda;
@@ -213,7 +213,7 @@ xapi config_reconfigure(xapi * res)
 {
   enter;
 
-  char trace[256];
+  char trace[4096];
   size_t tracesz;
 
   // validate the new config
@@ -221,7 +221,6 @@ xapi config_reconfigure(xapi * res)
   if(  (*res = invoke(logging_reconfigure, config_staging, ~0))
     || (*res = invoke(filesystem_reconfigure, config_staging, ~0)))
   {
-printf("reconfigure rejected\n");
     if(xapi_exit_errtab(*res) != perrtab_CONFIG)
       fail(0);
 
@@ -232,7 +231,7 @@ printf("reconfigure rejected\n");
 #endif
     xapi_calltree_unwind();
 
-    xlogw(L_ERROR, L_RED, trace, tracesz);
+    logf(L_WARN, "\n%.*s", (int)tracesz, trace);
   }
   else
   {

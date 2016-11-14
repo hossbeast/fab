@@ -34,8 +34,8 @@
 #include "macros.h"
 
 logger_category * categories = (logger_category []) {
-    { name : "ERROR"    , description : "fatal errors" }
-  , { name : "WARN"     , description : "non-fatal errors" }
+    { name : "ERROR"    , description : "fatal errors", attr : L_RED }
+  , { name : "WARN"     , description : "non-fatal errors", attr : L_YELLOW }
   , { name : "INFO"     , description : "high-level summary of actions" }
   , { name : "CONFIG"   , description : "configuration" }
   , { name : "PARAMS"   , description : "runtime parameters" }
@@ -101,10 +101,16 @@ xapi logging_reconfigure(const value * restrict config, uint32_t dry)
       fatal(config_query, list, config_cursor_path(&cursor), config_cursor_query(&cursor), VALUE_TYPE_STRING & dry, &val);
 
       if(dry && !logger_filter_validates(val->s->s))
+      {
+        xapi_fail_intent();
+        xapi_info_adds("filter", val->s->s);
         fatal(config_throw, CONFIG_INVALID, val, config_cursor_path(&cursor));
+      }
 
       if(!dry)
+      {
         fatal(logger_filter_pushs, streams[0].id, val->s->s);
+      }
     }
   }
 

@@ -31,20 +31,29 @@
 
 #define restrict __restrict
 
+const char ** fab_command_names = (const char *[]){
+#define FAB_COMMAND(a, b, c) [c] = #b,
+FAB_COMMAND_TABLE
+#undef FAB_COMMAND
+};
+
+#define FAB_COMMAND(a, b, c) + 1
+size_t fab_command_num = 0 + FAB_COMMAND_TABLE;
+
 //
 // public
 //
 
-API void command_free(fab_command * const restrict command)
+API void command_free(fab_command * const restrict cmd)
 {
-  if(command)
+  if(cmd)
   {
-    size_t x;
-    for(x = 0; x < sizeof(command->strings) / sizeof(command->strings[0]); x++)
-      wfree(command->strings[x]);
+    int x;
+    for(x = 0; x < sizeof(cmd->strings) / sizeof(cmd->strings[0]); x++)
+      wfree(cmd->strings[x]);
   }
 
-  wfree(command);
+  wfree(cmd);
 }
 
 API void command_ifree(fab_command ** const restrict command)
@@ -67,90 +76,52 @@ API void command_thaw(fab_command * const restrict command, char * const restric
     memblk_thaw(mb, &command->strings[x]);
 }
 
-xapi command_say(const fab_command * const restrict command, struct narrator * const restrict N)
+xapi command_say(const fab_command * const restrict cmd, struct narrator * const restrict N)
 {
   enter;
 
-  sayf("{ attrs ", command->attrs);
+
+  sayf("{ %s", COMMAND_NAME(cmd->type));
 
   int first = 1;
-  if(command->attrs & FABCORE_COMMAND_OPT)
+  if(cmd->attr & FAB_ATTR_TARGET_OPT)
   {
-    if(!first)
+    if(first)
+      sayc(' ');
+    else
       sayc(',');
     first = 0;
 
-    says(FABCORE_COMMAND_STRING(command->attrs));
+    says(FAB_ATTR_TARGET_NAME(cmd->attr));
   }
 
-  if(command->attrs & FABCORE_LIST_OP_OPT)
-  {
-    if(!first)
-      sayc(',');
-    first = 0;
-
-    says(FABCORE_LIST_OP_STRING(command->attrs));
-  }
-
-#define IN1(x, S0) \
-  ((x) == S0)
-
-#define IN2(x, S0, S1) \
-  ((x) == S0 || (x) == S1)
-
-#define IN4(x, S0, S1, S2, S3) \
-  ((x) == S0 || (x) == S1 || (x) == S2 || (x) == S3)
-
-  if(IN4(command->attrs & FABCORE_COMMAND_OPT, FABCORE_TARGET_FABRICATE, FABCORE_TARGET_FABRICATE_EXACT, FABCORE_TARGET_FABRICATE_NOFILE, FABCORE_TARGET_INVALIDATE))
-  {
-    if(IN1(command->attrs & FABCORE_LIST_OP_OPT, FABCORE_CLEAR)) { }
-
-    else if(IN2(command->attrs & FABCORE_LIST_OP_OPT, FABCORE_SET, FABCORE_PUSH))
-    {
-      sayf(", text %s", command->text);
-
-      if(command->u8)
-        sayf(", opt %s ", FABCORE_TARGET_STRING(command->u8));
-    }
-  }
-
-  else if(IN1(command->attrs & FABCORE_COMMAND_OPT, FABCORE_CONFIGURATION_MERGE))
-    sayf(", text %s", command->text);
-
-  else if(IN1(command->attrs & FABCORE_COMMAND_OPT, FABCORE_MODE_BUILD))
-    sayf(", mode %s", FABCORE_BUILD_STRING(command->u8));
-
-  else if(IN1(command->attrs & FABCORE_COMMAND_OPT, FABCORE_MODE_LICENSE))
-    sayf(", mode %s", FABCORE_LICENSE_STRING(command->u8));
-
-  else if(IN1(command->attrs & FABCORE_COMMAND_OPT, FABCORE_MODE_TRACE))
-    sayf(", mode %s", FABCORE_TRACE_STRING(command->u8));
-
-  else if(IN1(command->attrs & FABCORE_COMMAND_OPT, FABCORE_BUILDSCRIPT_PATH))
-    sayf(", path %s", command->path);
+  if(cmd->strings[0])
+    sayf(" %s", cmd->strings[0]);
 
   says(" }");
 
   finally : coda;
 }
 
-xapi command_create(fab_command ** const restrict ret, uint32_t attrs)
+xapi command_create(fab_command ** const restrict ret, uint8_t type, uint32_t attr)
 {
   enter;
 
   fatal(xmalloc, ret, sizeof(**ret));
-  (*ret)->attrs = attrs;
+  (*ret)->type = type;
+  (*ret)->attr = attr;
 
   finally : coda;
 }
 
-xapi command_creates(fab_command ** const restrict ret, uint32_t attrs, const char * const restrict text)
+xapi command_creates(fab_command ** const restrict ret, uint8_t type, uint32_t attr, const char * const restrict text)
 {
   enter;
 
   fab_command * command = 0;
   fatal(xmalloc, &command, sizeof(*command));
-  command->attrs = attrs;
+  command->type = type;
+  command->attr = attr;
   fatal(ixstrdup, &command->text, text);
 
   *ret = command;
@@ -161,14 +132,15 @@ finally:
 coda;
 }
 
-xapi command_createvf(fab_command ** const restrict ret, uint32_t attrs, const char * const restrict fmt, va_list va)
+xapi command_createvf(fab_command ** const restrict ret, uint8_t type, uint32_t attr, const char * const restrict fmt, va_list va)
 {
   enter;
 
   fab_command * command = 0;
 
   fatal(xmalloc, &command, sizeof(*command));
-  command->attrs = attrs;
+  command->type = type;
+  command->attr = attr;
 
   va_list va2;
   va_copy(va2, va);
@@ -176,35 +148,6 @@ xapi command_createvf(fab_command ** const restrict ret, uint32_t attrs, const c
 
   fatal(xmalloc, &command->text, sz + 1);
   vsprintf(command->text, fmt, va);
-
-  *ret = command;
-  command = 0;
-
-finally:
-  command_free(command);
-coda;
-}
-
-xapi command_createu8(fab_command ** const restrict ret, uint32_t attrs, uint8_t value)
-{
-  enter;
-
-  fatal(xmalloc, ret, sizeof(**ret));
-  (*ret)->attrs = attrs;
-  (*ret)->u8 = value;
-
-  finally : coda;
-}
-
-xapi command_create_target(fab_command ** const restrict ret, uint32_t attrs, uint8_t opt, const char * const restrict text)
-{
-  enter;
-
-  fab_command * command = 0;
-  fatal(xmalloc, &command, sizeof(*command));
-  command->attrs = attrs;
-  command->u8 = opt;
-  fatal(ixstrdup, &command->text, text);
 
   *ret = command;
   command = 0;

@@ -23,7 +23,6 @@
 
 logger_category * categories = (logger_category[]) {
     { name : "ERROR" , description : "errors leading to shutdown" }
-  , { name : "INFO"  , description : "program flow" }
   , { name : "ARGS"  , description : "program arguments report" }
   , { name : "PARAMS", description : "program parameters report" }
 #if DEBUG || DEVEL
@@ -33,7 +32,7 @@ logger_category * categories = (logger_category[]) {
 };
 
 logger_stream * streams = (logger_stream []) {
-    { name : "console"  , type : LOGGER_STREAM_FD , fd : 1  , expr : "+ERROR,INFO", attr : L_PROCESSID | L_CATEGORY }
+    { name : "console"  , type : LOGGER_STREAM_FD , fd : 1  , expr : "+ERROR", attr : L_PROCESSID | L_CATEGORY }
   , { }
 };
 

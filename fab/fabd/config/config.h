@@ -111,43 +111,5 @@ xapi config_query(const struct value * restrict base, const char * restrict path
 xapi config_throw(xapi error, struct value * restrict val, const char * restrict path)
   __attribute__((nonnull(2)));
 
-#if 0
-/// config_list_get
-//
-// SUMMARY
-//  get an element from a config list
-//
-// PARAMETERS
-//  list   - config list
-//  index  - index of the element to get
-//  [opts] - bitwise combo of VALUE_TYPE_* and CONFIG_QUERY_*
-//  val    - (returns) the value
-//
-// ERRORS
-//  CONFIG_ILLEGAL - opts inclues VALUE_TYPE_* and the query matched a value of some other type, or opts includes
-//                   CONFIG_QUERY_NOTNULL, and the query did not match any value
-//
-xapi config_list_get(struct value * const restrict list, size_t index, uint32_t opts, struct value ** const restrict val)
-  __attribute__((nonnull));
-
-/// config_value_query
-//
-// SUMMARY
-//  query a config tree
-//
-// PARAMETERS
-//  base   - config tree to query
-//  query  - query
-//  [opts] - bitwise combo of VALUE_TYPE_* and CONFIG_QUERY_*
-//  val    - (returns) the value
-//
-// ERRORS
-//  CONFIG_ILLEGAL - opts inclues VALUE_TYPE_* and the query matched a value of some other type, or opts includes
-//                   CONFIG_QUERY_NOTNULL, and the query did not match any value
-//
-xapi config_value_query(struct value * base, const char * const restrict query, uint32_t opts, struct value ** const restrict val)
-  __attribute__((nonnull));
-#endif
-
 #undef restrict
 #endif

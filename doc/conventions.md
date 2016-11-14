@@ -20,7 +20,7 @@
 
 # data types
 
-## options / modifiers / flags
+## attr : options / modifiers / flags
 
 attributes / options
 * bit-range or variable that contains one or more option / modifiers regions

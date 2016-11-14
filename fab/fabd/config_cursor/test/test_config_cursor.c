@@ -60,7 +60,36 @@ finally:
   config_cursor_destroy(&cursor);
 coda;
 }
+#include "valyria/pstring.h"
+static xapi config_cursor_push_repeated(xunit_test * test)
+{
+  enter;
 
+  config_cursor cursor;
+  fatal(config_cursor_init, &cursor);
+
+  fatal(config_cursor_sets, &cursor, "foo.bar");
+  assert_strs("foo.bar", config_cursor_path(&cursor));
+  assert_strs("foo.bar", config_cursor_query(&cursor));
+
+  fatal(config_cursor_mark, &cursor);
+  fatal(config_cursor_pushs, &cursor, "baz.qux");
+  assert_strs("foo.bar.baz.qux", config_cursor_path(&cursor));
+  assert_strs("baz.qux", config_cursor_query(&cursor));
+
+  fatal(config_cursor_pushd, &cursor, 7);
+
+  assert_strs("foo.bar.7", config_cursor_path(&cursor));
+  assert_strs("7", config_cursor_query(&cursor));
+
+  fatal(config_cursor_pushd, &cursor, 33);
+  assert_strs("foo.bar.33", config_cursor_path(&cursor));
+  assert_strs("33", config_cursor_query(&cursor));
+
+finally:
+  config_cursor_destroy(&cursor);
+coda;
+}
 
 //
 // manifest
@@ -69,6 +98,7 @@ coda;
 xunit_unit xunit = {
     tests : (xunit_test*[]) {
       (xunit_test[]) {{ entry : config_cursor_basic }}
+    , (xunit_test[]) {{ entry : config_cursor_push_repeated }}
     , 0
   }
 };

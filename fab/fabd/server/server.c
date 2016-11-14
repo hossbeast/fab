@@ -20,9 +20,9 @@
 #include "xapi/exit.h"
 #include "xapi/calltree.h"
 
-#include "fab/command.h"
 #include "fab/ipc.h"
-#include "fab/request.h"
+#include "fab/request.def.h"
+#include "fab/command.def.h"
 #include "fab/response.h"
 #include "fab/sigbank.h"
 #include "listwise/LISTWISE.errtab.h"
@@ -65,7 +65,6 @@ static xapi load_client_pid(fab_server * const restrict server, pid_t expected_c
   int fd = -1;
 
   // load fab/pid
-
   fatal(xopenf, &fd, O_RDONLY, "%s/client/pid", g_params.ipcdir);
   fatal(axread, fd, &server->client_pid, sizeof(server->client_pid));
   if(server->client_pid <= 0)
@@ -101,12 +100,12 @@ static int handle(fab_request * const restrict request, memblk * const restrict 
   int x;
   for(x = 0; x < request->commandsl; x++)
   {
-    fab_command * cmd = request->commands[x];
-    if((cmd->attrs & FABCORE_COMMAND_OPT) == FABCORE_CONFIGURATION_MERGE)
+    struct fab_command * cmd = request->commands[x];
+    if(cmd->type == FAB_COMMAND_CONFIG_STAGE)
     {
       fatal(config_apply, cmd->text);
     }
-    else if((cmd->attrs & FABCORE_COMMAND_OPT) == FABCORE_CONFIGURATION_APPLY)
+    else if(cmd->type == FAB_COMMAND_CONFIG_APPLY)
     {
       xapi res;
       fatal(config_reconfigure, &res);
@@ -364,28 +363,15 @@ xapi fab_server_dispatch(fab_server * const restrict server, fab_request * const
 {
   enter;
 
-  char space[1024];
   int mpc = 0;
 
   // handle this request
-  xapi exit = 0;
-  if((exit = invoke(handle, request, mb, response)))
-  {
-    // propagate unrecoverable errors
-    if(xapi_exit_errtab(exit) == perrtab_KERNEL)
-    {
-      fail(0);  // propagate unhandled errors
-    }
-
-    size_t tracesz = xapi_trace_full(space, sizeof(space));
-    xapi_calltree_unwind();
-    xlogw(L_ERROR, L_RED, space, tracesz);
-  }
+  fatal(handle, request, mb, response);
 
   if(*response == 0)
   {
     fatal(mempolicy_push, memblk_getpolicy(mb), &mpc);
-    fatal(fab_response_create, response, exit);
+    fatal(fab_response_create, response, 0);
   }
 
 finally:
