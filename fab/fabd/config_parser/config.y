@@ -177,13 +177,13 @@ map
   ;
 
 mapping
-  : key '+' '=' aggregate
+  : key '+' '=' value 
   {
     $$.key = $1;
     $$.val = $4;
     $$.attr = VALUE_MERGE_ADD;
   }
-  | key '=' aggregate
+  | key '=' value 
   {
     $$.key = $1;
     $$.val = $3;

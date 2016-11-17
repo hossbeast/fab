@@ -131,7 +131,7 @@ static xapi merge_test_map_update(xunit_test * test)
   fatal(value_float_mk, stor, 0, &val, 5);
   fatal(value_map_mks, stor, 0, src, &src, "foo", val, 0);
 
-  // { bar 10 baz 15 foo 4 }
+  // { bar 10 baz 15 foo 5 }
   fatal(value_merge, dst, src);
 
   int x = 0;
@@ -316,6 +316,7 @@ static xapi merge_test_map_list_add(xunit_test * test)
   fatal(entry_mkf, stor, &list, 40);
   fatal(value_map_mks, stor, 0, src, &src, "foo", list, VALUE_MERGE_ADD);
 
+  // dst : { valyria [ 10 20 30 40 ] }
   fatal(value_merge, dst, src);
 
   list = list_get(dst->vals, 0);
@@ -347,13 +348,13 @@ static xapi merge_test_map_list_set(xunit_test * test)
   fatal(entry_mkf, stor, &list, 20);
   fatal(value_map_mks, stor, 0, dst, &dst, "foo", list, 0);
 
-  // src : { foo += [ 30 40 ] }
+  // src : { foo = [ 30 40 ] }
   list = 0;
   fatal(entry_mkf, stor, &list, 30);
   fatal(entry_mkf, stor, &list, 40);
-  list->attr = VALUE_MERGE_SET;
   fatal(value_map_mks, stor, 0, src, &src, "foo", list, VALUE_MERGE_SET);
 
+  // dst : { valyria [ 30 40 ] }
   fatal(value_merge, dst, src);
 
   list = list_get(dst->vals, 0);
@@ -384,6 +385,7 @@ static xapi merge_test_list_scalar(xunit_test * test)
   fatal(entry_mkf, stor, &src, 30);
   fatal(entry_mkf, stor, &src, 40);
 
+  // dst : [ 10 20 30 40 ]
   fatal(value_merge, dst, src);
 
   int x = 0;
@@ -440,38 +442,108 @@ finally:
 coda;
 }
 
-static xapi merge_test_path(xunit_test * test)
+static xapi merge_test_map_set_inner(xunit_test * test)
 {
   enter;
 
-  char space[1024];
+  value * src = 0;
+  value * dst = 0;
+  value * list = 0;
+  value * val = 0;
+  value_store * stor = 0;
+
+  fatal(value_store_create, &stor);
+
+  // dst : { foo [ 42 ] }
+  fatal(entry_mkf, stor, &list, 42);
+  fatal(value_map_mks, stor, 0, dst, &dst, "foo", list, 0);
+
+  // src : { foo = true }
+  fatal(value_boolean_mk, stor, 0, &val, 1);
+  fatal(value_map_mks, stor, 0, src, &src, "foo", val, VALUE_MERGE_SET);
+
+  // expected to fail with a particular exit value and kvp containing the path
+  fatal(value_merge, dst, src);
+
+finally:
+  fatal(value_store_xfree, stor);
+coda;
+}
+
+static xapi merge_test_difftype_aggregates(xunit_test * test)
+{
+  enter;
+
+  char space[64];
 
   value * src = 0;
   value * dst = 0;
   value * map = 0;
+  value * map1 = 0;
+  value * map2 = 0;
   value * list = 0;
   value_store * stor = 0;
 
   fatal(value_store_create, &stor);
 
-  // dst : { foo { foo 10 } }
-  fatal(mapping_mkf, stor, &map, "foo", 10);
-  fatal(value_map_mks, stor, 0, dst, &dst, "foo", map, 0);
+  // dst : { foo { bar { baz 10 } } }
+  fatal(mapping_mkf, stor, &map1, "baz", 10);
+  fatal(value_map_mks, stor, 0, map2, &map2, "bar", map1, 0);
+  fatal(value_map_mks, stor, 0, dst, &dst, "foo", map2, 0);
 
-  // src : { foo [ 10 ] }
+  // src : { foo { bar [ 10 ] } }
   fatal(entry_mkf, stor, &list, 10);
-  fatal(value_map_mks, stor, 0, src, &src, "foo", list, 0);
+  fatal(value_map_mks, stor, 0, map, &map, "bar", list, 0);
+  fatal(value_map_mks, stor, 0, src, &src, "foo", map, 0);
 
-  // expected to fail with a particular exit value and kvp for the path
+  // expected to fail with a particular exit value and kvp containing the path
   xapi exit;
   if((exit = invoke(value_merge, dst, src)))
   {
-    xapi_trace_pithy(space, sizeof(space));
+    xapi_trace_info("path", space, sizeof(space));
     xapi_calltree_unwind();
   }
 
   assert_exit(VALUE_DIFFTYPE, exit);
-  assertf(strstr(space, "path=foo"), "path:foo", "actual trace\n**\n%s\n**\n", space);
+  assert_strs("foo.bar", space);
+
+finally:
+  fatal(value_store_xfree, stor);
+coda;
+}
+
+static xapi merge_test_difftype_mixed(xunit_test * test)
+{
+  enter;
+
+  char space[64];
+
+  value * src = 0;
+  value * dst = 0;
+  value * list = 0;
+  value * val = 0;
+  value_store * stor = 0;
+
+  fatal(value_store_create, &stor);
+
+  // dst : { foo [ 1 ] }
+  fatal(entry_mkf, stor, &list, 10);
+  fatal(value_map_mks, stor, 0, dst, &dst, "foo", list, 0);
+
+  // src : { foo 1 }
+  fatal(value_float_mk, stor, 0, &val, 1);
+  fatal(value_map_mks, stor, 0, src, &src, "foo", val, 0);
+
+  // expected to fail with a particular exit value and kvp containing the path
+  xapi exit;
+  if((exit = invoke(value_merge, dst, src)))
+  {
+    xapi_trace_info("path", space, sizeof(space));
+    xapi_calltree_unwind();
+  }
+
+  assert_exit(VALUE_DIFFTYPE, exit);
+  assert_strs("foo", space);
 
 finally:
   fatal(value_store_xfree, stor);
@@ -495,7 +567,11 @@ xunit_unit xunit = {
     , (xunit_test[]){{ entry : merge_test_map_list_set }}
     , (xunit_test[]){{ entry : merge_test_list_scalar }}
     , (xunit_test[]){{ entry : merge_test_list_aggregate }}
-    , (xunit_test[]){{ entry : merge_test_path }}
+    , (xunit_test[]){{ entry : merge_test_map_set_inner }}
+
+    // failure cases
+    , (xunit_test[]){{ entry : merge_test_difftype_aggregates }}
+    , (xunit_test[]){{ entry : merge_test_difftype_mixed }}
     , 0
   }
 };

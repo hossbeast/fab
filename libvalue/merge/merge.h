@@ -18,6 +18,20 @@
 #ifndef _VALUE_MERGE_H
 #define _VALUE_MERGE_H
 
+/*
+
+MODULE
+ value/merge
+
+SUMMARY
+ functionality to combine two value trees.
+
+REMARKS
+ only the merge attributes in the src tree are relevant, and merge attributes are not
+ propagated to the destination by the merge operation
+
+*/
+
 #include "xapi.h"
 
 struct value; // value.h

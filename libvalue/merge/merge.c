@@ -33,7 +33,7 @@
 static xapi merge(
     value * const restrict dst
   , const value * const restrict src
-  , uint16_t attr
+  , uint16_t outer_attr
   , const char ** restrict parts
   , size_t partsz
   , size_t * restrict partsl
@@ -43,7 +43,7 @@ static xapi merge(
 static xapi merge(
     value * const restrict dst
   , const value * const restrict src
-  , uint16_t attr
+  , uint16_t outer_attr
   , const char ** restrict parts
   , size_t partsz
   , size_t * restrict partsl
@@ -70,7 +70,7 @@ static xapi merge(
 
   else if(dst->type == VALUE_TYPE_MAP)
   {
-    if((attr & MERGE_OPT) == VALUE_MERGE_SET)
+    if((outer_attr & MERGE_OPT) == VALUE_MERGE_SET)
     {
       dst->keys = src->keys;
       dst->vals = src->vals;
@@ -99,7 +99,11 @@ static xapi merge(
           uint16_t dt = ((value*)list_get(dst->vals, x))->type;
           uint16_t st = ((value*)list_get(src->vals, y))->type;
 
-          if(dt & st & VALUE_TYPE_SCALAR)
+          if((src_key->attr & MERGE_OPT) == VALUE_MERGE_SET)
+          {
+            fatal(list_splice, dst->vals, x, src->vals, y, 1);
+          }
+          else if(dt & st & VALUE_TYPE_SCALAR)
           {
             fatal(list_splice, dst->vals, x, src->vals, y, 1);
           }
@@ -128,7 +132,7 @@ static xapi merge(
   }
   else if(dst->type == VALUE_TYPE_LIST)
   {
-    if((attr & MERGE_OPT) == VALUE_MERGE_SET)
+    if((outer_attr & MERGE_OPT) == VALUE_MERGE_SET)
     {
       fatal(list_splice, dst->els, 0, src->els, 0, src->els->l);
       fatal(list_truncate, dst->els, src->els->l);
