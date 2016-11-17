@@ -18,6 +18,10 @@
 #ifndef _SERVER_H
 #define _SERVER_H
 
+/*
+
+*/
+
 #include <sys/types.h>
 
 #include "xapi.h"
@@ -35,7 +39,7 @@ typedef struct fab_server
   void *    request_shm;
   void *    response_shm;
 
-  int       client_cwd; // fs operations are resolved relative to client cwd
+  int       client_cwd_dirfd;
 } fab_server;
 
 #define restrict __restrict
@@ -47,10 +51,8 @@ typedef struct fab_server
 //
 // PARAMETERS
 //  server - (returns) server instance
-//  ipcdir - ipcdir for the project, e.g. /var/run/fab/<hash>
-//  hash   - 
 //
-xapi fab_server_create(fab_server ** const restrict server, char * const restrict ipcdir, const char hash[8])
+xapi fab_server_create(fab_server ** const restrict server)
   __attribute__((nonnull));
 
 /// fab_server_xfree
@@ -78,6 +80,22 @@ xapi fab_server_respond(fab_server * const restrict server, struct memblk * cons
   __attribute__((nonnull));
 
 xapi fab_server_dispatch(fab_server * const restrict server, struct fab_request * const restrict req, struct memblk * const restrict mb, struct fab_response ** const restrict response)
+  __attribute__((nonnull));
+
+/// fab_server_client_cwd_dirfd
+//
+// SUMMARY
+//  get the file descriptor for the clients cwd
+//
+int fab_server_client_cwd_dirfd(fab_server * const restrict server)
+  __attribute__((nonnull));
+
+/// fab_server_project_dirfd
+//
+// SUMMARY
+//  get the file descriptor for the project dir
+//
+int fab_server_project_dirfd(fab_server * const restrict server)
   __attribute__((nonnull));
 
 #undef restrict

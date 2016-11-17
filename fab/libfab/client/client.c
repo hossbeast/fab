@@ -104,24 +104,21 @@ finally:
 coda;
 }
 
-static xapi verify_result(fab_client * const restrict client, int expsig, int actsig)
+static xapi validate_result(fab_client * const restrict client, int expsig, int actsig)
 {
   enter;
 
-  char space[512];
   int exit;
   int fd = -1;
 
   if(actsig == FABIPC_SIGEND)
   {
     // check child exit file
-    snprintf(space, sizeof(space), "%s/fabd/exit", client->ipcdir);
     fatal(ixclose, &fd);
-    fatal(xopens, &fd, O_RDONLY, space);
+    fatal(xopenf, &fd, O_RDONLY, "%s/fabd/exit", client->ipcdir);
     fatal(axread, fd, MM(exit));
 
     xapi_fail_intent();
-
     if(WIFEXITED(exit))
     {
       xapi_info_addf("status", "%d", WEXITSTATUS(exit));
@@ -368,7 +365,6 @@ API xapi fab_client_launchp(fab_client * const restrict client)
 #else
         "fabw"
 #endif
-      , "+IPC"
       , client->hash, (void*)0
     };
 
@@ -403,7 +399,7 @@ API xapi fab_client_launchp(fab_client * const restrict client)
 #endif
   fatal(identity_assume_user);
 
-  fatal(verify_result, client, FABIPC_SIGACK, actsig);
+  fatal(validate_result, client, FABIPC_SIGACK, actsig);
 
 finally:
   fatal(log_finish, &token);
@@ -414,7 +410,6 @@ API xapi fab_client_request_make(fab_client * const restrict client, memblk * co
 {
   enter;
 
-  fab_response * response = 0;
   int token = 0;
   int shmid_tmp;
   int fd = -1;
@@ -448,7 +443,7 @@ API xapi fab_client_request_make(fab_client * const restrict client, memblk * co
   // awaken fabd and await response
   int actsig;
   fatal(sigbank_exchange, FABIPC_SIGSYN, -client->pgid, &actsig, 0);
-  fatal(verify_result, client, FABIPC_SIGACK, actsig);
+  fatal(validate_result, client, FABIPC_SIGACK, actsig);
 
   // destroy the request
   fatal(ixshmdt, &shmaddr);
@@ -460,7 +455,7 @@ API xapi fab_client_request_make(fab_client * const restrict client, memblk * co
   fatal(xshmat, res_shmid, 0, 0, &shmaddr);
 
   // consume the response
-  response = shmaddr;
+  fab_response * response = shmaddr;
   fab_response_thaw(response, shmaddr);
 
 #if DEBUG || DEVEL
@@ -472,6 +467,9 @@ API xapi fab_client_request_make(fab_client * const restrict client, memblk * co
 
   // unblock fabd
   fatal(xkill, -client->pgid, FABIPC_SIGACK);
+
+  if(response->exit)
+    fail(FAB_UNSUCCESS);
 
 finally:
   fatal(log_finish, &token);

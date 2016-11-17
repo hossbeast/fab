@@ -487,20 +487,6 @@ finally:
 coda;
 }
 
-static xapi config_merge(fab_request * restrict request, const char * restrict fmt, ...)
-{
-  enter;
-
-  va_list va;
-  va_start(va, fmt);
-
-  fatal(fab_request_commandvf, request, FABCORE_CONFIGURATION_MERGE, fmt, va);
-
-finally:
-  va_end(va);
-coda;
-}
-
 xapi args_request_collate(memblk * const restrict mb, fab_request ** const restrict request)
 {
   enter;
@@ -512,7 +498,7 @@ xapi args_request_collate(memblk * const restrict mb, fab_request ** const restr
   fatal(fab_request_create, request, g_params.pid);
 
   // overwrite logging filters
-  fatal(config_merge, *request, "logging.console.filters [ \"%s\" ]", g_logvsl ? g_logvs : "+ERROR,INFO");
+  fatal(fab_request_commandf, *request, FABCORE_CONFIGURATION_MERGE, "logging.console.filters [ \"%s\" ]", g_logvsl ? g_logvs : "+ERROR,INFO");
 
   if(g_args->mode_build)
     fatal(fab_request_commandu8, *request, FABCORE_MODE_BUILD, g_args->mode_build);

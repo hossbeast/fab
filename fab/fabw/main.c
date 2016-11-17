@@ -152,14 +152,12 @@ int main(int argc, char ** argv, char ** envp)
   }
 
   // record the exit status
-  snprintf(space, sizeof(space), "%s/%s/fabd/exit", XQUOTE(FABIPCDIR), hash);
-  fatal(xopen_modes, &fd, O_CREAT | O_WRONLY, FABIPC_MODE_DATA, space);
+  fatal(xopen_modef, &fd, O_CREAT | O_WRONLY, FABIPC_MODE_DATA, "%s/%s/fabd/exit", XQUOTE(FABIPCDIR), hash);
   fatal(axwrite, fd, &status, sizeof(status));
   fatal(ixclose, &fd);
 
   // signal a client, if any
-  snprintf(space, sizeof(space), "%s/%s/client/pid", XQUOTE(FABIPCDIR), hash);
-  fatal(xopens, &fd, O_RDONLY, space);
+  fatal(xopenf, &fd, O_RDONLY, "%s/%s/client/pid", XQUOTE(FABIPCDIR), hash);
   fatal(axread, fd, &client_pid, sizeof(client_pid));
 #if DEVEL
 logf(L_IPC, "sending %s/%d to %d", FABIPC_SIGNAME(FABIPC_SIGEND), FABIPC_SIGEND, client_pid);
@@ -170,10 +168,13 @@ finally:
   fatal(log_finish, &token);
 
 #if DEBUG || DEVEL
-  xapi_infos("name", "fabw");
-  xapi_infof("pgid", "%ld", (long)getpgid(0));
-  xapi_infof("pid", "%ld", (long)getpid());
-  xapi_infos("hash", hash);
+  if(log_would(L_IPC))
+  {
+    xapi_infos("name", "fabw");
+    xapi_infof("pgid", "%ld", (long)getpgid(0));
+    xapi_infof("pid", "%ld", (long)getpid());
+    xapi_infos("hash", hash);
+  }
 #endif
 
   if(XAPI_UNWINDING)

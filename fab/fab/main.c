@@ -50,6 +50,7 @@
 #include "fab/identity.h"
 #include "fab/request.h"
 #include "fab/client.h"
+#include "fab/FAB.errtab.h"
 
 #include "args.h"
 #include "params.h"
@@ -147,23 +148,33 @@ finally:
   fatal(log_finish, &token);
 
 #if DEBUG || DEVEL
-  xapi_infos("name", "fab");
-  xapi_infof("pid", "%ld", (long)getpid());
-  if(client)
-    xapi_infos("hash", fab_client_gethash(client));
+  if(log_would(L_IPC))
+  {
+    xapi_infos("name", "fab");
+    xapi_infof("pid", "%ld", (long)getpid());
+    if(client)
+      xapi_infos("hash", fab_client_gethash(client));
+  }
 #endif
 
   // when failing due to an error propagated from fabd (fabd_error), do not log the
   // stacktrace, because fabd will have already done that
   if(XAPI_UNWINDING)
   {
+    if(XAPI_ERRVAL == FAB_FABDEXIT || XAPI_ERRVAL == FAB_UNSUCCESS)
+    {
+      // it is assumed that on an orderly shutdown fabd has already backtraced to our stdout
+    }
+    else
+    {
 #if DEBUG || DEVEL || XAPI
-    tracesz = xapi_trace_full(space, sizeof(space));
+      tracesz = xapi_trace_full(space, sizeof(space));
 #else
-    tracesz = xapi_trace_pithy(space, sizeof(space));
+      tracesz = xapi_trace_pithy(space, sizeof(space));
 #endif
 
-    xlogw(L_ERROR, L_RED, space, tracesz);
+      xlogw(L_ERROR, L_RED, space, tracesz);
+    }
   }
 
   // locals

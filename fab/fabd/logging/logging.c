@@ -35,9 +35,9 @@
 logger_category * categories = (logger_category []) {
     { name : "ERROR"    , description : "fatal errors" }
   , { name : "WARN"     , description : "non-fatal errors" }
+  , { name : "INFO"     , description : "high-level summary of actions" }
   , { name : "CONFIG"   , description : "configuration" }
   , { name : "PARAMS"   , description : "runtime parameters" }
-  , { name : "TMP"      , description : "tmp files" }
   , { name : "USAGE"    , description : "resource usage reports" }
 #if DEBUG || DEVEL || XAPI
   , { name : "IPC"      , description : "signal-exchange" }
@@ -46,9 +46,9 @@ logger_category * categories = (logger_category []) {
 };
 
 logger_stream * streams = (logger_stream []) {
-    { name : "console"  , type : LOGGER_STREAM_FD , expr : "+ERROR|WARN|LOGGER", attr : L_PROCESSID | L_CATEGORY
+    { name : "console"  , type : LOGGER_STREAM_FD , expr : "+ERROR|WARN|INFO", attr : L_PROCESSID | L_CATEGORY
       , fd : 1 }
-  , { name : "logfile"  , type : LOGGER_STREAM_ROLLING, expr : "+PARAMS +CONFIG%% +ALL", attr : L_DATESTAMP | L_PROCESSID | L_CATEGORY
+  , { name : "logfile"  , type : LOGGER_STREAM_ROLLING, expr : "+ALL", attr : L_DATESTAMP | L_CATEGORY  | L_NOCOLOR
       , file_mode : FABIPC_MODE_DATA, threshold : 1024 * 1024, max_files : 10, path_base : (char[256]) { } }
   , { }
 };
@@ -59,14 +59,14 @@ int g_logger_default_stderr = 1;
 // process name for L_PROCESSID
 char * g_logger_process_name = "fabd";
 
-xapi logging_setup(char * const restrict hash)
+xapi logging_setup(uint32_t hash)
 {
   enter;
 
   // per-ipc logfiles
   if(hash)
   {
-    snprintf(streams[1].path_base, 256, "%s/%s/fabd/log", XQUOTE(FABIPCDIR), hash);
+    snprintf(streams[1].path_base, 256, "%s/%x/fabd/log", XQUOTE(FABIPCDIR), hash);
     fatal(logger_stream_register, streams);
   }
 

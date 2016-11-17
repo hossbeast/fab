@@ -34,6 +34,7 @@
 #include "valyria/load.h"
 #include "xlinux/load.h"
 #include "yyutil/load.h"
+#include "value/load.h"
 
 #include "fab/ipc.h"
 #include "fab/identity.h"
@@ -83,12 +84,11 @@ int main(int argc, char** argv, char ** envp)
   enter;
 
   xapi R = 0;
-  char trace[1024];
+  char space[1024];
   size_t tracesz = 0;
   int token = 0;
-  char ipcdir[512];
-  char hash[9] = { 0 };
   int fd = -1;
+  uint32_t hash = 0;
 
   fab_server * server = 0;
   memblk * mb = 0;
@@ -102,12 +102,13 @@ int main(int argc, char** argv, char ** envp)
   fatal(valyria_load);
   fatal(xlinux_load);
   fatal(yyutil_load);
+  fatal(value_load);
 
   // modules
   fatal(xapi_errtab_register, perrtab_CONFIG);
   fatal(sigbank_setup, "fabd");
-  fatal(params_setup);
   fatal(filesystem_setup);
+  fatal(config_setup);
   fatal(logger_arguments_setup, envp);
 
   // locals
@@ -144,14 +145,12 @@ int main(int argc, char** argv, char ** envp)
   fatal(xopens, 0, O_RDONLY, "/dev/null");
 
   // get ipc dir
-  uint32_t u32;
-  if(argc < 2 || parseuint(g_argv[1], SCNx32, 1, UINT32_MAX, 1, UINT8_MAX, &u32, 0) != 0)
+  if(argc < 2 || parseuint(g_argv[1], SCNx32, 1, UINT32_MAX, 1, UINT8_MAX, &hash, 0) != 0)
     fail(SYS_BADARGS);
-  snprintf(hash, sizeof(hash), "%x", u32);
-  snprintf(ipcdir, sizeof(ipcdir), "%s/%s", XQUOTE(FABIPCDIR), hash);
 
   // core file goes in cwd
-  fatal(xchdirf, "%s/fabd", ipcdir);
+  fatal(params_setup, hash);
+  fatal(xchdirf, "%s/fabd", g_params.ipcdir);
 
   // logging, with per-ipc logfiles
   fatal(logging_setup, hash);
@@ -163,16 +162,22 @@ int main(int argc, char** argv, char ** envp)
 
   fatal(params_report);
 
+  // in non-daemon mode, the fabd lock will not have been inherited
+  if(!daemon)
+  {
+    pid_t pgid = 0;
+    fatal(ipc_lock_obtain, &pgid, "%s/fabd/lock", g_params.ipcdir);
+    while(pgid)
+    {
+      fatal(ipc_lock_release, "%s/fabd/lock", g_params.ipcdir);
+      fatal(ipc_lock_obtain, &pgid, "%s/fabd/lock", g_params.ipcdir);
+    }
+  }
+
+  fatal(fab_server_create, &server);
+
   // load the initial config
   fatal(config_load);
-
-#if 0
-  // create symlink for dsc in hashdir
-  snprintf(space, sizeof(space), "%s/dsc", ipcdir);
-  snprintf(space2, sizeof(space2), XQUOTE(FABTMPDIR) "/pid/%d/dsc", g_params.pid);
-  fatal(uxunlink, space);
-  fatal(xsymlink, space2, space);
-#endif
 
 #if DEVEL
   #if __linux__
@@ -180,20 +185,6 @@ int main(int argc, char** argv, char ** envp)
   fatal(xprctl, PR_SET_PDEATHSIG, SIGTERM, 0, 0, 0);
   #endif
 #endif
-
-  // take the fabd lock, since it will not have been inherited
-  if(!daemon)
-  {
-    pid_t pgid = 0;
-    fatal(ipc_lock_obtain, &pgid, "%s/fabd/lock", ipcdir);
-    while(pgid)
-    {
-      fatal(ipc_lock_release, "%s/fabd/lock", ipcdir);
-      fatal(ipc_lock_obtain, &pgid, "%s/fabd/lock", ipcdir);
-    }
-  }
-
-  fatal(fab_server_create, &server, ipcdir, hash);
 
   // prepare to receive requests
   fatal(identity_assume_fabsys);
@@ -239,38 +230,34 @@ finally:
   fatal(log_finish, &token);
 
 #if DEBUG || DEVEL
-  xapi_infos("name", "fabd");
-  xapi_infof("pgid", "%ld", (long)getpgid(0));
-  xapi_infof("pid", "%ld", (long)getpid());
-  xapi_infos("hash", hash);
+  if(log_would(L_IPC))
+  {
+    xapi_infos("name", "fabd");
+    xapi_infof("pgid", "%ld", (long)getpgid(0));
+    xapi_infof("pid", "%ld", (long)getpid());
+    xapi_infof("hash", "%x", hash);
+  }
 #endif
 
   if(XAPI_UNWINDING)
   {
 #if DEBUG || DEVEL || XAPI
-    tracesz = xapi_trace_full(trace, sizeof(trace));
+    tracesz = xapi_trace_full(space, sizeof(space));
 #else
-    tracesz = xapi_trace_pithy(trace, sizeof(trace));
+    tracesz = xapi_trace_pithy(space, sizeof(space));
 #endif
 
-    xlogw(L_ERROR, L_RED, trace, tracesz);
+    xlogw(L_ERROR, L_RED, space, tracesz);
   }
 
   // locals
-//  map_free(rmap);
-//  map_free(vmap);
-//  fabd_handler_context_free(ctx);
   fatal(xclose, fd);
   fatal(fab_server_xfree, server);
   fatal(memblk_free, mb);
 
   // modules
-//  gn_teardown();
-//  fml_teardown();
-//  ff_teardown();
-//  selector_teardown();
   sigbank_teardown();
-  params_teardown();
+  fatal(params_cleanup);
   fatal(config_cleanup);
   fatal(filesystem_cleanup);
 
@@ -283,6 +270,7 @@ finally:
   fatal(valyria_unload);
   fatal(xlinux_unload);
   fatal(yyutil_unload);
+  fatal(value_unload);
 
 conclude(&R);
   xapi_teardown();

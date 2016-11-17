@@ -33,22 +33,18 @@
 //
 //
 
-API xapi fab_response_create(fab_response ** const restrict response)
+API xapi fab_response_create(fab_response ** const restrict response, xapi exit)
 {
   enter;
 
   fatal(xmalloc, response, sizeof(**response));
+  (*response)->exit = exit;
 
   finally : coda;
 }
 
 API void fab_response_free(fab_response * const restrict response)
 {
-  if(response)
-  {
-    wfree(response->trace);
-  }
-
   wfree(response);
 }
 
@@ -60,47 +56,17 @@ API void fab_response_ifree(fab_response ** const restrict response)
 
 API void fab_response_freeze(fab_response * const restrict response, memblk * const restrict mb)
 {
-  memblk_freeze(mb, &response->trace);
 }
 
 API void fab_response_thaw(fab_response * const restrict response, char * const restrict mb)
 {
-  memblk_thaw(mb, &response->trace);
 }
 
 API xapi fab_response_say(const fab_response * const restrict response, narrator * const restrict N)
 {
   enter;
 
-  sayf("exit %08x", response->exit);
-  if(response->exit)
-  {
-//    sayf(", errtab %s", response->errtab);
-//    sayf(", errname %s", response->errname);
-    sayf(", pithy %.*s", (int)response->tracesz, response->trace);
-  }
-
-  finally : coda;
-}
-
-API xapi fab_response_error(fab_response * const restrict response, xapi exit, const char * const restrict trace, size_t tracesz)
-{
-  enter;
-
-  response->exit = exit;
-  fatal(ixstrdup, &response->trace, trace);
-  response->tracesz = tracesz;
-  fatal(ixstrdup, &response->errtab, xapi_exit_errtab_name(exit));
-  fatal(ixstrdup, &response->errname, xapi_exit_errname(exit));
-
-  finally : coda;
-}
-
-API xapi fab_response_success(fab_response * const restrict response)
-{
-  enter;
-
-  response->exit = 0;
+  sayf("exit %x", response->exit);
 
   finally : coda;
 }

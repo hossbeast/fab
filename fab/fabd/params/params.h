@@ -23,37 +23,37 @@
 
 #include "xapi.h"
 
+/// g_params
+//
+// SUMMARY
+//  non-configurable execution parameters
+//
 extern struct g_params
 {
-  //
-  // non-configurable execution parameters
-  //
+  pid_t           pid;              // pid of this process
+  pid_t           ppid;             // pid of parent process
+  pid_t           pgid;             // process group id
 
-  pid_t           pid;                        // pid of this process
-  pid_t           ppid;                       // pid of parent process
-  pid_t           pgid;                       // process group id
+  char *          exedir;           // location of the binary executable
+  long            procs;            // detected number of processors (0 means unknown)
+  long            pagesize;         // page size
 
-  char *          exedir;                     // location of the binary executable
-  int             exedirl;
-  long            procs;                      // detected number of processors (0 means unknown)
-  long            pagesize;                   // page size
+  char *          ipcdir;
+  int             projdir_fd;       // readonly file descriptor for the project dir
 } g_params;
 
 /// params_parse
 //
-// parses command-line options, populating g_params.
+// SUMMARY
+//  parses command-line options, populating g_params.
 //
-// Prints the usage statement and terminates the program if options are
-// invalid, for example required options are not present, or invalid
-// parameters are given to an option
-//
-xapi params_setup(void);
+xapi params_setup(uint32_t hash);
 
 /// params_teardown
 //
 // free g_params
 //
-void params_teardown(void);
+xapi params_cleanup(void);
 
 /// params_report
 //

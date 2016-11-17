@@ -29,9 +29,9 @@ extern struct logger_category * categories;
 
 #define L_ERROR   categories[0].id
 #define L_WARN    categories[1].id
-#define L_CONFIG  categories[2].id
-#define L_PARAMS  categories[3].id
-#define L_TMP     categories[4].id
+#define L_INFO    categories[2].id
+#define L_CONFIG  categories[3].id
+#define L_PARAMS  categories[4].id
 #define L_USAGE   categories[5].id
 #if DEBUG || DEVEL || XAPI
 #define L_IPC     categories[6].id
@@ -42,9 +42,7 @@ extern struct logger_category * categories;
 // SUMMARY
 //  register logging categories
 //
-xapi logging_setup(char * const restrict hash);
-
-xapi logging_config_validate(struct value * restrict config_staging);
+xapi logging_setup(uint32_t hash);
 
 /// logging_reconfigure
 //

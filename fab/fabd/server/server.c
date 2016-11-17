@@ -66,7 +66,7 @@ static xapi load_client_pid(fab_server * const restrict server, pid_t expected_c
 
   // load fab/pid
 
-  fatal(xopenf, &fd, O_RDONLY, "%s/client/pid", server->ipcdir);
+  fatal(xopenf, &fd, O_RDONLY, "%s/client/pid", g_params.ipcdir);
   fatal(axread, fd, &server->client_pid, sizeof(server->client_pid));
   if(server->client_pid <= 0)
   {
@@ -189,12 +189,12 @@ static xapi redirect(fab_server * const restrict server)
   char space[512];
 
   // redirect stdout/stderr to the client
-  snprintf(space, sizeof(space), "%s/client/out", server->ipcdir);
+  snprintf(space, sizeof(space), "%s/client/out", g_params.ipcdir);
   fatal(xopens, &fd, O_RDWR, space);
   fatal(xdup2, fd, 1);
   fatal(ixclose, &fd);
 
-  snprintf(space, sizeof(space), "%s/client/err", server->ipcdir);
+  snprintf(space, sizeof(space), "%s/client/err", g_params.ipcdir);
   fatal(xopens, &fd, O_RDWR, space);
   fatal(xdup2, fd, 2);
 
@@ -208,14 +208,12 @@ coda;
 // public
 //
 
-xapi fab_server_create(fab_server ** const restrict server, char * const restrict ipcdir, const char hash[8])
+xapi fab_server_create(fab_server ** const restrict server)
 {
   enter;
 
   fatal(xmalloc, server, sizeof(**server));
-  fatal(ixstrdup, &(*server)->ipcdir, ipcdir); 
-  memcpy((*server)->hash, hash, sizeof((*server)->hash));
-  (*server)->client_cwd = -1;
+  (*server)->client_cwd_dirfd = -1;
 
   finally : coda;
 }
@@ -226,10 +224,9 @@ xapi fab_server_xfree(fab_server * const restrict server)
 
   if(server)
   {
-    iwfree(&server->ipcdir);
     fatal(ixshmdt, &server->request_shm);
     fatal(ixshmdt, &server->response_shm);
-    fatal(ixclose, &server->client_cwd);
+    fatal(ixclose, &server->client_cwd_dirfd);
   }
 
   wfree(server);
@@ -289,11 +286,11 @@ xapi fab_server_receive(fab_server * const restrict server, int daemon, fab_requ
     fatal(redirect, server);
 
   // get a fd to the clients cwd
-  fatal(ixclose, &server->client_cwd);
-  fatal(xopenf, &server->client_cwd, O_RDONLY, "%s/client/cwd", server->ipcdir);
+  fatal(ixclose, &server->client_cwd_dirfd);
+  fatal(xopenf, &server->client_cwd_dirfd, O_RDONLY, "%s/client/cwd", g_params.ipcdir);
 
   // get the request shm
-  fatal(xopenf, &fd, O_RDONLY, "%s/client/request_shmid", server->ipcdir);
+  fatal(xopenf, &fd, O_RDONLY, "%s/client/request_shmid", g_params.ipcdir);
   fatal(axread, fd, &shmid, sizeof(shmid));
   fatal(xshmat, shmid, 0, 0, &server->request_shm);
 
@@ -327,14 +324,14 @@ xapi fab_server_respond(fab_server * const restrict server, memblk * const restr
   fatal(ixshmdt, &server->request_shm);
 
   // create the shm for the response
-  fatal(xshmget, ftok(server->ipcdir, FABIPC_TOKRES), memblk_size(mb), IPC_CREAT | IPC_EXCL | FABIPC_MODE_DATA, &shmid);
+  fatal(xshmget, ftok(g_params.ipcdir, FABIPC_TOKRES), memblk_size(mb), IPC_CREAT | IPC_EXCL | FABIPC_MODE_DATA, &shmid);
   fatal(xshmat, shmid, 0, 0, &server->response_shm);
   fatal(xshmctl, shmid, IPC_RMID, 0);
   int shmid_tmp = shmid;
   shmid = -1;
 
   // save the shmid for the client
-  fatal(xopen_modef, &fd, O_CREAT | O_WRONLY, FABIPC_MODE_DATA, "%s/fabd/response_shmid", server->ipcdir);
+  fatal(xopen_modef, &fd, O_CREAT | O_WRONLY, FABIPC_MODE_DATA, "%s/fabd/response_shmid", g_params.ipcdir);
   fatal(axwrite, fd, &shmid_tmp, sizeof(shmid_tmp));
   fatal(ixclose, &fd);
 
@@ -367,6 +364,7 @@ xapi fab_server_dispatch(fab_server * const restrict server, fab_request * const
 {
   enter;
 
+  char space[1024];
   int mpc = 0;
 
   // handle this request
@@ -379,22 +377,15 @@ xapi fab_server_dispatch(fab_server * const restrict server, fab_request * const
       fail(0);  // propagate unhandled errors
     }
 
-    char trace[512];
-    size_t tracesz = xapi_trace_full(trace, sizeof(trace));
+    size_t tracesz = xapi_trace_full(space, sizeof(space));
     xapi_calltree_unwind();
-
-    // build an error response
-    fatal(mempolicy_push, memblk_getpolicy(mb), &mpc);
-    fatal(fab_response_create, response);
-    fatal(fab_response_error, *response, exit, trace, tracesz);
+    xlogw(L_ERROR, L_RED, space, tracesz);
   }
 
-  // build a success response
   if(*response == 0)
   {
     fatal(mempolicy_push, memblk_getpolicy(mb), &mpc);
-    fatal(fab_response_create, response);
-    fatal(fab_response_success, *response);
+    fatal(fab_response_create, response, exit);
   }
 
 finally:

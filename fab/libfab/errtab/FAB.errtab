@@ -20,3 +20,4 @@
 3   FABLOCK     fab already running for this hash
 4   FABDFAIL    fabd terminated abnormally
 5   FABDEXIT    fabd terminated unexpectedly
+6   UNSUCCESS   request was completed unsuccessfully

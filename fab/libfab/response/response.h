@@ -28,10 +28,6 @@ struct narrator;
 typedef struct fab_response
 {
   xapi    exit;     // 0 on success
-  char *  errtab;   
-  char *  errname;
-  char *  trace;    // error trace
-  size_t  tracesz;
 } fab_response;
 
 #define restrict __restrict
@@ -43,8 +39,9 @@ typedef struct fab_response
 //
 // PARAMETERS
 //  response - (returns) response instance
+//  exit     - exit value, zero is success
 //
-xapi fab_response_create(fab_response ** const restrict response)
+xapi fab_response_create(fab_response ** const restrict response, xapi exit)
   __attribute__((nonnull));
 
 /// fab_response_free
@@ -82,22 +79,6 @@ void fab_response_thaw(fab_response * const restrict response, char * const rest
 // SUMMARY
 //
 xapi fab_response_say(const fab_response * const restrict response, struct narrator * const restrict N)
-  __attribute__((nonnull));
-
-/// fab_response_error
-//
-// SUMMARY
-//  build an error response
-//
-xapi fab_response_error(fab_response * const restrict response, xapi exit, const char * const restrict trace, size_t tracesz)
-  __attribute__((nonnull));
-
-/// fab_response_success
-//
-// SUMMARY
-//  build a success response
-//
-xapi fab_response_success(fab_response * const restrict response)
   __attribute__((nonnull));
 
 #undef restrict
