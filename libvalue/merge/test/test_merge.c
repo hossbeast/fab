@@ -19,17 +19,19 @@
 
 #include "xapi.h"
 #include "xapi/errtab.h"
+#include "xapi/calltree.h"
+#include "xapi/trace.h"
 #include "value.h"
 #include "value/store.h"
 #include "value/make.h"
 #include "xunit.h"
 #include "xunit/assert.h"
 #include "narrator.h"
-
 #include "valyria/list.h"
 #include "valyria/pstring.h"
 
 #include "merge.internal.h"
+#include "VALUE.errtab.h"
 #include "make.internal.h"
 
 static xapi unit_setup(xunit_unit * unit)
@@ -78,14 +80,26 @@ static xapi assert_elementf(value * map, int x, double exp)
   finally : coda;
 }
 
-static xapi mapping_mk(value_store * stor, value ** map, char * key, double f, uint16_t attr)
+static xapi mapping_mkf(value_store * stor, value ** map, char * key, double f)
 {
   enter;
 
   value * val = 0;
 
   fatal(value_float_mk, stor, 0, &val, f);
-  fatal(value_map_mks, stor, 0, *map, map, key, val, attr);
+  fatal(value_map_mks, stor, 0, *map, map, key, val, 0);
+
+  finally : coda;
+}
+
+static xapi entry_mkf(value_store * stor, value ** list, double f)
+{
+  enter;
+
+  value * val = 0;
+
+  fatal(value_float_mk, stor, 0, &val, f);
+  fatal(value_list_mkv, stor, 0, *list, list, val);
 
   finally : coda;
 }
@@ -255,14 +269,14 @@ static xapi merge_test_map_set(xunit_test * test)
   fatal(value_store_create, &stor);
 
   // dst : { valyria { foo 10 bar 20 } }
-  fatal(mapping_mk, stor, &map, "foo", 10, 0);
-  fatal(mapping_mk, stor, &map, "bar", 20, 0);
+  fatal(mapping_mkf, stor, &map, "foo", 10);
+  fatal(mapping_mkf, stor, &map, "bar", 20);
   fatal(value_map_mks, stor, 0, dst, &dst, "valyria", map, 0);
 
   // src : { valyria = { baz 30 qux 40 } }
   map = 0;
-  fatal(mapping_mk, stor, &map, "baz", 30, 0);
-  fatal(mapping_mk, stor, &map, "qux", 40, 0);
+  fatal(mapping_mkf, stor, &map, "baz", 30);
+  fatal(mapping_mkf, stor, &map, "qux", 40);
   fatal(value_map_mks, stor, 0, src, &src, "valyria", map, VALUE_MERGE_SET);
 
   // dst : { valyria { baz 30 qux 40 } }
@@ -285,7 +299,6 @@ static xapi merge_test_map_list_add(xunit_test * test)
 
   value * src = 0;
   value * dst = 0;
-  value * val = 0;
   value * list = 0;
   value_store * stor = 0;
   int x = 0;
@@ -293,18 +306,14 @@ static xapi merge_test_map_list_add(xunit_test * test)
   fatal(value_store_create, &stor);
 
   // dst : { foo [ 10 20 ] }
-  fatal(value_float_mk, stor, 0, &val, 10);
-  fatal(value_list_mkv, stor, 0, list, &list, val);
-  fatal(value_float_mk, stor, 0, &val, 20);
-  fatal(value_list_mkv, stor, 0, list, &list, val);
+  fatal(entry_mkf, stor, &list, 10);
+  fatal(entry_mkf, stor, &list, 20);
   fatal(value_map_mks, stor, 0, dst, &dst, "foo", list, 0);
 
   // src : { foo += [ 30 40 ] }
   list = 0;
-  fatal(value_float_mk, stor, 0, &val, 30);
-  fatal(value_list_mkv, stor, 0, list, &list, val);
-  fatal(value_float_mk, stor, 0, &val, 40);
-  fatal(value_list_mkv, stor, 0, list, &list, val);
+  fatal(entry_mkf, stor, &list, 30);
+  fatal(entry_mkf, stor, &list, 40);
   fatal(value_map_mks, stor, 0, src, &src, "foo", list, VALUE_MERGE_ADD);
 
   fatal(value_merge, dst, src);
@@ -327,7 +336,6 @@ static xapi merge_test_map_list_set(xunit_test * test)
 
   value * src = 0;
   value * dst = 0;
-  value * val = 0;
   value * list = 0;
   value_store * stor = 0;
   int x = 0;
@@ -335,18 +343,14 @@ static xapi merge_test_map_list_set(xunit_test * test)
   fatal(value_store_create, &stor);
 
   // dst : { foo [ 10 20 ] }
-  fatal(value_float_mk, stor, 0, &val, 10);
-  fatal(value_list_mkv, stor, 0, list, &list, val);
-  fatal(value_float_mk, stor, 0, &val, 20);
-  fatal(value_list_mkv, stor, 0, list, &list, val);
+  fatal(entry_mkf, stor, &list, 10);
+  fatal(entry_mkf, stor, &list, 20);
   fatal(value_map_mks, stor, 0, dst, &dst, "foo", list, 0);
 
   // src : { foo += [ 30 40 ] }
   list = 0;
-  fatal(value_float_mk, stor, 0, &val, 30);
-  fatal(value_list_mkv, stor, 0, list, &list, val);
-  fatal(value_float_mk, stor, 0, &val, 40);
-  fatal(value_list_mkv, stor, 0, list, &list, val);
+  fatal(entry_mkf, stor, &list, 30);
+  fatal(entry_mkf, stor, &list, 40);
   list->attr = VALUE_MERGE_SET;
   fatal(value_map_mks, stor, 0, src, &src, "foo", list, VALUE_MERGE_SET);
 
@@ -368,22 +372,17 @@ static xapi merge_test_list_scalar(xunit_test * test)
 
   value * src = 0;
   value * dst = 0;
-  value * val = 0;
   value_store * stor = 0;
 
   fatal(value_store_create, &stor);
 
   // dst : [ 10 20 ]
-  fatal(value_float_mk, stor, 0, &val, 10);
-  fatal(value_list_mkv, stor, 0, dst, &dst, val);
-  fatal(value_float_mk, stor, 0, &val, 20);
-  fatal(value_list_mkv, stor, 0, dst, &dst, val);
+  fatal(entry_mkf, stor, &dst, 10);
+  fatal(entry_mkf, stor, &dst, 20);
 
   // src : [ 30 40 ]
-  fatal(value_float_mk, stor, 0, &val, 30);
-  fatal(value_list_mkv, stor, 0, src, &src, val);
-  fatal(value_float_mk, stor, 0, &val, 40);
-  fatal(value_list_mkv, stor, 0, src, &src, val);
+  fatal(entry_mkf, stor, &src, 30);
+  fatal(entry_mkf, stor, &src, 40);
 
   fatal(value_merge, dst, src);
 
@@ -441,6 +440,44 @@ finally:
 coda;
 }
 
+static xapi merge_test_path(xunit_test * test)
+{
+  enter;
+
+  char space[1024];
+
+  value * src = 0;
+  value * dst = 0;
+  value * map = 0;
+  value * list = 0;
+  value_store * stor = 0;
+
+  fatal(value_store_create, &stor);
+
+  // dst : { foo { foo 10 } }
+  fatal(mapping_mkf, stor, &map, "foo", 10);
+  fatal(value_map_mks, stor, 0, dst, &dst, "foo", map, 0);
+
+  // src : { foo [ 10 ] }
+  fatal(entry_mkf, stor, &list, 10);
+  fatal(value_map_mks, stor, 0, src, &src, "foo", list, 0);
+
+  // expected to fail with a particular exit value and kvp for the path
+  xapi exit;
+  if((exit = invoke(value_merge, dst, src)))
+  {
+    xapi_trace_pithy(space, sizeof(space));
+    xapi_calltree_unwind();
+  }
+
+  assert_exit(VALUE_DIFFTYPE, exit);
+  assertf(strstr(space, "path=foo"), "path:foo", "actual trace\n**\n%s\n**\n", space);
+
+finally:
+  fatal(value_store_xfree, stor);
+coda;
+}
+
 //
 // public
 //
@@ -458,6 +495,7 @@ xunit_unit xunit = {
     , (xunit_test[]){{ entry : merge_test_map_list_set }}
     , (xunit_test[]){{ entry : merge_test_list_scalar }}
     , (xunit_test[]){{ entry : merge_test_list_aggregate }}
+    , (xunit_test[]){{ entry : merge_test_path }}
     , 0
   }
 };

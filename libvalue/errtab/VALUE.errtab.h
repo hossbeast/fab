@@ -2,7 +2,7 @@
 #define _VALUE_ERRTAB_H
 #include "xapi.h"
 #define ETABLE_VALUE \
-_E(1, DIFFTYPE, "cant merge values of differing type") \
+_E(1, DIFFTYPE, "cant merge differently typed values") \
 
 #if XAPI_STACKTRACE
 #define VALUE_DIFFTYPE perrtab_VALUE->v[1 - ERRMIN_VALUE].exit

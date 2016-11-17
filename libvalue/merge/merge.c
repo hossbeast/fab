@@ -1,19 +1,21 @@
 /* Copyright (c) 2012-2015 Todd Freed <todd.freed@gmail.com>
 
    This file is part of fab.
-   
+
    fab is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
    the Free Software Foundation, either version 3 of the License, or
    (at your option) any later version.
-   
+
    fab is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
    GNU General Public License for more details.
-   
+
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
+
+#include <stdio.h>
 
 #include "xapi.h"
 #include "valyria/list.h"
@@ -26,13 +28,45 @@
 #include "logger.h"
 #include "narrator.h"
 
-static xapi merge(value * const restrict dst, const value * const restrict src, uint16_t attr);
-static xapi merge(value * const restrict dst, const value * const restrict src, uint16_t attr)
+#include "macros.h"
+
+static xapi merge(
+    value * const restrict dst
+  , const value * const restrict src
+  , uint16_t attr
+  , const char ** restrict parts
+  , size_t partsz
+  , size_t * restrict partsl
+)
+  __attribute__((nonnull));
+
+static xapi merge(
+    value * const restrict dst
+  , const value * const restrict src
+  , uint16_t attr
+  , const char ** restrict parts
+  , size_t partsz
+  , size_t * restrict partsl
+)
 {
   enter;
 
   if(src->type != dst->type)
+  {
+    xapi_fail_intent();
+    xapi_info_addf("types", "%s -> %s", VALUE_TYPE_STRING(dst->type), VALUE_TYPE_STRING(src->type));
+    xapi_info_addf("location"
+      , "[%d,%d - %d,%d]"
+      , dst->loc.f_lin
+      , dst->loc.f_col
+      , dst->loc.l_lin
+      , dst->loc.l_col
+    );
+    if(dst->loc.fname)
+      xapi_info_adds("file", dst->loc.fname);
+
     fail(VALUE_DIFFTYPE);
+  }
 
   else if(dst->type == VALUE_TYPE_MAP)
   {
@@ -65,12 +99,20 @@ static xapi merge(value * const restrict dst, const value * const restrict src, 
           uint16_t dt = ((value*)list_get(dst->vals, x))->type;
           uint16_t st = ((value*)list_get(src->vals, y))->type;
 
-          if((dt & 0xF0) ^ (st & 0xF0))
-            fail(VALUE_DIFFTYPE);
-          else if(dt & 0xF00)
+          if(dt & st & VALUE_TYPE_SCALAR)
+          {
             fatal(list_splice, dst->vals, x, src->vals, y, 1);
+          }
           else
-            fatal(merge, list_get(dst->vals, x), list_get(src->vals, y), src_key->attr);
+          {
+            if(invoke(merge, list_get(dst->vals, x), list_get(src->vals, y), src_key->attr, parts, partsz, partsl))
+            {
+              if(*partsl < partsz)
+                parts[(*partsl)++] = src_key->s->s;
+
+              fail(0);
+            }
+          }
 
           x--;
           y--;
@@ -104,7 +146,28 @@ API xapi value_merge(value * const restrict dst, const value * const restrict sr
 {
   enter;
 
-  fatal(merge, dst, src, 0);
+  char space[128];
+  const char * parts[16];
+  size_t partsl = 0;
 
-  finally : coda;
+  fatal(merge, dst, src, 0, parts, sizeof(parts) / sizeof(parts[0]), &partsl);
+
+finally:
+  if(XAPI_UNWINDING)
+  {
+    char * s = space;
+    size_t sz = sizeof(space);
+    size_t l = 0;
+
+    int x;
+    for(x = partsl - 1; x >= 0; x--)
+    {
+      if(x != partsl - 1)
+        l += znloadf(s + l, sz - l, ".");
+      l += znloadf(s + l, sz - l, "%s", parts[x]);
+    }
+
+    xapi_infos("path", space);
+  }
+coda;
 }
