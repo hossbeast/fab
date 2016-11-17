@@ -94,7 +94,7 @@ static xapi config_parser_test_maps(xunit_test * test)
 
   // parse
   fatal(config_parser_create, &parser);
-  fatal(config_parser_parse, &parser, &store, MMS(config_text), &actual);
+  fatal(config_parser_parse, &parser, &store, MMS(config_text), 0, &actual);
 
   // assert
   value * val = 0;
@@ -140,7 +140,7 @@ static xapi config_parser_test_lists(xunit_test * test)
 
   // parse
   fatal(config_parser_create, &parser);
-  fatal(config_parser_parse, &parser, &store, MMS(config_text), &actual);
+  fatal(config_parser_parse, &parser, &store, MMS(config_text), 0, &actual);
 
   // assert
   value * val = 0;

@@ -31,6 +31,7 @@
 //
 typedef struct yyu_location
 {
+  const char *  fname;  // name of the file
   int     f_lin;  // line where the location begins
   int     f_col;  // column where the location begins
   int     l_lin;  // line where the location ends
@@ -78,6 +79,7 @@ typedef struct yyu_extra
   char            error_str[256];   //  string
   char            tokenstring[256]; //  tokenstring (gramerr only)
 
+  const char *    fname;
   uint64_t        state_logs;       // logging category ids for state transition logging
   uint64_t        token_logs;       // logging category ids for token logging
 
@@ -117,6 +119,7 @@ do                                          \
 {                                           \
   if(N)                                     \
   {                                         \
+    (Cur).fname = YYRHSLOC(Rhs, 1).fname;   \
     (Cur).f_lin = YYRHSLOC(Rhs, 1).f_lin;   \
     (Cur).f_col = YYRHSLOC(Rhs, 1).f_col;   \
     (Cur).l_lin = YYRHSLOC(Rhs, N).l_lin;   \
@@ -128,6 +131,7 @@ do                                          \
   }                                         \
   else                                      \
   {                                         \
+    (Cur).fname = YYRHSLOC(Rhs, 0).fname;   \
     (Cur).f_lin = YYRHSLOC(Rhs, 0).l_lin;   \
     (Cur).l_lin = YYRHSLOC(Rhs, 0).l_lin;   \
     (Cur).f_col = YYRHSLOC(Rhs, 0).l_col;   \

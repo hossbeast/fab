@@ -36,8 +36,9 @@
 #include "config.h"
 #include "config_parser.h"
 #include "errtab/CONFIG.errtab.h"
-#include "logging.h"
 #include "filesystem.h"
+#include "logging.h"
+#include "params.h"
 
 #include "snarf.h"
 #include "strutil.h"
@@ -64,25 +65,26 @@ static xapi __attribute__((nonnull)) parse(
     value_store * stor
   , const char * const restrict text
   , size_t len
+  , const char * restrict fname
   , value ** restrict root
 )
 {
   enter;
 
-  fatal(config_parser_parse, &parser, &stor, text, len, root);
+  fatal(config_parser_parse, &parser, &stor, text, len, fname, root);
 
   if(*root && (*root)->type != VALUE_TYPE_MAP)
-    fail(CONFIG_NOTMAP);
+    fatal(config_throw, CONFIG_NOTMAP, *root, 0);
 
   finally : coda;
 }
 
-static xapi applyw(const char * const restrict text, size_t textl, value_store * const restrict store, value ** restrict dst)
+static xapi applyw(const char * const restrict text, size_t textl, const char * restrict fname, value_store * const restrict store, value ** restrict dst)
 {
   enter;
 
   value * val = 0;
-  fatal(parse, store, text, textl, &val);
+  fatal(parse, store, text, textl, fname, &val);
 
   // merge with the existing config
   if(*dst == 0)
@@ -93,9 +95,9 @@ static xapi applyw(const char * const restrict text, size_t textl, value_store *
   finally : coda;
 }
 
-static xapi applys(const char * const restrict text, value_store * const restrict store, value ** restrict dst)
+static xapi applys(const char * const restrict text, const char * restrict fname, value_store * const restrict store, value ** restrict dst)
 {
-  xproxy(applyw, text, strlen(text), store, dst);
+  xproxy(applyw, text, strlen(text), fname, store, dst);
 }
 
 static xapi validate(value * restrict val, const char * restrict path, uint32_t opts)
@@ -111,7 +113,7 @@ static xapi validate(value * restrict val, const char * restrict path, uint32_t 
     xapi_info_adds("expected", VALUE_TYPE_STRING(type));
     xapi_info_adds("actual", VALUE_TYPE_STRING(val->type));
 
-    fatal(config_invalid, val, path);
+    fatal(config_throw, CONFIG_ILLEGAL, val, path);
   }
   else if(notnull && !val)
   {
@@ -119,7 +121,7 @@ static xapi validate(value * restrict val, const char * restrict path, uint32_t 
     xapi_info_adds("expected", "(any)");
     xapi_info_adds("actual", "(none)");
 
-    fatal(config_invalid, val, path);
+    fatal(config_throw, CONFIG_ILLEGAL, val, path);
   }
 
   finally : coda;
@@ -136,6 +138,38 @@ xapi config_setup()
   fatal(config_parser_create, &parser);
 
   finally : coda;
+}
+
+xapi config_files_apply()
+{
+  enter;
+
+  char * text = 0;
+
+  // reset the staging config
+  fatal(value_store_create, &store_staging);
+  config_staging = 0;
+
+  // apply system-level config
+  fatal(udsnarfs, &text, 0, g_params.projdir_fd, SYSTEM_CONFIG_PATH);
+  if(text)
+    fatal(applys, text, SYSTEM_CONFIG_PATH, store_staging, &config_staging);
+
+  // apply user-level config
+  iwfree(&text);
+  fatal(udsnarfs, &text, 0, g_params.projdir_fd, USER_CONFIG_PATH);
+  if(text)
+    fatal(applys, text, USER_CONFIG_PATH, store_staging, &config_staging);
+
+  // apply project-level config
+  iwfree(&text);
+  fatal(udsnarfs, &text, 0, g_params.projdir_fd, PROJECT_CONFIG_PATH);
+  if(text)
+    fatal(applys, text, PROJECT_CONFIG_PATH, store_staging, &config_staging);
+
+finally:
+  wfree(text);
+coda;
 }
 
 xapi config_cleanup()
@@ -170,42 +204,9 @@ xapi config_apply(const char * const restrict text)
 {
   enter;
 
-  fatal(applys, text, store_staging, &config_staging);
+  fatal(applys, text, 0, store_staging, &config_staging);
 
   finally : coda;
-}
-
-xapi config_load()
-{
-  enter;
-
-  char * text = 0;
-
-  // reset the staging config
-  fatal(value_store_ixfree, &store_staging);
-  fatal(value_store_create, &store_staging);
-  config_staging = 0;
-
-  // apply system-level config
-  fatal(usnarfs, &text, 0, SYSTEM_CONFIG_PATH);
-  if(text)
-    fatal(applys, text, store_staging, &config_staging);
-
-  // apply user-level config
-  iwfree(&text);
-  fatal(usnarfs, &text, 0, USER_CONFIG_PATH);
-  if(text)
-    fatal(applys, text, store_staging, &config_staging);
-
-  // apply project-level config
-  iwfree(&text);
-  fatal(usnarfs, &text, 0, PROJECT_CONFIG_PATH);
-  if(text)
-    fatal(applys, text, store_staging, &config_staging);
-
-finally:
-  wfree(text);
-coda;
 }
 
 xapi config_reconfigure(xapi * res)
@@ -220,6 +221,7 @@ xapi config_reconfigure(xapi * res)
   if(  (*res = invoke(logging_reconfigure, config_staging, ~0))
     || (*res = invoke(filesystem_reconfigure, config_staging, ~0)))
   {
+printf("reconfigure rejected\n");
     if(xapi_exit_errtab(*res) != perrtab_CONFIG)
       fail(0);
 
@@ -237,14 +239,17 @@ xapi config_reconfigure(xapi * res)
     // promote the staging config to active
     fatal(value_store_ixfree, &store_active);
     store_active = store_staging;
+    store_staging = 0;
     g_config = config_staging;
-    fatal(value_store_create, &store_staging);
     config_staging = 0;
-    fatal(config_report);
 
     // apply the new config to subsystems
+    fatal(config_report);
     fatal(logging_reconfigure, g_config, 0);
     fatal(filesystem_reconfigure, g_config, 0);
+
+    // reload the config files and apply to staging
+    fatal(config_files_apply);
   }
 
   finally : coda;
@@ -261,16 +266,20 @@ xapi config_query(const value * restrict base, const char * restrict path, const
   finally : coda;
 }
 
-xapi config_invalid(value * restrict val, const char * restrict path)
+xapi config_throw(xapi error, value * restrict val, const char * restrict path)
 {
   enter;
 
   xapi_fail_intent();
 
-  xapi_info_adds("path", path);
+  if(path)
+    xapi_info_adds("path", path);
 
   if(val)
     xapi_info_addf("location", "[%d,%d - %d,%d]", val->loc.f_lin, val->loc.f_col, val->loc.l_lin, val->loc.l_col);
+
+  if(val->loc.fname)
+    xapi_info_adds("file", val->loc.fname);
 
 #if 0
   if(type)
@@ -284,7 +293,7 @@ xapi config_invalid(value * restrict val, const char * restrict path)
     xapi_info_adds("actual", "(none)");
 #endif
 
-  fail(CONFIG_ILLEGAL);
+  fail(error);
 
   finally : coda;
 }

@@ -30,6 +30,7 @@
 
 static void __attribute__((nonnull)) location_copy(value_location * const restrict dst, const yyu_location * const restrict src)
 {
+  dst->fname = src->fname;
   dst->f_lin = src->f_lin;
   dst->f_col = src->f_col;
   dst->l_lin = src->l_lin;

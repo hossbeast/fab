@@ -23,8 +23,8 @@
 
 #include "xapi.h"
 
-struct pstring;   // libvalyria/pstring
-struct list;      // libvalyria/list
+struct pstring;       // libvalyria/pstring
+struct list;          // libvalyria/list
 struct yyu_location;
 struct value_store;
 struct narrator;
@@ -65,6 +65,8 @@ VALUE_ATTR_TABLE(0, 0)
 };
 
 typedef struct value_location {
+  const char * fname;
+
   int f_lin;
   int f_col;
   int l_lin;

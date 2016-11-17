@@ -187,7 +187,7 @@ xapi filesystem_reconfigure(const value * restrict config, uint32_t dry)
         xapi_fail_intent();
         xapi_info_adds("expected", "{stat, content, notify, always, never}");
         xapi_info_adds("actual", val->s->s);
-        fatal(config_invalid, val, config_cursor_path(&cursor));
+        fatal(config_throw, CONFIG_INVALID, val, config_cursor_path(&cursor));
       }
 
       if(!dry)

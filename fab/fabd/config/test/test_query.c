@@ -75,7 +75,7 @@ static xapi config_test_entry(config_test * test)
   while(*config_text)
   {
     value * val;
-    fatal(config_parser_parse, &parser, &store, MMS(*config_text), &val);
+    fatal(config_parser_parse, &parser, &store, MMS(*config_text), 0, &val);
     if(root == 0)
       root = val;
     else
@@ -90,7 +90,7 @@ static xapi config_test_entry(config_test * test)
   {
     value * expected = 0;
     if(test->queries[x].value)
-      fatal(config_parser_parse, &parser, &store, MMS(test->queries[x].value), &expected);
+      fatal(config_parser_parse, &parser, &store, MMS(test->queries[x].value), 0, &expected);
 
     value * actual = 0;
     fatal(config_query, root, "(path)", test->queries[x].query, 0, &actual);
@@ -261,6 +261,19 @@ xunit_unit xunit = {
               { query : "foo.qux.0", value : "1" }
             , { query : "foo.qux.1", value : "2" }
             , { query : "foo.qux.2", value : "3" }
+            , { }
+        }
+      }}
+    , (config_test[]){{
+          config_texts: (char *[]) {
+              "foo.bar { A true B false }"
+            , "foo.baz.qux false"
+            , 0
+          }
+        , queries : (typeof(*((config_test*)0)->queries)[]) {
+              { query : "foo.bar.A", value : "true" }
+            , { query : "foo.bar.B", value : "false" }
+            , { query : "foo.baz.qux", value : "false" }
             , { }
         }
       }}

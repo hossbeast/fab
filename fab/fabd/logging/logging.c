@@ -29,6 +29,7 @@
 #include "logging.h"
 #include "config.h"
 #include "config_cursor.h"
+#include "errtab/CONFIG.errtab.h"
 
 #include "macros.h"
 
@@ -100,7 +101,7 @@ xapi logging_reconfigure(const value * restrict config, uint32_t dry)
       fatal(config_query, list, config_cursor_path(&cursor), config_cursor_query(&cursor), VALUE_TYPE_STRING & dry, &val);
 
       if(dry && !logger_filter_validates(val->s->s))
-        fatal(config_invalid, val, config_cursor_path(&cursor));
+        fatal(config_throw, CONFIG_INVALID, val, config_cursor_path(&cursor));
 
       if(!dry)
         fatal(logger_filter_pushs, streams[0].id, val->s->s);
@@ -121,7 +122,7 @@ xapi logging_reconfigure(const value * restrict config, uint32_t dry)
       fatal(config_query, list, config_cursor_path(&cursor), config_cursor_query(&cursor), VALUE_TYPE_STRING & dry, &val);
 
       if(dry && !logger_filter_validates(val->s->s))
-        fatal(config_invalid, val, config_cursor_path(&cursor));
+        fatal(config_throw, CONFIG_INVALID, val, config_cursor_path(&cursor));
 
       if(!dry)
         fatal(logger_filter_pushs, streams[1].id, val->s->s);

@@ -72,6 +72,7 @@ xapi config_parser_parse(
   , struct value_store ** restrict stor
   , const char * const restrict buf
   , size_t len
+  , const char * restrict fname
   , struct value ** restrict root
 )
   __attribute__((nonnull(3)));

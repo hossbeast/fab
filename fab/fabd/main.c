@@ -177,7 +177,7 @@ int main(int argc, char** argv, char ** envp)
   fatal(fab_server_create, &server);
 
   // load the initial config
-  fatal(config_load);
+  fatal(config_files_apply);
 
 #if DEVEL
   #if __linux__

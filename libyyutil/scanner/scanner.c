@@ -237,6 +237,7 @@ API xapi yyu_lexify(const int token, void * const lval, const size_t lvalsz, yyu
 {
   enter;
 
+  lloc->fname = xtra->fname;
   if(isnl)
     yyu_locreset(lloc, xtra, del);
   else

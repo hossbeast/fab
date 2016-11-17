@@ -118,6 +118,7 @@ xapi config_parser_parse(
   , value_store ** restrict stor
   , const char * const restrict text
   , size_t len
+  , const char * restrict fname
   , value ** restrict root
 )
 {
@@ -143,6 +144,7 @@ xapi config_parser_parse(
       .tokname      = tokenname
     , .statename    = statename
     , .lvalstr      = lvalstr
+    , .fname        = fname
 #if DEBUG || DEVEL || XUNIT
     , .state_logs   = L_CONFIG
     , .token_logs   = L_CONFIG
@@ -164,17 +166,6 @@ xapi config_parser_parse(
 
   if(pp.root)
   {
-#if 0
-    int token;
-    fatal(log_start, 0, &token);
-    fatal(value_say, pp.root, log_narrator(&token));
-    fatal(log_finish, &token);
-#endif
-
-    // create copy of the path
-//    fatal(ixstrdup, &pp.config->canpath, path);
-
-    // return the config
     if(root)
       *root = pp.root;
 

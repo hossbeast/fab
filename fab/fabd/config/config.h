@@ -53,12 +53,12 @@ xapi config_cleanup(void);
 //
 xapi config_report(void);
 
-/// config_load
+/// config_files_apply
 //
 // SUMMARY
-//  reset the staging config, reload the config files and apply them to the staging config
+//  reload the config files and apply them to the staging config
 //
-xapi config_load(void);
+xapi config_files_apply(void);
 
 /// config_apply
 //
@@ -98,17 +98,18 @@ xapi config_reconfigure(xapi * restrict res)
 xapi config_query(const struct value * restrict base, const char * restrict path, const char * restrict query, uint32_t opts, struct value ** const restrict val)
   __attribute__((nonnull));
 
-/// config_invalid
+/// config_throw
 //
 // SUMMARY
 //  fail with CONFIG_ILLEGAL
 //
 // PARAMETERS
-//  val    - invalid config object
-//  path   - path from the root of the config tree
+//  error  - error, CONFIG_*
+//  val    - throw config object
+//  [path] - path from the root of the config tree
 //
-xapi config_invalid(struct value * restrict val, const char * restrict path)
-  __attribute__((nonnull));
+xapi config_throw(xapi error, struct value * restrict val, const char * restrict path)
+  __attribute__((nonnull(2)));
 
 #if 0
 /// config_list_get

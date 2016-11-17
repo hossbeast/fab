@@ -34,7 +34,6 @@ typedef struct config_xtra
   };
 
   struct value_store * stor; // value store
-
   struct value *      root; // (returns) root of the parsed tree
 } config_xtra;
 
