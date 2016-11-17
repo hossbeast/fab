@@ -318,6 +318,26 @@ finally:
 coda;
 }
 
+static xapi query_test_list_empty(xunit_test * test)
+{
+  enter;
+
+  value * list = 0;
+  value_store * stor = 0;
+
+  fatal(value_store_create, &stor);
+
+  // list [ ]
+  fatal(value_list_mkv, stor, 0, list, &list, 0);
+
+  // assert
+  assertf(list->els->l == 0, "%d", "%d", 0, list->els->l);
+
+finally:
+  fatal(value_store_xfree, stor);
+coda;
+}
+
 //
 // public
 //
@@ -331,6 +351,7 @@ xunit_unit xunit = {
     , (xunit_test[]){{ entry : query_test_map_nomatch }}
     , (xunit_test[]){{ entry : query_test_list }}
     , (xunit_test[]){{ entry : query_test_list_nomatch }}
+    , (xunit_test[]){{ entry : query_test_list_empty }}
     , 0
   }
 };

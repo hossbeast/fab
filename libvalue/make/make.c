@@ -297,7 +297,8 @@ API xapi value_list_mkv(
   if(loc)
     location_copy(&e->loc, loc);
 
-  fatal(list_push, e->els, el);
+  if(el)
+    fatal(list_push, e->els, el);
 
   *rv = e;
 

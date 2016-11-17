@@ -201,8 +201,11 @@ xapi value_map_mks(
 //  stor  - value storage
 //  [loc] - value location
 //  [e]   - existing value to append to, if any
-//  rv    - (returns) value containing the list
-//  el    - value to insert
+//  rv    - (returns) list value
+//  [el]  - value to insert
+//
+// REMARKS
+//  list size is unchanged if el is null
 //
 xapi value_list_mkv(
     struct value_store * const restrict stor
@@ -211,6 +214,6 @@ xapi value_list_mkv(
   , struct value ** rv
   , struct value * el
 )
-  __attribute__((nonnull(1, 4, 5)));
+  __attribute__((nonnull(1, 4)));
 
 #endif

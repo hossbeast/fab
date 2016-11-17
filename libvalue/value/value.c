@@ -89,7 +89,11 @@ static xapi __attribute__((nonnull)) say_value_canon(const value * const restric
       sayf("\n%*s", (level + 1) * 2, "");
       fatal(say_value_canon, list_get(val->els, x), level + 1, N);
     }
-    sayf("\n%*s]", level * 2, "");
+    if(val->els->l)
+      sayf("\n%*s", level * 2, "");
+    else
+      says(" ");
+    says("]");
   }
 
   else if(val->type == VALUE_TYPE_MAP)
@@ -102,7 +106,11 @@ static xapi __attribute__((nonnull)) say_value_canon(const value * const restric
       sayf(" ");
       fatal(say_value_canon, list_get(val->vals, x), level + 1, N);
     }
-    sayf("\n%*s}", level * 2, "");
+    if(val->keys->l)
+      sayf("\n%*s", level * 2, "");
+    else
+      says(" ");
+    says("}");
   }
 
   else if(val->type == VALUE_TYPE_STRING)
