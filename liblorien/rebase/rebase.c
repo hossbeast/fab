@@ -30,7 +30,7 @@
 #include "rebase.internal.h"
 
 #include "strutil.h"
-#include "macros.h"
+#include "zbuffer.h"
 
 
 //

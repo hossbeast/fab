@@ -33,7 +33,7 @@
 #include "canon.internal.h"
 
 #include "strutil.h"
-#include "macros.h"
+#include "zbuffer.h"
 
 //
 // static
@@ -131,7 +131,7 @@ static void add(size_t * z, char * const resolved, size_t sz, char * fmt, ...)
 
   va_list va;
   va_start(va, fmt);
-  (*z) += znvloadf(resolved + (*z), sz - (*z), fmt, va);
+  (*z) += znloadvf(resolved + (*z), sz - (*z), fmt, va);
   va_end(va);
 
   resolved[(*z)] = 0;

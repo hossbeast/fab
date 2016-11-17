@@ -25,7 +25,7 @@
 #include "internal.h"
 #include "fixed.internal.h"
 
-#include "macros.h"
+#include "zbuffer.h"
 
 #define restrict __restrict
 
@@ -37,7 +37,7 @@ xapi fixed_vsayf(narrator_fixed * const restrict n, const char * const restrict 
 {
   enter;
 
-  n->l += znvloadf(n->s + n->l, n->a - n->l, fmt, va);
+  n->l += znloadvf(n->s + n->l, n->a - n->l, fmt, va);
 
   finally : coda;
 }

@@ -32,7 +32,7 @@
 #include "config_cursor.h"
 #include "errtab/CONFIG.errtab.h"
 
-#include "macros.h"
+#include "zbuffer.h"
 
 #define restrict __restrict
 

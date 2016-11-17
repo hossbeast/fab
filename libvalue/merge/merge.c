@@ -28,7 +28,7 @@
 #include "logger.h"
 #include "narrator.h"
 
-#include "macros.h"
+#include "zbuffer.h"
 
 static xapi merge(
     value * const restrict dst

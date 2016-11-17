@@ -28,7 +28,7 @@
 #include "frame.internal.h"
 #include "info.internal.h"
 
-#include "macros.h"
+#include "zbuffer.h"
 #include "strutil.h"
 
 #define restrict __restrict
