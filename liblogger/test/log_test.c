@@ -88,7 +88,7 @@ static xapi test_log()
   // assert
   char * expected = "foo";
   const char * actual = narrator_fixed_buffer(N);
-  assertf(strcmp(expected, actual) == 0, "%s", "%s", expected, actual);
+  assert_eq_s(expected, actual);
 
   finally : coda;
 }
@@ -112,7 +112,7 @@ static xapi test_log_start()
   // assert
   char * expected = "foo";
   const char * actual = narrator_fixed_buffer(N);
-  assertf(strcmp(expected, actual) == 0, "%s", "%s", expected, actual);
+  assert_eq_s(expected, actual);
 
 finally:
   fatal(log_finish, &token);

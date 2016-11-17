@@ -30,6 +30,7 @@
 #include "valyria/list.h"
 
 #include "test_util.h"
+#include "macros.h"
 
 static logger_category * logs_test = (logger_category[]) {
     { name : "A" }

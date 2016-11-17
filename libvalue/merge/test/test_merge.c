@@ -505,7 +505,7 @@ static xapi merge_test_difftype_aggregates(xunit_test * test)
   }
 
   assert_exit(VALUE_DIFFTYPE, exit);
-  assert_strs("foo.bar", space);
+  assert_eq_s("foo.bar", space);
 
 finally:
   fatal(value_store_xfree, stor);
@@ -543,7 +543,7 @@ static xapi merge_test_difftype_mixed(xunit_test * test)
   }
 
   assert_exit(VALUE_DIFFTYPE, exit);
-  assert_strs("foo", space);
+  assert_eq_s("foo", space);
 
 finally:
   fatal(value_store_xfree, stor);

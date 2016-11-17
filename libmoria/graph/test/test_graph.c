@@ -165,7 +165,7 @@ static xapi graph_test_entry(graph_test * test)
 
     // appropriate error message
     if(test->cycle_path)
-      assert_strs(test->cycle_path, space);
+      assert_eq_s(test->cycle_path, space);
   }
 
 finally:

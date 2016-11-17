@@ -53,7 +53,7 @@ static xapi test_basic()
 
   assertf(strcmp(N->fixed.s, expected) == 0, "%s", "%s", expected, N->fixed.s);
   assertf(N->fixed.l == expectedl, "written %zu", "written %zu", expectedl, N->fixed.l);
-  assert(N->fixed.s == narrator_fixed_buffer(N));
+  assertf(N->fixed.s == narrator_fixed_buffer(N), "%p", "%p", narrator_fixed_buffer(N), N->fixed.s);
 
 finally:
   fatal(narrator_xfree, N);
@@ -73,7 +73,7 @@ static xapi test_constrained()
 
   assertf(strcmp(N->fixed.s, expected) == 0, "%s", "%s", expected, N->fixed.s);
   assertf(N->fixed.l == expectedl, "written %zu", "written %zu", expectedl, N->fixed.l);
-  assert(N->fixed.s == narrator_fixed_buffer(N));
+  assertf(N->fixed.s == narrator_fixed_buffer(N), "%p", "%p", narrator_fixed_buffer(N), N->fixed.s);
 
 finally:
   fatal(narrator_xfree, N);

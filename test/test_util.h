@@ -28,6 +28,9 @@ SUMMARY
 
 */
 
+#include <stdio.h>
+#include <string.h>
+
 #include "xapi.h"
 #include "xapi/exit.h"
 #include "xapi/errtab.h"
@@ -58,14 +61,6 @@ void ufails_info(const char * const restrict exp, const char * const restrict ac
     ufail();                                      \
   } while(0)
 
-#define assert(bool)      \
-  do {                    \
-    if(!(bool))           \
-    {                     \
-      ufail();            \
-    }                     \
-  } while(0)
-
 #define asserts(bool, exp, act, ...)          \
   do {                                        \
     if(!(bool))                               \
@@ -81,6 +76,12 @@ void ufails_info(const char * const restrict exp, const char * const restrict ac
       ufailf(expfmt, actfmt, ##__VA_ARGS__);  \
     }                                         \
   } while(0)
+
+#define assert_eq_d(exp, act)                 \
+  assertf(act == exp, "%d", "%d", exp, act)
+
+#define assert_eq_s(exp, act, ...)            \
+  asserts(strcmp(act, exp) == 0, exp, act)
 
 #define assert_exit(expected, actual)                                 \
   assertf(                                                            \

@@ -115,12 +115,10 @@ extern __thread uint32_t xunit_assertions_failed;
     , actual                                  \
   )
 
-/// assert_str
-//
-// SUMMARY
-//  special-purpose assert for strings
-//
-#define assert_strs(exp, act, ...)            \
+#define assert_eq_d(exp, act)                 \
+  assertf(act == exp, "%d", "%d", exp, act)
+
+#define assert_eq_s(exp, act, ...)            \
   asserts(strcmp(act, exp) == 0, exp, act)
 
 #endif
