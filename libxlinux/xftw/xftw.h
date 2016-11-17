@@ -19,9 +19,12 @@
 #define _XFTW_H
 
 #include <ftw.h>
-struct FTW;
-
 #include "xapi.h"
+
+struct FTW;
+struct stat;
+
+#define restrict __restrict
 
 /// xftw
 //
@@ -31,7 +34,17 @@ struct FTW;
 // CALLBACK
 //  xnftw uses an internal callback which is passed to nftw. That callback fatal-invokes the xnftw callback
 //
-xapi xnftw(const char * dirpath, xapi (*fn)(const char * fpath, const struct stat * sb, int typeflag, struct FTW * ftwbuf), int nopenfd, int flags);
+// REMARKS
+//  this function uses static storage and is therefore not threadsafe
+//
+xapi xnftw(
+    const char * restrict dirpath
+  , xapi (* xfn)(const char * fpath, const struct stat * sb, int typeflag, struct FTW * ftwbuf, void * arg)
+  , int nopenfd
+  , int flags
+  , void * arg
+)
+  __attribute__((nonnull));
 
 /// xnftw_nth
 //
@@ -41,6 +54,18 @@ xapi xnftw(const char * dirpath, xapi (*fn)(const char * fpath, const struct sta
 // CALLBACK
 //  as for xnftw
 //
-xapi xnftw_nth(const char * dirpath, xapi (*fn)(const char * fpath, const struct stat * sb, int typeflag, struct FTW * ftwbuf), int nopenfd, int flags, int level);
+// REMARKS
+//  this function uses static storage and is therefore not threadsafe
+//
+xapi xnftw_nth(
+    const char * restrict dirpath
+  , xapi (* xfn)(const char * fpath, const struct stat * sb, int typeflag, struct FTW * ftwbuf, void * arg)
+  , int nopenfd
+  , int flags
+  , int level
+  , void * arg
+)
+  __attribute__((nonnull));
 
+#undef restrict
 #endif

@@ -30,6 +30,40 @@
 #include "internal.h"
 #include "rmdirp.h"
 
+struct context
+{
+  int rmself;
+};
+
+static xapi rmdirp_fn(const char * fpath, const struct stat * sb, int typeflag, struct FTW * ftwbuf, void * arg)
+{
+  enter;
+
+  struct context * ctx = arg;
+
+  if(typeflag == FTW_F || typeflag == FTW_SL)
+  {
+    fatal(xunlinks, fpath);
+  }
+  else if(typeflag == FTW_DP)
+  {
+    if(ftwbuf->level > 0 || ctx->rmself)
+    {
+      fatal(xrmdir, fpath);
+    }
+  }
+  else
+  {
+    // WTF
+  }
+
+finally:
+  xapi_infos("path", fpath);
+coda;
+};
+
+
+
 //
 // api
 //
@@ -38,32 +72,10 @@ API xapi rmdirp(const char * const dirpath, int rmself)
 {
   enter;
 
-  xapi fn(const char * fpath, const struct stat * sb, int typeflag, struct FTW * ftwbuf)
-  {
-    enter;
+  struct context ctx = { 0 };
+  ctx.rmself = rmself;
 
-    if(typeflag == FTW_F || typeflag == FTW_SL)
-    {
-      fatal(xunlinks, fpath);
-    }
-    else if(typeflag == FTW_DP)
-    {
-      if(ftwbuf->level > 0 || rmself)
-      {
-        fatal(xrmdir, fpath);
-      }
-    }
-    else
-    {
-      // WTF
-    }
-
-  finally:
-    xapi_infos("path", fpath);
-  coda;
-  };
-
-  fatal(xnftw, dirpath, fn, 32, FTW_DEPTH | FTW_PHYS);
+  fatal(xnftw, dirpath, rmdirp_fn, 32, FTW_DEPTH | FTW_PHYS, &ctx);
 
   finally : coda;
 }

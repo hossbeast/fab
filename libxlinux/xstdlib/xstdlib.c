@@ -26,6 +26,43 @@
 
 #include "fmt.internal.h"
 
+//
+// static
+//
+
+struct xqsort_context
+{
+  xapi (*xcompar)(const void *, const void *, void *, int *);
+  void * arg;
+  int hasfailed;
+};
+
+static int xqsort_compar(const void * A, const void * B, void * arg)
+{
+  enter_nochecks;
+
+  struct xqsort_context * ctx = arg;
+
+  int r = 0;
+  if(!ctx->hasfailed)
+    fatal(ctx->xcompar, A, B, ctx->arg, &r);
+
+  int R = 0;
+  finally : conclude(&R);
+
+  if(R)
+  {
+    ctx->hasfailed = 1;
+    r = 0;
+  }
+
+  return r;
+};
+
+//
+// api
+//
+
 API xapi xmalloc(void* target, size_t size)
 {
   enter;
@@ -119,31 +156,13 @@ API xapi xqsort_r(void * base, size_t nmemb, size_t size, xapi (*xcompar)(const 
 {
   enter;
 
-  int hasfailed = 0;
+  struct xqsort_context ctx = { 0 };
+  ctx.xcompar = xcompar;
+  ctx.arg = arg;
 
-  int compar(const void * A, const void * B, void * T)
-  {
-    enter_nochecks;
+  qsort_r(base, nmemb, size, xqsort_compar, &ctx);
 
-    int r = 0;
-    if(!hasfailed)
-      fatal(xcompar, A, B, T, &r);
-
-    int R = 0;
-    finally : conclude(&R);
-
-    if(R)
-    {
-      hasfailed = 1;
-      r = 0;
-    }
-
-    return r;
-  };
-
-  qsort_r(base, nmemb, size, compar, arg);
-
-  if(hasfailed)
+  if(ctx.hasfailed)
     fail(0);
 
   finally : coda;

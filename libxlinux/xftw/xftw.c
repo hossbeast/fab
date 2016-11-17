@@ -15,84 +15,112 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
+#include <ftw.h>
 #include <errno.h>
 
 #include "internal.h"
 #include "xftw/xftw.h"
 #include "errtab/XLINUX.errtab.h"
 
-API xapi xnftw(const char *dirpath, xapi (*xfn) (const char *fpath, const struct stat *sb, int typeflag, struct FTW *ftwbuf), int nopenfd, int flags)
+//
+// static
+//
+
+struct {
+  xapi (* xfn)(const char *fpath, const struct stat *sb, int typeflag, struct FTW *ftwbuf, void * arg);
+  void * arg;
+} xnftw_context;
+
+static int xnftw_callback(const char *fpath, const struct stat *sb, int typeflag, struct FTW *ftwbuf)
 {
   enter;
 
-  int callback(const char *fpath, const struct stat *sb, int typeflag, struct FTW *ftwbuf)
+  fatal(xnftw_context.xfn, fpath, sb, typeflag, ftwbuf, xnftw_context.arg);
+
+  int R = 0;
+  finally : conclude(&R);
+
+  if(R == 0)
+    return FTW_CONTINUE;
+
+  return FTW_STOP;
+};
+
+struct {
+  xapi (* xfn)(const char *fpath, const struct stat *sb, int typeflag, struct FTW *ftwbuf, void * arg);
+  void * arg;
+  int level;
+} xnftw_nth_context;
+
+static int xnftw_nth_callback(const char *fpath, const struct stat *sb, int typeflag, struct FTW *ftwbuf)
+{
+  enter_nochecks;
+
+  if(ftwbuf->level == xnftw_nth_context.level)
+    fatal(xnftw_nth_context.xfn, fpath, sb, typeflag, ftwbuf, xnftw_nth_context.arg);
+
+  xapi R;
+  finally : conclude(&R);
+
+  if(R == 0)
   {
-    enter;
-
-    fatal(xfn, fpath, sb, typeflag, ftwbuf);
-
-    int R = 0;
-    finally : conclude(&R);
-
-    if(R == 0)
+    if(ftwbuf->level == xnftw_nth_context.level)
+      return FTW_SKIP_SUBTREE;  // process only nth-level files
+    else
       return FTW_CONTINUE;
+  }
 
-    return FTW_STOP;
-  };
+  return FTW_STOP;
+};
+
+//
+// api
+//
+
+API xapi xnftw(
+    const char * restrict dirpath
+  , xapi (* xfn)(const char *fpath, const struct stat *sb, int typeflag, struct FTW *ftwbuf, void * arg)
+  , int nopenfd
+  , int flags
+  , void * arg
+)
+{
+  enter;
+
+  xnftw_context.xfn = xfn;
+  xnftw_context.arg = arg;
 
   // depth-first
-  if(nftw(dirpath, callback, nopenfd, flags | FTW_ACTIONRETVAL) != 0)
+  if(nftw(dirpath, xnftw_callback, nopenfd, flags | FTW_ACTIONRETVAL) != 0)
   {
     fail(0);  // propagate error raised by callback
   }
-  /*
-  else
-  {
-    fail(XLINUX_FTWERROR);  // internal-to-ftw error
-  }
-  */
   
 finally:
   xapi_infof("path", "%s", dirpath);
 coda;
 }
 
-API xapi xnftw_nth(const char *dirpath, xapi (*xfn) (const char *fpath, const struct stat *sb, int typeflag, struct FTW *ftwbuf), int nopenfd, int flags, int level)
+API xapi xnftw_nth(
+    const char * restrict dirpath
+  , xapi (* xfn)(const char *fpath, const struct stat *sb, int typeflag, struct FTW *ftwbuf, void * arg)
+  , int nopenfd
+  , int flags
+  , int level
+  , void * arg
+)
 {
   enter;
 
-  int callback(const char *fpath, const struct stat *sb, int typeflag, struct FTW *ftwbuf)
-  {
-    enter_nochecks;
-
-    if(ftwbuf->level == level)
-      fatal(xfn, fpath, sb, typeflag, ftwbuf);
-
-    xapi R;
-    finally : conclude(&R);
-
-    if(R == 0)
-    {
-      if(ftwbuf->level == level)
-        return FTW_SKIP_SUBTREE;  // process only nth-level files
-      else
-        return FTW_CONTINUE;
-    }
-
-    return FTW_STOP;
-  };
+  xnftw_nth_context.xfn = xfn;
+  xnftw_nth_context.arg = arg;
+  xnftw_nth_context.level = level;
 
   // depth-first
-  if(nftw(dirpath, callback, nopenfd, flags | FTW_ACTIONRETVAL) != 0)
+  if(nftw(dirpath, xnftw_nth_callback, nopenfd, flags | FTW_ACTIONRETVAL) != 0)
   {
     fail(0);  // user callback raised an error
   }
-  /*
-  else
-  {
-    fail(XLINUX_FTWERROR);  // internal-to-ftw error
-  }
-  */
   
 finally:
   xapi_infof("path", "%s", dirpath);

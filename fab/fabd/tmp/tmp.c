@@ -32,6 +32,7 @@
 #include "tmp.h"
 #include "logging.h"
 
+#include "parseint.h"
 #include "macros.h"
 
 /*
@@ -39,6 +40,59 @@
 ** directories for related processes are (also) deleted on another schedule
 */
 #define EXPIRATION_POLICY (60 * 60 * 24)    // 24 hours
+
+struct context
+{
+  pid_t * pids;
+  size_t pidsl;
+};
+
+static xapi fn(const char* fpath, const struct stat * sb, int typeflag, struct FTW * ftwbuf, void * arg)
+{
+  enter;
+
+  struct context * ctx = arg;
+
+  // unexpected file, skip
+  if(typeflag != FTW_D)
+    goto XAPI_FINALIZE;
+
+  // unexpected directory name, skip
+  pid_t pid = 0;
+  if(parseint(fpath + ftwbuf->base, SCNd32, 0, INT32_MAX, 1, 10, &pid, 0))
+    goto XAPI_FINALIZE;
+
+  // still executing, skip
+  if(kill(pid, 0))
+    goto XAPI_FINALIZE;
+
+  int x;
+  for(x = 0; x < ctx->pidsl; x++)
+  {
+    if(pid == ctx->pids[x])
+      break;
+  }
+
+  int r = 1;
+  if(x == ctx->pidsl)  // not in pids
+  {
+    // check stamp file
+    struct stat stb;
+    fatal(uxstatf, &r, &stb, "%s/%s", fpath, "stamp");
+
+    // directory does not contain a stamp file, or the stamp file is older than the expiration policy
+    if(r == 0 && ((time(0) - stb.st_atim.tv_sec) > EXPIRATION_POLICY))
+      r = 1;
+  }
+
+  // directory is for del, does not contain a stamp file, or the stamp file is older than the expiration policy
+  if(r)
+    fatal(rmdirp, fpath, 1);
+
+finally :
+  xapi_infof("path", "%s", fpath);
+coda;
+};
 
 //
 // public
@@ -48,63 +102,12 @@ xapi tmp_cleanup(pid_t * pids, size_t pidsl)
 {
   enter;
 
-  char space[512];
+  struct context ctx = { 0 };
+  ctx.pids = pids;
+  ctx.pidsl = pidsl;
 
-  time_t now = time(0);
-
-  //
-  // TMPDIR/pid
-  //
   fatal(mkdirps, S_IRWXU | S_IRWXG | S_IRWXO, XQUOTE(FABTMPDIR) "/pid");
-
-  // cleanup the tmp dir
-  xapi fn(const char* fpath, const struct stat * sb, int typeflag, struct FTW * ftwbuf)
-  {
-    enter;
-
-    if(typeflag != FTW_D)
-      logf(L_WARN | L_TMP, "not a directory %s", fpath);
-
-    pid_t pid = 0;
-    int n = 0;
-    if(sscanf(fpath + ftwbuf->base, "%d%n", &pid, &n) != 1 || (ftwbuf->base + n) != strlen(fpath))
-      logf(L_WARN | L_TMP, "expected pid, actual %s", fpath);
-
-    // not presently executing
-    if(kill(pid, 0) == 0)
-    {
-      int r = 1;
-      int x;
-      for(x = 0; x < pidsl; x++)
-      {
-        if(pid == pids[x])
-          break;
-      }
-
-      if(x == pidsl)  // not in pids
-      {
-        // check stamp file
-        snprintf(space, sizeof(space), "%s/%s", fpath, "stamp");
-
-        struct stat stb;
-        fatal(uxstats, &r, &stb, space);
-
-        // directory does not contain a stamp file, or the stamp file is older than the expiration policy
-        if(r == 0 && ((now - stb.st_atim.tv_sec) > EXPIRATION_POLICY))
-          r = 1;
-      }
-
-      // directory is for del, does not contain a stamp file, or the stamp file is older than the expiration policy
-      if(r)
-        fatal(rmdirp, fpath, 1);
-    }
-
-  finally :
-    xapi_infof("path", "%s", fpath);
-  coda;
-  };
-
-  fatal(xnftw_nth, XQUOTE(FABTMPDIR) "/pid", fn, 32, 0, 1);
+  fatal(xnftw_nth, XQUOTE(FABTMPDIR) "/pid", fn, 32, 0, 1, &ctx);
 
   finally : coda;
 }
