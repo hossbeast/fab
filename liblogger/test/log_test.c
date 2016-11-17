@@ -15,7 +15,7 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#include <stdio.h>
+#include <string.h>
 
 #include "xapi.h"
 #include "xapi/trace.h"
@@ -30,6 +30,7 @@
 #include "log.internal.h"
 
 #include "test_util.h"
+#include "macros.h"
 
 narrator * N;
 

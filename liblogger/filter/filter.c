@@ -177,7 +177,7 @@ int filter_expr_parse(const char * const restrict expr, size_t exprl, filter * f
   int y = 0;
   size_t z = 0;
 
-  for(x = y; x < exprl; x = y)
+  for(x = 0; x < exprl; x = y)
   {
     while(x < exprl && (expr[x] == ' ' || expr[x] == '\t'))
       x++;

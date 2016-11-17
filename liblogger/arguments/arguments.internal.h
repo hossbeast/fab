@@ -18,6 +18,8 @@
 #ifndef _LOGGER_ARGUMENTS_INTERNAL_H
 #define _LOGGER_ARGUMENTS_INTERNAL_H
 
+#include <sys/types.h>
+
 #include "xapi.h"
 
 #include "arguments.h"
@@ -35,5 +37,18 @@ void arguments_teardown(void);
 //  apply logger cmdline arguments
 //
 xapi arguments_finalize(void);
+
+/// arguments_process
+//
+// SUMMARY
+//  create g_argv from cmdline arguments
+//
+// PARAMETERS
+//  argvs   - string of arguments with elements delimited by null bytes
+//  argvsl  - size of argvs
+//  binaryx - index in argvs of the executable name, or -1
+//  interpx - index in argvs of the interpreter script, or -1
+//
+xapi arguments_process(const char * restrict argvs, size_t argvsl, int binaryx, int interpx);
 
 #endif

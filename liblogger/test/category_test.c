@@ -28,7 +28,6 @@
 #include "LOGGER.errtab.h"
 
 #include "test_util.h"
-
 #include "macros.h"
 
 /// assert_ascending
@@ -436,8 +435,8 @@ int main()
       if(xapi_exit_errtab(exit) != perrtab_LOGGER)
         fail(0);
 
-      // print the stacktrace to stdout
-      xapi_backtrace_to(1);
+      if(exit != tests[x].expected)
+        xapi_backtrace_to(1);
       xapi_calltree_unwind();
     }
 

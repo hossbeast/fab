@@ -25,6 +25,7 @@
 #include "xlinux/xfcntl.h"
 #include "xlinux/xstdlib.h"
 #include "xlinux/xunistd.h"
+#include "xlinux/xstring.h"
 
 #include "internal.h"
 #include "arguments.internal.h"
@@ -32,20 +33,61 @@
 #include "logging.internal.h"
 
 #include "snarf.h"
+#include "zbuffer.h"
 
 #define restrict __restrict
 
-APIDATA char **       g_argv;
-APIDATA int           g_argc;
-APIDATA char *        g_argvs;
-APIDATA size_t        g_argvsl;
 APIDATA char *        g_binary;
 APIDATA char *        g_interpreter;
+APIDATA char **       g_argv;
+APIDATA size_t        g_argc;
+APIDATA char *        g_argvs;
+APIDATA size_t        g_argvsl;
 APIDATA char **       g_logv;
-APIDATA static size_t g_logva;
-APIDATA int           g_logc;
+APIDATA size_t        g_logc;
 APIDATA char *        g_logvs;
 APIDATA size_t        g_logvsl;
+APIDATA char **       g_ulogv;
+APIDATA size_t        g_ulogc;
+APIDATA char *        g_ulogvs;
+APIDATA size_t        g_ulogvsl;
+
+/// list_finalize
+//
+// SUMMARY
+//  complete setup of an arguments list
+//
+// PARAMETERS
+//  list - list
+//  len  - elements in list
+//  vs   - list, joined by single spaces
+//  vsl  - (returns) length of vs
+//
+static void list_finalize(char ** list, size_t * len, char * vs, size_t * vsl)
+{
+  int x;
+  for(x = (*len) - 1; x >= 0; x--)
+  {
+    if(list[x] == 0)
+    {
+      memmove(
+          &list[x]
+        , &list[x + 1]
+        , ((*len) - x - 1) * sizeof(*list)
+      );
+      (*len)--;
+    }
+  }
+
+  (*vsl) = 0;
+  for(x = 0; x < *len; x++)
+  {
+    if(x)
+      (*vsl) += zloads(vs + (*vsl), " ");
+
+    (*vsl) += zloads(vs + (*vsl), list[x]);
+  }
+}
 
 //
 // public
@@ -53,41 +95,145 @@ APIDATA size_t        g_logvsl;
 
 void arguments_teardown()
 {
-  wfree(g_argvs);
+  iwfree(&g_argvs);
   int x;
   for(x = 0; x < g_argc; x++)
-    wfree(g_argv[x]);
-  wfree(g_argv);
+    iwfree(&g_argv[x]);
+  iwfree(&g_argv);
+  g_argc = 0;
+
   for(x = 0; x < g_logc; x++)
-    wfree(g_logv[x]);
-  wfree(g_logv);
-  wfree(g_logvs);
+    iwfree(&g_logv[x]);
+  iwfree(&g_logv);
+  iwfree(&g_logvs);
+  g_logc = 0;
+
+  for(x = 0; x < g_ulogc; x++)
+    iwfree(&g_ulogv[x]);
+  iwfree(&g_ulogv);
+  iwfree(&g_ulogvs);
+  g_ulogc = 0;
+
+  g_binary = 0;
+  g_interpreter = 0;
 }
 
 xapi arguments_finalize()
 {
   enter;
 
+  int x;
   filter * filterp = 0;
 
-  int x;
+  // move recognized logexprs g_ulogv -> g_logv
+  for(x = 0; x < g_ulogc; x++)
+  {
+    filter fl;
+    if(filter_parses(g_ulogv[x], &fl), fl.v)
+    {
+      g_logv[g_logc++] = g_ulogv[x];
+      g_ulogv[x] = 0;
+    }
+  }
+
+  // move unrecognized logexprs g_logv -> g_ulogv
   for(x = 0; x < g_logc; x++)
   {
     if(filterp == 0)
       fatal(xmalloc, &filterp, sizeof(*filterp));
 
-    filter_parses(g_logv[x], filterp);
-
-    if(filterp->v)
+    if(filter_parses(g_logv[x], filterp), filterp->v)
     {
       fatal(filter_push, 0, filterp);
       filterp = 0;
     }
+    else
+    {
+      g_ulogv[g_ulogc++] = g_logv[x];
+      g_logv[x] = 0;
+    }
   }
+
+  list_finalize(g_logv, &g_logc, g_logvs, &g_logvsl);
+  list_finalize(g_ulogv, &g_ulogc, g_ulogvs, &g_ulogvsl);
 
 finally:
   filter_free(filterp);
 coda;
+}
+
+xapi arguments_process(const char * restrict argvs, size_t argvsl, int binaryx, int interpx)
+{
+  enter;
+
+  int i;
+  int x;
+  size_t argva = 0;
+
+  // construct g_argv, array of arguments
+  i = 0;
+  for(x = 0; x <= argvsl; x++)
+  {
+    if(argvs[x] == 0)
+    {
+      if(strlen(&argvs[i]))
+      {
+        argva++;
+        i = x + 1;
+      }
+    }
+  }
+
+  fatal(xmalloc, &g_argv, sizeof(*g_argv) * argva);
+
+  i = 0;
+  for(x = 0; x <= argvsl; x++)
+  {
+    if(argvs[x] == 0)
+    {
+      int len = strlen(&argvs[i]);
+      if(len)
+      {
+        fatal(ixstrdup, &g_argv[g_argc], &argvs[i]);
+
+        if(binaryx == i)
+          g_binary = g_argv[g_argc];
+        else if(interpx == i)
+          g_interpreter = g_argv[g_argc];
+
+        g_argc++;
+        i = x + 1;
+      }
+    }
+  }
+
+  fatal(xmalloc, &g_ulogv, sizeof(*g_ulogv) * g_argc);
+  fatal(xmalloc, &g_logv, sizeof(*g_logv) * g_argc);
+
+  size_t tot = 0;
+  for(x = 0; x < g_argc; x++)
+    tot += strlen(g_argv[x]);
+
+  if(g_argc)
+    tot += (g_argc - 1);
+
+  fatal(xmalloc, &g_argvs, tot + 1);
+  fatal(xmalloc, &g_logvs, tot + 1);
+  fatal(xmalloc, &g_ulogvs, tot + 1);
+
+  // move logexpr options g_argv -> g_ulogv
+  for(x = 0; x < g_argc; x++)
+  {
+    if(filter_parses(g_argv[x], 0))
+    {
+      g_ulogv[g_ulogc++] = g_argv[x];
+      g_argv[x] = 0;
+    }
+  }
+
+  list_finalize(g_argv, &g_argc, g_argvs, &g_argvsl);
+
+  finally : coda;
 }
 
 //
@@ -101,15 +247,12 @@ API xapi logger_arguments_setup(char ** restrict envp)
   int fd = -1;
   char * argvs = 0;
   size_t argvsl = 0; // argvs length
-  size_t argva = 0;
 #if __linux__
   char * auxv = 0;
   size_t auxvl = 0;
-  size_t auxva = 0;
 #endif
   int x;
   int y;
-  int i;
 
   int binaryx = -1;
   int interpx = -1;
@@ -152,18 +295,7 @@ API xapi logger_arguments_setup(char ** restrict envp)
         execfn = (char*)(intptr_t)getauxval(AT_EXECFN);
         */
 
-        fatal(ixclose, &fd);
-        fatal(xopens, &fd, O_RDONLY, "/proc/self/auxv");
-        do
-        {
-          size_t newa = auxva ?: 100;
-          newa += newa * 2 + newa / 2;
-          fatal(xrealloc, &auxv, sizeof(*auxv), newa, auxva);
-          auxva = newa;
-          auxvl += read(fd, &auxv[auxvl], auxva - auxvl);
-        } while(auxvl == auxva);
-        auxvl--;
-
+        fatal(snarfs, &auxv, &auxvl, "/proc/self/auxv");
         auxvec = (void*)auxv;
       }
 
@@ -210,104 +342,7 @@ API xapi logger_arguments_setup(char ** restrict envp)
   }
 #endif
 
-  // construct g_argv, array of arguments
-  i = 0;
-  for(x = 0; x <= argvsl; x++)
-  {
-    if(argvs[x] == 0)
-    {
-      int len = strlen(&argvs[i]);
-      if(len)
-      {
-        if(g_argc == argva)
-        {
-          size_t newa = argva ?: 10;
-          newa += newa * 2 + newa / 2;
-          fatal(xrealloc, &g_argv, sizeof(*g_argv), newa, argva);
-          argva = newa;
-        }
-
-        fatal(xmalloc, &g_argv[g_argc], len + 1);
-        memcpy(g_argv[g_argc], &argvs[i], len);
-
-        if(binaryx == i)
-          g_binary = g_argv[g_argc];
-        else if(interpx == i)
-          g_interpreter = g_argv[g_argc];
-
-        g_argc++;
-        i = x + 1;
-      }
-    }
-  }
-
-  // process g_argv, splicing out recognized logger-options
-  for(x = 0; x < g_argc; x++)
-  {
-    if(filter_parses(g_argv[x], 0))
-    {
-      if(g_logc == g_logva)
-      {
-        size_t ns = g_logva ?: 10;
-        ns = ns * 2 + ns / 2;
-        fatal(xrealloc, &g_logv, sizeof(*g_logv), ns, g_logva);
-        g_logva = ns;
-      }
-
-      g_logv[g_logc++] = g_argv[x];
-      g_argv[x] = 0;
-    }
-  }
-
-  // shrink g_argv to size
-  for(x = g_argc - 1; x >= 0; x--)
-  {
-    if(g_argv[x] == 0)
-    {
-      memmove(
-          &g_argv[x]
-        , &g_argv[x+1]
-        , (g_argc - x - 1) * sizeof(g_argv[0])
-      );
-      g_argc--;
-    }
-  }
-
-  // render to g_argvs
-  g_argvsl = 0;
-  for(x = 0; x < g_argc; x++)
-  {
-    if(x)
-      g_argvsl++;
-    g_argvsl += strlen(g_argv[x]);
-  }
-
-  fatal(xmalloc, &g_argvs, g_argvsl + 1);
-
-  for(x = 0; x < g_argc; x++)
-  {
-    if(x)
-      strcat(g_argvs, " ");
-    strcat(g_argvs, g_argv[x]);
-  }
-
-  // render to g_logvs
-  g_logvsl = 0;
-  for(x = 0; x < g_logc; x++)
-  {
-    if(x)
-      g_logvsl++;
-    g_logvsl += strlen(g_logv[x]);
-  }
-
-  fatal(xmalloc, &g_logvs, g_logvsl + 1);
-
-  for(x = 0; x < g_logc; x++)
-  {
-    if(x)
-      strcat(g_logvs, " ");
-    strcat(g_logvs, g_logv[x]);
-  }
+  fatal(arguments_process, argvs, argvsl, binaryx, interpx);
 
 finally:
   fatal(ixclose, &fd);
