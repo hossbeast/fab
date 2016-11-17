@@ -51,12 +51,12 @@ static xapi snarf(int fd, char ** const restrict dst, size_t * restrict dstlp)
   finally : coda;
 }
 
-xapi usnarfs(const char * const restrict path, char ** const restrict dst, size_t * const restrict dstlp)
+xapi udsnarfs(char ** const restrict dst, size_t * const restrict dstlp, int dirfd, const char * const restrict path)
 {
   enter;
 
   int fd = -1;
-  fatal(uxopens, &fd, O_RDONLY, path);
+  fatal(uxopenats, &fd, O_RDONLY, dirfd, path);
   if(fd != -1)
     fatal(snarf, fd, dst, dstlp);
 
@@ -65,15 +65,25 @@ finally:
 coda;
 }
 
-xapi snarfs(const char * const restrict path, char ** const restrict dst, size_t * const restrict dstlp)
+xapi usnarfs(char ** const restrict dst, size_t * const restrict dstlp, const char * const restrict path)
+{
+  xproxy(udsnarfs, dst, dstlp, AT_FDCWD, path);
+}
+
+xapi dsnarfs(char ** const restrict dst, size_t * const restrict dstlp, int dirfd, const char * const restrict path)
 {
   enter;
 
   int fd = -1;
-  fatal(xopens, &fd, O_RDONLY, path);
+  fatal(xopenats, &fd, O_RDONLY, dirfd, path);
   fatal(snarf, fd, dst, dstlp);
 
 finally:
   fatal(ixclose, &fd);
 coda;
+}
+
+xapi snarfs(char ** const restrict dst, size_t * const restrict dstlp, const char * const restrict path)
+{
+  xproxy(dsnarfs, dst, dstlp, AT_FDCWD, path);
 }

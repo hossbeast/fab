@@ -94,4 +94,11 @@ xapi logger_stream_register(const logger_stream * restrict streams)
 //
 xapi logger_streams_report(void);
 
+/// logger_stream_would
+//
+// SUMMARY
+//  returns true if a log with the specified ids would write to the specified stream
+//
+int logger_stream_would(int stream_id, uint64_t ids);
+
 #endif

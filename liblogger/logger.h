@@ -182,7 +182,7 @@ struct narrator * log_narrator(int * const restrict token)
 /// log_would
 //
 // SUMMARY
-//  true if a log with the specified ids would write to any stream
+//  returns true if a log with the specified ids would write to any stream
 //
 int log_would(const uint64_t ids);
 

@@ -87,7 +87,7 @@ xapi tmp_cleanup(pid_t * pids, size_t pidsl)
         snprintf(space, sizeof(space), "%s/%s", fpath, "stamp");
 
         struct stat stb;
-        fatal(uxstat, space, &stb, &r);
+        fatal(uxstats, &r, &stb, space);
 
         // directory does not contain a stamp file, or the stamp file is older than the expiration policy
         if(r == 0 && ((now - stb.st_atim.tv_sec) > EXPIRATION_POLICY))

@@ -133,6 +133,9 @@ i _name_  (idempotent)
   completion, sets the value pointed at to the identity value for that resource
   type
 
+d _name_ (dirfd)
+* takes a dirfd a la openat
+
 _name_ vf
 * takes format string and va_list
 

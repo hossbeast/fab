@@ -23,11 +23,15 @@
 //  load the contents of a file into a buffer with read
 //
 // PARAMETERS
-//  path   - path to file
-//  dst    - (returns) xmalloc'd buffer
-//  [dstl] - (returns) size of buffer
+//  dst     - (returns) xmalloc'd buffer
+//  [dstl]  - (returns) size of buffer
+//  [dirfd] - relative path resolution dir
+//  path    - path to file
 //
-xapi snarfs(const char * const restrict path, char ** const restrict dst, size_t * const restrict dstl)
+xapi snarfs(char ** const restrict dst, size_t * const restrict dstl, const char * const restrict path)
+  __attribute__((nonnull(1)));
+
+xapi dsnarfs(char ** const restrict dst, size_t * const restrict dstl, int dirfd, const char * const restrict path)
   __attribute__((nonnull(1)));
 
 /// usnarf
@@ -35,5 +39,8 @@ xapi snarfs(const char * const restrict path, char ** const restrict dst, size_t
 // SUMMARY
 //  wrapper for snarf that only fails when errno != ENOENT
 //
-xapi usnarfs(const char * const restrict path, char ** const restrict dst, size_t * const restrict dstl)
+xapi usnarfs(char ** const restrict dst, size_t * const restrict dstl, const char * const restrict path)
+  __attribute__((nonnull(1)));
+
+xapi udsnarfs(char ** const restrict dst, size_t * const restrict dstl, int dirfd, const char * const restrict path)
   __attribute__((nonnull(1)));

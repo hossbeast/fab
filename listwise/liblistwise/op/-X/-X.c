@@ -131,9 +131,9 @@ static xapi op_exec(operation* o, lwx* ls, int** ovec, int* ovec_len, int linkst
     char * zs = 0;
     fatal(lstack_string, ls, 0, x, &zs);
     if(linkstat)
-      fatal(uxlstat, zs, &st, &r);
+      fatal(uxlstats, &r, &st, zs);
     else
-      fatal(uxstat, zs, &st, &r);
+      fatal(uxstats, &r, &st, zs);
 
     if(r == 0)
     {

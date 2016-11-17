@@ -22,9 +22,11 @@
 #include "xstat/xstat.h"
 #include "errtab/KERNEL.errtab.h"
 
+#include "fmt.internal.h"
+
 #define restrict __restrict
 
-API xapi xstat(const char * path, struct stat * buf)
+API xapi xstats(struct stat * restrict buf, const char * restrict path)
 {
   enter;
 
@@ -36,7 +38,31 @@ finally:
 coda;
 }
 
-API xapi uxstat(const char * path, struct stat * buf, int * r)
+API xapi xstatf(struct stat * restrict buf, const char * restrict path_fmt, ...)
+{
+  enter;
+
+  va_list va;
+  va_start(va, path_fmt);
+
+  fatal(xstatvf, buf, path_fmt, va);
+
+  finally : coda;
+}
+
+API xapi xstatvf(struct stat * restrict buf, const char * restrict path_fmt, va_list va)
+{
+  enter;
+
+  char path[512];
+
+  fatal(fmt_apply, path, sizeof(path), path_fmt, va);
+  fatal(xstats, buf, path);
+
+  finally : coda;
+}
+
+API xapi uxstats(int * restrict r, struct stat * restrict buf, const char * restrict path)
 {
   enter;
 
@@ -53,7 +79,31 @@ finally:
 coda;
 }
 
-API xapi xlstat(const char * path, struct stat * buf, int * r)
+API xapi uxstatf(int * restrict r, struct stat * restrict buf, const char * restrict path_fmt, ...)
+{
+  enter;
+
+  va_list va;
+  va_start(va, path_fmt);
+
+  fatal(uxstatvf, r, buf, path_fmt, va);
+
+  finally : coda;
+}
+
+API xapi uxstatvf(int * restrict r, struct stat * restrict buf, const char * restrict path_fmt, va_list va)
+{
+  enter;
+
+  char path[512];
+
+  fatal(fmt_apply, path, sizeof(path), path_fmt, va);
+  fatal(uxstats, r, buf, path);
+
+  finally : coda;
+}
+
+API xapi xlstats(int * restrict r, struct stat * restrict buf, const char * restrict path)
 {
   enter;
 
@@ -65,7 +115,31 @@ finally:
 coda;
 }
 
-API xapi uxlstat(const char * path, struct stat * buf, int * r)
+API xapi xlstatf(int * restrict r, struct stat * restrict buf, const char * restrict path_fmt, ...)
+{
+  enter;
+
+  va_list va;
+  va_start(va, path_fmt);
+
+  fatal(xlstatvf, r, buf, path_fmt, va);
+
+  finally : coda;
+}
+
+API xapi xlstatvf(int * restrict r, struct stat * restrict buf, const char * restrict path_fmt, va_list va)
+{
+  enter;
+
+  char path[512];
+
+  fatal(fmt_apply, path, sizeof(path), path_fmt, va);
+  fatal(xlstats, r, buf, path);
+
+  finally : coda;
+}
+
+API xapi uxlstats(int * restrict r, struct stat * restrict buf, const char * restrict path)
 {
   enter;
 
@@ -80,6 +154,30 @@ API xapi uxlstat(const char * path, struct stat * buf, int * r)
 finally:
   xapi_infof("path", "%s", path);
 coda;
+}
+
+API xapi uxlstatf(int * restrict r, struct stat * restrict buf, const char * restrict path_fmt, ...)
+{
+  enter;
+
+  va_list va;
+  va_start(va, path_fmt);
+
+  fatal(uxlstatvf, r, buf, path_fmt, va);
+
+  finally : coda;
+}
+
+API xapi uxlstatvf(int * restrict r, struct stat * restrict buf, const char * restrict path_fmt, va_list va)
+{
+  enter;
+
+  char path[512];
+
+  fatal(fmt_apply, path, sizeof(path), path_fmt, va);
+  fatal(uxlstats, r, buf, path);
+
+  finally : coda;
 }
 
 API xapi xfstat(int fd, struct stat * buf)
@@ -118,51 +216,99 @@ API xapi xfutimens(int fd, const struct timespec times[2])
   finally : coda;
 }
 
-API xapi xutimensat(int dirfd, const char * const restrict pathname, const struct timespec times[2], int flags)
+API xapi xutimensats(int dirfd, const struct timespec times[2], int flags, const char * const restrict path)
 {
   enter;
 
-  tfatalize(perrtab_KERNEL, errno, utimensat, dirfd, pathname, times, flags);
+  tfatalize(perrtab_KERNEL, errno, utimensat, dirfd, path, times, flags);
 
   finally : coda;
 }
 
-API xapi uxutimensat(int dirfd, const char * const restrict pathname, const struct timespec times[2], int flags, int * restrict r)
+API xapi uxutimensats(int dirfd, const struct timespec times[2], int flags, int * restrict r, const char * const restrict path)
 {
   enter;
 
-  if((r && ((*r) = utimensat(dirfd, pathname, times, flags)) != 0) || (!r && utimensat(dirfd, pathname, times, flags) != 0))
+  if((r && ((*r) = utimensat(dirfd, path, times, flags)) != 0) || (!r && utimensat(dirfd, path, times, flags) != 0))
   {
     if(errno != ENOENT)
       tfail(perrtab_KERNEL, errno);
   }
 
 finally:
-  xapi_infof("path", "%s", pathname);
+  xapi_infof("path", "%s", path);
 coda;
 }
 
-API xapi xmkdir(const char * pathname, mode_t mode)
+API xapi xmkdirs(mode_t mode, const char * path)
 {
   enter;
 
-  tfatalize(perrtab_KERNEL, errno, mkdir, pathname, mode);
+  tfatalize(perrtab_KERNEL, errno, mkdir, path, mode);
 
 finally:
-  xapi_infos("path", pathname);
+  xapi_infos("path", path);
 coda;
 }
 
-API xapi uxmkdir(const char * pathname, mode_t mode)
+API xapi xmkdirf(mode_t mode, const char * path_fmt, ...)
 {
   enter;
 
-  if(mkdir(pathname, mode) != 0 && errno != EEXIST)
+  va_list va;
+  va_start(va, path_fmt);
+
+  fatal(xmkdirvf, mode, path_fmt, va);
+
+  finally : coda;
+}
+
+API xapi xmkdirvf(mode_t mode, const char * path_fmt, va_list va)
+{
+  enter;
+
+  char path[512];
+
+  fatal(fmt_apply, path, sizeof(path), path_fmt, va);
+  fatal(xmkdirs, mode, path);
+
+  finally : coda;
+}
+
+API xapi uxmkdirs(mode_t mode, const char * path)
+{
+  enter;
+
+  if(mkdir(path, mode) != 0 && errno != EEXIST)
     tfail(perrtab_KERNEL, errno);
 
 finally:
-  xapi_infos("path", pathname);
+  xapi_infos("path", path);
 coda;
+}
+
+API xapi uxmkdirf(mode_t mode, const char * path_fmt, ...)
+{
+  enter;
+
+  va_list va;
+  va_start(va, path_fmt);
+
+  fatal(uxmkdirvf, mode, path_fmt, va);
+
+  finally : coda;
+}
+
+API xapi uxmkdirvf(mode_t mode, const char * path_fmt, va_list va)
+{
+  enter;
+
+  char path[512];
+
+  fatal(fmt_apply, path, sizeof(path), path_fmt, va);
+  fatal(uxmkdirs, mode, path);
+
+  finally : coda;
 }
 
 API xapi xfchmod(int fd, mode_t mode)

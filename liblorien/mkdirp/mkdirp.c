@@ -48,7 +48,7 @@ API xapi mkdirpw(mode_t mode, const char * const path, size_t pathl)
     memcpy(space, path, t - path);
     space[t - path] = 0;
 
-    fatal(uxmkdir, space, mode);
+    fatal(uxmkdirs, mode, space);
   }
 
 finally:

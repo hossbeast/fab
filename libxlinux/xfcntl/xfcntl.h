@@ -30,9 +30,6 @@
 // SUMMARY
 //  proxy for open
 //
-// VARIANTS
-//  s/f/vf - different ways to pass path
-//
 xapi xopens(int * fd, int flags, const char * path)
   __attribute__((nonnull(3)));
 
@@ -42,13 +39,24 @@ xapi xopenf(int * fd, int flags, const char * path_fmt, ...)
 xapi xopenvf(int * fd, int flags, const char * path_fmt, va_list va)
   __attribute__((nonnull(3)));
 
+/// xopenat
+//
+// SUMMARY
+//  proxy for opent
+//
+xapi xopenats(int * fd, int flags, int dirfd, const char * path)
+  __attribute__((nonnull(4)));
+
+xapi xopenatf(int * fd, int flags, int dirfd, const char * path_fmt, ...)
+  __attribute__((nonnull(4)));
+
+xapi xopenatvf(int * fd, int flags, int dirfd, const char * path_fmt, va_list va)
+  __attribute__((nonnull(4)));
+
 /// xopen_mode
 //
 // SUMMARY
 //  proxy for open
-//
-// VARIANTS
-//  s/f/vf - different ways to pass path
 //
 xapi xopen_modes(int * fd, int flags, mode_t mode, const char * path)
   __attribute__((nonnull(4)));
@@ -59,13 +67,24 @@ xapi xopen_modef(int * fd, int flags, mode_t mode, const char * path_fmt, ...)
 xapi xopen_modevf(int * fd, int flags, mode_t mode, const char * path_fmt, va_list va)
   __attribute__((nonnull(4)));
 
+/// xopenat_mode
+//
+// SUMMARY
+//  proxy for open
+//
+xapi xopenat_modes(int * fd, int flags, mode_t mode, int dirfd, const char * path)
+  __attribute__((nonnull(5)));
+
+xapi xopenat_modef(int * fd, int flags, mode_t mode, int dirfd, const char * path_fmt, ...)
+  __attribute__((nonnull(5)));
+
+xapi xopenat_modevf(int * fd, int flags, mode_t mode, int dirfd, const char * path_fmt, va_list va)
+  __attribute__((nonnull(5)));
+
 /// uxopen
 //
 // SUMMARY
 //  proxy for open that only fails when errno not in { ENOENT, EEXIST }
-//
-// VARIANTS
-//  s/f/vf - different ways to pass path
 //
 xapi uxopens(int * fd, int flags, const char * path)
   __attribute__((nonnull(3)));
@@ -76,13 +95,24 @@ xapi uxopenf(int * fd, int flags, const char * path_fmt, ...)
 xapi uxopenvf(int * fd, int flags, const char * path_fmt, va_list va)
   __attribute__((nonnull(3)));
 
+/// uxopenat
+//
+// SUMMARY
+//  proxy for openat that only fails when errno not in { ENOENT, EEXIST }
+//
+xapi uxopenats(int * fd, int flags, int dirfd, const char * path)
+  __attribute__((nonnull(4)));
+
+xapi uxopenatf(int * fd, int flags, int dirfd, const char * path_fmt, ...)
+  __attribute__((nonnull(4)));
+
+xapi uxopenatvf(int * fd, int flags, int dirfd, const char * path_fmt, va_list va)
+  __attribute__((nonnull(4)));
+
 /// xopen_mode
 //
 // SUMMARY
 //  proxy for open that only fails when errno not in { ENOENT, EEXIST }
-//
-// VARIANTS
-//  s/f/vf - different ways to pass path
 //
 xapi uxopen_modes(int * fd, int flags, mode_t mode, const char * path)
   __attribute__((nonnull(4)));
@@ -92,5 +122,19 @@ xapi uxopen_modef(int * fd, int flags, mode_t mode, const char * path_fmt, ...)
 
 xapi uxopen_modevf(int * fd, int flags, mode_t mode, const char * path_fmt, va_list va)
   __attribute__((nonnull(4)));
+
+/// xopenat_mode
+//
+// SUMMARY
+//  proxy for open that only fails when errno not in { ENOENT, EEXIST }
+//
+xapi uxopenat_modes(int * fd, int flags, mode_t mode, int dirfd, const char * path)
+  __attribute__((nonnull(5)));
+
+xapi uxopenat_modef(int * fd, int flags, mode_t mode, int dirfd, const char * path_fmt, ...)
+  __attribute__((nonnull(5)));
+
+xapi uxopenat_modevf(int * fd, int flags, mode_t mode, int dirfd, const char * path_fmt, va_list va)
+  __attribute__((nonnull(5)));
 
 #endif

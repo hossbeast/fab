@@ -21,6 +21,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
+#include <stdarg.h>
 
 #include "xapi.h"
 
@@ -31,7 +32,16 @@
 // SUMMARY
 //  proxy for stat
 //
-xapi xstat(const char * restrict path, struct stat * restrict buf)
+// VARIANTS
+//  s/f/vf - different ways to pass path
+//
+xapi xstats(struct stat * restrict buf, const char * restrict path)
+  __attribute__((nonnull(1, 2)));
+
+xapi xstatf(struct stat * restrict buf, const char * restrict path_fmt, ...)
+  __attribute__((nonnull(1, 2)));
+
+xapi xstatvf(struct stat * restrict buf, const char * restrict path_fmt, va_list va)
   __attribute__((nonnull(1, 2)));
 
 /// uxstat
@@ -40,7 +50,16 @@ xapi xstat(const char * restrict path, struct stat * restrict buf)
 //  proxy for stat which only fails when errno != ENOENT and errno != ENOTDIR
 //  if stat fails but uxstat does not, buf is zeroed
 //
-xapi uxstat(const char * restrict path, struct stat * restrict buf, int * restrict r)
+// VARIANTS
+//  s/f/vf - different ways to pass path
+//
+xapi uxstats(int * restrict r, struct stat * restrict buf, const char * restrict path)
+  __attribute__((nonnull(1,2)));
+
+xapi uxstatf(int * restrict r, struct stat * restrict buf, const char * restrict path_fmt, ...)
+  __attribute__((nonnull(1,2)));
+
+xapi uxstatvf(int * restrict r, struct stat * restrict buf, const char * restrict path_fmt, va_list va)
   __attribute__((nonnull(1,2)));
 
 /// xlstat
@@ -48,7 +67,16 @@ xapi uxstat(const char * restrict path, struct stat * restrict buf, int * restri
 // SUMMARY
 //  proxy for lstat
 //
-xapi xlstat(const char * restrict path, struct stat * restrict buf, int * restrict r)
+// VARIANTS
+//  s/f/vf - different ways to pass path
+//
+xapi xlstats(int * restrict r, struct stat * restrict buf, const char * restrict path)
+  __attribute__((nonnull(1,2)));
+
+xapi xlstatf(int * restrict r, struct stat * restrict buf, const char * restrict path_fmt, ...)
+  __attribute__((nonnull(1,2)));
+
+xapi xlstatvf(int * restrict r, struct stat * restrict buf, const char * restrict path_fmt, va_list va)
   __attribute__((nonnull(1,2)));
 
 /// uxlstat
@@ -57,7 +85,16 @@ xapi xlstat(const char * restrict path, struct stat * restrict buf, int * restri
 //  proxy for lstat which only fails when errno != ENOENT and errno != ENOTDIR
 //  if lstat fails but uxlstat does not, buf is zeroed
 //
-xapi uxlstat(const char * restrict path, struct stat * restrict buf, int * restrict r)
+// VARIANTS
+//  s/f/vf - different ways to pass path
+//
+xapi uxlstats(int * restrict r, struct stat * restrict buf, const char * restrict path)
+  __attribute__((nonnull(1,2)));
+
+xapi uxlstatf(int * restrict r, struct stat * restrict buf, const char * restrict path_fmt, ...)
+  __attribute__((nonnull(1,2)));
+
+xapi uxlstatvf(int * restrict r, struct stat * restrict buf, const char * restrict path_fmt, va_list va)
   __attribute__((nonnull(1,2)));
 
 /// xfstat
@@ -89,21 +126,29 @@ xapi xfutimens(int fd, const struct timespec times[2]);
 // SUMMARY
 //  proxy for utimensat
 //
-xapi xutimensat(int dirfd, const char * const restrict pathname, const struct timespec times[2], int flags);
+xapi xutimensats(int dirfd, const struct timespec times[2], int flags, const char * const restrict path)
+  __attribute__((nonnull));
 
 /// xutimensat
 //
 // SUMMARY
 //  proxy for utimensat that only fails when errno != ENOENT
 //
-xapi uxutimensat(int dirfd, const char * const restrict pathname, const struct timespec times[2], int flags, int * restrict r);
+xapi uxutimensats(int dirfd, const struct timespec times[2], int flags, int * restrict r, const char * const restrict path)
+  __attribute__((nonnull));
 
 /// xmkdir
 //
 // SUMMARY
 //  proxy for mkdir
 //
-xapi xmkdir(const char * restrict pathname, mode_t mode)
+xapi xmkdirs(mode_t mode, const char * path)
+  __attribute__((nonnull));
+
+xapi xmkdirf(mode_t mode, const char * path_fmt, ...)
+  __attribute__((nonnull));
+
+xapi xmkdirvf(mode_t mode, const char * path_fmt, va_list va)
   __attribute__((nonnull));
 
 /// uxmkdir
@@ -111,7 +156,13 @@ xapi xmkdir(const char * restrict pathname, mode_t mode)
 // SUMMARY
 //  proxy for mkdir which only fails when errno != ENOENT
 //
-xapi uxmkdir(const char * restrict pathname, mode_t mode)
+xapi uxmkdirs(mode_t mode, const char * path)
+  __attribute__((nonnull));
+
+xapi uxmkdirf(mode_t mode, const char * path_fmt, ...)
+  __attribute__((nonnull));
+
+xapi uxmkdirvf(mode_t mode, const char * path_fmt, va_list va)
   __attribute__((nonnull));
 
 /// xfchmod

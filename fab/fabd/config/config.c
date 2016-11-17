@@ -187,19 +187,19 @@ xapi config_load()
   config_staging = 0;
 
   // apply system-level config
-  fatal(usnarfs, SYSTEM_CONFIG_PATH, &text, 0);
+  fatal(usnarfs, &text, 0, SYSTEM_CONFIG_PATH);
   if(text)
     fatal(applys, text, store_staging, &config_staging);
 
   // apply user-level config
   iwfree(&text);
-  fatal(usnarfs, USER_CONFIG_PATH, &text, 0);
+  fatal(usnarfs, &text, 0, USER_CONFIG_PATH);
   if(text)
     fatal(applys, text, store_staging, &config_staging);
 
   // apply project-level config
   iwfree(&text);
-  fatal(usnarfs, PROJECT_CONFIG_PATH, &text, 0);
+  fatal(usnarfs, &text, 0, PROJECT_CONFIG_PATH);
   if(text)
     fatal(applys, text, store_staging, &config_staging);
 
