@@ -374,9 +374,11 @@ API xapi logger_arguments_report()
     fatal(log_finish, &token);
   }
 
-  logf(L_LOGGER, " logs : %s", g_logvs);
+  logf(L_LOGGER, " logs : %s - %s", g_logvs, g_ulogvs);
   for(x = 0; x < g_logc; x++)
     logf(L_LOGGER, "  [%2d] %s", x, g_logv[x]);
+  for(x = 0; x < g_ulogc; x++)
+    logf(L_LOGGER, "  [%2d] %s", x, g_ulogv[x]);
 
 finally:
   fatal(log_finish, &token);
