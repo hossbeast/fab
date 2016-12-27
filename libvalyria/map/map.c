@@ -111,7 +111,7 @@ static size_t __attribute__((nonnull)) hashkey(const char * const restrict k, co
 //   1 : not found, and the first deleted slot in the probe sequence is returned in i
 //  -1 : not found
 //
-static int __attribute__((nonnull)) probe(const map * const restrict m, const char * const restrict key, const size_t keyl, size_t * const restrict i)
+static int __attribute__((nonnull)) probe(const map * const restrict m, const void * const restrict key, const size_t keyl, size_t * const restrict i)
 {
   // start at the index which the key hashes to
   *i = hashkey(key, keyl, m->lm);
@@ -197,7 +197,7 @@ xapi map_allocate(
 
 xapi map_put(
     map * const restrict m
-  , const char * const restrict k
+  , const void * const restrict k
   , size_t kl
   , void * const restrict v
   , void * const * const restrict rv
@@ -329,7 +329,7 @@ API xapi map_createx(
   finally : coda;
 }
 
-API xapi map_set(map* const restrict m, const char * const restrict k, size_t kl, void * const restrict v)
+API xapi map_set(map * const restrict m, const void * const restrict k, size_t kl, void * const restrict v)
 {
   enter;
 
@@ -338,7 +338,7 @@ API xapi map_set(map* const restrict m, const char * const restrict k, size_t kl
   finally : coda;
 }
 
-API void * map_get(const map* const restrict m, const char * const restrict k, size_t kl)
+API void * map_get(const map* const restrict m, const void * const restrict k, size_t kl)
 {
   // perform probe
   size_t i = 0;
@@ -378,7 +378,7 @@ API xapi map_recycle(map* const restrict m)
   finally : coda;
 }
 
-API xapi map_delete(map* const restrict m, const char * const restrict k, size_t kl)
+API xapi map_delete(map* const restrict m, const void * const restrict k, size_t kl)
 {
   enter;
 
@@ -483,7 +483,7 @@ API size_t map_table_size(const map * const restrict m)
   return m->table_size;
 }
 
-API const char * map_table_key(const map * const restrict m, size_t x)
+API const void * map_table_key(const map * const restrict m, size_t x)
 {
   if(m->tk[x] && m->tk[x]->l && !m->tk[x]->d)
     return m->tk[x]->p;

@@ -89,7 +89,7 @@ xapi map_ixfree(map ** const restrict map)
 //  keyl   - key length
 //  value  - pointer to value
 //
-xapi map_set(map * const restrict m, const char * const restrict key, size_t keyl, void * const restrict value)
+xapi map_set(map * const restrict m, const void * const restrict key, size_t keyl, void * const restrict value)
   __attribute__((nonnull));
 
 /// map_get
@@ -111,7 +111,7 @@ xapi map_set(map * const restrict m, const char * const restrict key, size_t key
 // SUMMARY
 //  returns pointer to the stored value, or 0 if not found
 //
-void * map_get(const map * const restrict m, const char * const restrict key, size_t keyl)
+void * map_get(const map * const restrict m, const void * const restrict key, size_t keyl)
   __attribute__((nonnull));
 
 /// map_recycle
@@ -131,7 +131,7 @@ xapi map_recycle(map * const restrict map)
 //  key  - pointer to key
 //  keyl - length of key
 //
-xapi map_delete(map * const restrict m, const char * const restrict key, size_t keyl)
+xapi map_delete(map * const restrict m, const void * const restrict key, size_t keyl)
   __attribute__((nonnull));
 
 /// map_size
@@ -188,7 +188,7 @@ size_t map_table_size(const map * const restrict m)
 //  m - map
 //  x - slot index
 //
-const char * map_table_key(const map * const restrict m, size_t x)
+const void * map_table_key(const map * const restrict m, size_t x)
   __attribute__((nonnull));
 
 /// map_valueat

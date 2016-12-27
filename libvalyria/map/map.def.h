@@ -99,7 +99,7 @@ xapi map_allocate(
 //  [r]   - pointer to value
 //  [rv]  - (returns) pointer to map-owned value
 //
-xapi map_put(struct map * const restrict m, const char * const restrict key, size_t keyl, void * r, void * const * const restrict rv)
+xapi map_put(struct map * const restrict m, const void * const restrict key, size_t keyl, void * r, void * const * const restrict rv)
   __attribute__((nonnull(1,2)));
 
 #undef restrict
