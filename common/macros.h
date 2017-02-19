@@ -20,6 +20,9 @@
 
 #include <string.h>
 
+#define QUOTE(x) #x
+#define XQUOTE(x) QUOTE(x)
+
 #define MIN(a,b)            \
  ({ typeof (a) _a = (a);    \
      typeof (b) _b = (b);   \
@@ -29,9 +32,6 @@
  ({ typeof (a) _a = (a);    \
      typeof (b) _b = (b);   \
    _a > _b ? _a : _b; })
-
-#define QUOTE(x) #x
-#define XQUOTE(x) QUOTE(x)
 
 /// sentinel
 //
@@ -51,7 +51,7 @@
 /// NARGS
 //
 // SUMMARY
-//  evaluates to the quantity of arguments passed to it
+//  evaluates to the number of arguments passed to it
 //
 #define NARGS(...) ((sizeof((int[]){0, ##__VA_ARGS__}) / sizeof(int)) - 1)
 
@@ -61,9 +61,43 @@
 //
 // when the items size is known at compile time, MM makes it simpler to pass
 //
-#ifndef MAP_NO_HELPERS
-# define MM(x) (void*)&(x), sizeof(x)
-# define MMS(x) (x), strlen(x)
-#endif
+#define MM(x) (void*)&(x), sizeof(x)
+#define MMS(x) (x), strlen(x)
+
+/// containerof
+//
+// SUMMARY
+//  get a pointer to a containing structure from an inner structure
+//
+#define containerof(ptr, type, member) ({               \
+  const typeof(((type*)0)->member) * __mptr = (ptr);    \
+  (type*)((char*)__mptr - offsetof(type, member));      \
+})
+
+/// memncmp
+//
+// SUMMARY
+//  compare two regions of memory
+//
+// PARAMETERS
+//  a    - pointer to the first region
+//  alen - size of the first region
+//  b    - pointer to the second region
+//  blen - size of the second region
+//
+// RETURNS
+//  a la strcmp
+//
+static inline int memncmp(const void * a, size_t alen, const void * b, size_t blen)
+{
+  int r = memcmp(a, b, MIN(alen, blen));
+  if(r != 0)
+    return r;
+  if(alen > blen)
+    return 1;
+  if(blen > alen)
+    return -1;
+  return 0;
+}
 
 #endif
