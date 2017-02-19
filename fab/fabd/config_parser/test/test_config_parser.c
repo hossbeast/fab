@@ -110,7 +110,7 @@ static xapi config_parser_test_maps(xunit_test * test)
   
   fatal(value_say, expected, N0);
   fatal(value_say, actual, N1);
-  assertf(value_cmp(expected, actual) == 0, "%s", "%s", narrator_fixed_buffer(N0), narrator_fixed_buffer(N1));
+  assert_eq_s(narrator_fixed_buffer(N0), narrator_fixed_buffer(N1));
 
 finally:
   fatal(config_parser_xfree, parser);
@@ -156,7 +156,7 @@ static xapi config_parser_test_lists(xunit_test * test)
   
   fatal(value_say, expected, N0);
   fatal(value_say, actual, N1);
-  assertf(value_cmp(expected, actual) == 0, "%s", "%s", narrator_fixed_buffer(N0), narrator_fixed_buffer(N1));
+  assert_eq_s(narrator_fixed_buffer(N0), narrator_fixed_buffer(N1));
 
 finally:
   fatal(config_parser_xfree, parser);
@@ -171,11 +171,11 @@ coda;
 //
 
 xunit_unit xunit = {
-    setup : config_parser_unit_setup
-  , cleanup : config_parser_unit_cleanup
-  , tests : (xunit_test*[]) {
-      (xunit_test[]) {{ entry : config_parser_test_maps }}
-    , (xunit_test[]) {{ entry : config_parser_test_lists }}
+    xu_setup : config_parser_unit_setup
+  , xu_cleanup : config_parser_unit_cleanup
+  , xu_tests : (xunit_test*[]) {
+      (xunit_test[]) {{ xu_entry : config_parser_test_maps }}
+    , (xunit_test[]) {{ xu_entry : config_parser_test_lists }}
     , 0
   }
 };

@@ -162,7 +162,7 @@ xapi config_parser_parse(
   config_yyset_extra(&pp, (*parser)->p);
 
   // invoke the appropriate parser, raise errors as needed
-  fatal(yyu_reduce, config_yyparse, &pp, xapi_exit_synth(perrtab_CONFIG, CONFIG_SYNTAX));
+  fatal(yyu_reduce, config_yyparse, &pp, CONFIG_SYNTAX);
 
   if(pp.root)
   {

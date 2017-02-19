@@ -21,27 +21,63 @@
 
 #include "internal.h"
 #include "assert.internal.h"
+#include "type.internal.h"
+
+#include "zbuffer.h"
 
 #define restrict __restrict
 
-APIDATA __thread uint32_t xunit_assertions_passed;
-APIDATA __thread uint32_t xunit_assertions_failed;
+APIDATA uint32_t xunit_assertions_passed;
+APIDATA uint32_t xunit_assertions_failed;
 
-API void xunit_failf_info(const char * const restrict expfmt, const char * const restrict actfmt, ...)
+//
+// API
+//
+
+API int xunit_assertion_evaluate(const xunit_type * const restrict type, uint8_t op, const char * const restrict value, ...)
 {
   va_list va;
-  va_start(va, actfmt);
+  va_start(va, value);
 
+  xunit_arg expected;
+  xunit_arg actual;
+
+  int r;
+  if(op == XU_NULL || op == XU_NOTNULL)
+  {
+    type->xu_unpack(va, &actual);
+    r = actual.d;
+  }
+  else
+  {
+    type->xu_unpack(va, &expected);
+    type->xu_unpack(va, &actual);
+    r = type->xu_compare(&expected, &actual);
+  }
+
+  if(op == XU_EQ && r) { }
+  else if(op == XU_LT && r >= 0) { }
+  else if(op == XU_NULL && r) { }
+  else if(op == XU_NOTNULL && !r) { }
+  else
+  {
+    xunit_assertions_passed++;
+    return 1;
+  }
+
+  xunit_assertions_failed++;
   xapi_fail_intent();
-  xapi_info_vaddf("expected", expfmt, va);
-  xapi_info_vaddf("actual", actfmt, va);
+  xapi_info_adds("value", value);
+  if(op == XU_NULL || op == XU_NOTNULL)
+  {
+    xapi_info_adds("expected", op == XU_NULL ? "(null)" : "(notnull");
+    type->xu_info_add("actual", &actual);
+  }
+  else
+  {
+    type->xu_info_add("expected", &expected);
+    type->xu_info_add("actual", &actual);
+  }
 
-  va_end(va);
-}
-
-API void xunit_fails_info(const char * const restrict exp, const char * const restrict act)
-{
-  xapi_fail_intent();
-  xapi_info_adds("expected", exp);
-  xapi_info_adds("actual", act);
+  return 0;
 }

@@ -51,8 +51,8 @@ static xapi assert_entryi(value * map, int x, char * const restrict key, int64_t
   value * k = list_get(map->keys, x);
   value * v = list_get(map->vals, x);
 
-  assertf(strcmp(k->s->s, key) == 0, "%s", "%s", key, k->s->s);
-  assertf(v->i == i, "%lld", "%lld", i, v->i);
+  assert_eq_s(key, k->s->s);
+  assert_eq_i64(i, v->i);
 
   finally : coda;
 }
@@ -64,8 +64,8 @@ static xapi assert_entryf(value * map, int x, char * const restrict key, double 
   value * k = list_get(map->keys, x);
   value * v = list_get(map->vals, x);
 
-  assertf(strcmp(k->s->s, key) == 0, "%s", "%s", key, k->s->s);
-  assertf(v->f == f, "%f", "%f", f, v->f);
+  assert_eq_s(key, k->s->s);
+  assert_eq_f(f, v->f);
 
   finally : coda;
 }
@@ -75,7 +75,7 @@ static xapi assert_elementf(value * map, int x, double exp)
   enter;
 
   value * act = list_get(map->els, x);
-  assertf(act->f == exp, "%f", "%f", exp, act->f);
+  assert_eq_f(exp, act->f);
 
   finally : coda;
 }
@@ -138,7 +138,7 @@ static xapi merge_test_map_update(xunit_test * test)
   fatal(assert_entryf, dst, x++, "bar", 10);
   fatal(assert_entryf, dst, x++, "baz", 15);
   fatal(assert_entryf, dst, x++, "foo", 5);
-  assertf(dst->keys->l == x, "len %d", "len %d", x, dst->keys->l);
+  assert_eq_d(x, dst->keys->l);
 
 finally:
   fatal(value_store_xfree, stor);
@@ -250,7 +250,7 @@ static xapi merge_test_map_add(xunit_test * test)
   fatal(assert_entryf, dst, x++, "baz", 30);
   fatal(assert_entryf, dst, x++, "foo", 10);
   fatal(assert_entryf, dst, x++, "qux", 40);
-  assertf(dst->keys->l == x, "len %d", "len %d", x, dst->keys->l);
+  assert_eq_d(x, dst->keys->l);
 
 finally:
   fatal(value_store_xfree, stor);
@@ -286,7 +286,7 @@ static xapi merge_test_map_set(xunit_test * test)
   int x = 0;
   fatal(assert_entryf, map, x++, "baz", 30);
   fatal(assert_entryf, map, x++, "qux", 40);
-  assertf(map->keys->l == x, "len %d", "len %d", x, map->keys->l);
+  assert_eq_d(x, map->keys->l);
 
 finally:
   fatal(value_store_xfree, stor);
@@ -324,7 +324,7 @@ static xapi merge_test_map_list_add(xunit_test * test)
   fatal(assert_elementf, list, x++, 20);
   fatal(assert_elementf, list, x++, 30);
   fatal(assert_elementf, list, x++, 40);
-  assertf(list->els->l == x, "len %d", "len %d", x, list->els->l);
+  assert_eq_d(x, list->els->l);
 
 finally:
   fatal(value_store_xfree, stor);
@@ -360,7 +360,7 @@ static xapi merge_test_map_list_set(xunit_test * test)
   list = list_get(dst->vals, 0);
   fatal(assert_elementf, list, x++, 30);
   fatal(assert_elementf, list, x++, 40);
-  assertf(list->els->l == x, "len %d", "len %d", x, list->els->l);
+  assert_eq_d(x, list->els->l);
 
 finally:
   fatal(value_store_xfree, stor);
@@ -393,7 +393,7 @@ static xapi merge_test_list_scalar(xunit_test * test)
   fatal(assert_elementf, dst, x++, 20);
   fatal(assert_elementf, dst, x++, 30);
   fatal(assert_elementf, dst, x++, 40);
-  assertf(dst->els->l == x, "len %d", "len %d", x, dst->els->l);
+  assert_eq_d(x, dst->els->l);
 
 finally:
   fatal(value_store_xfree, stor);
@@ -430,12 +430,12 @@ static xapi merge_test_list_aggregate(xunit_test * test)
   map = list_get(dst->els, 0);
   x = 0;
   fatal(assert_entryf, map, x++, "foo", 10);
-  assertf(map->keys->l == x, "len %d", "len %d", x, map->keys->l);
+  assert_eq_d(x, map->keys->l);
 
   map = list_get(dst->els, 1);
   x = 0;
   fatal(assert_entryf, map, x++, "bar", 20);
-  assertf(map->keys->l == x, "len %d", "len %d", x, map->keys->l);
+  assert_eq_d(x, map->keys->l);
 
 finally:
   fatal(value_store_xfree, stor);
@@ -504,7 +504,7 @@ static xapi merge_test_difftype_aggregates(xunit_test * test)
     xapi_calltree_unwind();
   }
 
-  assert_exit(VALUE_DIFFTYPE, exit);
+  assert_eq_e(VALUE_DIFFTYPE, exit);
   assert_eq_s("foo.bar", space);
 
 finally:
@@ -542,7 +542,7 @@ static xapi merge_test_difftype_mixed(xunit_test * test)
     xapi_calltree_unwind();
   }
 
-  assert_exit(VALUE_DIFFTYPE, exit);
+  assert_eq_e(VALUE_DIFFTYPE, exit);
   assert_eq_s("foo", space);
 
 finally:

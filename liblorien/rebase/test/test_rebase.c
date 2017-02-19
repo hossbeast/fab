@@ -43,7 +43,7 @@ static xapi rebase_test_entry(rebase_test * test)
   // transform
   fatal(rebase, test->path, 0, test->base, 0, space, sizeof(space), 0);
 
-  assertf(strcmp(test->expected, space) == 0, "%s", "%s", test->expected, space);
+  assert_eq_s(test->expected, space);
 
   finally : coda;
 }

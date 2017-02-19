@@ -15,23 +15,6 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef _MORIA_LOAD_H
-#define _MORIA_LOAD_H
-
-#include "xapi.h"
-
-/// moria_load
-//
-// SUMMARY
-//  initialize the library
-//
-xapi moria_load(void);
-
-/// moria_unload
-//
-// SUMMARY
-//  release the library
-//
-xapi moria_unload(void);
-
-#endif
+1   SYNTAX    fabfile could not be parsed
+2   ILLBYTE   fabfile contains illegal byte(s)
+3   NOINVOKE  invocation not found

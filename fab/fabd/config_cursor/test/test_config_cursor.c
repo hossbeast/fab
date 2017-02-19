@@ -34,27 +34,27 @@ static xapi config_cursor_basic(xunit_test * test)
   fatal(config_cursor_init, &cursor);
 
   fatal(config_cursor_sets, &cursor, "foo.bar");
-  assert_strs("foo.bar", config_cursor_path(&cursor));
-  assert_strs("foo.bar", config_cursor_query(&cursor));
+  assert_eq_s("foo.bar", config_cursor_path(&cursor));
+  assert_eq_s("foo.bar", config_cursor_query(&cursor));
 
   fatal(config_cursor_mark, &cursor);
   fatal(config_cursor_pushs, &cursor, "baz.qux");
-  assert_strs("foo.bar.baz.qux", config_cursor_path(&cursor));
-  assert_strs("baz.qux", config_cursor_query(&cursor));
+  assert_eq_s("foo.bar.baz.qux", config_cursor_path(&cursor));
+  assert_eq_s("baz.qux", config_cursor_query(&cursor));
 
   fatal(config_cursor_mark, &cursor);
   fatal(config_cursor_pushd, &cursor, 7);
-  assert_strs("foo.bar.baz.qux.7", config_cursor_path(&cursor));
-  assert_strs("7", config_cursor_query(&cursor));
+  assert_eq_s("foo.bar.baz.qux.7", config_cursor_path(&cursor));
+  assert_eq_s("7", config_cursor_query(&cursor));
 
   fatal(config_cursor_sets, &cursor, "valyria");
-  assert_strs("valyria", config_cursor_path(&cursor));
-  assert_strs("valyria", config_cursor_query(&cursor));
+  assert_eq_s("valyria", config_cursor_path(&cursor));
+  assert_eq_s("valyria", config_cursor_query(&cursor));
 
   fatal(config_cursor_mark, &cursor);
   fatal(config_cursor_pushf, &cursor, "%s", "winterfell");
-  assert_strs("valyria.winterfell", config_cursor_path(&cursor));
-  assert_strs("winterfell", config_cursor_query(&cursor));
+  assert_eq_s("valyria.winterfell", config_cursor_path(&cursor));
+  assert_eq_s("winterfell", config_cursor_query(&cursor));
 
 finally:
   config_cursor_destroy(&cursor);
@@ -69,22 +69,22 @@ static xapi config_cursor_push_repeated(xunit_test * test)
   fatal(config_cursor_init, &cursor);
 
   fatal(config_cursor_sets, &cursor, "foo.bar");
-  assert_strs("foo.bar", config_cursor_path(&cursor));
-  assert_strs("foo.bar", config_cursor_query(&cursor));
+  assert_eq_s("foo.bar", config_cursor_path(&cursor));
+  assert_eq_s("foo.bar", config_cursor_query(&cursor));
 
   fatal(config_cursor_mark, &cursor);
   fatal(config_cursor_pushs, &cursor, "baz.qux");
-  assert_strs("foo.bar.baz.qux", config_cursor_path(&cursor));
-  assert_strs("baz.qux", config_cursor_query(&cursor));
+  assert_eq_s("foo.bar.baz.qux", config_cursor_path(&cursor));
+  assert_eq_s("baz.qux", config_cursor_query(&cursor));
 
   fatal(config_cursor_pushd, &cursor, 7);
 
-  assert_strs("foo.bar.7", config_cursor_path(&cursor));
-  assert_strs("7", config_cursor_query(&cursor));
+  assert_eq_s("foo.bar.7", config_cursor_path(&cursor));
+  assert_eq_s("7", config_cursor_query(&cursor));
 
   fatal(config_cursor_pushd, &cursor, 33);
-  assert_strs("foo.bar.33", config_cursor_path(&cursor));
-  assert_strs("33", config_cursor_query(&cursor));
+  assert_eq_s("foo.bar.33", config_cursor_path(&cursor));
+  assert_eq_s("33", config_cursor_query(&cursor));
 
 finally:
   config_cursor_destroy(&cursor);
@@ -96,9 +96,9 @@ coda;
 //
 
 xunit_unit xunit = {
-    tests : (xunit_test*[]) {
-      (xunit_test[]) {{ entry : config_cursor_basic }}
-    , (xunit_test[]) {{ entry : config_cursor_push_repeated }}
+    xu_tests : (xunit_test*[]) {
+      (xunit_test[]) {{ xu_entry : config_cursor_basic }}
+    , (xunit_test[]) {{ xu_entry : config_cursor_push_repeated }}
     , 0
   }
 };

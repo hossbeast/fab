@@ -183,7 +183,7 @@ int main(int argc, char** argv, char ** envp)
           xapi_calltree_unwind();
 
           // for unit-testing errors, log the failure and continue
-          logf(L_FAIL, "   %.*s", (int)z, space);
+          xlogf(L_FAIL, L_RED, "   %.*s", (int)z, space);
         }
 
         fatal(xclock_gettime, CLOCK_MONOTONIC_RAW, &test_end);

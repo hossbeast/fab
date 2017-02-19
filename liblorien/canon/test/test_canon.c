@@ -45,7 +45,7 @@ static xapi __attribute__((nonnull)) canon_test_entry(canon_test * const test)
   size_t z;
   fatal(canon, test->path, 0, test->base, 0, space, sizeof(space), &z, test->opts);
 
-  assertf(strcmp(test->final, space) == 0, "%s", "%s", test->final, space);
+  assert_eq_s(test->final, space);
 
   finally : coda;
 }

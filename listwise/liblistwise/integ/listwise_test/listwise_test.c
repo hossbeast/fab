@@ -113,13 +113,13 @@ API xapi listwise_test_entry(listwise_test * test)
     fatal(lstack_string, lx, 0, x, &s);
 
     if(i < sentinel(test->final))
-      assertf(strcmp(test->final[i], s) == 0, "row %s", "row %s", test->final[i], s);
+      assert_eq_s(test->final[i], s);
 
     i++;
   }
   LSTACK_ITEREND
 
-  assertf(i == sentinel(test->final), "rows %d", "rows %d", sentinel(test->final), i);
+  assert_eq_d(sentinel(test->final), i);
 
 finally:
   fatal(log_finish, &token);

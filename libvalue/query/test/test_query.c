@@ -28,6 +28,7 @@
 #include "valyria/pstring.h"
 #include "narrator.h"
 #include "narrator/fixed.h"
+#include "value/assert.h"
 
 #include "internal.h"
 #include "make.internal.h"
@@ -58,12 +59,8 @@ static xapi query_test_map_one_level(xunit_test * test)
   value * exp;
   value * act;
   value_store * stor = 0;
-  narrator * N0 = 0;
-  narrator * N1 = 0;
 
   fatal(value_store_create, &stor);
-  fatal(narrator_fixed_create, &N0, 1024);
-  fatal(narrator_fixed_create, &N1, 1024);
 
   // tree { bar 10 baz 15 foo 20 }
   fatal(value_float_mk, stor, 0, &foo, 20);
@@ -78,32 +75,24 @@ static xapi query_test_map_one_level(xunit_test * test)
   act = value_query(map, "foo");
 
   // assert
-  fatal(narrator_reset, N0); fatal(value_say, exp, N0);
-  fatal(narrator_reset, N1); fatal(value_say, act, N1);
-  assertf(value_cmp(exp, act) == 0, "%s", "%s", narrator_fixed_buffer(N0), narrator_fixed_buffer(N1));
+  assert_eq_value(exp, act);
 
   // act
   exp = bar;
   act = value_query(map, "bar");
 
   // assert
-  fatal(narrator_reset, N0); fatal(value_say, exp, N0);
-  fatal(narrator_reset, N1); fatal(value_say, act, N1);
-  assertf(value_cmp(exp, act) == 0, "%s", "%s", narrator_fixed_buffer(N0), narrator_fixed_buffer(N1));
+  assert_eq_value(exp, act);
 
   // act
   exp = baz;
   act = value_query(map, "baz");
 
   // assert
-  fatal(narrator_reset, N0); fatal(value_say, exp, N0);
-  fatal(narrator_reset, N1); fatal(value_say, act, N1);
-  assertf(value_cmp(exp, act) == 0, "%s", "%s", narrator_fixed_buffer(N0), narrator_fixed_buffer(N1));
+  assert_eq_value(exp, act);
 
 finally:
   fatal(value_store_xfree, stor);
-  fatal(narrator_xfree, N0);
-  fatal(narrator_xfree, N1);
 coda;
 }
 
@@ -118,12 +107,8 @@ static xapi query_test_map_two_levels(xunit_test * test)
   value * exp;
   value * act;
   value_store * stor = 0;
-  narrator * N0 = 0;
-  narrator * N1 = 0;
 
   fatal(value_store_create, &stor);
-  fatal(narrator_fixed_create, &N0, 1024);
-  fatal(narrator_fixed_create, &N1, 1024);
 
   // tree { foo { bar 15 baz 20 } }
   fatal(value_float_mk, stor, 0, &bar, 15);
@@ -137,23 +122,17 @@ static xapi query_test_map_two_levels(xunit_test * test)
   act = value_query(map, "foo.bar");
 
   // assert
-  fatal(narrator_reset, N0); fatal(value_say, exp, N0);
-  fatal(narrator_reset, N1); fatal(value_say, act, N1);
-  assertf(value_cmp(exp, act) == 0, "%s", "%s", narrator_fixed_buffer(N0), narrator_fixed_buffer(N1));
+  assert_eq_value(exp, act);
 
   // act
   exp = baz;
   act = value_query(map, "foo.baz");
 
   // assert
-  fatal(narrator_reset, N0); fatal(value_say, exp, N0);
-  fatal(narrator_reset, N1); fatal(value_say, act, N1);
-  assertf(value_cmp(exp, act) == 0, "%s", "%s", narrator_fixed_buffer(N0), narrator_fixed_buffer(N1));
+  assert_eq_value(exp, act);
 
 finally:
   fatal(value_store_xfree, stor);
-  fatal(narrator_xfree, N0);
-  fatal(narrator_xfree, N1);
 coda;
 }
 
@@ -167,10 +146,8 @@ static xapi query_test_map_nomatch(xunit_test * test)
   value * baz;
   value * act;
   value_store * stor = 0;
-  narrator * N0 = 0;
 
   fatal(value_store_create, &stor);
-  fatal(narrator_fixed_create, &N0, 1024);
 
   // tree { foo { bar 15 baz 20 } }
   fatal(value_float_mk, stor, 0, &bar, 15);
@@ -183,38 +160,22 @@ static xapi query_test_map_nomatch(xunit_test * test)
   act = value_query(map, "qux");
 
   // assert
-  if(act)
-  {
-    fatal(narrator_reset, N0);
-    fatal(value_say, act, N0);
-  }
-  assertf(act == 0, "%s", "%s", "(nomatch)", narrator_fixed_buffer(N0));
+  assert_null_value(act);
 
   // act
   act = value_query(map, "foot");
 
   // assert
-  if(act)
-  {
-    fatal(narrator_reset, N0);
-    fatal(value_say, act, N0);
-  }
-  assertf(act == 0, "%s", "%s", "(nomatch)", narrator_fixed_buffer(N0));
+  assert_null_value(act);
 
   // act
   act = value_query(map, "foo.qux");
 
   // assert
-  if(act)
-  {
-    fatal(narrator_reset, N0);
-    fatal(value_say, act, N0);
-  }
-  assertf(act == 0, "%s", "%s", "(nomatch)", narrator_fixed_buffer(N0));
+  assert_null_value(act);
 
 finally:
   fatal(value_store_xfree, stor);
-  fatal(narrator_xfree, N0);
 coda;
 }
 
@@ -229,12 +190,8 @@ static xapi query_test_list(xunit_test * test)
   value * exp;
   value * act;
   value_store * stor = 0;
-  narrator * N0 = 0;
-  narrator * N1 = 0;
 
   fatal(value_store_create, &stor);
-  fatal(narrator_fixed_create, &N0, 1024);
-  fatal(narrator_fixed_create, &N1, 1024);
 
   // tree [ 1 true 3 ]
   fatal(value_integer_mk, stor, 0, &one, 1);
@@ -249,32 +206,24 @@ static xapi query_test_list(xunit_test * test)
   act = value_query(list, "0");
 
   // assert
-  fatal(narrator_reset, N0); fatal(value_say, exp, N0);
-  fatal(narrator_reset, N1); fatal(value_say, act, N1);
-  assertf(value_cmp(exp, act) == 0, "%s", "%s", narrator_fixed_buffer(N0), narrator_fixed_buffer(N1));
+  assert_eq_value(exp, act);
 
   // act
   exp = two;
   act = value_query(list, "1");
 
   // assert
-  fatal(narrator_reset, N0); fatal(value_say, exp, N0);
-  fatal(narrator_reset, N1); fatal(value_say, act, N1);
-  assertf(value_cmp(exp, act) == 0, "%s", "%s", narrator_fixed_buffer(N0), narrator_fixed_buffer(N1));
+  assert_eq_value(exp, act);
 
   // act
   exp = three;
   act = value_query(list, "2");
 
   // assert
-  fatal(narrator_reset, N0); fatal(value_say, exp, N0);
-  fatal(narrator_reset, N1); fatal(value_say, act, N1);
-  assertf(value_cmp(exp, act) == 0, "%s", "%s", narrator_fixed_buffer(N0), narrator_fixed_buffer(N1));
+  assert_eq_value(exp, act);
 
 finally:
   fatal(value_store_xfree, stor);
-  fatal(narrator_xfree, N0);
-  fatal(narrator_xfree, N1);
 coda;
 }
 
@@ -288,10 +237,8 @@ static xapi query_test_list_nomatch(xunit_test * test)
   value * three;
   value * act;
   value_store * stor = 0;
-  narrator * N0 = 0;
 
   fatal(value_store_create, &stor);
-  fatal(narrator_fixed_create, &N0, 1024);
 
   // tree [ 1 true 3 ]
   fatal(value_integer_mk, stor, 0, &one, 1);
@@ -305,16 +252,10 @@ static xapi query_test_list_nomatch(xunit_test * test)
   act = value_query(list, "7");
 
   // assert
-  if(act)
-  {
-    fatal(narrator_reset, N0);
-    fatal(value_say, act, N0);
-  }
-  assertf(act == 0, "%s", "%s", "(nomatch)", narrator_fixed_buffer(N0));
+  assert_null_value(act);
 
 finally:
   fatal(value_store_xfree, stor);
-  fatal(narrator_xfree, N0);
 coda;
 }
 
@@ -331,7 +272,7 @@ static xapi query_test_list_empty(xunit_test * test)
   fatal(value_list_mkv, stor, 0, list, &list, 0);
 
   // assert
-  assertf(list->els->l == 0, "%d", "%d", 0, list->els->l);
+  assert_eq_d(0, list->els->l);
 
 finally:
   fatal(value_store_xfree, stor);

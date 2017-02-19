@@ -27,7 +27,8 @@ SUMMARY
  test assertions that fail with XUNIT_FAIL
 
 REMARKS
- macros instead of static inline to preserve file name and line number
+ macros instead of static inline to preserve file name and line number, pending address based
+ location support in libxapi
 
 */
 
@@ -38,25 +39,44 @@ REMARKS
 
 #include "xunit.h"
 #include "xunit/XUNIT.errtab.h"
+#include "macros.h"
 
-void xunit_failf_info(const char * const restrict expfmt, const char * const restrict actfmt, ...)
-  __attribute__((nonnull(1, 2)));
+#define XU_EQ 1
+#define XU_GT 2
+#define XU_LT 3
+#define XU_NULL 4
+#define XU_NOTNULL 5
 
-void xunit_fails_info(const char * const restrict exp, const char * const restrict act)
-  __attribute__((nonnull));
+extern uint32_t xunit_assertions_passed;
+extern uint32_t xunit_assertions_failed;
 
-extern __thread uint32_t xunit_assertions_passed;
-extern __thread uint32_t xunit_assertions_failed;
+// libxapi-provided assertion data types
+extern struct xunit_type * xunit_buffer;
+extern struct xunit_type * xunit_string;
+extern struct xunit_type * xunit_int;
+extern struct xunit_type * xunit_xapi;
+extern struct xunit_type * xunit_int64;
+extern struct xunit_type * xunit_float;
+extern struct xunit_type * xunit_bool;
 
 /// ufail
 //
 // SUMMARY
 //  raise a unit test assertion failure
 //
-#define ufail()                       \
-  do {                                \
-    xunit_assertions_failed++;        \
-    fail(XUNIT_FAIL); \
+#define assert_eq_s(expected, actual)       _assertion(xunit_string, XU_EQ, QUOTE(actual), expected, actual)
+#define assert_eq_w(exp, expz, act, actz)   _assertion(xunit_buffer, XU_EQ, QUOTE(act), exp, expz, act, actz)
+#define assert_eq_d(expected, actual)       _assertion(xunit_int, XU_EQ, QUOTE(actual), expected, actual)
+#define assert_eq_e(expected, actual)       _assertion(xunit_xapi, XU_EQ, QUOTE(actual), expected, actual)
+#define assert_eq_i64(expected, actual)     _assertion(xunit_int64, XU_EQ, QUOTE(actual), expected, actual)
+#define assert_eq_f(expected, actual)       _assertion(xunit_float, XU_EQ, QUOTE(actual), expected, actual)
+#define assert_eq_b(expected, actual)       _assertion(xunit_bool, XU_EQ, QUOTE(actual), expected, actual)
+
+#define _assertion(type, op, value, ...)                                  \
+  do {                                                                   \
+    if(!xunit_assertion_evaluate(type, op, value, ##__VA_ARGS__)) {      \
+      fail(XUNIT_FAIL);                                                  \
+    }                                                                    \
   } while(0)
 
 #define ufails(exp, act, ...)                     \
@@ -76,49 +96,37 @@ extern __thread uint32_t xunit_assertions_failed;
 // SUMMARY
 //  raise a unit test assertion failure if a condition is false
 //
-#define assert(bool)              \
-  do {                            \
-    if(!(bool))                   \
-      ufail();                    \
-    else                          \
-      xunit_assertions_passed++;  \
+#define assert_eq_s(expected, actual)       _assertion(xunit_string, XU_EQ, QUOTE(actual), expected, actual)
+#define assert_eq_w(exp, expz, act, actz)   _assertion(xunit_buffer, XU_EQ, QUOTE(act), exp, expz, act, actz)
+#define assert_eq_d(expected, actual)       _assertion(xunit_int, XU_EQ, QUOTE(actual), expected, actual)
+#define assert_eq_e(expected, actual)       _assertion(xunit_xapi, XU_EQ, QUOTE(actual), expected, actual)
+#define assert_eq_i64(expected, actual)     _assertion(xunit_int64, XU_EQ, QUOTE(actual), expected, actual)
+#define assert_eq_f(expected, actual)       _assertion(xunit_float, XU_EQ, QUOTE(actual), expected, actual)
+
+#define _assertion(type, op, value, ...)                                  \
+  do {                                                                   \
+    if(!xunit_assertion_evaluate(type, op, value, ##__VA_ARGS__)) {      \
+      fail(XUNIT_FAIL);                                                  \
+    }                                                                    \
   } while(0)
 
-#define asserts(bool, exp, act, ...)          \
-  do {                                        \
-    if(!(bool))                               \
-      ufails(exp, act);                       \
-    else                                      \
-      xunit_assertions_passed++;              \
-  } while(0)
+#define restrict __restrict
 
-#define assertf(bool, expfmt, actfmt, ...)    \
-  do {                                        \
-    if(!(bool))                               \
-      ufailf(expfmt, actfmt, ##__VA_ARGS__);  \
-    else                                      \
-      xunit_assertions_passed++;              \
-  } while(0)
-
-/// assert_exit
+/// xunit_assertion_evaluate
 //
 // SUMMARY
-//  special-purpose assert for exit values
+//  evaluate an assertion
 //
-#define assert_exit(expected, actual)         \
-  assertf(                                    \
-      expected == actual                      \
-    , "%s(%d)", "%s(%d)"                      \
-    , xapi_exit_errname(expected)             \
-    , expected                                \
-    , xapi_exit_errname(actual)               \
-    , actual                                  \
-  )
+// PARAMETERS
+//  type    - data
+//  op      - 
+//  [value] - 
+//
+// RETURNS
+//  boolean value indicating whether the assertion passed
+//
+int xunit_assertion_evaluate(const struct xunit_type * const restrict type, uint8_t op, const char * const restrict value, ...)
+  __attribute__((nonnull(1)));
 
-#define assert_eq_d(exp, act)                 \
-  assertf(act == exp, "%d", "%d", exp, act)
-
-#define assert_eq_s(exp, act, ...)            \
-  asserts(strcmp(act, exp) == 0, exp, act)
-
+#undef restrict
 #endif

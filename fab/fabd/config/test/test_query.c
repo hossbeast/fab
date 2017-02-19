@@ -99,7 +99,7 @@ static xapi config_test_entry(config_test * test)
     fatal(value_say, expected, N0);
     fatal(narrator_reset, N1);
     fatal(value_say, actual, N1);
-    assertf(value_cmp(expected, actual) == 0, "%s", "%s", narrator_fixed_buffer(N0), narrator_fixed_buffer(N1));
+    assert_eq_s(narrator_fixed_buffer(N0), narrator_fixed_buffer(N1));
   }
 
 finally:
@@ -115,8 +115,8 @@ static xapi config_unit_setup(xunit_unit * unit)
   enter;
 
   int x;
-  for(x = 0; x < sentinel(unit->tests); x++)
-    unit->tests[x]->entry = config_test_entry;
+  for(x = 0; x < sentinel(unit->xu_tests); x++)
+    unit->xu_tests[x]->xu_entry = config_test_entry;
 
   // load libraries
   fatal(lorien_load);
@@ -153,9 +153,9 @@ static xapi config_unit_cleanup(xunit_unit * unit)
 //
 
 xunit_unit xunit = {
-    setup : config_unit_setup
-  , cleanup : config_unit_cleanup
-  , tests : (xunit_test*[]) {
+    xu_setup : config_unit_setup
+  , xu_cleanup : config_unit_cleanup
+  , xu_tests : (xunit_test*[]) {
       (config_test[]){{
           config_texts: (char *[]) { "foo bar", 0 }
         , queries : (typeof(*((config_test*)0)->queries)[]) {

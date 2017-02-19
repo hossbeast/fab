@@ -1,37 +1,54 @@
 /* Copyright (c) 2012-2015 Todd Freed <todd.freed@gmail.com>
 
    This file is part of fab.
-   
+
    fab is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
    the Free Software Foundation, either version 3 of the License, or
    (at your option) any later version.
-   
+
    fab is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
    GNU General Public License for more details.
-   
+
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef _MORIA_LOAD_H
-#define _MORIA_LOAD_H
+#include <stdarg.h>
 
 #include "xapi.h"
+#include "xunit/type.h"
 
-/// moria_load
-//
-// SUMMARY
-//  initialize the library
-//
-xapi moria_load(void);
+#include "internal.h"
+#include "assert.h"
 
-/// moria_unload
-//
-// SUMMARY
-//  release the library
-//
-xapi moria_unload(void);
+#define restrict __restrict
 
-#endif
+//
+// types
+//
+
+static void value_unpack(va_list va, xunit_arg * a)
+{
+  a->p = va_arg(va, void*);
+}
+
+static int value_compare(xunit_arg * A, xunit_arg * B)
+{
+  return value_cmp(A->p, B->p);
+}
+
+static void value_info_add(const char * const restrict name, xunit_arg * a)
+{
+}
+
+//
+// API
+//
+
+APIDATA xunit_type * value_xunit_value = (xunit_type[]) {{
+    xu_unpack : value_unpack
+  , xu_compare : value_compare
+  , xu_info_add : value_info_add
+}};

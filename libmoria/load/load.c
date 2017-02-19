@@ -15,6 +15,8 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
+#include <stdio.h>
+
 #include "xapi.h"
 #include "xlinux/load.h"
 #include "narrator/load.h"
@@ -32,7 +34,7 @@
 
 static int handles;
 
-API xapi valyria_load()
+API xapi moria_load()
 {
   enter;
 
@@ -47,7 +49,7 @@ API xapi valyria_load()
   finally : coda;
 }
 
-API xapi valyria_unload()
+API xapi moria_unload()
 {
   enter;
 
@@ -61,7 +63,7 @@ API xapi valyria_unload()
   }
   else if(handles < 0)
   {
-    fails(SYS_AUNLOAD, "library", "libvalyria");
+    fails(SYS_AUNLOAD, "library", "libmoria");
   }
 
   finally : coda;

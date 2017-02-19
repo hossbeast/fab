@@ -37,6 +37,7 @@
   // 
   // PARAMETERS
   //  token - token to parse
+  //  ldel  - offset from start of yytext
   //
   #define LEX(token)            \
     fatal(lexify                \

@@ -102,7 +102,6 @@ static xapi graph_test_entry(graph_test * test)
   fatal(narrator_fixed_create, &N, 4096);
 
   // setup the test graph
-
   int x;
   for(x = 0; x < sentinel(test->edges); x++)
   {
@@ -156,12 +155,12 @@ static xapi graph_test_entry(graph_test * test)
 
   if(test->expected)
   {
-    assertf(strcmp(test->expected, narrator_fixed_buffer(N)) == 0, "%s", "%s", test->expected, narrator_fixed_buffer(N));
+    assert_eq_s(test->expected, narrator_fixed_buffer(N));
   }
   else if(test->cycle || test->cycle_path)
   {
     // appropriate exit status
-    assert_exit(MORIA_CYCLE, exit);
+    assert_eq_e(MORIA_CYCLE, exit);
 
     // appropriate error message
     if(test->cycle_path)

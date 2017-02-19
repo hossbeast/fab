@@ -15,23 +15,9 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef _MORIA_LOAD_H
-#define _MORIA_LOAD_H
+#ifndef _XUNIT_TYPE_INTERNAL_H
+#define _XUNIT_TYPE_INTERNAL_H
 
-#include "xapi.h"
-
-/// moria_load
-//
-// SUMMARY
-//  initialize the library
-//
-xapi moria_load(void);
-
-/// moria_unload
-//
-// SUMMARY
-//  release the library
-//
-xapi moria_unload(void);
+#include "type.h"
 
 #endif

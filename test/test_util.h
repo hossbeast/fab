@@ -80,8 +80,23 @@ void ufails_info(const char * const restrict exp, const char * const restrict ac
 #define assert_eq_d(exp, act)                 \
   assertf(act == exp, "%d", "%d", exp, act)
 
+#define assert_eq_zu(exp, act)                 \
+  assertf(act == exp, "%zu", "%zu", exp, act)
+
+#define assert_gt_d(exp, act)                 \
+  assertf(act > exp, "> %d", "%d", exp, act)
+
+#define assert_le_d(exp, act)                 \
+  assertf(act <= exp, "<= %d", "%d", exp, act)
+
 #define assert_eq_s(exp, act, ...)            \
   asserts(strcmp(act, exp) == 0, exp, act)
+
+#define assert_null(act)                      \
+  assertf(!act, "null", "%p", act)
+
+#define assert_notnull(act)                   \
+  assertf(act, "not null", "%p", act)
 
 #define assert_exit(expected, actual)                                 \
   assertf(                                                            \
@@ -92,6 +107,9 @@ void ufails_info(const char * const restrict exp, const char * const restrict ac
     , xapi_exit_errname(actual)                                       \
     , actual                                                          \
   )
+
+#define assert_eq_b(exp, act)                                         \
+  assertf(act == exp, "%s", "%s", exp ? "true" : "false", act ? "true" : "false")
 
 #define success                                                        \
   do {                                                                 \

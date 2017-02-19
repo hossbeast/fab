@@ -129,7 +129,7 @@ GRAPH_TRAVERSE_TABLE(0, 0)
 //  follows.
 //
 //  For an edge whose attrs matches one of the masks, the traversal proceeds along the edge
-//  according to the table below. If the attrs of an edge matche more than one of the bitmasks, the
+//  according to the table below. If the attrs of an edge match more than one of the bitmasks, the
 //  behavior is undefined. For the initial node, it is as if traverse and visit are both true
 //
 //               traverse    visit
