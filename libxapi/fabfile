@@ -47,7 +47,7 @@ $lflags_xapi_devel  = [ $lflags_xapi_devel $lflags [ "-Wl,-soname," libxapi-xapi
 ## dependencies
 ##
 
-[ @all ] : [ @release @test ]
+[ @all ] : [ @release @test.fast ]
 [ @release ] : [ @release.xapi ]
 [ @release.xapi ] : [ @final.xapi @debug.xapi @devel.xapi ]
 [ @final.xapi ] : [ $libxapi_xapi_final ]
@@ -144,8 +144,17 @@ $lflags_xapi_devel  = [ $lflags_xapi_devel $lflags [ "-Wl,-soname," libxapi-xapi
 }
 
 [ @test ] : [ @test.stacktrace_checks @test.stacktrace @test.errorcode ]
+[ @test.fast ] : [ @test.stacktrace_checks.fast @test.stacktrace.fast @test.errorcode.fast ]
 
 [ @test.stacktrace ] : [ $*/integ ~ j lsr l/errtab v sx/c/stacktrace sy ]
+{
+  set -e
+  (
+    for x in [ $@ ~ rx/ineed fi ]; do [ $dcommon/valgrind.runner ~ j ] $x ; done
+  ) | tee /dev/fd/501
+}
+
+[ @test.stacktrace.fast ] : [ $*/integ ~ j lsr l/errtab v sx/c/stacktrace sy ]
 {
   set -e
   (
@@ -157,11 +166,27 @@ $lflags_xapi_devel  = [ $lflags_xapi_devel $lflags [ "-Wl,-soname," libxapi-xapi
 {
   set -e
   (
+    for x in [ $@ ~ rx/ineed fi ]; do [ $dcommon/valgrind.runner ~ j ] $x ; done
+  ) | tee /dev/fd/501
+}
+
+[ @test.stacktrace_checks.fast ] : [ $*/integ ~ j lsr l/errtab v sx/c/stacktrace_checks sy ]
+{
+  set -e
+  (
     [ $@ ~ rx/ineed fi/; ]
   ) | tee /dev/fd/501
 }
 
 [ @test.errorcode ] : [ $*/integ ~ j lsr l/errtab v sx/c/errorcode sy ]
+{
+  set -e
+  (
+    for x in [ $@ ~ rx/ineed fi ]; do [ $dcommon/valgrind.runner ~ j ] $x ; done
+  ) | tee /dev/fd/501
+}
+
+[ @test.errorcode.fast ] : [ $*/integ ~ j lsr l/errtab v sx/c/errorcode sy ]
 {
   set -e
   (
