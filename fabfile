@@ -20,6 +20,7 @@
 
 # source invocations
 +[ $dfabcore ]()      @fabcore
++[ $dfabd ]()         @fabd
 +[ $dliblistwise ]()  @liblistwise
 +[ $dliblogger ]()    @liblogger
 +[ $dliblorien ]()    @liblorien
@@ -35,7 +36,7 @@
 +[ $dxunit ]()        @xunit
 
 # build artifacts
-[ @all ] : [ @release @test ]
+[ @all ] : [ @release @test.fast ]
 [ @release ] : [ @final @debug @devel ]
 [ @final ] : [
   @fabcore.final @liblistwise.final @liblogger.final @liblorien.final @libmoria.final
@@ -75,7 +76,11 @@
 # doc
 [ @install.man ] : [ @fabcore.install.man @listwise.install.man ]
 
-# non-xunit tests
-[ @test ] : [ @fabcore.test @liblistwise.test @liblogger.test @liblorien.test @libmoria.test @libnarrator.test ]
+# tests
+[ @test ] : [ @fabd.test @liblistwise.test @liblogger.test @liblorien.test @libmoria.test @libnarrator.test ]
 [ @test ] : [ @libvalue.test @libvalyria.test @libxapi.test @libxlinux.test @libxunit.test @libyyutil.test @listwise.test ]
 [ @test ] : [ @xunit.test ]
+
+[ @test.fast ] : [ @fabd.test.fast @liblistwise.test.fast @liblogger.test.fast @liblorien.test.fast @libmoria.test.fast @libnarrator.test.fast ]
+[ @test.fast ] : [ @libvalue.test.fast @libvalyria.test.fast @libxapi.test.fast @libxlinux.test.fast @libxunit.test.fast @libyyutil.test.fast @listwise.test.fast ]
+[ @test.fast ] : [ @xunit.test.fast ]

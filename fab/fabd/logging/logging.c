@@ -47,7 +47,7 @@ logger_category * categories = (logger_category []) {
 };
 
 logger_stream * streams = (logger_stream []) {
-    { name : "console"  , type : LOGGER_STREAM_FD , expr : "+ERROR|WARN|INFO", attr : L_PROCESSID | L_CATEGORY
+    { name : "console"  , type : LOGGER_STREAM_FD , expr : "+ERROR +WARN +INFO", attr : L_PROCESSID | L_CATEGORY
       , fd : 1 }
   , { name : "logfile"  , type : LOGGER_STREAM_ROLLING, expr : "+ALL", attr : L_DATESTAMP | L_CATEGORY  | L_NOCOLOR
       , file_mode : FABIPC_MODE_DATA, threshold : 1024 * 1024, max_files : 10, path_base : (char[256]) { } }

@@ -88,7 +88,7 @@ $lflags_xapi_devel = [ $lflags_xapi_devel $lopts $libxapi_xapi_devel $libxlinux_
 #
 # catchall node
 #
-[ @all ] : [ @release @test ]
+[ @all ] : [ @release @test.fast ]
 [ @release ] : [ @final @debug @devel ]
 [ @final ] : [ $fabd_final ]
 [ @debug ] : [ $fabd_debug ]
