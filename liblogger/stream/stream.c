@@ -43,6 +43,7 @@
 #include "macros.h"
 #include "strutil.h"
 #include "color.h"
+#include "spinlock.h"
 
 #define restrict __restrict
 
@@ -80,6 +81,8 @@ static xapi __attribute__((nonnull)) stream_write(stream * const restrict stream
 
   // effective attributes : category + log site + stream
   uint32_t attr = attr_combine(base_attr, streamp->attr);
+
+  spinlock_engage(&streamp->lock);
 
   int prev = 0;
   if((attr & COLOR_OPT) && (attr & COLOR_OPT) != L_NOCOLOR)
@@ -220,7 +223,9 @@ static xapi __attribute__((nonnull)) stream_write(stream * const restrict stream
   // flush
   fatal(narrator_record_write, N);
 
-  finally : coda;
+finally:
+  spinlock_release(&streamp->lock);
+coda;
 }
 
 static xapi __attribute__((nonnull)) stream_initialize(stream * const restrict streamp, const logger_stream * restrict def)

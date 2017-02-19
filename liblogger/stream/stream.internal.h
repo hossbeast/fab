@@ -60,6 +60,8 @@ typedef struct stream
   // the underlying narrator
   struct narrator * narrator_base;
   struct narrator * narrator_owned;
+
+  int lock;
 } stream;
 
 /// g_streams
