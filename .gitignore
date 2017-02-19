@@ -2,11 +2,12 @@
 *.i
 *.s
 *.o
-//*.tab.*
-//*.lex.*
-//*.tokens.*
-//*.states.*
-//*.errtab.*
+*.tab.*
+*.lex.*
+*.tokens.*
+*.states.*
+*.errtab.c
+**/errtab/*.errtab.h
 exports
 *.final
 *.debug
