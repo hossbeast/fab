@@ -64,19 +64,19 @@ calltree * S;
 
 #define restrict __restrict
 
-/// xapi_calltree_free
-//
-// SUMMARY
-//  free the calltree for this thread with free semantics
-//
-void calltree_free(void);
-
 /// calltree_frame_push
 //
 // SUMMARY
 //  during unwinding, allocate a frame on the calltree
 //
 struct frame * calltree_frame_push(void);
+
+/// calltree_teardown
+//
+// SUMMARY
+//  zero the calltree after the memblk has been freed
+//
+void calltree_teardown(void);
 
 #undef restrict
 #endif

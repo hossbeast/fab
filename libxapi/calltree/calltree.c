@@ -109,6 +109,12 @@ frame * calltree_frame_push()
   return f;
 }
 
+void calltree_teardown()
+{
+  g_calltree = 0;
+  g_calltree_stor = 0;
+}
+
 //
 // api
 //

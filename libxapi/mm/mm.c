@@ -31,10 +31,6 @@ __thread struct memblk mm_mb;
 
 #define restrict __restrict
 
-//
-// static
-//
-
 /// assure
 //
 // SUMMARY
@@ -77,23 +73,23 @@ static void assure(size_t sz)
     }
 
     typeof(mb->blocks[0]) * block = &mb->blocks[mb->blocksl];
+    block->l = 0;
+    block->a = 0;
+    block->o = 0;
 
     /* reallocate the block */
-    if(block->a == 0 || (block->a == MEMBLOCK_SMALL && sz > MEMBLOCK_SMALL))
-    {
-      size_t ns = MEMBLOCK_LARGE;
-      if((mb->blocksl < MEMBLOCK_THRESHOLD) && (sz <= MEMBLOCK_SMALL))
-        block->a = MEMBLOCK_SMALL;
+    size_t ns = MEMBLOCK_LARGE;
+    if((mb->blocksl < MEMBLOCK_THRESHOLD) && (sz <= MEMBLOCK_SMALL))
+      block->a = MEMBLOCK_SMALL;
 
-      if((block->s = realloc(block->s, sizeof(*block->s) * ns)) == 0)
-        goto failed;
+    if((block->s = realloc(block->s, sizeof(*block->s) * ns)) == 0)
+      goto failed;
 
-      block->a = ns;
+    block->a = ns;
 
-      // cumulative offset
-      if(mb->blocksl)
-        block->o = mb->blocks[mb->blocksl - 1].o + mb->blocks[mb->blocksl - 1].l;
-    }
+    // cumulative offset
+    if(mb->blocksl)
+      block->o = mb->blocks[mb->blocksl - 1].o + mb->blocks[mb->blocksl - 1].l;
 
     memset(block->s, 0, sizeof(*block->s) * block->a);
     mb->blocksl++;
@@ -112,19 +108,14 @@ void mm_teardown()
 {
   struct memblk * mb = &mm_mb;
 
-//
-// how to teardown all threads?
-//
-
   int x;
   for(x = 0; x < mb->blocksl; x++)
-  {
     free(mb->blocks[x].s);
-  }
 
   free(mb->blocks);
   mb->blocks = 0;
   mb->blocksl = 0;
+  mb->blocksa = 0;
 }
 
 void mm_malloc(void * restrict p, size_t sz)

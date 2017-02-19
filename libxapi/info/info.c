@@ -37,6 +37,13 @@ __thread APIDATA size_t info_staginga;
 // public
 //
 
+void info_teardown()
+{
+  info_staging = 0;
+  info_stagingl = 0;
+  info_staginga = 0;
+}
+
 void info_freeze(memblk * const restrict mb, info * restrict i)
 {
   memblk_freeze(mb, &i->ks);

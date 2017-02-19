@@ -20,9 +20,7 @@
 
 /*
 
-mm manages a per-thread allocation memblk used exclusively for g_calltree
-
-All mm allocations are directly attributable to g_calltree or its children
+mm manages a per-thread allocation memblk that stores the per-thread calltree and staging infos
 
 */
 
@@ -39,7 +37,7 @@ extern __thread struct memblk mm_mb;
 /// mm_teardown
 //
 // SUMMARY
-//  release memory across all threads
+//  release the memblk for this thread
 //
 void mm_teardown(void);
 

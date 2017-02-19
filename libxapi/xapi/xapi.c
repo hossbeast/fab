@@ -16,7 +16,6 @@
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
 #include "internal.h"
-#include "mm.internal.h"
 #include "errtab.internal.h"
 #include "frame.internal.h"
 
@@ -26,7 +25,6 @@
 
 API void xapi_teardown()
 {
-  mm_teardown();
   errtab_teardown();
   frame_teardown();
 }

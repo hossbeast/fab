@@ -215,6 +215,10 @@ API xapi xapi_frame_leave(int topframe)
 #if XAPI_RUNTIME_CHECKS
     xapi_calling_frame_address = 0;
 #endif
+
+    mm_teardown();
+    calltree_teardown();
+    info_teardown();
   }
 
   return exit;

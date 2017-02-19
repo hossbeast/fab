@@ -42,6 +42,13 @@ extern __thread size_t info_staginga;
 
 #define restrict __restrict 
 
+/// info_teardown
+//
+// SUMMARY
+//  zero the staging infos after the memblk has been freed
+//
+void info_teardown(void);
+
 /// info_freeze
 //
 // SUMMARY
