@@ -162,7 +162,7 @@ API void psifree(pstring ** ps)
 
 // load
 
-API xapi psvloadf(pstring * restrict ps, const char * const restrict fmt, va_list va)
+API xapi psloadvf(pstring * restrict ps, const char * const restrict fmt, va_list va)
 {
   enter;
 
@@ -192,7 +192,7 @@ API xapi psloadf(pstring * restrict ps, const char * const restrict fmt, ...)
 
   va_list va;
   va_start(va, fmt);
-  fatal(psvloadf, ps, fmt, va);
+  fatal(psloadvf, ps, fmt, va);
 
 finally:
   va_end(va);

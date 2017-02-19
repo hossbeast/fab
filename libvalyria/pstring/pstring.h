@@ -135,14 +135,14 @@ void psclear(pstring * restrict p)
 //  [c]   - single byte
 //
 // VARIANTS
-//  psvloadf : load formatted output from va_list
+//  psloadvf : load formatted output from va_list
 //  psloadf : load formatted output from varargs
 //  psloads : load a string
 //  psloadw : load a buffer
 //  psloadc : load a byte
 //
 
-xapi psvloadf(pstring * restrict p, const char * const restrict fmt, va_list va)
+xapi psloadvf(pstring * restrict p, const char * const restrict fmt, va_list va)
   __attribute__((nonnull));
 
 xapi psloadf(pstring * restrict p, const char * const restrict fmt, ...)
