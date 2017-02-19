@@ -15,6 +15,10 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
+#ifndef SNARF_H
+#define SNARF_H
+
+#include <stdarg.h>
 #include "xapi.h"
 
 /// snarf
@@ -25,22 +29,52 @@
 // PARAMETERS
 //  dst     - (returns) xmalloc'd buffer
 //  [dstl]  - (returns) size of buffer
-//  [dirfd] - relative path resolution dir
 //  path    - path to file
 //
+// VARIANTS
+//  *at
+//   [dirfd] - relative path resolution dir
+//
+//  u* - only fails when errno != ENOENT
+//
 xapi snarfs(char ** const restrict dst, size_t * const restrict dstl, const char * const restrict path)
-  __attribute__((nonnull(1)));
+  __attribute__((nonnull(1, 3)));
 
-xapi dsnarfs(char ** const restrict dst, size_t * const restrict dstl, int dirfd, const char * const restrict path)
-  __attribute__((nonnull(1)));
+xapi snarff(char ** const restrict dst, size_t * const restrict dstl, const char * const restrict path_fmt, ...)
+  __attribute__((nonnull(1, 3)))
+  __attribute__((format(printf, 3, 4)));
 
-/// usnarf
-//
-// SUMMARY
-//  wrapper for snarf that only fails when errno != ENOENT
-//
+xapi snarfvf(char ** const restrict dst, size_t * const restrict dstl, const char * const restrict path_fmt, va_list va)
+  __attribute__((nonnull(1, 3)));
+
+xapi snarfats(char ** const restrict dst, size_t * const restrict dstl, int dirfd, const char * const restrict path)
+  __attribute__((nonnull(1, 4)));
+
+xapi snarfatf(char ** const restrict dst, size_t * const restrict dstl, int dirfd, const char * const restrict path_fmt, ...)
+  __attribute__((nonnull(1, 4)))
+  __attribute__((format(printf, 4, 5)));
+
+xapi snarfatvf(char ** const restrict dst, size_t * const restrict dstl, int dirfd, const char * const restrict path_fmt, va_list va)
+  __attribute__((nonnull(1, 4)));
+
 xapi usnarfs(char ** const restrict dst, size_t * const restrict dstl, const char * const restrict path)
-  __attribute__((nonnull(1)));
+  __attribute__((nonnull(1, 3)));
 
-xapi udsnarfs(char ** const restrict dst, size_t * const restrict dstl, int dirfd, const char * const restrict path)
-  __attribute__((nonnull(1)));
+xapi usnarff(char ** const restrict dst, size_t * const restrict dstl, const char * const restrict path_fmt, ...)
+  __attribute__((nonnull(1, 3)))
+  __attribute__((format(printf, 3, 4)));
+
+xapi usnarfvf(char ** const restrict dst, size_t * const restrict dstl, const char * const restrict path_fmt, va_list va)
+  __attribute__((nonnull(1, 3)));
+
+xapi usnarfats(char ** const restrict dst, size_t * const restrict dstl, int dirfd, const char * const restrict path)
+  __attribute__((nonnull(1, 4)));
+
+xapi usnarfatf(char ** const restrict dst, size_t * const restrict dstl, int dirfd, const char * const restrict path_fmt, ...)
+  __attribute__((nonnull(1, 4)))
+  __attribute__((format(printf, 4, 5)));
+
+xapi usnarfatvf(char ** const restrict dst, size_t * const restrict dstl, int dirfd, const char * const restrict path_fmt, va_list va)
+  __attribute__((nonnull(1, 4)));
+
+#endif

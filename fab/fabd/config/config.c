@@ -151,19 +151,19 @@ xapi config_files_apply()
   config_staging = 0;
 
   // apply system-level config
-  fatal(udsnarfs, &text, 0, g_params.projdir_fd, SYSTEM_CONFIG_PATH);
+  fatal(usnarfats, &text, 0, g_params.projdir_fd, SYSTEM_CONFIG_PATH);
   if(text)
     fatal(applys, text, SYSTEM_CONFIG_PATH, store_staging, &config_staging);
 
   // apply user-level config
   iwfree(&text);
-  fatal(udsnarfs, &text, 0, g_params.projdir_fd, USER_CONFIG_PATH);
+  fatal(usnarfats, &text, 0, g_params.projdir_fd, USER_CONFIG_PATH);
   if(text)
     fatal(applys, text, USER_CONFIG_PATH, store_staging, &config_staging);
 
   // apply project-level config
   iwfree(&text);
-  fatal(udsnarfs, &text, 0, g_params.projdir_fd, PROJECT_CONFIG_PATH);
+  fatal(usnarfats, &text, 0, g_params.projdir_fd, PROJECT_CONFIG_PATH);
   if(text)
     fatal(applys, text, PROJECT_CONFIG_PATH, store_staging, &config_staging);
 
