@@ -18,6 +18,7 @@
 #ifndef _LOGGER_ARGUMENTS_H
 #define _LOGGER_ARGUMENTS_H
 
+#include <sys/types.h>
 #include "xapi.h"
 
 /*

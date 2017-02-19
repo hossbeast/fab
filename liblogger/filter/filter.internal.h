@@ -29,8 +29,9 @@ struct list;
 typedef struct filter
 {
   uint64_t  v;    // tag
-  char      m;    // mode, ( or % or ^
-  char      o;    // operation, + or -
+  char      u;    // unknown, whether the tag text has any unrecognized components
+  char      m;    // mode, ' ' or '%'
+  char      o;    // operation, '+' or '-'
 } filter;
 
 /// filter_setup
@@ -154,6 +155,10 @@ xapi filter_unshift(const int stream_id, filter * const restrict filterp)
 //
 // SUMMARY
 //  returns a boolean value indicating whether a log is passed by the filter
+//
+// PARAMETERS
+//  filters - 
+//  ids     - category ids
 //
 int filters_would(const struct list * const restrict filters, const uint64_t ids)
   __attribute__((nonnull));

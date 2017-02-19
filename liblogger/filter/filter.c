@@ -73,6 +73,7 @@ int filter_parsew(const char * const restrict expr, size_t exprl, filter * const
   size_t off = 0;
   char m = ' ';
   uint64_t v = 0;
+  int u = 0;
 
   if(expr[off] != '+' && expr[off] != '-')
     return 0;
@@ -92,7 +93,7 @@ int filter_parsew(const char * const restrict expr, size_t exprl, filter * const
         break;
     }
 
-    if(x != exprl && expr[x] != ',' && expr[x] != '|' && expr[x] != '%' && expr[x] != '^')
+    if(x != exprl && expr[x] != ',' && expr[x] != '|' && expr[x] != '%')
       return 0;
 
     if(estrcmp(expr + off, x - off, "ALL", 3, 0) == 0)
@@ -104,6 +105,8 @@ int filter_parsew(const char * const restrict expr, size_t exprl, filter * const
       logger_category * category = category_byname(expr + off, x - off);
       if(category)
         v |= category->id & L_ALL;
+      else
+        u = 1;
     }
 
     // skip trailing category delimiters
@@ -111,7 +114,7 @@ int filter_parsew(const char * const restrict expr, size_t exprl, filter * const
       x++;
 
     // trailing flag indicating the mode
-    if(x < exprl && (expr[x] == '%' || expr[x] == '^'))
+    if(x < exprl && (expr[x] == '%'))
       m = expr[x++];
 
     off += (x - off);
@@ -120,9 +123,9 @@ int filter_parsew(const char * const restrict expr, size_t exprl, filter * const
   if(off != exprl)
     return 0;
 
-  // create a filter if any named category was found
+  // create a filter if the entire expr was used
   if(filterp)
-    (*filterp) = (typeof(*filterp)) { v : v, m : m, o : expr[0] };
+    (*filterp) = (typeof(*filterp)) { v : v, m : m, o : expr[0], u : u };
 
   return 1;
 }
@@ -142,7 +145,7 @@ xapi filter_expr_process(
   enter;
 
   filter * filterp = 0;
-  filter filters[8];
+  filter filters[32];
   int r;
 
   if((r = filter_expr_parse(expr, exprl, filters, sizeof(filters) / sizeof(*filters))) < 0)
@@ -224,6 +227,9 @@ xapi filter_say(filter * filterp, struct narrator * N)
     bit <<= 1;
   }
 
+  if(filterp->m != ' ')
+    sayc(filterp->m);
+
   finally : coda;
 }
 
@@ -236,10 +242,14 @@ int filters_would(const list * const restrict filters, const uint64_t ids)
   {
     filter * filterp = list_get(filters, x);
     uint64_t rr = 0;
+
+    // the log has all of the categories in the filter
+    //  (which cannot be true if the filter has unrecognized categories)
     if(filterp->m == ' ')
-      rr = ids & filterp->v & L_ALL;
-    else if(filterp->m == '^')
-      rr = ((ids & filterp->v & L_ALL) == (filterp->v & L_ALL));
+      rr = !filterp->u && ((ids & filterp->v & L_ALL) == (filterp->v & L_ALL));
+
+    // the filter has all of the categories in the log
+    //  (the log cannot have unrecognized categories)
     else if(filterp->m == '%')
       rr = ((ids & filterp->v & L_ALL) == (ids & L_ALL));
 
