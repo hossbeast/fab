@@ -333,5 +333,30 @@ xapi list_splice(list * const restrict dst, size_t dst_index, list * const restr
 xapi list_replicate(list * const restrict dst, size_t dst_index, list * const restrict src, size_t src_index, size_t len)
   __attribute__((nonnull));
 
+/// list_delete
+//
+// SUMMARY
+//  remove an element from the list
+//
+// PARAMETERS
+//  li    - list to delete from
+//  index - index of the item to delete
+//
+xapi list_delete(list * const restrict li, size_t index)
+  __attribute__((nonnull));
+
+/// list_delete_range
+//
+// SUMMARY
+//  remove contiguous elements from the list
+//
+// PARAMETERS
+//  li    - list to delete from
+//  index - index of the first item to delete
+//  len   - number of elements to delete
+//
+xapi list_delete_range(list * const restrict li, size_t index, size_t len)
+  __attribute__((nonnull));
+
 #undef restrict
 #endif

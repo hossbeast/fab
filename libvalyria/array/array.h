@@ -190,7 +190,7 @@ xapi array_unshift(array * const restrict ar, void * restrict el)
 //  len - number of elements
 //  el  - (returns) pointers to elements
 //
-xapi array_unshift_range(array * const restrict ar, size_t len, void ** const restrict el)
+xapi array_unshift_range(array * const restrict ar, size_t len, void * const restrict el)
   __attribute__((nonnull));
 
 /// array_insert
@@ -267,10 +267,10 @@ xapi array_recycle(array * const ar)
 /// array_truncate
 //
 // SUMMARY
-//  set the size of the list
+//  set the size of the array
 //
 // PARAMETERS
-//  len - new size of the array, 0 <= len <= li->l
+//  len - new size of the array, 0 <= len <= ar->l
 //
 xapi array_truncate(array * const restrict ar, size_t len)
   __attribute__((nonnull));
@@ -307,6 +307,31 @@ void array_sort(array * const restrict ar, int (*compar)(const void *, const voi
 //
 void * array_search(array * const restrict ar, void * ud, int (*compar)(void *, const void *, size_t))
   __attribute__((nonnull(1,3)));
+
+/// array_delete
+//
+// SUMMARY
+//  remove an element from the array
+//
+// PARAMETERS
+//  ar    - array to delete from
+//  index - index of the item to delete
+//
+xapi array_delete(array * const restrict ar, size_t index)
+  __attribute__((nonnull));
+
+/// array_delete_range
+//
+// SUMMARY
+//  remove contiguous elements from the array
+//
+// PARAMETERS
+//  ar    - array to delete from
+//  index - index of the first item to delete
+//  len   - number of elements to delete
+//
+xapi array_delete_range(array * const restrict ar, size_t index, size_t len)
+  __attribute__((nonnull));
 
 #undef restrict
 #endif

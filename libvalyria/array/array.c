@@ -92,7 +92,7 @@ API xapi array_unshift(array * const restrict ar, void * restrict el)
   xproxy(list_add, (void*)ar, 0, 1, 0, el);
 }
 
-API xapi array_unshift_range(array * const restrict ar, size_t len, void ** const restrict el)
+API xapi array_unshift_range(array * const restrict ar, size_t len, void * const restrict el)
 {
   xproxy(list_add, (void*)ar, 0, len, 0, el);
 }
@@ -130,4 +130,14 @@ API void * array_search(array * const restrict ar, void * ud, int (*compar)(void
 API xapi array_truncate(array * const restrict ar, size_t len)
 {
   xproxy(list_truncate, (void*)ar, len);
+}
+
+API xapi array_delete(array * const restrict ar, size_t index)
+{
+  xproxy(list_delete, (void*)ar, index);
+}
+
+API xapi array_delete_range(array * const restrict ar, size_t index, size_t len)
+{
+  xproxy(list_delete_range, (void*)ar, index, len);
 }

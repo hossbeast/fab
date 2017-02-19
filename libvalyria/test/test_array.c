@@ -15,6 +15,7 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
+#include <stdarg.h>
 #include <stdlib.h>
 #include <stdio.h>
 
@@ -44,6 +45,27 @@ static xapi validate(array * ar)
   }
 
   finally : coda;
+}
+
+static xapi validate_contents(array * ar, size_t num, ...)
+{
+  enter;
+
+  va_list va;
+  va_start(va, num);
+
+  assert_eq_zu(ar->l, num);
+
+  int x;
+  for(x = 0; x < num; x++)
+  {
+    int el = va_arg(va, typeof(el));
+    assert_eq_d(el, ((item*)array_get(ar, x))->x);
+  }
+
+finally:
+  va_end(va);
+coda;
 }
 
 static xapi test_basic()
@@ -121,6 +143,48 @@ finally:
 coda;
 }
 
+static xapi test_delete()
+{
+  enter;
+
+  array * ar = 0;
+  item * itemps[4];
+
+  fatal(array_create, &ar, sizeof(item));
+
+  fatal(array_push_range, ar, sizeof(itemps) / sizeof(itemps[0]), itemps);
+  itemps[0]->x = 1;
+  itemps[1]->x = 2;
+  itemps[2]->x = 3;
+  itemps[3]->x = 4;
+  fatal(validate_contents, ar, 4, 1, 2, 3, 4);
+
+  fatal(array_delete, ar, 1);
+  fatal(validate_contents, ar, 3, 1, 3, 4);
+  fatal(array_delete, ar, 2);
+  fatal(validate_contents, ar, 2, 1, 3);
+  fatal(array_delete, ar, 0);
+  fatal(validate_contents, ar, 1, 3);
+  fatal(array_delete, ar, 0);
+  fatal(validate_contents, ar, 0);
+
+  fatal(array_unshift_range, ar, sizeof(itemps) / sizeof(itemps[0]), itemps);
+  itemps[0]->x = 1;
+  itemps[1]->x = 2;
+  itemps[2]->x = 3;
+  itemps[3]->x = 4;
+  fatal(validate_contents, ar, 4, 1, 2, 3, 4);
+
+  fatal(array_delete_range, ar, 1, 3);
+  fatal(validate_contents, ar, 1, 1);
+  fatal(array_delete, ar, 0);
+  fatal(validate_contents, ar, 0);
+
+finally:
+  fatal(array_xfree, ar);
+coda;
+}
+
 int main()
 {
   enter;
@@ -128,6 +192,7 @@ int main()
 
   fatal(test_basic);
   fatal(test_set);
+  fatal(test_delete);
 
   success;
 

@@ -424,11 +424,12 @@ API void * list_search(list * const restrict li, void * ud, int (*compar)(void *
 
   if(li->attr & LIST_PRIMARY)
   {
-    elp = bsearch(&ctx, li->v, li->l, ctx.esz, (void*)pcompar);
+    void * res;
+    if((res = bsearch(&ctx, li->v, li->l, ctx.esz, (void*)pcompar)))
+      elp = *(void**)res;
   }
   else // li->attr & LIST_SECONDARY
   {
-
     void * res;
     if((res = bsearch(&ctx, li->v, li->l, ctx.esz, (void*)scompar)))
       elp = *(void **)res;
@@ -473,6 +474,42 @@ API xapi list_truncate(list * const restrict li, size_t len)
 
   fatal(list_free_range, li, 0, len);
   li->l = len;
+
+  finally : coda;
+}
+
+API xapi list_delete(list * const restrict li, size_t index)
+{
+  enter;
+
+  fatal(list_free_range, li, index, 1);
+
+  // overwrite
+  memmove(
+      li->v + (index * ELEMENT_SIZE(li))
+    , li->v + ((index + 1) * ELEMENT_SIZE(li))
+    , (li->l - index - 1) * ELEMENT_SIZE(li)
+  );
+
+  li->l--;
+
+  finally : coda;
+}
+
+API xapi list_delete_range(list * const restrict li, size_t index, size_t len)
+{
+  enter;
+
+  fatal(list_free_range, li, index, len);
+
+  // overwrite
+  memmove(
+      li->v + (index * ELEMENT_SIZE(li))
+    , li->v + ((index + len) * ELEMENT_SIZE(li))
+    , (li->l - index - len) * ELEMENT_SIZE(li)
+  );
+
+  li->l -= len;
 
   finally : coda;
 }

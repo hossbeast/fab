@@ -15,6 +15,7 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
+#include <stdarg.h>
 #include <stdlib.h>
 #include <stdio.h>
 
@@ -46,11 +47,31 @@ static xapi validate(list * listp)
     item * A = list_get(listp, x - 1);
     item * B = list_get(listp, x);
 
-    if(B->x <= A->x)
-      fail(TEST_FAIL);
+    assert_gt_d(A->x, B->x);
   }
 
   finally : coda;
+}
+
+static xapi validate_contents(list * listp, size_t num, ...)
+{
+  enter;
+
+  va_list va;
+  va_start(va, num);
+
+  assert_eq_zu(listp->l, num);
+
+  int x;
+  for(x = 0; x < num; x++)
+  {
+    int el = va_arg(va, typeof(el));
+    assert_eq_d(el, ((item*)list_get(listp, x))->x);
+  }
+
+finally:
+  va_end(va);
+coda;
 }
 
 static xapi test_basic()
@@ -182,11 +203,72 @@ finally:
 coda;
 }
 
-/// test_set
-//
-// SUMMARY
-//  tests list_set
-//
+static xapi test_search()
+{
+  enter;
+
+  list * listp = 0;
+  item * itemp = 0;
+
+  fatal(list_createx, &listp, (void*)wfree, 0, 0);
+  fatal(xmalloc, &itemp, sizeof(*itemp));
+  itemp->x = 1;
+  fatal(list_push, listp, itemp);
+  fatal(xmalloc, &itemp, sizeof(*itemp));
+  itemp->x = 7;
+  fatal(list_push, listp, itemp);
+  fatal(xmalloc, &itemp, sizeof(*itemp));
+  itemp->x = 32;
+  fatal(list_push, listp, itemp);
+  fatal(xmalloc, &itemp, sizeof(*itemp));
+  itemp->x = 101;
+  fatal(list_push, listp, itemp);
+
+  size_t lx;
+  int lc;
+
+  int compar(void * ud, const void * el, size_t idx)
+  {
+    lx = idx;
+    lc = (int)(intptr_t)ud - ((item*)el)->x;
+    return lc;
+  };
+
+  item * p = list_search(listp, (void*)0, compar);
+  assert_null(p);
+
+  p = list_search(listp, (void*)1, compar);
+  assert_notnull(p);
+  assert_eq_d(1, p->x);
+  assert_eq_zu(0, lx);
+  assert_eq_d(0, lc);
+
+  p = list_search(listp, (void*)7, compar);
+  assert_notnull(p);
+  assert_eq_d(7, p->x);
+  assert_eq_zu(1, lx);
+  assert_eq_d(0, lc);
+
+  p = list_search(listp, (void*)32, compar);
+  assert_notnull(p);
+  assert_eq_d(32, p->x);
+  assert_eq_zu(2, lx);
+  assert_eq_d(0, lc);
+
+  p = list_search(listp, (void*)101, compar);
+  assert_notnull(p);
+  assert_eq_d(101, p->x);
+  assert_eq_zu(3, lx);
+  assert_eq_d(0, lc);
+
+  p = list_search(listp, (void*)102, compar);
+  assert_null(p);
+
+finally:
+  fatal(list_xfree, listp);
+coda;
+}
+
 static xapi test_set()
 {
   enter;
@@ -224,6 +306,56 @@ finally:
 coda;
 }
 
+static xapi test_delete()
+{
+  enter;
+
+  list * listp = 0;
+  item * itemps[4];
+
+  fatal(list_createx, &listp, (void*)wfree, 0, 0);
+
+  fatal(xmalloc, &itemps[0], sizeof(**itemps));
+  itemps[0]->x = 1;
+  fatal(xmalloc, &itemps[1], sizeof(**itemps));
+  itemps[1]->x = 2;
+  fatal(xmalloc, &itemps[2], sizeof(**itemps));
+  itemps[2]->x = 3;
+  fatal(xmalloc, &itemps[3], sizeof(**itemps));
+  itemps[3]->x = 4;
+  fatal(list_push_range, listp, itemps, sizeof(itemps) / sizeof(itemps[0]));
+  fatal(validate_contents, listp, 4, 1, 2, 3, 4);
+
+  fatal(list_delete, listp, 1);
+  fatal(validate_contents, listp, 3, 1, 3, 4);
+  fatal(list_delete, listp, 2);
+  fatal(validate_contents, listp, 2, 1, 3);
+  fatal(list_delete, listp, 0);
+  fatal(validate_contents, listp, 1, 3);
+  fatal(list_delete, listp, 0);
+  fatal(validate_contents, listp, 0);
+
+  fatal(xmalloc, &itemps[0], sizeof(**itemps));
+  itemps[0]->x = 1;
+  fatal(xmalloc, &itemps[1], sizeof(**itemps));
+  itemps[1]->x = 2;
+  fatal(xmalloc, &itemps[2], sizeof(**itemps));
+  itemps[2]->x = 3;
+  fatal(xmalloc, &itemps[3], sizeof(**itemps));
+  itemps[3]->x = 4;
+  fatal(list_unshift_range, listp, itemps, sizeof(itemps) / sizeof(itemps[0]));
+  fatal(validate_contents, listp, 4, 1, 2, 3, 4);
+
+  fatal(list_delete_range, listp, 1, 3);
+  fatal(validate_contents, listp, 1, 1);
+  fatal(list_delete, listp, 0);
+  fatal(validate_contents, listp, 0);
+
+finally:
+  fatal(list_xfree, listp);
+coda;
+}
+
 int main()
 {
   enter;
@@ -233,6 +365,8 @@ int main()
   fatal(test_load);
   fatal(test_insertion_sort);
   fatal(test_set);
+  fatal(test_search);
+  fatal(test_delete);
 
   success;
 
