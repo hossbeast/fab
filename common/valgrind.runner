@@ -42,6 +42,14 @@ $valgrind --gen-suppressions=all $valgrind_options --suppressions=/dev/fd/601 --
   fun:_dl_open
   ...
 }
+{
+  libxapi devel frame stack
+  Memcheck:Leak
+  match-leak-kinds: definite
+  fun:realloc
+  fun:xapi_record_frame
+  ...
+}
 DEFAULT_SUPPRESSIONS
 
 # gather execution results

@@ -480,7 +480,7 @@ $oplist_xapi_devel = [ $* ~ ??, s,$,/op lsr l,/test.c v sxf,c,xapi.devel.so sy ]
 [ @integ ] : [  $*/integ ~ j ls m/test.c$ sx/c/xapi.xunit.so ]
 {
   (
-    [ $xunit_valgrind_runner ] [ $xunit_xapi_devel ] [ $libyyutil_xapi_devel ] [ $liblorien_xapi_devel ] [ $liblistwise_xapi_devel ] [ $@ ~ rx/ineed fi ] +UNIT
+    [ $valgrind_runner ] [ $xunit_xapi_devel ] [ $libyyutil_xapi_devel ] [ $liblorien_xapi_devel ] [ $liblistwise_xapi_devel ] [ $@ ~ rx/ineed fi ] +UNIT
   ) | tee /dev/fd/501
   > exit ${PIPESTATUS[0]}
 }

@@ -197,7 +197,7 @@ $lflags_xapi_devel  = [ $lopts $libxapi_xapi_devel $libxlinux_xapi_devel [ -Wl,-
 {
   (
     set -e
-    for x in [ $@ ~ rx/ineed fi ] ; do [ $xunit_valgrind_runner ] $x ; done
+    for x in [ $@ ~ rx/ineed fi ] ; do [ $valgrind_runner ] $x ; done
   ) | tee /dev/fd/501
   > exit ${PIPESTATUS[0]}
 }
