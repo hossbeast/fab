@@ -15,21 +15,22 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef _MORIA_GRAPH_INTERNAL_H
-#define _MORIA_GRAPH_INTERNAL_H
+#ifndef _MORIA_EDGE_INTERNAL_H
+#define _MORIA_EDGE_INTERNAL_H
 
 #include <sys/types.h>
 
-#include "graph.h"
-
-struct list;
-
-struct graph
+struct edge_internals
 {
-  size_t vsz;
-  struct list * vertices;
-  struct list * edges;
-  int traversal_id;
+  size_t up_index;
+  size_t down_index;
+  size_t edges_index;
+
+  int guard;      // there exists a frame exploring this edge
+  int traveled;   // id of the last traversal to travel this edge
 };
+
+#define EDGE_INTERNALS struct edge_internals
+#include "edge.h"
 
 #endif

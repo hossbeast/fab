@@ -17,6 +17,7 @@
 
 #include <sys/types.h>
 #include <stddef.h>
+#include <string.h>
 
 #include "xapi.h"
 #include "xlinux/xstdlib.h"
@@ -28,23 +29,8 @@
 #include "internal.h"
 #include "graph.internal.h"
 #include "vertex.internal.h"
+#include "edge.internal.h"
 #include "errtab/MORIA.errtab.h"
-
-typedef struct edge
-{
-  struct vertex * A;      // A depends on B, A -> B
-  struct vertex * B;
-  uint64_t        attrs;  // properties of the edge
-} edge;
-
-struct graph
-{
-  list * vertices;
-  list * edges;
-  xapi (* say)(vertex * const restrict v, struct narrator * const restrict N);
-  int traversal_ids;
-};
-
 
 #define DIRECTION_OPT   UINT32_C(0x00000003)
 #define METHOD_OPT      UINT32_C(0x0000000c)
@@ -59,93 +45,105 @@ struct graph
 // static
 //
 
-static int traverse(
-    vertex * const restrict v
-  , xapi (* const visit)(vertex * const restrict, void *)
-  , uint32_t skip
-  , uint32_t finish
-  , uint32_t stop
-  , void * arg
-  , int id
-  , uint32_t direction
-  , uint32_t method
-  , int vtraverse
-  , int vvisit
-  , vertex * (* const restrict stack)[32]
-  , size_t * restrict stackz
+#include <stdio.h>
+
+static xapi __attribute__((nonnull(1, 13, 14))) explore_vertex(
+    /*  1 */ vertex * const restrict v
+  , /*  2 */ xapi (* const visitor)(vertex * const restrict, int, void *)
+  , /*  3 */ uint32_t vertex_travel
+  , /*  4 */ uint32_t vertex_visit
+  , /*  5 */ uint32_t edge_travel
+  , /*  6 */ uint32_t edge_visit
+  , /*  7 */ uint32_t attrs
+  , /*  8 */ void * ctx
+  , /*  9 */ int traversal_id
+  , /* 10 */ int distance
+  , /* 11 */ int travel
+  , /* 12 */ int visit
+  , /* 13 */ vertex * (* const restrict stack)[32]
+  , /* 14 */ size_t * const restrict stackz
 )
 {
   enter;
 
-#if 0
-printf("\n");
-printf("TRAVERSE %p\n", v);
-printf("traverse %d\n", vtraverse);
-printf("visit %d\n", vvisit);
-#endif
+  edge * next_edge = 0;
+  vertex * next_vertex = 0;
+  int next_travel;
+  int next_visit;
 
   if(v->guard)  // cycle detected
     fail(MORIA_CYCLE);
 
   v->guard = 1; // descend
 
-  if(method == GRAPH_TRAVERSE_BREADTH && vvisit && v->visited != id)
+  if((attrs & METHOD_OPT) == GRAPH_TRAVERSE_PRE && visit && v->visited != traversal_id)
   {
-    fatal(visit, v, arg);
-    v->visited = id;
+    v->visited = traversal_id;
+    if(visitor)
+      fatal(visitor, v, distance, ctx);
   }
 
-  if(vtraverse && v->traversed != id)
+  if(travel && v->traveled != traversal_id)
   {
+    v->traveled = traversal_id;
     int x = -1;
     while(1)
     {
       x++;
-      edge * e = 0;
-      vertex * other = 0;
-      if(direction == GRAPH_TRAVERSE_UP)
+      if((attrs & DIRECTION_OPT) == GRAPH_TRAVERSE_UP)
       {
         if(x == list_size(v->up))
           break;
-        e = list_get(v->up, x);
-        other = e->A;
+        next_edge = list_get(v->up, x);
+        next_vertex = next_edge->A;
       }
-
-      else if(direction == GRAPH_TRAVERSE_DOWN)
+      else if((attrs & DIRECTION_OPT) == GRAPH_TRAVERSE_DOWN)
       {
         if(x == list_size(v->down))
           break;
-        e = list_get(v->down, x);
-        other = e->B;
+        next_edge = list_get(v->down, x);
+        next_vertex = next_edge->B;
       }
 
-      int ntraverse = !(e->attrs & (finish | stop));
-      int nvisit = !(e->attrs & (skip | stop));
+      next_travel = 1;
+      if(vertex_travel)
+        next_travel &= !!(next_vertex->attrs & vertex_travel);
+      if(edge_travel)
+        next_travel &= !!(next_edge->attrs & edge_travel);
 
-      fatal(traverse
-        , other
-        , visit
-        , skip
-        , finish
-        , stop
-        , arg
-        , id
-        , direction
-        , method
-        , ntraverse
-        , nvisit
-        , stack
-        , stackz
-      );
+      next_visit = 1;
+      if(vertex_visit)
+        next_visit &= !!(next_vertex->attrs & vertex_visit);
+      if(edge_visit)
+        next_visit &= !!(next_edge->attrs & edge_visit);
+
+      if(next_travel || next_visit)
+      {
+        fatal(explore_vertex
+          , next_vertex
+          , visitor
+          , vertex_travel
+          , vertex_visit
+          , edge_travel
+          , edge_visit
+          , attrs
+          , ctx
+          , traversal_id
+          , distance + 1
+          , next_travel
+          , next_visit
+          , stack
+          , stackz
+        );
+      }
     }
-
-    v->traversed = id;
   }
 
-  if(method == GRAPH_TRAVERSE_DEPTH && vvisit && v->visited != id)
+  if((attrs & METHOD_OPT) == GRAPH_TRAVERSE_POST && visit && v->visited != traversal_id)
   {
-    fatal(visit, v, arg);
-    v->visited = id;
+    v->visited = traversal_id;
+    if(visitor)
+      fatal(visitor, v, distance, ctx);
   }
 
   v->guard = 0; // ascend
@@ -159,20 +157,150 @@ finally:
 coda;
 }
 
+static xapi __attribute__((nonnull(1, 13, 14))) explore_edge(
+    /*  1 */ edge * const restrict e
+  , /*  2 */ xapi (* const visitor)(edge * const restrict, int, void *)
+  , /*  3 */ uint32_t vertex_travel
+  , /*  4 */ uint32_t vertex_visit
+  , /*  5 */ uint32_t edge_travel
+  , /*  6 */ uint32_t edge_visit
+  , /*  7 */ uint32_t attrs
+  , /*  8 */ void * ctx
+  , /*  9 */ int traversal_id
+  , /* 10 */ int distance
+  , /* 11 */ int travel
+  , /* 12 */ int visit
+  , /* 13 */ edge * (* const restrict stack)[32]
+  , /* 14 */ size_t * const restrict stackz
+)
+{
+  enter;
+
+  edge * next_edge = 0;
+  vertex * next_vertex = 0;
+  int next_travel;
+  int next_visit;
+
+  if(e->guard)  // cycle detected
+    fail(MORIA_CYCLE);
+
+  e->guard = 1; // descend
+
+  if((attrs & METHOD_OPT) == GRAPH_TRAVERSE_PRE && visit && e->visited != traversal_id)
+  {
+    e->visited = traversal_id;
+    if(visitor)
+      fatal(visitor, e, distance, ctx);
+  }
+
+  if(travel && e->traveled != traversal_id)
+  {
+    e->traveled = traversal_id;
+    int x = -1;
+    while(1)
+    {
+      x++;
+      if((attrs & DIRECTION_OPT) == GRAPH_TRAVERSE_UP)
+      {
+        if(x == list_size(e->A->up))
+          break;
+        next_edge = list_get(e->A->up, x);
+        next_vertex = next_edge->A;
+      }
+      else if((attrs & DIRECTION_OPT) == GRAPH_TRAVERSE_DOWN)
+      {
+        if(x == list_size(e->B->down))
+          break;
+        next_edge = list_get(e->B->down, x);
+        next_vertex = next_edge->B;
+      }
+
+      next_travel = 1;
+      if(vertex_travel)
+        next_travel &= !!(next_vertex->attrs & vertex_travel);
+      if(edge_travel)
+        next_travel &= !!(next_edge->attrs & edge_travel);
+
+      next_visit = 1;
+      if(vertex_visit)
+        next_visit &= !!(next_vertex->attrs & vertex_visit);
+      if(edge_visit)
+        next_visit &= !!(next_edge->attrs & edge_visit);
+
+      if(next_travel || next_visit)
+      {
+        fatal(explore_edge
+          , next_edge
+          , visitor
+          , vertex_travel
+          , vertex_visit
+          , edge_travel
+          , edge_visit
+          , attrs
+          , ctx
+          , traversal_id
+          , distance + 1
+          , next_travel
+          , next_visit
+          , stack
+          , stackz
+        );
+      }
+    }
+  }
+
+  if((attrs & METHOD_OPT) == GRAPH_TRAVERSE_POST && visit && e->visited != traversal_id)
+  {
+    e->visited = traversal_id;
+    if(visitor)
+      fatal(visitor, e, distance, ctx);
+  }
+
+  e->guard = 0; // ascend
+
+finally:
+  if(XAPI_THROWING(MORIA_CYCLE))
+  {
+    if((*stackz) < sizeof((*stack)) / sizeof((*stack)[0]))
+      (*stack)[(*stackz)++] = e;
+  }
+coda;
+}
+
+static int edge_compare(const void * _X, const void * _Y, void * ctx)
+{
+  graph * g = ctx;
+  const edge * X = list_get(g->edges, *(int*)_X);
+  const edge * Y = list_get(g->edges, *(int*)_Y);
+
+  return strcmp(X->A->label, Y->A->label) ?: strcmp(X->B->label, Y->B->label);
+}
 
 //
 // api
 //
 
-API xapi graph_create(graph ** const restrict g, xapi (* say)(struct vertex * const restrict v, struct narrator * const restrict N))
+API xapi graph_create(graph ** const restrict g)
 {
   enter;
 
   fatal(xmalloc, g, sizeof(**g));
+  (*g)->traversal_id = 1;
   fatal(list_createx, &(*g)->vertices, 0, (void*)vertex_xfree, 0);
   fatal(list_createx, &(*g)->edges, (void*)wfree, 0, 0);
 
-  (*g)->say = say;
+  finally : coda;
+}
+
+API xapi graph_createx(graph ** const restrict g, size_t vsz)
+{
+  enter;
+
+  fatal(xmalloc, g, sizeof(**g));
+  (*g)->traversal_id = 1;
+  (*g)->vsz = vsz;
+  fatal(list_createx, &(*g)->vertices, 0, (void*)vertex_xfree, 0);
+  fatal(list_createx, &(*g)->edges, (void*)wfree, 0, 0);
 
   finally : coda;
 }
@@ -202,12 +330,12 @@ API xapi graph_ixfree(graph ** const restrict g)
   finally : coda;
 }
 
-xapi graph_vertex_create(graph * const restrict g, struct vertex ** const restrict v)
+API xapi graph_vertex_createw(struct vertex ** const restrict v, graph * const restrict g, const char * const restrict label, size_t label_len, uint32_t attrs)
 {
   enter;
 
   vertex * lv = 0;
-  fatal(vertex_create, &lv);
+  fatal(vertex_createw, &lv, g->vsz, label, label_len, attrs);
 
   fatal(list_push, g->vertices, (void*)lv);
   *v = lv;
@@ -218,47 +346,106 @@ finally:
 coda;
 }
 
-API xapi graph_relate(graph * const restrict g, vertex * const restrict A, vertex * const restrict B, uint32_t attrs)
+API xapi graph_connect_edge(graph * const restrict g, vertex * const restrict A, vertex * const restrict B, uint32_t attrs)
 {
   enter;
 
   edge * e = 0;
+  edge * tmp = 0;
+  struct vertex_cmp_context ctx;
 
-  // binary search for the edge
-  int compar(void * key, const void * item, size_t idx)
+  ctx = (typeof(ctx)) { B : B->label };
+  if(A->down->l == 0)
+    ctx.lc = -1;
+  else
+    list_search(A->down, &ctx, vertex_compare);
+
+  if(ctx.lc)
   {
-    ptrdiff_t diff = key - (void*)((edge *)item)->B;
-    return diff > 0 ? 1 : diff < 1 ? -1 : 0;
-  };
-  if(list_search(A->down, B, compar) == 0)
-  {
-    // no such edge
-    fatal(xmalloc, &e, sizeof(*e));
-    e->A = A;
-    e->B = B;
-    e->attrs = attrs;
+    fatal(xmalloc, &tmp, sizeof(*tmp));
+    tmp->A = A;
+    tmp->B = B;
+    tmp->attrs = attrs;
+    fatal(list_push, g->edges, tmp);
+    e = tmp;
+    tmp = 0;
+    e->edges_index = g->edges->l - 1;
 
-    fatal(list_push, A->down, e);
-    fatal(list_push, B->up, e);
+    e->down_index = ctx.lx;
+    if(ctx.lc > 0)
+      e->down_index++;
 
-    fatal(list_push, g->edges, e);
-    e = 0;
+    fatal(list_insert, A->down, e->down_index, e);
+
+    ctx = (typeof(ctx)){ A : A->label };
+    if(B->up->l == 0)
+      ctx.lc = -1;
+    else
+      list_search(B->up, &ctx, vertex_compare);
+
+    e->up_index = ctx.lx;
+    if(ctx.lc > 0)
+      e->up_index++;
+
+    fatal(list_insert, B->up, e->up_index, e);
   }
 
 finally:
-  wfree(e);
+  wfree(tmp);
 coda;
 }
 
-API xapi graph_traverse(
+API xapi graph_disconnect_edge(graph * const restrict g, vertex * const restrict A, vertex * const restrict B)
+{
+  enter;
+
+  struct vertex_cmp_context ctx = (typeof(ctx)) { B : B->label };
+  edge * e = list_search(A->down, &ctx, vertex_compare);
+
+  if(e)
+    fatal(edge_disconnect, g, e);
+
+  finally : coda;
+}
+
+API xapi graph_say(graph * const restrict g, struct narrator * const restrict N)
+{
+  enter;
+
+  int * xs = 0;
+  int x;
+
+  fatal(xmalloc, &xs, g->edges->l * sizeof(*xs));
+  for(x = 0; x < g->edges->l; x++)
+    xs[x] = x;
+
+  qsort_r(xs, g->edges->l, sizeof(*xs), edge_compare, g);
+
+  for(x = 0; x < g->edges->l; x++)
+  {
+    if(x)
+      says(" ");
+    says((((edge*)list_get(g->edges, xs[x]))->A)->label);
+    says(":");
+    says((((edge*)list_get(g->edges, xs[x]))->B)->label);
+  }
+
+finally:
+  wfree(xs);
+coda;
+}
+
+API xapi graph_traverse_vertices(
     graph * const restrict g
   , vertex * const restrict v
-  , xapi (* const visit)(vertex * const restrict, void *)
-  , uint32_t skip
-  , uint32_t finish
-  , uint32_t stop
+  , xapi (* const visitor)(vertex * const restrict, int, void *)
+  , int traversal_id
+  , uint32_t vertex_travel
+  , uint32_t vertex_visit
+  , uint32_t edge_travel
+  , uint32_t edge_visit
   , uint32_t attrs
-  , void * arg
+  , void * ctx
 )
 {
   enter;
@@ -267,23 +454,42 @@ API xapi graph_traverse(
   vertex * stack[32] = {};
   size_t stackz = 0;
 
-  int id = ++g->traversal_ids;
+  if(traversal_id != g->traversal_id)
+    traversal_id = ++g->traversal_id;
 
-  fatal(traverse
-    , v
-    , visit
-    , skip
-    , finish
-    , stop
-    , arg
-    , id
-    , attrs & DIRECTION_OPT
-    , attrs & METHOD_OPT
-    , 1         // traverse
-    , 1         // visit
-    , &stack
-    , &stackz
-  );
+  // defaults
+  if(!(attrs & (GRAPH_TRAVERSE_UP | GRAPH_TRAVERSE_DOWN)))
+    attrs |= GRAPH_TRAVERSE_DOWN;
+  if(!(attrs & (GRAPH_TRAVERSE_PRE | GRAPH_TRAVERSE_POST)))
+    attrs |= GRAPH_TRAVERSE_POST;
+
+  int travel = 1;
+  if(vertex_travel)
+    travel &= !!(v->attrs & vertex_travel);
+
+  int visit = 1;
+  if(vertex_visit)
+    visit &= !!(v->attrs & vertex_visit);
+
+  if(travel || visit)
+  {
+    fatal(explore_vertex
+      , v
+      , visitor
+      , vertex_travel
+      , vertex_visit
+      , edge_travel
+      , edge_visit
+      , attrs
+      , ctx
+      , traversal_id
+      , 0     // distance
+      , travel
+      , visit
+      , &stack
+      , &stackz
+    );
+  }
 
 finally:
   if(XAPI_THROWING(MORIA_CYCLE))
@@ -295,7 +501,90 @@ finally:
     {
       if(narrator_growing_size(N))
         says(" -> ");
-      fatal(g->say, stack[x], N);
+      says(stack[x]->label);
+    }
+
+    xapi_infof("nodes", "%zu", stackz);
+    xapi_infos("path", narrator_growing_buffer(N));
+  }
+
+  fatal(narrator_xfree, N);
+coda;
+}
+
+API xapi graph_traverse_edges(
+    graph * const restrict g
+  , edge * const restrict e
+  , xapi (* const visitor)(edge * const restrict, int, void *)
+  , int traversal_id
+  , uint32_t vertex_travel
+  , uint32_t vertex_visit
+  , uint32_t edge_travel
+  , uint32_t edge_visit
+  , uint32_t attrs
+  , void * ctx
+)
+{
+  enter;
+
+  narrator * N = 0;
+  edge * stack[32] = {};
+  size_t stackz = 0;
+
+  if(traversal_id != g->traversal_id)
+    traversal_id = ++g->traversal_id;
+
+  // defaults
+  if(!(attrs & (GRAPH_TRAVERSE_UP | GRAPH_TRAVERSE_DOWN)))
+    attrs |= GRAPH_TRAVERSE_DOWN;
+  if(!(attrs & (GRAPH_TRAVERSE_PRE | GRAPH_TRAVERSE_POST)))
+    attrs |= GRAPH_TRAVERSE_POST;
+
+  int travel = 1;
+  if(edge_travel)
+    travel &= !!(e->attrs & edge_travel);
+
+  int visit = 1;
+  if(edge_visit)
+    visit &= !!(e->attrs & edge_visit);
+
+  if(travel || visit)
+  {
+    fatal(explore_edge
+      , e
+      , visitor
+      , vertex_travel
+      , vertex_visit
+      , edge_travel
+      , edge_visit
+      , attrs
+      , ctx
+      , traversal_id
+      , 0     // distance
+      , travel
+      , visit
+      , &stack
+      , &stackz
+    );
+  }
+
+finally:
+  if(XAPI_THROWING(MORIA_CYCLE))
+  {
+    fatal(narrator_growing_create, &N);
+
+    if(stackz)
+    {
+      says(stack[stackz - 1]->A->label);
+      says(" -> ");
+      says(stack[stackz - 1]->B->label);
+    }
+
+    int x;
+    for(x = stackz - 2; x > 0; x--)
+    {
+      says(" -> ");
+      says(stack[x]->B->label);
     }
 
     xapi_infos("path", narrator_growing_buffer(N));
@@ -303,4 +592,19 @@ finally:
 
   fatal(narrator_xfree, N);
 coda;
+}
+
+int graph_traversal_begin(graph * const restrict g)
+{
+  return ++g->traversal_id;
+}
+
+API list * graph_vertices(graph * g)
+{
+  return g->vertices;
+}
+
+API list * graph_edges(graph * g)
+{
+  return g->edges;
 }

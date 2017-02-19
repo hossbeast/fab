@@ -18,33 +18,36 @@
 #ifndef _MORIA_VERTEX_INTERNAL_H
 #define _MORIA_VERTEX_INTERNAL_H
 
-#include "vertex.h"
-
 struct list;    // valyria/list.h
 
-typedef struct vertex
+struct vertex_internals
 {
-  VERTEX_VALUE_TYPE * value;
+  int guard;      // there exists a frame exploring this vertex
+  int traveled;   // id of the last traversal to travel this vertex
 
-  struct list * up;    // edges where this == B, i.e. { up } -> this
-  struct list * down;  // edges where this == A, i.e. this -> { down }
+  char value[];   // opaque user data
+};
 
-  // buildplan create tracking
-  int                 height;   // distance of longest route to a leaf node
-  int                 stage;    // assigned stage - NEARLY always equal to height
+#define VERTEX_INTERNALS struct vertex_internals
+#include "vertex.h"
 
-  // traversal tracking
-  int                 guard;
-  int                 visited;
-  int                 traversed;
-} vertex;
+struct vertex_cmp_context {
+  size_t lx;
+  int lc;
+  const char * A;
+  const char * B;
+  size_t len;
+};
 
-/// vertex_create
+int vertex_compare(void * _ctx, const void * _e, size_t idx)
+  __attribute__((nonnull));
+
+/// vertex_createw
 //
 // SUMMARY
 //  initialize a vertex
 //
-xapi vertex_create(vertex ** const restrict v)
+xapi vertex_createw(vertex ** const restrict v, size_t vsz, const char * const restrict label, size_t label_len, uint32_t attrs)
   __attribute__((nonnull));
 
 /// vertex_free

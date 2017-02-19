@@ -29,13 +29,28 @@ REMARKS
 
 */
 
-struct graph;
-struct vertex;
-typedef struct vertex vertex;
+#include <stdint.h>
+#include <sys/types.h>
 
-#ifndef VERTEX_VALUE_TYPE
-# define VERTEX_VALUE_TYPE void
+struct graph;
+struct edge;
+
+typedef struct vertex
+{
+  char *   label;
+  size_t   label_len;
+  uint32_t attrs;         // properties of the vertex
+
+  struct list * up;       // edges where this == B, i.e. { up } -> this
+  struct list * down;     // edges where this == A, i.e. this -> { down }
+
+  int visited;            // id of the last traversal to visit this vertex
+
+#ifndef VERTEX_INTERNALS
+# define VERTEX_INTERNALS
 #endif
+  VERTEX_INTERNALS;
+} vertex;
 
 #define restrict __restrict
 
@@ -44,19 +59,69 @@ typedef struct vertex vertex;
 // SUMMARY
 //  set the value for the vertex
 //
-// PARAMETERS
-//  v       -
-//  [value] -
+// REMARKS
+//  size must match that provided in graph_create
 //
-void vertex_value_set(vertex * const restrict v, VERTEX_VALUE_TYPE * value)
+// PARAMETERS
+//  v       - pointer to vertex
+//  [value] - pointer to value
+//  vsz     - size of value
+//
+void vertex_value_set(vertex * const restrict v, void * value, size_t vsz)
   __attribute__((nonnull(1)));
 
 /// vertex_value
 //
 // SUMMARY
-//  get the value for the vertex
+//  get a pointer to the value for the vertex
 //
-VERTEX_VALUE_TYPE * vertex_value(vertex * const restrict v)
+void * vertex_value(vertex * const restrict v)
+  __attribute__((nonnull));
+
+/// vertex_ascend
+//
+// SUMMARY
+//  get the vertex above a vertex at a distance of 1 with the given label
+//
+// PARAMETERS
+//  v         - starting vertex
+//  label     - label of the desired vertex
+//  label_len - length of label
+//
+// VARIANTS
+//  edge - get the edge connecting the two vertices
+//  w - label is given as a buffer/length pair
+//
+// RETURNS
+//  desired vertex or edge, if any
+//
+vertex * vertex_ascendw(vertex * const restrict v, const char * const restrict label, size_t label_len)
+  __attribute__((nonnull));
+
+struct edge * vertex_ascend_edgew(vertex * const restrict v, const char * const restrict label, size_t label_len)
+  __attribute__((nonnull));
+
+/// vertex_descend
+//
+// SUMMARY
+//  get the vertex below a vertex at a distance of 1 with the given label
+//
+// PARAMETERS
+//  v         - starting vertex
+//  label     - label of the desired vertex
+//  label_len - length of label
+//
+// VARIANTS
+//  edge - get the edge connecting the two vertices
+//  w - label is given as a buffer/length pair
+//
+// RETURNS
+//  desired vertex or edge, if any
+//
+vertex * vertex_descendw(vertex * const restrict v, const char * const restrict label, size_t label_len)
+  __attribute__((nonnull));
+
+struct edge * vertex_descend_edgew(vertex * const restrict v, const char * const restrict label, size_t label_len)
   __attribute__((nonnull));
 
 #undef restrict

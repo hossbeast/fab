@@ -32,8 +32,10 @@ REMARKS
 #include "xapi.h"
 
 struct vertex;
+struct edge;
 struct narrator;
-struct graph;
+struct list;
+
 typedef struct graph graph;
 
 #define restrict __restrict
@@ -45,10 +47,21 @@ typedef struct graph graph;
 //
 // PARAMETERS
 //  g     - (returns) graph
-//  [say] - callback function when a cycle is detected to get a node description
+//  [vsz] - size of vertex udata
 //
-xapi graph_create(graph ** const restrict g, xapi (* say)(struct vertex * const restrict v, struct narrator * const restrict N))
+xapi graph_create(graph ** const restrict g)
   __attribute__((nonnull(1)));
+
+xapi graph_createx(graph ** const restrict g, size_t vsz)
+  __attribute__((nonnull(1)));
+
+/// graph_say
+//
+// SUMMARY
+//  write a sorted list of edges to the narrator
+//
+xapi graph_say(graph * const restrict g, struct narrator * const restrict N)
+  __attribute__((nonnull));
 
 /// graph_xfree
 //
@@ -65,30 +78,38 @@ xapi graph_xfree(graph * const restrict g);
 xapi graph_ixfree(graph ** const restrict g)
   __attribute__((nonnull));
 
-/// graph_vertex_create
+/// graph_vertex_createw
 //
 // SUMMARY
 //  allocate a vertex in the graph
 //
 // PARAMETERS
-//  g     - graph
-//  v     - (returns) vertex
+//  v         - (returns) vertex
+//  g         - graph
+//  label     -
+//  label_len -
+//  attrs     -
 //
-xapi graph_vertex_create(graph * const restrict g, struct vertex ** const restrict v)
+xapi graph_vertex_createw(struct vertex ** const restrict v, graph * const restrict g, const char * const restrict label, size_t label_len, uint32_t attrs)
   __attribute__((nonnull));
 
-/// graph_relate
+/// graph_connect_edge
 //
 // SUMMARY
-//  create the edge A -> B, if it does not already exist, with the specified attributes
+//  create the edge A : B, if it does not already exist, with the specified attributes
+//
+// REMARKS
+//  A : B, e.g. A needs B, e.g. A depends on B, e.g. A is up from B, B is down from A
 //
 // PARAMETERS
 //  g     - graph
 //  A     - vertex
 //  B     - vertex
-//  attrs -
 //
-xapi graph_relate(graph * const restrict g, struct vertex * A, struct vertex * B, uint32_t attrs)
+xapi graph_connect_edge(graph * const restrict g, struct vertex * A, struct vertex * B, uint32_t attrs)
+  __attribute__((nonnull));
+
+xapi graph_disconnect_edge(graph * const restrict g, struct vertex * A, struct vertex * B)
   __attribute__((nonnull));
 
 /// GRAPH_TRAVERSE_TABLE
@@ -96,11 +117,11 @@ xapi graph_relate(graph * const restrict g, struct vertex * A, struct vertex * B
 // SUMMARY
 //  graph traversal options and modifiers
 //
-#define GRAPH_TRAVERSE_TABLE(x, y)                                                                                    \
-  GRAPH_TRAVERSE_DEF(UP            , 0x00000001 , x , y)  /* traverse from a node to its consumers (upward) */        \
-  GRAPH_TRAVERSE_DEF(DOWN          , 0x00000002 , x , y)  /* traverse from a node to its dependencies (downward) */   \
-  GRAPH_TRAVERSE_DEF(DEPTH         , 0x00000004 , x , y)  /* depth-first traversal */                                 \
-  GRAPH_TRAVERSE_DEF(BREADTH       , 0x00000008 , x , y)  /* breadth-first traversal */
+#define GRAPH_TRAVERSE_TABLE(x, y)                                                                               \
+  GRAPH_TRAVERSE_DEF(UP       , 0x00000001 , x , y)  /* traverse from a node to its consumers (upward) */        \
+  GRAPH_TRAVERSE_DEF(DOWN     , 0x00000002 , x , y)  /* traverse from a node to its dependencies (downward) */   \
+  GRAPH_TRAVERSE_DEF(PRE      , 0x00000004 , x , y)  /* breadth-first traversal */                               \
+  GRAPH_TRAVERSE_DEF(POST     , 0x00000008 , x , y)  /* depth-first traversal */
 
 enum {
 #define GRAPH_TRAVERSE_DEF(a, b, x, y) GRAPH_TRAVERSE_ ## a = UINT32_C(b),
@@ -108,20 +129,25 @@ GRAPH_TRAVERSE_TABLE(0, 0)
 #undef GRAPH_TRAVERSE_DEF
 };
 
-/// graph_traverse
+/// graph_traverse_vertices
 //
 // SUMMARY
-//  traverse the graph
+//  traverse the vertices of a graph
 //
 // PARAMETERS
-//  g        - graph
-//  v        - vertex at which to begin the traversal
-//  visit    - callback function to visit a node
-//  skip     - see remarks
-//  stop     - see remarks
-//  finish   - see remarks
-//  attrs    - bitwise combination of GRAPH_TRAVERSE_*
-//  [arg]    - optional context
+//  g               - graph
+//  v               - vertex at which to begin the traversal
+//  visitor         - invoked on each visited vertex
+//  [traversal_id]  -
+//  [travel]        - see remarks
+//  [visit]         -
+//  attrs           - bitwise combination of GRAPH_TRAVERSE_*
+//  [ctx]           - optional context
+//
+// VISITOR
+//  v     -
+//  distance -
+//  [ctx] -
 //
 // REMARKS
 //  For each node, the default operation is to visit that node, and continue by traversing its
@@ -139,17 +165,50 @@ GRAPH_TRAVERSE_TABLE(0, 0)
 //  skip      |     x
 //  (default) |     x          x
 //
-xapi graph_traverse(
+xapi graph_traverse_vertices(
     /* 1 */ graph * const restrict g
   , /* 2 */ struct vertex * const restrict v
-  , /* 2 */ xapi (* const visit)(struct vertex * const restrict, void *)
-  , /* 3 */ uint32_t skip
-  , /* 4 */ uint32_t finish
-  , /* 5 */ uint32_t stop
-  , /* 6 */ uint32_t attrs
-  , /* 7 */ void * arg
+  , /* 3 */ xapi (* const visitor)(struct vertex * const restrict, int distance, void *)
+  , /* 4 */ int traversal_id
+  , /* 5 */ uint32_t vertex_travel
+  , /* 6 */ uint32_t vertex_visit
+  , /* 7 */ uint32_t edge_travel
+  , /* 8 */ uint32_t edge_visit
+  , /* 9 */ uint32_t attrs
+  , /* a */ void * ctx
 )
-  __attribute__((nonnull(1, 2, 3)));
+  __attribute__((nonnull(1, 2)));
+
+xapi graph_traverse_edges(
+    /* 1 */ graph * const restrict g
+  , /* 2 */ struct edge * const restrict e
+  , /* 3 */ xapi (* const visitor)(struct edge * const restrict, int distance, void *)
+  , /* 4 */ int traversal_id
+  , /* 5 */ uint32_t vertex_travel
+  , /* 6 */ uint32_t vertex_visit
+  , /* 7 */ uint32_t edge_travel
+  , /* 8 */ uint32_t edge_visit
+  , /* 9 */ uint32_t attrs
+  , /* a */ void * ctx
+)
+  __attribute__((nonnull(1, 2)));
+
+/// graph_traversal_begin
+//
+// SUMMARY
+//  open a traversal
+//
+// RETURNS
+//  an id suitable for passing to graph_traverse
+//
+int graph_traversal_begin(graph * const restrict g)
+  __attribute__((nonnull));
+
+struct list * graph_vertices(graph * const restrict g)
+  __attribute__((nonnull));
+
+struct list * graph_edges(graph * const restrict g)
+  __attribute__((nonnull));
 
 #undef restrict
 #endif
