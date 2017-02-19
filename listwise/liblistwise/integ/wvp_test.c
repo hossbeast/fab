@@ -18,24 +18,25 @@
 #include "listwise_test.h"
 
 xunit_unit xunit = {
-    .setup = listwise_test_setup
-  , .cleanup = listwise_test_cleanup
-  , .tests = (xunit_test*[]) {
+    .xu_setup = listwise_test_setup
+  , .xu_cleanup = listwise_test_cleanup
+  , .xu_entry = listwise_test_entry
+  , .xu_tests = (xunit_test*[]) {
 
 /* wvp : WINDOWS_ACTIVATE */
 
-      (listwise_test[]){{ .entry = listwise_test_entry
-        , .init = (char*[]) { "foo", "foo.a", "foo.a.b", "foo.a.b.c", 0 }
+      (listwise_test[]){{
+          .init = (char*[]) { "foo", "foo.a", "foo.a.b", "foo.a.b.c", 0 }
         , .xsfm = "l/. y wvp"
         , .final = (char*[]) { "foo", "foo", "foo", 0 }
       }}
-    , (listwise_test[]){{ .entry = listwise_test_entry
-        , .init = (char*[]) { "foo", "foo.a", "foo.a.b", "foo.a.b.c", 0 }
+    , (listwise_test[]){{
+          .init = (char*[]) { "foo", "foo.a", "foo.a.b", "foo.a.b.c", 0 }
         , .xsfm = "l/./g y wvp"
         , .final = (char*[]) { "foo", "foo", "foo", 0 }
       }}
-    , (listwise_test[]){{ .entry = listwise_test_entry
-        , .init = (char*[]) { "a", "aa", "aaa", "aaaa", 0 }
+    , (listwise_test[]){{
+          .init = (char*[]) { "a", "aa", "aaa", "aaaa", 0 }
         , .xsfm = "l/a y wvp"
         , .final = (char*[]) { 0 }
       }}

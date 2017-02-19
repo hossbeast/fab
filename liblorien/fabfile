@@ -175,10 +175,10 @@ $lflags_xapi_devel  = [ $lopts $libxapi_xapi_devel $libxlinux_xapi_devel $liblog
   [ $cc ] [ $cflags -shared ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw lx/o uu fi ]
 }
 
-[ @test ] : [ $* ~ lsr l/test\/test_ sx/c/xapi.xunit.so sy ]
+[ @test ] : [ [ $* ~ lsr l/test\/test_ sx/c/xapi.xunit.so sy ] $xunit_xapi_devel ]
 {
   (
-    [ $valgrind_runner ] [ $xunit_xapi_devel ] [ $@ ~ rx/ineed fi ] +UNIT
+    [ $valgrind_runner ] [ $xunit_xapi_devel ] [ $@ ~ rx/ineed lx/so fi ] +UNIT
   ) | tee /dev/fd/501
   > exit ${PIPESTATUS[0]}
 }

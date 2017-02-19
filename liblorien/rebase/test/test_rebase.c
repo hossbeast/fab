@@ -49,19 +49,20 @@ static xapi rebase_test_entry(rebase_test * test)
 }
 
 xunit_unit xunit = {
-    .tests = (xunit_test*[]) {
-        (rebase_test[]){{ .entry = rebase_test_entry
-          , path      : "/home/todd/fab/foo/bar"
+    .xu_entry = rebase_test_entry
+  , .xu_tests = (xunit_test*[]) {
+        (rebase_test[]){{
+            path      : "/home/todd/fab/foo/bar"
           , base      : "/home/todd/fab"
           , expected  : "foo/bar"
         }}
-      , (rebase_test[]){{ .entry = rebase_test_entry
-          , path      : "/home/fab/foo/bar"
+      , (rebase_test[]){{
+            path      : "/home/fab/foo/bar"
           , base      : "/home/todd/fab"
           , expected  : "../../fab/foo/bar"
         }}
-      , (rebase_test[]){{ .entry = rebase_test_entry
-          , path      : "/../foo/bar/baz"
+      , (rebase_test[]){{
+            path      : "/../foo/bar/baz"
           , base      : "/.."
           , expected  : "foo/bar/baz"
         }}

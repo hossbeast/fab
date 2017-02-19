@@ -42,10 +42,11 @@ typedef xapi (*xunit_test_entry)(TEST_TYPE*);
 //
 typedef struct xunit_unit
 {
-  xunit_unit_setup      setup;
-  xunit_unit_teardown   teardown;
-  xunit_unit_cleanup    cleanup;
-  struct xunit_test **  tests;    // sentinel-terminated list of pointers to tests
+  xunit_unit_setup      xu_setup;
+  xunit_unit_teardown   xu_teardown;
+  xunit_unit_cleanup    xu_cleanup;
+  xunit_test_entry      xu_entry;
+  struct xunit_test **  xu_tests;    // sentinel-terminated list of pointers to tests
 } xunit_unit;
 
 /// xunit_test
@@ -55,9 +56,10 @@ typedef struct xunit_unit
 //
 typedef struct xunit_test
 {
-  struct xunit_unit * unit;
-  char *              name;
-  xunit_test_entry    entry;
+  struct xunit_unit * xu_unit;
+  char *              xu_name;
+  xunit_test_entry    xu_entry;
+  int                 xu_only;
 } xunit_test;
 
 #endif

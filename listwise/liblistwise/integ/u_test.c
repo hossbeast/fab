@@ -18,24 +18,25 @@
 #include "listwise_test.h"
 
 xunit_unit xunit = {
-    .setup = listwise_test_setup
-  , .cleanup = listwise_test_cleanup
-  , .tests = (xunit_test*[]) {
-      (listwise_test[]){{ .entry = listwise_test_entry
+    .xu_setup = listwise_test_setup
+  , .xu_cleanup = listwise_test_cleanup
+  , .xu_entry = listwise_test_entry
+  , .xu_tests = (xunit_test*[]) {
+      (listwise_test[]){{
         /* unique entries are preserved */
-        , .init = (char*[]) { "ao", "ob", "c", "od", 0 }
+          .init = (char*[]) { "ao", "ob", "c", "od", 0 }
         , .xsfm = "u"
         , .final = (char*[]) { "ao", "ob", "c", "od", 0 }
       }}
-    , (listwise_test[]){{ .entry = listwise_test_entry
+    , (listwise_test[]){{
         /* non-unique consecutive entries removed */
-        , .init = (char*[]) { "ao", "ao", "c", "od", 0 }
+          .init = (char*[]) { "ao", "ao", "c", "od", 0 }
         , .xsfm = "u"
         , .final = (char*[]) { "ao", "c", "od", 0 }
       }}
-    , (listwise_test[]){{ .entry = listwise_test_entry
+    , (listwise_test[]){{
         /* non-consecutive unique entries are preserved */
-        , .init = (char*[]) { "ao", "ob", "ao", "od", 0 }
+          .init = (char*[]) { "ao", "ob", "ao", "od", 0 }
         , .xsfm = "u"
         , .final = (char*[]) { "ao", "ob", "ao", "od", 0 }
       }}

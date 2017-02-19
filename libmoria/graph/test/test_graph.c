@@ -176,10 +176,11 @@ coda;
 }
 
 xunit_unit xunit = {
-    .tests = (xunit_test*[]) {
+    .xu_entry = graph_test_entry
+  , .xu_tests = (xunit_test*[]) {
         // downward, breadth
-        (graph_test[]){{ .entry = graph_test_entry
-          , edges : (struct edges*[]) {
+        (graph_test[]){{
+            edges : (struct edges*[]) {
                 (struct edges[]) {{ edges : "AB BC AC CD DE" }}
               , 0
             }
@@ -188,8 +189,8 @@ xunit_unit xunit = {
           , expected  : "ABCDE"
         }}
         // downward, depth
-      , (graph_test[]){{ .entry = graph_test_entry
-          , edges : (struct edges*[]) {
+      , (graph_test[]){{
+            edges : (struct edges*[]) {
                 (struct edges[]) {{ edges : "AB BC AC CD DE" }}
               , 0
             }
@@ -198,8 +199,8 @@ xunit_unit xunit = {
           , expected  : "EDCBA"
         }}
         // downward, depth
-      , (graph_test[]){{ .entry = graph_test_entry
-          , edges : (struct edges*[]) {
+      , (graph_test[]){{
+            edges : (struct edges*[]) {
                 (struct edges[]) {{ edges : "AB BC AC CD DE" }}
               , 0
             }
@@ -208,8 +209,8 @@ xunit_unit xunit = {
           , expected  : "EDC"
         }}
         // upward, breadth, skip weak
-      , (graph_test[]){{ .entry = graph_test_entry
-          , edges : (struct edges*[]) {
+      , (graph_test[]){{
+            edges : (struct edges*[]) {
                 (struct edges[]) {{ edges : "AB BC AD DE" }}
               , (struct edges[]) {{ edges : "BD", attrs : ATTR_WEAK }}
               , 0
@@ -220,8 +221,8 @@ xunit_unit xunit = {
           , expected  : "CBA"
         }}
         // downward, breadth, treat weak normally
-      , (graph_test[]){{ .entry = graph_test_entry
-          , edges : (struct edges*[]) {
+      , (graph_test[]){{
+            edges : (struct edges*[]) {
                 (struct edges[]) {{ edges : "AB BC DE" }}
               , (struct edges[]) {{ edges : "BD", attrs : ATTR_WEAK }}
               , 0
@@ -231,8 +232,8 @@ xunit_unit xunit = {
           , expected  : "ABCDE"
         }}
         // downward, breadth, skip weak
-      , (graph_test[]){{ .entry = graph_test_entry
-          , edges : (struct edges*[]) {
+      , (graph_test[]){{
+            edges : (struct edges*[]) {
                 (struct edges[]) {{ edges : "AB BC DE" }}
               , (struct edges[]) {{ edges : "BD", attrs : ATTR_WEAK }}
               , 0
@@ -243,8 +244,8 @@ xunit_unit xunit = {
           , expected  : "ABCE"
         }}
         // downward, breadth, finish
-      , (graph_test[]){{ .entry = graph_test_entry
-          , edges : (struct edges*[]) {
+      , (graph_test[]){{
+            edges : (struct edges*[]) {
                 (struct edges[]) {{ edges : "AB BC DE" }}
               , (struct edges[]) {{ edges : "BD", attrs : ATTR_WEAK }}
               , 0
@@ -255,8 +256,8 @@ xunit_unit xunit = {
           , expected  : "ABCD"
         }}
         // downward, breadth, stop on weak
-      , (graph_test[]){{ .entry = graph_test_entry
-          , edges : (struct edges*[]) {
+      , (graph_test[]){{
+            edges : (struct edges*[]) {
                 (struct edges[]) {{ edges : "AB BC DE" }}
               , (struct edges[]) {{ edges : "BD", attrs : ATTR_WEAK }}
               , 0
@@ -267,8 +268,8 @@ xunit_unit xunit = {
           , expected  : "ABC"
         }}
         // cycle detection
-      , (graph_test[]){{ .entry = graph_test_entry
-          , edges : (struct edges*[]) {
+      , (graph_test[]){{
+            edges : (struct edges*[]) {
                 (struct edges[]) {{ edges : "AB BC CD DE EF FG GA" }}
               , 0
             }
@@ -277,8 +278,8 @@ xunit_unit xunit = {
           , cycle_path: "A -> B -> C -> D -> E -> F -> G -> A"
         }}
         // self-referential cycle
-      , (graph_test[]){{ .entry = graph_test_entry
-          , edges : (struct edges*[]) {
+      , (graph_test[]){{
+            edges : (struct edges*[]) {
                 (struct edges[]) {{ edges : "AB BA" }}
               , 0
             }
@@ -287,8 +288,8 @@ xunit_unit xunit = {
           , cycle_path: "A -> B -> A"
         }}
         // duplicate labels
-      , (graph_test[]){{ .entry = graph_test_entry
-          , edges : (struct edges*[]) {
+      , (graph_test[]){{
+            edges : (struct edges*[]) {
                 (struct edges[]) {{ edges : "AB BC AB CD AB AB" }}
               , 0
             }
@@ -297,8 +298,8 @@ xunit_unit xunit = {
           , expected  : "ABCD"
         }}
         // cycle that exceeds the stack size
-      , (graph_test[]){{ .entry = graph_test_entry
-          , edges : (struct edges*[]) {
+      , (graph_test[]){{
+            edges : (struct edges*[]) {
                 (struct edges[]) {{ edges : "ab bc cd de ef fg gh hi ij jk kl lm mn no op pq qr rs st tu uv vw wx xy yz zA AB BC CD DE EF FG GH HI IJ JK KL LM MN NO OP PQ QR RS ST TU UV VW WX XY YZ Za" }}
               , 0
             }

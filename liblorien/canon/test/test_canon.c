@@ -51,57 +51,58 @@ static xapi __attribute__((nonnull)) canon_test_entry(canon_test * const test)
 }
 
 xunit_unit xunit = {
-    .tests = (xunit_test*[]) {
-        (canon_test[]){{ .entry = canon_test_entry
-          , .path   = "."
+    .xu_entry = canon_test_entry
+  , .xu_tests = (xunit_test*[]) {
+        (canon_test[]){{
+            .path   = "."
           , .base   = "/home/todd/fab"
           , .opts   = CAN_REALPATH
           , .final  = "/home/todd/fab"
         }}
-      , (canon_test[]){{ .entry = canon_test_entry
-          , .path = "/home/todd/fab/fab/fab/fab.devel/.."
+      , (canon_test[]){{
+            .path = "/home/todd/fab/fab/fab/fab.devel/.."
           , .base = "/home/todd/fab/listwise/listwise"
           , .opts = CAN_REALPATH
           , .final = "/home/todd/fab/fab/fab"
         }}
-      , (canon_test[]){{ .entry = canon_test_entry
-          , .path = "./fabfile"
+      , (canon_test[]){{
+            .path = "./fabfile"
           , .base = "/home/todd/fab/listwise/listwise"
           , .opts = CAN_REALPATH
           , .final = "/home/todd/fab/listwise/listwise/fabfile"
         }}
-      , (canon_test[]){{ .entry = canon_test_entry
-          , .path = "./fabfile"
+      , (canon_test[]){{
+            .path = "./fabfile"
           , .base = "/home/todd/fab/listwise/listwise"
           , .opts = CAN_INIT_DOT | CAN_NEXT_DOT | CAN_FORCE_DOT | CAN_NEXT_SYM
           , .final = "/home/todd/fab/listwise/listwise/fabfile"
         }}
-      , (canon_test[]) {{ .entry = canon_test_entry
-          , .path = "/home/todd/fab/devel/var/tmp/fab/pid/638/fml/1156/out"
+      , (canon_test[]) {{
+            .path = "/home/todd/fab/devel/var/tmp/fab/pid/638/fml/1156/out"
           , .base = "/../FABSYS/dscv"
           , .opts = CAN_INIT_DOT | CAN_NEXT_DOT | CAN_FORCE_DOT | CAN_NEXT_SYM
           , .final = "/home/todd/fab/devel/var/tmp/fab/pid/638/fml/1156/out"
       }}
-      , (canon_test[]){{ .entry = canon_test_entry
-          , .path = "../../fab/fabd/ts/ts.debug.o"
+      , (canon_test[]){{
+            .path = "../../fab/fabd/ts/ts.debug.o"
           , .base = "/home/todd/fab/fab/fabd"
           , .opts = CAN_REALPATH
           , .final = "/home/todd/fab/fab/fabd/ts/ts.debug.o"
       }}
-      , (canon_test[]) {{ .entry = canon_test_entry
-          , .path = "../../fab/fabd/strstack/strstack.debug.o"
+      , (canon_test[]) {{
+            .path = "../../fab/fabd/strstack/strstack.debug.o"
           , .base = "/home/todd/fab/fab/fabd"
           , .opts = CAN_REALPATH
           , .final = "/home/todd/fab/fab/fabd/strstack/strstack.debug.o"
       }}
-      , (canon_test[]) {{ .entry = canon_test_entry
-          , .path = "../../fab/fabd/traverse/traverse.debug.o"
+      , (canon_test[]) {{
+            .path = "../../fab/fabd/traverse/traverse.debug.o"
           , .base = "/home/todd/fab/fab/fabd"
           , .opts = CAN_REALPATH
           , .final = "/home/todd/fab/fab/fabd/traverse/traverse.debug.o"
       }}
-      , (canon_test[]) {{ .entry = canon_test_entry
-          , .path = "../../fab/common/dirutil/dirutil.debug.o"
+      , (canon_test[]) {{
+            .path = "../../fab/common/dirutil/dirutil.debug.o"
           , .base = "/home/todd/fab/fab/fabd"
           , .opts = CAN_REALPATH
           , .final = "/home/todd/fab/fab/common/dirutil/dirutil.debug.o"

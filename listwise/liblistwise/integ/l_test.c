@@ -18,21 +18,22 @@
 #include "listwise_test.h"
 
 xunit_unit xunit = {
-    .setup = listwise_test_setup
-  , .cleanup = listwise_test_cleanup
-  , .tests = (struct xunit_test*[]) {
-      (listwise_test[]){{ .entry = listwise_test_entry
-        , .init = (char*[]) { "ao", "ob", "c", "od", 0 }
+    .xu_setup = listwise_test_setup
+  , .xu_cleanup = listwise_test_cleanup
+  , .xu_entry = listwise_test_entry
+  , .xu_tests = (struct xunit_test*[]) {
+      (listwise_test[]){{
+          .init = (char*[]) { "ao", "ob", "c", "od", 0 }
         , .xsfm = "l/o"
         , .final = (char*[]) { "ao", "ob", "od", 0 }
       }}
-    , (listwise_test[]){{ .entry = listwise_test_entry
-        , .init = (char*[]) { "ao", "ob", "c", "od", 0 }
+    , (listwise_test[]){{
+          .init = (char*[]) { "ao", "ob", "c", "od", 0 }
         , .xsfm = "l/o wy"
         , .final = (char*[]) { "o", "o", "o", 0 }
       }}
-    , (listwise_test[]){{ .entry = listwise_test_entry
-        , .init = (char*[]) { "ao", "ob", "c", "od", 0 }
+    , (listwise_test[]){{
+          .init = (char*[]) { "ao", "ob", "c", "od", 0 }
         , .xsfm = "l/o wy uu"
         , .final = (char*[]) { "o", 0 }
       }}

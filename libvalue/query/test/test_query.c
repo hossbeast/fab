@@ -343,15 +343,15 @@ coda;
 //
 
 xunit_unit xunit = {
-    setup : unit_setup
-  , cleanup : unit_cleanup
-  , tests : (xunit_test*[]) {
-      (xunit_test[]){{ entry : query_test_map_one_level }}
-    , (xunit_test[]){{ entry : query_test_map_two_levels }}
-    , (xunit_test[]){{ entry : query_test_map_nomatch }}
-    , (xunit_test[]){{ entry : query_test_list }}
-    , (xunit_test[]){{ entry : query_test_list_nomatch }}
-    , (xunit_test[]){{ entry : query_test_list_empty }}
+    xu_setup : unit_setup
+  , xu_cleanup : unit_cleanup
+  , xu_tests : (xunit_test*[]) {
+      (xunit_test[]){{ xu_entry : query_test_map_one_level }}
+    , (xunit_test[]){{ xu_entry : query_test_map_two_levels }}
+    , (xunit_test[]){{ xu_entry : query_test_map_nomatch }}
+    , (xunit_test[]){{ xu_entry : query_test_list }}
+    , (xunit_test[]){{ xu_entry : query_test_list_nomatch }}
+    , (xunit_test[]){{ xu_entry : query_test_list_empty }}
     , 0
   }
 };

@@ -18,31 +18,32 @@
 #include "listwise_test.h"
 
 xunit_unit xunit = {
-    .setup = listwise_test_setup
-  , .cleanup = listwise_test_cleanup
-  , .tests = (xunit_test*[]) {
-      (listwise_test[]){{ .entry = listwise_test_entry
-        , .init = (char*[]) { "foo", "foo.a", "foo.a.b", "foo.a.b.c", 0 }
+    .xu_setup = listwise_test_setup
+  , .xu_cleanup = listwise_test_cleanup
+  , .xu_entry = listwise_test_entry
+  , .xu_tests = (xunit_test*[]) {
+      (listwise_test[]){{
+          .init = (char*[]) { "foo", "foo.a", "foo.a.b", "foo.a.b.c", 0 }
         , .xsfm = "sx/z"
         , .final = (char*[]) { "foo", "foo.z", "foo.a.z", "foo.a.b.z", 0 }
       }}
-    , (listwise_test[]){{ .entry = listwise_test_entry
-        , .init = (char*[]) { "foo", "foo.a", "foo.a.b", "foo.a.b.c", 0 }
+    , (listwise_test[]){{
+          .init = (char*[]) { "foo", "foo.a", "foo.a.b", "foo.a.b.c", 0 }
         , .xsfm = "sx/b/z"
         , .final = (char*[]) { "foo", "foo.a", "foo.a.z", "foo.a.b.c", 0 }
       }}
-    , (listwise_test[]){{ .entry = listwise_test_entry
-        , .init = (char*[]) { "foo", "foo.a", "foo.a.b", "foo.a.b.c", 0 }
+    , (listwise_test[]){{
+          .init = (char*[]) { "foo", "foo.a", "foo.a.b", "foo.a.b.c", 0 }
         , .xsfm = "sxf/z"
         , .final = (char*[]) { "foo", "foo.z", "foo.z", "foo.z", 0 }
       }}
-    , (listwise_test[]){{ .entry = listwise_test_entry
-        , .init = (char*[]) { "foo", "foo.a", "foo.a.b", "foo.a.b.c", "foo.a.b.c.d", "foo.b.c", 0 }
+    , (listwise_test[]){{
+          .init = (char*[]) { "foo", "foo.a", "foo.a.b", "foo.a.b.c", "foo.a.b.c.d", "foo.b.c", 0 }
         , .xsfm = "sxf/b.c/z"
         , .final = (char*[]) { "foo", "foo.a", "foo.a.b", "foo.a.b.c", "foo.a.b.c.d", "foo.z", 0 }
       }}
-    , (listwise_test[]){{ .entry = listwise_test_entry
-        , .init = (char*[]) { "foo", "foo.a", "foo.a.b", "foo.a.b.c", "foo.a.b.c.d", "foo.b.c", 0 }
+    , (listwise_test[]){{
+          .init = (char*[]) { "foo", "foo.a", "foo.a.b", "foo.a.b.c", "foo.a.b.c.d", "foo.b.c", 0 }
         , .xsfm = "sxf/b.c/z"
         , .final = (char*[]) { "foo", "foo.a", "foo.a.b", "foo.a.b.c", "foo.a.b.c.d", "foo.z", 0 }
       }}

@@ -18,21 +18,22 @@
 #include "listwise_test.h"
 
 xunit_unit xunit = {
-    .setup = listwise_test_setup
-  , .cleanup = listwise_test_cleanup
-  , .tests = (xunit_test*[]) {
-      (listwise_test[]){{ .entry = listwise_test_entry
-        , .init = (char*[]) { "a", "c", "b", "d", 0 }
+    .xu_setup = listwise_test_setup
+  , .xu_cleanup = listwise_test_cleanup
+  , .xu_entry = listwise_test_entry
+  , .xu_tests = (xunit_test*[]) {
+      (listwise_test[]){{
+          .init = (char*[]) { "a", "c", "b", "d", 0 }
         , .xsfm = "ss"
         , .final = (char*[]) { "a", "b", "c", "d", 0 }
       }}
-    , (listwise_test[]){{ .entry = listwise_test_entry
-        , .init = (char*[]) { "a", "c", "b", "d", 0 }
+    , (listwise_test[]){{
+          .init = (char*[]) { "a", "c", "b", "d", 0 }
         , .xsfm = "ss"
         , .final = (char*[]) { "a", "b", "c", "d", 0 }
       }} 
-    , (listwise_test[]){{ .entry = listwise_test_entry
-        , .init = (char*[]) { "a", "c", "b", "d", 0 }
+    , (listwise_test[]){{
+          .init = (char*[]) { "a", "c", "b", "d", 0 }
         , .xsfm = "ss"
         , .final = (char*[]) { "a", "b", "c", "d", 0 }
       }} 

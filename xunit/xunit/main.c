@@ -97,10 +97,10 @@ int main(int argc, char** argv, char ** envp)
     {
       logf(L_DLOAD, "loaded %s -> xunit : { setup : %p, teardown : %p, cleanup : %p, tests : %zu }"
         , g_args.objects[x]
-        , xunit->setup
-        , xunit->teardown
-        , xunit->cleanup
-        , sentinel(xunit->tests)
+        , xunit->xu_setup
+        , xunit->xu_teardown
+        , xunit->xu_cleanup
+        , sentinel(xunit->xu_tests)
       );
     }
     else
@@ -115,22 +115,40 @@ int main(int argc, char** argv, char ** envp)
       fatal(xclock_gettime, CLOCK_MONOTONIC_RAW, &unit_start);
 
       // unit setup
-      if(xunit->setup)
-        fatal(xunit->setup, xunit);
+      if(xunit->xu_setup)
+        fatal(xunit->xu_setup, xunit);
 
-      xunit_test ** test = xunit->tests;
+      xunit_test ** test = xunit->xu_tests;
 
       uint32_t unit_assertions_passed = 0;
       uint32_t unit_assertions_failed = 0;
       uint32_t unit_tests = 0;
 
-      // execute all tests
-      while(*test)
+      int only = 0;
+      while(*test && !only)
       {
+        // convenience
+        (*test)->xu_unit = xunit;
+
+        if((*test)->xu_only)
+          only++;
+
+        test++;
+      }
+
+      // execute all tests
+      test = xunit->xu_tests;
+      for(test = xunit->xu_tests; *test; test++)
+      {
+        if(only && !(*test)->xu_only)
+          continue;
+
         unit_tests++;
 
         // convenience
-        (*test)->unit = xunit;
+        (*test)->xu_unit = xunit;
+
+        xunit_test_entry entry = (*test)->xu_entry ?: xunit->xu_entry;
 
         xunit_assertions_passed = 0;
         xunit_assertions_failed = 0;
@@ -140,22 +158,22 @@ int main(int argc, char** argv, char ** envp)
         fatal(xclock_gettime, CLOCK_MONOTONIC_RAW, &test_start);
 
         const char * name = 0;
-        if(!(name = (*test)->name))
+        if(!(name = (*test)->xu_name))
         {
-          int r = dladdr((*test)->entry, &nfo);
+          int r = dladdr(entry, &nfo);
           if(r && nfo.dli_sname)
             name = nfo.dli_sname;
         }
 
-        if(invoke((*test)->entry, (*test)))
+        if(invoke(entry, *test))
         {
           // add identifying info
           if(name)
             xapi_info_adds("name", name);
-          xapi_info_addf("test", "%zu", test - xunit->tests);
+          xapi_info_addf("test", "%zu", test - xunit->xu_tests);
 
           // propagate non-unit-testing errors
-          if(XAPI_ERRTAB != perrtab_XUNIT || XAPI_ERRCODE != XUNIT_FAIL)
+          if(XAPI_ERRVAL != XUNIT_FAIL)
             fail(0);
 
           // save the trace
@@ -185,8 +203,6 @@ int main(int argc, char** argv, char ** envp)
 
         unit_assertions_passed += xunit_assertions_passed;
         unit_assertions_failed += xunit_assertions_failed;
-
-        test++;
       }
 
       fatal(xclock_gettime, CLOCK_MONOTONIC_RAW, &unit_end);
@@ -197,7 +213,7 @@ int main(int argc, char** argv, char ** envp)
         , " %%%6.2f pass rate on %6d assertions by %3d tests over "
         , 100 * ((double)unit_assertions_passed / (double)(unit_assertions_passed + unit_assertions_failed))
         , unit_assertions_passed + unit_assertions_failed
-        , sentinel(xunit->tests)
+        , sentinel(xunit->xu_tests)
       );
 
       fatal(elapsed_say, &unit_start, &unit_end, log_narrator(&token));
@@ -210,11 +226,11 @@ int main(int argc, char** argv, char ** envp)
       suite_tests += unit_tests;
 
       // unit cleanup
-      if(xunit->teardown)
-        xunit->teardown(xunit);
+      if(xunit->xu_teardown)
+        xunit->xu_teardown(xunit);
 
-      if(xunit->cleanup)
-        fatal(xunit->cleanup, xunit);
+      if(xunit->xu_cleanup)
+        fatal(xunit->xu_cleanup, xunit);
     }
   }
 

@@ -555,23 +555,23 @@ coda;
 //
 
 xunit_unit xunit = {
-    setup : unit_setup
-  , cleanup : unit_cleanup
-  , tests : (xunit_test*[]) {
-      (xunit_test[]){{ entry : merge_test_map_update }}
-    , (xunit_test[]){{ entry : merge_test_map_prepend }}
-    , (xunit_test[]){{ entry : merge_test_map_append }}
-    , (xunit_test[]){{ entry : merge_test_map_add }}
-    , (xunit_test[]){{ entry : merge_test_map_set }}
-    , (xunit_test[]){{ entry : merge_test_map_list_add }}
-    , (xunit_test[]){{ entry : merge_test_map_list_set }}
-    , (xunit_test[]){{ entry : merge_test_list_scalar }}
-    , (xunit_test[]){{ entry : merge_test_list_aggregate }}
-    , (xunit_test[]){{ entry : merge_test_map_set_inner }}
+    xu_setup : unit_setup
+  , xu_cleanup : unit_cleanup
+  , xu_tests : (xunit_test*[]) {
+      (xunit_test[]){{ xu_entry : merge_test_map_update }}
+    , (xunit_test[]){{ xu_entry : merge_test_map_prepend }}
+    , (xunit_test[]){{ xu_entry : merge_test_map_append }}
+    , (xunit_test[]){{ xu_entry : merge_test_map_add }}
+    , (xunit_test[]){{ xu_entry : merge_test_map_set }}
+    , (xunit_test[]){{ xu_entry : merge_test_map_list_add }}
+    , (xunit_test[]){{ xu_entry : merge_test_map_list_set }}
+    , (xunit_test[]){{ xu_entry : merge_test_list_scalar }}
+    , (xunit_test[]){{ xu_entry : merge_test_list_aggregate }}
+    , (xunit_test[]){{ xu_entry : merge_test_map_set_inner }}
 
     // failure cases
-    , (xunit_test[]){{ entry : merge_test_difftype_aggregates }}
-    , (xunit_test[]){{ entry : merge_test_difftype_mixed }}
+    , (xunit_test[]){{ xu_entry : merge_test_difftype_aggregates }}
+    , (xunit_test[]){{ xu_entry : merge_test_difftype_mixed }}
     , 0
   }
 };

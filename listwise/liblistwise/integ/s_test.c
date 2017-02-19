@@ -18,17 +18,19 @@
 #include "listwise_test.h"
 
 xunit_unit xunit = {
-    .setup = listwise_test_setup
-  , .cleanup = listwise_test_cleanup
-  , .tests = (xunit_test*[]) {
+    .xu_setup = listwise_test_setup
+  , .xu_cleanup = listwise_test_cleanup
+  , .xu_entry = listwise_test_entry
+  , .xu_tests = (xunit_test*[]) {
 
 /* s : SELECTION_STAGE | WINDOWS_STAGE | MODIFIERS_CANHAVE | ARGS_CANHAVE | OPERATION_INPLACE */
 
     // remove part of the row, select/leave the remainder
-      (listwise_test[]){{ .entry = listwise_test_entry
-        , .init = (char*[]) { "1-DFOO", 0 }
+      (listwise_test[]){{
+          .init = (char*[]) { "1-DFOO", 0 }
         , .xsfm = "s/^1// sy"
         , .final = (char*[]) { "-DFOO", 0 }
       }}
+    , 0
   }
 };

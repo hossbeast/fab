@@ -18,26 +18,27 @@
 #include "listwise_test.h"
 
 xunit_unit xunit = {
-    .setup = listwise_test_setup
-  , .cleanup = listwise_test_cleanup
-  , .tests = (xunit_test*[]) {
+    .xu_setup = listwise_test_setup
+  , .xu_cleanup = listwise_test_cleanup
+  , .xu_entry = listwise_test_entry
+  , .xu_tests = (xunit_test*[]) {
 
 /* s : WINDOWS_STAGE | SELECTION_STAGE */
 /* l : WINDOWS_STAGE | SELECTION_ACTIVATE */
 
-      (listwise_test[]){{ .entry = listwise_test_entry
-        , .init = (char*[]) { "zoo", "foo.a", "foo.a.b", "foo.a.b.c", "bar", 0 }
+      (listwise_test[]){{
+          .init = (char*[]) { "zoo", "foo.a", "foo.a.b", "foo.a.b.c", "bar", 0 }
         , .xsfm = "sx/x o s/z/a sy"
         , .final = (char*[]) { "aoo", "foo.x", "foo.a.x", "foo.a.b.x", 0 }
       }}
       /* o : works across multiple chained o operators */
-    , (listwise_test[]){{ .entry = listwise_test_entry
-        , .init = (char*[]) { "zoo", "foo.a", "foo.a.b", "foo.a.b.c", "bar", 0 }
+    , (listwise_test[]){{
+          .init = (char*[]) { "zoo", "foo.a", "foo.a.b", "foo.a.b.c", "bar", 0 }
         , .xsfm = "sx/x o s/z/a o l/b sy"
         , .final = (char*[]) { "aoo", "foo.x", "foo.a.x", "foo.a.b.x", "bar", 0 }
       }}
-    , (listwise_test[]){{ .entry = listwise_test_entry
-        , .init = (char*[]) { "zoo", "foo.a", "foo.a.b", "foo.a.b.c", "bar", 0 }
+    , (listwise_test[]){{
+          .init = (char*[]) { "zoo", "foo.a", "foo.a.b", "foo.a.b.c", "bar", 0 }
         , .xsfm = "sx/x o l/b"
         , .final = (char*[]) { "foo.x", "foo.a.x", "foo.a.b.x", "bar", 0 }
       }}
