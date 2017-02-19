@@ -21,7 +21,7 @@
 #include "xfcntl/xfcntl.h"
 #include "errtab/KERNEL.errtab.h"
 
-#include "fmt.internal.h"
+#include "fmt.h"
 
 API xapi xopens(int * fd, int flags, const char * path)
 {

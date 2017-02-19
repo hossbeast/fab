@@ -18,6 +18,8 @@
 #include <errno.h>
 #include <signal.h>
 #include <string.h>
+#include <unistd.h>
+#include <sys/syscall.h>
 
 #include "internal.h"
 #include "xsignal/xsignal.h"
@@ -49,6 +51,40 @@ API xapi uxkill(pid_t pid, int sig, int * r)
   }
 
   finally : coda;
+}
+
+API xapi xtgkill(pid_t pid, pid_t tid, int sig)
+{
+  enter;
+
+  if(syscall(SYS_tgkill, pid, tid, sig) != 0)
+    tfail(perrtab_KERNEL, errno);
+
+finally:
+  xapi_infof("pid", "%ld", (long)pid);
+  xapi_infof("tid", "%ld", (long)tid);
+  xapi_infof("sig", "%d", sig);
+coda;
+}
+
+API xapi uxtgkill(int * r, pid_t pid, pid_t tid, int sig)
+{
+  enter;
+
+  if(r && (*r = syscall(SYS_tgkill, pid, tid, sig)) != 0 && errno != ESRCH && errno != EINVAL)
+  {
+    tfail(perrtab_KERNEL, errno);
+  }
+  else if(!r && syscall(SYS_tgkill, pid, tid, sig) != 0 && errno != ESRCH && errno != EINVAL)
+  {
+    tfail(perrtab_KERNEL, errno);
+  }
+
+finally:
+  xapi_infof("pid", "%ld", (long)pid);
+  xapi_infof("tid", "%ld", (long)tid);
+  xapi_infof("sig", "%d", sig);
+coda;
 }
 
 API xapi xsigaction(int signum, const struct sigaction * act, struct sigaction * oldact)
@@ -94,26 +130,24 @@ API xapi xsigwaitinfo(const sigset_t * mask, siginfo_t * info)
 {
   enter;
 
-  tfatalize(perrtab_KERNEL, errno, sigwaitinfo, mask, info);
+  if(sigwaitinfo(mask, info) == -1)
+    tfail(perrtab_KERNEL, errno);
 
   finally : coda;
 }
 
-API xapi uxsigwaitinfo(const sigset_t * mask, siginfo_t * info)
+API xapi uxsigwaitinfo(int * r, const sigset_t * mask, siginfo_t * info)
 {
   enter;
 
-  if(sigwaitinfo(mask, info))
-  {
-    if(errno == EINTR)
-    {
-      memset(info, 0, sizeof(*info));
-    }
-    else
-    {
-      tfail(perrtab_KERNEL, errno);
-    }
-  }
+  siginfo_t linfo;
+  if(!info)
+    info = &linfo;
+
+  if(r && (((*r) = sigwaitinfo(mask, info)) == -1) && errno != EINTR)
+    tfail(perrtab_KERNEL, errno);
+  else if(!r && sigwaitinfo(mask, info) == -1 && errno != EINTR)
+    tfail(perrtab_KERNEL, errno);
 
   finally : coda;
 }
@@ -123,9 +157,7 @@ API xapi xsignal(int signum, sighandler_t handler)
   enter;
 
   if(signal(signum, handler) == SIG_ERR)
-  {
     tfail(perrtab_KERNEL, errno);
-  }
 
 finally:
   xapi_infof("sig", "%d", signum);

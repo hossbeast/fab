@@ -37,7 +37,7 @@ static int xnftw_callback(const char *fpath, const struct stat *sb, int typeflag
 
   fatal(xnftw_context.xfn, fpath, sb, typeflag, ftwbuf, xnftw_context.arg);
 
-  int R = 0;
+  xapi R = 0;
   finally : conclude(&R);
 
   if(R == 0)

@@ -15,30 +15,28 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef _XTIME_H
-#define _XTIME_H
+#ifndef _XINOTIFY_H
+#define _XINOTIFY_H
 
-#include <time.h>
+#include <sys/types.h>
+#include <sys/inotify.h>
 
 #include "xapi.h"
 
-/// xlocaltime_r
+/// xinotify_init
 //
 // SUMMARY
-//  proxy for localtime_r
+//  proxy for inotify_init
 //
-xapi xlocaltime_r(const time_t * timep, struct tm * result);
-
-/// clock_gettime
-//
-// SUMMARY
-//  xapi proxy for clock_gettime
-//
-xapi xclock_gettime(clockid_t clk_id, struct timespec * tp)
+xapi xinotify_init(int * id)
   __attribute__((nonnull));
 
-xapi xclock_nanosleep(clockid_t clock_id, int flags, const struct timespec *request, struct timespec *remain);
-
-xapi uxclock_nanosleep(int * r, clockid_t clock_id, int flags, const struct timespec *request, struct timespec *remain);
+/// inotify_add_watch
+//
+// SUMMARY
+//  proxy for inotify_add_watch
+//
+xapi xinotify_add_watch(int * wd, int id, const char *path, uint32_t mask)
+  __attribute__((nonnull));
 
 #endif

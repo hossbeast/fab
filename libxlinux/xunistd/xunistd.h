@@ -342,5 +342,12 @@ xapi xchdirvf(const char * const restrict fmt, va_list va)
 //
 xapi xfchdir(int fd);
 
+/// gettid
+//
+// SUMMARY
+//  get the id of the current thread
+//
+pid_t gettid(void);
+
 #undef restrict
 #endif

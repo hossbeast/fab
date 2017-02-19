@@ -22,7 +22,7 @@
 #include "xstat/xstat.h"
 #include "errtab/KERNEL.errtab.h"
 
-#include "fmt.internal.h"
+#include "fmt.h"
 
 #define restrict __restrict
 

@@ -16,31 +16,41 @@
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
 #include <errno.h>
-#include <sys/types.h>
-#include <stdio.h>
-
-#include "xapi.h"
 
 #include "internal.h"
-#include "fmt.internal.h"
-#include "errtab/XLINUX.errtab.h"
+#include "xinotify.h"
+#include "errtab/KERNEL.errtab.h"
 
-//
-// public
-//
-
-xapi fmt_apply(char * const restrict dst, size_t dst_size, const char * const restrict fmt, va_list va)
+API xapi xinotify_init(int * id)
 {
   enter;
 
-  size_t sz = vsnprintf(dst, dst_size, fmt, va);
-  if(sz >= dst_size)
-  {
-    xapi_fail_intent();
-    xapi_info_addf("max size", "%zu", dst_size);
-    xapi_info_addf("actual size", "%zu", sz);
-    fail(XLINUX_NAMETOOLONG);
-  }
+  int rv;
+  if((rv = inotify_init()) < 0)
+    tfail(perrtab_KERNEL, rv);
+
+  *id = rv;
 
   finally : coda;
+}
+
+/// inotify_add_watch
+//
+// SUMMARY
+//  proxy for inotify_add_watch
+//
+API xapi xinotify_add_watch(int * wd, int id, const char *path, uint32_t mask)
+{
+  enter;
+
+  int rv;
+  if((rv = inotify_add_watch(id, path, mask)) < 0)
+    tfail(perrtab_KERNEL, errno);
+
+  *wd = rv;
+
+finally:
+  xapi_info_adds("path", path);
+  xapi_info_addf("id", "%d", id);
+coda;
 }

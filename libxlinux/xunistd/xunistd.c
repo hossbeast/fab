@@ -1,29 +1,30 @@
 /* Copyright (c) 2012-2015 Todd Freed <todd.freed@gmail.com>
 
    This file is part of fab.
-   
+
    fab is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
    the Free Software Foundation, either version 3 of the License, or
    (at your option) any later version.
-   
+
    fab is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
    GNU General Public License for more details.
-   
+
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
 #include <errno.h>
 #include <stdio.h>
+#include <sys/syscall.h>
 
 #include "internal.h"
 #include "xunistd/xunistd.h"
 #include "errtab/KERNEL.errtab.h"
 #include "errtab/XLINUX.errtab.h"
 
-#include "fmt.internal.h"
+#include "fmt.h"
 
 //
 // api
@@ -331,7 +332,7 @@ API xapi xfork(pid_t * r)
 
   if(r && (((*r) = fork()) == -1))
     tfail(perrtab_KERNEL, errno);
-  
+
   else if(!r && fork() == -1)
     tfail(perrtab_KERNEL, errno);
 
@@ -404,7 +405,7 @@ API xapi xeuidaccess(const char * pathname, int mode, int * const r)
 finally:
   xapi_infos("path", pathname);
 coda;
-}  
+}
 
 API xapi uxeuidaccess(const char * pathname, int mode, int * const r)
 {
@@ -412,14 +413,14 @@ API xapi uxeuidaccess(const char * pathname, int mode, int * const r)
 
   if(r && ((*r) = euidaccess(pathname, mode)) == -1 && errno != EACCES && errno != ENOENT && errno != ENOTDIR)
     tfail(perrtab_KERNEL, errno);
-    
+
   else if(!r && euidaccess(pathname, mode) == -1 && errno != EACCES && errno != ENOENT && errno != ENOTDIR)
     tfail(perrtab_KERNEL, errno);
 
 finally:
   xapi_infos("path", pathname);
 coda;
-}  
+}
 
 API xapi xseteuid(uid_t euid)
 {
@@ -559,4 +560,14 @@ API xapi xfchdir(int fd)
 finally:
   xapi_infof("fd", "%d", fd);
 coda;
+}
+
+API pid_t gettid()
+{
+  static __thread pid_t self;
+
+  if(!self)
+    self = syscall(SYS_gettid);
+
+  return self;
 }

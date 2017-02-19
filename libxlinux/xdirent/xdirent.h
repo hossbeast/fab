@@ -40,6 +40,22 @@ xapi xopendir(const char * name, DIR ** dd)
 xapi uxopendir(const char * name, DIR ** dd)
   __attribute__((nonnull));
 
+/// xopendirat
+//
+// SUMMARY
+//  like opendir, but relative to an O_PATH file descriptor (man 2 openat)
+//
+xapi xopendirat(DIR ** dd, int dirfd, const char * const restrict path)
+  __attribute__((nonnull));
+
+/// xfdopendir
+//
+// SUMMARY
+//  proxy for fdopendir
+//
+xapi xfdopendir(int fd, DIR ** dd)
+  __attribute__((nonnull));
+
 /// xreaddir_r
 //
 // SUMMARY
@@ -52,7 +68,16 @@ xapi xreaddir_r(DIR * dirp, struct dirent * entry, struct dirent ** result);
 // SUMMARY
 //  proxy for closedir
 //
-xapi xclosedir(DIR * dd)
+xapi xclosedir(DIR * dd);
+
+xapi ixclosedir(DIR ** dd)
+  __attribute__((nonnull));
+
+/// xtelldir
+//
+// xapi proxy for telldir
+//
+xapi xtelldir(long * loc, DIR * dirp)
   __attribute__((nonnull));
 
 #endif

@@ -46,6 +46,20 @@ xapi xkill(pid_t pid, int sig);
 //
 xapi uxkill(pid_t pid, int sig, int * r);
 
+/// xtgkill
+//
+// SUMMARY
+//  proxy for tgkill
+//
+xapi xtgkill(int tgid, int tid, int sig);
+
+/// xtgkill
+//
+// SUMMARY
+//  proxy for tgkill that only fails when errno != ESRCH (no such pid/thread)
+//
+xapi uxtgkill(int * r, int tgid, int tid, int sig);
+
 /// xsigaction
 //
 // SUMMARY
@@ -70,12 +84,27 @@ xapi xsigprocmask(int how, const sigset_t * set, sigset_t * oldset);
 xapi uxsigsuspend(const sigset_t * mask)
   __attribute__((nonnull));
 
+/// sigwaitinfo
+//
+// SUMMARY
+//  xapi proxy for sigwaitinfo
+//
 xapi xsigwaitinfo(const sigset_t * mask, siginfo_t * info)
-  __attribute__((nonnull));
+  __attribute__((nonnull(1)));
 
-xapi uxsigwaitinfo(const sigset_t * mask, siginfo_t * info)
-  __attribute__((nonnull));
+/// uxsigwaitinfo
+//
+// SUMMARY
+//  xapi proxy for sigwaitinfo that only fails when errno != EINTR
+//
+xapi uxsigwaitinfo(int * r, const sigset_t * mask, siginfo_t * info)
+  __attribute__((nonnull(2)));
 
+/// xsignal
+//
+// SUMMARY
+//  xapi proxy for signal
+//
 xapi xsignal(int signum, sighandler_t handler);
 
 #endif

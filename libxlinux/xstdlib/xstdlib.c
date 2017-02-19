@@ -24,7 +24,7 @@
 #include "errtab/KERNEL.errtab.h"
 #include "mempolicy/mempolicy.internal.h"
 
-#include "fmt.internal.h"
+#include "fmt.h"
 
 //
 // static
@@ -210,14 +210,44 @@ API xapi xreadlinkvf(const char * pathname_fmt, char * buf, size_t bufsiz, ssize
   finally : coda;
 }
 
-API xapi xrealpath(const char * const restrict path, char * const restrict resolved_path)
+API xapi xrealpaths(char ** restrict r, char * restrict resolved_path, const char * restrict path)
 {
   enter;
 
-  if(realpath(path, resolved_path) == 0)
-  {
+  if(r && (*r= realpath(path, resolved_path)) == 0)
     tfail(perrtab_KERNEL, errno);
-  }
+  else if(!r && realpath(path, resolved_path) == 0)
+    tfail(perrtab_KERNEL, errno);
 
-  finally : coda;
+finally:
+  xapi_infos("path", path);
+coda;
+}
+
+API xapi xrealpathf(char ** restrict r, char * restrict resolved_path, const char * restrict path_fmt, ...)
+{
+  enter;
+
+  va_list va;
+  va_start(va, path_fmt);
+
+  fatal(xrealpathvf, r, resolved_path, path_fmt, va);
+
+finally:
+  va_end(va);
+coda;
+}
+
+API xapi xrealpathvf(char ** restrict r, char * restrict resolved_path, const char * restrict path_fmt, va_list va)
+{
+  enter;
+
+  char pathname[512];
+
+  fatal(fmt_apply, pathname, sizeof(pathname), path_fmt, va);
+  fatal(xrealpaths, r, resolved_path, pathname);
+
+finally:
+  va_end(va);
+coda;
 }

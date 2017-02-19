@@ -15,30 +15,31 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef _XTIME_H
-#define _XTIME_H
-
-#include <time.h>
+#include <errno.h>
+#include <sys/types.h>
+#include <stdio.h>
 
 #include "xapi.h"
 
-/// xlocaltime_r
-//
-// SUMMARY
-//  proxy for localtime_r
-//
-xapi xlocaltime_r(const time_t * timep, struct tm * result);
+#include "fmt.h"
+#include "xlinux/XLINUX.errtab.h"
 
-/// clock_gettime
 //
-// SUMMARY
-//  xapi proxy for clock_gettime
+// public
 //
-xapi xclock_gettime(clockid_t clk_id, struct timespec * tp)
-  __attribute__((nonnull));
 
-xapi xclock_nanosleep(clockid_t clock_id, int flags, const struct timespec *request, struct timespec *remain);
+xapi fmt_apply(char * const restrict dst, size_t dst_size, const char * const restrict fmt, va_list va)
+{
+  enter;
 
-xapi uxclock_nanosleep(int * r, clockid_t clock_id, int flags, const struct timespec *request, struct timespec *remain);
+  size_t sz = vsnprintf(dst, dst_size, fmt, va);
+  if(sz >= dst_size)
+  {
+    xapi_fail_intent();
+    xapi_info_addf("max size", "%zu", dst_size);
+    xapi_info_addf("actual size", "%zu", sz);
+    fail(XLINUX_NAMETOOLONG);
+  }
 
-#endif
+  finally : coda;
+}

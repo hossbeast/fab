@@ -16,8 +16,10 @@
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
 #include "internal.h"
-#include "xdirent/xdirent.h"
-#include "errtab/KERNEL.errtab.h"
+#include "xdirent.h"
+#include "KERNEL.errtab.h"
+#include "xfcntl.h"
+#include "xunistd.h"
 
 API xapi xopendir(const char * name, DIR ** dd)
 {
@@ -43,6 +45,31 @@ finally:
 coda;
 }
 
+API xapi xfdopendir(int fd, DIR ** dd)
+{
+  enter;
+
+  if(((*dd) = fdopendir(fd)) == 0)
+    tfail(perrtab_KERNEL, errno);
+
+  finally : coda;
+}
+
+API xapi xopendirat(DIR ** dd, int dirfd, const char * const restrict path)
+{
+  enter;
+
+  int fd = -1;
+
+  fatal(xopenats, &fd, O_RDONLY | O_DIRECTORY, dirfd, path);
+  fatal(xfdopendir, fd, dd);
+  fd = -1;
+
+finally:
+  fatal(ixclose, &fd);
+coda;
+}
+
 API xapi xreaddir_r(DIR * dirp, struct dirent * entry, struct dirent ** result)
 {
   enter;
@@ -58,7 +85,27 @@ API xapi xclosedir(DIR * dd)
 {
   enter;
 
-  if(closedir(dd) != 0)
+  if(dd && closedir(dd) != 0)
+    tfail(perrtab_KERNEL, errno);
+
+  finally : coda;
+}
+
+API xapi ixclosedir(DIR ** dd)
+{
+  enter;
+
+  fatal(xclosedir, *dd);
+  *dd = 0;
+
+  finally : coda;
+}
+
+API xapi xtelldir(long * loc, DIR * dirp)
+{
+  enter;
+
+  if((*loc = telldir(dirp)) == -1)
     tfail(perrtab_KERNEL, errno);
 
   finally : coda;

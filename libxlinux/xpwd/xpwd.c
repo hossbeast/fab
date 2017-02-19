@@ -51,5 +51,7 @@ API xapi xgetpwuid(uid_t uid, struct passwd ** const pwd)
   if(((*pwd) = getpwuid(uid)) == 0)
     tfail(perrtab_KERNEL, errno);
 
-  finally : coda;
+finally:
+  xapi_infof("uid", "%zu", uid);
+coda;
 }

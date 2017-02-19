@@ -152,7 +152,7 @@ API xapi fab_client_create(fab_client ** const restrict client, const char * con
   fatal(xmalloc, client, sizeof(**client));
 
   // canonicalized project path
-  fatal(xrealpath, projdir, space);
+  fatal(xrealpaths, 0, space, projdir);
   fatal(ixstrdup, &(*client)->projdir, space);
 
   // project path hash
