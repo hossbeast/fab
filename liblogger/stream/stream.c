@@ -28,22 +28,24 @@
 #include "narrator/fixed.h"
 #include "narrator/record.h"
 #include "valyria/pstring.h"
-
-#include "internal.h"
-#include "stream/stream.internal.h"
-#include "attr/attr.internal.h"
-#include "filter/filter.internal.h"
-#include "category/category.internal.h"
-#include "log/log.internal.h"
-#include "logging/logging.internal.h"
 #include "valyria/array.h"
 #include "valyria/map.h"
 #include "valyria/list.h"
+
+#include "internal.h"
+#include "stream.internal.h"
+#include "attr.internal.h"
+#include "category.internal.h"
+#include "filter.internal.h"
+#include "log.internal.h"
+#include "logging.internal.h"
+#include "config.internal.h"
 
 #include "macros.h"
 #include "strutil.h"
 #include "color.h"
 #include "spinlock.h"
+#include "zbuffer.h"
 
 #define restrict __restrict
 
@@ -166,10 +168,19 @@ static xapi __attribute__((nonnull)) stream_write(stream * const restrict stream
   {
     if(prev)
       says(" ");
-    sayf("%5ld/%-5ld", (long)getpgid(0), (long)getpid());
-    if(g_logger_process_name)
-      sayf("/%4s", g_logger_process_name);
-    prev = 1;
+    if(*logger_thread_name || *logger_process_name)
+    {
+      char name[14];
+      size_t namel = 0;
+
+      namel += znloads(name + namel, sizeof(name) - namel, logger_process_name);
+      if(namel && *logger_thread_name)
+        namel += znloadc(name + namel, sizeof(name) - namel, '/');
+      namel += znloads(name + namel, sizeof(name) - namel, logger_thread_name);
+
+      sayf("%14s", name);
+      prev = 1;
+    }
   }
 
   if(prev)

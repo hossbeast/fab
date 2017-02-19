@@ -78,7 +78,8 @@
 // SUMMARY
 //  like znloadf, except takes a pointer to string
 //
-#define znloads(dst, sz, s) znloadw(dst, sz, s, strlen(s)) 
+#define znloads(dst, sz, s) znloadw(dst, sz, s, strlen(s))
+#define znloadc(dst, sz, c) znloadw(dst, sz, (char[]) { c }, 1)
 
 /// zloads
 //

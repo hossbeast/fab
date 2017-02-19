@@ -67,22 +67,6 @@ LOGGER_ATTR_TABLE(0, 0)
 
 #define restrict __restrict
 
-/// g_logger_default_stderr
-//
-// SUMMARY
-//  changes the default request handling from drop silently to write to stderr
-//
-// REMARKS
-//  an application using liblogger should export this and set it to nonzero
-//
-int g_logger_default_stderr;
-
-/// g_logger_process_name
-//
-//
-//
-char * g_logger_process_name;
-
 /// logger_arguments_setup
 //
 // SUMMARY
@@ -124,15 +108,15 @@ xapi logger_finalize(void);
 //  [file]  - file name
 //  [line]  - line number
 //
-xapi logger_vlogf(const uint64_t ids, const uint32_t attrs, const char * const restrict fmt, va_list va)
+xapi logger_vlogf(uint64_t ids, const uint32_t attrs, const char * const restrict fmt, va_list va)
   __attribute__((nonnull(3)));
-xapi logger_logf (const uint64_t ids, const uint32_t attrs, const char * const restrict fmt, ...)
+xapi logger_logf (uint64_t ids, const uint32_t attrs, const char * const restrict fmt, ...)
   __attribute__((nonnull(3)));
-xapi logger_logs (const uint64_t ids, const uint32_t attrs, const char * const restrict s)
+xapi logger_logs (uint64_t ids, const uint32_t attrs, const char * const restrict s)
   __attribute__((nonnull));
-xapi logger_logw (const uint64_t ids, const uint32_t attrs, const char * const restrict src, size_t len)
+xapi logger_logw (uint64_t ids, const uint32_t attrs, const char * const restrict src, size_t len)
   __attribute__((nonnull));
-xapi logger_logc (const uint64_t ids, const uint32_t attrs, const char c)
+xapi logger_logc (uint64_t ids, const uint32_t attrs, const char c)
   __attribute__((nonnull));
 
 #define  logvf(ids, ...) fatal(logger_logvf , ids , 0 , __VA_ARGS__)
@@ -156,9 +140,9 @@ xapi logger_logc (const uint64_t ids, const uint32_t attrs, const char c)
 //  [attrs] - bitwise combination of L_* options and modifiers
 //  token    - if log_would, and if the call succeeds, set to 1
 //
-xapi log_xstart(const uint64_t ids, const uint32_t attrs, int * const restrict token);
+xapi log_xstart(uint64_t ids, const uint32_t attrs, int * const restrict token);
 
-xapi log_start(const uint64_t ids, int * const restrict token);
+xapi log_start(uint64_t ids, int * const restrict token);
 
 /// log_finish
 //
@@ -184,7 +168,7 @@ struct narrator * log_narrator(int * const restrict token)
 // SUMMARY
 //  returns true if a log with the specified ids would write to any stream
 //
-int log_would(const uint64_t ids);
+int log_would(uint64_t ids);
 
 /// log_bytes
 //

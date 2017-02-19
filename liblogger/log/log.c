@@ -34,6 +34,7 @@
 #include "internal.h"
 #include "log.internal.h"
 #include "stream.internal.h"
+#include "config.internal.h"
 
 #include "macros.h"
 #include "strutil.h"
@@ -119,9 +120,12 @@ xapi log_cleanup()
 // api
 //
 
-API xapi logger_vlogf(const uint64_t ids, uint32_t attrs, const char * const fmt, va_list va)
+API xapi logger_vlogf(uint64_t ids, uint32_t attrs, const char * const fmt, va_list va)
 {
   enter;
+
+  ids |= logger_process_categories;
+  ids |= logger_thread_categories;
 
   if(storage_log)
   {
@@ -145,9 +149,12 @@ API xapi logger_vlogf(const uint64_t ids, uint32_t attrs, const char * const fmt
   finally : coda;
 }
 
-API xapi logger_logf(const uint64_t ids, uint32_t attrs, const char * const fmt, ...)
+API xapi logger_logf(uint64_t ids, uint32_t attrs, const char * const fmt, ...)
 {
   enter;
+
+  ids |= logger_process_categories;
+  ids |= logger_thread_categories;
 
   va_list va;
   va_start(va, fmt);
@@ -158,18 +165,26 @@ finally:
 coda;
 }
 
-API xapi logger_logs(const uint64_t ids, uint32_t attrs, const char * const s)
+API xapi logger_logs(uint64_t ids, uint32_t attrs, const char * const s)
 {
   enter;
+
+  ids |= logger_process_categories;
+  ids |= logger_thread_categories;
 
   fatal(logger_logw, ids, attrs, s, strlen(s));
 
   finally : coda;
 }
 
-API xapi logger_logw(const uint64_t ids, uint32_t attrs, const char * const src, size_t len)
+#include "category.internal.h"
+
+API xapi logger_logw(uint64_t ids, uint32_t attrs, const char * const src, size_t len)
 {
   enter;
+
+  ids |= logger_process_categories;
+  ids |= logger_thread_categories;
 
   if(storage_log)
   {
@@ -180,6 +195,29 @@ API xapi logger_logw(const uint64_t ids, uint32_t attrs, const char * const src,
   {
     int w = 0;
     fatal(start, ids, attrs, &w);
+
+#if 0
+printf(" >> ");
+uint64_t bit = UINT64_C(1);
+while(bit)
+{
+  if(bit & ids)
+  {
+    logger_category * category = category_byid(bit);
+    if(category)
+    {
+      if((bit - 1) & ids)
+        printf(",");
+
+      printf("%.*s", (int)category->namel, category->name);
+    }
+  }
+
+  bit <<= 1;
+}
+
+printf(" : %d <<\n", w);
+#endif
 
     if(w)
     {
@@ -193,9 +231,12 @@ API xapi logger_logw(const uint64_t ids, uint32_t attrs, const char * const src,
   finally : coda;
 }
 
-API xapi log_xstart(const uint64_t ids, uint32_t attrs, int * const restrict token)
+API xapi log_xstart(uint64_t ids, uint32_t attrs, int * const restrict token)
 {
   enter;
+
+  ids |= logger_process_categories;
+  ids |= logger_thread_categories;
 
   int w = 0;
   fatal(start, ids, attrs, &w);
@@ -204,9 +245,12 @@ API xapi log_xstart(const uint64_t ids, uint32_t attrs, int * const restrict tok
   finally : coda;
 }
 
-API xapi log_start(const uint64_t ids, int * const restrict token)
+API xapi log_start(uint64_t ids, int * const restrict token)
 {
   enter;
+
+  ids |= logger_process_categories;
+  ids |= logger_thread_categories;
 
   int w = 0;
   fatal(start, ids, 0, &w);
@@ -237,7 +281,7 @@ API xapi log_finish(int * const restrict token)
   finally : coda;
 }
 
-API int log_would(const uint64_t ids)
+API int log_would(uint64_t ids)
 {
   if(ids == 0)
     return !!g_logger_default_stderr;

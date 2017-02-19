@@ -15,39 +15,17 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#include "xapi.h"
+#ifndef _LOGGER_CONFIG_INTERNAL_H
+#define _LOGGER_CONFIG_INTERNAL_H
 
-#include "internal.h"
-#include "category.internal.h"
-#include "stream.internal.h"
-#include "filter.internal.h"
-#include "arguments.internal.h"
+#include <stdint.h>
 
-//
-// api
-//
+#include "config.h"
 
-API xapi logger_finalize()
-{
-  enter;
+extern char logger_process_name[32];
+extern __thread char logger_thread_name[32];
 
-  // resolve registrations
-  fatal(categories_activate);
-  fatal(streams_activate);
+extern uint64_t logger_process_categories;
+extern __thread uint64_t logger_thread_categories;
 
-  // reset filters for all streams
-  fatal(logger_filter_clear, 0);
-
-  // stream definition filters
-  fatal(streams_finalize);
-
-  // cmdline filters
-  fatal(arguments_finalize);
-
-  // reports to LOGGER
-  fatal(logger_arguments_report);
-  fatal(categories_report_verbose);
-  fatal(logger_streams_report);
-
-  finally : coda;
-}
+#endif
