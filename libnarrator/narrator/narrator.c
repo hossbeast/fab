@@ -38,13 +38,14 @@ API xapi narrator_xfree(narrator * restrict n)
 {
   enter;
 
+  if(n && n->type == NARRATOR_FIXED)
+    goto XAPI_FINALIZE;
+
   if(n)
   {
     // dispatch
     if(n->type == NARRATOR_GROWING)
       growing_destroy(&n->growing);
-    else if(n->type == NARRATOR_FIXED)
-      fixed_destroy(&n->fixed);
     else if(n->type == NARRATOR_FD)
       fd_destroy(&n->fd);
     else if(n->type == NARRATOR_MULTI)

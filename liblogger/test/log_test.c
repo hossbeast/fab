@@ -21,7 +21,7 @@
 #include "xapi/trace.h"
 #include "xapi/calltree.h"
 #include "narrator.h"
-#include "narrator/fixed.h"
+#include "narrator/growing.h"
 
 #include "internal.h"
 #include "stream.internal.h"
@@ -54,7 +54,7 @@ static xapi test_setup()
   fatal(category_setup);
   fatal(stream_setup);
 
-  fatal(narrator_fixed_create, &N, 2048);
+  fatal(narrator_growing_create, &N);
   streams[0].narrator = N;
 
   // register a stream
@@ -88,7 +88,7 @@ static xapi test_log()
 
   // assert
   char * expected = "foo";
-  const char * actual = narrator_fixed_buffer(N);
+  const char * actual = narrator_growing_buffer(N);
   assert_eq_s(expected, actual);
 
   finally : coda;
@@ -112,7 +112,7 @@ static xapi test_log_start()
 
   // assert
   char * expected = "foo";
-  const char * actual = narrator_fixed_buffer(N);
+  const char * actual = narrator_growing_buffer(N);
   assert_eq_s(expected, actual);
 
 finally:

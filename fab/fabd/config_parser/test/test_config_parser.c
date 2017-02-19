@@ -27,7 +27,7 @@
 #include "xunit.h"
 #include "xunit/assert.h"
 #include "narrator.h"
-#include "narrator/fixed.h"
+#include "narrator/growing.h"
 
 #include "value.h"
 #include "value/store.h"
@@ -84,8 +84,8 @@ static xapi config_parser_test_maps(xunit_test * test)
   narrator * N0 = 0;
   narrator * N1 = 0;
 
-  fatal(narrator_fixed_create, &N0, 1024);
-  fatal(narrator_fixed_create, &N1, 1024);
+  fatal(narrator_growing_create, &N0);
+  fatal(narrator_growing_create, &N1);
 
   char * config_text = "core.filesystem { \"/\" { invalidate notify } \"/mnt/remote\" { invalidate stat } }";
 
@@ -110,7 +110,7 @@ static xapi config_parser_test_maps(xunit_test * test)
   
   fatal(value_say, expected, N0);
   fatal(value_say, actual, N1);
-  assert_eq_s(narrator_fixed_buffer(N0), narrator_fixed_buffer(N1));
+  assert_eq_s(narrator_growing_buffer(N0), narrator_growing_buffer(N1));
 
 finally:
   fatal(config_parser_xfree, parser);
@@ -130,8 +130,8 @@ static xapi config_parser_test_lists(xunit_test * test)
   narrator * N0 = 0;
   narrator * N1 = 0;
 
-  fatal(narrator_fixed_create, &N0, 1024);
-  fatal(narrator_fixed_create, &N1, 1024);
+  fatal(narrator_growing_create, &N0);
+  fatal(narrator_growing_create, &N1);
 
   char * config_text = "core [ 1 true 2.0 \"foo\" ]";
 
@@ -156,7 +156,7 @@ static xapi config_parser_test_lists(xunit_test * test)
   
   fatal(value_say, expected, N0);
   fatal(value_say, actual, N1);
-  assert_eq_s(narrator_fixed_buffer(N0), narrator_fixed_buffer(N1));
+  assert_eq_s(narrator_growing_buffer(N0), narrator_growing_buffer(N1));
 
 finally:
   fatal(config_parser_xfree, parser);

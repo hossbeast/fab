@@ -23,7 +23,7 @@
 
 #include "valyria/list.h"
 #include "narrator.h"
-#include "narrator/fixed.h"
+#include "narrator/growing.h"
 
 #include "internal.h"
 #include "graph.internal.h"
@@ -288,17 +288,17 @@ API xapi graph_traverse(
 finally:
   if(XAPI_THROWING(MORIA_CYCLE))
   {
-    fatal(narrator_fixed_create, &N, 4096);
+    fatal(narrator_growing_create, &N);
 
     int x;
     for(x = stackz - 1; x >= 0; x--)
     {
-      if(narrator_fixed_size(N))
+      if(narrator_growing_size(N))
         says(" -> ");
       fatal(g->say, stack[x], N);
     }
 
-    xapi_infos("path", narrator_fixed_buffer(N));
+    xapi_infos("path", narrator_growing_buffer(N));
   }
 
   fatal(narrator_xfree, N);

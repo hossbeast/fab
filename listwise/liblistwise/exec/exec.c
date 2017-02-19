@@ -20,7 +20,7 @@
 #include "xapi.h"
 #include "xlinux/xstdlib.h"
 #include "narrator.h"
-#include "narrator/fixed.h"
+#include "narrator/growing.h"
 
 #include "internal.h"
 #include "exec.internal.h"
@@ -66,7 +66,7 @@ API xapi listwise_exec_transform(
   sanityblock * sb = 0;
 #endif
 
-  fatal(narrator_fixed_create, &N, 2048);
+  fatal(narrator_growing_create, &N);
 
   // list stack allocation
   if(!*lx)
@@ -168,9 +168,9 @@ API xapi listwise_exec_transform(
         fatal(log_start, L_LISTWISE | L_EXEC, &token);
         logf(L_LISTWISE | L_EXEC, " >> [%2d] %.*s%*s"
           , i
-          , (int)narrator_fixed_size(N)
-          , narrator_fixed_buffer(N)
-          , MAX(35 - narrator_fixed_size(N), 0)
+          , (int)narrator_growing_size(N)
+          , narrator_growing_buffer(N)
+          , MAX(35 - narrator_growing_size(N), 0)
           , ""
         );
         fatal(listwise_lwop_say, g->ops[i]->op->optype, 1, log_narrator(&token));

@@ -23,7 +23,7 @@
 
 #include "internal.h"
 #include "narrator/multi.h"
-#include "narrator/fixed.h"
+#include "narrator/growing.h"
 
 #include "test_util.h"
 
@@ -39,7 +39,7 @@ static xapi validate(int count, ...)
   {
     narrator * n = va_arg(va, narrator*);
 
-    assertf(strcmp("hello world", n->fixed.s) == 0, "%s", "%s", "hello world", n->fixed.s);
+    assertf(strcmp("hello world", n->growing.s) == 0, "%s", "%s", "hello world", n->growing.s);
   }
 
 finally:
@@ -56,8 +56,8 @@ static xapi test_basic()
   narrator * N0 = 0;
   narrator * N1 = 0;
   fatal(narrator_multi_create, &N);
-  fatal(narrator_fixed_create, &N0, 2048);
-  fatal(narrator_fixed_create, &N1, 2048);
+  fatal(narrator_growing_create, &N0);
+  fatal(narrator_growing_create, &N1);
 
   fatal(narrator_multi_add, N, N0);
   fatal(narrator_multi_add, N, N1);

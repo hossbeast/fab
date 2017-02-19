@@ -32,7 +32,7 @@ struct graph_test;
 #include "valyria/dictionary.h"
 
 #include "narrator.h"
-#include "narrator/fixed.h"
+#include "narrator/growing.h"
 #include "internal.h"
 #include "graph.internal.h"
 #include "vertex.internal.h"
@@ -99,7 +99,7 @@ static xapi graph_test_entry(graph_test * test)
 
   fatal(graph_create, &g, vertex_say);
   fatal(dictionary_create, &items, sizeof(item));
-  fatal(narrator_fixed_create, &N, 4096);
+  fatal(narrator_growing_create, &N);
 
   // setup the test graph
   int x;
@@ -155,7 +155,7 @@ static xapi graph_test_entry(graph_test * test)
 
   if(test->expected)
   {
-    assert_eq_s(test->expected, narrator_fixed_buffer(N));
+    assert_eq_s(test->expected, narrator_growing_buffer(N));
   }
   else if(test->cycle || test->cycle_path)
   {

@@ -15,6 +15,8 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
+#include <inttypes.h>
+
 #include "xapi.h"
 #include "xlinux/xstdlib.h"
 #include "narrator.h"
@@ -142,7 +144,7 @@ API xapi lwx_say(lwx * const restrict lx, narrator * const restrict N)
 {
   enter;
 
-  sayf("sel active { lease(%3d) %s era(%3d) %s nil=%d } staged { lease(%3d) %s era(%3d) }\n"
+  sayf("sel active { lease(%3"PRIu64") %s era(%3"PRIu64") %s nil=%d } staged { lease(%3"PRIu64") %s era(%3"PRIu64") }\n"
     , lx->sel.active ? lx->sel.active->lease : 0
     , (lx->sel.active ? lx->sel.active->lease : 0) == lx->sel.active_era ? "= " : "!="
     , lx->sel.active_era
@@ -152,7 +154,7 @@ API xapi lwx_say(lwx * const restrict lx, narrator * const restrict N)
     , (lx->sel.staged ? lx->sel.staged->lease : 0) == lx->sel.staged_era ? "= " : "!="
     , lx->sel.staged_era
   );
-  sayf("win active { %*sera(%3d)%*s } staged { %*sera(%3d) }\n"
+  sayf("win active { %*sera(%3"PRIu64")%*s } staged { %*sera(%3"PRIu64") }\n"
     , 14, ""
     , lx->win.active_era
     , 10, ""
@@ -282,9 +284,9 @@ API xapi lwx_say(lwx * const restrict lx, narrator * const restrict N)
           off_t z;
           fatal(narrator_seek, N, 0, NARRATOR_SEEK_CUR, &z);
           if((z - oz) < 45)
-            sayf("%*s", 45 - (z - oz), "");
+            sayf("%*s", (int)(45 - (z - oz)), "");
 
-          sayf(" active { lease(%3d) %s era(%3d)"
+          sayf(" active { lease(%3"PRIu64") %s era(%3"PRIu64")"
             , lx->win.s[y].active->lease
             , lx->win.s[y].active->lease == lx->win.active_era ? "= " : "!="
             , lx->win.active_era
@@ -361,9 +363,9 @@ API xapi lwx_say(lwx * const restrict lx, narrator * const restrict N)
           off_t z;
           fatal(narrator_seek, N, 0, NARRATOR_SEEK_CUR, &z);
           if((z - oz) < 45)
-            sayf("%*s", 45 - (z - oz), "");
+            sayf("%*s", (int)(45 - (z - oz)), "");
 
-          sayf(" staged { lease(%3d) %s era(%3d)"
+          sayf(" staged { lease(%3"PRIu64") %s era(%3"PRIu64")"
             , lx->win.s[y].staged->lease
             , lx->win.s[y].staged->lease == lx->win.staged_era ? "= " : "!="
             , lx->win.staged_era

@@ -70,33 +70,16 @@ xapi fixed_seek(narrator_fixed * const restrict n, off_t offset, int whence, off
   finally : coda;
 }
 
-void fixed_destroy(narrator_fixed * const restrict n)
-{
-  wfree(n->s);
-}
-
 //
 // api
 //
 
-API xapi narrator_fixed_create(narrator ** const restrict rv, size_t size)
+API narrator * narrator_fixed_init(narrator_fixed_storage * restrict fixed)
 {
-  enter;
-
-  narrator * n = 0;
-  fatal(xmalloc, &n, sizeof(*n));
-
+  narrator * n = (void*)fixed;
   n->type = NARRATOR_FIXED;
-  n->fixed.a = size + 1;    // trailing null byte
-
-  fatal(xmalloc, &n->fixed.s, sizeof(*n->fixed.s) * n->fixed.a);
-
-  *rv = n;
-  n = 0;
-
-finally:
-  fatal(narrator_xfree, n);
-coda;
+  n->fixed.l = 0;
+  return n;
 }
 
 API const char * narrator_fixed_buffer(narrator * const restrict n)

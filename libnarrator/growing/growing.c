@@ -104,6 +104,7 @@ API xapi narrator_growing_create(narrator ** const restrict rv)
   fatal(xmalloc, &n, sizeof(*n));
 
   n->type = NARRATOR_GROWING;
+  fatal(xmalloc, &n->growing.s, 1);
   
   *rv = n;
   n = 0;

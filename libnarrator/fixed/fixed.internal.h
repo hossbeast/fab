@@ -27,7 +27,7 @@ typedef struct narrator_fixed
 {
   char *  s;      // buffer
   size_t  l;      // position
-  size_t  a;      // allocated size
+  size_t  a;      // buffer size
 } narrator_fixed;
 
 #define restrict __restrict
@@ -63,14 +63,6 @@ xapi fixed_sayw(narrator_fixed * const restrict n, const char * const restrict b
 //  [res]  - (returns) the resulting absolute offset
 //
 xapi fixed_seek(narrator_fixed * const restrict n, off_t offset, int whence, off_t * restrict res)
-  __attribute__((nonnull));
-
-/// fixed_destroy
-//
-// SUMMARY
-//  destroy a fixed narrator
-//
-void fixed_destroy(narrator_fixed * const restrict n)
   __attribute__((nonnull));
 
 #undef restrict

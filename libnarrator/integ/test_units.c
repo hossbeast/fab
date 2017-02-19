@@ -21,7 +21,7 @@
 #include "xapi/trace.h"
 
 #include "internal.h"
-#include "narrator/fixed.h"
+#include "narrator/growing.h"
 #include "narrator/units.h"
 
 #include "test_util.h"
@@ -32,7 +32,7 @@ static xapi test_interval_say()
 
   // arrange
   narrator * N = 0;
-  fatal(narrator_fixed_create, &N, 2048);
+  fatal(narrator_growing_create, &N);
 
   struct {
     time_t seconds;
@@ -57,7 +57,7 @@ static xapi test_interval_say()
     fatal(interval_say, tests[x].seconds, N);
 
     // assert
-    assertf(strcmp(N->fixed.s, tests[x].expected) == 0, "%s", "%s", tests[x].expected, N->fixed.s);
+    assertf(strcmp(N->growing.s, tests[x].expected) == 0, "%s", "%s", tests[x].expected, N->growing.s);
   }
 
 finally:
@@ -71,7 +71,7 @@ static xapi test_bytesize_say()
 
   // arrange
   narrator * N = 0;
-  fatal(narrator_fixed_create, &N, 2048);
+  fatal(narrator_growing_create, &N);
 
   struct {
     size_t bytes;
@@ -91,7 +91,7 @@ static xapi test_bytesize_say()
     fatal(bytesize_say, tests[x].bytes, N);
 
     // assert
-    assertf(strcmp(N->fixed.s, tests[x].expected) == 0, "%s", "%s", tests[x].expected, N->fixed.s);
+    assertf(strcmp(N->growing.s, tests[x].expected) == 0, "%s", "%s", tests[x].expected, N->growing.s);
   }
 
 finally:
@@ -105,7 +105,7 @@ static xapi test_elapsed_say()
 
   // arrange
   narrator * N = 0;
-  fatal(narrator_fixed_create, &N, 2048);
+  fatal(narrator_growing_create, &N);
 
   struct {
     struct timespec start;
@@ -127,7 +127,7 @@ static xapi test_elapsed_say()
     fatal(elapsed_say, &tests[x].start, &tests[x].end, N);
 
     // assert
-    assertf(strcmp(N->fixed.s, tests[x].expected) == 0, "%s", "%s", tests[x].expected, N->fixed.s);
+    assertf(strcmp(N->growing.s, tests[x].expected) == 0, "%s", "%s", tests[x].expected, N->growing.s);
   }
 
 finally:

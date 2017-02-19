@@ -120,7 +120,7 @@ static xapi __attribute__((nonnull)) scan(narrator_rolling * const restrict n)
 
 finally:
   if(dd)
-    fatal(closedir, dd);
+    fatal(xclosedir, dd);
 coda;
 }
 

@@ -29,7 +29,7 @@
 #include "xlinux/mempolicy.h"
 #include "narrator.h"
 #include "narrator/units.h"
-#include "narrator/fixed.h"
+#include "narrator/growing.h"
 #include "fab/request.h"
 #include "logger.h"
 #include "logger/filter.h"
@@ -170,13 +170,13 @@ xapi args_report(const command * restrict cmd)
 
   narrator * N = 0;
 
-  fatal(narrator_fixed_create, &N, 1024);
+  fatal(narrator_growing_create, &N);
 
   says("fab");
   fatal(cmd->command_say, N);
   sayf(" %s", g_logvs);
 
-  logs(L_ARGS, narrator_fixed_buffer(N));
+  logs(L_ARGS, narrator_growing_buffer(N));
 
 finally:
   fatal(narrator_xfree, N);

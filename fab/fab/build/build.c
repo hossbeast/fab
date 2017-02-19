@@ -162,7 +162,7 @@ static xapi build_command_say(narrator * N)
 
   int x;
   for(x = 0; x < args.targets->l; x++)
-    sayf(" %s", list_get(args.targets, x));
+    sayf(" %s", (char*)list_get(args.targets, x));
 
   finally : coda;
 }

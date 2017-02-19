@@ -26,32 +26,43 @@ MODULE
 SUMMARY
  narrator that writes to a fixed-size buffer, discarding overflow
 
+REMARKS
+ a fixed narrator requires no dynamic allocation, and passing a fixed narrator to the narrator free
+ apis is a no-op
+
 */
+
+typedef struct narrator_fixed_storage
+{
+  uint8_t opaque;
+  char *  s;      // pointer to a buffer to write to
+  size_t  l;      // position
+  size_t  a;      // buffer size
+} narrator_fixed_storage;
 
 #define restrict __restrict
 
-/// narrator_fixed_create
+/// narrator_fixed_init
 //
 // SUMMARY
-//  allocate a file narrator
+//  initialize a fixed narrator
 //
 // PARAMETERS
-//  n    - (returns) narrator
-//  size - size of the buffer
+//  fixed - storage for the fixed narrator
 //
-xapi narrator_fixed_create(narrator ** const restrict n, size_t size)
+// RETURNS
+//  fixed size narrator suitable for passing to other narrator apis
+//
+narrator * narrator_fixed_init(narrator_fixed_storage * restrict fixed)
   __attribute__((nonnull));
 
 /// narrator_fixed_buffer
 //
 // SUMMARY
-//  get a pointer to the underlying store
+//  get a pointer to the underlying buffer, that is, storage->s
 //
 // PARAMETERS
 //  n - fixed narrator
-//
-// REMARKS
-//  further operations on the narrator may free the buffer
 //
 const char * narrator_fixed_buffer(narrator * const restrict n)
   __attribute__((nonnull));
@@ -59,7 +70,7 @@ const char * narrator_fixed_buffer(narrator * const restrict n)
 /// narrator_fixed_size
 //
 // SUMMARY
-//  get the size in bytes of the data written to the underlying store
+//  get the size in bytes of the data written to the underlying buffer, that is, storage->l
 //
 // PARAMETERS
 //  n - fixed narrator

@@ -153,7 +153,7 @@ static xapi __attribute__((nonnull)) stream_write(stream * const restrict stream
     if(prev)
       says(" ");
     if(category)
-      sayf("%*.*s", category_name_max_length, category->namel, category->name);
+      sayf("%*.*s", category_name_max_length, (int)category->namel, category->name);
     else
       sayf("%*s", category_name_max_length, "");
     prev = 1;
@@ -163,7 +163,7 @@ static xapi __attribute__((nonnull)) stream_write(stream * const restrict stream
   {
     if(prev)
       says(" ");
-    sayf("%5ld/%-5ld", getpgid(0), getpid());
+    sayf("%5ld/%-5ld", (long)getpgid(0), (long)getpid());
     if(g_logger_process_name)
       sayf("/%4s", g_logger_process_name);
     prev = 1;
@@ -196,7 +196,7 @@ static xapi __attribute__((nonnull)) stream_write(stream * const restrict stream
           if((bit - 1) & ids)
             says(" | ");
 
-          sayf("%.*s", category->namel, category->name);
+          sayf("%.*s", (int)category->namel, category->name);
         }
 
         bit <<= 1;

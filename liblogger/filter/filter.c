@@ -217,7 +217,7 @@ xapi filter_say(filter * filterp, struct narrator * N)
         if((bit - 1) & filterp->v)
           says(",");
 
-        sayf("%.*s", category->namel, category->name);
+        sayf("%.*s", (int)category->namel, category->name);
       }
     }
 

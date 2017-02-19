@@ -44,40 +44,40 @@ static xapi test_basic()
 {
   enter;
 
-  narrator * N = 0;
-  fatal(narrator_fixed_create, &N, 64);
+  narrator_fixed_storage fixed;
+  fixed.s = (char[64]) { };
+  fixed.a = 64;
+
+  narrator * N = narrator_fixed_init(&fixed);
   fatal(say, N);
 
   char * expected = "40 41 42 43 44";
   size_t expectedl = strlen(expected);
 
-  assertf(strcmp(N->fixed.s, expected) == 0, "%s", "%s", expected, N->fixed.s);
-  assertf(N->fixed.l == expectedl, "written %zu", "written %zu", expectedl, N->fixed.l);
-  assertf(N->fixed.s == narrator_fixed_buffer(N), "%p", "%p", narrator_fixed_buffer(N), N->fixed.s);
+  assert_eq_s(expected, N->fixed.s);
+  assert_eq_zu(expectedl, N->fixed.l);
 
-finally:
-  fatal(narrator_xfree, N);
-coda;
+  finally : coda;
 }
 
 static xapi test_constrained()
 {
   enter;
 
-  narrator * N = 0;
-  fatal(narrator_fixed_create, &N, 6);
+  narrator_fixed_storage fixed;
+  fixed.s = (char[7]) { };
+  fixed.a = 7;
+
+  narrator * N = narrator_fixed_init(&fixed);
   fatal(say, N);
 
   char * expected = "40 41 ";
-  size_t expectedl = strlen(expected);
+  size_t expectedl = 6;
 
-  assertf(strcmp(N->fixed.s, expected) == 0, "%s", "%s", expected, N->fixed.s);
-  assertf(N->fixed.l == expectedl, "written %zu", "written %zu", expectedl, N->fixed.l);
-  assertf(N->fixed.s == narrator_fixed_buffer(N), "%p", "%p", narrator_fixed_buffer(N), N->fixed.s);
+  assert_eq_s(expected, N->fixed.s);
+  assert_eq_zu(expectedl, N->fixed.l);
 
-finally:
-  fatal(narrator_xfree, N);
-coda;
+  finally : coda;
 }
 
 int main()
@@ -85,6 +85,7 @@ int main()
   enter;
 
   xapi R = 0;
+
   fatal(test_basic);
   fatal(test_constrained);
 

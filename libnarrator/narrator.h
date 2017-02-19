@@ -63,7 +63,8 @@ xapi narrator_vsayf(struct narrator * const restrict n, const char * const restr
 //  formatted write to the specified narrator
 //
 xapi narrator_sayf(struct narrator * const restrict n, const char * const restrict fmt, ...)
-  __attribute__((nonnull(1, 2)));
+  __attribute__((nonnull(1, 2)))
+  __attribute__((format(printf, 2, 3)));
 
 /// narrator_sayw
 //
