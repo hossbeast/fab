@@ -28,7 +28,7 @@
 #include "xlinux/xtime.h"
 #include "valyria/pstring.h"
 #include "narrator.h"
-#include "narrator/growing.h"
+#include "narrator/fixed.h"
 #include "narrator/nullity.h"
 
 #include "internal.h"
@@ -52,6 +52,9 @@ static __thread uint32_t    storage_attrs;
 static __thread narrator *  storage_narrator; // the log message
 static __thread long        storage_time_msec;
 
+static __thread char storage_fixed_buffer[4096];
+static __thread narrator_fixed_storage storage_fixed_storage;
+
 /// start
 //
 // SUMMARY
@@ -62,12 +65,16 @@ static __thread long        storage_time_msec;
 //  attrs - 
 //  w     - (returns) whether streams_would
 //
-static xapi start(const uint64_t ids, uint32_t attrs, int * const restrict w)
+static xapi start(uint64_t ids, uint32_t attrs, int * const restrict w)
 {
   enter;
 
   if(storage_narrator == 0)
-    fatal(narrator_growing_create, &storage_narrator);
+  {
+    storage_fixed_storage.s = storage_fixed_buffer;
+    storage_fixed_storage.a = sizeof(storage_fixed_buffer);
+    storage_narrator = narrator_fixed_init(&storage_fixed_storage);
+  }
 
   storage_log = 1;
   storage_ids = ids;
@@ -95,8 +102,8 @@ static xapi finish()
   fatal(streams_write
     , storage_ids
     , storage_attrs
-    , narrator_growing_buffer(storage_narrator)
-    , narrator_growing_size(storage_narrator)
+    , narrator_fixed_buffer(storage_narrator)
+    , narrator_fixed_size(storage_narrator)
     , storage_time_msec
   );
 
@@ -292,7 +299,7 @@ API int log_would(uint64_t ids)
 API int log_bytes()
 {
   if(storage_narrator)
-    return narrator_growing_size(storage_narrator);
+    return narrator_fixed_size(storage_narrator);
 
   return 0;
 }
@@ -300,7 +307,7 @@ API int log_bytes()
 API int log_chars()
 {
   if(storage_narrator)
-    return narrator_growing_size(storage_narrator);
+    return narrator_fixed_size(storage_narrator);
 
   return 0;
 }
