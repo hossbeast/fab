@@ -23,7 +23,6 @@
 #include "logger.h"
 #include "narrator.h"
 #include "xapi/SYS.errtab.h"
-#include "xapi/errtab.h"
 
 #include "internal.h"
 #include "load.h"
@@ -51,9 +50,6 @@ API xapi fab_load()
     // modules
     fatal(identity_setup);
     fatal(logging_setup);
-#if XAPI_STACKTRACE
-    fatal(xapi_errtab_register, perrtab_FAB);
-#endif
   }
   handles++;
 

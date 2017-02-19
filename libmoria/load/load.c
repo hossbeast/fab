@@ -21,7 +21,6 @@
 #include "valyria/load.h"
 
 #include "xapi/SYS.errtab.h"
-#include "xapi/errtab.h"
 
 #include "internal.h"
 #include "load.internal.h"
@@ -43,12 +42,6 @@ API xapi valyria_load()
     fatal(xlinux_load);
     fatal(narrator_load);
     fatal(valyria_load);
-
-    // modules
-    // error tables
-#if XAPI_STACKTRACE
-    fatal(xapi_errtab_register, perrtab_MORIA);
-#endif
   }
 
   finally : coda;

@@ -404,8 +404,6 @@ int main()
 
   xapi R = 0;
   int x = 0;
-  fatal(xapi_errtab_register, perrtab_LOGGER);
-  fatal(xapi_errtab_register, perrtab_TEST);
 
   struct {
     xapi (*entry)();

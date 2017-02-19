@@ -23,6 +23,22 @@
 #if XAPI_STACKTRACE
 #define restrict __restrict
 
+/// xapi_errtab_stage
+//
+// SUMMARY
+//  register an error table for xapi_error apis
+//  the error table is assigned an id and etab->id is written to
+//
+// PARAMETERS
+//  etab - error table
+//
+// REMARKS
+//  meant to be called from __attribute__((constructor)) functions, limited
+//  to a fixed number of tables that may be staged
+//
+void xapi_errtab_stage(errtab * const restrict etab)
+  __attribute__((nonnull));
+
 /// xapi_errtab_register
 //
 // SUMMARY
@@ -34,6 +50,9 @@
 //
 // NOTES
 //  not threadsafe
+//
+// REMARKS
+//  able to register new error tables at runtime, not limited
 //
 xapi xapi_errtab_register(errtab * const restrict etab)
   __attribute__((nonnull));

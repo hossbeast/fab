@@ -20,7 +20,6 @@
 #include "narrator/load.h"
 #include "valyria/load.h"
 
-#include "xapi/errtab.h"
 #include "xapi/SYS.errtab.h"
 
 #include "internal.h"
@@ -54,9 +53,6 @@ API xapi logger_load()
     fatal(category_setup);
     fatal(stream_setup);
     fatal(logger_category_register, logger_categories);
-#ifndef XAPI_MODE_ERRORCODE
-    fatal(xapi_errtab_register, perrtab_LOGGER);
-#endif
   }
   handles++;
 

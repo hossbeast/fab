@@ -53,10 +53,6 @@ static xapi foo()
 
 int main()
 {
-#if XAPI_STACKTRACE
-  xapi_errtab_register(perrtab_TEST);
-#endif
-
   // invoke the function, collect its exit status
   xapi exit = foo();
 

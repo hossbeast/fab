@@ -42,10 +42,6 @@ static xapi alpha()
 
 int main()
 {
-#if XAPI_STACKTRACE
-  xapi_errtab_register(perrtab_TEST);
-#endif
-
   // alpha should fail
   xapi exit = alpha();
   assert_exit(0, exit);

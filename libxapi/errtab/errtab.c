@@ -17,6 +17,7 @@
 
 #include <stdlib.h>
 #include <stdint.h>
+#include <string.h>
 
 #include "internal.h"
 #include "errtab.internal.h"
@@ -27,7 +28,8 @@ errtab **         tab;
 size_t            tabl;
 static size_t     taba;
 
-static errtab *   tab_stat[1];
+static errtab *   tab_stage[64];
+static size_t     tab_stagel;
 
 #define restrict __restrict
 
@@ -47,63 +49,65 @@ static void errtab_prepare(errtab * const restrict etab, xapi_errtab_id id)
   }
 }
 
-static void __attribute__((constructor)) init()
-{
-  tab_stat[0] = perrtab_XAPI;
-  tab = tab_stat;
-  tabl = 1;
-
-  errtab_prepare(tab[0], 1);
-}
-
-
 //
 // public
 //
 
 void errtab_teardown()
 {
-  if(tab != tab_stat)
-  {
+  if(tab != tab_stage)
     free(tab);
-    tab = 0;
-  }
+  tab = 0;
 }
 
 //
 // api
 //
 
+API void xapi_errtab_stage(errtab * const etab)
+{
+  if(tab_stagel == (sizeof(tab_stage) / sizeof(tab_stage[0])) - 1)
+  {
+    dprintf(2, "too many staged error tables ; use xapi_errtab_register\n");
+    return;
+  }
+
+  tab_stage[tab_stagel] = etab;
+  errtab_prepare(tab_stage[tab_stagel], tab_stagel + 1);
+  tab_stagel++;
+
+  tab = tab_stage;
+  tabl = tab_stagel;
+}
+
 API xapi xapi_errtab_register(errtab * const etab)
 {
   enter;
 
-  errtab * reg[2];
-  size_t regl = 0;
-
-  if(tab == tab_stat)
+  if(tab == tab_stage)
   {
-    tab = 0;
-    tabl = 0;
-    reg[regl++] = perrtab_XAPI;
-  }
-  reg[regl++] = etab;
+    size_t ns = tab_stagel + 1;
+    ns = ns * 2 + ns / 2;
+    if((tab = calloc(sizeof(*tab), ns)) == 0)
+      fail(XAPI_NOMEM);
+    taba = ns;
 
-  int x;
-  for(x = 0; x < regl; x++)
+    memcpy(tab, tab_stage, sizeof(*tab) * tab_stagel);
+    tabl = tab_stagel;
+  }
+
+  if(tabl == taba)
   {
-    if(tabl == taba)
-    {
-      size_t ns = taba ?: 3;
-      ns = ns * 2 + ns / 2;
-      if((tab = realloc(tab, sizeof(*tab) * ns)) == 0)
-        fail(XAPI_NOMEM);
-      taba = ns;
-    }
-
-    tab[tabl++] = reg[x];
-    errtab_prepare(reg[x], tabl);
+    size_t ns = taba + 1;
+    ns = ns * 2 + ns / 2;
+    if((tab = realloc(tab, sizeof(*tab) * ns)) == 0)
+      fail(XAPI_NOMEM);
+    taba = ns;
   }
+
+  tab[tabl] = etab;
+  errtab_prepare(tab[tabl], tabl + 1);
+  tabl++;
 
   finally : coda;
 }

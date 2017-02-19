@@ -22,7 +22,6 @@
 #include "yyutil/load.h"
 
 #include "xapi/SYS.errtab.h"
-#include "xapi/errtab.h"
 
 #include "internal.h"
 #include "load.internal.h"
@@ -41,11 +40,6 @@ API xapi value_load()
     fatal(narrator_load);
     fatal(valyria_load);
     fatal(yyutil_load);
-
-    // modules
-#if XAPI_STACKTRACE
-    fatal(xapi_errtab_register, perrtab_VALUE);
-#endif
   }
   handles++;
 

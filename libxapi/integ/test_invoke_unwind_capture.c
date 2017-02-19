@@ -69,10 +69,6 @@ static xapi alpha()
 
 int main()
 {
-#if XAPI_STACKTRACE
-  xapi_errtab_register(perrtab_TEST);
-#endif
-
   int x;
   for(x = 0; x < 3; x++)
   {

@@ -124,7 +124,6 @@ static xapi config_unit_setup(xunit_unit * unit)
   fatal(value_load);
 
   // modules
-  fatal(xapi_errtab_register, perrtab_CONFIG);
   fatal(config_setup);
   fatal(logging_setup, 0);
 

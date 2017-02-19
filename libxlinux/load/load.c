@@ -16,7 +16,6 @@
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
 #include "xapi.h"
-#include "xapi/errtab.h"
 #include "xapi/SYS.errtab.h"
 
 #include "internal.h"
@@ -37,11 +36,6 @@ API xapi xlinux_load()
 
   if(handles == 0)
   {
-#ifndef XAPI_MODE_ERRORCODE
-    // modules
-    fatal(xapi_errtab_register, perrtab_XLINUX);
-    fatal(xapi_errtab_register, perrtab_KERNEL);
-#endif
   }
   handles++;
 

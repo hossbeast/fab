@@ -211,8 +211,6 @@ int main()
   xapi R = 0;
   int x = 0;
 
-  fatal(xapi_errtab_register, perrtab_LOGGER);
-  fatal(xapi_errtab_register, perrtab_TEST);
   fatal(category_setup);
   fatal(stream_setup);
   fatal(logger_category_register, logs_test_one);

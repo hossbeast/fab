@@ -55,10 +55,6 @@ static xapi foo()
 
 int main()
 {
-#if XAPI_STACKTRACE
-  xapi_errtab_register(perrtab_TEST);
-#endif
-
   int expected = 3;
   int x;
   for(x = 0; x < expected; x++)

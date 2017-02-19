@@ -75,10 +75,6 @@ static xapi zeta()
 
 int main()
 {
-#if XAPI_STACKTRACE
-  xapi_errtab_register(perrtab_TEST);
-#endif
-
   // zeta fails
   xapi exit = zeta();
   assert_exit(TEST_ERROR_ONE, exit);

@@ -106,10 +106,6 @@ coda;
 
 int main()
 {
-#if XAPI_STACKTRACE
-  xapi_errtab_register(perrtab_TEST);
-#endif
-
   // alpha should propagate the error from epsilon
   xapi exit = zeta();
   assert_exit(TEST_ERROR_ONE, exit);

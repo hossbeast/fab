@@ -53,9 +53,6 @@ static xapi config_parser_unit_setup(xunit_unit * unit)
   fatal(yyutil_load);
   fatal(value_load);
 
-  // modules
-  fatal(xapi_errtab_register, perrtab_CONFIG);
-
   // logging
   fatal(logger_finalize);
 

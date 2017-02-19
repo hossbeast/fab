@@ -51,10 +51,6 @@ static xapi test_fatalize()
 
 int main()
 {
-#if XAPI_STACKTRACE
-  xapi_errtab_register(perrtab_TEST);
-#endif
-
   // invoke the function, collect its exit status
   xapi exit = test_fatalize();
   assert_exit(TEST_ERROR_ONE, exit);

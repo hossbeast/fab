@@ -19,7 +19,6 @@
 #include "xlinux/load.h"
 #include "logger/load.h"
 
-#include "xapi/errtab.h"
 #include "xapi/SYS.errtab.h"
 
 #include "internal.h"
@@ -41,9 +40,6 @@ API xapi xunit_load()
     // dependencies
     fatal(xlinux_load);
     fatal(logger_load);
-
-    // modules
-    fatal(xapi_errtab_register, perrtab_XUNIT);
   }
 
   finally : coda;

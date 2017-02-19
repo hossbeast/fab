@@ -55,7 +55,6 @@
 #include "narrator.h"
 #include "xapi/SYS.errtab.h"
 #include "xapi/calltree.h"
-#include "xapi/errtab.h"
 #include "xapi/trace.h"
 #include "xlinux/xfcntl.h"
 #include "xlinux/xprctl.h"
@@ -105,7 +104,6 @@ int main(int argc, char** argv, char ** envp)
   fatal(value_load);
 
   // modules
-  fatal(xapi_errtab_register, perrtab_CONFIG);
   fatal(sigbank_setup, "fabd");
   fatal(filesystem_setup);
   fatal(config_setup);

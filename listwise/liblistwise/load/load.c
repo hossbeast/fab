@@ -25,7 +25,6 @@
 #include "yyutil/load.h"
 #include "valyria/load.h"
 
-#include "xapi/errtab.h"
 #include "xapi/SYS.errtab.h"
 #include "narrator.h"
 #include "logger.h"
@@ -65,12 +64,6 @@ API xapi listwise_load()
     fatal(operators_setup);
     fatal(lwx_setup);
     fatal(logging_setup);
-
-    // error tables
-#ifndef XAPI_MODE_ERRORCODE
-    fatal(xapi_errtab_register, perrtab_PCRE);
-    fatal(xapi_errtab_register, perrtab_LISTWISE);
-#endif
   }
   handles++;
 

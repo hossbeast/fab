@@ -104,6 +104,10 @@ $errtabpaths = [
   > echo "}};"
   > echo "#if XAPI_STACKTRACE"
   > echo "errtab * ${api} perrtab_${pfx} = &errtab_${pfx};"
+  > echo "#include \"xapi/errtab.h\""
+  > echo "static void __attribute__((constructor)) init() {"
+  > echo " xapi_errtab_stage(perrtab_${pfx});"
+  > echo "}"
   > echo "#endif"
 }
 

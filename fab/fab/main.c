@@ -94,7 +94,6 @@ int main(int argc, char** argv, char ** envp)
   fatal(narrator_load);
   fatal(xlinux_load);
 
-  xapi_errtab_register(perrtab_MAIN);
 
   // logging
   fatal(logging_setup);
