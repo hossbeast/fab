@@ -400,6 +400,14 @@ xapi streams_write(const uint64_t ids, const uint32_t site_attr, const char * co
 {
   enter;
 
+  // not properly configured - write to stderr
+  if(ids == 0 || g_streams == 0 || array_size(g_streams) == 0)
+  {
+    int __attribute__((unused)) _r = write(2, b, l);
+    _r = write(2, "\n", 1);
+    goto XAPI_FINALIZE;
+  }
+
   // base attributes : category attributes + log site attributes
   uint32_t base_attr = 0;
 
@@ -422,21 +430,12 @@ xapi streams_write(const uint64_t ids, const uint32_t site_attr, const char * co
   // log site
   base_attr = attr_combine(base_attr, site_attr);
 
-  // not properly configured - write to stderr
-  if(ids == 0 || array_size(g_streams) == 0)
+  int x;
+  for(x = 0; x < array_size(g_streams); x++)
   {
-    int __attribute__((unused)) _r = write(2, b, l);
-    _r = write(2, "\n", 1);
-  }
-  else
-  {
-    int x;
-    for(x = 0; x < array_size(g_streams); x++)
-    {
-      stream * streamp = array_get(g_streams, x);
-      if(stream_would(streamp, ids))
-        fatal(stream_write, streamp, ids, base_attr, b, l, time_msec);
-    }
+    stream * streamp = array_get(g_streams, x);
+    if(stream_would(streamp, ids))
+      fatal(stream_write, streamp, ids, base_attr, b, l, time_msec);
   }
 
   finally : coda;
@@ -452,7 +451,7 @@ int stream_would(const stream * const restrict streamp, const uint64_t ids)
 
 int streams_would(const uint64_t ids)
 {
-  if(ids == 0 || array_size(g_streams) == 0)
+  if(ids == 0 || g_streams == 0 || array_size(g_streams) == 0)
     return !!g_logger_default_stderr;
 
   int x;
