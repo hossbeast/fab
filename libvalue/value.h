@@ -140,4 +140,12 @@ xapi value_say_verbose(const value * const restrict val, struct narrator * const
 //
 int value_cmp(const value * const restrict A, const value * const restrict B);
 
+/// value_hash
+//
+// SUMMARY
+//  compute a hash over the value
+//
+uint64_t value_hash(const value * const restrict val)
+  __attribute__((nonnull));
+
 #endif

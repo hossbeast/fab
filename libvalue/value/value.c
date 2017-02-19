@@ -24,6 +24,8 @@
 #include "internal.h"
 #include "store.internal.h"
 
+#include "cksum.h"
+
 //
 // static
 //
@@ -224,4 +226,47 @@ API int value_cmp(const value * const restrict A, const value * const restrict B
   }
 
   return 0;
+}
+
+API uint64_t value_hash(const value * const restrict val)
+{
+  uint64_t hash = val->type;
+
+  int x;
+  if(val->type == VALUE_TYPE_LIST)
+  {
+    for(x = 0; x < val->els->l; x++)
+      hash += value_hash(list_get(val->els, x));
+  }
+
+  else if(val->type == VALUE_TYPE_MAP)
+  {
+    for(x = 0; x < val->keys->l; x++)
+    {
+      hash += value_hash(list_get(val->keys, x));
+      hash += value_hash(list_get(val->vals, x));
+    }
+  }
+
+  else if(val->type == VALUE_TYPE_STRING)
+  {
+    hash += cksum64(val->s->s, val->s->l);
+  }
+
+  else if(val->type == VALUE_TYPE_FLOAT)
+  {
+    hash += val->f;
+  }
+
+  else if(val->type == VALUE_TYPE_BOOLEAN)
+  {
+    hash += val->b;
+  }
+
+  else if(val->type == VALUE_TYPE_INTEGER)
+  {
+    hash += val->i;
+  }
+
+  return hash;
 }
