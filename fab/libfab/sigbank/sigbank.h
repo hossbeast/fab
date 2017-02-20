@@ -1,17 +1,17 @@
 /* Copyright (c) 2012-2015 Todd Freed <todd.freed@gmail.com>
 
    This file is part of fab.
-   
+
    fab is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
    the Free Software Foundation, either version 3 of the License, or
    (at your option) any later version.
-   
+
    fab is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
    GNU General Public License for more details.
-   
+
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
@@ -67,7 +67,7 @@ void sigbank_teardown(void);
 //  [actsig] - (returns) received application signal
 //  [actpid] - (returns) pid of sender of application signal
 //
-// ERRORS 
+// ERRORS
 //  FAB_BADIPC - an application signal was received, expsig was not null, and the received signal was not in the set
 //               or exppid was not null, and the actual sender was not exppid
 //
@@ -97,7 +97,7 @@ xapi sigbank_exchange(int sig, pid_t pid, int * const restrict rsig, pid_t * con
 /// sigbank_assert
 //
 // SUMMARY
-//  
+//
 //
 // PARAMETERS
 //

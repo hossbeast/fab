@@ -2,25 +2,25 @@ op  : [-a-zA-Z], preceeded by whitespace
 
 /   : [^ \t/\\] - do backslash escaping
 /   : [^ \t/]   - no backslash escaping
-,   : [^ \t,\\]	- do backslash escaping
-,   : [^ \t,]	  - no backslash escaping
+,   : [^ \t,\\] - do backslash escaping
+,   : [^ \t,]   - no backslash escaping
 {}  : [^}\\]    - do backslash escaping
 {}  : [^}]      - no backslash escaping
 
 init: [^ \t\n/\\]
 
 backslash escapes
-\\[0-9]												backreference
-\\x{?[0-9a-fA-F]{1,2}}?				hexreference
-\\[\\]												escaped backslash
-\\[ ]													escaped whitespace
-\\[\n]												escaped character
-\\[\r]												escaped character
-\\[\b]												escaped character
-\\[\t]												escaped character
-\\[\f]												escaped character
-\\[\a]												escaped character
-\\[\v]												escaped character
+\\[0-9]                       backreference
+\\x{?[0-9a-fA-F]{1,2}}?       hexreference
+\\[\\]                        escaped backslash
+\\[ ]                         escaped whitespace
+\\[\n]                        escaped character
+\\[\r]                        escaped character
+\\[\b]                        escaped character
+\\[\t]                        escaped character
+\\[\f]                        escaped character
+\\[\a]                        escaped character
+\\[\v]                        escaped character
 
 \\[/]
 \\[,]

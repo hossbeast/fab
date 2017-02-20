@@ -1,17 +1,17 @@
 /* Copyright (c) 2012-2015 Todd Freed <todd.freed@gmail.com>
 
    This file is part of fab.
-   
+
    fab is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
    the Free Software Foundation, either version 3 of the License, or
    (at your option) any later version.
-   
+
    fab is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
    GNU General Public License for more details.
-   
+
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
@@ -353,12 +353,12 @@ API xapi list_insert_range(list * const restrict li, size_t index, void * el, si
 
 API xapi list_set(list * const restrict li, size_t index, void * el)
 {
-  xproxy(list_put, li, index, 1, &el, 0);  
+  xproxy(list_put, li, index, 1, &el, 0);
 }
 
 API xapi list_set_range(list * const restrict li, size_t index, void * el, size_t len)
 {
-  xproxy(list_put, li, index, len, el, 0);  
+  xproxy(list_put, li, index, len, el, 0);
 }
 
 API void list_sort(list * const restrict li, int (*compar)(const void *, const void *, void *), void * arg)
@@ -460,7 +460,7 @@ API xapi list_replicate(list * const restrict dst, size_t dst_index, list * cons
     , dst->v + (dst_index * ELEMENT_SIZE(dst))
     , (dst->l - dst_index) * ELEMENT_SIZE(dst)
   );
-  
+
   list_move(dst, dst_index, src, src_index, len);
   dst->l += len;
 

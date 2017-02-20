@@ -1,17 +1,17 @@
 /* Copyright (c) 2012-2015 Todd Freed <todd.freed@gmail.com>
 
    This file is part of fab.
-   
+
    fab is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
    the Free Software Foundation, either version 3 of the License, or
    (at your option) any later version.
-   
+
    fab is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
    GNU General Public License for more details.
-   
+
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
@@ -161,7 +161,7 @@ static xapi ensure(lwx * const restrict lx, int x, int y, int z)
         int ns = lx->s[x].a ?: listwise_allocation_seed;
         while(ns <= y)
           ns = ns * 2 + ns / 2;
-        
+
         // list of strings
         fatal(xrealloc, &lx->s[x].s, sizeof(lx->s[x].s[0]), ns, lx->s[x].a);
 
@@ -898,7 +898,7 @@ API xapi lstack_readrow(lwx * const lx, int x, int y, char ** const r, int * con
       lx->s[x].t[y].l = zsl;
       lx->s[x].t[y].y = LWTMP_STRING;
     }
-    
+
     zs = lx->s[x].t[y].s;
     zsl = lx->s[x].t[y].l;
     zraw = 0;
@@ -946,7 +946,7 @@ API xapi lstack_swaptop(lwx * const restrict lx, int ay, int by)
 
   lx->s[0].s[ay] = lx->s[0].s[by];
   lx->s[0].t[ay] = lx->s[0].t[by];
-  
+
   lx->win.s[ay] = lx->win.s[by];
   if(lx->win.s[ay].active && lx->win.s[ay].active->lease == lx->win.active_era)
   {

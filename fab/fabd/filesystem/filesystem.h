@@ -1,17 +1,17 @@
 /* Copyright (c) 2012-2015 Todd Freed <todd.freed@gmail.com>
 
    This file is part of fab.
-   
+
    fab is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
    the Free Software Foundation, either version 3 of the License, or
    (at your option) any later version.
-   
+
    fab is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
    GNU General Public License for more details.
-   
+
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
@@ -25,16 +25,16 @@
 struct value;
 
 // filesystme attributes
-#define FILESYSTEM_TABLE(x, y)																							                    \
-	FILESYSTEM(INVALIDATE_STAT		, 1	, "stat"    , x , y)	/* stat hash (default) */							\
-	FILESYSTEM(INVALIDATE_CONTENT	, 2	, "content" , x , y)	/* content hash */										\
-	FILESYSTEM(INVALIDATE_NOTIFY	, 3	, "notify"  , x , y)	/* filesystem event subscription */		\
-	FILESYSTEM(INVALIDATE_ALWAYS	, 4	, "always"  , x , y)	/* always considered invalid */				\
-	FILESYSTEM(INVALIDATE_NEVER		, 5	, "never"   , x , y)	/* never considered invalid */
+#define FILESYSTEM_TABLE(x, y)                                                                  \
+  FILESYSTEM(INVALIDATE_STAT    , 1 , "stat"    , x , y)  /* stat hash (default) */             \
+  FILESYSTEM(INVALIDATE_CONTENT , 2 , "content" , x , y)  /* content hash */                    \
+  FILESYSTEM(INVALIDATE_NOTIFY  , 3 , "notify"  , x , y)  /* filesystem event subscription */   \
+  FILESYSTEM(INVALIDATE_ALWAYS  , 4 , "always"  , x , y)  /* always considered invalid */       \
+  FILESYSTEM(INVALIDATE_NEVER   , 5 , "never"   , x , y)  /* never considered invalid */
 
 #define FILESYSTEM_INVALIDATE_MIN 1
 #define FILESYSTEM_INVALIDATE_MAX 5
-	
+
 enum {
 #define FILESYSTEM(a, b, c, x, y) FILESYSTEM_ ## a = UINT32_C(b),
 FILESYSTEM_TABLE(0, 0)
@@ -44,7 +44,7 @@ FILESYSTEM_TABLE(0, 0)
 typedef struct filesystem
 {
   char *          path;   // canonical path to the root of the filesystem
-	uint32_t				attrs;	// attributes
+  uint32_t        attrs;  // attributes
 } filesystem;
 
 #define restrict __restrict
@@ -85,7 +85,7 @@ xapi filesystem_reconfigure(const struct value * restrict config, uint32_t dry)
 //  fs   - (returns) filesystem
 //
 xapi filesystem_lookup(char * const restrict path, filesystem ** const restrict fs)
-	__attribute__((nonnull));
+  __attribute__((nonnull));
 
 #undef restrict
 #endif

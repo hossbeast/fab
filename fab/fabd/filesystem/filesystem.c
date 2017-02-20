@@ -1,17 +1,17 @@
 /* Copyright (c) 2012-2015 Todd Freed <todd.freed@gmail.com>
 
    This file is part of fab.
-   
+
    fab is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
    the Free Software Foundation, either version 3 of the License, or
    (at your option) any later version.
-   
+
    fab is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
    GNU General Public License for more details.
-   
+
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
@@ -82,12 +82,12 @@ static xapi filesystem_create(const char * const restrict path, uint32_t attrs, 
 
 static void filesystem_free(filesystem * const restrict fs)
 {
-	if(fs)
-	{
-		wfree(fs->path);
-	}
+  if(fs)
+  {
+    wfree(fs->path);
+  }
 
-	wfree(fs);
+  wfree(fs);
 }
 
 //
@@ -117,7 +117,7 @@ xapi filesystem_setup()
     z += znloads(s + z, sz - z, invalidate_opts[x].name);
   }
 
-	finally : coda;
+  finally : coda;
 }
 
 xapi filesystem_cleanup()
@@ -147,7 +147,7 @@ xapi filesystem_lookup(char * const restrict path, filesystem ** const restrict 
 
   *rv = fs;
 
-	finally : coda;
+  finally : coda;
 }
 
 xapi filesystem_reconfigure(const value * restrict config, uint32_t dry)
@@ -193,7 +193,7 @@ xapi filesystem_reconfigure(const value * restrict config, uint32_t dry)
       if(!dry)
       {
         fatal(filesystem_create, key->s->s, opt, &fs);
-        fatal(map_set, filesystems, key->s->s, key->s->l, fs); 
+        fatal(map_set, filesystems, key->s->s, key->s->l, fs);
         fs = 0;
       }
     }

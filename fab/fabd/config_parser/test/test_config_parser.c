@@ -107,7 +107,7 @@ static xapi config_parser_test_maps(xunit_test * test)
   fatal(value_map_mks, store, 0, map2, &map2, "/mnt/remote", map, 0);
   fatal(value_map_mks, store, 0, 0, &map, "filesystem", map2, 0);
   fatal(value_map_mks, store, 0, 0, &expected, "core", map, 0);
-  
+
   fatal(value_say, expected, N0);
   fatal(value_say, actual, N1);
   assert_eq_s(narrator_growing_buffer(N0), narrator_growing_buffer(N1));
@@ -153,7 +153,7 @@ static xapi config_parser_test_lists(xunit_test * test)
   fatal(value_string_mks, store, 0, 0, &val, "foo");
   fatal(value_list_mkv, store, 0, list, &list, val);
   fatal(value_map_mks, store, 0, 0, &expected, "core", list, 0);
-  
+
   fatal(value_say, expected, N0);
   fatal(value_say, actual, N1);
   assert_eq_s(narrator_growing_buffer(N0), narrator_growing_buffer(N1));

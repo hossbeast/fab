@@ -7,9 +7,9 @@ fname
   : OPERATIONs TYPE name
   | OPERATIONs name
   | TYPE name
-  
+
 OPERATION
-  : i 
+  : i
   | u
   | a
   | e

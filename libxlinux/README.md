@@ -22,7 +22,7 @@ fname
 Operations
   : Operations Operation
   | Operation
-  
+
 Operation
   : 'i'
   | 'u'

@@ -1,17 +1,17 @@
 /* Copyright (c) 2012-2015 Todd Freed <todd.freed@gmail.com>
 
    This file is part of fab.
-   
+
    fab is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
    the Free Software Foundation, either version 3 of the License, or
    (at your option) any later version.
-   
+
    fab is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
    GNU General Public License for more details.
-   
+
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
@@ -188,7 +188,7 @@ int filter_expr_parse(const char * const restrict expr, size_t exprl, filter * f
     y = x;
     while(y < exprl && expr[y] != ' ' && expr[y] != '\t')
       y++;
-    
+
     if(y > x)
     {
       filter * filterp = 0;
@@ -298,7 +298,7 @@ xapi filter_push(int stream_id, filter * restrict filterp)
       clone = 0;
     }
   }
- 
+
 finally:
   filter_free(filterp);
   filter_free(clone);
@@ -336,7 +336,7 @@ xapi filter_unshift(int stream_id, filter * const restrict filterp)
       clone = 0;
     }
   }
- 
+
 finally:
   filter_free(clone);
 coda;
@@ -370,7 +370,7 @@ API xapi logger_filter_pushw(int stream_id, const char * const restrict expr, si
       fatal(list_replicate, streamp->filters, streamp->filters->l, listp, 0, listp->l);
     }
   }
- 
+
 finally:
   fatal(list_xfree, listp);
 coda;
@@ -405,7 +405,7 @@ API xapi logger_filter_unshiftw(int stream_id, const char * const restrict expr,
       fatal(list_replicate, streamp->filters, 0, listp, 0, listp->l);
     }
   }
- 
+
 finally:
   fatal(list_xfree, listp);
 coda;
@@ -434,7 +434,7 @@ API xapi logger_filter_pop(int stream_id)
       fatal(list_pop, ((stream *)array_get(g_streams, x))->filters, 0);
     }
   }
-  
+
   finally : coda;
 }
 
@@ -456,7 +456,7 @@ API xapi logger_filter_shift(int stream_id)
       fatal(list_shift, ((stream *)array_get(g_streams, x))->filters, 0);
     }
   }
-  
+
   finally : coda;
 }
 
@@ -478,7 +478,7 @@ API xapi logger_filter_clear(int stream_id)
       fatal(list_recycle, ((stream *)array_get(g_streams, x))->filters);
     }
   }
-  
+
   finally : coda;
 }
 

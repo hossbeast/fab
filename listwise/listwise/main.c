@@ -1,17 +1,17 @@
 /* Copyright (c) 2012-2015 Todd Freed <todd.freed@gmail.com>
 
    This file is part of fab.
-   
+
    fab is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
    the Free Software Foundation, either version 3 of the License, or
    (at your option) any later version.
-   
+
    fab is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
    GNU General Public License for more details.
-   
+
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
@@ -127,7 +127,7 @@ static int snarf(char * path, int bang, pstring * mem)
       , st.st_mode & S_IFMT
     );
   }
- 
+
 finally:
   fatal(ixclose, &fd);
 
@@ -220,7 +220,7 @@ int main(int argc, char ** argv, char ** envp)
     {
       if(trans && trans->l)
         fatal(pscats, trans, " ");
-      
+
       fatal(snarf, g_args.inputs[x].s, g_args.inputs[x].bang, trans);
     }
     else if(g_args.inputs[x].type == INPUT_TYPE_HYBRID_FILE)

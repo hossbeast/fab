@@ -129,7 +129,7 @@ static xapi test_filter_expr_parse()
     , { expr : "+A,BAR        +BAR%"    , n : 2 }
     , { expr : "+A,BAR -DELTA "         , n : 2 }
     , { expr : "+A,BAR -DELTA +BAR%"    , n : 3 }
-    , { expr : "+A,BAR -DELTA +BAR%		" , n : 3 }
+    , { expr : "+A,BAR -DELTA +BAR%   " , n : 3 }
     , { expr : "--foo" }
     , { expr : "-bar" }
     , { expr : "+bar" }

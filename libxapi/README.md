@@ -21,9 +21,9 @@ Use the fail macro to throw an error, and use the fatal macro to invoke other xa
 
       char * str = 0;
       fatal(xmalloc, &str, 100);    // call another xapi-enabled function
-    
+
       fail(EFOO);                   // throw an error
-    
+
       finally:                      // xapi-enabled functions end with finally/coda
         free(str);                  // cleanup
       coda;

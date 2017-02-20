@@ -1,17 +1,17 @@
 /* Copyright (c) 2012-2015 Todd Freed <todd.freed@gmail.com>
 
    This file is part of fab.
-   
+
    fab is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
    the Free Software Foundation, either version 3 of the License, or
    (at your option) any later version.
-   
+
    fab is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
    GNU General Public License for more details.
-   
+
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
@@ -46,7 +46,7 @@ $cflags_xapi_final = [ $cflags_xapi_final $copts $params ]
 $cflags_xapi_debug = [ $cflags_xapi_debug $copts $params ]
 $cflags_xapi_devel = [ $cflags_xapi_devel $copts $params_devel ]
 
-$rpath = [ 
+$rpath = [
   [ $dlibxapi $dlibxlinux $dlibvalyria $dliblorien $dliblogger $dlibxunit $dlibnarrator $dlibfab $dlibvalyria $dliblorien ~ [ ?{ [ rb{$*} ~ j ] "s{^}{'-Wl,-rpath,$ORIGIN/}" "s{$}{'}" ~ fi ] ]
 ]
 
@@ -80,17 +80,17 @@ $lflags_xapi_devel = [ $lflags_xapi_devel $lopts $libxapi_xapi_devel $libxlinux_
 [ $fab_debug ] :^ [ $libxapi_xapi_debug $libxlinux_xapi_debug $liblogger_xapi_debug $libnarrator_xapi_debug $libfab_xapi_debug ]
 [ $fab_devel ] :^ [ $libxapi_xapi_devel $libxlinux_xapi_devel $liblogger_xapi_devel $libnarrator_xapi_devel $libfab_xapi_devel ]
 
-[ $fab_final ] : [ $*/main.xapi.final.o ~ j ] 
+[ $fab_final ] : [ $*/main.xapi.final.o ~ j ]
 {
   [ $cc ] [ $cflags_xapi_final -export-dynamic ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw rx lx/o uu fi ] [ $lflags_xapi_final ~ fi ]
 }
 
-[ $fab_debug ] : [ $*/main.xapi.debug.o ~ j ] 
+[ $fab_debug ] : [ $*/main.xapi.debug.o ~ j ]
 {
   [ $cc ] [ $cflags_xapi_debug -export-dynamic ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw rx lx/o uu fi ] [ $lflags_xapi_debug ~ fi ]
 }
 
-[ $fab_devel ] : [ $*/main.xapi.devel.o ~ j ] 
+[ $fab_devel ] : [ $*/main.xapi.devel.o ~ j ]
 {
   [ $cc ] [ $cflags_xapi_devel -export-dynamic ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw rx lx/o uu fi ] [ $lflags_xapi_devel ~ fi ]
 }

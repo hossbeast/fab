@@ -1,11 +1,11 @@
-// TODO 
-// n     select by Number 
-//       select by expression on x (every other, etc) 
-// y     transliteration 
-// jw    join lists - window  
-// jm    join lists - regex 
-//       (set) intersect - jw on whole string 
-//       (set) union - same as c 
+// TODO
+// n     select by Number
+//       select by expression on x (every other, etc)
+// y     transliteration
+// jw    join lists - window
+// jm    join lists - regex
+//       (set) intersect - jw on whole string
+//       (set) union - same as c
 
 // append text to each entry
 // prepend text to each entry
@@ -15,7 +15,7 @@
 
 // split lines
    like disjoin, where the number of elements in list[0] is equal to the number of matches in all the
-   text comprising the current selection 
+   text comprising the current selection
 
 // establish selections on each entry
 //  by offset/length window

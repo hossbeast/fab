@@ -1,17 +1,17 @@
 /* Copyright (c) 2012-2015 Todd Freed <todd.freed@gmail.com>
 
    This file is part of fab.
-   
+
    fab is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
    the Free Software Foundation, either version 3 of the License, or
    (at your option) any later version.
-   
+
    fab is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
    GNU General Public License for more details.
-   
+
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
@@ -86,7 +86,7 @@ xapi graph_vertex_create(graph * const restrict g, struct vertex ** const restri
 //  g     - graph
 //  A     - vertex
 //  B     - vertex
-//  attrs - 
+//  attrs -
 //
 xapi graph_relate(graph * const restrict g, struct vertex * A, struct vertex * B, uint32_t attrs)
   __attribute__((nonnull));
@@ -95,7 +95,7 @@ xapi graph_relate(graph * const restrict g, struct vertex * A, struct vertex * B
 //
 // SUMMARY
 //  graph traversal options and modifiers
-// 
+//
 #define GRAPH_TRAVERSE_TABLE(x, y)                                                                                    \
   GRAPH_TRAVERSE_DEF(UP            , 0x00000001 , x , y)  /* traverse from a node to its consumers (upward) */        \
   GRAPH_TRAVERSE_DEF(DOWN          , 0x00000002 , x , y)  /* traverse from a node to its dependencies (downward) */   \
@@ -150,6 +150,6 @@ xapi graph_traverse(
   , /* 7 */ void * arg
 )
   __attribute__((nonnull(1, 2, 3)));
-  
+
 #undef restrict
 #endif

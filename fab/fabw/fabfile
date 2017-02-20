@@ -1,17 +1,17 @@
 /* Copyright (c) 2012-2015 Todd Freed <todd.freed@gmail.com>
 
    This file is part of fab.
-   
+
    fab is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
    the Free Software Foundation, either version 3 of the License, or
    (at your option) any later version.
-   
+
    fab is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
    GNU General Public License for more details.
-   
+
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
@@ -77,17 +77,17 @@ $lflags_xapi_devel = [ $lflags_xapi_devel $libxapi_xapi_devel $libxlinux_xapi_de
 [ $fabw_debug ] :^ [ $libxapi_xapi_debug $libxlinux_xapi_debug $liblogger_xapi_debug ]
 [ $fabw_devel ] :^ [ $libxapi_xapi_devel $libxlinux_xapi_devel $liblogger_xapi_devel ]
 
-[ $fabw_final ] : [ $dfabw/main.xapi.final.o ~ j ] 
+[ $fabw_final ] : [ $dfabw/main.xapi.final.o ~ j ]
 {
   [ $cc ] [ $cflags_xapi_final ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw rx lx/o/so uu fi ] [ $lflags_xapi_final ~ fi ]
 }
 
-[ $fabw_debug ] : [ $dfabw/main.xapi.debug.o ~ j ] 
+[ $fabw_debug ] : [ $dfabw/main.xapi.debug.o ~ j ]
 {
   [ $cc ] [ $cflags_xapi_debug ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw rx lx/o/so uu fi ] [ $lflags_xapi_debug ~ fi ]
 }
 
-[ $fabw_devel ] : [ $dfabw/main.xapi.devel.o ~ j ] 
+[ $fabw_devel ] : [ $dfabw/main.xapi.devel.o ~ j ]
 {
   [ $cc ] [ $cflags_xapi_devel ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw rx lx/o/so uu fi ] [ $lflags_xapi_devel ~ fi ]
 }

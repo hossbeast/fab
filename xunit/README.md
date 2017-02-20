@@ -15,7 +15,7 @@ Optionally, a valgrind test runner is provided, which may be used to wrap invoca
 
 integration tests depend on the top-level artifact(s) in the fabfile, and exercise the public apis.
 
-unit tests have a smaller scope. They typically 
+unit tests have a smaller scope. They typically
 
 # Tenets
 

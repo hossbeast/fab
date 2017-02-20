@@ -23,7 +23,7 @@ Quoting from man 2 kill :
   For a process to have permission to send a signal it must either be
   privileged (under Linux: have the CAP_KILL capability), or the real
   or effective user ID of the sending process must equal the real or
-  saved set-user-ID of the target process. 
+  saved set-user-ID of the target process.
 
 Example process credentials for fab
 
@@ -44,7 +44,7 @@ FABSIG_DONE     : faba -> fab    command complete
 
 FABSIG_BPSTART  : fabd -> faba   buildplan stage ready to be executed
 FABSIG_BPGOOD   : faba -> fabd   buildplan stage executed to completion
-FABSIG_BPBAD    : faba -> fabd   buildplan stage failed 
+FABSIG_BPBAD    : faba -> fabd   buildplan stage failed
 
 FOO             : faba -> fabd   filesystem changes ; re-interpret fabfiles
 FOO             : faba -> fabd   filesystem changes ; re-execute the buildplan

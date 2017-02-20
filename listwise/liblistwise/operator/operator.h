@@ -1,17 +1,17 @@
 /* Copyright (c) 2012-2015 Todd Freed <todd.freed@gmail.com>
 
    This file is part of fab.
-   
+
    fab is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
    the Free Software Foundation, either version 3 of the License, or
    (at your option) any later version.
-   
+
    fab is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
    GNU General Public License for more details.
-   
+
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
@@ -103,7 +103,7 @@ struct arg;
   _LWOPT(OPERATION_PUSHBEFORE   , 0x1000  , x)  \
   _LWOPT(OPERATION_INPLACE      , 0x2000  , x)  \
   _LWOPT(OPERATION_FILESYSTEM   , 0x4000  , x)
-  
+
 enum {
 #define _LWOPT(a, b, x) LWOPT_ ## a = b,
 LWOPT_TABLE(0)
@@ -119,13 +119,13 @@ LWOPT_TABLE(0)
 //  write a description of the specified optype to the specified buffer
 //
 // PARAMETERS
-//  optype    - 
+//  optype    -
 //  effectual - whether to include only effectual bits and ignore informational-only bits
-//  [dst]     - 
+//  [dst]     -
 //  [sz]      -
-//  [z]       - 
-//  [ps]      - 
-//  writer    - 
+//  [z]       -
+//  [ps]      -
+//  writer    -
 //
 xapi listwise_lwop_write(uint64_t optype, int effectual, char * const restrict dst, const size_t sz, size_t * restrict z)
   __attribute__((nonnull(3)));
@@ -136,13 +136,13 @@ xapi listwise_lwop_write(uint64_t optype, int effectual, char * const restrict d
 //  write a description of the specified optype to the specified pstring
 //
 // PARAMETERS
-//  optype    - 
+//  optype    -
 //  effectual - whether to include only effectual bits and ignore informational-only bits
-//  [dst]     - 
+//  [dst]     -
 //  [sz]      -
-//  [z]       - 
-//  [ps]      - 
-//  writer    - 
+//  [z]       -
+//  [ps]      -
+//  writer    -
 //
 xapi listwise_lwop_pswrite(uint64_t optype, int effectual, pstring * const restrict ps)
   __attribute__((nonnull));
@@ -201,7 +201,7 @@ typedef struct arg
   {
     struct ref    // references within the string
     {
-      char* s;    // start of the reference 
+      char* s;    // start of the reference
       char* e;    //   end of the reference (pointer to the character following the last character of the reference)
       int   l;    // length of the reference (l = e - s)
 

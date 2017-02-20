@@ -2,8 +2,8 @@ logging.console.filters [ "+IPC" ]
 
 # filesystem declaration attaches attributes to a subset of the filesystem
 filesystem {
-	"/" {
-    invalidation notify	| stat | content | always | never
+  "/" {
+    invalidation notify | stat | content | always | never
   }
 }
 

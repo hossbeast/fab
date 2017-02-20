@@ -1,17 +1,17 @@
 /* Copyright (c) 2012-2015 Todd Freed <todd.freed@gmail.com>
 
    This file is part of fab.
-   
+
    fab is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
    the Free Software Foundation, either version 3 of the License, or
    (at your option) any later version.
-   
+
    fab is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
    GNU General Public License for more details.
-   
+
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
@@ -166,7 +166,7 @@ xapi lstack_getstring(struct lwx * const restrict lx, int x, int y, char ** cons
 xapi lstack_string(struct lwx * const restrict lx, int x, int y, char ** restrict r)
   __attribute__((nonnull));
 
-/// lwx_reset 
+/// lwx_reset
 //
 // SUMMARY
 //  reset (but do not deallocate) an lw context
@@ -177,7 +177,7 @@ xapi lstack_string(struct lwx * const restrict lx, int x, int y, char ** restric
 xapi lwx_reset(struct lwx * const restrict lx)
   __attribute__((nonnull));
 
-/// listwise_identity 
+/// listwise_identity
 //
 // SUMMARY
 //  pointer to singleton liblistwise-managed lwx object with a single 0-element list

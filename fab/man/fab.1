@@ -2,17 +2,17 @@
 .\" Copyright (c) 2012-2015 Todd Freed <todd.freed@gmail.com>
 .\"
 .\" This file is part of fab.
-.\" 
+.\"
 .\" fab is free software: you can redistribute it and/or modify
 .\" it under the terms of the GNU General Public License as published by
 .\" the Free Software Foundation, either version 3 of the License, or
 .\" (at your option) any later version.
-.\" 
+.\"
 .\" fab is distributed in the hope that it will be useful,
 .\" but WITHOUT ANY WARRANTY; without even the implied warranty of
 .\" MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 .\" GNU General Public License for more details.
-.\" 
+.\"
 .\" You should have received a copy of the GNU General Public License
 .\" along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 .\"
@@ -98,30 +98,30 @@ relative path selectors resolve against directory in which the init-fabfile resi
 \fB+t\fR|\fB-t\fR fabricate-set (default)
 add nodes to the build plan along with their eventual dependencies
 .TP
-\fB+x\fR|\fB-x\fR fabricate-exact-set 
+\fB+x\fR|\fB-x\fR fabricate-exact-set
 add nodes to the buildplan without considering dependencies
 .TP
-\fB+n\fR|\fB-n\fR fabricate-nofile-set 
+\fB+n\fR|\fB-n\fR fabricate-nofile-set
 add nodes to the buildplan along with their eventual dependencies without traversing a nofile boundary
 .TP
-\fB+b\fR|\fB-b\fR invalidate-set 
+\fB+b\fR|\fB-b\fR invalidate-set
 invalidate nodes
 .SS "NON-BUILD NODE-SETS"
 If any of the following node-sets is nonempty, the associated actions are performed instead of buildplan creation/execution
 .TP
-\fB+d\fR|\fB-d\fR discovery-set 
+\fB+d\fR|\fB-d\fR discovery-set
 perform dependency discovery for nodes
 .TP
-\fB+i\fR|\fB-i\fR inspect-set 
+\fB+i\fR|\fB-i\fR inspect-set
 output summary information for nodes
 .TP
-\fB+q\fR|\fB-q\fR query-set 
+\fB+q\fR|\fB-q\fR query-set
 list the nodes matched by selectors
 .RS
 .SH OPTIONS
 .SS "Execution Modes"
 .TP
-.BR \-p 
+.BR \-p
 create buildplan only - do not execute buildplan. Implies \fB+BPDUMP\fP.
 .
 .SS "Incremental Builds"
@@ -323,7 +323,7 @@ fabd terminated abnormally
 .RB (15) FABPERMS
 fab binar(ies) do not have proper permissions
 .SH AUTHORS
-Todd Freed 
+Todd Freed
 .MT todd.freed@gmail.com
 .ME
 .SH "SEE ALSO"

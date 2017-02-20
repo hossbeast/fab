@@ -119,8 +119,8 @@ extern struct xunit_type * xunit_bool;
 //
 // PARAMETERS
 //  type    - data
-//  op      - 
-//  [value] - 
+//  op      -
+//  [value] -
 //
 // RETURNS
 //  boolean value indicating whether the assertion passed
