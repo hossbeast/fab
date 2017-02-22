@@ -41,7 +41,6 @@ API xapi edge_disconnect(graph * const restrict g, edge * const restrict e)
   enter;
 
   int x;
-  size_t index;
 
   fatal(list_delete, e->A->down, e->down_index);
   for(x = e->down_index; x < e->A->down->l; x++)
@@ -51,11 +50,10 @@ API xapi edge_disconnect(graph * const restrict g, edge * const restrict e)
   for(x = e->up_index; x < e->B->up->l; x++)
     ((edge*)list_get(e->B->up, x))->up_index--;
 
-  index = e->edges_index;
-  fatal(list_delete, g->edges, index);
-  for(x = index; x < g->edges->l; x++)
+  size_t edges_index = e->edges_index;
+  fatal(list_delete, g->edges, e->edges_index);
+  for(x = edges_index; x < g->edges->l; x++)
     ((edge*)list_get(g->edges, x))->edges_index--;
 
   finally : coda;
 }
-

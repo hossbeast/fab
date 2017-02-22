@@ -45,8 +45,6 @@
 // static
 //
 
-#include <stdio.h>
-
 static xapi __attribute__((nonnull(1, 13, 14))) explore_vertex(
     /*  1 */ vertex * const restrict v
   , /*  2 */ xapi (* const visitor)(vertex * const restrict, int, void *)
@@ -350,6 +348,7 @@ API xapi graph_connect_edge(graph * const restrict g, vertex * const restrict A,
 {
   enter;
 
+  int x;
   edge * e = 0;
   edge * tmp = 0;
   struct vertex_cmp_context ctx;
@@ -376,6 +375,8 @@ API xapi graph_connect_edge(graph * const restrict g, vertex * const restrict A,
       e->down_index++;
 
     fatal(list_insert, A->down, e->down_index, e);
+    for(x = e->down_index + 1; x < A->down->l; x++)
+      ((edge*)list_get(A->down, x))->down_index++;
 
     ctx = (typeof(ctx)){ A : A->label };
     if(B->up->l == 0)
@@ -388,6 +389,8 @@ API xapi graph_connect_edge(graph * const restrict g, vertex * const restrict A,
       e->up_index++;
 
     fatal(list_insert, B->up, e->up_index, e);
+    for(x = e->up_index + 1; x < B->up->l; x++)
+      ((edge*)list_get(B->up, x))->up_index++;
   }
 
 finally:
