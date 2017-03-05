@@ -40,7 +40,8 @@ xapi strloadw(char ** restrict dst, const void * restrict buf, size_t bufl)
   __attribute__((nonnull));
 
 xapi strloadf(char ** restrict dst, const char * restrict fmt, ...)
-  __attribute__((nonnull));
+  __attribute__((nonnull(2)))
+  __attribute__((format(printf, 2, 3)));
 
 xapi strloadvf(char ** restrict dst, const char * restrict fmt, va_list va)
   __attribute__((nonnull));
