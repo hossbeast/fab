@@ -38,43 +38,28 @@
 
 #include "args.h"
 #include "logging.h"
-#include "errtab/MAIN.errtab.h"
+#include "MAIN.errtab.h"
 #include "macros.h"
 
-int main(int argc, char** argv, char ** envp)
+static uint32_t suite_assertions_passed = 0;
+static uint32_t suite_assertions_failed = 0;
+static uint32_t suite_tests = 0;
+static uint32_t suite_units = 0;
+
+static xapi begin(int argc, char** argv, char ** envp)
 {
   enter;
 
-  xapi R;
   char space[4096];
-  size_t tracesz = 0;
   Dl_info nfo;
-
-  uint32_t suite_assertions_passed = 0;
-  uint32_t suite_assertions_failed = 0;
-  uint32_t suite_tests = 0;
-  uint32_t suite_units = 0;
 
   // allocated with the same size as g_args.objects
   void ** objects = 0;
   int x = 0;
   int token = 0;
 
-  // load libraries
-  fatal(logger_load);
-  fatal(narrator_load);
-  fatal(xlinux_load);
-  fatal(xunit_load);
-
-  // initialize logger
-  fatal(logging_setup);
-  fatal(logger_arguments_setup, envp);
-  fatal(logger_finalize);
-
   // parse cmdline arguments
   fatal(args_parse);
-
-  // summarize
   fatal(args_summarize);
 
   // allocation for dloaded objects
@@ -252,6 +237,37 @@ int main(int argc, char** argv, char ** envp)
 finally:
   fatal(log_finish, &token);
 
+  // dlclose will cause leak reports to have blank frames
+  for(x = 0; x < g_args.objectsl; x++)
+    fatal(ixdlclose, &objects[x]);
+
+  // locals
+  wfree(objects);
+coda;
+}
+
+int main(int argc, char** argv, char ** envp)
+{
+  enter;
+
+  xapi R;
+  char space[4096];
+
+  // load libraries
+  fatal(logger_load);
+  fatal(narrator_load);
+  fatal(xlinux_load);
+  fatal(xunit_load);
+
+  // initialize logger
+  fatal(logging_setup);
+  fatal(logger_arguments_setup, envp);
+  fatal(logger_finalize);
+
+  // main program
+  fatal(begin, argc, argv, envp);
+
+finally:
   if(XAPI_UNWINDING)
   {
 # if DEVEL || DEBUG
@@ -270,14 +286,10 @@ finally:
     xlogw(L_ERROR, L_RED, space, tracesz);
   }
 
-#if 1
-  // dlclose will cause leak reports to have blank frames
-  for(x = 0; x < g_args.objectsl; x++)
-    fatal(ixdlclose, &objects[x]);
-#endif
-  wfree(objects);
-
+  // modules
   args_teardown();
+
+  // libraries
   fatal(logger_unload);
   fatal(narrator_unload);
   fatal(xlinux_unload);
