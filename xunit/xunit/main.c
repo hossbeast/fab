@@ -110,7 +110,7 @@ static xapi begin(int argc, char** argv, char ** envp)
       uint32_t unit_tests = 0;
 
       int only = 0;
-      while(*test && !only)
+      while(*test)
       {
         // convenience
         (*test)->xu_unit = xunit;
@@ -120,6 +120,7 @@ static xapi begin(int argc, char** argv, char ** envp)
 
         test++;
       }
+      size_t tests_len = (test - xunit->xu_tests) - 1;
 
       // execute all tests
       test = xunit->xu_tests;
@@ -155,20 +156,20 @@ static xapi begin(int argc, char** argv, char ** envp)
           // add identifying info
           if(name)
             xapi_info_adds("name", name);
-          xapi_info_addf("test", "%zu", test - xunit->xu_tests);
+          xapi_info_addf("test", "%zu in [%zu,%zu]", test - xunit->xu_tests, 0, tests_len);
 
           // propagate non-unit-testing errors
           if(XAPI_ERRVAL != XUNIT_FAIL)
             fail(0);
 
           // save the trace
-          size_t z = xapi_trace_pithy(space, sizeof(space));
+          xapi_trace_full(space, sizeof(space));
 
           // discard the error frames
           xapi_calltree_unwind();
 
           // for unit-testing errors, log the failure and continue
-          xlogf(L_FAIL, L_RED, "   %.*s", (int)z, space);
+          xlogs(L_FAIL, L_RED, space);
         }
 
         fatal(xclock_gettime, CLOCK_MONOTONIC_RAW, &test_end);
@@ -274,16 +275,16 @@ finally:
     if(g_args.mode_backtrace == MODE_BACKTRACE_PITHY)
     {
 #endif
-      tracesz = xapi_trace_pithy(space, sizeof(space));
+      xapi_trace_pithy(space, sizeof(space));
 #if DEBUG || DEVEL
     }
     else
     {
-      tracesz = xapi_trace_full(space, sizeof(space));
+      xapi_trace_full(space, sizeof(space));
     }
 #endif
 
-    xlogw(L_ERROR, L_RED, space, tracesz);
+    xlogs(L_ERROR, L_CATEGORY_OFF, space);
   }
 
   // modules
