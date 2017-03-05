@@ -47,12 +47,12 @@ API xapi uxread(int fd, void * buf, size_t count, ssize_t * bytes)
 {
   enter;
 
-  if(bytes && ((*bytes) = read(fd, buf, count)) == -1 && errno != EAGAIN && errno != EWOULDBLOCK)
+  if(bytes && ((*bytes) = read(fd, buf, count)) == -1 && errno != EAGAIN && errno != EWOULDBLOCK && errno != EINTR)
   {
     tfail(perrtab_KERNEL, errno);
   }
 
-  else if(!bytes && read(fd, buf, count) == -1 && errno != EAGAIN && errno != EWOULDBLOCK)
+  else if(!bytes && read(fd, buf, count) == -1 && errno != EAGAIN && errno != EWOULDBLOCK && errno != EINTR)
   {
     tfail(perrtab_KERNEL, errno);
   }

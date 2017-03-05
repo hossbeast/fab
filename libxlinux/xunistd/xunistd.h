@@ -39,7 +39,7 @@ xapi xread(int fd, void * restrict buf, size_t count, ssize_t * restrict bytes)
 /// uxread
 //
 // SUMMARY
-//  proxy for read that only fails when errno != EAGAIN
+//  proxy for read that only fails when errno not in { EAGAIN, EINTR }
 //
 // PARAMETERS
 //  [bytes] - returns the number of bytes read
