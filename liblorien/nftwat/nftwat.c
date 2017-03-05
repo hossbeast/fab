@@ -85,6 +85,7 @@ static xapi __attribute__((nonnull(1, 3, 5, 7, 9))) walk(
     if(strcmp(entp->d_name, ".") && strcmp(entp->d_name, ".."))
     {
       *pathl += znloads(path + *pathl, pathz - *pathl, "/");
+      child.name_off = *pathl;
       *pathl += znloads(path + *pathl, pathz - *pathl, entp->d_name);
       child.pathl = *pathl;
 
@@ -161,6 +162,15 @@ API xapi nftwat(
   rootinfo.path = path;
   rootinfo.pathl = pathl;
   rootinfo.type = FTWAT_D;
+
+  const char * e = path + pathl;
+  while(e != path && *e != '/')
+    e--;
+
+  if(*e == '/')
+    e++;
+
+  rootinfo.name_off = e - path;
 
   fatal(walk
     , fn

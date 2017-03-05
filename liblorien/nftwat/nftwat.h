@@ -19,6 +19,8 @@
 #define _LORIEN_NFTWAT_H
 
 #include <dirent.h>
+#include <stdint.h>
+
 #include "xapi.h"
 
 #define restrict __restrict
@@ -33,9 +35,10 @@ typedef struct ftwinfo
   struct ftwinfo * parent;
 
   const char * path;
-  size_t pathl;
-  uint8_t type;
-  void * udata;     // opaque user data
+  uint16_t pathl;
+  uint16_t name_off;
+  uint8_t type;       // one of FTWAT_F, FTWAT_D
+  void * udata;
 } ftwinfo;
 
 /// nftwat - file tree walk with AT dirfd
@@ -49,13 +52,19 @@ typedef struct ftwinfo
 //  dirpath - path to the root of the tree to traverse
 //  fn      - callback function for each directory entry
 //  nopenfd - maximum number of file descriptors in use at once
+//  udata   - opaque user data
 //
 // CALLBACK PARAMETERS
-//  path  - path to the entry, relative to (and including) dirpath
-//  info  -
-//   parent -
-//   entp   - directory entry
-//   udata  - opaque space
+//  method - for FTWAT_D, one of FTWAT_PRE, FTWAT_POST, zero otherwise
+//  info
+//   parent   - info for the parent directory of this entry
+//   path     - path to the entry, relative to (and including) dirpath
+//   pathl    - size of path
+//   name_off - offset from path to the name, that is, following the final directory separator
+//   type     - filesystem type for the entry
+//   udata    - opaque user data
+//  udata  - opaque user data
+//  stop   - (returns) for FTWAT_PRE, whether to not traverse this directory
 //
 // SEE ALSO
 //  man 2 ftw
@@ -64,9 +73,9 @@ typedef struct ftwinfo
 xapi nftwat(
     int dirfd
   , const char * dirpath
-  , xapi (*fn)(int method, ftwinfo * restrict info, void * arg, int * stop)
+  , xapi (*fn)(int method, ftwinfo * restrict info, void * udata, int * stop)
   , int nopenfd
-  , void * arg
+  , void * udata
 )
   __attribute__((nonnull(2, 3)));
 
