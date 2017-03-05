@@ -181,10 +181,7 @@ API void xapi_record_frame(void * calling_frame)
     size_t ns = (*dsta) ?: 10;
     while(ns <= l)
       ns = ns * 2 + ns / 2;
-    if((*(void**)dst = realloc(*(void**)dst, ns * z)) == 0)
-    {
-      /* failure to allocate */
-    }
+    *(void**)dst = realloc(*(void**)dst, ns * z);
     (*dsta) = ns;
   }
 
@@ -213,6 +210,10 @@ API xapi xapi_frame_leave(int topframe)
     xapi_calltree_unwind();
     xapi_sentinel = 0;
 #if XAPI_RUNTIME_CHECKS
+    free(g_frame_addresses.v);
+    g_frame_addresses.v = 0;
+    g_frame_addresses.l = 0;
+    g_frame_addresses.a = 0;
     xapi_calling_frame_address = 0;
 #endif
 
