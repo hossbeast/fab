@@ -48,11 +48,12 @@ typedef struct graph graph;
 // PARAMETERS
 //  g     - (returns) graph
 //  [vsz] - size of vertex udata
+//  [vertex_value_destroy] - invoked on vertex user data before releasing
 //
 xapi graph_create(graph ** const restrict g)
   __attribute__((nonnull(1)));
 
-xapi graph_createx(graph ** const restrict g, size_t vsz)
+xapi graph_createx(graph ** const restrict g, size_t vsz, void * vertex_value_destroy, void * vertex_value_xdestroy)
   __attribute__((nonnull(1)));
 
 /// graph_say
@@ -78,7 +79,7 @@ xapi graph_xfree(graph * const restrict g);
 xapi graph_ixfree(graph ** const restrict g)
   __attribute__((nonnull));
 
-/// graph_vertex_createw
+/// graph_vertex_create
 //
 // SUMMARY
 //  allocate a vertex in the graph
@@ -86,11 +87,18 @@ xapi graph_ixfree(graph ** const restrict g)
 // PARAMETERS
 //  v         - (returns) vertex
 //  g         - graph
-//  label     -
-//  label_len -
-//  attrs     -
+//  attrs     - bitmask
 //
-xapi graph_vertex_createw(struct vertex ** const restrict v, graph * const restrict g, const char * const restrict label, size_t label_len, uint32_t attrs)
+// VARIANT
+//  w - provide label as pointer/length pair
+//
+// REMARKS
+//  the label is not copied or owned by the vertex
+//
+xapi graph_vertex_create(struct vertex ** const restrict v, graph * const restrict g, uint32_t attrs)
+  __attribute__((nonnull));
+
+xapi graph_vertex_createw(struct vertex ** const restrict v, graph * const restrict g, uint32_t attrs, const char * const restrict label, size_t label_len)
   __attribute__((nonnull));
 
 /// graph_connect_edge

@@ -57,7 +57,7 @@ static xapi graph_test_entry(xunit_test * _test)
     vertex * A;
     if((A = map_get(vertices, MM(*seq))) == 0)
     {
-      fatal(graph_vertex_createw, &A, g, MM(*seq), 0);
+      fatal(graph_vertex_createw, &A, g, 0, MM(*seq));
       fatal(map_set, vertices, MM(*seq), A);
     }
     seq++;
@@ -65,7 +65,7 @@ static xapi graph_test_entry(xunit_test * _test)
     vertex * B;
     if((B = map_get(vertices, MM(*seq))) == 0)
     {
-      fatal(graph_vertex_createw, &B, g, MM(*seq), 0);
+      fatal(graph_vertex_createw, &B, g, 0, MM(*seq));
       fatal(map_set, vertices, MM(*seq), B);
     }
     seq++;

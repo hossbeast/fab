@@ -65,9 +65,9 @@ static xapi edge_visit(edge * const restrict e, int distance, void * arg)
   enter;
 
   narrator * N = arg;
-  says(e->A->label);
+  sayw(e->A->label, e->A->label_len);
   says(":");
-  says(e->B->label);
+  sayw(e->B->label, e->B->label_len);
 
   finally : coda;
 }
@@ -92,7 +92,7 @@ static xapi graph_test_entry(graph_test * test)
     vertex * A;
     if((A = map_get(vertices, MM(*c))) == 0)
     {
-      fatal(graph_vertex_createw, &A, g, MM(*c), 0);
+      fatal(graph_vertex_createw, &A, g, 0, MM(*c));
       fatal(map_set, vertices, MM(*c), A);
     }
     c++;
@@ -110,7 +110,7 @@ static xapi graph_test_entry(graph_test * test)
     vertex * B;
     if((B = map_get(vertices, MM(*c))) == 0)
     {
-      fatal(graph_vertex_createw, &B, g, MM(*c), 0);
+      fatal(graph_vertex_createw, &B, g, 0, MM(*c));
       fatal(map_set, vertices, MM(*c), B);
     }
     c++;

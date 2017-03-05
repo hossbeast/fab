@@ -280,25 +280,20 @@ static int edge_compare(const void * _X, const void * _Y, void * ctx)
 
 API xapi graph_create(graph ** const restrict g)
 {
-  enter;
-
-  fatal(xmalloc, g, sizeof(**g));
-  (*g)->traversal_id = 1;
-  fatal(list_createx, &(*g)->vertices, 0, (void*)vertex_xfree, 0);
-  fatal(list_createx, &(*g)->edges, (void*)wfree, 0, 0);
-
-  finally : coda;
+  xproxy(graph_createx, g, 0, 0, 0);
 }
 
-API xapi graph_createx(graph ** const restrict g, size_t vsz)
+API xapi graph_createx(graph ** const restrict g, size_t vsz, void * vertex_value_destroy, void * vertex_value_xdestroy)
 {
   enter;
 
   fatal(xmalloc, g, sizeof(**g));
   (*g)->traversal_id = 1;
+  fatal(list_createx, &(*g)->vertices, 0, vertex_xfree, 0);
+  fatal(list_createx, &(*g)->edges, wfree, 0, 0);
   (*g)->vsz = vsz;
-  fatal(list_createx, &(*g)->vertices, 0, (void*)vertex_xfree, 0);
-  fatal(list_createx, &(*g)->edges, (void*)wfree, 0, 0);
+  (*g)->vertex_value_destroy = vertex_value_destroy;
+  (*g)->vertex_value_xdestroy = vertex_value_xdestroy;
 
   finally : coda;
 }
@@ -309,6 +304,19 @@ API xapi graph_xfree(graph * const restrict g)
 
   if(g)
   {
+    if(g->vertex_value_destroy || g->vertex_value_xdestroy)
+    {
+      int x;
+      for(x = 0; x < g->vertices->l; x++)
+      {
+        vertex * v = list_get(g->vertices, x);
+        if(g->vertex_value_destroy)
+          g->vertex_value_destroy(v->value);
+        else
+          fatal(g->vertex_value_xdestroy, v->value);
+      }
+    }
+
     fatal(list_xfree, g->vertices);
     fatal(list_xfree, g->edges);
   }
@@ -328,13 +336,27 @@ API xapi graph_ixfree(graph ** const restrict g)
   finally : coda;
 }
 
-API xapi graph_vertex_createw(struct vertex ** const restrict v, graph * const restrict g, const char * const restrict label, size_t label_len, uint32_t attrs)
+API xapi graph_vertex_create(struct vertex ** const restrict v, graph * const restrict g, uint32_t attrs)
 {
   enter;
 
   vertex * lv = 0;
-  fatal(vertex_createw, &lv, g->vsz, label, label_len, attrs);
+  fatal(vertex_create, &lv, g->vsz, attrs);
+  fatal(list_push, g->vertices, (void*)lv);
+  *v = lv;
+  lv = 0;
 
+finally:
+  fatal(vertex_xfree, lv);
+coda;
+}
+
+API xapi graph_vertex_createw(struct vertex ** const restrict v, graph * const restrict g, uint32_t attrs, const char * const restrict label, size_t label_len)
+{
+  enter;
+
+  vertex * lv = 0;
+  fatal(vertex_createw, &lv, g->vsz, attrs, label, label_len);
   fatal(list_push, g->vertices, (void*)lv);
   *v = lv;
   lv = 0;
@@ -353,7 +375,7 @@ API xapi graph_connect_edge(graph * const restrict g, vertex * const restrict A,
   edge * tmp = 0;
   struct vertex_cmp_context ctx;
 
-  ctx = (typeof(ctx)) { B : B->label };
+  ctx = (typeof(ctx)) { B : B->label, len : B->label_len };
   if(A->down->l == 0)
     ctx.lc = -1;
   else
@@ -378,7 +400,7 @@ API xapi graph_connect_edge(graph * const restrict g, vertex * const restrict A,
     for(x = e->down_index + 1; x < A->down->l; x++)
       ((edge*)list_get(A->down, x))->down_index++;
 
-    ctx = (typeof(ctx)){ A : A->label };
+    ctx = (typeof(ctx)){ A : A->label, len : A->label_len };
     if(B->up->l == 0)
       ctx.lc = -1;
     else
@@ -402,7 +424,7 @@ API xapi graph_disconnect_edge(graph * const restrict g, vertex * const restrict
 {
   enter;
 
-  struct vertex_cmp_context ctx = (typeof(ctx)) { B : B->label };
+  struct vertex_cmp_context ctx = (typeof(ctx)) { B : B->label, len : B->label_len };
   edge * e = list_search(A->down, &ctx, vertex_compare);
 
   if(e)
@@ -426,11 +448,12 @@ API xapi graph_say(graph * const restrict g, struct narrator * const restrict N)
 
   for(x = 0; x < g->edges->l; x++)
   {
+    edge * e = list_get(g->edges, xs[x]);
     if(x)
       says(" ");
-    says((((edge*)list_get(g->edges, xs[x]))->A)->label);
+    sayw(e->A->label, e->A->label_len);
     says(":");
-    says((((edge*)list_get(g->edges, xs[x]))->B)->label);
+    sayw(e->B->label, e->B->label_len);
   }
 
 finally:
@@ -504,7 +527,7 @@ finally:
     {
       if(narrator_growing_size(N))
         says(" -> ");
-      says(stack[x]->label);
+      sayw(stack[x]->label, stack[x]->label_len);
     }
 
     xapi_infof("nodes", "%zu", stackz);
@@ -578,16 +601,16 @@ finally:
 
     if(stackz)
     {
-      says(stack[stackz - 1]->A->label);
+      sayw(stack[stackz - 1]->A->label, stack[stackz - 1]->A->label_len);
       says(" -> ");
-      says(stack[stackz - 1]->B->label);
+      sayw(stack[stackz - 1]->B->label, stack[stackz - 1]->B->label_len);
     }
 
     int x;
     for(x = stackz - 2; x > 0; x--)
     {
       says(" -> ");
-      says(stack[x]->B->label);
+      sayw(stack[x]->B->label, stack[x]->B->label_len);
     }
 
     xapi_infos("path", narrator_growing_buffer(N));
@@ -597,7 +620,7 @@ finally:
 coda;
 }
 
-int graph_traversal_begin(graph * const restrict g)
+API int graph_traversal_begin(graph * const restrict g)
 {
   return ++g->traversal_id;
 }

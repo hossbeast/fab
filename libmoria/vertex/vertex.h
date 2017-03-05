@@ -37,9 +37,9 @@ struct edge;
 
 typedef struct vertex
 {
-  char *   label;
-  size_t   label_len;
-  uint32_t attrs;         // properties of the vertex
+  const char *  label;    // (not owned)
+  size_t        label_len;
+  uint32_t      attrs;    // properties of the vertex
 
   struct list * up;       // edges where this == B, i.e. { up } -> this
   struct list * down;     // edges where this == A, i.e. this -> { down }
@@ -78,18 +78,25 @@ void vertex_value_set(vertex * const restrict v, void * value, size_t vsz)
 void * vertex_value(vertex * const restrict v)
   __attribute__((nonnull));
 
+/// vertex_containerof
+//
+// SUMMARY
+//  get a pointer to the vertex containing the user value
+//
+vertex * vertex_containerof(void * value)
+  __attribute__((nonnull));
+
 /// vertex_ascend
 //
 // SUMMARY
 //  get the vertex above a vertex at a distance of 1 with the given label
 //
 // PARAMETERS
-//  v         - starting vertex
-//  label     - label of the desired vertex
-//  label_len - length of label
+//  v   - starting vertex
 //
 // VARIANTS
 //  edge - get the edge connecting the two vertices
+//  s - label is given as a null terminated string
 //  w - label is given as a buffer/length pair
 //
 // RETURNS
@@ -98,7 +105,25 @@ void * vertex_value(vertex * const restrict v)
 vertex * vertex_ascendw(vertex * const restrict v, const char * const restrict label, size_t label_len)
   __attribute__((nonnull));
 
+vertex * vertex_ascends(vertex * const restrict v, const char * const restrict label)
+  __attribute__((nonnull));
+
+vertex * vertex_ascend_atw(vertex * const restrict v, size_t off, const char * const restrict label, size_t label_len)
+  __attribute__((nonnull));
+
+vertex * vertex_ascend_ats(vertex * const restrict v, size_t off, const char * const restrict label)
+  __attribute__((nonnull));
+
 struct edge * vertex_ascend_edgew(vertex * const restrict v, const char * const restrict label, size_t label_len)
+  __attribute__((nonnull));
+
+struct edge * vertex_ascend_edges(vertex * const restrict v, const char * const restrict label)
+  __attribute__((nonnull));
+
+struct edge * vertex_ascend_edge_atw(vertex * const restrict v, size_t off, const char * const restrict label, size_t label_len)
+  __attribute__((nonnull));
+
+struct edge * vertex_ascend_edge_ats(vertex * const restrict v, size_t off, const char * const restrict label)
   __attribute__((nonnull));
 
 /// vertex_descend
@@ -107,12 +132,11 @@ struct edge * vertex_ascend_edgew(vertex * const restrict v, const char * const 
 //  get the vertex below a vertex at a distance of 1 with the given label
 //
 // PARAMETERS
-//  v         - starting vertex
-//  label     - label of the desired vertex
-//  label_len - length of label
+//  v   - starting vertex
 //
 // VARIANTS
 //  edge - get the edge connecting the two vertices
+//  s - label is given as a null terminated string
 //  w - label is given as a buffer/length pair
 //
 // RETURNS
@@ -121,7 +145,25 @@ struct edge * vertex_ascend_edgew(vertex * const restrict v, const char * const 
 vertex * vertex_descendw(vertex * const restrict v, const char * const restrict label, size_t label_len)
   __attribute__((nonnull));
 
+vertex * vertex_descends(vertex * const restrict v, const char * const restrict label)
+  __attribute__((nonnull));
+
+vertex * vertex_descend_atw(vertex * const restrict v, size_t off, const char * const restrict label, size_t label_len)
+  __attribute__((nonnull));
+
+vertex * vertex_descend_ats(vertex * const restrict v, size_t off, const char * const restrict label)
+  __attribute__((nonnull));
+
 struct edge * vertex_descend_edgew(vertex * const restrict v, const char * const restrict label, size_t label_len)
+  __attribute__((nonnull));
+
+struct edge * vertex_descend_edges(vertex * const restrict v, const char * const restrict label)
+  __attribute__((nonnull));
+
+struct edge * vertex_descend_edge_atw(vertex * const restrict v, size_t off, const char * const restrict label, size_t label_len)
+  __attribute__((nonnull));
+
+struct edge * vertex_descend_edge_ats(vertex * const restrict v, size_t off, const char * const restrict label)
   __attribute__((nonnull));
 
 #undef restrict

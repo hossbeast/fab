@@ -19,6 +19,7 @@
 #define _MORIA_GRAPH_INTERNAL_H
 
 #include <sys/types.h>
+#include "xapi.h"
 
 #include "graph.h"
 
@@ -26,10 +27,13 @@ struct list;
 
 struct graph
 {
-  size_t vsz;
   struct list * vertices;
   struct list * edges;
   int traversal_id;
+
+  size_t vsz;
+  void (*vertex_value_destroy)(void *);
+  xapi (*vertex_value_xdestroy)(void *);
 };
 
 #endif

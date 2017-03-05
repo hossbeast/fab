@@ -64,7 +64,7 @@ static xapi vertex_visit(vertex * const restrict v, int level, void * arg)
   enter;
 
   narrator * N = arg;
-  says(v->label);
+  sayw(v->label, v->label_len);
 
   finally : coda;
 }
@@ -89,7 +89,7 @@ static xapi graph_test_entry(graph_test * test)
     vertex * A;
     if((A = map_get(vertices, MM(*c))) == 0)
     {
-      fatal(graph_vertex_createw, &A, g, MM(*c), 0);
+      fatal(graph_vertex_createw, &A, g, 0, MM(*c));
       fatal(map_set, vertices, MM(*c), A);
     }
     c++;
@@ -107,7 +107,7 @@ static xapi graph_test_entry(graph_test * test)
     vertex * B;
     if((B = map_get(vertices, MM(*c))) == 0)
     {
-      fatal(graph_vertex_createw, &B, g, MM(*c), 0);
+      fatal(graph_vertex_createw, &B, g, 0, MM(*c));
       fatal(map_set, vertices, MM(*c), B);
     }
     c++;
