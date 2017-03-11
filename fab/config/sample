@@ -1,7 +1,15 @@
-logging.console.filters [ "+IPC" ]
+logging {
+  # writes to the terminal of the connected client
+  console.filters [ "+IPC" ]
+
+  # writes to the rolling logfile at $ipcdir
+  logfile.filters [ "+IPC" ]
+}
 
 # filesystem declaration attaches attributes to a subset of the filesystem
 filesystem {
+  # the path must be an absolute path, in the future, variables may be supported here ($HOME,
+  # $PROJECT, etc) but relative paths cannot work, because there is no realpathat(dirfd, ...)
   "/" {
     invalidation notify | stat | content | always | never
   }
@@ -10,11 +18,10 @@ filesystem {
 buildscript {
   path "/foo/bar"
   runtime-vars [ foo bar ]
+  license std | fab
 }
 
 concurrency unbounded | heuristic | <integer>
-
-license std | fab
 
 cycles fail | warn | deal
 
