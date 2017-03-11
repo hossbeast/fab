@@ -30,22 +30,33 @@
 //
 extern struct g_params
 {
-  pid_t           pid;              // pid of this process
-  pid_t           ppid;             // pid of parent process
-  pid_t           pgid;             // process group id
+  pid_t           pid;              // process id of this process
+  pid_t           ppid;             // process id of parent process
+  pid_t           pgid;             // process group id of this process
+  pid_t           thread_monitor;   // thread id of the monitor thread
+  pid_t           thread_server;    // thread id of the server thread
+  pid_t           thread_notify;    // thread id of the notify thread
+  pid_t           thread_sweeper;   // thread id of the sweeper thread
+  int             thread_count;     // number of extant threads, other than the monitor/main thread
+
+  time_t          starttime;
 
   char *          exedir;           // location of the binary executable
   long            procs;            // detected number of processors (0 means unknown)
   long            pagesize;         // page size
 
   char *          ipcdir;
-  int             projdir_fd;       // readonly file descriptor for the project dir
+  char *          proj_dir;         // because some apis cant take a dirfd
+  int             proj_dirfd;       // readonly file descriptor for the project dir
+  char *          homedir;          // homedir of the real user
+
+  int             shutdown;         // whether shutdown has been initiated
 } g_params;
 
 /// params_parse
 //
 // SUMMARY
-//  parses command-line options, populating g_params.
+//  populates g_params
 //
 xapi params_setup(uint32_t hash);
 

@@ -15,7 +15,25 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-1 BADIPC      ipc failure
-2 EXEPERMS    fabd executable must be owned by fabsys:fabsys and have ug+s permissions
-3 EXCL        fabd already running
-4 UNSATISFIED unsatisfied dependencies
+#ifndef _HANDLER_H
+#define _HANDLER_H
+
+/*
+
+*/
+
+#include "xapi.h"
+
+struct fab_request;
+struct fab_response;
+struct memblk;
+
+xapi handler_dispatch(
+    struct fab_request * const restrict request
+  , struct memblk * const restrict mb
+  , struct fab_response ** const restrict response
+)
+  __attribute__((nonnull));
+
+#undef restrict
+#endif

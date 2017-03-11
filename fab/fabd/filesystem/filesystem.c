@@ -23,28 +23,33 @@
 #include "value.h"
 #include "valyria/list.h"
 #include "valyria/map.h"
+#include "valyria/strutil.h"
 #include "valyria/pstring.h"
 #include "xlinux/xstdlib.h"
 #include "xlinux/xstring.h"
+#include "lorien/path_normalize.h"
 
 #include "filesystem.h"
 #include "config.h"
+#include "reconfigure.h"
 #include "config_cursor.h"
-#include "errtab/CONFIG.errtab.h"
+#include "CONFIG.errtab.h"
 
 #include "zbuffer.h"
+#include "cksum.h"
 
 #define restrict __restrict
 
 static map * filesystems;
+static uint64_t filesystems_hash[2];
 
 // sorted by name
 static struct {
   const char * name;
   int opt;
 } invalidate_opts[] = {
-#define FILESYSTEM(a, b, c, x, y) { opt : (b), name : QUOTE(c) },
-FILESYSTEM_TABLE(0, 0)
+#define FILESYSTEM(a, b, c) { opt : (b), name : c },
+FILESYSTEM_TABLE
 #undef FILESYSTEM
 };
 
@@ -74,7 +79,7 @@ static xapi filesystem_create(const char * const restrict path, uint32_t attrs, 
   enter;
 
   fatal(xmalloc, fs, sizeof(**fs));
-  fatal(ixstrdup, &(*fs)->path, path);
+  fatal(strloads, &(*fs)->path, path);
   (*fs)->attrs = attrs;
 
   finally : coda;
@@ -98,12 +103,12 @@ xapi filesystem_setup()
 {
   enter;
 
+  fatal(map_createx, &filesystems, filesystem_free, 0, 0);
+  qsort(invalidate_opts, sizeof(invalidate_opts) / sizeof(*invalidate_opts), sizeof(*invalidate_opts), invalidate_opts_compare);
+
   char * s;
   size_t sz;
   size_t z;
-
-  fatal(map_createx, &filesystems, filesystem_free, 0, 0);
-  qsort(invalidate_opts, sizeof(invalidate_opts) / sizeof(*invalidate_opts), sizeof(*invalidate_opts), invalidate_opts_compare);
 
   s = invalidate_opts_list;
   sz = sizeof(invalidate_opts_list);
@@ -129,10 +134,8 @@ xapi filesystem_cleanup()
   finally : coda;
 }
 
-xapi filesystem_lookup(char * const restrict path, filesystem ** const restrict rv)
+filesystem * filesystem_lookup(const char * const restrict path)
 {
-  enter;
-
   const char * end = path + strlen(path);
 
   filesystem * fs = 0;
@@ -145,37 +148,59 @@ xapi filesystem_lookup(char * const restrict path, filesystem ** const restrict 
       end--;
   }
 
-  *rv = fs;
-
-  finally : coda;
+  return fs;
 }
 
-xapi filesystem_reconfigure(const value * restrict config, uint32_t dry)
+static int keys_compare(const void * A, const void * B)
+{
+  return strcmp(*(char **)A, *(char **)B);
+}
+
+xapi filesystem_reconfigure(struct reconfigure_context * ctx, const value * restrict config, uint32_t dry)
 {
   enter;
+
+  char space[512];
 
   value * map;
   value * val;
   value * key;
   filesystem * fs = 0;
-  config_cursor cursor = { 0 };
+  config_cursor cursor = { };
   int opt = 0;
+  const char ** keys = 0;
+  size_t keysl = 0;
+  int has_root = 0;
+  int x;
 
-  fatal(config_cursor_init, &cursor);
+  if(!dry && !ctx->filesystems_changed)
+    goto XAPI_FINALIZE;
 
   if(!dry)
     fatal(map_recycle, filesystems);
 
-  fatal(config_cursor_sets, &cursor, "filesystems");
+  if(dry)
+    filesystems_hash[1] = 0;
+
+  fatal(config_cursor_init, &cursor);
+  fatal(config_cursor_sets, &cursor, "filesystem");
   fatal(config_query, config, config_cursor_path(&cursor), config_cursor_query(&cursor), VALUE_TYPE_MAP & dry, &map);
   if(map)
   {
     fatal(config_cursor_mark, &cursor);
 
-    int x;
     for(x = 0; x < map->keys->l; x++)
     {
       key = list_get(map->keys, x);
+
+      // hash the config value for this filesystem
+      if(dry)
+      {
+        filesystems_hash[1] += value_hash(key);
+        filesystems_hash[1] += value_hash(list_get(map->vals, x));
+      }
+
+      // query the relevant properties
       fatal(config_cursor_pushf, &cursor, "%s.invalidate", key->s->s);
       fatal(config_query, map, config_cursor_path(&cursor), config_cursor_query(&cursor), (VALUE_TYPE_STRING | CONFIG_QUERY_NOTNULL) & dry, &val);
 
@@ -185,22 +210,58 @@ xapi filesystem_reconfigure(const value * restrict config, uint32_t dry)
       if(dry && !opt)
       {
         xapi_fail_intent();
-        xapi_info_adds("expected", "{stat, content, notify, always, never}");
+        xapi_info_adds("expected", invalidate_opts_list);
         xapi_info_adds("actual", val->s->s);
         fatal(config_throw, CONFIG_INVALID, val, config_cursor_path(&cursor));
       }
 
       if(!dry)
       {
-        fatal(filesystem_create, key->s->s, opt, &fs);
-        fatal(map_set, filesystems, key->s->s, key->s->l, fs);
+        path_normalize(space, sizeof(space), key->s->s);
+        fatal(filesystem_create, space, opt, &fs);
+        fatal(map_set, filesystems, MMS(fs->path), fs);
         fs = 0;
+        if(strcmp(space, "/") == 0)
+          has_root = 1;
       }
     }
+  }
+
+  if(dry)
+  {
+    ctx->filesystems_changed = filesystems_hash[0] != filesystems_hash[1];
+//printf("filesystems_hash [ %lx <=> %lx ]\n", filesystems_hash[0], filesystems_hash[1]);
+  }
+
+  if(!dry)
+  {
+    if(!has_root)
+    {
+      fatal(filesystem_create, "/", FILESYSTEM_INVALIDATE_NOTIFY, &fs);
+      fatal(map_set, filesystems, MMS(fs->path), fs);
+      fs = 0;
+    }
+
+    // determine which filesystems are leaves
+    fatal(map_keys, filesystems, &keys, &keysl);
+    qsort(keys, keysl, sizeof(*keys), keys_compare);
+
+    for(x = 0; x < keysl; x++)
+    {
+      filesystem * tmp = map_get(filesystems, MMS(keys[x]));
+      if(x == (keysl - 1) || strcmp(keys[x], keys[x + 1]))
+        tmp->leaf = 1;
+      else
+        tmp->leaf = 0;
+    }
+
+    // the circle is now complete
+    filesystems_hash[0] = filesystems_hash[1];
   }
 
 finally:
   filesystem_free(fs);
   config_cursor_destroy(&cursor);
+  wfree(keys);
 coda;
 }

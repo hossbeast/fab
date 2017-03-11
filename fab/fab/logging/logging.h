@@ -25,18 +25,23 @@
 
 extern struct logger_category * categories;
 
-#define L_ERROR   categories[0x0].id
-#define L_ARGS    categories[0x1].id
-#define L_PARAMS  categories[0x2].id
-#if DEBUG || DEVEL
-#define L_IPC     categories[0x3].id
+#define BASE 0
+#if DEBUG || DEVEL || XAPI
+#define L_IPC       categories[0].id
+#undef BASE
+#define BASE 1
 #endif
+
+#define L_ERROR     categories[BASE + 0].id
+#define L_ARGS      categories[BASE + 1].id
+#define L_PARAMS    categories[BASE + 2].id
+#define L_FAB       categories[BASE + 3].id
 
 /// logging_setup
 //
 // SUMMARY
 //  register logging categories
 //
-xapi logging_setup(void);
+xapi logging_setup(char ** envp);
 
 #endif

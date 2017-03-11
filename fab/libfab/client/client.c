@@ -29,6 +29,7 @@
 #include "xapi.h"
 #include "xapi/trace.h"
 
+#include "xlinux/xunistd.h"
 #include "xlinux/xfcntl.h"
 #include "xlinux/xunistd.h"
 #include "xlinux/xstdlib.h"
@@ -36,24 +37,26 @@
 #include "xlinux/xstring.h"
 #include "xlinux/xshm.h"
 #include "xlinux/xsignal.h"
+#include "xlinux/xpthread.h"
 
 #include "narrator.h"
 #include "narrator/units.h"
 #include "lorien/mkdirp.h"
 #include "lorien/symlinkp.h"
 #include "logger.h"
+#include "logger/arguments.h"
 #include "fab/ipc.h"
 
 #include "internal.h"
 #include "client.internal.h"
 #include "errtab/FAB.errtab.h"
-#include "sigbank.internal.h"
 #include "request.internal.h"
 #include "response.internal.h"
 #include "identity.internal.h"
 #include "logging.internal.h"
 #include "ipc.internal.h"
 
+#include "sigutil.h"
 #include "memblk.h"
 #include "memblk.def.h"
 #include "macros.h"
@@ -104,14 +107,14 @@ finally:
 coda;
 }
 
-static xapi validate_result(fab_client * const restrict client, int expsig, int actsig)
+static xapi validate_result(fab_client * const restrict client, int expsig, siginfo_t * actual)
 {
   enter;
 
   int exit;
   int fd = -1;
 
-  if(actsig == FABIPC_SIGEND)
+  if(actual->si_signo == FABIPC_SIGEND)
   {
     // check child exit file
     fatal(ixclose, &fd);
@@ -132,7 +135,7 @@ static xapi validate_result(fab_client * const restrict client, int expsig, int 
     fail(FAB_BADIPC);
   }
 
-  fatal(sigbank_assert, expsig, actsig, 0, 0);
+  fatal(sigutil_assert, expsig, 0, actual);
 
 finally:
   fatal(ixclose, &fd);
@@ -152,8 +155,7 @@ API xapi fab_client_create(fab_client ** const restrict client, const char * con
   fatal(xmalloc, client, sizeof(**client));
 
   // canonicalized project path
-  fatal(xrealpaths, 0, space, projdir);
-  fatal(ixstrdup, &(*client)->projdir, space);
+  fatal(xrealpaths, &(*client)->projdir, 0, projdir);
 
   // project path hash
   uint32_t u32 = cksum((*client)->projdir, strlen((*client)->projdir));
@@ -226,10 +228,6 @@ API xapi fab_client_prepare(fab_client * const restrict client)
   // canonical cwd symlink
   fatal(symlinkpf, "%s", "%s/client/cwd", getcwd(space, sizeof(space)), client->ipcdir);
 
-//  snprintf(space, sizeof(space), "%s/client/cwd", client->ipcdir);
-//  fatal(uxunlink, space);
-//  fatal(xsymlink, g_params.cwd, space);
-
   pid = getpid();
 
   // client stdout symlink
@@ -249,33 +247,6 @@ API xapi fab_client_prepare(fab_client * const restrict client)
   if(ss >= 0)
     space[ss] = 0;
   fatal(symlinkpf, "%s", "%s/client/err", space, client->ipcdir);
-
-#if 0
-  snprintf(space2, sizeof(space2), "/proc/%ld/fd/1", (long)pid);
-  ssize_t ss = 0;
-  fatal(xreadlink, space2, space2, sizeof(space2), &ss);
-  if(ss >= sizeof(space2))
-    ss = sizeof(space2) - 1;
-  if(ss >= 0)
-    space2[ss] = 0;
-  snprintf(space, sizeof(space), "%s/client/out", client->ipcdir);
-  fatal(uxunlink, space);
-  fatal(xsymlink, space2, space);
-#endif
-
-#if 0
-  // client stderr symlink
-  snprintf(space2, sizeof(space2), "/proc/%ld/fd/2", (long)pid);
-  ss = 0;
-  fatal(xreadlink, space2, space2, sizeof(space2), &ss);
-  if(ss >= sizeof(space2))
-    ss = sizeof(space2) - 1;
-  if(ss >= 0)
-    space2[ss] = 0;
-  snprintf(space, sizeof(space), "%s/client/err", client->ipcdir);
-  fatal(uxunlink, space);
-  fatal(xsymlink, space2, space);
-#endif
 
   // client pid file
   snprintf(space, sizeof(space), "%s/client/pid", client->ipcdir);
@@ -309,8 +280,13 @@ API xapi fab_client_launchp(fab_client * const restrict client)
 {
   enter;
 
+  sigset_t sigs;
+  sigset_t oset;
   int token = 0;
+  char ** argv = 0;
   int r;
+  int i;
+  int x;
 
   // attempt to get the fabd lock
   while(1)
@@ -339,15 +315,18 @@ API xapi fab_client_launchp(fab_client * const restrict client)
   if(client->pgid)
     goto XAPI_FINALIZE;
 
-  fatal(identity_assume_effective);
+  // cleanup the directory
+  fatal(uxunlinkf, "%s/fabd/exit", client->ipcdir);
+  fatal(uxunlinkf, "%s/fabd/core", client->ipcdir);
+  fatal(uxunlinkf, "%s/fabd/trace", client->ipcdir);
+
+  // block signals
+  sigfillset(&sigs);
+  fatal(xpthread_sigmask, SIG_SETMASK, &sigs, &oset);
+
   fatal(xfork, &client->pgid);
   if(client->pgid == 0)
   {
-    // cleanup the directory
-    fatal(uxunlinkf, "%s/fabd/exit", client->ipcdir);
-    fatal(uxunlinkf, "%s/fabd/core", client->ipcdir);
-    fatal(uxunlinkf, "%s/fabd/trace", client->ipcdir);
-
     // create new session/process group
     fatal(xsetsid);
 
@@ -359,21 +338,26 @@ API xapi fab_client_launchp(fab_client * const restrict client)
     if(client->pgid != 0)
       exit(0);
 
-    char * argv[] = {
-#if DEVEL
-        "fabw.devel"
-#else
-        "fabw"
-#endif
-      , client->hash, (void*)0
-    };
+    // core file goes in cwd
+    fatal(xchdirf, "%s/fabd", client->ipcdir);
+
+    fatal(xmalloc, &argv, sizeof(*argv) * (g_logc + g_ulogc + 3));
+    i = 0;
+    argv[i++] = "fabw";
+    argv[i++] = client->hash;
+
+    for(x = 0; x < g_logc; x++)
+      argv[i++] = g_logv[x];
+
+    for(x = 0; x < g_ulogc; x++)
+      argv[i++] = g_ulogv[x];
 
 #if DEVEL
+    argv[0] = "fabw.devel";
     fatal(log_start, L_IPC, &token);
     logf(0, "execv(");
     logs(0, client->fabw_path ?: "fabw");
-    int x;
-    for(x = 0; x < sentinel(argv); x++)
+    for(x = 0; x < i; x++)
     {
       logs(0, ",");
       logs(0, argv[x]);
@@ -383,26 +367,29 @@ API xapi fab_client_launchp(fab_client * const restrict client)
 #endif
 
     if(client->fabw_path)
-      fatal(execv, client->fabw_path, argv);
+      fatal(xexecv, client->fabw_path, argv);
     else
-      fatal(execvp, "fabw", argv);
+      fatal(xexecvp, "fabw", argv);
   }
 
-  // await ready signal from the child
-#if DEVEL
-//logf(L_IPC, "client waiting to receive ACK(%d)", FABIPC_SIGACK);
-#endif
-  int actsig;
-  fatal(sigbank_receive, &actsig, 0);
-#if DEVEL
-//logf(L_IPC, "client received %d", actsig);
-#endif
-  fatal(identity_assume_real);
+  fatal(xpthread_sigmask, SIG_SETMASK, &oset, 0);
 
-  fatal(validate_result, client, FABIPC_SIGACK, actsig);
+  // await ready signal from the child
+  sigfillset(&sigs);
+  siginfo_t info;
+  while(1)
+  {
+    fatal(sigutil_wait, &sigs, &info);
+    if(info.si_signo == SIGCHLD)
+      continue;
+    break;
+  }
+  fatal(identity_assume_real);
+  fatal(validate_result, client, FABIPC_SIGACK, &info);
 
 finally:
   fatal(log_finish, &token);
+  wfree(argv);
 coda;
 }
 
@@ -418,7 +405,7 @@ API xapi fab_client_make_request(fab_client * const restrict client, memblk * co
   void * shmaddr = 0;
 
 #if DEBUG || DEVEL
-  fatal(log_start, L_IPC, &token);
+  fatal(log_start, L_PROTOCOL, &token);
   logs(0, "request ");
   fatal(fab_request_say, request, log_narrator(&token));
   fatal(log_finish, &token);
@@ -441,9 +428,11 @@ API xapi fab_client_make_request(fab_client * const restrict client, memblk * co
   memblk_copyto(mb, shmaddr, memblk_size(mb));
 
   // awaken fabd and await response
-  int actsig;
-  fatal(sigbank_exchange, FABIPC_SIGSYN, -client->pgid, &actsig, 0);
-  fatal(validate_result, client, FABIPC_SIGACK, actsig);
+  sigset_t sigs;
+  sigfillset(&sigs);
+  siginfo_t info;
+  fatal(sigutil_exchange, FABIPC_SIGSYN, -client->pgid, &sigs, &info);
+  fatal(validate_result, client, FABIPC_SIGACK, &info);
 
   // destroy the request
   fatal(ixshmdt, &shmaddr);
@@ -459,13 +448,14 @@ API xapi fab_client_make_request(fab_client * const restrict client, memblk * co
   fab_response_thaw(response, shmaddr);
 
 #if DEBUG || DEVEL
-  fatal(log_start, L_IPC, &token);
+  fatal(log_start, L_PROTOCOL, &token);
   logs(0, "response ");
   fatal(fab_response_say, response, log_narrator(&token));
   fatal(log_finish, &token);
 #endif
 
   // unblock fabd
+//printf("%10s (%d) : tx : %s (%d) -> %d\n", "client", gettid(), FABIPC_SIGNAME(FABIPC_SIGACK), FABIPC_SIGACK, -client->pgid);
   fatal(xkill, -client->pgid, FABIPC_SIGACK);
 
   if(response->exit)

@@ -127,9 +127,6 @@ static xapi config_unit_setup(xunit_unit * unit)
   fatal(config_setup);
   fatal(logging_setup, 0);
 
-  // logging
-  fatal(logger_finalize);
-
   finally : coda;
 }
 

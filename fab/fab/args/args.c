@@ -50,7 +50,7 @@
 #define restrict __restrict
 
 //
-// [[ public ]]
+// public
 //
 
 xapi args_usage(const command * restrict cmd, int version, int logcats)
@@ -120,7 +120,9 @@ xapi args_parse(const command ** cmd)
   else
     fail(MAIN_NOCOMMAND);
 
-  fatal(xmalloc, &argv, sizeof(*argv) * g_argc);
+  fatal(xmalloc, &argv, sizeof(*argv) * (g_argc - 1));
+
+  argv[argc++] = g_argv[1];
 
   int help = 0;
   int version = 0;
@@ -144,10 +146,13 @@ xapi args_parse(const command ** cmd)
     else if(strcmp(g_argv[x], "logs") == 0)
       logs = 1;
     else
-      continue;
-
-    argv[argc++] = g_argv[x];
+      goto add;
+    continue;
+    add : argv[argc++] = g_argv[x];
   }
+
+  for(; x < g_argc; x++)
+    g_argv[argc++] = g_argv[x];
 
   if(*cmd)
   {
@@ -192,23 +197,11 @@ xapi args_collate(const command * restrict cmd, memblk * restrict mb, fab_reques
 
   fatal(mempolicy_push, memblk_getpolicy(mb), &mpc);
   fatal(fab_request_create, req);
-  fatal(fab_request_config_stagef, *req, "logging.console.filters = [ \"+WARN +INFO\" ]", g_logvs);
+  fatal(fab_request_config_stages, *req, "logging.console.filters = [ \"+WARN +INFO\" ]");
+  if(g_logc)
+    fatal(fab_request_config_stagef, *req, "logging.console.filters += [ \"%s\" ]", g_logvs);
   if(g_ulogc)
     fatal(fab_request_config_stagef, *req, "logging.console.filters += [ \"%s\" ]", g_ulogvs);
-
-  int x;
-  for(x = 0; x < g_logc; x++)
-  {
-    if(strstr(g_logv[x], "ERROR")) { }
-    else if(strstr(g_logv[x], "PARAMS")) { }
-#if DEBUG || DEVEL
-    else if(strstr(g_logv[x], "IPC")) { }
-#endif
-    else
-      continue;
-
-    fatal(fab_request_config_stagef, *req, "logging.console.filters += [ \"%s\" ]", g_logv[x]);
-  }
 
   fatal(cmd->collate, *req, &config_applied);
 

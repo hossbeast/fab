@@ -20,7 +20,8 @@
 
 #include "xapi.h"
 
-struct value;   // libvalue
+struct value;         // libvalue
+struct value_store;
 
 #define CONFIG_QUERY_NOTNULL 0x10000
 
@@ -53,30 +54,12 @@ xapi config_cleanup(void);
 //
 xapi config_report(void);
 
-/// config_files_apply
-//
-// SUMMARY
-//  reload the config files and apply them to the staging config
-//
-xapi config_files_apply(void);
-
-/// config_apply
-//
-// SUMMARY
-//  cumulatively apply additional config to the staging config
-//
-// PARAMETERS
-//  text - configuration text to apply
-//
-xapi config_apply(const char * const restrict text)
-  __attribute__((nonnull));
-
 /// config_reconfigure
 //
 // SUMMARY
-//  promoate the staging config to the active config, reconfigure subsystems, and call config_report
+//  promote the staging config to the active config, reconfigure subsystems, and call config_report
 //
-xapi config_reconfigure(xapi * restrict res)
+xapi config_reconfigure(void)
   __attribute__((nonnull));
 
 /// config_query
@@ -96,6 +79,13 @@ xapi config_reconfigure(xapi * restrict res)
 //                   CONFIG_QUERY_NOTNULL, and the query did not match any value
 //
 xapi config_query(const struct value * restrict base, const char * restrict path, const char * restrict query, uint32_t opts, struct value ** const restrict val)
+  __attribute__((nonnull));
+
+///
+//
+//
+//
+xapi config_promote(struct value_store * store_staging, struct value * config_staging)
   __attribute__((nonnull));
 
 /// config_throw

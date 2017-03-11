@@ -20,6 +20,7 @@
 #include "logger.h"
 #include "logger/stream.h"
 #include "logger/filter.h"
+#include "logger/arguments.h"
 #include "value.h"
 #include "value/query.h"
 #include "valyria/list.h"
@@ -27,29 +28,38 @@
 #include "fab/ipc.h"
 
 #include "logging.h"
+#include "reconfigure.h"
 #include "config.h"
 #include "config_cursor.h"
-#include "errtab/CONFIG.errtab.h"
+#include "CONFIG.errtab.h"
 
 #include "macros.h"
 
 logger_category * categories = (logger_category []) {
+#if DEBUG || DEVEL || XAPI
+    { name : "IPC"      , description : "signal-exchange" }
+  , { name : "PROTOCOL" , description : "request/response exchange" }
+  ,
+#endif
     { name : "ERROR"    , description : "fatal errors", attr : L_RED }
   , { name : "WARN"     , description : "non-fatal errors", attr : L_YELLOW }
   , { name : "INFO"     , description : "high-level summary of actions" }
   , { name : "CONFIG"   , description : "configuration" }
   , { name : "PARAMS"   , description : "runtime parameters" }
   , { name : "USAGE"    , description : "resource usage reports" }
-#if DEBUG || DEVEL || XAPI
-  , { name : "IPC"      , description : "signal-exchange" }
-#endif
+
+  , { name : "NOTIFY"   , description : "fabd/notify thread" }
+  , { name : "SERVER"   , description : "fabd/server thread" }
+  , { name : "SWEEPER"  , description : "fabd/sweeper thread" }
+  , { name : "MONITOR"  , description : "fabd/monitor thread" }
+  , { name : "FABD"     , description : "fabd" }
   , { }
 };
 
 logger_stream * streams = (logger_stream []) {
-    { name : "console"  , type : LOGGER_STREAM_FD , expr : "+ERROR +WARN +INFO", attr : L_PROCESSID | L_CATEGORY
+    { name : "console"  , type : LOGGER_STREAM_FD , expr : "+ERROR +WARN +INFO", attr : L_PROCESSID
       , fd : 1 }
-  , { name : "logfile"  , type : LOGGER_STREAM_ROLLING, expr : "+ALL", attr : L_DATESTAMP | L_CATEGORY  | L_NOCOLOR
+  , { name : "logfile"  , type : LOGGER_STREAM_ROLLING, expr : "+ALL%", attr : L_DATESTAMP | L_CATEGORY  | L_NOCOLOR | L_PROCESSID
       , file_mode : FABIPC_MODE_DATA, threshold : 1024 * 1024, max_files : 10, path_base : (char[256]) { } }
   , { }
 };
@@ -57,8 +67,9 @@ logger_stream * streams = (logger_stream []) {
 // while misconfigured, log any messages to stderr
 int g_logger_default_stderr = 1;
 
-// process name for L_PROCESSID
-char * g_logger_process_name = "fabd";
+#if DEBUG || DEVEL
+int g_logging_skip_reconfigure;
+#endif
 
 xapi logging_setup(uint32_t hash)
 {
@@ -72,11 +83,12 @@ xapi logging_setup(uint32_t hash)
   }
 
   fatal(logger_category_register, categories);
+  fatal(logger_finalize);
 
   finally : coda;
 }
 
-xapi logging_reconfigure(const value * restrict config, uint32_t dry)
+xapi logging_reconfigure(reconfigure_context * ctx, const value * restrict config, uint32_t dry)
 {
   enter;
 
@@ -86,6 +98,11 @@ xapi logging_reconfigure(const value * restrict config, uint32_t dry)
   int x;
 
   fatal(config_cursor_init, &cursor);
+
+#if DEBUG || DEVEL
+  if(g_logging_skip_reconfigure)
+    goto XAPI_FINALIZE;
+#endif
 
   if(!dry)
     fatal(logger_filter_clear, streams[0].id);
@@ -114,6 +131,7 @@ xapi logging_reconfigure(const value * restrict config, uint32_t dry)
     }
   }
 
+#if 0
   if(!dry)
     fatal(logger_filter_clear, streams[1].id);
 
@@ -128,12 +146,13 @@ xapi logging_reconfigure(const value * restrict config, uint32_t dry)
       fatal(config_query, list, config_cursor_path(&cursor), config_cursor_query(&cursor), VALUE_TYPE_STRING & dry, &val);
 
       if(dry && !logger_filter_validates(val->s->s))
-        fatal(config_throw, CONFIG_INVALID, val, config_cursor_path(&cursor));
+        fatal(reconfigure_throw, CONFIG_INVALID, val, config_cursor_path(&cursor));
 
       if(!dry)
         fatal(logger_filter_pushs, streams[1].id, val->s->s);
     }
   }
+#endif
 
 finally:
   config_cursor_destroy(&cursor);

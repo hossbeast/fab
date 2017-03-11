@@ -15,7 +15,13 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-1 BADIPC      ipc failure
-2 EXEPERMS    fabd executable must be owned by fabsys:fabsys and have ug+s permissions
-3 EXCL        fabd already running
-4 UNSATISFIED unsatisfied dependencies
+#ifndef _MONITOR_THREAD_H
+#define _MONITOR_THREAD_H
+
+#include "xapi.h"
+
+#define restrict __restrict
+
+xapi monitor_thread(void);
+
+#endif

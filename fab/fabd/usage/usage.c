@@ -35,7 +35,7 @@ xapi usage_report()
 {
   enter;
 
-  char space[64];
+  char space[64] = {};
   int fd = -1;
   int token = 0;
 

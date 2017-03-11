@@ -15,7 +15,18 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-1 BADIPC      ipc failure
-2 EXEPERMS    fabd executable must be owned by fabsys:fabsys and have ug+s permissions
-3 EXCL        fabd already running
-4 UNSATISFIED unsatisfied dependencies
+#ifndef _SWEEPER_THREAD_H
+#define _SWEEPER_THREAD_H
+
+#include "xapi.h"
+
+xapi sweeper_thread_setup(void);
+
+xapi sweeper_thread_cleanup(void);
+
+xapi sweeper_thread_launch(void);
+
+xapi sweeper_thread_enqueue(int wd, uint32_t m, const char * restrict name, size_t namel)
+  __attribute__((nonnull));
+
+#endif

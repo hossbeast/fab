@@ -18,35 +18,40 @@
 #include "xapi.h"
 
 #include "logger/stream.h"
+#include "logger/config.h"
 
 #include "logging.h"
 
 logger_category * categories = (logger_category[]) {
-    { name : "ERROR" , description : "errors leading to shutdown" }
-  , { name : "ARGS"  , description : "program arguments report" }
-  , { name : "PARAMS", description : "program parameters report" }
-#if DEBUG || DEVEL
-  , { name : "IPC"   , description : "signal-exchange" }
+#if DEBUG || DEVEL || XAPI
+    { name : "IPC"        , description : "signal-exchange" }
+  ,
 #endif
+    { name : "ERROR"      , description : "errors leading to shutdown", attr : L_RED }
+  , { name : "ARGS"       , description : "program arguments report" }
+  , { name : "PARAMS"     , description : "program parameters report" }
+  , { name : "FAB"        , description : "fab client" }
   , { }
 };
 
 logger_stream * streams = (logger_stream []) {
-    { name : "console"  , type : LOGGER_STREAM_FD , fd : 1  , expr : "+ERROR", attr : L_PROCESSID | L_CATEGORY }
+    { name : "console"  , type : LOGGER_STREAM_FD , fd : 1  , expr : "+ERROR", attr : L_PROCESSID }
   , { }
 };
 
 // while misconfigured, log any messages to stderr
 int g_logger_default_stderr = 1;
 
-char * g_logger_process_name = "fab";
-
-xapi logging_setup()
+xapi logging_setup(char ** envp)
 {
   enter;
 
   fatal(logger_category_register, categories);
   fatal(logger_stream_register, streams);
+  fatal(logger_arguments_setup, envp);
+  fatal(logger_finalize);
+  logger_set_process_name("fab");
+  logger_set_process_categories(L_FAB);
 
   finally : coda;
 }

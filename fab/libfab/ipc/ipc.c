@@ -34,21 +34,22 @@ API xapi ipc_lock_obtain(pid_t * pgid, char * const restrict fmt, ...)
   enter;
 
   ssize_t bytes;
-  char space[512];
   int fd = -1;
 
   va_list va;
   va_start(va, fmt);
-  vsnprintf(space, sizeof(space), fmt, va);
+
+  va_list va2;
+  va_copy(va2, va);
 
   // initialize the return value
   *pgid = -1;
 
   // create the pidfile
-  fatal(uxopen_modes, &fd, O_CREAT | O_WRONLY | O_EXCL, FABIPC_MODE_DATA, space);
+  fatal(uxopen_modevf, &fd, O_CREAT | O_WRONLY | O_EXCL, FABIPC_MODE_DATA, fmt, va2);
   if(fd == -1)
   {
-    fatal(xopens, &fd, O_RDONLY, space);
+    fatal(xopenvf, &fd, O_RDONLY, fmt, va);
     fatal(xread, fd, pgid, sizeof(*pgid), &bytes);
     if(bytes != sizeof(*pgid))
       *pgid = -1;
@@ -61,8 +62,9 @@ API xapi ipc_lock_obtain(pid_t * pgid, char * const restrict fmt, ...)
   }
 
 finally:
-  xapi_infos("path", space);
   fatal(ixclose, &fd);
+  va_end(va2);
+  va_end(va);
 coda;
 }
 
@@ -70,15 +72,12 @@ API xapi ipc_lock_update(char * const restrict fmt, ...)
 {
   enter;
 
-  char space[512];
   int fd = -1;
-
   va_list va;
   va_start(va, fmt);
-  vsnprintf(space, sizeof(space), fmt, va);
 
   // write our pgid to the lockfile
-  fatal(xopens, &fd, O_WRONLY, space);
+  fatal(xopenvf, &fd, O_WRONLY, fmt, va);
   fatal(axwrite, fd, (pid_t[]) { getpgid(0) }, sizeof(pid_t));
 
 finally:

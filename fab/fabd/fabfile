@@ -25,7 +25,7 @@
 $copts = [
   [ -DFABVERSIONS="\""$VERSIONS"\"" ~ j ]
   [ -DFABVERSIONN="\""$VERSIONN"\"" ~ j ]
-  [ [ $* ~ lsr c -d ] $dlibxapi $dlibxlinux $dliblistwise $dlibvalyria $dlibvalue $dliblogger $dlibnarrator $dlibfab $dliblorien $dlibyyutil ~ s/^/-I ]
+  [ [ $* ~ lsr c -d ] $dlibxapi $dlibxlinux $dlibvalyria $dlibvalue $dliblogger $dlibnarrator $dlibfab $dliblorien $dlibmoria $dlibyyutil ~ s/^/-I ]
 ]
 
 $params = [
@@ -48,14 +48,17 @@ $cflags_xapi_devel = [ $cflags_xapi_devel $copts $params_devel ]
 $cflags_xapi_xunit = [ $cflags_xapi_xunit $copts -fPIC ]
 
 $rpath = [
-  [ $dlibxapi $dlibxlinux $dliblistwise $dlibvalyria $dlibvalue $dliblogger $dlibxunit $dlibnarrator $dlibfab $dliblorien $dlibyyutil ~ [ ?{ [ rb{$*} ~ j ] "s{^}{'-Wl,-rpath,$ORIGIN/}" "s{$}{'}" ~ fi ] ]
+  [ $dlibxapi $dlibxlinux $dlibvalyria $dlibvalue $dliblogger $dlibxunit $dlibnarrator $dlibfab $dliblorien $dlibmoria $dlibyyutil ~ [ ?{ [ rb{$*} ~ j ] "s{^}{'-Wl,-rpath,$ORIGIN/}" "s{$}{'}" ~ fi ] ]
 ]
 
 # -lrt required for glibc < 2.17 as per man clock_gettime
-$lopts             = [ -lrt ]
-$lflags_xapi_final = [ $lflags_xapi_final $lopts $libxapi_xapi_final $libxlinux_xapi_final $liblistwise_xapi_final $libvalyria_xapi_final $libvalue_xapi_final $liblogger_xapi_final $libnarrator_xapi_final $liblorien_xapi_final $libfab_xapi_final $libyyutil_xapi_final ]
-$lflags_xapi_debug = [ $lflags_xapi_debug $lopts $libxapi_xapi_debug $libxlinux_xapi_debug $liblistwise_xapi_debug $libvalyria_xapi_debug $libvalue_xapi_debug $liblogger_xapi_debug $libnarrator_xapi_debug $liblorien_xapi_debug $libfab_xapi_debug $libyyutil_xapi_debug ]
-$lflags_xapi_devel = [ $lflags_xapi_devel $lopts $libxapi_xapi_devel $libxlinux_xapi_devel $liblistwise_xapi_devel $libvalyria_xapi_devel $libvalue_xapi_devel $liblogger_xapi_devel $libnarrator_xapi_devel $liblorien_xapi_devel $libfab_xapi_devel $libyyutil_xapi_devel $rpath ]
+$lopts             = [ -lrt -lpthread ]
+$lflags_xapi_final = [ $lflags_xapi_final $lopts $libxapi_xapi_final $libxlinux_xapi_final $libvalyria_xapi_final $libvalue_xapi_final $liblogger_xapi_final
+$libnarrator_xapi_final $liblorien_xapi_final $libmoria_xapi_final $libfab_xapi_final $libyyutil_xapi_final ]
+$lflags_xapi_debug = [ $lflags_xapi_debug $lopts $libxapi_xapi_debug $libxlinux_xapi_debug $libvalyria_xapi_debug $libvalue_xapi_debug $liblogger_xapi_debug
+$libnarrator_xapi_debug $liblorien_xapi_debug $libmoria_xapi_debug $libfab_xapi_debug $libyyutil_xapi_debug ]
+$lflags_xapi_devel = [ $lflags_xapi_devel $lopts $libxapi_xapi_devel $libxlinux_xapi_devel $libvalyria_xapi_devel $libvalue_xapi_devel $liblogger_xapi_devel
+$libnarrator_xapi_devel $liblorien_xapi_devel $libmoria_xapi_devel $libfab_xapi_devel $libyyutil_xapi_devel $rpath ]
 
 # standard files - standard compilation
 +[@std.c]($dext = [ xapi.final.o ]; $rdirs = $*; $cc; $cflags = $cflags_xapi_final)
@@ -98,9 +101,9 @@ $lflags_xapi_devel = [ $lflags_xapi_devel $lopts $libxapi_xapi_devel $libxlinux_
 # executables
 #  -export-dynamic enables dloaded code (in particular, the fab-specific operator so's) to bind to symbols in the executable.
 #
-[ $fabd_final ] :^ [ $libxapi_xapi_final $libxlinux_xapi_final $liblistwise_xapi_final $libvalyria_xapi_final $libvalue_xapi_final $liblogger_xapi_final $libnarrator_xapi_final $liblorien_xapi_final $libfab_xapi_final ]
-[ $fabd_debug ] :^ [ $libxapi_xapi_debug $libxlinux_xapi_debug $liblistwise_xapi_debug $libvalyria_xapi_debug $libvalue_xapi_debug $liblogger_xapi_debug $libnarrator_xapi_debug $liblorien_xapi_debug $libfab_xapi_debug ]
-[ $fabd_devel ] :^ [ $libxapi_xapi_devel $libxlinux_xapi_devel $liblistwise_xapi_devel $libvalyria_xapi_devel $libvalue_xapi_devel $liblogger_xapi_devel $libnarrator_xapi_devel $liblorien_xapi_devel $libfab_xapi_devel ]
+[ $fabd_final ] :^ [ $libxapi_xapi_final $libxlinux_xapi_final $libvalyria_xapi_final $libvalue_xapi_final $liblogger_xapi_final $libnarrator_xapi_final $libmoria_xapi_final $liblorien_xapi_final $libfab_xapi_final ]
+[ $fabd_debug ] :^ [ $libxapi_xapi_debug $libxlinux_xapi_debug $libvalyria_xapi_debug $libvalue_xapi_debug $liblogger_xapi_debug $libnarrator_xapi_debug $libmoria_xapi_debug $liblorien_xapi_debug $libfab_xapi_debug ]
+[ $fabd_devel ] :^ [ $libxapi_xapi_devel $libxlinux_xapi_devel $libvalyria_xapi_devel $libvalue_xapi_devel $liblogger_xapi_devel $libnarrator_xapi_devel $libmoria_xapi_devel $liblorien_xapi_devel $libfab_xapi_devel ]
 
 [ $fabd_final ] : [[ $*/main.xapi.final.o ~ j ] ]
 {
@@ -154,9 +157,9 @@ $lflags_xapi_devel = [ $lflags_xapi_devel $lopts $libxapi_xapi_devel $libxlinux_
 # unit tests
 #
 
-[ $* ~ lsr l/test\/test_ sx/c/xapi.xunit.so sy dj shift ] :: [ [ $< ~ sx/so/pic.o ] ]
+[ $* ~ lsr l/test\/test_ sx/c/xapi.xunit.so sy dj shift ] :: [ [ $< ~ sx/so/pic.o ] $libxunit_xapi_devel ]
 {
-  [ $cc ] [ $cflags -shared ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw lx/o uu fi ]
+  [ $cc ] [ $cflags -shared ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw lx/o uu fi ] [ $libxunit_xapi_devel ]
 }
 
 [ @test ] : [ [ $* ~ lsr l/test\/test_ sx/c/xapi.xunit.so sy ] $xunit_xapi_devel ]
@@ -164,7 +167,7 @@ $lflags_xapi_devel = [ $lflags_xapi_devel $lopts $libxapi_xapi_devel $libxlinux_
   (
     [ $valgrind_runner ] [ $xunit_xapi_devel ] [
     ] [ $libxlinux_xapi_devel $libvalyria_xapi_devel $libyyutil_xapi_devel $libvalue_xapi_devel ~ fi ] [
-    ] [ $liblogger_xapi_devel $libnarrator_xapi_devel $liblorien_xapi_devel $libfab_xapi_devel ~ fi ] [
+    ] [ $liblogger_xapi_devel $libnarrator_xapi_devel $liblorien_xapi_devel $libmoria_xapi_devel $libfab_xapi_devel ~ fi ] [
     ] [ $@ ~ rx/ineed lx/so fi ] +UNIT
   ) | tee /dev/fd/501
   > exit ${PIPESTATUS[0]}
@@ -175,7 +178,7 @@ $lflags_xapi_devel = [ $lflags_xapi_devel $lopts $libxapi_xapi_devel $libxlinux_
   (
     [ $xunit_xapi_devel ] [
     ] [ $libxlinux_xapi_devel $libvalyria_xapi_devel $libyyutil_xapi_devel $libvalue_xapi_devel ~ fi ] [
-    ] [ $liblogger_xapi_devel $libnarrator_xapi_devel $liblorien_xapi_devel $libfab_xapi_devel ~ fi ] [
+    ] [ $liblogger_xapi_devel $libnarrator_xapi_devel $liblorien_xapi_devel $libmoria_xapi_devel $libfab_xapi_devel ~ fi ] [
     ] [ $@ ~ rx/ineed lx/so fi ] +UNIT
   ) | tee /dev/fd/501
   > exit ${PIPESTATUS[0]}

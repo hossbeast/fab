@@ -15,13 +15,7 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#include <sys/types.h>
-#include <unistd.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <getopt.h>
-#include <stdarg.h>
+#include <inttypes.h>
 
 #include "xapi.h"
 #include "xapi/SYS.errtab.h"
@@ -29,6 +23,7 @@
 #include "xlinux/xstring.h"
 #include "xlinux/xfcntl.h"
 #include "xlinux/xunistd.h"
+#include "xlinux/xpwd.h"
 #include "logger.h"
 
 #include "internal.h"
@@ -49,10 +44,13 @@ xapi params_setup(uint32_t hash)
 
   char space[512];
 
+  struct passwd * pwd;
+  uid_t ruid;
+
   g_params.pid = getpid();
   g_params.ppid = getppid();
   g_params.pgid = getpgid(0);
-  g_params.projdir_fd = -1;
+  g_params.proj_dirfd = -1;
 
   // exedir is the path to directory containing the executing binary
   ssize_t r = 0;
@@ -76,10 +74,18 @@ xapi params_setup(uint32_t hash)
   // page size
   g_params.pagesize = sysconf(_SC_PAGESIZE);
 
-  snprintf(space, sizeof(space), "%s/%x", XQUOTE(FABIPCDIR), hash);
+  snprintf(space, sizeof(space), "%s/%"PRIx32, XQUOTE(FABIPCDIR), hash);
   fatal(ixstrdup, &g_params.ipcdir, space);
 
-  fatal(xopenf, &g_params.projdir_fd, O_PATH | O_DIRECTORY, "%s/projdir", space);
+  fatal(xrealpathf, &g_params.proj_dir, 0, "%s/%"PRIx32"/projdir", XQUOTE(FABIPCDIR), hash);
+  fatal(xopens, &g_params.proj_dirfd, O_PATH | O_DIRECTORY, g_params.proj_dir);
+
+  // get real user identity
+  uid_t __attribute__((unused)) suid;
+  uid_t __attribute__((unused)) euid;
+  fatal(xgetresuid, &ruid, &euid, &suid);
+  fatal(xgetpwuid, ruid, &pwd);
+  fatal(ixstrdup, &g_params.homedir, pwd->pw_dir);
 
   finally : coda;
 }
@@ -90,7 +96,9 @@ xapi params_cleanup()
 
   iwfree(&g_params.exedir);
   iwfree(&g_params.ipcdir);
-  fatal(ixclose, &g_params.projdir_fd);
+  iwfree(&g_params.proj_dir);
+  fatal(ixclose, &g_params.proj_dirfd);
+  iwfree(&g_params.homedir);
 
   finally : coda;
 }
@@ -109,6 +117,7 @@ xapi params_report()
   logf(L_PARAMS, "processors   =%ld"  , g_params.procs);
   logf(L_PARAMS, "pagesize     =%ld"  , g_params.pagesize);
   logf(L_PARAMS, "ipcdir       =%s"   , g_params.ipcdir);
+  logf(L_PARAMS, "homedir      =%s"   , g_params.homedir);
 
   finally : coda;
 }

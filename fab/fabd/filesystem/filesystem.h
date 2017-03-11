@@ -23,28 +23,27 @@
 #include "xapi.h"
 
 struct value;
+struct reconfigure_context;
 
-// filesystme attributes
-#define FILESYSTEM_TABLE(x, y)                                                                  \
-  FILESYSTEM(INVALIDATE_STAT    , 1 , "stat"    , x , y)  /* stat hash (default) */             \
-  FILESYSTEM(INVALIDATE_CONTENT , 2 , "content" , x , y)  /* content hash */                    \
-  FILESYSTEM(INVALIDATE_NOTIFY  , 3 , "notify"  , x , y)  /* filesystem event subscription */   \
-  FILESYSTEM(INVALIDATE_ALWAYS  , 4 , "always"  , x , y)  /* always considered invalid */       \
-  FILESYSTEM(INVALIDATE_NEVER   , 5 , "never"   , x , y)  /* never considered invalid */
-
-#define FILESYSTEM_INVALIDATE_MIN 1
-#define FILESYSTEM_INVALIDATE_MAX 5
+// filesystem attributes
+#define FILESYSTEM_TABLE                                                              \
+  FILESYSTEM(INVALIDATE_STAT    , 1 , "stat")    /* stat hash (default) */            \
+  FILESYSTEM(INVALIDATE_CONTENT , 2 , "content") /* content hash */                   \
+  FILESYSTEM(INVALIDATE_NOTIFY  , 3 , "notify")  /* filesystem event subscription */  \
+  FILESYSTEM(INVALIDATE_ALWAYS  , 4 , "always")  /* always considered invalid */      \
+  FILESYSTEM(INVALIDATE_NEVER   , 5 , "never")   /* never considered invalid */
 
 enum {
-#define FILESYSTEM(a, b, c, x, y) FILESYSTEM_ ## a = UINT32_C(b),
-FILESYSTEM_TABLE(0, 0)
+#define FILESYSTEM(a, b, c) FILESYSTEM_ ## a = UINT32_C(b),
+FILESYSTEM_TABLE
 #undef FILESYSTEM
 };
 
 typedef struct filesystem
 {
-  char *          path;   // canonical path to the root of the filesystem
+  char *          path;   // path to the root of the filesystem, normalized and relative to the project dir
   uint32_t        attrs;  // attributes
+  int             leaf;   // whether there do not exist more specific filesystems under this path
 } filesystem;
 
 #define restrict __restrict
@@ -72,7 +71,7 @@ xapi filesystem_cleanup(void);
 //  config - root of the config tree
 //  dry    - whether to perform a dry-run
 //
-xapi filesystem_reconfigure(const struct value * restrict config, uint32_t dry)
+xapi filesystem_reconfigure(struct reconfigure_context * ctx, const struct value * restrict config, uint32_t dry)
   __attribute__((nonnull));
 
 /// filesystem_lookup
@@ -81,10 +80,10 @@ xapi filesystem_reconfigure(const struct value * restrict config, uint32_t dry)
 //  get the filesystem configuration for the specified path
 //
 // PARAMETERS
-//  path - canonical path
+//  path - normalized path relative to the project dir
 //  fs   - (returns) filesystem
 //
-xapi filesystem_lookup(char * const restrict path, filesystem ** const restrict fs)
+filesystem * filesystem_lookup(const char * const restrict path)
   __attribute__((nonnull));
 
 #undef restrict

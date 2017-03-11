@@ -15,9 +15,19 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef _FAB_SIGBANK_INTERNAL_H
-#define _FAB_SIGBANK_INTERNAL_H
+#ifndef _NOTIFY_THREAD_H
+#define _NOTIFY_THREAD_H
 
-#include "sigbank.h"
+#include "xapi.h"
+
+struct node;
+
+#define restrict __restrict
+
+xapi notify_thread_setup(void);
+xapi notify_thread_cleanup(void);
+xapi notify_thread_launch(void);
+xapi notify_thread_watch(struct node * restrict n)
+  __attribute__((nonnull));
 
 #endif

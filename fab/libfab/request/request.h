@@ -116,6 +116,9 @@ xapi fab_request_inspect(fab_request * restrict req, const char * restrict text)
 xapi fab_request_query(fab_request * restrict req, const char * restrict text)
   __attribute__((nonnull));
 
+xapi fab_request_config_stages(fab_request * restrict req, const char * restrict s)
+  __attribute__((nonnull(1, 2)));
+
 xapi fab_request_config_stagef(fab_request * restrict req, const char * restrict fmt, ...)
   __attribute__((nonnull(1, 2)));
 

@@ -15,7 +15,14 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-1 BADIPC      ipc failure
-2 EXEPERMS    fabd executable must be owned by fabsys:fabsys and have ug+s permissions
-3 EXCL        fabd already running
-4 UNSATISFIED unsatisfied dependencies
+#ifndef _INOTIFY_MASK
+#define _INOTIFY_MASK
+
+#include <stdint.h>
+
+#include "xapi.h"
+
+xapi inotify_mask_say(uint32_t mask, narrator * const restrict N)
+  __attribute__((nonnull));
+
+#endif

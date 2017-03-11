@@ -15,21 +15,26 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef _TMP_H
-#define _TMP_H
+#ifndef _WALKER_H
+#define _WALKER_H
 
+#include <fcntl.h>
 #include "xapi.h"
+
+struct node;
 
 #define restrict __restrict
 
-/// tmp_cleanup
+/// walker_walk
 //
 // SUMMARY
-//  delete directory entries in the tmp dir that have expired
 //
 // PARAMETERS
-//  pid - delete directory for this pid even if it has not yet expired
+//  [root]   - 
+//  ancestor - 
+//  path     - 
 //
-xapi tmp_cleanup(pid_t * const restrict pids, size_t pidsl);
+xapi walker_walk(struct node ** restrict root, struct node * restrict ancestor, const char * restrict path)
+  __attribute__((nonnull(1,3)));
 
 #endif

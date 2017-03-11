@@ -59,6 +59,7 @@ static xapi build_usage_say(narrator * restrict N)
 "\n"
 "----------- [ options ] ------------------------------------------------------------------\n"
 "\n"
+" --target                      foo\n"
 " --dryrun                      foo\n"
 " --exact                       foo\n"
 " --nofile                      foo\n"
@@ -151,6 +152,8 @@ static xapi build_command_say(narrator * N)
     says(" --exact");
   else if(args.target_mode == FAB_ATTR_TARGET_NOFILE)
     says(" --nofile");
+  else
+    says(" --target");
 
   if(args.force_mode == FORCE_TARGETS)
     says(" --force");

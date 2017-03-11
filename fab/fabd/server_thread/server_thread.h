@@ -15,16 +15,25 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef _SERVER_H
-#define _SERVER_H
+#ifndef _SERVER_THREAD_H
+#define _SERVER_THREAD_H
 
 /*
 
 */
 
-#include <sys/types.h>
-
 #include "xapi.h"
+
+#if DEBUG || DEVEL
+// dont acknowledge the client if true
+int g_server_no_acknowledge;
+#endif
+
+#define restrict __restrict
+
+xapi server_thread_launch(void);
+
+#if 0
 
 struct fab_request;
 struct fab_response;
@@ -42,8 +51,6 @@ typedef struct fab_server
   int       client_cwd_dirfd;
 } fab_server;
 
-#define restrict __restrict
-
 /// server_create
 //
 // SUMMARY
@@ -52,51 +59,52 @@ typedef struct fab_server
 // PARAMETERS
 //  server - (returns) server instance
 //
-xapi fab_server_create(fab_server ** const restrict server)
+xapi server_create(fab_server ** const restrict server)
   __attribute__((nonnull));
 
-/// fab_server_xfree
+/// server_xfree
 //
 // SUMMARY
 //
 //
-xapi fab_server_xfree(fab_server * const restrict server);
+xapi server_xfree(fab_server * const restrict server);
 
-xapi fab_server_ixfree(fab_server ** const restrict server)
+xapi server_ixfree(fab_server ** const restrict server)
   __attribute__((nonnull));
 
-/// fab_server_ready
+/// server_ready
 //
 // SUMMARY
 //  notify the client that we are ready to begin processing requests
 //
-xapi fab_server_ready(fab_server * const restrict server)
+xapi server_ready(fab_server * const restrict server)
   __attribute__((nonnull));
 
-xapi fab_server_receive(fab_server * const restrict server, int daemon, struct fab_request ** const restrict req)
+xapi server_receive(fab_server * const restrict server, int daemon, struct fab_request ** const restrict req)
   __attribute__((nonnull));
 
-xapi fab_server_respond(fab_server * const restrict server, struct memblk * const restrict mb, struct fab_response * const restrict response)
+xapi server_respond(fab_server * const restrict server, struct memblk * const restrict mb, struct fab_response * const restrict response)
   __attribute__((nonnull));
 
-xapi fab_server_dispatch(fab_server * const restrict server, struct fab_request * const restrict req, struct memblk * const restrict mb, struct fab_response ** const restrict response)
+xapi server_dispatch(fab_server * const restrict server, struct fab_request * const restrict req, struct memblk * const restrict mb, struct fab_response ** const restrict response)
   __attribute__((nonnull));
 
-/// fab_server_client_cwd_dirfd
+/// server_client_cwd_dirfd
 //
 // SUMMARY
 //  get the file descriptor for the clients cwd
 //
-int fab_server_client_cwd_dirfd(fab_server * const restrict server)
+int server_client_cwd_dirfd(fab_server * const restrict server)
   __attribute__((nonnull));
 
-/// fab_server_project_dirfd
+/// server_project_dirfd
 //
 // SUMMARY
 //  get the file descriptor for the project dir
 //
-int fab_server_project_dirfd(fab_server * const restrict server)
+int server_project_dirfd(fab_server * const restrict server)
   __attribute__((nonnull));
+#endif
 
 #undef restrict
 #endif

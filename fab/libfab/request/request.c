@@ -216,6 +216,20 @@ finally:
 coda;
 }
 
+API xapi fab_request_config_stages(fab_request * restrict req, const char * restrict s)
+{
+  enter;
+
+  fab_command * cmd = 0;
+  fatal(command_creates, &cmd, FAB_COMMAND_CONFIG_STAGE, 0, s);
+  fatal(push, req, cmd);
+  cmd = 0;
+
+finally:
+  command_free(cmd);
+coda;
+}
+
 API xapi fab_request_config_stagef(fab_request * restrict req, const char * restrict fmt, ...)
 {
   enter;

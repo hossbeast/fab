@@ -19,15 +19,20 @@
 #define _FAB_IPC_H
 
 #include <signal.h>
+#include <string.h>
 
 #define FABIPC_SIGSYN   (SIGRTMIN + 0)
 #define FABIPC_SIGACK   (SIGRTMIN + 1)
 #define FABIPC_SIGEND   (SIGRTMIN + 2)
+#define FABIPC_SIGSCH   (SIGRTMIN + 3)
+#define FABIPC_SIGINTR  (SIGRTMIN + 4)
 
 #define FABIPC_SIGNAME(x)                     \
-    (x) == FABIPC_SIGSYN ? "FABIPC_SIGSYN"    \
-  : (x) == FABIPC_SIGACK ? "FABIPC_SIGACK"    \
-  : (x) == FABIPC_SIGEND ? "FABIPC_SIGEND"    \
+    (x) == FABIPC_SIGSYN  ? "FABIPC_SIGSYN"   \
+  : (x) == FABIPC_SIGACK  ? "FABIPC_SIGACK"   \
+  : (x) == FABIPC_SIGEND  ? "FABIPC_SIGEND"   \
+  : (x) == FABIPC_SIGSCH  ? "FABIPC_SIGSCH"   \
+  : (x) == FABIPC_SIGINTR ? "FABIPC_SIGINTR"  \
   : strsignal(x)
 
 #define FABIPC_TOKREQ   0x13
@@ -76,7 +81,7 @@
 //
 // PARAMETERS
 //  pgid  - (returns) zero on success, otherwise pgid of lock holder
-//  fmt   - printf-style format string for the path
+//  fmt   - printf-style format string for the path to the lockfile
 //
 // REMARKS
 //  after the call,
@@ -87,9 +92,25 @@
 xapi ipc_lock_obtain(pid_t * pgid, char * const restrict fmt, ...)
   __attribute__((nonnull(1, 2)));
 
+/// ipc_lock_update
+//
+// SUMMARY
+//  write the pid of the current process to a lockfile
+//
+// PARAMETERS
+//  fmt   - printf-style format string for the path to the lockfile
+//
 xapi ipc_lock_update(char * const restrict fmt, ...)
   __attribute__((nonnull(1)));
 
+/// ipc_lock_release
+//
+// SUMMARY
+//  unlink a lockfile
+//
+// PARAMETERS
+//  fmt   - printf-style format string for the path to the lockfile
+//
 xapi ipc_lock_release(char * const restrict fmt, ...)
   __attribute__((nonnull(1)));
 

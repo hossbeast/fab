@@ -24,11 +24,12 @@
 #include "logging.internal.h"
 
 logger_category * categories = (logger_category []) {
-    { name : "FAB"      , description : "libfab logging" }
 #if DEBUG || DEVEL || XUNIT
-  , { name : "IPC"      , description : "signal-exchange" }
+    { name : "IPC"      , description : "signal-exchange" }
+  , { name : "PROTOCOL" , description : "request/response exchange" }
+  ,
 #endif
-  , { }
+    { }
 };
 
 xapi logging_setup()
