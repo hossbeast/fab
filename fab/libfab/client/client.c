@@ -339,7 +339,7 @@ API xapi fab_client_launchp(fab_client * const restrict client)
   if(client->pgid)
     goto XAPI_FINALIZE;
 
-  fatal(identity_assume_fabsys);
+  fatal(identity_assume_effective);
   fatal(xfork, &client->pgid);
   if(client->pgid == 0)
   {
@@ -397,7 +397,7 @@ API xapi fab_client_launchp(fab_client * const restrict client)
 #if DEVEL
 //logf(L_IPC, "client received %d", actsig);
 #endif
-  fatal(identity_assume_user);
+  fatal(identity_assume_real);
 
   fatal(validate_result, client, FABIPC_SIGACK, actsig);
 

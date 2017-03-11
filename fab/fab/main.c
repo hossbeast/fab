@@ -48,7 +48,6 @@
 #include "logger/arguments.h"
 
 #include "fab/sigbank.h"
-#include "fab/identity.h"
 #include "fab/request.h"
 #include "fab/client.h"
 #include "fab/FAB.errtab.h"

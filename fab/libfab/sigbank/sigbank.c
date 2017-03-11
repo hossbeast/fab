@@ -161,7 +161,7 @@ API xapi sigbank_exchange(int sig, pid_t pid, int * const restrict rsig, pid_t *
   enter;
 
   // assume fabsys identity
-  fatal(identity_assume_fabsys);
+  fatal(identity_assume_effective);
 
   // send signal
   fatal(xkill, pid, sig);
@@ -170,7 +170,7 @@ API xapi sigbank_exchange(int sig, pid_t pid, int * const restrict rsig, pid_t *
   fatal(sigbank_receive, rsig, rpid);
 
   // reassume user identity
-  fatal(identity_assume_user);
+  fatal(identity_assume_real);
 
   finally : coda;
 }

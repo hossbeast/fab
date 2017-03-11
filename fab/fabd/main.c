@@ -37,7 +37,6 @@
 #include "value/load.h"
 
 #include "fab/ipc.h"
-#include "fab/identity.h"
 #include "fab/request.h"
 #include "fab/response.h"
 #include "fab/sigbank.h"
@@ -75,6 +74,7 @@
 #include "memblk.h"
 #include "params.h"
 #include "parseint.h"
+#include "identity.h"
 
 static pid_t fab_pids[3];      // most recent fab pids
 
@@ -185,7 +185,7 @@ int main(int argc, char** argv, char ** envp)
 #endif
 
   // prepare to receive requests
-  fatal(identity_assume_fabsys);
+  fatal(identity_assume_effective);
 
   if(daemon)
     fatal(fab_server_ready, server);
