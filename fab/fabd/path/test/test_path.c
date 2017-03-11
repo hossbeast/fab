@@ -33,11 +33,13 @@ struct path_test;
 typedef struct path_test {
   xunit_test;
   char * input;
+  char * path;
   char * dir;
   char * name;
   char * ext;
   char * suffix;
-  char * path;
+  char * base;
+  char * stem;
 } path_test;
 
 static xapi path_test_entry(path_test * test)
@@ -45,13 +47,15 @@ static xapi path_test_entry(path_test * test)
   enter;
 
   path * p;
-  fatal(path_createf, &p, "%s", test->input);
+  fatal(path_creates, &p, test->input);
 
   assert_eq_w(test->path, istrlen(test->path), p->path, p->pathl);
-  assert_eq_w(test->name, istrlen(test->name), p->name, p->namel);
   assert_eq_w(test->dir, istrlen(test->dir), p->dir, p->dirl);
+  assert_eq_w(test->name, istrlen(test->name), p->name, p->namel);
   assert_eq_w(test->ext, istrlen(test->ext), p->ext, p->extl);
   assert_eq_w(test->suffix, istrlen(test->suffix), p->suffix, p->suffixl);
+  assert_eq_w(test->base, istrlen(test->base), p->base, p->basel);
+  assert_eq_w(test->stem, istrlen(test->stem), p->stem, p->steml);
 
 finally:
   path_free(p);
@@ -72,64 +76,56 @@ xunit_unit xunit = {
         , name : "bar.baz"
         , ext : "baz"
         , suffix : "baz"
+        , base : "bar"
+        , stem : "/foo/bar"
       }}
     , (path_test[]){{
-          input : "foo/bar.baz.qux"
+          input : "./foo/bar.baz.qux"
         , path : "./foo/bar.baz.qux"
         , dir : "./foo"
         , name : "bar.baz.qux"
         , ext : "baz.qux"
         , suffix : "qux"
-      }}
-
-    /* redundant slashes */
-    , (path_test[]){{
-          input : "//foo"
-        , path : "/foo"
-        , dir : "/"
-        , name : "foo"
+        , base : "bar"
+        , stem : "./foo/bar"
       }}
     , (path_test[]){{
-          input : "//foo//bar"
-        , path : "/foo/bar"
-        , dir : "/foo"
-        , name : "bar"
-      }}
-    , (path_test[]){{
-          input : "foo//bar"
-        , path : "./foo/bar"
-        , dir : "./foo"
-        , name : "bar"
+          input : "./foo/bar/baz/qux"
+        , path : "./foo/bar/baz/qux"
+        , dir : "./foo/bar/baz"
+        , name : "qux"
+        , base : "qux"
+        , stem : "./foo/bar/baz/qux"
       }}
 
     /* internal double-dot */
     , (path_test[]){{
-          input : "foo/../bar.qux"
+          input : "./bar.qux"
         , path : "./bar.qux"
         , dir : "."
         , name : "bar.qux"
         , ext : "qux"
         , suffix : "qux"
+        , base : "bar"
+        , stem : "./bar"
       }}
     , (path_test[]){{
-          input : "alpha/omega/../../bar.baz.qux"
+          input : "./bar.baz.qux"
         , path : "./bar.baz.qux"
         , dir : "."
         , name : "bar.baz.qux"
         , ext : "baz.qux"
         , suffix : "qux"
+        , base : "bar"
+        , stem : "./bar"
       }}
     , (path_test[]){{
-          input : "alpha/omega/../../../bar"
+          input : "./../bar"
         , path : "./../bar"
         , dir : "./.."
         , name : "bar"
-      }}
-    , (path_test[]){{
-          input : "./alpha/omega/../../../bar"
-        , path : "./../bar"
-        , dir : "./.."
-        , name : "bar"
+        , base : "bar"
+        , stem : "./../bar"
       }}
 
     /* relative paths */
@@ -140,6 +136,8 @@ xunit_unit xunit = {
         , name : "bar.baz.qux"
         , ext : "baz.qux"
         , suffix : "qux"
+        , base : "bar"
+        , stem : "./bar"
       }}
     , (path_test[]){{
           input : "./../bar.baz.qux"
@@ -148,6 +146,8 @@ xunit_unit xunit = {
         , name : "bar.baz.qux"
         , ext : "baz.qux"
         , suffix : "qux"
+        , base : "bar"
+        , stem : "./../bar"
       }}
 
     /* absolute paths */
@@ -158,32 +158,34 @@ xunit_unit xunit = {
         , name : "baz.c"
         , suffix : "c"
         , ext : "c"
+        , base : "baz"
+        , stem : "/bar/baz"
       }}
     , (path_test[]){{
-          input : "/bar/../baz.c"
+          input : "/baz.c"
         , path : "/baz.c"
         , dir : "/"
         , name : "baz.c"
         , suffix : "c"
         , ext : "c"
+        , base : "baz"
+        , stem : "/baz"
       }}
     , (path_test[]){{
-          input : "/bar/baz/../tez"
+          input : "/bar/tez"
         , path : "/bar/tez"
         , dir : "/bar"
         , name : "tez"
+        , base : "tez"
+        , stem : "/bar/tez"
       }}
     , (path_test[]){{
-          input : "/bar/baz/../../tez"
+          input : "/tez"
         , path : "/tez"
         , dir : "/"
         , name : "tez"
-      }}
-    , (path_test[]){{
-          input : "/bar/baz/../../../tez"
-        , path : "/tez"
-        , dir : "/"
-        , name : "tez"
+        , base : "tez"
+        , stem : "/tez"
       }}
 
     /* nofile cases */
@@ -194,12 +196,16 @@ xunit_unit xunit = {
         , name : "bar.baz.qux"
         , ext : "baz.qux"
         , suffix : "qux"
+        , base : "bar"
+        , stem : "/../bar"
       }}
     , (path_test[]){{
-          input : "/../../bar"
+          input : "/../bar"
         , path : "/../bar"
         , dir : "/.."
         , name : "bar"
+        , base : "bar"
+        , stem : "/../bar"
       }}
 
     /* the root */
@@ -207,11 +213,17 @@ xunit_unit xunit = {
           input : "/"
         , path : "/"
         , dir : "/"
+        , stem : "/"
       }}
+
+    /* immediate paths */
     , (path_test[]){{
-          input : "//"
-        , path : "/"
-        , dir : "/"
+          input : "test"
+        , path : "./test"
+        , dir : "."
+        , name : "test"
+        , base : "test"
+        , stem : "./test"
       }}
     }
 };

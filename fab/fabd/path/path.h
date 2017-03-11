@@ -23,7 +23,6 @@
 #define restrict __restrict
 
 /*
-
 /foo/bar/baz.qux.tez
 ^------------------^  path
 ^------^              dir
@@ -37,30 +36,42 @@
 // immutable
 typedef struct path
 {
-  char *  dir;
-  size_t  dirl;
-  char *  name;
-  size_t  namel;
-  char *  ext;
-  size_t  extl;
-  char *  suffix;
-  size_t  suffixl;
-  size_t  pathl;
-  char    path[];
+  char *    dir;
+  uint16_t  dirl;
+  char *    name;
+  uint16_t  namel;
+  char *    ext;
+  uint16_t  extl;
+  char *    suffix;
+  uint16_t  suffixl;
+  char *    base;
+  uint16_t  basel;
+  char *    stem;
+  uint16_t  steml;
+
+  uint16_t  pathl;
+  char      path[];
 } path;
 
 /// path_create
 //
 // SUMMARY
-//  create path instance from a relative path representation
+//  create path instance from a pre-normalized absolute or relative
 //
 // PARAMETERS
-//  p        - result path object
-//  in_base  - input path is relative to this base
-//  cwd      - canonicalized cwd
-//  fmt      - input path
+//  p  - (returns) path object
 //
+xapi path_creates(path ** const restrict p, const char * const restrict s)
+  __attribute__((nonnull));
+
+xapi path_createw(path ** const restrict p, const char * const restrict buf, size_t bufl)
+  __attribute__((nonnull));
+
 xapi path_createf(path ** const restrict p, const char * const restrict fmt, ...)
+  __attribute__((nonnull))
+  __attribute__((format(printf, 2, 3)));
+
+xapi path_createvf(path ** const restrict p, const char * const restrict fmt, va_list va)
   __attribute__((nonnull));
 
 /// path_free

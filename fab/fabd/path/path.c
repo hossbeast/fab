@@ -34,15 +34,15 @@
 // static
 //
 
-static void getdir(const char * const p, char ** const dir, size_t * dirl)
+static void getdir(char * const restrict p, char ** const restrict dir, uint16_t * restrict dirl)
 {
-  const char * s = p + strlen(p);
+  char * s = p + strlen(p);
   while(s != p && *s != '/')
     s--;
 
   if(s == p && *s == '/')
   {
-    *dir = (void*)p;
+    *dir = p;
     *dirl = 1;
   }
   else if(s == p)
@@ -52,27 +52,28 @@ static void getdir(const char * const p, char ** const dir, size_t * dirl)
   }
   else
   {
-    *dir = (void*)p;
+    *dir = p;
     *dirl = s - p;
   }
 }
 
-static void getname(const char * const p, char ** const name, size_t * namel)
+static void getname(char * const restrict p, char ** const restrict name, uint16_t * restrict namel)
 {
-  const char * s = p + strlen(p);
+  char * e = p + strlen(p);
+  char * s = e;
   while(s != p && *s != '/')
     s--;
 
   if(*s == '/')
     s++;
 
-  *name = (void*)s;
-  *namel = strlen(s);
+  *name = s;
+  *namel = e - s;
 }
 
-static void getext(const char * const p, char ** const ext, size_t * extl)
+static void getext(char * const restrict p, char ** const restrict ext, uint16_t * restrict extl)
 {
-  const char * s = p + strlen(p);
+  char * s = p + strlen(p);
   while(s != p && *s != '/')
     s--;
 
@@ -83,14 +84,14 @@ static void getext(const char * const p, char ** const ext, size_t * extl)
   *extl = 0;
   if(*s == '.')
   {
-    *ext = (void*)s + 1;
+    *ext = s + 1;
     *extl = strlen(s + 1);
   }
 }
 
-static void getsuffix(const char * const p, char ** const suffix, size_t * suffixl)
+static void getsuffix(char * const restrict p, char ** const restrict suffix, uint16_t * restrict suffixl)
 {
-  const char * s = p + strlen(p);
+  char * s = p + strlen(p);
   while(s != p && *s != '/' && *s != '.')
     s--;
 
@@ -98,33 +99,119 @@ static void getsuffix(const char * const p, char ** const suffix, size_t * suffi
   *suffixl = 0;
   if(*s == '.')
   {
-    *suffix = (void*)s + 1;
+    *suffix = s + 1;
     *suffixl = strlen(s + 1);
   }
+}
+
+static void getbase(char * const restrict p, char ** const restrict base, uint16_t * restrict basel)
+{
+  char * e = p + strlen(p);
+  char * s = e;
+  while(s != p && *s != '/')
+    s--;
+
+  if(*s == '/')
+    s++;
+
+  *base = s;
+  while(s != e && *s != '.')
+    s++;
+
+  *basel = s - *base;
+}
+
+static void getstem(char * const restrict p, char ** const restrict stem, uint16_t * restrict steml)
+{
+  char * e = p + strlen(p);
+  char * s = e;
+  while(s != p && *s != '/')
+    s--;
+
+  while(s != e && *s != '.')
+    s++;
+
+  *stem = p;
+  *steml = s - p;
+}
+
+/// path_initialize
+//
+// SUMMARY
+//  compute derived properties
+//
+static void path_initialize(path * const restrict p)
+{
+  getdir(p->path, &p->dir, &p->dirl);
+  getname(p->path, &p->name, &p->namel);
+  getext(p->path, &p->ext, &p->extl);
+  getsuffix(p->path, &p->suffix, &p->suffixl);
+  getbase(p->path, &p->base, &p->basel);
+  getstem(p->path, &p->stem, &p->steml);
 }
 
 //
 // api
 //
 
-xapi path_createf(path ** const p, const char * const fmt, ...)
+xapi path_creates(path ** const restrict p, const char * const restrict s)
+{
+  xproxy(path_createw, p, s, strlen(s));
+}
+
+xapi path_createw(path ** const restrict p, const char * const restrict buf, size_t bufl)
 {
   enter;
 
-  char space[512];
+  if(bufl && buf[0] != '.' && buf[0] != '/')
+  {
+    fatal(xmalloc, p, sizeof(**p) + bufl + 3);
+    memcpy((*p)->path, "./", 2);
+    memcpy((*p)->path + 2, buf, bufl);
+    (*p)->path[bufl + 2] = 0;
+    (*p)->pathl = bufl + 2;
+  }
+  else
+  {
+    fatal(xmalloc, p, sizeof(**p) + bufl + 1);
+    memcpy((*p)->path, buf, bufl);
+    (*p)->path[bufl] = 0;
+    (*p)->pathl = bufl;
+  }
+
+  path_initialize(*p);
+
+  finally : coda;
+}
+
+xapi path_createf(path ** const restrict p, const char * const restrict fmt, ...)
+{
+  enter;
 
   va_list va;
   va_start(va, fmt);
 
-  size_t sz = vsnprintf(space, sizeof(space), fmt, va);
-  fatal(xmalloc, p, sizeof(**p) + sz + 1 + 2);
-  (*p)->pathl = path_normalize((*p)->path, sz + 1 + 2, space);
+  fatal(path_createvf, p, fmt, va);
 
-  // properties
-  getdir((*p)->path, &(*p)->dir, &(*p)->dirl);
-  getname((*p)->path, &(*p)->name, &(*p)->namel);
-  getext((*p)->path, &(*p)->ext, &(*p)->extl);
-  getsuffix((*p)->path, &(*p)->suffix, &(*p)->suffixl);
+finally:
+  va_end(va);
+coda;
+}
+
+xapi path_createvf(path ** const restrict p, const char * const restrict fmt, va_list va)
+{
+  enter;
+
+  va_list va2;
+  va_copy(va2, va);
+
+  int r = vsnprintf(0, 0, fmt, va2);
+  va_end(va2);
+
+  fatal(xmalloc, p, sizeof(**p) + r + 1);
+  vsprintf((*p)->path, fmt, va);
+
+  path_initialize(*p);
 
 finally:
   va_end(va);
