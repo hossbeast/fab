@@ -18,12 +18,17 @@
 #include "xapi.h"
 
 #include "logger/stream.h"
+#include "logger/config.h"
 
 #include "logging.h"
 
 logger_category * categories = (logger_category []) {
-    { name : "ERROR"  , description : "fatal errors" }
-  , { name : "IPC"    , description : "signal-exchange" }
+#if DEBUG || XAPI || DEVEL
+    { name : "IPC"      , description : "signal-exchange" }
+  ,
+#endif
+    { name : "ERROR"    , description : "fatal errors" }
+  , { name : "WATCHER"  , description : "fabw/watcher" }
   , { }
 };
 
@@ -35,14 +40,16 @@ logger_stream * streams = (logger_stream []) {
 // while misconfigured, log any messages to stderr
 int g_logger_default_stderr = 1;
 
-char * g_logger_process_name = "fabw";
-
-xapi logging_setup()
+xapi logging_setup(char ** restrict envp)
 {
   enter;
 
   fatal(logger_category_register, categories);
   fatal(logger_stream_register, streams);
+  fatal(logger_arguments_setup, envp);
+  fatal(logger_finalize);
+  logger_set_process_name("fabw");
+  logger_set_process_categories(L_WATCHER);
 
   finally : coda;
 }

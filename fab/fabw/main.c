@@ -34,12 +34,14 @@
 #include "xapi/trace.h"
 #include "xapi/SYS.errtab.h"
 #include "xlinux/xsignal.h"
+#include "xlinux/xpthread.h"
 #include "xlinux/xunistd.h"
 #include "xlinux/xwait.h"
 #include "xlinux/xfcntl.h"
 #include "narrator.h"
 #include "logger.h"
 #include "logger/arguments.h"
+#include "logger/config.h"
 #include "fab/ipc.h"
 
 #include "logging.h"
@@ -48,13 +50,13 @@
 #include "parseint.h"
 #include "macros.h"
 
-int main(int argc, char ** argv, char ** envp)
+static xapi begin(int argc, char ** argv, char ** envp)
 {
   enter;
 
-  xapi R = 0;
-
-  char space[512];
+#if DEVEL
+  char space[4096];
+#endif
   char * fabd_path = 0;
 
   int token = 0;
@@ -62,19 +64,6 @@ int main(int argc, char ** argv, char ** envp)
   pid_t child_pid = -1;
   pid_t client_pid = -1;
   char hash[9] = { 0 };
-
-  // load libraries
-  fatal(logger_load);
-  fatal(narrator_load);
-  fatal(xlinux_load);
-
-  // logging
-  fatal(logging_setup);
-  fatal(logger_arguments_setup, envp);
-  fatal(logger_finalize);
-
-  // modules
-  fatal(params_setup);
 
   // std file descriptors
   fatal(xclose, 0);
@@ -90,15 +79,6 @@ int main(int argc, char ** argv, char ** envp)
   logs(L_IPC, "started");
 #endif
 
-  // block libfab signals
-  sigset_t app_set;
-  sigemptyset(&app_set);
-  sigaddset(&app_set, FABIPC_SIGSYN);
-  sigaddset(&app_set, FABIPC_SIGACK);
-  sigaddset(&app_set, FABIPC_SIGEND);
-
-  fatal(xsigprocmask, SIG_SETMASK, &app_set, 0);
-
   // fork child
   fatal(xfork, &child_pid);
   if(child_pid == 0)
@@ -108,23 +88,18 @@ int main(int argc, char ** argv, char ** envp)
     fabd_path = space;
 #endif
 
-    char * argv[] = {
-#if DEVEL
-        "fabd.devel"
-#else
-        "fabd"
-#endif
-      , hash, (void*)0
-    };
+    argv[0] = "fabd";
 
 #if DEBUG || DEVEL
+    argv[0] = "fabd.devel";
     fatal(log_start, L_IPC, &token);
     logs(0, "execv(");
     logs(0, fabd_path ?: "fabd");
     int x;
     for(x = 0; x < sentinel(argv); x++)
     {
-      logs(0, ",");
+      if(*argv[x])
+        logs(0, ",");
       logs(0, argv[x]);
     }
     logs(0, ")");
@@ -132,9 +107,9 @@ int main(int argc, char ** argv, char ** envp)
 #endif
 
     if(fabd_path)
-      fatal(execv, fabd_path, argv);
+      fatal(xexecv, fabd_path, argv);
     else
-      fatal(execvp, "fabd", argv);
+      fatal(xexecvp, "fabd", argv);
   }
 
   // suspend execution pending child status change
@@ -166,30 +141,44 @@ int main(int argc, char ** argv, char ** envp)
 finally:
   fatal(log_finish, &token);
 
-#if DEBUG || DEVEL
-  if(log_would(L_IPC))
+  // locals
+  fatal(ixclose, &fd);
+coda;
+}
+
+int main(int argc, char ** argv, char ** envp)
+{
+  enter;
+
+  xapi R;
+  char space[4096];
+
+  // load libraries
+  fatal(logger_load);
+  fatal(narrator_load);
+  fatal(xlinux_load);
+
+  // modules
+  fatal(logging_setup, envp);
+  fatal(params_setup);
+
+  fatal(begin, argc, argv, envp);
+finally:
+  if(XAPI_UNWINDING)
   {
+#if DEBUG || DEVEL || XAPI
     xapi_infos("name", "fabw");
     xapi_infof("pgid", "%ld", (long)getpgid(0));
     xapi_infof("pid", "%ld", (long)getpid());
-    xapi_infos("hash", hash);
-  }
-#endif
+    xapi_infof("tid", "%ld", (long)gettid());
 
-  if(XAPI_UNWINDING)
-  {
-    size_t tracesz;
-#if DEBUG || DEVEL
-    tracesz = xapi_trace_full(space, sizeof(space));
+    xapi_trace_full(space, sizeof(space));
 #else
-    tracesz = xapi_trace_pithy(space, sizeof(space));
+    xapi_trace_pithy(space, sizeof(space));
 #endif
 
-    xlogw(L_ERROR, L_RED, space, tracesz);
+    xlogs(L_ERROR, L_CATEGORY_OFF, space);
   }
-
-  // locals
-  fatal(ixclose, &fd);
 
   // modules
   params_teardown();
@@ -198,7 +187,6 @@ finally:
   fatal(logger_unload);
   fatal(narrator_unload);
   fatal(xlinux_unload);
-
 conclude(&R);
   xapi_teardown();
 
