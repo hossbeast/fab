@@ -122,7 +122,7 @@ static xapi graph_test_entry(graph_test * test)
   }
 
   vertex * v = map_get(vertices, MM(test->from[0]));
-  edge * e = vertex_descend_edgew(v, MM(test->from[1]));
+  edge * e = vertex_descend_edge(v, &test->from[1]);
 
   // perform the traversal
   xapi exit = invoke(graph_traverse_edges

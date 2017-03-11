@@ -37,7 +37,6 @@ struct vertex_cmp_context {
   const char * A;
   const char * B;
   size_t len;
-  size_t off;
 };
 
 int vertex_compare(void * _ctx, const void * _e, size_t idx)

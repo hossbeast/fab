@@ -90,9 +90,9 @@ int vertex_compare(void * _ctx, const void * _e, size_t idx)
   const edge * e = _e;
 
   if(ctx->A)
-    ctx->lc = memncmp(ctx->A, ctx->len, e->A->label + ctx->off, e->A->label_len - ctx->off);
+    ctx->lc = memncmp(ctx->A, ctx->len, e->A->label, e->A->label_len);
   else
-    ctx->lc = memncmp(ctx->B, ctx->len, e->B->label + ctx->off, e->B->label_len - ctx->off);
+    ctx->lc = memncmp(ctx->B, ctx->len, e->B->label, e->B->label_len);
 
   ctx->lx = idx;
   return ctx->lc;
@@ -117,90 +117,32 @@ API vertex * vertex_containerof(void * value)
   return value - offsetof(vertex, value);
 }
 
-API vertex * vertex_ascendw(vertex * const restrict v, const char * const restrict label, size_t label_len)
-{
-  return vertex_ascend_atw(v, 0, label, label_len);
-}
-
-API vertex * vertex_ascends(vertex * const restrict v, const char * const restrict label)
-{
-  return vertex_ascendw(v, label, strlen(label));
-}
-
-API vertex * vertex_ascend_atw(vertex * const restrict v, size_t off, const char * const restrict label, size_t label_len)
+API vertex * vertex_ascend(vertex * const restrict v, const char * const restrict label)
 {
   edge * e;
-  if((e = vertex_ascend_edgew(v, label, label_len)))
+  if((e = vertex_ascend_edge(v, label)))
     return e->A;
+
   return 0;
 }
 
-API vertex * vertex_ascend_ats(vertex * const restrict v, size_t off, const char * const restrict label)
+API edge * vertex_ascend_edge(vertex * const restrict v, const char * const restrict label)
 {
-  return vertex_ascend_atw(v, off, label, strlen(label));
-}
-
-API edge * vertex_ascend_edgew(vertex * const restrict v, const char * const restrict label, size_t label_len)
-{
-  return vertex_ascend_edge_atw(v, 0, label, label_len);
-}
-
-API edge * vertex_ascend_edges(vertex * const restrict v, const char * const restrict label)
-{
-  return vertex_ascend_edgew(v, label, strlen(label));
-}
-
-API edge * vertex_ascend_edge_atw(vertex * const restrict v, size_t off, const char * const restrict label, size_t label_len)
-{
-  struct vertex_cmp_context ctx = { A : label, len : label_len, off : off };
+  struct vertex_cmp_context ctx = { A : label, len : strlen(label) };
   return list_search(v->up, &ctx, vertex_compare);
 }
 
-API edge * vertex_ascend_edge_ats(vertex * const restrict v, size_t off, const char * const restrict label)
-{
-  return vertex_ascend_edge_atw(v, off, label, strlen(label));
-}
-
-API vertex * vertex_descendw(vertex * const restrict v, const char * const restrict label, size_t label_len)
-{
-  return vertex_descend_atw(v, 0, label, label_len);
-}
-
-API vertex * vertex_descends(vertex * const restrict v, const char * const restrict label)
-{
-  return vertex_descendw(v, label, strlen(label));
-}
-
-API vertex * vertex_descend_atw(vertex * const restrict v, size_t off, const char * const restrict label, size_t label_len)
+API vertex * vertex_descend(vertex * const restrict v, const char * const restrict label)
 {
   edge * e;
-  if((e = vertex_descend_edge_atw(v, off, label, label_len)))
+  if((e = vertex_descend_edge(v, label)))
     return e->B;
+
   return 0;
 }
 
-API vertex * vertex_descend_ats(vertex * const restrict v, size_t off, const char * const restrict label)
+API edge * vertex_descend_edge(vertex * const restrict v, const char * const restrict label)
 {
-  return vertex_descend_atw(v, off, label, strlen(label));
-}
-
-API edge * vertex_descend_edgew(vertex * const restrict v, const char * const restrict label, size_t label_len)
-{
-  return vertex_descend_edge_atw(v, 0, label, label_len);
-}
-
-API edge * vertex_descend_edges(vertex * const restrict v, const char * const restrict label)
-{
-  return vertex_descend_edgew(v, label, strlen(label));
-}
-
-API edge * vertex_descend_edge_atw(vertex * const restrict v, size_t off, const char * const restrict label, size_t label_len)
-{
-  struct vertex_cmp_context ctx = { B : label, len : label_len, off : off };
+  struct vertex_cmp_context ctx = { B : label, len : strlen(label) };
   return list_search(v->down, &ctx, vertex_compare);
-}
-
-API edge * vertex_descend_edge_ats(vertex * const restrict v, size_t off, const char * const restrict label)
-{
-  return vertex_descend_edge_atw(v, off, label, strlen(label));
 }

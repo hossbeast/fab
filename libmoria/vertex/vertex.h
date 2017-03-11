@@ -102,28 +102,10 @@ vertex * vertex_containerof(void * value)
 // RETURNS
 //  desired vertex or edge, if any
 //
-vertex * vertex_ascendw(vertex * const restrict v, const char * const restrict label, size_t label_len)
+vertex * vertex_ascend(vertex * const restrict v, const char * const restrict label)
   __attribute__((nonnull));
 
-vertex * vertex_ascends(vertex * const restrict v, const char * const restrict label)
-  __attribute__((nonnull));
-
-vertex * vertex_ascend_atw(vertex * const restrict v, size_t off, const char * const restrict label, size_t label_len)
-  __attribute__((nonnull));
-
-vertex * vertex_ascend_ats(vertex * const restrict v, size_t off, const char * const restrict label)
-  __attribute__((nonnull));
-
-struct edge * vertex_ascend_edgew(vertex * const restrict v, const char * const restrict label, size_t label_len)
-  __attribute__((nonnull));
-
-struct edge * vertex_ascend_edges(vertex * const restrict v, const char * const restrict label)
-  __attribute__((nonnull));
-
-struct edge * vertex_ascend_edge_atw(vertex * const restrict v, size_t off, const char * const restrict label, size_t label_len)
-  __attribute__((nonnull));
-
-struct edge * vertex_ascend_edge_ats(vertex * const restrict v, size_t off, const char * const restrict label)
+struct edge * vertex_ascend_edge(vertex * const restrict v, const char * const restrict label)
   __attribute__((nonnull));
 
 /// vertex_descend
@@ -142,28 +124,10 @@ struct edge * vertex_ascend_edge_ats(vertex * const restrict v, size_t off, cons
 // RETURNS
 //  desired vertex or edge, if any
 //
-vertex * vertex_descendw(vertex * const restrict v, const char * const restrict label, size_t label_len)
+vertex * vertex_descend(vertex * const restrict v, const char * const restrict label)
   __attribute__((nonnull));
 
-vertex * vertex_descends(vertex * const restrict v, const char * const restrict label)
-  __attribute__((nonnull));
-
-vertex * vertex_descend_atw(vertex * const restrict v, size_t off, const char * const restrict label, size_t label_len)
-  __attribute__((nonnull));
-
-vertex * vertex_descend_ats(vertex * const restrict v, size_t off, const char * const restrict label)
-  __attribute__((nonnull));
-
-struct edge * vertex_descend_edgew(vertex * const restrict v, const char * const restrict label, size_t label_len)
-  __attribute__((nonnull));
-
-struct edge * vertex_descend_edges(vertex * const restrict v, const char * const restrict label)
-  __attribute__((nonnull));
-
-struct edge * vertex_descend_edge_atw(vertex * const restrict v, size_t off, const char * const restrict label, size_t label_len)
-  __attribute__((nonnull));
-
-struct edge * vertex_descend_edge_ats(vertex * const restrict v, size_t off, const char * const restrict label)
+struct edge * vertex_descend_edge(vertex * const restrict v, const char * const restrict label)
   __attribute__((nonnull));
 
 #undef restrict
