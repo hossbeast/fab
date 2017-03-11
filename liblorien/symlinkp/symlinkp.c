@@ -63,9 +63,6 @@ API xapi symlinkpvf(const char * const restrict target_fmt, const char * const r
   va_copy(va2, va);
 
   // discard
-//char space[512];
-//  snprintf(space, sizeof(space), target_fmt, va2);
-//printf("target '%s'\n", space);
   va_arg(va2, char*);
 
   fatal(uxunlinkvf, linkpath_fmt, va2);

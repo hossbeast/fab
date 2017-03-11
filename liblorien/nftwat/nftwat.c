@@ -72,7 +72,7 @@ static xapi __attribute__((nonnull(1, 3, 5, 7, 9))) walk(
   *ddsp = ((*ddsp) + 1) % ddsz;
   dds[ddso] = &dd;
 
-  ftwinfo child;
+  ftwinfo child = {};
   child.parent = dirinfo;
   child.path = path;
 
@@ -88,6 +88,7 @@ static xapi __attribute__((nonnull(1, 3, 5, 7, 9))) walk(
       child.name_off = *pathl;
       *pathl += znloads(path + *pathl, pathz - *pathl, entp->d_name);
       child.pathl = *pathl;
+      child.udata = 0;
 
       if(entp->d_type == DT_REG)
       {
