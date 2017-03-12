@@ -130,47 +130,6 @@ $lflags_xapi_devel  = [ $lopts $libxapi_xapi_devel $libxlinux_xapi_devel [ -Wl,-
 [ $libvalyria_xapi_debug ] :^ [ $libxlinux_xapi_debug $libxapi_xapi_debug ]
 [ $libvalyria_xapi_devel ] :^ [ $libxlinux_xapi_devel $libxapi_xapi_devel ]
 
-##
-## tasks
-##
-
-[ @install.final.eapi ] : [ @final.eapi ]
-{
-  install -d                                    [ $destdir/$libdir ]
-  install [ $libvalyria_eapi_final ]            [ $destdir/$libdir/$libname_eapi ]
-}
-
-[ @install.debug.eapi ] : [ @debug.eapi ]
-{
-  install -d                                    [ $destdir/$libdir ]
-  install [ $libvalyria_eapi_debug ]            [ $destdir/$libdir/$libname_eapi ]
-}
-
-[ @install.final.xapi ] : [ @final.xapi ]
-{
-  install -d                                    [ $destdir/$libdir ]
-  install [ $libvalyria_xapi_final ]            [ $destdir/$libdir/$libname_xapi ]
-}
-
-[ @install.debug.xapi ] : [ @debug.xapi ]
-{
-  install -d                                    [ $destdir/$libdir ]
-  install [ $libvalyria_xapi_debug ]            [ $destdir/$libdir/$libname_xapi ]
-}
-
-[ @installdevheaders ]
-{
-  install -d                                    [ $destdir/$incdir ]
-  install [ $*/valyria.h  ]                     [ $destdir/$incdir/ ]
-
-  install -d                                    [ $destdir/$incdir/valyria ]
-  install [ $*/valyria/pstring.h ]              [ $destdir/$incdir/valyria/ ]
-  install [ $*/valyria/array.h ]                [ $destdir/$incdir/valyria/ ]
-  install [ $*/valyria/list.h ]                 [ $destdir/$incdir/valyria/ ]
-  install [ $*/valyria/dictionary.h ]           [ $destdir/$incdir/valyria/ ]
-  install [ $*/valyria/map.h ]                  [ $destdir/$incdir/valyria/ ]
-}
-
 #
 # tests
 #  for rationale see test/README.md

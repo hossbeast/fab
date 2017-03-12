@@ -132,40 +132,6 @@ $lflags_xapi_devel  = [ $lopts $libxapi_xapi_devel $libxlinux_xapi_devel $liblog
 [ $liblorien_xapi_debug ] :^ [ $libxlinux_xapi_debug $liblogger_xapi_debug $libvalyria_xapi_debug $libnarrator_xapi_debug $libxapi_xapi_debug ]
 [ $liblorien_xapi_devel ] :^ [ $libxlinux_xapi_devel $liblogger_xapi_devel $libvalyria_xapi_devel $libnarrator_xapi_devel $libxapi_xapi_devel ]
 
-##
-## tasks
-##
-
-[ @install.final.eapi ] : [ @final.eapi ]
-{
-  install -d                                    [ $destdir/$libdir ]
-  install [ $liblorien_eapi_final ]            [ $destdir/$libdir/$libname_eapi ]
-}
-
-[ @install.debug.eapi ] : [ @debug.eapi ]
-{
-  install -d                                    [ $destdir/$libdir ]
-  install [ $liblorien_eapi_debug ]            [ $destdir/$libdir/$libname_eapi ]
-}
-
-[ @install.final.xapi ] : [ @final.xapi ]
-{
-  install -d                                    [ $destdir/$libdir ]
-  install [ $liblorien_xapi_final ]            [ $destdir/$libdir/$libname_xapi ]
-}
-
-[ @install.debug.xapi ] : [ @debug.xapi ]
-{
-  install -d                                    [ $destdir/$libdir ]
-  install [ $liblorien_xapi_debug ]            [ $destdir/$libdir/$libname_xapi ]
-}
-
-[ @installdevheaders ]
-{
-  install -d                                    [ $destdir/$incdir/lorien ]
-  install [ $*/lorien/canon.h ]                [ $destdir/$incdir/lorien/ ]
-}
-
 #
 # unit tests
 #

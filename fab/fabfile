@@ -109,59 +109,6 @@ $faboplist_xapi_devel = [ $dfabroot/fablw/op ~ j lsr sx/c/xapi.devel.so sy ]
 # tasks
 #
 
-[ @install.base ]
-{
-  install -d                                          [ $destdir/$bindir ]
-  install [ $gccdep_final ]                           [ $destdir/$bindir ]
-
-  rm -rf                                              [ $destdir/$fabtmpdir ] 2>/dev/null
-  install -d                                          [ $destdir/$fabtmpdir ]
-  rm -rf                                              [ $destdir/$fabipcdir ] 2>/dev/null
-  install -d                                          [ $destdir/$fabipcdir ]
-
-  rm -rf                                              [ $destdir/$fabinvokedir ] 2>/dev/null
-  install -d                                          [ $destdir/$fabinvokedir/std ]
-  install -d                                          [ $destdir/$fabinvokedir/std/flex ]
-  install -d                                          [ $destdir/$fabinvokedir/std/bison ]
-  install -d                                          [ $destdir/$fabinvokedir/std/xapi ]
-  install [ $dfabroot/fablib/std/c.fab ]              [ $destdir/$fabinvokedir/std/c.fab ]
-  install [ $dfabroot/fablib/std/l.fab ]              [ $destdir/$fabinvokedir/std/l.fab ]
-  install [ $dfabroot/fablib/std/y.fab ]              [ $destdir/$fabinvokedir/std/y.fab ]
-  install [ $dfabroot/fablib/std/flex/states.fab ]    [ $destdir/$fabinvokedir/std/flex/states.fab ]
-  install [ $dfabroot/fablib/std/bison/tokens.fab ]   [ $destdir/$fabinvokedir/std/bison/tokens.fab ]
-  install [ $dfabroot/fablib/std/xapi/errtab.fab ]    [ $destdir/$fabinvokedir/std/xapi/errtab.fab ]
-
-  rm -rf                                              [ $destdir/$fablwopdir ] 2>/dev/null
-  install -d                                          [ $destdir/$fablwopdir ]
-}
-
-[ @install.local ] : [ @install.base ]
-{
-  chmod 777                                           [ $destdir/$fabtmpdir ]
-  chmod 777                                           [ $destdir/$fabipcdir ]
-  chown fabsys:fabsys                                 [ $destdir/$fabtmpdir ]
-  chown fabsys:fabsys                                 [ $destdir/$fabipcdir ]
-}
-
-[ @install.final ] : [ @install.base ]
-{
-  install [ $dfabroot/fablw/op/fi/fi.xapi.final.so ]  [ $destdir/$fablwopdir/fi.so ]
-  install [ $dfabroot/fablw/op/fg/fg.xapi.final.so ]  [ $destdir/$fablwopdir/fg.so ]
-}
-[ @install.local.final] : [ @install.final @install.local @fab.install.local.final @fabw.install.local.final @fabd.install.local.final ]
-[ @install.dist.final] : [ @install.final @fab.install.dist.final @fabw.install.dist.final @fabd.install.dist.final ]
-
-[ @install.debug ] : [ @install.base ]
-{
-  install [ $dfabroot/fablw/op/fi/fi.xapi.debug.so ]  [ $destdir/$fablwopdir/fi.so ]
-  install [ $dfabroot/fablw/op/fg/fg.xapi.debug.so ]  [ $destdir/$fablwopdir/fg.so ]
-}
-
-[ @install.local.debug ] : [ @install.debug @install.local @fab.install.local.debug @fabw.install.local.debug @fabd.install.local.debug ]
-[ @install.dist.debug ] : [ @install.debug @fab.install.dist.debug @fabw.install.dist.debug @fabd.install.dist.debug ]
-
-[ @install.man ] : [ @install.man1 ]
-
 # build the man gz
 [ @man ] : [ $dfabroot/man/fab.1.gz ~ j ]
 [ $dfabroot/man/fab.1.gz ~ j ] : [ $dfabroot/man/fab.1 ~ j ]
@@ -170,11 +117,4 @@ $faboplist_xapi_devel = [ $dfabroot/fablw/op ~ j lsr sx/c/xapi.devel.so sy ]
   ] | sed -e 's/---BUILDVERS---/[ $VERSIONS ]/' [
   ] | sed -e 's/---BUILDDATE---/[ $^starttime ~ datef/%Y-%m-%d ]/' [
   ] | gzip -9c > [ $@ ]
-}
-
-# install the man gz
-[ @install.man1 ] : [ $dfabroot/man/fab.1.gz ~ j ]
-{
-  install -d                                    [ $destdir/$mandir/man1 ]
-  install [ $dfabroot/man/fab.1.gz ]            [ $destdir/$mandir/man1/fab.1.gz ]
 }

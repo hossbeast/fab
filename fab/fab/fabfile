@@ -94,31 +94,3 @@ $lflags_xapi_devel = [ $lflags_xapi_devel $lopts $libxapi_xapi_devel $libxlinux_
 {
   [ $cc ] [ $cflags_xapi_devel -export-dynamic ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw rx lx/o uu fi ] [ $lflags_xapi_devel ~ fi ]
 }
-
-#
-# tasks
-#
-
-[ @install.base.final ] : [ @final ]
-{
-  install -d                                      [ $destdir/$bindir ]
-  rm                                              [ $destdir/$bindir/fab ] 2>/dev/null
-  install [ $fab_final ]                          [ $destdir/$bindir/fab ]
-}
-
-[ @install.dist.final ] : [ @install.base.final ]
-[ @install.local.final ] : [ @install.base.final ]
-{
-  chown fabsys:fabsys                             [ $destdir/$bindir/fab ]
-  chmod ug+s                                      [ $destdir/$bindir/fab ]
-}
-
-[ @install.base.debug ] : [ @debug ]
-{
-  install -d                                      [ $destdir/$bindir ]
-  rm                                              [ $destdir/$bindir/fab ] 2>/dev/null
-  install [ $fab_debug ]                          [ $destdir/$bindir/fab ]
-}
-
-[ @install.dist.debug ] : [ @install.base.debug ]
-[ @install.local.debug ] : [ @install.base.debug ]

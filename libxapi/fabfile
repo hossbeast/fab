@@ -85,35 +85,6 @@ $lflags_xapi_devel  = [ $lflags_xapi_devel $lflags [ "-Wl,-soname," libxapi-xapi
   [ [ $cc ] [ $cflags_xapi_devel ~ uu ] -o [ $@ ] [ $@ ~ rx/aneedw lx/o ss u ] $lflags_xapi_devel ~ fi ]
 }
 
-##
-## tasks
-##
-
-[ @install.final.xapi ] : [ @final.xapi ]
-{
-  install -d                                [ $destdir/$libdir ]
-  install [ $libxapi_xapi_final ]           [ $destdir/$libdir/$libname_xapi ]
-}
-
-[ @install.debug.xapi ] : [ @debug.xapi ]
-{
-  install -d                                [ $destdir/$libdir ]
-  install [ $libxapi_xapi_debug ]           [ $destdir/$libdir/$libname_xapi ]
-}
-
-[ @installdevheaders ]
-{
-  install -d                                [ $destdir/$incdir ]
-  install [ $dlibxapi/xapi.h ]              [ $destdir/$incdir ]
-
-  install -d                                [ $destdir/$incdir/xapi ]
-  install [ $dlibxapi/xapi/frame.h ]        [ $destdir/$incdir/xapi ]
-  install [ $dlibxapi/xapi/unwind.h ]       [ $destdir/$incdir/xapi ]
-  install [ $dlibxapi/xapi/errcode.h ]      [ $destdir/$incdir/xapi ]
-  install [ $dlibxapi/xapi/XAPI.errtab.h ]  [ $destdir/$incdir/xapi ]
-  install [ $dlibxapi/xapi/SYS.errtab.h ]   [ $destdir/$incdir/xapi ]
-}
-
 #
 # tests
 #  for rationale see test/README.md

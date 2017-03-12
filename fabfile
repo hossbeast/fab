@@ -54,26 +54,6 @@
   @libyyutil.devel @xunit.devel
 ]
 
-# install libraries
-[ @install.base.final ] : [ @install.base.final.xapi ]
-[ @install.base.debug ] : [ @install.base.debug.xapi ]
-[ @install.base.final.xapi ] : [ @libxapi.install.final.xapi @libxlinux.install.final.xapi @libvalyria.install.final.xapi ]
-[ @install.base.debug.xapi ] : [ @libxapi.install.debug.xapi @libxlinux.install.debug.xapi @libvalyria.install.debug.xapi ]
-
-# install local and dist
-[ @install.local.final ] : [ @install.local.final.xapi ]
-[ @install.local.debug ] : [ @install.local.debug.xapi ]
-[ @install.dist.final ] : [ @install.dist.final.xapi ]
-[ @install.dist.debug ] : [ @install.dist.debug.xapi ]
-
-[ @install.local.final.xapi ] : [ @install.base.final.xapi @fabcore.install.local.final ]
-[ @install.local.debug.xapi ] : [ @install.base.debug.xapi  @fabcore.install.local.debug ]
-[ @install.dist.final.xapi ] : [ @install.base.final.xapi @fabcore.install.dist.final ]
-[ @install.dist.debug.xapi ] : [ @install.base.debug.xapi  @fabcore.install.dist.debug ]
-
-# doc
-[ @install.man ] : [ @fabcore.install.man ]
-
 # tests
 [ @test ] : [ @fabd.test @liblogger.test @liblorien.test @libmoria.test @libnarrator.test ]
 [ @test ] : [ @libvalue.test @libvalyria.test @libxapi.test @libxlinux.test @libxunit.test @libyyutil.test ]

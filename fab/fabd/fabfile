@@ -121,39 +121,6 @@ $libnarrator_xapi_devel $liblorien_xapi_devel $libmoria_xapi_devel $libfab_xapi_
 }
 
 #
-# tasks
-#
-
-# base install
-[ @install.base.final ] : [ @final ]
-{
-  install -d                                      [ $destdir/$bindir ]
-  rm                                              [ $destdir/$bindir/fabd ] 2>/dev/null
-  install [ $fabd_final ]                         [ $destdir/$bindir/fabd ]
-}
-
-# dist install meant for packagers - it does not include file ownership/permissions
-# which would be supplied by the deb/rpm/etc
-[ @install.dist.final ] : [ @install.base.final ]
-
-# local install
-[ @install.local.final ] : [ @install.base.final ]
-{
-  chown fabsys:fabsys                             [ $destdir/$bindir/fabd ]
-  chmod ug+s                                      [ $destdir/$bindir/fabd ]
-}
-
-[ @install.base.debug ] : [ @debug ]
-{
-  install -d                                      [ $destdir/$bindir ]
-  rm                                              [ $destdir/$bindir/fabd ] 2>/dev/null
-  install [ $fabd_debug ]                         [ $destdir/$bindir/fabd ]
-}
-
-[ @install.dist.debug ] : [ @install.base.debug ]
-[ @install.local.debug ] : [ @install.base.debug ]
-
-#
 # unit tests
 #
 
