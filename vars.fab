@@ -35,8 +35,6 @@ $VERSIONN       = [ $VERSIONL ~ j s/^0//g ]       # version number
 #
 # devel : (debug + portable)
 #  - enable compilation options to use files from the source directories, including :
-#   - listwise operators
-#   - fab-listwise operators
 #   - fab-provided invocations
 #   - all libraries, via rpath
 #
@@ -50,7 +48,6 @@ $dfabcore       = [ $*/fab ~ j ]
 $dfabd          = [ $*/fab/fabd ~ j ]
 $dfabw          = [ $*/fab/fabw ~ j ]
 $dlibfab        = [ $*/fab/libfab ~ j ]
-$dliblistwise   = [ $*/listwise/liblistwise ~ j ]
 $dliblogger     = [ $*/liblogger ~ j ]
 $dliblorien     = [ $*/liblorien ~ j ]
 $dlibmoria      = [ $*/libmoria ~ j ]
@@ -61,7 +58,6 @@ $dlibxapi       = [ $*/libxapi ~ j ]
 $dlibxlinux     = [ $*/libxlinux ~ j ]
 $dlibxunit      = [ $*/xunit/libxunit ~ j ]
 $dlibyyutil     = [ $*/libyyutil ~ j ]
-$dlistwise      = [ $*/listwise/listwise ~ j ]
 $dutil          = [ $*/fab/util ~ j ]
 $dxunit         = [ $*/xunit/xunit ~ j ]
 
@@ -75,18 +71,6 @@ $libxlinux_eapi_devel   = [ $dlibxlinux/libxlinux-devel.so ~ j ]
 $libxlinux_xapi_final   = [ $dlibxlinux/libxlinux-xapi.final.so ~ j ]
 $libxlinux_xapi_debug   = [ $dlibxlinux/libxlinux-xapi.debug.so ~ j ]
 $libxlinux_xapi_devel   = [ $dlibxlinux/libxlinux-xapi-devel.so ~ j ]
-$liblistwise_eapi_final = [ $dliblistwise/liblistwise.final.so ~ j ]
-$liblistwise_eapi_debug = [ $dliblistwise/liblistwise.debug.so ~ j ]
-$liblistwise_eapi_devel = [ $dliblistwise/liblistwise-devel.so ~ j ]
-$liblistwise_xapi_final = [ $dliblistwise/liblistwise-xapi.final.so ~ j ]
-$liblistwise_xapi_debug = [ $dliblistwise/liblistwise-xapi.debug.so ~ j ]
-$liblistwise_xapi_devel = [ $dliblistwise/liblistwise-xapi-devel.so ~ j ]
-$listwise_eapi_final    = [ $dlistwise/listwise.eapi.final ~ j ]
-$listwise_eapi_debug    = [ $dlistwise/listwise.eapi.debug ~ j ]
-$listwise_eapi_devel    = [ $dlistwise/listwise.eapi.devel ~ j ]
-$listwise_xapi_final    = [ $dlistwise/listwise.xapi.final ~ j ]
-$listwise_xapi_debug    = [ $dlistwise/listwise.xapi.debug ~ j ]
-$listwise_xapi_devel    = [ $dlistwise/listwise.xapi.devel ~ j ]
 $libvalyria_eapi_final  = [ $dlibvalyria/libvalyria.final.so ~ j ]
 $libvalyria_eapi_debug  = [ $dlibvalyria/libvalyria.debug.so ~ j ]
 $libvalyria_eapi_devel  = [ $dlibvalyria/libvalyria-devel.so ~ j ]
@@ -172,11 +156,6 @@ $fabtmpdir              = [ /var/tmp/fab ]                # fab tmp
 $fabtmpdir_devel        = [ /tmp/$fabtmpdir ~ j can ]     # fab tmp
 $fabipcdir              = [ /var/run/fab ]
 $fabipcdir_devel        = [ /tmp/$fabipcdir ~ j can ]     # fab shm/ipc files
-$lwopdir                = [ $dlibdir/listwise ~ j can ]
-$lwopdir_devel          = [ $dliblistwise/op ~ j can ]
-$lwopext                = [ so ]
-$fablwopdir             = [ $dlibdir/fab/listwise ~ j can ]
-$fablwopdir_devel       = [ $dfabcore/fablw/op ~ j can ]
 $fabinvokedir           = [ $dlibdir/fab/fablib ~ j can ]
 $fabinvokedir_devel     = [ $dfabcore/fablib ~ j can ]
 

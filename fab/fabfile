@@ -32,7 +32,7 @@ $cflags = [ -fno-builtin-log [ $sdirs ~ s/^/-I ]
   [ -DFABVERSIONN="\""$VERSIONN"\"" ~ j ]
 
   # include paths - mark as system to preclude dependency discovery from gcc
-  [ $dlibxapi $dlibxlinux $dlibpstring $dliblistwise ~ s/^/-I ]
+  [ $dlibxapi $dlibxlinux $dlibpstring ~ s/^/-I ]
 ]
 
 $params = [

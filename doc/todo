@@ -7,19 +7,9 @@
   cleanup libxapi commented out code
   libxapi unit test for prologue
   libxapi xproxy unit tests
-  liblistwise deconstruct internal.h to improve dependency clarity
   global retab to spaces
- listwise
-  generic object operators hard to understand - create fab-specific object operators
 
 * finished
-
-* docket
- listwise resolve lstack vs lwx
- listwise resolve write vs alt_write
- listwise ordered access
- listwise generator -> transform
- listwise sanity checks
 
  per-filesystem options (canon, hashblock stat vs content)
  configurable options (fabrc, override cmdline)
