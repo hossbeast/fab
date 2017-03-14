@@ -75,7 +75,7 @@ API void xapi_info_addw(const char * const key, const char * const vbuf, size_t 
 {
   if(g_calltree || g_fail_intent)
   {
-    if(key && vbuf && vlen)
+    if(key)
     {
       info * i = 0;
       if(g_calltree)
@@ -95,7 +95,10 @@ API void xapi_info_addw(const char * const key, const char * const vbuf, size_t 
 
       memset(i, 0, sizeof(*i));
       mm_sloadw(&i->ks, &i->kl, key, strlen(key));
-      mm_sloadw(&i->vs, &i->vl, vbuf, vlen);
+      if(vbuf && vlen)
+        mm_sloadw(&i->vs, &i->vl, vbuf, vlen);
+      else
+        mm_sloadw(&i->vs, &i->vl, "", 0);
     }
   }
 }
@@ -120,7 +123,7 @@ API void xapi_info_vaddf(const char * const key, const char * const vfmt, va_lis
     size_t vlen = vsnprintf(0, 0, vfmt, va2);
     va_end(va2);
 
-    if(key && vfmt && vlen)
+    if(key)
     {
       info * i = 0;
       if(g_calltree)
@@ -140,7 +143,10 @@ API void xapi_info_vaddf(const char * const key, const char * const vfmt, va_lis
 
       memset(i, 0, sizeof(*i));
       mm_sloadw(&i->ks, &i->kl, key, strlen(key));
-      mm_svloadf(&i->vs, &i->vl, vfmt, va);
+      if(vfmt && vlen)
+        mm_svloadf(&i->vs, &i->vl, vfmt, va);
+      else
+        mm_sloadw(&i->vs, &i->vl, "", 0);
     }
   }
 }
