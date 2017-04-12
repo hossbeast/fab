@@ -41,7 +41,7 @@
   __z;                                                        \
 })
 
-/// znvloadf
+/// znloadvf
 //
 // SUMMARY
 //  like znloadf, except takes format string and va_list
@@ -66,12 +66,13 @@
 //  b   - pointer to bytes to write
 //  bz  - number of bytes to write
 //
-#define znloadw(dst, sz, b, bz) ({            \
-  size_t __z = MIN(sz - 1, bz);               \
-  memcpy(dst, b, __z);                        \
-  ((char*)dst)[__z] = 0;                      \
-  __z;                                        \
-})
+static inline size_t znloadw(void * restrict dst, size_t sz, const void * b, size_t bz)
+{
+  size_t z = MIN(sz - 1, bz);
+  memcpy(dst, b, z);
+  ((char*)dst)[z] = 0;
+  return z;
+}
 
 /// znloads
 //
