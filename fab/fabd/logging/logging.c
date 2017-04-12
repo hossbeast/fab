@@ -21,6 +21,7 @@
 #include "logger/stream.h"
 #include "logger/expr.h"
 #include "logger/arguments.h"
+#include "logger/config.h"
 #include "value.h"
 #include "value/query.h"
 #include "valyria/list.h"
@@ -37,29 +38,31 @@
 
 logger_category * categories = (logger_category []) {
 #if DEBUG || DEVEL || XAPI
-    { name : "IPC"      , description : "signal-exchange" }
-  , { name : "PROTOCOL" , description : "request/response exchange" }
+    { name : "IPC"      , description : "signal-exchange", attr : L_NAMES }
+  , { name : "PROTOCOL" , description : "request/response exchange", attr : L_NAMES }
   ,
 #endif
-    { name : "ERROR"    , description : "fatal errors", attr : L_RED }
+    { name : "ERROR"    , description : "fatal errors" }
   , { name : "WARN"     , description : "non-fatal errors", attr : L_YELLOW }
   , { name : "INFO"     , description : "high-level summary of actions" }
   , { name : "CONFIG"   , description : "configuration" }
   , { name : "PARAMS"   , description : "runtime parameters" }
   , { name : "USAGE"    , description : "resource usage reports" }
+  , { name : "GRAPH"    , description : "dependency graph changes" }
+  , { name : "FSEVENT"  , description : "monitored filesystem events" }
 
-  , { name : "NOTIFY"   , description : "fabd/notify thread" }
-  , { name : "SERVER"   , description : "fabd/server thread" }
-  , { name : "SWEEPER"  , description : "fabd/sweeper thread" }
-  , { name : "MONITOR"  , description : "fabd/monitor thread" }
-  , { name : "FABD"     , description : "fabd" }
+  , { name : "NOTIFY"   , description : "notify thread" , optional : 1 }
+  , { name : "SERVER"   , description : "server thread" , optional : 1 }
+  , { name : "SWEEPER"  , description : "sweeper thread" , optional : 1 }
+  , { name : "MONITOR"  , description : "monitor thread" , optional : 1 }
+  , { name : "DAEMON"   , description : "daemon" , optional : 1 }
   , { }
 };
 
 logger_stream * streams = (logger_stream []) {
-    { name : "console"  , type : LOGGER_STREAM_FD , expr : "+ERROR +WARN +INFO", attr : L_NAMES
+    { name : "console"  , type : LOGGER_STREAM_FD , expr : "+WARN +ERROR"
       , fd : 1 }
-  , { name : "logfile"  , type : LOGGER_STREAM_ROLLING, expr : "+ALL%", attr : L_DATESTAMP | L_CATEGORY  | L_NOCOLOR | L_NAMES
+  , { name : "logfile"  , type : LOGGER_STREAM_ROLLING, attr : L_DATESTAMP | L_CATEGORY | L_NOCOLOR | L_NAMES | L_NOFILTER
       , file_mode : FABIPC_MODE_DATA, threshold : 1024 * 1024, max_files : 10, path_base : (char[256]) { } }
   , { }
 };
@@ -81,6 +84,10 @@ xapi logging_setup(uint32_t hash)
     snprintf(streams[1].path_base, 256, "%s/%x/fabd/log", XQUOTE(FABIPCDIR), hash);
     fatal(logger_stream_register, streams);
   }
+
+  // process-level properties
+  logger_set_process_name("fabd");
+  logger_set_process_categories(L_DAEMON);
 
   fatal(logging_finalize);
 
@@ -116,7 +123,7 @@ xapi logging_reconfigure(reconfigure_context * ctx, const value * restrict confi
   if(!dry)
     fatal(logger_expr_clear, streams[0].id);
 
-  fatal(config_cursor_sets, &cursor, "logging.console.filters");
+  fatal(config_cursor_sets, &cursor, "logging.console.exprs");
   fatal(config_query, config, config_cursor_path(&cursor), config_cursor_query(&cursor), VALUE_TYPE_LIST & dry, &list);
   if(list)
   {
@@ -128,7 +135,7 @@ xapi logging_reconfigure(reconfigure_context * ctx, const value * restrict confi
 
       if(dry && !logger_expr_validate(val->s->s))
       {
-        xapi_info_pushs("filter", val->s->s);
+        xapi_info_pushs("expr", val->s->s);
         fatal(config_throw, CONFIG_INVALID, val, config_cursor_path(&cursor));
       }
 
@@ -143,7 +150,7 @@ xapi logging_reconfigure(reconfigure_context * ctx, const value * restrict confi
   if(!dry)
     fatal(logger_expr_clear, streams[1].id);
 
-  fatal(config_cursor_sets, &cursor, "logging.logfile.filters");
+  fatal(config_cursor_sets, &cursor, "logging.logfile.exprs");
   fatal(config_query, config, config_cursor_path(&cursor), config_cursor_query(&cursor), VALUE_TYPE_LIST & dry, &list);
   if(list)
   {
@@ -153,11 +160,11 @@ xapi logging_reconfigure(reconfigure_context * ctx, const value * restrict confi
       fatal(config_cursor_pushd, &cursor, x);
       fatal(config_query, list, config_cursor_path(&cursor), config_cursor_query(&cursor), VALUE_TYPE_STRING & dry, &val);
 
-      if(dry && !logger_expr_validate(val->s->s))
+      if(dry && !logger_expr_validates(val->s->s))
         fatal(reconfigure_throw, CONFIG_INVALID, val, config_cursor_path(&cursor));
 
       if(!dry)
-        fatal(logger_filter_pushs, streams[1].id, val->s->s);
+        fatal(logger_expr_pushs, streams[1].id, val->s->s);
     }
   }
 #endif

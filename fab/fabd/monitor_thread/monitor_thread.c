@@ -94,7 +94,6 @@ xapi monitor_thread()
     fatal(sigutil_wait, &sigs, 0);
   }
 
-
 finally:
 #if DEBUG || DEVEL
   logs(L_IPC, "terminating");

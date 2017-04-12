@@ -80,10 +80,10 @@ xapi filesystem_reconfigure(struct reconfigure_context * ctx, const struct value
 //  get the filesystem configuration for the specified path
 //
 // PARAMETERS
-//  path - normalized path relative to the project dir
+//  path - normalized absolute path
 //  fs   - (returns) filesystem
 //
-filesystem * filesystem_lookup(const char * const restrict path)
+filesystem * filesystem_lookup(const char * const restrict path, size_t pathl)
   __attribute__((nonnull));
 
 #undef restrict

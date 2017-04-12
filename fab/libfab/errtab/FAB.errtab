@@ -15,8 +15,7 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-1   BADIPC      ipc failure
-2   FABLOCK     fab already running for this hash
-3   FABDFAIL    fabd terminated abnormally
-4   FABDEXIT    fabd terminated unexpectedly
-5   UNSUCCESS   request was completed unsuccessfully
+1   BADIPC        ipc failure
+2   CLIENTEXCL    client already running
+3   DAEMONFAILED  fab daemon terminated abnormally (probable crash)
+4   DAEMONEXITED  fab daemon terminated unexpectedly

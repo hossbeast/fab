@@ -58,6 +58,7 @@ xapi walker_visit(int method, ftwinfo * info, void * arg, int * stop)
   vertex * v;
   node * n;
 
+
   if(!info->parent)
   {
     if(method == FTWAT_PRE && ctx->root)
@@ -69,7 +70,7 @@ xapi walker_visit(int method, ftwinfo * info, void * arg, int * stop)
       if(ctx->ancestor && ctx->ancestor->fs->leaf)
         fs = ctx->ancestor->fs;
       if(!fs)
-        fs = ctx->fslookup(ctx, info->path);
+        fs = ctx->fslookup(ctx, info->path, info->pathl);
       fatal(ctx->create, ctx, &n, fstype_ftwinfo(info), fs, info->path + info->name_off);
       ctx->root = n;
 
@@ -98,7 +99,7 @@ xapi walker_visit(int method, ftwinfo * info, void * arg, int * stop)
       if(info->type == FTWAT_D && parent->fs->leaf)
         fs = parent->fs;
       if(!fs)
-        fs = ctx->fslookup(ctx, info->path);
+        fs = ctx->fslookup(ctx, info->path, info->pathl);
       fatal(ctx->create, ctx, &n, fstype_ftwinfo(info), fs, info->path + info->name_off);
 
       fatal(ctx->connect, ctx, parent, n);
@@ -154,9 +155,9 @@ static xapi create(walker_context * ctx, node ** restrict n, uint8_t fstype, con
   xproxy(node_creates, n, fstype, fs, name);
 }
 
-static const filesystem * fslookup(walker_context * ctx, const char * const restrict path)
+static const filesystem * fslookup(walker_context * ctx, const char * const restrict path, size_t pathl)
 {
-  return filesystem_lookup(path);
+  return filesystem_lookup(path, pathl);
 }
 
 static xapi refresh(walker_context * ctx, node * n)
@@ -183,7 +184,7 @@ static xapi disintegrate(walker_context * restrict ctx, edge * restrict e)
 // public
 //
 
-xapi walker_walk(node ** restrict root, node * restrict ancestor, const char * restrict path)
+xapi walker_walk(node ** restrict root, node * restrict ancestor, const char * restrict abspath)
 {
   enter;
 
@@ -205,7 +206,7 @@ xapi walker_walk(node ** restrict root, node * restrict ancestor, const char * r
   ctx.disintegrate = disintegrate;
 
   // filesystem traversal from the root
-  fatal(nftwat, AT_FDCWD, path, walker_visit, 64, &ctx);
+  fatal(nftwat, AT_FDCWD, abspath, walker_visit, 64, &ctx);
 
   if(root)
     *root = ctx.root;

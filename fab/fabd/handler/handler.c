@@ -42,6 +42,18 @@
 // public
 //
 
+xapi handler_build()
+{
+  enter;
+
+  // update the graph
+  fatal(walker_walk, &g_root, 0, g_params.proj_dir);
+
+  // do FAB_COMMAND_BUILD
+
+  finally : coda;
+}
+
 xapi handler_dispatch(fab_request * const restrict request, memblk * const restrict mb, fab_response ** const restrict response)
 {
   enter;

@@ -46,7 +46,7 @@ extern struct g_params
   long            pagesize;         // page size
 
   char *          ipcdir;
-  char *          proj_dir;         // because some apis cant take a dirfd
+  char *          proj_dir;         // absolute path of the project directory
   int             proj_dirfd;       // readonly file descriptor for the project dir
   char *          homedir;          // homedir of the real user
 

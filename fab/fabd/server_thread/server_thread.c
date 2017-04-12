@@ -58,6 +58,8 @@
 #include "memblk.h"
 #include "atomic.h"
 
+int server_thread_rebuild;
+
 /// load_client_pid
 //
 // SUMMARY
@@ -228,6 +230,12 @@ static xapi server_thread()
 
   while(!g_params.shutdown)
   {
+    if(server_thread_rebuild)
+    {
+      fatal(handler_build);
+      server_thread_rebuild = 0;
+    }
+
     fatal(sigutil_wait, &sigs, &siginfo);
     if(siginfo.si_signo == FABIPC_SIGSCH)
       continue;
@@ -252,6 +260,7 @@ static xapi server_thread()
     fatal(respond, client_pid, &sigs, &response_shm, mb, response);
     fatal(ixshmdt, &response_shm);
 
+    fatal(node_dump);
     fatal(usage_report);
   }
 
@@ -272,7 +281,6 @@ static void * server_thread_main(void * arg)
   enter;
 
   xapi R;
-  char space[4096];
 
   logger_set_thread_name("server");
   logger_set_thread_categories(L_SERVER);
@@ -286,11 +294,10 @@ finally:
     xapi_infof("pgid", "%ld", (long)getpgid(0));
     xapi_infof("pid", "%ld", (long)getpid());
     xapi_infof("tid", "%ld", (long)gettid());
-    xapi_trace_full(space, sizeof(space), 0);
+    fatal(logger_xtrace_full, L_ERROR, L_NONAMES, XAPI_TRACE_COLORIZE | XAPI_TRACE_NONEWLINE);
 #else
-    xapi_trace_pithy(space, sizeof(space), 0);
+    fatal(logger_xtrace_pithy, L_ERROR, L_NONAMES, XAPI_TRACE_COLORIZE | XAPI_TRACE_NONEWLINE);
 #endif
-    logf(L_ERROR, "\n%s", space);
   }
 conclude(&R);
 

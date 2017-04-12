@@ -28,14 +28,15 @@ extern struct logger_category * categories;
 #define BASE 0
 #if DEBUG || DEVEL || XAPI
 #define L_IPC       categories[0].id
+#define L_PROTOCOL  categories[1].id
 #undef BASE
-#define BASE 1
+#define BASE 2
 #endif
 
 #define L_ERROR     categories[BASE + 0].id
 #define L_ARGS      categories[BASE + 1].id
 #define L_PARAMS    categories[BASE + 2].id
-#define L_FAB       categories[BASE + 3].id
+#define L_CLIENT    categories[BASE + 3].id
 
 /// logging_setup
 //

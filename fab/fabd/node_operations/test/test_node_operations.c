@@ -31,6 +31,7 @@
 #include "xunit/assert.h"
 #include "narrator.h"
 #include "narrator/growing.h"
+#include "logging.h"
 
 #include "node_operations.h"
 #include "node.h"
@@ -50,6 +51,8 @@ static xapi node_operations_test_unit_setup(xunit_unit * unit)
 
   fatal(valyria_load);
   fatal(moria_load);
+  fatal(logging_finalize);
+
   finally : coda;
 }
 

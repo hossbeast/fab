@@ -25,12 +25,13 @@ struct path;
 struct map;
 struct reconfigure_context;
 struct value;
+struct narrator;
 
 // relation attributes
 #define NODE_RELATION_TABLE	    																			        \
 	NODE_RELATION(FS      , 1 , "filesystem")	/* directory : directory entry */	\
   NODE_RELATION(WEAK    , 2 , "weak")       /* A :^ B */                      \
-  NODE_RELATION(STRONG  , 3 , "strong")     /* A : B */                       \
+  NODE_RELATION(STRONG  , 6 , "strong")     /* A : B */                       \
 
 enum {
 #define NODE_RELATION(a, b, c) NODE_RELATION_ ## a = UINT32_C(b),
@@ -121,7 +122,13 @@ void node_destroy(node * n)
 
 xapi node_dump(void);
 
-size_t node_get_path(node * restrict n, void * restrict dst, size_t dst_size)
+size_t node_get_relative_path(node * restrict n, void * restrict dst, size_t dst_size)
+  __attribute__((nonnull));
+
+size_t node_get_absolute_path(node * restrict n, void * restrict dst, size_t dst_size)
+  __attribute__((nonnull));
+
+xapi node_path_say(node * restrict n, struct narrator * restrict N)
   __attribute__((nonnull));
 
 #endif

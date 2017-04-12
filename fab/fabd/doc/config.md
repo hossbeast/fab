@@ -1,7 +1,7 @@
 # configuration keys
 
-logging.console.filters [ "+ERROR|WARN" ]
-logging.logfile.filters [ "+ERROR|WARN" "+CONFIG%" ]
+logging.console.exprs [ "+ERROR|WARN" ]
+logging.logfile.exprs [ "+ERROR|WARN" "+CONFIG" ]
 
 filesystems."/".invalidate "stat|content|notify|always|never"
 

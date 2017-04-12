@@ -24,16 +24,16 @@
 
 logger_category * categories = (logger_category []) {
 #if DEBUG || XAPI || DEVEL
-    { name : "IPC"      , description : "signal-exchange" }
+    { name : "IPC"      , description : "signal-exchange", attr : L_NAMES }
   ,
 #endif
     { name : "ERROR"    , description : "fatal errors" }
-  , { name : "WATCHER"  , description : "fabw/watcher" }
+  , { name : "WATCHER"  , description : "fabd watcher", optional : 1 }
   , { }
 };
 
 logger_stream * streams = (logger_stream []) {
-    { name : "console"  , type : LOGGER_STREAM_FD , fd : 1  , expr : "+ERROR", attr : L_NAMES | L_CATEGORY }
+    { name : "console"  , type : LOGGER_STREAM_FD , fd : 1  , expr : "+ERROR" }
   , { }
 };
 

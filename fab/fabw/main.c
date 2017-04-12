@@ -117,6 +117,7 @@ static xapi begin(int argc, char ** argv, char ** envp)
   fatal(xwaitpid, child_pid, &status, 0);
 
 #if DEBUG || DEVEL
+#if 0
   // if fabd terminated abnormally
   if(WIFEXITED(status)) { }
   else if(WEXITSTATUS(status) || WIFSIGNALED(status))
@@ -126,6 +127,7 @@ static xapi begin(int argc, char ** argv, char ** envp)
     else if(WIFSIGNALED(status))
       xlogf(L_ERROR, L_RED, "fabd : term signal %d %s", WTERMSIG(status), strsignal(WTERMSIG(status)));
   }
+#endif
 #endif
 
   // record the exit status
@@ -139,7 +141,6 @@ static xapi begin(int argc, char ** argv, char ** envp)
   fatal(uxkill, client_pid, FABIPC_SIGEND, 0);
 
 finally:
-
   // locals
   fatal(ixclose, &fd);
 coda;
@@ -150,7 +151,6 @@ int main(int argc, char ** argv, char ** envp)
   enter;
 
   xapi R;
-  char space[4096];
 
   // load libraries
   fatal(logger_load);
@@ -171,12 +171,10 @@ finally:
     xapi_infof("pid", "%ld", (long)getpid());
     xapi_infof("tid", "%ld", (long)gettid());
 
-    xapi_trace_full(space, sizeof(space), 0);
+    fatal(logger_trace_full, L_ERROR, XAPI_TRACE_COLORIZE);
 #else
-    xapi_trace_pithy(space, sizeof(space), 0);
+    fatal(logger_trace_pithy, L_ERROR, XAPI_TRACE_COLORIZE);
 #endif
-
-    xlogs(L_ERROR, L_NOCATEGORY, space);
   }
 
   // modules

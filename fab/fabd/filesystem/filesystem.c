@@ -29,7 +29,7 @@
 #include "xlinux/xstring.h"
 #include "lorien/path_normalize.h"
 
-#include "filesystem.h"
+#include "filesystem.internal.h"
 #include "config.h"
 #include "reconfigure.h"
 #include "config_cursor.h"
@@ -40,7 +40,7 @@
 
 #define restrict __restrict
 
-static map * filesystems;
+map * filesystems;
 static uint64_t filesystems_hash[2];
 
 // sorted by name
@@ -130,12 +130,15 @@ xapi filesystem_cleanup()
   enter;
 
   fatal(map_xfree, filesystems);
+  memset(filesystems_hash, 0, sizeof(filesystems_hash));
 
   finally : coda;
 }
 
-filesystem * filesystem_lookup(const char * const restrict path)
+filesystem * filesystem_lookup(const char * const restrict path, size_t pathl)
 {
+  /* path is a normalized absolute path */
+
   const char * end = path + strlen(path);
 
   filesystem * fs = 0;
@@ -226,14 +229,20 @@ xapi filesystem_reconfigure(struct reconfigure_context * ctx, const value * rest
     }
   }
 
+  // the absence of filesystem config
+  else
+  {
+    filesystems_hash[1] = 0xdeadbeef;
+  }
+
   if(dry)
   {
     ctx->filesystems_changed = filesystems_hash[0] != filesystems_hash[1];
-//printf("filesystems_hash [ %lx <=> %lx ]\n", filesystems_hash[0], filesystems_hash[1]);
   }
 
   if(!dry)
   {
+    // synthetic root
     if(!has_root)
     {
       fatal(filesystem_create, "/", FILESYSTEM_INVALIDATE_NOTIFY, &fs);
@@ -247,11 +256,23 @@ xapi filesystem_reconfigure(struct reconfigure_context * ctx, const value * rest
 
     for(x = 0; x < keysl; x++)
     {
-      filesystem * tmp = map_get(filesystems, MMS(keys[x]));
-      if(x == (keysl - 1) || strcmp(keys[x], keys[x + 1]))
-        tmp->leaf = 1;
-      else
-        tmp->leaf = 0;
+      filesystem * fs = map_get(filesystems, MMS(keys[x]));
+      fs->leaf = 1;
+
+      size_t len = strlen(keys[x]);
+
+      int y;
+      for(y = x + 1; y < keysl; y++)
+      {
+        if(strcmp(keys[x], keys[y]) > 0)
+          break;
+
+        if(len == 1 || keys[y][len] == '/')
+        {
+          fs->leaf = 0;
+          break;
+        }
+      }
     }
 
     // the circle is now complete

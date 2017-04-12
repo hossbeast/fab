@@ -41,7 +41,6 @@
 #include "fab/sigutil.h"
 #include "logger.h"
 #include "logger/arguments.h"
-#include "logger/config.h"
 #include "moria/graph.h"
 
 #include "FABD.errtab.h"
@@ -58,39 +57,6 @@
 
 #include "identity.h"
 #include "parseint.h"
-
-#if DEBUG || DEVEL
-static xapi obtain_lock()
-{
-  enter;
-
-  while(1)
-  {
-    pid_t pgid = 0;
-    fatal(ipc_lock_obtain, &pgid, "%s/fabd/lock", g_params.ipcdir);
-
-    // lock obtained
-    if(pgid == 0)
-      break;
-
-    if(pgid == -1)
-      continue;
-
-    // check whether the lock holder is still running
-    int r = 0;
-    fatal(uxkill, -pgid, 0, &r);
-
-    // already running
-    if(r == 0)
-      fail(FABD_EXCL);
-
-    // not running ; forcibly release the lock, try again
-    fatal(ipc_lock_release, "%s/fabd/lock", g_params.ipcdir);
-  }
-  
-  finally : coda;
-}
-#endif
 
 static xapi begin()
 {
@@ -122,8 +88,6 @@ static xapi begin()
 
   // logging, with per-ipc logfiles
   fatal(logging_setup, hash);
-  logger_set_process_name("fabd");
-  logger_set_process_categories(L_FABD);
 
 #if DEBUG || DEVEL
   logs(L_IPC, "started");
@@ -144,7 +108,11 @@ static xapi begin()
     g_logging_skip_reconfigure = 1;
     g_server_no_acknowledge = 1;
 
-    fatal(obtain_lock);
+    pid_t pgid;
+    fatal(ipc_lock_obtain, &pgid, 0, "%s/fabd/lock", g_params.ipcdir);
+
+    if(pgid)
+      failf(FABD_DAEMONEXCL, "pgid", "%ld", (long)pgid);
   }
 #endif
 
@@ -162,7 +130,6 @@ int main(int argc, char** argv, char ** envp)
   enter;
 
   xapi R;
-  char space[4096];
 
   // libraries
   fatal(fab_load);
@@ -193,13 +160,10 @@ finally:
     xapi_infof("pgid", "%ld", (long)getpgid(0));
     xapi_infof("pid", "%ld", (long)getpid());
     xapi_infof("tid", "%ld", (long)gettid());
-
-    xapi_trace_full(space, sizeof(space), 0);
+    fatal(logger_trace_full, L_ERROR, XAPI_TRACE_COLORIZE | XAPI_TRACE_NONEWLINE);
 #else
-    xapi_trace_pithy(space, sizeof(space), 0);
+    fatal(logger_trace_pithy, L_ERROR, XAPI_TRACE_COLORIZE | XAPI_TRACE_NONEWLINE);
 #endif
-
-    xlogs(L_ERROR, L_NOCATEGORY, space);
   }
 
   // modules

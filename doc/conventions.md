@@ -50,6 +50,7 @@ xapi bits_say(const uint64_t bits, narrator * const restrict _narrator) notnull(
 single-invocation setup and teardown
 
 ```
+void module_init()              # affirmative initialization
 xapi module_setup()             # affirmative initialization
 void module_teardown()          # affirmative resource cleanup
 xapi module_cleanup()           # affirmative resource cleanup that may fail (close, dlclose)

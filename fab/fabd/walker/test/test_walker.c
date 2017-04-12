@@ -37,6 +37,7 @@
 #include "path.h"
 
 #include "walker.internal.h"
+#include "logging.h"
 #include "node.h"
 #include "node_operations.h"
 #include "filesystem.h"
@@ -50,6 +51,9 @@ typedef struct
   char * sequence;
   char * operations;
 } walker_test;
+
+filesystem * fs_stat;
+filesystem * fs_notify;
 
 #define OP_WATCH          1
 #define OP_REFRESH        2
@@ -82,6 +86,16 @@ static xapi walker_test_unit_setup(xunit_unit * unit)
   fatal(valyria_load);
   fatal(lorien_load);
   fatal(moria_load);
+  fatal(logging_finalize);
+
+  // mocked out dependencies
+  fatal(xmalloc, &fs_stat, sizeof(*fs_stat));
+  fs_stat->attrs = FILESYSTEM_INVALIDATE_STAT;
+  fs_stat->leaf = 0;
+
+  fatal(xmalloc, &fs_notify, sizeof(*fs_notify));
+  fs_notify->attrs = FILESYSTEM_INVALIDATE_NOTIFY;
+  fs_notify->leaf = 0;
 
   finally : coda;
 }
@@ -93,6 +107,9 @@ static xapi walker_test_unit_cleanup(xunit_unit * unit)
   fatal(valyria_unload);
   fatal(lorien_unload);
   fatal(moria_unload);
+
+  wfree(fs_stat);
+  wfree(fs_notify);
 
   finally : coda;
 }
@@ -152,14 +169,22 @@ static xapi create(walker_context * ctx, node ** restrict n, uint8_t fstype, con
   finally : coda;
 }
 
-static const struct filesystem * fslookup(walker_test_context * ctx, const char * const restrict path)
+static const struct filesystem * fslookup(walker_test_context * ctx, const char * const restrict path, size_t pathl)
 {
-  return ctx->udata;
+  if(path[0] < 'N')
+    return fs_stat;
+
+  else if(path[0] >= 'N')
+    return fs_notify;
+
+  return 0;
 }
 
 static xapi watch(walker_test_context * ctx, node * n)
 {
   enter;
+
+  n->wd = 1;
 
   walker_test_operation * operation;
   fatal(array_push, ctx->operations, &operation);
@@ -215,13 +240,12 @@ static xapi walker_test_entry(xunit_test * _test)
   walker_test_context ctx = {};
   dictionary * infos = 0;
   map * nodes = 0;
-  filesystem * fs = 0;
-  int x;
-  char act[32] = { };
+  char op[32] = { };
   narrator_fixed_storage fixed;
-  fixed.s = act;
+  fixed.s = op;
   fixed.l = 0;
-  fixed.a = sizeof(act);
+  fixed.a = sizeof(op);
+  int x;
 
   fatal(node_setup);
 
@@ -229,18 +253,12 @@ static xapi walker_test_entry(xunit_test * _test)
   fatal(dictionary_createx, &infos, sizeof(ftwinfo), info_free, 0, 0);
   fatal(array_create, &ctx.operations, sizeof(walker_test_operation));
 
-  // mocked out dependencies
-  fatal(xmalloc, &fs, sizeof(*fs));
-  fs->attrs = FILESYSTEM_INVALIDATE_STAT;
-  fs->leaf = 0;
-
   ctx.create = (void*)create;
   ctx.fslookup = (void*)fslookup;
   ctx.refresh = (void*)refresh;
   ctx.watch = (void*)watch;
   ctx.connect = (void*)connect;
   ctx.disintegrate = (void*)disintegrate;
-  ctx.udata = fs;
 
   // setup the initial graph
   char * edges = test->edges;
@@ -249,7 +267,8 @@ static xapi walker_test_entry(xunit_test * _test)
     node * A;
     if((A = map_get(nodes, MM(edges[0]))) == 0)
     {
-      fatal(create, 0, &A, 0, fs, &edges[0]);
+      const filesystem * fs = fslookup(0, &edges[0], 1);
+      fatal(create, 0, &A, NODE_FS_TYPE_DIR, fs, &edges[0]);
       fatal(map_set, nodes, MM(edges[0]), A);
     }
     A->fstype = NODE_FS_TYPE_DIR;
@@ -257,7 +276,8 @@ static xapi walker_test_entry(xunit_test * _test)
     node * B;
     if((B = map_get(nodes, MM(edges[1]))) == 0)
     {
-      fatal(create, 0, &B, NODE_FS_TYPE_FILE, fs, &edges[1]);
+      const filesystem * fs = fslookup(0, &edges[1], 1);
+      fatal(create, 0, &B, NODE_FS_TYPE_DIR, fs, &edges[1]);
       fatal(map_set, nodes, MM(edges[1]), B);
     }
 
@@ -318,10 +338,6 @@ static xapi walker_test_entry(xunit_test * _test)
   char * ops = test->operations;
   for(x = 0; x < ctx.operations->l || *ops; x++)
   {
-    char * exp = ops;
-    while(*ops && *ops != ' ')
-      ops++;
-
     // expected
     if(x >= ctx.operations->l)
     {
@@ -332,19 +348,23 @@ static xapi walker_test_entry(xunit_test * _test)
     // actual
     else
     {
+      char * exp = ops;
+      while(*ops && *ops != ' ')
+        ops++;
+
       fatal(narrator_reset, N);
-      act[0] = 0;
+      op[0] = 0;
       walker_test_operation * act_op = array_get(ctx.operations, x);
       fatal(walker_test_operation_say, act_op, N);
 
       if(!*exp)
       {
-        xapi_info_pushs("unexpected operation", act);
+        xapi_info_pushs("unexpected operation", op);
         fail(XUNIT_FAIL);
       }
       else
       {
-        assert_eq_w(exp, ops - exp, act, strlen(act));
+        assert_eq_w(exp, ops - exp, op, strlen(op));
       }
     }
 
@@ -357,7 +377,6 @@ finally:
 
   fatal(map_xfree, nodes);
   fatal(dictionary_xfree, infos);
-  wfree(fs);
 coda;
 }
 
@@ -370,6 +389,7 @@ xunit_unit xunit = {
   , xu_cleanup : walker_test_unit_cleanup
   , xu_entry : walker_test_entry
   , xu_tests : (xunit_test*[]) {
+    /* FILESYSTEM_INVALIDATE_STAT */
       (walker_test[]) {{        // something from nothing
           sequence : "*0A AB 0A*"
         , operations : "A:B !B"
@@ -389,7 +409,6 @@ xunit_unit xunit = {
         , root : "A"
         , sequence : "*0A AB AC 0A*"
         , operations : "!B !C"
-, xu_only : 1
       }}
     , (walker_test[]) {{
           edges : "AB AC BD BE CF CG"
@@ -426,6 +445,40 @@ xunit_unit xunit = {
         , root : "A"
         , sequence : "*0A *AB BD BE AB* 0A*"
         , operations : "!D !E A~C"
+      }}
+
+    /* FILESYSTEM_INVALIDATE_NOTIFY */
+    , (walker_test[]) {{        // something from nothing
+          sequence : "*0N NO 0N*"
+        , operations : "N:O !O @N"
+      }}
+    , (walker_test[]) {{        // something from nothing
+          sequence : "*0N *NO NO* 0N*"
+        , operations : "N:O @O @N"
+      }}
+    , (walker_test[]) {{        // new leaves { O:P, O:Q }
+          edges : "NO"
+        , root : "N"
+        , sequence : "*0N *NO OP OQ NO* 0N*"
+        , operations : "O:P !P O:Q !Q @O @N"
+      }}
+    , (walker_test[]) {{        // new leaves { N:P, P:Q, P:R }
+          edges : "NO"
+        , root : "N"
+        , sequence : "*0N *NO NO* *NP PQ PR NP* 0N*"
+        , operations : "@O N:P P:Q !Q P:R !R @P @N"
+      }}
+
+    /* FILESYSTEM_INVALIDATE_STAT containing a FILESYSTEM_INVALIDATE_NOTIFY */
+    , (walker_test[]) {{        // something from nothing
+          sequence : "*0A *AN AN* 0A*"
+        , operations : "A:N @N"
+      }}
+    , (walker_test[]) {{        // new leaves { A:P, P:Q, P:R }
+          edges : "AB"
+        , root : "A"
+        , sequence : "*0A *AB AB* *AP PQ PR AP* 0A*"
+        , operations : "A:P P:Q !Q P:R !R @P"
       }}
     , 0
   }

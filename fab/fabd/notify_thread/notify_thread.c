@@ -34,6 +34,7 @@
 #include "xlinux/xstring.h"
 #include "logger/config.h"
 #include "valyria/map.h"
+#include "narrator.h"
 
 #include "notify_thread.h"
 #include "params.h"
@@ -41,6 +42,8 @@
 #include "node.h"
 #include "walker.h"
 #include "sweeper_thread.h"
+#include "path.h"
+#include "inotify_mask.h"
 
 #include "atomic.h"
 #include "macros.h"
@@ -55,6 +58,7 @@ static xapi notify_thread()
 
   sigset_t sigs;
   char buffer[4096] = {};
+  narrator * N;
 
   g_params.thread_notify = gettid();
 
@@ -79,7 +83,27 @@ static xapi notify_thread()
     while(o < r)
     {
       struct inotify_event * ev = (void*)buffer + o;
-      fatal(sweeper_thread_enqueue, ev->wd, ev->mask, ev->name, strlen(ev->name));
+
+      if(ev->mask & IN_IGNORED)
+      {
+
+      }
+      else
+      {
+        if(log_would(L_FSEVENT))
+        {
+          fatal(log_start, L_FSEVENT, &N);
+          node * n = map_get(g_nodes_by_wd, MM(ev->wd));
+          char path[512];
+          node_get_relative_path(n, path, sizeof(path));
+          sayf("%s/%s ", path, ev->name);
+          fatal(inotify_mask_say, ev->mask, N);
+          fatal(log_finish);
+        }
+
+        fatal(sweeper_thread_enqueue, ev->wd, ev->mask, ev->name, strlen(ev->name));
+      }
+
       o += sizeof(*ev) + ev->len;
     }
   }
@@ -98,8 +122,6 @@ static void * notify_thread_main(void * arg)
   enter;
 
   xapi R;
-  char space[4096];
-
   logger_set_thread_name("notify");
   logger_set_thread_categories(L_NOTIFY);
   fatal(notify_thread, arg);
@@ -112,11 +134,10 @@ finally:
     xapi_infof("pgid", "%ld", (long)getpgid(0));
     xapi_infof("pid", "%ld", (long)getpid());
     xapi_infof("tid", "%ld", (long)gettid());
-    xapi_trace_full(space, sizeof(space), 0);
+    fatal(logger_xtrace_full, L_ERROR, L_NONAMES, XAPI_TRACE_COLORIZE | XAPI_TRACE_NONEWLINE);
 #else
-    xapi_trace_pithy(space, sizeof(space), 0);
+    fatal(logger_xtrace_pithy, L_ERROR, L_NONAMES, XAPI_TRACE_COLORIZE | XAPI_TRACE_NONEWLINE);
 #endif
-    logf(L_ERROR, "\n%s", space);
   }
 conclude(&R);
 
@@ -173,10 +194,19 @@ xapi notify_thread_watch(node * n)
   mask |= IN_ONLYDIR | IN_EXCL_UNLINK;
 
   // full path
-  node_get_path(n, space, sizeof(space));
+  node_get_absolute_path(n, space, sizeof(space));
 
   fatal(xinotify_add_watch, &n->wd, in_fd, space, mask);
   fatal(map_set, g_nodes_by_wd, MM(n->wd), n);
+
+  if(log_would(L_GRAPH))
+  {
+    narrator * N;
+    fatal(log_start, L_GRAPH, &N);
+    says(">> ");
+    fatal(node_path_say, n, N);
+    fatal(log_finish);
+  }
 
   finally : coda;
 }

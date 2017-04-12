@@ -42,12 +42,14 @@ extern struct logger_category * categories;
 #define L_CONFIG   categories[BASE + 0x3].id
 #define L_PARAMS   categories[BASE + 0x4].id
 #define L_USAGE    categories[BASE + 0x5].id
+#define L_GRAPH    categories[BASE + 0x6].id
+#define L_FSEVENT  categories[BASE + 0x7].id
 
-#define L_NOTIFY   categories[BASE + 0x6].id
-#define L_SERVER   categories[BASE + 0x7].id
-#define L_SWEEPER  categories[BASE + 0x8].id
-#define L_MONITOR  categories[BASE + 0x9].id
-#define L_FABD     categories[BASE + 0xa].id
+#define L_NOTIFY   categories[BASE + 0x8].id
+#define L_SERVER   categories[BASE + 0x9].id
+#define L_SWEEPER  categories[BASE + 0xa].id
+#define L_MONITOR  categories[BASE + 0xb].id
+#define L_DAEMON   categories[BASE + 0xc].id
 
 /// logging_setup
 //

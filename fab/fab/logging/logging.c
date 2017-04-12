@@ -24,18 +24,20 @@
 
 logger_category * categories = (logger_category[]) {
 #if DEBUG || DEVEL || XAPI
-    { name : "IPC"        , description : "signal-exchange" }
+    { name : "IPC"        , description : "signal-exchange", attr : L_NAMES }
+  , { name : "PROTOCOL"   , attr : L_NAMES }
   ,
 #endif
-    { name : "ERROR"      , description : "errors leading to shutdown", attr : L_RED }
+    { name : "ERROR"      , description : "fatal errors" }
   , { name : "ARGS"       , description : "program arguments report" }
   , { name : "PARAMS"     , description : "program parameters report" }
-  , { name : "FAB"        , description : "fab client" }
+
+  , { name : "CLIENT"     , description : "fab client", optional : 1 }
   , { }
 };
 
 logger_stream * streams = (logger_stream []) {
-    { name : "console"  , type : LOGGER_STREAM_FD , fd : 1  , expr : "+ERROR", attr : L_NAMES }
+    { name : "console"  , type : LOGGER_STREAM_FD , fd : 1  , expr : "+ERROR" }
   , { }
 };
 
@@ -51,7 +53,7 @@ xapi logging_setup(char ** envp)
   fatal(logger_arguments_setup, envp);
   fatal(logger_finalize);
   logger_set_process_name("fab");
-  logger_set_process_categories(L_FAB);
+  logger_set_process_categories(L_CLIENT);
 
   finally : coda;
 }

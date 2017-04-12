@@ -38,6 +38,7 @@
 #include "narrator.h"
 
 #include "sweeper_thread.h"
+#include "server_thread.h"
 #include "filesystem.h"
 #include "inotify_mask.h"
 #include "logging.h"
@@ -107,18 +108,11 @@ static xapi sweeper_thread()
         struct event * ev = array_get(queue, x);
         node * parent = map_get(g_nodes_by_wd, MM(ev->wd));
 
-#if 0
-narrator * N = g_narrator_stdout;
-sayf("EVENT %s/%s ", parent->name->name, ev->name);
-fatal(inotify_mask_say, ev->mask, g_narrator_stdout);
-sayf("\n");
-#endif
-
         if(ev->mask & (IN_CREATE | IN_MOVED_TO))
         {
           if(ev->mask & IN_ISDIR)
           {
-            size_t pathl = node_get_path(parent, space, sizeof(space));
+            size_t pathl = node_get_absolute_path(parent, space, sizeof(space));
             pathl += znloads(space + pathl, sizeof(space) - pathl, "/");
             pathl += znloadw(space + pathl, sizeof(space) - pathl, ev->name, ev->namel);
 
@@ -148,7 +142,10 @@ sayf("\n");
       }
 
       queue->l = 0;
-      fatal(node_dump);
+
+      // kick the server thread
+      server_thread_rebuild = 1;
+      syscall(SYS_tgkill, g_params.pid, g_params.thread_server, FABIPC_SIGSCH);
     }
 
     queue_len = queue->l;
@@ -170,8 +167,6 @@ static void * sweeper_thread_main(void * arg)
   enter;
 
   xapi R;
-  char space[4096];
-
   logger_set_thread_name("sweeper");
   logger_set_thread_categories(L_SWEEPER);
   fatal(sweeper_thread);
@@ -184,11 +179,10 @@ finally:
     xapi_infof("pgid", "%ld", (long)getpgid(0));
     xapi_infof("pid", "%ld", (long)getpid());
     xapi_infof("tid", "%ld", (long)gettid());
-    xapi_trace_full(space, sizeof(space), 0);
+    fatal(logger_xtrace_full, L_ERROR, L_NONAMES, XAPI_TRACE_COLORIZE | XAPI_TRACE_NONEWLINE);
 #else
-    xapi_trace_pithy(space, sizeof(space), 0);
+    fatal(logger_xtrace_pithy, L_ERROR, L_NONAMES, XAPI_TRACE_COLORIZE | XAPI_TRACE_NONEWLINE);
 #endif
-    logf(L_ERROR, "\n%s", space);
   }
 conclude(&R);
 

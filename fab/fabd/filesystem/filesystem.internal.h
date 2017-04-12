@@ -15,15 +15,13 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef _INOTIFY_MASK
-#define _INOTIFY_MASK
+#ifndef _FILESYSTEM_INTERNAL_H
+#define _FILESYSTEM_INTERNAL_H
 
-#include <stdint.h>
-#include "xapi.h"
+#include "filesystem.h"
 
-struct narrator;
+struct map;
+extern struct map * filesystems;
 
-xapi inotify_mask_say(uint32_t mask, struct narrator * const restrict N)
-  __attribute__((nonnull));
-
+#undef restrict
 #endif

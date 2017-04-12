@@ -80,17 +80,13 @@
 //  attempt to obtain an exclusive lock
 //
 // PARAMETERS
-//  pgid  - (returns) zero on success, otherwise pgid of lock holder
+//  pgid  - (returns) zero if the lock was obtained, otherwise pgid of lock holder
+//  [fd]  - (returns) fd if the lock was obtained, otherwise -1
 //  fmt   - printf-style format string for the path to the lockfile
 //
-// REMARKS
-//  after the call,
-//   if *pgid == 0, then the lock was obtained
-//   if *pgid > 0, the lock is already held, and *pgid identifies the lock holder
-//   if *pgid < 0, the operation should be re-tried
-//
-xapi ipc_lock_obtain(pid_t * pgid, char * const restrict fmt, ...)
-  __attribute__((nonnull(1, 2)));
+xapi ipc_lock_obtain(pid_t * pgid, int * restrict fd, char * const restrict fmt, ...)
+  __attribute__((nonnull(1, 3)))
+  __attribute__((format(printf, 3, 4 )));
 
 /// ipc_lock_update
 //

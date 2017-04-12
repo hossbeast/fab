@@ -35,7 +35,7 @@ typedef struct walker_context
   int walk_id;
 
   xapi (*create)(struct walker_context * restrict ctx, struct node ** restrict n, uint8_t fstype, const struct filesystem * restrict fs, const char * restrict name);
-  const struct filesystem * (*fslookup)(struct walker_context * restrict ctx, const char * const restrict path);
+  const struct filesystem * (*fslookup)(struct walker_context * restrict ctx, const char * const restrict path, size_t pathl);
   xapi (*refresh)(struct walker_context * restrict ctx, struct node * restrict n);
   xapi (*watch)(struct walker_context * restrict ctx, struct node * restrict n);
   xapi (*connect)(struct walker_context * restrict ctx, struct node * restrict parent, struct node * restrict n);

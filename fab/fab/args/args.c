@@ -197,11 +197,11 @@ xapi args_collate(const command * restrict cmd, memblk * restrict mb, fab_reques
 
   fatal(mempolicy_push, memblk_getpolicy(mb), &mpc);
   fatal(fab_request_create, req);
-  fatal(fab_request_config_stages, *req, "logging.console.filters = [ \"+WARN +INFO\" ]");
+  fatal(fab_request_config_stages, *req, "logging.console.exprs = [ \"+WARN +INFO\" ]");
   if(g_logc)
-    fatal(fab_request_config_stagef, *req, "logging.console.filters += [ \"%s\" ]", g_logvs);
+    fatal(fab_request_config_stagef, *req, "logging.console.exprs += [ \"%s\" ]", g_logvs);
   if(g_ulogc)
-    fatal(fab_request_config_stagef, *req, "logging.console.filters += [ \"%s\" ]", g_ulogvs);
+    fatal(fab_request_config_stagef, *req, "logging.console.exprs += [ \"%s\" ]", g_ulogvs);
 
   fatal(cmd->collate, *req, &config_applied);
 

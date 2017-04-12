@@ -24,8 +24,10 @@
 #include "valyria/list.h"
 #include "valyria/map.h"
 #include "value.h"
+#include "narrator.h"
 
 #include "node_operations.h"
+#include "logging.h"
 #include "node.h"
 #include "filesystem.h"
 
@@ -50,6 +52,15 @@ static xapi invalidate_visitor(vertex * v, int distance, void * arg)
   node * n = vertex_value(v);
   n->invalid = 1;
 
+  if(log_would(L_GRAPH))
+  {
+    narrator * N;
+    fatal(log_start, L_GRAPH, &N);
+    fatal(narrator_says, N, "invalidate ");
+    fatal(node_path_say, n, N);
+    fatal(log_finish);
+  }
+
   finally : coda;
 }
 
@@ -61,8 +72,24 @@ xapi node_connect(node * restrict parent, node * restrict n)
 {
   enter;
 
-  fatal(graph_connect_edge, g_node_graph, vertex_containerof(parent), vertex_containerof(n), NODE_RELATION_FS);
+  fatal(graph_connect_edge
+    , g_node_graph
+    , vertex_containerof(parent)
+    , vertex_containerof(n)
+    , NODE_RELATION_FS
+  );
   n->fsparent = parent;
+
+  if(log_would(L_GRAPH))
+  {
+    narrator * N;
+    fatal(log_start, L_GRAPH, &N);
+    says("connect RELATION_FS ");
+    fatal(node_path_say, n, N);
+    says(" : ");
+    fatal(node_path_say, parent, N);
+    fatal(log_finish);
+  }
 
   finally : coda;
 }

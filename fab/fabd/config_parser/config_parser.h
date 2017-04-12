@@ -20,7 +20,7 @@
 
 #include "xapi.h"
 
-struct value; // libvalue
+struct value;       // libvalue
 struct value_store; // libavlue
 
 struct config_parser;

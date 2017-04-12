@@ -119,7 +119,7 @@ static xapi begin(int argc, char** argv, char ** envp)
 #endif
 
 #if 0
-  // possibly kill the existing fabd instance, if any
+  // kill the existing fabd instance, if any
   if(changed credentials)
     fatal(client_terminate);
 #endif
@@ -134,11 +134,11 @@ static xapi begin(int argc, char** argv, char ** envp)
 finally:
   if(XAPI_UNWINDING)
   {
-    if(XAPI_ERRVAL == FAB_FABDEXIT || XAPI_ERRVAL == FAB_UNSUCCESS)
+    if(XAPI_ERRVAL == FAB_DAEMONEXITED)
     {
-      // on orderly shutdown fabd has already backtraced to our stdout
+      // fabd terminated unexpectedly in an orderly fashion, and already backtraced to our stdout
     }
-    if(XAPI_ERRVAL == MAIN_BADARGS || XAPI_ERRVAL == MAIN_NOCOMMAND)
+    else if(XAPI_ERRVAL == MAIN_BADARGS || XAPI_ERRVAL == MAIN_NOCOMMAND)
     {
       fatal(args_usage, cmd, 1, 1);
     }
@@ -159,7 +159,6 @@ int main(int argc, char ** argv, char ** envp)
   enter;
 
   xapi R;
-  char space[4096];
 
   // load libraries
   fatal(fab_load);
@@ -186,12 +185,10 @@ finally:
     xapi_infof("pid", "%ld", (long)getpid());
     xapi_infof("tid", "%ld", (long)gettid());
 
-    xapi_trace_full(space, sizeof(space), 0);
+    fatal(logger_trace_full, L_ERROR, XAPI_TRACE_COLORIZE);
 #else
-    xapi_trace_pithy(space, sizeof(space), 0);
+    fatal(logger_trace_pithy, L_ERROR, XAPI_TRACE_COLORIZE);
 #endif
-
-    xlogs(L_ERROR, L_NOCATEGORY, space);
   }
 
   // modules

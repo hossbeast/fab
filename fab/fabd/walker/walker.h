@@ -28,13 +28,14 @@ struct node;
 /// walker_walk
 //
 // SUMMARY
+//  
 //
 // PARAMETERS
-//  [root]   - 
-//  ancestor - 
-//  path     - 
+//  [root]     - 
+//  [ancestor] - 
+//  abspath    - absolute path to a directory
 //
-xapi walker_walk(struct node ** restrict root, struct node * restrict ancestor, const char * restrict path)
+xapi walker_walk(struct node ** restrict root, struct node * restrict ancestor, const char * restrict abspath)
   __attribute__((nonnull(1,3)));
 
 #endif

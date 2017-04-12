@@ -19,9 +19,8 @@
 #include "xapi/errtab.h"
 #include "xlinux/xstdlib.h"
 
-#include "xlinux/load.h"
-#include "valyria/load.h"
 #include "lorien/load.h"
+#include "value/load.h"
 #include "yyutil/load.h"
 
 #include "xunit.h"

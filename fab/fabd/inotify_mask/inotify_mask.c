@@ -30,12 +30,12 @@ xapi inotify_mask_say(uint32_t m, struct narrator * N)
   {
     char* s = 0;
     uint32_t b = 0;
-
+                                                                                          // node operations
          if(m & IN_ACCESS)					{ s = "IN_ACCESS"					; b = IN_ACCESS					; }
     else if(m & IN_ATTRIB)					{ s = "IN_ATTRIB"					; b = IN_ATTRIB					; }
     else if(m & IN_CLOSE_WRITE)			{ s = "IN_CLOSE_WRITE"		; b = IN_CLOSE_WRITE		; }
     else if(m & IN_CLOSE_NOWRITE)		{ s = "IN_CLOSE_NOWRITE"	; b = IN_CLOSE_NOWRITE	; }
-    else if(m & IN_CREATE)					{ s = "IN_CREATE"					; b = IN_CREATE					; } // new node
+    else if(m & IN_CREATE)					{ s = "IN_CREATE"					; b = IN_CREATE					; } // connect
     else if(m & IN_DELETE)					{ s = "IN_DELETE"					; b = IN_DELETE					; } // disintegrate
     else if(m & IN_DELETE_SELF)			{ s = "IN_DELETE_SELF"		; b = IN_DELETE_SELF		; } // disintegrate
     else if(m & IN_MODIFY)					{ s = "IN_MODIFY"					; b = IN_MODIFY					; } // invalidate
@@ -50,7 +50,7 @@ xapi inotify_mask_say(uint32_t m, struct narrator * N)
     else														{ s = "unknown"						; b = ~0								; }
 
     if(said)
-      says(",");
+      says("|");
     says(s);
     said = 1;
     m &= ~b;

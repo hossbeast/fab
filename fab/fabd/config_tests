@@ -1,3 +1,0 @@
-given a config sample, parse and validate
-given a config sample and some queries, assert on result of queries
-given two config trees, merge and assert on the result

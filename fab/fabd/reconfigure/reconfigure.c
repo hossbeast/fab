@@ -87,7 +87,7 @@ static xapi applyw(const char * const restrict text, size_t textl, const char * 
   // merge with the existing config
   if(*dst == 0)
     *dst = val;
-  else
+  else if(val)
     fatal(value_merge, *dst, val);
 
   finally : coda;
@@ -136,8 +136,12 @@ xapi reconfigure_stage_files()
   fatal(usnarfs, &text, 0, SYSTEM_CONFIG_PATH);
   if(text)
   {
-    logf(L_CONFIG, "staging global config %s", SYSTEM_CONFIG_PATH);
+    logf(L_CONFIG, "staging global config @ %s", SYSTEM_CONFIG_PATH);
     fatal(applys, text, SYSTEM_CONFIG_PATH, store_staging, &config_staging);
+  }
+  else
+  {
+    logf(L_CONFIG, "no global config @ %s", SYSTEM_CONFIG_PATH);
   }
 
   // apply user-level config
@@ -145,8 +149,12 @@ xapi reconfigure_stage_files()
   fatal(usnarff, &text, 0, "%s/%s", g_params.homedir, USER_CONFIG_PATH);
   if(text)
   {
-    logf(L_CONFIG, "staging user config %s/%s", g_params.homedir, USER_CONFIG_PATH);
+    logf(L_CONFIG, "staging user config @ %s/%s", g_params.homedir, USER_CONFIG_PATH);
     fatal(applys, text, USER_CONFIG_PATH, store_staging, &config_staging);
+  }
+  else
+  {
+    logf(L_CONFIG, "no user config @ %s/%s", g_params.homedir, USER_CONFIG_PATH);
   }
 
   // apply project-level config
@@ -154,8 +162,12 @@ xapi reconfigure_stage_files()
   fatal(usnarfats, &text, 0, g_params.proj_dirfd, PROJECT_CONFIG_PATH);
   if(text)
   {
-    logf(L_CONFIG, "staging project config %s/%s", g_params.proj_dir, PROJECT_CONFIG_PATH);
+    logf(L_CONFIG, "staging project config @ %s/%s", g_params.proj_dir, PROJECT_CONFIG_PATH);
     fatal(applys, text, PROJECT_CONFIG_PATH, store_staging, &config_staging);
+  }
+  else
+  {
+    logf(L_CONFIG, "no project config @ %s/%s", g_params.proj_dir, PROJECT_CONFIG_PATH);
   }
 
 finally:
@@ -176,7 +188,7 @@ xapi reconfigure()
 {
   enter;
 
-  char space[4096];
+  char trace[4096];
   reconfigure_context ctx;
   ctx.proj_dir = g_params.proj_dir;
 
@@ -191,13 +203,13 @@ xapi reconfigure()
       fail(0);
 
 #if DEBUG || DEVEL || XAPI
-    xapi_trace_full(space, sizeof(space), 0);
+    xapi_trace_full(trace, sizeof(trace), 0);
 #else
-    xapi_trace_pithy(space, sizeof(space), 0);
+    xapi_trace_pithy(trace, sizeof(trace), 0);
 #endif
     xapi_calltree_unwind();
 
-    xlogs(L_WARN, L_NOCATEGORY, space);
+    xlogs(L_WARN, L_NOCATEGORY, trace);
   }
   else
   {

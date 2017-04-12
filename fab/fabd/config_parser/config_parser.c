@@ -46,8 +46,6 @@ struct config_xtra;
 struct config_parser
 {
   void * p;
-
-  value_store * stor;
 };
 
 //
@@ -83,8 +81,6 @@ xapi config_parser_create(config_parser ** const parser)
   fatal(xmalloc, parser, sizeof(**parser));
   tfatalize(perrtab_KERNEL, ENOMEM, config_yylex_init, &(*parser)->p);
 
-  fatal(value_store_create, &(*parser)->stor);
-
   finally : coda;
 }
 
@@ -95,7 +91,6 @@ xapi config_parser_xfree(config_parser* const p)
   if(p)
   {
     config_yylex_destroy(p->p);
-    fatal(value_store_xfree, p->stor);
   }
 
   wfree(p);
@@ -156,7 +151,7 @@ xapi config_parser_parse(
     fail(KERNEL_ENOMEM);
 
   pp.scanner = (*parser)->p;
-  pp.stor = (*parser)->stor;
+  pp.stor = *stor;
 
   // make available to the lexer
   config_yyset_extra(&pp, (*parser)->p);

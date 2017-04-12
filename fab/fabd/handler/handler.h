@@ -28,6 +28,8 @@ struct fab_request;
 struct fab_response;
 struct memblk;
 
+xapi handler_build(void);
+
 xapi handler_dispatch(
     struct fab_request * const restrict request
   , struct memblk * const restrict mb

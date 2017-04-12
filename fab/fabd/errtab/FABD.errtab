@@ -17,5 +17,5 @@
 
 1 BADIPC      ipc failure
 2 EXEPERMS    fabd executable must be owned by fabsys:fabsys and have ug+s permissions
-3 EXCL        fabd already running
+3 DAEMONEXCL  fab daemon already running
 4 UNSATISFIED unsatisfied dependencies

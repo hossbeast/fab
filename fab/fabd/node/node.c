@@ -20,6 +20,7 @@
 #include "valyria/list.h"
 #include "valyria/map.h"
 #include "value.h"
+#include "narrator.h"
 
 #include "node.h"
 #include "filesystem.h"
@@ -35,22 +36,11 @@ map * g_nodes_by_wd;
 
 #define restrict __restrict
 
-#if 0
-static struct {
-  const char * name;
-  int opt;
-} fstype_opts[] = {
-#define NODE_FS_TYPE(a, b, c) [ (b) ] = { opt : (b), name : c },
-NODE_FS_TYPE_TABLE
-#undef NODE_FS_TYPE
-};
-#endif
-
 static xapi dump_visitor(vertex * v, int distance, void * arg)
 {
   enter;
 
-  printf("%*s%s\n", distance * 2, "", v->label);
+  printf("node_dump %*s%s\n", distance * 2, "", v->label);
 
   finally : coda;
 }
@@ -83,6 +73,9 @@ xapi node_reconfigure(reconfigure_context * ctx, const value * restrict config, 
 {
   enter;
 
+  char path[512];
+  size_t pathl;
+
   list * vertices;
   int x;
 
@@ -94,7 +87,10 @@ xapi node_reconfigure(reconfigure_context * ctx, const value * restrict config, 
     {
       node * n = vertex_value(list_get(vertices, x));
       if(n->fstype == NODE_FS_TYPE_DIR)
-        n->fs = filesystem_lookup(n->name->path);
+      {
+        pathl = node_get_absolute_path(n, path, sizeof(path));
+        n->fs = filesystem_lookup(path, pathl);
+      }
     }
   }
 
@@ -170,7 +166,7 @@ void node_destroy(node * restrict n)
   path_xfree(&n->name);
 }
 
-size_t node_get_path(node * restrict n, void * restrict dst, size_t sz)
+size_t node_get_absolute_path(node * restrict n, void * restrict dst, size_t sz)
 {
   node * ns[64];
   size_t nsl = 0;
@@ -186,13 +182,52 @@ size_t node_get_path(node * restrict n, void * restrict dst, size_t sz)
   z += znloads(dst + z, sz - z, g_params.proj_dir);
 
   /* skip the project root node */
-printf(" - %.*s", ns[nsl - 1]->name->namel, ns[nsl - 1]->name->name);
   for(x = nsl - 2; x >= 0; x--)
   {
-printf(" + %.*s", ns[x]->name->namel, ns[x]->name->name);
+    vertex * v = vertex_containerof(ns[x]);
+
     z += znloads(dst + z, sz - z, "/");
-    z += znloadw(dst + z, sz - z, ns[x]->name->name, ns[x]->name->namel);
+    z += znloadw(dst + z, sz - z, v->label, v ->label_len);
   }
-printf("\n");
   return z;
+}
+
+size_t node_get_relative_path(node * restrict n, void * restrict dst, size_t sz)
+{
+  node * ns[64];
+  size_t nsl = 0;
+  size_t z = 0;
+  int x;
+
+  while(n && nsl < (sizeof(ns) / sizeof(ns[0])))
+  {
+    ns[nsl++] = n;
+    n = n->fsparent;
+  }
+
+  z += znloads(dst + z, sz - z, ".");
+
+  /* skip the project root node */
+  for(x = nsl - 2; x >= 0; x--)
+  {
+    vertex * v = vertex_containerof(ns[x]);
+
+    z += znloads(dst + z, sz - z, "/");
+    z += znloadw(dst + z, sz - z, v->label, v->label_len);
+  }
+  return z;
+}
+
+xapi node_path_say(node * restrict n, narrator * restrict N)
+{
+  enter;
+
+  char path[512];
+  size_t pathl;
+
+  pathl = node_get_relative_path(n, path, sizeof(path));
+
+  sayw(path, pathl);
+
+  finally : coda;
 }

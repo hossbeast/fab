@@ -22,13 +22,13 @@
 #include "xlinux/xunistd.h"
 #include "xlinux/xpthread.h"
 #include "xlinux/xsignal.h"
-#include "fab/ipc.h"
 #include "narrator.h"
 
 #include "internal.h"
 #include "sigutil.h"
 #include "logging.h"
 #include "FAB.errtab.h"
+#include "ipc.h"
 
 #include "identity.h"
 

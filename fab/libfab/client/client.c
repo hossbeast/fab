@@ -113,22 +113,24 @@ static xapi validate_result(fab_client * const restrict client, int expsig, sigi
   int exit;
   int fd = -1;
 
+  // SIGEND is sent by fabw
   if(actual->si_signo == FABIPC_SIGEND)
   {
-    // check child exit file
     fatal(ixclose, &fd);
     fatal(xopenf, &fd, O_RDONLY, "%s/fabd/exit", client->ipcdir);
     fatal(axread, fd, MM(exit));
 
     if(WIFEXITED(exit))
     {
+      // exited means orderly shutdown
       xapi_info_pushf("status", "%d", WEXITSTATUS(exit));
-      fail(FAB_FABDEXIT);
+      fail(FAB_DAEMONEXITED);
     }
     else if(WIFSIGNALED(exit))
     {
+      // failure means abnormal termination
       xapi_info_pushf("signal", "%d", WTERMSIG(exit));
-      fail(FAB_FABDFAIL);
+      fail(FAB_DAEMONFAILED);
     }
     fail(FAB_BADIPC);
   }
@@ -191,34 +193,18 @@ API xapi fab_client_prepare(fab_client * const restrict client)
 
   char space[512];
   pid_t pid;
+  pid_t pgid;
   int fd = -1;
 
   // client directory
   fatal(mkdirpf, FABIPC_MODE_DIR, "%s/client", client->ipcdir);
 
-  // obtain exclusive lock
-  while(1)
-  {
-    pid_t pgid;
-    fatal(ipc_lock_obtain, &pgid, "%s/client/lock", client->ipcdir);
+  // obtain the client lock
+  fatal(ipc_lock_obtain, &pgid, 0, "%s/client/lock", client->ipcdir);
 
-    // lock obtained
-    if(pgid == 0)
-      break;
-
-    if(pgid == -1)
-      continue;
-
-    int r;
-    fatal(uxkill, -pgid, 0, &r);
-
-    // already running
-    if(r == 0)
-      failf(FAB_FABLOCK, "pgid", "%ld", (long)pgid);
-
-    // not running ; forcibly release the lock, try again
-    fatal(ipc_lock_release, "%s/client/lock", client->ipcdir);
-  }
+  // client already running
+  if(pgid)
+    failf(FAB_CLIENTEXCL, "pgid", "%ld", (long)pgid);
 
   // canonical projdir symlink
   fatal(uxsymlinkf, "%s", "%s/projdir", client->projdir, client->ipcdir);
@@ -281,34 +267,13 @@ API xapi fab_client_launchp(fab_client * const restrict client)
   sigset_t sigs;
   sigset_t oset;
   char ** argv = 0;
-  int r;
   int i;
   int x;
 
-  // attempt to get the fabd lock
-  while(1)
-  {
-    fatal(ipc_lock_obtain, &client->pgid, "%s/fabd/lock", client->ipcdir);
+  // attempt to obtain the server lock
+  fatal(ipc_lock_obtain, &client->pgid, 0, "%s/fabd/lock", client->ipcdir);
 
-    // lock obtained
-    if(client->pgid == 0)
-      break;
-
-    if(client->pgid == -1)
-      continue;
-
-    // check whether the lock holder is still running
-    fatal(uxkill, -client->pgid, 0, &r);
-
-    // already running
-    if(r == 0)
-      break;
-
-    // not running ; forcibly release the lock, try again
-    fatal(ipc_lock_release, "%s/fabd/lock", client->ipcdir);
-  }
-
-  // daemon is already running
+  // server daemon is already running
   if(client->pgid)
     goto XAPI_FINALIZE;
 
@@ -402,8 +367,9 @@ API xapi fab_client_make_request(fab_client * const restrict client, memblk * co
 
 #if DEBUG || DEVEL
   narrator * N;
+
   fatal(log_start, L_PROTOCOL, &N);
-  logs(0, "request ");
+  says("request ");
   fatal(fab_request_say, request, N);
   fatal(log_finish);
 #endif
@@ -455,8 +421,8 @@ API xapi fab_client_make_request(fab_client * const restrict client, memblk * co
 //printf("%10s (%d) : tx : %s (%d) -> %d\n", "client", gettid(), FABIPC_SIGNAME(FABIPC_SIGACK), FABIPC_SIGACK, -client->pgid);
   fatal(xkill, -client->pgid, FABIPC_SIGACK);
 
-  if(response->exit)
-    fail(FAB_UNSUCCESS);
+//  if(response->exit)
+//    fail(FAB_UNSUCCESS);
 
 finally:
   fatal(ixshmdt, &shmaddr);
