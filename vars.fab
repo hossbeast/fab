@@ -27,7 +27,6 @@ $VERSIONN       = [ $VERSIONL ~ j s/^0//g ]       # version number
 #   - the --backtrace* options
 #   - the --logtrace* options
 #   - the *TOKEN and *STATE logging catories
-#   - SANITY logging categories and related options
 #  - disable ug+s check (to facilitate execution under valgrind)
 #
 #$debug         = [ 0 ]
@@ -183,7 +182,7 @@ $cflags       = [
 # cflags options
 $cflags_final = [ -O3 ]
 $cflags_debug = [ -O0 -ggdb3 -DDEBUG ]
-$cflags_devel = [ -O0 -ggdb3 -DDEVEL -DSANITY [ -DBUILDROOT="\""$buildroot"\"" ~ j ] -DDEBUG_IPC ]
+$cflags_devel = [ -O0 -ggdb3 -DDEVEL [ -DBUILDROOT="\""$buildroot"\"" ~ j ] -DDEBUG_IPC ]
 $cflags_xunit = [ -O0 -ggdb3 -DXUNIT [ $dlibxunit ~ s/^/-I ] ]
 
 # cflags variants
