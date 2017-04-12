@@ -60,17 +60,18 @@ static xapi test_basic()
   enter;
 
 #if XAPI_STACKTRACE
-  char space[4096];
-  size_t z;
+  char value[4096];
 #endif
 
   fatal(beta);
 
 finally:
 #if XAPI_STACKTRACE
-  z = xapi_trace_pithy(space, sizeof(space));
-  assertf(strstr(space, "foo=42"), "expected foo=42, actual trace\n**\n%.*s\n**\n", (int)z, space);
-  assertf(strstr(space, "bar=27"), "expected bar=27, actual trace\n**\n%.*s\n**\n", (int)z, space);
+  xapi_trace_info("foo", value, sizeof(value));
+  assert_eq_s("42", value);
+
+  xapi_trace_info("bar", value, sizeof(value));
+  assert_eq_s(value, "27");
 #endif
 coda;
 }
@@ -97,7 +98,6 @@ static xapi test_masking()
 
 #if XAPI_STACKTRACE
   char space[4096];
-  size_t z;
 #endif
 
   fatal(epsilon);
@@ -106,9 +106,9 @@ finally:
 #if XAPI_STACKTRACE
   xapi_infos("foo", "87");
 
-  z = xapi_trace_pithy(space, sizeof(space));
-  assertf(strstr(space, "foo=42"), "expected foo=42, actual trace\n**\n%.*s\n**\n", (int)z, space);
-  assertf(!strstr(space, "foo=87"), "expected !foo=87, actual trace\n**\n%.*s\n**\n", (int)z, space);
+  xapi_trace_pithy(space, sizeof(space));
+  assertf(strstr(space, "foo=42"), "expected foo=42, actual trace\n**\n%s\n**\n", space);
+  assertf(!strstr(space, "foo=87"), "expected !foo=87, actual trace\n**\n%s\n**\n", space);
 #endif
 coda;
 }
@@ -147,16 +147,15 @@ static xapi test_substack_0_skip()
 
 #if XAPI_STACKTRACE
   char space[4096];
-  size_t z;
 #endif
 
   fatal(zeta);
 
 finally:
 #if XAPI_STACKTRACE
-  z = xapi_trace_pithy(space, sizeof(space));
-  assertf(strstr(space, "foo=42"), "expected foo=42, actual trace\n**\n%.*s\n**\n", (int)z, space);
-  assertf(!strstr(space, "bar"), "expected !bar, actual trace\n**\n%.*s\n**\n", (int)z, space);
+  xapi_trace_pithy(space, sizeof(space));
+  assertf(strstr(space, "foo=42"), "expected foo=42, actual trace\n**\n%s\n**\n", space);
+  assertf(!strstr(space, "bar"), "expected !bar, actual trace\n**\n%s\n**\n", space);
 #endif
 coda;
 }
@@ -211,16 +210,16 @@ coda;
 int main()
 {
   xapi exit = test_basic();
-  assert_exit(TEST_ERROR_ONE, exit);
+  assert_eq_exit(TEST_ERROR_ONE, exit);
 
   exit = test_masking();
-  assert_exit(TEST_ERROR_TWO, exit);
+  assert_eq_exit(TEST_ERROR_TWO, exit);
 
   exit = test_substack_0_skip();
-  assert_exit(TEST_ERROR_ONE, exit);
+  assert_eq_exit(TEST_ERROR_ONE, exit);
 
   exit = test_substack_1_skip();
-  assert_exit(TEST_ERROR_ONE, exit);
+  assert_eq_exit(TEST_ERROR_ONE, exit);
 
   succeed;
 }

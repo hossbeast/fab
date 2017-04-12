@@ -52,7 +52,7 @@ static xapi alpha()
   int exit;
   if((exit = invoke(beta)))
   {
-    assert_exit(TEST_ERROR_ONE, exit);
+    assert_eq_exit(TEST_ERROR_ONE, exit);
 
 #if XAPI_STACKTRACE
     // discard
@@ -74,13 +74,10 @@ int main()
   {
     // alpha calls beta, unwinds, and calls delta, which fails with NOFATAL
     xapi exit = alpha();
-    assert_exit(TEST_ERROR_TWO, exit);
+    assert_eq_exit(TEST_ERROR_TWO, exit);
 
     // dead area should have been skipped
-    assertf(alpha_dead_count == 0
-      , "expected alpha-dead-count : 0, actual alpha-dead-count : %d"
-      , alpha_dead_count
-    );
+    assert_eq_d(0, alpha_dead_count);
   }
 
   // victory

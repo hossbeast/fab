@@ -45,7 +45,7 @@ static xapi alpha()
   int exit;
   if((exit = invoke(beta)))
   {
-    assert_exit(TEST_ERROR_ONE, exit);
+    assert_eq_exit(TEST_ERROR_ONE, exit);
 
     // propagate
     fail(exit);
@@ -57,7 +57,7 @@ static xapi alpha()
 int main()
 {
   xapi exit = alpha();
-  assert_exit(TEST_ERROR_ONE, exit);
+  assert_eq_exit(TEST_ERROR_ONE, exit);
 
   succeed;
 }

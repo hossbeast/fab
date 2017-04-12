@@ -33,7 +33,7 @@ static xapi epsilon()
   enter;
 
 finally:
-  // not failing at this point
+  // this frame is not failing
   xapi_infos("epsilon", "epsilon");
 coda;
 }
@@ -111,7 +111,7 @@ int main()
 {
   // alpha should propagate the error from beta
   xapi exit = zeta();
-  assert_exit(TEST_ERROR_ONE, exit);
+  assert_eq_exit(TEST_ERROR_ONE, exit);
 
   succeed;
 }

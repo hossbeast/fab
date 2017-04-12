@@ -60,13 +60,9 @@ int main()
   for(x = 0; x < expected; x++)
   {
     xapi exit = foo();
-    assert_exit(TEST_ERROR_ONE, exit);
+    assert_eq_exit(TEST_ERROR_ONE, exit);
   }
 
-  assertf(beta_count == expected
-    , "expected beta-count : %d, actual beta-count : %d"
-    , expected, beta_count
-  );
-
+  assert_eq_d(expected, beta_count);
   succeed;
 }

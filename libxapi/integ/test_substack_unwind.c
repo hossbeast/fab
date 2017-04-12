@@ -73,16 +73,16 @@ int main()
 {
   // alpha should fail
   xapi exit = alpha();
-  assert_exit(TEST_ERROR_ONE, exit);
+  assert_eq_exit(TEST_ERROR_ONE, exit);
 
   // dead area should have been skipped
-  assertf(beta_dead == 0, "expected beta-dead : 0, actual : %d", beta_dead);
+  assert_eq_d(0, beta_dead);
 
   // beta should have been run once
-  assertf(beta_live == 1, "expected beta-live : 1, actual : %d", beta_live);
+  assert_eq_d(1, beta_live);
 
   // delta should have been run twice
-  assertf(delta_live == 2, "expected delta-live : 2, actual : %d", delta_live);
+  assert_eq_d(2, delta_live);
 
   succeed;
 }

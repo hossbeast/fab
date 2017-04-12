@@ -52,7 +52,7 @@ static xapi foo()
 int main()
 {
   xapi exit = foo();
-  assert_exit(0, exit);
+  assert_eq_exit(0, exit);
 
   succeed;
 }

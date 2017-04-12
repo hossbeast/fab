@@ -77,25 +77,16 @@ int main()
 {
   // zeta fails
   xapi exit = zeta();
-  assert_exit(TEST_ERROR_ONE, exit);
+  assert_eq_exit(TEST_ERROR_ONE, exit);
 
   // alpha dead area should have been skipped
-  assertf(alpha_finally_count == 1
-    , "expected alpha-finally-count : 1, actual alpha-finally-count : %d"
-    , alpha_finally_count
-  );
+  assert_eq_d(1, alpha_finally_count);
 
   // beta should have been run once
-  assertf(beta_count == 1
-    , "expected beta-count : 1, actual beta-count : %d"
-    , beta_count
-  );
+  assert_eq_d(1, beta_count);
 
   // delta should have been run twice
-  assertf(delta_count == 1
-    , "expected delta-count : 1, actual delta-count : %d"
-    , delta_count
-  );
+  assert_eq_d(1, delta_count);
 
   succeed;
 }

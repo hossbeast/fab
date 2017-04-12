@@ -71,7 +71,7 @@ coda;
 int main()
 {
   xapi exit = foo();
-  assert_exit(TEST_ERROR_ONE, exit);
+  assert_eq_exit(TEST_ERROR_ONE, exit);
 
   succeed;
 }

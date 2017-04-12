@@ -57,7 +57,7 @@ int main()
   xapi exit = foo();
 
   // assertions
-  assert_exit(TEST_ERROR_ONE, exit);
+  assert_eq_exit(TEST_ERROR_ONE, exit);
 
   // victory
   succeed;

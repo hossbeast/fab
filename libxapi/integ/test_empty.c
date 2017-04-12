@@ -44,7 +44,7 @@ int main()
 {
   // alpha should fail
   xapi exit = alpha();
-  assert_exit(0, exit);
+  assert_eq_exit(0, exit);
 
   succeed;
 }

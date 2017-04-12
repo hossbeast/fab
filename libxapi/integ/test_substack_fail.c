@@ -161,23 +161,23 @@ int main()
 {
   // alpha should propagate the error from epsilon
   xapi exit = zeta();
-  assert_exit(TEST_ERROR_ONE, exit);
+  assert_eq_exit(TEST_ERROR_ONE, exit);
 
-  assertf(alpha_dead == 0, "expected alpha-dead : 0, actual : %d", alpha_dead);
-  assertf(beta_count == 1, "expected beta-count : 1, actual : %d", beta_count);
-  assertf(delta_count == 1, "expected delta-count : 1, actual : %d", delta_count);
-  assertf(epsilon_count == 1, "expected epsilon-count : 1, actual : %d", epsilon_count);
+  assert_eq_d(0, alpha_dead);
+  assert_eq_d(1, beta_count);
+  assert_eq_d(1, delta_count);
+  assert_eq_d(1, epsilon_count);
 
   // lambda has a subsequence rooted at frame 0
   exit = lambda();
-  assert_exit(TEST_ERROR_ONE, exit);
+  assert_eq_exit(TEST_ERROR_ONE, exit);
 
-  assertf(fi_live == 1, "expected fi-live : 1, actual : %d", fi_live);
-  assertf(fi_dead == 0, "expected fi-dead : 0, actual %d", fi_dead);
-  assertf(lambda_live_one == 1, "expected lambda-live-one : 1, actual %d", lambda_live_one);
-  assertf(lambda_dead_one == 0, "expected lambda-dead-one : 0, actual %d", lambda_dead_one);
-  assertf(lambda_live_two == 1, "expected lambda-live-two : 1, actual %d", lambda_live_two);
-  assertf(lambda_dead_two == 0, "expected lambda-dead-two : 0, actual %d", lambda_dead_two);
+  assert_eq_d(1, fi_live);
+  assert_eq_d(0, fi_dead);
+  assert_eq_d(1, lambda_live_one);
+  assert_eq_d(0, lambda_dead_one);
+  assert_eq_d(1, lambda_live_two);
+  assert_eq_d(0, lambda_dead_two);
 
   succeed;
 }
