@@ -80,8 +80,7 @@ static xapi epsilon()
 {
   enter;
 
-  xapi_fail_intent();
-  xapi_info_adds("foo", "42");
+  xapi_info_pushs("foo", "42");
   fail(TEST_ERROR_TWO);
 
   finally : coda;
@@ -120,7 +119,7 @@ static xapi lambda()
   fail(TEST_ERROR_TWO);
 
 finally:
-  xapi_info_adds("bar", "38");
+  xapi_info_pushs("bar", "38");
 coda;
 }
 
@@ -164,8 +163,7 @@ static xapi bar()
 {
   enter;
 
-  xapi_fail_intent();
-  xapi_info_adds("foo", "42");
+  xapi_info_pushs("foo", "42");
   fail(TEST_ERROR_ONE);
 
   finally : coda;
@@ -192,17 +190,19 @@ static xapi test_substack_1_skip()
   enter;
 
 #if XAPI_STACKTRACE
-  char space[4096];
-  size_t z;
+  char value[4096];
 #endif
 
   fatal(theta);
 
 finally:
 #if XAPI_STACKTRACE
-  z = xapi_trace_pithy(space, sizeof(space));
-  assertf(strstr(space, "foo=42"), "expected foo=42, actual trace\n**\n%.*s\n**\n", (int)z, space);
-  assertf(!strstr(space, "bar"), "expected !bar, actual trace\n**\n%.*s\n**\n", (int)z, space);
+  xapi_trace_info("foo", value, sizeof(value));
+  assert_eq_s("42", value);
+
+  value[0] = 0;
+  xapi_trace_info("bar", value, sizeof(value));
+  assert_eq_s("", value);
 #endif
 coda;
 }

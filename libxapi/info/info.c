@@ -29,9 +29,9 @@
 #define restrict __restrict
 
 // per-thread info staging
-__thread APIDATA info * info_staging;
-__thread APIDATA size_t info_stagingl;
-__thread APIDATA size_t info_staginga;
+__thread APIDATA info * xapi_infos_staging;
+__thread APIDATA size_t xapi_infos_stagingl;
+__thread APIDATA size_t xapi_infos_staginga;
 
 //
 // public
@@ -39,24 +39,54 @@ __thread APIDATA size_t info_staginga;
 
 void info_teardown()
 {
-  info_staging = 0;
-  info_stagingl = 0;
-  info_staginga = 0;
+  xapi_infos_staging = 0;
+  xapi_infos_stagingl = 0;
+  xapi_infos_staginga = 0;
 }
 
-void info_freeze(memblk * const restrict mb, info * restrict i)
+void info_setw(info * restrict i, const char * restrict key, size_t keyl, const char * restrict vbuf, size_t vlen)
+{
+  memset(i, 0, sizeof(*i));
+  mm_sloadw(&i->ks, &i->kl, key, keyl);
+  if(vbuf && vlen)
+    mm_sloadw(&i->vs, &i->vl, vbuf, vlen);
+  else
+    mm_sloadw(&i->vs, &i->vl, "", 0);
+}
+
+void info_setvf(info * restrict i, const char * restrict key, size_t keyl, const char * restrict vfmt, va_list va)
+{
+  va_list va2;
+  va_copy(va2, va);
+  size_t vlen = vsnprintf(0, 0, vfmt, va2);
+  va_end(va2);
+
+  memset(i, 0, sizeof(*i));
+  mm_sloadw(&i->ks, &i->kl, key, keyl);
+  if(vfmt && vlen)
+  {
+    mm_svloadf(&i->vs, &i->vl, vfmt, va);
+  }
+  else
+  {
+    vsnprintf(0, 0, vfmt, va);  // discard
+    mm_sloadw(&i->vs, &i->vl, "", 0);
+  }
+}
+
+void info_freeze(memblk * restrict mb, info * restrict i)
 {
   memblk_freeze(mb, &i->ks);
   memblk_freeze(mb, &i->vs);
 }
 
-void info_unfreeze(memblk * const restrict mb, info * restrict i)
+void info_unfreeze(memblk * restrict mb, info * restrict i)
 {
   memblk_unfreeze(mb, &i->ks);
   memblk_unfreeze(mb, &i->vs);
 }
 
-void info_thaw(char * const restrict mb, info * restrict i)
+void info_thaw(char * restrict mb, info * restrict i)
 {
   memblk_thaw(mb, &i->ks);
   memblk_thaw(mb, &i->vs);
@@ -66,87 +96,142 @@ void info_thaw(char * const restrict mb, info * restrict i)
 // api
 //
 
-API void xapi_info_adds(const char * const key, const char * const vstr)
+API void xapi_info_unstage()
 {
-  xapi_info_addw(key, vstr, strlen(vstr));
+  xapi_infos_stagingl = 0;
 }
 
-API void xapi_info_addw(const char * const key, const char * const vbuf, size_t vlen)
+API void xapi_info_inserts(uint16_t index, const char * restrict key, const char * restrict vstr)
 {
-  if(g_calltree || g_fail_intent)
+  xapi_info_insertw(0, key, vstr, strlen(vstr));
+}
+
+API void xapi_info_insertw(uint16_t index, const char * restrict key, const char * restrict vbuf, size_t vlen)
+{
+  if(key)
   {
-    if(key)
+    size_t keyl = strlen(key);
+    if(keyl)
     {
-      info * i = 0;
-      if(g_calltree)
-      {
-        frame * f = &g_calltree->frames.v[g_calltree->frames.l - 1];
+      mm_assure(&xapi_infos_staging, &xapi_infos_stagingl, &xapi_infos_staginga, sizeof(*xapi_infos_staging), xapi_infos_stagingl + 1);
 
-        // ensure allocation for the info list
-        mm_assure(&f->infos.v, &f->infos.l, &f->infos.a, sizeof(*f->infos.v), f->infos.l + 1);
-        i = &f->infos.v[f->infos.l++];
-      }
-      else
-      {
-        // if not unwinding, stage these infos for inclusion into the base frame
-        mm_assure(&info_staging, &info_stagingl, &info_staginga, sizeof(*info_staging), info_stagingl + 1);
-        i = &info_staging[info_stagingl++];
-      }
+      // displace
+      memmove(
+          xapi_infos_staging + index + 1
+        , xapi_infos_staging + index
+        , (xapi_infos_stagingl - index) * sizeof(*xapi_infos_staging)
+      );
 
-      memset(i, 0, sizeof(*i));
-      mm_sloadw(&i->ks, &i->kl, key, strlen(key));
-      if(vbuf && vlen)
-        mm_sloadw(&i->vs, &i->vl, vbuf, vlen);
-      else
-        mm_sloadw(&i->vs, &i->vl, "", 0);
+      info * i = &xapi_infos_staging[index];
+      xapi_infos_stagingl++;
+
+      info_setw(i, key, keyl, vbuf, vlen);
     }
   }
 }
 
-API void xapi_info_addf(const char * const key, const char * const vfmt, ...)
+API void xapi_info_insertvf(uint16_t index, const char * restrict key, const char * restrict vfmt, va_list va)
+{
+  if(key)
+  {
+    size_t keyl = strlen(key);
+    if(keyl)
+    {
+      // if not unwinding, stage these infos for inclusion into the base frame
+      mm_assure(&xapi_infos_staging, &xapi_infos_stagingl, &xapi_infos_staginga, sizeof(*xapi_infos_staging), xapi_infos_stagingl + 1);
+
+      // displace
+      memmove(
+          xapi_infos_staging + index + 1
+        , xapi_infos_staging + index
+        , (xapi_infos_stagingl - index) * sizeof(*xapi_infos_staging)
+      );
+
+      info * i = &xapi_infos_staging[index];
+      xapi_infos_stagingl++;
+
+      info_setvf(i, key, keyl, vfmt, va);
+    }
+  }
+}
+
+API void xapi_info_insertf(uint16_t index, const char * restrict key, const char * restrict vfmt, ...)
 {
   va_list va;
   va_start(va, vfmt);
 
-  xapi_info_vaddf(key, vfmt, va);
+  xapi_info_insertvf(0, key, vfmt, va);
 
   va_end(va);
 }
 
-API void xapi_info_vaddf(const char * const key, const char * const vfmt, va_list va)
+
+API void xapi_info_pushs(const char * restrict key, const char * restrict vstr)
 {
-  if(g_calltree || g_fail_intent)
+  xapi_info_pushw(key, vstr, strlen(vstr));
+}
+
+API void xapi_info_pushw(const char * restrict key, const char * restrict vbuf, size_t vlen)
+{
+  xapi_info_insertw(xapi_infos_stagingl, key, vbuf, vlen);
+}
+
+API void xapi_info_pushvf(const char * restrict key, const char * restrict vfmt, va_list va)
+{
+  xapi_info_insertvf(xapi_infos_stagingl, key, vfmt, va);
+}
+
+API void xapi_info_pushf(const char * restrict key, const char * restrict vfmt, ...)
+{
+  va_list va;
+  va_start(va, vfmt);
+
+  xapi_info_insertvf(xapi_infos_stagingl, key, vfmt, va);
+
+  va_end(va);
+}
+
+API void xapi_info_unshifts(const char * restrict key, const char * restrict vstr)
+{
+  xapi_info_insertw(xapi_infos_stagingl, key, vstr, strlen(vstr));
+}
+
+API void xapi_info_unshiftw(const char * restrict key, const char * restrict vbuf, size_t vlen)
+{
+  xapi_info_insertw(xapi_infos_stagingl, key, vbuf, vlen);
+}
+
+API void xapi_info_unshiftvf(const char * restrict key, const char * restrict vfmt, va_list va)
+{
+  if(key)
   {
-    // measure
-    va_list va2;
-    va_copy(va2, va);
-    size_t vlen = vsnprintf(0, 0, vfmt, va2);
-    va_end(va2);
-
-    if(key)
+    size_t keyl = strlen(key);
+    if(keyl)
     {
-      info * i = 0;
-      if(g_calltree)
-      {
-        frame * f = &g_calltree->frames.v[g_calltree->frames.l - 1];
+      // if not unwinding, stage these infos for inclusion into the base frame
+      mm_assure(&xapi_infos_staging, &xapi_infos_stagingl, &xapi_infos_staginga, sizeof(*xapi_infos_staging), xapi_infos_stagingl + 1);
 
-        // ensure allocation for the info list
-        mm_assure(&f->infos.v, &f->infos.l, &f->infos.a, sizeof(*f->infos.v), f->infos.l + 1);
-        i = &f->infos.v[f->infos.l++];
-      }
-      else
-      {
-        // if not unwinding, stage these infos for inclusion into the base frame
-        mm_assure(&info_staging, &info_stagingl, &info_staginga, sizeof(*info_staging), info_stagingl + 1);
-        i = &info_staging[info_stagingl++];
-      }
+      // displace
+      memmove(
+          xapi_infos_staging + 1
+        , xapi_infos_staging
+        , xapi_infos_stagingl * sizeof(*xapi_infos_staging)
+      );
 
-      memset(i, 0, sizeof(*i));
-      mm_sloadw(&i->ks, &i->kl, key, strlen(key));
-      if(vfmt && vlen)
-        mm_svloadf(&i->vs, &i->vl, vfmt, va);
-      else
-        mm_sloadw(&i->vs, &i->vl, "", 0);
+      info * i = &xapi_infos_staging[0];
+      xapi_infos_stagingl++;
+
+      info_setvf(i, key, keyl, vfmt, va);
     }
   }
+}
+
+API void xapi_info_unshiftf(const char * restrict key, const char * restrict vfmt, ...)
+{
+  va_list va;
+  va_start(va, vfmt);
+
+  xapi_info_unshiftvf(key, vfmt, va);
+
+  va_end(va);
 }

@@ -106,9 +106,8 @@ static xapi begin()
   // this executable MUST BE OWNED by fabsys:fabsys and have u+s and g+s permissions
   if(strcmp(g_euid_name, "fabsys") || strcmp(g_egid_name, "fabsys"))
   {
-    xapi_fail_intent();
-    xapi_info_addf("real", "r:%s/%d:%s/%d", g_ruid_name, g_ruid, g_rgid_name, g_rgid);
-    xapi_info_addf("effective", "e:%s/%d:%s/%d", g_euid_name, g_euid, g_egid_name, g_egid);
+    xapi_info_pushf("real", "r:%s/%d:%s/%d", g_ruid_name, g_ruid, g_rgid_name, g_rgid);
+    xapi_info_pushf("effective", "e:%s/%d:%s/%d", g_euid_name, g_euid, g_egid_name, g_egid);
     fail(FABD_EXEPERMS);
   }
 #endif

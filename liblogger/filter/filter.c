@@ -150,8 +150,7 @@ xapi filter_expr_process(
 
   if((r = filter_expr_parse(expr, exprl, filters, sizeof(filters) / sizeof(*filters))) < 0)
   {
-    xapi_fail_intent();
-    xapi_info_addf("expr", "%.*s", (int)exprl, expr);
+    xapi_info_pushf("expr", "%.*s", (int)exprl, expr);
     fail(LOGGER_BADFILTER);
   }
 

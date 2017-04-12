@@ -36,18 +36,33 @@ typedef struct info
 } info;
 
 // per-thread info staging
-extern __thread info * info_staging;
-extern __thread size_t info_stagingl;
-extern __thread size_t info_staginga;
+extern __thread info * xapi_infos_staging;
+extern __thread size_t xapi_infos_stagingl;
+extern __thread size_t xapi_infos_staginga;
 
 #define restrict __restrict
 
 /// info_teardown
 //
 // SUMMARY
-//  zero the staging infos after the memblk has been freed
+//  cleanup staging infos
 //
 void info_teardown(void);
+
+/// info_set
+//
+// SUMMARY
+//  populate an info
+//
+// PARAMETERS
+//  key  - pointer to key
+//  keyl - nonzero key length
+//
+void info_setw(info * restrict i, const char * restrict key, size_t keyl, const char * restrict vbuf, size_t vlen)
+  __attribute__((nonnull));
+
+void info_setvf(info * restrict i, const char * restrict key, size_t keyl, const char * restrict vfmt, va_list va)
+  __attribute__((nonnull));
 
 /// info_freeze
 //

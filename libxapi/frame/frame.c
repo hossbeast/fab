@@ -17,7 +17,6 @@
 
 #include <stdarg.h>
 #include <string.h>
-#include <stdio.h>
 #include <inttypes.h>
 
 #include "internal.h"
@@ -47,7 +46,6 @@ __thread APIDATA xapi xapi_stack_raised_exit;
 // per-thread sentinels
 __thread APIDATA int xapi_sentinel;
 __thread APIDATA xapi_frame_index xapi_top_frame_index = -1;
-__thread int g_fail_intent;
 
 //
 // static
@@ -106,11 +104,12 @@ static void frame_set(
       g_calltree->exit = exit;
 
     // apply any staged infos
-    mm_assure(&f->infos.v, &f->infos.l, &f->infos.a, sizeof(*f->infos.v), f->infos.l + info_stagingl);
+    mm_assure(&f->infos.v, &f->infos.l, &f->infos.a, sizeof(*f->infos.v), f->infos.l + xapi_infos_stagingl);
     int x;
-    for(x = 0; x < info_stagingl; x++)
-      f->infos.v[x] = info_staging[x];
-    f->infos.l += info_stagingl;
+    for(x = 0; x < xapi_infos_stagingl; x++)
+      f->infos.v[x] = xapi_infos_staging[x];
+    f->infos.l += xapi_infos_stagingl;
+    xapi_info_unstage();
   }
 
 #if XAPI_RUNTIME_CHECKS
@@ -189,11 +188,6 @@ API void xapi_record_frame(void * calling_frame)
 }
 #endif
 
-API void xapi_fail_intent()
-{
-  g_fail_intent = 1;
-}
-
 API xapi xapi_frame_leave(int topframe)
 {
 #if XAPI_RUNTIME_CHECKS
@@ -232,7 +226,6 @@ API int xapi_unwinding()
 
 API xapi xapi_frame_errval(xapi_frame_index index)
 {
-//  return error_errval(g_calltree->frames.v[index].error);
   return g_calltree->frames.v[index].exit;
 }
 
@@ -258,7 +251,7 @@ API void xapi_frame_set_infos(
 )
 {
   frame_set(exit, parent_index, file, line, func);
-  xapi_info_adds(key, vstr);
+  xapi_frame_info_pushs(key, vstr);
 }
 
 API void xapi_frame_set_infow(
@@ -273,7 +266,7 @@ API void xapi_frame_set_infow(
 )
 {
   frame_set(exit, parent_index, file, line, func);
-  xapi_info_addw(key, vbuf, vlen);
+  xapi_frame_info_pushw(key, vbuf, vlen);
 }
 
 API void xapi_frame_set_infof(
@@ -291,6 +284,57 @@ API void xapi_frame_set_infof(
 
   va_list va;
   va_start(va, func);
-  xapi_info_vaddf(key, vfmt, va);
+  xapi_frame_info_pushvf(key, vfmt, va);
+  va_end(va);
+}
+
+API void xapi_frame_info_pushw(const char * restrict key, const char * restrict vbuf, size_t vlen)
+{
+  if(g_calltree && key)
+  {
+    size_t keyl = strlen(key);
+    if(keyl)
+    {
+      frame * f = &g_calltree->frames.v[g_calltree->frames.l - 1];
+
+      // ensure allocation for the info list
+      mm_assure(&f->infos.v, &f->infos.l, &f->infos.a, sizeof(*f->infos.v), f->infos.l + 1);
+      info * i = &f->infos.v[f->infos.l++];
+
+      info_setw(i, key, keyl, vbuf, vlen);
+    }
+  }
+}
+
+API void xapi_frame_info_pushs(const char * restrict key, const char * restrict vstr)
+{
+  xapi_frame_info_pushw(key, vstr, strlen(vstr));
+}
+
+API void xapi_frame_info_pushvf(const char * restrict key, const char * restrict vfmt, va_list va)
+{
+  if(g_calltree && key)
+  {
+    size_t keyl = strlen(key);
+    if(keyl)
+    {
+      frame * f = &g_calltree->frames.v[g_calltree->frames.l - 1];
+
+      // ensure allocation for the info list
+      mm_assure(&f->infos.v, &f->infos.l, &f->infos.a, sizeof(*f->infos.v), f->infos.l + 1);
+      info * i = &f->infos.v[f->infos.l++];
+
+      info_setvf(i, key, keyl, vfmt, va);
+    }
+  }
+}
+
+API void xapi_frame_info_pushf(const char * restrict key, const char * restrict vfmt, ...)
+{
+  va_list va;
+  va_start(va, vfmt);
+
+  xapi_frame_info_pushvf(key, vfmt, va);
+
   va_end(va);
 }

@@ -134,14 +134,13 @@ API xapi sigutil_assert(int expsig, pid_t exppid, const siginfo_t * actual)
 
   if((exppid && (exppid != actual->si_pid)) || (expsig && (expsig != actual->si_signo)))
   {
-    xapi_fail_intent();
     if(expsig)
-      xapi_info_adds("expected signal", FABIPC_SIGNAME(expsig));
-    xapi_info_adds("actual signal", FABIPC_SIGNAME(actual->si_signo));
+      xapi_info_pushs("expected signal", FABIPC_SIGNAME(expsig));
+    xapi_info_pushs("actual signal", FABIPC_SIGNAME(actual->si_signo));
 
     if(exppid)
-      xapi_info_addf("expected pid", "%lu", (long)exppid);
-    xapi_info_addf("actual pid", "%lu", (long)actual->si_pid);
+      xapi_info_pushf("expected pid", "%lu", (long)exppid);
+    xapi_info_pushf("actual pid", "%lu", (long)actual->si_pid);
 
     fail(FAB_BADIPC);
   }

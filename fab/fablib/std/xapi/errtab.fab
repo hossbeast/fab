@@ -108,6 +108,9 @@ $errtabpaths = [
   > echo "static void __attribute__((constructor)) init() {"
   > echo " xapi_errtab_stage(perrtab_${pfx});"
   > echo "}"
+  > echo "static void __attribute__((destructor)) fini() {"
+  > echo " xapi_errtab_unstage(perrtab_${pfx});"
+  > echo "}"
   > echo "#endif"
 }
 

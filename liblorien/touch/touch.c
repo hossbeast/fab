@@ -37,7 +37,7 @@ API xapi touchw(mode_t mode, const char * const path, size_t pathl)
   fatal(xfutimens, fd, 0);
 
 finally:
-  xapi_infof("path", "%*s", pathl, path);
+  xapi_infow("path", path, pathl);
   fatal(ixclose, &fd);
 coda;
 }

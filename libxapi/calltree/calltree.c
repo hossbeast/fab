@@ -127,8 +127,7 @@ API void xapi_calltree_unwind()
 #endif
 
   xapi_top_frame_index = -1;
-  info_stagingl = 0;
-  g_fail_intent = 0;
+  xapi_infos_stagingl = 0;
 
 #if XAPI_RUNTIME_CHECKS
   xapi_stack_raised_exit = 0;

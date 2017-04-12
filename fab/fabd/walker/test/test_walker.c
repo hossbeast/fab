@@ -325,8 +325,7 @@ static xapi walker_test_entry(xunit_test * _test)
     // expected
     if(x >= ctx.operations->l)
     {
-      xapi_fail_intent();
-      xapi_info_adds("expected operations", ops);
+      xapi_info_pushs("expected operations", ops);
       fail(XUNIT_FAIL);
     }
 
@@ -340,8 +339,7 @@ static xapi walker_test_entry(xunit_test * _test)
 
       if(!*exp)
       {
-        xapi_fail_intent();
-        xapi_info_adds("unexpected operation", act);
+        xapi_info_pushs("unexpected operation", act);
         fail(XUNIT_FAIL);
       }
       else

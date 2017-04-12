@@ -53,9 +53,8 @@ static xapi merge(
 
   if(src->type != dst->type)
   {
-    xapi_fail_intent();
-    xapi_info_addf("types", "%s -> %s", VALUE_TYPE_STRING(dst->type), VALUE_TYPE_STRING(src->type));
-    xapi_info_addf("location"
+    xapi_info_pushf("types", "%s -> %s", VALUE_TYPE_STRING(dst->type), VALUE_TYPE_STRING(src->type));
+    xapi_info_pushf("location"
       , "[%d,%d - %d,%d]"
       , dst->loc.f_lin
       , dst->loc.f_col
@@ -63,7 +62,7 @@ static xapi merge(
       , dst->loc.l_col
     );
     if(dst->loc.fname)
-      xapi_info_adds("file", dst->loc.fname);
+      xapi_info_pushs("file", dst->loc.fname);
 
     fail(VALUE_DIFFTYPE);
   }

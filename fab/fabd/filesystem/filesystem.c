@@ -209,9 +209,8 @@ xapi filesystem_reconfigure(struct reconfigure_context * ctx, const value * rest
 
       if(dry && !opt)
       {
-        xapi_fail_intent();
-        xapi_info_adds("expected", invalidate_opts_list);
-        xapi_info_adds("actual", val->s->s);
+        xapi_info_pushs("expected", invalidate_opts_list);
+        xapi_info_pushs("actual", val->s->s);
         fatal(config_throw, CONFIG_INVALID, val, config_cursor_path(&cursor));
       }
 

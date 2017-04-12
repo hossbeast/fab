@@ -50,7 +50,7 @@ API xapi xinotify_add_watch(int * wd, int id, const char *path, uint32_t mask)
   *wd = rv;
 
 finally:
-  xapi_info_adds("path", path);
-  xapi_info_addf("id", "%d", id);
+  xapi_infos("path", path);
+  xapi_infof("id", "%d", id);
 coda;
 }

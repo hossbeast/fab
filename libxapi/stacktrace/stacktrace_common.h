@@ -209,26 +209,30 @@ XAPI_LEAVE:                         \
 //
 #define xapi_infos(key, vstr)                           \
   do {                                                  \
-    if(XAPI_FAILING)                                    \
-      xapi_info_adds(key, vstr);                        \
+    if(XAPI_FAILING) {                                  \
+      xapi_frame_info_pushs(key, vstr);                 \
+    }                                                   \
   } while(0)
 
 #define xapi_infow(key, vbuf, vlen)                     \
   do {                                                  \
-    if(XAPI_FAILING)                                    \
-      xapi_info_addw(key, vbuf, vlen);                  \
+    if(XAPI_FAILING) {                                  \
+      xapi_frame_info_pushw(key, vbuf, vlen);           \
+    }                                                   \
   } while(0)
 
 #define xapi_infof(key, vfmt, ...)                      \
   do {                                                  \
-    if(XAPI_FAILING)                                    \
-      xapi_info_addf(key, vfmt, ##__VA_ARGS__);         \
+    if(XAPI_FAILING) {                                  \
+      xapi_frame_info_pushf(key, vfmt, ##__VA_ARGS__);  \
+    }                                                   \
   } while(0)
 
-#define xapi_vinfof(key, vfmt, va)                      \
+#define xapi_infovf(key, vfmt, va)                      \
   do {                                                  \
-    if(XAPI_FAILING)                                    \
-      xapi_info_vaddf(key, vfmt, va);                   \
+    if(XAPI_FAILING) {                                  \
+      xapi_frame_info_pushvf(key, vfmt, va);            \
+    }                                                   \
   } while(0)
 
 /// XAPI_FAILING

@@ -39,6 +39,9 @@
 void xapi_errtab_stage(errtab * const restrict etab)
   __attribute__((nonnull));
 
+void xapi_errtab_unstage(errtab * const restrict etab)
+  __attribute__((nonnull));
+
 /// xapi_errtab_register
 //
 // SUMMARY
@@ -62,8 +65,7 @@ xapi xapi_errtab_register(errtab * const restrict etab)
 // SUMMARY
 //  lookup an error table by id
 //
-const errtab * xapi_errtab_byid(const xapi_errtab_id id)
-  __attribute__((nonnull));
+const errtab * xapi_errtab_byid(const xapi_errtab_id id);
 
 //
 // exit value api
@@ -78,8 +80,7 @@ const errtab * xapi_errtab_byid(const xapi_errtab_id id)
 //  [etab] - errtab
 //  exit   - exit value
 //
-const char * xapi_errtab_errname(const errtab * const restrict etab, const xapi exit)
-  __attribute__((nonnull));
+const char * xapi_errtab_errname(const errtab * const restrict etab, const xapi exit);
 
 /// xapi_errtab_errdesc
 //
@@ -90,8 +91,7 @@ const char * xapi_errtab_errname(const errtab * const restrict etab, const xapi 
 //  [etab] - errtab
 //  exit   - exit value
 //
-const char * xapi_errtab_errdesc(const errtab * const restrict etab, const xapi exit)
-  __attribute__((nonnull));
+const char * xapi_errtab_errdesc(const errtab * const restrict etab, const xapi exit);
 
 /// xapi_errtab_errstr
 //
@@ -102,8 +102,7 @@ const char * xapi_errtab_errdesc(const errtab * const restrict etab, const xapi 
 //  [etab] - errtab
 //  exit   - exit value
 //
-const char * xapi_errtab_errstr(const errtab * const restrict etab, const xapi exit)
-  __attribute__((nonnull));
+const char * xapi_errtab_errstr(const errtab * const restrict etab, const xapi exit);
 
 /// xapi_errtab_errcode
 //
@@ -114,8 +113,7 @@ const char * xapi_errtab_errstr(const errtab * const restrict etab, const xapi e
 //  [etab] - errtab
 //  exit   - exit value
 //
-xapi_code xapi_errtab_errcode(const errtab * const restrict etab, const xapi exit)
-  __attribute__((nonnull));
+xapi_code xapi_errtab_errcode(const errtab * const restrict etab, const xapi exit);
 
 #undef restrict
 #endif

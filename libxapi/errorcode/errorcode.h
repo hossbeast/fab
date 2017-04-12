@@ -183,14 +183,21 @@ XAPI_LEAVE:             \
 #define XAPI_THROWING(c) (XAPI_UNWINDING && XAPI_ERRCODE == ((c) & 0xFFFF))
 
 // resolve to nothing under eapi
-#define xapi_fail_intent()
-#define xapi_info_adds(key, vstr)
-#define xapi_info_addw(key, vbuf, vlen)
-#define xapi_info_addf(key, vfmt, ...)
-#define xapi_vinfof(key, vfmt, va)
 #define xapi_infos(key, vstr)
 #define xapi_infow(key, vbuf, vlen)
 #define xapi_infof(key, vfmt, ...)
-#define xapi_vinfof(key, vfmt, va)
+#define xapi_infovf(key, vfmt, va)
+#define xapi_info_pushs(key, vstr)
+#define xapi_info_pushw(key, vbuf, vlen)
+#define xapi_info_pushf(key, vfmt, ...)
+#define xapi_info_pushvf(key, vfmt, ...)
+#define xapi_info_unshifts(key, vstr)
+#define xapi_info_unshiftw(key, vbuf, vlen)
+#define xapi_info_unshiftf(key, vfmt, ...)
+#define xapi_info_unshiftvf(key, vfmt, ...)
+#define xapi_info_inserts(key, vstr)
+#define xapi_info_insertw(key, vbuf, vlen)
+#define xapi_info_insertf(key, vfmt, ...)
+#define xapi_info_insertvf(key, vfmt, ...)
 
 #endif

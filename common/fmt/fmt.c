@@ -35,9 +35,8 @@ xapi fmt_apply(char * const restrict dst, size_t dst_size, const char * const re
   size_t sz = vsnprintf(dst, dst_size, fmt, va);
   if(sz >= dst_size)
   {
-    xapi_fail_intent();
-    xapi_info_addf("max size", "%zu", dst_size);
-    xapi_info_addf("actual size", "%zu", sz);
+    xapi_info_pushf("max size", "%zu", dst_size);
+    xapi_info_pushf("actual size", "%zu", sz);
     fail(XLINUX_NAMETOOLONG);
   }
 

@@ -74,9 +74,8 @@ static xapi load_client_pid(pid_t * client_pid)
   fatal(axread, fd, client_pid, sizeof(*client_pid));
   if(*client_pid <= 0)
   {
-    xapi_fail_intent();
-    xapi_info_adds("expected client pid", "> 0");
-    xapi_info_addf("actual client pid", "%ld", (long)*client_pid);
+    xapi_info_pushs("expected client pid", "> 0");
+    xapi_info_pushf("actual client pid", "%ld", (long)*client_pid);
     fail(FABD_BADIPC);
   }
 

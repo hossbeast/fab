@@ -39,7 +39,7 @@ API xapi uxgetpwuid_r(uid_t uid, struct passwd * pwd, char * buf, size_t buflen,
   }
 
 finally :
-  xapi_infof("uid", "%zu", uid);
+  xapi_infof("uid", "%lu", (unsigned long)uid);
 coda;
 }
 
@@ -52,6 +52,6 @@ API xapi xgetpwuid(uid_t uid, struct passwd ** const pwd)
     tfail(perrtab_KERNEL, errno);
 
 finally:
-  xapi_infof("uid", "%zu", uid);
+  xapi_infof("uid", "%lu", (unsigned long)uid);
 coda;
 }

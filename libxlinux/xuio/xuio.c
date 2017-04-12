@@ -47,9 +47,8 @@ API xapi axreadv(int fd, const struct iovec * iov, int iovcnt)
 
   if(actual != expected)
   {
-    xapi_fail_intent();
-    xapi_info_addf("expected", "%zd", expected);
-    xapi_info_addf("actual", "%zd", actual);
+    xapi_info_pushf("expected", "%zd", expected);
+    xapi_info_pushf("actual", "%zd", actual);
     fail(XLINUX_LESS);
   }
 
@@ -80,9 +79,8 @@ API xapi axwritev(int fd, const struct iovec * iov, int iovcnt)
 
   if(actual != expected)
   {
-    xapi_fail_intent();
-    xapi_info_addf("expected", "%zd", expected);
-    xapi_info_addf("actual", "%zd", actual);
+    xapi_info_pushf("expected", "%zd", expected);
+    xapi_info_pushf("actual", "%zd", actual);
     fail(XLINUX_LESS);
   }
 

@@ -64,7 +64,7 @@ void errtab_teardown()
 // api
 //
 
-API void xapi_errtab_stage(errtab * const etab)
+API void xapi_errtab_stage(errtab * const restrict etab)
 {
   if(tab_stagel == (sizeof(tab_stage) / sizeof(tab_stage[0])) - 1)
   {
@@ -78,6 +78,11 @@ API void xapi_errtab_stage(errtab * const etab)
 
   tab = tab_stage;
   tabl = tab_stagel;
+}
+
+API void xapi_errtab_unstage(errtab * const restrict etab)
+{
+  tab_stage[etab->id - 1] = 0;
 }
 
 API xapi xapi_errtab_register(errtab * const etab)
@@ -126,6 +131,9 @@ API const errtab * xapi_errtab_byid(const xapi_errtab_id id)
 
 API const char * xapi_errtab_errname(const errtab * const restrict etab, const xapi exit)
 {
+  if(etab == 0)
+    return 0;
+
   xapi_code code = exit & 0xFFFF;   // error code
 
   if(code < etab->min || code > etab->max)
@@ -136,6 +144,9 @@ API const char * xapi_errtab_errname(const errtab * const restrict etab, const x
 
 API const char * xapi_errtab_errdesc(const errtab * const restrict etab, const xapi exit)
 {
+  if(etab == 0)
+    return 0;
+
   xapi_code code = exit & 0xFFFF;   // error code
 
   if(code < etab->min || code > etab->max)
@@ -146,6 +157,9 @@ API const char * xapi_errtab_errdesc(const errtab * const restrict etab, const x
 
 API const char * xapi_errtab_errstr(const errtab * const restrict etab, const xapi exit)
 {
+  if(etab == 0)
+    return 0;
+
   xapi_code code = exit & 0xFFFF;   // error code
 
   if(code < etab->min || code > etab->max)
@@ -156,6 +170,9 @@ API const char * xapi_errtab_errstr(const errtab * const restrict etab, const xa
 
 API xapi_code xapi_errtab_errcode(const errtab * const restrict etab, const xapi exit)
 {
+  if(etab == 0)
+    return 0;
+
   xapi_code code = exit & 0xFFFF;   // error code
 
   if(code < etab->min || code > etab->max)

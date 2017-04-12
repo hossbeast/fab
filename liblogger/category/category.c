@@ -202,7 +202,6 @@ static xapi __attribute__((nonnull)) category_list_merge(list * const restrict A
       // common elements must appear in the same order
       if(strcmp(a->name, b->name))
       {
-        xapi_fail_intent();
         xapi_infof("category A", "%s", a->name);
         xapi_infof("category B", "%s", b->name);
         fail(LOGGER_ILLORDER);
@@ -384,7 +383,7 @@ API xapi categories_activate()
 
     // assign the id as the next unused bit from the mask
     if(~used_category_ids_mask == 0)
-      failf(LOGGER_TOOMANY, "limit", "%d", MAX_CATEGORIES);
+      failf(LOGGER_TOOMANY, "limit", "%ld", MAX_CATEGORIES);
 
     uint64_t id = ~used_category_ids_mask & -~used_category_ids_mask;
     used_category_ids_mask |= id;

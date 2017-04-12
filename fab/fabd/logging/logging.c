@@ -119,8 +119,7 @@ xapi logging_reconfigure(reconfigure_context * ctx, const value * restrict confi
 
       if(dry && !logger_filter_validates(val->s->s))
       {
-        xapi_fail_intent();
-        xapi_info_adds("filter", val->s->s);
+        xapi_info_pushs("filter", val->s->s);
         fatal(config_throw, CONFIG_INVALID, val, config_cursor_path(&cursor));
       }
 

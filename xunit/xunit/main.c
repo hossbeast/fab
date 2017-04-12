@@ -155,8 +155,8 @@ static xapi begin(int argc, char** argv, char ** envp)
         {
           // add identifying info
           if(name)
-            xapi_info_adds("name", name);
-          xapi_info_addf("test", "%zu in [%zu,%zu]", test - xunit->xu_tests, 0, tests_len);
+            xapi_info_pushs("name", name);
+          xapi_info_pushf("test", "%zu in [0,%zu]", test - xunit->xu_tests, tests_len);
 
           // propagate non-unit-testing errors
           if(XAPI_ERRVAL != XUNIT_FAIL)

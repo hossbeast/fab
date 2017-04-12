@@ -60,7 +60,7 @@ static int string_compare(xunit_arg * A, xunit_arg * B)
 
 static void string_info_add(const char * const restrict name, xunit_arg * a)
 {
-  xapi_info_adds(name, a->s);
+  xapi_info_pushs(name, a->s);
 }
 
 static void buffer_unpack(va_list va, xunit_arg * a)
@@ -99,11 +99,11 @@ static void buffer_info_add(const char * const restrict name, xunit_arg * a)
 {
   if(a->p == 0)
   {
-    xapi_info_adds(name, "(null)");
+    xapi_info_pushs(name, "(null)");
   }
   else if(printable(a->p, a->l))
   {
-    xapi_info_addf(name, "%.*s", (int)a->l, a->p);
+    xapi_info_pushf(name, "%.*s", (int)a->l, (char*)a->p);
   }
   else
   {
@@ -117,7 +117,7 @@ static void buffer_info_add(const char * const restrict name, xunit_arg * a)
     for(x = 0; x < a->l; x++)
       bufo += znloadf(buf + bufo, bufz - bufo, "%02hhx", ((char*)a->p)[x]);
 
-    xapi_info_adds(name, space);
+    xapi_info_pushs(name, space);
   }
 }
 
@@ -133,7 +133,7 @@ static int int_compare(xunit_arg * A, xunit_arg * B)
 
 static void int_info_add(const char * const restrict name, xunit_arg * a)
 {
-  xapi_info_addf(name, "%d", a->d);
+  xapi_info_pushf(name, "%d", a->d);
 }
 
 static void float_unpack(va_list va, xunit_arg * a)
@@ -153,7 +153,7 @@ static int float_compare(xunit_arg * A, xunit_arg * B)
 
 static void float_info_add(const char * const restrict name, xunit_arg * a)
 {
-  xapi_info_addf(name, "%f", a->f);
+  xapi_info_pushf(name, "%f", a->f);
 }
 
 static void int64_unpack(va_list va, xunit_arg * a)
@@ -173,7 +173,7 @@ static int int64_compare(xunit_arg * A, xunit_arg * B)
 
 static void int64_info_add(const char * const restrict name, xunit_arg * a)
 {
-  xapi_info_addf(name, "%"PRIi64, a->i64);
+  xapi_info_pushf(name, "%"PRIi64, a->i64);
 }
 
 static void bool_unpack(va_list va, xunit_arg * a)
@@ -188,7 +188,7 @@ static int bool_compare(xunit_arg * A, xunit_arg * B)
 
 static void bool_info_add(const char * const restrict name, xunit_arg * a)
 {
-  xapi_info_adds(name, a->b ? "true" : "false");
+  xapi_info_pushs(name, a->b ? "true" : "false");
 }
 
 static void xapi_unpack(va_list va, xunit_arg * a)
@@ -203,7 +203,7 @@ static int xapi_compare(xunit_arg * A, xunit_arg * B)
 
 static void xapi_info_add(const char * const restrict name, xunit_arg * a)
 {
-  xapi_info_addf(name, "%s(%d)", xapi_exit_errname(a->e), a->e);
+  xapi_info_pushf(name, "%s(%d)", xapi_exit_errname(a->e), a->e);
 }
 
 //

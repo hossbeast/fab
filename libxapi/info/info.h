@@ -19,81 +19,47 @@
 #define _XAPI_INFO_H
 
 #if XAPI_STACKTRACE
+
+#include <stdarg.h>
+#include <sys/types.h>
+
 #define restrict __restrict
 
-/// xapi_fail_intent
+/// xapi_info_unstage
 //
 // SUMMARY
-//  Before failing a frame, but after calling xapi_fail_intent, infos are staged to be applied to
-//  the frame for the current function call. There is no way to unstage, so infos should only be
-//  staged when a fail call in the current frame is imminent.
+//  unstage staged infos, if any
 //
-//  When staging infos in this way, call xapi_info_add* directly, instead of xapi_info*, which can only
-//  be used to apply infos to the current frame while failing
-//
-//  xapi_fail_intent may safely be called more than once
-//
-void xapi_fail_intent(void);
+void xapi_info_unstage(void);
 
-/// xapi_info_adds
+/// xapi_info_
 //
 // SUMMARY
-//  add an info key/value pair to a calltree frame (no-op if the key or value is null or 0-length)
+//  add an info key/value pair to the staging area. the info is silently discarded if the key is
+//  null or has zero length.
 //
-// PARAMETERS
-//  [key]  - key string
-//  [vstr] - value string
+// VARIANTS
+//  push    - append
+//  unshift - prepend
 //
-// REMARKS
-//  to stage infos for inclusion in the base frame using xapi_fail_intent
-//
-void xapi_info_adds(const char * const restrict key, const char * const restrict vstr);
 
-/// xapi_info_addw
-//
-// SUMMARY
-//  add an info key/value pair to a calltree frame
-//
-// PARAMETERS
-//  [key]  - key string
-//  [vbuf] - value buffer
-//  [vlen] - vstr length
-//
-// REMARKS
-//  see xapi_info_adds
-//
-void xapi_info_addw(const char * const restrict key, const char * const restrict vbuf, size_t vlen);
+void xapi_info_pushs(const char * restrict key, const char * restrict vstr);
+void xapi_info_pushw(const char * restrict key, const char * restrict vbuf, size_t vlen);
+void xapi_info_pushf(const char * restrict key, const char * restrict vfmt, ...)
+  __attribute__((format(printf, 2, 3)));
+void xapi_info_pushvf(const char * restrict key, const char * restrict vfmt, va_list va);
 
-/// xapi_info_add
-//
-// SUMMARY
-//  add an info key/value pair to a calltree frame
-//
-// PARAMETERS
-//  [key] - key string
-//  vfmt  - format string for value
-//
-// REMARKS
-//  see xapi_info_adds
-//
-void xapi_info_addf(const char * const restrict key, const char * const restrict vfmt, ...)
-  __attribute__((nonnull(2)));
+void xapi_info_unshifts(const char * restrict key, const char * restrict vstr);
+void xapi_info_unshiftw(const char * restrict key, const char * restrict vbuf, size_t vlen);
+void xapi_info_unshiftf(const char * restrict key, const char * restrict vfmt, ...)
+  __attribute__((format(printf, 2, 3)));
+void xapi_info_unshiftvf(const char * restrict key, const char * restrict vfmt, va_list va);
 
-/// xapi_info_add
-//
-// SUMMARY
-//  add an info key/value pair to a calltree frame
-//
-// PARAMETERS
-//  [key] - key string
-//  vfmt  - format string for value
-//  va    - varargs
-//
-// REMARKS
-//  see xapi_info_adds
-//
-void xapi_info_vaddf(const char * const restrict key, const char * const restrict vfmt, va_list va)
-  __attribute__((nonnull(2)));
+void xapi_info_inserts(uint16_t index, const char * restrict key, const char * restrict vstr);
+void xapi_info_insertw(uint16_t index, const char * restrict key, const char * restrict vbuf, size_t vlen);
+void xapi_info_insertf(uint16_t index, const char * restrict key, const char * restrict vfmt, ...)
+  __attribute__((format(printf, 3, 4)));
+void xapi_info_insertvf(uint16_t index, const char * restrict key, const char * restrict vfmt, va_list va);
 
 #undef restrict
 #endif

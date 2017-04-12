@@ -21,15 +21,28 @@
 
 /*
 
-SUMMARY
- fail, unwind, ensure the error code and table are propagated correctly
+BEHAVIORS - info staging
+
+ 1. staged infos are only applied to the immediate frame and not to future frames
+ 2. staged infos may be applied to nested frames
 
 */
 
-static xapi alpha()
+static xapi zeta()
 {
   enter;
 
+  xapi_info_pushs("zeta", "zeta");
+  fail(TEST_ERROR_ONE);
+
+  finally : coda;
+}
+
+static xapi theta()
+{
+  enter;
+
+  xapi_info_pushs("theta", "theta");
   fail(TEST_ERROR_ONE);
 
   finally : coda;
@@ -39,16 +52,18 @@ static xapi beta()
 {
   enter;
 
-  fails(TEST_ERROR_ONE, "foo", "bar");
+  fatal(theta);
 
-  finally : coda;
+finally:
+  fatal(zeta);
+coda;
 }
 
-static xapi zeta()
+static xapi alpha()
 {
   enter;
 
-  failf(TEST_ERROR_ONE, "foo", "%s", "bar");
+  fatal(beta);
 
   finally : coda;
 }
@@ -59,47 +74,16 @@ static xapi test_fail()
 
   fatal(alpha);
 
-  finally : coda;
-}
-
-static xapi test_fails()
-{
-  enter;
-
-  fatal(beta);
-
-  finally : coda;
-}
-
-static xapi test_failf()
-{
-  enter;
-
-  fatal(zeta);
-
-  finally : coda;
-}
-
-static xapi test_fail_intent()
-{
-  enter;
-
-#if XAPI_STACKTRACE
-  char space[2048];
-#endif
-
-  xapi_info_pushs("foo", "bar");
-  xapi_info_pushs("baz", "qux");
-  fail(TEST_ERROR_ONE);
-
 finally:
 #if XAPI_STACKTRACE
-  // ensure that the trace contains both infos
-  xapi_trace_info("foo", space, sizeof(space));
-  assert_eq_s("bar", space);
+  {
+    char bar[64];
+    xapi_trace_info("theta", bar, sizeof(bar));
+    assert_eq_s("theta", bar);
 
-  xapi_trace_info("baz", space, sizeof(space));
-  assert_eq_s("qux", space);
+    size_t len = xapi_trace_info("zeta", bar, sizeof(bar));
+    assert_eq_zu(0, len);
+  }
 #endif
 coda;
 }
@@ -108,15 +92,6 @@ int main()
 {
   // invoke the function, collect its exit status
   xapi exit = test_fail();
-  assert_eq_exit(TEST_ERROR_ONE, exit);
-
-  exit = test_fails();
-  assert_eq_exit(TEST_ERROR_ONE, exit);
-
-  exit = test_failf();
-  assert_eq_exit(TEST_ERROR_ONE, exit);
-
-  exit = test_fail_intent();
   assert_eq_exit(TEST_ERROR_ONE, exit);
 
   // victory

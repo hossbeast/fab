@@ -71,9 +71,8 @@ API xapi axread(int fd, void * buf, size_t count)
 
     if(cur == 0)
     {
-      xapi_fail_intent();
-      xapi_info_addf("expected", "%zu", count);
-      xapi_info_addf("actual", "%zd", actual);
+      xapi_info_pushf("expected", "%zu", count);
+      xapi_info_pushf("actual", "%zd", actual);
       fail(XLINUX_LESS);
     }
     else if(cur == -1)
@@ -109,9 +108,8 @@ API xapi axwrite(int fd, const void * buf, size_t count)
 
     if(cur == 0)
     {
-      xapi_fail_intent();
-      xapi_info_addf("expected", "%zu", count);
-      xapi_info_addf("actual", "%zd", actual);
+      xapi_info_pushf("expected", "%zu", count);
+      xapi_info_pushf("actual", "%zd", actual);
       fail(XLINUX_LESS);
     }
     else if(cur == -1)

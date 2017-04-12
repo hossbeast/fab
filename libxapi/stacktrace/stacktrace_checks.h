@@ -98,10 +98,9 @@ when calling non-xapi code, you have a couple of options.
   xapi_record_frame(xapi_calling_frame_address);                                              \
   if(xapi_calling_frame_address && xapi_calling_frame_address != __builtin_frame_address(1))  \
   {                                                                                           \
-    xapi_fail_intent();                                                                       \
-    xapi_info_adds("function", __FUNCTION__);                                                 \
-    xapi_info_addf("expected caller", "%p", __builtin_frame_address(1));                      \
-    xapi_info_addf("recorded caller", "%p", xapi_calling_frame_address);                      \
+    xapi_info_pushs("function", __FUNCTION__);                                                \
+    xapi_info_pushf("expected caller", "%p", __builtin_frame_address(1));                     \
+    xapi_info_pushf("recorded caller", "%p", xapi_calling_frame_address);                     \
     fail(XAPI_NOFATAL);                                                                       \
   }
 

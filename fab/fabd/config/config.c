@@ -59,17 +59,15 @@ static xapi validate(value * restrict val, const char * restrict path, uint32_t 
 
   if(type && val && val->type != type)
   {
-    xapi_fail_intent();
-    xapi_info_adds("expected", VALUE_TYPE_STRING(type));
-    xapi_info_adds("actual", VALUE_TYPE_STRING(val->type));
+    xapi_info_pushs("expected", VALUE_TYPE_STRING(type));
+    xapi_info_pushs("actual", VALUE_TYPE_STRING(val->type));
 
     fatal(config_throw, CONFIG_INCOMPAT, val, path);
   }
   else if(notnull && !val)
   {
-    xapi_fail_intent();
-    xapi_info_adds("expected", "(any)");
-    xapi_info_adds("actual", "(none)");
+    xapi_info_pushs("expected", "(any)");
+    xapi_info_pushs("actual", "(none)");
 
     fatal(config_throw, CONFIG_MISSING, val, path);
   }
@@ -143,27 +141,25 @@ xapi config_throw(xapi error, value * restrict val, const char * restrict path)
 {
   enter;
 
-  xapi_fail_intent();
-
   if(path)
-    xapi_info_adds("path", path);
+    xapi_info_pushs("path", path);
 
   if(val)
-    xapi_info_addf("location", "[%d,%d - %d,%d]", val->loc.f_lin, val->loc.f_col, val->loc.l_lin, val->loc.l_col);
+    xapi_info_pushf("location", "[%d,%d - %d,%d]", val->loc.f_lin, val->loc.f_col, val->loc.l_lin, val->loc.l_col);
 
   if(val->loc.fname)
-    xapi_info_adds("file", val->loc.fname);
+    xapi_info_pushs("file", val->loc.fname);
 
 #if 0
   if(type)
-    xapi_info_adds("expected", VALUE_TYPE_STRING(type));
+    xapi_info_pushs("expected", VALUE_TYPE_STRING(type));
   else
-    xapi_info_adds("expected", "(any)");
+    xapi_info_pushs("expected", "(any)");
 
   if(val)
-    xapi_info_adds("actual", VALUE_TYPE_STRING(val->type));
+    xapi_info_pushs("actual", VALUE_TYPE_STRING(val->type));
   else
-    xapi_info_adds("actual", "(none)");
+    xapi_info_pushs("actual", "(none)");
 #endif
 
   fail(error);

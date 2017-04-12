@@ -82,7 +82,6 @@ static xapi zeta()
 
 #if XAPI_STACKTRACE
   char space[2048];
-  size_t z;
 #endif
 
   fatal(alpha);
@@ -91,15 +90,19 @@ finally:
   xapi_infos("zeta", "zeta");
 
 #if XAPI_STACKTRACE
-  z = xapi_trace_full(space, sizeof(space));
+  space[0] = 0;
+  xapi_trace_info("epsilon", space, sizeof(space));
+  assert_eq_s("", space);
 
-  assertf(strstr(space, "epsilon") == 0, "expected no epsilon, actual trace\n**\n%.*s\n**\n", (int)z, space);
-  assertf(strstr(space, "delta") == 0, "expected no delta, actual trace\n**\n%.*s\n**\n", (int)z, space);
+  space[0] = 0;
+  xapi_trace_info("delta", space, sizeof(space));
+  assert_eq_s("", space);
 
-  assertf(sameline(space, "ERROR_ONE", "beta=beta"), "expected kvp beta=beta, actual trace\n**\n%.*s\n**\n", (int)z, space);
-  assertf(sameline(space, "ERROR_ONE", "alpha1=alpha1"), "expected kvp alpha1=alpha1, actual trace\n**\n%.*s\n**\n", (int)z, space);
-  assertf(sameline(space, "ERROR_ONE", "alpha2=alpha2"), "expected kvp alpha2=alpha2, actual trace\n**\n%.*s\n**\n", (int)z, space);
-  assertf(sameline(space, "ERROR_ONE", "zeta=zeta"), "expected kvp zeta=zeta, actual trace\n**\n%.*s\n**\n", (int)z, space);
+  xapi_trace_full(space, sizeof(space));
+  assertf(sameline(space, "ERROR_ONE", "beta=beta"), "expected kvp beta=beta, actual trace\n**\n%s\n**\n", space);
+  assertf(sameline(space, "ERROR_ONE", "alpha1=alpha1"), "expected kvp alpha1=alpha1, actual trace\n**\n%s\n**\n", space);
+  assertf(sameline(space, "ERROR_ONE", "alpha2=alpha2"), "expected kvp alpha2=alpha2, actual trace\n**\n%s\n**\n", space);
+  assertf(sameline(space, "ERROR_ONE", "zeta=zeta"), "expected kvp zeta=zeta, actual trace\n**\n%s\n**\n", space);
 #endif
 coda;
 }

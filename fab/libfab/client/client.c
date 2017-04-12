@@ -95,9 +95,8 @@ static xapi pgid_load(fab_client * const restrict client)
     fatal(axread, fd, &client->pgid, sizeof(client->pgid));
     if(client->pgid <= 0)
     {
-      xapi_fail_intent();
-      xapi_info_adds("expected pgid", "> 0");
-      xapi_info_addf("actual pgid", "%ld", (long)client->pgid);
+      xapi_info_pushs("expected pgid", "> 0");
+      xapi_info_pushf("actual pgid", "%ld", (long)client->pgid);
       fail(FAB_BADIPC);
     }
   }
@@ -121,15 +120,14 @@ static xapi validate_result(fab_client * const restrict client, int expsig, sigi
     fatal(xopenf, &fd, O_RDONLY, "%s/fabd/exit", client->ipcdir);
     fatal(axread, fd, MM(exit));
 
-    xapi_fail_intent();
     if(WIFEXITED(exit))
     {
-      xapi_info_addf("status", "%d", WEXITSTATUS(exit));
+      xapi_info_pushf("status", "%d", WEXITSTATUS(exit));
       fail(FAB_FABDEXIT);
     }
     else if(WIFSIGNALED(exit))
     {
-      xapi_info_addf("signal", "%d", WTERMSIG(exit));
+      xapi_info_pushf("signal", "%d", WTERMSIG(exit));
       fail(FAB_FABDFAIL);
     }
     fail(FAB_BADIPC);

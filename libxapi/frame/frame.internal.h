@@ -64,9 +64,6 @@ extern __thread void * xapi_caller_frame_address;
 extern __thread xapi xapi_stack_raised_exit;
 #endif
 
-// per-thread flag which signals the users intent to fail
-extern __thread int g_fail_intent;
-
 #define restrict __restrict
 
 /// frame_freeze

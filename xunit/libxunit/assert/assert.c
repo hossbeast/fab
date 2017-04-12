@@ -66,11 +66,10 @@ API int xunit_assertion_evaluate(const xunit_type * const restrict type, uint8_t
   }
 
   xunit_assertions_failed++;
-  xapi_fail_intent();
-  xapi_info_adds("value", value);
+  xapi_info_pushs("value", value);
   if(op == XU_NULL || op == XU_NOTNULL)
   {
-    xapi_info_adds("expected", op == XU_NULL ? "(null)" : "(notnull");
+    xapi_info_pushs("expected", op == XU_NULL ? "(null)" : "(notnull");
     type->xu_info_add("actual", &actual);
   }
   else

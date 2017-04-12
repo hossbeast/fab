@@ -152,7 +152,20 @@ void xapi_frame_set_infof(
   , const char * const restrict func
   , ...
 )
+  __attribute__((format(printf, 4, 8)))
   __attribute__((nonnull(7)));
+
+/// xapi_frame_info_push
+//
+// SUMMARY
+//  append an info key/value pair to the current frame. the info is silently discarded if the key is
+//  null or has zero length.
+//
+void xapi_frame_info_pushw(const char * key, const char * vbuf, size_t vlen);
+void xapi_frame_info_pushs(const char * key, const char * vstr);
+void xapi_frame_info_pushf(const char * key, const char * vfmt, ...)
+  __attribute__((format(printf, 2, 3)));
+void xapi_frame_info_pushvf(const char * key, const char * vfmt, va_list va);
 
 ///
 //
