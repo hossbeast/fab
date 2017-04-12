@@ -81,8 +81,8 @@ finally:
     xapi_trace_info("theta", bar, sizeof(bar));
     assert_eq_s("theta", bar);
 
-    size_t len = xapi_trace_info("zeta", bar, sizeof(bar));
-    assert_eq_zu(0, len);
+    size_t info_len = xapi_trace_info("zeta", 0, 0);
+    assert_eq_zu(0, info_len);
   }
 #endif
 coda;

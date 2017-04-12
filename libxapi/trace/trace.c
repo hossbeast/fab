@@ -16,8 +16,10 @@
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
 #include <inttypes.h>
+#include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
+#include <unistd.h>
 
 #include "internal.h"
 #include "trace.internal.h"
@@ -29,11 +31,70 @@
 #include "info.internal.h"
 
 #include "zbuffer.h"
-#include "strutil.h"
+#include "color.h"
+#include "macros.h"
+
+#define TRACE_COLORIZE_OPT        UINT16_C(0x0003)
+#define TRACE_NEWLINE_OPT         UINT16_C(0x000C)
+#define TRACE_INFO_UNIQUE_OPT     UINT16_C(0x0030)
+#define TRACE_INFO_LOCATION_OPT   UINT16_C(0x00C0)
 
 #define restrict __restrict
 
-#define SAY(...) z += znloadf(dst + z, sz - z, __VA_ARGS__)
+#define sayf(...)  z += _sayf (dst + z, sz - z, ##__VA_ARGS__)
+#define csayf(...) z += _csayf(dst + z, sz - z, attrs, ##__VA_ARGS__)
+
+#define says(...)  z += _says (dst + z, sz - z, ##__VA_ARGS__)
+#define csays(...) z += _csays(dst + z, sz - z, attrs, ##__VA_ARGS__)
+
+static inline size_t _csayvf(char * restrict dst, size_t sz, uint16_t attrs, void * restrict cbuf, size_t clen, const char * restrict fmt, va_list va)
+{
+  size_t z = 0;
+  if((attrs & TRACE_COLORIZE_OPT) == XAPI_TRACE_COLORIZE)
+    z += znloadw(dst + z, sz - z, cbuf, clen);
+  z += znloadvf(dst + z, sz - z, fmt, va);
+  if((attrs & TRACE_COLORIZE_OPT) == XAPI_TRACE_COLORIZE)
+    z += znloadw(dst + z, sz - z, NOCOLOR);
+  return z;
+}
+
+static inline size_t _csayf(char * restrict dst, size_t sz, uint16_t attrs, void * restrict cbuf, size_t clen, const char * restrict fmt, ...)
+{
+  va_list va;
+  va_start(va, fmt);
+
+  size_t z = _csayvf(dst, sz, attrs, cbuf, clen, fmt, va);
+
+  va_end(va);
+  return z;
+}
+
+static inline size_t _sayf(char * restrict dst, size_t sz, const char * restrict fmt, ...)
+{
+  va_list va;
+  va_start(va, fmt);
+
+  size_t z = _csayvf(dst, sz, 0, 0, 0, fmt, va);
+
+  va_end(va);
+  return z;
+}
+
+static inline size_t _csays(char * restrict dst, size_t sz, uint16_t attrs, void * restrict cbuf, size_t clen, const char * restrict s)
+{
+  size_t z = 0;
+  if((attrs & TRACE_COLORIZE_OPT) == XAPI_TRACE_COLORIZE && cbuf)
+    z += znloadw(dst + z, sz - z, cbuf, clen);
+  z += znloads(dst + z, sz - z, s);
+  if((attrs & TRACE_COLORIZE_OPT) == XAPI_TRACE_COLORIZE && cbuf)
+    z += znloadw(dst + z, sz - z, NOCOLOR);
+  return z;
+}
+
+static inline size_t _says(char * restrict dst, size_t sz, const char * restrict s)
+{
+  return _csays(dst, sz, 0, 0, 0, s);
+}
 
 //
 // static
@@ -56,38 +117,34 @@ static int calltree_locate_substack(calltree * const restrict ct, int a, int b)
   return -1;
 }
 
-static size_t error_trace(char * const dst, const size_t sz, xapi e)
+static size_t error_trace(char * const dst, const size_t sz, xapi e, uint16_t attrs)
 {
   size_t z = 0;
 
   const errtab * etab  = xapi_exit_errtab(e);
   const xapi_code code = xapi_exit_errcode(e);
 
-  if(0)
+  if(etab && code)
   {
+    says("[");
+    csays(BOLD_RED, etab->name);
+    says(":");
+    csays(BOLD_RED, code > etab->max ? "UNKNWN" : etab->v[code + (etab->min * -1)].name);
+    says("]");
+    says(" ");
+    csays(LIGHT_GRAY, code > etab->max ? "unspecified error" : etab->v[code + (etab->min * -1)].desc);
+  }
 
-  }
-#if XAPI_RUNTIME_CHECKS
-  else if(etab == perrtab_XAPI && (code == XAPI_NOCODE || code == XAPI_NOTABLE))
+  // this can happen if, for example, the object containing the error table has been unloaded
+  else
   {
-    SAY("[%s:%s] %s"
-      , etab->name
-      , code > etab->max ? "UNKNWN" : etab->v[code + (etab->min * -1)].name
-      , code > etab->max ? "unspecified error" : etab->v[code + (etab->min * -1)].desc
-    );
-  }
-#endif
-  else if(etab && code)
-  {
-    SAY("[%s:%s] %s"
-      , etab->name
-      , code > etab->max ? "UNKNWN" : etab->v[code + (etab->min * -1)].name
-      , code > etab->max ? "unspecified error" : etab->v[code + (etab->min * -1)].desc
-    );
-  }
-  else if(code)
-  {
-    SAY("[%d]", code);
+    says("[");
+    csays(BOLD_RED, "(TABNAME)");
+    says(":");
+    csays(BOLD_RED, "(ERRNAME)");
+    says("]");
+    says(" ");
+    csays(LIGHT_GRAY, "(ERRDESC)");
   }
 
   return z;
@@ -107,12 +164,13 @@ static size_t error_trace(char * const dst, const size_t sz, xapi e)
 //  a2  - index of the last frame in the hole, or -1
 //  b2  - index of the first frame in the hole
 //  b1  - index of the last frame in the sequence
+//  attrs - whether to attrs using terminal escapes
 //
 // RETURNS
 //  number of bytes written to dst
 //
-static size_t infos_trace(char * const dst, const size_t sz, calltree * const restrict ct, int a1, int a2, int b2, int b1);
-static size_t infos_trace(char * const dst, const size_t sz, calltree * const restrict ct, int a1, int a2, int b2, int b1)
+static size_t infos_trace(char * const dst, const size_t sz, calltree * const restrict ct, int a1, int a2, int b2, int b1, uint16_t attrs);
+static size_t infos_trace(char * const dst, const size_t sz, calltree * const restrict ct, int a1, int a2, int b2, int b1, uint16_t attrs)
 {
   info * nfo = 0;
   size_t z = 0;
@@ -136,12 +194,11 @@ static size_t infos_trace(char * const dst, const size_t sz, calltree * const re
 
         for(j = 0; j < ct->frames.v[i].infos.l; j++)
         {
-          if(estrcmp(
+          if(memncmp(
               ct->frames.v[x].infos.v[y].ks
             , ct->frames.v[x].infos.v[y].kl
             , ct->frames.v[i].infos.v[j].ks
-            , ct->frames.v[i].infos.v[j].kl
-            , 0) == 0)
+            , ct->frames.v[i].infos.v[j].kl) == 0)
           {
             break;
           }
@@ -157,16 +214,12 @@ static size_t infos_trace(char * const dst, const size_t sz, calltree * const re
         if(nfo)
         {
           if(z == 0)
-            SAY(" with ");
+            csays(DIM_CYAN, " with ");
           else
-            SAY(", ");
+            csays(DIM_CYAN, ", ");
 
-          SAY("%.*s=%.*s"
-            , (int)nfo->kl
-            , nfo->ks
-            , (int)nfo->vl
-            , nfo->vs
-          );
+          csayf(LIGHT_YELLOW, "%.*s", (int)nfo->kl, nfo->ks);
+          csayf(LIGHT_GRAY, " %.*s", (int)nfo->vl, nfo->vs);
         }
         nfo = &ct->frames.v[x].infos.v[y];
       }
@@ -176,30 +229,25 @@ static size_t infos_trace(char * const dst, const size_t sz, calltree * const re
   if(nfo)
   {
     if(z == 0)
-      SAY(" with ");
+      csays(DIM_CYAN, " with ");
     else
-      SAY(" and ");
+      csays(DIM_CYAN, " and ");
 
-    SAY("%.*s=%.*s"
-      , (int)nfo->kl
-      , nfo->ks
-      , (int)nfo->vl
-      , nfo->vs
-    );
+    csayf(LIGHT_YELLOW, "%.*s", (int)nfo->kl, nfo->ks);
+    csayf(LIGHT_GRAY, " %.*s", (int)nfo->vl, nfo->vs);
   }
 
   return z;
 }
 
-static size_t frame_trace_function(char * const dst, const size_t sz, frame * f)
+static size_t frame_trace_function(char * const dst, const size_t sz, frame * f, uint16_t attrs)
 {
   size_t z = 0;
-  SAY("%s", f->func);
-
+  csays(GREEN, f->func);
   return z;
 }
 
-static size_t frame_trace_location(char * const dst, const size_t sz, frame * f)
+static size_t frame_trace_location(char * const dst, const size_t sz, frame * f, uint16_t attrs)
 {
   size_t z = 0;
 
@@ -210,24 +258,24 @@ static size_t frame_trace_location(char * const dst, const size_t sz, frame * f)
     file = n + 1;
   }
 
-  SAY("%s:%d", file, f->line);
+  csayf(GREEN, "%s:%d", file, f->line);
 
   return z;
 }
 
-static size_t frame_trace(char * const dst, const size_t sz, frame * f, int loc, int in, int level)
+static size_t frame_trace(char * const dst, const size_t sz, frame * f, int loc, int in, int level, uint16_t attrs)
 {
   size_t z = 0;
 
   if(in)
-    SAY("in ");
+    csays(DIM_CYAN, "in ");
 
-  z += frame_trace_function(dst + z, sz - z, f);
+  z += frame_trace_function(dst + z, sz - z, f, attrs);
 
   if(loc && f->file)
   {
-    SAY(" at ");
-    z += frame_trace_location(dst + z, sz - z, f);
+    csays(DIM_CYAN, " at ");
+    z += frame_trace_location(dst + z, sz - z, f, attrs);
   }
 
   return z;
@@ -249,8 +297,8 @@ static size_t frame_trace(char * const dst, const size_t sz, frame * f, int loc,
 // RETURNS
 //  number of bytes written to dst
 //
-static size_t calltree_trace_frames(char * const dst, const size_t sz, calltree * const restrict ct, int a1, int b1, int level);
-static size_t calltree_trace_frames(char * const dst, const size_t sz, calltree * const restrict ct, int a1, int b1, int level)
+static size_t calltree_trace_frames(char * const dst, const size_t sz, calltree * const restrict ct, int a1, int b1, int level, uint16_t attrs);
+static size_t calltree_trace_frames(char * const dst, const size_t sz, calltree * const restrict ct, int a1, int b1, int level, uint16_t attrs)
 {
   int x;
   size_t z = 0;
@@ -264,11 +312,11 @@ static size_t calltree_trace_frames(char * const dst, const size_t sz, calltree 
     b2 = x;
   }
 
-  SAY("%*s", level * 2, "");
-  z += error_trace(dst + z, sz - z, ct->frames.v[a1].exit);
-  z += infos_trace(dst + z, sz - z, ct, a1, a2, b2, b1);
+  sayf("%*s", level * 2, "");
+  z += error_trace(dst + z, sz - z, ct->frames.v[a1].exit, attrs);
+  z += infos_trace(dst + z, sz - z, ct, a1, a2, b2, b1, attrs);
 
-  SAY("\n");
+  sayf("\n");
 
   // main sequence
   for(x = a1; x <= b1; x++)
@@ -276,35 +324,35 @@ static size_t calltree_trace_frames(char * const dst, const size_t sz, calltree 
     if(a2 != -1 && x == a2)
       break;
 
-    SAY("%*s", level * 2, "");
+    sayf("%*s", level * 2, "");
     if(a2 != -1)
-      SAY(" %2d : ", b1 - x - ((b2 - a2) + 1));
+      csayf(DIM_CYAN, " %2d : ", b1 - x - ((b2 - a2) + 1));
     else
-      SAY(" %2d : ", b1 - x);
+      csayf(DIM_CYAN, " %2d : ", b1 - x);
 
-    z += frame_trace(dst + z, sz - z, &ct->frames.v[x], 1, 1, level);
+    z += frame_trace(dst + z, sz - z, &ct->frames.v[x], 1, 1, level, attrs);
 
     if(x < b1)
-      SAY("\n");
+      sayf("\n");
   }
 
   if(a2 != -1)
   {
     // subsequence
-    z += calltree_trace_frames(dst + z, sz - z, ct, a2, b2, level + 1);
+    z += calltree_trace_frames(dst + z, sz - z, ct, a2, b2, level + 1, attrs);
 
     // trailing segment of the main sequence
     if(b1 != b2)
-      SAY("\n");
+      sayf("\n");
 
     for(x = b2 + 1; x <= b1; x++)
     {
-      SAY("%*s", level * 2, "");
-      SAY(" %2d : ", b1 - x);
-      z += frame_trace(dst + z, sz - z, &ct->frames.v[x], 1, 1, level);
+      sayf("%*s", level * 2, "");
+      csayf(DIM_CYAN, " %2d : ", b1 - x);
+      z += frame_trace(dst + z, sz - z, &ct->frames.v[x], 1, 1, level, attrs);
 
       if(x < b1)
-        SAY("\n");
+        sayf("\n");
     }
   }
 
@@ -315,7 +363,7 @@ static size_t calltree_trace_frames(char * const dst, const size_t sz, calltree 
 // API
 //
 
-API size_t xapi_trace_calltree_pithy(calltree * const restrict ct, char * const restrict dst, const size_t sz)
+API size_t xapi_trace_calltree_pithy(calltree * const restrict ct, char * const restrict dst, const size_t sz, uint16_t attrs)
 {
   size_t z = 0;
 
@@ -329,46 +377,56 @@ API size_t xapi_trace_calltree_pithy(calltree * const restrict ct, char * const 
     b2 = x;
   }
 
-  z += error_trace(dst + z, sz - z, ct->frames.v[0].exit);
-  z += infos_trace(dst + z, sz - z, ct, 0, a2, b2, ct->frames.l - 1);
+  z += error_trace(dst + z, sz - z, ct->frames.v[0].exit, attrs);
+  z += infos_trace(dst + z, sz - z, ct, 0, a2, b2, ct->frames.l - 1, attrs);
+
+  if((attrs & TRACE_NEWLINE_OPT) != XAPI_TRACE_NONEWLINE)
+    z += znloadc(dst + z, sz - z, '\n');
 
   return z;
 }
 
-API size_t xapi_trace_calltree_full(calltree * const restrict ct, char * const restrict dst, const size_t sz)
+API size_t xapi_trace_calltree_full(calltree * const restrict ct, char * const restrict dst, const size_t sz, uint16_t attrs)
 {
-  return calltree_trace_frames(dst, sz, ct, 0, ct->frames.l - 1, 0);
+  size_t z = 0;
+
+  z += calltree_trace_frames(dst, sz, ct, 0, ct->frames.l - 1, 0, attrs);
+
+  if((attrs & TRACE_NEWLINE_OPT) != XAPI_TRACE_NONEWLINE)
+    z += znloadc(dst + z, sz - z, '\n');
+
+  return z;
 }
 
-API size_t xapi_trace_pithy(char * const dst, const size_t sz)
+API size_t xapi_trace_pithy(char * const dst, const size_t sz, uint16_t attrs)
 {
-  return xapi_trace_calltree_pithy(g_calltree, dst, sz);
+  return xapi_trace_calltree_pithy(g_calltree, dst, sz, attrs);
 }
 
-API size_t xapi_trace_full(char * const dst, const size_t sz)
+API size_t xapi_trace_full(char * const dst, const size_t sz, uint16_t attrs)
 {
-  return xapi_trace_calltree_full(g_calltree, dst, sz);
+  return xapi_trace_calltree_full(g_calltree, dst, sz, attrs);
 }
 
 API void xapi_pithytrace_to(int fd)
 {
   char space[4096];
-  size_t z = xapi_trace_pithy(space, sizeof(space));
-  dprintf(fd, "%.*s\n", (int)z, space);
+  size_t z = xapi_trace_pithy(space, sizeof(space), XAPI_TRACE_COLORIZE);
+  int __attribute__((unused)) r = write(fd, space, z);
 }
 
 API void xapi_fulltrace_to(int fd)
 {
   char space[4096];
-  size_t z = xapi_trace_full(space, sizeof(space));
-  dprintf(fd, "%.*s\n", (int)z, space);
+  size_t z = xapi_trace_full(space, sizeof(space), XAPI_TRACE_COLORIZE);
+  int __attribute__((unused)) r = write(fd, space, z);
 }
 
 API void xapi_backtrace_to(int fd)
 {
   char space[4096];
-  size_t z = xapi_trace_full(space, sizeof(space));
-  dprintf(fd, "%.*s\n", (int)z, space);
+  size_t z = xapi_trace_full(space, sizeof(space), XAPI_TRACE_COLORIZE);
+  int __attribute__((unused)) r = write(fd, space, z);
 }
 
 API void xapi_pithytrace()
@@ -386,7 +444,7 @@ API void xapi_backtrace()
   xapi_backtrace_to(2);
 }
 
-API size_t xapi_trace_info(const char * restrict key, char * const restrict dst, const size_t sz)
+API size_t xapi_trace_info(const char * restrict name, char * const restrict dst, const size_t sz)
 {
   int a1 = 0;
   int a2 = -1; // start index for the subsequence
@@ -408,20 +466,24 @@ API size_t xapi_trace_info(const char * restrict key, char * const restrict dst,
     int y;
     for(y = 0; y < g_calltree->frames.v[x].infos.l; y++)
     {
-      if(estrcmp(
+      if(memncmp(
           g_calltree->frames.v[x].infos.v[y].ks
         , g_calltree->frames.v[x].infos.v[y].kl
-        , key
-        , strlen(key)
-        , 0) == 0)
+        , name
+        , strlen(name)) == 0)
       {
         size_t len = MIN(g_calltree->frames.v[x].infos.v[y].vl, sz - 1);
-        memcpy(dst, g_calltree->frames.v[x].infos.v[y].vs, len);
-        dst[len] = 0;
+        if(dst)
+        {
+          memcpy(dst, g_calltree->frames.v[x].infos.v[y].vs, len);
+          dst[len] = 0;
+        }
         return len;
       }
     }
   }
 
+  if(dst)
+    dst[0] = 0;
   return 0;
 }

@@ -21,33 +21,54 @@
 
 // five-byte color sequences
 char (* APIDATA g_colors_5)[5] = (char[][5]) {
-#define COLORDEF(x) { 0x1b, 0x5b, 0x33, x, 0x6d }
-    COLORDEF(0x31)  // RED
-  , COLORDEF(0x32)  // GREEN
-  , COLORDEF(0x33)  // YELLOW
-  , COLORDEF(0x34)  // BLUE
-  , COLORDEF(0x35)  // MAGENTA
-  , COLORDEF(0x36)  // CYAN
-  , COLORDEF(0x37)  // WHITE
-#undef COLORDEF
+#define COLOR(x, y) { 0x1b, 0x5b, x, y, 0x6d }
+    COLOR(0x33, 0x31)  // 0 RED
+  , COLOR(0x33, 0x32)  // 1 GREEN
+  , COLOR(0x33, 0x33)  // 2 YELLOW
+  , COLOR(0x33, 0x34)  // 3 BLUE
+  , COLOR(0x33, 0x35)  // 4 MAGENTA
+  , COLOR(0x33, 0x36)  // 5 CYAN
+  , COLOR(0x33, 0x37)  // 6 GRAY
+  , COLOR(0x39, 0x31)  // 7 LIGHT_RED
+  , COLOR(0x39, 0x32)  // 8 LIGHT_GREEN
+  , COLOR(0x39, 0x33)  // 9 LIGHT_YELLOW
+  , COLOR(0x39, 0x34)  // a LIGHT_BLUE
+  , COLOR(0x39, 0x35)  // b LIGHT_MAGENTA
+  , COLOR(0x39, 0x36)  // c LIGHT_CYAN
+  , COLOR(0x39, 0x37)  // d LIGHT_GRAY
+#undef COLOR
 };
 
 // six-byte color sequences
 char (* APIDATA g_colors_6)[6] = (char[][6]){
-#define COLORDEF(x) { 0x1b, 0x5b, 0x30, 0x3b, x, 0x6d }
-    COLORDEF(0x30)  // NONE
-#undef COLORDEF
+#define COLOR(x) { 0x1b, 0x5b, 0x30, 0x3b, x, 0x6d }
+    COLOR(0x30)  // NOCOLOR
+#undef COLOR
 };
 
 // seven-byte byte color sequences
 char (* APIDATA g_colors_7)[7] = (char[][7]){
-#define COLORDEF(x) { 0x1b, 0x5b, 0x31, 0x3b, 0x33, x, 0x6d }
-    COLORDEF(0x31)  // BOLD_RED
-  , COLORDEF(0x32)  // BOLD_GREEN
-  , COLORDEF(0x33)  // BOLD_YELLOW
-  , COLORDEF(0x34)  // BOLD_BLUE
-  , COLORDEF(0x35)  // BOLD_MAGENTA
-  , COLORDEF(0x36)  // BOLD_CYAN
-  , COLORDEF(0x37)  // BOLD_WHITE
-#undef COLORDEF
+#define COLOR(a, b, c) { 0x1b, 0x5b, a, 0x3b, b, c, 0x6d }
+    COLOR(0x31, 0x33, 0x31)  //   0 BOLD_RED
+  , COLOR(0x31, 0x33, 0x32)  //   1 BOLD_GREEN
+  , COLOR(0x31, 0x33, 0x33)  //   2 BOLD_YELLOW
+  , COLOR(0x31, 0x33, 0x34)  //   3 BOLD_BLUE
+  , COLOR(0x31, 0x33, 0x35)  //   4 BOLD_MAGENTA
+  , COLOR(0x31, 0x33, 0x36)  //   5 BOLD_CYAN
+  , COLOR(0x31, 0x33, 0x37)  //   6 BOLD_GRAY
+  , COLOR(0x32, 0x33, 0x31)  //   7 DIM_RED
+  , COLOR(0x32, 0x33, 0x32)  //   8 DIM_GREEN
+  , COLOR(0x32, 0x33, 0x33)  //   9 DIM_YELLOW
+  , COLOR(0x32, 0x33, 0x34)  //   a DIM_BLUE
+  , COLOR(0x32, 0x33, 0x35)  //   b DIM_MAGENTA
+  , COLOR(0x32, 0x33, 0x36)  //   c DIM_CYAN
+  , COLOR(0x32, 0x33, 0x37)  //   d DIM_GRAY
+  , COLOR(0x32, 0x39, 0x31)  //   e DIM_LIGHT_RED
+  , COLOR(0x32, 0x39, 0x32)  //   f DIM_LIGHT_GREEN
+  , COLOR(0x32, 0x39, 0x33)  //  11 DIM_LIGHT_YELLOW
+  , COLOR(0x32, 0x39, 0x34)  //  12 DIM_LIGHT_BLUE
+  , COLOR(0x32, 0x39, 0x35)  //  12 DIM_LIGHT_MAGENTA
+  , COLOR(0x32, 0x39, 0x36)  //  13 DIM_LIGHT_CYAN
+  , COLOR(0x32, 0x39, 0x37)  //  14 DIM_LIGHT_GRAY
+#undef COLOR
 };

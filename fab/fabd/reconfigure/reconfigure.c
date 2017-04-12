@@ -191,9 +191,9 @@ xapi reconfigure()
       fail(0);
 
 #if DEBUG || DEVEL || XAPI
-    xapi_trace_full(space, sizeof(space));
+    xapi_trace_full(space, sizeof(space), 0);
 #else
-    xapi_trace_pithy(space, sizeof(space));
+    xapi_trace_pithy(space, sizeof(space), 0);
 #endif
     xapi_calltree_unwind();
 

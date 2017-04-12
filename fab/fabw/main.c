@@ -172,9 +172,9 @@ finally:
     xapi_infof("pid", "%ld", (long)getpid());
     xapi_infof("tid", "%ld", (long)gettid());
 
-    xapi_trace_full(space, sizeof(space));
+    xapi_trace_full(space, sizeof(space), 0);
 #else
-    xapi_trace_pithy(space, sizeof(space));
+    xapi_trace_pithy(space, sizeof(space), 0);
 #endif
 
     xlogs(L_ERROR, L_CATEGORY_OFF, space);

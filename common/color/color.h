@@ -18,6 +18,14 @@
 #ifndef _COLOR_H
 #define _COLOR_H
 
+/*
+
+EXAMPLE
+ write(1, RED);
+ write(1, NOCOLOR);
+
+*/
+
 #include <sys/types.h>
 
 // byte sequence tables
@@ -25,37 +33,49 @@ extern char (*g_colors_7)[7];
 extern char (*g_colors_6)[6];
 extern char (*g_colors_5)[5];
 
-#define CSEVEN(x) g_colors_7[x]
-#define CSIX(x)   g_colors_6[x]
-#define CFIVE(x)  g_colors_5[x]
+#define _COLOR5(x) g_colors_5[x], sizeof(g_colors_5[x])
+#define _COLOR6(x) g_colors_6[x], sizeof(g_colors_6[x])
+#define _COLOR7(x) g_colors_7[x], sizeof(g_colors_7[x])
 
-// definitions
-#define RED             CFIVE(0)
-#define GREEN           CFIVE(1)
-#define YELLOW          CFIVE(2)
-#define BLUE            CFIVE(3)
-#define MAGENTA         CFIVE(4)
-#define CYAN            CFIVE(5)
-#define WHITE           CFIVE(6)
+// foreground colors
+#define DIM_LIGHT_BLUE    _COLOR7(0x11)
+#define DIM_BLUE          _COLOR7(0x0a)
+#define LIGHT_BLUE        _COLOR5(0xa)
+#define BLUE              _COLOR5(0x3)
+#define BOLD_BLUE         _COLOR7(0x03)
+#define DIM_LIGHT_CYAN    _COLOR7(0x13)
+#define DIM_CYAN          _COLOR7(0x0c)
+#define LIGHT_CYAN        _COLOR5(0xc)
+#define CYAN              _COLOR5(0x5)
+#define BOLD_CYAN         _COLOR7(0x05)
+#define DIM_LIGHT_GRAY    _COLOR7(0x14)
+#define DIM_GRAY          _COLOR7(0x0d)
+#define LIGHT_GRAY        _COLOR5(0xd)
+#define GRAY              _COLOR5(0x6)
+#define BOLD_GRAY         _COLOR7(0x06)
+#define DIM_LIGHT_GREEN   _COLOR7(0x0f)
+#define DIM_GREEN         _COLOR7(0x08)
+#define LIGHT_GREEN       _COLOR5(0x8)
+#define GREEN             _COLOR5(0x1)
+#define BOLD_GREEN        _COLOR7(0x01)
+#define DIM_LIGHT_MAGENTA _COLOR7(0x12)
+#define DIM_MAGENTA       _COLOR7(0x0b)
+#define LIGHT_MAGENTA     _COLOR5(0xb)
+#define MAGENTA           _COLOR5(0x4)
+#define BOLD_MAGENTA      _COLOR7(0x04)
+#define DIM_LIGHT_RED     _COLOR7(0x0e)
+#define DIM_RED           _COLOR7(0x07)
+#define LIGHT_RED         _COLOR5(0x7)
+#define RED               _COLOR5(0x0)
+#define BOLD_RED          _COLOR7(0x00)
+#define DIM_LIGHT_YELLOW  _COLOR7(0x11)
+#define DIM_YELLOW        _COLOR7(0x09)
+#define LIGHT_YELLOW      _COLOR5(0x9)
+#define YELLOW            _COLOR5(0x2)
+#define BOLD_YELLOW       _COLOR7(0x02)
 
-// bold definitions
-#define BOLD_RED        CSEVEN(0)
-#define BOLD_GREEN      CSEVEN(1)
-#define BOLD_YELLOW     CSEVEN(2)
-#define BOLD_BLUE       CSEVEN(3)
-#define BOLD_MAGENTA    CSEVEN(4)
-#define BOLD_CYAN       CSEVEN(5)
-#define BOLD_WHITE      CSEVEN(6)
-
-#define NONE            CSIX(0)
-
-//
-// example
-//  write(1, COLOR(RED));
-//  write(1, COLOR(NONE));
-//
-
-#define COLOR(x) x, sizeof(x)
-#define CSIZE(x) sizeof(x)
+// other
+#define WHITE             LIGHT_GRAY
+#define NOCOLOR           _COLOR6(0)
 
 #endif

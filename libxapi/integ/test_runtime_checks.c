@@ -59,11 +59,11 @@ static xapi test_illfatal()
 
 finally:
   // ensure that the trace contains the function name
-  xapi_trace_full(space, sizeof(space));
-  assertf(strstr(space, "function=alpha_notxapi"), "expected function, actual trace\n**\n%s\n**\n", space);
+  xapi_trace_full(space, sizeof(space), 0);
+  assertf(strstr(space, "function alpha_notxapi"), "expected function, actual trace\n**\n%s\n**\n", space);
 
-  xapi_trace_pithy(space, sizeof(space));
-  assertf(strstr(space, "function=alpha_notxapi"), "expected function, actual trace\n**\n%s\n**\n", space);
+  xapi_trace_pithy(space, sizeof(space), 0);
+  assertf(strstr(space, "function alpha_notxapi"), "expected function, actual trace\n**\n%s\n**\n", space);
 coda;
 }
 
@@ -77,11 +77,11 @@ static xapi test_nofatal()
 
 finally:
   // ensure that the trace contains the function name
-  xapi_trace_full(space, sizeof(space));
-  assertf(strstr(space, "function=gamma_xapi"), "expected function, actual trace\n**\n%s\n**\n", space);
+  xapi_trace_full(space, sizeof(space), 0);
+  assertf(strstr(space, "function gamma_xapi"), "expected function, actual trace\n**\n%s\n**\n", space);
 
-  xapi_trace_pithy(space, sizeof(space));
-  assertf(strstr(space, "function=gamma_xapi"), "expected function, actual trace\n**\n%s\n**\n", space);
+  xapi_trace_pithy(space, sizeof(space), 0);
+  assertf(strstr(space, "function gamma_xapi"), "expected function, actual trace\n**\n%s\n**\n", space);
 coda;
 }
 #endif

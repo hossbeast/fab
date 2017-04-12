@@ -105,9 +105,9 @@ finally:
 #if XAPI_STACKTRACE
   xapi_infos("foo", "87");
 
-  xapi_trace_pithy(space, sizeof(space));
-  assertf(strstr(space, "foo=42"), "expected foo=42, actual trace\n**\n%s\n**\n", space);
-  assertf(!strstr(space, "foo=87"), "expected !foo=87, actual trace\n**\n%s\n**\n", space);
+  xapi_trace_pithy(space, sizeof(space), 0);
+  assertf(strstr(space, "foo 42"), "expected foo 42, actual trace\n**\n%s\n**\n", space);
+  assertf(!strstr(space, "foo 87"), "expected !foo 87, actual trace\n**\n%s\n**\n", space);
 #endif
 coda;
 }
@@ -152,8 +152,8 @@ static xapi test_substack_0_skip()
 
 finally:
 #if XAPI_STACKTRACE
-  xapi_trace_pithy(space, sizeof(space));
-  assertf(strstr(space, "foo=42"), "expected foo=42, actual trace\n**\n%s\n**\n", space);
+  xapi_trace_pithy(space, sizeof(space), 0);
+  assertf(strstr(space, "foo 42"), "expected foo 42, actual trace\n**\n%s\n**\n", space);
   assertf(!strstr(space, "bar"), "expected !bar, actual trace\n**\n%s\n**\n", space);
 #endif
 coda;
@@ -200,9 +200,8 @@ finally:
   xapi_trace_info("foo", value, sizeof(value));
   assert_eq_s("42", value);
 
-  value[0] = 0;
-  xapi_trace_info("bar", value, sizeof(value));
-  assert_eq_s("", value);
+  size_t info_len = xapi_trace_info("bar", 0, 0);
+  assert_eq_zu(0, info_len);
 #endif
 coda;
 }

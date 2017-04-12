@@ -24,6 +24,23 @@
 
 struct calltree;
 
+// options and modifiers for rendering traces
+#define XAPI_TRACE_TABLE                                                                                         \
+  XAPI_TRACE_DEF(NOCOLORIZE     , 0x0001) /* (default) no terminal color escapes                              */ \
+  XAPI_TRACE_DEF(COLORIZE       , 0x0002) /* apply terminal color escape sequences                            */ \
+  XAPI_TRACE_DEF(NEWLINE        , 0x0004) /* (default) include a trailing newline                             */ \
+  XAPI_TRACE_DEF(NONEWLINE      , 0x000C) /* omit the trailing newline                                        */ \
+  XAPI_TRACE_DEF(INFOKEYED      , 0x0010) /* (default) include only infos whose name is unique in the stack   */ \
+  XAPI_TRACE_DEF(INFONAMED      , 0x0030) /* include all infos in the stack                                   */ \
+  XAPI_TRACE_DEF(INFOSTACK      , 0x0080) /* (default) report infos for a stack on the summary line           */ \
+  XAPI_TRACE_DEF(INFOFRAME      , 0x000C) /* report infos alongside the frame they are attached to            */ \
+
+enum {
+#define XAPI_TRACE_DEF(a, b) XAPI_TRACE_ ## a = UINT16_C(b),
+XAPI_TRACE_TABLE
+#undef XAPI_TRACE_DEF
+};
+
 #define restrict __restrict
 
 /*
@@ -61,10 +78,11 @@ void xapi_backtrace_to(int fd);
 //  write a string summarizing the entire calltree
 //
 // PARAMETERS
-//  dst  - buffer to write to
-//  sz   - max bytes to write, including null byte
+//  dst   - buffer to write to
+//  sz    - max bytes to write, including null byte
+//  attrs - bitwise mask of XAPI_TRACE_*
 //
-size_t xapi_trace_pithy(char * const restrict dst, const size_t sz)
+size_t xapi_trace_pithy(char * const restrict dst, const size_t sz, uint16_t attrs)
   __attribute__((nonnull));
 
 /// xapi_trace_full
@@ -76,24 +94,25 @@ size_t xapi_trace_pithy(char * const restrict dst, const size_t sz)
 //  will contain newlines for a multi-frame calltree, but does not terminate with a newline
 //
 // PARAMETERS
-//  dst  - buffer to write to
-//  sz   - max bytes to write, including null byte
+//  dst   - buffer to write to
+//  sz    - max bytes to write, including null byte
+//  attrs - bitwise mask of XAPI_TRACE_*
 //
-size_t xapi_trace_full(char * const restrict dst, const size_t sz)
+size_t xapi_trace_full(char * const restrict dst, const size_t sz, uint16_t attrs)
   __attribute__((nonnull));
 
 /// xapi_trace_calltree_pithy
 //
 // SEE xapi_trace_pithy
 //
-size_t xapi_trace_calltree_pithy(struct calltree * const restrict cs, char * const restrict dst, const size_t sz)
+size_t xapi_trace_calltree_pithy(struct calltree * const restrict cs, char * const restrict dst, const size_t sz, uint16_t attrs)
   __attribute__((nonnull));
 
 /// xapi_trace_calltree_full
 //
 // SEE xapi_trace_full
 //
-size_t xapi_trace_calltree_full(struct calltree * const restrict cs, char * const restrict dst, const size_t sz)
+size_t xapi_trace_calltree_full(struct calltree * const restrict cs, char * const restrict dst, const size_t sz, uint16_t attrs)
   __attribute__((nonnull));
 
 /// xapi_trace_info
@@ -102,15 +121,15 @@ size_t xapi_trace_calltree_full(struct calltree * const restrict cs, char * cons
 //  get the value of an info kvp while unwinding
 //
 // PARAMETERS
-//  key - info name
-//  dst - buffer to write the value to
-//  sz  - size of dst
+//  name  - info name
+//  [dst] - buffer to write the value to
+//  [sz]  - size of dst
 //
 // RETURNS
-//  number of bytes < sz written to dst
+//  number of bytes < sz written to dst, not including the null terminator, which is always written
 //
-size_t xapi_trace_info(const char * restrict key, char * const restrict dst, const size_t sz)
-  __attribute__((nonnull));
+size_t xapi_trace_info(const char * restrict name, char * const restrict dst, const size_t sz)
+  __attribute__((nonnull(1)));
 
 #undef restrict
 #endif

@@ -59,8 +59,6 @@ extern __thread struct frame_addresses
 
 extern __thread void * xapi_calling_frame_address;
 extern __thread void * xapi_caller_frame_address;
-//extern __thread const errtab * xapi_stack_raised_etab;
-//extern __thread int xapi_stack_raised_code;
 extern __thread xapi xapi_stack_raised_exit;
 #endif
 

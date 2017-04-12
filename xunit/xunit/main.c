@@ -163,7 +163,7 @@ static xapi begin(int argc, char** argv, char ** envp)
             fail(0);
 
           // save the trace
-          xapi_trace_full(space, sizeof(space));
+          xapi_trace_full(space, sizeof(space), 0);
 
           // discard the error frames
           xapi_calltree_unwind();
@@ -275,12 +275,12 @@ finally:
     if(g_args.mode_backtrace == MODE_BACKTRACE_PITHY)
     {
 #endif
-      xapi_trace_pithy(space, sizeof(space));
+      xapi_trace_pithy(space, sizeof(space), 0);
 #if DEBUG || DEVEL
     }
     else
     {
-      xapi_trace_full(space, sizeof(space));
+      xapi_trace_full(space, sizeof(space), 0);
     }
 #endif
 

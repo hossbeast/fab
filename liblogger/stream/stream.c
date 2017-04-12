@@ -90,34 +90,34 @@ static xapi __attribute__((nonnull)) stream_write(stream * const restrict stream
   if((attr & COLOR_OPT) && (attr & COLOR_OPT) != L_NOCOLOR)
   {
     if((attr & COLOR_OPT) == L_RED)
-      sayw(COLOR(RED));
+      sayw(RED);
     else if((attr & COLOR_OPT) == L_GREEN)
-      sayw(COLOR(GREEN));
+      sayw(GREEN);
     else if((attr & COLOR_OPT) == L_YELLOW)
-      sayw(COLOR(YELLOW));
+      sayw(YELLOW);
     else if((attr & COLOR_OPT) == L_BLUE)
-      sayw(COLOR(BLUE));
+      sayw(BLUE);
     else if((attr & COLOR_OPT) == L_MAGENTA)
-      sayw(COLOR(MAGENTA));
+      sayw(MAGENTA);
     else if((attr & COLOR_OPT) == L_CYAN)
-      sayw(COLOR(CYAN));
-    else if((attr & COLOR_OPT) == L_WHITE)
-      sayw(COLOR(WHITE));
+      sayw(CYAN);
+    else if((attr & COLOR_OPT) == L_GRAY)
+      sayw(GRAY);
 
     else if((attr & COLOR_OPT) == L_BOLD_RED)
-      sayw(COLOR(BOLD_RED));
+      sayw(BOLD_RED);
     else if((attr & COLOR_OPT) == L_BOLD_GREEN)
-      sayw(COLOR(BOLD_GREEN));
+      sayw(BOLD_GREEN);
     else if((attr & COLOR_OPT) == L_BOLD_YELLOW)
-      sayw(COLOR(BOLD_YELLOW));
+      sayw(BOLD_YELLOW);
     else if((attr & COLOR_OPT) == L_BOLD_BLUE)
-      sayw(COLOR(BOLD_BLUE));
+      sayw(BOLD_BLUE);
     else if((attr & COLOR_OPT) == L_BOLD_MAGENTA)
-      sayw(COLOR(BOLD_MAGENTA));
+      sayw(BOLD_MAGENTA);
     else if((attr & COLOR_OPT) == L_BOLD_CYAN)
-      sayw(COLOR(BOLD_CYAN));
-    else if((attr & COLOR_OPT) == L_BOLD_WHITE)
-      sayw(COLOR(BOLD_WHITE));
+      sayw(BOLD_CYAN);
+    else if((attr & COLOR_OPT) == L_BOLD_GRAY)
+      sayw(BOLD_GRAY);
   }
 
   if((attr & DATESTAMP_OPT) == L_DATESTAMP)
@@ -222,7 +222,7 @@ static xapi __attribute__((nonnull)) stream_write(stream * const restrict stream
 
   if((attr & COLOR_OPT) && (attr & COLOR_OPT) != L_NOCOLOR)
   {
-    sayw(COLOR(NONE));
+    sayw(NOCOLOR);
   }
 
   // message terminator
