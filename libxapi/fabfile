@@ -34,6 +34,9 @@ $lflags             = [ -shared [ "-Wl,--version-script=" $*/exports  ~ j ] ]
 $lflags_xapi_final  = [ $lflags_xapi_final $lflags [ "-Wl,-soname," libxapi-xapi.so ~ j ] ]
 $lflags_xapi_debug  = [ $lflags_xapi_debug $lflags [ "-Wl,-soname," libxapi-xapi.so ~ j ] ]
 $lflags_xapi_devel  = [ $lflags_xapi_devel $lflags [ "-Wl,-soname," libxapi-xapi-devel.so ~ j ] ]
+$lflags_xapi_debug_test = [ $lflags_xapi_debug_test $lflags [ "-Wl,-soname," libxapi-xapi-debug-test.so ~ j ] ]
+
+$libxapi_xapi_debug_test     = [ $dlibxapi/libxapi-xapi-debug-test.so ~ j ]
 
 # source files
 +[@std.c]($dext = [ xapi.final.pic.o ]; $rdirs = [ $dlibxapi ~ ls l/integ d ]; $cc; $cflags = $cflags_xapi_final)
@@ -85,6 +88,11 @@ $lflags_xapi_devel  = [ $lflags_xapi_devel $lflags [ "-Wl,-soname," libxapi-xapi
   [ [ $cc ] [ $cflags_xapi_devel ~ uu ] -o [ $@ ] [ $@ ~ rx/aneedw lx/o ss u ] $lflags_xapi_devel ~ fi ]
 }
 
+[ $libxapi_xapi_debug_test ] : [ [ $*/exports ~ j ] [ $* ~ ls l/integ d lsr sx/c/xapi.debug.pic.o y ] [ $*/errtab/SYS.errtab.xapi.debug.pic.o ~ j ] ]
+{
+  [ [ $cc ] [ $cflags_xapi_debug ~ uu ] -o [ $@ ] [ $@ ~ rx/aneedw lx/o ss u ] $lflags_xapi_debug_test ~ fi ]
+}
+
 #
 # tests
 #  for rationale see test/README.md
@@ -103,10 +111,10 @@ $lflags_xapi_devel  = [ $lflags_xapi_devel $lflags [ "-Wl,-soname," libxapi-xapi
   [ [ $cc ] -o [ $@ ] [ $cflags_xapi_devel ~ uu ] [ $@ ~ rx/aneedw lx/o ss u ] [ $libxapi_xapi_devel ] [ $dlibxapi ~ [ ?{ [ rb{$*/integ} ~ j ] "s{^}{'-Wl,-rpath,$ORIGIN/}" "s{$}{'}" ~ fi ] ] ~ fi ]
 }
 
-[ $*/integ ~ j lsr l/errtab v sx/c/stacktrace sy dj shift ] ::^ [ $libxapi_xapi_devel [ $*/integ/errtab/TEST.errtab.xapi.devel.o ~ j ] ]
-[ $*/integ ~ j lsr l/errtab v sx/c/stacktrace sy dj shift ] :: [ $< ~ sx/stacktrace/xapi.devel.o ]
+[ $*/integ ~ j lsr l/errtab v sx/c/stacktrace sy dj shift ] ::^ [ $libxapi_xapi_debug_test [ $*/integ/errtab/TEST.errtab.xapi.debug.o ~ j ] ]
+[ $*/integ ~ j lsr l/errtab v sx/c/stacktrace sy dj shift ] :: [ $< ~ sx/stacktrace/xapi.debug.o ]
 {
-  [ [ $cc ] -o [ $@ ] [ $cflags_xapi_devel ~ uu ] [ $@ ~ rx/aneedw lx/o ss u ] [ $libxapi_xapi_devel ] [ $dlibxapi ~ [ ?{ [ rb{$*/integ} ~ j ] "s{^}{'-Wl,-rpath,$ORIGIN/}" "s{$}{'}" ~ fi ] ] ~ fi ]
+  [ [ $cc ] -o [ $@ ] [ $cflags_xapi_debug ~ uu ] [ $@ ~ rx/aneedw lx/o ss u ] [ $libxapi_xapi_debug_test ] [ $dlibxapi ~ [ ?{ [ rb{$*/integ} ~ j ] "s{^}{'-Wl,-rpath,$ORIGIN/}" "s{$}{'}" ~ fi ] ] ~ fi ]
 }
 
 [ $*/integ ~ j lsr l/errtab v sx/c/errorcode sy dj shift ] :: [ $< ~ sx/errorcode/eapi.devel.o ]
