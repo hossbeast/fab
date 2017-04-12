@@ -37,7 +37,7 @@ xapi usage_report()
 
   char space[64] = {};
   int fd = -1;
-  int token = 0;
+  narrator * N;
 
   if(log_would(L_USAGE))
   {
@@ -50,15 +50,14 @@ xapi usage_report()
       fatal(xread, fd, space, sizeof(space), 0);
       sscanf(space, "%*d %ld", &pages);
     }
-    fatal(log_start, L_USAGE, &token);
-    logs(0, "usage : mem(");
-    fatal(bytesize_say, pages * g_params.pagesize, log_narrator(&token));
-    logs(0, ")");
-    fatal(log_finish, &token);
+    fatal(log_start, L_USAGE, &N);
+    says("usage : mem(");
+    fatal(bytesize_say, pages * g_params.pagesize, N);
+    says(")");
+    fatal(log_finish);
   }
 
 finally:
-  fatal(log_finish, &token);
   fatal(ixclose, &fd);
 coda;
 }

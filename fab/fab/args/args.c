@@ -32,7 +32,7 @@
 #include "narrator/growing.h"
 #include "fab/request.h"
 #include "logger.h"
-#include "logger/filter.h"
+#include "logger/expr.h"
 #include "logger/category.h"
 #include "logger/arguments.h"
 #include "valyria/list.h"
@@ -88,9 +88,9 @@ xapi args_usage(const command * restrict cmd, int version, int logcats)
 "\n"
     );
 
-    fatal(logger_filter_pushs, 0, "+LOGGER");
+    fatal(logger_expr_push, 0, "+LOGGER");
     fatal(logger_categories_report);
-    fatal(logger_filter_pop, 0);
+    fatal(logger_expr_pop, 0);
   }
 
   says(

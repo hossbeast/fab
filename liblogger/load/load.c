@@ -30,6 +30,7 @@
 #include "stream.internal.h"
 #include "arguments.internal.h"
 #include "log.internal.h"
+#include "attr.internal.h"
 
 #define restrict __restrict
 

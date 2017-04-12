@@ -1,4 +1,4 @@
-/* Copyright (c) 2012-2015 Todd Freed <todd.freed@gmail.com>
+/* (see xlog*, and strea* Copyright (c) 2012-2015 Todd Freed <todd.freed@gmail.com>
 
    This file is part of fab.
 
@@ -25,9 +25,10 @@
 
 struct narrator;
 
-/*
- * options and modifiers that can be applied to a log message
- */
+// maximum possible number of streams
+#define LOGGER_MAX_STREAMS 63
+
+// stream types
 #define LOGGER_STREAM_TABLE(x)                                                          \
   LOGGER_STREAM_DEF(FD            , 0x01  , x)  /* write to a file descriptor */        \
   LOGGER_STREAM_DEF(RING          , 0x02  , x)  /* write to a ring buffer */            \
@@ -73,7 +74,7 @@ typedef struct logger_stream
   };
 
   // (returns) unique id
-  int id;
+  uint8_t id;
 } logger_stream;
 
 /// logger_stream_register
@@ -82,7 +83,7 @@ typedef struct logger_stream
 //  provide a list of streams for writing log messages to
 //
 // PARAMETERS
-//  streams    - sentinel-terminated list of stream definitions
+//  streams - sentinel-terminated list of stream definitions
 //
 xapi logger_stream_register(const logger_stream * restrict streams)
   __attribute__((nonnull));
@@ -90,15 +91,8 @@ xapi logger_stream_register(const logger_stream * restrict streams)
 /// logger_streams_report
 //
 // SUMMARY
-//  log a summary of configured streams to LOGGER
+//  log a summary of stream configuration to LOGGER
 //
 xapi logger_streams_report(void);
-
-/// logger_stream_would
-//
-// SUMMARY
-//  returns true if a log with the specified ids would write to the specified stream
-//
-int logger_stream_would(int stream_id, uint64_t ids);
 
 #endif

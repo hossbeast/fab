@@ -37,6 +37,7 @@
 
 #include "config_parser.h"
 #include "errtab/CONFIG.errtab.h"
+#include "logging.h"
 
 #include "macros.h"
 
@@ -54,7 +55,7 @@ static xapi config_parser_unit_setup(xunit_unit * unit)
   fatal(value_load);
 
   // logging
-  fatal(logger_finalize);
+  fatal(logging_finalize);
 
   finally : coda;
 }

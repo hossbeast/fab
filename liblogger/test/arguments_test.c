@@ -253,10 +253,8 @@ finally:
   test_teardown();
 
   if(XAPI_UNWINDING)
-  {
-    xapi_infof("test", "%d", x);
     xapi_backtrace();
-  }
+
 conclude(&R);
   xapi_teardown();
 

@@ -18,5 +18,5 @@
 1   TOOMANY   number of unique categories exceeds the limit
 2   ILLREPEAT category repeated non-consecutively
 3   ILLORDER  incompatible ordering of category definitions
-4   BADFILTER invalid filter expression
+4   BADEXPR   invalid logger expression
 5   NXSTREAM  stream definition has unknown type

@@ -26,11 +26,13 @@
 #include "xlinux/xstdlib.h"
 #include "xlinux/xunistd.h"
 #include "xlinux/xstring.h"
+#include "narrator.h"
 
 #include "internal.h"
 #include "arguments.internal.h"
-#include "filter.internal.h"
 #include "logging.internal.h"
+#include "expr.internal.h"
+#include "filter.internal.h"
 
 #include "snarf.h"
 #include "zbuffer.h"
@@ -123,13 +125,11 @@ xapi arguments_finalize()
   enter;
 
   int x;
-  filter * filterp = 0;
 
   // move recognized logexprs g_ulogv -> g_logv
   for(x = 0; x < g_ulogc; x++)
   {
-    filter fl;
-    if(filter_parses(g_ulogv[x], &fl), fl.v)
+    if(expr_validate(g_ulogv[x], 1))
     {
       g_logv[g_logc++] = g_ulogv[x];
       g_ulogv[x] = 0;
@@ -139,13 +139,9 @@ xapi arguments_finalize()
   // move unrecognized logexprs g_logv -> g_ulogv
   for(x = 0; x < g_logc; x++)
   {
-    if(filterp == 0)
-      fatal(xmalloc, &filterp, sizeof(*filterp));
-
-    if(filter_parses(g_logv[x], filterp), filterp->v)
+    if(expr_validate(g_logv[x], 1))
     {
-      fatal(filter_push, 0, filterp);
-      filterp = 0;
+      fatal(logger_expr_push, 0, g_logv[x]);
     }
     else
     {
@@ -157,9 +153,7 @@ xapi arguments_finalize()
   list_finalize(g_logv, &g_logc, g_logvs, &g_logvsl);
   list_finalize(g_ulogv, &g_ulogc, g_ulogvs, &g_ulogvsl);
 
-finally:
-  filter_free(filterp);
-coda;
+  finally : coda;
 }
 
 xapi arguments_process(const char * restrict argvs, size_t argvsl, int binaryx, int interpx)
@@ -224,7 +218,7 @@ xapi arguments_process(const char * restrict argvs, size_t argvsl, int binaryx, 
   // move logexpr options g_argv -> g_ulogv
   for(x = 0; x < g_argc; x++)
   {
-    if(filter_parses(g_argv[x], 0))
+    if(expr_validate(g_argv[x], 0))
     {
       g_ulogv[g_ulogc++] = g_argv[x];
       g_argv[x] = 0;
@@ -358,20 +352,20 @@ API xapi logger_arguments_report()
 {
   enter;
 
-  int token = 0;
+  narrator * N;
 
   logf(L_LOGGER, "logger cmdline arguments");
   logf(L_LOGGER, " args : %s", g_argvs);
   int x;
   for(x = 0; x < g_argc; x++)
   {
-    fatal(log_start, L_LOGGER, &token);
-    logf(L_LOGGER, "  [%2d] %s", x, g_argv[x]);
+    fatal(log_start, L_LOGGER, &N);
+    sayf("  [%2d] %s", x, g_argv[x]);
     if(g_binary == g_argv[x])
-      logf(L_LOGGER, "   <-- binary");
+      sayf("   <-- binary");
     else if(g_interpreter == g_argv[x])
-      logf(L_LOGGER, "   <-- interpreting");
-    fatal(log_finish, &token);
+      sayf("   <-- interpreting");
+    fatal(log_finish);
   }
 
   logf(L_LOGGER, " logs : %s - %s", g_logvs, g_ulogvs);
@@ -380,7 +374,5 @@ API xapi logger_arguments_report()
   for(x = 0; x < g_ulogc; x++)
     logf(L_LOGGER, "  [%2d] %s", x, g_ulogv[x]);
 
-finally:
-  fatal(log_finish, &token);
-coda;
+  finally : coda;
 }

@@ -28,8 +28,8 @@ struct narrator;  // libnarrator
 /// logger_category
 //
 // SUMMARY
-//  application components provide logger_category definitions to liblogger liblogger assigns the
-//  same bits to definitions having the same name
+//  application components provide logger_category definitions to liblogger, and liblogger assigns
+//  the same bits to definitions having the same name
 //
 typedef struct logger_category
 {
@@ -47,6 +47,9 @@ typedef struct logger_category
 
   // options and modifiers
   uint32_t attr;          // e.g. L_RED | L_TRACE
+
+  // if true, then a filter may match without mentioning this category
+  char optional;
 
   // all definitions having the same name are assigned the same id by liblogger
   uint64_t id;

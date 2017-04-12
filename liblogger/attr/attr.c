@@ -15,15 +15,55 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
+#include <string.h>
+#include <stdlib.h>
+
 #include "xapi.h"
 #include "narrator.h"
+#include "valyria/array.h"
 
 #include "internal.h"
-#include "attr/attr.internal.h"
+#include "attr.internal.h"
+#include "stream.internal.h"
+
+#include "attrs32.h"
+#include "macros.h"
 
 #define restrict __restrict
 
-uint32_t attr_combine(uint32_t A, uint32_t B)
+struct attrs32 * logger_attrs = (struct attrs32[]) {
+#define LOGGER_ATTR_DEF(a, b) { value : (b), name : #a, namel : strlen(#a) },
+LOGGER_ATTR_TABLE
+#undef LOGGER_ATTR_DEF
+};
+
+#define LOGGER_ATTR_DEF(a, b) + 1
+size_t logger_attrs_len = 0 LOGGER_ATTR_TABLE;
+#undef LOGGER_ATTR_DEF
+
+static void __attribute__((constructor)) attr_init()
+{
+  qsort(logger_attrs, logger_attrs_len, sizeof(*logger_attrs), attrs32_compare_byname);
+}
+
+uint32_t attr_byname(const char * name, size_t namel)
+{
+  return attrs32_lookup_byname(logger_attrs, logger_attrs_len, name, namel);
+}
+
+const char * color_option_name(uint32_t attrs)     { return attrs32_option_name(logger_attrs, logger_attrs_len, COLOR_OPT, attrs); }
+const char * category_option_name(uint32_t attrs)  { return attrs32_option_name(logger_attrs, logger_attrs_len, CATEGORY_OPT, attrs); }
+const char * trace_option_name(uint32_t attrs)     { return attrs32_option_name(logger_attrs, logger_attrs_len, TRACE_OPT, attrs); }
+const char * discovery_option_name(uint32_t attrs) { return attrs32_option_name(logger_attrs, logger_attrs_len, DISCOVERY_OPT, attrs); }
+const char * datestamp_option_name(uint32_t attrs) { return attrs32_option_name(logger_attrs, logger_attrs_len, DATESTAMP_OPT, attrs); }
+const char * processid_option_name(uint32_t attrs) { return attrs32_option_name(logger_attrs, logger_attrs_len, NAMES_OPT, attrs); }
+const char * filter_option_name(uint32_t attrs)    { return attrs32_option_name(logger_attrs, logger_attrs_len, FILTER_OPT, attrs); }
+
+//
+// public
+//
+
+uint32_t attr_combine2(uint32_t A, uint32_t B)
 {
   if(B & COLOR_OPT)
   {
@@ -55,13 +95,24 @@ uint32_t attr_combine(uint32_t A, uint32_t B)
     A |= (B & DATESTAMP_OPT);
   }
 
-  if(B & PROCESSID_OPT)
+  if(B & NAMES_OPT)
   {
-    A &= ~PROCESSID_OPT;
-    A |= (B & PROCESSID_OPT);
+    A &= ~NAMES_OPT;
+    A |= (B & NAMES_OPT);
+  }
+
+  if(B & FILTER_OPT)
+  {
+    A &= ~FILTER_OPT;
+    A |= (B & FILTER_OPT);
   }
 
   return A;
+}
+
+uint32_t attr_combine4(uint32_t A, uint32_t B, uint32_t C, uint32_t D)
+{
+  return attr_combine2(attr_combine2(attr_combine2(A, B), C), D);
 }
 
 xapi attr_say(uint32_t attr, narrator * const restrict N)
@@ -76,7 +127,7 @@ xapi attr_say(uint32_t attr, narrator * const restrict N)
       sayc(',');
     wrote = 1;
 
-    says(COLOR_VALUE(attr));
+    says(color_option_name(attr));
   }
 
   if(attr & CATEGORY_OPT)
@@ -85,7 +136,7 @@ xapi attr_say(uint32_t attr, narrator * const restrict N)
       sayc(',');
     wrote = 1;
 
-    says(CATEGORY_VALUE(attr));
+    says(category_option_name(attr));
   }
 
   if(attr & TRACE_OPT)
@@ -94,7 +145,7 @@ xapi attr_say(uint32_t attr, narrator * const restrict N)
       sayc(',');
     wrote = 1;
 
-    says(TRACE_VALUE(attr));
+    says(trace_option_name(attr));
   }
 
   if(attr & DISCOVERY_OPT)
@@ -103,7 +154,7 @@ xapi attr_say(uint32_t attr, narrator * const restrict N)
       sayc(',');
     wrote = 1;
 
-    says(DISCOVERY_VALUE(attr));
+    says(discovery_option_name(attr));
   }
 
   if(attr & DATESTAMP_OPT)
@@ -112,16 +163,25 @@ xapi attr_say(uint32_t attr, narrator * const restrict N)
       sayc(',');
     wrote = 1;
 
-    says(DATESTAMP_VALUE(attr));
+    says(datestamp_option_name(attr));
   }
 
-  if(attr & PROCESSID_OPT)
+  if(attr & NAMES_OPT)
   {
     if(wrote)
       sayc(',');
     wrote = 1;
 
-    says(PROCESSID_VALUE(attr));
+    says(processid_option_name(attr));
+  }
+
+  if(attr & FILTER_OPT)
+  {
+    if(wrote)
+      sayc(',');
+    wrote = 1;
+
+    says(filter_option_name(attr));
   }
 
   finally : coda;

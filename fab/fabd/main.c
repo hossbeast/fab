@@ -199,7 +199,7 @@ finally:
     xapi_trace_pithy(space, sizeof(space), 0);
 #endif
 
-    xlogs(L_ERROR, L_CATEGORY_OFF, space);
+    xlogs(L_ERROR, L_NOCATEGORY, space);
   }
 
   // modules

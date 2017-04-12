@@ -197,7 +197,7 @@ xapi reconfigure()
 #endif
     xapi_calltree_unwind();
 
-    xlogs(L_WARN, L_CATEGORY_OFF, space);
+    xlogs(L_WARN, L_NOCATEGORY, space);
   }
   else
   {

@@ -280,7 +280,6 @@ API xapi fab_client_launchp(fab_client * const restrict client)
 
   sigset_t sigs;
   sigset_t oset;
-  int token = 0;
   char ** argv = 0;
   int r;
   int i;
@@ -352,16 +351,17 @@ API xapi fab_client_launchp(fab_client * const restrict client)
 
 #if DEVEL
     argv[0] = "fabw.devel";
-    fatal(log_start, L_IPC, &token);
-    logf(0, "execv(");
-    logs(0, client->fabw_path ?: "fabw");
+    narrator * N;
+    fatal(log_start, L_IPC, &N);
+    sayf("execv(");
+    says(client->fabw_path ?: "fabw");
     for(x = 0; x < i; x++)
     {
-      logs(0, ",");
-      logs(0, argv[x]);
+      says(",");
+      says(argv[x]);
     }
-    logs(0, ")");
-    fatal(log_finish, &token);
+    says(")");
+    fatal(log_finish);
 #endif
 
     if(client->fabw_path)
@@ -386,7 +386,6 @@ API xapi fab_client_launchp(fab_client * const restrict client)
   fatal(validate_result, client, FABIPC_SIGACK, &info);
 
 finally:
-  fatal(log_finish, &token);
   wfree(argv);
 coda;
 }
@@ -395,7 +394,6 @@ API xapi fab_client_make_request(fab_client * const restrict client, memblk * co
 {
   enter;
 
-  int token = 0;
   int shmid_tmp;
   int fd = -1;
   int req_shmid = -1;
@@ -403,10 +401,11 @@ API xapi fab_client_make_request(fab_client * const restrict client, memblk * co
   void * shmaddr = 0;
 
 #if DEBUG || DEVEL
-  fatal(log_start, L_PROTOCOL, &token);
+  narrator * N;
+  fatal(log_start, L_PROTOCOL, &N);
   logs(0, "request ");
-  fatal(fab_request_say, request, log_narrator(&token));
-  fatal(log_finish, &token);
+  fatal(fab_request_say, request, N);
+  fatal(log_finish);
 #endif
 
   // create shm for the request
@@ -446,10 +445,10 @@ API xapi fab_client_make_request(fab_client * const restrict client, memblk * co
   fab_response_thaw(response, shmaddr);
 
 #if DEBUG || DEVEL
-  fatal(log_start, L_PROTOCOL, &token);
-  logs(0, "response ");
-  fatal(fab_response_say, response, log_narrator(&token));
-  fatal(log_finish, &token);
+  fatal(log_start, L_PROTOCOL, &N);
+  says("response ");
+  fatal(fab_response_say, response, N);
+  fatal(log_finish);
 #endif
 
   // unblock fabd
@@ -460,7 +459,6 @@ API xapi fab_client_make_request(fab_client * const restrict client, memblk * co
     fail(FAB_UNSUCCESS);
 
 finally:
-  fatal(log_finish, &token);
   fatal(ixshmdt, &shmaddr);
   if(req_shmid != -1)
     fatal(xshmctl, req_shmid, IPC_RMID, 0);

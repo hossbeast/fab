@@ -27,7 +27,7 @@
 #include "xlinux/xstdlib.h"
 #include "logger.h"
 #include "logger/arguments.h"
-#include "logger/filter.h"
+#include "logger/expr.h"
 
 #include "args.h"
 #include "logging.h"
@@ -83,9 +83,9 @@ printf(
 "\n"
 );
 
-  fatal(logger_filter_pushs, 0, "+LOGGER");
+  fatal(logger_expr_push, 0, "+LOGGER");
   fatal(logger_categories_report);
-  fatal(logger_filter_pop, 0);
+  fatal(logger_expr_pop, 0);
 }
 
 printf(

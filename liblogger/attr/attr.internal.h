@@ -18,7 +18,7 @@
 #ifndef _LOGGER_ATTR_INTERNAL_H
 #define _LOGGER_ATTR_INTERNAL_H
 
-#include <inttypes.h>
+#include <stdint.h>
 
 #include "xapi.h"
 
@@ -31,16 +31,16 @@ struct narrator;
 #define TRACE_OPT     UINT32_C(0x000000C0)
 #define DISCOVERY_OPT UINT32_C(0x00000300)
 #define DATESTAMP_OPT UINT32_C(0x00000C00)
-#define PROCESSID_OPT UINT32_C(0x00003000)
+#define NAMES_OPT     UINT32_C(0x00003000)
+#define FILTER_OPT    UINT32_C(0X0000C000)
 
-// get the name of a modifier or option from its value
-#define LOGGER_ATTR_DEF(a, b, x, m) (x & m) == b ? "L_" #a :
-#define COLOR_VALUE(x)      LOGGER_ATTR_TABLE(x, COLOR_OPT) "NONE"
-#define CATEGORY_VALUE(x)   LOGGER_ATTR_TABLE(x, CATEGORY_OPT) "NONE"
-#define TRACE_VALUE(x)      LOGGER_ATTR_TABLE(x, TRACE_OPT) "NONE"
-#define DISCOVERY_VALUE(x)  LOGGER_ATTR_TABLE(x, DISCOVERY_OPT) "NONE"
-#define DATESTAMP_VALUE(x)  LOGGER_ATTR_TABLE(x, DATESTAMP_OPT) "NONE"
-#define PROCESSID_VALUE(x)  LOGGER_ATTR_TABLE(x, PROCESSID_OPT) "NONE"
+const char * color_option_name(uint32_t attrs);
+const char * category_option_name(uint32_t attrs);
+const char * trace_option_name(uint32_t attrs);
+const char * discovery_option_name(uint32_t attrs);
+const char * datestamp_option_name(uint32_t attrs);
+const char * processid_option_name(uint32_t attrs);
+const char * filter_option_name(uint32_t attrs);
 
 #define restrict __restrict
 
@@ -50,15 +50,16 @@ struct narrator;
 //  combine two sets of attributes
 //
 // PARAMETERS
-//  A - low precedence
-//  B - high precedence
+//  A - lower precedence
+//  B - higher precedence
 //
 // RETURNS
 //  attribute set A overwritten with all options affirmatively set by B
 //
-uint32_t attr_combine(uint32_t A, uint32_t B);
+uint32_t attr_combine2(uint32_t A, uint32_t B);
+uint32_t attr_combine4(uint32_t A, uint32_t B, uint32_t C, uint32_t D);
 
-/// category_attr_say
+/// attr_say
 //
 // SUMMARY
 //  write a description of attr to the narrator
@@ -68,6 +69,9 @@ uint32_t attr_combine(uint32_t A, uint32_t B);
 //  narrator -
 //
 xapi attr_say(uint32_t attr, struct narrator * const restrict _narrator)
+  __attribute__((nonnull));
+
+uint32_t attr_byname(const char * name, size_t namel)
   __attribute__((nonnull));
 
 #undef restrict

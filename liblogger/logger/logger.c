@@ -20,8 +20,8 @@
 #include "internal.h"
 #include "category.internal.h"
 #include "stream.internal.h"
-#include "filter.internal.h"
 #include "arguments.internal.h"
+#include "expr.internal.h"
 
 //
 // api
@@ -35,16 +35,16 @@ API xapi logger_finalize()
   fatal(categories_activate);
   fatal(streams_activate);
 
-  // reset filters for all streams
-  fatal(logger_filter_clear, 0);
+  // clear filters and attrs from streams
+  fatal(logger_expr_clear, 0);
 
-  // stream definition filters
+  // process exprs attached to streams
   fatal(streams_finalize);
 
-  // cmdline filters
+  // process exprs on cmdline
   fatal(arguments_finalize);
 
-  // reports to LOGGER
+  // report to LOGGER
   fatal(logger_arguments_report);
   fatal(categories_report_verbose);
   fatal(logger_streams_report);

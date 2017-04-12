@@ -115,12 +115,12 @@ xapi config_report()
 {
   enter;
 
-  int token = 0;
   if(log_would(L_CONFIG))
   {
-    fatal(log_start, L_CONFIG, &token);
-    fatal(value_say, g_config, log_narrator(&token));
-    fatal(log_finish, &token);
+    narrator * N;
+    fatal(log_start, L_CONFIG, &N);
+    fatal(value_say, g_config, N);
+    fatal(log_finish);
   }
 
   finally : coda;

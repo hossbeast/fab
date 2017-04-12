@@ -20,6 +20,7 @@
 #include "xapi.h"
 #include "xapi/trace.h"
 #include "xapi/calltree.h"
+#include "valyria/list.h"
 
 #include "logger.h"
 #include "internal.h"
@@ -58,6 +59,89 @@ static xapi assert_ascending(logger_category * logsp)
     logs[0] = logs[1];
     logs[1]++;
   } while(logs[1]->name);
+
+  finally : coda;
+}
+
+/// assert_together
+//
+// SUMMARY
+//  assert that categories with the same name are contiguous in the list
+//
+static xapi assert_together(list * C)
+{
+  enter;
+
+  int x;
+  int y;
+  int i;
+
+  logger_category * rep;
+  logger_category * other = 0;
+
+  for(x = 0; x < C->l; x++)
+  {
+    rep = list_get(C, x);
+    for(y = x + 1; y < C->l; y++)
+    {
+      logger_category * last = list_get(C, y);
+
+      if(strcmp(rep->name, last->name))
+        break;
+    }
+
+    for(i = y + 1; i < C->l; i++)
+    {
+      logger_category * other = list_get(C, i);
+
+      if(strcmp(rep->name, other->name) == 0)
+        break;
+    }
+
+    if(i < C->l)
+      break;
+
+    x = y - 1;
+  }
+
+  assert_null(other);
+
+  finally : coda;
+}
+
+/// assert_before
+//
+// SUMMARY
+//  assert that categories with name A appear before categories with name B
+//
+static xapi assert_before(list * restrict C, const char * restrict A, const char * restrict B)
+{
+  enter;
+
+  logger_category * cat;
+
+  int x;
+  for(x = 0; x < C->l; x++)
+  {
+    cat = list_get(C, x);
+    if(strcmp(cat->name, A) == 0)
+      break;
+  }
+
+  int y;
+  for(y = 0; y < C->l; y++)
+  {
+    cat = list_get(C, y);
+    if(strcmp(cat->name, B) == 0)
+      break;
+  }
+  
+  assert_infos("before", A);
+  assert_infos("after", B);
+  int before_index = x;
+  int after_index = y;
+  assert_gt_d(before_index, after_index);
+  assert_info_unstage();
 
   finally : coda;
 }
@@ -377,8 +461,8 @@ static xapi test_category_list_merge_attr_rank()
   fatal(logger_category_register, logs_a);
   fatal(categories_activate);
 
-#define assert_eq_color(exp, act) assert_eq_u32(exp, (act & COLOR_OPT))
-#define assert_eq_trace(exp, act) assert_eq_u32(exp, (act & TRACE_OPT))
+#define assert_eq_color(exp, act) _asserts((act & COLOR_OPT) == exp, QUOTE(act), color_option_name(act), color_option_name(exp))
+#define assert_eq_trace(exp, act) _asserts((act & TRACE_OPT) == exp, QUOTE(act), trace_option_name(act), trace_option_name(exp))
 
   fatal(assert_ascending, logs_a);
   assert_eq_color(L_BLUE, logs_a[0].attr);
@@ -389,6 +473,105 @@ static xapi test_category_list_merge_attr_rank()
   assert_eq_trace(L_TRACE, logs_a[3].attr);
 
   finally : coda;
+}
+
+static xapi test_category_list_merge_common_A()
+{
+  enter;
+
+  list * A = 0;
+  list * B = 0;
+  list * C = 0;
+
+  fatal(list_create, &A);
+  fatal(list_create, &B);
+  fatal(list_create, &C);
+
+  fatal(list_push, A, (logger_category[]) {{ name : "B" }});
+  fatal(list_push, A, (logger_category[]) {{ name : "C" }});
+
+  fatal(list_push, B, (logger_category[]) {{ name : "C" }});
+  fatal(list_push, B, (logger_category[]) {{ name : "D" }});
+
+  fatal(category_list_merge, A, B, C);
+
+  assert_eq_zu(4, C->l);
+  fatal(assert_together, C);
+  fatal(assert_before, C, "B", "C");
+  fatal(assert_before, C, "C", "D");
+
+finally:
+  fatal(list_xfree, A);
+  fatal(list_xfree, B);
+  fatal(list_xfree, C);
+coda;
+}
+
+static xapi test_category_list_merge_common_B()
+{
+  enter;
+
+  list * A = 0;
+  list * B = 0;
+  list * C = 0;
+
+  fatal(list_create, &A);
+  fatal(list_create, &B);
+  fatal(list_create, &C);
+
+  fatal(list_push, A, (logger_category[]) {{ name : "B" }});
+  fatal(list_push, A, (logger_category[]) {{ name : "C" }});
+
+  fatal(list_push, B, (logger_category[]) {{ name : "A" }});
+  fatal(list_push, B, (logger_category[]) {{ name : "B" }});
+
+  fatal(category_list_merge, A, B, C);
+
+  assert_eq_zu(4, C->l);
+  fatal(assert_together, C);
+  fatal(assert_before, C, "B", "C");
+  fatal(assert_before, C, "A", "B");
+
+finally:
+  fatal(list_xfree, A);
+  fatal(list_xfree, B);
+  fatal(list_xfree, C);
+coda;
+}
+
+static xapi test_category_list_merge_nocommon()
+{
+  enter;
+
+  list * A = 0;
+  list * B = 0;
+  list * C = 0;
+
+  fatal(list_create, &A);
+  fatal(list_create, &B);
+  fatal(list_create, &C);
+
+  fatal(list_push, A, (logger_category[]) {{ name : "B" }});
+  fatal(list_push, A, (logger_category[]) {{ name : "B" }});
+  fatal(list_push, A, (logger_category[]) {{ name : "C" }});
+  fatal(list_push, A, (logger_category[]) {{ name : "C" }});
+  fatal(list_push, A, (logger_category[]) {{ name : "C" }});
+
+  fatal(list_push, B, (logger_category[]) {{ name : "D" }});
+  fatal(list_push, B, (logger_category[]) {{ name : "E" }});
+
+  fatal(category_list_merge, A, B, C);
+
+  assert_eq_zu(7, C->l);
+  fatal(assert_together, C);
+  fatal(assert_before, C, "B", "C");
+  fatal(assert_before, C, "D", "E");
+
+finally:
+  fatal(list_xfree, A);
+  fatal(list_xfree, B);
+  fatal(list_xfree, C);
+coda;
 }
 
 int main()
@@ -413,6 +596,9 @@ int main()
     , { entry : test_category_list_merge_failure_toomany, expected : LOGGER_TOOMANY }
 
     , { entry : test_category_list_merge_attr_rank }
+    , { entry : test_category_list_merge_common_A }
+    , { entry : test_category_list_merge_common_B }
+    , { entry : test_category_list_merge_nocommon }
   };
 
   for(x = 0; x < sizeof(tests) / sizeof(tests[0]); x++)
@@ -432,7 +618,6 @@ int main()
     }
 
     assert_eq_exit(tests[x].expected, exit);
-
     fatal(category_cleanup);
   }
 
@@ -441,10 +626,8 @@ finally:
   fatal(category_cleanup);
 
   if(XAPI_UNWINDING)
-  {
-    xapi_infof("test", "%d", x);
     xapi_backtrace();
-  }
+
 conclude(&R);
   xapi_teardown();
 

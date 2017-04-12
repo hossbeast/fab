@@ -112,7 +112,6 @@ static xapi receive(void ** request_shm, fab_request ** const restrict request)
 {
   enter;
 
-  int token = 0;
   int shmid = -1;
   int fd = -1;
 
@@ -130,14 +129,14 @@ static xapi receive(void ** request_shm, fab_request ** const restrict request)
   *request = *request_shm;
 
 #if DEBUG || DEVEL || XAPI
-  fatal(log_start, L_PROTOCOL, &token);
-  logf(0, "request ");
-  fatal(fab_request_say, *request, log_narrator(&token));
-  fatal(log_finish, &token);
+  narrator * N;
+  fatal(log_start, L_PROTOCOL, &N);
+  sayf("request ");
+  fatal(fab_request_say, *request, N);
+  fatal(log_finish);
 #endif
 
 finally:
-  fatal(log_finish, &token);
   fatal(ixclose, &fd);
 coda;
 }
@@ -146,7 +145,6 @@ static xapi respond(pid_t client_pid, const sigset_t * sigs, void ** response_sh
 {
   enter;
 
-  int token = 0;
   int shmid = -1;
   int fd = -1;
   siginfo_t siginfo;
@@ -164,10 +162,11 @@ static xapi respond(pid_t client_pid, const sigset_t * sigs, void ** response_sh
   fatal(ixclose, &fd);
 
 #if DEBUG || DEVEL
-  fatal(log_start, L_PROTOCOL, &token);
-  logf(0, "response ");
-  fatal(fab_response_say, response, log_narrator(&token));
-  fatal(log_finish, &token);
+  narrator * N;
+  fatal(log_start, L_PROTOCOL, &N);
+  sayf("response ");
+  fatal(fab_response_say, response, N);
+  fatal(log_finish);
 #endif
 
   // write the response to shm
@@ -179,7 +178,6 @@ static xapi respond(pid_t client_pid, const sigset_t * sigs, void ** response_sh
   fatal(sigutil_assert, FABIPC_SIGACK, client_pid, &siginfo);
 
 finally:
-  fatal(log_finish, &token);
   if(shmid != -1)
     fatal(xshmctl, shmid, IPC_RMID, 0);
 coda;

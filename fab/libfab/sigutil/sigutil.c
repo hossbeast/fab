@@ -23,6 +23,7 @@
 #include "xlinux/xpthread.h"
 #include "xlinux/xsignal.h"
 #include "fab/ipc.h"
+#include "narrator.h"
 
 #include "internal.h"
 #include "sigutil.h"
@@ -75,7 +76,6 @@ API xapi sigutil_wait(const sigset_t * sigs, siginfo_t * r_info)
 {
   enter;
 
-  int token = 0;
   siginfo_t info;
   int r = -1;
 
@@ -83,8 +83,9 @@ API xapi sigutil_wait(const sigset_t * sigs, siginfo_t * r_info)
     fatal(uxsigwaitinfo, &r, sigs, &info);
 
 #if DEBUG || DEVEL || XUNIT
-  fatal(log_start, L_IPC, &token);
-  logf(0, "rx %s { signo : %d, sender : %ld"
+  narrator * N;
+  fatal(log_start, L_IPC, &N);
+  sayf("rx %s { signo : %d, sender : %ld"
     , FABIPC_SIGNAME(info.si_signo)
     , info.si_signo
     , (long)info.si_pid
@@ -93,21 +94,19 @@ API xapi sigutil_wait(const sigset_t * sigs, siginfo_t * r_info)
   if(info.si_signo == SIGCHLD)
   {
     if(WIFEXITED(info.si_status))
-      logf(0, ", status : %d", WEXITSTATUS(info.si_status));
+      sayf(", status : %d", WEXITSTATUS(info.si_status));
 
     if(WIFSIGNALED(info.si_status))
-      logf(0, ", signal : %d", WTERMSIG(info.si_status));
+      sayf(", signal : %d", WTERMSIG(info.si_status));
   }
-  logf(0, " }");
-  fatal(log_finish, &token);
+  sayf(" }");
+  fatal(log_finish);
 #endif
 
   if(r_info)
     memcpy(r_info, &info, sizeof(*r_info));
 
-finally:
-  fatal(log_finish, &token);
-coda;
+  finally : coda;
 }
 
 API xapi sigutil_exchange(int sig, pid_t pid, const sigset_t * sigs, siginfo_t * info)

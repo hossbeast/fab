@@ -15,33 +15,54 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#include <stdio.h>
-#include <inttypes.h>
 #include <stdlib.h>
 
 #include "xapi.h"
 #include "xapi/trace.h"
 #include "xapi/calltree.h"
+#include "valyria/list.h"
 
 #include "internal.h"
 #include "LOGGER.errtab.h"
 #include "filter.internal.h"
 #include "category.internal.h"
-#include "valyria/list.h"
+#include "expr.internal.h"
 
 #include "test_util.h"
 #include "macros.h"
+#include "zbuffer.h"
 
 static logger_category * logs_test = (logger_category[]) {
     { name : "A" }
   , { name : "BAR" }
   , { name : "DELTA" }
+  , { name : "LABEL", optional : 1 }
   , {}
 };
 
 #define L_A     logs_test[0].id
 #define L_BAR   logs_test[1].id
 #define L_DELTA logs_test[2].id
+#define L_LABEL logs_test[3].id
+
+static void ids_say(uint64_t ids, char * restrict dst, size_t sz)
+{
+  size_t z = 0;
+
+  dst[0] = 0;
+
+  logger_category * t = logs_test;
+  while(t->id)
+  {
+    if(ids & t->id)
+    {
+      if(z)
+        z += znloads(dst + z, sz - z, ",");
+      z += znloads(dst + z, sz - z, t->name);
+    }
+    t++;
+  }
+}
 
 static xapi suite_setup()
 {
@@ -63,160 +84,71 @@ static xapi suite_cleanup()
   finally : coda;
 }
 
-static xapi test_filter_parse()
-{
-  enter;
-
-  struct {
-    char * expr;  // expression
-
-    uint64_t v;   // expected ids
-    char m;       // expected mode
-    char o;       // expected operation
-    size_t off;   // expected offset
-  } tests[] = {
-      { expr : "+A"             , v : L_A                   , m : ' ' , o : '+' , off : 2 }
-    , { expr : "+A,BAR"         , v : L_A | L_BAR           , m : ' ' , o : '+' , off : 6 }
-    , { expr : "-BAR"           , v : L_BAR                 , m : ' ' , o : '-' , off : 4 }
-    , { expr : "-BAR%"          , v : L_BAR                 , m : '%' , o : '-' , off : 5 }
-    , { expr : "+DELTA,A,BAR%"  , v : L_A | L_BAR | L_DELTA , m : '%' , o : '+' , off : 13 }
-    , { expr : "+BAR,,BAR"      , v : L_BAR                 , m : ' ' , o : '+' , off : 9 }
-    , { expr : "+BAR||BAR"      , v : L_BAR                 , m : ' ' , o : '+' , off : 9 }
-    , { expr : "+|BAR||BAR|"    , v : L_BAR                 , m : ' ' , o : '+' , off : 11 }
-    , { expr : "+DELTA%"        , v : L_DELTA               , m : '%' , o : '+' , off : 7 }
-    , { expr : "+DELTA|%"       , v : L_DELTA               , m : '%' , o : '+' , off : 8 }
-    , { expr : "--foo" }
-    , { expr : "-bar" }
-    , { expr : "+bar" }
-    , { expr : "bar" }
-    , { expr : "BAR" }
-  };
-
-  int x;
-  for(x = 0; x < sizeof(tests) / sizeof(tests[0]); x++)
-  {
-    filter f;
-    int r = filter_parses(tests[x].expr, &f);
-
-    assert_eq_b(!tests[x].v, !r);
-    if(tests[x].v)
-    {
-      assert_eq_u64(tests[x].v, f.v);
-      assert_eq_c(tests[x].m, f.m);
-      assert_eq_c(tests[x].o, f.o);
-    }
-  }
-
-finally:
-  xapi_infos("input", tests[x].expr);
-  xapi_infof("case", "%d", x);
-coda;
-}
-
-static xapi test_filter_expr_parse()
-{
-  enter;
-
-  struct {
-    char * expr;  // expression
-    char n;       // expected number of filters
-  } tests[] = {
-      { expr : "+A"                     , n : 1 }
-    , { expr : " +A"                    , n : 1 }
-    , { expr : "+A "                    , n : 1 }
-    , { expr : "+A,BAR -DELTA"          , n : 2 }
-    , { expr : " +A,BAR -DELTA"         , n : 2 }
-    , { expr : "+A,BAR        +BAR%"    , n : 2 }
-    , { expr : "+A,BAR -DELTA "         , n : 2 }
-    , { expr : "+A,BAR -DELTA +BAR%"    , n : 3 }
-    , { expr : "+A,BAR -DELTA +BAR%   " , n : 3 }
-    , { expr : "--foo" }
-    , { expr : "-bar" }
-    , { expr : "+bar" }
-  };
-
-  int x;
-  for(x = 0; x < sizeof(tests) / sizeof(tests[0]); x++)
-  {
-    filter filters[4];
-    int r = filter_expr_parse(MMS(tests[x].expr), filters, sizeof(filters) / sizeof(*filters));
-
-    if(tests[x].n)
-    {
-      assert_gt_d(0, r);
-      assert_eq_c(tests[x].n, r);
-    }
-    else
-    {
-      assert_lt_d(0, r);
-    }
-  }
-
-finally:
-  xapi_infos("input", tests[x].expr);
-  xapi_infof("case", "%d", x);
-coda;
-}
-
 static xapi test_filters_would()
 {
   enter;
 
   list * filters = 0;
-  int x = -1;
+  uint32_t attrs;
+  char space[64];
+  int x;
 
   struct {
-    char ** expr;
+    char * expr;
     uint64_t ids;
     int would;
   } tests[] = {
-      { expr : (char*[]) { "+A", "+BAR", 0 }    , ids : L_A , would : 1 }
-    , { expr : (char*[]) { "+A", "+BAR", 0 }    , ids : L_A | L_BAR , would : 1 }
-    , { expr : (char*[]) { "+A,BAR", 0 }        , ids : L_BAR , would : 0 }
-    , { expr : (char*[]) { "+BAR", 0 }        , ids : L_BAR , would : 1 }
-    , { expr : (char*[]) { "+A,BAR", 0 }        , ids : L_BAR | L_A, would : 1 }
-    , { expr : (char*[]) { "+A,BAR", "-BAR", 0 }, ids : L_A | L_BAR, would : 0 }
-    , { expr : (char*[]) { "+A,BAR", "-BAR", 0 }, ids : L_A, would : 0 }
-    , { expr : (char*[]) { "+A,BAR", "-BAR", 0 }, ids : L_BAR, would : 0 }
-    , { expr : (char*[]) { "+BAR", 0 }          , ids : L_DELTA, would : 0 }
+      { expr : "+A +BAR"         , ids : L_A            , would : 1 }
+    , { expr : "+BAR"            , ids : L_BAR          , would : 1 }
+    , { expr : "+A,BAR"          , ids : L_BAR | L_A    , would : 1 }
+    , { expr : "+A,BAR -BAR"     , ids : L_A | L_BAR    , would : 1 }
+    , { expr : "+A"              , ids : L_A            , would : 1 }
+    , { expr : "+A,BAR"          , ids : L_A | L_BAR    , would : 1 }
+    , { expr : "+LABEL"          , ids : L_LABEL        , would : 1 }
+    , { expr : "+A"              , ids : L_A            , would : 1 }
+    , { expr : "+A"              , ids : L_A | L_LABEL  , would : 1 }
+    , { expr : "+A,LABEL"        , ids : L_A | L_LABEL  , would : 1 }
 
-    , { expr : (char*[]) { "+A", 0 }            , ids : L_A, would : 1 }
-    , { expr : (char*[]) { "+A", 0 }            , ids : L_BAR, would : 0 }
-    , { expr : (char*[]) { "+A", 0 }            , ids : L_A | L_BAR, would : 1 }
-    , { expr : (char*[]) { "+A,BAR", 0 }        , ids : L_A, would : 0 }
-    , { expr : (char*[]) { "+A,BAR", 0 }        , ids : L_BAR, would : 0 }
-    , { expr : (char*[]) { "+A,BAR", 0 }        , ids : L_A | L_BAR, would : 1 }
-
-    , { expr : (char*[]) { "+A%", 0 }            , ids : L_A, would : 1 }
-    , { expr : (char*[]) { "+A%", 0 }            , ids : L_BAR, would : 0 }
-    , { expr : (char*[]) { "+A%", 0 }            , ids : L_A | L_BAR, would : 0 }
-    , { expr : (char*[]) { "+A,BAR%", 0 }        , ids : L_A, would : 1 }
-    , { expr : (char*[]) { "+A,BAR%", 0 }        , ids : L_BAR, would : 1 }
-    , { expr : (char*[]) { "+A,BAR%", 0 }        , ids : L_A | L_BAR, would : 1 }
+    , { expr : "+A +BAR"         , ids : L_A | L_BAR    , would : 0 }
+    , { expr : "+A,BAR"          , ids : L_BAR          , would : 0 }
+    , { expr : "+A,BAR -BAR"     , ids : L_A            , would : 0 }
+    , { expr : "+A,BAR -BAR"     , ids : L_BAR          , would : 0 }
+    , { expr : "+BAR"            , ids : L_DELTA        , would : 0 }
+    , { expr : "+A"              , ids : L_BAR          , would : 0 }
+    , { expr : "+A"              , ids : L_A | L_BAR    , would : 0 }
+    , { expr : "+A,BAR"          , ids : L_A            , would : 0 }
+    , { expr : "+A,BAR"          , ids : L_BAR          , would : 0 }
+    , { expr : "+A"              , ids : L_LABEL        , would : 0 }
+    , { expr : "+A,LABEL"        , ids : L_LABEL        , would : 0 }
+    , { expr : "+LABEL"          , ids : L_A            , would : 0 }
+    , { expr : "+A,LABEL"        , ids : L_A            , would : 0 }
+    , { expr : "+LABEL"          , ids : L_A | L_LABEL  , would : 0 }
 
     // unrecognized categories in the filter
-    , { expr : (char*[]) { "+A,BAR,BAZ", 0 }     , ids : L_A | L_BAR, would : 0 }
-    , { expr : (char*[]) { "+A,BAR,BAZ%", 0 }    , ids : L_A | L_BAR, would : 1 }
-    , { expr : (char*[]) { "+BAZ", 0 }           , ids : L_A, would : 0 }
-    , { expr : (char*[]) { "+BAZ%", 0 }          , ids : L_A, would : 0 }
+    , { expr : "+A,BAR,BAZ"      , ids : L_A | L_BAR    , would : 0 }
+    , { expr : "+BAZ"            , ids : L_A            , would : 0 }
   };
 
   fatal(list_createx, &filters, filter_free, 0, 0);
 
-  for(x = 0; x < sizeof(tests) / sizeof(tests[0]); x++)
+  for(x = 0; x < ARRAY_LEN(tests); x++)
   {
+    // arrange
     fatal(list_recycle, filters);
+    fatal(expr_parse, tests[x].expr, filters, &attrs);
 
-    char ** expr;
-    for(expr = tests[x].expr; *expr; expr++)
-      fatal(filter_expr_process, *expr, strlen(*expr), filters, list_push);
+    // act
+    int would = filters_would(filters, tests[x].ids);
 
-    int actual = filters_would(filters, tests[x].ids);
-    assert_eq_b(tests[x].would, actual);
+    // assert
+    assert_infos("expr", tests[x].expr);
+    ids_say(tests[x].ids, space, sizeof(space));
+    assert_infos("ids", space);
+    assert_eq_b(tests[x].would, would);
+    assert_info_unstage();
   }
 
 finally:
-  xapi_infof("case", "%d", x);
   fatal(list_xfree, filters);
 coda;
 }
@@ -233,9 +165,7 @@ int main()
     xapi (*entry)();
     int expected;
   } tests[] = {
-      { entry : test_filter_parse }
-    , { entry : test_filter_expr_parse }
-    , { entry : test_filters_would }
+      { entry : test_filters_would }
   };
 
   for(x = 0; x < sizeof(tests) / sizeof(tests[0]); x++)
@@ -247,7 +177,6 @@ int main()
       if(xapi_exit_errtab(exit) != perrtab_LOGGER)
         fail(0);
 
-      // print the stacktrace to stdout
       xapi_backtrace_to(1);
       xapi_calltree_unwind();
     }
@@ -260,10 +189,8 @@ finally:
   fatal(suite_cleanup);
 
   if(XAPI_UNWINDING)
-  {
-    xapi_infof("test", "%d", x);
     xapi_backtrace();
-  }
+
 conclude(&R);
   xapi_teardown();
 

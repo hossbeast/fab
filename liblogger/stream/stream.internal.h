@@ -37,21 +37,20 @@ struct filter;
 typedef struct stream
 {
   // unique identifier
-  uint32_t id;
+  uint8_t id;
   uint8_t type;
 
   // unique identifier for the stream
   char * name;
   size_t namel;
 
-  // attributes for logs emitted to the stream, at higher precedence than both
-  // category definitions and attributes at the log site
-  uint32_t attr;
-
-  // filter expressions
+  // stack of logger expressions attached to the stream
   struct list * exprs;
 
-  // the filters determine which log messages are emitted to the stream
+  // effective attributes, given higher precedence than category and log site attrs
+  uint32_t attrs;
+
+  // effective filters, which determine which log messages are emitted to the stream
   struct list * filters;
 
   // log messages are written to this record narrator
@@ -67,11 +66,25 @@ typedef struct stream
 /// g_streams
 //
 // SUMMARY
+//  active streams
 //
-//
-extern struct array * g_streams;
+extern stream g_streams[LOGGER_MAX_STREAMS];
+extern uint8_t g_streams_l;
 
 #define restrict __restrict
+
+/// stream_byid
+//
+// SUMMARY
+//  lookup an active stream by id
+//
+// PARAMETERS
+//  id - id returned by stream_register
+//
+static inline stream * stream_byid(uint8_t id)
+{
+  return &g_streams[id];
+}
 
 /// stream_setup
 //
@@ -101,19 +114,17 @@ xapi streams_activate(void);
 //
 xapi streams_finalize(void);
 
-/// stream_would
-//
-// SUMMARY
-//
-int stream_would(const stream * const restrict streamp, const uint64_t ids)
-  __attribute__((nonnull));
-
 /// streams_would
 //
 // SUMMARY
 //
 //
-int streams_would(const uint64_t ids);
+// PARAMETERS
+//  ids        - 
+//  base_attrs - 
+//  vector     - 
+//
+int streams_would(uint64_t ids, uint32_t attrs, uint64_t * restrict vector);
 
 /// streams_write
 //
@@ -126,23 +137,36 @@ int streams_would(const uint64_t ids);
 //  b         -
 //  l         -
 //  time_msec -
+//  vector    - 
 //
-xapi streams_write(const uint64_t ids, const uint32_t attrs, const char * const restrict b, size_t l, const long time_msec)
+xapi streams_write(const uint64_t ids, const uint32_t attrs, const char * restrict b, size_t l, const long time_msec, uint64_t vector)
   __attribute__((nonnull));
 
-/// stream_byid
+/// stream_write
 //
 // SUMMARY
-//  lookup an active stream by id
+//  write a log message to a stream
 //
 // PARAMETERS
-//  id       - id
-//  category - (returns) category definition
+//  streamp    - stream to write to
+//  ids        - bitmask of ids for the message
+//  attrs      - category attrs + log site attrs + stream attrs
+//  b          -
+//  l          -
+//  time_msec  -
 //
-xapi stream_byid(int id, stream ** const restrict streamp)
+xapi stream_write(stream *  restrict streamp, const uint64_t ids, uint32_t attrs, const char * const restrict b, size_t l, const long time_msec)
   __attribute__((nonnull));
 
-/// stream_filter_push
+/// stream_say
+//
+// SUMMARY
+//  write a description of the stream to a narrator
+//
+xapi stream_say(stream * restrict streamp, struct narrator * restrict N)
+  __attribute__((nonnull));
+
+/// stream_expr_push
 //
 // SUMMARY
 //  append a filter to the filters for the specified stream
@@ -154,15 +178,19 @@ xapi stream_byid(int id, stream ** const restrict streamp)
 // REMARKS
 //  takes ownership of the filter instance
 //
-xapi stream_filter_push(stream * const restrict streamp, struct filter * restrict filterp)
+xapi stream_expr_push(stream * restrict streamp, const char * restrict expr)
   __attribute__((nonnull));
 
-/// stream_say
-//
-// SUMMARY
-//  write a description of the stream to a narrator
-//
-xapi stream_say(stream * const restrict streamp, struct narrator * restrict N)
+xapi stream_expr_pop(stream * restrict streamp)
+  __attribute__((nonnull));
+
+xapi stream_expr_unshift(stream * restrict streamp, const char * restrict expr)
+  __attribute__((nonnull));
+
+xapi stream_expr_shift(stream * restrict streamp)
+  __attribute__((nonnull));
+
+xapi stream_expr_clear(stream * restrict streamp)
   __attribute__((nonnull));
 
 #undef restrict

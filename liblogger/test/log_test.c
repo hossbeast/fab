@@ -21,6 +21,7 @@
 #include "xapi/trace.h"
 #include "xapi/calltree.h"
 #include "narrator.h"
+#include "narrator/load.h"
 #include "narrator/growing.h"
 
 #include "internal.h"
@@ -83,41 +84,74 @@ static xapi test_log()
 {
   enter;
 
+  char buf[64] = {};
+
   // act
   logs(L_FOO, "foo");
 
+  narrator_growing_reset(N);
+  narrator_growing_read(N, buf, sizeof(buf));
+
   // assert
-  char * expected = "foo";
-  const char * actual = narrator_growing_buffer(N);
+  const char * expected = "foo";
+  const char * actual = buf;
   assert_eq_s(expected, actual);
 
   finally : coda;
 }
 
-static xapi test_log_start()
+static xapi test_log_start_basic()
 {
   enter;
 
-  int token;
+  char buf[64] = {};
 
   // act
-  fatal(log_start, L_FOO, &token);
+  narrator * N;
+  fatal(log_start, L_FOO, &N);
 
-  // only the ids specified in log_start matter
-  logs(L_FOO, "f");
-  logs(0, "o");
-  logs(75, "o");
+  says("f");
+  says("o");
+  says("o");
 
-  fatal(log_finish, &token);
+  fatal(log_finish);
+
+  narrator_growing_reset(N);
+  narrator_growing_read(N, buf, sizeof(buf));
 
   // assert
-  char * expected = "foo";
-  const char * actual = narrator_growing_buffer(N);
+  const char * expected = "foo";
+  const char * actual = buf;
   assert_eq_s(expected, actual);
 
-finally:
-  fatal(log_finish, &token);
-coda;
+  finally : coda;
+}
+
+static xapi test_log_start_nullity()
+{
+  enter;
+
+  char buf[64] = {};
+
+  // act
+  narrator * N;
+  fatal(log_start, 42, &N); // returns the nullity narrator
+
+  says("f");
+  says("o");
+  says("o");
+
+  fatal(log_finish);
+
+  narrator_growing_reset(N);
+  narrator_growing_read(N, buf, sizeof(buf));
+
+  // assert
+  const char * expected = "";
+  const char * actual = buf;
+  assert_eq_s(expected, actual);
+
+  finally : coda;
 }
 
 int main()
@@ -127,12 +161,15 @@ int main()
   xapi R = 0;
   int x = 0;
 
+  fatal(narrator_load);
+
   struct {
     xapi (*entry)();
     int expected;
   } tests[] = {
       { entry : test_log }
-    , { entry : test_log_start }
+    , { entry : test_log_start_basic }
+    , { entry : test_log_start_nullity }
   };
 
   for(x = 0; x < sizeof(tests) / sizeof(tests[0]); x++)
@@ -160,10 +197,10 @@ finally:
   fatal(test_cleanup);
 
   if(XAPI_UNWINDING)
-  {
-    xapi_infof("test", "%d", x);
     xapi_backtrace();
-  }
+
+  fatal(narrator_unload);
+
 conclude(&R);
   xapi_teardown();
 

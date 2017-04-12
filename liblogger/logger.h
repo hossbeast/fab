@@ -27,43 +27,47 @@
 struct narrator; // libnarrator
 
 /*
- * options and modifiers that can be applied to a log message
- */
-#define LOGGER_ATTR_TABLE(x, y)                                                                   \
-  LOGGER_ATTR_DEF(NOCOLOR       , 0x00000001 , x , y)  /* (default) not colorized */              \
-  LOGGER_ATTR_DEF(RED           , 0x00000002 , x , y)  /* terminal colorization : red */          \
-  LOGGER_ATTR_DEF(GREEN         , 0x00000003 , x , y)  /* terminal colorization : green */        \
-  LOGGER_ATTR_DEF(YELLOW        , 0x00000004 , x , y)  /* terminal colorization : yellow */       \
-  LOGGER_ATTR_DEF(BLUE          , 0x00000005 , x , y)  /* terminal colorization : blue */         \
-  LOGGER_ATTR_DEF(MAGENTA       , 0x00000006 , x , y)  /* terminal colorization : magenta */      \
-  LOGGER_ATTR_DEF(CYAN          , 0x00000007 , x , y)  /* terminal colorization : cyan */         \
-  LOGGER_ATTR_DEF(GRAY          , 0x00000008 , x , y)  /* terminal colorization : cyan */         \
-  LOGGER_ATTR_DEF(BOLD_RED      , 0x00000009 , x , y)  /* terminal colorization : bold red */     \
-  LOGGER_ATTR_DEF(BOLD_GREEN    , 0x0000000a , x , y)  /* terminal colorization : bold green */   \
-  LOGGER_ATTR_DEF(BOLD_YELLOW   , 0x0000000b , x , y)  /* terminal colorization : bold yellow */  \
-  LOGGER_ATTR_DEF(BOLD_BLUE     , 0x0000000c , x , y)  /* terminal colorization : bold blue */    \
-  LOGGER_ATTR_DEF(BOLD_MAGENTA  , 0x0000000d , x , y)  /* terminal colorization : bold magenta */ \
-  LOGGER_ATTR_DEF(BOLD_CYAN     , 0x0000000e , x , y)  /* terminal colorization : bold cyan */    \
-  LOGGER_ATTR_DEF(BOLD_GRAY     , 0x0000000f , x , y)  /* terminal colorization : bold cyan */    \
-  LOGGER_ATTR_DEF(CATEGORY      , 0x00000010 , x , y)  /* (default) include the category name*/   \
-  LOGGER_ATTR_DEF(CATEGORY_OFF  , 0x00000020 , x , y)                                             \
-  LOGGER_ATTR_DEF(TRACE_OFF     , 0x00000040 , x , y)  /* (default) */                            \
-  LOGGER_ATTR_DEF(TRACE         , 0x00000080 , x , y)  /* include trace info */                   \
-  LOGGER_ATTR_DEF(DISCOVERY_OFF , 0x00000100 , x , y)  /* (default) */                            \
-  LOGGER_ATTR_DEF(DISCOVERY     , 0x00000200 , x , y)  /* include discovery info */               \
-  LOGGER_ATTR_DEF(DATESTAMP_OFF , 0x00000400 , x , y)  /* (default) */                            \
-  LOGGER_ATTR_DEF(DATESTAMP     , 0x00000800 , x , y)  /* include timestamp */                    \
-  LOGGER_ATTR_DEF(PROCESSID_OFF , 0x00001000 , x , y)  /* (default) */                            \
-  LOGGER_ATTR_DEF(PROCESSID     , 0x00002000 , x , y)  /* include process identifier */
+
+options and modifiers which may be applied to
+ categories (see logger_category)
+ log messages (see xlog*)
+ streams (see logger_stream)
+
+*/
+#define LOGGER_ATTR_TABLE                                                                 \
+  LOGGER_ATTR_DEF(NOCOLOR       , 0x00000001)  /* (default) not colorized */              \
+  LOGGER_ATTR_DEF(RED           , 0x00000002)  /* terminal colorization : red */          \
+  LOGGER_ATTR_DEF(GREEN         , 0x00000003)  /* terminal colorization : green */        \
+  LOGGER_ATTR_DEF(YELLOW        , 0x00000004)  /* terminal colorization : yellow */       \
+  LOGGER_ATTR_DEF(BLUE          , 0x00000005)  /* terminal colorization : blue */         \
+  LOGGER_ATTR_DEF(MAGENTA       , 0x00000006)  /* terminal colorization : magenta */      \
+  LOGGER_ATTR_DEF(CYAN          , 0x00000007)  /* terminal colorization : cyan */         \
+  LOGGER_ATTR_DEF(GRAY          , 0x00000008)  /* terminal colorization : gray */         \
+  LOGGER_ATTR_DEF(BOLD_RED      , 0x00000009)  /* terminal colorization : bold red */     \
+  LOGGER_ATTR_DEF(BOLD_GREEN    , 0x0000000a)  /* terminal colorization : bold green */   \
+  LOGGER_ATTR_DEF(BOLD_YELLOW   , 0x0000000b)  /* terminal colorization : bold yellow */  \
+  LOGGER_ATTR_DEF(BOLD_BLUE     , 0x0000000c)  /* terminal colorization : bold blue */    \
+  LOGGER_ATTR_DEF(BOLD_MAGENTA  , 0x0000000d)  /* terminal colorization : bold magenta */ \
+  LOGGER_ATTR_DEF(BOLD_CYAN     , 0x0000000e)  /* terminal colorization : bold cyan */    \
+  LOGGER_ATTR_DEF(BOLD_GRAY     , 0x0000000f)  /* terminal colorization : bold gray */    \
+  LOGGER_ATTR_DEF(CATEGORY      , 0x00000010)  /* (default) include the category name */  \
+  LOGGER_ATTR_DEF(NOCATEGORY    , 0x00000020)                                             \
+  LOGGER_ATTR_DEF(NOTRACE       , 0x00000040)  /* (default) */                            \
+  LOGGER_ATTR_DEF(TRACE         , 0x00000080)  /* append trace info */                    \
+  LOGGER_ATTR_DEF(NODISCOVERY   , 0x00000100)  /* (default) */                            \
+  LOGGER_ATTR_DEF(DISCOVERY     , 0x00000200)  /* append discovery info */                \
+  LOGGER_ATTR_DEF(NODATESTAMP   , 0x00000400)  /* (default) */                            \
+  LOGGER_ATTR_DEF(DATESTAMP     , 0x00000800)  /* parepend timestamp */                   \
+  LOGGER_ATTR_DEF(NONAMES       , 0x00001000)  /* (default) */                            \
+  LOGGER_ATTR_DEF(NAMES         , 0x00002000)  /* prepend process/thread names  */        \
+  LOGGER_ATTR_DEF(FILTER        , 0x00004000)  /* (default) emission subject to filters */\
+  LOGGER_ATTR_DEF(NOFILTER      , 0x00008000)  /* dont filter logs */                     \
 
 enum {
-#define LOGGER_ATTR_DEF(a, b, x, y) L_ ## a = UINT32_C(b),
-LOGGER_ATTR_TABLE(0, 0)
+#define LOGGER_ATTR_DEF(a, b) L_ ## a = UINT32_C(b),
+LOGGER_ATTR_TABLE
 #undef LOGGER_ATTR_DEF
 };
-
-// all categories
-#define L_ALL UINT64_C(0xFFFFFFFFFFFFFFFF)
 
 #define restrict __restrict
 
@@ -108,15 +112,15 @@ xapi logger_finalize(void);
 //  [file]  - file name
 //  [line]  - line number
 //
-xapi logger_vlogf(uint64_t ids, const uint32_t attrs, const char * const restrict fmt, va_list va)
+xapi logger_vlogf(uint64_t ids, uint32_t attrs, const char * restrict fmt, va_list va)
   __attribute__((nonnull(3)));
-xapi logger_logf (uint64_t ids, const uint32_t attrs, const char * const restrict fmt, ...)
+xapi logger_logf (uint64_t ids, uint32_t attrs, const char * restrict fmt, ...)
   __attribute__((nonnull(3)));
-xapi logger_logs (uint64_t ids, const uint32_t attrs, const char * const restrict s)
+xapi logger_logs (uint64_t ids, uint32_t attrs, const char * restrict s)
   __attribute__((nonnull));
-xapi logger_logw (uint64_t ids, const uint32_t attrs, const char * const restrict src, size_t len)
+xapi logger_logw (uint64_t ids, uint32_t attrs, const char * restrict src, size_t len)
   __attribute__((nonnull));
-xapi logger_logc (uint64_t ids, const uint32_t attrs, const char c)
+xapi logger_logc (uint64_t ids, uint32_t attrs, char c)
   __attribute__((nonnull));
 
 #define  logvf(ids, ...) fatal(logger_logvf , ids , 0 , __VA_ARGS__)
@@ -138,30 +142,18 @@ xapi logger_logc (uint64_t ids, const uint32_t attrs, const char c)
 // PARAMETERS
 //  ids     - bitwise combination of category ids
 //  [attrs] - bitwise combination of L_* options and modifiers
-//  token    - if log_would, and if the call succeeds, set to 1
+//  [N]     - (returns) narrator to write the log message to
 //
-xapi log_xstart(uint64_t ids, const uint32_t attrs, int * const restrict token);
+xapi log_xstart(uint64_t ids, uint32_t attrs, struct narrator ** restrict N);
 
-xapi log_start(uint64_t ids, int * const restrict token);
+xapi log_start(uint64_t ids, struct narrator ** restrict N);
 
 /// log_finish
 //
 // SUMMARY
-//  complete the log that was started with log_start
+//  flush the log that was started with log_start
 //
-// PARAMETERS
-//  [token] - if *token, if if the call succeeds, set to 0
-//
-xapi log_finish(int * const restrict token);
-
-/// log_narrator
-//
-// SUMMARY
-//  between log_start and log_finish calls, returns a narrator which may be used to append to the
-//  current log message
-//
-struct narrator * log_narrator(int * const restrict token)
-  __attribute__((nonnull));
+xapi log_finish(void);
 
 /// log_would
 //
@@ -169,6 +161,7 @@ struct narrator * log_narrator(int * const restrict token)
 //  returns true if a log with the specified ids would write to any stream
 //
 int log_would(uint64_t ids);
+int log_xwould(uint64_t ids, uint32_t attrs);
 
 /// log_bytes
 //
@@ -185,6 +178,23 @@ int log_bytes(void);
 //  otherwise, returns the number of characters written on the last log* call or log_start/log_finish sequence
 //
 int log_chars(void);
+
+#if XAPI_STACKTRACE
+/// logger_trace
+//
+// SUMMARY
+//  while unwinding, log the backtrace using xapi_trace
+//
+// PARAMETERS
+//  ids           - bitwise combination of category ids
+//  [attrs]       - bitwise combination of L_* options and modifiers
+//  [trace_attrs] - attrs for xapi_trace
+//
+xapi logger_trace_full(uint64_t ids, uint16_t trace_attrs);
+xapi logger_xtrace_full(uint64_t ids, uint32_t attrs, uint16_t trace_attrs);
+xapi logger_trace_pithy(uint64_t ids, uint16_t trace_attrs);
+xapi logger_xtrace_pithy(uint64_t ids, uint32_t attrs, uint16_t trace_attrs);
+#endif
 
 #undef restrict
 #endif

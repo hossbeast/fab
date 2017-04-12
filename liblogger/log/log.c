@@ -25,6 +25,7 @@
 #include <time.h>
 
 #include "xapi.h"
+#include "xapi/trace.h"
 #include "xlinux/xtime.h"
 #include "valyria/pstring.h"
 #include "narrator.h"
@@ -35,6 +36,8 @@
 #include "log.internal.h"
 #include "stream.internal.h"
 #include "config.internal.h"
+#include "attr.internal.h"
+#include "category.internal.h"
 
 #include "macros.h"
 #include "strutil.h"
@@ -46,7 +49,8 @@
 // [[ static ]]
 //
 
-static __thread int         storage_log;      // whether a log is being constructed
+static __thread int         storage_would;    // whether a log is being constructed
+static __thread uint64_t    storage_would_vector;
 static __thread uint64_t    storage_ids;      // when a log is being constructed, effective bits
 static __thread uint32_t    storage_attrs;
 static __thread narrator *  storage_narrator; // the log message
@@ -54,61 +58,6 @@ static __thread long        storage_time_msec;
 
 static __thread char storage_fixed_buffer[4096];
 static __thread narrator_fixed_storage storage_fixed_storage;
-
-/// start
-//
-// SUMMARY
-//  store the log prefix if streams_would
-//
-// PARAMETERS
-//  ids   - log bits
-//  attrs -
-//  w     - (returns) whether streams_would
-//
-static xapi start(uint64_t ids, uint32_t attrs, int * const restrict w)
-{
-  enter;
-
-  if(storage_narrator == 0)
-  {
-    storage_fixed_storage.s = storage_fixed_buffer;
-    storage_fixed_storage.a = sizeof(storage_fixed_buffer);
-    storage_narrator = narrator_fixed_init(&storage_fixed_storage);
-  }
-
-  storage_log = 1;
-  storage_ids = ids;
-  if(streams_would(storage_ids))
-  {
-    (*w) = 1;
-
-    storage_attrs = attrs;
-    fatal(narrator_reset, storage_narrator);
-
-    // wall-clock milliseconds
-    struct timespec times;
-    fatal(xclock_gettime, CLOCK_REALTIME, &times);
-    storage_time_msec = (times.tv_sec * 1000) + (times.tv_nsec / 1000);
-  }
-
-  finally : coda;
-}
-
-static xapi finish()
-{
-  enter;
-
-  // write to active streams
-  fatal(streams_write
-    , storage_ids
-    , storage_attrs
-    , narrator_fixed_buffer(storage_narrator)
-    , narrator_fixed_size(storage_narrator)
-    , storage_time_msec
-  );
-
-  finally : coda;
-}
 
 //
 // public
@@ -127,41 +76,27 @@ xapi log_cleanup()
 // api
 //
 
-API xapi logger_vlogf(uint64_t ids, uint32_t attrs, const char * const fmt, va_list va)
+API xapi logger_vlogf(uint64_t ids, uint32_t attrs, const char * fmt, va_list va)
 {
   enter;
 
   ids |= logger_process_categories;
   ids |= logger_thread_categories;
 
-  if(storage_log)
-  {
-    if(streams_would(storage_ids))
-      fatal(narrator_vsayf, storage_narrator, fmt, va);
-  }
-  else
-  {
-    int w = 0;
-    fatal(start, ids, attrs, &w);
+  if(storage_would)
+    fatal(log_finish);
 
-    if(w)
-    {
-      fatal(narrator_vsayf, storage_narrator, fmt, va);
-      fatal(finish);
-    }
-
-    storage_log = 0;
-  }
+  fatal(log_xstart, ids, attrs, 0);
+  if(storage_would)
+    narrator_fixed_vsayf(storage_narrator, fmt, va);
+  fatal(log_finish);
 
   finally : coda;
 }
 
-API xapi logger_logf(uint64_t ids, uint32_t attrs, const char * const fmt, ...)
+API xapi logger_logf(uint64_t ids, uint32_t attrs, const char * fmt, ...)
 {
   enter;
-
-  ids |= logger_process_categories;
-  ids |= logger_thread_categories;
 
   va_list va;
   va_start(va, fmt);
@@ -172,128 +107,107 @@ finally:
 coda;
 }
 
-API xapi logger_logs(uint64_t ids, uint32_t attrs, const char * const s)
+API xapi logger_logs(uint64_t ids, uint32_t attrs, const char * s)
+{
+  xproxy(logger_logw, ids, attrs, s, strlen(s));
+}
+
+API xapi logger_logw(uint64_t ids, uint32_t attrs, const char * src, size_t len)
 {
   enter;
 
   ids |= logger_process_categories;
   ids |= logger_thread_categories;
 
-  fatal(logger_logw, ids, attrs, s, strlen(s));
+  if(storage_would)
+    fatal(log_finish);
+
+  fatal(log_xstart, ids, attrs, 0);
+  if(storage_would)
+    narrator_fixed_sayw(storage_narrator, src, len);
+
+  fatal(log_finish);
 
   finally : coda;
 }
 
-#include "category.internal.h"
-
-API xapi logger_logw(uint64_t ids, uint32_t attrs, const char * const src, size_t len)
+API xapi log_xstart(uint64_t ids, uint32_t attrs, narrator ** restrict N)
 {
   enter;
 
   ids |= logger_process_categories;
   ids |= logger_thread_categories;
 
-  if(storage_log)
+  if(storage_narrator == 0)
   {
-    if(streams_would(storage_ids))
-      fatal(narrator_sayw, storage_narrator, src, len);
-  }
-  else
-  {
-    int w = 0;
-    fatal(start, ids, attrs, &w);
-
-#if 0
-printf(" >> ");
-uint64_t bit = UINT64_C(1);
-while(bit)
-{
-  if(bit & ids)
-  {
-    logger_category * category = category_byid(bit);
-    if(category)
-    {
-      if((bit - 1) & ids)
-        printf(",");
-
-      printf("%.*s", (int)category->namel, category->name);
-    }
+    storage_fixed_storage.s = storage_fixed_buffer;
+    storage_fixed_storage.a = sizeof(storage_fixed_buffer);
+    storage_narrator = narrator_fixed_init(&storage_fixed_storage);
   }
 
-  bit <<= 1;
-}
+  storage_ids = ids;
+  storage_attrs = attrs;
+  if((storage_would = streams_would(storage_ids, storage_attrs, &storage_would_vector)))
+  {
+    narrator_fixed_reset(storage_narrator);
 
-printf(" : %d <<\n", w);
-#endif
+    // wall-clock milliseconds
+    struct timespec times;
+    fatal(xclock_gettime, CLOCK_REALTIME, &times);
+    storage_time_msec = (times.tv_sec * 1000) + (times.tv_nsec / 1000);
 
-    if(w)
-    {
-      fatal(narrator_sayw, storage_narrator, src, len);
-      fatal(finish);
-    }
-
-    storage_log = 0;
+    if(N)
+      *N = storage_narrator;
+  }
+  else if(N)
+  {
+    *N = g_narrator_nullity;
   }
 
   finally : coda;
 }
 
-API xapi log_xstart(uint64_t ids, uint32_t attrs, int * const restrict token)
+API xapi log_start(uint64_t ids, narrator ** restrict N)
+{
+  xproxy(log_xstart, ids, 0, N);
+}
+
+API xapi log_finish()
 {
   enter;
 
-  ids |= logger_process_categories;
-  ids |= logger_thread_categories;
-
-  int w = 0;
-  fatal(start, ids, attrs, &w);
-  *token = 1;
-
-  finally : coda;
-}
-
-API xapi log_start(uint64_t ids, int * const restrict token)
-{
-  enter;
-
-  ids |= logger_process_categories;
-  ids |= logger_thread_categories;
-
-  int w = 0;
-  fatal(start, ids, 0, &w);
-  *token = 1;
-
-  finally : coda;
-}
-
-API narrator * log_narrator(int * const restrict token)
-{
-  if(*token && streams_would(storage_ids))
-    return storage_narrator;
-
-  return g_narrator_nullity;
-}
-
-API xapi log_finish(int * const restrict token)
-{
-  enter;
-
-  if(*token)
+  if(storage_would)
   {
-    fatal(finish);
-    storage_log = 0;
-    *token = 0;
+    fatal(streams_write
+      , storage_ids
+      , storage_attrs
+      , narrator_fixed_buffer(storage_narrator)
+      , narrator_fixed_size(storage_narrator)
+      , storage_time_msec
+      , storage_would_vector
+    );
   }
+  storage_would = 0;
 
   finally : coda;
 }
 
 API int log_would(uint64_t ids)
 {
-  if(ids == 0)
-    return !!g_logger_default_stderr;
+  // misconfigured
+  if(ids == 0 || g_streams_l == 0)
+    return g_logger_default_stderr;
 
-  return streams_would(ids);
+  return streams_would(ids, 0, 0);
+}
+
+API int log_xwould(uint64_t ids, uint32_t attrs)
+{
+  // misconfigured
+  if(ids == 0 || g_streams_l == 0)
+    return g_logger_default_stderr;
+
+  return streams_would(ids, attrs, 0);
 }
 
 API int log_bytes()
@@ -311,3 +225,78 @@ API int log_chars()
 
   return 0;
 }
+
+#if XAPI_STACKTRACE
+static __attribute__((nonnull)) xapi logger_trace(uint64_t ids, uint32_t site_attrs, uint16_t trace_attrs, size_t (*tracer)(char * restrict, size_t, uint16_t))
+{
+  enter;
+
+  uint64_t vector = 0;
+  char trace[4096];
+  size_t tracesz;
+
+  ids |= logger_process_categories;
+  ids |= logger_thread_categories;
+
+  // misconfigured
+  if(ids == 0 || g_streams_l == 0)
+  {
+    if(g_logger_default_stderr)
+    {
+      tracesz = tracer(trace, sizeof(trace), trace_attrs);
+      int __attribute__((unused)) r = write(2, trace, tracesz);
+    }
+    goto XAPI_FINALIZE;
+  }
+
+  if(streams_would(ids, site_attrs, &vector))
+  {
+    // wall-clock milliseconds
+    struct timespec times;
+    int __attribute__((unused)) r = clock_gettime(CLOCK_REALTIME, &times);
+    long time_msec = (times.tv_sec * 1000) + (times.tv_nsec / 1000);
+
+    uint32_t base_attrs = attr_combine2(categories_attrs(ids), site_attrs);
+
+    int x;
+    for(x = 0; x < g_streams_l; x++)
+    {
+      stream * streamp = &g_streams[x];
+
+      uint32_t attrs = attr_combine2(base_attrs, streamp->attrs);
+      if(vector & (UINT64_C(1) << x))
+      {
+        uint16_t effective_trace_attrs = trace_attrs;
+        if((attrs & COLOR_OPT) == L_NOCOLOR)
+          effective_trace_attrs &= ~XAPI_TRACE_COLORIZE;
+
+        // stream narrator handles the newline as appropriate
+        tracesz = tracer(trace, sizeof(trace), effective_trace_attrs | XAPI_TRACE_NONEWLINE);
+        fatal(stream_write, streamp, ids, attrs, trace, tracesz, time_msec);
+      }
+    }
+  }
+
+  finally : coda;
+}
+
+API xapi logger_xtrace_full(uint64_t ids, uint32_t site_attrs, uint16_t trace_attrs)
+{
+  xproxy(logger_trace, ids, site_attrs, trace_attrs, xapi_trace_full);
+}
+
+API xapi logger_trace_full(uint64_t ids, uint16_t trace_attrs)
+{
+  xproxy(logger_trace, ids, 0, trace_attrs, xapi_trace_full);
+}
+
+API xapi logger_xtrace_pithy(uint64_t ids, uint32_t site_attrs, uint16_t trace_attrs)
+{
+  xproxy(logger_trace, ids, site_attrs, trace_attrs, xapi_trace_pithy);
+}
+
+API xapi logger_trace_pithy(uint64_t ids, uint16_t trace_attrs)
+{
+  xproxy(logger_trace, ids, 0, trace_attrs, xapi_trace_pithy);
+}
+#endif

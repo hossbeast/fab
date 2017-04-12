@@ -33,7 +33,7 @@ int g_logger_default_stderr;
 /// logger_set_process_name
 //
 // SUMMARY
-//  for L_PROCESSID, provide the process name applied to all logs emitted by this process
+//  for L_NAMES, provide the process name for logs emitted in this process
 //
 void logger_set_process_name(const char * const restrict name)
   __attribute__((nonnull));
@@ -41,7 +41,7 @@ void logger_set_process_name(const char * const restrict name)
 /// logger_set_thread_name
 //
 // SUMMARY
-//  for L_PROCESSID, provide the thread name applied to all logs emitted by this thread
+//  for L_NAMES, provide the thread name for logs emitted on this thread
 //
 void logger_set_thread_name(const char * const restrict name)
   __attribute__((nonnull));
@@ -49,16 +49,30 @@ void logger_set_thread_name(const char * const restrict name)
 /// logger_set_process_categories
 //
 // SUMMARY
-//  provide a mask of category ids to be applied to all logs emitted by this process
+//  provide category ids to be applied to logs emitted in this process
 //
 void logger_set_process_categories(uint64_t ids);
 
 /// logger_set_thread_categories
 //
 // SUMMARY
-//  provide a mask of category ids to be applied to all logs emitted by this thread
+//  provide category ids to be applied to logs emitted on this thread
 //
 void logger_set_thread_categories(uint64_t ids);
+
+/// logger_set_process_attrs
+//
+// SUMMARY
+//  provide attrs to be applied to logs emitted in this process
+//
+void logger_set_process_attrs(uint32_t attrs);
+
+/// logger_set_thread_attrs
+//
+// SUMMARY
+//  provide attrs to be applied to logs emitted on this thread
+//
+void logger_set_thread_attrs(uint32_t attrs);
 
 #undef restrict
 #endif

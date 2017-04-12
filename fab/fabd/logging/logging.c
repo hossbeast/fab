@@ -19,7 +19,7 @@
 
 #include "logger.h"
 #include "logger/stream.h"
-#include "logger/filter.h"
+#include "logger/expr.h"
 #include "logger/arguments.h"
 #include "value.h"
 #include "value/query.h"
@@ -57,9 +57,9 @@ logger_category * categories = (logger_category []) {
 };
 
 logger_stream * streams = (logger_stream []) {
-    { name : "console"  , type : LOGGER_STREAM_FD , expr : "+ERROR +WARN +INFO", attr : L_PROCESSID
+    { name : "console"  , type : LOGGER_STREAM_FD , expr : "+ERROR +WARN +INFO", attr : L_NAMES
       , fd : 1 }
-  , { name : "logfile"  , type : LOGGER_STREAM_ROLLING, expr : "+ALL%", attr : L_DATESTAMP | L_CATEGORY  | L_NOCOLOR | L_PROCESSID
+  , { name : "logfile"  , type : LOGGER_STREAM_ROLLING, expr : "+ALL%", attr : L_DATESTAMP | L_CATEGORY  | L_NOCOLOR | L_NAMES
       , file_mode : FABIPC_MODE_DATA, threshold : 1024 * 1024, max_files : 10, path_base : (char[256]) { } }
   , { }
 };
@@ -81,6 +81,15 @@ xapi logging_setup(uint32_t hash)
     snprintf(streams[1].path_base, 256, "%s/%x/fabd/log", XQUOTE(FABIPCDIR), hash);
     fatal(logger_stream_register, streams);
   }
+
+  fatal(logging_finalize);
+
+  finally : coda;
+}
+
+xapi logging_finalize()
+{
+  enter;
 
   fatal(logger_category_register, categories);
   fatal(logger_finalize);
@@ -105,7 +114,7 @@ xapi logging_reconfigure(reconfigure_context * ctx, const value * restrict confi
 #endif
 
   if(!dry)
-    fatal(logger_filter_clear, streams[0].id);
+    fatal(logger_expr_clear, streams[0].id);
 
   fatal(config_cursor_sets, &cursor, "logging.console.filters");
   fatal(config_query, config, config_cursor_path(&cursor), config_cursor_query(&cursor), VALUE_TYPE_LIST & dry, &list);
@@ -117,7 +126,7 @@ xapi logging_reconfigure(reconfigure_context * ctx, const value * restrict confi
       fatal(config_cursor_pushd, &cursor, x);
       fatal(config_query, list, config_cursor_path(&cursor), config_cursor_query(&cursor), VALUE_TYPE_STRING & dry, &val);
 
-      if(dry && !logger_filter_validates(val->s->s))
+      if(dry && !logger_expr_validate(val->s->s))
       {
         xapi_info_pushs("filter", val->s->s);
         fatal(config_throw, CONFIG_INVALID, val, config_cursor_path(&cursor));
@@ -125,14 +134,14 @@ xapi logging_reconfigure(reconfigure_context * ctx, const value * restrict confi
 
       if(!dry)
       {
-        fatal(logger_filter_pushs, streams[0].id, val->s->s);
+        fatal(logger_expr_push, streams[0].id, val->s->s);
       }
     }
   }
 
 #if 0
   if(!dry)
-    fatal(logger_filter_clear, streams[1].id);
+    fatal(logger_expr_clear, streams[1].id);
 
   fatal(config_cursor_sets, &cursor, "logging.logfile.filters");
   fatal(config_query, config, config_cursor_path(&cursor), config_cursor_query(&cursor), VALUE_TYPE_LIST & dry, &list);
@@ -144,7 +153,7 @@ xapi logging_reconfigure(reconfigure_context * ctx, const value * restrict confi
       fatal(config_cursor_pushd, &cursor, x);
       fatal(config_query, list, config_cursor_path(&cursor), config_cursor_query(&cursor), VALUE_TYPE_STRING & dry, &val);
 
-      if(dry && !logger_filter_validates(val->s->s))
+      if(dry && !logger_expr_validate(val->s->s))
         fatal(reconfigure_throw, CONFIG_INVALID, val, config_cursor_path(&cursor));
 
       if(!dry)

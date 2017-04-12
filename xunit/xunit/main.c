@@ -56,7 +56,6 @@ static xapi begin(int argc, char** argv, char ** envp)
   // allocated with the same size as g_args.objects
   void ** objects = 0;
   int x = 0;
-  int token = 0;
 
   // parse cmdline arguments
   fatal(args_parse);
@@ -175,17 +174,18 @@ static xapi begin(int argc, char** argv, char ** envp)
         fatal(xclock_gettime, CLOCK_MONOTONIC_RAW, &test_end);
 
         // report for this test
-        fatal(log_xstart, L_TEST, xunit_assertions_failed == 0 ? L_GREEN : L_RED, &token);
-        logf(0
-          , "  %%%6.2f pass rate on %6d assertions over "
+        narrator * N;
+        fatal(log_xstart, L_TEST, xunit_assertions_failed == 0 ? L_GREEN : L_RED, &N);
+        sayf(
+            "  %%%6.2f pass rate on %6d assertions over "
           , 100 * ((double)xunit_assertions_passed / (double)(xunit_assertions_passed + xunit_assertions_failed))
           , xunit_assertions_passed + xunit_assertions_failed
         );
-        fatal(elapsed_say, &test_start, &test_end, log_narrator(&token));
+        fatal(elapsed_say, &test_start, &test_end, N);
         if(name)
-          logf(0, " for %s", name);
+          sayf(" for %s", name);
 
-        fatal(log_finish, &token);
+        fatal(log_finish);
 
         unit_assertions_passed += xunit_assertions_passed;
         unit_assertions_failed += xunit_assertions_failed;
@@ -194,17 +194,18 @@ static xapi begin(int argc, char** argv, char ** envp)
       fatal(xclock_gettime, CLOCK_MONOTONIC_RAW, &unit_end);
 
       // report for this module
-      fatal(log_xstart, L_UNIT, unit_assertions_failed == 0 ? L_GREEN : L_RED, &token);
-      logf(0
-        , " %%%6.2f pass rate on %6d assertions by %3d tests over "
+      narrator * N;
+      fatal(log_xstart, L_UNIT, unit_assertions_failed == 0 ? L_GREEN : L_RED, &N);
+      sayf(
+          " %%%6.2f pass rate on %6d assertions by %3ld tests over "
         , 100 * ((double)unit_assertions_passed / (double)(unit_assertions_passed + unit_assertions_failed))
         , unit_assertions_passed + unit_assertions_failed
         , sentinel(xunit->xu_tests)
       );
 
-      fatal(elapsed_say, &unit_start, &unit_end, log_narrator(&token));
-      logf(0, " in %s", g_args.objects[x]);
-      fatal(log_finish, &token);
+      fatal(elapsed_say, &unit_start, &unit_end, N);
+      sayf(" in %s", g_args.objects[x]);
+      fatal(log_finish);
 
       suite_assertions_passed += unit_assertions_passed;
       suite_assertions_failed += unit_assertions_failed;
@@ -223,21 +224,20 @@ static xapi begin(int argc, char** argv, char ** envp)
   fatal(xclock_gettime, CLOCK_MONOTONIC_RAW, &suite_end);
 
   // summary report
-  fatal(log_xstart, L_SUITE, suite_assertions_failed == 0 ? L_GREEN : L_RED, &token);
-  logf(0
-    , "%%%6.2f pass rate on %6d assertions by %3d tests from %4d units over "
+  narrator * N;
+  fatal(log_xstart, L_SUITE, suite_assertions_failed == 0 ? L_GREEN : L_RED, &N);
+  sayf(
+      "%%%6.2f pass rate on %6d assertions by %3d tests from %4d units over "
     , 100 * ((double)suite_assertions_passed / (double)(suite_assertions_passed + suite_assertions_failed))
     , (suite_assertions_passed + suite_assertions_failed)
     , suite_tests
     , suite_units
   );
 
-  fatal(elapsed_say, &suite_start, &suite_end, log_narrator(&token));
-  fatal(log_finish, &token);
+  fatal(elapsed_say, &suite_start, &suite_end, N);
+  fatal(log_finish);
 
 finally:
-  fatal(log_finish, &token);
-
   // dlclose will cause leak reports to have blank frames
   for(x = 0; x < g_args.objectsl; x++)
     fatal(ixdlclose, &objects[x]);
@@ -284,7 +284,7 @@ finally:
     }
 #endif
 
-    xlogs(L_ERROR, L_CATEGORY_OFF, space);
+    xlogs(L_ERROR, L_NOCATEGORY, space);
   }
 
   // modules

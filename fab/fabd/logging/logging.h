@@ -56,6 +56,8 @@ extern struct logger_category * categories;
 //
 xapi logging_setup(uint32_t hash);
 
+xapi logging_finalize(void);
+
 /// logging_reconfigure
 //
 // SUMMARY

@@ -40,6 +40,8 @@
 #include "log.internal.h"
 #include "logging.internal.h"
 #include "config.internal.h"
+#include "expr.internal.h"
+#include "LOGGER.errtab.h"
 
 #include "macros.h"
 #include "strutil.h"
@@ -50,200 +52,25 @@
 #define restrict __restrict
 
 // active streams
-array * g_streams;
+//array * g_streams;
+//map * streams_byid;
+stream g_streams[LOGGER_MAX_STREAMS];
+uint8_t g_streams_l;
 
 //
 // static
 //
 
-static map * streams_byid;
-
 // registered, not yet activated streams
 static list * registered;
 
-/// stream_write
-//
-// SUMMARY
-//  write a log message to a stream
-//
-// PARAMETERS
-//  streamp    - stream to write to
-//  ids        - bitmask of ids for the message
-//  base_attr  - category attributes + log site attributes
-//  b          -
-//  l          -
-//  time_msec  -
-//
-static xapi __attribute__((nonnull)) stream_write(stream * const restrict streamp, const uint64_t ids, const uint32_t base_attr, const char * const restrict b, size_t l, const long time_msec)
-{
-  enter;
-
-  // enable say
-  narrator * N = streamp->narrator;
-
-  // effective attributes : category + log site + stream
-  uint32_t attr = attr_combine(base_attr, streamp->attr);
-
-  spinlock_engage(&streamp->lock);
-
-  int prev = 0;
-  if((attr & COLOR_OPT) && (attr & COLOR_OPT) != L_NOCOLOR)
-  {
-    if((attr & COLOR_OPT) == L_RED)
-      sayw(RED);
-    else if((attr & COLOR_OPT) == L_GREEN)
-      sayw(GREEN);
-    else if((attr & COLOR_OPT) == L_YELLOW)
-      sayw(YELLOW);
-    else if((attr & COLOR_OPT) == L_BLUE)
-      sayw(BLUE);
-    else if((attr & COLOR_OPT) == L_MAGENTA)
-      sayw(MAGENTA);
-    else if((attr & COLOR_OPT) == L_CYAN)
-      sayw(CYAN);
-    else if((attr & COLOR_OPT) == L_GRAY)
-      sayw(GRAY);
-
-    else if((attr & COLOR_OPT) == L_BOLD_RED)
-      sayw(BOLD_RED);
-    else if((attr & COLOR_OPT) == L_BOLD_GREEN)
-      sayw(BOLD_GREEN);
-    else if((attr & COLOR_OPT) == L_BOLD_YELLOW)
-      sayw(BOLD_YELLOW);
-    else if((attr & COLOR_OPT) == L_BOLD_BLUE)
-      sayw(BOLD_BLUE);
-    else if((attr & COLOR_OPT) == L_BOLD_MAGENTA)
-      sayw(BOLD_MAGENTA);
-    else if((attr & COLOR_OPT) == L_BOLD_CYAN)
-      sayw(BOLD_CYAN);
-    else if((attr & COLOR_OPT) == L_BOLD_GRAY)
-      sayw(BOLD_GRAY);
-  }
-
-  if((attr & DATESTAMP_OPT) == L_DATESTAMP)
-  {
-    struct tm tm;
-    time_t time = time_msec / 1000;
-    localtime_r(&time, &tm);
-
-    char * months[] = {
-        "Jan", "Feb", "Mar", "Apr", "May", "Jun"
-      , "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
-    };
-
-    sayf("%4d %s %02d %02d:%02d:%02d"
-      , tm.tm_year + 1900
-      , months[tm.tm_mon]
-      , tm.tm_mday
-      , tm.tm_hour
-      , tm.tm_min
-      , tm.tm_sec
-    );
-    prev = 1;
-  }
-
-  if((attr & CATEGORY_OPT) == L_CATEGORY)
-  {
-    // emit the name of the category with the least id
-    uint64_t bit = UINT64_C(1);
-    while(bit)
-    {
-      if(bit & ids)
-        break;
-
-      bit <<= 1;
-    }
-
-    logger_category * category = category_byid(bit);
-    if(prev)
-      says(" ");
-    if(category)
-      sayf("%*.*s", category_name_max_length, (int)category->namel, category->name);
-    else
-      sayf("%*s", category_name_max_length, "");
-    prev = 1;
-  }
-
-  if((attr & PROCESSID_OPT) == L_PROCESSID)
-  {
-    if(prev)
-      says(" ");
-    if(*logger_thread_name || *logger_process_name)
-    {
-      char name[14];
-      size_t namel = 0;
-
-      namel += znloads(name + namel, sizeof(name) - namel, logger_process_name);
-      if(namel && *logger_thread_name)
-        namel += znloadc(name + namel, sizeof(name) - namel, '/');
-      namel += znloads(name + namel, sizeof(name) - namel, logger_thread_name);
-
-      sayf("%14s", name);
-      prev = 1;
-    }
-  }
-
-  if(prev)
-    says(" ");
-
-  // the mssage
-  sayw(b, l);
-  prev = 1;
-
-  if((attr & DISCOVERY_OPT) == L_DISCOVERY)
-  {
-    // emit the names of all tagged categories
-    if(ids & L_ALL)
-    {
-      if(prev)
-        says(" ");
-      prev = 1;
-      says("{ ");
-
-      uint64_t bit = UINT64_C(1);
-      while(bit)
-      {
-        if(bit & ids)
-        {
-          logger_category * category = category_byid(bit);
-
-          if((bit - 1) & ids)
-            says(" | ");
-
-          sayf("%.*s", (int)category->namel, category->name);
-        }
-
-        bit <<= 1;
-      }
-
-      says(" }");
-    }
-  }
-
-  if((attr & COLOR_OPT) && (attr & COLOR_OPT) != L_NOCOLOR)
-  {
-    sayw(NOCOLOR);
-  }
-
-  // message terminator
-  if(streamp->type == LOGGER_STREAM_FD || streamp->type == LOGGER_STREAM_ROLLING)
-  {
-    sayc('\n');
-  }
-
-  // flush
-  fatal(narrator_record_write, N);
-
-finally:
-  spinlock_release(&streamp->lock);
-coda;
-}
-
-static xapi __attribute__((nonnull)) stream_initialize(stream * const restrict streamp, const logger_stream * restrict def)
+static xapi __attribute__((nonnull)) stream_initialize(stream *  restrict streamp, const logger_stream * restrict def)
 {
   enter;
 
   char * expr = 0;
+
+  memset(streamp, 0, sizeof(*streamp));
 
   streamp->id = def->id;
   if(def->name)
@@ -251,7 +78,7 @@ static xapi __attribute__((nonnull)) stream_initialize(stream * const restrict s
     fatal(ixstrdup, &streamp->name, def->name);
     streamp->namel = strlen(streamp->name);
   }
-  streamp->attr = def->attr;
+  streamp->attrs = def->attr;
   fatal(list_createx, &streamp->filters, filter_free, 0, 0);
 
   streamp->type = def->type;
@@ -275,7 +102,7 @@ static xapi __attribute__((nonnull)) stream_initialize(stream * const restrict s
   }
   fatal(narrator_record_create, &streamp->narrator, streamp->narrator_base);
 
-  // save filter expressions for late binding
+  // save expressions for late binding
   fatal(list_createx, &streamp->exprs, wfree, 0, 0);
 
   if(def->expr)
@@ -302,21 +129,20 @@ finally:
 coda;
 }
 
-static xapi __attribute__((nonnull)) stream_finalize(stream * const restrict streamp)
+static xapi __attribute__((nonnull)) stream_finalize(stream *  restrict streamp)
 {
   enter;
 
+  fatal(list_recycle, streamp->filters);
+
   int x;
   for(x = 0; x < streamp->exprs->l; x++)
-  {
-    char * expr = list_get(streamp->exprs, x);
-    fatal(filter_expr_process, expr, strlen(expr), streamp->filters, list_push);
-  }
+    fatal(expr_parse, list_get(streamp->exprs, x), streamp->filters, &streamp->attrs);
 
   finally : coda;
 }
 
-static xapi __attribute__((nonnull)) stream_xdestroy(stream * const restrict streamp)
+static xapi __attribute__((nonnull)) stream_xdestroy(stream *  restrict streamp)
 {
   enter;
 
@@ -333,6 +159,19 @@ static xapi __attribute__((nonnull)) stream_xdestroy(stream * const restrict str
   finally : coda;
 }
 
+static int stream_would(const stream * restrict streamp, uint64_t ids, uint32_t base_attrs)
+{
+  uint32_t attrs = attr_combine2(base_attrs, streamp->attrs);
+
+  if((attrs & FILTER_OPT) == L_NOFILTER)
+    return 1;
+
+  if(list_size(streamp->filters) == 0)
+    return 0;
+
+  return filters_would(streamp->filters, ids);
+}
+
 //
 // public
 //
@@ -341,9 +180,9 @@ xapi stream_setup()
 {
   enter;
 
-  fatal(array_createx, &g_streams, sizeof(stream), 0, stream_xdestroy, 0);
+//  fatal(array_createx, &g_streams, sizeof(stream), 0, stream_xdestroy, 0);
+//  fatal(map_create, &streams_byid);
   fatal(list_create, &registered);
-  fatal(map_create, &streams_byid);
 
   finally : coda;
 }
@@ -352,8 +191,13 @@ xapi stream_cleanup()
 {
   enter;
 
-  fatal(array_ixfree, &g_streams);
-  fatal(map_ixfree, &streams_byid);
+  int x;
+  for(x = 0; x < g_streams_l; x++)
+    fatal(stream_xdestroy, &g_streams[x]);
+  g_streams_l = 0;
+
+//  fatal(array_ixfree, &g_streams);
+//  fatal(map_ixfree, &streams_byid);
   fatal(list_ixfree, &registered);
 
   finally : coda;
@@ -372,10 +216,14 @@ xapi streams_activate()
       logger_stream * def = list_get(registered, x);
       def->id = x + 1;
 
-      stream * streamp = 0;
-      fatal(array_push, g_streams, &streamp);
+      stream * streamp = &g_streams[g_streams_l];
+      def->id = g_streams_l + 1;
+      g_streams_l++;
+      g_streams_l %= LOGGER_MAX_STREAMS;
       fatal(stream_initialize, streamp, def);
-      fatal(map_set, streams_byid, MM(streamp->id), streamp);
+
+//      fatal(array_push, g_streams, &streamp);
+//      fatal(map_set, streams_byid, MM(streamp->id), streamp);
     }
   }
 
@@ -389,112 +237,243 @@ xapi streams_finalize()
   enter;
 
   int x;
-  for(x = 0; x < g_streams->l; x++)
-    fatal(stream_finalize, array_get(g_streams, x));
+  for(x = 0; x < g_streams_l; x++)
+    fatal(stream_finalize, &g_streams[x]);
 
   finally : coda;
 }
 
-
-xapi streams_write(const uint64_t ids, const uint32_t site_attr, const char * const restrict b, size_t l,  const long time_msec)
+xapi stream_write(stream *  restrict streamp, const uint64_t ids, uint32_t attrs, const char * const restrict b, size_t l, const long time_msec)
 {
   enter;
 
-  // not properly configured - write to stderr
-  if(ids == 0 || g_streams == 0 || array_size(g_streams) == 0)
+  // enable say
+  narrator * N = streamp->narrator;
+
+  spinlock_engage(&streamp->lock);
+
+  int prev = 0;
+  if((attrs & COLOR_OPT) && (attrs & COLOR_OPT) != L_NOCOLOR)
   {
-    int __attribute__((unused)) _r = write(2, b, l);
-    _r = write(2, "\n", 1);
+    if((attrs & COLOR_OPT) == L_RED)
+      sayw(RED);
+    else if((attrs & COLOR_OPT) == L_GREEN)
+      sayw(GREEN);
+    else if((attrs & COLOR_OPT) == L_YELLOW)
+      sayw(YELLOW);
+    else if((attrs & COLOR_OPT) == L_BLUE)
+      sayw(BLUE);
+    else if((attrs & COLOR_OPT) == L_MAGENTA)
+      sayw(MAGENTA);
+    else if((attrs & COLOR_OPT) == L_CYAN)
+      sayw(CYAN);
+    else if((attrs & COLOR_OPT) == L_GRAY)
+      sayw(GRAY);
+
+    else if((attrs & COLOR_OPT) == L_BOLD_RED)
+      sayw(BOLD_RED);
+    else if((attrs & COLOR_OPT) == L_BOLD_GREEN)
+      sayw(BOLD_GREEN);
+    else if((attrs & COLOR_OPT) == L_BOLD_YELLOW)
+      sayw(BOLD_YELLOW);
+    else if((attrs & COLOR_OPT) == L_BOLD_BLUE)
+      sayw(BOLD_BLUE);
+    else if((attrs & COLOR_OPT) == L_BOLD_MAGENTA)
+      sayw(BOLD_MAGENTA);
+    else if((attrs & COLOR_OPT) == L_BOLD_CYAN)
+      sayw(BOLD_CYAN);
+    else if((attrs & COLOR_OPT) == L_BOLD_GRAY)
+      sayw(BOLD_GRAY);
+  }
+
+  if((attrs & DATESTAMP_OPT) == L_DATESTAMP)
+  {
+    struct tm tm;
+    time_t time = time_msec / 1000;
+    localtime_r(&time, &tm);
+
+    char * months[] = {
+        "Jan", "Feb", "Mar", "Apr", "May", "Jun"
+      , "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+    };
+
+    sayf("%4d %s %02d %02d:%02d:%02d"
+      , tm.tm_year + 1900
+      , months[tm.tm_mon]
+      , tm.tm_mday
+      , tm.tm_hour
+      , tm.tm_min
+      , tm.tm_sec
+    );
+    prev = 1;
+  }
+
+  if((attrs & CATEGORY_OPT) == L_CATEGORY)
+  {
+    // emit the name of the category with the least id
+    uint64_t bit = UINT64_C(1);
+    while(bit)
+    {
+      if(bit & ids)
+        break;
+
+      bit <<= 1;
+    }
+
+    logger_category * category = category_byid(bit);
+    if(prev)
+      says(" ");
+    if(category)
+      sayf("%*.*s", category_name_max_length, (int)category->namel, category->name);
+    else
+      sayf("%*s", category_name_max_length, "");
+    prev = 1;
+  }
+
+  if((attrs & NAMES_OPT) == L_NAMES)
+  {
+    if(prev)
+      says(" ");
+    if(*logger_thread_name || *logger_process_name)
+    {
+      char name[14];
+      size_t namel = 0;
+
+      namel += znloads(name + namel, sizeof(name) - namel, logger_process_name);
+      if(namel && *logger_thread_name)
+        namel += znloadc(name + namel, sizeof(name) - namel, '/');
+      namel += znloads(name + namel, sizeof(name) - namel, logger_thread_name);
+
+      sayf("%14s", name);
+      prev = 1;
+    }
+  }
+
+  if(prev)
+    says(" ");
+
+  // the message
+  sayw(b, l);
+  prev = 1;
+
+  if((attrs & DISCOVERY_OPT) == L_DISCOVERY)
+  {
+    // emit the names of all tagged categories
+    if(prev)
+      says(" ");
+    prev = 1;
+    says("{ ");
+
+    uint64_t bit = UINT64_C(1);
+    while(bit)
+    {
+      if(bit & ids)
+      {
+        logger_category * category = category_byid(bit);
+
+        if((bit - 1) & ids)
+          says(" | ");
+
+        sayf("%.*s", (int)category->namel, category->name);
+      }
+
+      bit <<= 1;
+    }
+
+    says(" }");
+  }
+
+  if((attrs & COLOR_OPT) && (attrs & COLOR_OPT) != L_NOCOLOR)
+  {
+    sayw(NOCOLOR);
+  }
+
+  // message terminator
+  if(streamp->type == LOGGER_STREAM_FD || streamp->type == LOGGER_STREAM_ROLLING)
+  {
+    sayc('\n');
+  }
+
+  // flush
+  fatal(narrator_record_write, N);
+
+finally:
+  spinlock_release(&streamp->lock);
+coda;
+}
+
+xapi streams_write(const uint64_t ids, const uint32_t site_attrs, const char *  restrict b, size_t l,  const long time_msec, uint64_t vector)
+{
+  enter;
+
+  // misconfigured
+  if(ids == 0 || g_streams_l == 0)
+  {
+    if(g_logger_default_stderr)
+    {
+      int __attribute__((unused)) r = write(2, b, l);
+      r = write(2, "\n", 1);
+    }
+
     goto XAPI_FINALIZE;
   }
 
-  // base attributes : category attributes + log site attributes
-  uint32_t base_attr = 0;
-
-  // log categories
-  uint64_t copy = ids;
-  uint64_t bit = UINT64_C(1) << 63;
-  while(copy)
-  {
-    if(copy & bit)
-    {
-      logger_category * category = category_byid(bit);
-      if(category)
-        base_attr = attr_combine(base_attr, category->attr);
-
-      copy &= ~bit;
-    }
-    bit >>= 1;
-  }
-
-  // log site
-  base_attr = attr_combine(base_attr, site_attr);
+  uint32_t base_attrs = attr_combine4(logger_process_attrs, logger_thread_attrs, categories_attrs(ids), site_attrs);
 
   int x;
-  for(x = 0; x < array_size(g_streams); x++)
+  for(x = 0; x < g_streams_l; x++)
   {
-    stream * streamp = array_get(g_streams, x);
-    if(stream_would(streamp, ids))
-      fatal(stream_write, streamp, ids, base_attr, b, l, time_msec);
+    stream * streamp = &g_streams[x];
+    if(vector & (UINT64_C(1) << x))
+    {
+      uint32_t attrs = attr_combine2(base_attrs, streamp->attrs);
+      fatal(stream_write, streamp, ids, attrs, b, l, time_msec);
+    }
   }
 
   finally : coda;
 }
 
-int stream_would(const stream * const restrict streamp, const uint64_t ids)
+int streams_would(const uint64_t ids, uint32_t site_attrs, uint64_t * vector)
 {
-  if(list_size(streamp->filters) == 0)
-    return 0;
+  // misconfigured
+  if(ids == 0 || g_streams_l == 0)
+    return g_logger_default_stderr;
 
-  return filters_would(streamp->filters, ids);
-}
-
-int streams_would(const uint64_t ids)
-{
-  if(ids == 0 || g_streams == 0 || array_size(g_streams) == 0)
-    return !!g_logger_default_stderr;
+  uint32_t base_attrs = attr_combine4(logger_process_attrs, logger_thread_attrs, categories_attrs(ids), site_attrs);
 
   int x;
-  for(x = 0; x < array_size(g_streams); x++)
+  for(x = 0; x < g_streams_l; x++)
   {
-    stream * streamp = array_get(g_streams, x);
-    if(stream_would(streamp, ids))
-      return 1;
+    stream * streamp = &g_streams[x];
+    if(stream_would(streamp, ids, base_attrs))
+    {
+      if(vector)
+        (*vector) |= UINT64_C(1) << x;
+      else
+        return 1;
+    }
+    else if(vector)
+    {
+      (*vector) &= ~(UINT64_C(1) << x);
+    }
   }
+
+  if(vector)
+    return !!*vector;
 
   return 0;
 }
 
-xapi stream_byid(int id, stream ** const restrict streamp)
-{
-  enter;
-
-  (*streamp) = map_get(streams_byid, MM(id));
-
-  finally : coda;
-}
-
-xapi stream_filter_push(stream * const restrict streamp, filter * restrict filterp)
-{
-  enter;
-
-  fatal(list_push, streamp->filters, filterp);
-  filterp = 0;
-
-finally:
-  filter_free(filterp);
-coda;
-}
-
-xapi stream_say(stream * const restrict streamp, narrator * restrict N)
+xapi stream_say(stream *  restrict streamp, narrator * restrict N)
 {
   enter;
 
   sayf("id : %"PRIu32, streamp->id);
   sayf(", type : %s", LOGGER_STREAM_STR(streamp->type));
   sayf(", name : %s", streamp->name);
-  says(", attr : ");
-  fatal(attr_say, streamp->attr, N);
+  says(", attrs : ");
+  fatal(attr_say, streamp->attrs, N);
   says(", filters : [");
   int x;
   for(x = 0; x < streamp->filters->l; x++)
@@ -511,6 +490,67 @@ xapi stream_say(stream * const restrict streamp, narrator * restrict N)
 
   finally : coda;
 }
+
+xapi stream_expr_push(stream *  restrict streamp, const char * restrict expr)
+{
+  enter;
+
+  char * e = 0;
+  fatal(ixstrdup, &e, expr);
+  fatal(list_push, streamp->exprs, e);
+  e = 0;
+  fatal(stream_finalize, streamp);
+
+finally:
+  wfree(e);
+coda;
+}
+
+xapi stream_expr_pop(stream *  restrict streamp)
+{
+  enter;
+
+  fatal(list_pop, streamp->exprs, 0);
+  fatal(stream_finalize, streamp);
+
+  finally : coda;
+}
+
+xapi stream_expr_unshift(stream *  restrict streamp, const char * restrict expr)
+{
+  enter;
+
+  char * e = 0;
+  fatal(ixstrdup, &e, expr);
+  fatal(list_unshift, streamp->exprs, e);
+  e = 0;
+  fatal(stream_finalize, streamp);
+
+finally:
+  wfree(e);
+coda;
+}
+
+xapi stream_expr_shift(stream *  restrict streamp)
+{
+  enter;
+
+  fatal(list_shift, streamp->exprs, 0);
+  fatal(stream_finalize, streamp);
+
+  finally : coda;
+}
+
+xapi stream_expr_clear(stream *  restrict streamp)
+{
+  enter;
+
+  fatal(list_recycle, streamp->filters);
+  fatal(stream_finalize, streamp);
+
+  finally : coda;
+}
+
 
 //
 // api
@@ -533,21 +573,17 @@ API xapi logger_streams_report()
 {
   enter;
 
-  int token = 0;
-
   logs(L_LOGGER, "logger streams");
 
   int x;
-  for(x = 0; x < g_streams->l; x++)
+  for(x = 0; x < g_streams_l; x++)
   {
-    fatal(log_start, L_LOGGER, &token);
-    narrator * N = log_narrator(&token);
+    narrator * N;
+    fatal(log_start, L_LOGGER, &N);
     says(" ");
-    fatal(stream_say, array_get(g_streams, x), N);
-    fatal(log_finish, &token);
+    fatal(stream_say, &g_streams[x], N);
+    fatal(log_finish);
   }
 
-finally:
-  fatal(log_finish, &token);
-coda;
+  finally : coda;
 }

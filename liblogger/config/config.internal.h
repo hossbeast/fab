@@ -28,4 +28,7 @@ extern __thread char logger_thread_name[32];
 extern uint64_t logger_process_categories;
 extern __thread uint64_t logger_thread_categories;
 
+extern uint32_t logger_process_attrs;
+extern __thread uint32_t logger_thread_attrs;
+
 #endif

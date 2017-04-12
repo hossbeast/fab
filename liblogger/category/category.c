@@ -23,14 +23,19 @@
 #include "narrator.h"
 #include "narrator/fixed.h"
 #include "valyria/pstring.h"
+#include "valyria/list.h"
+#include "valyria/dictionary.h"
+#include "valyria/map.h"
 
 #include "internal.h"
-#include "errtab/LOGGER.errtab.h"
-#include "category/category.internal.h"
-#include "log/log.internal.h"
-#include "attr/attr.internal.h"
+#include "category.internal.h"
+#include "LOGGER.errtab.h"
+#include "log.internal.h"
+#include "attr.internal.h"
 #include "logging.internal.h"
-#include "valyria/list.h"
+
+#include "macros.h"
+
 
 /// location
 //
@@ -43,14 +48,10 @@ typedef struct location {
   int bxl;    // number of elements in B
 } location;
 
-#include "valyria/dictionary.h"
-
-#include "valyria/map.h"
-#include "macros.h"
-
 #define restrict __restrict
 
 int category_name_max_length;
+uint64_t category_optional_mask;
 
 // maximum number of unique categories by name
 #define MAX_CATEGORIES  (sizeof(((logger_category*)0)->id) * 8)
@@ -66,37 +67,114 @@ static list * registered;
 static list * registering;
 
 // activated categories, in decreasing order of precedence
-static list * activated;
+list * activated;
 
 static map * activated_byname;
 static map * activated_byid;
 
-/// category_list_merge
 //
-// SUMMARY
-//  merge two lists of categories in such a way that preserves the ordering of
-//  each element relative to other elements in its source list
+// public
 //
-// PARAMETERS
-//  A - source list
-//  B - source list
-//  C - dest list
-//
-// THROWS
-//  ILLORDER - relative ordering of all elements cannot be maintained
-//
-static xapi __attribute__((nonnull)) category_list_merge(list * const restrict A, list * const restrict B, list *  const restrict C)
+
+xapi category_setup()
+{
+  enter;
+
+  fatal(list_create, &registered);
+  fatal(list_create, &registering);
+  fatal(list_create, &activated);
+  fatal(map_create, &activated_byname);
+  fatal(map_create, &activated_byid);
+
+  finally : coda;
+}
+
+xapi category_cleanup()
+{
+  enter;
+
+  fatal(list_ixfree, &registered);
+  fatal(list_ixfree, &registering);
+  fatal(list_ixfree, &activated);
+  fatal(map_ixfree, &activated_byname);
+  fatal(map_ixfree, &activated_byid);
+
+  finally : coda;
+}
+
+xapi category_say_verbose(logger_category * const restrict cat, narrator * restrict N)
+{
+  enter;
+
+  sayf("%s%*s : 0x%016"PRIx64 " 0x%08"PRIx32 " : "
+    , cat->optional ? "*" : " "
+    , category_name_max_length
+    , cat->name
+    , cat->id
+    , cat->attr
+  );
+
+  says(cat->description);
+  if(cat->attr)
+  {
+    says(", %");
+    fatal(attr_say, cat->attr, N);
+  }
+
+  finally : coda;
+}
+
+xapi category_say(logger_category * const restrict cat, narrator * restrict N)
+{
+  enter;
+
+  sayf("%s%*s : %s"
+    , cat->optional ? "*" : " "
+    , category_name_max_length
+    , cat->name
+    , cat->description
+  );
+
+  finally : coda;
+}
+
+uint32_t categories_attrs(uint64_t ids)
+{
+  uint32_t attrs = 0;
+
+  // categories
+  uint64_t copy = ids;
+  uint64_t bit = UINT64_C(1) << 63;
+  while(copy)
+  {
+    if(copy & bit)
+    {
+      logger_category * category = category_byid(bit);
+      if(category)
+        attrs = attr_combine2(attrs, category->attr);
+
+      copy &= ~bit;
+    }
+    bit >>= 1;
+  }
+
+  return attrs;
+}
+
+xapi category_list_merge(list * restrict A, list * restrict B, list * restrict C)
 {
   enter;
 
   dictionary * common = 0;
   location ** ax = 0;
   location ** bx = 0;
+  int c = 0;    // number of sequences in common
+  int x;
 
   // build a map of element sequences common between the two lists
   fatal(dictionary_create, &common, sizeof(location));
 
-  int x = 0;
+  x = 0;
   int y = 0;
   while(x < list_size(A) || y < list_size(B))
   {
@@ -152,7 +230,6 @@ static xapi __attribute__((nonnull)) category_list_merge(list * const restrict A
   fatal(xmalloc, &ax, sizeof(*ax) * dictionary_size(common));
   fatal(xmalloc, &bx, sizeof(*bx) * dictionary_size(common));
 
-  int c = 0;
   for(x = 0; x < dictionary_table_size(common); x++)
   {
     location * loc = 0;
@@ -190,52 +267,44 @@ static xapi __attribute__((nonnull)) category_list_merge(list * const restrict A
   while(x < list_size(A) || y < list_size(B))
   {
     logger_category * a = 0;
-    if(x < list_size(A))
-      a = list_get(A, x);
-
     logger_category * b = 0;
-    if(y < list_size(B))
-      b = list_get(B, y);
 
     if(cx < c && x == ax[cx]->ax && y == bx[cx]->bx)
     {
+      a = list_get(A, x);
+      b = list_get(B, y);
+
       // common elements must appear in the same order
       if(strcmp(a->name, b->name))
       {
-        xapi_infof("category A", "%s", a->name);
-        xapi_infof("category B", "%s", b->name);
+        xapi_info_pushf("categories", "%s, %s", a->name, b->name);
         fail(LOGGER_ILLORDER);
       }
 
       // take all elements from both sequences
-      int i;
-      for(i = 0; i < ax[cx]->axl; i++)
-      {
-        a = list_get(A, x);
-        fatal(list_push, C, a);
-        x++;
-      }
-      for(i = 0; i < bx[cx]->bxl; i++)
-      {
-        b = list_get(B, y);
-        fatal(list_push, C, b);
-        y++;
-      }
+      fatal(list_replicate, C, C->l, A, x, ax[cx]->axl);
+      x += ax[cx]->axl;
+      fatal(list_replicate, C, C->l, B, y, bx[cx]->bxl);
+      y += bx[cx]->bxl;
 
       cx++;
     }
     else
     {
-      if((cx == c || x < ax[cx]->ax) && a)
+      if(x < list_size(A) && (cx == c || x < ax[cx]->ax))
       {
-        fatal(list_push, C, a);
-        x++;
+        a = list_get(A, x);
+        location * loc = dictionary_get(common, MMS(a->name));
+        fatal(list_replicate, C, C->l, A, x, loc->axl);
+        x += loc->axl;
       }
 
-      if((cx == c || y < bx[cx]->bx) && b)
+      else // if(y < list_size(B))
       {
-        fatal(list_push, C, b);
-        y++;
+        b = list_get(B, y);
+        location * loc = dictionary_get(common, MMS(b->name));
+        fatal(list_replicate, C, C->l, B, y, loc->bxl);
+        y += loc->bxl;
       }
     }
   }
@@ -248,71 +317,13 @@ coda;
 }
 
 //
-// public
+// api
 //
-
-xapi category_setup()
-{
-  enter;
-
-  fatal(list_create, &registered);
-  fatal(list_create, &registering);
-  fatal(list_create, &activated);
-  fatal(map_create, &activated_byname);
-  fatal(map_create, &activated_byid);
-
-  finally : coda;
-}
-
-xapi category_cleanup()
-{
-  enter;
-
-  fatal(list_ixfree, &registered);
-  fatal(list_ixfree, &registering);
-  fatal(list_ixfree, &activated);
-  fatal(map_ixfree, &activated_byname);
-  fatal(map_ixfree, &activated_byid);
-
-  finally : coda;
-}
-
-xapi category_say_verbose(logger_category * const restrict cat, narrator * restrict N)
-{
-  enter;
-
-  sayf("%*s : 0x%016"PRIx64 " 0x%08"PRIx32 " : "
-    , category_name_max_length
-    , cat->name
-    , cat->id
-    , cat->attr
-  );
-
-  fatal(attr_say, cat->attr, N);
-  says(cat->description);
-  if(cat->attr)
-  {
-    says(", +");
-    fatal(attr_say, cat->attr, N);
-  }
-
-  finally : coda;
-}
-
-xapi category_say(logger_category * const restrict cat, narrator * restrict N)
-{
-  enter;
-
-  sayf("%*s : %s", category_name_max_length, cat->name, cat->description);
-
-  finally : coda;
-}
 
 API xapi categories_report_verbose()
 {
   enter;
 
-  int token = 0;
   logs(L_LOGGER, "logger categories");
 
   int x;
@@ -328,18 +339,16 @@ API xapi categories_report_verbose()
         break;
     }
 
-    fatal(log_start, L_LOGGER, &token);
-    narrator * N = log_narrator(&token);
+    narrator * N;
+    fatal(log_start, L_LOGGER, &N);
     says(" ");
     fatal(category_say_verbose, list_get(activated, x), N);
-    fatal(log_finish, &token);
+    fatal(log_finish);
 
     x = y - 1;
   }
 
-finally:
-  fatal(log_finish, &token);
-coda;
+  finally : coda;
 }
 
 API xapi categories_activate()
@@ -347,6 +356,7 @@ API xapi categories_activate()
   enter;
 
   category_name_max_length = 8;
+  category_optional_mask = 0;
 
   // mask of category ids that have been assigned
   uint64_t used_category_ids_mask = 0;
@@ -361,7 +371,7 @@ API xapi categories_activate()
   fatal(map_create, &activating_byid);
 
   // merge the activated list with the registered list
-  fatal(category_list_merge, activated, registered, activating);
+  fatal(category_list_merge, registered, activated, activating);
 
   int x;
   for(x = 0; x < list_size(activating); x++)
@@ -383,7 +393,7 @@ API xapi categories_activate()
 
     // assign the id as the next unused bit from the mask
     if(~used_category_ids_mask == 0)
-      failf(LOGGER_TOOMANY, "limit", "%ld", MAX_CATEGORIES);
+      failf(LOGGER_TOOMANY, "limit", "%lu", MAX_CATEGORIES);
 
     uint64_t id = ~used_category_ids_mask & -~used_category_ids_mask;
     used_category_ids_mask |= id;
@@ -391,9 +401,7 @@ API xapi categories_activate()
     // assign the id to all members of the name-group
     int i;
     for(i = x; i < y; i++)
-    {
       ((logger_category *)list_get(activating, i))->id = id;
-    }
 
     logger_category * category = list_get(activating, x);
     char * name = category->name;
@@ -413,16 +421,26 @@ API xapi categories_activate()
       list_sort(sublist, compar, 0);
 
       uint32_t attr = 0;
+      char optional = 0;
       for(i = 0; i < list_size(sublist); i++)
-        attr = attr_combine(attr, ((logger_category *)list_get(sublist, i))->attr);
+      {
+        logger_category * cat = list_get(sublist, i);
+        attr = attr_combine2(attr, cat->attr);
+        if(i == 0)
+          optional = cat->optional;
+      }
 
       for(i = 0; i < list_size(sublist); i++)
       {
         logger_category * A = list_get(sublist, i);
         A->namel = namel;
         A->attr = attr;
+        A->optional = optional;
       }
     }
+
+    if(category->optional)
+      category_optional_mask |= category->id;
 
     // assign to lookup map
     fatal(map_set, activating_byname, name, namel, category);
@@ -455,15 +473,11 @@ finally:
 coda;
 }
 
-//
-// api
-//
-
 API xapi logger_categories_report()
 {
   enter;
 
-  int token = 0;
+  narrator * N;
 
   int x;
   for(x = 0; x < list_size(activated); x++)
@@ -478,18 +492,15 @@ API xapi logger_categories_report()
         break;
     }
 
-    fatal(log_start, L_LOGGER, &token);
-    narrator * N = log_narrator(&token);
+    fatal(log_start, L_LOGGER, &N);
     says(" ");
     fatal(category_say, list_get(activated, x), N);
-    fatal(log_finish, &token);
+    fatal(log_finish);
 
     x = y - 1;
   }
 
-finally:
-  fatal(log_finish, &token);
-coda;
+  finally : coda;
 }
 
 API xapi logger_category_register(logger_category * logs)
@@ -511,22 +522,12 @@ API xapi logger_category_register(logger_category * logs)
   }
 
   // merge the registered list with the new list
-  fatal(category_list_merge, registered, tmp, registering);
+  fatal(category_list_merge, tmp, registered, registering);
 
   // swap registering and registered
   void * T = registered;
   registered = registering;
   registering = T;
-
-#if 0
-  printf("registered categories\n");
-  int x;
-  for(x = 0; x < list_size(registered); x++)
-  {
-    logger_category * this = list_get(registered, x);
-    printf("%*s\n", category_name_max_length, this->name);
-  }
-#endif
 
 finally:
   fatal(list_xfree, tmp);

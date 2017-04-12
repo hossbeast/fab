@@ -25,14 +25,23 @@
 #include "category.h"
 
 struct narrator;  // libnarrator
+struct list;
+
+extern struct list * activated;
 
 /// category_name_max_length
 //
 // SUMMARY
-//  length of the longest category name
-//  written in logger_category_resolve
+//  length of the longest category name, calculated in categories_activate
 //
 extern int category_name_max_length;
+
+/// category_optional_mask
+//
+// SUMMARY
+//  bitmask of categories which are marked as optional for filtering, calculated in categories_activate
+//
+extern uint64_t category_optional_mask;
 
 /// category_setup
 //
@@ -47,6 +56,24 @@ xapi category_setup(void);
 //  release resources owned by this module
 //
 xapi category_cleanup(void);
+
+
+/// category_list_merge
+//
+// SUMMARY
+//  merge two lists of categories in such a way that preserves the ordering of
+//  each element relative to other elements in its source list
+//
+// PARAMETERS
+//  A - source list
+//  B - source list
+//  C - dest list
+//
+// THROWS
+//  ILLORDER - relative ordering of all elements cannot be maintained
+//
+xapi category_list_merge(struct list * restrict A, struct list * restrict B, struct list * restrict C)
+  __attribute__((nonnull));
 
 /// categories_activate
 //
@@ -120,5 +147,8 @@ xapi category_say(logger_category * const restrict cat, struct narrator * const 
 //
 xapi category_say_verbose(logger_category * const restrict cat, struct narrator * const restrict N)
   __attribute__((nonnull));
+
+// base attributes : category attributes + log site attributes
+uint32_t categories_attrs(uint64_t ids);
 
 #endif

@@ -15,20 +15,6 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#include <inttypes.h>
-#include <stdio.h>
-#include <time.h>
-
-#include "xapi.h"
-#include "xlinux/xstring.h"
-#include "xlinux/xstdlib.h"
-#include "narrator.h"
-#include "narrator/fd.h"
-#include "narrator/rolling.h"
-#include "narrator/fixed.h"
-#include "narrator/record.h"
-#include "valyria/pstring.h"
-
 #include "internal.h"
 #include "config.internal.h"
 
@@ -41,6 +27,9 @@ __thread char logger_thread_name[32];
 
 uint64_t logger_process_categories;
 __thread uint64_t logger_thread_categories;
+
+uint32_t logger_process_attrs;
+__thread uint32_t logger_thread_attrs;
 
 #define restrict __restrict
 
@@ -62,4 +51,14 @@ API void logger_set_process_categories(uint64_t ids)
 API void logger_set_thread_categories(uint64_t ids)
 {
   logger_thread_categories = ids;
+}
+
+API void logger_set_process_attrs(uint32_t attrs)
+{
+  logger_process_attrs = attrs;
+}
+
+API void logger_set_thread_attrs(uint32_t attrs)
+{
+  logger_thread_attrs = attrs;
 }

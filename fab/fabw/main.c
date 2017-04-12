@@ -59,7 +59,6 @@ static xapi begin(int argc, char ** argv, char ** envp)
 #endif
   char * fabd_path = 0;
 
-  int token = 0;
   int fd = -1;
   pid_t child_pid = -1;
   pid_t client_pid = -1;
@@ -91,19 +90,20 @@ static xapi begin(int argc, char ** argv, char ** envp)
     argv[0] = "fabd";
 
 #if DEBUG || DEVEL
+    narrator * N;
     argv[0] = "fabd.devel";
-    fatal(log_start, L_IPC, &token);
-    logs(0, "execv(");
-    logs(0, fabd_path ?: "fabd");
+    fatal(log_start, L_IPC, &N);
+    says("execv(");
+    says(fabd_path ?: "fabd");
     int x;
     for(x = 0; x < sentinel(argv); x++)
     {
       if(*argv[x])
-        logs(0, ",");
-      logs(0, argv[x]);
+        says(",");
+      says(argv[x]);
     }
-    logs(0, ")");
-    fatal(log_finish, &token);
+    says(")");
+    fatal(log_finish);
 #endif
 
     if(fabd_path)
@@ -139,7 +139,6 @@ static xapi begin(int argc, char ** argv, char ** envp)
   fatal(uxkill, client_pid, FABIPC_SIGEND, 0);
 
 finally:
-  fatal(log_finish, &token);
 
   // locals
   fatal(ixclose, &fd);
@@ -177,7 +176,7 @@ finally:
     xapi_trace_pithy(space, sizeof(space), 0);
 #endif
 
-    xlogs(L_ERROR, L_CATEGORY_OFF, space);
+    xlogs(L_ERROR, L_NOCATEGORY, space);
   }
 
   // modules
