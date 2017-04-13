@@ -48,7 +48,7 @@ API xapi strloadw(char ** restrict dst, const void * restrict buf, size_t bufl)
   wfree(*dst);
   fatal(xmalloc, dst, bufl + 1);
   memcpy(*dst, buf, bufl);
-  ((char*)buf)[bufl] = 0;
+  (*dst)[bufl] = 0;
 
   finally : coda;
 }

@@ -253,7 +253,7 @@ xapi array_set(array * const restrict ar, size_t index, void * restrict el)
 xapi array_set_range(array * const restrict ar, size_t index, size_t len, void * restrict el)
   __attribute__((nonnull));
 
-/// array_clear
+/// array_recycle
 //
 // SUMMARY
 //  remove all elements from the array
