@@ -49,6 +49,33 @@ typedef struct narrator narrator;
 
 #define restrict __restrict
 
+/// read-only singleton narrators that write to fixed file descriptors
+extern narrator * g_narrator_stdout;
+extern narrator * g_narrator_stderr;
+
+/// read-only singleton nullity narrator that discards all output
+extern narrator * g_narrator_nullity;
+
+/// narrator_xfree
+//
+// SUMMARY
+//  release resources associated with a narrator
+//
+// PARAMETERS
+//  [n]  - pointer to a narrator, or a pointer to null
+//
+// REMARKS
+//  sets *n = 0
+//
+xapi narrator_xfree(struct narrator * restrict n);
+
+/// narrator_ixfree
+//
+// narrator_xfree(*n) ; *n = 0;
+//
+xapi narrator_ixfree(struct narrator ** const restrict n)
+  __attribute__((nonnull));
+
 /// narrator_vsayf
 //
 // SUMMARY
@@ -123,32 +150,13 @@ xapi narrator_seek(struct narrator * const restrict n, off_t offset, int whence,
 xapi narrator_reset(struct narrator * const restrict n)
   __attribute__((nonnull));
 
-/// narrator_xfree
+/// narrator_read
 //
 // SUMMARY
-//  release resources associated with a narrator
+//  read count bytes from the underlying store - not supported for many narrator types
 //
-// PARAMETERS
-//  [n]  - pointer to a narrator, or a pointer to null
-//
-// REMARKS
-//  sets *n = 0
-//
-xapi narrator_xfree(struct narrator * restrict n);
-
-/// narrator_ixfree
-//
-// narrator_xfree(*n) ; *n = 0;
-//
-xapi narrator_ixfree(struct narrator ** const restrict n)
+xapi narrator_read(struct narrator * restrict n, void * dst, size_t count)
   __attribute__((nonnull));
-
-/// read-only singleton narrators that write to fixed file descriptors
-extern narrator * g_narrator_stdout;
-extern narrator * g_narrator_stderr;
-
-/// read-only singleton nullity narrator that discards all output
-extern narrator * g_narrator_nullity;
 
 #undef restrict
 #endif

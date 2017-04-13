@@ -47,10 +47,10 @@ xapi nullity_cleanup(void);
 //  no-op
 //
 
-xapi nullity_vsayf(narrator_nullity * const restrict n, const char * const restrict fmt, va_list va)
+void nullity_vsayf(narrator_nullity * const restrict n, const char * const restrict fmt, va_list va)
   __attribute__((nonnull));
 
-xapi nullity_sayw(narrator_nullity * const restrict n, const char * const restrict b, size_t l)
+void nullity_sayw(narrator_nullity * const restrict n, const char * const restrict b, size_t l)
   __attribute__((nonnull));
 
 /// nullity_seek
@@ -58,8 +58,8 @@ xapi nullity_sayw(narrator_nullity * const restrict n, const char * const restri
 // SUMMARY
 //  no-op
 //
-xapi nullity_seek(narrator_nullity * const restrict n, off_t offset, int whence, off_t * restrict res)
-  __attribute__((nonnull(1)));
+off_t nullity_seek(narrator_nullity * const restrict n, off_t offset, int whence)
+  __attribute__((nonnull));
 
 /// narrator_destroy
 //
@@ -67,6 +67,9 @@ xapi nullity_seek(narrator_nullity * const restrict n, off_t offset, int whence,
 //  destroy a nullity narrator
 //
 void nullity_destroy(narrator_nullity * const restrict n)
+  __attribute__((nonnull));
+
+ssize_t nullity_read(narrator_nullity * restrict n, void * dst, size_t count)
   __attribute__((nonnull));
 
 #undef restrict

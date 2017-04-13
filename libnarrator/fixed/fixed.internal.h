@@ -20,7 +20,6 @@
 
 #include <sys/types.h>
 
-#include "xapi.h"
 #include "fixed.h"
 
 typedef struct narrator_fixed
@@ -30,40 +29,4 @@ typedef struct narrator_fixed
   size_t  a;      // buffer size
 } narrator_fixed;
 
-#define restrict __restrict
-
-/// fixed_say
-//
-// SUMMARY
-//  write to the narrator
-//
-// PARAMETERS
-//  n     - fixed narrator
-//  [fmt] - printf-style format string
-//  [va]  - varargs
-//  [b]   - buffer
-//  [l]   - size of buffer
-//
-
-xapi fixed_vsayf(narrator_fixed * const restrict n, const char * const restrict fmt, va_list va)
-  __attribute__((nonnull));
-
-xapi fixed_sayw(narrator_fixed * const restrict n, const char * const restrict b, size_t l)
-  __attribute__((nonnull));
-
-/// fixed_seek
-//
-// SUMMARY
-//  reposition the narrator to offset according to whence
-//
-// PARAMETERS
-//  n      - fixed narrator
-//  offset - byte offset
-//  whence - one of NARRATOR_SEEK_*, indicates how offset is interpreted
-//  [res]  - (returns) the resulting absolute offset
-//
-xapi fixed_seek(narrator_fixed * const restrict n, off_t offset, int whence, off_t * restrict res)
-  __attribute__((nonnull));
-
-#undef restrict
 #endif

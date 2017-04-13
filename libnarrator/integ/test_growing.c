@@ -53,6 +53,7 @@ static xapi test_basic()
 
   assert_eq_s(expected, N->growing.s);
   assert_eq_zu(expectedl, N->growing.l);
+  assert_eq_p(narrator_growing_buffer(N), N->growing.s);
 
 finally:
   fatal(narrator_xfree, N);

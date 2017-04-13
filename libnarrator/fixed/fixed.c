@@ -19,7 +19,6 @@
 #include <stdarg.h>
 #include <stdlib.h>
 
-#include "xapi.h"
 #include "xlinux/xstdlib.h"
 
 #include "internal.h"
@@ -28,47 +27,6 @@
 #include "zbuffer.h"
 
 #define restrict __restrict
-
-//
-// public
-//
-
-xapi fixed_vsayf(narrator_fixed * const restrict n, const char * const restrict fmt, va_list va)
-{
-  enter;
-
-  n->l += znloadvf(n->s + n->l, n->a - n->l, fmt, va);
-
-  finally : coda;
-}
-
-xapi fixed_sayw(narrator_fixed * const restrict n, const char * const restrict b, size_t l)
-{
-  enter;
-
-  n->l += znloadw(n->s + n->l, n->a - n->l, b, l);
-
-  finally : coda;
-}
-
-xapi fixed_seek(narrator_fixed * const restrict n, off_t offset, int whence, off_t * restrict res)
-{
-  enter;
-
-  if(whence == NARRATOR_SEEK_SET)
-    n->l = offset;
-  else if(whence == NARRATOR_SEEK_CUR)
-    n->l += offset;
-
-  // for a fixed narrator, the "end" is the allocated size
-  else if(whence == NARRATOR_SEEK_END)
-    n->l = (n->a + offset);
-
-  if(res)
-    *res = n->l;
-
-  finally : coda;
-}
 
 //
 // api
@@ -90,4 +48,48 @@ API const char * narrator_fixed_buffer(narrator * const restrict n)
 API size_t narrator_fixed_size(narrator * const restrict n)
 {
   return n->fixed.l;
+}
+
+API void narrator_fixed_vsayf(narrator * const restrict n, const char * const restrict fmt, va_list va)
+{
+  narrator_fixed * f = &n->fixed;
+
+  f->l += znloadvf(f->s + f->l, f->a - f->l, fmt, va);
+}
+
+API void narrator_fixed_sayw(narrator * const restrict n, const char * const restrict b, size_t l)
+{
+  narrator_fixed * f = &n->fixed;
+
+  f->l += znloadw(f->s + f->l, f->a - f->l, b, l);
+}
+
+API off_t narrator_fixed_seek(narrator * const restrict n, off_t offset, int whence)
+{
+  narrator_fixed * f = &n->fixed;
+
+  if(whence == NARRATOR_SEEK_SET)
+    f->l = offset;
+  else if(whence == NARRATOR_SEEK_CUR)
+    f->l += offset;
+
+  // for a fixed narrator, the "end" is the allocated size
+  else if(whence == NARRATOR_SEEK_END)
+    f->l = (f->a + offset);
+
+  return f->l;
+}
+
+API off_t narrator_fixed_reset(narrator * const restrict n)
+{
+  return narrator_fixed_seek(n, 0, SEEK_SET);
+}
+
+API size_t narrator_fixed_read(narrator * restrict n, void * dst, size_t count)
+{
+  narrator_fixed * f = &n->fixed;
+  size_t d = MIN(count, f->a - f->l);
+  memcpy(dst, f->s + f->l, d);
+  f->l += d;
+  return d;
 }

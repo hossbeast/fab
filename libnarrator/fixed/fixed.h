@@ -78,5 +78,57 @@ const char * narrator_fixed_buffer(narrator * const restrict n)
 size_t narrator_fixed_size(narrator * const restrict n)
   __attribute__((nonnull));
 
+/// narrator_fixed_say
+//
+// SUMMARY
+//  write to the narrator
+//
+// PARAMETERS
+//  n     - fixed narrator
+//  [fmt] - printf-style format string
+//  [va]  - varargs
+//  [b]   - buffer
+//  [l]   - size of buffer
+//
+
+void narrator_fixed_vsayf(narrator * const restrict n, const char * const restrict fmt, va_list va)
+  __attribute__((nonnull));
+
+void narrator_fixed_sayw(narrator * const restrict n, const char * const restrict b, size_t l)
+  __attribute__((nonnull));
+
+/// narrator_fixed_seek
+//
+// SUMMARY
+//  reposition the narrator to offset according to whence
+//
+// PARAMETERS
+//  n      - fixed narrator
+//  offset - byte offset
+//  whence - one of NARRATOR_SEEK_*, indicates how offset is interpreted
+//  [res]  - (returns) the resulting absolute offset
+//
+off_t narrator_fixed_seek(narrator * const restrict n, off_t offset, int whence)
+  __attribute__((nonnull));
+
+off_t narrator_fixed_reset(narrator * const restrict n)
+  __attribute__((nonnull));
+
+/// narrator_fixed_read
+//
+// SUMMARY
+//  copy bytes from the underlying buffer and reposition
+//
+// PARAMETERS
+//  n     - fixed narrator
+//  dst   - destination buffer
+//  count - number of bytes to copy
+//
+// RETURNS
+//  number of bytes actually copied <= count
+//
+size_t narrator_fixed_read(narrator * restrict n, void * dst, size_t count)
+  __attribute__((nonnull));
+
 #undef restrict
 #endif

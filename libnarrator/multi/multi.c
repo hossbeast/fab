@@ -84,6 +84,13 @@ void multi_destroy(narrator_multi * const restrict n)
   wfree(n->v);
 }
 
+xapi multi_read(narrator_multi * restrict n, void * dst, size_t count)
+{
+  enter;
+  // not supported
+  finally : coda;
+}
+
 //
 // api
 //

@@ -68,25 +68,6 @@ xapi growing_sayw(narrator_growing * const restrict n, const char * const restri
   finally : coda;
 }
 
-xapi growing_seek(narrator_growing * const restrict n, off_t offset, int whence, off_t * restrict res)
-{
-  enter;
-
-  if(whence == NARRATOR_SEEK_SET)
-    n->l = offset;
-  else if(whence == NARRATOR_SEEK_CUR)
-    n->l += offset;
-
-  // for a growing narrator, the "end" is the greatest position ever written to
-  else if(whence == NARRATOR_SEEK_END)
-    n->l = (n->m + offset);
-
-  if(res)
-    *res = n->l;
-
-  finally : coda;
-}
-
 void growing_destroy(narrator_growing * const restrict n)
 {
   wfree(n->s);
@@ -122,4 +103,34 @@ API const char * narrator_growing_buffer(narrator * const restrict n)
 API size_t narrator_growing_size(narrator * const restrict n)
 {
   return n->growing.l;
+}
+
+API off_t narrator_growing_seek(narrator * restrict n, off_t offset, int whence)
+{
+  narrator_growing * g = &n->growing;
+
+  if(whence == NARRATOR_SEEK_SET)
+    g->l = offset;
+  else if(whence == NARRATOR_SEEK_CUR)
+    g->l += offset;
+
+  // for a growing narrator, the "end" is the greatest position ever written to
+  else if(whence == NARRATOR_SEEK_END)
+    g->l = (g->m + offset);
+
+  return g->l;
+}
+
+API off_t narrator_growing_reset(narrator * restrict n)
+{
+  return narrator_growing_seek(n, 0, NARRATOR_SEEK_SET);
+}
+
+API size_t narrator_growing_read(narrator * restrict n, void * dst, size_t count)
+{
+  narrator_growing * g = &n->growing;
+  size_t d = MIN(count, g->m - g->l);
+  memcpy(dst, g->s + g->l, d);
+  g->l += d;
+  return d;
 }

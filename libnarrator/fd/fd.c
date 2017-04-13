@@ -73,6 +73,11 @@ void fd_destroy(narrator_fd * const restrict n)
 {
 }
 
+xapi fd_read(narrator_fd * restrict n, void * dst, size_t count)
+{
+  xproxy(axread, n->fd,dst, count);
+}
+
 //
 // api
 //

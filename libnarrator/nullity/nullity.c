@@ -45,29 +45,26 @@ xapi nullity_cleanup()
   xproxy(narrator_xfree, g_narrator_nullity);
 }
 
-xapi nullity_vsayf(narrator_nullity * const restrict n, const char * const restrict fmt, va_list va)
+void nullity_vsayf(narrator_nullity * const restrict n, const char * const restrict fmt, va_list va)
 {
-  enter;
-
-  finally : coda;
 }
 
-xapi nullity_sayw(narrator_nullity * const restrict n, const char * const restrict b, size_t l)
+void nullity_sayw(narrator_nullity * const restrict n, const char * const restrict b, size_t l)
 {
-  enter;
-
-  finally : coda;
 }
 
-xapi nullity_seek(narrator_nullity * const restrict n, off_t offset, int whence, off_t * restrict res)
+off_t nullity_seek(narrator_nullity * const restrict n, off_t offset, int whence)
 {
-  enter;
-
-  finally : coda;
+  return 0;
 }
 
 void nullity_destroy(narrator_nullity * const restrict n)
 {
+}
+
+ssize_t nullity_read(narrator_nullity * restrict n, void * dst, size_t count)
+{
+  return 0;
 }
 
 //

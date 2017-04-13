@@ -88,5 +88,21 @@ xapi fd_seek(narrator_fd * const restrict n, off_t offset, int whence, off_t * r
 void fd_destroy(narrator_fd * const restrict n)
   __attribute__((nonnull));
 
+/// narrator_fd_read
+//
+// SUMMARY
+//  read from the underlying file descriptor
+//
+// PARAMETERS
+//  n     - fd narrator
+//  dst   - destination buffer
+//  count - number of bytes to read
+//
+// RETURNS
+//  number of bytes actually read <= count
+//
+xapi fd_read(narrator_fd * restrict n, void * dst, size_t count)
+  __attribute__((nonnull));
+
 #undef restrict
 #endif

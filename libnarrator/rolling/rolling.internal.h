@@ -75,5 +75,8 @@ xapi rolling_seek(narrator_rolling * const restrict n, off_t offset, int whence,
 xapi rolling_xdestroy(narrator_rolling * const restrict n)
   __attribute__((nonnull));
 
+xapi rolling_read(narrator_rolling * restrict n, void * dst, size_t count)
+  __attribute__((nonnull));
+
 #undef restrict
 #endif

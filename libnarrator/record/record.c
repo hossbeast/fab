@@ -76,6 +76,11 @@ void record_destroy(narrator_record * const restrict n)
   wfree(n->s);
 }
 
+xapi record_read(narrator_record * restrict n, void * dst, size_t count)
+{
+  xproxy(narrator_read, n->n, dst, count);
+}
+
 //
 // api
 //

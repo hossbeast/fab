@@ -53,20 +53,6 @@ xapi growing_vsayf(narrator_growing * const restrict n, const char * const restr
 xapi growing_sayw(narrator_growing * const restrict n, const char * const restrict b, size_t l)
   __attribute__((nonnull));
 
-/// growing_seek
-//
-// SUMMARY
-//  reposition the narrator to offset according to whence
-//
-// PARAMETERS
-//  n      - growing narrator
-//  offset - byte offset
-//  whence - one of NARRATOR_SEEK_*, indicates how offset is interpreted
-//  [res]  - (returns) the resulting absolute offset
-//
-xapi growing_seek(narrator_growing * const restrict n, off_t offset, int whence, off_t * restrict res)
-  __attribute__((nonnull(1)));
-
 /// narrator_destroy
 //
 // SUMMARY

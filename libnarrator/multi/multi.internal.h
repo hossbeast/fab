@@ -74,5 +74,8 @@ xapi multi_seek(narrator_multi * const restrict n, off_t offset, int whence, off
 void multi_destroy(narrator_multi * const restrict n)
   __attribute__((nonnull));
 
+xapi multi_read(narrator_multi * restrict n, void * dst, size_t count)
+  __attribute__((nonnull));
+
 #undef restrict
 #endif

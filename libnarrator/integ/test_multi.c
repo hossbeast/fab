@@ -38,7 +38,6 @@ static xapi validate(int count, ...)
   for(x = 0; x < count; x++)
   {
     narrator * n = va_arg(va, narrator*);
-
     assert_eq_s("hello world", n->growing.s);
   }
 
