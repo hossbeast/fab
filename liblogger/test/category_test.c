@@ -47,21 +47,11 @@ static xapi assert_ascending(logger_category * logsp)
     {
       if(strcmp(logs[0]->name, logs[1]->name) == 0)
       {
-        assertf(logs[1]->id == logs[0]->id
-          , "id %"PRIu64
-          , "id %"PRIu64
-          , logs[0]->id
-          , logs[1]->id
-        );
+        assert_eq_u64(logs[0]->id, logs[1]->id);
       }
       else
       {
-        assertf(logs[1]->id > logs[0]->id
-          , "id %"PRIu64
-          , "id %"PRIu64
-          , logs[0]->id
-          , logs[1]->id
-        );
+        assert_gt_u64(logs[0]->id, logs[1]->id);
       }
     }
 
@@ -387,13 +377,16 @@ static xapi test_category_list_merge_attr_rank()
   fatal(logger_category_register, logs_a);
   fatal(categories_activate);
 
+#define assert_eq_color(exp, act) assert_eq_u32(exp, (act & COLOR_OPT))
+#define assert_eq_trace(exp, act) assert_eq_u32(exp, (act & TRACE_OPT))
+
   fatal(assert_ascending, logs_a);
-  assertf((logs_a[0].attr & COLOR_OPT) == L_BLUE, "expected : %s, actual : %s", COLOR_VALUE(L_BLUE), COLOR_VALUE(logs_a[0].attr));
-  assertf((logs_a[1].attr & COLOR_OPT) == L_BLUE, "expected : %s, actual : %s", COLOR_VALUE(L_BLUE), COLOR_VALUE(logs_a[1].attr));
-  assertf((logs_a[2].attr & COLOR_OPT) == L_RED, "expected : %s, actual : %s", COLOR_VALUE(L_RED), COLOR_VALUE(logs_a[2].attr));
-  assertf((logs_a[2].attr & TRACE_OPT) == L_TRACE, "expected : %s, actual : %s", TRACE_VALUE(L_TRACE), TRACE_VALUE(logs_a[2].attr));
-  assertf((logs_a[3].attr & COLOR_OPT) == L_RED, "expected : %s, actual : %s", COLOR_VALUE(L_RED), COLOR_VALUE(logs_a[3].attr));
-  assertf((logs_a[3].attr & TRACE_OPT) == L_TRACE, "expected : %s, actual : %s", TRACE_VALUE(L_TRACE), TRACE_VALUE(logs_a[3].attr));
+  assert_eq_color(L_BLUE, logs_a[0].attr);
+  assert_eq_color(L_BLUE, logs_a[1].attr);
+  assert_eq_color(L_RED, logs_a[2].attr);
+  assert_eq_trace(L_TRACE, logs_a[2].attr);
+  assert_eq_color(L_RED, logs_a[3].attr);
+  assert_eq_trace(L_TRACE, logs_a[3].attr);
 
   finally : coda;
 }
@@ -438,13 +431,13 @@ int main()
       xapi_calltree_unwind();
     }
 
-    assert_exit(tests[x].expected, exit);
-    success;
+    assert_eq_exit(tests[x].expected, exit);
 
     fatal(category_cleanup);
   }
 
 finally:
+  summarize;
   fatal(category_cleanup);
 
   if(XAPI_UNWINDING)

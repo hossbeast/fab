@@ -39,7 +39,7 @@ static xapi validate(int count, ...)
   {
     narrator * n = va_arg(va, narrator*);
 
-    assertf(strcmp("hello world", n->growing.s) == 0, "%s", "%s", "hello world", n->growing.s);
+    assert_eq_s("hello world", n->growing.s);
   }
 
 finally:
@@ -80,9 +80,8 @@ int main()
   xapi R = 0;
   fatal(test_basic);
 
-  success;
-
 finally:
+  summarize;
   if(XAPI_UNWINDING)
   {
     xapi_backtrace();

@@ -51,9 +51,8 @@ static xapi test_basic()
   char * expected = "40 41 42 43 44";
   size_t expectedl = strlen(expected);
 
-  assertf(strcmp(N->growing.s, expected) == 0, "%s", "%s", expected, N->growing.s);
-  assertf(N->growing.l == expectedl, "written %zu", "written %zu", expectedl, N->growing.l);
-  assertf(N->growing.s == narrator_growing_buffer(N), "%p", "%p", N->growing.s, narrator_growing_buffer(N));
+  assert_eq_s(expected, N->growing.s);
+  assert_eq_zu(expectedl, N->growing.l);
 
 finally:
   fatal(narrator_xfree, N);
@@ -67,9 +66,8 @@ int main()
   xapi R = 0;
   fatal(test_basic);
 
-  success;
-
 finally:
+  summarize;
   if(XAPI_UNWINDING)
   {
     xapi_backtrace();

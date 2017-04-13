@@ -51,35 +51,35 @@ static xapi validate(map * mapp)
   // retrieve by key
   item * itemp;
   itemp = map_get(mapp, MMS("one"));
-  assertf(itemp->x == 1, "%d", "%d", 1, itemp->x);
+  assert_eq_d(1, itemp->x);
 
   itemp = map_get(mapp, MMS("two"));
-  assertf(itemp->x == 2, "%d", "%d", 2, itemp->x);
+  assert_eq_d(2, itemp->x);
 
   itemp = map_get(mapp, MMS("three"));
-  assertf(itemp->x == 3, "%d", "%d", 3, itemp->x);
+  assert_eq_d(3, itemp->x);
 
   // lists of keys
   fatal(map_keys, mapp, &keys, &keysl);
-  assertf(keysl == 3, "keys %d", "keys %zu", 3, keysl);
+  assert_eq_zu(3, keysl);
 
   int stringsort(const void * A, const void * B) { return strcmp(*(char **)A, *(char**)B); };
   qsort(keys, keysl, sizeof(*keys), stringsort);
 
-  assertf(strcmp(keys[0], "one") == 0, "%s", "%s", "one", keys[0]);
-  assertf(strcmp(keys[1], "three") == 0, "%s", "%s", "three", keys[1]);
-  assertf(strcmp(keys[2], "two") == 0, "%s", "%s", "two", keys[2]);
+  assert_eq_s("one", keys[0]);
+  assert_eq_s("three", keys[1]);
+  assert_eq_s("two", keys[2]);
 
   // list of values
   fatal(map_values, mapp, &values, &valuesl);
-  assertf(keysl == 3, "values %d", "values %zu", 3, keysl);
+  assert_eq_zu(3, keysl);
 
   int itemsort(const void * A, const void * B) { return (*(item **)A)->x - (*(item **)B)->x; };
   qsort(values, valuesl, sizeof(*values), itemsort);
 
-  assertf(values[0]->x == 1, "%d", "%d", 1, values[0]->x);
-  assertf(values[1]->x == 2, "%d", "%d", 2, values[1]->x);
-  assertf(values[2]->x == 3, "%d", "%d", 3, values[2]->x);
+  assert_eq_d(1, values[0]->x);
+  assert_eq_d(2, values[1]->x);
+  assert_eq_d(3, values[2]->x);
 
   // by slot
   int x;
@@ -95,15 +95,15 @@ static xapi validate(map * mapp)
     {
       if(strcmp(key, "one") == 0)
       {
-        assertf(itemp->x == 1, "%d", "%d", 1, itemp->x);
+        assert_eq_d(1, itemp->x);
       }
       else if(strcmp(key, "two") == 0)
       {
-        assertf(itemp->x == 2, "%d", "%d", 2, itemp->x);
+        assert_eq_d(2, itemp->x);
       }
       else if(strcmp(key, "three") == 0)
       {
-        assertf(itemp->x == 3, "%d", "%d", 3, itemp->x);
+        assert_eq_d(3, itemp->x);
       }
       else
       {
@@ -145,9 +145,8 @@ int main()
 
   fatal(validate, mapp);
 
-  success;
-
 finally:
+  summarize;
   if(XAPI_UNWINDING)
   {
     xapi_backtrace();

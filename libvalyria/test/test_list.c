@@ -368,9 +368,8 @@ int main()
   fatal(test_search);
   fatal(test_delete);
 
-  success;
-
 finally:
+  summarize;
   if(XAPI_UNWINDING)
   {
     xapi_backtrace();

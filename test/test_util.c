@@ -19,21 +19,26 @@
 
 #include "test_util.h"
 
+uint32_t assertions_passed;
+uint32_t assertions_failed;
+
 #define restrict __restrict
 
-void ufailf_info(const char * const restrict expfmt, const char * const restrict actfmt, ...)
+void ufailf_info(const char * restrict value, const char * restrict expfmt, const char * restrict actfmt, ...)
 {
   va_list va;
   va_start(va, actfmt);
 
-  xapi_info_pushvf("expected", expfmt, va);
-  xapi_info_pushvf("actual", actfmt, va);
+  xapi_info_inserts (0, "value", value);
+  xapi_info_insertvf(1, "expected", expfmt, va);
+  xapi_info_insertvf(2, "actual", actfmt, va);
 
   va_end(va);
 }
 
-void ufails_info(const char * const restrict exp, const char * const restrict act)
+void ufails_info(const char * restrict value, const char * restrict exp, const char * restrict act)
 {
-  xapi_info_pushs("expected", exp);
-  xapi_info_pushs("actual", act);
+  xapi_info_inserts(0, "actual", act);
+  xapi_info_inserts(0, "expected", exp);
+  xapi_info_inserts(0, "value", value);
 }

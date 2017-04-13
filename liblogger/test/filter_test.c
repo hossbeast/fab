@@ -98,12 +98,12 @@ static xapi test_filter_parse()
     filter f;
     int r = filter_parses(tests[x].expr, &f);
 
-    assertf(!!r == !!tests[x].v, !!tests[x].v ? "parsed" : "not parsed", !!r ? "parsed" : "not parsed");
+    assert_eq_b(!tests[x].v, !r);
     if(tests[x].v)
     {
-      assertf(f.v == tests[x].v, "ids 0x%"PRIx64, "ids 0x%"PRIx64, tests[x].v, f.v);
-      assertf(f.m == tests[x].m, "mode %c", "mode %c", tests[x].m, f.m);
-      assertf(f.o == tests[x].o, "operation %c", "operation %c", tests[x].o, f.o);
+      assert_eq_u64(tests[x].v, f.v);
+      assert_eq_c(tests[x].m, f.m);
+      assert_eq_c(tests[x].o, f.o);
     }
   }
 
@@ -143,12 +143,12 @@ static xapi test_filter_expr_parse()
 
     if(tests[x].n)
     {
-      assertf(r >= 0, "parsed", "not parsed");
-      assertf(r == tests[x].n, "%d filters", "%d filters", tests[x].n, r);
+      assert_gt_d(0, r);
+      assert_eq_c(tests[x].n, r);
     }
     else
     {
-      assertf(r < 0, "not parsed", "parsed");
+      assert_lt_d(0, r);
     }
   }
 
@@ -252,11 +252,11 @@ int main()
       xapi_calltree_unwind();
     }
 
-    assert_exit(tests[x].expected, exit);
-    success;
+    assert_eq_exit(tests[x].expected, exit);
   }
 
 finally:
+  summarize;
   fatal(suite_cleanup);
 
   if(XAPI_UNWINDING)

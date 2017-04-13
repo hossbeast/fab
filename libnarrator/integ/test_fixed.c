@@ -89,9 +89,8 @@ int main()
   fatal(test_basic);
   fatal(test_constrained);
 
-  success;
-
 finally:
+  summarize;
   if(XAPI_UNWINDING)
   {
     xapi_backtrace();

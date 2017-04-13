@@ -152,11 +152,11 @@ int main()
       xapi_calltree_unwind();
     }
 
-    assert_exit(tests[x].expected, exit);
-    success;
+    assert_eq_exit(tests[x].expected, exit);
   }
 
 finally:
+  summarize;
   fatal(test_cleanup);
 
   if(XAPI_UNWINDING)

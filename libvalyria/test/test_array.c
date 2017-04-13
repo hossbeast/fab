@@ -41,7 +41,7 @@ static xapi validate(array * ar)
     item * A = array_get(ar, x - 1);
     item * B = array_get(ar, x);
 
-    assertf(B->x >= A->x, "B >= A", "%d < %d", B->x, A->x);
+    assert_ge_d(A->x, B->x);
   }
 
   finally : coda;
@@ -194,9 +194,8 @@ int main()
   fatal(test_set);
   fatal(test_delete);
 
-  success;
-
 finally:
+  summarize;
   if(XAPI_UNWINDING)
   {
     xapi_backtrace();

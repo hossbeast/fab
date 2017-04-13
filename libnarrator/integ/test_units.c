@@ -57,7 +57,7 @@ static xapi test_interval_say()
     fatal(interval_say, tests[x].seconds, N);
 
     // assert
-    assertf(strcmp(N->growing.s, tests[x].expected) == 0, "%s", "%s", tests[x].expected, N->growing.s);
+    assert_eq_s(tests[x].expected, N->growing.s);
   }
 
 finally:
@@ -91,7 +91,7 @@ static xapi test_bytesize_say()
     fatal(bytesize_say, tests[x].bytes, N);
 
     // assert
-    assertf(strcmp(N->growing.s, tests[x].expected) == 0, "%s", "%s", tests[x].expected, N->growing.s);
+    assert_eq_s(tests[x].expected, N->growing.s);
   }
 
 finally:
@@ -127,7 +127,7 @@ static xapi test_elapsed_say()
     fatal(elapsed_say, &tests[x].start, &tests[x].end, N);
 
     // assert
-    assertf(strcmp(N->growing.s, tests[x].expected) == 0, "%s", "%s", tests[x].expected, N->growing.s);
+    assert_eq_s(tests[x].expected, N->growing.s);
   }
 
 finally:
@@ -144,9 +144,8 @@ int main()
   fatal(test_bytesize_say);
   fatal(test_elapsed_say);
 
-  success;
-
 finally:
+  summarize;
   if(XAPI_UNWINDING)
   {
     xapi_backtrace();
