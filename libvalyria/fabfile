@@ -20,6 +20,7 @@
 
 # source invocations
 +[ $dcommon ]() @common
++[ $droot/test ]()
 
 # variables
 $basename     = [ valyria ]
@@ -135,8 +136,7 @@ $lflags_xapi_devel  = [ $lopts $libxapi_xapi_devel $libxlinux_xapi_devel [ -Wl,-
 #  for rationale see test/README.md
 #
 
-+[@std.c]($dext = [ xapi.devel.pic.o ]; $rdirs = [ [ $*/test ~ j ] [ $droot/test ~ j ] ]; $cc; $cflags = [ $cflags_xapi_devel [ $droot/test ~ j s/^/-I ] ])
-+[@std.xapi.errtab]($dext = [ xapi.devel.pic.o ]; $dirs = [ $droot/test/errtab ~ j ]; $apidata = [1]; $cc; $cflags = $cflags_xapi_devel)
++[@std.c]($dext = [ xapi.devel.pic.o ]; $rdirs = [ $*/test ~ j ]; $cc; $cflags = [ $cflags_xapi_devel [ $droot/test ~ j s/^/-I ] ])
 
 [ $*/test ~ j lsr sx/c/test sy dj shift ] :: [ $< ~ sx/test/xapi.devel.pic.o ]
 {
