@@ -53,7 +53,6 @@ struct value; // value.h
 //
 // THROWS
 //  DIFFTYPE - src and dst are not the same type
-//  BADTYPE  - src and dst are scalars
 //
 xapi value_merge(struct value * const restrict dst, const struct value * const restrict src)
   __attribute__((nonnull));

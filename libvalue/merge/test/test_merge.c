@@ -442,34 +442,6 @@ finally:
 coda;
 }
 
-static xapi merge_test_map_set_inner(xunit_test * test)
-{
-  enter;
-
-  value * src = 0;
-  value * dst = 0;
-  value * list = 0;
-  value * val = 0;
-  value_store * stor = 0;
-
-  fatal(value_store_create, &stor);
-
-  // dst : { foo [ 42 ] }
-  fatal(entry_mkf, stor, &list, 42);
-  fatal(value_map_mks, stor, 0, dst, &dst, "foo", list, 0);
-
-  // src : { foo = true }
-  fatal(value_boolean_mk, stor, 0, &val, 1);
-  fatal(value_map_mks, stor, 0, src, &src, "foo", val, VALUE_MERGE_SET);
-
-  // expected to fail with a particular exit value and kvp containing the path
-  fatal(value_merge, dst, src);
-
-finally:
-  fatal(value_store_xfree, stor);
-coda;
-}
-
 static xapi merge_test_difftype_aggregates(xunit_test * test)
 {
   enter;
@@ -567,7 +539,6 @@ xunit_unit xunit = {
     , (xunit_test[]){{ xu_entry : merge_test_map_list_set }}
     , (xunit_test[]){{ xu_entry : merge_test_list_scalar }}
     , (xunit_test[]){{ xu_entry : merge_test_list_aggregate }}
-    , (xunit_test[]){{ xu_entry : merge_test_map_set_inner }}
 
     // failure cases
     , (xunit_test[]){{ xu_entry : merge_test_difftype_aggregates }}

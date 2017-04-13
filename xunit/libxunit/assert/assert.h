@@ -36,6 +36,7 @@ REMARKS
 
 #include "xapi.h"
 #include "xapi/exit.h"
+#include "xapi/info.h"
 
 #include "xunit.h"
 #include "xunit/XUNIT.errtab.h"
@@ -58,52 +59,24 @@ extern struct xunit_type * xunit_xapi;
 extern struct xunit_type * xunit_int64;
 extern struct xunit_type * xunit_float;
 extern struct xunit_type * xunit_bool;
-
-/// ufail
-//
-// SUMMARY
-//  raise a unit test assertion failure
-//
-#define assert_eq_s(expected, actual)       _assertion(xunit_string, XU_EQ, QUOTE(actual), expected, actual)
-#define assert_eq_w(exp, expz, act, actz)   _assertion(xunit_buffer, XU_EQ, QUOTE(act), exp, expz, act, actz)
-#define assert_eq_d(expected, actual)       _assertion(xunit_int, XU_EQ, QUOTE(actual), expected, actual)
-#define assert_eq_e(expected, actual)       _assertion(xunit_xapi, XU_EQ, QUOTE(actual), expected, actual)
-#define assert_eq_i64(expected, actual)     _assertion(xunit_int64, XU_EQ, QUOTE(actual), expected, actual)
-#define assert_eq_f(expected, actual)       _assertion(xunit_float, XU_EQ, QUOTE(actual), expected, actual)
-#define assert_eq_b(expected, actual)       _assertion(xunit_bool, XU_EQ, QUOTE(actual), expected, actual)
-
-#define _assertion(type, op, value, ...)                                  \
-  do {                                                                   \
-    if(!xunit_assertion_evaluate(type, op, value, ##__VA_ARGS__)) {      \
-      fail(XUNIT_FAIL);                                                  \
-    }                                                                    \
-  } while(0)
-
-#define ufails(exp, act, ...)                     \
-  do {                                            \
-    xunit_fails_info(exp, act);                   \
-    ufail();                                      \
-  } while(0)
-
-#define ufailf(expfmt, actfmt, ...)                   \
-  do {                                                \
-    xunit_failf_info(expfmt, actfmt, ##__VA_ARGS__);  \
-    ufail();                                          \
-  } while(0)
+extern struct xunit_type * xunit_pointer;
 
 /// assert
 //
 // SUMMARY
 //  raise a unit test assertion failure if a condition is false
 //
-#define assert_eq_s(expected, actual)       _assertion(xunit_string, XU_EQ, QUOTE(actual), expected, actual)
-#define assert_eq_w(exp, expz, act, actz)   _assertion(xunit_buffer, XU_EQ, QUOTE(act), exp, expz, act, actz)
+#define assert_eq_b(expected, actual)       _assertion(xunit_bool, XU_EQ, QUOTE(actual), expected, actual)
 #define assert_eq_d(expected, actual)       _assertion(xunit_int, XU_EQ, QUOTE(actual), expected, actual)
 #define assert_eq_e(expected, actual)       _assertion(xunit_xapi, XU_EQ, QUOTE(actual), expected, actual)
-#define assert_eq_i64(expected, actual)     _assertion(xunit_int64, XU_EQ, QUOTE(actual), expected, actual)
 #define assert_eq_f(expected, actual)       _assertion(xunit_float, XU_EQ, QUOTE(actual), expected, actual)
+#define assert_eq_i64(expected, actual)     _assertion(xunit_int64, XU_EQ, QUOTE(actual), expected, actual)
+#define assert_eq_s(expected, actual)       _assertion(xunit_string, XU_EQ, QUOTE(actual), expected, actual)
+#define assert_eq_w(exp, expz, act, actz)   _assertion(xunit_buffer, XU_EQ, QUOTE(act), exp, expz, act, actz)
 
-#define _assertion(type, op, value, ...)                                  \
+#define assert_notnull(actual)              _assertion(xunit_pointer, XU_NOTNULL, QUOTE(actual), actual)
+
+#define _assertion(type, op, value, ...)                                 \
   do {                                                                   \
     if(!xunit_assertion_evaluate(type, op, value, ##__VA_ARGS__)) {      \
       fail(XUNIT_FAIL);                                                  \
@@ -127,6 +100,28 @@ extern struct xunit_type * xunit_bool;
 //
 int xunit_assertion_evaluate(const struct xunit_type * const restrict type, uint8_t op, const char * const restrict value, ...)
   __attribute__((nonnull(1)));
+
+#if XAPI_STACKTRACE
+static inline void assert_infos(const char * restrict key, const char * restrict val)
+{
+  xapi_info_pushs(key, val);
+}
+
+static inline void assert_infof(const char * restrict key, const char * restrict fmt, ...)
+{
+  va_list va;
+  va_start(va, fmt);
+
+  xapi_info_pushvf(key, fmt, va);
+
+  va_end(va);
+}
+
+static inline void assert_info_unstage()
+{
+  xapi_info_unstage();
+}
+#endif
 
 #undef restrict
 #endif

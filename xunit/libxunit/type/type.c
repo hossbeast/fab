@@ -15,6 +15,7 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
+#include <stddef.h>
 #include <stdarg.h>
 #include <inttypes.h>
 
@@ -58,7 +59,7 @@ static int string_compare(xunit_arg * A, xunit_arg * B)
   return strcmp(A->s, B->s);
 }
 
-static void string_info_add(const char * const restrict name, xunit_arg * a)
+static void string_info_push(const char * const restrict name, xunit_arg * a)
 {
   xapi_info_pushs(name, a->s);
 }
@@ -95,7 +96,7 @@ static int buffer_compare(xunit_arg * A, xunit_arg * B)
   return 0;
 }
 
-static void buffer_info_add(const char * const restrict name, xunit_arg * a)
+static void buffer_info_push(const char * const restrict name, xunit_arg * a)
 {
   if(a->p == 0)
   {
@@ -131,7 +132,7 @@ static int int_compare(xunit_arg * A, xunit_arg * B)
   return A->d - B->d;
 }
 
-static void int_info_add(const char * const restrict name, xunit_arg * a)
+static void int_info_push(const char * const restrict name, xunit_arg * a)
 {
   xapi_info_pushf(name, "%d", a->d);
 }
@@ -151,7 +152,7 @@ static int float_compare(xunit_arg * A, xunit_arg * B)
   return 0;
 }
 
-static void float_info_add(const char * const restrict name, xunit_arg * a)
+static void float_info_push(const char * const restrict name, xunit_arg * a)
 {
   xapi_info_pushf(name, "%f", a->f);
 }
@@ -171,7 +172,7 @@ static int int64_compare(xunit_arg * A, xunit_arg * B)
   return 0;
 }
 
-static void int64_info_add(const char * const restrict name, xunit_arg * a)
+static void int64_info_push(const char * const restrict name, xunit_arg * a)
 {
   xapi_info_pushf(name, "%"PRIi64, a->i64);
 }
@@ -186,7 +187,7 @@ static int bool_compare(xunit_arg * A, xunit_arg * B)
   return A->b != B->b;
 }
 
-static void bool_info_add(const char * const restrict name, xunit_arg * a)
+static void bool_info_push(const char * const restrict name, xunit_arg * a)
 {
   xapi_info_pushs(name, a->b ? "true" : "false");
 }
@@ -201,9 +202,29 @@ static int xapi_compare(xunit_arg * A, xunit_arg * B)
   return A->e - B->e;
 }
 
-static void xapi_info_add(const char * const restrict name, xunit_arg * a)
+static void xapi_info_push(const char * const restrict name, xunit_arg * a)
 {
   xapi_info_pushf(name, "%s(%d)", xapi_exit_errname(a->e), a->e);
+}
+
+static void pointer_unpack(va_list va, xunit_arg * a)
+{
+  a->p = va_arg(va, void*);
+}
+
+static int pointer_compare(xunit_arg * A, xunit_arg * B)
+{
+  ptrdiff_t delta = A->p - B->p;
+  if(delta > 0)
+    return 1;
+  if(delta < 0)
+    return -1;
+  return 0;
+}
+
+static void pointer_info_push(const char * const restrict name, xunit_arg * a)
+{
+  xapi_info_pushf(name, "%p", a->p);
 }
 
 //
@@ -213,41 +234,47 @@ static void xapi_info_add(const char * const restrict name, xunit_arg * a)
 APIDATA xunit_type * xunit_string = (xunit_type[]) {{
     xu_unpack : string_unpack
   , xu_compare : string_compare
-  , xu_info_add : string_info_add
+  , xu_info_push : string_info_push
 }};
 
 APIDATA xunit_type * xunit_buffer = (xunit_type[]) {{
     xu_unpack : buffer_unpack
   , xu_compare : buffer_compare
-  , xu_info_add : buffer_info_add
+  , xu_info_push : buffer_info_push
 }};
 
 APIDATA xunit_type * xunit_int = (xunit_type[]) {{
     xu_unpack : int_unpack
   , xu_compare : int_compare
-  , xu_info_add : int_info_add
+  , xu_info_push : int_info_push
 }};
 
 APIDATA xunit_type * xunit_xapi = (xunit_type[]) {{
     xu_unpack : xapi_unpack
   , xu_compare : xapi_compare
-  , xu_info_add : xapi_info_add
+  , xu_info_push : xapi_info_push
 }};
 
 APIDATA xunit_type * xunit_int64 = (xunit_type[]) {{
     xu_unpack : int64_unpack
   , xu_compare : int64_compare
-  , xu_info_add : int64_info_add
+  , xu_info_push : int64_info_push
 }};
 
 APIDATA xunit_type * xunit_float = (xunit_type[]) {{
     xu_unpack : float_unpack
   , xu_compare : float_compare
-  , xu_info_add : float_info_add
+  , xu_info_push : float_info_push
 }};
 
 APIDATA xunit_type * xunit_bool = (xunit_type[]) {{
     xu_unpack : bool_unpack
   , xu_compare : bool_compare
-  , xu_info_add : bool_info_add
+  , xu_info_push : bool_info_push
+}};
+
+APIDATA xunit_type * xunit_pointer = (xunit_type[]) {{
+    xu_unpack : pointer_unpack
+  , xu_compare : pointer_compare
+  , xu_info_push : pointer_info_push
 }};

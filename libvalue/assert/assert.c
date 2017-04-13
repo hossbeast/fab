@@ -39,7 +39,7 @@ static int value_compare(xunit_arg * A, xunit_arg * B)
   return value_cmp(A->p, B->p);
 }
 
-static void value_info_add(const char * const restrict name, xunit_arg * a)
+static void value_info_push(const char * const restrict name, xunit_arg * a)
 {
 }
 
@@ -50,5 +50,5 @@ static void value_info_add(const char * const restrict name, xunit_arg * a)
 APIDATA xunit_type * value_xunit_value = (xunit_type[]) {{
     xu_unpack : value_unpack
   , xu_compare : value_compare
-  , xu_info_add : value_info_add
+  , xu_info_push : value_info_push
 }};

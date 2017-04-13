@@ -33,7 +33,7 @@ SUMMARY
 typedef union xunit_arg
 {
   struct {      // xunit_buffer
-    void * p;
+    void * p;   // xunit_pointer
     size_t l;
   };
 
@@ -51,7 +51,7 @@ typedef struct xunit_type
 {
   void (*xu_unpack)(va_list, xunit_arg *);
   int (*xu_compare)(xunit_arg *, xunit_arg *);
-  void (*xu_info_add)(const char *, xunit_arg *);
+  void (*xu_info_push)(const char *, xunit_arg *);
 } xunit_type;
 
 #endif
