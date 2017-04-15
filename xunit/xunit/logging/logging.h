@@ -38,6 +38,6 @@ extern logger_stream * streams;
 //
 //
 //
-xapi logging_setup(void);
+xapi logging_setup(char ** envp);
 
 #endif

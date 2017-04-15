@@ -18,14 +18,14 @@
 #include "logging.h"
 
 logger_category * categories = (logger_category []) {
-    { name : "ERROR"    , description : "errors leading to shutdown" }
+    { name : "ERROR"    , description : "fatal errors" }
   , { name : "ARGS"     , description : "program arguments" }
   , { name : "PARAMS"   , description : "program execution parameters" }
   , { name : "DLOAD"    , description : "dload details"                 , attr : L_MAGENTA }
   , { name : "TEST"     , description : "per-test results" }
   , { name : "UNIT"     , description : "per-unit results" }
   , { name : "SUITE"    , description : "per-suite results" }
-  , { name : "FAIL"     , description : "test failure details" }
+  , { name : "FAIL"     , description : "test failures" }
   , { }
 };
 
@@ -37,12 +37,14 @@ logger_stream * streams = (logger_stream []) {
 // while misconfigured, write log messages to stderr
 int g_logger_default_stderr = 1;
 
-xapi logging_setup()
+xapi logging_setup(char ** envp)
 {
   enter;
 
   fatal(logger_category_register, categories);
   fatal(logger_stream_register, streams);
+  fatal(logger_arguments_setup, envp);
+  fatal(logger_finalize);
 
   finally : coda;
 }

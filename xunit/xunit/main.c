@@ -17,6 +17,9 @@
 
 #include <stdio.h>
 #include <dlfcn.h>
+#include <inttypes.h>
+
+#include "xapi/SYS.errtab.h"
 
 #include "xapi.h"
 
@@ -43,15 +46,17 @@
 
 static uint32_t suite_assertions_passed = 0;
 static uint32_t suite_assertions_failed = 0;
-static uint32_t suite_tests = 0;
+static uint32_t suite_tests_passed = 0;
+static uint32_t suite_tests_failed = 0;
 static uint32_t suite_units = 0;
 
 static xapi begin(int argc, char** argv, char ** envp)
 {
   enter;
 
-  char space[4096];
+  char trace[4096];
   Dl_info nfo;
+  narrator * N;
 
   // allocated with the same size as g_args.objects
   void ** objects = 0;
@@ -70,8 +75,20 @@ static xapi begin(int argc, char** argv, char ** envp)
 
   for(x = 0; x < g_args.objectsl; x++)
   {
-    // open the object
-    fatal(xdlopen, g_args.objects[x], RTLD_NOW | RTLD_GLOBAL | RTLD_DEEPBIND, &objects[x]);
+    /*
+     * When the object is unloaded, its symbols are no longer available. It's important
+     * that the symbols remain available, for several reasons:
+     *  1) valgrind leak reports will have blank frames for functions in those symbols
+     *  2) xapi/trace will report an unknown error, if the error table is one of those symbols
+     */
+    fatal(xdlopen
+      , g_args.objects[x]
+      , RTLD_NOW          // fail before dlopen returns if the object has unresolved references
+      | RTLD_GLOBAL       // make symbols in this object available to subsequently loaded objects
+      | RTLD_DEEPBIND     // cause this object to prefer symbols which it contains
+      | RTLD_NODELETE     // dont unload during dlclose
+      , &objects[x]
+    );
 
     // load the test manifest
     xunit_unit * xunit;
@@ -104,9 +121,10 @@ static xapi begin(int argc, char** argv, char ** envp)
 
       xunit_test ** test = xunit->xu_tests;
 
+      uint32_t unit_tests_passed = 0;
+      uint32_t unit_tests_failed = 0;
       uint32_t unit_assertions_passed = 0;
       uint32_t unit_assertions_failed = 0;
-      uint32_t unit_tests = 0;
 
       int only = 0;
       while(*test)
@@ -128,8 +146,6 @@ static xapi begin(int argc, char** argv, char ** envp)
         if(only && !(*test)->xu_only)
           continue;
 
-        unit_tests++;
-
         // convenience
         (*test)->xu_unit = xunit;
 
@@ -150,34 +166,35 @@ static xapi begin(int argc, char** argv, char ** envp)
             name = nfo.dli_sname;
         }
 
+        int test_failed = 0;
         if(invoke(entry, *test))
         {
+          test_failed = 1;
+
           // add identifying info
           if(name)
-            xapi_info_pushs("name", name);
-          xapi_info_pushf("test", "%zu in [0,%zu]", test - xunit->xu_tests, tests_len);
+            xapi_frame_info_pushs("name", name);
+          xapi_frame_info_pushf("test", "%zu in [%d,%zu]", test - xunit->xu_tests, 0, tests_len);
 
           // propagate non-unit-testing errors
           if(XAPI_ERRVAL != XUNIT_FAIL)
             fail(0);
 
-          // save the trace
-          xapi_trace_full(space, sizeof(space), 0);
-
-          // discard the error frames
-          xapi_calltree_unwind();
-
           // for unit-testing errors, log the failure and continue
-          xlogs(L_FAIL, L_RED, space);
+          xapi_trace_full(trace, sizeof(trace), XAPI_TRACE_COLORIZE | XAPI_TRACE_NONEWLINE);
+          xapi_calltree_unwind();
+          logs(L_FAIL, trace);
+        }
+        else if(xunit_assertions_failed)
+        {
+          test_failed = 1;
         }
 
         fatal(xclock_gettime, CLOCK_MONOTONIC_RAW, &test_end);
 
         // report for this test
-        narrator * N;
-        fatal(log_xstart, L_TEST, xunit_assertions_failed == 0 ? L_GREEN : L_RED, &N);
-        sayf(
-            "  %%%6.2f pass rate on %6d assertions over "
+        fatal(log_xstart, L_TEST, test_failed ? L_RED : L_GREEN, &N);
+        sayf("  %%%6.2f pass rate on %6"PRIu32" assertions over "
           , 100 * ((double)xunit_assertions_passed / (double)(xunit_assertions_passed + xunit_assertions_failed))
           , xunit_assertions_passed + xunit_assertions_failed
         );
@@ -187,6 +204,10 @@ static xapi begin(int argc, char** argv, char ** envp)
 
         fatal(log_finish);
 
+        if(test_failed)
+          unit_tests_failed++;
+        else
+          unit_tests_passed++;
         unit_assertions_passed += xunit_assertions_passed;
         unit_assertions_failed += xunit_assertions_failed;
       }
@@ -194,13 +215,11 @@ static xapi begin(int argc, char** argv, char ** envp)
       fatal(xclock_gettime, CLOCK_MONOTONIC_RAW, &unit_end);
 
       // report for this module
-      narrator * N;
-      fatal(log_xstart, L_UNIT, unit_assertions_failed == 0 ? L_GREEN : L_RED, &N);
-      sayf(
-          " %%%6.2f pass rate on %6d assertions by %3ld tests over "
+      fatal(log_xstart, L_UNIT, unit_tests_failed ? L_RED : L_GREEN, &N);
+      sayf(" %%%6.2f pass rate on %6"PRIu32" assertions by %3"PRIu32" tests over "
         , 100 * ((double)unit_assertions_passed / (double)(unit_assertions_passed + unit_assertions_failed))
         , unit_assertions_passed + unit_assertions_failed
-        , sentinel(xunit->xu_tests)
+        , unit_tests_passed + unit_tests_failed
       );
 
       fatal(elapsed_say, &unit_start, &unit_end, N);
@@ -209,8 +228,9 @@ static xapi begin(int argc, char** argv, char ** envp)
 
       suite_assertions_passed += unit_assertions_passed;
       suite_assertions_failed += unit_assertions_failed;
+      suite_tests_passed += unit_tests_passed;
+      suite_tests_failed += unit_tests_failed;
       suite_units++;
-      suite_tests += unit_tests;
 
       // unit cleanup
       if(xunit->xu_teardown)
@@ -224,13 +244,11 @@ static xapi begin(int argc, char** argv, char ** envp)
   fatal(xclock_gettime, CLOCK_MONOTONIC_RAW, &suite_end);
 
   // summary report
-  narrator * N;
-  fatal(log_xstart, L_SUITE, suite_assertions_failed == 0 ? L_GREEN : L_RED, &N);
-  sayf(
-      "%%%6.2f pass rate on %6d assertions by %3d tests from %4d units over "
+  fatal(log_xstart, L_SUITE, suite_tests_failed ? L_RED : L_GREEN, &N);
+  sayf("%%%6.2f pass rate on %6d assertions by %3d tests from %4d units over "
     , 100 * ((double)suite_assertions_passed / (double)(suite_assertions_passed + suite_assertions_failed))
     , (suite_assertions_passed + suite_assertions_failed)
-    , suite_tests
+    , suite_tests_passed + suite_tests_failed
     , suite_units
   );
 
@@ -238,9 +256,11 @@ static xapi begin(int argc, char** argv, char ** envp)
   fatal(log_finish);
 
 finally:
-  // dlclose will cause leak reports to have blank frames
-  for(x = 0; x < g_args.objectsl; x++)
-    fatal(ixdlclose, &objects[x]);
+  if(objects)
+  {
+    for(x = 0; x < g_args.objectsl; x++)
+      fatal(ixdlclose, &objects[x]);
+  }
 
   // locals
   wfree(objects);
@@ -252,7 +272,6 @@ int main(int argc, char** argv, char ** envp)
   enter;
 
   xapi R;
-  char space[4096];
 
   // load libraries
   fatal(logger_load);
@@ -261,31 +280,14 @@ int main(int argc, char** argv, char ** envp)
   fatal(xunit_load);
 
   // initialize logger
-  fatal(logging_setup);
-  fatal(logger_arguments_setup, envp);
-  fatal(logger_finalize);
+  fatal(logging_setup, envp);
 
   // main program
   fatal(begin, argc, argv, envp);
 
 finally:
   if(XAPI_UNWINDING)
-  {
-# if DEVEL || DEBUG
-    if(g_args.mode_backtrace == MODE_BACKTRACE_PITHY)
-    {
-#endif
-      xapi_trace_pithy(space, sizeof(space), 0);
-#if DEBUG || DEVEL
-    }
-    else
-    {
-      xapi_trace_full(space, sizeof(space), 0);
-    }
-#endif
-
-    xlogs(L_ERROR, L_NOCATEGORY, space);
-  }
+    fatal(logger_trace_full, L_ERROR, XAPI_TRACE_COLORIZE);
 
   // modules
   args_teardown();
@@ -299,5 +301,8 @@ finally:
 conclude(&R);
   xapi_teardown();
 
-  return R | suite_assertions_failed;
+  R |= suite_assertions_failed;
+  R |= suite_tests_failed;
+
+  return !!R;
 }
