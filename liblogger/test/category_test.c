@@ -21,6 +21,8 @@
 #include "xapi/trace.h"
 #include "xapi/calltree.h"
 #include "valyria/list.h"
+#include "xlinux/xstdlib.h"
+#include "valyria/strutil.h"
 
 #include "logger.h"
 #include "internal.h"
@@ -31,220 +33,51 @@
 #include "test_util.h"
 #include "macros.h"
 
-/// assert_ascending
-//
-// SUMMARY
-//  verify that a sequence of category definitions are sorted by id in
-//  ascending order
-//
-static xapi assert_ascending(logger_category * logsp)
-{
-  enter;
+struct test {
+  xapi (*entry)(struct test *);
+  xapi exit;
+  char ** lists;
+};
 
-  logger_category * logs[2] = { [1] = logsp };
-  do
-  {
-    if(logs[0])
-    {
-      if(strcmp(logs[0]->name, logs[1]->name) == 0)
-      {
-        assert_eq_u64(logs[0]->id, logs[1]->id);
-      }
-      else
-      {
-        assert_gt_u64(logs[0]->id, logs[1]->id);
-      }
-    }
-
-    logs[0] = logs[1];
-    logs[1]++;
-  } while(logs[1]->name);
-
-  finally : coda;
-}
-
-/// assert_together
-//
-// SUMMARY
-//  assert that categories with the same name are contiguous in the list
-//
-static xapi assert_together(list * C)
-{
-  enter;
-
-  int x;
-  int y;
-  int i;
-
-  logger_category * rep;
-  logger_category * other = 0;
-
-  for(x = 0; x < C->l; x++)
-  {
-    rep = list_get(C, x);
-    for(y = x + 1; y < C->l; y++)
-    {
-      logger_category * last = list_get(C, y);
-
-      if(strcmp(rep->name, last->name))
-        break;
-    }
-
-    for(i = y + 1; i < C->l; i++)
-    {
-      logger_category * other = list_get(C, i);
-
-      if(strcmp(rep->name, other->name) == 0)
-        break;
-    }
-
-    if(i < C->l)
-      break;
-
-    x = y - 1;
-  }
-
-  assert_null(other);
-
-  finally : coda;
-}
-
-/// assert_before
+/// assert_relation
 //
 // SUMMARY
 //  assert that categories with name A appear before categories with name B
 //
-static xapi assert_before(list * restrict C, const char * restrict A, const char * restrict B)
+// PARAMETERS
+//  category - category which is before
+//  other    - category which is after
+//
+static xapi assert_relation(list * restrict C, const char * category, size_t categoryl, const char * other, size_t otherl)
 {
   enter;
 
   logger_category * cat;
 
+  int loc = 0;
+  int othermin = 0xFFFF;
+
   int x;
   for(x = 0; x < C->l; x++)
   {
     cat = list_get(C, x);
-    if(strcmp(cat->name, A) == 0)
-      break;
+    size_t namel = strlen(cat->name);
+    if(memncmp(cat->name, namel, category, categoryl) == 0)
+    {
+      if(x > loc)
+        loc = x;
+    }
+    else if(memncmp(cat->name, namel, other, otherl) == 0)
+    {
+      if(x < othermin)
+        othermin = x;
+    }
   }
 
-  int y;
-  for(y = 0; y < C->l; y++)
-  {
-    cat = list_get(C, y);
-    if(strcmp(cat->name, B) == 0)
-      break;
-  }
-  
-  assert_infos("before", A);
-  assert_infos("after", B);
-  int before_index = x;
-  int after_index = y;
-  assert_gt_d(before_index, after_index);
+  assert_infow("category", category, categoryl);
+  assert_infow("other", other, otherl);
+  assert_lt_d(othermin, loc);
   assert_info_unstage();
-
-  finally : coda;
-}
-
-static xapi test_category_list_merge_success()
-{
-  enter;
-
-  logger_category * logs_a = (logger_category[]) {
-      { name : "A" }
-    , { name : "B" }
-    , { name : "C" }
-    , { name : "D" }
-    , {}
-  };
-
-  fatal(logger_category_register, logs_a);
-  fatal(categories_activate);
-
-  fatal(assert_ascending, logs_a);
-
-  finally : coda;
-}
-
-static xapi test_category_list_merge_success_two()
-{
-  enter;
-
-  logger_category * logs_a = (logger_category[]) {
-      { name : "A" }
-    , { name : "B" }
-    , { name : "C" }
-    , { name : "D" }
-    , {}
-  };
-
-  logger_category * logs_b = (logger_category[]) {
-      { name : "A" }
-    , { name : "D" }
-    , { name : "E" }
-    , { name : "F" }
-    , {}
-  };
-
-  fatal(logger_category_register, logs_a);
-  fatal(logger_category_register, logs_b);
-  fatal(categories_activate);
-
-  fatal(assert_ascending, logs_a);
-  fatal(assert_ascending, logs_b);
-
-  finally : coda;
-}
-
-static xapi test_category_list_merge_success_two_activate()
-{
-  enter;
-
-  logger_category * logs_a = (logger_category[]) {
-      { name : "A" }
-    , { name : "B" }
-    , { name : "C" }
-    , { name : "D" }
-    , {}
-  };
-
-  logger_category * logs_b = (logger_category[]) {
-      { name : "A" }
-    , { name : "D" }
-    , { name : "E" }
-    , { name : "F" }
-    , {}
-  };
-
-  fatal(logger_category_register, logs_a);
-  fatal(categories_activate);
-  fatal(logger_category_register, logs_b);
-  fatal(categories_activate);
-
-  fatal(assert_ascending, logs_a);
-  fatal(assert_ascending, logs_b);
-
-  finally : coda;
-}
-
-static xapi test_category_list_merge_success_nonunique()
-{
-  enter;
-
-  logger_category * logs_a = (logger_category[]) {
-      { name : "A" }
-    , { name : "A" }
-    , { name : "B" }
-    , { name : "B" }
-    , { name : "C" }
-    , { name : "D" }
-    , {}
-  };
-
-  fatal(logger_category_register, logs_a);
-  fatal(categories_activate);
-
-  fatal(assert_ascending, logs_a);
 
   finally : coda;
 }
@@ -327,47 +160,7 @@ static xapi test_category_list_merge_success_max()
   finally : coda;
 }
 
-static xapi test_category_list_merge_failure_order()
-{
-  enter;
-
-  logger_category * logs_a = (logger_category[]) {
-      { name : "A" }
-    , { name : "B" }
-    , {}
-  };
-
-  logger_category * logs_b = (logger_category[]) {
-      { name : "B" }
-    , { name : "A" }
-    , {}
-  };
-
-  fatal(logger_category_register, logs_a);
-  fatal(logger_category_register, logs_b);
-  fatal(categories_activate);
-
-  finally : coda;
-}
-
-static xapi test_category_list_merge_failure_order_single()
-{
-  enter;
-
-  logger_category * logs_a = (logger_category[]) {
-      { name : "A" }
-    , { name : "B" }
-    , { name : "A" }
-    , {}
-  };
-
-  fatal(logger_category_register, logs_a);
-  fatal(categories_activate);
-
-  finally : coda;
-}
-
-static xapi test_category_list_merge_failure_toomany()
+static xapi test_category_list_merge_failure_toomany(struct test * test)
 {
   enter;
 
@@ -437,7 +230,7 @@ static xapi test_category_list_merge_failure_toomany()
     , { name : "A62" }
     , { name : "A63" }
     , { name : "A64" }
-    , {}
+    , { }
   };
 
   fatal(logger_category_register, logs_a);
@@ -446,130 +239,128 @@ static xapi test_category_list_merge_failure_toomany()
   finally : coda;
 }
 
-static xapi test_category_list_merge_attr_rank()
+static xapi test_category_list_merge_attr_rank(struct test * test)
 {
   enter;
 
   logger_category * logs_a = (logger_category[]) {
       { name : "A" , attr : L_RED }
-    , { name : "A" , attr : L_BLUE , rank : 10 }
     , { name : "B" , attr : L_RED | L_TRACE, rank : 10 }
+    , { }
+  };
+
+  logger_category * logs_b = (logger_category[]) {
+      { name : "A" , attr : L_BLUE , rank : 10 }
     , { name : "B" , attr : L_BLUE }
-    , {}
+    , { }
   };
 
   fatal(logger_category_register, logs_a);
+  fatal(logger_category_register, logs_b);
   fatal(categories_activate);
 
 #define assert_eq_color(exp, act) _asserts((act & COLOR_OPT) == exp, QUOTE(act), color_option_name(act), color_option_name(exp))
 #define assert_eq_trace(exp, act) _asserts((act & TRACE_OPT) == exp, QUOTE(act), trace_option_name(act), trace_option_name(exp))
 
-  fatal(assert_ascending, logs_a);
   assert_eq_color(L_BLUE, logs_a[0].attr);
-  assert_eq_color(L_BLUE, logs_a[1].attr);
-  assert_eq_color(L_RED, logs_a[2].attr);
-  assert_eq_trace(L_TRACE, logs_a[2].attr);
-  assert_eq_color(L_RED, logs_a[3].attr);
-  assert_eq_trace(L_TRACE, logs_a[3].attr);
+  assert_eq_color(L_BLUE, logs_b[0].attr);
+  assert_eq_color(L_RED, logs_a[1].attr);
+  assert_eq_trace(L_TRACE, logs_a[1].attr);
+  assert_eq_color(L_RED, logs_b[1].attr);
+  assert_eq_trace(L_TRACE, logs_b[1].attr);
 
   finally : coda;
 }
 
-static xapi test_category_list_merge_common_A()
+static void free_cat(logger_category * cat)
 {
-  enter;
-
-  list * A = 0;
-  list * B = 0;
-  list * C = 0;
-
-  fatal(list_create, &A);
-  fatal(list_create, &B);
-  fatal(list_create, &C);
-
-  fatal(list_push, A, (logger_category[]) {{ name : "B" }});
-  fatal(list_push, A, (logger_category[]) {{ name : "C" }});
-
-  fatal(list_push, B, (logger_category[]) {{ name : "C" }});
-  fatal(list_push, B, (logger_category[]) {{ name : "D" }});
-
-  fatal(category_list_merge, A, B, C);
-
-  assert_eq_zu(4, C->l);
-  fatal(assert_together, C);
-  fatal(assert_before, C, "B", "C");
-  fatal(assert_before, C, "C", "D");
-
-finally:
-  fatal(list_xfree, A);
-  fatal(list_xfree, B);
-  fatal(list_xfree, C);
-coda;
+  wfree(cat->name);
+  wfree(cat);
 }
 
-static xapi test_category_list_merge_common_B()
+static xapi test_category_lists_merge(struct test * test)
 {
   enter;
 
   list * A = 0;
-  list * B = 0;
+  list * lists = 0;
   list * C = 0;
+  logger_category * cat = 0;
 
-  fatal(list_create, &A);
-  fatal(list_create, &B);
+  fatal(list_createx, &lists, 0, list_xfree, 0);
   fatal(list_create, &C);
 
-  fatal(list_push, A, (logger_category[]) {{ name : "B" }});
-  fatal(list_push, A, (logger_category[]) {{ name : "C" }});
+  // arrange
+  char ** input = test->lists;
+  while(*input)
+  {
+    fatal(list_createx, &A, free_cat, 0, 0);
 
-  fatal(list_push, B, (logger_category[]) {{ name : "A" }});
-  fatal(list_push, B, (logger_category[]) {{ name : "B" }});
+    char * s = *input;
+    while(*s)
+    {
+      char * e = s;
+      while(*e >= 'A' && *e <= 'Z')
+        e++;
 
-  fatal(category_list_merge, A, B, C);
+      if(e - s)
+      {
+        fatal(xmalloc, &cat, sizeof(*cat));
+        fatal(strloadw, &cat->name, s, e - s);
+        fatal(list_push, A, cat);
+        cat = 0;
+      }
 
-  assert_eq_zu(4, C->l);
-  fatal(assert_together, C);
-  fatal(assert_before, C, "B", "C");
-  fatal(assert_before, C, "A", "B");
+      s = e;
+      while(*s == ' ')
+        s++;
+    }
+
+    fatal(list_push, lists, A);
+    A = 0;
+    input++;
+  }
+
+  // act
+  fatal(category_lists_merge, lists, C);
+
+  // assert
+  input = test->lists;
+  while(*input)
+  {
+    char * cats[2] = {};
+    size_t lens[2] = {};
+
+    char * s = *input;
+    while(*s)
+    {
+      char * e = s;
+      while(*e >= 'A' && *e <= 'Z')
+        e++;
+
+      cats[0] = cats[1];
+      lens[0] = lens[1];
+
+      cats[1] = s;
+      lens[1] = e - s;
+
+      if(lens[0])
+        fatal(assert_relation, C, cats[0], lens[0], cats[1], lens[1]);
+
+      s = e;
+      while(*s == ' ')
+        s++;
+    }
+
+    input++;
+  }
 
 finally:
+  if(cat)
+    wfree(cat->name);
+  wfree(cat);
   fatal(list_xfree, A);
-  fatal(list_xfree, B);
-  fatal(list_xfree, C);
-coda;
-}
-
-static xapi test_category_list_merge_nocommon()
-{
-  enter;
-
-  list * A = 0;
-  list * B = 0;
-  list * C = 0;
-
-  fatal(list_create, &A);
-  fatal(list_create, &B);
-  fatal(list_create, &C);
-
-  fatal(list_push, A, (logger_category[]) {{ name : "B" }});
-  fatal(list_push, A, (logger_category[]) {{ name : "B" }});
-  fatal(list_push, A, (logger_category[]) {{ name : "C" }});
-  fatal(list_push, A, (logger_category[]) {{ name : "C" }});
-  fatal(list_push, A, (logger_category[]) {{ name : "C" }});
-
-  fatal(list_push, B, (logger_category[]) {{ name : "D" }});
-  fatal(list_push, B, (logger_category[]) {{ name : "E" }});
-
-  fatal(category_list_merge, A, B, C);
-
-  assert_eq_zu(7, C->l);
-  fatal(assert_together, C);
-  fatal(assert_before, C, "B", "C");
-  fatal(assert_before, C, "D", "E");
-
-finally:
-  fatal(list_xfree, A);
-  fatal(list_xfree, B);
+  fatal(list_xfree, lists);
   fatal(list_xfree, C);
 coda;
 }
@@ -581,44 +372,146 @@ int main()
   xapi R = 0;
   int x = 0;
 
-  struct {
-    xapi (*entry)();
-    xapi expected;
-  } tests[] = {
-      { entry : test_category_list_merge_success }
-    , { entry : test_category_list_merge_success_two }
-    , { entry : test_category_list_merge_success_two_activate }
-    , { entry : test_category_list_merge_success_nonunique }
-    , { entry : test_category_list_merge_success_max }
-
-    , { entry : test_category_list_merge_failure_order, expected : LOGGER_ILLORDER }
-    , { entry : test_category_list_merge_failure_order_single, expected : LOGGER_ILLREPEAT }
-    , { entry : test_category_list_merge_failure_toomany, expected : LOGGER_TOOMANY }
-
+  struct test tests[] = {
+      { entry : test_category_list_merge_success_max }
+    , { entry : test_category_list_merge_failure_toomany, exit : LOGGER_TOOMANY }
     , { entry : test_category_list_merge_attr_rank }
-    , { entry : test_category_list_merge_common_A }
-    , { entry : test_category_list_merge_common_B }
-    , { entry : test_category_list_merge_nocommon }
+    , {
+        lists : (char*[]) {
+              "A"
+            , 0
+          }
+      }
+    , {
+          lists : (char*[]) {
+              "A"
+            , "A"
+            , 0
+          }
+      }
+    , {
+          lists : (char*[]) {
+              "A"
+            , "A"
+            , "A"
+            , 0
+          }
+      }
+    , {
+          lists : (char*[]) {
+              "B C D"
+            , "  C D"
+            , 0
+          }
+      }
+    , {
+          lists : (char*[]) {
+              "C D"
+            , "C D E"
+            , 0
+          }
+      }
+    , {
+          lists : (char*[]) {
+              "B C D"
+            , "  C D"
+            , "B C D"
+            , 0
+          }
+      }
+    , {
+          lists : (char*[]) {
+              "B C D"
+            , "B C"
+            , "B C D"
+            , 0
+          }
+      }
+    , {
+          lists : (char*[]) {
+              "B C D"
+            , "B C D"
+            , "B C D"
+            , 0
+          }
+      }
+    , {
+          lists : (char*[]) {
+               "A C E"
+             , "B E G"
+             , "A G Z"
+             , 0
+           }
+      }
+    , {
+          lists : (char*[]) {
+               "B"
+             , "A B"
+             , "A B"
+             , 0
+           }
+      }
+/*
+ * failure cases
+ */
+    , {
+          lists : (char*[]) { "A B A", 0 }
+        , exit : LOGGER_ILLREPEAT
+      }
+    , {
+          lists : (char*[]) {
+               "B A"
+             , "A B C"
+             , 0
+           }
+        , exit : LOGGER_ILLORDER
+      }
+    , {
+          lists : (char*[]) {
+               "A B C"
+             , "  B C D"
+             , "    C D X Y"
+             , "  B     X   Z  A"
+             , 0
+           }
+        , exit : LOGGER_ILLORDER
+      }
+    , {
+          lists : (char*[]) {
+               "  A B C"
+             , "      C D W X Y"
+             , "X   B   D W"
+             , 0
+           }
+        , exit : LOGGER_ILLORDER
+      }
   };
 
   for(x = 0; x < sizeof(tests) / sizeof(tests[0]); x++)
   {
+    fatal(category_cleanup);
     fatal(category_setup);
 
     xapi exit;
-    if((exit = invoke(tests[x].entry)))
+    if(tests[x].entry)
+      exit = invoke(tests[x].entry, &tests[x]);
+    else
+      exit = invoke(test_category_lists_merge, &tests[x]);
+
+    if(exit)
     {
       // propagate unexpected errors
       if(xapi_exit_errtab(exit) != perrtab_LOGGER)
         fail(0);
 
-      if(exit != tests[x].expected)
+      if(exit != tests[x].exit)
         xapi_backtrace_to(1);
       xapi_calltree_unwind();
     }
 
-    assert_eq_exit(tests[x].expected, exit);
-    fatal(category_cleanup);
+    assert_infof("test", "%d in [%d,%zu]", x, 0, sizeof(tests) / sizeof(tests[0]));
+    assert_eq_exit(tests[x].exit, exit);
+    assert_info_unstage();
   }
 
 finally:

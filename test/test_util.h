@@ -158,6 +158,11 @@ static inline void assert_infos(const char * restrict key, const char * restrict
   xapi_info_pushs(key, val);
 }
 
+static inline void assert_infow(const char * restrict key, const char * restrict vbuf, size_t vlen)
+{
+  xapi_info_pushw(key, vbuf, vlen);
+}
+
 static inline void assert_infof(const char * restrict key, const char * restrict fmt, ...)
 {
   va_list va;

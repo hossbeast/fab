@@ -27,8 +27,6 @@
 struct narrator;  // libnarrator
 struct list;
 
-extern struct list * activated;
-
 /// category_name_max_length
 //
 // SUMMARY
@@ -58,21 +56,21 @@ xapi category_setup(void);
 xapi category_cleanup(void);
 
 
-/// category_list_merge
+/// category_lists_merge
 //
 // SUMMARY
-//  merge two lists of categories in such a way that preserves the ordering of
-//  each element relative to other elements in its source list
+//  merge lists of categories into a new list such that relative ordering among elements in the
+//  source lists is preserved
 //
 // PARAMETERS
-//  A - source list
-//  B - source list
-//  C - dest list
+//  lists - lists to merge
+//  C     - dest list
 //
 // THROWS
-//  ILLORDER - relative ordering of all elements cannot be maintained
+//  ILLREPEAT
+//  ILLORDER
 //
-xapi category_list_merge(struct list * restrict A, struct list * restrict B, struct list * restrict C)
+xapi category_lists_merge(struct list * restrict lists, struct list * restrict C)
   __attribute__((nonnull));
 
 /// categories_activate

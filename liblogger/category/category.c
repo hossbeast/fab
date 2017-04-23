@@ -25,6 +25,7 @@
 #include "valyria/pstring.h"
 #include "valyria/list.h"
 #include "valyria/dictionary.h"
+#include "valyria/array.h"
 #include "valyria/map.h"
 
 #include "internal.h"
@@ -35,18 +36,7 @@
 #include "logging.internal.h"
 
 #include "macros.h"
-
-
-/// location
-//
-// tracks two sequences of elements with the same name that are common to both lists
-//
-typedef struct location {
-  int ax;     // index of the first element in A
-  int axl;    // number of elements in A
-  int bx;     // index of the first element in B
-  int bxl;    // number of elements in B
-} location;
+#include "zbuffer.h"
 
 #define restrict __restrict
 
@@ -56,21 +46,93 @@ uint64_t category_optional_mask;
 // maximum number of unique categories by name
 #define MAX_CATEGORIES  (sizeof(((logger_category*)0)->id) * 8)
 
+// list of registered category lists
+static list * registered;
+
+// activated categories, in decreasing order of precedence
+static list * activated;
+
+static map * activated_byname;
+static map * activated_byid;
+
 //
 // static
 //
 
-// categories that have been registered but not yet activated
-static list * registered;
+/// select_category
+//
+// SUMMARY
+//  copy instances of a category from source lists to the dst list
+//
+static xapi select_category(list * restrict lists, dictionary * restrict index, dictionary * restrict selections, list * restrict dst, const char * restrict name)
+{
+  enter;
 
-// working space for category_list_merge
-static list * registering;
+  int * state;
+  int * indexes;
+  int x;
+  int y;
 
-// activated categories, in decreasing order of precedence
-list * activated;
+  if((state = dictionary_get(selections, MMS(name))) == 0)
+    fatal(dictionary_set, selections, MMS(name), &state);
 
-static map * activated_byname;
-static map * activated_byid;
+  // this category was already selected
+  if(*state == 2)
+    goto XAPI_FINALIZE;
+
+  // this category is being selected in another frame
+  else if(*state == 1)
+  {
+    char space[128];
+    char * s = space;
+    size_t sz = sizeof(space);
+    size_t z = 0;
+
+    for(x = 0; x < dictionary_table_size(selections); x++)
+    {
+      const char * key;
+      if((key = dictionary_table_key(selections, x)))
+      {
+        int * val = dictionary_table_value(selections, x);
+        if(*val == 1)
+        {
+          if(z)
+            z += znloads(s + z, sz - z, ", ");
+          z += znloads(s + z, sz - z, key);
+        }
+      }
+    }
+
+    failw(LOGGER_ILLORDER, "categories", s, z);
+  }
+
+  *state = 1;
+  indexes = dictionary_get(index, MMS(name));
+
+  for(x = 0; x < lists->l; x++)
+  {
+    list * A = list_get(lists, x);
+
+    for(y = 0; y < indexes[x]; y++)
+    {
+      logger_category * cat = list_get(A, y);
+      fatal(select_category, lists, index, selections, dst, cat->name);
+    }
+  }
+
+  for(x = 0; x < lists->l; x++)
+  {
+    if(indexes[x] < 0)
+      continue;
+
+    list * A = list_get(lists, x);
+    fatal(list_replicate, dst, dst->l, A, indexes[x], 1);
+  }
+
+  *state = 2;
+
+  finally : coda;
+}
 
 //
 // public
@@ -80,8 +142,7 @@ xapi category_setup()
 {
   enter;
 
-  fatal(list_create, &registered);
-  fatal(list_create, &registering);
+  fatal(list_createx, &registered, 0, list_xfree, 0);
   fatal(list_create, &activated);
   fatal(map_create, &activated_byname);
   fatal(map_create, &activated_byid);
@@ -94,7 +155,6 @@ xapi category_cleanup()
   enter;
 
   fatal(list_ixfree, &registered);
-  fatal(list_ixfree, &registering);
   fatal(list_ixfree, &activated);
   fatal(map_ixfree, &activated_byname);
   fatal(map_ixfree, &activated_byid);
@@ -161,158 +221,57 @@ uint32_t categories_attrs(uint64_t ids)
   return attrs;
 }
 
-xapi category_list_merge(list * restrict A, list * restrict B, list * restrict C)
+xapi category_lists_merge(list * restrict lists, list * restrict dst)
 {
   enter;
 
-  dictionary * common = 0;
-  location ** ax = 0;
-  location ** bx = 0;
-  int c = 0;    // number of sequences in common
+  dictionary * selections = 0;    // per category selection state
+  dictionary * index = 0;         // per category per list element index
+
   int x;
+  int y;
 
-  // build a map of element sequences common between the two lists
-  fatal(dictionary_create, &common, sizeof(location));
+  fatal(dictionary_create, &index, sizeof(int) * lists->l);
+  fatal(dictionary_create, &selections, sizeof(int));
 
-  x = 0;
-  int y = 0;
-  while(x < list_size(A) || y < list_size(B))
+  // index = { category-name : [ <element-index> @ <list-index> ] }
+  //  mapping from element name to per-list index of its occurrence
+  for(x = 0; x < lists->l; x++)
   {
-    if(x < list_size(A))
+    list * listp = list_get(lists, x);
+    for(y = 0; y < listp->l; y++)
     {
-      logger_category * a = list_get(A, x);
-      location * loc;
-      if((loc = dictionary_get(common, MMS(a->name))))
+      logger_category * cat = list_get(listp, y);
+      int * indexes = 0;
+      if((indexes = dictionary_get(index, MMS(cat->name))) == 0)
       {
-        if(loc->ax != -1 && (loc->ax + loc->axl) != x)
-        {
-          failf(LOGGER_ILLREPEAT, "category", "%s", a->name);
-        }
-      }
-      else
-      {
-        fatal(dictionary_set, common, MMS(a->name), &loc);
-        loc->ax = -1;
-        loc->bx = -1;
+        fatal(dictionary_set, index, MMS(cat->name), &indexes);
+
+        int i;
+        for(i = 0; i < lists->l; i++)
+          indexes[i] = -1;
       }
 
-      if(loc->ax == -1)
-        loc->ax = x;
-      loc->axl++;
-      x++;
-    }
+      if(indexes[x] != -1)
+        fails(LOGGER_ILLREPEAT, "category", cat->name);
 
-    if(y < list_size(B))
-    {
-      logger_category * b = list_get(B, y);
-      location * loc;
-      if((loc = dictionary_get(common, MMS(b->name))))
-      {
-        if(loc->bx != -1 && (loc->bx + loc->bxl) != y)
-        {
-          failf(LOGGER_ILLREPEAT, "category", "%s", b->name);
-        }
-      }
-      else
-      {
-        fatal(dictionary_set, common, MMS(b->name), &loc);
-        loc->ax = -1;
-        loc->bx = -1;
-      }
-      if(loc->bx == -1)
-        loc->bx = y;
-      loc->bxl++;
-      y++;
+      indexes[x] = y;
     }
   }
 
-  // create a copy of the common sequence locations for each list
-  fatal(xmalloc, &ax, sizeof(*ax) * dictionary_size(common));
-  fatal(xmalloc, &bx, sizeof(*bx) * dictionary_size(common));
-
-  for(x = 0; x < dictionary_table_size(common); x++)
+  for(x = 0; x < lists->l; x++)
   {
-    location * loc = 0;
-    if((loc = dictionary_table_value(common, x)))
+    list * A = list_get(lists, x);
+    for(y = 0; y < A->l; y++)
     {
-      if(loc->ax >= 0 && loc->bx >= 0)
-      {
-        ax[c] = loc;
-        bx[c] = loc;
-        c++;
-      }
-    }
-  }
-
-  // sort the per-list sequence lists
-  int compar(const void * _A, const void * _B, void * arg)
-  {
-    location * A = *(location **)_A;
-    location * B = *(location **)_B;
-
-    if(arg)
-      return A->ax - B->ax;
-    else
-      return A->bx - B->bx;
-  };
-  qsort_r(ax, c, sizeof(*ax), compar, (void*)1);
-  qsort_r(bx, c, sizeof(*bx), compar, (void*)0);
-
-  // walk the lists, write to C, and verify that the common elements appear in the same order
-  fatal(list_recycle, C);
-
-  x = 0;
-  y = 0;
-  int cx = 0;
-  while(x < list_size(A) || y < list_size(B))
-  {
-    logger_category * a = 0;
-    logger_category * b = 0;
-
-    if(cx < c && x == ax[cx]->ax && y == bx[cx]->bx)
-    {
-      a = list_get(A, x);
-      b = list_get(B, y);
-
-      // common elements must appear in the same order
-      if(strcmp(a->name, b->name))
-      {
-        xapi_info_pushf("categories", "%s, %s", a->name, b->name);
-        fail(LOGGER_ILLORDER);
-      }
-
-      // take all elements from both sequences
-      fatal(list_replicate, C, C->l, A, x, ax[cx]->axl);
-      x += ax[cx]->axl;
-      fatal(list_replicate, C, C->l, B, y, bx[cx]->bxl);
-      y += bx[cx]->bxl;
-
-      cx++;
-    }
-    else
-    {
-      if(x < list_size(A) && (cx == c || x < ax[cx]->ax))
-      {
-        a = list_get(A, x);
-        location * loc = dictionary_get(common, MMS(a->name));
-        fatal(list_replicate, C, C->l, A, x, loc->axl);
-        x += loc->axl;
-      }
-
-      else // if(y < list_size(B))
-      {
-        b = list_get(B, y);
-        location * loc = dictionary_get(common, MMS(b->name));
-        fatal(list_replicate, C, C->l, B, y, loc->bxl);
-        y += loc->bxl;
-      }
+      logger_category * cat = list_get(A, y);
+      fatal(select_category, lists, index, selections, dst, cat->name);
     }
   }
 
 finally:
-  fatal(dictionary_xfree, common);
-  wfree(ax);
-  wfree(bx);
+  fatal(dictionary_xfree, selections);
+  fatal(dictionary_xfree, index);
 coda;
 }
 
@@ -370,8 +329,8 @@ API xapi categories_activate()
   fatal(map_create, &activating_byname);
   fatal(map_create, &activating_byid);
 
-  // merge the activated list with the registered list
-  fatal(category_list_merge, registered, activated, activating);
+  // merge the registered lists, preserving intra-list dependencies
+  fatal(category_lists_merge, registered, activating);
 
   int x;
   for(x = 0; x < list_size(activating); x++)
@@ -380,10 +339,11 @@ API xapi categories_activate()
     int anyzero = !((logger_category *)list_get(activating, x))->id;
 
     // find the bounds of the name-group
+    logger_category * A = list_get(activating, x);
+
     int y;
     for(y = x + 1; y < list_size(activating); y++)
     {
-      logger_category * A = list_get(activating, x);
       logger_category * B = list_get(activating, y);
       if(strcmp(A->name, B->name))
         break;
@@ -401,7 +361,10 @@ API xapi categories_activate()
     // assign the id to all members of the name-group
     int i;
     for(i = x; i < y; i++)
-      ((logger_category *)list_get(activating, i))->id = id;
+    {
+      logger_category * cat = list_get(activating, i);
+      cat->id = id;
+    }
 
     logger_category * category = list_get(activating, x);
     char * name = category->name;
@@ -462,9 +425,6 @@ API xapi categories_activate()
   activated_byid = activating_byid;
   activating_byid = T;
 
-  fatal(list_ixfree, &registered);
-  fatal(list_ixfree, &registering);
-
 finally:
   fatal(list_xfree, activating);
   fatal(map_xfree, activating_byname);
@@ -507,13 +467,8 @@ API xapi logger_category_register(logger_category * logs)
 {
   enter;
 
-  if(!registered)
-    fatal(list_create, &registered);
-
-  if(!registering)
-    fatal(list_create, &registering);
-
   list * tmp = 0;
+
   fatal(list_create, &tmp);
   while(logs->name)
   {
@@ -521,13 +476,8 @@ API xapi logger_category_register(logger_category * logs)
     logs++;
   }
 
-  // merge the registered list with the new list
-  fatal(category_list_merge, tmp, registered, registering);
-
-  // swap registering and registered
-  void * T = registered;
-  registered = registering;
-  registering = T;
+  fatal(list_push, registered, tmp);
+  tmp = 0;
 
 finally:
   fatal(list_xfree, tmp);
