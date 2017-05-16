@@ -45,7 +45,7 @@ printf("not numeric at %s:%d\n", __FILE__, __LINE__);
       return 1;
     }
   }
-  if(strchr(f, 'i'))
+  else if(strchr(f, 'i'))
   {
     if(sscanf(s, "%"SCNiMAX"%n", &tr, &tn) != 1)
     {
@@ -54,6 +54,10 @@ printf("not numeric at %s:%d\n", __FILE__, __LINE__);
 #endif
       return 1;
     }
+  }
+  else
+  {
+    return 1;
   }
 
   if(errno == ERANGE)         /* larger, or smaller, than intmax can hold */
@@ -159,7 +163,7 @@ printf("not numeric at %s:%d\n", __FILE__, __LINE__);
       return 1;
     }
   }
-  if(strchr(f, 'u'))
+  else if(strchr(f, 'u'))
   {
     if(sscanf(s, "%"SCNuMAX"%n", &tr, &tn) != 1)
     {
@@ -169,7 +173,7 @@ printf("not numeric at %s:%d\n", __FILE__, __LINE__);
       return 1;
     }
   }
-  if(strchr(f, 'x'))
+  else if(strchr(f, 'x'))
   {
     if(sscanf(s, "%"SCNxMAX"%n", &tr, &tn) != 1)
     {
@@ -178,6 +182,10 @@ printf("not numeric at %s:%d\n", __FILE__, __LINE__);
 #endif
       return 1;
     }
+  }
+  else
+  {
+    return 1;
   }
 
   if(errno == ERANGE)         /* larger, or smaller, than intmax can hold */
@@ -268,7 +276,10 @@ xapi xparseint(const char* const s, char* f, intmax_t lo, intmax_t hi, uint8_t m
   if(parseint(s, f, lo, hi, min, max, r, rn))
     fail(SYS_INVALID);
 
-  finally : coda;
+finally:
+  xapi_infos("string", s);
+  xapi_infos("format", f);
+coda;
 }
 
 xapi xparseuint(const char* const s, char* f, uintmax_t lo, uintmax_t hi, uint8_t min, uint8_t max, void* r, int* rn)
@@ -278,5 +289,8 @@ xapi xparseuint(const char* const s, char* f, uintmax_t lo, uintmax_t hi, uint8_
   if(parseuint(s, f, lo, hi, min, max, r, rn))
     fail(SYS_INVALID);
 
-  finally : coda;
+finally:
+  xapi_infos("string", s);
+  xapi_infos("format", f);
+coda;
 }
