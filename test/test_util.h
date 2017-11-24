@@ -37,6 +37,7 @@ REMARKS
 #include "xapi.h"
 #include "xapi/exit.h"
 #include "xapi/errtab.h"
+#include "types.h"
 
 #include "errtab/TEST.errtab.h"
 
@@ -44,8 +45,6 @@ REMARKS
 
 extern uint32_t assertions_passed;
 extern uint32_t assertions_failed;
-
-#define restrict __restrict
 
 void ufailf_info(const char * restrict value, const char * restrict expfmt, const char * restrict actfmt, ...)
   __attribute__((nonnull(1, 2, 3)));
@@ -109,8 +108,36 @@ void ufails_info(const char * restrict value, const char * restrict exp, const c
 #define assert_eq_u64(exp, act)                 \
   _assertf(act == exp, QUOTE(act), "%"PRIu64, "%"PRIu64, exp, act)
 
+#define assert_eq_b(exp, act)                                         \
+  _assertf(act == exp, QUOTE(act), "%s", "%s", exp ? "true" : "false", act ? "true" : "false")
+
+#define assert_eq_s(exp, act)                 \
+  _asserts(strcmp(act, exp) == 0, QUOTE(act), exp, act)
+
+
+#define assert_that(act)  \
+  _assertf(act, QUOTE(act), "true", "false")
+
+
+#define assert_ne_c(exp, act)                 \
+  _assertf(act != exp, QUOTE(act), "!= %c", "%c", exp, act)
+
+#define assert_ne_d(exp, act)                 \
+  _assertf(act != exp, QUOTE(act), "!= %d", "%d", exp, act)
+
+#define assert_ne_zu(exp, act)                 \
+  _assertf(act != exp, QUOTE(act), "!= %zu", "%zu", exp, act)
+
+#define assert_ne_u32(exp, act)                 \
+  _assertf(act != exp, QUOTE(act), "!= %"PRIu32, "%"PRIu32, exp, act)
+
+#define assert_ne_u64(exp, act)                 \
+  _assertf(act != exp, QUOTE(act), "!= %"PRIu64, "%"PRIu64, exp, act)
+
+
 #define assert_ge_d(exp, act)                 \
   _assertf(act >= exp, QUOTE(act), ">= %d", "%d", exp, act)
+
 
 #define assert_gt_d(exp, act)                 \
   _assertf(act > exp, QUOTE(act), "> %d", "%d", exp, act)
@@ -121,25 +148,22 @@ void ufails_info(const char * restrict value, const char * restrict exp, const c
 #define assert_gt_zu(exp, act)                  \
   _assertf(act > exp, QUOTE(act), "> %zu", "%zu", exp, act)
 
+
 #define assert_lt_d(exp, act)                 \
   _assertf(act < exp, QUOTE(act), "< %d", "%d", exp, act)
 
 #define assert_le_d(exp, act)                 \
   _assertf(act <= exp, QUOTE(act), "<= %d", "%d", exp, act)
 
-#define assert_eq_s(exp, act)                 \
-  _asserts(strcmp(act, exp) == 0, QUOTE(act), exp, act)
-
-#define assert_eq_b(exp, act)                                         \
-  _assertf(act == exp, QUOTE(act), "%s", "%s", exp ? "true" : "false", act ? "true" : "false")
-
 #define assert_eq_exit(expected, actual)                 \
   _assertf(                                              \
       expected == actual                                 \
     , QUOTE(actual)                                      \
-    , "%s(%d)", "%s(%d)"                                 \
+    , "%s_%s(%d)", "%s_%s(%d)"                           \
+    , xapi_exit_errtab_name(expected)                    \
     , xapi_exit_errname(expected)                        \
     , expected                                           \
+    , xapi_exit_errtab_name(actual)                      \
     , xapi_exit_errname(actual)                          \
     , actual                                             \
   )
@@ -189,5 +213,4 @@ static inline void assert_info_unstage()
     );                                                                                      \
   } while(0)
 
-#undef restrict
 #endif

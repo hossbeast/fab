@@ -25,6 +25,7 @@
 
 #include "internal.h"
 #include "map.internal.h"
+#include "faults.internal.h"
 #include "maputils.internal.h"
 
 #include "macros.h"

@@ -21,6 +21,7 @@
 
 #include "internal.h"
 #include "maputils.internal.h"
+#include "faults.internal.h"
 
 /// maputils_hashkey
 //
@@ -33,6 +34,21 @@ size_t maputils_hashkey(const char * restrict k, size_t kl, size_t lm)
 {
   size_t x;
   size_t h = 0;
+
+  if(fault(MAPDEF_HASH_BOUNDARY_ALL))
+  {
+    return lm;
+  }
+  else if(fault(MAPDEF_HASH_BOUNDARY_KEY))
+  {
+    for(x = 0; x < fault_state.mapdef_hash_boundary.len; x++)
+    {
+      typeof(*fault_state.mapdef_hash_boundary.keys) faultkey = fault_state.mapdef_hash_boundary.keys[x];
+
+      if(kl == faultkey.len && memcmp(k, faultkey.key, kl) == 0)
+        return lm;
+    }
+  }
 
   for(x = 0; x < kl; x++)
   {

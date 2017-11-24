@@ -187,8 +187,8 @@ $cflags_final = [ -O3 ]
 $cflags_debug = [ -O0 -ggdb3 -DDEBUG ]
 
 # -Wno-frame-address is required for libxapi stack unwinding, for now
-$cflags_devel = [ -O0 -ggdb3 -DDEVEL -Wno-frame-address [ -DBUILDROOT="\""$buildroot"\"" ~ j ] ]
-$cflags_xunit = [ -O0 -ggdb3 -DXUNIT -Wno-frame-address [ $dlibxunit ~ s/^/-I ] ]
+$cflags_devel = [ -O0 -ggdb3 -DDEVEL -Wno-frame-address -DFAULT_INJECTION [ -DBUILDROOT="\""$buildroot"\"" ~ j ] ]
+$cflags_xunit = [ -O0 -ggdb3 -DXUNIT -Wno-frame-address -DFAULT_INJECTION [ $dlibxunit ~ s/^/-I ] ]
 
 # cflags variants
 $cflags_eapi_final = [ $cflags -DXAPI_MODE_ERRORCODE $cflags_final ]
