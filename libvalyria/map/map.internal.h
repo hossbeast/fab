@@ -15,8 +15,8 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef _MAP_DEF_H
-#define _MAP_DEF_H
+#ifndef _MAP_INTERNAL_H
+#define _MAP_INTERNAL_H
 
 /*
 
@@ -32,14 +32,23 @@ SUMMARY
 #include <stdint.h>
 
 #include "xapi.h"
+#include "map.h"
 
-#define MAP_PRIMARY     0x01    /* primary storage of the values in the map */
-#define MAP_SECONDARY   0x02    /* not the primary storage of the values in the map */
+#define VALUE_SIZE(m) ({          \
+  size_t valz = sizeof(void*);    \
+  if(MAPATTR_PRIMARY(m))          \
+  {                               \
+    valz = (m)->vsz;              \
+  }                               \
+  valz;                           \
+})
+#define MAPATTR_PRIMARY(m) ((m)->attr & MAP_PRIMARY)
 
 typedef struct
 {
-  int     d;      // deleted (boolean)
-  size_t  a;      // allocated
+  uint8_t attr;
+
+  size_t  a;      // allocated size of p
   size_t  l;      // length
   char    p[];    // payload
 } __attribute__((packed)) key;
@@ -47,14 +56,14 @@ typedef struct
 struct map
 {
   size_t      size;           // number of active entries
+  size_t      table_size;     // table length, in elements (always a power of two)
+  size_t      overflow_size;  // size at which to rehash
+  size_t      lm;             // bitmask equal to table_size - 1
   uint32_t    attr;           // options and modifiers
   size_t      vsz;            // for MAP_PRIMARY, size of values
   void (*free_value)(void *);
   xapi (*xfree_value)(void *);
 
-  size_t      table_size;     // table length, in elements (always a power of two)
-  size_t      overflow_size;  // size at which to rehash
-  size_t      lm;             // bitmask equal to table_size - 1
   key **      tk;             // key table
   char *      tv;             // value table
 };

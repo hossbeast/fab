@@ -16,10 +16,9 @@
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
 #include "internal.h"
-#include "dictionary.h"
-
-#include "map.h"
-#include "map.def.h"
+#include "dictionary.internal.h"
+#include "map.internal.h"
+#include "maputils.internal.h"
 
 struct dictionary
 {

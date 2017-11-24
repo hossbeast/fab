@@ -22,7 +22,7 @@
 #include "xapi/trace.h"
 #include "xlinux/xstdlib.h"
 
-#include "dictionary.h"
+#include "dictionary.internal.h"
 #include "test_util.h"
 
 #include "macros.h"

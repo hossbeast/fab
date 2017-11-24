@@ -15,39 +15,34 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
+#include <string.h>
+
 #include "xapi.h"
 
-#include "xlinux/load.h"
-
 #include "internal.h"
-#include "load.internal.h"
+#include "maputils.internal.h"
 
+/// maputils_hashkey
 //
-// api
+// compute the hash of a key
 //
-
-static int handles;
-
-API xapi valyria_load()
+// REMARKS
+//  the jenkins hash function : http://en.wikipedia.org/wiki/Jenkins_hash_function
+//
+size_t maputils_hashkey(const char * restrict k, size_t kl, size_t lm)
 {
-  enter;
+  size_t x;
+  size_t h = 0;
 
-  if(handles++ == 0)
+  for(x = 0; x < kl; x++)
   {
-    fatal(xlinux_load);
+    h += k[x];
+    h += (h << 10);
+    h ^= (h >> 6);
   }
+  h += (h << 3);
+  h ^= (h >> 11);
+  h += (h << 15);
 
-  finally : coda;
-}
-
-API xapi valyria_unload()
-{
-  enter;
-
-  if(--handles == 0)
-  {
-    fatal(xlinux_unload);
-  }
-
-  finally : coda;
+  return h & lm;
 }

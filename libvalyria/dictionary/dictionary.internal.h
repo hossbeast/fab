@@ -15,39 +15,9 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#include "xapi.h"
+#ifndef _VALYRIA_DICTIONARY_INTERNAL_H
+#define _VALYRIA_DICTIONARY_INTERNAL_H
 
-#include "xlinux/load.h"
+#include "dictionary.h"
 
-#include "internal.h"
-#include "load.internal.h"
-
-//
-// api
-//
-
-static int handles;
-
-API xapi valyria_load()
-{
-  enter;
-
-  if(handles++ == 0)
-  {
-    fatal(xlinux_load);
-  }
-
-  finally : coda;
-}
-
-API xapi valyria_unload()
-{
-  enter;
-
-  if(--handles == 0)
-  {
-    fatal(xlinux_unload);
-  }
-
-  finally : coda;
-}
+#endif

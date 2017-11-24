@@ -20,11 +20,12 @@
 #include <string.h>
 
 #include "xapi.h"
+#include "types.h"
 #include "xlinux/xstdlib.h"
 
 #include "internal.h"
-#include "map.h"
-#include "map.def.h"
+#include "map.internal.h"
+#include "maputils.internal.h"
 
 #include "macros.h"
 
@@ -40,60 +41,11 @@
  *
  * smaller values trade space for time because sparser tables mean shorter probe sequences
  */
-#define SATURATION        0.45f      /* for 100-sized table, reallocate at 45 keys */
-
-#define VALUE_SIZE(m) ({          \
-  size_t valz = sizeof(void*);    \
-  if((m)->attr & MAP_PRIMARY)     \
-  {                               \
-    valz = (m)->vsz;              \
-  }                               \
-  valz;                           \
-})
-
-#define VALUE(m, tv, x) ({                         \
-  void * val;                                      \
-  if((m)->attr & MAP_PRIMARY)                      \
-  {                                                \
-    val = tv + ((x) * VALUE_SIZE(m));              \
-  }                                                \
-  else                                             \
-  {                                                \
-    val = *(char**)(tv + ((x) * VALUE_SIZE(m)));   \
-  }                                                \
-  val;                                             \
-})
-
-#define restrict __restrict
+#define MAX_SATURATION    0.45f      /* for 100-sized table, reallocate at 45 keys */
 
 //
 // static
 //
-
-/// hashkey
-//
-// SUMMARY
-//  compute a hash for the key
-//
-// REMARKS
-//  the jenkins hash function : http://en.wikipedia.org/wiki/Jenkins_hash_function
-//
-static size_t __attribute__((nonnull)) hashkey(const char * const restrict k, const size_t kl, size_t lm)
-{
-  size_t x;
-  size_t h = 0;
-  for(x = 0; x < kl; x++)
-  {
-    h += k[x];
-    h += (h << 10);
-    h ^= (h >> 6);
-  }
-  h += (h << 3);
-  h ^= (h >> 11);
-  h += (h << 15);
-
-  return h & lm;
-}
 
 /// probe
 //
@@ -111,19 +63,19 @@ static size_t __attribute__((nonnull)) hashkey(const char * const restrict k, co
 //   1 : not found, and the first deleted slot in the probe sequence is returned in i
 //  -1 : not found
 //
-static int __attribute__((nonnull)) probe(const map * const restrict m, const void * const restrict key, const size_t keyl, size_t * const restrict i)
+static int __attribute__((nonnull)) probe(const map * restrict m, const void * restrict key, size_t keyl, size_t * restrict i)
 {
   // start at the index which the key hashes to
-  *i = hashkey(key, keyl, m->lm);
+  *i = maputils_hashkey(key, keyl, m->lm);
 
   size_t ij = 0;
   size_t * ijp = &ij;
 
   while(1)
   {
-    if(m->tk[*i] && (m->tk[*i]->l || m->tk[*i]->d))
+    if(m->tk[*i])
     {
-      if(m->tk[*i]->d)
+      if(m->tk[*i]->attr & MAP_KEY_DELETED)
       {
         if(ijp)
           *ijp = *i;
@@ -146,7 +98,6 @@ static int __attribute__((nonnull)) probe(const map * const restrict m, const vo
       return -1;
     }
 
-    // ring increment
     (*i)++;
     (*i) &= m->lm;
   }
@@ -167,21 +118,14 @@ xapi map_allocate(
 {
   enter;
 
-  fatal(xmalloc, m, sizeof(*m[0]));
+  fatal(xmalloc, m, sizeof(**m));
 
   // compute initial table size for 100 keys @ given saturation
-  (*m)->table_size = (capacity ?: DEFAULT_CAPACITY) * (1 / SATURATION);
+  (*m)->table_size = (capacity ?: DEFAULT_CAPACITY) * (1 / MAX_SATURATION);
 
   // round up to the next highest power of 2
-  (*m)->table_size--;
-  (*m)->table_size |= (*m)->table_size >> 1;
-  (*m)->table_size |= (*m)->table_size >> 2;
-  (*m)->table_size |= (*m)->table_size >> 4;
-  (*m)->table_size |= (*m)->table_size >> 8;
-  (*m)->table_size |= (*m)->table_size >> 16;
-  (*m)->table_size++;
-
-  (*m)->overflow_size = (size_t)((*m)->table_size * SATURATION);
+  (*m)->table_size = roundup2((*m)->table_size);
+  (*m)->overflow_size = (size_t)((*m)->table_size * MAX_SATURATION);
   (*m)->lm = (*m)->table_size - 1;
 
   (*m)->free_value = free_value;
@@ -196,11 +140,11 @@ xapi map_allocate(
 }
 
 xapi map_put(
-    map * const restrict m
-  , const void * const restrict k
+    map * restrict m
+  , const void * restrict k
   , size_t kl
   , void * const restrict v
-  , void * const * const restrict rv
+  , void * const * restrict rv
 )
 {
   enter;
@@ -217,9 +161,9 @@ xapi map_put(
   {
     // the value will be overwritten
     if(m->free_value)
-      m->free_value(VALUE(m, m->tv, i));
+      m->free_value(VALUE(m, i));
     else if(m->xfree_value)
-      fatal(m->xfree_value, VALUE(m, m->tv, i));
+      fatal(m->xfree_value, VALUE(m, i));
   }
   else if(r == 1) // not found, and a suitable deleted slot exists
   {
@@ -238,16 +182,16 @@ xapi map_put(
     vs = tmp;
 
     m->table_size <<= 2;
-    m->overflow_size = (size_t)(m->table_size * SATURATION);
+    m->overflow_size = (size_t)(m->table_size * MAX_SATURATION);
     m->lm = m->table_size - 1;
 
     // reassociate active entries
     for(x = 0; x < ksl; x++)
     {
-      if(ks[x] && ks[x]->l && !ks[x]->d)
+      if(ks[x] && !(ks[x]->attr & MAP_KEY_DELETED))
       {
         // first empty spot in the linear probe sequence
-        size_t j = hashkey(ks[x]->p, ks[x]->l, m->lm);
+        size_t j = maputils_hashkey(ks[x]->p, ks[x]->l, m->lm);
         while(m->tk[j])
         {
           j++;
@@ -269,25 +213,24 @@ xapi map_put(
   {
     if(m->tk[i] == 0 || kl >= m->tk[i]->a)
     {
-      fatal(xrealloc, &m->tk[i], sizeof(*m->tk[i]), kl + 1, (m->tk[i] ? m->tk[i]->a : 0));
+      fatal(xrealloc, &m->tk[i], 1, sizeof(*m->tk[i]) + kl + 1, (m->tk[i] ? m->tk[i]->a : 0));
       m->tk[i]->a = kl + 1;
     }
 
     memcpy(m->tk[i]->p, k, kl);
     m->tk[i]->p[kl] = 0;
     m->tk[i]->l = kl;
-    m->tk[i]->d = 0;
+    m->tk[i]->attr = 0;
 
     m->size++;
   }
-
   // copy the value
   if(v)
     ((void**)m->tv)[i] = v;
 
   // return a pointer to the value
   if(rv)
-    *(void**)rv = VALUE(m, m->tv, i);
+    *(void**)rv = VALUE(m, i);
 
 finally:
   for(x = 0; x < ksl; x++)
@@ -301,59 +244,45 @@ finally:
 coda;
 }
 
-
 //
 // api
 //
 
-API xapi map_create(map ** const restrict m)
+API xapi map_create(map ** restrict m)
 {
-  enter;
-
-  fatal(map_allocate, m, MAP_SECONDARY, 0, 0, 0, 0);
-
-  finally : coda;
+  xproxy(map_allocate, m, MAP_SECONDARY, 0, 0, 0, 0);
 }
 
 API xapi map_createx(
-    map ** const restrict m
+    map ** restrict m
   , void * free_value
   , void * xfree_value
   , size_t capacity
 )
 {
-  enter;
-
-  fatal(map_allocate, m, MAP_SECONDARY, 0, free_value, xfree_value, capacity);
-
-  finally : coda;
+  xproxy(map_allocate, m, MAP_SECONDARY, 0, free_value, xfree_value, capacity);
 }
 
-API xapi map_set(map * const restrict m, const void * const restrict k, size_t kl, void * const restrict v)
+API xapi map_set(map * restrict m, const void * restrict k, size_t kl, void * restrict v)
 {
-  enter;
-
-  fatal(map_put, m, k, kl, v, 0);
-
-  finally : coda;
+  xproxy(map_put, m, k, kl, v, 0);
 }
 
-API void * map_get(const map* const restrict m, const void * const restrict k, size_t kl)
+API void * map_get(const map * restrict m, const void * restrict k, size_t kl)
 {
-  // perform probe
   size_t i = 0;
   if(probe(m, k, kl, &i) == 0)
-    return VALUE(m, m->tv, i);
+    return VALUE(m, i);
 
   return 0;
 }
 
-API size_t map_size(const map * const restrict m)
+API size_t map_size(const map * restrict m)
 {
   return m->size;
 }
 
-API xapi map_recycle(map* const restrict m)
+API xapi map_recycle(map * restrict m)
 {
   enter;
 
@@ -361,16 +290,16 @@ API xapi map_recycle(map* const restrict m)
   int x;
   for(x = 0; x < m->table_size; x++)
   {
-    if(m->tk[x] && m->tk[x]->l && !m->tk[x]->d)
+    if(m->tk[x] && !(m->tk[x]->attr & MAP_KEY_DELETED))
     {
       if(m->free_value)
-        m->free_value(VALUE(m, m->tv, x));
+        m->free_value(VALUE(m, x));
       else if(m->xfree_value)
-        fatal(m->xfree_value, VALUE(m, m->tv, x));
-
-      m->tk[x]->l = 0;
-      m->tk[x]->d = 0;
+        fatal(m->xfree_value, VALUE(m, x));
     }
+
+    if(m->tk[x])
+      m->tk[x]->attr = 0;
   }
 
   m->size = 0;
@@ -378,28 +307,26 @@ API xapi map_recycle(map* const restrict m)
   finally : coda;
 }
 
-API xapi map_delete(map* const restrict m, const void * const restrict k, size_t kl)
+API xapi map_delete(map * restrict m, const void * restrict k, size_t kl)
 {
   enter;
 
-  size_t i = 0;
+  size_t i;
   if(probe(m, k, kl, &i) == 0)
   {
     if(m->free_value)
-      m->free_value(VALUE(m, m->tv, i));
+      m->free_value(VALUE(m, i));
     else if(m->xfree_value)
-      fatal(m->xfree_value, VALUE(m, m->tv, i));
+      fatal(m->xfree_value, VALUE(m, i));
 
-    m->tk[i]->l = 0;
-    m->tk[i]->d = 1;
-
+    m->tk[i]->attr |= MAP_KEY_DELETED;
     m->size--;
   }
 
   finally : coda;
 }
 
-API xapi map_keys(const map * const restrict m, const char *** const restrict keys, size_t * const restrict keysl)
+API xapi map_keys(const map * restrict m, const char *** restrict keys, size_t * restrict keysl)
 {
   enter;
 
@@ -409,16 +336,14 @@ API xapi map_keys(const map * const restrict m, const char *** const restrict ke
   size_t x;
   for(x = 0; x < m->table_size; x++)
   {
-    if(m->tk[x] && m->tk[x]->l && !m->tk[x]->d)
-    {
+    if(m->tk[x] && !(m->tk[x]->attr & MAP_KEY_DELETED))
       (*keys)[(*keysl)++] = m->tk[x]->p;
-    }
   }
 
   finally : coda;
 }
 
-API xapi map_values(const map* const restrict m, void * restrict _values, size_t * const restrict valuesl)
+API xapi map_values(const map * restrict m, void * restrict _values, size_t * restrict valuesl)
 {
   enter;
 
@@ -430,34 +355,24 @@ API xapi map_values(const map* const restrict m, void * restrict _values, size_t
   size_t x;
   for(x = 0; x < m->table_size; x++)
   {
-    if(m->tk[x] && m->tk[x]->l && !m->tk[x]->d)
-    {
-      (*values)[(*valuesl)++] = VALUE(m, m->tv, x);
-    }
+    if(m->tk[x] && !(m->tk[x]->attr & MAP_KEY_DELETED))
+      (*values)[(*valuesl)++] = VALUE(m, x);
   }
 
   finally : coda;
 }
 
-API xapi map_xfree(map* const restrict m)
+API xapi map_xfree(map * restrict m)
 {
   enter;
 
   if(m)   // free-like semantics
   {
+    fatal(map_recycle, m);
+
     int x;
     for(x = 0; x < m->table_size; x++)
-    {
-      if(m->tk[x] && m->tk[x]->l && !m->tk[x]->d)
-      {
-        if(m->free_value)
-          m->free_value(VALUE(m, m->tv, x));
-        else if(m->xfree_value)
-          fatal(m->xfree_value, VALUE(m, m->tv, x));
-      }
-
       wfree(m->tk[x]);
-    }
 
     wfree(m->tk);
     wfree(m->tv);
@@ -467,8 +382,7 @@ API xapi map_xfree(map* const restrict m)
 
   finally : coda;
 }
-
-API xapi map_ixfree(map** const restrict m)
+API xapi map_ixfree(map ** restrict m)
 {
   enter;
 
@@ -478,23 +392,23 @@ API xapi map_ixfree(map** const restrict m)
   finally : coda;
 }
 
-API size_t map_table_size(const map * const restrict m)
+API size_t map_table_size(const map * restrict m)
 {
   return m->table_size;
 }
 
-API const void * map_table_key(const map * const restrict m, size_t x)
+API const void * map_table_key(const map * restrict m, size_t x)
 {
-  if(m->tk[x] && m->tk[x]->l && !m->tk[x]->d)
+  if(m->tk[x] && !(m->tk[x]->attr & MAP_KEY_DELETED))
     return m->tk[x]->p;
 
   return 0;
 }
 
-API void * map_table_value(const map * const restrict m, size_t x)
+API void * map_table_value(const map * restrict m, size_t x)
 {
-  if(m->tk[x] && m->tk[x]->l && !m->tk[x]->d)
-    return VALUE(m, m->tv, x);
+  if(m->tk[x] && !(m->tk[x]->attr & MAP_KEY_DELETED))
+    return VALUE(m, x);
 
   return 0;
 }

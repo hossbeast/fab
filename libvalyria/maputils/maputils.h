@@ -1,4 +1,4 @@
-/* Copyright (c) 2012-2015 Todd Freed <todd.freed@gmail.com>
+/* Copyright (c) 2012-2017 Todd Freed <todd.freed@gmail.com>
 
    This file is part of fab.
 
@@ -15,39 +15,7 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#include "xapi.h"
+#ifndef _VALYRIA_MAPUTILS_H
+#define _VALYRIA_MAPUTILS_H
 
-#include "xlinux/load.h"
-
-#include "internal.h"
-#include "load.internal.h"
-
-//
-// api
-//
-
-static int handles;
-
-API xapi valyria_load()
-{
-  enter;
-
-  if(handles++ == 0)
-  {
-    fatal(xlinux_load);
-  }
-
-  finally : coda;
-}
-
-API xapi valyria_unload()
-{
-  enter;
-
-  if(--handles == 0)
-  {
-    fatal(xlinux_unload);
-  }
-
-  finally : coda;
-}
+#endif

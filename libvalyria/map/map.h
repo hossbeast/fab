@@ -39,8 +39,6 @@ REMARKS
 struct map;
 typedef struct map map;
 
-#define restrict __restrict
-
 /// map_create
 //
 // SUMMARY
@@ -52,11 +50,11 @@ typedef struct map map;
 //  [xfree_value] - invoked with the value just before freeing it (keys may not be managed in this way)
 //  [capacity]    - initial capacity, the minimum number of entries which can be set without rehashing
 //
-xapi map_create(map ** const restrict m)
+xapi map_create(map ** restrict m)
   __attribute__((nonnull));
 
 xapi map_createx(
-    map ** const restrict m
+    map ** restrict m
   , void * free_value
   , void * xfree_value
   , size_t capacity
@@ -68,14 +66,14 @@ xapi map_createx(
 // SUMMARY
 //  free a map
 //
-xapi map_xfree(map * const restrict map);
+xapi map_xfree(map * restrict map);
 
 /// map_ixfree
 //
 // SUMMARY
 //  free a map, zero its reference
 //
-xapi map_ixfree(map ** const restrict map)
+xapi map_ixfree(map ** restrict map)
   __attribute__((nonnull));
 
 /// map_set
@@ -89,7 +87,7 @@ xapi map_ixfree(map ** const restrict map)
 //  keyl   - key length
 //  value  - pointer to value
 //
-xapi map_set(map * const restrict m, const void * const restrict key, size_t keyl, void * const restrict value)
+xapi map_set(map * restrict m, const void * restrict key, size_t keyl, void * restrict value)
   __attribute__((nonnull));
 
 /// map_get
@@ -111,14 +109,14 @@ xapi map_set(map * const restrict m, const void * const restrict key, size_t key
 // SUMMARY
 //  returns pointer to the stored value, or 0 if not found
 //
-void * map_get(const map * const restrict m, const void * const restrict key, size_t keyl)
+void * map_get(const map * restrict m, const void * restrict key, size_t keyl)
   __attribute__((nonnull));
 
 /// map_recycle
 //
 // disassociate all keys - internal structures in the map remain allocated
 //
-xapi map_recycle(map * const restrict map)
+xapi map_recycle(map * restrict map)
   __attribute__((nonnull));
 
 /// map_delete
@@ -131,7 +129,7 @@ xapi map_recycle(map * const restrict map)
 //  key  - pointer to key
 //  keyl - length of key
 //
-xapi map_delete(map * const restrict m, const void * const restrict key, size_t keyl)
+xapi map_delete(map * restrict m, const void * restrict key, size_t keyl)
   __attribute__((nonnull));
 
 /// map_size
@@ -139,7 +137,7 @@ xapi map_delete(map * const restrict m, const void * const restrict key, size_t 
 // SUMMARY
 //  get the number of entries in the map
 //
-size_t map_size(const map * const restrict m)
+size_t map_size(const map * restrict m)
   __attribute__((nonnull));
 
 /// map_keys
@@ -152,7 +150,7 @@ size_t map_size(const map * const restrict m)
 //  list   - (returns) list, to be freed by the caller
 //  listl  - (returns) size of list
 //
-xapi map_keys(const map * const restrict m, const char *** const restrict keys, size_t * const restrict keysl)
+xapi map_keys(const map * restrict m, const char *** restrict keys, size_t * restrict keysl)
   __attribute__((nonnull));
 
 /// map_values
@@ -165,7 +163,7 @@ xapi map_keys(const map * const restrict m, const char *** const restrict keys, 
 //  list   - (returns) list, to be freed by the caller
 //  listl  - (returns) size of list
 //
-xapi map_values(const map * const restrict m, void * restrict values, size_t * const restrict valuesl)
+xapi map_values(const map * restrict m, void * restrict values, size_t * restrict valuesl)
   __attribute__((nonnull));
 
 /// map_table_size
@@ -176,7 +174,7 @@ xapi map_values(const map * const restrict m, void * restrict values, size_t * c
 // PARAMETERS
 //  m - map
 //
-size_t map_table_size(const map * const restrict m)
+size_t map_table_size(const map * restrict m)
   __attribute__((nonnull));
 
 /// map_keyat
@@ -188,7 +186,7 @@ size_t map_table_size(const map * const restrict m)
 //  m - map
 //  x - slot index
 //
-const void * map_table_key(const map * const restrict m, size_t x)
+const void * map_table_key(const map * restrict m, size_t x)
   __attribute__((nonnull));
 
 /// map_valueat
@@ -200,7 +198,7 @@ const void * map_table_key(const map * const restrict m, size_t x)
 //  m - map
 //  x - slot index
 //
-void * map_table_value(const map * const restrict m, size_t x)
+void * map_table_value(const map * restrict m, size_t x)
   __attribute__((nonnull));
 
 #undef restrict
