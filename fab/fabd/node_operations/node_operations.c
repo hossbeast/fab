@@ -106,11 +106,11 @@ xapi node_disintegrate_fs(edge * restrict e, int traversal)
     , e
     , disintegrate_visitor
     , traversal
-    , 0
-    , 0
-    , NODE_RELATION_FS
-    , NODE_RELATION_FS
-    , GRAPH_TRAVERSE_DOWN
+    , (traversal_criteria[]) {{
+          edge_travel : NODE_RELATION_FS
+        , edge_visit : NODE_RELATION_FS
+      }}
+    , MORIA_TRAVERSE_DOWN | MORIA_TRAVERSE_PRE
     , li
   );
 
@@ -156,11 +156,11 @@ xapi node_invalidate(node * restrict n, int traversal)
     , vertex_containerof(n)
     , invalidate_visitor
     , traversal
-    , 0
-    , 0
-    , NODE_RELATION_STRONG | NODE_RELATION_WEAK   // travel weak edges
-    , NODE_RELATION_STRONG                        // callback on strong edges
-    , GRAPH_TRAVERSE_UP | GRAPH_TRAVERSE_PRE
+    , (traversal_criteria[]) {{
+          edge_travel : NODE_RELATION_STRONG | NODE_RELATION_WEAK   // travel weak edges
+        , edge_visit : NODE_RELATION_STRONG                         // callback on strong edges
+      }}
+    , MORIA_TRAVERSE_UP | MORIA_TRAVERSE_PRE
     , 0
   );
 

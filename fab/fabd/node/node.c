@@ -150,11 +150,11 @@ xapi node_dump()
     , vertex_containerof(g_root)
     , dump_visitor
     , 0
-    , 0
-    , 0
-    , NODE_RELATION_FS
-    , NODE_RELATION_FS
-    , GRAPH_TRAVERSE_DOWN | GRAPH_TRAVERSE_PRE
+    , (traversal_criteria[]) {{
+          edge_travel : NODE_RELATION_FS
+        , edge_visit : NODE_RELATION_FS
+      }}
+    , MORIA_TRAVERSE_DOWN | MORIA_TRAVERSE_PRE
     , 0
   );
 

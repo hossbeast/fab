@@ -21,30 +21,29 @@
 /*
 
 MODULE
- vertex
-
-SUMMARY
-
-REMARKS
+ moria/vertex
 
 */
 
 #include <stdint.h>
 #include <sys/types.h>
 
+#include "traverse.h"
+
 struct graph;
 struct edge;
 
 typedef struct vertex
 {
-  const char *  label;    // (not owned)
-  size_t        label_len;
-  uint32_t      attrs;    // properties of the vertex
+  struct graph *  graph;    // graph that the vertex belongs to
+  const char *    label;    // (not owned)
+  size_t          label_len;
+  uint32_t        attrs;    // properties of the vertex
 
-  struct list * up;       // edges where this == B, i.e. { up } -> this
-  struct list * down;     // edges where this == A, i.e. this -> { down }
+  struct list *   up;       // edges where this == B, i.e. { up } -> this
+  struct list *   down;     // edges where this == A, i.e. this -> { down }
 
-  int visited;            // id of the last traversal to visit this vertex
+  int visited;              // id of the last traversal to visit this vertex
 
 #ifndef VERTEX_INTERNALS
 # define VERTEX_INTERNALS
@@ -75,7 +74,7 @@ void vertex_value_set(vertex * const restrict v, void * value, size_t vsz)
 // SUMMARY
 //  get a pointer to the value for the vertex
 //
-void * vertex_value(vertex * const restrict v)
+void * vertex_value(const vertex * const restrict v)
   __attribute__((nonnull));
 
 /// vertex_containerof
@@ -83,52 +82,58 @@ void * vertex_value(vertex * const restrict v)
 // SUMMARY
 //  get a pointer to the vertex containing the user value
 //
-vertex * vertex_containerof(void * value)
+vertex * vertex_containerof(const void * value)
   __attribute__((nonnull));
 
-/// vertex_ascend
+/// vertex_travel
 //
 // SUMMARY
-//  get the vertex above a vertex at a distance of 1 with the given label
+//  get a vertex or edge at distance 1 from a starting vertex or edge
 //
 // PARAMETERS
-//  v   - starting vertex
+//  v              - starting vertex
+//  [label]        - select a vertex with this label
+//  [vertex_visit] - see traversal_criteria
+//  [edge_visit]   - see traversal_criteria
+//  attrs          - bitwise combination of MORIA_TRAVERSE_*
 //
-// VARIANTS
-//  edge - get the edge connecting the two vertices
-//  s - label is given as a null terminated string
-//  w - label is given as a buffer/length pair
-//
-// RETURNS
-//  desired vertex or edge, if any
-//
-vertex * vertex_ascend(vertex * const restrict v, const char * const restrict label)
-  __attribute__((nonnull));
+vertex * vertex_travel_vertexs(
+    const vertex * restrict v
+  , const char * restrict label
+  , uint32_t vertex_visit
+  , uint32_t edge_visit
+  , uint32_t attrs
+)
+  __attribute__((nonnull(1)));
 
-struct edge * vertex_ascend_edge(vertex * const restrict v, const char * const restrict label)
-  __attribute__((nonnull));
+vertex * vertex_travel_vertexw(
+    const vertex * restrict v
+  , const char * restrict label
+  , size_t label_len
+  , uint32_t vertex_visit
+  , uint32_t edge_visit
+  , uint32_t attrs
+)
+  __attribute__((nonnull(1)));
 
-/// vertex_descend
-//
-// SUMMARY
-//  get the vertex below a vertex at a distance of 1 with the given label
-//
-// PARAMETERS
-//  v   - starting vertex
-//
-// VARIANTS
-//  edge - get the edge connecting the two vertices
-//  s - label is given as a null terminated string
-//  w - label is given as a buffer/length pair
-//
-// RETURNS
-//  desired vertex or edge, if any
-//
-vertex * vertex_descend(vertex * const restrict v, const char * const restrict label)
-  __attribute__((nonnull));
+struct edge * vertex_travel_edges(
+    const vertex * restrict v
+  , const char * restrict label
+  , uint32_t vertex_visit
+  , uint32_t edge_visit
+  , uint32_t attrs
+)
+  __attribute__((nonnull(1)));
 
-struct edge * vertex_descend_edge(vertex * const restrict v, const char * const restrict label)
-  __attribute__((nonnull));
+struct edge * vertex_travel_edgew(
+    const vertex * restrict v
+  , const char * restrict label
+  , size_t label_len
+  , uint32_t vertex_visit
+  , uint32_t edge_visit
+  , uint32_t attrs
+)
+  __attribute__((nonnull(1)));
 
 #undef restrict
 #endif

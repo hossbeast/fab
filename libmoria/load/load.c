@@ -24,7 +24,7 @@
 
 #include "internal.h"
 #include "load.internal.h"
-#include "errtab/MORIA.errtab.h"
+#include "MORIA.errtab.h"
 
 //
 // api

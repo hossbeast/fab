@@ -124,10 +124,10 @@ static xapi graph_test_entry(graph_test * test)
     , map_get(vertices, MMS(test->from))
     , vertex_visit
     , 0
-    , 0
-    , 0
-    , test->travel
-    , test->visit
+    , (traversal_criteria[]) {{
+          edge_travel : test->travel
+        , edge_visit : test->visit
+      }}
     , test->attrs
     , N
   );
@@ -173,28 +173,28 @@ xunit_unit xunit = {
         // downward, preorder
         (graph_test[]){{
             constr    : "AB BC AC CD DE"
-          , attrs     : GRAPH_TRAVERSE_DOWN | GRAPH_TRAVERSE_PRE
+          , attrs     : MORIA_TRAVERSE_DOWN | MORIA_TRAVERSE_PRE
           , from      : "A"
           , expected  : "ABCDE"
         }}
         // downward, preorder, from another node
       , (graph_test[]){{
             constr    : "AB BC AC CD DE"
-          , attrs     : GRAPH_TRAVERSE_DOWN | GRAPH_TRAVERSE_PRE
+          , attrs     : MORIA_TRAVERSE_DOWN | MORIA_TRAVERSE_PRE
           , from      : "B"
           , expected  : "BCDE"
         }}
         // downward, postorder
       , (graph_test[]){{
             constr    : "AB BC AC CD DE"
-          , attrs     : GRAPH_TRAVERSE_DOWN | GRAPH_TRAVERSE_POST
+          , attrs     : MORIA_TRAVERSE_DOWN | MORIA_TRAVERSE_POST
           , from      : "A"
           , expected  : "EDCBA"
         }}
         // downward, postorder, from another node
       , (graph_test[]){{
             constr    : "AB BC AC CD DE"
-          , attrs     : GRAPH_TRAVERSE_DOWN | GRAPH_TRAVERSE_POST
+          , attrs     : MORIA_TRAVERSE_DOWN | MORIA_TRAVERSE_POST
           , from      : "C"
           , expected  : "EDC"
         }}
@@ -202,7 +202,7 @@ xunit_unit xunit = {
         // visit and travel weak edges
       , (graph_test[]){{
             constr    : "A!B B!C D!E B~D"
-          , attrs     : GRAPH_TRAVERSE_DOWN | GRAPH_TRAVERSE_PRE
+          , attrs     : MORIA_TRAVERSE_DOWN | MORIA_TRAVERSE_PRE
           , from      : "A"
           , travel    : ATTR_STRONG | ATTR_WEAK
           , visit     : ATTR_STRONG | ATTR_WEAK
@@ -211,7 +211,7 @@ xunit_unit xunit = {
         // travel but not visit (skip) weak edges
       , (graph_test[]){{
             constr    : "A!B B!C E!D D~B F!D"
-          , attrs     : GRAPH_TRAVERSE_UP | GRAPH_TRAVERSE_PRE
+          , attrs     : MORIA_TRAVERSE_UP | MORIA_TRAVERSE_PRE
           , from      : "C"
           , travel    : ATTR_STRONG | ATTR_WEAK
           , visit     : ATTR_STRONG
@@ -220,7 +220,7 @@ xunit_unit xunit = {
         // visit but not travel (finish) weak edges
       , (graph_test[]){{
             constr    : "A!B B!C D!E B~D"
-          , attrs     : GRAPH_TRAVERSE_DOWN | GRAPH_TRAVERSE_PRE
+          , attrs     : MORIA_TRAVERSE_DOWN | MORIA_TRAVERSE_PRE
           , from      : "A"
           , travel    : ATTR_STRONG
           , visit     : ATTR_STRONG | ATTR_WEAK
@@ -229,7 +229,7 @@ xunit_unit xunit = {
         // neither visit nor travel (stop) on weak edges, down
       , (graph_test[]){{
             constr    : "A!B B!C D!E B~D"
-          , attrs     : GRAPH_TRAVERSE_DOWN | GRAPH_TRAVERSE_PRE
+          , attrs     : MORIA_TRAVERSE_DOWN | MORIA_TRAVERSE_PRE
           , from      : "A"
           , travel    : ATTR_STRONG
           , visit     : ATTR_STRONG
@@ -238,7 +238,7 @@ xunit_unit xunit = {
         // neither visit nor travel (stop) on weak edges, up
       , (graph_test[]){{
             constr    : "A!B B!C D!E B~D"
-          , attrs     : GRAPH_TRAVERSE_UP | GRAPH_TRAVERSE_PRE
+          , attrs     : MORIA_TRAVERSE_UP | MORIA_TRAVERSE_PRE
           , from      : "E"
           , travel    : ATTR_STRONG
           , visit     : ATTR_STRONG
@@ -248,21 +248,21 @@ xunit_unit xunit = {
         // cycle detection
       , (graph_test[]){{
             constr    : "AB BC CD DE EF FG GA"
-          , attrs     : GRAPH_TRAVERSE_DOWN | GRAPH_TRAVERSE_PRE
+          , attrs     : MORIA_TRAVERSE_DOWN | MORIA_TRAVERSE_PRE
           , from      : "A"
           , cycle_path: "A -> B -> C -> D -> E -> F -> G -> A"
         }}
         // self-referential cycle
       , (graph_test[]){{
             constr    : "AB BA"
-          , attrs     : GRAPH_TRAVERSE_DOWN | GRAPH_TRAVERSE_PRE
+          , attrs     : MORIA_TRAVERSE_DOWN | MORIA_TRAVERSE_PRE
           , from      : "A"
           , cycle_path: "A -> B -> A"
         }}
         // cycle that exceeds the stack size
       , (graph_test[]){{
             constr    : "ab bc cd de ef fg gh hi ij jk kl lm mn no op pq qr rs st tu uv vw wx xy yz zA AB BC CD DE EF FG GH HI IJ JK KL LM MN NO OP PQ QR RS ST TU UV VW WX XY YZ Za"
-          , attrs     : GRAPH_TRAVERSE_DOWN | GRAPH_TRAVERSE_PRE
+          , attrs     : MORIA_TRAVERSE_DOWN | MORIA_TRAVERSE_PRE
           , from      : "a"
           , cycle     : 1
         }}

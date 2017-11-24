@@ -18,6 +18,7 @@
 #ifndef _MORIA_VERTEX_INTERNAL_H
 #define _MORIA_VERTEX_INTERNAL_H
 
+struct graph;
 struct list;    // valyria/list.h
 
 struct vertex_internals
@@ -47,10 +48,13 @@ int vertex_compare(void * _ctx, const void * _e, size_t idx)
 // SUMMARY
 //  allocate a vertex
 //
-xapi vertex_create(vertex ** const restrict v, size_t vsz, uint32_t attrs)
+xapi vertex_create(vertex ** const restrict v, struct graph * restrict g, size_t vsz, uint32_t attrs)
   __attribute__((nonnull));
 
-xapi vertex_createw(vertex ** const restrict v, size_t vsz, uint32_t attrs, const char * const restrict label, size_t label_len)
+xapi vertex_creates(vertex ** const restrict v, struct graph * restrict g, size_t vsz, uint32_t attrs, const char * const restrict label)
+  __attribute__((nonnull));
+
+xapi vertex_createw(vertex ** const restrict v, struct graph * restrict g, size_t vsz, uint32_t attrs, const char * const restrict label, size_t label_len)
   __attribute__((nonnull));
 
 /// vertex_free

@@ -138,7 +138,7 @@ static xapi node_operations_test_entry(xunit_test * _test)
     else
     {
       fatal(get_node, vertices, &seq[0], &A);
-      edge * e = vertex_descend_edge(vertex_containerof(A), &seq[2]);
+      edge * e = vertex_travel_edges(vertex_containerof(A), &seq[2], 0, NODE_RELATION_FS, MORIA_TRAVERSE_DOWN);
       fatal(node_disintegrate_fs, e, 0);
     }
 
@@ -148,7 +148,7 @@ static xapi node_operations_test_entry(xunit_test * _test)
   }
 
   // ordered list of edges
-  fatal(graph_say, g_node_graph, N);
+  fatal(graph_say, g_node_graph, NODE_RELATION_FS, N);
   assert_eq_s(test->result ?: "", narrator_growing_buffer(N));
 
 finally:

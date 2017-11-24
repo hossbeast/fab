@@ -79,7 +79,7 @@ static xapi graph_test_entry(xunit_test * _test)
       seq++;
   }
 
-  fatal(graph_say, g, N);
+  fatal(graph_say, g, 0, N);
   assert_eq_s(test->expected, narrator_growing_buffer(N));
 
 finally:

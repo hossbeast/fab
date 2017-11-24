@@ -29,16 +29,18 @@ REMARKS
 
 */
 
+#include <sys/types.h>
+#include <stdint.h>
 #include "xapi.h"
+#include "traverse.h"
 
 struct vertex;
 struct edge;
 struct narrator;
 struct list;
+struct traversal_criteria;
 
 typedef struct graph graph;
-
-#define restrict __restrict
 
 /// graph_create
 //
@@ -59,9 +61,14 @@ xapi graph_createx(graph ** const restrict g, size_t vsz, void * vertex_value_de
 /// graph_say
 //
 // SUMMARY
-//  write a sorted list of edges to the narrator
+//  write a sorted list of edges to a narrator
 //
-xapi graph_say(graph * const restrict g, struct narrator * const restrict N)
+// PARAMETERS
+//  g            - graph
+//  [edge_visit] - if nonzero, only use edges which match the mask
+//  N            - narrator
+//
+xapi graph_say(graph * const restrict g, uint32_t edge_visit, struct narrator * const restrict N)
   __attribute__((nonnull));
 
 /// graph_xfree
@@ -98,6 +105,9 @@ xapi graph_ixfree(graph ** const restrict g)
 xapi graph_vertex_create(struct vertex ** const restrict v, graph * const restrict g, uint32_t attrs)
   __attribute__((nonnull));
 
+xapi graph_vertex_creates(struct vertex ** const restrict v, graph * const restrict g, uint32_t attrs, const char * const restrict label)
+  __attribute__((nonnull));
+
 xapi graph_vertex_createw(struct vertex ** const restrict v, graph * const restrict g, uint32_t attrs, const char * const restrict label, size_t label_len)
   __attribute__((nonnull));
 
@@ -120,37 +130,23 @@ xapi graph_connect_edge(graph * const restrict g, struct vertex * A, struct vert
 xapi graph_disconnect_edge(graph * const restrict g, struct vertex * A, struct vertex * B)
   __attribute__((nonnull));
 
-/// GRAPH_TRAVERSE_TABLE
+/// graph_traverse
 //
 // SUMMARY
-//  graph traversal options and modifiers
+//  traverse a graph from a starting point
 //
-#define GRAPH_TRAVERSE_TABLE(x, y)                                                                               \
-  GRAPH_TRAVERSE_DEF(UP       , 0x00000001 , x , y)  /* traverse from a node to its consumers (upward) */        \
-  GRAPH_TRAVERSE_DEF(DOWN     , 0x00000002 , x , y)  /* traverse from a node to its dependencies (downward) */   \
-  GRAPH_TRAVERSE_DEF(PRE      , 0x00000004 , x , y)  /* breadth-first traversal */                               \
-  GRAPH_TRAVERSE_DEF(POST     , 0x00000008 , x , y)  /* depth-first traversal */
-
-enum {
-#define GRAPH_TRAVERSE_DEF(a, b, x, y) GRAPH_TRAVERSE_ ## a = UINT32_C(b),
-GRAPH_TRAVERSE_TABLE(0, 0)
-#undef GRAPH_TRAVERSE_DEF
-};
-
-/// graph_traverse_vertices
-//
-// SUMMARY
-//  traverse the vertices of a graph
+// VARIANTS
+//  vertices - visitor invoked on vertices
+//  edges - visitor invoked on edges
 //
 // PARAMETERS
-//  g               - graph
-//  v               - vertex at which to begin the traversal
-//  visitor         - invoked on each visited vertex
-//  [traversal_id]  -
-//  [travel]        - see remarks
-//  [visit]         -
-//  attrs           - bitwise combination of GRAPH_TRAVERSE_*
-//  [ctx]           - optional context
+//  g              - graph
+//  v              - vertex at which to begin the traversal
+//  [visitor]      - invoked on each visited vertex
+//  [traversal_id] - see graph_traversal_begin
+//  [criteria]     - vertex and edge selection bitmasks
+//  attrs          - bitwise combination of MORIA_TRAVERSE_*
+//  [ctx]          - optional user context
 //
 // VISITOR
 //  v     -
@@ -174,49 +170,59 @@ GRAPH_TRAVERSE_TABLE(0, 0)
 //  (default) |     x          x
 //
 xapi graph_traverse_vertices(
-    /* 1 */ graph * const restrict g
-  , /* 2 */ struct vertex * const restrict v
-  , /* 3 */ xapi (* const visitor)(struct vertex * const restrict, int distance, void *)
+    /* 1 */ graph * restrict g
+  , /* 2 */ struct vertex * restrict v
+  , /* 3 */ xapi (* visitor)(struct vertex * restrict, int distance, void *)
   , /* 4 */ int traversal_id
-  , /* 5 */ uint32_t vertex_travel
-  , /* 6 */ uint32_t vertex_visit
-  , /* 7 */ uint32_t edge_travel
-  , /* 8 */ uint32_t edge_visit
-  , /* 9 */ uint32_t attrs
-  , /* a */ void * ctx
+  , /* 5 */ const struct traversal_criteria * restrict criteria
+  , /* 6 */ uint32_t attrs
+  , /* 7 */ void * ctx
 )
   __attribute__((nonnull(1, 2)));
 
 xapi graph_traverse_edges(
-    /* 1 */ graph * const restrict g
-  , /* 2 */ struct edge * const restrict e
-  , /* 3 */ xapi (* const visitor)(struct edge * const restrict, int distance, void *)
+    /* 1 */ graph * restrict g
+  , /* 2 */ struct edge * restrict e
+  , /* 3 */ xapi (* visitor)(struct edge * restrict, int distance, void *)
   , /* 4 */ int traversal_id
-  , /* 5 */ uint32_t vertex_travel
-  , /* 6 */ uint32_t vertex_visit
-  , /* 7 */ uint32_t edge_travel
-  , /* 8 */ uint32_t edge_visit
-  , /* 9 */ uint32_t attrs
-  , /* a */ void * ctx
+  , /* 5 */ const struct traversal_criteria * restrict criteria
+  , /* 6 */ uint32_t attrs
+  , /* 7 */ void * ctx
 )
   __attribute__((nonnull(1, 2)));
+
+/// graph_traverse_all
+//
+// SUMMARY
+//  traverse all the entities of a graph while honoring directionality among entities
+//
+// PARAMETERS
+//  as for graph_traverse
+//
+xapi graph_traverse_all_vertices(
+    /* 1 */ graph * restrict g
+  , /* 2 */ xapi (* visitor)(struct vertex * restrict, int distance, void *)
+  , /* 3 */ const struct traversal_criteria * restrict criteria
+  , /* 4 */ uint32_t attrs
+  , /* 5 */ void * ctx
+)
+  __attribute__((nonnull(1)));
 
 /// graph_traversal_begin
 //
 // SUMMARY
-//  open a traversal
+//  Open a traversal. Two traversals with the same id will not visit the same entity more than once.
 //
 // RETURNS
-//  an id suitable for passing to graph_traverse
+//  an id suitable for passing to graph_traverse_*
 //
-int graph_traversal_begin(graph * const restrict g)
+int graph_traversal_begin(graph * restrict g)
   __attribute__((nonnull));
 
-struct list * graph_vertices(graph * const restrict g)
+struct list * graph_vertices(graph * restrict g)
   __attribute__((nonnull));
 
-struct list * graph_edges(graph * const restrict g)
+struct list * graph_edges(graph * restrict g)
   __attribute__((nonnull));
 
-#undef restrict
 #endif

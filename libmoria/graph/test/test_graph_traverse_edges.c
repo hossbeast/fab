@@ -122,7 +122,7 @@ static xapi graph_test_entry(graph_test * test)
   }
 
   vertex * v = map_get(vertices, MM(test->from[0]));
-  edge * e = vertex_descend_edge(v, &test->from[1]);
+  edge * e = vertex_travel_edges(v, &test->from[1], 0, 0, MORIA_TRAVERSE_DOWN);
 
   // perform the traversal
   xapi exit = invoke(graph_traverse_edges
@@ -130,10 +130,10 @@ static xapi graph_test_entry(graph_test * test)
     , e
     , edge_visit
     , 0
-    , 0
-    , 0
-    , test->travel
-    , test->visit
+    , (traversal_criteria[]) {{
+          edge_travel : test->travel
+        , edge_visit : test->visit
+      }}
     , test->attrs
     , N
   );
@@ -179,28 +179,28 @@ xunit_unit xunit = {
         // downward, preorder
         (graph_test[]){{
             constr    : "AB BC AC CD DE"
-          , attrs     : GRAPH_TRAVERSE_DOWN | GRAPH_TRAVERSE_PRE
+          , attrs     : MORIA_TRAVERSE_DOWN | MORIA_TRAVERSE_PRE
           , from      : "AC"
           , expected  : "A:CC:DD:E"
         }}
         // downward, preorder, from another node
       , (graph_test[]){{
             constr    : "AB BC AC CD DE"
-          , attrs     : GRAPH_TRAVERSE_DOWN | GRAPH_TRAVERSE_PRE
+          , attrs     : MORIA_TRAVERSE_DOWN | MORIA_TRAVERSE_PRE
           , from      : "BC"
           , expected  : "B:CC:DD:E"
         }}
         // downward, postorder
       , (graph_test[]){{
             constr    : "AB BC AC CD DE"
-          , attrs     : GRAPH_TRAVERSE_DOWN | GRAPH_TRAVERSE_POST
+          , attrs     : MORIA_TRAVERSE_DOWN | MORIA_TRAVERSE_POST
           , from      : "AB"
           , expected  : "D:EC:DB:CA:B"
         }}
         // upward, postorder, from another node
       , (graph_test[]){{
             constr    : "AB BC AC CD DE"
-          , attrs     : GRAPH_TRAVERSE_UP | GRAPH_TRAVERSE_POST
+          , attrs     : MORIA_TRAVERSE_UP | MORIA_TRAVERSE_POST
           , from      : "CD"
           , expected  : "A:CA:BB:CC:D"
         }}
@@ -208,7 +208,7 @@ xunit_unit xunit = {
         // visit and travel weak edges
       , (graph_test[]){{
             constr    : "A!B B!C D!E B~D"
-          , attrs     : GRAPH_TRAVERSE_UP | GRAPH_TRAVERSE_PRE
+          , attrs     : MORIA_TRAVERSE_UP | MORIA_TRAVERSE_PRE
           , from      : "DE"
           , travel    : ATTR_STRONG | ATTR_WEAK
           , visit     : ATTR_STRONG | ATTR_WEAK
@@ -217,7 +217,7 @@ xunit_unit xunit = {
         // travel but not visit (skip) weak edges
       , (graph_test[]){{
             constr    : "A!B B!C E!D D~B F!D"
-          , attrs     : GRAPH_TRAVERSE_UP | GRAPH_TRAVERSE_PRE
+          , attrs     : MORIA_TRAVERSE_UP | MORIA_TRAVERSE_PRE
           , from      : "BC"
           , travel    : ATTR_STRONG | ATTR_WEAK
           , visit     : ATTR_STRONG
@@ -226,7 +226,7 @@ xunit_unit xunit = {
         // visit but not travel (finish) weak edges
       , (graph_test[]){{
             constr    : "A!B B!C D!E B~D"
-          , attrs     : GRAPH_TRAVERSE_DOWN | GRAPH_TRAVERSE_PRE
+          , attrs     : MORIA_TRAVERSE_DOWN | MORIA_TRAVERSE_PRE
           , from      : "AB"
           , travel    : ATTR_STRONG
           , visit     : ATTR_STRONG | ATTR_WEAK
@@ -235,7 +235,7 @@ xunit_unit xunit = {
         // neither visit nor travel (stop) on weak edges, down
       , (graph_test[]){{
             constr    : "A!B B!C D!E B~D"
-          , attrs     : GRAPH_TRAVERSE_DOWN | GRAPH_TRAVERSE_PRE
+          , attrs     : MORIA_TRAVERSE_DOWN | MORIA_TRAVERSE_PRE
           , from      : "AB"
           , travel    : ATTR_STRONG
           , visit     : ATTR_STRONG
@@ -244,7 +244,7 @@ xunit_unit xunit = {
         // neither visit nor travel (stop) on weak edges, up
       , (graph_test[]){{
             constr    : "A!B B!C D!E B~D"
-          , attrs     : GRAPH_TRAVERSE_UP | GRAPH_TRAVERSE_PRE
+          , attrs     : MORIA_TRAVERSE_UP | MORIA_TRAVERSE_PRE
           , from      : "DE"
           , travel    : ATTR_STRONG
           , visit     : ATTR_STRONG
@@ -254,14 +254,14 @@ xunit_unit xunit = {
         // cycle detection
       , (graph_test[]){{
             constr    : "AB BC CD DE EF FG GA"
-          , attrs     : GRAPH_TRAVERSE_DOWN | GRAPH_TRAVERSE_PRE
+          , attrs     : MORIA_TRAVERSE_DOWN | MORIA_TRAVERSE_PRE
           , from      : "AB"
           , cycle_path: "A -> B -> C -> D -> E -> F -> G -> A"
         }}
         // self-referential cycle
       , (graph_test[]){{
             constr    : "AB BA"
-          , attrs     : GRAPH_TRAVERSE_DOWN | GRAPH_TRAVERSE_PRE
+          , attrs     : MORIA_TRAVERSE_DOWN | MORIA_TRAVERSE_PRE
           , from      : "AB"
           , cycle_path: "A -> B -> A"
         }}

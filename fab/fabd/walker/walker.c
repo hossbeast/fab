@@ -89,7 +89,13 @@ xapi walker_visit(int method, ftwinfo * info, void * arg, int * stop)
   else
   {
     node * parent = info->parent->udata;
-    v = vertex_descend(vertex_containerof(parent), info->path + info->name_off);
+    vertex * v = vertex_travel_vertexs(
+        vertex_containerof(parent)
+      , info->path + info->name_off
+      , 0
+      , NODE_RELATION_FS
+      , MORIA_TRAVERSE_DOWN
+    );
     if(v)
     {
       n = vertex_value(v);
