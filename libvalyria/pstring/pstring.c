@@ -79,6 +79,31 @@ API xapi pscreate(pstring ** const restrict ps)
   xproxy(pscreatex, ps, 0);
 }
 
+API void psclear(pstring * restrict ps)
+{
+  ps->l = 0;
+}
+
+API void psfree(pstring * ps)
+{
+  if(ps)
+  {
+    wfree(ps->s);
+  }
+  wfree(ps);
+}
+
+API void psifree(pstring ** ps)
+{
+  psfree(*ps);
+  *ps = 0;
+}
+
+API int pscmp(const pstring * const restrict A, const pstring * const restrict B)
+{
+  return estrcmp(A->s, A->l, B->s, B->l, 0);
+}
+
 // mk
 
 API xapi psvmkf(pstring ** restrict ps, pstring * restrict e, const char * const restrict fmt, va_list va)
@@ -138,26 +163,6 @@ API xapi psmkc(pstring ** restrict ps, pstring * restrict e, int c)
   fatal(pscatc, *ps, c);
 
   finally : coda;
-}
-
-API void psclear(pstring * restrict ps)
-{
-  ps->l = 0;
-}
-
-API void psfree(pstring * ps)
-{
-  if(ps)
-  {
-    wfree(ps->s);
-  }
-  wfree(ps);
-}
-
-API void psifree(pstring ** ps)
-{
-  psfree(*ps);
-  *ps = 0;
 }
 
 // load
@@ -292,9 +297,4 @@ API xapi pscatc(pstring * restrict ps, int c)
   ps->l++;
 
   finally : coda;
-}
-
-API int pscmp(const pstring * const restrict A, const pstring * const restrict B)
-{
-  return estrcmp(A->s, A->l, B->s, B->l, 0);
 }

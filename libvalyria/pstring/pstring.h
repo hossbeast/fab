@@ -58,13 +58,13 @@ xapi pscreate(pstring ** const restrict ps)
 xapi pscreatex(pstring ** const restrict ps, size_t capacity)
   __attribute__((nonnull));
 
-/// psmkw
+/// psmk
 //
 // SUMMARY
 //  creates a new pstring or reuses an existing instance, and appends like pscat
 //
 // PARAMETERS
-//  ps    - (returns) pstring
+//  [ps]  - (returns) pstring
 //  [e]   - existing instance
 //  [fmt] - printf-style format string
 //  [va]  - varargs

@@ -356,10 +356,9 @@ finally:
 coda;
 }
 
-int main()
+static xapi run_tests()
 {
   enter;
-  xapi r;
 
   fatal(test_basic);
   fatal(test_load);
@@ -367,16 +366,23 @@ int main()
   fatal(test_set);
   fatal(test_search);
   fatal(test_delete);
+  summarize;
+
+  finally : coda;
+}
+
+int main()
+{
+  enter;
+
+  xapi R = 0;
+  fatal(run_tests);
 
 finally:
-  summarize;
   if(XAPI_UNWINDING)
-  {
     xapi_backtrace();
-  }
-
-conclude(&r);
-
+conclude(&R);
   xapi_teardown();
-  return !!r;
+
+  return !!R;
 }

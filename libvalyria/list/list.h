@@ -155,7 +155,7 @@ xapi list_pop(list * const restrict li, void ** const restrict el)
 //  li - list
 //  el - pointer to element
 //
-xapi list_push(list * const restrict li, void * el)
+xapi list_push(list * const restrict li, const void * el)
   __attribute__((nonnull));
 
 /// list_push_range
@@ -168,7 +168,7 @@ xapi list_push(list * const restrict li, void * el)
 //  el  - pointer to first element to append
 //  len - number of elements
 //
-xapi list_push_range(list * const restrict li, void * el, size_t len)
+xapi list_push_range(list * const restrict li, const void * el, size_t len)
   __attribute__((nonnull));
 
 /// list_unshift
@@ -180,7 +180,7 @@ xapi list_push_range(list * const restrict li, void * el, size_t len)
 //  s  - list
 //  el - pointer to element
 //
-xapi list_unshift(list * const restrict li, void * el)
+xapi list_unshift(list * const restrict li, const void * el)
   __attribute__((nonnull));
 
 /// list_unshift_range
@@ -196,7 +196,7 @@ xapi list_unshift(list * const restrict li, void * el)
 //  el  - pointer to first element to append
 //  len - number of elements
 //
-xapi list_unshift_range(list * const restrict li, void * el, size_t len)
+xapi list_unshift_range(list * const restrict li, const void * el, size_t len)
   __attribute__((nonnull));
 
 /// list_insert
@@ -209,7 +209,7 @@ xapi list_unshift_range(list * const restrict li, void * el, size_t len)
 //  index - 0 <= index <= li->l
 //  el    - pointer to element to insert
 //
-xapi list_insert(list * const restrict li, size_t index, void * el)
+xapi list_insert(list * const restrict li, size_t index, const void * el)
   __attribute__((nonnull));
 
 /// list_insert_range
@@ -223,7 +223,7 @@ xapi list_insert(list * const restrict li, size_t index, void * el)
 //  el    - pointer to the first element to insert
 //  len   - number of elements to insert
 //
-xapi list_insert_range(list * const restrict li, size_t index, void * el, size_t len)
+xapi list_insert_range(list * const restrict li, size_t index, const void * el, size_t len)
   __attribute__((nonnull));
 
 /// list_set
@@ -239,7 +239,7 @@ xapi list_insert_range(list * const restrict li, size_t index, void * el, size_t
 //  index - 0 <= index < li->l
 //  el    - pointer to the element to place
 //
-xapi list_set(list * const restrict li, size_t index, void * el)
+xapi list_set(list * const restrict li, size_t index, const void * el)
   __attribute__((nonnull));
 
 /// list_set_range
@@ -256,7 +256,7 @@ xapi list_set(list * const restrict li, size_t index, void * el)
 //  el    - pointer to the first element to place
 //  len   - number of elements to place
 //
-xapi list_set_range(list * const restrict li, size_t index, void * el, size_t len)
+xapi list_set_range(list * const restrict li, size_t index, const void * el, size_t len)
   __attribute__((nonnull));
 
 /// list_sort

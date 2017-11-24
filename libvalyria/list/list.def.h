@@ -89,7 +89,7 @@ xapi list_allocate(
 //  [el]  - pointer to the first element to add
 //  [rv]  - (returns) pointers to elements
 //
-xapi list_add(struct list * const restrict li, size_t index, size_t len, void * el, void ** const restrict rv)
+xapi list_add(struct list * const restrict li, size_t index, size_t len, const void * el, const void ** const restrict rv)
   __attribute__((nonnull(1)));
 
 /// list_put
@@ -104,7 +104,7 @@ xapi list_add(struct list * const restrict li, size_t index, size_t len, void * 
 //  [el]  - pointer to the first element to write
 //  [rv]  - (returns) pointers to elements
 //
-xapi list_put(struct list * const restrict li, size_t index, size_t len, void * el, void ** const restrict rv)
+xapi list_put(struct list * const restrict li, size_t index, size_t len, const void * el, const void ** const restrict rv)
   __attribute__((nonnull(1)));
 
 #undef restrict

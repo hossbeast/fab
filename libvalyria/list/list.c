@@ -76,7 +76,7 @@ static xapi list_assure(list * const restrict li, size_t len)
 // SUMMARY
 //  overwrite elements in the list
 //
-static void list_update(list * const restrict li, size_t index, size_t len, void * el, void ** const restrict rv)
+static void list_update(list * const restrict li, size_t index, size_t len, const void * el, const void ** const restrict rv)
 {
   // copy the elements into place
   if(el)
@@ -179,7 +179,7 @@ finally:
 coda;
 }
 
-xapi list_put(list * const restrict li, size_t index, size_t len, void * el, void ** const restrict rv)
+xapi list_put(list * const restrict li, size_t index, size_t len, const void * el, const void ** const restrict rv)
 {
   enter;
 
@@ -191,7 +191,7 @@ xapi list_put(list * const restrict li, size_t index, size_t len, void * el, voi
   finally : coda;
 }
 
-xapi list_add(list * const restrict li, size_t index, size_t len, void * el, void ** const restrict rv)
+xapi list_add(list * const restrict li, size_t index, size_t len, const void * el, const void ** const restrict rv)
 {
   enter;
 
@@ -321,42 +321,42 @@ API xapi list_pop(list * const restrict li, void ** const restrict el)
   finally : coda;
 }
 
-API xapi list_push(list * const restrict li, void * el)
+API xapi list_push(list * const restrict li, const void * el)
 {
   xproxy(list_add, li, li->l, 1, &el, 0);
 }
 
-API xapi list_push_range(list * const restrict li, void * el, size_t len)
+API xapi list_push_range(list * const restrict li, const void * el, size_t len)
 {
   xproxy(list_add, li, li->l, len, el, 0);
 }
 
-API xapi list_unshift(list * const restrict li, void * el)
+API xapi list_unshift(list * const restrict li, const void * el)
 {
   xproxy(list_add, li, 0, 1, &el, 0);
 }
 
-API xapi list_unshift_range(list * const restrict li, void * el, size_t len)
+API xapi list_unshift_range(list * const restrict li, const void * el, size_t len)
 {
   xproxy(list_add, li, 0, len, el, 0);
 }
 
-API xapi list_insert(list * const restrict li, size_t index, void * el)
+API xapi list_insert(list * const restrict li, size_t index, const void * el)
 {
   xproxy(list_add, li, index, 1, &el, 0);
 }
 
-API xapi list_insert_range(list * const restrict li, size_t index, void * el, size_t len)
+API xapi list_insert_range(list * const restrict li, size_t index, const void * el, size_t len)
 {
   xproxy(list_add, li, index, len, el, 0);
 }
 
-API xapi list_set(list * const restrict li, size_t index, void * el)
+API xapi list_set(list * const restrict li, size_t index, const void * el)
 {
   xproxy(list_put, li, index, 1, &el, 0);
 }
 
-API xapi list_set_range(list * const restrict li, size_t index, void * el, size_t len)
+API xapi list_set_range(list * const restrict li, size_t index, const void * el, size_t len)
 {
   xproxy(list_put, li, index, len, el, 0);
 }

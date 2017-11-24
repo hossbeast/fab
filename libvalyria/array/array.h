@@ -149,7 +149,7 @@ xapi array_pop(array * const restrict ar, void ** const restrict el)
 //  ar - array
 //  el - (returns) pointer to element
 //
-xapi array_push(array * const restrict ar, void * const restrict el)
+xapi array_push(array * const restrict ar, void * el)
   __attribute__((nonnull));
 
 /// array_push_range
@@ -174,7 +174,7 @@ xapi array_push_range(array * const restrict ar, size_t len, void * el)
 //  ar - array
 //  el - (returns) pointer to element
 //
-xapi array_unshift(array * const restrict ar, void * restrict el)
+xapi array_unshift(array * const restrict ar, void * el)
   __attribute__((nonnull));
 
 /// array_unshift_range
@@ -190,7 +190,7 @@ xapi array_unshift(array * const restrict ar, void * restrict el)
 //  len - number of elements
 //  el  - (returns) pointers to elements
 //
-xapi array_unshift_range(array * const restrict ar, size_t len, void * const restrict el)
+xapi array_unshift_range(array * const restrict ar, size_t len, void * el)
   __attribute__((nonnull));
 
 /// array_insert
@@ -203,7 +203,7 @@ xapi array_unshift_range(array * const restrict ar, size_t len, void * const res
 //  index - 0 <= index <= array_size(s)
 //  el    - (returns) pointer to element
 //
-xapi array_insert(array * const restrict ar, size_t index, void * restrict el)
+xapi array_insert(array * const restrict ar, size_t index, void * el)
   __attribute__((nonnull));
 
 /// array_insert_range
@@ -217,7 +217,7 @@ xapi array_insert(array * const restrict ar, size_t index, void * restrict el)
 //  len   - number of elements to insert
 //  el    - (returns) pointers to elements
 //
-xapi array_insert_range(array * const restrict ar, size_t index, size_t len, void * restrict el)
+xapi array_insert_range(array * const restrict ar, size_t index, size_t len, void * el)
   __attribute__((nonnull));
 
 /// array_set
@@ -233,7 +233,7 @@ xapi array_insert_range(array * const restrict ar, size_t index, size_t len, voi
 //  index - 0 <= index < array_size(s)
 //  el    - (returns) pointer to the element
 //
-xapi array_set(array * const restrict ar, size_t index, void * restrict el)
+xapi array_set(array * const restrict ar, size_t index, void * el)
   __attribute__((nonnull));
 
 /// array_set_range
@@ -250,7 +250,7 @@ xapi array_set(array * const restrict ar, size_t index, void * restrict el)
 //  len   - number of elements to insert
 //  el    - (returns) pointers to the elements
 //
-xapi array_set_range(array * const restrict ar, size_t index, size_t len, void * restrict el)
+xapi array_set_range(array * const restrict ar, size_t index, size_t len, void * el)
   __attribute__((nonnull));
 
 /// array_recycle
