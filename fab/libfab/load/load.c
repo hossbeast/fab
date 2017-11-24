@@ -22,7 +22,6 @@
 
 #include "logger.h"
 #include "narrator.h"
-#include "xapi/SYS.errtab.h"
 
 #include "internal.h"
 #include "load.h"
@@ -69,10 +68,6 @@ API xapi fab_unload()
     fatal(xlinux_unload);
     fatal(logger_unload);
     fatal(narrator_unload);
-  }
-  else if(handles < 0)
-  {
-    fails(SYS_AUNLOAD, "library", "libfab");
   }
 
   finally : coda;

@@ -19,8 +19,6 @@
 #include "xlinux/load.h"
 #include "logger/load.h"
 
-#include "xapi/SYS.errtab.h"
-
 #include "internal.h"
 #include "load.internal.h"
 #include "XUNIT.errtab.h"
@@ -55,10 +53,6 @@ API xapi xunit_unload()
     // dependencies
     fatal(xlinux_unload);
     fatal(logger_unload);
-  }
-  else if(handles < 0)
-  {
-    fails(SYS_AUNLOAD, "library", "libxunit");
   }
 
   finally : coda;

@@ -16,7 +16,6 @@
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
 #include "xapi.h"
-#include "xapi/SYS.errtab.h"
 
 #include "xlinux/load.h"
 #include "logger/load.h"
@@ -58,10 +57,6 @@ API xapi yyutil_unload()
     // dependencies
     fatal(xlinux_unload);
     fatal(logger_unload);
-  }
-  else if(handles < 0)
-  {
-    fails(SYS_AUNLOAD, "library", "libyyutil");
   }
 
   finally : coda;

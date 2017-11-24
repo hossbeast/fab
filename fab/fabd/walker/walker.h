@@ -36,6 +36,6 @@ struct node;
 //  abspath    - absolute path to a directory
 //
 xapi walker_walk(struct node ** restrict root, struct node * restrict ancestor, const char * restrict abspath)
-  __attribute__((nonnull(1,3)));
+  __attribute__((nonnull(3)));
 
 #endif

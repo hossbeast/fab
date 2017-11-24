@@ -74,19 +74,18 @@ xapi pscreatex(pstring ** const restrict ps, size_t capacity)
 //  [c]   - single byte
 //
 xapi psvmkf(pstring ** restrict ps, pstring * restrict e, const char * const restrict fmt, va_list va)
-  __attribute__((nonnull(1,3)));
+  __attribute__((nonnull(3)));
 
 xapi psmkf(pstring ** restrict ps, pstring * restrict e, const char * const restrict fmt, ...)
-  __attribute__((nonnull(1,3)));
+  __attribute__((nonnull(3)));
 
 xapi psmks(pstring ** restrict ps, pstring * restrict e, const char * const restrict s)
-  __attribute__((nonnull(1,3)));
+  __attribute__((nonnull(3)));
 
 xapi psmkw(pstring ** restrict ps, pstring * restrict e, const char * const restrict b, size_t l)
-  __attribute__((nonnull(1,3)));
+  __attribute__((nonnull(3)));
 
-xapi psmkc(pstring ** restrict ps, pstring * restrict e, int c)
-  __attribute__((nonnull(1)));
+xapi psmkc(pstring ** restrict ps, pstring * restrict e, int c);
 
 /// psfree
 //

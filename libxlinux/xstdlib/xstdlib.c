@@ -103,7 +103,7 @@ API xapi xrealloc(void* target, size_t es, size_t ec, size_t oec)
       tfail(perrtab_KERNEL, errno);
     *t = mem;
 
-    if(es * ec)
+    if(es && ec)
     {
       if(*t)
       {

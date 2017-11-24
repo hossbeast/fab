@@ -16,7 +16,6 @@
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
 #include "xapi.h"
-#include "xapi/SYS.errtab.h"
 
 #include "internal.h"
 #include "load.internal.h"
@@ -34,10 +33,9 @@ API xapi xlinux_load()
 {
   enter;
 
-  if(handles == 0)
+  if(handles++ == 0)
   {
   }
-  handles++;
 
   finally : coda;
 }
@@ -49,10 +47,6 @@ API xapi xlinux_unload()
   if(--handles == 0)
   {
     mempolicy_teardown();
-  }
-  else if(handles < 0)
-  {
-    fails(SYS_AUNLOAD, "library", "libxlinux");
   }
 
   finally : coda;

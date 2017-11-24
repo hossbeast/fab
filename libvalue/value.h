@@ -119,7 +119,7 @@ xapi value_unload(void);
 //  N   - narrator to write to
 //
 xapi value_say(const value * const restrict val, struct narrator * const restrict N)
-  __attribute__((nonnull(1)));
+  __attribute__((nonnull(2)));
 
 /// value_say_verbose
 //
@@ -131,7 +131,7 @@ xapi value_say(const value * const restrict val, struct narrator * const restric
 //  N   - narrator to write to
 //
 xapi value_say_verbose(const value * const restrict val, struct narrator * const restrict N)
-  __attribute__((nonnull(1)));
+  __attribute__((nonnull(2)));
 
 /// value_cmp
 //

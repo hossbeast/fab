@@ -59,10 +59,10 @@ void info_teardown(void);
 //  keyl - nonzero key length
 //
 void info_setw(info * restrict i, const char * restrict key, size_t keyl, const char * restrict vbuf, size_t vlen)
-  __attribute__((nonnull));
+  __attribute__((nonnull(1, 2)));
 
 void info_setvf(info * restrict i, const char * restrict key, size_t keyl, const char * restrict vfmt, va_list va)
-  __attribute__((nonnull));
+  __attribute__((nonnull(1, 2)));
 
 /// info_freeze
 //

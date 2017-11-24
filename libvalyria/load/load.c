@@ -16,7 +16,6 @@
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
 #include "xapi.h"
-#include "xapi/SYS.errtab.h"
 
 #include "xlinux/load.h"
 
@@ -53,10 +52,6 @@ API xapi valyria_unload()
     // modules
     // dependencies
     fatal(xlinux_unload);
-  }
-  else if(handles < 0)
-  {
-    fails(SYS_AUNLOAD, "library", "libvalyria");
   }
 
   finally : coda;

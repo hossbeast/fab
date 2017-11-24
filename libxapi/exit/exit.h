@@ -20,9 +20,6 @@
 
 #include "xapi.h"
 
-#if XAPI_STACKTRACE
-#define restrict __restrict
-
 /// xapi_exit_errname
 //
 // SUMMARY
@@ -88,7 +85,7 @@ const errtab * xapi_exit_errtab(const xapi exit);
 //
 xapi_code xapi_exit_errcode(const xapi exit);
 
-/// xapi_exit_errtabname
+/// xapi_exit_errtab_name
 //
 // SUMMARY
 //  get the name of an error table from an exit value, e.g. "SYS"
@@ -101,7 +98,7 @@ xapi_code xapi_exit_errcode(const xapi exit);
 //
 const char * xapi_exit_errtab_name(const xapi exit);
 
-/// xapi_exit_errtabid
+/// xapi_exit_errtab_id
 //
 // SUMMARY
 //  get the id of an error table from an exit value
@@ -129,6 +126,4 @@ xapi_errtab_id xapi_exit_errtab_id(const xapi exit);
 xapi xapi_exit_synth(const errtab * const restrict etab, const xapi_code errcode)
   __attribute__((nonnull));
 
-#undef restrict
-#endif
 #endif

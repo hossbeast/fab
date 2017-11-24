@@ -17,7 +17,6 @@
 
 # error table with generic errors
 1 BADARGS   failed to parse command-line arguments
-2 AUNLOAD   asymmetric load-unload sequence
-3 NXPARAMS  unable to determine runtime parameters
-4 NOTSUPP   operation not supported
-5 INVALID   invalid argument
+2 NXPARAMS  unable to determine runtime parameters
+3 NOTSUPP   operation not supported
+4 INVALID   invalid argument

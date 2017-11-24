@@ -170,7 +170,10 @@ $cc         = [ gcc ]
 # cflags options
 $cflags       = [
   # universal compiler options
-  [ -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -Wmissing-prototypes -fdiagnostics-color=always ]
+  [ -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -Wmissing-prototypes -fdiagnostics-color=always -Wno-misleading-indentation ]
+
+  # readdir_r is deprecated
+  [ -Wno-deprecated-declarations ]
 
   # include paths
   [ $dcommon ~ lsr c -d s/^/-I ]
@@ -182,8 +185,10 @@ $cflags       = [
 # cflags options
 $cflags_final = [ -O3 ]
 $cflags_debug = [ -O0 -ggdb3 -DDEBUG ]
-$cflags_devel = [ -O0 -ggdb3 -DDEVEL [ -DBUILDROOT="\""$buildroot"\"" ~ j ] -DDEBUG_IPC ]
-$cflags_xunit = [ -O0 -ggdb3 -DXUNIT [ $dlibxunit ~ s/^/-I ] ]
+
+# -Wno-frame-address is required for libxapi stack unwinding, for now
+$cflags_devel = [ -O0 -ggdb3 -DDEVEL -Wno-frame-address [ -DBUILDROOT="\""$buildroot"\"" ~ j ] ]
+$cflags_xunit = [ -O0 -ggdb3 -DXUNIT -Wno-frame-address [ $dlibxunit ~ s/^/-I ] ]
 
 # cflags variants
 $cflags_eapi_final = [ $cflags -DXAPI_MODE_ERRORCODE $cflags_final ]
@@ -192,6 +197,6 @@ $cflags_eapi_devel = [ $cflags -DXAPI_MODE_ERRORCODE $cflags_devel ]
 $cflags_xapi_final = [ $cflags -DXAPI_MODE_STACKTRACE $cflags_final ]
 $cflags_xapi_debug = [ $cflags -DXAPI_MODE_STACKTRACE $cflags_debug ]
 
-# test code MUST be compiled with STACKTRACE_CHECKS, to match xunit itself
+# test code MUST be compiled with STACKTRACE_CHECKS, to be called by xunit.devel
 $cflags_xapi_devel = [ $cflags -DXAPI_MODE_STACKTRACE_CHECKS $cflags_devel ]
 $cflags_xapi_xunit = [ $cflags -DXAPI_MODE_STACKTRACE_CHECKS $cflags_xunit ]

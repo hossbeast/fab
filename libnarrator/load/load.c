@@ -16,7 +16,6 @@
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
 #include "xapi.h"
-#include "xapi/SYS.errtab.h"
 
 #include "xlinux/load.h"
 
@@ -35,7 +34,7 @@ API xapi narrator_load()
 {
   enter;
 
-  if(handles == 0)
+  if(handles++ == 0)
   {
     // dependencies
     fatal(xlinux_load);
@@ -44,7 +43,6 @@ API xapi narrator_load()
     fatal(nullity_setup);
     fatal(fd_setup);
   }
-  handles++;
 
   finally : coda;
 }
@@ -61,10 +59,6 @@ API xapi narrator_unload()
 
     // dependencies
     fatal(xlinux_unload);
-  }
-  else if(handles < 0)
-  {
-    fails(SYS_AUNLOAD, "library", "libnarrator");
   }
 
   finally : coda;

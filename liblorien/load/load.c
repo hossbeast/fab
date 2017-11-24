@@ -21,8 +21,6 @@
 #include "valyria/load.h"
 #include "narrator/load.h"
 
-#include "xapi/SYS.errtab.h"
-
 #include "internal.h"
 #include "load.internal.h"
 
@@ -59,10 +57,6 @@ API xapi lorien_unload()
     fatal(logger_unload);
     fatal(valyria_unload);
     fatal(narrator_unload);
-  }
-  else if(handles < 0)
-  {
-    tfails(perrtab_SYS, SYS_AUNLOAD, "library", "liblorien");
   }
 
   finally : coda;

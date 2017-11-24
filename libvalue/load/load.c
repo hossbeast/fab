@@ -21,8 +21,6 @@
 #include "valyria/load.h"
 #include "yyutil/load.h"
 
-#include "xapi/SYS.errtab.h"
-
 #include "internal.h"
 #include "load.internal.h"
 #include "VALUE.errtab.h"
@@ -33,7 +31,7 @@ API xapi value_load()
 {
   enter;
 
-  if(handles == 0)
+  if(handles++ == 0)
   {
     // dependencies
     fatal(xlinux_load);
@@ -41,7 +39,6 @@ API xapi value_load()
     fatal(valyria_load);
     fatal(yyutil_load);
   }
-  handles++;
 
   finally : coda;
 }
@@ -58,10 +55,6 @@ API xapi value_unload()
     fatal(valyria_unload);
     fatal(narrator_unload);
     fatal(yyutil_unload);
-  }
-  else if(handles < 0)
-  {
-    tfails(perrtab_SYS, SYS_AUNLOAD, "library", "libvalue");
   }
 
   finally : coda;

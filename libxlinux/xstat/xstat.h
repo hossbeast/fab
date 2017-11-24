@@ -54,13 +54,13 @@ xapi xstatvf(struct stat * restrict buf, const char * restrict path_fmt, va_list
 //  s/f/vf - different ways to pass path
 //
 xapi uxstats(int * restrict r, struct stat * restrict buf, const char * restrict path)
-  __attribute__((nonnull(1,2)));
+  __attribute__((nonnull(2,3)));
 
 xapi uxstatf(int * restrict r, struct stat * restrict buf, const char * restrict path_fmt, ...)
-  __attribute__((nonnull(1,2)));
+  __attribute__((nonnull(2,3)));
 
 xapi uxstatvf(int * restrict r, struct stat * restrict buf, const char * restrict path_fmt, va_list va)
-  __attribute__((nonnull(1,2)));
+  __attribute__((nonnull(2,3)));
 
 /// xlstat
 //
@@ -71,13 +71,13 @@ xapi uxstatvf(int * restrict r, struct stat * restrict buf, const char * restric
 //  s/f/vf - different ways to pass path
 //
 xapi xlstats(int * restrict r, struct stat * restrict buf, const char * restrict path)
-  __attribute__((nonnull(1,2)));
+  __attribute__((nonnull(2,3)));
 
 xapi xlstatf(int * restrict r, struct stat * restrict buf, const char * restrict path_fmt, ...)
-  __attribute__((nonnull(1,2)));
+  __attribute__((nonnull(2,3)));
 
 xapi xlstatvf(int * restrict r, struct stat * restrict buf, const char * restrict path_fmt, va_list va)
-  __attribute__((nonnull(1,2)));
+  __attribute__((nonnull(2,3)));
 
 /// uxlstat
 //
@@ -89,13 +89,13 @@ xapi xlstatvf(int * restrict r, struct stat * restrict buf, const char * restric
 //  s/f/vf - different ways to pass path
 //
 xapi uxlstats(int * restrict r, struct stat * restrict buf, const char * restrict path)
-  __attribute__((nonnull(1,2)));
+  __attribute__((nonnull(2,3)));
 
 xapi uxlstatf(int * restrict r, struct stat * restrict buf, const char * restrict path_fmt, ...)
-  __attribute__((nonnull(1,2)));
+  __attribute__((nonnull(2,3)));
 
 xapi uxlstatvf(int * restrict r, struct stat * restrict buf, const char * restrict path_fmt, va_list va)
-  __attribute__((nonnull(1,2)));
+  __attribute__((nonnull(2,3)));
 
 /// xfstat
 //
@@ -135,7 +135,7 @@ xapi xutimensats(int dirfd, const struct timespec times[2], int flags, const cha
 //  proxy for utimensat that only fails when errno != ENOENT
 //
 xapi uxutimensats(int dirfd, const struct timespec times[2], int flags, int * restrict r, const char * const restrict path)
-  __attribute__((nonnull));
+  __attribute__((nonnull(5)));
 
 /// xmkdir
 //

@@ -44,7 +44,7 @@ API xapi sigutil_defaults()
 
   // default disposition for all low signals
   int x;
-  for(x = 1; x < SIGUNUSED; x++)
+  for(x = 1; x < SIGSYS; x++)
   {
     if(x != SIGKILL && x != SIGSTOP)
     {

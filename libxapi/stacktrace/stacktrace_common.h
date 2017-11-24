@@ -21,8 +21,9 @@
 #if XAPI_STACKTRACE
 
 #include <stdio.h>
-#include <sys/types.h>
 #include <errno.h>
+
+#include "types.h"
 
 // declarations of frame-manipulation functions (application-visible but not directly called)
 #include "xapi/frame.h"
@@ -147,12 +148,12 @@
 #define finally                                 \
   goto XAPI_FINALIZE;                           \
 XAPI_FINALIZE:                                  \
-  if(__xapi_f1)                                 \
+  if(__xapi_this_frame_finally)                 \
   {                                             \
     goto XAPI_LEAVE;                            \
   }                                             \
   __xapi_current_frame = xapi_top_frame_index;  \
-  __xapi_f1 = 1;                                \
+  __xapi_this_frame_finally = true;             \
   goto XAPI_FINALLY;                            \
 XAPI_FINALLY
 
@@ -181,19 +182,19 @@ XAPI_LEAVE:                         \
 
 // call xapi_frame_set with the current location
 #define XAPI_FRAME_SET(exit)  \
-  xapi_frame_set(exit, __xapi_f1 ? __xapi_current_frame : -1, __FILE__, __LINE__, __FUNCTION__)
+  xapi_frame_set(exit, __xapi_this_frame_finally ? __xapi_current_frame : -1, __FILE__, __LINE__, __FUNCTION__)
 
 // call xapi_frame_set with the current location, and a single key/value info pair
 #define XAPI_FRAME_SET_INFOS(exit, key, vstr) \
-  xapi_frame_set_infos(exit, __xapi_f1 ? __xapi_current_frame : -1, key, vstr, __FILE__, __LINE__, __FUNCTION__)
+  xapi_frame_set_infos(exit, __xapi_this_frame_finally ? __xapi_current_frame : -1, key, vstr, __FILE__, __LINE__, __FUNCTION__)
 
 // call xapi_frame_set with the current location, and a single key/value info pair
 #define XAPI_FRAME_SET_INFOW(exit, key, vbuf, vlen) \
-  xapi_frame_set_infow(exit, __xapi_f1 ? __xapi_current_frame : -1, key, vbuf, vlen, __FILE__, __LINE__, __FUNCTION__)
+  xapi_frame_set_infow(exit, __xapi_this_frame_finally ? __xapi_current_frame : -1, key, vbuf, vlen, __FILE__, __LINE__, __FUNCTION__)
 
 // call xapi_frame_set with the current location, and a single key/value info pair
 #define XAPI_FRAME_SET_INFOF(exit, key, vfmt, ...)  \
-  xapi_frame_set_infof(exit, __xapi_f1 ? __xapi_current_frame : -1, key, vfmt, __FILE__, __LINE__, __FUNCTION__, ##__VA_ARGS__)
+  xapi_frame_set_infof(exit, __xapi_this_frame_finally ? __xapi_current_frame : -1, key, vfmt, __FILE__, __LINE__, __FUNCTION__, ##__VA_ARGS__)
 
 /*
 ** called after finally

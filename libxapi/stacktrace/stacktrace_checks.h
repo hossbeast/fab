@@ -83,14 +83,14 @@ when calling non-xapi code, you have a couple of options.
 //  must be the first line of any xapi function
 //
 // DETAILS
-//  __xapi_f1            - tracks whether the finalize label has been hit
-//  __xapi_topframe      - used by xapi_frame_leave to cleanup when the top-level function exits
-//  __xapi_base_frame    - index of the base frame for this invocation
-//  __xapi_current_frame - index of the current frame for this invocation
+//  __xapi_this_frame_finally - tracks whether the finalize label has been hit
+//  __xapi_topframe           - used by xapi_frame_leave to cleanup when the top-level function exits
+//  __xapi_base_frame         - index of the base frame for this invocation
+//  __xapi_current_frame      - index of the current frame for this invocation
 //
 #define enter                                                                                 \
   __label__ XAPI_LEAVE, XAPI_FINALIZE, XAPI_FINALLY;                                          \
-  int __xapi_f1 = 0;                                                                          \
+  bool __xapi_this_frame_finally = false;                                                     \
   int __xapi_topframe = !xapi_sentinel;                                                       \
   xapi_sentinel = 1;                                                                          \
   xapi_frame_index __attribute__((unused)) __xapi_base_frame = xapi_top_frame_index;          \
@@ -106,7 +106,7 @@ when calling non-xapi code, you have a couple of options.
 
 #define enter_nochecks                                                                        \
   __label__ XAPI_LEAVE, XAPI_FINALIZE, XAPI_FINALLY;                                          \
-  int __xapi_f1 = 0;                                                                          \
+  bool __xapi_this_frame_finally = false;                                                     \
   int __xapi_topframe = !xapi_sentinel;                                                       \
   xapi_sentinel = 1;                                                                          \
   xapi_frame_index __attribute__((unused)) __xapi_base_frame = xapi_top_frame_index;          \

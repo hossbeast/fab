@@ -98,8 +98,7 @@ xapi config_promote(struct value_store * store_staging, struct value * config_st
 //  val    - throw config object
 //  [path] - path from the root of the config tree
 //
-xapi config_throw(xapi error, struct value * restrict val, const char * restrict path)
-  __attribute__((nonnull(2)));
+xapi config_throw(xapi error, struct value * restrict val, const char * restrict path);
 
 #undef restrict
 #endif

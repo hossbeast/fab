@@ -30,8 +30,7 @@ struct memblk;
 
 typedef struct fab_command fab_command;
 
-void command_free(fab_command * const restrict cmd)
-  __attribute__((nonnull));
+void command_free(fab_command * const restrict cmd);
 
 void command_ifree(fab_command ** const restrict cmd)
   __attribute__((nonnull));

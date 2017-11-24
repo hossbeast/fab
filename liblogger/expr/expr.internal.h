@@ -42,7 +42,7 @@ struct filter;
 //  boolean indicating whether the expr was syntactically valid
 //
 int expr_lex(const char * restrict expr, size_t exprl, struct filter * restrict filterp, uint32_t * restrict attrsp)
-  __attribute__((nonnull));
+  __attribute__((nonnull(1)));
 
 /// expr_parse
 //

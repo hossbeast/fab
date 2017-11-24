@@ -142,7 +142,7 @@ static xapi __attribute__((nonnull)) stream_finalize(stream *  restrict streamp)
   finally : coda;
 }
 
-static xapi __attribute__((nonnull)) stream_xdestroy(stream *  restrict streamp)
+static xapi stream_xdestroy(stream *  restrict streamp)
 {
   enter;
 

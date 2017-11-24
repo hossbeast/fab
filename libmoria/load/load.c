@@ -22,8 +22,6 @@
 #include "narrator/load.h"
 #include "valyria/load.h"
 
-#include "xapi/SYS.errtab.h"
-
 #include "internal.h"
 #include "load.internal.h"
 #include "errtab/MORIA.errtab.h"
@@ -60,10 +58,6 @@ API xapi moria_unload()
     fatal(xlinux_unload);
     fatal(narrator_unload);
     fatal(valyria_unload);
-  }
-  else if(handles < 0)
-  {
-    fails(SYS_AUNLOAD, "library", "libmoria");
   }
 
   finally : coda;

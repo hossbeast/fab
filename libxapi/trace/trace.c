@@ -411,21 +411,21 @@ API size_t xapi_trace_full(char * const dst, const size_t sz, uint16_t attrs)
 API void xapi_pithytrace_to(int fd)
 {
   char space[4096];
-  size_t z = xapi_trace_pithy(space, sizeof(space), XAPI_TRACE_COLORIZE);
+  size_t z = xapi_trace_pithy(space, sizeof(space), 0);
   int __attribute__((unused)) r = write(fd, space, z);
 }
 
 API void xapi_fulltrace_to(int fd)
 {
   char space[4096];
-  size_t z = xapi_trace_full(space, sizeof(space), XAPI_TRACE_COLORIZE);
+  size_t z = xapi_trace_full(space, sizeof(space), 0);
   int __attribute__((unused)) r = write(fd, space, z);
 }
 
 API void xapi_backtrace_to(int fd)
 {
   char space[4096];
-  size_t z = xapi_trace_full(space, sizeof(space), XAPI_TRACE_COLORIZE);
+  size_t z = xapi_trace_full(space, sizeof(space), 0);
   int __attribute__((unused)) r = write(fd, space, z);
 }
 
