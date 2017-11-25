@@ -137,6 +137,28 @@ static void int_info_push(const char * const restrict name, xunit_arg * a)
   xapi_info_pushf(name, "%d", a->d);
 }
 
+static void char_unpack(va_list va, xunit_arg * a)
+{
+  a->c = va_arg(va, int);
+}
+
+static int char_compare(xunit_arg * A, xunit_arg * B)
+{
+  return A->c - B->c;
+}
+
+static void char_info_push(const char * const restrict name, xunit_arg * a)
+{
+  if(a->c < 0x20 || a->c > 0x7e)
+  {
+    xapi_info_pushf(name, "0x%02hhx", a->c);
+  }
+  else
+  {
+    xapi_info_pushf(name, "'%c'", a->c);
+  }
+}
+
 static void float_unpack(va_list va, xunit_arg * a)
 {
   a->f = (float)va_arg(va, double);
@@ -204,7 +226,7 @@ static int xapi_compare(xunit_arg * A, xunit_arg * B)
 
 static void xapi_info_push(const char * const restrict name, xunit_arg * a)
 {
-  xapi_info_pushf(name, "%s(%d)", xapi_exit_errname(a->e), a->e);
+  xapi_info_pushf(name, "%s_%s (%d)", xapi_exit_errtab_name(a->e), xapi_exit_errname(a->e), a->e);
 }
 
 static void pointer_unpack(va_list va, xunit_arg * a)
@@ -247,6 +269,12 @@ APIDATA xunit_type * xunit_int = (xunit_type[]) {{
     xu_unpack : int_unpack
   , xu_compare : int_compare
   , xu_info_push : int_info_push
+}};
+
+APIDATA xunit_type * xunit_char = (xunit_type[]) {{
+    xu_unpack : char_unpack
+  , xu_compare : char_compare
+  , xu_info_push : char_info_push
 }};
 
 APIDATA xunit_type * xunit_xapi = (xunit_type[]) {{

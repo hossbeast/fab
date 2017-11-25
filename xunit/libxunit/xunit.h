@@ -19,6 +19,7 @@
 #define _XUNIT_H
 
 #include "xapi.h"
+#include "types.h"
 
 #ifndef TEST_TYPE
 # define TEST_TYPE struct xunit_test
@@ -59,7 +60,9 @@ typedef struct xunit_test
   struct xunit_unit * xu_unit;
   char *              xu_name;
   xunit_test_entry    xu_entry;
-  int                 xu_only;
+  bool                xu_only;
+  bool                xu_run;
+  bool                xu_skip;
 } xunit_test;
 
 #endif

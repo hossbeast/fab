@@ -34,6 +34,8 @@ REMARKS
 
 #include <string.h>
 
+#include "types.h"
+
 #include "xapi.h"
 #include "xapi/exit.h"
 #include "xapi/info.h"
@@ -42,11 +44,14 @@ REMARKS
 #include "xunit/XUNIT.errtab.h"
 #include "macros.h"
 
-#define XU_EQ 1
-#define XU_GT 2
-#define XU_LT 3
-#define XU_NULL 4
-#define XU_NOTNULL 5
+#define XU_EQ 1         // equal to
+#define XU_NE 2         // not equal to
+#define XU_GT 3         // greater than
+#define XU_GE 4         // greater than or equal to
+#define XU_LT 5         // less than
+#define XU_LE 6         // less than or equal to
+#define XU_NULL 7       // is null
+#define XU_NOTNULL 8    // is not null
 
 extern uint32_t xunit_assertions_passed;
 extern uint32_t xunit_assertions_failed;
@@ -55,6 +60,7 @@ extern uint32_t xunit_assertions_failed;
 extern struct xunit_type * xunit_buffer;
 extern struct xunit_type * xunit_string;
 extern struct xunit_type * xunit_int;
+extern struct xunit_type * xunit_char;
 extern struct xunit_type * xunit_xapi;
 extern struct xunit_type * xunit_int64;
 extern struct xunit_type * xunit_float;
@@ -67,13 +73,46 @@ extern struct xunit_type * xunit_pointer;
 //  raise a unit test assertion failure if a condition is false
 //
 #define assert_eq_b(expected, actual)       _assertion(xunit_bool, XU_EQ, QUOTE(actual), expected, actual)
-#define assert_eq_d(expected, actual)       _assertion(xunit_int, XU_EQ, QUOTE(actual), expected, actual)
-#define assert_eq_e(expected, actual)       _assertion(xunit_xapi, XU_EQ, QUOTE(actual), expected, actual)
-#define assert_eq_f(expected, actual)       _assertion(xunit_float, XU_EQ, QUOTE(actual), expected, actual)
-#define assert_eq_i64(expected, actual)     _assertion(xunit_int64, XU_EQ, QUOTE(actual), expected, actual)
-#define assert_eq_s(expected, actual)       _assertion(xunit_string, XU_EQ, QUOTE(actual), expected, actual)
-#define assert_eq_w(exp, expz, act, actz)   _assertion(xunit_buffer, XU_EQ, QUOTE(act), exp, expz, act, actz)
+#define assert_ne_b(expected, actual)       _assertion(xunit_bool, XU_NE, QUOTE(actual), expected, actual)
 
+#define assert_eq_c(expected, actual)       _assertion(xunit_char, XU_EQ, QUOTE(actual), expected, actual)
+#define assert_ne_c(expected, actual)       _assertion(xunit_char, XU_NE, QUOTE(actual), expected, actual)
+#define assert_gt_c(expected, actual)       _assertion(xunit_char, XU_GT, QUOTE(actual), expected, actual)
+#define assert_ge_c(expected, actual)       _assertion(xunit_char, XU_GE, QUOTE(actual), expected, actual)
+#define assert_lt_c(expected, actual)       _assertion(xunit_char, XU_LT, QUOTE(actual), expected, actual)
+#define assert_le_c(expected, actual)       _assertion(xunit_char, XU_LE, QUOTE(actual), expected, actual)
+
+#define assert_eq_d(expected, actual)       _assertion(xunit_int, XU_EQ, QUOTE(actual), expected, actual)
+#define assert_ne_d(expected, actual)       _assertion(xunit_int, XU_NE, QUOTE(actual), expected, actual)
+#define assert_gt_d(expected, actual)       _assertion(xunit_int, XU_GT, QUOTE(actual), expected, actual)
+#define assert_ge_d(expected, actual)       _assertion(xunit_int, XU_GE, QUOTE(actual), expected, actual)
+#define assert_lt_d(expected, actual)       _assertion(xunit_int, XU_LT, QUOTE(actual), expected, actual)
+#define assert_le_d(expected, actual)       _assertion(xunit_int, XU_LE, QUOTE(actual), expected, actual)
+
+#define assert_eq_e(expected, actual)       _assertion(xunit_xapi, XU_EQ, QUOTE(actual), expected, actual)
+#define assert_ne_e(expected, actual)       _assertion(xunit_xapi, XU_NE, QUOTE(actual), expected, actual)
+
+#define assert_eq_f(expected, actual)       _assertion(xunit_float, XU_EQ, QUOTE(actual), expected, actual)
+#define assert_ne_f(expected, actual)       _assertion(xunit_float, XU_NE, QUOTE(actual), expected, actual)
+#define assert_gt_f(expected, actual)       _assertion(xunit_float, XU_GT, QUOTE(actual), expected, actual)
+#define assert_ge_f(expected, actual)       _assertion(xunit_float, XU_GE, QUOTE(actual), expected, actual)
+#define assert_lt_f(expected, actual)       _assertion(xunit_float, XU_LT, QUOTE(actual), expected, actual)
+#define assert_le_f(expected, actual)       _assertion(xunit_float, XU_LE, QUOTE(actual), expected, actual)
+
+#define assert_eq_i64(expected, actual)     _assertion(xunit_int64, XU_EQ, QUOTE(actual), expected, actual)
+#define assert_ne_i64(expected, actual)     _assertion(xunit_int64, XU_NE, QUOTE(actual), expected, actual)
+#define assert_gt_i64(expected, actual)     _assertion(xunit_int64, XU_GT, QUOTE(actual), expected, actual)
+#define assert_ge_i64(expected, actual)     _assertion(xunit_int64, XU_GE, QUOTE(actual), expected, actual)
+#define assert_lt_i64(expected, actual)     _assertion(xunit_int64, XU_LT, QUOTE(actual), expected, actual)
+#define assert_le_i64(expected, actual)     _assertion(xunit_int64, XU_LE, QUOTE(actual), expected, actual)
+
+#define assert_eq_s(expected, actual)       _assertion(xunit_string, XU_EQ, QUOTE(actual), expected, actual)
+#define assert_ne_s(expected, actual)       _assertion(xunit_string, XU_NE, QUOTE(actual), expected, actual)
+
+#define assert_eq_w(exp, expz, act, actz)   _assertion(xunit_buffer, XU_EQ, QUOTE(act), exp, expz, act, actz)
+#define assert_ne_w(exp, expz, act, actz)   _assertion(xunit_buffer, XU_NE, QUOTE(act), exp, expz, act, actz)
+
+#define assert_null(actual)                 _assertion(xunit_pointer, XU_NULL, QUOTE(actual), actual)
 #define assert_notnull(actual)              _assertion(xunit_pointer, XU_NOTNULL, QUOTE(actual), actual)
 
 #define _assertion(type, op, value, ...)                                 \
@@ -82,8 +121,6 @@ extern struct xunit_type * xunit_pointer;
       fail(XUNIT_FAIL);                                                  \
     }                                                                    \
   } while(0)
-
-#define restrict __restrict
 
 /// xunit_assertion_evaluate
 //
@@ -98,7 +135,7 @@ extern struct xunit_type * xunit_pointer;
 // RETURNS
 //  boolean value indicating whether the assertion passed
 //
-int xunit_assertion_evaluate(const struct xunit_type * const restrict type, uint8_t op, const char * const restrict value, ...)
+bool xunit_assertion_evaluate(const struct xunit_type * const restrict type, uint8_t op, const char * const restrict value, ...)
   __attribute__((nonnull(1)));
 
 #if XAPI_STACKTRACE
@@ -123,5 +160,4 @@ static inline void assert_info_unstage()
 }
 #endif
 
-#undef restrict
 #endif

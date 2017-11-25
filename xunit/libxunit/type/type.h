@@ -29,6 +29,7 @@ SUMMARY
 
 #include <sys/types.h>
 #include <stdint.h>
+#include <stdbool.h>
 
 typedef union xunit_arg
 {
@@ -37,12 +38,13 @@ typedef union xunit_arg
     size_t l;
   };
 
+  char c;       // xunit_char
   int d;        // xunit_int
   char * s;     // xunit_string
   xapi e;       // xunit_xapi
   int64_t i64;  // xunit_int64
   float f;      // xunit_float
-  char b;       // xunit_bool
+  bool b;       // xunit_bool
 
   void * udata;
 } xunit_arg;

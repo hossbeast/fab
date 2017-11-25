@@ -15,6 +15,7 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
+#include <stdlib.h>
 #include <stdio.h>
 #include <dlfcn.h>
 #include <inttypes.h>
@@ -22,6 +23,7 @@
 #include "xapi/SYS.errtab.h"
 
 #include "xapi.h"
+#include "types.h"
 
 #include "xlinux/load.h"
 #include "logger/load.h"
@@ -39,24 +41,29 @@
 #include "narrator.h"
 #include "narrator/units.h"
 
-#include "args.h"
-#include "logging.h"
 #include "MAIN.errtab.h"
+#include "args.h"
+#include "assure.h"
+#include "logging.h"
 #include "macros.h"
 
-static uint32_t suite_assertions_passed = 0;
-static uint32_t suite_assertions_failed = 0;
-static uint32_t suite_tests_passed = 0;
-static uint32_t suite_tests_failed = 0;
-static uint32_t suite_units = 0;
+static xapi main_exit;
+static uint32_t suite_assertions_passed;
+static uint32_t suite_assertions_failed;
+static uint32_t suite_tests_passed;
+static uint32_t suite_tests_failed;
+static uint32_t suite_units;
 
-static xapi begin(int argc, char** argv, char ** envp)
+static xapi xmain()
 {
   enter;
 
   char trace[4096];
   Dl_info nfo;
   narrator * N;
+  uint64_t * test_vector = 0;
+  size_t test_vector_l = 0;
+  size_t test_vector_a = 0;
 
   // allocated with the same size as g_args.objects
   void ** objects = 0;
@@ -115,6 +122,8 @@ static xapi begin(int argc, char** argv, char ** envp)
       struct timespec unit_end;
       fatal(xclock_gettime, CLOCK_MONOTONIC_RAW, &unit_start);
 
+      test_vector_l = 0;
+
       // unit setup
       if(xunit->xu_setup)
         fatal(xunit->xu_setup, xunit);
@@ -126,14 +135,17 @@ static xapi begin(int argc, char** argv, char ** envp)
       uint32_t unit_assertions_passed = 0;
       uint32_t unit_assertions_failed = 0;
 
-      int only = 0;
+      bool only = false;
+      bool only_run = false;
       while(*test)
       {
         // convenience
         (*test)->xu_unit = xunit;
 
         if((*test)->xu_only)
-          only++;
+          only = true;
+        else if((*test)->xu_run)
+          only_run = true;
 
         test++;
       }
@@ -144,6 +156,12 @@ static xapi begin(int argc, char** argv, char ** envp)
       for(test = xunit->xu_tests; *test; test++)
       {
         if(only && !(*test)->xu_only)
+          continue;
+
+        if(only_run && !(*test)->xu_run)
+          continue;
+
+        if((*test)->xu_skip)
           continue;
 
         // convenience
@@ -167,6 +185,7 @@ static xapi begin(int argc, char** argv, char ** envp)
         }
 
         int test_failed = 0;
+        int test_index = (int)(test - xunit->xu_tests);
         if(invoke(entry, *test))
         {
           test_failed = 1;
@@ -174,7 +193,7 @@ static xapi begin(int argc, char** argv, char ** envp)
           // add identifying info
           if(name)
             xapi_frame_info_pushs("name", name);
-          xapi_frame_info_pushf("test", "%zu in [%d,%zu]", test - xunit->xu_tests, 0, tests_len);
+          xapi_frame_info_pushf("test", "%d in [%d,%zu]", test_index, 0, tests_len);
 
           // propagate non-unit-testing errors
           if(XAPI_ERRVAL != XUNIT_FAIL)
@@ -204,10 +223,30 @@ static xapi begin(int argc, char** argv, char ** envp)
 
         fatal(log_finish);
 
-        if(test_failed)
-          unit_tests_failed++;
-        else
+        if(!test_failed)
+        {
           unit_tests_passed++;
+        }
+        else
+        {
+          unit_tests_failed++;
+
+          div_t r = div(test_index, (sizeof(*test_vector) * 8));
+          int i = r.quot;
+          int o = r.rem;
+          fatal(assure, &test_vector, sizeof(*test_vector), i, &test_vector_a);
+          if(test_vector_l <= i)
+          {
+            memset(
+                test_vector + test_vector_l
+              , 0
+              , (i - test_vector_l + 1) * sizeof(*test_vector)
+            );
+            test_vector_l = i + 1;
+          }
+          test_vector[i] |= 1ULL << o;
+        }
+
         unit_assertions_passed += xunit_assertions_passed;
         unit_assertions_failed += xunit_assertions_failed;
       }
@@ -215,6 +254,25 @@ static xapi begin(int argc, char** argv, char ** envp)
       fatal(xclock_gettime, CLOCK_MONOTONIC_RAW, &unit_end);
 
       // report for this module
+      if(unit_tests_failed)
+      {
+        fatal(log_xstart, L_UNIT, L_RED, &N);
+        sayf("   %6d failed test(s) :", unit_tests_failed);
+        int x;
+        for(x = 0; x < test_vector_l; x++)
+        {
+          int y;
+          for(y = 0; y < (sizeof(*test_vector) * 8); y++)
+          {
+            if(test_vector[x] & (1ULL << y))
+            {
+              sayf(" %zu", (x * sizeof(*test_vector)) + y);
+            }
+          }
+        }
+        fatal(log_finish);
+      }
+
       fatal(log_xstart, L_UNIT, unit_tests_failed ? L_RED : L_GREEN, &N);
       sayf(" %%%6.2f pass rate on %6"PRIu32" assertions by %3"PRIu32" tests over "
         , 100 * ((double)unit_assertions_passed / (double)(unit_assertions_passed + unit_assertions_failed))
@@ -256,51 +314,78 @@ static xapi begin(int argc, char** argv, char ** envp)
   fatal(log_finish);
 
 finally:
+  // locals
   if(objects)
   {
     for(x = 0; x < g_args.objectsl; x++)
       fatal(ixdlclose, &objects[x]);
   }
-
-  // locals
   wfree(objects);
+  wfree(test_vector);
+
+  // modules
+  args_teardown();
 coda;
 }
 
-int main(int argc, char** argv, char ** envp)
+static xapi main_jump()
 {
   enter;
 
-  xapi R;
+  fatal(xmain);
+
+finally:
+  if(XAPI_UNWINDING)
+  {
+    main_exit = XAPI_ERRVAL;
+    fatal(logger_trace_full, L_ERROR, XAPI_TRACE_COLORIZE);
+    xapi_calltree_unwind();
+  }
+coda;
+}
+
+static xapi main_load(char ** envp)
+{
+  enter;
 
   // load libraries
   fatal(logger_load);
-  fatal(narrator_load);
-  fatal(xlinux_load);
   fatal(xunit_load);
 
   // initialize logger
   fatal(logging_setup, envp);
 
   // main program
-  fatal(begin, argc, argv, envp);
+  fatal(main_jump);
+
+finally:
+  // libraries
+  fatal(logger_unload);
+  fatal(xunit_unload);
+coda;
+}
+
+int main(int argc, char ** argv, char ** envp)
+{
+  enter;
+
+  setvbuf(stdout, NULL, _IONBF, 0);
+  setvbuf(stderr, NULL, _IONBF, 0);
+
+  xapi R = 0;
+  fatal(main_load, envp);
 
 finally:
   if(XAPI_UNWINDING)
-    fatal(logger_trace_full, L_ERROR, XAPI_TRACE_COLORIZE);
-
-  // modules
-  args_teardown();
-
-  // libraries
-  fatal(logger_unload);
-  fatal(narrator_unload);
-  fatal(xlinux_unload);
-  fatal(xunit_unload);
+  {
+    // failures which cannot be logged with liblogger to stderr
+    xapi_backtrace();
+  }
 
 conclude(&R);
   xapi_teardown();
 
+  R |= main_exit;
   R |= suite_assertions_failed;
   R |= suite_tests_failed;
 

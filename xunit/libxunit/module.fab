@@ -1,0 +1,9 @@
+artifact libxunit.{$final,$debug,$devel} : libxapi^, libxlinux^, liblogger^
+
+source c
+source clib   # exports
+
+rule libxunit^ : ^.o, exports
+{
+  $cc -o $@ $^
+}

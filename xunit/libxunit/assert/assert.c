@@ -34,7 +34,7 @@ APIDATA uint32_t xunit_assertions_failed;
 // API
 //
 
-API int xunit_assertion_evaluate(const xunit_type * const restrict type, uint8_t op, const char * const restrict value, ...)
+API bool xunit_assertion_evaluate(const xunit_type * const restrict type, uint8_t op, const char * const restrict value, ...)
 {
   va_list va;
   va_start(va, value);
@@ -55,19 +55,28 @@ API int xunit_assertion_evaluate(const xunit_type * const restrict type, uint8_t
     r = type->xu_compare(&expected, &actual);
   }
 
-  if(op == XU_EQ && r) { }
-  else if(op == XU_LT && r >= 0) { }
+       if(op == XU_EQ && r) { }
+  else if(op == XU_NE && r == 0) { }
+  else if(op == XU_GT && r < 0) { }
+  else if(op == XU_GE && r <= 0) { }
+  else if(op == XU_LT && r > 0) { }
+  else if(op == XU_LE && r >= 0) { }
   else if(op == XU_NULL && r) { }
   else if(op == XU_NOTNULL && !r) { }
   else
   {
     xunit_assertions_passed++;
-    return 1;
+    return true;
   }
 
   xunit_assertions_failed++;
   xapi_info_pushs("value", value);
-  if(op == XU_NULL || op == XU_NOTNULL)
+  if(op == XU_NE)
+  {
+    type->xu_info_push("expected not", &expected);
+    type->xu_info_push("actual", &actual);
+  }
+  else if(op == XU_NULL || op == XU_NOTNULL)
   {
     xapi_info_pushs("expected", op == XU_NULL ? "(null)" : "(notnull)");
     type->xu_info_push("actual", &actual);
@@ -78,5 +87,5 @@ API int xunit_assertion_evaluate(const xunit_type * const restrict type, uint8_t
     type->xu_info_push("actual", &actual);
   }
 
-  return 0;
+  return false;
 }
