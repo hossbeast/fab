@@ -25,7 +25,7 @@
 #include "errtab/KERNEL.errtab.h"
 #include "xstdlib.h"
 
-API xapi ixstrncat(char** s1, const char* s2, int s2len)
+API xapi ixstrncat(char ** s1, const char * s2, int s2len)
 {
   enter;
 
@@ -44,11 +44,11 @@ API xapi ixstrncat(char** s1, const char* s2, int s2len)
   finally : coda;
 }
 
-API xapi ixstrcat(char** s1, const char* s2)
+API xapi ixstrcat(char ** s1, const char * s2)
 {
   enter;
 
-  char* o = *s1;
+  char * o = *s1;
   int s1len = 0;
   if(o)
     s1len = strlen(o);
@@ -66,7 +66,7 @@ API xapi ixstrcat(char** s1, const char* s2)
   finally : coda;
 }
 
-API xapi ixstrcatf(char** s, char* fmt, ...)
+API xapi ixstrcatf(char ** s, char * fmt, ...)
 {
   enter;
 
@@ -76,7 +76,7 @@ API xapi ixstrcatf(char** s, char* fmt, ...)
   int req = vsnprintf(0, 0, fmt, va);
   va_end(va);
 
-  char* o = *s;
+  char * o = *s;
   int len = 0;
   if(o)
     len = strlen(o);
@@ -92,12 +92,12 @@ API xapi ixstrcatf(char** s, char* fmt, ...)
   finally : coda;
 }
 
-API xapi ixstrdup(char** s1, const char* s2)
+API xapi ixstrdup(char ** s1, const char * s2)
 {
   xproxy(ixstrndup, s1, s2, strlen(s2));
 }
 
-API xapi ixstrndup(char** s1, const char* s2, const size_t l)
+API xapi ixstrndup(char ** s1, const char * s2, const size_t l)
 {
   enter;
 
@@ -121,7 +121,7 @@ API xapi ixstrndup(char** s1, const char* s2, const size_t l)
   finally : coda;
 }
 
-API xapi ixsprintf(char** s, char* fmt, ...)
+API xapi ixsprintf(char ** s, char * fmt, ...)
 {
   enter;
 

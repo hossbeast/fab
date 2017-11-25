@@ -50,13 +50,16 @@ xapi xread(int fd, void * restrict buf, size_t count, ssize_t * restrict bytes)
 xapi uxread(int fd, void * restrict buf, size_t count, ssize_t * restrict bytes)
   __attribute__((nonnull(2)));
 
-/// axread
+/// aread
 //
 // SUMMARY
 //  proxy for read that also fails when count != actual
 //
 // PARAMETERS
 //
+int aread(int fd, void * restrict buf, size_t count)
+  __attribute__((nonnull));
+
 xapi axread(int fd, void * restrict buf, size_t count)
   __attribute__((nonnull));
 
@@ -71,13 +74,16 @@ xapi axread(int fd, void * restrict buf, size_t count)
 xapi xwrite(int fd, const void * buf, size_t count, ssize_t * bytes)
   __attribute__((nonnull(2)));
 
-/// axwrite
+/// awrite
 //
 // SUMMARY
 //  proxy for write that also fails when count != actual
 //
 // PARAMETERS
 //
+int awrite(int fd, const void * buf, size_t count)
+  __attribute__((nonnull));
+
 xapi axwrite(int fd, const void * buf, size_t count)
   __attribute__((nonnull));
 
@@ -224,16 +230,30 @@ xapi xsetresgid(gid_t rgid, gid_t egid, gid_t sgid);
 // SUMMARY
 //  proxy for euidaccess
 //
-xapi xeuidaccess(const char * restrict pathname, int mode, int * const restrict r)
-  __attribute__((nonnull(1)));
+xapi xeuidaccesss(int * restrict r, int mode, const char * restrict path)
+  __attribute__((nonnull(3)));
+
+xapi xeuidaccessf(int * restrict r, int mode, const char * restrict path_fmt, ...)
+  __attribute__((nonnull(3)))
+  __attribute__((format(printf, 3, 4)));
+
+xapi xeuidaccessvf(int * restrict r, int mode, const char * restrict path_fmt, va_list va)
+  __attribute__((nonnull(3)));
 
 /// uxeuidaccess
 //
 // SUMMARY
 //  proxy for euidaccess that only fails when errno !: { EACCES, ENOENT, ENOTDIR }
 //
-xapi uxeuidaccess(const char * restrict pathname, int mode, int * const restrict r)
-  __attribute__((nonnull(1)));
+xapi uxeuidaccesss(int * restrict r, int mode, const char * restrict path)
+  __attribute__((nonnull(3)));
+
+xapi uxeuidaccessf(int * restrict r, int mode, const char * restrict path_fmt, ...)
+  __attribute__((nonnull(3)))
+  __attribute__((format(printf, 3, 4)));
+
+xapi uxeuidaccessvf(int * restrict r, int mode, const char * restrict path_fmt, va_list va)
+  __attribute__((nonnull(3)));
 
 /// xseteuid
 //

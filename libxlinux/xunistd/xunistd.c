@@ -19,6 +19,10 @@
 #include <stdio.h>
 #include <sys/syscall.h>
 
+#include "xapi.h"
+#include "xapi/exit.h"
+#include "types.h"
+
 #include "internal.h"
 #include "xunistd/xunistd.h"
 #include "errtab/KERNEL.errtab.h"
@@ -60,7 +64,28 @@ API xapi uxread(int fd, void * buf, size_t count, ssize_t * bytes)
   finally : coda;
 }
 
-API xapi axread(int fd, void * buf, size_t count)
+API int aread(int fd, void * restrict buf, size_t count)
+{
+  size_t actual = 0;
+  while(count - actual)
+  {
+    ssize_t cur = read(fd, ((char*)buf) + actual, count - actual);
+    if(cur == 0)
+    {
+      return XLINUX_LESS;
+    }
+    else if(cur == -1)
+    {
+      return xapi_exit_synth(perrtab_KERNEL, errno);
+    }
+
+    actual += cur;
+  }
+
+  return actual;
+}
+
+API xapi axread(int fd, void * restrict buf, size_t count)
 {
   enter;
 
@@ -95,6 +120,27 @@ API xapi xwrite(int fd, const void * buf, size_t count, ssize_t * bytes)
     tfail(perrtab_KERNEL, errno);
 
   finally : coda;
+}
+
+API int awrite(int fd, const void * buf, size_t count)
+{
+  size_t actual = 0;
+  while(count - actual)
+  {
+    ssize_t cur = write(fd, ((char*)buf) + actual, count - actual);
+    if(cur == 0)
+    {
+      return XLINUX_LESS;
+    }
+    else if(cur == -1)
+    {
+      return xapi_exit_synth(perrtab_KERNEL, errno);
+    }
+
+    actual += cur;
+  }
+
+  return actual;
 }
 
 API xapi axwrite(int fd, const void * buf, size_t count)
@@ -393,31 +439,80 @@ API xapi xsetresgid(gid_t rgid, gid_t egid, gid_t sgid)
   finally : coda;
 }
 
-API xapi xeuidaccess(const char * pathname, int mode, int * const r)
+API xapi xeuidaccesss(int * restrict r, int mode, const char * restrict path)
 {
   enter;
 
-  if((r && ((*r) = euidaccess(pathname, mode)) == -1) || (!r && euidaccess(pathname, mode) == -1))
+  if((r && ((*r) = euidaccess(path, mode)) == -1) || (!r && euidaccess(path, mode) == -1))
     tfail(perrtab_KERNEL, errno);
 
 finally:
-  xapi_infos("path", pathname);
+  xapi_infos("path", path);
 coda;
 }
 
-API xapi uxeuidaccess(const char * pathname, int mode, int * const r)
+API xapi xeuidaccessf(int * restrict r, int mode, const char * restrict fmt, ...)
 {
   enter;
 
-  if(r && ((*r) = euidaccess(pathname, mode)) == -1 && errno != EACCES && errno != ENOENT && errno != ENOTDIR)
-    tfail(perrtab_KERNEL, errno);
+  va_list va;
+  va_start(va, fmt);
+  fatal(xeuidaccessvf, r, mode, fmt, va);
 
-  else if(!r && euidaccess(pathname, mode) == -1 && errno != EACCES && errno != ENOENT && errno != ENOTDIR)
+finally:
+  va_end(va);
+coda;
+}
+
+API xapi xeuidaccessvf(int * restrict r, int mode, const char * restrict fmt, va_list va)
+{
+  enter;
+
+  char space[512];
+  fatal(fmt_apply, space, sizeof(space), fmt, va);
+  fatal(xeuidaccesss, r, mode, space);
+
+  finally : coda;
+}
+
+API xapi uxeuidaccesss(int * restrict r, int mode, const char * restrict path)
+{
+  enter;
+
+  int lr;
+  if(!r)
+    r = &lr;
+
+  if(((*r) = euidaccess(path, mode)) == -1 && errno != EACCES && errno != ENOENT && errno != ENOTDIR)
     tfail(perrtab_KERNEL, errno);
 
 finally:
-  xapi_infos("path", pathname);
+  xapi_infos("path", path);
 coda;
+}
+
+API xapi uxeuidaccessf(int * restrict r, int mode, const char * restrict fmt, ...)
+{
+  enter;
+
+  va_list va;
+  va_start(va, fmt);
+  fatal(uxeuidaccessvf, r, mode, fmt, va);
+
+finally:
+  va_end(va);
+coda;
+}
+
+API xapi uxeuidaccessvf(int * restrict r, int mode, const char * restrict fmt, va_list va)
+{
+  enter;
+
+  char space[512];
+  fatal(fmt_apply, space, sizeof(space), fmt, va);
+  fatal(uxeuidaccesss, r, mode, space);
+
+  finally : coda;
 }
 
 API xapi xseteuid(uid_t euid)

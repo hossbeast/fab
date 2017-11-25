@@ -26,31 +26,31 @@
 //
 // reallocates *s1, appends s2 onto *s1
 //
-xapi ixstrncat(char** s1, const char* s2, int s2len);
+xapi ixstrncat(char ** s1, const char * s2, int s2len);
 
 /// xstrcat
 //
 // reallocates *s1, appends s2 onto *s1
 //
-xapi ixstrcat(char** s1, const char* s2);
+xapi ixstrcat(char ** s1, const char * s2);
 
 /// xstrcatf
 //
 // calculates size required to vprintf, reallocates *s and appends the new string onto *s
 //
-xapi ixstrcatf(char** s, char* fmt, ...);
+xapi ixstrcatf(char ** s, char * fmt, ...);
 
 /// xstrdup
 //
 // copies s2 to *s1, reallocating *s1 if necessary, deallocating it if it was already allocated
 //
-xapi ixstrdup(char** s1, const char* s2);
+xapi ixstrdup(char ** s1, const char * s2);
 
 /// xstrndup
 //
 // copies s2 to *s1, reallocating *s1 if necessary, deallocating it if it was already allocated
 //
-xapi ixstrndup(char** s1, const char* s2, const size_t l);
+xapi ixstrndup(char ** s1, const char * s2, const size_t l);
 
 /// ixsprintf
 //
@@ -58,7 +58,7 @@ xapi ixstrndup(char** s1, const char* s2, const size_t l);
 // - allocate(*s)
 // - sprintf(fmt, ...) -> *s
 //
-xapi ixsprintf(char** s, char* fmt, ...);
+xapi ixsprintf(char ** s, char * fmt, ...);
 
 #undef restrict
 #endif

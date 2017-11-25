@@ -19,8 +19,6 @@
 
 #include "internal.h"
 #include "load.internal.h"
-#include "errtab/XLINUX.errtab.h"
-#include "errtab/KERNEL.errtab.h"
 #include "mempolicy.internal.h"
 
 static int handles;
