@@ -68,7 +68,7 @@ static xapi invalidate_visitor(vertex * v, int distance, void * arg)
 // public
 //
 
-xapi node_connect(node * restrict parent, node * restrict n)
+xapi node_connect_fs(node * restrict parent, node * restrict n)
 {
   enter;
 
@@ -84,10 +84,37 @@ xapi node_connect(node * restrict parent, node * restrict n)
   {
     narrator * N;
     fatal(log_start, L_GRAPH, &N);
-    xsays("connect RELATION_FS ");
+    xsayf("%8s ", "connect");
     fatal(node_path_say, n, N);
     xsays(" : ");
     fatal(node_path_say, parent, N);
+    xsays(" NODE_RELATION_FS");
+    fatal(log_finish);
+  }
+
+  finally : coda;
+}
+
+xapi node_connect_dependency(node * restrict left, node * restrict right)
+{
+  enter;
+
+  fatal(graph_connect_edge
+    , g_node_graph
+    , vertex_containerof(left)
+    , vertex_containerof(right)
+    , NODE_RELATION_STRONG
+  );
+
+  if(log_would(L_GRAPH))
+  {
+    narrator * N;
+    fatal(log_start, L_GRAPH, &N);
+    xsayf("%8s ", "connect");
+    fatal(node_path_say, left, N);
+    xsays(" : ");
+    fatal(node_path_say, right, N);
+    xsays(" NODE_RELATION_STRONG");
     fatal(log_finish);
   }
 
@@ -116,7 +143,23 @@ xapi node_disintegrate_fs(edge * restrict e, int traversal)
 
   int x;
   for(x = 0; x < li->l; x++)
-    fatal(edge_disconnect, g_node_graph, list_get(li, x));
+  {
+    edge * e = list_get(li, x);
+
+    if(log_would(L_GRAPH))
+    {
+      narrator * N;
+      fatal(log_start, L_GRAPH, &N);
+      xsayf("%8s ", "disconnect");
+      fatal(node_path_say, vertex_value(e->A), N);
+      xsays(" : ");
+      fatal(node_path_say, vertex_value(e->B), N);
+      xsays(" NODE_RELATION_FS");
+      fatal(log_finish);
+    }
+
+    fatal(edge_disconnect, g_node_graph, e);
+  }
 
 finally:
   fatal(list_xfree, li);

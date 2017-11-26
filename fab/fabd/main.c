@@ -31,6 +31,7 @@
 #include "yyutil/load.h"
 
 #include "xapi/SYS.errtab.h"
+#include "xapi/calltree.h"
 #include "xapi/trace.h"
 #include "xapi/errtab.h"
 #include "xlinux/xfcntl.h"
@@ -54,17 +55,18 @@
 #include "reconfigure.h"
 #include "server_thread.h"
 #include "sweeper_thread.h"
+#include "ff.h"
+#include "module.h"
+#include "extern.h"
 
 #include "identity.h"
 #include "parseint.h"
 
-static xapi begin()
+static xapi main_exit;
+
+static xapi xmain()
 {
   enter;
-
-  uint32_t hash = 0;
-
-  fatal(sigutil_defaults);
 
 #if DEBUG || DEVEL
   // this check is omitted in DEBUG/DEVEL mode because valgrind requires non-setgid and non-setuid executables
@@ -77,17 +79,6 @@ static xapi begin()
     fail(FABD_EXEPERMS);
   }
 #endif
-
-  // get ipc dir
-  if(g_argc < 2 || parseuint(g_argv[1], SCNx32, 1, UINT32_MAX, 1, UINT8_MAX, &hash, 0) != 0)
-    fail(SYS_BADARGS);
-
-  // core file goes in cwd
-  fatal(params_setup, hash);
-  fatal(xchdirf, "%s/fabd", g_params.ipcdir);
-
-  // logging, with per-ipc logfiles
-  fatal(logging_setup, hash);
 
 #if DEBUG || DEVEL
   logs(L_IPC, "started");
@@ -117,41 +108,25 @@ static xapi begin()
 #endif
 
   g_params.thread_monitor = gettid();
+
+  // launch other threads
+  fatal(sigutil_defaults);
   fatal(notify_thread_launch);
   fatal(server_thread_launch);
   fatal(sweeper_thread_launch);
+
+  // become the monitor thread
   fatal(monitor_thread);
 
   finally : coda;
 }
 
-int main(int argc, char** argv, char ** envp)
+static xapi main_jump()
 {
   enter;
 
-  xapi R;
+  fatal(xmain);
 
-  // libraries
-  fatal(fab_load);
-  fatal(logger_load);
-  fatal(lorien_load);
-  fatal(narrator_load);
-  fatal(valyria_load);
-  fatal(xlinux_load);
-  fatal(yyutil_load);
-  fatal(value_load);
-  fatal(moria_load);
-
-  // modules
-  fatal(config_setup);
-  fatal(filesystem_setup);
-  fatal(identity_setup);
-  fatal(logger_arguments_setup, envp);
-  fatal(node_setup);
-  fatal(notify_thread_setup);
-  fatal(sweeper_thread_setup);
-
-  fatal(begin, argc, argv, envp);
 finally:
   if(XAPI_UNWINDING)
   {
@@ -164,11 +139,62 @@ finally:
 #else
     fatal(logger_trace_pithy, L_ERROR, XAPI_TRACE_COLORIZE | XAPI_TRACE_NONEWLINE);
 #endif
+
+    main_exit = XAPI_ERRVAL;
+    xapi_calltree_unwind();
   }
+coda;
+}
+
+static xapi main_load(char ** envp)
+{
+  enter;
+
+  uint32_t hash = 0;
+
+  // libraries
+  fatal(fab_load);
+  fatal(logger_load);
+  fatal(lorien_load);
+  fatal(moria_load);
+  fatal(narrator_load);
+  fatal(value_load);
+  fatal(valyria_load);
+  fatal(xlinux_load);
+  fatal(yyutil_load);
 
   // modules
+  fatal(config_setup);
+  fatal(extern_setup);
+  fatal(ff_setup);
+  fatal(filesystem_setup);
+  fatal(identity_setup);
+  fatal(module_setup);
+  fatal(node_setup);
+  fatal(notify_thread_setup);
+  fatal(sweeper_thread_setup);
+
+  // initialize logger, main program
+  fatal(logger_arguments_setup, envp);
+
+  // get ipc dir
+  if(g_argc < 2 || parseuint(g_argv[1], SCNx32, 1, UINT32_MAX, 1, UINT8_MAX, &hash, 0) != 0)
+    fail(SYS_BADARGS);
+
+  // core file goes in cwd
+  fatal(params_setup, hash);
+  fatal(xchdirf, "%s/fabd", g_params.ipcdir);
+
+  // logging with per-ipc logfiles
+  fatal(logging_setup, hash);
+  fatal(main_jump);
+
+finally:
+  // modules
   fatal(config_cleanup);
+  fatal(extern_cleanup);
   fatal(filesystem_cleanup);
+  fatal(module_cleanup);
   fatal(node_cleanup);
   fatal(notify_thread_cleanup);
   fatal(params_cleanup);
@@ -186,8 +212,27 @@ finally:
   fatal(valyria_unload);
   fatal(xlinux_unload);
   fatal(yyutil_unload);
+coda;
+}
+
+int main(int argc, char ** argv, char ** envp)
+{
+  enter;
+
+  xapi R = 0;
+  fatal(main_load, envp);
+
+finally:
+  if(XAPI_UNWINDING)
+  {
+    // failures which cannot be logged with liblogger to stderr
+    xapi_backtrace();
+  }
+
 conclude(&R);
   xapi_teardown();
+
+  R |= main_exit;
 
   return !!R;
 }

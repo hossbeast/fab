@@ -20,9 +20,10 @@
 
 #include "xapi.h"
 
+struct edge;
 struct filesystem;
-struct vertex;
 struct node;
+struct vertex;
 
 /// node_connect
 //
@@ -34,7 +35,10 @@ struct node;
 //  parent - parent
 //  n      - node
 //
-xapi node_connect(struct node * restrict parent, struct node * restrict n)
+xapi node_connect_fs(struct node * restrict parent, struct node * restrict n)
+  __attribute__((nonnull));
+
+xapi node_connect_dependency(struct node * restrict left, struct node * restrict right)
   __attribute__((nonnull));
 
 /// node_disintegrate_fs

@@ -59,8 +59,7 @@ xapi config_report(void);
 // SUMMARY
 //  promote the staging config to the active config, reconfigure subsystems, and call config_report
 //
-xapi config_reconfigure(void)
-  __attribute__((nonnull));
+xapi config_reconfigure(void);
 
 /// config_query
 //

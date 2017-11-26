@@ -50,7 +50,6 @@ static struct {
 } invalidate_opts[] = {
 #define FILESYSTEM(a, b, c) { opt : (b), name : c },
 FILESYSTEM_TABLE
-#undef FILESYSTEM
 };
 
 static char invalidate_opts_list[64];
@@ -138,7 +137,6 @@ xapi filesystem_cleanup()
 filesystem * filesystem_lookup(const char * const restrict path, size_t pathl)
 {
   /* path is a normalized absolute path */
-
   const char * end = path + strlen(path);
 
   filesystem * fs = 0;
@@ -151,6 +149,9 @@ filesystem * filesystem_lookup(const char * const restrict path, size_t pathl)
       end--;
   }
 
+  if(!fs)
+    fs = map_get(filesystems, "/", 1);
+
   return fs;
 }
 
@@ -159,7 +160,7 @@ static int keys_compare(const void * A, const void * B)
   return strcmp(*(char **)A, *(char **)B);
 }
 
-xapi filesystem_reconfigure(struct reconfigure_context * ctx, const value * restrict config, uint32_t dry)
+xapi filesystem_reconfigure(struct reconfigure_context * restrict ctx, const value * restrict config, uint32_t dry)
 {
   enter;
 
@@ -236,9 +237,7 @@ xapi filesystem_reconfigure(struct reconfigure_context * ctx, const value * rest
   }
 
   if(dry)
-  {
     ctx->filesystems_changed = filesystems_hash[0] != filesystems_hash[1];
-  }
 
   if(!dry)
   {

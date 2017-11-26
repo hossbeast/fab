@@ -117,13 +117,13 @@ static xapi sweeper_thread()
             pathl += znloadw(space + pathl, sizeof(space) - pathl, ev->name, ev->namel);
 
             n = 0;
-            fatal(walker_walk, &n, parent, space);
+            fatal(walker_walk, &n, parent, space, 0);
           }
           else
           {
             n = 0;
-            fatal(node_createw, &n, NODE_FS_TYPE_FILE, parent->fs, ev->name, ev->namel);
-            fatal(node_connect, parent, n);
+            fatal(node_createw, &n, NODE_FSTYPE_FILE, parent->fs, ev->name, ev->namel);
+            fatal(node_connect_fs, parent, n);
           }
         }
 

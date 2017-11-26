@@ -41,6 +41,7 @@
 #include "filesystem.h"
 #include "logging.h"
 #include "params.h"
+#include "extern.h"
 
 #include "snarf.h"
 #include "strutil.h"
@@ -197,6 +198,7 @@ xapi reconfigure()
   if(  (exit = invoke(logging_reconfigure, &ctx, config_staging, ~0))
     || (exit = invoke(filesystem_reconfigure, &ctx, config_staging, ~0))
     || (exit = invoke(node_reconfigure, &ctx, config_staging, ~0))
+    || (exit = invoke(extern_reconfigure, &ctx, config_staging, ~0))
   )
   {
     if(xapi_exit_errtab(exit) != perrtab_CONFIG)
@@ -223,6 +225,7 @@ xapi reconfigure()
     fatal(logging_reconfigure, &ctx, g_config, 0);
     fatal(filesystem_reconfigure, &ctx, g_config, 0);
     fatal(node_reconfigure, &ctx, g_config, 0);
+    fatal(extern_reconfigure, &ctx, g_config, 0);
   }
 
   finally : coda;

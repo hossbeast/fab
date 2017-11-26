@@ -34,8 +34,11 @@ struct node;
 //  [root]     - 
 //  [ancestor] - 
 //  abspath    - absolute path to a directory
+//  walk_id    - 
 //
-xapi walker_walk(struct node ** restrict root, struct node * restrict ancestor, const char * restrict abspath)
+xapi walker_walk(struct node ** restrict root, struct node * restrict ancestor, const char * restrict abspath, int walk_id)
   __attribute__((nonnull(3)));
+
+int walker_walk_begin(void);
 
 #endif

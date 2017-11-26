@@ -38,6 +38,18 @@
 #include "memblk.def.h"
 #include "memblk.h"
 
+static xapi update_graph(void)
+{
+  enter;
+
+  // 1. allocate a walk_id
+  // 1.1. call walker_walk for each source dir, for each module, with that walk_id
+
+  /* fatal(walker_walk, &g_root, 0, g_params.proj_dir); */
+
+  finally : coda;
+}
+
 //
 // public
 //
@@ -46,8 +58,7 @@ xapi handler_build()
 {
   enter;
 
-  // update the graph
-  fatal(walker_walk, &g_root, 0, g_params.proj_dir);
+  fatal(update_graph);
 
   // do FAB_COMMAND_BUILD
 
@@ -60,8 +71,7 @@ xapi handler_dispatch(fab_request * const restrict request, memblk * const restr
 
   int mpc = 0;
 
-  // update the graph
-  fatal(walker_walk, &g_root, 0, g_params.proj_dir);
+  fatal(update_graph);
 
   int x;
   for(x = 0; x < request->commandsl; x++)

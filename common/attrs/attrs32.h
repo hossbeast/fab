@@ -15,39 +15,41 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef _ATTRS_H
-#define _ATTRS_H
+#ifndef _ATTRS32_H
+#define _ATTRS32_H
+
+/* see attrs32 */
 
 #include <stdint.h>
+#include <stdlib.h>
 
 #include "macros.h"
+#include "types.h"
 
-#define restrict __restrict
-
-struct attrs32 {
-  const char * name;
-  uint16_t namel;
+typedef struct attrs32 {
+  const char * restrict name;
+  uint8_t namel;
   uint32_t value;
-};
+} attrs32;
 
 static int attrs32_compare_byname(const void * _A, const void * _B)
 {
-  const struct attrs32 * A = _A;
-  const struct attrs32 * B = _B;
+  const attrs32 * A = _A;
+  const attrs32 * B = _B;
   return memncmp(A->name, A->namel, B->name, B->namel);
 }
 
-static uint32_t attrs32_lookup_byname(const struct attrs32 * restrict table, uint16_t table_len, const char * name, size_t namel)
+static uint32_t attrs32_lookup_byname(const attrs32 * restrict table, uint16_t table_len, const char * restrict name, uint8_t namel)
 {
-  struct attrs32 key = { .name = name, .namel = namel };
-  struct attrs32 * attr = bsearch(&key, table, table_len, sizeof(*table), attrs32_compare_byname);
+  attrs32 key = { .name = name, .namel = namel };
+  attrs32 * attr = bsearch(&key, table, table_len, sizeof(*table), attrs32_compare_byname);
   if(attr)
     return attr->value;
 
   return 0;
 }
 
-static inline const char * attrs32_option_name(const struct attrs32 * restrict table, uint16_t table_len, uint32_t mask, uint32_t attrs)
+static inline const char * attrs32_option_name(const attrs32 * restrict table, uint16_t table_len, uint32_t mask, uint32_t attrs)
 {
   attrs &= mask;
 
@@ -61,5 +63,4 @@ static inline const char * attrs32_option_name(const struct attrs32 * restrict t
   return 0;
 }
 
-#undef restrict
 #endif

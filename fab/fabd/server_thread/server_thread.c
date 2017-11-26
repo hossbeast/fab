@@ -42,16 +42,18 @@
 #include "moria/graph.h"
 
 #include "server_thread.h"
-#include "usage.h"
-#include "reconfigure.h"
-#include "node.h"
-#include "logging.h"
-#include "walker.internal.h"
-#include "handler.h"
 #include "config.h"
-#include "params.h"
 #include "errtab/FABD.errtab.h"
+#include "extern.h"
+#include "handler.h"
+#include "logging.h"
+#include "module.h"
+#include "node.h"
 #include "notify_thread.h"
+#include "params.h"
+#include "reconfigure.h"
+#include "usage.h"
+#include "walker.internal.h"
 
 #include "macros.h"
 #include "memblk.def.h"
@@ -189,6 +191,7 @@ static xapi server_thread()
 {
   enter;
 
+  node * project_root;
   pid_t client_pid = 0; // client process id
   memblk * mb = 0;
   sigset_t sigs;
@@ -209,13 +212,15 @@ static xapi server_thread()
   sigaddset(&sigs, FABIPC_SIGACK);
   sigaddset(&sigs, FABIPC_SIGSCH);
 
-  // load the initial config
+  // load the config
   fatal(reconfigure_stage_files);
   fatal(reconfigure);
 
-  // build the initial graph
-  fatal(walker_walk, &g_root, 0, g_params.proj_dir);
-  fatal(node_dump);
+  // load the filesystem rooted at the module dir
+  fatal(walker_walk, &project_root, 0, g_params.proj_dir, 0);
+
+  // load the module in this directory (and nested modules, recursively)
+  fatal(module_load_project, project_root, g_params.proj_dir);
 
   // signal to the client readiness to receive requests
 #if DEBUG || DEVEL
@@ -236,6 +241,7 @@ static xapi server_thread()
       server_thread_rebuild = 0;
     }
 
+    // receive a signal
     fatal(sigutil_wait, &sigs, &siginfo);
     if(siginfo.si_signo == FABIPC_SIGSCH)
       continue;
@@ -260,7 +266,7 @@ static xapi server_thread()
     fatal(respond, client_pid, &sigs, &response_shm, mb, response);
     fatal(ixshmdt, &response_shm);
 
-    fatal(node_dump);
+    //fatal(node_dump);
     fatal(usage_report);
   }
 

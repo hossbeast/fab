@@ -46,10 +46,12 @@ logger_category * categories = (logger_category []) {
   , { name : "WARN"     , description : "non-fatal errors", attr : L_YELLOW }
   , { name : "INFO"     , description : "high-level summary of actions" }
   , { name : "CONFIG"   , description : "configuration" }
+  , { name : "FF"       , description : "fabfiles" }
   , { name : "PARAMS"   , description : "runtime parameters" }
   , { name : "USAGE"    , description : "resource usage reports" }
   , { name : "GRAPH"    , description : "dependency graph changes" }
   , { name : "FSEVENT"  , description : "monitored filesystem events" }
+  , { name : "MODULE"   , description : "modules" }
 
   , { name : "NOTIFY"   , description : "notify thread" , optional : 1 }
   , { name : "SERVER"   , description : "server thread" , optional : 1 }

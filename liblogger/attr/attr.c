@@ -31,7 +31,7 @@
 
 #define restrict __restrict
 
-struct attrs32 * logger_attrs = (struct attrs32[]) {
+static attrs32 * logger_attrs = (attrs32[]) {
 #define LOGGER_ATTR_DEF(a, b) { value : (b), name : #a, namel : strlen(#a) },
 LOGGER_ATTR_TABLE
 #undef LOGGER_ATTR_DEF

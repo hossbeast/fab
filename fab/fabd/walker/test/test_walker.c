@@ -163,7 +163,7 @@ static xapi create(walker_context * ctx, node ** restrict n, uint8_t fstype, con
   (*n)->fstype = fstype;
   (*n)->fs = fs;
 
-  if((*n)->fstype == NODE_FS_TYPE_DIR)
+  if((*n)->fstype == NODE_FSTYPE_DIR)
     (*n)->wd = -1;
 
   finally : coda;
@@ -268,20 +268,20 @@ static xapi walker_test_entry(xunit_test * _test)
     if((A = map_get(nodes, MM(edges[0]))) == 0)
     {
       const filesystem * fs = fslookup(0, &edges[0], 1);
-      fatal(create, 0, &A, NODE_FS_TYPE_DIR, fs, &edges[0]);
+      fatal(create, 0, &A, NODE_FSTYPE_DIR, fs, &edges[0]);
       fatal(map_set, nodes, MM(edges[0]), A);
     }
-    A->fstype = NODE_FS_TYPE_DIR;
+    A->fstype = NODE_FSTYPE_DIR;
 
     node * B;
     if((B = map_get(nodes, MM(edges[1]))) == 0)
     {
       const filesystem * fs = fslookup(0, &edges[1], 1);
-      fatal(create, 0, &B, NODE_FS_TYPE_DIR, fs, &edges[1]);
+      fatal(create, 0, &B, NODE_FSTYPE_DIR, fs, &edges[1]);
       fatal(map_set, nodes, MM(edges[1]), B);
     }
 
-    fatal(node_connect, A, B);
+    fatal(node_connect_fs, A, B);
 
     edges += 2;
     while(*edges == ' ')

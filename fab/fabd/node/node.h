@@ -21,54 +21,73 @@
 #include <stdint.h>
 #include "xapi.h"
 
-struct path;
 struct map;
+struct module;
+struct narrator;
+struct path;
 struct reconfigure_context;
 struct value;
-struct narrator;
 
 // relation attributes
-#define NODE_RELATION_TABLE	    																			        \
-	NODE_RELATION(FS      , 1 , "filesystem")	/* directory : directory entry */	\
-  NODE_RELATION(WEAK    , 2 , "weak")       /* A :^ B */                      \
-  NODE_RELATION(STRONG  , 6 , "strong")     /* A : B */                       \
+#define NODE_RELATION_TABLE	    																			                        \
+	NODE_RELATION(NODE_RELATION_FS      , 0x1 , "filesystem")	/* directory : directory entry */	\
+  NODE_RELATION(NODE_RELATION_WEAK    , 0x2 , "weak")       /* A :^ B */                      \
+  NODE_RELATION(NODE_RELATION_STRONG  , 0x6 , "strong")     /* A : B */                       \
 
 enum {
-#define NODE_RELATION(a, b, c) NODE_RELATION_ ## a = UINT32_C(b),
+#define NODE_RELATION(a, b, c) a = UINT32_C(b),
 NODE_RELATION_TABLE
 #undef NODE_RELATION
 };
 
-#define NODE_FS_TYPE_TABLE                                      \
-  NODE_FS_TYPE(DIR    , 1 , "dir")                              \
-  NODE_FS_TYPE(FILE   , 2 , "file")                             \
+#define NODE_FSTYPE_TABLE             \
+  NODE_FSTYPE_DEF(NODE_FSTYPE_DIR)    \
+  NODE_FSTYPE_DEF(NODE_FSTYPE_FILE)
 
-enum {
-#define NODE_FS_TYPE(a, b, c) NODE_FS_TYPE_ ## a = UINT8_C(b),
-NODE_FS_TYPE_TABLE
-#undef NODE_FS_TYPE
-};
+typedef enum node_fstype {
+  NODE_FSTYPE_RANGE_BEFORE = 0,
+
+#define NODE_FSTYPE_DEF(t) t,
+NODE_FSTYPE_TABLE
+#undef NODE_FSTYPE_DEF
+
+  NODE_FSTYPE_RANGE_AFTER
+} node_fstype;
+
+/// node_fstype_name
+//
+// SUMMARY
+//  get the string name for a node_fstype
+//
+const char *node_fstype_name(node_fstype type);
 
 // the node corresponding to the project directory
 extern struct graph * g_node_graph;
-extern struct node * g_root;
 extern struct map * g_nodes_by_wd;
 
 // allocated as the value of a vertex
 typedef struct node
 {
-  struct path * name;   // name of filesystem entry
-  uint8_t       fstype;
+  struct path * name;             // name of filesystem entry
+  node_fstype   fstype;           // one of NODE_FSTYPE_*
 
   int invalid;
   const struct filesystem * fs;   // not null
   struct node * fsparent;
 
+  struct module * mod;            // module rooted at this dir, if any
+
   union {
-    struct {    // FS_TYPE_DIR and INVALIDATE_NOTIFY
+    struct {    // FSTYPE_DIR and INVALIDATE_NOTIFY
       int wd;
     };
   };
+
+/*
+
+reference counts for deletion
+
+*/
 
   int walk_id;
 } node;
@@ -102,7 +121,7 @@ xapi node_reconfigure(struct reconfigure_context * ctx, const struct value * res
 //
 xapi node_createw(
     /* 1 */ node ** restrict n
-  , /* 2 */ uint8_t fstype
+  , /* 2 */ node_fstype fstype
   , /* 3 */ const struct filesystem * restrict fs
   , /* 4 */ const char * restrict name
   , /* 5 */ size_t namel
@@ -111,7 +130,7 @@ xapi node_createw(
 
 xapi node_creates(
     /* 1 */ node ** restrict n
-  , /* 2 */ uint8_t fstype
+  , /* 2 */ node_fstype fstype
   , /* 3 */ const struct filesystem * restrict fs
   , /* 4 */ const char * restrict name
 )
@@ -120,15 +139,16 @@ xapi node_creates(
 void node_destroy(node * n)
   __attribute__((nonnull));
 
-xapi node_dump(void);
-
-size_t node_get_relative_path(node * restrict n, void * restrict dst, size_t dst_size)
+xapi node_dump(node * restrict)
   __attribute__((nonnull));
 
-size_t node_get_absolute_path(node * restrict n, void * restrict dst, size_t dst_size)
+size_t node_get_relative_path(const node * restrict n, void * restrict dst, size_t dst_size)
   __attribute__((nonnull));
 
-xapi node_path_say(node * restrict n, struct narrator * restrict N)
+size_t node_get_absolute_path(const node * restrict n, void * restrict dst, size_t dst_size)
+  __attribute__((nonnull));
+
+xapi node_path_say(const node * restrict n, struct narrator * restrict N)
   __attribute__((nonnull));
 
 #endif

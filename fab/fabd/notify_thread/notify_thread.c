@@ -40,7 +40,6 @@
 #include "params.h"
 #include "logging.h"
 #include "node.h"
-#include "walker.h"
 #include "sweeper_thread.h"
 #include "path.h"
 #include "inotify_mask.h"
@@ -58,6 +57,7 @@ static xapi notify_thread()
 
   sigset_t sigs;
   char buffer[4096] = {};
+  char path[512];
   narrator * N;
 
   g_params.thread_notify = gettid();
@@ -94,7 +94,6 @@ static xapi notify_thread()
         {
           fatal(log_start, L_FSEVENT, &N);
           node * n = map_get(g_nodes_by_wd, MM(ev->wd));
-          char path[512];
           node_get_relative_path(n, path, sizeof(path));
           xsayf("%s/%s ", path, ev->name);
           fatal(inotify_mask_say, ev->mask, N);
@@ -203,7 +202,7 @@ xapi notify_thread_watch(node * n)
   {
     narrator * N;
     fatal(log_start, L_GRAPH, &N);
-    xsays(">> ");
+    xsayf("%8s ", "watch");
     fatal(node_path_say, n, N);
     fatal(log_finish);
   }

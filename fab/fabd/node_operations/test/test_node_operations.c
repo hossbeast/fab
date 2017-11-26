@@ -131,7 +131,7 @@ static xapi node_operations_test_entry(xunit_test * _test)
     {
       fatal(get_node, vertices, &seq[0], &A);
       fatal(get_node, vertices, &seq[2], &B);
-      fatal(node_connect, A, B);
+      fatal(node_connect_fs, A, B);
     }
 
     // disintegrate

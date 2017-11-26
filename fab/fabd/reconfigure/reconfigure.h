@@ -19,14 +19,16 @@
 #define _RECONFIGURE_H
 
 #include "xapi.h"
+#include "types.h"
 
 typedef struct reconfigure_context
 {
-  int filesystems_changed;
+  bool filesystems_changed;
+  bool references_changed;
+  bool extern_changed;
+
   const char * proj_dir;
 } reconfigure_context;
-
-#define restrict __restrict
 
 /// reconfigure_setup
 //
@@ -47,8 +49,7 @@ xapi reconfigure_cleanup(void);
 // SUMMARY
 //  promote the staging config to the active config, reconfigure subsystems, and call config_report
 //
-xapi reconfigure(void)
-  __attribute__((nonnull));
+xapi reconfigure(void);
 
 /// config_stage_files
 //
@@ -60,7 +61,7 @@ xapi reconfigure_stage_files(void);
 /// config_stage
 //
 // SUMMARY
-//  cumulatively apply additional config to the staging config
+//  cumulatively apply config text to the staging config
 //
 // PARAMETERS
 //  text - configuration text to apply
@@ -68,5 +69,4 @@ xapi reconfigure_stage_files(void);
 xapi reconfigure_stage(const char * const restrict text)
   __attribute__((nonnull));
 
-#undef restrict
 #endif

@@ -15,6 +15,8 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-1   SYNTAX    fabfile could not be parsed
-2   ILLBYTE   fabfile contains illegal byte(s)
-3   NOINVOKE  invocation not found
+1   SYNTAX           fabfile could not be parsed
+2   ILLBYTE          fabfile contains illegal byte(s)
+3   NOMODULE         module.fab was not found
+4   EXTERN_AMBIGREF  ambiguous reference
+5   EXTERN_NOREF     reference not resolved

@@ -21,20 +21,21 @@
 #include <stdint.h>
 
 #include "xapi.h"
+#include "types.h"
 
 struct value;
 struct reconfigure_context;
 
 // filesystem attributes
-#define FILESYSTEM_TABLE                                                              \
-  FILESYSTEM(INVALIDATE_STAT    , 1 , "stat")    /* stat hash (default) */            \
-  FILESYSTEM(INVALIDATE_CONTENT , 2 , "content") /* content hash */                   \
-  FILESYSTEM(INVALIDATE_NOTIFY  , 3 , "notify")  /* filesystem event subscription */  \
-  FILESYSTEM(INVALIDATE_ALWAYS  , 4 , "always")  /* always considered invalid */      \
-  FILESYSTEM(INVALIDATE_NEVER   , 5 , "never")   /* never considered invalid */
+#define FILESYSTEM_TABLE                                                                         \
+  FILESYSTEM(FILESYSTEM_INVALIDATE_STAT    , 1 , "stat")    /* stat hash (default) */            \
+  FILESYSTEM(FILESYSTEM_INVALIDATE_CONTENT , 2 , "content") /* content hash */                   \
+  FILESYSTEM(FILESYSTEM_INVALIDATE_NOTIFY  , 3 , "notify")  /* filesystem event subscription */  \
+  FILESYSTEM(FILESYSTEM_INVALIDATE_ALWAYS  , 4 , "always")  /* always considered invalid */      \
+  FILESYSTEM(FILESYSTEM_INVALIDATE_NEVER   , 5 , "never")   /* never considered invalid */
 
 enum {
-#define FILESYSTEM(a, b, c) FILESYSTEM_ ## a = UINT32_C(b),
+#define FILESYSTEM(a, b, c) a = UINT32_C(b),
 FILESYSTEM_TABLE
 #undef FILESYSTEM
 };
@@ -45,8 +46,6 @@ typedef struct filesystem
   uint32_t        attrs;  // attributes
   int             leaf;   // whether there do not exist more specific filesystems under this path
 } filesystem;
-
-#define restrict __restrict
 
 /// filesystem_setup
 //
@@ -68,10 +67,11 @@ xapi filesystem_cleanup(void);
 //  rebuild the filesystem lookup structure from config
 //
 // PARAMETERS
+/// ctx    - reconfiguration context
 //  config - root of the config tree
 //  dry    - whether to perform a dry-run
 //
-xapi filesystem_reconfigure(struct reconfigure_context * ctx, const struct value * restrict config, uint32_t dry)
+xapi filesystem_reconfigure(struct reconfigure_context * restrict ctx, const struct value * restrict config, uint32_t dry)
   __attribute__((nonnull));
 
 /// filesystem_lookup
@@ -86,5 +86,4 @@ xapi filesystem_reconfigure(struct reconfigure_context * ctx, const struct value
 filesystem * filesystem_lookup(const char * const restrict path, size_t pathl)
   __attribute__((nonnull));
 
-#undef restrict
 #endif

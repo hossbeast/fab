@@ -36,7 +36,7 @@
 #  rfabdirs  - 
 #  fabpaths  - 
 #
-#  dext       - file extension for object files resulting from fabrication
+#  dext      - file extension for object files resulting from fabrication
 #  gendir    - parameter to gcc-dep, directory path for the location of generated files
 
 # default source file extension

@@ -38,13 +38,19 @@
 
 #define restrict __restrict
 
+static int walk_ids = 1;
+
+//
+// static
+//
+
 static uint8_t fstype_ftwinfo(ftwinfo * info)
 {
   if(info->type == FTWAT_D)
-    return NODE_FS_TYPE_DIR;
+    return NODE_FSTYPE_DIR;
 
   if(info->type == FTWAT_F)
-    return NODE_FS_TYPE_FILE;
+    return NODE_FSTYPE_FILE;
 
   return 0;
 }
@@ -57,7 +63,6 @@ xapi walker_visit(int method, ftwinfo * info, void * arg, int * stop)
   const filesystem * fs = 0;
   vertex * v;
   node * n;
-
 
   if(!info->parent)
   {
@@ -121,7 +126,7 @@ xapi walker_visit(int method, ftwinfo * info, void * arg, int * stop)
 
   if(method == FTWAT_PRE)
   {
-    // stop the traversal on a leaf inotify dir
+    // stop the traversal on a leaf inotify dir which has already been explored
     if(n->fs->attrs == FILESYSTEM_INVALIDATE_NOTIFY)
     {
       if(n->fs->leaf && n->wd != -1)
@@ -178,7 +183,7 @@ static xapi watch(walker_context * ctx, node * n)
 
 static xapi connect(walker_context * restrict ctx, node * restrict parent, node * restrict n)
 {
-  xproxy(node_connect, parent, n);
+  xproxy(node_connect_fs, parent, n);
 }
 
 static xapi disintegrate(walker_context * restrict ctx, edge * restrict e)
@@ -190,14 +195,16 @@ static xapi disintegrate(walker_context * restrict ctx, edge * restrict e)
 // public
 //
 
-xapi walker_walk(node ** restrict root, node * restrict ancestor, const char * restrict abspath)
+xapi walker_walk(node ** restrict root, node * restrict ancestor, const char * restrict abspath, int walk_id)
 {
   enter;
 
-  static int walk_ids;
   walker_context ctx;
 
-  ctx.walk_id = ++walk_ids;
+  if(walk_id != walk_ids)
+    walk_id = ++walk_ids;
+
+  ctx.walk_id = walk_id;
   ctx.ancestor = ancestor;
   ctx.root = 0;
   if(root)
@@ -218,4 +225,9 @@ xapi walker_walk(node ** restrict root, node * restrict ancestor, const char * r
     *root = ctx.root;
 
   finally : coda;
+}
+
+int walker_walk_begin()
+{
+  return ++walk_ids;
 }

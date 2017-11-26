@@ -39,7 +39,7 @@ API xapi fab_load()
 {
   enter;
 
-  if(handles == 0)
+  if(handles++ == 0)
   {
     // dependencies
     fatal(xlinux_load);
@@ -50,7 +50,6 @@ API xapi fab_load()
     fatal(identity_setup);
     fatal(logging_setup);
   }
-  handles++;
 
   finally : coda;
 }
