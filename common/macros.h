@@ -19,6 +19,7 @@
 #define _MACROS_H
 
 #include <string.h>
+#include <stddef.h>
 
 #define QUOTE(x) #x
 #define XQUOTE(x) QUOTE(x)
