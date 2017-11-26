@@ -39,7 +39,7 @@ $valgrind --gen-suppressions=all $valgrind_options --suppressions=/dev/fd/601 --
   match-leak-kinds: reachable
   fun:*alloc
   ...
-  fun:_dl_open
+  fun:dlopen
   ...
 }
 {
