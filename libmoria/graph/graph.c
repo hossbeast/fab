@@ -450,10 +450,10 @@ API xapi graph_say(graph * const restrict g, struct narrator * const restrict N)
   {
     edge * e = list_get(g->edges, xs[x]);
     if(x)
-      says(" ");
-    sayw(e->A->label, e->A->label_len);
-    says(":");
-    sayw(e->B->label, e->B->label_len);
+      xsays(" ");
+    xsayw(e->A->label, e->A->label_len);
+    xsays(":");
+    xsayw(e->B->label, e->B->label_len);
   }
 
 finally:
@@ -526,8 +526,8 @@ finally:
     for(x = stackz - 1; x >= 0; x--)
     {
       if(narrator_growing_size(N))
-        says(" -> ");
-      sayw(stack[x]->label, stack[x]->label_len);
+        xsays(" -> ");
+      xsayw(stack[x]->label, stack[x]->label_len);
     }
 
     xapi_infof("nodes", "%zu", stackz);
@@ -601,16 +601,16 @@ finally:
 
     if(stackz)
     {
-      sayw(stack[stackz - 1]->A->label, stack[stackz - 1]->A->label_len);
-      says(" -> ");
-      sayw(stack[stackz - 1]->B->label, stack[stackz - 1]->B->label_len);
+      xsayw(stack[stackz - 1]->A->label, stack[stackz - 1]->A->label_len);
+      xsays(" -> ");
+      xsayw(stack[stackz - 1]->B->label, stack[stackz - 1]->B->label_len);
     }
 
     int x;
     for(x = stackz - 2; x > 0; x--)
     {
-      says(" -> ");
-      sayw(stack[x]->B->label, stack[x]->B->label_len);
+      xsays(" -> ");
+      xsayw(stack[x]->B->label, stack[x]->B->label_len);
     }
 
     xapi_infos("path", narrator_growing_buffer(N));

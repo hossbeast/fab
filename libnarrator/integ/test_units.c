@@ -51,7 +51,7 @@ static xapi test_interval_say()
   int x;
   for(x = 0; x < sizeof(tests) / sizeof(tests[0]); x++)
   {
-    fatal(narrator_reset, N);
+    fatal(narrator_xreset, N);
 
     // act
     fatal(interval_say, tests[x].seconds, N);
@@ -85,7 +85,7 @@ static xapi test_bytesize_say()
   int x;
   for(x = 0; x < sizeof(tests) / sizeof(tests[0]); x++)
   {
-    fatal(narrator_reset, N);
+    fatal(narrator_xreset, N);
 
     // act
     fatal(bytesize_say, tests[x].bytes, N);
@@ -121,7 +121,7 @@ static xapi test_elapsed_say()
   int x;
   for(x = 0; x < sizeof(tests) / sizeof(tests[0]); x++)
   {
-    fatal(narrator_reset, N);
+    fatal(narrator_xreset, N);
 
     // act
     fatal(elapsed_say, &tests[x].start, &tests[x].end, N);

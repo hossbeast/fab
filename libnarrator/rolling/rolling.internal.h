@@ -18,10 +18,11 @@
 #ifndef _NARRATOR_ROLLING_INTERNAL_H
 #define _NARRATOR_ROLLING_INTERNAL_H
 
-#include <sys/types.h>
 #include <fcntl.h>
 
 #include "xapi.h"
+#include "types.h"
+
 #include "rolling.h"
 
 typedef struct narrator_rolling
@@ -38,8 +39,6 @@ typedef struct narrator_rolling
   char * name_base;
 } narrator_rolling;
 
-#define restrict __restrict
-
 /// rolling_say
 //
 // SUMMARY
@@ -53,10 +52,10 @@ typedef struct narrator_rolling
 //  [l]   - size of buffer
 //
 
-xapi rolling_vsayf(narrator_rolling * const restrict n, const char * const restrict fmt, va_list va)
+xapi rolling_xsayvf(narrator_rolling * const restrict n, const char * const restrict fmt, va_list va)
   __attribute__((nonnull));
 
-xapi rolling_sayw(narrator_rolling * const restrict n, const char * const restrict b, size_t l)
+xapi rolling_xsayw(narrator_rolling * const restrict n, const char * const restrict b, size_t l)
   __attribute__((nonnull));
 
 /// rolling_seek
@@ -64,8 +63,8 @@ xapi rolling_sayw(narrator_rolling * const restrict n, const char * const restri
 // SUMMARY
 //  returns ENOTSUPP
 //
-xapi rolling_seek(narrator_rolling * const restrict n, off_t offset, int whence, off_t * restrict res)
-  __attribute__((nonnull(1)));
+xapi rolling_xseek(narrator_rolling * const restrict n, off_t offset, int whence, off_t * restrict res)
+  __attribute__((nonnull));
 
 /// rolling_xdestroy
 //
@@ -75,8 +74,7 @@ xapi rolling_seek(narrator_rolling * const restrict n, off_t offset, int whence,
 xapi rolling_xdestroy(narrator_rolling * const restrict n)
   __attribute__((nonnull));
 
-xapi rolling_read(narrator_rolling * restrict n, void * dst, size_t count)
+xapi rolling_xread(narrator_rolling * restrict n, void * dst, size_t count)
   __attribute__((nonnull));
 
-#undef restrict
 #endif

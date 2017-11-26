@@ -64,7 +64,7 @@ static xapi vertex_visit(vertex * const restrict v, int level, void * arg)
   enter;
 
   narrator * N = arg;
-  sayw(v->label, v->label_len);
+  xsayw(v->label, v->label_len);
 
   finally : coda;
 }

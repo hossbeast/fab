@@ -38,41 +38,41 @@ static xapi __attribute__((nonnull)) say_value_verbose(const value * const restr
   int x;
   if(val->type == VALUE_TYPE_LIST)
   {
-    sayf("%s [", VALUE_TYPE_STRING(val->type));
+    xsayf("%s [", VALUE_TYPE_STRING(val->type));
     for(x = 0; x < val->els->l; x++)
     {
-      sayf("\n%*s", (level + 1) * 2, "");
+      xsayf("\n%*s", (level + 1) * 2, "");
       fatal(say_value_verbose, list_get(val->els, x), level + 1, N);
     }
-    sayf("\n%*s]", level * 2, "");
+    xsayf("\n%*s]", level * 2, "");
   }
 
   else if(val->type == VALUE_TYPE_MAP)
   {
-    sayf("%s {", VALUE_TYPE_STRING(val->type));
+    xsayf("%s {", VALUE_TYPE_STRING(val->type));
     for(x = 0; x < val->keys->l; x++)
     {
-      sayf("\n%*s", (level + 1) * 2, "");
+      xsayf("\n%*s", (level + 1) * 2, "");
       fatal(say_value_verbose, list_get(val->keys, x), level + 1, N);
-      sayf(" : ");
+      xsayf(" : ");
       fatal(say_value_verbose, list_get(val->vals, x), level + 1, N);
     }
-    sayf("\n%*s}", level * 2, "");
+    xsayf("\n%*s}", level * 2, "");
   }
 
   else if(val->type == VALUE_TYPE_STRING)
   {
-    sayf("%s %s", VALUE_TYPE_STRING(val->type), val->s->s);
+    xsayf("%s %s", VALUE_TYPE_STRING(val->type), val->s->s);
   }
 
   else if(val->type == VALUE_TYPE_FLOAT)
   {
-    sayf("%s %f", VALUE_TYPE_STRING(val->type), val->f);
+    xsayf("%s %f", VALUE_TYPE_STRING(val->type), val->f);
   }
 
   else if(val->type == VALUE_TYPE_BOOLEAN)
   {
-    sayf("%s %s", VALUE_TYPE_STRING(val->type), val->b ? "true" : "false");
+    xsayf("%s %s", VALUE_TYPE_STRING(val->type), val->b ? "true" : "false");
   }
 
   finally : coda;
@@ -85,54 +85,54 @@ static xapi __attribute__((nonnull)) say_value_canon(const value * const restric
   int x;
   if(val->type == VALUE_TYPE_LIST)
   {
-    says("[");
+    xsays("[");
     for(x = 0; x < val->els->l; x++)
     {
-      sayf("\n%*s", (level + 1) * 2, "");
+      xsayf("\n%*s", (level + 1) * 2, "");
       fatal(say_value_canon, list_get(val->els, x), level + 1, N);
     }
     if(val->els->l)
-      sayf("\n%*s", level * 2, "");
+      xsayf("\n%*s", level * 2, "");
     else
-      says(" ");
-    says("]");
+      xsays(" ");
+    xsays("]");
   }
 
   else if(val->type == VALUE_TYPE_MAP)
   {
-    says("{");
+    xsays("{");
     for(x = 0; x < val->keys->l; x++)
     {
-      sayf("\n%*s", (level + 1) * 2, "");
+      xsayf("\n%*s", (level + 1) * 2, "");
       fatal(say_value_canon, list_get(val->keys, x), level + 1, N);
-      sayf(" ");
+      xsayf(" ");
       fatal(say_value_canon, list_get(val->vals, x), level + 1, N);
     }
     if(val->keys->l)
-      sayf("\n%*s", level * 2, "");
+      xsayf("\n%*s", level * 2, "");
     else
-      says(" ");
-    says("}");
+      xsays(" ");
+    xsays("}");
   }
 
   else if(val->type == VALUE_TYPE_STRING)
   {
-    sayf("%s", val->s->s);
+    xsayf("%s", val->s->s);
   }
 
   else if(val->type == VALUE_TYPE_FLOAT)
   {
-    sayf("%.2f", val->f);
+    xsayf("%.2f", val->f);
   }
 
   else if(val->type == VALUE_TYPE_BOOLEAN)
   {
-    sayf("%s", val->b ? "true" : "false");
+    xsayf("%s", val->b ? "true" : "false");
   }
 
   else if(val->type == VALUE_TYPE_INTEGER)
   {
-    sayf("%"PRId64, val->i);
+    xsayf("%"PRId64, val->i);
   }
 
   finally : coda;
@@ -148,7 +148,7 @@ API xapi value_say(const value * const restrict val, narrator * const restrict N
 
   if(val == 0)
   {
-    says("(empty)");
+    xsays("(empty)");
   }
   else
   {
@@ -164,7 +164,7 @@ API xapi value_say_verbose(const value * const restrict val, narrator * const re
 
   if(val == 0)
   {
-    says("(empty)");
+    xsays("(empty)");
   }
   else
   {

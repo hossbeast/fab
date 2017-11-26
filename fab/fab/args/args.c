@@ -59,13 +59,13 @@ xapi args_usage(const command * restrict cmd, int version, int logcats)
 
   narrator * N = g_narrator_stdout;
 
-  says(
+  xsays(
 "fab : build optimally\n"
   );
 
   if(version)
   {
-    says(
+    xsays(
 " fab-" XQUOTE(FABVERSIONS)
 #if DEVEL
 "+DEVEL"
@@ -82,7 +82,7 @@ xapi args_usage(const command * restrict cmd, int version, int logcats)
 
   if(logcats)
   {
-    says(
+    xsays(
 "\n"
 "----------------- [ logs ] -----------------------------------------------------------------------\n"
 "\n"
@@ -93,7 +93,7 @@ xapi args_usage(const command * restrict cmd, int version, int logcats)
     fatal(logger_expr_pop, 0);
   }
 
-  says(
+  xsays(
 "\n"
 "For more information visit http://fabutil.org\n"
 "\n"
@@ -177,9 +177,9 @@ xapi args_report(const command * restrict cmd)
 
   fatal(narrator_growing_create, &N);
 
-  says("fab");
+  xsays("fab");
   fatal(cmd->command_say, N);
-  sayf(" %s", g_logvs);
+  xsayf(" %s", g_logvs);
 
   logs(L_ARGS, narrator_growing_buffer(N));
 

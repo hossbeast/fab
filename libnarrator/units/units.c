@@ -24,8 +24,6 @@
 
 #include "macros.h"
 
-#define restrict __restrict
-
 //
 // static
 //
@@ -90,10 +88,10 @@ static xapi __attribute__((nonnull)) compose(unit * cfg, double * parts, narrato
       if(parts[x] || x == 0)
       {
         if(!first)
-          says(" ");
+          xsays(" ");
 
-        sayf(cfg[x].fmt, parts[x]);
-        sayf("%s", cfg[x].label);
+        xsayf(cfg[x].fmt, parts[x]);
+        xsayf("%s", cfg[x].label);
 
         first = 0;
       }

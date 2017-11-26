@@ -88,7 +88,7 @@ API xapi logger_vlogf(uint64_t ids, uint32_t attrs, const char * fmt, va_list va
 
   fatal(log_xstart, ids, attrs, 0);
   if(storage_would)
-    narrator_fixed_vsayf(storage_narrator, fmt, va);
+    fatal(narrator_xsayvf, storage_narrator, fmt, va);
   fatal(log_finish);
 
   finally : coda;
@@ -124,7 +124,7 @@ API xapi logger_logw(uint64_t ids, uint32_t attrs, const char * src, size_t len)
 
   fatal(log_xstart, ids, attrs, 0);
   if(storage_would)
-    narrator_fixed_sayw(storage_narrator, src, len);
+    fatal(narrator_xsayw, storage_narrator, src, len);
 
   fatal(log_finish);
 
@@ -149,7 +149,7 @@ API xapi log_xstart(uint64_t ids, uint32_t attrs, narrator ** restrict N)
   storage_attrs = attrs;
   if((storage_would = streams_would(storage_ids, storage_attrs, &storage_would_vector)))
   {
-    narrator_fixed_reset(storage_narrator);
+    fatal(narrator_xreset, storage_narrator);
 
     // wall-clock milliseconds
     struct timespec times;

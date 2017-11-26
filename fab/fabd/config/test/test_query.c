@@ -95,9 +95,9 @@ static xapi config_test_entry(config_test * test)
     value * actual = 0;
     fatal(config_query, root, "(path)", test->queries[x].query, 0, &actual);
 
-    fatal(narrator_reset, N0);
+    fatal(narrator_xreset, N0);
     fatal(value_say, expected, N0);
-    fatal(narrator_reset, N1);
+    fatal(narrator_xreset, N1);
     fatal(value_say, actual, N1);
     assert_eq_s(narrator_growing_buffer(N0), narrator_growing_buffer(N1));
   }

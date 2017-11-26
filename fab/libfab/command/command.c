@@ -81,24 +81,24 @@ xapi command_say(const fab_command * const restrict cmd, struct narrator * const
   enter;
 
 
-  sayf("{ %s", COMMAND_NAME(cmd->type));
+  xsayf("{ %s", COMMAND_NAME(cmd->type));
 
   int first = 1;
   if(cmd->attr & FAB_ATTR_TARGET_OPT)
   {
     if(first)
-      sayc(' ');
+      xsayc(' ');
     else
-      sayc(',');
+      xsayc(',');
     first = 0;
 
-    says(FAB_ATTR_TARGET_NAME(cmd->attr));
+    xsays(FAB_ATTR_TARGET_NAME(cmd->attr));
   }
 
   if(cmd->strings[0])
-    sayf(" %s", cmd->strings[0]);
+    xsayf(" %s", cmd->strings[0]);
 
-  says(" }");
+  xsays(" }");
 
   finally : coda;
 }

@@ -26,13 +26,11 @@
 #include "macros.h"
 #include "assure.h"
 
-#define restrict __restrict
-
 //
 // public
 //
 
-xapi growing_vsayf(narrator_growing * const restrict n, const char * const restrict fmt, va_list va)
+xapi growing_xsayvf(narrator_growing * const restrict n, const char * const restrict fmt, va_list va)
 {
   enter;
 
@@ -55,7 +53,7 @@ xapi growing_vsayf(narrator_growing * const restrict n, const char * const restr
   finally : coda;
 }
 
-xapi growing_sayw(narrator_growing * const restrict n, const char * const restrict b, size_t l)
+xapi growing_xsayw(narrator_growing * const restrict n, const char * const restrict b, size_t l)
 {
   enter;
 
@@ -71,6 +69,33 @@ xapi growing_sayw(narrator_growing * const restrict n, const char * const restri
 void growing_destroy(narrator_growing * const restrict n)
 {
   wfree(n->s);
+}
+
+off_t growing_seek(narrator_growing * restrict n, off_t offset, int whence)
+{
+  if(whence == NARRATOR_SEEK_SET)
+    n->l = offset;
+  else if(whence == NARRATOR_SEEK_CUR)
+    n->l += offset;
+
+  // for a growing narrator, the "end" is the greatest position ever written to
+  else if(whence == NARRATOR_SEEK_END)
+    n->l = (n->m + offset);
+
+  return n->l;
+}
+
+off_t growing_reset(narrator_growing * restrict n)
+{
+  return growing_seek(n, 0, NARRATOR_SEEK_SET);
+}
+
+size_t growing_read(narrator_growing * restrict n, void * dst, size_t count)
+{
+  size_t d = MIN(count, n->m - n->l);
+  memcpy(dst, n->s + n->l, d);
+  n->l += d;
+  return d;
 }
 
 //
@@ -103,34 +128,4 @@ API const char * narrator_growing_buffer(narrator * const restrict n)
 API size_t narrator_growing_size(narrator * const restrict n)
 {
   return n->growing.l;
-}
-
-API off_t narrator_growing_seek(narrator * restrict n, off_t offset, int whence)
-{
-  narrator_growing * g = &n->growing;
-
-  if(whence == NARRATOR_SEEK_SET)
-    g->l = offset;
-  else if(whence == NARRATOR_SEEK_CUR)
-    g->l += offset;
-
-  // for a growing narrator, the "end" is the greatest position ever written to
-  else if(whence == NARRATOR_SEEK_END)
-    g->l = (g->m + offset);
-
-  return g->l;
-}
-
-API off_t narrator_growing_reset(narrator * restrict n)
-{
-  return narrator_growing_seek(n, 0, NARRATOR_SEEK_SET);
-}
-
-API size_t narrator_growing_read(narrator * restrict n, void * dst, size_t count)
-{
-  narrator_growing * g = &n->growing;
-  size_t d = MIN(count, g->m - g->l);
-  memcpy(dst, g->s + g->l, d);
-  g->l += d;
-  return d;
 }

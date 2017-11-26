@@ -124,64 +124,64 @@ xapi attr_say(uint32_t attr, narrator * const restrict N)
   if(attr & COLOR_OPT)
   {
     if(wrote)
-      sayc(',');
+      xsayc(',');
     wrote = 1;
 
-    says(color_option_name(attr));
+    xsays(color_option_name(attr));
   }
 
   if(attr & CATEGORY_OPT)
   {
     if(wrote)
-      sayc(',');
+      xsayc(',');
     wrote = 1;
 
-    says(category_option_name(attr));
+    xsays(category_option_name(attr));
   }
 
   if(attr & TRACE_OPT)
   {
     if(wrote)
-      sayc(',');
+      xsayc(',');
     wrote = 1;
 
-    says(trace_option_name(attr));
+    xsays(trace_option_name(attr));
   }
 
   if(attr & DISCOVERY_OPT)
   {
     if(wrote)
-      sayc(',');
+      xsayc(',');
     wrote = 1;
 
-    says(discovery_option_name(attr));
+    xsays(discovery_option_name(attr));
   }
 
   if(attr & DATESTAMP_OPT)
   {
     if(wrote)
-      sayc(',');
+      xsayc(',');
     wrote = 1;
 
-    says(datestamp_option_name(attr));
+    xsays(datestamp_option_name(attr));
   }
 
   if(attr & NAMES_OPT)
   {
     if(wrote)
-      sayc(',');
+      xsayc(',');
     wrote = 1;
 
-    says(processid_option_name(attr));
+    xsays(processid_option_name(attr));
   }
 
   if(attr & FILTER_OPT)
   {
     if(wrote)
-      sayc(',');
+      xsayc(',');
     wrote = 1;
 
-    says(filter_option_name(attr));
+    xsays(filter_option_name(attr));
   }
 
   finally : coda;

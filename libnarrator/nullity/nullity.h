@@ -30,8 +30,6 @@ SUMMARY
 
 #include "xapi.h"
 
-#define restrict __restrict
-
 /// narrator_nullity_create
 //
 // SUMMARY
@@ -43,5 +41,4 @@ SUMMARY
 xapi narrator_nullity_create(narrator ** const restrict n)
   __attribute__((nonnull));
 
-#undef restrict
 #endif

@@ -23,8 +23,6 @@
 #include "internal.h"
 #include "nullity.internal.h"
 
-#define restrict __restrict
-
 APIDATA narrator * g_narrator_nullity = 0;
 
 //
@@ -45,12 +43,14 @@ xapi nullity_cleanup()
   xproxy(narrator_xfree, g_narrator_nullity);
 }
 
-void nullity_vsayf(narrator_nullity * const restrict n, const char * const restrict fmt, va_list va)
+int nullity_sayvf(narrator_nullity * const restrict n, const char * const restrict fmt, va_list va)
 {
+  return 0;
 }
 
-void nullity_sayw(narrator_nullity * const restrict n, const char * const restrict b, size_t l)
+int nullity_sayw(narrator_nullity * const restrict n, const char * const restrict b, size_t l)
 {
+  return 0;
 }
 
 off_t nullity_seek(narrator_nullity * const restrict n, off_t offset, int whence)
@@ -62,7 +62,7 @@ void nullity_destroy(narrator_nullity * const restrict n)
 {
 }
 
-ssize_t nullity_read(narrator_nullity * restrict n, void * dst, size_t count)
+int nullity_read(narrator_nullity * restrict n, void * dst, size_t count)
 {
   return 0;
 }

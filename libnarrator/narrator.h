@@ -33,21 +33,19 @@ SUMMARY
 #include <unistd.h>
 
 #include "xapi.h"
+#include "types.h"
 
-struct narrator;
 typedef struct narrator narrator;
 
 //
-// write to the active narration
+// fatal-write to the active narration
 //
 
-#define vsayf(...)       fatal(narrator_vsayf, N, ##__VA_ARGS__)
-#define sayf(...)        fatal(narrator_sayf , N, ##__VA_ARGS__)
-#define says(...)        fatal(narrator_says , N, ##__VA_ARGS__)
-#define sayw(...)        fatal(narrator_sayw , N, ##__VA_ARGS__)
-#define sayc(...)        fatal(narrator_sayc , N, ##__VA_ARGS__)
-
-#define restrict __restrict
+#define xsayvf(...)       fatal(narrator_xsayvf, N, ##__VA_ARGS__)
+#define xsayf(...)        fatal(narrator_xsayf , N, ##__VA_ARGS__)
+#define xsays(...)        fatal(narrator_xsays , N, ##__VA_ARGS__)
+#define xsayw(...)        fatal(narrator_xsayw , N, ##__VA_ARGS__)
+#define xsayc(...)        fatal(narrator_xsayc , N, ##__VA_ARGS__)
 
 /// read-only singleton narrators that write to fixed file descriptors
 extern narrator * g_narrator_stdout;
@@ -72,21 +70,21 @@ extern narrator * N;
 // REMARKS
 //  sets *n = 0
 //
-xapi narrator_xfree(struct narrator * restrict n);
+xapi narrator_xfree(narrator * restrict n);
 
 /// narrator_ixfree
 //
 // narrator_xfree(*n) ; *n = 0;
 //
-xapi narrator_ixfree(struct narrator ** const restrict n)
+xapi narrator_ixfree(narrator ** const restrict n)
   __attribute__((nonnull));
 
-/// narrator_vsayf
+/// narrator_sayvf
 //
 // SUMMARY
 //  formatted write from va_list to the specified narrator
 //
-xapi narrator_vsayf(struct narrator * const restrict n, const char * const restrict fmt, va_list va)
+xapi narrator_xsayvf(narrator * const restrict n, const char * const restrict fmt, va_list va)
   __attribute__((nonnull));
 
 /// narrator_sayf
@@ -94,7 +92,7 @@ xapi narrator_vsayf(struct narrator * const restrict n, const char * const restr
 // SUMMARY
 //  formatted write to the specified narrator
 //
-xapi narrator_sayf(struct narrator * const restrict n, const char * const restrict fmt, ...)
+xapi narrator_xsayf(narrator * const restrict n, const char * const restrict fmt, ...)
   __attribute__((nonnull(1, 2)))
   __attribute__((format(printf, 2, 3)));
 
@@ -103,7 +101,7 @@ xapi narrator_sayf(struct narrator * const restrict n, const char * const restri
 // SUMMARY
 //  write to the specified narrator
 //
-xapi narrator_sayw(struct narrator * const restrict n, const char * const restrict b, size_t l)
+xapi narrator_xsayw(narrator * const restrict n, const char * const restrict b, size_t l)
   __attribute__((nonnull));
 
 /// narrator_says
@@ -111,7 +109,7 @@ xapi narrator_sayw(struct narrator * const restrict n, const char * const restri
 // SUMMARY
 //  write to the specified narrator
 //
-xapi narrator_says(struct narrator * const restrict n, const char * const restrict s)
+xapi narrator_xsays(narrator * const restrict n, const char * const restrict s)
   __attribute__((nonnull));
 
 /// narrator_sayc
@@ -119,16 +117,16 @@ xapi narrator_says(struct narrator * const restrict n, const char * const restri
 // SUMMARY
 //  write a byte to the specified narrator
 //
-xapi narrator_sayc(struct narrator * const restrict n, int c)
+xapi narrator_xsayc(narrator * const restrict n, int c)
   __attribute__((nonnull));
 
-#define NARRATOR_SEEK_TABLE(x)                                                        \
-  NARRATOR_SEEK_DEF(SET , SEEK_SET  , x)  /* absolute offset */                       \
-  NARRATOR_SEEK_DEF(CUR , SEEK_CUR  , x)  /* offset relative to current position */   \
-  NARRATOR_SEEK_DEF(END , SEEK_END  , x)  /* offset relative to size of the store */
+#define NARRATOR_SEEK_TABLE(x)                                                                      \
+  NARRATOR_SEEK_DEF(NARRATOR_SEEK_SET , SEEK_SET  , x)  /* absolute offset */                       \
+  NARRATOR_SEEK_DEF(NARRATOR_SEEK_CUR , SEEK_CUR  , x)  /* offset relative to current position */   \
+  NARRATOR_SEEK_DEF(NARRATOR_SEEK_END , SEEK_END  , x)  /* offset relative to size of the store */
 
 enum {
-#define NARRATOR_SEEK_DEF(a, b, x) NARRATOR_SEEK_ ## a = b,
+#define NARRATOR_SEEK_DEF(a, b, x) a = b,
 NARRATOR_SEEK_TABLE(0)
 #undef NARRATOR_SEEK_DEF
 };
@@ -144,7 +142,7 @@ NARRATOR_SEEK_TABLE(0)
 //  whence - one of NARRATOR_SEEK_*, indicates how offset is interpreted
 //  [res]  - (returns) the resulting absolute offset
 //
-xapi narrator_seek(struct narrator * const restrict n, off_t offset, int whence, off_t * restrict res)
+xapi narrator_xseek(narrator * const restrict n, off_t offset, int whence, off_t * restrict res)
   __attribute__((nonnull(1)));
 
 /// narrator_reset
@@ -152,7 +150,7 @@ xapi narrator_seek(struct narrator * const restrict n, off_t offset, int whence,
 // SUMMARY
 //  reposition the narrator such that subsequent writes start at the beginning
 //
-xapi narrator_reset(struct narrator * const restrict n)
+xapi narrator_xreset(narrator * const restrict n)
   __attribute__((nonnull));
 
 /// narrator_read
@@ -160,8 +158,7 @@ xapi narrator_reset(struct narrator * const restrict n)
 // SUMMARY
 //  read count bytes from the underlying store - not supported for many narrator types
 //
-xapi narrator_read(struct narrator * restrict n, void * dst, size_t count)
+xapi narrator_xread(narrator * restrict n, void * dst, size_t count)
   __attribute__((nonnull));
 
-#undef restrict
 #endif

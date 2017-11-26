@@ -28,7 +28,8 @@ SUMMARY
 
 */
 
-#define restrict __restrict
+#include "xapi.h"
+#include "types.h"
 
 /// narrator_fd_create
 //
@@ -50,5 +51,4 @@ xapi narrator_fd_create(narrator ** const restrict n, int fd)
 int narrator_fd_fd(narrator * const restrict n)
   __attribute__((nonnull));
 
-#undef restrict
 #endif

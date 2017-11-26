@@ -213,13 +213,13 @@ static xapi xmain()
 
         // report for this test
         fatal(log_xstart, L_TEST, test_failed ? L_RED : L_GREEN, &N);
-        sayf("  %%%6.2f pass rate on %6"PRIu32" assertions over "
+        xsayf("  %%%6.2f pass rate on %6"PRIu32" assertions over "
           , 100 * ((double)xunit_assertions_passed / (double)(xunit_assertions_passed + xunit_assertions_failed))
           , xunit_assertions_passed + xunit_assertions_failed
         );
         fatal(elapsed_say, &test_start, &test_end, N);
         if(name)
-          sayf(" for %s", name);
+          xsayf(" for %s", name);
 
         fatal(log_finish);
 
@@ -257,7 +257,7 @@ static xapi xmain()
       if(unit_tests_failed)
       {
         fatal(log_xstart, L_UNIT, L_RED, &N);
-        sayf("   %6d failed test(s) :", unit_tests_failed);
+        xsayf("   %6d failed test(s) :", unit_tests_failed);
         int x;
         for(x = 0; x < test_vector_l; x++)
         {
@@ -266,7 +266,7 @@ static xapi xmain()
           {
             if(test_vector[x] & (1ULL << y))
             {
-              sayf(" %zu", (x * sizeof(*test_vector)) + y);
+              xsayf(" %zu", (x * sizeof(*test_vector)) + y);
             }
           }
         }
@@ -274,14 +274,14 @@ static xapi xmain()
       }
 
       fatal(log_xstart, L_UNIT, unit_tests_failed ? L_RED : L_GREEN, &N);
-      sayf(" %%%6.2f pass rate on %6"PRIu32" assertions by %3"PRIu32" tests over "
+      xsayf(" %%%6.2f pass rate on %6"PRIu32" assertions by %3"PRIu32" tests over "
         , 100 * ((double)unit_assertions_passed / (double)(unit_assertions_passed + unit_assertions_failed))
         , unit_assertions_passed + unit_assertions_failed
         , unit_tests_passed + unit_tests_failed
       );
 
       fatal(elapsed_say, &unit_start, &unit_end, N);
-      sayf(" in %s", g_args.objects[x]);
+      xsayf(" in %s", g_args.objects[x]);
       fatal(log_finish);
 
       suite_assertions_passed += unit_assertions_passed;
@@ -303,7 +303,7 @@ static xapi xmain()
 
   // summary report
   fatal(log_xstart, L_SUITE, suite_tests_failed ? L_RED : L_GREEN, &N);
-  sayf("%%%6.2f pass rate on %6d assertions by %3d tests from %4d units over "
+  xsayf("%%%6.2f pass rate on %6d assertions by %3d tests from %4d units over "
     , 100 * ((double)suite_assertions_passed / (double)(suite_assertions_passed + suite_assertions_failed))
     , (suite_assertions_passed + suite_assertions_failed)
     , suite_tests_passed + suite_tests_failed

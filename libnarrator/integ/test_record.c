@@ -15,49 +15,55 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
+#include <stdio.h>
+#include <stdarg.h>
+
 #include "xapi.h"
+#include "xapi/trace.h"
 
-#include "xlinux/xfcntl.h"
-#include "xlinux/xunistd.h"
-#include "logger.h"
-#include "narrator.h"
-#include "narrator/units.h"
+#include "internal.h"
+#include "narrator/record.h"
+#include "narrator/growing.h"
 
-#include "usage.h"
-#include "logging.h"
-#include "params.h"
+#include "test_util.h"
 
-//
-// public
-//
-
-xapi usage_report()
+static xapi test_fatal()
 {
   enter;
 
-  char space[64] = {};
-  int fd = -1;
-  narrator * N;
+  narrator * N = 0;
+  narrator * N0 = 0;
+  fatal(narrator_growing_create, &N0);
+  fatal(narrator_record_create, &N, N0);
 
-  if(log_would(L_USAGE))
-  {
-    // check memory usage
-    fatal(uxopens, &fd, O_RDONLY, "/proc/self/statm");
+  xsays("hello");
+  xsayc(' ');
+  xsays("world");
+  fatal(narrator_record_write, N);
 
-    long pages = 0;
-    if(fd != -1)
-    {
-      fatal(xread, fd, space, sizeof(space), 0);
-      sscanf(space, "%*d %ld", &pages);
-    }
-    fatal(log_start, L_USAGE, &N);
-    xsays("usage : mem(");
-    fatal(bytesize_say, pages * g_params.pagesize, N);
-    xsays(")");
-    fatal(log_finish);
-  }
+  assert_eq_s("hello world", N0->growing.s);
 
 finally:
-  fatal(ixclose, &fd);
+  fatal(narrator_xfree, N);
+  fatal(narrator_xfree, N0);
 coda;
+}
+
+int main()
+{
+  enter;
+
+  xapi R = 0;
+  fatal(test_fatal);
+
+finally:
+  summarize;
+  if(XAPI_UNWINDING)
+  {
+    xapi_backtrace();
+  }
+conclude(&R);
+
+  xapi_teardown();
+  return !!R;
 }

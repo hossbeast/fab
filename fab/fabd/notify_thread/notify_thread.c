@@ -96,7 +96,7 @@ static xapi notify_thread()
           node * n = map_get(g_nodes_by_wd, MM(ev->wd));
           char path[512];
           node_get_relative_path(n, path, sizeof(path));
-          sayf("%s/%s ", path, ev->name);
+          xsayf("%s/%s ", path, ev->name);
           fatal(inotify_mask_say, ev->mask, N);
           fatal(log_finish);
         }
@@ -203,7 +203,7 @@ xapi notify_thread_watch(node * n)
   {
     narrator * N;
     fatal(log_start, L_GRAPH, &N);
-    says(">> ");
+    xsays(">> ");
     fatal(node_path_say, n, N);
     fatal(log_finish);
   }

@@ -53,7 +53,7 @@ xapi filter_say(filter * filterp, struct narrator * N)
 {
   enter;
 
-  sayc(filterp->o);
+  xsayc(filterp->o);
 
   uint64_t bit = UINT64_C(1);
   while(bit)
@@ -64,9 +64,9 @@ xapi filter_say(filter * filterp, struct narrator * N)
       if(category)
       {
         if((bit - 1) & filterp->v)
-          says(",");
+          xsays(",");
 
-        sayf("%.*s", (int)category->namel, category->name);
+        xsayf("%.*s", (int)category->namel, category->name);
       }
     }
 

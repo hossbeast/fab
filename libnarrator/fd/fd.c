@@ -25,8 +25,6 @@
 #include "internal.h"
 #include "fd/fd.internal.h"
 
-#define restrict __restrict
-
 APIDATA narrator * g_narrator_stdout;
 APIDATA narrator * g_narrator_stderr;
 APIDATA narrator * N;
@@ -58,28 +56,48 @@ xapi fd_cleanup()
   finally : coda;
 }
 
-xapi fd_vsayf(narrator_fd * const restrict n, const char * const restrict fmt, va_list va)
+xapi fd_xsayvf(narrator_fd * const restrict n, const char * const restrict fmt, va_list va)
 {
   xproxy(xvdprintf, n->fd, fmt, va);
 }
 
-xapi fd_sayw(narrator_fd * const restrict n, const char * const restrict b, size_t l)
+int fd_sayvf(narrator_fd * const restrict n, const char * const restrict fmt, va_list va)
+{
+  return vdprintf(n->fd, fmt, va);
+}
+
+xapi fd_xsayw(narrator_fd * const restrict n, const char * const restrict b, size_t l)
 {
   xproxy(axwrite, n->fd, b, l);
 }
 
-xapi fd_seek(narrator_fd * const restrict n, off_t offset, int whence, off_t * restrict res)
+int fd_sayw(narrator_fd * const restrict n, const char * const restrict b, size_t l)
+{
+  return awrite(n->fd, b, l);
+}
+
+xapi fd_xseek(narrator_fd * const restrict n, off_t offset, int whence, off_t * restrict res)
 {
   xproxy(xlseek, n->fd, offset, whence, res);
 }
 
-void fd_destroy(narrator_fd * const restrict n)
+off_t fd_seek(narrator_fd * const restrict n, off_t offset, int whence)
 {
+  return lseek(n->fd, offset, whence);
 }
 
-xapi fd_read(narrator_fd * restrict n, void * dst, size_t count)
+xapi fd_xread(narrator_fd * restrict n, void * dst, size_t count)
 {
   xproxy(axread, n->fd,dst, count);
+}
+
+int fd_read(narrator_fd * restrict n, void * dst, size_t count)
+{
+  return aread(n->fd,dst, count);
+}
+
+void fd_destroy(narrator_fd * const restrict n)
+{
 }
 
 //

@@ -133,7 +133,7 @@ static xapi receive(void ** request_shm, fab_request ** const restrict request)
 #if DEBUG || DEVEL || XAPI
   narrator * N;
   fatal(log_start, L_PROTOCOL, &N);
-  sayf("request ");
+  xsayf("request ");
   fatal(fab_request_say, *request, N);
   fatal(log_finish);
 #endif
@@ -166,7 +166,7 @@ static xapi respond(pid_t client_pid, const sigset_t * sigs, void ** response_sh
 #if DEBUG || DEVEL
   narrator * N;
   fatal(log_start, L_PROTOCOL, &N);
-  sayf("response ");
+  xsayf("response ");
   fatal(fab_response_say, response, N);
   fatal(log_finish);
 #endif

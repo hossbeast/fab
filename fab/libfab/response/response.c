@@ -66,7 +66,7 @@ API xapi fab_response_say(const fab_response * const restrict response, narrator
 {
   enter;
 
-  sayf("exit %x", response->exit);
+  xsayf("exit %x", response->exit);
 
   finally : coda;
 }

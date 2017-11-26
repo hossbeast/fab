@@ -29,8 +29,7 @@ SUMMARY
 */
 
 #include "xapi.h"
-
-#define restrict __restrict
+#include "types.h"
 
 /// narrator_multi_create
 //
@@ -55,16 +54,4 @@ xapi narrator_multi_create(narrator ** const restrict n)
 API xapi narrator_multi_add(narrator * const restrict n, narrator * const restrict np)
   __attribute__((nonnull));
 
-/// narrator_multi_reset
-//
-// SUMMARY
-//  clear the list of
-//
-// PARAMETERS
-//  n - multi narrator
-//
-API void narrator_multi_reset(narrator * const restrict n)
-  __attribute__((nonnull));
-
-#undef restrict
 #endif

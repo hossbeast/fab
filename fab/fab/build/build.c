@@ -53,7 +53,7 @@ static xapi build_usage_say(narrator * restrict N)
 {
   enter;
 
-  says(
+  xsays(
 "\n"
 "usage : fab build [ [ <selector> ] [ <option> ] ] ...\n"
 "\n"
@@ -143,29 +143,29 @@ static xapi build_command_say(narrator * N)
 {
   enter;
 
-  says(" build");
+  xsays(" build");
 
   if(args.dryrun)
-    says(" --dryrun");
+    xsays(" --dryrun");
 
   if(args.target_mode == FAB_ATTR_TARGET_EXACT)
-    says(" --exact");
+    xsays(" --exact");
   else if(args.target_mode == FAB_ATTR_TARGET_NOFILE)
-    says(" --nofile");
+    xsays(" --nofile");
   else
-    says(" --target");
+    xsays(" --target");
 
   if(args.force_mode == FORCE_TARGETS)
-    says(" --force");
+    xsays(" --force");
   else if(args.force_mode == FORCE_ALL)
-    says(" --all");
+    xsays(" --all");
 
   if(args.targets->l)
-    says(" --");
+    xsays(" --");
 
   int x;
   for(x = 0; x < args.targets->l; x++)
-    sayf(" %s", (char*)list_get(args.targets, x));
+    xsayf(" %s", (char*)list_get(args.targets, x));
 
   finally : coda;
 }

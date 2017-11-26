@@ -31,8 +31,6 @@ typedef struct narrator_multi
   size_t a;         // allocated size
 } narrator_multi;
 
-#define restrict __restrict
-
 /// multi_say
 //
 // SUMMARY
@@ -45,11 +43,16 @@ typedef struct narrator_multi
 //  [b]   - buffer
 //  [l]   - size of buffer
 //
-
-xapi multi_vsayf(narrator_multi * const restrict n, const char * const restrict fmt, va_list va)
+xapi multi_xsayvf(narrator_multi * const restrict n, const char * const restrict fmt, va_list va)
   __attribute__((nonnull));
 
-xapi multi_sayw(narrator_multi * const restrict n, const char * const restrict b, size_t l)
+void multi_sayvf(narrator_multi * const restrict n, const char * const restrict fmt, va_list va)
+  __attribute__((nonnull));
+
+xapi multi_xsayw(narrator_multi * const restrict n, const char * const restrict b, size_t l)
+  __attribute__((nonnull));
+
+void multi_sayw(narrator_multi * const restrict n, const char * const restrict b, size_t l)
   __attribute__((nonnull));
 
 /// multi_seek
@@ -63,8 +66,16 @@ xapi multi_sayw(narrator_multi * const restrict n, const char * const restrict b
 //  whence - one of NARRATOR_SEEK_*, indicates how offset is interpreted
 //  [res]  - (returns) the resulting absolute offset
 //
-xapi multi_seek(narrator_multi * const restrict n, off_t offset, int whence, off_t * restrict res)
-  __attribute__((nonnull(1)));
+xapi multi_xseek(narrator_multi * const restrict n, off_t offset, int whence, off_t * restrict res)
+  __attribute__((nonnull));
+
+/// multi_seek
+//
+// RETURNS
+//  a negative value if the operation failed for any of the underlying narrators, and zero otherwise
+//
+off_t multi_seek(narrator_multi * const restrict n, off_t offset, int whence)
+  __attribute__((nonnull));
 
 /// multi_destroy
 //
@@ -74,8 +85,4 @@ xapi multi_seek(narrator_multi * const restrict n, off_t offset, int whence, off
 void multi_destroy(narrator_multi * const restrict n)
   __attribute__((nonnull));
 
-xapi multi_read(narrator_multi * restrict n, void * dst, size_t count)
-  __attribute__((nonnull));
-
-#undef restrict
 #endif

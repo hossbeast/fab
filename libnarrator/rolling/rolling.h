@@ -31,7 +31,8 @@ REMARKS
 
 */
 
-#define restrict __restrict
+#include "xapi.h"
+#include "types.h"
 
 /// narrator_rolling_create
 //
@@ -54,5 +55,4 @@ xapi narrator_rolling_create(
 )
   __attribute__((nonnull));
 
-#undef restrict
 #endif

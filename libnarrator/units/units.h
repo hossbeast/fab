@@ -23,8 +23,6 @@
 struct timespec;
 struct narrator;
 
-#define restrict __restrict
-
 /// interval_say
 //
 // SUMMARY
@@ -63,5 +61,4 @@ xapi elapsed_say(const struct timespec * const restrict start, const struct time
 xapi bytesize_say(size_t bytes, struct narrator * const restrict N)
   __attribute__((nonnull));
 
-#undef restrict
 #endif

@@ -93,16 +93,16 @@ static xapi begin(int argc, char ** argv, char ** envp)
     narrator * N;
     argv[0] = "fabd.devel";
     fatal(log_start, L_IPC, &N);
-    says("execv(");
-    says(fabd_path ?: "fabd");
+    xsays("execv(");
+    xsays(fabd_path ?: "fabd");
     int x;
     for(x = 0; x < sentinel(argv); x++)
     {
       if(*argv[x])
-        says(",");
-      says(argv[x]);
+        xsays(",");
+      xsays(argv[x]);
     }
-    says(")");
+    xsays(")");
     fatal(log_finish);
 #endif
 

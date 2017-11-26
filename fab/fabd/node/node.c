@@ -227,7 +227,7 @@ xapi node_path_say(node * restrict n, narrator * restrict N)
 
   pathl = node_get_relative_path(n, path, sizeof(path));
 
-  sayw(path, pathl);
+  xsayw(path, pathl);
 
   finally : coda;
 }

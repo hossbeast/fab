@@ -115,18 +115,18 @@ API xapi fab_request_say(const fab_request * restrict request, struct narrator *
 {
   enter;
 
-  says("commands [ ");
+  xsays("commands [ ");
 
   size_t x;
   for(x = 0; x < request->commandsl; x++)
   {
     if(x)
-      says(" ");
+      xsays(" ");
 
     fatal(command_say, request->commands[x], N);
   }
 
-  says(" ]");
+  xsays(" ]");
 
   finally : coda;
 }

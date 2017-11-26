@@ -318,14 +318,14 @@ API xapi fab_client_launchp(fab_client * const restrict client)
     argv[0] = "fabw.devel";
     narrator * N;
     fatal(log_start, L_IPC, &N);
-    sayf("execv(");
-    says(client->fabw_path ?: "fabw");
+    xsayf("execv(");
+    xsays(client->fabw_path ?: "fabw");
     for(x = 0; x < i; x++)
     {
-      says(",");
-      says(argv[x]);
+      xsays(",");
+      xsays(argv[x]);
     }
-    says(")");
+    xsays(")");
     fatal(log_finish);
 #endif
 
@@ -369,7 +369,7 @@ API xapi fab_client_make_request(fab_client * const restrict client, memblk * co
   narrator * N;
 
   fatal(log_start, L_PROTOCOL, &N);
-  says("request ");
+  xsays("request ");
   fatal(fab_request_say, request, N);
   fatal(log_finish);
 #endif
@@ -412,7 +412,7 @@ API xapi fab_client_make_request(fab_client * const restrict client, memblk * co
 
 #if DEBUG || DEVEL
   fatal(log_start, L_PROTOCOL, &N);
-  says("response ");
+  xsays("response ");
   fatal(fab_response_say, response, N);
   fatal(log_finish);
 #endif

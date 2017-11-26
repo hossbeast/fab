@@ -29,8 +29,7 @@ SUMMARY
 */
 
 #include "xapi.h"
-
-#define restrict __restrict
+#include "types.h"
 
 /// narrator_growing_create
 //
@@ -68,40 +67,4 @@ const char * narrator_growing_buffer(narrator * const restrict n)
 size_t narrator_growing_size(narrator * const restrict n)
   __attribute__((nonnull));
 
-/// growing_seek
-//
-// SUMMARY
-//  reposition the narrator to offset according to whence
-//
-// PARAMETERS
-//  n      - growing narrator
-//  offset - byte offset
-//  whence - one of NARRATOR_SEEK_*, indicates how offset is interpreted
-//
-// RETURNS
-//  the resulting absolute offset
-//
-off_t narrator_growing_seek(narrator * restrict n, off_t offset, int whence)
-  __attribute__((nonnull));
-
-off_t narrator_growing_reset(narrator * restrict n)
-  __attribute__((nonnull));
-
-/// narrator_growing_read
-//
-// SUMMARY
-//  copy bytes from the underlying buffer and reposition
-//
-// PARAMETERS
-//  n     - growing narrator
-//  dst   - destination buffer
-//  count - number of bytes to copy
-//
-// RETURNS
-//  number of bytes actually copied <= count
-//
-size_t narrator_growing_read(narrator * restrict n, void * dst, size_t count)
-  __attribute__((nonnull));
-
-#undef restrict
 #endif

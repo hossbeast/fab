@@ -19,13 +19,14 @@
 #define _NARRATOR_NULLITY_INTERNAL_H
 
 #include "xapi.h"
+#include "types.h"
+
 #include "nullity.h"
 
 typedef struct narrator_nullity
 {
 } narrator_nullity;
 
-#define restrict __restrict
 
 /// nullity_setup
 //
@@ -46,11 +47,10 @@ xapi nullity_cleanup(void);
 // SUMMARY
 //  no-op
 //
-
-void nullity_vsayf(narrator_nullity * const restrict n, const char * const restrict fmt, va_list va)
+int nullity_sayvf(narrator_nullity * const restrict n, const char * const restrict fmt, va_list va)
   __attribute__((nonnull));
 
-void nullity_sayw(narrator_nullity * const restrict n, const char * const restrict b, size_t l)
+int nullity_sayw(narrator_nullity * const restrict n, const char * const restrict b, size_t l)
   __attribute__((nonnull));
 
 /// nullity_seek
@@ -69,8 +69,7 @@ off_t nullity_seek(narrator_nullity * const restrict n, off_t offset, int whence
 void nullity_destroy(narrator_nullity * const restrict n)
   __attribute__((nonnull));
 
-ssize_t nullity_read(narrator_nullity * restrict n, void * dst, size_t count)
+int nullity_read(narrator_nullity * restrict n, void * dst, size_t count)
   __attribute__((nonnull));
 
-#undef restrict
 #endif

@@ -121,21 +121,21 @@ static xapi walker_test_operation_say(walker_test_operation * op, narrator * N)
   vertex * v = vertex_containerof(op->n);
 
   if(op->op == OP_WATCH)
-    sayf("@%.*s", (int)v->label_len, v->label);
+    xsayf("@%.*s", (int)v->label_len, v->label);
   else if(op->op == OP_REFRESH)
-    sayf("!%.*s", (int)v->label_len, v->label);
+    xsayf("!%.*s", (int)v->label_len, v->label);
   else if(op->op == OP_CONNECT)
   {
     vertex * parent = vertex_containerof(op->parent);
     vertex * child = vertex_containerof(op->child);
-    sayf("%.*s:%.*s", (int)parent->label_len, parent->label, (int)child->label_len, child->label);
+    xsayf("%.*s:%.*s", (int)parent->label_len, parent->label, (int)child->label_len, child->label);
   }
   else if(op->op == OP_DISINTEGRATE)
   {
-    sayf("%.*s~%.*s", (int)op->e->A->label_len, op->e->A->label, (int)op->e->B->label_len, op->e->B->label);
+    xsayf("%.*s~%.*s", (int)op->e->A->label_len, op->e->A->label, (int)op->e->B->label_len, op->e->B->label);
   }
   else
-    says("(unknown)");
+    xsays("(unknown)");
 
   finally : coda;
 }
@@ -352,7 +352,7 @@ static xapi walker_test_entry(xunit_test * _test)
       while(*ops && *ops != ' ')
         ops++;
 
-      fatal(narrator_reset, N);
+      fatal(narrator_xreset, N);
       op[0] = 0;
       walker_test_operation * act_op = array_get(ctx.operations, x);
       fatal(walker_test_operation_say, act_op, N);
@@ -377,6 +377,7 @@ finally:
 
   fatal(map_xfree, nodes);
   fatal(dictionary_xfree, infos);
+  fatal(array_xfree, ctx.operations);
 coda;
 }
 

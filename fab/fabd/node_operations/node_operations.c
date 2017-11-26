@@ -56,7 +56,7 @@ static xapi invalidate_visitor(vertex * v, int distance, void * arg)
   {
     narrator * N;
     fatal(log_start, L_GRAPH, &N);
-    fatal(narrator_says, N, "invalidate ");
+    xsays("invalidate ");
     fatal(node_path_say, n, N);
     fatal(log_finish);
   }
@@ -84,9 +84,9 @@ xapi node_connect(node * restrict parent, node * restrict n)
   {
     narrator * N;
     fatal(log_start, L_GRAPH, &N);
-    says("connect RELATION_FS ");
+    xsays("connect RELATION_FS ");
     fatal(node_path_say, n, N);
-    says(" : ");
+    xsays(" : ");
     fatal(node_path_say, parent, N);
     fatal(log_finish);
   }

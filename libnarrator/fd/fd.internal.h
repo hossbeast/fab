@@ -18,17 +18,15 @@
 #ifndef _NARRATOR_FD_INTERNAL_H
 #define _NARRATOR_FD_INTERNAL_H
 
-#include <sys/types.h>
-
 #include "xapi.h"
+#include "types.h"
+
 #include "fd.h"
 
 typedef struct narrator_fd
 {
   int fd;           // file descriptor
 } narrator_fd;
-
-#define restrict __restrict
 
 /// fd_setup
 //
@@ -56,11 +54,16 @@ xapi fd_cleanup(void);
 //  [b]   - buffer
 //  [l]   - size of buffer
 //
-
-xapi fd_vsayf(narrator_fd * const restrict n, const char * const restrict fmt, va_list va)
+xapi fd_xsayvf(narrator_fd * const restrict n, const char * const restrict fmt, va_list va)
   __attribute__((nonnull));
 
-xapi fd_sayw(narrator_fd * const restrict n, const char * const restrict b, size_t l)
+int fd_sayvf(narrator_fd * const restrict n, const char * const restrict fmt, va_list va)
+  __attribute__((nonnull));
+
+xapi fd_xsayw(narrator_fd * const restrict n, const char * const restrict b, size_t l)
+  __attribute__((nonnull));
+
+int fd_sayw(narrator_fd * const restrict n, const char * const restrict b, size_t l)
   __attribute__((nonnull));
 
 /// fd_seek
@@ -77,8 +80,11 @@ xapi fd_sayw(narrator_fd * const restrict n, const char * const restrict b, size
 // REMARKS
 //  support depends on the underlying fd
 //
-xapi fd_seek(narrator_fd * const restrict n, off_t offset, int whence, off_t * restrict res)
-  __attribute__((nonnull(1)));
+xapi fd_xseek(narrator_fd * const restrict n, off_t offset, int whence, off_t * restrict res)
+  __attribute__((nonnull));
+
+off_t fd_seek(narrator_fd * const restrict n, off_t offset, int whence)
+  __attribute__((nonnull));
 
 /// fd_destroy
 //
@@ -101,8 +107,10 @@ void fd_destroy(narrator_fd * const restrict n)
 // RETURNS
 //  number of bytes actually read <= count
 //
-xapi fd_read(narrator_fd * restrict n, void * dst, size_t count)
+xapi fd_xread(narrator_fd * restrict n, void * dst, size_t count)
   __attribute__((nonnull));
 
-#undef restrict
+int fd_read(narrator_fd * restrict n, void * dst, size_t count)
+  __attribute__((nonnull));
+
 #endif

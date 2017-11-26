@@ -166,7 +166,7 @@ xapi category_say_verbose(logger_category * const restrict cat, narrator * restr
 {
   enter;
 
-  sayf("%s%*s : 0x%016"PRIx64 " 0x%08"PRIx32 " : "
+  xsayf("%s%*s : 0x%016"PRIx64 " 0x%08"PRIx32 " : "
     , cat->optional ? "*" : " "
     , category_name_max_length
     , cat->name
@@ -174,10 +174,10 @@ xapi category_say_verbose(logger_category * const restrict cat, narrator * restr
     , cat->attr
   );
 
-  says(cat->description);
+  xsays(cat->description);
   if(cat->attr)
   {
-    says(", %");
+    xsays(", %");
     fatal(attr_say, cat->attr, N);
   }
 
@@ -188,7 +188,7 @@ xapi category_say(logger_category * const restrict cat, narrator * restrict N)
 {
   enter;
 
-  sayf("%s%*s : %s"
+  xsayf("%s%*s : %s"
     , cat->optional ? "*" : " "
     , category_name_max_length
     , cat->name
@@ -300,7 +300,7 @@ API xapi categories_report_verbose()
 
     narrator * N;
     fatal(log_start, L_LOGGER, &N);
-    says(" ");
+    xsays(" ");
     fatal(category_say_verbose, list_get(activated, x), N);
     fatal(log_finish);
 
@@ -453,7 +453,7 @@ API xapi logger_categories_report()
     }
 
     fatal(log_start, L_LOGGER, &N);
-    says(" ");
+    xsays(" ");
     fatal(category_say, list_get(activated, x), N);
     fatal(log_finish);
 

@@ -17,6 +17,8 @@
 
 #include <string.h>
 
+#define NARRATOR_NO_N
+
 #include "xapi.h"
 #include "xapi/trace.h"
 #include "xapi/calltree.h"
@@ -33,8 +35,6 @@
 #include "test_util.h"
 #include "macros.h"
 
-narrator * N;
-
 #define L_FOO categories[0].id
 
 static logger_category * categories = (logger_category []) {
@@ -46,6 +46,8 @@ static logger_stream * streams = (logger_stream []) {
     { name : "foo", type : LOGGER_STREAM_NARRATOR, expr : "+FOO", exprs : (char*[]) { "+FOO", 0 } }
   , { }
 };
+
+static narrator * N;
 
 static xapi test_setup()
 {
@@ -89,8 +91,8 @@ static xapi test_log()
   // act
   logs(L_FOO, "foo");
 
-  narrator_growing_reset(N);
-  narrator_growing_read(N, buf, sizeof(buf));
+  fatal(narrator_xreset, N);
+  fatal(narrator_xread, N, buf, sizeof(buf));
 
   // assert
   const char * expected = "foo";
@@ -110,14 +112,14 @@ static xapi test_log_start_basic()
   narrator * N;
   fatal(log_start, L_FOO, &N);
 
-  says("f");
-  says("o");
-  says("o");
+  xsays("f");
+  xsays("o");
+  xsays("o");
 
   fatal(log_finish);
 
-  narrator_growing_reset(N);
-  narrator_growing_read(N, buf, sizeof(buf));
+  fatal(narrator_xreset, N);
+  fatal(narrator_xread, N, buf, sizeof(buf));
 
   // assert
   const char * expected = "foo";
@@ -137,14 +139,14 @@ static xapi test_log_start_nullity()
   narrator * N;
   fatal(log_start, 42, &N); // returns the nullity narrator
 
-  says("f");
-  says("o");
-  says("o");
+  xsays("f");
+  xsays("o");
+  xsays("o");
 
   fatal(log_finish);
 
-  narrator_growing_reset(N);
-  narrator_growing_read(N, buf, sizeof(buf));
+  fatal(narrator_xreset, N);
+  fatal(narrator_xread, N, buf, sizeof(buf));
 
   // assert
   const char * expected = "";
@@ -154,12 +156,9 @@ static xapi test_log_start_nullity()
   finally : coda;
 }
 
-int main()
+static xapi run_tests()
 {
   enter;
-
-  xapi R = 0;
-  int x = 0;
 
   fatal(narrator_load);
 
@@ -172,6 +171,7 @@ int main()
     , { entry : test_log_start_nullity }
   };
 
+  int x = 0;
   for(x = 0; x < sizeof(tests) / sizeof(tests[0]); x++)
   {
     fatal(test_cleanup);
@@ -193,14 +193,23 @@ int main()
   }
 
 finally:
-  summarize;
   fatal(test_cleanup);
-
-  if(XAPI_UNWINDING)
-    xapi_backtrace();
-
   fatal(narrator_unload);
 
+  summarize;
+coda;
+}
+
+int main()
+{
+  enter;
+
+  xapi R = 0;
+  fatal(run_tests);
+
+finally:
+  if(XAPI_UNWINDING)
+    xapi_backtrace();
 conclude(&R);
   xapi_teardown();
 

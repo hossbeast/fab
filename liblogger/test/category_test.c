@@ -365,12 +365,9 @@ finally:
 coda;
 }
 
-int main()
+static xapi run_tests()
 {
   enter;
-
-  xapi R = 0;
-  int x = 0;
 
   struct test tests[] = {
       { entry : test_category_list_merge_success_max }
@@ -487,6 +484,7 @@ int main()
       }
   };
 
+  int x = 0;
   for(x = 0; x < sizeof(tests) / sizeof(tests[0]); x++)
   {
     fatal(category_cleanup);
@@ -515,12 +513,21 @@ int main()
   }
 
 finally:
-  summarize;
   fatal(category_cleanup);
+  summarize;
+coda;
+}
 
+int main()
+{
+  enter;
+
+  xapi R = 0;
+  fatal(run_tests);
+
+finally:
   if(XAPI_UNWINDING)
     xapi_backtrace();
-
 conclude(&R);
   xapi_teardown();
 

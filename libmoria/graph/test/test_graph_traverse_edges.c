@@ -65,9 +65,9 @@ static xapi edge_visit(edge * const restrict e, int distance, void * arg)
   enter;
 
   narrator * N = arg;
-  sayw(e->A->label, e->A->label_len);
-  says(":");
-  sayw(e->B->label, e->B->label_len);
+  xsayw(e->A->label, e->A->label_len);
+  xsays(":");
+  xsayw(e->B->label, e->B->label_len);
 
   finally : coda;
 }

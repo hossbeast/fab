@@ -85,7 +85,7 @@ API xapi sigutil_wait(const sigset_t * sigs, siginfo_t * r_info)
 #if DEBUG || DEVEL || XUNIT
   narrator * N;
   fatal(log_start, L_IPC, &N);
-  sayf("rx %s { signo : %d, sender : %ld"
+  xsayf("rx %s { signo : %d, sender : %ld"
     , FABIPC_SIGNAME(info.si_signo)
     , info.si_signo
     , (long)info.si_pid
@@ -94,12 +94,12 @@ API xapi sigutil_wait(const sigset_t * sigs, siginfo_t * r_info)
   if(info.si_signo == SIGCHLD)
   {
     if(WIFEXITED(info.si_status))
-      sayf(", status : %d", WEXITSTATUS(info.si_status));
+      xsayf(", status : %d", WEXITSTATUS(info.si_status));
 
     if(WIFSIGNALED(info.si_status))
-      sayf(", signal : %d", WTERMSIG(info.si_status));
+      xsayf(", signal : %d", WTERMSIG(info.si_status));
   }
-  sayf(" }");
+  xsayf(" }");
   fatal(log_finish);
 #endif
 

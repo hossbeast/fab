@@ -19,9 +19,10 @@
 #define _NARRATOR_RECORD_INTERNAL_H
 
 #include "xapi.h"
+#include "types.h"
+
 #include "record.h"
 
-struct pstring;
 struct narrator;
 
 typedef struct narrator_record
@@ -33,26 +34,15 @@ typedef struct narrator_record
   struct narrator * n;    // underlying narrator, (not owned)
 } narrator_record;
 
-#define restrict __restrict
-
 /// record_say
 //
 // SUMMARY
 //  accumulate to the buffer
 //
-
-xapi record_vsayf(narrator_record * const restrict n, const char * const restrict fmt, va_list va)
+xapi record_xsayvf(narrator_record * const restrict n, const char * const restrict fmt, va_list va)
   __attribute__((nonnull));
 
-xapi record_sayw(narrator_record * const restrict n, const char * const restrict b, size_t l)
-  __attribute__((nonnull));
-
-/// record_write
-//
-// SUMMARY
-//  flush the buffer to the underlying narrator
-//
-xapi record_write(narrator_record * const restrict n)
+xapi record_xsayw(narrator_record * const restrict n, const char * const restrict b, size_t l)
   __attribute__((nonnull));
 
 /// record_seek
@@ -60,8 +50,8 @@ xapi record_write(narrator_record * const restrict n)
 // SUMMARY
 //  seek the underlying narrator
 //
-xapi record_seek(narrator_record * const restrict n, off_t offset, int whence, off_t * restrict res)
-  __attribute__((nonnull(1)));
+xapi record_xseek(narrator_record * const restrict n, off_t offset, int whence, off_t * restrict res)
+  __attribute__((nonnull));
 
 /// record_destroy
 //
@@ -71,8 +61,7 @@ xapi record_seek(narrator_record * const restrict n, off_t offset, int whence, o
 void record_destroy(narrator_record * const restrict n)
   __attribute__((nonnull));
 
-xapi record_read(narrator_record * restrict n, void * dst, size_t count)
+xapi record_xread(narrator_record * restrict n, void * dst, size_t count)
   __attribute__((nonnull));
 
-#undef restrict
 #endif

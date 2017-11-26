@@ -83,7 +83,7 @@ $lflags_xapi_devel  = [ $lopts $libxapi_xapi_devel $libxlinux_xapi_devel [ -Wl,-
 [ $*/exports ~ j ] : [ $* ~ lsr lx/c ]
 {
     (echo "{ global: "
-  > perl -ne 'if(/API(?:DATA)?.*? ([a-zA-Z_][a-zA-Z0-9_]+) *(?:\(|=|;)/) { print "$1;\n" }' <(\
+  > perl -ne 'if(/API(?:DATA)?.*? ([a-zA-Z_][a-zA-Z0-9_]*) *(?:\(|=|;)/) { print "$1;\n" }' <(\
     cat -- [ $@ ~ rx/ineed fi ] )
   > echo "local: *; };"
    ) 1>[ $@ ]

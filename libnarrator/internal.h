@@ -36,20 +36,24 @@
 #include "record.internal.h"
 #include "rolling.internal.h"
 
-#define NARRATOR_TYPE_TABLE(x)      \
-  NARRATOR_TYPE_DEF(FIXED   , 1, x) \
-  NARRATOR_TYPE_DEF(GROWING , 2, x) \
-  NARRATOR_TYPE_DEF(FD      , 3, x) \
-  NARRATOR_TYPE_DEF(MULTI   , 4, x) \
-  NARRATOR_TYPE_DEF(NULLITY , 5, x) \
-  NARRATOR_TYPE_DEF(RECORD  , 6, x) \
-  NARRATOR_TYPE_DEF(ROLLING , 7, x)
+#define NARRATOR_TYPE_TABLE       \
+  NARRATOR_TYPE_DEF(FIXED)        \
+  NARRATOR_TYPE_DEF(GROWING)      \
+  NARRATOR_TYPE_DEF(FD)           \
+  NARRATOR_TYPE_DEF(MULTI)        \
+  NARRATOR_TYPE_DEF(NULLITY)      \
+  NARRATOR_TYPE_DEF(RECORD)       \
+  NARRATOR_TYPE_DEF(ROLLING)      \
 
-enum {
-#define NARRATOR_TYPE_DEF(a, b, x) NARRATOR_ ## a = b,
-NARRATOR_TYPE_TABLE(0)
+typedef enum narrator_type {
+  NARRATOR_TYPE_RANGE_BEFORE = 0,
+
+#define NARRATOR_TYPE_DEF(x) NARRATOR_ ## x,
+NARRATOR_TYPE_TABLE
 #undef NARRATOR_TYPE_DEF
-};
+
+  NARRATOR_TYPE_RANGE_AFTER
+} narrator_type;
 
 /// narrator
 //
@@ -58,7 +62,7 @@ NARRATOR_TYPE_TABLE(0)
 //
 typedef struct narrator
 {
-  uint8_t type;       // one of NARRATOR_*
+  narrator_type type;       // one of NARRATOR_*
 
   union {
     narrator_fixed fixed;

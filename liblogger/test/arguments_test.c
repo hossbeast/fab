@@ -204,11 +204,10 @@ static xapi test_arguments_repeated()
   finally : coda;
 }
 
-int main()
+static xapi run_tests()
 {
   enter;
 
-  xapi R = 0;
   int x = 0;
 
   fatal(category_setup);
@@ -247,14 +246,24 @@ int main()
   }
 
 finally:
-  summarize;
   fatal(category_cleanup);
   fatal(stream_cleanup);
   test_teardown();
 
+  summarize;
+coda;
+}
+
+int main()
+{
+  enter;
+
+  xapi R = 0;
+  fatal(run_tests);
+
+finally:
   if(XAPI_UNWINDING)
     xapi_backtrace();
-
 conclude(&R);
   xapi_teardown();
 

@@ -50,8 +50,8 @@ xapi inotify_mask_say(uint32_t m, struct narrator * N)
     else														{ s = "unknown"						; b = ~0								; }
 
     if(said)
-      says("|");
-    says(s);
+      xsays("|");
+    xsays(s);
     said = 1;
     m &= ~b;
   }

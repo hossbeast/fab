@@ -26,13 +26,11 @@
 #include "macros.h"
 #include "assure.h"
 
-#define restrict __restrict
-
 //
 // public
 //
 
-xapi record_vsayf(narrator_record * const restrict n, const char * const restrict fmt, va_list va)
+xapi record_xsayvf(narrator_record * const restrict n, const char * const restrict fmt, va_list va)
 {
   enter;
 
@@ -54,7 +52,7 @@ xapi record_vsayf(narrator_record * const restrict n, const char * const restric
   finally : coda;
 }
 
-xapi record_sayw(narrator_record * const restrict n, const char * const restrict b, size_t l)
+xapi record_xsayw(narrator_record * const restrict n, const char * const restrict b, size_t l)
 {
   enter;
 
@@ -66,9 +64,9 @@ xapi record_sayw(narrator_record * const restrict n, const char * const restrict
   finally : coda;
 }
 
-xapi record_seek(narrator_record * const restrict n, off_t offset, int whence, off_t * restrict res)
+xapi record_xseek(narrator_record * const restrict n, off_t offset, int whence, off_t * restrict res)
 {
-  xproxy(narrator_seek, n->n, offset, whence, res);
+  xproxy(narrator_xseek, n->n, offset, whence, res);
 }
 
 void record_destroy(narrator_record * const restrict n)
@@ -76,9 +74,9 @@ void record_destroy(narrator_record * const restrict n)
   wfree(n->s);
 }
 
-xapi record_read(narrator_record * restrict n, void * dst, size_t count)
+xapi record_xread(narrator_record * restrict n, void * dst, size_t count)
 {
-  xproxy(narrator_read, n->n, dst, count);
+  xproxy(narrator_xread, n->n, dst, count);
 }
 
 //
@@ -108,7 +106,7 @@ API xapi narrator_record_write(narrator * const restrict n)
   enter;
 
   // flush to the underlying narrator and reset
-  fatal(narrator_sayw, n->record.n, n->record.s, n->record.l);
+  fatal(narrator_xsayw, n->record.n, n->record.s, n->record.l);
   n->record.l = 0;
 
   finally : coda;

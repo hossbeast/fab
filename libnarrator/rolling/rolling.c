@@ -34,8 +34,6 @@
 #include "parseint.h"
 #include "strutil.h"
 
-#define restrict __restrict
-
 //
 // static
 //
@@ -128,7 +126,7 @@ coda;
 // public
 //
 
-xapi rolling_vsayf(narrator_rolling * const restrict n, const char * const restrict fmt, va_list va)
+xapi rolling_xsayvf(narrator_rolling * const restrict n, const char * const restrict fmt, va_list va)
 {
   enter;
 
@@ -144,7 +142,7 @@ xapi rolling_vsayf(narrator_rolling * const restrict n, const char * const restr
   finally : coda;
 }
 
-xapi rolling_sayw(narrator_rolling * const restrict n, const char * const restrict b, size_t l)
+xapi rolling_xsayw(narrator_rolling * const restrict n, const char * const restrict b, size_t l)
 {
   enter;
 
@@ -161,11 +159,11 @@ xapi rolling_sayw(narrator_rolling * const restrict n, const char * const restri
   finally : coda;
 }
 
-xapi rolling_seek(narrator_rolling * const restrict n, off_t offset, int whence, off_t * restrict res)
+xapi rolling_xseek(narrator_rolling * const restrict n, off_t offset, int whence, off_t * restrict res)
 {
   enter;
 
-  // operation not supported
+  fail(SYS_NOTSUPP);
 
   finally : coda;
 }
@@ -182,11 +180,11 @@ xapi rolling_xdestroy(narrator_rolling * const restrict n)
   finally : coda;
 }
 
-xapi rolling_read(narrator_rolling * restrict n, void * dst, size_t count)
+xapi rolling_xread(narrator_rolling * restrict n, void * dst, size_t count)
 {
   enter;
 
-  // operation not supported
+  fail(SYS_NOTSUPP);
 
   finally : coda;
 }

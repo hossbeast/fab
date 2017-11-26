@@ -34,7 +34,7 @@ static xapi exercise_rolling()
   int x;
   for(x = 0; x < 100; x++)
   {
-    says("foo bar baz qux");
+    xsays("foo bar baz qux");
   }
 
 finally:

@@ -37,11 +37,12 @@
 //
 
 static int handles;
+
 API xapi logger_load()
 {
   enter;
 
-  if(handles == 0)
+  if(handles++ == 0)
   {
     // dependencies
     fatal(xlinux_load);
@@ -53,7 +54,6 @@ API xapi logger_load()
     fatal(stream_setup);
     fatal(logger_category_register, logger_categories);
   }
-  handles++;
 
   finally : coda;
 }

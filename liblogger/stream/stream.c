@@ -52,8 +52,6 @@
 #define restrict __restrict
 
 // active streams
-//array * g_streams;
-//map * streams_byid;
 stream g_streams[LOGGER_MAX_STREAMS];
 uint8_t g_streams_l;
 
@@ -180,8 +178,6 @@ xapi stream_setup()
 {
   enter;
 
-//  fatal(array_createx, &g_streams, sizeof(stream), 0, stream_xdestroy, 0);
-//  fatal(map_create, &streams_byid);
   fatal(list_create, &registered);
 
   finally : coda;
@@ -196,8 +192,6 @@ xapi stream_cleanup()
     fatal(stream_xdestroy, &g_streams[x]);
   g_streams_l = 0;
 
-//  fatal(array_ixfree, &g_streams);
-//  fatal(map_ixfree, &streams_byid);
   fatal(list_ixfree, &registered);
 
   finally : coda;
@@ -221,9 +215,6 @@ xapi streams_activate()
       g_streams_l++;
       g_streams_l %= LOGGER_MAX_STREAMS;
       fatal(stream_initialize, streamp, def);
-
-//      fatal(array_push, g_streams, &streamp);
-//      fatal(map_set, streams_byid, MM(streamp->id), streamp);
     }
   }
 
@@ -256,34 +247,34 @@ xapi stream_write(stream *  restrict streamp, const uint64_t ids, uint32_t attrs
   if((attrs & COLOR_OPT) && (attrs & COLOR_OPT) != L_NOCOLOR)
   {
     if((attrs & COLOR_OPT) == L_RED)
-      sayw(RED);
+      xsayw(RED);
     else if((attrs & COLOR_OPT) == L_GREEN)
-      sayw(GREEN);
+      xsayw(GREEN);
     else if((attrs & COLOR_OPT) == L_YELLOW)
-      sayw(YELLOW);
+      xsayw(YELLOW);
     else if((attrs & COLOR_OPT) == L_BLUE)
-      sayw(BLUE);
+      xsayw(BLUE);
     else if((attrs & COLOR_OPT) == L_MAGENTA)
-      sayw(MAGENTA);
+      xsayw(MAGENTA);
     else if((attrs & COLOR_OPT) == L_CYAN)
-      sayw(CYAN);
+      xsayw(CYAN);
     else if((attrs & COLOR_OPT) == L_GRAY)
-      sayw(GRAY);
+      xsayw(GRAY);
 
     else if((attrs & COLOR_OPT) == L_BOLD_RED)
-      sayw(BOLD_RED);
+      xsayw(BOLD_RED);
     else if((attrs & COLOR_OPT) == L_BOLD_GREEN)
-      sayw(BOLD_GREEN);
+      xsayw(BOLD_GREEN);
     else if((attrs & COLOR_OPT) == L_BOLD_YELLOW)
-      sayw(BOLD_YELLOW);
+      xsayw(BOLD_YELLOW);
     else if((attrs & COLOR_OPT) == L_BOLD_BLUE)
-      sayw(BOLD_BLUE);
+      xsayw(BOLD_BLUE);
     else if((attrs & COLOR_OPT) == L_BOLD_MAGENTA)
-      sayw(BOLD_MAGENTA);
+      xsayw(BOLD_MAGENTA);
     else if((attrs & COLOR_OPT) == L_BOLD_CYAN)
-      sayw(BOLD_CYAN);
+      xsayw(BOLD_CYAN);
     else if((attrs & COLOR_OPT) == L_BOLD_GRAY)
-      sayw(BOLD_GRAY);
+      xsayw(BOLD_GRAY);
   }
 
   if((attrs & DATESTAMP_OPT) == L_DATESTAMP)
@@ -297,7 +288,7 @@ xapi stream_write(stream *  restrict streamp, const uint64_t ids, uint32_t attrs
       , "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
     };
 
-    sayf("%4d %s %02d %02d:%02d:%02d"
+    xsayf("%4d %s %02d %02d:%02d:%02d"
       , tm.tm_year + 1900
       , months[tm.tm_mon]
       , tm.tm_mday
@@ -322,18 +313,18 @@ xapi stream_write(stream *  restrict streamp, const uint64_t ids, uint32_t attrs
 
     logger_category * category = category_byid(bit);
     if(prev)
-      says(" ");
+      xsays(" ");
     if(category)
-      sayf("%*.*s", category_name_max_length, (int)category->namel, category->name);
+      xsayf("%*.*s", category_name_max_length, (int)category->namel, category->name);
     else
-      sayf("%*s", category_name_max_length, "");
+      xsayf("%*s", category_name_max_length, "");
     prev = 1;
   }
 
   if((attrs & NAMES_OPT) == L_NAMES)
   {
     if(prev)
-      says(" ");
+      xsays(" ");
     if(*logger_thread_name || *logger_process_name)
     {
       char name[14];
@@ -344,25 +335,25 @@ xapi stream_write(stream *  restrict streamp, const uint64_t ids, uint32_t attrs
         namel += znloadc(name + namel, sizeof(name) - namel, '/');
       namel += znloads(name + namel, sizeof(name) - namel, logger_thread_name);
 
-      sayf("%14s", name);
+      xsayf("%14s", name);
       prev = 1;
     }
   }
 
   if(prev)
-    says(" ");
+    xsays(" ");
 
   // the message
-  sayw(b, l);
+  xsayw(b, l);
   prev = 1;
 
   if((attrs & DISCOVERY_OPT) == L_DISCOVERY)
   {
     // emit the names of all tagged categories
     if(prev)
-      says(" ");
+      xsays(" ");
     prev = 1;
-    says("{ ");
+    xsays("{ ");
 
     uint64_t bit = UINT64_C(1);
     while(bit)
@@ -372,26 +363,26 @@ xapi stream_write(stream *  restrict streamp, const uint64_t ids, uint32_t attrs
         logger_category * category = category_byid(bit);
 
         if((bit - 1) & ids)
-          says(" | ");
+          xsays(" | ");
 
-        sayf("%.*s", (int)category->namel, category->name);
+        xsayf("%.*s", (int)category->namel, category->name);
       }
 
       bit <<= 1;
     }
 
-    says(" }");
+    xsays(" }");
   }
 
   if((attrs & COLOR_OPT) && (attrs & COLOR_OPT) != L_NOCOLOR)
   {
-    sayw(NOCOLOR);
+    xsayw(NOCOLOR);
   }
 
   // message terminator
   if(streamp->type == LOGGER_STREAM_FD || streamp->type == LOGGER_STREAM_ROLLING)
   {
-    sayc('\n');
+    xsayc('\n');
   }
 
   // flush
@@ -469,24 +460,24 @@ xapi stream_say(stream *  restrict streamp, narrator * restrict N)
 {
   enter;
 
-  sayf("id : %"PRIu32, streamp->id);
-  sayf(", type : %s", LOGGER_STREAM_STR(streamp->type));
-  sayf(", name : %s", streamp->name);
-  says(", attrs : ");
+  xsayf("id : %"PRIu32, streamp->id);
+  xsayf(", type : %s", LOGGER_STREAM_STR(streamp->type));
+  xsayf(", name : %s", streamp->name);
+  xsays(", attrs : ");
   fatal(attr_say, streamp->attrs, N);
-  says(", filters : [");
+  xsays(", filters : [");
   int x;
   for(x = 0; x < streamp->filters->l; x++)
   {
-    says(" ");
+    xsays(" ");
     fatal(filter_say, list_get(streamp->filters, x), N);
   }
-  says(" ]");
+  xsays(" ]");
 
   if(streamp->type == LOGGER_STREAM_FD)
-    sayf(", fd : %d", narrator_fd_fd(streamp->narrator_base));
+    xsayf(", fd : %d", narrator_fd_fd(streamp->narrator_base));
   else if(streamp->type == LOGGER_STREAM_NARRATOR)
-    sayf(", narrator : %p", streamp->narrator_base);
+    xsayf(", narrator : %p", streamp->narrator_base);
 
   finally : coda;
 }
@@ -580,7 +571,7 @@ API xapi logger_streams_report()
   {
     narrator * N;
     fatal(log_start, L_LOGGER, &N);
-    says(" ");
+    xsays(" ");
     fatal(stream_say, &g_streams[x], N);
     fatal(log_finish);
   }

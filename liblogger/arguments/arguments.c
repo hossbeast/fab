@@ -360,11 +360,11 @@ API xapi logger_arguments_report()
   for(x = 0; x < g_argc; x++)
   {
     fatal(log_start, L_LOGGER, &N);
-    sayf("  [%2d] %s", x, g_argv[x]);
+    xsayf("  [%2d] %s", x, g_argv[x]);
     if(g_binary == g_argv[x])
-      sayf("   <-- binary");
+      xsayf("   <-- binary");
     else if(g_interpreter == g_argv[x])
-      sayf("   <-- interpreting");
+      xsayf("   <-- interpreting");
     fatal(log_finish);
   }
 

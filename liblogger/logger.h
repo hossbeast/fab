@@ -20,9 +20,9 @@
 
 #include <stdarg.h>
 #include <inttypes.h>
-#include <sys/types.h>
 
 #include "xapi.h"
+#include "types.h"
 
 struct narrator; // libnarrator
 
@@ -68,8 +68,6 @@ enum {
 LOGGER_ATTR_TABLE
 #undef LOGGER_ATTR_DEF
 };
-
-#define restrict __restrict
 
 /// logger_arguments_setup
 //
@@ -123,14 +121,14 @@ xapi logger_logw (uint64_t ids, uint32_t attrs, const char * restrict src, size_
 xapi logger_logc (uint64_t ids, uint32_t attrs, char c)
   __attribute__((nonnull));
 
-#define  logvf(ids, ...) fatal(logger_logvf , ids , 0 , __VA_ARGS__)
-#define   logf(ids, ...) fatal(logger_logf  , ids , 0 , __VA_ARGS__)
-#define   logs(ids, ...) fatal(logger_logs  , ids , 0 , __VA_ARGS__)
-#define   logw(ids, ...) fatal(logger_logw  , ids , 0 , __VA_ARGS__)
-#define xlogvf(...) fatal(logger_logvf , __VA_ARGS__)
-#define  xlogf(...) fatal(logger_logf  , __VA_ARGS__)
-#define  xlogs(...) fatal(logger_logs  , __VA_ARGS__)
-#define  xlogw(...) fatal(logger_logw  , __VA_ARGS__)
+#define  logvf(ids, ...)  fatal(logger_logvf , ids , 0 , __VA_ARGS__)
+#define   logf(ids, ...)  fatal(logger_logf  , ids , 0 , __VA_ARGS__)
+#define   logs(ids, ...)  fatal(logger_logs  , ids , 0 , __VA_ARGS__)
+#define   logw(ids, ...)  fatal(logger_logw  , ids , 0 , __VA_ARGS__)
+#define xlogvf(...)       fatal(logger_logvf , __VA_ARGS__)
+#define  xlogf(...)       fatal(logger_logf  , __VA_ARGS__)
+#define  xlogs(...)       fatal(logger_logs  , __VA_ARGS__)
+#define  xlogw(...)       fatal(logger_logw  , __VA_ARGS__)
 
 /// log_start
 //
@@ -196,5 +194,4 @@ xapi logger_trace_pithy(uint64_t ids, uint16_t trace_attrs);
 xapi logger_xtrace_pithy(uint64_t ids, uint32_t attrs, uint16_t trace_attrs);
 #endif
 
-#undef restrict
 #endif

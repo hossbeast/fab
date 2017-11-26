@@ -61,7 +61,7 @@ static xapi test_basic()
   fatal(narrator_multi_add, N, N0);
   fatal(narrator_multi_add, N, N1);
 
-  says("hello world");
+  xsays("hello world");
 
   fatal(validate, 2, N0, N1);
 

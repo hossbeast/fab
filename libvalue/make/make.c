@@ -135,7 +135,7 @@ API xapi value_string_mks(
   if(loc)
     location_copy(&e->loc, loc);
 
-  fatal(psloads, e->s, s);
+  fatal(pscats, e->s, s);
 
   *rv = e;
 
@@ -158,7 +158,7 @@ API xapi value_string_mkw(
   if(loc)
     location_copy(&e->loc, loc);
 
-  fatal(psloadw, e->s, b, l);
+  fatal(pscatw, e->s, b, l);
 
   *rv = e;
 
@@ -180,7 +180,7 @@ API xapi value_string_mkc(
   if(loc)
     location_copy(&e->loc, loc);
 
-  fatal(psloadc, e->s, c);
+  fatal(pscatc, e->s, c);
 
   *rv = e;
 
@@ -203,7 +203,7 @@ API xapi value_string_mkv(
   if(loc)
     location_copy(&e->loc, loc);
 
-  fatal(psloadw, e->s, v->loc.s, v->loc.l);
+  fatal(pscatw, e->s, v->loc.s, v->loc.l);
 
   *rv = e;
 

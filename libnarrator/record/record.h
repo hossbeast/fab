@@ -29,8 +29,7 @@ SUMMARY
 */
 
 #include "xapi.h"
-
-#define restrict __restrict
+#include "types.h"
 
 /// narrator_record_create
 //
@@ -60,7 +59,7 @@ void narrator_record_reset(narrator * const restrict n)
 // SUMMARY
 //  propagate to the underlying narrator with a single write
 //
-xapi narrator_record_write(narrator * const restrict n);
+xapi narrator_record_write(narrator * const restrict n)
+  __attribute__((nonnull));
 
-#undef restrict
 #endif

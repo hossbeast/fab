@@ -21,18 +21,17 @@
 #include "xlinux/xstdlib.h"
 
 #include "internal.h"
+#include "narrator/narrator.h"
 #include "multi.internal.h"
 
 #include "macros.h"
 #include "assure.h"
 
-#define restrict __restrict
-
 //
 // public
 //
 
-xapi multi_vsayf(narrator_multi * const restrict n, const char * const restrict fmt, va_list va)
+xapi multi_xsayvf(narrator_multi * const restrict n, const char * const restrict fmt, va_list va)
 {
   enter;
 
@@ -45,7 +44,7 @@ xapi multi_vsayf(narrator_multi * const restrict n, const char * const restrict 
     va_copy(va2, va);
     vap = &va2;
 
-    fatal(narrator_vsayf, n->v[x], fmt, *vap);
+    fatal(narrator_xsayvf, n->v[x], fmt, *vap);
 
     va_end(*vap);
     vap = 0;
@@ -57,24 +56,29 @@ finally:
 coda;
 }
 
-xapi multi_sayw(narrator_multi * const restrict n, const char * const restrict b, size_t l)
+void multi_sayvf(narrator_multi * const restrict n, const char * const restrict fmt, va_list va)
+{
+
+}
+
+xapi multi_xsayw(narrator_multi * const restrict n, const char * const restrict b, size_t l)
 {
   enter;
 
   int x;
   for(x = 0; x < n->l; x++)
-    fatal(narrator_sayw, n->v[x], b, l);
+    fatal(narrator_xsayw, n->v[x], b, l);
 
   finally : coda;
 }
 
-xapi multi_seek(narrator_multi * const restrict n, off_t offset, int whence, off_t * restrict res)
+xapi multi_xseek(narrator_multi * const restrict n, off_t offset, int whence, off_t * restrict res)
 {
   enter;
 
   int x;
   for(x = 0; x < n->l; x++)
-    fatal(narrator_seek, n->v[x], offset, whence, res);
+    fatal(narrator_xseek, n->v[x], offset, whence, res);
 
   finally : coda;
 }
@@ -82,13 +86,6 @@ xapi multi_seek(narrator_multi * const restrict n, off_t offset, int whence, off
 void multi_destroy(narrator_multi * const restrict n)
 {
   wfree(n->v);
-}
-
-xapi multi_read(narrator_multi * restrict n, void * dst, size_t count)
-{
-  enter;
-  // not supported
-  finally : coda;
 }
 
 //
@@ -121,9 +118,4 @@ API xapi narrator_multi_add(narrator * const restrict n, narrator * const restri
   n->multi.v[n->multi.l++] = np;
 
   finally : coda;
-}
-
-API void narrator_multi_reset(narrator * const restrict n)
-{
-  n->multi.l = 0;
 }

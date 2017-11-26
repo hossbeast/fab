@@ -30,12 +30,12 @@ static xapi say(narrator * const N)
   enter;
 
   // says the string : 40 41 42 43 44
-  sayf("%d", 40);
-  says(" 41");
-  sayw(" 42", 3);
-  sayf(" %d", 43);
-  sayf(" %d", 4);
-  sayc('4');
+  xsayf("%d", 40);
+  xsays(" 41");
+  xsayw(" 42", 3);
+  xsayf(" %d", 43);
+  xsayf(" %d", 4);
+  xsayc('4');
 
   finally : coda;
 }
