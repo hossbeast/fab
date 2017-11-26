@@ -74,7 +74,6 @@ $lflags_xapi_devel = [ $lflags_xapi_devel $lopts $libxapi_xapi_devel $libxlinux_
 
 #
 # executables
-#  -export-dynamic enables dloaded code (in particular, the fab-specific operator so's) to bind to symbols in the executable.
 #
 [ $fab_final ] :^ [ $libxapi_xapi_final $libxlinux_xapi_final $liblogger_xapi_final $libnarrator_xapi_final $libfab_xapi_final ]
 [ $fab_debug ] :^ [ $libxapi_xapi_debug $libxlinux_xapi_debug $liblogger_xapi_debug $libnarrator_xapi_debug $libfab_xapi_debug ]
@@ -82,15 +81,15 @@ $lflags_xapi_devel = [ $lflags_xapi_devel $lopts $libxapi_xapi_devel $libxlinux_
 
 [ $fab_final ] : [ $*/main.xapi.final.o ~ j ]
 {
-  [ $cc ] [ $cflags_xapi_final -export-dynamic ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw rx lx/o uu fi ] [ $lflags_xapi_final ~ fi ]
+  [ $cc ] [ $cflags_xapi_final ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw rx lx/o uu fi ] [ $lflags_xapi_final ~ fi ]
 }
 
 [ $fab_debug ] : [ $*/main.xapi.debug.o ~ j ]
 {
-  [ $cc ] [ $cflags_xapi_debug -export-dynamic ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw rx lx/o uu fi ] [ $lflags_xapi_debug ~ fi ]
+  [ $cc ] [ $cflags_xapi_debug ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw rx lx/o uu fi ] [ $lflags_xapi_debug ~ fi ]
 }
 
 [ $fab_devel ] : [ $*/main.xapi.devel.o ~ j ]
 {
-  [ $cc ] [ $cflags_xapi_devel -export-dynamic ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw rx lx/o uu fi ] [ $lflags_xapi_devel ~ fi ]
+  [ $cc ] [ $cflags_xapi_devel ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw rx lx/o uu fi ] [ $lflags_xapi_devel ~ fi ]
 }
