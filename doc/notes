@@ -1,6 +1,0 @@
- : bridge dependency (listwise -> liblistwise.so) takes 2 invocations to update
-   change exec.c
- : pitfalls of not having ~ j in certain fabfile expressions
- : difficulty of distinguishing operators/args in generator string
-
-fabfiles should reference higher level fabfiles, but higher levels should be loaded on-demand

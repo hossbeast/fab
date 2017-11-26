@@ -12,7 +12,7 @@
   * may re-define perrtab, the default error table
   * does NOT include any other internal header files
 
-## binary project organization
+## executable project organization
 
 * global.h is included by every source file
   * should define perrtab, the default error table
@@ -105,9 +105,12 @@ xapi foo_recycle(foo *) notnull               # X  I like reset, can fail
 
 # function naming
 
-these modifiers specify some property about the semantics of the function
+These modifiers specify some property about the semantics of the function.
 
-## failure modes
+If a function has both a failure mode specifier and operation modifier, the operation modifier is
+first.
+
+## failure mode specifier
 
 w _name_ (wrapper)
 * non-xapi wrapper function that follows the zero-return-success model and
@@ -124,7 +127,7 @@ a _name_ (also)
 * fails in some superset of failure cases of the underlying function as
   specified
 
-## modifiers
+## operation modifiers
 
 e _name_  (extended)
 * performs the same operation as the underlying function on another data type
