@@ -56,6 +56,11 @@ extern narrator * g_narrator_stderr;
 /// read-only singleton nullity narrator that discards all output
 extern narrator * g_narrator_nullity;
 
+#ifndef NARRATOR_NO_N
+// default narrator ; points to g_narrator_stdout
+extern narrator * N;
+#endif
+
 /// narrator_xfree
 //
 // SUMMARY

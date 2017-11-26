@@ -29,6 +29,7 @@
 
 APIDATA narrator * g_narrator_stdout;
 APIDATA narrator * g_narrator_stderr;
+APIDATA narrator * N;
 
 //
 // public
@@ -40,6 +41,9 @@ xapi fd_setup()
 
   fatal(narrator_fd_create, &g_narrator_stdout, 1);
   fatal(narrator_fd_create, &g_narrator_stderr, 2);
+
+  // default narrator
+  N = g_narrator_stdout;
 
   finally : coda;
 }
