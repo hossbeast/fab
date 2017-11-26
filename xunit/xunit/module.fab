@@ -1,0 +1,14 @@
+# this module contains C sources
+use c
+
+# make common objects available for #inclusion and linking by files in this module
+#require lib{xapi,xlinux,xunit}, lib{logger,narrator}
+#require fab/common
+require libxunit
+
+# this module produces three artifacts
+artifact xunit{.xapi.{final,debug,devel}}?
+
+# dependencies for artifacts
+rule xunit? : ./main?.o
+rule xunit? : libxunit/libxunit?.so
