@@ -65,7 +65,6 @@ typedef struct yyu_extra
   int             states[64];       // start states stack
   int             states_n;
   yyu_location    loc;              // running location track for this parse
-  char            space[256];       // temp space
 
                                     // last successfully scanned token
   yyu_location    last_loc;         //  location
@@ -90,10 +89,10 @@ typedef struct yyu_extra
   const char *    (*statename)(int token);
 
   // yyu calls this function to get a description of the input for location messages
-  void            (*inputstr)(YYU_EXTRA_TYPE * restrict xtra, char ** restrict buf, size_t * restrict blen);
+  size_t          (*inputstr)(YYU_EXTRA_TYPE * restrict xtra, char * restrict buf, size_t blen);
 
   // yyu calls this function get a textual description of a scanned token
-  void            (*lvalstr)(int token, void * restrict lval, YYU_EXTRA_TYPE * restrict xtra, char ** restrict buf, size_t * restrict blen);
+  size_t          (*lvalstr)(int token, void * restrict lval, YYU_EXTRA_TYPE * restrict xtra, char * restrict buf, size_t blen);
 } yyu_extra;
 
 /// yyu_extra_destroy

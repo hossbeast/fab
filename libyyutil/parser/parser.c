@@ -28,6 +28,7 @@
 
 #include "macros.h"
 #include "strutil.h"
+#include "zbuffer.h"
 
 //
 // api
@@ -35,6 +36,9 @@
 
 API void yyu_grammar_error(yyu_location * const lloc, void * const scanner, yyu_extra * const xtra, char const * err)
 {
+  char abuf[256];
+  char bbuf[256];
+
   if(xtra->gramerr || xtra->scanerr)
   {
     // already called
@@ -65,38 +69,47 @@ API void yyu_grammar_error(yyu_location * const lloc, void * const scanner, yyu_
       // token source string
       char * s    = xtra->last_loc.s;
       char * e    = xtra->last_loc.e;
-      char * abuf = xtra->last_loc.s;
-      size_t alen = stresc(s, e - s, xtra->space, sizeof(xtra->space));
+      size_t alen = stresc(s, e - s, abuf, sizeof(abuf));
 
       // token value
-      char * bbuf = 0;
       size_t blen = 0;
       if(xtra->lvalstr)
-        xtra->lvalstr(xtra->last_token, xtra->last_lval, xtra, &bbuf, &blen);
+        blen = xtra->lvalstr(xtra->last_token, xtra->last_lval, xtra, bbuf, sizeof(bbuf));
 
-      snprintf(xtra->tokenstring, sizeof(xtra->tokenstring)
-        , "%s%s%.*s%s%s%.*s%s"
-        , xtra->tokname(xtra->last_token) ?: ""   // token name
-        , alen ? " (" : ""
-        , (int)alen                         // escaped string from which the token was scanned
-        , abuf
-        , alen ? ")" : ""
-        , blen ? " (" : ""
-        , (int)blen                         // representation of the semantic value for the token
-        , bbuf
-        , blen ? ")" : ""
-      );
+      s = xtra->tokenstring;
+      size_t sz = sizeof(xtra->tokenstring);
+      size_t z = 0;
+      size_t zt;
+
+      // token name
+      zt = z, z += znloads(s + z, sz - z, xtra->tokname(xtra->last_token) ?: "");
+
+      // escaped string from which the token was scanned
+      if(alen)
+      {
+        if(zt != z)
+          z += znloads(s + z, sz - z, " ");
+        zt = z, z += znloadf(s + z, sz - z, "(%.*s)", (int)alen, abuf);
+      }
+
+      // representation of the semantic value for the token
+      if(blen)
+      {
+        if(zt != z)
+          z += znloads(s + z, sz - z, " ");
+        zt = z, z += znloadf(s + z, sz - z, "(%.*s)", (int)blen, bbuf);
+      }
     }
   }
 }
 
-API xapi yyu_reduce(int (*parser)(void *, yyu_extra *), yyu_extra * pp, xapi syntax_error)
+API xapi yyu_reduce(int (*parser)(void *, yyu_extra *), yyu_extra * xtra, xapi syntax_error)
 {
   enter;
 
   // error from the parser means failure to reduce
   int r;
-  if((r = parser(pp->scanner, pp)) || pp->scanerr)
+  if((r = parser(xtra->scanner, xtra)) || xtra->scanerr)
   {
     if(r == 2)
     {
@@ -108,28 +121,28 @@ API xapi yyu_reduce(int (*parser)(void *, yyu_extra *), yyu_extra * pp, xapi syn
       // fail from within a lexer or parser rule
       fail(0);
     }
-    else if(pp->gramerr)
+    else if(xtra->gramerr)
     {
       // failure to reduce from the parser
-      fails(syntax_error, "message", pp->error_str);
+      fails(syntax_error, "message", xtra->error_str);
     }
   }
 
 finally :
   if(XAPI_UNWINDING)
   {
-    if(pp->scanerr || pp->gramerr)
+    if(xtra->scanerr || xtra->gramerr)
     {
       xapi_infof("location", "[%d,%d - %d,%d]"
-        , pp->error_loc.f_lin + 1
-        , pp->error_loc.f_col + 1
-        , pp->error_loc.l_lin + 1
-        , pp->error_loc.l_col + 1
+        , xtra->error_loc.f_lin + 1
+        , xtra->error_loc.f_col + 1
+        , xtra->error_loc.l_lin + 1
+        , xtra->error_loc.l_col + 1
       );
 
-      if(pp->gramerr)
+      if(xtra->gramerr)
       {
-        xapi_infos("token", pp->tokenstring);
+        xapi_infos("token", xtra->tokenstring);
       }
     }
   }

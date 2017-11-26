@@ -62,10 +62,6 @@ static const char * statename(int state)
   return state >= 0 ? config_statenames[state] : "";
 }
 
-static void lvalstr(int token, void * restrict lval, struct config_xtra * restrict xtra, char ** restrict buf, size_t * restrict bufl)
-{
-}
-
 //
 // protected
 //
@@ -138,7 +134,6 @@ xapi config_parser_parse(
   config_xtra pp = {
       .tokname      = tokenname
     , .statename    = statename
-    , .lvalstr      = lvalstr
     , .fname        = fname
 #if DEBUG || DEVEL || XUNIT
     , .state_logs   = L_CONFIG

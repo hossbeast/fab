@@ -60,23 +60,24 @@ static xapi __attribute__((nonnull)) ptoken(
   enter;
 
 #if DEBUG || DEVEL || XUNIT
-  if(log_would(xtra->token_logs))
+  char abuf[256];
+  char bbuf[256];
+  char cbuf[256];
+
+  if(log_would(xtra->token_logs | L_YYUTIL | L_TOKENS))
   {
     // token source string
-    char * abuf = xtra->space;
-    size_t alen = stresc(text, leng, xtra->space, sizeof(xtra->space));
+    size_t alen = stresc(text, leng, abuf, sizeof(abuf));
 
     // token value
-    char * bbuf = 0;
     size_t blen = 0;
     if(xtra->lvalstr)
-      xtra->lvalstr(token, lval, xtra, &bbuf, &blen);
+      blen = xtra->lvalstr(token, lval, xtra, bbuf, sizeof(bbuf));
 
     // input name
-    char * cbuf = 0;
     size_t clen = 0;
     if(xtra->inputstr)
-      xtra->inputstr(xtra, &cbuf, &clen);
+      clen = xtra->inputstr(xtra, cbuf, sizeof(cbuf));
 
     logf(xtra->token_logs | L_YYUTIL | L_TOKENS
       , "%8s ) '%.*s'%s%.*s%s %*s @ %s%.*s%s[%3d,%3d - %3d,%3d]"
@@ -157,9 +158,11 @@ API xapi yyu_pushstate(const int state, yyu_extra * const xtra)
   enter;
 
 #if DEBUG || DEVEL || XUNIT
-  if(log_would(xtra->state_logs))
+  char abuf[256];
+
+  if(log_would(xtra->state_logs | L_YYUTIL | L_STATES))
   {
-    int al = snprintf(xtra->space, sizeof(xtra->space), "%s -> %s"
+    int alen = snprintf(abuf, sizeof(abuf), "%s -> %s"
       , xtra->statename(yyu_nstate(xtra, 0))
       , xtra->statename(state)
     );
@@ -167,9 +170,9 @@ API xapi yyu_pushstate(const int state, yyu_extra * const xtra)
     logf(xtra->state_logs | L_YYUTIL | L_STATES
       , "(%2d) %.*s %*s @ %*s "
       , xtra->states_n
-      , al
-      , xtra->space
-      , MAX(58 - al, 0)
+      , alen
+      , abuf
+      , MAX(58 - alen, 0)
       , ""
       , 18
       , ""
@@ -192,14 +195,15 @@ API xapi yyu_popstate(yyu_extra * const xtra)
   enter;
 
 #if DEBUG || DEVEL || XUNIT
+  char abuf[256];
   int x = yyu_nstate(xtra, 0);
 #endif
   xtra->states_n--;
 
 #if DEBUG || DEVEL || XUNIT
-  if(log_would(xtra->state_logs))
+  if(log_would(xtra->state_logs | L_YYUTIL | L_STATES))
   {
-    int al = snprintf(xtra->space, sizeof(xtra->space), "%s <- %s"
+    int alen = snprintf(abuf, sizeof(abuf), "%s <- %s"
       , xtra->statename(yyu_nstate(xtra, 0))
       , xtra->statename(x)
     );
@@ -207,9 +211,9 @@ API xapi yyu_popstate(yyu_extra * const xtra)
     logf(xtra->state_logs | L_YYUTIL | L_STATES
       , "(%2d) %.*s %*s @ %*s "
       , xtra->states_n
-      , al
-      , xtra->space
-      , MAX(58 - al, 0)
+      , alen
+      , abuf
+      , MAX(58 - alen, 0)
       , ""
       , 18
       , ""
