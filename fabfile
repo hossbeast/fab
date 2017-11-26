@@ -56,9 +56,7 @@
 
 # tests
 [ @test ] : [ @fabd.test @liblogger.test @liblorien.test @libmoria.test @libnarrator.test ]
-[ @test ] : [ @libvalue.test @libvalyria.test @libxapi.test @libxlinux.test @libxunit.test @libyyutil.test ]
-[ @test ] : [ @xunit.test ]
+[ @test ] : [ @libvalue.test @libvalyria.test @libxapi.test ]
 
 [ @test.fast ] : [ @fabd.test.fast @liblogger.test.fast @liblorien.test.fast @libmoria.test.fast @libnarrator.test.fast ]
-[ @test.fast ] : [ @libvalue.test.fast @libvalyria.test.fast @libxapi.test.fast @libxlinux.test.fast @libxunit.test.fast @libyyutil.test.fast ]
-[ @test.fast ] : [ @xunit.test.fast ]
+[ @test.fast ] : [ @libvalue.test.fast @libvalyria.test.fast @libxapi.test.fast ]
