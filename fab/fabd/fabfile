@@ -124,9 +124,9 @@ $libnarrator_xapi_devel $liblorien_xapi_devel $libmoria_xapi_devel $libfab_xapi_
 # unit tests
 #
 
-[ $* ~ lsr l/test\/test_ sx/c/xapi.xunit.so sy dj shift ] :: [ [ $< ~ sx/so/pic.o ] $libxunit_xapi_devel ]
+[ $* ~ lsr l/test\/test_ sx/c/xapi.xunit.so sy dj shift ] :: [ $< ~ sx/so/pic.o ]
 {
-  [ $cc ] [ $cflags -shared ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw lx/o uu fi ] [ $libxunit_xapi_devel ]
+  [ $cc ] [ $cflags -shared ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw lx/o uu fi ]
 }
 
 [ @test ] : [ [ $* ~ lsr l/test\/test_ sx/c/xapi.xunit.so sy ] $xunit_xapi_devel ]
