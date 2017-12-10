@@ -65,7 +65,7 @@ static xapi __attribute__((nonnull)) module_initialize(module * restrict mod, no
   enter;
 
   mod->base = base;
-  fatal(list_create, &mod->artifacts);
+  fatal(list_createx, &mod->artifacts, wfree, 0, 0);
   fatal(list_create, &mod->rules);
   fatal(list_create, &mod->required);
 
@@ -144,7 +144,7 @@ static xapi module_load_visitor(vertex * v, int distance, void * ctx)
   enter;
 
   char path[512];
-  const ff_node * ffn = 0;
+  ff_node * ffn = 0;
   module * mod = 0;
   vertex * common = 0;
   vertex * module = 0;
@@ -198,7 +198,7 @@ xapi module_load_project(node * restrict project_root, const char * restrict pro
 {
   enter;
 
-  const ff_node * ffn;
+  ff_node * ffn;
 
   // index the filesystem rooted at the module dir for extern lookups
   fatal(graph_traverse_vertices

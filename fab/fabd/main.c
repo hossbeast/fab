@@ -200,6 +200,7 @@ finally:
   fatal(params_cleanup);
   fatal(reconfigure_cleanup);
   fatal(sweeper_thread_cleanup);
+  fatal(ff_cleanup);
   identity_teardown();
 
   // libraries

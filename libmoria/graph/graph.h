@@ -86,6 +86,14 @@ xapi graph_xfree(graph * const restrict g);
 xapi graph_ixfree(graph ** const restrict g)
   __attribute__((nonnull));
 
+/// graph_recycle
+//
+// SUMMARY
+//  reset the graph to its initial state, without releasing allocations
+//
+xapi graph_recycle(graph * const restrict g)
+  __attribute__((nonnull));
+
 /// graph_vertex_create
 //
 // SUMMARY

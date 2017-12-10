@@ -191,7 +191,7 @@ static xapi server_thread()
 {
   enter;
 
-  node * project_root;
+  node * project_root = 0;
   pid_t client_pid = 0; // client process id
   memblk * mb = 0;
   sigset_t sigs;

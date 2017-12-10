@@ -37,9 +37,9 @@ xapi ff_setup(void);
 xapi ff_cleanup(void);
 xapi ff_report(void);
 
-xapi ff_load_paths(const struct ff_node ** restrict ffn, const char * restrict path)
+xapi ff_load_paths(struct ff_node ** restrict ffn, const char * restrict path)
   __attribute__((nonnull));
-xapi ff_load_pathf(const struct ff_node ** restrict ffn, const char * restrict fmt, ...)
+xapi ff_load_pathf(struct ff_node ** restrict ffn, const char * restrict fmt, ...)
   __attribute__((nonnull));
 
 #endif

@@ -288,24 +288,35 @@ API xapi graph_xfree(graph * const restrict g)
 
   if(g)
   {
-    if(g->vertex_value_destroy || g->vertex_value_xdestroy)
-    {
-      int x;
-      for(x = 0; x < g->vertices->l; x++)
-      {
-        vertex * v = list_get(g->vertices, x);
-        if(g->vertex_value_destroy)
-          g->vertex_value_destroy(v->value);
-        else
-          fatal(g->vertex_value_xdestroy, v->value);
-      }
-    }
-
+    fatal(graph_recycle, g);
     fatal(list_xfree, g->vertices);
     fatal(list_xfree, g->edges);
   }
 
   wfree(g);
+
+  finally : coda;
+}
+
+API xapi graph_recycle(graph * const restrict g)
+{
+  enter;
+
+  if(g->vertex_value_destroy || g->vertex_value_xdestroy)
+  {
+    int x;
+    for(x = 0; x < g->vertices->l; x++)
+    {
+      vertex * v = list_get(g->vertices, x);
+      if(g->vertex_value_destroy)
+        g->vertex_value_destroy(v->value);
+      else
+        fatal(g->vertex_value_xdestroy, v->value);
+    }
+  }
+
+  fatal(list_recycle, g->vertices);
+  fatal(list_recycle, g->edges);
 
   finally : coda;
 }

@@ -225,6 +225,7 @@ xapi map_put(
 
     m->size++;
   }
+
   // copy the value
   if(v)
     ((void**)m->tv)[i] = v;
@@ -287,7 +288,7 @@ API xapi map_recycle(map * restrict m)
 {
   enter;
 
-  // reset all lengths; all allocations remain intact
+  // reset all lengths; allocations remain intact
   int x;
   for(x = 0; x < m->table_size; x++)
   {
@@ -297,10 +298,9 @@ API xapi map_recycle(map * restrict m)
         m->free_value(VALUE(m, x));
       else if(m->xfree_value)
         fatal(m->xfree_value, VALUE(m, x));
-    }
 
-    if(m->tk[x])
-      m->tk[x]->attr = 0;
+      m->tk[x]->attr |= MAP_KEY_DELETED;
+    }
   }
 
   m->size = 0;
@@ -369,11 +369,19 @@ API xapi map_xfree(map * restrict m)
 
   if(m)   // free-like semantics
   {
-    fatal(map_recycle, m);
-
     int x;
     for(x = 0; x < m->table_size; x++)
+    {
+      if(m->tk[x] && !(m->tk[x]->attr & MAP_KEY_DELETED))
+      {
+        if(m->free_value)
+          m->free_value(VALUE(m, x));
+        else if(m->xfree_value)
+          fatal(m->xfree_value, VALUE(m, x));
+      }
+
       wfree(m->tk[x]);
+    }
 
     wfree(m->tk);
     wfree(m->tv);

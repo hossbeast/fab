@@ -34,6 +34,7 @@
 #include "valyria/pstring.h"
 #include "xlinux/xstdlib.h"
 #include "xlinux/xstring.h"
+#include "xlinux/xstat.h"
 
 #include "extern.h"
 #include "FF.errtab.h"
@@ -165,8 +166,24 @@ static xapi index_directory(const char * restrict abspath)
 {
   enter;
 
-  extern_index_context ctx = {};
-  fatal(nftwat, AT_FDCWD, abspath, index_directory_visit, 64, &ctx);
+  struct stat st;
+  int r;
+
+  fatal(uxstats, &r, &st, abspath);
+
+  if(r)
+  {
+    logf(L_INFO, "no permissions %s", abspath);
+  }
+  else if(!S_ISDIR(st.st_mode))
+  {
+    logf(L_INFO, "not a dir %s", abspath);
+  }
+  else
+  {
+    extern_index_context ctx = {};
+    fatal(nftwat, AT_FDCWD, abspath, index_directory_visit, 64, &ctx);
+  }
 
   finally : coda;
 }
@@ -269,11 +286,14 @@ xapi extern_reconfigure(struct reconfigure_context * restrict ctx, const value *
   if(!dry && !ctx->extern_changed)
     goto XAPI_FINALIZE;
 
-  if(!dry)
-    fatal(multimap_recycle, extern_mmap);
-
   if(dry)
     extern_config_hash[1] = 0;
+
+  else
+  {
+    fatal(multimap_recycle, extern_mmap);
+    fatal(graph_recycle, extern_graph);
+  }
 
   fatal(config_cursor_init, &cursor);
   fatal(config_cursor_sets, &cursor, "extern");
@@ -291,7 +311,6 @@ xapi extern_reconfigure(struct reconfigure_context * restrict ctx, const value *
       {
         extern_config_hash[1] += value_hash(val);
       }
-
       else
       {
         path_normalize(space, sizeof(space), val->s->s);
@@ -299,6 +318,8 @@ xapi extern_reconfigure(struct reconfigure_context * restrict ctx, const value *
       }
     }
   }
+
+  // no extern config
   else
   {
     extern_config_hash[1] = 0xdeadbeef;
@@ -307,7 +328,10 @@ xapi extern_reconfigure(struct reconfigure_context * restrict ctx, const value *
   if(dry)
     ctx->extern_changed = extern_config_hash[0] != extern_config_hash[1];
   else
+  {
     fatal(extern_report);
+    extern_config_hash[0] = extern_config_hash[1];
+  }
 
 finally:
   config_cursor_destroy(&cursor);
@@ -328,7 +352,9 @@ xapi extern_cleanup()
 {
   enter;
 
+  fatal(graph_xfree, extern_graph);
   fatal(multimap_xfree, extern_mmap);
+  memset(extern_config_hash, 0, sizeof(extern_config_hash));
 
   finally : coda;
 }

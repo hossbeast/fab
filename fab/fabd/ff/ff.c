@@ -17,7 +17,9 @@
 
 #include <string.h>
 
+#include "types.h"
 #include "xapi.h"
+
 #include "xlinux/xstdlib.h"
 #include "valyria/list.h"
 #include "valyria/map.h"
@@ -38,12 +40,19 @@
 #include "config.h"
 #include "value.h"
 
+// special value stored when there is no fabfile at a path, or it is empty
 #define FF_NXFILE ((void*)0x1)
-
-#define restrict __restrict
 
 static ff_parser * parser;
 static map * ff_by_path;
+
+static void ff_ffn_free(void * ffn)
+{
+  if(ffn != FF_NXFILE)
+  {
+    ffn_free(ffn);
+  }
+}
 
 //
 // public
@@ -54,7 +63,7 @@ xapi ff_setup()
   enter;
 
   fatal(ff_parser_create, &parser);
-  fatal(map_create, &ff_by_path);
+  fatal(map_createx, &ff_by_path, ff_ffn_free, 0, 0);
 
   finally : coda;
 }
@@ -76,7 +85,7 @@ xapi ff_report()
   finally : coda;
 }
 
-xapi ff_load_paths(const ff_node ** restrict root, const char * restrict path)
+xapi ff_load_paths(ff_node ** restrict root, const char * restrict path)
 {
   enter;
 
@@ -111,7 +120,7 @@ finally:
 coda;
 }
 
-xapi ff_load_pathf(const ff_node ** restrict root, const char * restrict fmt, ...)
+xapi ff_load_pathf(ff_node ** restrict root, const char * restrict fmt, ...)
 {
   enter;
 

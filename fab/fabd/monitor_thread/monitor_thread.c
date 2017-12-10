@@ -85,6 +85,7 @@ xapi monitor_thread()
 
   fatal(sigutil_wait, &sigs, &info);
 
+  // teardown other threads
   g_params.shutdown = 1;
   while(g_params.thread_count)
   {

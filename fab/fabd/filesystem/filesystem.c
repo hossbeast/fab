@@ -41,7 +41,7 @@
 #define restrict __restrict
 
 map * filesystems;
-static uint64_t filesystems_hash[2];
+static uint64_t filesystems_config_hash[2];
 
 // sorted by name
 static struct {
@@ -129,7 +129,7 @@ xapi filesystem_cleanup()
   enter;
 
   fatal(map_xfree, filesystems);
-  memset(filesystems_hash, 0, sizeof(filesystems_hash));
+  memset(filesystems_config_hash, 0, sizeof(filesystems_config_hash));
 
   finally : coda;
 }
@@ -170,7 +170,7 @@ xapi filesystem_reconfigure(struct reconfigure_context * restrict ctx, const val
   value * val;
   value * key;
   filesystem * fs = 0;
-  config_cursor cursor = { };
+  config_cursor cursor = {};
   int opt = 0;
   const char ** keys = 0;
   size_t keysl = 0;
@@ -184,7 +184,7 @@ xapi filesystem_reconfigure(struct reconfigure_context * restrict ctx, const val
     fatal(map_recycle, filesystems);
 
   if(dry)
-    filesystems_hash[1] = 0;
+    filesystems_config_hash[1] = 0;
 
   fatal(config_cursor_init, &cursor);
   fatal(config_cursor_sets, &cursor, "filesystem");
@@ -200,8 +200,8 @@ xapi filesystem_reconfigure(struct reconfigure_context * restrict ctx, const val
       // hash the config value for this filesystem
       if(dry)
       {
-        filesystems_hash[1] += value_hash(key);
-        filesystems_hash[1] += value_hash(list_get(map->vals, x));
+        filesystems_config_hash[1] += value_hash(key);
+        filesystems_config_hash[1] += value_hash(list_get(map->vals, x));
       }
 
       // query the relevant properties
@@ -233,13 +233,13 @@ xapi filesystem_reconfigure(struct reconfigure_context * restrict ctx, const val
   // the absence of filesystem config
   else
   {
-    filesystems_hash[1] = 0xdeadbeef;
+    filesystems_config_hash[1] = 0xdeadbeef;
   }
 
   if(dry)
-    ctx->filesystems_changed = filesystems_hash[0] != filesystems_hash[1];
+    ctx->filesystems_changed = filesystems_config_hash[0] != filesystems_config_hash[1];
 
-  if(!dry)
+  else
   {
     // synthetic root
     if(!has_root)
@@ -275,7 +275,7 @@ xapi filesystem_reconfigure(struct reconfigure_context * restrict ctx, const val
     }
 
     // the circle is now complete
-    filesystems_hash[0] = filesystems_hash[1];
+    filesystems_config_hash[0] = filesystems_config_hash[1];
   }
 
 finally:
