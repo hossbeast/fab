@@ -19,7 +19,6 @@
 #include "xapi/errtab.h"
 #include "xlinux/xstdlib.h"
 
-#include "lorien/load.h"
 #include "value/load.h"
 #include "yyutil/load.h"
 
@@ -34,9 +33,7 @@
 #include "logger.h"
 #include "logger/category.h"
 
-#include "config_parser.h"
-#include "errtab/CONFIG.errtab.h"
-#include "logging.h"
+#include "parser.h"
 
 #include "macros.h"
 
@@ -44,26 +41,23 @@
 // public
 //
 
-static xapi config_parser_unit_setup(xunit_unit * unit)
+static xapi value_parser_unit_setup(xunit_unit * unit)
 {
   enter;
 
   // load libraries
-  fatal(lorien_load);
   fatal(yyutil_load);
   fatal(value_load);
 
-  // logging
-  fatal(logging_finalize);
+  fatal(logger_finalize);
 
   finally : coda;
 }
 
-static xapi config_parser_unit_cleanup(xunit_unit * unit)
+static xapi value_parser_unit_cleanup(xunit_unit * unit)
 {
   enter;
 
-  fatal(lorien_unload);
   fatal(yyutil_unload);
   fatal(value_unload);
 
@@ -74,11 +68,11 @@ static xapi config_parser_unit_cleanup(xunit_unit * unit)
 // tests
 //
 
-static xapi config_parser_test_maps(xunit_test * test)
+static xapi value_parser_test_maps(xunit_test * test)
 {
   enter;
 
-  config_parser * parser = 0;
+  value_parser * parser = 0;
   value_store * store = 0;
   value * actual = 0;
   narrator * N0 = 0;
@@ -87,11 +81,11 @@ static xapi config_parser_test_maps(xunit_test * test)
   fatal(narrator_growing_create, &N0);
   fatal(narrator_growing_create, &N1);
 
-  char * config_text = "core.filesystem { \"/\" { invalidate notify } \"/mnt/remote\" { invalidate stat } }";
+  char * value_text = "core.filesystem { \"/\" { invalidate notify } \"/mnt/remote\" { invalidate stat } }";
 
   // parse
-  fatal(config_parser_create, &parser);
-  fatal(config_parser_parse, &parser, &store, MMS(config_text), 0, &actual);
+  fatal(value_parser_create, &parser);
+  fatal(value_parser_parse, &parser, &store, MMS(value_text), 0, &actual, 0);
 
   // assert
   value * val = 0;
@@ -113,18 +107,18 @@ static xapi config_parser_test_maps(xunit_test * test)
   assert_eq_s(narrator_growing_buffer(N0), narrator_growing_buffer(N1));
 
 finally:
-  fatal(config_parser_xfree, parser);
+  fatal(value_parser_xfree, parser);
   fatal(value_store_xfree, store);
   fatal(narrator_xfree, N0);
   fatal(narrator_xfree, N1);
 coda;
 }
 
-static xapi config_parser_test_lists(xunit_test * test)
+static xapi value_parser_test_lists(xunit_test * test)
 {
   enter;
 
-  config_parser * parser = 0;
+  value_parser * parser = 0;
   value_store * store = 0;
   value * actual = 0;
   narrator * N0 = 0;
@@ -133,11 +127,11 @@ static xapi config_parser_test_lists(xunit_test * test)
   fatal(narrator_growing_create, &N0);
   fatal(narrator_growing_create, &N1);
 
-  char * config_text = "core [ 1 true 2.0 \"foo\" ]";
+  char * value_text = "core [ 1 true 2.0 \"foo\" ]";
 
   // parse
-  fatal(config_parser_create, &parser);
-  fatal(config_parser_parse, &parser, &store, MMS(config_text), 0, &actual);
+  fatal(value_parser_create, &parser);
+  fatal(value_parser_parse, &parser, &store, MMS(value_text), 0, &actual, 0);
 
   // assert
   value * val = 0;
@@ -159,7 +153,7 @@ static xapi config_parser_test_lists(xunit_test * test)
   assert_eq_s(narrator_growing_buffer(N0), narrator_growing_buffer(N1));
 
 finally:
-  fatal(config_parser_xfree, parser);
+  fatal(value_parser_xfree, parser);
   fatal(value_store_xfree, store);
   fatal(narrator_xfree, N0);
   fatal(narrator_xfree, N1);
@@ -171,11 +165,11 @@ coda;
 //
 
 xunit_unit xunit = {
-    xu_setup : config_parser_unit_setup
-  , xu_cleanup : config_parser_unit_cleanup
+    xu_setup : value_parser_unit_setup
+  , xu_cleanup : value_parser_unit_cleanup
   , xu_tests : (xunit_test*[]) {
-      (xunit_test[]) {{ xu_entry : config_parser_test_maps }}
-    , (xunit_test[]) {{ xu_entry : config_parser_test_lists }}
+      (xunit_test[]) {{ xu_entry : value_parser_test_maps }}
+    , (xunit_test[]) {{ xu_entry : value_parser_test_lists }}
     , 0
   }
 };

@@ -15,7 +15,22 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-1   DIFFTYPE  cant merge differently typed values
-2   SYNTAX    config could not be parsed
-3   ILLBYTE   config contains illegal byte(s)
-4   NOTMAP    top-level config value is not a map
+#ifndef VALUE_LOGGING_INTERNAL_H
+#define VALUE_LOGGING_INTERNAL_H
+
+#include "logger.h"
+#include "logger/category.h"
+#include "logging.h"
+
+extern logger_category * categories;
+
+#define L_VALUE    categories[0].id
+
+/// logging_setup
+//
+// SUMMARY
+//  configure logging
+//
+xapi logging_setup(void);
+
+#endif

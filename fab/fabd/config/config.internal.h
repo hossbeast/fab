@@ -15,40 +15,35 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef _CONFIG_PARSER_H
-#define _CONFIG_PARSER_H
+#ifndef FABD_CONFIG_INTERNAL_H
+#define FABD_CONFIG_INTERNAL_H
 
+#include "types.h"
 #include "xapi.h"
 
-struct value;       // libvalue
-struct value_store; // libavlue
+#include "config.h"
 
-struct config_parser;
-typedef struct config_parser config_parser;
+struct value;
+struct value_parser;
+struct value_store;
 
-#define restrict __restrict
-
-/// config_parser_create
+/// config_throw
 //
 // SUMMARY
-//  create a config parser
+//  fail with CONFIG_ILLEGAL
 //
-xapi config_parser_create(config_parser ** const restrict p)
-  __attribute__((nonnull));
+// PARAMETERS
+//  error  - error, CONFIG_*
+//  [val]  - throw config object
+//  [path] - path from the root of the config tree
+//
+xapi config_throw(xapi error, struct value * restrict val, const char * restrict path);
 
-/// config_parser_xfree
+///
 //
-// SUMMARY
-//  free a config parser with free semantics
 //
-xapi config_parser_xfree(config_parser * const restrict);
-
-/// config_parser_ixfree
 //
-// SUMMARY
-//  free a config parser with iwfree semantics
-//
-xapi config_parser_ixfree(config_parser ** const restrict)
+xapi config_promote(struct value_store * store_staging, struct value * config_staging)
   __attribute__((nonnull));
 
 /// config_parse
@@ -67,8 +62,8 @@ xapi config_parser_ixfree(config_parser ** const restrict)
 //  not passing stor means that the parsed config tree will have been freed before this function
 //  returns, and is therefore only useful to log the parse tree
 //
-xapi config_parser_parse(
-    config_parser ** restrict parser
+xapi config_parse(
+    struct value_parser ** restrict parser
   , struct value_store ** restrict stor
   , const char * const restrict buf
   , size_t len
@@ -77,5 +72,4 @@ xapi config_parser_parse(
 )
   __attribute__((nonnull(3)));
 
-#undef restrict
 #endif

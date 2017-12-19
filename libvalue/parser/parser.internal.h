@@ -15,17 +15,17 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef _CONFIG_PARSER_INTERNAL_H
-#define _CONFIG_PARSER_INTERNAL_H
+#ifndef VALUE_PARSER_INTERNAL_H
+#define VALUE_PARSER_INTERNAL_H
 
 #ifndef YYU_EXTRA_TYPE
- struct config_extra;
- #define YYU_EXTRA_TYPE struct config_extra
+ struct value_xtra;
+ #define YYU_EXTRA_TYPE struct value_xtra
 #endif
 #include "yyutil/parser.h"
-#include "config_parser.h"
+#include "parser.h"
 
-typedef struct config_xtra
+typedef struct value_xtra
 {
   /* yyu-defined xtra fields */
   union {
@@ -35,9 +35,9 @@ typedef struct config_xtra
 
   struct value_store * stor; // value store
   struct value *      root; // (returns) root of the parsed tree
-} config_xtra;
+} value_xtra;
 
-/// config_yyerror
+/// value_yyerror
 //
 // SUMMARY
 //  flag the parse as failed (by setting pp->r = 0)
@@ -47,7 +47,7 @@ typedef struct config_xtra
 // DETAILS
 //  called from tab.o and lex.o
 //
-static void config_yyerror(struct YYLTYPE * loc, void * scanner, config_xtra * pp, char const * err)
+static void value_yyerror(struct YYLTYPE * loc, void * scanner, value_xtra * pp, char const * err)
   __attribute__((weakref("yyu_grammar_error")));
 
 #endif

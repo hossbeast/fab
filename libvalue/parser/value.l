@@ -19,14 +19,14 @@
   #include <stdio.h>
   #include <strings.h>
 
-  struct config_xtra;
-  #define YYU_EXTRA_TYPE struct config_xtra
+  struct value_xtra;
+  #define YYU_EXTRA_TYPE struct value_xtra
   #include "yyutil/scanner.h"
 
-  #include "config_parser.internal.h"
-  #include "config_parser/config.tab.h"
-  #include "config_parser/config.tokens.h"
-  #include "errtab/CONFIG.errtab.h"
+  #include "VALUE.errtab.h"
+  #include "parser.internal.h"
+  #include "value.tab.h"
+  #include "value.tokens.h"
 
   #include "parseint.h"
 
@@ -65,7 +65,7 @@
       , 0                       \
     )
 
-  static xapi lexify(const int token, YYSTYPE * const lval, yyu_location * const lloc, config_xtra * const xtra, char * const text, const int leng, const int ldel, const int vdel, void * const v)
+  static xapi lexify(const int token, YYSTYPE * const lval, yyu_location * const lloc, value_xtra * const xtra, char * const text, const int leng, const int ldel, const int vdel, void * const v)
   {
     enter;
 
@@ -117,8 +117,8 @@
 %option noinput nounput noyywrap noyy_top_state
 %option reentrant
 %option bison-bridge bison-locations
-%option prefix="config_yy"
-%option extra-type="config_xtra *"
+%option prefix="value_yy"
+%option extra-type="value_xtra *"
 %option stack
 
 %x multilinecomment
@@ -165,7 +165,7 @@ ILL   [\x00-\x08\x0B-\x1F\x7F-\xFF]
                                                           while(yyextra->states_n)
                                                             { POPSTATE; }
                                                           LOCWRITE;
-                                                          failf(CONFIG_ILLBYTE, "byte", "0x%02hhx", yytext[0]);
+                                                          failf(VALUE_ILLBYTE, "byte", "0x%02hhx", yytext[0]);
                                                           finally : lcoda;
                                                         }
 <*>[\x20-\x7E]                                          {
@@ -173,7 +173,7 @@ ILL   [\x00-\x08\x0B-\x1F\x7F-\xFF]
                                                           while(yyextra->states_n)
                                                             { POPSTATE; }
                                                           LOCWRITE;
-                                                          failf(CONFIG_ILLBYTE, "character", "'%1$c'(0x%1$02hhx)", yytext[0]);
+                                                          failf(VALUE_ILLBYTE, "character", "'%1$c'(0x%1$02hhx)", yytext[0]);
                                                           finally : lcoda;
                                                         }
 <<EOF>>                                                 {

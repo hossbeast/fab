@@ -30,7 +30,7 @@
 
 #include "filesystem.internal.h"
 #include "reconfigure.h"
-#include "config_parser.h"
+#include "config.internal.h"
 #include "logging.h"
 
 typedef struct
@@ -82,7 +82,7 @@ static xapi filesystem_test_entry(xunit_test * _test)
   fatal(filesystem_setup);
 
   // arrange
-  fatal(config_parser_parse, 0, &stor, MMS(test->config), 0, &config);
+  fatal(config_parse, 0, &stor, MMS(test->config), 0, &config);
 
   // act
   fatal(filesystem_reconfigure, &ctx, config, ~0);

@@ -29,14 +29,14 @@
 #include "value/store.h"
 #include "value/query.h"
 #include "value/merge.h"
+#include "value/parser.h"
 #include "valyria/pstring.h"
 #include "valyria/list.h"
 
 #include "internal.h"
 #include "reconfigure.h"
 #include "node.h"
-#include "config.h"
-#include "config_parser.h"
+#include "config.internal.h"
 #include "CONFIG.errtab.h"
 #include "filesystem.h"
 #include "logging.h"
@@ -52,7 +52,7 @@
 #define USER_CONFIG_PATH      ".fab/config"     // relative to $HOME
 #define PROJECT_CONFIG_PATH   ".fab/config"     // relative to project dir
 
-static config_parser * parser;
+static value_parser * parser;
 static value_store * store_staging;
 static value * config_staging;
 
@@ -70,7 +70,7 @@ static xapi __attribute__((nonnull)) parse(
 {
   enter;
 
-  fatal(config_parser_parse, &parser, &stor, text, len, fname, root);
+  fatal(config_parse, &parser, &stor, text, len, fname, root);
 
   if(*root && (*root)->type != VALUE_TYPE_MAP)
     fatal(config_throw, CONFIG_NOTMAP, *root, 0);
@@ -107,7 +107,7 @@ xapi reconfigure_setup()
 {
   enter;
 
-  fatal(config_parser_create, &parser);
+  fatal(value_parser_create, &parser);
 
   finally : coda;
 }
@@ -116,7 +116,7 @@ xapi reconfigure_cleanup()
 {
   enter;
 
-  fatal(config_parser_xfree, parser);
+  fatal(value_parser_xfree, parser);
   fatal(value_store_xfree, store_staging);
   config_staging = 0;
 

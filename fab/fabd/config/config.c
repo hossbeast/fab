@@ -29,12 +29,12 @@
 #include "value/store.h"
 #include "value/query.h"
 #include "value/merge.h"
+#include "value/parser.h"
 #include "valyria/pstring.h"
 #include "valyria/list.h"
 
 #include "internal.h"
-#include "config.h"
-#include "config_parser.h"
+#include "config.internal.h"
 #include "logging.h"
 #include "params.h"
 #include "CONFIG.errtab.h"
@@ -76,7 +76,7 @@ static xapi validate(value * restrict val, const char * restrict path, uint32_t 
 }
 
 //
-// protected
+// internal
 //
 
 xapi config_promote(value_store * store_staging, value * config_staging)
@@ -86,53 +86,6 @@ xapi config_promote(value_store * store_staging, value * config_staging)
   fatal(value_store_ixfree, &store_active);
   store_active = store_staging;
   g_config = config_staging;
-
-  finally : coda;
-}
-
-//
-// public
-//
-
-xapi config_setup()
-{
-  enter;
-
-  finally : coda;
-}
-
-xapi config_cleanup()
-{
-  enter;
-
-  fatal(value_store_xfree, store_active);
-  g_config = 0;
-
-  finally : coda;
-}
-
-xapi config_report()
-{
-  enter;
-
-  if(log_would(L_CONFIG))
-  {
-    narrator * N;
-    fatal(log_start, L_CONFIG, &N);
-    fatal(value_say, g_config, N);
-    fatal(log_finish);
-  }
-
-  finally : coda;
-}
-
-xapi config_query(const value * restrict base, const char * restrict path, const char * restrict query, uint32_t opts, value ** restrict res)
-{
-  enter;
-
-  value * val = value_query(base, query);
-  fatal(validate, val, path, opts);
-  *res = val;
 
   finally : coda;
 }
@@ -163,6 +116,77 @@ xapi config_throw(xapi error, value * restrict val, const char * restrict path)
 #endif
 
   fail(error);
+
+  finally : coda;
+}
+
+xapi config_parse(
+    value_parser ** restrict parser
+  , value_store ** restrict stor
+  , const char * const restrict text
+  , size_t len
+  , const char * restrict fname
+  , value ** restrict root
+)
+{
+  enter;
+
+  fatal(value_parser_parse, parser, stor, text, len, fname, root
+#if DEBUG || DEVEL || XUNIT
+      , L_CONFIG
+#endif
+  );
+
+  finally : coda;
+}
+
+//
+// public
+//
+
+xapi config_setup()
+{
+  enter;
+
+  finally : coda;
+}
+
+xapi config_cleanup()
+{
+  enter;
+
+  fatal(value_store_xfree, store_active);
+  g_config = 0;
+
+  finally : coda;
+}
+
+xapi config_report()
+{
+  enter;
+
+#if 0
+  narrator * N;
+
+  if(log_would(L_CONFIG))
+  {
+    fatal(log_start, L_CONFIG, &N);
+    xsays("effective config ");
+    fatal(value_say, g_config, N);
+    fatal(log_finish);
+  }
+#endif
+
+  finally : coda;
+}
+
+xapi config_query(const value * restrict base, const char * restrict path, const char * restrict query, uint32_t opts, value ** restrict res)
+{
+  enter;
+
+  value * val = value_query(base, query);
+  fatal(validate, val, path, opts);
+  *res = val;
 
   finally : coda;
 }

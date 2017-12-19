@@ -15,7 +15,7 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-1   DIFFTYPE  cant merge differently typed values
-2   SYNTAX    config could not be parsed
-3   ILLBYTE   config contains illegal byte(s)
-4   NOTMAP    top-level config value is not a map
+#ifndef VALUE_LOGGING_H
+#define VALUE_LOGGING_H
+
+#endif

@@ -16,50 +16,21 @@
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
 #include "xapi.h"
-#include "xlinux/load.h"
-#include "narrator/load.h"
-#include "valyria/load.h"
-#include "yyutil/load.h"
+#include "logger.h"
 
 #include "internal.h"
-#include "load.internal.h"
 #include "logging.internal.h"
-#include "VALUE.errtab.h"
 
-static int handles;
+logger_category * categories = (logger_category []) {
+    { name : "VALUE"    , description : "libvalue logging", optional : 1 }
+  , { }
+};
 
-API xapi value_load()
+xapi logging_setup()
 {
   enter;
 
-  if(handles++ == 0)
-  {
-    // dependencies
-    fatal(xlinux_load);
-    fatal(narrator_load);
-    fatal(valyria_load);
-    fatal(yyutil_load);
-
-    // modules
-    fatal(logging_setup);
-  }
-
-  finally : coda;
-}
-
-API xapi value_unload()
-{
-  enter;
-
-  if(--handles == 0)
-  {
-    // modules
-    // dependencies
-    fatal(xlinux_unload);
-    fatal(valyria_unload);
-    fatal(narrator_unload);
-    fatal(yyutil_unload);
-  }
+  fatal(logger_category_register, categories);
 
   finally : coda;
 }

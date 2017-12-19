@@ -37,8 +37,7 @@ struct config_test;
 #include "xunit.h"
 #include "xunit/assert.h"
 
-#include "config.h"
-#include "config_parser.h"
+#include "config.internal.h"
 #include "errtab/CONFIG.errtab.h"
 #include "logging.h"
 
@@ -61,7 +60,6 @@ static xapi config_test_entry(config_test * test)
 {
   enter;
 
-  config_parser * parser = 0;
   value_store * store = 0;
   value * root = 0;
   narrator * N0 = 0;
@@ -75,7 +73,7 @@ static xapi config_test_entry(config_test * test)
   while(*config_text)
   {
     value * val;
-    fatal(config_parser_parse, &parser, &store, MMS(*config_text), 0, &val);
+    fatal(config_parse, 0, &store, MMS(*config_text), 0, &val);
     if(root == 0)
       root = val;
     else
@@ -90,7 +88,7 @@ static xapi config_test_entry(config_test * test)
   {
     value * expected = 0;
     if(test->queries[x].value)
-      fatal(config_parser_parse, &parser, &store, MMS(test->queries[x].value), 0, &expected);
+      fatal(config_parse, 0, &store, MMS(test->queries[x].value), 0, &expected);
 
     value * actual = 0;
     fatal(config_query, root, "(path)", test->queries[x].query, 0, &actual);
@@ -103,7 +101,6 @@ static xapi config_test_entry(config_test * test)
   }
 
 finally:
-  fatal(config_parser_xfree, parser);
   fatal(value_store_xfree, store);
   fatal(narrator_xfree, N0);
   fatal(narrator_xfree, N1);

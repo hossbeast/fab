@@ -30,7 +30,7 @@
 #include "lorien/path_normalize.h"
 
 #include "filesystem.internal.h"
-#include "config.h"
+#include "config.internal.h"
 #include "reconfigure.h"
 #include "config_cursor.h"
 #include "CONFIG.errtab.h"

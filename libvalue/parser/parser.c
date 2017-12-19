@@ -30,20 +30,16 @@
 #include "value.h"
 #include "value/store.h"
 
-struct config_xtra;
-#define YYU_EXTRA_TYPE struct config_xtra
 #include "internal.h"
-#include "logging.h"
-#include "config_parser.internal.h"
-#include "config_parser/config.tab.h"
-#include "config_parser/config.lex.h"
-#include "config_parser/config.tokens.h"
-#include "config_parser/config.states.h"
-#include "errtab/CONFIG.errtab.h"
+#include "parser.internal.h"
+#include "VALUE.errtab.h"
+#include "logging.internal.h"
+#include "value.tab.h"
+#include "value.tokens.h"
+#include "value.lex.h"
+#include "value.states.h"
 
-#define restrict __restrict
-
-struct config_parser
+struct value_parser
 {
   void * p;
 };
@@ -54,12 +50,12 @@ struct config_parser
 
 static const char * tokenname(int token)
 {
-  return config_tokennames[token];
+  return value_tokennames[token];
 }
 
 static const char * statename(int state)
 {
-  return state >= 0 ? config_statenames[state] : "";
+  return state >= 0 ? value_statenames[state] : "";
 }
 
 //
@@ -70,23 +66,23 @@ static const char * statename(int state)
 // public
 //
 
-xapi config_parser_create(config_parser ** const parser)
+API xapi value_parser_create(value_parser ** const parser)
 {
   enter;
 
   fatal(xmalloc, parser, sizeof(**parser));
-  tfatalize(perrtab_KERNEL, ENOMEM, config_yylex_init, &(*parser)->p);
+  tfatalize(perrtab_KERNEL, ENOMEM, value_yylex_init, &(*parser)->p);
 
   finally : coda;
 }
 
-xapi config_parser_xfree(config_parser* const p)
+API xapi value_parser_xfree(value_parser* const p)
 {
   enter;
 
   if(p)
   {
-    config_yylex_destroy(p->p);
+    value_yylex_destroy(p->p);
   }
 
   wfree(p);
@@ -94,28 +90,31 @@ xapi config_parser_xfree(config_parser* const p)
   finally : coda;
 }
 
-xapi config_parser_ixfree(config_parser ** const p)
+API xapi value_parser_ixfree(value_parser ** const p)
 {
   enter;
 
-  fatal(config_parser_xfree, *p);
+  fatal(value_parser_xfree, *p);
   *p = 0;
 
   finally : coda;
 }
 
-xapi config_parser_parse(
-    config_parser ** restrict parser
+API xapi value_parser_parse(
+    value_parser ** restrict parser
   , value_store ** restrict stor
   , const char * const restrict text
   , size_t len
   , const char * restrict fname
   , value ** restrict root
+#if DEBUG || DEVEL || XUNIT
+  , uint64_t logs
+#endif
 )
 {
   enter;
 
-  config_parser * lp = 0;
+  value_parser * lp = 0;
   value_store * lvs = 0;
   void * state = 0;
 
@@ -123,7 +122,7 @@ xapi config_parser_parse(
   if(!parser)
     parser = &lp;
   if(!*parser)
-    fatal(config_parser_create, parser);
+    fatal(value_parser_create, parser);
 
   // storage
   if(!stor)
@@ -131,28 +130,28 @@ xapi config_parser_parse(
   if(!*stor)
     fatal(value_store_create, stor);
 
-  config_xtra pp = {
+  value_xtra pp = {
       .tokname      = tokenname
     , .statename    = statename
     , .fname        = fname
 #if DEBUG || DEVEL || XUNIT
-    , .state_logs   = L_CONFIG
-    , .token_logs   = L_CONFIG
+    , .state_logs   = logs | L_VALUE
+    , .token_logs   = logs | L_VALUE
 #endif
   };
 
   // create state specific to this parse
-  if((state = config_yy_scan_bytes(text, len, (*parser)->p)) == 0)
+  if((state = value_yy_scan_bytes(text, len, (*parser)->p)) == 0)
     fail(KERNEL_ENOMEM);
 
   pp.scanner = (*parser)->p;
   pp.stor = *stor;
 
   // make available to the lexer
-  config_yyset_extra(&pp, (*parser)->p);
+  value_yyset_extra(&pp, (*parser)->p);
 
   // invoke the appropriate parser, raise errors as needed
-  fatal(yyu_reduce, config_yyparse, &pp, CONFIG_SYNTAX);
+  fatal(yyu_reduce, value_yyparse, &pp, VALUE_SYNTAX);
 
   if(pp.root)
   {
@@ -165,10 +164,10 @@ xapi config_parser_parse(
 
 finally:
   // cleanup state for this parse
-  config_yy_delete_buffer(state, (*parser)->p);
+  value_yy_delete_buffer(state, (*parser)->p);
   yyu_extra_destroy(&pp.yyu);
 
-  fatal(config_parser_xfree, lp);
+  fatal(value_parser_xfree, lp);
   fatal(value_store_xfree, lvs);
 coda;
 }

@@ -30,7 +30,7 @@
 
 #include "logging.h"
 #include "reconfigure.h"
-#include "config.h"
+#include "config.internal.h"
 #include "config_cursor.h"
 #include "CONFIG.errtab.h"
 

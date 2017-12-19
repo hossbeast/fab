@@ -24,19 +24,19 @@
   #include "valyria/list.h"
   #include "valyria/pstring.h"
 
-  #include "config_parser.internal.h"
+  #include "parser.internal.h"
 }
 
 %code top {
-  int config_yylex(void *, void*, void*);
+  int value_yylex(void *, void*, void*);
 }
 
 %define api.pure
 %error-verbose
 %locations
-%name-prefix "config_yy"
+%name-prefix "value_yy"
 %parse-param { void* scanner }
-%parse-param { config_xtra * xtra }
+%parse-param { struct value_xtra* xtra }
 %lex-param { void* scanner }
 
 /* zero based lines and columns */

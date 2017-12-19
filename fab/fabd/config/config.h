@@ -15,17 +15,16 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef _CONFIG_H
-#define _CONFIG_H
+#ifndef FABD_CONFIG_H
+#define FABD_CONFIG_H
 
+#include "types.h"
 #include "xapi.h"
 
 struct value;         // libvalue
 struct value_store;
 
 #define CONFIG_QUERY_NOTNULL 0x10000
-
-#define restrict __restrict
 
 /// g_config
 //
@@ -54,13 +53,6 @@ xapi config_cleanup(void);
 //
 xapi config_report(void);
 
-/// config_reconfigure
-//
-// SUMMARY
-//  promote the staging config to the active config, reconfigure subsystems, and call config_report
-//
-xapi config_reconfigure(void);
-
 /// config_query
 //
 // SUMMARY
@@ -80,24 +72,4 @@ xapi config_reconfigure(void);
 xapi config_query(const struct value * restrict base, const char * restrict path, const char * restrict query, uint32_t opts, struct value ** const restrict val)
   __attribute__((nonnull));
 
-///
-//
-//
-//
-xapi config_promote(struct value_store * store_staging, struct value * config_staging)
-  __attribute__((nonnull));
-
-/// config_throw
-//
-// SUMMARY
-//  fail with CONFIG_ILLEGAL
-//
-// PARAMETERS
-//  error  - error, CONFIG_*
-//  val    - throw config object
-//  [path] - path from the root of the config tree
-//
-xapi config_throw(xapi error, struct value * restrict val, const char * restrict path);
-
-#undef restrict
 #endif
