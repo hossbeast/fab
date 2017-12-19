@@ -28,6 +28,9 @@ MODULE
 #include <stdint.h>
 #include <sys/types.h>
 
+#include "types.h"
+#include "xapi.h"
+
 #include "traverse.h"
 
 struct graph;
@@ -50,8 +53,6 @@ typedef struct vertex
 #endif
   VERTEX_INTERNALS;
 } vertex;
-
-#define restrict __restrict
 
 /// vertex_value_set
 //
@@ -88,7 +89,8 @@ vertex * vertex_containerof(const void * value)
 /// vertex_travel
 //
 // SUMMARY
-//  get a vertex or edge at distance 1 from a starting vertex or edge
+//  Get a vertex or edge at distance 1 from a starting vertex or edge. If a label is specified,
+//  select a vertex or edge having that label. If no label is specified, then label is not considered.
 //
 // PARAMETERS
 //  v              - starting vertex
@@ -97,6 +99,14 @@ vertex * vertex_containerof(const void * value)
 //  [edge_visit]   - see traversal_criteria
 //  attrs          - bitwise combination of MORIA_TRAVERSE_*
 //
+vertex * vertex_travel_vertex(
+    const vertex * restrict v
+  , uint32_t vertex_visit
+  , uint32_t edge_visit
+  , uint32_t attrs
+)
+  __attribute__((nonnull(1)));
+
 vertex * vertex_travel_vertexs(
     const vertex * restrict v
   , const char * restrict label
@@ -110,6 +120,14 @@ vertex * vertex_travel_vertexw(
     const vertex * restrict v
   , const char * restrict label
   , size_t label_len
+  , uint32_t vertex_visit
+  , uint32_t edge_visit
+  , uint32_t attrs
+)
+  __attribute__((nonnull(1)));
+
+struct edge * vertex_travel_edge(
+    const vertex * restrict v
   , uint32_t vertex_visit
   , uint32_t edge_visit
   , uint32_t attrs
@@ -135,5 +153,4 @@ struct edge * vertex_travel_edgew(
 )
   __attribute__((nonnull(1)));
 
-#undef restrict
 #endif

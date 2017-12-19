@@ -73,7 +73,6 @@ typedef struct node
 
   int invalid;
   const struct filesystem * fs;   // not null
-  struct node * fsparent;
 
   struct module * mod;            // module rooted at this dir, if any
 
@@ -150,5 +149,17 @@ size_t node_get_absolute_path(const node * restrict n, void * restrict dst, size
 
 xapi node_path_say(const node * restrict n, struct narrator * restrict N)
   __attribute__((nonnull));
+
+static inline node * node_fsparent(const node * restrict n)
+{
+  vertex * fsparent = vertex_travel_vertex(
+      vertex_containerof(n)
+    , 0
+    , NODE_RELATION_FS
+    , MORIA_TRAVERSE_UP
+  );
+
+  return vertex_value(fsparent);
+}
 
 #endif

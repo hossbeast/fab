@@ -87,7 +87,6 @@ static xapi get_node(map * node_map, char * path, size_t len, node ** n)
     if(A)
     {
       fatal(graph_connect_edge, g_node_graph, vertex_containerof(A), vertex_containerof(B), NODE_RELATION_FS);
-      B->fsparent = A;
     }
     
     A = B;

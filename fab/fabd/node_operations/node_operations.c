@@ -78,7 +78,6 @@ xapi node_connect_fs(node * restrict parent, node * restrict n)
     , vertex_containerof(n)
     , NODE_RELATION_FS
   );
-  n->fsparent = parent;
 
   if(log_would(L_GRAPH))
   {

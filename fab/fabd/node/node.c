@@ -186,7 +186,7 @@ size_t node_get_absolute_path(const node * restrict n, void * restrict dst, size
   while(n && nsl < (sizeof(ns) / sizeof(ns[0])))
   {
     ns[nsl++] = n;
-    n = n->fsparent;
+    n = node_fsparent(n);
   }
 
   z += znloads(dst + z, sz - z, g_params.proj_dir ?: "");
@@ -213,7 +213,7 @@ size_t node_get_relative_path(const node * restrict n, void * restrict dst, size
   while(n && nsl < (sizeof(ns) / sizeof(ns[0])))
   {
     ns[nsl++] = n;
-    n = n->fsparent;
+    n = node_fsparent(n);
   }
 
   z += znloads(dst + z, sz - z, ".");

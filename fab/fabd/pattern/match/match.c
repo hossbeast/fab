@@ -19,6 +19,7 @@
 #include "xapi.h"
 
 #include "narrator.h"
+#include "moria/vertex.h"
 
 #include "pattern/match.internal.h"
 #include "artifact.h"
@@ -76,7 +77,7 @@ xapi pattern_part_match(pattern_match_context * restrict context, ffn_bydir_walk
       ffn_pattern_bydir_rtl(walk->context);
       if((walk->ffn = walk->context->first))
       {
-        context->node = context->node->fsparent;
+        context->node = node_fsparent(context->node);
         context->name_offset = 0;
       }
     }

@@ -56,13 +56,27 @@ static bool __attribute__((nonnull(1))) vertex_travel(
 
   if((attrs & DIRECTION_OPT) == MORIA_TRAVERSE_UP)
   {
-    struct vertex_cmp_context ctx = { A : label, len : label_len };
-    e = list_search(v->up, &ctx, vertex_compare);
+    if(label)
+    {
+      struct vertex_cmp_context ctx = { A : label, len : label_len };
+      e = list_search(v->up, &ctx, vertex_compare);
+    }
+    else if(v->up->l)
+    {
+      e = list_get(v->up, 0);
+    }
   }
   else if((attrs & DIRECTION_OPT) == MORIA_TRAVERSE_DOWN)
   {
-    struct vertex_cmp_context ctx = { B : label, len : label_len };
-    e = list_search(v->down, &ctx, vertex_compare);
+    if(label)
+    {
+      struct vertex_cmp_context ctx = { B : label, len : label_len };
+      e = list_search(v->down, &ctx, vertex_compare);
+    }
+    else if(v->down->l)
+    {
+      e = list_get(v->down, 0);
+    }
   }
 
   if(!e)
@@ -184,6 +198,20 @@ API vertex * vertex_containerof(const void * value)
   return (vertex*)(value - offsetof(vertex, value));
 }
 
+API vertex * vertex_travel_vertex(
+    const vertex * restrict v
+  , uint32_t vertex_visit
+  , uint32_t edge_visit
+  , uint32_t attrs
+)
+{
+  vertex * nv;
+  if(vertex_travel(v, 0, 0, vertex_visit, edge_visit, attrs, &nv, 0))
+    return nv;
+
+  return 0;
+}
+
 API vertex * vertex_travel_vertexs(
     const vertex * restrict v
   , const char * restrict label
@@ -211,6 +239,20 @@ API vertex * vertex_travel_vertexw(
   vertex * nv;
   if(vertex_travel(v, label, label_len, vertex_visit, edge_visit, attrs, &nv, 0))
     return nv;
+
+  return 0;
+}
+
+API edge * vertex_travel_edge(
+    const vertex * restrict v
+  , uint32_t vertex_visit
+  , uint32_t edge_visit
+  , uint32_t attrs
+)
+{
+  edge * e;
+  if(vertex_travel(v, 0, 0, vertex_visit, edge_visit, attrs, 0, &e))
+    return e;
 
   return 0;
 }
