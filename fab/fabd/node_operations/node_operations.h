@@ -24,21 +24,29 @@ struct edge;
 struct filesystem;
 struct node;
 struct vertex;
+struct operations_dispatch;
+
+enum relation_type;
 
 /// node_connect
 //
 // SUMMARY
-//  attach a node to the graph
+//  create an edge in the graph
 //
 // PARAMETERS
 //  g      - graph
 //  parent - parent
 //  n      - node
 //
-xapi node_connect_fs(struct node * restrict parent, struct node * restrict n)
+xapi node_connect(struct node * restrict above, struct node * restrict below, enum relation_type relation)
   __attribute__((nonnull));
 
-xapi node_connect_dependency(struct node * restrict left, struct node * restrict right)
+/// node_disconnect
+//
+// SUMMARY
+//  remove an edge between two nodes, if any
+//
+xapi node_disconnect(struct node * restrict A, struct node * restrict B)
   __attribute__((nonnull));
 
 /// node_disintegrate_fs
@@ -80,6 +88,10 @@ xapi node_invalidate(struct node * restrict n, int traversal)
 xapi node_refresh(struct node * restrict n, int traversal)
   __attribute__((nonnull));
 
-int node_traversal_begin(void);
+/// node_operations_dispatch
+//
+// function pointers for moria/operations which operate on the node graph
+//
+struct operations_dispatch * node_operations_dispatch;
 
 #endif

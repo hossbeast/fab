@@ -21,6 +21,7 @@
 #include "types.h"
 #include "narrator.h"
 #include "valyria/list.h"
+#include "valyria/map.h"
 #include "moria/vertex.h"
 
 #include "rule.internal.h"
@@ -34,35 +35,33 @@
 #include "match.h"
 #include "generate.h"
 #include "artifact.h"
+#include "module.h"
 
 //
-// public
+// internal
 //
 
-xapi rules_apply(const list * restrict rules, node * restrict base, artifact * restrict af, int traversal_id)
+
+xapi rules_apply_rules(
+    node * restrict consequent
+  , const list * restrict rules_lists
+  , node * restrict base
+  , map * restrict scope
+  , artifact * restrict af
+  , list * restrict antecedents
+  , list * restrict consequents
+)
 {
   enter;
 
-  int x, y, i;
-  list * antecedent_list = 0;
-  list * consequent_list = 0;
+  int x, y, z;
 
-  fatal(list_create, &antecedent_list);
-  fatal(list_create, &consequent_list);
-  fatal(list_push, consequent_list, af->node);
-
-  for(i = 0; i < consequent_list->l; i++)
+  for(x = 0; x < rules_lists->l; x++)
   {
-    node * consequent = list_get(consequent_list, i);
-    vertex * consequent_vertex = vertex_containerof(consequent);
-
-    if(consequent_vertex->visited == traversal_id)
-      continue;
-    consequent_vertex->visited = traversal_id;
-
-    for(x = 0; x < rules->l; x++)
+    const list * rules = list_get(rules_lists, x);
+    for(y = 0; y < rules->l; y++)
     {
-      ff_node_rule * rule = list_get(rules, x);
+      ff_node_rule * rule = list_get(rules, y);
 
       ff_node_pattern * consequent_pattern = rule->consequent_list->chain;
       while(consequent_pattern)
@@ -73,20 +72,21 @@ xapi rules_apply(const list * restrict rules, node * restrict base, artifact * r
         fatal(pattern_match, consequent_pattern, consequent, af, &b, &stem, &stem_len);
         if(b)
         {
-          fatal(list_recycle, antecedent_list);
+          fatal(list_recycle, antecedents);
           
           ff_node_pattern * antecedent_pattern = rule->antecedent_list->chain;
           while(antecedent_pattern)
           {
-            fatal(pattern_generate, antecedent_pattern, base, af, stem, stem_len, antecedent_list, false);
+            fatal(pattern_generate, antecedent_pattern, base, scope, af, stem, stem_len, antecedents, false);
             antecedent_pattern = (typeof(antecedent_pattern))antecedent_pattern->next;
           }
 
-          for(y = 0; y < antecedent_list->l; y++)
+          for(z = 0; z < antecedents->l; z++)
           {
-            node * antecedent = list_get(antecedent_list, y);
-            fatal(node_connect_dependency, consequent, antecedent);
-            fatal(list_push, consequent_list, antecedent);
+            node * antecedent = list_get(antecedents, z);
+
+            fatal(node_connect, consequent, antecedent, RELATION_TYPE_STRONG);
+            fatal(list_push, consequents, antecedent);
           }
         }
 
@@ -95,8 +95,56 @@ xapi rules_apply(const list * restrict rules, node * restrict base, artifact * r
     }
   }
 
+  finally : coda;
+}
+
+//
+// public
+//
+
+xapi rules_apply(artifact * restrict af, int traversal_id)
+{
+  enter;
+
+  int x;
+  list * antecedents = 0;
+  list * consequents = 0;
+
+  char path[512];
+  size_t pathl;
+
+  fatal(list_create, &antecedents);
+  fatal(list_create, &consequents);
+  fatal(list_push, consequents, af->node);
+
+  for(x = 0; x < consequents->l; x++)
+  {
+    node * consequent = list_get(consequents, x);
+    vertex * consequent_vertex = vertex_containerof(consequent);
+
+    if(consequent_vertex->visited == traversal_id)
+      continue;
+    consequent_vertex->visited = traversal_id;
+
+    // on-demand module attribution
+    if(!consequent->mod)
+    {
+      pathl = node_get_absolute_path(consequent, path, sizeof(path));
+      consequent->mod = module_lookup(path, pathl);
+    }
+
+    if(!consequent->mod)
+      continue;
+
+    const list * rules_lists = consequent->mod->rules_lists;
+    node * base = consequent->mod->base;
+    map * scope = consequent->mod->require_scope;
+
+    fatal(rules_apply_rules, consequent, rules_lists, base, scope, af, antecedents, consequents);
+  }
+
 finally:
-  fatal(list_xfree, antecedent_list);
-  fatal(list_xfree, consequent_list);
+  fatal(list_xfree, antecedents);
+  fatal(list_xfree, consequents);
 coda;
 }

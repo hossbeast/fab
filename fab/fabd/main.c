@@ -16,8 +16,6 @@
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
 #include <string.h>
-#include <sys/stat.h>
-#include <sys/types.h>
 
 #include "xapi.h"
 #include "fab/load.h"
@@ -36,13 +34,10 @@
 #include "xapi/errtab.h"
 #include "xlinux/xfcntl.h"
 #include "xlinux/xunistd.h"
-#include "xlinux/xinotify.h"
-#include "xlinux/xsignal.h"
 #include "fab/ipc.h"
 #include "fab/sigutil.h"
 #include "logger.h"
 #include "logger/arguments.h"
-#include "moria/graph.h"
 
 #include "FABD.errtab.h"
 #include "config.h"
@@ -62,15 +57,14 @@
 #include "identity.h"
 #include "parseint.h"
 
-static xapi main_exit;
-
+static xapi xmain_exit;
 static xapi xmain()
 {
   enter;
 
-#if DEBUG || DEVEL
+  #if DEBUG || DEVEL
   // this check is omitted in DEBUG/DEVEL mode because valgrind requires non-setgid and non-setuid executables
-#else
+  #else
   // this executable MUST BE OWNED by fabsys:fabsys and have u+s and g+s permissions
   if(strcmp(g_euid_name, "fabsys") || strcmp(g_egid_name, "fabsys"))
   {
@@ -78,11 +72,11 @@ static xapi xmain()
     xapi_info_pushf("effective", "e:%s/%d:%s/%d", g_euid_name, g_euid, g_egid_name, g_egid);
     fail(FABD_EXEPERMS);
   }
-#endif
+  #endif
 
-#if DEBUG || DEVEL
+  #if DEBUG || DEVEL
   logs(L_IPC, "started");
-#endif
+  #endif
 
   fatal(params_report);
 
@@ -93,7 +87,7 @@ static xapi xmain()
   fatal(xclose, 0);
   fatal(xopens, 0, O_RDONLY, "/dev/null");
 
-#if DEBUG || DEVEL
+  #if DEBUG || DEVEL
   if(g_argc > 2 && strcmp(g_argv[2], "--nodaemon") == 0)
   {
     g_logging_skip_reconfigure = 1;
@@ -105,7 +99,7 @@ static xapi xmain()
     if(pgid)
       failf(FABD_DAEMONEXCL, "pgid", "%ld", (long)pgid);
   }
-#endif
+  #endif
 
   g_params.thread_monitor = gettid();
 
@@ -121,7 +115,7 @@ static xapi xmain()
   finally : coda;
 }
 
-static xapi main_jump()
+static xapi xmain_jump()
 {
   enter;
 
@@ -140,13 +134,13 @@ finally:
     fatal(logger_trace_pithy, L_ERROR, XAPI_TRACE_COLORIZE | XAPI_TRACE_NONEWLINE);
 #endif
 
-    main_exit = XAPI_ERRVAL;
+    xmain_exit = XAPI_ERRVAL;
     xapi_calltree_unwind();
   }
 coda;
 }
 
-static xapi main_load(char ** envp)
+static xapi xmain_load(char ** envp)
 {
   enter;
 
@@ -187,7 +181,7 @@ static xapi main_load(char ** envp)
 
   // logging with per-ipc logfiles
   fatal(logging_setup, hash);
-  fatal(main_jump);
+  fatal(xmain_jump);
 
 finally:
   // modules
@@ -221,7 +215,7 @@ int main(int argc, char ** argv, char ** envp)
   enter;
 
   xapi R = 0;
-  fatal(main_load, envp);
+  fatal(xmain_load, envp);
 
 finally:
   if(XAPI_UNWINDING)
@@ -233,7 +227,7 @@ finally:
 conclude(&R);
   xapi_teardown();
 
-  R |= main_exit;
+  R |= xmain_exit;
 
   return !!R;
 }

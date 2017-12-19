@@ -78,6 +78,7 @@
  alternation-pattern-parts
  artifact
  artifact-pattern
+ artifact-patterns artifact-pattern-list
  artifact-pattern-alternation
  artifact-pattern-alternation-part
  artifact-pattern-alternation-parts
@@ -104,14 +105,23 @@
  patterns
  quoted-string quoted-string-literal quoted-strpart quoted-strparts
  range
- require require-pattern require-parts require-part
+ require
+ extern-pattern extern-pattern-parts extern-pattern-part
+ extern-patterns extern-pattern-list
+ extern-pattern-alternation
+ extern-pattern-alternation-part
+ extern-pattern-alternation-parts
+ extern-pattern-alternation-parts-no-epsilon
+ extern-pattern-alternation-parts-with-epsilon
+ extern-pattern-alternation-pattern
+ extern-pattern-alternation-pattern-parts
  rule
  statements statement
  stem
  string string-list string-literal strings
  task
  unquoted-string unquoted-string-literal unquoted-strpart
- use use-pattern use-parts use-part
+ use
  variant
  varname vardef varname-variant
 
@@ -178,58 +188,115 @@ formula
   ;
 
 use
-  : USE use-pattern
+  : USE extern-patterns
   {
     YFATAL(ffn_mknode, &$$, &@$, FFN_USE, $2);
   }
   ;
 
-use-pattern
-  : use-parts
-  {
-    YFATAL(ffn_mknode, &$$, &@$, FFN_PATTERN, $1);
-  }
-  ;
-
-use-parts
-  : use-parts use-part
-  {
-    $$ = ffn_append($1, $2);
-  }
-  | use-part
-  ;
-
-use-part
-  : string-literal
-  | dirsep
-  ;
-
 require
-  : REQUIRE require-pattern
+  : REQUIRE extern-patterns
   {
     YFATAL(ffn_mknode, &$$, &@$, FFN_REQUIRE, $2);
   }
   ;
 
-require-pattern
-  : require-parts
+extern-patterns
+  : extern-pattern-list ','
+  {
+    YFATAL(ffn_mknode, &$$, &@$, FFN_PATTERNS, $1);
+  }
+  | extern-pattern-list
+  {
+    YFATAL(ffn_mknode, &$$, &@$, FFN_PATTERNS, $1);
+  }
+  ;
+
+extern-pattern-list
+  : extern-pattern-list ',' extern-pattern
+  {
+    $$ = ffn_append($1, $3);
+  }
+  | extern-pattern
+  ;
+
+ /* extern patterns do not contain % and ? */
+extern-pattern
+  : extern-pattern-parts
   {
     YFATAL(ffn_mknode, &$$, &@$, FFN_PATTERN, $1);
   }
   ;
 
-require-parts
-  : require-parts require-part
+extern-pattern-parts
+  : extern-pattern-parts extern-pattern-part
   {
     $$ = ffn_append($1, $2);
   }
-  | require-part
+  | extern-pattern-part
   ;
 
-require-part
-  : string-literal
-  | dirsep
+ /* may appearat any position in the extern pattern */
+extern-pattern-part
+  : extern-pattern-alternation
+  | class
   | dot
+  | string-literal
+  | dirsep
+  ;
+
+extern-pattern-alternation
+  : '{' extern-pattern-alternation-parts '}'
+  {
+    YFATAL(ffn_mknode, &$$, &@$, FFN_ALTERNATION, $2, 0);
+  }
+  ;
+
+extern-pattern-alternation-parts
+  : extern-pattern-alternation-parts-with-epsilon
+  | extern-pattern-alternation-parts-no-epsilon
+  | alternation-part-epsilon ',' extern-pattern-alternation-parts-no-epsilon
+  {
+    $$ = ffn_append($1, $3);
+  }
+  ;
+
+extern-pattern-alternation-parts-no-epsilon
+  : extern-pattern-alternation-parts-no-epsilon ',' extern-pattern-alternation-part
+  {
+    $$ = ffn_append($1, $3);
+  }
+  | extern-pattern-alternation-part
+  ;
+
+extern-pattern-alternation-parts-with-epsilon
+  : extern-pattern-alternation-parts-with-epsilon ',' extern-pattern-alternation-part
+  {
+    $$ = ffn_append($1, $3);
+  }
+  | extern-pattern-alternation-parts-no-epsilon ',' alternation-part-epsilon
+  {
+    $$ = ffn_append($1, $3);
+  }
+  ;
+
+extern-pattern-alternation-part
+  : extern-pattern-alternation-pattern
+  ;
+
+extern-pattern-alternation-pattern
+  : extern-pattern-alternation-pattern-parts
+  {
+    YFATAL(ffn_mknode, &$$, &@$, FFN_PATTERN, $1);
+  }
+  ;
+
+extern-pattern-alternation-pattern-parts
+  : extern-pattern-alternation-pattern-parts extern-pattern-part
+  {
+    $$ = ffn_append($1, $2);
+  }
+  | extern-pattern-part
   ;
 
 task
@@ -240,10 +307,29 @@ task
   ;
 
 artifact
-  : ARTIFACT artifact-pattern
+  : ARTIFACT artifact-patterns
   {
     YFATAL(ffn_mknode, &$$, &@$, FFN_ARTIFACT, $2);
   }
+  ;
+
+artifact-patterns
+  : artifact-pattern-list ','
+  {
+    YFATAL(ffn_mknode, &$$, &@$, FFN_PATTERNS, $1);
+  }
+  | artifact-pattern-list
+  {
+    YFATAL(ffn_mknode, &$$, &@$, FFN_PATTERNS, $1);
+  }
+  ;
+
+artifact-pattern-list
+  : artifact-pattern-list ',' artifact-pattern
+  {
+    $$ = ffn_append($1, $3);
+  }
+  | artifact-pattern
   ;
 
  /* artifact patterns do not contain %, and ? has a different meaning */

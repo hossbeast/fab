@@ -19,6 +19,7 @@
 #include "lorien/load.h"
 #include "value/load.h"
 #include "yyutil/load.h"
+#include "logger/load.h"
 
 #include "value.h"
 #include "value/store.h"

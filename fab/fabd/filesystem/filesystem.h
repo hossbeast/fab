@@ -15,8 +15,8 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef _FILESYSTEM_H
-#define _FILESYSTEM_H
+#ifndef FABD_FILESYSTEM_H
+#define FABD_FILESYSTEM_H
 
 #include <stdint.h>
 
@@ -44,7 +44,7 @@ typedef struct filesystem
 {
   char *          path;   // path to the root of the filesystem, normalized and relative to the project dir
   uint32_t        attrs;  // attributes
-  int             leaf;   // whether there do not exist more specific filesystems under this path
+  bool            leaf;   // whether there do not exist more specific filesystems under this path
 } filesystem;
 
 /// filesystem_setup

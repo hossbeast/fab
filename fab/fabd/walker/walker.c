@@ -17,6 +17,9 @@
 
 #include <string.h>
 
+#include "xapi.h"
+#include "types.h"
+
 #include "moria/graph.h"
 #include "moria/vertex.h"
 #include "moria/edge.h"
@@ -31,12 +34,11 @@
 #include "node_operations.h"
 #include "filesystem.h"
 #include "notify_thread.h"
+#include "module.h"
 #include "path.h"
 
 #include "macros.h"
 #include "zbuffer.h"
-
-#define restrict __restrict
 
 static int walk_ids = 1;
 
@@ -61,6 +63,7 @@ xapi walker_visit(int method, ftwinfo * info, void * arg, int * stop)
 
   walker_context * ctx = arg;
   const filesystem * fs = 0;
+  module * mod = 0;
   vertex * v;
   node * n;
 
@@ -72,11 +75,17 @@ xapi walker_visit(int method, ftwinfo * info, void * arg, int * stop)
     }
     else if(method == FTWAT_PRE)
     {
-      if(ctx->ancestor && ctx->ancestor->fs->leaf)
+      if(ctx->ancestor && ctx->ancestor->mod->leaf)
+        mod = ctx->ancestor->mod;
+      if(!mod)
+        mod = ctx->modlookup(ctx, info->path, info->pathl);
+      if(mod)
+        fs = mod->base->fs;
+      else if(ctx->ancestor && ctx->ancestor->fs->leaf)
         fs = ctx->ancestor->fs;
       if(!fs)
         fs = ctx->fslookup(ctx, info->path, info->pathl);
-      fatal(ctx->create, ctx, &n, fstype_ftwinfo(info), fs, info->path + info->name_off);
+      fatal(ctx->create, ctx, &n, fstype_ftwinfo(info), fs, mod, info->path + info->name_off);
       ctx->root = n;
 
       if(ctx->ancestor)
@@ -104,12 +113,18 @@ xapi walker_visit(int method, ftwinfo * info, void * arg, int * stop)
     }
     else
     {
-      if(info->type == FTWAT_D && parent->fs->leaf)
+      if(parent->mod && parent->mod->leaf)
+        mod = parent->mod;
+      if(!mod)
+        mod = ctx->modlookup(ctx, info->path, info->pathl);
+      if(mod)
+        fs = mod->base->fs;
+      else if(info->type == FTWAT_D && parent->fs->leaf)
         fs = parent->fs;
       if(!fs)
         fs = ctx->fslookup(ctx, info->path, info->pathl);
-      fatal(ctx->create, ctx, &n, fstype_ftwinfo(info), fs, info->path + info->name_off);
-
+      
+      fatal(ctx->create, ctx, &n, fstype_ftwinfo(info), fs, mod, info->path + info->name_off);
       fatal(ctx->connect, ctx, parent, n);
     }
   }
@@ -158,14 +173,19 @@ xapi walker_visit(int method, ftwinfo * info, void * arg, int * stop)
   finally : coda;
 }
 
-static xapi create(walker_context * ctx, node ** restrict n, uint8_t fstype, const struct filesystem * restrict fs, const char * restrict name)
+static xapi create(walker_context * ctx, node ** restrict n, uint8_t fstype, const filesystem * restrict fs, module * restrict mod, const char * restrict name)
 {
-  xproxy(node_creates, n, fstype, fs, name);
+  xproxy(node_creates, n, fstype, fs, mod, name);
 }
 
 static const filesystem * fslookup(walker_context * ctx, const char * const restrict path, size_t pathl)
 {
   return filesystem_lookup(path, pathl);
+}
+
+static module * modlookup(walker_context * ctx, const char * const restrict path, size_t pathl)
+{
+  return module_lookup(path, pathl);
 }
 
 static xapi refresh(walker_context * ctx, node * n)
@@ -180,7 +200,7 @@ static xapi watch(walker_context * ctx, node * n)
 
 static xapi connect(walker_context * restrict ctx, node * restrict parent, node * restrict n)
 {
-  xproxy(node_connect_fs, parent, n);
+  xproxy(node_connect, parent, n, RELATION_TYPE_FS);
 }
 
 static xapi disintegrate(walker_context * restrict ctx, edge * restrict e)
@@ -192,7 +212,7 @@ static xapi disintegrate(walker_context * restrict ctx, edge * restrict e)
 // public
 //
 
-xapi walker_walk(node ** restrict root, node * restrict ancestor, const char * restrict abspath, int walk_id)
+xapi walker_walk(node ** restrict root, node * restrict base, node * restrict ancestor, const char * restrict abspath, int walk_id)
 {
   enter;
 
@@ -204,12 +224,13 @@ xapi walker_walk(node ** restrict root, node * restrict ancestor, const char * r
   ctx.walk_id = walk_id;
   ctx.ancestor = ancestor;
   ctx.root = 0;
-  if(root)
-    ctx.root = *root;
+  if(base)
+    ctx.root = base;
 
   // ops
   ctx.create = create;
   ctx.fslookup = fslookup;
+  ctx.modlookup = modlookup;
   ctx.refresh = refresh;
   ctx.watch = watch;
   ctx.connect = connect;

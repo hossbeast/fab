@@ -38,8 +38,8 @@
 
 logger_category * categories = (logger_category []) {
 #if DEBUG || DEVEL || XAPI
-    { name : "IPC"      , description : "signal-exchange", attr : L_NAMES }
-  , { name : "PROTOCOL" , description : "request/response exchange", attr : L_NAMES }
+    { name : "IPC"      , description : "signal-exchange", attr : L_NAMES | L_PID }
+  , { name : "PROTOCOL" , description : "request/response exchange", attr : L_NAMES | L_PID }
   ,
 #endif
     { name : "ERROR"    , description : "fatal errors" }
@@ -62,9 +62,9 @@ logger_category * categories = (logger_category []) {
 };
 
 logger_stream * streams = (logger_stream []) {
-    { name : "console"  , type : LOGGER_STREAM_FD , expr : "+WARN +ERROR"
+    { name : "console"  , type : LOGGER_STREAM_FD , expr : "+INFO +WARN +ERROR", attr : L_DATESTAMP
       , fd : 1 }
-  , { name : "logfile"  , type : LOGGER_STREAM_ROLLING, attr : L_DATESTAMP | L_CATEGORY | L_NOCOLOR | L_NAMES | L_NOFILTER
+  , { name : "logfile"  , type : LOGGER_STREAM_ROLLING, attr : L_DATESTAMP | L_CATEGORY | L_NOCOLOR | L_NAMES | L_NOFILTER | L_PID
       , file_mode : FABIPC_MODE_DATA, threshold : 1024 * 1024, max_files : 10, path_base : (char[256]) { } }
   , { }
 };

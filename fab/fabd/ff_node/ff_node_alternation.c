@@ -64,14 +64,45 @@ xapi ffn_alternation_say_normal(const ff_node_alternation * restrict n, narrator
   finally : coda;
 }
 
+xapi ffn_alternation_render(const ff_node_alternation * restrict ffn, ffn_render_context * restrict ctx, narrator * restrict N)
+{
+  enter;
+
+  char prev[512];
+  size_t prevl;
+
+  // store the preceeding content
+  fatal(narrator_xseek, N, ctx->start + 2, NARRATOR_SEEK_SET, 0);
+  fatal(narrator_xread, N, prev, sizeof(prev), &prevl);
+
+  const ff_node_pattern * part = ffn->chain;
+  while(part)
+  {
+    if(part != ffn->chain)
+    {
+      // mark this items start, replay preceeding content
+      fatal(narrator_xseek, N, 0, NARRATOR_SEEK_CUR, &ctx->start);
+      xsayw((uint16_t[]) { 0 }, sizeof(uint16_t));
+      xsayw(prev, prevl);
+    }
+
+    fatal(ffn_pattern_render, part, ctx, N);
+    part = (typeof(part))part->next;
+  }
+
+  finally : coda;
+}
+
 xapi ffn_alternation_mknode(ff_node_alternation ** restrict n, va_list va)
 {
   enter;
 
   fatal(xmalloc, n, sizeof(**n));
 
-  (*n)->chain = va_arg(va, void*);
+  (*n)->chain = va_arg(va, typeof((*n)->chain));
   (*n)->attrs = (typeof((*n)->attrs))va_arg(va, int);
+
+  ffn_chain_attach_all(*n, (*n)->chain);
 
   finally : coda;
 }

@@ -40,6 +40,7 @@
 #include "logging.h"
 #include "node.h"
 #include "node_operations.h"
+#include "module.h"
 #include "filesystem.h"
 
 typedef struct
@@ -78,7 +79,6 @@ typedef struct
   walker_context;
   array * operations;
 } walker_test_context;
-
 static xapi walker_test_unit_setup(xunit_unit * unit)
 {
   enter;
@@ -150,26 +150,24 @@ static void info_free(void * _info)
   wfree((void*)info->path);
 }
 
-static xapi create(walker_context * ctx, node ** restrict n, uint8_t fstype, const struct filesystem * restrict fs, const char * restrict name)
+static xapi create(walker_context * ctx, node ** restrict n, uint8_t fstype, const filesystem * restrict fs, module * restrict mod, const char * restrict name)
 {
   enter;
 
   vertex * v;
-  fatal(vertex_create, &v, g_node_graph, 0);
+  fatal(vertex_createw, &v, g_node_graph, fstype, name, 1);
   *n = vertex_value(v);
   v->label = name;
   v->label_len = 1;
 
-  (*n)->fstype = fstype;
   (*n)->fs = fs;
-
-  if((*n)->fstype == NODE_FSTYPE_DIR)
+  if(node_fstype_get(*n)== NODE_FSTYPE_DIR)
     (*n)->wd = -1;
 
   finally : coda;
 }
 
-static const struct filesystem * fslookup(walker_test_context * ctx, const char * const restrict path, size_t pathl)
+static const struct filesystem * fslookup(walker_context * ctx, const char * const restrict path, size_t pathl)
 {
   if(path[0] < 'N')
     return fs_stat;
@@ -180,9 +178,16 @@ static const struct filesystem * fslookup(walker_test_context * ctx, const char 
   return 0;
 }
 
-static xapi watch(walker_test_context * ctx, node * n)
+static struct module * modlookup(walker_context * ctx, const char * const restrict path, size_t pathl)
+{
+  return 0;
+}
+
+static xapi watch(walker_context * _ctx, node * n)
 {
   enter;
+
+  walker_test_context * ctx = (void*)_ctx;
 
   n->wd = 1;
 
@@ -194,9 +199,11 @@ static xapi watch(walker_test_context * ctx, node * n)
   finally : coda;
 }
 
-static xapi refresh(walker_test_context * ctx, node * n)
+static xapi refresh(walker_context * _ctx, node * n)
 {
   enter;
+
+  walker_test_context * ctx = (void*)_ctx;
 
   walker_test_operation * operation;
   fatal(array_push, ctx->operations, &operation);
@@ -206,9 +213,11 @@ static xapi refresh(walker_test_context * ctx, node * n)
   finally : coda;
 }
 
-static xapi connect(walker_test_context * restrict ctx, node * restrict parent, node * restrict n)
+static xapi connect(walker_context * restrict _ctx, node * restrict parent, node * restrict n)
 {
   enter;
+
+  walker_test_context * ctx = (void*)_ctx;
 
   walker_test_operation * operation;
   fatal(array_push, ctx->operations, &operation);
@@ -219,9 +228,11 @@ static xapi connect(walker_test_context * restrict ctx, node * restrict parent, 
   finally : coda;
 }
 
-static xapi disintegrate(walker_test_context * restrict ctx, edge * restrict e)
+static xapi disintegrate(walker_context * restrict _ctx, edge * restrict e)
 {
   enter;
+
+  walker_test_context * ctx = (void*)_ctx;
 
   walker_test_operation * operation;
   fatal(array_push, ctx->operations, &operation);
@@ -250,12 +261,13 @@ static xapi walker_test_entry(xunit_test * _test)
   fatal(dictionary_createx, &infos, sizeof(ftwinfo), 0, info_free, 0);
   fatal(array_create, &ctx.operations, sizeof(walker_test_operation));
 
-  ctx.create = (void*)create;
-  ctx.fslookup = (void*)fslookup;
-  ctx.refresh = (void*)refresh;
-  ctx.watch = (void*)watch;
-  ctx.connect = (void*)connect;
-  ctx.disintegrate = (void*)disintegrate;
+  ctx.create = create;
+  ctx.fslookup = fslookup;
+  ctx.modlookup = modlookup;
+  ctx.refresh = refresh;
+  ctx.watch = watch;
+  ctx.connect = connect;
+  ctx.disintegrate = disintegrate;
 
   // setup the initial graph
   char * edges = test->edges;
@@ -265,20 +277,20 @@ static xapi walker_test_entry(xunit_test * _test)
     if((A = map_get(nodes, MM(edges[0]))) == 0)
     {
       const filesystem * fs = fslookup(0, &edges[0], 1);
-      fatal(create, 0, &A, NODE_FSTYPE_DIR, fs, &edges[0]);
+      fatal(create, 0, &A, NODE_FSTYPE_DIR, fs, 0, &edges[0]);
       fatal(map_set, nodes, MM(edges[0]), A);
     }
-    A->fstype = NODE_FSTYPE_DIR;
+    //A->fstype = NODE_FSTYPE_DIR;
 
     node * B;
     if((B = map_get(nodes, MM(edges[1]))) == 0)
     {
       const filesystem * fs = fslookup(0, &edges[1], 1);
-      fatal(create, 0, &B, NODE_FSTYPE_DIR, fs, &edges[1]);
+      fatal(create, 0, &B, NODE_FSTYPE_DIR, fs, 0, &edges[1]);
       fatal(map_set, nodes, MM(edges[1]), B);
     }
 
-    fatal(node_connect_fs, A, B);
+    fatal(node_connect, A, B, RELATION_TYPE_FS);
 
     edges += 2;
     while(*edges == ' ')

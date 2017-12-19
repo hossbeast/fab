@@ -43,7 +43,6 @@ struct config_test;
 
 #include "snarf.h"
 #include "macros.h"
-#include "strutil.h"
 
 typedef struct config_test {
   xunit_test;
@@ -254,6 +253,7 @@ xunit_unit xunit = {
               { query : "foo.qux.0", value : "1" }
             , { query : "foo.qux.1", value : "2" }
             , { query : "foo.qux.2", value : "3" }
+            , { query : "foo.bar", value : "true" }
             , { }
         }
       }}

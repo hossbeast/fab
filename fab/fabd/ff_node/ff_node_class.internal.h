@@ -24,11 +24,15 @@
 #include "ff_node_class.h"
 
 struct narrator;
+struct ffn_render_context;
 
 xapi ffn_class_say_tree(const ff_node_class * restrict n, int level, struct narrator * restrict N)
   __attribute__((nonnull));
 
 xapi ffn_class_say_normal(const ff_node_class * restrict n, struct narrator * restrict N)
+  __attribute__((nonnull));
+
+xapi ffn_class_render(const ff_node_class * restrict n, struct ffn_render_context * restrict ctx, struct narrator * restrict N)
   __attribute__((nonnull));
 
 xapi ffn_class_mknode(ff_node_class ** restrict n, va_list va)

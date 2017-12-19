@@ -24,11 +24,15 @@
 #include "ff_node_char.h"
 
 struct narrator;
+struct ffn_render_context;
 
 xapi ffn_char_say_tree(const ff_node_char * restrict n, struct narrator * restrict N)
   __attribute__((nonnull));
 
 xapi ffn_char_say_normal(const ff_node_char * restrict n, struct narrator * restrict N)
+  __attribute__((nonnull));
+
+xapi ffn_char_render(const ff_node_char * restrict n, struct ffn_render_context * restrict ctx, struct narrator * restrict N)
   __attribute__((nonnull));
 
 xapi ffn_char_mknode(ff_node_char ** restrict n, va_list va)

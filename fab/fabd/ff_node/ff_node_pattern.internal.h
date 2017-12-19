@@ -24,6 +24,7 @@
 #include "ff_node_pattern.h"
 
 struct narrator;
+struct ffn_render_context;
 
 xapi ffn_pattern_say_tree(const ff_node_pattern * restrict n, int level, struct narrator * restrict N)
   __attribute__((nonnull));
@@ -35,6 +36,9 @@ xapi ffn_pattern_mknode(ff_node_pattern ** restrict n, va_list va)
   __attribute__((nonnull));
 
 void ffn_pattern_destroy(ff_node_pattern * restrict n)
+  __attribute__((nonnull));
+
+xapi ffn_pattern_render(const ff_node_pattern * restrict n, struct ffn_render_context * restrict ctx, struct narrator * restrict N)
   __attribute__((nonnull));
 
 #endif

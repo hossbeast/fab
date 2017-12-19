@@ -52,6 +52,15 @@ xapi ffn_word_say_normal(const ff_node_word * restrict n, narrator * restrict N)
   finally : coda;
 }
 
+xapi ffn_word_render(const ff_node_word * restrict n, ffn_render_context * restrict ctx, narrator * restrict N)
+{
+  enter;
+
+  xsayw(n->text, n->len);
+
+  finally : coda;
+}
+
 xapi ffn_word_mknode(ff_node_word ** restrict n, va_list va)
 {
   enter;

@@ -29,7 +29,7 @@ typedef struct ff_node_use
     ff_node base;
   };
 
-  struct ff_node_pattern * pattern;
+  struct ff_node_patterns * target_list;
 } ff_node_use;
 
 #endif

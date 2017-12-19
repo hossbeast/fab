@@ -203,7 +203,7 @@ xapi notify_thread_watch(node * n)
     narrator * N;
     fatal(log_start, L_GRAPH, &N);
     xsayf("%8s ", "watch");
-    fatal(node_path_say, n, N);
+    fatal(node_absolute_path_say, n, N);
     fatal(log_finish);
   }
 

@@ -87,7 +87,7 @@ static xapi get_node(map * node_map, char * path, size_t len, node ** n)
 
     if(A)
     {
-      fatal(graph_connect, g_node_graph, vertex_containerof(A), vertex_containerof(B), NODE_RELATION_FS);
+      fatal(graph_connect, g_node_graph, vertex_containerof(A), vertex_containerof(B), RELATION_TYPE_FS);
     }
     
     A = B;

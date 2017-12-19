@@ -184,20 +184,18 @@ static xapi say_tree(const ff_node * restrict n, int level, narrator * restrict 
 
 static xapi say_normal_list(const ff_node * restrict n, narrator * restrict N, bool chain, const char * restrict sep, bool first)
 {
-enter;
+  enter;
 
-if(!n)
-  goto XAPI_FINALIZE;
+  if(!n)
+    goto XAPI_FINALIZE;
 
-if(chain && !first && sep)
-  xsays(sep);
+  if(chain && !first && sep)
+    xsays(sep);
 
-fatal(say_normal, n, N);
-
-if(chain)
+  fatal(say_normal, n, N);
   fatal(say_normal_list, n->next, N, true, sep, false);
 
-finally : coda;
+  finally : coda;
 }
 
 //
@@ -231,6 +229,12 @@ xapi ffn_say_tree_level(const ff_node * restrict n, int level, narrator * restri
 
   xsayc('\n');
 
+  xsayf("%*sparent %p"
+    , level * 2, ""
+    , n->parent
+  );
+  xsayc('\n');
+
   if(n->type & FFN_TYPE_AGGREGATE)
     fatal(say_tree, n, level, N);
 
@@ -239,23 +243,125 @@ xapi ffn_say_tree_level(const ff_node * restrict n, int level, narrator * restri
   finally : coda;
 }
 
-xapi ffn_semantic_error(xapi error, const ff_node * restrict refnode)
+xapi ffn_semantic_error(xapi error, const ff_node * restrict refnode, const char * restrict ref, const node * restrict dirnode, vertex * restrict matching[2])
 {
   enter;
 
-  char space[512];
+  char path1[512];
+  char path2[512];
 
-  const ff_node * ref = (ff_node*)refnode;
+  if(!ref && refnode)
+  {
+    char stor[NARRATOR_STATIC_SIZE];
+    narrator * N = narrator_fixed_init(stor, path1, sizeof(path1));
+    fatal(ffn_say_normal, refnode, N);
+    ref = path1;
+  }
+  xapi_info_pushs("ref", ref);
 
-  char stor[NARRATOR_STATIC_SIZE];
-  narrator * N = narrator_fixed_init(stor, space, sizeof(space));
-  fatal(ffn_say_normal, ref, N);
+  if(matching)
+  {
+    size_t az = node_get_absolute_path(vertex_value(matching[0]), path1, sizeof(path1));
+    xapi_info_pushw("A", path1, az);
 
-  xapi_info_pushs("ref", space);
-  xapi_info_pushf("location", "%s line %d", ref->loc.fname, ref->loc.f_lin + 1);
+    size_t bz = node_get_absolute_path(vertex_value(matching[1]), path2, sizeof(path2));
+    xapi_info_pushw("B", path2, bz);
+  }
+
+  if(refnode)
+    xapi_info_pushf("location", "%s line %d", refnode->loc.fname, refnode->loc.f_lin + 1);
+
+  if(dirnode)
+  {
+    node_get_absolute_path(dirnode, path1, sizeof(path1));
+    xapi_info_pushs("dir", path1);
+  }
+
   fail(error);
 
   finally : coda;
+}
+
+xapi render_tail(const ff_node * restrict n, ffn_render_context * restrict ctx, struct narrator * restrict N)
+{
+  enter;
+
+  if(n->parent)
+  {
+    fatal(render_tail, n->parent, ctx, N);
+  }
+  else if(n->next)
+  {
+    fatal(ffn_render, n->next, ctx, N);
+  }
+  else
+  {
+    // end of the pattern
+    off_t end = 0;
+    fatal(narrator_xseek, N, 0, NARRATOR_SEEK_CUR, &end);
+
+    // write a null terminator
+    xsayc(0);
+
+    uint16_t len = end - ctx->start - sizeof(uint16_t);
+
+    // record the length
+    fatal(narrator_xseek, N, ctx->start, NARRATOR_SEEK_SET, 0);
+    xsayw(&len, sizeof(len));
+
+    fatal(narrator_xseek, N, end + 1, NARRATOR_SEEK_SET, 0);
+
+    ctx->num++;
+  }
+
+  finally : coda;
+}
+
+xapi ffn_render(const ff_node * restrict n, ffn_render_context * restrict ctx, struct narrator * restrict N)
+{
+  enter;
+
+  // scalars
+  if(n->type == FFN_DIRSEP)
+    fatal(ffn_dirsep_render, (ff_node_dirsep*)n, ctx, N);
+  else if(n->type == FFN_CHAR)
+    fatal(ffn_char_render, (ff_node_char*)n, ctx, N);
+  else if(n->type == FFN_USRVAR)
+    fatal(ffn_usrvar_render, (ff_node_usrvar*)n, ctx, N);
+  else if(n->type == FFN_WORD)
+    fatal(ffn_word_render, (ff_node_word*)n, ctx, N);
+
+  // aggregates
+  else if(n->type == FFN_ALTERNATION)
+    fatal(ffn_alternation_render, (ff_node_alternation*)n, ctx, N);
+  else if(n->type == FFN_CLASS)
+    fatal(ffn_class_render, (ff_node_class*)n, ctx, N);
+
+  if(n->type == FFN_ALTERNATION) { }
+  else if(n->type == FFN_CLASS) { }
+  else
+  {
+    fatal(render_tail, n, ctx, N);
+  }
+
+  finally : coda;
+}
+
+void ffn_chain_attach_all(ff_node * restrict n, ff_node * restrict chain)
+{
+  while(chain)
+  {
+    chain->parent = n;
+    chain = (typeof(chain))chain->next;
+  }
+}
+
+void ffn_chain_attach(ff_node * restrict n, ff_node * restrict chain)
+{
+  if(chain->tail)
+    chain->tail->parent = n;
+  else
+    chain->parent = n;
 }
 
 //
@@ -334,6 +440,9 @@ xapi ffn_mknode(ff_node ** restrict n, const yyu_location * restrict loc, ffn_ty
 
 ff_node* ffn_append(ff_node * n, ff_node * T)
 {
+  if(!T)
+    return n;
+
   if(n->tail)
   {
     // discard subsequent slashes beyond the first

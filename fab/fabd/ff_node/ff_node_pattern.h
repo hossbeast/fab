@@ -129,7 +129,8 @@ xapi ffn_pattern_bydir_strings_rtl_init(
   , ffn_bydir_context * restrict ctx
   , char * restrict tmp
   , size_t tmpsz
-  , const char ** restrict str
+  , const char ** restrict segment
+  , uint16_t * restrict segment_len
 )
   __attribute__((nonnull));
 
@@ -148,8 +149,12 @@ xapi ffn_pattern_bydir_strings_rtl(
     ffn_bydir_context * restrict ctx
   , char * restrict tmp
   , size_t tmpsz
-  , const char ** restrict str
+  , const char ** restrict segment
+  , uint16_t * restrict segment_len
 )
+  __attribute__((nonnull));
+
+void ffn_bydir_rtl_setup(ffn_bydir_context * restrict ctx, const ff_node_pattern_part * restrict start)
   __attribute__((nonnull));
 
 #endif

@@ -61,6 +61,15 @@ xapi ffn_char_say_normal(const ff_node_char * restrict n, narrator * restrict N)
   finally : coda;
 }
 
+xapi ffn_char_render(const ff_node_char * restrict n, ffn_render_context * restrict ctx, narrator * restrict N)
+{
+  enter;
+
+  xsayc(n->code);
+
+  finally : coda;
+}
+
 xapi ffn_char_mknode(ff_node_char ** restrict n, va_list va)
 {
   enter;

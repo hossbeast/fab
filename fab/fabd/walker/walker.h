@@ -19,25 +19,33 @@
 #define _WALKER_H
 
 #include <fcntl.h>
+
 #include "xapi.h"
+#include "types.h"
 
 struct node;
-
-#define restrict __restrict
 
 /// walker_walk
 //
 // SUMMARY
-//  
+//  visit directory entries in a filesystem tree, creating graph nodes for each node as necessary
 //
 // PARAMETERS
-//  [root]     - 
-//  [ancestor] - 
-//  abspath    - absolute path to a directory
-//  walk_id    - 
+//  [root]     - (returns) base of the tree rooted at abspath
+//  [base]     - base of the tree rooted at abspath, if any
+//  [ancestor] - if base was null, and a new node is created for the tree rooted at abspath, and ancestor
+//               is not null, then the new node is attached to the graph as a child of ancestor
+//  abspath    - absolute path to a directory to traverse
+//  walk_id    -
 //
-xapi walker_walk(struct node ** restrict root, struct node * restrict ancestor, const char * restrict abspath, int walk_id)
-  __attribute__((nonnull(3)));
+xapi walker_walk(
+    struct node ** restrict root
+  , struct node * restrict base
+  , struct node * restrict ancestor
+  , const char * restrict abspath
+  , int walk_id
+)
+  __attribute__((nonnull(4)));
 
 int walker_walk_begin(void);
 

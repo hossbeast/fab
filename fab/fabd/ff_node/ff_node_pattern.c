@@ -24,6 +24,13 @@
 
 #include "ff_node_pattern.internal.h"
 #include "ff_node.internal.h"
+#include "ff_node_alternation.internal.h"
+#include "ff_node_char.internal.h"
+#include "ff_node_class.internal.h"
+#include "ff_node_dirsep.internal.h"
+#include "ff_node_range.internal.h"
+#include "ff_node_usrvar.internal.h"
+#include "ff_node_word.internal.h"
 
 //
 // static
@@ -34,7 +41,7 @@ static void __attribute__((nonnull)) ffn_bydir_ltr_setup(ffn_bydir_context * res
   *ctx = (typeof(*ctx)){ state : start };
 }
 
-static void __attribute__((nonnull)) ffn_bydir_rtl_setup(ffn_bydir_context * restrict ctx, const ff_node_pattern_part * restrict start)
+void ffn_bydir_rtl_setup(ffn_bydir_context * restrict ctx, const ff_node_pattern_part * restrict start)
 {
   typeof(start) last = start;
   while(last->next)
@@ -73,6 +80,7 @@ xapi ffn_pattern_mknode(ff_node_pattern ** restrict n, va_list va)
   fatal(xmalloc, n, sizeof(**n));
 
   (*n)->chain = va_arg(va, typeof((*n)->chain));
+  ffn_chain_attach(*n, (*n)->chain);
 
   finally : coda;
 }
@@ -80,6 +88,18 @@ xapi ffn_pattern_mknode(ff_node_pattern ** restrict n, va_list va)
 void ffn_pattern_destroy(ff_node_pattern * restrict n)
 {
   ffn_free(n->chain);
+}
+
+xapi ffn_pattern_render(const ff_node_pattern * restrict pat, ffn_render_context * restrict ctx, struct narrator * restrict N)
+{
+  enter;
+
+  if(pat->chain)
+    fatal(ffn_render, pat->chain, ctx, N);
+  else
+    fatal(render_tail, pat, ctx, N);
+
+  finally : coda;
 }
 
 //
@@ -140,33 +160,40 @@ void ffn_pattern_bydir_rtl(ffn_bydir_context * restrict ctx)
   ctx->first = last;
 }
 
-xapi ffn_pattern_bydir_strings_rtl_init(const ff_node_pattern_part * restrict start, ffn_bydir_context * restrict ctx, char * restrict tmp, size_t tmpsz, const char ** restrict str)
+xapi ffn_pattern_bydir_strings_rtl_init(const ff_node_pattern_part * restrict start, ffn_bydir_context * restrict ctx, char * restrict tmp, size_t tmpsz, const char ** restrict segment, uint16_t * restrict segment_len)
 {
   enter;
 
   ffn_bydir_rtl_setup(ctx, (ff_node_pattern_part*)start);
-  fatal(ffn_pattern_bydir_strings_rtl, ctx, tmp, tmpsz, str);
+  fatal(ffn_pattern_bydir_strings_rtl, ctx, tmp, tmpsz, segment, segment_len);
 
   finally : coda;
 }
 
-xapi ffn_pattern_bydir_strings_rtl(ffn_bydir_context * restrict ctx, char * restrict tmp, size_t tmpsz, const char ** restrict str)
+xapi ffn_pattern_bydir_strings_rtl(ffn_bydir_context * restrict ctx, char * restrict tmp, size_t tmpsz, const char ** restrict segment, uint16_t * restrict segment_len)
 {
   enter;
 
   ffn_pattern_bydir_rtl(ctx);
 
   if(!ctx->first)
-    *str = 0;
-
+  {
+    *segment = 0;
+    *segment_len = 0;
+  }
   else if(ctx->first == ctx->stop && ctx->first->type == FFN_WORD)
-    *str = ((ff_node_word*)ctx->first)->text;
-
+  {
+    *segment = ((ff_node_word*)ctx->first)->text;
+    *segment_len = ((ff_node_word*)ctx->first)->len;
+  }
   else
   {
     char stor[NARRATOR_STATIC_SIZE];
-    fatal(ffn_segment_say_normal, ctx->first, ctx->stop, narrator_fixed_init(stor, tmp, tmpsz));
-    *str = tmp;
+    narrator * N = narrator_fixed_init(stor, tmp, tmpsz);
+
+    fatal(ffn_segment_say_normal, ctx->first, ctx->stop, N);
+    *segment = narrator_fixed_buffer(N);
+    *segment_len = narrator_fixed_size(N);
   }
 
   finally : coda;

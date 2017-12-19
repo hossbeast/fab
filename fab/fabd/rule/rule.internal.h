@@ -20,4 +20,21 @@
 
 #include "rule.h"
 
+struct node;
+struct list;
+struct map;
+struct artifact;
+struct list;
+
+xapi rules_apply_rules(
+    struct node * restrict consequent
+  , const struct list * restrict rules_lists
+  , struct node * restrict base
+  , struct map * restrict scope
+  , struct artifact * restrict af
+  , struct list * restrict antecedents
+  , struct list * restrict consequents
+)
+  __attribute__((nonnull));
+
 #endif

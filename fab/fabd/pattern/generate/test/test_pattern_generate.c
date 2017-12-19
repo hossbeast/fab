@@ -37,6 +37,8 @@
 #include "path.h"
 #include "artifact.h"
 
+static map * attrs_definitions;
+
 typedef struct pattern_generate_test
 {
   xunit_test;
@@ -46,8 +48,8 @@ typedef struct pattern_generate_test
   char * variant;
   char * pattern;
 
-  char * expected_graph;
-  char * expected_nodes;
+  char * graph;
+  char * nodes;
 } pattern_generate_test;
 
 static xapi pattern_test_unit_setup(xunit_unit * unit)
@@ -56,21 +58,21 @@ static xapi pattern_test_unit_setup(xunit_unit * unit)
 
   fatal(logging_finalize);
 
+  // attrs name map
+  fatal(map_create, &attrs_definitions);
+  fatal(map_set, attrs_definitions, (uint32_t[]) { RELATION_TYPE_FS }, sizeof(uint32_t), "FS");
+  fatal(map_set, attrs_definitions, (uint32_t[]) { RELATION_TYPE_STRONG }, sizeof(uint32_t), "ST");
+  fatal(map_set, attrs_definitions, (uint32_t[]) { NODE_FSTYPE_FILE }, sizeof(uint32_t), "FILE");
+  fatal(map_set, attrs_definitions, (uint32_t[]) { NODE_FSTYPE_DIR}, sizeof(uint32_t), "DIR");
+
   finally : coda;
 }
 
-static xapi get_node(map * node_map, char * label, size_t len, node ** n)
+static xapi pattern_test_unit_cleanup(xunit_unit * unit)
 {
   enter;
 
-  if((*n = map_get(node_map, label, len)) == 0)
-  {
-    vertex * v;
-    fatal(vertex_createw, &v, g_node_graph, 0, label, len);
-    *n = vertex_value(v);
-    fatal(path_createw, &(*n)->name, label, len);
-    fatal(map_set, node_map, label, len, *n);
-  }
+  fatal(map_xfree, attrs_definitions);
 
   finally : coda;
 }
@@ -99,14 +101,17 @@ static xapi pattern_generate_test_entry(xunit_test * _test)
   ff_node * ffn = 0;
   list * nodes_list = 0;
   node * context;
+  map * scope;
 
   fatal(node_setup);
   fatal(narrator_growing_create, &N);
   fatal(map_create, &node_map);
   fatal(list_create, &nodes_list);
+  fatal(map_create, &scope);
 
   // context
-  fatal(get_node, node_map, MMS(test->context), &context);
+  fatal(node_createw, &context, NODE_FSTYPE_DIR, (void*)42, 0, MMS(test->context));
+
   artifact af = { variant : test->variant };
   if(test->variant)
     af.variant_len = strlen(test->variant);
@@ -116,14 +121,24 @@ static xapi pattern_generate_test_entry(xunit_test * _test)
   ff_node_pattern * pattern = ((ff_node_rule*)ffn)->antecedent_list->chain;
 
   // act
-  fatal(pattern_generate, pattern, context, &af, test->stem, test->stem ? strlen(test->stem) : 0, nodes_list, false);
+  fatal(pattern_generate
+    , pattern
+    , context
+    , scope
+    , &af
+    , test->stem
+    , test->stem ? strlen(test->stem) : 0
+    , nodes_list
+    , false
+  );
 
   // ordered list of edges
   fatal(narrator_xreset, N);
-  fatal(graph_say, g_node_graph, 0, N);
+  fatal(graph_say, g_node_graph, attrs_definitions, N);
   const char * graph = narrator_growing_buffer(N);
   size_t graph_len = narrator_growing_size(N);
-  assert_eq_w(test->expected_graph, strlen(test->expected_graph), graph, graph_len);
+  assert_eq_s(test->graph, graph);
+  assert_eq_w(test->graph, strlen(test->graph), graph, graph_len);
 
   // ordered list of nodes
   fatal(narrator_xreset, N);
@@ -136,9 +151,9 @@ static xapi pattern_generate_test_entry(xunit_test * _test)
       xsays(" ");
     xsays(n->name->name);
   }
-  const char * node_list = narrator_growing_buffer(N);
-  size_t node_list_len = narrator_growing_size(N);
-  assert_eq_w(test->expected_nodes, strlen(test->expected_nodes), node_list, node_list_len);
+  const char * nodes = narrator_growing_buffer(N);
+  size_t nodes_len = narrator_growing_size(N);
+  assert_eq_w(test->nodes, strlen(test->nodes), nodes, nodes_len);
 
 finally:
   xapi_infos("pattern", test->pattern);
@@ -149,6 +164,7 @@ finally:
   ff_parser_free(parser);
   ffn_free(ffn);
   fatal(list_xfree, nodes_list);
+  fatal(map_xfree, scope);
 coda;
 }
 
@@ -158,336 +174,392 @@ coda;
 
 xunit_unit xunit = {
     xu_setup : pattern_test_unit_setup
+  , xu_cleanup : pattern_test_unit_cleanup
   , xu_entry : pattern_generate_test_entry
   , xu_tests : (xunit_test*[]) {
     /* single node */
       (pattern_generate_test[]) {{
           context : "A"
-        , pattern : "rule xunit : B"
-        , expected_graph : "A:B"
-        , expected_nodes : "B"
+        , pattern : "rule consequent-ignored : B"
+        , graph :  "1-A!DIR 2-B!FILE"
+                  " 1:FS:2"
+        , nodes : "B"
       }}
     , (pattern_generate_test[]) {{
           context : "A"
-        , pattern : "rule xunit : B/C"
-        , expected_graph : "A:B B:C"
-        , expected_nodes : "C"
-      }}
-    , (pattern_generate_test[]) {{
-          context : "A"
-        , pattern : "rule xunit : B/C"
-        , expected_graph : "A:B B:C"
-        , expected_nodes : "C"
-      }}
-    , (pattern_generate_test[]) {{
-          context : "B"
-        , pattern : "rule xunit : C/D"
-        , expected_graph : "B:C C:D"
-        , expected_nodes : "D"
+        , pattern : "rule consequent-ignored : B/C"
+        , graph :  "1-A!DIR 2-B!DIR 3-C!FILE"
+                  " 1:FS:2 2:FS:3"
+        , nodes : "C"
       }}
 
     /* alternations */
     , (pattern_generate_test[]) {{
           context : "A"
-        , pattern : "rule xunit : {B}"
-        , expected_graph : "A:B"
-        , expected_nodes : "B"
+        , pattern : "rule consequent-ignored : {B}"
+        , graph :  "1-A!DIR 2-B!FILE"
+                  " 1:FS:2"
+        , nodes : "B"
       }}
     , (pattern_generate_test[]) {{
           context : "A"
-        , pattern : "rule xunit : {B,}"
-        , expected_graph : "A:B"
-        , expected_nodes : "B"
+        , pattern : "rule consequent-ignored : {B,}"
+        , graph :  "1-A!DIR 2-B!FILE"
+                  " 1:FS:2"
+        , nodes : "B"
       }}
     , (pattern_generate_test[]) {{
           context : "A"
-        , pattern : "rule xunit : {B,C}"
-        , expected_graph : "A:B A:C"
-        , expected_nodes : "B C"
+        , pattern : "rule consequent-ignored : {B,C}"
+        , graph :  "1-A!DIR 2-B!FILE 3-C!FILE"
+                  " 1:FS:2 1:FS:3"
+        , nodes : "B C"
       }}
     , (pattern_generate_test[]) {{
           context : "A"
-        , pattern : "rule xunit : {B,C,D}"
-        , expected_graph : "A:B A:C A:D"
-        , expected_nodes : "B C D"
+        , pattern : "rule consequent-ignored : {B,C,D}"
+        , graph :  "1-A!DIR 2-B!FILE 3-C!FILE 4-D!FILE"
+                  " 1:FS:2 1:FS:3 1:FS:4"
+        , nodes : "B C D"
       }}
     , (pattern_generate_test[]) {{
           context : "A"
-        , pattern : "rule xunit : B/{C,D}"
-        , expected_graph : "A:B B:C B:D"
-        , expected_nodes : "C D"
+        , pattern : "rule consequent-ignored : B/{C,D}"
+        , graph :  "1-A!DIR 2-B!DIR 3-C!FILE 4-D!FILE"
+                  " 1:FS:2 2:FS:3 2:FS:4"
+        , nodes : "C D"
       }}
     , (pattern_generate_test[]) {{
           context : "A"
-        , pattern : "rule xunit : {C,D}/F"
-        , expected_graph : "A:C A:D C:F D:F"
-        , expected_nodes : "F F"
+        , pattern : "rule consequent-ignored : {C,D}/F"
+        , graph :  "1-A!DIR 2-C!DIR 3-D!DIR 4-F!FILE 5-F!FILE"
+                  " 1:FS:2 1:FS:3 2:FS:4 3:FS:5"
+        , nodes : "F F"
       }}
     , (pattern_generate_test[]) {{
           context : "A"
-        , pattern : "rule xunit : B/{C,D}/F"
-        , expected_graph : "A:B B:C B:D C:F D:F"
-        , expected_nodes : "F F"
+        , pattern : "rule consequent-ignored : B/{C,D}/F"
+        , graph :  "1-A!DIR 2-B!DIR 3-C!DIR 4-D!DIR 5-F!FILE 6-F!FILE"
+                  " 1:FS:2 2:FS:3 2:FS:4 3:FS:5 4:FS:6"
+        , nodes : "F F"
       }}
     , (pattern_generate_test[]) {{
           context : "A"
-        , pattern : "rule xunit : {B,C}/{D,E}"
-        , expected_graph : "A:B A:C B:D B:E C:D C:E"
-        , expected_nodes : "D D E E"
+        , pattern : "rule consequent-ignored : {B,C}/{D,E}"
+        , graph :  "1-A!DIR 2-B!DIR 3-C!DIR 4-D!FILE 5-D!FILE 6-E!FILE 7-E!FILE"
+                  " 1:FS:2 1:FS:3 2:FS:4 2:FS:6 3:FS:5 3:FS:7"
+        , nodes : "D D E E"
       }}
     , (pattern_generate_test[]) {{
           context : "A"
-        , pattern : "rule xunit : B{C,D}"
-        , expected_graph : "A:BC A:BD"
-        , expected_nodes : "BC BD"
+        , pattern : "rule consequent-ignored : B{C,D}"
+        , graph :  "1-A!DIR 2-BC!FILE 3-BD!FILE"
+                  " 1:FS:2 1:FS:3"
+        , nodes : "BC BD"
       }}
     , (pattern_generate_test[]) {{
           context : "A"
-        , pattern : "rule xunit : B{C,D,}"
-        , expected_graph : "A:B A:BC A:BD"
-        , expected_nodes : "B BC BD"
+        , pattern : "rule consequent-ignored : B{C,D,}"
+        , graph :  "1-A!DIR 2-B!FILE 3-BC!FILE 4-BD!FILE"
+                  " 1:FS:2 1:FS:3 1:FS:4"
+        , nodes : "B BC BD"
       }}
     , (pattern_generate_test[]) {{
           context : "A"
-        , pattern : "rule xunit : {C,D}F"
-        , expected_graph : "A:CF A:DF"
-        , expected_nodes : "CF DF"
+        , pattern : "rule consequent-ignored : {C,D}F"
+        , graph :  "1-A!DIR 2-CF!FILE 3-DF!FILE"
+                  " 1:FS:2 1:FS:3"
+        , nodes : "CF DF"
       }}
     , (pattern_generate_test[]) {{
           context : "A"
-        , pattern : "rule xunit : {B}{D}"
-        , expected_graph : "A:BD"
-        , expected_nodes : "BD"
+        , pattern : "rule consequent-ignored : {B}{D}"
+        , graph : "A:BD"
+        , graph :  "1-A!DIR 2-BD!FILE"
+                  " 1:FS:2"
+        , nodes : "BD"
       }}
     , (pattern_generate_test[]) {{
           context : "A"
-        , pattern : "rule xunit : {B,C}{D}"
-        , expected_graph : "A:BD A:CD"
-        , expected_nodes : "BD CD"
+        , pattern : "rule consequent-ignored : {B,C}{D}"
+        , graph :  "1-A!DIR 2-BD!FILE 3-CD!FILE"
+                  " 1:FS:2 1:FS:3"
+        , nodes : "BD CD"
       }}
     , (pattern_generate_test[]) {{
           context : "A"
-        , pattern : "rule xunit : {B}{D,E}"
-        , expected_graph : "A:BD A:BE"
-        , expected_nodes : "BD BE"
+        , pattern : "rule consequent-ignored : {B}{D,E}"
+        , graph :  "1-A!DIR 2-BD!FILE 3-BE!FILE"
+                  " 1:FS:2 1:FS:3"
+        , nodes : "BD BE"
       }}
     , (pattern_generate_test[]) {{
           context : "A"
-        , pattern : "rule xunit : {B,C}{D,E}"
-        , expected_graph : "A:BD A:BE A:CD A:CE"
-        , expected_nodes : "BD BE CD CE"
+        , pattern : "rule consequent-ignored : {B,C}{D,E}"
+        , graph :  "1-A!DIR 2-BD!FILE 3-BE!FILE 4-CD!FILE 5-CE!FILE"
+                  " 1:FS:2 1:FS:3 1:FS:4 1:FS:5"
+        , nodes : "BD BE CD CE"
       }}
     , (pattern_generate_test[]) {{
           context : "A"
-        , pattern : "rule xunit : {B,}{C,}"
-        , expected_nodes : "B BC C"
-        , expected_graph : "A:B A:BC A:C"
+        , pattern : "rule consequent-ignored : {B,}{C,}"
+        , nodes : "B BC C"
+        , graph :  "1-A!DIR 2-B!FILE 3-BC!FILE 4-C!FILE"
+                  " 1:FS:2 1:FS:3 1:FS:4"
       }}
     , (pattern_generate_test[]) {{
           context : "A"
-        , pattern : "rule xunit : {{B}}"
-        , expected_graph : "A:B"
-        , expected_nodes : "B"
+        , pattern : "rule consequent-ignored : {{B}}"
+        , nodes : "B"
+        , graph :  "1-A!DIR 2-B!FILE"
+                  " 1:FS:2"
       }}
     , (pattern_generate_test[]) {{
           context : "A"
-        , pattern : "rule xunit : {{B,C}}"
-        , expected_graph : "A:B A:C"
-        , expected_nodes : "B C"
+        , pattern : "rule consequent-ignored : {{B,C}}"
+        , nodes : "B C"
+        , graph :  "1-A!DIR 2-B!FILE 3-C!FILE"
+                  " 1:FS:2 1:FS:3"
       }}
     , (pattern_generate_test[]) {{
           context : "A"
-        , pattern : "rule xunit : {X{B,C}}"
-        , expected_graph : "A:XB A:XC"
-        , expected_nodes : "XB XC"
+        , pattern : "rule consequent-ignored : {X{B,C}}"
+        , nodes : "XB XC"
+        , graph :  "1-A!DIR 2-XB!FILE 3-XC!FILE"
+                  " 1:FS:2 1:FS:3"
       }}
 
     /* classes */
     , (pattern_generate_test[]) {{
           context : "A"
-        , pattern : "rule xunit : [BCD]"
-        , expected_graph : "A:B A:C A:D"
-        , expected_nodes : "B C D"
+        , pattern : "rule consequent-ignored : [BCD]"
+        , nodes : "B C D"
+        , graph :  "1-A!DIR 2-B!FILE 3-C!FILE 4-D!FILE"
+                  " 1:FS:2 1:FS:3 1:FS:4"
       }}
     , (pattern_generate_test[]) {{
           context : "A"
-        , pattern : "rule xunit : X[BCD]"
-        , expected_graph : "A:XB A:XC A:XD"
-        , expected_nodes : "XB XC XD"
+        , pattern : "rule consequent-ignored : X[BCD]"
+        , nodes : "XB XC XD"
+        , graph :  "1-A!DIR 2-XB!FILE 3-XC!FILE 4-XD!FILE"
+                  " 1:FS:2 1:FS:3 1:FS:4"
       }}
     , (pattern_generate_test[]) {{
           context : "A"
-        , pattern : "rule xunit : [BCD]Y"
-        , expected_graph : "A:BY A:CY A:DY"
-        , expected_nodes : "BY CY DY"
+        , pattern : "rule consequent-ignored : [BCD]Y"
+        , nodes : "BY CY DY"
+        , graph :  "1-A!DIR 2-BY!FILE 3-CY!FILE 4-DY!FILE"
+                  " 1:FS:2 1:FS:3 1:FS:4"
       }}
     , (pattern_generate_test[]) {{
           context : "A"
-        , pattern : "rule xunit : X[BCD]Y"
-        , expected_graph : "A:XBY A:XCY A:XDY"
-        , expected_nodes : "XBY XCY XDY"
+        , pattern : "rule consequent-ignored : X[BCD]Y"
+        , nodes : "XBY XCY XDY"
+        , graph :  "1-A!DIR 2-XBY!FILE 3-XCY!FILE 4-XDY!FILE"
+                  " 1:FS:2 1:FS:3 1:FS:4"
       }}
 
     /* ranges */
     , (pattern_generate_test[]) {{
           context : "A"
-        , pattern : "rule xunit : [B-E]"
-        , expected_graph : "A:B A:C A:D A:E"
-        , expected_nodes : "B C D E"
+        , pattern : "rule consequent-ignored : [B-E]"
+        , nodes : "B C D E"
+        , graph :  "1-A!DIR 2-B!FILE 3-C!FILE 4-D!FILE 5-E!FILE"
+                  " 1:FS:2 1:FS:3 1:FS:4 1:FS:5"
       }}
 
     /* nested alternations */
     , (pattern_generate_test[]) {{
           context : "A"
-        , pattern : "rule xunit : {{C}}"
-        , expected_graph : "A:C"
-        , expected_nodes : "C"
+        , pattern : "rule consequent-ignored : {{C}}"
+        , nodes : "C"
+        , graph :  "1-A!DIR 2-C!FILE"
+                  " 1:FS:2"
       }}
     , (pattern_generate_test[]) {{
           context : "A"
-        , pattern : "rule xunit : B{{C}}"
-        , expected_graph : "A:BC"
-        , expected_nodes : "BC"
+        , pattern : "rule consequent-ignored : B{{C}}"
+        , nodes : "BC"
+        , graph :  "1-A!DIR 2-BC!FILE"
+                  " 1:FS:2"
       }}
     , (pattern_generate_test[]) {{
           context : "A"
-        , pattern : "rule xunit : {{C}}D"
-        , expected_graph : "A:CD"
-        , expected_nodes : "CD"
+        , pattern : "rule consequent-ignored : {{C}}D"
+        , nodes : "CD"
+        , graph :  "1-A!DIR 2-CD!FILE"
+                  " 1:FS:2"
       }}
     , (pattern_generate_test[]) {{
           context : "A"
-        , pattern : "rule xunit : {{{C}}}"
-        , expected_graph : "A:C"
-        , expected_nodes : "C"
+        , pattern : "rule consequent-ignored : {{{C}}}"
+        , nodes : "C"
+        , graph :  "1-A!DIR 2-C!FILE"
+                  " 1:FS:2"
       }}
     , (pattern_generate_test[]) {{
           context : "A"
-        , pattern : "rule xunit : B{{{C}}}"
-        , expected_graph : "A:BC"
-        , expected_nodes : "BC"
+        , pattern : "rule consequent-ignored : B{{{C}}}"
+        , nodes : "BC"
+        , graph :  "1-A!DIR 2-BC!FILE"
+                  " 1:FS:2"
       }}
     , (pattern_generate_test[]) {{
           context : "A"
-        , pattern : "rule xunit : {{{C}}}D"
-        , expected_graph : "A:CD"
-        , expected_nodes : "CD"
+        , pattern : "rule consequent-ignored : {{{C}}}D"
+        , nodes : "CD"
+        , graph :  "1-A!DIR 2-CD!FILE"
+                  " 1:FS:2"
       }}
     , (pattern_generate_test[]) {{
           context : "A"
-        , pattern : "rule xunit : {{{C}}D}"
-        , expected_graph : "A:CD"
-        , expected_nodes : "CD"
+        , pattern : "rule consequent-ignored : {{{C}}D}"
+        , nodes : "CD"
+        , graph :  "1-A!DIR 2-CD!FILE"
+                  " 1:FS:2"
       }}
     , (pattern_generate_test[]) {{
           context : "A"
-        , pattern : "rule xunit : {{{C}D}}"
-        , expected_graph : "A:CD"
-        , expected_nodes : "CD"
+        , pattern : "rule consequent-ignored : {{{C}D}}"
+        , nodes : "CD"
+        , graph :  "1-A!DIR 2-CD!FILE"
+                  " 1:FS:2"
       }}
 
     /* nested alternations and classes */
     , (pattern_generate_test[]) {{
           context : "A"
-        , pattern : "rule xunit : {[BCD]}"
-        , expected_graph : "A:B A:C A:D"
-        , expected_nodes : "B C D"
+        , pattern : "rule consequent-ignored : {[BCD]}"
+        , nodes : "B C D"
+        , graph :  "1-A!DIR 2-B!FILE 3-C!FILE 4-D!FILE"
+                  " 1:FS:2 1:FS:3 1:FS:4"
       }}
     , (pattern_generate_test[]) {{
           context : "A"
-        , pattern : "rule xunit : {X[BCD]}"
-        , expected_graph : "A:XB A:XC A:XD"
-        , expected_nodes : "XB XC XD"
+        , pattern : "rule consequent-ignored : {X[BCD]}"
+        , nodes : "XB XC XD"
+        , graph :  "1-A!DIR 2-XB!FILE 3-XC!FILE 4-XD!FILE"
+                  " 1:FS:2 1:FS:3 1:FS:4"
       }}
     , (pattern_generate_test[]) {{
           context : "A"
-        , pattern : "rule xunit : {[BCD]Y}"
-        , expected_graph : "A:BY A:CY A:DY"
-        , expected_nodes : "BY CY DY"
+        , pattern : "rule consequent-ignored : {[BCD]Y}"
+        , nodes : "BY CY DY"
+        , graph :  "1-A!DIR 2-BY!FILE 3-CY!FILE 4-DY!FILE"
+                  " 1:FS:2 1:FS:3 1:FS:4"
       }}
     , (pattern_generate_test[]) {{
           context : "A"
-        , pattern : "rule xunit : X{[BCD]}"
-        , expected_graph : "A:XB A:XC A:XD"
-        , expected_nodes : "XB XC XD"
+        , pattern : "rule consequent-ignored : X{[BCD]}"
+        , nodes : "XB XC XD"
+        , graph :  "1-A!DIR 2-XB!FILE 3-XC!FILE 4-XD!FILE"
+                  " 1:FS:2 1:FS:3 1:FS:4"
       }}
     , (pattern_generate_test[]) {{
           context : "A"
-        , pattern : "rule xunit : {[BCD]}Y"
-        , expected_graph : "A:BY A:CY A:DY"
-        , expected_nodes : "BY CY DY"
+        , pattern : "rule consequent-ignored : {[BCD]}Y"
+        , nodes : "BY CY DY"
+        , graph :  "1-A!DIR 2-BY!FILE 3-CY!FILE 4-DY!FILE"
+                  " 1:FS:2 1:FS:3 1:FS:4"
       }}
     , (pattern_generate_test[]) {{
           context : "A"
-        , pattern : "rule xunit : B{[CD]}Y"
-        , expected_graph : "A:BCY A:BDY"
-        , expected_nodes : "BCY BDY"
+        , pattern : "rule consequent-ignored : B{[CD]}Y"
+        , graph : "A:BCY A:BDY"
+        , nodes : "BCY BDY"
+        , graph :  "1-A!DIR 2-BCY!FILE 3-BDY!FILE"
+                  " 1:FS:2 1:FS:3"
       }}
     , (pattern_generate_test[]) {{
           context : "A"
-        , pattern : "rule xunit : B{{,[CD]}}Y"
-        , expected_graph : "A:BCY A:BDY A:BY"
-        , expected_nodes : "BCY BDY BY"
+        , pattern : "rule consequent-ignored : B{{,[CD]}}Y"
+        , nodes : "BCY BDY BY"
+        , graph :  "1-A!DIR 2-BCY!FILE 3-BDY!FILE 4-BY!FILE"
+                  " 1:FS:2 1:FS:3 1:FS:4"
       }}
 
     /* stem */
     , (pattern_generate_test[]) {{
           context : "A"
         , stem : "foo"
-        , pattern : "rule xunit : %"
-        , expected_graph : "A:foo"
-        , expected_nodes : "foo"
+        , pattern : "rule consequent-ignored : %"
+        , nodes : "foo"
+        , graph :  "1-A!DIR 2-foo!FILE"
+                  " 1:FS:2"
       }}
     , (pattern_generate_test[]) {{
           context : "A"
         , stem : "bar"
-        , pattern : "rule xunit : node.%"
-        , expected_graph : "A:node.bar"
-        , expected_nodes : "node.bar"
+        , pattern : "rule consequent-ignored : node.%"
+        , nodes : "node.bar"
+        , graph :  "1-A!DIR 2-node.bar!FILE"
+                  " 1:FS:2"
       }}
     , (pattern_generate_test[]) {{
           context : "A"
         , stem : "bar"
-        , pattern : "rule xunit : node/%"
-        , expected_graph : "A:node node:bar"
-        , expected_nodes : "bar"
+        , pattern : "rule consequent-ignored : node/%"
+        , nodes : "bar"
+        , graph :  "1-A!DIR 2-bar!FILE 3-node!DIR"
+                  " 1:FS:3 3:FS:2"
       }}
 
     /* variant */
     , (pattern_generate_test[]) {{
           context : "A"
         , variant : "xapi"
-        , pattern : "rule xunit : B.?"
-        , expected_graph : "A:B.xapi"
-        , expected_nodes : "B.xapi"
+        , pattern : "rule consequent-ignored : B.?"
+        , nodes : "B.xapi"
+        , graph :  "1-A!DIR 2-B.xapi!FILE"
+                  " 1:FS:2"
       }}
     , (pattern_generate_test[]) {{
           context : "A"
         , variant : "xapi"
-        , pattern : "rule xunit : ?.B"
-        , expected_graph : "A:xapi.B"
-        , expected_nodes : "xapi.B"
+        , pattern : "rule consequent-ignored : ?.B"
+        , nodes : "xapi.B"
+        , graph :  "1-A!DIR 2-xapi.B!FILE"
+                  " 1:FS:2"
       }}
     , (pattern_generate_test[]) {{
           context : "A"
         , variant : "xapi"
-        , pattern : "rule xunit : B?C"
-        , expected_graph : "A:BxapiC"
-        , expected_nodes : "BxapiC"
+        , pattern : "rule consequent-ignored : B?C"
+        , nodes : "BxapiC"
+        , graph :  "1-A!DIR 2-BxapiC!FILE"
+                  " 1:FS:2"
       }}
 
     /* pathological cases */
     , (pattern_generate_test[]) {{
           context : "A"
-        , pattern : "rule xunit : B/{C,}"
-        , expected_graph : "A:B B:C"
-        , expected_nodes : "C"
+        , pattern : "rule consequent-ignored : B/{C,}"
+        , nodes : "C"
+        , graph :  "1-A!DIR 2-B!DIR 3-C!FILE"
+                  " 1:FS:2 2:FS:3"
       }}
     , (pattern_generate_test[]) {{
           context : "A"
-        , pattern : "rule xunit : B/{,C}"
-        , expected_graph : "A:B B:C"
-        , expected_nodes : "C"
+        , pattern : "rule consequent-ignored : B/{,C}"
+        , nodes : "C"
+        , graph :  "1-A!DIR 2-B!DIR 3-C!FILE"
+                  " 1:FS:2 2:FS:3"
+      }}
+
+    /* path variations */
+    , (pattern_generate_test[]) {{
+          context : "A"
+        , pattern : "rule consequent-ignored : ./B"
+        , nodes : "B"
+        , graph :  "1-A!DIR 2-B!FILE"
+                  " 1:FS:2"
+      }}
+    , (pattern_generate_test[]) {{
+          context : "A"
+        , pattern : "rule consequent-ignored : ././B"
+        , nodes : "B"
+        , graph :  "1-A!DIR 2-B!FILE"
+                  " 1:FS:2"
       }}
     , 0
   }

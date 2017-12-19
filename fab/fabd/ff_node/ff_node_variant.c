@@ -24,10 +24,12 @@
 #include "xlinux/xstdlib.h"
 #include "valyria/list.h"
 
-#include "ff_node_variant.internal.h"
 #include "ff_node.internal.h"
+#include "ff_node_variant.internal.h"
 #include "artifact.h"
 #include "ff_node_pattern.internal.h"
+#include "generate.internal.h"
+#include "match.internal.h"
 #include "node.h"
 #include "path.h"
 #include "generate.internal.h"

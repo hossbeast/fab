@@ -45,6 +45,15 @@ xapi ffn_usrvar_say_normal(const ff_node_usrvar * restrict n, narrator * restric
   finally : coda;
 }
 
+xapi ffn_usrvar_render(const ff_node_usrvar * restrict n, ffn_render_context * restrict ctx, narrator * restrict N)
+{
+  enter;
+
+  xsays(n->text);
+
+  finally : coda;
+}
+
 xapi ffn_usrvar_mknode(ff_node_usrvar ** restrict n, va_list va)
 {
   enter;

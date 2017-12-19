@@ -23,14 +23,14 @@
 
 #include "ff_node_use.internal.h"
 #include "ff_node.internal.h"
-#include "ff_node_pattern.internal.h"
+#include "ff_node_patterns.internal.h"
 
 xapi ffn_use_say_tree(const ff_node_use * restrict n, int level, narrator * restrict N)
 {
   enter;
 
-  xsayf("%*spattern\n", level * 2, "");
-  fatal(ffn_say_tree_level, (ff_node*)n->pattern, level + 1, N);
+  xsayf("%*stargets\n", level * 2, "");
+  fatal(ffn_say_tree_level, (ff_node*)n->target_list, level + 1, N);
 
   finally : coda;
 }
@@ -38,6 +38,9 @@ xapi ffn_use_say_tree(const ff_node_use * restrict n, int level, narrator * rest
 xapi ffn_use_say_normal(const ff_node_use * restrict n, narrator * restrict N)
 {
   enter;
+
+  xsays("use ");
+  fatal(ffn_say_normal_list, n->target_list, N, 0);
 
   finally : coda;
 }
@@ -48,12 +51,12 @@ xapi ffn_use_mknode(ff_node_use ** restrict n, va_list va)
 
   fatal(xmalloc, n, sizeof(**n));
 
-  (*n)->pattern = va_arg(va, ff_node_pattern*);
+  (*n)->target_list = va_arg(va, typeof((*n)->target_list));
 
   finally : coda;
 }
 
 void ffn_use_destroy(ff_node_use * restrict n)
 {
-  ffn_free(n->pattern);
+  ffn_free((ff_node*)n->target_list);
 }

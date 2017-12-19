@@ -32,8 +32,8 @@ xapi ffn_artifact_say_tree(const ff_node_artifact * restrict n, int level, narra
 {
   enter;
 
-  xsayf("%*spattern\n", level * 2, "");
-  fatal(ffn_say_tree_level, &n->pattern->base, level + 1, N);
+  xsayf("%*spatterns\n", level * 2, "");
+  fatal(ffn_say_tree_level, (ff_node*)n->pattern_list, level + 1, N);
 
   finally : coda;
 }
@@ -43,7 +43,7 @@ xapi ffn_artifact_say_normal(const ff_node_artifact * restrict n, narrator * res
   enter;
 
   xsays("artifact ");
-  fatal(ffn_say_normal_list, &n->pattern->base, N, 0);
+  fatal(ffn_say_normal_list, (ff_node*)n->pattern_list, N, 0);
 
   finally : coda;
 }
@@ -54,12 +54,12 @@ xapi ffn_artifact_mknode(ff_node_artifact ** restrict n, va_list va)
 
   fatal(xmalloc, n, sizeof(**n));
 
-  (*n)->pattern = va_arg(va, void*);
+  (*n)->pattern_list = va_arg(va, typeof((*n)->pattern_list));
 
   finally : coda;
 }
 
 void ffn_artifact_destroy(ff_node_artifact * restrict n)
 {
-  ffn_free(&n->pattern->base);
+  ffn_free((ff_node*)n->pattern_list);
 }

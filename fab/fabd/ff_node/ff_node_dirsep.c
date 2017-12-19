@@ -49,6 +49,15 @@ xapi ffn_dirsep_say_normal(const ff_node_dirsep * restrict n, narrator * restric
   finally : coda;
 }
 
+xapi ffn_dirsep_render(const ff_node_dirsep * restrict n, ffn_render_context * restrict ctx, narrator * restrict N)
+{
+  enter;
+
+  xsayc('/');
+
+  finally : coda;
+}
+
 xapi ffn_dirsep_mknode(ff_node_dirsep ** restrict n, va_list va)
 {
   enter;

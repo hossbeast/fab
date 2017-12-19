@@ -25,7 +25,7 @@
 #include "moria/graph.h"
 #include "moria/vertex.h"
 #include "narrator.h"
-#include "valyria/array.h"
+#include "valyria/dictionary.h"
 #include "valyria/list.h"
 #include "valyria/map.h"
 #include "xapi/info.h"
@@ -39,22 +39,28 @@
 #include "ff.h"
 #include "ff_node.h"
 #include "ff_node_artifact.h"
+#include "ff_node_artifact_patterns.h"
 #include "ff_node_use.h"
 #include "ff_node_require.h"
+#include "ff_node_pattern.h"
+#include "ff_node_patterns.h"
 #include "logging.h"
 #include "node.h"
 #include "node_operations.h"
 #include "params.h"
+#include "path.h"
 #include "rule.h"
 #include "walker.h"
+#include "formula.h"
 
 #include "zbuffer.h"
+#include "assure.h"
 
 #define LANGUAGE_FAB      "language.fab"
 #define MODULE_FAB        "module.fab"
 #define COMMON_FAB        "common.fab"
 
-array * g_modules;
+dictionary * g_modules;
 
 //
 // static
@@ -67,7 +73,12 @@ static xapi __attribute__((nonnull)) module_initialize(module * restrict mod, no
   mod->base = base;
   fatal(list_createx, &mod->artifacts, wfree, 0, 0);
   fatal(list_create, &mod->rules);
+  fatal(list_create, &mod->rules_lists);
   fatal(list_create, &mod->required);
+  fatal(list_create, &mod->used);
+  fatal(map_create, &mod->require_scope);
+
+  fatal(list_push, mod->rules_lists, mod->rules);
 
   finally : coda;
 }
@@ -80,20 +91,26 @@ static xapi module_xdestroy(module * restrict mod)
   {
     fatal(list_xfree, mod->artifacts);
     fatal(list_xfree, mod->rules);
+    fatal(list_xfree, mod->rules_lists);
     fatal(list_xfree, mod->required);
+    fatal(list_xfree, mod->used);
+    fatal(map_xfree, mod->require_scope);
   }
 
   finally : coda;
 }
 
-static xapi __attribute__((nonnull)) node_index_visitor(vertex * restrict v, int distance, void * restrict ctx)
-{
-  xproxy(extern_index_vertex, v->label, v->label_len, v);
-}
+static xapi module_vertex_load(vertex * mod_dir_v, int distance)
+  __attribute__((nonnull));
 
-static xapi __attribute__((nonnull(1))) fabfile_module_build(const ff_node * restrict ffn, module * restrict mod)
+static xapi ffn_apply(const ff_node * restrict ffn, module * restrict mod)
 {
   enter;
+
+  rendered_patterns * block = 0;
+  typeof(*block->items) *item;
+  int x;
+  node * refnode = 0;
 
   while(ffn)
   {
@@ -109,83 +126,143 @@ static xapi __attribute__((nonnull(1))) fabfile_module_build(const ff_node * res
     {
       const ff_node_use * use = (ff_node_use*)ffn;
 
-      // resolve the reference
-      const vertex * node;
-      fatal(extern_reference_resolve, use->pattern, &node);
+      // resolve the references
+      iwfree(&block);
+      fatal(ffn_patterns_render, use->target_list, &block);
 
-      // apply those rules and formulas to this module
+      item = block->items;
+      for(x = 0; x < block->num; x++)
+      {
+        fatal(node_lookup_path, ffn, item->name, &refnode);
+        fatal(module_vertex_load, vertex_containerof(refnode), -1);
+
+        if(refnode->mod == 0)
+          fatal(ffn_semantic_error, FF_NOMODULE, ffn, 0, refnode, 0);
+
+        fatal(list_push, mod->used, refnode->mod);
+        fatal(list_push, mod->rules_lists, refnode->mod->rules);
+
+        item = rendered_item_next(item);
+      }
     }
     else if(ffn->type == FFN_REQUIRE)
     {
       const ff_node_require * require = (ff_node_require*)ffn;
 
-      // resolve the reference
-      const vertex * node;
-      fatal(extern_reference_resolve, require->pattern, &node);
+      // resolve the references
+      iwfree(&block);
+      fatal(ffn_patterns_render, require->target_list, &block);
 
-      // save with this module
+      item = block->items;
+      for(x = 0; x < block->num; x++)
+      {
+        fatal(node_lookup_path, ffn, item->name, &refnode);
+        fatal(module_vertex_load, vertex_containerof(refnode), -1);
+
+        if(refnode->mod == 0)
+          fatal(ffn_semantic_error, FF_NOMODULE, ffn, item->name, refnode, 0);
+
+        fatal(list_push, mod->required, refnode->mod);
+
+        // TODO add uniqueness check here
+        fatal(map_set, mod->require_scope, refnode->mod->base->name->name, refnode->mod->base->name->namel, refnode->mod->base);
+
+        item = rendered_item_next(item);
+      }
     }
     else if(ffn->type == FFN_ARTIFACT)
     {
       const ff_node_artifact * artifact = (ff_node_artifact*)ffn;
 
       // resolve to list of nodes
-      fatal(artifact_pattern_generate, artifact->pattern, mod->base, mod->artifacts);
+      fatal(artifact_pattern_generate, artifact->pattern_list->chain, mod->base, mod->artifacts);
     }
 
     ffn = ffn->next;
   }
 
-  finally : coda;
+finally:
+  wfree(block);
+coda;
+}
+
+static xapi module_vertex_load(vertex * mod_dir_v, int distance)
+{
+  enter;
+
+  vertex ** ancestry = 0;
+  size_t ancestryz = 0;
+  size_t ancestryl = 0;
+
+  char path[512];
+  size_t pathl;
+  int x;
+
+  node * mod_dir_n = vertex_value(mod_dir_v);
+  node_get_absolute_path(mod_dir_n, path, sizeof(path));
+
+  if(mod_dir_n->mod)
+    goto XAPI_FINALIZE;
+
+  vertex * mod_file_v = vertex_downs(mod_dir_v, MODULE_FAB);
+  if(!mod_file_v)
+    goto XAPI_FINALIZE;
+
+  node * mod_file_n = vertex_value(mod_file_v);
+  pathl = node_get_absolute_path(mod_dir_n, path, sizeof(path));
+  module * mod;
+  fatal(dictionary_set, g_modules, path, pathl, &mod);
+  mod_dir_n->mod = mod;
+  fatal(module_initialize, mod, mod_dir_n);
+
+  // list of ancestor nodes, in reverse order
+  vertex * v = mod_dir_v;
+  while(v)
+  {
+    fatal(assure, &ancestry, sizeof(*ancestry), ancestryl + 1, &ancestryz);
+    ancestry[ancestryl++] = v;
+    v = vertex_up(v);
+  }
+
+  // apply ancestor common modules
+  for(x = ancestryl - 1; x >= 0; x--)
+  {
+    vertex * common;
+    if((common = vertex_downs(ancestry[x], COMMON_FAB)))
+    {
+      node * n = vertex_value(common);
+      fatal(node_get_ffn, n, 0);
+      if(n->ffn)
+        fatal(ffn_apply, n->ffn, mod);
+    }
+  }
+
+  // apply the module
+  fatal(node_get_ffn, mod_file_n, 0);
+  if(mod_file_n->ffn)
+    fatal(ffn_apply, mod_file_n->ffn, mod);
+
+  if(log_would(L_MODULE))
+  {
+    node_get_absolute_path(mod_dir_n, path, sizeof(path));
+    logf(L_MODULE, "loaded module %s with %d artifacts", path, mod->artifacts->l);
+    for(x = 0; x < mod->artifacts->l; x++)
+    {
+      artifact * af = list_get(mod->artifacts, x);
+      logf(L_MODULE, " %s ? %.*s", af->node->name->path, (int)af->variant_len, af->variant);
+    }
+  }
+
+finally:
+  wfree(ancestry);
+coda;
 }
 
 static xapi module_load_visitor(vertex * v, int distance, void * ctx)
 {
   enter;
 
-  char path[512];
-  ff_node * ffn = 0;
-  module * mod = 0;
-  vertex * common = 0;
-  vertex * module = 0;
-
-  common = vertex_downs(v, COMMON_FAB);
-  module = vertex_downs(v, MODULE_FAB);
-  if(common || module)
-  {
-    node_get_absolute_path(vertex_value(v), path, sizeof(path));
-  }
-
-  if(common)
-  {
-    fatal(ff_load_pathf, &ffn, "%s/%s", path, COMMON_FAB);
-
-    if(ffn)
-    {
-      fatal(fabfile_module_build, ffn, 0);
-      logf(L_MODULE, "loaded %s/%s", path, COMMON_FAB);
-      ffn = 0;
-    }
-  }
-
-  if(module)
-  {
-    fatal(ff_load_pathf, &ffn, "%s/%s", path, MODULE_FAB);
-  }
-
-  if((module || distance == 0) && !ffn)
-  {
-    xapi_info_pushs("directory", path);
-    fail(FF_NOMODULE);
-  }
-
-  if(module)
-  {
-    fatal(array_push, g_modules, &mod);
-    fatal(module_initialize, mod, vertex_value(v));
-    fatal(fabfile_module_build, ffn, mod);
-    logf(L_MODULE, "loaded %s", path);
-  }
+  fatal(module_vertex_load, v, distance);
 
   finally : coda;
 }
@@ -198,75 +275,38 @@ xapi module_load_project(node * restrict project_root, const char * restrict pro
 {
   enter;
 
-  ff_node * ffn;
-
-  // index the filesystem rooted at the module dir for extern lookups
-  fatal(graph_traverse_vertices
-    , g_node_graph 
-    , vertex_containerof(project_root)
-    , node_index_visitor
-    , 0
-    , (traversal_criteria[]) {{
-          edge_travel : NODE_FSTYPE_DIR
-        , edge_visit : NODE_RELATION_FS
-      }}
-    , MORIA_TRAVERSE_DOWN | MORIA_TRAVERSE_PRE
-    , 0
-  );
-
-  // traverse ancestor directories for common fabfiles, in reverse order
-  const char * end = project_dir;
-  const char * term = project_dir + strlen(project_dir);
-  end++;
-  while(end != term && *end != '/')
-    end++;
-
-  while(end != term)
-  {
-    fatal(ff_load_pathf, &ffn, "%.*s/%s", (int)(end - project_dir), project_dir, COMMON_FAB);
-
-    if(ffn)
-    {
-      fatal(fabfile_module_build, ffn, 0);
-      logf(L_MODULE, "loaded %.*s/%s", (int)(end - project_dir), project_dir, COMMON_FAB);
-    }
-
-    end++;
-    while(end != term && *end != '/')
-      end++;
-  }
-
-  // load this module and its descendants
+  // load this module, its descendants, and any referenced modules, recursively
   fatal(graph_traverse_vertices
     , g_node_graph 
     , vertex_containerof(project_root)
     , module_load_visitor
     , 0
     , (traversal_criteria[]) {{
-          edge_travel : NODE_FSTYPE_DIR
-        , edge_visit : NODE_RELATION_FS
+          edge_travel: RELATION_TYPE_FS
+        , vertex_visit : NODE_FSTYPE_DIR
       }}
     , MORIA_TRAVERSE_DOWN | MORIA_TRAVERSE_PRE
     , 0
   );
 
-  // build the dependency graph, radiating outward from all known artifacts
-  int traversal_id = node_traversal_begin();
+  // build the dependency graph, radiating outward from known artifacts
+  int traversal_id = graph_traversal_begin(g_node_graph);
 
   int x;
-  for(x = 0; x < g_modules->l; x++)
+  for(x = 0; x < g_modules->table_size; x++)
   {
-    module * mod = array_get(g_modules, x);
+    module * mod = dictionary_table_value(g_modules, x);
+    if(!mod)
+      continue;
 
     int y;
     for(y = 0; y < mod->artifacts->l; y++)
     {
       artifact * af = list_get(mod->artifacts, y);
-      fatal(rules_apply, mod->rules, mod->base, af, traversal_id);
+
+      fatal(rules_apply, af, traversal_id);
     }
   }
-
-  fatal(module_report);
 
   finally : coda;
 }
@@ -275,7 +315,7 @@ xapi module_setup()
 {
   enter;
 
-  fatal(array_createx, &g_modules, sizeof(module), 0, module_xdestroy, 0);
+  fatal(dictionary_createx, &g_modules, sizeof(module), 0, 0, module_xdestroy);
 
   finally : coda;
 }
@@ -284,7 +324,7 @@ xapi module_cleanup()
 {
   enter;
 
-  fatal(array_xfree, g_modules);
+  fatal(dictionary_xfree, g_modules);
 
   finally : coda;
 }
@@ -293,18 +333,54 @@ xapi module_report()
 {
   enter;
 
-  logs(L_INFO, "loaded modules");
+  logf(L_INFO, "loaded %d modules", g_modules->count);
 
   int x;
-  for(x = 0; x < g_modules->l; x++)
+  for(x = 0; x < g_modules->table_size; x++)
   {
-    module * mod = array_get(g_modules, x);
+    module * mod = dictionary_table_value(g_modules, x);
+    if(!mod)
+      continue;
 
-    narrator * nar;
-    fatal(log_start, L_INFO, &nar);
-    fatal(node_path_say, mod->base, nar);
+    narrator * N;
+    fatal(log_start, L_INFO, &N);
+    xsays("module ");
+    fatal(node_relative_path_say, mod->base, N);
     fatal(log_finish);
+
+    int y;
+    for(y = 0; y < mod->artifacts->l; y++)
+    {
+      artifact * af = list_get(mod->artifacts, y);
+      fatal(log_start, L_INFO, &N);
+      xsays(" artifact ");
+      fatal(node_relative_path_say, af->node, N);
+      xsays(" ? ");
+      xsayw(af->variant, af->variant_len);
+      fatal(log_finish);
+    }
   }
 
   finally : coda;
+}
+
+module * module_lookup(const char * const restrict path, size_t pathl)
+{
+  /* path is a normalized absolute path */
+  const char * end = path + strlen(path);
+
+  module * mod = 0;
+  while(end != path && !mod)
+  {
+    mod = dictionary_get(g_modules, path, end - path);
+
+    end--;
+    while(end != path && *end != '/')
+      end--;
+  }
+
+  if(!mod)
+    mod = dictionary_get(g_modules, "/", 1);
+
+  return mod;
 }

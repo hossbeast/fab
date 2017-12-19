@@ -17,11 +17,15 @@
 
 #include <stdlib.h>
 
+#include "types.h"
+#include "xapi.h"
+
 #include "xlinux/xunistd.h"
 #include "moria/graph.h"
 #include "moria/operations.h"
 #include "moria/vertex.h"
 #include "moria/edge.h"
+#include "moria/operations.h"
 #include "valyria/list.h"
 #include "valyria/map.h"
 #include "value.h"
@@ -29,12 +33,11 @@
 
 #include "node_operations.h"
 #include "logging.h"
-#include "node.h"
+#include "node.internal.h"
 #include "filesystem.h"
+#include "path.h"
 
 #include "macros.h"
-
-#define restrict __restrict
 
 static xapi disintegrate_visitor(edge * e, int distance, void * arg)
 {
@@ -46,38 +49,30 @@ static xapi disintegrate_visitor(edge * e, int distance, void * arg)
   finally : coda;
 }
 
-static xapi invalidate_visitor(vertex * v, int distance, void * arg)
-{
-  enter;
-
-  node * n = vertex_value(v);
-  n->invalid = 1;
-
-  if(log_would(L_GRAPH))
-  {
-    narrator * N;
-    fatal(log_start, L_GRAPH, &N);
-    xsays("invalidate ");
-    fatal(node_path_say, n, N);
-    fatal(log_finish);
-  }
-
-  finally : coda;
-}
-
 //
 // public
 //
 
-xapi node_connect_fs(node * restrict parent, node * restrict n)
+static xapi graph_node_connect(graph * const restrict g, vertex * const restrict A, vertex * const restrict B, uint32_t attrs)
+{
+  enter;
+
+  node_fstype_set(vertex_value(A), NODE_FSTYPE_DIR);
+  node_fstype_set(vertex_value(B), NODE_FSTYPE_FILE);
+  fatal(node_connect, vertex_value(A), vertex_value(B), attrs);
+
+  finally : coda;
+}
+
+xapi node_connect(node * restrict A, node * restrict B, relation_type relation)
 {
   enter;
 
   fatal(graph_connect
     , g_node_graph
-    , vertex_containerof(parent)
-    , vertex_containerof(n)
-    , NODE_RELATION_FS
+    , vertex_containerof(A)
+    , vertex_containerof(B)
+    , relation
   );
 
   if(log_would(L_GRAPH))
@@ -85,36 +80,36 @@ xapi node_connect_fs(node * restrict parent, node * restrict n)
     narrator * N;
     fatal(log_start, L_GRAPH, &N);
     xsayf("%8s ", "connect");
-    fatal(node_path_say, n, N);
+    fatal(node_absolute_path_say, A, N);
     xsays(" : ");
-    fatal(node_path_say, parent, N);
-    xsays(" NODE_RELATION_FS");
+    fatal(node_absolute_path_say, B, N);
+    xsayf(" %s", relation_type_name(relation));
     fatal(log_finish);
   }
 
   finally : coda;
 }
 
-xapi node_connect_dependency(node * restrict left, node * restrict right)
+static xapi graph_node_disconnect(graph * const restrict g, vertex * const restrict A, vertex * const restrict B)
+{
+  xproxy(node_disconnect, vertex_value(A), vertex_value(B));
+}
+
+xapi node_disconnect(node * restrict A, node * restrict B)
 {
   enter;
 
-  fatal(graph_connect
-    , g_node_graph
-    , vertex_containerof(left)
-    , vertex_containerof(right)
-    , NODE_RELATION_STRONG
-  );
+  fatal(graph_disconnect, g_node_graph, vertex_containerof(A), vertex_containerof(B));
 
   if(log_would(L_GRAPH))
   {
     narrator * N;
     fatal(log_start, L_GRAPH, &N);
-    xsayf("%8s ", "connect");
-    fatal(node_path_say, left, N);
+    xsayf("%8s ", "disconnect");
+    fatal(node_relative_path_say, A, N);
     xsays(" : ");
-    fatal(node_path_say, right, N);
-    xsays(" NODE_RELATION_STRONG");
+    fatal(node_relative_path_say, B, N);
+    xsays(" RELATION_TYPE_FS");
     fatal(log_finish);
   }
 
@@ -134,8 +129,8 @@ xapi node_disintegrate_fs(edge * restrict e, int traversal)
     , disintegrate_visitor
     , traversal
     , (traversal_criteria[]) {{
-          edge_travel : NODE_RELATION_FS
-        , edge_visit : NODE_RELATION_FS
+          edge_travel : RELATION_TYPE_FS
+        , edge_visit : RELATION_TYPE_FS
       }}
     , MORIA_TRAVERSE_DOWN | MORIA_TRAVERSE_PRE
     , li
@@ -151,10 +146,10 @@ xapi node_disintegrate_fs(edge * restrict e, int traversal)
       narrator * N;
       fatal(log_start, L_GRAPH, &N);
       xsayf("%8s ", "disconnect");
-      fatal(node_path_say, vertex_value(e->A), N);
+      fatal(node_relative_path_say, vertex_value(e->A), N);
       xsays(" : ");
-      fatal(node_path_say, vertex_value(e->B), N);
-      xsays(" NODE_RELATION_FS");
+      fatal(node_relative_path_say, vertex_value(e->B), N);
+      xsays(" RELATION_TYPE_FS");
       fatal(log_finish);
     }
 
@@ -170,24 +165,39 @@ xapi node_refresh(node * restrict n, int traversal)
 {
   enter;
 
-  int fd = -1;
-
   if(n->fs->attrs == FILESYSTEM_INVALIDATE_ALWAYS)
   {
     fatal(node_invalidate, n, traversal);
   }
   else if(n->fs->attrs == FILESYSTEM_INVALIDATE_STAT)
   {
-    
+    // compare to stat hash
   }
   else if(n->fs->attrs == FILESYSTEM_INVALIDATE_CONTENT)
   {
-    
+    // compare to content hash
   }
 
-finally:
-  fatal(ixclose, &fd);
-coda;
+  finally : coda;
+}
+
+static xapi invalidate_visitor(vertex * v, int distance, void * arg)
+{
+  enter;
+
+  node * n = vertex_value(v);
+  n->invalid = true;
+
+  if(log_would(L_GRAPH))
+  {
+    narrator * N;
+    fatal(log_start, L_GRAPH, &N);
+    xsays("invalidate ");
+    fatal(node_relative_path_say, n, N);
+    fatal(log_finish);
+  }
+
+  finally : coda;
 }
 
 xapi node_invalidate(node * restrict n, int traversal)
@@ -200,8 +210,8 @@ xapi node_invalidate(node * restrict n, int traversal)
     , invalidate_visitor
     , traversal
     , (traversal_criteria[]) {{
-          edge_travel : NODE_RELATION_STRONG | NODE_RELATION_WEAK   // travel weak edges
-        , edge_visit : NODE_RELATION_STRONG                         // callback on strong edges
+          edge_travel : RELATION_TYPE_STRONG | RELATION_TYPE_WEAK   // travel weak edges
+        , edge_visit : RELATION_TYPE_STRONG                         // callback on strong edges
       }}
     , MORIA_TRAVERSE_UP | MORIA_TRAVERSE_PRE
     , 0
@@ -210,7 +220,8 @@ xapi node_invalidate(node * restrict n, int traversal)
   finally : coda;
 }
 
-int node_traversal_begin()
-{
-  return graph_traversal_begin(g_node_graph);
-}
+operations_dispatch * node_operations_dispatch = (operations_dispatch[]) {{
+    .connect = graph_node_connect
+  , .disconnect = graph_node_disconnect
+  , .vertex_create = graph_node_create
+}};

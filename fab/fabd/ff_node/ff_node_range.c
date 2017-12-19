@@ -56,6 +56,13 @@ xapi ffn_range_say_normal(const ff_node_range * restrict n, narrator * restrict 
   finally : coda;
 }
 
+xapi ffn_range_render(const ff_node_range * restrict n, ffn_render_context * restrict ctx, narrator * restrict N)
+{
+  enter;
+
+  finally : coda;
+}
+
 xapi ffn_range_mknode(ff_node_range ** restrict n, va_list va)
 {
   enter;

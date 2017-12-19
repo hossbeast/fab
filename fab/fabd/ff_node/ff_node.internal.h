@@ -26,10 +26,27 @@
 struct narrator;
 union ff_node_pattern_part;
 
+typedef struct ffn_render_context {
+  uint16_t num;
+  off_t start;
+} ffn_render_context;
+
 xapi ffn_say_normal_list(const ff_node * restrict n, struct narrator * restrict N, const char * restrict sep)
   __attribute__((nonnull(2)));
 
 xapi ffn_say_tree_level(const ff_node * restrict n, int level, struct narrator * restrict N)
   __attribute__((nonnull(3)));
+
+void ffn_chain_attach(ff_node * restrict n, ff_node * restrict chain)
+  __attribute__((nonnull));
+
+void ffn_chain_attach_all(ff_node * restrict n, ff_node * restrict chain)
+  __attribute__((nonnull));
+
+xapi render_tail(const ff_node * restrict n, ffn_render_context * restrict ctx, struct narrator * restrict N)
+  __attribute__((nonnull));
+
+xapi ffn_render(const ff_node * restrict n, ffn_render_context * restrict ctx, struct narrator * restrict N)
+  __attribute__((nonnull));
 
 #endif

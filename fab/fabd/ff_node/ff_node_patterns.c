@@ -20,10 +20,15 @@
 
 #include "xlinux/xstdlib.h"
 #include "narrator.h"
+#include "narrator/growing.h"
 
 #include "ff_node_patterns.internal.h"
 #include "ff_node.internal.h"
 #include "ff_node_pattern.internal.h"
+
+//
+// public
+//
 
 xapi ffn_patterns_say_tree(const ff_node_patterns * restrict n, int level, narrator * restrict N)
 {
@@ -51,6 +56,7 @@ xapi ffn_patterns_mknode(ff_node_patterns ** restrict n, va_list va)
   fatal(xmalloc, n, sizeof(**n));
 
   (*n)->chain = va_arg(va, typeof((*n)->chain));
+  
 
   finally : coda;
 }
@@ -58,4 +64,42 @@ xapi ffn_patterns_mknode(ff_node_patterns ** restrict n, va_list va)
 void ffn_patterns_destroy(ff_node_patterns * restrict n)
 {
   ffn_free(n->chain);
+}
+
+xapi ffn_patterns_render(const ff_node_patterns * restrict pats, rendered_patterns ** block)
+{
+  enter;
+
+  narrator * N = 0;
+  ffn_render_context ctx = {};
+
+  fatal(narrator_growing_create, &N);
+
+  // save a place in the buffer for the number of paths
+  xsayw((uint16_t[]) { 0 }, sizeof(uint16_t));
+
+  const ff_node_pattern * pat = pats->chain;
+  while(pat)
+  {
+    // save the current offset
+    fatal(narrator_xseek, N, 0, NARRATOR_SEEK_CUR, &ctx.start);
+
+    // save a place in the buffer for the length
+    xsayw((uint16_t[]) { 0 }, sizeof(uint16_t));
+
+    fatal(ffn_pattern_render, pat, &ctx, N);
+    pat = (typeof(pat))pat->next;
+  }
+
+  // record the number of patterns
+  fatal(narrator_xseek, N, 0, NARRATOR_SEEK_SET, 0);
+  xsayw(&ctx.num, sizeof(ctx.num));
+
+  // ownership transfer
+  *block = (void*)narrator_growing_buffer(N);
+  N = 0;
+
+finally:
+  fatal(narrator_xfree, N);
+coda;
 }

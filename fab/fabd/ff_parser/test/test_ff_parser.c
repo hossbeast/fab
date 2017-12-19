@@ -44,6 +44,7 @@ typedef struct ff_parser_test {
   xunit_test;
 
   char * text;
+  char * expected;
 } ff_parser_test;
 
 //
@@ -84,21 +85,23 @@ static xapi ff_parser_test_entry(ff_parser_test * test)
 {
   enter;
 
-  ff_node * actual = 0;
+  ff_node * ffn = 0;
   narrator * N1 = 0;
 
   fatal(narrator_growing_create, &N1);
 
   // parse
-  fatal(ff_parser_parse, 0, MMS(test->text), 0, &actual);
+  fatal(ff_parser_parse, 0, MMS(test->text), 0, &ffn);
 
   // for now only asserting round trip
-  fatal(ffn_say_normal, actual, N1);
-  assert_eq_s(test->text, narrator_growing_buffer(N1));
+  fatal(ffn_say_normal, ffn, N1);
+
+  const char * actual = narrator_growing_buffer(N1);
+  assert_eq_s(test->expected, actual);
 
 finally:
   fatal(narrator_xfree, N1);
-  ffn_free(actual);
+  ffn_free(ffn);
 coda;
 }
 
@@ -111,27 +114,80 @@ xunit_unit xunit = {
   , xu_cleanup : ff_parser_unit_cleanup
   , xu_entry : ff_parser_test_entry
   , xu_tests : (xunit_test*[]) {
-#define TEST(x) (ff_parser_test[]) {{ text : x }},
-    TEST("artifact program.{{$final,$debug,$devel}{.pic,}}?")
-    TEST("rule program.? : main?.o")
-    TEST("rule program.? : main?.o")
-    TEST("rule %.y : %.y.header, %.y.rules")
-    TEST("rule .tab.{c,h} : %.y")
-    TEST("rule %.tokens.{c,h} : %.tab.c")
-    TEST("rule %.lex.{c,h} : %.l")
-    TEST("rule %.states.{c,h} : %.lex.h")
-    TEST("var cflags.$xapi.debug -m64 -Wall -Werror")
-    TEST("rule xunit : A/BC/D")
-    TEST("rule A/BC/D : xunit")
-    TEST("rule xunit : A/{B,C}/D")
+      (ff_parser_test[]) {{
+          text     : "artifact program.{{$final,$debug,$devel}{.pic,}}?"
+        , expected: "artifact program.{{$final,$debug,$devel}{.pic,}}?"
+      }}
+    , (ff_parser_test[]) {{
+          text     : "rule program.? : main?.o"
+        , expected : "rule program.? : main?.o"
+     }}
+    , (ff_parser_test[]) {{
+          text     : "rule program.? : main?.o"
+        , expected : "rule program.? : main?.o"
+     }}
+    , (ff_parser_test[]) {{
+          text     : "rule %.y : %.y.header, %.y.rules"
+        , expected : "rule %.y : %.y.header, %.y.rules"
+     }}
+    , (ff_parser_test[]) {{
+          text     : "rule .tab.{c,h} : %.y"
+        , expected : "rule .tab.{c,h} : %.y"
+     }}
+    , (ff_parser_test[]) {{
+          text     : "rule %.tokens.{c,h} : %.tab.c"
+        , expected : "rule %.tokens.{c,h} : %.tab.c"
+     }}
+    , (ff_parser_test[]) {{
+          text     : "rule %.lex.{c,h} : %.l"
+        , expected : "rule %.lex.{c,h} : %.l"
+     }}
+    , (ff_parser_test[]) {{
+          text     : "rule %.states.{c,h} : %.lex.h"
+        , expected : "rule %.states.{c,h} : %.lex.h"
+     }}
+    , (ff_parser_test[]) {{
+          text     : "var cflags.$xapi.debug -m64 -Wall -Werror"
+        , expected : "var cflags.$xapi.debug -m64 -Wall -Werror"
+     }}
+    , (ff_parser_test[]) {{
+          text     : "rule xunit : A/BC/D"
+        , expected : "rule xunit : A/BC/D"
+     }}
+    , (ff_parser_test[]) {{
+          text     : "rule A/BC/D : xunit"
+        , expected : "rule A/BC/D : xunit"
+     }}
+    , (ff_parser_test[]) {{
+          text     : "rule xunit : A/{B,C}/D"
+        , expected : "rule xunit : A/{B,C}/D"
+     }}
   /* alternations */
-    TEST("rule A/{B,C}/D : xunit")
-    TEST("rule A/{B,}/D : xunit")
-    TEST("rule A/{,B}/D : xunit")
+    , (ff_parser_test[]) {{
+          text     : "rule A/{B,C}/D : xunit"
+        , expected : "rule A/{B,C}/D : xunit"
+     }}
+    , (ff_parser_test[]) {{
+          text     : "rule A/{B,}/D : xunit"
+        , expected : "rule A/{B,}/D : xunit"
+     }}
+    , (ff_parser_test[]) {{
+          text     : "rule A/{,B}/D : xunit"
+        , expected : "rule A/{,B}/D : xunit"
+     }}
   /* classes */
-    TEST("rule A/[a-z0-9]/D : xunit")
-    TEST("rule A/[^a-z0-9]/D : xunit")
-    TEST("rule A/[ABC0-9XY]/D : xunit")
-    0
+    , (ff_parser_test[]) {{
+          text     : "rule A/[a-z0-9]/D : xunit"
+        , expected : "rule A/[a-z0-9]/D : xunit"
+    }}
+    , (ff_parser_test[]) {{
+          text     : "rule A/[^a-z0-9]/D : xunit"
+        , expected : "rule A/[^a-z0-9]/D : xunit"
+     }}
+    , (ff_parser_test[]) {{
+          text     : "rule A/[ABC0-9XY]/D : xunit"
+        , expected : "rule A/[ABC0-9XY]/D : xunit"
+     }}
+    , 0
   }
 };

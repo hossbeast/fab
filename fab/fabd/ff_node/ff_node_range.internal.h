@@ -24,11 +24,15 @@
 #include "ff_node_range.h"
 
 struct narrator;
+struct ffn_render_context;
 
 xapi ffn_range_say_tree(const ff_node_range * restrict n, int level, struct narrator * restrict N)
   __attribute__((nonnull));
 
 xapi ffn_range_say_normal(const ff_node_range * restrict n, struct narrator * restrict N)
+  __attribute__((nonnull));
+
+xapi ffn_range_render(const ff_node_range * restrict n, struct ffn_render_context * restrict ctx, struct narrator * restrict N)
   __attribute__((nonnull));
 
 xapi ffn_range_mknode(ff_node_range ** restrict n, va_list va)

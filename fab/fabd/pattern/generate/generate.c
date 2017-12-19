@@ -22,6 +22,7 @@
 #include "narrator.h"
 #include "narrator/fixed.h"
 #include "valyria/list.h"
+#include "valyria/map.h"
 #include "xlinux/xstdlib.h"
 
 #include "generate.internal.h"
@@ -39,6 +40,8 @@
 #include "ff_node_word.h"
 #include "node.h"
 #include "node_operations.h"
+#include "filesystem.h"
+#include "module.h"
 #include "path.h"
 
 //
@@ -75,11 +78,28 @@ xapi pattern_segment_generate(
     // next is a slash, or the end of the outermost pattern
     if(section_len > 0 && (walk->ffn || walk->outer == NULL))
     {
-      vertex * next_context_vertex = vertex_downw(
-          vertex_containerof(context->node)
-        , section
-        , section_len
-      );
+      vertex * next_context_vertex = 0;
+      if(!context->node)
+      {
+        if(context->scope && (context->node = map_get(context->scope, section, section_len)))
+        {
+          next_context_vertex = vertex_containerof(context->node);
+        }
+        else
+        {
+          context->node = context->base;
+        }
+        context->mod = context->node->mod;
+      }
+
+      if(next_context_vertex == 0)
+      {
+        next_context_vertex = vertex_downw(
+            vertex_containerof(context->node)
+          , section
+          , section_len
+        );
+      }
 
       // only the final section is a file
       node_fstype fstype = NODE_FSTYPE_FILE;
@@ -90,7 +110,7 @@ xapi pattern_segment_generate(
       if(next_context_vertex)
       {
         next_context_node = vertex_value(next_context_vertex);
-        if(next_context_node->fstype != fstype)
+        if(node_fstype_get(next_context_node) != fstype)
         {
           char space[512];
           size_t z = node_get_relative_path(next_context_node, space, sizeof(space));
@@ -99,13 +119,22 @@ xapi pattern_segment_generate(
           fail(FABD_AMBIGPATH);
         }
       }
+      else if(section_len == 1 && *section == '.')
+      {
+        next_context_node = context->node;
+      }
       else
       {
-        fatal(node_createw, &next_context_node, fstype, context->node->fs, section, section_len);
-        fatal(node_connect_fs, context->node, next_context_node);
+        module * mod = context->mod;
+        const filesystem * fs = 0;
+        if(mod && mod->base)
+          fs = mod->base->fs;
+
+        fatal(node_createw, &next_context_node, fstype, fs, mod, section, section_len);
+        fatal(node_connect, context->node, next_context_node, RELATION_TYPE_FS);
       }
 
-      if(next_context_node->fstype == NODE_FSTYPE_FILE)
+      if(node_fstype_get(next_context_node) == NODE_FSTYPE_FILE)
       {
         if(generating_artifact)
         {
@@ -128,6 +157,8 @@ xapi pattern_segment_generate(
       {
         /* TODO : call notify_thread_watch for new directories */
         context->node = next_context_node;
+        if(context->node->mod)
+          context->mod = context->node->mod;
       }
     }
 
@@ -190,7 +221,8 @@ coda;
 
 xapi pattern_generate(
     const ff_node_pattern * restrict pat
-  , node * restrict context_node
+  , node * restrict base
+  , map * restrict scope
   , const artifact * restrict context_af
   , const char * restrict stem
   , uint16_t stem_len
@@ -204,7 +236,10 @@ xapi pattern_generate(
   char fixed[NARRATOR_STATIC_SIZE];
 
   // setup the dynamic context
-  pattern_generate_context context =  { node : context_node };
+  pattern_generate_context context =  {
+      base : base
+    , scope : scope
+  };
   context.segment_narrator = narrator_fixed_init(fixed, space, sizeof(space));
 
   // setup the outermost walk

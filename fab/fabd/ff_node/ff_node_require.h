@@ -20,13 +20,13 @@
 
 #include "ff_node.h"
 
-struct ff_node_pattern;
+struct ff_node_patterns;
 
 typedef struct ff_node_require
 {
   ff_node;
 
-  struct ff_node_pattern * pattern;
+  struct ff_node_patterns * target_list;
 } ff_node_require;
 
 #endif

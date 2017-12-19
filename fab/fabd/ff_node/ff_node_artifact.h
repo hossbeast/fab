@@ -29,7 +29,7 @@ typedef struct ff_node_artifact
     ff_node base;
   };
 
-  struct ff_node_artifact_pattern * pattern;
+  struct ff_node_artifact_patterns * pattern_list;
 } ff_node_artifact;
 
 #endif

@@ -31,13 +31,13 @@
 
 xapi artifact_pattern_generate(
     const ff_node_artifact_pattern * restrict pat
-  , node * restrict context_node
+  , node * restrict base
   , list * restrict results
 )
 {
   enter;
 
-  fatal(pattern_generate, (struct ff_node_pattern*)pat, context_node, 0, 0, 0, results, true);
+  fatal(pattern_generate, (struct ff_node_pattern*)pat, base, 0, 0, 0, 0, results, true);
 
   finally : coda;
 }

@@ -39,8 +39,6 @@
 #include "params.h"
 #include "CONFIG.errtab.h"
 
-#include "strutil.h"
-
 #define restrict __restrict
 
 static value_store * store_active;
@@ -55,7 +53,7 @@ static xapi validate(value * restrict val, const char * restrict path, uint32_t 
   enter;
 
   uint8_t type = opts & 0xffff;
-  int notnull = opts & CONFIG_QUERY_NOTNULL;
+  bool notnull = opts & CONFIG_QUERY_NOTNULL;
 
   if(type && val && val->type != type)
   {
@@ -102,18 +100,6 @@ xapi config_throw(xapi error, value * restrict val, const char * restrict path)
 
   if(val->loc.fname)
     xapi_info_pushs("file", val->loc.fname);
-
-#if 0
-  if(type)
-    xapi_info_pushs("expected", VALUE_TYPE_STRING(type));
-  else
-    xapi_info_pushs("expected", "(any)");
-
-  if(val)
-    xapi_info_pushs("actual", VALUE_TYPE_STRING(val->type));
-  else
-    xapi_info_pushs("actual", "(none)");
-#endif
 
   fail(error);
 
@@ -165,7 +151,6 @@ xapi config_report()
 {
   enter;
 
-#if 0
   narrator * N;
 
   if(log_would(L_CONFIG))
@@ -175,7 +160,6 @@ xapi config_report()
     fatal(value_say, g_config, N);
     fatal(log_finish);
   }
-#endif
 
   finally : coda;
 }

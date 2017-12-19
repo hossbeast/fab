@@ -28,9 +28,10 @@ SUMMARY
 #include "xapi.h"
 #include "types.h"
 
-struct node;
-struct list;
 struct artifact;
+struct list;
+struct map;
+struct node;
 
 /// rules_apply
 //
@@ -39,15 +40,14 @@ struct artifact;
 //  the artifact, and proceeding to its consequents, to their consequents, and so on.
 //
 // PARAMETERS
-//  rules        - generally applicable rules for the module
+//  rules        - generally applicable rules lists for the module
 //  base         - directory node for the base of the module
+//  scope        - 
 //  af           - artifact to begin from
 //  traversal_id - restrict the traversal to nodes not yet visited with this id
 //
 xapi rules_apply(
-    const struct list * restrict rules
-  , struct node * restrict module_node
-  , struct artifact * restrict af
+    struct artifact * restrict af
   , int traversal_id
 )
   __attribute__((nonnull));

@@ -24,11 +24,15 @@
 #include "ff_node_alternation.h"
 
 struct narrator;
+struct ffn_render_context;
 
 xapi ffn_alternation_say_tree(const ff_node_alternation * restrict n, int level, struct narrator * restrict N)
   __attribute__((nonnull));
 
 xapi ffn_alternation_say_normal(const ff_node_alternation * restrict n, struct narrator * restrict N)
+  __attribute__((nonnull));
+
+xapi ffn_alternation_render(const ff_node_alternation * restrict n, struct ffn_render_context * restrict ctx, struct narrator * restrict N)
   __attribute__((nonnull));
 
 xapi ffn_alternation_mknode(ff_node_alternation ** restrict n, va_list va)

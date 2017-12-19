@@ -25,6 +25,7 @@ struct artifact;
 struct ff_node_pattern;
 struct list;
 struct node;
+struct map;
 
 /// pattern_generate
 //
@@ -34,6 +35,7 @@ struct node;
 // PARAMETERS
 //  pattern             - pattern
 //  base                - node to which new nodes are attached (directory node for the module)
+//  [scope]             - 
 //  af                  - artifact to generate in the context of
 //  [stem]              - stem from a previous match
 //  [stem_len]          - stem length
@@ -43,12 +45,13 @@ struct node;
 xapi pattern_generate(
     /* 1 */ const struct ff_node_pattern * restrict pattern
   , /* 2 */ struct node * restrict base
-  , /* 3 */ const struct artifact * restrict af
-  , /* 4 */ const char * restrict stem
-  , /* 5 */ uint16_t stem_len
-  , /* 6 */ struct list * restrict nodes
-  , /* 7 */ bool generating_artifact
+  , /* 3 */ struct map * restrict scope
+  , /* 4 */ const struct artifact * restrict af
+  , /* 5 */ const char * restrict stem
+  , /* 6 */ uint16_t stem_len
+  , /* 7 */ struct list * restrict nodes
+  , /* 8 */ bool generating_artifact
 )
-  __attribute__((nonnull(1, 2, 6)));
+  __attribute__((nonnull(1, 2, 7)));
 
 #endif

@@ -30,10 +30,13 @@ SUMMARY
 
 #include "yyutil/parser.h"
 
+struct vertex;
+
 struct ff_file;
 struct ff_node;
 struct module;
 struct narrator;      // narrator.h
+struct node;
 
 union ff_node_pattern_part;
 
@@ -123,6 +126,7 @@ typedef struct ff_node
 	struct ff_node * next;	 // next sibling
   struct ff_node * tail;   // last sibling (only set on the first in a chain)
   struct ff_node * prev;   // previous sibling
+  struct ff_node * parent; // containing aggregate node
 } ff_node;
 
 ///  ffn_mknode
@@ -147,8 +151,7 @@ xapi ffn_mknode(ff_node ** restrict n, const struct yyu_location * restrict loc,
 //  h - head of the chain
 //  n - node to append
 //
-ff_node* ffn_append(ff_node * restrict a, ff_node * const restrict b)
-	__attribute__((nonnull));
+ff_node* ffn_append(ff_node * restrict a, ff_node * const restrict b);
 
 /// ffn_free
 //
@@ -195,10 +198,18 @@ xapi ffn_segment_say_normal(const ff_node * restrict first, const ff_node * rest
 //  throw an FF error, with infos for the ref string and ff location
 //
 // PARAMETERS
-//  ref   - ref string being resolved
-//  error - FF error type
+//  error      - FF error type
+//  ffn_ref    - ff node with the reference
+//  dirnode    - module node for NOMODULE
+//  (ref)      - ref string being resolved
+//  (matching) - matching vertices for AMBIGREF
 //
-xapi ffn_semantic_error(xapi error, const ff_node * restrict refnode)
-  __attribute__((nonnull));
+xapi ffn_semantic_error(
+    xapi error
+  , const ff_node * restrict ffn_ref
+  , const char * restrict ref
+  , const struct node * restrict dirnode
+  , struct vertex * restrict matching[2]
+);
 
 #endif

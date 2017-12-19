@@ -18,6 +18,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "types.h"
 #include "xapi.h"
 
 #include "value.h"
@@ -36,9 +37,7 @@
 #include "CONFIG.errtab.h"
 
 #include "zbuffer.h"
-#include "cksum.h"
-
-#define restrict __restrict
+#include "hash.h"
 
 map * filesystems;
 static uint64_t filesystems_config_hash[2];
@@ -128,7 +127,7 @@ xapi filesystem_cleanup()
 {
   enter;
 
-  fatal(map_xfree, filesystems);
+  fatal(map_ixfree, &filesystems);
   memset(filesystems_config_hash, 0, sizeof(filesystems_config_hash));
 
   finally : coda;

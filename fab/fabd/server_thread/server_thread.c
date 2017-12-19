@@ -44,7 +44,6 @@
 #include "server_thread.h"
 #include "config.h"
 #include "errtab/FABD.errtab.h"
-#include "extern.h"
 #include "handler.h"
 #include "logging.h"
 #include "module.h"
@@ -60,7 +59,7 @@
 #include "memblk.h"
 #include "atomic.h"
 
-int server_thread_rebuild;
+bool server_thread_rebuild;
 
 /// load_client_pid
 //
@@ -191,13 +190,13 @@ static xapi server_thread()
 {
   enter;
 
-  node * project_root = 0;
   pid_t client_pid = 0; // client process id
   memblk * mb = 0;
   sigset_t sigs;
   siginfo_t siginfo;
   void * request_shm = 0;
   void * response_shm = 0;
+  handler_context * handler_ctx = 0;
 
   g_params.thread_server = gettid();
   fatal(memblk_mk, &mb);
@@ -212,15 +211,23 @@ static xapi server_thread()
   sigaddset(&sigs, FABIPC_SIGACK);
   sigaddset(&sigs, FABIPC_SIGSCH);
 
-  // load the config
+  fatal(handler_context_create, &handler_ctx);
+
+  fatal(node_root_init);
+  fatal(node_project_init);
+
+  // extern_reconfigure loads areas of the filesystem referenced via extern
   fatal(reconfigure_stage_files);
   fatal(reconfigure);
 
   // load the filesystem rooted at the module dir
-  fatal(walker_walk, &project_root, 0, g_params.proj_dir, 0);
+  fatal(walker_walk, 0, g_project_root, 0, g_params.proj_dir, 0);
+
+  // load formulas
 
   // load the module in this directory (and nested modules, recursively)
-  fatal(module_load_project, project_root, g_params.proj_dir);
+  fatal(module_load_project, g_project_root, g_params.proj_dir);
+  fatal(module_report);
 
   // signal to the client readiness to receive requests
 #if DEBUG || DEVEL
@@ -228,7 +235,7 @@ static xapi server_thread()
   {
 #endif
     fatal(load_client_pid, &client_pid);
-    fatal(xkill, client_pid, FABIPC_SIGACK);
+    fatal(sigutil_kill, client_pid, FABIPC_SIGACK);
 #if DEBUG || DEVEL
   }
 #endif
@@ -237,8 +244,8 @@ static xapi server_thread()
   {
     if(server_thread_rebuild)
     {
-      fatal(handler_build);
-      server_thread_rebuild = 0;
+      fatal(handler_build, handler_ctx);
+      server_thread_rebuild = false;
     }
 
     // receive a signal
@@ -259,14 +266,14 @@ static xapi server_thread()
 
     // process and release the request
     fab_response * response = 0;
-    fatal(handler_dispatch, request, mb, &response);
+    fatal(handler_dispatch, handler_ctx, request, mb, &response);
     fatal(ixshmdt, &request_shm);
 
     // send and release the response
     fatal(respond, client_pid, &sigs, &response_shm, mb, response);
     fatal(ixshmdt, &response_shm);
 
-    //fatal(node_dump);
+    fatal(node_report);
     fatal(usage_report);
   }
 
@@ -275,6 +282,7 @@ finally:
   memblk_free(mb);
   fatal(ixshmdt, &request_shm);
   fatal(ixshmdt, &response_shm);
+  fatal(handler_context_ixfree, &handler_ctx);
 
 #if DEBUG || DEVEL
   logs(L_IPC, "terminating");

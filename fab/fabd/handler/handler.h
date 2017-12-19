@@ -15,27 +15,52 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef _HANDLER_H
-#define _HANDLER_H
+#ifndef FABD_HANDLER_H
+#define FABD_HANDLER_H
 
 /*
 
 */
 
+#include "types.h"
 #include "xapi.h"
 
 struct fab_request;
 struct fab_response;
 struct memblk;
+struct buildplan;
 
-xapi handler_build(void);
+typedef struct handler_context {
+  struct buildplan * bp;
+} handler_context;
 
+xapi handler_context_create(handler_context ** restrict ctx)
+  __attribute__((nonnull));
+
+xapi handler_context_xfree(handler_context * restrict ctx);
+
+xapi handler_context_ixfree(handler_context ** restrict ctx)
+  __attribute__((nonnull));
+
+/// handler_build
+//
+// SUMMARY
+//  build the current targets
+//
+xapi handler_build(handler_context * restrict ctx)
+  __attribute__((nonnull));
+
+/// handler_dispatch
+//
+// SUMMARY
+//  
+//
 xapi handler_dispatch(
-    struct fab_request * const restrict request
-  , struct memblk * const restrict mb
-  , struct fab_response ** const restrict response
+    handler_context * restrict ctx
+  , struct fab_request * restrict request
+  , struct memblk * restrict mb
+  , struct fab_response ** restrict response
 )
   __attribute__((nonnull));
 
-#undef restrict
 #endif

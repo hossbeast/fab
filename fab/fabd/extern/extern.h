@@ -21,23 +21,20 @@
 /*
 
 SUMMARY
- "use" and "require" directives are resolved against the node graph, or against the extern graph.
 
- the extern graph built from directory trees specified in config under the "extern" key.
+ portions of the filesystem outside the module directory are loaded from directory trees specified
+ in config under the "extern" key.
 
 */
 
 #include "xapi.h"
 #include "types.h"
 
-struct ff_node_pattern;
 struct reconfigure_context;
 struct value;
-struct vertex;
 
 xapi extern_setup(void);
 xapi extern_cleanup(void);
-xapi extern_report(void);
 
 /// extern_reconfigure
 //
@@ -50,31 +47,6 @@ xapi extern_report(void);
 //  dry    - whether to perform a dry-run
 //
 xapi extern_reconfigure(struct reconfigure_context * restrict ctx, const struct value * restrict config, uint32_t dry)
-  __attribute__((nonnull));
-
-/// extern_reference_resolve
-//
-// SUMMARY
-//  lookup a vertex which was indexed for extern lookup
-//
-// PARAMETERS
-//  ref  - string node for the reference
-//  node - (returns) first matching vertex, either belonging to the node graph, or the extern graph
-//
-xapi extern_reference_resolve(const struct ff_node_pattern * restrict ref, const struct vertex ** restrict node)
-  __attribute__((nonnull));
-
-/// extern_index_vertex
-//
-// SUMMARY
-//  index a single vertex for extern lookup
-//
-// PARAMETERS
-//  name  - name of the node (last component of its file path)
-//  namel - length of name
-//  v     - vertex, either belonging to the node graph, or the extern graph
-//
-xapi extern_index_vertex(const char * restrict name, size_t namel, struct vertex * restrict v)
   __attribute__((nonnull));
 
 #endif

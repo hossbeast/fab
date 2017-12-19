@@ -31,7 +31,7 @@ int g_server_no_acknowledge;
 
 #define restrict __restrict
 
-extern int server_thread_rebuild;
+extern bool server_thread_rebuild;
 
 xapi server_thread_launch(void);
 

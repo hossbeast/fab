@@ -18,8 +18,7 @@
 #ifndef _CONFIG_CURSOR_H
 #define _CONFIG_CURSOR_H
 
-#include <sys/types.h>
-
+#include "types.h"
 #include "xapi.h"
 
 struct pstring;
@@ -54,7 +53,7 @@ xapi config_cursor_pushf(config_cursor * restrict cursor, const char * restrict 
 /// config_cursor_query
 //
 // SUMMARY
-//  get the current query - the substing of the path from the mark to the end
+//  get the current query - the substring of the path from the mark to the end
 //
 const char * config_cursor_query(const config_cursor * restrict cursor)
   __attribute__((nonnull));
@@ -67,5 +66,4 @@ const char * config_cursor_query(const config_cursor * restrict cursor)
 const char * config_cursor_path(const config_cursor * restrict cursor)
   __attribute__((nonnull));
 
-#undef restrict
 #endif

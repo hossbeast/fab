@@ -65,6 +65,54 @@ xapi ffn_class_say_normal(const ff_node_class * restrict n, narrator * restrict 
   finally : coda;
 }
 
+xapi ffn_class_render(const ff_node_class * restrict ffn, ffn_render_context * restrict ctx, narrator * restrict N)
+{
+  enter;
+
+  char prev[512];
+  size_t prevl;
+
+  // store the preceeding content
+  fatal(narrator_xseek, N, ctx->start + 2, NARRATOR_SEEK_SET, 0);
+  fatal(narrator_xread, N, prev, sizeof(prev), &prevl);
+
+  ff_node_class_part * part = ffn->chain;
+  while(part)
+  {
+    uint8_t start = 0;
+    uint8_t end = 0;
+
+    if(part->type == FFN_CHAR)
+    {
+      start = end = part->character.code;
+    }
+    else if(part->type == FFN_RANGE)
+    {
+      start = part->range.start->code;
+      end = part->range.end->code;
+    }
+
+    uint8_t c;
+    for(c = start; c <= end; c++)
+    {
+      if(c != start || part != ffn->chain)
+      {
+        // mark this items start, replay preceeding content
+        fatal(narrator_xseek, N, 0, NARRATOR_SEEK_CUR, &ctx->start);
+        xsayw((uint16_t[]) { 0 }, sizeof(uint16_t));
+        xsayw(prev, prevl);
+      }
+
+      xsayc(c);
+      fatal(render_tail, ffn, ctx, N);
+    }
+
+    part = (typeof(part))part->next;
+  }
+
+  finally : coda;
+}
+
 xapi ffn_class_mknode(ff_node_class ** restrict n, va_list va)
 {
   enter;
@@ -73,6 +121,8 @@ xapi ffn_class_mknode(ff_node_class ** restrict n, va_list va)
 
   (*n)->chain = va_arg(va, typeof((*n)->chain));
   (*n)->attrs = (typeof((*n)->attrs))va_arg(va, int);
+
+  ffn_chain_attach(*n, (*n)->chain);
 
   finally : coda;
 }

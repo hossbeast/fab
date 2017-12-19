@@ -24,11 +24,15 @@
 #include "ff_node_dirsep.h"
 
 struct narrator;
+struct ffn_render_context;
 
 xapi ffn_dirsep_say_tree(const ff_node_dirsep * restrict n, struct narrator * restrict N)
   __attribute__((nonnull));
 
 xapi ffn_dirsep_say_normal(const ff_node_dirsep * restrict n, struct narrator * restrict N)
+  __attribute__((nonnull));
+
+xapi ffn_dirsep_render(const ff_node_dirsep * restrict n, struct ffn_render_context * restrict ctx, struct narrator * restrict N)
   __attribute__((nonnull));
 
 xapi ffn_dirsep_mknode(ff_node_dirsep ** restrict n, va_list va)

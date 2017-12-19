@@ -19,23 +19,25 @@
 #define _WALKER_INTERNAL_H
 
 #include "xapi.h"
+#include "types.h"
+
 #include "walker.h"
 
 struct filesystem;
 struct ftwinfo;
 struct node;
 struct vertex;
-
-#define restrict __restrict
+struct module;
 
 typedef struct walker_context
 {
-  struct node * ancestor;
-  struct node * root;
+  struct node * ancestor; // new tree attached here
+  struct node * root;     // base of the tree
   int walk_id;
 
-  xapi (*create)(struct walker_context * restrict ctx, struct node ** restrict n, uint8_t fstype, const struct filesystem * restrict fs, const char * restrict name);
+  xapi (*create)(struct walker_context * restrict ctx, struct node ** restrict n, uint8_t fstype, const struct filesystem * restrict fs, struct module * restrict mod, const char * restrict name);
   const struct filesystem * (*fslookup)(struct walker_context * restrict ctx, const char * const restrict path, size_t pathl);
+  struct module * (*modlookup)(struct walker_context * restrict ctx, const char * const restrict path, size_t pathl);
   xapi (*refresh)(struct walker_context * restrict ctx, struct node * restrict n);
   xapi (*watch)(struct walker_context * restrict ctx, struct node * restrict n);
   xapi (*connect)(struct walker_context * restrict ctx, struct node * restrict parent, struct node * restrict n);
@@ -47,5 +49,4 @@ typedef struct walker_context
 xapi walker_visit(int method, struct ftwinfo * info, void * arg, int * stop)
   __attribute__((nonnull(2)));
 
-#undef restrict
 #endif

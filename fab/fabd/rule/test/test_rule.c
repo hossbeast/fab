@@ -19,15 +19,10 @@
 #include "valyria/load.h"
 #include "moria/load.h"
 
-#include "valyria/dictionary.h"
 #include "valyria/list.h"
 #include "valyria/map.h"
-#include "moria/edge.h"
 #include "moria/graph.h"
-#include "moria/vertex.h"
 #include "moria/operations.h"
-#include "xlinux/xstdlib.h"
-#include "xlinux/xstring.h"
 
 #include "xunit.h"
 #include "xunit/assert.h"
@@ -38,43 +33,46 @@
 #include "ff_parser.h"
 #include "rule.internal.h"
 #include "node.h"
-#include "path.h"
+#include "node_operations.h"
 #include "artifact.h"
+
+static map * attrs_definitions;
 
 typedef struct rules_test
 {
   xunit_test;
 
-  char * nodes;
-  char * base;
-  char * artifact;
-  char * artifact_variant;
-  char ** rules;
-  char * result_graph;
+  char * operations;          // create the starting graph
+  char * base;                // context node for applying rules
+  char * artifact;            // artifact node to apply rules for
+  char * artifact_variant;    // artifact variant to apply rules for
+  char ** rules;              // rules to apply
+  char * graph;               // expectant result graph
 } rules_test;
 
 static xapi rules_test_unit_setup(xunit_unit * unit)
 {
   enter;
 
+  fatal(valyria_load);
+  fatal(moria_load);
   fatal(logging_finalize);
+
+  // attrs name map for graph_say
+  fatal(map_create, &attrs_definitions);
+  fatal(map_set, attrs_definitions, (uint32_t[]) { RELATION_TYPE_FS }, sizeof(uint32_t), "FS");
+  fatal(map_set, attrs_definitions, (uint32_t[]) { RELATION_TYPE_STRONG }, sizeof(uint32_t), "ST");
+  fatal(map_set, attrs_definitions, (uint32_t[]) { NODE_FSTYPE_FILE }, sizeof(uint32_t), "FILE");
+  fatal(map_set, attrs_definitions, (uint32_t[]) { NODE_FSTYPE_DIR }, sizeof(uint32_t), "DIR");
 
   finally : coda;
 }
 
-static xapi get_node(map * node_map, char * label, size_t len, node ** n)
+static xapi rules_test_unit_cleanup(xunit_unit * unit)
 {
   enter;
 
-  if((*n = map_get(node_map, label, len)) == 0)
-  {
-    vertex * v;
-    fatal(vertex_createw, &v, g_node_graph, 0, label, len);
-    *n = vertex_value(v);
-    (*n)->fstype = NODE_FSTYPE_FILE;
-    fatal(path_createw, &(*n)->name, label, len);
-    fatal(map_set, node_map, label, len, *n);
-  }
+  fatal(map_xfree, attrs_definitions);
 
   finally : coda;
 }
@@ -89,51 +87,30 @@ static xapi rules_test_entry(xunit_test * _test)
 
   rules_test * test = (rules_test *)_test;
 
-  map * node_map = 0;
   narrator * N = 0;
   ff_parser * parser = 0;
   ff_node * ffn = 0;
   node * artifact_node;
-  node * base;
+  node * base = 0;
   list * rules_list = 0;
-  node * A = 0;
-  node * B;
+  list * rules_lists = 0;
+  list * operations = 0;
+  list * antecedents = 0;
+  list * consequents = 0;
+  map * scope = 0;
 
   fatal(node_setup);
   fatal(narrator_growing_create, &N);
-  fatal(map_create, &node_map);
+  fatal(list_create, &antecedents);
+  fatal(list_create, &consequents);
 
-  // setup initial nodes
-  char * nodes = test->nodes;
-  while(*nodes)
-  {
-    while(*nodes && *nodes == ' ')
-      nodes++;
-
-    while(*nodes && *nodes != ' ')
-    {
-      char * label = nodes;
-      while(*nodes && *nodes != ' ' && *nodes != '/')
-        nodes++;
-
-      fatal(get_node, node_map, label, nodes - label, &B);
-
-      if(*nodes == '/')
-        nodes++;
-
-      if(A)
-      {
-        A->fstype = NODE_FSTYPE_DIR;
-        fatal(graph_connect, g_node_graph, vertex_containerof(A), vertex_containerof(B), NODE_RELATION_FS);
-      }
-      
-      A = B;
-    }
-
-    A = 0;
-  }
+  // setup initial graph
+  fatal(operations_parser_parse, 0, MMS(test->operations), &operations);
+  fatal(operations_perform, g_node_graph, node_operations_dispatch, operations);
 
   // parse the rules
+  fatal(map_create, &scope);
+  fatal(list_create, &rules_lists);
   fatal(list_createx, &rules_list, ffn_free, 0, 0);
   char ** rules = test->rules;
   while(*rules)
@@ -144,10 +121,11 @@ static xapi rules_test_entry(xunit_test * _test)
 
     rules++;
   }
+  fatal(list_push, rules_lists, rules_list);
 
   // apply rules, starting with the artifact
-  base = map_get(node_map, MMS(test->base));
-  artifact_node = map_get(node_map, MMS(test->artifact));
+  fatal(node_lookup_path, 0, test->base, &base);
+  fatal(node_lookup_path, 0, test->artifact, &artifact_node);
 
   artifact af = {
       node : artifact_node
@@ -155,21 +133,24 @@ static xapi rules_test_entry(xunit_test * _test)
     , variant_len : test->artifact_variant ? strlen(test->artifact_variant) : 0
   };
 
-  int traversal_id = graph_traversal_begin(g_node_graph);
-  fatal(rules_apply, rules_list, base, &af, traversal_id);
+  fatal(rules_apply_rules, af.node, rules_lists, base, scope, &af, antecedents, consequents);
 
   // ordered list of edges
-  fatal(graph_say, g_node_graph, 0, N);
+  fatal(graph_say, g_node_graph, attrs_definitions, N);
   const char * graph = narrator_growing_buffer(N);
-  assert_eq_s(test->result_graph, graph);
+  assert_eq_s(test->graph, graph);
 
 finally:
   fatal(node_cleanup);
-  fatal(map_xfree, node_map);
   fatal(narrator_xfree, N);
   ff_parser_free(parser);
   ffn_free(ffn);
   fatal(list_xfree, rules_list);
+  fatal(list_xfree, rules_lists);
+  fatal(list_xfree, consequents);
+  fatal(list_xfree, antecedents);
+  fatal(list_xfree, operations);
+  fatal(map_xfree, scope);
 coda;
 }
 
@@ -179,10 +160,11 @@ coda;
 
 xunit_unit xunit = {
     xu_setup : rules_test_unit_setup
+  , xu_cleanup : rules_test_unit_cleanup
   , xu_entry : rules_test_entry
   , xu_tests : (xunit_test*[]) {
       (rules_test[]) {{
-          nodes : "A/B A/C.c"
+          operations : "A/B A/C.c"
         , base : "A"
         , artifact : "B"
         , rules : (char*[]) {
@@ -190,10 +172,12 @@ xunit_unit xunit = {
             , "rule C.o : C.c"
             , 0
           }
-        , result_graph : "1-A 2-B 3-C.c 4-C.c!0x2 5-C.o!0x2 1:0x1:2 1:0x1:3 1:0x1:4 1:0x1:5 2:0x6:5 5:0x6:4"
+        , graph :  "1-A!DIR 2-B!FILE 3-C.c!FILE 4-C.o!FILE"
+                     " 1:FS:2 1:FS:3 1:FS:4"
+                     " 2:ST:4"
       }}
     , (rules_test[]) {{
-          nodes : "A/B.xapi"
+          operations : "A/B.xapi"
         , base : "A"
         , artifact : "B.xapi"
         , artifact_variant : "xapi"
@@ -201,10 +185,12 @@ xunit_unit xunit = {
               "rule B.? : C.?.o"
             , 0
           }
-        , result_graph : "1-A 2-B.xapi 3-C.xapi.o!0x2 1:0x1:2 1:0x1:3 2:0x6:3"
+        , graph : "1-A!DIR 2-B.xapi!FILE 3-C.xapi.o!FILE"
+                    " 1:FS:2 1:FS:3"
+                    " 2:ST:3"
       }}
     , (rules_test[]) {{
-          nodes : "A/B A/C.c A/D.c"
+          operations : "A/B A/C.c A/D.c"
         , base : "A"
         , artifact : "B"
         , rules : (char*[]) {
@@ -212,7 +198,9 @@ xunit_unit xunit = {
             , "rule %.o : %.c"
             , 0
           }
-        , result_graph : "1-A 2-B 3-C.c 4-C.c!0x2 5-C.o!0x2 6-D.c 7-D.c!0x2 8-D.o!0x2 1:0x1:2 1:0x1:3 1:0x1:4 1:0x1:5 1:0x1:6 1:0x1:7 1:0x1:8 2:0x6:5 2:0x6:8 5:0x6:4 8:0x6:7"
+        , graph : "1-A!DIR 2-B!FILE 3-C.c!FILE 4-C.o!FILE 5-D.c!FILE 6-D.o!FILE"
+                    " 1:FS:2 1:FS:3 1:FS:4 1:FS:5 1:FS:6"
+                    " 2:ST:4 2:ST:6"
       }}
     , 0
   }

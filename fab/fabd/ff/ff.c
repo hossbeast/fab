@@ -96,14 +96,13 @@ xapi ff_load_paths(ff_node ** restrict root, const char * restrict path)
   {
     fatal(usnarfs, &text, 0, path);
     if(text)
-    {
-      logf(L_FF, "parsing %s", path);
       fatal(ff_parser_parse, &parser, MMS(text), "module.fab", &ffn);
-    }
 
     // no file, empty file
     if(ffn == 0)
       ffn = FF_NXFILE;
+
+    logf(L_FF, "loaded ff %s", path);
 
     fatal(map_set, ff_by_path, MMS(path), ffn);
   }

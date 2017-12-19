@@ -42,11 +42,15 @@ union ff_node_pattern_part;
 //
 typedef struct pattern_generate_context
 {
-  struct node * restrict node;
+  struct node * node;
+  struct module * mod;
   struct narrator * restrict segment_narrator;
   off_t segment_base_pos;
   off_t variant_pos;
   int variant_len;
+
+  struct node * base;
+  struct map * scope;
 } pattern_generate_context;
 
 /// pattern_segment_generate

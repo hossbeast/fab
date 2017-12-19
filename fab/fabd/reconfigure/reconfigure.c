@@ -44,7 +44,6 @@
 #include "extern.h"
 
 #include "snarf.h"
-#include "strutil.h"
 
 #define restrict __restrict
 

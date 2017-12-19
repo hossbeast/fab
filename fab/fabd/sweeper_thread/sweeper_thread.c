@@ -46,6 +46,7 @@
 #include "node_operations.h"
 #include "params.h"
 #include "walker.h"
+#include "module.h"
 #include "path.h"
 
 #include "spinlock.h"
@@ -100,7 +101,7 @@ static xapi sweeper_thread()
     if(queue->l && queue->l == queue_len)
     {
       // open a traversal
-      int traversal = node_traversal_begin();
+      int traversal = graph_traversal_begin(g_node_graph);
 
       int x;
       for(x = 0; x < queue->l; x++)
@@ -117,13 +118,13 @@ static xapi sweeper_thread()
             pathl += znloadw(space + pathl, sizeof(space) - pathl, ev->name, ev->namel);
 
             n = 0;
-            fatal(walker_walk, &n, parent, space, 0);
+            fatal(walker_walk, &n, 0, parent, space, 0);
           }
           else
           {
             n = 0;
-            fatal(node_createw, &n, NODE_FSTYPE_FILE, parent->fs, ev->name, ev->namel);
-            fatal(node_connect_fs, parent, n);
+            fatal(node_createw, &n, NODE_FSTYPE_FILE, parent->fs, parent->mod, ev->name, ev->namel);
+            fatal(node_connect, parent, n, RELATION_TYPE_FS);
           }
         }
 
@@ -203,6 +204,7 @@ xapi sweeper_thread_enqueue(int wd, uint32_t mask, const char * restrict name, s
   size_t len;
 
   spinlock_engage(&queue_lock);
+
   fatal(array_push, queue, &e);
   e->wd = wd;
   e->mask = mask;

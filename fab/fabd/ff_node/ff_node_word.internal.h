@@ -24,11 +24,15 @@
 #include "ff_node_word.h"
 
 struct narrator;
+struct ffn_render_context;
 
 xapi ffn_word_say_tree(const ff_node_word * restrict, struct narrator * restrict N)
   __attribute__((nonnull));
 
 xapi ffn_word_say_normal(const ff_node_word * restrict n, struct narrator * restrict N)
+  __attribute__((nonnull));
+
+xapi ffn_word_render(const ff_node_word * restrict n, struct ffn_render_context * restrict ctx, struct narrator * restrict N)
   __attribute__((nonnull));
 
 xapi ffn_word_mknode(ff_node_word ** restrict n, va_list va)

@@ -19,31 +19,34 @@
 #include "valyria/load.h"
 #include "moria/load.h"
 
-#include "valyria/dictionary.h"
+#include "valyria/list.h"
 #include "valyria/map.h"
 #include "moria/graph.h"
-#include "moria/vertex.h"
 #include "moria/operations.h"
-#include "moria/edge.h"
-#include "xlinux/xstring.h"
-#include "xlinux/xstdlib.h"
 
 #include "xunit.h"
 #include "xunit/assert.h"
 #include "narrator.h"
 #include "narrator/growing.h"
 #include "logging.h"
-
-#include "node_operations.h"
+#include "ff_node.h"
+#include "ff_node_pattern.h"
+#include "ff_parser.h"
+#include "rule.internal.h"
 #include "node.h"
+#include "node_operations.h"
+#include "artifact.h"
+#include "ff_node_require.h"
+#include "path.h"
+
+static map * attrs_definitions;
 
 typedef struct node_operations_test
 {
   xunit_test;
 
-  char * initial;
-  char * sequence;
-  char * result;
+  char * operations;        // create the starting graph
+  char * graph;             // (expected) graph
 } node_operations_test;
 
 static xapi node_operations_test_unit_setup(xunit_unit * unit)
@@ -54,6 +57,13 @@ static xapi node_operations_test_unit_setup(xunit_unit * unit)
   fatal(moria_load);
   fatal(logging_finalize);
 
+  // attrs name map for graph_say
+  fatal(map_create, &attrs_definitions);
+  fatal(map_set, attrs_definitions, (uint32_t[]) { RELATION_TYPE_FS }, sizeof(uint32_t), "FS");
+  fatal(map_set, attrs_definitions, (uint32_t[]) { RELATION_TYPE_STRONG }, sizeof(uint32_t), "ST");
+  fatal(map_set, attrs_definitions, (uint32_t[]) { NODE_FSTYPE_FILE }, sizeof(uint32_t), "FILE");
+  fatal(map_set, attrs_definitions, (uint32_t[]) { NODE_FSTYPE_DIR}, sizeof(uint32_t), "DIR");
+
   finally : coda;
 }
 
@@ -61,24 +71,7 @@ static xapi node_operations_test_unit_cleanup(xunit_unit * unit)
 {
   enter;
 
-  fatal(valyria_unload);
-  fatal(moria_unload);
-
-  finally : coda;
-}
-
-static xapi get_node(map * vertices, char * label, node ** n)
-{
-  enter;
-
-  vertex * v;
-  if((v = map_get(vertices, label, 1)) == 0)
-  {
-    fatal(vertex_createw, &v, g_node_graph, 0, label, 1);
-    fatal(map_set, vertices, label, 1, v);
-  }
-
-  *n = vertex_value(v);
+  fatal(map_xfree, attrs_definitions);
 
   finally : coda;
 }
@@ -93,61 +86,25 @@ static xapi node_operations_test_entry(xunit_test * _test)
 
   node_operations_test * test = (node_operations_test *)_test;
 
-  map * vertices = 0;
   narrator * N = 0;
-  node * A;
-  node * B;
+  list * operations = 0;
 
   fatal(node_setup);
   fatal(narrator_growing_create, &N);
-  fatal(map_create, &vertices);
 
-  // setup the initial graph
-  char * edges = test->initial;
-  while(edges && *edges)
-  {
-    fatal(get_node, vertices, &edges[0], &A);
-    fatal(get_node, vertices, &edges[2], &B);
+  // setup initial graph
+  fatal(operations_parser_parse, 0, MMS(test->operations), &operations);
+  fatal(operations_perform, g_node_graph, node_operations_dispatch, operations);
 
-    fatal(graph_connect, g_node_graph, vertex_containerof(A), vertex_containerof(B), NODE_RELATION_FS);
-
-    edges += 3;
-    while(*edges == ' ')
-      edges++;
-  }
-
-  // carry out the test sequence
-  char * seq = test->sequence;
-  while(*seq)
-  {
-    int operation = 0;
-    if(*seq == '-')
-    {
-      operation = 1;
-      seq++;
-    }
-
-    // attach
-    if(operation == 0)
-    {
-      fatal(get_node, vertices, &seq[0], &A);
-      fatal(get_node, vertices, &seq[2], &B);
-      fatal(node_connect_fs, A, B);
-    }
-
-    seq += 3;
-    while(*seq == ' ')
-      seq++;
-  }
-
-  // ordered list of edges
-  fatal(graph_say, g_node_graph, 0, N);
-  assert_eq_s(test->result ?: "", narrator_growing_buffer(N));
+  fatal(narrator_xreset, N);
+  fatal(graph_say, g_node_graph, attrs_definitions, N);
+  const char * graph = narrator_growing_buffer(N);
+  assert_eq_s(test->graph, graph);
 
 finally:
   fatal(node_cleanup);
-  fatal(map_xfree, vertices);
   fatal(narrator_xfree, N);
+  fatal(list_xfree, operations);
 coda;
 }
 
@@ -160,25 +117,15 @@ xunit_unit xunit = {
   , xu_cleanup : node_operations_test_unit_cleanup
   , xu_entry : node_operations_test_entry
   , xu_tests : (xunit_test*[]) {
-      (node_operations_test[]) {{        // attach
-          initial : "A:B"
-        , sequence : "A:C"
-        , result : "1-A 2-B 3-C 1:0x1:2 1:0x1:3"
+      (node_operations_test[]) {{
+          operations : "A/B"
+        , graph :  "1-A!DIR 2-B!FILE"
+                  " 1:FS:2"
       }}
     , (node_operations_test[]) {{
-          initial : "A:B"
-        , sequence : "B:C"
-        , result : "1-A 2-B 3-C 1:0x1:2 2:0x1:3"
-      }}
-    , (node_operations_test[]) {{
-          initial : "A:B"
-        , sequence : "A:C C:D"
-        , result : "1-A 2-B 3-C 4-D 1:0x1:2 1:0x1:3 3:0x1:4"
-      }}
-    , (node_operations_test[]) {{
-          initial : "A:B"
-        , sequence : "B:C B:D B:E D:F"
-        , result : "1-A 2-B 3-C 4-D 5-E 6-F 1:0x1:2 2:0x1:3 2:0x1:4 2:0x1:5 4:0x1:6"
+          operations : "A/B/C"
+        , graph :  "1-A!DIR 2-B!DIR 3-C!FILE"
+                  " 1:FS:2 2:FS:3"
       }}
     , 0
   }
