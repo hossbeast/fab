@@ -169,8 +169,10 @@ $cc         = [ gcc ]
 
 # cflags options
 $cflags       = [
-  # universal compiler options
-  [ -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -Wmissing-prototypes -fdiagnostics-color=always -Wno-misleading-indentation ]
+  # universal compiler options - c11
+  [ -m64 -Wall -Werror -D_GNU_SOURCE -fno-builtin-log -Wmissing-prototypes -fdiagnostics-color=always -Wno-misleading-indentation -Wno-trigraphs ]
+
+  [ -fno-omit-frame-pointer ]
 
   # include paths
   [ $dcommon ~ lsr c -d s/^/-I ]

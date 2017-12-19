@@ -13,9 +13,10 @@ been generated.
 
 ```
 # generate intermediate files
-% fab -J build +bx $(for x in **/*.l ; do echo ${x%.l}.lex.h ; done)
-% fab -J build +bx $(for x in **/*.l ; do echo ${x%.l}.states.h ; done)
-% fab -J build +bx $(for x in **/*.y ; do echo ${x%.y}.tab.h ; done)
-% fab -J build +bx $(for x in **/*.y ; do echo ${x%.y}.tokens.h ; done)
-% fab -J build +bx $(for x in **/*.errtab ; do echo $x.h ; done)
+set -e
+fab -J ~/fab/build +bx $(for x in **/*.l ; do echo ${x%.l}.lex.h ; done)
+fab -J ~/fab/build +bx $(for x in **/*.l ; do echo ${x%.l}.states.h ; done)
+fab -J ~/fab/build +bx $(for x in **/*.y ; do echo ${x%.y}.tab.h ; done)
+fab -J ~/fab/build +bx $(for x in **/*.y ; do echo ${x%.y}.tokens.h ; done)
+fab -J ~/fab/build +bx $(for x in **/*.errtab ; do echo $x.h ; done)
 ```

@@ -1,4 +1,5 @@
 *.so
+*.a
 *.i
 *.s
 *.o
@@ -19,3 +20,8 @@ exports
 /common/*/test
 *.test
 /tags
+*.debug.xapi
+*.devel.xapi
+*.final.xapi
+*.xapi
+*.so.lnk
