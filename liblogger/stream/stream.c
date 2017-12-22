@@ -349,23 +349,47 @@ xapi stream_write(stream *  restrict streamp, const uint64_t ids, uint32_t attrs
 
   if((attrs & DISCOVERY_OPT) == L_DISCOVERY)
   {
-    // emit the names of all tagged categories
+    // emit the names of all tagged, required categories
     if(prev)
       xsays(" ");
     prev = 1;
     xsays("{ ");
 
+    bool any = false;
     uint64_t bit = UINT64_C(1);
     while(bit)
     {
-      if(bit & ids)
+      if(bit & ids & ~category_optional_mask)
       {
         logger_category * category = category_byid(bit);
 
-        if((bit - 1) & ids)
+        if(any)
           xsays(" | ");
+        any = true;
 
         xsayf("%.*s", (int)category->namel, category->name);
+        if(category->id & category_optional_mask)
+          xsays("*");
+      }
+
+      bit <<= 1;
+    }
+
+    // tagged, optional categories
+    bit = UINT64_C(1);
+    while(bit)
+    {
+      if(bit & ids & category_optional_mask)
+      {
+        logger_category * category = category_byid(bit);
+
+        if(any)
+          xsays(" | ");
+        any = true;
+
+        xsayf("%.*s", (int)category->namel, category->name);
+        if(category->id & category_optional_mask)
+          xsays("*");
       }
 
       bit <<= 1;
