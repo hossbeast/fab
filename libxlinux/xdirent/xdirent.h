@@ -36,11 +36,11 @@ int xopendir(const char * name, DIR ** dd);
 //
 int uxopendir(const char * name, DIR ** dd);
 
-/// xreaddir_r
+/// xreaddir
 //
 // SUMMARY
-//  proxy for readdir_r
+//  proxy for readdir
 //
-int xreaddir_r(DIR * dirp, struct dirent * entry, struct dirent ** result);
+int xreaddir(DIR * dirp, struct dirent ** result);
 
 #endif

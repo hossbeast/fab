@@ -93,11 +93,10 @@ static int listing(lwx* ls, char * s, int recurse, void ** udata)
 	DIR * dd = 0;
 	if((dd = opendir(s)))
 	{
-		struct dirent ent;
 		struct dirent * entp = 0;
 		while(1)
 		{
-			fatal(xreaddir_r, dd, &ent, &entp);
+			fatal(xreaddir, dd, &entp);
 			if(entp)
 			{
 				if(strcmp(entp->d_name, ".") && strcmp(entp->d_name, ".."))

@@ -112,11 +112,10 @@ static int read_opdir(char * s)
 
 	space[strlen(space)] = '/';
 
-	struct dirent ent = {};
 	struct dirent * entp = 0;
 	while(1)
 	{
-		fatal(xreaddir_r, dd, &ent, &entp);
+		fatal(xreaddir, dd, &entp);
 
 		if(entp)
 		{

@@ -37,11 +37,12 @@ finally:
 coda;
 }
 
-int API xreaddir_r(DIR * dirp, struct dirent * entry, struct dirent ** result)
+int API xreaddir(DIR * dirp, struct dirent ** result)
 {
-	int r;
-	if((r = readdir_r(dirp, entry, result)))
-		fail(r);
+	errno = 0;
+
+	if((*result = readdir(dirp)) == 0 && errno)
+		fail(errno);
 
 	finally : coda;
 }
