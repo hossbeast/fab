@@ -113,7 +113,7 @@ static void signal_handler(int signum, siginfo_t * info, void * ctx)
 		o_signum = signum;
 
 #if DEBUG_IPC
-	char space[2048];
+	char space[4096];
 	char * dst = space;
 	size_t sz = sizeof(space);
 	size_t z = 0;
@@ -204,7 +204,7 @@ static int loop()
 
 	int fd = -1;
 
-	char space[2048];
+	char space[4096];
 
 	// reset some stuff
 	tsl = 0;
@@ -559,8 +559,8 @@ coda;
 
 int main(int argc, char** argv, char ** envp)
 {
-	char space[2048];
-	char space2[2048];
+	char space[4096];
+	char space2[4096];
 
 	int fd = -1;
 

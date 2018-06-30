@@ -322,8 +322,8 @@ for(x = 0; x < il; x++)
 					int j = readlink(dst, space, sizeof(space));
 					space[j] = 0;
 
-					// space2 contains the resolved path
-					char space2[512];
+					// space2 contains the resolved path - truncation ignored
+					char space2[1024];
 					snprintf(space2, sizeof(space2), "%.*s/%s", (int)oldz, dst, space);
 
 					// stat the resolved path
