@@ -126,8 +126,7 @@ int transform_canon_pswrite(transform * const restrict g, struct pstring ** rest
 //  g    - transform
 //  [ps] - pstring to write to
 //
-int transform_canon_dump(transform * const restrict g, struct pstring ** restrict ps)
-	__attribute__((nonnull));
+int transform_canon_dump(transform * const restrict g, struct pstring ** restrict ps);
 
 /// transform_canon_log
 //
@@ -180,8 +179,7 @@ int transform_description_pswrite(transform * const restrict g, struct pstring *
 //  g    - transform
 //  [ps] - pstring to write to
 //
-int transform_description_dump(transform * const restrict g, struct pstring ** restrict ps)
-	__attribute__((nonnull));
+int transform_description_dump(transform * const restrict g, struct pstring ** restrict ps);
 
 /// transform_description_log
 //

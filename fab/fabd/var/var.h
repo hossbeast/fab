@@ -118,7 +118,7 @@ int var_xfm_lw(map * restrict vmap, const char * restrict s, transform * const r
 //  nonzero on success
 //
 int var_alias(map * const restrict amap, const char * const restrict as, map * const restrict bmap, const char * const restrict bs, const struct ff_node * const restrict src)
-	__attribute__((nonnull));
+	__attribute__((nonnull(1, 2, 3, 4)));
 
 /// var_link
 //
@@ -137,7 +137,7 @@ int var_alias(map * const restrict amap, const char * const restrict as, map * c
 //  nonzero on success
 //
 int var_link(map * const restrict amap, const char * const restrict as, map * const restrict bmap, const char * const restrict bs, const struct ff_node * const restrict src)
-	__attribute__((nonnull));
+	__attribute__((nonnull(1, 2, 3, 4)));
 
 /// var_root
 //

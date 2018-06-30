@@ -173,13 +173,10 @@ void yyu_scanner_error(yyu_location * const lloc, yyu_extra * const xtra, const 
 	xtra->scanerr = error;
 
 	// save the error string
-	if(fmt)
-	{
-		va_list va;
-		va_start(va, fmt);
-		vsnprintf(xtra->error_str, sizeof(xtra->error_str), fmt, va);
-		va_end(va);
-	}
+	va_list va;
+	va_start(va, fmt);
+	vsnprintf(xtra->error_str, sizeof(xtra->error_str), fmt, va);
+	va_end(va);
 
 	// save the location
 	memcpy(&xtra->error_loc, lloc, sizeof(xtra->error_loc));

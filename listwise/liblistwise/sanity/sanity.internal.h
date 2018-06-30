@@ -43,8 +43,7 @@ typedef struct
 int sanityblock_create(sanityblock ** const restrict sb)
 	__attribute__((nonnull));
 
-void sanityblock_free(sanityblock * const restrict sb)
-	__attribute__((nonnull));
+void sanityblock_free(sanityblock * const restrict sb);
 
 void sanityblock_reset(sanityblock * const restrict sb)
 	__attribute__((nonnull));

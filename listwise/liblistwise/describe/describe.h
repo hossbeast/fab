@@ -58,7 +58,7 @@ int lstack_description_pswrite(lwx * const restrict lx, pstring ** const restric
 //  [ps] - pstring to write to
 //
 int lstack_description_dump(lwx * const restrict, pstring ** restrict ps)
-	__attribute__((nonnull));
+	__attribute__((nonnull(1)));
 
 /// lstack_description_log
 //
@@ -71,7 +71,7 @@ int lstack_description_dump(lwx * const restrict, pstring ** restrict ps)
 //  [udata] - passthrough
 //
 int lstack_description_log(lwx * const restrict, pstring ** restrict ps, void * restrict udata)
-	__attribute__((nonnull));
+	__attribute__((nonnull(1)));
 
 #undef restrict
 #endif

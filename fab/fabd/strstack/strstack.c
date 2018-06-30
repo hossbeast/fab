@@ -113,8 +113,7 @@ int strstack_string(strstack * const stk, const int off, const char * const ldr,
 	int dl = 0;
 	int ldrl = 0;
 
-	if(d)
-		dl = strlen(d);
+	dl = strlen(d);
 
 	if(ldr)
 		ldrl = strlen(ldr);
@@ -148,7 +147,7 @@ int strstack_string(strstack * const stk, const int off, const char * const ldr,
 			stk->sa = ns;
 		}
 
-		if(x != off && d)
+		if(x != off)
 		{
 			memcpy(stk->s + stk->sl, d, dl);
 			stk->sl += dl;
