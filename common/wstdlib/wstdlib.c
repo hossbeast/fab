@@ -32,7 +32,7 @@ int wrealloc(void* target, size_t es, size_t ec, size_t oec)
 	void** t = ((void**)target);
 	*t = realloc(*t, es * ec);
 
-	if(es * ec)
+	if(es && ec)
 	{
 		if(*t)
 		{
