@@ -86,7 +86,7 @@ int main(int argc, char** argv)
 	};
 
 	int x;
-	for(x = 1; x < SIGUNUSED; x++)
+	for(x = 1; x < SIGSYS; x++)
 	{
 		if(x == SIGKILL || x == SIGSTOP || x == SIGSEGV) { }
 		else if(x == SIGINT || x == SIGQUIT || x == SIGTERM || x == SIGCHLD)

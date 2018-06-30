@@ -600,7 +600,7 @@ SAYF("fabd[%ld] started\n", (long)getpid());
 		  .sa_sigaction = signal_handler
 		, .sa_flags = SA_SIGINFO
 	};
-	for(x = 1; x < SIGUNUSED; x++)
+	for(x = 1; x < SIGSYS; x++)
 	{
 		if(x != SIGKILL && x != SIGSTOP && x != SIGSEGV)
 		{
