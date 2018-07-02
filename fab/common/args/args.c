@@ -220,6 +220,7 @@ if(help)
 #endif
 " -f <path>                     locate the initial fabfile at <path> rather than ./fabfile\n"
 " -I <path>                     append <path> to the list of directories for invocation resolution\n"
+" -J <path>                     prepend <path> to the list of directories for invocation resolution\n"
 " -v <varexpr>                  scope-zero variable definition\n"
 " --cycles-warn       (default) warn when a cycle is detected (once per unique cycle)\n"
 " --cycles-fail                 fail when a cycle is detected\n"
@@ -451,8 +452,8 @@ int args_parse()
 /* F - following selectors resolve against init-fabfile-dir */
 // G
 // H
-/* I */	, { 0	, required_argument	, 0			, 'I' }		// directory to search for invocations
-// J
+/* I */	, { 0	, required_argument	, 0			, 'I' }		// directory to search for invocations (append)
+/* J */	, { 0	, required_argument	, 0			, 'J' }		// directory to search for invocations (prepend)
 /* K */ , { 0	, required_argument	, 0			, 'K' }		// bs-runtime variables
 // L
 // M
@@ -480,7 +481,7 @@ int args_parse()
 		"cpB"
 
 		// with-argument switches
-		"f:j:k:v:I:K:"
+		"f:j:k:v:I:J:K:"
 	;
 
 	//
@@ -588,6 +589,14 @@ int args_parse()
 		{
 			fatal(xrealloc, &g_args->invokedirs, sizeof(g_args->invokedirs[0]), g_args->invokedirsl + 1, g_args->invokedirsl);
 			fatal(ixstrdup, &g_args->invokedirs[g_args->invokedirsl++], optarg);
+		}
+		else if(x == 'J')
+		{
+			fatal(xrealloc, &g_args->invokedirs, sizeof(g_args->invokedirs[0]), g_args->invokedirsl + 1, g_args->invokedirsl);
+			memmove(&g_args->invokedirs[1], &g_args->invokedirs[0], g_args->invokedirsl * sizeof(g_args->invokedirs[0]));
+			g_args->invokedirs[0] = 0;
+			fatal(ixstrdup, &g_args->invokedirs[0], optarg);
+			g_args->invokedirsl++;
 		}
 		else if(x == 'K')
 		{
