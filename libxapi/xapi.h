@@ -42,7 +42,7 @@ typedef uint32_t xapi;
 
 // types for the components of an xapi
 typedef uint16_t xapi_code;
-typedef uint16_t xapi_errtab_id;
+typedef uint16_t xapi_errtab_tag;
 
 // error table struct
 typedef struct errtab
@@ -50,13 +50,13 @@ typedef struct errtab
   // indexed by lower uint16 of the error code + (min * -1)
   struct
   {
-    xapi   exit;         // exit value for the error, nonzero, set by libxapi
+    xapi   exit;         // exit value for the error, nonzero
     char * name;         // e.g. KERNEL_ENOMEM
     char * desc;         // e.g. out of memory
     char * str;          // e.g. KERNEL_ENOMEM : out of memory
   } * v;
 
-  xapi_errtab_id  id;    // upper bits of an exit value, nonzero, set by libxapi
+  xapi_errtab_tag tag;   // upper bits of an exit value, nonzero
   char *          name;  // e.g. "PCRE", "SYS", "FAB", "LW"
   xapi_code       min;   // min err
   xapi_code       max;   // max err

@@ -199,5 +199,11 @@ XAPI_LEAVE:             \
 #define xapi_info_insertw(key, vbuf, vlen)
 #define xapi_info_insertf(key, vfmt, ...)
 #define xapi_info_insertvf(key, vfmt, ...)
+#define xapi_info_unstage()
+
+static inline xapi xapi_exit_synth(const errtab * const restrict etab, const xapi_code errcode)
+{
+  return ((etab->tag) << 16) | errcode;
+}
 
 #endif

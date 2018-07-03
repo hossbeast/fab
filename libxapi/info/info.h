@@ -21,9 +21,8 @@
 #if XAPI_STACKTRACE
 
 #include <stdarg.h>
-#include <sys/types.h>
+#include "types.h"
 
-#define restrict __restrict
 
 /// xapi_info_unstage
 //
@@ -61,6 +60,5 @@ void xapi_info_insertf(uint16_t index, const char * restrict key, const char * r
   __attribute__((format(printf, 3, 4)));
 void xapi_info_insertvf(uint16_t index, const char * restrict key, const char * restrict vfmt, va_list va);
 
-#undef restrict
 #endif
 #endif

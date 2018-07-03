@@ -18,6 +18,8 @@
 #ifndef _XAPI_EXIT_H
 #define _XAPI_EXIT_H
 
+#if XAPI_STACKTRACE
+
 #include "xapi.h"
 
 /// xapi_exit_errname
@@ -98,18 +100,18 @@ xapi_code xapi_exit_errcode(const xapi exit);
 //
 const char * xapi_exit_errtab_name(const xapi exit);
 
-/// xapi_exit_errtab_id
+/// xapi_exit_errtab_tag
 //
 // SUMMARY
-//  get the id of an error table from an exit value
+//  get the tag of an error table from an exit value
 //
 // PARAMETERS
 //  exit - exit value
 //
 // RETURNS
-//  error table id or zero if no such errtab is registered
+//  error table tag or zero if no such errtab is registered
 //
-xapi_errtab_id xapi_exit_errtab_id(const xapi exit);
+xapi_errtab_tag xapi_exit_errtab_tag(const xapi exit);
 
 /// xapi_exit_synth
 //
@@ -126,4 +128,5 @@ xapi_errtab_id xapi_exit_errtab_id(const xapi exit);
 xapi xapi_exit_synth(const errtab * const restrict etab, const xapi_code errcode)
   __attribute__((nonnull));
 
+#endif
 #endif

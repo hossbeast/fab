@@ -15,15 +15,7 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#include "internal.h"
-#include "errtab.internal.h"
-#include "frame.internal.h"
+#ifndef _XAPI_HASHTABLE_H
+#define _XAPI_HASHTABLE_H
 
-//
-// api
-//
-
-API void xapi_teardown()
-{
-  frame_teardown();
-}
+#endif

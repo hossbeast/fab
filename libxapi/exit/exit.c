@@ -15,12 +15,10 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#include <stdlib.h>
-#include <stdint.h>
-
 #include "internal.h"
-#include "exit.h"
+#include "exit.internal.h"
 #include "errtab.internal.h"
+#include "hashtable.internal.h"
 
 //
 // api
@@ -28,75 +26,82 @@
 
 API const char * xapi_exit_errname(const xapi exit)
 {
-  xapi_errtab_id id = exit >> 16;     // table id
+  xapi_errtab_tag tag = exit >> 16;
 
-  if(id < 1 || id > tabl)
+  const errtab * tab;
+  if((tab = hashtable_get(&tabmap, tag)) == 0)
     return 0;
 
-  return xapi_errtab_errname(tab[id - 1], exit);
+  return xapi_errtab_errname(tab, exit);
 }
 
 API const char * xapi_exit_errdesc(const xapi exit)
 {
-  xapi_errtab_id id = exit >> 16;     // table id
+  xapi_errtab_tag tag = exit >> 16;
 
-  if(id < 1 || id > tabl)
+  const errtab * tab;
+  if((tab = hashtable_get(&tabmap, tag)) == 0)
     return 0;
 
-  return xapi_errtab_errdesc(tab[id - 1], exit);
+  return xapi_errtab_errdesc(tab, exit);
 }
 
 API const char * xapi_exit_errstr(const xapi exit)
 {
-  xapi_errtab_id id = exit >> 16;     // table id
+  xapi_errtab_tag tag = exit >> 16;
 
-  if(id < 1 || id > tabl)
+  const errtab * tab;
+  if((tab = hashtable_get(&tabmap, tag)) == 0)
     return 0;
 
-  return xapi_errtab_errstr(tab[id - 1], exit);
+  return xapi_errtab_errstr(tab, exit);
 }
 
 API const errtab * xapi_exit_errtab(const xapi exit)
 {
-  xapi_errtab_id id = exit >> 16;     // table id
+  xapi_errtab_tag tag = exit >> 16;
 
-  if(id < 1 || id > tabl)
+  const errtab * tab;
+  if((tab = hashtable_get(&tabmap, tag)) == 0)
     return 0;
 
-  return tab[id - 1];
+  return tab;
 }
 
 API xapi_code xapi_exit_errcode(const xapi exit)
 {
-  xapi_errtab_id id = exit >> 16;     // table id
+  xapi_errtab_tag tag = exit >> 16;
 
-  if(id < 1 || id > tabl)
+  const errtab * tab;
+  if((tab = hashtable_get(&tabmap, tag)) == 0)
     return 0;
 
-  return xapi_errtab_errcode(tab[id - 1], exit);
+  return xapi_errtab_errcode(tab, exit);
 }
 
 API const char * xapi_exit_errtab_name(const xapi exit)
 {
-  xapi_errtab_id id = exit >> 16;     // table id
+  xapi_errtab_tag tag = exit >> 16;
 
-  if(id < 1 || id > tabl)
+  const errtab * tab;
+  if((tab = hashtable_get(&tabmap, tag)) == 0)
     return 0;
 
-  return tab[id - 1]->name;
+  return tab->name;
 }
 
-API xapi_errtab_id xapi_exit_errtab_id(const xapi exit)
+API xapi_errtab_tag xapi_exit_errtab_tag(const xapi exit)
 {
-  xapi_errtab_id id = exit >> 16;     // table id
+  xapi_errtab_tag tag = exit >> 16;
 
-  if(id < 1 || id > tabl)
+  const errtab * tab;
+  if((tab = hashtable_get(&tabmap, tag)) == 0)
     return 0;
 
-  return tab[id - 1]->id;
+  return tab->tag;
 }
 
 API xapi xapi_exit_synth(const errtab * const restrict etab, const xapi_code errcode)
 {
-  return ((etab->id) << 16) | errcode;
+  return ((etab->tag) << 16) | errcode;
 }

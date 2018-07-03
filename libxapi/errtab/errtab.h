@@ -60,12 +60,12 @@ void xapi_errtab_unstage(errtab * const restrict etab)
 xapi xapi_errtab_register(errtab * const restrict etab)
   __attribute__((nonnull));
 
-/// xapi_errtab_byid
+/// xapi_errtab_bytag
 //
 // SUMMARY
-//  lookup an error table by id
+//  lookup an error table by tag
 //
-const errtab * xapi_errtab_byid(const xapi_errtab_id id);
+const errtab * xapi_errtab_bytag(const xapi_errtab_tag tag);
 
 //
 // exit value api

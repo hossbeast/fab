@@ -19,15 +19,8 @@
 #define _XAPI_ERRTAB_INTERNAL_H
 
 #include "errtab.h"
+#include "hashtable.internal.h"
 
-extern errtab **  tab;
-extern size_t     tabl;
-
-/// errtab_teardown
-//
-// SUMMARY
-//  release memory
-//
-void errtab_teardown(void);
+extern hashtable tabmap;
 
 #endif

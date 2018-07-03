@@ -100,7 +100,7 @@ xapi memblk_alloc(memblk * restrict mb, void * restrict p, size_t sz)
 
   // request is too large to satisfy
   if(sz > MEMBLOCK_LARGE)
-    tfail(perrtab_KERNEL, KERNEL_ENOMEM);
+    fail(KERNEL_ENOMEM);
 
   /* current block is full */
   if(mb->blocksl == 0 || ((mb->blocks[mb->blocksl - 1].l + sz) > mb->blocks[mb->blocksl - 1].a))

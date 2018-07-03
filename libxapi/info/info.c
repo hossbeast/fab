@@ -103,7 +103,7 @@ API void xapi_info_unstage()
 
 API void xapi_info_inserts(uint16_t index, const char * restrict key, const char * restrict vstr)
 {
-  xapi_info_insertw(0, key, vstr, strlen(vstr));
+  xapi_info_insertw(index, key, vstr, strlen(vstr));
 }
 
 API void xapi_info_insertw(uint16_t index, const char * restrict key, const char * restrict vbuf, size_t vlen)
@@ -160,7 +160,7 @@ API void xapi_info_insertf(uint16_t index, const char * restrict key, const char
   va_list va;
   va_start(va, vfmt);
 
-  xapi_info_insertvf(0, key, vfmt, va);
+  xapi_info_insertvf(index, key, vfmt, va);
 
   va_end(va);
 }

@@ -15,50 +15,20 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#include <stdlib.h>
-#include <stdint.h>
-#include <string.h>
+#include "types.h"
 
 #include "internal.h"
 #include "errtab.internal.h"
 #include "errtab/XAPI.errtab.h"
 #include "mm/mm.internal.h"
+#include "hashtable.internal.h"
 
-errtab **         tab;
-size_t            tabl;
-static size_t     taba;
+#define TABMAP_TABLE_SIZE 512
 
-static errtab *   tab_stage[64];
-static size_t     tab_stagel;
-
-#define restrict __restrict
-
-//
-// static
-//
-
-static void errtab_prepare(errtab * const restrict etab, xapi_errtab_id id)
-{
-  etab->id = id;
-
-  int x;
-  for(x = 0; x <= (etab->max - etab->min); x++)
-  {
-    etab->v[x].exit &= 0xFFFF;
-    etab->v[x].exit |= ((etab->id) << 16);
-  }
-}
-
-//
-// public
-//
-
-void errtab_teardown()
-{
-  if(tab != tab_stage)
-    free(tab);
-  tab = 0;
-}
+hashtable tabmap;
+static uint16_t keytab[TABMAP_TABLE_SIZE];
+static void * valtab[TABMAP_TABLE_SIZE];
+static bool tabmap_setup;
 
 //
 // api
@@ -66,63 +36,32 @@ void errtab_teardown()
 
 API void xapi_errtab_stage(errtab * const restrict etab)
 {
-  if(tab_stagel == (sizeof(tab_stage) / sizeof(tab_stage[0])) - 1)
+  if(!tabmap_setup)
   {
-    dprintf(2, "too many staged error tables ; use xapi_errtab_register\n");
-    return;
+    hashtable_init(&tabmap, keytab, valtab, TABMAP_TABLE_SIZE);
+    tabmap_setup = true;
   }
 
-  tab_stage[tab_stagel] = etab;
-  errtab_prepare(tab_stage[tab_stagel], tab_stagel + 1);
-  tab_stagel++;
-
-  tab = tab_stage;
-  tabl = tab_stagel;
+  if(hashtable_set(&tabmap, etab->tag, etab) == ENOMEM)
+  {
+    dprintf(2, "too many staged error tables ; use xapi_errtab_register\n");
+  }
 }
 
 API void xapi_errtab_unstage(errtab * const restrict etab)
 {
-  tab_stage[etab->id - 1] = 0;
 }
 
 API xapi xapi_errtab_register(errtab * const etab)
 {
   enter;
 
-  if(tab == tab_stage)
-  {
-    size_t ns = tab_stagel + 1;
-    ns = ns * 2 + ns / 2;
-    if((tab = calloc(sizeof(*tab), ns)) == 0)
-      fail(XAPI_NOMEM);
-    taba = ns;
-
-    memcpy(tab, tab_stage, sizeof(*tab) * tab_stagel);
-    tabl = tab_stagel;
-  }
-
-  if(tabl == taba)
-  {
-    size_t ns = taba + 1;
-    ns = ns * 2 + ns / 2;
-    if((tab = realloc(tab, sizeof(*tab) * ns)) == 0)
-      fail(XAPI_NOMEM);
-    taba = ns;
-  }
-
-  tab[tabl] = etab;
-  errtab_prepare(tab[tabl], tabl + 1);
-  tabl++;
-
   finally : coda;
 }
 
-API const errtab * xapi_errtab_byid(const xapi_errtab_id id)
+API const errtab * xapi_errtab_bytag(xapi_errtab_tag tag)
 {
-  if(id < 1 || id > tabl)
-    return 0;
-
-  return tab[id - 1];
+  return hashtable_get(&tabmap, tag);
 }
 
 //
@@ -134,7 +73,7 @@ API const char * xapi_errtab_errname(const errtab * const restrict etab, const x
   if(etab == 0)
     return 0;
 
-  xapi_code code = exit & 0xFFFF;   // error code
+  xapi_code code = exit & 0xFFFF;
 
   if(code < etab->min || code > etab->max)
     return 0;
