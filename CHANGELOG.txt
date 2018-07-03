@@ -1,0 +1,11 @@
+v0.5.4.0
+
+The v0.5 branch is used to build the master branch. This release is aimed at
+making it easier to set up a new environment for building the master branch. In
+particular the fab build logic should not rely on modules provided by the
+previous version.
+
+* clean up some compile time errors and warnings to permit building with newer
+  compilers
+* add an option to allow specifying directories for resolving invocations with
+  higher precedence than the builtin directories provided by fab
