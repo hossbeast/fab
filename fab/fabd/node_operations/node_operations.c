@@ -19,6 +19,7 @@
 
 #include "xlinux/xunistd.h"
 #include "moria/graph.h"
+#include "moria/operations.h"
 #include "moria/vertex.h"
 #include "moria/edge.h"
 #include "valyria/list.h"
@@ -72,7 +73,7 @@ xapi node_connect_fs(node * restrict parent, node * restrict n)
 {
   enter;
 
-  fatal(graph_connect_edge
+  fatal(graph_connect
     , g_node_graph
     , vertex_containerof(parent)
     , vertex_containerof(n)
@@ -98,7 +99,7 @@ xapi node_connect_dependency(node * restrict left, node * restrict right)
 {
   enter;
 
-  fatal(graph_connect_edge
+  fatal(graph_connect
     , g_node_graph
     , vertex_containerof(left)
     , vertex_containerof(right)

@@ -63,7 +63,7 @@ xapi node_setup()
 {
   enter;
 
-  fatal(graph_createx, &g_node_graph, sizeof(node), node_destroy, 0);
+  fatal(graph_createx, &g_node_graph, 0, sizeof(node), node_destroy, 0);
   fatal(map_create, &g_nodes_by_wd);
 
   finally : coda;
@@ -86,7 +86,7 @@ xapi node_reconfigure(reconfigure_context * ctx, const value * restrict config, 
   char path[512];
   size_t pathl;
 
-  list * vertices;
+  const list * vertices;
   int x;
 
   if(!dry && ctx->filesystems_changed)
@@ -120,7 +120,7 @@ xapi node_createw(
   vertex * v;
   path * p = 0;
 
-  fatal(graph_vertex_create, &v, g_node_graph, fstype);
+  fatal(vertex_create, &v, g_node_graph, fstype);
   fatal(path_createw, &p, name, name_len);
   *n = vertex_value(v);
   (*n)->name = p;

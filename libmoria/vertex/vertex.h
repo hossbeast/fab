@@ -38,21 +38,47 @@ struct edge;
 
 typedef struct vertex
 {
-  struct graph *  graph;    // graph that the vertex belongs to
-  const char *    label;    // (not owned)
-  size_t          label_len;
-  uint32_t        attrs;    // properties of the vertex
+  struct graph *  graph;        // graph that the vertex belongs to
+  const char *    label;        // (not owned)
+  uint16_t        label_len;
+  uint32_t        attrs;        // properties of the vertex
 
-  struct list *   up;       // edges where this == B, i.e. { up } -> this
-  struct list *   down;     // edges where this == A, i.e. this -> { down }
+  struct list * up;      // edges where this == B, i.e. { up } -> this
+  struct list * down;    // edges where this == A, i.e. this -> { down }
 
-  int visited;              // id of the last traversal to visit this vertex
+  int visited;           // id of the last traversal to visit this vertex
 
 #ifndef VERTEX_INTERNALS
 # define VERTEX_INTERNALS
 #endif
   VERTEX_INTERNALS;
 } vertex;
+
+/// vertex_create
+//
+// SUMMARY
+//  allocate a vertex in the graph
+//
+// PARAMETERS
+//  v      - (returns) vertex
+//  g      - graph
+//  attrs  - bitmask
+//  label  - label for the vertex
+//
+// VARIANT
+//  w - provide label as pointer/length pair
+//
+// REMARKS
+//  the label is not copied or owned by the vertex
+//
+xapi vertex_create(struct vertex ** const restrict v, struct graph * const restrict g, uint32_t attrs)
+  __attribute__((nonnull));
+
+xapi vertex_creates(struct vertex ** const restrict v, struct graph * const restrict g, uint32_t attrs, const char * const restrict label)
+  __attribute__((nonnull));
+
+xapi vertex_createw(struct vertex ** const restrict v, struct graph * const restrict g, uint32_t attrs, const char * const restrict label, uint16_t label_len)
+  __attribute__((nonnull));
 
 /// vertex_value_set
 //
@@ -89,68 +115,30 @@ vertex * vertex_containerof(const void * value)
 /// vertex_travel
 //
 // SUMMARY
-//  Get a vertex or edge at distance 1 from a starting vertex or edge. If a label is specified,
-//  select a vertex or edge having that label. If no label is specified, then label is not considered.
+//  Get the vertex at distance 1 from a starting vertex on the identity tree having the
+//  specified label.
 //
 // PARAMETERS
-//  v              - starting vertex
-//  [label]        - select a vertex with this label
-//  [vertex_visit] - see traversal_criteria
-//  [edge_visit]   - see traversal_criteria
-//  attrs          - bitwise combination of MORIA_TRAVERSE_*
+//  v     - starting vertex
+//  label - select the vertex with this label
+//  attrs - one of MORIA_TRAVERSE_{UP,DOWN}
 //
-vertex * vertex_travel_vertex(
-    const vertex * restrict v
-  , uint32_t vertex_visit
-  , uint32_t edge_visit
-  , uint32_t attrs
-)
-  __attribute__((nonnull(1)));
+vertex * vertex_downs(const vertex * restrict v, const char * restrict label)
+  __attribute__((nonnull));
 
-vertex * vertex_travel_vertexs(
-    const vertex * restrict v
-  , const char * restrict label
-  , uint32_t vertex_visit
-  , uint32_t edge_visit
-  , uint32_t attrs
-)
-  __attribute__((nonnull(1)));
+vertex * vertex_downw(const vertex * restrict v, const char * restrict label, uint16_t label_len)
+  __attribute__((nonnull));
 
-vertex * vertex_travel_vertexw(
-    const vertex * restrict v
-  , const char * restrict label
-  , size_t label_len
-  , uint32_t vertex_visit
-  , uint32_t edge_visit
-  , uint32_t attrs
-)
-  __attribute__((nonnull(1)));
+struct edge * vertex_edge_downs(const vertex * restrict v, const char * restrict label)
+  __attribute__((nonnull));
 
-struct edge * vertex_travel_edge(
-    const vertex * restrict v
-  , uint32_t vertex_visit
-  , uint32_t edge_visit
-  , uint32_t attrs
-)
-  __attribute__((nonnull(1)));
+struct edge * vertex_edge_downw(const vertex * restrict v, const char * restrict label, uint16_t label_len)
+  __attribute__((nonnull));
 
-struct edge * vertex_travel_edges(
-    const vertex * restrict v
-  , const char * restrict label
-  , uint32_t vertex_visit
-  , uint32_t edge_visit
-  , uint32_t attrs
-)
-  __attribute__((nonnull(1)));
+vertex * vertex_up(const vertex * restrict v)
+  __attribute__((nonnull));
 
-struct edge * vertex_travel_edgew(
-    const vertex * restrict v
-  , const char * restrict label
-  , size_t label_len
-  , uint32_t vertex_visit
-  , uint32_t edge_visit
-  , uint32_t attrs
-)
-  __attribute__((nonnull(1)));
+struct edge * vertex_edge_up(const vertex * restrict v)
+  __attribute__((nonnull));
 
 #endif

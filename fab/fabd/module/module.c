@@ -149,8 +149,8 @@ static xapi module_load_visitor(vertex * v, int distance, void * ctx)
   vertex * common = 0;
   vertex * module = 0;
 
-  common = vertex_travel_vertexs(v, COMMON_FAB, NODE_FSTYPE_FILE, NODE_RELATION_FS, MORIA_TRAVERSE_DOWN);
-  module = vertex_travel_vertexs(v, MODULE_FAB, NODE_FSTYPE_FILE, NODE_RELATION_FS, MORIA_TRAVERSE_DOWN);
+  common = vertex_downs(v, COMMON_FAB);
+  module = vertex_downs(v, MODULE_FAB);
   if(common || module)
   {
     node_get_absolute_path(vertex_value(v), path, sizeof(path));

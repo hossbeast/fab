@@ -23,6 +23,7 @@
 #include "valyria/map.h"
 #include "moria/graph.h"
 #include "moria/vertex.h"
+#include "moria/operations.h"
 #include "moria/edge.h"
 #include "xlinux/xstring.h"
 #include "xlinux/xstdlib.h"
@@ -73,7 +74,7 @@ static xapi get_node(map * vertices, char * label, node ** n)
   vertex * v;
   if((v = map_get(vertices, label, 1)) == 0)
   {
-    fatal(graph_vertex_createw, &v, g_node_graph, 0, label, 1);
+    fatal(vertex_createw, &v, g_node_graph, 0, label, 1);
     fatal(map_set, vertices, label, 1, v);
   }
 
@@ -108,7 +109,7 @@ static xapi node_operations_test_entry(xunit_test * _test)
     fatal(get_node, vertices, &edges[0], &A);
     fatal(get_node, vertices, &edges[2], &B);
 
-    fatal(graph_connect_edge, g_node_graph, vertex_containerof(A), vertex_containerof(B), NODE_RELATION_FS);
+    fatal(graph_connect, g_node_graph, vertex_containerof(A), vertex_containerof(B), NODE_RELATION_FS);
 
     edges += 3;
     while(*edges == ' ')
@@ -134,21 +135,13 @@ static xapi node_operations_test_entry(xunit_test * _test)
       fatal(node_connect_fs, A, B);
     }
 
-    // disintegrate
-    else
-    {
-      fatal(get_node, vertices, &seq[0], &A);
-      edge * e = vertex_travel_edges(vertex_containerof(A), &seq[2], 0, NODE_RELATION_FS, MORIA_TRAVERSE_DOWN);
-      fatal(node_disintegrate_fs, e, 0);
-    }
-
     seq += 3;
     while(*seq == ' ')
       seq++;
   }
 
   // ordered list of edges
-  fatal(graph_say, g_node_graph, NODE_RELATION_FS, N);
+  fatal(graph_say, g_node_graph, 0, N);
   assert_eq_s(test->result ?: "", narrator_growing_buffer(N));
 
 finally:
@@ -170,57 +163,22 @@ xunit_unit xunit = {
       (node_operations_test[]) {{        // attach
           initial : "A:B"
         , sequence : "A:C"
-        , result : "A:B A:C"
+        , result : "1-A 2-B 3-C 1:0x1:2 1:0x1:3"
       }}
     , (node_operations_test[]) {{
           initial : "A:B"
         , sequence : "B:C"
-        , result : "A:B B:C"
+        , result : "1-A 2-B 3-C 1:0x1:2 2:0x1:3"
       }}
     , (node_operations_test[]) {{
           initial : "A:B"
         , sequence : "A:C C:D"
-        , result : "A:B A:C C:D"
+        , result : "1-A 2-B 3-C 4-D 1:0x1:2 1:0x1:3 3:0x1:4"
       }}
     , (node_operations_test[]) {{
           initial : "A:B"
         , sequence : "B:C B:D B:E D:F"
-        , result : "A:B B:C B:D B:E D:F"
-      }}
-    , (node_operations_test[]) {{        // disintegrate
-          initial : "A:B A:C"
-        , sequence : "-A:B"
-        , result : "A:C"
-      }}
-    , (node_operations_test[]) {{
-          initial : "A:B A:C"
-        , sequence : "-A:C"
-        , result : "A:B"
-      }}
-    , (node_operations_test[]) {{
-          initial : "A:B B:C"
-        , sequence : "-B:C"
-        , result : "A:B"
-      }}
-    , (node_operations_test[]) {{
-          initial : "A:B A:C A:D"
-        , sequence : "-A:B"
-        , result : "A:C A:D"
-      }}
-    , (node_operations_test[]) {{
-          initial : "A:B A:C A:D"
-        , sequence : "-A:C"
-        , result : "A:B A:D"
-      }}
-    , (node_operations_test[]) {{
-          initial : "A:B A:C A:D"
-        , sequence : "-A:D"
-        , result : "A:B A:C"
-      }}
-    , (node_operations_test[]) {{
-          initial : "A:B B:C C:D"
-        , sequence : "-B:C"
-        , result : "A:B"
+        , result : "1-A 2-B 3-C 4-D 5-E 6-F 1:0x1:2 2:0x1:3 2:0x1:4 2:0x1:5 4:0x1:6"
       }}
     , 0
   }

@@ -75,13 +75,10 @@ xapi pattern_segment_generate(
     // next is a slash, or the end of the outermost pattern
     if(section_len > 0 && (walk->ffn || walk->outer == NULL))
     {
-      vertex * next_context_vertex = vertex_travel_vertexw(
+      vertex * next_context_vertex = vertex_downw(
           vertex_containerof(context->node)
         , section
         , section_len
-        , 0
-        , NODE_RELATION_FS
-        , MORIA_TRAVERSE_DOWN
       );
 
       // only the final section is a file

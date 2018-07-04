@@ -15,10 +15,9 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-1 CYCLE        graph contains a cycle
-2 SYNTAX       graph description could not be parsed
-3 ILLBYTE      graph description contains illegal byte(s)
-4 LABELEXISTS  edge already exists for this label
-5 VERTEXEXISTS edge already exists for this vertex
-6 UPEXISTS     upward identity edge already exists
-7 AMBIGUOUS    ambiguous identifier in operation
+#ifndef _MORIA_TRAVERSE_INTERNAL_H
+#define _MORIA_TRAVERSE_INTERNAL_H
+
+#include "traverse.h"
+
+#endif

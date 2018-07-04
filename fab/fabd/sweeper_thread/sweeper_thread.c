@@ -129,14 +129,14 @@ static xapi sweeper_thread()
 
         else if(ev->mask & (IN_DELETE | IN_MOVED_FROM))
         {
-          edge * e = vertex_travel_edges(vertex_containerof(parent), ev->name, 0, NODE_RELATION_FS, MORIA_TRAVERSE_DOWN);
+          edge * e = vertex_edge_downs(vertex_containerof(parent), ev->name);
           if(e)
             fatal(node_disintegrate_fs, e, traversal);
         }
 
         else if(ev->mask & IN_MODIFY)
         {
-          vertex * v = vertex_travel_vertexs(vertex_containerof(parent), ev->name, 0, NODE_RELATION_FS, MORIA_TRAVERSE_DOWN);
+          vertex * v = vertex_downs(vertex_containerof(parent), ev->name);
           fatal(node_invalidate, vertex_value(v), traversal);
         }
       }

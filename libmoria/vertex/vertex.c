@@ -16,96 +16,53 @@
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
 #include <string.h>
-#include <stddef.h>
 
 #include "xapi.h"
 #include "types.h"
 
 #include "xlinux/xstdlib.h"
-#include "xlinux/xstring.h"
-
 #include "valyria/list.h"
 
 #include "internal.h"
-#include "graph.internal.h"
 #include "vertex.internal.h"
-#include "edge.internal.h"
 #include "attr.internal.h"
+#include "edge.internal.h"
+#include "graph.internal.h"
 
 #include "macros.h"
-
-#define restrict __restrict
 
 //
 // static
 //
 
-static bool __attribute__((nonnull(1))) vertex_travel(
+static bool __attribute__((nonnull(1, 2))) vertex_down(
     /* 1 */ const vertex * restrict v
   , /* 2 */ const char * restrict label
-  , /* 3 */ size_t label_len
-  , /* 4 */ uint32_t vertex_visit
-  , /* 5 */ uint32_t edge_visit
-  , /* 6 */ uint32_t attrs
-  , /* 7 */ vertex ** restrict rv
-  , /* 8 */ edge ** restrict re
+  , /* 3 */ uint16_t label_len
+  , /* 4 */ vertex ** restrict rv
+  , /* 5 */ edge ** restrict re
 )
 {
-  edge * e = 0;
-  vertex * nv;
-
-  if((attrs & DIRECTION_OPT) == MORIA_TRAVERSE_UP)
-  {
-    if(label)
-    {
-      struct vertex_cmp_context ctx = { A : label, len : label_len };
-      e = list_search(v->up, &ctx, vertex_compare);
-    }
-    else if(v->up->l)
-    {
-      e = list_get(v->up, 0);
-    }
-  }
-  else if((attrs & DIRECTION_OPT) == MORIA_TRAVERSE_DOWN)
-  {
-    if(label)
-    {
-      struct vertex_cmp_context ctx = { B : label, len : label_len };
-      e = list_search(v->down, &ctx, vertex_compare);
-    }
-    else if(v->down->l)
-    {
-      e = list_get(v->down, 0);
-    }
-  }
+  struct edge_key_compare_label_context ctx = { B : label, len : label_len };
+  edge * e = list_search_range(v->down, 0, v->down_partition, &ctx, edge_key_compare_label);
 
   if(!e)
     return false;
 
-  if((attrs & DIRECTION_OPT) == MORIA_TRAVERSE_UP)
-    nv = e->A;
-  else if((attrs & DIRECTION_OPT) == MORIA_TRAVERSE_DOWN)
-    nv = e->B;
-
-  if(edge_visit && !(e->attrs & edge_visit))
-    return false;
-
-  if(vertex_visit && !(nv->attrs & vertex_visit))
-    return false;
-
   if(rv)
-    *rv = nv;
+    *rv = e->B;
   if(re)
     *re = e;
 
   return true;
 }
 
-//
-// public
-//
-
-xapi vertex_create(vertex ** const restrict v, graph * restrict g, size_t vsz, uint32_t attrs)
+static xapi __attribute__((nonnull)) vertex_alloc(
+    vertex ** const restrict v
+  , graph * restrict g
+  , size_t vsz
+  , uint32_t attrs
+)
 {
   enter;
 
@@ -118,27 +75,9 @@ xapi vertex_create(vertex ** const restrict v, graph * restrict g, size_t vsz, u
   finally : coda;
 }
 
-xapi vertex_creates(vertex ** const restrict v, graph * restrict g, size_t vsz, uint32_t attrs, const char * const restrict label)
-{
-  enter;
-
-  fatal(vertex_create, v, g, vsz, attrs);
-  (*v)->label = label;
-  (*v)->label_len = strlen(label);
-
-  finally : coda;
-}
-
-xapi vertex_createw(vertex ** const restrict v, graph * restrict g, size_t vsz, uint32_t attrs, const char * const restrict label, size_t label_len)
-{
-  enter;
-
-  fatal(vertex_create, v, g, vsz, attrs);
-  (*v)->label = label;
-  (*v)->label_len = label_len;
-
-  finally : coda;
-}
+//
+// public
+//
 
 xapi vertex_xfree(vertex * const restrict v)
 {
@@ -165,23 +104,67 @@ xapi vertex_ixfree(vertex ** const restrict v)
   finally : coda;
 }
 
-int vertex_compare(void * _ctx, const void * _e, size_t idx)
-{
-  struct vertex_cmp_context * ctx = _ctx;
-  const edge * e = _e;
-
-  if(ctx->A)
-    ctx->lc = memncmp(ctx->A, ctx->len, e->A->label, e->A->label_len);
-  else
-    ctx->lc = memncmp(ctx->B, ctx->len, e->B->label, e->B->label_len);
-
-  ctx->lx = idx;
-  return ctx->lc;
-};
-
 //
 // api
 //
+
+API xapi vertex_creates(struct vertex ** const restrict v, graph * const restrict g, uint32_t attrs, const char * const restrict label)
+{
+  enter;
+
+  vertex * lv = 0;
+  fatal(vertex_alloc, &lv, g, g->vsz, attrs);
+  lv->label = label;
+  lv->label_len = strlen(label);
+
+  fatal(graph_vertex_push, g, lv);
+  *v = lv;
+  lv = 0;
+
+  if(g->identity)
+    fatal(graph_identity_indexs, g, *v, label);
+
+finally:
+  fatal(vertex_xfree, lv);
+coda;
+}
+
+API xapi vertex_createw(struct vertex ** const restrict v, graph * const restrict g, uint32_t attrs, const char * const restrict label, uint16_t label_len)
+{
+  enter;
+
+  vertex * lv = 0;
+  fatal(vertex_alloc, &lv, g, g->vsz, attrs);
+  lv->label = label;
+  lv->label_len = label_len;
+
+  fatal(graph_vertex_push, g, lv);
+  *v = lv;
+  lv = 0;
+
+  if(g->identity)
+    fatal(graph_identity_indexw, g, *v, label, label_len);
+
+finally:
+  fatal(vertex_xfree, lv);
+coda;
+}
+
+API xapi vertex_create(struct vertex ** const restrict v, graph * const restrict g, uint32_t attrs)
+{
+  enter;
+
+  vertex * lv = 0;
+  fatal(vertex_alloc, &lv, g, g->vsz, attrs);
+
+  fatal(graph_vertex_push, g, lv);
+  *v = lv;
+  lv = 0;
+
+finally:
+  fatal(vertex_xfree, lv);
+coda;
+}
 
 API void vertex_value_set(vertex * const restrict v, void * value, size_t vsz)
 {
@@ -198,92 +181,54 @@ API vertex * vertex_containerof(const void * value)
   return (vertex*)(value - offsetof(vertex, value));
 }
 
-API vertex * vertex_travel_vertex(
-    const vertex * restrict v
-  , uint32_t vertex_visit
-  , uint32_t edge_visit
-  , uint32_t attrs
-)
+API vertex * vertex_downs(const vertex * restrict v, const char * restrict label)
 {
   vertex * nv;
-  if(vertex_travel(v, 0, 0, vertex_visit, edge_visit, attrs, &nv, 0))
+  if(vertex_down(v, label, strlen(label), &nv, 0))
     return nv;
 
   return 0;
 }
 
-API vertex * vertex_travel_vertexs(
-    const vertex * restrict v
-  , const char * restrict label
-  , uint32_t vertex_visit
-  , uint32_t edge_visit
-  , uint32_t attrs
-)
+API vertex * vertex_downw(const vertex * restrict v, const char * restrict label, uint16_t label_len)
 {
   vertex * nv;
-  if(vertex_travel(v, label, strlen(label), vertex_visit, edge_visit, attrs, &nv, 0))
+  if(vertex_down(v, label, label_len, &nv, 0))
     return nv;
 
   return 0;
 }
 
-API vertex * vertex_travel_vertexw(
-    const vertex * restrict v
-  , const char * restrict label
-  , size_t label_len
-  , uint32_t vertex_visit
-  , uint32_t edge_visit
-  , uint32_t attrs
-)
-{
-  vertex * nv;
-  if(vertex_travel(v, label, label_len, vertex_visit, edge_visit, attrs, &nv, 0))
-    return nv;
-
-  return 0;
-}
-
-API edge * vertex_travel_edge(
-    const vertex * restrict v
-  , uint32_t vertex_visit
-  , uint32_t edge_visit
-  , uint32_t attrs
-)
+API edge * vertex_edge_downs(const vertex * restrict v, const char * restrict label)
 {
   edge * e;
-  if(vertex_travel(v, 0, 0, vertex_visit, edge_visit, attrs, 0, &e))
+  if(vertex_down(v, label, strlen(label), 0, &e))
     return e;
 
   return 0;
 }
 
-API edge * vertex_travel_edges(
-    const vertex * restrict v
-  , const char * restrict label
-  , uint32_t vertex_visit
-  , uint32_t edge_visit
-  , uint32_t attrs
-)
+API edge * vertex_edge_downw(const vertex * restrict v, const char * restrict label, uint16_t label_len)
 {
   edge * e;
-  if(vertex_travel(v, label, strlen(label), vertex_visit, edge_visit, attrs, 0, &e))
+  if(vertex_down(v, label, label_len, 0, &e))
     return e;
 
   return 0;
 }
 
-API edge * vertex_travel_edgew(
-    const vertex * restrict v
-  , const char * restrict label
-  , size_t label_len
-  , uint32_t vertex_visit
-  , uint32_t edge_visit
-  , uint32_t attrs
-)
+API vertex * vertex_up(const vertex * restrict v)
 {
-  edge * e;
-  if(vertex_travel(v, label, label_len, vertex_visit, edge_visit, attrs, 0, &e))
-    return e;
+  if(v->up_partition)
+    return ((edge*)list_get(v->up, 0))->A;
 
-  return 0;
+  return NULL;
+}
+
+API edge * vertex_edge_up(const vertex * restrict v)
+{
+  if(v->up_partition)
+    return list_get(v->up, 0);
+
+  return NULL;
 }

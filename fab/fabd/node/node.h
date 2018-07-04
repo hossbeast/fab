@@ -154,14 +154,11 @@ xapi node_path_say(const node * restrict n, struct narrator * restrict N)
 
 static inline node * node_fsparent(const node * restrict n)
 {
-  vertex * fsparent = vertex_travel_vertex(
-      vertex_containerof(n)
-    , 0
-    , NODE_RELATION_FS
-    , MORIA_TRAVERSE_UP
-  );
+  const vertex * v = vertex_containerof(n);
+  if((v = vertex_up(v)))
+    return vertex_value(v);
 
-  return vertex_value(fsparent);
+  return 0;
 }
 
 #endif

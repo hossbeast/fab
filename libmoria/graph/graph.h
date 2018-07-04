@@ -26,18 +26,21 @@ MODULE
 SUMMARY
 
 REMARKS
+ An identity graph is a tree where each vertex is uniquely identified by its path in the upward
+ direction to another vertex called the root. For example, a filesystem tree is an identity graph
+ with a root vertex at '/'.
 
 */
 
-#include <sys/types.h>
-#include <stdint.h>
 #include "xapi.h"
-#include "traverse.h"
+#include "types.h"
+
+struct list;
+struct map;
+struct narrator;
 
 struct vertex;
 struct edge;
-struct narrator;
-struct list;
 struct traversal_criteria;
 
 typedef struct graph graph;
@@ -48,28 +51,16 @@ typedef struct graph graph;
 //  create a graph
 //
 // PARAMETERS
-//  g     - (returns) graph
-//  [vsz] - size of vertex udata
+//  g           - (returns) graph
+//  [identity]  - nonzero to enable identity operations
+//  [vsz]       - size of vertex udata
 //  [vertex_value_destroy] - invoked on vertex user data before releasing
 //
-xapi graph_create(graph ** const restrict g)
+xapi graph_create(graph ** const restrict g, uint32_t identity)
   __attribute__((nonnull(1)));
 
-xapi graph_createx(graph ** const restrict g, size_t vsz, void * vertex_value_destroy, void * vertex_value_xdestroy)
+xapi graph_createx(graph ** const restrict g, uint32_t identity, size_t vsz, void * vertex_value_destroy, void * vertex_value_xdestroy)
   __attribute__((nonnull(1)));
-
-/// graph_say
-//
-// SUMMARY
-//  write a sorted list of edges to a narrator
-//
-// PARAMETERS
-//  g            - graph
-//  [edge_visit] - if nonzero, only use edges which match the mask
-//  N            - narrator
-//
-xapi graph_say(graph * const restrict g, uint32_t edge_visit, struct narrator * const restrict N)
-  __attribute__((nonnull));
 
 /// graph_xfree
 //
@@ -94,143 +85,91 @@ xapi graph_ixfree(graph ** const restrict g)
 xapi graph_recycle(graph * const restrict g)
   __attribute__((nonnull));
 
-/// graph_vertex_create
+/// graph_vertices
 //
 // SUMMARY
-//  allocate a vertex in the graph
+//  get a list of vertices in the graph
+//
+const struct list * graph_vertices(graph * restrict g)
+  __attribute__((nonnull));
+
+/// graph_edges
+//
+// SUMMARY
+//  get a list of edges in the graph
+//
+const struct list * graph_edges(graph * restrict g)
+  __attribute__((nonnull));
+
+/// graph_say
+//
+// SUMMARY
+//  write the normal representation of a graph to a narrator
 //
 // PARAMETERS
-//  v         - (returns) vertex
-//  g         - graph
-//  attrs     - bitmask
+//  g   - graph
+//  [d] - attrs name lookup
+//  N   - narrator
 //
-// VARIANT
-//  w - provide label as pointer/length pair
+xapi graph_say(graph * const restrict g, struct map * restrict definitions, struct narrator * const restrict N)
+  __attribute__((nonnull(1, 3)));
+
+/// graph_lookup_identifier_callback
+//
+// SUMMARY
+//  returns the next label in the lookup sequence, or resets the lookup sequence if label == NULL
+//
+typedef xapi (*graph_lookup_identifier_callback)(
+    void * context                  // user context
+  , const char ** restrict label    // (returns) next label
+  , uint16_t * restrict label_len   // (returns) next label length
+);
+
+/// graph_lookup
+//
+// SUMMARY
+//  find a vertex in the identity tree
+//
+// PARAMETERS
+//  g                   - graph with nonzero identity
+//  identifier_callback - user callback to get vertex labels in the lookup sequence
+//  context             - opaque user context for identifier_callback
+//  mm_tmp              - required temp space for mm lookup
+//  *V                  - (returns) one, or two vertices (based on *r)
+//  *r                  - (returns) return code
 //
 // REMARKS
-//  the label is not copied or owned by the vertex
+//  return code,
+//   0 - no matching vertices
+//   1 - one matching vertex (*V)
+//   2 - two or more matching vertices (*V[0], *V[1])
 //
-xapi graph_vertex_create(struct vertex ** const restrict v, graph * const restrict g, uint32_t attrs)
-  __attribute__((nonnull));
-
-xapi graph_vertex_creates(struct vertex ** const restrict v, graph * const restrict g, uint32_t attrs, const char * const restrict label)
-  __attribute__((nonnull));
-
-xapi graph_vertex_createw(struct vertex ** const restrict v, graph * const restrict g, uint32_t attrs, const char * const restrict label, size_t label_len)
-  __attribute__((nonnull));
-
-/// graph_connect_edge
-//
-// SUMMARY
-//  create the edge A : B, if it does not already exist, with the specified attributes
-//
-// REMARKS
-//  A : B, e.g. A needs B, e.g. A depends on B, e.g. A is up from B, B is down from A
-//
-// PARAMETERS
-//  g     - graph
-//  A     - vertex
-//  B     - vertex
-//
-xapi graph_connect_edge(graph * const restrict g, struct vertex * A, struct vertex * B, uint32_t attrs)
-  __attribute__((nonnull));
-
-xapi graph_disconnect_edge(graph * const restrict g, struct vertex * A, struct vertex * B)
-  __attribute__((nonnull));
-
-/// graph_traverse
-//
-// SUMMARY
-//  traverse a graph from a starting point
-//
-// VARIANTS
-//  vertices - visitor invoked on vertices
-//  edges - visitor invoked on edges
-//
-// PARAMETERS
-//  g              - graph
-//  v              - vertex at which to begin the traversal
-//  [visitor]      - invoked on each visited vertex
-//  [traversal_id] - see graph_traversal_begin
-//  [criteria]     - vertex and edge selection bitmasks
-//  attrs          - bitwise combination of MORIA_TRAVERSE_*
-//  [ctx]          - optional user context
-//
-// VISITOR
-//  v     -
-//  distance -
-//  [ctx] -
-//
-// REMARKS
-//  For each node, the default operation is to visit that node, and continue by traversing its
-//  neighbors. The arguments skip, stop, and finish are bitmasks which alter this behavior, as
-//  follows.
-//
-//  For an edge whose attrs matches one of the masks, the traversal proceeds along the edge
-//  according to the table below. If the attrs of an edge match more than one of the bitmasks, the
-//  behavior is undefined. For the initial node, it is as if traverse and visit are both true
-//
-//               traverse    visit
-//            ---------------------
-//  stop      |
-//  finish    |                x
-//  skip      |     x
-//  (default) |     x          x
-//
-xapi graph_traverse_vertices(
-    /* 1 */ graph * restrict g
-  , /* 2 */ struct vertex * restrict v
-  , /* 3 */ xapi (* visitor)(struct vertex * restrict, int distance, void *)
-  , /* 4 */ int traversal_id
-  , /* 5 */ const struct traversal_criteria * restrict criteria
-  , /* 6 */ uint32_t attrs
-  , /* 7 */ void * ctx
+xapi graph_lookup(
+    struct graph * restrict g
+  , graph_lookup_identifier_callback identifier_callback
+  , void * context
+  , void * mm_tmp
+  , struct vertex * restrict V[2]
+  , int * restrict r
 )
-  __attribute__((nonnull(1, 2)));
+  __attribute__((nonnull));
 
-xapi graph_traverse_edges(
-    /* 1 */ graph * restrict g
-  , /* 2 */ struct edge * restrict e
-  , /* 3 */ xapi (* visitor)(struct edge * restrict, int distance, void *)
-  , /* 4 */ int traversal_id
-  , /* 5 */ const struct traversal_criteria * restrict criteria
-  , /* 6 */ uint32_t attrs
-  , /* 7 */ void * ctx
-)
-  __attribute__((nonnull(1, 2)));
+typedef struct graph_lookup_sentinel_context {
+  char ** labels;     // sentinel-terminated sequence of labels
+  uint16_t index;     // iteration state
+} graph_lookup_sentinel_context;
 
-/// graph_traverse_all
+/// graph_lookup_sentinel
 //
-// SUMMARY
-//  traverse all the entities of a graph while honoring directionality among entities
+// lookup callback for resolving an identifier comprised of a sentinel-terminated array of labels
 //
-// PARAMETERS
-//  as for graph_traverse
-//
-xapi graph_traverse_all_vertices(
-    /* 1 */ graph * restrict g
-  , /* 2 */ xapi (* visitor)(struct vertex * restrict, int distance, void *)
-  , /* 3 */ const struct traversal_criteria * restrict criteria
-  , /* 4 */ uint32_t attrs
-  , /* 5 */ void * ctx
-)
+xapi graph_lookup_sentinel(void * restrict context, const char ** restrict label, uint16_t * restrict label_len)
   __attribute__((nonnull(1)));
 
-/// graph_traversal_begin
-//
-// SUMMARY
-//  Open a traversal. Two traversals with the same id will not visit the same entity more than once.
-//
-// RETURNS
-//  an id suitable for passing to graph_traverse_*
-//
-int graph_traversal_begin(graph * restrict g)
+xapi graph_identity_indexs(graph * const restrict g, struct vertex * const restrict v, const char * const restrict name)
   __attribute__((nonnull));
 
-struct list * graph_vertices(graph * restrict g)
-  __attribute__((nonnull));
-
-struct list * graph_edges(graph * restrict g)
+xapi graph_identity_indexw(graph * const restrict g, struct vertex * const restrict v, const char * const restrict name, uint16_t name_len)
   __attribute__((nonnull));
 
 #endif

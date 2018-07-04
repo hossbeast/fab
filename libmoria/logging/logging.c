@@ -15,10 +15,24 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-1 CYCLE        graph contains a cycle
-2 SYNTAX       graph description could not be parsed
-3 ILLBYTE      graph description contains illegal byte(s)
-4 LABELEXISTS  edge already exists for this label
-5 VERTEXEXISTS edge already exists for this vertex
-6 UPEXISTS     upward identity edge already exists
-7 AMBIGUOUS    ambiguous identifier in operation
+#include "xapi.h"
+#include "logger.h"
+
+#include "internal.h"
+#include "logging.internal.h"
+
+logger_category * categories = (logger_category []) {
+    { name : "MORIA"      , description : "libmoria logging", optional : 1 }
+  , { name : "GRAPH"      , description : "graph parsing", optional : 1 }
+  , { name : "OPERATIONS" , description : "operations parsing", optional : 1 }
+  , { }
+};
+
+xapi logging_setup()
+{
+  enter;
+
+  fatal(logger_category_register, categories);
+
+  finally : coda;
+}

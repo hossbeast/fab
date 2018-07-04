@@ -155,7 +155,7 @@ static xapi create(walker_context * ctx, node ** restrict n, uint8_t fstype, con
   enter;
 
   vertex * v;
-  fatal(graph_vertex_create, &v, g_node_graph, 0);
+  fatal(vertex_create, &v, g_node_graph, 0);
   *n = vertex_value(v);
   v->label = name;
   v->label_len = 1;

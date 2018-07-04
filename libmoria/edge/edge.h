@@ -31,6 +31,9 @@ REMARKS
 
 #include <stdint.h>
 
+#include "xapi.h"
+#include "types.h"
+
 struct graph;
 struct vertex;
 
@@ -48,8 +51,6 @@ typedef struct edge
   EDGE_INTERNALS;
 } edge;
 
-#define restrict __restrict
-
 /// edge_disconnect
 //
 // SUMMARY
@@ -59,8 +60,10 @@ typedef struct edge
 //  g - graph
 //  e - edge to remove
 //
-xapi edge_disconnect(struct graph * const restrict g, edge * e)
+xapi edge_disconnect(struct graph * restrict g, edge * restrict e)
   __attribute__((nonnull));
 
-#undef restrict
+edge * edge_between(const struct vertex * restrict A, const struct vertex * restrict B)
+  __attribute__((nonnull));
+
 #endif

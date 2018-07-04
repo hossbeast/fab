@@ -20,6 +20,8 @@
 
 #include <sys/types.h>
 
+struct vertex;
+
 struct edge_internals
 {
   size_t up_index;
@@ -32,5 +34,35 @@ struct edge_internals
 
 #define EDGE_INTERNALS struct edge_internals
 #include "edge.h"
+
+//  either A or B is specified
+struct edge_key_compare_label_context {
+  const char * A; // if not null, compare to the edges A vertex
+  const char * B; // if not null, compare to the edges B vertex
+  uint16_t len;   // length of A or B
+
+  size_t lx;  // (returns) last index
+  int lc;     // (returns) results of last comparison
+};
+
+//  either A or B is specified
+struct edge_key_compare_vertex_context {
+  const struct vertex * A; // if not null, compare to the edges A vertex
+  const struct vertex * B; // if not null, compare to the edges B vertex
+
+  size_t lx;  // (returns) last index
+  int lc;     // (returns) results of last comparison
+};
+
+/// edge_key_compare_context
+//
+// SUMMARY
+//
+//
+int edge_key_compare_label(void * _ctx, const void * _e, size_t idx)
+  __attribute__((nonnull));
+
+int edge_key_compare_vertex(void * _ctx, const void * _e, size_t idx)
+  __attribute__((nonnull));
 
 #endif

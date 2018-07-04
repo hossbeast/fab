@@ -15,11 +15,7 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#include <string.h>
-
 #include "xapi.h"
-#include "xlinux/xstdlib.h"
-#include "xlinux/xstring.h"
 
 #include "valyria/list.h"
 
@@ -28,9 +24,39 @@
 #include "graph.internal.h"
 #include "vertex.internal.h"
 
-#include "strutil.h"
+#include "macros.h"
 
-#define restrict __restrict
+//
+// public
+//
+
+int edge_key_compare_label(void * _ctx, const void * _e, size_t idx)
+{
+  struct edge_key_compare_label_context * ctx = _ctx;
+  const edge * e = _e;
+
+  if(ctx->A)
+    ctx->lc = memncmp(ctx->A, ctx->len, e->A->label, e->A->label_len);
+  else
+    ctx->lc = memncmp(ctx->B, ctx->len, e->B->label, e->B->label_len);
+
+  ctx->lx = idx;
+  return ctx->lc;
+}
+
+int edge_key_compare_vertex(void * _ctx, const void * _e, size_t idx)
+{
+  struct edge_key_compare_vertex_context * ctx = _ctx;
+  const edge * e = _e;
+
+  if(ctx->A)
+    ctx->lc = INTCMP(ctx->A, e->A);
+  else
+    ctx->lc = INTCMP(ctx->B, e->B);
+
+  ctx->lx = idx;
+  return ctx->lc;
+}
 
 //
 // api
@@ -56,4 +82,22 @@ API xapi edge_disconnect(graph * const restrict g, edge * const restrict e)
     ((edge*)list_get(g->edges, x))->edges_index--;
 
   finally : coda;
+}
+
+API edge * edge_between(const vertex * restrict A, const vertex * restrict B)
+{
+  struct edge_key_compare_label_context label_ctx;
+  struct edge_key_compare_vertex_context vertex_ctx;
+  edge * e;
+
+  label_ctx = (typeof(label_ctx)) { B : B->label, len : B->label_len };
+  e = list_search_range(A->down, 0, A->down_partition, &label_ctx, edge_key_compare_label);
+
+  if(!e)
+  {
+    vertex_ctx = (typeof(vertex_ctx)) { B : B };
+    e = list_search_range(A->down, A->down_partition, A->down->l - A->down_partition, &vertex_ctx, edge_key_compare_vertex);
+  }
+
+  return e;
 }

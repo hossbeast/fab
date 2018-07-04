@@ -23,39 +23,21 @@ struct list;    // valyria/list.h
 
 struct vertex_internals
 {
-  int guard;      // there exists a frame exploring this vertex
-  int traveled;   // id of the last traversal to travel this vertex
+  size_t  up_partition;   // index of the first item in up indexed by vertex
+  size_t  down_partition; // index of the first item in down indexed by vertex
+
+  union {
+    struct {
+      int guard;      // there exists a frame exploring this vertex
+      int traveled;   // id of the last traversal to travel this vertex
+    };
+  };
 
   char value[];   // opaque user data
 };
 
 #define VERTEX_INTERNALS struct vertex_internals
 #include "vertex.h"
-
-struct vertex_cmp_context {
-  size_t lx;
-  int lc;
-  const char * A;
-  const char * B;
-  size_t len;
-};
-
-int vertex_compare(void * _ctx, const void * _e, size_t idx)
-  __attribute__((nonnull));
-
-/// vertex_create
-//
-// SUMMARY
-//  allocate a vertex
-//
-xapi vertex_create(vertex ** const restrict v, struct graph * restrict g, size_t vsz, uint32_t attrs)
-  __attribute__((nonnull));
-
-xapi vertex_creates(vertex ** const restrict v, struct graph * restrict g, size_t vsz, uint32_t attrs, const char * const restrict label)
-  __attribute__((nonnull));
-
-xapi vertex_createw(vertex ** const restrict v, struct graph * restrict g, size_t vsz, uint32_t attrs, const char * const restrict label, size_t label_len)
-  __attribute__((nonnull));
 
 /// vertex_free
 //

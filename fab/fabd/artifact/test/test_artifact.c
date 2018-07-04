@@ -67,7 +67,7 @@ static xapi get_node(map * node_map, char * label, size_t len, node ** n)
   if((*n = map_get(node_map, label, len)) == 0)
   {
     vertex * v;
-    fatal(graph_vertex_createw, &v, g_node_graph, 0, label, len);
+    fatal(vertex_createw, &v, g_node_graph, 0, label, len);
     *n = vertex_value(v);
     fatal(path_createw, &(*n)->name, label, len);
     fatal(map_set, node_map, label, len, *n);
@@ -119,7 +119,7 @@ static xapi artifact_test_entry(xunit_test * _test)
 
   // ordered list of edges
   fatal(narrator_xreset, N);
-  fatal(graph_say, g_node_graph, NODE_RELATION_FS, N);
+  fatal(graph_say, g_node_graph, 0, N);
   const char * actual_graph = narrator_growing_buffer(N);
   size_t actual_graph_len = narrator_growing_size(N);
   assert_eq_w(test->expected_graph, strlen(test->expected_graph), actual_graph, actual_graph_len);
@@ -163,73 +163,73 @@ xunit_unit xunit = {
       (artifact_test[]) {{
           context : "C"
         , ff : "artifact X.{a,b,c}?"
-        , expected_graph : "C:X.a C:X.b C:X.c"
+        , expected_graph : "1-C 2-X.a!0x2 3-X.b!0x2 4-X.c!0x2 1:0x1:2 1:0x1:3 1:0x1:4"
         , expected_artifacts : "X.a?a X.b?b X.c?c"
       }}
     , (artifact_test[]) {{
           context : "C"
         , ff : "artifact X.{[a-c]}?"
-        , expected_graph : "C:X.a C:X.b C:X.c"
+        , expected_graph : "1-C 2-X.a!0x2 3-X.b!0x2 4-X.c!0x2 1:0x1:2 1:0x1:3 1:0x1:4"
         , expected_artifacts : "X.a?a X.b?b X.c?c"
       }}
     , (artifact_test[]) {{
           context : "C"
         , ff : "artifact X.{[a-c]}?d"
-        , expected_graph : "C:X.ad C:X.bd C:X.cd"
+        , expected_graph : "1-C 2-X.ad!0x2 3-X.bd!0x2 4-X.cd!0x2 1:0x1:2 1:0x1:3 1:0x1:4"
         , expected_artifacts : "X.ad?a X.bd?b X.cd?c"
       }}
     , (artifact_test[]) {{
           context : "C"
         , ff : "artifact X.[a-b]?"
-        , expected_graph : "C:X.a C:X.b"
+        , expected_graph : "1-C 2-X.a!0x2 3-X.b!0x2 1:0x1:2 1:0x1:3"
         , expected_artifacts : "X.a?a X.b?b"
       }}
     , (artifact_test[]) {{
           context : "C"
         , ff : "artifact X.[a-b]?c"
-        , expected_graph : "C:X.ac C:X.bc"
+        , expected_graph : "1-C 2-X.ac!0x2 3-X.bc!0x2 1:0x1:2 1:0x1:3"
         , expected_artifacts : "X.ac?a X.bc?b"
       }}
     , (artifact_test[]) {{
           context : "C"
         , ff : "artifact X.{a,b}?w"
-        , expected_graph : "C:X.aw C:X.bw"
+        , expected_graph : "1-C 2-X.aw!0x2 3-X.bw!0x2 1:0x1:2 1:0x1:3"
         , expected_artifacts : "X.aw?a X.bw?b"
       }}
     , (artifact_test[]) {{
           context : "C"
         , ff : "artifact X.{{a,b}{.c,}}?"
-        , expected_graph : "C:X.a C:X.a.c C:X.b C:X.b.c"
+        , expected_graph : "1-C 2-X.a!0x2 3-X.a.c!0x2 4-X.b!0x2 5-X.b.c!0x2 1:0x1:2 1:0x1:3 1:0x1:4 1:0x1:5"
         , expected_artifacts : "X.a?a X.a.c?a.c X.b?b X.b.c?b.c"
       }}
     , (artifact_test[]) {{
           context : "C"
         , ff : "artifact X.{a{,.c},b{,.c}}?"
-        , expected_graph : "C:X.a C:X.a.c C:X.b C:X.b.c"
+        , expected_graph : "1-C 2-X.a!0x2 3-X.a.c!0x2 4-X.b!0x2 5-X.b.c!0x2 1:0x1:2 1:0x1:3 1:0x1:4 1:0x1:5"
         , expected_artifacts : "X.a?a X.a.c?a.c X.b?b X.b.c?b.c"
       }}
     , (artifact_test[]) {{
           context : "C"
         , ff : "artifact X{Y,Z}.{a,b}?"
-        , expected_graph : "C:XY.a C:XY.b C:XZ.a C:XZ.b"
+        , expected_graph : "1-C 2-XY.a!0x2 3-XY.b!0x2 4-XZ.a!0x2 5-XZ.b!0x2 1:0x1:2 1:0x1:3 1:0x1:4 1:0x1:5"
         , expected_artifacts : "XY.a?a XY.b?b XZ.a?a XZ.b?b"
       }}
     , (artifact_test[]) {{
           context : "C"
         , ff : "artifact X{Y}?.{a}"
-        , expected_graph : "C:XY.a"
+        , expected_graph : "1-C 2-XY.a!0x2 1:0x1:2"
         , expected_artifacts : "XY.a?Y"
       }}
     , (artifact_test[]) {{
           context : "C"
         , ff : "artifact X{Y,}?.{a}"
-        , expected_graph : "C:X.a C:XY.a"
+        , expected_graph : "1-C 2-X.a!0x2 3-XY.a!0x2 1:0x1:2 1:0x1:3"
         , expected_artifacts : "X.a? XY.a?Y"
       }}
     , (artifact_test[]) {{
           context : "C"
         , ff : "artifact X{Y,Z}?.{a,b}"
-        , expected_graph : "C:XY.a C:XY.b C:XZ.a C:XZ.b"
+        , expected_graph : "1-C 2-XY.a!0x2 3-XY.b!0x2 4-XZ.a!0x2 5-XZ.b!0x2 1:0x1:2 1:0x1:3 1:0x1:4 1:0x1:5"
         , expected_artifacts : "XY.a?Y XY.b?Y XZ.a?Z XZ.b?Z"
       }}
     , 0

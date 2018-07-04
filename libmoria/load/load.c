@@ -15,16 +15,15 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#include <stdio.h>
-
 #include "xapi.h"
-#include "xlinux/load.h"
+
 #include "narrator/load.h"
 #include "valyria/load.h"
+#include "xlinux/load.h"
 
 #include "internal.h"
 #include "load.internal.h"
-#include "MORIA.errtab.h"
+#include "logging.internal.h"
 
 //
 // api
@@ -42,6 +41,9 @@ API xapi moria_load()
     fatal(xlinux_load);
     fatal(narrator_load);
     fatal(valyria_load);
+
+    // modules
+    fatal(logging_setup);
   }
 
   finally : coda;

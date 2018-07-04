@@ -25,6 +25,7 @@
 #include "moria/edge.h"
 #include "moria/graph.h"
 #include "moria/vertex.h"
+#include "moria/operations.h"
 #include "xlinux/xstdlib.h"
 #include "xlinux/xstring.h"
 
@@ -68,7 +69,7 @@ static xapi get_node(map * node_map, char * label, size_t len, node ** n)
   if((*n = map_get(node_map, label, len)) == 0)
   {
     vertex * v;
-    fatal(graph_vertex_createw, &v, g_node_graph, 0, label, len);
+    fatal(vertex_createw, &v, g_node_graph, 0, label, len);
     *n = vertex_value(v);
     (*n)->fstype = NODE_FSTYPE_FILE;
     fatal(path_createw, &(*n)->name, label, len);
@@ -123,7 +124,7 @@ static xapi rules_test_entry(xunit_test * _test)
       if(A)
       {
         A->fstype = NODE_FSTYPE_DIR;
-        fatal(graph_connect_edge, g_node_graph, vertex_containerof(A), vertex_containerof(B), NODE_RELATION_FS);
+        fatal(graph_connect, g_node_graph, vertex_containerof(A), vertex_containerof(B), NODE_RELATION_FS);
       }
       
       A = B;
@@ -158,7 +159,7 @@ static xapi rules_test_entry(xunit_test * _test)
   fatal(rules_apply, rules_list, base, &af, traversal_id);
 
   // ordered list of edges
-  fatal(graph_say, g_node_graph, NODE_RELATION_STRONG, N);
+  fatal(graph_say, g_node_graph, 0, N);
   const char * graph = narrator_growing_buffer(N);
   assert_eq_s(test->result_graph, graph);
 
@@ -189,7 +190,7 @@ xunit_unit xunit = {
             , "rule C.o : C.c"
             , 0
           }
-        , result_graph : "B:C.o C.o:C.c"
+        , result_graph : "1-A 2-B 3-C.c 4-C.c!0x2 5-C.o!0x2 1:0x1:2 1:0x1:3 1:0x1:4 1:0x1:5 2:0x6:5 5:0x6:4"
       }}
     , (rules_test[]) {{
           nodes : "A/B.xapi"
@@ -200,7 +201,7 @@ xunit_unit xunit = {
               "rule B.? : C.?.o"
             , 0
           }
-        , result_graph : "B.xapi:C.xapi.o"
+        , result_graph : "1-A 2-B.xapi 3-C.xapi.o!0x2 1:0x1:2 1:0x1:3 2:0x6:3"
       }}
     , (rules_test[]) {{
           nodes : "A/B A/C.c A/D.c"
@@ -211,7 +212,7 @@ xunit_unit xunit = {
             , "rule %.o : %.c"
             , 0
           }
-        , result_graph : "B:C.o B:D.o C.o:C.c D.o:D.c"
+        , result_graph : "1-A 2-B 3-C.c 4-C.c!0x2 5-C.o!0x2 6-D.c 7-D.c!0x2 8-D.o!0x2 1:0x1:2 1:0x1:3 1:0x1:4 1:0x1:5 1:0x1:6 1:0x1:7 1:0x1:8 2:0x6:5 2:0x6:8 5:0x6:4 8:0x6:7"
       }}
     , 0
   }

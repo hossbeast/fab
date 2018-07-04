@@ -21,6 +21,7 @@
 
 #include "moria/graph.h"
 #include "moria/vertex.h"
+#include "moria/operations.h"
 #include "valyria/list.h"
 #include "valyria/map.h"
 
@@ -75,7 +76,7 @@ static xapi get_node(map * node_map, char * path, size_t len, node ** n)
     if((B = map_get(node_map, label, label_len)) == 0)
     {
       vertex * v;
-      fatal(graph_vertex_createw, &v, g_node_graph, 0, label, label_len);
+      fatal(vertex_createw, &v, g_node_graph, 0, label, label_len);
       B = vertex_value(v);
       fatal(path_createw, &B->name, label, label_len);
       fatal(map_set, node_map, label, label_len, B);
@@ -86,7 +87,7 @@ static xapi get_node(map * node_map, char * path, size_t len, node ** n)
 
     if(A)
     {
-      fatal(graph_connect_edge, g_node_graph, vertex_containerof(A), vertex_containerof(B), NODE_RELATION_FS);
+      fatal(graph_connect, g_node_graph, vertex_containerof(A), vertex_containerof(B), NODE_RELATION_FS);
     }
     
     A = B;

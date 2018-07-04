@@ -18,12 +18,15 @@
 #ifndef _MORIA_GRAPH_INTERNAL_H
 #define _MORIA_GRAPH_INTERNAL_H
 
-#include <sys/types.h>
+#include "types.h"
 #include "xapi.h"
 
 #include "graph.h"
 
-struct list;
+struct list;      // valyria/list
+struct multimap;  // valyria/multimap
+
+struct vertex;
 
 struct graph
 {
@@ -31,9 +34,15 @@ struct graph
   struct list * edges;
   int traversal_id;
 
+  uint32_t identity;
+  struct multimap * mm;
+
   size_t vsz;
   void (*vertex_value_destroy)(void *);
   xapi (*vertex_value_xdestroy)(void *);
 };
+
+xapi graph_vertex_push(graph * const restrict g, struct vertex * const restrict v)
+  __attribute__((nonnull));
 
 #endif

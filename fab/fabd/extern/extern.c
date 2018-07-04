@@ -24,6 +24,8 @@
 #include "lorien/nftwat.h"
 #include "lorien/path_normalize.h"
 #include "moria/graph.h"
+#include "moria/operations.h"
+#include "moria/traverse.h"
 #include "moria/vertex.h"
 #include "narrator.h"
 #include "narrator/fixed.h"
@@ -111,7 +113,7 @@ static xapi __attribute__((nonnull)) index_directory_visit(
   const char * name = info->path + info->name_off;
   size_t namel = info->pathl - info->name_off;
 
-  fatal(graph_vertex_create, &v, extern_graph, 0);
+  fatal(vertex_create, &v, extern_graph, 0);
   n = vertex_value(v);
   fatal(ixstrndup, &n->name, name, namel);
   v->label = n->name;
@@ -119,7 +121,7 @@ static xapi __attribute__((nonnull)) index_directory_visit(
 
   if(info->parent)
   {
-    fatal(graph_connect_edge
+    fatal(graph_connect
       , extern_graph
       , info->parent->udata
       , v
@@ -236,8 +238,10 @@ xapi extern_reference_resolve(const ff_node_pattern * restrict ref, const vertex
       if(!name)
         break;
 
-      v = vertex_travel_vertexs(v, name, 0, NODE_RELATION_FS, MORIA_TRAVERSE_UP);
-      if(v == 0)
+      if((v = vertex_up(v)) == NULL)
+        break;
+
+      if(memncmp(name, strlen(name), v->label, v->label_len) != 0)
         break;
     }
 
@@ -342,7 +346,7 @@ xapi extern_setup()
 {
   enter;
 
-  fatal(graph_createx, &extern_graph, sizeof(refnode), refnode_destroy, 0);
+  fatal(graph_createx, &extern_graph, 0, sizeof(refnode), refnode_destroy, 0);
   fatal(multimap_create, &extern_mmap);
 
   finally : coda;
@@ -366,7 +370,7 @@ xapi extern_report()
   logs(L_INFO, "extern graph");
 
   // dump the extern graph
-  fatal(graph_traverse_all_vertices
+  fatal(graph_traverse_vertices_all
     , extern_graph
     , extern_report_visit
     , 0

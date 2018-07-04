@@ -66,7 +66,7 @@ static xapi get_node(map * node_map, char * label, size_t len, node ** n)
   if((*n = map_get(node_map, label, len)) == 0)
   {
     vertex * v;
-    fatal(graph_vertex_createw, &v, g_node_graph, 0, label, len);
+    fatal(vertex_createw, &v, g_node_graph, 0, label, len);
     *n = vertex_value(v);
     fatal(path_createw, &(*n)->name, label, len);
     fatal(map_set, node_map, label, len, *n);
@@ -120,7 +120,7 @@ static xapi pattern_generate_test_entry(xunit_test * _test)
 
   // ordered list of edges
   fatal(narrator_xreset, N);
-  fatal(graph_say, g_node_graph, NODE_RELATION_FS, N);
+  fatal(graph_say, g_node_graph, 0, N);
   const char * graph = narrator_growing_buffer(N);
   size_t graph_len = narrator_growing_size(N);
   assert_eq_w(test->expected_graph, strlen(test->expected_graph), graph, graph_len);
