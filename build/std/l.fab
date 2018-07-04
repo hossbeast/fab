@@ -39,55 +39,57 @@
 #  fabpaths   - 
 #
 
++[ $*/../../vars.fab ]
+
 # default object file extensions
 $dext = [ o ]
 
 # paths to l files for discovery
 $ldscpaths = [
-  $paths        # paths
-  $dscpaths     # paths, discovery only
+	$paths				# paths
+	$dscpaths			# paths, discovery only
 
-  [
-    $dirs       # directories
-    $dscdirs    # directories, discovery only
-  ~ ls ]
+	[
+		$dirs				# directories
+		$dscdirs		# directories, discovery only
+	~ ls ]
 
-  [
-    $rdirs      # recursive directories
-    $rdscdirs   # recursive directories, discovery only
-  ~ lsr ]
+	[
+		$rdirs			# recursive directories
+		$rdscdirs		# recursive directories, discovery only
+	~ lsr ]
 ~ lx/l ]
 
 # paths to l files for fabrication
 $lfabpaths = [
-  $paths        # paths
-  $fabpaths     # paths, discovery only
+	$paths				# paths
+	$fabpaths			# paths, discovery only
 
-  [
-    $dirs       # directories
-    $fabdirs    # directories, discovery only
-  ~ ls ]
+	[
+		$dirs				# directories
+		$fabdirs		# directories, discovery only
+	~ ls ]
 
-  [
-    $rdirs      # recursive directories
-    $rfabdirs   # recursive directories, discovery only
+	[
+		$rdirs			# recursive directories
+		$rfabdirs		# recursive directories, discovery only
   ~ lsr ]
 ~ lx/l ]
 
 # discovery
 [ $ldscpaths ] %
 {
-      [ $flex ] [ $flexflags ~ uu fi ] -t [ $@ ] [
-  ] | [ $cc ] [ $cflags ~ uu fi ] -MM -MP -MG -xc - [
-  ] | [ $^gccdep ] '[ $gendir ]' [ $@ ~ [ rx [ sx/l/lex.$dext ~ j ] y fi ~ fi ] ] [ $dext ]
+		  [ $flex ] [ $flexflags ~ uu fi ] -t [ $@ ] [
+	] | [ $cc ] [ $cflags ~ uu fi ] -MM -MP -MG -xc - [
+	] | [ $gccdep ] [ $@ ~ [ rx [ sx/l/lex.$dext ~ j ] y fi ~ fi ] ] [ $dext ]
 }
 
 # $flex : l -> { lex.c, lex.h }
 [ $lfabpaths ~ sx/l/lex.c sy uu v d cp u sx/lex.c/lex.h z dj/2 shift pop ] :: [ $< ~ rx sx/lex.c/l sx/lex.h/l ss u ]
 {
-    [ $flex ] [ $flexflags ~ uu fi ] -o [ $@ ~ w/1/1 ] [
-  ] [ --header-file= [ $@ ~ w/0/1 ] ] [
-  ] [ $@ ~ rx/ineed lx/l ss u ]
+	  [ $flex ] [ $flexflags ~ uu fi ] -o [ $@ ~ w/1/1 ] [
+	] [ --header-file= [ $@ ~ w/0/1 ] ] [
+	] [ $@ ~ rx/ineed lx/l ss u ]
 }
 
 # $cc : lex.c -> lex.o via std.c

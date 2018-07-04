@@ -1,0 +1,63 @@
+/* Copyright (c) 2012-2015 Todd Freed <todd.freed@gmail.com>
+
+   This file is part of fab.
+   
+   fab is free software: you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation, either version 3 of the License, or
+   (at your option) any later version.
+   
+   fab is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+   
+   You should have received a copy of the GNU General Public License
+   along with fab.  If not, see <http://www.gnu.org/licenses/>. */
+
+# errors.fab
+#  provides fabrication formula for .errtab -> { .errtab.c, .errtab.h }
+#  provides dependencies for { .errtab.c, .errtab.h } -> .errtab
+#
+# var/closure
+#
+#  apidata    - whether to include APIDATA in the errtab definition
+#
+#  dirs       - directories containing .errtab files
+#  rdirs      - directories containing .errtab files, recursive search
+#  paths      - paths to .errtab files
+#
+#  fabdirs    - (as above, but for fabrication/dependency only)
+#  rfabdirs   - 
+#  fabpaths   - 
+
++[ $*/../../../vars.fab ]
+
+# paths to errtab files for fabrication
+$errtabpaths = [
+	$paths				# paths
+	$fabpaths			# paths, fabrication only
+
+	[
+		$dirs				# directories
+		$fabdirs		# directories, fabrication only
+	~ ls ]
+
+	[
+		$rdirs			# recursive directories
+		$rfabdirs		# recursive directories, fabrication only
+	~ lsr ]
+~ lx/errtab ]
+
+# errtab -> { .errtab.c, .errtab.h }
+[ $errtabpaths ~ sx/errtab/errtab.c sy uu v d cp u sx/errtab.c/errtab.h z dj/2 shift pop ] :: [ $< ~ rx sx/errtab.c/errtab sx/errtab.h/errtab ss u ]
+{
+  [ $mkerrtab ] [ $@ ~ rx/ineed uu fi ]
+}
+
+# echo "etable * ${api} perrtab = &errtab_${pfx};"
+# echo "#extern etable * perrtab;"
+
+# cc : errors.c -> errors.o @ std.c
++[@std.c](-$cobjpaths; $cfabpaths = [ $errtabpaths ~ sx/errtab/errtab.c ]; $cc $cflags; $cdscpaths)
+$errorsobjpaths = [ $cobjpaths ]

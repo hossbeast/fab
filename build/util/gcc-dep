@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 
-# Copyright (c) 2012-2015 Todd Freed <todd.freed@gmail.com>
+# Copyright (c) 2012-2018 Todd Freed <todd.freed@gmail.com>
 #
 # This file is part of fab.
 #
@@ -23,15 +23,6 @@ use warnings;
 my @S;  # strong
 my @W;  # weak
 
-my $gen = '';
-if($ARGV[0])
-{
-  $gen = $ARGV[0];
-  $gen =~ s/^\s+//;
-  $gen =~ s/\s+//;
-}
-
-#for my $line (map { chomp ; $_ } <RDOUT>)
 for (map { chomp ; $_ } <STDIN>)
 {
   if(/^[^:]+:$/)  # -MP lines, only
@@ -40,12 +31,6 @@ for (map { chomp ; $_ } <STDIN>)
 
     my $line = substr $_, 0, -2;  # exclude trailing newline and colon
     $line = "${line}h";
-
-    # for a generated file, the target does not exist ; prepend to the path (for gcc -MG)
-    if(! -r $line && $gen)
-    {
-      $line = $gen . "/" . $line;
-    }
 
     if($line =~ /\.lex\.h$/)
     {
@@ -86,7 +71,7 @@ for (map { chomp ; $_ } <STDIN>)
 # args come in pairs ; target, and extension to use for its object-file dependencies
 #
 
-for(my $x = 1; $x <= $#ARGV; $x += 2)
+for(my $x = 0; $x <= $#ARGV; $x += 2)
 {
   if(@S)
   {

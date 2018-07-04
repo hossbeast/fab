@@ -41,6 +41,7 @@ $VERSIONN       = [ $VERSIONL ~ j s/^0//g ]       # version number
 
 # source directories
 $droot          = [ $* ]
+$dbuild         = [ $*/build ~ j ]
 $dcommon        = [ $*/common ~ j ]
 $dfab           = [ $*/fab/fab ~ j ]
 $dfabcore       = [ $*/fab ~ j ]
@@ -57,7 +58,6 @@ $dlibxapi       = [ $*/libxapi ~ j ]
 $dlibxlinux     = [ $*/libxlinux ~ j ]
 $dlibxunit      = [ $*/xunit/libxunit ~ j ]
 $dlibyyutil     = [ $*/libyyutil ~ j ]
-$dutil          = [ $*/fab/util ~ j ]
 $dxunit         = [ $*/xunit/xunit ~ j ]
 
 # build artifacts
@@ -132,9 +132,8 @@ $xunit_xapi_debug       = [ $dxunit/xunit.debug ~ j ]
 $xunit_xapi_devel       = [ $dxunit/xunit.devel ~ j ]
 $valgrind_runner        = [ $dcommon/valgrind.runner ~ j ]
 $xunit_tests            = [ $*/test/xunit.fab ~ j ]
-$gccdep_final           = [ $dutil/gcc-dep ~ j ]
-$gccdep_debug           = [ $dutil/gcc-dep ~ j ]
-$gccdep_devel           = [ $dutil/gcc-dep ~ j ]
+$gccdep                 = [ $dbuild/util/gcc-dep ~ j ]
+$mkerrtab               = [ $dbuild/util/mkerrtab ~ j ]
 
 # install directories (these are suitable for ubuntu-64)
 $destdir        = [ ]                             # root install directory - does not affect runtime directories
@@ -171,9 +170,6 @@ $cc         = [ gcc ]
 $cflags       = [
   # universal compiler options
   [ -m64 -Wall -Werror -D_GNU_SOURCE -fplan9-extensions -fno-builtin-log -Wmissing-prototypes -fdiagnostics-color=always -Wno-misleading-indentation ]
-
-  # readdir_r is deprecated
-  [ -Wno-deprecated-declarations ]
 
   # include paths
   [ $dcommon ~ lsr c -d s/^/-I ]
