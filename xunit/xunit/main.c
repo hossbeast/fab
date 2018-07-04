@@ -19,6 +19,8 @@
 #include <stdio.h>
 #include <dlfcn.h>
 #include <inttypes.h>
+#include <sys/mman.h>
+#include <sys/wait.h>
 
 #include "xapi/SYS.errtab.h"
 
@@ -32,9 +34,13 @@
 
 #include "xapi/trace.h"
 #include "xapi/calltree.h"
+#include "xlinux/KERNEL.errtab.h"
 #include "xlinux/xstdlib.h"
 #include "xlinux/xtime.h"
 #include "xlinux/xdlfcn.h"
+#include "xlinux/xwait.h"
+#include "xlinux/xresource.h"
+#include "xlinux/xunistd.h"
 #include "xunit/assert.h"
 #include "xunit/XUNIT.errtab.h"
 #include "logger.h"
@@ -43,9 +49,18 @@
 
 #include "MAIN.errtab.h"
 #include "args.h"
+#include "cores.h"
 #include "assure.h"
 #include "logging.h"
 #include "macros.h"
+
+static inline double pct(double a, double b)
+{
+  if((a + b) == 0)
+    return 0;
+
+  return 100 * (a / (a + b));
+}
 
 static xapi main_exit;
 static uint32_t suite_assertions_passed;
@@ -53,6 +68,13 @@ static uint32_t suite_assertions_failed;
 static uint32_t suite_tests_passed;
 static uint32_t suite_tests_failed;
 static uint32_t suite_units;
+
+typedef struct test_results
+{
+  xapi status;
+  uint32_t assertions_passed;
+  uint32_t assertions_failed;
+} test_results;
 
 static xapi xmain()
 {
@@ -64,6 +86,7 @@ static xapi xmain()
   uint64_t * test_vector = 0;
   size_t test_vector_l = 0;
   size_t test_vector_a = 0;
+  test_results * results = 0;
 
   // allocated with the same size as g_args.objects
   void ** objects = 0;
@@ -73,8 +96,14 @@ static xapi xmain()
   fatal(args_parse);
   fatal(args_summarize);
 
+  // enable coredumps
+  fatal(xsetrlimit, RLIMIT_CORE, (struct rlimit[]) {{ .rlim_cur = RLIM_INFINITY, .rlim_max = RLIM_INFINITY }});
+
   // allocation for dloaded objects
   fatal(xmalloc, &objects, sizeof(*objects) * g_args.objectsl);
+
+  if((results = mmap(0, sizeof(test_results), PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, -1, 0)) == 0)
+    fail(KERNEL_ENOMEM);
 
   struct timespec suite_start;
   struct timespec suite_end;
@@ -155,10 +184,12 @@ static xapi xmain()
       test = xunit->xu_tests;
       for(test = xunit->xu_tests; *test; test++)
       {
+        (*test)->xu_index = (int)(test - xunit->xu_tests);
+
         if(only && !(*test)->xu_only)
           continue;
 
-        if(only_run && !(*test)->xu_run)
+        if(!only && only_run && !(*test)->xu_run)
           continue;
 
         if((*test)->xu_skip)
@@ -169,13 +200,6 @@ static xapi xmain()
 
         xunit_test_entry entry = (*test)->xu_entry ?: xunit->xu_entry;
 
-        xunit_assertions_passed = 0;
-        xunit_assertions_failed = 0;
-
-        struct timespec test_start;
-        struct timespec test_end;
-        fatal(xclock_gettime, CLOCK_MONOTONIC_RAW, &test_start);
-
         const char * name = 0;
         if(!(name = (*test)->xu_name))
         {
@@ -184,37 +208,76 @@ static xapi xmain()
             name = nfo.dli_sname;
         }
 
-        int test_failed = 0;
-        int test_index = (int)(test - xunit->xu_tests);
-        if(invoke(entry, *test))
+        struct timespec test_start;
+        struct timespec test_end;
+        fatal(xclock_gettime, CLOCK_MONOTONIC_RAW, &test_start);
+
+        xunit_assertions_passed = 0;
+        xunit_assertions_failed = 0;
+
+        memset(results, 0, sizeof(test_results));
+        pid_t pid;
+        fatal(xfork, &pid);
+        if(pid == 0)
         {
-          test_failed = 1;
+          if((results->status = invoke(entry, *test)))
+          {
+            // add identifying info
+            if(name)
+              xapi_frame_info_pushs("name", name);
+            xapi_frame_info_pushf("test", "%d in [%d,%zu]", (*test)->xu_index, 0, tests_len);
 
-          // add identifying info
-          if(name)
-            xapi_frame_info_pushs("name", name);
-          xapi_frame_info_pushf("test", "%d in [%d,%zu]", test_index, 0, tests_len);
+            // propagate non-unit-testing errors
+            if(XAPI_ERRVAL != XUNIT_FAIL)
+              fail(0);
 
-          // propagate non-unit-testing errors
-          if(XAPI_ERRVAL != XUNIT_FAIL)
-            fail(0);
+            // for unit-testing errors, log the failure and continue
+            xapi_trace_full(trace, sizeof(trace), XAPI_TRACE_COLORIZE | XAPI_TRACE_NONEWLINE);
+            xapi_calltree_unwind();
+            logs(L_FAIL, trace);
+          }
 
-          // for unit-testing errors, log the failure and continue
-          xapi_trace_full(trace, sizeof(trace), XAPI_TRACE_COLORIZE | XAPI_TRACE_NONEWLINE);
-          xapi_calltree_unwind();
-          logs(L_FAIL, trace);
+          results->assertions_passed = xunit_assertions_passed;
+          results->assertions_failed = xunit_assertions_failed;
+
+          // in the child, ignore suite status
+          suite_assertions_failed = 0;
+          suite_tests_failed = 0;
+
+          goto XAPI_FINALIZE;
         }
-        else if(xunit_assertions_failed)
-        {
-          test_failed = 1;
-        }
 
+        int wstatus;
+        fatal(xwaitpid, pid, &wstatus, 0);
         fatal(xclock_gettime, CLOCK_MONOTONIC_RAW, &test_end);
+
+        xunit_assertions_passed = results->assertions_passed;
+        xunit_assertions_failed = results->assertions_failed;
+        bool test_failed = xunit_assertions_failed || wstatus || results->status;
+
+        if(WIFEXITED(wstatus))
+        {
+          int exit = WEXITSTATUS(wstatus);
+          if(exit != 0)
+            xlogf(L_FAIL, L_RED, "exited with status %d", exit);
+        }
+        else if(WIFSIGNALED(wstatus))
+        {
+          int sig = WTERMSIG(wstatus);
+          bool core = WCOREDUMP(wstatus);
+          if(core)
+            fatal(print_core_backtrace, pid);
+          xlogf(L_FAIL, L_RED, "exited with signal %d, core %s", sig, core ? "yes" : "no");
+        }
+        else
+        {
+          xlogs(L_FAIL, L_RED, "exited abnormally");
+        }
 
         // report for this test
         fatal(log_xstart, L_TEST, test_failed ? L_RED : L_GREEN, &N);
         xsayf("  %%%6.2f pass rate on %6"PRIu32" assertions over "
-          , 100 * ((double)xunit_assertions_passed / (double)(xunit_assertions_passed + xunit_assertions_failed))
+          , pct(xunit_assertions_passed, xunit_assertions_failed)
           , xunit_assertions_passed + xunit_assertions_failed
         );
         fatal(elapsed_say, &test_start, &test_end, N);
@@ -231,7 +294,7 @@ static xapi xmain()
         {
           unit_tests_failed++;
 
-          div_t r = div(test_index, (sizeof(*test_vector) * 8));
+          div_t r = div((*test)->xu_index, (sizeof(*test_vector) * 8));
           int i = r.quot;
           int o = r.rem;
           fatal(assure, &test_vector, sizeof(*test_vector), i, &test_vector_a);
@@ -275,7 +338,7 @@ static xapi xmain()
 
       fatal(log_xstart, L_UNIT, unit_tests_failed ? L_RED : L_GREEN, &N);
       xsayf(" %%%6.2f pass rate on %6"PRIu32" assertions by %3"PRIu32" tests over "
-        , 100 * ((double)unit_assertions_passed / (double)(unit_assertions_passed + unit_assertions_failed))
+        , pct(unit_assertions_passed, unit_assertions_failed)
         , unit_assertions_passed + unit_assertions_failed
         , unit_tests_passed + unit_tests_failed
       );
@@ -304,7 +367,7 @@ static xapi xmain()
   // summary report
   fatal(log_xstart, L_SUITE, suite_tests_failed ? L_RED : L_GREEN, &N);
   xsayf("%%%6.2f pass rate on %6d assertions by %3d tests from %4d units over "
-    , 100 * ((double)suite_assertions_passed / (double)(suite_assertions_passed + suite_assertions_failed))
+    , pct(suite_assertions_passed, suite_assertions_failed)
     , (suite_assertions_passed + suite_assertions_failed)
     , suite_tests_passed + suite_tests_failed
     , suite_units

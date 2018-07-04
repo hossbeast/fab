@@ -68,10 +68,6 @@ if(help)
 "\n"
 "----------------- [ options ] --------------------------------------------------------------------\n"
 "\n"
-#if DEBUG || DEVEL
-" --backtrace-pithy   (default) produce a summary of the callstack upon failure\n"
-" --backtrace-full              produce a complete description of the callstack upon failure\n"
-#endif
   );
 }
 
@@ -139,11 +135,6 @@ xapi args_parse()
     , { "logcats"                     , no_argument       , &logs, 1 }
     , { "logexpr"                     , no_argument       , &logs, 1 }
     , { "logexprs"                    , no_argument       , &logs, 1 }
-
-#if DEBUG || DEVEL
-    , { "backtrace-pithy"             , no_argument       , &g_args.mode_backtrace, MODE_BACKTRACE_PITHY }
-    , { "backtrace-full"              , no_argument       , &g_args.mode_backtrace, MODE_BACKTRACE_FULL }
-#endif
     , { }
   };
 
@@ -157,13 +148,6 @@ xapi args_parse()
     // with-argument switches
     ""
   ;
-
-  //
-  // args:defaults
-  //
-#if DEBUG || DEVEL
-  g_args.mode_backtrace   = DEFAULT_MODE_BACKTRACE;
-#endif
 
   int x;
   int indexptr;
@@ -218,10 +202,6 @@ xapi args_summarize()
 
   // log execution parameters under PARAMS
   logf(L_PARAMS , "%11sprocessors             =%ld"           , ""  , g_args.procs);
-
-#if DEBUG || DEVEL
-  logf(L_ARGS | L_PARAMS        , " %s (  %c  ) mode-backtrace         =%s", g_args.mode_backtrace == DEFAULT_MODE_BACKTRACE ? " " : "*", ' ', MODE_STR(g_args.mode_backtrace));
-#endif
 
   if(g_args.concurrency == 0)
     snprintf(space, sizeof(space)  , "%s", "unbounded");

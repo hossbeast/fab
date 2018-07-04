@@ -1,4 +1,4 @@
-/* Copyright (c) 2012-2015 Todd Freed <todd.freed@gmail.com>
+/* Copyright (c) 2012-2018 Todd Freed <todd.freed@gmail.com>
 
    This file is part of fab.
 
@@ -15,23 +15,16 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef _ARGS_H
-#define _ARGS_H
+#ifndef _CORES_H
+#define _CORES_H
 
 #include "xapi.h"
 #include "types.h"
 
-struct g_args_t
-{
-  char ** objects;
-  size_t  objectsl;
-
-  long    procs;
-  int     concurrency;      // concurrently limiting factor
-} g_args;
-
-xapi args_parse(void);
-xapi args_summarize(void);
-void args_teardown(void);
+/// print_core_backtrace
+//
+// best-effort print backtrace to stdout
+//
+xapi print_core_backtrace(pid_t pid);
 
 #endif
