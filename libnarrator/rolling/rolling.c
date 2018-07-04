@@ -81,9 +81,8 @@ static xapi __attribute__((nonnull)) scan(narrator_rolling * const restrict n)
 
   size_t name_base_len = strlen(n->name_base);
 
-  struct dirent ent;
   struct dirent * entp = 0;
-  fatal(xreaddir_r, dd, &ent, &entp);
+  fatal(xreaddir, dd, &entp);
   while(entp)
   {
     if(strcmp(entp->d_name, ".") && strcmp(entp->d_name, ".."))
@@ -108,7 +107,7 @@ static xapi __attribute__((nonnull)) scan(narrator_rolling * const restrict n)
       }
     }
 
-    fatal(xreaddir_r, dd, &ent, &entp);
+    fatal(xreaddir, dd, &entp);
   }
 
   if(found)

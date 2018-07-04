@@ -76,9 +76,8 @@ static xapi __attribute__((nonnull(1, 3, 5, 7, 9))) walk(
   child.parent = dirinfo;
   child.path = path;
 
-  struct dirent * entp = 0;
-  struct dirent ent;
-  fatal(xreaddir_r, dd, &ent, &entp);
+  struct dirent * entp;
+  fatal(xreaddir, dd, &entp);
   fatal(xtelldir, &dirloc, dd);
   do
   {
@@ -126,7 +125,7 @@ static xapi __attribute__((nonnull(1, 3, 5, 7, 9))) walk(
     path[*pathl] = 0;
 
     seekdir(dd, dirloc);
-    fatal(xreaddir_r, dd, &ent, &entp);
+    fatal(xreaddir, dd, &entp);
     fatal(xtelldir, &dirloc, dd);
   } while(entp);
 

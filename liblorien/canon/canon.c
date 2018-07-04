@@ -339,7 +339,7 @@ for(x = 0; x < il; x++)
           space[j] = 0;
 
           // space2 contains the resolved path
-          char space2[512];
+          char space2[1024];
           snprintf(space2, sizeof(space2), "%.*s/%s", (int)oldz, dst, space);
 
           // stat the resolved path

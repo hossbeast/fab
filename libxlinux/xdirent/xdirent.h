@@ -56,12 +56,12 @@ xapi xopendirat(DIR ** dd, int dirfd, const char * const restrict path)
 xapi xfdopendir(int fd, DIR ** dd)
   __attribute__((nonnull));
 
-/// xreaddir_r
+/// xreaddir
 //
 // SUMMARY
-//  proxy for readdir_r
+//  proxy for readdir
 //
-xapi xreaddir_r(DIR * dirp, struct dirent * entry, struct dirent ** result);
+xapi xreaddir(DIR * dirp, struct dirent ** result);
 
 /// xclosedir
 //
