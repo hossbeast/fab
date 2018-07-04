@@ -60,12 +60,41 @@ finally:
 coda;
 }
 
+static xapi test_seek()
+{
+  enter;
+
+  narrator * N = 0;
+  fatal(narrator_growing_create, &N);
+  
+  xsays("H");
+
+  fatal(narrator_xseek, N, 2, NARRATOR_SEEK_SET, 0);
+  xsays("L");
+
+  fatal(narrator_xseek, N, 1, NARRATOR_SEEK_SET, 0);
+  xsays("E");
+
+  fatal(narrator_xseek, N, 4, NARRATOR_SEEK_SET, 0);
+  xsays("O");
+
+  fatal(narrator_xseek, N, 3, NARRATOR_SEEK_SET, 0);
+  xsays("L");
+
+  assert_eq_s("HELLO", N->growing.s);
+
+finally:
+  fatal(narrator_xfree, N);
+coda;
+}
+
 int main()
 {
   enter;
 
   xapi R = 0;
   fatal(test_basic);
+  fatal(test_seek);
 
 finally:
   summarize;

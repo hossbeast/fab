@@ -61,7 +61,7 @@ xapi record_xseek(narrator_record * const restrict n, off_t offset, int whence, 
 void record_destroy(narrator_record * const restrict n)
   __attribute__((nonnull));
 
-xapi record_xread(narrator_record * restrict n, void * dst, size_t count)
-  __attribute__((nonnull));
+xapi record_xread(narrator_record * restrict n, void * dst, size_t count, size_t * restrict r)
+  __attribute__((nonnull(1, 2)));
 
 #endif

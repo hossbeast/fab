@@ -107,10 +107,7 @@ void fd_destroy(narrator_fd * const restrict n)
 // RETURNS
 //  number of bytes actually read <= count
 //
-xapi fd_xread(narrator_fd * restrict n, void * dst, size_t count)
-  __attribute__((nonnull));
-
-int fd_read(narrator_fd * restrict n, void * dst, size_t count)
-  __attribute__((nonnull));
+xapi fd_xread(narrator_fd * restrict n, void * dst, size_t count, size_t * restrict r)
+  __attribute__((nonnull(1, 2)));
 
 #endif

@@ -32,7 +32,6 @@
 #include "rolling.internal.h"
 
 #include "parseint.h"
-#include "strutil.h"
 
 //
 // static
@@ -179,7 +178,7 @@ xapi rolling_xdestroy(narrator_rolling * const restrict n)
   finally : coda;
 }
 
-xapi rolling_xread(narrator_rolling * restrict n, void * dst, size_t count)
+xapi rolling_xread(narrator_rolling * restrict n, void * dst, size_t count, size_t * restrict r)
 {
   enter;
 

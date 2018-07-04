@@ -101,7 +101,7 @@ xapi narrator_xsayf(narrator * const restrict n, const char * const restrict fmt
 // SUMMARY
 //  write to the specified narrator
 //
-xapi narrator_xsayw(narrator * const restrict n, const char * const restrict b, size_t l)
+xapi narrator_xsayw(narrator * const restrict n, const void * const restrict b, size_t l)
   __attribute__((nonnull));
 
 /// narrator_says
@@ -156,9 +156,18 @@ xapi narrator_xreset(narrator * const restrict n)
 /// narrator_read
 //
 // SUMMARY
-//  read count bytes from the underlying store - not supported for many narrator types
+//  read bytes from the underlying store
 //
-xapi narrator_xread(narrator * restrict n, void * dst, size_t count)
-  __attribute__((nonnull));
+// PARAMETERS
+//  n     - narrator
+//  dst   - destination buffer
+//  count - number of bytes to read
+//  [r]   - (returns) number of bytes read
+//
+// REMARKS
+//  not supported for many narrator types
+//
+xapi narrator_xread(narrator * restrict n, void * dst, size_t count, size_t * restrict r)
+  __attribute__((nonnull(1, 2)));
 
 #endif

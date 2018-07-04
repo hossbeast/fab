@@ -128,7 +128,7 @@ coda;
 
 API xapi narrator_xsayc(narrator * const restrict n, int c)
 {
-  xproxy(narrator_xsayw, n, (char*)&c, 1);
+  xproxy(narrator_xsayw, n, &c, 1);
 }
 
 API xapi narrator_xsayvf(narrator * const restrict n, const char * const restrict fmt, va_list va)
@@ -157,7 +157,7 @@ API xapi narrator_xsayvf(narrator * const restrict n, const char * const restric
   finally : coda;
 }
 
-API xapi narrator_xsayw(narrator * const restrict n, const char * const restrict b, size_t l)
+API xapi narrator_xsayw(narrator * const restrict n, const void * const restrict b, size_t l)
 {
   enter;
 
@@ -188,22 +188,26 @@ API xapi narrator_xsays(narrator * const restrict n, const char * const restrict
   xproxy(narrator_xsayw, n, s, strlen(s));
 }
 
-API xapi narrator_xread(narrator * restrict n, void * dst, size_t count)
+API xapi narrator_xread(narrator * restrict n, void * dst, size_t count, size_t * restrict r)
 {
   enter;
 
+  size_t lr;
+  if(!r)
+    r = &lr;
+
   if(n->type == NARRATOR_FD)
-    fatal(fd_xread, &n->fd, dst, count);
+    fatal(fd_xread, &n->fd, dst, count, r);
   else if(n->type == NARRATOR_ROLLING)
-    fatal(rolling_xread, &n->rolling, dst, count);
+    fatal(rolling_xread, &n->rolling, dst, count, r);
   else if(n->type == NARRATOR_RECORD)
-    fatal(record_xread, &n->record, dst, count);
+    fatal(record_xread, &n->record, dst, count, r);
   else if(n->type == NARRATOR_FIXED)
-    fixed_read(&n->fixed, dst, count);
+    *r = fixed_read(&n->fixed, dst, count);
   else if(n->type == NARRATOR_GROWING)
-    growing_read(&n->growing, dst, count);
+    *r = growing_read(&n->growing, dst, count);
   else if(n->type == NARRATOR_NULLITY)
-    nullity_read(&n->nullity, dst, count);
+    *r = nullity_read(&n->nullity, dst, count);
 
   else
     fail(SYS_NOTSUPP);

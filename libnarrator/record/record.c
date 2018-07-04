@@ -74,9 +74,9 @@ void record_destroy(narrator_record * const restrict n)
   wfree(n->s);
 }
 
-xapi record_xread(narrator_record * restrict n, void * dst, size_t count)
+xapi record_xread(narrator_record * restrict n, void * dst, size_t count, size_t * restrict r)
 {
-  xproxy(narrator_xread, n->n, dst, count);
+  xproxy(narrator_xread, n->n, dst, count, r);
 }
 
 //

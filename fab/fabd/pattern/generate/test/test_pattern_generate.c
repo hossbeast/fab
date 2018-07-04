@@ -122,7 +122,8 @@ static xapi pattern_generate_test_entry(xunit_test * _test)
   fatal(narrator_xreset, N);
   fatal(graph_say, g_node_graph, NODE_RELATION_FS, N);
   const char * graph = narrator_growing_buffer(N);
-  assert_eq_s(test->expected_graph, graph);
+  size_t graph_len = narrator_growing_size(N);
+  assert_eq_w(test->expected_graph, strlen(test->expected_graph), graph, graph_len);
 
   // ordered list of nodes
   fatal(narrator_xreset, N);
@@ -136,7 +137,8 @@ static xapi pattern_generate_test_entry(xunit_test * _test)
     xsays(n->name->name);
   }
   const char * node_list = narrator_growing_buffer(N);
-  assert_eq_s(test->expected_nodes, node_list);
+  size_t node_list_len = narrator_growing_size(N);
+  assert_eq_w(test->expected_nodes, strlen(test->expected_nodes), node_list, node_list_len);
 
 finally:
   xapi_infos("pattern", test->pattern);

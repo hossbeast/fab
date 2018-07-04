@@ -92,7 +92,7 @@ static xapi test_log()
   logs(L_FOO, "foo");
 
   fatal(narrator_xreset, N);
-  fatal(narrator_xread, N, buf, sizeof(buf));
+  fatal(narrator_xread, N, buf, sizeof(buf), 0);
 
   // assert
   const char * expected = "foo";
@@ -119,7 +119,7 @@ static xapi test_log_start_basic()
   fatal(log_finish);
 
   fatal(narrator_xreset, N);
-  fatal(narrator_xread, N, buf, sizeof(buf));
+  fatal(narrator_xread, N, buf, sizeof(buf), 0);
 
   // assert
   const char * expected = "foo";
@@ -146,7 +146,7 @@ static xapi test_log_start_nullity()
   fatal(log_finish);
 
   fatal(narrator_xreset, N);
-  fatal(narrator_xread, N, buf, sizeof(buf));
+  fatal(narrator_xread, N, buf, sizeof(buf), 0);
 
   // assert
   const char * expected = "";

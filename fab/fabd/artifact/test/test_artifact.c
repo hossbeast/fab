@@ -121,7 +121,8 @@ static xapi artifact_test_entry(xunit_test * _test)
   fatal(narrator_xreset, N);
   fatal(graph_say, g_node_graph, NODE_RELATION_FS, N);
   const char * actual_graph = narrator_growing_buffer(N);
-  assert_eq_s(test->expected_graph, actual_graph);
+  size_t actual_graph_len = narrator_growing_size(N);
+  assert_eq_w(test->expected_graph, strlen(test->expected_graph), actual_graph, actual_graph_len);
 
   // ordered list of nodes
   fatal(narrator_xreset, N);
@@ -137,7 +138,8 @@ static xapi artifact_test_entry(xunit_test * _test)
     xsayw(af->variant, af->variant_len);
   }
   const char * actual_artifacts = narrator_growing_buffer(N);
-  assert_eq_s(test->expected_artifacts, actual_artifacts);
+  size_t actual_artifacts_len = narrator_growing_size(N);
+  assert_eq_w(test->expected_artifacts, strlen(test->expected_artifacts), actual_artifacts, actual_artifacts_len);
 
 finally:
   fatal(node_cleanup);

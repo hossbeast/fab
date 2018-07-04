@@ -47,19 +47,19 @@ xapi growing_xsayvf(narrator_growing * const restrict n, const char * const rest
     fatal(assure, &n->s, sizeof(*n->s), n->l + r + 1, &n->a);
     vsprintf(n->s + n->l, fmt, va);
   }
+
   n->l += r;
   n->m = MAX(n->l, n->m);
 
   finally : coda;
 }
 
-xapi growing_xsayw(narrator_growing * const restrict n, const char * const restrict b, size_t l)
+xapi growing_xsayw(narrator_growing * const restrict n, const void * const restrict b, size_t l)
 {
   enter;
 
   fatal(assure, &n->s, sizeof(*n->s), n->l + l + 1, &n->a);
   memcpy(n->s + n->l, b, l);
-  n->s[n->l + l] = 0;
   n->l += l;
   n->m = MAX(n->l, n->m);
 

@@ -74,7 +74,7 @@ xapi rolling_xseek(narrator_rolling * const restrict n, off_t offset, int whence
 xapi rolling_xdestroy(narrator_rolling * const restrict n)
   __attribute__((nonnull));
 
-xapi rolling_xread(narrator_rolling * restrict n, void * dst, size_t count)
-  __attribute__((nonnull));
+xapi rolling_xread(narrator_rolling * restrict n, void * dst, size_t count, size_t * restrict r)
+  __attribute__((nonnull(1, 2)));
 
 #endif

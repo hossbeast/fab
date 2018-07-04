@@ -52,7 +52,7 @@ xapi growing_xsayvf(narrator_growing * const restrict n, const char * const rest
 int growing_sayvf(narrator_growing * const restrict n, const char * const restrict fmt, va_list va)
   __attribute__((nonnull));
 
-xapi growing_xsayw(narrator_growing * const restrict n, const char * const restrict b, size_t l)
+xapi growing_xsayw(narrator_growing * const restrict n, const void * const restrict b, size_t l)
   __attribute__((nonnull));
 
 int growing_sayw(narrator_growing * const restrict n, const char * const restrict b, size_t l)

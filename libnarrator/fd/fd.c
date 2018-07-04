@@ -86,14 +86,15 @@ off_t fd_seek(narrator_fd * const restrict n, off_t offset, int whence)
   return lseek(n->fd, offset, whence);
 }
 
-xapi fd_xread(narrator_fd * restrict n, void * dst, size_t count)
+xapi fd_xread(narrator_fd * restrict n, void * dst, size_t count, size_t * restrict r)
 {
-  xproxy(axread, n->fd,dst, count);
-}
+  enter;
 
-int fd_read(narrator_fd * restrict n, void * dst, size_t count)
-{
-  return aread(n->fd,dst, count);
+  fatal(axread, n->fd,dst, count);
+  if(r)
+    *r = count;
+
+  finally : coda;
 }
 
 void fd_destroy(narrator_fd * const restrict n)
