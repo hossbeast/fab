@@ -62,6 +62,8 @@ options and modifiers which may be applied to
   LOGGER_ATTR_DEF(NAMES         , 0x00002000)  /* prepend process/thread names  */        \
   LOGGER_ATTR_DEF(FILTER        , 0x00004000)  /* (default) emission subject to filters */\
   LOGGER_ATTR_DEF(NOFILTER      , 0x00008000)  /* dont filter logs */                     \
+  LOGGER_ATTR_DEF(NOPID         , 0x00010000)  /* (default) */                            \
+  LOGGER_ATTR_DEF(PID           , 0x00020000)  /* prepend process ids */                  \
 
 enum {
 #define LOGGER_ATTR_DEF(a, b) L_ ## a = UINT32_C(b),

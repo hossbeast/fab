@@ -19,6 +19,8 @@
 #include <stdlib.h>
 
 #include "xapi.h"
+#include "types.h"
+
 #include "narrator.h"
 #include "valyria/array.h"
 
@@ -28,8 +30,6 @@
 
 #include "attrs32.h"
 #include "macros.h"
-
-#define restrict __restrict
 
 static attrs32 * logger_attrs = (attrs32[]) {
 #define LOGGER_ATTR_DEF(a, b) { value : (b), name : #a, namel : strlen(#a) },
@@ -58,6 +58,7 @@ const char * discovery_option_name(uint32_t attrs) { return attrs32_option_name(
 const char * datestamp_option_name(uint32_t attrs) { return attrs32_option_name(logger_attrs, logger_attrs_len, DATESTAMP_OPT, attrs); }
 const char * processid_option_name(uint32_t attrs) { return attrs32_option_name(logger_attrs, logger_attrs_len, NAMES_OPT, attrs); }
 const char * filter_option_name(uint32_t attrs)    { return attrs32_option_name(logger_attrs, logger_attrs_len, FILTER_OPT, attrs); }
+const char * pid_option_name(uint32_t attrs)       { return attrs32_option_name(logger_attrs, logger_attrs_len, PID_OPT, attrs); }
 
 //
 // public
@@ -105,6 +106,12 @@ uint32_t attr_combine2(uint32_t A, uint32_t B)
   {
     A &= ~FILTER_OPT;
     A |= (B & FILTER_OPT);
+  }
+
+  if(B & PID_OPT)
+  {
+    A &= ~PID_OPT;
+    A |= (B & PID_OPT);
   }
 
   return A;
@@ -182,6 +189,15 @@ xapi attr_say(uint32_t attr, narrator * const restrict N)
     wrote = 1;
 
     xsays(filter_option_name(attr));
+  }
+
+  if(attr & PID_OPT)
+  {
+    if(wrote)
+      xsayc(',');
+    wrote = 1;
+
+    xsays(pid_option_name(attr));
   }
 
   finally : coda;

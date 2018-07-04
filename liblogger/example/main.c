@@ -17,20 +17,41 @@
 
 #include "xapi.h"
 #include "xapi/trace.h"
+#include "xapi/calltree.h"
 
 #include "logger.h"
+#include "logger/load.h"
+#include "logger/category.h"
+#include "logger/stream.h"
+#include "logger/config.h"
 
-#include "logs.h"
+#define L_FOO categories[0].id
+#define L_BAR categories[1].id
+
+logger_category * categories = (logger_category []) {
+    { name : "FOO", description : "foo" , attr : L_CATEGORY | L_DATESTAMP | L_PID }
+  , { name : "BAR", description : "bar" , attr : L_CATEGORY | L_DATESTAMP | L_PID }
+  , { }
+};
+
+logger_stream * streams = (logger_stream []) {
+    { type : LOGGER_STREAM_FD , fd : 1 , expr : "+FOO", attr : L_CATEGORY | L_DATESTAMP }
+  , { }
+};
 
 int main(int argc, char ** argv, char ** envp)
 {
   enter;
   xapi R;
 
-  fatal(logger_setup);
-  fatal(logger_category_register, logs);
+  fatal(logger_load);
+  fatal(logger_category_register, categories);
   fatal(logger_stream_register, streams);
-  fatal(logger_initialize, envp);
+  fatal(logger_arguments_setup, envp);
+  fatal(logger_finalize);
+
+  //logger_set_process_name("example");
+  logger_set_thread_name("main");
 
   xlogs(L_FOO, L_RED, "red");
   xlogs(L_FOO, L_GREEN, "green");
@@ -38,7 +59,6 @@ int main(int argc, char ** argv, char ** envp)
   xlogs(L_FOO, L_BLUE, "blue");
   xlogs(L_FOO, L_MAGENTA, "magenta");
   xlogs(L_FOO, L_CYAN, "cyan");
-  xlogs(L_FOO, L_WHITE, "white");
 
   xlogs(L_BAR, L_BOLD_RED, "red");
 
@@ -50,17 +70,20 @@ int main(int argc, char ** argv, char ** envp)
   xlogs(L_BAR, L_BOLD_BLUE, "blue");
   xlogs(L_BAR, L_BOLD_MAGENTA, "magenta");
   xlogs(L_BAR, L_BOLD_CYAN, "cyan");
-  xlogs(L_BAR, L_BOLD_WHITE, "white");
 
 finally:
   if(XAPI_UNWINDING)
   {
+#if XAPI_STACKTRACE
     xapi_backtrace();
+#endif
   }
 
-  logger_teardown();
+  logger_unload();
 conclude(&R);
 
+#if XAPI_STACKTRACE
   xapi_teardown();
+#endif
   return !!R;
 }

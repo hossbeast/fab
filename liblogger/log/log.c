@@ -40,7 +40,6 @@
 #include "category.internal.h"
 
 #include "macros.h"
-#include "strutil.h"
 #include "color.h"
 
 #define restrict __restrict
@@ -153,8 +152,8 @@ API xapi log_xstart(uint64_t ids, uint32_t attrs, narrator ** restrict N)
 
     // wall-clock milliseconds
     struct timespec times;
-    fatal(xclock_gettime, CLOCK_REALTIME, &times);
-    storage_time_msec = (times.tv_sec * 1000) + (times.tv_nsec / 1000);
+    fatal(xclock_gettime, CLOCK_REALTIME_COARSE, &times);
+    storage_time_msec = (times.tv_sec * 1000) + (times.tv_nsec / 1000 / 1000);
 
     if(N)
       *N = storage_narrator;

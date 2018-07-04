@@ -44,7 +44,6 @@
 #include "LOGGER.errtab.h"
 
 #include "macros.h"
-#include "strutil.h"
 #include "color.h"
 #include "spinlock.h"
 #include "zbuffer.h"
@@ -288,6 +287,8 @@ xapi stream_write(stream *  restrict streamp, const uint64_t ids, uint32_t attrs
       , "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
     };
 
+    if(prev)
+      xsays(" ");
     xsayf("%4d %s %02d %02d:%02d:%02d"
       , tm.tm_year + 1900
       , months[tm.tm_mon]
@@ -327,17 +328,26 @@ xapi stream_write(stream *  restrict streamp, const uint64_t ids, uint32_t attrs
       xsays(" ");
     if(*logger_thread_name || *logger_process_name)
     {
-      char name[14];
+      char name[21];
       size_t namel = 0;
 
       namel += znloads(name + namel, sizeof(name) - namel, logger_process_name);
+      if((attrs & PID_OPT) == L_PID)
+        namel += znloadf(name + namel, sizeof(name) - namel, "[%5d]", getpid());
       if(namel && *logger_thread_name)
         namel += znloadc(name + namel, sizeof(name) - namel, '/');
       namel += znloads(name + namel, sizeof(name) - namel, logger_thread_name);
 
-      xsayf("%14s", name);
+      xsayf("%21s", name);
       prev = 1;
     }
+  }
+  else if((attrs & PID_OPT) == L_PID)
+  {
+    if(prev)
+      xsays(" ");
+    xsayf("[%5d]", getpid());
+    prev = 1;
   }
 
   if(prev)

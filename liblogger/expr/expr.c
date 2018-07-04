@@ -30,7 +30,6 @@
 #include "attr.internal.h"
 
 #include "macros.h"
-#include "strutil.h"
 
 #define restrict __restrict
 

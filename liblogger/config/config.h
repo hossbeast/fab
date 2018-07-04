@@ -28,8 +28,6 @@
 //
 int g_logger_default_stderr;
 
-#define restrict __restrict
-
 /// logger_set_process_name
 //
 // SUMMARY
@@ -74,5 +72,4 @@ void logger_set_process_attrs(uint32_t attrs);
 //
 void logger_set_thread_attrs(uint32_t attrs);
 
-#undef restrict
 #endif

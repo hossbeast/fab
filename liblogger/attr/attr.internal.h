@@ -18,9 +18,8 @@
 #ifndef _LOGGER_ATTR_INTERNAL_H
 #define _LOGGER_ATTR_INTERNAL_H
 
-#include <stdint.h>
-
 #include "xapi.h"
+#include "types.h"
 
 #include "attr.h"
 
@@ -32,7 +31,8 @@ struct narrator;
 #define DISCOVERY_OPT UINT32_C(0x00000300)
 #define DATESTAMP_OPT UINT32_C(0x00000C00)
 #define NAMES_OPT     UINT32_C(0x00003000)
-#define FILTER_OPT    UINT32_C(0X0000C000)
+#define FILTER_OPT    UINT32_C(0x0000C000)
+#define PID_OPT       UINT32_C(0x00030000)
 
 const char * color_option_name(uint32_t attrs);
 const char * category_option_name(uint32_t attrs);
@@ -41,8 +41,7 @@ const char * discovery_option_name(uint32_t attrs);
 const char * datestamp_option_name(uint32_t attrs);
 const char * processid_option_name(uint32_t attrs);
 const char * filter_option_name(uint32_t attrs);
-
-#define restrict __restrict
+const char * pid_option_name(uint32_t attrs);
 
 /// attr_combine
 //
@@ -74,5 +73,4 @@ xapi attr_say(uint32_t attr, struct narrator * const restrict _narrator)
 uint32_t attr_byname(const char * name, size_t namel)
   __attribute__((nonnull));
 
-#undef restrict
 #endif

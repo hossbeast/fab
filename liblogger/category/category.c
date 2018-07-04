@@ -88,7 +88,7 @@ static xapi select_category(list * restrict lists, dictionary * restrict index, 
     size_t sz = sizeof(space);
     size_t z = 0;
 
-    for(x = 0; x < selections->count; x++)
+    for(x = 0; x < selections->table_size; x++)
     {
       const char * key;
       if((key = dictionary_table_key(selections, x)))

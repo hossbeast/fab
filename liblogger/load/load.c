@@ -58,6 +58,8 @@ API xapi logger_load()
   finally : coda;
 }
 
+#include <stdio.h>
+
 API xapi logger_unload()
 {
   enter;
