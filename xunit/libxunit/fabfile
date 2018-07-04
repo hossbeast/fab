@@ -24,14 +24,14 @@
 # variables
 $basename     = [ xunit ]
 $libname_xapi = [ lib $basename .so ~ j ]
-$copts        = [ -fPIC [ $dlibxapi $dlibxlinux $dliblogger [ $* ~ lsr c -d ] ~ s/^/-I ] ]
+$copts        = [ -fPIC [ $dlibxapi $dlibxlinux [ $* ~ lsr c -d ] ~ s/^/-I ] ]
 $cflags_xapi_final  = [ $cflags_xapi_final $copts ]
 $cflags_xapi_debug  = [ $cflags_xapi_debug $copts ]
 $cflags_xapi_devel  = [ $cflags_xapi_devel $copts ]
 $lopts              = [ -shared [ -Wl,--version-script=$*/exports ~ j ] ]
-$lflags_xapi_final  = [ $libxapi_xapi_final $libxlinux_xapi_final $liblogger_xapi_final $lopts [ -Wl,-soname,libxunit-xapi.so ~ j ] ]
-$lflags_xapi_debug  = [ $libxapi_xapi_debug $libxlinux_xapi_debug $liblogger_xapi_debug $lopts [ -Wl,-soname,libxunit-xapi.so ~ j ] ]
-$lflags_xapi_devel  = [ $libxapi_xapi_devel $libxlinux_xapi_devel $liblogger_xapi_devel $lopts [ -Wl,-soname,libxunit-xapi-devel.so ~ j ] ]
+$lflags_xapi_final  = [ $libxapi_xapi_final $libxlinux_xapi_final $lopts [ -Wl,-soname,libxunit-xapi.so ~ j ] ]
+$lflags_xapi_debug  = [ $libxapi_xapi_debug $libxlinux_xapi_debug $lopts [ -Wl,-soname,libxunit-xapi.so ~ j ] ]
+$lflags_xapi_devel  = [ $libxapi_xapi_devel $libxlinux_xapi_devel $lopts [ -Wl,-soname,libxunit-xapi-devel.so ~ j ] ]
 
 # source files
 +[@std.c]($dext = [ xapi.final.pic.o ]; $rdirs = $dlibxunit; $cc; $cflags = $cflags_xapi_final)
@@ -85,6 +85,6 @@ $lflags_xapi_devel  = [ $libxapi_xapi_devel $libxlinux_xapi_devel $liblogger_xap
 }
 
 # library dependencies
-[ $libxunit_xapi_final ] :^ [ $libxapi_xapi_final $libxlinux_xapi_final $liblogger_xapi_final ]
-[ $libxunit_xapi_debug ] :^ [ $libxapi_xapi_debug $libxlinux_xapi_debug $liblogger_xapi_debug ]
-[ $libxunit_xapi_devel ] :^ [ $libxapi_xapi_devel $libxlinux_xapi_devel $liblogger_xapi_devel ]
+[ $libxunit_xapi_final ] :^ [ $libxapi_xapi_final $libxlinux_xapi_final ]
+[ $libxunit_xapi_debug ] :^ [ $libxapi_xapi_debug $libxlinux_xapi_debug ]
+[ $libxunit_xapi_devel ] :^ [ $libxapi_xapi_devel $libxlinux_xapi_devel ]

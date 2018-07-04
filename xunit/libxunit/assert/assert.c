@@ -57,10 +57,10 @@ API bool xunit_assertion_evaluate(const xunit_type * const restrict type, uint8_
 
        if(op == XU_EQ && r) { }
   else if(op == XU_NE && r == 0) { }
-  else if(op == XU_GT && r < 0) { }
-  else if(op == XU_GE && r <= 0) { }
-  else if(op == XU_LT && r > 0) { }
-  else if(op == XU_LE && r >= 0) { }
+  else if(op == XU_GT && r > 0) { }
+  else if(op == XU_GE && r >= 0) { }
+  else if(op == XU_LT && r < 0) { }
+  else if(op == XU_LE && r <= 0) { }
   else if(op == XU_NULL && r) { }
   else if(op == XU_NOTNULL && !r) { }
   else
@@ -83,7 +83,13 @@ API bool xunit_assertion_evaluate(const xunit_type * const restrict type, uint8_
   }
   else
   {
-    type->xu_info_push("expected", &expected);
+    const char * expected_label = "expected";
+    if(op == XU_GT) { expected_label = "expected >"; }
+    if(op == XU_GE) { expected_label = "expected >="; }
+    if(op == XU_LT) { expected_label = "expected <"; }
+    if(op == XU_LE) { expected_label = "expected <="; }
+
+    type->xu_info_push(expected_label, &expected);
     type->xu_info_push("actual", &actual);
   }
 

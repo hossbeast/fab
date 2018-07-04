@@ -62,7 +62,10 @@ extern struct xunit_type * xunit_string;
 extern struct xunit_type * xunit_int;
 extern struct xunit_type * xunit_char;
 extern struct xunit_type * xunit_xapi;
+extern struct xunit_type * xunit_int32;
+extern struct xunit_type * xunit_uint32;
 extern struct xunit_type * xunit_int64;
+extern struct xunit_type * xunit_uint64;
 extern struct xunit_type * xunit_float;
 extern struct xunit_type * xunit_bool;
 extern struct xunit_type * xunit_pointer;
@@ -72,6 +75,9 @@ extern struct xunit_type * xunit_pointer;
 // SUMMARY
 //  raise a unit test assertion failure if a condition is false
 //
+#define assert_true(actual)                 _assertion(xunit_bool, XU_EQ, QUOTE(actual), true, actual)
+#define assert_false(actual)                _assertion(xunit_bool, XU_EQ, QUOTE(actual), false, actual)
+
 #define assert_eq_b(expected, actual)       _assertion(xunit_bool, XU_EQ, QUOTE(actual), expected, actual)
 #define assert_ne_b(expected, actual)       _assertion(xunit_bool, XU_NE, QUOTE(actual), expected, actual)
 
@@ -99,6 +105,13 @@ extern struct xunit_type * xunit_pointer;
 #define assert_lt_f(expected, actual)       _assertion(xunit_float, XU_LT, QUOTE(actual), expected, actual)
 #define assert_le_f(expected, actual)       _assertion(xunit_float, XU_LE, QUOTE(actual), expected, actual)
 
+#define assert_eq_u32(expected, actual)     _assertion(xunit_uint32, XU_EQ, QUOTE(actual), expected, actual)
+#define assert_ne_u32(expected, actual)     _assertion(xunit_uint32, XU_NE, QUOTE(actual), expected, actual)
+#define assert_gt_u32(expected, actual)     _assertion(xunit_uint32, XU_GT, QUOTE(actual), expected, actual)
+#define assert_ge_u32(expected, actual)     _assertion(xunit_uint32, XU_GE, QUOTE(actual), expected, actual)
+#define assert_lt_u32(expected, actual)     _assertion(xunit_uint32, XU_LT, QUOTE(actual), expected, actual)
+#define assert_le_u32(expected, actual)     _assertion(xunit_uint32, XU_LE, QUOTE(actual), expected, actual)
+
 #define assert_eq_i64(expected, actual)     _assertion(xunit_int64, XU_EQ, QUOTE(actual), expected, actual)
 #define assert_ne_i64(expected, actual)     _assertion(xunit_int64, XU_NE, QUOTE(actual), expected, actual)
 #define assert_gt_i64(expected, actual)     _assertion(xunit_int64, XU_GT, QUOTE(actual), expected, actual)
@@ -106,14 +119,25 @@ extern struct xunit_type * xunit_pointer;
 #define assert_lt_i64(expected, actual)     _assertion(xunit_int64, XU_LT, QUOTE(actual), expected, actual)
 #define assert_le_i64(expected, actual)     _assertion(xunit_int64, XU_LE, QUOTE(actual), expected, actual)
 
+#define assert_eq_u64(expected, actual)     _assertion(xunit_uint64, XU_EQ, QUOTE(actual), expected, actual)
+#define assert_ne_u64(expected, actual)     _assertion(xunit_uint64, XU_NE, QUOTE(actual), expected, actual)
+#define assert_gt_u64(expected, actual)     _assertion(xunit_uint64, XU_GT, QUOTE(actual), expected, actual)
+#define assert_ge_u64(expected, actual)     _assertion(xunit_uint64, XU_GE, QUOTE(actual), expected, actual)
+#define assert_lt_u64(expected, actual)     _assertion(xunit_uint64, XU_LT, QUOTE(actual), expected, actual)
+#define assert_le_u64(expected, actual)     _assertion(xunit_uint64, XU_LE, QUOTE(actual), expected, actual)
+
 #define assert_eq_s(expected, actual)       _assertion(xunit_string, XU_EQ, QUOTE(actual), expected, actual)
 #define assert_ne_s(expected, actual)       _assertion(xunit_string, XU_NE, QUOTE(actual), expected, actual)
 
-#define assert_eq_w(exp, expz, act, actz)   _assertion(xunit_buffer, XU_EQ, QUOTE(act), exp, expz, act, actz)
-#define assert_ne_w(exp, expz, act, actz)   _assertion(xunit_buffer, XU_NE, QUOTE(act), exp, expz, act, actz)
+#define assert_eq_w(expected, expected_size, actual, actual_size) \
+                                            _assertion(xunit_buffer, XU_EQ, QUOTE(actual), expected, expected_size, actual, actual_size)
+#define assert_ne_w(expected, expected_size, actual, actual_size) \
+                                            _assertion(xunit_buffer, XU_NE, QUOTE(actual), expected, expected_size, actual, actual_size)
 
+#define assert_eq_p(expected, actual)       _assertion(xunit_pointer, XU_EQ, QUOTE(actual), expected, actual)
 #define assert_null(actual)                 _assertion(xunit_pointer, XU_NULL, QUOTE(actual), actual)
 #define assert_notnull(actual)              _assertion(xunit_pointer, XU_NOTNULL, QUOTE(actual), actual)
+#define assert_nullity(expected, actual)    _assertion(xunit_pointer, expected ? XU_NULL : XU_NOTNULL, QUOTE(actual), actual)
 
 #define _assertion(type, op, value, ...)                                 \
   do {                                                                   \

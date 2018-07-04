@@ -33,18 +33,21 @@ SUMMARY
 
 typedef union xunit_arg
 {
-  struct {      // xunit_buffer
-    void * p;   // xunit_pointer
+  struct {        // xunit_buffer
+    void * p;     // xunit_pointer
     size_t l;
   };
 
-  char c;       // xunit_char
-  int d;        // xunit_int
-  char * s;     // xunit_string
-  xapi e;       // xunit_xapi
-  int64_t i64;  // xunit_int64
-  float f;      // xunit_float
-  bool b;       // xunit_bool
+  char c;         // xunit_char
+  int d;          // xunit_int
+  char * s;       // xunit_string
+  xapi e;         // xunit_xapi
+  int32_t i32;    // xunit_int32
+  int32_t u32;    // xunit_unt32
+  int64_t i64;    // xunit_int64
+  int64_t u64;    // xunit_unt64
+  float f;        // xunit_float
+  bool b;         // xunit_bool
 
   void * udata;
 } xunit_arg;

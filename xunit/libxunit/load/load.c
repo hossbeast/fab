@@ -17,7 +17,6 @@
 
 #include "xapi.h"
 #include "xlinux/load.h"
-#include "logger/load.h"
 
 #include "internal.h"
 #include "load.internal.h"
@@ -37,7 +36,6 @@ API xapi xunit_load()
   {
     // dependencies
     fatal(xlinux_load);
-    fatal(logger_load);
   }
 
   finally : coda;
@@ -52,7 +50,6 @@ API xapi xunit_unload()
     // modules
     // dependencies
     fatal(xlinux_unload);
-    fatal(logger_unload);
   }
 
   finally : coda;

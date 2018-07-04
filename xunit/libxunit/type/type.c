@@ -179,6 +179,36 @@ static void float_info_push(const char * const restrict name, xunit_arg * a)
   xapi_info_pushf(name, "%f", a->f);
 }
 
+static void int32_unpack(va_list va, xunit_arg * a)
+{
+  a->i32 = va_arg(va, int32_t);
+}
+
+static int int32_compare(xunit_arg * A, xunit_arg * B)
+{
+  return INTCMP(A->i32, B->i32);
+}
+
+static void int32_info_push(const char * const restrict name, xunit_arg * a)
+{
+  xapi_info_pushf(name, "%"PRIi32, a->i32);
+}
+
+static void uint32_unpack(va_list va, xunit_arg * a)
+{
+  a->u32 = va_arg(va, uint32_t);
+}
+
+static int uint32_compare(xunit_arg * A, xunit_arg * B)
+{
+  return INTCMP(A->u32, B->u32);
+}
+
+static void uint32_info_push(const char * const restrict name, xunit_arg * a)
+{
+  xapi_info_pushf(name, "%"PRIu32, a->u32);
+}
+
 static void int64_unpack(va_list va, xunit_arg * a)
 {
   a->i64 = va_arg(va, int64_t);
@@ -186,17 +216,27 @@ static void int64_unpack(va_list va, xunit_arg * a)
 
 static int int64_compare(xunit_arg * A, xunit_arg * B)
 {
-  if(A->i64 < B->i64)
-    return -1;
-  else if(A->i64 > B->i64)
-    return 1;
-
-  return 0;
+  return INTCMP(A->i64, B->i64);
 }
 
 static void int64_info_push(const char * const restrict name, xunit_arg * a)
 {
   xapi_info_pushf(name, "%"PRIi64, a->i64);
+}
+
+static void uint64_unpack(va_list va, xunit_arg * a)
+{
+  a->u64 = va_arg(va, uint64_t);
+}
+
+static int uint64_compare(xunit_arg * A, xunit_arg * B)
+{
+  return INTCMP(A->u64, B->u64);
+}
+
+static void uint64_info_push(const char * const restrict name, xunit_arg * a)
+{
+  xapi_info_pushf(name, "%"PRIu64, a->u64);
 }
 
 static void bool_unpack(va_list va, xunit_arg * a)
@@ -226,7 +266,14 @@ static int xapi_compare(xunit_arg * A, xunit_arg * B)
 
 static void xapi_info_push(const char * const restrict name, xunit_arg * a)
 {
-  xapi_info_pushf(name, "%s_%s (%d)", xapi_exit_errtab_name(a->e), xapi_exit_errname(a->e), a->e);
+  xapi_info_pushf(
+      name
+    , "%s_%s (0x%04x+%d)"
+    , xapi_exit_errtab_name(a->e)
+    , xapi_exit_errname(a->e)
+    , xapi_exit_errtab_tag(a->e)
+    , xapi_exit_errcode(a->e)
+  );
 }
 
 static void pointer_unpack(va_list va, xunit_arg * a)
@@ -283,10 +330,28 @@ APIDATA xunit_type * xunit_xapi = (xunit_type[]) {{
   , xu_info_push : xapi_info_push
 }};
 
+APIDATA xunit_type * xunit_int32 = (xunit_type[]) {{
+    xu_unpack : int32_unpack
+  , xu_compare : int32_compare
+  , xu_info_push : int32_info_push
+}};
+
+APIDATA xunit_type * xunit_uint32 = (xunit_type[]) {{
+    xu_unpack : uint32_unpack
+  , xu_compare : uint32_compare
+  , xu_info_push : uint32_info_push
+}};
+
 APIDATA xunit_type * xunit_int64 = (xunit_type[]) {{
     xu_unpack : int64_unpack
   , xu_compare : int64_compare
   , xu_info_push : int64_info_push
+}};
+
+APIDATA xunit_type * xunit_uint64 = (xunit_type[]) {{
+    xu_unpack : uint64_unpack
+  , xu_compare : uint64_compare
+  , xu_info_push : uint64_info_push
 }};
 
 APIDATA xunit_type * xunit_float = (xunit_type[]) {{

@@ -1,9 +1,15 @@
-artifact libxunit.{$final,$debug,$devel} : libxapi^, libxlinux^, liblogger^
+# this module contains C sources
+use c
+use so
 
-source c
-source clib   # exports
+# make common objects available for #inclusion and linking by files in this module
+#require common
 
-rule libxunit^ : ^.o, exports
-{
-  $cc -o $@ $^
-}
+# libraries
+#require libxapi, libxlinux, liblogger
+
+# this module produces three artifacts
+artifact libxunit{.xapi.{final,debug,devel}}?.so
+
+# dependencies for artifacts
+rule libxunit?.so : libxapi?.so, libxlinux?.so, liblogger?.so, exports

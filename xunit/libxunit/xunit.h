@@ -60,6 +60,9 @@ typedef struct xunit_test
   struct xunit_unit * xu_unit;
   char *              xu_name;
   xunit_test_entry    xu_entry;
+  uint16_t            xu_index;
+
+  // controlling which tests to run
   bool                xu_only;
   bool                xu_run;
   bool                xu_skip;
