@@ -32,6 +32,7 @@
 #include "value/make.h"
 #include "logger.h"
 #include "logger/category.h"
+#include "value/assert.h"
 
 #include "parser.h"
 
@@ -127,7 +128,7 @@ static xapi value_parser_test_lists(xunit_test * test)
   fatal(narrator_growing_create, &N0);
   fatal(narrator_growing_create, &N1);
 
-  char * value_text = "core [ 1 true 2.0 \"foo\" ]";
+  char * value_text = "core ( 1 true 2.0 \"foo\" )";
 
   // parse
   fatal(value_parser_create, &parser);
@@ -150,6 +151,7 @@ static xapi value_parser_test_lists(xunit_test * test)
 
   fatal(value_say, expected, N0);
   fatal(value_say, actual, N1);
+
   assert_eq_s(narrator_growing_buffer(N0), narrator_growing_buffer(N1));
 
 finally:
@@ -157,6 +159,66 @@ finally:
   fatal(value_store_xfree, store);
   fatal(narrator_xfree, N0);
   fatal(narrator_xfree, N1);
+coda;
+}
+
+static xapi value_parser_test_sets(xunit_test * test)
+{
+  enter;
+
+  value_parser * parser = 0;
+  value_store * store = 0;
+  value * actual = 0;
+  value * val = 0;
+  value * expected = 0;
+  char * text;
+
+  fatal(value_parser_create, &parser);
+
+  // parse
+  text = "[ 1 true 2.0 \"foo\" ]";
+  fatal(value_parser_parse, &parser, &store, MMS(text), 0, &actual, 0);
+
+  // assert
+  expected = 0;
+  fatal(value_integer_mk, store, 0, &val, 1);
+  fatal(value_set_mkv, store, 0, expected, &expected, val);
+  fatal(value_boolean_mk, store, 0, &val, 1);
+  fatal(value_set_mkv, store, 0, expected, &expected, val);
+  fatal(value_float_mk, store, 0, &val, 2);
+  fatal(value_set_mkv, store, 0, expected, &expected, val);
+  fatal(value_string_mks, store, 0, 0, &val, "foo");
+  fatal(value_set_mkv, store, 0, expected, &expected, val);
+  assert_eq_value(expected, actual);
+
+  // parse
+  text = "[ [ 1 2 ] [ 2 1 ] ]";
+  fatal(value_parser_parse, &parser, &store, MMS(text), 0, &actual, 0);
+
+  expected = 0;
+  fatal(value_integer_mk, store, 0, &val, 1);
+  fatal(value_set_mkv, store, 0, expected, &expected, val);
+  fatal(value_integer_mk, store, 0, &val, 2);
+  fatal(value_set_mkv, store, 0, expected, &expected, val);
+  fatal(value_set_mkv, store, 0, 0, &expected, expected);
+  assert_eq_value(expected, actual);
+
+  // parse
+  text = "( [ 1 2 ] [ 2 1 ] )";
+  fatal(value_parser_parse, &parser, &store, MMS(text), 0, &actual, 0);
+
+  expected = 0;
+  fatal(value_integer_mk, store, 0, &val, 1);
+  fatal(value_set_mkv, store, 0, expected, &expected, val);
+  fatal(value_integer_mk, store, 0, &val, 2);
+  fatal(value_set_mkv, store, 0, expected, &val, val);
+  fatal(value_list_mkv, store, 0, 0, &expected, val);
+  fatal(value_list_mkv, store, 0, expected, &expected, val);
+  assert_eq_value(expected, actual);
+
+finally:
+  fatal(value_parser_xfree, parser);
+  fatal(value_store_xfree, store);
 coda;
 }
 
@@ -170,6 +232,7 @@ xunit_unit xunit = {
   , xu_tests : (xunit_test*[]) {
       (xunit_test[]) {{ xu_entry : value_parser_test_maps }}
     , (xunit_test[]) {{ xu_entry : value_parser_test_lists }}
+    , (xunit_test[]) {{ xu_entry : value_parser_test_sets }}
     , 0
   }
 };

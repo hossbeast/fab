@@ -15,9 +15,13 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
+#include "types.h"
+#include "xapi.h"
+
 #include "xlinux/xstdlib.h"
 
 #include "valyria/list.h"
+#include "valyria/hashtable.h"
 #include "valyria/pstring.h"
 
 #include "internal.h"
@@ -26,7 +30,18 @@
 #include "grow.h"
 #include "assure.h"
 
-#define restrict __restrict
+static uint32_t set_value_hash(hashtable * ht, uint32_t h, void * restrict val, size_t sz)
+{
+  value * v = *(value**)val;
+  return value_hash(h, v);
+}
+
+static int set_value_cmp(hashtable * ht, void * _A, size_t Az, void * _B, size_t Bz)
+{
+  value * A = *(value**)_A;
+  value * B = *(value**)_B;
+  return value_cmp(A, B);
+}
 
 //
 // public
@@ -149,7 +164,7 @@ xapi store_list(value_store * const restrict stor, value ** rv)
   fatal(xmalloc, &val, sizeof(*val));
   fatal(list_create, &li);
 
-  val->els = li;
+  val->items = li;
   val->type = VALUE_TYPE_LIST;
 
   fatal(list_push, stor->lists, li);
@@ -165,6 +180,32 @@ finally:
 coda;
 }
 
+xapi store_set(value_store * const restrict stor, value ** rv)
+{
+  enter;
+
+  value * val = 0;
+  hashtable * ht = 0;
+
+  fatal(xmalloc, &val, sizeof(*val));
+  fatal(hashtable_createx, &ht, sizeof(void*), 0, set_value_hash, set_value_cmp, 0, 0);
+
+  val->els = ht;
+  val->type = VALUE_TYPE_SET;
+
+  fatal(list_push, stor->sets, ht);
+  ht = 0;
+
+  fatal(list_push, stor->values, val);
+  *rv = val;
+  val = 0;
+
+finally:
+  wfree(val);
+  fatal(hashtable_xfree, ht);
+coda;
+}
+
 //
 // api
 //
@@ -177,6 +218,7 @@ API xapi value_store_create(value_store ** const restrict stor)
   fatal(list_createx, &(*stor)->values, wfree, 0, 0);
   fatal(list_createx, &(*stor)->lists, 0, (void*)list_xfree, 0);
   fatal(list_createx, &(*stor)->strings, (void*)psfree, 0, 0);
+  fatal(list_createx, &(*stor)->sets, 0, (void*)hashtable_xfree, 0);
 
   finally : coda;
 }
@@ -190,6 +232,7 @@ API xapi value_store_xfree(value_store * const restrict stor)
     fatal(list_xfree, stor->values);
     fatal(list_xfree, stor->lists);
     fatal(list_xfree, stor->strings);
+    fatal(list_xfree, stor->sets);
   }
 
   wfree(stor);

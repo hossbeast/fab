@@ -247,7 +247,7 @@ xunit_unit xunit = {
     , (config_test[]){{
           config_texts: (char *[]) {
               "foo { bar true }"
-            , "foo += { qux [ 1 2 3 ] }"
+            , "foo += { qux ( 1 2 3 ) }"
             , 0
           }
         , queries : (typeof(*((config_test*)0)->queries)[]) {

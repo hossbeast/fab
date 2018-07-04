@@ -24,7 +24,6 @@
 #include "internal.h"
 #include "load.internal.h"
 #include "logging.internal.h"
-#include "VALUE.errtab.h"
 
 static int handles;
 

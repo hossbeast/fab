@@ -78,6 +78,7 @@
 %type <val> string strpart strparts quoted_string unquoted_string
 %type <val> array list
 %type <val> object map
+%type <val> set entries
 %type <val> boolean
 %type <val> integer
 %type <val> float
@@ -105,10 +106,11 @@ value
   | float
   | array
   | object
+  | set
   ;
 
 array
-  : '[' list ']'
+  : '(' list ')'
   {
     $$ = $2;
   }
@@ -125,6 +127,24 @@ list
   }
   ;
 
+set
+  : '[' entries ']'
+  {
+    $$ = $2;
+  }
+  ;
+
+entries
+  : entries value
+  {
+    YFATAL(value_set_mkv, xtra->stor, &@$, $1, &$$, $2);
+  }
+  | value
+  {
+    YFATAL(value_set_mkv, xtra->stor, &@$, 0, &$$, $1);
+  }
+  ;
+
 object
   : '{' map '}'
   {
@@ -135,36 +155,36 @@ object
 map
   : map mapping
   {
-    if($2.key->els->l == 1)
+    if($2.key->items->l == 1)
     {
-      YFATAL(value_map_mkv, xtra->stor, &@$, $1, &$$, list_get($2.key->els, 0), $2.val, $2.attr);
+      YFATAL(value_map_mkv, xtra->stor, &@$, $1, &$$, list_get($2.key->items, 0), $2.val, $2.attr);
     }
     else
     {
-      YFATAL(value_map_mkv, xtra->stor, &@$, 0, &$$, list_get($2.key->els, $2.key->els->l - 1), $2.val, $2.attr);
+      YFATAL(value_map_mkv, xtra->stor, &@$, 0, &$$, list_get($2.key->items, $2.key->items->l - 1), $2.val, $2.attr);
 
       int x;
-      for(x = $2.key->els->l - 2; x > 0; x--)
-        YFATAL(value_map_mkv, xtra->stor, &@$, 0, &$$, list_get($2.key->els, x), $$, 0);
+      for(x = $2.key->items->l - 2; x > 0; x--)
+        YFATAL(value_map_mkv, xtra->stor, &@$, 0, &$$, list_get($2.key->items, x), $$, 0);
 
-      YFATAL(value_map_mkv, xtra->stor, &@$, $1, &$$, list_get($2.key->els, 0), $$, 0);
+      YFATAL(value_map_mkv, xtra->stor, &@$, $1, &$$, list_get($2.key->items, 0), $$, 0);
     }
   }
   | mapping
   {
-    if($1.key->els->l == 1)
+    if($1.key->items->l == 1)
     {
-      YFATAL(value_map_mkv, xtra->stor, &@$, 0, &$$, list_get($1.key->els, 0), $1.val, $1.attr);
+      YFATAL(value_map_mkv, xtra->stor, &@$, 0, &$$, list_get($1.key->items, 0), $1.val, $1.attr);
     }
     else
     {
-      YFATAL(value_map_mkv, xtra->stor, &@$, 0, &$$, list_get($1.key->els, $1.key->els->l - 1), $1.val, $1.attr);
+      YFATAL(value_map_mkv, xtra->stor, &@$, 0, &$$, list_get($1.key->items, $1.key->items->l - 1), $1.val, $1.attr);
 
       int x;
-      for(x = $1.key->els->l - 2; x > 0; x--)
-        YFATAL(value_map_mkv, xtra->stor, &@$, 0, &$$, list_get($1.key->els, x), $$, 0);
+      for(x = $1.key->items->l - 2; x > 0; x--)
+        YFATAL(value_map_mkv, xtra->stor, &@$, 0, &$$, list_get($1.key->items, x), $$, 0);
 
-      YFATAL(value_map_mkv, xtra->stor, &@$, 0, &$$, list_get($1.key->els, 0), $$, 0);
+      YFATAL(value_map_mkv, xtra->stor, &@$, 0, &$$, list_get($1.key->items, 0), $$, 0);
     }
   }
   ;

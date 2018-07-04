@@ -200,8 +200,8 @@ xapi filesystem_reconfigure(struct reconfigure_context * restrict ctx, const val
       // hash the config value for this filesystem
       if(dry)
       {
-        filesystems_config_hash[1] += value_hash(key);
-        filesystems_config_hash[1] += value_hash(list_get(map->vals, x));
+        filesystems_config_hash[1] = value_hash(filesystems_config_hash[1], key);
+        filesystems_config_hash[1] = value_hash(filesystems_config_hash[1], list_get(map->vals, x));
       }
 
       // query the relevant properties

@@ -303,13 +303,13 @@ xapi extern_reconfigure(struct reconfigure_context * restrict ctx, const value *
     fatal(config_cursor_mark, &cursor);
 
     int x;
-    for(x = 0; x < list->els->l; x++)
+    for(x = 0; x < list->items->l; x++)
     {
-      val = list_get(list->els, x);
+      val = list_get(list->items, x);
 
       if(dry)
       {
-        extern_config_hash[1] += value_hash(val);
+        extern_config_hash[1] = value_hash(extern_config_hash[1], val);
       }
       else
       {

@@ -18,12 +18,12 @@
 #include <stdarg.h>
 
 #include "xapi.h"
+#include "types.h"
+
 #include "xunit/type.h"
 
 #include "internal.h"
 #include "assert.h"
-
-#define restrict __restrict
 
 //
 // types
@@ -41,6 +41,17 @@ static int value_compare(xunit_arg * A, xunit_arg * B)
 
 static void value_info_push(const char * const restrict name, xunit_arg * a)
 {
+  if(a->p == 0)
+  {
+    xapi_info_pushs(name, "(null)");
+  }
+  else
+  {
+    char buf[512];
+    size_t __attribute__((unused)) z = value_znload(buf, sizeof(buf), a->p);
+
+    xapi_info_pushw(name, buf, z);
+  }
 }
 
 //

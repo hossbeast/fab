@@ -17,18 +17,19 @@
 
 #include <string.h>
 
-#include "xapi.h"
-#include "xapi/errtab.h"
-#include "value.h"
-#include "value/store.h"
-#include "value/make.h"
-#include "xunit.h"
-#include "xunit/assert.h"
-#include "valyria/list.h"
-#include "valyria/pstring.h"
 #include "narrator.h"
 #include "narrator/fixed.h"
+#include "value.h"
 #include "value/assert.h"
+#include "value/make.h"
+#include "value/store.h"
+#include "valyria/list.h"
+#include "valyria/pstring.h"
+#include "valyria/hashtable.h"
+#include "xapi.h"
+#include "xapi/errtab.h"
+#include "xunit.h"
+#include "xunit/assert.h"
 
 #include "internal.h"
 #include "make.internal.h"
@@ -193,7 +194,7 @@ static xapi query_test_list(xunit_test * test)
 
   fatal(value_store_create, &stor);
 
-  // tree [ 1 true 3 ]
+  // tree ( 1 true 3 )
   fatal(value_integer_mk, stor, 0, &one, 1);
   fatal(value_list_mkv, stor, 0, list, &list, one);
   fatal(value_boolean_mk, stor, 0, &two, 1);
@@ -240,7 +241,7 @@ static xapi query_test_list_nomatch(xunit_test * test)
 
   fatal(value_store_create, &stor);
 
-  // tree [ 1 true 3 ]
+  // tree ( 1 true 3 )
   fatal(value_integer_mk, stor, 0, &one, 1);
   fatal(value_list_mkv, stor, 0, list, &list, one);
   fatal(value_boolean_mk, stor, 0, &two, 1);
@@ -268,11 +269,11 @@ static xapi query_test_list_empty(xunit_test * test)
 
   fatal(value_store_create, &stor);
 
-  // list [ ]
+  // list ( )
   fatal(value_list_mkv, stor, 0, list, &list, 0);
 
   // assert
-  assert_eq_d(0, list->els->l);
+  assert_eq_d(0, list->items->l);
 
 finally:
   fatal(value_store_xfree, stor);

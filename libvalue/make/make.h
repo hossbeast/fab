@@ -216,4 +216,28 @@ xapi value_list_mkv(
 )
   __attribute__((nonnull(1, 4)));
 
+/// value_set_mk
+//
+// SUMMARY
+//  create or update a VALUE_TYPE_SET value
+//
+// PARAMETERS
+//  stor  - value storage
+//  [loc] - value location
+//  [e]   - existing value to append to, if any
+//  rv    - (returns) set value
+//  [el]  - value to insert
+//
+// REMARKS
+//  set size is unchanged if el is null
+//
+xapi value_set_mkv(
+    struct value_store * const restrict stor
+  , const struct yyu_location * const restrict loc
+  , struct value * e
+  , struct value ** rv
+  , struct value * el
+)
+  __attribute__((nonnull(1, 4)));
+
 #endif

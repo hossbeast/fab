@@ -19,10 +19,9 @@
 #define VALUE_QUERY_H
 
 #include "xapi.h"
+#include "types.h"
 
 struct value;
-
-#define restrict __restrict
 
 /// value_query
 //
@@ -39,5 +38,4 @@ struct value;
 struct value * value_query(const struct value * restrict val, const char * const restrict query)
   __attribute__((nonnull));
 
-#undef restrict
 #endif

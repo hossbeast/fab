@@ -18,13 +18,12 @@
 #ifndef _VALUE_H
 #define _VALUE_H
 
-#include <sys/types.h>
-#include <stdint.h>
-
 #include "xapi.h"
+#include "types.h"
 
 struct pstring;       // libvalyria/pstring
 struct list;          // libvalyria/list
+struct hashtable;     // libvalyria/hashtable
 struct yyu_location;
 struct value_store;
 struct narrator;
@@ -33,6 +32,7 @@ struct narrator;
   /* aggregates */                    \
   VALUE_TYPE(LIST   , 0x010 , x)      \
   VALUE_TYPE(MAP    , 0x020 , x)      \
+  VALUE_TYPE(SET    , 0x030 , x)      \
   /* scalars */                       \
   VALUE_TYPE(STRING , 0x100 , x)      \
   VALUE_TYPE(FLOAT  , 0x201 , x)      \
@@ -81,9 +81,11 @@ typedef struct value {
   uint16_t type;           // one of VALUE_TYPE_*
   value_location loc;
   uint16_t attr;           // bitwise combo of VALUE_*
+  uint32_t hash;
 
   union {
-    struct list * els;      // list
+    struct list * items;    // list
+    struct hashtable * els; // set
     struct {                // map
       struct list * keys;
       struct list * vals;
@@ -109,6 +111,9 @@ xapi value_load(void);
 //
 xapi value_unload(void);
 
+size_t value_znload(void * restrict dst, size_t sz, const value * const restrict val)
+  __attribute__((nonnull));
+
 /// value_say
 //
 // SUMMARY
@@ -121,18 +126,6 @@ xapi value_unload(void);
 xapi value_say(const value * const restrict val, struct narrator * const restrict N)
   __attribute__((nonnull(2)));
 
-/// value_say_verbose
-//
-// SUMMARY
-//  write a (multiline) description of a value to a narrator
-//
-// PARAMETERS
-//  val - value
-//  N   - narrator to write to
-//
-xapi value_say_verbose(const value * const restrict val, struct narrator * const restrict N)
-  __attribute__((nonnull(2)));
-
 /// value_cmp
 //
 // SUMMARY
@@ -140,12 +133,19 @@ xapi value_say_verbose(const value * const restrict val, struct narrator * const
 //
 int value_cmp(const value * const restrict A, const value * const restrict B);
 
+/// value_equal
+//
+// SUMMARY
+//  determine whether two values are equal
+//
+bool value_equal(value * const restrict A, value * const restrict B);
+
 /// value_hash
 //
 // SUMMARY
 //  compute a hash over the value
 //
-uint64_t value_hash(const value * const restrict val)
+uint32_t value_hash(uint32_t h, value * const restrict val)
   __attribute__((nonnull));
 
 #endif

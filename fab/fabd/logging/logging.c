@@ -130,7 +130,7 @@ xapi logging_reconfigure(reconfigure_context * ctx, const value * restrict confi
   if(list)
   {
     fatal(config_cursor_mark, &cursor);
-    for(x = 0; x < list->els->l; x++)
+    for(x = 0; x < list->items->l; x++)
     {
       fatal(config_cursor_pushd, &cursor, x);
       fatal(config_query, list, config_cursor_path(&cursor), config_cursor_query(&cursor), VALUE_TYPE_STRING & dry, &val);

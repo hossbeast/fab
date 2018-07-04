@@ -25,10 +25,8 @@
 #include "internal.h"
 #include "query.internal.h"
 
-#include "strutil.h"
 #include "parseint.h"
-
-#define restrict __restrict
+#include "macros.h"
 
 //
 // static
@@ -48,7 +46,7 @@ static int value_query_compare(void * ud, const void * _el, size_t idx)
   ctx->idx = idx;
 
   // keys are strings
-  return estrcmp(ctx->key, ctx->len, el->s->s, el->s->l, 0);
+  return memncmp(ctx->key, ctx->len, el->s->s, el->s->l);
 }
 
 //
@@ -80,7 +78,7 @@ API value * value_query(const value * restrict val, const char * const restrict 
       if(parseuint(start, SCNu16, 0, UINT16_MAX, end - start, end - start, &idx, 0))
         break;
 
-      val = list_get(val->els, idx);
+      val = list_get(val->items, idx);
     }
 
     start = end;

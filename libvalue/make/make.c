@@ -18,11 +18,14 @@
 #include "xapi.h"
 #include "valyria/pstring.h"
 #include "valyria/list.h"
+#include "valyria/hashtable.h"
 #include "yyutil/parser.h"
 
 #include "internal.h"
 #include "make.internal.h"
 #include "store.internal.h"
+
+#include "macros.h"
 
 //
 // static
@@ -103,7 +106,8 @@ API xapi value_integer_mk(
 API xapi value_boolean_mk(
     struct value_store * const restrict stor
   , const struct yyu_location * const restrict loc
-  , struct value ** rv, const int b
+  , struct value ** rv
+  , const int b
 )
 {
   enter;
@@ -298,7 +302,30 @@ API xapi value_list_mkv(
     location_copy(&e->loc, loc);
 
   if(el)
-    fatal(list_push, e->els, el);
+    fatal(list_push, e->items, el);
+
+  *rv = e;
+
+  finally : coda;
+}
+
+API xapi value_set_mkv(
+    struct value_store * const restrict stor
+  , const struct yyu_location * const restrict loc
+  , struct value * e
+  , struct value ** rv
+  , struct value * el
+)
+{
+  enter;
+
+  if(!e)
+    fatal(store_set, stor, &e);
+  if(loc)
+    location_copy(&e->loc, loc);
+
+  if(el)
+    fatal(hashtable_put, e->els, &el);
 
   *rv = e;
 

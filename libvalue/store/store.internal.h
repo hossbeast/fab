@@ -24,8 +24,9 @@ struct list;    // valyria/list
 
 typedef struct value_store {
   struct list * values;
-  struct list * lists;
   struct list * strings;
+  struct list * lists;
+  struct list * sets;
 } value_store;
 
 /// store_string
@@ -68,6 +69,13 @@ xapi store_map(value_store * const restrict stor, value ** rv)
 //
 //
 xapi store_list(value_store * const restrict stor, value ** rv)
+  __attribute__((nonnull));
+
+/// store_set
+//
+//
+//
+xapi store_set(value_store * const restrict stor, value ** rv)
   __attribute__((nonnull));
 
 #endif

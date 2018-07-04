@@ -104,8 +104,10 @@
       sscanf(text + vdel, "%lf", &lval->fp);
     else if(token == BOOL)
     {
-      if(strcasecmp(text + vdel, "true") == 0 || strcasecmp(text + vdel, "yes") == 0 || strcasecmp(text + vdel, "on"))
+      if(strcasecmp(text + vdel, "true") == 0 || strcasecmp(text + vdel, "yes") == 0 || strcasecmp(text + vdel, "on") == 0)
         lval->u8 = 1;
+      else
+        lval->u8 = 0;
     }
 
     fatal(yyu_lexify, token, lval, sizeof(*lval), lloc, xtra, text, leng, ldel, 0);
@@ -145,13 +147,13 @@ ILL   [\x00-\x08\x0B-\x1F\x7F-\xFF]
 <INITIAL>[\r\t ]+                                       { LOCWRITE; }
 
  /* tokens */
-<INITIAL>[[\]{}.+=]                                     { lenter; LEX(yytext[0]); yield(yytext[0]); finally : lcoda; }
+<INITIAL>[[\]{}().+=]                                   { lenter; LEX(yytext[0]); yield(yytext[0]); finally : lcoda; }
 <INITIAL>(?i:true|false|yes|no|on|off)                  { lenter; LEX(BOOL); yield(BOOL); finally : lcoda; }
 <INITIAL>[0-9]+                                         { lenter; LEX(INT); yield(INT); finally : lcoda; }
 <INITIAL>[-][0-9]+                                      { lenter; LEX(INT); yield(INT); finally : lcoda; }
 <INITIAL>(?i:0x[a-f0-9]+)                               { lenter; LEX(HEX); yield(HEX); finally : lcoda; }
 <INITIAL>[+-]?[0-9]+[.][0-9]+                           { lenter; LEX(FLOAT); yield(FLOAT); finally : lcoda; }
-<INITIAL>[a-zA-Z_][-a-zA-Z0-9_]*                        { lenter; LEX(STR); yield(STR); finally : lcoda; }
+<INITIAL>[-a-zA-Z0-9_/]+                                { lenter; LEX(STR); yield(STR); finally : lcoda; }
 <INITIAL>["]                                            { lenter; PUSHSTATE(quoted); LEX(yytext[0]); yield(yytext[0]); finally : lcoda; }
 
 <quoted>["]                                             { lenter; POPSTATE; LEX(yytext[0]); yield(yytext[0]); finally : lcoda; }

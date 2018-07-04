@@ -24,11 +24,14 @@
 #include "value.h"
 #include "value/store.h"
 #include "value/make.h"
+#include "value/assert.h"
 #include "xunit.h"
 #include "xunit/assert.h"
 #include "narrator.h"
 #include "valyria/list.h"
 #include "valyria/pstring.h"
+#include "valyria/hashtable.h"
+#include "logger.h"
 
 #include "merge.internal.h"
 #include "VALUE.errtab.h"
@@ -36,7 +39,12 @@
 
 static xapi unit_setup(xunit_unit * unit)
 {
-  xproxy(value_load);
+  enter;
+
+  fatal(value_load);
+  fatal(logger_finalize);
+
+  finally : coda;
 }
 
 static xapi unit_cleanup(xunit_unit * unit)
@@ -44,7 +52,7 @@ static xapi unit_cleanup(xunit_unit * unit)
   xproxy(value_unload);
 }
 
-static xapi assert_entryi(value * map, int x, char * const restrict key, int64_t i)
+static xapi assert_map_entryi(value * map, int x, char * const restrict key, int64_t i)
 {
   enter;
 
@@ -57,7 +65,7 @@ static xapi assert_entryi(value * map, int x, char * const restrict key, int64_t
   finally : coda;
 }
 
-static xapi assert_entryf(value * map, int x, char * const restrict key, double f)
+static xapi assert_map_entryf(value * map, int x, char * const restrict key, double f)
 {
   enter;
 
@@ -70,11 +78,11 @@ static xapi assert_entryf(value * map, int x, char * const restrict key, double 
   finally : coda;
 }
 
-static xapi assert_elementf(value * map, int x, double exp)
+static xapi assert_list_itemf(value * map, int x, double exp)
 {
   enter;
 
-  value * act = list_get(map->els, x);
+  value * act = list_get(map->items, x);
   assert_eq_f(exp, act->f);
 
   finally : coda;
@@ -92,7 +100,7 @@ static xapi mapping_mkf(value_store * stor, value ** map, char * key, double f)
   finally : coda;
 }
 
-static xapi entry_mkf(value_store * stor, value ** list, double f)
+static xapi list_entry_mkf(value_store * stor, value ** list, double f)
 {
   enter;
 
@@ -100,6 +108,18 @@ static xapi entry_mkf(value_store * stor, value ** list, double f)
 
   fatal(value_float_mk, stor, 0, &val, f);
   fatal(value_list_mkv, stor, 0, *list, list, val);
+
+  finally : coda;
+}
+
+static xapi set_entry_mkf(value_store * stor, value ** set, double f)
+{
+  enter;
+
+  value * val = 0;
+
+  fatal(value_float_mk, stor, 0, &val, f);
+  fatal(value_set_mkv, stor, 0, *set, set, val);
 
   finally : coda;
 }
@@ -135,9 +155,9 @@ static xapi merge_test_map_update(xunit_test * test)
   fatal(value_merge, dst, src);
 
   int x = 0;
-  fatal(assert_entryf, dst, x++, "bar", 10);
-  fatal(assert_entryf, dst, x++, "baz", 15);
-  fatal(assert_entryf, dst, x++, "foo", 5);
+  fatal(assert_map_entryf, dst, x++, "bar", 10);
+  fatal(assert_map_entryf, dst, x++, "baz", 15);
+  fatal(assert_map_entryf, dst, x++, "foo", 5);
   assert_eq_d(x, dst->keys->l);
 
 finally:
@@ -172,10 +192,10 @@ static xapi merge_test_map_append(xunit_test * test)
   fatal(value_merge, dst, src);
 
   int x = 0;
-  fatal(assert_entryi, dst, x++, "bar", 10);
-  fatal(assert_entryi, dst, x++, "baz", 15);
-  fatal(assert_entryi, dst, x++, "foo", 20);
-  fatal(assert_entryi, dst, x++, "qux", 5);
+  fatal(assert_map_entryi, dst, x++, "bar", 10);
+  fatal(assert_map_entryi, dst, x++, "baz", 15);
+  fatal(assert_map_entryi, dst, x++, "foo", 20);
+  fatal(assert_map_entryi, dst, x++, "qux", 5);
 
 finally:
   fatal(value_store_xfree, stor);
@@ -209,10 +229,10 @@ static xapi merge_test_map_prepend(xunit_test * test)
   fatal(value_merge, dst, src);
 
   int x = 0;
-  fatal(assert_entryf, dst, x++, "ace", 5);
-  fatal(assert_entryf, dst, x++, "bar", 10);
-  fatal(assert_entryf, dst, x++, "baz", 15);
-  fatal(assert_entryf, dst, x++, "foo", 20);
+  fatal(assert_map_entryf, dst, x++, "ace", 5);
+  fatal(assert_map_entryf, dst, x++, "bar", 10);
+  fatal(assert_map_entryf, dst, x++, "baz", 15);
+  fatal(assert_map_entryf, dst, x++, "foo", 20);
 
 finally:
   fatal(value_store_xfree, stor);
@@ -246,10 +266,10 @@ static xapi merge_test_map_add(xunit_test * test)
   fatal(value_merge, dst, src);
 
   int x = 0;
-  fatal(assert_entryf, dst, x++, "bar", 20);
-  fatal(assert_entryf, dst, x++, "baz", 30);
-  fatal(assert_entryf, dst, x++, "foo", 10);
-  fatal(assert_entryf, dst, x++, "qux", 40);
+  fatal(assert_map_entryf, dst, x++, "bar", 20);
+  fatal(assert_map_entryf, dst, x++, "baz", 30);
+  fatal(assert_map_entryf, dst, x++, "foo", 10);
+  fatal(assert_map_entryf, dst, x++, "qux", 40);
   assert_eq_d(x, dst->keys->l);
 
 finally:
@@ -284,8 +304,8 @@ static xapi merge_test_map_set(xunit_test * test)
 
   map = list_get(dst->vals, 0);
   int x = 0;
-  fatal(assert_entryf, map, x++, "baz", 30);
-  fatal(assert_entryf, map, x++, "qux", 40);
+  fatal(assert_map_entryf, map, x++, "baz", 30);
+  fatal(assert_map_entryf, map, x++, "qux", 40);
   assert_eq_d(x, map->keys->l);
 
 finally:
@@ -305,26 +325,26 @@ static xapi merge_test_map_list_add(xunit_test * test)
 
   fatal(value_store_create, &stor);
 
-  // dst : { foo [ 10 20 ] }
-  fatal(entry_mkf, stor, &list, 10);
-  fatal(entry_mkf, stor, &list, 20);
+  // dst : { foo ( 10 20 ) }
+  fatal(list_entry_mkf, stor, &list, 10);
+  fatal(list_entry_mkf, stor, &list, 20);
   fatal(value_map_mks, stor, 0, dst, &dst, "foo", list, 0);
 
-  // src : { foo += [ 30 40 ] }
+  // src : { foo += ( 30 40 ) }
   list = 0;
-  fatal(entry_mkf, stor, &list, 30);
-  fatal(entry_mkf, stor, &list, 40);
+  fatal(list_entry_mkf, stor, &list, 30);
+  fatal(list_entry_mkf, stor, &list, 40);
   fatal(value_map_mks, stor, 0, src, &src, "foo", list, VALUE_MERGE_ADD);
 
-  // dst : { valyria [ 10 20 30 40 ] }
+  // dst : { valyria ( 10 20 30 40 ) }
   fatal(value_merge, dst, src);
 
   list = list_get(dst->vals, 0);
-  fatal(assert_elementf, list, x++, 10);
-  fatal(assert_elementf, list, x++, 20);
-  fatal(assert_elementf, list, x++, 30);
-  fatal(assert_elementf, list, x++, 40);
-  assert_eq_d(x, list->els->l);
+  fatal(assert_list_itemf, list, x++, 10);
+  fatal(assert_list_itemf, list, x++, 20);
+  fatal(assert_list_itemf, list, x++, 30);
+  fatal(assert_list_itemf, list, x++, 40);
+  assert_eq_d(x, list->items->l);
 
 finally:
   fatal(value_store_xfree, stor);
@@ -343,24 +363,24 @@ static xapi merge_test_map_list_set(xunit_test * test)
 
   fatal(value_store_create, &stor);
 
-  // dst : { foo [ 10 20 ] }
-  fatal(entry_mkf, stor, &list, 10);
-  fatal(entry_mkf, stor, &list, 20);
+  // dst : { foo ( 10 20 ) }
+  fatal(list_entry_mkf, stor, &list, 10);
+  fatal(list_entry_mkf, stor, &list, 20);
   fatal(value_map_mks, stor, 0, dst, &dst, "foo", list, 0);
 
-  // src : { foo = [ 30 40 ] }
+  // src : { foo = ( 30 40 ) }
   list = 0;
-  fatal(entry_mkf, stor, &list, 30);
-  fatal(entry_mkf, stor, &list, 40);
+  fatal(list_entry_mkf, stor, &list, 30);
+  fatal(list_entry_mkf, stor, &list, 40);
   fatal(value_map_mks, stor, 0, src, &src, "foo", list, VALUE_MERGE_SET);
 
-  // dst : { valyria [ 30 40 ] }
+  // dst : { valyria ( 30 40 ) }
   fatal(value_merge, dst, src);
 
   list = list_get(dst->vals, 0);
-  fatal(assert_elementf, list, x++, 30);
-  fatal(assert_elementf, list, x++, 40);
-  assert_eq_d(x, list->els->l);
+  fatal(assert_list_itemf, list, x++, 30);
+  fatal(assert_list_itemf, list, x++, 40);
+  assert_eq_d(x, list->items->l);
 
 finally:
   fatal(value_store_xfree, stor);
@@ -377,23 +397,23 @@ static xapi merge_test_list_scalar(xunit_test * test)
 
   fatal(value_store_create, &stor);
 
-  // dst : [ 10 20 ]
-  fatal(entry_mkf, stor, &dst, 10);
-  fatal(entry_mkf, stor, &dst, 20);
+  // dst : ( 10 20 )
+  fatal(list_entry_mkf, stor, &dst, 10);
+  fatal(list_entry_mkf, stor, &dst, 20);
 
-  // src : [ 30 40 ]
-  fatal(entry_mkf, stor, &src, 30);
-  fatal(entry_mkf, stor, &src, 40);
+  // src : ( 30 40 )
+  fatal(list_entry_mkf, stor, &src, 30);
+  fatal(list_entry_mkf, stor, &src, 40);
 
-  // dst : [ 10 20 30 40 ]
+  // dst : ( 10 20 30 40 )
   fatal(value_merge, dst, src);
 
   int x = 0;
-  fatal(assert_elementf, dst, x++, 10);
-  fatal(assert_elementf, dst, x++, 20);
-  fatal(assert_elementf, dst, x++, 30);
-  fatal(assert_elementf, dst, x++, 40);
-  assert_eq_d(x, dst->els->l);
+  fatal(assert_list_itemf, dst, x++, 10);
+  fatal(assert_list_itemf, dst, x++, 20);
+  fatal(assert_list_itemf, dst, x++, 30);
+  fatal(assert_list_itemf, dst, x++, 40);
+  assert_eq_d(x, dst->items->l);
 
 finally:
   fatal(value_store_xfree, stor);
@@ -413,34 +433,119 @@ static xapi merge_test_list_aggregate(xunit_test * test)
 
   fatal(value_store_create, &stor);
 
-  // dst : [ { foo [ 10 ] } ]
+  // dst : ( { foo ( 10 ) } )
   fatal(value_float_mk, stor, 0, &val, 10);
   fatal(value_map_mks, stor, 0, map, &map, "foo", val, 0);
   fatal(value_list_mkv, stor, 0, dst, &dst, map);
 
-  // src : [ { foo [ 20 ] } ]
+  // src : ( { bar ( 20 ) } )
   map = 0;
   fatal(value_float_mk, stor, 0, &val, 20);
   fatal(value_map_mks, stor, 0, map, &map, "bar", val, 0);
   fatal(value_list_mkv, stor, 0, src, &src, map);
 
-  // dst : [ { foo [ 10 ] } { bar [ 20 ] } ]
+  // dst : ( { foo ( 10 ) } { bar ( 20 ) } )
   fatal(value_merge, dst, src);
 
-  map = list_get(dst->els, 0);
+  map = list_get(dst->items, 0);
   x = 0;
-  fatal(assert_entryf, map, x++, "foo", 10);
+  fatal(assert_map_entryf, map, x++, "foo", 10);
   assert_eq_d(x, map->keys->l);
 
-  map = list_get(dst->els, 1);
+  map = list_get(dst->items, 1);
   x = 0;
-  fatal(assert_entryf, map, x++, "bar", 20);
+  fatal(assert_map_entryf, map, x++, "bar", 20);
   assert_eq_d(x, map->keys->l);
 
 finally:
   fatal(value_store_xfree, stor);
 coda;
 }
+
+static xapi merge_test_set_scalar(xunit_test * test)
+{
+  enter;
+
+  value * val = 0;
+  value * src = 0;
+  value * dst = 0;
+  value_store * stor = 0;
+
+  fatal(value_store_create, &stor);
+
+  // dst : [ 10 20 ]
+  fatal(set_entry_mkf, stor, &dst, 10);
+  fatal(set_entry_mkf, stor, &dst, 20);
+
+  // src : [ 30 40 ]
+  fatal(set_entry_mkf, stor, &src, 30);
+  fatal(set_entry_mkf, stor, &src, 40);
+
+  // dst : [ 10 20 30 40 ]
+  fatal(value_merge, dst, src);
+
+  fatal(value_float_mk, stor, 0, &val, 10);
+  assert_eq_b(true, hashtable_contains(dst->els, &val));
+  fatal(value_float_mk, stor, 0, &val, 20);
+  assert_eq_b(true, hashtable_contains(dst->els, &val));
+  fatal(value_float_mk, stor, 0, &val, 30);
+  assert_eq_b(true, hashtable_contains(dst->els, &val));
+  fatal(value_float_mk, stor, 0, &val, 40);
+  assert_eq_b(true, hashtable_contains(dst->els, &val));
+
+  assert_eq_d(4, dst->els->count);
+
+finally:
+  fatal(value_store_xfree, stor);
+coda;
+}
+
+static xapi merge_test_set_aggregate(xunit_test * test)
+{
+  enter;
+
+  value * src;
+  value * dst;
+  value * val;
+  value * map;
+  value * lst;
+  value * exp;
+  value_store * stor = 0;
+
+  fatal(value_store_create, &stor);
+
+  // src : [ { foo ( 10 ) } ]
+  fatal(value_float_mk, stor, 0, &val, 10);
+  fatal(value_list_mkv, stor, 0, 0, &lst, val);
+  fatal(value_map_mks, stor, 0, 0, &map, "foo", lst, 0);
+  fatal(value_set_mkv, stor, 0, 0, &src, map);
+
+  // src : [ { foo ( 20 ) } ]
+  fatal(value_float_mk, stor, 0, &val, 20);
+  fatal(value_list_mkv, stor, 0, 0, &lst, val);
+  fatal(value_map_mks, stor, 0, 0, &map, "foo", lst, 0);
+  fatal(value_set_mkv, stor, 0, 0, &dst, map);
+
+  // dst : [ { foo ( 10 ) } { foo ( 20 ) } ]
+  fatal(value_merge, dst, src);
+
+  // assert
+  fatal(value_float_mk, stor, 0, &val, 10);
+  fatal(value_list_mkv, stor, 0, 0, &lst, val);
+  fatal(value_map_mks, stor, 0, 0, &map, "foo", lst, 0);
+  fatal(value_set_mkv, stor, 0, 0, &exp, map);
+  fatal(value_float_mk, stor, 0, &val, 20);
+  fatal(value_list_mkv, stor, 0, 0, &lst, val);
+  fatal(value_map_mks, stor, 0, 0, &map, "foo", lst, 0);
+  fatal(value_set_mkv, stor, 0, exp, &exp, map);
+
+  assert_eq_value(exp, dst);
+
+finally:
+  fatal(value_store_xfree, stor);
+coda;
+}
+
 
 static xapi merge_test_difftype_aggregates(xunit_test * test)
 {
@@ -463,8 +568,8 @@ static xapi merge_test_difftype_aggregates(xunit_test * test)
   fatal(value_map_mks, stor, 0, map2, &map2, "bar", map1, 0);
   fatal(value_map_mks, stor, 0, dst, &dst, "foo", map2, 0);
 
-  // src : { foo { bar [ 10 ] } }
-  fatal(entry_mkf, stor, &list, 10);
+  // src : { foo { bar ( 10 ) } }
+  fatal(list_entry_mkf, stor, &list, 10);
   fatal(value_map_mks, stor, 0, map, &map, "bar", list, 0);
   fatal(value_map_mks, stor, 0, src, &src, "foo", map, 0);
 
@@ -498,8 +603,8 @@ static xapi merge_test_difftype_mixed(xunit_test * test)
 
   fatal(value_store_create, &stor);
 
-  // dst : { foo [ 1 ] }
-  fatal(entry_mkf, stor, &list, 10);
+  // dst : { foo ( 1 ) }
+  fatal(list_entry_mkf, stor, &list, 10);
   fatal(value_map_mks, stor, 0, dst, &dst, "foo", list, 0);
 
   // src : { foo 1 }
@@ -539,6 +644,8 @@ xunit_unit xunit = {
     , (xunit_test[]){{ xu_entry : merge_test_map_list_set }}
     , (xunit_test[]){{ xu_entry : merge_test_list_scalar }}
     , (xunit_test[]){{ xu_entry : merge_test_list_aggregate }}
+    , (xunit_test[]){{ xu_entry : merge_test_set_scalar }}
+    , (xunit_test[]){{ xu_entry : merge_test_set_aggregate }}
 
     // failure cases
     , (xunit_test[]){{ xu_entry : merge_test_difftype_aggregates }}

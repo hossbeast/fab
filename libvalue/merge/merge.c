@@ -19,6 +19,7 @@
 
 #include "xapi.h"
 #include "valyria/list.h"
+#include "valyria/hashtable.h"
 #include "valyria/pstring.h"
 
 #include "internal.h"
@@ -51,6 +52,8 @@ static xapi merge(
 {
   enter;
 
+  int x, y;
+
   if(src->type != dst->type)
   {
     xapi_info_pushf("types", "%s -> %s", VALUE_TYPE_STRING(dst->type), VALUE_TYPE_STRING(src->type));
@@ -66,7 +69,6 @@ static xapi merge(
 
     fail(VALUE_DIFFTYPE);
   }
-
   else if(dst->type == VALUE_TYPE_MAP)
   {
     if((outer_attr & MERGE_OPT) == VALUE_MERGE_SET)
@@ -76,8 +78,8 @@ static xapi merge(
     }
     else // VALUE_MERGE_ADD
     {
-      int x = dst->keys->l - 1;
-      int y = src->keys->l - 1;
+      x = dst->keys->l - 1;
+      y = src->keys->l - 1;
       for(; x >= 0 && y >= 0;)
       {
         value * src_key = list_get(src->keys, y);
@@ -133,12 +135,28 @@ static xapi merge(
   {
     if((outer_attr & MERGE_OPT) == VALUE_MERGE_SET)
     {
-      fatal(list_splice, dst->els, 0, src->els, 0, src->els->l);
-      fatal(list_truncate, dst->els, src->els->l);
+      fatal(list_splice, dst->items, 0, src->items, 0, src->items->l);
+      fatal(list_truncate, dst->items, src->items->l);
     }
     else // VALUE_MERGE_ADD
     {
-      fatal(list_replicate, dst->els, dst->els->l, src->els, 0, src->els->l);
+      fatal(list_replicate, dst->items, dst->items->l, src->items, 0, src->items->l);
+    }
+  }
+  else if(dst->type == VALUE_TYPE_SET)
+  {
+    if((outer_attr & MERGE_OPT) == VALUE_MERGE_SET)
+    {
+      dst->els = src->els;
+    }
+    else // VALUE_MERGE_ADD
+    {
+      for(x = 0; x < src->els->table_size; x++)
+      {
+        value ** ent;
+        if((ent = hashtable_table_entry(src->els, x)))
+          fatal(hashtable_put, dst->els, ent);
+      }
     }
   }
 
