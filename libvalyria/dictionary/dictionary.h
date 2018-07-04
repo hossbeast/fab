@@ -24,22 +24,23 @@ MODULE
  dictionary
 
 SUMMARY
- dynamically resizing unordered collection of key/value pairs
+ dynamically resizing unordered collection of key/fixed-size value pairs
 
 REMARKS
  meant to be used as primary storage for the elements in the collection
 
 */
 
-#include <sys/types.h>
-#include <stdint.h>
-
 #include "xapi.h"
+#include "types.h"
 
-struct dictionary;
-typedef struct dictionary dictionary;
+#include "map.h"
 
-#define restrict __restrict
+typedef struct dictionary
+{
+  map;
+  size_t vsz;
+} dictionary;
 
 /// dictionary_create
 //
@@ -54,14 +55,14 @@ typedef struct dictionary dictionary;
 //  [capacity]    - initial capacity, the minimum number of entries which can be set without rehashing
 //
 xapi dictionary_create(dictionary ** const restrict m, size_t vsz)
-  __attribute__((nonnull(1)));
+  __attribute__((nonnull));
 
 xapi dictionary_createx(
     dictionary ** const restrict m
   , size_t vsz
+  , size_t capacity
   , void * free_value
   , void * xfree_value
-  , size_t capacity
 )
   __attribute__((nonnull(1)));
 
@@ -91,7 +92,7 @@ xapi dictionary_ixfree(dictionary ** const restrict dictionary)
 //  keyl  - key length
 //  value - (returns) pointer to value
 //
-xapi dictionary_set(dictionary * const restrict m, const char * const restrict key, size_t keyl, void * const restrict value)
+xapi dictionary_set(dictionary * const restrict m, const void * restrict key, size_t keyl, void * const restrict value)
   __attribute__((nonnull));
 
 /// dictionary_get
@@ -131,14 +132,6 @@ xapi dictionary_recycle(dictionary * const restrict dictionary)
 xapi dictionary_delete(dictionary * const restrict m, const char * const restrict key, size_t keyl)
   __attribute__((nonnull));
 
-/// dictionary_size
-//
-// SUMMARY
-//  get the number of entries in the dictionary
-//
-size_t dictionary_size(const dictionary * const restrict m)
-  __attribute__((nonnull));
-
 /// dictionary_keys
 //
 // SUMMARY
@@ -165,17 +158,6 @@ xapi dictionary_keys(const dictionary * const restrict m, const char *** const r
 xapi dictionary_values(const dictionary * const restrict m, void * restrict values, size_t * const restrict valuesl)
   __attribute__((nonnull));
 
-/// dictionary_table_size
-//
-// SUMMARY
-//  get the size of the dictionary tables for use with dictionary_keyat / dictionary_valueat
-//
-// PARAMETERS
-//  m - dictionary
-//
-size_t dictionary_table_size(const dictionary * const restrict m)
-  __attribute__((nonnull));
-
 /// dictionary_table_key
 //
 // SUMMARY
@@ -185,7 +167,7 @@ size_t dictionary_table_size(const dictionary * const restrict m)
 //  m - dictionary
 //  x - slot index, 0 <= x < dictionary_table_size
 //
-const char * dictionary_table_key(const dictionary * const restrict m, size_t x)
+const void * dictionary_table_key(const dictionary * const restrict m, size_t x)
   __attribute__((nonnull));
 
 /// dictionary_table_value
@@ -200,5 +182,4 @@ const char * dictionary_table_key(const dictionary * const restrict m, size_t x)
 void * dictionary_table_value(const dictionary * const restrict m, size_t x)
   __attribute__((nonnull));
 
-#undef restrict
 #endif

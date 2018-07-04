@@ -63,7 +63,7 @@ xapi ff_setup()
   enter;
 
   fatal(ff_parser_create, &parser);
-  fatal(map_createx, &ff_by_path, ff_ffn_free, 0, 0);
+  fatal(map_createx, &ff_by_path, 0, ff_ffn_free, 0);
 
   finally : coda;
 }

@@ -28,10 +28,10 @@ REMARKS
 
 */
 
-#include <sys/types.h>
 #include <stdint.h>
 
 #include "xapi.h"
+#include "types.h"
 
 typedef struct array
 {
@@ -42,8 +42,6 @@ typedef struct array
 #endif
   ARRAY_INTERNALS;
 } array;
-
-#define restrict __restrict
 
 /// array_create
 //
@@ -285,8 +283,41 @@ xapi array_truncate(array * const restrict ar, size_t len)
 //  compar - comparison function
 //  [arg]  - passed to compar
 //
+// COMPAR
+//  a
+//  b
+//  [arg]
+//
 void array_sort(array * const restrict ar, int (*compar)(const void *, const void *, void *), void * arg)
   __attribute__((nonnull(1, 2)));
+
+/// array_search
+//
+// SUMMARY
+//  perform a binary search among array elements
+//
+// SEE
+//  man 3 bsearch
+//
+// PARAMETERS
+//  ar   - array
+//  [ud] - user data
+//  compar - comparison function
+//   ud  - user data
+//   el  - pointer to element
+//   idx - element index
+//
+void * array_search(array * const restrict ar, void * ud, int (*compar)(void * ud, const void * el, size_t idx))
+  __attribute__((nonnull(1, 3)));
+
+/// array_search_range
+//
+// PARAMETERS
+//  index - index of the first item in the search range
+//  len   - number of items in the search range
+//
+void * array_search_range(array * const restrict ar, size_t index, size_t len, void * ud, int (*compar)(void * ud, const void * el, size_t idx))
+  __attribute__((nonnull(1, 5)));
 
 /// array_search
 //
@@ -307,6 +338,36 @@ void array_sort(array * const restrict ar, int (*compar)(const void *, const voi
 //
 void * array_search(array * const restrict ar, void * ud, int (*compar)(void *, const void *, size_t))
   __attribute__((nonnull(1,3)));
+
+/// array_splice
+//
+// SUMMARY
+//  copy elements between two arrays, overwriting elements in the destination array
+//
+// PARAMETERS
+//  dst       - array to copy to
+//  dst_index - 0 <= dst_index <= dst->l
+//  src       - array to copy from
+//  src_index - 0 <= src_index <= src->l
+//  len       - number >= 0 of elements to copy
+//
+xapi array_splice(array * const restrict dst, size_t dst_index, array * const restrict src, size_t src_index, size_t len)
+  __attribute__((nonnull));
+
+/// array_replicate
+//
+// SUMMARY
+//  copy elements between two arrays, expanding the destination array
+//
+// PARAMETERS
+//  dst       - array to copy to
+//  dst_index - 0 <= dst_index <= dst->l
+//  src       - array to copy from
+//  src_index - 0 <= src_index <= src->l
+//  len       - number >= 0 of elements to copy
+//
+xapi array_replicate(array * const restrict dst, size_t dst_index, array * const restrict src, size_t src_index, size_t len)
+  __attribute__((nonnull));
 
 /// array_delete
 //
@@ -333,5 +394,4 @@ xapi array_delete(array * const restrict ar, size_t index)
 xapi array_delete_range(array * const restrict ar, size_t index, size_t len)
   __attribute__((nonnull));
 
-#undef restrict
 #endif

@@ -15,35 +15,31 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef _VALYRIA_STRUTIL_H
-#define _VALYRIA_STRUTIL_H
+#ifndef _HASH_H
+#define _HASH_H
 
-/*
-
-SUMMARY
- dynamically resizing string
-
-*/
-
-#include <stdarg.h>
-
-#include "xapi.h"
 #include "types.h"
 
-xapi strloadc(char ** restrict dst, int c)
+uint32_t strhash32(uint32_t h, const char * restrict s)
   __attribute__((nonnull));
 
-xapi strloads(char ** restrict dst, const char * restrict s)
+uint64_t strhash64(uint64_t h, const char * restrict s)
   __attribute__((nonnull));
 
-xapi strloadw(char ** restrict dst, const void * restrict buf, size_t bufl)
+/// hash
+//
+// SUMMARY
+//  simple hash
+//
+uint32_t hash32(uint32_t h, const void * const restrict v, size_t l)
   __attribute__((nonnull));
 
-xapi strloadf(char ** restrict dst, const char * restrict fmt, ...)
-  __attribute__((nonnull(2)))
-  __attribute__((format(printf, 2, 3)));
-
-xapi strloadvf(char ** restrict dst, const char * restrict fmt, va_list va)
+/// hash
+//
+// SUMMARY
+//  simple hash
+//
+uint64_t hash64(uint64_t h, const void * const restrict v, size_t l)
   __attribute__((nonnull));
 
 #endif

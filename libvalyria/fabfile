@@ -49,7 +49,7 @@ $lflags_eapi_debug  = [ $lopts $libxlinux_eapi_debug [ -Wl,-soname,libvalyria.so
 $lflags_eapi_devel  = [ $lopts $libxlinux_eapi_devel [ -Wl,-soname,libvalyria-devel.so ~ j ] ]
 $lflags_xapi_final  = [ $lopts $libxapi_xapi_final $libxlinux_xapi_final [ -Wl,-soname,libvalyria-xapi.so ~ j ] ]
 $lflags_xapi_debug  = [ $lopts $libxapi_xapi_debug $libxlinux_xapi_debug [ -Wl,-soname,libvalyria-xapi.so ~ j ] ]
-$lflags_xapi_devel  = [ $lopts $libxapi_xapi_devel $libxlinux_xapi_devel [ -Wl,-soname,libvalyria-xapi-devel.so ~ j ] ]
+$lflags_xapi_devel  = [ $lopts $libxapi_xapi_devel $libxlinux_xapi_devel $libxunit [ -Wl,-soname,libvalyria-xapi-devel.so ~ j ] ]
 
 # source files, filter out tests
 +[@std.c]($dext = [ eapi.final.pic.o ]; $rdirs = [ $* ~ ls l/test d ]; $cc; $cflags = $cflags_eapi_final)

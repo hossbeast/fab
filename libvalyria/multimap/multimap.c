@@ -24,19 +24,43 @@
 
 #include "internal.h"
 #include "multimap.internal.h"
-#include "maputils.internal.h"
+#include "faults.internal.h"
+
+#include "macros.h"
+#include "hash.h"
+
+/*
+ * Default capacity, the minimum number of entries which can be set without rehashing
+ */
+#define DEFAULT_CAPACITY  100
+
+/*
+ * Maximum proportion of used entries to allocated table size
+ *
+ * valid values : 0 < saturation <= 1
+ *
+ * smaller values trade space for time because sparser tables mean shorter probe sequences
+ */
+#define MAX_SATURATION  0.45f      /* for 100-sized table, reallocate at 45 keys */
 
 #define VALUE_SIZE(m) sizeof(void*)
-#define MAPATTR_PRIMARY(m) false
+#define MAP_KEY_DELETED 0x01    /* this key has been deleted */
 
 #define MULTIMAP_CONTIGUOUS   0x04  /* entries in the set are stored contiguously */
 #define MULTIMAP_FIRST        0x08  /* first is set */
 #define MULTIMAP_NEXT         0x10  /* next is set */
 #define MULTIMAP_LAST         0x20  /* last is set */
 
+#define VALUE(m, x) ({                                \
+  void * val;                                         \
+  val = *(char**)((m)->tv + ((x) * VALUE_SIZE(m))); \
+  val;                                                \
+})
+
 typedef struct
 {
   uint8_t attr;
+  uint32_t h;
 
   size_t first;   // index of the first entry in the set
   size_t next;    // index of the next entry in the set
@@ -64,6 +88,28 @@ struct multimap
   char * tv;           // value table
 };
 
+static uint32_t hash_reduce(uint32_t h, const char * restrict k, size_t kl, uint32_t lm)
+{
+  size_t x;
+
+  if(fault(MAPDEF_HASH_BOUNDARY_ALL))
+  {
+    return lm;
+  }
+  else if(fault(MAPDEF_HASH_BOUNDARY_KEY))
+  {
+    for(x = 0; x < fault_state.mapdef_hash_boundary.len; x++)
+    {
+      typeof(*fault_state.mapdef_hash_boundary.keys) faultkey = fault_state.mapdef_hash_boundary.keys[x];
+
+      if(kl == faultkey.len && memcmp(k, faultkey.key, kl) == 0)
+        return lm;
+    }
+  }
+
+  return h & lm;
+}
+
 /// probe
 //
 // SUMMARY
@@ -72,9 +118,9 @@ struct multimap
 // RETURN
 //  boolean indicating whether the key was found
 //
-static bool __attribute__((nonnull)) probe(const multimap * restrict m, const void * restrict key, size_t keyl, size_t * restrict index)
+static bool __attribute__((nonnull)) probe(const multimap * restrict m, uint32_t h, const void * restrict key, size_t keyl, size_t * restrict index)
 {
-  size_t i = maputils_hashkey(key, keyl, m->lm);
+  size_t i = hash_reduce(h, key, keyl, m->lm);
   multimap_key * k = m->tk[i];
 
   if(k && !(k->attr & MAP_KEY_DELETED) && (k->attr & MULTIMAP_FIRST))
@@ -142,7 +188,7 @@ xapi multimap_rehash(multimap * restrict m)
     if(ks[i] && (ks[i]->attr & MULTIMAP_LAST) && !(ks[i]->attr & MAP_KEY_DELETED))
     {
       // start at the first empty spot in the linear probe sequence
-      size_t head = maputils_hashkey(ks[i]->p, ks[i]->l, m->lm);
+      size_t head = hash_reduce(ks[i]->h, ks[i]->p, ks[i]->l, m->lm);
 
       while(m->tk[head])
       {
@@ -253,9 +299,11 @@ API xapi multimap_set(multimap * restrict m, const void * restrict key, size_t k
   if(m->size == m->overflow_size)
     fatal(multimap_rehash, m);
 
+  uint32_t h = hash32(0, key, keyl);
+
   size_t i;
   size_t last;
-  bool found = probe(m, key, keyl, &i);
+  bool found = probe(m, h, key, keyl, &i);
   multimap_key * k = m->tk[i];
   bool contiguous = true;
   if(!found)
@@ -308,6 +356,7 @@ API xapi multimap_set(multimap * restrict m, const void * restrict key, size_t k
   m->tk[i]->n++;
   if(!contiguous)
     m->tk[i]->attr &= ~MULTIMAP_CONTIGUOUS;
+  m->tk[i]->h = h;
   m->size++;
 
   // copy the value
@@ -321,16 +370,22 @@ API xapi multimap_get(
     const multimap * restrict m
   , const void * restrict key
   , size_t keyl
-  , void * restrict tmp
-  , size_t * restrict tmpsz
+  , void * _tmp
   , void * restrict vals
   , size_t * restrict valsl
 )
 {
   enter;
 
+  struct {
+    uint16_t sz;
+    char v[];
+  } ** tmp = _tmp;
+
+  uint32_t h = hash32(0, key, keyl);
+
   size_t i;
-  if(probe(m, key, keyl, &i) == 0)
+  if(probe(m, h, key, keyl, &i) == 0)
   {
     *valsl = 0;
   }
@@ -345,11 +400,10 @@ API xapi multimap_get(
     if(tmp && vals)
     {
       size_t oldsz = 0;
-      if(tmpsz)
-        oldsz = *tmpsz;
-      fatal(xrealloc, tmp, sizeof(void*), m->tk[i]->n, oldsz);
-      if(oldsz)
-        *tmpsz = m->tk[i]->n;
+      if(*tmp)
+        oldsz = (*tmp)->sz;
+      fatal(xrealloc, tmp, 1, sizeof(**tmp) + (sizeof(void*) * m->tk[i]->n), oldsz);
+      (*tmp)->sz = m->tk[i]->n;
 
       size_t x = 0;
       while(1)
@@ -445,8 +499,10 @@ API xapi multimap_delete(multimap * const restrict m, const void * restrict key,
 {
   enter;
 
+  uint32_t h = hash32(0, key, keyl);
+
   size_t i = 0;
-  if(probe(m, key, keyl, &i))
+  if(probe(m, h, key, keyl, &i))
   {
     size_t * next = &i;
     size_t x;
@@ -493,6 +549,23 @@ API xapi multimap_recycle(multimap * const restrict m)
   }
 
   m->size = 0;
+
+  finally : coda;
+}
+
+API xapi multimap_keys(const multimap * restrict m, const char *** restrict keys, size_t * restrict keysl)
+{
+  enter;
+
+  fatal(xmalloc, keys, m->size * sizeof(*keys));
+  (*keysl) = 0;
+
+  size_t x;
+  for(x = 0; x < m->table_size; x++)
+  {
+    if(m->tk[x] && !(m->tk[x]->attr & MAP_KEY_DELETED))
+      (*keys)[(*keysl)++] = m->tk[x]->p;
+  }
 
   finally : coda;
 }

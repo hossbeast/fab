@@ -102,7 +102,7 @@ xapi filesystem_setup()
 {
   enter;
 
-  fatal(map_createx, &filesystems, filesystem_free, 0, 0);
+  fatal(map_createx, &filesystems, 0, filesystem_free, 0);
   qsort(invalidate_opts, sizeof(invalidate_opts) / sizeof(*invalidate_opts), sizeof(*invalidate_opts), invalidate_opts_compare);
 
   char * s;

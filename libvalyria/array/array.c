@@ -127,6 +127,21 @@ API void * array_search(array * const restrict ar, void * ud, int (*compar)(void
   return list_search((void*)ar, ud, compar);
 }
 
+API void * array_search_range(array * const restrict ar, size_t index, size_t len, void * ud, int (*compar)(void * ud, const void * el, size_t idx))
+{
+  return list_search_range((void*)ar, index, len, ud, compar);
+}
+
+API xapi array_splice(array * const restrict dst, size_t dst_index, array * const restrict src, size_t src_index, size_t len)
+{
+  xproxy(list_splice, (void*)dst, dst_index, (void*)src, src_index, len);
+}
+
+API xapi array_replicate(array * const restrict dst, size_t dst_index, array * const restrict src, size_t src_index, size_t len)
+{
+  xproxy(list_replicate, (void*)dst, dst_index, (void*)src, src_index, len);
+}
+
 API xapi array_truncate(array * const restrict ar, size_t len)
 {
   xproxy(list_truncate, (void*)ar, len);

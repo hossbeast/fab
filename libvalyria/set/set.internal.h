@@ -1,4 +1,4 @@
-/* Copyright (c) 2012-2017 Todd Freed <todd.freed@gmail.com>
+/* Copyright (c) 2012-2015 Todd Freed <todd.freed@gmail.com>
 
    This file is part of fab.
 
@@ -15,7 +15,9 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef _VALYRIA_MAPUTILS_H
-#define _VALYRIA_MAPUTILS_H
+#ifndef _SET_INTERNAL_H
+#define _SET_INTERNAL_H
+
+#include "set.h"
 
 #endif

@@ -416,7 +416,7 @@ static int scompar(struct context * ctx, const void * el)
   return ctx->compar(ctx->ud, *(const void **)el, ((char*)el - ctx->v) / ctx->esz);
 }
 
-API void * list_search(list * const restrict li, void * ud, int (*compar)(void *, const void *, size_t))
+API void * list_search_range(list * const restrict li, size_t index, size_t len, void * ud, int (*compar)(void *, const void *, size_t))
 {
   void * elp = 0;
 
@@ -425,17 +425,22 @@ API void * list_search(list * const restrict li, void * ud, int (*compar)(void *
   if(li->attr & LIST_PRIMARY)
   {
     void * res;
-    if((res = bsearch(&ctx, li->v, li->l, ctx.esz, (void*)pcompar)))
-      elp = *(void**)res;
+    if((res = bsearch(&ctx, li->v + (index * ELEMENT_SIZE(li)), len, ctx.esz, (void*)pcompar)))
+      elp = res;
   }
   else // li->attr & LIST_SECONDARY
   {
     void * res;
-    if((res = bsearch(&ctx, li->v, li->l, ctx.esz, (void*)scompar)))
+    if((res = bsearch(&ctx, li->v + (index * ELEMENT_SIZE(li)), len, ctx.esz, (void*)scompar)))
       elp = *(void **)res;
   }
 
   return elp;
+}
+
+API void * list_search(list * const restrict li, void * ud, int (*compar)(void *, const void *, size_t))
+{
+  return list_search_range(li, 0, li->l, ud, compar);
 }
 
 API xapi list_splice(list * const restrict dst, size_t dst_index, list * const restrict src, size_t src_index, size_t len)

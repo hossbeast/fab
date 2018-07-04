@@ -15,35 +15,14 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef _VALYRIA_STRUTIL_H
-#define _VALYRIA_STRUTIL_H
+#ifndef _VALYRIA_ASSERT_H
+#define _VALYRIA_ASSERT_H
 
-/*
+#include "xunit/assert.h"
 
-SUMMARY
- dynamically resizing string
+extern struct xunit_type * valyria_xunit_set;
 
-*/
-
-#include <stdarg.h>
-
-#include "xapi.h"
-#include "types.h"
-
-xapi strloadc(char ** restrict dst, int c)
-  __attribute__((nonnull));
-
-xapi strloads(char ** restrict dst, const char * restrict s)
-  __attribute__((nonnull));
-
-xapi strloadw(char ** restrict dst, const void * restrict buf, size_t bufl)
-  __attribute__((nonnull));
-
-xapi strloadf(char ** restrict dst, const char * restrict fmt, ...)
-  __attribute__((nonnull(2)))
-  __attribute__((format(printf, 2, 3)));
-
-xapi strloadvf(char ** restrict dst, const char * restrict fmt, va_list va)
-  __attribute__((nonnull));
+#define assert_eq_set(expected, actual)   _assertion(valyria_xunit_set, XU_EQ, QUOTE(actual), expected, actual)
+#define assert_ne_set(expected, actual)   _assertion(valyria_xunit_set, XU_EQ, QUOTE(actual), expected, actual)
 
 #endif

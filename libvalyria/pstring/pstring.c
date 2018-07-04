@@ -27,14 +27,12 @@
 #include "pstring.internal.h"
 
 #include "assure.h"
-#include "strutil.h"
+#include "macros.h"
 
 /*
  * Default capacity
  */
 #define DEFAULT_CAPACITY 100
-
-#define restrict __restrict
 
 //
 // static
@@ -101,7 +99,7 @@ API void psifree(pstring ** ps)
 
 API int pscmp(const pstring * const restrict A, const pstring * const restrict B)
 {
-  return estrcmp(A->s, A->l, B->s, B->l, 0);
+  return memncmp(A->s, A->l, B->s, B->l);
 }
 
 // mk

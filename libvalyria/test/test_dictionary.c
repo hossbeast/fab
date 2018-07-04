@@ -27,12 +27,34 @@
 
 #include "macros.h"
 
-struct item
+typedef struct item
 {
   int a;
   int x;
-};
-typedef struct item item;
+} item;
+
+static xapi validate_int_table_values(dictionary * restrict m)
+{
+  enter;
+
+  int x;
+  for(x = 0; x < m->table_size; x++)
+  {
+    const char * key = dictionary_table_key(m, x);
+    const int * val = dictionary_table_value(m, x);
+
+    assert_eq_b(!key, !val);
+
+    if(key)
+    {
+      int keyval;
+      sscanf(key, "%d", &keyval);
+      assert_eq_d(keyval, *val);
+    }
+  }
+
+  finally : coda;
+}
 
 static xapi validate(dictionary * dp)
 {
@@ -80,7 +102,7 @@ static xapi validate(dictionary * dp)
 
   // by slot
   int x;
-  for(x = 0; x < dictionary_table_size(dp); x++)
+  for(x = 0; x < dp->table_size; x++)
   {
     const char * key = dictionary_table_key(dp, x);
     itemp = dictionary_table_value(dp, x);
@@ -115,7 +137,7 @@ finally:
 coda;
 }
 
-static xapi test()
+static xapi test_basic()
 {
   enter;
 
@@ -139,12 +161,57 @@ finally:
 coda;
 }
 
+static xapi test_load()
+{
+  enter;
+
+  char space[64];
+  dictionary * m = 0;
+  int * val;
+  int x;
+  int y;
+  int i;
+
+  fatal(dictionary_create, &m, sizeof(int));
+
+  for(i = 0; i < 2; i++)
+  {
+    y = i * 1000;
+    x = y;
+    do {
+      snprintf(space, sizeof(space), "%d", x);
+      fatal(dictionary_set, m, space, strlen(space), &val);
+      *val = x;
+
+      x = (x + 1) % 5000;
+    } while(x != y);
+
+    assert_eq_d(5000, m->count);
+
+    // entries by lookup
+    for(x = 0; x < 5000; x++)
+    {
+      snprintf(space, sizeof(space), "%d", x);
+      val = dictionary_get(m, space, strlen(space));
+      assert_eq_d(x, *val);
+    }
+
+    // entries by enumeration
+    fatal(validate_int_table_values, m);
+    fatal(dictionary_recycle, m);
+  }
+
+finally:
+  fatal(dictionary_xfree, m);
+coda;
+}
+
 static xapi test_rehash()
 {
   enter;
 
   dictionary * dp = 0;
-  fatal(dictionary_createx, &dp, sizeof(item), 0, 0, 2);
+  fatal(dictionary_createx, &dp, sizeof(item), 2, 0, 0);
 
   int x;
   for(x = 0; x <= 35; x++)
@@ -167,16 +234,14 @@ static xapi test_rehash()
         int i;
         for(i = 0; i < 7; i++)
         {
-          item * itemp = 0;
-          if((itemp = dictionary_get(dp, MM(i))))
-            ufailf("%s", "%d", "(null)", itemp->x);
+          item * itemp = dictionary_get(dp, MM(i));
+          assert_null(itemp);
         }
 
         for(i = 7; i < x; i++)
         {
-          item * itemp = 0;
-          if(!(itemp = dictionary_get(dp, MM(i))))
-            ufailf("%s", "%d", "(found)", i);
+          item * itemp = dictionary_get(dp, MM(i));
+          assert_notnull(itemp);
         }
       }
     }
@@ -187,23 +252,31 @@ finally:
 coda;
 }
 
+static xapi run_tests()
+{
+  enter;
+
+  fatal(test_basic);
+  fatal(test_load);
+  fatal(test_rehash);
+
+  summarize;
+
+  finally : coda;
+}
+
 int main()
 {
   enter;
 
-  xapi r;
-
-  fatal(test);
-  fatal(test_rehash);
+  xapi R = 0;
+  fatal(run_tests);
 
 finally:
-  summarize;
   if(XAPI_UNWINDING)
-  {
     xapi_backtrace();
-  }
-conclude(&r);
-
+conclude(&R);
   xapi_teardown();
-  return !!r;
+
+  return !!R;
 }

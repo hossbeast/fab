@@ -24,15 +24,22 @@
 #define QUOTE(x) #x
 #define XQUOTE(x) QUOTE(x)
 
-#define MIN(a,b)            \
- ({ typeof (a) _a = (a);    \
-     typeof (b) _b = (b);   \
+#define MIN(a,b)           \
+ ({ typeof (a) _a = (a);   \
+    typeof (b) _b = (b);   \
    _a > _b ? _b : _a; })
 
-#define MAX(a,b)            \
- ({ typeof (a) _a = (a);    \
-     typeof (b) _b = (b);   \
+#define MAX(a,b)           \
+ ({ typeof (a) _a = (a);   \
+    typeof (b) _b = (b);   \
    _a > _b ? _a : _b; })
+
+#define INTCMP(a, b)       \
+ ({ typeof (a) _a = (a);   \
+    typeof (b) _b = (b);   \
+      _a > _b ? 1          \
+    : _a < _b ? -1         \
+    : 0; })
 
 /// sentinel
 //
@@ -101,6 +108,23 @@ static inline int memncmp(const void * a, size_t alen, const void * b, size_t bl
   if(blen > alen)
     return -1;
   return 0;
+}
+
+/// roundup2
+//
+// round up to the next highest power of 2
+//
+static inline size_t roundup2(size_t x)
+{
+  x--;
+  x |= x >> 1;
+  x |= x >> 2;
+  x |= x >> 4;
+  x |= x >> 8;
+  x |= x >> 16;
+  x++;
+
+  return x;
 }
 
 #endif

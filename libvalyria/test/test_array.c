@@ -185,6 +185,195 @@ finally:
 coda;
 }
 
+static xapi test_splice()
+{
+  enter;
+
+  array * A = 0;
+  array * B = 0;
+  item * itemp = 0;
+
+  fatal(array_create, &A, sizeof(item));
+  fatal(array_create, &B, sizeof(item));
+
+  fatal(array_push, A, &itemp);
+  itemp->x = 1;
+  fatal(validate_contents, A, 1, 1);
+
+  fatal(array_push, A, &itemp);
+  itemp->x = 4;
+  fatal(validate_contents, A, 2, 1, 4);
+
+  fatal(array_push, B, &itemp);
+  itemp->x = 2;
+  fatal(validate_contents, B, 1, 2);
+
+  fatal(array_push, B, &itemp);
+  itemp->x = 3;
+  fatal(validate_contents, B, 2, 2, 3);
+
+  fatal(array_splice, A, 0, B, 0, 2);
+  fatal(validate_contents, A, 2, 2, 3);
+  fatal(validate_contents, B, 2, 2, 3);
+
+finally:
+  fatal(array_xfree, A);
+  fatal(array_xfree, B);
+coda;
+}
+
+static xapi test_replicate()
+{
+  enter;
+
+  array * A = 0;
+  array * B = 0;
+  item * itemp = 0;
+
+  fatal(array_create, &A, sizeof(item));
+  fatal(array_create, &B, sizeof(item));
+
+  fatal(array_push, A, &itemp);
+  itemp->x = 1;
+  fatal(validate_contents, A, 1, 1);
+
+  fatal(array_push, A, &itemp);
+  itemp->x = 4;
+  fatal(validate_contents, A, 2, 1, 4);
+
+  fatal(array_push, B, &itemp);
+  itemp->x = 2;
+  fatal(validate_contents, B, 1, 2);
+
+  fatal(array_push, B, &itemp);
+  itemp->x = 3;
+  fatal(validate_contents, B, 2, 2, 3);
+
+  fatal(array_replicate, A, 1, B, 0, 2);
+  fatal(validate_contents, A, 4, 1, 2, 3, 4);
+  fatal(validate_contents, B, 2, 2, 3);
+
+finally:
+  fatal(array_xfree, A);
+  fatal(array_xfree, B);
+coda;
+}
+
+static xapi test_search()
+{
+  enter;
+
+  array * ar = 0;
+  item * itemps[4];
+
+  fatal(array_create, &ar, sizeof(item));
+  fatal(array_push_range, ar, sizeof(itemps) / sizeof(itemps[0]), itemps);
+  itemps[0]->x = 1;
+  itemps[1]->x = 7;
+  itemps[2]->x = 32;
+  itemps[3]->x = 101;
+
+  size_t lx;
+  int lc;
+  int compar(void * ud, const void * el, size_t idx)
+  {
+    lx = idx;
+    lc = (int)(intptr_t)ud - ((item*)el)->x;
+    return lc;
+  };
+
+  item * p = array_search(ar, (void*)0, compar);
+  assert_null(p);
+
+  p = array_search(ar, (void*)1, compar);
+  assert_notnull(p);
+  assert_eq_d(1, p->x);
+  assert_eq_zu(0, lx);
+  assert_eq_d(0, lc);
+
+  p = array_search(ar, (void*)7, compar);
+  assert_notnull(p);
+  assert_eq_d(7, p->x);
+  assert_eq_zu(1, lx);
+  assert_eq_d(0, lc);
+
+  p = array_search(ar, (void*)32, compar);
+  assert_notnull(p);
+  assert_eq_d(32, p->x);
+  assert_eq_zu(2, lx);
+  assert_eq_d(0, lc);
+
+  p = array_search(ar, (void*)101, compar);
+  assert_notnull(p);
+  assert_eq_d(101, p->x);
+  assert_eq_zu(3, lx);
+  assert_eq_d(0, lc);
+
+  p = array_search(ar, (void*)102, compar);
+  assert_null(p);
+
+finally:
+  fatal(array_xfree, ar);
+coda;
+}
+
+static xapi test_search_range()
+{
+  enter;
+
+  array * ar = 0;
+  item * itemps[4];
+
+  fatal(array_create, &ar, sizeof(item));
+  fatal(array_push_range, ar, sizeof(itemps) / sizeof(itemps[0]), itemps);
+  itemps[0]->x = 1;
+  itemps[1]->x = 7;
+  itemps[2]->x = 32;
+  itemps[3]->x = 101;
+
+  size_t lx;
+  int lc;
+  int compar(void * ud, const void * el, size_t idx)
+  {
+    lx = idx;
+    lc = (int)(intptr_t)ud - ((item*)el)->x;
+    return lc;
+  };
+
+  item * p = array_search_range(ar, 0, ar->l, (void*)0, compar);
+  assert_null(p);
+
+  p = array_search_range(ar, 1, 3, (void*)1, compar);
+  assert_null(p);
+
+  p = array_search_range(ar, 2, 2, (void*)7, compar);
+  assert_null(p);
+
+  p = array_search_range(ar, 0, 4, (void*)32, compar);
+  assert_notnull(p);
+  assert_eq_d(32, p->x);
+  assert_eq_zu(2, lx);
+
+  p = array_search_range(ar, 1, 3, (void*)32, compar);
+  assert_notnull(p);
+  assert_eq_d(32, p->x);
+  assert_eq_zu(2, lx);
+  assert_eq_d(0, lc);
+
+  p = array_search_range(ar, 2, 2, (void*)32, compar);
+  assert_notnull(p);
+  assert_eq_d(32, p->x);
+  assert_eq_zu(2, lx);
+  assert_eq_d(0, lc);
+
+  p = array_search_range(ar, 3, 1, (void*)32, compar);
+  assert_null(p);
+
+finally:
+  fatal(array_xfree, ar);
+coda;
+}
+
 static xapi run_tests()
 {
   enter;
@@ -192,6 +381,10 @@ static xapi run_tests()
   fatal(test_basic);
   fatal(test_set);
   fatal(test_delete);
+  fatal(test_splice);
+  fatal(test_replicate);
+  fatal(test_search);
+  fatal(test_search_range);
   summarize;
 
   finally : coda;

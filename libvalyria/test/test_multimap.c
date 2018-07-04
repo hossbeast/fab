@@ -158,11 +158,10 @@ static xapi validate_lookup(multimap * restrict m, const char * restrict key, in
   int i;
 
   void * tmp = 0;
-  size_t tmpsz = 0;
   item ** values = 0;
   size_t valuesl = 0;
 
-  fatal(multimap_get, m, MMS(key), &tmp, &tmpsz, &values, &valuesl);
+  fatal(multimap_get, m, MMS(key), &tmp, &values, &valuesl);
 
   size_t n = sentinel(valset);
   assert_eq_zu(n, valuesl);
@@ -206,7 +205,7 @@ static xapi validate_absent(multimap * restrict m, const char * restrict key)
   enter;
 
   size_t itemsl = 0;
-  fatal(multimap_get, m, MMS(key), 0, 0, 0, &itemsl);
+  fatal(multimap_get, m, MMS(key), 0, 0, &itemsl);
   assert_eq_zu(0, itemsl);
 
   finally : coda;
@@ -385,6 +384,38 @@ finally:
 coda;
 }
 
+static xapi test_load()
+{
+  enter;
+
+  char space[64];
+  multimap * m = 0;
+
+  fatal(multimap_createx, &m, destructor, 0, 0);
+
+  int x;
+  for(x = 1; x <= 5000; x++)
+  {
+    snprintf(space, sizeof(space), "%d", x);
+    fatal(set, m, space, x * 10);
+    fatal(set, m, space, x * 100);
+    fatal(set, m, space, x * 1000);
+  }
+
+  assert_eq_d(5000 * 3, multimap_size(m));
+
+  // entries by lookup
+  for(x = 1; x <= 5000; x++)
+  {
+    snprintf(space, sizeof(space), "%d", x);
+    fatal(validate_lookup, m, space, (int[]) { x * 10, x * 100, x * 1000, 0 });
+  }
+
+finally:
+  fatal(multimap_xfree, m);
+coda;
+}
+
 static xapi run_tests()
 {
   enter;
@@ -393,6 +424,8 @@ static xapi run_tests()
   fatal(test_set_mingle);
   fatal(test_delete);
   fatal(test_delete_mingle);
+  fatal(test_load);
+
   summarize;
 
   finally : coda;

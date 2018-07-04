@@ -250,7 +250,7 @@ static xapi walker_test_entry(xunit_test * _test)
   fatal(node_setup);
 
   fatal(map_create, &nodes);
-  fatal(dictionary_createx, &infos, sizeof(ftwinfo), info_free, 0, 0);
+  fatal(dictionary_createx, &infos, sizeof(ftwinfo), 0, info_free, 0);
   fatal(array_create, &ctx.operations, sizeof(walker_test_operation));
 
   ctx.create = (void*)create;

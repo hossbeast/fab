@@ -222,7 +222,7 @@ xapi extern_reference_resolve(const ff_node_pattern * restrict ref, const vertex
   fatal(ffn_pattern_bydir_strings_rtl_init, ref->chain, &base_ctx, space, sizeof(space), &name);
 
   // get all references to the rightmost segment
-  fatal(multimap_get, extern_mmap, MMS(name), &tmp, 0, &nodes, &nodesl);
+  fatal(multimap_get, extern_mmap, MMS(name), &tmp, &nodes, &nodesl);
 
   int x[2] = { [0] = -1 };
   for(x[1] = 0; x[1] < nodesl; x[1]++)

@@ -15,35 +15,27 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef _VALYRIA_STRUTIL_H
-#define _VALYRIA_STRUTIL_H
+#include <stdio.h>
 
-/*
+#include "stresc.h"
 
-SUMMARY
- dynamically resizing string
+int strescw(const char * const src, const size_t len, char * const dst, const size_t sz)
+{
+  size_t z  = 0;
+  int x;
+  for(x = 0; x < len; x++)
+  {
+    if(src[x] == 0x09)
+      z += snprintf(dst + z, sz - z, "\\t");
+    else if(src[x] == 0x0a)
+      z += snprintf(dst + z, sz - z, "\\n");
+    else if(src[x] == 0x0d)
+      z += snprintf(dst + z, sz - z, "\\r");
+    else if(src[x] >= 0x20 && src[x] <= 0x7e)
+      z += snprintf(dst + z, sz - z, "%c", src[x]);
+    else
+      z += snprintf(dst + z, sz - z, "\\x%02hhx", src[x]);
+  }
 
-*/
-
-#include <stdarg.h>
-
-#include "xapi.h"
-#include "types.h"
-
-xapi strloadc(char ** restrict dst, int c)
-  __attribute__((nonnull));
-
-xapi strloads(char ** restrict dst, const char * restrict s)
-  __attribute__((nonnull));
-
-xapi strloadw(char ** restrict dst, const void * restrict buf, size_t bufl)
-  __attribute__((nonnull));
-
-xapi strloadf(char ** restrict dst, const char * restrict fmt, ...)
-  __attribute__((nonnull(2)))
-  __attribute__((format(printf, 2, 3)));
-
-xapi strloadvf(char ** restrict dst, const char * restrict fmt, va_list va)
-  __attribute__((nonnull));
-
-#endif
+  return z;
+}

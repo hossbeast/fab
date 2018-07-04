@@ -15,92 +15,101 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
+#include "xlinux/xstdlib.h"
+
 #include "internal.h"
 #include "dictionary.internal.h"
 #include "map.internal.h"
-#include "maputils.internal.h"
 
-struct dictionary
+static void mapping_free(mapping * mg)
 {
-  struct map;
-};
+  if(mg)
+  {
+    wfree(mg->k);
+    wfree(mg->v);
+  }
+  wfree(mg);
+}
 
 //
 // api
 //
 
-API xapi dictionary_create(dictionary ** const restrict m, size_t vsz)
-{
-  xproxy(map_allocate, (void*)m, MAP_PRIMARY, vsz, 0, 0, 0);
-}
-
 API xapi dictionary_createx(
-    dictionary ** const restrict m
+    dictionary ** const restrict dict
   , size_t vsz
+  , size_t capacity
   , void * free_value
   , void * xfree_value
-  , size_t capacity
 )
 {
-  xproxy(map_allocate, (void*)m, MAP_PRIMARY, vsz, free_value, xfree_value, capacity);
+  enter;
+
+  fatal(xmalloc, dict, sizeof(**dict));
+  fatal(map_init, *dict, capacity, free_value, xfree_value);
+
+  (*dict)->vsz = vsz;
+  (*dict)->free_mapping = mapping_free;
+
+  finally : coda;
 }
 
-API xapi dictionary_set(dictionary * const restrict m, const char * const restrict key, size_t keyl, void * const restrict value)
+API xapi dictionary_create(dictionary ** const restrict d, size_t vsz)
 {
-  xproxy(map_put, m, key, keyl, 0, value);
+  xproxy(dictionary_createx, d, vsz, 0, 0, 0);
 }
 
-API void * dictionary_get(const dictionary* const restrict m, const char * const restrict k, size_t kl)
+API xapi dictionary_set(dictionary * const restrict d, const void * restrict k, size_t kl, void * const restrict rv)
 {
-  return map_get(m, k, kl);
+  xproxy(map_put, d, k, kl, 0, d->vsz, rv);
 }
 
-API size_t dictionary_size(const dictionary * const restrict m)
+API void * dictionary_get(const dictionary* const restrict d, const char * const restrict k, size_t kl)
 {
-  return map_size(m);
+  return map_get(d, k, kl);
 }
 
-API xapi dictionary_recycle(dictionary* const restrict m)
+API xapi dictionary_recycle(dictionary* const restrict d)
 {
-  xproxy(map_recycle, m);
+  xproxy(map_recycle, d);
 }
 
-API xapi dictionary_delete(dictionary * const restrict m, const char * const restrict key, size_t keyl)
+API xapi dictionary_delete(dictionary * const restrict d, const char * const restrict k, size_t kl)
 {
-  xproxy(map_delete, m, key, keyl);
+  xproxy(map_delete, d, k, kl);
 }
 
-API xapi dictionary_keys(const dictionary * const restrict m, const char *** const restrict keys, size_t * const restrict keysl)
+API xapi dictionary_keys(const dictionary * const restrict d, const char *** const restrict keys, size_t * const restrict keysl)
 {
-  xproxy(map_keys, m, keys, keysl);
+  xproxy(map_keys, d, keys, keysl);
 }
 
-API xapi dictionary_values(const dictionary* const restrict m, void * restrict values, size_t * const restrict valuesl)
+API xapi dictionary_values(const dictionary* const restrict d, void * restrict values, size_t * const restrict valuesl)
 {
-  xproxy(map_values, m, values, valuesl);
+  xproxy(map_values, d, values, valuesl);
 }
 
-API xapi dictionary_xfree(dictionary* const restrict m)
+API xapi dictionary_xfree(dictionary* const restrict d)
 {
-  xproxy(map_xfree, m);
+  xproxy(map_xfree, d);
 }
 
-API xapi dictionary_ixfree(dictionary** const restrict m)
+API xapi dictionary_ixfree(dictionary** const restrict d)
 {
-  xproxy(map_ixfree, (void*)m);
+  enter;
+
+  fatal(dictionary_xfree, *d);
+  *d = 0;
+
+  finally : coda;
 }
 
-API size_t dictionary_table_size(const dictionary * const restrict m)
+API const void * dictionary_table_key(const dictionary * const restrict d, size_t x)
 {
-  return map_table_size(m);
+  return map_table_key(d, x);
 }
 
-API const char * dictionary_table_key(const dictionary * const restrict m, size_t x)
+API void * dictionary_table_value(const dictionary * const restrict d, size_t x)
 {
-  return map_table_key(m, x);
-}
-
-API void * dictionary_table_value(const dictionary * const restrict m, size_t x)
-{
-  return map_table_value(m, x);
+  return map_table_value(d, x);
 }

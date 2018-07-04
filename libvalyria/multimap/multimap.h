@@ -98,8 +98,8 @@ xapi multimap_set(multimap * restrict m, const void * restrict key, size_t keyl,
 //  given a key, returns pointer to associated value, or 0 if not found
 //
 // PARAMETERS
-//  map     - map
-//  key     - pointer to key
+//  map  - map
+//  key  - pointer to key
 //  keyl - length of key
 //
 // EXAMPLE
@@ -115,12 +115,11 @@ xapi multimap_get(
     /* 1 */ const multimap * restrict m
   , /* 2 */ const void * restrict key
   , /* 3 */ size_t keyl
-  , /* 4 */ void * restrict tmp
-  , /* 5 */ size_t * restrict tmpsz
-  , /* 6 */ void * restrict vals
-  , /* 7 */ size_t * restrict valsl
+  , /* 4 */ void * tmp           // opaque temp space
+  , /* 5 */ void * restrict vals
+  , /* 6 */ size_t * restrict valsl
 )
-  __attribute__((nonnull(1, 2, 7)));
+  __attribute__((nonnull(1, 2, 6)));
 
 /// multimap_recycle
 //

@@ -31,13 +31,20 @@ REMARKS
 
 */
 
-#include <sys/types.h>
-#include <stdint.h>
-
 #include "xapi.h"
+#include "types.h"
+#include "hashtable.h"
 
-struct map;
-typedef struct map map;
+struct mapping;
+
+typedef struct map
+{
+  hashtable;
+
+  void (*free_value)(void *);
+  xapi (*xfree_value)(void *);
+  void (*free_mapping)(struct mapping *);
+} map;
 
 /// map_create
 //
@@ -55,9 +62,9 @@ xapi map_create(map ** restrict m)
 
 xapi map_createx(
     map ** restrict m
+  , size_t capacity
   , void * free_value
   , void * xfree_value
-  , size_t capacity
 )
   __attribute__((nonnull(1)));
 
@@ -82,13 +89,13 @@ xapi map_ixfree(map ** restrict map)
 //  add or update an element
 //
 // PARAMETERS
-//  map    - map
-//  key    - pointer to key
-//  keyl   - key length
-//  value  - pointer to value
+//  map     - map
+//  key     - pointer to key
+//  keyl    - key length > 0
+//  [value] - pointer to value
 //
-xapi map_set(map * restrict m, const void * restrict key, size_t keyl, void * restrict value)
-  __attribute__((nonnull));
+xapi map_set(map * restrict m, const void * key, size_t keyl, void * restrict value)
+  __attribute__((nonnull(1, 2)));
 
 /// map_get
 //
@@ -96,8 +103,8 @@ xapi map_set(map * restrict m, const void * restrict key, size_t keyl, void * re
 //  given a key, returns pointer to associated value, or 0 if not found
 //
 // PARAMETERS
-//  map     - map
-//  key     - pointer to key
+//  map  - map
+//  key  - pointer to key
 //  keyl - length of key
 //
 // EXAMPLE
@@ -132,14 +139,6 @@ xapi map_recycle(map * restrict map)
 xapi map_delete(map * restrict m, const void * restrict key, size_t keyl)
   __attribute__((nonnull));
 
-/// map_size
-//
-// SUMMARY
-//  get the number of entries in the map
-//
-size_t map_size(const map * restrict m)
-  __attribute__((nonnull));
-
 /// map_keys
 //
 // SUMMARY
@@ -166,17 +165,6 @@ xapi map_keys(const map * restrict m, const char *** restrict keys, size_t * res
 xapi map_values(const map * restrict m, void * restrict values, size_t * restrict valuesl)
   __attribute__((nonnull));
 
-/// map_table_size
-//
-// SUMMARY
-//  get the size of the map tables for use with map_keyat / map_valueat
-//
-// PARAMETERS
-//  m - map
-//
-size_t map_table_size(const map * restrict m)
-  __attribute__((nonnull));
-
 /// map_keyat
 //
 // SUMMARY
@@ -201,5 +189,4 @@ const void * map_table_key(const map * restrict m, size_t x)
 void * map_table_value(const map * restrict m, size_t x)
   __attribute__((nonnull));
 
-#undef restrict
 #endif

@@ -15,35 +15,27 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef _VALYRIA_STRUTIL_H
-#define _VALYRIA_STRUTIL_H
+#ifndef _STRESC_H
+#define _STRESC_H
 
-/*
-
-SUMMARY
- dynamically resizing string
-
-*/
-
-#include <stdarg.h>
-
-#include "xapi.h"
 #include "types.h"
 
-xapi strloadc(char ** restrict dst, int c)
-  __attribute__((nonnull));
-
-xapi strloads(char ** restrict dst, const char * restrict s)
-  __attribute__((nonnull));
-
-xapi strloadw(char ** restrict dst, const void * restrict buf, size_t bufl)
-  __attribute__((nonnull));
-
-xapi strloadf(char ** restrict dst, const char * restrict fmt, ...)
-  __attribute__((nonnull(2)))
-  __attribute__((format(printf, 2, 3)));
-
-xapi strloadvf(char ** restrict dst, const char * restrict fmt, va_list va)
-  __attribute__((nonnull));
+/// stresc
+//
+// SUMMARY
+//  write a string to a buffer with all nonprinting characters and non-space whitespace replaced
+//  with hex escape sequences
+//
+// PARAMETERS
+//  src - source string
+//  len - length of src, 0 for strlen
+//  dst - dst buffer
+//  sz  - size of dst
+//
+// RETURNS
+//  returns number of bytes written
+//
+int strescw(const char * const restrict src, const size_t len, char * const restrict dst, const size_t sz)
+  __attribute__((nonnull(1, 3)));
 
 #endif

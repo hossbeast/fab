@@ -32,18 +32,17 @@ REMARKS
 #include <stdint.h>
 
 #include "xapi.h"
+#include "types.h"
 
 typedef struct list
 {
-  size_t l;  // number of elements
+  size_t l;  // number of items
 
 #ifndef LIST_INTERNALS
 # define LIST_INTERNALS
 #endif
   LIST_INTERNALS;
 } list;
-
-#define restrict __restrict
 
 /// list_create
 //
@@ -279,8 +278,8 @@ void list_sort(list * const restrict li, int (*compar)(const void *, const void 
 //  man 3 bsearch
 //
 // PARAMETERS
-//  li - list
-//  ud - user data
+//  li   - list
+//  [ud] - user data
 //  compar - comparison function
 //   ud  - user data
 //   el  - pointer to element
@@ -288,6 +287,15 @@ void list_sort(list * const restrict li, int (*compar)(const void *, const void 
 //
 void * list_search(list * const restrict li, void * ud, int (*compar)(void * ud, const void * el, size_t idx))
   __attribute__((nonnull(1, 3)));
+
+/// list_search_range
+//
+// PARAMETERS
+//  index - index of the first item in the search range
+//  len   - number of items in the search range
+//
+void * list_search_range(list * const restrict li, size_t index, size_t len, void * ud, int (*compar)(void * ud, const void * el, size_t idx))
+  __attribute__((nonnull(1, 5)));
 
 /// list_sublist
 //
@@ -358,5 +366,4 @@ xapi list_delete(list * const restrict li, size_t index)
 xapi list_delete_range(list * const restrict li, size_t index, size_t len)
   __attribute__((nonnull));
 
-#undef restrict
 #endif
