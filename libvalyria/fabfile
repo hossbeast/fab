@@ -26,8 +26,14 @@
 $basename     = [ valyria ]
 $libname_eapi = [ lib $basename .so ~ j ]
 $libname_xapi = [ lib $basename -xapi .so ~ j ]
-$libdeps_dirs = [ $dlibxapi $dlibxlinux ]
-$copts        = [ -fPIC [ [ $* ~ lsr -d v d l/\/valyria v ] $* $libdeps_dirs ~ s/^/-I ] ]
+$dlibdeps     = [ $dlibxapi $dlibxlinux $dlibxunit ]
+$copts        = [ -fPIC [ [ $* ~ lsr -d v d l/\/valyria v ] $* $dlibdeps ~ s/^/-I ] ]
+$libdeps_eapi_final = [ $libxlinux_eapi_final ]
+$libdeps_eapi_debug = [ $libxlinux_eapi_debug ]
+$libdeps_eapi_devel = [ $libxlinux_eapi_devel ]
+$libdeps_xapi_final = [ $libxlinux_xapi_final $libxapi_xapi_final ]
+$libdeps_xapi_debug = [ $libxlinux_xapi_debug $libxapi_xapi_debug ]
+$libdeps_xapi_devel = [ $libxlinux_xapi_devel $libxapi_xapi_devel ]
 
 # cflags variants
 $cflags_eapi_final = [ $cflags_eapi_final $copts ]
@@ -124,12 +130,12 @@ $lflags_xapi_devel  = [ $lopts $libxapi_xapi_devel $libxlinux_xapi_devel [ -Wl,-
   [ $cc ] [ $cflags_xapi_devel ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw lx/o uu fi ] [ $lflags_xapi_devel ~ fi ]
 }
 
-[ $libvalyria_eapi_final ] :^ [ $libxlinux_eapi_final ]
-[ $libvalyria_eapi_debug ] :^ [ $libxlinux_eapi_debug ]
-[ $libvalyria_eapi_devel ] :^ [ $libxlinux_eapi_devel ]
-[ $libvalyria_xapi_final ] :^ [ $libxlinux_xapi_final $libxapi_xapi_final ]
-[ $libvalyria_xapi_debug ] :^ [ $libxlinux_xapi_debug $libxapi_xapi_debug ]
-[ $libvalyria_xapi_devel ] :^ [ $libxlinux_xapi_devel $libxapi_xapi_devel ]
+[ $libvalyria_eapi_final ] :^ [ $libdeps_eapi_final ]
+[ $libvalyria_eapi_debug ] :^ [ $libdeps_eapi_debug ]
+[ $libvalyria_eapi_devel ] :^ [ $libdeps_eapi_devel ]
+[ $libvalyria_xapi_final ] :^ [ $libdeps_xapi_final ]
+[ $libvalyria_xapi_debug ] :^ [ $libdeps_xapi_debug ]
+[ $libvalyria_xapi_devel ] :^ [ $libdeps_xapi_devel ]
 
 #
 # tests
@@ -138,10 +144,11 @@ $lflags_xapi_devel  = [ $lopts $libxapi_xapi_devel $libxlinux_xapi_devel [ -Wl,-
 
 +[@std.c]($dext = [ xapi.devel.pic.o ]; $rdirs = [ $*/test ~ j ]; $cc; $cflags = [ $cflags_xapi_devel [ $droot/test ~ j s/^/-I ] ])
 
+[ $*/test ~ j lsr sx/c/test sy dj shift ] ::^ [ $libdeps_xapi_devel ]
 [ $*/test ~ j lsr sx/c/test sy dj shift ] :: [ $< ~ sx/test/xapi.devel.pic.o ]
 {
-  [ [ $cc ] -o [ $@ ] [ $cflags_xapi_devel ~ uu ] [ $@ ~ rx/aneedw lx/o uu ] [ $libxapi_xapi_devel $libxlinux_xapi_devel $dlibnarrator_xapi_devel ] [
-  ] [ $dlibxapi $dlibxlinux $dlibnarrator_xapi_devel $* ~ [ ?{ [ rb{$*/test} ~ j ] "s{^}{'-Wl,-rpath,$ORIGIN/}" "s{$}{'}" ~ fi ] ] ~ fi ]
+  [ [ $cc ] -o [ $@ ] [ $cflags_xapi_devel ~ uu ] [ $@ ~ rx/aneedw lx/o uu ] [ $libdeps_xapi_devel ] [
+  ] [ $dlibxapi $dlibxlinux $* ~ [ ?{ [ rb{$*/test} ~ j ] "s{^}{'-Wl,-rpath,$ORIGIN/}" "s{$}{'}" ~ fi ] ] ~ fi ]
 }
 
 [ @test ] : [ $*/test ~ j lsr sx/c/test sy ]
