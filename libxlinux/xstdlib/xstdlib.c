@@ -21,7 +21,8 @@
 
 #include "internal.h"
 #include "xstdlib/xstdlib.h"
-#include "errtab/KERNEL.errtab.h"
+#include "KERNEL.errtab.h"
+#include "XLINUX.errtab.h"
 #include "mempolicy/mempolicy.internal.h"
 
 #include "fmt.h"
@@ -91,29 +92,31 @@ API xapi xrealloc(void* target, size_t es, size_t ec, size_t oec)
 {
   enter;
 
+  void** t = ((void**)target);
+
   if(policy)
   {
     fatal(policy->realloc, policy, target, es, ec, oec);
   }
+  else if(!es || !ec)
+  {
+    *t = 0;
+  }
   else
   {
-    void** t = ((void**)target);
     void * mem = 0;
     if((mem = realloc(*t, es * ec)) == 0)
       tfail(perrtab_KERNEL, errno);
     *t = mem;
 
-    if(es && ec)
+    if(*t)
     {
-      if(*t)
-      {
-        if(((ssize_t)ec - (ssize_t)oec) > 0)
-          memset(((char*)*t) + (oec * es), 0, ((ssize_t)ec - (ssize_t)oec) * es);
-      }
-      else
-      {
-        tfail(perrtab_KERNEL, errno);
-      }
+      if(((ssize_t)ec - (ssize_t)oec) > 0)
+        memset(((char*)*t) + (oec * es), 0, ((ssize_t)ec - (ssize_t)oec) * es);
+    }
+    else
+    {
+      tfail(perrtab_KERNEL, errno);
     }
   }
 
@@ -249,5 +252,19 @@ API xapi xrealpathvf(char ** restrict r, char * restrict resolved_path, const ch
 
 finally:
   va_end(va);
+coda;
+}
+
+API xapi xsystem(const char * restrict command, int * restrict status)
+{
+  enter;
+
+  if(status && ((*status) = system(command)) == -1)
+    fail(XLINUX_SYSFAIL);
+  else if(system(command) == -1)
+    fail(XLINUX_SYSFAIL);
+
+finally:
+  xapi_infos("command", command);
 coda;
 }

@@ -22,8 +22,7 @@
 #include <stdarg.h>
 
 #include "xapi.h"
-
-#define restrict __restrict
+#include "types.h"
 
 /// xread
 //
@@ -369,5 +368,4 @@ xapi xfchdir(int fd);
 //
 pid_t gettid(void);
 
-#undef restrict
 #endif

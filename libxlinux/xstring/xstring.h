@@ -18,9 +18,9 @@
 #ifndef _XSTRING_H
 #define _XSTRING_H
 
+#include "types.h"
 #include "xapi.h"
 
-#define restrict __restrict
 
 /// xstrncat
 //
@@ -60,5 +60,4 @@ xapi ixstrndup(char ** s1, const char * s2, const size_t l);
 //
 xapi ixsprintf(char ** s, char * fmt, ...);
 
-#undef restrict
 #endif

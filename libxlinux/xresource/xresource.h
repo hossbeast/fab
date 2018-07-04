@@ -15,9 +15,22 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-1 DLERROR     dynamic loader error
-2 FTWERROR    filesystem traversal error
-3 LESS        less data available than was expected
-4 MPOLICY     mempolicy limit exceeded
-5 NAMETOOLONG name too long for static space
-6 SYSFAIL     system library function failed
+#ifndef _XRESOURCE_H
+#define _XRESOURCE_H
+
+#include <sys/time.h>
+#include <sys/resource.h>
+
+#include "xapi.h"
+
+struct rlimit;
+
+/// xsetrlimit
+//
+// SUMMARY
+//  xapi proxy for setrlimit
+//
+xapi xsetrlimit(int resource, const struct rlimit * restrict rlim)
+  __attribute__((nonnull));
+
+#endif

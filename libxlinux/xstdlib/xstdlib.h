@@ -116,4 +116,7 @@ xapi xrealpathf(char ** restrict r, char * restrict resolved_path, const char * 
 xapi xrealpathvf(char ** restrict r, char * restrict resolved_path, const char * restrict path_fmt, va_list va)
   __attribute__((nonnull(3)));
 
+xapi xsystem(const char * restrict command, int * restrict status)
+  __attribute__((nonnull(1)));
+
 #endif

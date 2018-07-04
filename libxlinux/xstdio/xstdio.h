@@ -21,8 +21,7 @@
 #include <stdarg.h>
 
 #include "xapi.h"
-
-#define restrict __restrict
+#include "types.h"
 
 /// xvdprintf
 //
@@ -35,5 +34,36 @@
 xapi xvdprintf(int fd, const char * const restrict fmt, va_list va)
   __attribute__((nonnull(2)));
 
-#undef restrict
+/// xrename
+//
+// SUMMARY
+//  xapi proxy for rename
+//
+// VARIANTS
+//  s/f/vf - different ways to pass path
+//
+xapi xrenames(const char * const restrict old, const char * const restrict new)
+  __attribute__((nonnull));
+
+xapi xrenamef(const char * const restrict oldfmt, const char * const restrict newfmt, ...)
+  __attribute__((nonnull(1, 2)));
+
+xapi xrenamevf(const char * const restrict oldfmt, const char * const restrict newfmt, va_list va)
+  __attribute__((nonnull(1, 2)));
+
+/// uxrename
+//
+// SUMMARY
+//  proxy for rename that only fails when errno not in { ENOENT, ENOTDIR }
+//
+
+xapi uxrenames(const char * const restrict old, const char * const restrict new)
+  __attribute__((nonnull));
+
+xapi uxrenamef(const char * const restrict oldfmt, const char * const restrict newfmt, ...)
+  __attribute__((nonnull(1, 2)));
+
+xapi uxrenamevf(const char * const restrict oldfmt, const char * const restrict newfmt, va_list va)
+  __attribute__((nonnull(1, 2)));
+
 #endif
