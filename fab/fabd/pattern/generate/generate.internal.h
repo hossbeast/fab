@@ -18,7 +18,7 @@
 #ifndef FABD_PATTERN_GENERATE_INTERNAL_H
 #define FABD_PATTERN_GENERATE_INTERNAL_H
 
-#include "pattern/generate.h"
+#include "generate.h"
 #include "types.h"
 
 struct ff_node_pattern;

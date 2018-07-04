@@ -82,7 +82,7 @@ void fab_request_freeze(fab_request * restrict req, struct memblk * restrict mb)
 //
 //
 //
-void fab_request_thaw(fab_request * restrict req, void * restrict mb)
+void fab_request_thaw(fab_request * req, void * mb)
   __attribute__((nonnull));
 
 /// fab_request_say

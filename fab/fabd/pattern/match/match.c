@@ -21,7 +21,7 @@
 #include "narrator.h"
 #include "moria/vertex.h"
 
-#include "pattern/match.internal.h"
+#include "match.internal.h"
 #include "artifact.h"
 #include "ff_node.h"
 #include "ff_node_alternation.h"

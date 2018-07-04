@@ -21,6 +21,8 @@
 #include <stdint.h>
 #include "xapi.h"
 
+#include "moria/vertex.h"
+
 struct map;
 struct module;
 struct narrator;

@@ -24,7 +24,7 @@
 #include "valyria/list.h"
 #include "valyria/map.h"
 
-#include "pattern/match.h"
+#include "match.h"
 #include "artifact.h"
 #include "ff_node.h"
 #include "ff_node_pattern.h"

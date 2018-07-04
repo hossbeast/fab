@@ -26,7 +26,7 @@
 #include "ff_node_pattern.internal.h"
 #include "ff_node_char.internal.h"
 #include "node.h"
-#include "pattern/match.internal.h"
+#include "match.internal.h"
 #include "path.h"
 
 //

@@ -71,7 +71,7 @@ static xapi begin(int argc, char ** argv, char ** envp)
   // required second argument : ipc hash
   uint32_t u32;
   if(argc < 2 || parseuint(g_argv[1], SCNx32, 1, UINT32_MAX, 1, UINT8_MAX, &u32, 0) != 0)
-    tfail(perrtab_SYS, SYS_BADARGS);
+    fail(SYS_BADARGS);
   snprintf(hash, sizeof(hash), "%x", u32);
 
 #if DEBUG || DEVEL

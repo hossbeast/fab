@@ -30,8 +30,8 @@
 #include "ff_node_range.internal.h"
 #include "node.h"
 #include "path.h"
-#include "pattern/generate.internal.h"
-#include "pattern/match.internal.h"
+#include "generate.internal.h"
+#include "match.internal.h"
 
 //
 // public

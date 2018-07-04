@@ -26,7 +26,7 @@
 #include "valyria/map.h"
 
 #include "artifact.h"
-#include "pattern/generate.h"
+#include "generate.h"
 #include "ff_node.h"
 #include "ff_node_artifact.h"
 #include "ff_node_artifact_pattern.h"

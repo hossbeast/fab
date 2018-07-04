@@ -29,8 +29,8 @@
 #include "ff_parser.h"
 #include "node.h"
 #include "path.h"
-#include "pattern/generate.internal.h"
-#include "pattern/match.internal.h"
+#include "generate.internal.h"
+#include "match.internal.h"
 
 bool ffn_char_nonprintable(const ff_node_char * restrict n)
 {

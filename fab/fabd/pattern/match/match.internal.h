@@ -18,7 +18,7 @@
 #ifndef FABD_PATTERN_MATCH_INTERNAL_H
 #define FABD_PATTERN_MATCH_INTERNAL_H
 
-#include "pattern/match.h"
+#include "match.h"
 
 struct ffn_bydir_walk;
 

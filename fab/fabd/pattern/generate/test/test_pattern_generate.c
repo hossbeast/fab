@@ -24,7 +24,7 @@
 #include "valyria/list.h"
 #include "valyria/map.h"
 
-#include "pattern/generate.h"
+#include "generate.h"
 #include "ff_node.h"
 #include "ff_node_pattern.h"
 #include "ff_node_patterns.h"

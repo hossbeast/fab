@@ -31,8 +31,8 @@
 #include "node.h"
 #include "node_operations.h"
 #include "path.h"
-#include "pattern/match.h"
-#include "pattern/generate.h"
+#include "match.h"
+#include "generate.h"
 #include "artifact.h"
 
 //

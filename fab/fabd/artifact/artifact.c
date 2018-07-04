@@ -23,7 +23,7 @@
 #include "artifact.internal.h"
 #include "ff_node_artifact_pattern.internal.h"
 #include "node.h"
-#include "pattern/generate.internal.h"
+#include "generate.internal.h"
 
 //
 // public

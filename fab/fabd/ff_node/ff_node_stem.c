@@ -29,8 +29,8 @@
 #include "ff_node_word.internal.h"
 #include "node.h"
 #include "path.h"
-#include "pattern/generate.internal.h"
-#include "pattern/match.internal.h"
+#include "generate.internal.h"
+#include "match.internal.h"
 
 xapi ffn_stem_say_tree(const ff_node_stem * restrict n, narrator * restrict N)
 {

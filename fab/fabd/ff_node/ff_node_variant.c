@@ -30,8 +30,8 @@
 #include "ff_node_pattern.internal.h"
 #include "node.h"
 #include "path.h"
-#include "pattern/generate.internal.h"
-#include "pattern/match.internal.h"
+#include "generate.internal.h"
+#include "match.internal.h"
 
 xapi ffn_variant_say_tree(const ff_node_variant * restrict n, narrator * restrict N)
 {

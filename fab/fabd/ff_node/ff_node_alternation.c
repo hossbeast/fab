@@ -28,8 +28,8 @@
 #include "ff_node_pattern.internal.h"
 #include "artifact.h"
 #include "node.h"
-#include "pattern/match.internal.h"
-#include "pattern/generate.internal.h"
+#include "match.internal.h"
+#include "generate.internal.h"
 #include "path.h"
 
 #include "macros.h"

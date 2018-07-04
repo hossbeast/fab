@@ -99,7 +99,7 @@ API void fab_request_freeze(fab_request * restrict request, memblk * restrict mb
   memblk_freeze(mb, &request->commands);
 }
 
-API void fab_request_thaw(fab_request * restrict request, void * restrict mb)
+API void fab_request_thaw(fab_request * request, void * mb)
 {
   memblk_thaw(mb, &request->commands);
 

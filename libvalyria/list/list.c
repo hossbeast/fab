@@ -321,32 +321,32 @@ API xapi list_pop(list * const restrict li, void ** const restrict el)
   finally : coda;
 }
 
-API xapi list_push(list * const restrict li, const void * el)
+API xapi list_push(list * const li, const void * el)
 {
   xproxy(list_add, li, li->l, 1, &el, 0);
 }
 
-API xapi list_push_range(list * const restrict li, const void * el, size_t len)
+API xapi list_push_range(list * const li, const void * el, size_t len)
 {
   xproxy(list_add, li, li->l, len, el, 0);
 }
 
-API xapi list_unshift(list * const restrict li, const void * el)
+API xapi list_unshift(list * const li, const void * el)
 {
   xproxy(list_add, li, 0, 1, &el, 0);
 }
 
-API xapi list_unshift_range(list * const restrict li, const void * el, size_t len)
+API xapi list_unshift_range(list * const li, const void * el, size_t len)
 {
   xproxy(list_add, li, 0, len, el, 0);
 }
 
-API xapi list_insert(list * const restrict li, size_t index, const void * el)
+API xapi list_insert(list * const li, size_t index, const void * el)
 {
   xproxy(list_add, li, index, 1, &el, 0);
 }
 
-API xapi list_insert_range(list * const restrict li, size_t index, const void * el, size_t len)
+API xapi list_insert_range(list * const li, size_t index, const void * el, size_t len)
 {
   xproxy(list_add, li, index, len, el, 0);
 }

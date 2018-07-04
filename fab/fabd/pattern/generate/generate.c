@@ -24,7 +24,7 @@
 #include "valyria/list.h"
 #include "xlinux/xstdlib.h"
 
-#include "pattern/generate.internal.h"
+#include "generate.internal.h"
 #include "artifact.h"
 #include "errtab/FABD.errtab.h"
 #include "ff_node.h"
