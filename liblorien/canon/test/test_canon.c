@@ -19,7 +19,7 @@
 #include <unistd.h>
 #include <string.h>
 
-#include "canon.h"
+#include "canon.internal.h"
 
 struct canon_test;
 #define TEST_TYPE struct canon_test

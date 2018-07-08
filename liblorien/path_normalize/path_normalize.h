@@ -18,9 +18,7 @@
 #ifndef _LORIEN_PATH_NORMALIZE_H
 #define _LORIEN_PATH_NORMALIZE_H
 
-#include <sys/types.h>
-
-#define restrict __restrict
+#include "types.h"
 
 /// normalize
 //
@@ -38,5 +36,4 @@
 size_t path_normalize(char * restrict dst, size_t sz, const char * restrict path)
   __attribute__((nonnull));
 
-#undef restrict
 #endif

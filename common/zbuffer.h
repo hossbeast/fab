@@ -21,9 +21,8 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "types.h"
 #include "macros.h"
-
-#define restrict __restrict
 
 /// znload
 //
@@ -93,5 +92,4 @@ static inline size_t zloads(void * restrict dst, const char * const restrict src
   return len;
 }
 
-#undef restrict
 #endif

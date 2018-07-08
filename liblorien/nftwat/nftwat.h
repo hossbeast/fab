@@ -22,8 +22,7 @@
 #include <stdint.h>
 
 #include "xapi.h"
-
-#define restrict __restrict
+#include "types.h"
 
 #define FTWAT_F       1  // regular file
 #define FTWAT_D       2  // a directory
@@ -45,7 +44,7 @@ typedef struct ftwinfo
 //
 // SUMMARY
 //  traverse a directory tree like nftw with FTW_DEPTH (children of a directory are visited before
-//  the directory itself)
+//  the directory itself, e.g. post-order)
 //
 // PARAMETERS
 //  dirfd   - file descriptor opened with O_PATH, man 2 openat
@@ -79,5 +78,4 @@ xapi nftwat(
 )
   __attribute__((nonnull(2, 3)));
 
-#undef restrict
 #endif

@@ -18,11 +18,8 @@
 #ifndef _LORIEN_REBASE_H
 #define _LORIEN_REBASE_H
 
-#include <sys/types.h>
-
 #include "xapi.h"
-
-#define restrict __restrict
+#include "types.h"
 
 /// rebase
 //
@@ -49,5 +46,4 @@ xapi rebase(
 )
   __attribute__((nonnull(1, 3, 5)));
 
-#undef restrict
 #endif

@@ -18,18 +18,17 @@
 #ifndef _PERMUTE_H
 #define _PERMUTE_H
 
-#include <sys/types.h>
-#include <stdint.h>
-
-#define restrict __restrict
+#include "types.h"
 
 /// permute
 //
 // SUMMARY
 //  reorder a set in place to obtain the next permutation
 //
-int permute(uint8_t * const restrict set, size_t setl)
+// RETURNS
+//  true if the next permutation exists
+//
+bool permute(uint8_t * const restrict set, size_t setl)
   __attribute__((nonnull));
 
-#undef restrict
 #endif

@@ -19,7 +19,7 @@
 #include <unistd.h>
 #include <string.h>
 
-#include "rebase.h"
+#include "rebase.internal.h"
 
 struct rebase_test;
 #define TEST_TYPE struct rebase_test

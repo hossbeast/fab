@@ -32,7 +32,6 @@
 #include "internal.h"
 #include "canon.internal.h"
 
-#include "strutil.h"
 #include "zbuffer.h"
 
 //

@@ -21,7 +21,6 @@
 #include "assure.h"
 
 #define DEFAULT_SEED 10
-#define restrict __restrict
 
 xapi assure(void * target, size_t es, size_t len, size_t * const restrict ac)
 {

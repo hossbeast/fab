@@ -29,8 +29,8 @@
 #include "internal.h"
 #include "rebase.internal.h"
 
-#include "strutil.h"
 #include "zbuffer.h"
+#include "macros.h"
 
 
 //
@@ -83,7 +83,7 @@ API xapi rebase(
     while((i + y) < basel && base[i + y] != '/')
       y++;
 
-    if(y && estrcmp(base + i, y - i, ".", 1, 0))
+    if(y && memncmp(base + i, y - i, ".", 1))
     {
       if(i != x)
         (*z) += znloadf(dst + (*z), siz - (*z), "/");

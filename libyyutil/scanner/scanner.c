@@ -29,7 +29,7 @@
 #include "logging.internal.h"
 
 #include "macros.h"
-#include "strutil.h"
+#include "stresc.h"
 
 //
 // static
@@ -67,7 +67,7 @@ static xapi __attribute__((nonnull)) ptoken(
   if(log_would(xtra->token_logs | L_YYUTIL | L_TOKENS))
   {
     // token source string
-    size_t alen = stresc(text, leng, abuf, sizeof(abuf));
+    size_t alen = strescw(text, leng, abuf, sizeof(abuf));
 
     // token value
     size_t blen = 0;

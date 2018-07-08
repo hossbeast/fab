@@ -27,7 +27,7 @@
 #include "yyutil/parser.h"
 
 #include "macros.h"
-#include "strutil.h"
+#include "stresc.h"
 #include "zbuffer.h"
 
 //
@@ -69,7 +69,7 @@ API void yyu_grammar_error(yyu_location * const lloc, void * const scanner, yyu_
       // token source string
       char * s    = xtra->last_loc.s;
       char * e    = xtra->last_loc.e;
-      size_t alen = stresc(s, e - s, abuf, sizeof(abuf));
+      size_t alen = strescw(s, e - s, abuf, sizeof(abuf));
 
       // token value
       size_t blen = 0;

@@ -113,6 +113,9 @@ static xapi __attribute__((nonnull(1, 3, 5, 7, 9))) walk(
         // reopen if necessary
         if(dd == 0)
         {
+          *pathl = patho;
+          path[*pathl] = 0;
+
           fatal(xopendirat, &dd, dirfd, path);
           ddso = *ddsp;
           *ddsp = ((*ddsp) + 1) % ddsz;

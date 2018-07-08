@@ -18,11 +18,8 @@
 #ifndef _ASSURE_H
 #define _ASSURE_H
 
-#include <sys/types.h>
-
 #include "xapi.h"
-
-#define restrict __restrict
+#include "types.h"
 
 /// assure
 //
@@ -44,5 +41,4 @@ xapi assure(void * target, size_t es, size_t len, size_t * const restrict ac);
 //
 xapi assurex(void * target, size_t es, size_t len, size_t * const restrict ac, size_t seed);
 
-#undef restrict
 #endif

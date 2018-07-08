@@ -35,7 +35,7 @@ static void reverse(uint8_t * const restrict set, size_t i, size_t len)
 // public
 //
 
-int permute(uint8_t * const restrict set, size_t setl)
+bool permute(uint8_t * const restrict set, size_t setl)
 {
   int k;
   for(k = setl - 2; k >= 0; k--)
@@ -45,7 +45,7 @@ int permute(uint8_t * const restrict set, size_t setl)
   }
 
   if(k == -1)
-    return 0;
+    return false;
 
   int i;
   for(i = setl - 1; i >  k; i--)
@@ -57,5 +57,5 @@ int permute(uint8_t * const restrict set, size_t setl)
   swap(set, k, i);
   reverse(set, k + 1, setl - (k + 1));
 
-  return 1;
+  return true;
 }
