@@ -77,11 +77,14 @@ size_t fixed_read(narrator_fixed * restrict n, void * dst, size_t count)
 // api
 //
 
-API narrator * narrator_fixed_init(narrator_fixed_storage * restrict fixed)
+API narrator * narrator_fixed_init(char fixed[NARRATOR_STATIC_SIZE], char * s, size_t a)
 {
   narrator * n = (void*)fixed;
   n->type = NARRATOR_FIXED;
+  n->fixed.s = s;
   n->fixed.l = 0;
+  n->fixed.a = a;
+  n->fixed.m = 0;
   return n;
 }
 

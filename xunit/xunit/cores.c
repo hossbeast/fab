@@ -84,10 +84,10 @@ xapi print_core_backtrace(pid_t pid)
   enter;
 
   char buf[512];
+  char fixed[NARRATOR_STATIC_SIZE];
   bool ready = false;
 
-  narrator_fixed_storage storage = { .s = buf, .a = sizeof(buf) };
-  narrator * N = narrator_fixed_init(&storage);
+  narrator * N = narrator_fixed_init(fixed, buf, sizeof(buf));
 
   if(!ready)
     fatal(cwd_core, N, pid, &ready);

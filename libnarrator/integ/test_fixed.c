@@ -44,11 +44,10 @@ static xapi test_basic()
 {
   enter;
 
-  narrator_fixed_storage fixed;
-  fixed.s = (char[64]) { };
-  fixed.a = 64;
+  char s[64];
+  char fixed[NARRATOR_STATIC_SIZE];
 
-  narrator * N = narrator_fixed_init(&fixed);
+  narrator * N = narrator_fixed_init(fixed, s, sizeof(s));
   fatal(say, N);
 
   char * expected = "40 41 42 43 44";
@@ -64,11 +63,10 @@ static xapi test_constrained()
 {
   enter;
 
-  narrator_fixed_storage fixed;
-  fixed.s = (char[7]) { };
-  fixed.a = 7;
+  char s[7];
+  char fixed[NARRATOR_STATIC_SIZE];
 
-  narrator * N = narrator_fixed_init(&fixed);
+  narrator * N = narrator_fixed_init(fixed, s, sizeof(s));
   fatal(say, N);
 
   char * expected = "40 41 ";

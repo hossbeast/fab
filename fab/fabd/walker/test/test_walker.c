@@ -241,10 +241,7 @@ static xapi walker_test_entry(xunit_test * _test)
   dictionary * infos = 0;
   map * nodes = 0;
   char op[32] = { };
-  narrator_fixed_storage fixed;
-  fixed.s = op;
-  fixed.l = 0;
-  fixed.a = sizeof(op);
+  char fixed[NARRATOR_STATIC_SIZE];
   int x;
 
   fatal(node_setup);
@@ -332,7 +329,7 @@ static xapi walker_test_entry(xunit_test * _test)
       seq++;
   }
 
-  narrator * N = narrator_fixed_init(&fixed);
+  narrator * N = narrator_fixed_init(fixed, op, sizeof(op));
 
   // assert operations performed
   char * ops = test->operations;

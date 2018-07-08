@@ -30,6 +30,7 @@ SUMMARY
 
 #include "xapi.h"
 #include "types.h"
+#include "narrator.h"
 
 /// narrator_growing_create
 //
@@ -40,6 +41,14 @@ SUMMARY
 //  n - (returns) narrator
 //
 xapi narrator_growing_create(narrator ** const restrict n)
+  __attribute__((nonnull));
+
+/// narrator_growing_init
+//
+// SUMMARY
+//  initialize a growing narrator
+//
+narrator * narrator_growing_init(char stor[NARRATOR_STATIC_SIZE])
   __attribute__((nonnull));
 
 /// narrator_growing_buffer

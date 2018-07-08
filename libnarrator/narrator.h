@@ -59,6 +59,8 @@ extern narrator * g_narrator_nullity;
 extern narrator * N;
 #endif
 
+#define NARRATOR_STATIC_SIZE 64
+
 /// narrator_xfree
 //
 // SUMMARY

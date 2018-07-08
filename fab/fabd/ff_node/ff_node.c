@@ -247,8 +247,8 @@ xapi ffn_semantic_error(xapi error, const ff_node * restrict refnode)
 
   const ff_node * ref = (ff_node*)refnode;
 
-  narrator_fixed_storage stor = { s : space, l : sizeof(space) };
-  narrator * N = narrator_fixed_init(&stor);
+  char stor[NARRATOR_STATIC_SIZE];
+  narrator * N = narrator_fixed_init(stor, space, sizeof(space));
   fatal(ffn_say_normal, ref, N);
 
   xapi_info_pushs("ref", space);

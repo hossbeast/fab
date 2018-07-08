@@ -201,11 +201,11 @@ xapi pattern_generate(
   enter;
 
   char space[512] = { };
-  narrator_fixed_storage fixed = { s : space, a : sizeof(space) };
+  char fixed[NARRATOR_STATIC_SIZE];
 
   // setup the dynamic context
   pattern_generate_context context =  { node : context_node };
-  context.segment_narrator = narrator_fixed_init(&fixed);
+  context.segment_narrator = narrator_fixed_init(fixed, space, sizeof(space));
 
   // setup the outermost walk
   ffn_bydir_context walk_context;

@@ -56,7 +56,7 @@ static __thread narrator *  storage_narrator; // the log message
 static __thread long        storage_time_msec;
 
 static __thread char storage_fixed_buffer[4096];
-static __thread narrator_fixed_storage storage_fixed_storage;
+static __thread char storage_fixed_storage[NARRATOR_STATIC_SIZE];
 
 //
 // public
@@ -139,9 +139,7 @@ API xapi log_xstart(uint64_t ids, uint32_t attrs, narrator ** restrict N)
 
   if(storage_narrator == 0)
   {
-    storage_fixed_storage.s = storage_fixed_buffer;
-    storage_fixed_storage.a = sizeof(storage_fixed_buffer);
-    storage_narrator = narrator_fixed_init(&storage_fixed_storage);
+    storage_narrator = narrator_fixed_init(storage_fixed_storage, storage_fixed_buffer, sizeof(storage_fixed_buffer));
   }
 
   storage_ids = ids;

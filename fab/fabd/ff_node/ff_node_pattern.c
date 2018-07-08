@@ -164,12 +164,8 @@ xapi ffn_pattern_bydir_strings_rtl(ffn_bydir_context * restrict ctx, char * rest
 
   else
   {
-    narrator_fixed_storage stor = {
-        s : tmp
-      , a : tmpsz
-    };
-
-    fatal(ffn_segment_say_normal, ctx->first, ctx->stop, narrator_fixed_init(&stor));
+    char stor[NARRATOR_STATIC_SIZE];
+    fatal(ffn_segment_say_normal, ctx->first, ctx->stop, narrator_fixed_init(stor, tmp, tmpsz));
     *str = tmp;
   }
 

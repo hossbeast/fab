@@ -120,6 +120,14 @@ finally:
 coda;
 }
 
+narrator * narrator_growing_init(char stor[NARRATOR_STATIC_SIZE])
+{
+  narrator * n = (void*)stor;
+  n->type = NARRATOR_GROWING;
+  memset(&n->growing, 0, sizeof(n->growing));
+  return n;
+}
+
 API const char * narrator_growing_buffer(narrator * const restrict n)
 {
   return n->growing.s;

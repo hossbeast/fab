@@ -127,4 +127,6 @@ static inline size_t roundup2(size_t x)
   return x;
 }
 
+#define STATIC_ASSERT(x) _Static_assert(x, #x)
+
 #endif

@@ -18,9 +18,6 @@
 #ifndef _NARRATOR_INTERNAL_H
 #define _NARRATOR_INTERNAL_H
 
-#include <stdint.h>
-
-// public header file
 #include "narrator.h"
 
 // other declarations
@@ -35,6 +32,8 @@
 #include "nullity.internal.h"
 #include "record.internal.h"
 #include "rolling.internal.h"
+
+#include "macros.h"
 
 #define NARRATOR_TYPE_TABLE       \
   NARRATOR_TYPE_DEF(FIXED)        \
@@ -74,5 +73,7 @@ typedef struct narrator
     narrator_rolling rolling;
   };
 } narrator;
+
+STATIC_ASSERT(NARRATOR_STATIC_SIZE == sizeof(narrator));
 
 #endif
