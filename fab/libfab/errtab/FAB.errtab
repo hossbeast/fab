@@ -17,5 +17,4 @@
 
 1   BADIPC        ipc failure
 2   CLIENTEXCL    client already running
-3   DAEMONFAILED  fab daemon terminated abnormally (probable crash)
-4   DAEMONEXITED  fab daemon terminated unexpectedly
+3   NODAEMON      fab daemon terminated unexpectedly

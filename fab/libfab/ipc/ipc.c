@@ -99,7 +99,6 @@ API xapi ipc_lock_obtain(pid_t * pgid, int * restrict fdp, char * const restrict
 
     int r = 0;
     fatal(uxkill, (*pgid) * -1, 0, &r);
-
     if(r == 0)
       break;    // lock holder still running
 

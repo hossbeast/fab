@@ -19,9 +19,9 @@
 #define _SIGUTIL_H
 
 #include <signal.h>
-#include "xapi.h"
 
-#define restrict __restrict
+#include "xapi.h"
+#include "types.h"
 
 /// sigutil_defaults
 //
@@ -72,5 +72,18 @@ xapi sigutil_exchange(int sig, pid_t pid, const sigset_t * restrict sigs, siginf
 xapi sigutil_assert(int expsig, pid_t exppid, const siginfo_t * restrict actual)
   __attribute__((nonnull));
 
-#undef restrict
+/// sigutil_kill
+//
+// SUMMARY
+//  call xkill and log under L_IPC
+//
+xapi sigutil_kill(pid_t pid, int sig);
+
+/// sigutil_ukill
+//
+// SUMMARY
+//  call uxkill and log under L_IPC
+//
+xapi sigutil_ukill(pid_t pid, int sig);
+
 #endif

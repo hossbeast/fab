@@ -24,8 +24,8 @@
 
 logger_category * categories = (logger_category[]) {
 #if DEBUG || DEVEL || XAPI
-    { name : "IPC"        , description : "signal-exchange", attr : L_NAMES }
-  , { name : "PROTOCOL"   , attr : L_NAMES }
+    { name : "IPC"        , description : "signal-exchange", attr : L_NAMES | L_PID }
+  , { name : "PROTOCOL"   , attr : L_NAMES | L_PID }
   ,
 #endif
     { name : "ERROR"      , description : "fatal errors" }

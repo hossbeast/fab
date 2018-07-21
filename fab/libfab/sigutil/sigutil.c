@@ -15,24 +15,24 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#include <string.h>
 #include <sys/wait.h>
-#include <signal.h>
 
-#include "xlinux/xunistd.h"
+#include "xapi.h"
+#include "types.h"
+
 #include "xlinux/xpthread.h"
 #include "xlinux/xsignal.h"
+#include "xlinux/xunistd.h"
+#include "xlinux/xwait.h"
 #include "narrator.h"
 
 #include "internal.h"
 #include "sigutil.h"
-#include "logging.h"
 #include "FAB.errtab.h"
 #include "ipc.h"
+#include "logging.h"
 
 #include "identity.h"
-
-#define restrict __restrict
 
 static void handler(int signum, siginfo_t * info, void * ctx) { }
 
@@ -72,39 +72,51 @@ API xapi sigutil_defaults()
   finally : coda;
 }
 
-API xapi sigutil_wait(const sigset_t * sigs, siginfo_t * r_info)
+API xapi sigutil_wait(const sigset_t * sigs, siginfo_t * info)
 {
   enter;
 
-  siginfo_t info;
+  siginfo_t linfo;
   int r = -1;
 
+  if(!info)
+    info = &linfo;
+
+  // retry EINTR
   while(r == -1)
-    fatal(uxsigwaitinfo, &r, sigs, &info);
+    fatal(uxsigwaitinfo, &r, sigs, info);
+
+  if(info->si_signo == SIGCHLD)
+  {
+    // sigwaitinfo returns only part of the child status
+    fatal(xwaitpid, info->si_pid, &info->si_status, 0);
+  }
 
 #if DEBUG || DEVEL || XUNIT
   narrator * N;
   fatal(log_start, L_IPC, &N);
-  xsayf("rx %s { signo : %d, sender : %ld"
-    , FABIPC_SIGNAME(info.si_signo)
-    , info.si_signo
-    , (long)info.si_pid
-  );
+  xsayf("rx %s { signo %d", FABIPC_SIGNAME(info->si_signo), info->si_signo);
 
-  if(info.si_signo == SIGCHLD)
+  if(info->si_signo == SIGCHLD)
   {
-    if(WIFEXITED(info.si_status))
-      xsayf(", status : %d", WEXITSTATUS(info.si_status));
+    xsayf(" pid %ld", (long)info->si_pid);
 
-    if(WIFSIGNALED(info.si_status))
-      xsayf(", signal : %d", WTERMSIG(info.si_status));
+    if(WIFEXITED(info->si_status))
+      xsayf(" status %d", WEXITSTATUS(info->si_status));
+
+    if(WIFSIGNALED(info->si_status))
+    {
+      xsayf(" signal %d", WTERMSIG(info->si_status));
+      xsayf(" core %s", WCOREDUMP(info->si_status) ? "yes" : "no");
+    }
+  }
+  else
+  {
+    xsayf(" sender %ld", (long)info->si_pid);
   }
   xsayf(" }");
   fatal(log_finish);
 #endif
-
-  if(r_info)
-    memcpy(r_info, &info, sizeof(*r_info));
 
   finally : coda;
 }
@@ -113,9 +125,8 @@ API xapi sigutil_exchange(int sig, pid_t pid, const sigset_t * sigs, siginfo_t *
 {
   enter;
 
-  // assume fabsys identity
+  // assume fabsys identity, signal target
   fatal(identity_assume_effective);
-
   fatal(xkill, pid, sig);
 
   // receive a signal in sigs
@@ -143,6 +154,32 @@ API xapi sigutil_assert(int expsig, pid_t exppid, const siginfo_t * actual)
 
     fail(FAB_BADIPC);
   }
+
+  finally : coda;
+}
+
+API xapi sigutil_kill(pid_t pid, int signo)
+{
+  enter;
+
+#if DEBUG || DEVEL || XUNIT
+  logf(L_IPC, "tx %s { signo %d pid %ld }", FABIPC_SIGNAME(signo), signo, (long)pid);
+#endif
+
+  fatal(xkill, pid, signo);
+
+  finally : coda;
+}
+
+API xapi sigutil_ukill(pid_t pid, int signo)
+{
+  enter;
+
+#if DEBUG || DEVEL || XUNIT
+  logf(L_IPC, "tx %s { signo %d pid %ld }", FABIPC_SIGNAME(signo), signo, (long)pid);
+#endif
+
+  fatal(uxkill, pid, signo, 0);
 
   finally : coda;
 }

@@ -60,7 +60,7 @@
 #include "memblk.h"
 #include "memblk.def.h"
 #include "macros.h"
-#include "cksum.h"
+#include "hash.h"
 
 #define restrict __restrict
 
@@ -122,15 +122,14 @@ static xapi validate_result(fab_client * const restrict client, int expsig, sigi
 
     if(WIFEXITED(exit))
     {
-      // exited means orderly shutdown
-      xapi_info_pushf("status", "%d", WEXITSTATUS(exit));
-      fail(FAB_DAEMONEXITED);
+      xapi_info_pushf("exit", "%d", WEXITSTATUS(exit));
+      fail(FAB_NODAEMON);
     }
     else if(WIFSIGNALED(exit))
     {
-      // failure means abnormal termination
       xapi_info_pushf("signal", "%d", WTERMSIG(exit));
-      fail(FAB_DAEMONFAILED);
+      xapi_info_pushf("core", "%s", WCOREDUMP(exit) ? "yes" : "no");
+      fail(FAB_NODAEMON);
     }
     fail(FAB_BADIPC);
   }
@@ -158,7 +157,7 @@ API xapi fab_client_create(fab_client ** const restrict client, const char * con
   fatal(xrealpaths, &(*client)->projdir, 0, projdir);
 
   // project path hash
-  uint32_t u32 = cksum((*client)->projdir, strlen((*client)->projdir));
+  uint32_t u32 = hash32(0, (*client)->projdir, strlen((*client)->projdir));
   snprintf((*client)->hash, sizeof((*client)->hash), "%x", u32);
 
   // ipc dir for the project
@@ -280,7 +279,6 @@ API xapi fab_client_launchp(fab_client * const restrict client)
   // cleanup the directory
   fatal(uxunlinkf, "%s/fabd/exit", client->ipcdir);
   fatal(uxunlinkf, "%s/fabd/core", client->ipcdir);
-  fatal(uxunlinkf, "%s/fabd/trace", client->ipcdir);
 
   // block signals
   sigfillset(&sigs);
@@ -289,6 +287,9 @@ API xapi fab_client_launchp(fab_client * const restrict client)
   fatal(xfork, &client->pgid);
   if(client->pgid == 0)
   {
+    // core file goes in cwd
+    fatal(xchdirf, "%s/fabd", client->ipcdir);
+
     // create new session/process group
     fatal(xsetsid);
 
@@ -299,9 +300,6 @@ API xapi fab_client_launchp(fab_client * const restrict client)
     fatal(xfork, &client->pgid);
     if(client->pgid != 0)
       exit(0);
-
-    // core file goes in cwd
-    fatal(xchdirf, "%s/fabd", client->ipcdir);
 
     fatal(xmalloc, &argv, sizeof(*argv) * (g_logc + g_ulogc + 3));
     i = 0;
@@ -419,7 +417,7 @@ API xapi fab_client_make_request(fab_client * const restrict client, memblk * co
 
   // unblock fabd
 //printf("%10s (%d) : tx : %s (%d) -> %d\n", "client", gettid(), FABIPC_SIGNAME(FABIPC_SIGACK), FABIPC_SIGACK, -client->pgid);
-  fatal(xkill, -client->pgid, FABIPC_SIGACK);
+  fatal(sigutil_kill, -client->pgid, FABIPC_SIGACK);
 
 //  if(response->exit)
 //    fail(FAB_UNSUCCESS);

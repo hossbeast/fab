@@ -15,36 +15,19 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#include <stdlib.h>
-#include <inttypes.h>
-#include <stdio.h>
-#include <signal.h>
-#include <string.h>
-#include <unistd.h>
-#include <fcntl.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <sys/wait.h>
-
 #include "xapi.h"
 #include "xapi/calltree.h"
 #include "fab/load.h"
 #include "logger/load.h"
-#include "valyria/load.h"
 #include "narrator/load.h"
+#include "valyria/load.h"
 #include "xlinux/load.h"
 
 #include "xapi/trace.h"
-#include "xapi/SYS.errtab.h"
-#include "xapi/errtab.h"
-#include "xlinux/xtime.h"
-#include "xlinux/xsignal.h"
 #include "xlinux/xunistd.h"
-#include "xlinux/xstdlib.h"
 #include "xlinux/xfcntl.h"
 #include "xlinux/xstat.h"
 #include "narrator.h"
-#include "narrator/units.h"
 #include "logger.h"
 
 #include "fab/sigutil.h"
@@ -61,17 +44,10 @@
 #include "macros.h"
 #include "memblk.h"
 #include "memblk.def.h"
-#include "parseint.h"
-#include "cksum.h"
 #include "identity.h"
 
-#define restrict __restrict
-
-//
-// public
-//
-
-static xapi begin(int argc, char** argv, char ** envp)
+static xapi xmain_exit;
+static xapi xmain()
 {
   enter;
 
@@ -84,7 +60,6 @@ static xapi begin(int argc, char** argv, char ** envp)
   memblk * mb = 0;
   fab_client * client = 0;
   fab_request * request = 0;
-
   int fd = -1;
 
 #if DEBUG || DEVEL
@@ -97,6 +72,10 @@ static xapi begin(int argc, char** argv, char ** envp)
     xapi_info_pushf("effective", "e:%s/%d:%s/%d", g_euid_name, g_euid, g_egid_name, g_egid);
     fail(MAIN_EXEPERMS);
   }
+#endif
+
+#if DEBUG || DEVEL
+  logs(L_IPC, "started");
 #endif
 
   // parse cmdline arguments
@@ -114,10 +93,6 @@ static xapi begin(int argc, char** argv, char ** envp)
 
   fatal(fab_client_create, &client, ".", XQUOTE(FABIPCDIR), fabw_path);
 
-#if DEBUG || DEVEL
-  logs(L_IPC, "started");
-#endif
-
 #if 0
   // kill the existing fabd instance, if any
   if(changed credentials)
@@ -134,9 +109,11 @@ static xapi begin(int argc, char** argv, char ** envp)
 finally:
   if(XAPI_UNWINDING)
   {
-    if(XAPI_ERRVAL == FAB_DAEMONEXITED)
+    if(XAPI_ERRVAL == FAB_NODAEMON)
     {
-      // fabd terminated unexpectedly in an orderly fashion, and already backtraced to our stdout
+#if DEBUG || DEVEL
+      // fabd exited - check for a coredump
+#endif
     }
     else if(XAPI_ERRVAL == MAIN_BADARGS || XAPI_ERRVAL == MAIN_NOCOMMAND)
     {
@@ -154,11 +131,35 @@ finally:
 coda;
 }
 
-int main(int argc, char ** argv, char ** envp)
+static xapi xmain_jump()
 {
   enter;
 
-  xapi R;
+  fatal(xmain);
+
+finally:
+  if(XAPI_UNWINDING)
+  {
+#if DEBUG || DEVEL || XAPI
+    xapi_infos("name", "fab");
+    xapi_infof("pgid", "%ld", (long)getpgid(0));
+    xapi_infof("pid", "%ld", (long)getpid());
+    xapi_infof("tid", "%ld", (long)gettid());
+
+    fatal(logger_trace_full, L_ERROR, XAPI_TRACE_COLORIZE);
+#else
+    fatal(logger_trace_pithy, L_ERROR, XAPI_TRACE_COLORIZE);
+#endif
+
+    xmain_exit = XAPI_ERRVAL;
+    xapi_calltree_unwind();
+  }
+coda;
+}
+
+static xapi xmain_load(char ** envp)
+{
+  enter;
 
   // load libraries
   fatal(fab_load);
@@ -175,22 +176,9 @@ int main(int argc, char ** argv, char ** envp)
   fatal(params_setup);
   fatal(sigutil_defaults);
 
-  fatal(begin, argc, argv, envp);
+  fatal(xmain_jump);
+
 finally:
-  if(XAPI_UNWINDING)
-  {
-#if DEBUG || DEVEL || XAPI
-    xapi_infos("name", "fab");
-    xapi_infof("pgid", "%ld", (long)getpgid(0));
-    xapi_infof("pid", "%ld", (long)getpid());
-    xapi_infof("tid", "%ld", (long)gettid());
-
-    fatal(logger_trace_full, L_ERROR, XAPI_TRACE_COLORIZE);
-#else
-    fatal(logger_trace_pithy, L_ERROR, XAPI_TRACE_COLORIZE);
-#endif
-  }
-
   // modules
   params_teardown();
 
@@ -200,8 +188,27 @@ finally:
   fatal(narrator_unload);
   fatal(valyria_unload);
   fatal(xlinux_unload);
+coda;
+}
+
+int main(int argc, char ** argv, char ** envp)
+{
+  enter;
+
+  xapi R = 0;
+  fatal(xmain_load, envp);
+
+finally:
+  if(XAPI_UNWINDING)
+  {
+    // write failures before liblogger to stderr
+    xapi_backtrace();
+  }
+
 conclude(&R);
   xapi_teardown();
+
+  R |= xmain_exit;
 
   return !!R;
 }

@@ -15,34 +15,33 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#include <stdlib.h>
-#include <inttypes.h>
-#include <stdio.h>
-#include <signal.h>
-#include <string.h>
-#include <unistd.h>
-#include <fcntl.h>
 #include <sys/types.h>
-#include <sys/stat.h>
 #include <sys/wait.h>
 
 #include "xapi.h"
+#include "types.h"
+
+#include "fab/load.h"
 #include "xlinux/load.h"
 #include "logger/load.h"
 #include "narrator/load.h"
 
-#include "xapi/trace.h"
-#include "xapi/SYS.errtab.h"
-#include "xlinux/xsignal.h"
-#include "xlinux/xpthread.h"
-#include "xlinux/xunistd.h"
-#include "xlinux/xwait.h"
-#include "xlinux/xfcntl.h"
-#include "narrator.h"
+#include "fab/ipc.h"
+#include "fab/sigutil.h"
 #include "logger.h"
 #include "logger/arguments.h"
 #include "logger/config.h"
-#include "fab/ipc.h"
+#include "narrator.h"
+#include "xapi/SYS.errtab.h"
+#include "xapi/calltree.h"
+#include "xapi/trace.h"
+#include "xlinux/xfcntl.h"
+#include "xlinux/xpthread.h"
+#include "xlinux/xsignal.h"
+#include "xlinux/xstdio.h"
+#include "xlinux/xstdlib.h"
+#include "xlinux/xunistd.h"
+#include "xlinux/xwait.h"
 
 #include "logging.h"
 #include "params.h"
@@ -50,7 +49,8 @@
 #include "parseint.h"
 #include "macros.h"
 
-static xapi begin(int argc, char ** argv, char ** envp)
+static xapi xmain_exit;
+static xapi xmain()
 {
   enter;
 
@@ -58,11 +58,17 @@ static xapi begin(int argc, char ** argv, char ** envp)
   char space[4096];
 #endif
   char * fabd_path = 0;
-
   int fd = -1;
   pid_t child_pid = -1;
   pid_t client_pid = -1;
   char hash[9] = { 0 };
+  char ** argv = 0;
+  int i = 0;
+  int x;
+
+#if DEBUG || DEVEL
+  logs(L_IPC, "started");
+#endif
 
   // std file descriptors
   fatal(xclose, 0);
@@ -70,13 +76,9 @@ static xapi begin(int argc, char ** argv, char ** envp)
 
   // required second argument : ipc hash
   uint32_t u32;
-  if(argc < 2 || parseuint(g_argv[1], SCNx32, 1, UINT32_MAX, 1, UINT8_MAX, &u32, 0) != 0)
+  if(g_argc < 2 || parseuint(g_argv[1], SCNx32, 1, UINT32_MAX, 1, UINT8_MAX, &u32, 0) != 0)
     fail(SYS_BADARGS);
   snprintf(hash, sizeof(hash), "%x", u32);
-
-#if DEBUG || DEVEL
-  logs(L_IPC, "started");
-#endif
 
   // fork child
   fatal(xfork, &child_pid);
@@ -87,7 +89,17 @@ static xapi begin(int argc, char ** argv, char ** envp)
     fabd_path = space;
 #endif
 
-    argv[0] = "fabd";
+    fatal(xmalloc, &argv, sizeof(*argv) * (g_argc + g_logc + g_ulogc + 3));
+    argv[i++] = "fabd";
+
+    for(x = 1; x < g_argc; x++)
+      argv[i++] = g_argv[x];
+
+    for(x = 0; x < g_logc; x++)
+      argv[i++] = g_logv[x];
+
+    for(x = 0; x < g_ulogc; x++)
+      argv[i++] = g_ulogv[x];
 
 #if DEBUG || DEVEL
     narrator * N;
@@ -95,11 +107,9 @@ static xapi begin(int argc, char ** argv, char ** envp)
     fatal(log_start, L_IPC, &N);
     xsays("execv(");
     xsays(fabd_path ?: "fabd");
-    int x;
-    for(x = 0; x < sentinel(argv); x++)
+    for(x = 0; x < i; x++)
     {
-      if(*argv[x])
-        xsays(",");
+      xsays(",");
       xsays(argv[x]);
     }
     xsays(")");
@@ -112,56 +122,49 @@ static xapi begin(int argc, char ** argv, char ** envp)
       fatal(xexecvp, "fabd", argv);
   }
 
-  // suspend execution pending child status change
-  int status;
-  fatal(xwaitpid, child_pid, &status, 0);
+  // suspend and wait for the child to exit
+  sigset_t sigs;
+  sigemptyset(&sigs);
+  sigaddset(&sigs, SIGINT);
+  sigaddset(&sigs, SIGTERM);
+  sigaddset(&sigs, SIGQUIT);
+  sigaddset(&sigs, SIGCHLD);
 
-#if DEBUG || DEVEL
-#if 0
-  // if fabd terminated abnormally
-  if(WIFEXITED(status)) { }
-  else if(WEXITSTATUS(status) || WIFSIGNALED(status))
-  {
-    if(WEXITSTATUS(status))
-      xlogf(L_ERROR, L_RED, "fabd : exited status %d", WEXITSTATUS(status));
-    else if(WIFSIGNALED(status))
-      xlogf(L_ERROR, L_RED, "fabd : term signal %d %s", WTERMSIG(status), strsignal(WTERMSIG(status)));
-  }
-#endif
-#endif
+  siginfo_t info;
+  fatal(sigutil_wait, &sigs, &info);
+  fatal(sigutil_assert, SIGCHLD, child_pid, &info);
 
   // record the exit status
   fatal(xopen_modef, &fd, O_CREAT | O_WRONLY, FABIPC_MODE_DATA, "%s/%s/fabd/exit", XQUOTE(FABIPCDIR), hash);
-  fatal(axwrite, fd, &status, sizeof(status));
+  fatal(axwrite, fd, &info.si_status, sizeof(info.si_status));
   fatal(ixclose, &fd);
+
+#if DEBUG || DEVEL
+  // preserve a coredump, if any
+  if(WIFSIGNALED(info.si_status) && WCOREDUMP(info.si_status))
+  {
+    fatal(uxrenamef, "%s/%s/fabd/core.%d", "%s/%s/fabd/core", XQUOTE(FABIPCDIR), hash, child_pid, XQUOTE(FABIPCDIR), hash);
+  }
+#endif
 
   // signal a client, if any
   fatal(xopenf, &fd, O_RDONLY, "%s/%s/client/pid", XQUOTE(FABIPCDIR), hash);
   fatal(axread, fd, &client_pid, sizeof(client_pid));
-  fatal(uxkill, client_pid, FABIPC_SIGEND, 0);
+  fatal(sigutil_ukill, client_pid, FABIPC_SIGEND);
 
 finally:
   // locals
   fatal(ixclose, &fd);
+  wfree(argv);
 coda;
 }
 
-int main(int argc, char ** argv, char ** envp)
+static xapi xmain_jump()
 {
   enter;
 
-  xapi R;
+  fatal(xmain);
 
-  // load libraries
-  fatal(logger_load);
-  fatal(narrator_load);
-  fatal(xlinux_load);
-
-  // modules
-  fatal(logging_setup, envp);
-  fatal(params_setup);
-
-  fatal(begin, argc, argv, envp);
 finally:
   if(XAPI_UNWINDING)
   {
@@ -175,8 +178,30 @@ finally:
 #else
     fatal(logger_trace_pithy, L_ERROR, XAPI_TRACE_COLORIZE);
 #endif
-  }
 
+    xmain_exit = XAPI_ERRVAL;
+    xapi_calltree_unwind();
+  }
+coda;
+}
+
+static xapi xmain_load(char ** envp)
+{
+  enter;
+
+  // load libraries
+  fatal(logger_load);
+  fatal(narrator_load);
+  fatal(xlinux_load);
+  fatal(fab_load);
+
+  // modules
+  fatal(logging_setup, envp);
+  fatal(params_setup);
+
+  fatal(xmain_jump);
+
+finally:
   // modules
   params_teardown();
 
@@ -184,8 +209,28 @@ finally:
   fatal(logger_unload);
   fatal(narrator_unload);
   fatal(xlinux_unload);
+  fatal(fab_unload);
+coda;
+}
+
+int main(int argc, char ** argv, char ** envp)
+{
+  enter;
+
+  xapi R = 0;
+  fatal(xmain_load, envp);
+
+finally:
+  if(XAPI_UNWINDING)
+  {
+    // write failures before liblogger to stderr
+    xapi_backtrace();
+  }
+
 conclude(&R);
   xapi_teardown();
+
+  R |= xmain_exit;
 
   return !!R;
 }
