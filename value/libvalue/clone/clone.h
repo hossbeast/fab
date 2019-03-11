@@ -15,7 +15,20 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef _VALUE_STORE_H
-#define _VALUE_STORE_H
+#ifndef _VALUE_CLONE_H
+#define _VALUE_CLONE_H
+
+#include "xapi.h"
+#include "types.h"
+
+struct value;
+struct value_parser;
+
+xapi value_clone(
+    struct value_parser * const restrict parser
+  , struct value ** dst
+  , const struct value * src
+)
+  __attribute__((nonnull));
 
 #endif

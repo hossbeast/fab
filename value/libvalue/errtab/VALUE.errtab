@@ -15,7 +15,7 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-1   DIFFTYPE  cant merge differently typed values
-2   SYNTAX    config could not be parsed
-3   ILLBYTE   config contains illegal byte(s)
-4   NOTMAP    top-level config value is not a map
+1   SYNTAX         parse failure
+2   ILLBYTE        illegal input
+3   DIFFTYPE       cant merge differently typed aggregate values
+4   MSCALAR        cant replace scalar value in merge

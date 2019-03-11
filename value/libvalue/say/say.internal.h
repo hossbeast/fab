@@ -15,7 +15,23 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef _VALUE_STORE_H
-#define _VALUE_STORE_H
+#ifndef VALUE_SAY_INTERNAL_H
+#define VALUE_SAY_INTERNAL_H
+
+#include "say.h"
+
+/// say_setup
+//
+// SUMMARY
+//  initialize the say module
+//
+xapi say_setup(void);
+
+/// say_cleanup
+//
+// SUMMARY
+//  teardown the say module
+//
+xapi say_cleanup(void);
 
 #endif

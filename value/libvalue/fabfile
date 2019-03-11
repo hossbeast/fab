@@ -16,7 +16,7 @@
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
 # definitions
-+[ $*/../vars.fab ]
++[ $*/../../vars.fab ]
 
 # source invocations
 +[ $dcommon ]() @common
@@ -103,6 +103,19 @@ $lflags_xapi_devel  = [ $lopts $libdeps_xapi_devel [ -Wl,-soname,libvalue-xapi-d
 ## dependencies
 ##
 
+#[ @tests ] : [
+#  [ $libvalue_xapi_devel ]
+#  [ say/test/test_say.xapi.xunit.so ~ j ]
+#  [ merge/test/test_merge.xapi.xunit.so ~ j ]
+#]
+#{
+#  [ $xunit_xapi_devel ] [ $libdeps_xapi_devel $libvalue_xapi_devel ~ fi ] --nofork [
+#   [ say/test/test_say.xapi.xunit.so ]
+#   [ merge/test/test_merge.xapi.xunit.so ]
+#  ~ fi ] +UNIT
+#}
+
+
 # default NOFILE target - build everything
 [ @all ] : [ @release @test.fast ]
 
@@ -177,16 +190,17 @@ $lflags_xapi_devel  = [ $lopts $libdeps_xapi_devel [ -Wl,-soname,libvalue-xapi-d
 
 [ $* ~ lsr l/test\/test_ sx/c/xapi.xunit.so sy dj shift ] :: [ $< ~ sx/so/pic.o ]
 {
-  [ $cc ] [ $cflags -shared ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw lx/o uu fi ]
+  [ $cc ] [ $cflags -shared ~ uu fi ] -o [ $@ ] [ $@ ~ rx/ineedw lx/o uu fi ]
 }
+
+[ @testsos ] : [ $* ~ lsr l/test\/test_ sx/c/xapi.xunit.so sy ]
 
 [ @test ] :^ [ $xunit_xapi_devel $libvalue_xapi_devel $libdeps_xapi_devel ]
 [ @test ] : [ $* ~ lsr l/test\/test_ sx/c/xapi.xunit.so sy ]
 {
   (
     [ $valgrind_runner ] [ $xunit_xapi_devel ] [ $libdeps_xapi_devel $libvalue_xapi_devel ~ fi ] [
-    ] [ $@ ~ rx/ineed lx/so fi ] [
-    ] +UNIT
+    ] [ $@ ~ rx/ineed lx/so fi ] +UNIT
   ) | tee /dev/fd/501
   > exit ${PIPESTATUS[0]}
 }
@@ -195,9 +209,9 @@ $lflags_xapi_devel  = [ $lopts $libdeps_xapi_devel [ -Wl,-soname,libvalue-xapi-d
 [ @test.fast ] : [ $* ~ lsr l/test\/test_ sx/c/xapi.xunit.so sy ]
 {
   (
-    [ $xunit_xapi_devel ] [ $libdeps_xapi_devel $libvalue_xapi_devel ~ fi ] [
+      [ $xunit_xapi_devel ] [ $libdeps_xapi_devel $libvalue_xapi_devel ~ fi ] [
     ] [ $@ ~ rx/ineed lx/so fi ] [
-    ] +UNIT
+    ] +UNIT --nofork
   ) | tee /dev/fd/501
   > exit ${PIPESTATUS[0]}
 }

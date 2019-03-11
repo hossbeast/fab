@@ -19,176 +19,180 @@
 
 #include "xapi.h"
 #include "valyria/list.h"
-#include "valyria/hashtable.h"
+#include "valyria/set.h"
 #include "valyria/pstring.h"
-
-#include "internal.h"
-#include "VALUE.errtab.h"
-#include "merge.internal.h"
-
 #include "logger.h"
 #include "narrator.h"
 
+#include "internal.h"
+#include "merge.internal.h"
+#include "VALUE.errtab.h"
+#include "parser.h"
+#include "make.h"
+#include "clone.h"
+#include "value.h"
+
 #include "zbuffer.h"
+#include "attrs.h"
 
-static xapi merge(
-    value * const restrict dst
-  , const value * const restrict src
-  , uint16_t outer_attr
-  , const char ** restrict parts
-  , size_t partsz
-  , size_t * restrict partsl
-)
-  __attribute__((nonnull));
-
-static xapi merge(
-    value * const restrict dst
-  , const value * const restrict src
-  , uint16_t outer_attr
-  , const char ** restrict parts
-  , size_t partsz
-  , size_t * restrict partsl
-)
+API xapi value_merge(value_parser * restrict parser, value ** restrict dstp, const value * restrict src, uint16_t attrs)
 {
   enter;
 
-  int x, y;
+  int x;
+  value *el;
+  value *dst;
+  value *c;
 
-  if(src->type != dst->type)
+  dst = *dstp;
+
+  if(!src) { }
+  else if(!dst || (attrs & MERGE_OPT) == VALUE_MERGE_SET)
   {
-    xapi_info_pushf("types", "%s -> %s", VALUE_TYPE_STRING(dst->type), VALUE_TYPE_STRING(src->type));
-    xapi_info_pushf("location"
-      , "[%d,%d - %d,%d]"
-      , dst->loc.f_lin
-      , dst->loc.f_col
-      , dst->loc.l_lin
-      , dst->loc.l_col
-    );
-    if(dst->loc.fname)
-      xapi_info_pushs("file", dst->loc.fname);
-
-    fail(VALUE_DIFFTYPE);
+    fatal(value_clone, parser, dstp, src);
   }
-  else if(dst->type == VALUE_TYPE_MAP)
+
+  /* scalar / set promotion */
+  else if(dst->type == VALUE_TYPE_SET && (src->type & VALUE_TYPE_SCALAR))
   {
-    if((outer_attr & MERGE_OPT) == VALUE_MERGE_SET)
+    fatal(value_clone, parser, &c, src);
+    fatal(set_put, dst->els, c, 0);
+  }
+  else if(dst->type & VALUE_TYPE_SCALAR && (src->type == VALUE_TYPE_SET))
+  {
+    fatal(value_clone, parser, dstp, src);
+    fatal(set_put, (*dstp)->els, dst, 0);
+  }
+
+  /* scalar / list promotion */
+  else if(dst->type == VALUE_TYPE_LIST && (src->type & VALUE_TYPE_SCALAR))
+  {
+    fatal(value_clone, parser, &c, src);
+    fatal(list_push, dst->items, c, 0);
+  }
+  else if(dst->type & VALUE_TYPE_SCALAR && (src->type == VALUE_TYPE_LIST))
+  {
+    fatal(value_clone, parser, dstp, src);
+    fatal(list_push, (*dstp)->items, dst, 0);
+  }
+
+  /* scalar / scalar : list vivification */
+  else if((dst->type & VALUE_TYPE_SCALAR) && (src->type & VALUE_TYPE_SCALAR))
+  {
+    fatal(value_clone, parser, &c, src);
+    fatal(value_list_mkv, parser, 0, 0, dstp, c);
+    fatal(value_list_mkv, parser, 0, *dstp, dstp, dst);
+  }
+
+  /* scalar / mapping promotion */
+  else if(dst->type == VALUE_TYPE_MAPPING && (src->type & VALUE_TYPE_SCALAR))
+  {
+    fatal(value_merge, parser, &dst->val, src, 0);
+  }
+  else if(dst->type & VALUE_TYPE_SCALAR && (src->type == VALUE_TYPE_MAPPING))
+  {
+    fatal(value_clone, parser, dstp, src);
+    fatal(value_merge, parser, &(*dstp)->val, dst, 0);
+  }
+
+  /* mapping -> mapping */
+  else if(dst->type == VALUE_TYPE_MAPPING && src->type == VALUE_TYPE_MAPPING)
+  {
+    fatal(value_merge, parser, &dst->val, src->val, src->attr);
+  }
+  else if(dst->type == VALUE_TYPE_MAPPING && src->type == VALUE_TYPE_LIST)
+  {
+    fatal(value_clone, parser, dstp, src);
+    fatal(list_push, (*dstp)->items, dst, 0);
+  }
+  else if(dst->type == VALUE_TYPE_MAPPING && src->type == VALUE_TYPE_SET)
+  {
+    fatal(value_clone, parser, dstp, src);
+    fatal(set_put, (*dstp)->els, dst, 0);
+  }
+
+  /* list -> list */
+  else if(dst->type == VALUE_TYPE_LIST && src->type == VALUE_TYPE_LIST)
+  {
+    fatal(value_clone, parser, dstp, src);
+    fatal(list_replicate, (*dstp)->items, 0, dst->items, 0, dst->items->size);
+  }
+  /* set -> list */
+  else if(dst->type == VALUE_TYPE_LIST && src->type == VALUE_TYPE_SET)
+  {
+    for(x = 0; x < src->els->table_size; x++)
     {
-      dst->keys = src->keys;
-      dst->vals = src->vals;
+      if((el = set_table_get(src->els, x)) == 0)
+        continue;
+
+      fatal(value_clone, parser, &c, el);
+      fatal(list_push, dst->items, c, 0);
     }
-    else // VALUE_MERGE_ADD
+  }
+  /* mapping -> list */
+  else if(dst->type == VALUE_TYPE_LIST && src->type == VALUE_TYPE_MAPPING)
+  {
+    fatal(value_clone, parser, &c, src);
+    fatal(list_push, dst->items, c, 0);
+  }
+
+  /* set -> set */
+  else if(dst->type == VALUE_TYPE_SET && src->type == VALUE_TYPE_SET)
+  {
+    for(x = 0; x < src->els->table_size; x++)
     {
-      x = dst->keys->l - 1;
-      y = src->keys->l - 1;
-      for(; x >= 0 && y >= 0;)
+      value * src_el;
+      if((src_el = set_table_get(src->els, x)) == 0)
+        continue;
+
+      // mapping-equality is key only
+      value * old_el = 0;
+      if((el = set_get(dst->els, src_el, 0)))
       {
-        value * src_key = list_get(src->keys, y);
-        value * dst_key = list_get(dst->keys, x);
-        int d = pscmp(src_key->s, dst_key->s);
-        if(d < 0)
-        {
-          x--;
-        }
-        else if(d > 0)
-        {
-          fatal(list_replicate, dst->keys, x + 1, src->keys, y, 1);
-          fatal(list_replicate, dst->vals, x + 1, src->vals, y, 1);
-          y--;
-        }
-        else
-        {
-          uint16_t dt = ((value*)list_get(dst->vals, x))->type;
-          uint16_t st = ((value*)list_get(src->vals, y))->type;
-
-          if((src_key->attr & MERGE_OPT) == VALUE_MERGE_SET)
-          {
-            fatal(list_splice, dst->vals, x, src->vals, y, 1);
-          }
-          else if(dt & st & VALUE_TYPE_SCALAR)
-          {
-            fatal(list_splice, dst->vals, x, src->vals, y, 1);
-          }
-          else
-          {
-            if(invoke(merge, list_get(dst->vals, x), list_get(src->vals, y), src_key->attr, parts, partsz, partsl))
-            {
-              if(*partsl < partsz)
-                parts[(*partsl)++] = src_key->s->s;
-
-              fail(0);
-            }
-          }
-
-          x--;
-          y--;
-        }
+        old_el = el;
+        fatal(value_merge, parser, &el, src_el, 0);
+      }
+      else
+      {
+        fatal(value_clone, parser, &el, src_el);
       }
 
-      if(x == -1 && y >= 0)
-      {
-        fatal(list_replicate, dst->keys, 0, src->keys, 0, y + 1);
-        fatal(list_replicate, dst->vals, 0, src->vals, 0, y + 1);
-      }
+      if(el != old_el)
+        fatal(set_put, dst->els, el, 0);
     }
   }
-  else if(dst->type == VALUE_TYPE_LIST)
+  /* list -> set */
+  else if(dst->type == VALUE_TYPE_SET && src->type == VALUE_TYPE_LIST)
   {
-    if((outer_attr & MERGE_OPT) == VALUE_MERGE_SET)
+    for(x = 0; x < src->items->size; x++)
     {
-      fatal(list_splice, dst->items, 0, src->items, 0, src->items->l);
-      fatal(list_truncate, dst->items, src->items->l);
-    }
-    else // VALUE_MERGE_ADD
-    {
-      fatal(list_replicate, dst->items, dst->items->l, src->items, 0, src->items->l);
+      fatal(value_clone, parser, &c, list_get(src->items, x));
+      fatal(set_put, dst->els, c, 0);
     }
   }
-  else if(dst->type == VALUE_TYPE_SET)
+  /* mapping -> set */
+  else if(dst->type == VALUE_TYPE_SET && src->type == VALUE_TYPE_MAPPING)
   {
-    if((outer_attr & MERGE_OPT) == VALUE_MERGE_SET)
+    /* mapping-equality is key only */
+    value * old_el = 0;
+    if((el = set_get(dst->els, src, 0)))
     {
-      dst->els = src->els;
+      old_el = el;
+      fatal(value_merge, parser, &el, src, src->attr);
     }
-    else // VALUE_MERGE_ADD
+    else
     {
-      for(x = 0; x < src->els->table_size; x++)
-      {
-        value ** ent;
-        if((ent = hashtable_table_entry(src->els, x)))
-          fatal(hashtable_put, dst->els, ent);
-      }
+      fatal(value_clone, parser, &el, src);
     }
+
+    if(el != old_el)
+      fatal(set_put, dst->els, el, 0);
+  }
+
+  else
+  {
+    RUNTIME_ABORT();
   }
 
   finally : coda;
-}
-
-API xapi value_merge(value * const restrict dst, const value * const restrict src)
-{
-  enter;
-
-  char space[128];
-  const char * parts[16];
-  size_t partsl = 0;
-
-  fatal(merge, dst, src, 0, parts, sizeof(parts) / sizeof(parts[0]), &partsl);
-
-finally:
-  if(XAPI_UNWINDING)
-  {
-    char * s = space;
-    size_t sz = sizeof(space);
-    size_t l = 0;
-
-    int x;
-    for(x = partsl - 1; x >= 0; x--)
-    {
-      if(x != partsl - 1)
-        l += znloadf(s + l, sz - l, ".");
-      l += znloadf(s + l, sz - l, "%s", parts[x]);
-    }
-
-    xapi_infos("path", space);
-  }
-coda;
 }

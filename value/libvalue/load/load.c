@@ -24,8 +24,12 @@
 #include "internal.h"
 #include "load.internal.h"
 #include "logging.internal.h"
+#include "say.internal.h"
+#include "writer.internal.h"
 
 static int handles;
+
+#include <stdio.h>
 
 API xapi value_load()
 {
@@ -41,6 +45,8 @@ API xapi value_load()
 
     // modules
     fatal(logging_setup);
+    fatal(say_setup);
+    fatal(writer_setup);
   }
 
   finally : coda;
@@ -53,6 +59,9 @@ API xapi value_unload()
   if(--handles == 0)
   {
     // modules
+    fatal(say_cleanup);
+    fatal(writer_cleanup);
+
     // dependencies
     fatal(xlinux_unload);
     fatal(valyria_unload);

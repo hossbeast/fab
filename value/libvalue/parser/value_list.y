@@ -32,16 +32,14 @@
 }
 
 %code top {
-  int value_yylex(void *, void *, void *);
-
-  #define PARSER containerof(parser, value_parser, value_yyu)
-  #define VALUE_YYLTYPE yyu_location
+  #define PARSER containerof(parser, value_parser, value_list_yyu)
+  #define VALUE_LIST_YYLTYPE yyu_location
 }
 
 %define api.pure
 %define parse.error verbose
 %locations
-%define api.prefix {value_yy}
+%define api.prefix {value_list_yy}
 %parse-param { void* scanner }
 %parse-param { void* parser }
 %lex-param { void* scanner }
@@ -56,8 +54,7 @@
 
 /* terminals */
 %token            STR           "unquoted-string"
-%token <yyu.u8>   CREF          "character-escape"
-%token <yyu.u8>   HREF          "hex-escape"
+%token <yyu.u8>   CREF          "character-reference"
 %token <yyu.b>    BOOL          "boolean"
 %token <yyu.f>    FLOAT         "float"
 %token <yyu.t>    VARIABLE      "variable"
@@ -78,7 +75,7 @@
 %token <yyu.imax> INTMAX32
 %token <yyu.imax> INTMAX64
 
-%token '{' '}' '[' ']' ':' '='
+%token '{' '}' '[' ']'
 
 %type <yyu.umax> posint_ugroup
 %type <yyu.imax> posint_igroup
@@ -95,17 +92,16 @@
 
 %%
 utterance
-  : value
+  : items
   {
     PARSER->root = $1;
 
-    if(PARSER->value_yyu.attrs & YYU_PARTIAL)
+    if(PARSER->value_list_yyu.attrs & YYU_PARTIAL)
     {
-      yyu_loc_final(&PARSER->value_yyu, &@1);
+      yyu_loc_final(&PARSER->value_list_yyu, &@1);
       YYACCEPT;
     }
   }
-  |
   ;
 
 value
@@ -218,10 +214,6 @@ strparts
 strpart
   : unquoted_strpart
   | CREF
-  {
-    YFATAL(value_string_mkc, PARSER, &@$, 0, &$$, $1);
-  }
-  | HREF
   {
     YFATAL(value_string_mkc, PARSER, &@$, 0, &$$, $1);
   }

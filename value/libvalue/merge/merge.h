@@ -24,17 +24,25 @@ MODULE
  value/merge
 
 SUMMARY
- functionality to combine two value trees.
+ combine two value trees.
 
 REMARKS
+ there are no error cases - any two values can be merged
+
  only the merge attributes in the src tree are relevant, and merge attributes are not
  propagated to the destination by the merge operation
 
+ when two sets are merged, mappings with the same key are coalesced, and their values are merged.
+ Thus, unless you pass two mappings in to value_merge, mappings are never merged. When this does
+ happen, their respective keys are ignored.
+
+ if two scalars are merged, a list is created to contain them
 */
 
 #include "xapi.h"
 
-struct value; // value.h
+struct value;         // value.h
+struct value_parser;  // value/parser.h
 
 #define MERGE_OPT   UINT16_C(0x000F)
 
@@ -50,11 +58,9 @@ struct value; // value.h
 // PARAMETERS
 //  dst - destination tree
 //  src - source tree
+//  attrs - VALUE_MERGE_*
 //
-// THROWS
-//  DIFFTYPE - src and dst are not the same type
-//
-xapi value_merge(struct value * const restrict dst, const struct value * const restrict src)
-  __attribute__((nonnull));
+xapi value_merge(struct value_parser * restrict parser, struct value ** dst, const struct value * src, uint16_t attrs)
+  __attribute__((nonnull(1)));
 
 #endif

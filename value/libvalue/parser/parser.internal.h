@@ -18,36 +18,35 @@
 #ifndef VALUE_PARSER_INTERNAL_H
 #define VALUE_PARSER_INTERNAL_H
 
-#ifndef YYU_EXTRA_TYPE
- struct value_xtra;
- #define YYU_EXTRA_TYPE struct value_xtra
-#endif
 #include "yyutil/parser.h"
 #include "parser.h"
 
-typedef struct value_xtra
-{
-  /* yyu-defined xtra fields */
-  union {
-    yyu_extra;
-    yyu_extra yyu;
-  };
+struct value_store;
+struct YYLTYPE;
 
-  struct value_store * stor; // value store
-  struct value *      root; // (returns) root of the parsed tree
-} value_xtra;
+struct value_parser {
+  yyu_parser value_yyu;
+  yyu_parser value_set_yyu;
+  yyu_parser value_list_yyu;
 
-/// value_yyerror
-//
-// SUMMARY
-//  flag the parse as failed (by setting pp->r = 0)
-//  log the error under L_ERROR | L_FF
-//  log the last token under L_ERROR | L_FF
-//
-// DETAILS
-//  called from tab.o and lex.o
-//
-static void value_yyerror(struct YYLTYPE * loc, void * scanner, value_xtra * pp, char const * err)
+  struct value_store * store; // value storage
+  struct value *       root;  // (returns) root of the parsed tree
+};
+
+static void value_yyerror(struct YYLTYPE * loc, void * scanner, value_parser * parser, char const * err)
   __attribute__((weakref("yyu_grammar_error")));
+
+static int value_set_yylex(void *, void *, void *)
+  __attribute__((weakref("value_yylex")));
+
+static void value_set_yyerror(struct YYLTYPE * loc, void * scanner, value_parser * parser, char const * err)
+  __attribute__((weakref("yyu_grammar_error")));
+
+static int value_list_yylex(void *, void *, void *)
+  __attribute__((weakref("value_yylex")));
+
+static void value_list_yyerror(struct YYLTYPE * loc, void * scanner, value_parser * parser, char const * err)
+  __attribute__((weakref("yyu_grammar_error")));
+
 
 #endif

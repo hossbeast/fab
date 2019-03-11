@@ -15,27 +15,9 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef VALUE_QUERY_H
-#define VALUE_QUERY_H
+#ifndef _VALUE_ASSERT_INTERNAL_H
+#define _VALUE_ASSERT_INTERNAL_H
 
-#include "xapi.h"
-#include "types.h"
-
-struct value;
-
-/// value_query
-//
-// SUMMARY
-//  query a value tree
-//
-// PARAMETERS
-//  val   - an aggregate value
-//  query -
-//
-// RETURNS
-//  value matching the query, if any
-//
-struct value * value_query(const struct value * restrict val, const char * const restrict query)
-  __attribute__((nonnull));
+#include "assert.h"
 
 #endif

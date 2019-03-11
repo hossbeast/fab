@@ -15,14 +15,15 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef VALUE_PARSER_H
-#define VALUE_PARSER_H
+#ifndef _VALUE_PARSER_H
+#define _VALUE_PARSER_H
 
 #include "types.h"
 #include "xapi.h"
 
-struct value;       // libvalue
-struct value_store; // libavlue
+struct value;       // value.h
+enum value_type;
+struct yyu_location;
 
 struct value_parser;
 typedef struct value_parser value_parser;
@@ -50,6 +51,14 @@ xapi value_parser_xfree(value_parser * const restrict);
 xapi value_parser_ixfree(value_parser ** const restrict)
   __attribute__((nonnull));
 
+/// value_parser_recycle
+//
+// SUMMARY
+//  
+//
+xapi value_parser_recycle(value_parser ** const restrict)
+  __attribute__((nonnull));
+
 /// value_parse
 //
 // SUMMARY
@@ -57,27 +66,34 @@ xapi value_parser_ixfree(value_parser ** const restrict)
 //
 // PARAMETERS
 //  [parser]  - (returns) reusable parser
-//  [stor]    - (returns) value storage for the config tree
 //  text      - config text
 //  len       - size of text
 //  [tree]    - (returns) root of the parsed config tree
-//  [logs]    - tokens and states logging categories
 //
 // REMARKS
 //  not passing stor means that the parsed config tree will have been freed before this function
 //  returns, and is therefore only useful to log the parse tree
 //
 xapi value_parser_parse(
-    value_parser ** restrict parser
-  , struct value_store ** restrict stor
-  , const char * const restrict buf
+    value_parser * restrict parser
+  , char * const restrict buf
   , size_t len
   , const char * restrict fname
+  , enum value_type initial_state
   , struct value ** restrict root
-#if DEBUG || DEVEL || XUNIT
-  , uint64_t logs
-#endif
 )
-  __attribute__((nonnull(3)));
+  __attribute__((nonnull(1, 2)));
+
+xapi value_parser_parse_partial(
+    value_parser * restrict parser
+  , char * const restrict buf
+  , size_t len
+  , const char * restrict fname
+  , struct yyu_location * init_loc
+  , struct yyu_location * used_loc
+  , enum value_type initial_state
+  , struct value ** restrict root
+)
+  __attribute__((nonnull(1, 2)));
 
 #endif

@@ -15,52 +15,26 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#include <stdarg.h>
+#ifndef VALUE_WRITER_INTERNAL_H
+#define VALUE_WRITER_INTERNAL_H
 
 #include "xapi.h"
 #include "types.h"
 
-#include "xunit/type.h"
+#include "writer.h"
 
-#include "internal.h"
-#include "value.h"
-#include "assert.h"
-
+/// writer_setup
 //
-// types
+// SUMMARY
+//  initialize the writer module
 //
+xapi writer_setup(void);
 
-static void value_unpack(va_list va, xunit_arg * a)
-{
-  a->p = va_arg(va, void*);
-}
-
-static int value_compare(xunit_arg * A, xunit_arg * B)
-{
-  return value_cmp(A->p, B->p);
-}
-
-static void value_info_push(const char * const restrict name, xunit_arg * a)
-{
-  if(a->p == 0)
-  {
-    xapi_info_pushs(name, "-none-");
-  }
-  else
-  {
-    char buf[512];
-    size_t __attribute__((unused)) z = value_znload(buf, sizeof(buf), a->p);
-
-    xapi_info_pushw(name, buf, z);
-  }
-}
-
+/// writer_cleanup
 //
-// API
+// SUMMARY
+//  teardown the writer module
 //
+xapi writer_cleanup(void);
 
-APIDATA xunit_type * value_xunit_value = (xunit_type[]) {{
-    xu_unpack : value_unpack
-  , xu_compare : value_compare
-  , xu_info_push : value_info_push
-}};
+#endif

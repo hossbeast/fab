@@ -1,4 +1,4 @@
-/* Copyright (c) 2012-2015 Todd Freed <todd.freed@gmail.com>
+/* Copyright (c) 2012-2018 Todd Freed <todd.freed@gmail.com>
 
    This file is part of fab.
 
@@ -15,7 +15,24 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef _VALUE_STORE_H
-#define _VALUE_STORE_H
+#ifndef _LOGGING_H
+#define _LOGGING_H
+
+#include "logger.h"
+#include "logger/stream.h"
+#include "logger/category.h"
+
+extern logger_category * categories;
+extern logger_stream * streams;
+
+#define L_ERROR   categories[0].id
+#define L_ARGS    categories[1].id
+#define L_PARAMS  categories[2].id
+
+/// logging_setup
+//
+//
+//
+xapi logging_setup(char ** envp);
 
 #endif

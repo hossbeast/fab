@@ -18,12 +18,15 @@
 #include "xapi.h"
 #include "valyria/pstring.h"
 #include "valyria/list.h"
-#include "valyria/hashtable.h"
+#include "valyria/set.h"
 #include "yyutil/parser.h"
 
 #include "internal.h"
+#include "value.h"
 #include "make.internal.h"
 #include "store.internal.h"
+#include "parser.internal.h"
+#include "merge.h"
 
 #include "macros.h"
 
@@ -33,7 +36,6 @@
 
 static void __attribute__((nonnull)) location_copy(value_location * const restrict dst, const yyu_location * const restrict src)
 {
-  dst->fname = src->fname;
   dst->f_lin = src->f_lin;
   dst->f_col = src->f_col;
   dst->l_lin = src->l_lin;
@@ -43,27 +45,13 @@ static void __attribute__((nonnull)) location_copy(value_location * const restri
   dst->l = src->l;
 }
 
-struct context {
-  size_t lx;
-  int lc;
-  const struct value * el;
-};
-
-static int map_mk_compare(void * _ctx, const void * _A, size_t idx)
-{
-  struct context * ctx = (typeof(ctx)) _ctx;
-  const value * A = (typeof(A)) _A;
-  ctx->lx = idx;
-  return ctx->lc = pscmp(ctx->el->s, A->s);
-};
-
 //
 // api
 //
 
 API xapi value_float_mk(
-    struct value_store * const restrict stor
-  , const struct yyu_location * const restrict loc
+    value_parser * const restrict parser
+  , const yyu_location * const restrict loc
   , struct value ** rv
   , float fp
 )
@@ -71,7 +59,7 @@ API xapi value_float_mk(
   enter;
 
   value * e = 0;
-  fatal(store_float, stor, &e);
+  fatal(store_float, parser, &e);
 
   if(loc)
     location_copy(&e->loc, loc);
@@ -82,9 +70,30 @@ API xapi value_float_mk(
   finally : coda;
 }
 
-API xapi value_integer_mk(
-    struct value_store * const restrict stor
-  , const struct yyu_location * const restrict loc
+API xapi value_posint_mk(
+    value_parser * const restrict parser
+  , const yyu_location * const restrict loc
+  , struct value ** rv
+  , uint64_t u
+)
+{
+  enter;
+
+  value * e = 0;
+  fatal(store_posint, parser, &e);
+
+  if(loc)
+    location_copy(&e->loc, loc);
+
+  e->u = u;
+  *rv = e;
+
+  finally : coda;
+}
+
+API xapi value_negint_mk(
+    value_parser * const restrict parser
+  , const yyu_location * const restrict loc
   , struct value ** rv
   , int64_t i
 )
@@ -92,7 +101,7 @@ API xapi value_integer_mk(
   enter;
 
   value * e = 0;
-  fatal(store_integer, stor, &e);
+  fatal(store_negint, parser, &e);
 
   if(loc)
     location_copy(&e->loc, loc);
@@ -104,8 +113,8 @@ API xapi value_integer_mk(
 }
 
 API xapi value_boolean_mk(
-    struct value_store * const restrict stor
-  , const struct yyu_location * const restrict loc
+    value_parser * const restrict parser
+  , const yyu_location * const restrict loc
   , struct value ** rv
   , const int b
 )
@@ -113,7 +122,7 @@ API xapi value_boolean_mk(
   enter;
 
   value * e = 0;
-  fatal(store_boolean, stor, &e);
+  fatal(store_boolean, parser, &e);
 
   if(loc)
     location_copy(&e->loc, loc);
@@ -125,8 +134,8 @@ API xapi value_boolean_mk(
 }
 
 API xapi value_string_mks(
-    struct value_store * const restrict stor
-  , const struct yyu_location * const restrict loc
+    value_parser * const restrict parser
+  , const yyu_location * const restrict loc
   , struct value * e
   , struct value ** rv
   , const char * const restrict s
@@ -135,7 +144,7 @@ API xapi value_string_mks(
   enter;
 
   if(!e)
-    fatal(store_string, stor, &e);
+    fatal(store_string, parser, &e);
   if(loc)
     location_copy(&e->loc, loc);
 
@@ -147,8 +156,8 @@ API xapi value_string_mks(
 }
 
 API xapi value_string_mkw(
-    struct value_store * const restrict stor
-  , const struct yyu_location * const restrict loc
+    value_parser * const restrict parser
+  , const yyu_location * const restrict loc
   , struct value * e
   , struct value ** rv
   , const char * const restrict b
@@ -158,7 +167,7 @@ API xapi value_string_mkw(
   enter;
 
   if(!e)
-    fatal(store_string, stor, &e);
+    fatal(store_string, parser, &e);
   if(loc)
     location_copy(&e->loc, loc);
 
@@ -170,8 +179,8 @@ API xapi value_string_mkw(
 }
 
 API xapi value_string_mkc(
-    struct value_store * const restrict stor
-  , const struct yyu_location * const restrict loc
+    value_parser * const restrict parser
+  , const yyu_location * const restrict loc
   , struct value * e
   , struct value ** rv
   , const uint8_t c
@@ -180,7 +189,7 @@ API xapi value_string_mkc(
   enter;
 
   if(!e)
-    fatal(store_string, stor, &e);
+    fatal(store_string, parser, &e);
   if(loc)
     location_copy(&e->loc, loc);
 
@@ -192,103 +201,56 @@ API xapi value_string_mkc(
 }
 
 API xapi value_string_mkv(
-    struct value_store * const restrict stor
-  , const struct yyu_location * const restrict loc
+    value_parser * const restrict parser
+  , const yyu_location * const restrict loc
   , struct value * e
   , struct value ** rv
   , struct value * v
 )
-
 {
   enter;
 
   if(!e)
-    fatal(store_string, stor, &e);
+    fatal(store_string, parser, &e);
   if(loc)
     location_copy(&e->loc, loc);
 
-  fatal(pscatw, e->s, v->loc.s, v->loc.l);
+  fatal(pscatw, e->s, v->s->s, v->s->size);
 
   *rv = e;
 
   finally : coda;
 }
 
-API xapi value_map_mkv(
-    struct value_store * const restrict stor
-  , const struct yyu_location * const restrict loc
-  , struct value * e
+API xapi value_mapping_mk(
+    value_parser * const restrict parser
+  , const yyu_location * const restrict loc
   , struct value ** rv
-  , struct value * key
-  , struct value * val
+  , struct value * k
+  , struct value * v
   , uint16_t attr
 )
 {
   enter;
 
-  if(!e)
-    fatal(store_map, stor, &e);
+  value * e = 0;
+
+  fatal(store_mapping, parser, &e);
   if(loc)
     location_copy(&e->loc, loc);
 
-  key->attr = attr;
-
-  if(e->keys->l == 0)
-  {
-    fatal(list_push, e->keys, key);
-    fatal(list_push, e->vals, val);
-  }
-  else
-  {
-    // insert in sorted order
-    struct context ctx = { el : key };
-    list_search(e->keys, &ctx, map_mk_compare);
-
-    if(ctx.lc == 0) // duplicate key
-    {
-      fatal(list_set, e->keys, ctx.lx, key);
-      fatal(list_set, e->vals, ctx.lx, val);
-    }
-    else if(ctx.lc < 0)
-    {
-      fatal(list_insert, e->keys, ctx.lx, key);
-      fatal(list_insert, e->vals, ctx.lx, val);
-    }
-    else
-    {
-      fatal(list_insert, e->keys, ctx.lx + 1, key);
-      fatal(list_insert, e->vals, ctx.lx + 1, val);
-    }
-  }
+  e->key = k;
+  e->val = v;
+  e->attr = attr;
 
   *rv = e;
-
-  finally : coda;
-}
-
-API xapi value_map_mks(
-    struct value_store * const restrict stor
-  , const struct yyu_location * const restrict loc
-  , struct value * e
-  , struct value ** rv
-  , const char * const key
-  , struct value * val
-  , uint16_t attr
-)
-{
-  enter;
-
-  value * keyval = 0;
-
-  fatal(value_string_mks, stor, 0, 0, &keyval, key);
-  fatal(value_map_mkv, stor, loc, e, rv, keyval, val, attr);
 
   finally : coda;
 }
 
 API xapi value_list_mkv(
-    struct value_store * const restrict stor
-  , const struct yyu_location * const restrict loc
+    value_parser * const restrict parser
+  , const yyu_location * const restrict loc
   , struct value * e
   , struct value ** rv
   , struct value * el
@@ -297,12 +259,12 @@ API xapi value_list_mkv(
   enter;
 
   if(!e)
-    fatal(store_list, stor, &e);
+    fatal(store_list, parser, &e);
   if(loc)
     location_copy(&e->loc, loc);
 
   if(el)
-    fatal(list_push, e->items, el);
+    fatal(list_push, e->items, el, 0);
 
   *rv = e;
 
@@ -310,8 +272,8 @@ API xapi value_list_mkv(
 }
 
 API xapi value_set_mkv(
-    struct value_store * const restrict stor
-  , const struct yyu_location * const restrict loc
+    value_parser * const restrict parser
+  , const yyu_location * const restrict loc
   , struct value * e
   , struct value ** rv
   , struct value * el
@@ -320,12 +282,39 @@ API xapi value_set_mkv(
   enter;
 
   if(!e)
-    fatal(store_set, stor, &e);
+    fatal(store_set, parser, &e);
   if(loc)
     location_copy(&e->loc, loc);
 
   if(el)
-    fatal(hashtable_put, e->els, &el);
+    fatal(set_put, e->els, el, 0);
+
+  *rv = e;
+
+  finally : coda;
+}
+
+API xapi value_variable_mkw(
+    value_parser * const restrict parser
+  , const yyu_location * const restrict loc
+  , struct value ** rv
+  , const char * const restrict name
+  , uint16_t len
+)
+{
+  enter;
+
+  value *e = 0;
+
+  fatal(store_variable, parser, &e);
+
+  if(loc)
+    location_copy(&e->loc, loc);
+
+  len = MIN(len, sizeof(e->v.name) - 1);
+  memcpy(e->v.name, name, len);
+  e->v.name[len] = 0;
+  e->v.len = len;
 
   *rv = e;
 

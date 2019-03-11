@@ -15,7 +15,9 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef _VALUE_STORE_H
-#define _VALUE_STORE_H
+#ifndef _VALUE_TYPE_INTERNAL_H
+#define _VALUE_TYPE_INTERNAL_H
+
+#include "type.h"
 
 #endif

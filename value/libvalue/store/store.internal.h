@@ -20,7 +20,10 @@
 
 #include "store.h"
 
+struct array;   // valyria/array
 struct list;    // valyria/list
+struct value_parser;
+struct value;
 
 typedef struct value_store {
   struct list * values;
@@ -29,53 +32,97 @@ typedef struct value_store {
   struct list * sets;
 } value_store;
 
+/// store_create
+//
+// SUMMARY
+//  create a value_store
+//
+xapi value_store_create(value_store ** const restrict store)
+  __attribute__((nonnull));
+
+/// store_xfree
+//
+// SUMMARY
+//  free a value_store
+//
+xapi value_store_xfree(value_store * const restrict store);
+
+/// store_ixfree
+//
+// SUMMARY
+//  free a value_store, zero its reference
+//
+xapi value_store_ixfree(value_store ** const store)
+  __attribute__((nonnull));
+
+/// store_recyle
+//
+//  
+//
+xapi value_store_recycle(value_store * const restrict store)
+  __attribute__((nonnull));
+
 /// store_string
 //
 //
 //
-xapi store_string(value_store * const restrict stor, value ** rv)
+xapi store_string(struct value_parser * const restrict parser, struct value ** rv)
   __attribute__((nonnull));
 
 /// store_float
 //
 //
 //
-xapi store_float(value_store * const restrict stor, value ** rv)
+xapi store_float(struct value_parser * const restrict parser, struct value ** rv)
   __attribute__((nonnull));
 
 /// store_boolean
 //
 //
 //
-xapi store_boolean(value_store * const restrict stor, value ** rv)
+xapi store_boolean(struct value_parser * const restrict parser, struct value ** rv)
   __attribute__((nonnull));
 
-/// store_integer
+/// store_posint
 //
 //
 //
-xapi store_integer(value_store * const restrict stor, value ** rv)
+xapi store_posint(struct value_parser * const restrict parser, struct value ** rv)
   __attribute__((nonnull));
 
-/// store_map
+/// store_negint
 //
 //
 //
-xapi store_map(value_store * const restrict stor, value ** rv)
+xapi store_negint(struct value_parser * const restrict parser, struct value ** rv)
+  __attribute__((nonnull));
+
+/// store_variable
+//
+//
+//
+xapi store_variable(struct value_parser * const restrict parser, struct value ** rv)
+  __attribute__((nonnull));
+
+/// store_mapping
+//
+//
+//
+xapi store_mapping(struct value_parser * const restrict parser, struct value ** rv)
   __attribute__((nonnull));
 
 /// store_list
 //
 //
 //
-xapi store_list(value_store * const restrict stor, value ** rv)
+xapi store_list(struct value_parser * const restrict parser, struct value ** rv)
   __attribute__((nonnull));
 
 /// store_set
 //
 //
 //
-xapi store_set(value_store * const restrict stor, value ** rv)
+xapi store_set(struct value_parser * const restrict parser, struct value ** rv)
   __attribute__((nonnull));
 
 #endif

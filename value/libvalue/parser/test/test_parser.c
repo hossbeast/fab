@@ -27,212 +27,227 @@
 #include "narrator.h"
 #include "narrator/growing.h"
 
-#include "value.h"
-#include "value/store.h"
-#include "value/make.h"
 #include "logger.h"
 #include "logger/category.h"
-#include "value/assert.h"
 
-#include "parser.h"
+#include "internal.h"
+#include "value.h"
+#include "assert.internal.h"
+#include "make.internal.h"
+#include "parser.internal.h"
+#include "store.internal.h"
 
 #include "macros.h"
+#include "attrs.h"
 
-//
-// public
-//
+typedef struct parser_test {
+  XUNITTEST;
 
-static xapi value_parser_unit_setup(xunit_unit * unit)
+  char * text;
+  value_type container;
+  char * expected;
+} parser_test;
+
+static xapi test_parser_setup(xunit_unit * unit)
 {
   enter;
 
   // load libraries
-  fatal(yyutil_load);
   fatal(value_load);
-
   fatal(logger_finalize);
 
   finally : coda;
 }
 
-static xapi value_parser_unit_cleanup(xunit_unit * unit)
+static xapi test_parser_cleanup(xunit_unit * unit)
 {
   enter;
 
-  fatal(yyutil_unload);
   fatal(value_unload);
 
   finally : coda;
 }
 
-//
-// tests
-//
-
-static xapi value_parser_test_maps(xunit_test * test)
+static xapi test_parser_entry(xunit_test * _test)
 {
   enter;
 
+  parser_test * test = containerof(_test, parser_test, xu);
+
+  char buf[512];
   value_parser * parser = 0;
-  value_store * store = 0;
-  value * actual = 0;
+  value * val0 = 0;
+  value * val1 = 0;
   narrator * N0 = 0;
   narrator * N1 = 0;
 
   fatal(narrator_growing_create, &N0);
   fatal(narrator_growing_create, &N1);
 
-  char * value_text = "core.filesystem { \"/\" { invalidate notify } \"/mnt/remote\" { invalidate stat } }";
+  fatal(value_parser_create, &parser);
+
+printf("\n---------------\n");
+printf(">> INITIAL\n%s\n", test->text);
 
   // parse
-  fatal(value_parser_create, &parser);
-  fatal(value_parser_parse, &parser, &store, MMS(value_text), 0, &actual, 0);
+  fatal(value_parser_parse, parser, MMS(test->text), 0, test->container, &val0);
+  fatal(value_say, val0, N0);
 
-  // assert
-  value * val = 0;
-  value * map = 0;
-  value * map2 = 0;
-  value * expected = 0;
+printf(">> FIRST\n%s\n", narrator_growing_buffer(N0));
 
-  fatal(value_string_mks, store, 0, 0, &val, "notify");
-  fatal(value_map_mks, store, 0, 0, &map, "invalidate", val, 0);
-  fatal(value_map_mks, store, 0, map2, &map2, "/", map, 0);
-  fatal(value_string_mks, store, 0, 0, &val, "stat");
-  fatal(value_map_mks, store, 0, 0, &map, "invalidate", val, 0);
-  fatal(value_map_mks, store, 0, map2, &map2, "/mnt/remote", map, 0);
-  fatal(value_map_mks, store, 0, 0, &map, "filesystem", map2, 0);
-  fatal(value_map_mks, store, 0, 0, &expected, "core", map, 0);
+  // round-trip
+  if(val0)
+  {
+    size_t len = narrator_growing_size(N0);
+    fatal(narrator_xseek, N0, 0, NARRATOR_SEEK_SET, 0);
+    fatal(narrator_xread, N0, buf, len, 0);
+    buf[len] = 0;
+    fatal(value_parser_parse, parser, buf, len, 0, 0, &val1);
+  }
+  fatal(value_say, val1, N1);
 
-  fatal(value_say, expected, N0);
-  fatal(value_say, actual, N1);
-  assert_eq_s(narrator_growing_buffer(N0), narrator_growing_buffer(N1));
+printf(">> SECOND\n%s\n", narrator_growing_buffer(N1));
+
+  char norm[512];
+  int y = 0;
+  int x;
+  for (x = 0; x < narrator_growing_size(N1); x++)
+  {
+    char c = narrator_growing_buffer(N1)[x];
+    if (c == '\n') { c = ' '; }
+    if (c == ' ')
+    {
+      if (y && norm[y - 1] == ' ') { continue; }
+    }
+
+    norm[y++] = c;
+  }
+  norm[y] = 0;
+
+  const char *actual = norm;
+  assert_eq_value(val0, val1);
+  assert_eq_s(test->expected ?: test->text, actual);
 
 finally:
   fatal(value_parser_xfree, parser);
-  fatal(value_store_xfree, store);
   fatal(narrator_xfree, N0);
   fatal(narrator_xfree, N1);
 coda;
-}
-
-static xapi value_parser_test_lists(xunit_test * test)
-{
-  enter;
-
-  value_parser * parser = 0;
-  value_store * store = 0;
-  value * actual = 0;
-  narrator * N0 = 0;
-  narrator * N1 = 0;
-
-  fatal(narrator_growing_create, &N0);
-  fatal(narrator_growing_create, &N1);
-
-  char * value_text = "core ( 1 true 2.0 \"foo\" )";
-
-  // parse
-  fatal(value_parser_create, &parser);
-  fatal(value_parser_parse, &parser, &store, MMS(value_text), 0, &actual, 0);
-
-  // assert
-  value * val = 0;
-  value * list = 0;
-  value * expected = 0;
-
-  fatal(value_integer_mk, store, 0, &val, 1);
-  fatal(value_list_mkv, store, 0, list, &list, val);
-  fatal(value_boolean_mk, store, 0, &val, 1);
-  fatal(value_list_mkv, store, 0, list, &list, val);
-  fatal(value_float_mk, store, 0, &val, 2);
-  fatal(value_list_mkv, store, 0, list, &list, val);
-  fatal(value_string_mks, store, 0, 0, &val, "foo");
-  fatal(value_list_mkv, store, 0, list, &list, val);
-  fatal(value_map_mks, store, 0, 0, &expected, "core", list, 0);
-
-  fatal(value_say, expected, N0);
-  fatal(value_say, actual, N1);
-
-  assert_eq_s(narrator_growing_buffer(N0), narrator_growing_buffer(N1));
-
-finally:
-  fatal(value_parser_xfree, parser);
-  fatal(value_store_xfree, store);
-  fatal(narrator_xfree, N0);
-  fatal(narrator_xfree, N1);
-coda;
-}
-
-static xapi value_parser_test_sets(xunit_test * test)
-{
-  enter;
-
-  value_parser * parser = 0;
-  value_store * store = 0;
-  value * actual = 0;
-  value * val = 0;
-  value * expected = 0;
-  char * text;
-
-  fatal(value_parser_create, &parser);
-
-  // parse
-  text = "[ 1 true 2.0 \"foo\" ]";
-  fatal(value_parser_parse, &parser, &store, MMS(text), 0, &actual, 0);
-
-  // assert
-  expected = 0;
-  fatal(value_integer_mk, store, 0, &val, 1);
-  fatal(value_set_mkv, store, 0, expected, &expected, val);
-  fatal(value_boolean_mk, store, 0, &val, 1);
-  fatal(value_set_mkv, store, 0, expected, &expected, val);
-  fatal(value_float_mk, store, 0, &val, 2);
-  fatal(value_set_mkv, store, 0, expected, &expected, val);
-  fatal(value_string_mks, store, 0, 0, &val, "foo");
-  fatal(value_set_mkv, store, 0, expected, &expected, val);
-  assert_eq_value(expected, actual);
-
-  // parse
-  text = "[ [ 1 2 ] [ 2 1 ] ]";
-  fatal(value_parser_parse, &parser, &store, MMS(text), 0, &actual, 0);
-
-  expected = 0;
-  fatal(value_integer_mk, store, 0, &val, 1);
-  fatal(value_set_mkv, store, 0, expected, &expected, val);
-  fatal(value_integer_mk, store, 0, &val, 2);
-  fatal(value_set_mkv, store, 0, expected, &expected, val);
-  fatal(value_set_mkv, store, 0, 0, &expected, expected);
-  assert_eq_value(expected, actual);
-
-  // parse
-  text = "( [ 1 2 ] [ 2 1 ] )";
-  fatal(value_parser_parse, &parser, &store, MMS(text), 0, &actual, 0);
-
-  expected = 0;
-  fatal(value_integer_mk, store, 0, &val, 1);
-  fatal(value_set_mkv, store, 0, expected, &expected, val);
-  fatal(value_integer_mk, store, 0, &val, 2);
-  fatal(value_set_mkv, store, 0, expected, &val, val);
-  fatal(value_list_mkv, store, 0, 0, &expected, val);
-  fatal(value_list_mkv, store, 0, expected, &expected, val);
-  assert_eq_value(expected, actual);
-
-finally:
-  fatal(value_parser_xfree, parser);
-  fatal(value_store_xfree, store);
-coda;
-}
+} 
 
 //
 // manifest
 //
 
 xunit_unit xunit = {
-    xu_setup : value_parser_unit_setup
-  , xu_cleanup : value_parser_unit_cleanup
-  , xu_tests : (xunit_test*[]) {
-      (xunit_test[]) {{ xu_entry : value_parser_test_maps }}
-    , (xunit_test[]) {{ xu_entry : value_parser_test_lists }}
-    , (xunit_test[]) {{ xu_entry : value_parser_test_sets }}
+    xu_setup : test_parser_setup
+  , xu_entry : test_parser_entry
+  , xu_cleanup : test_parser_cleanup
+  , xu_tests : (parser_test*[]) {
+    /* primitives */
+      (parser_test[]) {{ text : "true" }}
+    , (parser_test[]) {{ text : "false" }}
+    , (parser_test[]) {{ text : "1.42" }}
+    , (parser_test[]) {{ text : "-1.42" }}
+    , (parser_test[]) {{ text : "-142" }}
+    , (parser_test[]) {{ text : "142" }}
+    , (parser_test[]) {{ text : "0x142", expected : "322" }}
+    , (parser_test[]) {{ text : "foo" }}
+    , (parser_test[]) {{ text : "foo/bar" }}
+    , (parser_test[]) {{ text : "foo-bar" }}
+    , (parser_test[]) {{ text : "/bar" }}
+    , (parser_test[]) {{ text : "bar/" }}
+    , (parser_test[]) {{ text : "bar-" }}
+    , (parser_test[]) {{ text : "\"bar\"", expected: "bar" }}
+    , (parser_test[]) {{ text : "\"ba\\x65r\"", expected: "baer" }}
+    , (parser_test[]) {{ text : "\"ba\\x90r\"" }}
+    , (parser_test[]) {{ text : "\"ba\\x00r\"", expected : "\"ba\\x00r\"" }}
+    , (parser_test[]) {{ text : "\"ba\\x{0}r\"", expected : "\"ba\\x00r\"" }}
+    , (parser_test[]) {{ text : "\"ba\\x{00}r\"", expected : "\"ba\\x00r\"" }}
+
+    /* mappings */
+    , (parser_test[]) {{ text : "true : foo" }}
+    , (parser_test[]) {{ text : "false : true" }}
+    , (parser_test[]) {{ text : "142 : false" }}
+    , (parser_test[]) {{ text : "1.42 : 142" }}
+    , (parser_test[]) {{ text : "foo : 1.42" }}
+
+    /* lists */
+    , (parser_test[]) {{
+          text : "[ 1 true 2 foo ]"
+      }}
+    , (parser_test[]) {{
+          text : "[ [ 1 true ] 2 foo ]"
+      }}
+    , (parser_test[]) {{
+          text : "[ 1 true [ 2 foo ] ]"
+      }}
+    , (parser_test[]) {{
+          text : "[ 1 : true 2 : false ]"
+      }}
+    , (parser_test[]) {{
+          text : "[ true : [ 1 2 3 ] ]"
+      }}
+    , (parser_test[]) {{
+          text : "[ true true 1 1 ]"
+      }}
+    , (parser_test[]) {{
+          text : "true true 1 1"
+        , expected : "[ true true 1 1 ]"
+        , container : VALUE_TYPE_LIST
+      }}
+    , (parser_test[]) {{
+          text : "true : true 1 : 1"
+        , expected : "[ true : true 1 : 1 ]"
+        , container : VALUE_TYPE_LIST
+      }}
+
+    /* sets */
+    , (parser_test[]) {{
+          text : "{ true true 1 1 }"
+        , expected : "{ true 1 }"
+      }}
+    , (parser_test[]) {{
+          text : "{ foo true 1 2.00 }"
+      }}
+    , (parser_test[]) {{
+          text : "foo true 1 2.00"
+        , expected : "{ foo true 1 2.00 }"
+        , container : VALUE_TYPE_SET
+      }}
+    , (parser_test[]) {{
+          text : "foo : true 1 : 2.00"
+        , expected : "{ foo : true 1 : 2.00 }"
+        , container : VALUE_TYPE_SET
+      }}
+    , (parser_test[]) {{
+          text : "foo : true 1 : 2.00 foo : true"
+        , expected : "{ foo : true 1 : 2.00 }"
+        , container : VALUE_TYPE_SET
+      }}
+    , (parser_test[]) {{
+          text : "core : { foo true 1 2.00 }"
+      }}
+    , (parser_test[]) {{
+          text : "/ : { foo true 1 2.00 }"
+      }}
+    , (parser_test[]) {{
+          text : "core : { foo : { bar : baz } qux : true }"
+      }}
+    , (parser_test[]) {{
+          text : "core : { / : { invalidate : notify } /mnt/remote : { invalidate : stat } }"
+      }}
+
+    /* other */
+    , (parser_test[]) {{
+          text : ""
+            "bisonflags   : \"--warnings=error\"\n"
+            "cflags       : -g\n"
+            "cflags.eapi  : [ -DEAPI -DXAPI_MODE_ERRORCODE ]\n"
+        , container : VALUE_TYPE_SET
+        , expected : "{ bisonflags : \"--warnings=error\" cflags : \"-g\" cflags.eapi : [ \"-DEAPI\" \"-DXAPI_MODE_ERRORCODE\" ] }"
+      }}
+    
     , 0
   }
 };

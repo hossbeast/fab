@@ -15,7 +15,30 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef _VALUE_STORE_H
-#define _VALUE_STORE_H
+#ifndef _ARGS_H
+#define _ARGS_H
+
+#include "xapi.h"
+#include "types.h"
+
+enum value_type;
+
+typedef enum {
+  INPUT_FILE = 1,
+  INPUT_TEXT
+} input_type;
+
+struct g_args_t {
+  struct {
+    input_type type;
+    enum value_type container;
+    char * s;   
+  } * inputs;
+  uint16_t inputsl;
+} g_args;
+
+xapi args_parse(void);
+xapi args_summarize(void);
+void args_teardown(void);
 
 #endif

@@ -23,57 +23,128 @@
 
 #include "narrator.h"
 
-#include "valyria/map.h"
 #include "valyria/list.h"
 #include "valyria/pstring.h"
+#include "valyria/hashtable.h"
 
 #include "value.h"
-#include "value/store.h"
 
 #include "internal.h"
+#include "store.internal.h"
+
+/* flex and bison do not agree on these names */
+#define YYSTYPE struct value_yystype
+#define YYLTYPE yyu_location
+
+/* the token enums shadow each other */
+#define VALUE_SET_YYTOKENTYPE
+#define VALUE_LIST_YYTOKENTYPE
+
 #include "parser.internal.h"
 #include "VALUE.errtab.h"
 #include "logging.internal.h"
-#include "value.tab.h"
-#include "value.tokens.h"
+
 #include "value.lex.h"
 #include "value.states.h"
+#include "value.tab.h"
+#include "value.tokens.h"
+#include "value_set.tab.h"
+#include "value_set.tokens.h"
+#include "value_list.tab.h"
+#include "value_list.tokens.h"
 
-struct value_parser
-{
-  void * p;
-};
+#include "attrs.h"
 
-//
-// static
-//
-
-static const char * tokenname(int token)
-{
-  return value_tokennames[token];
-}
-
-static const char * statename(int state)
-{
-  return state >= 0 ? value_statenames[state] : "";
-}
-
-//
-// protected
-//
+static YYU_VTABLE(value_vtable, value, value);
+static YYU_VTABLE(value_set_vtable, value, value_set);
+static YYU_VTABLE(value_list_vtable, value, value_list);
 
 //
 // public
 //
 
-API xapi value_parser_create(value_parser ** const parser)
+API xapi value_parser_create(value_parser ** const rp)
 {
   enter;
 
-  fatal(xmalloc, parser, sizeof(**parser));
-  tfatalize(perrtab_KERNEL, ENOMEM, value_yylex_init, &(*parser)->p);
+  value_parser *p = 0;
 
-  finally : coda;
+  fatal(xmalloc, &p, sizeof(*p));
+
+  fatal(value_store_create, &p->store);
+
+  // value
+  fatal(yyu_parser_init, &p->value_yyu, &value_vtable, VALUE_SYNTAX);
+  fatal(yyu_parser_init_tokens
+    , &p->value_yyu
+    , value_numtokens
+    , value_mintoken
+    , value_maxtoken
+    , value_tokenindexes
+    , value_tokennumbers
+    , value_tokennames
+    , value_tokenstrings
+    , value_tokenstring_tokens
+  );
+  fatal(yyu_parser_init_states
+    , &p->value_yyu
+    , value_numstates
+    , value_statenumbers
+    , value_statenames
+  );
+
+  // value-set
+  fatal(yyu_parser_init, &p->value_set_yyu, &value_set_vtable, VALUE_SYNTAX);
+  fatal(yyu_parser_init_tokens
+    , &p->value_set_yyu
+    , value_set_numtokens
+    , value_set_mintoken
+    , value_set_maxtoken
+    , value_set_tokenindexes
+    , value_set_tokennumbers
+    , value_set_tokennames
+    , value_set_tokenstrings
+    , value_set_tokenstring_tokens
+  );
+  fatal(yyu_parser_init_states
+    , &p->value_set_yyu
+    , value_numstates
+    , value_statenumbers
+    , value_statenames
+  );
+
+  // value-list
+  fatal(yyu_parser_init, &p->value_list_yyu, &value_list_vtable, VALUE_SYNTAX);
+  fatal(yyu_parser_init_tokens
+    , &p->value_list_yyu
+    , value_list_numtokens
+    , value_list_mintoken
+    , value_list_maxtoken
+    , value_list_tokenindexes
+    , value_list_tokennumbers
+    , value_list_tokennames
+    , value_list_tokenstrings
+    , value_list_tokenstring_tokens
+  );
+  fatal(yyu_parser_init_states
+    , &p->value_list_yyu
+    , value_numstates
+    , value_statenumbers
+    , value_statenames
+  );
+
+#if DEBUG || DEVEL || XUNIT
+  p->value_yyu.logs = L_VALUE;
+  p->value_set_yyu.logs = L_VALUE;
+  p->value_list_yyu.logs = L_VALUE;
+#endif
+
+  *rp = p;
+  p = 0;
+
+finally:
+  fatal(value_parser_xfree, p);
+coda;
 }
 
 API xapi value_parser_xfree(value_parser* const p)
@@ -82,7 +153,10 @@ API xapi value_parser_xfree(value_parser* const p)
 
   if(p)
   {
-    value_yylex_destroy(p->p);
+    fatal(value_store_xfree, p->store);
+    fatal(yyu_parser_xdestroy, &p->value_yyu);
+    fatal(yyu_parser_xdestroy, &p->value_set_yyu);
+    fatal(yyu_parser_xdestroy, &p->value_list_yyu);
   }
 
   wfree(p);
@@ -101,73 +175,65 @@ API xapi value_parser_ixfree(value_parser ** const p)
 }
 
 API xapi value_parser_parse(
-    value_parser ** restrict parser
-  , value_store ** restrict stor
-  , const char * const restrict text
+    value_parser * restrict parser
+  , char * const restrict text
   , size_t len
   , const char * restrict fname
+  , value_type initial_state
   , value ** restrict root
-#if DEBUG || DEVEL || XUNIT
-  , uint64_t logs
-#endif
 )
 {
   enter;
 
-  value_parser * lp = 0;
-  value_store * lvs = 0;
-  void * state = 0;
+  typeof(parser->value_yyu) *pfn = 0;
 
-  // parser
-  if(!parser)
-    parser = &lp;
-  if(!*parser)
-    fatal(value_parser_create, parser);
+  parser->root = 0;
 
-  // storage
-  if(!stor)
-    stor = &lvs;
-  if(!*stor)
-    fatal(value_store_create, stor);
+  if(initial_state == 0)
+    pfn = &parser->value_yyu;
+  else if(initial_state == VALUE_TYPE_LIST)
+    pfn = &parser->value_list_yyu;
+  else if(initial_state == VALUE_TYPE_SET)
+    pfn = &parser->value_set_yyu;
 
-  value_xtra pp = {
-      .tokname      = tokenname
-    , .statename    = statename
-    , .fname        = fname
-#if DEBUG || DEVEL || XUNIT
-    , .state_logs   = logs | L_VALUE
-    , .token_logs   = logs | L_VALUE
-#endif
-  };
+  fatal(yyu_parse, pfn, text, len, fname, 0, 0, 0);
 
-  // create state specific to this parse
-  if((state = value_yy_scan_bytes(text, len, (*parser)->p)) == 0)
-    fail(KERNEL_ENOMEM);
+  // ownership transfer
+  if(root)
+    *root = parser->root;
 
-  pp.scanner = (*parser)->p;
-  pp.stor = *stor;
+  finally : coda;
+}
 
-  // make available to the lexer
-  value_yyset_extra(&pp, (*parser)->p);
+API xapi value_parser_parse_partial(
+    value_parser * restrict parser
+  , char * const restrict text
+  , size_t len
+  , const char * restrict fname
+  , yyu_location * init_loc
+  , yyu_location * used_loc
+  , value_type initial_state
+  , value ** restrict root
+)
+{
+  enter;
 
-  // invoke the appropriate parser, raise errors as needed
-  fatal(yyu_reduce, value_yyparse, &pp, VALUE_SYNTAX);
+  typeof(parser->value_yyu) *pfn = 0;
 
-  if(pp.root)
-  {
-    if(root)
-      *root = pp.root;
+  parser->root = 0;
 
-    // ownership transfer
-    pp.root = 0;
-  }
+  if(initial_state == 0)
+    pfn = &parser->value_yyu;
+  else if(initial_state == VALUE_TYPE_LIST)
+    pfn = &parser->value_list_yyu;
+  else if(initial_state == VALUE_TYPE_SET)
+    pfn = &parser->value_set_yyu;
 
-finally:
-  // cleanup state for this parse
-  value_yy_delete_buffer(state, (*parser)->p);
-  yyu_extra_destroy(&pp.yyu);
+  fatal(yyu_parse, pfn, text, len, fname, YYU_PARTIAL | YYU_INPLACE, init_loc, used_loc);
 
-  fatal(value_parser_xfree, lp);
-  fatal(value_store_xfree, lvs);
-coda;
+  // ownership transfer
+  if(root)
+    *root = parser->root;
+
+  finally : coda;
 }
