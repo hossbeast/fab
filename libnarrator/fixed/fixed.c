@@ -97,3 +97,8 @@ API size_t narrator_fixed_size(narrator * const restrict n)
 {
   return n->fixed.l;
 }
+
+void fixed_flush(narrator_fixed * restrict n)
+{
+  n->s[n->l] = 0;
+}

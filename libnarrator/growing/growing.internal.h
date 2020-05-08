@@ -52,11 +52,9 @@ xapi growing_xsayvf(narrator_growing * const restrict n, const char * const rest
 int growing_sayvf(narrator_growing * const restrict n, const char * const restrict fmt, va_list va)
   __attribute__((nonnull));
 
-xapi growing_xsayw(narrator_growing * const restrict n, const void * const restrict b, size_t l)
-  __attribute__((nonnull));
+xapi growing_xsayw(narrator_growing * const restrict n, const void * const restrict b, size_t l);
 
-int growing_sayw(narrator_growing * const restrict n, const char * const restrict b, size_t l)
-  __attribute__((nonnull));
+int growing_sayw(narrator_growing * const restrict n, const char * const restrict b, size_t l);
 
 /// narrator_destroy
 //
@@ -99,6 +97,9 @@ off_t growing_reset(narrator_growing * restrict n)
 //  number of bytes actually copied <= count
 //
 size_t growing_read(narrator_growing * restrict n, void * dst, size_t count)
+  __attribute__((nonnull));
+
+xapi growing_flush(narrator_growing * restrict n)
   __attribute__((nonnull));
 
 #endif

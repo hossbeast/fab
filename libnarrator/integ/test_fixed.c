@@ -72,8 +72,8 @@ static xapi test_constrained()
   char * expected = "40 41 ";
   size_t expectedl = 6;
 
-  assert_eq_s(expected, N->fixed.s);
   assert_eq_zu(expectedl, N->fixed.l);
+  assert_eq_s(expected, N->fixed.s);
 
   finally : coda;
 }

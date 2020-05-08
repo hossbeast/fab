@@ -60,11 +60,9 @@ xapi fd_xsayvf(narrator_fd * const restrict n, const char * const restrict fmt, 
 int fd_sayvf(narrator_fd * const restrict n, const char * const restrict fmt, va_list va)
   __attribute__((nonnull));
 
-xapi fd_xsayw(narrator_fd * const restrict n, const char * const restrict b, size_t l)
-  __attribute__((nonnull));
+xapi fd_xsayw(narrator_fd * const restrict n, const char * const restrict b, size_t l);
 
-int fd_sayw(narrator_fd * const restrict n, const char * const restrict b, size_t l)
-  __attribute__((nonnull));
+int fd_sayw(narrator_fd * const restrict n, const char * const restrict b, size_t l);
 
 /// fd_seek
 //
@@ -109,5 +107,8 @@ void fd_destroy(narrator_fd * const restrict n)
 //
 xapi fd_xread(narrator_fd * restrict n, void * dst, size_t count, size_t * restrict r)
   __attribute__((nonnull(1, 2)));
+
+xapi fd_flush(narrator_fd * restrict n)
+  __attribute__((nonnull));
 
 #endif

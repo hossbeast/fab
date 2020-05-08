@@ -48,8 +48,7 @@ typedef struct narrator_fixed
 int fixed_sayvf(narrator_fixed * restrict n, const char * restrict fmt, va_list va)
   __attribute__((nonnull));
 
-int fixed_sayw(narrator_fixed * restrict n, const char * restrict b, size_t l)
-  __attribute__((nonnull));
+int fixed_sayw(narrator_fixed * restrict n, const char * restrict b, size_t l);
 
 /// narrator_fixed_seek
 //
@@ -82,6 +81,9 @@ off_t fixed_reset(narrator_fixed * restrict n)
 //  number of bytes actually copied <= count
 //
 size_t fixed_read(narrator_fixed * restrict n, void * dst, size_t count)
+  __attribute__((nonnull));
+
+void fixed_flush(narrator_fixed * restrict n)
   __attribute__((nonnull));
 
 #endif

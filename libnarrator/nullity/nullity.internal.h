@@ -50,8 +50,7 @@ xapi nullity_cleanup(void);
 int nullity_sayvf(narrator_nullity * const restrict n, const char * const restrict fmt, va_list va)
   __attribute__((nonnull));
 
-int nullity_sayw(narrator_nullity * const restrict n, const char * const restrict b, size_t l)
-  __attribute__((nonnull));
+int nullity_sayw(narrator_nullity * const restrict n, const char * const restrict b, size_t l);
 
 /// nullity_seek
 //
@@ -70,6 +69,9 @@ void nullity_destroy(narrator_nullity * const restrict n)
   __attribute__((nonnull));
 
 int nullity_read(narrator_nullity * restrict n, void * dst, size_t count)
+  __attribute__((nonnull));
+
+void nullity_flush(narrator_nullity * restrict n)
   __attribute__((nonnull));
 
 #endif

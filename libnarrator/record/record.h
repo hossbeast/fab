@@ -54,12 +54,23 @@ xapi narrator_record_create(narrator ** const restrict n, narrator * const restr
 void narrator_record_reset(narrator * const restrict n)
   __attribute__((nonnull));
 
-/// narrator_record_write
+/// narrator_record_flush
 //
 // SUMMARY
 //  propagate to the underlying narrator with a single write
 //
-xapi narrator_record_write(narrator * const restrict n)
+xapi narrator_record_flush(narrator * const restrict n)
+  __attribute__((nonnull));
+
+/// narrator_record_size
+//
+// SUMMARY
+//  get the size in bytes of the unwritten record
+//
+// PARAMETERS
+//  n - record narrator
+//
+size_t narrator_record_size(narrator * const restrict n)
   __attribute__((nonnull));
 
 #endif

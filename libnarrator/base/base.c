@@ -31,16 +31,15 @@
 #include "record.internal.h"
 #include "rolling.internal.h"
 
+#include "macros.h"
+
 //
 // api
 //
 
-API xapi narrator_xfree(narrator * restrict n)
+API xapi narrator_xdestroy(narrator * restrict n)
 {
-  enter;
-
-  if(n && n->type == NARRATOR_FIXED)
-    goto XAPI_FINALIZE;
+    enter;
 
   if(n)
   {
@@ -57,9 +56,21 @@ API xapi narrator_xfree(narrator * restrict n)
       record_destroy(&n->record);
     else if(n->type == NARRATOR_ROLLING)
       fatal(rolling_xdestroy, &n->rolling);
+    else if(n->type == NARRATOR_FIXED) { }
     else
-      fail(SYS_NOTSUPP);
+      RUNTIME_ABORT();
+  }
 
+  finally : coda;
+}
+
+API xapi narrator_xfree(narrator * restrict n)
+{
+  enter;
+
+  if(n)
+  {
+    fatal(narrator_xdestroy, n);
     wfree(n);
   }
 
@@ -99,7 +110,7 @@ API xapi narrator_xseek(narrator * const restrict n, off_t offset, int whence, o
     res = nullity_seek(&n->nullity, offset, whence);
 
   else
-    fail(SYS_NOTSUPP);
+    RUNTIME_ABORT();
 
   if(resp)
     *resp = res;
@@ -152,7 +163,7 @@ API xapi narrator_xsayvf(narrator * const restrict n, const char * const restric
     nullity_sayvf(&n->nullity, fmt, va);
 
   else
-    fail(SYS_NOTSUPP);
+    RUNTIME_ABORT();
 
   finally : coda;
 }
@@ -178,14 +189,20 @@ API xapi narrator_xsayw(narrator * const restrict n, const void * const restrict
     nullity_sayw(&n->nullity, b, l);
 
   else
-    fail(SYS_NOTSUPP);
+    RUNTIME_ABORT();
 
   finally : coda;
 }
 
 API xapi narrator_xsays(narrator * const restrict n, const char * const restrict s)
 {
-  xproxy(narrator_xsayw, n, s, strlen(s));
+  enter;
+
+  if(s) {
+    fatal(narrator_xsayw, n, s, strlen(s));
+  }
+
+  finally : coda;
 }
 
 API xapi narrator_xread(narrator * restrict n, void * dst, size_t count, size_t * restrict r)
@@ -210,7 +227,30 @@ API xapi narrator_xread(narrator * restrict n, void * dst, size_t count, size_t 
     *r = nullity_read(&n->nullity, dst, count);
 
   else
-    fail(SYS_NOTSUPP);
+    RUNTIME_ABORT();
+
+  finally : coda;
+}
+
+API xapi narrator_flush(narrator * restrict n)
+{
+  enter;
+
+  if(n->type == NARRATOR_FD)
+    fatal(fd_flush, &n->fd);
+  else if(n->type == NARRATOR_ROLLING)
+    fatal(rolling_flush, &n->rolling);
+  else if(n->type == NARRATOR_RECORD)
+    fatal(narrator_record_flush, n);
+  else if(n->type == NARRATOR_FIXED)
+    fixed_flush(&n->fixed);
+  else if(n->type == NARRATOR_GROWING)
+    fatal(growing_flush, &n->growing);
+  else if(n->type == NARRATOR_NULLITY)
+    nullity_flush(&n->nullity);
+
+  else
+    RUNTIME_ABORT();
 
   finally : coda;
 }

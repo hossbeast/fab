@@ -39,7 +39,7 @@ static xapi test_fatal()
   xsays("hello");
   xsayc(' ');
   xsays("world");
-  fatal(narrator_record_write, N);
+  fatal(narrator_record_flush, N);
 
   assert_eq_s("hello world", N0->growing.s);
 

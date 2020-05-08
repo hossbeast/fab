@@ -101,7 +101,7 @@ finally:
 coda;
 }
 
-API xapi narrator_record_write(narrator * const restrict n)
+API xapi narrator_record_flush(narrator * const restrict n)
 {
   enter;
 
@@ -110,4 +110,9 @@ API xapi narrator_record_write(narrator * const restrict n)
   n->record.l = 0;
 
   finally : coda;
+}
+
+API size_t narrator_record_size(narrator * const restrict n)
+{
+  return n->record.l;
 }

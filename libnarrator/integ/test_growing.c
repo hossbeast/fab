@@ -19,6 +19,7 @@
 
 #include "xapi.h"
 #include "xapi/trace.h"
+#include "xlinux/xstdlib.h"
 
 #include "internal.h"
 #include "narrator/growing.h"
@@ -66,7 +67,7 @@ static xapi test_seek()
 
   narrator * N = 0;
   fatal(narrator_growing_create, &N);
-  
+
   xsays("H");
 
   fatal(narrator_xseek, N, 2, NARRATOR_SEEK_SET, 0);
@@ -88,6 +89,30 @@ finally:
 coda;
 }
 
+static xapi test_init()
+{
+  enter;
+
+  narrator * N = 0;
+  char Nstor[NARRATOR_STATIC_SIZE];
+  char * buf = 0;
+
+  N = narrator_growing_init(Nstor);
+
+  xsays("hello");
+  xsays(" ");
+  xsays("world");
+
+  narrator_growing_claim_buffer(N, &buf, 0);
+
+  assert_eq_s("hello world", buf);
+
+finally:
+  fatal(narrator_xdestroy, N);
+  wfree(buf);
+coda;
+}
+
 int main()
 {
   enter;
@@ -95,6 +120,7 @@ int main()
   xapi R = 0;
   fatal(test_basic);
   fatal(test_seek);
+  fatal(test_init);
 
 finally:
   summarize;

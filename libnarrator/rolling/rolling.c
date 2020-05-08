@@ -93,7 +93,7 @@ static xapi __attribute__((nonnull)) scan(narrator_rolling * const restrict n)
           if(entp->d_name[name_base_len] == '.')
           {
             uint16_t counter;
-            if(parseuint(entp->d_name + name_base_len + 1, "%"SCNu16, 0, UINT16_MAX, 5, 5, &counter, 0) == 0)
+            if(parseuint(entp->d_name + name_base_len + 1, SCNu16, 0, UINT16_MAX, 5, 5, &counter, 0) == 0)
             {
               if(counter < n->max_files && counter >= n->counter)
               {
@@ -217,6 +217,13 @@ API xapi narrator_rolling_create(narrator ** const restrict n, const char * cons
 
   fatal(ixstrndup, &(*n)->rolling.directory, path_base, e - path_base);
   fatal(ixstrdup, &(*n)->rolling.name_base, e + 1);
+
+  finally : coda;
+}
+
+xapi rolling_flush(narrator_rolling * restrict n)
+{
+  enter;
 
   finally : coda;
 }

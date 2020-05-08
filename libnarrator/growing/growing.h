@@ -30,6 +30,7 @@ SUMMARY
 
 #include "xapi.h"
 #include "types.h"
+
 #include "narrator.h"
 
 /// narrator_growing_create
@@ -51,19 +52,30 @@ xapi narrator_growing_create(narrator ** const restrict n)
 narrator * narrator_growing_init(char stor[NARRATOR_STATIC_SIZE])
   __attribute__((nonnull));
 
+narrator * narrator_growing_init_from(char stor[NARRATOR_STATIC_SIZE], char * buf, size_t bufa)
+  __attribute__((nonnull(1)));
+
 /// narrator_growing_buffer
 //
 // SUMMARY
-//  get a pointer to the underlying store
+//  get a pointer to the underlying buffer
 //
 // PARAMETERS
 //  n - growing narrator
 //
 // REMARKS
-//  further operations on the narrator may free the buffer
+//  subsequent operations on the narrator may free the buffer
 //
-const char * narrator_growing_buffer(narrator * const restrict n)
+char * narrator_growing_buffer(narrator * const restrict n)
   __attribute__((nonnull));
+
+/// narrator_growing_claim_buffer
+//
+// SUMMARY
+//  claim the underlying buffer and reset the narrator
+//
+void narrator_growing_claim_buffer(narrator * restrict n, void * bufp, size_t * allocp)
+  __attribute__((nonnull(1)));
 
 /// narrator_growing_size
 //
@@ -74,6 +86,9 @@ const char * narrator_growing_buffer(narrator * const restrict n)
 //  n - growing narrator
 //
 size_t narrator_growing_size(narrator * const restrict n)
+  __attribute__((nonnull));
+
+xapi narrator_growing_allocate(narrator * restrict n, size_t size)
   __attribute__((nonnull));
 
 #endif

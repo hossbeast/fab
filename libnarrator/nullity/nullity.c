@@ -80,3 +80,8 @@ API xapi narrator_nullity_create(narrator ** const restrict rv)
 
   finally : coda;
 }
+
+void nullity_flush(narrator_nullity * restrict n)
+{
+
+}

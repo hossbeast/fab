@@ -81,6 +81,12 @@ xapi narrator_xfree(narrator * restrict n);
 xapi narrator_ixfree(narrator ** const restrict n)
   __attribute__((nonnull));
 
+//
+// PARAMETERS
+//  n - narrator to destroy
+//
+xapi narrator_xdestroy(narrator * restrict n);
+
 /// narrator_sayvf
 //
 // SUMMARY
@@ -103,8 +109,7 @@ xapi narrator_xsayf(narrator * const restrict n, const char * const restrict fmt
 // SUMMARY
 //  write to the specified narrator
 //
-xapi narrator_xsayw(narrator * const restrict n, const void * const restrict b, size_t l)
-  __attribute__((nonnull));
+xapi narrator_xsayw(narrator * const restrict n, const void * const restrict b, size_t l);
 
 /// narrator_says
 //
@@ -112,7 +117,7 @@ xapi narrator_xsayw(narrator * const restrict n, const void * const restrict b, 
 //  write to the specified narrator
 //
 xapi narrator_xsays(narrator * const restrict n, const char * const restrict s)
-  __attribute__((nonnull));
+  __attribute__((nonnull(1)));
 
 /// narrator_sayc
 //
@@ -120,6 +125,14 @@ xapi narrator_xsays(narrator * const restrict n, const char * const restrict s)
 //  write a byte to the specified narrator
 //
 xapi narrator_xsayc(narrator * const restrict n, int c)
+  __attribute__((nonnull));
+
+/// narrator_flush
+//
+// SUMMARY
+//  flush
+//
+xapi narrator_flush(narrator * const restrict n)
   __attribute__((nonnull));
 
 #define NARRATOR_SEEK_TABLE(x)                                                                      \

@@ -101,6 +101,13 @@ void fd_destroy(narrator_fd * const restrict n)
 {
 }
 
+xapi fd_flush(narrator_fd * const restrict n)
+{
+  enter;
+
+  finally : coda;
+}
+
 //
 // api
 //

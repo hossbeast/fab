@@ -49,11 +49,9 @@ xapi multi_xsayvf(narrator_multi * const restrict n, const char * const restrict
 void multi_sayvf(narrator_multi * const restrict n, const char * const restrict fmt, va_list va)
   __attribute__((nonnull));
 
-xapi multi_xsayw(narrator_multi * const restrict n, const char * const restrict b, size_t l)
-  __attribute__((nonnull));
+xapi multi_xsayw(narrator_multi * const restrict n, const char * const restrict b, size_t l);
 
-void multi_sayw(narrator_multi * const restrict n, const char * const restrict b, size_t l)
-  __attribute__((nonnull));
+void multi_sayw(narrator_multi * const restrict n, const char * const restrict b, size_t l);
 
 /// multi_seek
 //
