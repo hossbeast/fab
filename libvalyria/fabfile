@@ -69,6 +69,31 @@ $lflags_xapi_devel  = [ $lopts $libxapi_xapi_devel $libxlinux_xapi_devel $libxun
 ## dependencies
 ##
 
+/*
+[ @tests ] : [
+  [ test/test_array.test ~ j ]
+  [ test/test_hashtable.test ~ j ]
+  [ test/test_set.test ~ j ]
+  [ test/test_list.test ~ j ]
+  [ test/test_dictionary.test ~ j ]
+  [ test/test_map.test ~ j ]
+  [ test/test_multimap.test ~ j ]
+]
+{
+  for x in [
+  [
+  ] [ test/test_array.test ~ j ] [
+  ] [ test/test_hashtable.test ~ j ] [
+  ] [ test/test_set.test ~ j ] [
+  ] [ test/test_list.test ~ j ] [
+  ] [ test/test_dictionary.test ~ j ] [
+  ] [ test/test_map.test ~ j ] [
+  ] [ test/test_multimap.test ~ j ] [
+  ]
+  ~ fi ] ; do [ $valgrind_runner ] $x ; done
+}
+*/
+
 # default NOFILE target - build everything
 [ @all ] : [ @release @test.fast ]
 

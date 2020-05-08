@@ -22,4 +22,6 @@
 #define API __attribute__((visibility("protected")))
 #define APIDATA
 
+#define DATA_ZERO_LEN_HASH 0xfaceface
+
 #endif

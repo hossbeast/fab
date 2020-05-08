@@ -21,26 +21,18 @@
 /*
 
 SUMMARY
- dynamically resizing ordered collection of elements addressable by index
+ dynamically resizing ordered collection of items addressable by index
 
 REMARKS
- meant to be used as the primary storage for the elements in the collection
+ array stores objects - the put operations make a copy
 
 */
-
-#include <stdint.h>
 
 #include "xapi.h"
 #include "types.h"
 
-typedef struct array
-{
-  size_t l;
-
-#ifndef ARRAY_INTERNALS
-# define ARRAY_INTERNALS
-#endif
-  ARRAY_INTERNALS;
+typedef struct array {
+  size_t size;
 } array;
 
 /// array_create
@@ -49,13 +41,16 @@ typedef struct array
 //  create an empty array
 //
 // PARAMETERS
-//  array             - created array goes here
-//  esz               - element size > 0
-//  [destroy_element] - invoked on an element when its storage becomes unused
-//  [capacity]        - initial capacity
+//  array       - created array goes here
+//  esz         - item size > 0
+//  [capacity]  - initial capacity
+//  [init]      - invoked on an item when its storage becomes used
+//  [xinit]     - invoked on an item when its storage becomes used
+//  [destroy]   - invoked on an item when its storage becomes unused
+//  [xdestroy]  - invoked on an item when its storage becomes unused
 //
 // REMARKS
-//  destroy_element follows the destroy idiom, not the free idiom, i.e. it should not free the pointer
+//  destroy_item follows the destroy idiom, not the free idiom, i.e. it should not free the pointer
 //  itself, as this memory is owned by the array
 //
 xapi array_create(array ** const restrict ar, size_t esz)
@@ -64,9 +59,12 @@ xapi array_create(array ** const restrict ar, size_t esz)
 xapi array_createx(
     array ** const restrict ar
   , size_t esz
-  , void * free_element
-  , void * xfree_element
   , size_t capacity
+  , int (*cmp_fn)(const void * A, size_t Asz, const void * B, size_t Bsz)
+  , void * init_fn
+  , void * xinit_fn
+  , void * destroy_fn
+  , void * xdestroy_fn
 )
   __attribute__((nonnull(1)));
 
@@ -85,176 +83,10 @@ xapi array_xfree(array * const restrict ar);
 xapi array_ixfree(array ** const restrict ar)
   __attribute__((nonnull));
 
-/// array_size
-//
-// SUMMARY
-//  get the number of elements in the array
-//
-size_t array_size(const array * const ar)
-  __attribute__((nonnull));
-
-/// array_get
-//
-// SUMMARY
-//  retrieve an element from the array by index
-//
-// PARAMETERS
-//  ar - array
-//  x  - index
-//
-// RETURNS
-//  pointer to element
-//
-void * array_get(const array * const restrict ar, int x)
-  __attribute__((nonnull));
-
-/// array_shift
-//
-// SUMMARY
-//  remove the first element of the array
-//
-// PARAMETERS
-//  ar   - array
-//  [el] - (returns) pointer to element
-//
-// REMARKS
-//  destroy_element is called before this function returns
-//
-xapi array_shift(array * const restrict ar, void ** const restrict el)
-  __attribute__((nonnull(1)));
-
-/// array_pop
-//
-// SUMMARY
-//  remove the last element of the array
-//
-// PARAMETERS
-//  ar   - array
-//  [el] - (returns) pointer to element
-//
-// REMARKS
-//  destroy_element is called before this function returns
-//
-xapi array_pop(array * const restrict ar, void ** const restrict el)
-  __attribute__((nonnull(1)));
-
-/// array_push
-//
-// SUMMARY
-//  add an element at the end of an array
-//
-// PARAMETERS
-//  ar - array
-//  el - (returns) pointer to element
-//
-xapi array_push(array * const restrict ar, void * el)
-  __attribute__((nonnull));
-
-/// array_push_range
-//
-// SUMMARY
-//  add elements to the end of the array
-//
-// PARAMETERS
-//  ar  - array
-//  len - number of elements
-//  el  - (returns) pointers to elements
-//
-xapi array_push_range(array * const restrict ar, size_t len, void * el)
-  __attribute__((nonnull));
-
-/// array_unshift
-//
-// SUMMARY
-//  add an element to the beginning of an array
-//
-// PARAMETERS
-//  ar - array
-//  el - (returns) pointer to element
-//
-xapi array_unshift(array * const restrict ar, void * el)
-  __attribute__((nonnull));
-
-/// array_unshift_range
-//
-// SUMMARY
-//  add elements to the beginning of an array
-//
-// REMARKS
-//  the order of the elements is not reversed
-//
-// PARAMETERS
-//  ar  - array
-//  len - number of elements
-//  el  - (returns) pointers to elements
-//
-xapi array_unshift_range(array * const restrict ar, size_t len, void * el)
-  __attribute__((nonnull));
-
-/// array_insert
-//
-// SUMMARY
-//  add an element to an array at a specific location
-//
-// PARAMETERS
-//  ar    - array
-//  index - 0 <= index <= array_size(s)
-//  el    - (returns) pointer to element
-//
-xapi array_insert(array * const restrict ar, size_t index, void * el)
-  __attribute__((nonnull));
-
-/// array_insert_range
-//
-// SUMMARY
-//  add elements to an array at a specific location
-//
-// PARAMETERS
-//  ar    - array
-//  index - 0 <= index <= array_size(s)
-//  len   - number of elements to insert
-//  el    - (returns) pointers to elements
-//
-xapi array_insert_range(array * const restrict ar, size_t index, size_t len, void * el)
-  __attribute__((nonnull));
-
-/// array_set
-//
-// SUMMARY
-//  update the element in the array at the specified index
-//
-// REMARKS
-//  the existing element at the index is destroyed
-//
-// PARAMETERS
-//  ar    - array
-//  index - 0 <= index < array_size(s)
-//  el    - (returns) pointer to the element
-//
-xapi array_set(array * const restrict ar, size_t index, void * el)
-  __attribute__((nonnull));
-
-/// array_set_range
-//
-// SUMMARY
-//  update elements in the array at the specified range of indexes
-//
-// REMARKS
-//  the existing element at the index is destroyed
-//
-// PARAMETERS
-//  ar    - array
-//  index - 0 <= index < array_size(s)
-//  len   - number of elements to insert
-//  el    - (returns) pointers to the elements
-//
-xapi array_set_range(array * const restrict ar, size_t index, size_t len, void * el)
-  __attribute__((nonnull));
-
 /// array_recycle
 //
 // SUMMARY
-//  remove all elements from the array
+//  remove all items from the array
 //
 // REMARKS
 //  allocations remain intact
@@ -273,106 +105,162 @@ xapi array_recycle(array * const ar)
 xapi array_truncate(array * const restrict ar, size_t len)
   __attribute__((nonnull));
 
-/// array_sort
+/// array_get
 //
 // SUMMARY
-//  sort an array - see qsort
+//  retrieve an item from the array by index
 //
 // PARAMETERS
-//  ar     - array
-//  compar - comparison function
-//  [arg]  - passed to compar
+//  ar - array
+//  x  - index
 //
-// COMPAR
-//  a
-//  b
-//  [arg]
+// RETURNS
+//  pointer to item
 //
-void array_sort(array * const restrict ar, int (*compar)(const void *, const void *, void *), void * arg)
-  __attribute__((nonnull(1, 2)));
+void * array_get(const array * const restrict ar, int x)
+  __attribute__((nonnull));
 
-/// array_search
+
+
+/// array_push
 //
 // SUMMARY
-//  perform a binary search among array elements
+//  add an item at the end of an array
 //
-// SEE
-//  man 3 bsearch
+// PARAMETERS
+//  ar - array
+//  el - (returns) pointer to item
+//
+xapi array_push(array * const restrict ar, void * const el)
+  __attribute__((nonnull(1)));
+
+/// array_push_range
+//
+// SUMMARY
+//  add items to the end of the array
+//
+// PARAMETERS
+//  ar  - array
+//  len - number of items
+//  el  - (returns) pointers to items
+//
+xapi array_push_range(array * const restrict ar, void * items, size_t len)
+  __attribute__((nonnull));
+
+/// array_pop
+//
+// SUMMARY
+//  remove the last item of the array
 //
 // PARAMETERS
 //  ar   - array
-//  [ud] - user data
-//  compar - comparison function
-//   ud  - user data
-//   el  - pointer to element
-//   idx - element index
 //
-void * array_search(array * const restrict ar, void * ud, int (*compar)(void * ud, const void * el, size_t idx))
-  __attribute__((nonnull(1, 3)));
+// REMARKS
+//  destroy_item is called before this function returns
+//
+xapi array_pop(array * const restrict ar)
+  __attribute__((nonnull(1)));
 
-/// array_search_range
-//
-// PARAMETERS
-//  index - index of the first item in the search range
-//  len   - number of items in the search range
-//
-void * array_search_range(array * const restrict ar, size_t index, size_t len, void * ud, int (*compar)(void * ud, const void * el, size_t idx))
-  __attribute__((nonnull(1, 5)));
-
-/// array_search
+/// array_unshift
 //
 // SUMMARY
-//  perform a binary search among array elements
-//
-// SEE
-//  man 3 bsearch
+//  add an item to the beginning of an array
 //
 // PARAMETERS
-//  ar     - array
-//  key    - key to search for
-//  compar - comparison function
-//   key   - key
-//   el    - pointer to element
-//   idx   - element index
-//   [ud]  - user data
+//  ar - array
+//  el - (returns) pointer to item
 //
-void * array_search(array * const restrict ar, void * ud, int (*compar)(void *, const void *, size_t))
-  __attribute__((nonnull(1,3)));
-
-/// array_splice
-//
-// SUMMARY
-//  copy elements between two arrays, overwriting elements in the destination array
-//
-// PARAMETERS
-//  dst       - array to copy to
-//  dst_index - 0 <= dst_index <= dst->l
-//  src       - array to copy from
-//  src_index - 0 <= src_index <= src->l
-//  len       - number >= 0 of elements to copy
-//
-xapi array_splice(array * const restrict dst, size_t dst_index, array * const restrict src, size_t src_index, size_t len)
+xapi array_unshift(array * const restrict ar, void * el)
   __attribute__((nonnull));
 
-/// array_replicate
+/// array_unshift_range
 //
 // SUMMARY
-//  copy elements between two arrays, expanding the destination array
+//  add items to the beginning of an array
+//
+// REMARKS
+//  the order of the items is not reversed
 //
 // PARAMETERS
-//  dst       - array to copy to
-//  dst_index - 0 <= dst_index <= dst->l
-//  src       - array to copy from
-//  src_index - 0 <= src_index <= src->l
-//  len       - number >= 0 of elements to copy
+//  ar  - array
+//  len - number of items
+//  el  - (returns) pointers to items
 //
-xapi array_replicate(array * const restrict dst, size_t dst_index, array * const restrict src, size_t src_index, size_t len)
+xapi array_unshift_range(array * const restrict ar, void * items, size_t len)
+  __attribute__((nonnull));
+
+/// array_shift
+//
+// SUMMARY
+//  remove the first item of the array
+//
+// PARAMETERS
+//  ar   - array
+//
+// REMARKS
+//  destroy_item is called before this function returns
+//
+xapi array_shift(array * const restrict ar)
+  __attribute__((nonnull(1)));
+
+/// array_insert
+//
+// SUMMARY
+//  add an item to an array at a specific location, expanding the array to retain existing items
+//
+// PARAMETERS
+//  ar    - array
+//  index - 0 <= index <= array_size(s)
+//  el    - (returns) pointer to item
+//
+xapi array_insert(array * const restrict ar, size_t index, void * el)
+  __attribute__((nonnull));
+
+/// array_insert_range
+//
+// SUMMARY
+//  add items to an array at a specific location, expanding the array to retain existing items
+//
+// PARAMETERS
+//  ar    - array
+//  index - 0 <= index <= array_size(s)
+//  len   - number of items to insert
+//  el    - (returns) pointers to items
+//
+xapi array_insert_range(array * const restrict ar, size_t index, void * items, size_t len)
+  __attribute__((nonnull));
+
+/// array_update
+//
+// SUMMARY
+//  add an item to an array at a specific location, overwriting existing items if any
+//
+// PARAMETERS
+//  ar    - array
+//  index - 0 <= index <= array_size(s)
+//  el    - (returns) pointer to item
+//
+xapi array_update(array * const restrict ar, size_t index, void * el)
+  __attribute__((nonnull));
+
+/// array_update_range
+//
+// SUMMARY
+//  add items to an array at a specific location, overwriting existing items if any
+//
+// PARAMETERS
+//  ar    - array
+//  index - 0 <= index <= array_size(s)
+//  len   - number of items to update
+//  el    - (returns) pointers to items
+//
+xapi array_update_range(array * const restrict ar, size_t index, void * items, size_t len)
   __attribute__((nonnull));
 
 /// array_delete
 //
 // SUMMARY
-//  remove an element from the array
+//  remove an item from the array
 //
 // PARAMETERS
 //  ar    - array to delete from
@@ -384,14 +272,131 @@ xapi array_delete(array * const restrict ar, size_t index)
 /// array_delete_range
 //
 // SUMMARY
-//  remove contiguous elements from the array
+//  remove contiguous items from the array
 //
 // PARAMETERS
 //  ar    - array to delete from
 //  index - index of the first item to delete
-//  len   - number of elements to delete
+//  len   - number of items to delete
 //
 xapi array_delete_range(array * const restrict ar, size_t index, size_t len)
   __attribute__((nonnull));
+
+/// array_subarray
+//
+// SUMMARY
+//  create subset of an array
+//
+// PARAMETERS
+//  array - array to copy from
+//  index - index at which to begin copying
+//  len   - number of elements to copy
+//  lc    - (returns) pointer to array, or reuses an existing array
+//
+xapi array_subarray(array * const restrict lip, size_t index, size_t len, array ** const restrict lc)
+  __attribute__((nonnull));
+
+/// array_splice
+//
+// SUMMARY
+//  remove items between from a source array and add them to a destination array
+//
+// REMARKS
+//  the destination is expanded to make room as necessary
+//
+// PARAMETERS
+//  dst       - array to copy to
+//  dst_index - 0 <= dst_index <= dst->l
+//  src       - array to copy from
+//  src_index - 0 <= src_index <= src->l
+//  len       - number >= 0 of items to copy
+//
+xapi array_splice(array * const restrict dst, size_t dst_index, array * const restrict src, size_t src_index, size_t len)
+  __attribute__((nonnull));
+
+/// array_replicate
+//
+// SUMMARY
+//  copy items from a source array to a destination array
+//
+// REMARKS
+//  the destination is expanded to make room as necessary
+//
+// PARAMETERS
+//  dst       - array to copy to
+//  dst_index - 0 <= dst_index <= dst->l
+//  src       - array to copy from
+//  src_index - 0 <= src_index <= src->l
+//  len       - number >= 0 of items to copy
+//
+xapi array_replicate(array * const restrict dst, size_t dst_index, array * const restrict src, size_t src_index, size_t len)
+  __attribute__((nonnull));
+
+/// array_equal
+//
+// SUMARY
+//  determine whether two arrays contain the same items
+//
+// PARAMETERS
+//  A     - first array
+//  B     - second array
+//  [cmp] - comparison function
+//
+bool array_equal(array * const restrict A, array * const restrict B, int (*cmp_fn)(const void * A, size_t Asz, const void * B, size_t Bsz))
+  __attribute__((nonnull(1, 2)));
+
+/// array_sort
+//
+// SUMMARY
+//  sort an array in place
+//
+// SEE
+//  man 3 qsort
+//
+// PARAMETERS
+//  ar - array
+//
+void array_sort(const array * const restrict ar, int (*cmp_fn)(const void * A, size_t Asz, const void * B, size_t Bsz))
+  __attribute__((nonnull(1)));
+
+/// array_search
+//
+// SUMMARY
+//  search for an item in the array
+//
+// SEE
+//  man 3 bsearch
+//
+// PARAMETERS
+//  ar         - array
+//  [index]    - first index in the search range
+//  [len]      - number of items in the search range
+//  [key]      - item to search for
+//  [cmp]      - comparison function
+//  [item]     - (returns) pointer to the item, if found
+//  [lx]       - (returns) index of the last item considered
+//  [lc]       - (returns) result of the final comparison
+//
+bool array_search(
+    const array * const restrict ar
+  , void * key
+  , int (*cmp_fn)(const void * A, size_t Asz, const void * B, size_t Bsz)
+  , void * item
+  , size_t * restrict lx
+  , int * restrict lc
+)
+  __attribute__((nonnull(1, 2)));
+
+bool array_search_range(
+    const array * const restrict ar
+  , size_t index
+  , size_t len
+  , void * key
+  , int (*cmp_fn)(const void * A, size_t Asz, const void * B, size_t Bsz)
+  , void * item
+  , size_t * restrict lx
+  , int * restrict lc
+)
+  __attribute__((nonnull(1, 4)));
 
 #endif

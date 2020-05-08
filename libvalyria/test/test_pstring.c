@@ -30,8 +30,7 @@ static xapi validate(pstring * ps)
 {
   enter;
 
-  //assertf(ps->a > ps->l, "allocated %zu", "length %zu", ps->a, ps->l);
-  assert_gt_zu(ps->l, ps->a);
+  assert_gt_zu(ps->size, ps->a);
 
   finally : coda;
 }
@@ -41,11 +40,9 @@ static xapi assert_contents(pstring * ps)
   enter;
 
   fatal(validate, ps);
-  assert_eq_zu(10, ps->l);
-  //assertf(ps->l == 10, "length %zu", "length %zu", 10, ps->l);
+  assert_eq_zu(10, ps->size);
 
   assert_eq_s("1234567890", ps->s);
-  //assertf(strcmp(ps->s, "1234567890") == 0, "content %s", "content %s", "1234567890", ps->s);
 
   finally : coda;
 }

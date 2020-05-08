@@ -79,7 +79,7 @@ API xapi pscreate(pstring ** const restrict ps)
 
 API void psclear(pstring * restrict ps)
 {
-  ps->l = 0;
+  ps->size = 0;
 }
 
 API void psfree(pstring * ps)
@@ -99,7 +99,7 @@ API void psifree(pstring ** ps)
 
 API int pscmp(const pstring * const restrict A, const pstring * const restrict B)
 {
-  return memncmp(A->s, A->l, B->s, B->l);
+  return memncmp(A->s, A->size, B->s, B->size);
 }
 
 // mk
@@ -182,7 +182,7 @@ API xapi psloadvf(pstring * restrict ps, const char * const restrict fmt, va_lis
     fatal(psassure, ps, r + 1);
     vsprintf(ps->s, fmt, va);
   }
-  ps->l = r;
+  ps->size = r;
 
 finally:
   va_end(va);
@@ -214,7 +214,7 @@ API xapi psloadw(pstring * restrict ps, const char * const restrict s, size_t l)
   fatal(psassure, ps, l + 1);
   memcpy(ps->s, s, l);
   ps->s[l] = 0;
-  ps->l = l;
+  ps->size = l;
 
   finally : coda;
 }
@@ -226,7 +226,7 @@ API xapi psloadc(pstring * restrict ps, int c)
   fatal(psassure, ps, 1 + 1);
   ps->s[0] = c;
   ps->s[1] = 0;
-  ps->l = 1;
+  ps->size = 1;
 
   finally : coda;
 }
@@ -241,16 +241,16 @@ API xapi psvcatf(pstring * restrict ps, const char * const restrict fmt, va_list
   va_copy(va2, va);
 
   // attempt to perform the entire write to the buffer
-  int r = vsnprintf(ps->s + ps->l, ps->a - ps->l, fmt, va2);
+  int r = vsnprintf(ps->s + ps->size, ps->a - ps->size, fmt, va2);
   va_end(va2);
 
   // check whether output was truncated
-  if(r >= (ps->a - ps->l))
+  if(r >= (ps->a - ps->size))
   {
-    fatal(psassure, ps, ps->l + r + 1);
-    vsprintf(ps->s + ps->l, fmt, va);
+    fatal(psassure, ps, ps->size + r + 1);
+    vsprintf(ps->s + ps->size, fmt, va);
   }
-  ps->l += r;
+  ps->size += r;
 
   finally : coda;
 }
@@ -277,10 +277,10 @@ API xapi pscatw(pstring * restrict ps, const char * const restrict s, size_t l)
 {
   enter;
 
-  fatal(psassure, ps, ps->l + l + 1);
-  memcpy(ps->s + ps->l, s, l);
-  ps->s[ps->l + l] = 0;
-  ps->l += l;
+  fatal(psassure, ps, ps->size + l + 1);
+  memcpy(ps->s + ps->size, s, l);
+  ps->s[ps->size + l] = 0;
+  ps->size += l;
 
   finally : coda;
 }
@@ -289,10 +289,10 @@ API xapi pscatc(pstring * restrict ps, int c)
 {
   enter;
 
-  fatal(psassure, ps, ps->l + 1 + 1);
-  ps->s[ps->l] = c;
-  ps->s[ps->l + 1] = 0;
-  ps->l++;
+  fatal(psassure, ps, ps->size + 1 + 1);
+  ps->s[ps->size] = c;
+  ps->s[ps->size + 1] = 0;
+  ps->size++;
 
   finally : coda;
 }

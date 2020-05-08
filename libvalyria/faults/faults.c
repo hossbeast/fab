@@ -33,7 +33,7 @@ VALYRIA_FAULT_TABLE
 typeof(fault_state) fault_state;
 
 //
-// api 
+// api
 //
 
 API void valyria_fault_activate(valyria_fault fault, ...)
@@ -43,12 +43,27 @@ API void valyria_fault_activate(valyria_fault fault, ...)
 
   faults[fault] = true;
 
-  if(fault == VALYRIA_MAPDEF_HASH_BOUNDARY_KEY)
+  if(fault == VALYRIA_KEY_INDEX_BOUNDARY)
   {
-    size_t x = fault_state.mapdef_hash_boundary.len;
-    fault_state.mapdef_hash_boundary.keys[x].key = va_arg(va, void*);
-    fault_state.mapdef_hash_boundary.keys[x].len = va_arg(va, size_t);
-    fault_state.mapdef_hash_boundary.len++;
+    size_t x = fault_state.key_index_boundary.len;
+    fault_state.key_index_boundary.keys[x].key = va_arg(va, void*);
+    fault_state.key_index_boundary.keys[x].len = va_arg(va, size_t);
+    fault_state.key_index_boundary.len++;
+  }
+  else if(fault == VALYRIA_KEY_HASH)
+  {
+    size_t x = fault_state.key_hash.len;
+    fault_state.key_hash.keys[x].key = va_arg(va, void*);
+    fault_state.key_hash.keys[x].len = va_arg(va, size_t);
+    fault_state.key_hash.keys[x].hash = va_arg(va, uint32_t);
+    fault_state.key_hash.len++;
+  }
+  else if(fault == VALYRIA_HASH_INDEX)
+  {
+    size_t x = fault_state.hash_index.len;
+    fault_state.hash_index.hashes[x].hash = va_arg(va, uint32_t);
+    fault_state.hash_index.hashes[x].index = va_arg(va, size_t);
+    fault_state.hash_index.len++;
   }
 
   va_end(va);

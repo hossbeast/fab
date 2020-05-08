@@ -25,16 +25,6 @@ MODULE
 
 */
 
-
-#include <stdarg.h>
-#include <sys/types.h>
-
-struct pstring_internals
-{
-  size_t a; // allocated size
-};
-
-#define PSTRING_INTERNALS struct pstring_internals
 #include "pstring.h"
 
 #endif

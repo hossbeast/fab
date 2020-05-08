@@ -19,44 +19,36 @@
 #define _MAP_INTERNAL_H
 
 #include "map.h"
+#include "hashtable.internal.h"
 
-typedef struct mapping
-{
-  char * k;
-  uint16_t ka; // allocated size
-  uint16_t kl; // length
+typedef struct mapping {
+  void * k;     // key
+  uint16_t ka;  // allocated size
+  uint16_t kl;  // length
 
-  void * v;
+  void * v;     // reference to value
+  size_t vl;    // value length
 } mapping;
 
-/// map_put
-//
-// SUMMARY
-//  create or update a key/value pair mapping
-//
-// PARAMETERS
-//  map   - map
-//  key   - pointer to key
-//  keyl  - key length
-//  [r]   - pointer to value
-//  [rv]  - (returns) pointer to map-owned value
-//
-xapi map_put(
-    struct map * const restrict m
-  , const void * const restrict key
-  , size_t keyl
-  , void * const restrict r
-  , size_t vsz
-  , void * const * const restrict rv
-)
-  __attribute__((nonnull(1, 2)));
+typedef struct map_t {
+  union {
+    hashtable_t ht;
+    hashtable htx;
+    map mx;
+    struct {
+      size_t size;
+      size_t table_size;
+    };
+  };
 
-xapi map_init(
-    map * const restrict m
-  , size_t capacity
-  , void * free_value
-  , void * xfree_value
-)
-  __attribute__((nonnull(1)));
+  // user callbacks
+  void (*destroy_fn)(void * entry);
+  xapi (*xdestroy_fn)(void * entry);
+} map_t;
+
+STATIC_ASSERT(offsetof(map, size) == offsetof(map_t, size));
+STATIC_ASSERT(offsetof(map_t, size) == offsetof(hashtable_t, size));
+STATIC_ASSERT(offsetof(map, table_size) == offsetof(hashtable_t, table_size));
+STATIC_ASSERT(offsetof(map_t, table_size) == offsetof(hashtable_t, table_size));
 
 #endif

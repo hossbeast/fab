@@ -25,11 +25,13 @@ SUMMARY
 
 */
 
-#include <sys/types.h>
+#include "types.h"
 
-#define VALYRIA_FAULT_TABLE               \
-  VALYRIA_FAULT(MAPDEF_HASH_BOUNDARY_KEY) \
-  VALYRIA_FAULT(MAPDEF_HASH_BOUNDARY_ALL) \
+#define VALYRIA_FAULT_TABLE          \
+  VALYRIA_FAULT(ALL_INDEX_BOUNDARY)  \
+  VALYRIA_FAULT(KEY_INDEX_BOUNDARY)  \
+  VALYRIA_FAULT(KEY_HASH)            \
+  VALYRIA_FAULT(HASH_INDEX)          \
 
 typedef enum {
   VALYRIA_FAULT_RANGE_BEFORE = 0,

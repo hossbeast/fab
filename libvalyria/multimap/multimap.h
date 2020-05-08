@@ -38,8 +38,10 @@ REMARKS
 #include "xapi.h"
 #include "types.h"
 
-struct multimap;
-typedef struct multimap multimap;
+typedef struct multimap {
+  size_t size;
+  size_t table_size;
+} multimap;
 
 /// multimap_create
 //
@@ -132,7 +134,7 @@ xapi multimap_recycle(multimap * restrict map)
 /// multimap_delete
 //
 // SUMMARY
-//  remove an entry from the map, if any
+//  remove all entries from the map under the specified key
 //
 // PARAMETERS
 //  m    - map
@@ -140,14 +142,6 @@ xapi multimap_recycle(multimap * restrict map)
 //  keyl - length of key
 //
 xapi multimap_delete(multimap * restrict m, const void * restrict key, size_t keyl)
-  __attribute__((nonnull));
-
-/// multimap_size
-//
-// SUMMARY
-//  get the number of keys in the multimap
-//
-size_t multimap_size(const multimap * restrict m)
   __attribute__((nonnull));
 
 /// multimap_keys
@@ -176,17 +170,6 @@ xapi multimap_keys(const multimap * restrict m, const char *** restrict keys, si
 xapi multimap_values(const multimap * restrict m, void * restrict values, size_t * restrict valuesl)
   __attribute__((nonnull));
 
-/// multimap_table_size
-//
-// SUMMARY
-//  get the size of the map tables for use with map_keyat / map_valueat
-//
-// PARAMETERS
-//  m - map
-//
-size_t multimap_table_size(const multimap * restrict m)
-  __attribute__((nonnull));
-
 /// multimap_table_key
 //
 // SUMMARY
@@ -211,5 +194,4 @@ const void * multimap_table_key(const multimap * restrict m, size_t x)
 void * multimap_table_value(const multimap * restrict m, size_t x)
   __attribute__((nonnull));
 
-#undef restrict
 #endif

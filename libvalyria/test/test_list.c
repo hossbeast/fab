@@ -42,7 +42,7 @@ static xapi validate(list * listp)
   enter;
 
   int x;
-  for(x = 1; x < listp->l; x++)
+  for(x = 1; x < listp->size; x++)
   {
     item * A = list_get(listp, x - 1);
     item * B = list_get(listp, x);
@@ -60,7 +60,7 @@ static xapi validate_contents(list * listp, size_t num, ...)
   va_list va;
   va_start(va, num);
 
-  assert_eq_zu(listp->l, num);
+  assert_eq_zu(listp->size, num);
 
   int x;
   for(x = 0; x < num; x++)
@@ -82,43 +82,47 @@ static xapi test_basic()
   item * itemp = 0;
   item * itemps[2];
 
-  fatal(list_createx, &listp, wfree, 0, 0);
+  fatal(list_createx, &listp, 0, 0, wfree, 0);
 
   fatal(xmalloc, &itemp, sizeof(*itemp));
   itemp->x = 4;
-  fatal(list_push, listp, itemp);
+  fatal(list_push, listp, itemp, 0);
   itemp = 0;
 
   fatal(xmalloc, &itemp, sizeof(*itemp));
   itemp->x = 5;
-  fatal(list_push, listp, itemp);
+  fatal(list_push, listp, itemp, 0);
   itemp = 0;
 
   fatal(xmalloc, &itemp, sizeof(*itemp));
   itemp->x = 6;
-  fatal(list_push, listp, itemp);
+  fatal(list_push, listp, itemp, 0);
   itemp = 0;
 
+  assert_eq_d(3, listp->size);
   fatal(validate, listp);
 
   fatal(xmalloc, &itemps[0], sizeof(**itemps));
   itemps[0]->x = 1;
   fatal(xmalloc, &itemps[1], sizeof(**itemps));
   itemps[1]->x = 2;
-  fatal(list_unshift_range, listp, itemps, 2);
+  fatal(list_unshift_range, listp, itemps, 0, 2);
 
+  assert_eq_d(5, listp->size);
   fatal(validate, listp);
 
-  fatal(list_pop, listp, 0);
-  fatal(list_shift, listp, 0);
+  fatal(list_pop, listp);
+  fatal(list_shift, listp);
 
+  assert_eq_d(3, listp->size);
   fatal(validate, listp);
 
   fatal(xmalloc, &itemp, sizeof(*itemp));
   itemp->x = 3;
-  fatal(list_insert, listp, 1, itemp);
+  fatal(list_insert, listp, 1, itemp, 0);
   itemp = 0;
 
+  assert_eq_d(4, listp->size);
   fatal(validate, listp);
 
 finally:
@@ -136,13 +140,13 @@ static xapi test_load()
 
   int x;
   for(x = 0; x < 50; x++)
-    fatal(list_push, listp, (void*)0x42);
+    fatal(list_push, listp, (void*)0x42, 0);
 
   for(x = 0; x < 300; x++)
-    fatal(list_unshift, listp, (void*)0x42);
+    fatal(list_unshift, listp, (void*)0x42, 0);
 
   for(x = 0; x < 35; x++)
-    fatal(list_insert, listp, x, (void*)0x42);
+    fatal(list_insert, listp, x, (void*)0x42, 0);
 
 finally:
   fatal(list_xfree, listp);
@@ -155,6 +159,8 @@ static xapi test_insertion_sort()
 
   list * listp = 0;
   item * itemp = 0;
+  size_t lx;
+  int lc;
 
   int ** items = (int*[]) {
       (int[]) { 4, 6, 7, 5, 0 }
@@ -168,28 +174,19 @@ static xapi test_insertion_sort()
   for(x = 0; x < sentinel(items); x++)
   {
     fatal(list_ixfree, &listp);
-    fatal(list_createx, &listp, (void*)wfree, 0, 0);
+    fatal(list_createx, &listp, 0, 0, wfree, 0);
 
     int y;
     for(y = 0; y < sentinel(items[x]); y++)
     {
-      size_t lx = 0;
-      int lc = 0;
-
-      int compar(void * ud, const void * el, size_t idx)
-      {
-        lx = idx;
-        return lc = itemp->x - ((item*)el)->x;
-      };
-
       fatal(xmalloc, &itemp, sizeof(*itemp));
       itemp->x = items[x][y];
 
-      list_search(listp, 0, compar);
+      list_search(listp, itemp, sizeof(item), 0, 0, 0, &lx, &lc);
       if(lc <= 0)
-        fatal(list_insert, listp, lx, itemp);
+        fatal(list_insert, listp, lx, itemp, sizeof(item));
       else if(lc > 0)
-        fatal(list_insert, listp, lx + 1, itemp);
+        fatal(list_insert, listp, lx + 1, itemp, sizeof(item));
 
       itemp = 0;
     }
@@ -209,59 +206,54 @@ static xapi test_search()
 
   list * listp = 0;
   item * itemp = 0;
-
-  fatal(list_createx, &listp, (void*)wfree, 0, 0);
-  fatal(xmalloc, &itemp, sizeof(*itemp));
-  itemp->x = 1;
-  fatal(list_push, listp, itemp);
-  fatal(xmalloc, &itemp, sizeof(*itemp));
-  itemp->x = 7;
-  fatal(list_push, listp, itemp);
-  fatal(xmalloc, &itemp, sizeof(*itemp));
-  itemp->x = 32;
-  fatal(list_push, listp, itemp);
-  fatal(xmalloc, &itemp, sizeof(*itemp));
-  itemp->x = 101;
-  fatal(list_push, listp, itemp);
-
   size_t lx;
   int lc;
+  item * p;
+  bool r;
 
-  int compar(void * ud, const void * el, size_t idx)
-  {
-    lx = idx;
-    lc = (int)(intptr_t)ud - ((item*)el)->x;
-    return lc;
-  };
+  fatal(list_createx, &listp, 0, 0, wfree, 0);
+  fatal(xmalloc, &itemp, sizeof(*itemp));
+  itemp->x = 1;
+  fatal(list_push, listp, itemp, sizeof(item));
+  fatal(xmalloc, &itemp, sizeof(*itemp));
+  itemp->x = 7;
+  fatal(list_push, listp, itemp, sizeof(item));
+  fatal(xmalloc, &itemp, sizeof(*itemp));
+  itemp->x = 32;
+  fatal(list_push, listp, itemp, sizeof(item));
+  fatal(xmalloc, &itemp, sizeof(*itemp));
+  itemp->x = 101;
+  fatal(list_push, listp, itemp, sizeof(item));
 
-  item * p = list_search(listp, (void*)0, compar);
+  r = list_search(listp, (item[]) {{ x : 0 }}, sizeof(item), 0, &p, 0, 0, 0);
+  assert_eq_b(false, r);
   assert_null(p);
 
-  p = list_search(listp, (void*)1, compar);
+  list_search(listp, (item[]) {{ x : 1 }}, sizeof(item), 0, &p, 0, &lx, &lc);
   assert_notnull(p);
   assert_eq_d(1, p->x);
   assert_eq_zu(0, lx);
   assert_eq_d(0, lc);
 
-  p = list_search(listp, (void*)7, compar);
+  list_search(listp, (item[]) {{ x : 7 }}, sizeof(item), 0, &p, 0, &lx, &lc);
   assert_notnull(p);
   assert_eq_d(7, p->x);
   assert_eq_zu(1, lx);
   assert_eq_d(0, lc);
 
-  p = list_search(listp, (void*)32, compar);
+  list_search(listp, (item[]) {{ x : 32 }}, sizeof(item), 0, &p, 0, &lx, &lc);
   assert_notnull(p);
   assert_eq_d(32, p->x);
   assert_eq_zu(2, lx);
   assert_eq_d(0, lc);
 
-  p = list_search(listp, (void*)101, compar);
+  list_search(listp, (item[]) {{ x : 101 }}, sizeof(item), 0, &p, 0, &lx, &lc);
   assert_notnull(p);
   assert_eq_d(101, p->x);
   assert_eq_zu(3, lx);
   assert_eq_d(0, lc);
 
-  p = list_search(listp, (void*)102, compar);
+  list_search(listp, (item[]) {{ x : 102 }}, sizeof(item), 0, &p, 0, &lx, &lc);
   assert_null(p);
 
 finally:
@@ -275,58 +267,54 @@ static xapi test_search_range()
 
   list * listp = 0;
   item * itemp = 0;
-
-  fatal(list_createx, &listp, (void*)wfree, 0, 0);
-  fatal(xmalloc, &itemp, sizeof(*itemp));
-  itemp->x = 1;
-  fatal(list_push, listp, itemp);
-  fatal(xmalloc, &itemp, sizeof(*itemp));
-  itemp->x = 7;
-  fatal(list_push, listp, itemp);
-  fatal(xmalloc, &itemp, sizeof(*itemp));
-  itemp->x = 32;
-  fatal(list_push, listp, itemp);
-  fatal(xmalloc, &itemp, sizeof(*itemp));
-  itemp->x = 101;
-  fatal(list_push, listp, itemp);
-
   size_t lx;
   int lc;
+  bool r;
+  item * p;
 
-  int compar(void * ud, const void * el, size_t idx)
-  {
-    lx = idx;
-    lc = (int)(intptr_t)ud - ((item*)el)->x;
-    return lc;
-  };
+  fatal(list_createx, &listp, 0, 0, wfree, 0);
+  fatal(xmalloc, &itemp, sizeof(*itemp));
+  itemp->x = 1;
+  fatal(list_push, listp, itemp, sizeof(item));
+  fatal(xmalloc, &itemp, sizeof(*itemp));
+  itemp->x = 7;
+  fatal(list_push, listp, itemp, sizeof(item));
+  fatal(xmalloc, &itemp, sizeof(*itemp));
+  itemp->x = 32;
+  fatal(list_push, listp, itemp, sizeof(item));
+  fatal(xmalloc, &itemp, sizeof(*itemp));
+  itemp->x = 101;
+  fatal(list_push, listp, itemp, sizeof(item));
 
-  item * p = list_search_range(listp, 0, listp->l, (void*)0, compar);
+  r = list_search_range(listp, 0, listp->size, (item[]) {{ x : 0 }}, sizeof(item), 0, &p, 0, 0, 0);
+  assert_eq_b(false, r);
   assert_null(p);
 
-  p = list_search_range(listp, 1, 3, (void*)1, compar);
+  r = list_search_range(listp, 1, 3, (item[]) {{ x : 1 }}, sizeof(item), 0, &p, 0, 0, 0);
+  assert_eq_b(false, r);
   assert_null(p);
 
-  p = list_search_range(listp, 2, 2, (void*)7, compar);
+  list_search_range(listp, 2, 2, (item[]) {{ x : 7 }}, sizeof(item), 0, &p, 0, 0, 0);
   assert_null(p);
 
-  p = list_search_range(listp, 0, 4, (void*)32, compar);
+  list_search_range(listp, 0, 4, (item[]) {{ x : 32 }}, sizeof(item), 0, &p, 0, &lx, 0);
   assert_notnull(p);
   assert_eq_d(32, p->x);
   assert_eq_zu(2, lx);
 
-  p = list_search_range(listp, 1, 3, (void*)32, compar);
+  list_search_range(listp, 1, 3, (item[]) {{ x : 32 }}, sizeof(item), 0, &p, 0, &lx, &lc);;
   assert_notnull(p);
   assert_eq_d(32, p->x);
   assert_eq_zu(2, lx);
   assert_eq_d(0, lc);
 
-  p = list_search_range(listp, 2, 2, (void*)32, compar);
+  list_search_range(listp, 2, 2, (item[]) {{ x : 32 }}, sizeof(item), 0, &p, 0, &lx, &lc);
   assert_notnull(p);
   assert_eq_d(32, p->x);
   assert_eq_zu(2, lx);
   assert_eq_d(0, lc);
 
-  p = list_search_range(listp, 3, 1, (void*)32, compar);
+  list_search_range(listp, 3, 1, (item[]) {{ x : 32 }}, sizeof(item), 0, &p, 0, 0, &lc);
   assert_null(p);
 
 finally:
@@ -334,7 +322,7 @@ finally:
 coda;
 }
 
-static xapi test_set()
+static xapi test_update()
 {
   enter;
 
@@ -342,7 +330,7 @@ static xapi test_set()
   item * itemp = 0;
   item * itemps[3];
 
-  fatal(list_createx, &listp, (void*)wfree, 0, 0);
+  fatal(list_createx, &listp, 0, 0, wfree, 0);
 
   fatal(xmalloc, &itemps[0], sizeof(**itemps));
   itemps[0]->x = 1;
@@ -350,8 +338,9 @@ static xapi test_set()
   itemps[1]->x = 2;
   fatal(xmalloc, &itemps[2], sizeof(**itemps));
   itemps[2]->x = 3;
-  fatal(list_push_range, listp, itemps, sizeof(itemps) / sizeof(itemps[0]));
+  fatal(list_insert_range, listp, 0, itemps, 0, sizeof(itemps) / sizeof(itemps[0]));
 
+  assert_eq_d(3, listp->size);
   fatal(validate, listp);
 
   int x;
@@ -359,11 +348,14 @@ static xapi test_set()
   {
     fatal(xmalloc, &itemp, sizeof(*itemp));
     itemp->x = x + 3;
-    fatal(list_set, listp, x, itemp);
+    fatal(list_update, listp, x, itemp, 0);
     itemp = 0;
 
+    assert_eq_d(3, listp->size);
     fatal(validate, listp);
   }
+
+  assert_eq_d(3, listp->size);
 
 finally:
   fatal(list_xfree, listp);
@@ -378,7 +370,7 @@ static xapi test_delete()
   list * listp = 0;
   item * itemps[4];
 
-  fatal(list_createx, &listp, (void*)wfree, 0, 0);
+  fatal(list_createx, &listp, 0, 0, wfree, 0);
 
   fatal(xmalloc, &itemps[0], sizeof(**itemps));
   itemps[0]->x = 1;
@@ -388,7 +380,7 @@ static xapi test_delete()
   itemps[2]->x = 3;
   fatal(xmalloc, &itemps[3], sizeof(**itemps));
   itemps[3]->x = 4;
-  fatal(list_push_range, listp, itemps, sizeof(itemps) / sizeof(itemps[0]));
+  fatal(list_push_range, listp, itemps, 0, sizeof(itemps) / sizeof(itemps[0]));
   fatal(validate_contents, listp, 4, 1, 2, 3, 4);
 
   fatal(list_delete, listp, 1);
@@ -408,7 +400,7 @@ static xapi test_delete()
   itemps[2]->x = 3;
   fatal(xmalloc, &itemps[3], sizeof(**itemps));
   itemps[3]->x = 4;
-  fatal(list_unshift_range, listp, itemps, sizeof(itemps) / sizeof(itemps[0]));
+  fatal(list_unshift_range, listp, itemps, 0, sizeof(itemps) / sizeof(itemps[0]));
   fatal(validate_contents, listp, 4, 1, 2, 3, 4);
 
   fatal(list_delete_range, listp, 1, 3);
@@ -437,27 +429,27 @@ static xapi test_splice()
 
   fatal(xmalloc, &i1, sizeof(*i1));
   i1->x = 1;
-  fatal(list_push, A, i1);
+  fatal(list_push, A, i1, 0);
   fatal(validate_contents, A, 1, 1);
 
   fatal(xmalloc, &i2, sizeof(*i2));
   i2->x = 4;
-  fatal(list_push, A, i2);
+  fatal(list_push, A, i2, 0);
   fatal(validate_contents, A, 2, 1, 4);
 
   fatal(xmalloc, &i3, sizeof(*i3));
   i3->x = 2;
-  fatal(list_push, B, i3);
+  fatal(list_push, B, i3, 0);
   fatal(validate_contents, B, 1, 2);
 
   fatal(xmalloc, &i4, sizeof(*i4));
   i4->x = 3;
-  fatal(list_push, B, i4);
+  fatal(list_push, B, i4, 0);
   fatal(validate_contents, B, 2, 2, 3);
 
   fatal(list_splice, A, 0, B, 0, 2);
-  fatal(validate_contents, A, 2, 2, 3);
-  fatal(validate_contents, B, 2, 2, 3);
+  fatal(validate_contents, A, 4, 2, 3, 1, 4);
+  fatal(validate_contents, B, 0);
 
 finally:
   fatal(list_xfree, A);
@@ -485,22 +477,22 @@ static xapi test_replicate()
 
   fatal(xmalloc, &i1, sizeof(*i1));
   i1->x = 1;
-  fatal(list_push, A, i1);
+  fatal(list_push, A, i1, 0);
   fatal(validate_contents, A, 1, 1);
 
   fatal(xmalloc, &i2, sizeof(*i2));
   i2->x = 4;
-  fatal(list_push, A, i2);
+  fatal(list_push, A, i2, 0);
   fatal(validate_contents, A, 2, 1, 4);
 
   fatal(xmalloc, &i3, sizeof(*i3));
   i3->x = 2;
-  fatal(list_push, B, i3);
+  fatal(list_push, B, i3, 0);
   fatal(validate_contents, B, 1, 2);
 
   fatal(xmalloc, &i4, sizeof(*i4));
   i4->x = 3;
-  fatal(list_push, B, i4);
+  fatal(list_push, B, i4, 0);
   fatal(validate_contents, B, 2, 2, 3);
 
   fatal(list_replicate, A, 1, B, 0, 2);
@@ -524,12 +516,13 @@ static xapi run_tests()
   fatal(test_basic);
   fatal(test_load);
   fatal(test_insertion_sort);
-  fatal(test_set);
+  fatal(test_update);
   fatal(test_search);
   fatal(test_search_range);
   fatal(test_delete);
   fatal(test_splice);
   fatal(test_replicate);
+
   summarize;
 
   finally : coda;

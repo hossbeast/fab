@@ -21,11 +21,14 @@
 #include "xapi.h"
 #include "xapi/trace.h"
 #include "xlinux/xstdlib.h"
+#include "xlinux/xstring.h"
 
 #include "set.h"
 #include "test_util.h"
 
 #include "macros.h"
+#include "assure.h"
+#include "hash.h"
 
 static xapi validate_elements(set * restrict s, char ** restrict elements)
 {
@@ -34,18 +37,19 @@ static xapi validate_elements(set * restrict s, char ** restrict elements)
   int n = sentinel(elements);
   int x;
   int i;
-  const char *element;
+  const char *el;
+  size_t elen;
 
-  assert_eq_d(n, s->count);
+  assert_eq_d(n, s->size);
 
   // elements in the set are in elements
   for(x = 0; x < s->table_size; x++)
   {
-    if(set_table_element(s, x, &element, 0))
+    if(set_table_element(s, x, &el, &elen))
     {
       for(i = 0; i < n; i++)
       {
-        if(strcmp(element, elements[i]) == 0)
+        if(memncmp(el, elen, MMS(elements[i])) == 0)
           break;
       }
 
@@ -58,7 +62,7 @@ static xapi validate_elements(set * restrict s, char ** restrict elements)
   {
     for(i = 0; i < s->table_size; i++)
     {
-      if(set_table_element(s, i, &element, 0) && strcmp(element, elements[x]) == 0)
+      if(set_table_element(s, i, &el, &elen) && memncmp(el, elen, MMS(elements[x])) == 0)
           break;
     }
 
@@ -83,12 +87,14 @@ static xapi test_basic()
       "1"
     , "200"
     , "3"
+    , ""
     , 0
   };
 
-  fatal(set_put, s, MMS("1"));
-  fatal(set_put, s, MMS("200"));
-  fatal(set_put, s, MMS("3"));
+  fatal(set_put, s, MMS(elementset[0]));
+  fatal(set_put, s, MMS(elementset[1]));
+  fatal(set_put, s, MMS(elementset[2]));
+  fatal(set_put, s, MMS(elementset[3]));
 
   // assert
   fatal(validate_elements, s, elementset);
@@ -102,13 +108,15 @@ static xapi test_recycle()
 {
   enter;
 
-  char space[64];
   set * s = 0;
+  char * str = 0;
+
+  char space[64];
   int x;
   int y;
   int i;
 
-  fatal(set_create, &s);
+  fatal(set_createx, &s, 0, hash32, memncmp, wfree, 0);
 
   for(i = 0; i < 2; i++)
   {
@@ -116,25 +124,30 @@ static xapi test_recycle()
     x = y;
     do {
       snprintf(space, sizeof(space), "%d", x);
-      fatal(set_put, s, MMS(space));
+      fatal(ixstrdup, &str, space);
+      fatal(set_put, s, MMS(str));
+      str = 0;
       x = (x + 1) % 5000;
     } while(x != y);
 
-    assert_eq_d(5000, s->count);
+    assert_eq_d(5000, s->size);
 
-    // entries by lookup
+    // lookup entries
     for(x = 0; x < 5000; x++)
     {
       snprintf(space, sizeof(space), "%d", x);
       assert_eq_b(true, set_contains(s, MMS(space)));
     }
 
-    // entries by enumeration
+    assert_eq_b(false, set_contains(s, MMS("foobar")));
+    assert_eq_b(false, set_contains(s, MMS("09123")));
+
     fatal(set_recycle, s);
   }
 
 finally:
   fatal(set_xfree, s);
+  wfree(str);
 coda;
 }
 
@@ -152,6 +165,7 @@ static xapi test_delete()
     , "3"
     , "37"
     , "9000000"
+    , ""
     , 0
   };
 
@@ -160,8 +174,14 @@ static xapi test_delete()
   fatal(set_put, s, MMS("3"));
   fatal(set_put, s, MMS("37"));
   fatal(set_put, s, MMS("9000000"));
+  fatal(set_put, s, MMS(""));
 
   // successive deletion
+  fatal(set_delete, s, MMS(elements[5]));
+  assert_eq_b(false, set_contains(s, MMS(elements[5])));
+  elements[5] = 0;
+  fatal(validate_elements, s, elements);
+
   fatal(set_delete, s, MMS(elements[4]));
   assert_eq_b(false, set_contains(s, MMS(elements[4])));
   elements[4] = 0;
@@ -192,6 +212,140 @@ finally:
 coda;
 }
 
+static xapi test_splice()
+{
+  enter;
+
+  set * A = 0;
+  set * B = 0;
+  char * str = 0;
+  char space[64];
+  int x;
+
+  fatal(set_createx, &A, 0, hash32, memncmp, wfree, 0);
+  fatal(set_createx, &B, 0, hash32, memncmp, wfree, 0);
+
+  for(x = 0; x < 5000; x++)
+  {
+    snprintf(space, sizeof(space), "%d", x);
+    fatal(ixstrdup, &str, space);
+    fatal(set_put, A, MMS(str));
+    str = 0;
+  }
+
+  // lookup in A
+  assert_eq_d(5000, A->size);
+  for(x = 0; x < 5000; x++)
+  {
+    snprintf(space, sizeof(space), "%d", x);
+    assert_eq_b(true, set_contains(A, MMS(space)));
+  }
+
+  assert_eq_b(false, set_contains(A, MMS("foobar")));
+  assert_eq_b(false, set_contains(A, MMS("09123")));
+  assert_eq_b(false, set_contains(B, MMS("foobar")));
+  assert_eq_b(false, set_contains(B, MMS("09123")));
+
+  fatal(set_delete, A, MMS("1234"));
+  fatal(set_delete, A, MMS("1235"));
+  fatal(set_delete, A, MMS("1236"));
+
+  // replicate A -> B
+  fatal(set_splice, B, A);
+
+  assert_eq_d(0, A->size);
+  assert_eq_d(4997, B->size);
+
+  // lookup in A and B
+  for(x = 0; x < 5000; x++)
+  {
+    if(x == 1234 || x == 1235 || x == 1236)
+      continue;
+
+    snprintf(space, sizeof(space), "%d", x);
+    assert_eq_b(false, set_contains(A, MMS(space)));
+    assert_eq_b(true, set_contains(B, MMS(space)));
+  }
+
+  assert_eq_b(false, set_contains(A, MMS("foobar")));
+  assert_eq_b(false, set_contains(A, MMS("09123")));
+  assert_eq_b(false, set_contains(B, MMS("foobar")));
+  assert_eq_b(false, set_contains(B, MMS("09123")));
+
+finally:
+  fatal(set_xfree, A);
+  fatal(set_xfree, B);
+  wfree(str);
+coda;
+}
+
+static xapi test_replicate()
+{
+  enter;
+
+  set * A = 0;
+  set * B = 0;
+  char * str = 0;
+  char space[64];
+  int x;
+
+  fatal(set_createx, &A, 0, hash32, memncmp, wfree, 0);
+  fatal(set_createx, &B, 0, hash32, memncmp, 0, 0);
+
+  for(x = 0; x < 5000; x++)
+  {
+    snprintf(space, sizeof(space), "%d", x);
+    fatal(ixstrdup, &str, space);
+    fatal(set_put, A, MMS(str));
+    str = 0;
+  }
+
+  // lookup in A
+  assert_eq_d(5000, A->size);
+  for(x = 0; x < 5000; x++)
+  {
+    snprintf(space, sizeof(space), "%d", x);
+    assert_eq_b(true, set_contains(A, MMS(space)));
+  }
+
+  assert_eq_b(false, set_contains(A, MMS("foobar")));
+  assert_eq_b(false, set_contains(A, MMS("09123")));
+  assert_eq_b(false, set_contains(B, MMS("foobar")));
+  assert_eq_b(false, set_contains(B, MMS("09123")));
+
+  fatal(set_delete, A, MMS("1234"));
+  fatal(set_delete, A, MMS("1235"));
+  fatal(set_delete, A, MMS("1236"));
+
+  // replicate A -> B
+  fatal(set_replicate, B, A);
+
+  assert_eq_d(4997, A->size);
+  assert_eq_d(4997, B->size);
+
+  // lookup in A and B
+  for(x = 0; x < 5000; x++)
+  {
+    if(x == 1234 || x == 1235 || x == 1236)
+      continue;
+
+    snprintf(space, sizeof(space), "%d", x);
+    assert_eq_b(true, set_contains(A, MMS(space)));
+    assert_eq_b(true, set_contains(B, MMS(space)));
+  }
+
+  assert_eq_b(false, set_contains(A, MMS("foobar")));
+  assert_eq_b(false, set_contains(A, MMS("09123")));
+  assert_eq_b(false, set_contains(B, MMS("foobar")));
+  assert_eq_b(false, set_contains(B, MMS("09123")));
+
+finally:
+  fatal(set_xfree, A);
+  fatal(set_xfree, B);
+  wfree(str);
+coda;
+}
+
 static xapi run_tests()
 {
   enter;
@@ -199,6 +353,8 @@ static xapi run_tests()
   fatal(test_basic);
   fatal(test_recycle);
   fatal(test_delete);
+  fatal(test_replicate);
+  fatal(test_splice);
 
   summarize;
 

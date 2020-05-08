@@ -15,10 +15,17 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef _VALYRIA_HASHTABLE_DEF_H
-#define _VALYRIA_HASHTABLE_DEF_H
+#ifndef _VALYRIA_RBTREE_INTERNAL_H
+#define _VALYRIA_RBTREE_INTERNAL_H
 
-#include "types.h"
-#include "xapi.h"
+/*
+
+MODULE
+ rbtree.internal
+
+*/
+
+#include "rbtree.h"
+#include "macros.h"
 
 #endif

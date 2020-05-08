@@ -15,9 +15,42 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef _VALYRIA_LIST_INTERNAL_H
-#define _VALYRIA_LIST_INTERNAL_H
+#ifndef _LIST_INTERNAL_H
+#define _LIST_INTERNAL_H
+
+/*
+
+MODULE
+ list.internal
+
+*/
 
 #include "list.h"
+#include "array.internal.h"
+
+#include "macros.h"
+
+typedef struct value {
+  void * p;
+  size_t l;
+} value;
+
+typedef struct list_t {
+  union {
+    array_t ar;
+    array arx;
+    list lix;
+    struct {
+      size_t size;
+    };
+  };
+
+  int (*cmp_fn)(const void * A, size_t Asz, const void * B, size_t Bsz);
+  void (*free_fn)(void * item);
+  xapi (*xfree_fn)(void * item);
+} list_t;
+
+STATIC_ASSERT(offsetof(list, size) == offsetof(list_t, size));
+STATIC_ASSERT(offsetof(list_t, size) == offsetof(array_t, size));
 
 #endif

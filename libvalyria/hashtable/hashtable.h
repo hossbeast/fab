@@ -21,36 +21,20 @@
 /*
 
 MODULE
-  hashtable
+ hashtable - dynamically resizing unordered collection of unique entries
 
-dynamically resizing unordered collection of unique entries
+REMARKS
+ hashtable stores objects - the put operation makes a copy
 
 */
 
 #include "xapi.h"
 #include "types.h"
 
-struct hashtable;
-typedef uint32_t (*ht_hash_fn)(struct hashtable * ht, uint32_t, void *, size_t);
-typedef int (*ht_cmp_fn)(struct hashtable * ht, void *, size_t, void *, size_t);
-typedef void (*ht_free_fn)(struct hashtable * ht, void *);
-typedef xapi (*ht_xfree_fn)(struct hashtable * ht, void *);
-
-struct ht_bucket;
-typedef struct hashtable
-{
-  size_t   count;           // number of active buckets
-  size_t   table_size;      // allocated table size, a power of two
-  uint32_t hash;
-  size_t   lm;              // bitmask equal to table_size - 1
-  size_t   overflow_count;  // size at which to rehash
-  size_t   esz;             // entry size
-  struct ht_bucket * tab;          // bucket table
-
-  ht_hash_fn hash_fn;
-  ht_cmp_fn cmp_fn;
-  ht_free_fn free_fn;
-  ht_xfree_fn xfree_fn;
+typedef struct hashtable {
+  size_t size;        // number of entries
+  size_t table_size;  // allocated table size
+  uint32_t hash;      // order invariant hash of entries
 } hashtable;
 
 /// hashtable_create
@@ -62,8 +46,8 @@ typedef struct hashtable
 //  ht            - (returns) newly allocated hashtable
 //  esz           - entry size > 0
 //  [capacity]    - initial capacity, the minimum number of entries which can be set without rehashing
-//  [free_value]  - invoked with the entry just before freeing it
-//  [xfree_value] - invoked with the entry just before freeing it
+//  [destroy_entry]  - invoked with the entry just before freeing it
+//  [xdestroy_entry] - invoked with the entry just before freeing it
 //
 xapi hashtable_create(hashtable ** restrict ht, size_t esz)
   __attribute__((nonnull(1)));
@@ -72,10 +56,10 @@ xapi hashtable_createx(
     hashtable ** restrict ht
   , size_t esz
   , size_t capacity
-  , ht_hash_fn hash_fn
-  , ht_cmp_fn cmp_fn
-  , ht_free_fn free_fn
-  , ht_xfree_fn xfree_fn
+  , uint32_t (*hash_entry)(uint32_t h, const void * entry, size_t sz)
+  , int (*cmp_entry)(const void * A, size_t Asz, const void * B, size_t Bsz)
+  , void (*destroy_entry)(void * entry)
+  , xapi (*xdestroy_entry)(void * entry)
 )
   __attribute__((nonnull(1)));
 
@@ -94,6 +78,9 @@ xapi hashtable_ixfree(hashtable ** restrict ht)
 // SUMMARY
 //  add an entry to the hashtable
 //
+// REMARKS
+//  destroys an existing entry, if any
+//
 // PARAMETERS
 //  hashtable - hashtable
 //  entry     - pointer to entry
@@ -101,13 +88,26 @@ xapi hashtable_ixfree(hashtable ** restrict ht)
 xapi hashtable_put(hashtable * const restrict ht, void * restrict entry)
   __attribute__((nonnull));
 
-/// hashtable_contains
+/// hashtable_get
 //
 // SUMMARY
-//  determine whether an entry is in the hashtable
+//  get an entry in the hashtable
 //
-bool hashtable_contains(hashtable * const restrict ht, void * restrict entry)
+// PARAMETERS
+//  ht    - hashtable
+//  entry - pointer to entry
+//
+// RETURNS
+//  pointer to entry, if any
+//
+void * hashtable_get(const hashtable * const restrict ht, void * restrict entry)
   __attribute__((nonnull));
+
+static inline bool __attribute__((nonnull)) hashtable_contains(const hashtable * const restrict ht, void * restrict entry)
+{
+  return hashtable_get(ht, entry) ? true : false;
+}
+
 
 /// hashtable_equal
 //
@@ -122,6 +122,22 @@ bool hashtable_equal(hashtable * const restrict A, hashtable * const restrict B)
 // disassociate all entries - internal structures remain allocated
 //
 xapi hashtable_recycle(hashtable * const restrict ht)
+  __attribute__((nonnull));
+
+/// hashtable_splice
+//
+// SUMMARY
+//  move entries from one hashtable to another
+//
+xapi hashtable_splice(hashtable * dst, hashtable * src)
+  __attribute__((nonnull));
+
+/// hashtable_replicate
+//
+// SUMMARY
+//  copy entries from one hashtable to another
+//
+xapi hashtable_replicate(hashtable * dst, hashtable * src)
   __attribute__((nonnull));
 
 /// hashtable_delete
@@ -155,6 +171,9 @@ xapi hashtable_entries(const hashtable * restrict m, void * restrict entries, si
 //  get a pointer to the entry at the specified table index, if any
 //
 void * hashtable_table_entry(const hashtable * restrict ht, size_t x)
+  __attribute__((nonnull));
+
+xapi hashtable_table_delete(hashtable * restrict ht, size_t x)
   __attribute__((nonnull));
 
 #endif

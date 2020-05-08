@@ -15,6 +15,8 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
+#include <stdio.h>
+
 #include "xapi.h"
 #include "types.h"
 
@@ -27,252 +29,353 @@
 #include "macros.h"
 #include "hash.h"
 
-typedef struct element
-{
-  char * e;
-  uint16_t ea; // allocated size
-  uint16_t el; // length
-} element;
+//
+// static
+//
 
-static uint32_t element_hash(hashtable * ht, uint32_t h, void * _A, size_t sz)
+static uint32_t set_default_hash_fn(uint32_t h, const void * data, size_t len)
 {
-  element * A = *(element **)_A;
-  return hash32(h, A->e, A->el);
+  return hash32(hash32(h, &data, sizeof(data)), &len, sizeof(len));
 }
 
-static int element_cmp(hashtable * ht, void * restrict _A, size_t Asz, void * restrict _B, size_t Bsz)
+static int set_default_cmp_fn(const void * A, size_t Asz, const void * B, size_t Bsz)
 {
-  element * A = *(element **)_A;
-  element * B = *(element **)_B;
-
-  return memncmp(A->e, A->el, B->e, B->el);
+  return
+       INTCMP(A, B)
+    ?: INTCMP(Asz, Bsz)
+    ;
 }
 
-static xapi element_destroy(hashtable * ht, void * _A)
+//
+// set/hashtable callbacks
+//
+
+static uint32_t hash_entry(const hashtable_t * ht, void * entry)
+{
+  element * el = entry;
+  return ht->hash_fn(0, el->p, el->l);
+}
+
+static int compare_entries(const hashtable_t * ht, void * _A, void * _B)
+{
+  element * A = _A;
+  element * B = _B;
+
+  return ht->cmp_fn(A->p, A->l, B->p, B->l);
+}
+
+static xapi delete_entry(const hashtable_t * ht, void * entry)
 {
   enter;
 
-  set * s = (set*)ht;
-  element * mg = *(element **)_A;
+  const set_t * s = (typeof(s))ht;
+  element * el = entry;
 
-  if(s->free_element)
-    s->free_element(mg->e, mg->el);
-  if(s->xfree_element)
-    fatal(s->xfree_element, mg->e, mg->el);
+  if(s->destroy_fn)
+    s->destroy_fn(el->p);
+  else if(s->xdestroy_fn)
+    fatal(s->xdestroy_fn, el->p);
 
-  finally : coda; 
+  finally : coda;
 }
 
-static element * table_element(set * restrict s, size_t i)
+static xapi destroy_entry(const hashtable_t * ht, void * entry)
 {
-  ht_bucket * b = hashtable_bucket_at(s, s->tab, i);
-  element ** mgp = (void*)b->p;
-  return *mgp;
+  enter;
+
+  finally : coda;
 }
+
+static xapi store_entry(const hashtable_t * ht, void * dst, void * entry, bool found)
+{
+  enter;
+
+  if(found)
+  {
+    fatal(delete_entry, ht, dst);
+  }
+
+  memcpy(dst, entry, ht->esz);
+
+  finally : coda;
+}
+
+static ht_operations ht_ops = {
+    hash_entry : hash_entry
+  , compare_entries : compare_entries
+  , delete_entry : delete_entry
+  , destroy_entry : destroy_entry
+  , store_entry : store_entry
+};
 
 //
 // api
 //
 
-API xapi set_createx(set ** const restrict s, size_t capacity, void * free_element, void * xfree_element)
+API xapi set_createx(
+    set ** const restrict rv
+  , size_t capacity
+  , uint32_t (*hash_fn)(uint32_t h, const void * element, size_t sz)
+  , int (*cmp_fn)(const void * A, size_t Asz, const void * B, size_t Bsz)
+  , void (*destroy_fn)(void * element)
+  , xapi (*xdestroy_fn)(void * element)
+)
 {
   enter;
 
-  fatal(xmalloc, s, sizeof(**s));
-  fatal(hashtable_init, *s, sizeof(element*), capacity, element_hash, element_cmp, 0, element_destroy);
+  set_t * s = 0;
 
-  (*s)->free_element = free_element;
-  (*s)->xfree_element = xfree_element;
+  fatal(xmalloc, &s, sizeof(*s));
 
-  finally : coda;
+  if(!hash_fn)
+    hash_fn = set_default_hash_fn;
+
+  if(!cmp_fn)
+    cmp_fn = set_default_cmp_fn;
+
+  fatal(hashtable_init
+    , &s->ht
+    , sizeof(element)
+    , capacity
+    , &ht_ops
+    , hash_fn
+    , cmp_fn
+  );
+
+  s->destroy_fn = destroy_fn;
+  s->xdestroy_fn = xdestroy_fn;
+
+  *rv = &s->sx;
+  s = 0;
+
+finally:
+  if(s)
+    fatal(set_xfree, &s->sx);
+coda;
 }
 
-API xapi set_create(set ** restrict s)
+API xapi set_create(set ** restrict sx)
 {
-  xproxy(set_createx, s, 0, 0, 0);
+  xproxy(set_createx, sx, 0, 0, 0, 0, 0);
 }
 
-API xapi set_xfree(set * restrict s)
+API xapi set_xfree(set * restrict sx)
 {
   enter;
+
+  set_t * s = containerof(sx, set_t, sx);
 
   if(s)   // free-like semantics
-  {
-    fatal(hashtable_recycle, s);
-
-    size_t x;
-    for(x = 0; x < s->table_size; x++)
-    {
-      element * mg = table_element(s, x);
-      if(mg)
-      {
-        wfree(mg->e);
-      }
-      wfree(mg);
-    }
-
-    wfree(s->tab);
-  }
+    fatal(hashtable_xdestroy, &s->ht);
 
   wfree(s);
 
   finally : coda;
 }
 
-API xapi set_ixfree(set ** restrict s)
+API xapi set_ixfree(set ** restrict sx)
 {
   enter;
 
-  fatal(set_xfree, *s);
-  *s = 0;
+  fatal(set_xfree, *sx);
+  *sx = 0;
 
   finally : coda;
 }
 
-API xapi set_recycle(set * restrict s)
-{
-  xproxy(hashtable_recycle, s);
-}
-
-API xapi set_put(set * restrict s, const void * e, uint16_t el)
+API xapi set_recycle(set * restrict sx)
 {
   enter;
 
-  uint32_t h;
-  size_t i;
-  element * lmg;
-  element * mg = 0;
-  element * mgp = 0;
+  set_t * s = containerof(sx, set_t, sx);
+  fatal(hashtable_recycle, &s->htx);
 
-  if(el == 0)
-    goto XAPI_FINALIZE;
-
-  lmg = (typeof(*lmg)[]){{ .e = (void*)e, .el = el }};
-
-  h = element_hash(s, 0, &lmg, 0);
-  int r = hashtable_probe(s, h, &lmg, &i);
-  if(r == 0)  // found
-  {
-    mg = table_element(s, i);
-
-    // the element will be overwritten
-    if(s->free_element)
-      s->free_element(mg->e, mg->el);
-    else if(s->xfree_element)
-      fatal(s->xfree_element, mg->e, mg->el);
-  }
-  // not found, and a suitable deleted slot exists
-  else if(r == 1)
-  {
-    mg = table_element(s, i);
-  }
-  else
-  {
-    // not found, and saturation has been reached
-    if(s->count == s->overflow_count)
-    {
-      fatal(hashtable_grow, s);
-      hashtable_probe(s, h, &lmg, &i);
-    }
-    fatal(xmalloc, &mgp, sizeof(*mgp));
-    mg = mgp;
-  }
-
-  if(r)
-  {
-    if(mg->e == 0 || el >= mg->ea)
-    {
-      fatal(xrealloc, &mg->e, 1, sizeof(*mg->e) + el + 1, mg->ea);
-      mg->ea = el + 1;
-    }
-
-    memcpy(mg->e, e, el);
-    mg->e[el] = 0;
-    mg->el = el;
-
-    ht_bucket *b = hashtable_bucket_at(s, s->tab, i);
-    hashtable_set_entry(s, b, h, &mg);
-    mgp = 0;
-  }
-
-finally:
-  if(mgp)
-  {
-    wfree(mgp->e);
-  }
-  wfree(mgp);
-coda;
+  finally : coda;
 }
 
-API bool set_contains(const set * s, const void * e, uint16_t el)
+API xapi set_put(set * restrict sx, void * e, size_t len)
 {
-  element * lmg;
-  uint32_t h;
-  size_t i;
+  enter;
 
-  lmg = (typeof(*lmg)[]){{ .e = (void*)e, .el = el }};
-  h = element_hash(s, 0, &lmg, 0);
+  set_t * s = containerof(sx, set_t, sx);
 
-  if(hashtable_probe(s, h, &lmg, &i) == 0)
+  element el = { p : e, l : len };
+  fatal(hashtable_put, &s->htx, &el);
+
+  finally : coda;
+}
+
+xapi set_store(set * sx, void * e, size_t len, void ** restrict elementp)
+{
+  enter;
+
+  set_t *s = containerof(sx, set_t, sx);
+  ht_bucket * bp;
+
+  element el = { p : e, l : len };
+  fatal(hashtable_store, &s->ht, &el, &bp);
+
+  element * elp = (typeof(elp))bp->p;
+  *(void**)elementp = elp->p;
+
+  finally : coda;
+}
+
+API xapi set_splice(set * restrict dstx, set * restrict srcx)
+{
+  enter;
+
+  set_t * src = containerof(srcx, set_t, sx);
+  set_t * dst = containerof(dstx, set_t, sx);
+
+  fatal(hashtable_splice, &dst->htx, &src->htx);
+
+  finally : coda;
+}
+
+API xapi set_replicate(set * restrict dstx, set * restrict srcx)
+{
+  enter;
+
+  set_t * src = containerof(srcx, set_t, sx);
+  set_t * dst = containerof(dstx, set_t, sx);
+
+  fatal(hashtable_replicate, &dst->htx, &src->htx);
+
+  finally : coda;
+}
+
+API bool set_contains(const set * sx, const void * e, size_t len)
+{
+  const set_t * s = containerof(sx, set_t, sx);
+
+  element key = { .p = (void*)e, .l = len };
+  return !!hashtable_get(&s->htx, &key);
+}
+
+API void * set_get(const set * sx, const void * e, size_t len)
+{
+  const set_t * s = containerof(sx, set_t, sx);
+
+  element key = { .p = (void*)e, .l = len };
+  element * el = hashtable_get(&s->htx, &key);
+  if(el)
+    return el->p;
+
+  return 0;
+}
+
+API bool set_get_element(const set * sx, const void * e, size_t len, void * elp, size_t * restrict ell)
+{
+  const set_t * s = containerof(sx, set_t, sx);
+
+  element key = { .p = (void*)e, .l = len };
+  element * el = hashtable_get(&s->htx, &key);
+  if(el)
+  {
+    if(elp)
+      *(void**)elp = el->p;
+    if(ell)
+      *ell = el->l;
+
     return true;
+  }
 
   return false;
 }
 
-API bool set_equal(set * const A, set * const B)
+API bool set_equal(set * const Ax, set * const Bx)
 {
-  return hashtable_equal(A, B);
+  set_t * A = containerof(Ax, set_t, sx);
+  set_t * B = containerof(Bx, set_t, sx);
+
+  return hashtable_equal(&A->htx, &B->htx);
 }
 
-API xapi set_delete(set * s, const void * e, uint16_t el)
+API xapi set_delete(set * sx, const void * e, size_t len)
 {
   enter;
 
-  element * lmg;
+  set_t * s = containerof(sx, set_t, sx);
 
-  lmg = (typeof(*lmg)[]){{ .e = (void*)e, .el = el }};
-  fatal(hashtable_delete, s, &lmg);
+  element el = { .p = (void*)e, .l = len };
+  fatal(hashtable_delete, &s->htx, &el);
 
   finally : coda;
 }
 
-API xapi set_elements(const set * restrict s, const void *** restrict es, uint16_t * restrict esls, size_t * restrict esl)
+API xapi set_elements(const set * restrict sx, void * restrict _els, size_t ** restrict elsls, size_t * restrict elsl)
 {
   enter;
 
-  element ** mg;
+  element * el;
   size_t x;
   size_t i;
 
-  fatal(xmalloc, es, sizeof(*es) * s->count);
-  fatal(xmalloc, esls, sizeof(*esls) * s->count);
+  const set_t * s = containerof(sx, set_t, sx);
+  void *** els = _els;
+
+  fatal(xmalloc, els, sizeof(**els) * s->size);
+  fatal(xmalloc, elsls, sizeof(**elsls) * s->size);
 
   i = 0;
   for(x = 0; x < s->table_size; x++)
   {
-    if((mg = hashtable_table_entry(s, x)))
+    if((el = hashtable_table_entry(&s->htx, x)))
     {
-      (*es)[i] = (*mg)->e;
-      esls[i] = (*mg)->el;
+      (*els)[i] = el->p;
+      (*elsls)[i] = el->l;
       i++;
     }
   }
-  (*esl) = s->count;
+  (*elsl) = s->size;
 
   finally : coda;
 }
 
-API bool set_table_element(const set * restrict s, size_t x, void * e, uint16_t * el)
+API bool set_table_element(const set * restrict sx, size_t x, void * elp, size_t * elenp)
 {
-  element ** mg;
-  if((mg = hashtable_table_entry(s, x)))
+  ht_bucket * htb;
+  element * el;
+
+  const set_t * s = containerof(sx, set_t, sx);
+  if((htb = hashtable_table_bucket(&s->ht, x)))
   {
-    if(e)
-      *(void**)e = (*mg)->e;
-    if(el)
-      *el = (*mg)->el;
+    el = (typeof(el))htb->p;
+
+    if(elp)
+      *(void**)elp = el->p;
+    if(elenp)
+      *elenp = el->l;
+
     return true;
   }
 
   return false;
+}
+
+API void * set_table_get(const set * restrict sx, size_t x)
+{
+  ht_bucket * htb;
+  element * el;
+
+  const set_t * s = containerof(sx, set_t, sx);
+  if((htb = hashtable_table_bucket(&s->ht, x)))
+  {
+    el = (typeof(el))htb->p;
+    return el->p;
+  }
+
+  return 0;
+}
+
+API xapi set_table_delete(set * restrict sx, size_t x)
+{
+  enter;
+
+  set_t * s = containerof(sx, set_t, sx);
+
+  fatal(hashtable_table_delete, &s->htx, x);
+
+  finally : coda;
 }

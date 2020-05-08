@@ -102,7 +102,7 @@ finally:
 coda;
 }
 
-static inline xapi construct(hashtable ** restrict ht, void ** entries, int start)
+static inline xapi construct(hashtable ** restrict ht, int ** entries, int start)
 {
   enter;
 
@@ -118,6 +118,34 @@ static inline xapi construct(hashtable ** restrict ht, void ** entries, int star
   finally : coda;
 }
 
+static xapi test_sizes()
+{
+  enter;
+
+  hashtable * ht = 0;
+
+  int x;
+  for(x = 1; x <= 17; x++)
+  {
+    fatal(hashtable_create, &ht, x);
+
+    int y;
+    for(y = 0; y < 10; y++)
+    {
+      char data[32];
+      sprintf(data, "%d-%d", x, y);
+      fatal(hashtable_put, ht, data);
+      assert_notnull(hashtable_get(ht, data));
+    }
+
+    fatal(hashtable_ixfree, &ht);
+  }
+
+finally:
+  fatal(hashtable_xfree, ht);
+coda;
+}
+
 static xapi test_basic()
 {
   enter;
@@ -125,25 +153,63 @@ static xapi test_basic()
   hashtable * ht = 0;
   fatal(hashtable_create, &ht, sizeof(int));
 
-  fatal(hashtable_put, ht, (int[]){ 1 });
-  fatal(hashtable_put, ht, (int[]){ 200 });
-  fatal(hashtable_put, ht, (int[]){ 3 });
-
-  assert_eq_d(3, ht->count);
-
-  // entries by lookup
-  assert_eq_b(true, hashtable_contains(ht, (int[]){ 1 }));
-  assert_eq_b(true, hashtable_contains(ht, (int[]){ 3 }));
-  assert_eq_b(true, hashtable_contains(ht, (int[]){ 200 }));
-
-  // entries by enumeration
-  void * entries[] = {
+  int * entries[] = {
       (int[]) { 1 }
     , (int[]) { 200 }
     , (int[]) { 3 }
     , 0
   };
+
+  fatal(hashtable_put, ht, entries[0]);
+  fatal(hashtable_put, ht, entries[1]);
+  fatal(hashtable_put, ht, entries[2]);
+
+  assert_eq_d(3, ht->size);
+
+  // entries by lookup
+  assert_eq_d(*(int*)hashtable_get(ht, entries[0]), *entries[0]);
+  assert_eq_d(*(int*)hashtable_get(ht, entries[1]), *entries[1]);
+  assert_eq_d(*(int*)hashtable_get(ht, entries[2]), *entries[2]);
+
+  // entries by contains
+  assert_eq_b(true, hashtable_contains(ht, entries[0]));
+  assert_eq_b(true, hashtable_contains(ht, entries[1]));
+  assert_eq_b(true, hashtable_contains(ht, entries[2]));
+
+  // entries by enumeration
   fatal(validate_entries, ht, entries);
+
+finally:
+  fatal(hashtable_xfree, ht);
+coda;
+}
+
+int X;
+static void destroy(void * ent)
+{
+  X++;
+}
+
+static xapi test_put()
+{
+  enter;
+
+  hashtable * ht = 0;
+  fatal(hashtable_createx, &ht, sizeof(int), 0, 0, 0, destroy, 0);
+
+  int value = 5;
+  fatal(hashtable_put, ht, &value);
+  assert_eq_d(0, X);
+  assert_eq_d(true, hashtable_contains(ht, &value));
+  assert_eq_d(1, ht->size);
+
+  // put destroys the existing value
+  fatal(hashtable_put, ht, &value);
+  assert_eq_d(1, X);
+  assert_eq_d(true, hashtable_contains(ht, &value));
+  assert_eq_d(1, ht->size);
+  int * v = hashtable_get(ht, &value);
+  assert_eq_d(5, *v);
 
 finally:
   fatal(hashtable_xfree, ht);
@@ -157,7 +223,7 @@ static xapi test_delete()
   hashtable * ht = 0;
   fatal(hashtable_create, &ht, sizeof(int));
 
-  void * entries[] = {
+  int * entries[] = {
       (int[]){ 1 }
     , (int[]){ 200 }
     , (int[]){ 3 }
@@ -174,31 +240,31 @@ static xapi test_delete()
 
   // successive deletion
   fatal(hashtable_delete, ht, entries[4]);
-  assert_eq_d(4, ht->count);
+  assert_eq_d(4, ht->size);
   fatal(absent, ht, entries[4]);
   entries[4] = 0;
   fatal(validate_entries, ht, entries);
 
   fatal(hashtable_delete, ht, entries[3]);
-  assert_eq_d(3, ht->count);
+  assert_eq_d(3, ht->size);
   fatal(absent, ht, entries[3]);
   entries[3] = 0;
   fatal(validate_entries, ht, entries);
 
   fatal(hashtable_delete, ht, entries[2]);
-  assert_eq_d(2, ht->count);
+  assert_eq_d(2, ht->size);
   fatal(absent, ht, entries[2]);
   entries[2] = 0;
   fatal(validate_entries, ht, entries);
 
   fatal(hashtable_delete, ht, entries[1]);
-  assert_eq_d(1, ht->count);
+  assert_eq_d(1, ht->size);
   fatal(absent, ht, entries[1]);
   entries[1] = 0;
   fatal(validate_entries, ht, entries);
 
   fatal(hashtable_delete, ht, entries[0]);
-  assert_eq_d(0, ht->count);
+  assert_eq_d(0, ht->size);
   fatal(absent, ht, entries[0]);
   entries[0] = 0;
   fatal(validate_entries, ht, entries);
@@ -218,25 +284,34 @@ static xapi test_load()
   fatal(hashtable_create, &ht, sizeof(int));
 
   for(x = 0; x < 1000; x++)
+  {
+    assert_eq_d(x, ht->size);
     fatal(hashtable_put, ht, &x);
+  }
 
-  assert_eq_d(1000, ht->count);
+  assert_eq_d(1000, ht->size);
 
   for(x = 0; x < 1000; x++)
     assert_eq_b(true, hashtable_contains(ht, &x));
 
   for(x = 1000; x < 2000; x++)
+  {
+    assert_eq_d(x, ht->size);
     fatal(hashtable_put, ht, &x);
+  }
 
-  assert_eq_d(2000, ht->count);
+  assert_eq_d(2000, ht->size);
 
   for(x = 0; x < 2000; x++)
     assert_eq_b(true, hashtable_contains(ht, &x));
 
   for(x = 2000; x < 3000; x++)
+  {
+    assert_eq_d(x, ht->size);
     fatal(hashtable_put, ht, &x);
+  }
 
-  assert_eq_d(3000, ht->count);
+  assert_eq_d(3000, ht->size);
 
   for(x = 0; x < 3000; x++)
     assert_eq_b(true, hashtable_contains(ht, &x));
@@ -253,7 +328,7 @@ static xapi test_equality()
   hashtable * A = 0;
   hashtable * B = 0;
 
-  void * items[] = {
+  int * items[] = {
       (int[]) { 0x1234 }
     , (int[]) { 0x78bc }
     , (int[]) { 0x38bc }
@@ -267,7 +342,7 @@ static xapi test_equality()
   };
 
   fatal(construct, &A, items, 0);
-  fatal(construct, &B, items, 0);
+  fatal(construct, &B, items, 5);
 
   assert_eq_b(true, hashtable_equal(A, B));
 
@@ -295,7 +370,7 @@ static xapi test_order()
   hashtable * C = 0;
   hashtable * D = 0;
 
-  void * items[] = {
+  int * items[] = {
       (int[]) { 0x1234 }
     , (int[]) { 0x78bc }
     , (int[]) { 0x38bc }
@@ -335,15 +410,125 @@ finally:
 coda;
 }
 
+static xapi test_splice()
+{
+  enter;
+
+  hashtable * A = 0;
+  hashtable * B = 0;
+  int x;
+
+  fatal(hashtable_create, &A, sizeof(int));
+  fatal(hashtable_create, &B, sizeof(int));
+
+  for(x = 0; x < 5000; x++)
+    fatal(hashtable_put, A, &x);
+
+  // lookup in A
+  assert_eq_d(5000, A->size);
+  for(x = 0; x < 5000; x++)
+    assert_eq_b(true, hashtable_contains(A, &x));
+
+  assert_eq_b(false, hashtable_contains(A, (int[]) { 50000 }));
+  assert_eq_b(false, hashtable_contains(B, (int[]) { 50000 }));
+
+  fatal(hashtable_delete, A, (int[]) { 450 });
+  fatal(hashtable_delete, A, (int[]) { 451 });
+  fatal(hashtable_delete, A, (int[]) { 452 });
+
+  assert_eq_d(4997, A->size);
+
+  // splice A -> B
+  fatal(hashtable_splice, B, A);
+
+  assert_eq_d(0, A->size);
+  assert_eq_d(4997, B->size);
+
+  // lookup in A and B
+  for(x = 0; x < 5000; x++)
+  {
+    if(x == 450 || x == 451 || x == 452)
+      continue;
+
+    assert_eq_b(false, hashtable_contains(A, &x));
+    assert_eq_b(true, hashtable_contains(B, &x));
+  }
+
+  assert_eq_b(false, hashtable_contains(A, (int[]) { 50000 }));
+  assert_eq_b(false, hashtable_contains(B, (int[]) { 50000 }));
+
+finally:
+  fatal(hashtable_xfree, A);
+  fatal(hashtable_xfree, B);
+coda;
+}
+
+static xapi test_replicate()
+{
+  enter;
+
+  hashtable * A = 0;
+  hashtable * B = 0;
+  int x;
+
+  fatal(hashtable_create, &A, sizeof(int));
+  fatal(hashtable_create, &B, sizeof(int));
+
+  for(x = 0; x < 5000; x++)
+    fatal(hashtable_put, A, &x);
+
+  // lookup in A
+  assert_eq_d(5000, A->size);
+  for(x = 0; x < 5000; x++)
+    assert_eq_b(true, hashtable_contains(A, &x));
+
+  assert_eq_b(false, hashtable_contains(A, (int[]) { 50000 }));
+  assert_eq_b(false, hashtable_contains(B, (int[]) { 50000 }));
+
+  fatal(hashtable_delete, A, (int[]) { 450 });
+  fatal(hashtable_delete, A, (int[]) { 451 });
+  fatal(hashtable_delete, A, (int[]) { 452 });
+
+  assert_eq_d(4997, A->size);
+
+  // replicate A -> B
+  fatal(hashtable_replicate, B, A);
+
+  assert_eq_d(4997, A->size);
+  assert_eq_d(4997, B->size);
+
+  // lookup in A and B
+  for(x = 0; x < 5000; x++)
+  {
+    if(x == 450 || x == 451 || x == 452)
+      continue;
+
+    assert_eq_b(true, hashtable_contains(A, &x));
+    assert_eq_b(true, hashtable_contains(B, &x));
+  }
+
+  assert_eq_b(false, hashtable_contains(A, (int[]) { 50000 }));
+  assert_eq_b(false, hashtable_contains(B, (int[]) { 50000 }));
+
+finally:
+  fatal(hashtable_xfree, A);
+  fatal(hashtable_xfree, B);
+coda;
+}
+
 static xapi run_tests()
 {
   enter;
 
+  fatal(test_sizes);
   fatal(test_basic);
+  fatal(test_put);
   fatal(test_load);
   fatal(test_delete);
   fatal(test_equality);
   fatal(test_order);
+  fatal(test_replicate);
+  fatal(test_splice);
 
   summarize;
 

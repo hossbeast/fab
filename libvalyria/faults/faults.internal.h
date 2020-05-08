@@ -21,7 +21,7 @@
 #include "types.h"
 #include "faults.h"
 
-#define HASH_BOUNDARY_MAX_KEYS 8
+#define FAULTS_MAX_ENTRIES 8
 
 extern bool faults[VALYRIA_FAULT_RANGE_AFTER];
 extern char *fault_names[VALYRIA_FAULT_RANGE_AFTER];
@@ -30,9 +30,26 @@ extern struct {
     struct {
       char * key;
       size_t len;
-    } keys[HASH_BOUNDARY_MAX_KEYS];
+    } keys[FAULTS_MAX_ENTRIES];
     size_t len;
-  } mapdef_hash_boundary;
+  } key_index_boundary;
+
+  struct {
+    struct {
+      char * key;
+      size_t len;
+      uint32_t hash;
+    } keys[FAULTS_MAX_ENTRIES];
+    size_t len;
+  } key_hash;
+
+  struct {
+    struct {
+      uint32_t hash;
+      size_t index;
+    } hashes[FAULTS_MAX_ENTRIES];
+    size_t len;
+  } hash_index;
 } fault_state;
 
 #if FAULT_INJECTION

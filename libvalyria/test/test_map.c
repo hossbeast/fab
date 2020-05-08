@@ -40,7 +40,7 @@ static inline xapi insert(map * restrict m, const char * restrict key, int val)
   item * itemp = 0;
   fatal(xmalloc, &itemp, sizeof(*itemp));
   itemp->x = val;
-  fatal(map_set, m, MMS(key), itemp);
+  fatal(map_put, m, MMS(key), itemp, 0);
   itemp = 0;
 
 finally:
@@ -84,9 +84,16 @@ static xapi validate_enumeration(map * restrict m)
 
     if(key)
     {
-      int val;
-      sscanf(key, "%d", &val);
-      assert_eq_d(val, itemp->x);
+      if(strlen(key) == 0)
+      {
+        assert_eq_d(42, itemp->x);
+      }
+      else
+      {
+        int val;
+        sscanf(key, "%d", &val);
+        assert_eq_d(val, itemp->x);
+      }
     }
   }
 
@@ -100,6 +107,9 @@ static xapi validate_keyset(map * restrict m, char ** restrict keyset)
   int n = sentinel(keyset);
   int x;
   int i;
+
+  char ** keys;
+  uint16_t keysl;
 
   // keys in the map are in the keyset
   for(x = 0; x < m->table_size; x++)
@@ -130,7 +140,11 @@ static xapi validate_keyset(map * restrict m, char ** restrict keyset)
     assert_ne_d(m->table_size, i);
   }
 
-  finally : coda;
+  fatal(map_keys, m, &keys, &keysl);
+
+finally:
+  wfree(keys);
+coda;
 }
 
 static xapi test_basic()
@@ -144,19 +158,22 @@ static xapi test_basic()
       "1"
     , "200"
     , "3"
+    , ""
     , 0
   };
 
   fatal(insert, m, "1", 1);
   fatal(insert, m, "200", 200);
   fatal(insert, m, "3", 3);
+  fatal(insert, m, "", 42);
 
-  assert_eq_d(3, m->count);
+  assert_eq_d(4, m->size);
 
   // entries by lookup
   fatal(contains, m, "1", 1);
   fatal(contains, m, "3", 3);
   fatal(contains, m, "200", 200);
+  fatal(contains, m, "", 42);
 
   // entries by enumeration
   fatal(validate_enumeration, m);
@@ -189,7 +206,7 @@ static xapi test_recycle()
       x = (x + 1) % 5000;
     } while(x != y);
 
-    assert_eq_d(5000, m->count);
+    assert_eq_d(5000, m->size);
 
     // entries by lookup
     for(x = 0; x < 5000; x++)
@@ -221,6 +238,7 @@ static xapi test_delete()
     , "3"
     , "37"
     , "9000000"
+    , ""
     , 0
   };
 
@@ -229,38 +247,46 @@ static xapi test_delete()
   fatal(insert, m, "3", 3);
   fatal(insert, m, "37", 37);
   fatal(insert, m, "9000000", 9000000);
+  fatal(insert, m, "", 42);
 
   // successive deletion
+  fatal(map_delete, m, MMS(keyset[5]));
+  assert_eq_d(5, m->size);
+  fatal(absent, m, keyset[5]);
+  fatal(validate_enumeration, m);
+  keyset[5] = 0;
+  fatal(validate_keyset, m, keyset);
+
   fatal(map_delete, m, MMS(keyset[4]));
-  assert_eq_d(4, m->count);
+  assert_eq_d(4, m->size);
   fatal(absent, m, keyset[4]);
   fatal(validate_enumeration, m);
   keyset[4] = 0;
   fatal(validate_keyset, m, keyset);
 
   fatal(map_delete, m, MMS(keyset[3]));
-  assert_eq_d(3, m->count);
+  assert_eq_d(3, m->size);
   fatal(absent, m, keyset[3]);
   fatal(validate_enumeration, m);
   keyset[3] = 0;
   fatal(validate_keyset, m, keyset);
 
   fatal(map_delete, m, MMS(keyset[2]));
-  assert_eq_d(2, m->count);
+  assert_eq_d(2, m->size);
   fatal(absent, m, keyset[2]);
   fatal(validate_enumeration, m);
   keyset[2] = 0;
   fatal(validate_keyset, m, keyset);
 
   fatal(map_delete, m, MMS(keyset[1]));
-  assert_eq_d(1, m->count);
+  assert_eq_d(1, m->size);
   fatal(absent, m, keyset[1]);
   fatal(validate_enumeration, m);
   keyset[1] = 0;
   fatal(validate_keyset, m, keyset);
 
   fatal(map_delete, m, MMS(keyset[0]));
-  assert_eq_d(0, m->count);
+  assert_eq_d(0, m->size);
   fatal(absent, m, keyset[0]);
   fatal(validate_enumeration, m);
   keyset[0] = 0;
@@ -271,6 +297,61 @@ finally:
 coda;
 }
 
+static xapi test_successive_mappings()
+{
+  enter;
+
+  map * m = 0;
+  fatal(map_createx, &m, 0, wfree, 0);
+
+  fatal(insert, m, "1", 1);
+  assert_eq_d(1, m->size);
+
+  // new mapping with the same key should overwrite/free the previous mapping
+  fatal(insert, m, "1", 1);
+  assert_eq_d(1, m->size);
+  fatal(insert, m, "1", 1);
+  assert_eq_d(1, m->size);
+
+  // successive deletion
+  fatal(map_delete, m, MMS("1"));
+  assert_eq_d(0, m->size);
+  fatal(absent, m, "1");
+
+finally:
+  fatal(map_xfree, m);
+coda;
+}
+
+static xapi test_equal()
+{
+  enter;
+
+  map * A = 0;
+  map * B = 0;
+  fatal(map_createx, &A, 0, wfree, 0);
+  fatal(map_createx, &B, 0, wfree, 0);
+
+  assert_eq_b(true, map_equal(A, B));
+
+  fatal(insert, A, "1", 1);
+  assert_eq_b(false, map_equal(A, B));
+
+  fatal(insert, B, "1", 1);
+  assert_eq_b(true, map_equal(A, B));
+
+  fatal(map_delete, B, "1", 1);
+  assert_eq_b(false, map_equal(A, B));
+
+  fatal(map_recycle, A);
+  assert_eq_b(true, map_equal(A, B));
+
+finally:
+  fatal(map_xfree, A);
+  fatal(map_xfree, B);
+coda;
+}
+
 static xapi run_tests()
 {
   enter;
@@ -278,6 +359,8 @@ static xapi run_tests()
   fatal(test_basic);
   fatal(test_recycle);
   fatal(test_delete);
+  fatal(test_equal);
+  fatal(test_successive_mappings);
 
   summarize;
 

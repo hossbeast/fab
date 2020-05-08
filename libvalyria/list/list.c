@@ -21,224 +21,120 @@
 #include "xlinux/xstdlib.h"
 
 #include "internal.h"
-#define LIST_INTERNALS struct list_internals
-#include "list.def.h"
 #include "list.internal.h"
 
-#include "grow.h"
-#include "assure.h"
-
-/*
- * Default capacity, the minimum number of entries which can be stored without reallocating
- */
-#define DEFAULT_CAPACITY  10
-
-#define ELEMENT_SIZE(li) ({       \
-  size_t elz = sizeof(void*);     \
-  if((li)->attr & LIST_PRIMARY)   \
-  {                               \
-    elz = (li)->esz;              \
-  }                               \
-  elz;                            \
-})
-
-#define ELEMENT(li, x) ({                               \
-  void * el;                                            \
-  if((li)->attr & LIST_PRIMARY)                         \
-  {                                                     \
-    el = (li)->v + ((x) * ELEMENT_SIZE(li));            \
-  }                                                     \
-  else                                                  \
-  {                                                     \
-    el = *(char**)((li)->v + ((x) * ELEMENT_SIZE(li))); \
-  }                                                     \
-  el;                                                   \
-})
-
-#define restrict __restrict
+#include "macros.h"
 
 //
 // static
 //
 
-static xapi list_grow(list * const restrict li, size_t len)
+typedef struct container {
+  void ** items;
+  size_t * lens;
+} container;
+
+static int compare_items(const struct array_t * ar, const void * _a, const void * _b, int (*cmp_fn)(const void *, size_t, const void *, size_t))
 {
-  xproxy(grow, &li->v, ELEMENT_SIZE(li), len, li->l, &li->a);
+  if(!cmp_fn)
+    cmp_fn = ar->cmp_fn;
+
+  const value * a = _a;
+  const value * b = _b;
+
+  return cmp_fn(a->p, a->l, b->p, b->l);
 }
 
-static xapi list_assure(list * const restrict li, size_t len)
-{
-  xproxy(assure, &li->v, ELEMENT_SIZE(li), len, &li->a);
-}
-
-/// list_update
-//
-// SUMMARY
-//  overwrite elements in the list
-//
-static void list_update(list * const restrict li, size_t index, size_t len, const void * el, const void ** const restrict rv)
-{
-  // copy the elements into place
-  if(el)
-  {
-    memcpy(
-        li->v + (index * ELEMENT_SIZE(li))
-      , el
-      , len * ELEMENT_SIZE(li)
-    );
-  }
-
-  // return pointers to the elements
-  if(rv)
-  {
-    size_t x;
-    for(x = 0; x < len; x++)
-      rv[x] = ELEMENT(li, index + x);
-  }
-}
-
-/// list_move
-//
-// SUMMARY
-//  copy elements from one list to another
-//
-// REMARKS
-//  the lists must be compatible, e.g. have the same element size and value_free callbacks
-//
-static void list_move(list * const restrict dst, size_t dst_index, list * const restrict src, size_t src_index, size_t len)
-{
-  size_t elsz = ELEMENT_SIZE(dst);
-
-  memcpy(
-      dst->v + (dst_index * elsz)
-    , src->v + (src_index * elsz)
-    , len * elsz
-  );
-}
-
-/// list_free_range
-//
-// SUMMARY
-//  free a range of elements in a list
-//
-// PARAMETERS
-//  li    - pointer to list
-//  start - index of the first element
-//  len   - number of elements
-//
-static xapi list_free_range(list * const restrict li, size_t start, size_t len)
+static xapi destroy_item(const struct array_t * ar, void * item)
 {
   enter;
+
+  list_t * li = containerof(ar, list_t, ar);
+  value * val = item;
+
+  if(li->free_fn)
+    li->free_fn(val->p);
+  else if(li->xfree_fn)
+    fatal(li->xfree_fn, val->p);
+
+  finally : coda;
+}
+
+static xapi store_items(const struct array_t * ar, void * _storage, void * _container, size_t len)
+{
+  enter;
+
+  value * storage = _storage;
+  container * c = _container;
 
   size_t x;
-
-  if(li->free_element)
+  for(x = 0; x < len; x++)
   {
-    for(x = 0; x < len; x++)
-      li->free_element(ELEMENT(li, start + x));
-  }
-  else if(li->xfree_element)
-  {
-    for(x = 0; x < len; x++)
-      fatal(li->xfree_element, ELEMENT(li, start + x));
+    storage[x].p = c->items[x];
+    if(c->lens)
+      storage[x].l = c->lens[x];
   }
 
   finally : coda;
 }
 
-//
-// protected
-//
-
-xapi list_allocate(
-    list ** const restrict rv
-  , uint32_t attr
-  , size_t esz
-  , void * free_element
-  , void * xfree_element
-  , size_t capacity
-)
-{
-  enter;
-
-  list * li = 0;
-  fatal(xmalloc, &li, sizeof(*li));
-
-  li->free_element = free_element;
-  li->xfree_element = xfree_element;
-  li->esz = esz;
-  li->attr = attr;
-
-  fatal(list_grow, li, capacity ?: DEFAULT_CAPACITY);
-
-  *rv = li;
-  li = 0;
-
-finally:
-  fatal(list_xfree, li);
-coda;
-}
-
-xapi list_put(list * const restrict li, size_t index, size_t len, const void * el, const void ** const restrict rv)
-{
-  enter;
-
-  // destroy existing elements
-  fatal(list_free_range, li, index, len);
-
-  list_update(li, index, len, el, rv);
-
-  finally : coda;
-}
-
-xapi list_add(list * const restrict li, size_t index, size_t len, const void * el, const void ** const restrict rv)
-{
-  enter;
-
-  // allocate new space if necessary
-  fatal(list_assure, li, li->l + len);
-
-  // for an insertion, displace existing elements
-  memmove(
-      li->v + ((index + len) * ELEMENT_SIZE(li))
-    , li->v + (index * ELEMENT_SIZE(li))
-    , (li->l - index) * ELEMENT_SIZE(li)
-  );
-
-  list_update(li, index, len, el, rv);
-  li->l += len;
-
-  finally : coda;
-}
+static ar_operations ar_ops = {
+    compare_items : compare_items
+  , destroy_item : destroy_item
+  , store_items : store_items
+};
 
 //
 // api
 //
 
 API xapi list_createx(
-    list** const restrict li
-  , void * free_element
-  , void * xfree_element
+    list** const restrict rv
   , size_t capacity
+  , int (*cmp_fn)(const void * A, size_t Asz, const void * B, size_t Bsz)
+  , void * free_fn
+  , void * xfree_fn
 )
 {
-  xproxy(list_allocate, li, LIST_SECONDARY, 0, free_element, xfree_element, capacity);
+  enter;
+
+  list_t * li = 0;
+
+  fatal(xmalloc, &li, sizeof(*li));
+  fatal(array_init
+    , &li->ar
+    , sizeof(value)
+    , capacity
+    , &ar_ops
+    , cmp_fn
+  );
+
+  li->free_fn = free_fn;
+  li->xfree_fn = xfree_fn;
+
+  *rv = &li->lix;
+  li = 0;
+
+finally:
+  if(li)
+    fatal(list_xfree, &li->lix);
+coda;
 }
 
 API xapi list_create(list** const restrict li)
 {
-  xproxy(list_allocate, li, LIST_SECONDARY, 0, 0, 0, 0);
+  xproxy(list_createx, li, 0, 0, 0, 0);
 }
 
-API xapi list_xfree(list * const restrict li)
+API xapi list_xfree(list * const restrict lix)
 {
   enter;
 
+  list_t * li = containerof(lix, list_t, lix);
+
   if(li)
-  {
-    fatal(list_recycle, li);
-    wfree(li->v);
-  }
+    fatal(array_xdestroy, &li->ar);
+
   wfree(li);
 
   finally : coda;
@@ -254,267 +150,247 @@ API xapi list_ixfree(list ** const restrict li)
   finally : coda;
 }
 
-API size_t list_size(const list * const restrict li)
-{
-  return li->l;
-}
-
-API xapi list_recycle(list * const restrict li)
+API xapi list_recycle(list * const restrict lix)
 {
   enter;
 
-  fatal(list_truncate, li, li->l);
-  li->l = 0;
+  list_t * li = containerof(lix, list_t, lix);
+  fatal(array_recycle, &li->arx);
 
   finally : coda;
 }
 
-API void * list_get(const list * const restrict li, int x)
+API void * list_get(const list * const restrict lix, int x)
 {
-  return ELEMENT(li, x);
+  list_t * li = containerof(lix, list_t, lix);
+  value * val = array_get(&li->arx, x);
+  if(val)
+    return val->p;
+
+  return 0;
 }
 
-API xapi list_shift(list * const restrict li, void ** const restrict el)
+bool list_get_item(const list * const restrict lix, int x, void * restrict item, size_t * restrict item_len)
+{
+  list_t * li = containerof(lix, list_t, lix);
+  value * val = array_get(&li->arx, x);
+  if(val)
+  {
+    if(item)
+      *(void**)item = val->p;
+    if(item_len)
+      *item_len = val->l;
+    return true;
+  }
+
+  return false;
+}
+
+API xapi list_push(list * const lix, void * item, size_t item_len)
+{
+  xproxy(list_push_range, lix, &item, &item_len, 1);
+}
+
+API xapi list_push_range(list * const lix, void * items, size_t * restrict items_lens, size_t len)
 {
   enter;
 
-  void * e = 0;
-  if(li->l)
-  {
-    e = ELEMENT(li, 0);
-    if(li->free_element)
-      li->free_element(e);
-    else if(li->xfree_element)
-      fatal(li->xfree_element, e);
+  list_t * li = containerof(lix, list_t, lix);
 
-    memmove(
-        li->v
-      , li->v + ELEMENT_SIZE(li)
-      , (li->l - 1) * ELEMENT_SIZE(li)
-    );
-
-    li->l--;
-  }
-  if(el)
-    *el = e;
+  container c = { items : items, lens : items_lens };
+  fatal(array_push_range, &li->arx, &c, len);
 
   finally : coda;
 }
 
-API xapi list_pop(list * const restrict li, void ** const restrict el)
+API xapi list_pop(list * const restrict lix)
 {
   enter;
 
-  void * e = 0;
-  if(li->l)
-  {
-    e = ELEMENT(li, li->l - 1);
-    if(li->free_element)
-      li->free_element(e);
-    else if(li->xfree_element)
-      fatal(li->xfree_element, e);
-    li->l--;
-  }
-  if(el)
-    *el = e;
+  list_t * li = containerof(lix, list_t, lix);
+  fatal(array_pop, &li->arx);
 
   finally : coda;
 }
 
-API xapi list_push(list * const li, const void * el)
+API xapi list_unshift(list * const lix, void * el, size_t item_len)
 {
-  xproxy(list_add, li, li->l, 1, &el, 0);
+  xproxy(list_unshift_range, lix, &el, &item_len, 1);
 }
 
-API xapi list_push_range(list * const li, const void * el, size_t len)
-{
-  xproxy(list_add, li, li->l, len, el, 0);
-}
-
-API xapi list_unshift(list * const li, const void * el)
-{
-  xproxy(list_add, li, 0, 1, &el, 0);
-}
-
-API xapi list_unshift_range(list * const li, const void * el, size_t len)
-{
-  xproxy(list_add, li, 0, len, el, 0);
-}
-
-API xapi list_insert(list * const li, size_t index, const void * el)
-{
-  xproxy(list_add, li, index, 1, &el, 0);
-}
-
-API xapi list_insert_range(list * const li, size_t index, const void * el, size_t len)
-{
-  xproxy(list_add, li, index, len, el, 0);
-}
-
-API xapi list_set(list * const restrict li, size_t index, const void * el)
-{
-  xproxy(list_put, li, index, 1, &el, 0);
-}
-
-API xapi list_set_range(list * const restrict li, size_t index, const void * el, size_t len)
-{
-  xproxy(list_put, li, index, len, el, 0);
-}
-
-API void list_sort(list * const restrict li, int (*compar)(const void *, const void *, void *), void * arg)
-{
-  if(li->attr & LIST_PRIMARY)
-  {
-    qsort_r(li->v, li->l, ELEMENT_SIZE(li), compar, arg);
-  }
-
-  else if(li->attr & LIST_SECONDARY)
-  {
-    int lcompar(const void * A, const void * B, void * arg)
-    {
-      return compar(*(const void **)A, *(const void **)B, arg);
-    };
-
-    qsort_r(li->v, li->l, ELEMENT_SIZE(li), lcompar, arg);
-  }
-}
-
-API xapi list_sublist(list * const restrict li, size_t index, size_t len, list ** const restrict rv)
+API xapi list_unshift_range(list * const lix, void * items, size_t * restrict items_lens, size_t len)
 {
   enter;
+
+  list_t * li = containerof(lix, list_t, lix);
+
+  container c = { items : items, lens : items_lens };
+  fatal(array_unshift_range, &li->arx, &c, len);
+
+  finally : coda;
+}
+
+API xapi list_shift(list * const restrict lix)
+{
+  enter;
+
+  list_t * li = containerof(lix, list_t, lix);
+  fatal(array_shift, &li->arx);
+
+  finally : coda;
+}
+
+API xapi list_insert(list * const lix, size_t index, void * item, size_t item_len)
+{
+  xproxy(list_insert_range, lix, index, &item, &item_len, 1);
+}
+
+API xapi list_insert_range(list * const lix, size_t index, void * items, size_t * restrict items_lens, size_t len)
+{
+  enter;
+
+  list_t * li = containerof(lix, list_t, lix);
+
+  container c = { items : items, lens : items_lens };
+  fatal(array_insert_range, &li->arx, index, &c, len);
+
+  finally : coda;
+}
+
+API xapi list_update(list * const lix, size_t index, void * item, size_t item_len)
+{
+  xproxy(list_update_range, lix, index, &item, &item_len, 1);
+}
+
+API xapi list_update_range(list * const lix, size_t index, void * items, size_t * restrict items_lens, size_t len)
+{
+  enter;
+
+  list_t * li = containerof(lix, list_t, lix);
+
+  container c = { items : items, lens : items_lens };
+  fatal(array_update_range, &li->arx, index, &c, len);
+
+  finally : coda;
+}
+
+API xapi list_delete(list * const restrict lix, size_t index)
+{
+  xproxy(list_delete_range, lix, index, 1);
+}
+
+API xapi list_delete_range(list * const restrict lix, size_t index, size_t len)
+{
+  enter;
+
+  list_t * li = containerof(lix, list_t, lix);
+  fatal(array_delete_range, &li->arx, index, len);
+
+  finally : coda;
+}
+
+API xapi list_sublist(list * const restrict lix, size_t index, size_t len, list ** const restrict rv)
+{
+  enter;
+
+  list_t * li = containerof(lix, list_t, lix);
+  list_t * dst = 0;
 
   if(!*rv)
-    fatal(list_createx, rv, li->free_element, li->xfree_element, len);
-  fatal(list_recycle, *rv);
+    fatal(list_createx, rv, li->size, li->cmp_fn, li->free_fn, li->xfree_fn);
+  dst = containerof(*rv, list_t, lix);
 
-  fatal(list_assure, *rv, len);
-  memcpy(
-      (*rv)->v
-    , li->v + (index * ELEMENT_SIZE(li))
-    , len * ELEMENT_SIZE(li)
-  );
-  (*rv)->l = len;
+  fatal(list_recycle, &dst->lix);
+  fatal(list_replicate, &dst->lix, 0, &li->lix, index, len);
 
   finally : coda;
 }
 
-struct context
-{
-  int (*compar)(void *, const void *, size_t);
-  const char * v;
-  size_t esz;
-  void * ud;
-};
-
-static int pcompar(struct context * ctx, const void * el)
-{
-  return ctx->compar(ctx->ud, el, ((char*)el - ctx->v) / ctx->esz);
-};
-
-static int scompar(struct context * ctx, const void * el)
-{
-  return ctx->compar(ctx->ud, *(const void **)el, ((char*)el - ctx->v) / ctx->esz);
-}
-
-API void * list_search_range(list * const restrict li, size_t index, size_t len, void * ud, int (*compar)(void *, const void *, size_t))
-{
-  void * elp = 0;
-
-  struct context ctx = { v : li->v, ud : ud, esz : ELEMENT_SIZE(li), compar : compar };
-
-  if(li->attr & LIST_PRIMARY)
-  {
-    void * res;
-    if((res = bsearch(&ctx, li->v + (index * ELEMENT_SIZE(li)), len, ctx.esz, (void*)pcompar)))
-      elp = res;
-  }
-  else // li->attr & LIST_SECONDARY
-  {
-    void * res;
-    if((res = bsearch(&ctx, li->v + (index * ELEMENT_SIZE(li)), len, ctx.esz, (void*)scompar)))
-      elp = *(void **)res;
-  }
-
-  return elp;
-}
-
-API void * list_search(list * const restrict li, void * ud, int (*compar)(void *, const void *, size_t))
-{
-  return list_search_range(li, 0, li->l, ud, compar);
-}
-
-API xapi list_splice(list * const restrict dst, size_t dst_index, list * const restrict src, size_t src_index, size_t len)
+API xapi list_splice(list * const restrict dstx, size_t dst_index, list * const restrict srcx, size_t src_index, int len)
 {
   enter;
 
-  fatal(list_free_range, dst, dst_index, len);
-  list_move(dst, dst_index, src, src_index, len);
+  list_t * dst = containerof(dstx, list_t, lix);
+  list_t * src = containerof(srcx, list_t, lix);
+
+  fatal(array_splice, &dst->arx, dst_index, &src->arx, src_index, len);
 
   finally : coda;
 }
 
-API xapi list_replicate(list * const restrict dst, size_t dst_index, list * const restrict src, size_t src_index, size_t len)
+API xapi list_replicate(list * const restrict dstx, size_t dst_index, list * const restrict srcx, size_t src_index, int len)
 {
   enter;
 
-  // allocate new space if necessary
-  fatal(list_assure, dst, dst->l + len);
+  list_t * dst = containerof(dstx, list_t, lix);
+  list_t * src = containerof(srcx, list_t, lix);
 
-  // displace existing elements
-  memmove(
-      dst->v + ((dst_index + len) * ELEMENT_SIZE(dst))
-    , dst->v + (dst_index * ELEMENT_SIZE(dst))
-    , (dst->l - dst_index) * ELEMENT_SIZE(dst)
-  );
-
-  list_move(dst, dst_index, src, src_index, len);
-  dst->l += len;
+  fatal(array_replicate, &dst->arx, dst_index, &src->arx, src_index, len);
 
   finally : coda;
 }
 
-API xapi list_truncate(list * const restrict li, size_t len)
+API xapi list_truncate(list * const restrict lix, size_t len)
 {
   enter;
 
-  fatal(list_free_range, li, 0, len);
-  li->l = len;
+  list_t * li = containerof(lix, list_t, lix);
+  fatal(array_truncate, &li->arx, len);
 
   finally : coda;
 }
 
-API xapi list_delete(list * const restrict li, size_t index)
+API bool list_equal(list * const restrict Ax, list * const restrict Bx, int (*cmp_fn)(const void * A, size_t Asz, const void * B, size_t Bsz))
 {
-  enter;
-
-  fatal(list_free_range, li, index, 1);
-
-  // overwrite
-  memmove(
-      li->v + (index * ELEMENT_SIZE(li))
-    , li->v + ((index + 1) * ELEMENT_SIZE(li))
-    , (li->l - index - 1) * ELEMENT_SIZE(li)
-  );
-
-  li->l--;
-
-  finally : coda;
+  list_t * A = containerof(Ax, list_t, lix);
+  list_t * B = containerof(Bx, list_t, lix);
+  return array_equal(&A->arx, &B->arx, cmp_fn);
 }
 
-API xapi list_delete_range(list * const restrict li, size_t index, size_t len)
+API void list_sort(list * const restrict lix, int (*cmp_fn)(const void *A, size_t Asz, const void *B, size_t Bsz))
 {
-  enter;
+  list_t * li = containerof(lix, list_t, lix);
+  array_sort(&li->arx, cmp_fn);
+}
 
-  fatal(list_free_range, li, index, len);
+API bool list_search(
+    const list * const restrict lix
+  , void * key_data
+  , size_t key_len
+  , int (*cmp_fn)(const void *A, size_t Asz, const void *B, size_t Bsz)
+  , void * item
+  , size_t * restrict item_len
+  , size_t * restrict lx
+  , int * restrict lc
+)
+{
+  return list_search_range(lix, 0, lix->size, key_data, key_len, cmp_fn, item, item_len, lx, lc);
+}
 
-  // overwrite
-  memmove(
-      li->v + (index * ELEMENT_SIZE(li))
-    , li->v + ((index + len) * ELEMENT_SIZE(li))
-    , (li->l - index - len) * ELEMENT_SIZE(li)
-  );
+API bool list_search_range(
+    const list * const restrict lix
+  , size_t index
+  , size_t len
+  , void * key_data
+  , size_t key_len
+  , int (*cmp_fn)(const void *A, size_t Asz, const void *B, size_t Bsz)
+  , void * item
+  , size_t * restrict item_len
+  , size_t * restrict lx
+  , int * restrict lc
+)
+{
+  list_t * li = containerof(lix, list_t, lix);
 
-  li->l -= len;
+  value key = { p : key_data, l : key_len };
 
-  finally : coda;
+  value * result;
+  array_search_range(&li->arx, index, len, &key, cmp_fn, &result, lx, lc);
+
+  if(item)
+    *(void**)item = result ? result->p : 0;
+  if(item_len)
+    *item_len = result ? result->l : 0;
+
+  return !!result;
 }

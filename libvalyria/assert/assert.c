@@ -64,19 +64,19 @@ static void set_info_push(const char * const restrict name, xunit_arg * a)
   for(x = 0; x < ht->table_size; x++)
   {
     const void * e;
-    uint16_t el;
+    size_t el;
     if(!set_table_element(ht, x, &e, &el))
       continue;
 
     if(bufz > 1)
       bufz += znloads(buf + bufz, bufsz - bufz, " ");
 
-    bufz += strescw(e, el, buf + bufz, bufsz - bufz);
+    bufz += strescw(buf + bufz, bufsz - bufz, e, el);
   }
 
-  znloads(buf + bufz, bufsz - bufz, "}");
+  bufz += znloads(buf + bufz, bufsz - bufz, "}");
 
-  xapi_info_pushs(name, buf);
+  xapi_info_pushw(name, buf, bufz);
 }
 
 //

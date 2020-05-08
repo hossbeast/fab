@@ -26,22 +26,15 @@ SUMMARY
 */
 
 #include <stdarg.h>
-#include <sys/types.h>
 
+#include "types.h"
 #include "xapi.h"
 
-typedef struct pstring
-{
-  char * s;   // buffer
-  size_t l;   // size
-
-#ifndef PSTRING_INTERNALS
-# define PSTRING_INTERNALS
-#endif
-  PSTRING_INTERNALS;
+typedef struct pstring {
+  char * s;     // buffer
+  size_t size;  // size
+  size_t a;     // allocated size
 } pstring;
-
-#define restrict __restrict
 
 /// pscreate
 //
@@ -196,5 +189,4 @@ xapi pscatc(pstring * restrict p, int c)
 int pscmp(const pstring * const restrict A, const pstring * const restrict B)
   __attribute__((nonnull));
 
-#undef restrict
 #endif

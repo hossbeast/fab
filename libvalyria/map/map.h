@@ -27,23 +27,16 @@ SUMMARY
  dynamically resizing unordered collection of key/value pairs
 
 REMARKS
- meant to be used as secondary storage for the elements in the collection
+ map stores values as references to objects - the set operation stores a reference
 
 */
 
 #include "xapi.h"
 #include "types.h"
-#include "hashtable.h"
 
-struct mapping;
-
-typedef struct map
-{
-  hashtable;
-
-  void (*free_value)(void *);
-  xapi (*xfree_value)(void *);
-  void (*free_mapping)(struct mapping *);
+typedef struct map {
+  size_t size;
+  size_t table_size;
 } map;
 
 /// map_create
@@ -63,8 +56,8 @@ xapi map_create(map ** restrict m)
 xapi map_createx(
     map ** restrict m
   , size_t capacity
-  , void * free_value
-  , void * xfree_value
+  , void (*free_value)(void * value)
+  , xapi (*xfree_value)(void * value)
 )
   __attribute__((nonnull(1)));
 
@@ -83,40 +76,56 @@ xapi map_xfree(map * restrict map);
 xapi map_ixfree(map ** restrict map)
   __attribute__((nonnull));
 
-/// map_set
+/// map_put
 //
 // SUMMARY
-//  add or update an element
+//  create or update a mapping
 //
 // PARAMETERS
-//  map     - map
-//  key     - pointer to key
-//  keyl    - key length > 0
-//  [value] - pointer to value
+//  map         - map
+//  key         - pointer to key
+//  keyl        - key length
+//  [value]     - pointer to value
+//  [value_len] - value length
 //
-xapi map_set(map * restrict m, const void * key, size_t keyl, void * restrict value)
+xapi map_put(map * restrict m, const void * restrict key, uint16_t keyl, void * value, size_t value_len)
   __attribute__((nonnull(1, 2)));
 
 /// map_get
 //
 // SUMMARY
-//  given a key, returns pointer to associated value, or 0 if not found
+//  given a key, get a pointer to the associated value, or 0 if not found
 //
 // PARAMETERS
 //  map  - map
 //  key  - pointer to key
 //  keyl - length of key
 //
-// EXAMPLE
-//  int k = 15;
-//  int* v = 0;
-//  if((v = map_get(map, MM(k))) == 0)
-//    /* key is not set */
-//
 // SUMMARY
 //  returns pointer to the stored value, or 0 if not found
 //
-void * map_get(const map * restrict m, const void * restrict key, size_t keyl)
+void * map_get(const map * restrict m, const void * restrict key, uint16_t keyl)
+  __attribute__((nonnull));
+
+/// map_get_mapping
+//
+// SUMMARY
+//  given a key, returns
+//
+// PARAMETERS
+//  m           - map
+//  key         - pointer to key
+//  keyl        - length of key
+//  [value]     - (returns) pointer to the value
+//  [value_len] - (returns) value length
+//
+// RETURNS
+//  true if a mapping exists with the specified key
+//
+bool map_get_mapping(const map * restrict m, const void * restrict key, uint16_t keyl, void * value, size_t * restrict value_len)
+  __attribute__((nonnull(1, 2)));
+
+bool map_equal(map * const restrict A, map * const restrict B)
   __attribute__((nonnull));
 
 /// map_recycle
@@ -136,7 +145,7 @@ xapi map_recycle(map * restrict map)
 //  key  - pointer to key
 //  keyl - length of key
 //
-xapi map_delete(map * restrict m, const void * restrict key, size_t keyl)
+xapi map_delete(map * restrict m, const void * restrict key, uint16_t keyl)
   __attribute__((nonnull));
 
 /// map_keys
@@ -149,7 +158,7 @@ xapi map_delete(map * restrict m, const void * restrict key, size_t keyl)
 //  list   - (returns) list, to be freed by the caller
 //  listl  - (returns) size of list
 //
-xapi map_keys(const map * restrict m, const char *** restrict keys, size_t * restrict keysl)
+xapi map_keys(const map * restrict m, void * restrict keys, uint16_t * restrict keysl)
   __attribute__((nonnull));
 
 /// map_values
@@ -165,7 +174,7 @@ xapi map_keys(const map * restrict m, const char *** restrict keys, size_t * res
 xapi map_values(const map * restrict m, void * restrict values, size_t * restrict valuesl)
   __attribute__((nonnull));
 
-/// map_keyat
+/// map_table_key
 //
 // SUMMARY
 //  get the key at the specified slot, if any
@@ -177,7 +186,7 @@ xapi map_values(const map * restrict m, void * restrict values, size_t * restric
 const void * map_table_key(const map * restrict m, size_t x)
   __attribute__((nonnull));
 
-/// map_valueat
+/// map_table_value
 //
 // SUMMARY
 //  get the value at the specified slot, if any
@@ -187,6 +196,38 @@ const void * map_table_key(const map * restrict m, size_t x)
 //  x - slot index
 //
 void * map_table_value(const map * restrict m, size_t x)
+  __attribute__((nonnull));
+
+/// map_table_mapping
+//
+// SUMMARY
+//  get the mapping at the specified slot, if any
+//
+// PARAMETERS
+//  m    - map
+//  x    - slot index
+//  [k]  - (returns) key
+//  [kl] - (returns) key length
+//  [v]  - (returns) value
+//  [vl] - (returns) value length
+//
+bool map_table_mapping(const map * restrict m, size_t x, const void ** restrict k, uint16_t * restrict kl, void * v, size_t * restrict vl)
+  __attribute__((nonnull(1)));
+
+/// map_splice
+//
+// SUMMARY
+//  copy elements from one map to another
+//
+xapi map_splice(map * restrict dst, map * restrict src)
+  __attribute__((nonnull));
+
+/// map_replicate
+//
+// SUMMARY
+//  copy elements from one map to another
+//
+xapi map_replicate(map * restrict dst, map * restrict src)
   __attribute__((nonnull));
 
 #endif

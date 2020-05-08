@@ -53,54 +53,23 @@
 
 #define VALUE(m, x) ({                                \
   void * val;                                         \
-  val = *(char**)((m)->tv + ((x) * VALUE_SIZE(m))); \
+  val = *(char**)((m)->tv + ((x) * VALUE_SIZE(m)));   \
   val;                                                \
 })
-
-typedef struct
-{
-  uint8_t attr;
-  uint32_t h;
-
-  size_t first;   // index of the first entry in the set
-  size_t next;    // index of the next entry in the set
-  size_t last;    // index of the last entry in the set
-
-  struct {      // first entry in the set
-    size_t n;     // number of values in the set
-    size_t a;     // allocated size of p
-    size_t l;     // length of the key
-    char   p[];
-  };
-} multimap_key;
-
-struct multimap
-{
-  size_t table_size;          // table length, in elements (always a power of two)
-  size_t overflow_size;       // size at which to rehash
-  size_t lm;                  // bitmask equal to table_size - 1
-
-  void (*free_value)(void *);
-  xapi (*xfree_value)(void *);
-
-  size_t size;         // number of active entries
-  multimap_key ** tk;  // key table
-  char * tv;           // value table
-};
 
 static uint32_t hash_reduce(uint32_t h, const char * restrict k, size_t kl, uint32_t lm)
 {
   size_t x;
 
-  if(fault(MAPDEF_HASH_BOUNDARY_ALL))
+  if(fault(ALL_INDEX_BOUNDARY))
   {
     return lm;
   }
-  else if(fault(MAPDEF_HASH_BOUNDARY_KEY))
+  else if(fault(KEY_INDEX_BOUNDARY))
   {
-    for(x = 0; x < fault_state.mapdef_hash_boundary.len; x++)
+    for(x = 0; x < fault_state.key_index_boundary.len; x++)
     {
-      typeof(*fault_state.mapdef_hash_boundary.keys) faultkey = fault_state.mapdef_hash_boundary.keys[x];
+      typeof(*fault_state.key_index_boundary.keys) faultkey = fault_state.key_index_boundary.keys[x];
 
       if(kl == faultkey.len && memcmp(k, faultkey.key, kl) == 0)
         return lm;
@@ -108,6 +77,14 @@ static uint32_t hash_reduce(uint32_t h, const char * restrict k, size_t kl, uint
   }
 
   return h & lm;
+}
+
+static uint32_t hash(const void * restrict key, size_t keyl)
+{
+  if(keyl == 0)
+    return DATA_ZERO_LEN_HASH;
+
+  return hash32(0, key, keyl);
 }
 
 /// probe
@@ -118,7 +95,7 @@ static uint32_t hash_reduce(uint32_t h, const char * restrict k, size_t kl, uint
 // RETURN
 //  boolean indicating whether the key was found
 //
-static bool __attribute__((nonnull)) probe(const multimap * restrict m, uint32_t h, const void * restrict key, size_t keyl, size_t * restrict index)
+static bool __attribute__((nonnull)) probe(const multimap_t * restrict m, uint32_t h, const void * restrict key, size_t keyl, size_t * restrict index)
 {
   size_t i = hash_reduce(h, key, keyl, m->lm);
   multimap_key * k = m->tk[i];
@@ -158,7 +135,7 @@ static bool __attribute__((nonnull)) probe(const multimap * restrict m, uint32_t
   }
 }
 
-xapi multimap_rehash(multimap * restrict m)
+xapi multimap_rehash(multimap_t * restrict m)
 {
   enter;
 
@@ -264,7 +241,7 @@ API xapi multimap_create(multimap ** const restrict m)
 }
 
 API xapi multimap_createx(
-    multimap ** const restrict m
+    multimap ** const restrict mx
   , void * free_value
   , void * xfree_value
   , size_t capacity
@@ -272,34 +249,44 @@ API xapi multimap_createx(
 {
   enter;
 
-  fatal(xmalloc, m, sizeof(**m));
+  multimap_t * m = 0;
+
+  fatal(xmalloc, &m, sizeof(*m));
 
   // compute initial table size for 100 keys @ given saturation
-  (*m)->table_size = (capacity ?: DEFAULT_CAPACITY) * (1 / MAX_SATURATION);
+  m->table_size = (capacity ?: DEFAULT_CAPACITY) * (1 / MAX_SATURATION);
 
   // round up to the next highest power of 2
-  (*m)->table_size = roundup2((*m)->table_size);
-  (*m)->overflow_size = (size_t)((*m)->table_size * MAX_SATURATION);
-  (*m)->lm = (*m)->table_size - 1;
+  m->table_size = roundup2(m->table_size);
+  m->overflow_size = (size_t)(m->table_size * MAX_SATURATION);
+  m->lm = m->table_size - 1;
 
-  (*m)->free_value = free_value;
-  (*m)->xfree_value = xfree_value;
+  m->free_value = free_value;
+  m->xfree_value = xfree_value;
 
-  fatal(xmalloc, &(*m)->tk, sizeof(*(*m)->tk) * (*m)->table_size);
-  fatal(xmalloc, &(*m)->tv, VALUE_SIZE(*m) * (*m)->table_size);
+  fatal(xmalloc, &m->tk, sizeof(*m->tk) * m->table_size);
+  fatal(xmalloc, &m->tv, VALUE_SIZE(m) * m->table_size);
 
-  finally : coda;
+  *mx = &m->mx;
+  m = 0;
+
+finally:
+  if(m)
+    fatal(multimap_xfree, &m->mx);
+coda;
 }
 
-API xapi multimap_set(multimap * restrict m, const void * restrict key, size_t keyl, void * restrict value)
+API xapi multimap_set(multimap * restrict mx, const void * restrict key, size_t keyl, void * restrict value)
 {
   enter;
+
+  multimap_t * m = containerof(mx, multimap_t, mx);
 
   // grow the table and rehash the entryset
   if(m->size == m->overflow_size)
     fatal(multimap_rehash, m);
 
-  uint32_t h = hash32(0, key, keyl);
+  uint32_t h = hash(key, keyl);
 
   size_t i;
   size_t last;
@@ -367,7 +354,7 @@ API xapi multimap_set(multimap * restrict m, const void * restrict key, size_t k
 }
 
 API xapi multimap_get(
-    const multimap * restrict m
+    const multimap * restrict mx
   , const void * restrict key
   , size_t keyl
   , void * _tmp
@@ -382,7 +369,9 @@ API xapi multimap_get(
     char v[];
   } ** tmp = _tmp;
 
-  uint32_t h = hash32(0, key, keyl);
+  uint32_t h = hash(key, keyl);
+
+  const multimap_t * m = containerof(mx, multimap_t, mx);
 
   size_t i;
   if(probe(m, h, key, keyl, &i) == 0)
@@ -425,18 +414,15 @@ API xapi multimap_get(
   finally : coda;
 }
 
-API size_t multimap_size(const multimap * const restrict m)
-{
-  return m->size;
-}
-
-API xapi multimap_xfree(multimap * const restrict m)
+API xapi multimap_xfree(multimap * const restrict mx)
 {
   enter;
 
+  multimap_t * m = containerof(mx, multimap_t, mx);
+
   if(m)   // free-like semantics
   {
-    fatal(multimap_recycle, m);
+    fatal(multimap_recycle, &m->mx);
 
     int x;
     for(x = 0; x < m->table_size; x++)
@@ -461,13 +447,9 @@ API xapi multimap_ixfree(multimap ** const restrict m)
   finally : coda;
 }
 
-API size_t multimap_table_size(const multimap * restrict m)
+API const void * multimap_table_key(const multimap * restrict mx, size_t x)
 {
-  return m->table_size;
-}
-
-API const void * multimap_table_key(const multimap * restrict m, size_t x)
-{
+  multimap_t * m = containerof(mx, multimap_t, mx);
   multimap_key * k = m->tk[x];
 
   if(!k)
@@ -482,8 +464,9 @@ API const void * multimap_table_key(const multimap * restrict m, size_t x)
   return k->p;
 }
 
-API void * multimap_table_value(const multimap * restrict m, size_t x)
+API void * multimap_table_value(const multimap * restrict mx, size_t x)
 {
+  multimap_t * m = containerof(mx, multimap_t, mx);
   multimap_key * k = m->tk[x];
 
   if(!k)
@@ -495,11 +478,12 @@ API void * multimap_table_value(const multimap * restrict m, size_t x)
   return VALUE(m, x);
 }
 
-API xapi multimap_delete(multimap * const restrict m, const void * restrict key, size_t keyl)
+API xapi multimap_delete(multimap * const restrict mx, const void * restrict key, size_t keyl)
 {
   enter;
 
-  uint32_t h = hash32(0, key, keyl);
+  multimap_t * m = containerof(mx, multimap_t, mx);
+  uint32_t h = hash(key, keyl);
 
   size_t i = 0;
   if(probe(m, h, key, keyl, &i))
@@ -528,9 +512,11 @@ API xapi multimap_delete(multimap * const restrict m, const void * restrict key,
   finally : coda;
 }
 
-API xapi multimap_recycle(multimap * const restrict m)
+API xapi multimap_recycle(multimap * const restrict mx)
 {
   enter;
+
+  multimap_t * m = containerof(mx, multimap_t, mx);
 
   // reset all lengths; all allocations remain intact
   int x;
@@ -553,9 +539,11 @@ API xapi multimap_recycle(multimap * const restrict m)
   finally : coda;
 }
 
-API xapi multimap_keys(const multimap * restrict m, const char *** restrict keys, size_t * restrict keysl)
+API xapi multimap_keys(const multimap * restrict mx, const char *** restrict keys, size_t * restrict keysl)
 {
   enter;
+
+  const multimap_t * m = containerof(mx, multimap_t, mx);
 
   fatal(xmalloc, keys, m->size * sizeof(*keys));
   (*keysl) = 0;
