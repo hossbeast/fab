@@ -327,7 +327,15 @@ xapi xsetsid(void);
 //  xapi proxy for execv
 //
 xapi xexecv(const char * path, char * const argv[])
-  __attribute__((nonnull(1)));
+  __attribute__((nonnull));
+
+/// xexecve
+//
+// SUMMARY
+//  xapi proxy for execvpe
+//
+xapi xexecve(const char * path, char * const argv[], char * const envp[])
+  __attribute__((nonnull));
 
 /// xexecvp
 //
@@ -335,7 +343,7 @@ xapi xexecv(const char * path, char * const argv[])
 //  xapi proxy for execvp
 //
 xapi xexecvp(const char * file, char * const argv[])
-  __attribute__((nonnull(1)));
+  __attribute__((nonnull));
 
 /// xchdir
 //
@@ -367,5 +375,13 @@ xapi xfchdir(int fd);
 //  get the id of the current thread
 //
 pid_t gettid(void);
+
+/// xpipe
+//
+// SUMMARY
+//  xapi proxy for pipe
+//
+xapi xpipe(int filedes[2])
+  __attribute__((nonnull));
 
 #endif

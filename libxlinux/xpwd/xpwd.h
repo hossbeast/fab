@@ -23,8 +23,6 @@
 
 #include "xapi.h"
 
-#define restrict __restrict
-
 /// uxgetpwuid_r
 //
 // SUMMARY
@@ -40,5 +38,4 @@ xapi uxgetpwuid_r(uid_t uid, struct passwd * pwd, char * buf, size_t buflen, str
 xapi xgetpwuid(uid_t uid, struct passwd ** const restrict pwd)
   __attribute__((nonnull));
 
-#undef restrict
 #endif

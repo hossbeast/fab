@@ -290,3 +290,19 @@ finally:
   va_end(va);
 coda;
 }
+
+API xapi xsplice(ssize_t * restrict r, int fd_in, loff_t *off_in, int fd_out, loff_t *off_out, size_t len, unsigned int flags)
+{
+  enter;
+
+  if(r && (*r = splice(fd_in, off_in, fd_out, off_out, len, flags)) == -1)
+  {
+    tfail(perrtab_KERNEL, errno);
+  }
+  else if(!r && splice(fd_in, off_in, fd_out, off_out, len, flags) == -1)
+  {
+    tfail(perrtab_KERNEL, errno);
+  }
+
+  finally : coda;
+}

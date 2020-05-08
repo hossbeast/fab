@@ -22,8 +22,6 @@
 
 #include "xapi.h"
 
-#define restrict __restrict
-
 /// xmmap
 //
 // SUMMARY
@@ -49,5 +47,4 @@ xapi xmunmap(void * addr, size_t length);
 //
 xapi ixmunmap(void * addr, size_t length);
 
-#undef restrict
 #endif

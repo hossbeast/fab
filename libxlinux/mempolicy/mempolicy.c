@@ -32,8 +32,6 @@ __thread mempolicy ** policies;
 __thread size_t policiesl;
 __thread size_t policiesa;
 
-#define restrict __restrict
-
 void mempolicy_teardown()
 {
   wfree(policies);

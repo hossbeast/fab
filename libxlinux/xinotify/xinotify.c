@@ -21,12 +21,12 @@
 #include "xinotify.h"
 #include "errtab/KERNEL.errtab.h"
 
-API xapi xinotify_init(int * id)
+API xapi xinotify_init(int * id, int flags)
 {
   enter;
 
   int rv;
-  if((rv = inotify_init()) < 0)
+  if((rv = inotify_init1(flags)) < 0)
     tfail(perrtab_KERNEL, rv);
 
   *id = rv;

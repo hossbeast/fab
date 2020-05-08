@@ -68,22 +68,19 @@ API xapi xmalloc(void* target, size_t size)
 {
   enter;
 
-  void * mem = 0;
+  //void * mem = 0;
 
   if(policy)
   {
     fatal(policy->malloc, policy, target, size);
   }
-  else if((mem = calloc(size, 1)) == 0)
-  {
-    tfail(perrtab_KERNEL, errno);
-  }
   else
   {
-    *(void**)target = mem;
+    posix_memalign(target, sizeof(void*) * 2, size);
+    memset(*(void**)target, 0, size);
   }
 
-finally :
+finally:
   xapi_infof("size", "%zu", size);
 coda;
 }

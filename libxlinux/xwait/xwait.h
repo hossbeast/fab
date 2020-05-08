@@ -19,8 +19,7 @@
 #define _XWAIT_H
 
 #include "xapi.h"
-
-#define restrict __restrict
+#include "types.h"
 
 /// xwait
 //
@@ -38,5 +37,7 @@ xapi xwait(int * status)
 xapi xwaitpid(pid_t pid, int * status, int options)
   __attribute__((nonnull(2)));
 
-#undef restrict
+xapi uxwaitid(idtype_t idtype, id_t id, siginfo_t *infop, int options)
+  __attribute__((nonnull));
+
 #endif

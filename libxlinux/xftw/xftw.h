@@ -24,8 +24,6 @@
 struct FTW;
 struct stat;
 
-#define restrict __restrict
-
 /// xftw
 //
 // SUMMARY
@@ -67,5 +65,4 @@ xapi xnftw_nth(
 )
   __attribute__((nonnull));
 
-#undef restrict
 #endif

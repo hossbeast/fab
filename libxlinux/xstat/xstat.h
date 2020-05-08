@@ -22,97 +22,47 @@
 #include <sys/stat.h>
 #include <unistd.h>
 #include <stdarg.h>
+#include <fcntl.h>
 
 #include "xapi.h"
 
-#define restrict __restrict
-
-/// xstat
+/// xfstatat
 //
 // SUMMARY
-//  proxy for stat
+//  proxy for fstatat
 //
 // VARIANTS
 //  s/f/vf - different ways to pass path
 //
-xapi xstats(struct stat * restrict buf, const char * restrict path)
-  __attribute__((nonnull(1, 2)));
+xapi xfstatats(int dirfd, int flags, struct stat * restrict buf, const char * restrict path)
+  __attribute__((nonnull(3, 4)));
 
-xapi xstatf(struct stat * restrict buf, const char * restrict path_fmt, ...)
-  __attribute__((nonnull(1, 2)));
+xapi xfstatatf(int dirfd, int flags, struct stat * restrict buf, const char * restrict path_fmt, ...)
+  __attribute__((nonnull(3, 4)))
+  __attribute__((format(printf, 4, 5)));
 
-xapi xstatvf(struct stat * restrict buf, const char * restrict path_fmt, va_list va)
-  __attribute__((nonnull(1, 2)));
+xapi xfstatatvf(int dirfd, int flags, struct stat * restrict buf, const char * restrict path_fmt, va_list va)
+  __attribute__((nonnull(3, 4)));
 
-/// uxstat
+/// uxfstatat
 //
 // SUMMARY
-//  proxy for stat which only fails when errno != ENOENT and errno != ENOTDIR
-//  if stat fails but uxstat does not, buf is zeroed
+//  proxy for fstatat which only fails when errno != ENOENT and errno != ENOTDIR
+//  if fstatat fails but uxfstatat does not, buf is zeroed
 //
 // VARIANTS
 //  s/f/vf - different ways to pass path
 //
-xapi uxstats(int * restrict r, struct stat * restrict buf, const char * restrict path)
-  __attribute__((nonnull(2,3)));
+xapi uxfstatats(int * restrict r, int dirfd, int flags, struct stat * restrict buf, const char * restrict path)
+  __attribute__((nonnull(4, 5)));
 
-xapi uxstatf(int * restrict r, struct stat * restrict buf, const char * restrict path_fmt, ...)
-  __attribute__((nonnull(2,3)));
+xapi uxfstatatf(int * restrict r, int dirfd, int flags, struct stat * restrict buf, const char * restrict path_fmt, ...)
+  __attribute__((nonnull(4, 5)))
+  __attribute__((format(printf, 5, 6)));
 
-xapi uxstatvf(int * restrict r, struct stat * restrict buf, const char * restrict path_fmt, va_list va)
-  __attribute__((nonnull(2,3)));
+xapi uxfstatatvf(int * restrict r, int dirfd, int flags, struct stat * restrict buf, const char * restrict path_fmt, va_list va)
+  __attribute__((nonnull(4, 5)));
 
-/// xlstat
-//
-// SUMMARY
-//  proxy for lstat
-//
-// VARIANTS
-//  s/f/vf - different ways to pass path
-//
-xapi xlstats(int * restrict r, struct stat * restrict buf, const char * restrict path)
-  __attribute__((nonnull(2,3)));
-
-xapi xlstatf(int * restrict r, struct stat * restrict buf, const char * restrict path_fmt, ...)
-  __attribute__((nonnull(2,3)));
-
-xapi xlstatvf(int * restrict r, struct stat * restrict buf, const char * restrict path_fmt, va_list va)
-  __attribute__((nonnull(2,3)));
-
-/// uxlstat
-//
-// SUMMARY
-//  proxy for lstat which only fails when errno != ENOENT and errno != ENOTDIR
-//  if lstat fails but uxlstat does not, buf is zeroed
-//
-// VARIANTS
-//  s/f/vf - different ways to pass path
-//
-xapi uxlstats(int * restrict r, struct stat * restrict buf, const char * restrict path)
-  __attribute__((nonnull(2,3)));
-
-xapi uxlstatf(int * restrict r, struct stat * restrict buf, const char * restrict path_fmt, ...)
-  __attribute__((nonnull(2,3)));
-
-xapi uxlstatvf(int * restrict r, struct stat * restrict buf, const char * restrict path_fmt, va_list va)
-  __attribute__((nonnull(2,3)));
-
-/// xfstat
-//
-// SUMMARY
-//  proxy for fstat
-//
-xapi xfstat(int fd, struct stat * restrict buf)
-  __attribute__((nonnull));
-
-/// uxfstat
-//
-// SUMMARY
-//  proxy for stat which only fails when errno != ENOENT and errno != ENOTDIR
-//  if stat fails and errno == ENOENT, buf is zeroed
-//
-xapi uxfstat(int fd, struct stat * restrict buf)
-  __attribute__((nonnull));
 
 /// xfutimens
 //
@@ -172,5 +122,4 @@ xapi uxmkdirvf(mode_t mode, const char * path_fmt, va_list va)
 //
 xapi xfchmod(int fd, mode_t mode);
 
-#undef restrict
 #endif

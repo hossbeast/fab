@@ -15,51 +15,58 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef _XPTHREAD_H
-#define _XPTHREAD_H
+#ifndef _XEPOLL_H
+#define _XEPOLL_H
 
-#include <pthread.h>
+#include <sys/epoll.h>
 #include <signal.h>
 
 #include "xapi.h"
+#include "types.h"
 
-/// xpthread_attr_init
+struct epoll_event;
+
+/// xepoll_create
 //
 // SUMMARY
-//  xapi proxy for pthread_attr_init
+//  proxy for epoll_create
 //
-xapi xpthread_attr_init(pthread_attr_t * attr)
+// PARAMETERS
+//  fd   - (returns) newly created epoll fd
+//
+xapi xepoll_create(int * restrict fd)
   __attribute__((nonnull));
 
-/// xpthread_attr_destroy
+/// xepoll_ctl
 //
 // SUMMARY
-//  xapi proxy for pthread_attr_destroy
+//  proxy for epoll_ctl
 //
-xapi xpthread_attr_destroy(pthread_attr_t * attr)
+xapi xepoll_ctl(int epfd, int op, int fd, struct epoll_event *event)
   __attribute__((nonnull));
 
-/// xpthread_create
+/// xepoll_wait
 //
 // SUMMARY
-//  xapi proxy for pthread_create
+//  proxy for epoll_wait
 //
-xapi xpthread_create(pthread_t * thread, const pthread_attr_t * attr, void *(*start_routine)(void *), void * arg)
-  __attribute__((nonnull(1, 3)));
+xapi xepoll_wait(int * restrict r, int epfd, struct epoll_event *events, int maxevents, int timeout)
+  __attribute__((nonnull));
 
-/// xpthread_sigmask
+/// xepoll_pwait
 //
 // SUMMARY
-//  xapi proxy for pthread_sigmask
+//  proxy for epoll_pwait
 //
-xapi xpthread_sigmask(int how, const sigset_t * set, sigset_t * oldset);
+xapi xepoll_pwait(int * restrict r, int epfd, struct epoll_event *events, int maxevents, int timeout, const sigset_t *sigmask)
+  __attribute__((nonnull));
 
-/// xpthread_attr_setdetachstate
+/// uxepoll_pwait
 //
 // SUMMARY
-//  xapi proxy for pthread_attr_setdetachstate
+//  proxy for epoll_pwait that fails only when errno != EINTR
 //
-xapi xpthread_attr_setdetachstate(pthread_attr_t * attr, int detachstate)
+xapi uxepoll_pwait(int * restrict r, int epfd, struct epoll_event *events, int maxevents, int timeout, const sigset_t *sigmask)
   __attribute__((nonnull));
 
 #endif

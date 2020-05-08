@@ -41,3 +41,15 @@ API xapi xwaitpid(pid_t pid, int * status, int options)
 
   finally : coda;
 }
+
+API xapi uxwaitid(idtype_t idtype, id_t id, siginfo_t *infop, int options)
+{
+  enter;
+
+  if(waitid(idtype, id, infop, options) == -1 && errno != ECHILD)
+  {
+    tfail(perrtab_KERNEL, errno);
+  }
+  
+  finally : coda;
+}

@@ -18,9 +18,8 @@
 #ifndef _XLINUX_MEMPOLICY_H
 #define _XLINUX_MEMPOLICY_H
 
-#include <sys/types.h>
-
 #include "xapi.h"
+#include "types.h"
 
 typedef struct mempolicy
 {
@@ -35,8 +34,6 @@ typedef struct mempolicy
 
   void (*free)(struct mempolicy * plc, void * target);
 } mempolicy;
-
-#define restrict __restrict
 
 /// mempolicy_push
 //
@@ -78,5 +75,4 @@ mempolicy * mempolicy_pop(int * const restrict mpc);
 //
 mempolicy * mempolicy_unwind(int * const restrict mpc);
 
-#undef restrict
 #endif

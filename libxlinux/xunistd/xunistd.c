@@ -51,11 +51,15 @@ API xapi uxread(int fd, void * buf, size_t count, ssize_t * bytes)
 {
   enter;
 
-  if(bytes && ((*bytes) = read(fd, buf, count)) == -1 && errno != EAGAIN && errno != EWOULDBLOCK && errno != EINTR)
+  if(bytes && ((*bytes) = read(fd, buf, count)) == -1)
   {
-    tfail(perrtab_KERNEL, errno);
-  }
+    if(errno != EAGAIN && errno != EWOULDBLOCK && errno != EINTR)
+    {
+      tfail(perrtab_KERNEL, errno);
+    }
 
+    *bytes = 0;
+  }
   else if(!bytes && read(fd, buf, count) == -1 && errno != EAGAIN && errno != EWOULDBLOCK && errno != EINTR)
   {
     tfail(perrtab_KERNEL, errno);
@@ -400,7 +404,10 @@ API xapi xdup2(int oldfd, int newfd)
   if(dup2(oldfd, newfd) == -1)
     tfail(perrtab_KERNEL, errno);
 
-  finally : coda;
+finally:
+  xapi_infof("oldfd", "%d", oldfd);
+  xapi_infof("newfd", "%d", newfd);
+coda;
 }
 
 API xapi xgetresuid(uid_t * const ruid, uid_t * const euid, uid_t * const suid)
@@ -598,6 +605,17 @@ finally:
 coda;
 }
 
+API xapi xexecve(const char * path, char * const argv[], char * const envp[])
+{
+  enter;
+
+  tfatalize(perrtab_KERNEL, errno, execve, path, argv, envp);
+
+finally:
+  xapi_infos("path", path);
+coda;
+}
+
 API xapi xexecvp(const char * file, char * const argv[])
 {
   enter;
@@ -663,4 +681,13 @@ API pid_t gettid()
     self = syscall(SYS_gettid);
 
   return self;
+}
+
+API xapi xpipe(int filedes[2])
+{
+  enter;
+
+  tfatalize(perrtab_KERNEL, errno, pipe, filedes);
+
+  finally : coda;
 }

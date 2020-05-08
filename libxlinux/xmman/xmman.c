@@ -40,7 +40,10 @@ API xapi xmunmap(void * addr, size_t length)
 {
   enter;
 
-  tfatalize(perrtab_KERNEL, errno, munmap, addr, length);
+  if(addr != MAP_FAILED)
+  {
+    tfatalize(perrtab_KERNEL, errno, munmap, addr, length);
+  }
 
   finally : coda;
 }
@@ -49,10 +52,12 @@ API xapi ixmunmap(void * addr, size_t length)
 {
   enter;
 
-  if(*(void**)addr)
+  if(*(void**)addr != MAP_FAILED)
+  {
     tfatalize(perrtab_KERNEL, errno, munmap, *(void**)addr, length);
+  }
 
-  *(void**)addr = 0;
+  *(void**)addr = MAP_FAILED;
 
   finally : coda;
 }

@@ -18,12 +18,10 @@
 #ifndef _XSHM_H
 #define _XSHM_H
 
-#include <sys/types.h>
 #include <sys/shm.h>
 
 #include "xapi.h"
-
-#define restrict __restrict
+#include "types.h"
 
 /// uxshmget
 //
@@ -75,5 +73,4 @@ xapi xshmdt(const void * shmaddr);
 xapi ixshmdt(void ** shmaddr)
   __attribute__((nonnull));
 
-#undef restrict
 #endif

@@ -18,19 +18,20 @@
 #include <string.h>
 #include <errno.h>
 
+#include "xapi.h"
+#include "types.h"
+
 #include "internal.h"
 #include "xstat/xstat.h"
 #include "errtab/KERNEL.errtab.h"
 
 #include "fmt.h"
 
-#define restrict __restrict
-
-API xapi xstats(struct stat * restrict buf, const char * restrict path)
+API xapi xfstatats(int dirfd, int flags, struct stat * restrict buf, const char * restrict path)
 {
   enter;
 
-  if(stat(path, buf) != 0)
+  if(fstatat(dirfd, path, buf, flags) != 0)
     tfail(perrtab_KERNEL, errno);
 
 finally:
@@ -38,35 +39,41 @@ finally:
 coda;
 }
 
-API xapi xstatf(struct stat * restrict buf, const char * restrict path_fmt, ...)
+API xapi xfstatatf(int dirfd, int flags, struct stat * restrict buf, const char * restrict path_fmt, ...)
 {
   enter;
 
   va_list va;
   va_start(va, path_fmt);
 
-  fatal(xstatvf, buf, path_fmt, va);
+  fatal(xfstatatvf, dirfd, flags, buf, path_fmt, va);
 
-  finally : coda;
+finally:
+  va_end(va);
+coda;
 }
 
-API xapi xstatvf(struct stat * restrict buf, const char * restrict path_fmt, va_list va)
+API xapi xfstatatvf(int dirfd, int flags, struct stat * restrict buf, const char * restrict path_fmt, va_list va)
 {
   enter;
 
   char path[512];
 
   fatal(fmt_apply, path, sizeof(path), path_fmt, va);
-  fatal(xstats, buf, path);
+  fatal(xfstatats, dirfd, flags, buf, path);
 
   finally : coda;
 }
 
-API xapi uxstats(int * restrict r, struct stat * restrict buf, const char * restrict path)
+API xapi uxfstatats(int * restrict r, int dirfd, int flags, struct stat * restrict buf, const char * restrict path)
 {
   enter;
 
-  if((r && ((*r) = stat(path, buf)) != 0) || (!r && stat(path, buf) != 0))
+  int lr;
+  if(!r)
+    r = &lr;
+
+  if(((*r) = fstatat(dirfd, path, buf, flags)) != 0)
   {
     if(errno != ENOENT && errno != ENOTDIR)
       tfail(perrtab_KERNEL, errno);
@@ -79,132 +86,30 @@ finally:
 coda;
 }
 
-API xapi uxstatf(int * restrict r, struct stat * restrict buf, const char * restrict path_fmt, ...)
+API xapi uxfstatatf(int * restrict r, int dirfd, int flags, struct stat * restrict buf, const char * restrict path_fmt, ...)
 {
   enter;
 
   va_list va;
   va_start(va, path_fmt);
 
-  fatal(uxstatvf, r, buf, path_fmt, va);
+  fatal(uxfstatatvf, r, dirfd, flags, buf, path_fmt, va);
 
-  finally : coda;
+finally:
+  va_end(va);
+coda;
 }
 
-API xapi uxstatvf(int * restrict r, struct stat * restrict buf, const char * restrict path_fmt, va_list va)
+API xapi uxfstatatvf(int * restrict r, int dirfd, int flags, struct stat * restrict buf, const char * restrict path_fmt, va_list va)
 {
   enter;
 
   char path[512];
 
   fatal(fmt_apply, path, sizeof(path), path_fmt, va);
-  fatal(uxstats, r, buf, path);
+  fatal(uxfstatats, r, dirfd, flags, buf, path);
 
   finally : coda;
-}
-
-API xapi xlstats(int * restrict r, struct stat * restrict buf, const char * restrict path)
-{
-  enter;
-
-  if((r && ((*r) = lstat(path, buf)) != 0) || (!r && lstat(path, buf) != 0))
-    tfail(perrtab_KERNEL, errno);
-
-finally:
-  xapi_infof("path", "%s", path);
-coda;
-}
-
-API xapi xlstatf(int * restrict r, struct stat * restrict buf, const char * restrict path_fmt, ...)
-{
-  enter;
-
-  va_list va;
-  va_start(va, path_fmt);
-
-  fatal(xlstatvf, r, buf, path_fmt, va);
-
-  finally : coda;
-}
-
-API xapi xlstatvf(int * restrict r, struct stat * restrict buf, const char * restrict path_fmt, va_list va)
-{
-  enter;
-
-  char path[512];
-
-  fatal(fmt_apply, path, sizeof(path), path_fmt, va);
-  fatal(xlstats, r, buf, path);
-
-  finally : coda;
-}
-
-API xapi uxlstats(int * restrict r, struct stat * restrict buf, const char * restrict path)
-{
-  enter;
-
-  if((r && ((*r) = lstat(path, buf)) != 0) || (!r && lstat(path, buf) != 0))
-  {
-    if(errno != ENOENT && errno != ENOTDIR)
-      tfail(perrtab_KERNEL, errno);
-
-    memset(buf, 0, sizeof(*buf));
-  }
-
-finally:
-  xapi_infof("path", "%s", path);
-coda;
-}
-
-API xapi uxlstatf(int * restrict r, struct stat * restrict buf, const char * restrict path_fmt, ...)
-{
-  enter;
-
-  va_list va;
-  va_start(va, path_fmt);
-
-  fatal(uxlstatvf, r, buf, path_fmt, va);
-
-  finally : coda;
-}
-
-API xapi uxlstatvf(int * restrict r, struct stat * restrict buf, const char * restrict path_fmt, va_list va)
-{
-  enter;
-
-  char path[512];
-
-  fatal(fmt_apply, path, sizeof(path), path_fmt, va);
-  fatal(uxlstats, r, buf, path);
-
-  finally : coda;
-}
-
-API xapi xfstat(int fd, struct stat * buf)
-{
-  enter;
-
-  if(fstat(fd, buf) != 0)
-    tfail(perrtab_KERNEL, errno);
-
-  finally : coda;
-}
-
-API xapi uxfstat(int fd, struct stat * buf)
-{
-  enter;
-
-  if(fstat(fd, buf) != 0)
-  {
-    if(errno != ENOENT && errno != ENOTDIR)
-      tfail(perrtab_KERNEL, errno);
-
-    memset(buf, 0, sizeof(*buf));
-  }
-
-finally:
-  xapi_infof("fd", "%d", fd);
-coda;
 }
 
 API xapi xfutimens(int fd, const struct timespec times[2])

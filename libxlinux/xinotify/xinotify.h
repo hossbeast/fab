@@ -28,7 +28,7 @@
 // SUMMARY
 //  proxy for inotify_init
 //
-xapi xinotify_init(int * id)
+xapi xinotify_init(int * id, int flags)
   __attribute__((nonnull));
 
 /// inotify_add_watch

@@ -23,8 +23,6 @@
 
 #include "xapi.h"
 
-#define restrict __restrict
-
 /// uxgetgrgid_r
 //
 // SUMMARY
@@ -40,5 +38,4 @@ xapi uxgetgrgid_r(gid_t uid, struct group * grp, char * buf, size_t buflen, stru
 xapi xgetgrgid(gid_t gid, struct group ** const restrict grp)
   __attribute__((nonnull));
 
-#undef restrict
 #endif
