@@ -17,6 +17,7 @@
 
 once {
   +[ $*/../vars.fab ]
+  +[ $dasan ~ j ]
 
   $cflags = [ $dlibxapi $dlibxlinux ~ s/^/-I ]
 

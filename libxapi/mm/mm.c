@@ -15,10 +15,11 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include <string.h>
+#include <stdio.h>
+
+#include "types.h"
 
 #include "internal.h"
 #include "mm.internal.h"
@@ -28,8 +29,6 @@
 
 // per-thread storage
 __thread struct memblk mm_mb;
-
-#define restrict __restrict
 
 /// assure
 //
@@ -124,6 +123,9 @@ void mm_malloc(void * restrict p, size_t sz)
 
   struct memblk * mb = &mm_mb;
 
+  // avoid unaligned accesses by requiring a minimum object size
+  sz = roundup(sz, sizeof(mb->blocks[0]));
+
   // allocate from the block
   *(void**)p = mb->blocks[mb->blocksl - 1].s + mb->blocks[mb->blocksl - 1].l;
   mb->blocks[mb->blocksl - 1].l += sz;
@@ -160,10 +162,12 @@ void mm_sloadw(char ** const restrict dst, size_t * const restrict dstl, const c
 
 void mm_svloadf(char ** const restrict dst, size_t * const restrict dstl, const char * const restrict fmt, va_list va)
 {
-  // measure
   va_list va2;
+  size_t l;
+
+  // measure
   va_copy(va2, va);
-  size_t l = vsnprintf(0, 0, fmt, va2);
+  l = vsnprintf(0, 0, fmt, va2);
   va_end(va2);
 
   // allocate
@@ -178,7 +182,9 @@ void mm_svloadf(char ** const restrict dst, size_t * const restrict dstl, const 
 // api
 //
 
+#if XAPI_STACKTRACE
 API void xapi_allocate(size_t sz)
 {
   assure(sz);
 }
+#endif

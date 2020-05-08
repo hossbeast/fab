@@ -62,8 +62,6 @@ extern __thread calltree * g_calltree;
 calltree * S;
 #endif
 
-#define restrict __restrict
-
 /// calltree_frame_push
 //
 // SUMMARY
@@ -78,5 +76,4 @@ struct frame * calltree_frame_push(void);
 //
 void calltree_teardown(void);
 
-#undef restrict
 #endif

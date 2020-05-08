@@ -41,8 +41,6 @@ XAPI_TRACE_TABLE
 #undef XAPI_TRACE_DEF
 };
 
-#define restrict __restrict
-
 /*
 ** called after finally iff XAPI_UNWINDING
 */
@@ -131,6 +129,5 @@ size_t xapi_trace_calltree_full(struct calltree * const restrict cs, char * cons
 size_t xapi_trace_info(const char * restrict name, char * const restrict dst, const size_t sz)
   __attribute__((nonnull(1)));
 
-#undef restrict
 #endif
 #endif

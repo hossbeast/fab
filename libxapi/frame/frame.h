@@ -34,7 +34,6 @@ REMARKS
 #if XAPI_STACKTRACE
 
 #include <stdint.h>
-#define restrict __restrict
 
 struct errtab;
 struct stack;
@@ -175,6 +174,5 @@ xapi_code xapi_calltree_errcode(void);
 xapi xapi_calltree_errval(void);
 const errtab * xapi_calltree_errtab(void);
 
-#undef restrict
 #endif
 #endif

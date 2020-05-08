@@ -24,6 +24,13 @@
 #include "types.h"
 #include "macros.h"
 
+/*
+*
+* NOTE there's an inconsistency in this module. The functions which are implemented with
+* snprintf always append a null byte, but the others do not.
+*
+*/
+
 /// znload
 //
 // SUMMARY
@@ -67,9 +74,9 @@
 //
 static inline size_t znloadw(void * restrict dst, size_t sz, const void * b, size_t bz)
 {
-  size_t z = MIN(sz - 1, bz);
-  memcpy(dst, b, z);
-  ((char*)dst)[z] = 0;
+  size_t z = MIN(sz - 1, bz); // leave room for a trailing null
+  if(z)
+    memcpy(dst, b, z);
   return z;
 }
 
@@ -81,6 +88,7 @@ static inline size_t znloadw(void * restrict dst, size_t sz, const void * b, siz
 #define znloads(dst, sz, s) znloadw(dst, sz, s, strlen(s))
 #define znloadc(dst, sz, c) znloadw(dst, sz, (char[]) { c }, 1)
 
+#if 0
 /// zloads
 //
 //
@@ -91,5 +99,6 @@ static inline size_t zloads(void * restrict dst, const char * const restrict src
   memcpy(dst, src, len);
   return len;
 }
+#endif
 
 #endif

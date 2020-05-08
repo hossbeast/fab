@@ -75,8 +75,6 @@ when calling non-xapi code, you have a couple of options.
 
 #include "xapi/XAPI.errtab.h"
 
-#define restrict __restrict
-
 /// enter
 //
 // SUMMARY

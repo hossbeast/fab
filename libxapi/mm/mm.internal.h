@@ -32,8 +32,6 @@ mm manages a per-thread allocation memblk that stores the per-thread calltree an
 // per-thread memblocks
 extern __thread struct memblk mm_mb;
 
-#define restrict __restrict
-
 /// mm_teardown
 //
 // SUMMARY
@@ -92,5 +90,4 @@ void mm_sloadw(char ** const restrict dst, size_t * const restrict dstl, const c
 void mm_svloadf(char ** const restrict dst, size_t * const restrict dstl, const char * const restrict fmt, va_list va)
   __attribute__((nonnull));
 
-#undef restrict
 #endif

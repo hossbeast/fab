@@ -25,13 +25,10 @@
 #include "mm.internal.h"
 #include "info.internal.h"
 #include "errtab/XAPI.errtab.h"
-#include "error.internal.h"
 #include "exit.internal.h"
 
 #include "memblk.def.h"
 #include "macros.h"
-
-#define restrict __restrict
 
 #if XAPI_RUNTIME_CHECKS
 #include <stdlib.h>

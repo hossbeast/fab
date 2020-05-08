@@ -81,7 +81,7 @@ print FH <<"END";
 #define ERRTAG_${name} $tag
 #define ERRMIN_${name} $min
 #define ERRMAX_${name} $max
-#define ETABLE_${name} \\
+#define ERRTAB_${name} \\
 END
 
 for(@err)
@@ -93,7 +93,7 @@ print FH <<"END";
 
 enum {
 #define _ERRDEF(a, b, c) ${name}_ ## b = (ERRTAG_${name} << 16) | a,
-ETABLE_${name}
+ERRTAB_${name}
 #undef _ERRDEF
 };
 
@@ -124,7 +124,7 @@ errtab errtab_${name} = {
   , .max = ERRMAX_${name}
   , .v =  (typeof(((errtab*)0)->v[0])[]) {
 #define _ERRDEF(a, b, c) [ a - ERRMIN_${name} ] = { .name = #b, .desc = c, .str = "${name}_" #b " : " c, .exit = (ERRTAG_${name} << 16) | a },
-ETABLE_${name}
+ERRTAB_${name}
 #undef _ERRDEF
     }
 };

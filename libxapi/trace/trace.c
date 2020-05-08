@@ -24,7 +24,6 @@
 #include "internal.h"
 #include "trace.internal.h"
 #include "calltree.internal.h"
-#include "error.internal.h"
 #include "errtab/XAPI.errtab.h"
 #include "exit.internal.h"
 #include "frame.internal.h"
@@ -38,8 +37,6 @@
 #define TRACE_NEWLINE_OPT         UINT16_C(0x000C)
 #define TRACE_INFO_UNIQUE_OPT     UINT16_C(0x0030)
 #define TRACE_INFO_LOCATION_OPT   UINT16_C(0x00C0)
-
-#define restrict __restrict
 
 #define sayf(...)  z += _sayf (dst + z, sz - z, ##__VA_ARGS__)
 #define csayf(...) z += _csayf(dst + z, sz - z, attrs, ##__VA_ARGS__)
@@ -216,7 +213,7 @@ static size_t infos_trace(char * const dst, const size_t sz, calltree * const re
           if(z == 0)
             csays(DIM_CYAN, " with ");
           else
-            csays(DIM_CYAN, ", ");
+            csays(DIM_CYAN, " ");
 
           csayf(LIGHT_YELLOW, "%.*s", (int)nfo->kl, nfo->ks);
           csayf(LIGHT_GRAY, " %.*s", (int)nfo->vl, nfo->vs);

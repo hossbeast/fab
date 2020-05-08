@@ -110,6 +110,14 @@ static inline int memncmp(const void * a, size_t alen, const void * b, size_t bl
   return 0;
 }
 
+static inline int ptrcmp(const void *_A, const void *_B)
+{
+  const void * const * A = _A;
+  const void * const * B = _B;
+
+  return INTCMP(*A, *B);
+}
+
 /// roundup2
 //
 // round up to the next highest power of 2
@@ -128,5 +136,57 @@ static inline size_t roundup2(size_t x)
 }
 
 #define STATIC_ASSERT(x) _Static_assert(x, #x)
+
+#define sizeof_member(s, m) sizeof(((s*)((void*)0))->m)
+
+#define fieldof(type, member)         \
+  typeof(((type*)0)->member) member;  \
+
+#define ALIGNEDOF(A, B, member)  \
+  STATIC_ASSERT(offsetof(A, member) == offsetof(B, member))
+
+#define die_expr(expr) \
+  char (*__kaboom)[expr] = 1
+
+#define refas(expr, as) ({    \
+  typeof(expr->as) * ptr = 0; \
+  if(expr) {                  \
+    ptr = &expr->as;          \
+  }                           \
+  ptr;                        \
+})
+
+#define refas2(expr, section, as) ({   \
+  typeof(expr->section->as) * ptr = 0; \
+  if(expr && expr->section) {          \
+    ptr = &expr->section->as;          \
+  }                                    \
+  ptr;                                 \
+})
+
+#if DEBUG || DEVEL || XUNIT
+#include <stdlib.h>
+#include <stdio.h>
+#define RUNTIME_ASSERT(x) do {                          \
+  if (!(x)) {                                           \
+    fprintf(stderr, "%s:%d failed runtime assert: " #x "\n", __FILE__, __LINE__); \
+    RUNTIME_ABORT();                                    \
+  }                                                     \
+} while(0)
+#else
+#define RUNTIME_ASSERT(x)
+#endif
+
+#if DEBUG || DEVEL || XUNIT
+#define RUNTIME_ABORT() do {  \
+  fprintf(stderr, "%s:%d aborting\n", __FILE__, __LINE__); \
+  memcpy((void*)0x42, (void*)0x43, 43);       \
+} while(0)
+#else
+#define RUNTIME_ABORT()
+#endif
+
+#define ffsll(x)   __builtin_ffsll(x)
+#define clz_u32(x) __builtin_clz(x)
 
 #endif

@@ -31,7 +31,7 @@
 // PARAMETERS
 //  bytes - allocation size
 //
-API void xapi_allocate(size_t bytes);
+void xapi_allocate(size_t bytes);
 
 #endif
 #endif

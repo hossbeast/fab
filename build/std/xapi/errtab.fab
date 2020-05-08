@@ -55,9 +55,6 @@ $errtabpaths = [
   [ $mkerrtab ] [ $@ ~ rx/ineed uu fi ]
 }
 
-# echo "etable * ${api} perrtab = &errtab_${pfx};"
-# echo "#extern etable * perrtab;"
-
 # cc : errors.c -> errors.o @ std.c
 +[@std.c](-$cobjpaths; $cfabpaths = [ $errtabpaths ~ sx/errtab/errtab.c ]; $cc $cflags; $cdscpaths)
 $errorsobjpaths = [ $cobjpaths ]

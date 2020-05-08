@@ -30,8 +30,6 @@
 #include "xapi/info.h"
 #include "xapi/exit.h"
 
-#define restrict __restrict
-
 /*
 ** called at the site of an error
 */
@@ -282,6 +280,5 @@ XAPI_LEAVE:                         \
 //
 #define XAPI_THROWING(c) (XAPI_UNWINDING && XAPI_ERRVAL == (c))
 
-#undef restrict
 #endif
 #endif

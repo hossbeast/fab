@@ -62,8 +62,6 @@ extern __thread void * xapi_caller_frame_address;
 extern __thread xapi xapi_stack_raised_exit;
 #endif
 
-#define restrict __restrict
-
 /// frame_freeze
 //
 // SUMMARY
@@ -95,5 +93,4 @@ void frame_thaw(void * restrict mb, frame * restrict f)
 //
 void frame_teardown(void);
 
-#undef restrict
 #endif

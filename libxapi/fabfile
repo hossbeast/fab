@@ -18,17 +18,14 @@
 # definitions
 +[ $*/../vars.fab ]
 
-# source invocations
-+[ $dcommon ]() @common
-
 # variables
 $basename           = [ xapi ]
 $libname_xapi       = [ lib $basename -xapi .so ~ j ]
 
 $cflags             = [ -fPIC [ $dlibxapi ~ lsr c -d s/^/-I ] ]
-$cflags_xapi_final  = [ $cflags_xapi_final $cflags ]
-$cflags_xapi_debug  = [ $cflags_xapi_debug $cflags ]
-$cflags_xapi_devel  = [ $cflags_xapi_devel $cflags -DXAPI_RUNTIME_CHECKS ]
+$cflags_xapi_final  = [ $cflags $cflags_xapi_final ]
+$cflags_xapi_debug  = [ $cflags $cflags_xapi_debug ]
+$cflags_xapi_devel  = [ $cflags $cflags_xapi_devel -DXAPI_RUNTIME_CHECKS ]
 
 $lflags             = [ -shared [ "-Wl,--version-script=" $*/exports  ~ j ] ]
 $lflags_xapi_final  = [ $lflags_xapi_final $lflags [ "-Wl,-soname," libxapi-xapi.so ~ j ] ]
@@ -50,7 +47,7 @@ $libxapi_xapi_debug_test     = [ $dlibxapi/libxapi-xapi-debug-test.so ~ j ]
 ## dependencies
 ##
 
-[ @all ] : [ @release @test.fast ]
+[ @all ] : [ @release @test ]
 [ @release ] : [ @release.xapi ]
 [ @release.xapi ] : [ @final.xapi @debug.xapi @devel.xapi ]
 [ @final.xapi ] : [ $libxapi_xapi_final ]
@@ -98,9 +95,9 @@ $libxapi_xapi_debug_test     = [ $dlibxapi/libxapi-xapi-debug-test.so ~ j ]
 #  for rationale see test/README.md
 #
 
-+[@std.c]($dext = [ xapi.debug.o ]; $rdirs = [ $*/integ ~ j ]; $cc; $cflags = $cflags_xapi_debug)
-+[@std.c]($dext = [ xapi.devel.o ]; $rdirs = [ $*/integ ~ j ]; $cc; $cflags = $cflags_xapi_devel)
-+[@std.c]($dext = [ eapi.devel.o ]; $rdirs = [ $*/integ ~ j ]; $cc; $cflags = [ $cflags_eapi_devel [ $dlibxapi ~ lsr c -d s/^/-I ] ])
++[@std.c]($dext = [ xapi.debug.o ]; $rdirs = [ [ $*/integ ~ j ] [ $*/memblk ~ j ] ]; $cc; $cflags = $cflags_xapi_debug)
++[@std.c]($dext = [ xapi.devel.o ]; $rdirs = [ [ $*/integ ~ j ] [ $*/memblk ~ j ] ]; $cc; $cflags = $cflags_xapi_devel)
++[@std.c]($dext = [ eapi.devel.o ]; $rdirs = [ [ $*/integ ~ j ] [ $*/memblk ~ j ] ]; $cc; $cflags = [ $cflags_eapi_devel [ $dlibxapi ~ lsr c -d s/^/-I ] ])
 +[@std.xapi.errtab]($dext = [ xapi.debug.o ]; $rdirs = [ $*/integ ~ j ]; $apidata = [1]; $cc; $cflags = $cflags_xapi_debug)
 +[@std.xapi.errtab]($dext = [ xapi.devel.o ]; $rdirs = [ $*/integ ~ j ]; $apidata = [1]; $cc; $cflags = $cflags_xapi_devel)
 +[@std.xapi.errtab]($dext = [ eapi.devel.o ]; $rdirs = [ $*/integ ~ j ]; $apidata = [1]; $cc; $cflags = [ $cflags_eapi_devel [ $dlibxapi ~ lsr c -d s/^/-I ] ])
@@ -123,17 +120,8 @@ $libxapi_xapi_debug_test     = [ $dlibxapi/libxapi-xapi-debug-test.so ~ j ]
 }
 
 [ @test ] : [ @test.stacktrace_checks @test.stacktrace @test.errorcode ]
-[ @test.fast ] : [ @test.stacktrace_checks.fast @test.stacktrace.fast @test.errorcode.fast ]
 
 [ @test.stacktrace ] : [ $*/integ ~ j lsr l/errtab v sx/c/stacktrace sy ]
-{
-  set -e
-  (
-    for x in [ $@ ~ rx/ineed fi ]; do [ $dcommon/valgrind.runner ~ j ] $x ; done
-  ) | tee /dev/fd/501
-}
-
-[ @test.stacktrace.fast ] : [ $*/integ ~ j lsr l/errtab v sx/c/stacktrace sy ]
 {
   set -e
   (
@@ -145,27 +133,11 @@ $libxapi_xapi_debug_test     = [ $dlibxapi/libxapi-xapi-debug-test.so ~ j ]
 {
   set -e
   (
-    for x in [ $@ ~ rx/ineed fi ]; do [ $dcommon/valgrind.runner ~ j ] $x ; done
-  ) | tee /dev/fd/501
-}
-
-[ @test.stacktrace_checks.fast ] : [ $*/integ ~ j lsr l/errtab v sx/c/stacktrace_checks sy ]
-{
-  set -e
-  (
     [ $@ ~ rx/ineed fi/; ]
   ) | tee /dev/fd/501
 }
 
 [ @test.errorcode ] : [ $*/integ ~ j lsr l/errtab v sx/c/errorcode sy ]
-{
-  set -e
-  (
-    for x in [ $@ ~ rx/ineed fi ]; do [ $dcommon/valgrind.runner ~ j ] $x ; done
-  ) | tee /dev/fd/501
-}
-
-[ @test.errorcode.fast ] : [ $*/integ ~ j lsr l/errtab v sx/c/errorcode sy ]
 {
   set -e
   (

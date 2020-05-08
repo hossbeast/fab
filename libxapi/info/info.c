@@ -26,8 +26,6 @@
 #include "macros.h"
 #include "memblk.def.h"
 
-#define restrict __restrict
-
 // per-thread info staging
 __thread APIDATA info * xapi_infos_staging;
 __thread APIDATA size_t xapi_infos_stagingl;
@@ -56,6 +54,9 @@ void info_setw(info * restrict i, const char * restrict key, size_t keyl, const 
 
 void info_setvf(info * restrict i, const char * restrict key, size_t keyl, const char * restrict vfmt, va_list va)
 {
+  if(vfmt == 0)
+    return;
+
   va_list va2;
   va_copy(va2, va);
   size_t vlen = vsnprintf(0, 0, vfmt, va2);

@@ -21,8 +21,7 @@
 #include <string.h>
 
 #include "memblk.def.h"
-
-#define restrict __restrict
+#include "internal.h"
 
 void memblk_freeze(memblk * const restrict mb, void * restrict _p)
 {
@@ -77,7 +76,7 @@ void memblk_thaw(void * restrict mb, void * restrict _p)
   }
 }
 
-void memblk_copyto(memblk * const restrict mb, void * restrict dst, size_t sz)
+API void memblk_copyto(memblk * const restrict mb, void * restrict dst, size_t sz)
 {
   int x;
   for(x = 0; x < mb->blocksl; x++)

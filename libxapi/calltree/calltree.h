@@ -23,8 +23,6 @@
 struct memblk;      // memblk.h
 struct calltree;
 
-#define restrict __restrict
-
 /// xapi_calltree_unwindto
 //
 // SUMMARY
@@ -81,6 +79,5 @@ struct calltree * xapi_calltree_thaw(void * mb)
 struct calltree * xapi_calltree_export(void * dst, size_t sz)
   __attribute__((nonnull));
 
-#undef restrict
 #endif
 #endif

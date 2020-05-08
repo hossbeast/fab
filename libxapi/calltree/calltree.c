@@ -39,8 +39,6 @@ __thread calltree * g_calltree;
 __thread calltree * g_calltree_stor;
 __thread int g_intent_to_fail;
 
-#define restrict __restrict
-
 //
 // static
 //

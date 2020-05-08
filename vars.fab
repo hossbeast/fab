@@ -43,6 +43,7 @@ $VERSIONN       = [ $VERSIONL ~ j s/^0//g ]       # version number
 $droot          = [ $* ]
 $dbuild         = [ $*/build ~ j ]
 $dcommon        = [ $*/common ~ j ]
+$dinclude       = [ $*/include ~ j ]
 $dasan          = [ $*/asan ~ j ]
 $dfab           = [ $*/fab/fab ~ j ]
 $dfabcore       = [ $*/fab ~ j ]
@@ -175,7 +176,7 @@ $cflags       = [
   [ -fno-omit-frame-pointer ]
 
   # include paths
-  [ $dcommon ~ lsr c -d s/^/-I ]
+  [ $dcommon $dinclude ~ lsr c -d s/^/-I ]
 
   # buildstamp
   [ -DBUILDSTAMP='[ $^starttime ~ datef ]' ~ j ]

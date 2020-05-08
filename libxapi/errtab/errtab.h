@@ -21,7 +21,6 @@
 #include "xapi.h"
 
 #if XAPI_STACKTRACE
-#define restrict __restrict
 
 /// xapi_errtab_stage
 //
@@ -115,6 +114,5 @@ const char * xapi_errtab_errstr(const errtab * const restrict etab, const xapi e
 //
 xapi_code xapi_errtab_errcode(const errtab * const restrict etab, const xapi exit);
 
-#undef restrict
 #endif
 #endif

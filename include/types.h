@@ -1,4 +1,4 @@
-/* Copyright (c) 2012-2015 Todd Freed <todd.freed@gmail.com>
+/* Copyright (c) 2012-2017 Todd Freed <todd.freed@gmail.com>
 
    This file is part of fab.
 
@@ -15,7 +15,25 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef _XAPI_ERROR_H
-#define _XAPI_ERROR_H
+#ifndef _COMMON_TYPES_H
+#define _COMMON_TYPES_H
+
+/*
+ * common type definitions - suitable for inclusion anywhere in the fab project
+ */
+
+#include <stdint.h>
+#include <stdbool.h>
+#include <sys/types.h>
+
+#define restrict __restrict
+
+static inline size_t roundup(size_t x, size_t y)
+{
+  size_t r = x % y;
+  if(r)
+    return x + (y - r);
+  return x;
+}
 
 #endif

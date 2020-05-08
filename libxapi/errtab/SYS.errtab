@@ -20,3 +20,4 @@
 2 NXPARAMS  unable to determine runtime parameters
 3 NOTSUPP   operation not supported
 4 INVALID   invalid argument
+5 ABORT     unsatisfied invariant detected

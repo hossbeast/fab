@@ -40,8 +40,6 @@ extern __thread info * xapi_infos_staging;
 extern __thread size_t xapi_infos_stagingl;
 extern __thread size_t xapi_infos_staginga;
 
-#define restrict __restrict
-
 /// info_teardown
 //
 // SUMMARY
@@ -88,5 +86,4 @@ void info_unfreeze(struct memblk * const restrict mb, info * restrict i)
 void info_thaw(char * const restrict mb, info * restrict i)
   __attribute__((nonnull));
 
-#undef restrict
 #endif

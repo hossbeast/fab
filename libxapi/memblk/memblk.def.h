@@ -29,8 +29,20 @@ SUMMARY
 
 */
 
-typedef struct memblk
-{
+struct memblk;
+struct mempolicy;
+
+typedef struct memblk {
+  struct memblk_policy
+  {
+    struct mempolicy * mp;
+    struct memblk * mb;
+  } policy;
+
+  int mapped;
+  int prot;
+  int flags;
+
   struct {
     char *  s;
     size_t  l;
@@ -39,14 +51,7 @@ typedef struct memblk
   } *     blocks;
   size_t  blocksl;
   size_t  blocksa;
-
-#ifndef MEMBLK_INTERNALS
-# define MEMBLK_INTERNALS
-#endif
-  MEMBLK_INTERNALS;
 } memblk;
-
-#define restrict __restrict
 
 /// memblk_freeze
 //
@@ -100,5 +105,4 @@ void memblk_copyto(memblk * const restrict mb, void * restrict dst, size_t sz)
 size_t memblk_size(memblk * const restrict mb)
   __attribute__((nonnull));
 
-#undef restrict
 #endif
