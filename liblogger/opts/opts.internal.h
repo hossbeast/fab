@@ -15,24 +15,15 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef _LOGGER_ATTR_INTERNAL_H
-#define _LOGGER_ATTR_INTERNAL_H
+#ifndef _LOGGER_OPTS_INTERNAL_H
+#define _LOGGER_OPTS_INTERNAL_H
 
 #include "xapi.h"
 #include "types.h"
 
-#include "attr.h"
+#include "opts.h"
 
 struct narrator;
-
-#define COLOR_OPT     UINT32_C(0x0000000F)
-#define CATEGORY_OPT  UINT32_C(0x00000030)
-#define TRACE_OPT     UINT32_C(0x000000C0)
-#define DISCOVERY_OPT UINT32_C(0x00000300)
-#define DATESTAMP_OPT UINT32_C(0x00000C00)
-#define NAMES_OPT     UINT32_C(0x00003000)
-#define FILTER_OPT    UINT32_C(0x0000C000)
-#define PID_OPT       UINT32_C(0x00030000)
 
 const char * color_option_name(uint32_t attrs);
 const char * category_option_name(uint32_t attrs);
@@ -42,8 +33,17 @@ const char * datestamp_option_name(uint32_t attrs);
 const char * processid_option_name(uint32_t attrs);
 const char * filter_option_name(uint32_t attrs);
 const char * pid_option_name(uint32_t attrs);
+const char * tid_option_name(uint32_t attrs);
 
-/// attr_combine
+/// attrs_value
+//
+// SUMMARY
+//  get the value of an attrs member by name
+//
+uint32_t attrs_value(const char * name, uint8_t namel)
+  __attribute__((nonnull));
+
+/// attrs_combine
 //
 // SUMMARY
 //  combine two sets of attributes
@@ -55,22 +55,19 @@ const char * pid_option_name(uint32_t attrs);
 // RETURNS
 //  attribute set A overwritten with all options affirmatively set by B
 //
-uint32_t attr_combine2(uint32_t A, uint32_t B);
-uint32_t attr_combine4(uint32_t A, uint32_t B, uint32_t C, uint32_t D);
+uint32_t attrs_combine2(uint32_t A, uint32_t B);
+uint32_t attrs_combine4(uint32_t A, uint32_t B, uint32_t C, uint32_t D);
 
-/// attr_say
+/// attrs_say
 //
 // SUMMARY
-//  write a description of attr to the narrator
+//  write a description of attrs to the narrator
 //
 // PARAMETERS
-//  attr     -
+//  attrs    -
 //  narrator -
 //
-xapi attr_say(uint32_t attr, struct narrator * const restrict _narrator)
-  __attribute__((nonnull));
-
-uint32_t attr_byname(const char * name, size_t namel)
+xapi attrs_say(uint32_t attrs, struct narrator * const restrict _narrator)
   __attribute__((nonnull));
 
 #endif

@@ -84,7 +84,7 @@ static xapi test_expr_lex()
     , { expr : "+A,BAR"         , r : 1 , o : '+', v : L_A | L_BAR }
     , { expr : "-BAR"           , r : 1 , o : '-', v : L_BAR       }
     , { expr : "+BAR,,BAR"      , r : 1 , o : '+', v : L_BAR       }
-    , { expr : "%CATEGORY"      , r : 1 , a : L_CATEGORY           }
+    , { expr : "%""CATEGORY"    , r : 1 , a : L_CATEGORY           }
     , { expr : "%NOFILTER,RED"  , r : 1 , a : L_NOFILTER | L_RED   }
     , { expr : " +A" }
     , { expr : "--foo" }

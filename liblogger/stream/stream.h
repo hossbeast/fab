@@ -56,9 +56,6 @@ typedef struct logger_stream
 
   uint8_t type;             // e.g. LOGGER_STREAM_FD
 
-  // options and modifiers
-  uint32_t attr;            // e.g. L_RED | L_TRACE
-
   char * expr;              // e.g. +INFO
   char ** exprs;            // e.g. (char *[]) { "+INFO", "+WARN", 0 }
 

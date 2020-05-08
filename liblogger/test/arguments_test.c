@@ -57,7 +57,7 @@ static xapi test_arguments_nonlogger()
   enter;
 
   // arrange
-  char * argvs = "foo\0bar\0baz";
+  char * argvs = "foo\0bar\0baz\0";
   size_t argvsl = 12;
 
   // act
@@ -84,7 +84,7 @@ static xapi test_arguments_recognized()
   enter;
 
   // arrange
-  char * argvs = "+A\0+BAR";
+  char * argvs = "+A\0+BAR\0";
   size_t argvsl = 8;
 
   // act
@@ -110,7 +110,7 @@ static xapi test_arguments_unrecognized()
   enter;
 
   // arrange
-  char * argvs = "+BAZ\0+QUX";
+  char * argvs = "+BAZ\0+QUX\0";
   size_t argvsl = 10;
 
   // act
@@ -136,7 +136,7 @@ static xapi test_arguments_mixed()
   enter;
 
   // arrange
-  char * argvs = "+BAZ\0+QUX\0+A\0foo\0bar";
+  char * argvs = "+BAZ\0+QUX\0+A\0foo\0bar\0";
   size_t argvsl = 21;
 
   // act
@@ -167,7 +167,7 @@ static xapi test_arguments_repeated()
   enter;
 
   // arrange
-  char * argvs = "+BAZ\0+QUX\0+A\0foo\0bar";
+  char * argvs = "+BAZ\0+QUX\0+A\0foo\0bar\0";
   size_t argvsl = 21;
 
   // act

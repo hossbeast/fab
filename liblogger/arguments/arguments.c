@@ -37,8 +37,6 @@
 #include "snarf.h"
 #include "zbuffer.h"
 
-#define restrict __restrict
-
 APIDATA char *        g_binary;
 APIDATA char *        g_interpreter;
 APIDATA char **       g_argv;
@@ -53,6 +51,13 @@ APIDATA char **       g_ulogv;
 APIDATA size_t        g_ulogc;
 APIDATA char *        g_ulogvs;
 APIDATA size_t        g_ulogvsl;
+
+static inline size_t zloads(void * restrict dst, const char * const restrict src)
+{
+  size_t len = strlen(src);
+  memcpy(dst, src, len);
+  return len;
+}
 
 /// list_finalize
 //

@@ -31,45 +31,108 @@ struct narrator; // libnarrator
 options and modifiers which may be applied to
  categories (see logger_category)
  log messages (see xlog*)
- streams (see logger_stream)
+ and streams (see logger_stream)
 
 */
-#define LOGGER_ATTR_TABLE                                                                 \
-  LOGGER_ATTR_DEF(NOCOLOR       , 0x00000001)  /* (default) not colorized */              \
-  LOGGER_ATTR_DEF(RED           , 0x00000002)  /* terminal colorization : red */          \
-  LOGGER_ATTR_DEF(GREEN         , 0x00000003)  /* terminal colorization : green */        \
-  LOGGER_ATTR_DEF(YELLOW        , 0x00000004)  /* terminal colorization : yellow */       \
-  LOGGER_ATTR_DEF(BLUE          , 0x00000005)  /* terminal colorization : blue */         \
-  LOGGER_ATTR_DEF(MAGENTA       , 0x00000006)  /* terminal colorization : magenta */      \
-  LOGGER_ATTR_DEF(CYAN          , 0x00000007)  /* terminal colorization : cyan */         \
-  LOGGER_ATTR_DEF(GRAY          , 0x00000008)  /* terminal colorization : gray */         \
-  LOGGER_ATTR_DEF(BOLD_RED      , 0x00000009)  /* terminal colorization : bold red */     \
-  LOGGER_ATTR_DEF(BOLD_GREEN    , 0x0000000a)  /* terminal colorization : bold green */   \
-  LOGGER_ATTR_DEF(BOLD_YELLOW   , 0x0000000b)  /* terminal colorization : bold yellow */  \
-  LOGGER_ATTR_DEF(BOLD_BLUE     , 0x0000000c)  /* terminal colorization : bold blue */    \
-  LOGGER_ATTR_DEF(BOLD_MAGENTA  , 0x0000000d)  /* terminal colorization : bold magenta */ \
-  LOGGER_ATTR_DEF(BOLD_CYAN     , 0x0000000e)  /* terminal colorization : bold cyan */    \
-  LOGGER_ATTR_DEF(BOLD_GRAY     , 0x0000000f)  /* terminal colorization : bold gray */    \
-  LOGGER_ATTR_DEF(CATEGORY      , 0x00000010)  /* (default) include the category name */  \
-  LOGGER_ATTR_DEF(NOCATEGORY    , 0x00000020)                                             \
-  LOGGER_ATTR_DEF(NOTRACE       , 0x00000040)  /* (default) */                            \
-  LOGGER_ATTR_DEF(TRACE         , 0x00000080)  /* append trace info */                    \
-  LOGGER_ATTR_DEF(NODISCOVERY   , 0x00000100)  /* (default) */                            \
-  LOGGER_ATTR_DEF(DISCOVERY     , 0x00000200)  /* append discovery info */                \
-  LOGGER_ATTR_DEF(NODATESTAMP   , 0x00000400)  /* (default) */                            \
-  LOGGER_ATTR_DEF(DATESTAMP     , 0x00000800)  /* parepend timestamp */                   \
-  LOGGER_ATTR_DEF(NONAMES       , 0x00001000)  /* (default) */                            \
-  LOGGER_ATTR_DEF(NAMES         , 0x00002000)  /* prepend process/thread names  */        \
-  LOGGER_ATTR_DEF(FILTER        , 0x00004000)  /* (default) emission subject to filters */\
-  LOGGER_ATTR_DEF(NOFILTER      , 0x00008000)  /* dont filter logs */                     \
-  LOGGER_ATTR_DEF(NOPID         , 0x00010000)  /* (default) */                            \
-  LOGGER_ATTR_DEF(PID           , 0x00020000)  /* prepend process ids */                  \
 
-enum {
-#define LOGGER_ATTR_DEF(a, b) L_ ## a = UINT32_C(b),
-LOGGER_ATTR_TABLE
+#define LOGGER_COLOR_OPT     0x0000000F
+#define LOGGER_CATEGORY_OPT  0x00000030
+#define LOGGER_TRACE_OPT     0x000000C0
+#define LOGGER_DISCOVERY_OPT 0x00000300
+#define LOGGER_DATESTAMP_OPT 0x00000C00
+#define LOGGER_NAMES_OPT     0x00003000
+#define LOGGER_FILTER_OPT    0x0000C000
+#define LOGGER_PID_OPT       0x00030000
+#define LOGGER_TID_OPT       0x000C0000
+
+#define LOGGER_COLOR_OPT_TABLE                                                                             \
+  LOGGER_ATTR_DEF(NOCOLOR      , 0x00000001 , LOGGER_COLOR_OPT) /* (default) not colorized */              \
+  LOGGER_ATTR_DEF(RED          , 0x00000002 , LOGGER_COLOR_OPT) /* terminal colorization : red */          \
+  LOGGER_ATTR_DEF(GREEN        , 0x00000003 , LOGGER_COLOR_OPT) /* terminal colorization : green */        \
+  LOGGER_ATTR_DEF(YELLOW       , 0x00000004 , LOGGER_COLOR_OPT) /* terminal colorization : yellow */       \
+  LOGGER_ATTR_DEF(BLUE         , 0x00000005 , LOGGER_COLOR_OPT) /* terminal colorization : blue */         \
+  LOGGER_ATTR_DEF(MAGENTA      , 0x00000006 , LOGGER_COLOR_OPT) /* terminal colorization : magenta */      \
+  LOGGER_ATTR_DEF(CYAN         , 0x00000007 , LOGGER_COLOR_OPT) /* terminal colorization : cyan */         \
+  LOGGER_ATTR_DEF(GRAY         , 0x00000008 , LOGGER_COLOR_OPT) /* terminal colorization : gray */         \
+  LOGGER_ATTR_DEF(BOLD_RED     , 0x00000009 , LOGGER_COLOR_OPT) /* terminal colorization : bold red */     \
+  LOGGER_ATTR_DEF(BOLD_GREEN   , 0x0000000a , LOGGER_COLOR_OPT) /* terminal colorization : bold green */   \
+  LOGGER_ATTR_DEF(BOLD_YELLOW  , 0x0000000b , LOGGER_COLOR_OPT) /* terminal colorization : bold yellow */  \
+  LOGGER_ATTR_DEF(BOLD_BLUE    , 0x0000000c , LOGGER_COLOR_OPT) /* terminal colorization : bold blue */    \
+  LOGGER_ATTR_DEF(BOLD_MAGENTA , 0x0000000d , LOGGER_COLOR_OPT) /* terminal colorization : bold magenta */ \
+  LOGGER_ATTR_DEF(BOLD_CYAN    , 0x0000000e , LOGGER_COLOR_OPT) /* terminal colorization : bold cyan */    \
+  LOGGER_ATTR_DEF(BOLD_GRAY    , 0x0000000f , LOGGER_COLOR_OPT) /* terminal colorization : bold gray */    \
+
+#define LOGGER_ATTR_DEF(x, y, r) L_ ## x = UINT32_C(y),
+
+typedef enum logger_color {
+LOGGER_COLOR_OPT_TABLE
+} logger_color;
+
+#define LOGGER_CATEGORY_OPT_TABLE                                                                          \
+  LOGGER_ATTR_DEF(CATEGORY   , 0x00000010 , LOGGER_CATEGORY_OPT) /* (default) include the category name */ \
+  LOGGER_ATTR_DEF(NOCATEGORY , 0x00000020 , LOGGER_CATEGORY_OPT)                                           \
+
+typedef enum logger_category_e {
+LOGGER_CATEGORY_OPT_TABLE
+} logger_category_e;
+
+#define LOGGER_TRACE_OPT_TABLE                                                          \
+  LOGGER_ATTR_DEF(NOTRACE      , 0x00000040 , LOGGER_TRACE_OPT) /* (default) */         \
+  LOGGER_ATTR_DEF(TRACE        , 0x00000080 , LOGGER_TRACE_OPT) /* append trace info */ \
+
+typedef enum logger_trace_e {
+LOGGER_TRACE_OPT_TABLE
+} logger_trace_e;
+
+#define LOGGER_DISCOVERY_OPT_TABLE                                                              \
+  LOGGER_ATTR_DEF(NODISCOVERY  , 0x00000100 , LOGGER_DISCOVERY_OPT) /* (default) */             \
+  LOGGER_ATTR_DEF(DISCOVERY    , 0x00000200 , LOGGER_DISCOVERY_OPT) /* append discovery info */ \
+
+typedef enum logger_discovery {
+LOGGER_DISCOVERY_OPT_TABLE
+} logger_discovery;
+
+#define LOGGER_DATESTAMP_OPT_TABLE                                                            \
+  LOGGER_ATTR_DEF(NODATESTAMP  , 0x00000400 , LOGGER_DATESTAMP_OPT) /* (default) */           \
+  LOGGER_ATTR_DEF(DATESTAMP    , 0x00000800 , LOGGER_DATESTAMP_OPT) /* prepend timestamp */  \
+
+typedef enum logger_datestamp {
+LOGGER_DATESTAMP_OPT_TABLE
+} logger_datestamp;
+
+#define LOGGER_NAMES_OPT_TABLE                                                                      \
+  LOGGER_ATTR_DEF(NONAMES      , 0x00001000 , LOGGER_NAMES_OPT) /* (default) */                     \
+  LOGGER_ATTR_DEF(NAMES        , 0x00002000 , LOGGER_NAMES_OPT) /* prepend process/thread names  */ \
+
+typedef enum logger_names {
+LOGGER_NAMES_OPT_TABLE
+} logger_names;
+
+#define LOGGER_FILTER_OPT_TABLE                                                                              \
+  LOGGER_ATTR_DEF(FILTER       , 0x00004000 , LOGGER_FILTER_OPT) /* (default) emission subject to filters */ \
+  LOGGER_ATTR_DEF(NOFILTER     , 0x00008000 , LOGGER_FILTER_OPT) /* dont filter logs */                      \
+
+typedef enum logger_filter {
+LOGGER_FILTER_OPT_TABLE
+} logger_filter;
+
+#define LOGGER_PID_OPT_TABLE                                                            \
+  LOGGER_ATTR_DEF(NOPID        , 0x00010000 , LOGGER_PID_OPT) /* (default) */           \
+  LOGGER_ATTR_DEF(PID          , 0x00020000 , LOGGER_PID_OPT) /* prepend process ids */ \
+
+typedef enum logger_pid {
+LOGGER_PID_OPT_TABLE
+} logger_pid;
+
+#define LOGGER_TID_OPT_TABLE                                                            \
+  LOGGER_ATTR_DEF(NOTID        , 0x00040000 , LOGGER_TID_OPT) /* (default) */           \
+  LOGGER_ATTR_DEF(TID          , 0x00080000 , LOGGER_TID_OPT) /* prepend thread ids */  \
+
+typedef enum logger_tid {
+LOGGER_TID_OPT_TABLE
+} logger_tid;
+
 #undef LOGGER_ATTR_DEF
-};
 
 /// logger_arguments_setup
 //
@@ -115,7 +178,8 @@ xapi logger_finalize(void);
 xapi logger_vlogf(uint64_t ids, uint32_t attrs, const char * restrict fmt, va_list va)
   __attribute__((nonnull(3)));
 xapi logger_logf (uint64_t ids, uint32_t attrs, const char * restrict fmt, ...)
-  __attribute__((nonnull(3)));
+  __attribute__((nonnull(3)))
+  __attribute__((format(printf, 3, 4)));
 xapi logger_logs (uint64_t ids, uint32_t attrs, const char * restrict s)
   __attribute__((nonnull));
 xapi logger_logw (uint64_t ids, uint32_t attrs, const char * restrict src, size_t len)

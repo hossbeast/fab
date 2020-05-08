@@ -21,6 +21,7 @@
 #include "xapi/trace.h"
 #include "xapi/calltree.h"
 #include "valyria/list.h"
+#include "xlinux/xstdlib.h"
 
 #include "internal.h"
 #include "LOGGER.errtab.h"
@@ -106,7 +107,9 @@ static xapi test_filters_would()
     , { expr : "+A,BAR"          , ids : L_A | L_BAR    , would : 1 }
     , { expr : "+LABEL"          , ids : L_LABEL        , would : 1 }
     , { expr : "+A"              , ids : L_A            , would : 1 }
+
     , { expr : "+A"              , ids : L_A | L_LABEL  , would : 1 }
+
     , { expr : "+A,LABEL"        , ids : L_A | L_LABEL  , would : 1 }
 
     , { expr : "+A +BAR"         , ids : L_A | L_BAR    , would : 0 }
@@ -129,7 +132,7 @@ static xapi test_filters_would()
     , { expr : "+BAZ"            , ids : L_A            , would : 0 }
   };
 
-  fatal(list_createx, &filters, filter_free, 0, 0);
+  fatal(list_createx, &filters, 0, 0, wfree, 0);
 
   for(x = 0; x < ARRAY_LEN(tests); x++)
   {
@@ -158,6 +161,7 @@ static xapi run_tests()
   enter;
 
   fatal(suite_setup);
+  assert_eq_d(L_LABEL, category_optional_mask);
 
   struct {
     xapi (*entry)();
@@ -166,7 +170,7 @@ static xapi run_tests()
       { entry : test_filters_would }
   };
 
-  int x = 0;
+  int x;
   for(x = 0; x < sizeof(tests) / sizeof(tests[0]); x++)
   {
     xapi exit;

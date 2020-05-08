@@ -31,8 +31,6 @@
 
 #include "macros.h"
 
-#define restrict __restrict
-
 //
 // public
 //
@@ -52,15 +50,17 @@ xapi filter_say(filter * filterp, struct narrator * N)
 {
   enter;
 
+  uint64_t bit;
+  logger_category *category;
+
   xsayc(filterp->o);
 
-  uint64_t bit = UINT64_C(1);
+  bit = UINT64_C(1);
   while(bit)
   {
     if(bit & filterp->v)
     {
-      logger_category * category = category_byid(bit);
-      if(category)
+      if((category = category_byid(bit)))
       {
         if((bit - 1) & filterp->v)
           xsays(",");
@@ -80,7 +80,7 @@ int filters_would(const list * const restrict filters, const uint64_t ids)
   int r = 0;
 
   int x;
-  for(x = 0; x < filters->l; x++)
+  for(x = 0; x < filters->size; x++)
   {
     filter * filterp = list_get(filters, x);
     int rr = 0;

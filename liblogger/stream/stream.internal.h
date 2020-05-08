@@ -71,8 +71,6 @@ typedef struct stream
 extern stream g_streams[LOGGER_MAX_STREAMS];
 extern uint8_t g_streams_l;
 
-#define restrict __restrict
-
 /// stream_byid
 //
 // SUMMARY
@@ -83,7 +81,7 @@ extern uint8_t g_streams_l;
 //
 static inline stream * stream_byid(uint8_t id)
 {
-  return &g_streams[id];
+  return &g_streams[id - 1];
 }
 
 /// stream_setup
@@ -120,9 +118,9 @@ xapi streams_finalize(void);
 //
 //
 // PARAMETERS
-//  ids        - 
-//  base_attrs - 
-//  vector     - 
+//  ids        -
+//  base_attrs -
+//  vector     -
 //
 int streams_would(uint64_t ids, uint32_t attrs, uint64_t * restrict vector);
 
@@ -137,7 +135,7 @@ int streams_would(uint64_t ids, uint32_t attrs, uint64_t * restrict vector);
 //  b         -
 //  l         -
 //  time_msec -
-//  vector    - 
+//  vector    -
 //
 xapi streams_write(const uint64_t ids, const uint32_t attrs, const char * restrict b, size_t l, const long time_msec, uint64_t vector)
   __attribute__((nonnull));
@@ -190,8 +188,7 @@ xapi stream_expr_unshift(stream * restrict streamp, const char * restrict expr)
 xapi stream_expr_shift(stream * restrict streamp)
   __attribute__((nonnull));
 
-xapi stream_expr_clear(stream * restrict streamp)
+xapi stream_expr_reset(stream * restrict streamp)
   __attribute__((nonnull));
 
-#undef restrict
 #endif

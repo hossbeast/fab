@@ -27,7 +27,7 @@
 #include "logger.h"
 #include "internal.h"
 #include "category.internal.h"
-#include "attr.internal.h"
+#include "opts.internal.h"
 #include "LOGGER.errtab.h"
 
 #include "test_util.h"
@@ -58,7 +58,7 @@ static xapi assert_relation(list * restrict C, const char * category, size_t cat
   int othermin = 0xFFFF;
 
   int x;
-  for(x = 0; x < C->l; x++)
+  for(x = 0; x < C->size; x++)
   {
     cat = list_get(C, x);
     size_t namel = strlen(cat->name);
@@ -259,13 +259,14 @@ static xapi test_category_list_merge_attr_rank(struct test * test)
   fatal(logger_category_register, logs_b);
   fatal(categories_activate);
 
-#define assert_eq_color(exp, act) _asserts((act & COLOR_OPT) == exp, QUOTE(act), color_option_name(act), color_option_name(exp))
-#define assert_eq_trace(exp, act) _asserts((act & TRACE_OPT) == exp, QUOTE(act), trace_option_name(act), trace_option_name(exp))
+#define assert_eq_color(exp, act) _asserts((act & LOGGER_COLOR_OPT) == exp, QUOTE(act), color_option_name(act), color_option_name(exp))
+#define assert_eq_trace(exp, act) _asserts((act & LOGGER_TRACE_OPT) == exp, QUOTE(act), trace_option_name(act), trace_option_name(exp))
 
   assert_eq_color(L_BLUE, logs_a[0].attr);
-  assert_eq_color(L_BLUE, logs_b[0].attr);
   assert_eq_color(L_RED, logs_a[1].attr);
   assert_eq_trace(L_TRACE, logs_a[1].attr);
+
+  assert_eq_color(L_BLUE, logs_b[0].attr);
   assert_eq_color(L_RED, logs_b[1].attr);
   assert_eq_trace(L_TRACE, logs_b[1].attr);
 
@@ -287,14 +288,14 @@ static xapi test_category_lists_merge(struct test * test)
   list * C = 0;
   logger_category * cat = 0;
 
-  fatal(list_createx, &lists, 0, list_xfree, 0);
+  fatal(list_createx, &lists, 0, 0, 0, (void*)list_xfree);
   fatal(list_create, &C);
 
   // arrange
   char ** input = test->lists;
   while(*input)
   {
-    fatal(list_createx, &A, free_cat, 0, 0);
+    fatal(list_createx, &A, 0, 0, (void*)free_cat, 0);
 
     char * s = *input;
     while(*s)
@@ -307,7 +308,7 @@ static xapi test_category_lists_merge(struct test * test)
       {
         fatal(xmalloc, &cat, sizeof(*cat));
         fatal(strloadw, &cat->name, s, e - s);
-        fatal(list_push, A, cat);
+        fatal(list_push, A, cat, 0);
         cat = 0;
       }
 
@@ -316,7 +317,7 @@ static xapi test_category_lists_merge(struct test * test)
         s++;
     }
 
-    fatal(list_push, lists, A);
+    fatal(list_push, lists, A, 0);
     A = 0;
     input++;
   }

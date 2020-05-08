@@ -35,10 +35,7 @@ API xapi logger_finalize()
   fatal(categories_activate);
   fatal(streams_activate);
 
-  // clear filters and attrs from streams
-  fatal(logger_expr_clear, 0);
-
-  // process exprs attached to streams
+  // apply exprs attached to streams
   fatal(streams_finalize);
 
   // process exprs on cmdline

@@ -26,7 +26,7 @@
 // REMARKS
 //  an application using liblogger should export this and set it to nonzero
 //
-int g_logger_default_stderr;
+extern int g_logger_default_stderr;
 
 /// logger_set_process_name
 //

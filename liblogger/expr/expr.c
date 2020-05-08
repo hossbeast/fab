@@ -27,11 +27,11 @@
 #include "category.internal.h"
 #include "stream.internal.h"
 #include "filter.internal.h"
-#include "attr.internal.h"
+#include "opts.internal.h"
 
 #include "macros.h"
 
-#define restrict __restrict
+#include <stdio.h>
 
 //
 // public
@@ -39,8 +39,11 @@
 
 int expr_lex(const char * restrict expr, size_t exprl, filter * restrict filterp, uint32_t * restrict attrsp)
 {
+  int x;
   filter filter = {};
   uint32_t attrs = 0;
+  size_t off;
+  logger_category * category;
 
   if(exprl == 0 || (expr[0] != '+' && expr[0] != '-' && expr[0] != '%'))
     return 0;
@@ -48,7 +51,7 @@ int expr_lex(const char * restrict expr, size_t exprl, filter * restrict filterp
   if(expr[0] == '+' || expr[0] == '-')
     filter.o = expr[0];
 
-  size_t off = 1;
+  off = 1;
   while(off != exprl)
   {
     // skip leading delimiters
@@ -56,7 +59,6 @@ int expr_lex(const char * restrict expr, size_t exprl, filter * restrict filterp
       off++;
 
     // find the end of the name
-    int x;
     for(x = off; x < exprl; x++)
     {
       if((x == off || expr[x] < '0' || expr[x] > '9') && (expr[x] < 'A' || expr[x] > 'Z') && expr[x] != '_')
@@ -66,17 +68,12 @@ int expr_lex(const char * restrict expr, size_t exprl, filter * restrict filterp
     if(x != exprl && expr[x] != ',')
       return 0;
 
-    if(expr[0] == '%')
-    {
-      attrs = attr_combine2(attrs, attr_byname(expr + off, x - off));
-    }
-    else
-    {
-      logger_category * category = category_byname(expr + off, x - off);
-      if(category)
-        filter.v |= category->id;
-      else
-        filter.u = 1;
+    if(expr[0] == '%') {
+      attrs = attrs_combine2(attrs, attrs_value(expr + off, x - off));
+    } else if((category = category_byname(expr + off, x - off))) {
+      filter.v |= category->id;
+    } else {
+      filter.u = 1;
     }
 
     // skip trailing delimiters
@@ -134,6 +131,7 @@ xapi expr_parse(const char * restrict expr, list * restrict filters, uint32_t * 
 
   filter * filterp = 0;
   size_t exprl = strlen(expr);
+  uint32_t attr;
 
   int x;
   int y;
@@ -150,17 +148,24 @@ xapi expr_parse(const char * restrict expr, list * restrict filters, uint32_t * 
     {
       if(filterp == 0)
         fatal(xmalloc, &filterp, sizeof(*filterp));
+      else
+        memset(filterp, 0, sizeof(*filterp));
 
-      uint32_t attr;
+      attr = 0;
       if(!expr_lex(expr + x, y - x, filterp, &attr))
       {
         xapi_info_pushw("expr", expr, exprl);
         fail(LOGGER_BADEXPR);
       }
 
-      fatal(list_push, filters, filterp);
-      filterp = 0;
-      *attrs = attr_combine2(*attrs, attr);
+      /* if the expr had any filters */
+      if(filterp->v) {
+        fatal(list_push, filters, filterp, 0);
+        filterp = 0;
+      }
+
+      /* if the expr had any attrs */
+      *attrs = attrs_combine2(*attrs, attr);
     }
   }
 
@@ -254,19 +259,19 @@ API xapi logger_expr_shift(uint8_t stream_id)
   finally : coda;
 }
 
-API xapi logger_expr_clear(uint8_t stream_id)
+API xapi logger_expr_reset(uint8_t stream_id)
 {
   enter;
 
   if(stream_id)
   {
-    fatal(stream_expr_clear, stream_byid(stream_id));
+    fatal(stream_expr_reset, stream_byid(stream_id));
   }
   else
   {
     int x;
     for(x = 0; x < g_streams_l; x++)
-      fatal(stream_expr_clear, &g_streams[x]);
+      fatal(stream_expr_reset, &g_streams[x]);
   }
 
   finally : coda;

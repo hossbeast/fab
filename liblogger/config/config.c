@@ -18,6 +18,7 @@
 #include "internal.h"
 #include "config.internal.h"
 
+#include "types.h"
 #include "zbuffer.h"
 
 APIDATA int g_logger_default_stderr;
@@ -30,8 +31,6 @@ __thread uint64_t logger_thread_categories;
 
 uint32_t logger_process_attrs;
 __thread uint32_t logger_thread_attrs;
-
-#define restrict __restrict
 
 API void logger_set_process_name(const char * const restrict name)
 {

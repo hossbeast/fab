@@ -21,6 +21,7 @@
 #include <stdint.h>
 #include <sys/types.h>
 
+#include "types.h"
 #include "xapi.h"
 
 struct narrator;  // libnarrator
@@ -55,8 +56,6 @@ typedef struct logger_category
   uint64_t id;
 } logger_category;
 
-#define restrict __restrict
-
 /// logger_category_register
 //
 // SUMMARY
@@ -80,5 +79,4 @@ xapi logger_category_register(logger_category * logs)
 //
 xapi logger_categories_report(void);
 
-#undef restrict
 #endif

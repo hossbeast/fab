@@ -31,6 +31,7 @@ REMARKS
 
 */
 
+#include <inttypes.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -93,31 +94,53 @@ void ufails_info(const char * restrict value, const char * restrict exp, const c
     }                                               \
   } while(0)
 
-#define assert_eq_c(exp, act)                 \
-  _assertf(act == exp, QUOTE(act), "%c", "%c", exp, act)
+#define assert_eq_c(exp, act)                                 \
+  ({                                                          \
+    typeof(exp) _exp = (exp);                                 \
+    typeof(act) _act = (act);                                 \
+    _assertf(act == exp, QUOTE(act), "%c", "%c", _exp, _act); \
+  })
 
-#define assert_eq_d(exp, act)                 \
-  _assertf(act == exp, QUOTE(act), "%d", "%d", exp, act)
+#define assert_eq_d(exp, act)                                   \
+  ({                                                            \
+    typeof(exp) _exp = (exp);                                   \
+    typeof(act) _act = (act);                                   \
+    _assertf(_act == _exp, QUOTE(act), "%d", "%d", _exp, _act); \
+  })
 
-#define assert_eq_zu(exp, act)                 \
-  _assertf(act == exp, QUOTE(act), "%zu", "%zu", exp, act)
+#define assert_eq_zu(exp, act)                                    \
+  ({                                                              \
+    typeof(exp) _exp = (exp);                                     \
+    typeof(act) _act = (act);                                     \
+    _assertf(_act == _exp, QUOTE(act), "%zu", "%zu", _exp, _act); \
+  })
 
-#define assert_eq_u32(exp, act)                 \
-  _assertf(act == exp, QUOTE(act), "%"PRIu32, "%"PRIu32, exp, act)
+#define assert_eq_u32(exp, act)                                           \
+  ({                                                                      \
+    typeof(exp) _exp = (exp);                                             \
+    typeof(act) _act = (act);                                             \
+    _assertf(_act == _exp, QUOTE(act), "%"PRIu32, "%"PRIu32, _exp, _act); \
+  })
 
-#define assert_eq_u64(exp, act)                 \
-  _assertf(act == exp, QUOTE(act), "%"PRIu64, "%"PRIu64, exp, act)
+#define assert_eq_u64(exp, act)                                           \
+  ({                                                                      \
+    typeof(exp) _exp = (exp);                                             \
+    typeof(act) _act = act;                                               \
+    _assertf(_act ==( _exp),QUOTE(act), "%"PRIu64, "%"PRIu64, _exp, _act); \
+  })
 
-#define assert_eq_b(exp, act)                                         \
-  _assertf(act == exp, QUOTE(act), "%s", "%s", exp ? "true" : "false", act ? "true" : "false")
+#define assert_eq_b(exp, act)                                 \
+  ({                                                          \
+    typeof(exp) _exp = (exp);                                 \
+    typeof(act) _act = (act);                                 \
+    _assertf(_act == _exp, QUOTE(act), "%s", "%s", _exp ? "true" : "false", _act ? "true" : "false");  \
+  })
 
 #define assert_eq_s(exp, act)                 \
   _asserts(strcmp(act, exp) == 0, QUOTE(act), exp, act)
 
-
 #define assert_that(act)  \
   _assertf(act, QUOTE(act), "true", "false")
-
 
 #define assert_ne_c(exp, act)                 \
   _assertf(act != exp, QUOTE(act), "!= %c", "%c", exp, act)

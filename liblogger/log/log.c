@@ -36,13 +36,11 @@
 #include "log.internal.h"
 #include "stream.internal.h"
 #include "config.internal.h"
-#include "attr.internal.h"
+#include "opts.internal.h"
 #include "category.internal.h"
 
 #include "macros.h"
 #include "color.h"
-
-#define restrict __restrict
 
 //
 // [[ static ]]
@@ -55,7 +53,7 @@ static __thread uint32_t    storage_attrs;
 static __thread narrator *  storage_narrator; // the log message
 static __thread long        storage_time_msec;
 
-static __thread char storage_fixed_buffer[4096];
+static __thread char storage_fixed_buffer[1024*32];
 static __thread char storage_fixed_storage[NARRATOR_STATIC_SIZE];
 
 //
@@ -66,7 +64,7 @@ xapi log_cleanup()
 {
   enter;
 
-  fatal(narrator_ixfree, &storage_narrator);
+  fatal(narrator_xdestroy, storage_narrator);
 
   finally : coda;
 }
@@ -253,18 +251,18 @@ static __attribute__((nonnull)) xapi logger_trace(uint64_t ids, uint32_t site_at
     int __attribute__((unused)) r = clock_gettime(CLOCK_REALTIME, &times);
     long time_msec = (times.tv_sec * 1000) + (times.tv_nsec / 1000);
 
-    uint32_t base_attrs = attr_combine2(categories_attrs(ids), site_attrs);
+    uint32_t base_attrs = attrs_combine2(categories_attrs(ids), site_attrs);
 
     int x;
     for(x = 0; x < g_streams_l; x++)
     {
       stream * streamp = &g_streams[x];
 
-      uint32_t attrs = attr_combine2(base_attrs, streamp->attrs);
+      uint32_t attrs = attrs_combine2(base_attrs, streamp->attrs);
       if(vector & (UINT64_C(1) << x))
       {
         uint16_t effective_trace_attrs = trace_attrs;
-        if((attrs & COLOR_OPT) == L_NOCOLOR)
+        if((attrs & LOGGER_COLOR_OPT) == L_NOCOLOR)
           effective_trace_attrs &= ~XAPI_TRACE_COLORIZE;
 
         // stream narrator handles the newline as appropriate

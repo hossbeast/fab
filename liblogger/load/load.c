@@ -28,9 +28,7 @@
 #include "stream.internal.h"
 #include "arguments.internal.h"
 #include "log.internal.h"
-#include "attr.internal.h"
-
-#define restrict __restrict
+#include "opts.internal.h"
 
 //
 // api
@@ -57,8 +55,6 @@ API xapi logger_load()
 
   finally : coda;
 }
-
-#include <stdio.h>
 
 API xapi logger_unload()
 {

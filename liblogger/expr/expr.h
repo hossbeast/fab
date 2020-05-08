@@ -96,7 +96,7 @@ xapi logger_expr_unshift(uint8_t stream_id, const char * const restrict expr)
 //
 xapi logger_expr_shift(uint8_t stream_id);
 
-/// logger_expr_clear
+/// logger_expr_reset
 //
 // SUMMARY
 //  remove all exprs from streams
@@ -104,6 +104,6 @@ xapi logger_expr_shift(uint8_t stream_id);
 // PARAMETERS
 //  stream_id  - nonzero stream id, or 0 to apply the operation to all streams
 //
-xapi logger_expr_clear(uint8_t stream_id);
+xapi logger_expr_reset(uint8_t stream_id);
 
 #endif
