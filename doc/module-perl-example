@@ -1,0 +1,92 @@
+#!/usr/bin/env perl
+
+use strict;
+use warnings;
+
+use POSIX;
+use POSIX qw(:signal_h);
+
+my $sigset = POSIX::SigSet->new;
+$sigset->emptyset();
+my $oldset = POSIX::SigSet->new;
+
+$SIG{RTMIN} = sub { };
+
+while (1) {
+  my $text = do { local $/ = undef ; <STDIN> } || '';
+print(" > $text\n");
+
+#  for (<DATA>) {
+#    print("$_");
+#  }
+
+  # receive signal
+  POSIX::pause();
+}
+
+__DATA__
+
+# this module contains C sources
+use c
+
+# this module builds a library
+use so
+
+# make common objects available for #inclusion and linking by files in this module
+require fab/common
+
+# this module produces three artifacts
+artifact libxapi-xapi{.{debug,final}?,-{devel}?}.so
+
+artifact libxapi-{xapi-devel}?.so
+  variant xapi.devel
+
+artifact libxapi-{xapi.debug}?.so
+artifact libxapi-{xapi.final}?.so
+
+## dependencies for artifacts
+rule libxapi-xapi{.,-}?.so : calltree/calltree?.o
+
+use : c
+use : so
+
+require : fab/common
+
+artifacts : {
+  libxapi-xapi-devel.so : {
+    variant : xapi.devel
+  }
+
+  libxapi-{xapi.{debug,final}}.so : {
+    variant : $2
+  }
+}
+
+rules : [
+  pattern-rule : {
+    match : pattern
+    generate : pattern
+  }
+
+  special-rule : {
+    match : [
+      module
+      traverse : [
+        direction : down
+        relation : artifacts
+      ]
+    ]
+    generate : [
+
+    ]
+  }
+
+  foo-rule : {
+    match : 
+  }
+]
+
+tasks : {
+  @test : 
+}
+END

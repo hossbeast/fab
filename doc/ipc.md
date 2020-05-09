@@ -1,5 +1,7 @@
 #fab ipc
 
+This is all terribly out of date.
+
 For a project, the fab system consists of four processes, viz.
 
  - fab : parses command-line arguments and marshals them for faba/fabd
