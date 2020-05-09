@@ -61,10 +61,11 @@ static xapi xmain()
   int fd = -1;
   pid_t child_pid = -1;
   pid_t client_pid = -1;
-  char hash[9] = { 0 };
+  char hash[16+1] = { 0 };
   char ** argv = 0;
   int i = 0;
   int x;
+  uint64_t u64;
 
 #if DEBUG || DEVEL
   logs(L_IPC, "started");
@@ -75,10 +76,9 @@ static xapi xmain()
   fatal(xopens, 0, O_RDONLY, "/dev/null");
 
   // required second argument : ipc hash
-  uint32_t u32;
-  if(g_argc < 2 || parseuint(g_argv[1], SCNx32, 1, UINT32_MAX, 1, UINT8_MAX, &u32, 0) != 0)
+  if(g_argc < 2 || parseuint(g_argv[1], SCNx64, 1, UINT64_MAX, 1, UINT8_MAX, &u64, 0) != 0)
     fail(SYS_BADARGS);
-  snprintf(hash, sizeof(hash), "%x", u32);
+  snprintf(hash, sizeof(hash), "%016"PRIx64, u64);
 
   // fork child
   fatal(xfork, &child_pid);
@@ -150,7 +150,7 @@ static xapi xmain()
   // signal a client, if any
   fatal(xopenf, &fd, O_RDONLY, "%s/%s/client/pid", XQUOTE(FABIPCDIR), hash);
   fatal(axread, fd, &client_pid, sizeof(client_pid));
-  fatal(sigutil_ukill, client_pid, FABIPC_SIGEND);
+  fatal(uxkill, client_pid, FABIPC_SIGEND, 0);
 
 finally:
   // locals

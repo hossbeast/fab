@@ -23,15 +23,11 @@
 
 extern logger_category * categories;
 
-#define BASE 0
+#define L_ERROR   categories[0x0].id
+#define L_WATCHER categories[0x1].id
 #if DEBUG || DEVEL || XAPI
-#define L_IPC   categories[0x0].id
-#undef BASE
-#define BASE 1
+# define L_IPC    categories[0x2].id
 #endif
-
-#define L_ERROR   categories[BASE + 0x0].id
-#define L_WATCHER categories[BASE + 0x1].id
 
 /// logging_setup
 //

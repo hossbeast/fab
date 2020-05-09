@@ -23,12 +23,11 @@
 #include "logging.h"
 
 logger_category * categories = (logger_category []) {
-#if DEBUG || XAPI || DEVEL
-    { name : "IPC"      , description : "signal-exchange", attr : L_NAMES | L_PID }
-  ,
-#endif
     { name : "ERROR"    , description : "fatal errors" }
   , { name : "WATCHER"  , description : "fabd watcher", optional : 1 }
+#if DEBUG || XAPI || DEVEL
+  , { name : "IPC"      , description : "signal-exchange", attr : L_NAMES | L_PID }
+#endif
   , { }
 };
 
