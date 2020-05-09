@@ -1,0 +1,48 @@
+/* Copyright (c) 2012-2015 Todd Freed <todd.freed@gmail.com>
+
+   This file is part of fab.
+
+   fab is free software: you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation, either version 3 of the License, or
+   (at your option) any later version.
+
+   fab is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+
+   You should have received a copy of the GNU General Public License
+   along with fab.  If not, see <http://www.gnu.org/licenses/>. */
+
+use cc                  # this module contains C sources
+use library/shared      # this module builds a library
+use xunit-tests         # this module contains xunit tests
+
+# make common objects available for #inclusion and linking by files in this module
+import fab/include
+import common
+import common/attrs
+import lib{xapi,xlinux,narrator,valyria,logger,xunit,yyutil}
+
+# declare variants in the module
+variant xapi.pic.{devel,debug,final}
+
+# default target for this module
+rule libmoria.?.so -> //module/targets
+
+rule libmoria.?.so <- common/attrs/attrs.$?.o
+
+# pull in object files in the module, ignoring ./test
+rule **~test/*.?.o -> libmoria.$?.so
+
+# intra module dependencies - generated files
+rule */*.?.o <- errtab/MORIA.errtab.h
+
+# library dependencies
+rule //module/imports/*~libxunit/lib*.?.so -> libmoria.$?.so
+
+# tests need the library
+variant xapi.pic.devel : [
+  rule **/test/test_*.?.so <- libmoria.$?.so
+]

@@ -1,0 +1,48 @@
+/* Copyright (c) 2012-2019 Todd Freed <todd.freed@gmail.com>
+
+   This file is part of fab.
+
+   fab is free software: you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation, either version 3 of the License, or
+   (at your option) any later version.
+
+   fab is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+
+   You should have received a copy of the GNU General Public License
+   along with fab.  If not, see <http://www.gnu.org/licenses/>. */
+
+use cc              # this module contains c sources
+use library/shared  # this module builds a shared library
+use xapi/errtab     # this module contains errtabs
+
+# make common objects available for #inclusion and linking by files in this module
+import fab/include
+import common
+import common/fmt
+import libxapi
+
+# variants for the module
+variant xapi.pic.{debug,devel,final}
+
+# common objects
+rule libxlinux.?.so <- common/fmt/fmt.$?.o
+
+# pull in object files in the module, except those under integ
+rule *~integ/**/*.?.o -> libxlinux.$?.so
+
+# default build targets
+rule libxlinux.?.{so,a} -> //module/targets
+
+# intra module dependencies - generated files
+rule */*.?.o <- errtab/{XLINUX,KERNEL}.errtab.h
+
+# library dependencies
+rule //module/imports/*/lib*.?.so -> libxlinux.$?.so
+
+var : {
+  cflags : [ -ldl -lrt ]
+}

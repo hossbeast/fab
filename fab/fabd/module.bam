@@ -1,0 +1,112 @@
+/* Copyright (c) 2012-2019 Todd Freed <todd.freed@gmail.com>
+
+   This file is part of fab.
+
+   fab is free software: you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation, either version 3 of the License, or
+   (at your option) any later version.
+
+   fab is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+
+   You should have received a copy of the GNU General Public License
+   along with fab.  If not, see <http://www.gnu.org/licenses/>. */
+
+use builtin-modules/cc           # this module contains C sources
+use builtin-modules/flex
+use builtin-modules/bison
+use builtin-modules/executable  # this module builds an executable
+use xapi/errtab
+use xunit-tests
+
+# declare variants
+variant xapi.{debug,devel,final}
+rule fabd.? -> //module/targets
+
+# make common objects available for #include and linking
+import fab/include
+import fab/asan
+import common
+import common/assure
+import common/parseint
+import common/attrs
+import common/hash
+import common/atomic
+import common/snarf
+import common/spinlock
+import common/grow
+import lib{xapi,xlinux,valyria,value,logger,narrator,fab,lorien,moria,yyutil,xunit}
+
+rule fabd.? <- common/attrs/attrs.$?.o
+rule fabd.? <- common/assure/assure.$?.o
+rule fabd.? <- common/hash/hash.$?.o
+rule fabd.? <- common/snarf/snarf.$?.o
+rule fabd.? <- common/fmt/fmt.$?.o
+rule fabd.? <- common/parseint/parseint.$?.o
+
+variant xapi.{debug,devel} : [
+  rule fabd.? <- asan/asan.$?.o
+]
+
+# invoke the compiler to build the executable
+rule **~test/*.?.o -> fabd.$? : executable/bam-cc
+
+# intra module dependencies - generated files
+rule */*.?.o <- errtab/CONFIG.errtab.h
+rule */*.?.o <- errtab/FABD.errtab.h
+rule */*.?.o <- errtab/FORMULA.errtab.h
+rule */*.?.o <- errtab/MODULE.errtab.h
+rule */*.?.o <- errtab/PATTERN.errtab.h
+rule */*.?.o <- errtab/REQUEST.errtab.h
+rule */*.?.o <- errtab/SELECTOR.errtab.h
+
+# library dependencies
+variant xapi.pic.{debug,devel,final} : [
+  rule //module/imports/*~libxunit/lib*.?.so -> fabd.${?-pic}
+]
+
+variant xapi.pic.devel : [
+  rule //module/imports/libxunit/lib*.?.so -> fabd.${?-pic}
+]
+
+var : {
+  cflags : [ -lrt -lpthread ]
+}
+
+#
+# tests
+#
+
+variant xapi.pic.devel : [
+  # all the code
+  rule **~test/(*~main).?.o -> test/blob.?.so : ./bam-cc-blob-so
+
+  # some test dependency code
+  rule test/node_operations_test.?.o -> test/blob.?.so
+
+  # common
+  rule test/blob.?.so <- common/attrs/attrs.$?.o
+  rule test/blob.?.so <- common/assure/assure.$?.o
+  rule test/blob.?.so <- common/hash/hash.$?.o
+  rule test/blob.?.so <- common/snarf/snarf.$?.o
+  rule test/blob.?.so <- common/fmt/fmt.$?.o
+  rule test/blob.?.so <- common/parseint/parseint.$?.o
+
+  #
+  # here be hacks
+  #  these are arranged like this in order to be loaded in the proper order
+  #
+  rule //module/imports/libyyutil/libyyutil.?.so -> //two
+  rule //module/imports/libmoria/libmoria.?.so -> //three
+  rule //module/imports/libvalue/libvalue.?.so -> //three
+  rule //module/imports/liblorien/liblorien.?.so -> //three
+  rule //module/imports/libfab/libfab.?.so -> //four
+  rule test/blob.?.so -> //five
+  rule //two -> //three
+  rule //three -> //four
+  rule //four -> //five
+  rule //five -> //xunit
+]

@@ -1,6 +1,6 @@
 #!/usr/bin/env perl
 #
-# Copyright (c) 2012-2015 Todd Freed <todd.freed@gmail.com>
+# Copyright (c) 2012-2020 Todd Freed <todd.freed@gmail.com>
 # 
 # This file is part of fab.
 # 
@@ -16,36 +16,16 @@
 # 
 # You should have received a copy of the GNU General Public License
 # along with fab.  If not, see <http://www.gnu.org/licenses/>. */
+#
 
-# target - path to exports file
-# deps - colon delimited list of paths to source files in the module
+use strict;
+use warnings;
 
-my $ofd = open "$ENV{target}" or die $!;
+use POSIX;
 
-print $ofd ("{ global: ");
+my @cmd = ($ENV{bm_source});
 
-for split(/:/, $ENV{deps})
-{
-  my $rfd = open($_) or die $!;
-  while(<$rfd>)
-  {
-    if(/API(?:DATA)?.*? ([a-zA-Z_][a-zA-Z0-9_]+) *(?:\(|=|;)/)
-    {
-      print $ofd ("$1;\n")
-    }
-  }
-}
+# redirect stdout -> auxout
+POSIX::dup2(1001, 1);
 
-print $ofd ("local: *; };")
-
-__END__
-
-env [
-  deps {
-    type traversal
-    direction up|down
-    mode pre|post
-    travel fs|weak|strong
-    visit fs|weak|strong
-  }
-]
+exec { $cmd[0] } @cmd

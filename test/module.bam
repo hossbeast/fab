@@ -1,0 +1,7 @@
+use cc
+use xapi/errtab
+
+variant xapi.pic.{debug,devel,final}
+
+import fab/include
+import libxapi

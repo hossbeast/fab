@@ -1,0 +1,52 @@
+/* Copyright (c) 2012-2019 Todd Freed <todd.freed@gmail.com>
+
+   This file is part of fab.
+
+   fab is free software: you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation, either version 3 of the License, or
+   (at your option) any later version.
+
+   fab is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+
+   You should have received a copy of the GNU General Public License
+   along with fab.  If not, see <http://www.gnu.org/licenses/>. */
+
+use cc           # this module contains C sources
+use executable  # this module builds an executable
+
+# declare variants
+variant xapi.{debug,devel,final}
+
+rule fabw.? -> //module/targets
+
+# make common objects available for #include and linking
+import fab/include
+import fab/asan
+import common
+import common/assure
+import common/parseint
+
+import lib{xapi,xlinux,logger,narrator,fab,lorien,valyria,xunit}
+
+variant xapi.{debug,devel} : [
+  rule fabw.? <- asan/asan.$?.o
+]
+
+rule fabw.? <- common/assure/assure.$?.o
+rule fabw.? <- common/parseint/parseint.$?.o
+
+# invoke the compiler to build the executable
+rule **/*.?.o -> fabw.$? : executable/bam-cc
+
+# library dependencies
+variant xapi.pic.{debug,devel,final} : [
+  rule //module/imports/*~libxunit/lib*.?.so -> fabw.${?-pic}
+]
+
+variant xapi.pic.devel : [
+  rule //module/imports/libxunit/lib*.?.so -> fabw.${?-pic}
+]

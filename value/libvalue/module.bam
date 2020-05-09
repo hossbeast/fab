@@ -1,0 +1,59 @@
+/* Copyright (c) 2012-2019 Todd Freed <todd.freed@gmail.com>
+
+   This file is part of fab.
+
+   fab is free software: you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation, either version 3 of the License, or
+   (at your option) any later version.
+
+   fab is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+
+   You should have received a copy of the GNU General Public License
+   along with fab.  If not, see <http://www.gnu.org/licenses/>. */
+
+use cc               # this module contains c sources
+use flex
+use bison
+use library/shared  # this module builds a library
+use xapi/errtab     # this module contains errtabs
+use xunit-tests     # this module contains xunit tests
+
+# make common objects available for #inclusion and linking by files in this module
+import fab/include
+import common
+import common/hash
+import common/assure
+import common/grow
+import common/stresc
+import common/attrs
+import common/parseint
+
+import lib{xapi,xlinux,narrator,valyria,yyutil,xunit,logger}
+
+# variants for the module
+variant xapi.pic.{debug,devel,final}
+
+rule libvalue.?.so <- common/attrs/attrs.$?.o
+rule libvalue.?.so <- common/parseint/parseint.$?.o
+rule libvalue.?.so <- common/hash/hash.$?.o
+
+# pull in object files in the module, except those under integ
+rule **~test/*.?.o -> libvalue.$?.so
+
+# default build targets
+rule libvalue.?.so -> //module/targets
+
+# intra module dependencies - generated files
+rule */*.?.o <- errtab/VALUE.errtab.h
+
+# library dependencies
+rule //module/imports/*~libxunit/lib*.?.so -> libvalue.$?.so
+
+# tests need the library
+variant xapi.pic.devel : [
+  rule **/test/test_*.?.so <- libvalue.$?.so
+]

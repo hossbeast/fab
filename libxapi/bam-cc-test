@@ -17,40 +17,54 @@
 # You should have received a copy of the GNU General Public License
 # along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-# target - path to exports file
-# deps - colon delimited list of paths to source files in the module
+use strict;
+use warnings;
 
+die "cc not found in environment" unless $ENV{cc};
+
+# exec into the compiler
 my @cmd = (
     $ENV{cc}
-  , $ENV{cflags}
-  , "-shared"
-  , "-Wl,--version-script=" . $ENV{target} . "../exports"
-  , map { "-I$_" } split(/:/, $ENV{includes})
-  , "-o" $ENV{target}
-  # object files in this module
-  , split(/:/, $ENV{thisdeps})
-  # immediate library dependencies
-  , split(/:/, $ENV{otherdeps})
+  , split(/ /, $ENV{cflags})
+  , "-o", $ENV{bm_target}
+  # object files
+  , split(/ /, $ENV{objects})
+  # library files
+  , split(/ /, $ENV{libraries})
 );
+
+print(join(" ", @cmd) . "\n");
 
 exec { $cmd[0] } @cmd
 
-__END__
+__DATA__
 
-env [
-  deps {
-    type traversal
-    direction up|down
-    mode pre|post
-    travel fs|weak|strong
-    visit fs|weak|strong
-  }
+envs : {
+  objects : [
+    select : [
+      target
+      traverse : {
+        direction : down
+        relation : strong
+        max-distance : 1
+        min-distance : 1
+        extension : o
+      }
+    ]
+    property : relpath
+  ]
 
-  otherdeps {
-    type traversal
-    direction up|down
-    mode pre|post
-    travel fs|weak|strong
-    visit fs|weak|strong
-  }
-]
+  libraries : [
+    select : [
+      target
+      traverse : {
+        direction : down
+        relation : strong
+        max-distance : 1
+        min-distance : 1
+        extension : a
+      }
+    ]
+    property : relpath
+  ]
+}

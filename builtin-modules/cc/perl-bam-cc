@@ -1,0 +1,98 @@
+#!/usr/bin/env perl
+#
+# Copyright (c) 2012-2015 Todd Freed <todd.freed@gmail.com>
+#
+# This file is part of fab.
+#
+# fab is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# fab is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with fab.  If not, see <http://www.gnu.org/licenses/>. */
+#
+
+die "cc not found in environment" unless $ENV{cc};
+
+my $ccpath = undef;
+if(index($ENV{cc}, "/") > -1)
+{
+  $ccpath = $ENV{cc};
+}
+elsif($ENV{PATH})
+{
+  for my $dir (split(/:/, $ENV{PATH}))
+  {
+    my $path = "$dir/$ENV{cc}";
+    if (-e $path)
+    {
+      $ccpath = $path;
+      last;
+    }
+  }
+}
+
+die "cannot find $ENV{cc}" unless $ccpath;
+
+my @cmd = (
+    $ccpath
+  , split(/ /, $ENV{cflags})
+  , (map { "-I$_" } split(/ /, $ENV{includes}))
+#  , ((split(/ /, $ENV{deps}))[0])
+  , $ENV{bm_source}
+  , "-c"
+  , "-o", $ENV{bm_target}
+);
+
+use Data::Dumper;
+#print Dumper \%ENV;
+#print Dumper \@cmd;
+print(join(" ", @cmd) . "\n");
+
+exec { $cmd[0] } @cmd
+
+__DATA__
+
+envs : {
+  deps : [
+    select : [
+      target
+      traverse : {
+        direction : down
+        relation : strong
+        max-distance : 1
+      }
+    ]
+
+    property : relpath
+  ]
+
+  includes : [
+    select : [
+      module
+      union : [
+        # all directories in this module
+        traverse : {
+          direction : down
+          min-distance : 0
+          relation : fsmod
+          nodes : dir
+        }
+
+        # imported directories
+        traverse : {
+          direction : down
+          relation : imports
+        }
+      ]
+    ]
+
+    property : relpath
+  ]
+}

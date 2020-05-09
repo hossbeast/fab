@@ -15,15 +15,5 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-# setup the dependency
-rule %?.o : %.c
-
-formula {
-
-}
-TEXT
-#!/usr/bin/env perl
-
-
-  
-TEXT
+# statically linked object archives
+rule *.a -- : ./bam-cc-a
