@@ -1,17 +1,17 @@
 /* Copyright (c) 2012-2015 Todd Freed <todd.freed@gmail.com>
 
    This file is part of fab.
-   
+
    fab is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
    the Free Software Foundation, either version 3 of the License, or
    (at your option) any later version.
-   
+
    fab is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
    GNU General Public License for more details.
-   
+
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
@@ -26,8 +26,8 @@
 #  paths      - paths to .lex.h files
 #
 #  fabdirs    - (as above, but for fabrication/dependency only)
-#  rfabdirs   - 
-#  fabpaths   - 
+#  rfabdirs   -
+#  fabpaths   -
 
 +[ $*/../../../vars.fab ]
 
@@ -59,27 +59,27 @@ $lexhfabpaths = [
 	> echo "#ifndef ${pfx}_STATES_H"
 	> echo "#define ${pfx}_STATES_H"
 	> echo "extern int ${pfx}_numstates;"
-	> echo "extern int * ${pfx}_statenumbers;"
-	> echo "extern char ** ${pfx}_statenames;"
+	> echo "extern const int * ${pfx}_statenumbers;"
+	> echo "extern const char ** ${pfx}_statenames;"
 	> echo "enum ${pfx}_statenames {"
 	> sed   -ne '/#ifdef.*YY_HEADER_EXPORT_START_CONDITIONS/,/#.*endif/ p' < ${src} \
 	>  | sed -ne "s/#define[ \t]\+\([^ \t]\+\)[ \t]\+\([^ \t]\+\)/${pfx}_\1 = \2,/p"
-	> echo "};"	
+	> echo "};"
 	> echo "#endif"
 
 	> exec 1>${states_c}
-	> echo "char ** ${pfx}_statenames = (char *[]) {"
+	> echo "const char ** ${pfx}_statenames = (const char *[]) {"
 	> sed   -ne '/#ifdef.*YY_HEADER_EXPORT_START_CONDITIONS/,/#.*endif/ p' < ${src} \
 	>  | sed -ne 's/#define[ \t]\+\([^ \t]\+\)[ \t]\+\([^ \t]\+\)/[\2] = "\1",/p'
-	> echo "};"	
-	> echo "int * ${pfx}_statenumbers = (int []) {"
+	> echo "};"
+	> echo "const int * ${pfx}_statenumbers = (const int []) {"
 	> sed   -ne '/#ifdef.*YY_HEADER_EXPORT_START_CONDITIONS/,/#.*endif/ p' < ${src} \
 	>  | sed -ne "s/#define[ \t]\+\([^ \t]\+\)[ \t]\+\([^ \t]\+\)/\2,/p"
-	> echo "};"	
+	> echo "};"
 	> echo "int ${pfx}_numstates = sizeof((int []) {"
 	> sed   -ne '/#ifdef.*YY_HEADER_EXPORT_START_CONDITIONS/,/#.*endif/ p' < ${src} \
 	>  | sed -ne "s/#define[ \t]\+\([^ \t]\+\)[ \t]\+\([^ \t]\+\)/\2,/p"
-	> echo "}) / sizeof(int);"	
+	> echo "}) / sizeof(int);"
 }
 
 # cc : tokens.c -> tokens.o @ std.c

@@ -24,6 +24,7 @@
 logger_category * categories = (logger_category []) {
     { name : "YYUTIL"   , description : "libyyutil logging", optional : 1 }
 #if DEBUG || DEVEL || XUNIT
+  , { name : "PARSER"   , description : "parser configuration" }
   , { name : "TOKENS"   , description : "scanner - token stream" }
   , { name : "STATES"   , description : "scanner - lexer states" }
 #endif

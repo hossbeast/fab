@@ -15,27 +15,17 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef _YYUTIL_LOGGING_INTERNAL_H
-#define _YYUTIL_LOGGING_INTERNAL_H
+#ifndef _YYUTIL_SCANNER_INTERNAL_H
+#define _YYUTIL_SCANNER_INTERNAL_H
 
-#include "logger.h"
-#include "logger/category.h"
-#include "logging.h"
+#include "scanner.h"
 
-extern logger_category * categories;
+struct yyu_parser;
 
-#define L_YYUTIL    categories[0].id
-#if DEBUG || DEVEL || XUNIT
-#define L_PARSER    categories[1].id
-#define L_TOKENS    categories[2].id
-#define L_STATES    categories[3].id
-#endif
+const char * scanner_tokenname(struct yyu_parser * restrict parser, int token)
+  __attribute__((nonnull));
 
-/// logging_setup
-//
-// SUMMARY
-//  configure logging
-//
-xapi logging_setup(void);
+const char * scanner_statename(struct yyu_parser * restrict parser, int state)
+  __attribute__((nonnull));
 
 #endif

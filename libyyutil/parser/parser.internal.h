@@ -15,27 +15,20 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef _YYUTIL_LOGGING_INTERNAL_H
-#define _YYUTIL_LOGGING_INTERNAL_H
+#ifndef _YYUTIL_PARSER_INTERNAL_H
+#define _YYUTIL_PARSER_INTERNAL_H
 
-#include "logger.h"
-#include "logger/category.h"
-#include "logging.h"
+#include "parser.h"
 
-extern logger_category * categories;
+struct attrs;
+struct member;
 
-#define L_YYUTIL    categories[0].id
-#if DEBUG || DEVEL || XUNIT
-#define L_PARSER    categories[1].id
-#define L_TOKENS    categories[2].id
-#define L_STATES    categories[3].id
-#endif
-
-/// logging_setup
-//
-// SUMMARY
-//  configure logging
-//
-xapi logging_setup(void);
+typedef struct str_token_entry
+{
+  int token;
+  const char * name;
+  uint16_t namel;
+  int lval;
+} str_token_entry;
 
 #endif

@@ -22,7 +22,7 @@
 
 # var/closure
 #  cc
-#  cflags 
+#  cflags
 #  bison
 #  bisonflags
 #
@@ -31,12 +31,12 @@
 #  paths      - paths to .y files
 #
 #  dscdirs    - (as above, but for discovery only)
-#  dscrdirs   - 
-#  dscpaths   - 
+#  dscrdirs   -
+#  dscpaths   -
 #
 #  fabdirs    - (as above, but for fabrication/dependency only)
-#  fabrdirs   - 
-#  fabpaths   - 
+#  fabrdirs   -
+#  fabpaths   -
 #
 
 +[ $*/../../vars.fab ]
@@ -79,7 +79,10 @@ $yfabpaths = [
 # discovery
 [ $ydscpaths ] %
 {
+	fname=[ $@ ~ w/0/1 rx ]
+
 	    [ $bison ] [ $bisonflags ~ uu fi ] -o /dev/stdout [ $@ ] [
+  ] | sed -e "s@/dev/stdout@$fname@g" [
 	] | [ $cc ] [ $cflags ~ uu fi ] -MM -MP -MG -xc - [
 	] | [ $gccdep ] [ $@ ~ [ rx [ sx/y/tab.$dext ~ j ] y fi ~ fi ] ] [ $dext ]
 }

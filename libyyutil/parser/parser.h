@@ -18,175 +18,239 @@
 #ifndef _YYUTIL_PARSER_H
 #define _YYUTIL_PARSER_H
 
-#include <sys/types.h>
-#include <stdint.h>
-
 #include "xapi.h"
+#include "types.h"
 
-#define restrict __restrict
+#include "grammar.h"
 
-/// yyu_location
-//
-// structure for location tracking that including line numbers and start and end pointers
-//
-typedef struct yyu_location
-{
-  const char *  fname;  // name of the file
-  int     f_lin;  // line where the location begins
-  int     f_col;  // column where the location begins
-  int     l_lin;  // line where the location ends
-  int     l_col;  // column where the location ends
+struct hashtable;     // valyria/hashtable
+struct attrs;
+struct yy_buffer_state;
 
-  char *  s;      // pointer to start of location
-  char *  e;      // pointer to end of location
-  size_t  l;      // length of location, equal to e - s
-} yyu_location;
+typedef struct yyu_vtable {
+  struct yy_buffer_state * (*yy_scan_bytes)(const char * bytes, int len, void * scanner);
+  struct yy_buffer_state * (*yy_scan_buffer)(char * buf, size_t size, void * scanner);
+  void (*yy_delete_buffer)(struct yy_buffer_state *, void *);
+  int (*yylex_destroy)(void * scanner);
+  int (*yylex_init)(void ** scanner);
+  void (*yyset_extra)(void * parser, void * scanner);
+  int (*yyparse)(void * scanner, void * parser);
+  char (*yyget_hold_char)(void * scanner);
+} yyu_vtable;
 
-/// YYU_EXTRA_TYPE
-//
-// SUMMARY
-//  must have struct yyu_extra as its first member
-//
-#ifndef YYU_EXTRA_TYPE
-# define YYU_EXTRA_TYPE struct yyu_extra
-#endif
+#define YYU_VTABLE(name, lex_prefix, tab_prefix)         \
+yyu_vtable name = {                                      \
+    yy_scan_bytes : lex_prefix ## _yy_scan_bytes         \
+  , yy_scan_buffer : lex_prefix ## _yy_scan_buffer       \
+  , yy_delete_buffer : lex_prefix ## _yy_delete_buffer   \
+  , yylex_destroy : lex_prefix ## _yylex_destroy         \
+  , yylex_init : lex_prefix ## _yylex_init               \
+  , yyset_extra : lex_prefix ## _yyset_extra             \
+  , yyget_hold_char : lex_prefix ## _yyget_hold_char     \
+  , yyparse : tab_prefix ## _yyparse                     \
+}
 
-/// yyu_extra
+/* indexes of particular tokens */
+struct yyu_tokens {
+  uint16_t STR;            // sequence of printable characters
+  uint16_t CREF;           // character-escape of one byte in the printable range of 7-bit ascii
+  uint16_t HREF;           // hex escape of one byte
+  uint16_t BOOL;           // boolean literals
+  uint16_t FLOAT;          // floating point literals
+  uint16_t HEX8;           // hex literals
+  uint16_t HEX16;
+  uint16_t HEX32;
+  uint16_t HEX64;
+  uint16_t UINTMAX8;       // positive integer literals
+  uint16_t UINTMAX16;
+  uint16_t UINTMAX32;
+  uint16_t UINTMAX64;
+  uint16_t INTMIN8;        // possibly negative integer literals
+  uint16_t INTMIN16;
+  uint16_t INTMIN32;
+  uint16_t INTMIN64;
+  uint16_t INTMAX8;
+  uint16_t INTMAX16;
+  uint16_t INTMAX32;
+  uint16_t INTMAX64;
+};
+
+/// yyu_parser
 //
 // SUMMARY
 //  structure for parsing data (yyextra)
 //
-typedef struct yyu_extra
-{
-  int             scanerr;          // error from scanner
-  int             gramerr;          // error from parser
+typedef struct yyu_parser {
+/* parse state */
+  bool            scanerr;          // error raised from scanner
+  bool            gramerr;          // error raised from parser
+  uint16_t        attrs;            // YYU_*
 
-  void *          scanner;          // flex scanner
   int             states[64];       // start states stack
   int             states_n;
+  const char *    yybuffer;
+  char *          usrbuf;
+  size_t          usrbufsize;
   yyu_location    loc;              // running location track for this parse
 
                                     // last successfully scanned token
   yyu_location    last_loc;         //  location
   int             last_token;       //  token
   int             last_line;        //  line number in the scanner
-  void *          last_lval;        //  semantic value
   size_t          last_lval_aloc;   //  allocated size
 
                                     // upon error
   yyu_location    error_loc;        //  location
   char            error_str[256];   //  string
   char            tokenstring[256]; //  tokenstring (gramerr only)
+  const char *    fname;            //  filename
 
-  const char *    fname;
-  uint64_t        state_logs;       // logging category ids for state transition logging
-  uint64_t        token_logs;       // logging category ids for token logging
+/* parser configuration */
+  struct hashtable * str_token_table; // tokens for parsing instead of STR in LEXA
+  uint64_t logs;                      // logging categories for this parser
+  const yyu_vtable * vtable;
+  xapi error_syntax;
+  void * scanner;                     // flex scanner
+  void * last_lval;                   //  semantic value
+  yyu_location * final_loc;
 
-  // yyu calls this function to get a token name from a token
-  const char *    (*tokname)(int token);
+  /// lvalstr
+  //
+  // SUMMARY
+  //  yyu calls this function get a textual description of a scanned token
+  //
+  size_t (*lvalstr)(struct yyu_parser * restrict parser, int token, void * restrict lval, char * restrict buf, size_t blen);
 
-  // yyu calls this function to get a state name from a state
-  const char *    (*statename)(int token);
+/* autogenerated parser configuration */
+/* .tokens.h structures */
+  uint16_t numtokens;
+  uint16_t mintoken;
+  uint16_t maxtoken;
+  const uint16_t * tokenindexes;   // [mintoken, maxtoken] - indexes by token number
+  const uint16_t * tokennumbers;   // [0, numtokens) - token numbers
+  const char ** tokennames;        // [0, numtokens) - token names
+  const char ** tokenstrings;      // [0, numtokens) - token user strings
+  struct yyu_tokens tokens;        // indexes of particular tokens
+/* .states.h structures */
+  int numstates;
+  const int * statenumbers;
+  const char ** statenames;
+} yyu_parser;
 
-  // yyu calls this function to get a description of the input for location messages
-  size_t          (*inputstr)(YYU_EXTRA_TYPE * restrict xtra, char * restrict buf, size_t blen);
-
-  // yyu calls this function get a textual description of a scanned token
-  size_t          (*lvalstr)(int token, void * restrict lval, YYU_EXTRA_TYPE * restrict xtra, char * restrict buf, size_t blen);
-} yyu_extra;
-
-/// yyu_extra_destroy
+/// yyu_parser_init
 //
 // SUMMARY
-//  destroy an yyu_extra
 //
-void yyu_extra_destroy(yyu_extra * const restrict)
+//
+xapi yyu_parser_init(
+    yyu_parser * const restrict parser
+  , const yyu_vtable * const restrict vtable
+  , xapi error_syntax
+)
   __attribute__((nonnull));
 
-/// YYULTYPE
-//
-// use yyu_location within bison
-//
-#define YYLTYPE yyu_location
-
-/// YYULLOC_DEFAULT
-//
-// aggregate yyu_locations in the parser
-//
-#define YYLLOC_DEFAULT(Cur, Rhs, N)         \
-do                                          \
-{                                           \
-  if(N)                                     \
-  {                                         \
-    (Cur).fname = YYRHSLOC(Rhs, 1).fname;   \
-    (Cur).f_lin = YYRHSLOC(Rhs, 1).f_lin;   \
-    (Cur).f_col = YYRHSLOC(Rhs, 1).f_col;   \
-    (Cur).l_lin = YYRHSLOC(Rhs, N).l_lin;   \
-    (Cur).l_col = YYRHSLOC(Rhs, N).l_col;   \
-                                            \
-    (Cur).s = YYRHSLOC(Rhs, 1).s;           \
-    (Cur).e = YYRHSLOC(Rhs, N).e;           \
-    (Cur).l = (Cur).e - (Cur).s;            \
-  }                                         \
-  else                                      \
-  {                                         \
-    (Cur).fname = YYRHSLOC(Rhs, 0).fname;   \
-    (Cur).f_lin = YYRHSLOC(Rhs, 0).l_lin;   \
-    (Cur).l_lin = YYRHSLOC(Rhs, 0).l_lin;   \
-    (Cur).f_col = YYRHSLOC(Rhs, 0).l_col;   \
-    (Cur).l_col = YYRHSLOC(Rhs, 0).l_col;   \
-                                            \
-    (Cur).s = YYRHSLOC(Rhs, 0).e;           \
-    (Cur).l = 0;                            \
-  }                                         \
-} while(0)
-
-/// YYU_YFATAL
-//
-// fatal for use within grammar rules - invokes YYABORT
-//
-// NOTE
-//  requires that you have these lines in your .y file
-//  %parse-param { void * scanner }
-//  %parse-param { parse_param * parm }
-//
-#define YFATAL(x, ...)                \
-do {                                  \
-  enter_nochecks;                     \
-  xapi _yyu_R;                        \
-  fatal(x, ##__VA_ARGS__);            \
-  finally : conclude(&_yyu_R);        \
-  if(_yyu_R)                          \
-  {                                   \
-    YYABORT;                          \
-  }                                   \
-} while(0)
-
-/// yyu_grammar_error
+/// yyu_parser_init_tokens
 //
 // SUMMARY
-//  yyerror - invoked by yyparse to report failure-to-reduce before returning 1
+//
 //
 // PARAMETERS
-//  lloc    -
-//  scanner -
-//  xtra    -
-//  err     -
+//  parser        -
+//  numtokens     -
+//  mintoken      -
+//  maxtoken      -
+//  tokenindexes  -
+//  tokennumbers  -
+//  tokennames    -
+//  tokenstrings  -
+//  numstates     -
+//  statenumbers  -
+//  statenames    -
 //
-void yyu_grammar_error(yyu_location * const restrict lloc, void * const restrict scanner, YYU_EXTRA_TYPE * const restrict xtra, char const * err)
-  __attribute__((nonnull(1,2,3)));
+xapi yyu_parser_init_tokens(
+    yyu_parser * const restrict parser
+  , uint16_t numtokens
+  , uint16_t mintoken
+  , uint16_t maxtoken
+  , const uint16_t * restrict tokenindexes
+  , const uint16_t * restrict tokennumbers
+  , const char ** restrict tokennames
+  , const char ** restrict tokenstrings
+  , const uint16_t * restrict tokenstring_tokens
+);
 
-/// yyu_reduce
-//
-// SUMMARY
-//  frontend to the parsing machinery
-//
-// PARAMETERS
-//  parser       - yyparse
-//  pp           - parse_param instance
-//  syntax_error - exit value to use when the parse fails with failure-to-reduce
-//
-xapi yyu_reduce(int (*parser)(void *, YYU_EXTRA_TYPE *), YYU_EXTRA_TYPE * pp, xapi syntax_error)
+xapi yyu_parser_init_states(
+    yyu_parser * const restrict parser
+  , int numstates
+  , const int * restrict statenumbers
+  , const char ** restrict statenames
+)
   __attribute__((nonnull));
+
+/// yyu_parser_xdestroy
+//
+// SUMMARY
+//  destroy an yyu_parser
+//
+xapi yyu_parser_xdestroy(yyu_parser * const restrict parser)
+  __attribute__((nonnull));
+
+#define YYU_PARTIAL 1  // stop parsing after recognizing an utterance
+#define YYU_INPLACE 2  // parse the buffer without making a copy ; it ends with two null bytes
+
+/// yyu_parse
+//
+// SUMMARY
+//
+//
+// PARAMETERS
+//  parser      -
+//  text        -
+//  text_len    -
+//  fname       -
+//  attrs       - 
+//  [init_loc]  - 
+//  [final_loc] - (returns) 
+//
+xapi yyu_parse(
+    yyu_parser * const restrict parser
+  , char * const restrict text
+  , size_t text_len
+  , const char * const restrict fname
+  , uint16_t attrs
+  , yyu_location * restrict init_loc
+  , yyu_location * restrict final_loc
+)
+  __attribute__((nonnull(1, 2)));
+
+#if 0
+/// yyu_define_enum
+//
+// SUMMARY
+//  define strings to be parsed with LEXA
+//
+// PARAMETERS
+//  parser - parser
+//  token  -
+//  e      - attrs
+//
+// REMARKS
+//  not useful in a parser where enum members overlap
+//
+xapi yyu_define_enum(yyu_parser * restrict parser, int token, const struct attrs * restrict e)
+  __attribute__((nonnull));
+#endif
+
+/// yyu_define_tokenrange
+//
+// SUMMARY
+//  define strings to be parsed with LEXA
+//
+// PARAMETERS
+//  parser  -
+//  first   -
+//  last    -
+//
+xapi yyu_define_tokenrange(yyu_parser * restrict parser, int first, int last);
 
 #endif

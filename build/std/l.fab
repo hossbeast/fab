@@ -22,7 +22,7 @@
 
 # var/closure
 #  cc
-#  cflags 
+#  cflags
 #  flex
 #  flexflags
 #
@@ -31,12 +31,12 @@
 #  paths      - paths to .l files
 #
 #  dscdirs    - (as above, but for discovery only)
-#  dscrdirs   - 
-#  dscpaths   - 
+#  dscrdirs   -
+#  dscpaths   -
 #
 #  fabdirs    - (as above, but for fabrication/dependency only)
-#  fabrdirs   - 
-#  fabpaths   - 
+#  fabrdirs   -
+#  fabpaths   -
 #
 
 +[ $*/../../vars.fab ]
@@ -87,9 +87,25 @@ $lfabpaths = [
 # $flex : l -> { lex.c, lex.h }
 [ $lfabpaths ~ sx/l/lex.c sy uu v d cp u sx/lex.c/lex.h z dj/2 shift pop ] :: [ $< ~ rx sx/lex.c/l sx/lex.h/l ss u ]
 {
+	pfx=[ $@ ~ w/0/1 rx bn fn ]
+
 	  [ $flex ] [ $flexflags ~ uu fi ] -o [ $@ ~ w/1/1 ] [
 	] [ --header-file= [ $@ ~ w/0/1 ] ] [
 	] [ $@ ~ rx/ineed lx/l ss u ]
+
+  exec 1>>[ $@ ~ w/0/1 ]
+  > cat <<END
+  > char ${pfx}_yyget_hold_char(yyscan_t yyscanner);
+  > END
+
+  exec 1>>[ $@ ~ w/1/1 ]
+  > cat <<END
+  > char ${pfx}_yyget_hold_char(yyscan_t yyscanner);
+  > char ${pfx}_yyget_hold_char(yyscan_t yyscanner) {
+  >   struct yyguts_t * yyg = (struct yyguts_t*)yyscanner;
+  >   return yyg->yy_hold_char;
+  > }
+  > END
 }
 
 # $cc : lex.c -> lex.o via std.c

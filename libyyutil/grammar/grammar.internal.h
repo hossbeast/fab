@@ -1,3 +1,4 @@
+
 /* Copyright (c) 2012-2015 Todd Freed <todd.freed@gmail.com>
 
    This file is part of fab.
@@ -15,27 +16,9 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef _YYUTIL_LOGGING_INTERNAL_H
-#define _YYUTIL_LOGGING_INTERNAL_H
+#ifndef _YYUTIL_GRAMMAR_INTERNAL_H
+#define _YYUTIL_GRAMMAR_INTERNAL_H
 
-#include "logger.h"
-#include "logger/category.h"
-#include "logging.h"
-
-extern logger_category * categories;
-
-#define L_YYUTIL    categories[0].id
-#if DEBUG || DEVEL || XUNIT
-#define L_PARSER    categories[1].id
-#define L_TOKENS    categories[2].id
-#define L_STATES    categories[3].id
-#endif
-
-/// logging_setup
-//
-// SUMMARY
-//  configure logging
-//
-xapi logging_setup(void);
+#include "grammar.h"
 
 #endif
