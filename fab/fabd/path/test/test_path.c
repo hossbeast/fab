@@ -20,8 +20,6 @@
 #include "xapi.h"
 #include "xapi/errtab.h"
 
-struct path_test;
-#define TEST_TYPE struct path_test
 #include "xunit.h"
 #include "xunit/assert.h"
 
@@ -31,7 +29,8 @@ struct path_test;
 #define istrlen(a) a ? strlen(a) : 0
 
 typedef struct path_test {
-  xunit_test;
+  XUNITTEST;
+
   char * input;
   char * path;
   char * dir;
@@ -42,9 +41,11 @@ typedef struct path_test {
   char * stem;
 } path_test;
 
-static xapi path_test_entry(path_test * test)
+static xapi path_test_entry(xunit_test * _test)
 {
   enter;
+
+  path_test * test = containerof(_test, path_test, xu);
 
   path * p;
   fatal(path_creates, &p, test->input);
@@ -68,7 +69,7 @@ coda;
 
 xunit_unit xunit = {
     xu_entry : path_test_entry
-  , xu_tests : (xunit_test*[]) {
+  , xu_tests : (path_test*[]) {
       (path_test[]){{
           input : "/foo/bar.baz"
         , path : "/foo/bar.baz"
@@ -225,5 +226,6 @@ xunit_unit xunit = {
         , base : "test"
         , stem : "./test"
       }}
+    , 0
     }
 };

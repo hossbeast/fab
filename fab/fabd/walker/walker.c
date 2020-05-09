@@ -20,25 +20,35 @@
 #include "xapi.h"
 #include "types.h"
 
+#include "xlinux/xfcntl.h"
+#include "xlinux/xinotify.h"
+#include "xlinux/xmman.h"
+#include "xlinux/xstat.h"
+#include "xlinux/xstdlib.h"
+#include "xlinux/xstring.h"
+#include "xlinux/xunistd.h"
+#include "valyria/set.h"
 #include "moria/graph.h"
 #include "moria/vertex.h"
 #include "moria/edge.h"
 #include "lorien/nftwat.h"
-#include "xlinux/xstring.h"
-#include "xlinux/xinotify.h"
 #include "valyria/list.h"
 #include "valyria/map.h"
 
 #include "walker.internal.h"
+#include "filesystem.h"
+#include "module.internal.h"
 #include "node.h"
 #include "node_operations.h"
-#include "filesystem.h"
 #include "notify_thread.h"
-#include "module.h"
 #include "path.h"
+#include "params.h"
+#include "stats.h"
 
 #include "macros.h"
 #include "zbuffer.h"
+#include "hash.h"
+#include "attrs.h"
 
 static int walk_ids = 1;
 
@@ -46,16 +56,132 @@ static int walk_ids = 1;
 // static
 //
 
-static uint8_t fstype_ftwinfo(ftwinfo * info)
+static vertex_filetype fstype_ftwinfo(ftwinfo * info)
 {
   if(info->type == FTWAT_D)
-    return NODE_FSTYPE_DIR;
+    return VERTEX_FILETYPE_DIR;
 
   if(info->type == FTWAT_F)
-    return NODE_FSTYPE_FILE;
+    return VERTEX_FILETYPE_REG;
 
   return 0;
 }
+
+static xapi stathash(node * restrict n, char * restrict path, uint16_t pathl, uint32_t * restrict hash)
+{
+  enter;
+
+  struct stat stb;
+  int r;
+  char c;
+
+  STATS_INC(stathash);
+
+  *hash += 0xbeef;
+
+  c = path[pathl];
+  path[pathl] = 0;
+  fatal(uxfstatats, &r, g_params.proj_dirfd, 0, &stb, path);
+  if(r == 0)
+  {
+    /* accumulate specific fields we care about */
+    *hash = hash32(*hash, &stb.st_dev, sizeof(stb.st_dev));
+    *hash = hash32(*hash, &stb.st_ino, sizeof(stb.st_ino));
+    *hash = hash32(*hash, &stb.st_mode, sizeof(stb.st_mode));
+    *hash = hash32(*hash, &stb.st_nlink, sizeof(stb.st_nlink));
+    *hash = hash32(*hash, &stb.st_uid, sizeof(stb.st_uid));
+    *hash = hash32(*hash, &stb.st_gid, sizeof(stb.st_gid));
+    *hash = hash32(*hash, &stb.st_size, sizeof(stb.st_size));
+    *hash = hash32(*hash, &stb.st_mtim, sizeof(stb.st_mtim));
+    *hash = hash32(*hash, &stb.st_ctim, sizeof(stb.st_ctim));
+  }
+
+finally:
+  path[pathl] = c;
+coda;
+}
+
+static xapi contenthash(node * restrict n, char * restrict path, uint16_t pathl, uint32_t * restrict hash)
+{
+  enter;
+
+  int fd = -1;
+  off_t end;
+  void *buf = MAP_FAILED;
+  char c;
+
+  STATS_INC(contenthash);
+
+  *hash += 0xface;
+
+  c = path[pathl];
+  path[pathl] = 0;
+  fatal(xopenats, &fd, O_RDONLY, g_params.proj_dirfd, path);
+  if(fd != -1)
+  {
+    fatal(xlseek, fd, 0, SEEK_END, &end);
+    if(end > 0)
+    {
+      fatal(xmmap, 0, end, PROT_READ, MAP_PRIVATE | MAP_ANONYMOUS, fd, 0, &buf);
+      *hash = hash32(*hash, buf, end);
+    }
+  }
+
+finally:
+  fatal(ixmunmap, &buf, end);
+  fatal(xclose, fd);
+  path[pathl] = c;
+coda;
+}
+
+
+static xapi refresh(walker_context * restrict ctx, node * restrict n, char * restrict path, uint16_t pathl)
+{
+  enter;
+
+  uint32_t hash;
+  const filesystem *fs;
+  vertex *v;
+
+  fs = node_filesystem_get(n);
+  if(fs->attrs == INVALIDATE_ALWAYS)
+  {
+    fatal(node_invalidate, n, ctx->invalidation);
+    goto XAPI_FINALIZE;
+  }
+
+  /* only hash/invalidate on primary files - those with no dependencies */
+  v = vertex_containerof(n);
+  if(!rbtree_empty(&v->down)) {
+    goto XAPI_FINALIZE;
+  }
+
+  hash = 0;
+  if(fs->attrs == INVALIDATE_STAT)
+  {
+    fatal(stathash, n, path, pathl, &hash);
+  }
+  else if(fs->attrs == INVALIDATE_CONTENT)
+  {
+    fatal(contenthash, n, path, pathl, &hash);
+  }
+
+  if(hash != n->hash)
+  {
+    if(hash)
+    {
+      fatal(node_invalidate, n, ctx->invalidation);
+    }
+
+    n->hash = hash;
+  }
+
+  finally : coda;
+}
+
+//
+// internal
+//
 
 xapi walker_visit(int method, ftwinfo * info, void * arg, int * stop)
 {
@@ -64,32 +190,35 @@ xapi walker_visit(int method, ftwinfo * info, void * arg, int * stop)
   walker_context * ctx = arg;
   const filesystem * fs = 0;
   module * mod = 0;
-  vertex * v;
-  node * n;
+  vertex * lv;
+  node * n = 0;
+  node * parent;
+  llist edges;
+  vertex *v;
+  edge *e;
 
+/* put this into config */
+if((info->pathl - info->name_off) == 4 && memcmp(info->path + info->name_off, ".git", 4) == 0) {
+  *stop = 1;
+  goto XAPI_FINALIZE;
+}
+
+  /* if !info->parent, this is the top-level directory */
   if(!info->parent)
   {
-    if(method == FTWAT_PRE && ctx->root)
+    if(method == FTWAT_PRE && ctx->base)
     {
-      n = ctx->root;
+      n = ctx->base;
     }
     else if(method == FTWAT_PRE)
     {
-      if(ctx->ancestor && ctx->ancestor->mod->leaf)
-        mod = ctx->ancestor->mod;
-      if(!mod)
-        mod = ctx->modlookup(ctx, info->path, info->pathl);
-      if(mod)
-        fs = mod->base->fs;
-      else if(ctx->ancestor && ctx->ancestor->fs->leaf)
-        fs = ctx->ancestor->fs;
-      if(!fs)
-        fs = ctx->fslookup(ctx, info->path, info->pathl);
-      fatal(ctx->create, ctx, &n, fstype_ftwinfo(info), fs, mod, info->path + info->name_off);
-      ctx->root = n;
+      mod = node_module_get(ctx->base_parent);
+      fs = node_filesystem_get(ctx->base_parent);
 
-      if(ctx->ancestor)
-        fatal(ctx->connect, ctx, ctx->ancestor, n);
+      fatal(node_creates, &ctx->base, fstype_ftwinfo(info) | VERTEX_OK, fs, mod, info->path + info->name_off);
+      fatal(node_connect, ctx->base_parent, ctx->base, EDGE_TYPE_FS, ctx->invalidation, 0, 0);
+
+      n = ctx->base;
     }
     else
     {
@@ -102,150 +231,192 @@ xapi walker_visit(int method, ftwinfo * info, void * arg, int * stop)
   }
   else
   {
-    node * parent = info->parent->udata;
-    vertex * v = vertex_downs(
+    parent = info->parent->udata;
+    lv = vertex_downs(
         vertex_containerof(parent)
       , info->path + info->name_off
     );
-    if(v)
+    if(lv)
     {
-      n = vertex_value(v);
+      n = vertex_value(lv);
     }
     else
     {
-      if(parent->mod && parent->mod->leaf)
-        mod = parent->mod;
-      if(!mod)
-        mod = ctx->modlookup(ctx, info->path, info->pathl);
-      if(mod)
-        fs = mod->base->fs;
-      else if(info->type == FTWAT_D && parent->fs->leaf)
-        fs = parent->fs;
-      if(!fs)
-        fs = ctx->fslookup(ctx, info->path, info->pathl);
-      
-      fatal(ctx->create, ctx, &n, fstype_ftwinfo(info), fs, mod, info->path + info->name_off);
-      fatal(ctx->connect, ctx, parent, n);
+      if(info->type == FTWAT_D)
+      {
+        mod = node_module_get(parent);
+        fs = node_filesystem_get(parent);
+      }
+
+      fatal(node_creates, &n, fstype_ftwinfo(info) | VERTEX_OK, fs, mod, info->path + info->name_off);
+      fatal(node_connect, parent, n, EDGE_TYPE_FS, ctx->invalidation, 0, 0);
     }
   }
 
   info->udata = n;
-  v = vertex_containerof(n);
 
   // this node was visited
-  if(method != FTWAT_POST)
+  if(method != FTWAT_POST) {
     n->walk_id = ctx->walk_id;
+  }
 
-  if(method == FTWAT_PRE)
+  fs = node_filesystem_get(n);
+  if(info->type == FTWAT_D && method == FTWAT_PRE)
   {
     // stop the traversal on a leaf inotify dir which has already been explored
-    if(n->fs->attrs == FILESYSTEM_INVALIDATE_NOTIFY)
+    if(fs->attrs == INVALIDATE_NOTIFY)
     {
-      if(n->fs->leaf && n->wd != -1)
+      if(n->wd == -1)
+      {
+        /* it's important that the watch happen in the PREORDER step */
+        fatal(notify_thread_watch, n);
+      }
+      else if(n->descended)
+      {
         *stop = 1;
+      }
+
+      n->descended = true;
     }
   }
 
-  if(method == FTWAT_POST)
+  if(info->type == FTWAT_D && method == FTWAT_POST)
   {
-    if(n->fs->attrs == FILESYSTEM_INVALIDATE_NOTIFY)
+    if(fs->attrs != INVALIDATE_NOTIFY)
     {
-      if(n->wd == -1)
-        fatal(ctx->watch, ctx, n);
-    }
-    else
-    {
-      int x;
-      for(x = v->down->l - 1; x >= 0; x--)
-      {
-        edge * e = list_get(v->down, x);
+      // destroy edges connecting to vertices which were not visited by this walk
+      llist_init_node(&edges);
+
+      v = vertex_containerof(n);
+      rbtree_foreach(&v->down, e, rbn_down) {
+        if(e->attrs != (MORIA_EDGE_IDENTITY | EDGE_TYPE_FS)) {
+          continue;
+        }
+
         vertex * B = e->B;
         node * Bn = vertex_value(B);
-        if(Bn->walk_id != ctx->walk_id)
-          fatal(ctx->disintegrate, ctx, e);
+        if(Bn->walk_id == ctx->walk_id) {
+          continue;
+        }
+
+        llist_prepend(&edges, e, lln);
+      }
+
+      while((e = llist_shift(&edges, typeof(*e), lln)))
+      {
+        fatal(node_disintegrate_fs, edge_value(e), ctx->invalidation);
       }
     }
   }
 
-  if(info->type == FTWAT_F)
-    fatal(ctx->refresh, ctx, n);
+  else if(info->type == FTWAT_F)
+  {
+    if(fs->invalidate != INVALIDATE_NOTIFY && fs->invalidate != INVALIDATE_NEVER)
+    {
+      fatal(refresh, ctx, n, info->path, info->pathl);
+    }
+  }
 
   finally : coda;
-}
-
-static xapi create(walker_context * ctx, node ** restrict n, uint8_t fstype, const filesystem * restrict fs, module * restrict mod, const char * restrict name)
-{
-  xproxy(node_creates, n, fstype, fs, mod, name);
-}
-
-static const filesystem * fslookup(walker_context * ctx, const char * const restrict path, size_t pathl)
-{
-  return filesystem_lookup(path, pathl);
-}
-
-static module * modlookup(walker_context * ctx, const char * const restrict path, size_t pathl)
-{
-  return module_lookup(path, pathl);
-}
-
-static xapi refresh(walker_context * ctx, node * n)
-{
-  xproxy(node_refresh, n, 0);
-}
-
-static xapi watch(walker_context * ctx, node * n)
-{
-  xproxy(notify_thread_watch, n);
-}
-
-static xapi connect(walker_context * restrict ctx, node * restrict parent, node * restrict n)
-{
-  xproxy(node_connect, parent, n, RELATION_TYPE_FS);
-}
-
-static xapi disintegrate(walker_context * restrict ctx, edge * restrict e)
-{
-  xproxy(node_disintegrate_fs, e, 0);
 }
 
 //
 // public
 //
 
-xapi walker_walk(node ** restrict root, node * restrict base, node * restrict ancestor, const char * restrict abspath, int walk_id)
+xapi walker_descend(node ** restrict basep, node * restrict base, node * restrict parent, const char * restrict abspath, int walk_id, graph_invalidation_context * restrict invalidation)
 {
   enter;
 
   walker_context ctx;
 
+  RUNTIME_ASSERT(!base ^ !parent);
+
   if(walk_id != walk_ids)
     walk_id = ++walk_ids;
 
   ctx.walk_id = walk_id;
-  ctx.ancestor = ancestor;
-  ctx.root = 0;
-  if(base)
-    ctx.root = base;
-
-  // ops
-  ctx.create = create;
-  ctx.fslookup = fslookup;
-  ctx.modlookup = modlookup;
-  ctx.refresh = refresh;
-  ctx.watch = watch;
-  ctx.connect = connect;
-  ctx.disintegrate = disintegrate;
+  ctx.invalidation = invalidation;
+  ctx.base_parent = parent;
+  ctx.base = base;
 
   // filesystem traversal from the root
   fatal(nftwat, AT_FDCWD, abspath, walker_visit, 64, &ctx);
 
-  if(root)
-    *root = ctx.root;
+  if(basep) {
+    *basep = ctx.base;
+  }
 
   finally : coda;
 }
 
-int walker_walk_begin()
+xapi walker_ascend(node * restrict basedir, int walk_id, graph_invalidation_context * restrict invalidation)
+{
+  enter;
+
+  char path[512];
+  uint16_t pathl;
+  node * dirn;
+  vertex * dirv;
+  int r;
+  const filesystem *fs = 0;
+  module *mod = 0;
+  walker_context ctx = { 0 };
+
+  if(walk_id != walk_ids)
+    walk_id = ++walk_ids;
+
+  ctx.invalidation = invalidation;
+  dirn = basedir;
+  dirv = vertex_containerof(dirn);
+
+  pathl = node_get_absolute_path(dirn, path, sizeof(path));
+
+  // ascend at least once
+  while(1)
+  {
+    pathl -= (dirv->label_len + 1);
+    dirv = vertex_up(dirv);
+    dirn = vertex_value(dirv);
+    if(!dirv || dirn->walk_id == walk_id)
+      break;
+
+    vertex * filev = vertex_downs(dirv, NODE_VAR_BAM);
+    node * filen = vertex_value(filev);
+
+    snprintf(path + pathl, sizeof(path) - pathl, "/" NODE_VAR_BAM);
+    fatal(uxeuidaccesss, &r, F_OK, path);
+    if(r == 0)
+    {
+      if(filev)
+      {
+        fatal(refresh, &ctx, filen, path, pathl + strlen("/" NODE_VAR_BAM));
+      }
+      else
+      {
+        fatal(node_creates, &filen, VERTEX_FILETYPE_REG | VERTEX_OK, fs, mod, NODE_VAR_BAM);
+        fatal(node_connect, dirn, filen, EDGE_TYPE_FS, invalidation, 0, 0);
+      }
+    }
+    else if(filev)
+    {
+      fatal(node_disconnect, dirn, filen, invalidation);
+    }
+
+    if(dirn->fs->attrs == INVALIDATE_NOTIFY)
+    {
+      if(dirn->wd == -1)
+        fatal(notify_thread_watch, dirn);
+    }
+
+    // visited
+    dirn->walk_id = walk_id;
+  }
+
+  finally : coda;
+}
+
+int walker_descend_begin()
 {
   return ++walk_ids;
 }

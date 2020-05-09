@@ -18,9 +18,8 @@
 #ifndef _FABD_PATH_H
 #define _FABD_PATH_H
 
-#include <stdint.h>
-
-#define restrict __restrict
+#include "types.h"
+#include "xapi.h"
 
 /*
 /foo/bar/baz.qux.tez
@@ -89,5 +88,4 @@ void path_free(path * const restrict);
 void path_xfree(path ** const restrict)
   __attribute__((nonnull));
 
-#undef restrict
 #endif

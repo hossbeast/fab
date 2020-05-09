@@ -18,6 +18,8 @@
 #include <unistd.h>
 
 #include "xapi.h"
+#include "types.h"
+
 #include "xlinux/xpthread.h"
 #include "xlinux/xsignal.h"
 #include "xlinux/xunistd.h"
@@ -28,40 +30,6 @@
 #include "monitor_thread.h"
 #include "logging.h"
 #include "params.h"
-
-#define restrict __restrict
-
-#if 0
-void sigdumper(char * name);
-void sigdumper(char * name)
-{
-  sigset_t sigs;
-  sigset_t set;
-  sigemptyset(&sigs);
-  pthread_sigmask(SIG_BLOCK, &sigs, &set);
-
-  printf("%10s (%d) unblocked [", name, gettid());
-  int x;
-  for(x = 1; x <= SIGRTMAX; x++)
-  {
-    if(!sigismember(&set, x))
-      printf(" %d", x);
-  }
-  printf(" ]\n");
-
-  int rv = sigpending(&sigs);
-  if(rv != 0)
-    printf("SIGPENDING FAILED\n");
-
-  printf("%10s (%d) pending [", name, gettid());
-  for(x = 1; x <= SIGRTMAX; x++)
-  {
-    if(sigismember(&sigs, x))
-      printf(" %d", x);
-  }
-  printf(" ]\n");
-}
-#endif
 
 xapi monitor_thread()
 {
@@ -86,12 +54,17 @@ xapi monitor_thread()
   fatal(sigutil_wait, &sigs, &info);
 
   // teardown other threads
-  g_params.shutdown = 1;
+  g_params.shutdown = true;
   while(g_params.thread_count)
   {
+    // signal-event-driven threads
     fatal(uxtgkill, 0, g_params.pid, g_params.thread_server, FABIPC_SIGSCH);
+    fatal(uxtgkill, 0, g_params.pid, g_params.thread_build, FABIPC_SIGSCH);
+
+    // blocking-io-driven threads
     fatal(uxtgkill, 0, g_params.pid, g_params.thread_notify, FABIPC_SIGINTR);
     fatal(uxtgkill, 0, g_params.pid, g_params.thread_sweeper, FABIPC_SIGINTR);
+
     fatal(sigutil_wait, &sigs, 0);
   }
 

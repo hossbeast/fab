@@ -16,6 +16,7 @@
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
 #include <string.h>
+#include <stdlib.h>
 
 #include "xapi.h"
 #include "fab/load.h"
@@ -40,21 +41,28 @@
 #include "logger/arguments.h"
 
 #include "FABD.errtab.h"
+#include "build_thread.h"
+#include "buildplan.h"
 #include "config.h"
+#include "config.internal.h"
+#include "extern.h"
 #include "filesystem.h"
+#include "formula.h"
 #include "logging.h"
+#include "module.h"
 #include "monitor_thread.h"
 #include "node.h"
+#include "shadow.h"
 #include "notify_thread.h"
 #include "params.h"
-#include "reconfigure.h"
+#include "request.internal.h"
 #include "server_thread.h"
 #include "sweeper_thread.h"
-#include "ff.h"
-#include "module.h"
-#include "extern.h"
-
-#include "identity.h"
+#include "var.h"
+#include "variant.h"
+#include "goals.h"
+#include "stats.h"
+#include "selection.h"
 #include "parseint.h"
 
 static xapi xmain_exit;
@@ -62,21 +70,9 @@ static xapi xmain()
 {
   enter;
 
-  #if DEBUG || DEVEL
-  // this check is omitted in DEBUG/DEVEL mode because valgrind requires non-setgid and non-setuid executables
-  #else
-  // this executable MUST BE OWNED by fabsys:fabsys and have u+s and g+s permissions
-  if(strcmp(g_euid_name, "fabsys") || strcmp(g_egid_name, "fabsys"))
-  {
-    xapi_info_pushf("real", "r:%s/%d:%s/%d", g_ruid_name, g_ruid, g_rgid_name, g_rgid);
-    xapi_info_pushf("effective", "e:%s/%d:%s/%d", g_euid_name, g_euid, g_egid_name, g_egid);
-    fail(FABD_EXEPERMS);
-  }
-  #endif
-
-  #if DEBUG || DEVEL
+#if DEBUG || DEVEL
   logs(L_IPC, "started");
-  #endif
+#endif
 
   fatal(params_report);
 
@@ -87,11 +83,13 @@ static xapi xmain()
   fatal(xclose, 0);
   fatal(xopens, 0, O_RDONLY, "/dev/null");
 
-  #if DEBUG || DEVEL
-  if(g_argc > 2 && strcmp(g_argv[2], "--nodaemon") == 0)
+#if DEVEL
+  if(g_argc > 1 && strcmp(g_argv[1], "--request") == 0)
   {
-    g_logging_skip_reconfigure = 1;
-    g_server_no_acknowledge = 1;
+    g_logging_skip_reconfigure = true;
+    g_server_no_initial_client = true;
+    RUNTIME_ASSERT(g_argc > 2);
+    g_server_initial_request = g_argv[2];
 
     pid_t pgid;
     fatal(ipc_lock_obtain, &pgid, 0, "%s/fabd/lock", g_params.ipcdir);
@@ -99,7 +97,7 @@ static xapi xmain()
     if(pgid)
       failf(FABD_DAEMONEXCL, "pgid", "%ld", (long)pgid);
   }
-  #endif
+#endif
 
   g_params.thread_monitor = gettid();
 
@@ -108,6 +106,8 @@ static xapi xmain()
   fatal(notify_thread_launch);
   fatal(server_thread_launch);
   fatal(sweeper_thread_launch);
+
+  /* the build thread is launched after the initial reconfiguration */
 
   // become the monitor thread
   fatal(monitor_thread);
@@ -144,7 +144,7 @@ static xapi xmain_load(char ** envp)
 {
   enter;
 
-  uint32_t hash = 0;
+  uint64_t hash = 0;
 
   // libraries
   fatal(fab_load);
@@ -157,45 +157,62 @@ static xapi xmain_load(char ** envp)
   fatal(xlinux_load);
   fatal(yyutil_load);
 
-  // modules
-  fatal(config_setup);
-  fatal(extern_setup);
-  fatal(ff_setup);
-  fatal(filesystem_setup);
-  fatal(identity_setup);
-  fatal(module_setup);
-  fatal(node_setup);
-  fatal(notify_thread_setup);
-  fatal(sweeper_thread_setup);
-
   // initialize logger, main program
   fatal(logger_arguments_setup, envp);
 
-  // get ipc dir
-  if(g_argc < 2 || parseuint(g_argv[1], SCNx32, 1, UINT32_MAX, 1, UINT8_MAX, &hash, 0) != 0)
+#if !DEVEL
+  if(g_argc < 2 || parseuint(g_argv[1], SCNx64, 1, UINT64_MAX, 1, UINT8_MAX, &hash, 0) != 0)
     fail(SYS_BADARGS);
+#endif
 
   // core file goes in cwd
-  fatal(params_setup, hash);
+  fatal(params_setup, &hash);
   fatal(xchdirf, "%s/fabd", g_params.ipcdir);
 
   // logging with per-ipc logfiles
   fatal(logging_setup, hash);
+
+  // modules
+  fatal(build_thread_setup);
+  fatal(buildplan_setup);
+  fatal(config_setup);
+  fatal(extern_setup);
+  fatal(filesystem_setup);
+  fatal(graph_setup);
+  fatal(module_setup);
+  fatal(node_setup);
+  fatal(shadow_setup);
+  fatal(notify_thread_setup);
+  fatal(request_setup);
+  fatal(sweeper_thread_setup);
+  fatal(var_setup);
+  fatal(variant_setup);
+  fatal(goals_setup);
+  fatal(stats_setup);
+  fatal(selection_setup);
+
   fatal(xmain_jump);
 
 finally:
   // modules
+  fatal(buildplan_cleanup);
   fatal(config_cleanup);
   fatal(extern_cleanup);
   fatal(filesystem_cleanup);
   fatal(module_cleanup);
   fatal(node_cleanup);
+  fatal(shadow_cleanup);
+  fatal(graph_cleanup);
   fatal(notify_thread_cleanup);
   fatal(params_cleanup);
-  fatal(reconfigure_cleanup);
   fatal(sweeper_thread_cleanup);
-  fatal(ff_cleanup);
-  identity_teardown();
+  fatal(build_thread_cleanup);
+  fatal(request_cleanup);
+  fatal(var_cleanup);
+  fatal(variant_cleanup);
+  fatal(goals_cleanup);
+  fatal(stats_cleanup);
+  fatal(selection_cleanup);
 
   // libraries
   fatal(fab_unload);

@@ -22,13 +22,8 @@
 #include "xapi.h"
 #include "xlinux/xstring.h"
 #include "xlinux/xstdlib.h"
-#include "lorien/path_normalize.h"
 
 #include "path.h"
-
-#include "zbuffer.h"
-
-#define restrict __restrict
 
 //
 // static

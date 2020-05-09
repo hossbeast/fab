@@ -16,7 +16,6 @@
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
 1 BADIPC      ipc failure
-2 EXEPERMS    fabd executable must be owned by fabsys:fabsys and have ug+s permissions
-3 DAEMONEXCL  fab daemon already running
-4 UNSATISFIED unsatisfied dependencies
-5 AMBIGPATH   path treated as both a directory and as a file
+2 DAEMONEXCL  fab daemon already running
+3 UNSATISFIED unsatisfied dependencies
+4 AMBIGPATH   path treated as both a directory and as a file

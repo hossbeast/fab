@@ -21,27 +21,35 @@
 #include "xapi.h"
 #include "types.h"
 
+struct node;
+struct set;
+struct formula_value;
+
 typedef struct formula
 {
+  /* regarding the formula node itself */
+  char * abspath;           // absolute path
+  char * filename;          // filename
+  struct node * fml_node;
+  bool shebang;
 
+  /* parsed from the embedded bacon block */
+  struct formula_value *envs;   // mappings set
+  struct formula_value *args;   // list
+  struct formula_value *path;   // primitive
 } formula;
 
-/// formula_setup
+xapi formula_xfree(formula * restrict fml);
+
+/// formula_load
 //
 // SUMMARY
 //
-xapi formula_setup(void);
-
-/// formula_cleanup
+// PARAMETERS
+//  parser
+//  fml    - (returns)
 //
-// SUMMARY
-//  free resources
-//
-xapi formula_cleanup(void);
-
-xapi formula_load(formula ** restrict fmlp);
-
-xapi formula_exec(const formula * restrict fml)
+xapi formula_node_parse(struct node * restrict fml_node)
   __attribute__((nonnull));
 
 #endif

@@ -27,14 +27,15 @@
 #include "xlinux/KERNEL.errtab.h"
 #include "xlinux/xunistd.h"
 #include "xlinux/xtime.h"
+#include "xlinux/xstdlib.h"
 #include "moria/graph.h"
 #include "moria/vertex.h"
 #include "moria/edge.h"
 #include "fab/ipc.h"
 #include "fab/sigutil.h"
 #include "logger/config.h"
-#include "valyria/array.h"
 #include "valyria/map.h"
+#include "valyria/llist.h"
 #include "narrator.h"
 
 #include "sweeper_thread.h"
@@ -54,37 +55,174 @@
 #include "macros.h"
 #include "zbuffer.h"
 
-#define restrict __restrict
+#define SWEEP_INTERVAL_SEC 1
 
-struct event
+static llist event_queue;
+static llist child_event_freelist;
+static int event_queue_lock;
+static uint32_t event_era;
+
+static xapi process_event(sweeper_event * restrict ev, graph_invalidation_context * restrict invalidation)
 {
-  int wd;
-  uint32_t mask;
-  char name[128];
-  size_t namel;
-};
+  enter;
 
-static array * queue;
-static int queue_lock;
+  char path[512];
+  vertex *v;
+  edge *ue;
+  node_edge *ne;
+  node *n;
+  sweeper_child_event *cev = 0;
+  size_t z;
+
+  if(ev->kind == SWEEPER_EVENT_SELF)
+  {
+    n = containerof(ev, node, pending);
+  }
+  else if(ev->kind == SWEEPER_EVENT_CHILD)
+  {
+    cev = containerof(ev, typeof(*cev), sweep_event);
+    n = cev->parent;
+  }
+  else
+  {
+    RUNTIME_ABORT();
+  }
+
+  if(log_would(L_FSEVENT))
+  {
+    if((ev->mask & IN_DELETE) && ev->kind == SWEEPER_EVENT_CHILD)
+    {
+      /* entity created then subsequently deleted during the epoch - no-op */
+    }
+    else
+    {
+      const char *event;
+      if(ev->mask & IN_DELETE)
+      {
+        /* entity was deleted */
+        event = "DELETE";
+      }
+      else if(ev->kind == SWEEPER_EVENT_CHILD)
+      {
+        event = "CREATE";
+      }
+      else
+      {
+        event = "MODIFY";
+      }
+
+      fatal(log_start, L_FSEVENT, &N);
+      fatal(node_project_relative_path_say, n, N);
+      if(cev)
+      {
+        xsays("//");
+        xsayw(cev->name, cev->name_len);
+      }
+      xsays(" ");
+      xsays(event);
+      xsayf(" era %"PRIu32, event_era);
+      fatal(log_finish);
+    }
+  }
+
+  if((ev->mask & IN_DELETE) && ev->kind == SWEEPER_EVENT_CHILD)
+  {
+    /* entity created then subsequently deleted during the epoch - no-op */
+  }
+  else if(ev->mask & IN_DELETE)
+  {
+    /* entity was deleted */
+    RUNTIME_ASSERT(ev->kind == SWEEPER_EVENT_SELF);
+
+    v = vertex_containerof(n);
+    if((ue = v->up_identity) == 0)
+    {
+      /* deleted the root node ?? */
+      goto XAPI_FINALLY;
+    }
+
+    ne = edge_value(ue);
+    fatal(node_edge_disconnect, ne, invalidation);
+  }
+  else if(ev->kind == SWEEPER_EVENT_CHILD)
+  {
+    n = 0;
+
+    /* entity was created */
+    if(ev->mask & IN_ISDIR)
+    {
+      z = node_get_absolute_path(cev->parent, path, sizeof(path));
+      z += znloadc(path + z, sizeof(path) - z, '/');
+      z += znloadw(path + z, sizeof(path) - z, cev->name, cev->name_len);
+      path[z] = 0;
+
+      /* traverse the directory (recursively) and attach at cev->parent */
+      fatal(walker_descend, 0, 0, cev->parent, path, 0, invalidation);
+    }
+    else
+    {
+      fatal(node_createw, &n, VERTEX_FILETYPE_REG | VERTEX_OK, 0, 0, cev->name, cev->name_len);
+      fatal(node_connect, cev->parent, n, EDGE_TYPE_FS, invalidation, 0, 0);
+    }
+  }
+  else
+  {
+    /* entity was modified */
+    fatal(node_invalidate, n, invalidation);
+  }
+
+  finally : coda;
+}
+
+static xapi sweep()
+{
+  enter;
+
+  graph_invalidation_context invalidation = { 0 };
+  sweeper_event *ev;
+  sweeper_child_event *ce;
+  llist *cursor;
+
+  fatal(graph_invalidation_begin, &invalidation);
+
+  llist_foreach_safe(&event_queue, ev, lln, cursor) {
+    /* subsequent events have not yet expired */
+    if((event_era - ev->era) < 2) {
+      break;
+    }
+
+    fatal(process_event, ev, &invalidation);
+
+    llist_delete(ev, lln);
+    if(ev->kind == SWEEPER_EVENT_SELF) {
+      ev->era = 0;
+    } else if(ev->kind == SWEEPER_EVENT_CHILD) {
+      llist_append(&child_event_freelist, ev, lln);
+      ce = containerof(ev, sweeper_child_event, sweep_event);
+      rbtree_delete(&ce->parent->pending_child, ce, rbn);
+    }
+  }
+
+finally:
+  graph_invalidation_end(&invalidation);
+coda;
+}
 
 static xapi sweeper_thread()
 {
   enter;
 
-  char space[512];
   sigset_t sigs;
   struct timespec start;
   struct timespec next;
-  int iteration = 0;
-  size_t queue_len;
-  node * n;
+  typeof(start.tv_sec) iteration;
+  sigset_t orig;
 
   g_params.thread_sweeper = gettid();
 
   // signals handled on this thread
   sigfillset(&sigs);
   sigdelset(&sigs, FABIPC_SIGINTR);
-  fatal(xpthread_sigmask, SIG_SETMASK, &sigs, 0);
 
 #if DEBUG || DEVEL
   logs(L_IPC, "starting");
@@ -93,70 +231,32 @@ static xapi sweeper_thread()
   fatal(xclock_gettime, CLOCK_MONOTONIC, &start);
   memcpy(&next, &start, sizeof(next));
 
-  queue_len = 0;
-  while(!g_params.shutdown)
+  for(iteration = 1; !g_params.shutdown; iteration++)
   {
-    spinlock_engage(&queue_lock);
+    spinlock_engage(&event_queue_lock);
+    event_era++;
 
-    if(queue->l && queue->l == queue_len)
+    if(!llist_empty(&event_queue))
     {
-      // open a traversal
-      int traversal = graph_traversal_begin(g_node_graph);
-
-      int x;
-      for(x = 0; x < queue->l; x++)
+      fatal(sweep);
+      if(llist_empty(&event_queue) && g_server_autorun)
       {
-        struct event * ev = array_get(queue, x);
-        node * parent = map_get(g_nodes_by_wd, MM(ev->wd));
-
-        if(ev->mask & (IN_CREATE | IN_MOVED_TO))
-        {
-          if(ev->mask & IN_ISDIR)
-          {
-            size_t pathl = node_get_absolute_path(parent, space, sizeof(space));
-            pathl += znloads(space + pathl, sizeof(space) - pathl, "/");
-            pathl += znloadw(space + pathl, sizeof(space) - pathl, ev->name, ev->namel);
-
-            n = 0;
-            fatal(walker_walk, &n, 0, parent, space, 0);
-          }
-          else
-          {
-            n = 0;
-            fatal(node_createw, &n, NODE_FSTYPE_FILE, parent->fs, parent->mod, ev->name, ev->namel);
-            fatal(node_connect, parent, n, RELATION_TYPE_FS);
-          }
-        }
-
-        else if(ev->mask & (IN_DELETE | IN_MOVED_FROM))
-        {
-          edge * e = vertex_edge_downs(vertex_containerof(parent), ev->name);
-          if(e)
-            fatal(node_disintegrate_fs, e, traversal);
-        }
-
-        else if(ev->mask & IN_MODIFY)
-        {
-          vertex * v = vertex_downs(vertex_containerof(parent), ev->name);
-          fatal(node_invalidate, vertex_value(v), traversal);
-        }
+        fatal(sigutil_tgkill, g_params.pid, g_params.thread_server, FABIPC_SIGINTR);
       }
-
-      queue->l = 0;
-
-      // kick the server thread
-      server_thread_rebuild = 1;
-      syscall(SYS_tgkill, g_params.pid, g_params.thread_server, FABIPC_SIGSCH);
     }
 
-    queue_len = queue->l;
-    spinlock_release(&queue_lock);
+    spinlock_release(&event_queue_lock);
 
-    next.tv_sec = start.tv_sec + (++iteration * 1);
+    /* sleep */
+    next.tv_sec = start.tv_sec + (iteration * SWEEP_INTERVAL_SEC);
+    fatal(xpthread_sigmask, SIG_SETMASK, &sigs, &orig);
     fatal(uxclock_nanosleep, 0, CLOCK_MONOTONIC, TIMER_ABSTIME, &next, 0);
+    fatal(xpthread_sigmask, SIG_SETMASK, &orig, 0);
   }
 
 finally:
+  spinlock_release(&event_queue_lock);
+
 #if DEBUG || DEVEL
   logs(L_IPC, "terminating");
 #endif
@@ -196,25 +296,86 @@ conclude(&R);
 // public
 //
 
-xapi sweeper_thread_enqueue(int wd, uint32_t mask, const char * restrict name, size_t namel)
+struct event_rbn_key {
+  const char *name;
+  uint8_t name_len;
+};
+
+static int event_rbn_key_cmp(void * _key, const rbnode * _n)
+{
+  const struct event_rbn_key *key = _key;
+  const sweeper_child_event *n = containerof(_n, typeof(*n), rbn);
+
+  return memncmp(key->name, key->name_len, n->name, n->name_len);
+}
+
+xapi sweeper_thread_enqueue(node *n, uint32_t mask, const char * restrict name, uint16_t namel)
 {
   enter;
 
-  struct event * e;
-  size_t len;
+  sweeper_event *e;
+  sweeper_child_event *ce;
+  rbnode *rbn;
+  rbtree_search_context search_ctx;
 
-  spinlock_engage(&queue_lock);
+  spinlock_engage(&event_queue_lock);
 
-  fatal(array_push, queue, &e);
-  e->wd = wd;
-  e->mask = mask;
-  len = MIN(sizeof(e->name) - 1, namel);
-  memcpy(e->name, name, len);
-  e->name[len] = 0;
-  e->namel = len;
+  if(name)
+  {
+    /* lookup the event record for this name, under this directory */
+    struct event_rbn_key key = (typeof(key)) {
+        .name = name
+      , .name_len = namel
+    };
+    if((rbn = rbtree_search(&n->pending_child, &search_ctx, &key, event_rbn_key_cmp)))
+    {
+      ce = containerof(rbn, typeof(*ce), rbn);
+    }
+    else
+    {
+      if((ce = llist_shift(&child_event_freelist, typeof(*ce), sweep_event.lln)) == 0)
+      {
+        fatal(xmalloc, &ce, sizeof(*ce));
+        ce->sweep_event.kind = SWEEPER_EVENT_CHILD;
+        llist_init_node(&ce->sweep_event.lln);
+      }
+      else
+      {
+        ce->sweep_event.mask = 0;
+      }
+
+      memcpy(ce->name, name, namel);
+      ce->name_len = namel;
+      ce->parent = n;
+
+      rbtree_insert_node(&n->pending_child, &search_ctx, &ce->rbn);
+    }
+    e = &ce->sweep_event;
+  }
+  else
+  {
+    e = &n->pending;
+    if(e->era == 0) {
+      e->mask = 0;
+    }
+  }
+
+  /* push to the end */
+  llist_delete(e, lln);
+  llist_append(&event_queue, e, lln);
+
+  /* coalesce events */
+  if(mask & IN_CREATE) {
+    e->mask &= ~(IN_DELETE | IN_MOVED_FROM);
+  }
+
+  e->mask |= mask;
+
+  /* refresh timer */
+  e->era = event_era;
 
 finally:
-  spinlock_release(&queue_lock);
+  spinlock_release(&event_queue_lock);
 coda;
 }
 
@@ -245,16 +406,25 @@ xapi sweeper_thread_setup()
 {
   enter;
 
-  fatal(array_create, &queue, sizeof(struct event));
-
   finally : coda;
+}
+
+static void __attribute__((constructor)) setup()
+{
+  llist_init_node(&event_queue);
+  llist_init_node(&child_event_freelist);
 }
 
 xapi sweeper_thread_cleanup()
 {
   enter;
 
-  fatal(array_xfree, queue);
+  sweeper_child_event *ce;
+  llist *cursor;
+
+  llist_foreach_safe(&child_event_freelist, ce, sweep_event.lln, cursor) {
+    free(ce);
+  }
 
   finally : coda;
 }

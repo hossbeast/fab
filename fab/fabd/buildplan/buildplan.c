@@ -16,130 +16,102 @@
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
 #include "moria/vertex.h"
+#include "fab/ipc.h"
 #include "xlinux/xstdlib.h"
+#include "xlinux/xsignal.h"
+#include "xlinux/xfcntl.h"
+#include "xlinux/xunistd.h"
 #include "valyria/set.h"
+#include "moria/edge.h"
+#include "narrator.h"
+#include "value.h"
+#include "fab/sigutil.h"
 
 #include "buildplan.h"
+#include "buildplan_entity.h"
+#include "server_thread.internal.h"
+#include "config.internal.h"
+#include "formula.h"
+#include "logging.h"
 #include "node.h"
+#include "params.h"
+#include "path.h"
+#include "selection.h"
 
 #include "assure.h"
 #include "macros.h"
 
-xapi buildplan_create(buildplan ** restrict bp)
+selection bp_selection;
+uint16_t bp_plan_id;
+
+xapi buildplan_setup()
 {
   enter;
 
-  fatal(xmalloc, bp, sizeof(**bp));
-  fatal(set_create, &(*bp)->nodes);
+  fatal(selection_xinit, &bp_selection);
+  bp_plan_id = 1;
 
   finally : coda;
 }
 
-xapi buildplan_xfree(buildplan * restrict bp)
+xapi buildplan_cleanup()
 {
   enter;
 
-  if(bp)
-  {
-    fatal(set_xfree, bp->nodes);
-
-    int x;
-    for(x = 0; x < bp->stages_a; x++)
-      wfree(bp->stages[x]);
-    wfree(bp->stages);
-  }
-  wfree(bp);
+  fatal(selection_xdestroy, &bp_selection);
 
   finally : coda;
 }
 
-xapi buildplan_ixfree(buildplan ** restrict bp)
+xapi buildplan_reset()
 {
   enter;
 
-  fatal(buildplan_xfree, *bp);
-  *bp = 0;
+  fatal(selection_reset, &bp_selection);
+  bp_plan_id++;
 
   finally : coda;
 }
 
-xapi buildplan_reset(buildplan * restrict bp, int traversal)
+xapi buildplan_add(buildplan_entity * restrict bpe, int distance)
 {
   enter;
 
-  fatal(set_recycle, bp->nodes);
-  bp->traversal = traversal;
-
-  memset(bp->stages_lens, 0, bp->stages_a * sizeof(*bp->stages_lens));
-  bp->stages_len = 0;
+  fatal(selection_add_bpe, &bp_selection, bpe, distance);
 
   finally : coda;
 }
 
-xapi buildplan_add(buildplan * restrict bp, node * restrict n, int distance)
+xapi buildplan_finalize()
 {
   enter;
 
-  vertex * v = vertex_containerof(n);
-
-  if(v->visited < bp->traversal)
-    n->build_depth = 0;
-  n->build_depth = MAX(n->build_depth, distance);
-
-  fatal(set_put, bp->nodes, MM(n));
+  selection_finalize(&bp_selection);
 
   finally : coda;
 }
 
-xapi buildplan_finalize(buildplan * restrict bp)
+xapi buildplan_report()
 {
   enter;
 
-  int max_stage = 0;
+  selected_node *sn;
+  buildplan_entity *bpe;
+  narrator *N;
 
-  int x;
-  for(x = 0; x < bp->nodes->table_size; x++)
-  {
-    node ** np;
-    if(!set_table_element(bp->nodes, x, &np, 0))
-      continue;
+  logf(L_BUILDPLAN, "%3zu executions in %2hu stages", bp_selection.selected_nodes->size, bp_selection.numranks);
 
-    node * n = *np;
-
-    int stage = n->build_depth;
-    size_t stages_lens_a = bp->stages_a;
-    size_t stages_as_a = bp->stages_a;
-    fatal(assure, &bp->stages, sizeof(*bp->stages), stage + 1, &bp->stages_a);
-    fatal(assure, &bp->stages_lens, sizeof(*bp->stages_lens), stage + 1, &stages_lens_a);
-    fatal(assure, &bp->stages_as, sizeof(*bp->stages_as), stage + 1, &stages_as_a);
-    int stage_index = bp->stages_lens[stage];
-
-    fatal(assure, &bp->stages[stage], sizeof(**bp->stages), stage_index + 1, &bp->stages_as[stage]);
-    bp->stages[stage][stage_index] = n;
-    bp->stages_lens[stage]++;
-
-    max_stage = MAX(max_stage, stage);
-  }
-
-  bp->stages_len = max_stage + 1;
-
-  finally : coda;
-}
-
-xapi buildplan_report(buildplan * restrict bp)
-{
-  enter;
-
-  char path[512];
-
-  int x, y;
-  for(x = bp->stages_len - 1; x >= 0; x--)
-  {
-    for(y = 0; y < bp->stages_lens[x]; y++)
+  llist_foreach(&bp_selection.list, sn, lln) {
+    bpe = sn->bpe;
+    fatal(log_start, L_BUILDPLAN, &N);
+    fatal(narrator_xsayf, N, " %-3d ", sn->rank);
+    if(bpe->fml)
     {
-      node_get_absolute_path(bp->stages[x][y], path, sizeof(path));
-      printf("[%2d][%2d] %s\n", x, y, path);
+      fatal(narrator_xsays, N, bpe->fml->name->name);
+      fatal(narrator_xsays, N, " -> ");
     }
+    fatal(bpe_say_targets, bpe, N);
+    fatal(log_finish);
   }
 
   finally : coda;

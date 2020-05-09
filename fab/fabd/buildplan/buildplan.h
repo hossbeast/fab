@@ -19,45 +19,26 @@
 #define FABD_BUILDPLAN_H
 
 #include "xapi.h"
-#include "types.h"
 
-struct set;   // libvalyria/set
-struct node;
+#include "selection.h"
 
-typedef struct buildplan {
-  struct set * nodes;
-  int traversal;
+struct buildplan_entity;
 
-  struct node *** stages;
-  size_t * stages_as;
-  size_t * stages_lens;
-  size_t stages_a;
-  size_t stages_len;
-} buildplan;
+extern selection bp_selection;
+extern uint16_t bp_plan_id;
 
-/// buildplan_create
-//
-// SUMMARY
-//  create a buildplan
-//
-xapi buildplan_create(buildplan ** restrict bp)
+xapi buildplan_setup(void);
+
+xapi buildplan_cleanup(void);
+
+xapi buildplan_reset(void);
+
+xapi buildplan_add(struct buildplan_entity * restrict bpe, int distance)
   __attribute__((nonnull));
 
-xapi buildplan_xfree(buildplan * restrict bp);
-
-xapi buildplan_reset(buildplan * restrict bp, int traversal)
+xapi buildplan_finalize(void)
   __attribute__((nonnull));
 
-xapi buildplan_ixfree(buildplan ** restrict bp)
-  __attribute__((nonnull));
-
-xapi buildplan_add(buildplan * restrict bp, struct node * restrict n, int distance)
-  __attribute__((nonnull));
-
-xapi buildplan_finalize(buildplan * restrict bp)
-  __attribute__((nonnull));
-
-xapi buildplan_report(buildplan * restrict bp)
-  __attribute__((nonnull));
+xapi buildplan_report(void);
 
 #endif

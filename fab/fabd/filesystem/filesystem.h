@@ -23,29 +23,42 @@
 #include "xapi.h"
 #include "types.h"
 
-struct value;
-struct reconfigure_context;
+#include "valyria/rbtree.h"
+
+struct config;
+struct attrs16;
+struct fstree;
 
 // filesystem attributes
-#define FILESYSTEM_TABLE                                                                         \
-  FILESYSTEM(FILESYSTEM_INVALIDATE_STAT    , 1 , "stat")    /* stat hash (default) */            \
-  FILESYSTEM(FILESYSTEM_INVALIDATE_CONTENT , 2 , "content") /* content hash */                   \
-  FILESYSTEM(FILESYSTEM_INVALIDATE_NOTIFY  , 3 , "notify")  /* filesystem event subscription */  \
-  FILESYSTEM(FILESYSTEM_INVALIDATE_ALWAYS  , 4 , "always")  /* always considered invalid */      \
-  FILESYSTEM(FILESYSTEM_INVALIDATE_NEVER   , 5 , "never")   /* never considered invalid */
+#define INVALIDATE_OPT 0xf
+#define INVALIDATE_TYPE_TABLE                                                                              \
+  INVALIDATE_DEF(INVALIDATE_STAT    , "stat"    , INVALIDATE_OPT, 0x1) /* stat hash (default) */           \
+  INVALIDATE_DEF(INVALIDATE_CONTENT , "content" , INVALIDATE_OPT, 0x2) /* content hash */                  \
+  INVALIDATE_DEF(INVALIDATE_NOTIFY  , "notify"  , INVALIDATE_OPT, 0x3) /* filesystem event subscription */ \
+  INVALIDATE_DEF(INVALIDATE_ALWAYS  , "always"  , INVALIDATE_OPT, 0x4) /* always considered invalid */     \
+  INVALIDATE_DEF(INVALIDATE_NEVER   , "never"   , INVALIDATE_OPT, 0x5) /* never considered invalid */      \
 
-enum {
-#define FILESYSTEM(a, b, c) a = UINT32_C(b),
-FILESYSTEM_TABLE
-#undef FILESYSTEM
-};
+typedef enum invalidate_type {
+#define INVALIDATE_DEF(x, n, r, y) x = UINT16_C(y),
+INVALIDATE_TYPE_TABLE
+#undef INVALIDATE_DEF
+} invalidate_type;
 
-typedef struct filesystem
-{
-  char *          path;   // path to the root of the filesystem, normalized and relative to the project dir
-  uint32_t        attrs;  // attributes
-  bool            leaf;   // whether there do not exist more specific filesystems under this path
+struct attrs16 * invalidate_attrs;
+
+typedef struct filesystem {
+  union {
+    invalidate_type invalidate;
+    uint16_t attrs;
+  };
+
+  struct fstree *fst; // filesystem attachment point
+
+  llist lln;  // freelist
 } filesystem;
+
+extern struct filesystem filesystem_root;
+extern struct filesystem filesystem_shadow;
 
 /// filesystem_setup
 //
@@ -71,19 +84,10 @@ xapi filesystem_cleanup(void);
 //  config - root of the config tree
 //  dry    - whether to perform a dry-run
 //
-xapi filesystem_reconfigure(struct reconfigure_context * restrict ctx, const struct value * restrict config, uint32_t dry)
+xapi filesystem_reconfigure(struct config * restrict cfg, bool dry)
   __attribute__((nonnull));
 
-/// filesystem_lookup
-//
-// SUMMARY
-//  get the filesystem configuration for the specified path
-//
-// PARAMETERS
-//  path - normalized absolute path
-//  fs   - (returns) filesystem
-//
-filesystem * filesystem_lookup(const char * const restrict path, size_t pathl)
+size_t filesystem_get_absolute_path(const filesystem * restrict fs, void * restrict dst, size_t sz)
   __attribute__((nonnull));
 
 #endif

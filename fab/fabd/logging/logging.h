@@ -23,42 +23,49 @@
 #include "logger.h"
 #include "logger/category.h"
 
-struct value;
-struct reconfigure_context;
+struct config;
 
 extern struct logger_category * categories;
 
-#define BASE 0
+#define L_ERROR     categories[0x00].id
+#define L_WARN      categories[0x01].id
+#define L_INFO      categories[0x02].id
+#define L_PROTOCOL  categories[0x03].id
+#define L_CONFIG    categories[0x04].id
+#define L_FF        categories[0x05].id
+#define L_PARAMS    categories[0x06].id
+#define L_USAGE     categories[0x07].id
+#define L_FSEVENT   categories[0x08].id
+#define L_MODULE    categories[0x09].id
+#define L_BUILDPLAN categories[0x0a].id
+#define L_BUILD     categories[0x0b].id
+#define L_REQUEST   categories[0x0c].id
+#define L_FORMULA   categories[0x0d].id
+#define L_SELECTOR  categories[0x0e].id
+#define L_PATTERN   categories[0x0f].id
+#define L_RULE      categories[0x10].id
+#define L_NODE      categories[0x11].id
+#define L_FSGRAPH   categories[0x12].id
+#define L_DEPGRAPH  categories[0x13].id
+#define L_RULEGRAPH categories[0x14].id
 #if DEBUG || DEVEL || XAPI
-#define L_IPC      categories[0x0].id
-#define L_PROTOCOL categories[0x1].id
-#undef BASE
-#define BASE 2
+#define L_IPC       categories[0x15].id
+#define L_B 0x16
+#else
+#define L_B 0x15
 #endif
-
-#define L_ERROR    categories[BASE + 0x0].id
-#define L_WARN     categories[BASE + 0x1].id
-#define L_INFO     categories[BASE + 0x2].id
-#define L_CONFIG   categories[BASE + 0x3].id
-#define L_FF       categories[BASE + 0x4].id
-#define L_PARAMS   categories[BASE + 0x5].id
-#define L_USAGE    categories[BASE + 0x6].id
-#define L_GRAPH    categories[BASE + 0x7].id
-#define L_FSEVENT  categories[BASE + 0x8].id
-#define L_MODULE   categories[BASE + 0x9].id
-
-#define L_NOTIFY   categories[BASE + 0xa].id
-#define L_SERVER   categories[BASE + 0xb].id
-#define L_SWEEPER  categories[BASE + 0xc].id
-#define L_MONITOR  categories[BASE + 0xd].id
-#define L_DAEMON   categories[BASE + 0xe].id
+#define L_NOTIFY    categories[L_B + 0x0].id
+#define L_SERVER    categories[L_B + 0x1].id
+#define L_SWEEPER   categories[L_B + 0x2].id
+#define L_BUILDER   categories[L_B + 0x3].id
+#define L_MONITOR   categories[L_B + 0x4].id
 
 /// logging_setup
 //
 // SUMMARY
 //  register logging categories
 //
-xapi logging_setup(uint32_t hash);
+xapi logging_setup(uint64_t hash);
 
 xapi logging_finalize(void);
 
@@ -71,7 +78,7 @@ xapi logging_finalize(void);
 //  config - root of the effective config tree
 //  dry    - if true, do not commit the new config
 //
-xapi logging_reconfigure(struct reconfigure_context * ctx, const struct value * restrict config, uint32_t dry)
+xapi logging_reconfigure(struct config * restrict config, bool dry)
   __attribute__((nonnull));
 
 #if DEBUG || DEVEL

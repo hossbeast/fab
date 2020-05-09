@@ -21,16 +21,8 @@
 #include "types.h"
 #include "xapi.h"
 
-struct value;         // libvalue
-struct value_store;
-
-#define CONFIG_QUERY_NOTNULL 0x10000
-
-/// g_config
-//
-// root of the active config tree
-//
-struct value * g_config;
+struct config;
+typedef struct config config;
 
 /// config_setup
 //
@@ -53,23 +45,29 @@ xapi config_cleanup(void);
 //
 xapi config_report(void);
 
-/// config_query
+/// config_begin_staging
 //
 // SUMMARY
-//  query a config tree
+//  reset the staging config, reload config files and apply them to the staging config
+//
+xapi config_begin_staging(void);
+
+/// config_stage
+//
+// SUMMARY
+//  cumulatively apply config to the staging config
 //
 // PARAMETERS
-//  base   - config tree to query
-//  path   - path from the root of the config tree
-//  query  - path from base
-//  [opts] - bitwise combo of VALUE_TYPE_* and CONFIG_QUERY_*
-//  val    - (returns) the value
+//  text - configuration text to apply
 //
-// ERRORS
-//  CONFIG_ILLEGAL - opts inclues VALUE_TYPE_* and the query matched a value of some other type, or opts includes
-//                   CONFIG_QUERY_NOTNULL, and the query did not match any value
-//
-xapi config_query(const struct value * restrict base, const char * restrict path, const char * restrict query, uint32_t opts, struct value ** const restrict val)
+xapi config_stage(config ** const restrict)
   __attribute__((nonnull));
+
+/// reconfigure
+//
+// SUMMARY
+//  promote the staging config to the active config, reconfigure subsystems, and call config_report
+//
+xapi config_reconfigure(void);
 
 #endif

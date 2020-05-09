@@ -17,26 +17,23 @@
 
 #include "xapi.h"
 #include "lorien/load.h"
-#include "value/load.h"
 #include "yyutil/load.h"
 #include "logger/load.h"
+#include "value/load.h"
 
-#include "value.h"
-#include "value/store.h"
-#include "valyria/map.h"
+#include "valyria/dictionary.h"
 
 #include "xunit.h"
 #include "xunit/assert.h"
 #include "narrator.h"
 
 #include "filesystem.internal.h"
-#include "reconfigure.h"
+#include "config_parser.h"
 #include "config.internal.h"
 #include "logging.h"
 
-typedef struct
-{
-  xunit_test;
+typedef struct {
+  XUNITTEST;
 
   char * config;
   char * filesystems;
@@ -50,7 +47,9 @@ static xapi filesystem_test_unit_setup(xunit_unit * unit)
   fatal(lorien_load);
   fatal(yyutil_load);
   fatal(value_load);
+
   fatal(logging_finalize);
+  fatal(filesystem_setup);
 
   finally : coda;
 }
@@ -74,50 +73,29 @@ static xapi filesystem_test_entry(xunit_test * _test)
 
   filesystem_test * test = (filesystem_test *)_test;
 
-  reconfigure_context ctx;
-  value_store * stor = 0;
-  value * config = 0;
+  config_parser * parser = 0;
+  config * cfg = 0;
+  char space[1024];
 
-  // modules
+  // arrange
+  fatal(config_parser_create, &parser);
+  fatal(config_parser_parse, parser, test->config, strlen(test->config) + 2, 0, 0, &cfg);
+
+  cfg->filesystems.changed = true;
+
+  // act
   fatal(filesystem_cleanup);
   fatal(filesystem_setup);
 
-  // arrange
-  fatal(config_parse, 0, &stor, MMS(test->config), 0, &config);
+  fatal(filesystem_reconfigure, cfg, true);
+  fatal(filesystem_reconfigure, cfg, false);
 
-  // act
-  fatal(filesystem_reconfigure, &ctx, config, ~0);
-  fatal(filesystem_reconfigure, &ctx, config, 0);
-
-  // assert
-  const char * def = test->filesystems;
-  while(*def)
-  {
-    const char * end = def;
-    while(*end && *end != ' ')
-      end++;
-
-    int leaf = 0;
-    if(def[0] == '!')
-    {
-      leaf = 1;
-      def++;
-    }
-
-    filesystem * fs = map_get(filesystems, def, end - def);
-
-    assert_infof("name", "%.*s", (int)(end - def), def);
-    assert_notnull(fs);
-    assert_eq_b(leaf, fs->leaf);
-    assert_info_unstage();
-
-    def = end;
-    while(*def == ' ')
-      def++;
-  }
+  fstree_znload(space, sizeof(space));
+  assert_eq_s(test->filesystems, space);
 
 finally:
-  fatal(value_store_xfree, stor);
+  fatal(config_parser_xfree, parser);
+  fatal(config_xfree, cfg);
 coda;
 }
 
@@ -129,37 +107,117 @@ xunit_unit xunit = {
     xu_setup : filesystem_test_unit_setup
   , xu_cleanup : filesystem_test_unit_cleanup
   , xu_entry : filesystem_test_entry
-  , xu_tests : (xunit_test*[]) {
+  , xu_tests : (void*)(filesystem_test*[]) {
       (filesystem_test[]) {{
-          config : ""
-        , filesystems : "!/"
+          config : (char[]) { "\0\0" }
+        , filesystems :
+              "/ : (none)"
+            "\n"
       }}
     , (filesystem_test[]) {{
-          config : "filesystem {"
-              "\"/\"      { invalidate notify } "
-            "}"
-        , filesystems : "!/"
+          config : (char[]) {
+            "filesystems : {"
+              "\"/\" : { invalidate : stat } "
+            "}\0\0"
+          }
+        , filesystems :
+              "/ : stat"
+            "\n"
       }}
     , (filesystem_test[]) {{
-          config : "filesystem {"
-              "\"/A\"     { invalidate notify } "
-            "}"
-        , filesystems : "/ !/A"
+          config : (char[]) {
+            "filesystems : {"
+              "\"/\" : { invalidate : content } "
+              "\"/A\" : { invalidate : notify } "
+            "}\0\0"
+          }
+        , filesystems :
+              "/ : content"
+            "\n A : notify"
+            "\n"
       }}
     , (filesystem_test[]) {{
-          config : "filesystem {"
-              "\"/A\"     { invalidate notify } "
-              "\"/B\"     { invalidate notify } "
-            "}"
-        , filesystems : "/ !/A !/B"
+          config : (char[]) {
+            "filesystems : {"
+              "\"/\" : { invalidate : content } "
+              "\"/A\" : { invalidate : notify } "
+              "\"/B\" : { invalidate : stat } "
+            "}\0\0"
+          }
+        , filesystems :
+              "/ : content"
+            "\n A : notify"
+            "\n B : stat"
+            "\n"
       }}
     , (filesystem_test[]) {{
-          config : "filesystem {"
-              "\"/A\"      { invalidate notify } "
-              "\"/A/BB/C\" { invalidate notify } "
-              "\"/A/B\"    { invalidate notify } "
-            "}"
-        , filesystems : "/ /A !/A/B !/A/BB/C"
+          config : (char[]) {
+            "filesystems : {"
+              "\"/\" : { invalidate : content } "
+              "\"/A\" : { invalidate : notify } "
+              "\"/A/B\" : { invalidate : stat } "
+            "}\0\0"
+          }
+        , filesystems :
+              "/ : content"
+            "\n A : notify"
+            "\n  B : stat"
+            "\n"
+      }}
+    , (filesystem_test[]) {{
+          config : (char[]) {
+            "filesystems : {"
+              "\"/\" : { invalidate : content } "
+              "\"/A\" : { invalidate : notify } "
+              "\"/A/B/C\" : { invalidate : stat } "
+            "}\0\0"
+          }
+        , filesystems :
+              "/ : content"
+            "\n A : notify"
+            "\n  B"
+            "\n   C : stat"
+            "\n"
+      }}
+    , (filesystem_test[]) {{
+          config : (char[]) {
+            "filesystems : {"
+              "\"/A\" : { invalidate : notify } "
+            "}\0\0"
+          }
+        , filesystems :
+              "/ : (none)"
+            "\n A : notify"
+            "\n"
+      }}
+    , (filesystem_test[]) {{
+          config : (char[]) {
+            "filesystems : {"
+              "\"/A\" : { invalidate : notify } "
+              "\"/B\" : { invalidate : content } "
+            "}\0\0"
+          }
+        , filesystems :
+              "/ : (none)"
+            "\n A : notify"
+            "\n B : content"
+            "\n"
+      }}
+    , (filesystem_test[]) {{
+          config : (char[]) {
+            "filesystems : {"
+              "\"/A\"      : { invalidate : content } "
+              "\"/A/BB/C\" : { invalidate : notify } "
+              "\"/A/B\"    : { invalidate : stat } "
+            "}\0\0"
+          }
+        , filesystems :
+              "/ : (none)"
+            "\n A : content"
+            "\n  B : stat"
+            "\n  BB"
+            "\n   C : notify"
+            "\n"
       }}
     , 0
   }

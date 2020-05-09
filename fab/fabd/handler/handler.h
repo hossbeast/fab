@@ -25,13 +25,22 @@
 #include "types.h"
 #include "xapi.h"
 
-struct fab_request;
-struct fab_response;
-struct memblk;
-struct buildplan;
+#include "selector.h"
 
+struct request;
+struct value_writer;
+struct selection;
+struct graph_invalidation_context;
+
+/// handler_context
+//
+// SUMMARY
+//  context for processing a request
+//
 typedef struct handler_context {
-  struct buildplan * bp;
+  selector_context sel_ctx;
+  struct selection * selection;
+  struct graph_invalidation_context * invalidation;
 } handler_context;
 
 xapi handler_context_create(handler_context ** restrict ctx)
@@ -39,27 +48,20 @@ xapi handler_context_create(handler_context ** restrict ctx)
 
 xapi handler_context_xfree(handler_context * restrict ctx);
 
-xapi handler_context_ixfree(handler_context ** restrict ctx)
+xapi handler_context_reset(handler_context * restrict ctx)
   __attribute__((nonnull));
 
-/// handler_build
-//
-// SUMMARY
-//  build the current targets
-//
-xapi handler_build(handler_context * restrict ctx)
+xapi handler_context_ixfree(handler_context ** restrict ctx)
   __attribute__((nonnull));
 
 /// handler_dispatch
 //
 // SUMMARY
-//  
 //
 xapi handler_dispatch(
     handler_context * restrict ctx
-  , struct fab_request * restrict request
-  , struct memblk * restrict mb
-  , struct fab_response ** restrict response
+  , struct request * restrict request
+  , struct value_writer * response_writer
 )
   __attribute__((nonnull));
 

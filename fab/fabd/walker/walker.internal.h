@@ -23,27 +23,15 @@
 
 #include "walker.h"
 
-struct filesystem;
 struct ftwinfo;
 struct node;
-struct vertex;
-struct module;
+struct graph_invalidation_context;
 
-typedef struct walker_context
-{
-  struct node * ancestor; // new tree attached here
-  struct node * root;     // base of the tree
+typedef struct walker_context {
+  struct node * base;        // base of the tree
+  struct node * base_parent; // base attached here if/when created
   int walk_id;
-
-  xapi (*create)(struct walker_context * restrict ctx, struct node ** restrict n, uint8_t fstype, const struct filesystem * restrict fs, struct module * restrict mod, const char * restrict name);
-  const struct filesystem * (*fslookup)(struct walker_context * restrict ctx, const char * const restrict path, size_t pathl);
-  struct module * (*modlookup)(struct walker_context * restrict ctx, const char * const restrict path, size_t pathl);
-  xapi (*refresh)(struct walker_context * restrict ctx, struct node * restrict n);
-  xapi (*watch)(struct walker_context * restrict ctx, struct node * restrict n);
-  xapi (*connect)(struct walker_context * restrict ctx, struct node * restrict parent, struct node * restrict n);
-  xapi (*disintegrate)(struct walker_context * restrict ctx, struct edge * restrict e);
-
-  void * udata;
+  struct graph_invalidation_context * invalidation;
 } walker_context;
 
 xapi walker_visit(int method, struct ftwinfo * info, void * arg, int * stop)

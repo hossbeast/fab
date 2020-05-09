@@ -22,12 +22,19 @@
 
 struct node;
 
-#define restrict __restrict
-
 xapi notify_thread_setup(void);
 xapi notify_thread_cleanup(void);
 xapi notify_thread_launch(void);
 xapi notify_thread_watch(struct node * restrict n)
   __attribute__((nonnull));
+
+/* incremented each time new events are available */
+extern uint16_t notify_thread_epoch;
+
+enum notify_state {
+  NOTIFY_MONITOR = 0,
+  NOTIFY_SUPPRESS,
+  NOTIFY_EXPIRING,
+};
 
 #endif

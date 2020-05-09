@@ -20,8 +20,6 @@
 
 #include "xapi.h"
 
-#define restrict __restrict
-
 xapi monitor_thread(void);
 
 #endif

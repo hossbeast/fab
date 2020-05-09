@@ -29,7 +29,7 @@ struct graph;
 /// graph_node_create
 //
 // SUMMARY
-//  create a vertex in g_node_graph
+//  create a vertex in g_graph
 //
 // PARAMETERS
 //  v         - (returns) newly created vertex
@@ -39,7 +39,7 @@ struct graph;
 //  label_len -
 //
 // REMARKS
-//  used by unit tests to drive node operations against g_node_graph from a sequence of operations
+//  used by unit tests to drive node operations against g_graph from a sequence of operations
 //  obtained from a libmoria/operations parser
 //
 xapi graph_node_create(
@@ -49,6 +49,18 @@ xapi graph_node_create(
   , /* 4 */ const char * const restrict label
   , /* 5 */ uint16_t label_len
 )
+  __attribute__((nonnull));
+
+/*
+ * write the path to the node, relative to another node, to a buffer
+ */
+size_t node_get_relative_path(const node * n, const node * base, void * restrict dst, size_t dst_size)
+  __attribute__((nonnull));
+
+/*
+ * write the path to a node, relative to another node, to a narrator
+ */
+xapi node_relative_path_say(const node * n, const node * base, struct narrator * restrict N)
   __attribute__((nonnull));
 
 #endif

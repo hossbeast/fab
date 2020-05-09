@@ -21,7 +21,8 @@
 # source invocations
 +[ $dcommon ]() @common
 
-$dlibdeps = [ $dlibxapi $dlibxlinux $dlibvalyria $dlibvalue $dliblogger $dlibnarrator $dlibfab $dliblorien $dlibmoria $dlibyyutil ]
+# libraries
+$dlibdeps = [ $dlibxapi $dlibxlinux $dlibvalyria $dlibvalue $dliblogger $dlibnarrator $dlibfab $dliblorien $dlibmoria $dlibyyutil $dlibxunit ]
 $libdeps_xapi_final = [ $libxapi_xapi_final $libxlinux_xapi_final $libvalyria_xapi_final $libyyutil_xapi_final $libvalue_xapi_final $liblogger_xapi_final
   $libnarrator_xapi_final $liblorien_xapi_final $libmoria_xapi_final $libfab_xapi_final ]
 $libdeps_xapi_debug = [ $libxapi_xapi_debug $libxlinux_xapi_debug $libvalyria_xapi_debug $libyyutil_xapi_debug $libvalue_xapi_debug $liblogger_xapi_debug
@@ -94,8 +95,8 @@ $lflags_xapi_devel = [ $lflags_xapi_devel $lopts $libdeps_xapi_devel $rpath ]
 #
 # catchall node
 #
-[ @all ] : [ @release @test.fast ]
-[ @release ] : [ @final @debug @devel ]
+[ @all ] : [ @release ]
+[ @release ] : [ @final @debug @devel @testsos ]
 [ @final ] : [ $fabd_final ]
 [ @debug ] : [ $fabd_debug ]
 [ @devel ] : [ $fabd_devel ]
@@ -132,6 +133,8 @@ $lflags_xapi_devel = [ $lflags_xapi_devel $lopts $libdeps_xapi_devel $rpath ]
   [ $cc ] [ $cflags -shared ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw lx/o uu fi ]
 }
 
+[ @testsos ] : [ $* ~ lsr l/test\/test_ sx/c/xapi.xunit.so sy ]
+
 [ @test ] : [ [ $* ~ lsr l/test\/test_ sx/c/xapi.xunit.so sy ] $xunit_xapi_devel $libdeps_xapi_devel ]
 {
   (
@@ -147,7 +150,7 @@ $lflags_xapi_devel = [ $lflags_xapi_devel $lopts $libdeps_xapi_devel $rpath ]
   (
     [ $xunit_xapi_devel ] [ $libdeps_xapi_devel ~ fi ] [
     ] [ $@ ~ rx/ineed lx/so fi ] [
-    ] +UNIT
+    ] +UNIT --nofork
   ) | tee /dev/fd/501
   > exit ${PIPESTATUS[0]}
 }

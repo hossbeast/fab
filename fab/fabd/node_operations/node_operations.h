@@ -20,13 +20,29 @@
 
 #include "xapi.h"
 
-struct edge;
 struct filesystem;
 struct node;
+struct node_edge;
 struct vertex;
 struct operations_dispatch;
+struct graph;
+struct graph_invalidation_context;
 
-enum relation_type;
+enum edge_type;
+enum vertex_filetype;
+
+extern uint32_t node_invalidation_counter;
+
+/*
+ * create a node in the graph
+ *
+ * valid - whether the node currently exists in the filesystem
+ */
+xapi node_vertex_create(struct node ** restrict n, uint32_t attrs, const char * restrict label, uint16_t label_len)
+  __attribute__((nonnull));
+
+xapi node_index(struct node * restrict n)
+  __attribute__((nonnull));
 
 /// node_connect
 //
@@ -34,20 +50,44 @@ enum relation_type;
 //  create an edge in the graph
 //
 // PARAMETERS
-//  g      - graph
-//  parent - parent
-//  n      - node
+//  above - parent
+//  below - child
 //
-xapi node_connect(struct node * restrict above, struct node * restrict below, enum relation_type relation)
-  __attribute__((nonnull));
+xapi node_connect(
+    struct node * restrict above
+  , struct node * restrict below
+  , enum edge_type relation
+  , struct graph_invalidation_context * restrict invalidation
+  , struct node_edge ** restrict e
+  , struct node ** restrict old
+)
+  __attribute__((nonnull(1, 2, 4)));
+
+xapi node_hyperconnect(
+    struct node ** restrict Alist
+  , uint16_t Alen
+  , struct node ** restrict B
+  , uint16_t Blen
+  , enum edge_type relation
+  , struct graph_invalidation_context * restrict invalidation
+  , struct node_edge ** restrict e
+)
+  __attribute__((nonnull(1, 3, 6)));
 
 /// node_disconnect
 //
 // SUMMARY
 //  remove an edge between two nodes, if any
 //
-xapi node_disconnect(struct node * restrict A, struct node * restrict B)
-  __attribute__((nonnull));
+xapi node_disconnect(struct node * restrict A, struct node * restrict B, struct graph_invalidation_context * restrict context)
+  __attribute__((nonnull(1, 2)));
+
+/// node_edge_disconnect
+//
+// remove an edge
+//
+xapi node_edge_disconnect(struct node_edge * restrict ne, struct graph_invalidation_context * restrict context)
+  __attribute__((nonnull(1)));
 
 /// node_disintegrate_fs
 //
@@ -59,8 +99,8 @@ xapi node_disconnect(struct node * restrict A, struct node * restrict B)
 //  e         - edge to begin with
 //  traversal - id of an open traversal
 //
-xapi node_disintegrate_fs(struct edge * restrict e, int traversal)
-  __attribute__((nonnull));
+xapi node_disintegrate_fs(struct node_edge * restrict ne, struct graph_invalidation_context * restrict invalidation)
+  __attribute__((nonnull(1)));
 
 /// node_invalidate
 //
@@ -72,26 +112,22 @@ xapi node_disintegrate_fs(struct edge * restrict e, int traversal)
 //  n         - node
 //  traversal - id of an open traversal
 //
-xapi node_invalidate(struct node * restrict n, int traversal)
+xapi node_invalidate(struct node * restrict n, struct graph_invalidation_context * restrict context)
   __attribute__((nonnull));
 
-/// node_refresh
-//
-// SUMMARY
-//  determine whether a node is invalid, according to the options on the fs it belongs to
-//
-// PARAMETERS
-//  g         - graph
-//  n         - node
-//  traversal - id of an open traversal
-//
-xapi node_refresh(struct node * restrict n, int traversal)
+xapi node_ok(struct node * restrict n)
   __attribute__((nonnull));
 
-/// node_operations_dispatch
-//
-// function pointers for moria/operations which operate on the node graph
-//
-struct operations_dispatch * node_operations_dispatch;
+xapi node_delete_node(struct node * restrict n)
+  __attribute__((nonnull));
+
+xapi node_operations_create_vertex(
+    struct vertex ** const restrict rv
+  , struct graph * const restrict g
+  , uint32_t attrs
+  , const char * const restrict label
+  , uint16_t label_len
+)
+  __attribute__((nonnull));
 
 #endif

@@ -18,63 +18,232 @@
 #include "xlinux/xstdlib.h"
 #include "moria/graph.h"
 #include "moria/vertex.h"
+#include "moria/edge.h"
 #include "valyria/list.h"
 #include "valyria/map.h"
+#include "valyria/set.h"
 #include "value.h"
 #include "narrator.h"
+#include "narrator/fixed.h"
 
 #include "node.internal.h"
-#include "node_operations.h"
+#include "shadow.h"
+#include "formula.h"
 #include "filesystem.h"
-#include "reconfigure.h"
-#include "path.h"
-#include "params.h"
+#include "filesystem.internal.h"
 #include "logging.h"
-#include "ff_node_pattern.h"
-#include "ff.h"
-#include "FF.errtab.h"
-#include "module.h"
+#include "module.internal.h"
+#include "node_operations.h"
+#include "params.h"
+#include "path.h"
+#include "pattern.h"
+#include "config.internal.h"
+#include "MODULE.errtab.h"
+#include "walker.h"
+#include "extern.h"
+#include "variant.h"
+#include "var.h"
+#include "stats.h"
 
+#include "attrs.h"
 #include "zbuffer.h"
-#include "attrs32.h"
+#include "hash.h"
 
-graph * g_node_graph;
+static uint8_t node_fs_epoch;
+
+set * g_parse_nodes;
 map * g_nodes_by_wd;
 node * g_root;
 node * g_project_root;
+node * g_project_shadow;
 
-#define RELATION_ATTR_DEF(a, b) + 1
-static size_t relation_type_attrs_len = 0 RELATION_TYPE_TABLE;
-#undef RELATION_ATTR_DEF
+attrs32 * node_property_attrs = (attrs32[]) {{
+#undef DEF
+#define DEF(x, s, r, y) + 1
+    num : 0
+      NODE_PROPERTY_TABLE
+  , members : (member32[]) {
+#undef DEF
+#define DEF(x, s, r, y) { name : s, value : UINT32_C(y), range : UINT32_C(r) },
+NODE_PROPERTY_TABLE
+  }
+}};
 
-static attrs32 * relation_type_attrs = (typeof(*relation_type_attrs)[]) {
-#define RELATION_ATTR_DEF(a, b) { value : (b), name : #a, namel : strlen(#a) },
-RELATION_TYPE_TABLE
-};
-
-#define NODE_ATTR_DEF(a, b) + 1
-static size_t node_fstype_attrs_len = 0 NODE_FSTYPE_TABLE;
-#undef NODE_ATTR_DEF
-
-static attrs32 * node_fstype_attrs = (typeof(*node_fstype_attrs)[]) {
-#define NODE_ATTR_DEF(a, b) { value : (b), name : #a, namel : strlen(#a) },
-NODE_FSTYPE_TABLE
-};
-
-static void __attribute__((constructor)) attrs_init()
+static void __attribute__((constructor)) init()
 {
-  qsort(relation_type_attrs, relation_type_attrs_len, sizeof(*relation_type_attrs), attrs32_compare_byname);
-  qsort(node_fstype_attrs, node_fstype_attrs_len, sizeof(*node_fstype_attrs), attrs32_compare_byname);
+  attrs32_init(node_property_attrs);
 }
 
-static xapi node_report_visitor(vertex * v, int distance, void * arg)
+/// node_root_init
+//
+// SUMMARY
+//  create the root node (g_root)
+//
+static xapi root_init()
 {
   enter;
 
-  narrator * N;
-  fatal(log_start, L_GRAPH, &N);
-  xsayf("%*s%s", distance * 2, "", v->label);
-  fatal(log_finish);
+  vertex * v;
+  node * n;
+  path * p = 0;
+
+  STATS_INC(nodes);
+  fatal(vertex_create, &v, g_graph, VERTEX_FILETYPE_DIR | VERTEX_TYPE_NODE);
+  n = vertex_value(v);
+  n->self_bpe.typemark = BPE_NODE;
+
+  fatal(path_creates, &p, "(root)");
+  n->name = p;
+  p = 0;
+
+  v->label = n->name->name;
+  v->label_len = n->name->namel;
+
+  n->wd = -1;
+  n->fst = &fstree_root;
+  n->fs = n->fst->fs;
+
+  g_root = n;
+
+finally:
+  fatal(path_free, p);
+coda;
+}
+
+/// node_project_init
+//
+// SUMMARY
+//  create the project node (g_project_root) and attach it to the root
+//
+static xapi project_init()
+{
+  enter;
+
+  graph_invalidation_context invalidation = { 0 };
+
+#if XUNIT
+  if(!g_params.proj_dir) {
+    goto XAPI_FINALIZE;
+  }
+#endif
+
+  fatal(graph_invalidation_begin, &invalidation);
+  fatal(node_graft, g_params.proj_dir, &g_project_root, &invalidation);
+
+finally:
+  graph_invalidation_end(&invalidation);
+coda;
+}
+
+//
+// internal
+//
+
+size_t node_get_relative_path(const node * subject, const node * base, void * restrict dst, size_t sz)
+{
+  const node *n;
+  const node *bs[64];
+  size_t bsl = 0;
+  const node *ns[64];
+  size_t nsl = 0;
+  size_t z = 0;
+  int x;
+
+  /* subject and base are the same node */
+  if(subject == base)
+  {
+    z += znloads(dst + z, sz - z, ".");
+    goto end;
+  }
+
+  /* path from base up -> subject */
+  n = base;
+  while(n)
+  {
+    if(n == subject)
+      break;
+
+    if(n == g_root)
+      break;
+
+    RUNTIME_ASSERT(bsl < (sizeof(bs) / sizeof(bs[0])));
+    bs[bsl++] = n;
+    n = node_fsparent(n);
+  }
+
+  /* base is directly up from subject */
+  if(n == subject)
+    goto end;
+
+  /* path from subject up -> base */
+  n = subject;
+  while(n)
+  {
+    if(n == base)
+      break;
+
+    if(n == g_root)
+      break;
+
+    RUNTIME_ASSERT(nsl < (sizeof(ns) / sizeof(ns[0])));
+    ns[nsl++] = n;
+    n = node_fsparent(n);
+  }
+
+  /* subject is directly up from base */
+  if(n == base)
+  {
+    bsl = 0;
+  }
+
+  /* find the nearest common ancestor */
+  while(nsl && bsl && ns[nsl - 1] == bs[bsl - 1])
+  {
+    nsl--;
+    bsl--;
+  }
+
+end:
+  /* path from base to nearest common ancestor */
+  for(x = 0; x < bsl; x++)
+  {
+    if(z)
+      z += znloads(dst + z, sz - z, "/");
+    z += znloads(dst + z, sz - z, "..");
+  }
+
+  /* symlink to the project module */
+  if(nsl > 2 && node_shadowtype_get(ns[nsl - 1]) == VERTEX_SHADOWTYPE_MODULES && ns[nsl - 2] == g_project_shadow)
+  {
+    z += znloads(dst + z, sz - z, "module");
+    nsl -= 2;
+  }
+
+  /* path from nearest common ancestor to the subject */
+  for(x = nsl - 1; x >= 0; x--)
+  {
+    n = ns[x];
+
+    if(z)
+      z += znloads(dst + z, sz - z, "/");
+    z += znloadw(dst + z, sz - z, n->name->name, n->name->namel);
+  }
+
+  ((char*)dst)[z] = 0;
+
+  return z;
+}
+
+xapi node_relative_path_say(const node * n, const node * base, narrator * restrict N)
+{
+  enter;
+
+  char path[512];
+  size_t pathl;
+
+  pathl = node_get_relative_path(n, base, path, sizeof(path));
+
+  xsayw(path, pathl);
 
   finally : coda;
 }
@@ -83,15 +252,27 @@ static xapi node_report_visitor(vertex * v, int distance, void * arg)
 // public
 //
 
-const char * relation_type_name(uint32_t attrs) { return attrs32_option_name(relation_type_attrs, relation_type_attrs_len, RELATION_TYPE_OPT, attrs); }
-const char * node_fstype_name(uint32_t attrs) { return attrs32_option_name(node_fstype_attrs, node_fstype_attrs_len, NODE_FSTYPE_OPT, attrs); }
+xapi node_setup_minimal()
+{
+  enter;
+
+  fatal(map_create, &g_nodes_by_wd);
+  fatal(set_create, &g_parse_nodes);
+
+  finally : coda;
+}
 
 xapi node_setup()
 {
   enter;
 
-  fatal(graph_createx, &g_node_graph, RELATION_TYPE_FS, sizeof(node), node_destroy, 0);
-  fatal(map_create, &g_nodes_by_wd);
+  fatal(node_setup_minimal);
+
+  // setup basic nodes
+  fatal(root_init);
+  fatal(project_init);
+
+  node_fs_epoch = 1;
 
   finally : coda;
 }
@@ -100,36 +281,61 @@ xapi node_cleanup()
 {
   enter;
 
-  fatal(graph_xfree, g_node_graph);
   fatal(map_xfree, g_nodes_by_wd);
+  fatal(set_xfree, g_parse_nodes);
 
   finally : coda;
 }
 
-xapi node_root_init()
+xapi node_reconfigure(config * restrict cfg, bool dry)
 {
   enter;
 
-  fatal(node_createw, &g_root, NODE_FSTYPE_DIR, 0, 0, "", 0);
+  if(dry)
+  {
+
+  }
+  else if(cfg->filesystems.attrs & CONFIG_CHANGED)
+  {
+    /* invalidate node -> filesystem assignments */
+    node_fs_epoch++;
+  }
 
   finally : coda;
 }
 
-xapi node_project_init()
+xapi node_full_refresh(void)
 {
   enter;
 
-  fatal(node_graft, g_params.proj_dir, &g_project_root);
+  int walk_id;
+  //const filesystem *fs;
+  //invalidate_type iv;
+  graph_invalidation_context invalidation = { 0 };
 
-  finally : coda;
+  fatal(graph_invalidation_begin, &invalidation);
+  walk_id = walker_descend_begin();
+
+  /* refresh the project tree */
+  fatal(walker_descend, 0, g_project_root, 0, g_params.proj_dir, walk_id, &invalidation);
+  fatal(walker_ascend, g_project_root, walk_id, &invalidation);
+
+  /* refresh extern trees */
+  fatal(extern_refresh, walk_id, &invalidation);
+
+finally:
+  graph_invalidation_end(&invalidation);
+coda;
 }
 
-xapi node_graft(const char * restrict base, node ** restrict rn)
+xapi node_graft(const char * restrict base, node ** restrict rn, graph_invalidation_context * restrict invalidation)
 {
   enter;
 
   node * parent;
   node * child = 0;
+  module * mod = 0;
+  const filesystem * fs = 0;
 
   parent = g_root;
   const char * seg = base + 1;
@@ -146,22 +352,11 @@ xapi node_graft(const char * restrict base, node ** restrict rn)
     }
     else
     {
-      module * mod = 0;
-      const filesystem * fs = 0;
 
-      if(parent->mod && parent->mod->leaf)
-        mod = parent->mod;
-      if(!mod)
-        mod = module_lookup(base, end - base);
-      if(mod)
-        fs = mod->base->fs;
-      else if(parent->fs && parent->fs->leaf)
-        fs = parent->fs;
-      if(!fs)
-        fs = filesystem_lookup(base, end - base);
+      fs = node_filesystem_get(parent);
 
-      fatal(node_createw, &child, NODE_FSTYPE_DIR, fs, mod, seg, end - seg);
-      fatal(node_connect, parent, child, RELATION_TYPE_FS);
+      fatal(node_createw, &child, VERTEX_FILETYPE_DIR | VERTEX_OK, fs, mod, seg, end - seg);
+      fatal(node_connect, parent, child, EDGE_TYPE_FS, invalidation, 0, 0);
     }
     parent = child;
 
@@ -175,61 +370,53 @@ xapi node_graft(const char * restrict base, node ** restrict rn)
   finally : coda;
 }
 
-xapi node_reconfigure(reconfigure_context * ctx, const value * restrict config, uint32_t dry)
+static void node_fstree_refresh(node * restrict n)
 {
-  enter;
+  node * parent;
 
-  char path[512];
-  size_t pathl;
+  if(n->fs_epoch == node_fs_epoch)
+    return;
 
-  const list * vertices;
-  int x;
+  /* the root node does not refresh */
+  if((parent = node_fsparent(n)) == 0)
+    return;
 
-  if(!dry && ctx->filesystems_changed)
+  STATS_INC(fstree_refresh);
+
+  node_fstree_refresh(parent);
+
+  n->fst = 0;
+  if(parent->fst)
   {
-    vertices = graph_vertices(g_node_graph);
-
-    for(x = 0; x < vertices->l; x++)
+    if((n->fst = fstree_down((struct fstree *)parent->fst, n->name->name, n->name->namel)))
     {
-      node * n = vertex_value(list_get(vertices, x));
-      if(node_fstype_get(n) == NODE_FSTYPE_DIR)
-      {
-        pathl = node_get_absolute_path(n, path, sizeof(path));
-        n->fs = filesystem_lookup(path, pathl);
-      }
+      n->fs = n->fst->fs;
     }
   }
 
-  finally : coda;
+  if(!n->fs)
+    n->fs = parent->fs;
+
+  n->fs_epoch = node_fs_epoch;
 }
 
-xapi graph_node_create(
-    struct vertex ** const restrict v
-  , graph * const restrict g
-  , uint32_t attrs
-  , const char * const restrict label
-  , uint16_t label_len
-)
+const struct filesystem * node_filesystem_get(node * restrict n)
 {
-  enter;
+  enum vertex_filetype filetype;
 
-  node * n = 0;
+  filetype = node_filetype_get(n);
+  if(filetype != VERTEX_FILETYPE_DIR)
+    n = node_fsparent(n);
 
-  // child is set to FILE in connect
-  node_fstype fstype = NODE_FSTYPE_DIR;
+  node_fstree_refresh(n);
 
-  const filesystem * fs = NULL;
-  module * mod = NULL;
-
-  fatal(node_createw, &n, fstype, fs, mod, label, label_len);
-  *v = vertex_containerof(n);
-
-  finally : coda;
+  RUNTIME_ASSERT(n->fs);
+  return n->fs;
 }
 
 xapi node_createw(
     node ** restrict n
-  , node_fstype fstype
+  , uint32_t attrs
   , const filesystem * restrict fs
   , module * restrict mod
   , const char * restrict name
@@ -238,144 +425,136 @@ xapi node_createw(
 {
   enter;
 
-  vertex * v;
-  path * p = 0;
+  fatal(node_vertex_create, n, attrs, name, name_len);
 
-  fatal(vertex_create, &v, g_node_graph, fstype);
-  *n = vertex_value(v);
-
-  fatal(path_createw, &p, name, name_len);
-  (*n)->name = p;
-  p = 0;
-
-  // the vertex label points at the node name
-  v->label = (*n)->name->name;
-  v->label_len = (*n)->name->namel;
-  (*n)->fs = fs;
-  (*n)->mod = mod;
-
-  // index the node for lookup
-  fatal(graph_identity_indexw, g_node_graph, v, (*n)->name->name, (*n)->name->namel);
-
-  if(memncmp((*n)->name->ext, (*n)->name->extl, MMS("fab")) == 0)
+  if(mod || fs)
   {
-    if(memncmp((*n)->name->base, (*n)->name->basel, MMS("common")))
-      fatal(graph_identity_indexw, g_node_graph, v, (*n)->name->base, (*n)->name->basel);
+    RUNTIME_ASSERT(((attrs & ~(VERTEX_STATE_OPT)) | VERTEX_TYPE_NODE) == VERTEX_DIR);
+    (*n)->mod = mod;
+    (*n)->fs = fs;
   }
 
-  if(fstype == NODE_FSTYPE_DIR)
-    (*n)->wd = -1;
-
-finally:
-  fatal(path_xfree, &p);
-coda;
-}
-
-xapi node_creates(
-    node ** restrict n
-  , node_fstype fstype
-  , const filesystem * restrict fs
-  , module * restrict mod
-  , const char * restrict name
-)
-{
-  xproxy(node_createw, n, fstype, fs, mod, name, strlen(name));
-}
-
-xapi node_report()
-{
-  enter;
-
-  if(log_would(L_GRAPH))
+  if(attrs == VERTEX_DIR)
   {
-    logs(L_GRAPH, "node fs graph");
-
-    fatal(graph_traverse_vertices_all
-      , g_node_graph
-      , node_report_visitor
-      , (traversal_criteria[]) {{
-            edge_travel : RELATION_TYPE_FS
-          , edge_visit : RELATION_TYPE_FS
-        }}
-      , MORIA_TRAVERSE_DOWN | MORIA_TRAVERSE_PRE
-      , 0
-    );
+    (*n)->fs_epoch = node_fs_epoch;
   }
 
   finally : coda;
 }
 
-void node_destroy(node * restrict n)
+xapi node_creates(
+    node ** restrict n
+  , vertex_filetype filetype
+  , const filesystem * restrict fs
+  , module * restrict mod
+  , const char * restrict name
+)
 {
+  xproxy(node_createw, n, filetype, fs, mod, name, strlen(name));
+}
+
+xapi node_xdestroy(node * restrict n)
+{
+  enter;
+
+  vertex_kind kind;
+
+  kind = node_kind_get(n);
+  if(kind == VERTEX_FML)
+  {
+    fatal(formula_xfree, n->self_fml);
+  }
+  else if(kind == VERTEX_MODULE_BAM)
+  {
+    fatal(module_xfree, n->self_mod);
+  }
+  else if(kind == VERTEX_MODEL_BAM)
+  {
+    fatal(module_xfree, n->self_mod);
+  }
+
   path_xfree(&n->name);
+
+  finally : coda;
 }
 
 size_t node_get_absolute_path(const node * restrict n, void * restrict dst, size_t sz)
 {
-  const node * ns[64];
-  size_t nsl = 0;
   size_t z = 0;
-  int x;
+  const node *base;
 
-  // relative to the root
-  while(n && nsl < (sizeof(ns) / sizeof(ns[0])))
+  if(node_shadowtype_get(n))
   {
-    ns[nsl++] = n;
-    n = node_fsparent(n);
-
-    if(n == g_root)
-      break;
+    z += znloads(dst, sz, "//");
+    base = g_shadow;
   }
-
-  for(x = nsl - 1; x >= 0; x--)
+  else
   {
-    n = ns[x];
-
-    z += znloads(dst + z, sz - z, "/");
-    z += znloadw(dst + z, sz - z, n->name->name, n->name->namel);
+    z += znloads(dst, sz, "/");
+    base = g_root;
   }
+  z += node_get_relative_path(n, base, dst + z, sz - z);
 
   return z;
 }
 
-size_t node_get_relative_path(const node * restrict n, void * restrict dst, size_t sz)
+size_t node_get_path(const node * restrict n, void * restrict dst, size_t dst_size)
 {
-  const node * ns[64];
-  size_t nsl = 0;
-  size_t z = 0;
-  int x;
-
-  // relative to the project root
-  while(n && nsl < (sizeof(ns) / sizeof(ns[0])))
+  /* absolute path for shadow nodes */
+  if(node_shadowtype_get(n))
   {
-    ns[nsl++] = n;
-    n = node_fsparent(n);
-
-    if(n == g_project_root)
-      break;
+    return node_get_absolute_path(n, dst, dst_size);
   }
-
-  for(x = nsl - 1; x >= 0; x--)
+  else
   {
-    n = ns[x];
-
-    if(z)
-      z += znloads(dst + z, sz - z, "/");
-    z += znloadw(dst + z, sz - z, n->name->name, n->name->namel);
+    return node_get_project_relative_path(n, dst, dst_size);
   }
-
-  return z;
 }
 
-xapi node_relative_path_say(const node * restrict n, narrator * restrict N)
+size_t node_get_project_relative_path(const node * restrict n, void * restrict dst, size_t sz)
+{
+  if(g_project_root == 0)
+  {
+    /* project not yet initialized */
+    return node_get_absolute_path(n, dst, sz);
+  }
+
+  return node_get_relative_path(n, g_project_root, dst, sz);
+}
+
+size_t node_get_module_relative_path(const node * restrict n, void * restrict dst, size_t sz)
+{
+  const module *mod;
+
+  if((mod = node_module_get(n)) == 0) {
+    /* WTF IS THIS SHIT */
+    return node_get_absolute_path(n, dst, sz);
+  }
+
+  return node_get_relative_path(n, mod->dir_node, dst, sz);
+}
+
+xapi node_module_relative_path_say(const node * restrict n, narrator * restrict N)
 {
   enter;
 
   char path[512];
   size_t pathl;
 
-  pathl = node_get_relative_path(n, path, sizeof(path));
+  pathl = node_get_module_relative_path(n, path, sizeof(path));
+  xsayw(path, pathl);
 
+  finally : coda;
+}
+
+xapi node_project_relative_path_say(const node * restrict n, narrator * restrict N)
+{
+  enter;
+
+  char path[512];
+  size_t pathl;
+
+  pathl = node_get_project_relative_path(n, path, sizeof(path));
   xsayw(path, pathl);
 
   finally : coda;
@@ -389,166 +568,115 @@ xapi node_absolute_path_say(const node * restrict n, narrator * restrict N)
   size_t pathl;
 
   pathl = node_get_absolute_path(n, path, sizeof(path));
-
   xsayw(path, pathl);
 
   finally : coda;
 }
 
-typedef struct lookup_path_context {
-  const char * path;
-  uint16_t path_len;
-
-  const char * segment;
-} lookup_path_context;
-
-static xapi __attribute__((nonnull(1))) lookup_path_callback(
-    void * restrict _ctx
-  , const char ** restrict label
-  , uint16_t * restrict label_len
-)
-{
-  enter;
-
-  lookup_path_context * ctx = _ctx;
-
-  if(label)
-  {
-    *label = 0;
-    if(ctx->segment)
-    {
-      uint16_t seg_len = 0;
-      if(*ctx->segment == '/')
-      {
-        ctx->segment--;
-        seg_len++;
-      }
-      while(ctx->segment != ctx->path && *ctx->segment != '/')
-      {
-        ctx->segment--;
-        seg_len++;
-      }
-
-      if(ctx->segment == ctx->path)
-      {
-        *label = ctx->segment;
-        *label_len = seg_len;
-        ctx->segment = 0;
-      }
-      else
-      {
-        *label = ctx->segment + 1;
-        *label_len = seg_len - 1;
-      }
-    }
-  }
-
-  // rewind
-  else
-  {
-    ctx->segment= ctx->path + ctx->path_len;
-  }
-
-  finally : coda;
-}
-
-xapi node_lookup_path(const ff_node * restrict ffn, const char * restrict path, node ** restrict rn)
-{
-  enter;
-
-  vertex * vertices[2];
-  void * mm_tmp = 0;
-  int r;
-
-  lookup_path_context ctx = { .path = path, .path_len = strlen(path) };
-  fatal(graph_lookup, g_node_graph, lookup_path_callback, &ctx, &mm_tmp, vertices, &r);
-
-  if(r == 2)
-  {
-    fatal(ffn_semantic_error, FF_EXTERN_AMBIGREF, ffn, path, 0, vertices);
-  }
-  else if(r == 0)
-  {
-    fatal(ffn_semantic_error, FF_EXTERN_NOREF, ffn, path, 0, 0);
-  }
-  *rn = vertex_value(vertices[0]);
-
-finally:
-  wfree(mm_tmp);
-coda;
-}
-
-typedef struct lookup_pattern_context {
-  const ff_node_pattern * ref;
-  char tmp[512];
-  ffn_bydir_context walk_context;
-} lookup_pattern_context;
-
-static xapi __attribute__((nonnull(1))) lookup_pattern_callback(
-    void * restrict _ctx
-  , const char ** restrict label
-  , uint16_t * restrict label_len
-)
-{
-  enter;
-
-  lookup_pattern_context * ctx = _ctx;
-
-  if(label)
-  {
-    fatal(ffn_pattern_bydir_strings_rtl, &ctx->walk_context, ctx->tmp, sizeof(ctx->tmp), label, label_len);
-  }
-
-  // rewind
-  else
-  {
-    ffn_bydir_rtl_setup(&ctx->walk_context, ctx->ref->chain);
-  }
-
-  finally : coda;
-}
-
-xapi node_lookup_pattern(const ff_node_pattern * restrict ref, node ** restrict rn)
-{
-  enter;
-
-  vertex * vertices[2];
-  void * mm_tmp = 0;
-  int r;
-
-  lookup_pattern_context ctx = { ref : ref };
-  fatal(graph_lookup, g_node_graph, lookup_pattern_callback, &ctx, &mm_tmp, vertices, &r);
-
-  if(r == 0)
-  {
-    fatal(ffn_semantic_error, FF_EXTERN_NOREF, ref, 0, 0, 0);
-  }
-  else if(r == 2)
-  {
-    fatal(ffn_semantic_error, FF_EXTERN_AMBIGREF, ref, 0, 0, vertices);
-  }
-
-  *rn = vertex_value(vertices[0]);
-
-finally:
-  wfree(mm_tmp);
-coda;
-}
-
-xapi node_get_ffn(node * restrict n, ff_node ** ffn)
+xapi node_path_say(node * restrict n, struct narrator * restrict N)
 {
   enter;
 
   char path[512];
+  size_t pathl;
 
-  if(n->ffn == 0)
+  pathl = node_get_path(n, path, sizeof(path));
+  xsayw(path, pathl);
+
+  finally : coda;
+}
+
+xapi node_property_say(const node * restrict n, node_property property, const node_property_context * restrict ctx, narrator * restrict N)
+{
+  enter;
+
+  const filesystem *fs;
+  char path[512];
+  uint16_t pathl;
+  uint32_t attrs;
+
+  /* node name */
+  if(property == NODE_PROPERTY_NAME)
+    fatal(narrator_xsayw, N, n->name->name, n->name->namel);
+  else if(property == NODE_PROPERTY_EXT)
+    fatal(narrator_xsayw, N, n->name->ext, n->name->extl);
+  else if(property == NODE_PROPERTY_SUFFIX)
+    fatal(narrator_xsayw, N, n->name->suffix, n->name->suffixl);
+  else if(property == NODE_PROPERTY_BASE)
+    fatal(narrator_xsayw, N, n->name->base, n->name->basel);
+
+  else if(property == NODE_PROPERTY_ABSDIR || property == NODE_PROPERTY_RELDIR)
   {
-    node_get_absolute_path(n, path, sizeof(path));
-    fatal(ff_load_pathf, &n->ffn, path);
-  }
+    if(node_filetype_get(n) != VERTEX_FILETYPE_DIR)
+    {
+      n = node_fsparent(n);
+    }
 
-  if(ffn)
-    *ffn = n->ffn;
+    if(property == NODE_PROPERTY_ABSDIR)
+    {
+      fatal(node_absolute_path_say, n, N);
+    }
+    else if(node_shadowtype_get(n))
+    {
+      fatal(node_absolute_path_say, n, N);
+    }
+    else
+    {
+      fatal(node_relative_path_say, n, ctx->mod->dir_node, N);
+    }
+  }
+  else if(property == NODE_PROPERTY_ABSPATH || property == NODE_PROPERTY_RELPATH)
+  {
+    if(property == NODE_PROPERTY_ABSPATH)
+    {
+      fatal(node_absolute_path_say, n, N);
+    }
+    else if(node_shadowtype_get(n))
+    {
+      fatal(node_absolute_path_say, n, N);
+    }
+    else
+    {
+      fatal(node_relative_path_say, n, ctx->mod->dir_node, N);
+    }
+  }
+  /* derived properties */
+  else if(property == NODE_PROPERTY_VARIANT)
+  {
+    if(n->var)
+    {
+      fatal(narrator_xsayw, N, n->var->norm, n->var->norm_len);
+    }
+  }
+  else if(property == NODE_PROPERTY_FSROOT)
+  {
+    fs = node_filesystem_get((node*)n);
+    pathl = filesystem_get_absolute_path(fs, path, sizeof(path));
+    fatal(narrator_xsayw, N, path, pathl);
+  }
+  else if(property == NODE_PROPERTY_INVALIDATION)
+  {
+    fs = node_filesystem_get((node*)n);
+    fatal(narrator_xsayf, N, "%s 0x%04x"
+      , attrs16_name_byvalue(invalidate_attrs, fs->invalidate)
+      , fs->attrs
+    );
+  }
+  else if(property == NODE_PROPERTY_STATE)
+  {
+    attrs = vertex_containerof(n)->attrs & VERTEX_STATE_OPT;
+    if(attrs)
+    {
+      fatal(narrator_xsays, N, attrs32_name_byvalue(graph_state_attrs, vertex_containerof(n)->attrs & VERTEX_STATE_OPT));
+    }
+  }
+  else if(property == NODE_PROPERTY_TYPE)
+  {
+    fatal(narrator_xsayf, N, "%s 0x%08x"
+      , attrs32_name_byvalue(graph_kind_attrs, vertex_containerof(n)->attrs & VERTEX_KIND_OPT)
+      , vertex_containerof(n)->attrs & VERTEX_KIND_OPT
+    );
+  }
 
   finally : coda;
 }

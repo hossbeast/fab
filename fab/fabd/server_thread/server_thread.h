@@ -18,95 +18,18 @@
 #ifndef _SERVER_THREAD_H
 #define _SERVER_THREAD_H
 
-/*
-
-*/
-
 #include "xapi.h"
+#include "types.h"
 
-#if DEBUG || DEVEL
-// dont acknowledge the client if true
-int g_server_no_acknowledge;
+#if DEVEL
+bool g_server_no_initial_client;      // no client right at startup
+const char *g_server_initial_request; // initial request
 #endif
 
-#define restrict __restrict
+// true if currently autobuilding
+extern bool g_server_autorun;
 
-extern bool server_thread_rebuild;
-
+/// create the server thread
 xapi server_thread_launch(void);
 
-#if 0
-
-struct fab_request;
-struct fab_response;
-struct memblk;
-
-typedef struct fab_server
-{
-  char *    ipcdir;
-  char      hash[8];
-  pid_t     client_pid; // client process id
-
-  void *    request_shm;
-  void *    response_shm;
-
-  int       client_cwd_dirfd;
-} fab_server;
-
-/// server_create
-//
-// SUMMARY
-//  create a server
-//
-// PARAMETERS
-//  server - (returns) server instance
-//
-xapi server_create(fab_server ** const restrict server)
-  __attribute__((nonnull));
-
-/// server_xfree
-//
-// SUMMARY
-//
-//
-xapi server_xfree(fab_server * const restrict server);
-
-xapi server_ixfree(fab_server ** const restrict server)
-  __attribute__((nonnull));
-
-/// server_ready
-//
-// SUMMARY
-//  notify the client that we are ready to begin processing requests
-//
-xapi server_ready(fab_server * const restrict server)
-  __attribute__((nonnull));
-
-xapi server_receive(fab_server * const restrict server, int daemon, struct fab_request ** const restrict req)
-  __attribute__((nonnull));
-
-xapi server_respond(fab_server * const restrict server, struct memblk * const restrict mb, struct fab_response * const restrict response)
-  __attribute__((nonnull));
-
-xapi server_dispatch(fab_server * const restrict server, struct fab_request * const restrict req, struct memblk * const restrict mb, struct fab_response ** const restrict response)
-  __attribute__((nonnull));
-
-/// server_client_cwd_dirfd
-//
-// SUMMARY
-//  get the file descriptor for the clients cwd
-//
-int server_client_cwd_dirfd(fab_server * const restrict server)
-  __attribute__((nonnull));
-
-/// server_project_dirfd
-//
-// SUMMARY
-//  get the file descriptor for the project dir
-//
-int server_project_dirfd(fab_server * const restrict server)
-  __attribute__((nonnull));
-#endif
-
-#undef restrict
 #endif

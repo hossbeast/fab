@@ -21,31 +21,38 @@
 #include "xapi.h"
 #include "types.h"
 
-struct artifact;
-struct ff_node_pattern;
+struct pattern;
 struct node;
+struct set;
+struct module;
+struct variant;
+struct llist;
 
 /// pattern_match
 //
 // SUMMARY
-//  determine whether a node matches a pattern
+//  get nodes matching a pattern
 //
 // PARAMETERS
-//  pattern  - pattern to match
-//  n        - node to match
-//  af       - artifact to match in the context of
-//  matched  - (returns) true if the pattern matches
-//  stem     - (returns) returns the stem of the match, if any
-//  stem_len - (returns) returns the length of the stem of the match, if any
+//  pattern    - match pattern
+//  module     - module to begin matching at
+//  modules    - all modules
+//  [variants] - variants
+//  matches    - (returns) matching nodes
 //
 xapi pattern_match(
-    /* 1 */ const struct ff_node_pattern * restrict pattern
-  , /* 2 */ const struct node * restrict n
-  , /* 3 */ const struct artifact * restrict af
-  , /* 4 */ bool * restrict matched
-  , /* 5 */ const char ** restrict stem
-  , /* 6 */ uint16_t * restrict stem_len
+    /* 1 */ const struct pattern * restrict pattern
+  , /* 2 */ const struct module * restrict module
+  , /* 3 */ const struct llist * restrict modules
+  , /* 4 */ const struct set * restrict variants
+  , /* 5 */ struct set * restrict matches
+  , /* 6 */ struct set * restrict node_matches
+  , /* 7 */ xapi (*dirnode_visit)(void * ctx, struct node * dirnode)
+  , /* 8 */ void *dirnode_visit_ctx
 )
+  __attribute__((nonnull(1, 2, 3)));
+
+xapi pattern_match_matches_create(struct set ** matches)
   __attribute__((nonnull));
 
 #endif

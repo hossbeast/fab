@@ -26,11 +26,11 @@
 #include "xlinux/xpwd.h"
 #include "logger.h"
 
-#include "internal.h"
 #include "params.h"
 #include "logging.h"
 
 #include "macros.h"
+#include "hash.h"
 
 struct g_params g_params;
 
@@ -38,7 +38,7 @@ struct g_params g_params;
 // public
 //
 
-xapi params_setup(uint32_t hash)
+xapi params_setup(uint64_t *hash)
 {
   enter;
 
@@ -51,6 +51,16 @@ xapi params_setup(uint32_t hash)
   g_params.ppid = getppid();
   g_params.pgid = getpgid(0);
   g_params.proj_dirfd = -1;
+
+#if DEVEL
+  if(*hash == 0)
+  {
+    char * pwd;
+    fatal(xrealpaths, &pwd, 0, getenv("PWD"));
+    *hash = hash64(0, pwd, strlen(pwd));
+    free(pwd);
+  }
+#endif
 
   // exedir is the path to directory containing the executing binary
   ssize_t r = 0;
@@ -74,10 +84,10 @@ xapi params_setup(uint32_t hash)
   // page size
   g_params.pagesize = sysconf(_SC_PAGESIZE);
 
-  snprintf(space, sizeof(space), "%s/%"PRIx32, XQUOTE(FABIPCDIR), hash);
+  snprintf(space, sizeof(space), "%s/%016"PRIx64, XQUOTE(FABIPCDIR), *hash);
   fatal(ixstrdup, &g_params.ipcdir, space);
 
-  fatal(xrealpathf, &g_params.proj_dir, 0, "%s/%"PRIx32"/projdir", XQUOTE(FABIPCDIR), hash);
+  fatal(xrealpathf, &g_params.proj_dir, 0, "%s/%016"PRIx64"/projdir", XQUOTE(FABIPCDIR), *hash);
   fatal(xopens, &g_params.proj_dirfd, O_PATH | O_DIRECTORY, g_params.proj_dir);
 
   // get real user identity
@@ -86,6 +96,11 @@ xapi params_setup(uint32_t hash)
   fatal(xgetresuid, &ruid, &euid, &suid);
   fatal(xgetpwuid, ruid, &pwd);
   fatal(ixstrdup, &g_params.homedir, pwd->pw_dir);
+
+  g_params.searchpath = getenv("PATH");
+  if(g_params.searchpath) {
+    g_params.searchpath -= 5;
+  }
 
   finally : coda;
 }
@@ -108,16 +123,17 @@ xapi params_report()
   enter;
 
   // log execution parameters under PARAMS
-  logf(L_PARAMS, "tmpdir       =%s"   , XQUOTE(FABTMPDIR));
-  logf(L_PARAMS, "ipcdir       =%s"   , XQUOTE(FABIPCDIR));
-  logf(L_PARAMS, "lwopdir      =%s"   , XQUOTE(FABLWOPDIR));
-  logf(L_PARAMS, "invokedir    =%s"   , XQUOTE(FABINVOKEDIR));
-  logf(L_PARAMS, "pid          =%u"   , g_params.pid);
-  logf(L_PARAMS, "exedir       =%s"   , g_params.exedir);
-  logf(L_PARAMS, "processors   =%ld"  , g_params.procs);
-  logf(L_PARAMS, "pagesize     =%ld"  , g_params.pagesize);
-  logf(L_PARAMS, "ipcdir       =%s"   , g_params.ipcdir);
-  logf(L_PARAMS, "homedir      =%s"   , g_params.homedir);
+  logf(L_PARAMS, "tmpdir       %s"   , XQUOTE(FABTMPDIR));
+  logf(L_PARAMS, "ipcdir       %s"   , XQUOTE(FABIPCDIR));
+  logf(L_PARAMS, "lwopdir      %s"   , XQUOTE(FABLWOPDIR));
+  logf(L_PARAMS, "invokedir    %s"   , XQUOTE(FABINVOKEDIR));
+  logf(L_PARAMS, "pid          %u"   , g_params.pid);
+  logf(L_PARAMS, "exedir       %s"   , g_params.exedir);
+  logf(L_PARAMS, "processors   %ld"  , g_params.procs);
+  logf(L_PARAMS, "pagesize     %ld"  , g_params.pagesize);
+  logf(L_PARAMS, "ipcdir       %s"   , g_params.ipcdir);
+  logf(L_PARAMS, "homedir      %s"   , g_params.homedir);
+  logf(L_PARAMS, "searchpath   %s"   , g_params.searchpath);
 
   finally : coda;
 }

@@ -20,87 +20,92 @@
 #include "types.h"
 #include "xapi.h"
 
+#include "xlinux/xstdlib.h"
 #include "lorien/path_normalize.h"
+#include "valyria/set.h"
 #include "value.h"
 #include "valyria/hashtable.h"
 #include "valyria/pstring.h"
 
-#include "config.h"
-#include "config_cursor.h"
 #include "extern.h"
+#include "config.internal.h"
 #include "node.h"
-#include "reconfigure.h"
 #include "walker.h"
+#include "box.h"
 
-static uint64_t extern_config_hash[2];
+static llist entry_head;        // linked list of pointers to extern nodes
+static llist entry_freelist;    // freelist
 
-xapi extern_reconfigure(struct reconfigure_context * restrict ctx, const value * restrict config, uint32_t dry)
+typedef struct {
+  node * n;
+  llist lln;
+} entry;
+
+static xapi extern_list_append(node * n)
+{
+  enter;
+
+  entry *e;
+
+  if((e = llist_shift(&entry_freelist, typeof(*e), lln)) == 0)
+  {
+    fatal(xmalloc, &e, sizeof(*e));
+    llist_init_node(&e->lln);
+  }
+
+  e->n = n;
+
+  llist_append(&entry_head, e, lln);
+
+  finally : coda;
+}
+
+xapi extern_reconfigure(config * restrict cfg, bool dry)
 {
   enter;
 
   char space[512];
+  int walk_id;
+  node * base;
+  box_string * elp;
+  graph_invalidation_context invalidation = { 0 };
+  int x;
 
-  value * list;
-  value ** val;
-  config_cursor cursor = {};
-
-  if(!dry && !ctx->extern_changed)
-    goto XAPI_FINALIZE;
-
-  if(dry)
-    extern_config_hash[1] = 0;
-
-  fatal(config_cursor_init, &cursor);
-  fatal(config_cursor_sets, &cursor, "extern");
-  fatal(config_query, config, config_cursor_path(&cursor), config_cursor_query(&cursor), VALUE_TYPE_SET & dry, &list);
-  if(list)
-  {
-    fatal(config_cursor_mark, &cursor);
-
-    int x;
-    for(x = 0; x < list->els->table_size; x++)
-    {
-      if(!(val = hashtable_table_entry(list->els, x)))
-        continue;
-
-      if(dry)
-      {
-        extern_config_hash[1] = value_hash(extern_config_hash[1], *val);
-      }
-      else
-      {
-        path_normalize(space, sizeof(space), (*val)->s->s);
-
-        node * base;
-        fatal(node_graft, space, &base);
-        fatal(walker_walk, 0, base, 0, space, 0);
-      }
-    }
+  if(dry || !cfg->extern_section.changed) {
+    goto XAPI_FINALLY;
   }
 
-  // no extern config
-  else
-  {
-    extern_config_hash[1] = 0xdeadbeef;
-  }
+  walk_id = walker_descend_begin();
+  fatal(graph_invalidation_begin, &invalidation);
 
-  if(dry)
+  /* move the extern node list to the freelist */
+  llist_splice_head(&entry_freelist, &entry_head);
+
+  for(x = 0; x < cfg->extern_section.entries->table_size; x++)
   {
-    ctx->extern_changed = extern_config_hash[0] != extern_config_hash[1];
-  }
-  else
-  {
-    extern_config_hash[0] = extern_config_hash[1];
+    if(!(elp = set_table_get(cfg->extern_section.entries, x)))
+      continue;
+
+    path_normalize(space, sizeof(space), elp->v);
+
+    fatal(node_graft, space, &base, &invalidation);
+    fatal(walker_descend, 0, base, 0, space, walk_id, &invalidation);
+    fatal(walker_ascend, base, walk_id, &invalidation);
+
+    fatal(extern_list_append, base);
   }
 
 finally:
-  config_cursor_destroy(&cursor);
+  graph_invalidation_end(&invalidation);
 coda;
 }
 
 xapi extern_setup()
 {
   enter;
+
+  llist_init_node(&entry_head);
+  llist_init_node(&entry_freelist);
 
   finally : coda;
 }
@@ -109,7 +114,22 @@ xapi extern_cleanup()
 {
   enter;
 
-  memset(extern_config_hash, 0, sizeof(extern_config_hash));
+  finally : coda;
+}
+
+xapi extern_refresh(int walk_id, struct graph_invalidation_context * restrict invalidation)
+{
+  enter;
+
+  entry *e;
+  node *n;
+  char path[512];
+
+  llist_foreach(&entry_head, e, lln) {
+    n = e->n;
+    node_get_absolute_path(n, path, sizeof(path));
+    fatal(walker_descend, 0, n, 0, path, walk_id, invalidation);
+  }
 
   finally : coda;
 }

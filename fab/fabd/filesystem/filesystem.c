@@ -21,76 +21,143 @@
 #include "types.h"
 #include "xapi.h"
 
+#include "lorien/path_normalize.h"
 #include "value.h"
 #include "valyria/list.h"
+#include "valyria/rbtree.h"
 #include "valyria/map.h"
-#include "valyria/strutil.h"
-#include "valyria/pstring.h"
 #include "xlinux/xstdlib.h"
 #include "xlinux/xstring.h"
-#include "lorien/path_normalize.h"
+#include "narrator.h"
 
 #include "filesystem.internal.h"
 #include "config.internal.h"
-#include "reconfigure.h"
-#include "config_cursor.h"
+#include "config_parser.h"
 #include "CONFIG.errtab.h"
+#include "box.h"
+#include "stats.h"
 
 #include "zbuffer.h"
 #include "hash.h"
+#include "attrs.h"
 
-map * filesystems;
-static uint64_t filesystems_config_hash[2];
+fstree fstree_root;
+filesystem filesystem_root;
 
-// sorted by name
-static struct {
-  const char * name;
-  int opt;
-} invalidate_opts[] = {
-#define FILESYSTEM(a, b, c) { opt : (b), name : c },
-FILESYSTEM_TABLE
-};
+fstree fstree_shadow;
+filesystem filesystem_shadow;
 
-static char invalidate_opts_list[64];
+static llist fstree_freelist = LLIST_INITIALIZER(fstree_freelist);
+static llist filesystem_freelist = LLIST_INITIALIZER(filesystem_freelist);
 
-static int invalidate_opts_compare(const void * A, const void * B)
+attrs16 * invalidate_attrs = (attrs16[]) {{
+#define INVALIDATE_DEF(x, n, r, y) + 1
+    num : 0 INVALIDATE_TYPE_TABLE
+  , members : (member16[]) {
+#undef INVALIDATE_DEF
+#define INVALIDATE_DEF(x, n, r, y) { name : n, value : UINT16_C(y), range : UINT16_C(r) },
+INVALIDATE_TYPE_TABLE
+  }
+}};
+
+static void __attribute__((constructor)) init()
 {
-  return strcmp(((typeof(invalidate_opts[0])*)A)->name, ((typeof(invalidate_opts[0])*)B)->name);
+  attrs16_init(invalidate_attrs);
 }
 
-static int invalidate_opts_lookup(const char * name)
+static void fstree_node_destroy(fstree * restrict fst)
 {
-  typeof(*invalidate_opts) key = { .name = name };
-  typeof(invalidate_opts[0])* opt = bsearch(&key, invalidate_opts, sizeof(invalidate_opts) / sizeof(*invalidate_opts), sizeof(*invalidate_opts), invalidate_opts_compare);
-  if(opt)
-    return opt->opt;
+  fstree *child;
 
-  return 0;
-}
-
-//
-// static
-//
-
-static xapi filesystem_create(const char * const restrict path, uint32_t attrs, filesystem ** const restrict fs)
-{
-  enter;
-
-  fatal(xmalloc, fs, sizeof(**fs));
-  fatal(strloads, &(*fs)->path, path);
-  (*fs)->attrs = attrs;
-
-  finally : coda;
-}
-
-static void filesystem_free(filesystem * const restrict fs)
-{
-  if(fs)
-  {
-    wfree(fs->path);
+  rbtree_foreach(&fst->down, child, rbn) {
+    fstree_node_destroy(child);
   }
 
-  wfree(fs);
+  llist_append(&fstree_freelist, fst, lln);
+  if(fst->fs) {
+    llist_append(&filesystem_freelist, fst->fs, lln);
+  }
+}
+
+static void fstree_destroy()
+{
+  fstree *child;
+
+  if(fstree_root.fs == 0)
+    return;
+
+  // fstree_root
+  rbtree_foreach(&fstree_root.down, child, rbn) {
+    fstree_node_destroy(child);
+  }
+
+  rbtree_init(&fstree_root.down);
+  rbnode_init(&fstree_root.rbn);
+  filesystem_root.attrs = 0;
+
+  // fstree_shadow
+  rbtree_foreach(&fstree_shadow.down, child, rbn) {
+    fstree_node_destroy(child);
+  }
+
+  rbtree_init(&fstree_shadow.down);
+  rbnode_init(&fstree_shadow.rbn);
+}
+
+static int children_compare(const void *Ap, const void *Bp)
+{
+  const fstree *A = *(typeof(A)*)Ap;
+  const fstree *B = *(typeof(B)*)Bp;
+
+  return memncmp(A->name, A->namel, B->name, B->namel);
+}
+
+static size_t fstree_node_znload(fstree * restrict fst, uint8_t lvl, void * restrict dst, size_t sz)
+{
+  fstree *child;
+  size_t z;
+  int x;
+  fstree *children[128];
+  uint16_t children_len;
+
+  z = 0;
+  for(x = 0; x < lvl; x++)
+    z += znloadc(dst + z, sz - z, ' ');
+  z += znloadw(dst + z, sz - z, fst->name, fst->namel);
+  if(fst->fs)
+  {
+    z += znloads(dst + z, sz - z, " : ");
+    z += znloads(dst + z, sz - z, attrs16_name_byvalue(invalidate_attrs, fst->fs->invalidate) ?: "(none)");
+  }
+  z += znloadc(dst + z, sz - z, '\n');
+
+  children_len = 0;
+  rbtree_foreach(&fst->down, child, rbn) {
+    children[children_len++] = child;
+  }
+
+  qsort(children, children_len, sizeof(*children), children_compare);
+
+  for(x = 0; x < children_len; x++) {
+    z += fstree_node_znload(children[x], lvl + 1, dst + z, sz - z);
+  }
+
+  return z;
+}
+
+//
+// internal
+//
+
+size_t fstree_znload(void * restrict dst, size_t sz)
+{
+  size_t z;
+
+  z = znloadc(dst, sz, '/');
+  z += fstree_node_znload(&fstree_root, 0, dst + z, sz - z);
+  ((char*)dst)[z] = 0;
+
+  return z;
 }
 
 //
@@ -101,24 +168,19 @@ xapi filesystem_setup()
 {
   enter;
 
-  fatal(map_createx, &filesystems, 0, filesystem_free, 0);
-  qsort(invalidate_opts, sizeof(invalidate_opts) / sizeof(*invalidate_opts), sizeof(*invalidate_opts), invalidate_opts_compare);
+  rbtree_init(&fstree_root.down);
+  rbnode_init(&fstree_root.rbn);
+  fstree_root.fs = &filesystem_root;
+  filesystem_root.fst = &fstree_root;
 
-  char * s;
-  size_t sz;
-  size_t z;
+  rbtree_init(&fstree_shadow.down);
+  rbnode_init(&fstree_shadow.rbn);
+  fstree_shadow.fs = &filesystem_shadow;
+  filesystem_shadow.fst = &fstree_shadow;
+  filesystem_shadow.invalidate = INVALIDATE_NEVER;
 
-  s = invalidate_opts_list;
-  sz = sizeof(invalidate_opts_list);
-  z = 0;
-
-  int x;
-  for(x = 0; x < sizeof(invalidate_opts) / sizeof(*invalidate_opts); x++)
-  {
-    if(x)
-      z += znloads(s + z, sz - z, ", ");
-    z += znloads(s + z, sz - z, invalidate_opts[x].name);
-  }
+  llist_init_node(&fstree_freelist);
+  llist_init_node(&filesystem_freelist);
 
   finally : coda;
 }
@@ -127,159 +189,179 @@ xapi filesystem_cleanup()
 {
   enter;
 
-  fatal(map_ixfree, &filesystems);
-  memset(filesystems_config_hash, 0, sizeof(filesystems_config_hash));
+  fstree *fst;
+  filesystem *fs;
+  llist *lln;
+
+  fstree_destroy();
+
+  llist_foreach_safe(&fstree_freelist, fst, lln, lln) {
+    wfree(fst);
+  }
+
+  llist_foreach_safe(&filesystem_freelist, fs, lln, lln) {
+    wfree(fs);
+  }
 
   finally : coda;
 }
 
-filesystem * filesystem_lookup(const char * const restrict path, size_t pathl)
+struct fs_rbn_key {
+  const char *name;
+  uint16_t namel;
+};
+
+static int rbn_key_cmp(void *keyp, const rbnode *np)
 {
-  /* path is a normalized absolute path */
-  const char * end = path + strlen(path);
+  const struct fs_rbn_key *key = keyp;
+  const fstree *fst = containerof(np, typeof(*fst), rbn);
 
-  filesystem * fs = 0;
-  while(end != path && !fs)
-  {
-    fs = map_get(filesystems, path, end - path);
-
-    end--;
-    while(end != path && *end != '/')
-      end--;
-  }
-
-  if(!fs)
-    fs = map_get(filesystems, "/", 1);
-
-  return fs;
+  return memncmp(key->name, key->namel, fst->name, fst->namel);
 }
 
-static int keys_compare(const void * A, const void * B)
-{
-  return strcmp(*(char **)A, *(char **)B);
-}
-
-xapi filesystem_reconfigure(struct reconfigure_context * restrict ctx, const value * restrict config, uint32_t dry)
+xapi filesystem_reconfigure(config * restrict cfg, bool dry)
 {
   enter;
 
-  char space[512];
+  char path[512];
 
-  value * map;
-  value * val;
-  value * key;
-  filesystem * fs = 0;
-  config_cursor cursor = {};
-  int opt = 0;
-  const char ** keys = 0;
-  size_t keysl = 0;
-  int has_root = 0;
+  fstree * fst = 0;
   int x;
+  const char *key;
+  struct config_filesystem_entry *fse;
+  const char *base;
+  const char *seg;
+  const char *end;
+  fstree * parent;
+  rbtree_search_context search_ctx;
+  rbnode *rbn;
+  struct fs_rbn_key rbn_key;
 
-  if(!dry && !ctx->filesystems_changed)
+  if(dry)
     goto XAPI_FINALIZE;
 
-  if(!dry)
-    fatal(map_recycle, filesystems);
+  if(!(cfg->filesystems.attrs & CONFIG_CHANGED))
+    goto XAPI_FINALIZE;
 
-  if(dry)
-    filesystems_config_hash[1] = 0;
+  fstree_destroy();
 
-  fatal(config_cursor_init, &cursor);
-  fatal(config_cursor_sets, &cursor, "filesystem");
-  fatal(config_query, config, config_cursor_path(&cursor), config_cursor_query(&cursor), VALUE_TYPE_MAP & dry, &map);
-  if(map)
+  for(x = 0; x < cfg->filesystems.entries->table_size; x++)
   {
-    fatal(config_cursor_mark, &cursor);
+    if(!(key = map_table_key(cfg->filesystems.entries, x)))
+      continue;
 
-    for(x = 0; x < map->keys->l; x++)
+    fse = map_table_value(cfg->filesystems.entries, x);
+    path_normalize(path, sizeof(path), key);
+
+    parent = &fstree_root;
+    base = path;
+    seg = base + 1;
+    while(*seg)
     {
-      key = list_get(map->keys, x);
+      end = seg + 1;
+      while(*end && *end != '/')
+        end++;
 
-      // hash the config value for this filesystem
-      if(dry)
+      rbn_key.name = seg;
+      rbn_key.namel = end - seg;
+
+      if((rbn = rbtree_search(&parent->down, &search_ctx, &rbn_key, rbn_key_cmp)))
       {
-        filesystems_config_hash[1] = value_hash(filesystems_config_hash[1], key);
-        filesystems_config_hash[1] = value_hash(filesystems_config_hash[1], list_get(map->vals, x));
+        fst = containerof(rbn, typeof(*fst), rbn);
       }
-
-      // query the relevant properties
-      fatal(config_cursor_pushf, &cursor, "%s.invalidate", key->s->s);
-      fatal(config_query, map, config_cursor_path(&cursor), config_cursor_query(&cursor), (VALUE_TYPE_STRING | CONFIG_QUERY_NOTNULL) & dry, &val);
-
-      if(val)
-        opt = invalidate_opts_lookup(val->s->s);
-
-      if(dry && !opt)
+      else
       {
-        xapi_info_pushs("expected", invalidate_opts_list);
-        xapi_info_pushs("actual", val->s->s);
-        fatal(config_throw, CONFIG_INVALID, val, config_cursor_path(&cursor));
-      }
-
-      if(!dry)
-      {
-        path_normalize(space, sizeof(space), key->s->s);
-        fatal(filesystem_create, space, opt, &fs);
-        fatal(map_set, filesystems, MMS(fs->path), fs);
-        fs = 0;
-        if(strcmp(space, "/") == 0)
-          has_root = 1;
-      }
-    }
-  }
-
-  // the absence of filesystem config
-  else
-  {
-    filesystems_config_hash[1] = 0xdeadbeef;
-  }
-
-  if(dry)
-    ctx->filesystems_changed = filesystems_config_hash[0] != filesystems_config_hash[1];
-
-  else
-  {
-    // synthetic root
-    if(!has_root)
-    {
-      fatal(filesystem_create, "/", FILESYSTEM_INVALIDATE_NOTIFY, &fs);
-      fatal(map_set, filesystems, MMS(fs->path), fs);
-      fs = 0;
-    }
-
-    // determine which filesystems are leaves
-    fatal(map_keys, filesystems, &keys, &keysl);
-    qsort(keys, keysl, sizeof(*keys), keys_compare);
-
-    for(x = 0; x < keysl; x++)
-    {
-      filesystem * fs = map_get(filesystems, MMS(keys[x]));
-      fs->leaf = 1;
-
-      size_t len = strlen(keys[x]);
-
-      int y;
-      for(y = x + 1; y < keysl; y++)
-      {
-        if(strcmp(keys[x], keys[y]) > 0)
-          break;
-
-        if(len == 1 || keys[y][len] == '/')
+        if((fst = llist_shift(&fstree_freelist, typeof(*fst), lln)) == 0)
         {
-          fs->leaf = 0;
-          break;
+          fatal(xmalloc, &fst, sizeof(*fst));
         }
+
+        memcpy(fst->name, seg, end - seg);
+        fst->name[end - seg] = 0;
+        fst->namel = end - seg;
+        fst->fs = 0;
+        rbtree_init(&fst->down);
+
+        rbtree_insert_node(&parent->down, &search_ctx, &fst->rbn);
+      }
+
+      parent = fst;
+
+      seg = end;
+      if(*seg)
+        seg++;
+    }
+
+    fst = parent;
+    if(fst->fs == 0)
+    {
+      if((fst->fs = llist_shift(&filesystem_freelist, typeof(*fst->fs), lln)) == 0)
+      {
+        fatal(xmalloc, &fst->fs, sizeof(*fst->fs));
       }
     }
 
-    // the circle is now complete
-    filesystems_config_hash[0] = filesystems_config_hash[1];
+    fst->fs->attrs = fse->invalidate->v;
+    fst->fs->fst = fst;
   }
 
-finally:
-  filesystem_free(fs);
-  config_cursor_destroy(&cursor);
-  wfree(keys);
-coda;
+  finally : coda;
+}
+
+const fstree * fstree_down(fstree * restrict fst, const char * restrict name, uint16_t namel)
+{
+  rbtree_search_context search_ctx;
+  struct fs_rbn_key rbn_key;
+  rbnode *rbn;
+
+  rbn_key.name = name;
+  rbn_key.namel = namel;
+
+  if((rbn = rbtree_search(&fst->down, &search_ctx, &rbn_key, rbn_key_cmp)))
+  {
+    return containerof(rbn, typeof(*fst), rbn);
+  }
+
+  return 0;
+}
+
+size_t filesystem_get_absolute_path(const filesystem * restrict fs, void * restrict dst, size_t sz)
+{
+  size_t z;
+  const fstree *bs[64];
+  uint8_t bsl = 0;
+  const fstree *fst;
+  int x;
+
+  fst = fs->fst;
+  while(fst)
+  {
+    if(fst == &fstree_root)
+      break;
+
+    if(fst == &fstree_shadow)
+      break;
+
+    bs[bsl++] = fst;
+    fst = fst->up;
+  }
+
+  z = 0;
+
+  if(fst == &fstree_root)
+    z += znloads(dst + z, sz - z, "/");
+
+  if(fst == &fstree_shadow)
+    z += znloads(dst + z, sz - z, "//");
+
+  for(x = bsl - 1; x >= 0; x--)
+  {
+    if(z > 2)
+      z += znloads(dst + z, sz - z, "/");
+    z += znloadw(dst + z, sz - z, bs[x]->name, bs[x]->namel);
+  }
+
+  ((char*)dst)[z] = 0;
+
+  return z;
 }

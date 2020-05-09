@@ -20,96 +20,163 @@
 
 #include <stdint.h>
 
-#include "moria/vertex.h" // vertex_value
+#include "valyria/llist.h"
+#include "valyria/rbtree.h"
+#include "moria/vertex.h"
 
 #include "types.h"
 #include "xapi.h"
 
+#include "graph.h"
+#include "buildplan_entity.h"
+#include "sweeper_thread.h"
+#include "notify_thread.h"
+
+struct edge;      // moria/edge.h
+struct attrs32;
+struct config;
+struct ff_node;
+struct pattern;
 struct formula;
+struct value;
 struct map;
 struct module;
 struct narrator;
 struct path;
-struct reconfigure_context;
-struct value;
 struct vertex;
-struct ff_node;
-struct ff_node_pattern;
+struct rule;
+struct variant;
+struct yyu_location;
+enum vertex_filetype;
+enum rule_direction;
+struct graph_invalidation_context;
+struct filesystem;
+struct fstree;
 
-/*
- * relation/edge attributes
- */
-#define RELATION_TYPE_TABLE                                                                 \
-  RELATION_ATTR_DEF(RELATION_TYPE_FS      , 0x00000001)   /* directory : directory entry */ \
-  RELATION_ATTR_DEF(RELATION_TYPE_WEAK    , 0x00000002)   /* A :^ B */                      \
-  RELATION_ATTR_DEF(RELATION_TYPE_STRONG  , 0x00000003)   /* A : B */                       \
-
-typedef enum relation_type {
-#define RELATION_ATTR_DEF(x, y) x = UINT32_C(y),
-RELATION_TYPE_TABLE
-#undef RELATION_ATTR_DEF
-} relation_type;
-
-#define RELATION_TYPE_OPT 0x0000000F
-
-/// node_relation_name
-//
-// SUMMARY
-//  get the string name for a node_relation
-//
-const char *relation_type_name(uint32_t attrs);
-
-/*
- * node/vertex attributes
- */
-#define NODE_FSTYPE_TABLE                          \
-  NODE_ATTR_DEF(NODE_FSTYPE_DIR   , 0x00000010)    \
-  NODE_ATTR_DEF(NODE_FSTYPE_FILE  , 0x00000020)    \
-
-typedef enum node_fstype {
-#define NODE_ATTR_DEF(x, y) x = UINT32_C(y),
-NODE_FSTYPE_TABLE
-#undef NODE_ATTR_DEF
-} node_fstype;
-
-#define NODE_FSTYPE_OPT 0x000000F0
-
-/// node_fstype_name
-//
-// SUMMARY
-//  get the string name for a node_fstype
-//
-const char *node_fstype_name(uint32_t attrs);
+// specially named nodes
+#define NODE_MODEL_BAM      "model.bam"
+#define NODE_MODULE_BAM     "module.bam"
+#define NODE_VAR_BAM        "var.bam"
 
 // globally scoped nodes
-extern struct graph * g_node_graph;
-extern struct map * g_nodes_by_wd;
 extern struct node * g_root;            // directory node at /
 extern struct node * g_project_root;    // directory node at the project root
+extern struct node * g_project_shadow;  // project modules shadow node
 
-// allocated as the value of a vertex
-typedef struct node
-{
-  struct path * name;             // name of filesystem entry
-  bool invalid;
+// node lookup datastructures
+extern struct set * g_parse_nodes;
+extern struct map * g_nodes_by_wd;
 
-  struct module * mod;            // module
-  const struct filesystem * fs;   // not null
-  struct ff_node * ffn;
+// VERTEX_TYPE_FSENT
+typedef struct node {
+  struct path * name;               // name (not full path) of filesystem entry
 
-  union {           // FSTYPE_DIR
-    struct {
-      int wd;                       // for INVALIDATE_NOTIFY
+  struct {
+    uint8_t not_loaded:1;
+    uint8_t not_parsed:1;
+  };
+
+  /* variant the node is associated with, if any */
+  const struct variant * var;
+
+  /* a node has at most one associated bpe */
+  buildplan_entity self_bpe;        // generate-only/match-only one-to-one rule
+  buildplan_entity *bpe;            // any other type of rule, owned by some edge
+
+  union {
+    struct {                        // FILETYPE_DIR
+      int wd;                       // watch descriptor
+      bool descended;
+      struct module * mod;          // module the node belongs to
+      const struct filesystem * fs; // not null
+      const struct fstree *fst;     // not null if the fs is rooted at this node
+      uint8_t fs_epoch;
+
+      /* notify-thread */
+      rbtree pending_child;         // sweeper_child_event
     };
 
-    struct {        // FSTYPE_FILE
-      struct formula * fml;
+    struct {                        // FILETYPE_REG
+      union {
+        struct formula * self_fml;    // VERTEX_NODETYPE_FML  e.g. bam-cc
+        struct value * self_var;      // VERTEX_NODETYPE_VAR  var.bam
+        struct module * self_mod;     // VERTEX_NODETYPE_MOD  module.bam
+      };
+
+      uint16_t bp_plan_id;
+      uint32_t hash;              // for INVALIDATE_STAT | INVALIDATE_CONTENT
     };
   };
 
-  int walk_id;    // reference counts for deletion
-  int build_depth;
+  int walk_id;                    // walker
+  sweeper_event pending;          // sweeper-thread
+  enum notify_state notify_state;
+  uint32_t notify_epoch;
 } node;
+
+STATIC_ASSERT(sizeof(node) <= GRAPH_VERTEX_VALUE_SIZE);
+
+#define EDGE_DIRECTION_TABLE                                    \
+  DEF(EDGE_TGT_SRC   , 0x0001)  /* ltr : targets -> sources */  \
+  DEF(EDGE_SRC_TGT   , 0x0002)  /* rtl : sources <- targets */  \
+
+#undef DEF
+#define DEF(x, y) x = UINT16_C(y),
+typedef enum edge_direction {
+EDGE_DIRECTION_TABLE
+} edge_direction;
+
+/* edge connecting two nodes */
+typedef struct node_edge {
+  union {
+    struct {                            // EDGE_TYPE_STRONG | EDGE_TYPE_CONDUIT
+      buildplan_entity bpe;
+      edge_direction dir;
+      uint32_t refresh_id;
+      struct rule_module_association *rma;
+      llist lln;  // rma->edges
+    };
+
+    struct {                            // EDGE_TYPE_IMPORTS
+      uint8_t shadow_epoch;
+      struct node_edge * imports_edge;
+      struct node_edge * scope_edge;
+    };
+  };
+} node_edge;
+
+STATIC_ASSERT(sizeof(node_edge) <= GRAPH_EDGE_VALUE_SIZE);
+
+#define NODE_PROPERTY_OPT 0xf000
+#define NODE_PROPERTY_TABLE                                                \
+  /* direct properties of the node name */                                 \
+  DEF(NODE_PROPERTY_NAME         , "name"         , NODE_PROPERTY_OPT, 0x1000) \
+  DEF(NODE_PROPERTY_EXT          , "ext"          , NODE_PROPERTY_OPT, 0x2000) \
+  DEF(NODE_PROPERTY_SUFFIX       , "suffix"       , NODE_PROPERTY_OPT, 0x3000) \
+  DEF(NODE_PROPERTY_BASE         , "base"         , NODE_PROPERTY_OPT, 0x4000) \
+  /* derived properties of the node path */                                    \
+  DEF(NODE_PROPERTY_ABSPATH      , "abspath"      , NODE_PROPERTY_OPT, 0x5000) \
+  DEF(NODE_PROPERTY_ABSDIR       , "absdir"       , NODE_PROPERTY_OPT, 0x6000) \
+  DEF(NODE_PROPERTY_RELPATH      , "relpath"      , NODE_PROPERTY_OPT, 0x7000) \
+  DEF(NODE_PROPERTY_RELDIR       , "reldir"       , NODE_PROPERTY_OPT, 0x8000) \
+  /* other derived properties */                                               \
+  DEF(NODE_PROPERTY_FSROOT       , "fsroot"       , NODE_PROPERTY_OPT, 0x9000) \
+  DEF(NODE_PROPERTY_INVALIDATION , "invalidation" , NODE_PROPERTY_OPT, 0xa000) \
+  DEF(NODE_PROPERTY_VARIANT      , "variant"      , NODE_PROPERTY_OPT, 0xb000) \
+  DEF(NODE_PROPERTY_STATE        , "state"        , NODE_PROPERTY_OPT, 0xc000) \
+  DEF(NODE_PROPERTY_TYPE         , "type"         , NODE_PROPERTY_OPT, 0xd000) \
+
+typedef enum node_property {
+#undef DEF
+#define DEF(x, s, r, y) x = UINT32_C(y),
+NODE_PROPERTY_TABLE
+} node_property;
+
+struct attrs32 * node_property_attrs;
+
+typedef struct node_property_context {
+  const struct module * mod;
+} node_property_context;
 
 /// node_setup
 //
@@ -118,6 +185,13 @@ typedef struct node
 //
 xapi node_setup(void);
 
+/// node_setup_minimal
+//
+// SUMMARY
+//  setup
+//
+xapi node_setup_minimal(void);
+
 /// node_cleanup
 //
 // SUMMARY
@@ -125,51 +199,30 @@ xapi node_setup(void);
 //
 xapi node_cleanup(void);
 
-/// node_root_init
-//
-// SUMMARY
-//  create the root node (g_root)
-//
-xapi node_root_init(void);
-
-/// node_project_init
-//
-// SUMMARY
-//  create the project node (g_project_root) and attach it to the root
-//
-xapi node_project_init(void);
-
-/// node_report
-//
-// SUMMARY
-//  log all of the nodes in the graph under L_GRAPH
-//
-xapi node_report(void);
-
 /// node_reconfigure
 //
 // SUMMARY
 //  apply configuration changes
 //
-xapi node_reconfigure(struct reconfigure_context * ctx, const struct value * restrict config, uint32_t dry)
+xapi node_reconfigure(struct config * restrict cfg, bool dry)
   __attribute__((nonnull));
 
 /// node_create
 //
 // SUMMARY
-//  create a node in g_node_graph
+//  create a node in g_graph
 //
 // PARAMETERS
 //  n      - (returns) newly created node
-//  fstype - filesystem type of the node. Certain node operations can change this later.
+//  filetype - filesystem type of the node. Certain node operations can change this later.
 //  [fs]   - filesystem the node belongs to
+//  [rule] - rule by which the node was generated
 //  [mod]  - module the node belongs to
 //  name   - filename
-//  namel  - 
 //
 xapi node_createw(
     /* 1 */ node ** restrict n
-  , /* 2 */ node_fstype fstype
+  , /* 2 */ enum vertex_filetype filetype
   , /* 3 */ const struct filesystem * restrict fs
   , /* 4 */ struct module * restrict mod
   , /* 5 */ const char * restrict name
@@ -179,33 +232,15 @@ xapi node_createw(
 
 xapi node_creates(
     /* 1 */ node ** restrict n
-  , /* 2 */ node_fstype fstype
+  , /* 2 */ enum vertex_filetype filetype
   , /* 3 */ const struct filesystem * restrict fs
   , /* 4 */ struct module * restrict mod
   , /* 5 */ const char * restrict name
 )
   __attribute__((nonnull(1, 5)));
 
-void node_destroy(node * n)
+xapi node_xdestroy(node * n)
   __attribute__((nonnull));
-
-size_t node_get_relative_path(const node * restrict n, void * restrict dst, size_t dst_size)
-  __attribute__((nonnull));
-
-size_t node_get_absolute_path(const node * restrict n, void * restrict dst, size_t dst_size)
-  __attribute__((nonnull));
-
-xapi node_relative_path_say(const node * restrict n, struct narrator * restrict N)
-  __attribute__((nonnull));
-
-xapi node_absolute_path_say(const node * restrict n, struct narrator * restrict N)
-  __attribute__((nonnull));
-
-xapi node_lookup_path(const struct ff_node * restrict ffn, const char * restrict path, node ** restrict rn)
-  __attribute__((nonnull(2, 3)));
-
-xapi node_lookup_pattern(const struct ff_node_pattern * restrict ref, node ** restrict rn)
-  __attribute__((nonnull(2)));
 
 static inline node * node_fsparent(const node * restrict n)
 {
@@ -216,20 +251,154 @@ static inline node * node_fsparent(const node * restrict n)
   return 0;
 }
 
-static inline node_fstype node_fstype_get(const node * restrict n)
+static inline enum vertex_kind node_kind_get(const node * restrict n)
 {
   uint32_t attrs = vertex_containerof(n)->attrs;
-  attrs &= NODE_FSTYPE_OPT;
+  attrs &= VERTEX_KIND_OPT;
   return attrs;
 }
 
-static inline void node_fstype_set(const node * restrict n, node_fstype fstype)
+static inline void node_kind_set(node * restrict n, enum vertex_kind kind)
 {
   uint32_t attrs = vertex_containerof(n)->attrs;
-  attrs &= ~NODE_FSTYPE_OPT;
-  attrs |= fstype;
+  attrs &= ~VERTEX_KIND_OPT;
+  attrs |= kind;
+
+RUNTIME_ASSERT(attrs);
   vertex_containerof(n)->attrs = attrs;
 }
+
+static inline enum vertex_filetype node_filetype_get(const node * restrict n)
+{
+  uint32_t attrs = vertex_containerof(n)->attrs;
+  attrs &= VERTEX_FILETYPE_OPT;
+  return attrs;
+}
+
+static inline void node_filetype_set(node * restrict n, enum vertex_filetype filetype)
+{
+  uint32_t attrs;
+
+  attrs = vertex_containerof(n)->attrs;
+
+  attrs &= ~VERTEX_FILETYPE_OPT;
+  attrs |= filetype;
+  vertex_containerof(n)->attrs = attrs;
+}
+
+static inline enum vertex_shadowtype node_shadowtype_get(const node * restrict n)
+{
+  uint32_t attrs = vertex_containerof(n)->attrs;
+  attrs &= VERTEX_SHADOWTYPE_OPT;
+  return attrs;
+}
+
+static inline void node_shadowtype_set(const node * restrict n, enum vertex_shadowtype shadowtype)
+{
+  uint32_t attrs = vertex_containerof(n)->attrs;
+  attrs &= ~VERTEX_SHADOWTYPE_OPT;
+  attrs |= shadowtype;
+
+  vertex_containerof(n)->attrs = attrs;
+}
+
+static inline enum vertex_nodetype node_nodetype_get(const node * restrict n)
+{
+  uint32_t attrs = vertex_containerof(n)->attrs;
+  attrs &= VERTEX_NODETYPE_OPT;
+  return attrs;
+}
+
+static inline enum vertex_type node_type_get(const node * restrict n)
+{
+  uint32_t attrs = vertex_containerof(n)->attrs;
+  attrs &= VERTEX_TYPE_OPT;
+  return attrs;
+}
+
+static inline void node_nodetype_set(node * restrict n, enum vertex_nodetype nodetype)
+{
+  uint32_t attrs = vertex_containerof(n)->attrs;
+  attrs &= ~VERTEX_NODETYPE_OPT;
+  attrs |= nodetype;
+
+  vertex_containerof(n)->attrs = attrs;
+
+  if(nodetype == VERTEX_NODETYPE_FML)
+    n->self_fml = 0;
+  else if(nodetype == VERTEX_NODETYPE_VAR)
+    n->self_var = 0;
+}
+
+static inline void node_state_set(node * restrict n, vertex_state state)
+{
+  uint32_t attrs;
+
+  attrs = vertex_containerof(n)->attrs;
+  attrs &= ~VERTEX_STATE_OPT;
+  attrs |= state;
+
+  RUNTIME_ASSERT(attrs);
+  vertex_containerof(n)->attrs = attrs;
+}
+
+static inline vertex_state node_state_get(node * restrict n)
+{
+  uint32_t attrs;
+
+  attrs = vertex_containerof(n)->attrs;
+  attrs &= VERTEX_STATE_OPT;
+
+  return attrs;
+}
+
+static inline bool node_exists_get(node * restrict n)
+{
+  uint32_t attrs;
+
+  attrs = vertex_containerof(n)->attrs;
+  attrs &= VERTEX_EXISTS_BIT;
+
+  return !!attrs;
+}
+
+static inline bool node_invalid_get(node * restrict n)
+{
+  uint32_t attrs;
+
+  attrs = vertex_containerof(n)->attrs;
+  attrs &= VERTEX_INVALID_BIT;
+
+  return !!attrs;
+}
+
+static inline void node_invalid_set(node * restrict n, bool invalid)
+{
+  uint32_t attrs;
+
+  attrs = vertex_containerof(n)->attrs;
+  attrs &= ~VERTEX_INVALID_BIT;
+
+  if(invalid)
+    attrs |= VERTEX_INVALID_BIT;
+
+  RUNTIME_ASSERT(attrs);
+  vertex_containerof(n)->attrs = attrs;
+}
+
+static inline struct module * node_module_get(const node * restrict n)
+{
+  enum vertex_filetype filetype;
+
+  filetype = node_filetype_get(n);
+  if(filetype == VERTEX_FILETYPE_REG)
+    n = node_fsparent(n);
+
+  return n->mod;
+}
+
+const struct filesystem * node_filesystem_get(node * restrict n)
+  __attribute__((nonnull));
 
 /// node_graft
 //
@@ -240,10 +409,73 @@ static inline void node_fstype_set(const node * restrict n, node_fstype fstype)
 //  base - absolute path from the root to the desired node
 //  rn   - (returns) node rooted at path base
 //
-xapi node_graft(const char * restrict base, node ** restrict rn)
+xapi node_graft(const char * restrict base, node ** restrict rn, struct graph_invalidation_context * restrict invalidation)
   __attribute__((nonnull));
 
-xapi node_get_ffn(node * restrict n, struct ff_node ** ffn)
-  __attribute__((nonnull(1)));
+/// node_var_loadp
+//
+// SUMMARY
+//  mark this node as NODETYPE_VAR and load the env associated with this node (idempotent)
+//
+xapi node_var_loadp(node * restrict n)
+  __attribute__((nonnull));
+
+/// node_fml_loadp
+//
+// SUMMARY
+//  mark this node as an NODETYPE_FML
+//
+xapi node_fml_loadp(node * restrict n)
+  __attribute__((nonnull));
+
+xapi node_full_refresh(void);
+
+xapi node_property_say(const node * restrict n, node_property property, const node_property_context * restrict ctx, struct narrator * restrict N)
+  __attribute__((nonnull));
+
+/*
+ * write the project-relative path to the node to a buffer
+ */
+size_t node_get_project_relative_path(const node * restrict n, void * restrict dst, size_t dst_size)
+  __attribute__((nonnull));
+
+/*
+ * write the module-relative path to the node to a buffer
+ */
+size_t node_get_module_relative_path(const node * restrict n, void * restrict dst, size_t dst_size)
+  __attribute__((nonnull));
+
+/*
+ * write the absolute path to the node to a buffer
+ */
+size_t node_get_absolute_path(const node * restrict n, void * restrict dst, size_t dst_size)
+  __attribute__((nonnull));
+
+size_t node_get_path(const node * restrict n, void * restrict dst, size_t dst_size)
+  __attribute__((nonnull));
+
+/*
+ * write the project-relative path to a node to a narrator
+ */
+xapi node_project_relative_path_say(const node * restrict n, struct narrator * restrict N)
+  __attribute__((nonnull));
+
+/*
+ * write the module-relative path to a node to a narrator
+ */
+xapi node_module_relative_path_say(const node * restrict n, struct narrator * restrict N)
+  __attribute__((nonnull));
+
+/*
+ * write the absolute path to a node to a narrator
+ */
+xapi node_absolute_path_say(const node * restrict n, struct narrator * restrict N)
+  __attribute__((nonnull));
+
+/*
+ * write one of the paths to a node to a narrator
+ */
+xapi node_path_say(node * restrict n, struct narrator * restrict N)
+  __attribute__((nonnull));
 
 #endif

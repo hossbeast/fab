@@ -17,15 +17,19 @@
 
 #include "xapi.h"
 
+#include "moria/graph.h"
+
 #include "xlinux/xfcntl.h"
 #include "xlinux/xunistd.h"
 #include "logger.h"
 #include "narrator.h"
 #include "narrator/units.h"
+#include "valyria/llist.h"
 
 #include "usage.h"
 #include "logging.h"
 #include "params.h"
+#include "graph.h"
 
 //
 // public
@@ -55,6 +59,8 @@ xapi usage_report()
     fatal(bytesize_say, pages * g_params.pagesize, N);
     xsays(")");
     fatal(log_finish);
+
+    logf(L_USAGE, "graph : %zu nodes, %zu edges", llist_count(graph_vertices(g_graph)), llist_count(graph_edges(g_graph)));
   }
 
 finally:

@@ -21,11 +21,11 @@
 #include "types.h"
 #include "xapi.h"
 
-struct artifact;
-struct ff_node_pattern;
-struct list;
-struct node;
-struct map;
+struct module;
+struct pattern;
+struct pattern_match_node;
+struct set;
+struct graph_invalidation_context;
 
 /// pattern_generate
 //
@@ -33,25 +33,21 @@ struct map;
 //  create nodes as specified by a pattern
 //
 // PARAMETERS
-//  pattern             - pattern
-//  base                - node to which new nodes are attached (directory node for the module)
-//  [scope]             - 
-//  af                  - artifact to generate in the context of
-//  [stem]              - stem from a previous match
-//  [stem_len]          - stem length
-//  results             - newly created nodes are appended to this list
-//  generating_artifact - true if generating from an artifact pattern
+//  pattern       - generate pattern
+//  base          - node to which new nodes are attached (directory node for the module)
+//  af            - artifact to generate in the context of
+//  [stem]        - stem from a previous match
+//  [stem_len]    - stem length
+//  results       - newly created nodes are appended to this list
 //
 xapi pattern_generate(
-    /* 1 */ const struct ff_node_pattern * restrict pattern
-  , /* 2 */ struct node * restrict base
-  , /* 3 */ struct map * restrict scope
-  , /* 4 */ const struct artifact * restrict af
-  , /* 5 */ const char * restrict stem
-  , /* 6 */ uint16_t stem_len
-  , /* 7 */ struct list * restrict nodes
-  , /* 8 */ bool generating_artifact
+    /* 1 */ const struct pattern * restrict pat
+  , /* 2 */ struct module * restrict module
+  , /* 3 */ const struct set * restrict variants
+  , /* 4 */ struct graph_invalidation_context * invalidation
+  , /* 4 */ const struct pattern_match_node * restrict match
+  , /* 5 */ struct set * restrict results
 )
-  __attribute__((nonnull(1, 2, 7)));
+  __attribute__((nonnull(1, 2, 4, 6)));
 
 #endif

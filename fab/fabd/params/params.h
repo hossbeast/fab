@@ -37,6 +37,7 @@ extern struct g_params
   pid_t           thread_server;    // thread id of the server thread
   pid_t           thread_notify;    // thread id of the notify thread
   pid_t           thread_sweeper;   // thread id of the sweeper thread
+  pid_t           thread_build;     // thread id of the build thread
   int             thread_count;     // number of extant threads, other than the monitor/main thread
 
   time_t          starttime;
@@ -49,6 +50,7 @@ extern struct g_params
   char *          proj_dir;         // absolute path of the project directory
   int             proj_dirfd;       // readonly file descriptor for the project dir
   char *          homedir;          // homedir of the real user
+  char *          searchpath;       // $ENV{PATH}
 
   int             shutdown;         // whether shutdown has been initiated
 } g_params;
@@ -58,7 +60,7 @@ extern struct g_params
 // SUMMARY
 //  populates g_params
 //
-xapi params_setup(uint32_t hash);
+xapi params_setup(uint64_t *hash);
 
 /// params_teardown
 //

@@ -29,24 +29,24 @@
 #include "narrator.h"
 #include "narrator/growing.h"
 #include "logging.h"
-#include "ff_node.h"
-#include "ff_node_pattern.h"
-#include "ff_parser.h"
 #include "rule.internal.h"
 #include "node.h"
 #include "node_operations.h"
-#include "artifact.h"
-#include "ff_node_require.h"
+#include "node_operations_test.h"
+#include "filesystem.h"
 #include "path.h"
 
-static map * attrs_definitions;
+typedef struct node_operations_test {
+  XUNITTEST;
 
-typedef struct node_operations_test
-{
-  xunit_test;
+  /* starting graph */
+  char * graph;
 
-  char * operations;        // create the starting graph
-  char * graph;             // (expected) graph
+  /* operations to perform */
+  char * operations;
+
+  /* expected graph */
+  char * expected;
 } node_operations_test;
 
 static xapi node_operations_test_unit_setup(xunit_unit * unit)
@@ -57,12 +57,9 @@ static xapi node_operations_test_unit_setup(xunit_unit * unit)
   fatal(moria_load);
   fatal(logging_finalize);
 
-  // attrs name map for graph_say
-  fatal(map_create, &attrs_definitions);
-  fatal(map_set, attrs_definitions, (uint32_t[]) { RELATION_TYPE_FS }, sizeof(uint32_t), "FS");
-  fatal(map_set, attrs_definitions, (uint32_t[]) { RELATION_TYPE_STRONG }, sizeof(uint32_t), "ST");
-  fatal(map_set, attrs_definitions, (uint32_t[]) { NODE_FSTYPE_FILE }, sizeof(uint32_t), "FILE");
-  fatal(map_set, attrs_definitions, (uint32_t[]) { NODE_FSTYPE_DIR}, sizeof(uint32_t), "DIR");
+  fatal(graph_setup);
+  fatal(filesystem_setup);
+  fatal(node_setup_minimal);
 
   finally : coda;
 }
@@ -71,7 +68,9 @@ static xapi node_operations_test_unit_cleanup(xunit_unit * unit)
 {
   enter;
 
-  fatal(map_xfree, attrs_definitions);
+  fatal(filesystem_cleanup);
+  fatal(node_cleanup);
+  fatal(graph_cleanup);
 
   finally : coda;
 }
@@ -88,23 +87,30 @@ static xapi node_operations_test_entry(xunit_test * _test)
 
   narrator * N = 0;
   list * operations = 0;
+  operations_parser * parser = 0;
+  const char *actual;
 
-  fatal(node_setup);
   fatal(narrator_growing_create, &N);
+  fatal(operations_parser_operations_create, &operations);
+  fatal(operations_parser_create, &parser);
 
-  // setup initial graph
-  fatal(operations_parser_parse, 0, MMS(test->operations), &operations);
-  fatal(operations_perform, g_node_graph, node_operations_dispatch, operations);
+  // setup the initial graph
+  fatal(operations_parser_parse, parser, g_graph, MMS(test->graph), operations);
+  fatal(operations_perform, g_graph, node_operations_test_dispatch, operations);
+
+  // perform the operations
+  fatal(operations_parser_parse, parser, g_graph, MMS(test->operations), operations);
+  fatal(operations_perform, g_graph, node_operations_test_dispatch, operations);
 
   fatal(narrator_xreset, N);
-  fatal(graph_say, g_node_graph, attrs_definitions, N);
-  const char * graph = narrator_growing_buffer(N);
-  assert_eq_s(test->graph, graph);
+  fatal(graph_say, g_graph, N);
+  actual = narrator_growing_buffer(N);
+  assert_eq_s(test->expected, actual);
 
 finally:
-  fatal(node_cleanup);
   fatal(narrator_xfree, N);
   fatal(list_xfree, operations);
+  fatal(operations_parser_xfree, parser);
 coda;
 }
 
@@ -116,16 +122,71 @@ xunit_unit xunit = {
     xu_setup : node_operations_test_unit_setup
   , xu_cleanup : node_operations_test_unit_cleanup
   , xu_entry : node_operations_test_entry
-  , xu_tests : (xunit_test*[]) {
+  , xu_tests : (node_operations_test*[]) {
+    /* single-node, remove strong edge only */
       (node_operations_test[]) {{
-          operations : "A/B"
-        , graph :  "1-A!DIR 2-B!FILE"
-                  " 1:FS:2"
+          graph :     "+A/B:strong:A/C"
+        , operations : "=A/B:strong:A/C"
+        , expected :  "1-A!dir 2-B!I|file 3-C!file"
+                     " 1:fs:2 1:fs:3"
+      }}
+    /* single-node, remove fs edge only */
+    , (node_operations_test[]) {{
+          graph :     "+A/B:strong:A/C"
+        , operations : " =A:fs:C"
+        , expected :  "1-A!dir 2-B!I|file 3-C!X|file" // marked as unlinked, not deleted
+                     " 2:strong:3"
+                     " 1:fs:2 1:fs:3"
+      }}
+    /* single-node, remove fs, then strong edge */
+    , (node_operations_test[]) {{
+          graph :     "+A/B:strong:A/C"
+        , operations : "=A:fs:C"
+                      " =A/B:strong:A/C"
+        , expected :  "1-A!dir 2-B!I|file"
+                     " 1:fs:2"
+      }}
+    /* single-node, remove strong, then fs edge */
+    , (node_operations_test[]) {{
+          graph :     "+A/B:strong:A/C"
+        , operations : "=A/B:strong:A/C"
+                       " =A:fs:C"
+        , expected :  "1-A!dir 2-B!I|file"
+                     " 1:fs:2"
+      }}
+    /* tree, remove fs edges bottom-up */
+    , (node_operations_test[]) {{
+          graph :      "A/B/C"
+        , operations : "=B:fs:C"
+        , expected :  "1-A!dir 2-B!dir"
+                     " 1:fs:2"
       }}
     , (node_operations_test[]) {{
-          operations : "A/B/C"
-        , graph :  "1-A!DIR 2-B!DIR 3-C!FILE"
-                  " 1:FS:2 2:FS:3"
+          graph :      "A/B/C"
+        , operations : "=B:fs:C"
+                      " =A:fs:B"
+        , expected :  "1-A!dir"
+      }}
+    /* tree, remove fs edges top-down */
+    , (node_operations_test[]) {{
+          graph :      "A/B/C"
+        , operations : "=A:fs:B"
+        , expected :  "1-A!dir 2-B!X|dir 3-C!file" // marked not-exists only
+                     " 1:fs:2 2:fs:3"
+      }}
+    , (node_operations_test[]) {{
+          graph :      "A/B/C"
+        , operations : "=A:fs:B"
+                      " =B:fs:C"
+        , expected :  "1-A!dir"
+      }}
+    , (node_operations_test[]) {{
+          graph :      "A/B/C/D/E"
+        , operations : "=A:fs:B"
+                      " =B:fs:C"
+                      " =C:fs:D"
+                      " =D:fs:E"
+        , expected :  "1-A!dir"
       }}
     , 0
   }

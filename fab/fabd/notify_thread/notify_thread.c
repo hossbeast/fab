@@ -19,37 +19,41 @@
 #include <string.h>
 
 #include "xapi.h"
-#include "xapi/trace.h"
-#include "xlinux/xpthread.h"
-#include "xlinux/xsignal.h"
-#include "moria/graph.h"
-#include "moria/vertex.h"
+#include "types.h"
+
 #include "fab/ipc.h"
 #include "fab/sigutil.h"
-#include "xlinux/KERNEL.errtab.h"
-#include "xlinux/xunistd.h"
-#include "xlinux/xinotify.h"
-#include "xlinux/xdirent.h"
-#include "xlinux/xfcntl.h"
-#include "xlinux/xstring.h"
 #include "logger/config.h"
-#include "valyria/map.h"
+#include "moria/graph.h"
+#include "moria/vertex.h"
 #include "narrator.h"
+#include "valyria/map.h"
+#include "xapi/trace.h"
+#include "xlinux/KERNEL.errtab.h"
+#include "xlinux/xdirent.h"
+#include "xlinux/xepoll.h"
+#include "xlinux/xfcntl.h"
+#include "xlinux/xinotify.h"
+#include "xlinux/xpthread.h"
+#include "xlinux/xsignal.h"
+#include "xlinux/xstring.h"
+#include "xlinux/xunistd.h"
+#include "xlinux/xepoll.h"
 
 #include "notify_thread.h"
 #include "params.h"
-#include "logging.h"
 #include "node.h"
 #include "sweeper_thread.h"
 #include "path.h"
 #include "inotify_mask.h"
+#include "logging.h"
 
 #include "atomic.h"
 #include "macros.h"
 
-#define restrict __restrict
+uint16_t notify_thread_epoch;
 
-int in_fd;
+static int in_fd;
 
 static xapi notify_thread()
 {
@@ -57,52 +61,105 @@ static xapi notify_thread()
 
   sigset_t sigs;
   char buffer[4096] = {};
-  char path[512];
-  narrator * N;
+  int epfd = -1;
+  struct epoll_event event;
+  node *n;
+  vertex *v;
+  const char *label = 0;
+  uint16_t label_len = 0;
+  ssize_t r;
+  size_t o;
+  int rv;
 
   g_params.thread_notify = gettid();
 
   // signals handled on this thread
   sigfillset(&sigs);
   sigdelset(&sigs, FABIPC_SIGINTR);
-  fatal(xpthread_sigmask, SIG_SETMASK, &sigs, 0);
 
 #if DEBUG || DEVEL
   logs(L_IPC, "starting");
 #endif
 
+  // setup epoll
+  fatal(xepoll_create, &epfd);
+  memset(&event, 0, sizeof(event));
+  event.events = EPOLLIN | EPOLLPRI | EPOLLERR;
+  fatal(xepoll_ctl, epfd, EPOLL_CTL_ADD, in_fd, &event);
+
+  r = 0;
   while(!g_params.shutdown)
   {
-    ssize_t r = read(in_fd, buffer, sizeof(buffer));
-    if(r < 0 && errno == EINTR)
-      continue;
-    else if(r < 0)
-      tfail(perrtab_KERNEL, errno);
+    if(r == 0)
+    {
+      fatal(uxepoll_pwait, &rv, epfd, &event, 1, -1, &sigs);
+      if(rv < 0)
+        continue;
 
-    size_t o = 0;
+      notify_thread_epoch++;
+    }
+
+    fatal(uxread, in_fd, buffer, sizeof(buffer), &r);
+
+    o = 0;
     while(o < r)
     {
       struct inotify_event * ev = (void*)buffer + o;
 
       if(ev->mask & IN_IGNORED)
-      {
+        goto next;
 
+      if(ev->name[0] == '.') {
+        /* ignore dotfiles for now */
+        goto next;
+      }
+
+      if((n = map_get(g_nodes_by_wd, MM(ev->wd))) == 0) {
+        logs(L_WARN, "unknown event");
+        goto next;
+      }
+
+      v = vertex_containerof(n);
+
+      if(ev->mask & (IN_MOVE_SELF | IN_DELETE_SELF))
+      {
+        /* only applies to the directory itself */
+        label = 0;
       }
       else
       {
-        if(log_would(L_FSEVENT))
-        {
-          fatal(log_start, L_FSEVENT, &N);
-          node * n = map_get(g_nodes_by_wd, MM(ev->wd));
-          node_get_relative_path(n, path, sizeof(path));
-          xsayf("%s/%s ", path, ev->name);
-          fatal(inotify_mask_say, ev->mask, N);
-          fatal(log_finish);
-        }
+        label = ev->name;
+        label_len = strlen(ev->name);
 
-        fatal(sweeper_thread_enqueue, ev->wd, ev->mask, ev->name, strlen(ev->name));
+        if((v = vertex_downw(v, label, label_len))) {
+          n = vertex_value(v);
+          label = 0;
+        }
       }
 
+      if(n->notify_state != NOTIFY_MONITOR)
+      {
+        /* should only ever be set for file nodes */
+        RUNTIME_ASSERT(label == 0);
+      }
+
+      if(n->notify_state == NOTIFY_SUPPRESS)
+      {
+        goto next;
+      }
+      else if(n->notify_state == NOTIFY_EXPIRING)
+      {
+        if(n->notify_epoch == notify_thread_epoch)
+        {
+          goto next;
+        }
+
+        n->notify_state = NOTIFY_MONITOR;
+      }
+
+      fatal(sweeper_thread_enqueue, n, ev->mask, label, label_len);
+
+next:
       o += sizeof(*ev) + ev->len;
     }
   }
@@ -151,7 +208,7 @@ conclude(&R);
 
 xapi notify_thread_setup()
 {
-  xproxy(xinotify_init, &in_fd);
+  xproxy(xinotify_init, &in_fd, IN_NONBLOCK);
 }
 
 xapi notify_thread_cleanup()
@@ -187,21 +244,27 @@ xapi notify_thread_watch(node * n)
   enter;
 
   char space[512];
-
   uint32_t mask = 0;
+
+  RUNTIME_ASSERT(n->wd == -1);
+
+  /* events for the directory itself */
+  mask |= IN_DELETE_SELF | IN_MOVE_SELF;
+
+  /* events for files/directories in the directory */
   mask |= IN_CREATE | IN_DELETE | IN_MODIFY | IN_MOVED_FROM | IN_MOVED_TO;
-  mask |= IN_ONLYDIR | IN_EXCL_UNLINK;
 
-  // full path
+  mask |= IN_ONLYDIR;       /* ENOTDIR if the path is not a directory */
+  mask |= IN_EXCL_UNLINK;   /* ignore events for files after they are unlinked */
+
   node_get_absolute_path(n, space, sizeof(space));
-
   fatal(xinotify_add_watch, &n->wd, in_fd, space, mask);
-  fatal(map_set, g_nodes_by_wd, MM(n->wd), n);
+  fatal(map_put, g_nodes_by_wd, MM(n->wd), n, 0);
 
-  if(log_would(L_GRAPH))
+  if(log_would(L_NOTIFY))
   {
     narrator * N;
-    fatal(log_start, L_GRAPH, &N);
+    fatal(log_start, L_NOTIFY, &N);
     xsayf("%8s ", "watch");
     fatal(node_absolute_path_say, n, N);
     fatal(log_finish);

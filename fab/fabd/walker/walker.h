@@ -24,29 +24,48 @@
 #include "types.h"
 
 struct node;
+struct graph_invalidation_context;
 
-/// walker_walk
-//
-// SUMMARY
-//  visit directory entries in a filesystem tree, creating graph nodes for each node as necessary
-//
-// PARAMETERS
-//  [root]     - (returns) base of the tree rooted at abspath
-//  [base]     - base of the tree rooted at abspath, if any
-//  [ancestor] - if base was null, and a new node is created for the tree rooted at abspath, and ancestor
-//               is not null, then the new node is attached to the graph as a child of ancestor
-//  abspath    - absolute path to a directory to traverse
-//  walk_id    -
-//
-xapi walker_walk(
-    struct node ** restrict root
+/*
+ * visit directory entries in a filesystem tree, creating graph nodes for each node as necessary
+ *
+ * either base is specified (if traversing an already-instantiated tree), or parent is specified
+ * (node to which the tree is to be attached)
+ *
+ * [basep]      - (returns) base of tree rooted at abspath
+ * [base]       - base of the tree rooted at abspath, if it already exists
+ * [parent]     - parent of base to which it is attached when created
+ * abspath      - absolute path to a base directory
+ * [walk_id]    -
+ * invalidation -
+ */
+xapi walker_descend(
+    struct node ** restrict basep
   , struct node * restrict base
-  , struct node * restrict ancestor
+  , struct node * restrict parent
   , const char * restrict abspath
   , int walk_id
+  , struct graph_invalidation_context * restrict invalidation
 )
-  __attribute__((nonnull(4)));
+  __attribute__((nonnull(4, 6)));
 
-int walker_walk_begin(void);
+/// walker_ascend
+//
+// SUMMARY
+//  traverse upwards in a filesystem tree from a base node, visiting only nodes relevant for modules
+//
+// PARAMETERS
+//  base      - node to ascend from
+//  [walk_id] -
+//
+xapi walker_ascend(struct node * restrict base, int walk_id, struct graph_invalidation_context * restrict invalidation)
+  __attribute__((nonnull));
+
+/// walker_descend_begin
+//
+// SUMMARY
+//  allocate a walk scope, in which each node is visited at most once
+//
+int walker_descend_begin(void);
 
 #endif
