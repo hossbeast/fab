@@ -22,29 +22,29 @@
 #include "narrator/load.h"
 #include "valyria/load.h"
 #include "xlinux/load.h"
+#include "value/load.h"
 
 #include "xapi/trace.h"
 #include "xlinux/xunistd.h"
 #include "xlinux/xfcntl.h"
 #include "xlinux/xstat.h"
+#include "xlinux/xshm.h"
+#include "xlinux/xpthread.h"
 #include "narrator.h"
 #include "logger.h"
 
 #include "fab/sigutil.h"
-#include "fab/request.h"
 #include "fab/client.h"
 #include "fab/FAB.errtab.h"
 
 #include "args.h"
+#include "command.h"
 #include "params.h"
 #include "logging.h"
 #include "build.h"
 #include "MAIN.errtab.h"
 
 #include "macros.h"
-#include "memblk.h"
-#include "memblk.def.h"
-#include "identity.h"
 
 static xapi xmain_exit;
 static xapi xmain()
@@ -57,22 +57,10 @@ static xapi xmain()
   char * fabw_path = 0;
   const command * cmd = 0;
 
-  memblk * mb = 0;
   fab_client * client = 0;
-  fab_request * request = 0;
-  int fd = -1;
 
-#if DEBUG || DEVEL
-  // this check is omitted in DEBUG/DEVEL mode because valgrind requires non-setgid and non-setuid executables
-#else
-  // this executable MUST BE OWNED by fabsys:fabsys and have u+s and g+s permissions
-  if(strcmp(g_euid_name, "fabsys") || strcmp(g_egid_name, "fabsys"))
-  {
-    xapi_info_pushf("real", "r:%s/%d:%s/%d", g_ruid_name, g_ruid, g_rgid_name, g_rgid);
-    xapi_info_pushf("effective", "e:%s/%d:%s/%d", g_euid_name, g_euid, g_egid_name, g_egid);
-    fail(MAIN_EXEPERMS);
-  }
-#endif
+  void * request_shm = 0;
+  void * response_shm = 0;
 
 #if DEBUG || DEVEL
   logs(L_IPC, "started");
@@ -102,9 +90,26 @@ static xapi xmain()
   fatal(fab_client_prepare, client);
   fatal(fab_client_launchp, client);
 
-  fatal(memblk_mk, &mb);
-  fatal(args_collate, cmd, mb, &request);
-  fatal(fab_client_make_request, client, mb, request);
+  fatal(fab_client_prepare_request_shm, client, &request_shm);
+  fatal(args_collate, cmd, request_shm);
+
+  void * shmaddr = request_shm;
+  request_shm = 0;
+  fatal(fab_client_make_request, client, shmaddr, &response_shm);
+
+  // consume the response
+  shmaddr = response_shm;
+  response_shm = 0;
+  if(cmd->process) {
+    fatal(cmd->process, shmaddr);
+  }
+
+  fatal(fab_client_release_response, client, shmaddr);
+  fatal(fab_client_unlock, client);
+
+  if(cmd->conclusion) {
+    fatal(cmd->conclusion);
+  }
 
 finally:
   if(XAPI_UNWINDING)
@@ -122,9 +127,10 @@ finally:
   }
 
   // locals
-  fatal(ixclose, &fd);
-  fatal(fab_client_dispose, &client);
-  memblk_free(mb);
+  fatal(fab_client_xfree, client);
+
+  fatal(xshmdt, request_shm);
+  fatal(xshmdt, response_shm);
 
   // module teardown
   fatal(build_command_cleanup);
@@ -168,13 +174,21 @@ static xapi xmain_load(char ** envp)
   fatal(narrator_load);
   fatal(valyria_load);
   fatal(xlinux_load);
+  fatal(value_load);
 
   // load modules
-  fatal(identity_setup);
   fatal(logging_setup, envp);
-  fatal(params_report);
   fatal(params_setup);
   fatal(sigutil_defaults);
+
+  // unblock SIGINT
+  sigset_t cur;
+  sigset_t sigs;
+  sigemptyset(&sigs);
+  fatal(xpthread_sigmask, SIG_BLOCK, &sigs, &cur);
+  sigs = cur;
+  sigdelset(&sigs, SIGINT);
+  fatal(xpthread_sigmask, SIG_SETMASK, &sigs, 0);
 
   fatal(xmain_jump);
 
@@ -188,6 +202,7 @@ finally:
   fatal(narrator_unload);
   fatal(valyria_unload);
   fatal(xlinux_unload);
+  fatal(value_unload);
 coda;
 }
 

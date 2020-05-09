@@ -17,4 +17,3 @@
 
 1   BADARGS   failed to parse command-line arguments
 2   NOCOMMAND specify a subcommand
-3   EXEPERMS  fab executable must be owned by fabsys:fabsys and have ug+s permissions

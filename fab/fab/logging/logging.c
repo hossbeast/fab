@@ -23,21 +23,23 @@
 #include "logging.h"
 
 logger_category * categories = (logger_category[]) {
-#if DEBUG || DEVEL || XAPI
-    { name : "IPC"        , description : "signal-exchange", attr : L_NAMES | L_PID }
-  , { name : "PROTOCOL"   , attr : L_NAMES | L_PID }
-  ,
-#endif
     { name : "ERROR"      , description : "fatal errors" }
   , { name : "ARGS"       , description : "program arguments report" }
   , { name : "PARAMS"     , description : "program parameters report" }
-
   , { name : "CLIENT"     , description : "fab client", optional : 1 }
+  , { name : "PROTOCOL"   , attr : L_NAMES | L_PID }
+#if DEBUG || DEVEL || XAPI
+  , { name : "IPC"        , description : "signal-exchange", attr : L_NAMES | L_PID | L_YELLOW }
+#endif
   , { }
 };
 
 logger_stream * streams = (logger_stream []) {
-    { name : "console"  , type : LOGGER_STREAM_FD , fd : 1  , expr : "+ERROR" }
+    { name : "console"  , type : LOGGER_STREAM_FD , fd : 1  , expr : "+ERROR"
+#if DEBUG || DEVEL || XAPI
+" %CATEGORY %NAMES %PID %TID"
+#endif
+    }
   , { }
 };
 

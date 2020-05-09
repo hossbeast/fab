@@ -18,17 +18,11 @@
 #ifndef _ARGS_H
 #define _ARGS_H
 
-#include <sys/types.h>
-
 #include "xapi.h"
+#include "types.h"
 
-typedef struct command
-{
-  xapi (*args_parse)(const char ** restrict argv, size_t argc);
-  xapi __attribute__((nonnull)) (*usage_say)(struct narrator * restrict);
-  xapi __attribute__((nonnull)) (*command_say)(struct narrator * restrict);
-  xapi __attribute__((nonnull)) (*collate)(struct fab_request * restrict req, int * restrict config_applied);
-} command;
+struct command;
+struct value_writer;
 
 /// args_parse
 //
@@ -69,7 +63,10 @@ xapi args_report(const struct command * restrict cmd)
 // SUMMARY
 //  build a fab request from g_args
 //
-xapi args_collate(const command * restrict cmd, struct memblk * const restrict mb, struct fab_request ** const restrict req)
+// PARAMETERS
+//  request - (returns) request
+//
+xapi args_collate(const struct command * restrict cmd, void * request_shm)
   __attribute__((nonnull));
 
 #endif

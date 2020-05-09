@@ -15,14 +15,14 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef _BUILD_COMMAND_H
-#define _BUILD_COMMAND_H
+#ifndef _ADHOC_COMMAND_H
+#define _ADHOC_COMMAND_H
 
 #include "xapi.h"
 
 struct command;
-struct command * build_command;
+struct command * adhoc_command;
 
-xapi build_command_cleanup(void);
+xapi adhoc_command_cleanup(void);
 
 #endif

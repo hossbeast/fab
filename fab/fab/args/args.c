@@ -27,10 +27,11 @@
 #include "xlinux/xstring.h"
 #include "xlinux/xstdlib.h"
 #include "xlinux/mempolicy.h"
+#include "value/writer.h"
 #include "narrator.h"
 #include "narrator/units.h"
+#include "narrator/fixed.h"
 #include "narrator/growing.h"
-#include "fab/request.h"
 #include "logger.h"
 #include "logger/expr.h"
 #include "logger/category.h"
@@ -42,12 +43,12 @@
 #include "params.h"
 #include "errtab/MAIN.errtab.h"
 #include "build.h"
+#include "adhoc.h"
+#include "invalidate.h"
+#include "command.h"
 
 #include "macros.h"
 #include "assure.h"
-#include "memblk.h"
-
-#define restrict __restrict
 
 //
 // public
@@ -110,24 +111,44 @@ xapi args_parse(const command ** cmd)
   const char ** argv = 0;
   size_t argc = 0;
 
-  *cmd = 0;
-  if(g_argc < 2)
-    fail(MAIN_NOCOMMAND);
-
   // built-in subcommands
-  else if(strcmp(g_argv[1], "build") == 0)
+  if(g_argc < 2)
+  {
+    x = 1;
     *cmd = build_command;
+  }
+  else if(strcmp(g_argv[1], "build") == 0)
+  {
+    x = 2;
+    *cmd = build_command;
+  }
+  else if(strcmp(g_argv[1], "autobuild") == 0)
+  {
+    x = 2;
+    *cmd = autobuild_command;
+  }
+  else if(strcmp(g_argv[1], "adhoc") == 0)
+  {
+    x = 2;
+    *cmd = adhoc_command;
+  }
+  else if(strcmp(g_argv[1], "invalidate") == 0)
+  {
+    x = 2;
+    *cmd = invalidate_command;
+  }
   else
+  {
     fail(MAIN_NOCOMMAND);
+  }
 
   fatal(xmalloc, &argv, sizeof(*argv) * (g_argc - 1));
-
-  argv[argc++] = g_argv[1];
+  argv[argc++] = (*cmd)->name;
 
   int help = 0;
   int version = 0;
   int logs = 0;
-  for(x = 2; x < g_argc; x++)
+  for(; x < g_argc; x++)
   {
     if(strcmp(g_argv[x], "--") == 0)
       break;
@@ -188,27 +209,38 @@ finally:
 coda;
 }
 
-xapi args_collate(const command * restrict cmd, memblk * restrict mb, fab_request ** restrict req)
+xapi args_collate(const command * restrict cmd, void * request_shm)
 {
   enter;
 
-  int mpc = 0;
-  int config_applied = 0;
+  char nstor[NARRATOR_STATIC_SIZE];
+  value_writer writer;
+  narrator * request_narrator;
+  uint32_t message_len;
+  size_t message_size;
 
-  fatal(mempolicy_push, memblk_getpolicy(mb), &mpc);
-  fatal(fab_request_create, req);
-  fatal(fab_request_config_stages, *req, "logging.console.exprs = [ \"+WARN +INFO\" ]");
-  if(g_logc)
-    fatal(fab_request_config_stagef, *req, "logging.console.exprs += [ \"%s\" ]", g_logvs);
-  if(g_ulogc)
-    fatal(fab_request_config_stagef, *req, "logging.console.exprs += [ \"%s\" ]", g_ulogvs);
+  value_writer_init(&writer);
 
-  fatal(cmd->collate, *req, &config_applied);
+  // save a spot for the message length
+  request_narrator = narrator_fixed_init(nstor, request_shm, 0xfff);
+  fatal(narrator_xsayw, request_narrator, (char[]) { 0xde, 0xad, 0xbe, 0xef }, 4);
 
-  if(!config_applied)
-    fatal(fab_request_config_apply, *req);
+  fatal(value_writer_open, &writer, request_narrator);
+
+  fatal(cmd->collate, &writer);
+
+  fatal(value_writer_close, &writer);
+
+  // two terminating null bytes
+  fatal(narrator_xsayw, request_narrator, (char[]) { 0x00, 0x00 }, 2);
+
+  // stitch up the message length
+  message_size = narrator_fixed_size(request_narrator);
+  message_len = message_size - 4;
+  fatal(narrator_xseek, request_narrator, 0, NARRATOR_SEEK_SET, 0);
+  fatal(narrator_xsayw, request_narrator, &message_len, sizeof(message_len));
 
 finally:
-  mempolicy_unwind(&mpc);
+  fatal(value_writer_destroy, &writer);
 coda;
 }

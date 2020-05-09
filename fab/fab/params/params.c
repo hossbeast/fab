@@ -67,6 +67,8 @@ xapi params_setup()
     g_params.procs = 0;
   }
 
+  fatal(params_report);
+
   finally : coda;
 }
 
