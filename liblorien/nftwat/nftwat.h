@@ -33,7 +33,7 @@ typedef struct ftwinfo
 {
   struct ftwinfo * parent;
 
-  const char * path;
+  char * path;
   uint16_t pathl;
   uint16_t name_off;
   uint8_t type;       // one of FTWAT_F, FTWAT_D

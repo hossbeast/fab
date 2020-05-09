@@ -152,7 +152,9 @@ $lflags_xapi_devel  = [ $lopts $libdeps_xapi_devel [ -Wl,-soname,liblorien-xapi-
 [ @test ] : [ $* ~ lsr l/test\/test_ sx/c/xapi.xunit.so sy ]
 {
   (
-    [ $valgrind_runner ] [ $xunit_xapi_devel ] [ $libdeps_xapi_devel ~ fi ] [ $@ ~ rx/ineed lx/so fi ] +UNIT
+    [ $valgrind_runner ] [ $xunit_xapi_devel ] [ $libdeps_xapi_devel $liblorien_xapi_devel ~ fi ]
+    ] [ $@ ~ rx/ineed lx/so fi ]
+    ] +UNIT
   ) | tee /dev/fd/501
   > exit ${PIPESTATUS[0]}
 }
@@ -161,7 +163,9 @@ $lflags_xapi_devel  = [ $lopts $libdeps_xapi_devel [ -Wl,-soname,liblorien-xapi-
 [ @test.fast ] : [ $* ~ lsr l/test\/test_ sx/c/xapi.xunit.so sy ]
 {
   (
-    [ $xunit_xapi_devel ] [ $libdeps_xapi_devel ~ fi ] [ $@ ~ rx/ineed lx/so fi ] +UNIT
+    [ $xunit_xapi_devel ] [ $libdeps_xapi_devel $liblorien_xapi_devel ~ fi ] [
+    ] [ $@ ~ rx/ineed lx/so fi ] [
+    ] +UNIT
   ) | tee /dev/fd/501
   > exit ${PIPESTATUS[0]}
 }

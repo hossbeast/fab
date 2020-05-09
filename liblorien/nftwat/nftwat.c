@@ -54,6 +54,8 @@ static xapi __attribute__((nonnull(1, 3, 5, 7, 9))) walk(
   long dirloc;
   int ddso = -1;
   int stop = 0;
+  struct stat stb;
+  uint8_t type;
 
   patho = *pathl;
 
@@ -86,15 +88,23 @@ static xapi __attribute__((nonnull(1, 3, 5, 7, 9))) walk(
       *pathl += znloads(path + *pathl, pathz - *pathl, "/");
       child.name_off = *pathl;
       *pathl += znloads(path + *pathl, pathz - *pathl, entp->d_name);
+      path[*pathl] = 0;
       child.pathl = *pathl;
       child.udata = 0;
 
-      if(entp->d_type == DT_REG)
+      type = entp->d_type;
+      if(type == DT_UNKNOWN || type == DT_LNK)
+      {
+        fatal(xfstatats, dirfd, 0, &stb, path);
+        type = (stb.st_mode & S_IFMT) >> 12;
+      }
+
+      if(type == DT_REG)
       {
         child.type = FTWAT_F;
         fatal(fn, 0, &child, arg, &stop);
       }
-      else if(entp->d_type == DT_DIR)
+      else if(type == DT_DIR)
       {
         child.type = FTWAT_D;
         fatal(walk
@@ -155,7 +165,7 @@ API xapi nftwat(
   DIR *** dds = 0;
   size_t ddsp = 0;
 
-  char path[512] = {};
+  char path[512]; // = {};
   size_t pathl = 0;
 
   fatal(xmalloc, &dds, sizeof(*dds) * nopenfd);

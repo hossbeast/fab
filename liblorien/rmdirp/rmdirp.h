@@ -23,8 +23,6 @@
 
 #include "xapi.h"
 
-#define restrict __restrict
-
 /// rmdirp
 //
 // SUMMARY
@@ -40,5 +38,4 @@
 xapi rmdirp(const char * const restrict dirpath, int rmself)
   __attribute__((nonnull));
 
-#undef restrict
 #endif

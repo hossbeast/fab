@@ -20,8 +20,6 @@
 #include "xapi.h"
 #include "xapi/errtab.h"
 
-struct path_test;
-#define TEST_TYPE struct path_test
 #include "xunit.h"
 #include "xunit/assert.h"
 
@@ -30,15 +28,17 @@ struct path_test;
 
 #define istrlen(a) a ? strlen(a) : 0
 
-typedef struct path_test {
-  xunit_test;
+typedef union path_test {
+  xunit_test xu;
   char * input;
   char * output;
 } path_test;
 
-static xapi path_test_entry(path_test * test)
+static xapi path_test_entry(xunit_test * _test)
 {
   enter;
+
+  path_test * test = containerof(_test, path_test, xu);
 
   char space[512];
 
@@ -55,7 +55,7 @@ static xapi path_test_entry(path_test * test)
 
 xunit_unit xunit = {
     xu_entry : path_test_entry
-  , xu_tests : (xunit_test*[]) {
+  , xu_tests : (void*)(path_test*[]) {
     /* redundant slashes */
       (path_test[]){{
           input : "//foo"
@@ -143,5 +143,6 @@ xunit_unit xunit = {
           input : "//"
         , output : "/"
       }}
+    , 0
     }
 };

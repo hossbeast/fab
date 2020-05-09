@@ -23,8 +23,6 @@
 
 #include "xapi.h"
 
-#define restrict __restrict
-
 /// symlinkp
 //
 // SUMMARY
@@ -46,5 +44,4 @@ xapi symlinkpf(const char * const restrict target_fmt, const char * const restri
 xapi symlinkpvf(const char * const restrict target_fmt, const char * const restrict linkpath_fmt, va_list va)
   __attribute__((nonnull));
 
-#undef restrict
 #endif

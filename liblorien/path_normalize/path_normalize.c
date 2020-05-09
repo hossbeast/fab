@@ -20,8 +20,6 @@
 
 #include "zbuffer.h"
 
-#define restrict __restrict
-
 //
 // api
 //
@@ -123,5 +121,6 @@ API size_t path_normalize(char * restrict dst, size_t sz, const char * restrict 
   if(abs && dst_len == 0)
     dst_len += znloadc(dst + dst_len, sz - dst_len, '/');
 
+  dst[dst_len] = 0;
   return dst_len;
 }

@@ -23,8 +23,6 @@
 
 #include "xapi.h"
 
-#define restrict __restrict
-
 /// mkdirp
 //
 // SUMMARY
@@ -50,5 +48,4 @@ xapi mkdirpf(mode_t mode, const char * const restrict fmt, ...)
 xapi mkdirpvf(mode_t mode, const char * const restrict fmt, va_list va)
   __attribute__((nonnull));
 
-#undef restrict
 #endif
