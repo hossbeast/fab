@@ -87,6 +87,8 @@ static xapi xmain()
   size_t test_vector_l = 0;
   size_t test_vector_a = 0;
   test_results * results = 0;
+  pid_t pid;
+  int wstatus;
 
   // allocated with the same size as g_args.objects
   void ** objects = 0;
@@ -97,7 +99,7 @@ static xapi xmain()
   fatal(args_summarize);
 
   // enable coredumps
-  fatal(xsetrlimit, RLIMIT_CORE, (struct rlimit[]) {{ .rlim_cur = RLIM_INFINITY, .rlim_max = RLIM_INFINITY }});
+  setrlimit(RLIMIT_CORE, (struct rlimit[]) {{ .rlim_cur = RLIM_INFINITY, .rlim_max = RLIM_INFINITY }});
 
   // allocation for dloaded objects
   fatal(xmalloc, &objects, sizeof(*objects) * g_args.objectsl);
@@ -121,7 +123,8 @@ static xapi xmain()
       , g_args.objects[x]
       , RTLD_NOW          // fail before dlopen returns if the object has unresolved references
       | RTLD_GLOBAL       // make symbols in this object available to subsequently loaded objects
-      | RTLD_DEEPBIND     // cause this object to prefer symbols which it contains
+/* asan does not work with DEEPBIND */
+//      | RTLD_DEEPBIND     // cause this object to prefer symbols which it contains
       | RTLD_NODELETE     // dont unload during dlclose
       , &objects[x]
     );
@@ -153,10 +156,6 @@ static xapi xmain()
 
       test_vector_l = 0;
 
-      // unit setup
-      if(xunit->xu_setup)
-        fatal(xunit->xu_setup, xunit);
-
       xunit_test ** test = xunit->xu_tests;
 
       uint32_t unit_tests_passed = 0;
@@ -164,35 +163,28 @@ static xapi xmain()
       uint32_t unit_assertions_passed = 0;
       uint32_t unit_assertions_failed = 0;
 
-      bool only = false;
-      bool only_run = false;
+      int maxweight = ~0;
       while(*test)
       {
         // convenience
         (*test)->xu_unit = xunit;
 
-        if((*test)->xu_only)
-          only = true;
-        else if((*test)->xu_run)
-          only_run = true;
+        int weight = (*test)->xu_weight;
+        if(weight > maxweight)
+          maxweight = weight;
 
         test++;
       }
-      size_t tests_len = (test - xunit->xu_tests) - 1;
+      size_t tests_len = (test - (xunit_test**)xunit->xu_tests) - 1;
 
       // execute all tests
       test = xunit->xu_tests;
       for(test = xunit->xu_tests; *test; test++)
       {
-        (*test)->xu_index = (int)(test - xunit->xu_tests);
+        (*test)->xu_index = (int)(test - (xunit_test**)xunit->xu_tests);
 
-        if(only && !(*test)->xu_only)
-          continue;
-
-        if(!only && only_run && !(*test)->xu_run)
-          continue;
-
-        if((*test)->xu_skip)
+        int weight = (*test)->xu_weight;
+        if(weight != maxweight)
           continue;
 
         // convenience
@@ -216,10 +208,18 @@ static xapi xmain()
         xunit_assertions_failed = 0;
 
         memset(results, 0, sizeof(test_results));
-        pid_t pid;
-        fatal(xfork, &pid);
-        if(pid == 0)
+
+        if(g_args.fork)
         {
+          fatal(xfork, &pid);
+        }
+
+        if(!g_args.fork || pid == 0)
+        {
+          // unit setup
+          if(xunit->xu_setup)
+            fatal(xunit->xu_setup, xunit);
+
           if((results->status = invoke(entry, *test)))
           {
             // add identifying info
@@ -240,15 +240,27 @@ static xapi xmain()
           results->assertions_passed = xunit_assertions_passed;
           results->assertions_failed = xunit_assertions_failed;
 
-          // in the child, ignore suite status
-          suite_assertions_failed = 0;
-          suite_tests_failed = 0;
+          // unit cleanup
+          if(xunit->xu_teardown)
+            xunit->xu_teardown(xunit);
 
-          goto XAPI_FINALIZE;
+          if(xunit->xu_cleanup)
+            fatal(xunit->xu_cleanup, xunit);
+
+          if(g_args.fork)
+          {
+            // in the child, ignore suite status
+            suite_assertions_failed = 0;
+            suite_tests_failed = 0;
+
+            goto XAPI_FINALIZE;
+          }
         }
 
-        int wstatus;
-        fatal(xwaitpid, pid, &wstatus, 0);
+        wstatus = 0;
+        if(g_args.fork)
+          fatal(xwaitpid, pid, &wstatus, 0);
+
         fatal(xclock_gettime, CLOCK_MONOTONIC_RAW, &test_end);
 
         xunit_assertions_passed = results->assertions_passed;
@@ -276,9 +288,12 @@ static xapi xmain()
 
         // report for this test
         fatal(log_xstart, L_TEST, test_failed ? L_RED : L_GREEN, &N);
-        xsayf("  %%%6.2f pass rate on %6"PRIu32" assertions over "
+        xsayf("  %%%6.2f pass rate on %6"PRIu32" assertions by test %d in [%d,%zu] over "
           , pct(xunit_assertions_passed, xunit_assertions_failed)
           , xunit_assertions_passed + xunit_assertions_failed
+          , (*test)->xu_index
+          , 0
+          , tests_len
         );
         fatal(elapsed_say, &test_start, &test_end, N);
         if(name)
@@ -329,18 +344,21 @@ static xapi xmain()
           {
             if(test_vector[x] & (1ULL << y))
             {
-              xsayf(" %zu", (x * sizeof(*test_vector)) + y);
+              xsayf(" %zu", (x * (sizeof(*test_vector) * 8)) + y);
             }
           }
         }
+        xsayf(" in [%d,%zu]", 0, tests_len);
         fatal(log_finish);
       }
 
       fatal(log_xstart, L_UNIT, unit_tests_failed ? L_RED : L_GREEN, &N);
-      xsayf(" %%%6.2f pass rate on %6"PRIu32" assertions by %3"PRIu32" tests over "
+      xsayf(" %%%6.2f pass rate on %6"PRIu32" assertions by %"PRIu32" tests in [%d,%zu] over "
         , pct(unit_assertions_passed, unit_assertions_failed)
         , unit_assertions_passed + unit_assertions_failed
         , unit_tests_passed + unit_tests_failed
+        , 0
+        , tests_len
       );
 
       fatal(elapsed_say, &unit_start, &unit_end, N);
@@ -352,13 +370,6 @@ static xapi xmain()
       suite_tests_passed += unit_tests_passed;
       suite_tests_failed += unit_tests_failed;
       suite_units++;
-
-      // unit cleanup
-      if(xunit->xu_teardown)
-        xunit->xu_teardown(xunit);
-
-      if(xunit->xu_cleanup)
-        fatal(xunit->xu_cleanup, xunit);
     }
   }
 
@@ -366,9 +377,11 @@ static xapi xmain()
 
   // summary report
   fatal(log_xstart, L_SUITE, suite_tests_failed ? L_RED : L_GREEN, &N);
-  xsayf("%%%6.2f pass rate on %6d assertions by %3d tests from %4d units over "
+  xsayf("%%%6.2f pass rate on %6d assertions by %"PRIu32" tests in [%d,%d] from %4d units over "
     , pct(suite_assertions_passed, suite_assertions_failed)
     , (suite_assertions_passed + suite_assertions_failed)
+    , suite_tests_passed + suite_tests_failed
+    , 0
     , suite_tests_passed + suite_tests_failed
     , suite_units
   );
@@ -454,3 +467,4 @@ conclude(&R);
 
   return !!R;
 }
+

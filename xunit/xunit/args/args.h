@@ -26,8 +26,7 @@ struct g_args_t
   char ** objects;
   size_t  objectsl;
 
-  long    procs;
-  int     concurrency;      // concurrently limiting factor
+  bool    fork;
 } g_args;
 
 xapi args_parse(void);

@@ -31,9 +31,9 @@ $cflags_xapi_final = [ $cflags $cflags_xapi_final ]
 $cflags_xapi_debug = [ $cflags $cflags_xapi_debug ]
 $cflags_xapi_devel = [ $cflags $cflags_xapi_devel ]
 
-
-$lflags = [ -ldl ]
+$lflags = [ -ldl -lasan -lubsan ]
 $rpath = [
+  # '-Wl,-rpath,$ORIGIN/../../libxapi' '-Wl,-rpath,$ORIGIN/../../libxlinux' '-Wl,-rpath,$ORIGIN/../../xunit/libxunit' '-Wl,-rpath,$ORIGIN/../../liblogger' '-Wl,-rpath,$ORIGIN/../../libvalyria'
   [ $dlibxapi $dlibxlinux $dlibxunit $dliblogger $dlibvalyria $dlibnarrator ~ [ ?{ [ rb{$*} ~ j ] "s{^}{'-Wl,-rpath,$ORIGIN/}" "s{$}{'}" ~ fi ] ]
 ]
 $lflags_xapi_final = [ $lflags_xapi_final $lflags $libxapi_xapi_final $libxlinux_xapi_final $libxunit_xapi_final $liblogger_xapi_final $libnarrator_xapi_final $libvalyria_xapi_final ]

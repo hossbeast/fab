@@ -20,13 +20,12 @@
 #include <inttypes.h>
 
 #include "xapi.h"
+#include "type.h"
 
 #include "internal.h"
 #include "type.internal.h"
 
 #include "zbuffer.h"
-
-#define restrict __restrict
 
 static int printable(const char * s, size_t l)
 {
@@ -56,12 +55,64 @@ static void string_unpack(va_list va, xunit_arg * a)
 
 static int string_compare(xunit_arg * A, xunit_arg * B)
 {
+  if(!A->s || !B->s)
+  {
+    return INTCMP(A->s, B->s);
+  }
+
   return strcmp(A->s, B->s);
 }
 
 static void string_info_push(const char * const restrict name, xunit_arg * a)
 {
-  xapi_info_pushs(name, a->s);
+  if(a->s)
+    xapi_info_pushs(name, a->s);
+  else
+    xapi_info_pushs(name, "(null)");
+}
+
+static void stringl_unpack(va_list va, xunit_arg * a)
+{
+  a->p = va_arg(va, void*);
+  a->l = va_arg(va, size_t);
+}
+
+static int stringl_compare(xunit_arg * A, xunit_arg * B)
+{
+  if(A->l == 0 && B->l == 0)
+  {
+    return 0;
+  }
+  else if(A->p && B->p)
+  {
+    int d;
+    if((d = A->l - B->l))
+      return d;
+
+    return memcmp(A->p, B->p, A->l);
+  }
+  else if(A->p)
+  {
+    return 1;
+  }
+  else if(B->p)
+  {
+    return -1;
+  }
+
+  return 0;
+}
+
+static void stringl_info_push(const char * const restrict name, xunit_arg * a)
+{
+  if(a->p == 0)
+  {
+    xapi_info_pushs(name, "(null)");
+  }
+  else
+  {
+    xapi_info_pushf(name, "%.*s", (int)a->l, (char*)a->p);
+  }
 }
 
 static void buffer_unpack(va_list va, xunit_arg * a)
@@ -239,6 +290,21 @@ static void uint64_info_push(const char * const restrict name, xunit_arg * a)
   xapi_info_pushf(name, "%"PRIu64, a->u64);
 }
 
+static void size_t_unpack(va_list va, xunit_arg * a)
+{
+  a->zu = va_arg(va, size_t);
+}
+
+static int size_t_compare(xunit_arg * A, xunit_arg * B)
+{
+  return INTCMP(A->zu, B->zu);
+}
+
+static void size_t_info_push(const char * const restrict name, xunit_arg * a)
+{
+  xapi_info_pushf(name, "%zu", a->zu);
+}
+
 static void bool_unpack(va_list va, xunit_arg * a)
 {
   a->b = va_arg(va, int);
@@ -306,6 +372,12 @@ APIDATA xunit_type * xunit_string = (xunit_type[]) {{
   , xu_info_push : string_info_push
 }};
 
+APIDATA xunit_type * xunit_stringl = (xunit_type[]) {{
+    xu_unpack : stringl_unpack
+  , xu_compare : stringl_compare
+  , xu_info_push : stringl_info_push
+}};
+
 APIDATA xunit_type * xunit_buffer = (xunit_type[]) {{
     xu_unpack : buffer_unpack
   , xu_compare : buffer_compare
@@ -352,6 +424,12 @@ APIDATA xunit_type * xunit_uint64 = (xunit_type[]) {{
     xu_unpack : uint64_unpack
   , xu_compare : uint64_compare
   , xu_info_push : uint64_info_push
+}};
+
+APIDATA xunit_type * xunit_size_t = (xunit_type[]) {{
+    xu_unpack : size_t_unpack
+  , xu_compare : size_t_compare
+  , xu_info_push : size_t_info_push
 }};
 
 APIDATA xunit_type * xunit_float = (xunit_type[]) {{

@@ -47,7 +47,7 @@ typedef struct xunit_unit
   xunit_unit_teardown   xu_teardown;
   xunit_unit_cleanup    xu_cleanup;
   xunit_test_entry      xu_entry;
-  struct xunit_test **  xu_tests;    // sentinel-terminated list of pointers to tests
+  void *                xu_tests;    // sentinel-terminated list of pointers to tests of type compatible with xunit_test
 } xunit_unit;
 
 /// xunit_test
@@ -55,17 +55,17 @@ typedef struct xunit_unit
 // SUMMARY
 //  a single test
 //
-typedef struct xunit_test
-{
-  struct xunit_unit * xu_unit;
-  char *              xu_name;
-  xunit_test_entry    xu_entry;
-  uint16_t            xu_index;
+#define XUNITDEF {                      \
+  struct xunit_unit * xu_unit;          \
+  char *              xu_name;          \
+  xunit_test_entry    xu_entry;         \
+  uint16_t            xu_index;         \
+                                        \
+  /* controlling which tests to run */  \
+  int                 xu_weight;        \
+}
 
-  // controlling which tests to run
-  bool                xu_only;
-  bool                xu_run;
-  bool                xu_skip;
-} xunit_test;
+typedef struct xunit_test XUNITDEF xunit_test;
+#define XUNITTEST union { xunit_test xu ; struct XUNITDEF; };
 
 #endif

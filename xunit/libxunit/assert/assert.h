@@ -59,6 +59,7 @@ extern uint32_t xunit_assertions_failed;
 // libxapi-provided assertion data types
 extern struct xunit_type * xunit_buffer;
 extern struct xunit_type * xunit_string;
+extern struct xunit_type * xunit_stringl;
 extern struct xunit_type * xunit_int;
 extern struct xunit_type * xunit_char;
 extern struct xunit_type * xunit_xapi;
@@ -66,6 +67,7 @@ extern struct xunit_type * xunit_int32;
 extern struct xunit_type * xunit_uint32;
 extern struct xunit_type * xunit_int64;
 extern struct xunit_type * xunit_uint64;
+extern struct xunit_type * xunit_size_t;
 extern struct xunit_type * xunit_float;
 extern struct xunit_type * xunit_bool;
 extern struct xunit_type * xunit_pointer;
@@ -126,12 +128,24 @@ extern struct xunit_type * xunit_pointer;
 #define assert_lt_u64(expected, actual)     _assertion(xunit_uint64, XU_LT, QUOTE(actual), expected, actual)
 #define assert_le_u64(expected, actual)     _assertion(xunit_uint64, XU_LE, QUOTE(actual), expected, actual)
 
+#define assert_eq_zu(expected, actual)     _assertion(xunit_size_t, XU_EQ, QUOTE(actual), expected, actual)
+#define assert_ne_zu(expected, actual)     _assertion(xunit_size_t, XU_NE, QUOTE(actual), expected, actual)
+#define assert_gt_zu(expected, actual)     _assertion(xunit_size_t, XU_GT, QUOTE(actual), expected, actual)
+#define assert_ge_zu(expected, actual)     _assertion(xunit_size_t, XU_GE, QUOTE(actual), expected, actual)
+#define assert_lt_zu(expected, actual)     _assertion(xunit_size_t, XU_LT, QUOTE(actual), expected, actual)
+#define assert_le_zu(expected, actual)     _assertion(xunit_size_t, XU_LE, QUOTE(actual), expected, actual)
+
 #define assert_eq_s(expected, actual)       _assertion(xunit_string, XU_EQ, QUOTE(actual), expected, actual)
 #define assert_ne_s(expected, actual)       _assertion(xunit_string, XU_NE, QUOTE(actual), expected, actual)
 
 #define assert_eq_w(expected, expected_size, actual, actual_size) \
-                                            _assertion(xunit_buffer, XU_EQ, QUOTE(actual), expected, expected_size, actual, actual_size)
+                                            _assertion(xunit_stringl, XU_EQ, QUOTE(actual), expected, expected_size, actual, actual_size)
 #define assert_ne_w(expected, expected_size, actual, actual_size) \
+                                            _assertion(xunit_stringnl, XU_NE, QUOTE(actual), expected, expected_size, actual, actual_size)
+
+#define assert_ne_buf(expected, expected_size, actual, actual_size) \
+                                            _assertion(xunit_buffer, XU_NE, QUOTE(actual), expected, expected_size, actual, actual_size)
+#define assert_ne_buf(expected, expected_size, actual, actual_size) \
                                             _assertion(xunit_buffer, XU_NE, QUOTE(actual), expected, expected_size, actual, actual_size)
 
 #define assert_eq_p(expected, actual)       _assertion(xunit_pointer, XU_EQ, QUOTE(actual), expected, actual)

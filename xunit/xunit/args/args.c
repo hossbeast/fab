@@ -23,6 +23,7 @@
 
 #include "xapi.h"
 #include "errtab/MAIN.errtab.h"
+#include "xapi/SYS.errtab.h"
 #include "xlinux/xstring.h"
 #include "xlinux/xstdlib.h"
 #include "logger.h"
@@ -68,6 +69,8 @@ if(help)
 "\n"
 "----------------- [ options ] --------------------------------------------------------------------\n"
 "\n"
+" --nofork  : don't fork before each test\n"
+"\n"
   );
 }
 
@@ -99,14 +102,27 @@ static xapi objects_push(char * path, size_t * objectsa)
 {
   enter;
 
-  // arguments to dlopen are specified as paths
-  if(strstr(path, "/") == 0)
-  {
-    failf(MAIN_NOTPATH, "argument", "%s", path);
-  }
+  char space[512];
+  uint16_t len;
 
   fatal(assure, &g_args.objects, sizeof(*g_args.objects), g_args.objectsl + 1, objectsa);
-  fatal(ixstrdup, &g_args.objects[g_args.objectsl++], path);
+
+  // arguments to dlopen are specified as paths
+  if(strstr(path, "/"))
+  {
+    fatal(ixstrdup, &g_args.objects[g_args.objectsl++], path);
+  }
+  else
+  {
+    len = strlen(path);
+    if(len > 500) {
+      fail(SYS_ABORT);
+    }
+    memcpy(space, "./", 2);
+    memcpy(space + 2, path, len);
+    space[len + 2] = 0;
+    fatal(ixstrdup, &g_args.objects[g_args.objectsl++], space);
+  }
 
   finally : coda;
 }
@@ -119,6 +135,7 @@ xapi args_parse()
   int version = 0;
   int logs = 0;
   size_t objectsa = 0;
+  int fork = 1;
 
   struct option longopts[] = {
       { "help"                        , no_argument       , &help, 1 }
@@ -135,6 +152,8 @@ xapi args_parse()
     , { "logcats"                     , no_argument       , &logs, 1 }
     , { "logexpr"                     , no_argument       , &logs, 1 }
     , { "logexprs"                    , no_argument       , &logs, 1 }
+    , { "fork"                        , no_argument       , &fork, 1 }
+    , { "nofork"                      , no_argument       , &fork, 0 }
     , { }
   };
 
@@ -183,6 +202,8 @@ xapi args_parse()
     fatal(objects_push, g_argv[optind], &objectsa);
   }
 
+  g_args.fork = fork;
+
   if(help || version || logs)
   {
     fatal(usage, 1, 1, help, logs);
@@ -195,27 +216,18 @@ xapi args_summarize()
 {
   enter;
 
-  char space[512];
   int x;
 
-  logs(L_ARGS | L_PARAMS, "--------------------------------------------------------------------------------");
+  logs(L_ARGS, "--------------------------------------------------------------------------------");
 
-  // log execution parameters under PARAMS
-  logf(L_PARAMS , "%11sprocessors             =%ld"           , ""  , g_args.procs);
-
-  if(g_args.concurrency == 0)
-    snprintf(space, sizeof(space)  , "%s", "unbounded");
-  else
-    snprintf(space, sizeof(space)  , "%d", g_args.concurrency);
-
-  logf(L_ARGS | L_PARAMS       , " %s (  %c  ) concurrency            =%s", g_args.concurrency == (int)((float)g_args.procs * 1.2f) ? " " : "*", 'j', space);
+  logf(L_ARGS, " %s (  %c  ) fork %21s %s", g_args.fork ? "*" : "", ' ', "", g_args.fork ? "true" : "false");
 
   if(g_args.objectsl == 0)
-    logf(L_ARGS | L_PARAMS      , " %s (  %c  ) object(s)         =", " ", ' ');
+    logf(L_ARGS, " %s (  %c  ) object(s)", " ", ' ');
   for(x = 0; x < g_args.objectsl; x++)
-    logf(L_ARGS | L_PARAMS      , " %s (  %c  ) object(s)         =%s", "*", ' ', g_args.objects[x]);
+    logf(L_ARGS, " %s (  %c  ) object(s) %16s %s", "*", ' ', "", g_args.objects[x]);
 
-  logs(L_ARGS | L_PARAMS, "--------------------------------------------------------------------------------");
+  logs(L_ARGS, "--------------------------------------------------------------------------------");
 
   finally : coda;
 }

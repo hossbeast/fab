@@ -25,8 +25,6 @@
 
 #include "zbuffer.h"
 
-#define restrict __restrict
-
 APIDATA uint32_t xunit_assertions_passed;
 APIDATA uint32_t xunit_assertions_failed;
 
