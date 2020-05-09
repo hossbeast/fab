@@ -32,15 +32,51 @@
 #include "ipc.h"
 #include "logging.h"
 
-#include "identity.h"
+#include "macros.h"
+#include "zbuffer.h"
 
-static void handler(int signum, siginfo_t * info, void * ctx) { }
+/* for use with FABIPC_SIGINTR only */
+static void handler(int signum, siginfo_t * info, void * ctx)
+{
+#if DEBUG || DEVEL || XUNIT
+#if SIGUTIL_HANDLER_DEBUG
+  char buf[128];
+  size_t z = 0;
+
+  z += znloadf(buf + z, sizeof(buf) - z, "rx %s { signo %d", FABIPC_SIGNAME(info->si_signo), info->si_signo);
+
+  if(info->si_signo == SIGCHLD)
+  {
+    z += znloadf(buf + z, sizeof(buf) - z, " pid %ld", (long)info->si_pid);
+
+    if(WIFEXITED(info->si_status))
+      z += znloadf(buf + z, sizeof(buf) - z, " status %d", WEXITSTATUS(info->si_status));
+
+    if(WIFSIGNALED(info->si_status))
+    {
+      z += znloadf(buf + z, sizeof(buf) - z, " signal %d", WTERMSIG(info->si_status));
+      z += znloadf(buf + z, sizeof(buf) - z, " core %s", WCOREDUMP(info->si_status) ? "yes" : "no");
+    }
+  }
+  else
+  {
+    z += znloadf(buf + z, sizeof(buf) - z, " sender %ld", (long)info->si_pid);
+  }
+  z += znloadf(buf + z, sizeof(buf) - z, " }");
+
+  printf("SIGNAL HANDLER :::: pid[%5d]/tid[%5d] %s\n", getpid(), gettid(), buf);
+#endif
+#endif
+}
 
 API xapi sigutil_defaults()
 {
   enter;
 
-  struct sigaction act = (typeof(act)) { .sa_sigaction = handler, .sa_flags = SA_SIGINFO };
+  struct sigaction act = (typeof(act)) {
+      .sa_sigaction = handler
+    , .sa_flags = SA_SIGINFO
+  };
 
   // default disposition for all low signals
   int x;
@@ -56,6 +92,8 @@ API xapi sigutil_defaults()
   sigset_t sigs;
   sigemptyset(&sigs);
   sigaddset(&sigs, FABIPC_SIGINTR);
+  sigaddset(&sigs, FABIPC_SIGSCH);
+  sigaddset(&sigs, SIGCHLD);
 
   for(x = SIGRTMIN; x <= SIGRTMAX; x++)
   {
@@ -77,20 +115,37 @@ API xapi sigutil_wait(const sigset_t * sigs, siginfo_t * info)
   enter;
 
   siginfo_t linfo;
-  int r = -1;
+  int r;
 
   if(!info)
     info = &linfo;
 
   // retry EINTR
-  while(r == -1)
+  r = -1;
+  while(r == -1) {
     fatal(uxsigwaitinfo, &r, sigs, info);
+  }
+
+/*
+
+sigwaitinfo does *not* cause the signal handler to be invoked
+
+*/
 
   if(info->si_signo == SIGCHLD)
   {
     // sigwaitinfo returns only part of the child status
     fatal(xwaitpid, info->si_pid, &info->si_status, 0);
   }
+
+  fatal(sigutil_log, info);
+
+  finally : coda;
+}
+
+API xapi sigutil_log(const siginfo_t * info)
+{
+  enter;
 
 #if DEBUG || DEVEL || XUNIT
   narrator * N;
@@ -125,15 +180,11 @@ API xapi sigutil_exchange(int sig, pid_t pid, const sigset_t * sigs, siginfo_t *
 {
   enter;
 
-  // assume fabsys identity, signal target
-  fatal(identity_assume_effective);
+  // signal target
   fatal(xkill, pid, sig);
 
   // receive a signal in sigs
   fatal(sigutil_wait, sigs, info);
-
-  // reassume user identity
-  fatal(identity_assume_real);
 
   finally : coda;
 }
@@ -171,15 +222,15 @@ API xapi sigutil_kill(pid_t pid, int signo)
   finally : coda;
 }
 
-API xapi sigutil_ukill(pid_t pid, int signo)
+API xapi sigutil_tgkill(pid_t pid, pid_t tid, int signo)
 {
   enter;
 
 #if DEBUG || DEVEL || XUNIT
-  logf(L_IPC, "tx %s { signo %d pid %ld }", FABIPC_SIGNAME(signo), signo, (long)pid);
+  logf(L_IPC, "tx %s { signo %d pid %ld tid %ld }", FABIPC_SIGNAME(signo), signo, (long)pid, (long)tid);
 #endif
 
-  fatal(uxkill, pid, signo, 0);
+  fatal(xtgkill, pid, tid, signo);
 
   finally : coda;
 }

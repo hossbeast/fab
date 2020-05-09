@@ -21,11 +21,11 @@
 #include <signal.h>
 #include <string.h>
 
-#define FABIPC_SIGSYN   (SIGRTMIN + 0)
-#define FABIPC_SIGACK   (SIGRTMIN + 1)
+#define FABIPC_SIGSYN   (SIGRTMIN + 0)  /* exchanged client / server */
+#define FABIPC_SIGACK   (SIGRTMIN + 1)  /* exchanged client / server */
 #define FABIPC_SIGEND   (SIGRTMIN + 2)
-#define FABIPC_SIGSCH   (SIGRTMIN + 3)
-#define FABIPC_SIGINTR  (SIGRTMIN + 4)
+#define FABIPC_SIGSCH   (SIGRTMIN + 3)  /* internal daemon signalling */
+#define FABIPC_SIGINTR  (SIGRTMIN + 4)  /* internal daemon signalling */
 
 #define FABIPC_SIGNAME(x)                     \
     (x) == FABIPC_SIGSYN  ? "FABIPC_SIGSYN"   \

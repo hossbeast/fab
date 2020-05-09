@@ -24,12 +24,11 @@
 #include "logging.internal.h"
 
 logger_category * categories = (logger_category []) {
+    { name : "PROTOCOL" , description : "request/response exchange" }
 #if DEBUG || DEVEL || XUNIT
-    { name : "IPC"      , description : "signal-exchange" }
-  , { name : "PROTOCOL" , description : "request/response exchange" }
-  ,
+  , { name : "IPC"      , description : "signal-exchange" }
 #endif
-    { }
+  , { }
 };
 
 xapi logging_setup()

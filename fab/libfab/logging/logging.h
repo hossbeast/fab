@@ -23,9 +23,9 @@
 
 extern struct logger_category * categories;
 
+#define L_PROTOCOL  categories[0].id
 #if DEBUG || DEVEL || XUNIT
-#define L_IPC       categories[0].id
-#define L_PROTOCOL  categories[1].id
+#define L_IPC       categories[1].id
 #endif
 
 #endif

@@ -15,20 +15,13 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef FAB_REQUEST_DEF_H
-#define FAB_REQUEST_DEF_H
+#ifndef _FAB_REQUEST_WRITER_H
+#define _FAB_REQUEST_WRITER_H
 
-#include <sys/types.h>
+#include "xapi.h"
+#include "types.h"
 
-#include "request.h"
-
-struct fab_command;
-
-struct fab_request
-{
-  struct fab_command ** commands;
-  size_t                commandsl;
-  size_t                commandsa;
-};
+struct fab_request_writer;
+typedef struct fab_request_writer fab_request_writer;
 
 #endif

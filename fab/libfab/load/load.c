@@ -26,7 +26,6 @@
 #include "internal.h"
 #include "load.h"
 #include "FAB.errtab.h"
-#include "identity.internal.h"
 #include "logging.internal.h"
 
 static int handles;
@@ -47,7 +46,6 @@ API xapi fab_load()
     fatal(narrator_load);
 
     // modules
-    fatal(identity_setup);
     fatal(logging_setup);
   }
 
@@ -61,8 +59,6 @@ API xapi fab_unload()
   if(--handles == 0)
   {
     // modules
-    identity_teardown();
-
     // dependencies
     fatal(xlinux_unload);
     fatal(logger_unload);

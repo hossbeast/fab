@@ -50,25 +50,18 @@
 #include "internal.h"
 #include "client.internal.h"
 #include "errtab/FAB.errtab.h"
-#include "request.internal.h"
-#include "response.internal.h"
-#include "identity.internal.h"
 #include "logging.internal.h"
 #include "ipc.internal.h"
 
 #include "sigutil.h"
-#include "memblk.h"
-#include "memblk.def.h"
 #include "macros.h"
 #include "hash.h"
-
-#define restrict __restrict
 
 struct fab_client
 {
   char *    projdir;    // canonicalized
   char *    ipcdir;
-  char      hash[8];
+  char      hash[16 + 1];
   char *    fabw_path;
   pid_t     pgid;       // fabd process group id
 };
@@ -77,7 +70,7 @@ struct fab_client
 // static
 //
 
-static xapi pgid_load(fab_client * const restrict client)
+static xapi pgid_load(fab_client * restrict client)
 {
   enter;
 
@@ -106,7 +99,7 @@ finally:
 coda;
 }
 
-static xapi validate_result(fab_client * const restrict client, int expsig, siginfo_t * actual)
+static xapi validate_result(fab_client * restrict client, int expsig, siginfo_t * actual)
 {
   enter;
 
@@ -145,11 +138,13 @@ coda;
 // public
 //
 
-API xapi fab_client_create(fab_client ** const restrict client, const char * const restrict projdir, const char * const restrict ipcdir_base, const char * const restrict fabw_path)
+API xapi fab_client_create(fab_client ** restrict client, const char * restrict projdir, const char * restrict ipcdir_base, const char * restrict fabw_path)
 {
   enter;
 
   char space[512];
+  size_t len;
+  uint64_t u64;
 
   fatal(xmalloc, client, sizeof(**client));
 
@@ -157,12 +152,13 @@ API xapi fab_client_create(fab_client ** const restrict client, const char * con
   fatal(xrealpaths, &(*client)->projdir, 0, projdir);
 
   // project path hash
-  uint32_t u32 = hash32(0, (*client)->projdir, strlen((*client)->projdir));
-  snprintf((*client)->hash, sizeof((*client)->hash), "%x", u32);
+  u64 = hash64(0, (*client)->projdir, strlen((*client)->projdir));
+  snprintf((*client)->hash, sizeof((*client)->hash), "%016"PRIx64, u64);
 
   // ipc dir for the project
-  snprintf(space, sizeof(space), "%s/%s", ipcdir_base, (*client)->hash);
-  fatal(ixstrdup, &(*client)->ipcdir, space);
+  len = snprintf(space, sizeof(space), "%s/%s", ipcdir_base, (*client)->hash);
+  fatal(xmalloc, &(*client)->ipcdir, len + 1);
+  memcpy((*client)->ipcdir, space, len);
 
   if(fabw_path)
     fatal(ixstrdup, &(*client)->fabw_path, fabw_path);
@@ -170,23 +166,32 @@ API xapi fab_client_create(fab_client ** const restrict client, const char * con
   finally : coda;
 }
 
-API xapi fab_client_dispose(fab_client ** const restrict client)
+API xapi fab_client_xfree(fab_client * restrict client)
 {
   enter;
 
-  if(*client)
+  if(client)
   {
-    wfree((*client)->ipcdir);
-    wfree((*client)->fabw_path);
-    wfree(*client);
+    wfree(client->ipcdir);
+    wfree(client->fabw_path);
+    wfree(client->projdir);
+    wfree(client);
   }
 
+  finally : coda;
+}
+
+API xapi fab_client_ixfree(fab_client ** restrict client)
+{
+  enter;
+
+  fatal(fab_client_xfree, *client);
   *client = 0;
 
   finally : coda;
 }
 
-API xapi fab_client_prepare(fab_client * const restrict client)
+API xapi fab_client_prepare(fab_client * restrict client)
 {
   enter;
 
@@ -245,7 +250,7 @@ finally:
 coda;
 }
 
-API xapi fab_client_terminatep(fab_client * const restrict client)
+API xapi fab_client_terminatep(fab_client * restrict client)
 {
   enter;
 
@@ -259,7 +264,7 @@ API xapi fab_client_terminatep(fab_client * const restrict client)
   finally : coda;
 }
 
-API xapi fab_client_launchp(fab_client * const restrict client)
+API xapi fab_client_launchp(fab_client * restrict client)
 {
   enter;
 
@@ -345,7 +350,6 @@ API xapi fab_client_launchp(fab_client * const restrict client)
       continue;
     break;
   }
-  fatal(identity_assume_real);
   fatal(validate_result, client, FABIPC_SIGACK, &info);
 
 finally:
@@ -353,40 +357,51 @@ finally:
 coda;
 }
 
-API xapi fab_client_make_request(fab_client * const restrict client, memblk * const restrict mb, fab_request * const restrict request)
+API xapi fab_client_prepare_request_shm(fab_client * restrict client, void ** restrict request_shm)
 {
   enter;
 
-  int shmid_tmp;
   int fd = -1;
-  int req_shmid = -1;
-  int res_shmid = -1;
   void * shmaddr = 0;
-
-#if DEBUG || DEVEL
-  narrator * N;
-
-  fatal(log_start, L_PROTOCOL, &N);
-  xsays("request ");
-  fatal(fab_request_say, request, N);
-  fatal(log_finish);
-#endif
+  int shmid = -1;
+  size_t REQUEST_SIZE = 0xfff;
+  int request_shmid;
 
   // create shm for the request
-  fab_request_freeze(request, mb);
-  fatal(xshmget, ftok(client->ipcdir, FABIPC_TOKREQ), memblk_size(mb), IPC_CREAT | IPC_EXCL | FABIPC_MODE_DATA, &req_shmid);
-  fatal(xshmat, req_shmid, 0, 0, &shmaddr);
-  fatal(xshmctl, req_shmid, IPC_RMID, 0);
-  shmid_tmp = req_shmid;
-  req_shmid = -1;
+  fatal(xshmget, ftok(client->ipcdir, FABIPC_TOKREQ), REQUEST_SIZE, IPC_CREAT | IPC_EXCL | FABIPC_MODE_DATA, &shmid);
+  fatal(xshmat, shmid, 0, 0, &shmaddr);
+  fatal(xshmctl, shmid, IPC_RMID, 0);
+  request_shmid = shmid;
+  shmid = -1;
 
   // save the shmid
   fatal(xopen_modef, &fd, O_CREAT | O_WRONLY, FABIPC_MODE_DATA, "%s/client/request_shmid", client->ipcdir);
-  fatal(axwrite, fd, &shmid_tmp, sizeof(shmid_tmp));
-  fatal(ixclose, &fd);
+  fatal(axwrite, fd, &request_shmid, sizeof(request_shmid));
 
-  // write the request to shm
-  memblk_copyto(mb, shmaddr, memblk_size(mb));
+  *request_shm = shmaddr;
+  shmaddr = 0;
+
+finally:
+  fatal(ixclose, &fd);
+  fatal(xshmdt, shmaddr);
+  if(shmid != -1)
+    fatal(xshmctl, shmid, IPC_RMID, 0);
+coda;
+}
+
+API xapi fab_client_make_request(fab_client * restrict client, void * request_shm, void ** restrict response_shm)
+{
+  enter;
+
+  int fd = -1;
+  void * shmaddr = 0;
+  int shmid;
+
+  narrator * N;
+  fab_message * msg = request_shm;
+  fatal(log_start, L_PROTOCOL, &N);
+  xsayf("request(%u)\n%s", msg->len, msg->text);
+  fatal(log_finish);
 
   // awaken fabd and await response
   sigset_t sigs;
@@ -395,42 +410,51 @@ API xapi fab_client_make_request(fab_client * const restrict client, memblk * co
   fatal(sigutil_exchange, FABIPC_SIGSYN, -client->pgid, &sigs, &info);
   fatal(validate_result, client, FABIPC_SIGACK, &info);
 
-  // destroy the request
-  fatal(ixshmdt, &shmaddr);
+  // release the request
+  fatal(ixshmdt, &request_shm);
 
-  // attach to shm for the response
+  // attach response shms
   fatal(xopenf, &fd, O_RDONLY, "%s/fabd/response_shmid", client->ipcdir);
-  fatal(axread, fd, &res_shmid, sizeof(res_shmid));
-  fatal(ixclose, &fd);
-  fatal(xshmat, res_shmid, 0, 0, &shmaddr);
-
-  // consume the response
-  fab_response * response = shmaddr;
-  fab_response_thaw(response, shmaddr);
+  fatal(axread, fd, &shmid, sizeof(shmid));
+  fatal(xshmat, shmid, 0, 0, &shmaddr);
 
 #if DEBUG || DEVEL
+  msg = shmaddr;
   fatal(log_start, L_PROTOCOL, &N);
-  xsays("response ");
-  fatal(fab_response_say, response, N);
+  xsayf("response(%u)\n%s", msg->len, msg->text);
   fatal(log_finish);
 #endif
 
-  // unblock fabd
-//printf("%10s (%d) : tx : %s (%d) -> %d\n", "client", gettid(), FABIPC_SIGNAME(FABIPC_SIGACK), FABIPC_SIGACK, -client->pgid);
-  fatal(sigutil_kill, -client->pgid, FABIPC_SIGACK);
-
-//  if(response->exit)
-//    fail(FAB_UNSUCCESS);
+  *response_shm = shmaddr;
+  shmaddr = 0;
 
 finally:
-  fatal(ixshmdt, &shmaddr);
-  if(req_shmid != -1)
-    fatal(xshmctl, req_shmid, IPC_RMID, 0);
+  fatal(xshmdt, request_shm);
+  fatal(xshmdt, shmaddr);
   fatal(ixclose, &fd);
 coda;
 }
 
-API char * fab_client_gethash(fab_client * const restrict client)
+API xapi fab_client_release_response(fab_client * restrict client, void * restrict response_shm)
+{
+  enter;
+
+  fatal(xshmdt, response_shm);
+  fatal(sigutil_kill, -client->pgid, FABIPC_SIGACK);
+
+  finally : coda;
+}
+
+API char * fab_client_gethash(fab_client * restrict client)
 {
   return client->hash;
+}
+
+API xapi fab_client_unlock(fab_client * restrict client)
+{
+  enter;
+
+  fatal(ipc_lock_release, "%s/client/lock", client->ipcdir);
+
+  finally : coda;
 }

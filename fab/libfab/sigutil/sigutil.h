@@ -72,6 +72,14 @@ xapi sigutil_exchange(int sig, pid_t pid, const sigset_t * restrict sigs, siginf
 xapi sigutil_assert(int expsig, pid_t exppid, const siginfo_t * restrict actual)
   __attribute__((nonnull));
 
+/// sigutil_log
+//
+// SUMMARY
+//  log signal details under L_IPC
+//
+xapi sigutil_log(const siginfo_t * restrict info)
+  __attribute__((nonnull));
+
 /// sigutil_kill
 //
 // SUMMARY
@@ -79,11 +87,11 @@ xapi sigutil_assert(int expsig, pid_t exppid, const siginfo_t * restrict actual)
 //
 xapi sigutil_kill(pid_t pid, int sig);
 
-/// sigutil_ukill
+/// sigutil_tgkill
 //
 // SUMMARY
-//  call uxkill and log under L_IPC
+//  call xtgkill and log under L_IPC
 //
-xapi sigutil_ukill(pid_t pid, int sig);
+xapi sigutil_tgkill(pid_t pid, pid_t tid, int sig);
 
 #endif
