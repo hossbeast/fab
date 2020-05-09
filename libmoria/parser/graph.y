@@ -30,26 +30,37 @@
   #include "graph.internal.h"
 
   #include "zbuffer.h"
+  #include "attrs.h"
 }
 
 %code top {
   int graph_yylex(void *, void*, void*);
+  #define PARSER containerof(parser, graph_parser, yyu)
+  #define GRAPH_YYLTYPE yyu_location
 }
 
 %define api.pure
-%error-verbose
+%define parse.error verbose
 %locations
-%name-prefix "graph_yy"
+%define api.prefix {graph_yy}
 %parse-param { void* scanner }
-%parse-param { struct graph_xtra* xtra }
+%parse-param { void* parser }
 %lex-param { void* scanner }
 
 /* zero based lines and columns */
 %initial-action { memset(&@$, 0, sizeof(@$)); }
 
 %union {
+  yyu_lval yyu;
+
   uint32_t u32;
-  uint64_t u64;
+
+  struct {
+    struct vertex *v0;
+    struct vertex **v;
+    uint16_t len;
+  } vertex_list;
+
   struct vertex * vertex;
   char * label;
 }
@@ -59,10 +70,15 @@
 %token '!'
 
 /* terminals */
-%token        STR
-%token <u32>
- HEX
- POSINT
+%token            STR
+%token <yyu.imax> INTMAX8
+%token <yyu.imax> INTMAX16
+%token <yyu.umax> UINTMAX8
+%token <yyu.umax> UINTMAX16
+%token <yyu.umax> UINTMAX32
+%token <yyu.umax> HEX8
+%token <yyu.umax> HEX16
+%token <yyu.umax> HEX32
 
 /* nonterminals */
 %type <vertex>
@@ -70,11 +86,17 @@
  vertex_label
  edge_vertex
 
+%type <vertex_list>
+ edge_vertex_list
+
 %type <label>
  label
 
 %type <u32>
- attrs
+ vertex_attrs
+ edge_attrs
+ uint32
+ hex32
 
 %destructor { wfree($$); } <label>
 
@@ -84,55 +106,99 @@ utterance
   ;
 
 graph
-  : graph definition
-  | graph edge
+  : graph edge
   | graph vertex
-  | definition
   | edge
   | vertex
   ;
 
-definition
-  : STR HEX
+edge
+  : edge_vertex_list ':' edge_attrs ':' edge_vertex_list
   {
-    typeof($2) * T;
-    YFATAL(dictionary_set, xtra->definitions, @1.s, @1.l, &T);
-    *T = $2;
+    if($1.len == 1 && $5.len == 1)
+    {
+      YFATAL(graph_connect, PARSER->g, $1.v0, $5.v0, $3, 0, 0);
+    }
+    else
+    {
+      struct vertex ** A = $1.v;
+      if($1.len == 1)
+        A = &$1.v0;
+
+      struct vertex ** B = $5.v;
+      if($5.len == 1)
+        B = &$5.v0;
+
+      YFATAL(graph_hyperconnect, PARSER->g, A, $1.len, B, $5.len, $3, 0, 0);
+      if($1.len > 1)
+        wfree($1.v);
+      if($5.len > 1)
+        wfree($5.v);
+    }
+  }
+  | edge_vertex_list ':' edge_vertex_list
+  {
+    if($1.len == 1 && $3.len == 1)
+    {
+      YFATAL(graph_connect, PARSER->g, $1.v0, $3.v0, 0, 0, 0);
+    }
+    else
+    {
+      struct vertex ** A = $1.v;
+      if($1.len == 1)
+        A = &$1.v0;
+
+      struct vertex ** B = $3.v;
+      if($3.len == 1)
+        B = &$3.v0;
+
+      YFATAL(graph_hyperconnect, PARSER->g, A, $1.len, B, $3.len, 0, 0, 0);
+      if($1.len > 1)
+        wfree(A);
+      if($3.len > 1)
+        wfree(B);
+    }
   }
   ;
 
-edge
-  : edge_vertex ':' attrs ':' edge_vertex 
+edge_vertex_list
+  : edge_vertex_list ',' edge_vertex
   {
-    YFATAL(graph_connect, xtra->g, $1, $5, $3);
+    $$ = $1;
+    YFATAL(xrealloc, &$$.v, sizeof(*$$.v), $$.len + 1, $$.len);
+    if($$.len == 1)
+      $$.v[0] = $$.v0;
+    $$.v[$$.len++] = $3;
   }
-  | edge_vertex ':' edge_vertex
+  | edge_vertex
   {
-    YFATAL(graph_connect, xtra->g, $1, $3, 0);
+    $$.v = 0;
+    $$.v0 = $1;
+    $$.len = 1;
   }
   ;
 
 edge_vertex
-  : POSINT
+  : uint32
   {
-    $$ = map_get(xtra->vertex_map, &$1, sizeof($1));
+    $$ = map_get(PARSER->vertex_map, (void*)&$1, sizeof($1));
   }
   | vertex
   ;
 
 vertex
-  : POSINT '-' vertex_label '!' attrs
+  : uint32 '-' vertex_label '!' vertex_attrs
   {
     $$ = $3;
     $$->attrs = $5;
-    YFATAL(map_set, xtra->vertex_map, &$1, sizeof($1), $$);
+    YFATAL(map_put, PARSER->vertex_map, (void*)&$1, sizeof($1), $$, 0);
   }
-  | POSINT '-' vertex_label
+  | uint32 '-' vertex_label
   {
     $$ = $3;
-    YFATAL(map_set, xtra->vertex_map, &$1, sizeof($1), $$);
+    YFATAL(map_put, PARSER->vertex_map, (void*)&$1, sizeof($1), $$, 0);
   }
-  | vertex_label '!' attrs
+  | vertex_label '!' vertex_attrs
   {
     $$ = $1;
     $$->attrs = $3;
@@ -143,8 +209,8 @@ vertex
 vertex_label
   : label
   {
-    YFATAL(vertex_creates, &$$, xtra->g, 0, $1);
-    *(char **)vertex_value($$) = $1;
+    YFATAL(vertex_creates, &$$, PARSER->g, 0, $1);
+    vertex_value_set($$, PARSER->g, &$1);
   }
   ;
 
@@ -156,13 +222,56 @@ label
   }
   ;
 
-attrs
-  : HEX
+vertex_attrs
+  : hex32
   | STR
   {
-    typeof($$) * T;
-    $$ = 0;
-    if((T = dictionary_get(xtra->definitions, @1.s, @1.l)))
-      $$ = *T;
+    $$ = attrs32_value_bynamew(PARSER->vertex_defs, @1.s, @1.l);
+  }
+  ;
+
+edge_attrs
+  : hex32
+  | STR
+  {
+    $$ = attrs32_value_bynamew(PARSER->edge_defs, @1.s, @1.l);
+  }
+  ;
+
+hex32
+  : HEX8
+  {
+    $$ = $1;
+  }
+  | HEX16
+  {
+    $$ = $1;
+  }
+  | HEX32
+  {
+    $$ = $1;
+  }
+  ;
+
+uint32
+  : INTMAX8
+  {
+    $$ = $1;
+  }
+  | INTMAX16
+  {
+    $$ = $1;
+  }
+  | UINTMAX8
+  {
+    $$ = $1;
+  }
+  | UINTMAX16
+  {
+    $$ = $1;
+  }
+  | UINTMAX32
+  {
+    $$ = $1;
   }
   ;

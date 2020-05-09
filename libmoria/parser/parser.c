@@ -21,6 +21,10 @@
 #include "valyria/map.h"
 #include "valyria/dictionary.h"
 
+/* flex and bison do not agree on these names */
+#define YYSTYPE GRAPH_YYSTYPE
+#define YYLTYPE yyu_location
+
 #include "internal.h"
 #include "parser.internal.h"
 #include "MORIA.errtab.h"
@@ -30,39 +34,46 @@
 #include "graph.states.h"
 #include "logging.internal.h"
 
-struct graph_parser
-{
-  void * p;
+static yyu_vtable vtable = {
+    yy_scan_bytes : graph_yy_scan_bytes
+  , yy_delete_buffer : graph_yy_delete_buffer
+  , yyset_extra : graph_yyset_extra
+  , yyparse : graph_yyparse
+  , yylex_init : graph_yylex_init
+  , yylex_destroy : graph_yylex_destroy
 };
-
-//
-// static
-//
-
-static const char * tokenname(int token)
-{
-  return graph_tokennames[token];
-}
-
-static const char * statename(int state)
-{
-  return state >= 0 ? graph_statenames[state] : "";
-}
-
-//
-// protected
-//
-
-//
-// public
-//
 
 API xapi graph_parser_create(graph_parser ** const parser)
 {
   enter;
 
   fatal(xmalloc, parser, sizeof(**parser));
-  tfatalize(perrtab_KERNEL, ENOMEM, graph_yylex_init, &(*parser)->p);
+#if DEBUG || DEVEL || XUNIT
+  (*parser)->yyu.logs = L_MORIA | L_GRAPH;
+#endif
+
+  fatal(yyu_parser_init, &(*parser)->yyu, &vtable, MORIA_SYNTAX);
+
+  fatal(yyu_parser_init_tokens
+    , &(*parser)->yyu
+    , graph_numtokens
+    , graph_mintoken
+    , graph_maxtoken
+    , graph_tokenindexes
+    , graph_tokennumbers
+    , graph_tokennames
+    , graph_tokenstrings
+    , graph_tokenstring_tokens
+  );
+
+  fatal(yyu_parser_init_states
+    , &(*parser)->yyu
+    , graph_numstates
+    , graph_statenumbers
+    , graph_statenames
+  );
+
+  fatal(map_create, &(*parser)->vertex_map);
 
   finally : coda;
 }
@@ -72,7 +83,11 @@ API xapi graph_parser_xfree(graph_parser* const p)
   enter;
 
   if(p)
-    graph_yylex_destroy(p->p);
+  {
+    fatal(map_xfree, p->vertex_map);
+
+    fatal(yyu_parser_xdestroy, &p->yyu);
+  }
 
   wfree(p);
 
@@ -96,70 +111,25 @@ static void free_value(void * value)
 
 API xapi graph_parser_graph_create(graph ** restrict g, uint32_t identity)
 {
-  xproxy(graph_createx, g, identity, sizeof(void*), free_value, 0);
+  xproxy(graph_createx, g, identity, sizeof(void*), 0, free_value, 0);
 }
 
 API xapi graph_parser_parse(
-    graph_parser ** restrict parser
-  , const char * const restrict text
+    graph_parser * restrict parser
+  , graph * restrict g
+  , char * const restrict text
   , size_t len
-  , graph ** restrict g
-  , uint32_t identity
 )
 {
   enter;
 
-  graph * lg = 0;
-  graph_parser * lp = 0;
-  void * lexer_state = 0;
+  fatal(map_recycle, parser->vertex_map);
 
-  graph_xtra pp = {
-      .tokname      = tokenname
-    , .statename    = statename
-#if DEBUG || DEVEL || XUNIT
-    , .state_logs   = L_MORIA | L_GRAPH
-    , .token_logs   = L_MORIA | L_GRAPH
-#endif
-  };
+  parser->vertex_defs = g->vertex_defs;
+  parser->edge_defs = g->edge_defs;
+  parser->g = g;
 
-  // parser
-  if(!parser)
-    parser = &lp;
-  if(!*parser)
-    fatal(graph_parser_create, parser);
+  fatal(yyu_parse, &parser->yyu, text, len, "-graph-", 0, 0, 0);
 
-  // storage
-  if(!g)
-    g = &lg;
-  if(!*g)
-    fatal(graph_parser_graph_create, g, identity);
-
-  // create state specific to this parse
-  if((lexer_state = graph_yy_scan_bytes(text, len, (*parser)->p)) == 0)
-    fail(KERNEL_ENOMEM);
-
-  fatal(dictionary_create, &pp.definitions, sizeof(uint32_t));
-  fatal(map_create, &pp.vertex_map);
-
-  pp.scanner = (*parser)->p;
-  pp.g = *g;
-
-  // make available to the lexer
-  graph_yyset_extra(&pp, (*parser)->p);
-
-  // invoke the appropriate parser, raise errors as needed
-  fatal(yyu_reduce, graph_yyparse, &pp, MORIA_SYNTAX);
-
-  // ownership transfer
-  lg = 0;
-
-finally:
-  graph_yy_delete_buffer(lexer_state, (*parser)->p);
-  yyu_extra_destroy(&pp.yyu);
-  fatal(map_xfree, pp.vertex_map);
-  fatal(dictionary_xfree, pp.definitions);
-
-  fatal(graph_parser_xfree, lp);
-  fatal(graph_ixfree, &lg);
-coda;
+  finally : coda;
 }

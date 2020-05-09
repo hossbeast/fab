@@ -18,31 +18,35 @@
 #ifndef GRAPH_PARSER_INTERNAL_H
 #define GRAPH_PARSER_INTERNAL_H
 
-#ifndef YYU_EXTRA_TYPE
- struct graph_xtra;
- #define YYU_EXTRA_TYPE struct graph_xtra
-#endif
+#include "xapi.h"
+#include "types.h"
+
 #include "yyutil/parser.h"
 #include "parser.h"
 
 struct graph;
+struct vertex;
+struct attrs32;
 
-typedef struct graph_xtra
-{
-  /* yyu-defined xtra fields */
-  union {
-    yyu_extra;
-    yyu_extra yyu;
-  };
+struct graph_yystype {
+  yyu_lval yyu;
+  uint32_t u32;
+  struct vertex * vertex;
+  char * label;
+};
+
+struct graph_parser {
+  yyu_parser yyu;
 
   // definitions map during parsing
-  struct dictionary * definitions;
+  const struct attrs32 * vertex_defs;
+  const struct attrs32 * edge_defs;
 
   // vertex lookup during parsing
   struct map * vertex_map;
 
   struct graph * g;  // (returns) parsed graph
-} graph_xtra;
+};
 
 /// graph_yyerror
 //
@@ -54,7 +58,7 @@ typedef struct graph_xtra
 // DETAILS
 //  called from tab.o and lex.o
 //
-static void graph_yyerror(struct YYLTYPE * loc, void * scanner, graph_xtra * pp, char const * err)
+static void graph_yyerror(yyu_location * loc, void * scanner, graph_parser * pp, char const * err)
   __attribute__((weakref("yyu_grammar_error")));
 
 /// graph_parser_graph_create

@@ -18,26 +18,44 @@
 #ifndef _MORIA_VERTEX_INTERNAL_H
 #define _MORIA_VERTEX_INTERNAL_H
 
+#include "vertex.h"
+#include "macros.h"
+
+#include "traverse.internal.h"
+
 struct graph;
 struct list;    // valyria/list.h
 
-struct vertex_internals
-{
-  size_t  up_partition;   // index of the first item in up indexed by vertex
-  size_t  down_partition; // index of the first item in down indexed by vertex
-
+typedef struct vertex_t {
   union {
+    vertex vx;
     struct {
-      int guard;      // there exists a frame exploring this vertex
-      int traveled;   // id of the last traversal to travel this vertex
+      fieldof(vertex, label);
+      fieldof(vertex, label_len);
+      fieldof(vertex, attrs);
+      fieldof(vertex, up);
+      fieldof(vertex, up_identity);
+      fieldof(vertex, down);
+      fieldof(vertex, ref);
+      fieldof(vertex, lln);
+      fieldof(vertex, graph_lln);
     };
   };
 
+  entity ent;     // traversable entity
   char value[];   // opaque user data
-};
+} vertex_t;
 
-#define VERTEX_INTERNALS struct vertex_internals
-#include "vertex.h"
+STATIC_ASSERT(offsetof(vertex_t, value) % 8 == 0);
+
+ALIGNEDOF(vertex, vertex_t, label);
+ALIGNEDOF(vertex, vertex_t, label_len);
+ALIGNEDOF(vertex, vertex_t, attrs);
+ALIGNEDOF(vertex, vertex_t, up);
+ALIGNEDOF(vertex, vertex_t, down);
+ALIGNEDOF(vertex, vertex_t, ref);
+ALIGNEDOF(vertex, vertex_t, lln);
+ALIGNEDOF(vertex, vertex_t, graph_lln);
 
 /// vertex_free
 //
@@ -52,6 +70,9 @@ xapi vertex_xfree(vertex * restrict v);
 //  free a vertex, zero its reference
 //
 xapi vertex_ixfree(vertex ** const restrict v)
+  __attribute__((nonnull));
+
+xapi vertex_delete(vertex_t * restrict v, struct graph * restrict g)
   __attribute__((nonnull));
 
 #endif

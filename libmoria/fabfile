@@ -176,23 +176,25 @@ $lflags_xapi_devel  = [ $lopts $libdeps_xapi_devel [ -Wl,-soname,libmoria-xapi-d
   [ $cc ] [ $cflags -shared ~ uu fi ] -o [ $@ ] [ $@ ~ rx/aneedw lx/o uu fi ]
 }
 
-[ @test ] :^ [ $xunit_xapi_devel $libdeps_xapi_devel ]
+[ @testsos ] : [ $* ~ lsr l/test\/test_ sx/c/xapi.xunit.so sy ]
+
+[ @test ] :^ [ $xunit_xapi_devel $libmoria_xapi_devel $libdeps_xapi_devel ]
 [ @test ] : [ $* ~ lsr l/test\/test_ sx/c/xapi.xunit.so sy ]
 {
   (
-    [ $valgrind_runner ] [ $xunit_xapi_devel ] [ $libdeps_xapi_devel ~ fi ] [
+    [ $valgrind_runner ] [ $xunit_xapi_devel ] [ $libdeps_xapi_devel $libmoria_xapi_devel ~ fi ] [
     ] [ $@ ~ rx/ineed lx/so fi ] +UNIT
   ) | tee /dev/fd/501
   > exit ${PIPESTATUS[0]}
 }
 
-[ @test.fast ] :^ [ $xunit_xapi_devel $libdeps_xapi_devel ]
+[ @test.fast ] :^ [ $xunit_xapi_devel $libmoria_xapi_devel $libdeps_xapi_devel ]
 [ @test.fast ] : [ $* ~ lsr l/test\/test_ sx/c/xapi.xunit.so sy ]
 {
   (
-      [ $xunit_xapi_devel ] [ $libdeps_xapi_devel ~ fi ] [
+      [ $xunit_xapi_devel ] [ $libdeps_xapi_devel $libmoria_xapi_devel ~ fi ] [
     ] [ $@ ~ rx/ineed lx/so fi ] [
-    ] +UNIT
+    ] +UNIT --nofork
   ) | tee /dev/fd/501
   > exit ${PIPESTATUS[0]}
 }

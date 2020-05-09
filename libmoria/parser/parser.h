@@ -21,6 +21,13 @@
 #include "types.h"
 #include "xapi.h"
 
+/*
+
+This should probably be internal only, because vertices are allocated with their value as a pointer
+to their label, so not useful for e.g. fabd in which vertices are allocated with fabd-node as value.
+
+*/
+
 struct graph;
 struct graph_parser;
 typedef struct graph_parser graph_parser;
@@ -51,7 +58,7 @@ xapi graph_parser_ixfree(graph_parser ** const restrict)
 /// graph_parser_parse
 //
 // SUMMARY
-//  parse the config at the specified path
+//  parse the graph
 //
 // PARAMETERS
 //  [parser]  - (returns) reusable parser
@@ -61,12 +68,11 @@ xapi graph_parser_ixfree(graph_parser ** const restrict)
 //  [g]       - (returns) parsed graph
 //
 xapi graph_parser_parse(
-    graph_parser ** restrict parser
-  , const char * restrict buf
+    graph_parser * restrict parser
+  , struct graph * restrict g
+  , char * restrict buf
   , size_t len
-  , struct graph ** restrict g
-  , uint32_t identity
 )
-  __attribute__((nonnull(2)));
+  __attribute__((nonnull));
 
 #endif

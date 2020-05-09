@@ -20,6 +20,7 @@
 #include "narrator/load.h"
 #include "valyria/load.h"
 #include "xlinux/load.h"
+#include "yyutil/load.h"
 
 #include "internal.h"
 #include "load.internal.h"
@@ -41,6 +42,7 @@ API xapi moria_load()
     fatal(xlinux_load);
     fatal(narrator_load);
     fatal(valyria_load);
+    fatal(yyutil_load);
 
     // modules
     fatal(logging_setup);
@@ -60,6 +62,7 @@ API xapi moria_unload()
     fatal(xlinux_unload);
     fatal(narrator_unload);
     fatal(valyria_unload);
+    fatal(yyutil_unload);
   }
 
   finally : coda;

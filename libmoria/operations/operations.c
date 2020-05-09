@@ -19,8 +19,13 @@
 #include "types.h"
 
 #include "xlinux/KERNEL.errtab.h"
+#include "xapi/SYS.errtab.h"
 #include "valyria/dictionary.h"
 #include "valyria/map.h"
+
+/* flex and bison do not agree on these names */
+#define YYSTYPE OPERATIONS_YYSTYPE
+#define YYLTYPE yyu_location
 
 #include "internal.h"
 #include "operations.internal.h"
@@ -33,30 +38,20 @@
 #include "graph.internal.h"
 #include "logging.internal.h"
 #include "vertex.internal.h"
+#include "edge.internal.h"
+
+#include "macros.h"
+#include "attrs.h"
 
 static const char * operation_type_names[] = {
-#define GRAPH_OPERATION_DEF(x) [x] = #x,
+#undef DEF
+#define DEF(x) [x] = #x,
   GRAPH_OPERATION_TABLE
-};
-
-struct operations_parser
-{
-  void * p;
 };
 
 //
 // private
 //
-
-static const char * tokenname(int token)
-{
-  return operations_tokennames[token];
-}
-
-static const char * statename(int state)
-{
-  return state >= 0 ? operations_statenames[state] : "";
-}
 
 typedef struct {
   identifier * id;
@@ -113,7 +108,7 @@ static xapi identifier_resolve(graph * restrict g, identifier * id, void * mm_tm
   graph_lookup_identifier_context context;
 
   context.first = id;
-  fatal(graph_lookup, g, graph_lookup_identifier, &context, mm_tmp, vertices, &r);
+  fatal(graph_lookup, g, graph_lookup_identifier, 0, &context, mm_tmp, vertices, &r);
 
   *v = 0;
   if(r == 1)
@@ -141,6 +136,7 @@ static xapi identifier_create(
   const char * label = 0;
   uint16_t label_len = 0;
   uint32_t attrs = 0;
+  vertex * pv = 0;
 
   // attempt lookup
   fatal(identifier_resolve, g, id, mm_tmp, v);
@@ -151,13 +147,12 @@ static xapi identifier_create(
     fatal(graph_lookup_identifier_attrs, &context, &label, &label_len, &attrs);
     if(label)
     {
-      vertex * pv = 0;
       if(context.id)
         fatal(identifier_create, g, dispatch, context.id, mm_tmp, &pv);
 
-      fatal(dispatch->vertex_create, v, g, attrs, label, label_len);
+      fatal(dispatch->create_vertex, v, g, attrs, id->op_attrs, label, label_len);
       if(pv)
-        fatal(dispatch->connect, g, pv, *v, g->identity);
+        fatal(dispatch->connect, g, pv, *v, g->identity, 0, 0);
     }
   }
 
@@ -168,19 +163,40 @@ static xapi identifier_create(
 // public
 //
 
+void identifier_list_free(identifier_list * id)
+{
+  int x;
+
+  if(!id)
+    return;
+
+  if(id->len == 1)
+  {
+    identifier_free(id->v0);
+    wfree(id);
+    return;
+  }
+
+  for(x = 0; x < id->len; x++)
+    identifier_free(id->v[x]);
+  wfree(id->v);
+  wfree(id);
+}
+
 void identifier_free(identifier * id)
 {
   if(id)
-    free(id->next);
-  free(id);
+    identifier_free(id->next);
+
+  wfree(id);
 }
 
 void operation_free(operation * op)
 {
   if(op)
   {
-    identifier_free(op->A);
-    identifier_free(op->B);
+    identifier_list_free(op->A);
+    identifier_list_free(op->B);
   }
 
   free(op);
@@ -194,6 +210,15 @@ const char * operation_type_name(operation_type type)
   return operation_type_names[type];
 }
 
+static yyu_vtable vtable = {
+    yy_scan_bytes : operations_yy_scan_bytes
+  , yy_delete_buffer : operations_yy_delete_buffer
+  , yyset_extra : operations_yyset_extra
+  , yyparse : operations_yyparse
+  , yylex_init : operations_yylex_init
+  , yylex_destroy : operations_yylex_destroy
+};
+
 //
 // API
 //
@@ -203,7 +228,30 @@ API xapi operations_parser_create(operations_parser ** const parser)
   enter;
 
   fatal(xmalloc, parser, sizeof(**parser));
-  tfatalize(perrtab_KERNEL, ENOMEM, operations_yylex_init, &(*parser)->p);
+#if DEBUG || DEVEL || XUNIT
+  (*parser)->yyu.logs = L_MORIA | L_OPERATIONS;
+#endif
+
+  fatal(yyu_parser_init, &(*parser)->yyu, &vtable, MORIA_SYNTAX);
+
+  fatal(yyu_parser_init_tokens
+    , &(*parser)->yyu
+    , operations_numtokens
+    , operations_mintoken
+    , operations_maxtoken
+    , operations_tokenindexes
+    , operations_tokennumbers
+    , operations_tokennames
+    , operations_tokenstrings
+    , operations_tokenstring_tokens
+  );
+
+  fatal(yyu_parser_init_states
+    , &(*parser)->yyu
+    , operations_numstates
+    , operations_statenumbers
+    , operations_statenames
+  );
 
   finally : coda;
 }
@@ -213,7 +261,9 @@ API xapi operations_parser_xfree(operations_parser* const p)
   enter;
 
   if(p)
-    operations_yylex_destroy(p->p);
+  {
+    fatal(yyu_parser_xdestroy, &p->yyu);
+  }
 
   wfree(p);
 
@@ -230,122 +280,207 @@ API xapi operations_parser_ixfree(operations_parser ** const p)
   finally : coda;
 }
 
+API xapi operations_parser_operations_create(list ** restrict operations)
+{
+  enter;
+
+  fatal(list_createx, operations, 0, 0, operation_free, 0);
+
+  finally : coda;
+}
+
 API xapi operations_parser_parse(
-    operations_parser ** restrict parser
-  , const char * const restrict text
+    operations_parser * restrict parser
+  , graph * restrict g
+  , char * const restrict text
   , size_t len
-  , list ** restrict operations
+  , list * restrict operations
 )
 {
   enter;
 
-  list * lops = 0;
-  operations_parser * lp = 0;
-  void * lexer_state = 0;
+  fatal(list_recycle, operations);
 
-  // parser
-  if(!parser)
-    parser = &lp;
-  if(!*parser)
-    fatal(operations_parser_create, parser);
+  parser->li = operations;
+  parser->vertex_defs = g->vertex_defs;
+  parser->edge_defs = g->edge_defs;
 
-  // storage
-  if(!operations)
-    operations = &lops;
-  if(!*operations)
-    fatal(list_createx, operations, operation_free, 0, 0);
+  fatal(yyu_parse, &parser->yyu, text, len, "-ops-", 0, 0, 0);
 
-  operations_xtra pp = {
-      .tokname      = tokenname
-    , .statename    = statename
-#if DEBUG || DEVEL || XUNIT
-    , .state_logs   = L_MORIA | L_OPERATIONS
-    , .token_logs   = L_MORIA | L_OPERATIONS
-#endif
-  };
-
-  // create state specific to this parse
-  if((lexer_state = operations_yy_scan_bytes(text, len, (*parser)->p)) == 0)
-    fail(KERNEL_ENOMEM);
-
-  fatal(dictionary_create, &pp.definitions, sizeof(uint32_t));
-
-  pp.scanner = (*parser)->p;
-  pp.li = *operations;
-
-  // make available to the lexer
-  operations_yyset_extra(&pp, (*parser)->p);
-
-  // invoke the appropriate parser, raise errors as needed
-  fatal(yyu_reduce, operations_yyparse, &pp, MORIA_SYNTAX);
-
-  // ownership transfer
-  lops = 0;
-
-finally:
-  operations_yy_delete_buffer(lexer_state, (*parser)->p);
-  yyu_extra_destroy(&pp.yyu);
-  fatal(dictionary_xfree, pp.definitions);
-
-  fatal(operations_parser_xfree, lp);
-  fatal(list_ixfree, &lops);
-coda;
+  finally : coda;
 }
 
-API xapi operations_perform(graph * restrict g, const operations_dispatch * restrict dispatch, list * restrict ops)
+API xapi operations_perform(graph * restrict g, operations_dispatch * restrict dispatch, list * restrict ops)
 {
   enter;
 
-  vertex *A = 0, *B = 0;
-  edge * e;
+  vertex *A = 0;
+  vertex *B = 0;
+  vertex **Alist = 0;
+  vertex **Blist = 0;
+  edge *e;
   operation *op;
   void * mm_tmp = 0;
-
   int x;
-  for(x = 0; x < ops->l; x++)
+  int y;
+
+  if(dispatch->setup)
+  {
+    fatal(dispatch->setup, dispatch, g);
+  }
+
+  for(x = 0; x < ops->size; x++)
   {
     op = list_get(ops, x);
 
     if(op->type == GRAPH_OPERATION_VERTEX)
     {
-      fatal(identifier_create, g, dispatch, op->A, &mm_tmp, &A);
+      if(op->A->len == 1)
+        fatal(identifier_create, g, dispatch, op->A->v0, &mm_tmp, &A);
+      else
+      {
+        for(y = 0; y < op->A->len; y++)
+          fatal(identifier_create, g, dispatch, op->A->v[y], &mm_tmp, &A);
+      }
+    }
+    else if(op->type == GRAPH_OPERATION_REFRESH)
+    {
+      if(op->A->len == 1)
+        fatal(identifier_create, g, dispatch, op->A->v0, &mm_tmp, &A);
+      else
+      {
+        for(y = 0; y < op->A->len; y++)
+          fatal(identifier_create, g, dispatch, op->A->v[y], &mm_tmp, &A);
+      }
+
+      fatal(dispatch->refresh_vertex, g, A);
+    }
+    else if(op->type == GRAPH_OPERATION_INVALIDATE)
+    {
+      if(op->A->len == 1)
+        fatal(identifier_create, g, dispatch, op->A->v0, &mm_tmp, &A);
+      else
+      {
+        for(y = 0; y < op->A->len; y++)
+          fatal(identifier_create, g, dispatch, op->A->v[y], &mm_tmp, &A);
+      }
+
+      fatal(dispatch->invalidate_vertex, g, A);
     }
     else if(op->type == GRAPH_OPERATION_CONNECT)
     {
-      fatal(identifier_create, g, dispatch, op->A, &mm_tmp, &A);
-      fatal(identifier_create, g, dispatch, op->B, &mm_tmp, &B);
+      if(op->A->len == 1 && op->B->len == 1)
+      {
+        fatal(identifier_create, g, dispatch, op->A->v0, &mm_tmp, &A);
+        fatal(identifier_create, g, dispatch, op->B->v0, &mm_tmp, &B);
 
-      fatal(graph_connect, g, A, B, op->attrs);
+        fatal(dispatch->connect, g, A, B, op->attrs, 0, 0);
+      }
+      else
+      {
+        fatal(xrealloc, &Alist, sizeof(*Alist), op->A->len, 0);
+        if(op->A->len == 1)
+        {
+          fatal(identifier_create, g, dispatch, op->A->v0, &mm_tmp, &Alist[0]);
+        }
+        else
+        {
+          for(y = 0; y < op->A->len; y++)
+            fatal(identifier_create, g, dispatch, op->A->v[y], &mm_tmp, &Alist[y]);
+        }
+
+        fatal(xrealloc, &Blist, sizeof(*Blist), op->B->len, 0);
+        if(op->B->len == 1)
+        {
+          fatal(identifier_create, g, dispatch, op->B->v0, &mm_tmp, &Blist[0]);
+        }
+        else
+        {
+          for(y = 0; y < op->B->len; y++)
+            fatal(identifier_create, g, dispatch, op->B->v[y], &mm_tmp, &Blist[y]);
+        }
+
+        fatal(dispatch->hyperconnect, g, Alist, op->A->len, Blist, op->B->len, op->attrs, 0, 0);
+      }
+    }
+    else if(op->type == GRAPH_OPERATION_DISCONNECT)
+    {
+      if(op->A->len == 1 && op->B->len == 1)
+      {
+        fatal(identifier_resolve, g, op->A->v0, &mm_tmp, &A);
+        fatal(identifier_resolve, g, op->B->v0, &mm_tmp, &B);
+
+        e = edge_between(A, B);
+      }
+      else
+      {
+        fatal(xrealloc, &Alist, sizeof(*Alist), op->A->len, 0);
+        if(op->A->len == 1)
+        {
+          fatal(identifier_resolve, g, op->A->v0, &mm_tmp, &Alist[0]);
+        }
+        else
+        {
+          for(y = 0; y < op->A->len; y++)
+            fatal(identifier_resolve, g, op->A->v[y], &mm_tmp, &Alist[y]);
+        }
+
+        fatal(xrealloc, &Blist, sizeof(*Blist), op->B->len, 0);
+        if(op->B->len == 1)
+        {
+          fatal(identifier_resolve, g, op->B->v0, &mm_tmp, &Blist[0]);
+        }
+        else
+        {
+          for(y = 0; y < op->B->len; y++)
+            fatal(identifier_resolve, g, op->B->v[y], &mm_tmp, &Blist[y]);
+        }
+
+        e = edge_of(Alist, op->A->len, Blist, op->B->len);
+      }
+      fatal(dispatch->disconnect, g, e);
     }
     else
     {
-      fatal(identifier_resolve, g, op->A, &mm_tmp, &A);
-      fatal(identifier_resolve, g, op->B, &mm_tmp, &B);
-      e = edge_between(A, B);
-
-      if(op->type == GRAPH_OPERATION_DISCONNECT)
-      {
-        fatal(graph_disconnect, g, A, B);
-      }
-      else if(op->type == GRAPH_OPERATION_DISINTEGRATE)
-      {
-        traversal_criteria criteria = {
-            edge_travel: e->attrs
-          , edge_visit: e->attrs
-        };
-        fatal(graph_disintegrate, g, e, 0, 0, &criteria, MORIA_TRAVERSE_POST | MORIA_TRAVERSE_DOWN, 0);
-      }
+      RUNTIME_ABORT();
     }
   }
 
 finally:
   wfree(mm_tmp);
+  wfree(Alist);
+  wfree(Blist);
+
+  if(dispatch->cleanup)
+  {
+    fatal(dispatch->cleanup, dispatch, g);
+  }
 coda;
 }
 
-API xapi graph_connect(graph * const restrict g, vertex * const restrict A, vertex * const restrict B, uint32_t attrs)
+API xapi graph_connect(graph * const restrict g, vertex * const restrict Ax, vertex * const restrict Bx, uint32_t attrs, edge ** restrict er, bool * restrict r)
 {
   enter;
+
+  fatal(graph_connect_replace, g, Ax, Bx, attrs, er, r, 0);
+
+  finally : coda;
+}
+
+API xapi graph_connect_replace(
+    struct graph * const restrict g
+  , struct vertex * Ax
+  , struct vertex * Bx
+  , uint32_t attrs
+  , struct edge ** restrict er
+  , bool * restrict r
+  , struct vertex ** oldBx
+)
+{
+  enter;
+
+  const vertex * X;
+  const vertex * Y;
 
 /*
   if inserting on identity
@@ -357,56 +492,79 @@ API xapi graph_connect(graph * const restrict g, vertex * const restrict A, vert
     if vertex is found -> EXISTS (edge already exists)
 */
 
-  int x;
-  edge * e = 0;
-  edge * tmp = 0;
+  vertex_t * A = containerof(Ax, vertex_t, vx);
+  vertex_t * B = containerof(Bx, vertex_t, vx);
 
-  struct edge_key_compare_label_context label_ctx;
-  struct edge_key_compare_vertex_context vertex_ctx;
+  edge_t * e = 0;
+  edge_t * existing_edge = 0;
+  edge_key key;
+  rbnode * rbn;
 
-  // search in the identity partition
-  if(A->down_partition == 0)
-  {
-    label_ctx = (typeof(label_ctx)) { lc : -1 };
-  }
-  else
-  {
-    label_ctx = (typeof(label_ctx)) { B : B->label, len : B->label_len };
-    e = list_search_range(A->down, 0, A->down_partition, &label_ctx, edge_key_compare_label);
+  // search by label (identity)
+  key = (typeof(key)) {
+      attrs : MORIA_EDGE_IDENTITY
+    , Blist : (vertex*[]) { &B->vx }
+    , Blen : 1
+  };
+  if((rbn = rbtree_lookup_node(&A->down, &key, edge_cmp_key_down))) {
+    e = containerof(rbn, edge_t, rbn_down);
   }
 
   // idempotency
-  if(e && e->B == B && e->attrs == attrs)
-    goto XAPI_FINALIZE;
-
-  if(e && attrs == g->identity)
+  if(e && (e->attrs & ~(MORIA_EDGE_IDENTITY | MORIA_EDGE_HYPER)) == attrs)
   {
-    xapi_info_pushf("edge", "%s:0x%x:%s", e->A->label, e->attrs, e->B->label);
-    fail(MORIA_LABELEXISTS);
+    X = e->B;
+    while(X->attrs & MORIA_VERTEX_LINK) {
+      X = X->ref;
+    }
+
+    Y = &B->vx;
+    while(Y->attrs & MORIA_VERTEX_LINK) {
+      Y = Y->ref;
+    }
+
+    if(X == Y)
+    {
+      if(er) *er = &e->ex;
+      if(r) *r = false;
+      goto XAPI_FINALIZE;
+    }
+  }
+
+  if(e && g->identity && attrs == g->identity)
+  {
+    if(oldBx) // permit replacement of B
+    {
+      existing_edge = e;
+    }
+    else
+    {
+      xapi_info_pushf("edge", "%s:0x%x:%s", e->A->label, e->attrs, e->B->label);
+      fail(MORIA_LABELEXISTS);
+    }
   }
 
   // different attrs for this edge
-  else if(e && e->B == B)
+  else if(e && e->B == &B->vx)
   {
     xapi_info_pushf("edge", "%s:0x%x:%s", e->A->label, e->attrs, e->B->label);
     fail(MORIA_VERTEXEXISTS);
   }
 
-  // search in the non-identity partition
+  // search by vertex (non-identity)
+  key.attrs &= ~MORIA_EDGE_IDENTITY;
   e = 0;
-  if(A->down->l == A->down_partition)
-  {
-    vertex_ctx = (typeof(vertex_ctx)) { lc : -1, lx : A->down_partition };
-  }
-  else
-  {
-    vertex_ctx = (typeof(vertex_ctx)) { B : B };
-    e = list_search_range(A->down, A->down_partition, A->down->l - A->down_partition, &vertex_ctx, edge_key_compare_vertex);
+  if((rbn = rbtree_lookup_node(&A->down, &key, edge_cmp_key_down))) {
+    e = containerof(rbn, edge_t, rbn_down);
   }
 
   // idempotency
-  if(e && e->attrs == attrs)
+  if(e && (e->attrs & ~(MORIA_EDGE_IDENTITY | MORIA_EDGE_HYPER)) == attrs)
+  {
+    if(er) *er = &e->ex;
+    if(r) *r = false;
     goto XAPI_FINALIZE;
+  }
 
   // different attrs for this edge
   if(e)
@@ -416,91 +574,182 @@ API xapi graph_connect(graph * const restrict g, vertex * const restrict A, vert
   }
 
   // check for multiple up edges
-  if(attrs == g->identity && B->up_partition)
+  if(g->identity && attrs == g->identity && B->up_identity)
   {
-    e = list_get(B->up, 0);
-    if(e->A != A)
+    if(B->up_identity->A != &A->vx)
     {
-      xapi_info_pushf("edge", "%s:0x%x:%s", e->A->label, e->attrs, e->B->label);
+      xapi_info_pushf("edge", "%s:0x%x:%s", B->up_identity->A->label, B->up_identity->attrs, B->label);
       fail(MORIA_UPEXISTS);
     }
   }
 
-  // create the edge
-  fatal(xmalloc, &tmp, sizeof(*tmp));
-  tmp->A = A;
-  tmp->B = B;
-  tmp->attrs = attrs;
-  fatal(list_push, g->edges, tmp);
-  e = tmp;
-  tmp = 0;
-  e->edges_index = g->edges->l - 1;
-
-  // insert into A->down
-  if(attrs == g->identity)
+  if(existing_edge)
   {
-    e->down_index = label_ctx.lx;
-    if(label_ctx.lc > 0)
-      e->down_index++;
+    /* just replace the B node on the existing edge and return the previous B node */
+    e = existing_edge;
+    *oldBx = e->B;
+    e->B->up_identity = 0;
+    e->B = &B->vx;
+    B->up_identity = &e->ex;
   }
   else
   {
-    e->down_index = vertex_ctx.lx;
-    if(vertex_ctx.lc > 0)
-      e->down_index++;
-  }
+    fatal(edge_alloc, g, &e);
+    e->attrs = attrs;
+    e->A = &A->vx;
+    e->B = &B->vx;
 
-  fatal(list_insert, A->down, e->down_index, e);
-  for(x = e->down_index + 1; x < A->down->l; x++)
-    ((edge*)list_get(A->down, x))->down_index++;
-
-  // search for A in B->up
-  if(attrs == g->identity)
-  {
-    if(B->up_partition == 0)
+    if(g->identity && (attrs & g->identity) == g->identity)
     {
-      label_ctx = (typeof(label_ctx)) { lc : -1 };
+      e->attrs |= MORIA_EDGE_IDENTITY;
+      B->up_identity = &e->ex;
     }
     else
     {
-      label_ctx = (typeof(label_ctx)) { A : A->label, len : A->label_len };
-      list_search_range(B->up, 0, B->up_partition, &label_ctx, edge_key_compare_label);
+      rbtree_put(&B->up, e, rbn_up, edge_cmp_rbn_up);
     }
 
-    e->up_index = label_ctx.lx;
-    if(label_ctx.lc > 0)
-      e->up_index++;
+    rbtree_put(&A->down, e, rbn_down, edge_cmp_rbn_down);
+  }
+
+  if(er) *er = &e->ex;
+  if(r) *r = true;
+
+  finally : coda;
+}
+
+API xapi graph_hyperconnect(
+    graph * const restrict g
+  , vertex ** const restrict Axlist
+  , uint16_t Axlen
+  , vertex ** const restrict Bxlist
+  , uint16_t Bxlen
+  , uint32_t attrs
+  , edge ** restrict er
+  , bool * restrict r
+)
+{
+  enter;
+
+  edge_t * e = 0;
+  rbnode * rbn;
+  edge_key key;
+  int x;
+
+  /* prefer non-hyperedge when possible */
+  if(Axlen == 1 && Bxlen == 1)
+  {
+    fatal(graph_connect, g, Axlist[0], Bxlist[0], attrs, er, r);
+    er = 0;
+    goto XAPI_FINALIZE;
+  }
+
+  /* if inserting on identity -> ERROR (hyperedges do not participate in the identity relation) */
+  if(g->identity && attrs == g->identity)
+  {
+    fail(MORIA_ILLIDENTITY);
+  }
+
+  qsort(Axlist, Axlen, sizeof(*Axlist), ptrcmp);
+  qsort(Bxlist, Bxlen, sizeof(*Bxlist), ptrcmp);
+
+  // search by vertex-set (non-identity)
+  key = (typeof(key)) {
+      attrs : MORIA_EDGE_HYPER
+    , Alist : Axlist
+    , Alen : Axlen
+    , Blist : Bxlist
+    , Blen : Bxlen
+  };
+  if((rbn = rbtree_lookup_node(&Axlist[0]->down, &key, edge_cmp_key_down)))
+    e = rbn->ud.p;
+
+  // idempotency
+  if(e && (e->attrs & ~(MORIA_EDGE_IDENTITY | MORIA_EDGE_HYPER)) == attrs)
+  {
+    if(er) *er = &e->ex;
+    if(r) *r = false;
+    goto XAPI_FINALIZE;
+  }
+
+  // different attrs for this edge
+  if(e)
+  {
+    fail(MORIA_VERTEXEXISTS);
+  }
+
+  fatal(edge_alloc, g, &e);
+  e->attrs = attrs | MORIA_EDGE_HYPER;
+
+  fatal(xmalloc, &e->Alist, sizeof(*e->Alist) * Axlen);
+  for(x = 0; x < Axlen; x++)
+  {
+    e->Alist[x].v = Axlist[x];
+    e->Alist[x].rbn.ud.p = e;
+  }
+  e->Alen = Axlen;
+
+  fatal(xmalloc, &e->Blist, sizeof(*e->Blist) * Bxlen);
+  for(x = 0; x < Bxlen; x++)
+  {
+    e->Blist[x].v = Bxlist[x];
+    e->Blist[x].rbn.ud.p = e;
+  }
+  e->Blen = Bxlen;
+
+  // insert into down tree of each A vertex
+  for(x = 0; x < Axlen; x++)
+    rbtree_put(&Axlist[x]->down, e, Alist[x].rbn, edge_cmp_rbn_down);
+
+  // insert into up tree of each B vertex
+  for(x = 0; x < Bxlen; x++)
+    rbtree_put(&Bxlist[x]->up, e, Blist[x].rbn, edge_cmp_rbn_up);
+
+  if(er) *er = &e->ex;
+  if(r) *r = true;
+
+  finally : coda;
+}
+
+API xapi graph_edge_disconnect(graph * const restrict g, edge * const restrict ex)
+{
+  enter;
+
+  edge_t *e;
+  int x;
+
+  e = containerof(ex, edge_t, ex);
+
+  if((e->attrs & MORIA_EDGE_HYPER))
+  {
+    for(x = 0; x < e->Alen; x++)
+    {
+      rbtree_delete(&e->Alist[x].v->down, &e->Alist[x], rbn);
+    }
+
+    for(x = 0; x < e->Blen; x++)
+    {
+      rbtree_delete(&e->Blist[x].v->up, &e->Blist[x], rbn);
+    }
   }
   else
   {
-    if(B->up->l == B->up_partition)
+    rbtree_delete(&e->A->down, e, rbn_down);
+
+    if(e->attrs & MORIA_EDGE_IDENTITY)
     {
-      vertex_ctx = (typeof(vertex_ctx)) { lc : -1, lx : B->up_partition };
+      e->B->up_identity = 0;
     }
     else
     {
-      vertex_ctx = (typeof(vertex_ctx)) { A : A };
-      list_search_range(B->up, B->up_partition, B->up->l - B->up_partition, &vertex_ctx, edge_key_compare_vertex);
+      rbtree_delete(&e->B->up, e, rbn_up);
     }
-
-    e->up_index = vertex_ctx.lx;
-    if(vertex_ctx.lc > 0)
-      e->up_index++;
   }
 
-  fatal(list_insert, B->up, e->up_index, e);
-  for(x = e->up_index + 1; x < B->up->l; x++)
-    ((edge*)list_get(B->up, x))->up_index++;
+  llist_delete(e, graph_lln);
+  llist_append(&g->edge_freelist, e, graph_lln);
 
-  if(attrs == g->identity)
-  {
-    A->down_partition++;
-    B->up_partition++;
-  }
-
-finally:
-  wfree(tmp);
-coda;
+  finally : coda;
 }
 
 API xapi graph_disconnect(graph * const restrict g, vertex * const restrict A, vertex * const restrict B)
@@ -510,60 +759,46 @@ API xapi graph_disconnect(graph * const restrict g, vertex * const restrict A, v
   edge * e = edge_between(A, B);
 
   if(e)
-    fatal(edge_disconnect, g, e);
+    fatal(graph_edge_disconnect, g, e);
 
   finally : coda;
 }
 
-xapi operations_disintegrate_visitor(edge * e, int distance, void * restrict context)
+API xapi graph_hyperdisconnect(graph * restrict g, vertex ** restrict Alist, uint16_t Alen, vertex ** restrict Blist, uint16_t Blen)
 {
   enter;
 
-  list * li = (list*)context;
-  fatal(list_push, li, e);
+  edge * e = edge_of(Alist, Alen, Blist, Blen);
+
+  if(e)
+    fatal(graph_edge_disconnect, g, e);
 
   finally : coda;
 }
 
-API xapi graph_disintegrate(
-    graph * const restrict g
-  , edge * const restrict e
-  , xapi (*visitor)(struct edge * restrict e, int distance, void * restrict ctx) __attribute__((nonnull))
-  , int traversal_id
-  , const traversal_criteria * restrict criteria
-  , uint32_t attrs
-  , void * ctx
-)
+API xapi graph_vertex_delete(struct graph * restrict g, struct vertex * restrict vx)
 {
   enter;
 
-  list * li = 0;
-  fatal(list_create, &li);
+  vertex_t * v = containerof(vx, vertex_t, vx);
 
-  fatal(graph_traverse_edges
-    , g
-    , e
-    , visitor ?: operations_disintegrate_visitor
-    , traversal_id
-    , criteria
-    , attrs
-    , li
-  );
+  fatal(vertex_delete, v, g);
 
-  int x;
-  for(x = 0; x < li->l; x++)
-  {
-    edge * e = list_get(li, x);
-    fatal(edge_disconnect, g, e);
-  }
+  finally : coda;
+}
 
-finally:
-  fatal(list_xfree, li);
-coda;
+static xapi operations_create_vertex(vertex ** const restrict rv, graph * const restrict g, uint32_t attrs, uint8_t op_attrs, const char * const restrict label, uint16_t label_len)
+{
+  enter;
+
+  fatal(vertex_createw, rv, g, attrs, label, label_len);
+
+  finally : coda;
 }
 
 APIDATA operations_dispatch * graph_operations_dispatch = (operations_dispatch[]) {{
     .connect = graph_connect
-  , .disconnect = graph_disconnect
-  , .vertex_create = vertex_createw
+  , .hyperconnect = graph_hyperconnect
+  , .disconnect = graph_edge_disconnect
+  , .create_vertex = operations_create_vertex
 }};

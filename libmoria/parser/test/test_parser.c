@@ -25,17 +25,17 @@
 #include "xlinux/xstdlib.h"
 #include "xunit.h"
 #include "xunit/assert.h"
-#include "yyutil/load.h"
+#include "moria/load.h"
+#include "logger.h"
 
 #include "graph.h"
 #include "parser.internal.h"
-#include "logging.internal.h"
 #include "MORIA.errtab.h"
 
 #include "macros.h"
 
 typedef struct graph_parser_test {
-  xunit_test;
+  XUNITTEST;
 
   char * graph;
   uint32_t identity;
@@ -53,10 +53,9 @@ static xapi graph_parser_unit_setup(xunit_unit * unit)
   enter;
 
   // load libraries
-  fatal(yyutil_load);
+  fatal(moria_load);
 
   // logging
-  fatal(logging_setup);
   fatal(logger_finalize);
 
   finally : coda;
@@ -64,7 +63,7 @@ static xapi graph_parser_unit_setup(xunit_unit * unit)
 
 static xapi graph_parser_unit_cleanup(xunit_unit * unit)
 {
-  xproxy(yyutil_unload);
+  xproxy(moria_unload);
 }
 
 //
@@ -78,13 +77,17 @@ static xapi graph_parser_test_entry(xunit_test * _test)
   graph_parser_test * test = (typeof(test))_test;
 
   graph * g = 0;
+  graph_parser * p = 0;
   narrator * N1 = 0;
+  const char * actual;
+  size_t actual_len;
 
-  // arrange 
-  fatal(narrator_growing_create, &N1);
+  // arrange
+  fatal(graph_parser_graph_create, &g, test->identity);
+  fatal(graph_parser_create, &p);
 
   // act
-  xapi exit = invoke(graph_parser_parse, 0, MMS(test->graph), &g, test->identity);
+  xapi exit = invoke(graph_parser_parse, p, g, MMS(test->graph));
   if(exit)
   {
     if(exit != test->expected_exit)
@@ -97,14 +100,17 @@ static xapi graph_parser_test_entry(xunit_test * _test)
   assert_eq_e(test->expected_exit, exit);
   if(test->expected)
   {
-    fatal(graph_say, g, 0, N1);
-    const char * actual = narrator_growing_buffer(N1);
-    assert_eq_s(test->expected, actual);
+    fatal(narrator_growing_create, &N1);
+    fatal(graph_say, g, N1);
+    actual = narrator_growing_buffer(N1);
+    actual_len = narrator_growing_size(N1);
+    assert_eq_w(test->expected, strlen(test->expected), actual, actual_len);
   }
 
 finally:
   fatal(narrator_xfree, N1);
   fatal(graph_xfree, g);
+  fatal(graph_parser_xfree, p);
 coda;
 }
 
@@ -116,7 +122,7 @@ xunit_unit xunit = {
     xu_setup : graph_parser_unit_setup
   , xu_cleanup : graph_parser_unit_cleanup
   , xu_entry : graph_parser_test_entry
-  , xu_tests : (xunit_test*[]) {
+  , xu_tests : (void*)(graph_parser_test*[]) {
       // unique labels
       (graph_parser_test[]) {{
           graph    : "A:B"
@@ -133,8 +139,8 @@ xunit_unit xunit = {
         , expected : "1-A!0x42 2-B 1:2"
       }}
     , (graph_parser_test[]) {{
-          graph    : "A:B!0x42"
-        , expected : "1-A 2-B!0x42 1:2"
+          graph    : "A:B!0x4"
+        , expected : "1-A 2-B!0x4 1:2"
       }}
     , (graph_parser_test[]) {{
           graph    : "A:0x42:B"
@@ -153,7 +159,7 @@ xunit_unit xunit = {
         , graph    : " 1-A 2-b 3-b"
                      " 1:0x8:2 1:0x1:3"
         , expected :  "1-A 2-b 3-b"
-                     " 1:0x8:2 1:0x1:3"
+                     " 1:0x1:3 1:0x8:2"
       }}
 
       // expected failure cases
@@ -186,16 +192,66 @@ xunit_unit xunit = {
         , expected_exit : MORIA_UPEXISTS
       }}
 
-    // inline attrs definitions
+      // hyper-edges
     , (graph_parser_test[]){{
-          graph     : " X 0x32"
-                      " 1-A!X"
-        , expected  :  "1-A!0x32"
+          graph     : " 1-A 2-B 3-C"
+                      " 1:2,3"
+        , expected  :  "1-A 2-B 3-C"
+                      " 1:2,3"
       }}
     , (graph_parser_test[]){{
-          graph     : " X 0x32 Y 0x17"
-                      " 1-A!X 2-B 1:Y:2"
-        , expected  :  "1-A!0x32 2-B 1:0x17:2"
+          graph     : " 1-A 2-B 3-C"
+                      " 1:0x42:2,3"
+        , expected  :  "1-A 2-B 3-C"
+                      " 1:0x42:2,3"
+      }}
+    , (graph_parser_test[]){{
+          graph     : " 1-A 2-B 3-C 4-D"
+                      " 1:2,3,4"
+        , expected  :  "1-A 2-B 3-C 4-D"
+                      " 1:2,3,4"
+      }}
+    , (graph_parser_test[]){{
+          graph     : " 1-A 2-B 3-C"
+                      " 1,2:3"
+        , expected  :  "1-A 2-B 3-C"
+                      " 1,2:3"
+      }}
+    , (graph_parser_test[]){{
+          graph     : " 1-A 2-B 3-C 4-D"
+                      " 1,2,3:4"
+        , expected  :  "1-A 2-B 3-C 4-D"
+                      " 1,2,3:4"
+      }}
+    , (graph_parser_test[]){{
+          graph     : " 1-A 2-B 3-C 4-D"
+                      " 1,2,3:0x42:4"
+        , expected  :  "1-A 2-B 3-C 4-D"
+                      " 1,2,3:0x42:4"
+      }}
+    , (graph_parser_test[]){{
+          graph     : " 1-A 2-B 3-C 4-D"
+                      " 1,2:3,4"
+        , expected  :  "1-A 2-B 3-C 4-D"
+                      " 1,2:3,4"
+      }}
+    , (graph_parser_test[]){{
+          graph     : " 1-A 2-B 3-C 4-D"
+                      " 1,2:0x42:3,4"
+        , expected  :  "1-A 2-B 3-C 4-D"
+                      " 1,2:0x42:3,4"
+      }}
+    , (graph_parser_test[]){{
+          graph     : " 1-A 2-B 3-C 4-D 5-E 6-F"
+                      " 1,2,3:4,5,6"
+        , expected  :  "1-A 2-B 3-C 4-D 5-E 6-F"
+                      " 1,2,3:4,5,6"
+      }}
+    , (graph_parser_test[]){{
+          graph     : " 1-A 2-B 3-C 4-D 5-E 6-F"
+                      " 1,2,3:0x42:4,5,6"
+        , expected  :  "1-A 2-B 3-C 4-D 5-E 6-F"
+                      " 1,2,3:0x42:4,5,6"
       }}
     , 0
   }

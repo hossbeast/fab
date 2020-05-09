@@ -15,10 +15,12 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-1 CYCLE        graph contains a cycle
-2 SYNTAX       graph description could not be parsed
-3 ILLBYTE      graph description contains illegal byte(s)
-4 LABELEXISTS  edge already exists for this label
-5 VERTEXEXISTS edge already exists for this vertex
-6 UPEXISTS     upward identity edge already exists
-7 AMBIGUOUS    ambiguous identifier in operation
+1  SYNTAX       graph description could not be parsed
+2  ILLBYTE      graph description contains illegal byte(s)
+3  LABELEXISTS  edge already exists for this label
+4  VERTEXEXISTS edge already exists for this vertex
+5  UPEXISTS     upward identity edge already exists
+6  AMBIGUOUS    ambiguous identifier in operation
+7  TOOMANY      too many concurrent traversals
+8  EDGEEXISTS   hyperedge already exists
+9  ILLIDENTITY  hyperedge may not have identity bit

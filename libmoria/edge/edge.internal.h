@@ -18,51 +18,98 @@
 #ifndef _MORIA_EDGE_INTERNAL_H
 #define _MORIA_EDGE_INTERNAL_H
 
-#include <sys/types.h>
+#include "xapi.h"
+#include "types.h"
+
+#include "edge.h"
+#include "traverse.internal.h"
+
+#include "macros.h"
 
 struct vertex;
 
-struct edge_internals
-{
-  size_t up_index;
-  size_t down_index;
-  size_t edges_index;
+typedef struct edge_t {
+  union {
+    edge ex;
+    struct {
+      fieldof(edge, attrs);
+      union {
+        struct {
+          fieldof(edge, rbn_up);
+          fieldof(edge, A);
+        };
+        struct {
+          fieldof(edge, Alist);
+          fieldof(edge, Alen);
+        };
+      };
+      union {
+        struct {
+          fieldof(edge, rbn_down);
+          fieldof(edge, B);
+        };
+        struct {
+          fieldof(edge, Blist);
+          fieldof(edge, Blen);
+        };
+      };
 
-  int guard;      // there exists a frame exploring this edge
-  int traveled;   // id of the last traversal to travel this edge
-};
+      fieldof(edge, graph_lln);
+      fieldof(edge, lln);
+    };
+  };
 
-#define EDGE_INTERNALS struct edge_internals
-#include "edge.h"
+//  size_t up_index;
+//  size_t down_index;
+//  size_t edges_index;
 
-//  either A or B is specified
-struct edge_key_compare_label_context {
-  const char * A; // if not null, compare to the edges A vertex
-  const char * B; // if not null, compare to the edges B vertex
-  uint16_t len;   // length of A or B
+  entity ent;   // traversable entity
+  char value[];
+} edge_t;
 
-  size_t lx;  // (returns) last index
-  int lc;     // (returns) results of last comparison
-};
+STATIC_ASSERT(offsetof(edge_t, value) % 8 == 0);
 
-//  either A or B is specified
-struct edge_key_compare_vertex_context {
-  const struct vertex * A; // if not null, compare to the edges A vertex
-  const struct vertex * B; // if not null, compare to the edges B vertex
+ALIGNEDOF(edge, edge_t, rbn_up);
+ALIGNEDOF(edge, edge_t, A);
+ALIGNEDOF(edge, edge_t, Alist);
+ALIGNEDOF(edge, edge_t, rbn_down);
+ALIGNEDOF(edge, edge_t, B);
+ALIGNEDOF(edge, edge_t, Blist);
+ALIGNEDOF(edge, edge_t, attrs);
+ALIGNEDOF(edge, edge_t, graph_lln);
 
-  size_t lx;  // (returns) last index
-  int lc;     // (returns) results of last comparison
-};
-
-/// edge_key_compare_context
-//
-// SUMMARY
-//
-//
-int edge_key_compare_label(void * _ctx, const void * _e, size_t idx)
+xapi edge_alloc(struct graph * restrict g, edge_t ** restrict re)
   __attribute__((nonnull));
 
-int edge_key_compare_vertex(void * _ctx, const void * _e, size_t idx)
+void edge_free(edge_t * restrict e);
+
+
+typedef struct edge_key {
+  uint32_t attrs;
+  struct vertex ** Alist;   // sorted in ptr order
+  uint16_t Alen;
+  struct vertex ** Blist;   // sorted in ptr order
+  uint16_t Blen;
+
+  uint32_t cmp_attrs;       // possibly contains NOFOLLOW
+} edge_key;
+
+int edge_cmp_up(const edge_t * restrict a, const edge_t * restrict b)
+  __attribute__((nonnull));
+
+int edge_cmp_rbn_up(const rbnode * restrict an, const rbnode * restrict bn)
+  __attribute__((nonnull));
+
+int edge_cmp_key_up(void * restrict key, const rbnode * restrict bn)
+  __attribute__((nonnull));
+
+int edge_cmp_down(const edge_t * restrict a, const edge_t * restrict b)
+  __attribute__((nonnull));
+
+int edge_cmp_key_down(void * restrict key, const rbnode * restrict rbn)
+  __attribute__((nonnull));
+
+int edge_cmp_rbn_down(const rbnode * restrict an, const rbnode * restrict bn)
   __attribute__((nonnull));
 
 #endif

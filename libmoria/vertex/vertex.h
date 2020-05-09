@@ -31,27 +31,36 @@ MODULE
 #include "types.h"
 #include "xapi.h"
 
+#include "valyria/llist.h"
+#include "valyria/rbtree.h"
 #include "traverse.h"
 
 struct graph;
 struct edge;
 
-typedef struct vertex
-{
-  struct graph *  graph;        // graph that the vertex belongs to
+#define MORIA_VERTEX_LINK   0x1 /* in attrs, vertex that refers to another vertex */
+
+typedef struct vertex {
   const char *    label;        // (not owned)
   uint16_t        label_len;
+
+  /* the bottom 6 bits are ignored for the purposes of ordering vertices in graph_say */
   uint32_t        attrs;        // properties of the vertex
 
-  struct list * up;      // edges where this == B, i.e. { up } -> this
-  struct list * down;    // edges where this == A, i.e. this -> { down }
+  /* edges where this == B, i.e. { up } -> this */
+  rbtree up;
 
-  int visited;           // id of the last traversal to visit this vertex
+  /* upwards identity edge - NOT stored in up */
+  struct edge * up_identity;
 
-#ifndef VERTEX_INTERNALS
-# define VERTEX_INTERNALS
-#endif
-  VERTEX_INTERNALS;
+  /* edges where this == A, i.e. this -> { down } */
+  rbtree down;
+
+  /* referent for VERTEX_LINK */
+  struct vertex *ref;
+
+  llist lln;            // user use
+  llist graph_lln;      // graph list/freelist
 } vertex;
 
 /// vertex_create
@@ -91,38 +100,32 @@ xapi vertex_createw(struct vertex ** const restrict v, struct graph * const rest
 // PARAMETERS
 //  v       - pointer to vertex
 //  [value] - pointer to value
-//  vsz     - size of value
 //
-void vertex_value_set(vertex * const restrict v, void * value, size_t vsz)
-  __attribute__((nonnull(1)));
+void vertex_value_set(vertex * const restrict v, struct graph * restrict g, void * value)
+  __attribute__((nonnull));
 
 /// vertex_value
 //
 // SUMMARY
 //  get a pointer to the value for the vertex
 //
-void * vertex_value(const vertex * const restrict v)
-  __attribute__((nonnull));
+void * vertex_value(const vertex * const restrict v);
 
 /// vertex_containerof
 //
 // SUMMARY
 //  get a pointer to the vertex containing the user value
 //
-vertex * vertex_containerof(const void * value)
-  __attribute__((nonnull));
+vertex * vertex_containerof(const void * value);
 
-/// vertex_travel
-//
-// SUMMARY
-//  Get the vertex at distance 1 from a starting vertex on the identity tree having the
-//  specified label.
-//
-// PARAMETERS
-//  v     - starting vertex
-//  label - select the vertex with this label
-//  attrs - one of MORIA_TRAVERSE_{UP,DOWN}
-//
+/*
+ * Get the vertex at distance 1 from a starting vertex on the identity tree having the
+ * specified label. These apis do not follow link nodes.
+ *
+ * v     - starting vertex
+ * label - select the vertex with this label
+ * attrs - one of MORIA_TRAVERSE_{UP,DOWN}
+ */
 vertex * vertex_downs(const vertex * restrict v, const char * restrict label)
   __attribute__((nonnull));
 

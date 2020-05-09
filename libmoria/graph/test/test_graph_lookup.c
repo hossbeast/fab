@@ -25,6 +25,7 @@
 #include "valyria/multimap.h"
 #include "valyria/list.h"
 #include "xlinux/xstdlib.h"
+#include "moria/load.h"
 
 #include "internal.h"
 #include "graph.internal.h"
@@ -33,9 +34,9 @@
 #include "parser.internal.h"
 #include "vertex.internal.h"
 
-typedef struct graph_test
+typedef struct graph_lookup_test
 {
-  xunit_test;
+  XUNITTEST;
 
   char * graph;
   uint32_t identity;
@@ -45,14 +46,23 @@ typedef struct graph_test
 
   char * expected_label;
   uint32_t expected_attrs;
-} graph_test;
+} graph_lookup_test;
 
 static xapi graph_unit_setup(xunit_unit * unit)
 {
   enter;
 
-  fatal(logging_setup);
+  fatal(moria_load);
   fatal(logger_finalize);
+
+  finally : coda;
+}
+
+static xapi graph_unit_cleanup(xunit_unit * unit)
+{
+  enter;
+
+  fatal(moria_unload);
 
   finally : coda;
 }
@@ -62,19 +72,24 @@ static xapi graph_test_entry(xunit_test * _test)
   enter;
 
   graph * g = 0;
+  graph_parser * p = 0;
   void * mm_tmp = 0;
   list * operations = 0;
+  operations_parser * op = 0;
   vertex * actual[2];
 
-  graph_test * test = (void*)_test;
+  graph_lookup_test * test = (void*)_test;
 
   fatal(graph_parser_graph_create, &g, test->identity);
+  fatal(graph_parser_create, &p);
   if(test->graph)
-    fatal(graph_parser_parse, 0, MMS(test->graph), &g, 0);
+    fatal(graph_parser_parse, p, g, MMS(test->graph));
 
   if(test->operations)
   {
-    fatal(operations_parser_parse, 0, MMS(test->operations), &operations);
+    fatal(operations_parser_operations_create, &operations);
+    fatal(operations_parser_create, &op);
+    fatal(operations_parser_parse, op, g, MMS(test->operations), operations);
     fatal(operations_perform, g, graph_operations_dispatch, operations);
   }
 
@@ -83,6 +98,7 @@ static xapi graph_test_entry(xunit_test * _test)
   fatal(graph_lookup
     , g
     , graph_lookup_sentinel
+    , 0
     , (graph_lookup_sentinel_context[]) {{ labels : test->labels }}
     , &mm_tmp
     , actual
@@ -106,50 +122,53 @@ finally:
   fatal(graph_xfree, g);
   wfree(mm_tmp);
   fatal(list_xfree, operations);
+  fatal(graph_parser_xfree, p);
+  fatal(operations_parser_xfree, op);
 coda;
 }
 
 xunit_unit xunit = {
     .xu_setup = graph_unit_setup
+  , .xu_cleanup = graph_unit_cleanup
   , .xu_entry = graph_test_entry
-  , .xu_tests = (xunit_test*[]) {
+  , .xu_tests = (void*)(graph_lookup_test*[]) {
       // graph lookup on the identity subgraph
-        (graph_test[]){{
+        (graph_lookup_test[]){{
             identity       : 1
           , operations     : " +x:1:y"
                              " +y/A:y/B +y/B:y/C +y/C:y/D +y/C:y/E"
           , labels         : (char*[]) { "x", 0 }
           , expected_label : "x"
         }}
-      , (graph_test[]){{
+      , (graph_lookup_test[]){{
             identity       : 1
           , operations     : " +x:1:y"
                              " +y/A:y/B +y/B:y/C +y/C:y/D +y/C:y/E"
           , labels         : (char*[]) { "y", 0 }
           , expected_label : "y"
         }}
-      , (graph_test[]){{
+      , (graph_lookup_test[]){{
             identity       : 1
-          , operations     : " +x:1:y"
+          , operations     : " +x:1:y" // aka x/y
                              " +y/A:y/B +y/B:y/C +y/C:y/D +y/C:y/E"
           , labels         : (char*[]) { "y", "x", 0 }
           , expected_label : "y"
         }}
-      , (graph_test[]){{
+      , (graph_lookup_test[]){{
             identity       : 1
           , operations     : " +x:1:y"
                              " +y/A:y/B +y/B:y/C +y/C:y/D +y/C:y/E"
           , labels         : (char*[]) { "B", 0 }
           , expected_label : "B"
         }}
-      , (graph_test[]){{
+      , (graph_lookup_test[]){{
             identity       : 1
           , operations     : " +x:1:y"
                              " +y/A:y/B +y/B:y/C +y/C:y/D +y/C:y/E"
           , labels         : (char*[]) { "B", "y", 0 }
           , expected_label : "B"
         }}
-      , (graph_test[]){{
+      , (graph_lookup_test[]){{
             identity       : 1
           , operations     : " +x:1:y"
                              " +y/A:y/B +y/B:y/C +y/C:y/D +y/C:y/E"

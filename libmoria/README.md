@@ -1,3 +1,5 @@
 # libmoria
 
-library of data structures
+graph datastructure
+
+supports nested traversals

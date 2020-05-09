@@ -34,7 +34,9 @@
 #include "edge.internal.h"
 #include "vertex.internal.h"
 
+#include "attrs.h"
 #include "macros.h"
+#include "zbuffer.h"
 
 //
 // static
@@ -47,80 +49,139 @@ struct edge_compare_context {
 
 static int edge_compare(const void * _X, const void * _Y, void * _ctx)
 {
-  struct edge_compare_context * ctx = _ctx;
+  dictionary * vertex_id_map = _ctx;
 
-  const edge * X = list_get(ctx->g->edges, *(int*)_X);
-  const edge * Y = list_get(ctx->g->edges, *(int*)_Y);
+  const edge_t * X = *(edge_t **)_X;
+  const edge_t * Y = *(edge_t **)_Y;
+  uint32_t * xid;
+  uint32_t * yid;
+  int r;
+  int x;
 
-  uint32_t * xaid = dictionary_get(ctx->vertex_id_map, (void*)&X->A, sizeof(void*));
-  uint32_t * xbid = dictionary_get(ctx->vertex_id_map, (void*)&X->B, sizeof(void*));
-  uint32_t * yaid = dictionary_get(ctx->vertex_id_map, (void*)&Y->A, sizeof(void*));
-  uint32_t * ybid = dictionary_get(ctx->vertex_id_map, (void*)&Y->B, sizeof(void*));
+  if((r = INTCMP(X->attrs & ~MORIA_EDGE_IDENTITY, Y->attrs & ~MORIA_EDGE_IDENTITY)))
+    return r;
 
-  return    INTCMP(*xaid, *yaid)
-         ?: INTCMP(*xbid, *ybid)
-         ?: INTCMP(X->A->attrs, Y->A->attrs)
-         ?: INTCMP(X->B->attrs, Y->B->attrs)
-         ?: INTCMP(X->attrs, Y->attrs)
-         ;
+  if(!(X->attrs & MORIA_EDGE_HYPER))
+  {
+    xid = dictionary_get(vertex_id_map, (void*)&X->A, sizeof(void*));
+    yid = dictionary_get(vertex_id_map, (void*)&Y->A, sizeof(void*));
+    if((r = INTCMP(*xid, *yid)))
+      return r;
+
+    xid = dictionary_get(vertex_id_map, (void*)&X->B, sizeof(void*));
+    yid = dictionary_get(vertex_id_map, (void*)&Y->B, sizeof(void*));
+    if((r = INTCMP(*xid, *yid)))
+      return r;
+
+    return 0;
+  }
+
+  if((r = INTCMP(X->Alen, Y->Alen)))
+    return r;
+
+  for(x = 0; x < X->Alen; x++)
+  {
+    xid = dictionary_get(vertex_id_map, (void*)&X->Alist[x].v, sizeof(void*));
+    yid = dictionary_get(vertex_id_map, (void*)&Y->Alist[x].v, sizeof(void*));
+    if((r = INTCMP(*xid, *yid)))
+      return r;
+  }
+
+  if((r = INTCMP(X->Blen, Y->Blen)))
+    return r;
+
+  for(x = 0; x < X->Blen; x++)
+  {
+    xid = dictionary_get(vertex_id_map, (void*)&X->Blist[x].v, sizeof(void*));
+    yid = dictionary_get(vertex_id_map, (void*)&Y->Blist[x].v, sizeof(void*));
+    if((r = INTCMP(*xid, *yid)))
+      return r;
+  }
+
+  return 0;
 }
 
-static xapi edges_sorted(graph * const restrict g, dictionary * restrict vertex_id_map, int ** restrict xs)
+static xapi edges_sorted(graph * const restrict g, dictionary * restrict vertex_id_map, size_t count, edge_t *** restrict edges)
 {
   enter;
 
-  fatal(xmalloc, xs, sizeof(**xs) * g->edges->l);
-
+  edge_t * e;
   int x;
-  for(x = 0; x < g->edges->l; x++)
-    (*xs)[x] = x;
 
-  struct edge_compare_context ctx;
-  ctx.g = g;
-  ctx.vertex_id_map = vertex_id_map;
+  fatal(xmalloc, edges, count * sizeof(*edges));
 
-  qsort_r(*xs, g->edges->l, sizeof(**xs), edge_compare, &ctx);
+  x = 0;
+  llist_foreach(&g->edges, e, graph_lln) {
+    (*edges)[x++] = e;
+  }
+
+  qsort_r(*edges, count, sizeof(**edges), edge_compare, vertex_id_map);
 
   finally : coda;
 }
 
-static int vertex_compare(const void * _X, const void * _Y, void * ctx)
+static int vertex_compare(const void * _A, const void * _B)
 {
-  graph * g = ctx;
-  const vertex * X = list_get(g->vertices, *(int*)_X);
-  const vertex * Y = list_get(g->vertices, *(int*)_Y);
+  const vertex_t * A = *(vertex_t **)_A;
+  const vertex_t * B = *(vertex_t **)_B;
 
-  return   memncmp(X->label, X->label_len, Y->label, Y->label_len)
-        ?: X->attrs - Y->attrs
-        ;
+  int r;
+  if((r = INTCMP(B->attrs & ~0x3f, A->attrs & ~0x3f)))
+    return r;
+
+  if(A->label == 0 || B->label == 0)
+    return INTCMP(A->label, B->label);
+
+  return memncmp(A->label, A->label_len, B->label, B->label_len);
 }
 
-static xapi vertices_sorted(graph * const restrict g, int ** restrict xs)
+static xapi vertices_sorted(graph * const restrict g, size_t count, vertex_t *** restrict vertices)
 {
   enter;
 
-  fatal(xmalloc, xs, sizeof(**xs) * g->vertices->l);
-
+  vertex_t * v;
   int x;
-  for(x = 0; x < g->vertices->l; x++)
-    (*xs)[x] = x;
 
-  qsort_r(*xs, g->vertices->l, sizeof(**xs), vertex_compare, g);
+  fatal(xmalloc, vertices, count * sizeof(*vertices));
+
+  x = 0;
+  llist_foreach(&g->vertices, v, graph_lln) {
+    (*vertices)[x++] = v;
+  }
+
+  qsort(*vertices, count, sizeof(**vertices), vertex_compare);
 
   finally : coda;
 }
 
 //
-// public
+// internal
 //
 
-xapi graph_vertex_push(graph * const restrict g, vertex * const restrict v)
+void graph_vertex_init(graph * const restrict g, vertex_t * const restrict v)
 {
-  enter;
+  v->ent.index = g->vertex_index;
+  v->ent.mask = g->vertex_mask;
 
-  fatal(list_push, g->vertices, v);
+  g->vertex_mask <<= 3;
+  if(g->vertex_mask == (UINT64_C(1) << 63))
+  {
+    g->vertex_mask = UINT64_C(1);
+    g->vertex_index++;
+  }
+}
 
-  finally : coda;
+void graph_edge_init(graph * const restrict g, edge_t * const restrict e)
+{
+  e->ent.index = g->edge_index;
+  e->ent.mask = g->edge_mask;
+
+  g->edge_mask <<= 3;
+  if(g->edge_mask == (UINT64_C(1) << 63))
+  {
+    g->edge_mask = UINT64_C(1);
+    g->edge_index++;
+  }
 }
 
 //
@@ -129,13 +190,14 @@ xapi graph_vertex_push(graph * const restrict g, vertex * const restrict v)
 
 API xapi graph_create(graph ** const restrict g, uint32_t identity)
 {
-  xproxy(graph_createx, g, identity, 0, 0, 0);
+  xproxy(graph_createx, g, identity, 0, 0, 0, 0);
 }
 
 API xapi graph_createx(
     graph ** const restrict g
   , uint32_t identity
   , size_t vsz
+  , size_t esz
   , void * vertex_value_destroy
   , void * vertex_value_xdestroy
 )
@@ -143,16 +205,22 @@ API xapi graph_createx(
   enter;
 
   fatal(xmalloc, g, sizeof(**g));
-  (*g)->traversal_id = 1;
-  fatal(list_createx, &(*g)->vertices, 0, vertex_xfree, 0);
-  fatal(list_createx, &(*g)->edges, wfree, 0, 0);
   (*g)->identity = identity;
   (*g)->vsz = vsz;
+  (*g)->esz = esz;
   (*g)->vertex_value_destroy = vertex_value_destroy;
   (*g)->vertex_value_xdestroy = vertex_value_xdestroy;
 
-  if((*g)->identity)
-    fatal(multimap_create, &(*g)->mm);
+  (*g)->vertex_mask = UINT64_C(1);
+  (*g)->edge_mask = UINT64_C(1);
+  llist_init_node(&(*g)->states);
+
+  fatal(multimap_create, &(*g)->mm);
+
+  llist_init_node(&(*g)->vertices);
+  llist_init_node(&(*g)->vertex_freelist);
+  llist_init_node(&(*g)->edges);
+  llist_init_node(&(*g)->edge_freelist);
 
   finally : coda;
 }
@@ -161,12 +229,35 @@ API xapi graph_xfree(graph * const restrict g)
 {
   enter;
 
+  llist *T;
+  traversal_state * state;
+  vertex_t *v;
+  edge_t *e;
+
   if(g)
   {
     fatal(graph_recycle, g);
-    fatal(list_xfree, g->vertices);
-    fatal(list_xfree, g->edges);
     fatal(multimap_xfree, g->mm);
+
+    llist_foreach_safe(&g->vertices, v, graph_lln, T) {
+      wfree(v);
+    }
+
+    llist_foreach_safe(&g->vertex_freelist, v, graph_lln, T) {
+      wfree(v);
+    }
+
+    llist_foreach_safe(&g->edges, e, graph_lln, T) {
+      edge_free(e);
+    }
+
+    llist_foreach_safe(&g->edge_freelist, e, graph_lln, T) {
+      edge_free(e);
+    }
+
+    llist_foreach_safe(&g->states, state, lln, T) {
+      wfree(state);
+    }
   }
 
   wfree(g);
@@ -178,12 +269,12 @@ API xapi graph_recycle(graph * const restrict g)
 {
   enter;
 
+  vertex_t * v;
+
+  // free all the values
   if(g->vertex_value_destroy || g->vertex_value_xdestroy)
   {
-    int x;
-    for(x = 0; x < g->vertices->l; x++)
-    {
-      vertex * v = list_get(g->vertices, x);
+    llist_foreach(&g->vertices, v, graph_lln) {
       if(g->vertex_value_destroy)
         g->vertex_value_destroy(v->value);
       else
@@ -191,10 +282,11 @@ API xapi graph_recycle(graph * const restrict g)
     }
   }
 
-  fatal(list_recycle, g->vertices);
-  fatal(list_recycle, g->edges);
-  if(g->identity)
-    fatal(multimap_recycle, g->mm);
+  // move to the freelist
+  llist_splice_tail(&g->vertex_freelist, &g->vertices);
+  llist_splice_tail(&g->edge_freelist, &g->edges);
+
+  fatal(multimap_recycle, g->mm);
 
   finally : coda;
 }
@@ -209,51 +301,70 @@ API xapi graph_ixfree(graph ** const restrict g)
   finally : coda;
 }
 
-API const list * graph_vertices(graph * g)
+API struct llist * graph_vertices(graph * restrict g)
 {
-  return g->vertices;
+  return &g->vertices;
 }
 
-API const list * graph_edges(graph * g)
+API struct llist * graph_edges(graph * restrict g)
 {
-  return g->edges;
+  return &g->edges;
 }
 
-API xapi graph_say(graph * const restrict g, map * restrict definitions, struct narrator * const restrict N)
+API void graph_vertex_definitions_set(graph * restrict g, const struct attrs32 * restrict defs)
+{
+  g->vertex_defs = defs;
+}
+
+API void graph_edge_definitions_set(graph * restrict g, const struct attrs32 * restrict defs)
+{
+  g->edge_defs = defs;
+}
+
+API xapi graph_say(graph * const restrict g, struct narrator * const restrict N)
 {
   enter;
 
   dictionary * vertex_id_map = 0;
-  int * xs = 0;
   int x;
-
+  int y;
   uint32_t * id;
+  vertex_t ** vertices = 0;
+  edge_t ** edges = 0;
+  edge_t * e;
+  vertex_t * v;
+  size_t vertices_count;
+  size_t edges_count;
+  uint32_t masked_attrs;
+  char label[64];
+  size_t label_len;
+
+  vertices_count = llist_count(&g->vertices);
+  edges_count = llist_count(&g->edges);
+
   fatal(dictionary_create, &vertex_id_map, sizeof(*id));
 
-  fatal(vertices_sorted, g, &xs);
-  for(x = 0; x < g->vertices->l; x++)
+  fatal(vertices_sorted, g, vertices_count, &vertices);
+  for(x = 0; x < vertices_count; x++)
   {
-    vertex * v = list_get(g->vertices, xs[x]);
-    fatal(dictionary_set, vertex_id_map, (void*)&v, sizeof(v), &id);
+    v = vertices[x];
+    fatal(dictionary_store, vertex_id_map, (void*)&v, sizeof(v), &id);
     *id = x + 1;
   }
 
-  for(x = 0; x < g->vertices->l; x++)
+  for(x = 0; x < vertices_count; x++)
   {
     if(x)
       xsays(" ");
 
-    vertex * v = list_get(g->vertices, xs[x]);
+    v = vertices[x];
     id = dictionary_get(vertex_id_map, (void*)&v, sizeof(v));
 
     xsayf("%"PRIu32"-%.*s", *id, v->label_len, v->label);
 
-    char * attrs_label = 0;
-    if(definitions)
-      attrs_label = map_get(definitions, MM(v->attrs));
-    if(attrs_label)
+    if(g->vertex_defs && (label_len = znload_attrs32(label, sizeof(label), g->vertex_defs, v->attrs)))
     {
-      xsayf("!%s", attrs_label);
+      xsayf("!%.*s", (int)label_len, label);
     }
     else if(v->attrs)
     {
@@ -261,35 +372,66 @@ API xapi graph_say(graph * const restrict g, map * restrict definitions, struct 
     }
   }
 
-  wfree(xs); xs = 0;
-  fatal(edges_sorted, g, vertex_id_map, &xs);
-  for(x = 0; x < g->edges->l; x++)
+  fatal(edges_sorted, g, vertex_id_map, edges_count, &edges);
+  for(x = 0; x < llist_count(&g->edges); x++)
   {
-    edge * e = list_get(g->edges, xs[x]);
-
-    id = dictionary_get(vertex_id_map, (void*)&e->A, sizeof(e->A));
-    xsayf(" %"PRIu32, *id);
-
-    char * attrs_label = 0;
-    if(definitions)
-      attrs_label = map_get(definitions, MM(e->attrs));
-    if(attrs_label)
+    xsays(" ");
+    e = edges[x];
+    if(e->attrs & MORIA_EDGE_HYPER)
     {
-      xsayf(":%s", attrs_label);
+      qsort(e->Alist, e->Alen, sizeof(*e->Alist), vertex_compare);
+
+      for(y = 0; y < e->Alen; y++)
+      {
+        if(y)
+          xsays(",");
+        id = dictionary_get(vertex_id_map, &e->Alist[y].v, sizeof(e->Alist[y].v));
+        xsayf("%"PRIu32, *id);
+      }
     }
-    else if(e->attrs)
+    else
     {
-      xsayf(":0x%"PRIx32, e->attrs);
+      id = dictionary_get(vertex_id_map, (void*)&e->A, sizeof(e->A));
+      xsayf("%"PRIu32, *id);
     }
 
-    id = dictionary_get(vertex_id_map, (void*)&e->B, sizeof(e->B));
+    /* mask off internal bits */
+    masked_attrs = e->attrs & ~(MORIA_EDGE_IDENTITY | MORIA_EDGE_HYPER);
+
+    if(g->edge_defs && (label_len = znload_attrs32(label, sizeof(label), g->edge_defs, masked_attrs)))
+    {
+      xsayf(":%.*s", (int)label_len, label);
+    }
+    else if(masked_attrs)
+    {
+      xsayf(":0x%"PRIx32, masked_attrs);
+    }
+
     xsays(":");
-    xsayf("%"PRIu32, *id);
+
+    if(e->attrs & MORIA_EDGE_HYPER)
+    {
+      qsort(e->Blist, e->Blen, sizeof(*e->Blist), vertex_compare);
+
+      for(y = 0; y < e->Blen; y++)
+      {
+        if(y)
+          xsays(",");
+        id = dictionary_get(vertex_id_map, &e->Blist[y].v, sizeof(e->Blist[y].v));
+        xsayf("%"PRIu32, *id);
+      }
+    }
+    else
+    {
+      id = dictionary_get(vertex_id_map, (void*)&e->B, sizeof(e->B));
+      xsayf("%"PRIu32, *id);
+    }
   }
 
 finally:
-  wfree(xs);
   fatal(dictionary_xfree, vertex_id_map);
+  wfree(edges);
+  wfree(vertices);
 coda;
 }
 
@@ -319,6 +461,7 @@ API xapi graph_lookup_sentinel(void * restrict _context, const char ** restrict 
 API xapi graph_lookup(
     graph * restrict g
   , graph_lookup_identifier_callback identifier_callback
+  , bool (*candidate_callback)(void * context, const struct vertex * const restrict v)
   , void * restrict context
   , void * mm_tmp
   , vertex * restrict V[2]   // (returns) located vertices
@@ -348,6 +491,9 @@ API xapi graph_lookup(
   {
     const vertex * v = nodes[x[1]];
 
+    if(candidate_callback && !candidate_callback(context, v))
+      continue;
+
     while(1)
     {
       fatal(identifier_callback, context, &label, &label_len);
@@ -361,13 +507,13 @@ API xapi graph_lookup(
         break;
     }
 
-    bool matched = !!label;
+    bool matched = !label;
 
     // reset the cursor, discard the initial label
     fatal(identifier_callback, context, 0, 0);
     fatal(identifier_callback, context, &label, &label_len);
 
-    if(matched)
+    if(!matched)
     {
       // identifier was not fully matched
       continue;
@@ -407,6 +553,15 @@ API xapi graph_identity_indexw(graph * const restrict g, vertex * const restrict
   enter;
 
   fatal(multimap_set, g->mm, name, name_len, v);
+
+  finally : coda;
+}
+
+API xapi graph_identity_deindex(graph * const restrict g, vertex * const restrict v)
+{
+  enter;
+
+  fatal(multimap_delete, g->mm, v->label, v->label_len);
 
   finally : coda;
 }

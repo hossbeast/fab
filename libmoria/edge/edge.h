@@ -29,41 +29,92 @@ REMARKS
 
 */
 
-#include <stdint.h>
-
 #include "xapi.h"
 #include "types.h"
+
+#include "valyria/llist.h"
+#include "valyria/rbtree.h"
 
 struct graph;
 struct vertex;
 
-typedef struct edge
-{
-  struct vertex * A;      // A depends on B, A -> B
-  struct vertex * B;      //  e.g. A is up from B, B is down from A
-  uint32_t        attrs;  // properties of the edge
+#define MORIA_EDGE_HYPER    0x80000000  /* set for a many-to-many hyperedge */
+#define MORIA_EDGE_IDENTITY 0x40000000  /* set for an identity edge */
 
-  int visited;            // id of the last traversal to visit this edge
+/* all edges where Alen == Blen == 1 do NOT have the hyper-edge bit set */
 
-#ifndef EDGE_INTERNALS
-# define EDGE_INTERNALS
-#endif
-  EDGE_INTERNALS;
+typedef struct edge {
+  uint32_t attrs;            // properties of the edge
+
+  union {
+    struct {
+      rbnode rbn_up;
+      struct vertex *A;      // A depends on B, A -> B
+    };
+
+    /* hyperedge */
+    struct {
+      struct {
+        struct vertex *v;
+        rbnode rbn;
+      } *Alist;
+      uint16_t Alen;
+    };
+  };
+
+  union {
+    struct {
+      rbnode rbn_down;
+      struct vertex *B;      // A depends on B, A -> B, A is up, B is down
+    };
+
+    /* hyperedge */
+    struct {
+      struct {
+        struct vertex *v;
+        rbnode rbn;
+      } *Blist;
+      uint16_t Blen;
+    };
+  };
+
+  llist graph_lln;    // graph list/freelist
+  llist lln;          // user use
 } edge;
-
-/// edge_disconnect
-//
-// SUMMARY
-//  remove the edge A : B
-//
-// PARAMETERS
-//  g - graph
-//  e - edge to remove
-//
-xapi edge_disconnect(struct graph * restrict g, edge * restrict e)
-  __attribute__((nonnull));
 
 edge * edge_between(const struct vertex * restrict A, const struct vertex * restrict B)
   __attribute__((nonnull));
+
+edge * edge_of(struct vertex ** restrict Alist, uint16_t Alen, struct vertex ** restrict Blist, uint16_t Blen)
+  __attribute__((nonnull));
+
+/// edge_value_set
+//
+// SUMMARY
+//  set the value for the edge
+//
+// REMARKS
+//  size must match that provided in graph_create
+//
+// PARAMETERS
+//  v       - pointer to edge
+//  [value] - pointer to value
+//
+void edge_value_set(edge * const restrict v, struct graph * restrict g, void * value)
+  __attribute__((nonnull));
+
+/// edge_value
+//
+// SUMMARY
+//  get a pointer to the value for the edge
+//
+void * edge_value(const edge * const restrict v);
+
+/// edge_containerof
+//
+// SUMMARY
+//  get a pointer to the edge containing the user value
+//
+edge * edge_containerof(const void * value);
 
 #endif

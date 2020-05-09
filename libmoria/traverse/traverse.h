@@ -25,24 +25,43 @@ MODULE
 
 */
 
-#include <stdint.h>
+#include "xapi.h"
+#include "types.h"
 
 struct edge;
 struct graph;
 struct vertex;
+struct attrs32;
+
+#define TRAVERSAL_DIRECTION_OPT 0x00000003
+#define TRAVERSAL_MODE_OPT      0x0000000c
 
 /* traversal options and modifiers */
-#define MORIA_ATTRS_TABLE                                                                                \
-  MORIA_ATTR(MORIA_TRAVERSE_UP   , 0x00000001) /* traverse from a node to its consumers (upward) */      \
-  MORIA_ATTR(MORIA_TRAVERSE_DOWN , 0x00000002) /* traverse from a node to its dependencies (downward) */ \
-  MORIA_ATTR(MORIA_TRAVERSE_PRE  , 0x00000004) /* breadth-first traversal */                             \
-  MORIA_ATTR(MORIA_TRAVERSE_POST , 0x00000008) /* depth-first traversal */
+#define TRAVERSAL_DIRECTION_TABLE                                                                                                         \
+  TRAVERSAL_ATTR_DEF(MORIA_TRAVERSE_UP   , TRAVERSAL_DIRECTION_OPT, 0x00000001) /* traverse from a node to its consumers (upward) */      \
+  TRAVERSAL_ATTR_DEF(MORIA_TRAVERSE_DOWN , TRAVERSAL_DIRECTION_OPT, 0x00000002) /* traverse from a node to its dependencies (downward) */ \
 
-enum {
-#define MORIA_ATTR(name, number) name = number,
-MORIA_ATTRS_TABLE
-#undef MORIA_ATTR
-};
+#define TRAVERSAL_ATTR_DEF(x, r, y) x = UINT32_C(y),
+
+typedef enum traversal_direction {
+TRAVERSAL_DIRECTION_TABLE
+} traversal_direction;
+
+#define TRAVERSAL_MODE_TABLE                                                                              \
+  TRAVERSAL_ATTR_DEF(MORIA_TRAVERSE_PRE  , TRAVERSAL_MODE_OPT, 0x00000004) /* breadth-first traversal */  \
+  TRAVERSAL_ATTR_DEF(MORIA_TRAVERSE_POST , TRAVERSAL_MODE_OPT, 0x00000008) /* depth-first traversal */    \
+
+typedef enum traversal_mode {
+TRAVERSAL_MODE_TABLE
+} traversal_mode;
+
+extern struct attrs32 * traverse_attrs;
+#undef TRAVERSAL_ATTR_DEF
+
+#define MORIA_TRAVERSE_PRUNE      0x01 // prune this path in the traversal
+#define MORIA_TRAVERSE_DEPTH      0x10 // use depth constraints in traversal_criteria
+#define MORIA_TRAVERSE_EXHAUSTIVE 0x20 // permit entities to be visited multiple times
+#define MORIA_TRAVERSE_NOFOLLOW   0x40 // do not follow link vertices to the referent
 
 /// traversal_criteria
 //
@@ -56,7 +75,15 @@ typedef struct traversal_criteria {
   uint32_t vertex_visit;
   uint32_t edge_travel;
   uint32_t edge_visit;
+  uint16_t min_depth;       // only if MORIA_TRAVERSE_DEPTH
+  uint16_t max_depth;       // only if MORIA_TRAVERSE_DEPTH
 } traversal_criteria;
+
+struct vertex_traversal_state;
+typedef struct vertex_traversal_state vertex_traversal_state;
+
+struct edge_traversal_state;
+typedef struct edge_traversal_state edge_traversal_state;
 
 /// graph_traverse
 //
@@ -97,8 +124,19 @@ typedef struct traversal_criteria {
 xapi graph_traverse_vertices(
     /* 1 */ struct graph * restrict g
   , /* 2 */ struct vertex * restrict v
-  , /* 3 */ xapi (* visitor)(struct vertex * restrict, int distance, void *)
-  , /* 4 */ int traversal_id
+  , /* 3 */ xapi (* visitor)(struct vertex * restrict, void * ctx, traversal_mode mode, int distance, int * restrict)
+  , /* 4 */ vertex_traversal_state * state
+  , /* 5 */ const traversal_criteria * restrict criteria
+  , /* 6 */ uint32_t attrs
+  , /* 7 */ void * ctx
+)
+  __attribute__((nonnull(1, 2)));
+
+xapi graph_traverse_vertex_edges(
+    /* 1 */ struct graph * restrict g
+  , /* 2 */ struct vertex * restrict v
+  , /* 3 */ xapi (* visitor)(struct edge * restrict, void * ctx, traversal_mode mode, int distance, int * restrict)
+  , /* 4 */ edge_traversal_state * state
   , /* 5 */ const traversal_criteria * restrict criteria
   , /* 6 */ uint32_t attrs
   , /* 7 */ void * ctx
@@ -108,8 +146,8 @@ xapi graph_traverse_vertices(
 xapi graph_traverse_edges(
     /* 1 */ struct graph * restrict g
   , /* 2 */ struct edge * restrict e
-  , /* 3 */ xapi (* visitor)(struct edge * restrict, int distance, void *)
-  , /* 4 */ int traversal_id
+  , /* 3 */ xapi (* visitor)(struct edge * restrict, void * ctx, traversal_mode mode, int distance, int * restrict)
+  , /* 4 */ edge_traversal_state * state
   , /* 5 */ const traversal_criteria * restrict criteria
   , /* 6 */ uint32_t attrs
   , /* 7 */ void * ctx
@@ -126,12 +164,20 @@ xapi graph_traverse_edges(
 //
 xapi graph_traverse_vertices_all(
     /* 1 */ struct graph * restrict g
-  , /* 2 */ xapi (* visitor)(struct vertex * restrict, int distance, void *)
+  , /* 2 */ xapi (* visitor)(struct vertex * restrict, void * ctx, traversal_mode mode, int distance, int * restrict)
   , /* 3 */ const traversal_criteria * restrict criteria
   , /* 4 */ uint32_t attrs
   , /* 5 */ void * ctx
 )
   __attribute__((nonnull(1)));
+
+xapi graph_vertex_traversal_state_xfree(vertex_traversal_state * restrict state);
+xapi graph_vertex_traversal_state_ixfree(vertex_traversal_state ** restrict state)
+  __attribute__((nonnull));
+
+xapi graph_edge_traversal_state_xfree(edge_traversal_state * restrict state);
+xapi graph_edge_traversal_state_ixfree(edge_traversal_state ** restrict state)
+  __attribute__((nonnull));
 
 /// graph_traversal_begin
 //
@@ -141,7 +187,19 @@ xapi graph_traverse_vertices_all(
 // RETURNS
 //  an id suitable for passing to graph_traverse_*
 //
-int graph_traversal_begin(struct graph * restrict g)
+xapi graph_vertex_traversal_begin(struct graph * restrict g, vertex_traversal_state ** restrict state)
+  __attribute__((nonnull));
+
+xapi graph_edge_traversal_begin(struct graph * restrict g, edge_traversal_state ** restrict state)
+  __attribute__((nonnull));
+
+void graph_vertex_traversal_end(struct graph * restrict g, vertex_traversal_state * restrict state);
+void graph_edge_traversal_end(struct graph * restrict g, edge_traversal_state * restrict state);
+
+bool graph_traversal_vertex_visited(const struct graph * const restrict g, const struct vertex * const restrict v, vertex_traversal_state * restrict state)
+  __attribute__((nonnull));
+
+bool graph_traversal_edge_visited(const struct graph * const restrict g, const struct edge * const restrict v, edge_traversal_state * restrict state)
   __attribute__((nonnull));
 
 #endif

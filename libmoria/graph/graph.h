@@ -30,14 +30,15 @@ REMARKS
  direction to another vertex called the root. For example, a filesystem tree is an identity graph
  with a root vertex at '/'.
 
+ hyperedges cannot be part of the identity graph
 */
 
 #include "xapi.h"
 #include "types.h"
 
-struct list;
-struct map;
+struct llist;
 struct narrator;
+struct attrs32;
 
 struct vertex;
 struct edge;
@@ -45,22 +46,44 @@ struct traversal_criteria;
 
 typedef struct graph graph;
 
-/// graph_create
-//
-// SUMMARY
-//  create a graph
-//
-// PARAMETERS
-//  g           - (returns) graph
-//  [identity]  - nonzero to enable identity operations
-//  [vsz]       - size of vertex udata
-//  [vertex_value_destroy] - invoked on vertex user data before releasing
-//
+/*
+ * create a graph
+ *
+ * g           - (returns) graph
+ * [identity]  - nonzero to enable identity operations
+ * [vsz]       - size of vertex udata
+ * [vertex_value_destroy] - invoked on vertex user data before releasing
+ */
 xapi graph_create(graph ** const restrict g, uint32_t identity)
   __attribute__((nonnull(1)));
 
-xapi graph_createx(graph ** const restrict g, uint32_t identity, size_t vsz, void * vertex_value_destroy, void * vertex_value_xdestroy)
+xapi graph_createx(
+    graph ** const restrict g
+  , uint32_t identity
+  , size_t vsz
+  , size_t esz
+  , void * vertex_value_destroy
+  , void * vertex_value_xdestroy
+)
   __attribute__((nonnull(1)));
+
+/*
+ * [defs]      - name/value mappings for parse and say
+ */
+void graph_vertex_definitions_set(graph * restrict g, const struct attrs32 * restrict defs)
+  __attribute__((nonnull));
+
+/*
+ * [defs]      - name/value mappings for parse and say
+ */
+void graph_edge_definitions_set(graph * restrict g, const struct attrs32 * restrict defs)
+  __attribute__((nonnull));
+
+struct llist * graph_vertices(graph * restrict g)
+  __attribute__((nonnull));
+
+struct llist * graph_edges(graph * restrict g)
+  __attribute__((nonnull));
 
 /// graph_xfree
 //
@@ -85,22 +108,6 @@ xapi graph_ixfree(graph ** const restrict g)
 xapi graph_recycle(graph * const restrict g)
   __attribute__((nonnull));
 
-/// graph_vertices
-//
-// SUMMARY
-//  get a list of vertices in the graph
-//
-const struct list * graph_vertices(graph * restrict g)
-  __attribute__((nonnull));
-
-/// graph_edges
-//
-// SUMMARY
-//  get a list of edges in the graph
-//
-const struct list * graph_edges(graph * restrict g)
-  __attribute__((nonnull));
-
 /// graph_say
 //
 // SUMMARY
@@ -111,8 +118,8 @@ const struct list * graph_edges(graph * restrict g)
 //  [d] - attrs name lookup
 //  N   - narrator
 //
-xapi graph_say(graph * const restrict g, struct map * restrict definitions, struct narrator * const restrict N)
-  __attribute__((nonnull(1, 3)));
+xapi graph_say(graph * const restrict g, struct narrator * const restrict N)
+  __attribute__((nonnull));
 
 /// graph_lookup_identifier_callback
 //
@@ -133,6 +140,7 @@ typedef xapi (*graph_lookup_identifier_callback)(
 // PARAMETERS
 //  g                   - graph with nonzero identity
 //  identifier_callback - user callback to get vertex labels in the lookup sequence
+//  candidate_callback  - user callback to qualify a vertex
 //  context             - opaque user context for identifier_callback
 //  mm_tmp              - required temp space for mm lookup
 //  *V                  - (returns) one, or two vertices (based on *r)
@@ -145,14 +153,15 @@ typedef xapi (*graph_lookup_identifier_callback)(
 //   2 - two or more matching vertices (*V[0], *V[1])
 //
 xapi graph_lookup(
-    struct graph * restrict g
-  , graph_lookup_identifier_callback identifier_callback
-  , void * context
-  , void * mm_tmp
-  , struct vertex * restrict V[2]
-  , int * restrict r
+    /* 1 */ struct graph * restrict g
+  , /* 2 */ graph_lookup_identifier_callback identifier_callback
+  , /* 3 */ bool (*candidate_callback)(void * context, const struct vertex * const restrict v)
+  , /* 4 */ void * context
+  , /* 5 */ void * mm_tmp
+  , /* 6 */ struct vertex * restrict V[2]
+  , /* 7 */ int * restrict r
 )
-  __attribute__((nonnull));
+  __attribute__((nonnull(1, 2, 5, 6, 7)));
 
 typedef struct graph_lookup_sentinel_context {
   char ** labels;     // sentinel-terminated sequence of labels
@@ -170,6 +179,9 @@ xapi graph_identity_indexs(graph * const restrict g, struct vertex * const restr
   __attribute__((nonnull));
 
 xapi graph_identity_indexw(graph * const restrict g, struct vertex * const restrict v, const char * const restrict name, uint16_t name_len)
+  __attribute__((nonnull));
+
+xapi graph_identity_deindex(graph * const restrict g, struct vertex * const restrict v)
   __attribute__((nonnull));
 
 #endif

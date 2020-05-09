@@ -21,28 +21,43 @@
 #include "types.h"
 #include "xapi.h"
 
+#include "valyria/llist.h"
+
 #include "graph.h"
+#include "traverse.internal.h"
 
-struct list;      // valyria/list
-struct multimap;  // valyria/multimap
+struct multimap;    // valyria/multimap
+struct vertex_t;
+struct edge_t;
+struct attrs32;
 
-struct vertex;
+struct graph {
+  llist vertices;         // active
+  llist vertex_freelist;  // deleted
+  size_t vertex_index;    // traversal
+  uint64_t vertex_mask;
 
-struct graph
-{
-  struct list * vertices;
-  struct list * edges;
-  int traversal_id;
+  llist edges;            // active
+  llist edge_freelist;    // deleted
+  size_t edge_index;      // traversal
+  uint64_t edge_mask;
 
   uint32_t identity;
   struct multimap * mm;
+  llist states;           // traversal_state's
+  const struct attrs32 * vertex_defs;
+  const struct attrs32 * edge_defs;
 
-  size_t vsz;
+  size_t vsz;     // vertex value size
+  size_t esz;     // edge value size
   void (*vertex_value_destroy)(void *);
   xapi (*vertex_value_xdestroy)(void *);
 };
 
-xapi graph_vertex_push(graph * const restrict g, struct vertex * const restrict v)
+void graph_vertex_init(graph * const restrict g, struct vertex_t * const restrict v)
+  __attribute__((nonnull));
+
+void graph_edge_init(graph * const restrict g, struct edge_t * const restrict v)
   __attribute__((nonnull));
 
 #endif

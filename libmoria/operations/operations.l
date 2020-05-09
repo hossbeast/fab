@@ -16,11 +16,6 @@
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
 %{
-  #include <stdio.h>
-  #include <strings.h>
-
-  struct operations_xtra;
-  #define YYU_EXTRA_TYPE struct operations_xtra
   #include "yyutil/scanner.h"
 
   #include "MORIA.errtab.h"
@@ -28,50 +23,14 @@
   #include "operations.tab.h"
   #include "operations.tokens.h"
 
-  #include "parseint.h"
-
-  /// LEX
-  //
-  // SUMMARY
-  //  parse a whitespace or character token with no semantic value possibly at an offset from yytext
-  //
-  // PARAMETERS
-  //  token - token to parse
-  //  ldel  - offset from start of yytext
-  //
-  #define LEX(token)            \
-    fatal(lexify                \
-      , token                   \
-      , yylval                  \
-      , yylloc                  \
-      , yyextra                 \
-      , yytext                  \
-      , yyleng                  \
-      , 0                       \
-      , 0                       \
-      , 0                       \
-    )
-
-  static xapi lexify(const int token, YYSTYPE * restrict lval, yyu_location * restrict lloc, operations_xtra * restrict xtra, char * restrict text, const int leng, const int ldel, const int vdel, void * restrict v)
-  {
-    enter;
-
-    if(token == POSINT)
-      fatal(xparseuint, text + vdel, SCNu64, 0, UINT64_MAX, 0, UINT8_MAX, &lval->u32, 0);
-    else if(token == HEX)
-      fatal(xparseuint, text + vdel, SCNx64, 0, UINT64_MAX, 0, UINT8_MAX, &lval->u32, 0);
-
-    fatal(yyu_lexify, token, lval, sizeof(*lval), lloc, xtra, text, leng, ldel, 0);
-
-    finally : coda;
-  }
+  #define YYSTYPE OPERATIONS_YYSTYPE
+  #define YYLTYPE yyu_location
 %}
 
 %option noinput nounput noyywrap noyy_top_state
 %option reentrant
 %option bison-bridge bison-locations
 %option prefix="operations_yy"
-%option extra-type="operations_xtra *"
 %option stack
 
 %x multilinecomment
@@ -97,31 +56,38 @@ ILL   [\x00-\x08\x0B-\x1F\x7F-\xFF]
 <INITIAL>[\r\t ]+                                       { LOCWRITE; }
 
  /* tokens */
-<INITIAL>[-:!+~/]                                       { lenter; LEX(yytext[0]); yield(yytext[0]); finally : lcoda; }
-<INITIAL>([0-9]+)                                       { lenter; LEX(POSINT); yield(POSINT); finally : lcoda; }
-<INITIAL>(?i:0x[a-f0-9]+)                               { lenter; LEX(HEX); yield(HEX); finally : lcoda; }
-<INITIAL>[a-zA-Z_][-a-zA-Z0-9_.]*                       { lenter; LEX(STR); yield(STR); finally : lcoda; }
+<INITIAL>[/][/]                                         { lenter; LEX(SLASH2); finally : lcoda; }
+<INITIAL>[=:!+~/,@]                                     { lenter; LEX(yytext[0]); finally : lcoda; }
+
+ /* strings */
+ /*
+<INITIAL>(?i:0x[a-f0-9]+)[-a-zA-Z0-9_.]+                { lenter; printf("!! %d\n", __LINE__); LEX(STR); finally : lcoda; }
+ */
+
+ /* integers */
+<INITIAL>[0-9]+                                         { lenter; LEXI("%"SCNuMAX); finally : lcoda; }
+<INITIAL>(?i:0x[a-f0-9]+)                               { lenter; LEXI("%"SCNxMAX); finally : lcoda; }
+
+ /* strings */
+<INITIAL>[-a-zA-Z0-9_.]+                                { lenter; LEX(STR); finally : lcoda; }
 
 <*>[\x00-\x1F\x7F-\xFF]                                 {
                                                           lenter;
-                                                          while(yyextra->states_n)
-                                                            { POPSTATE; }
+                                                          POPSTATES;
                                                           LOCWRITE;
                                                           failf(MORIA_ILLBYTE, "byte", "0x%02hhx", yytext[0]);
                                                           finally : lcoda;
                                                         }
 <*>[\x20-\x7E]                                          {
                                                           lenter;
-                                                          while(yyextra->states_n)
-                                                            { POPSTATE; }
+                                                          POPSTATES;
                                                           LOCWRITE;
                                                           failf(MORIA_ILLBYTE, "character", "'%1$c'(0x%1$02hhx)", yytext[0]);
                                                           finally : lcoda;
                                                         }
 <<EOF>>                                                 {
                                                           lenter;
-                                                          while(yyextra->states_n)
-                                                            { POPSTATE; }
-                                                          yield(0); /* return end-of-input */
+                                                          POPSTATES;
+                                                          _yyu_V = 0; /* return end-of-input */
                                                           finally : lcoda;
                                                         }

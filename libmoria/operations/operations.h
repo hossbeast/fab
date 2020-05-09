@@ -37,25 +37,30 @@ struct graph;
 struct list;
 struct vertex;
 struct edge;
+enum traversal_mode;
 
 struct operations_parser;
 typedef struct operations_parser operations_parser;
 
 #define GRAPH_OPERATION_TABLE                               \
-  GRAPH_OPERATION_DEF(GRAPH_OPERATION_VERTEX)       /*   */ \
-  GRAPH_OPERATION_DEF(GRAPH_OPERATION_CONNECT)      /* + */ \
-  GRAPH_OPERATION_DEF(GRAPH_OPERATION_DISCONNECT)   /* - */ \
-  GRAPH_OPERATION_DEF(GRAPH_OPERATION_DISINTEGRATE) /* ~ */ \
+  DEF(GRAPH_OPERATION_VERTEX)       /*   */ \
+  DEF(GRAPH_OPERATION_CONNECT)      /* + */ \
+  DEF(GRAPH_OPERATION_DISCONNECT)   /* - */ \
+  DEF(GRAPH_OPERATION_REFRESH)      /* @ */ \
+  DEF(GRAPH_OPERATION_INVALIDATE)   /* ~ */ \
 
 typedef enum operation_type {
   GRAPH_OPERATION_RANGE_BEFORE = 0,
 
-#define GRAPH_OPERATION_DEF(x) x,
+#undef DEF
+#define DEF(x) x,
 GRAPH_OPERATION_TABLE
-#undef GRAPH_OPERATION_DEF
 
   GRAPH_OPERATION_RANGE_AFTER
 } operation_type;
+
+#define MORIA_OPATTRS_INIT       0x1
+#define MORIA_OPATTRS_INIT_SLASH 0x2
 
 /// identifier
 //
@@ -63,10 +68,17 @@ GRAPH_OPERATION_TABLE
 //
 typedef struct identifier {
   struct identifier * next;   // next in the sequence
+  uint8_t op_attrs;
   uint32_t attrs;
   uint16_t label_len;
   char label[];
 } identifier;
+
+typedef struct identifier_list {
+  identifier *v0;
+  identifier **v;
+  uint16_t len;
+} identifier_list;
 
 /// operation
 //
@@ -75,20 +87,32 @@ typedef struct identifier {
 typedef struct operation {
   operation_type type;
   uint32_t attrs;
-  identifier * A;
-  identifier * B;
+  identifier_list * A;
+  identifier_list * B;
 } operation;
 
 typedef struct operations_dispatch {
-  xapi (*connect)(struct graph * restrict g, struct vertex * restrict A, struct vertex * restrict B, uint32_t attrs)
+  xapi (*connect)(struct graph * restrict g, struct vertex * restrict A, struct vertex * restrict B, uint32_t attrs, struct edge ** restrict e, bool * restrict r)
+    __attribute__((nonnull(1, 2, 3)));
+  xapi (*hyperconnect)(struct graph * restrict g, struct vertex ** restrict Alist, uint16_t Alen, struct vertex ** restrict B, uint16_t Blen, uint32_t attrs, struct edge ** restrict e, bool * restrict r)
+    __attribute__((nonnull(1, 2, 4)));
+  xapi (*disconnect)(struct graph * restrict g, struct edge * restrict e)
     __attribute__((nonnull));
-  xapi (*disconnect)(struct graph * restrict g, struct vertex * restrict A, struct vertex * restrict B)
+  xapi (*create_vertex)(struct vertex ** restrict v, struct graph * restrict g, uint32_t attrs, uint8_t op_attrs, const char * restrict label, uint16_t label_len)
     __attribute__((nonnull));
-  xapi (*vertex_create)(struct vertex ** restrict v, struct graph * restrict g, uint32_t attrs, const char * restrict label, uint16_t label_len)
+  xapi (*invalidate_vertex)(struct graph * restrict g, struct vertex * restrict v)
     __attribute__((nonnull));
+  xapi (*refresh_vertex)(struct graph * restrict g, struct vertex * restrict v)
+    __attribute__((nonnull));
+
+  /* called at the start of operations_perform */
+  xapi (*setup)(struct operations_dispatch * restrict dispatch, struct graph * restrict g);
+
+  /* called at the end of operations_perform */
+  xapi (*cleanup)(struct operations_dispatch * restrict dispatch, struct graph * restrict g);
 } operations_dispatch;
 
-operations_dispatch * graph_operations_dispatch;
+extern operations_dispatch * graph_operations_dispatch;
 
 /// operation_type_name
 //
@@ -120,28 +144,32 @@ xapi operations_parser_xfree(operations_parser * const restrict);
 xapi operations_parser_ixfree(operations_parser ** const restrict)
   __attribute__((nonnull));
 
+xapi operations_parser_operations_create(struct list ** restrict operations)
+  __attribute__((nonnull));
+
 /// operations_parser_parse
 //
 // SUMMARY
 //  parse a specification of a series of operations
 //
 // PARAMETERS
-//  [parser]     - (returns) reusable parser
-//  text         - config text
-//  len          - size of text
-//  [operations] - (returns) sequence of operations
+//  parser     - (returns) reusable parser
+//  operations - (returns) sequence of operations
+//  text       - config text
+//  len        - size of text
 //
 // REMARKS
 //  not passing stor means that the parsed config tree will have been freed before this function
 //  returns, and is therefore only useful to log the parse tree
 //
 xapi operations_parser_parse(
-    operations_parser ** restrict parser
-  , const char * restrict buf
+    operations_parser * restrict parser
+  , struct graph * restrict g
+  , char * restrict text
   , size_t len
-  , struct list ** restrict operations
+  , struct list * restrict operations
 )
-  __attribute__((nonnull(2)));
+  __attribute__((nonnull));
 
 /// operations_perform
 //
@@ -159,7 +187,7 @@ xapi operations_parser_parse(
 //
 xapi operations_perform(
     struct graph * restrict g
-  , const operations_dispatch * restrict dispatch
+  , operations_dispatch * restrict dispatch
   , struct list * restrict operations
 )
   __attribute__((nonnull));
@@ -167,7 +195,7 @@ xapi operations_perform(
 /// graph_connect
 //
 // SUMMARY
-//  create the edge A : B with the specified attributes
+//  create the edge A : B with the specified attributes (idempotent)
 //
 // REMARKS
 //  A : B, e.g. A needs B, e.g. A depends on B, e.g. A is up from B, B is down from A
@@ -177,46 +205,71 @@ xapi operations_perform(
 //  A     - vertex
 //  B     - vertex
 //  attrs - properties of the edge
+//  [e]   - (returns) the edge
+//  [r]   - (returns) true if the edge is newly created
 //
 // THROWS
 //  EXISTS
 //
-xapi graph_connect(struct graph * const restrict g, struct vertex * A, struct vertex * B, uint32_t attrs)
-  __attribute__((nonnull));
+xapi graph_connect(
+    struct graph * const restrict g
+  , struct vertex * A
+  , struct vertex * B
+  , uint32_t attrs
+  , struct edge ** restrict e
+  , bool * restrict r
+)
+  __attribute__((nonnull(1, 2, 3)));
 
+/*
+ * as for graph_connect, except that if the edge already exists, replace the existing B
+ */
+xapi graph_connect_replace(
+    struct graph * const restrict g
+  , struct vertex * A
+  , struct vertex * B
+  , uint32_t attrs
+  , struct edge ** restrict e
+  , bool * restrict r
+  , struct vertex ** oldB
+)
+  __attribute__((nonnull(1, 2, 3)));
+
+/// graph_hyperconnect
+//
+// create the edge [ Alist ] : [ Blist ] with the specified attributes (idempotent)
+//
+xapi graph_hyperconnect(
+    struct graph * const restrict g
+  , struct vertex ** Alist
+  , uint16_t Alen
+  , struct vertex ** Blist
+  , uint16_t Blen
+  , uint32_t attrs
+  , struct edge ** restrict e
+  , bool * restrict r
+)
+  __attribute__((nonnull(1, 2, 4)));
+
+/// edge_disconnect
+//
+// SUMMARY
+//  remove the edge A : B
+//
+// PARAMETERS
+//  g - graph
+//  e - edge to remove
+//
 xapi graph_disconnect(struct graph * const restrict g, struct vertex * A, struct vertex * B)
   __attribute__((nonnull));
 
-typedef struct graph_disintegrate_context {
-  void * uctx;
-} graph_disintegrate_context;
-
-xapi operations_disintegrate_visitor(struct edge * restrict e, int distance, void * restrict context)
+xapi graph_hyperdisconnect(struct graph * restrict g, struct vertex ** Alist, uint16_t Alen, struct vertex ** Blist, uint16_t Blen)
   __attribute__((nonnull));
 
-/// graph_disintegrate
-//
-// SUMMARY
-//  remove all edges in a subgraph from the graph
-//
-// PARAMETERS
-//  g              - 
-//  e              - 
-//  [criteria]     - 
-//  attrs          - 
-//  [traversal_id] - 
-//  [visitor]      - 
-//  [ctx]          - optional user context
-//
-xapi graph_disintegrate(
-    /* 1 */ struct graph * restrict g
-  , /* 2 */ struct edge * restrict e
-  , /* 3 */ xapi (* visitor)(struct edge * restrict e, int distance, void * restrict ctx) __attribute__((nonnull))
-  , /* 4 */ int traversal_id
-  , /* 5 */ const traversal_criteria * restrict criteria
-  , /* 6 */ uint32_t attrs
-  , /* 7 */ void * ctx
-)
-  __attribute__((nonnull(1, 2)));
+xapi graph_edge_disconnect(struct graph * const restrict g, struct edge * restrict e)
+  __attribute__((nonnull));
+
+xapi graph_vertex_delete(struct graph * restrict g, struct vertex * restrict v)
+  __attribute__((nonnull));
 
 #endif

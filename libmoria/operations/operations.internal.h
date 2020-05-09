@@ -18,27 +18,20 @@
 #ifndef MORIA_OPERATIONS_INTERNAL_H
 #define MORIA_OPERATIONS_INTERNAL_H
 
-#ifndef YYU_EXTRA_TYPE
- struct operations_xtra;
- #define YYU_EXTRA_TYPE struct operations_xtra
-#endif
 #include "yyutil/parser.h"
 #include "operations.h"
 
 struct dictionary;
 struct list;
+struct attrs32;
 
-typedef struct operations_xtra
-{
-  /* yyu-defined xtra fields */
-  union {
-    yyu_extra;
-    yyu_extra yyu;
-  };
-  
-  struct dictionary * definitions;
+struct operations_parser {
+  yyu_parser yyu;
+
+  const struct attrs32 * vertex_defs;
+  const struct attrs32 * edge_defs;
   struct list * li;  // sequence of operations
-} operations_xtra;
+};
 
 /// operations_yyerror
 //
@@ -50,9 +43,10 @@ typedef struct operations_xtra
 // DETAILS
 //  called from tab.o and lex.o
 //
-static void operations_yyerror(struct YYLTYPE * loc, void * scanner, operations_xtra * pp, char const * err)
+static void operations_yyerror(yyu_location * loc, void * scanner, yyu_parser * pp, char const * err)
   __attribute__((weakref("yyu_grammar_error")));
 
+void identifier_list_free(struct identifier_list * id);
 void identifier_free(struct identifier * id);
 void operation_free(struct operation * op);
 
