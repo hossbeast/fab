@@ -44,7 +44,6 @@ static xapi snarf(int fd, char ** const restrict dst, size_t * restrict dstlp)
     fatal(xread, fd, &(*dst)[dstl], dsta - dstl, &count);
     dstl += count;
   } while(dstl == dsta);
-  dstl--;
 
   if(dstlp)
     *dstlp = dstl;

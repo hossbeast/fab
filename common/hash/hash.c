@@ -63,7 +63,10 @@ static inline uint64_t final64(uint64_t h)
 uint32_t strhash32(uint32_t h, const char * restrict s)
 {
   while(*s)
+  {
     h = mix32(h, *s);
+    s++;
+  }
 
   return final32(h);
 }
@@ -82,7 +85,10 @@ uint32_t hash32(uint32_t h, const void * const restrict v, size_t l)
 uint64_t strhash64(uint64_t h, const char * restrict s)
 {
   while(*s)
+  {
     h = mix64(h, *s);
+    s++;
+  }
 
   return final64(h);
 }

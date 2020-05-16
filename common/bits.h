@@ -15,18 +15,16 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef _IDENTITY_INTERNAL_H
-#define _IDENTITY_INTERNAL_H
+#ifndef _BITS_H
+#define _BITS_H
 
-#include "identity.h"
+// ca - count all
+// cl - count leading
+// ct - count trailing
 
-/// identity_setup
-//
-// populates the identity fields of g_params and asserts that this
-// executable has the correct ownership and permissions
-//
-xapi identity_setup(void);
-
-void identity_teardown(void);
+static inline int caones(unsigned int x)
+{
+  return __builtin_popcount(x);
+}
 
 #endif

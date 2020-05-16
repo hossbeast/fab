@@ -26,7 +26,7 @@
 
 static inline void spinlock_engage_as(int * v, int as)
 {
-  int x;
+  uint16_t x;
 
   if(*v != as)
   {

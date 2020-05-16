@@ -22,8 +22,6 @@
 
 #include "xapi.h"
 
-#define restrict __restrict
-
 /// grow
 //
 // SUMMARY
@@ -44,5 +42,4 @@ xapi grow(void * target, size_t es, size_t len, size_t ec, size_t * const restri
 //
 xapi growx(void * target, size_t es, size_t len, size_t ec, size_t * const restrict ac, size_t seed);
 
-#undef restrict
 #endif

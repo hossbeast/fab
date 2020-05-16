@@ -22,8 +22,6 @@
 
 #include "xapi.h"
 
-#define restrict __restrict
-
 /// fmt_apply
 //
 // SUMMARY
@@ -35,5 +33,4 @@
 xapi fmt_apply(char * const restrict dst, size_t dst_size, const char * const restrict fmt, va_list va)
   __attribute__((nonnull));
 
-#undef restrict
 #endif

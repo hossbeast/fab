@@ -34,6 +34,15 @@ $valgrind --gen-suppressions=all $valgrind_options --suppressions=/dev/fd/601 --
   ...
 }
 {
+  dlerror leaks
+  Memcheck:Leak
+  match-leak-kinds: reachable
+  fun:*alloc
+  ...
+  fun:_dl_catch_error
+  ...
+}
+{
   dlopen leaks
   Memcheck:Leak
   match-leak-kinds: reachable

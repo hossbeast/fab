@@ -27,15 +27,15 @@
 //  with hex escape sequences
 //
 // PARAMETERS
-//  src - source string
-//  len - length of src, 0 for strlen
 //  dst - dst buffer
 //  sz  - size of dst
+//  src - source string
+//  len - length of src
 //
 // RETURNS
 //  returns number of bytes written
 //
-int strescw(const char * const restrict src, const size_t len, char * const restrict dst, const size_t sz)
+size_t strescw(void * restrict dst, size_t sz, const char * const restrict src, size_t len)
   __attribute__((nonnull(1, 3)));
 
 #endif
