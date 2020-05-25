@@ -1,0 +1,31 @@
+v0.6.0 - May 2020
+
+The v0.6 release represents a rewrite of most of the functionality of the
+project. It is NOT backwards compatible with the v0.5 series. To upgrade, you
+will have to replace fabfiles with module.bam files which have an entirely
+different syntax.
+
+v0.5.4.0 - July 2018
+
+The v0.5 branch is used to build the master branch. This release is aimed at
+making it easier to set up a new environment for building the master branch. In
+particular the fab build logic should not rely on modules provided by the
+previous version.
+
+* clean up some compile time errors and warnings to permit building with newer
+  compilers
+* add an option to allow specifying directories for resolving invocations with
+  higher precedence than the builtin directories provided by fab
+
+v0.5.3.0 - May 2016
+v0.5.2.0 - March 2015
+v0.5.1.0 - February 2015
+v0.5.0.0 - February 2015
+v0.4.3.3 - December 2014
+v0.4.3.0 - January 2014
+v0.4.2.3 - November 2013
+v0.4.2.2 - November 2013
+v0.4.2.1 - August 2013
+v0.4.2.0 - July 2013
+v0.4.1   - May 2013
+v0.4.0   - April 2013
