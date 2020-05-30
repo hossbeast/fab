@@ -4,7 +4,7 @@ set -e
 set -x
 
 #
-# installs binaries/libraries built by fab-v0.5
+# installs binaries/libraries built by fab-v0.6
 #
 
 # require root
@@ -13,28 +13,29 @@ if [[ $UID != 0 || $EUID != 0 ]]; then
   exit 1
 fi
 
-v=debug
+v=final
 bindir=/usr/local/bin
 libdir=/usr/lib
 rundir=/var/run
 
 # executables
-cp fab/fab/fab.$v       $bindir/fab
-cp fab/fabw/fabw.$v     $bindir/fabw
-cp fab/fabd/fabd.$v     $bindir/fabd
-cp value/value/value.$v $bindir/value
+cp fab/fab/fab.$v.xapi       $bindir/fab
+cp fab/fabw/fabw.$v.xapi     $bindir/fabw
+cp fab/fabd/fabd.$v.xapi     $bindir/fabd
+cp fab/fabc/fabc.$v.xapi     $bindir/fabc
+cp value/value/value.$v.xapi $bindir/value
 
 # libraries
-cp libxapi/libxapi-xapi.$v.so            $libdir/libxapi-xapi.so
-cp libxlinux/libxlinux-xapi.$v.so        $libdir/libxlinux-xapi.so
-cp libnarrator/libnarrator-xapi.$v.so    $libdir/libnarrator-xapi.so
-cp liblogger/liblogger-xapi.$v.so        $libdir/liblogger-xapi.so
-cp liblorien/liblorien-xapi.$v.so        $libdir/liblorien-xapi.so
-cp libmoria/libmoria-xapi.$v.so          $libdir/libmoria-xapi.so
-cp libvalyria/libvalyria-xapi.$v.so      $libdir/libvalyria-xapi.so
-cp libyyutil/libyyutil-xapi.$v.so        $libdir/libyyutil-xapi.so
-cp value/libvalue/libvalue-xapi.$v.so    $libdir/libvalue-xapi.so
-cp fab/libfab/libfab-xapi.$v.so          $libdir/libfab-xapi.so
+cp libxapi/libxapi.$v.pic.xapi.so            $libdir/libxapi.so
+cp libxlinux/libxlinux.$v.pic.xapi.so        $libdir/libxlinux.so
+cp libnarrator/libnarrator.$v.pic.xapi.so    $libdir/libnarrator.so
+cp liblogger/liblogger.$v.pic.xapi.so        $libdir/liblogger.so
+cp liblorien/liblorien.$v.pic.xapi.so        $libdir/liblorien.so
+cp libmoria/libmoria.$v.pic.xapi.so          $libdir/libmoria.so
+cp libvalyria/libvalyria.$v.pic.xapi.so      $libdir/libvalyria.so
+cp libyyutil/libyyutil.$v.pic.xapi.so        $libdir/libyyutil.so
+cp value/libvalue/libvalue.$v.pic.xapi.so    $libdir/libvalue.so
+cp fab/libfab/libfab.$v.pic.xapi.so          $libdir/libfab.so
 
 # filesystem
 mkdir -p       $rundir/fab
