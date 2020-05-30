@@ -154,7 +154,7 @@ $dlibdir                = [ /usr/lib ]                    # dloaded libraries
 $fabtmpdir              = [ /var/tmp/fab ]                # fab tmp
 $fabtmpdir_devel        = [ /tmp/$fabtmpdir ~ j can ]     # fab tmp
 $fabipcdir              = [ /var/run/fab ]
-$fabipcdir_devel        = [ /tmp/$fabipcdir ~ j can ]     # fab shm/ipc files
+$fabipcdir_devel        = [ $fabipcdir ~ j can ]     # fab shm/ipc files
 $fabinvokedir           = [ $dlibdir/fab/fablib ~ j can ]
 $fabinvokedir_devel     = [ $dfabcore/fablib ~ j can ]
 
