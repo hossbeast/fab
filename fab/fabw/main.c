@@ -101,7 +101,7 @@ static xapi xmain()
     for(x = 0; x < g_ulogc; x++)
       argv[i++] = g_ulogv[x];
 
-#if DEBUG || DEVEL
+#if DEVEL
     narrator * N;
     argv[0] = "fabd.devel";
     fatal(log_start, L_IPC, &N);
