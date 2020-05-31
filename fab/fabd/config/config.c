@@ -183,6 +183,9 @@ static void config_compare_formula_show_settings(config_base * restrict _new, co
     || box_cmp(refas(new->show_stderr, bx), refas(old->show_stderr, bx))
     || box_cmp(refas(new->show_stderr_limit_bytes, bx), refas(old->show_stderr_limit_bytes, bx))
     || box_cmp(refas(new->show_stderr_limit_lines, bx), refas(old->show_stderr_limit_lines, bx))
+    || box_cmp(refas(new->show_auxout, bx), refas(old->show_auxout, bx))
+    || box_cmp(refas(new->show_auxout_limit_bytes, bx), refas(old->show_auxout_limit_bytes, bx))
+    || box_cmp(refas(new->show_auxout_limit_lines, bx), refas(old->show_auxout_limit_lines, bx))
     ;
 }
 
@@ -201,6 +204,8 @@ static void config_compare_formula(config_base * restrict _new, config_base * re
       || box_cmp(refas(new->stdout_buffer_size, bx), refas(old->stdout_buffer_size, bx))
       || box_cmp(refas(new->capture_stderr, bx), refas(old->capture_stderr, bx))
       || box_cmp(refas(new->stderr_buffer_size, bx), refas(old->stderr_buffer_size, bx))
+      || box_cmp(refas(new->capture_auxout, bx), refas(old->capture_auxout, bx))
+      || box_cmp(refas(new->auxout_buffer_size, bx), refas(old->auxout_buffer_size, bx))
       ;
 }
 
@@ -563,6 +568,15 @@ xapi config_writer_write(config * restrict cfg, value_writer * const restrict wr
     if(cfg->formula.stderr_buffer_size)
     {
       fatal(value_writer_mapping_string_uint, writer, "stderr-buffer-size", cfg->formula.stderr_buffer_size->v);
+    }
+    if(cfg->formula.capture_auxout)
+    {
+      const char * name = attrs32_name_byvalue(stream_part_attrs, STREAM_PART_OPT & cfg->formula.capture_auxout->v);
+      fatal(value_writer_mapping_string_string, writer, "capture-auxout", name);
+    }
+    if(cfg->formula.auxout_buffer_size)
+    {
+      fatal(value_writer_mapping_string_uint, writer, "auxout-buffer-size", cfg->formula.auxout_buffer_size->v);
     }
     if(cfg->formula.success.merge_significant)
     {
