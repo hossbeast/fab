@@ -288,8 +288,11 @@ static xapi build_thread()
 
       bs->pid = 0;
       bs->stdout_buf_len = 0;
+      bs->stdout_total = 0;
       bs->stderr_buf_len = 0;
+      bs->stderr_total = 0;
       bs->auxout_buf_len = 0;
+      bs->auxout_total = 0;
 
       // check for end-of-stage
       stage_index_sum += (bs->stage_index + 1);
