@@ -179,6 +179,7 @@ static xapi collate(value_writer * restrict writer, const char * restrict run)
 "   show-targets : true"
 "   show-status : true"
 "   show-stdout : true"
+"   show-auxout : true"
 " }"
 " error : {"
 "   show-path : true"
@@ -190,6 +191,7 @@ static xapi collate(value_writer * restrict writer, const char * restrict run)
 "   show-targets : true"
 "   show-status : true"
 "   show-stdout : true"
+"   show-auxout : true"
 " }"
 "}"
     );
