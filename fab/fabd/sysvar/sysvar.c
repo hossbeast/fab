@@ -440,8 +440,7 @@ xapi exec_render_sysvar_variant(exec_render_context * restrict ctx, const build_
   if(ctx->builder_add_args.val.n)
   {
     ctx->builder_add_args.render_val = RENDER_PROPERTY;
-    ctx->builder_add_args.val.prop = NODE_PROPERTY_RELPATH;
-    ctx->builder_add_args.val.pctx.mod = bs->mod;
+    ctx->builder_add_args.val.prop = NODE_PROPERTY_VARIANT;
     ctx->builder_add_args.mode = APPEND;
 
     fatal(builder_add, ctx->builder, &ctx->builder_add_args);
