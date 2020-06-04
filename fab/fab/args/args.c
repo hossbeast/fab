@@ -142,7 +142,7 @@ xapi args_parse(const command ** cmd)
     fail(MAIN_NOCOMMAND);
   }
 
-  fatal(xmalloc, &argv, sizeof(*argv) * (g_argc - 1));
+  fatal(xmalloc, &argv, sizeof(*argv) * (g_argc + 1));
   argv[argc++] = (*cmd)->name;
 
   int help = 0;
