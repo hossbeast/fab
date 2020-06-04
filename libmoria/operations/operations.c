@@ -369,7 +369,7 @@ API xapi operations_perform(graph * restrict g, operations_dispatch * restrict d
     }
     else if(op->type == GRAPH_OPERATION_CONNECT)
     {
-      if(op->A->len == 1 && op->B->len == 1)
+      if(op->A && op->A->len == 1 && op->B && op->B->len == 1)
       {
         fatal(identifier_create, g, dispatch, op->A->v0, &mm_tmp, &A);
         fatal(identifier_create, g, dispatch, op->B->v0, &mm_tmp, &B);
@@ -378,34 +378,40 @@ API xapi operations_perform(graph * restrict g, operations_dispatch * restrict d
       }
       else
       {
-        fatal(xrealloc, &Alist, sizeof(*Alist), op->A->len, 0);
-        if(op->A->len == 1)
+        if(op->A && op->A->len > 0)
         {
-          fatal(identifier_create, g, dispatch, op->A->v0, &mm_tmp, &Alist[0]);
-        }
-        else
-        {
-          for(y = 0; y < op->A->len; y++)
-            fatal(identifier_create, g, dispatch, op->A->v[y], &mm_tmp, &Alist[y]);
-        }
-
-        fatal(xrealloc, &Blist, sizeof(*Blist), op->B->len, 0);
-        if(op->B->len == 1)
-        {
-          fatal(identifier_create, g, dispatch, op->B->v0, &mm_tmp, &Blist[0]);
-        }
-        else
-        {
-          for(y = 0; y < op->B->len; y++)
-            fatal(identifier_create, g, dispatch, op->B->v[y], &mm_tmp, &Blist[y]);
+          fatal(xrealloc, &Alist, sizeof(*Alist), op->A->len, 0);
+          if(op->A->len == 1)
+          {
+            fatal(identifier_create, g, dispatch, op->A->v0, &mm_tmp, &Alist[0]);
+          }
+          else
+          {
+            for(y = 0; y < op->A->len; y++)
+              fatal(identifier_create, g, dispatch, op->A->v[y], &mm_tmp, &Alist[y]);
+          }
         }
 
-        fatal(dispatch->hyperconnect, g, Alist, op->A->len, Blist, op->B->len, op->attrs, 0, 0);
+        if(op->B && op->B->len > 0)
+        {
+          fatal(xrealloc, &Blist, sizeof(*Blist), op->B->len, 0);
+          if(op->B->len == 1)
+          {
+            fatal(identifier_create, g, dispatch, op->B->v0, &mm_tmp, &Blist[0]);
+          }
+          else
+          {
+            for(y = 0; y < op->B->len; y++)
+              fatal(identifier_create, g, dispatch, op->B->v[y], &mm_tmp, &Blist[y]);
+          }
+        }
+
+        fatal(dispatch->hyperconnect, g, Alist, op->A ? op->A->len : 0, Blist, op->B ? op->B->len : 0, op->attrs, 0, 0);
       }
     }
     else if(op->type == GRAPH_OPERATION_DISCONNECT)
     {
-      if(op->A->len == 1 && op->B->len == 1)
+      if(op->A && op->A->len == 1 && op->B && op->B->len == 1)
       {
         fatal(identifier_resolve, g, op->A->v0, &mm_tmp, &A);
         fatal(identifier_resolve, g, op->B->v0, &mm_tmp, &B);
@@ -414,29 +420,35 @@ API xapi operations_perform(graph * restrict g, operations_dispatch * restrict d
       }
       else
       {
-        fatal(xrealloc, &Alist, sizeof(*Alist), op->A->len, 0);
-        if(op->A->len == 1)
+        if(op->A && op->A->len > 0)
         {
-          fatal(identifier_resolve, g, op->A->v0, &mm_tmp, &Alist[0]);
-        }
-        else
-        {
-          for(y = 0; y < op->A->len; y++)
-            fatal(identifier_resolve, g, op->A->v[y], &mm_tmp, &Alist[y]);
-        }
-
-        fatal(xrealloc, &Blist, sizeof(*Blist), op->B->len, 0);
-        if(op->B->len == 1)
-        {
-          fatal(identifier_resolve, g, op->B->v0, &mm_tmp, &Blist[0]);
-        }
-        else
-        {
-          for(y = 0; y < op->B->len; y++)
-            fatal(identifier_resolve, g, op->B->v[y], &mm_tmp, &Blist[y]);
+          fatal(xrealloc, &Alist, sizeof(*Alist), op->A->len, 0);
+          if(op->A->len == 1)
+          {
+            fatal(identifier_resolve, g, op->A->v0, &mm_tmp, &Alist[0]);
+          }
+          else
+          {
+            for(y = 0; y < op->A->len; y++)
+              fatal(identifier_resolve, g, op->A->v[y], &mm_tmp, &Alist[y]);
+          }
         }
 
-        e = edge_of(Alist, op->A->len, Blist, op->B->len);
+        if(op->B && op->B->len > 0)
+        {
+          fatal(xrealloc, &Blist, sizeof(*Blist), op->B->len, 0);
+          if(op->B->len == 1)
+          {
+            fatal(identifier_resolve, g, op->B->v0, &mm_tmp, &Blist[0]);
+          }
+          else
+          {
+            for(y = 0; y < op->B->len; y++)
+              fatal(identifier_resolve, g, op->B->v[y], &mm_tmp, &Blist[y]);
+          }
+        }
+
+        e = edge_of(Alist, op->A ? op->A->len : 0, Blist, op->B ? op->B->len : 0);
       }
       fatal(dispatch->disconnect, g, e);
     }
@@ -650,8 +662,10 @@ API xapi graph_hyperconnect(
     fail(MORIA_ILLIDENTITY);
   }
 
-  qsort(Axlist, Axlen, sizeof(*Axlist), ptrcmp);
-  qsort(Bxlist, Bxlen, sizeof(*Bxlist), ptrcmp);
+  if(Axlist)
+    qsort(Axlist, Axlen, sizeof(*Axlist), ptrcmp);
+  if(Bxlist)
+    qsort(Bxlist, Bxlen, sizeof(*Bxlist), ptrcmp);
 
   // search by vertex-set (non-identity)
   key = (typeof(key)) {
@@ -661,8 +675,18 @@ API xapi graph_hyperconnect(
     , Blist : Bxlist
     , Blen : Bxlen
   };
-  if((rbn = rbtree_lookup_node(&Axlist[0]->down, &key, edge_cmp_key_down)))
-    e = rbn->ud.p;
+  if(Axlen)
+  {
+    if((rbn = rbtree_lookup_node(&Axlist[0]->down, &key, edge_cmp_key_down))) {
+      e = rbn->ud.p;
+    }
+  }
+  else
+  {
+    if((rbn = rbtree_lookup_node(&Bxlist[0]->up, &key, edge_cmp_key_up))) {
+      e = rbn->ud.p;
+    }
+  }
 
   // idempotency
   if(e && (e->attrs & ~(MORIA_EDGE_IDENTITY | MORIA_EDGE_HYPER)) == attrs)

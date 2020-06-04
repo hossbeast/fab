@@ -379,14 +379,20 @@ API xapi graph_say(graph * const restrict g, struct narrator * const restrict N)
     e = edges[x];
     if(e->attrs & MORIA_EDGE_HYPER)
     {
-      qsort(e->Alist, e->Alen, sizeof(*e->Alist), vertex_compare);
-
-      for(y = 0; y < e->Alen; y++)
+      if(e->Alen == 0)
       {
-        if(y)
-          xsays(",");
-        id = dictionary_get(vertex_id_map, &e->Alist[y].v, sizeof(e->Alist[y].v));
-        xsayf("%"PRIu32, *id);
+        xsays("_");
+      }
+      else
+      {
+        qsort(e->Alist, e->Alen, sizeof(*e->Alist), vertex_compare);
+        for(y = 0; y < e->Alen; y++)
+        {
+          if(y)
+            xsays(",");
+          id = dictionary_get(vertex_id_map, &e->Alist[y].v, sizeof(e->Alist[y].v));
+          xsayf("%"PRIu32, *id);
+        }
       }
     }
     else
@@ -411,14 +417,20 @@ API xapi graph_say(graph * const restrict g, struct narrator * const restrict N)
 
     if(e->attrs & MORIA_EDGE_HYPER)
     {
-      qsort(e->Blist, e->Blen, sizeof(*e->Blist), vertex_compare);
-
-      for(y = 0; y < e->Blen; y++)
+      if(e->Blen == 0)
       {
-        if(y)
-          xsays(",");
-        id = dictionary_get(vertex_id_map, &e->Blist[y].v, sizeof(e->Blist[y].v));
-        xsayf("%"PRIu32, *id);
+        xsays("_");
+      }
+      else
+      {
+        qsort(e->Blist, e->Blen, sizeof(*e->Blist), vertex_compare);
+        for(y = 0; y < e->Blen; y++)
+        {
+          if(y)
+            xsays(",");
+          id = dictionary_get(vertex_id_map, &e->Blist[y].v, sizeof(e->Blist[y].v));
+          xsayf("%"PRIu32, *id);
+        }
       }
     }
     else

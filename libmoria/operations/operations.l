@@ -57,12 +57,7 @@ ILL   [\x00-\x08\x0B-\x1F\x7F-\xFF]
 
  /* tokens */
 <INITIAL>[/][/]                                         { lenter; LEX(SLASH2); finally : lcoda; }
-<INITIAL>[=:!+~/,@]                                     { lenter; LEX(yytext[0]); finally : lcoda; }
-
- /* strings */
- /*
-<INITIAL>(?i:0x[a-f0-9]+)[-a-zA-Z0-9_.]+                { lenter; printf("!! %d\n", __LINE__); LEX(STR); finally : lcoda; }
- */
+<INITIAL>[=:!+~/,@_]                                    { lenter; LEX(yytext[0]); finally : lcoda; }
 
  /* integers */
 <INITIAL>[0-9]+                                         { lenter; LEXI("%"SCNuMAX); finally : lcoda; }

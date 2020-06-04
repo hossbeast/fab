@@ -379,7 +379,10 @@ API edge * edge_of(vertex ** restrict Axlist, uint16_t Axlen, vertex ** restrict
   };
 
   // hyper lookup
-  rbn = rbtree_lookup_node(&Axlist[0]->down, &key, edge_cmp_key_down);
+  if(Axlen)
+    rbn = rbtree_lookup_node(&Axlist[0]->down, &key, edge_cmp_key_down);
+  else
+    rbn = rbtree_lookup_node(&Bxlist[0]->up, &key, edge_cmp_key_up);
 
   if(rbn)
     return rbn->ud.p;

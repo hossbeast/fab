@@ -253,6 +253,25 @@ xunit_unit xunit = {
         , expected  :  "1-A 2-B 3-C 4-D 5-E 6-F"
                       " 1,2,3:0x42:4,5,6"
       }}
+      // hyper-edges, zero-to-many
+    , (graph_parser_test[]){{
+          graph     : " 1-A 2-B"
+                      " 1,2:_"
+        , expected  :  "1-A 2-B"
+                      " 1,2:_"
+      }}
+    , (graph_parser_test[]){{
+          graph     : " 1-A 2-B"
+                      " _:1,2"
+        , expected  :  "1-A 2-B"
+                      " _:1,2"
+      }}
+    , (graph_parser_test[]){{
+          graph     : " 1-A 2-B"
+                      " _:1"
+        , expected  :  "1-A 2-B"
+                      " _:1"
+      }}
     , 0
   }
 };

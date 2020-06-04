@@ -64,6 +64,7 @@
  '+'
  '='
  '~'
+ '_'
  SLASH2
 
 /* terminals */
@@ -186,6 +187,10 @@ identifier-sequence-list
     YFATAL(xmalloc, &$$, sizeof(*$$));
     $$->v0 = $1;
     $$->len = 1;
+  }
+  | '_'
+  {
+    $$ = 0;
   }
   ;
 

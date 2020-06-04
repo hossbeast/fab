@@ -95,7 +95,7 @@ typedef struct operations_dispatch {
   xapi (*connect)(struct graph * restrict g, struct vertex * restrict A, struct vertex * restrict B, uint32_t attrs, struct edge ** restrict e, bool * restrict r)
     __attribute__((nonnull(1, 2, 3)));
   xapi (*hyperconnect)(struct graph * restrict g, struct vertex ** restrict Alist, uint16_t Alen, struct vertex ** restrict B, uint16_t Blen, uint32_t attrs, struct edge ** restrict e, bool * restrict r)
-    __attribute__((nonnull(1, 2, 4)));
+    __attribute__((nonnull(1)));
   xapi (*disconnect)(struct graph * restrict g, struct edge * restrict e)
     __attribute__((nonnull));
   xapi (*create_vertex)(struct vertex ** restrict v, struct graph * restrict g, uint32_t attrs, uint8_t op_attrs, const char * restrict label, uint16_t label_len)
@@ -249,7 +249,7 @@ xapi graph_hyperconnect(
   , struct edge ** restrict e
   , bool * restrict r
 )
-  __attribute__((nonnull(1, 2, 4)));
+  __attribute__((nonnull(1)));
 
 /// edge_disconnect
 //

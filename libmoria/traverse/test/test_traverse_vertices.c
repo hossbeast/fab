@@ -147,7 +147,7 @@ static xapi outer_vertex_visit(vertex * const restrict v, void * arg, traversal_
         , min_depth : 1
         , max_depth : UINT16_MAX
       }}
-    , ctx->test->inner_attrs | MORIA_TRAVERSE_DEPTH // MORIA_TRAVERSE_OMITSELF
+    , ctx->test->inner_attrs | MORIA_TRAVERSE_DEPTH
     , ctx
   );
 
@@ -408,6 +408,42 @@ xunit_unit xunit = {
             }
         }}
 
+        // downward, postorder, hyper-edges, zero-to-many
+      , (graph_test[]){{
+/*
+    A
+    B
+   C D
+     E
+*/
+            operations : "+A:B +B:C +B:D +D:E +_:E,F"
+          , attrs      : MORIA_TRAVERSE_DOWN | MORIA_TRAVERSE_POST
+          , from_label : "A"
+          , expected   : (char**[]) {
+                (char *[]) { "C", "B", "A", 0 }
+              , (char *[]) { "E", "D", "B", "A", 0 }
+              , 0
+            }
+        }}
+
+        // upward, postorder, hyper-edges, zero-to-many
+      , (graph_test[]){{
+/*
+    A
+    B
+   C D
+     EF
+*/
+            operations : "+A:B +B:C +B:D +D:E +_:E,F"
+          , attrs      : MORIA_TRAVERSE_UP | MORIA_TRAVERSE_PRE
+          , from_label : "E"
+          , expected   : (char**[]) {
+                (char *[]) { "E", "D", "B", "A", 0 }
+              , 0
+            }
+        }}
+
+
         // downward, postorder, from another node
       , (graph_test[]){{
             operations : "+A:B +B:C +C:D +D:E"
@@ -519,6 +555,7 @@ A -> B -> C -> D -> E
               , 0
             }
         }}
+
       , 0
     }
 };

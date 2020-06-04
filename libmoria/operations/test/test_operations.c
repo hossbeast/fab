@@ -93,10 +93,6 @@ static xapi operations_test_entry(xunit_test * _test)
     xapi_calltree_unwind();
   }
 
-printf("graph:\n");
-fatal(graph_say, g, g_narrator_stdout);
-printf("\n");
-
   assert_eq_e(test->expected_status, status);
   if(test->expected)
   {
@@ -106,6 +102,7 @@ printf("\n");
     size_t graph_len = narrator_growing_size(N);
     assert_eq_w(test->expected, strlen(test->expected), graph, graph_len);
   }
+
 
 finally:
   fatal(narrator_xfree, N);
@@ -252,6 +249,20 @@ xunit_unit xunit = {
               " +A,B,C:D,E,F"
               " +C,B,A:F,E,D"
           , expected   : "1-A 2-B 3-C 4-D 5-E 6-F 1,2,3:4,5,6"
+        }}
+
+        /* hyper-edge with zero vertices on a side */
+      , (operations_test[]){{
+            identity : 1
+          , operations :
+              " +A,B,C:_"
+          , expected   : "1-A 2-B 3-C 1,2,3:_"
+        }}
+      , (operations_test[]){{
+            identity : 1
+          , operations :
+              " +_:A"
+          , expected   : "1-A _:1"
         }}
     , 0
   }

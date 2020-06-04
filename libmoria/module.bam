@@ -16,6 +16,8 @@
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
 use cc                  # this module contains C sources
+use flex
+use bison
 use library/shared      # this module builds a library
 use xunit-tests         # this module contains xunit tests
 

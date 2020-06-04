@@ -56,7 +56,7 @@ ILL   [\x00-\x08\x0B-\x1F\x7F-\xFF]
 <INITIAL>[\r\t ]+                                       { LOCWRITE; }
 
  /* tokens */
-<INITIAL>[-:!,]                                         { lenter; LEX(yytext[0]); finally : lcoda; }
+<INITIAL>[-:!,_]                                        { lenter; LEX(yytext[0]); finally : lcoda; }
 
  /* integers */
 <INITIAL>[0-9]+                                         { lenter; LEXI("%"SCNuMAX); finally : lcoda; }

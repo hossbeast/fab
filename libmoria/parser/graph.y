@@ -66,8 +66,12 @@
 }
 
 /* tokens */
-%token ':'
-%token '!'
+%token
+ ':'
+ '!'
+ '-'
+ '_'
+ ','
 
 /* terminals */
 %token            STR
@@ -175,6 +179,12 @@ edge_vertex_list
     $$.v = 0;
     $$.v0 = $1;
     $$.len = 1;
+  }
+  | '_'
+  {
+    $$.v = 0;
+    $$.v0 = 0;
+    $$.len = 0;
   }
   ;
 

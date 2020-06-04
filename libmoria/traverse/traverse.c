@@ -325,21 +325,18 @@ static xapi explore_vertex(
       }
       if((attrs & DIRECTION_OPT) == MORIA_TRAVERSE_UP)
       {
-        if((next_edge->attrs & MORIA_EDGE_HYPER))
-        {
           if((rbn = rbtree_next_post_node(rbn)) == &rbleaf)
           {
             next_edge = 0;
           }
+          else if((next_edge = rbn->ud.p))
+          {
+            /* the next edge is a hyper-edge */
+          }
           else
           {
-            next_edge = rbn->ud.p;
+            next_edge = containerof(rbn, edge_t, rbn_up);
           }
-        }
-        else
-        {
-          next_edge = rbtree_next(next_edge, rbn_up);
-        }
       }
       else if((attrs & DIRECTION_OPT) == MORIA_TRAVERSE_DOWN)
       {
@@ -349,9 +346,13 @@ static xapi explore_vertex(
           {
             next_edge = 0;
           }
+          else if((next_edge = rbn->ud.p))
+          {
+            /* the next edge is a hyper-edge */
+          }
           else
           {
-            next_edge = rbn->ud.p;
+            next_edge = containerof(rbn, edge_t, rbn_down);
           }
         }
         else
@@ -408,40 +409,45 @@ size_t edge_znload(char * restrict dst, size_t sz, const edge *ex);
 API size_t edge_znload(char * restrict dst, size_t sz, const edge *ex)
 {
   size_t z = 0;
-
+  int x;
   const edge_t *e = containerof(ex, edge_t, ex);
 
-  int x;
+  z += znloads(dst + z, sz - z, "[up ");
   if(e->attrs & MORIA_EDGE_HYPER)
   {
-    z = 0;
     for(x = 0; x < e->Alen; x++)
     {
       if(x)
         z += znloads(dst + z, sz - z, ",");
-      z += znloads(dst + z, sz - z, e->Alist[x].v->label);
+      z += znloadf(dst + z, sz - z, "%s %p", e->Alist[x].v->label, e->Alist[x].v);
     }
   }
   else
   {
-    z += znloads(dst + z, sz - z, e->A->label);
+    z += znloadf(dst + z, sz - z, "%s %p", e->A->label, e->A);
   }
+  z += znloads(dst + z, sz - z, "]");
 
   z += znloads(dst + z, sz - z, " : ");
+  z += znloadf(dst + z, sz - z, "0x%08x", e->attrs);
+  z += znloads(dst + z, sz - z, " : ");
 
+  z += znloads(dst + z, sz - z, "[down ");
   if(e->attrs & MORIA_EDGE_HYPER)
   {
     for(x = 0; x < e->Blen; x++)
     {
       if(x)
         z += znloads(dst + z, sz - z, ",");
-      z += znloads(dst + z, sz - z, e->Blist[x].v->label);
+      z += znloadf(dst + z, sz - z, "%s %p", e->Blist[x].v->label, e->Blist[x].v);
     }
   }
   else
   {
-    z += znloads(dst + z, sz - z, e->B->label);
+    z += znloadf(dst + z, sz - z, "%s %p", e->B->label, e->B);
   }
+  z += znloads(dst + z, sz - z, "]");
+  dst[z] = 0;
 
   return z;
 }
