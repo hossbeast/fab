@@ -21,6 +21,10 @@ path : $cc
 args : [
   $cflags
   sequence : [
+    $bm_variant
+    prepend : "-DVARIANTNAME="
+  ]
+  sequence : [
     select : [
       module
       # all directories in the module

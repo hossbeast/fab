@@ -1,0 +1,108 @@
+#!/usr/bin/env perl
+#
+# Copyright (c) 2012-2015 Todd Freed <todd.freed@gmail.com>
+#
+# This file is part of fab.
+#
+# fab is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# fab is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with fab.  If not, see <http://www.gnu.org/licenses/>. */
+#
+
+use strict;
+use warnings;
+
+use POSIX;
+use Data::Dumper;
+
+die "git not found in environment" unless $ENV{git};
+
+#
+# runs a git command and returns the stdout as a single scalar
+#
+sub git
+{
+  my @cmd = @_;
+  unshift @cmd, $ENV{git};
+
+  my ($rdout, $wrout) = POSIX::pipe();
+
+  if(fork == 0)
+  {
+    POSIX::close(0);
+    POSIX::open("/dev/null", O_RDONLY);
+
+    POSIX::close($rdout);
+    POSIX::dup2($wrout, 1);
+
+    exec { "git" } @cmd;
+  }
+
+  POSIX::close($wrout);
+
+  my $stdout = '';
+  while(1)
+  {
+    my $data;
+    my $rv = POSIX::read($rdout, $data, 0xffff);
+    $stdout .= $data;
+    last if $rv == 0;
+    die "read $rdout : $rv : $!" if $rv < 0;
+  }
+  POSIX::close($rdout);
+  chomp $stdout;
+
+  wait;
+  my $exit = $?;
+  die "failed : exit " . ($exit >> 8) . " : @cmd" if $exit >> 8;
+  die "failed : signal " . ($exit & 127) . " : @cmd" if $exit & 127;
+
+  $stdout;
+}
+
+my $cfile = substr($ENV{bm_target0}, -2) eq ".c" ? $ENV{bm_target0} : $ENV{bm_target1};
+my $hfile = substr($ENV{bm_target0}, -2) eq ".h" ? $ENV{bm_target0} : $ENV{bm_target1};
+
+$ENV{TZ} = 'UTC';
+my $describe = git(qw|describe --dirty --abbrev=99|);
+my $date =   git(qw|log -1 -s --format=%cd --date=iso-local|);
+$describe =~ m/^([^-]+)-([0-9]+)-g([0-9a-f]+)(-dirty)$/ or die "wtf describe";
+my $tag = $1;
+my $delta = $2;
+my $commit = $3;
+my $dirty = !!$4;
+
+open my $fh, ">$hfile" or die $!;
+print $fh <<END;
+#ifndef _VCS_H
+#define _VCS_H
+
+extern const char * git_tag;
+extern int git_tag_delta;
+extern const char * git_commit_hash;
+extern const char * git_commit_date;
+extern int git_dirty;
+
+#endif
+END
+close $fh;
+
+open $fh, ">$cfile" or die $!;
+print $fh <<END;
+#include "$hfile"
+
+const char * git_tag = "$tag";
+int git_tag_delta = $delta;
+const char * git_commit_hash = "$commit";
+const char * git_commit_date = "$date";
+int git_dirty = $dirty;
+END
