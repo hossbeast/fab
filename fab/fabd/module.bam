@@ -23,8 +23,11 @@ use xapi/errtab
 use xunit-tests
 
 # declare variants
-variant xapi.{debug,devel,final}
-rule fabd.? -> //module/targets
+variant xapi.{,pic.}{debug,devel,final}
+
+variant xapi.{debug,devel,final} : [
+  rule fabd.? -> //module/targets
+]
 
 # make common objects available for #include and linking
 import fab/include

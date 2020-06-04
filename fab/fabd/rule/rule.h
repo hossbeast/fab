@@ -65,10 +65,12 @@ RULE_DIRECTION_TABLE
 extern struct attrs16 * rule_direction_attrs;
 
 #define RULE_CARDINALITY_TABLE                          \
-  DEF(RULE_ONE_TO_ONE   , 0x0004)     /*     ->     */  \
-  DEF(RULE_ONE_TO_MANY  , 0x0008)     /*     -> [*] */  \
-  DEF(RULE_MANY_TO_ONE  , 0x0010)     /* [*] ->     */  \
-  DEF(RULE_MANY_TO_MANY , 0x0020)     /* [*] -> [*] */  \
+  DEF(RULE_ZERO_TO_ONE  , 0x0004)     /*     --     */  \
+  DEF(RULE_ZERO_TO_MANY , 0x0008)     /* [*] -- [*] */  \
+  DEF(RULE_ONE_TO_ONE   , 0x000c)     /*     ->     */  \
+  DEF(RULE_ONE_TO_MANY  , 0x0010)     /*     -> [*] */  \
+  DEF(RULE_MANY_TO_ONE  , 0x0014)     /* [*] ->     */  \
+  DEF(RULE_MANY_TO_MANY , 0x0018)     /* [*] -> [*] */  \
 
 #undef DEF
 #define DEF(x, y) x = UINT16_C(y),

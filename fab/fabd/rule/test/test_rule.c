@@ -72,9 +72,10 @@ static xapi rules_test_unit_setup(xunit_unit * unit)
   fatal(logging_finalize);
 
   fatal(module_setup);
-  fatal(graph_setup);
-  fatal(variant_setup);
   fatal(filesystem_setup);
+  fatal(graph_setup);
+  fatal(node_setup);
+  fatal(variant_setup);
 
   finally : coda;
 }
@@ -117,6 +118,7 @@ static xapi rules_test_entry(xunit_test * _test)
   llist modules;
   pattern * match_pat = 0;
   pattern * generate_pat = 0;
+  pattern * fml_pat = 0;
   rule_run_context rule_ctx = { 0 };
   rule_module_association rma;
 
@@ -132,7 +134,6 @@ static xapi rules_test_entry(xunit_test * _test)
   fatal(rule_run_context_begin, &rule_ctx);
 
   // setup initial graph
-  fatal(node_setup);
   if(test->shadow)
   {
     fatal(shadow_setup);
@@ -144,15 +145,22 @@ static xapi rules_test_entry(xunit_test * _test)
   fatal(operations_perform, g_graph, node_operations_test_dispatch, operations);
 
   // parse the patterns for the rule
-  fatal(match_pattern_parse_partial, parser, test->match_pattern, strlen(test->match_pattern) + 2, "-test-", 0, &loc, &match_pat);
-  assert_eq_u32(strlen(test->match_pattern), loc.l);
+  if(test->match_pattern)
+  {
+    fatal(match_pattern_parse_partial, parser, test->match_pattern, strlen(test->match_pattern) + 2, "-test-", 0, &loc, &match_pat);
+    assert_eq_u32(strlen(test->match_pattern), loc.l);
+  }
 
-  fatal(generate_pattern_parse_partial, parser, test->generate_pattern, strlen(test->generate_pattern) + 2, "-test-", 0, &loc, &generate_pat);
-  assert_eq_u32(strlen(test->generate_pattern), loc.l);
+  if(test->generate_pattern)
+  {
+    fatal(generate_pattern_parse_partial, parser, test->generate_pattern, strlen(test->generate_pattern) + 2, "-test-", 0, &loc, &generate_pat);
+    assert_eq_u32(strlen(test->generate_pattern), loc.l);
+  }
 
-  fatal(rule_mk, &r, g_graph, match_pat, generate_pat, 0, 0);
+  fatal(rule_mk, &r, g_graph, match_pat, generate_pat, fml_pat, 0);
   match_pat = 0;
   generate_pat = 0;
+  fml_pat = 0;
 
   r->dir = test->dir;
   r->card = test->card;
@@ -189,6 +197,7 @@ static xapi rules_test_entry(xunit_test * _test)
 finally:
   pattern_free(match_pat);
   pattern_free(generate_pat);
+  pattern_free(fml_pat);
   fatal(node_cleanup);
   fatal(set_xfree, variants);
   fatal(narrator_xfree, N);
@@ -264,7 +273,7 @@ xunit_unit xunit = {
                   " 3:strong:4 5:strong:4"
                   " 1:fs:2 2:fs:3 2:fs:4 2:fs:5"
       }}
-    /* shadow shit */
+    /* shadow */
     , (rules_test[]) {{
           operations : ""
           " MOD/x.c"
@@ -288,6 +297,21 @@ xunit_unit xunit = {
                   " 13:rule-dir:11"
                   " 8:strong:12"
                   " 1:fs:4 3:fs:1 3:fs:2 3:fs:8 4:fs:5 4:fs:6 4:fs:7 4:fs:9 10:fs:11 11:fs:12"
+      }}
+    /* zero-to-many */
+    , (rules_test[]) {{
+          operations : ""
+          " MOD"
+        , module : "MOD"
+// a/b -> $^D/c.o
+        , generate_pattern : (char[]) { "vcs.{c,h}\0" }
+        , card : RULE_ZERO_TO_MANY
+        , relation : EDGE_TYPE_STRONG
+        , graph :  "1-(root)!dir 2-MOD!dir"
+                  " 3-vcs.c!U|file 4-vcs.h!U|file"
+                  " 5-!rule"
+                  " 1:fs:2 2:fs:3 2:fs:4"                  // fs edges
+                  " :strong:3,4"                           // strong edges (hyper)
       }}
     , 0
   }

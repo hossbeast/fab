@@ -117,25 +117,50 @@ xunit_unit xunit = {
   , xu_cleanup : module_parser_test_unit_cleanup
   , xu_entry : module_parser_test_entry
   , xu_tests : (module_parser_test*[]) {
+      /* variant declarations */
       (module_parser_test[]) {{
           text : (char[]) {
-            "variant {foo,bar}.xapi.{debug,devel,final}\n"
+            "variant {foo,bar}.xapi.{debug,devel,final}\0"
+          }
+      }}
+
+      /* ltr one-to-one */
+    , (module_parser_test[]) {{
+          text : (char[]) {
             "rule *~integ/**/*.?.o -> libxapi.$?.so\0"
           }
       }}
-    , (module_parser_test[]) {{
-          text : (char[]) {
-            "rule *~integ/**/*.?.o -> [*] libxapi.$?.so : ./bam-cc\0"
-          }
-      }}
+
+      /* zero-to-one match */
     , (module_parser_test[]) {{
           text : (char[]) {
             "rule *~integ/**/*.?.o -- : ./bam-cc\0"
           }
       }}
+      /* zero-to-many match */
+    , (module_parser_test[]) {{
+          text : (char[]) {
+            "rule *~integ/**/*.?.o [*] -- : ./bam-cc\0"
+          }
+      }}
+
+      /* zero-to-one generate */
     , (module_parser_test[]) {{
           text : (char[]) {
             "rule -- libxapi.?.so : ./bam-cc\0"
+          }
+      }}
+      /* zero-to-many generate */
+    , (module_parser_test[]) {{
+          text : (char[]) {
+            "rule -- [*] libxapi.?.so : ./bam-cc\0"
+          }
+      }}
+
+      /* ltr one-to-many */
+    , (module_parser_test[]) {{
+          text : (char[]) {
+            "rule *~integ/**/*.?.o -> [*] libxapi.$?.so : ./bam-cc\0"
           }
       }}
     , 0

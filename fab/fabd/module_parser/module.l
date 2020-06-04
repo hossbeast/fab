@@ -184,8 +184,9 @@ ILL   [\x00-\x08\x0B-\x1F\x7F-\xFF]
 
 <INITIAL>"rule"                                         { lenter; PUSHSTATE(rule_match); LEX(RULE); finally : lcoda; }
 <rule_match>"{ "                                        { lenter; PUSHSTATE(rule_bacon); LEX('{'); finally : lcoda; }
-<rule_match>"-- "                                       { lenter; POPSTATE; PUSHSTATE(generate); LEX(DASHES); finally : lcoda; }
+<rule_match>"-- "                                       { lenter; POPSTATE; PUSHSTATE(generate); PUSHSTATE(rule_starbox); LEX(DASHES); finally : lcoda; }
 <rule_match>[\x00-\xff]                                 { lenter; POPSTATE; yyless(0); PUSHSTATE(match); finally : lcoda; }
+<rule_connector>"["[*]"]"                               { lenter; LEX(STARBOX); finally : lcoda; }
 <rule_connector>"-- "                                   { lenter; POPSTATE; PUSHSTATE(rule_colon); LEX(DASHES); finally : lcoda; }
 <rule_connector>[\x00-\xff]                             { lenter; POPSTATE; yyless(0); PUSHSTATE(generate); PUSHSTATE(rule_starbox); PUSHSTATE(rule_arrow); PUSHSTATE(rule_starbox); finally : lcoda; }
 <rule_starbox>"["[*]"]"                                 { lenter; POPSTATE; LEX(STARBOX); finally : lcoda; }

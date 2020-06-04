@@ -96,6 +96,7 @@ static xapi walker_test_unit_setup(xunit_unit * unit)
   fatal(lorien_load);
   fatal(moria_load);
   fatal(logging_finalize);
+
   fatal(filesystem_setup);
   fatal(graph_setup);
   fatal(node_setup);

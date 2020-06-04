@@ -121,7 +121,7 @@ static xapi project_init()
 
   graph_invalidation_context invalidation = { 0 };
 
-#if XUNIT
+#if DEVEL
   if(!g_params.proj_dir) {
     goto XAPI_FINALIZE;
   }

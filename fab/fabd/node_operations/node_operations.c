@@ -278,8 +278,9 @@ xapi node_connect(node * restrict A, node * restrict B, edge_type relation, grap
 }
 
 xapi node_hyperconnect(
-    struct node ** restrict Axlist, uint16_t Alen
-  , struct node ** restrict Bxlist
+    struct vertex ** restrict Alist
+  , uint16_t Alen
+  , struct vertex ** restrict Blist
   , uint16_t Blen
   , edge_type relation
   , graph_invalidation_context * restrict invalidation
@@ -288,22 +289,12 @@ xapi node_hyperconnect(
 {
   enter;
 
-  vertex ** Alist = 0;
-  vertex ** Blist = 0;
   int x;
   bool created;
   edge *e;
   node_edge *ne;
   narrator * N;
   uint64_t cat = 0;
-
-  fatal(xmalloc, &Alist, sizeof(*Alist) * Alen);
-  for(x = 0; x < Alen; x++)
-    Alist[x] = vertex_containerof(Axlist[x]);
-
-  fatal(xmalloc, &Blist, sizeof(*Blist) * Blen);
-  for(x = 0; x < Blen; x++)
-    Blist[x] = vertex_containerof(Bxlist[x]);
 
   created = false;
   e = 0;
@@ -333,7 +324,7 @@ xapi node_hyperconnect(
   {
     for(x = 0; x < Alen; x++)
     {
-      fatal(node_invalidate, Axlist[x], invalidation);
+      fatal(node_invalidate, vertex_value(Alist[x]), invalidation);
     }
 
     cat = L_DEPGRAPH;
@@ -347,10 +338,7 @@ xapi node_hyperconnect(
     fatal(log_finish);
   }
 
-finally:
-  wfree(Alist);
-  wfree(Blist);
-coda;
+  finally : coda;
 }
 
 xapi node_disconnect(node * restrict A, node * restrict B, struct graph_invalidation_context * restrict invalidation)

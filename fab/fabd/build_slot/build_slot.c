@@ -206,12 +206,16 @@ xapi build_slot_prep(build_slot * restrict bs, buildplan_entity * restrict bpe, 
     else
     {
       /* all nodes in a hyperedge must belong to the same module */
-      n = vertex_value(e->Alist[0].v);
+      if(e->Alen) {
+        n = vertex_value(e->Alist[0].v);
+      } else {
+        n = vertex_value(e->Blist[0].v);
+      }
       bs->var = n->var;
 
       /* they need not all belong to the same variant ; only set the variant
        * on the buildslot if all nodes agree */
-      for(x = 1; x < e->Alen; x++)
+      for(x = 0; x < e->Alen; x++)
       {
         n = vertex_value(e->Alist[x].v);
         if(n->var != bs->var)
@@ -220,7 +224,21 @@ xapi build_slot_prep(build_slot * restrict bs, buildplan_entity * restrict bpe, 
           break;
         }
       }
-      n = vertex_value(e->Alist[0].v);
+      for(x = 0; x < e->Blen; x++)
+      {
+        n = vertex_value(e->Blist[x].v);
+        if(n->var != bs->var)
+        {
+          bs->var = 0;
+          break;
+        }
+      }
+
+      if(e->Alen) {
+        n = vertex_value(e->Alist[0].v);
+      } else {
+        n = vertex_value(e->Blist[0].v);
+      }
     }
   }
 

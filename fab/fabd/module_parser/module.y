@@ -266,12 +266,20 @@ rule
  /* match only */
   | RULE rule-bacon match-pattern DASHES ':' reference-pattern
   {
-    YFATAL(rule_mk, &$$, PARSER->g, $3, NULL, $6, RULE_ONE_TO_ONE | $2);
+    YFATAL(rule_mk, &$$, PARSER->g, $3, NULL, $6, RULE_ZERO_TO_ONE | $2);
+  }
+  | RULE rule-bacon match-pattern STARBOX DASHES ':' reference-pattern
+  {
+    YFATAL(rule_mk, &$$, PARSER->g, $3, NULL, $7, RULE_ZERO_TO_MANY | $2);
   }
  /* generate only */
   | RULE rule-bacon DASHES generate-pattern ':' reference-pattern
   {
-    YFATAL(rule_mk, &$$, PARSER->g, NULL, $4, $6, RULE_ONE_TO_ONE | $2);
+    YFATAL(rule_mk, &$$, PARSER->g, NULL, $4, $6, RULE_ZERO_TO_ONE | $2);
+  }
+  | RULE rule-bacon DASHES STARBOX generate-pattern ':' reference-pattern
+  {
+    YFATAL(rule_mk, &$$, PARSER->g, NULL, $5, $7, RULE_ZERO_TO_MANY | $2);
   }
   ;
 

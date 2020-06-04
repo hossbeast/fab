@@ -64,15 +64,15 @@ xapi node_connect(
   __attribute__((nonnull(1, 2, 4)));
 
 xapi node_hyperconnect(
-    struct node ** restrict Alist
+    struct vertex ** restrict Alist
   , uint16_t Alen
-  , struct node ** restrict B
+  , struct vertex ** restrict B
   , uint16_t Blen
   , enum edge_type relation
   , struct graph_invalidation_context * restrict invalidation
   , struct node_edge ** restrict e
 )
-  __attribute__((nonnull(1, 3, 6)));
+  __attribute__((nonnull(6)));
 
 /// node_disconnect
 //
