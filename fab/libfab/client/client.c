@@ -318,7 +318,7 @@ API xapi fab_client_launchp(fab_client * restrict client)
       argv[i++] = g_ulogv[x];
 
 #if DEVEL
-    argv[0] = "fabw.devel";
+    argv[0] = "fabw.devel.xapi";
     narrator * N;
     fatal(log_start, L_IPC, &N);
     xsayf("execv(");

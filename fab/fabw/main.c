@@ -85,7 +85,7 @@ static xapi xmain()
   if(child_pid == 0)
   {
 #if DEVEL
-    snprintf(space, sizeof(space), "%s/../fabd/fabd.devel", g_params.exedir);
+    snprintf(space, sizeof(space), "%s/../fabd/fabd.devel.xapi", g_params.exedir);
     fabd_path = space;
 #endif
 
@@ -103,7 +103,7 @@ static xapi xmain()
 
 #if DEVEL
     narrator * N;
-    argv[0] = "fabd.devel";
+    argv[0] = "fabd.devel.xapi";
     fatal(log_start, L_IPC, &N);
     xsays("execv(");
     xsays(fabd_path ?: "fabd");

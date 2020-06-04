@@ -101,7 +101,7 @@ static xapi xmain()
   fatal(xfchmod, 2, 0777);
 
 #if DEVEL
-  snprintf(space, sizeof(space), "%s/../fabw/fabw.devel", g_params.exedir);
+  snprintf(space, sizeof(space), "%s/../fabw/fabw.devel.xapi", g_params.exedir);
   fabw_path = space;
 #endif
 
