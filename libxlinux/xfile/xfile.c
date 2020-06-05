@@ -18,7 +18,6 @@
 #include <errno.h>
 #include <sys/file.h>
 
-#include "internal.h"
 #include "xfile/xfile.h"
 #include "errtab/KERNEL.errtab.h"
 

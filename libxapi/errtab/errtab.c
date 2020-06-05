@@ -17,7 +17,7 @@
 
 #include "types.h"
 
-#include "internal.h"
+#include "xapi.h"
 #include "errtab.internal.h"
 #include "errtab/XAPI.errtab.h"
 #include "mm/mm.internal.h"

@@ -18,7 +18,6 @@
 #include <errno.h>
 #include <sys/wait.h>
 
-#include "internal.h"
 #include "xwait/xwait.h"
 #include "errtab/KERNEL.errtab.h"
 
@@ -50,6 +49,6 @@ xapi API uxwaitid(idtype_t idtype, id_t id, siginfo_t *infop, int options)
   {
     tfail(perrtab_KERNEL, errno);
   }
-  
+
   finally : coda;
 }

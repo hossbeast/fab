@@ -21,7 +21,6 @@
 #include <unistd.h>
 #include <sys/syscall.h>
 
-#include "internal.h"
 #include "xsignal/xsignal.h"
 #include "errtab/KERNEL.errtab.h"
 

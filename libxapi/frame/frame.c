@@ -19,7 +19,7 @@
 #include <string.h>
 #include <inttypes.h>
 
-#include "internal.h"
+#include "xapi.h"
 #include "frame.internal.h"
 #include "calltree.internal.h"
 #include "mm.internal.h"

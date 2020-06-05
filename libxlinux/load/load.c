@@ -17,7 +17,6 @@
 
 #include "xapi.h"
 
-#include "internal.h"
 #include "load.internal.h"
 #include "mempolicy.internal.h"
 

@@ -17,7 +17,6 @@
 
 #include <errno.h>
 
-#include "internal.h"
 #include "xepoll.h"
 
 #include "KERNEL.errtab.h"

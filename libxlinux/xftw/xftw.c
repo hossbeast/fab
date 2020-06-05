@@ -18,7 +18,6 @@
 #include <ftw.h>
 #include <errno.h>
 
-#include "internal.h"
 #include "xftw/xftw.h"
 #include "errtab/XLINUX.errtab.h"
 

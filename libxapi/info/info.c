@@ -17,7 +17,7 @@
 
 #include <string.h>
 
-#include "internal.h"
+#include "xapi.h"
 #include "info.internal.h"
 #include "calltree.internal.h"
 #include "frame.internal.h"

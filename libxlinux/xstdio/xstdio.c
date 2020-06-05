@@ -22,7 +22,6 @@
 #include "xapi.h"
 #include "types.h"
 
-#include "internal.h"
 #include "xstdio/xstdio.h"
 #include "errtab/KERNEL.errtab.h"
 

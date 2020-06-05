@@ -19,7 +19,6 @@
 #include <string.h>
 #include <errno.h>
 
-#include "internal.h"
 #include "xdlfcn/xdlfcn.h"
 #include "errtab/KERNEL.errtab.h"
 #include "errtab/XLINUX.errtab.h"

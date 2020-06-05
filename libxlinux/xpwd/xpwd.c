@@ -17,7 +17,6 @@
 
 #include <errno.h>
 
-#include "internal.h"
 #include "xpwd/xpwd.h"
 #include "errtab/KERNEL.errtab.h"
 

@@ -23,7 +23,6 @@
 #include "xapi/exit.h"
 #include "types.h"
 
-#include "internal.h"
 #include "xunistd/xunistd.h"
 #include "errtab/KERNEL.errtab.h"
 #include "errtab/XLINUX.errtab.h"

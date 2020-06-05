@@ -20,7 +20,6 @@
 #include <stdarg.h>
 #include <string.h>
 
-#include "internal.h"
 #include "xstring/xstring.h"
 #include "errtab/KERNEL.errtab.h"
 #include "xstdlib.h"

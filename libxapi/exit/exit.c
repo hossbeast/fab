@@ -15,7 +15,7 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#include "internal.h"
+#include "xapi.h"
 #include "exit.internal.h"
 #include "errtab.internal.h"
 #include "hashtable.internal.h"

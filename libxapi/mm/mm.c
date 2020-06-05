@@ -21,7 +21,7 @@
 
 #include "types.h"
 
-#include "internal.h"
+#include "xapi.h"
 #include "mm.internal.h"
 
 #include "macros.h"

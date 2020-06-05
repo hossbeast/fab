@@ -17,7 +17,6 @@
 
 #include <pthread.h>
 
-#include "internal.h"
 #include "xpthread.h"
 #include "KERNEL.errtab.h"
 

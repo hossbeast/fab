@@ -21,7 +21,7 @@
 #include <string.h>
 #include <unistd.h>
 
-#include "internal.h"
+#include "xapi.h"
 #include "trace.internal.h"
 #include "calltree.internal.h"
 #include "errtab/XAPI.errtab.h"

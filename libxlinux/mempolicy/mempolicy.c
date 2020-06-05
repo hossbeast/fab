@@ -15,7 +15,6 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#include "internal.h"
 #include "mempolicy/mempolicy.internal.h"
 #include "errtab/KERNEL.errtab.h"
 #include "errtab/XLINUX.errtab.h"

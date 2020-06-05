@@ -18,7 +18,6 @@
 #include <errno.h>
 #include <sys/uio.h>
 
-#include "internal.h"
 #include "xuio/xuio.h"
 #include "errtab/KERNEL.errtab.h"
 #include "errtab/XLINUX.errtab.h"

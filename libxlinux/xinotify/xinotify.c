@@ -17,7 +17,6 @@
 
 #include <errno.h>
 
-#include "internal.h"
 #include "xinotify.h"
 #include "errtab/KERNEL.errtab.h"
 

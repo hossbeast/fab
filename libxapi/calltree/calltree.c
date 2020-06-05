@@ -20,7 +20,7 @@
 #include <string.h>
 #include <unistd.h>
 
-#include "internal.h"
+#include "xapi.h"
 #include "calltree.internal.h"
 #include "errtab.internal.h"
 #include "mm.internal.h"

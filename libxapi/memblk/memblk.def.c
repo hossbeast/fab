@@ -21,7 +21,7 @@
 #include <string.h>
 
 #include "memblk.def.h"
-#include "internal.h"
+#include "xapi.h"
 
 void memblk_freeze(memblk * const restrict mb, void * restrict _p)
 {

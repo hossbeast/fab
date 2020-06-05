@@ -18,7 +18,6 @@
 #include <errno.h>
 #include <sys/prctl.h>
 
-#include "internal.h"
 #include "xprctl/xprctl.h"
 #include "errtab/KERNEL.errtab.h"
 

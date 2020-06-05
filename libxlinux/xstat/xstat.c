@@ -21,7 +21,6 @@
 #include "xapi.h"
 #include "types.h"
 
-#include "internal.h"
 #include "xstat/xstat.h"
 #include "errtab/KERNEL.errtab.h"
 #include "common/fmt.h"

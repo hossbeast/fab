@@ -19,7 +19,6 @@
 #include <sys/time.h>
 #include <sys/resource.h>
 
-#include "internal.h"
 #include "xresource.h"
 #include "errtab/KERNEL.errtab.h"
 

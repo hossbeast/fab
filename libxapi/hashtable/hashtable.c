@@ -19,7 +19,7 @@
 
 #include "types.h"
 
-#include "internal.h"
+#include "xapi.h"
 #include "hashtable.internal.h"
 
 #include "macros.h"
