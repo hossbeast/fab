@@ -20,7 +20,6 @@
 
 #include "xlinux/xstdlib.h"
 
-#include "internal.h"
 #include "list.internal.h"
 
 #include "macros.h"
@@ -88,7 +87,7 @@ static ar_operations ar_ops = {
 // api
 //
 
-API xapi list_createx(
+xapi API list_createx(
     list** const restrict rv
   , size_t capacity
   , int (*cmp_fn)(const void * A, size_t Asz, const void * B, size_t Bsz)
@@ -121,12 +120,12 @@ finally:
 coda;
 }
 
-API xapi list_create(list** const restrict li)
+xapi API list_create(list** const restrict li)
 {
   xproxy(list_createx, li, 0, 0, 0, 0);
 }
 
-API xapi list_xfree(list * const restrict lix)
+xapi API list_xfree(list * const restrict lix)
 {
   enter;
 
@@ -140,7 +139,7 @@ API xapi list_xfree(list * const restrict lix)
   finally : coda;
 }
 
-API xapi list_ixfree(list ** const restrict li)
+xapi API list_ixfree(list ** const restrict li)
 {
   enter;
 
@@ -150,7 +149,7 @@ API xapi list_ixfree(list ** const restrict li)
   finally : coda;
 }
 
-API xapi list_recycle(list * const restrict lix)
+xapi API list_recycle(list * const restrict lix)
 {
   enter;
 
@@ -160,7 +159,7 @@ API xapi list_recycle(list * const restrict lix)
   finally : coda;
 }
 
-API void * list_get(const list * const restrict lix, int x)
+void * API list_get(const list * const restrict lix, int x)
 {
   list_t * li = containerof(lix, list_t, lix);
   value * val = array_get(&li->arx, x);
@@ -186,12 +185,12 @@ bool list_get_item(const list * const restrict lix, int x, void * restrict item,
   return false;
 }
 
-API xapi list_push(list * const lix, void * item, size_t item_len)
+xapi API list_push(list * const lix, void * item, size_t item_len)
 {
   xproxy(list_push_range, lix, &item, &item_len, 1);
 }
 
-API xapi list_push_range(list * const lix, void * items, size_t * restrict items_lens, size_t len)
+xapi API list_push_range(list * const lix, void * items, size_t * restrict items_lens, size_t len)
 {
   enter;
 
@@ -203,7 +202,7 @@ API xapi list_push_range(list * const lix, void * items, size_t * restrict items
   finally : coda;
 }
 
-API xapi list_pop(list * const restrict lix)
+xapi API list_pop(list * const restrict lix)
 {
   enter;
 
@@ -213,12 +212,12 @@ API xapi list_pop(list * const restrict lix)
   finally : coda;
 }
 
-API xapi list_unshift(list * const lix, void * el, size_t item_len)
+xapi API list_unshift(list * const lix, void * el, size_t item_len)
 {
   xproxy(list_unshift_range, lix, &el, &item_len, 1);
 }
 
-API xapi list_unshift_range(list * const lix, void * items, size_t * restrict items_lens, size_t len)
+xapi API list_unshift_range(list * const lix, void * items, size_t * restrict items_lens, size_t len)
 {
   enter;
 
@@ -230,7 +229,7 @@ API xapi list_unshift_range(list * const lix, void * items, size_t * restrict it
   finally : coda;
 }
 
-API xapi list_shift(list * const restrict lix)
+xapi API list_shift(list * const restrict lix)
 {
   enter;
 
@@ -240,12 +239,12 @@ API xapi list_shift(list * const restrict lix)
   finally : coda;
 }
 
-API xapi list_insert(list * const lix, size_t index, void * item, size_t item_len)
+xapi API list_insert(list * const lix, size_t index, void * item, size_t item_len)
 {
   xproxy(list_insert_range, lix, index, &item, &item_len, 1);
 }
 
-API xapi list_insert_range(list * const lix, size_t index, void * items, size_t * restrict items_lens, size_t len)
+xapi API list_insert_range(list * const lix, size_t index, void * items, size_t * restrict items_lens, size_t len)
 {
   enter;
 
@@ -257,12 +256,12 @@ API xapi list_insert_range(list * const lix, size_t index, void * items, size_t 
   finally : coda;
 }
 
-API xapi list_update(list * const lix, size_t index, void * item, size_t item_len)
+xapi API list_update(list * const lix, size_t index, void * item, size_t item_len)
 {
   xproxy(list_update_range, lix, index, &item, &item_len, 1);
 }
 
-API xapi list_update_range(list * const lix, size_t index, void * items, size_t * restrict items_lens, size_t len)
+xapi API list_update_range(list * const lix, size_t index, void * items, size_t * restrict items_lens, size_t len)
 {
   enter;
 
@@ -274,12 +273,12 @@ API xapi list_update_range(list * const lix, size_t index, void * items, size_t 
   finally : coda;
 }
 
-API xapi list_delete(list * const restrict lix, size_t index)
+xapi API list_delete(list * const restrict lix, size_t index)
 {
   xproxy(list_delete_range, lix, index, 1);
 }
 
-API xapi list_delete_range(list * const restrict lix, size_t index, size_t len)
+xapi API list_delete_range(list * const restrict lix, size_t index, size_t len)
 {
   enter;
 
@@ -289,7 +288,7 @@ API xapi list_delete_range(list * const restrict lix, size_t index, size_t len)
   finally : coda;
 }
 
-API xapi list_sublist(list * const restrict lix, size_t index, size_t len, list ** const restrict rv)
+xapi API list_sublist(list * const restrict lix, size_t index, size_t len, list ** const restrict rv)
 {
   enter;
 
@@ -306,7 +305,7 @@ API xapi list_sublist(list * const restrict lix, size_t index, size_t len, list 
   finally : coda;
 }
 
-API xapi list_splice(list * const restrict dstx, size_t dst_index, list * const restrict srcx, size_t src_index, int len)
+xapi API list_splice(list * const restrict dstx, size_t dst_index, list * const restrict srcx, size_t src_index, int len)
 {
   enter;
 
@@ -318,7 +317,7 @@ API xapi list_splice(list * const restrict dstx, size_t dst_index, list * const 
   finally : coda;
 }
 
-API xapi list_replicate(list * const restrict dstx, size_t dst_index, list * const restrict srcx, size_t src_index, int len)
+xapi API list_replicate(list * const restrict dstx, size_t dst_index, list * const restrict srcx, size_t src_index, int len)
 {
   enter;
 
@@ -330,7 +329,7 @@ API xapi list_replicate(list * const restrict dstx, size_t dst_index, list * con
   finally : coda;
 }
 
-API xapi list_truncate(list * const restrict lix, size_t len)
+xapi API list_truncate(list * const restrict lix, size_t len)
 {
   enter;
 
@@ -340,20 +339,20 @@ API xapi list_truncate(list * const restrict lix, size_t len)
   finally : coda;
 }
 
-API bool list_equal(list * const restrict Ax, list * const restrict Bx, int (*cmp_fn)(const void * A, size_t Asz, const void * B, size_t Bsz))
+bool API list_equal(list * const restrict Ax, list * const restrict Bx, int (*cmp_fn)(const void * A, size_t Asz, const void * B, size_t Bsz))
 {
   list_t * A = containerof(Ax, list_t, lix);
   list_t * B = containerof(Bx, list_t, lix);
   return array_equal(&A->arx, &B->arx, cmp_fn);
 }
 
-API void list_sort(list * const restrict lix, int (*cmp_fn)(const void *A, size_t Asz, const void *B, size_t Bsz))
+void API list_sort(list * const restrict lix, int (*cmp_fn)(const void *A, size_t Asz, const void *B, size_t Bsz))
 {
   list_t * li = containerof(lix, list_t, lix);
   array_sort(&li->arx, cmp_fn);
 }
 
-API bool list_search(
+bool API list_search(
     const list * const restrict lix
   , void * key_data
   , size_t key_len
@@ -367,7 +366,7 @@ API bool list_search(
   return list_search_range(lix, 0, lix->size, key_data, key_len, cmp_fn, item, item_len, lx, lc);
 }
 
-API bool list_search_range(
+bool API list_search_range(
     const list * const restrict lix
   , size_t index
   , size_t len

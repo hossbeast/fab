@@ -22,7 +22,7 @@
 #include "xfile/xfile.h"
 #include "errtab/KERNEL.errtab.h"
 
-API xapi xflock(int fd, int operation)
+xapi API xflock(int fd, int operation)
 {
   enter;
 

@@ -38,8 +38,8 @@
 #include "stats.h"
 
 #include "zbuffer.h"
-#include "hash.h"
-#include "attrs.h"
+#include "common/hash.h"
+#include "common/attrs.h"
 
 fstree fstree_root;
 filesystem filesystem_root;

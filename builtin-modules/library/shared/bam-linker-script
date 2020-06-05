@@ -25,8 +25,6 @@ use warnings;
 
 use Data::Dumper;
 
-print Dumper \%ENV;
-
 open(my $wfh, ">", "$ENV{bm_target}") or die "open($ENV{bm_target}) : $!";
 
 print $wfh ("{ global: \n");
@@ -36,7 +34,7 @@ for my $f (split(/ /, $ENV{sources}))
   open(my $rfh, "<", $f) or die "open($f) : $!";
   while(<$rfh>)
   {
-    if(/API(?:DATA)?.*? ([a-zA-Z_][a-zA-Z0-9_]*) *(?:\(|=|;)/)
+    if(/API(?:DATA)? +([a-zA-Z_][a-zA-Z0-9_]*)/)
     {
       print $wfh ("$1;\n")
     }

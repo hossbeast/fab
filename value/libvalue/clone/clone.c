@@ -21,7 +21,7 @@
 #include "valyria/set.h"
 #include "yyutil/parser.h"
 
-#include "internal.h"
+#include "value.h"
 #include "make.internal.h"
 #include "store.internal.h"
 #include "parser.internal.h"
@@ -148,12 +148,11 @@ static xapi clone_variable(value_parser * restrict parser, value ** restrict dst
   finally : coda;
 }
 
-
 //
 // api
 //
 
-API xapi value_clone(
+xapi API value_clone(
     value_parser * const restrict parser
   , value ** restrict dst
   , const value * restrict src

@@ -20,7 +20,7 @@
 #include "narrator/load.h"
 #include "valyria/load.h"
 
-#include "internal.h"
+#include "logger.h"
 #include "load.internal.h"
 #include "LOGGER.errtab.h"
 #include "logging.internal.h"
@@ -36,7 +36,7 @@
 
 static int handles;
 
-API xapi logger_load()
+xapi API logger_load()
 {
   enter;
 
@@ -56,7 +56,7 @@ API xapi logger_load()
   finally : coda;
 }
 
-API xapi logger_unload()
+xapi API logger_unload()
 {
   enter;
 

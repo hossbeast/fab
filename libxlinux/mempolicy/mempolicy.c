@@ -37,7 +37,7 @@ void mempolicy_teardown()
   wfree(policies);
 }
 
-API xapi mempolicy_push(mempolicy * plc, int * const restrict mpc)
+xapi API mempolicy_push(mempolicy * plc, int * const restrict mpc)
 {
   enter;
 
@@ -63,7 +63,7 @@ API xapi mempolicy_push(mempolicy * plc, int * const restrict mpc)
   finally : coda;
 }
 
-API mempolicy * mempolicy_pop(int * const restrict mpc)
+mempolicy * API mempolicy_pop(int * const restrict mpc)
 {
   mempolicy * r = 0;
   if(policiesl)
@@ -83,7 +83,7 @@ API mempolicy * mempolicy_pop(int * const restrict mpc)
   return r;
 }
 
-API mempolicy * mempolicy_unwind(int * const restrict mpc)
+mempolicy * API mempolicy_unwind(int * const restrict mpc)
 {
   mempolicy * r = 0;
   if(policiesl)

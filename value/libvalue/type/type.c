@@ -17,10 +17,10 @@
 
 #include "types.h"
 
-#include "internal.h"
+#include "value.h"
 #include "type.internal.h"
 
-#include "attrs.h"
+#include "common/attrs.h"
 
 APIDATA attrs32 * value_type_attrs = (attrs32[]){{
 #define VALUE_TYPE_DEF(x, r, y) + 1

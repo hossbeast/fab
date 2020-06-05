@@ -47,10 +47,10 @@
 #include "node.h"
 #include "var.h"
 
-#include "snarf.h"
+#include "common/snarf.h"
 #include "macros.h"
-#include "hash.h"
-#include "attrs.h"
+#include "common/hash.h"
+#include "common/attrs.h"
 
 #define SYSTEM_CONFIG_PATH    "/etc/fabconfig"  // absolute
 #define USER_CONFIG_PATH      ".fab/config"     // relative to $HOME

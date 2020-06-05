@@ -26,7 +26,7 @@
 #include "test_util.h"
 
 #include "macros.h"
-#include "hash.h"
+#include "common/hash.h"
 
 static inline xapi absent(hashtable * restrict ht, void * restrict entry)
 {

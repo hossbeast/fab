@@ -20,12 +20,11 @@
 
 #include "xlinux/xstdlib.h"
 
-#include "internal.h"
 #include "hashtable.internal.h"
 #include "faults.internal.h"
 
 #include "macros.h"
-#include "hash.h"
+#include "common/hash.h"
 
 /*
  * Default capacity, the minimum number of entries which can be set without rehashing
@@ -367,10 +366,10 @@ xapi hashtable_store(hashtable_t * restrict ht, void * entry, ht_bucket ** bp)
 }
 
 //
-// API
+// api
 //
 
-API xapi hashtable_create(hashtable ** restrict ht, size_t esz)
+xapi API hashtable_create(hashtable ** restrict ht, size_t esz)
 {
   enter;
 
@@ -379,7 +378,7 @@ API xapi hashtable_create(hashtable ** restrict ht, size_t esz)
   finally : coda;
 }
 
-API xapi hashtable_createx(
+xapi API hashtable_createx(
     hashtable ** restrict htx
   , size_t esz
   , size_t capacity
@@ -408,7 +407,7 @@ finally:
 coda;
 }
 
-API xapi hashtable_xfree(hashtable * restrict htx)
+xapi API hashtable_xfree(hashtable * restrict htx)
 {
   enter;
 
@@ -422,7 +421,7 @@ API xapi hashtable_xfree(hashtable * restrict htx)
   finally : coda;
 }
 
-API xapi hashtable_ixfree(hashtable ** restrict htx)
+xapi API hashtable_ixfree(hashtable ** restrict htx)
 {
   enter;
 
@@ -432,7 +431,7 @@ API xapi hashtable_ixfree(hashtable ** restrict htx)
   finally : coda;
 }
 
-API xapi hashtable_put(hashtable * restrict htx, void * entry)
+xapi API hashtable_put(hashtable * restrict htx, void * entry)
 {
   enter;
 
@@ -444,7 +443,7 @@ API xapi hashtable_put(hashtable * restrict htx, void * entry)
   finally : coda;
 }
 
-API void * hashtable_get(const hashtable * restrict htx, void * entry)
+void * API hashtable_get(const hashtable * restrict htx, void * entry)
 {
   size_t i;
   uint32_t h;
@@ -462,7 +461,7 @@ API void * hashtable_get(const hashtable * restrict htx, void * entry)
   return 0;
 }
 
-API xapi hashtable_delete(hashtable * restrict htx, void * restrict entry)
+xapi API hashtable_delete(hashtable * restrict htx, void * restrict entry)
 {
   enter;
 
@@ -484,7 +483,7 @@ API xapi hashtable_delete(hashtable * restrict htx, void * restrict entry)
   finally : coda;
 }
 
-API xapi hashtable_splice(hashtable * dstx, hashtable * srcx)
+xapi API hashtable_splice(hashtable * dstx, hashtable * srcx)
 {
   enter;
 
@@ -510,7 +509,7 @@ API xapi hashtable_splice(hashtable * dstx, hashtable * srcx)
   finally : coda;
 }
 
-API xapi hashtable_replicate(hashtable * dstx, hashtable * srcx)
+xapi API hashtable_replicate(hashtable * dstx, hashtable * srcx)
 {
   enter;
 
@@ -531,7 +530,7 @@ API xapi hashtable_replicate(hashtable * dstx, hashtable * srcx)
   finally : coda;
 }
 
-API bool hashtable_equal(hashtable * const Ax, hashtable * const Bx)
+bool API hashtable_equal(hashtable * const Ax, hashtable * const Bx)
 {
   ht_bucket * b;
 
@@ -557,7 +556,7 @@ API bool hashtable_equal(hashtable * const Ax, hashtable * const Bx)
   return true;
 }
 
-API xapi hashtable_recycle(hashtable * const restrict htx)
+xapi API hashtable_recycle(hashtable * const restrict htx)
 {
   enter;
 
@@ -580,7 +579,7 @@ API xapi hashtable_recycle(hashtable * const restrict htx)
   finally : coda;
 }
 
-API xapi hashtable_entries(const hashtable * restrict htx, void * restrict _entries, size_t * restrict entriesl)
+xapi API hashtable_entries(const hashtable * restrict htx, void * restrict _entries, size_t * restrict entriesl)
 {
   enter;
 
@@ -604,7 +603,7 @@ API xapi hashtable_entries(const hashtable * restrict htx, void * restrict _entr
   finally : coda;
 }
 
-API void * hashtable_table_entry(const hashtable * restrict htx, size_t x)
+void * API hashtable_table_entry(const hashtable * restrict htx, size_t x)
 {
   const hashtable_t * ht = containerof(htx, hashtable_t, htx);
 
@@ -615,7 +614,7 @@ API void * hashtable_table_entry(const hashtable * restrict htx, size_t x)
   return NULL;
 }
 
-API xapi hashtable_table_delete(hashtable * restrict htx, size_t x)
+xapi API hashtable_table_delete(hashtable * restrict htx, size_t x)
 {
   enter;
 

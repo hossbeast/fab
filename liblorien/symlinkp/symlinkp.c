@@ -28,10 +28,9 @@
 #include "xlinux/xstat.h"
 #include "xlinux/xunistd.h"
 
-#include "internal.h"
 #include "symlinkp.h"
 
-API xapi symlinkps(const char * const restrict target, const char * const restrict linkpath)
+xapi API symlinkps(const char * const restrict target, const char * const restrict linkpath)
 {
   enter;
 
@@ -41,7 +40,7 @@ API xapi symlinkps(const char * const restrict target, const char * const restri
   finally : coda;
 }
 
-API xapi symlinkpf(const char * const restrict target_fmt, const char * const restrict linkpath_fmt, ...)
+xapi API symlinkpf(const char * const restrict target_fmt, const char * const restrict linkpath_fmt, ...)
 {
   enter;
 
@@ -55,7 +54,7 @@ finally:
 coda;
 }
 
-API xapi symlinkpvf(const char * const restrict target_fmt, const char * const restrict linkpath_fmt, va_list va)
+xapi API symlinkpvf(const char * const restrict target_fmt, const char * const restrict linkpath_fmt, va_list va)
 {
   enter;
 

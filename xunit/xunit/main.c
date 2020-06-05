@@ -50,7 +50,7 @@
 #include "MAIN.errtab.h"
 #include "args.h"
 #include "cores.h"
-#include "assure.h"
+#include "common/assure.h"
 #include "logging.h"
 #include "macros.h"
 

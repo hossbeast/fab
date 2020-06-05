@@ -31,7 +31,7 @@
 #include "internal.h"
 #include "rolling.internal.h"
 
-#include "parseint.h"
+#include "common/parseint.h"
 
 //
 // static
@@ -187,11 +187,18 @@ xapi rolling_xread(narrator_rolling * restrict n, void * dst, size_t count, size
   finally : coda;
 }
 
+xapi rolling_flush(narrator_rolling * restrict n)
+{
+  enter;
+
+  finally : coda;
+}
+
 //
 // api
 //
 
-API xapi narrator_rolling_create(narrator ** const restrict n, const char * const restrict path_base, mode_t mode, uint32_t threshold, uint16_t max_files)
+xapi API narrator_rolling_create(narrator ** const restrict n, const char * const restrict path_base, mode_t mode, uint32_t threshold, uint16_t max_files)
 {
   enter;
 
@@ -217,13 +224,6 @@ API xapi narrator_rolling_create(narrator ** const restrict n, const char * cons
 
   fatal(ixstrndup, &(*n)->rolling.directory, path_base, e - path_base);
   fatal(ixstrdup, &(*n)->rolling.name_base, e + 1);
-
-  finally : coda;
-}
-
-xapi rolling_flush(narrator_rolling * restrict n)
-{
-  enter;
 
   finally : coda;
 }

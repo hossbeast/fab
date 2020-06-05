@@ -22,7 +22,10 @@
 #include "xapi.h"
 
 // visibility declaration macros
+#if 0
 #define API __attribute__((visibility("protected")))
+#endif
+#define API
 #define APIDATA
 
 #endif

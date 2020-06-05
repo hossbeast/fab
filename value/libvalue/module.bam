@@ -24,22 +24,12 @@ use xunit-tests     # this module contains xunit tests
 
 # make common objects available for #inclusion and linking by files in this module
 import fab/include
-import common
-import common/hash
-import common/assure
-import common/grow
-import common/stresc
-import common/attrs
-import common/parseint
+import libcommon
 
 import lib{xapi,xlinux,narrator,valyria,yyutil,xunit,logger}
 
 # variants for the module
 variant xapi.pic.{debug,devel,final}
-
-rule libvalue.?.so <- common/attrs/attrs.$?.o
-rule libvalue.?.so <- common/parseint/parseint.$?.o
-rule libvalue.?.so <- common/hash/hash.$?.o
 
 # pull in object files in the module, except those under integ
 rule **~test/*.?.o -> libvalue.$?.so

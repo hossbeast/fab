@@ -18,21 +18,13 @@
 use cc               # this module contains c sources
 use library/shared  # this module builds a shared library
 
-# make common objects available for #inclusion and linking by files in this module
 import fab/include
-import common
-import common/fmt
-import common/assure
-import common/parseint
-
+import libcommon
 import libxapi
 import libxlinux
 
 # variants for the module
 variant xapi.pic.{debug,devel,final}
-
-rule libnarrator.?.so <- common/parseint/parseint.$?.o
-rule libnarrator.?.so <- common/assure/assure.$?.o
 
 # pull in object files in the module, except those under integ/example
 rule *~{integ,example}/**/*.?.o -> libnarrator.$?.so

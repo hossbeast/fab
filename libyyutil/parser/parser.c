@@ -23,15 +23,14 @@
 #include "xlinux/KERNEL.errtab.h"
 #include "valyria/hashtable.h"
 
-#include "internal.h"
 #include "parser.internal.h"
 #include "scanner.internal.h"
 #include "logging.internal.h"
 
-#include "attrs.h"
-#include "hash.h"
+#include "common/attrs.h"
+#include "common/hash.h"
+#include "common/stresc.h"
 #include "macros.h"
-#include "stresc.h"
 #include "zbuffer.h"
 
 //
@@ -102,7 +101,7 @@ coda;
 // api
 //
 
-API xapi yyu_parser_xdestroy(yyu_parser * const parser)
+xapi API yyu_parser_xdestroy(yyu_parser * const parser)
 {
   enter;
 
@@ -113,7 +112,7 @@ API xapi yyu_parser_xdestroy(yyu_parser * const parser)
   finally : coda;
 }
 
-API xapi yyu_parser_init(
+xapi API yyu_parser_init(
     yyu_parser * const restrict parser
   , const yyu_vtable * const restrict vtable
   , xapi error_syntax
@@ -130,7 +129,7 @@ API xapi yyu_parser_init(
   finally : coda;
 }
 
-API xapi yyu_parser_init_tokens(
+xapi API yyu_parser_init_tokens(
     yyu_parser * const restrict parser
   , uint16_t numtokens
   , uint16_t mintoken
@@ -234,7 +233,7 @@ API xapi yyu_parser_init_tokens(
   finally : coda;
 }
 
-API xapi yyu_parser_init_states(
+xapi API yyu_parser_init_states(
     yyu_parser * const restrict parser
   , int numstates
   , const int * restrict statenumbers
@@ -250,7 +249,7 @@ API xapi yyu_parser_init_states(
   finally : coda;
 }
 
-API xapi yyu_parse(
+xapi API yyu_parse(
     yyu_parser * const restrict parser
   , char * const restrict text
   , size_t text_len
@@ -331,7 +330,7 @@ finally:
 coda;
 }
 
-API xapi yyu_define_tokenrange(yyu_parser * restrict parser, int first, int last)
+xapi API yyu_define_tokenrange(yyu_parser * restrict parser, int first, int last)
 {
   enter;
 

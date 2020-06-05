@@ -23,8 +23,8 @@
 #include "selection.h"
 #include "node.h"
 
-#include "hash.h"
-#include "assure.h"
+#include "common/hash.h"
+#include "common/assure.h"
 
 static llist selected_node_freelist = LLIST_INITIALIZER(selected_node_freelist);
 

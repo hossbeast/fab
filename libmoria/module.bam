@@ -23,8 +23,7 @@ use xunit-tests         # this module contains xunit tests
 
 # make common objects available for #inclusion and linking by files in this module
 import fab/include
-import common
-import common/attrs
+import libcommon
 import lib{xapi,xlinux,narrator,valyria,logger,xunit,yyutil}
 
 # declare variants in the module
@@ -32,8 +31,6 @@ variant xapi.pic.{devel,debug,final}
 
 # default target for this module
 rule libmoria.?.so -> //module/targets
-
-rule libmoria.?.so <- common/attrs/attrs.$?.o
 
 # pull in object files in the module, ignoring ./test
 rule **~test/*.?.o -> libmoria.$?.so

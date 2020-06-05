@@ -24,7 +24,7 @@
 #include "growing.internal.h"
 
 #include "macros.h"
-#include "assure.h"
+#include "common/assure.h"
 
 //
 // public
@@ -120,7 +120,7 @@ xapi growing_flush(narrator_growing * restrict n)
 // api
 //
 
-API xapi narrator_growing_create(narrator ** const restrict rv)
+xapi API narrator_growing_create(narrator ** const restrict rv)
 {
   enter;
 
@@ -138,7 +138,7 @@ finally:
 coda;
 }
 
-API narrator * narrator_growing_init_from(char stor[NARRATOR_STATIC_SIZE], char * buf, size_t bufa)
+narrator * API narrator_growing_init_from(char stor[NARRATOR_STATIC_SIZE], char * buf, size_t bufa)
 {
   narrator * n = (void*)stor;
   n->type = NARRATOR_GROWING;
@@ -148,17 +148,17 @@ API narrator * narrator_growing_init_from(char stor[NARRATOR_STATIC_SIZE], char 
   return n;
 }
 
-API narrator * narrator_growing_init(char stor[NARRATOR_STATIC_SIZE])
+narrator * API narrator_growing_init(char stor[NARRATOR_STATIC_SIZE])
 {
   return narrator_growing_init_from(stor, 0, 0);
 }
 
-API char * narrator_growing_buffer(narrator * const restrict n)
+char * API narrator_growing_buffer(narrator * const restrict n)
 {
   return n->growing.s;
 }
 
-API void narrator_growing_claim_buffer(narrator * const restrict n, void * bufp, size_t * allocp)
+void API narrator_growing_claim_buffer(narrator * const restrict n, void * bufp, size_t * allocp)
 {
   char * s = n->growing.s;
   size_t a = n->growing.a;
@@ -172,12 +172,12 @@ API void narrator_growing_claim_buffer(narrator * const restrict n, void * bufp,
   memset(&n->growing, 0, sizeof(n->growing));
 }
 
-API size_t narrator_growing_size(narrator * const restrict n)
+size_t API narrator_growing_size(narrator * const restrict n)
 {
   return n->growing.l;
 }
 
-API xapi narrator_growing_allocate(narrator * restrict _n, size_t size)
+xapi API narrator_growing_allocate(narrator * restrict _n, size_t size)
 {
   enter;
 

@@ -28,13 +28,12 @@
 #include "valyria/multimap.h"
 #include "narrator.h"
 
-#include "internal.h"
 #include "graph.internal.h"
 #include "MORIA.errtab.h"
 #include "edge.internal.h"
 #include "vertex.internal.h"
 
-#include "attrs.h"
+#include "common/attrs.h"
 #include "macros.h"
 #include "zbuffer.h"
 
@@ -188,12 +187,12 @@ void graph_edge_init(graph * const restrict g, edge_t * const restrict e)
 // api
 //
 
-API xapi graph_create(graph ** const restrict g, uint32_t identity)
+xapi API graph_create(graph ** const restrict g, uint32_t identity)
 {
   xproxy(graph_createx, g, identity, 0, 0, 0, 0);
 }
 
-API xapi graph_createx(
+xapi API graph_createx(
     graph ** const restrict g
   , uint32_t identity
   , size_t vsz
@@ -225,7 +224,7 @@ API xapi graph_createx(
   finally : coda;
 }
 
-API xapi graph_xfree(graph * const restrict g)
+xapi API graph_xfree(graph * const restrict g)
 {
   enter;
 
@@ -265,7 +264,7 @@ API xapi graph_xfree(graph * const restrict g)
   finally : coda;
 }
 
-API xapi graph_recycle(graph * const restrict g)
+xapi API graph_recycle(graph * const restrict g)
 {
   enter;
 
@@ -291,7 +290,7 @@ API xapi graph_recycle(graph * const restrict g)
   finally : coda;
 }
 
-API xapi graph_ixfree(graph ** const restrict g)
+xapi API graph_ixfree(graph ** const restrict g)
 {
   enter;
 
@@ -301,27 +300,27 @@ API xapi graph_ixfree(graph ** const restrict g)
   finally : coda;
 }
 
-API struct llist * graph_vertices(graph * restrict g)
+struct llist * API graph_vertices(graph * restrict g)
 {
   return &g->vertices;
 }
 
-API struct llist * graph_edges(graph * restrict g)
+struct llist * API graph_edges(graph * restrict g)
 {
   return &g->edges;
 }
 
-API void graph_vertex_definitions_set(graph * restrict g, const struct attrs32 * restrict defs)
+void API graph_vertex_definitions_set(graph * restrict g, const struct attrs32 * restrict defs)
 {
   g->vertex_defs = defs;
 }
 
-API void graph_edge_definitions_set(graph * restrict g, const struct attrs32 * restrict defs)
+void API graph_edge_definitions_set(graph * restrict g, const struct attrs32 * restrict defs)
 {
   g->edge_defs = defs;
 }
 
-API xapi graph_say(graph * const restrict g, struct narrator * const restrict N)
+xapi API graph_say(graph * const restrict g, struct narrator * const restrict N)
 {
   enter;
 
@@ -447,7 +446,7 @@ finally:
 coda;
 }
 
-API xapi graph_lookup_sentinel(void * restrict _context, const char ** restrict label, uint16_t * restrict label_len)
+xapi API graph_lookup_sentinel(void * restrict _context, const char ** restrict label, uint16_t * restrict label_len)
 {
   enter;
 
@@ -470,7 +469,7 @@ API xapi graph_lookup_sentinel(void * restrict _context, const char ** restrict 
   finally : coda;
 }
 
-API xapi graph_lookup(
+xapi API graph_lookup(
     graph * restrict g
   , graph_lookup_identifier_callback identifier_callback
   , bool (*candidate_callback)(void * context, const struct vertex * const restrict v)
@@ -551,7 +550,7 @@ API xapi graph_lookup(
   finally : coda;
 }
 
-API xapi graph_identity_indexs(graph * const restrict g, vertex * const restrict v, const char * const restrict name)
+xapi API graph_identity_indexs(graph * const restrict g, vertex * const restrict v, const char * const restrict name)
 {
   enter;
 
@@ -560,7 +559,7 @@ API xapi graph_identity_indexs(graph * const restrict g, vertex * const restrict
   finally : coda;
 }
 
-API xapi graph_identity_indexw(graph * const restrict g, vertex * const restrict v, const char * const restrict name, uint16_t name_len)
+xapi API graph_identity_indexw(graph * const restrict g, vertex * const restrict v, const char * const restrict name, uint16_t name_len)
 {
   enter;
 
@@ -569,7 +568,7 @@ API xapi graph_identity_indexw(graph * const restrict g, vertex * const restrict
   finally : coda;
 }
 
-API xapi graph_identity_deindex(graph * const restrict g, vertex * const restrict v)
+xapi API graph_identity_deindex(graph * const restrict g, vertex * const restrict v)
 {
   enter;
 

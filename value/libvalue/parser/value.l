@@ -23,8 +23,8 @@
   #include "value.tab.h"
   #include "value.tokens.h"
 
-  #include "parseint.h"
-  #include "attrs.h"
+  #include "common/parseint.h"
+  #include "common/attrs.h"
 
   #define YYSTYPE struct value_yystype
   #define YYLTYPE yyu_location

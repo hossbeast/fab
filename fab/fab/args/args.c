@@ -48,7 +48,7 @@
 #include "command.h"
 
 #include "macros.h"
-#include "assure.h"
+#include "common/assure.h"
 
 //
 // public

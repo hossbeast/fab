@@ -45,7 +45,7 @@
 #include "lookup.h"
 #include "selection.h"
 
-#include "attrs.h"
+#include "common/attrs.h"
 #include "zbuffer.h"
 
 #define TRAVERSE_MIN_DISTANCE_DEFAULT 1

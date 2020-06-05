@@ -30,7 +30,7 @@
   #include "graph.internal.h"
 
   #include "zbuffer.h"
-  #include "attrs.h"
+  #include "common/attrs.h"
 }
 
 %code top {

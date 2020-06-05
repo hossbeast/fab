@@ -28,13 +28,13 @@
 #include "errtab/KERNEL.errtab.h"
 #include "errtab/XLINUX.errtab.h"
 
-#include "fmt.h"
+#include "common/fmt.h"
 
 //
 // api
 //
 
-API xapi xread(int fd, void * buf, size_t count, ssize_t * bytes)
+xapi API xread(int fd, void * buf, size_t count, ssize_t * bytes)
 {
   enter;
 
@@ -47,7 +47,7 @@ API xapi xread(int fd, void * buf, size_t count, ssize_t * bytes)
   finally : coda;
 }
 
-API xapi uxread(int fd, void * buf, size_t count, ssize_t * bytes)
+xapi API uxread(int fd, void * buf, size_t count, ssize_t * bytes)
 {
   enter;
 
@@ -68,7 +68,7 @@ API xapi uxread(int fd, void * buf, size_t count, ssize_t * bytes)
   finally : coda;
 }
 
-API int aread(int fd, void * restrict buf, size_t count)
+int API aread(int fd, void * restrict buf, size_t count)
 {
   size_t actual = 0;
   while(count - actual)
@@ -89,7 +89,7 @@ API int aread(int fd, void * restrict buf, size_t count)
   return actual;
 }
 
-API xapi axread(int fd, void * restrict buf, size_t count)
+xapi API axread(int fd, void * restrict buf, size_t count)
 {
   enter;
 
@@ -113,7 +113,7 @@ API xapi axread(int fd, void * restrict buf, size_t count)
   finally : coda;
 }
 
-API xapi xwrite(int fd, const void * buf, size_t count, ssize_t * bytes)
+xapi API xwrite(int fd, const void * buf, size_t count, ssize_t * bytes)
 {
   enter;
 
@@ -126,7 +126,7 @@ API xapi xwrite(int fd, const void * buf, size_t count, ssize_t * bytes)
   finally : coda;
 }
 
-API int awrite(int fd, const void * buf, size_t count)
+int API awrite(int fd, const void * buf, size_t count)
 {
   size_t actual = 0;
   while(count - actual)
@@ -147,7 +147,7 @@ API int awrite(int fd, const void * buf, size_t count)
   return actual;
 }
 
-API xapi axwrite(int fd, const void * buf, size_t count)
+xapi API axwrite(int fd, const void * buf, size_t count)
 {
   enter;
 
@@ -171,7 +171,7 @@ API xapi axwrite(int fd, const void * buf, size_t count)
   finally : coda;
 }
 
-API xapi xgetcwd(char * buf, size_t size, char ** res)
+xapi API xgetcwd(char * buf, size_t size, char ** res)
 {
   enter;
 
@@ -184,7 +184,7 @@ API xapi xgetcwd(char * buf, size_t size, char ** res)
   finally : coda;
 }
 
-API xapi xlseek(int fd, off_t offset, int whence, off_t * res)
+xapi API xlseek(int fd, off_t offset, int whence, off_t * res)
 {
   enter;
 
@@ -197,7 +197,7 @@ API xapi xlseek(int fd, off_t offset, int whence, off_t * res)
   finally : coda;
 }
 
-API xapi xclose(int fd)
+xapi API xclose(int fd)
 {
   enter;
 
@@ -209,7 +209,7 @@ finally:
 coda;
 }
 
-API xapi ixclose(int * fd)
+xapi API ixclose(int * fd)
 {
   enter;
 
@@ -221,7 +221,7 @@ finally:
 coda;
 }
 
-API xapi xsymlinks(const char * target, const char * linkpath)
+xapi API xsymlinks(const char * target, const char * linkpath)
 {
   enter;
 
@@ -233,7 +233,7 @@ finally:
 coda;
 }
 
-API xapi xsymlinkf(const char * restrict target_fmt, const char * restrict linkpath_fmt, ...)
+xapi API xsymlinkf(const char * restrict target_fmt, const char * restrict linkpath_fmt, ...)
 {
   enter;
 
@@ -247,7 +247,7 @@ finally:
 coda;
 }
 
-API xapi xsymlinkvf(const char * restrict target_fmt, const char * restrict linkpath_fmt, va_list va)
+xapi API xsymlinkvf(const char * restrict target_fmt, const char * restrict linkpath_fmt, va_list va)
 {
   enter;
 
@@ -262,7 +262,7 @@ API xapi xsymlinkvf(const char * restrict target_fmt, const char * restrict link
   finally : coda;
 }
 
-API xapi uxsymlinks(const char * target, const char * linkpath)
+xapi API uxsymlinks(const char * target, const char * linkpath)
 {
   enter;
 
@@ -275,7 +275,7 @@ finally:
 coda;
 }
 
-API xapi uxsymlinkf(const char * restrict target_fmt, const char * restrict linkpath_fmt, ...)
+xapi API uxsymlinkf(const char * restrict target_fmt, const char * restrict linkpath_fmt, ...)
 {
   enter;
 
@@ -289,7 +289,7 @@ finally:
 coda;
 }
 
-API xapi uxsymlinkvf(const char * restrict target_fmt, const char * restrict linkpath_fmt, va_list va)
+xapi API uxsymlinkvf(const char * restrict target_fmt, const char * restrict linkpath_fmt, va_list va)
 {
   enter;
 
@@ -304,7 +304,7 @@ API xapi uxsymlinkvf(const char * restrict target_fmt, const char * restrict lin
   finally : coda;
 }
 
-API xapi xunlinks(const char * paths)
+xapi API xunlinks(const char * paths)
 {
   enter;
 
@@ -316,7 +316,7 @@ finally:
 coda;
 }
 
-API xapi xunlinkvf(const char * fmt, va_list va)
+xapi API xunlinkvf(const char * fmt, va_list va)
 {
   enter;
 
@@ -327,7 +327,7 @@ API xapi xunlinkvf(const char * fmt, va_list va)
   finally : coda;
 }
 
-API xapi xunlinkf(const char * fmt, ...)
+xapi API xunlinkf(const char * fmt, ...)
 {
   enter;
 
@@ -338,7 +338,7 @@ API xapi xunlinkf(const char * fmt, ...)
   finally : coda;
 }
 
-API xapi uxunlinks(const char * const restrict path)
+xapi API uxunlinks(const char * const restrict path)
 {
   enter;
 
@@ -350,7 +350,7 @@ finally:
 coda;
 }
 
-API xapi uxunlinkf(const char * const restrict fmt, ...)
+xapi API uxunlinkf(const char * const restrict fmt, ...)
 {
   enter;
 
@@ -363,7 +363,7 @@ finally:
 coda;
 }
 
-API xapi uxunlinkvf(const char * const restrict fmt, va_list va)
+xapi API uxunlinkvf(const char * const restrict fmt, va_list va)
 {
   enter;
 
@@ -374,7 +374,7 @@ API xapi uxunlinkvf(const char * const restrict fmt, va_list va)
   finally : coda;
 }
 
-API xapi xfork(pid_t * r)
+xapi API xfork(pid_t * r)
 {
   enter;
 
@@ -387,7 +387,7 @@ API xapi xfork(pid_t * r)
   finally : coda;
 }
 
-API xapi xdup(int oldfd)
+xapi API xdup(int oldfd)
 {
   enter;
 
@@ -397,7 +397,7 @@ API xapi xdup(int oldfd)
   finally : coda;
 }
 
-API xapi xdup2(int oldfd, int newfd)
+xapi API xdup2(int oldfd, int newfd)
 {
   enter;
 
@@ -410,7 +410,7 @@ finally:
 coda;
 }
 
-API xapi xgetresuid(uid_t * const ruid, uid_t * const euid, uid_t * const suid)
+xapi API xgetresuid(uid_t * const ruid, uid_t * const euid, uid_t * const suid)
 {
   enter;
 
@@ -419,7 +419,7 @@ API xapi xgetresuid(uid_t * const ruid, uid_t * const euid, uid_t * const suid)
   finally : coda;
 }
 
-API xapi xgetresgid(gid_t * const rgid, gid_t * const egid, gid_t * const sgid)
+xapi API xgetresgid(gid_t * const rgid, gid_t * const egid, gid_t * const sgid)
 {
   enter;
 
@@ -428,7 +428,7 @@ API xapi xgetresgid(gid_t * const rgid, gid_t * const egid, gid_t * const sgid)
   finally : coda;
 }
 
-API xapi xsetresuid(uid_t ruid, uid_t euid, uid_t suid)
+xapi API xsetresuid(uid_t ruid, uid_t euid, uid_t suid)
 {
   enter;
 
@@ -437,7 +437,7 @@ API xapi xsetresuid(uid_t ruid, uid_t euid, uid_t suid)
   finally : coda;
 }
 
-API xapi xsetresgid(gid_t rgid, gid_t egid, gid_t sgid)
+xapi API xsetresgid(gid_t rgid, gid_t egid, gid_t sgid)
 {
   enter;
 
@@ -446,7 +446,7 @@ API xapi xsetresgid(gid_t rgid, gid_t egid, gid_t sgid)
   finally : coda;
 }
 
-API xapi xeuidaccesss(int * restrict r, int mode, const char * restrict path)
+xapi API xeuidaccesss(int * restrict r, int mode, const char * restrict path)
 {
   enter;
 
@@ -458,7 +458,7 @@ finally:
 coda;
 }
 
-API xapi xeuidaccessf(int * restrict r, int mode, const char * restrict fmt, ...)
+xapi API xeuidaccessf(int * restrict r, int mode, const char * restrict fmt, ...)
 {
   enter;
 
@@ -471,7 +471,7 @@ finally:
 coda;
 }
 
-API xapi xeuidaccessvf(int * restrict r, int mode, const char * restrict fmt, va_list va)
+xapi API xeuidaccessvf(int * restrict r, int mode, const char * restrict fmt, va_list va)
 {
   enter;
 
@@ -482,7 +482,7 @@ API xapi xeuidaccessvf(int * restrict r, int mode, const char * restrict fmt, va
   finally : coda;
 }
 
-API xapi uxeuidaccesss(int * restrict r, int mode, const char * restrict path)
+xapi API uxeuidaccesss(int * restrict r, int mode, const char * restrict path)
 {
   enter;
 
@@ -498,7 +498,7 @@ finally:
 coda;
 }
 
-API xapi uxeuidaccessf(int * restrict r, int mode, const char * restrict fmt, ...)
+xapi API uxeuidaccessf(int * restrict r, int mode, const char * restrict fmt, ...)
 {
   enter;
 
@@ -511,7 +511,7 @@ finally:
 coda;
 }
 
-API xapi uxeuidaccessvf(int * restrict r, int mode, const char * restrict fmt, va_list va)
+xapi API uxeuidaccessvf(int * restrict r, int mode, const char * restrict fmt, va_list va)
 {
   enter;
 
@@ -522,7 +522,7 @@ API xapi uxeuidaccessvf(int * restrict r, int mode, const char * restrict fmt, v
   finally : coda;
 }
 
-API xapi xseteuid(uid_t euid)
+xapi API xseteuid(uid_t euid)
 {
   enter;
 
@@ -533,7 +533,7 @@ finally:
 coda;
 }
 
-API xapi xsetegid(gid_t egid)
+xapi API xsetegid(gid_t egid)
 {
   enter;
 
@@ -544,7 +544,7 @@ finally:
 coda;
 }
 
-API xapi xtruncate(const char * path, off_t length)
+xapi API xtruncate(const char * path, off_t length)
 {
   enter;
 
@@ -555,7 +555,7 @@ finally :
 coda;
 }
 
-API xapi xftruncate(int fd, off_t length)
+xapi API xftruncate(int fd, off_t length)
 {
   enter;
 
@@ -564,7 +564,7 @@ API xapi xftruncate(int fd, off_t length)
   finally : coda;
 }
 
-API xapi xrmdir(const char * pathname)
+xapi API xrmdir(const char * pathname)
 {
   enter;
 
@@ -575,7 +575,7 @@ finally:
 coda;
 }
 
-API xapi xsetpgid(pid_t pid, pid_t pgid)
+xapi API xsetpgid(pid_t pid, pid_t pgid)
 {
   enter;
 
@@ -584,7 +584,7 @@ API xapi xsetpgid(pid_t pid, pid_t pgid)
   finally : coda;
 }
 
-API xapi xsetsid()
+xapi API xsetsid()
 {
   enter;
 
@@ -594,7 +594,7 @@ API xapi xsetsid()
   finally : coda;
 }
 
-API xapi xexecv(const char * path, char * const argv[])
+xapi API xexecv(const char * path, char * const argv[])
 {
   enter;
 
@@ -605,7 +605,7 @@ finally:
 coda;
 }
 
-API xapi xexecve(const char * path, char * const argv[], char * const envp[])
+xapi API xexecve(const char * path, char * const argv[], char * const envp[])
 {
   enter;
 
@@ -616,7 +616,7 @@ finally:
 coda;
 }
 
-API xapi xexecvp(const char * file, char * const argv[])
+xapi API xexecvp(const char * file, char * const argv[])
 {
   enter;
 
@@ -627,7 +627,7 @@ finally:
 coda;
 }
 
-API xapi xchdirs(const char * const restrict path)
+xapi API xchdirs(const char * const restrict path)
 {
   enter;
 
@@ -638,7 +638,7 @@ finally:
 coda;
 }
 
-API xapi xchdirf(const char * const restrict fmt, ...)
+xapi API xchdirf(const char * const restrict fmt, ...)
 {
   enter;
 
@@ -651,7 +651,7 @@ finally:
 coda;
 }
 
-API xapi xchdirvf(const char * const restrict fmt, va_list va)
+xapi API xchdirvf(const char * const restrict fmt, va_list va)
 {
   enter;
 
@@ -662,7 +662,7 @@ API xapi xchdirvf(const char * const restrict fmt, va_list va)
   finally : coda;
 }
 
-API xapi xfchdir(int fd)
+xapi API xfchdir(int fd)
 {
   enter;
 
@@ -673,7 +673,7 @@ finally:
 coda;
 }
 
-API pid_t gettid()
+pid_t API gettid()
 {
   static __thread pid_t self;
 
@@ -683,7 +683,7 @@ API pid_t gettid()
   return self;
 }
 
-API xapi xpipe(int filedes[2])
+xapi API xpipe(int filedes[2])
 {
   enter;
 

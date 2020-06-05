@@ -29,7 +29,7 @@
 
 #include "value.h"
 
-#include "internal.h"
+#include "value.h"
 #include "store.internal.h"
 
 /* flex and bison do not agree on these names */
@@ -53,7 +53,7 @@
 #include "value_list.tab.h"
 #include "value_list.tokens.h"
 
-#include "attrs.h"
+#include "common/attrs.h"
 
 static YYU_VTABLE(value_vtable, value, value);
 static YYU_VTABLE(value_set_vtable, value, value_set);
@@ -63,7 +63,7 @@ static YYU_VTABLE(value_list_vtable, value, value_list);
 // public
 //
 
-API xapi value_parser_create(value_parser ** const rp)
+xapi API value_parser_create(value_parser ** const rp)
 {
   enter;
 
@@ -147,7 +147,7 @@ finally:
 coda;
 }
 
-API xapi value_parser_xfree(value_parser* const p)
+xapi API value_parser_xfree(value_parser* const p)
 {
   enter;
 
@@ -164,7 +164,7 @@ API xapi value_parser_xfree(value_parser* const p)
   finally : coda;
 }
 
-API xapi value_parser_ixfree(value_parser ** const p)
+xapi API value_parser_ixfree(value_parser ** const p)
 {
   enter;
 
@@ -174,7 +174,7 @@ API xapi value_parser_ixfree(value_parser ** const p)
   finally : coda;
 }
 
-API xapi value_parser_parse(
+xapi API value_parser_parse(
     value_parser * restrict parser
   , char * const restrict text
   , size_t len
@@ -205,7 +205,7 @@ API xapi value_parser_parse(
   finally : coda;
 }
 
-API xapi value_parser_parse_partial(
+xapi API value_parser_parse_partial(
     value_parser * restrict parser
   , char * const restrict text
   , size_t len

@@ -44,10 +44,10 @@
 #include "params.h"
 #include "sysvar.h"
 
-#include "snarf.h"
-#include "assure.h"
-#include "grow.h"
-#include "attrs.h"
+#include "common/snarf.h"
+#include "common/assure.h"
+#include "common/grow.h"
+#include "common/attrs.h"
 
 //
 // static

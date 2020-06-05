@@ -21,14 +21,14 @@
 #include "xfcntl/xfcntl.h"
 #include "errtab/KERNEL.errtab.h"
 
-#include "fmt.h"
+#include "common/fmt.h"
 
-API xapi xopens(int * fd, int flags, const char * path)
+xapi API xopens(int * fd, int flags, const char * path)
 {
   xproxy(xopenats, fd, flags, AT_FDCWD, path);
 }
 
-API xapi xopenf(int * fd, int flags, const char * path_fmt, ...)
+xapi API xopenf(int * fd, int flags, const char * path_fmt, ...)
 {
   enter;
 
@@ -42,12 +42,12 @@ finally:
 coda;
 }
 
-API xapi xopenvf(int * fd, int flags, const char * path_fmt, va_list va)
+xapi API xopenvf(int * fd, int flags, const char * path_fmt, va_list va)
 {
   xproxy(xopenatvf, fd, flags, AT_FDCWD, path_fmt, va);
 }
 
-API xapi xopenats(int * fd, int flags, int dirfd, const char * path)
+xapi API xopenats(int * fd, int flags, int dirfd, const char * path)
 {
   enter;
 
@@ -63,7 +63,7 @@ finally:
 coda;
 }
 
-API xapi xopenatf(int * fd, int flags, int dirfd, const char * path_fmt, ...)
+xapi API xopenatf(int * fd, int flags, int dirfd, const char * path_fmt, ...)
 {
   enter;
 
@@ -77,7 +77,7 @@ finally:
 coda;
 }
 
-API xapi xopenatvf(int * fd, int flags, int dirfd, const char * path_fmt, va_list va)
+xapi API xopenatvf(int * fd, int flags, int dirfd, const char * path_fmt, va_list va)
 {
   enter;
 
@@ -89,12 +89,12 @@ API xapi xopenatvf(int * fd, int flags, int dirfd, const char * path_fmt, va_lis
   finally : coda;
 }
 
-API xapi uxopens(int * fd, int flags, const char * path)
+xapi API uxopens(int * fd, int flags, const char * path)
 {
   xproxy(uxopenats, fd, flags, AT_FDCWD, path);
 }
 
-API xapi uxopenf(int * fd, int flags, const char * path_fmt, ...)
+xapi API uxopenf(int * fd, int flags, const char * path_fmt, ...)
 {
   enter;
 
@@ -107,12 +107,12 @@ finally:
 coda;
 }
 
-API xapi uxopenvf(int * fd, int flags, const char * path_fmt, va_list va)
+xapi API uxopenvf(int * fd, int flags, const char * path_fmt, va_list va)
 {
   xproxy(uxopenatvf, fd, flags, AT_FDCWD, path_fmt, va);
 }
 
-API xapi uxopenats(int * fd, int flags, int dirfd, const char * path)
+xapi API uxopenats(int * fd, int flags, int dirfd, const char * path)
 {
   enter;
 
@@ -129,7 +129,7 @@ finally:
 coda;
 }
 
-API xapi uxopenatf(int * fd, int flags, int dirfd, const char * path_fmt, ...)
+xapi API uxopenatf(int * fd, int flags, int dirfd, const char * path_fmt, ...)
 {
   enter;
 
@@ -142,7 +142,7 @@ finally:
 coda;
 }
 
-API xapi uxopenatvf(int * fd, int flags, int dirfd, const char * path_fmt, va_list va)
+xapi API uxopenatvf(int * fd, int flags, int dirfd, const char * path_fmt, va_list va)
 {
   enter;
 
@@ -155,12 +155,12 @@ finally:
 coda;
 }
 
-API xapi xopen_modes(int * fd, int flags, mode_t mode, const char * path)
+xapi API xopen_modes(int * fd, int flags, mode_t mode, const char * path)
 {
   xproxy(xopenat_modes, fd, flags, mode, AT_FDCWD, path);
 }
 
-API xapi xopen_modef(int * fd, int flags, mode_t mode, const char * path_fmt, ...)
+xapi API xopen_modef(int * fd, int flags, mode_t mode, const char * path_fmt, ...)
 {
   enter;
 
@@ -174,12 +174,12 @@ finally:
 coda;
 }
 
-API xapi xopen_modevf(int * fd, int flags, mode_t mode, const char * path_fmt, va_list va)
+xapi API xopen_modevf(int * fd, int flags, mode_t mode, const char * path_fmt, va_list va)
 {
   xproxy(xopenat_modevf, fd, flags, mode, AT_FDCWD, path_fmt, va);
 }
 
-API xapi xopenat_modes(int * fd, int flags, mode_t mode, int dirfd, const char * path)
+xapi API xopenat_modes(int * fd, int flags, mode_t mode, int dirfd, const char * path)
 {
   enter;
 
@@ -194,7 +194,7 @@ finally:
 coda;
 }
 
-API xapi xopenat_modef(int * fd, int flags, mode_t mode, int dirfd, const char * path_fmt, ...)
+xapi API xopenat_modef(int * fd, int flags, mode_t mode, int dirfd, const char * path_fmt, ...)
 {
   enter;
 
@@ -208,7 +208,7 @@ finally:
 coda;
 }
 
-API xapi xopenat_modevf(int * fd, int flags, mode_t mode, int dirfd, const char * path_fmt, va_list va)
+xapi API xopenat_modevf(int * fd, int flags, mode_t mode, int dirfd, const char * path_fmt, va_list va)
 {
   enter;
 
@@ -222,12 +222,12 @@ finally:
 coda;
 }
 
-API xapi uxopen_modes(int * fd, int flags, mode_t mode, const char * path)
+xapi API uxopen_modes(int * fd, int flags, mode_t mode, const char * path)
 {
   xproxy(uxopenat_modes, fd, flags, mode, AT_FDCWD, path);
 }
 
-API xapi uxopen_modef(int * fd, int flags, mode_t mode, const char * path_fmt, ...)
+xapi API uxopen_modef(int * fd, int flags, mode_t mode, const char * path_fmt, ...)
 {
   enter;
 
@@ -241,12 +241,12 @@ finally:
 coda;
 }
 
-API xapi uxopen_modevf(int * fd, int flags, mode_t mode, const char * path_fmt, va_list va)
+xapi API uxopen_modevf(int * fd, int flags, mode_t mode, const char * path_fmt, va_list va)
 {
   xproxy(uxopenat_modevf, fd, flags, mode, AT_FDCWD, path_fmt, va);
 }
 
-API xapi uxopenat_modes(int * fd, int flags, mode_t mode, int dirfd, const char * path)
+xapi API uxopenat_modes(int * fd, int flags, mode_t mode, int dirfd, const char * path)
 {
   enter;
 
@@ -263,7 +263,7 @@ finally:
 coda;
 }
 
-API xapi uxopenat_modef(int * fd, int flags, mode_t mode, int dirfd, const char * path_fmt, ...)
+xapi API uxopenat_modef(int * fd, int flags, mode_t mode, int dirfd, const char * path_fmt, ...)
 {
   enter;
 
@@ -277,7 +277,7 @@ finally:
 coda;
 }
 
-API xapi uxopenat_modevf(int * fd, int flags, mode_t mode, int dirfd, const char * path_fmt, va_list va)
+xapi API uxopenat_modevf(int * fd, int flags, mode_t mode, int dirfd, const char * path_fmt, va_list va)
 {
   enter;
 
@@ -291,7 +291,7 @@ finally:
 coda;
 }
 
-API xapi xsplice(ssize_t * restrict r, int fd_in, loff_t *off_in, int fd_out, loff_t *off_out, size_t len, unsigned int flags)
+xapi API xsplice(ssize_t * restrict r, int fd_in, loff_t *off_in, int fd_out, loff_t *off_out, size_t len, unsigned int flags)
 {
   enter;
 

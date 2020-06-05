@@ -76,7 +76,7 @@ void memblk_thaw(void * restrict mb, void * restrict _p)
   }
 }
 
-API void memblk_copyto(memblk * const restrict mb, void * restrict dst, size_t sz)
+void memblk_copyto(memblk * const restrict mb, void * restrict dst, size_t sz)
 {
   int x;
   for(x = 0; x < mb->blocksl; x++)

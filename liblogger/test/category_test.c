@@ -25,7 +25,6 @@
 #include "valyria/strutil.h"
 
 #include "logger.h"
-#include "internal.h"
 #include "category.internal.h"
 #include "opts.internal.h"
 #include "LOGGER.errtab.h"

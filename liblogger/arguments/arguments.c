@@ -28,29 +28,29 @@
 #include "xlinux/xstring.h"
 #include "narrator.h"
 
-#include "internal.h"
+#include "logger.h"
 #include "arguments.internal.h"
 #include "logging.internal.h"
 #include "expr.internal.h"
 #include "filter.internal.h"
 
-#include "snarf.h"
+#include "common/snarf.h"
 #include "zbuffer.h"
 
-APIDATA char *        g_binary;
-APIDATA char *        g_interpreter;
-APIDATA char **       g_argv;
-APIDATA size_t        g_argc;
-APIDATA char *        g_argvs;
-APIDATA size_t        g_argvsl;
-APIDATA char **       g_logv;
-APIDATA size_t        g_logc;
-APIDATA char *        g_logvs;
-APIDATA size_t        g_logvsl;
-APIDATA char **       g_ulogv;
-APIDATA size_t        g_ulogc;
-APIDATA char *        g_ulogvs;
-APIDATA size_t        g_ulogvsl;
+char *      APIDATA g_binary;
+char *      APIDATA g_interpreter;
+char **     APIDATA g_argv;
+size_t      APIDATA g_argc;
+char *      APIDATA g_argvs;
+size_t      APIDATA g_argvsl;
+char **     APIDATA g_logv;
+size_t      APIDATA g_logc;
+char *      APIDATA g_logvs;
+size_t      APIDATA g_logvsl;
+char **     APIDATA g_ulogv;
+size_t      APIDATA g_ulogc;
+char *      APIDATA g_ulogvs;
+size_t      APIDATA g_ulogvsl;
 
 static inline size_t zloads(void * restrict dst, const char * const restrict src)
 {
@@ -239,7 +239,7 @@ xapi arguments_process(const char * restrict argvs, size_t argvsl, int binaryx, 
 // api
 //
 
-API xapi logger_arguments_setup(char ** restrict envp)
+xapi API logger_arguments_setup(char ** restrict envp)
 {
   enter;
 
@@ -353,7 +353,7 @@ finally:
 coda;
 }
 
-API xapi logger_arguments_report()
+xapi API logger_arguments_report()
 {
   enter;
 

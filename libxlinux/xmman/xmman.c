@@ -21,7 +21,7 @@
 #include "xmman/xmman.h"
 #include "errtab/KERNEL.errtab.h"
 
-API xapi xmmap(void * addr, size_t length, int prot, int flags, int fd, off_t offset, void ** r)
+xapi API xmmap(void * addr, size_t length, int prot, int flags, int fd, off_t offset, void ** r)
 {
   enter;
 
@@ -36,7 +36,7 @@ finally:
 coda;
 }
 
-API xapi xmunmap(void * addr, size_t length)
+xapi API xmunmap(void * addr, size_t length)
 {
   enter;
 
@@ -48,7 +48,7 @@ API xapi xmunmap(void * addr, size_t length)
   finally : coda;
 }
 
-API xapi ixmunmap(void * addr, size_t length)
+xapi API ixmunmap(void * addr, size_t length)
 {
   enter;
 

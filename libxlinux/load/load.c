@@ -27,7 +27,7 @@ static int handles;
 // api
 //
 
-API xapi xlinux_load()
+xapi API xlinux_load()
 {
   enter;
 
@@ -38,7 +38,7 @@ API xapi xlinux_load()
   finally : coda;
 }
 
-API xapi xlinux_unload()
+xapi API xlinux_unload()
 {
   enter;
 

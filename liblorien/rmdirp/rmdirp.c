@@ -27,7 +27,6 @@
 #include "xlinux/xftw.h"
 #include "xlinux/xstat.h"
 
-#include "internal.h"
 #include "rmdirp.h"
 
 struct context
@@ -68,7 +67,7 @@ coda;
 // api
 //
 
-API xapi rmdirp(const char * const dirpath, int rmself)
+xapi API rmdirp(const char * const dirpath, int rmself)
 {
   enter;
 

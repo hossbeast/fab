@@ -37,7 +37,6 @@
 
 #include "narrator.h"
 #include "narrator/growing.h"
-#include "internal.h"
 #include "graph.internal.h"
 #include "vertex.internal.h"
 #include "errtab/MORIA.errtab.h"

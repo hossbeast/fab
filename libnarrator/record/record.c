@@ -24,7 +24,7 @@
 #include "record.internal.h"
 
 #include "macros.h"
-#include "assure.h"
+#include "common/assure.h"
 
 //
 // public
@@ -83,7 +83,7 @@ xapi record_xread(narrator_record * restrict n, void * dst, size_t count, size_t
 // api
 //
 
-API xapi narrator_record_create(narrator ** const restrict rv, narrator * const restrict np)
+xapi API narrator_record_create(narrator ** const restrict rv, narrator * const restrict np)
 {
   enter;
 
@@ -101,7 +101,7 @@ finally:
 coda;
 }
 
-API xapi narrator_record_flush(narrator * const restrict n)
+xapi API narrator_record_flush(narrator * const restrict n)
 {
   enter;
 
@@ -112,7 +112,7 @@ API xapi narrator_record_flush(narrator * const restrict n)
   finally : coda;
 }
 
-API size_t narrator_record_size(narrator * const restrict n)
+size_t API narrator_record_size(narrator * const restrict n)
 {
   return n->record.l;
 }

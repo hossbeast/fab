@@ -31,8 +31,8 @@
 #include "selector.internal.h"
 #include "config.internal.h"
 
-#include "attrs.h"
-#include "assure.h"
+#include "common/attrs.h"
+#include "common/assure.h"
 
 attrs32 * command_type_attrs = (attrs32[]) {{
 #define DEF(x, s, r, y) + 1

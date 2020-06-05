@@ -24,10 +24,9 @@
 #include "internal.h"
 #include "xstat/xstat.h"
 #include "errtab/KERNEL.errtab.h"
+#include "common/fmt.h"
 
-#include "fmt.h"
-
-API xapi xfstatats(int dirfd, int flags, struct stat * restrict buf, const char * restrict path)
+xapi API xfstatats(int dirfd, int flags, struct stat * restrict buf, const char * restrict path)
 {
   enter;
 
@@ -39,7 +38,7 @@ finally:
 coda;
 }
 
-API xapi xfstatatf(int dirfd, int flags, struct stat * restrict buf, const char * restrict path_fmt, ...)
+xapi API xfstatatf(int dirfd, int flags, struct stat * restrict buf, const char * restrict path_fmt, ...)
 {
   enter;
 
@@ -53,7 +52,7 @@ finally:
 coda;
 }
 
-API xapi xfstatatvf(int dirfd, int flags, struct stat * restrict buf, const char * restrict path_fmt, va_list va)
+xapi API xfstatatvf(int dirfd, int flags, struct stat * restrict buf, const char * restrict path_fmt, va_list va)
 {
   enter;
 
@@ -65,7 +64,7 @@ API xapi xfstatatvf(int dirfd, int flags, struct stat * restrict buf, const char
   finally : coda;
 }
 
-API xapi uxfstatats(int * restrict r, int dirfd, int flags, struct stat * restrict buf, const char * restrict path)
+xapi API uxfstatats(int * restrict r, int dirfd, int flags, struct stat * restrict buf, const char * restrict path)
 {
   enter;
 
@@ -86,7 +85,7 @@ finally:
 coda;
 }
 
-API xapi uxfstatatf(int * restrict r, int dirfd, int flags, struct stat * restrict buf, const char * restrict path_fmt, ...)
+xapi API uxfstatatf(int * restrict r, int dirfd, int flags, struct stat * restrict buf, const char * restrict path_fmt, ...)
 {
   enter;
 
@@ -100,7 +99,7 @@ finally:
 coda;
 }
 
-API xapi uxfstatatvf(int * restrict r, int dirfd, int flags, struct stat * restrict buf, const char * restrict path_fmt, va_list va)
+xapi API uxfstatatvf(int * restrict r, int dirfd, int flags, struct stat * restrict buf, const char * restrict path_fmt, va_list va)
 {
   enter;
 
@@ -112,7 +111,7 @@ API xapi uxfstatatvf(int * restrict r, int dirfd, int flags, struct stat * restr
   finally : coda;
 }
 
-API xapi xfutimens(int fd, const struct timespec times[2])
+xapi API xfutimens(int fd, const struct timespec times[2])
 {
   enter;
 
@@ -121,7 +120,7 @@ API xapi xfutimens(int fd, const struct timespec times[2])
   finally : coda;
 }
 
-API xapi xutimensats(int dirfd, const struct timespec times[2], int flags, const char * const restrict path)
+xapi API xutimensats(int dirfd, const struct timespec times[2], int flags, const char * const restrict path)
 {
   enter;
 
@@ -130,7 +129,7 @@ API xapi xutimensats(int dirfd, const struct timespec times[2], int flags, const
   finally : coda;
 }
 
-API xapi uxutimensats(int dirfd, const struct timespec times[2], int flags, int * restrict r, const char * const restrict path)
+xapi API uxutimensats(int dirfd, const struct timespec times[2], int flags, int * restrict r, const char * const restrict path)
 {
   enter;
 
@@ -145,7 +144,7 @@ finally:
 coda;
 }
 
-API xapi xmkdirs(mode_t mode, const char * path)
+xapi API xmkdirs(mode_t mode, const char * path)
 {
   enter;
 
@@ -156,7 +155,7 @@ finally:
 coda;
 }
 
-API xapi xmkdirf(mode_t mode, const char * path_fmt, ...)
+xapi API xmkdirf(mode_t mode, const char * path_fmt, ...)
 {
   enter;
 
@@ -168,7 +167,7 @@ API xapi xmkdirf(mode_t mode, const char * path_fmt, ...)
   finally : coda;
 }
 
-API xapi xmkdirvf(mode_t mode, const char * path_fmt, va_list va)
+xapi API xmkdirvf(mode_t mode, const char * path_fmt, va_list va)
 {
   enter;
 
@@ -180,7 +179,7 @@ API xapi xmkdirvf(mode_t mode, const char * path_fmt, va_list va)
   finally : coda;
 }
 
-API xapi uxmkdirs(mode_t mode, const char * path)
+xapi API uxmkdirs(mode_t mode, const char * path)
 {
   enter;
 
@@ -192,7 +191,7 @@ finally:
 coda;
 }
 
-API xapi uxmkdirf(mode_t mode, const char * path_fmt, ...)
+xapi API uxmkdirf(mode_t mode, const char * path_fmt, ...)
 {
   enter;
 
@@ -204,7 +203,7 @@ API xapi uxmkdirf(mode_t mode, const char * path_fmt, ...)
   finally : coda;
 }
 
-API xapi uxmkdirvf(mode_t mode, const char * path_fmt, va_list va)
+xapi API uxmkdirvf(mode_t mode, const char * path_fmt, va_list va)
 {
   enter;
 
@@ -216,7 +215,7 @@ API xapi uxmkdirvf(mode_t mode, const char * path_fmt, va_list va)
   finally : coda;
 }
 
-API xapi xfchmod(int fd, mode_t mode)
+xapi API xfchmod(int fd, mode_t mode)
 {
   enter;
 

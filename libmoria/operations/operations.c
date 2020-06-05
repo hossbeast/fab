@@ -27,7 +27,6 @@
 #define YYSTYPE OPERATIONS_YYSTYPE
 #define YYLTYPE yyu_location
 
-#include "internal.h"
 #include "operations.internal.h"
 #include "operations.tab.h"
 #include "operations.tokens.h"
@@ -41,7 +40,7 @@
 #include "edge.internal.h"
 
 #include "macros.h"
-#include "attrs.h"
+#include "common/attrs.h"
 
 static const char * operation_type_names[] = {
 #undef DEF
@@ -159,6 +158,15 @@ static xapi identifier_create(
   finally : coda;
 }
 
+static xapi operations_create_vertex(vertex ** const restrict rv, graph * const restrict g, uint32_t attrs, uint8_t op_attrs, const char * const restrict label, uint16_t label_len)
+{
+  enter;
+
+  fatal(vertex_createw, rv, g, attrs, label, label_len);
+
+  finally : coda;
+}
+
 //
 // public
 //
@@ -223,7 +231,7 @@ static yyu_vtable vtable = {
 // API
 //
 
-API xapi operations_parser_create(operations_parser ** const parser)
+xapi API operations_parser_create(operations_parser ** const parser)
 {
   enter;
 
@@ -256,7 +264,7 @@ API xapi operations_parser_create(operations_parser ** const parser)
   finally : coda;
 }
 
-API xapi operations_parser_xfree(operations_parser* const p)
+xapi API operations_parser_xfree(operations_parser* const p)
 {
   enter;
 
@@ -270,7 +278,7 @@ API xapi operations_parser_xfree(operations_parser* const p)
   finally : coda;
 }
 
-API xapi operations_parser_ixfree(operations_parser ** const p)
+xapi API operations_parser_ixfree(operations_parser ** const p)
 {
   enter;
 
@@ -280,7 +288,7 @@ API xapi operations_parser_ixfree(operations_parser ** const p)
   finally : coda;
 }
 
-API xapi operations_parser_operations_create(list ** restrict operations)
+xapi API operations_parser_operations_create(list ** restrict operations)
 {
   enter;
 
@@ -289,7 +297,7 @@ API xapi operations_parser_operations_create(list ** restrict operations)
   finally : coda;
 }
 
-API xapi operations_parser_parse(
+xapi API operations_parser_parse(
     operations_parser * restrict parser
   , graph * restrict g
   , char * const restrict text
@@ -310,7 +318,7 @@ API xapi operations_parser_parse(
   finally : coda;
 }
 
-API xapi operations_perform(graph * restrict g, operations_dispatch * restrict dispatch, list * restrict ops)
+xapi API operations_perform(graph * restrict g, operations_dispatch * restrict dispatch, list * restrict ops)
 {
   enter;
 
@@ -470,7 +478,7 @@ finally:
 coda;
 }
 
-API xapi graph_connect(graph * const restrict g, vertex * const restrict Ax, vertex * const restrict Bx, uint32_t attrs, edge ** restrict er, bool * restrict r)
+xapi API graph_connect(graph * const restrict g, vertex * const restrict Ax, vertex * const restrict Bx, uint32_t attrs, edge ** restrict er, bool * restrict r)
 {
   enter;
 
@@ -479,7 +487,7 @@ API xapi graph_connect(graph * const restrict g, vertex * const restrict Ax, ver
   finally : coda;
 }
 
-API xapi graph_connect_replace(
+xapi API graph_connect_replace(
     struct graph * const restrict g
   , struct vertex * Ax
   , struct vertex * Bx
@@ -630,7 +638,7 @@ API xapi graph_connect_replace(
   finally : coda;
 }
 
-API xapi graph_hyperconnect(
+xapi API graph_hyperconnect(
     graph * const restrict g
   , vertex ** const restrict Axlist
   , uint16_t Axlen
@@ -735,7 +743,7 @@ API xapi graph_hyperconnect(
   finally : coda;
 }
 
-API xapi graph_edge_disconnect(graph * const restrict g, edge * const restrict ex)
+xapi API graph_edge_disconnect(graph * const restrict g, edge * const restrict ex)
 {
   enter;
 
@@ -776,7 +784,7 @@ API xapi graph_edge_disconnect(graph * const restrict g, edge * const restrict e
   finally : coda;
 }
 
-API xapi graph_disconnect(graph * const restrict g, vertex * const restrict A, vertex * const restrict B)
+xapi API graph_disconnect(graph * const restrict g, vertex * const restrict A, vertex * const restrict B)
 {
   enter;
 
@@ -788,7 +796,7 @@ API xapi graph_disconnect(graph * const restrict g, vertex * const restrict A, v
   finally : coda;
 }
 
-API xapi graph_hyperdisconnect(graph * restrict g, vertex ** restrict Alist, uint16_t Alen, vertex ** restrict Blist, uint16_t Blen)
+xapi API graph_hyperdisconnect(graph * restrict g, vertex ** restrict Alist, uint16_t Alen, vertex ** restrict Blist, uint16_t Blen)
 {
   enter;
 
@@ -800,22 +808,13 @@ API xapi graph_hyperdisconnect(graph * restrict g, vertex ** restrict Alist, uin
   finally : coda;
 }
 
-API xapi graph_vertex_delete(struct graph * restrict g, struct vertex * restrict vx)
+xapi API graph_vertex_delete(struct graph * restrict g, struct vertex * restrict vx)
 {
   enter;
 
   vertex_t * v = containerof(vx, vertex_t, vx);
 
   fatal(vertex_delete, v, g);
-
-  finally : coda;
-}
-
-static xapi operations_create_vertex(vertex ** const restrict rv, graph * const restrict g, uint32_t attrs, uint8_t op_attrs, const char * const restrict label, uint16_t label_len)
-{
-  enter;
-
-  fatal(vertex_createw, rv, g, attrs, label, label_len);
 
   finally : coda;
 }

@@ -27,15 +27,14 @@
 #include "valyria/hashtable.h"
 #include "xlinux/KERNEL.errtab.h"
 
-#include "internal.h"
 #include "scanner.internal.h"
 #include "logging.internal.h"
 #include "parser.internal.h"
 
 #include "macros.h"
-#include "stresc.h"
-#include "attrs.h"
-#include "parseint.h"
+#include "common/stresc.h"
+#include "common/attrs.h"
+#include "common/parseint.h"
 
 //
 // internal
@@ -133,7 +132,7 @@ static xapi __attribute__((nonnull)) ptoken(
 // api
 //
 
-API void yyu_locreset(yyu_location * const lloc, yyu_parser * const xtra, char * const text)
+void API yyu_locreset(yyu_location * const lloc, yyu_parser * const xtra, char * const text)
 {
   if(!xtra->yybuffer)
     xtra->yybuffer = text;
@@ -154,7 +153,7 @@ API void yyu_locreset(yyu_location * const lloc, yyu_parser * const xtra, char *
   xtra->loc.l_col = 0;
 }
 
-API void yyu_locwrite(
+void API yyu_locwrite(
     yyu_location * const lloc
   , yyu_parser * const xtra
   , char * const text
@@ -179,7 +178,7 @@ API void yyu_locwrite(
   *lloc = xtra->loc;
 }
 
-API xapi yyu_pushstate(int state, yyu_parser * const xtra)
+xapi API yyu_pushstate(int state, yyu_parser * const xtra)
 {
   enter;
 
@@ -226,12 +225,12 @@ API xapi yyu_pushstate(int state, yyu_parser * const xtra)
   finally : coda;
 }
 
-API void yyu_dropstate(yyu_parser * const xtra)
+void API yyu_dropstate(yyu_parser * const xtra)
 {
   xtra->states_n--;
 }
 
-API xapi yyu_popstate(yyu_parser * const xtra)
+xapi API yyu_popstate(yyu_parser * const xtra)
 {
   enter;
 
@@ -280,12 +279,12 @@ API xapi yyu_popstate(yyu_parser * const xtra)
   finally : coda;
 }
 
-API int yyu_nstate(yyu_parser * const xtra, int n)
+int API yyu_nstate(yyu_parser * const xtra, int n)
 {
   return (xtra->states_n > n) ? xtra->states[xtra->states_n - n - 1] : -1;
 }
 
-API void yyu_scanner_error(yyu_location * const lloc, yyu_parser * const xtra)
+void API yyu_scanner_error(yyu_location * const lloc, yyu_parser * const xtra)
 {
   xtra->scanerr = 1;
 
@@ -293,7 +292,7 @@ API void yyu_scanner_error(yyu_location * const lloc, yyu_parser * const xtra)
   memcpy(&xtra->error_loc, lloc, sizeof(xtra->error_loc));
 }
 
-API xapi yyu_lexify(
+xapi API yyu_lexify(
     yyu_parser * const restrict xtra
   , int * const restrict ytoken
   , void * const restrict lval
@@ -330,7 +329,7 @@ API xapi yyu_lexify(
   finally : coda;
 }
 
-API xapi yyu_lexify_valtoken(
+xapi API yyu_lexify_valtoken(
     yyu_parser * const restrict xtra
   , int * const restrict ytoken
   , void * const restrict _lval
@@ -354,7 +353,7 @@ API xapi yyu_lexify_valtoken(
   finally : coda;
 }
 
-API xapi yyu_lexify_attrs(
+xapi API yyu_lexify_attrs(
     yyu_parser * const restrict parser
   , int * const restrict ytoken
   , void * const restrict lval
@@ -385,7 +384,7 @@ API xapi yyu_lexify_attrs(
   finally : coda;
 }
 
-API xapi yyu_lexify_enum(
+xapi API yyu_lexify_enum(
     yyu_parser * const restrict parser
   , int * const restrict ytoken
   , void * const restrict lval
@@ -411,7 +410,7 @@ API xapi yyu_lexify_enum(
   finally : coda;
 }
 
-API xapi yyu_lexify_int(
+xapi API yyu_lexify_int(
     yyu_parser * const restrict parser
   , int * ytoken
   , void * const restrict _lval
@@ -506,7 +505,7 @@ API xapi yyu_lexify_int(
   finally : coda;
 }
 
-API xapi yyu_lexify_cref(
+xapi API yyu_lexify_cref(
     yyu_parser * const restrict parser
   , int * ytoken
   , void * const restrict _lval
@@ -551,7 +550,7 @@ API xapi yyu_lexify_cref(
   finally : coda;
 }
 
-API xapi yyu_lexify_href(
+xapi API yyu_lexify_href(
     yyu_parser * const restrict parser
   , int * ytoken
   , void * const restrict _lval
@@ -575,7 +574,7 @@ API xapi yyu_lexify_href(
   finally : coda;
 }
 
-API xapi yyu_lexify_bool(
+xapi API yyu_lexify_bool(
     yyu_parser * const restrict parser
   , int * ytoken
   , void * const restrict _lval
@@ -600,7 +599,7 @@ API xapi yyu_lexify_bool(
   finally : coda;
 }
 
-API xapi yyu_lexify_float(
+xapi API yyu_lexify_float(
     yyu_parser * const restrict parser
   , int * ytoken
   , void * const restrict _lval

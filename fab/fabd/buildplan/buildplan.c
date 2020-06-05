@@ -38,7 +38,7 @@
 #include "path.h"
 #include "selection.h"
 
-#include "assure.h"
+#include "common/assure.h"
 #include "macros.h"
 
 selection bp_selection;

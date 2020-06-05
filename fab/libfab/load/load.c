@@ -23,7 +23,6 @@
 #include "logger.h"
 #include "narrator.h"
 
-#include "internal.h"
 #include "load.h"
 #include "FAB.errtab.h"
 #include "logging.internal.h"
@@ -34,7 +33,7 @@ static int handles;
 // api
 //
 
-API xapi fab_load()
+xapi API fab_load()
 {
   enter;
 
@@ -52,7 +51,7 @@ API xapi fab_load()
   finally : coda;
 }
 
-API xapi fab_unload()
+xapi API fab_unload()
 {
   enter;
 

@@ -21,7 +21,7 @@
 #include "valyria/array.h"
 #include "valyria/list.h"
 
-#include "internal.h"
+#include "logger.h"
 #include "expr.internal.h"
 #include "LOGGER.errtab.h"
 #include "category.internal.h"
@@ -177,17 +177,17 @@ coda;
 //
 // api
 //
-API int logger_expr_resolve(const char * restrict expr)
+int API logger_expr_resolve(const char * restrict expr)
 {
   return expr_validate(expr, 1);
 }
 
-API int logger_expr_validate(const char * restrict expr)
+int API logger_expr_validate(const char * restrict expr)
 {
   return expr_validate(expr, 0);
 }
 
-API xapi logger_expr_push(uint8_t stream_id, const char * restrict expr)
+xapi API logger_expr_push(uint8_t stream_id, const char * restrict expr)
 {
   enter;
 
@@ -205,7 +205,7 @@ API xapi logger_expr_push(uint8_t stream_id, const char * restrict expr)
   finally : coda;
 }
 
-API xapi logger_expr_pop(uint8_t stream_id)
+xapi API logger_expr_pop(uint8_t stream_id)
 {
   enter;
 
@@ -223,7 +223,7 @@ API xapi logger_expr_pop(uint8_t stream_id)
   finally : coda;
 }
 
-API xapi logger_expr_unshift(uint8_t stream_id, const char * restrict expr)
+xapi API logger_expr_unshift(uint8_t stream_id, const char * restrict expr)
 {
   enter;
 
@@ -241,7 +241,7 @@ API xapi logger_expr_unshift(uint8_t stream_id, const char * restrict expr)
   finally : coda;
 }
 
-API xapi logger_expr_shift(uint8_t stream_id)
+xapi API logger_expr_shift(uint8_t stream_id)
 {
   enter;
 
@@ -259,7 +259,7 @@ API xapi logger_expr_shift(uint8_t stream_id)
   finally : coda;
 }
 
-API xapi logger_expr_reset(uint8_t stream_id)
+xapi API logger_expr_reset(uint8_t stream_id)
 {
   enter;
 

@@ -22,7 +22,7 @@
 #include "xwait/xwait.h"
 #include "errtab/KERNEL.errtab.h"
 
-API xapi xwait(int * status)
+xapi API xwait(int * status)
 {
   enter;
 
@@ -32,7 +32,7 @@ API xapi xwait(int * status)
   finally : coda;
 }
 
-API xapi xwaitpid(pid_t pid, int * status, int options)
+xapi API xwaitpid(pid_t pid, int * status, int options)
 {
   enter;
 
@@ -42,7 +42,7 @@ API xapi xwaitpid(pid_t pid, int * status, int options)
   finally : coda;
 }
 
-API xapi uxwaitid(idtype_t idtype, id_t id, siginfo_t *infop, int options)
+xapi API uxwaitid(idtype_t idtype, id_t id, siginfo_t *infop, int options)
 {
   enter;
 

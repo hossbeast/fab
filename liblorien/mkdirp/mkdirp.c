@@ -27,10 +27,9 @@
 #include "xlinux/xftw.h"
 #include "xlinux/xstat.h"
 
-#include "internal.h"
 #include "mkdirp.h"
 
-API xapi mkdirpw(mode_t mode, const char * const path, size_t pathl)
+xapi API mkdirpw(mode_t mode, const char * const path, size_t pathl)
 {
   enter;
 
@@ -56,12 +55,12 @@ finally:
 coda;
 }
 
-API xapi mkdirps(mode_t mode, const char * const path)
+xapi API mkdirps(mode_t mode, const char * const path)
 {
   xproxy(mkdirpw, mode, path, strlen(path));
 }
 
-API xapi mkdirpf(mode_t mode, const char * const restrict fmt, ...)
+xapi API mkdirpf(mode_t mode, const char * const restrict fmt, ...)
 {
   enter;
 
@@ -74,7 +73,7 @@ finally:
 coda;
 }
 
-API xapi mkdirpvf(mode_t mode, const char * const restrict fmt, va_list va)
+xapi API mkdirpvf(mode_t mode, const char * const restrict fmt, va_list va)
 {
   enter;
 

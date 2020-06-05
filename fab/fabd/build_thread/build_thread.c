@@ -53,11 +53,11 @@
 #include "config.internal.h"
 #include "exec_builder.h"
 
-#include "atomic.h"
+#include "common/atomic.h"
 #include "macros.h"
-#include "spinlock.h"
-#include "hash.h"
-#include "attrs.h"
+#include "common/spinlock.h"
+#include "common/hash.h"
+#include "common/attrs.h"
 #include "box.h"
 
 // configuration

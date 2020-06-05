@@ -17,10 +17,8 @@
 
 #include "color.h"
 
-#define APIDATA
-
 // five-byte color sequences
-char (* APIDATA g_colors_5)[5] = (char[][5]) {
+char (* g_colors_5)[5] = (char[][5]) {
 #define COLOR(x, y) { 0x1b, 0x5b, x, y, 0x6d }
     COLOR(0x33, 0x31)  // 0 RED
   , COLOR(0x33, 0x32)  // 1 GREEN
@@ -40,14 +38,14 @@ char (* APIDATA g_colors_5)[5] = (char[][5]) {
 };
 
 // six-byte color sequences
-char (* APIDATA g_colors_6)[6] = (char[][6]){
+char (* g_colors_6)[6] = (char[][6]){
 #define COLOR(x) { 0x1b, 0x5b, 0x30, 0x3b, x, 0x6d }
     COLOR(0x30)  // NOCOLOR
 #undef COLOR
 };
 
 // seven-byte byte color sequences
-char (* APIDATA g_colors_7)[7] = (char[][7]){
+char (* g_colors_7)[7] = (char[][7]){
 #define COLOR(a, b, c) { 0x1b, 0x5b, a, 0x3b, b, c, 0x6d }
     COLOR(0x31, 0x33, 0x31)  //   0 BOLD_RED
   , COLOR(0x31, 0x33, 0x32)  //   1 BOLD_GREEN

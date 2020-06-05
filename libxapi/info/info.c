@@ -27,9 +27,9 @@
 #include "memblk.def.h"
 
 // per-thread info staging
-__thread APIDATA info * xapi_infos_staging;
-__thread APIDATA size_t xapi_infos_stagingl;
-__thread APIDATA size_t xapi_infos_staginga;
+__thread info * APIDATA xapi_infos_staging;
+__thread size_t APIDATA xapi_infos_stagingl;
+__thread size_t APIDATA xapi_infos_staginga;
 
 //
 // public
@@ -97,17 +97,17 @@ void info_thaw(char * restrict mb, info * restrict i)
 // api
 //
 
-API void xapi_info_unstage()
+void API xapi_info_unstage()
 {
   xapi_infos_stagingl = 0;
 }
 
-API void xapi_info_inserts(uint16_t index, const char * restrict key, const char * restrict vstr)
+void API xapi_info_inserts(uint16_t index, const char * restrict key, const char * restrict vstr)
 {
   xapi_info_insertw(index, key, vstr, strlen(vstr));
 }
 
-API void xapi_info_insertw(uint16_t index, const char * restrict key, const char * restrict vbuf, size_t vlen)
+void API xapi_info_insertw(uint16_t index, const char * restrict key, const char * restrict vbuf, size_t vlen)
 {
   if(key)
   {
@@ -131,7 +131,7 @@ API void xapi_info_insertw(uint16_t index, const char * restrict key, const char
   }
 }
 
-API void xapi_info_insertvf(uint16_t index, const char * restrict key, const char * restrict vfmt, va_list va)
+void API xapi_info_insertvf(uint16_t index, const char * restrict key, const char * restrict vfmt, va_list va)
 {
   if(key)
   {
@@ -156,7 +156,7 @@ API void xapi_info_insertvf(uint16_t index, const char * restrict key, const cha
   }
 }
 
-API void xapi_info_insertf(uint16_t index, const char * restrict key, const char * restrict vfmt, ...)
+void API xapi_info_insertf(uint16_t index, const char * restrict key, const char * restrict vfmt, ...)
 {
   va_list va;
   va_start(va, vfmt);
@@ -167,22 +167,22 @@ API void xapi_info_insertf(uint16_t index, const char * restrict key, const char
 }
 
 
-API void xapi_info_pushs(const char * restrict key, const char * restrict vstr)
+void API xapi_info_pushs(const char * restrict key, const char * restrict vstr)
 {
   xapi_info_pushw(key, vstr, strlen(vstr));
 }
 
-API void xapi_info_pushw(const char * restrict key, const char * restrict vbuf, size_t vlen)
+void API xapi_info_pushw(const char * restrict key, const char * restrict vbuf, size_t vlen)
 {
   xapi_info_insertw(xapi_infos_stagingl, key, vbuf, vlen);
 }
 
-API void xapi_info_pushvf(const char * restrict key, const char * restrict vfmt, va_list va)
+void API xapi_info_pushvf(const char * restrict key, const char * restrict vfmt, va_list va)
 {
   xapi_info_insertvf(xapi_infos_stagingl, key, vfmt, va);
 }
 
-API void xapi_info_pushf(const char * restrict key, const char * restrict vfmt, ...)
+void API xapi_info_pushf(const char * restrict key, const char * restrict vfmt, ...)
 {
   va_list va;
   va_start(va, vfmt);
@@ -192,17 +192,17 @@ API void xapi_info_pushf(const char * restrict key, const char * restrict vfmt, 
   va_end(va);
 }
 
-API void xapi_info_unshifts(const char * restrict key, const char * restrict vstr)
+void API xapi_info_unshifts(const char * restrict key, const char * restrict vstr)
 {
   xapi_info_insertw(xapi_infos_stagingl, key, vstr, strlen(vstr));
 }
 
-API void xapi_info_unshiftw(const char * restrict key, const char * restrict vbuf, size_t vlen)
+void API xapi_info_unshiftw(const char * restrict key, const char * restrict vbuf, size_t vlen)
 {
   xapi_info_insertw(xapi_infos_stagingl, key, vbuf, vlen);
 }
 
-API void xapi_info_unshiftvf(const char * restrict key, const char * restrict vfmt, va_list va)
+void API xapi_info_unshiftvf(const char * restrict key, const char * restrict vfmt, va_list va)
 {
   if(key)
   {
@@ -227,7 +227,7 @@ API void xapi_info_unshiftvf(const char * restrict key, const char * restrict vf
   }
 }
 
-API void xapi_info_unshiftf(const char * restrict key, const char * restrict vfmt, ...)
+void API xapi_info_unshiftf(const char * restrict key, const char * restrict vfmt, ...)
 {
   va_list va;
   va_start(va, vfmt);

@@ -57,7 +57,7 @@
 #include "node_operations.h"
 
 #include "macros.h"
-#include "attrs.h"
+#include "common/attrs.h"
 
 //
 // handlers

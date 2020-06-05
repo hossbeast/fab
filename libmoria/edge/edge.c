@@ -22,7 +22,6 @@
 #include "xlinux/xstdlib.h"
 #include "valyria/list.h"
 
-#include "internal.h"
 #include "edge.internal.h"
 #include "graph.internal.h"
 #include "vertex.internal.h"
@@ -335,7 +334,7 @@ void edge_free(edge_t * restrict e)
 // api
 //
 
-API edge * edge_between(const vertex * restrict Ax, const vertex * restrict Bx)
+edge * API edge_between(const vertex * restrict Ax, const vertex * restrict Bx)
 {
   vertex_t * A = containerof(Ax, vertex_t, vx);
   vertex_t * B = containerof(Bx, vertex_t, vx);
@@ -359,7 +358,7 @@ API edge * edge_between(const vertex * restrict Ax, const vertex * restrict Bx)
   return 0;
 }
 
-API edge * edge_of(vertex ** restrict Axlist, uint16_t Axlen, vertex ** restrict Bxlist, uint16_t Bxlen)
+edge * API edge_of(vertex ** restrict Axlist, uint16_t Axlen, vertex ** restrict Bxlist, uint16_t Bxlen)
 {
   edge_key key;
   rbnode *rbn;
@@ -390,13 +389,13 @@ API edge * edge_of(vertex ** restrict Axlist, uint16_t Axlen, vertex ** restrict
   return 0;
 }
 
-API void edge_value_set(edge * const restrict ex, graph * restrict g, void * value)
+void API edge_value_set(edge * const restrict ex, graph * restrict g, void * value)
 {
   edge_t * e = containerof(ex, edge_t, ex);
   memcpy(e->value, value, g->vsz);
 }
 
-API void * edge_value(const edge * const restrict ex)
+void * API edge_value(const edge * const restrict ex)
 {
   if(!ex)
     return 0;
@@ -406,7 +405,7 @@ API void * edge_value(const edge * const restrict ex)
   return (void*)e->value;
 }
 
-API edge * edge_containerof(const void * value)
+edge * API edge_containerof(const void * value)
 {
   if(!value)
     return 0;

@@ -26,9 +26,9 @@
 #include "xstdio/xstdio.h"
 #include "errtab/KERNEL.errtab.h"
 
-#include "fmt.h"
+#include "common/fmt.h"
 
-API xapi xvdprintf(int fd, const char * const restrict fmt, va_list va)
+xapi API xvdprintf(int fd, const char * const restrict fmt, va_list va)
 {
   enter;
 
@@ -40,7 +40,7 @@ finally:
 coda;
 }
 
-API xapi xrenames(const char * const restrict old, const char * const restrict new)
+xapi API xrenames(const char * const restrict old, const char * const restrict new)
 {
   enter;
 
@@ -52,7 +52,7 @@ finally:
 coda;
 }
 
-API xapi xrenamef(const char * const restrict oldfmt, const char * const restrict newfmt, ...)
+xapi API xrenamef(const char * const restrict oldfmt, const char * const restrict newfmt, ...)
 {
   enter;
 
@@ -66,7 +66,7 @@ finally:
 coda;
 }
 
-API xapi xrenamevf(const char * const restrict oldfmt, const char * const restrict newfmt, va_list va)
+xapi API xrenamevf(const char * const restrict oldfmt, const char * const restrict newfmt, va_list va)
 {
   enter;
 
@@ -80,7 +80,7 @@ API xapi xrenamevf(const char * const restrict oldfmt, const char * const restri
   finally : coda;
 }
 
-API xapi uxrenames(const char * const restrict old, const char * const restrict new)
+xapi API uxrenames(const char * const restrict old, const char * const restrict new)
 {
   enter;
 
@@ -93,7 +93,7 @@ finally:
 coda;
 }
 
-API xapi uxrenamef(const char * const restrict oldfmt, const char * const restrict newfmt, ...)
+xapi API uxrenamef(const char * const restrict oldfmt, const char * const restrict newfmt, ...)
 {
   enter;
 
@@ -107,7 +107,7 @@ finally:
 coda;
 }
 
-API xapi uxrenamevf(const char * const restrict oldfmt, const char * const restrict newfmt, va_list va)
+xapi API uxrenamevf(const char * const restrict oldfmt, const char * const restrict newfmt, va_list va)
 {
   enter;
 

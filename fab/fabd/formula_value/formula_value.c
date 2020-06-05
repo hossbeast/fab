@@ -38,7 +38,7 @@
 #include "module.h"
 #include "selection.h"
 
-#include "attrs.h"
+#include "common/attrs.h"
 
 attrs32 * formula_value_attrs = (attrs32[]) {{
 #define DEF(x, s, r, y) + 1

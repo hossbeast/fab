@@ -34,7 +34,7 @@
 #include "config.internal.h"
 #include "variant.h"
 
-#include "snarf.h"
+#include "common/snarf.h"
 
 static value_parser * parser;
 value * g_var;

@@ -19,7 +19,7 @@
 #include "xlinux/xstdlib.h"
 #include "narrator.h"
 
-#include "internal.h"
+#include "logger.h"
 #include "filter.internal.h"
 
 #include "LOGGER.errtab.h"

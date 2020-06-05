@@ -18,7 +18,7 @@
 #include "xapi.h"
 #include "xlinux/load.h"
 
-#include "internal.h"
+#include "xunit.h"
 #include "load.internal.h"
 #include "XUNIT.errtab.h"
 
@@ -28,7 +28,7 @@
 
 static int handles;
 
-API xapi xunit_load()
+xapi API xunit_load()
 {
   enter;
 
@@ -41,7 +41,7 @@ API xapi xunit_load()
   finally : coda;
 }
 
-API xapi xunit_unload()
+xapi API xunit_unload()
 {
   enter;
 

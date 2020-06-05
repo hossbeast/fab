@@ -28,7 +28,6 @@
 #include "narrator/growing.h"
 #include "xlinux/xstdlib.h"
 
-#include "internal.h"
 #include "traverse.internal.h"
 #include "MORIA.errtab.h"
 #include "attr.internal.h"
@@ -36,7 +35,7 @@
 #include "graph.internal.h"
 #include "vertex.internal.h"
 
-#include "attrs.h"
+#include "common/attrs.h"
 #include "macros.h"
 #include "zbuffer.h"
 
@@ -44,7 +43,7 @@
   TRAVERSAL_DIRECTION_TABLE     \
   TRAVERSAL_MODE_TABLE          \
 
-APIDATA attrs32 * traverse_attrs = (attrs32[]) {{
+attrs32 * APIDATA traverse_attrs = (attrs32[]) {{
 #define TRAVERSAL_ATTR_DEF(x, r, y) + 1
     .num = 0 TRAVERSAL_ATTRS_TABLES
   , .members = (member32[]){
@@ -406,7 +405,7 @@ static xapi explore_vertex(
 }
 
 size_t edge_znload(char * restrict dst, size_t sz, const edge *ex);
-API size_t edge_znload(char * restrict dst, size_t sz, const edge *ex)
+size_t API edge_znload(char * restrict dst, size_t sz, const edge *ex)
 {
   size_t z = 0;
   int x;
@@ -722,11 +721,27 @@ static xapi traversal_begin(graph * const restrict g, size_t max_index, traversa
   finally : coda;
 }
 
+static void traversal_state_reclaim(graph * restrict g, traversal_state * restrict state)
+{
+  traversal_state *next, *T;
+
+  llist_append(&g->states, state, lln);
+
+  /* recover any extra states attached to this one from a previous traversal */
+  next = state;
+  while((T = next->next))
+  {
+    next->next = 0;
+    llist_append(&g->states, T, lln);
+    next = T;
+  }
+}
+
 //
 // api
 //
 
-API xapi graph_traverse_vertices(
+xapi API graph_traverse_vertices(
     graph * const restrict g
   , vertex * const restrict vx
   , xapi (* visitor)(vertex * restrict, void *, traversal_mode, int, int * restrict)
@@ -785,7 +800,7 @@ finally:
 coda;
 }
 
-API xapi graph_traverse_vertex_edges(
+xapi API graph_traverse_vertex_edges(
     graph * const restrict g
   , vertex * const restrict vx
   , xapi (* visitor)(edge * restrict, void *, traversal_mode, int, int * restrict)
@@ -838,7 +853,7 @@ finally:
 coda;
 }
 
-API xapi graph_traverse_edges(
+xapi API graph_traverse_edges(
     graph * const restrict g
   , edge * const restrict ex
   , xapi (* visitor)(edge * restrict, void *, traversal_mode, int, int * restrict)
@@ -895,7 +910,7 @@ finally:
 coda;
 }
 
-API xapi graph_traverse_vertices_all(
+xapi API graph_traverse_vertices_all(
     graph * const restrict g
   , xapi (* visitor)(vertex * restrict, void *, traversal_mode, int, int * restrict)
   , const traversal_criteria * restrict criteria
@@ -942,7 +957,7 @@ finally:
 coda;
 }
 
-API xapi graph_vertex_traversal_begin(graph * const restrict g, vertex_traversal_state ** restrict vstp)
+xapi API graph_vertex_traversal_begin(graph * const restrict g, vertex_traversal_state ** restrict vstp)
 {
   enter;
 
@@ -955,7 +970,7 @@ API xapi graph_vertex_traversal_begin(graph * const restrict g, vertex_traversal
   finally : coda;
 }
 
-API xapi graph_edge_traversal_begin(graph * const restrict g, edge_traversal_state ** restrict estp)
+xapi API graph_edge_traversal_begin(graph * const restrict g, edge_traversal_state ** restrict estp)
 {
   enter;
 
@@ -968,23 +983,7 @@ API xapi graph_edge_traversal_begin(graph * const restrict g, edge_traversal_sta
   finally : coda;
 }
 
-static void traversal_state_reclaim(graph * restrict g, traversal_state * restrict state)
-{
-  traversal_state *next, *T;
-
-  llist_append(&g->states, state, lln);
-
-  /* recover any extra states attached to this one from a previous traversal */
-  next = state;
-  while((T = next->next))
-  {
-    next->next = 0;
-    llist_append(&g->states, T, lln);
-    next = T;
-  }
-}
-
-API void graph_vertex_traversal_end(graph * const restrict g, vertex_traversal_state * restrict state)
+void API graph_vertex_traversal_end(graph * const restrict g, vertex_traversal_state * restrict state)
 {
   if(!state)
     return;
@@ -992,7 +991,7 @@ API void graph_vertex_traversal_end(graph * const restrict g, vertex_traversal_s
   traversal_state_reclaim(g, &state->st);
 }
 
-API void graph_edge_traversal_end(graph * const restrict g, edge_traversal_state * restrict state)
+void API graph_edge_traversal_end(graph * const restrict g, edge_traversal_state * restrict state)
 {
   if(!state)
     return;
@@ -1000,14 +999,14 @@ API void graph_edge_traversal_end(graph * const restrict g, edge_traversal_state
   traversal_state_reclaim(g, &state->st);
 }
 
-API bool graph_traversal_vertex_visited(const graph * const restrict g, const vertex * const restrict vx, vertex_traversal_state * restrict state)
+bool API graph_traversal_vertex_visited(const graph * const restrict g, const vertex * const restrict vx, vertex_traversal_state * restrict state)
 {
   const vertex_t * v = containerof(vx, vertex_t, vx);
 
   return set(&state->st, VISIT, &v->ent);
 }
 
-API bool graph_traversal_edge_visited(const graph * const restrict g, const edge * const restrict ex, edge_traversal_state * restrict state)
+bool API graph_traversal_edge_visited(const graph * const restrict g, const edge * const restrict ex, edge_traversal_state * restrict state)
 {
   const edge_t * e = containerof(ex, edge_t, ex);
 

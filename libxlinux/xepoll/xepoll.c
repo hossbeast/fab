@@ -26,7 +26,7 @@
 // api
 //
 
-API xapi xepoll_create(int * restrict fd)
+xapi API xepoll_create(int * restrict fd)
 {
   enter;
 
@@ -41,7 +41,7 @@ API xapi xepoll_create(int * restrict fd)
   finally : coda;
 }
 
-API xapi xepoll_ctl(int epfd, int op, int fd, struct epoll_event *event)
+xapi API xepoll_ctl(int epfd, int op, int fd, struct epoll_event *event)
 {
   enter;
 
@@ -50,7 +50,7 @@ API xapi xepoll_ctl(int epfd, int op, int fd, struct epoll_event *event)
   finally : coda;
 }
 
-API xapi xepoll_wait(int * restrict r, int epfd, struct epoll_event *events, int maxevents, int timeout)
+xapi API xepoll_wait(int * restrict r, int epfd, struct epoll_event *events, int maxevents, int timeout)
 {
   enter;
 
@@ -62,7 +62,7 @@ API xapi xepoll_wait(int * restrict r, int epfd, struct epoll_event *events, int
   finally : coda;
 }
 
-API xapi xepoll_pwait(int * restrict r, int epfd, struct epoll_event *events, int maxevents, int timeout, const sigset_t *sigmask)
+xapi API xepoll_pwait(int * restrict r, int epfd, struct epoll_event *events, int maxevents, int timeout, const sigset_t *sigmask)
 {
   enter;
 
@@ -74,7 +74,7 @@ API xapi xepoll_pwait(int * restrict r, int epfd, struct epoll_event *events, in
   finally : coda;
 }
 
-API xapi uxepoll_pwait(int * restrict r, int epfd, struct epoll_event *events, int maxevents, int timeout, const sigset_t *sigmask)
+xapi API uxepoll_pwait(int * restrict r, int epfd, struct epoll_event *events, int maxevents, int timeout, const sigset_t *sigmask)
 {
   enter;
 

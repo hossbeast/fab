@@ -23,7 +23,7 @@
 #include "valyria/list.h"
 #include "xlinux/xstdlib.h"
 
-#include "internal.h"
+#include "logger.h"
 #include "LOGGER.errtab.h"
 #include "filter.internal.h"
 #include "category.internal.h"

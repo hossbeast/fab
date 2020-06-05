@@ -105,7 +105,7 @@ static xapi __attribute__((nonnull)) compose(unit * cfg, double * parts, narrato
 // api
 //
 
-API xapi interval_say(time_t seconds, struct narrator * const restrict N)
+xapi API interval_say(time_t seconds, struct narrator * const restrict N)
 {
   enter;
 
@@ -125,7 +125,7 @@ API xapi interval_say(time_t seconds, struct narrator * const restrict N)
   finally : coda;
 }
 
-API xapi bytesize_say(size_t bytes, struct narrator * const restrict N)
+xapi API bytesize_say(size_t bytes, struct narrator * const restrict N)
 {
   enter;
 
@@ -144,7 +144,7 @@ API xapi bytesize_say(size_t bytes, struct narrator * const restrict N)
   finally : coda;
 }
 
-API xapi elapsed_say(const struct timespec * const restrict start, const struct timespec * const restrict end, struct narrator * const restrict N)
+xapi API elapsed_say(const struct timespec * const restrict start, const struct timespec * const restrict end, struct narrator * const restrict N)
 {
   enter;
 

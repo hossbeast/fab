@@ -36,7 +36,7 @@
 #include "MAIN.errtab.h"
 #include "logging.h"
 
-#include "snarf.h"
+#include "common/snarf.h"
 
 static xapi xmain()
 {

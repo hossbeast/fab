@@ -30,7 +30,7 @@
 #include "logging.h"
 
 #include "macros.h"
-#include "hash.h"
+#include "common/hash.h"
 
 struct g_params g_params;
 

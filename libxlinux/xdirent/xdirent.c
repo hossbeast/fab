@@ -21,7 +21,7 @@
 #include "xfcntl.h"
 #include "xunistd.h"
 
-API xapi xopendir(const char * name, DIR ** dd)
+xapi API xopendir(const char * name, DIR ** dd)
 {
   enter;
 
@@ -33,7 +33,7 @@ finally:
 coda;
 }
 
-API xapi uxopendir(const char * name, DIR ** dd)
+xapi API uxopendir(const char * name, DIR ** dd)
 {
   enter;
 
@@ -45,7 +45,7 @@ finally:
 coda;
 }
 
-API xapi xfdopendir(int fd, DIR ** dd)
+xapi API xfdopendir(int fd, DIR ** dd)
 {
   enter;
 
@@ -55,7 +55,7 @@ API xapi xfdopendir(int fd, DIR ** dd)
   finally : coda;
 }
 
-API xapi xopendirat(DIR ** dd, int dirfd, const char * const restrict path)
+xapi API xopendirat(DIR ** dd, int dirfd, const char * const restrict path)
 {
   enter;
 
@@ -70,7 +70,7 @@ finally:
 coda;
 }
 
-API xapi xreaddir(DIR * dirp, struct dirent ** result)
+xapi API xreaddir(DIR * dirp, struct dirent ** result)
 {
   enter;
 
@@ -81,7 +81,7 @@ API xapi xreaddir(DIR * dirp, struct dirent ** result)
   finally : coda;
 }
 
-API xapi xclosedir(DIR * dd)
+xapi API xclosedir(DIR * dd)
 {
   enter;
 
@@ -91,7 +91,7 @@ API xapi xclosedir(DIR * dd)
   finally : coda;
 }
 
-API xapi ixclosedir(DIR ** dd)
+xapi API ixclosedir(DIR ** dd)
 {
   enter;
 
@@ -101,7 +101,7 @@ API xapi ixclosedir(DIR ** dd)
   finally : coda;
 }
 
-API xapi xtelldir(long * loc, DIR * dirp)
+xapi API xtelldir(long * loc, DIR * dirp)
 {
   enter;
 

@@ -22,7 +22,7 @@
 #include "xapi.h"
 #include "type.h"
 
-#include "internal.h"
+#include "xunit.h"
 #include "type.internal.h"
 
 #include "zbuffer.h"
@@ -366,85 +366,85 @@ static void pointer_info_push(const char * const restrict name, xunit_arg * a)
 // API
 //
 
-APIDATA xunit_type * xunit_string = (xunit_type[]) {{
+xunit_type * APIDATA xunit_string = (xunit_type[]) {{
     xu_unpack : string_unpack
   , xu_compare : string_compare
   , xu_info_push : string_info_push
 }};
 
-APIDATA xunit_type * xunit_stringl = (xunit_type[]) {{
+xunit_type * APIDATA xunit_stringl = (xunit_type[]) {{
     xu_unpack : stringl_unpack
   , xu_compare : stringl_compare
   , xu_info_push : stringl_info_push
 }};
 
-APIDATA xunit_type * xunit_buffer = (xunit_type[]) {{
+xunit_type * APIDATA xunit_buffer = (xunit_type[]) {{
     xu_unpack : buffer_unpack
   , xu_compare : buffer_compare
   , xu_info_push : buffer_info_push
 }};
 
-APIDATA xunit_type * xunit_int = (xunit_type[]) {{
+xunit_type * APIDATA xunit_int = (xunit_type[]) {{
     xu_unpack : int_unpack
   , xu_compare : int_compare
   , xu_info_push : int_info_push
 }};
 
-APIDATA xunit_type * xunit_char = (xunit_type[]) {{
+xunit_type * APIDATA xunit_char = (xunit_type[]) {{
     xu_unpack : char_unpack
   , xu_compare : char_compare
   , xu_info_push : char_info_push
 }};
 
-APIDATA xunit_type * xunit_xapi = (xunit_type[]) {{
+xunit_type * APIDATA xunit_xapi = (xunit_type[]) {{
     xu_unpack : xapi_unpack
   , xu_compare : xapi_compare
   , xu_info_push : xapi_info_push
 }};
 
-APIDATA xunit_type * xunit_int32 = (xunit_type[]) {{
+xunit_type * APIDATA xunit_int32 = (xunit_type[]) {{
     xu_unpack : int32_unpack
   , xu_compare : int32_compare
   , xu_info_push : int32_info_push
 }};
 
-APIDATA xunit_type * xunit_uint32 = (xunit_type[]) {{
+xunit_type * APIDATA xunit_uint32 = (xunit_type[]) {{
     xu_unpack : uint32_unpack
   , xu_compare : uint32_compare
   , xu_info_push : uint32_info_push
 }};
 
-APIDATA xunit_type * xunit_int64 = (xunit_type[]) {{
+xunit_type * APIDATA xunit_int64 = (xunit_type[]) {{
     xu_unpack : int64_unpack
   , xu_compare : int64_compare
   , xu_info_push : int64_info_push
 }};
 
-APIDATA xunit_type * xunit_uint64 = (xunit_type[]) {{
+xunit_type * APIDATA xunit_uint64 = (xunit_type[]) {{
     xu_unpack : uint64_unpack
   , xu_compare : uint64_compare
   , xu_info_push : uint64_info_push
 }};
 
-APIDATA xunit_type * xunit_size_t = (xunit_type[]) {{
+xunit_type * APIDATA xunit_size_t = (xunit_type[]) {{
     xu_unpack : size_t_unpack
   , xu_compare : size_t_compare
   , xu_info_push : size_t_info_push
 }};
 
-APIDATA xunit_type * xunit_float = (xunit_type[]) {{
+xunit_type * APIDATA xunit_float = (xunit_type[]) {{
     xu_unpack : float_unpack
   , xu_compare : float_compare
   , xu_info_push : float_info_push
 }};
 
-APIDATA xunit_type * xunit_bool = (xunit_type[]) {{
+xunit_type * APIDATA xunit_bool = (xunit_type[]) {{
     xu_unpack : bool_unpack
   , xu_compare : bool_compare
   , xu_info_push : bool_info_push
 }};
 
-APIDATA xunit_type * xunit_pointer = (xunit_type[]) {{
+xunit_type * APIDATA xunit_pointer = (xunit_type[]) {{
     xu_unpack : pointer_unpack
   , xu_compare : pointer_compare
   , xu_info_push : pointer_info_push

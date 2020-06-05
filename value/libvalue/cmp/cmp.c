@@ -21,15 +21,15 @@
 #include "valyria/set.h"
 #include "valyria/pstring.h"
 
-#include "internal.h"
-#include "hash.h"
+#include "value.h"
+#include "common/hash.h"
 #include "macros.h"
 
 //
 // api
 //
 
-API int value_cmp(value * const restrict A, value * const restrict B)
+int API value_cmp(value * const restrict A, value * const restrict B)
 {
   int d;
   int x;
@@ -98,7 +98,7 @@ API int value_cmp(value * const restrict A, value * const restrict B)
   return r;
 }
 
-API bool value_equal(value * const restrict A, value * const restrict B)
+bool API value_equal(value * const restrict A, value * const restrict B)
 {
   if(A == 0 || B == 0)
     return !!A == !!B;
@@ -112,7 +112,7 @@ API bool value_equal(value * const restrict A, value * const restrict B)
   return value_cmp(A, B) == 0;
 }
 
-API uint32_t value_hash(uint32_t h, value * const restrict val)
+uint32_t API value_hash(uint32_t h, value * const restrict val)
 {
   if(!val->hash)
   {

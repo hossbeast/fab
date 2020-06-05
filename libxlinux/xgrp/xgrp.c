@@ -21,7 +21,7 @@
 #include "xgrp/xgrp.h"
 #include "errtab/KERNEL.errtab.h"
 
-API xapi uxgetgrgid_r(gid_t gid, struct group * grp, char * buf, size_t buflen, struct group ** result)
+xapi API uxgetgrgid_r(gid_t gid, struct group * grp, char * buf, size_t buflen, struct group ** result)
 {
   enter;
 
@@ -43,7 +43,7 @@ finally :
 coda;
 }
 
-API xapi xgetgrgid(gid_t gid, struct group ** const grp)
+xapi API xgetgrgid(gid_t gid, struct group ** const grp)
 {
   enter;
 

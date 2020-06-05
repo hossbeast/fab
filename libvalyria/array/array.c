@@ -20,11 +20,10 @@
 
 #include "xlinux/xstdlib.h"
 
-#include "internal.h"
 #include "array.internal.h"
 
-#include "grow.h"
-#include "assure.h"
+#include "common/grow.h"
+#include "common/assure.h"
 #include "macros.h"
 
 /*
@@ -177,7 +176,7 @@ xapi array_xdestroy(array_t * const restrict ar)
 // api
 //
 
-API xapi array_createx(
+xapi API array_createx(
     array ** const restrict arp
   , size_t esz
   , size_t capacity
@@ -208,12 +207,12 @@ finally:
 coda;
 }
 
-API xapi array_create(array** const restrict ar, size_t esz)
+xapi API array_create(array** const restrict ar, size_t esz)
 {
   xproxy(array_createx, ar, esz, 0, 0, 0, 0, 0, 0);
 }
 
-API xapi array_xfree(array * const restrict arx)
+xapi API array_xfree(array * const restrict arx)
 {
   enter;
 
@@ -227,7 +226,7 @@ API xapi array_xfree(array * const restrict arx)
   finally : coda;
 }
 
-API xapi array_ixfree(array ** const restrict arx)
+xapi API array_ixfree(array ** const restrict arx)
 {
   enter;
 
@@ -237,7 +236,7 @@ API xapi array_ixfree(array ** const restrict arx)
   finally : coda;
 }
 
-API xapi array_recycle(array * const restrict arx)
+xapi API array_recycle(array * const restrict arx)
 {
   enter;
 
@@ -249,23 +248,23 @@ API xapi array_recycle(array * const restrict arx)
   finally : coda;
 }
 
-API void * array_get(const array * const restrict arx, int x)
+void * API array_get(const array * const restrict arx, int x)
 {
   array_t * ar = containerof(arx, array_t, arx);
   return ar->v + ((x) * ar->esz);
 }
 
-API xapi array_push(array * const arx, void * const item)
+xapi API array_push(array * const arx, void * const item)
 {
   xproxy(array_insert_range, arx, arx->size, item, 1);
 }
 
-API xapi array_push_range(array * const arx, void * items, size_t len)
+xapi API array_push_range(array * const arx, void * items, size_t len)
 {
   xproxy(array_insert_range, arx, arx->size, items, len);
 }
 
-API xapi array_pop(array * const restrict arx)
+xapi API array_pop(array * const restrict arx)
 {
   enter;
 
@@ -280,17 +279,17 @@ API xapi array_pop(array * const restrict arx)
   finally : coda;
 }
 
-API xapi array_unshift(array * const arx, void * item)
+xapi API array_unshift(array * const arx, void * item)
 {
   xproxy(array_insert_range, arx, 0, item, 1);
 }
 
-API xapi array_unshift_range(array * const arx, void * items, size_t len)
+xapi API array_unshift_range(array * const arx, void * items, size_t len)
 {
   xproxy(array_insert_range, arx, 0, items, len);
 }
 
-API xapi array_shift(array * const restrict arx)
+xapi API array_shift(array * const restrict arx)
 {
   enter;
 
@@ -312,12 +311,12 @@ API xapi array_shift(array * const restrict arx)
   finally : coda;
 }
 
-API xapi array_insert(array * const arx, size_t index, void * item)
+xapi API array_insert(array * const arx, size_t index, void * item)
 {
   xproxy(array_insert_range, arx, index, item, 1);
 }
 
-API xapi array_insert_range(array * const arx, size_t index, void * items, size_t len)
+xapi API array_insert_range(array * const arx, size_t index, void * items, size_t len)
 {
   enter;
 
@@ -339,12 +338,12 @@ API xapi array_insert_range(array * const arx, size_t index, void * items, size_
   finally : coda;
 }
 
-API xapi array_update(array * const arx, size_t index, void * item)
+xapi API array_update(array * const arx, size_t index, void * item)
 {
   xproxy(array_update_range, arx, index, item, 1);
 }
 
-API xapi array_update_range(array * const arx, size_t index, void * items, size_t len)
+xapi API array_update_range(array * const arx, size_t index, void * items, size_t len)
 {
   enter;
 
@@ -356,7 +355,7 @@ API xapi array_update_range(array * const arx, size_t index, void * items, size_
   finally : coda;
 }
 
-API xapi array_delete(array * const restrict arx, size_t index)
+xapi API array_delete(array * const restrict arx, size_t index)
 {
   enter;
 
@@ -376,7 +375,7 @@ API xapi array_delete(array * const restrict arx, size_t index)
   finally : coda;
 }
 
-API xapi array_delete_range(array * const restrict arx, size_t index, size_t len)
+xapi API array_delete_range(array * const restrict arx, size_t index, size_t len)
 {
   enter;
 
@@ -396,7 +395,7 @@ API xapi array_delete_range(array * const restrict arx, size_t index, size_t len
   finally : coda;
 }
 
-API xapi array_subarray(array * const restrict arx, size_t index, size_t len, array ** const restrict rv)
+xapi API array_subarray(array * const restrict arx, size_t index, size_t len, array ** const restrict rv)
 {
   enter;
 
@@ -413,7 +412,7 @@ API xapi array_subarray(array * const restrict arx, size_t index, size_t len, ar
   finally : coda;
 }
 
-API xapi array_splice(array * const restrict dstx, size_t dst_index, array * const restrict srcx, size_t src_index, size_t len)
+xapi API array_splice(array * const restrict dstx, size_t dst_index, array * const restrict srcx, size_t src_index, size_t len)
 {
   enter;
 
@@ -439,7 +438,7 @@ API xapi array_splice(array * const restrict dstx, size_t dst_index, array * con
   finally : coda;
 }
 
-API xapi array_replicate(array * const restrict dstx, size_t dst_index, array * const restrict srcx, size_t src_index, size_t len)
+xapi API array_replicate(array * const restrict dstx, size_t dst_index, array * const restrict srcx, size_t src_index, size_t len)
 {
   enter;
 
@@ -465,7 +464,7 @@ API xapi array_replicate(array * const restrict dstx, size_t dst_index, array * 
   finally : coda;
 }
 
-API xapi array_truncate(array * const restrict arx, size_t len)
+xapi API array_truncate(array * const restrict arx, size_t len)
 {
   enter;
 
@@ -477,7 +476,7 @@ API xapi array_truncate(array * const restrict arx, size_t len)
   finally : coda;
 }
 
-API bool array_equal(array * const restrict Ax, array * const restrict Bx, int (*cmp_fn)(const void * A, size_t Asz, const void * B, size_t Bsz))
+bool API array_equal(array * const restrict Ax, array * const restrict Bx, int (*cmp_fn)(const void * A, size_t Asz, const void * B, size_t Bsz))
 {
   array_t * A = containerof(Ax, array_t, arx);
   array_t * B = containerof(Bx, array_t, arx);
@@ -508,14 +507,13 @@ static int sort_cmp(const void * A, const void * B, void * arg)
   return ctx->ar->ops->compare_items(ctx->ar, A, B, ctx->cmp_fn);
 }
 
-API void array_sort(const array * const restrict arx, int (*cmp_fn)(const void * A, size_t Asz, const void * B, size_t Bsz))
+void API array_sort(const array * const restrict arx, int (*cmp_fn)(const void * A, size_t Asz, const void * B, size_t Bsz))
 {
   array_t * ar = containerof(arx, array_t, arx);
 
   struct sort_ctx ctx = { ar : ar, cmp_fn : cmp_fn ?: ar->cmp_fn };
   qsort_r(ar->v, ar->size, ar->esz, sort_cmp, &ctx);
 }
-
 
 struct context {
   const array_t * ar;
@@ -533,7 +531,7 @@ static int compare(const void * _ctx, const void * item)
   return ctx->lc = ctx->ar->ops->compare_items(ctx->ar, ctx->key, item, ctx->cmp_fn);
 };
 
-API bool array_search(
+bool API array_search(
     const array * const restrict arx
   , void * key
   , int (*cmp_fn)(const void * A, size_t Asz, const void * B, size_t Bsz)
@@ -546,7 +544,7 @@ API bool array_search(
   return array_search_range(&ar->arx, 0, ar->size, key, cmp_fn, item, lx, lc);
 }
 
-API bool array_search_range(
+bool API array_search_range(
     const array * const restrict arx
   , size_t index
   , size_t len

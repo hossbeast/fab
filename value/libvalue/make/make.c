@@ -21,7 +21,7 @@
 #include "valyria/set.h"
 #include "yyutil/parser.h"
 
-#include "internal.h"
+#include "value.h"
 #include "value.h"
 #include "make.internal.h"
 #include "store.internal.h"
@@ -49,7 +49,7 @@ static void __attribute__((nonnull)) location_copy(value_location * const restri
 // api
 //
 
-API xapi value_float_mk(
+xapi API value_float_mk(
     value_parser * const restrict parser
   , const yyu_location * const restrict loc
   , struct value ** rv
@@ -70,7 +70,7 @@ API xapi value_float_mk(
   finally : coda;
 }
 
-API xapi value_posint_mk(
+xapi API value_posint_mk(
     value_parser * const restrict parser
   , const yyu_location * const restrict loc
   , struct value ** rv
@@ -91,7 +91,7 @@ API xapi value_posint_mk(
   finally : coda;
 }
 
-API xapi value_negint_mk(
+xapi API value_negint_mk(
     value_parser * const restrict parser
   , const yyu_location * const restrict loc
   , struct value ** rv
@@ -112,7 +112,7 @@ API xapi value_negint_mk(
   finally : coda;
 }
 
-API xapi value_boolean_mk(
+xapi API value_boolean_mk(
     value_parser * const restrict parser
   , const yyu_location * const restrict loc
   , struct value ** rv
@@ -133,7 +133,7 @@ API xapi value_boolean_mk(
   finally : coda;
 }
 
-API xapi value_string_mks(
+xapi API value_string_mks(
     value_parser * const restrict parser
   , const yyu_location * const restrict loc
   , struct value * e
@@ -155,7 +155,7 @@ API xapi value_string_mks(
   finally : coda;
 }
 
-API xapi value_string_mkw(
+xapi API value_string_mkw(
     value_parser * const restrict parser
   , const yyu_location * const restrict loc
   , struct value * e
@@ -178,7 +178,7 @@ API xapi value_string_mkw(
   finally : coda;
 }
 
-API xapi value_string_mkc(
+xapi API value_string_mkc(
     value_parser * const restrict parser
   , const yyu_location * const restrict loc
   , struct value * e
@@ -200,7 +200,7 @@ API xapi value_string_mkc(
   finally : coda;
 }
 
-API xapi value_string_mkv(
+xapi API value_string_mkv(
     value_parser * const restrict parser
   , const yyu_location * const restrict loc
   , struct value * e
@@ -222,7 +222,7 @@ API xapi value_string_mkv(
   finally : coda;
 }
 
-API xapi value_mapping_mk(
+xapi API value_mapping_mk(
     value_parser * const restrict parser
   , const yyu_location * const restrict loc
   , struct value ** rv
@@ -248,7 +248,7 @@ API xapi value_mapping_mk(
   finally : coda;
 }
 
-API xapi value_list_mkv(
+xapi API value_list_mkv(
     value_parser * const restrict parser
   , const yyu_location * const restrict loc
   , struct value * e
@@ -271,7 +271,7 @@ API xapi value_list_mkv(
   finally : coda;
 }
 
-API xapi value_set_mkv(
+xapi API value_set_mkv(
     value_parser * const restrict parser
   , const yyu_location * const restrict loc
   , struct value * e
@@ -294,7 +294,7 @@ API xapi value_set_mkv(
   finally : coda;
 }
 
-API xapi value_variable_mkw(
+xapi API value_variable_mkw(
     value_parser * const restrict parser
   , const yyu_location * const restrict loc
   , struct value ** rv

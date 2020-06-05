@@ -23,7 +23,7 @@
 #include "errtab/KERNEL.errtab.h"
 #include "errtab/XLINUX.errtab.h"
 
-API xapi xreadv(int fd, const struct iovec * iov, int iovcnt)
+xapi API xreadv(int fd, const struct iovec * iov, int iovcnt)
 {
   enter;
 
@@ -32,7 +32,7 @@ API xapi xreadv(int fd, const struct iovec * iov, int iovcnt)
   finally : coda;
 }
 
-API xapi axreadv(int fd, const struct iovec * iov, int iovcnt)
+xapi API axreadv(int fd, const struct iovec * iov, int iovcnt)
 {
   enter;
 
@@ -55,7 +55,7 @@ API xapi axreadv(int fd, const struct iovec * iov, int iovcnt)
   finally : coda;
 }
 
-API xapi xwritev(int fd, const struct iovec * iov, int iovcnt)
+xapi API xwritev(int fd, const struct iovec * iov, int iovcnt)
 {
   enter;
 
@@ -64,7 +64,7 @@ API xapi xwritev(int fd, const struct iovec * iov, int iovcnt)
   finally :  coda;
 }
 
-API xapi axwritev(int fd, const struct iovec * iov, int iovcnt)
+xapi API axwritev(int fd, const struct iovec * iov, int iovcnt)
 {
   enter;
 

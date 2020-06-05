@@ -21,7 +21,7 @@
 #include "xpthread.h"
 #include "KERNEL.errtab.h"
 
-API xapi xpthread_attr_init(pthread_attr_t * attr)
+xapi API xpthread_attr_init(pthread_attr_t * attr)
 {
   enter;
 
@@ -32,7 +32,7 @@ API xapi xpthread_attr_init(pthread_attr_t * attr)
   finally : coda;
 }
 
-API xapi xpthread_attr_destroy(pthread_attr_t * attr)
+xapi API xpthread_attr_destroy(pthread_attr_t * attr)
 {
   enter;
 
@@ -43,7 +43,7 @@ API xapi xpthread_attr_destroy(pthread_attr_t * attr)
   finally : coda;
 }
 
-API xapi xpthread_create(pthread_t * thread, const pthread_attr_t * attr, void *(*start_routine)(void *), void * arg)
+xapi API xpthread_create(pthread_t * thread, const pthread_attr_t * attr, void *(*start_routine)(void *), void * arg)
 {
   enter;
 
@@ -54,7 +54,7 @@ API xapi xpthread_create(pthread_t * thread, const pthread_attr_t * attr, void *
   finally : coda;
 }
 
-API xapi xpthread_sigmask(int how, const sigset_t * set, sigset_t * oldset)
+xapi API xpthread_sigmask(int how, const sigset_t * set, sigset_t * oldset)
 {
   enter;
 
@@ -65,7 +65,7 @@ API xapi xpthread_sigmask(int how, const sigset_t * set, sigset_t * oldset)
   finally : coda;
 }
 
-API xapi xpthread_attr_setdetachstate(pthread_attr_t * attr, int detachstate)
+xapi API xpthread_attr_setdetachstate(pthread_attr_t * attr, int detachstate)
 {
   enter;
 

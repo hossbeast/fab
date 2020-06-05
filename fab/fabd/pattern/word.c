@@ -34,7 +34,7 @@
 #include "node.h"
 #include "path.h"
 
-#include "attrs.h"
+#include "common/attrs.h"
 
 //
 // static

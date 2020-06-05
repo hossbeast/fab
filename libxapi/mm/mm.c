@@ -183,7 +183,7 @@ void mm_svloadf(char ** const restrict dst, size_t * const restrict dstl, const 
 //
 
 #if XAPI_STACKTRACE
-API void xapi_allocate(size_t sz)
+void API xapi_allocate(size_t sz)
 {
   assure(sz);
 }

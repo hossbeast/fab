@@ -20,12 +20,11 @@
 
 #include "xlinux/xstdlib.h"
 
-#include "internal.h"
 #include "map.internal.h"
 #include "hashtable.internal.h"
 
 #include "macros.h"
-#include "hash.h"
+#include "common/hash.h"
 
 //
 // map/hashtable callbacks
@@ -111,7 +110,7 @@ static ht_operations ht_ops = {
 // api
 //
 
-API xapi map_createx(map ** const restrict mx, size_t capacity, void (*free_value)(void*), xapi (*xfree_value)(void*))
+xapi API map_createx(map ** const restrict mx, size_t capacity, void (*free_value)(void*), xapi (*xfree_value)(void*))
 {
   enter;
 
@@ -139,12 +138,12 @@ finally:
 coda;
 }
 
-API xapi map_create(map ** restrict m)
+xapi API map_create(map ** restrict m)
 {
   xproxy(map_createx, m, 0, 0, 0);
 }
 
-API xapi map_xfree(map * restrict mx)
+xapi API map_xfree(map * restrict mx)
 {
   enter;
 
@@ -158,7 +157,7 @@ API xapi map_xfree(map * restrict mx)
   finally : coda;
 }
 
-API xapi map_ixfree(map ** restrict m)
+xapi API map_ixfree(map ** restrict m)
 {
   enter;
 
@@ -168,7 +167,7 @@ API xapi map_ixfree(map ** restrict m)
   finally : coda;
 }
 
-API xapi map_recycle(map * restrict mx)
+xapi API map_recycle(map * restrict mx)
 {
   enter;
 
@@ -178,7 +177,7 @@ API xapi map_recycle(map * restrict mx)
   finally : coda;
 }
 
-API xapi map_put(map * restrict mx, const void * k, uint16_t kl, void * v, size_t vl)
+xapi API map_put(map * restrict mx, const void * k, uint16_t kl, void * v, size_t vl)
 {
   enter;
 
@@ -190,7 +189,7 @@ API xapi map_put(map * restrict mx, const void * k, uint16_t kl, void * v, size_
   finally : coda;
 }
 
-API void * map_get(const map * restrict mx, const void * restrict k, uint16_t kl)
+void * API map_get(const map * restrict mx, const void * restrict k, uint16_t kl)
 {
   map_t * m = containerof(mx, map_t, mx);
   mapping * ent;
@@ -202,7 +201,7 @@ API void * map_get(const map * restrict mx, const void * restrict k, uint16_t kl
   return 0;
 }
 
-API bool map_get_mapping(const map * restrict mx, const void * restrict k, uint16_t kl, void * v, size_t * restrict vl)
+bool API map_get_mapping(const map * restrict mx, const void * restrict k, uint16_t kl, void * v, size_t * restrict vl)
 {
   map_t * m = containerof(mx, map_t, mx);
   mapping * ent;
@@ -221,7 +220,7 @@ API bool map_get_mapping(const map * restrict mx, const void * restrict k, uint1
   return false;
 }
 
-API xapi map_splice(map * restrict dstx, map * restrict srcx)
+xapi API map_splice(map * restrict dstx, map * restrict srcx)
 {
   enter;
 
@@ -233,7 +232,7 @@ API xapi map_splice(map * restrict dstx, map * restrict srcx)
   finally : coda;
 }
 
-API xapi map_replicate(map * restrict dstx, map * restrict srcx)
+xapi API map_replicate(map * restrict dstx, map * restrict srcx)
 {
   enter;
 
@@ -245,7 +244,7 @@ API xapi map_replicate(map * restrict dstx, map * restrict srcx)
   finally : coda;
 }
 
-API bool map_equal(map * restrict Ax, map * restrict Bx)
+bool API map_equal(map * restrict Ax, map * restrict Bx)
 {
   map_t * A = containerof(Ax, map_t, mx);
   map_t * B = containerof(Bx, map_t, mx);
@@ -253,7 +252,7 @@ API bool map_equal(map * restrict Ax, map * restrict Bx)
   return hashtable_equal(&A->htx, &B->htx);
 }
 
-API xapi map_delete(map * restrict mx, const void * restrict k, uint16_t kl)
+xapi API map_delete(map * restrict mx, const void * restrict k, uint16_t kl)
 {
   enter;
 
@@ -265,7 +264,7 @@ API xapi map_delete(map * restrict mx, const void * restrict k, uint16_t kl)
   finally : coda;
 }
 
-API xapi map_keys(const map * restrict mx, void * restrict _keys, uint16_t * restrict keysl)
+xapi API map_keys(const map * restrict mx, void * restrict _keys, uint16_t * restrict keysl)
 {
   enter;
 
@@ -290,7 +289,7 @@ API xapi map_keys(const map * restrict mx, void * restrict _keys, uint16_t * res
   finally : coda;
 }
 
-API xapi map_values(const map * restrict mx, void * restrict _values, size_t * restrict valuesl)
+xapi API map_values(const map * restrict mx, void * restrict _values, size_t * restrict valuesl)
 {
   enter;
 
@@ -315,7 +314,7 @@ API xapi map_values(const map * restrict mx, void * restrict _values, size_t * r
   finally : coda;
 }
 
-API const void * map_table_key(const map * restrict mx, size_t x)
+const void * API map_table_key(const map * restrict mx, size_t x)
 {
   const map_t * m = containerof(mx, map_t, mx);
 
@@ -326,7 +325,7 @@ API const void * map_table_key(const map * restrict mx, size_t x)
   return 0;
 }
 
-API void * map_table_value(const map * restrict mx, size_t x)
+void * API map_table_value(const map * restrict mx, size_t x)
 {
   const map_t * m = containerof(mx, map_t, mx);
 
@@ -337,7 +336,7 @@ API void * map_table_value(const map * restrict mx, size_t x)
   return false;
 }
 
-API bool map_table_mapping(const map * restrict mx, size_t x, const void ** restrict k, uint16_t * restrict kl, void * v, size_t * restrict vl)
+bool API map_table_mapping(const map * restrict mx, size_t x, const void ** restrict k, uint16_t * restrict kl, void * v, size_t * restrict vl)
 {
   const map_t * m = containerof(mx, map_t, mx);
 

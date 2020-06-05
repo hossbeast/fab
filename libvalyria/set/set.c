@@ -22,12 +22,11 @@
 
 #include "xlinux/xstdlib.h"
 
-#include "internal.h"
 #include "hashtable.internal.h"
 #include "set.internal.h"
 
 #include "macros.h"
-#include "hash.h"
+#include "common/hash.h"
 
 //
 // static
@@ -112,7 +111,7 @@ static ht_operations ht_ops = {
 // api
 //
 
-API xapi set_createx(
+xapi API set_createx(
     set ** const restrict rv
   , size_t capacity
   , uint32_t (*hash_fn)(uint32_t h, const void * element, size_t sz)
@@ -154,12 +153,12 @@ finally:
 coda;
 }
 
-API xapi set_create(set ** restrict sx)
+xapi API set_create(set ** restrict sx)
 {
   xproxy(set_createx, sx, 0, 0, 0, 0, 0);
 }
 
-API xapi set_xfree(set * restrict sx)
+xapi API set_xfree(set * restrict sx)
 {
   enter;
 
@@ -173,7 +172,7 @@ API xapi set_xfree(set * restrict sx)
   finally : coda;
 }
 
-API xapi set_ixfree(set ** restrict sx)
+xapi API set_ixfree(set ** restrict sx)
 {
   enter;
 
@@ -183,7 +182,7 @@ API xapi set_ixfree(set ** restrict sx)
   finally : coda;
 }
 
-API xapi set_recycle(set * restrict sx)
+xapi API set_recycle(set * restrict sx)
 {
   enter;
 
@@ -193,7 +192,7 @@ API xapi set_recycle(set * restrict sx)
   finally : coda;
 }
 
-API xapi set_put(set * restrict sx, void * e, size_t len)
+xapi API set_put(set * restrict sx, void * e, size_t len)
 {
   enter;
 
@@ -221,7 +220,7 @@ xapi set_store(set * sx, void * e, size_t len, void ** restrict elementp)
   finally : coda;
 }
 
-API xapi set_splice(set * restrict dstx, set * restrict srcx)
+xapi API set_splice(set * restrict dstx, set * restrict srcx)
 {
   enter;
 
@@ -233,7 +232,7 @@ API xapi set_splice(set * restrict dstx, set * restrict srcx)
   finally : coda;
 }
 
-API xapi set_replicate(set * restrict dstx, set * restrict srcx)
+xapi API set_replicate(set * restrict dstx, set * restrict srcx)
 {
   enter;
 
@@ -245,7 +244,7 @@ API xapi set_replicate(set * restrict dstx, set * restrict srcx)
   finally : coda;
 }
 
-API bool set_contains(const set * sx, const void * e, size_t len)
+bool API set_contains(const set * sx, const void * e, size_t len)
 {
   const set_t * s = containerof(sx, set_t, sx);
 
@@ -253,7 +252,7 @@ API bool set_contains(const set * sx, const void * e, size_t len)
   return !!hashtable_get(&s->htx, &key);
 }
 
-API void * set_get(const set * sx, const void * e, size_t len)
+void * API set_get(const set * sx, const void * e, size_t len)
 {
   const set_t * s = containerof(sx, set_t, sx);
 
@@ -265,7 +264,7 @@ API void * set_get(const set * sx, const void * e, size_t len)
   return 0;
 }
 
-API bool set_get_element(const set * sx, const void * e, size_t len, void * elp, size_t * restrict ell)
+bool API set_get_element(const set * sx, const void * e, size_t len, void * elp, size_t * restrict ell)
 {
   const set_t * s = containerof(sx, set_t, sx);
 
@@ -284,7 +283,7 @@ API bool set_get_element(const set * sx, const void * e, size_t len, void * elp,
   return false;
 }
 
-API bool set_equal(set * const Ax, set * const Bx)
+bool API set_equal(set * const Ax, set * const Bx)
 {
   set_t * A = containerof(Ax, set_t, sx);
   set_t * B = containerof(Bx, set_t, sx);
@@ -292,7 +291,7 @@ API bool set_equal(set * const Ax, set * const Bx)
   return hashtable_equal(&A->htx, &B->htx);
 }
 
-API xapi set_delete(set * sx, const void * e, size_t len)
+xapi API set_delete(set * sx, const void * e, size_t len)
 {
   enter;
 
@@ -304,7 +303,7 @@ API xapi set_delete(set * sx, const void * e, size_t len)
   finally : coda;
 }
 
-API xapi set_elements(const set * restrict sx, void * restrict _els, size_t ** restrict elsls, size_t * restrict elsl)
+xapi API set_elements(const set * restrict sx, void * restrict _els, size_t ** restrict elsls, size_t * restrict elsl)
 {
   enter;
 
@@ -333,7 +332,7 @@ API xapi set_elements(const set * restrict sx, void * restrict _els, size_t ** r
   finally : coda;
 }
 
-API bool set_table_element(const set * restrict sx, size_t x, void * elp, size_t * elenp)
+bool API set_table_element(const set * restrict sx, size_t x, void * elp, size_t * elenp)
 {
   ht_bucket * htb;
   element * el;
@@ -354,7 +353,7 @@ API bool set_table_element(const set * restrict sx, size_t x, void * elp, size_t
   return false;
 }
 
-API void * set_table_get(const set * restrict sx, size_t x)
+void * API set_table_get(const set * restrict sx, size_t x)
 {
   ht_bucket * htb;
   element * el;
@@ -369,7 +368,7 @@ API void * set_table_get(const set * restrict sx, size_t x)
   return 0;
 }
 
-API xapi set_table_delete(set * restrict sx, size_t x)
+xapi API set_table_delete(set * restrict sx, size_t x)
 {
   enter;
 

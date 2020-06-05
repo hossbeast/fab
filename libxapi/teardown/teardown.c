@@ -23,7 +23,7 @@
 // api
 //
 
-API void xapi_teardown()
+void API xapi_teardown()
 {
   frame_teardown();
 }

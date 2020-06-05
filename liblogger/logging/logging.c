@@ -15,7 +15,7 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#include "internal.h"
+#include "logger.h"
 #include "logging.internal.h"
 
 logger_category * logger_categories = (logger_category []) {

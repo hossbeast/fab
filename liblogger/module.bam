@@ -22,17 +22,9 @@ use xapi/errtab     # this module contains errtabs
 
 # make common objects available for #inclusion and linking by files in this module
 import fab/include
-import common
-import common/assure
-import common/hash
-import common/color
-import common/attrs
-import common/spinlock
-import common/snarf
-import common/atomic
-
 import fab/test as fabtest
 
+import libcommon
 import libxapi
 import libxlinux
 import libnarrator
@@ -40,13 +32,6 @@ import libvalyria
 
 # variants for the module
 variant xapi.pic.{debug,devel,final}
-
-rule liblogger.?.{a,so} <- common/assure/assure.$?.o
-rule liblogger.?.{a,so} <- common/color/color.$?.o
-rule liblogger.?.{a,so} <- common/snarf/snarf.$?.o
-rule liblogger.?.{a,so} <- common/attrs/attrs.$?.o
-rule liblogger.?.{a,so} <- common/fmt/fmt.$?.o
-rule liblogger.?.{a,so} <- common/hash/hash.$?.o
 
 # pull in object files in the module, except those under integ
 rule *~{integ,example,test}/**/*.?.o -> liblogger.$?.{so,a}

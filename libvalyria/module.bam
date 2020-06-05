@@ -28,21 +28,10 @@ import libxunit
 # make common objects available for #inclusion and linking by files in this module
 import fab/include
 import fab/test as fabtest
-import common
-import common/hash
-import common/assure
-import common/grow
-import common/stresc
+import libcommon
 
 # variants for the module
 variant xapi.pic.{debug,devel,final}
-
-rule libvalyria.?.so <- common/grow/grow.$?.o
-rule libvalyria.?.so <- common/hash/hash.$?.o
-rule libvalyria.?.so <- common/assure/assure.$?.o
-rule libvalyria.?.a <- common/grow/grow.$?.o
-rule libvalyria.?.a <- common/hash/hash.$?.o
-rule libvalyria.?.a <- common/assure/assure.$?.o
 
 # pull in object files in the module, except those under integ/assert
 variant xapi.pic.{debug,final} : [
@@ -62,11 +51,6 @@ rule */*.?.o <- errtab/VALYRIA.errtab.h
 
 # library dependencies
 rule //module/imports/*~libxunit/lib*.?.so -> libvalyria.$?.so
-
-# additional dependencies for the devel library
-variant xapi.pic.devel : [
-  rule libvalyria.?.so <- common/stresc/stresc.$?.o
-]
 
 #
 # tests

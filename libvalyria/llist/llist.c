@@ -15,11 +15,9 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-
 #include "llist.h"
-#include "internal.h"
 
-API llist * llist_init_node(llist * head)
+llist * API llist_init_node(llist * head)
 {
   head->next = head;
   head->prev = head;
@@ -27,7 +25,7 @@ API llist * llist_init_node(llist * head)
   return head;
 }
 
-API llist * llist_prepend_node(llist * head, llist * node)
+llist * API llist_prepend_node(llist * head, llist * node)
 {
   node->prev = head;
   node->next = head->next;
@@ -37,7 +35,7 @@ API llist * llist_prepend_node(llist * head, llist * node)
   return head;
 }
 
-API llist * llist_append_node(llist * head, llist * node)
+llist * API llist_append_node(llist * head, llist * node)
 {
   node->prev = head->prev;
   node->next = head;
@@ -47,7 +45,7 @@ API llist * llist_append_node(llist * head, llist * node)
   return head;
 }
 
-API void llist_delete_node(llist * node)
+void API llist_delete_node(llist * node)
 {
   node->next->prev = node->prev;
   node->prev->next = node->next;
@@ -57,7 +55,7 @@ API void llist_delete_node(llist * node)
 
 /* cursor traversal */
 
-API llist * llist_next_node(const llist * head, const llist * node)
+llist * API llist_next_node(const llist * head, const llist * node)
 {
   if(node == NULL)
     return NULL;
@@ -68,7 +66,7 @@ API llist * llist_next_node(const llist * head, const llist * node)
   return node->next;
 }
 
-API llist * llist_prev_node(const llist * head, const llist * node)
+llist * API llist_prev_node(const llist * head, const llist * node)
 {
   if(node == NULL)
     return NULL;
@@ -79,17 +77,17 @@ API llist * llist_prev_node(const llist * head, const llist * node)
   return node->prev;
 }
 
-API bool llist_empty_node(const llist * head)
+bool API llist_empty_node(const llist * head)
 {
   return head->next == head;
 }
 
-API bool llist_attached_node(const llist *node)
+bool API llist_attached_node(const llist *node)
 {
   return node->next != node;
 }
 
-API size_t llist_count_node(const llist * head)
+size_t API llist_count_node(const llist * head)
 {
   size_t size = 0;
   llist * node;
@@ -101,7 +99,7 @@ API size_t llist_count_node(const llist * head)
   return size;
 }
 
-API llist * llist_splice_head(llist * dst_head, llist * src_head)
+llist * API llist_splice_head(llist * dst_head, llist * src_head)
 {
   if(llist_empty(src_head)) {
     return dst_head;
@@ -118,7 +116,7 @@ API llist * llist_splice_head(llist * dst_head, llist * src_head)
   return dst_head;
 }
 
-API llist * llist_splice_tail(llist * dst_head, llist * src_head)
+llist * API llist_splice_tail(llist * dst_head, llist * src_head)
 {
   if(llist_empty(src_head)) {
     return dst_head;

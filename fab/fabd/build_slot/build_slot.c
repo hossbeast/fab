@@ -57,8 +57,8 @@
 #include "node_operations.h"
 #include "stats.h"
 
-#include "atomic.h"
-#include "assure.h"
+#include "common/atomic.h"
+#include "common/assure.h"
 #include "zbuffer.h"
 
 struct insertion_sort_ctx {

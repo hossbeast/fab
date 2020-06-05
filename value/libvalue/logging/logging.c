@@ -18,7 +18,7 @@
 #include "xapi.h"
 #include "logger.h"
 
-#include "internal.h"
+#include "value.h"
 #include "logging.internal.h"
 
 logger_category * categories = (logger_category []) {

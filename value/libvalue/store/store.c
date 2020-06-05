@@ -24,13 +24,13 @@
 #include "valyria/set.h"
 #include "valyria/pstring.h"
 
-#include "internal.h"
+#include "value.h"
 #include "value.h"
 #include "parser.internal.h"
 #include "store.internal.h"
 
-#include "grow.h"
-#include "assure.h"
+#include "common/grow.h"
+#include "common/assure.h"
 
 static uint32_t set_value_hash(uint32_t h, const void * restrict _val, size_t sz)
 {
@@ -235,7 +235,7 @@ coda;
 // api
 //
 
-API xapi value_store_create(value_store ** const restrict stor)
+xapi API value_store_create(value_store ** const restrict stor)
 {
   enter;
 
@@ -248,7 +248,7 @@ API xapi value_store_create(value_store ** const restrict stor)
   finally : coda;
 }
 
-API xapi value_store_xfree(value_store * const restrict stor)
+xapi API value_store_xfree(value_store * const restrict stor)
 {
   enter;
 
@@ -265,7 +265,7 @@ API xapi value_store_xfree(value_store * const restrict stor)
   finally : coda;
 }
 
-API xapi value_store_ixfree(value_store ** const stor)
+xapi API value_store_ixfree(value_store ** const stor)
 {
   enter;
 
@@ -275,7 +275,7 @@ API xapi value_store_ixfree(value_store ** const stor)
   finally : coda;
 }
 
-API xapi value_store_recycle(value_store * const restrict stor)
+xapi API value_store_recycle(value_store * const restrict stor)
 {
   enter;
 

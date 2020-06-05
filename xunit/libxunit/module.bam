@@ -21,7 +21,7 @@ use xapi/errtab    # this module contains errtabs
 
 # make common objects available for #inclusion and linking by files in this module
 import fab/include
-import common
+import libcommon
 import libxapi
 import libxlinux
 

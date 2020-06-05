@@ -27,7 +27,6 @@
 #include "xlinux/xstdlib.h"
 #include "moria/load.h"
 
-#include "internal.h"
 #include "graph.internal.h"
 #include "logging.internal.h"
 #include "operations.internal.h"

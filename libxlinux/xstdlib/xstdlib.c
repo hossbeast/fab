@@ -25,7 +25,7 @@
 #include "XLINUX.errtab.h"
 #include "mempolicy/mempolicy.internal.h"
 
-#include "fmt.h"
+#include "common/fmt.h"
 
 //
 // static
@@ -64,7 +64,7 @@ static int xqsort_compar(const void * A, const void * B, void * arg)
 // api
 //
 
-API xapi xmalloc(void* target, size_t size)
+xapi API xmalloc(void* target, size_t size)
 {
   enter;
 
@@ -85,7 +85,7 @@ finally:
 coda;
 }
 
-API xapi xrealloc(void* target, size_t es, size_t ec, size_t oec)
+xapi API xrealloc(void* target, size_t es, size_t ec, size_t oec)
 {
   enter;
 
@@ -152,7 +152,7 @@ void API wfree(void* target)
   }
 }
 
-API xapi xqsort_r(void * base, size_t nmemb, size_t size, xapi (*xcompar)(const void *, const void *, void *, int * r), void * arg)
+xapi API xqsort_r(void * base, size_t nmemb, size_t size, xapi (*xcompar)(const void *, const void *, void *, int * r), void * arg)
 {
   enter;
 
@@ -168,7 +168,7 @@ API xapi xqsort_r(void * base, size_t nmemb, size_t size, xapi (*xcompar)(const 
   finally : coda;
 }
 
-API xapi xreadlinks(const char * pathname, char * buf, size_t bufsiz, ssize_t * r)
+xapi API xreadlinks(const char * pathname, char * buf, size_t bufsiz, ssize_t * r)
 {
   enter;
 
@@ -184,7 +184,7 @@ finally:
 coda;
 }
 
-API xapi xreadlinkf(const char * pathname_fmt, char * buf, size_t bufsiz, ssize_t * r, ...)
+xapi API xreadlinkf(const char * pathname_fmt, char * buf, size_t bufsiz, ssize_t * r, ...)
 {
   enter;
 
@@ -198,7 +198,7 @@ finally:
 coda;
 }
 
-API xapi xreadlinkvf(const char * pathname_fmt, char * buf, size_t bufsiz, ssize_t * r, va_list va)
+xapi API xreadlinkvf(const char * pathname_fmt, char * buf, size_t bufsiz, ssize_t * r, va_list va)
 {
   enter;
 
@@ -210,7 +210,7 @@ API xapi xreadlinkvf(const char * pathname_fmt, char * buf, size_t bufsiz, ssize
   finally : coda;
 }
 
-API xapi xrealpaths(char ** restrict r, char * restrict resolved_path, const char * restrict path)
+xapi API xrealpaths(char ** restrict r, char * restrict resolved_path, const char * restrict path)
 {
   enter;
 
@@ -224,7 +224,7 @@ finally:
 coda;
 }
 
-API xapi xrealpathf(char ** restrict r, char * restrict resolved_path, const char * restrict path_fmt, ...)
+xapi API xrealpathf(char ** restrict r, char * restrict resolved_path, const char * restrict path_fmt, ...)
 {
   enter;
 
@@ -238,7 +238,7 @@ finally:
 coda;
 }
 
-API xapi xrealpathvf(char ** restrict r, char * restrict resolved_path, const char * restrict path_fmt, va_list va)
+xapi API xrealpathvf(char ** restrict r, char * restrict resolved_path, const char * restrict path_fmt, va_list va)
 {
   enter;
 
@@ -252,7 +252,7 @@ finally:
 coda;
 }
 
-API xapi xsystem(const char * restrict command, int * restrict status)
+xapi API xsystem(const char * restrict command, int * restrict status)
 {
   enter;
 

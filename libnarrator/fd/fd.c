@@ -25,9 +25,9 @@
 #include "internal.h"
 #include "fd/fd.internal.h"
 
-APIDATA narrator * g_narrator_stdout;
-APIDATA narrator * g_narrator_stderr;
-APIDATA narrator * N;
+narrator * APIDATA g_narrator_stdout;
+narrator * APIDATA g_narrator_stderr;
+narrator * APIDATA N;
 
 //
 // public
@@ -112,7 +112,7 @@ xapi fd_flush(narrator_fd * const restrict n)
 // api
 //
 
-API xapi narrator_fd_create(narrator ** const restrict n, int fd)
+xapi API narrator_fd_create(narrator ** const restrict n, int fd)
 {
   enter;
 
@@ -123,7 +123,7 @@ API xapi narrator_fd_create(narrator ** const restrict n, int fd)
   finally : coda;
 }
 
-API int narrator_fd_fd(narrator * const restrict n)
+int API narrator_fd_fd(narrator * const restrict n)
 {
   return n->fd.fd;
 }

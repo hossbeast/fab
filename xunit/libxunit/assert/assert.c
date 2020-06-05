@@ -19,20 +19,20 @@
 
 #include "xapi.h"
 
-#include "internal.h"
+#include "xunit.h"
 #include "assert.internal.h"
 #include "type.internal.h"
 
 #include "zbuffer.h"
 
-APIDATA uint32_t xunit_assertions_passed;
-APIDATA uint32_t xunit_assertions_failed;
+uint32_t API xunit_assertions_passed;
+uint32_t API xunit_assertions_failed;
 
 //
 // API
 //
 
-API bool xunit_assertion_evaluate(const xunit_type * const restrict type, uint8_t op, const char * const restrict value, ...)
+bool API xunit_assertion_evaluate(const xunit_type * const restrict type, uint8_t op, const char * const restrict value, ...)
 {
   va_list va;
   va_start(va, value);

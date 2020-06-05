@@ -45,7 +45,7 @@
 #include "filesystem.h"
 #include "node_operations_test.h"
 
-#include "hash.h"
+#include "common/hash.h"
 #include "zbuffer.h"
 
 typedef struct pattern_match_test {

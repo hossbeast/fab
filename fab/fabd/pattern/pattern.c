@@ -33,7 +33,7 @@
 #include "module.h"
 #include "node.h"
 
-#include "attrs.h"
+#include "common/attrs.h"
 #include "zbuffer.h"
 
 attrs16 * pattern_segment_type_attrs = (attrs16[]){{

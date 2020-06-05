@@ -26,18 +26,12 @@ rule fabw.? -> //module/targets
 # make common objects available for #include and linking
 import fab/include
 import fab/asan
-import common
-import common/assure
-import common/parseint
 
-import lib{xapi,xlinux,logger,narrator,fab,lorien,valyria,xunit}
+import lib{common,xapi,xlinux,logger,narrator,fab,lorien,valyria,xunit}
 
 variant xapi.{debug,devel} : [
   rule fabw.? <- asan/asan.$?.o
 ]
-
-rule fabw.? <- common/assure/assure.$?.o
-rule fabw.? <- common/parseint/parseint.$?.o
 
 # invoke the compiler to build the executable
 rule **/*.?.o -> fabw.$? : executable/bam-cc

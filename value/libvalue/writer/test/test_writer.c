@@ -30,13 +30,13 @@
 #include "logger.h"
 #include "logger/category.h"
 
-#include "internal.h"
+#include "value.h"
 #include "assert.internal.h"
 #include "writer.internal.h"
 #include "store.internal.h"
 
 #include "macros.h"
-#include "attrs.h"
+#include "common/attrs.h"
 
 typedef struct writer_test {
   XUNITTEST;

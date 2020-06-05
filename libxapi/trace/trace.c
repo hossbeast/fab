@@ -360,7 +360,7 @@ static size_t calltree_trace_frames(char * const dst, const size_t sz, calltree 
 // API
 //
 
-API size_t xapi_trace_calltree_pithy(calltree * const restrict ct, char * const restrict dst, const size_t sz, uint16_t attrs)
+size_t API xapi_trace_calltree_pithy(calltree * const restrict ct, char * const restrict dst, const size_t sz, uint16_t attrs)
 {
   size_t z = 0;
 
@@ -383,7 +383,7 @@ API size_t xapi_trace_calltree_pithy(calltree * const restrict ct, char * const 
   return z;
 }
 
-API size_t xapi_trace_calltree_full(calltree * const restrict ct, char * const restrict dst, const size_t sz, uint16_t attrs)
+size_t API xapi_trace_calltree_full(calltree * const restrict ct, char * const restrict dst, const size_t sz, uint16_t attrs)
 {
   size_t z = 0;
 
@@ -395,53 +395,53 @@ API size_t xapi_trace_calltree_full(calltree * const restrict ct, char * const r
   return z;
 }
 
-API size_t xapi_trace_pithy(char * const dst, const size_t sz, uint16_t attrs)
+size_t API xapi_trace_pithy(char * const dst, const size_t sz, uint16_t attrs)
 {
   return xapi_trace_calltree_pithy(g_calltree, dst, sz, attrs);
 }
 
-API size_t xapi_trace_full(char * const dst, const size_t sz, uint16_t attrs)
+size_t API xapi_trace_full(char * const dst, const size_t sz, uint16_t attrs)
 {
   return xapi_trace_calltree_full(g_calltree, dst, sz, attrs);
 }
 
-API void xapi_pithytrace_to(int fd)
+void API xapi_pithytrace_to(int fd)
 {
   char space[4096];
   size_t z = xapi_trace_pithy(space, sizeof(space), 0);
   int __attribute__((unused)) r = write(fd, space, z);
 }
 
-API void xapi_fulltrace_to(int fd)
+void API xapi_fulltrace_to(int fd)
 {
   char space[4096];
   size_t z = xapi_trace_full(space, sizeof(space), 0);
   int __attribute__((unused)) r = write(fd, space, z);
 }
 
-API void xapi_backtrace_to(int fd)
+void API xapi_backtrace_to(int fd)
 {
   char space[4096];
   size_t z = xapi_trace_full(space, sizeof(space), 0);
   int __attribute__((unused)) r = write(fd, space, z);
 }
 
-API void xapi_pithytrace()
+void API xapi_pithytrace()
 {
   xapi_pithytrace_to(2);
 }
 
-API void xapi_fulltrace()
+void API xapi_fulltrace()
 {
   xapi_fulltrace_to(2);
 }
 
-API void xapi_backtrace()
+void API xapi_backtrace()
 {
   xapi_backtrace_to(2);
 }
 
-API size_t xapi_trace_info(const char * restrict name, char * const restrict dst, const size_t sz)
+size_t API xapi_trace_info(const char * restrict name, char * const restrict dst, const size_t sz)
 {
   int a1 = 0;
   int a2 = -1; // start index for the subsequence

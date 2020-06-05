@@ -21,27 +21,24 @@
 #include "xapi.h"
 #include "xlinux/xstdlib.h"
 
-#include "internal.h"
 #include "strutil.internal.h"
-
-#define restrict __restrict
 
 //
 // api
 //
 
 
-API xapi strloadc(char ** restrict dst, int c)
+xapi API strloadc(char ** restrict dst, int c)
 {
   xproxy(strloadw, dst, (char[]) { c }, 1);
 }
 
-API xapi strloads(char ** restrict dst, const char * restrict s)
+xapi API strloads(char ** restrict dst, const char * restrict s)
 {
   xproxy(strloadw, dst, s, strlen(s));
 }
 
-API xapi strloadw(char ** restrict dst, const void * restrict buf, size_t bufl)
+xapi API strloadw(char ** restrict dst, const void * restrict buf, size_t bufl)
 {
   enter;
 
@@ -53,7 +50,7 @@ API xapi strloadw(char ** restrict dst, const void * restrict buf, size_t bufl)
   finally : coda;
 }
 
-API xapi strloadf(char ** restrict dst, const char * restrict fmt, ...)
+xapi API strloadf(char ** restrict dst, const char * restrict fmt, ...)
 {
   enter;
 
@@ -67,7 +64,7 @@ finally:
 coda;
 }
 
-API xapi strloadvf(char ** restrict dst, const char * restrict fmt, va_list va)
+xapi API strloadvf(char ** restrict dst, const char * restrict fmt, va_list va)
 {
   enter;
 

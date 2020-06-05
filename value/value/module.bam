@@ -25,17 +25,7 @@ variant xapi.{debug,devel,final}
 # make common objects available for #include and linking
 import fab/include
 import fab/asan
-import common
-import common/assure
-import common/snarf
-import common/fmt
-import lib{xapi,xlinux,logger,xunit,narrator,valyria,yyutil,value}
-
-rule value.? <- common/assure/assure.$?.o
-rule value.? <- common/attrs/attrs.$?.o
-rule value.? <- common/hash/hash.$?.o
-rule value.? <- common/snarf/snarf.$?.o
-rule value.? <- common/fmt/fmt.$?.o
+import lib{common,xapi,xlinux,logger,xunit,narrator,valyria,yyutil,value}
 
 variant xapi.{debug,devel} : [
   rule value.? <- asan/asan.$?.o

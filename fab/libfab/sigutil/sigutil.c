@@ -26,7 +26,6 @@
 #include "xlinux/xwait.h"
 #include "narrator.h"
 
-#include "internal.h"
 #include "sigutil.h"
 #include "FAB.errtab.h"
 #include "ipc.h"
@@ -69,7 +68,7 @@ static void handler(int signum, siginfo_t * info, void * ctx)
 #endif
 }
 
-API xapi sigutil_defaults()
+xapi API sigutil_defaults()
 {
   enter;
 
@@ -110,7 +109,7 @@ API xapi sigutil_defaults()
   finally : coda;
 }
 
-API xapi sigutil_wait(const sigset_t * sigs, siginfo_t * info)
+xapi API sigutil_wait(const sigset_t * sigs, siginfo_t * info)
 {
   enter;
 
@@ -143,7 +142,7 @@ sigwaitinfo does *not* cause the signal handler to be invoked
   finally : coda;
 }
 
-API xapi sigutil_log(const siginfo_t * info)
+xapi API sigutil_log(const siginfo_t * info)
 {
   enter;
 
@@ -176,7 +175,7 @@ API xapi sigutil_log(const siginfo_t * info)
   finally : coda;
 }
 
-API xapi sigutil_exchange(int sig, pid_t pid, const sigset_t * sigs, siginfo_t * info)
+xapi API sigutil_exchange(int sig, pid_t pid, const sigset_t * sigs, siginfo_t * info)
 {
   enter;
 
@@ -189,7 +188,7 @@ API xapi sigutil_exchange(int sig, pid_t pid, const sigset_t * sigs, siginfo_t *
   finally : coda;
 }
 
-API xapi sigutil_assert(int expsig, pid_t exppid, const siginfo_t * actual)
+xapi API sigutil_assert(int expsig, pid_t exppid, const siginfo_t * actual)
 {
   enter;
 
@@ -209,7 +208,7 @@ API xapi sigutil_assert(int expsig, pid_t exppid, const siginfo_t * actual)
   finally : coda;
 }
 
-API xapi sigutil_kill(pid_t pid, int signo)
+xapi API sigutil_kill(pid_t pid, int signo)
 {
   enter;
 
@@ -222,7 +221,7 @@ API xapi sigutil_kill(pid_t pid, int signo)
   finally : coda;
 }
 
-API xapi sigutil_tgkill(pid_t pid, pid_t tid, int signo)
+xapi API sigutil_tgkill(pid_t pid, pid_t tid, int signo)
 {
   enter;
 

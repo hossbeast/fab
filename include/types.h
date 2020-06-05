@@ -36,4 +36,7 @@ static inline size_t roundup(size_t x, size_t y)
   return x;
 }
 
+#define API
+#define APIDATA
+
 #endif

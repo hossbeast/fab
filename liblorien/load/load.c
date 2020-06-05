@@ -21,7 +21,6 @@
 #include "valyria/load.h"
 #include "narrator/load.h"
 
-#include "internal.h"
 #include "load.internal.h"
 
 //
@@ -30,7 +29,7 @@
 
 static int handles;
 
-API xapi lorien_load()
+xapi API lorien_load()
 {
   enter;
 
@@ -46,7 +45,7 @@ API xapi lorien_load()
   finally : coda;
 }
 
-API xapi lorien_unload()
+xapi API lorien_unload()
 {
   enter;
 

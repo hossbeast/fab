@@ -21,7 +21,7 @@
 #include "xpwd/xpwd.h"
 #include "errtab/KERNEL.errtab.h"
 
-API xapi uxgetpwuid_r(uid_t uid, struct passwd * pwd, char * buf, size_t buflen, struct passwd ** result)
+xapi API uxgetpwuid_r(uid_t uid, struct passwd * pwd, char * buf, size_t buflen, struct passwd ** result)
 {
   enter;
 
@@ -43,7 +43,7 @@ finally :
 coda;
 }
 
-API xapi xgetpwuid(uid_t uid, struct passwd ** const pwd)
+xapi API xgetpwuid(uid_t uid, struct passwd ** const pwd)
 {
   enter;
 

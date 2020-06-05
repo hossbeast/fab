@@ -18,7 +18,7 @@
 #ifndef _XLINUX_INTERNAL_H
 #define _XLINUX_INTERNAL_H
 
-#define API __attribute__((visibility("protected")))
+#define API
 #define APIDATA
 
 #endif

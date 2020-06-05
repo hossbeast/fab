@@ -29,7 +29,6 @@
 #include "xlinux/xdirent.h"
 #include "xlinux/xstdlib.h"
 
-#include "internal.h"
 #include "nftwat.h"
 
 #include "zbuffer.h"
@@ -152,7 +151,7 @@ finally:
 coda;
 }
 
-API xapi nftwat(
+xapi API nftwat(
     int dirfd
   , const char * dirpath
   , xapi (*fn)(int method, ftwinfo * restrict info, void * arg, int * stop)

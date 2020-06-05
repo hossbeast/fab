@@ -25,7 +25,7 @@
 #include "xsignal/xsignal.h"
 #include "errtab/KERNEL.errtab.h"
 
-API xapi xkill(pid_t pid, int sig)
+xapi API xkill(pid_t pid, int sig)
 {
   enter;
 
@@ -37,7 +37,7 @@ finally:
 coda;
 }
 
-API xapi uxkill(pid_t pid, int sig, int * r)
+xapi API uxkill(pid_t pid, int sig, int * r)
 {
   enter;
 
@@ -53,7 +53,7 @@ API xapi uxkill(pid_t pid, int sig, int * r)
   finally : coda;
 }
 
-API xapi xtgkill(pid_t pid, pid_t tid, int sig)
+xapi API xtgkill(pid_t pid, pid_t tid, int sig)
 {
   enter;
 
@@ -67,7 +67,7 @@ finally:
 coda;
 }
 
-API xapi uxtgkill(int * r, pid_t pid, pid_t tid, int sig)
+xapi API uxtgkill(int * r, pid_t pid, pid_t tid, int sig)
 {
   enter;
 
@@ -87,7 +87,7 @@ finally:
 coda;
 }
 
-API xapi xsigaction(int signum, const struct sigaction * act, struct sigaction * oldact)
+xapi API xsigaction(int signum, const struct sigaction * act, struct sigaction * oldact)
 {
   enter;
 
@@ -98,7 +98,7 @@ finally:
 coda;
 }
 
-API xapi xsigprocmask(int how, const sigset_t * set, sigset_t * oldset)
+xapi API xsigprocmask(int how, const sigset_t * set, sigset_t * oldset)
 {
   enter;
 
@@ -107,7 +107,7 @@ API xapi xsigprocmask(int how, const sigset_t * set, sigset_t * oldset)
   finally : coda;
 }
 
-API xapi uxsigsuspend(const sigset_t * mask)
+xapi API uxsigsuspend(const sigset_t * mask)
 {
   enter;
 
@@ -126,7 +126,7 @@ API xapi uxsigsuspend(const sigset_t * mask)
   finally : coda;
 }
 
-API xapi xsigwaitinfo(const sigset_t * mask, siginfo_t * info)
+xapi API xsigwaitinfo(const sigset_t * mask, siginfo_t * info)
 {
   enter;
 
@@ -136,7 +136,7 @@ API xapi xsigwaitinfo(const sigset_t * mask, siginfo_t * info)
   finally : coda;
 }
 
-API xapi uxsigwaitinfo(int * r, const sigset_t * mask, siginfo_t * info)
+xapi API uxsigwaitinfo(int * r, const sigset_t * mask, siginfo_t * info)
 {
   enter;
 
@@ -152,7 +152,7 @@ API xapi uxsigwaitinfo(int * r, const sigset_t * mask, siginfo_t * info)
   finally : coda;
 }
 
-API xapi xsignal(int signum, sighandler_t handler)
+xapi API xsignal(int signum, sighandler_t handler)
 {
   enter;
 

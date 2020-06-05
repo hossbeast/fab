@@ -50,8 +50,8 @@
 #include "module.h"
 #include "path.h"
 
-#include "spinlock.h"
-#include "atomic.h"
+#include "common/spinlock.h"
+#include "common/atomic.h"
 #include "macros.h"
 #include "zbuffer.h"
 

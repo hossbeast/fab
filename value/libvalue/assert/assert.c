@@ -22,7 +22,7 @@
 
 #include "xunit/type.h"
 
-#include "internal.h"
+#include "value.h"
 #include "value.h"
 #include "assert.h"
 
@@ -59,7 +59,7 @@ static void value_info_push(const char * const restrict name, xunit_arg * a)
 // API
 //
 
-APIDATA xunit_type * value_xunit_value = (xunit_type[]) {{
+xunit_type * API value_xunit_value = (xunit_type[]) {{
     xu_unpack : value_unpack
   , xu_compare : value_compare
   , xu_info_push : value_info_push

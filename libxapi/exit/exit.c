@@ -24,7 +24,7 @@
 // api
 //
 
-API const char * xapi_exit_errname(const xapi exit)
+const char * API xapi_exit_errname(const xapi exit)
 {
   xapi_errtab_tag tag = exit >> 16;
 
@@ -35,7 +35,7 @@ API const char * xapi_exit_errname(const xapi exit)
   return xapi_errtab_errname(tab, exit);
 }
 
-API const char * xapi_exit_errdesc(const xapi exit)
+const char * API xapi_exit_errdesc(const xapi exit)
 {
   xapi_errtab_tag tag = exit >> 16;
 
@@ -46,7 +46,7 @@ API const char * xapi_exit_errdesc(const xapi exit)
   return xapi_errtab_errdesc(tab, exit);
 }
 
-API const char * xapi_exit_errstr(const xapi exit)
+const char * API xapi_exit_errstr(const xapi exit)
 {
   xapi_errtab_tag tag = exit >> 16;
 
@@ -57,7 +57,7 @@ API const char * xapi_exit_errstr(const xapi exit)
   return xapi_errtab_errstr(tab, exit);
 }
 
-API const errtab * xapi_exit_errtab(const xapi exit)
+const errtab * API xapi_exit_errtab(const xapi exit)
 {
   xapi_errtab_tag tag = exit >> 16;
 
@@ -68,7 +68,7 @@ API const errtab * xapi_exit_errtab(const xapi exit)
   return tab;
 }
 
-API xapi_code xapi_exit_errcode(const xapi exit)
+xapi_code API xapi_exit_errcode(const xapi exit)
 {
   xapi_errtab_tag tag = exit >> 16;
 
@@ -79,7 +79,7 @@ API xapi_code xapi_exit_errcode(const xapi exit)
   return xapi_errtab_errcode(tab, exit);
 }
 
-API const char * xapi_exit_errtab_name(const xapi exit)
+const char * API xapi_exit_errtab_name(const xapi exit)
 {
   xapi_errtab_tag tag = exit >> 16;
 
@@ -90,7 +90,7 @@ API const char * xapi_exit_errtab_name(const xapi exit)
   return tab->name;
 }
 
-API xapi_errtab_tag xapi_exit_errtab_tag(const xapi exit)
+xapi_errtab_tag API xapi_exit_errtab_tag(const xapi exit)
 {
   xapi_errtab_tag tag = exit >> 16;
 
@@ -101,7 +101,7 @@ API xapi_errtab_tag xapi_exit_errtab_tag(const xapi exit)
   return tab->tag;
 }
 
-API xapi xapi_exit_synth(const errtab * const restrict etab, const xapi_code errcode)
+xapi API xapi_exit_synth(const errtab * const restrict etab, const xapi_code errcode)
 {
   return ((etab->tag) << 16) | errcode;
 }

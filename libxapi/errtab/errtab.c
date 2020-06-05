@@ -34,7 +34,7 @@ static bool tabmap_setup;
 // api
 //
 
-API void xapi_errtab_stage(errtab * const restrict etab)
+void API xapi_errtab_stage(errtab * const restrict etab)
 {
   if(!tabmap_setup)
   {
@@ -48,18 +48,18 @@ API void xapi_errtab_stage(errtab * const restrict etab)
   }
 }
 
-API void xapi_errtab_unstage(errtab * const restrict etab)
+void API xapi_errtab_unstage(errtab * const restrict etab)
 {
 }
 
-API xapi xapi_errtab_register(errtab * const etab)
+xapi API xapi_errtab_register(errtab * const etab)
 {
   enter;
 
   finally : coda;
 }
 
-API const errtab * xapi_errtab_bytag(xapi_errtab_tag tag)
+const errtab * API xapi_errtab_bytag(xapi_errtab_tag tag)
 {
   return hashtable_get(&tabmap, tag);
 }
@@ -68,7 +68,7 @@ API const errtab * xapi_errtab_bytag(xapi_errtab_tag tag)
 // exit value api
 //
 
-API const char * xapi_errtab_errname(const errtab * const restrict etab, const xapi exit)
+const char * API xapi_errtab_errname(const errtab * const restrict etab, const xapi exit)
 {
   if(etab == 0)
     return 0;
@@ -81,7 +81,7 @@ API const char * xapi_errtab_errname(const errtab * const restrict etab, const x
   return etab->v[code + (etab->min * -1)].name;
 }
 
-API const char * xapi_errtab_errdesc(const errtab * const restrict etab, const xapi exit)
+const char * API xapi_errtab_errdesc(const errtab * const restrict etab, const xapi exit)
 {
   if(etab == 0)
     return 0;
@@ -94,7 +94,7 @@ API const char * xapi_errtab_errdesc(const errtab * const restrict etab, const x
   return etab->v[code + (etab->min * -1)].desc;
 }
 
-API const char * xapi_errtab_errstr(const errtab * const restrict etab, const xapi exit)
+const char * API xapi_errtab_errstr(const errtab * const restrict etab, const xapi exit)
 {
   if(etab == 0)
     return 0;
@@ -107,7 +107,7 @@ API const char * xapi_errtab_errstr(const errtab * const restrict etab, const xa
   return etab->v[code + (etab->min * -1)].str;
 }
 
-API xapi_code xapi_errtab_errcode(const errtab * const restrict etab, const xapi exit)
+xapi_code API xapi_errtab_errcode(const errtab * const restrict etab, const xapi exit)
 {
   if(etab == 0)
     return 0;

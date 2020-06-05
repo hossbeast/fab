@@ -20,14 +20,13 @@
 
 #include "xlinux/xstdlib.h"
 
-#include "internal.h"
 #include "rbtree.internal.h"
 #include "llist.h"
 
 #include "macros.h"
 #include "zbuffer.h"
 
-APIDATA rbnode rbleaf = { color : RB_BLACK, parent : &rbleaf };
+rbnode APIDATA rbleaf = { color : RB_BLACK, parent : &rbleaf };
 
 //
 // static
@@ -398,18 +397,18 @@ void rbnode_print(rbnode * restrict n)
 // api
 //
 
-API void rbtree_init(rbtree * restrict rb)
+void API rbtree_init(rbtree * restrict rb)
 {
   memset(rb, 0, sizeof(*rb));
   rb->root = &rbleaf;
 }
 
-API bool rbtree_empty(rbtree * restrict rb)
+bool API rbtree_empty(rbtree * restrict rb)
 {
   return rb->root == &rbleaf;
 }
 
-API size_t rbtree_count(rbtree * restrict rb)
+size_t API rbtree_count(rbtree * restrict rb)
 {
   size_t c = 0;
   rbnode *rbn;
@@ -421,22 +420,22 @@ API size_t rbtree_count(rbtree * restrict rb)
   return c;
 }
 
-API void rbtree_destroy(rbtree * restrict rb, void (*rbn_free)(rbnode * restrict n))
+void API rbtree_destroy(rbtree * restrict rb, void (*rbn_free)(rbnode * restrict n))
 {
   destroy(rb, rb->root, rbn_free);
 }
 
-API void rbnode_init(rbnode * restrict rbn)
+void API rbnode_init(rbnode * restrict rbn)
 {
   memset(rbn, 0, sizeof(*rbn));
 }
 
-API bool rbnode_attached(rbnode * restrict rbn)
+bool API rbnode_attached(rbnode * restrict rbn)
 {
   return rbn->parent != NULL;
 }
 
-API void rbtree_insert_node(rbtree * restrict rb, rbtree_search_context * restrict ctx, rbnode * restrict n)
+void API rbtree_insert_node(rbtree * restrict rb, rbtree_search_context * restrict ctx, rbnode * restrict n)
 {
   if(rb->root == &rbleaf)
   {
@@ -481,7 +480,7 @@ API void rbtree_insert_node(rbtree * restrict rb, rbtree_search_context * restri
 #endif
 }
 
-API rbnode * rbtree_put_node(rbtree * restrict rb, rbnode * restrict n, rbtree_node_cmp cmp)
+rbnode * API rbtree_put_node(rbtree * restrict rb, rbnode * restrict n, rbtree_node_cmp cmp)
 {
   rbtree_search_context ctx;
 
@@ -514,7 +513,7 @@ rb->hash += (uint32_t)(uintptr_t)n;
   return 0;
 }
 
-API rbnode * rbtree_search(const rbtree * restrict rb, rbtree_search_context *ctx, void *key, rbtree_key_cmp cmp)
+rbnode * API rbtree_search(const rbtree * restrict rb, rbtree_search_context *ctx, void *key, rbtree_key_cmp cmp)
 {
   if(rb->root == &rbleaf)
     return 0;
@@ -529,13 +528,13 @@ API rbnode * rbtree_search(const rbtree * restrict rb, rbtree_search_context *ct
 }
 
 
-API rbnode * rbtree_lookup_node(const rbtree * restrict rb, void * key, rbtree_key_cmp cmp)
+rbnode * API rbtree_lookup_node(const rbtree * restrict rb, void * key, rbtree_key_cmp cmp)
 {
   rbtree_search_context ctx;
   return rbtree_search(rb, &ctx, key, cmp);
 }
 
-API void rbtree_replace_node(rbnode * restrict n, rbnode * restrict new)
+void API rbtree_replace_node(rbnode * restrict n, rbnode * restrict new)
 {
   rbnode *p;
 
@@ -554,7 +553,7 @@ n->rbt->hash += (uint32_t)(uintptr_t)new;
 #endif
 }
 
-API void rbtree_delete_node(rbtree * restrict rb, rbnode * restrict n)
+void API rbtree_delete_node(rbtree * restrict rb, rbnode * restrict n)
 {
   rbnode *m;
   rbnode *o;
@@ -607,7 +606,7 @@ rb->hash -= (uint32_t)(uintptr_t)n;
 #endif
 }
 
-API rbnode * rbtree_first_post_node(rbtree * restrict rb)
+rbnode * API rbtree_first_post_node(rbtree * restrict rb)
 {
   if(rb->root == &rbleaf)
     return &rbleaf;
@@ -615,12 +614,12 @@ API rbnode * rbtree_first_post_node(rbtree * restrict rb)
   return leftmost(rb->root);
 }
 
-API rbnode * rbtree_last_post_node(rbtree * restrict rb)
+rbnode * API rbtree_last_post_node(rbtree * restrict rb)
 {
   return rb->root;
 }
 
-API rbnode * rbtree_next_post_node(rbnode * restrict n)
+rbnode * API rbtree_next_post_node(rbnode * restrict n)
 {
   if(n->parent == &rbleaf)
     return &rbleaf;

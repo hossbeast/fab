@@ -28,12 +28,12 @@
 #include "xapi/SYS.errtab.h"
 #include "xlinux/xstdlib.h"
 
-#include "internal.h"
+#include "value.h"
 #include "value.h"
 #include "writer.internal.h"
 
 #include "zbuffer.h"
-#include "hash.h"
+#include "common/hash.h"
 
 static set * keywords;
 
@@ -180,7 +180,7 @@ xapi writer_cleanup()
 // api
 //
 
-API xapi value_writer_create(value_writer ** restrict writer)
+xapi API value_writer_create(value_writer ** restrict writer)
 {
   enter;
 
@@ -189,7 +189,7 @@ API xapi value_writer_create(value_writer ** restrict writer)
   finally : coda;
 }
 
-API xapi value_writer_xfree(value_writer * restrict writer)
+xapi API value_writer_xfree(value_writer * restrict writer)
 {
   enter;
 
@@ -202,7 +202,7 @@ API xapi value_writer_xfree(value_writer * restrict writer)
   finally : coda;
 }
 
-API xapi value_writer_ixfree(value_writer ** restrict writer)
+xapi API value_writer_ixfree(value_writer ** restrict writer)
 {
   enter;
 
@@ -212,12 +212,12 @@ API xapi value_writer_ixfree(value_writer ** restrict writer)
   finally : coda;
 }
 
-API void value_writer_init(value_writer * restrict writer)
+void API value_writer_init(value_writer * restrict writer)
 {
   memset(writer, 0, sizeof(*writer));
 }
 
-API xapi value_writer_destroy(value_writer * restrict writer)
+xapi API value_writer_destroy(value_writer * restrict writer)
 {
   enter;
 
@@ -226,7 +226,7 @@ API xapi value_writer_destroy(value_writer * restrict writer)
   finally : coda;
 }
 
-API xapi value_writer_open(value_writer * restrict writer, struct narrator * restrict N)
+xapi API value_writer_open(value_writer * restrict writer, struct narrator * restrict N)
 {
   enter;
 
@@ -235,7 +235,7 @@ API xapi value_writer_open(value_writer * restrict writer, struct narrator * res
   finally : coda;
 }
 
-API xapi value_writer_close(value_writer * restrict writer)
+xapi API value_writer_close(value_writer * restrict writer)
 {
   enter;
 
@@ -267,7 +267,7 @@ API xapi value_writer_close(value_writer * restrict writer)
 // primitives
 //
 
-API xapi value_writer_value(value_writer * const restrict writer, const value * restrict val)
+xapi API value_writer_value(value_writer * const restrict writer, const value * restrict val)
 {
   enter;
 
@@ -330,7 +330,7 @@ API xapi value_writer_value(value_writer * const restrict writer, const value * 
   finally : coda;
 }
 
-API xapi value_writer_uint(value_writer * const restrict writer, uint64_t u)
+xapi API value_writer_uint(value_writer * const restrict writer, uint64_t u)
 {
   enter;
 
@@ -340,7 +340,7 @@ API xapi value_writer_uint(value_writer * const restrict writer, uint64_t u)
   finally : coda;
 }
 
-API xapi value_writer_int(value_writer * const restrict writer, int64_t i)
+xapi API value_writer_int(value_writer * const restrict writer, int64_t i)
 {
   enter;
 
@@ -350,7 +350,7 @@ API xapi value_writer_int(value_writer * const restrict writer, int64_t i)
   finally : coda;
 }
 
-API xapi value_writer_bool(value_writer * const restrict writer, bool b)
+xapi API value_writer_bool(value_writer * const restrict writer, bool b)
 {
   enter;
 
@@ -360,7 +360,7 @@ API xapi value_writer_bool(value_writer * const restrict writer, bool b)
   finally : coda;
 }
 
-API xapi value_writer_float(value_writer * const restrict writer, double f)
+xapi API value_writer_float(value_writer * const restrict writer, double f)
 {
   enter;
 
@@ -370,7 +370,7 @@ API xapi value_writer_float(value_writer * const restrict writer, double f)
   finally : coda;
 }
 
-API xapi value_writer_bytes(value_writer * const restrict writer, const char * const restrict s, size_t len)
+xapi API value_writer_bytes(value_writer * const restrict writer, const char * const restrict s, size_t len)
 {
   enter;
 
@@ -380,7 +380,7 @@ API xapi value_writer_bytes(value_writer * const restrict writer, const char * c
   finally : coda;
 }
 
-API xapi value_writer_string(value_writer * restrict writer, const char * const restrict s)
+xapi API value_writer_string(value_writer * restrict writer, const char * const restrict s)
 {
   enter;
 
@@ -391,7 +391,7 @@ API xapi value_writer_string(value_writer * restrict writer, const char * const 
   finally : coda;
 }
 
-API xapi value_writer_char(value_writer * const restrict writer, char c)
+xapi API value_writer_char(value_writer * const restrict writer, char c)
 {
   enter;
 
@@ -400,7 +400,7 @@ API xapi value_writer_char(value_writer * const restrict writer, char c)
   finally : coda;
 }
 
-API xapi value_writer_variable(value_writer * const restrict writer, const char * const restrict name, size_t len)
+xapi API value_writer_variable(value_writer * const restrict writer, const char * const restrict name, size_t len)
 {
   enter;
 
@@ -415,7 +415,7 @@ API xapi value_writer_variable(value_writer * const restrict writer, const char 
 // set
 //
 
-API xapi value_writer_push_set(value_writer * restrict writer)
+xapi API value_writer_push_set(value_writer * restrict writer)
 {
   enter;
 
@@ -429,7 +429,7 @@ API xapi value_writer_push_set(value_writer * restrict writer)
   finally : coda;
 }
 
-API xapi value_writer_pop_set(value_writer * restrict writer)
+xapi API value_writer_pop_set(value_writer * restrict writer)
 {
   xproxy(pop, writer);
 }
@@ -438,7 +438,7 @@ API xapi value_writer_pop_set(value_writer * restrict writer)
 // list
 //
 
-API xapi value_writer_push_list(value_writer * restrict writer)
+xapi API value_writer_push_list(value_writer * restrict writer)
 {
   enter;
 
@@ -452,7 +452,7 @@ API xapi value_writer_push_list(value_writer * restrict writer)
   finally : coda;
 }
 
-API xapi value_writer_pop_list(value_writer * restrict writer)
+xapi API value_writer_pop_list(value_writer * restrict writer)
 {
   xproxy(pop, writer);
 }
@@ -461,7 +461,7 @@ API xapi value_writer_pop_list(value_writer * restrict writer)
 // mapping
 //
 
-API xapi value_writer_push_mapping(value_writer * const restrict writer)
+xapi API value_writer_push_mapping(value_writer * const restrict writer)
 {
   enter;
 
@@ -471,14 +471,14 @@ API xapi value_writer_push_mapping(value_writer * const restrict writer)
   finally : coda;
 }
 
-API xapi value_writer_pop_mapping(value_writer * const restrict writer)
+xapi API value_writer_pop_mapping(value_writer * const restrict writer)
 {
   enter;
 
   finally : coda;
 }
 
-API xapi value_writer_mapping_string_string(value_writer * const restrict writer, const char * const restrict k, const char * const restrict s)
+xapi API value_writer_mapping_string_string(value_writer * const restrict writer, const char * const restrict k, const char * const restrict s)
 {
   enter;
 
@@ -490,7 +490,7 @@ API xapi value_writer_mapping_string_string(value_writer * const restrict writer
   finally : coda;
 }
 
-API xapi value_writer_mapping_string_bytes(value_writer * const restrict writer, const char * const restrict k, const char * const restrict s, size_t len)
+xapi API value_writer_mapping_string_bytes(value_writer * const restrict writer, const char * const restrict k, const char * const restrict s, size_t len)
 {
   enter;
 
@@ -502,7 +502,7 @@ API xapi value_writer_mapping_string_bytes(value_writer * const restrict writer,
   finally : coda;
 }
 
-API xapi value_writer_mapping_string_uint(value_writer * const restrict writer, const char * const restrict k, uint64_t u)
+xapi API value_writer_mapping_string_uint(value_writer * const restrict writer, const char * const restrict k, uint64_t u)
 {
   enter;
 
@@ -514,7 +514,7 @@ API xapi value_writer_mapping_string_uint(value_writer * const restrict writer, 
   finally : coda;
 }
 
-API xapi value_writer_mapping_string_int(value_writer * const restrict writer, const char * const restrict k, int64_t i)
+xapi API value_writer_mapping_string_int(value_writer * const restrict writer, const char * const restrict k, int64_t i)
 {
   enter;
 
@@ -526,7 +526,7 @@ API xapi value_writer_mapping_string_int(value_writer * const restrict writer, c
   finally : coda;
 }
 
-API xapi value_writer_mapping_string_bool(value_writer * const restrict writer, const char * const restrict k, bool b)
+xapi API value_writer_mapping_string_bool(value_writer * const restrict writer, const char * const restrict k, bool b)
 {
   enter;
 
@@ -538,7 +538,7 @@ API xapi value_writer_mapping_string_bool(value_writer * const restrict writer, 
   finally : coda;
 }
 
-API xapi value_writer_mapping_string_float(value_writer * const restrict writer, const char * const restrict k, double f)
+xapi API value_writer_mapping_string_float(value_writer * const restrict writer, const char * const restrict k, double f)
 {
   enter;
 

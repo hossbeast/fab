@@ -21,7 +21,7 @@
 #include "valyria/load.h"
 #include "yyutil/load.h"
 
-#include "internal.h"
+#include "value.h"
 #include "load.internal.h"
 #include "logging.internal.h"
 #include "say.internal.h"
@@ -31,7 +31,7 @@ static int handles;
 
 #include <stdio.h>
 
-API xapi value_load()
+xapi API value_load()
 {
   enter;
 
@@ -52,7 +52,7 @@ API xapi value_load()
   finally : coda;
 }
 
-API xapi value_unload()
+xapi API value_unload()
 {
   enter;
 

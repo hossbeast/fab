@@ -47,8 +47,8 @@
 
 #include "macros.h"
 #include "zbuffer.h"
-#include "hash.h"
-#include "attrs.h"
+#include "common/hash.h"
+#include "common/attrs.h"
 
 static int walk_ids = 1;
 

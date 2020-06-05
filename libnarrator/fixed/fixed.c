@@ -73,11 +73,16 @@ size_t fixed_read(narrator_fixed * restrict n, void * dst, size_t count)
   return d;
 }
 
+void fixed_flush(narrator_fixed * restrict n)
+{
+  n->s[n->l] = 0;
+}
+
 //
 // api
 //
 
-API narrator * narrator_fixed_init(char fixed[NARRATOR_STATIC_SIZE], char * s, size_t a)
+narrator * API narrator_fixed_init(char fixed[NARRATOR_STATIC_SIZE], char * s, size_t a)
 {
   narrator * n = (void*)fixed;
   n->type = NARRATOR_FIXED;
@@ -88,17 +93,12 @@ API narrator * narrator_fixed_init(char fixed[NARRATOR_STATIC_SIZE], char * s, s
   return n;
 }
 
-API const char * narrator_fixed_buffer(narrator * const restrict n)
+const char * API narrator_fixed_buffer(narrator * const restrict n)
 {
   return n->fixed.s;
 }
 
-API size_t narrator_fixed_size(narrator * const restrict n)
+size_t API narrator_fixed_size(narrator * const restrict n)
 {
   return n->fixed.l;
-}
-
-void fixed_flush(narrator_fixed * restrict n)
-{
-  n->s[n->l] = 0;
 }

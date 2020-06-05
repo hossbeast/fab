@@ -37,7 +37,7 @@
 // api
 //
 
-API xapi narrator_xdestroy(narrator * restrict n)
+xapi API narrator_xdestroy(narrator * restrict n)
 {
     enter;
 
@@ -64,7 +64,7 @@ API xapi narrator_xdestroy(narrator * restrict n)
   finally : coda;
 }
 
-API xapi narrator_xfree(narrator * restrict n)
+xapi API narrator_xfree(narrator * restrict n)
 {
   enter;
 
@@ -77,7 +77,7 @@ API xapi narrator_xfree(narrator * restrict n)
   finally : coda;
 }
 
-API xapi narrator_ixfree(narrator ** const restrict n)
+xapi API narrator_ixfree(narrator ** const restrict n)
 {
   enter;
 
@@ -87,7 +87,7 @@ API xapi narrator_ixfree(narrator ** const restrict n)
   finally : coda;
 }
 
-API xapi narrator_xseek(narrator * const restrict n, off_t offset, int whence, off_t * restrict resp)
+xapi API narrator_xseek(narrator * const restrict n, off_t offset, int whence, off_t * restrict resp)
 {
   enter;
 
@@ -118,12 +118,12 @@ API xapi narrator_xseek(narrator * const restrict n, off_t offset, int whence, o
   finally : coda;
 }
 
-API xapi narrator_xreset(narrator * const restrict n)
+xapi API narrator_xreset(narrator * const restrict n)
 {
   xproxy(narrator_xseek, n, 0, SEEK_SET, 0);
 }
 
-API xapi narrator_xsayf(narrator * n, const char * const restrict fmt, ...)
+xapi API narrator_xsayf(narrator * n, const char * const restrict fmt, ...)
 {
   enter;
 
@@ -137,12 +137,12 @@ finally:
 coda;
 }
 
-API xapi narrator_xsayc(narrator * const restrict n, int c)
+xapi API narrator_xsayc(narrator * const restrict n, int c)
 {
   xproxy(narrator_xsayw, n, &c, 1);
 }
 
-API xapi narrator_xsayvf(narrator * const restrict n, const char * const restrict fmt, va_list va)
+xapi API narrator_xsayvf(narrator * const restrict n, const char * const restrict fmt, va_list va)
 {
   enter;
 
@@ -168,7 +168,7 @@ API xapi narrator_xsayvf(narrator * const restrict n, const char * const restric
   finally : coda;
 }
 
-API xapi narrator_xsayw(narrator * const restrict n, const void * const restrict b, size_t l)
+xapi API narrator_xsayw(narrator * const restrict n, const void * const restrict b, size_t l)
 {
   enter;
 
@@ -194,7 +194,7 @@ API xapi narrator_xsayw(narrator * const restrict n, const void * const restrict
   finally : coda;
 }
 
-API xapi narrator_xsays(narrator * const restrict n, const char * const restrict s)
+xapi API narrator_xsays(narrator * const restrict n, const char * const restrict s)
 {
   enter;
 
@@ -205,7 +205,7 @@ API xapi narrator_xsays(narrator * const restrict n, const char * const restrict
   finally : coda;
 }
 
-API xapi narrator_xread(narrator * restrict n, void * dst, size_t count, size_t * restrict r)
+xapi API narrator_xread(narrator * restrict n, void * dst, size_t count, size_t * restrict r)
 {
   enter;
 
@@ -232,7 +232,7 @@ API xapi narrator_xread(narrator * restrict n, void * dst, size_t count, size_t 
   finally : coda;
 }
 
-API xapi narrator_flush(narrator * restrict n)
+xapi API narrator_flush(narrator * restrict n)
 {
   enter;
 

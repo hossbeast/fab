@@ -28,7 +28,6 @@
 #include "yyutil/load.h"
 #include "xapi/calltree.h"
 
-#include "internal.h"
 #include "operations.internal.h"
 #include "graph.internal.h"
 #include "vertex.internal.h"

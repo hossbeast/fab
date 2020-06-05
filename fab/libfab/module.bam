@@ -21,19 +21,11 @@ use xapi/errtab     # this module contains errtabs
 
 # make common objects available for #inclusion and linking by files in this module
 import fab/include
-import common
-import common/hash
-import common/fmt
 
-import lib{xapi,xlinux,narrator,logger,lorien}
+import lib{common,xapi,xlinux,narrator,logger,lorien}
 
 # variants for the module
 variant xapi.pic.{debug,devel,final}
-
-rule libfab.?.so <- common/attrs/attrs.$?.o
-rule libfab.?.so <- common/parseint/parseint.$?.o
-rule libfab.?.so <- common/fmt/fmt.$?.o
-rule libfab.?.so <- common/hash/hash.$?.o
 
 # pull in object files in the module, except those under integ
 rule **~test/*.?.o -> libfab.$?.so

@@ -34,7 +34,7 @@
 #include "logging.h"
 
 #include "macros.h"
-#include "assure.h"
+#include "common/assure.h"
 
 struct g_args_t g_args;
 

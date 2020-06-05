@@ -30,7 +30,7 @@ static int handles;
 // api
 //
 
-API xapi narrator_load()
+xapi API narrator_load()
 {
   enter;
 
@@ -47,7 +47,7 @@ API xapi narrator_load()
   finally : coda;
 }
 
-API xapi narrator_unload()
+xapi API narrator_unload()
 {
   enter;
 

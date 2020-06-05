@@ -45,9 +45,9 @@
 #include "var.h"
 #include "stats.h"
 
-#include "attrs.h"
+#include "common/attrs.h"
 #include "zbuffer.h"
-#include "hash.h"
+#include "common/hash.h"
 
 static uint8_t node_fs_epoch;
 

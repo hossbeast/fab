@@ -22,7 +22,6 @@
 #include "xlinux/load.h"
 #include "yyutil/load.h"
 
-#include "internal.h"
 #include "load.internal.h"
 #include "logging.internal.h"
 
@@ -32,7 +31,7 @@
 
 static int handles;
 
-API xapi moria_load()
+xapi API moria_load()
 {
   enter;
 
@@ -51,7 +50,7 @@ API xapi moria_load()
   finally : coda;
 }
 
-API xapi moria_unload()
+xapi API moria_unload()
 {
   enter;
 

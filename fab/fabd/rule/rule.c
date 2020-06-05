@@ -45,7 +45,7 @@
 #include "MODULE.errtab.h"
 #include "stats.h"
 
-#include "attrs.h"
+#include "common/attrs.h"
 
 attrs16 * rule_direction_attrs = (attrs16[]){{
 #undef DEF

@@ -20,10 +20,6 @@
 
 #include "narrator.h"
 
-// other declarations
-#define API __attribute__((visibility("protected")))
-#define APIDATA
-
 // structure definitions
 #include "fd.internal.h"
 #include "fixed.internal.h"

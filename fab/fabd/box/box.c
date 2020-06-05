@@ -26,7 +26,7 @@
 
 #include "box.h"
 
-#include "hash.h"
+#include "common/hash.h"
 #include "macros.h"
 
 //

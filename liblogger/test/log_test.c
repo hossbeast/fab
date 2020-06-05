@@ -26,7 +26,7 @@
 #include "narrator/load.h"
 #include "narrator/growing.h"
 
-#include "internal.h"
+#include "logger.h"
 #include "stream.internal.h"
 #include "LOGGER.errtab.h"
 #include "category.internal.h"

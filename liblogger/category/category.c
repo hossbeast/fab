@@ -28,7 +28,7 @@
 #include "valyria/array.h"
 #include "valyria/map.h"
 
-#include "internal.h"
+#include "logger.h"
 #include "category.internal.h"
 #include "LOGGER.errtab.h"
 #include "log.internal.h"
@@ -129,6 +129,14 @@ static xapi select_category(list * restrict lists, dictionary * restrict index, 
   *state = 2;
 
   finally : coda;
+}
+
+static int category_rank_cmp(const void * _A, size_t Asz, const void * _B, size_t Bsz)
+{
+  const logger_category * A = _A;
+  const logger_category * B = _B;
+
+  return A->rank - B->rank;
 }
 
 //
@@ -272,11 +280,22 @@ finally:
 coda;
 }
 
+logger_category * category_byname(const char * const restrict name, size_t namel)
+{
+  namel = namel ?: strlen(name);
+  return map_get(activated_byname, name, namel);
+}
+
+logger_category * category_byid(uint64_t id)
+{
+  return map_get(activated_byid, MM(id));
+}
+
 //
 // api
 //
 
-API xapi categories_report_verbose()
+xapi API categories_report_verbose()
 {
   enter;
 
@@ -307,15 +326,7 @@ API xapi categories_report_verbose()
   finally : coda;
 }
 
-static int category_rank_cmp(const void * _A, size_t Asz, const void * _B, size_t Bsz)
-{
-  const logger_category * A = _A;
-  const logger_category * B = _B;
-
-  return A->rank - B->rank;
-}
-
-API xapi categories_activate()
+xapi API categories_activate()
 {
   enter;
 
@@ -434,7 +445,7 @@ finally:
 coda;
 }
 
-API xapi logger_categories_report()
+xapi API logger_categories_report()
 {
   enter;
 
@@ -464,7 +475,7 @@ API xapi logger_categories_report()
   finally : coda;
 }
 
-API xapi logger_category_register(logger_category * logs)
+xapi API logger_category_register(logger_category * logs)
 {
   enter;
 
@@ -483,15 +494,4 @@ API xapi logger_category_register(logger_category * logs)
 finally:
   fatal(list_xfree, tmp);
 coda;
-}
-
-API logger_category * category_byname(const char * const restrict name, size_t namel)
-{
-  namel = namel ?: strlen(name);
-  return map_get(activated_byname, name, namel);
-}
-
-API logger_category * category_byid(uint64_t id)
-{
-  return map_get(activated_byid, MM(id));
 }

@@ -30,7 +30,7 @@
 #include "logger.h"
 #include "logger/category.h"
 
-#include "internal.h"
+#include "value.h"
 #include "value.h"
 #include "assert.internal.h"
 #include "make.internal.h"
@@ -38,7 +38,7 @@
 #include "store.internal.h"
 
 #include "macros.h"
-#include "attrs.h"
+#include "common/attrs.h"
 
 typedef struct parser_test {
   XUNITTEST;

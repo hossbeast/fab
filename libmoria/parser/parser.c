@@ -25,7 +25,6 @@
 #define YYSTYPE GRAPH_YYSTYPE
 #define YYLTYPE yyu_location
 
-#include "internal.h"
 #include "parser.internal.h"
 #include "MORIA.errtab.h"
 #include "graph.tab.h"
@@ -43,7 +42,7 @@ static yyu_vtable vtable = {
   , yylex_destroy : graph_yylex_destroy
 };
 
-API xapi graph_parser_create(graph_parser ** const parser)
+xapi API graph_parser_create(graph_parser ** const parser)
 {
   enter;
 
@@ -78,7 +77,7 @@ API xapi graph_parser_create(graph_parser ** const parser)
   finally : coda;
 }
 
-API xapi graph_parser_xfree(graph_parser* const p)
+xapi API graph_parser_xfree(graph_parser* const p)
 {
   enter;
 
@@ -94,7 +93,7 @@ API xapi graph_parser_xfree(graph_parser* const p)
   finally : coda;
 }
 
-API xapi graph_parser_ixfree(graph_parser ** const p)
+xapi API graph_parser_ixfree(graph_parser ** const p)
 {
   enter;
 
@@ -109,12 +108,12 @@ static void free_value(void * value)
   free(*(char**)value);
 }
 
-API xapi graph_parser_graph_create(graph ** restrict g, uint32_t identity)
+xapi API graph_parser_graph_create(graph ** restrict g, uint32_t identity)
 {
   xproxy(graph_createx, g, identity, sizeof(void*), 0, free_value, 0);
 }
 
-API xapi graph_parser_parse(
+xapi API graph_parser_parse(
     graph_parser * restrict parser
   , graph * restrict g
   , char * const restrict text

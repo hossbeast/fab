@@ -25,7 +25,7 @@
 #include "narrator.h"
 #include "narrator/fixed.h"
 
-#include "internal.h"
+#include "logger.h"
 #include "stream.internal.h"
 #include "LOGGER.errtab.h"
 #include "arguments.internal.h"

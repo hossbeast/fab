@@ -51,8 +51,8 @@
 #include "stats.h"
 
 #include "macros.h"
-#include "attrs.h"
-#include "hash.h"
+#include "common/attrs.h"
+#include "common/hash.h"
 
 uint32_t node_invalidation_counter;
 

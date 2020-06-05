@@ -15,13 +15,13 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#include "internal.h"
+#include "logger.h"
 #include "config.internal.h"
 
 #include "types.h"
 #include "zbuffer.h"
 
-APIDATA int g_logger_default_stderr;
+int APIDATA g_logger_default_stderr;
 
 char logger_process_name[32];
 __thread char logger_thread_name[32];
@@ -32,32 +32,32 @@ __thread uint64_t logger_thread_categories;
 uint32_t logger_process_attrs;
 __thread uint32_t logger_thread_attrs;
 
-API void logger_set_process_name(const char * const restrict name)
+void API logger_set_process_name(const char * const restrict name)
 {
   znloads(logger_process_name, sizeof(logger_process_name), name);
 }
 
-API void logger_set_thread_name(const char * const restrict name)
+void API logger_set_thread_name(const char * const restrict name)
 {
   znloads(logger_thread_name, sizeof(logger_thread_name), name);
 }
 
-API void logger_set_process_categories(uint64_t ids)
+void API logger_set_process_categories(uint64_t ids)
 {
   logger_process_categories = ids;
 }
 
-API void logger_set_thread_categories(uint64_t ids)
+void API logger_set_thread_categories(uint64_t ids)
 {
   logger_thread_categories = ids;
 }
 
-API void logger_set_process_attrs(uint32_t attrs)
+void API logger_set_process_attrs(uint32_t attrs)
 {
   logger_process_attrs = attrs;
 }
 
-API void logger_set_thread_attrs(uint32_t attrs)
+void API logger_set_thread_attrs(uint32_t attrs)
 {
   logger_thread_attrs = attrs;
 }

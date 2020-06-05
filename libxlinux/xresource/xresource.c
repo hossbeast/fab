@@ -23,7 +23,7 @@
 #include "xresource.h"
 #include "errtab/KERNEL.errtab.h"
 
-API xapi xsetrlimit(int resource, const struct rlimit * restrict rlim)
+xapi API xsetrlimit(int resource, const struct rlimit * restrict rlim)
 {
   enter;
 

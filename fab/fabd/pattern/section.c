@@ -35,7 +35,7 @@
 #include "module.h"
 #include "path.h"
 
-#include "attrs.h"
+#include "common/attrs.h"
 
 //
 // internal

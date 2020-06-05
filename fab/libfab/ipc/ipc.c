@@ -23,10 +23,9 @@
 #include "xlinux/xunistd.h"
 #include "xlinux/xsignal.h"
 
-#include "internal.h"
 #include "ipc.internal.h"
 
-#include "fmt.h"
+#include "common/fmt.h"
 
 //
 // static
@@ -68,7 +67,7 @@ coda;
 // api
 //
 
-API xapi ipc_lock_obtain(pid_t * pgid, int * restrict fdp, char * const restrict fmt, ...)
+xapi API ipc_lock_obtain(pid_t * pgid, int * restrict fdp, char * const restrict fmt, ...)
 {
   enter;
 
@@ -112,7 +111,7 @@ finally:
 coda;
 }
 
-API xapi ipc_lock_update(char * const restrict fmt, ...)
+xapi API ipc_lock_update(char * const restrict fmt, ...)
 {
   enter;
 
@@ -129,7 +128,7 @@ finally:
 coda;
 }
 
-API xapi ipc_lock_release(char * const restrict fmt, ...)
+xapi API ipc_lock_release(char * const restrict fmt, ...)
 {
   enter;
 

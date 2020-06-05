@@ -34,7 +34,7 @@
 #include "path.h"
 
 #include "macros.h"
-#include "attrs.h"
+#include "common/attrs.h"
 
 //
 // static

@@ -32,23 +32,7 @@ variant xapi.{debug,devel,final} : [
 # make common objects available for #include and linking
 import fab/include
 import fab/asan
-import common
-import common/assure
-import common/parseint
-import common/attrs
-import common/hash
-import common/atomic
-import common/snarf
-import common/spinlock
-import common/grow
-import lib{xapi,xlinux,valyria,value,logger,narrator,fab,lorien,moria,yyutil,xunit}
-
-rule fabd.? <- common/attrs/attrs.$?.o
-rule fabd.? <- common/assure/assure.$?.o
-rule fabd.? <- common/hash/hash.$?.o
-rule fabd.? <- common/snarf/snarf.$?.o
-rule fabd.? <- common/fmt/fmt.$?.o
-rule fabd.? <- common/parseint/parseint.$?.o
+import lib{common,xapi,xlinux,valyria,value,logger,narrator,fab,lorien,moria,yyutil,xunit}
 
 variant xapi.{debug,devel} : [
   rule fabd.? <- asan/asan.$?.o
@@ -89,14 +73,6 @@ variant xapi.pic.devel : [
 
   # some test dependency code
   rule test/node_operations_test.?.o -> test/blob.?.so
-
-  # common
-  rule test/blob.?.so <- common/attrs/attrs.$?.o
-  rule test/blob.?.so <- common/assure/assure.$?.o
-  rule test/blob.?.so <- common/hash/hash.$?.o
-  rule test/blob.?.so <- common/snarf/snarf.$?.o
-  rule test/blob.?.so <- common/fmt/fmt.$?.o
-  rule test/blob.?.so <- common/parseint/parseint.$?.o
 
   #
   # here be hacks

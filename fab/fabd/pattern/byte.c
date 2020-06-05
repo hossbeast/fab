@@ -35,7 +35,7 @@
 
 #include "pattern_parser.h"
 
-#include "attrs.h"
+#include "common/attrs.h"
 
 //
 // static

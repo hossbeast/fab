@@ -21,7 +21,7 @@
 #include "xtime/xtime.h"
 #include "errtab/KERNEL.errtab.h"
 
-API xapi xlocaltime_r(const time_t * timep, struct tm * result)
+xapi API xlocaltime_r(const time_t * timep, struct tm * result)
 {
   enter;
 
@@ -31,7 +31,7 @@ API xapi xlocaltime_r(const time_t * timep, struct tm * result)
   finally : coda;
 }
 
-API xapi xclock_gettime(clockid_t clk_id, struct timespec * tp)
+xapi API xclock_gettime(clockid_t clk_id, struct timespec * tp)
 {
   enter;
 
@@ -41,7 +41,7 @@ API xapi xclock_gettime(clockid_t clk_id, struct timespec * tp)
 }
 
 
-API xapi xclock_nanosleep(clockid_t clock_id, int flags, const struct timespec *request, struct timespec *remain)
+xapi API xclock_nanosleep(clockid_t clock_id, int flags, const struct timespec *request, struct timespec *remain)
 {
   enter;
 
@@ -52,7 +52,7 @@ API xapi xclock_nanosleep(clockid_t clock_id, int flags, const struct timespec *
   finally : coda;
 }
 
-API xapi uxclock_nanosleep(int * r, clockid_t clock_id, int flags, const struct timespec *request, struct timespec *remain)
+xapi API uxclock_nanosleep(int * r, clockid_t clock_id, int flags, const struct timespec *request, struct timespec *remain)
 {
   enter;
 

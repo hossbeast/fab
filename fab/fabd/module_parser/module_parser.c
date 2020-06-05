@@ -47,7 +47,7 @@
 #include "selection.h"
 #include "shadow.h"
 
-#include "attrs.h"
+#include "common/attrs.h"
 
 static YYU_VTABLE(vtable, module, module);
 

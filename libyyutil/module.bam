@@ -20,21 +20,11 @@ use library/shared       # this module builds a library
 
 # make common objects available for #inclusion and linking by files in this module
 import fab/include
-import common
-import common/attrs
-import common/stresc
-import common/hash
-import common/parseint
+import libcommon
 import lib{xapi,xlinux,narrator,valyria,logger}
 
 # variants for the module
 variant xapi.pic.{debug,devel,final}
-
-## common objects
-rule libyyutil.?.so <- common/attrs/attrs.${?+pic}.o
-rule libyyutil.?.so <- common/stresc/stresc.${?+pic}.o
-rule libyyutil.?.so <- common/hash/hash.${?+pic}.o
-rule libyyutil.?.so <- common/parseint/parseint.${?+pic}.o
 
 # pull in object files in the module, except those under integ
 rule *~integ/**/*.?.o -> libyyutil.$?.so

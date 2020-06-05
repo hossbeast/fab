@@ -48,7 +48,7 @@
 #include "inotify_mask.h"
 #include "logging.h"
 
-#include "atomic.h"
+#include "common/atomic.h"
 #include "macros.h"
 
 uint16_t notify_thread_epoch;

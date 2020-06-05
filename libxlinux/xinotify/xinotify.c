@@ -21,7 +21,7 @@
 #include "xinotify.h"
 #include "errtab/KERNEL.errtab.h"
 
-API xapi xinotify_init(int * id, int flags)
+xapi API xinotify_init(int * id, int flags)
 {
   enter;
 
@@ -39,7 +39,7 @@ API xapi xinotify_init(int * id, int flags)
 // SUMMARY
 //  proxy for inotify_add_watch
 //
-API xapi xinotify_add_watch(int * wd, int id, const char *path, uint32_t mask)
+xapi API xinotify_add_watch(int * wd, int id, const char *path, uint32_t mask)
 {
   enter;
 

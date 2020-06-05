@@ -36,7 +36,7 @@
 #include "config.lex.h"
 #include "config.states.h"
 
-#include "attrs.h"
+#include "common/attrs.h"
 
 static YYU_VTABLE(vtable, config, config);
 

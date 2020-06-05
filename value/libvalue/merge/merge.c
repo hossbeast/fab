@@ -24,7 +24,7 @@
 #include "logger.h"
 #include "narrator.h"
 
-#include "internal.h"
+#include "value.h"
 #include "merge.internal.h"
 #include "VALUE.errtab.h"
 #include "parser.h"
@@ -33,9 +33,9 @@
 #include "value.h"
 
 #include "zbuffer.h"
-#include "attrs.h"
+#include "common/attrs.h"
 
-API xapi value_merge(value_parser * restrict parser, value ** restrict dstp, const value * restrict src, uint16_t attrs)
+xapi API value_merge(value_parser * restrict parser, value ** restrict dstp, const value * restrict src, uint16_t attrs)
 {
   enter;
 

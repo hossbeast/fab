@@ -117,7 +117,7 @@ void calltree_teardown()
 // api
 //
 
-API void xapi_calltree_unwind()
+void API xapi_calltree_unwind()
 {
   g_calltree = 0;
 #if DEVEL
@@ -132,7 +132,7 @@ API void xapi_calltree_unwind()
 #endif
 }
 
-API memblk * xapi_calltree_freeze()
+memblk * API xapi_calltree_freeze()
 {
   memblk * const mb = &mm_mb;
 
@@ -142,19 +142,19 @@ API memblk * xapi_calltree_freeze()
   return mb;
 }
 
-API void xapi_calltree_unfreeze()
+void API xapi_calltree_unfreeze()
 {
   memblk * const mb = &mm_mb;
 
   calltree_unfreeze(mb, g_calltree);
 }
 
-API calltree * xapi_calltree_thaw(void * mb)
+calltree * API xapi_calltree_thaw(void * mb)
 {
   return calltree_thaw(g_calltree = mb);
 }
 
-API calltree * xapi_calltree_export(void * dst, size_t sz)
+calltree * API xapi_calltree_export(void * dst, size_t sz)
 {
   if(memblk_size(&mm_mb) > sz)
     return 0;
@@ -166,17 +166,17 @@ API calltree * xapi_calltree_export(void * dst, size_t sz)
   return calltree_thaw(dst);
 }
 
-API xapi_code xapi_calltree_errcode()
+xapi_code API xapi_calltree_errcode()
 {
   return xapi_exit_errcode(g_calltree->exit);
 }
 
-API xapi xapi_calltree_errval()
+xapi API xapi_calltree_errval()
 {
   return g_calltree->exit;
 }
 
-API const errtab * xapi_calltree_errtab()
+const errtab * API xapi_calltree_errtab()
 {
   return xapi_exit_errtab(g_calltree->exit);
 }

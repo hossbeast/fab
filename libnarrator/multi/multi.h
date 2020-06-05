@@ -51,7 +51,7 @@ xapi narrator_multi_create(narrator ** const restrict n)
 //  n  - multi narrator
 //  np - narrator to add to the multi narrator
 //
-API xapi narrator_multi_add(narrator * const restrict n, narrator * const restrict np)
+xapi narrator_multi_add(narrator * const restrict n, narrator * const restrict np)
   __attribute__((nonnull));
 
 #endif

@@ -77,7 +77,7 @@ static int xnftw_nth_callback(const char *fpath, const struct stat *sb, int type
 // api
 //
 
-API xapi xnftw(
+xapi API xnftw(
     const char * restrict dirpath
   , xapi (* xfn)(const char *fpath, const struct stat *sb, int typeflag, struct FTW *ftwbuf, void * arg)
   , int nopenfd
@@ -101,7 +101,7 @@ finally:
 coda;
 }
 
-API xapi xnftw_nth(
+xapi API xnftw_nth(
     const char * restrict dirpath
   , xapi (* xfn)(const char *fpath, const struct stat *sb, int typeflag, struct FTW *ftwbuf, void * arg)
   , int nopenfd

@@ -24,7 +24,6 @@
 #include "xlinux/xstdlib.h"
 #include "valyria/list.h"
 
-#include "internal.h"
 #include "vertex.internal.h"
 #include "attr.internal.h"
 #include "edge.internal.h"
@@ -84,7 +83,11 @@ xapi vertex_ixfree(vertex ** const restrict v)
   finally : coda;
 }
 
-API xapi vertex_delete(vertex_t * restrict v, graph * restrict g)
+//
+// api
+//
+
+xapi API vertex_delete(vertex_t * restrict v, graph * restrict g)
 {
   enter;
 
@@ -108,11 +111,7 @@ RUNTIME_ASSERT(v->up_identity == NULL);
   finally : coda;
 }
 
-//
-// api
-//
-
-API xapi vertex_create(vertex ** const restrict rv, graph * const restrict g, uint32_t attrs)
+xapi API vertex_create(vertex ** const restrict rv, graph * const restrict g, uint32_t attrs)
 {
   enter;
 
@@ -141,7 +140,7 @@ API xapi vertex_create(vertex ** const restrict rv, graph * const restrict g, ui
   finally : coda;
 }
 
-API xapi vertex_createw(vertex ** const restrict rv, graph * const restrict g, uint32_t attrs, const char * const restrict label, uint16_t label_len)
+xapi API vertex_createw(vertex ** const restrict rv, graph * const restrict g, uint32_t attrs, const char * const restrict label, uint16_t label_len)
 {
   enter;
 
@@ -156,7 +155,7 @@ API xapi vertex_createw(vertex ** const restrict rv, graph * const restrict g, u
   finally : coda;
 }
 
-API xapi vertex_creates(vertex ** const restrict rv, graph * const restrict g, uint32_t attrs, const char * const restrict label)
+xapi API vertex_creates(vertex ** const restrict rv, graph * const restrict g, uint32_t attrs, const char * const restrict label)
 {
   enter;
 
@@ -165,13 +164,13 @@ API xapi vertex_creates(vertex ** const restrict rv, graph * const restrict g, u
   finally : coda;
 }
 
-API void vertex_value_set(vertex * const restrict vx, graph * restrict g, void * value)
+void API vertex_value_set(vertex * const restrict vx, graph * restrict g, void * value)
 {
   vertex_t * v = containerof(vx, vertex_t, vx);
   memcpy(v->value, value, g->vsz);
 }
 
-API void * vertex_value(const vertex * const restrict vx)
+void * API vertex_value(const vertex * const restrict vx)
 {
   if(!vx)
     return 0;
@@ -181,7 +180,7 @@ API void * vertex_value(const vertex * const restrict vx)
   return (void*)v->value;
 }
 
-API vertex * vertex_containerof(const void * value)
+vertex * API vertex_containerof(const void * value)
 {
   if(!value)
     return 0;
@@ -189,7 +188,7 @@ API vertex * vertex_containerof(const void * value)
   return (vertex*)(value - offsetof(vertex_t, value));
 }
 
-API vertex * vertex_downs(const vertex * restrict vx, const char * restrict label)
+vertex * API vertex_downs(const vertex * restrict vx, const char * restrict label)
 {
   const vertex_t * v;
   edge * e;
@@ -201,7 +200,7 @@ API vertex * vertex_downs(const vertex * restrict vx, const char * restrict labe
   return 0;
 }
 
-API vertex * vertex_downw(const vertex * restrict vx, const char * restrict label, uint16_t label_len)
+vertex * API vertex_downw(const vertex * restrict vx, const char * restrict label, uint16_t label_len)
 {
   const vertex_t * v;
   edge * e;
@@ -213,7 +212,7 @@ API vertex * vertex_downw(const vertex * restrict vx, const char * restrict labe
   return 0;
 }
 
-API edge * vertex_edge_downs(const vertex * restrict vx, const char * restrict label)
+edge * API vertex_edge_downs(const vertex * restrict vx, const char * restrict label)
 {
   const vertex_t * v;
   edge * e;
@@ -225,7 +224,7 @@ API edge * vertex_edge_downs(const vertex * restrict vx, const char * restrict l
   return 0;
 }
 
-API edge * vertex_edge_downw(const vertex * restrict vx, const char * restrict label, uint16_t label_len)
+edge * API vertex_edge_downw(const vertex * restrict vx, const char * restrict label, uint16_t label_len)
 {
   const vertex_t * v = containerof(vx, vertex_t, vx);
 
@@ -236,7 +235,7 @@ API edge * vertex_edge_downw(const vertex * restrict vx, const char * restrict l
   return 0;
 }
 
-API vertex * vertex_up(const vertex * restrict vx)
+vertex * API vertex_up(const vertex * restrict vx)
 {
   const vertex_t * v = containerof(vx, vertex_t, vx);
 
@@ -246,7 +245,7 @@ API vertex * vertex_up(const vertex * restrict vx)
   return 0;
 }
 
-API edge * vertex_edge_up(const vertex * restrict vx)
+edge * API vertex_edge_up(const vertex * restrict vx)
 {
   const vertex_t * v = containerof(vx, vertex_t, vx);
 

@@ -27,8 +27,8 @@
 #include "test_util.h"
 
 #include "macros.h"
-#include "assure.h"
-#include "hash.h"
+#include "common/assure.h"
+#include "common/hash.h"
 
 static xapi validate_elements(set * restrict s, char ** restrict elements)
 {

@@ -19,7 +19,6 @@
 
 #include "xlinux/xstdlib.h"
 
-#include "internal.h"
 #include "dictionary.internal.h"
 
 #include "macros.h"
@@ -113,7 +112,7 @@ static ht_operations ht_ops = {
 // api
 //
 
-API xapi dictionary_createx(
+xapi API dictionary_createx(
     dictionary ** restrict dictx
   , size_t vsz
   , size_t capacity
@@ -152,12 +151,12 @@ finally:
 coda;
 }
 
-API xapi dictionary_create(dictionary ** restrict d, size_t vsz)
+xapi API dictionary_create(dictionary ** restrict d, size_t vsz)
 {
   xproxy(dictionary_createx, d, vsz, 0, 0, 0);
 }
 
-API xapi dictionary_put(dictionary * restrict dx, const void * restrict k, uint16_t kl, void * v)
+xapi API dictionary_put(dictionary * restrict dx, const void * restrict k, uint16_t kl, void * v)
 {
   enter;
 
@@ -180,7 +179,7 @@ API xapi dictionary_put(dictionary * restrict dx, const void * restrict k, uint1
   finally : coda;
 }
 
-API xapi dictionary_store(dictionary * restrict dx, const void * restrict k, uint16_t kl, void * v)
+xapi API dictionary_store(dictionary * restrict dx, const void * restrict k, uint16_t kl, void * v)
 {
   enter;
 
@@ -203,7 +202,7 @@ API xapi dictionary_store(dictionary * restrict dx, const void * restrict k, uin
   finally : coda;
 }
 
-API void * dictionary_get(dictionary* restrict dx, const void * restrict k, uint16_t kl)
+void * API dictionary_get(dictionary* restrict dx, const void * restrict k, uint16_t kl)
 {
   dictionary_t * d = containerof(dx, dictionary_t, dx);
   entry * ent;
@@ -215,7 +214,7 @@ API void * dictionary_get(dictionary* restrict dx, const void * restrict k, uint
   return 0;
 }
 
-API xapi dictionary_recycle(dictionary* restrict dx)
+xapi API dictionary_recycle(dictionary* restrict dx)
 {
   enter;
 
@@ -225,7 +224,7 @@ API xapi dictionary_recycle(dictionary* restrict dx)
   finally : coda;
 }
 
-API xapi dictionary_replicate(dictionary* restrict dstx, dictionary * restrict srcx)
+xapi API dictionary_replicate(dictionary* restrict dstx, dictionary * restrict srcx)
 {
   enter;
 
@@ -237,7 +236,7 @@ API xapi dictionary_replicate(dictionary* restrict dstx, dictionary * restrict s
   finally : coda;
 }
 
-API xapi dictionary_splice(dictionary * restrict dstx, dictionary * restrict srcx)
+xapi API dictionary_splice(dictionary * restrict dstx, dictionary * restrict srcx)
 {
   enter;
 
@@ -249,7 +248,7 @@ API xapi dictionary_splice(dictionary * restrict dstx, dictionary * restrict src
   finally : coda;
 }
 
-API xapi dictionary_delete(dictionary * restrict dx, const void * restrict k, uint16_t kl)
+xapi API dictionary_delete(dictionary * restrict dx, const void * restrict k, uint16_t kl)
 {
   enter;
 
@@ -261,7 +260,7 @@ API xapi dictionary_delete(dictionary * restrict dx, const void * restrict k, ui
   finally : coda;
 }
 
-API xapi dictionary_keys(const dictionary * restrict dx, void * restrict _keys, uint16_t * restrict keysl)
+xapi API dictionary_keys(const dictionary * restrict dx, void * restrict _keys, uint16_t * restrict keysl)
 {
   enter;
 
@@ -286,7 +285,7 @@ API xapi dictionary_keys(const dictionary * restrict dx, void * restrict _keys, 
   finally : coda;
 }
 
-API xapi dictionary_values(const dictionary* restrict dx, void * restrict _values, size_t * restrict valuesl)
+xapi API dictionary_values(const dictionary* restrict dx, void * restrict _values, size_t * restrict valuesl)
 {
   enter;
 
@@ -311,7 +310,7 @@ API xapi dictionary_values(const dictionary* restrict dx, void * restrict _value
   finally : coda;
 }
 
-API xapi dictionary_xfree(dictionary* restrict dx)
+xapi API dictionary_xfree(dictionary* restrict dx)
 {
   enter;
 
@@ -325,7 +324,7 @@ API xapi dictionary_xfree(dictionary* restrict dx)
   finally : coda;
 }
 
-API xapi dictionary_ixfree(dictionary** restrict d)
+xapi API dictionary_ixfree(dictionary** restrict d)
 {
   enter;
 
@@ -335,7 +334,7 @@ API xapi dictionary_ixfree(dictionary** restrict d)
   finally : coda;
 }
 
-API const void * dictionary_table_key(const dictionary * restrict dx, size_t x)
+const void * API dictionary_table_key(const dictionary * restrict dx, size_t x)
 {
   dictionary_t * d = containerof(dx, dictionary_t, dx);
   entry * ent;
@@ -345,7 +344,7 @@ API const void * dictionary_table_key(const dictionary * restrict dx, size_t x)
   return 0;
 }
 
-API void * dictionary_table_value(const dictionary * restrict dx, size_t x)
+void * API dictionary_table_value(const dictionary * restrict dx, size_t x)
 {
   dictionary_t * d = containerof(dx, dictionary_t, dx);
   entry * ent;

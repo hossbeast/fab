@@ -34,7 +34,7 @@
 #include "params.h"
 #include "path.h"
 
-#include "attrs.h"
+#include "common/attrs.h"
 
 graph * g_graph;
 

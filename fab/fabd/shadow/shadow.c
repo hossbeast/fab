@@ -36,7 +36,7 @@
 #include "stats.h"
 
 #include "zbuffer.h"
-#include "attrs.h"
+#include "common/attrs.h"
 
 uint8_t node_shadow_epoch;
 

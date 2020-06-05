@@ -45,9 +45,9 @@
 #include "params.h"
 #include "sysvar.h"
 
-#include "snarf.h"
-#include "assure.h"
-#include "grow.h"
+#include "common/snarf.h"
+#include "common/assure.h"
+#include "common/grow.h"
 
 //
 // internal

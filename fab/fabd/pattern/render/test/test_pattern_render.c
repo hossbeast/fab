@@ -36,7 +36,7 @@
 #include "pattern.h"
 #include "logging.h"
 
-#include "hash.h"
+#include "common/hash.h"
 
 #define TYPE_LOOKUP     0
 #define TYPE_REFERENCE  1

@@ -19,7 +19,6 @@
 
 #include "xlinux/load.h"
 
-#include "internal.h"
 #include "load.internal.h"
 
 //
@@ -28,7 +27,7 @@
 
 static int handles;
 
-API xapi valyria_load()
+xapi API valyria_load()
 {
   enter;
 
@@ -40,7 +39,7 @@ API xapi valyria_load()
   finally : coda;
 }
 
-API xapi valyria_unload()
+xapi API valyria_unload()
 {
   enter;
 

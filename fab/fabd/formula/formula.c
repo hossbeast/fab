@@ -44,12 +44,12 @@
 #include "variant.h"
 #include "node.h"
 
-#include "snarf.h"
+#include "common/snarf.h"
 #include "macros.h"
-#include "attrs.h"
-#include "assure.h"
+#include "common/attrs.h"
+#include "common/assure.h"
 #include "zbuffer.h"
-#include "hash.h"
+#include "common/hash.h"
 
 static xapi formula_create(formula ** restrict rv)
 {

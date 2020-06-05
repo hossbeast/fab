@@ -67,9 +67,9 @@
 #include "pattern.h"
 #include "node_operations.h"
 
-#include "attrs.h"
+#include "common/attrs.h"
 #include "macros.h"
-#include "atomic.h"
+#include "common/atomic.h"
 
 bool g_server_autorun;
 

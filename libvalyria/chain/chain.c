@@ -16,12 +16,11 @@
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
 #include "chain.h"
-#include "internal.h"
 
 #define chain_foreach_node(node, T, head) \
   for(node = (head), T = NULL; T == NULL || node != (head); T = node, node = node->next)
 
-API chain * chain_init_node(chain * head)
+chain * API chain_init_node(chain * head)
 {
   head->next = head;
   head->prev = head;
@@ -29,7 +28,7 @@ API chain * chain_init_node(chain * head)
   return head;
 }
 
-API chain * chain_add_tail_node(chain * head, chain * node)
+chain * API chain_add_tail_node(chain * head, chain * node)
 {
   node->prev = head;
   node->next = head->next;
@@ -39,7 +38,7 @@ API chain * chain_add_tail_node(chain * head, chain * node)
   return head;
 }
 
-API chain * chain_add_head_node(chain * head, chain * node)
+chain * API chain_add_head_node(chain * head, chain * node)
 {
   node->prev = head->prev;
   node->next = head;
@@ -49,7 +48,7 @@ API chain * chain_add_head_node(chain * head, chain * node)
   return head;
 }
 
-API size_t chain_count_node(const chain * head)
+size_t API chain_count_node(const chain * head)
 {
   size_t size = 0;
   const chain *node, *T;
@@ -61,7 +60,7 @@ API size_t chain_count_node(const chain * head)
   return size;
 }
 
-API chain * chain_splice_tail_node(chain * dst_head, chain * src_head)
+chain * API chain_splice_tail_node(chain * dst_head, chain * src_head)
 {
 // src : D E F
 // dst : A B C
@@ -76,7 +75,7 @@ API chain * chain_splice_tail_node(chain * dst_head, chain * src_head)
   return dst_head;
 }
 
-API chain * chain_next_node(const chain * head, const chain * cursor[1])
+chain * API chain_next_node(const chain * head, const chain * cursor[1])
 {
   if(cursor[0] == NULL) {
     cursor[0] = head->next;
@@ -91,7 +90,7 @@ API chain * chain_next_node(const chain * head, const chain * cursor[1])
   return (chain*)T;
 }
 
-API bool chain_has_next_node(const chain * head, const chain cursor[1])
+bool API chain_has_next_node(const chain * head, const chain cursor[1])
 {
   if(cursor == NULL)
     return true;
@@ -99,7 +98,7 @@ API bool chain_has_next_node(const chain * head, const chain cursor[1])
   return cursor != head;
 }
 
-API chain * chain_next_safe_node(const chain * head, const chain * cursor[2])
+chain * API chain_next_safe_node(const chain * head, const chain * cursor[2])
 {
   if(cursor[0] == NULL) {
     cursor[0] = head->next;

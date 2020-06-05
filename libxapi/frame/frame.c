@@ -35,14 +35,14 @@
 #include <stdio.h>
 
 __thread         struct frame_addresses g_frame_addresses;
-__thread APIDATA void * xapi_calling_frame_address;
-__thread APIDATA void * xapi_caller_frame_address;
-__thread APIDATA xapi xapi_stack_raised_exit;
+__thread void * APIDATA xapi_calling_frame_address;
+__thread void * APIDATA xapi_caller_frame_address;
+__thread xapi APIDATA xapi_stack_raised_exit;
 #endif
 
 // per-thread sentinels
-__thread APIDATA int xapi_sentinel;
-__thread APIDATA xapi_frame_index xapi_top_frame_index = -1;
+__thread int APIDATA xapi_sentinel;
+__thread xapi_frame_index APIDATA xapi_top_frame_index = -1;
 
 //
 // static
@@ -165,7 +165,7 @@ void frame_thaw(void * restrict mb, frame * restrict f)
 //
 
 #if XAPI_RUNTIME_CHECKS
-API void xapi_record_frame(void * calling_frame)
+void API xapi_record_frame(void * calling_frame)
 {
   void * dst = &g_frame_addresses.v;
   size_t * dsta = &g_frame_addresses.a;
@@ -185,7 +185,7 @@ API void xapi_record_frame(void * calling_frame)
 }
 #endif
 
-API xapi xapi_frame_leave(int topframe)
+xapi API xapi_frame_leave(int topframe)
 {
 #if XAPI_RUNTIME_CHECKS
   if(g_frame_addresses.l)   // pop the frame
@@ -216,17 +216,17 @@ API xapi xapi_frame_leave(int topframe)
   return exit;
 }
 
-API int xapi_unwinding()
+int API xapi_unwinding()
 {
   return !!g_calltree;
 }
 
-API xapi xapi_frame_errval(xapi_frame_index index)
+xapi API xapi_frame_errval(xapi_frame_index index)
 {
   return g_calltree->frames.v[index].exit;
 }
 
-API void xapi_frame_set(
+void API xapi_frame_set(
     const xapi exit
   , const xapi_frame_index parent_index
   , const char * const file
@@ -237,7 +237,7 @@ API void xapi_frame_set(
   frame_set(exit, parent_index, file, line, func);
 }
 
-API void xapi_frame_set_infos(
+void API xapi_frame_set_infos(
     const xapi exit
   , const xapi_frame_index parent_index
   , const char * const restrict key
@@ -251,7 +251,7 @@ API void xapi_frame_set_infos(
   xapi_frame_info_pushs(key, vstr);
 }
 
-API void xapi_frame_set_infow(
+void API xapi_frame_set_infow(
     const xapi exit
   , const xapi_frame_index parent_index
   , const char * const restrict key
@@ -266,7 +266,7 @@ API void xapi_frame_set_infow(
   xapi_frame_info_pushw(key, vbuf, vlen);
 }
 
-API void xapi_frame_set_infof(
+void API xapi_frame_set_infof(
     const xapi exit
   , const xapi_frame_index parent_index
   , const char * const restrict key
@@ -285,7 +285,7 @@ API void xapi_frame_set_infof(
   va_end(va);
 }
 
-API void xapi_frame_info_pushw(const char * restrict key, const char * restrict vbuf, size_t vlen)
+void API xapi_frame_info_pushw(const char * restrict key, const char * restrict vbuf, size_t vlen)
 {
   if(g_calltree && key)
   {
@@ -303,12 +303,12 @@ API void xapi_frame_info_pushw(const char * restrict key, const char * restrict 
   }
 }
 
-API void xapi_frame_info_pushs(const char * restrict key, const char * restrict vstr)
+void API xapi_frame_info_pushs(const char * restrict key, const char * restrict vstr)
 {
   xapi_frame_info_pushw(key, vstr, strlen(vstr));
 }
 
-API void xapi_frame_info_pushvf(const char * restrict key, const char * restrict vfmt, va_list va)
+void API xapi_frame_info_pushvf(const char * restrict key, const char * restrict vfmt, va_list va)
 {
   if(g_calltree && key)
   {
@@ -326,7 +326,7 @@ API void xapi_frame_info_pushvf(const char * restrict key, const char * restrict
   }
 }
 
-API void xapi_frame_info_pushf(const char * restrict key, const char * restrict vfmt, ...)
+void API xapi_frame_info_pushf(const char * restrict key, const char * restrict vfmt, ...)
 {
   va_list va;
   va_start(va, vfmt);

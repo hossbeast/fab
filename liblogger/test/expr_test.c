@@ -24,7 +24,7 @@
 #include "xapi/calltree.h"
 #include "valyria/list.h"
 
-#include "internal.h"
+#include "logger.h"
 #include "expr.internal.h"
 #include "LOGGER.errtab.h"
 #include "filter.internal.h"

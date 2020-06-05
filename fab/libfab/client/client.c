@@ -47,7 +47,6 @@
 #include "logger/arguments.h"
 #include "fab/ipc.h"
 
-#include "internal.h"
 #include "client.internal.h"
 #include "errtab/FAB.errtab.h"
 #include "logging.internal.h"
@@ -55,7 +54,7 @@
 
 #include "sigutil.h"
 #include "macros.h"
-#include "hash.h"
+#include "common/hash.h"
 
 struct fab_client
 {
@@ -138,7 +137,7 @@ coda;
 // public
 //
 
-API xapi fab_client_create(fab_client ** restrict client, const char * restrict projdir, const char * restrict ipcdir_base, const char * restrict fabw_path)
+xapi API fab_client_create(fab_client ** restrict client, const char * restrict projdir, const char * restrict ipcdir_base, const char * restrict fabw_path)
 {
   enter;
 
@@ -166,7 +165,7 @@ API xapi fab_client_create(fab_client ** restrict client, const char * restrict 
   finally : coda;
 }
 
-API xapi fab_client_xfree(fab_client * restrict client)
+xapi API fab_client_xfree(fab_client * restrict client)
 {
   enter;
 
@@ -181,7 +180,7 @@ API xapi fab_client_xfree(fab_client * restrict client)
   finally : coda;
 }
 
-API xapi fab_client_ixfree(fab_client ** restrict client)
+xapi API fab_client_ixfree(fab_client ** restrict client)
 {
   enter;
 
@@ -191,7 +190,7 @@ API xapi fab_client_ixfree(fab_client ** restrict client)
   finally : coda;
 }
 
-API xapi fab_client_prepare(fab_client * restrict client)
+xapi API fab_client_prepare(fab_client * restrict client)
 {
   enter;
 
@@ -250,7 +249,7 @@ finally:
 coda;
 }
 
-API xapi fab_client_terminatep(fab_client * restrict client)
+xapi API fab_client_terminatep(fab_client * restrict client)
 {
   enter;
 
@@ -264,7 +263,7 @@ API xapi fab_client_terminatep(fab_client * restrict client)
   finally : coda;
 }
 
-API xapi fab_client_launchp(fab_client * restrict client)
+xapi API fab_client_launchp(fab_client * restrict client)
 {
   enter;
 
@@ -357,7 +356,7 @@ finally:
 coda;
 }
 
-API xapi fab_client_prepare_request_shm(fab_client * restrict client, void ** restrict request_shm)
+xapi API fab_client_prepare_request_shm(fab_client * restrict client, void ** restrict request_shm)
 {
   enter;
 
@@ -389,7 +388,7 @@ finally:
 coda;
 }
 
-API xapi fab_client_make_request(fab_client * restrict client, void * request_shm, void ** restrict response_shm)
+xapi API fab_client_make_request(fab_client * restrict client, void * request_shm, void ** restrict response_shm)
 {
   enter;
 
@@ -435,7 +434,7 @@ finally:
 coda;
 }
 
-API xapi fab_client_release_response(fab_client * restrict client, void * restrict response_shm)
+xapi API fab_client_release_response(fab_client * restrict client, void * restrict response_shm)
 {
   enter;
 
@@ -445,12 +444,12 @@ API xapi fab_client_release_response(fab_client * restrict client, void * restri
   finally : coda;
 }
 
-API char * fab_client_gethash(fab_client * restrict client)
+char * API fab_client_gethash(fab_client * restrict client)
 {
   return client->hash;
 }
 
-API xapi fab_client_unlock(fab_client * restrict client)
+xapi API fab_client_unlock(fab_client * restrict client)
 {
   enter;
 

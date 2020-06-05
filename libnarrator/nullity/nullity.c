@@ -23,7 +23,7 @@
 #include "internal.h"
 #include "nullity.internal.h"
 
-APIDATA narrator * g_narrator_nullity = 0;
+narrator * APIDATA g_narrator_nullity = 0;
 
 //
 // public
@@ -67,11 +67,16 @@ int nullity_read(narrator_nullity * restrict n, void * dst, size_t count)
   return 0;
 }
 
+void nullity_flush(narrator_nullity * restrict n)
+{
+
+}
+
 //
 // api
 //
 
-API xapi narrator_nullity_create(narrator ** const restrict rv)
+xapi API narrator_nullity_create(narrator ** const restrict rv)
 {
   enter;
 
@@ -79,9 +84,4 @@ API xapi narrator_nullity_create(narrator ** const restrict rv)
   (*rv)->type = NARRATOR_NULLITY;
 
   finally : coda;
-}
-
-void nullity_flush(narrator_nullity * restrict n)
-{
-
 }

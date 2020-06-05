@@ -20,7 +20,6 @@
 #include "xlinux/load.h"
 #include "logger/load.h"
 
-#include "internal.h"
 #include "load.internal.h"
 #include "logging.internal.h"
 
@@ -30,7 +29,7 @@
 
 static int handles;
 
-API xapi yyutil_load()
+xapi API yyutil_load()
 {
   enter;
 
@@ -47,7 +46,7 @@ API xapi yyutil_load()
   finally : coda;
 }
 
-API xapi yyutil_unload()
+xapi API yyutil_unload()
 {
   enter;
 

@@ -25,7 +25,7 @@
 #include "errtab/KERNEL.errtab.h"
 #include "xstdlib.h"
 
-API xapi ixstrncat(char ** s1, const char * s2, int s2len)
+xapi API ixstrncat(char ** s1, const char * s2, int s2len)
 {
   enter;
 
@@ -44,7 +44,7 @@ API xapi ixstrncat(char ** s1, const char * s2, int s2len)
   finally : coda;
 }
 
-API xapi ixstrcat(char ** s1, const char * s2)
+xapi API ixstrcat(char ** s1, const char * s2)
 {
   enter;
 
@@ -66,7 +66,7 @@ API xapi ixstrcat(char ** s1, const char * s2)
   finally : coda;
 }
 
-API xapi ixstrcatf(char ** s, char * fmt, ...)
+xapi API ixstrcatf(char ** s, char * fmt, ...)
 {
   enter;
 
@@ -92,12 +92,12 @@ API xapi ixstrcatf(char ** s, char * fmt, ...)
   finally : coda;
 }
 
-API xapi ixstrdup(char ** s1, const char * s2)
+xapi API ixstrdup(char ** s1, const char * s2)
 {
   xproxy(ixstrndup, s1, s2, strlen(s2));
 }
 
-API xapi ixstrndup(char ** s1, const char * s2, const size_t l)
+xapi API ixstrndup(char ** s1, const char * s2, const size_t l)
 {
   enter;
 
@@ -121,7 +121,7 @@ API xapi ixstrndup(char ** s1, const char * s2, const size_t l)
   finally : coda;
 }
 
-API xapi ixsprintf(char ** s, char * fmt, ...)
+xapi API ixsprintf(char ** s, char * fmt, ...)
 {
   enter;
 

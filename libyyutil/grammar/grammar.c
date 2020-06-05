@@ -23,10 +23,9 @@
 #include "parser.internal.h"
 #include "scanner.internal.h"
 
-#include "internal.h"
 #include "grammar.internal.h"
 
-#include "stresc.h"
+#include "common/stresc.h"
 #include "zbuffer.h"
 #include "macros.h"
 
@@ -35,7 +34,7 @@
 //
 
 
-API void yyu_aggregate_location(yyu_location * loc, yyu_location * A, yyu_location * B)
+void API yyu_aggregate_location(yyu_location * loc, yyu_location * A, yyu_location * B)
 {
   if(A)
   {
@@ -53,18 +52,17 @@ API void yyu_aggregate_location(yyu_location * loc, yyu_location * A, yyu_locati
   }
 }
 
-API void yyu_loc_initialize(struct yyu_parser * parser, struct yyu_location * lloc)
+void API yyu_loc_initialize(struct yyu_parser * parser, struct yyu_location * lloc)
 {
   memset(lloc, 0, sizeof(*lloc));
 }
 
-API void yyu_loc_final(struct yyu_parser * parser, struct yyu_location * lloc)
+void API yyu_loc_final(struct yyu_parser * parser, struct yyu_location * lloc)
 {
   memcpy(parser->final_loc, lloc, sizeof(*lloc));
 }
 
-
-API void yyu_grammar_error(yyu_location * const restrict lloc, void * const restrict scanner, yyu_parser * const restrict parser, char const * err)
+void API yyu_grammar_error(yyu_location * const restrict lloc, void * const restrict scanner, yyu_parser * const restrict parser, char const * err)
 {
   char abuf[256];
   char bbuf[256];

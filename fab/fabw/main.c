@@ -46,7 +46,7 @@
 #include "logging.h"
 #include "params.h"
 
-#include "parseint.h"
+#include "common/parseint.h"
 #include "macros.h"
 
 static xapi xmain_exit;

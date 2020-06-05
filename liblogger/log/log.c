@@ -32,7 +32,7 @@
 #include "narrator/fixed.h"
 #include "narrator/nullity.h"
 
-#include "internal.h"
+#include "logger.h"
 #include "log.internal.h"
 #include "stream.internal.h"
 #include "config.internal.h"
@@ -40,7 +40,7 @@
 #include "category.internal.h"
 
 #include "macros.h"
-#include "color.h"
+#include "common/color.h"
 
 //
 // [[ static ]]
@@ -73,7 +73,7 @@ xapi log_cleanup()
 // api
 //
 
-API xapi logger_vlogf(uint64_t ids, uint32_t attrs, const char * fmt, va_list va)
+xapi API logger_vlogf(uint64_t ids, uint32_t attrs, const char * fmt, va_list va)
 {
   enter;
 
@@ -91,7 +91,7 @@ API xapi logger_vlogf(uint64_t ids, uint32_t attrs, const char * fmt, va_list va
   finally : coda;
 }
 
-API xapi logger_logf(uint64_t ids, uint32_t attrs, const char * fmt, ...)
+xapi API logger_logf(uint64_t ids, uint32_t attrs, const char * fmt, ...)
 {
   enter;
 
@@ -104,12 +104,12 @@ finally:
 coda;
 }
 
-API xapi logger_logs(uint64_t ids, uint32_t attrs, const char * s)
+xapi API logger_logs(uint64_t ids, uint32_t attrs, const char * s)
 {
   xproxy(logger_logw, ids, attrs, s, strlen(s));
 }
 
-API xapi logger_logw(uint64_t ids, uint32_t attrs, const char * src, size_t len)
+xapi API logger_logw(uint64_t ids, uint32_t attrs, const char * src, size_t len)
 {
   enter;
 
@@ -128,7 +128,7 @@ API xapi logger_logw(uint64_t ids, uint32_t attrs, const char * src, size_t len)
   finally : coda;
 }
 
-API xapi log_xstart(uint64_t ids, uint32_t attrs, narrator ** restrict N)
+xapi API log_xstart(uint64_t ids, uint32_t attrs, narrator ** restrict N)
 {
   enter;
 
@@ -162,12 +162,12 @@ API xapi log_xstart(uint64_t ids, uint32_t attrs, narrator ** restrict N)
   finally : coda;
 }
 
-API xapi log_start(uint64_t ids, narrator ** restrict N)
+xapi API log_start(uint64_t ids, narrator ** restrict N)
 {
   xproxy(log_xstart, ids, 0, N);
 }
 
-API xapi log_finish()
+xapi API log_finish()
 {
   enter;
 
@@ -187,7 +187,7 @@ API xapi log_finish()
   finally : coda;
 }
 
-API int log_would(uint64_t ids)
+int API log_would(uint64_t ids)
 {
   // misconfigured
   if(ids == 0 || g_streams_l == 0)
@@ -196,7 +196,7 @@ API int log_would(uint64_t ids)
   return streams_would(ids, 0, 0);
 }
 
-API int log_xwould(uint64_t ids, uint32_t attrs)
+int API log_xwould(uint64_t ids, uint32_t attrs)
 {
   // misconfigured
   if(ids == 0 || g_streams_l == 0)
@@ -205,7 +205,7 @@ API int log_xwould(uint64_t ids, uint32_t attrs)
   return streams_would(ids, attrs, 0);
 }
 
-API int log_bytes()
+int API log_bytes()
 {
   if(storage_narrator)
     return narrator_fixed_size(storage_narrator);
@@ -213,7 +213,7 @@ API int log_bytes()
   return 0;
 }
 
-API int log_chars()
+int API log_chars()
 {
   if(storage_narrator)
     return narrator_fixed_size(storage_narrator);
@@ -275,22 +275,22 @@ static __attribute__((nonnull)) xapi logger_trace(uint64_t ids, uint32_t site_at
   finally : coda;
 }
 
-API xapi logger_xtrace_full(uint64_t ids, uint32_t site_attrs, uint16_t trace_attrs)
+xapi API logger_xtrace_full(uint64_t ids, uint32_t site_attrs, uint16_t trace_attrs)
 {
   xproxy(logger_trace, ids, site_attrs, trace_attrs, xapi_trace_full);
 }
 
-API xapi logger_trace_full(uint64_t ids, uint16_t trace_attrs)
+xapi API logger_trace_full(uint64_t ids, uint16_t trace_attrs)
 {
   xproxy(logger_trace, ids, 0, trace_attrs, xapi_trace_full);
 }
 
-API xapi logger_xtrace_pithy(uint64_t ids, uint32_t site_attrs, uint16_t trace_attrs)
+xapi API logger_xtrace_pithy(uint64_t ids, uint32_t site_attrs, uint16_t trace_attrs)
 {
   xproxy(logger_trace, ids, site_attrs, trace_attrs, xapi_trace_pithy);
 }
 
-API xapi logger_trace_pithy(uint64_t ids, uint16_t trace_attrs)
+xapi API logger_trace_pithy(uint64_t ids, uint16_t trace_attrs)
 {
   xproxy(logger_trace, ids, 0, trace_attrs, xapi_trace_pithy);
 }

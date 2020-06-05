@@ -63,7 +63,7 @@
 #include "goals.h"
 #include "stats.h"
 #include "selection.h"
-#include "parseint.h"
+#include "common/parseint.h"
 
 static xapi xmain_exit;
 static xapi xmain()

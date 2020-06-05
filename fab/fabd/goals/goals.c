@@ -27,7 +27,7 @@
 #include "build_thread.h"
 #include "selector.h"
 #include "logging.h"
-#include "attrs.h"
+#include "common/attrs.h"
 
 static bool goal_build;
 static bool goal_script;

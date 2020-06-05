@@ -24,11 +24,11 @@
 #include "narrator.h"
 #include "valyria/array.h"
 
-#include "internal.h"
+#include "logger.h"
 #include "opts.internal.h"
 #include "stream.internal.h"
 
-#include "attrs.h"
+#include "common/attrs.h"
 #include "macros.h"
 
 #define LOGGER_ATTRS_TABLES  \

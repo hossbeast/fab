@@ -21,7 +21,7 @@
 #include "xshm/xshm.h"
 #include "errtab/KERNEL.errtab.h"
 
-API xapi uxshmget(key_t key, size_t size, int shmflg, int * const restrict shmid)
+xapi API uxshmget(key_t key, size_t size, int shmflg, int * const restrict shmid)
 {
   enter;
 
@@ -34,7 +34,7 @@ finally:
 coda;
 }
 
-API xapi xshmget(key_t key, size_t size, int shmflg, int * const restrict shmid)
+xapi API xshmget(key_t key, size_t size, int shmflg, int * const restrict shmid)
 {
   enter;
 
@@ -47,7 +47,7 @@ finally:
 coda;
 }
 
-API xapi xshmctl(int shmid, int cmd, struct shmid_ds * const restrict buf)
+xapi API xshmctl(int shmid, int cmd, struct shmid_ds * const restrict buf)
 {
   enter;
 
@@ -56,7 +56,7 @@ API xapi xshmctl(int shmid, int cmd, struct shmid_ds * const restrict buf)
   finally : coda;
 }
 
-API xapi xshmat(int shmid, const void * shmaddr, int shmflg, void ** const restrict addr)
+xapi API xshmat(int shmid, const void * shmaddr, int shmflg, void ** const restrict addr)
 {
   enter;
 
@@ -66,7 +66,7 @@ API xapi xshmat(int shmid, const void * shmaddr, int shmflg, void ** const restr
   finally : coda;
 }
 
-API xapi xshmdt(const void * shmaddr)
+xapi API xshmdt(const void * shmaddr)
 {
   enter;
 
@@ -76,7 +76,7 @@ API xapi xshmdt(const void * shmaddr)
   finally : coda;
 }
 
-API xapi ixshmdt(void ** shmaddr)
+xapi API ixshmdt(void ** shmaddr)
 {
   enter;
 

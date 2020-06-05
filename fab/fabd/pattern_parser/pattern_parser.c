@@ -47,7 +47,7 @@
 #include "lookup_pattern.tab.h"
 #include "lookup_pattern.tokens.h"
 
-#include "attrs.h"
+#include "common/attrs.h"
 
 static YYU_VTABLE(match_vtable, pattern, match_pattern);
 static YYU_VTABLE(generate_vtable, pattern, generate_pattern);

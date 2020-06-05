@@ -25,12 +25,7 @@ variant xapi.{debug,devel,final}
 # make common objects available for #include and linking
 import fab/include
 import fab/asan
-import common
-import common/assure
-import lib{xapi,xlinux,logger,xunit,narrator,valyria}
-
-rule xunit.? <- common/assure/assure.$?.o
-rule xunit.? <- asan/asan.$?.o
+import lib{common,xapi,xlinux,logger,xunit,narrator,valyria}
 
 # invoke the compiler to build the executable
 rule **/*.?.o -> xunit.$? : executable/bam-cc

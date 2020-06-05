@@ -15,7 +15,6 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#include "internal.h"
 #include "path_normalize.h"
 
 #include "zbuffer.h"
@@ -24,7 +23,7 @@
 // api
 //
 
-API size_t path_normalize(char * restrict dst, size_t sz, const char * restrict s)
+size_t API path_normalize(char * restrict dst, size_t sz, const char * restrict s)
 {
   size_t dst_len = 0;
 

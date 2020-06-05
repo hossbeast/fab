@@ -24,17 +24,17 @@
 #include "valyria/pstring.h"
 #include "narrator.h"
 
-#include "internal.h"
+#include "value.h"
 #include "value.h"
 #include "say.internal.h"
 #include "parser.internal.h"
 #include "store.internal.h"
 #include "writer.internal.h"
 
-#include "hash.h"
+#include "common/hash.h"
 #include "zbuffer.h"
-#include "attrs.h"
-#include "stresc.h"
+#include "common/attrs.h"
+#include "common/stresc.h"
 
 static set * keywords;
 
@@ -172,17 +172,16 @@ xapi say_cleanup()
   finally : coda;
 }
 
-
 //
 // api
 //
 
-API size_t value_znload(void * restrict dst, size_t sz, const value * const restrict val)
+size_t API value_znload(void * restrict dst, size_t sz, const value * const restrict val)
 {
   return znload_value(dst, sz, val, 0);
 }
 
-API xapi value_say(const value * const restrict val, narrator * const restrict N)
+xapi API value_say(const value * const restrict val, narrator * const restrict N)
 {
   enter;
 
@@ -207,7 +206,7 @@ finally:
 coda;
 }
 
-API value * value_lookupw(const value * restrict set, const char * restrict key, uint16_t key_len)
+value * API value_lookupw(const value * restrict set, const char * restrict key, uint16_t key_len)
 {
   RUNTIME_ASSERT(set->type == VALUE_TYPE_SET);
 
@@ -231,7 +230,7 @@ API value * value_lookupw(const value * restrict set, const char * restrict key,
   return 0;
 }
 
-API xapi value_render(const value * const restrict v, narrator * const restrict N)
+xapi API value_render(const value * const restrict v, narrator * const restrict N)
 {
   enter;
 

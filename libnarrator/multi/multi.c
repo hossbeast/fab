@@ -25,7 +25,7 @@
 #include "multi.internal.h"
 
 #include "macros.h"
-#include "assure.h"
+#include "common/assure.h"
 
 //
 // public
@@ -92,7 +92,7 @@ void multi_destroy(narrator_multi * const restrict n)
 // api
 //
 
-API xapi narrator_multi_create(narrator ** const restrict rv)
+xapi API narrator_multi_create(narrator ** const restrict rv)
 {
   enter;
 
@@ -110,7 +110,7 @@ finally:
 coda;
 }
 
-API xapi narrator_multi_add(narrator * const restrict n, narrator * const restrict np)
+xapi API narrator_multi_add(narrator * const restrict n, narrator * const restrict np)
 {
   enter;
 

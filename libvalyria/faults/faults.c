@@ -21,7 +21,6 @@
 
 #include "types.h"
 
-#include "internal.h"
 #include "faults.internal.h"
 
 #if FAULT_INJECTION
@@ -36,7 +35,7 @@ typeof(fault_state) fault_state;
 // api
 //
 
-API void valyria_fault_activate(valyria_fault fault, ...)
+void API valyria_fault_activate(valyria_fault fault, ...)
 {
   va_list va;
   va_start(va, fault);
@@ -69,9 +68,10 @@ API void valyria_fault_activate(valyria_fault fault, ...)
   va_end(va);
 }
 
-API void valyria_faults_reset()
+void API valyria_faults_reset()
 {
   memset(faults, 0, sizeof(faults));
   memset(&fault_state, 0, sizeof(fault_state));
 }
+
 #endif

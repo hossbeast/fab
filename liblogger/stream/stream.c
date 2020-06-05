@@ -32,7 +32,7 @@
 #include "valyria/map.h"
 #include "valyria/list.h"
 
-#include "internal.h"
+#include "logger.h"
 #include "stream.internal.h"
 #include "opts.internal.h"
 #include "category.internal.h"
@@ -44,8 +44,8 @@
 #include "LOGGER.errtab.h"
 
 #include "macros.h"
-#include "color.h"
-#include "spinlock.h"
+#include "common/color.h"
+#include "common/spinlock.h"
 #include "zbuffer.h"
 
 // active streams
@@ -593,7 +593,7 @@ xapi stream_expr_reset(stream *  restrict streamp)
 // api
 //
 
-API xapi logger_stream_register(const logger_stream * restrict streams)
+xapi API logger_stream_register(const logger_stream * restrict streams)
 {
   enter;
 
@@ -606,7 +606,7 @@ API xapi logger_stream_register(const logger_stream * restrict streams)
   finally : coda;
 }
 
-API xapi logger_streams_report()
+xapi API logger_streams_report()
 {
   enter;
 

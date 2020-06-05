@@ -24,11 +24,10 @@
 
 #include "xunit/type.h"
 
-#include "internal.h"
 #include "assert.h"
 #include "set.internal.h"
 
-#include "stresc.h"
+#include "common/stresc.h"
 #include "zbuffer.h"
 
 //
@@ -83,7 +82,7 @@ static void set_info_push(const char * const restrict name, xunit_arg * a)
 // API
 //
 
-APIDATA xunit_type * valyria_xunit_set = (xunit_type[]) {{
+xunit_type * APIDATA valyria_xunit_set = (xunit_type[]) {{
     xu_unpack : set_unpack
   , xu_compare : set_compare
   , xu_info_push : set_info_push

@@ -34,8 +34,8 @@
 #include "shadow.h"
 #include "path.h"
 
-#include "attrs.h"
-#include "hash.h"
+#include "common/attrs.h"
+#include "common/hash.h"
 
 //
 // static

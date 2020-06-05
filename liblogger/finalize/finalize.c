@@ -17,7 +17,7 @@
 
 #include "xapi.h"
 
-#include "internal.h"
+#include "logger.h"
 #include "category.internal.h"
 #include "stream.internal.h"
 #include "arguments.internal.h"
@@ -27,7 +27,7 @@
 // api
 //
 
-API xapi logger_finalize()
+xapi API logger_finalize()
 {
   enter;
 

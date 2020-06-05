@@ -39,7 +39,7 @@
 #include "node_operations.h"
 #include "match.internal.h"
 #include "path.h"
-#include "attrs.h"
+#include "common/attrs.h"
 
 //
 // static

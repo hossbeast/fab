@@ -65,10 +65,10 @@
 #include "MODULE.errtab.h"
 
 #include "zbuffer.h"
-#include "assure.h"
-#include "snarf.h"
-#include "attrs.h"
-#include "hash.h"
+#include "common/assure.h"
+#include "common/snarf.h"
+#include "common/attrs.h"
+#include "common/hash.h"
 #include "usage.h"
 
 llist g_modules;                            // all modules

@@ -20,7 +20,6 @@
 #include "logger.h"
 #include "logger/category.h"
 
-#include "internal.h"
 #include "logging.internal.h"
 
 logger_category * categories = (logger_category []) {
