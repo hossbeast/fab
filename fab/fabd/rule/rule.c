@@ -93,30 +93,6 @@ static xapi connector_say(const rule * restrict r, narrator * restrict N)
   finally : coda;
 }
 
-/* rule -> formula node */
-static xapi rule_formula_connect(rule * restrict r, node * restrict node)
-{
-  enter;
-
-  edge_type relation = EDGE_TYPE_RULE_FML;
-  edge *e;
-  bool created;
-
-  fatal(graph_connect
-    , g_graph
-    , vertex_containerof(r)
-    , vertex_containerof(node)
-    , relation
-    , &e
-    , &created
-  );
-
-  if(!created)
-    goto XAPI_FINALLY;
-
-  finally : coda;
-}
-
 struct rule_dirnode_connect_context {
   rule *r;
   module *mod;
@@ -161,7 +137,7 @@ xapi rule_mk(
   , graph * restrict g
   , pattern * match
   , pattern * generate
-  , pattern * formula
+  , node * formula
   , uint32_t attrs
 )
 {
@@ -176,7 +152,7 @@ xapi rule_mk(
 
   r->match = match;
   r->generate = generate;
-  r->formula = formula;
+  r->fml_node = formula;
   r->dir = attrs & RULE_DIRECTION_OPT;
   r->card = attrs & RULE_CARDINALITY_OPT;
   r->relation = attrs & EDGE_TYPE_OPT;
@@ -192,7 +168,6 @@ xapi rule_xdestroy(rule * restrict r)
 
   pattern_free(r->match);
   pattern_free(r->generate);
-  pattern_free(r->formula);
 
   finally : coda;
 }
@@ -286,17 +261,6 @@ xapi rule_run(rule * restrict rule, rule_run_context * restrict ctx)
   struct rule_dirnode_connect_context rdctx;
 
   rma = ctx->rma;
-
-  if(rule->formula && !rule->fml_node)
-  {
-    fatal(pattern_lookup, rule->formula, 0, ctx->mod_owner->dir_node, PATTERN_LOOKUP_FML | PATTERN_LOOKUP_ONE, 0, &rule->fml_node);
-
-    if(rule->fml_node)
-    {
-      fatal(rule_formula_connect, rule, rule->fml_node);
-      fatal(formula_node_parse, rule->fml_node);
-    }
-  }
 
   if(rule->match)
   {
@@ -652,10 +616,10 @@ xapi rule_say(const rule * restrict r, narrator * restrict N)
     xsays(" --");
   }
 
-  if(r->formula)
+  if(r->fml_node)
   {
     fatal(narrator_xsays, N, " : ");
-    fatal(pattern_say, r->formula, N);
+    fatal(node_project_relative_path_say, r->fml_node, N);
   }
 
   finally : coda;

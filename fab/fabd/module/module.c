@@ -137,71 +137,6 @@ finally:
 coda;
 }
 
-static xapi rebuild_variant_envs(module * restrict mod)
-{
-  enter;
-
-  vertex ** ancestry = 0;
-  size_t ancestryz = 0;
-  size_t ancestryl = 0;
-  int x;
-  statement_block *block;
-  vertex *v;
-  vertex * var_v;
-  value * vars = 0;
-  node * env_n;
-
-  fatal(map_recycle, mod->variant_var);
-  fatal(map_recycle, mod->variant_envs);
-  exec_ifree(&mod->novariant_envs);
-
-  // assemble list of ancestor nodes
-  v = vertex_containerof(mod->dir_node);
-  while(v)
-  {
-    fatal(assure, &ancestry, sizeof(*ancestry), ancestryl + 1, &ancestryz);
-    ancestry[ancestryl++] = v;
-    v = vertex_up(v);
-  }
-
-  /* start with the vars from config */
-  fatal(value_merge, mod->value_parser, &vars, g_var, 0);
-
-  /* apply ancestor var.bam files in reverse order */
-  for(x = ancestryl - 1; x >= 0; x--)
-  {
-    if((var_v = vertex_downs(ancestry[x], NODE_VAR_BAM)))
-    {
-      env_n = vertex_value(var_v);
-      fatal(var_node_parse, env_n);
-      fatal(value_merge, mod->value_parser, &vars, env_n->self_var, 0);
-    }
-  }
-
-  /* apply the var from module.bam if any */
-  fatal(value_merge, mod->value_parser, &vars, mod->var_value, mod->var_merge_overwrite ? VALUE_MERGE_SET : 0);
-
-  if(vars)
-  {
-    /* no-variant vars */
-    fatal(build_block_variant_envs, mod, 0, vars);
-
-    /* top-level block, if it's not also a no-variant block */
-    if(mod->unscoped_block && mod->unscoped_block->variants->size)
-    {
-      fatal(build_block_variant_envs, mod, mod->unscoped_block, vars);
-    }
-
-    llist_foreach(&mod->scoped_blocks, block, lln) {
-      fatal(build_block_variant_envs, mod, block, vars);
-    }
-  }
-
-finally:
-  wfree(ancestry);
-coda;
-}
-
 struct associate_rules_context
 {
   module * mod;
@@ -270,7 +205,7 @@ static xapi rule_remove(rule * restrict r, graph_invalidation_context * restrict
 
   v = vertex_containerof(r);
 
-  /* disconnect edges connecting this rule to dirnodes */
+  /* disconnect edges connecting this rule to dirnodes and formula nodes */
   llist_init_node(&lln);
   rbtree_foreach(&v->down, e, rbn_down) {
     llist_append(&lln, e, lln);
@@ -448,6 +383,89 @@ static xapi module_load_visitor(vertex * mod_dir_v, void * ctx, traversal_mode m
   finally : coda;
 }
 
+static xapi rebuild_variant_envs(module * restrict mod)
+{
+  enter;
+
+  vertex ** ancestry = 0;
+  size_t ancestryz = 0;
+  size_t ancestryl = 0;
+  int x;
+  statement_block *block;
+  vertex *v;
+  vertex * var_v;
+  value * vars = 0;
+  node * env_n;
+
+  fatal(map_recycle, mod->variant_var);
+  fatal(map_recycle, mod->variant_envs);
+  exec_ifree(&mod->novariant_envs);
+
+  // assemble list of ancestor nodes
+  v = vertex_containerof(mod->dir_node);
+  while(v)
+  {
+    fatal(assure, &ancestry, sizeof(*ancestry), ancestryl + 1, &ancestryz);
+    ancestry[ancestryl++] = v;
+    v = vertex_up(v);
+  }
+
+  /* start with the vars from config */
+  fatal(value_merge, mod->value_parser, &vars, g_var, 0);
+
+  /* apply ancestor var.bam files in reverse order */
+  for(x = ancestryl - 1; x >= 0; x--)
+  {
+    if((var_v = vertex_downs(ancestry[x], NODE_VAR_BAM)))
+    {
+      env_n = vertex_value(var_v);
+      fatal(var_node_parse, env_n);
+      fatal(value_merge, mod->value_parser, &vars, env_n->self_var, 0);
+    }
+  }
+
+  /* apply the var from module.bam if any */
+  fatal(value_merge, mod->value_parser, &vars, mod->var_value, mod->var_merge_overwrite ? VALUE_MERGE_SET : 0);
+
+  if(vars)
+  {
+    /* no-variant vars */
+    fatal(build_block_variant_envs, mod, 0, vars);
+
+    /* top-level block, if it's not also a no-variant block */
+    if(mod->unscoped_block && mod->unscoped_block->variants->size)
+    {
+      fatal(build_block_variant_envs, mod, mod->unscoped_block, vars);
+    }
+
+    llist_foreach(&mod->scoped_blocks, block, lln) {
+      fatal(build_block_variant_envs, mod, block, vars);
+    }
+  }
+
+finally:
+  wfree(ancestry);
+coda;
+}
+
+static xapi rule_formula_process(rule * restrict r, node * restrict fml_node)
+{
+  enter;
+
+  fatal(graph_connect
+    , g_graph
+    , vertex_containerof(r)
+    , vertex_containerof(r->fml_node)
+    , EDGE_TYPE_RULE_FML
+    , 0
+    , 0
+  );
+
+  fatal(formula_node_parse, r->fml_node);
+
+  finally : coda;
+}
+
 static xapi module_refresh(module * restrict mod, graph_invalidation_context * restrict invalidation)
 {
   enter;
@@ -455,28 +473,42 @@ static xapi module_refresh(module * restrict mod, graph_invalidation_context * r
   node * mod_dir_n;
   vertex * mod_dir_v;
   node * mod_file_n;
+  statement_block *block;
+  rule * r;
 
   mod_dir_n = mod->dir_node;
   mod_dir_v = vertex_containerof(mod_dir_n);
   mod_file_n = mod->self_node;
 
-  if(node_nodetype_get(mod_file_n) == VERTEX_NODETYPE_MODULE)
-  {
-    STATS_INC(module_refresh);
+  // parse formulas, connect to rules
+  if(mod->unscoped_block) {
+    llist_foreach(&mod->unscoped_block->rules, r, lln) {
+      if(!r->fml_node) {
+        continue;
+      }
+
+      fatal(rule_formula_process, r, r->fml_node);
+    }
   }
-  else
-  {
-    STATS_INC(model_refresh);
+  llist_foreach(&mod->scoped_blocks, block, lln) {
+    llist_foreach(&block->rules, r, lln) {
+      if(!r->fml_node) {
+        continue;
+      }
+      fatal(rule_formula_process, r, r->fml_node);
+    }
   }
 
   if(node_nodetype_get(mod_file_n) == VERTEX_NODETYPE_MODEL) {
     goto XAPI_FINALIZE;
   }
 
+  STATS_INC(module_refresh);
+
   /* remove any un-refreshed imports from //module/scope and //module/imports */
   fatal(shadow_prune_imports, mod, invalidation);
 
-  // build variant envs
+  // parse var.bam files, build variant envs
   fatal(rebuild_variant_envs, mod);
 
   // visit this module and its USES transitively to invalidate rules
@@ -492,6 +524,73 @@ static xapi module_refresh(module * restrict mod, graph_invalidation_context * r
     , MORIA_TRAVERSE_DOWN | MORIA_TRAVERSE_POST
     , mod
   );
+
+  finally : coda;
+}
+
+static xapi module_reload(module * restrict mod, module_parser * restrict parser, graph_invalidation_context * restrict invalidation)
+{
+  enter;
+
+  llist blocks;
+  statement_block *block;
+  llist *cursor;
+  rule *r;
+  rule_module_association *rma;
+
+  if(node_nodetype_get(mod->self_node) == VERTEX_NODETYPE_MODULE)
+  {
+    STATS_INC(module_reload);
+  }
+  else
+  {
+    STATS_INC(model_reload);
+  }
+
+  /* re-parse the module.bam file */
+  mod->self_node->not_parsed = 1;
+  fatal(module_parse, mod, parser, invalidation);
+
+  if(mod->self_node->not_parsed) {
+    /* parse not successful */
+    goto XAPI_FINALIZE;
+  }
+
+  /* disassociate all rmas owned by this module */
+  llist_foreach_safe(&mod->rmas_owner, rma, lln_rmas_owner, cursor) {
+    fatal(module_rule_disassociate, rma, invalidation);
+    rbtree_delete(&rma->mod->rmas, rma, rbn_rmas);
+    llist_delete(rma, lln_rmas_owner);
+    free(rma);
+  }
+
+  /* destroy existing/used blocks and return to the freelist */
+  llist_init_node(&blocks);
+  if(mod->unscoped_block) {
+    llist_append(&blocks, mod->unscoped_block, lln);
+  }
+  llist_splice_head(&blocks, &mod->scoped_blocks);
+
+  llist_foreach(&blocks, block, lln) {
+    llist_foreach(&block->rules, r, lln) {
+      fatal(rule_remove, r, invalidation);
+    }
+
+    llist_init_node(&block->rules);
+  }
+
+  /* replace the guts */
+  mod->unscoped_block = parser->unscoped_block;
+  parser->unscoped_block = 0;
+  llist_splice_head(&mod->scoped_blocks, &parser->scoped_blocks);
+  mod->var_value = parser->var_value;
+  mod->var_merge_overwrite = parser->var_merge_overwrite;
+
+  /* return previously used blocks to the freelist */
+  llist_splice_head(&parser->statement_block_freelist, &blocks);
+
+  /* re-build */
+  fatal(module_refresh, mod, invalidation);
 
   finally : coda;
 }
@@ -568,65 +667,6 @@ static xapi module_initialize(module * restrict mod, graph_invalidation_context 
 
   // open a rdonly file descriptor to the module directory for formula execution
   fatal(xopens, &mod->dirnode_fd, O_RDONLY, mod_dir_abspath);
-
-  finally : coda;
-}
-
-static xapi module_reload(module * restrict mod, module_parser * restrict parser, graph_invalidation_context * restrict invalidation)
-{
-  enter;
-
-  llist blocks;
-  statement_block *block;
-  llist *cursor;
-  rule *r;
-  rule_module_association *rma;
-
-  /* re-parse the module.bam file */
-  mod->self_node->not_parsed = 1;
-  fatal(module_parse, mod, parser, invalidation);
-
-  if(mod->self_node->not_parsed) {
-    /* parse not successful */
-    goto XAPI_FINALIZE;
-  }
-
-  /* disassociate all rmas owned by this module */
-  llist_foreach_safe(&mod->rmas_owner, rma, lln_rmas_owner, cursor) {
-
-    fatal(module_rule_disassociate, rma, invalidation);
-    rbtree_delete(&rma->mod->rmas, rma, rbn_rmas);
-    llist_delete(rma, lln_rmas_owner);
-    free(rma);
-  }
-
-  /* destroy existing/used blocks and return to the freelist */
-  llist_init_node(&blocks);
-  if(mod->unscoped_block) {
-    llist_append(&blocks, mod->unscoped_block, lln);
-  }
-  llist_splice_head(&blocks, &mod->scoped_blocks);
-
-  llist_foreach(&blocks, block, lln) {
-    llist_foreach(&block->rules, r, lln) {
-      fatal(rule_remove, r, invalidation);
-    }
-
-    llist_init_node(&block->rules);
-  }
-
-  /* replace the guts */
-  mod->unscoped_block = parser->unscoped_block;
-  parser->unscoped_block = 0;
-  llist_splice_head(&mod->scoped_blocks, &parser->scoped_blocks);
-  mod->var_value = parser->var_value;
-  mod->var_merge_overwrite = parser->var_merge_overwrite;
-
-  /* return previously used blocks to the freelist */
-  llist_splice_head(&parser->statement_block_freelist, &blocks);
-
-  /* re-build */
-  fatal(module_refresh, mod, invalidation);
 
   finally : coda;
 }

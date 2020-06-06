@@ -192,6 +192,21 @@ finally:
 coda;
 }
 
+static xapi resolve_formula(module_parser * restrict parser, pattern * restrict ref, struct node ** restrict target)
+{
+  enter;
+
+  module *mod;
+
+  mod = parser->mod;
+  /* note that a reference pattern can only render down to a single fragment */
+  fatal(pattern_lookup, ref, 0, mod->dir_node, 0, 0, target);
+
+finally:
+  pattern_free(ref);
+coda;
+}
+
 //
 // internal
 //
@@ -268,6 +283,7 @@ xapi module_parser_create(module_parser ** rv)
   p->require_resolve = resolve_require;
   p->use_resolve = resolve_use;
   p->import_resolve = resolve_import;
+  p->formula_resolve = resolve_formula;
 
   llist_init_node(&p->statement_block_freelist);
   llist_init_node(&p->scoped_blocks);

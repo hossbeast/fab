@@ -64,6 +64,7 @@
   variant * variant;
   struct pattern * pattern;
   struct value * value;
+  struct node * node;
 
   // enums
   edge_type relation_type;
@@ -110,6 +111,7 @@
 %type <pattern> reference-pattern
 %type <pattern> lookup-pattern
 %type <relation_type> relation-type rule-bacon
+%type <node> formula-reference
 
 // %destructor { module_free($$); } <module>
 %destructor { pattern_free($$); } <pattern>
@@ -253,9 +255,16 @@ block
   }
   ;
 
+formula-reference
+  : reference-pattern
+  {
+    YFATAL(PARSER->formula_resolve, PARSER, $1, &$$);
+  }
+  ;
+
 rule
  /* (match) antecedent(s) -> (generate) consequent(s) : (reference) formula */
-  : RULE rule-bacon match-pattern connector generate-pattern ':' reference-pattern
+  : RULE rule-bacon match-pattern connector generate-pattern ':' formula-reference
   {
     YFATAL(rule_mk, &$$, PARSER->g, $3, $5, $7, $4 | $2);
   }
@@ -264,20 +273,20 @@ rule
     YFATAL(rule_mk, &$$, PARSER->g, $3, $5, NULL, $4 | $2);
   }
  /* match only */
-  | RULE rule-bacon match-pattern DASHES ':' reference-pattern
+  | RULE rule-bacon match-pattern DASHES ':' formula-reference
   {
     YFATAL(rule_mk, &$$, PARSER->g, $3, NULL, $6, RULE_ZERO_TO_ONE | $2);
   }
-  | RULE rule-bacon match-pattern STARBOX DASHES ':' reference-pattern
+  | RULE rule-bacon match-pattern STARBOX DASHES ':' formula-reference
   {
     YFATAL(rule_mk, &$$, PARSER->g, $3, NULL, $7, RULE_ZERO_TO_MANY | $2);
   }
  /* generate only */
-  | RULE rule-bacon DASHES generate-pattern ':' reference-pattern
+  | RULE rule-bacon DASHES generate-pattern ':' formula-reference
   {
     YFATAL(rule_mk, &$$, PARSER->g, NULL, $4, $6, RULE_ZERO_TO_ONE | $2);
   }
-  | RULE rule-bacon DASHES STARBOX generate-pattern ':' reference-pattern
+  | RULE rule-bacon DASHES STARBOX generate-pattern ':' formula-reference
   {
     YFATAL(rule_mk, &$$, PARSER->g, NULL, $5, $7, RULE_ZERO_TO_MANY | $2);
   }
