@@ -29,11 +29,11 @@ struct module;
 #define PATTERN_LOOKUP_DIR       0x01 /* only match directories */
 #define PATTERN_LOOKUP_MODULE    0x03 /* only match module directories */
 #define PATTERN_LOOKUP_MODEL     0x05 /* only match model directories */
-#define PATTERN_LOOKUP_FML       0x08 /* only match formula nodes */
-#define PATTERN_LOOKUP_ONE       0x10 /* each fragment must match exactly one node */
 
 /*
- * lookup nodes by rendering a reference pattern, and looking up each fragment
+ * Render a lookup or reference pattern, and lookup a node for up each fragment. For each fragment,
+ * if graph lookup results in a number of matches != 1 then an error is raised. Note that a
+ * reference pattern can only have a single fragment.
  *
  * ref    - reference pattern
  * module - module for shadow lookups e.g. //module/foo

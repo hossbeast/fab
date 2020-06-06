@@ -84,7 +84,6 @@ extern struct attrs16 * rule_cardinality_attrs;
 typedef struct rule {
   struct pattern * match;
   struct pattern * generate;
-  struct pattern * formula;
   struct node * fml_node;   // lookup from formula
 
   edge_type relation;
@@ -154,7 +153,7 @@ xapi rule_mk(
   , struct graph * restrict g
   , struct pattern * match
   , struct pattern * generate
-  , struct pattern * formula
+  , struct node * formula
   , uint32_t attrs
 )
   __attribute__((nonnull(1)));

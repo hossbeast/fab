@@ -48,8 +48,9 @@ xapi stats_report(void);
   DEF(contenthash, uint64_t)    /* file is content-hash */             \
   DEF(bsexec, uint64_t)         /* build slot is executed */           \
   DEF(fstree_refresh, uint64_t) /* fstree refreshes */                 \
+  DEF(module_reload, uint64_t)  /* module is reloaded */               \
+  DEF(model_reload, uint64_t)   /* model is reloaded */                \
   DEF(module_refresh, uint64_t) /* module is refreshed */              \
-  DEF(model_refresh, uint64_t)  /* model is refreshed */               \
   DEF(rules, uint64_t)          /* extant rules */                     \
   DEF(rmas, uint64_t)           /* extant rmas */                      \
   DEF(models, uint64_t)         /* extant models */                    \

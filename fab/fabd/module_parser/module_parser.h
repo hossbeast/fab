@@ -55,6 +55,7 @@ typedef struct module_parser {
   xapi (*use_resolve)(struct module_parser * restrict parser, struct pattern * restrict ref);
   xapi (*require_resolve)(struct module_parser * restrict parser, struct pattern * restrict ref);
   xapi (*import_resolve)(struct module_parser * restrict parser, struct pattern * restrict ref, bool scoped, char * restrict name, uint16_t namel);
+  xapi (*formula_resolve)(struct module_parser * restrict parser, struct pattern * restrict ref, struct node ** restrict target);
 
   // under construction
   struct statement_block *block;

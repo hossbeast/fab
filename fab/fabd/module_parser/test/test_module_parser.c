@@ -82,6 +82,16 @@ static xapi load_submodule(module_parser * restrict parser, pattern * c, bool sc
   finally : coda;
 }
 
+static xapi load_formula(module_parser * restrict parser, pattern * c, node ** restrict target)
+{
+  enter;
+
+  pattern_free(c);
+  *target = 0;
+
+  finally : coda;
+}
+
 static xapi module_parser_test_entry(xunit_test * _test)
 {
   enter;
@@ -95,6 +105,7 @@ static xapi module_parser_test_entry(xunit_test * _test)
   // arrange
   fatal(module_parser_create, &parser);
   parser->import_resolve = load_submodule;
+  parser->formula_resolve = load_formula;
   fatal(graph_invalidation_begin, &invalidation);
 
   // parse

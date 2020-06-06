@@ -118,7 +118,6 @@ static xapi rules_test_entry(xunit_test * _test)
   llist modules;
   pattern * match_pat = 0;
   pattern * generate_pat = 0;
-  pattern * fml_pat = 0;
   rule_run_context rule_ctx = { 0 };
   rule_module_association rma;
 
@@ -157,10 +156,9 @@ static xapi rules_test_entry(xunit_test * _test)
     assert_eq_u32(strlen(test->generate_pattern), loc.l);
   }
 
-  fatal(rule_mk, &r, g_graph, match_pat, generate_pat, fml_pat, 0);
+  fatal(rule_mk, &r, g_graph, match_pat, generate_pat, 0, 0);
   match_pat = 0;
   generate_pat = 0;
-  fml_pat = 0;
 
   r->dir = test->dir;
   r->card = test->card;
@@ -197,7 +195,6 @@ static xapi rules_test_entry(xunit_test * _test)
 finally:
   pattern_free(match_pat);
   pattern_free(generate_pat);
-  pattern_free(fml_pat);
   fatal(node_cleanup);
   fatal(set_xfree, variants);
   fatal(narrator_xfree, N);
