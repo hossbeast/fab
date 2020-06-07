@@ -110,7 +110,7 @@ static void free_value(void * value)
 
 xapi API graph_parser_graph_create(graph ** restrict g, uint32_t identity)
 {
-  xproxy(graph_createx, g, identity, sizeof(void*), 0, free_value, 0);
+  xproxy(graph_createx, g, identity, sizeof(void*), 0, free_value, 0, 0, 0);
 }
 
 xapi API graph_parser_parse(

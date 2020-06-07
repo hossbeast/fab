@@ -223,6 +223,7 @@ xunit_unit xunit = {
                   " 5-!rule"
                   " 5:rule-dir:2"                 // rule edges
                   " 4:strong:3"                   // strong edges
+                  " 2:mod-rule:5"
                   " 1:fs:2 2:fs:3 2:fs:4"         // fs edges
       }}
       /* unlinked primary file - deleted, its secondary file remains */
@@ -247,6 +248,7 @@ xunit_unit xunit = {
                   " 3-main.o!U|file"
                   " 4-!rule"
                   " 4:rule-dir:2"                 // rule edges
+                  " 2:mod-rule:4"
                   " 1:fs:2 2:fs:3"                // fs edges
       }}
       /* unlinked secondary file - marked notexists, strong edge still in effect */
@@ -272,6 +274,7 @@ xunit_unit xunit = {
                   " 5-!rule"
                   " 5:rule-dir:2"                 // rule edges
                   " 4:strong:3"                   // strong edges
+                  " 2:mod-rule:5"
                   " 1:fs:2 2:fs:3 2:fs:4"         // fs edges
       }}
       /* unlinked primary+secondary file - both are deleted */
@@ -296,6 +299,7 @@ xunit_unit xunit = {
         , graph :  "1-(root)!dir 2-MOD!dir"
                   " 3-!rule"
                   " 3:rule-dir:2"
+                  " 2:mod-rule:3"
                   " 1:fs:2"
       }}
 
@@ -327,6 +331,7 @@ xunit_unit xunit = {
                   " 5-args.o!I|file 6-main.o!I|file"
                   " 7-!rule"
                   " 7:rule-dir:2 7:rule-dir:3 7:rule-dir:4"
+                  " 2:mod-rule:7"
                   " 1:fs:2 2:fs:3 3:fs:4 3:fs:6 4:fs:5"
       }}
 
@@ -359,6 +364,7 @@ xunit_unit xunit = {
         , graph :  "1-(root)!dir 2-MOD!dir"
                   " 3-!rule"
                   " 3:rule-dir:2"
+                  " 2:mod-rule:3"
                   " 1:fs:2"
       }}
 
@@ -385,6 +391,7 @@ xunit_unit xunit = {
                   " 9-!rule"
                   " 9:rule-dir:2 9:rule-dir:3 9:rule-dir:4"
                   " 6:strong:5 8:strong:7"
+                  " 2:mod-rule:9"
                   " 1:fs:2 2:fs:3 3:fs:4 3:fs:7 3:fs:8 4:fs:5 4:fs:6"
       }}
 
@@ -417,6 +424,7 @@ xunit_unit xunit = {
                   " 8-!rule 9-!rule"
                   " 8:rule-dir:2 9:rule-dir:2"
                   " 4:strong:3 5:strong:4 5:strong:7 7:strong:6"
+                  " 2:mod-rule:8 2:mod-rule:9"
                   " 1:fs:2 2:fs:3 2:fs:4 2:fs:5 2:fs:6 2:fs:7"
       }}
 
@@ -450,6 +458,7 @@ xunit_unit xunit = {
                   " 8-!rule 9-!rule"
                   " 8:rule-dir:2 9:rule-dir:2"
                   " 4:strong:3 5:strong:4 5:strong:7 7:strong:6"
+                  " 2:mod-rule:8 2:mod-rule:9"
                   " 1:fs:2 2:fs:3 2:fs:4 2:fs:5 2:fs:6 2:fs:7"
       }}
 
@@ -483,6 +492,7 @@ xunit_unit xunit = {
                   " 7-!rule 8-!rule"
                   " 7:rule-dir:2 8:rule-dir:2"
                   " 4:strong:3 4:strong:6 6:strong:5"
+                  " 2:mod-rule:7 2:mod-rule:8"
                   " 1:fs:2 2:fs:3 2:fs:4 2:fs:5 2:fs:6"
       }}
 
@@ -516,6 +526,7 @@ xunit_unit xunit = {
                   " 8-!rule 9-!rule"
                   " 8:rule-dir:2 9:rule-dir:2"
                   " 4:strong:3 5:strong:4 5:strong:7 7:strong:6"
+                  " 2:mod-rule:8 2:mod-rule:9"
                   " 1:fs:2 2:fs:3 2:fs:4 2:fs:5 2:fs:6 2:fs:7"
       }}
 
@@ -549,6 +560,7 @@ xunit_unit xunit = {
                   " 6-!rule 7-!rule"
                   " 6:rule-dir:2 7:rule-dir:2"
                   " 5:strong:4"
+                  " 2:mod-rule:6 2:mod-rule:7"
                   " 1:fs:2 2:fs:3 2:fs:4 2:fs:5"
       }}
 
@@ -582,6 +594,7 @@ xunit_unit xunit = {
                   " 6-!rule 7-!rule"
                   " 6:rule-dir:2 7:rule-dir:2"
                   " 5:strong:4"
+                  " 2:mod-rule:6 2:mod-rule:7"
                   " 1:fs:2 2:fs:3 2:fs:4 2:fs:5"
       }}
 
@@ -621,6 +634,7 @@ xunit_unit xunit = {
                   " 3-exe!I|file"
                   " 4-!rule 5-!rule"
                   " 4:rule-dir:2 5:rule-dir:2"
+                  " 2:mod-rule:4 2:mod-rule:5"
                   " 1:fs:2 2:fs:3"
       }}
     , 0

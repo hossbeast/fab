@@ -464,14 +464,15 @@ xapi node_xdestroy(node * restrict n)
   {
     fatal(formula_xfree, n->self_fml);
   }
-  else if(kind == VERTEX_MODULE_BAM)
-  {
-    fatal(module_xfree, n->self_mod);
-  }
-  else if(kind == VERTEX_MODEL_BAM)
-  {
-    fatal(module_xfree, n->self_mod);
-  }
+
+//  else if(kind == VERTEX_MODULE_BAM)
+//  {
+//    fatal(module_xfree, n->self_mod);
+//  }
+//  else if(kind == VERTEX_MODEL_BAM)
+//  {
+//    fatal(module_xfree, n->self_mod);
+//  }
 
   path_xfree(&n->name);
 

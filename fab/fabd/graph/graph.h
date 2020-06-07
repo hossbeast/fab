@@ -36,20 +36,21 @@ struct rule_module_association;
 #define GRAPH_EDGE_VALUE_SIZE   64
 
 /* edge attrs ranges */
-#define EDGE_TYPE_OPT 0xfff000
+#define EDGE_TYPE_OPT 0x00fff000
 
-#define EDGE_INVALIDATIONS                               0x100000 /* invalidations propagate along these edges */
+#define EDGE_INVALIDATIONS                               0x00100000 /* invalidations propagate along these edges */
 
 /* edge options */
 #define EDGE_TYPE_TABLE                                                                                          \
-  DEF(EDGE_TYPE_FS        , "fs"        , EDGE_TYPE_OPT, 0x200000) /* directory : directory entry */             \
-  DEF(EDGE_TYPE_IMPORTS   , "imports"   , EDGE_TYPE_OPT, 0x001000) /* module A imports directory B into scope */ \
-  DEF(EDGE_TYPE_USES      , "uses"      , EDGE_TYPE_OPT, 0x002000) /* module A uses model B */                   \
-  DEF(EDGE_TYPE_REQUIRES  , "requires"  , EDGE_TYPE_OPT, 0x004000) /* module A requires module B */              \
-  DEF(EDGE_TYPE_STRONG    , "strong"    , EDGE_TYPE_OPT, 0x108000) /* A : B */                                   \
-  DEF(EDGE_TYPE_CONDUIT   , "conduit"   , EDGE_TYPE_OPT, 0x110000) /* invalidation propagates from A -> B */     \
-  DEF(EDGE_TYPE_RULE_DIR  , "rule-dir"  , EDGE_TYPE_OPT, 0x005000) /* rule A matches in directory B */           \
-  DEF(EDGE_TYPE_RULE_FML  , "rule-fml"  , EDGE_TYPE_OPT, 0x006000) /* rule A uses formula B */                   \
+  DEF(EDGE_TYPE_FS        , "fs"        , EDGE_TYPE_OPT, 0x00400000) /* directory : directory entry */             \
+  DEF(EDGE_TYPE_IMPORTS   , "imports"   , EDGE_TYPE_OPT, 0x00001000) /* module A imports directory B into scope */ \
+  DEF(EDGE_TYPE_USES      , "uses"      , EDGE_TYPE_OPT, 0x00002000) /* module A uses model B */                   \
+  DEF(EDGE_TYPE_REQUIRES  , "requires"  , EDGE_TYPE_OPT, 0x00004000) /* module A requires module B */              \
+  DEF(EDGE_TYPE_STRONG    , "strong"    , EDGE_TYPE_OPT, 0x00108000) /* A : B */                                   \
+  DEF(EDGE_TYPE_CONDUIT   , "conduit"   , EDGE_TYPE_OPT, 0x00110000) /* invalidation propagates from A -> B */     \
+  DEF(EDGE_TYPE_RULE_DIR  , "rule-dir"  , EDGE_TYPE_OPT, 0x00020000) /* rule A matches in directory B */           \
+  DEF(EDGE_TYPE_RULE_FML  , "rule-fml"  , EDGE_TYPE_OPT, 0x00240000) /* rule A uses formula B */                   \
+  DEF(EDGE_TYPE_MOD_RULE  , "mod-rule"  , EDGE_TYPE_OPT, 0x00280000) /* module A uses rule B */                    \
 
 
 typedef enum edge_type {

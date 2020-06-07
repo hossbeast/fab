@@ -52,6 +52,8 @@ struct graph {
   size_t esz;     // edge value size
   void (*vertex_value_destroy)(void *);
   xapi (*vertex_value_xdestroy)(void *);
+  void (*edge_value_destroy)(void *);
+  xapi (*edge_value_xdestroy)(void *);
 };
 
 void graph_vertex_init(graph * const restrict g, struct vertex_t * const restrict v)

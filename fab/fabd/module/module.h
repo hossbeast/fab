@@ -39,17 +39,17 @@ struct value;
 struct graph_invalidation_context;
 struct rule;
 
-/* association of a rule to a module */
+/* edge connecting a rule to a module */
 typedef struct rule_module_association {
-//  rbnode rbn;               // in module->rule_associations
-  rbnode rbn_rmas;
-  llist lln_rmas_owner;
-  rbnode nohits_rbn;        // in rule_run_context->nohits
+  llist lln_owner;           // in module->rmas_owner, or freelist
+  rbnode rbn_rmas;           // in module->rmas
+  rbnode nohits_rbn;         // in rule_run_context->nohits
+  struct edge * associating_edge; //
+  struct module * mod_owner; // module which defines this rule
 
   struct rule * rule;        // rule to run
   struct module * mod;       // module to run in context of
   struct set * variants;     // variants for rule execution
-  struct module * mod_owner; // module which defines this rule
 
   /* considered during a refresh period */
   uint32_t refresh_id;
@@ -73,7 +73,7 @@ typedef struct statement_block {
 } statement_block;
 
 typedef struct module {
-  llist lln;              // in g_modules
+  llist lln_modules;      // in g_modules
   llist lln_invalidated;  // in modules_invalidated
 
   /* runtime state */
@@ -88,8 +88,8 @@ typedef struct module {
   bool leaf;                      // true if there do not exist more specific modules under this path
   int dirnode_fd;                 // open file descriptor to the module directory node
 
-  rbtree rmas;                    // rmas for rules associated to this module
-  llist rmas_owner;               // rmas for rules for which this module is the owner
+  llist rmas_owner;               // rmas for rules owned/defined by this module
+//  rbtree rmas;                    // rmas for rules associated to this module
 
   /*
    * values in this module are owned by the value_parser : variant_var, novariant_var
@@ -107,6 +107,8 @@ typedef struct module {
   llist scoped_blocks;
   struct value * var_value;     // var : { } block in module.bam
   bool var_merge_overwrite;
+
+  llist lln;                    // adhoc
 } module;
 
 // loaded modules

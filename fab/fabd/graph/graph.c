@@ -143,6 +143,13 @@ static xapi vertex_value_xdestroy(void * restrict val)
   finally : coda;
 }
 
+static xapi edge_value_xdestroy(void * restrict val)
+{
+  enter;
+
+  finally : coda;
+}
+
 /* visit rules attached to a directory, part of run-invalid-rules
  *
  * v - rule node
@@ -171,7 +178,7 @@ xapi graph_setup()
 {
   enter;
 
-  fatal(graph_createx, &g_graph, EDGE_TYPE_FS, GRAPH_VERTEX_VALUE_SIZE, GRAPH_EDGE_VALUE_SIZE, 0, vertex_value_xdestroy);
+  fatal(graph_createx, &g_graph, EDGE_TYPE_FS, GRAPH_VERTEX_VALUE_SIZE, GRAPH_EDGE_VALUE_SIZE, 0, vertex_value_xdestroy, 0, edge_value_xdestroy);
 
   graph_vertex_definitions_set(g_graph, graph_node_attrs);
   graph_edge_definitions_set(g_graph, graph_edge_attrs);
