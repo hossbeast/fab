@@ -30,7 +30,7 @@ xapi bpe_say_sources(buildplan_entity * restrict bpe, narrator * restrict N)
   enter;
 
   node *n;
-  node_edge *ne;
+  node_edge_dependency *ne;
   edge *e;
   int x;
 
@@ -39,7 +39,7 @@ xapi bpe_say_sources(buildplan_entity * restrict bpe, narrator * restrict N)
     n = containerof(bpe, typeof(*n), self_bpe);
     fatal(node_path_say, n, N);
   }
-  else if(bpe->typemark == BPE_NODE_EDGE)
+  else if(bpe->typemark == BPE_NODE_EDGE_DEPENDENCY)
   {
     ne = containerof(bpe, typeof(*ne), bpe);
     e = edge_containerof(ne);
@@ -89,7 +89,7 @@ xapi bpe_say_targets(buildplan_entity * restrict bpe, narrator * restrict N)
   enter;
 
   node *n;
-  node_edge *ne;
+  node_edge_dependency *ne;
   edge *e;
   int x;
 
@@ -98,7 +98,7 @@ xapi bpe_say_targets(buildplan_entity * restrict bpe, narrator * restrict N)
     n = containerof(bpe, typeof(*n), self_bpe);
     fatal(node_path_say, n, N);
   }
-  else if(bpe->typemark == BPE_NODE_EDGE)
+  else if(bpe->typemark == BPE_NODE_EDGE_DEPENDENCY)
   {
     ne = containerof(bpe, typeof(*ne), bpe);
     e = edge_containerof(ne);

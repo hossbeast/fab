@@ -291,7 +291,7 @@ xapi graph_full_refresh(rule_run_context * restrict ctx)
 
   rule_module_association *rma;
   llist *head;
-  node_edge *ne;
+  node_edge_dependency *ne;
   llist *T;
 
   /* list of rmas run during the refresh operation */
@@ -331,7 +331,7 @@ xapi graph_full_refresh(rule_run_context * restrict ctx)
     llist_foreach(&rma_refresh_list, rma, refresh_lln) {
       llist_foreach_safe(&rma->edges, ne, lln, T) {
         if(ne->refresh_id != graph_refresh_id) {
-          fatal(node_edge_disconnect, ne, &ctx->invalidation);
+          fatal(node_edge_disconnect, edge_containerof(ne), &ctx->invalidation);
           llist_delete(ne, lln);
         }
       }

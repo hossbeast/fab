@@ -172,13 +172,13 @@ static xapi module_rule_disassociate(rule_module_association * restrict rma, gra
 {
   enter;
 
-  struct node_edge *ne;
+  node_edge_dependency *ne;
 
   STATS_DEC(rmas);
 
   /* remove edges - connections to directory nodes - from this rma */
   llist_foreach(&rma->edges, ne, lln) {
-    fatal(node_edge_disconnect, ne, invalidation);
+    fatal(node_edge_disconnect, edge_containerof(ne), invalidation);
   }
 
   /*

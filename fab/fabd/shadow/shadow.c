@@ -80,7 +80,7 @@ static xapi shadow_link(
   , const char * restrict name
   , uint16_t namel
   , node * restrict ref
-  , node_edge ** restrict nep
+  , edge ** restrict nep
   , node ** restrict displacedp
   , graph_invalidation_context * restrict invalidation
 )
@@ -91,7 +91,7 @@ static xapi shadow_link(
   node * n;
   path * p = 0;
   node * displaced;
-  node_edge *ne;
+  edge *ne;
   path plocal;
 
   fatal(vertex_create, &v, g_graph, VERTEX_SHADOW_LINK);
@@ -110,7 +110,7 @@ static xapi shadow_link(
   n->fs = n->fst->fs;
   n->mod = mod;
 
-  fatal(node_connect, parent, n, EDGE_TYPE_FS, invalidation, &ne, &displaced);
+  fatal(node_connect_fs, parent, n, EDGE_TYPE_FS, invalidation, &ne, &displaced);
 
   if(nep) {
     *nep = ne;
@@ -121,7 +121,7 @@ static xapi shadow_link(
   }
 
   /* existing link by this name - same referent */
-  if(!displaced && edge_containerof(ne)->B != v)
+  if(!displaced && ne->B != v)
   {
     n->name = 0;
     fatal(graph_vertex_delete, g_graph, v);
@@ -163,8 +163,6 @@ static xapi shadow_create(
   vertex * v;
   node * n;
   path * p = 0;
-  node * nep = 0;
-  node_edge *ne;
 
   STATS_INC(nodes_shadow);
   fatal(vertex_create, &v, g_graph, attrs);
@@ -182,7 +180,7 @@ static xapi shadow_create(
   n->fs = n->fst->fs;
   n->mod = mod;
 
-  fatal(node_connect, parent, n, EDGE_TYPE_FS, invalidation, &ne, &nep);
+  fatal(node_connect_fs, parent, n, EDGE_TYPE_FS, invalidation, 0, 0);
 
   if(np) {
     *np = n;
@@ -243,7 +241,7 @@ xapi shadow_graft_module(struct module * restrict mod, graph_invalidation_contex
   finally : coda;
 }
 
-xapi shadow_graft_imports(struct module * restrict mod, node * restrict ref, const char * restrict as, uint16_t asl, node_edge ** restrict nep, graph_invalidation_context * restrict invalidation)
+xapi shadow_graft_imports(struct module * restrict mod, node * restrict ref, const char * restrict as, uint16_t asl, edge ** restrict nep, graph_invalidation_context * restrict invalidation)
 {
   enter;
 
@@ -269,7 +267,7 @@ xapi shadow_graft_imports(struct module * restrict mod, node * restrict ref, con
   finally : coda;
 }
 
-xapi shadow_graft_scope(struct module * restrict mod, node * restrict ref, const char * restrict as, uint16_t asl, bool overwrite, node_edge ** restrict nep, graph_invalidation_context * restrict invalidation)
+xapi shadow_graft_scope(struct module * restrict mod, node * restrict ref, const char * restrict as, uint16_t asl, bool overwrite, edge ** restrict nep, graph_invalidation_context * restrict invalidation)
 {
   enter;
 
@@ -308,7 +306,7 @@ static xapi prune_visitor(edge * e, void * ctx, traversal_mode mode, int distanc
   enter;
 
   llist *lln = ctx;
-  node_edge *ne;
+  node_edge_imports *ne;
 
   ne = edge_value(e);
 
@@ -325,7 +323,7 @@ xapi shadow_prune_imports(struct module * restrict mod, graph_invalidation_conte
 
   llist lln, *cursor;
   edge *e, *scope_edge, *imports_edge;
-  node_edge *ne;
+  node_edge_imports *ne;
 
   llist_init_node(&lln);
   fatal(graph_traverse_vertex_edges
@@ -344,7 +342,6 @@ xapi shadow_prune_imports(struct module * restrict mod, graph_invalidation_conte
   );
 
   llist_foreach_safe(&lln, e, lln, cursor) {
-
     ne = edge_value(e);
 
     /* save the related edges */
@@ -359,7 +356,6 @@ xapi shadow_prune_imports(struct module * restrict mod, graph_invalidation_conte
     {
       STATS_DEC(nodes_shadow);
       fatal(graph_edge_disconnect, g_graph, imports_edge);
-
       fatal(graph_delete_vertex, imports_edge->B);
     }
 
@@ -368,7 +364,6 @@ xapi shadow_prune_imports(struct module * restrict mod, graph_invalidation_conte
     {
       STATS_DEC(nodes_shadow);
       fatal(graph_edge_disconnect, g_graph, scope_edge);
-
       fatal(graph_delete_vertex, scope_edge->B);
     }
   }

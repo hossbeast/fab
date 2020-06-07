@@ -184,7 +184,7 @@ xapi build_slot_prep(build_slot * restrict bs, buildplan_entity * restrict bpe, 
 
   node *n = 0;
   edge *e;
-  node_edge *ne;
+  node_edge_dependency *ne;
   int x;
 
   bs->stage_index = stage_index;
@@ -194,7 +194,7 @@ xapi build_slot_prep(build_slot * restrict bs, buildplan_entity * restrict bpe, 
     n = containerof(bpe, typeof(*n), self_bpe);
     bs->var = n->var;
   }
-  else if(bpe->typemark == BPE_NODE_EDGE)
+  else if(bpe->typemark == BPE_NODE_EDGE_DEPENDENCY)
   {
     ne = containerof(bpe, typeof(*ne), bpe);
     e = edge_containerof(ne);
@@ -265,7 +265,7 @@ xapi build_slot_prep(build_slot * restrict bs, buildplan_entity * restrict bpe, 
     n = containerof(bpe, typeof(*n), self_bpe);
     n->notify_state = NOTIFY_SUPPRESS;
   }
-  else if(bpe->typemark == BPE_NODE_EDGE)
+  else if(bpe->typemark == BPE_NODE_EDGE_DEPENDENCY)
   {
     ne = containerof(bpe, typeof(*ne), bpe);
     e = edge_containerof(ne);
@@ -500,7 +500,7 @@ xapi build_slot_reap(build_slot * restrict bs, uint32_t slot_index, siginfo_t *i
 
   buildplan_entity *bpe;
   node *n;
-  node_edge *ne;
+  node_edge_dependency *ne;
   edge *e;
 
   bs->status = info->si_status;
@@ -536,7 +536,7 @@ xapi build_slot_reap(build_slot * restrict bs, uint32_t slot_index, siginfo_t *i
       n = containerof(bpe, typeof(*n), self_bpe);
       fatal(node_ok, n);
     }
-    else if(bpe->typemark == BPE_NODE_EDGE)
+    else if(bpe->typemark == BPE_NODE_EDGE_DEPENDENCY)
     {
       ne = containerof(bpe, typeof(*ne), bpe);
       e = edge_containerof(ne);
@@ -575,7 +575,7 @@ xapi build_slot_reap(build_slot * restrict bs, uint32_t slot_index, siginfo_t *i
     n->notify_epoch = notify_thread_epoch;
     n->notify_state = NOTIFY_EXPIRING;
   }
-  else if(bpe->typemark == BPE_NODE_EDGE)
+  else if(bpe->typemark == BPE_NODE_EDGE_DEPENDENCY)
   {
     ne = containerof(bpe, typeof(*ne), bpe);
     e = edge_containerof(ne);

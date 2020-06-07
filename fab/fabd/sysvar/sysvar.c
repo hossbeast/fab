@@ -27,7 +27,7 @@
 #include "build_slot.h"
 #include "module.h"
 
-static void bpe_split(const buildplan_entity * restrict bpe, const node ** restrict n, const node_edge ** restrict ne, const edge ** restrict e)
+static void bpe_split(const buildplan_entity * restrict bpe, const node ** restrict n, const node_edge_dependency ** restrict ne, const edge ** restrict e)
 {
   *n = 0;
   *ne = 0;
@@ -37,7 +37,7 @@ static void bpe_split(const buildplan_entity * restrict bpe, const node ** restr
   {
     *n = containerof(bpe, typeof(**n), self_bpe);
   }
-  else if(bpe->typemark == BPE_NODE_EDGE)
+  else if(bpe->typemark == BPE_NODE_EDGE_DEPENDENCY)
   {
     *ne = containerof(bpe, typeof(**ne), bpe);
     *e = edge_containerof(*ne);
@@ -54,7 +54,7 @@ xapi sysvar_builder_variant(exec_builder * restrict builder, const build_slot * 
 
   int x;
   const node * n;
-  const node_edge * ne;
+  const node_edge_dependency * ne;
   const edge * e;
   builder_add_args args = { 0 };
 
@@ -128,7 +128,7 @@ xapi sysvar_builder_targets(exec_builder * restrict builder, const build_slot * 
   char space[64];
   builder_add_args args = { 0 };
   const node * n;
-  const node_edge * ne;
+  const node_edge_dependency * ne;
   const edge * e;
 
   bpe_split(bs->bpe, &n, &ne, &e);
@@ -204,7 +204,7 @@ xapi sysvar_builder_sources(exec_builder * restrict builder, const build_slot * 
   char space[64];
   builder_add_args args = { 0 };
   const node * n;
-  const node_edge * ne;
+  const node_edge_dependency * ne;
   const edge * e;
 
   bpe_split(bs->bpe, &n, &ne, &e);
@@ -271,7 +271,7 @@ xapi exec_render_sysvar_sources(exec_render_context * restrict ctx, const build_
 
   int x;
   const node * n;
-  const node_edge * ne;
+  const node_edge_dependency * ne;
   const edge * e;
 
   bpe_split(bs->bpe, &n, &ne, &e);
@@ -327,7 +327,7 @@ xapi exec_render_sysvar_targets(exec_render_context * restrict ctx, const build_
 
   int x;
   const node * n;
-  const node_edge * ne;
+  const node_edge_dependency * ne;
   const edge * e;
 
   bpe_split(bs->bpe, &n, &ne, &e);
@@ -387,7 +387,7 @@ xapi exec_render_sysvar_variant(exec_render_context * restrict ctx, const build_
 
   int x;
   const node * n;
-  const node_edge * ne;
+  const node_edge_dependency * ne;
   const edge * e;
 
   bpe_split(bs->bpe, &n, &ne, &e);

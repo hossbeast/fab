@@ -58,7 +58,7 @@ typedef struct rule_module_association {
     llist lln;
   };
 
-  llist edges;              // struct node_edge - created by this rma
+  llist edges;              // struct node_edge_depends - created by this rma
 
   struct {
     llist lln;              // in module_rma_list
