@@ -71,11 +71,12 @@
 #include "common/hash.h"
 #include "usage.h"
 
-llist g_modules;                            // all modules
-static llist modules_invalidated;           // module files with pending invalidation
-llist parsers = LLIST_INITIALIZER(parsers); // struct module_parser
+llist g_modules = LLIST_INITIALIZER(g_modules); // all modules
+static llist modules_invalidated;               // module files with pending invalidation
+llist parsers = LLIST_INITIALIZER(parsers);     // struct module_parser
 static exec_builder local_exec_builder;
 static exec_render_context local_exec_render;
+static llist rmas_freelist = LLIST_INITIALIZER(rmas_freelist);
 
 //
 // static
@@ -144,7 +145,7 @@ struct associate_rules_context
 };
 
 /*
- * associate rules in the statement block with the module
+ * associate rules in statement block of module used (defines the rules) with the module self (module being loaded)
  *
  * mod_self - module to associate rules to
  * mod_used - module which defines the rules
@@ -192,6 +193,8 @@ static xapi module_rule_disassociate(rule_module_association * restrict rma, gra
     llist_delete(rma, changed[1].lln);
   }
 
+  fatal(graph_edge_disconnect, g_graph, rma->associating_edge);
+
   finally : coda;
 }
 
@@ -211,6 +214,16 @@ static xapi rule_remove(rule * restrict r, graph_invalidation_context * restrict
     llist_append(&lln, e, lln);
   }
 
+  /* note - upward edges, connecting to modules, are disconnected in module_rule_disassociate */
+
+//  /* disconnect edges connecting this rule to modules */
+//  rbtree_foreach(&v->up, e, rbn_up) {
+//rule_module_edge * rme = edge_value(e);
+//rme->rma = 0;
+//
+//    llist_append(&lln, e, lln);
+//  }
+
   llist_foreach_safe(&lln, e, lln, cursor) {
     fatal(graph_edge_disconnect, g_graph, e);
   }
@@ -221,29 +234,21 @@ static xapi rule_remove(rule * restrict r, graph_invalidation_context * restrict
   finally : coda;
 }
 
-/* run all rules in a module A (which defines the rules) in context of module B (module being loaded) */
-static xapi module_rules_uses_visitor(vertex * mod_dir_v, void * ctxp, traversal_mode mode, int distance, int * result)
+/* adds the module to a list */
+static xapi module_rules_uses_visitor(vertex * mod_dir_v, void * ctx, traversal_mode mode, int distance, int * result)
 {
   enter;
 
+  llist * mods = ctx;
   node * mod_dir_n;
-  module * mod_self;
-  module * mod_used;
-  statement_block *block;
+  module * mod;
 
-  mod_self = ctxp;
   mod_dir_n = vertex_value(mod_dir_v);
-  mod_used = mod_dir_n->mod;
+  mod = mod_dir_n->mod;
 
-  /* for rules in the unscoped block, use variants from the unscoped block of the module being loaded */
-  if(mod_used->unscoped_block) {
-    fatal(associate_block_rules, mod_self, mod_used, mod_used->unscoped_block, 0);// mod_self->unscoped_block.variants);
-  }
+//printf("uses visitor %p %s\n", mod, mod_dir_n->name->name);
 
-  /* however for scoped blocks, use variants from the block in the module which defines the rules */
-  llist_foreach(&mod_used->scoped_blocks, block, lln) {
-    fatal(associate_block_rules, mod_self, mod_used, block, block->variants);
-  }
+  llist_append(mods, mod, lln);
 
   finally : coda;
 }
@@ -475,6 +480,8 @@ static xapi module_refresh(module * restrict mod, graph_invalidation_context * r
   node * mod_file_n;
   statement_block *block;
   rule * r;
+  llist mods;
+  module * mod_used;
 
   mod_dir_n = mod->dir_node;
   mod_dir_v = vertex_containerof(mod_dir_n);
@@ -486,7 +493,6 @@ static xapi module_refresh(module * restrict mod, graph_invalidation_context * r
       if(!r->fml_node) {
         continue;
       }
-
       fatal(rule_formula_process, r, r->fml_node);
     }
   }
@@ -511,7 +517,11 @@ static xapi module_refresh(module * restrict mod, graph_invalidation_context * r
   // parse var.bam files, build variant envs
   fatal(rebuild_variant_envs, mod);
 
-  // visit this module and its USES transitively to invalidate rules
+  /* visit this module and its USES transitively
+   * NOTE: the mod-rule association cannot be made while the mod_rules_uses_visitor traversal
+   * is underway, because it modifies the edge on the module directory node
+   */
+  llist_init_node(&mods);
   fatal(graph_traverse_vertices
     , g_graph
     , mod_dir_v
@@ -522,8 +532,37 @@ static xapi module_refresh(module * restrict mod, graph_invalidation_context * r
         , edge_visit : EDGE_TYPE_USES
       }}
     , MORIA_TRAVERSE_DOWN | MORIA_TRAVERSE_POST
-    , mod
+    , &mods
   );
+
+  // enqueue rules
+  llist_foreach(&mods, mod_used, lln) {
+    /* for rules in the unscoped block, use variants from the unscoped block of the module being loaded */
+    if(mod_used->unscoped_block) {
+      fatal(associate_block_rules, mod, mod_used, mod_used->unscoped_block, 0);
+    }
+
+    /* however for scoped blocks, use variants from the block in the module which defines the rules */
+    llist_foreach(&mod_used->scoped_blocks, block, lln) {
+      fatal(associate_block_rules, mod, mod_used, block, block->variants);
+    }
+  }
+
+  finally : coda;
+}
+
+static xapi module_rule_append_visitor(edge * e, void * ctx, traversal_mode mode, int distance, int * result)
+{
+  enter;
+
+  llist *lln;
+  rule_module_edge *rme;
+
+  lln = ctx;
+  rme = edge_value(e);
+
+  llist_delete(rme->rma, lln_owner);
+  llist_append(lln, rme->rma, lln_owner);
 
   finally : coda;
 }
@@ -537,6 +576,7 @@ static xapi module_reload(module * restrict mod, module_parser * restrict parser
   llist *cursor;
   rule *r;
   rule_module_association *rma;
+  llist lln;
 
   if(node_nodetype_get(mod->self_node) == VERTEX_NODETYPE_MODULE)
   {
@@ -556,15 +596,33 @@ static xapi module_reload(module * restrict mod, module_parser * restrict parser
     goto XAPI_FINALIZE;
   }
 
-  /* disassociate all rmas owned by this module */
-  llist_foreach_safe(&mod->rmas_owner, rma, lln_rmas_owner, cursor) {
+  /* disassociate rules associated to (but not owned by) this module */
+  llist_init_node(&lln);
+  fatal(graph_traverse_vertex_edges
+    , g_graph
+    , vertex_containerof(mod->dir_node)
+    , module_rule_append_visitor
+    , 0
+    , (traversal_criteria[]) {{
+          edge_travel: EDGE_TYPE_MOD_RULE
+        , edge_visit : EDGE_TYPE_MOD_RULE
+        , min_depth : 0
+        , max_depth : 0
+      }}
+    , MORIA_TRAVERSE_DOWN | MORIA_TRAVERSE_PRE | MORIA_TRAVERSE_DEPTH
+    , &lln
+  );
+
+  llist_splice_head(&lln, &mod->rmas_owner);
+
+  /* disassociate rmas for rules owned by this module */
+  llist_foreach_safe(&lln, rma, lln_owner, cursor) {
     fatal(module_rule_disassociate, rma, invalidation);
-    rbtree_delete(&rma->mod->rmas, rma, rbn_rmas);
-    llist_delete(rma, lln_rmas_owner);
-    free(rma);
+    llist_delete(rma, lln_owner);
+    llist_append(&rmas_freelist, rma, lln_owner);
   }
 
-  /* destroy existing/used blocks and return to the freelist */
+  /* destroy existing blocks and rules owned by this module */
   llist_init_node(&blocks);
   if(mod->unscoped_block) {
     llist_append(&blocks, mod->unscoped_block, lln);
@@ -714,7 +772,7 @@ xapi module_load(node * restrict mod_dir_n, node * restrict mod_file_n, graph_in
   fatal(module_reload, mod, parser, invalidation);
 
   // register the module
-  llist_append(&g_modules, mod, lln);
+  llist_append(&g_modules, mod, lln_modules);
 
 finally:
   if(parser)
@@ -782,22 +840,8 @@ xapi module_create(module ** restrict modp)
 
   llist_init_node(&mod->scoped_blocks);
 
-#if 0
-  fatal(statement_block_xinit, &mod->unscoped_block);
-  fatal(array_createx
-    , &mod->scoped_blocks
-    , sizeof(statement_block)
-    , 0
-    , 0
-    , 0
-    , statement_block_xinit
-    , 0
-    , statement_block_xdestroy
-  );
-#endif
   fatal(map_create, &mod->variant_var);
   fatal(map_createx, &mod->variant_envs, 0, (void*)exec_free, 0);
-  rbtree_init(&mod->rmas);
   llist_init_node(&mod->rmas_owner);
   fatal(value_parser_create, &mod->value_parser);
   llist_init_node(&mod->lln_invalidated);
@@ -811,8 +855,7 @@ static xapi module_xdestroy(module * restrict mod)
 {
   enter;
 
-  llist lln, *cursor;
-  rule_module_association *rma;
+  llist *cursor;
   statement_block *block;
 
   wfree(mod->self_node_relpath);
@@ -830,14 +873,8 @@ static xapi module_xdestroy(module * restrict mod)
   fatal(map_xfree, mod->variant_envs);
   exec_free(mod->novariant_envs);
 
-  llist_init_node(&lln);
-  rbtree_foreach(&mod->rmas, rma, rbn_rmas) {
-    llist_append(&lln, rma, lln);
-  }
-
-  llist_foreach_safe(&lln, rma, lln, cursor) {
-    free(rma);
-  }
+  /* free rmas owned/defined by this module */
+  llist_splice_head(&rmas_freelist, &mod->rmas_owner);
 
   fatal(value_parser_xfree, mod->value_parser);
 
@@ -868,18 +905,6 @@ xapi module_ixfree(module ** restrict modp)
   finally : coda;
 }
 
-struct rma_rbn_key {
-  const struct rule *rule;
-};
-
-static int rma_rbn_key_cmp(void *_key, const rbnode * _n)
-{
-  const struct rma_rbn_key *key = _key;
-  const rule_module_association *rma = containerof(_n, typeof(*rma), rbn_rmas);
-
-  return INTCMP(key->rule, rma->rule);
-}
-
 void rule_module_association_init(rule_module_association * restrict rma)
 {
   rbnode_init(&rma->nohits_rbn);
@@ -897,37 +922,47 @@ void rule_module_association_init(rule_module_association * restrict rma)
  * variants  - variants for rule execution
  * rmap      - (returns) rma
  */
-xapi module_rule_associate(module * mod, module * mod_owner, rule * restrict rule, set * restrict variants, rule_module_association ** restrict rmap)
+xapi module_rule_associate(module * mod, module * mod_owner, rule * restrict r, set * restrict variants, rule_module_association ** restrict rmap)
 {
   enter;
 
+  edge *e;
+  bool created;
+  rule_module_edge *rme;
   rule_module_association *rma;
-  rbtree_search_context search_ctx;
-  struct rma_rbn_key key;
-  rbnode *rbn;
 
-  key = (typeof(key)) {
-      rule : rule
-  };
-  if((rbn = rbtree_search(&mod->rmas, &search_ctx, &key, rma_rbn_key_cmp)))
-  {
-    rma = containerof(rbn, typeof(*rma), rbn_rmas);
+  fatal(graph_connect
+    , g_graph
+    , vertex_containerof(mod->dir_node)
+    , vertex_containerof(r)
+    , EDGE_TYPE_MOD_RULE
+    , &e
+    , &created
+  );
+
+  rme = edge_value(e);
+
+  if(!created) {
+    *rmap = rme->rma;
+    goto XAPI_FINALIZE;
   }
-  else
-  {
-    STATS_INC(rmas);
+
+  STATS_INC(rmas);
+  if((rma = llist_shift(&rmas_freelist, typeof(*rma), lln_owner))) {
+    memset(rma, 0, sizeof(*rma));
+  } else {
     fatal(xmalloc, &rma, sizeof(*rma));
-    rule_module_association_init(rma);
-    rma->rule = rule;
-    rma->mod = mod;
-    rma->mod_owner = mod_owner;
-    rma->variants = variants;
-
-    rbtree_insert_node(&mod->rmas, &search_ctx, &rma->rbn_rmas);
-
-    /* also add to owner list */
-    llist_append(&mod_owner->rmas_owner, rma, lln_rmas_owner);
   }
+  rule_module_association_init(rma);
+  rma->rule = r;
+  rma->mod = mod;
+  rma->mod_owner = mod_owner;
+  rma->variants = variants;
+  rma->associating_edge = e;
+
+  /* also add to owner list */
+  llist_append(&mod_owner->rmas_owner, rma, lln_owner);
+  rme->rma = rma;
 
   *rmap = rma;
 
@@ -1036,10 +1071,10 @@ xapi module_setup()
 {
   enter;
 
-  llist_init_node(&g_modules);
   llist_init_node(&modules_invalidated);
   fatal(exec_builder_xinit, &local_exec_builder);
   fatal(exec_render_context_xinit, &local_exec_render);
+  llist_init_node(&rmas_freelist);
 
   finally : coda;
 }
@@ -1050,12 +1085,23 @@ xapi module_cleanup()
 
   module_parser *parser;
   llist *T;
+  rule_module_association *rma;
+  module *mod;
 
   fatal(exec_builder_xdestroy, &local_exec_builder);
   fatal(exec_render_context_xdestroy, &local_exec_render);
 
   llist_foreach_safe(&parsers, parser, lln, T) {
     fatal(module_parser_xfree, parser);
+  }
+
+  /* destroy modules */
+  llist_foreach_safe(&g_modules, mod, lln_modules, T) {
+    fatal(module_xfree, mod);
+  }
+
+  llist_foreach_safe(&rmas_freelist, rma, lln_owner, T) {
+    wfree(rma);
   }
 
   finally : coda;

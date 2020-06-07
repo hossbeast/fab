@@ -236,7 +236,6 @@ static xapi explore_vertex(
 
   travel = true;
   visit = should(v->attrs, criteria->vertex_visit);
-
   fatal(state_assure, state, ent->index);
 
   if(!(attrs & MORIA_TRAVERSE_DEPTH) || distance <= criteria->max_depth)
@@ -489,7 +488,6 @@ static xapi explore_edge(
 
   travel = true;
   visit = should(e->attrs, criteria->edge_visit);
-
   fatal(state_assure, state, ent->index);
 
   if(!(attrs & MORIA_TRAVERSE_DEPTH) || distance <= criteria->max_depth)
@@ -560,7 +558,6 @@ static xapi explore_edge(
     {
       next_vertex = follow(next_vertex, attrs);
       next_travel = should(next_vertex->attrs, criteria->vertex_travel);
-
       if(next_travel)
       {
         fatal(explore_vertex
@@ -906,6 +903,57 @@ xapi API graph_traverse_edges(
 
 finally:
   graph_edge_traversal_end(g, local_state);
+  fatal(narrator_xfree, N);
+coda;
+}
+
+xapi graph_traverse_edge_vertices(
+    graph * const restrict g
+  , edge * const restrict ex
+  , xapi (* visitor)(vertex * restrict, void *, traversal_mode, int, int * restrict)
+  , vertex_traversal_state * state
+  , const traversal_criteria * restrict criteria
+  , uint32_t attrs
+  , void * ctx
+)
+{
+  enter;
+
+  narrator * N = 0;
+  vertex_t * stack[32] = {};
+  size_t stackz = 0;
+  traversal_criteria local_criteria;
+  vertex_traversal_state * local_state = 0;
+  edge_t * e = containerof(ex, edge_t, ex);
+
+  if(!state)
+  {
+    fatal(graph_vertex_traversal_begin, g, &local_state);
+    state = local_state;
+  }
+
+  if(!criteria)
+  {
+    memset(&local_criteria, 0, sizeof(local_criteria));
+    criteria = &local_criteria;
+  }
+
+  fatal(explore_edge
+    , e
+    , visitor   // vertex visitor
+    , 0
+    , criteria
+    , attrs
+    , ctx
+    , &state->st
+    , 0         // distance
+    , &stack    // vertex stack
+    , 0
+    , &stackz
+  );
+
+finally:
+  graph_vertex_traversal_end(g, local_state);
   fatal(narrator_xfree, N);
 coda;
 }

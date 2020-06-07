@@ -189,7 +189,7 @@ void graph_edge_init(graph * const restrict g, edge_t * const restrict e)
 
 xapi API graph_create(graph ** const restrict g, uint32_t identity)
 {
-  xproxy(graph_createx, g, identity, 0, 0, 0, 0);
+  xproxy(graph_createx, g, identity, 0, 0, 0, 0, 0, 0);
 }
 
 xapi API graph_createx(
@@ -199,6 +199,8 @@ xapi API graph_createx(
   , size_t esz
   , void * vertex_value_destroy
   , void * vertex_value_xdestroy
+  , void * edge_value_destroy
+  , void * edge_value_xdestroy
 )
 {
   enter;
@@ -209,6 +211,8 @@ xapi API graph_createx(
   (*g)->esz = esz;
   (*g)->vertex_value_destroy = vertex_value_destroy;
   (*g)->vertex_value_xdestroy = vertex_value_xdestroy;
+  (*g)->edge_value_destroy = edge_value_destroy;
+  (*g)->edge_value_xdestroy = edge_value_xdestroy;
 
   (*g)->vertex_mask = UINT64_C(1);
   (*g)->edge_mask = UINT64_C(1);
@@ -269,20 +273,32 @@ xapi API graph_recycle(graph * const restrict g)
   enter;
 
   vertex_t * v;
+  edge_t * e;
 
-  // free all the values
+  // free values
   if(g->vertex_value_destroy || g->vertex_value_xdestroy)
   {
     llist_foreach(&g->vertices, v, graph_lln) {
-      if(g->vertex_value_destroy)
+      if(g->vertex_value_destroy) {
         g->vertex_value_destroy(v->value);
-      else
+      } else {
         fatal(g->vertex_value_xdestroy, v->value);
+      }
     }
   }
-
-  // move to the freelist
   llist_splice_tail(&g->vertex_freelist, &g->vertices);
+
+  // free edges
+  if(g->edge_value_destroy || g->edge_value_xdestroy)
+  {
+    llist_foreach(&g->edges, e, graph_lln) {
+      if(g->edge_value_destroy) {
+        g->edge_value_destroy(e->value);
+      } else {
+        fatal(g->edge_value_xdestroy, e->value);
+      }
+    }
+  }
   llist_splice_tail(&g->edge_freelist, &g->edges);
 
   fatal(multimap_recycle, g->mm);

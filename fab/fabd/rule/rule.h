@@ -90,7 +90,7 @@ typedef struct rule {
   rule_direction dir;
   rule_cardinality card;
 
-  llist lln;                // in block->rules
+  llist lln;                // in module statement_block->rules
 } rule;
 
 STATIC_ASSERT(sizeof(rule) <= GRAPH_VERTEX_VALUE_SIZE);
@@ -101,6 +101,11 @@ typedef struct rule_dirnode_edge {
 } rule_dirnode_edge;
 
 STATIC_ASSERT(sizeof(rule_dirnode_edge) <= GRAPH_EDGE_VALUE_SIZE);
+
+/* edge connecting a rule to a module */
+typedef struct rule_module_edge {
+  struct rule_module_association *rma;
+} rule_module_edge;
 
 typedef struct rule_run_context {
   struct module * mod;            // module the rule is associated to

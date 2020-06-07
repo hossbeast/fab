@@ -53,6 +53,7 @@ typedef struct graph graph;
  * [identity]  - nonzero to enable identity operations
  * [vsz]       - size of vertex udata
  * [vertex_value_destroy] - invoked on vertex user data before releasing
+ * [edge_value_destroy] - invoked on vertex user data before releasing
  */
 xapi graph_create(graph ** const restrict g, uint32_t identity)
   __attribute__((nonnull(1)));
@@ -64,6 +65,8 @@ xapi graph_createx(
   , size_t esz
   , void * vertex_value_destroy
   , void * vertex_value_xdestroy
+  , void * edge_value_destroy
+  , void * edge_value_xdestroy
 )
   __attribute__((nonnull(1)));
 

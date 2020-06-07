@@ -154,6 +154,17 @@ xapi graph_traverse_edges(
 )
   __attribute__((nonnull(1, 2)));
 
+xapi graph_traverse_edge_vertices(
+    /* 1 */ struct graph * restrict g
+  , /* 2 */ struct edge * restrict e
+  , /* 3 */ xapi (* visitor)(struct vertex * restrict, void * ctx, traversal_mode mode, int distance, int * restrict)
+  , /* 4 */ vertex_traversal_state * state
+  , /* 5 */ const traversal_criteria * restrict criteria
+  , /* 6 */ uint32_t attrs
+  , /* 7 */ void * ctx
+)
+  __attribute__((nonnull(1, 2)));
+
 /// graph_traverse_vertices_all
 //
 // SUMMARY

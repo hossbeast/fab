@@ -194,7 +194,7 @@ static xapi create_buildplan(buildplan_context * restrict bpctx)
   else
   {
     // otherwise select the targets of all modules
-    llist_foreach(&g_modules, mod, lln) {
+    llist_foreach(&g_modules, mod, lln_modules) {
       fatal(graph_traverse_vertices
         , g_graph
         , vertex_containerof(mod->shadow_targets)

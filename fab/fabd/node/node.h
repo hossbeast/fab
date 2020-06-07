@@ -128,6 +128,7 @@ EDGE_DIRECTION_TABLE
 
 /* edge connecting two nodes */
 typedef struct node_edge {
+/* need to split these into separate structs by EDGE_TYPE */
   union {
     struct {                            // EDGE_TYPE_STRONG | EDGE_TYPE_CONDUIT
       buildplan_entity bpe;
