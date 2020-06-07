@@ -39,6 +39,7 @@ struct rule_module_association;
 #define EDGE_TYPE_OPT 0x00fff000
 
 #define EDGE_INVALIDATIONS                               0x00100000 /* invalidations propagate along these edges */
+#define EDGE_MOD_RULE_FML                                0x00200000
 
 /* edge options */
 #define EDGE_TYPE_TABLE                                                                                          \
