@@ -115,6 +115,49 @@ static xapi dirnode_children_changed(node * restrict n, struct graph_invalidatio
   finally : coda;
 }
 
+static xapi invalidate_fml_rule_visitor(edge * e, void * arg, traversal_mode mode, int distance, int * result)
+{
+  enter;
+
+  graph_invalidation_context * invalidation = arg;
+  rule_module_edge *rme;
+  node_edge *ne;
+  node *n;
+  int x;
+
+  /* the formula attached to the rule for this rma has been invalidated */
+  rme = edge_value(e);
+  llist_foreach(&rme->rma->edges, ne, lln) {
+    e = edge_containerof(ne);
+    if(!(e->attrs & MORIA_EDGE_HYPER))
+    {
+      if(ne->dir == EDGE_TGT_SRC)
+        n = vertex_value(e->A);
+      else
+        n = vertex_value(e->B);
+      fatal(node_invalidate, n, invalidation);
+    }
+    else if(ne->dir == EDGE_TGT_SRC)
+    {
+      for(x = 0; x < e->Alen; x++)
+      {
+        n = vertex_value(e->Alist[x].v);
+        fatal(node_invalidate, n, invalidation);
+      }
+    }
+    else if(ne->dir == EDGE_SRC_TGT)
+    {
+      for(x = 0; x < e->Alen; x++)
+      {
+        n = vertex_value(e->Alist[x].v);
+        fatal(node_invalidate, n, invalidation);
+      }
+    }
+  }
+
+  finally : coda;
+}
+
 //
 // public
 //
@@ -729,8 +772,10 @@ xapi node_invalidate(node * restrict n, graph_invalidation_context * restrict in
   enter;
 
   vertex *v;
+  vertex_nodetype nt;
+  vertex_filetype ft;
 
-  // invalidate consumers
+  // propagate
   fatal(graph_traverse_vertices
     , g_graph
     , vertex_containerof(n)
@@ -752,13 +797,31 @@ xapi node_invalidate(node * restrict n, graph_invalidation_context * restrict in
     fatal(invalidate_visitor, vertex_containerof(n), 0, 0, 0, 0);
   }
 
-  if(node_filetype_get(n) == VERTEX_FILETYPE_DIR)
+  ft = node_filetype_get(n);
+  nt = node_nodetype_get(n);
+  if(ft == VERTEX_FILETYPE_DIR)
   {
     fatal(dirnode_children_changed, n, invalidation);
   }
-  else if(node_nodetype_get(n) == VERTEX_NODETYPE_MODULE || node_nodetype_get(n) == VERTEX_NODETYPE_MODEL)
+  else if(nt == VERTEX_NODETYPE_MODULE || nt == VERTEX_NODETYPE_MODEL)
   {
     module_invalidated(node_module_get(n));
+  }
+  else if(nt == VERTEX_NODETYPE_FML)
+  {
+    // traverse : formula -> rules -> rmas
+    fatal(graph_traverse_vertex_edges
+      , g_graph
+      , vertex_containerof(n)
+      , invalidate_fml_rule_visitor
+      , invalidation->edge_traversal
+      , (traversal_criteria[]) {{
+            edge_travel : EDGE_MOD_RULE_FML
+          , edge_visit : EDGE_TYPE_MOD_RULE
+        }}
+      , MORIA_TRAVERSE_UP | MORIA_TRAVERSE_PRE
+      , invalidation
+    );
   }
 
   finally : coda;
