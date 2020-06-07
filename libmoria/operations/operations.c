@@ -819,7 +819,7 @@ xapi API graph_vertex_delete(struct graph * restrict g, struct vertex * restrict
   finally : coda;
 }
 
-APIDATA operations_dispatch * graph_operations_dispatch = (operations_dispatch[]) {{
+operations_dispatch * API graph_operations_dispatch = (operations_dispatch[]) {{
     .connect = graph_connect
   , .hyperconnect = graph_hyperconnect
   , .disconnect = graph_edge_disconnect

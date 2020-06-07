@@ -63,6 +63,7 @@ variant xapi.pic.devel : [
   rule test/test_(*).? <- fabtest/test_util.$?.o
   rule test/test_(*).? <- libxapi/libxapi.$?.so
   rule test/test_(*).? <- libxlinux/libxlinux.$?.so
+  rule test/test_(*).? <- libcommon/libcommon.$?.so
   rule test/test_(*).? <- libvalyria.$?.a
 
   # target to run each test

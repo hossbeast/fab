@@ -311,7 +311,7 @@ xunit_unit xunit = {
                   " 3-vcs.c!U|file 4-vcs.h!U|file"
                   " 5-!rule"
                   " 1:fs:2 2:fs:3 2:fs:4"                  // fs edges
-                  " :strong:3,4"                           // strong edges (hyper)
+                  " _:strong:3,4"                          // strong edges (hyper)
       }}
     , 0
   }
