@@ -200,7 +200,7 @@ xapi pattern_segment_generate(pattern_generate_context * restrict ctx)
   {
     /* create as not yet existing */
     fatal(node_createw, &next_context_node, VERTEX_UNCREATED, 0, 0, section, section_len);
-    fatal(node_connect, ctx->node, next_context_node, EDGE_TYPE_FS, ctx->invalidation, 0, 0);
+    fatal(node_connect_fs, ctx->node, next_context_node, EDGE_TYPE_FS, ctx->invalidation, 0, 0);
   }
 
   // continue to the next section

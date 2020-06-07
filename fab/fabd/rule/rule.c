@@ -172,7 +172,7 @@ xapi rule_xdestroy(rule * restrict r)
   finally : coda;
 }
 
-static xapi rma_edge_associate(node_edge * restrict ne, rule_module_association * restrict rma)
+static xapi rma_edge_associate(node_edge_dependency * restrict ne, rule_module_association * restrict rma)
 {
   enter;
 
@@ -252,7 +252,7 @@ xapi rule_run(rule * restrict rule, rule_run_context * restrict ctx)
   node * above = 0;
   node * below = 0;
   narrator *N;
-  node_edge * ne;
+  node_edge_dependency * ne;
   node *n;
   vertex ** Alist = 0;
   vertex ** vlist = 0;
@@ -397,7 +397,7 @@ xapi rule_run(rule * restrict rule, rule_run_context * restrict ctx)
         logs(L_RULE, "  }");
       }
 
-      fatal(node_hyperconnect, 0, 0, vlist, z, rule->relation, &ctx->invalidation, &ne);
+      fatal(node_hyperconnect_dependency, 0, 0, vlist, z, rule->relation, &ctx->invalidation, &ne);
       fatal(rma_edge_associate, ne, rma);
       ne->dir = EDGE_SRC_TGT;
       fatal(bpe_setup, &ne->bpe, rule->fml_node);
@@ -488,7 +488,7 @@ xapi rule_run(rule * restrict rule, rule_run_context * restrict ctx)
           }
 
           RUNTIME_ASSERT(rule->relation);
-          fatal(node_connect, above, below, rule->relation, &ctx->invalidation, &ne, 0);
+          fatal(node_connect_dependency, above, below, rule->relation, &ctx->invalidation, &ne, 0);
           fatal(rma_edge_associate, ne, rma);
 
           if(rule->fml_node)
@@ -548,7 +548,7 @@ xapi rule_run(rule * restrict rule, rule_run_context * restrict ctx)
           fatal(log_finish);
         }
 
-        fatal(node_hyperconnect, Alist, z, Blist, 1, rule->relation, &ctx->invalidation, &ne);
+        fatal(node_hyperconnect_dependency, Alist, z, Blist, 1, rule->relation, &ctx->invalidation, &ne);
         fatal(rma_edge_associate, ne, rma);
 
         if(rule->fml_node)

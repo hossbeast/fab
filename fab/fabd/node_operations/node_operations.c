@@ -60,14 +60,30 @@ uint32_t node_invalidation_counter;
 // static
 //
 
-xapi node_index(node * n)
+static xapi log_connect(edge * restrict e)
 {
   enter;
 
-  vertex * v = vertex_containerof(n);
+  narrator * N;
+  edge_type type;
+  uint64_t cat;
 
-  // index the node for lookup
-  fatal(graph_identity_indexw, g_graph, v, n->name->name, n->name->namel);
+  type = e->attrs & EDGE_TYPE_OPT;
+
+  cat = 0;
+  if(type == EDGE_TYPE_FS) {
+    cat = L_FSGRAPH;
+  } else if (type & EDGE_DEPENDENCY) {
+    cat = L_DEPGRAPH;
+  }
+
+  if(log_would(cat))
+  {
+    fatal(log_start, cat, &N);
+    xsayf("%8s ", "connect");
+    fatal(graph_edge_say, e, N);
+    fatal(log_finish);
+  }
 
   finally : coda;
 }
@@ -121,7 +137,7 @@ static xapi invalidate_fml_rule_visitor(edge * e, void * arg, traversal_mode mod
 
   graph_invalidation_context * invalidation = arg;
   rule_module_edge *rme;
-  node_edge *ne;
+  node_edge_dependency *ne;
   node *n;
   int x;
 
@@ -161,6 +177,18 @@ static xapi invalidate_fml_rule_visitor(edge * e, void * arg, traversal_mode mod
 //
 // public
 //
+
+xapi node_index(node * n)
+{
+  enter;
+
+  vertex * v = vertex_containerof(n);
+
+  // index the node for lookup
+  fatal(graph_identity_indexw, g_graph, v, n->name->name, n->name->namel);
+
+  finally : coda;
+}
 
 xapi node_operations_create_vertex(
     vertex ** const restrict rv
@@ -235,17 +263,125 @@ xapi node_vertex_create(
   finally : coda;
 }
 
-xapi node_connect(node * restrict A, node * restrict B, edge_type relation, graph_invalidation_context * restrict invalidation, node_edge ** restrict nep, node ** restrict oldp)
+xapi node_connect_fs(
+    node * restrict A
+  , node * restrict B
+  , edge_type relation
+  , graph_invalidation_context * restrict invalidation
+  , edge ** restrict nep
+  , node ** restrict oldp
+)
+{
+  enter;
+
+  RUNTIME_ASSERT(relation == EDGE_TYPE_FS);
+
+  bool created = false;
+  edge * e = 0;
+  vertex_shadowtype ash;
+  vertex_shadowtype bsh;
+  vertex *old_vertex = 0, **oldvp = 0;
+
+  if(oldp) {
+    oldvp = &old_vertex;
+    *oldp = 0;
+  }
+
+  fatal(graph_connect_replace
+    , g_graph
+    , vertex_containerof(A)
+    , vertex_containerof(B)
+    , relation
+    , &e
+    , &created
+    , oldvp
+  );
+
+  if(nep)
+    *nep = e;
+
+  if(!created)
+    goto XAPI_FINALLY;
+
+  if(oldp && old_vertex) {
+    *oldp = vertex_value(old_vertex);
+  }
+
+  node_filetype_set(A, VERTEX_FILETYPE_DIR);
+  if(!node_filetype_get(B)) {
+    node_filetype_set(B, VERTEX_FILETYPE_REG);
+  }
+
+  ash = node_shadowtype_get(A);
+  bsh = node_shadowtype_get(B);
+
+  /* propagate the shadow-fs property */
+  if(ash && !bsh)
+  {
+    node_shadowtype_set(B, VERTEX_SHADOWTYPE_FS);
+  }
+  if(ash)
+  {
+    B->mod = A->mod;
+  }
+
+  fatal(dirnode_children_changed, A, invalidation);
+
+  fatal(log_connect, e);
+
+  finally : coda;
+}
+
+xapi node_connect_generic(
+    node * restrict A
+  , node * restrict B
+  , edge_type relation
+  , graph_invalidation_context * restrict invalidation
+  , edge ** restrict nep
+)
 {
   enter;
 
   bool created = false;
   edge * e = 0;
-  node_edge *ne;
-  narrator * N;
-  uint64_t cat = 0;
-  vertex_shadowtype ash;
-  vertex_shadowtype bsh;
+
+  fatal(graph_connect_replace
+    , g_graph
+    , vertex_containerof(A)
+    , vertex_containerof(B)
+    , relation
+    , &e
+    , &created
+    , 0
+  );
+
+  if(nep)
+    *nep = e;
+
+  if(!created)
+    goto XAPI_FINALLY;
+
+  fatal(log_connect, e);
+
+  finally : coda;
+}
+
+xapi node_connect_dependency(
+    node * restrict A
+  , node * restrict B
+  , edge_type relation
+  , graph_invalidation_context * restrict invalidation
+  , node_edge_dependency ** restrict nep
+  , node ** restrict oldp
+)
+{
+  enter;
+
+  RUNTIME_ASSERT(relation == EDGE_TYPE_STRONG || relation == EDGE_TYPE_CONDUIT);
+
+  bool created = false;
+  edge * e = 0;
+  node_edge_dependency *ne;
   vertex *old_vertex = 0, **oldvp = 0;
 
   if(oldp) {
@@ -274,70 +410,35 @@ xapi node_connect(node * restrict A, node * restrict B, edge_type relation, grap
     *oldp = vertex_value(old_vertex);
   }
 
+  llist_init_node(&ne->lln);
+  ne->bpe.typemark = BPE_NODE_EDGE_DEPENDENCY;
+
   /* invalidate the consumer nodes */
-  if(relation & EDGE_INVALIDATIONS)
-  {
-    fatal(node_invalidate, A, invalidation);
-    cat = L_DEPGRAPH;
-  }
+  fatal(node_invalidate, A, invalidation);
 
-  if(relation & EDGE_INVALIDATIONS)
-  {
-    llist_init_node(&ne->lln);
-    ne->bpe.typemark = BPE_NODE_EDGE;
-  }
-  else if(relation == EDGE_TYPE_FS)
-  {
-    node_filetype_set(A, VERTEX_FILETYPE_DIR);
-    if(!node_filetype_get(B))
-      node_filetype_set(B, VERTEX_FILETYPE_REG);
-
-    ash = node_shadowtype_get(A);
-    bsh = node_shadowtype_get(B);
-
-    /* propagate the shadow-fs property */
-    if(ash && !bsh)
-    {
-      node_shadowtype_set(B, VERTEX_SHADOWTYPE_FS);
-    }
-    if(ash)
-    {
-      B->mod = A->mod;
-    }
-
-    fatal(dirnode_children_changed, A, invalidation);
-    cat = L_FSGRAPH;
-  }
-
-  if(log_would(cat))
-  {
-    fatal(log_start, cat, &N);
-    xsayf("%8s ", "connect");
-    fatal(graph_edge_say, e, N);
-    fatal(log_finish);
-  }
+  fatal(log_connect, e);
 
   finally : coda;
 }
 
-xapi node_hyperconnect(
-    struct vertex ** restrict Alist
+xapi node_hyperconnect_dependency(
+    vertex ** restrict Alist
   , uint16_t Alen
-  , struct vertex ** restrict Blist
+  , vertex ** restrict Blist
   , uint16_t Blen
   , edge_type relation
   , graph_invalidation_context * restrict invalidation
-  , struct node_edge ** restrict nep
+  , node_edge_dependency ** restrict nep
 )
 {
   enter;
 
+  RUNTIME_ASSERT(relation == EDGE_TYPE_STRONG || relation == EDGE_TYPE_CONDUIT);
+
   int x;
   bool created;
   edge *e;
-  node_edge *ne;
-  narrator * N;
-  uint64_t cat = 0;
+  node_edge_dependency *ne;
 
   created = false;
   e = 0;
@@ -360,26 +461,15 @@ xapi node_hyperconnect(
     goto XAPI_FINALLY;
 
   llist_init_node(&ne->lln);
-  ne->bpe.typemark = BPE_NODE_EDGE;
+  ne->bpe.typemark = BPE_NODE_EDGE_DEPENDENCY;
 
   /* when the edge is created, invalidate the consumer nodes */
-  if(relation == EDGE_TYPE_STRONG || relation == EDGE_TYPE_CONDUIT)
+  for(x = 0; x < Alen; x++)
   {
-    for(x = 0; x < Alen; x++)
-    {
-      fatal(node_invalidate, vertex_value(Alist[x]), invalidation);
-    }
-
-    cat = L_DEPGRAPH;
+    fatal(node_invalidate, vertex_value(Alist[x]), invalidation);
   }
 
-  if(log_would(cat))
-  {
-    fatal(log_start, cat, &N);
-    xsayf("%8s ", "connect");
-    fatal(graph_edge_say, e, N);
-    fatal(log_finish);
-  }
+  fatal(log_connect, e);
 
   finally : coda;
 }
@@ -397,7 +487,7 @@ xapi node_disconnect(node * restrict A, node * restrict B, struct graph_invalida
   if(!(e = edge_between(va, vb)))
     goto XAPI_FINALLY;
 
-  fatal(node_edge_disconnect, edge_value(e), invalidation);
+  fatal(node_edge_disconnect, e, invalidation);
 
   finally : coda;
 }
@@ -500,20 +590,18 @@ xapi node_delete_node(node *n)
   finally : coda;
 }
 
-static xapi disconnect_edge(node_edge * restrict ne, graph_invalidation_context * restrict invalidation)
+static xapi disconnect_edge(edge * restrict e, graph_invalidation_context * restrict invalidation)
 {
   enter;
 
   narrator * N;
   uint64_t cat = 0;
-  edge *e;
 
-  e = edge_containerof(ne);
   if((e->attrs & EDGE_TYPE_OPT) == EDGE_TYPE_FS)
   {
     cat = L_FSGRAPH;
   }
-  else if((e->attrs & EDGE_TYPE_OPT) & EDGE_INVALIDATIONS)
+  else if((e->attrs & EDGE_TYPE_OPT) & EDGE_DEPENDENCY)
   {
     cat = L_DEPGRAPH;
   }
@@ -558,13 +646,13 @@ static xapi fsedge_disconnecting(node * restrict n, graph_invalidation_context *
 
   llist_foreach(&head, rbn, lln) {
     upe = containerof(rbn, typeof(*upe), rbn_up);
-    fatal(disconnect_edge, edge_value(upe), invalidation);
+    fatal(disconnect_edge, upe, invalidation);
   }
 
   finally : coda;
 }
 
-static xapi strong_disconnecting(node_edge * restrict ne, edge * restrict e, graph_invalidation_context * restrict invalidation)
+static xapi dependency_disconnecting(edge * restrict e, graph_invalidation_context * restrict invalidation)
 {
   enter;
 
@@ -575,9 +663,11 @@ static xapi strong_disconnecting(node_edge * restrict ne, edge * restrict e, gra
 
 */
 
+  node_edge_dependency * ne;
   int x;
   node *n;
 
+  ne = edge_value(e);
   if(ne->dir == EDGE_TGT_SRC)
   {
     if(!(e->attrs & MORIA_EDGE_HYPER))
@@ -626,11 +716,10 @@ static xapi strong_disconnecting(node_edge * restrict ne, edge * restrict e, gra
   finally : coda;
 }
 
-xapi node_edge_disconnect(node_edge * restrict ne, graph_invalidation_context * restrict invalidation)
+xapi node_edge_disconnect(edge * restrict e, graph_invalidation_context * restrict invalidation)
 {
   enter;
 
-  edge *e;
   vertex *v;
   node *n;
   int x;
@@ -641,7 +730,6 @@ xapi node_edge_disconnect(node_edge * restrict ne, graph_invalidation_context * 
   llist_init_node(&edges);
   llist_init_node(&vertices);
 
-  e = edge_containerof(ne);
   llist_append(&edges, e, lln);
 
   while(!llist_empty(&edges) || !llist_empty(&vertices))
@@ -649,7 +737,6 @@ xapi node_edge_disconnect(node_edge * restrict ne, graph_invalidation_context * 
     if((e = llist_first(&edges, typeof(*e), lln)))
     {
       llist_delete(e, lln);
-      ne = edge_value(e);
 
       /*
        * list of nodes in the edge, in bottom-up order. The order matters because when a directory
@@ -697,12 +784,12 @@ xapi node_edge_disconnect(node_edge * restrict ne, graph_invalidation_context * 
           continue;
         }
       }
-      else if((e->attrs & EDGE_TYPE_OPT) == EDGE_TYPE_STRONG)
+      else if(e->attrs & EDGE_DEPENDENCY)
       {
-        fatal(strong_disconnecting, ne, e, invalidation);
+        fatal(dependency_disconnecting, e, invalidation);
       }
 
-      fatal(disconnect_edge, ne, invalidation);
+      fatal(disconnect_edge, e, invalidation);
     }
 
     if((v = llist_first(&vertices, typeof(*v), lln)))
@@ -782,8 +869,8 @@ xapi node_invalidate(node * restrict n, graph_invalidation_context * restrict in
     , invalidate_visitor
     , invalidation->vertex_traversal
     , (traversal_criteria[]) {{
-          edge_travel : EDGE_INVALIDATIONS
-        , edge_visit : EDGE_INVALIDATIONS
+          edge_travel : EDGE_DEPENDENCY
+        , edge_visit : EDGE_DEPENDENCY
         , min_depth : 1
         , max_depth : UINT16_MAX
       }}
@@ -857,17 +944,16 @@ static xapi disintegrate_visitor(edge * e, void * ctx, traversal_mode mode, int 
   finally : coda;
 }
 
-xapi node_disintegrate_fs(node_edge * restrict ne, graph_invalidation_context * restrict invalidation)
+xapi node_disintegrate_fs(edge * restrict e, graph_invalidation_context * restrict invalidation)
 {
   enter;
 
   llist edges = LLIST_INITIALIZER(edges);
-  edge *e;
 
   // visit this edge and all edges below it
   fatal(graph_traverse_edges
     , g_graph
-    , edge_containerof(ne)
+    , e
     , disintegrate_visitor
     , 0
     , (traversal_criteria[]) {{
@@ -880,8 +966,7 @@ xapi node_disintegrate_fs(node_edge * restrict ne, graph_invalidation_context * 
 
   while((e = llist_shift(&edges, typeof(*e), lln)))
   {
-    ne = edge_value(e);
-    fatal(node_edge_disconnect, ne, invalidation);
+    fatal(node_edge_disconnect, e, invalidation);
   }
 
   finally : coda;

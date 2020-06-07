@@ -24,8 +24,8 @@
 struct narrator;
 struct node;
 
-#define BPE_NODE        0xbeef
-#define BPE_NODE_EDGE   0xdead
+#define BPE_NODE                   0xbeef
+#define BPE_NODE_EDGE_DEPENDENCY   0xdead
 
 /* either a node, or a node_edge */
 typedef struct buildplan_entity {

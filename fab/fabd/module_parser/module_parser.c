@@ -22,6 +22,7 @@
 #include "xlinux/KERNEL.errtab.h"
 #include "valyria/set.h"
 #include "value/parser.h"
+#include "moria/edge.h"
 
 #include "narrator.h"
 
@@ -63,7 +64,8 @@ static xapi resolve_import(module_parser * restrict parser, pattern * restrict r
   node * refnode;
   selected_node *sn;
   module *mod;
-  node_edge *ne, *iep, *sep;
+  edge *e, *iep, *sep;
+  node_edge_imports *nei;
   const char * refname;
   uint16_t refnamel;
 
@@ -98,10 +100,11 @@ static xapi resolve_import(module_parser * restrict parser, pattern * restrict r
     }
 
     // allow traversal via the imports graph
-    fatal(node_connect, mod->dir_node, refnode, EDGE_TYPE_IMPORTS, parser->invalidation, &ne, 0);
-    ne->shadow_epoch = node_shadow_epoch;
-    ne->scope_edge = sep;
-    ne->imports_edge = iep;
+    fatal(node_connect_generic, mod->dir_node, refnode, EDGE_TYPE_IMPORTS, parser->invalidation, &e);
+    nei = edge_value(e);
+    nei->shadow_epoch = node_shadow_epoch;
+    nei->scope_edge = sep;
+    nei->imports_edge = iep;
 
     if(log_would(L_MODULE))
     {
@@ -140,7 +143,7 @@ static xapi resolve_use(module_parser * restrict parser, pattern * restrict ref)
     mod_file_v = vertex_downs(mod_dir_v, NODE_MODEL_BAM);
     mod_file_n = vertex_value(mod_file_v);
     fatal(module_load, mod_dir_n, mod_file_n, parser->invalidation);
-    fatal(node_connect, mod->dir_node, mod_dir_n, EDGE_TYPE_USES, parser->invalidation, 0, 0);
+    fatal(node_connect_generic, mod->dir_node, mod_dir_n, EDGE_TYPE_USES, parser->invalidation, 0);
 
     if(log_would(L_MODULE))
     {
@@ -178,7 +181,7 @@ static xapi resolve_require(module_parser * restrict parser, pattern * restrict 
     mod_file_v = vertex_downs(mod_dir_v, NODE_MODULE_BAM);
     mod_file_n = vertex_value(mod_file_v);
     fatal(module_load, mod_dir_n, mod_file_n, parser->invalidation);
-    fatal(node_connect, mod->dir_node, mod_dir_n, EDGE_TYPE_REQUIRES, parser->invalidation, 0, 0);
+    fatal(node_connect_generic, mod->dir_node, mod_dir_n, EDGE_TYPE_REQUIRES, parser->invalidation, 0);
 
     if(log_would(L_MODULE))
     {

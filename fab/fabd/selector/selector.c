@@ -230,7 +230,7 @@ static xapi selector_ctx_exec(selector_context * restrict ctx)
   selection * T;
   int x;
   node * n;
-  node_edge * ne;
+  node_edge_dependency * ne;
   edge * e;
   selected_node *sn;
   uint32_t attrs;
@@ -277,7 +277,7 @@ static xapi selector_ctx_exec(selector_context * restrict ctx)
       n = containerof(ctx->bpe, typeof(*n), self_bpe);
       fatal(node_selected, ctx, n, 0);
     }
-    else if(ctx->bpe && ctx->bpe->typemark == BPE_NODE_EDGE)
+    else if(ctx->bpe && ctx->bpe->typemark == BPE_NODE_EDGE_DEPENDENCY)
     {
       ne = containerof(ctx->bpe, typeof(*ne), bpe);
       e = edge_containerof(ne);
@@ -308,7 +308,7 @@ static xapi selector_ctx_exec(selector_context * restrict ctx)
       n = containerof(ctx->bpe, typeof(*n), self_bpe);
       fatal(node_selected, ctx, n, 0);
     }
-    else if(ctx->bpe && ctx->bpe->typemark == BPE_NODE_EDGE)
+    else if(ctx->bpe && ctx->bpe->typemark == BPE_NODE_EDGE_DEPENDENCY)
     {
       ne = containerof(ctx->bpe, typeof(*ne), bpe);
       e = edge_containerof(ne);
@@ -340,7 +340,7 @@ static xapi selector_ctx_exec(selector_context * restrict ctx)
   }
   else if(sel->nodeset == SELECTOR_NODESET_SOURCE)
   {
-    if(ctx->bpe && ctx->bpe->typemark == BPE_NODE_EDGE)
+    if(ctx->bpe && ctx->bpe->typemark == BPE_NODE_EDGE_DEPENDENCY)
     {
       ne = containerof(ctx->bpe, typeof(*ne), bpe);
       e = edge_containerof(ne);
@@ -366,7 +366,7 @@ static xapi selector_ctx_exec(selector_context * restrict ctx)
   }
   else if(sel->nodeset == SELECTOR_NODESET_SOURCES)
   {
-    if(ctx->bpe && ctx->bpe->typemark == BPE_NODE_EDGE)
+    if(ctx->bpe && ctx->bpe->typemark == BPE_NODE_EDGE_DEPENDENCY)
     {
       ne = containerof(ctx->bpe, typeof(*ne), bpe);
       e = edge_containerof(ne);

@@ -22,7 +22,7 @@
 
 struct filesystem;
 struct node;
-struct node_edge;
+struct node_edge_dependency;
 struct vertex;
 struct operations_dispatch;
 struct graph;
@@ -53,24 +53,43 @@ xapi node_index(struct node * restrict n)
 //  above - parent
 //  below - child
 //
-xapi node_connect(
+xapi node_connect_dependency(
     struct node * restrict above
   , struct node * restrict below
   , enum edge_type relation
   , struct graph_invalidation_context * restrict invalidation
-  , struct node_edge ** restrict e
+  , struct node_edge_dependency ** restrict e
   , struct node ** restrict old
 )
   __attribute__((nonnull(1, 2, 4)));
 
-xapi node_hyperconnect(
+xapi node_connect_fs(
+    struct node * restrict above
+  , struct node * restrict below
+  , enum edge_type relation
+  , struct graph_invalidation_context * restrict invalidation
+  , struct edge ** restrict nep
+  , struct node ** restrict oldp
+)
+  __attribute__((nonnull(1, 2, 4)));
+
+xapi node_connect_generic(
+    struct node * restrict above
+  , struct node * restrict below
+  , enum edge_type relation
+  , struct graph_invalidation_context * restrict invalidation
+  , struct edge ** restrict nep
+)
+  __attribute__((nonnull(1, 2, 4)));
+
+xapi node_hyperconnect_dependency(
     struct vertex ** restrict Alist
   , uint16_t Alen
   , struct vertex ** restrict B
   , uint16_t Blen
   , enum edge_type relation
   , struct graph_invalidation_context * restrict invalidation
-  , struct node_edge ** restrict e
+  , struct node_edge_dependency ** restrict e
 )
   __attribute__((nonnull(6)));
 
@@ -86,7 +105,7 @@ xapi node_disconnect(struct node * restrict A, struct node * restrict B, struct 
 //
 // remove an edge
 //
-xapi node_edge_disconnect(struct node_edge * restrict ne, struct graph_invalidation_context * restrict context)
+xapi node_edge_disconnect(struct edge * restrict ne, struct graph_invalidation_context * restrict context)
   __attribute__((nonnull(1)));
 
 /// node_disintegrate_fs
@@ -99,7 +118,7 @@ xapi node_edge_disconnect(struct node_edge * restrict ne, struct graph_invalidat
 //  e         - edge to begin with
 //  traversal - id of an open traversal
 //
-xapi node_disintegrate_fs(struct node_edge * restrict ne, struct graph_invalidation_context * restrict invalidation)
+xapi node_disintegrate_fs(struct edge * restrict ne, struct graph_invalidation_context * restrict invalidation)
   __attribute__((nonnull(1)));
 
 /// node_invalidate

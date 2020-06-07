@@ -69,7 +69,6 @@ static xapi process_event(sweeper_event * restrict ev, graph_invalidation_contex
   char path[512];
   vertex *v;
   edge *ue;
-  node_edge *ne;
   node *n;
   sweeper_child_event *cev = 0;
   size_t z;
@@ -141,8 +140,7 @@ static xapi process_event(sweeper_event * restrict ev, graph_invalidation_contex
       goto XAPI_FINALLY;
     }
 
-    ne = edge_value(ue);
-    fatal(node_edge_disconnect, ne, invalidation);
+    fatal(node_edge_disconnect, ue, invalidation);
   }
   else if(ev->kind == SWEEPER_EVENT_CHILD)
   {
@@ -162,7 +160,7 @@ static xapi process_event(sweeper_event * restrict ev, graph_invalidation_contex
     else
     {
       fatal(node_createw, &n, VERTEX_FILETYPE_REG | VERTEX_OK, 0, 0, cev->name, cev->name_len);
-      fatal(node_connect, cev->parent, n, EDGE_TYPE_FS, invalidation, 0, 0);
+      fatal(node_connect_fs, cev->parent, n, EDGE_TYPE_FS, invalidation, 0, 0);
     }
   }
   else

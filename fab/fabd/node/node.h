@@ -126,31 +126,27 @@ typedef enum edge_direction {
 EDGE_DIRECTION_TABLE
 } edge_direction;
 
-/* edge connecting two nodes */
-typedef struct node_edge {
-/* need to split these into separate structs by EDGE_TYPE */
-  union {
-    struct {                            // EDGE_TYPE_STRONG | EDGE_TYPE_CONDUIT
-      buildplan_entity bpe;
-      edge_direction dir;
-      uint32_t refresh_id;
-      struct rule_module_association *rma;
-      llist lln;  // rma->edges
-    };
+/* dependency edge connecting two nodes */
+typedef struct node_edge_dependency {          // EDGE_TYPE_STRONG | EDGE_TYPE_CONDUIT
+  buildplan_entity bpe;
+  edge_direction dir;
+  uint32_t refresh_id;
+  struct rule_module_association *rma;
+  llist lln;                                   // rma->edges
+} node_edge_dependency;
+STATIC_ASSERT(sizeof(node_edge_dependency) <= GRAPH_EDGE_VALUE_SIZE);
 
-    struct {                            // EDGE_TYPE_IMPORTS
-      uint8_t shadow_epoch;
-      struct node_edge * imports_edge;
-      struct node_edge * scope_edge;
-    };
-  };
-} node_edge;
-
-STATIC_ASSERT(sizeof(node_edge) <= GRAPH_EDGE_VALUE_SIZE);
+/* imports edge connecting two module directory nodes */
+typedef struct node_edge_imports {          // EDGE_TYPE_IMPORTS
+  uint8_t shadow_epoch;
+  struct edge * imports_edge;
+  struct edge * scope_edge;
+} node_edge_imports;
+STATIC_ASSERT(sizeof(node_edge_imports) <= GRAPH_EDGE_VALUE_SIZE);
 
 #define NODE_PROPERTY_OPT 0xf000
-#define NODE_PROPERTY_TABLE                                                \
-  /* direct properties of the node name */                                 \
+#define NODE_PROPERTY_TABLE                                                    \
+  /* direct properties of the node name */                                     \
   DEF(NODE_PROPERTY_NAME         , "name"         , NODE_PROPERTY_OPT, 0x1000) \
   DEF(NODE_PROPERTY_EXT          , "ext"          , NODE_PROPERTY_OPT, 0x2000) \
   DEF(NODE_PROPERTY_SUFFIX       , "suffix"       , NODE_PROPERTY_OPT, 0x3000) \

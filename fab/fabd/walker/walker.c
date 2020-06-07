@@ -216,7 +216,7 @@ if((info->pathl - info->name_off) == 4 && memcmp(info->path + info->name_off, ".
       fs = node_filesystem_get(ctx->base_parent);
 
       fatal(node_creates, &ctx->base, fstype_ftwinfo(info) | VERTEX_OK, fs, mod, info->path + info->name_off);
-      fatal(node_connect, ctx->base_parent, ctx->base, EDGE_TYPE_FS, ctx->invalidation, 0, 0);
+      fatal(node_connect_fs, ctx->base_parent, ctx->base, EDGE_TYPE_FS, ctx->invalidation, 0, 0);
 
       n = ctx->base;
     }
@@ -249,7 +249,7 @@ if((info->pathl - info->name_off) == 4 && memcmp(info->path + info->name_off, ".
       }
 
       fatal(node_creates, &n, fstype_ftwinfo(info) | VERTEX_OK, fs, mod, info->path + info->name_off);
-      fatal(node_connect, parent, n, EDGE_TYPE_FS, ctx->invalidation, 0, 0);
+      fatal(node_connect_fs, parent, n, EDGE_TYPE_FS, ctx->invalidation, 0, 0);
     }
   }
 
@@ -304,7 +304,7 @@ if((info->pathl - info->name_off) == 4 && memcmp(info->path + info->name_off, ".
 
       while((e = llist_shift(&edges, typeof(*e), lln)))
       {
-        fatal(node_disintegrate_fs, edge_value(e), ctx->invalidation);
+        fatal(node_disintegrate_fs, e, ctx->invalidation);
       }
     }
   }
@@ -395,7 +395,7 @@ xapi walker_ascend(node * restrict basedir, int walk_id, graph_invalidation_cont
       else
       {
         fatal(node_creates, &filen, VERTEX_FILETYPE_REG | VERTEX_OK, fs, mod, NODE_VAR_BAM);
-        fatal(node_connect, dirn, filen, EDGE_TYPE_FS, invalidation, 0, 0);
+        fatal(node_connect_fs, dirn, filen, EDGE_TYPE_FS, invalidation, 0, 0);
       }
     }
     else if(filev)

@@ -356,7 +356,7 @@ xapi node_graft(const char * restrict base, node ** restrict rn, graph_invalidat
       fs = node_filesystem_get(parent);
 
       fatal(node_createw, &child, VERTEX_FILETYPE_DIR | VERTEX_OK, fs, mod, seg, end - seg);
-      fatal(node_connect, parent, child, EDGE_TYPE_FS, invalidation, 0, 0);
+      fatal(node_connect_fs, parent, child, EDGE_TYPE_FS, invalidation, 0, 0);
     }
     parent = child;
 

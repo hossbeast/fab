@@ -32,10 +32,10 @@ shadow filesystem layout
 
 */
 
+struct edge;
 struct node;
 struct module;
 struct graph_invalidation_context;
-struct node_edge;
 
 // globally scoped nodes
 extern struct node * g_shadow;                 /* root of the shadow fs */
@@ -61,7 +61,7 @@ xapi shadow_graft_imports(
   , struct node * restrict ref
   , const char * restrict as
   , uint16_t asl
-  , struct node_edge ** restrict ep
+  , struct edge ** restrict ep
   , struct graph_invalidation_context * restrict invalidation
 )
   __attribute__((nonnull(1, 2, 3, 6)));
@@ -82,7 +82,7 @@ xapi shadow_graft_scope(
   , const char * restrict as
   , uint16_t asl
   , bool overwrite
-  , struct node_edge ** restrict ep
+  , struct edge ** restrict ep
   , struct graph_invalidation_context * restrict invalidation
 )
   __attribute__((nonnull(1, 2, 3, 7)));

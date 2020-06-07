@@ -38,11 +38,11 @@ struct rule_module_association;
 /* edge attrs ranges */
 #define EDGE_TYPE_OPT 0x00fff000
 
-#define EDGE_INVALIDATIONS                               0x00100000 /* invalidations propagate along these edges */
-#define EDGE_MOD_RULE_FML                                0x00200000
+#define EDGE_DEPENDENCY                                  0x00100000 /* invalidations propagate along these edges */
+#define EDGE_MOD_RULE_FML                                0x00200000 /* mod-rule + rule-fml edges */
 
 /* edge options */
-#define EDGE_TYPE_TABLE                                                                                          \
+#define EDGE_TYPE_TABLE                                                                                            \
   DEF(EDGE_TYPE_FS        , "fs"        , EDGE_TYPE_OPT, 0x00400000) /* directory : directory entry */             \
   DEF(EDGE_TYPE_IMPORTS   , "imports"   , EDGE_TYPE_OPT, 0x00001000) /* module A imports directory B into scope */ \
   DEF(EDGE_TYPE_USES      , "uses"      , EDGE_TYPE_OPT, 0x00002000) /* module A uses model B */                   \
