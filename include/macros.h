@@ -100,13 +100,20 @@
 //
 static inline int memncmp(const void * a, size_t alen, const void * b, size_t blen)
 {
-  int r = memcmp(a, b, MIN(alen, blen));
+  int r;
+  size_t len;
+
+  r = 0;
+  len = MIN(alen, blen);
+  if(len)
+    r = memcmp(a, b, MIN(alen, blen));
   if(r != 0)
     return r;
   if(alen > blen)
     return 1;
   if(blen > alen)
     return -1;
+
   return 0;
 }
 
