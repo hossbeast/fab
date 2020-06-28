@@ -1,4 +1,4 @@
-/* Copyright (c) 2012-2015 Todd Freed <todd.freed@gmail.com>
+/* Copyright (c) 2012-2020 Todd Freed <todd.freed@gmail.com>
 
    This file is part of fab.
 
@@ -18,3 +18,6 @@
 # tab.c files from parser y files
 #  each invocation yields all files on the right-hand-side
 rule **/(*).y -> [*] $^D/$1.tab.{c,h} : ./bam-bison
+
+# tokens.c / tokens.h files from .tab.c files
+rule **/(*).tab.c -> [*] $^D/$1.tokens.{c,h} : ./bam-tokens
