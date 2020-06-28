@@ -1,0 +1,182 @@
+#!/usr/bin/env perl
+#
+# Copyright (c) 2012-2020 Todd Freed <todd.freed@gmail.com>
+#
+# This file is part of fab.
+#
+# fab is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# fab is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with fab.  If not, see <http://www.gnu.org/licenses/>. */
+#
+
+use strict;
+use warnings;
+
+my $tabc = $ENV{bm_source};
+my $tokens_c = substr($ENV{bm_target0}, -2) eq ".c" ? $ENV{bm_target0} : $ENV{bm_target1};
+my $tokens_h = substr($ENV{bm_target0}, -2) eq ".h" ? $ENV{bm_target0} : $ENV{bm_target1};
+
+$tokens_c =~ m|(?:[^/]*/)?([^.]+)|;
+my $pfx = "$1";
+
+my %yytokentype;
+my @yytname;
+my @yytoknum;
+my $mintoken = 0xffff;
+my $maxtoken = 0;
+my $numtokens = 0;
+
+open my $fh, "<$tabc" or die $!;
+my $mode = '';
+while(my $line = <$fh>)
+{
+  chomp $line;
+  if($mode && $line =~ m/};$/)
+  {
+    $mode = '';
+  }
+  elsif($mode eq 'yytokentype')
+  {
+    if($line =~ /([A-Z0-9_]+) = ([0-9]+)/)
+    {
+      $yytokentype{$2} = $1;
+      $mintoken = $2 if $2 < $mintoken;
+      $maxtoken = $2 if $2 > $maxtoken;
+      $numtokens++;
+    }
+  }
+  elsif($line =~ /^\s+enum [a-z_]+_yytokentype$/)
+  {
+    $mode = 'yytokentype';
+  }
+  elsif($mode eq 'yytname')
+  {
+    while($line =~ m/"((?:(?:[^"\\])|(?:\\"))+)"/g)
+    {
+      push @yytname, $1;
+    }
+  }
+  elsif($line =~ /static const char .const yytname/)
+  {
+    $mode = 'yytname';
+  }
+  elsif($mode eq 'yytoknum')
+  {
+    while($line =~ m/[0-9]+/g)
+    {
+      push @yytoknum, $&;
+    }
+  }
+  elsif($line =~ /static const yytype_int16 yytoknum/)
+  {
+    $mode = 'yytoknum';
+  }
+}
+
+#
+# c file
+#
+
+close $fh;
+open $fh, ">$tokens_c" or die $!;
+print $fh <<END;
+#include <stdint.h>
+#define ${pfx}_MINTOKEN ${mintoken}
+#define ${pfx}_MAXTOKEN ${maxtoken}
+uint16_t ${pfx}_mintoken = ${pfx}_MINTOKEN;
+uint16_t ${pfx}_maxtoken = ${pfx}_MAXTOKEN;
+uint16_t ${pfx}_numtokens = ${numtokens};
+const uint16_t * ${pfx}_tokenindexes = (uint16_t[]) {
+END
+
+my $x = 0;
+for my $k (sort keys %yytokentype)
+{
+  print $fh("[$k - ${pfx}_MINTOKEN] = " . ($x++) . ",\n");
+}
+
+print $fh <<END;
+};
+const char ** ${pfx}_tokennames = (const char *[]) {
+END
+
+for my $k (sort keys %yytokentype)
+{
+  print $fh('"' . $yytokentype{$k} . '",'."\n");
+}
+
+print $fh <<END;
+};
+const char ** ${pfx}_tokenstrings = (const char *[]) {
+END
+
+for my $k (@yytname)
+{
+  print $fh('"' . $k . '",' . "\n");
+}
+
+print $fh <<END;
+};
+const uint16_t * ${pfx}_tokenstring_tokens = (uint16_t []) {
+END
+
+for my $k (@yytoknum)
+{
+  print $fh($k . ",\n");
+}
+
+print $fh <<END;
+};
+uint16_t * ${pfx}_tokennumbers = (uint16_t []) {
+END
+
+for my $k (sort keys %yytokentype)
+{
+  print $fh($k . ",\n");
+}
+
+print $fh <<END;
+};
+END
+
+#
+# header file
+#
+
+close $fh;
+open $fh, ">$tokens_h" or die $!;
+print $fh <<END;
+#ifndef ${pfx}_TOKENS_H
+#define ${pfx}_TOKENS_H
+#include <stdint.h>
+#define ${pfx}_MINTOKEN ${mintoken}
+#define ${pfx}_MAXTOKEN ${maxtoken}
+extern uint16_t ${pfx}_numtokens;
+extern uint16_t ${pfx}_mintoken;
+extern uint16_t ${pfx}_maxtoken;
+extern uint16_t * ${pfx}_tokenindexes;
+extern uint16_t * ${pfx}_tokennumbers;
+extern const char ** ${pfx}_tokennames;
+extern const char ** ${pfx}_tokenstrings;
+extern const uint16_t * ${pfx}_tokenstring_tokens;
+enum ${pfx}_tokens {
+END
+
+while(my($k, $v) = each %yytokentype)
+{
+  print $fh ("  ${pfx}_${v} = ${k},\n");
+}
+
+print $fh <<END;
+};
+#endif
+END
