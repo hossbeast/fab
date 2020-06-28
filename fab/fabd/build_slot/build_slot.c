@@ -171,7 +171,7 @@ finally:
 conclude(&R);
   xapi_teardown();
 
-  return;
+  exit(R);
 }
 
 //
@@ -656,14 +656,14 @@ xapi build_slot_reap(build_slot * restrict bs, uint32_t slot_index, siginfo_t *i
     {
       xlogf(L_BUILD, color, " envp %2d", (int)sentinel(bs->envp));
       for(x = 0; x < sentinel(bs->envp); x++)
-        xlogf(L_BUILD, color, " [%2d] %s", x, bs->envp[x]);
+        xlogf(L_BUILD, color, "  [%2d] %s", x, bs->envp[x]);
     }
 
     if((bs->success && build_thread_cfg.success.show_sources) || (!bs->success && build_thread_cfg.error.show_sources))
     {
       xlogf(L_BUILD, color, " sources %2d", 1);
       fatal(log_xstart, L_BUILD, color, &N);
-      fatal(narrator_xsayf, N, " [%2d] ", 0);
+      fatal(narrator_xsayf, N, "  [%2d] ", 0);
       fatal(bpe_say_sources, bs->bpe, N);
       fatal(log_finish);
     }
@@ -672,7 +672,7 @@ xapi build_slot_reap(build_slot * restrict bs, uint32_t slot_index, siginfo_t *i
     {
       xlogf(L_BUILD, color, " targets %2d", 1);
       fatal(log_xstart, L_BUILD, color, &N);
-      fatal(narrator_xsayf, N, " [%2d] ", 0);
+      fatal(narrator_xsayf, N, "  [%2d] ", 0);
       fatal(bpe_say_targets, bs->bpe, N);
       fatal(log_finish);
     }
