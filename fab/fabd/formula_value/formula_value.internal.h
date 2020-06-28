@@ -128,6 +128,13 @@ xapi formula_value_prepend_mk(
 )
   __attribute__((nonnull));
 
+xapi formula_value_path_search_mk(
+    const struct yyu_location * restrict loc
+  , struct formula_value ** rv
+  , struct formula_value * v
+)
+  __attribute__((nonnull));
+
 xapi formula_value_sequence_mk(
     const struct yyu_location * restrict loc
   , struct formula_value ** rv

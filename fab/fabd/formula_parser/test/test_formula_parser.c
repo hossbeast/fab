@@ -32,7 +32,7 @@
 #include "narrator/growing.h"
 
 #include "formula_parser.internal.h"
-#include "formula.internal.h"
+#include "formula.h"
 #include "formula_value.internal.h"
 #include "selector.internal.h"
 #include "logging.h"
@@ -70,14 +70,14 @@ static xapi formula_parser_test_unit_cleanup(xunit_unit * unit)
   finally : coda;
 }
 
-static xapi fml_say(narrator * restrict N, formula_value * restrict path, formula_value * restrict args, formula_value * restrict envs)
+static xapi fml_say(narrator * restrict N, formula_value * restrict file, formula_value * restrict args, formula_value * restrict envs)
 {
   enter;
 
-  if(path)
+  if(file)
   {
-    xsays("path : ");
-    fatal(formula_value_say, path, N);
+    xsays("file : ");
+    fatal(formula_value_say, file, N);
     xsays("\n");
   }
   if(envs)
@@ -209,7 +209,7 @@ xunit_unit xunit = {
       }}
     , (formula_parser_test[]) {{
           text : (char[]) {
-            " path : $cc"
+            " file : $cc"
             " args : ["
               " $cflags"
               " sequence : ["

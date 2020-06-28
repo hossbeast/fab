@@ -36,13 +36,9 @@ typedef struct formula_parser {
   struct formula_operation * set;
 
   // (returns)
-//  char * restrict path;
-//  struct set * restrict envs;
-//  struct formula_value * restrict args;
-
-  struct formula_value * path;    // primitive
-  struct formula_value * args;    // list
-  struct formula_value * envs;    // set
+  struct formula_value * file;  // primitive
+  struct formula_value * args;  // list
+  struct formula_value * envs;  // set
 } formula_parser;
 
 /// formula_yyerror

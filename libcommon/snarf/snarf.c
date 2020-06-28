@@ -186,3 +186,13 @@ finally:
   va_end(va);
 coda;
 }
+
+xapi API fsnarf(char ** const restrict dst, size_t * const restrict dstlp, int fd)
+{
+  enter;
+
+  fatal(xlseek, fd, 0, SEEK_SET, 0);
+  fatal(snarf, fd, dst, dstlp);
+
+  finally : coda;
+}

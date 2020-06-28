@@ -35,7 +35,8 @@
 #include "path.h"
 #include "logging.h"
 #include "variant.h"
-#include "formula.internal.h"
+#include "formula.h"
+#include "path_cache.h"
 #include "formula_value.internal.h"
 #include "build_thread.h"
 #include "build_slot.h"
@@ -115,6 +116,10 @@ dispatch_render_function(
   {
     fatal(node_property_say, args->n, args->prop, &args->pctx, N);
   }
+  else if(func == RENDER_PATH_CACHE_ENTRY)
+  {
+    fatal(narrator_xsayw, N, args->pe->s, args->pe->len);
+  }
   else if(func == RENDER_STRING)
   {
     fatal(narrator_xsays, N, args->s);
@@ -149,20 +154,27 @@ xapi builder_add(exec_builder * restrict builder, const builder_add_args *args)
   size_t len;
   const char *eq;
 
+  /* special case of rendering a path entry to the file - save the pe so that exec can use the fd */
+  if(args->item == BUILDER_FILE && args->render_val == RENDER_PATH_CACHE_ENTRY)
+  {
+    builder->file_pe = args->val.pe;
+    goto XAPI_FINALLY;
+  }
+
   // current narrator position
   fatal(narrator_xseek, builder->Nexec, 0, NARRATOR_SEEK_CUR, &pos);
   start = pos;
 
   def = 0;
-  if(args->item == PATH)
+  if(args->item == BUILDER_FILE)
   {
     // locate an existing definition if any
-    def = builder->path;
+    def = builder->file;
 
     // new definition goes here
-    builder->path = start;
+    builder->file = start;
   }
-  else if(args->item == ARGS)
+  else if(args->item == BUILDER_ARGS)
   {
     // check for an existing definition
     if(args->position > -1)
@@ -178,7 +190,7 @@ xapi builder_add(exec_builder * restrict builder, const builder_add_args *args)
 
     builder->args[idx] = start;
   }
-  else if(args->item == ENVS)
+  else if(args->item == BUILDER_ENVS)
   {
     // search for an existing definition
     memset(&ctx, 0, sizeof(ctx));
@@ -220,9 +232,9 @@ xapi builder_add(exec_builder * restrict builder, const builder_add_args *args)
     builder->envs[idx] = start;
   }
 
-  if(args->mode == PREPEND)
+  if(args->mode == BUILDER_PREPEND)
   {
-    if(args->item == ENVS)
+    if(args->item == BUILDER_ENVS)
     {
       fatal(narrator_xsayw, builder->Nexec, args->name, args->name_len);
       fatal(narrator_xsays, builder->Nexec, "=");
@@ -238,7 +250,7 @@ xapi builder_add(exec_builder * restrict builder, const builder_add_args *args)
 
       // carry forward the existing definition
       textbase = narrator_growing_buffer(builder->Nexec);
-      if(args->item == ENVS)
+      if(args->item == BUILDER_ENVS)
       {
         eq = strchr(textbase + def, '=');
         len = strlen(eq + 1);
@@ -258,7 +270,7 @@ xapi builder_add(exec_builder * restrict builder, const builder_add_args *args)
 
     fatal(narrator_xsayc, builder->Nexec, 0);
   }
-  else if(args->mode == APPEND)
+  else if(args->mode == BUILDER_APPEND)
   {
     if(def)
     {
@@ -269,7 +281,7 @@ xapi builder_add(exec_builder * restrict builder, const builder_add_args *args)
       textbase = narrator_growing_buffer(builder->Nexec);
       fatal(narrator_xsayw, builder->Nexec, textbase + def, len);
     }
-    else if(args->item == ENVS)
+    else if(args->item == BUILDER_ENVS)
     {
       fatal(narrator_xsayw, builder->Nexec, args->name, args->name_len);
       fatal(narrator_xsays, builder->Nexec, "=");
@@ -301,7 +313,7 @@ void exec_builder_take(exec_builder * restrict builder, exec ** restrict envp)
   *envp = builder->exec;
   builder->exec = 0;
 
-  builder->path_stor = 0;
+  builder->file_stor = 0;
   builder->args_stor = 0;
   builder->args_stor_alloc = 0;
   builder->envs_stor = 0;
@@ -312,7 +324,7 @@ void exec_free(exec * e)
 {
   if(e)
   {
-    wfree(e->path);
+//    wfree(e->path);
     wfree(e->args);
     wfree(e->envs);
   }
@@ -345,7 +357,8 @@ xapi exec_builder_xreset(exec_builder * restrict builder)
 {
   enter;
 
-  builder->path = 0;
+  builder->file_pe = 0;
+  builder->file = 0;
   builder->envs_len = 0;
   builder->args_len = 0;
 
@@ -386,18 +399,13 @@ xapi exec_builder_build(exec_builder * restrict builder, exec ** restrict envp)
   builder->exec = (typeof(builder->exec))textbase;
   RUNTIME_ASSERT(builder->exec);
 
-  // path - pointer from offset
-  if(builder->path == 0)
+  // file - pointer from offset
+  builder->exec->file_pe = builder->file_pe;
+  builder->exec->file = 0;
+  if(builder->file)
   {
-    builder->exec->path = 0;
-    builder->exec->filename = 0;
-  }
-  else
-  {
-    builder->path_stor = textbase + builder->path;
-    builder->exec->path = builder->path_stor;
-    if((builder->exec->filename = strrchr(builder->exec->path, '/')))
-      builder->exec->filename++;
+    builder->file_stor = textbase + builder->file;
+    builder->exec->file = builder->file_stor;
   }
 
   // args - space
@@ -449,6 +457,10 @@ static xapi render_say(const char * restrict name, enum builder_render_function 
     xsayf(" node %p %s\n", args->n, args->n->name->name);
     xsayf(" prop %s\n", attrs32_name_byvalue(node_property_attrs, NODE_PROPERTY_OPT & args->prop));
   }
+  else if(renderer == RENDER_PATH_CACHE_ENTRY)
+  {
+    xsayf("render-%s PATH-ENTRY\n", name);
+  }
   else if(renderer == RENDER_STRING)
   {
     xsayf("render-%s STRING\n", name);
@@ -483,11 +495,11 @@ xapi builder_add_args_say(const exec_builder * restrict builder, const builder_a
   enter;
 
   xsayf("builder %p\n", builder);
-  xsayf("item %s\n", args->item == PATH ? "PATH" : args->item == ARGS ? "ARGS" : args->item == ENVS ? "ENVS" : "-wtf-");
+  xsayf("item %s\n", args->item == BUILDER_FILE ? "FILE" : args->item == BUILDER_ARGS ? "ARGS" : args->item == BUILDER_ENVS ? "ENVS" : "-wtf-");
   xsayf("position %d\n", args->position);
   xsayf("name %.*s\n", (int)args->name_len, args->name);
   xsayf("name-len %hu\n", args->name_len);
-  xsayf("mode %d %s\n", args->mode, args->mode == PREPEND ? "PREPEND" : args->mode == APPEND ? "APPEND" : "-wtf-");
+  xsayf("mode %d %s\n", args->mode, args->mode == BUILDER_PREPEND ? "PREPEND" : args->mode == BUILDER_APPEND ? "APPEND" : "-wtf-");
   fatal(render_say, "value", args->render_val, &args->val);
   fatal(render_say, "sep", args->render_sep, &args->sep);
 

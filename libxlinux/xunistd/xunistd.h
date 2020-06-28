@@ -345,6 +345,14 @@ xapi xexecve(const char * path, char * const argv[], char * const envp[])
 xapi xexecvp(const char * file, char * const argv[])
   __attribute__((nonnull));
 
+/// xfexecve
+//
+// SUMMARY
+//  xapi proxy for fexecve
+//
+xapi xfexecve(int fd, char * const argv[], char * const envp[])
+  __attribute__((nonnull));
+
 /// xchdir
 //
 // SUMMARY

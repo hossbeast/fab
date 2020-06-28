@@ -80,4 +80,7 @@ xapi usnarfatf(char ** const restrict dst, size_t * const restrict dstl, int dir
 xapi usnarfatvf(char ** const restrict dst, size_t * const restrict dstl, int dirfd, const char * const restrict path_fmt, va_list va)
   __attribute__((nonnull(1, 4)));
 
+xapi fsnarf(char ** const restrict dst, size_t * const restrict dstl, int fd)
+  __attribute__((nonnull));
+
 #endif

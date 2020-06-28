@@ -167,7 +167,7 @@ xapi hashtable_grow(hashtable_t * restrict ht)
 //   1 : not found, and the first deleted slot in the probe sequence is returned in i
 //  -1 : not found
 //
-int hashtable_probe(const hashtable_t * const restrict ht, uint32_t h, void * ent, size_t * restrict i)
+int hashtable_probe(const hashtable_t * const restrict ht, uint32_t h, void * ent, size_t ent_sz, hashtable_cmp cmp, size_t * restrict i)
   __attribute__((nonnull(1, 3)));
 
 /// hashtable_bucket_at

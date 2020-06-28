@@ -22,7 +22,7 @@ use warnings;
 
 use File::Basename;
 
-die "cc not found in environment" unless $ENV{cc};
+die "cc not found" unless $ENV{cc};
 
 my $name = basename($ENV{bm_target});
 my $dot = index($name, ".");
@@ -59,6 +59,10 @@ exec { $cmd[0] } @cmd
 __DATA__
 
 envs : {
+  cc : {
+    path-search : cc
+  }
+
   # object files for the library
   objects : [
     select : [

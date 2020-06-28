@@ -180,7 +180,6 @@ static xapi handler_goals(handler_context * restrict ctx, command * restrict cmd
   finally : coda;
 }
 
-
 static xapi handler_autorun(handler_context * restrict ctx)
 {
   enter;

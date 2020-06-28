@@ -201,8 +201,8 @@ static xapi resolve_formula(module_parser * restrict parser, pattern * restrict 
 
   module *mod;
 
-  mod = parser->mod;
   /* note that a reference pattern can only render down to a single fragment */
+  mod = parser->mod;
   fatal(pattern_lookup, ref, 0, mod->dir_node, 0, 0, target);
 
 finally:

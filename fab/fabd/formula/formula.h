@@ -21,25 +21,31 @@
 #include "xapi.h"
 #include "types.h"
 
+#include "valyria/llist.h"
+
 struct node;
-struct set;
 struct formula_value;
 
 typedef struct formula
 {
+  llist lln_invalidated;  // formulas_invalidated
+
   /* regarding the formula node itself */
-  char * abspath;           // absolute path
-  char * filename;          // filename
+  int fd;
+  char *abspath;
   struct node * fml_node;
   bool shebang;
 
   /* parsed from the embedded bacon block */
+  struct formula_value *file;   // primitive
   struct formula_value *envs;   // mappings set
   struct formula_value *args;   // list
-  struct formula_value *path;   // primitive
 } formula;
 
 xapi formula_xfree(formula * restrict fml);
+
+void formula_invalidated(formula * restrict fml)
+  __attribute__((nonnull));
 
 /// formula_load
 //
@@ -49,7 +55,12 @@ xapi formula_xfree(formula * restrict fml);
 //  parser
 //  fml    - (returns)
 //
-xapi formula_node_parse(struct node * restrict fml_node)
+xapi formula_node_initialize(struct node * restrict fml_node)
   __attribute__((nonnull));
+
+xapi formula_full_refresh(void);
+
+xapi formula_setup(void);
+xapi formula_cleanup(void);
 
 #endif

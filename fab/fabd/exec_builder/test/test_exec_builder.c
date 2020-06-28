@@ -64,7 +64,7 @@ typedef struct exec_builder_test {
   } **env_addf_args;
 
   // outputs
-  char * path;
+  char * file;
   char ** args;
   char ** envs;
 } exec_builder_test;
@@ -107,7 +107,7 @@ static xapi exec_builder_test_entry(xunit_test * _test)
   struct env_addf_args ** argsp;
   struct env_addf_args * args;
   size_t nargs;
-  formula_value * fml_path = 0;
+  formula_value * fml_file = 0;
   formula_value * fml_args = 0;
   formula_value * fml_envs = 0;
   variant * var = 0;
@@ -155,13 +155,13 @@ static xapi exec_builder_test_entry(xunit_test * _test)
 
   if(test->fml)
   {
-    fatal(formula_parser_bacon_parse, fml_parser, test->fml, strlen(test->fml) + 2, "-formula-", &fml_path, &fml_args, &fml_envs);
+    fatal(formula_parser_bacon_parse, fml_parser, test->fml, strlen(test->fml) + 2, "-formula-", &fml_file, &fml_args, &fml_envs);
 
     exec_render_context_configure(&renderer, &builder, &mod, vars, &bs);
 
-    if(fml_path)
+    if(fml_file)
     {
-      fatal(exec_render_path, &renderer, fml_path);
+      fatal(exec_render_file, &renderer, fml_file);
     }
 
     if(fml_args)
@@ -177,7 +177,7 @@ static xapi exec_builder_test_entry(xunit_test * _test)
 
   fatal(exec_builder_build, &builder, &e);
 
-  assert_eq_s(test->path, e->path);
+  assert_eq_s(test->file, e->file);
 
   if(test->args)
   {
@@ -202,7 +202,7 @@ finally:
   fatal(formula_parser_xfree, fml_parser);
   fatal(exec_builder_xdestroy, &builder);
   fatal(exec_render_context_xdestroy, &renderer);
-  formula_value_free(fml_path);
+  formula_value_free(fml_file);
   formula_value_free(fml_args);
   formula_value_free(fml_envs);
 coda;
@@ -559,19 +559,19 @@ xunit_unit xunit = {
           }
       }}
 
-    /* path */
+    /* file */
     , (exec_builder_test[]) {{
-          fml : (char[]) { "path : foo-bar\0\0" }
-        , path : "foo-bar"
+          fml : (char[]) { "file : foo-bar\0\0" }
+        , file : "foo-bar"
       }}
     , (exec_builder_test[]) {{
-          fml : (char[]) { "path : 14.92\0\0" }
-        , path : "14.92"
+          fml : (char[]) { "file : 14.92\0\0" }
+        , file : "14.92"
       }}
     , (exec_builder_test[]) {{
           vars : "cc : /usr/bin/gcc"
-        , fml : (char[]) { "path : $cc\0\0" }
-        , path : "/usr/bin/gcc"
+        , fml : (char[]) { "file : $cc\0\0" }
+        , file : "/usr/bin/gcc"
         , envs : (char*[]) {
               "cc=/usr/bin/gcc"
             , NULL

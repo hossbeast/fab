@@ -66,6 +66,7 @@
 #include "path.h"
 #include "pattern.h"
 #include "node_operations.h"
+#include "formula.h"
 
 #include "common/attrs.h"
 #include "macros.h"
@@ -194,7 +195,10 @@ static xapi __attribute__((nonnull(2, 3))) send_response(
   finally : coda;
 }
 
-static xapi full_refresh(rule_run_context * restrict rule_ctx)
+/**
+ * run invalidated rules to quiesence
+ */
+static xapi rules_full_refresh(rule_run_context * restrict rule_ctx)
 {
   enter;
 
@@ -278,6 +282,11 @@ static xapi server_thread()
   // extern_reconfigure loads areas of the filesystem referenced via extern
   fatal(config_begin_staging);
   fatal(config_reconfigure);
+  if(!config_reconfigure_result)
+  {
+    fprintf(stderr, "config was not applied\n");
+    exit(1);
+  }
 
   // load the filesystem rooted at the project dir
   int walk_id = walker_descend_begin();
@@ -301,7 +310,8 @@ static xapi server_thread()
     exit(1);
   }
 
-  fatal(full_refresh, &rule_ctx);
+  fatal(rules_full_refresh, &rule_ctx);
+  fatal(formula_full_refresh);
 
   // signal to the client readiness to receive requests
 #if DEVEL
@@ -346,7 +356,8 @@ static xapi server_thread()
       fatal(graph_invalidation_begin, &invalidation);
       fatal(module_full_refresh, &invalidation);
       graph_invalidation_end(&invalidation);
-      fatal(full_refresh, &rule_ctx);
+      fatal(rules_full_refresh, &rule_ctx);
+      fatal(formula_full_refresh);
 
       bool building;
       fatal(goals_run, false, &building);
@@ -418,7 +429,7 @@ if(g_server_no_initial_client && iteration != 0)
     fatal(graph_invalidation_begin, &invalidation);
     fatal(module_full_refresh, &invalidation);
     graph_invalidation_end(&invalidation);
-    fatal(full_refresh, &rule_ctx);
+    fatal(rules_full_refresh, &rule_ctx);
 #if DEVEL
 }
 #endif

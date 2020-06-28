@@ -71,7 +71,7 @@ xapi exec_render_context_xdestroy(exec_render_context * restrict ctx)
 /*
  *
  */
-xapi exec_render_path(exec_render_context * restrict ctx, const struct formula_value * restrict path)
+xapi exec_render_file(exec_render_context * restrict ctx, const struct formula_value * restrict path)
   __attribute__((nonnull));
 
 /*

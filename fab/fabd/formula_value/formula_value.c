@@ -37,6 +37,8 @@
 #include "build_slot.h"
 #include "module.h"
 #include "selection.h"
+#include "formula.h"
+#include "path_cache.h"
 
 #include "common/attrs.h"
 
@@ -168,6 +170,13 @@ static xapi writer_write(const formula_value * restrict val, value_writer * cons
   {
     fatal(value_writer_push_mapping, writer);
       fatal(value_writer_string, writer, "prepend");
+      fatal(writer_write, val->op.operand, writer, false);
+    fatal(value_writer_pop_mapping, writer);
+  }
+  else if(val->type == FORMULA_VALUE_PATH_SEARCH)
+  {
+    fatal(value_writer_push_mapping, writer);
+      fatal(value_writer_string, writer, "path-search");
       fatal(writer_write, val->op.operand, writer, false);
     fatal(value_writer_pop_mapping, writer);
   }
@@ -457,6 +466,24 @@ xapi formula_value_prepend_mk(
   finally : coda;
 }
 
+xapi formula_value_path_search_mk(
+    const yyu_location * restrict loc
+  , formula_value ** rv
+  , formula_value * restrict val
+)
+{
+  enter;
+
+  formula_value *v;
+
+  fatal(allocate, &v, FORMULA_VALUE_PATH_SEARCH);
+  v->op.operand = val;
+
+  *rv = v;
+
+  finally : coda;
+}
+
 xapi formula_value_sequence_mk(
     const yyu_location * restrict loc
   , formula_value ** restrict rv
@@ -523,6 +550,10 @@ void formula_value_free(formula_value * restrict v)
   {
     formula_value_free(v->op.operand);
   }
+  else if(v->type == FORMULA_VALUE_PATH_SEARCH)
+  {
+    formula_value_free(v->op.operand);
+  }
   else if(v->type == FORMULA_VALUE_SEQUENCE)
   {
     chain_foreach_safe(T, sv, chn, v->op.list_head) {
@@ -531,6 +562,12 @@ void formula_value_free(formula_value * restrict v)
   }
 
   wfree(v);
+}
+
+void formula_value_ifree(formula_value ** restrict v)
+{
+  formula_value_free(*v);
+  *v = 0;
 }
 
 int fmlval_rbn_cmp(const rbnode * restrict a, const rbnode * restrict b)
@@ -645,6 +682,7 @@ xapi exec_render_formula_value(const formula_value * val, exec_render_context * 
   exec * sequence_output;
   builder_add_args base_add_args;
   selected_node *sn;
+  const path_cache_entry *pe;
 
   if(val->type == FORMULA_VALUE_LIST)
   {
@@ -686,7 +724,7 @@ xapi exec_render_formula_value(const formula_value * val, exec_render_context * 
   {
     base_add_args = ctx->builder_add_args;
 
-    ctx->builder_add_args.mode = APPEND;
+    ctx->builder_add_args.mode = BUILDER_APPEND;
     ctx->builder_add_args.render_val = RENDER_PROPERTY;
     ctx->builder_add_args.val.prop = val->op.property;
     ctx->builder_add_args.val.pctx.mod = ctx->bs->mod;
@@ -703,10 +741,10 @@ xapi exec_render_formula_value(const formula_value * val, exec_render_context * 
 
     ctx->builder_add_args.render_val = RENDER_FORMULA_VALUE;
     ctx->builder_add_args.val.f = val->op.operand;
-    ctx->builder_add_args.mode = PREPEND;
+    ctx->builder_add_args.mode = BUILDER_PREPEND;
     ctx->builder_add_args.render_sep = 0;
 
-    ctx->builder_add_args.item = ARGS;
+    ctx->builder_add_args.item = BUILDER_ARGS;
     for(x = 0; x < ctx->builder->args_len; x++)
     {
       ctx->builder_add_args.position = x;
@@ -715,6 +753,17 @@ xapi exec_render_formula_value(const formula_value * val, exec_render_context * 
 
     ctx->builder_add_args = base_add_args;
   }
+  else if(val->type == FORMULA_VALUE_PATH_SEARCH)
+  {
+    /* assumes string */
+    fatal(path_cache_search, &pe, MMS(val->op.operand->s));
+
+    ctx->builder_add_args.val.pe = pe;
+    ctx->builder_add_args.mode = BUILDER_APPEND;
+    ctx->builder_add_args.render_val = RENDER_PATH_CACHE_ENTRY;
+
+    fatal(builder_add, ctx->builder, &ctx->builder_add_args);
+  }
   else if(val->type == FORMULA_VALUE_SEQUENCE)
   {
     /* operations are always couched in a sequence operation */
@@ -722,7 +771,7 @@ xapi exec_render_formula_value(const formula_value * val, exec_render_context * 
     fatal(exec_builder_xreset, &ctx->operation_builder);
     ctx->builder = &ctx->operation_builder;
 
-    ctx->builder_add_args.item = ARGS;
+    ctx->builder_add_args.item = BUILDER_ARGS;
     chain_foreach(T, sv, chn, val->op.list_head) {
       ctx->builder_add_args.position = -1;
       fatal(exec_render_formula_value, sv, ctx);
@@ -736,7 +785,7 @@ xapi exec_render_formula_value(const formula_value * val, exec_render_context * 
     ctx->builder_add_args = base_add_args;
 
     ctx->builder_add_args.render_val = RENDER_STRING;
-    ctx->builder_add_args.mode = APPEND;
+    ctx->builder_add_args.mode = BUILDER_APPEND;
 
     for(x = 0; x < sequence_output->args_size; x++)
     {
@@ -749,7 +798,7 @@ xapi exec_render_formula_value(const formula_value * val, exec_render_context * 
   else if(val->type & VALUE_TYPE_SCALAR)
   {
     ctx->builder_add_args.val.f = val;
-    ctx->builder_add_args.mode = APPEND;
+    ctx->builder_add_args.mode = BUILDER_APPEND;
     ctx->builder_add_args.render_val = RENDER_FORMULA_VALUE;
     fatal(builder_add, ctx->builder, &ctx->builder_add_args);
   }
@@ -796,7 +845,7 @@ xapi exec_render_value(const value * restrict val, exec_render_context * restric
   {
     ctx->builder_add_args.val.v = val;
     ctx->builder_add_args.render_val = RENDER_VALUE;
-    ctx->builder_add_args.mode = APPEND;
+    ctx->builder_add_args.mode = BUILDER_APPEND;
     fatal(builder_add, ctx->builder, &ctx->builder_add_args);
   }
 

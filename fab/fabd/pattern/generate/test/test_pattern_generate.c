@@ -162,7 +162,7 @@ static xapi pattern_generate_test_entry(xunit_test * _test)
       {
         fatal(pattern_lookup_fragment, MMS(test->modules_requires[x + 0]), 0, 0, 0, 0, 0, 0, &na);
         fatal(pattern_lookup_fragment, MMS(test->modules_requires[x + 1]), 0, 0, 0, 0, 0, 0, &nb);
-        fatal(node_connect, na, nb, EDGE_TYPE_IMPORTS, &invalidation, 0, 0);
+        fatal(node_connect_generic, na, nb, EDGE_TYPE_IMPORTS, &invalidation, 0);
         fatal(shadow_graft_imports, na->mod, nb, nb->name->name, nb->name->namel, 0, &invalidation);
       }
     }

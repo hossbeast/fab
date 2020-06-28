@@ -44,9 +44,10 @@ typedef struct build_slot {
   const struct value * vars;      // vars for the variant
   const struct exec * exec;       // pre-rendered env vars for the variant
 
-  char * path;    // absolute path to execute
-  char ** argv;   // sentinel-terminated args
-  char ** envp;   // sentinel-terminated environment
+  int file_fd;      // descriptor of file to execute
+  char * file_path; // or, absolute path of to execute
+  char ** argv;     // sentinel-terminated args
+  char ** envp;     // sentinel-terminated environment
 
   int stdout_pipe[2];
   char * stdout_buf;

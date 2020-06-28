@@ -22,7 +22,7 @@ use warnings;
 
 use File::Basename;
 
-die "ar not found in environment" unless $ENV{ar};
+die "ar not found" unless $ENV{ar};
 
 my @arflags;
 push @arflags, split(/ /, $ENV{arflags}) if $ENV{arflags};
@@ -46,6 +46,10 @@ exec { $cmd[0] } @cmd
 __DATA__
 
 envs : {
+  ar : {
+    path-search : ar
+  }
+
   # object files for the library
   objects : [
     select : [

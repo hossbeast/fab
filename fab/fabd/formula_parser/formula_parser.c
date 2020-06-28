@@ -159,16 +159,20 @@ xapi formula_parser_bacon_parse(
   , char * const restrict vars_text
   , size_t vars_text_len
   , const char * restrict fname
-  , formula_value ** restrict path
+  , formula_value ** restrict file
   , formula_value ** restrict args
   , formula_value ** restrict envs
 )
 {
   enter;
 
+  parser->file = 0;
+  parser->args = 0;
+  parser->envs = 0;
+
   fatal(yyu_parse, &parser->yyu, vars_text, vars_text_len, fname, YYU_INPLACE, 0, 0);
 
-  *path = parser->path;
+  *file = parser->file;
   *args = parser->args;
   *envs = parser->envs;
 
@@ -265,10 +269,10 @@ xapi formula_parser_parse(
 
   if(bacon && bacon_len)
   {
-    fatal(formula_parser_bacon_parse, parser, bacon, bacon_len + 2, fname, &fml->path, &fml->args, &fml->envs);
+    fatal(formula_parser_bacon_parse, parser, bacon, bacon_len + 2, fname, &fml->file, &fml->args, &fml->envs);
   }
 
-  if(!shebang && !fml->path)
+  if(!shebang && !fml->file)
   {
     fail(FORMULA_NOPATH);
   }

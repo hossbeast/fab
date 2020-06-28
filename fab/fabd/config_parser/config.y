@@ -144,18 +144,21 @@
  AUXOUT_BUFFER_SIZE       "auxout-buffer-size"
  SUCCESS                  "success"
  VAR                      "var"
+ PATH                     "path"
+ COPY_FROM_ENV            "copy-from-env"
+ DIRS                     "dirs"
+ STAT                     "stat"
+ CONTENT                  "content"
+ NOTIFY                   "notify"
+ ALWAYS                   "always"
+ NEVER                    "never"
+ LEADING                  "leading"
+ TRAILING                 "trailing"
+ NONE                     "none"
 
-%token
- STAT    "stat"
- CONTENT "content"
- NOTIFY  "notify"
- ALWAYS  "always"
- NEVER   "never"
-
-%token
- LEADING  "leading"
- TRAILING "trailing"
- NONE     "none"
+/*
+ EXECUTABLES              "executables"
+ */
 
 /* nonterminals */
 %type <str> string strpart strparts quoted_string unquoted_string
@@ -330,58 +333,101 @@ formula-mapping
   {
     PARSER->cfg->formula.auxout_buffer_size = $3;
   }
-  | success-settings
-  | error-settings
+  | formula-success
+  | formula-error
+  | formula-path
   ;
 
-success-settings
-  : SUCCESS ':' '{' show-settings '}'
+formula-path
+  : PATH ':' '{' formula-path-mappings '}'
+  | PATH '=' '{' formula-path-mappings '}'
+  {
+    PARSER->cfg->formula.path.merge_overwrite = true;
+  }
+  ;
+
+formula-path-mappings
+  : formula-path-mappings formula-path-mapping
+  | formula-path-mapping
+  {
+    PARSER->cfg->formula.path.merge_significant = true;
+  }
+  ;
+
+formula-path-mapping
+  : COPY_FROM_ENV ':' bool
+  {
+    PARSER->cfg->formula.path.copy_from_env = $3;
+  }
+  | DIRS ':' '{' formula-path-dirs '}'
+  | DIRS '=' '{' formula-path-dirs '}'
+  {
+    PARSER->cfg->formula.path.dirs.merge_overwrite = true;
+  }
+  ;
+
+formula-path-dirs
+  : formula-path-dirs formula-path-dir
+  | formula-path-dir
+  ;
+
+formula-path-dir
+  : bstring
+  {
+    if($1) {
+      YFATAL(set_put, PARSER->cfg->formula.path.dirs.entries, $1, 0);
+    }
+  }
+  ;
+
+formula-success
+  : SUCCESS ':' '{' formula-show '}'
   {
     PARSER->cfg->formula.success = PARSER->show_settings;
   }
-  | SUCCESS '=' '{' show-settings-epsilon '}'
+  | SUCCESS '=' '{' formula-show-epsilon '}'
   {
     PARSER->cfg->formula.success = PARSER->show_settings;
     PARSER->cfg->formula.success.merge_overwrite = true;
   }
   ;
 
-error-settings
-  : ERROR ':' '{' show-settings '}'
+formula-error
+  : ERROR ':' '{' formula-show '}'
   {
     PARSER->cfg->formula.error = PARSER->show_settings;
   }
-  | ERROR '=' '{' show-settings-epsilon '}'
+  | ERROR '=' '{' formula-show-epsilon '}'
   {
     PARSER->cfg->formula.error = PARSER->show_settings;
     PARSER->cfg->formula.error.merge_overwrite = true;
   }
   ;
 
-allocate-show-settings
+allocate-formula-show
   : %empty
   {
     memset(&PARSER->show_settings, 0, sizeof(PARSER->show_settings));
   }
   ;
 
-show-settings-epsilon
-  : show-settings
+formula-show-epsilon
+  : formula-show
   | %empty
   {
     PARSER->show_settings.merge_significant = true;
   }
   ;
 
-show-settings
-  : show-settings show-settings-mapping
-  | allocate-show-settings show-settings-mapping
+formula-show
+  : formula-show formula-show-mapping
+  | allocate-formula-show formula-show-mapping
   {
     PARSER->show_settings.merge_significant = true;
   }
   ;
 
-show-settings-mapping
+formula-show-mapping
   : SHOW_STDOUT ':' bool
   {
     PARSER->show_settings.show_stdout = $3;

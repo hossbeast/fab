@@ -163,7 +163,7 @@ ht_bucket * hashtable_bucket_at(const hashtable_t * restrict ht, ht_bucket * res
   return (ht_bucket*)(((char*)tab) + ((sizeof(*tab) + ht->essz) * x));
 }
 
-int hashtable_probe(const hashtable_t * const restrict ht, uint32_t h, void * ent, size_t * restrict i)
+int hashtable_probe(const hashtable_t * const restrict ht, uint32_t h, void * ent, size_t ent_sz, hashtable_cmp cmp, size_t * restrict i)
 {
   size_t li;
   if(!i)
@@ -187,12 +187,13 @@ int hashtable_probe(const hashtable_t * const restrict ht, uint32_t h, void * en
 
         ijp = 0;
       }
-      else
+      else if(cmp && cmp(b->p, ent, ent_sz) == 0)
       {
-        if(ht->ops->compare_entries(ht, ent, b->p) == 0)
-        {
-          return 0;
-        }
+        return 0;
+      }
+      else if(ht->ops->compare_entries(ht, ent, b->p) == 0)
+      {
+        return 0;
       }
     }
     else if(ijp == 0)
@@ -339,11 +340,11 @@ xapi hashtable_store(hashtable_t * restrict ht, void * entry, ht_bucket ** bp)
   int r;
 
   h = ht->ops->hash_entry(ht, entry);
-  r = hashtable_probe(ht, h, entry, &i);
+  r = hashtable_probe(ht, h, entry, 0, 0, &i);
   if(r == -1 && ht->dirty_size == ht->overflow_size)
   {
     fatal(hashtable_grow, ht);
-    hashtable_probe(ht, h, entry, &i);
+    hashtable_probe(ht, h, entry, 0, 0, &i);
   }
 
   b = hashtable_bucket_at(ht, ht->tab, i);
@@ -452,7 +453,25 @@ void * API hashtable_get(const hashtable * restrict htx, void * entry)
   hashtable_t * ht = containerof(htx, hashtable_t, htx);
 
   h = ht->ops->hash_entry(ht, entry);
-  if(hashtable_probe(ht, h, entry, &i) == 0)
+  if(hashtable_probe(ht, h, entry, 0, 0, &i) == 0)
+  {
+    b = hashtable_bucket_at(ht, ht->tab, i);
+    return b->p;
+  }
+
+  return 0;
+}
+
+void * hashtable_search(const hashtable * restrict htx, void * key, size_t key_len, hashtable_hash hash, hashtable_cmp cmp)
+{
+  size_t i;
+  uint32_t h;
+  ht_bucket * b;
+
+  hashtable_t * ht = containerof(htx, hashtable_t, htx);
+
+  h = hash(0, key, key_len);
+  if(hashtable_probe(ht, h, key, key_len, cmp, &i) == 0)
   {
     b = hashtable_bucket_at(ht, ht->tab, i);
     return b->p;
@@ -472,7 +491,7 @@ xapi API hashtable_delete(hashtable * restrict htx, void * restrict entry)
   hashtable_t * ht = containerof(htx, hashtable_t, htx);
 
   h = ht->ops->hash_entry(ht, entry);
-  if(hashtable_probe(ht, h, entry, &i) == 0)
+  if(hashtable_probe(ht, h, entry, 0, 0, &i) == 0)
   {
     b = hashtable_bucket_at(ht, ht->tab, i);
     fatal(bucket_delete, ht, b);
@@ -548,7 +567,7 @@ bool API hashtable_equal(hashtable * const Ax, hashtable * const Bx)
   {
     if((b = hashtable_table_bucket(A, x)))
     {
-      if(hashtable_probe(B, b->h, b->p, 0) != 0)
+      if(hashtable_probe(B, b->h, b->p, 0, 0, 0) != 0)
         return false;
     }
   }

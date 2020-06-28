@@ -81,6 +81,17 @@ struct config {
   struct config_formula {
     CONFIGBASE;
 
+    struct config_formula_path {
+      CONFIGBASE;
+
+      struct box_bool * copy_from_env;
+      struct config_formula_path_dirs {
+        CONFIGBASE;
+        struct set * entries;    // box_string
+      } dirs;
+    } path;
+
+    // output stream processing
     struct box_int * capture_stdout;
     struct box_uint16 * stdout_buffer_size;
     struct box_int * capture_stderr;
@@ -189,21 +200,6 @@ xapi config_ixfree(config ** restrict cfg)
 //
 void config_compare(config * restrict new, config * restrict old)
   __attribute__((nonnull(1)));
-
-#if 0
-/// config_accumulate
-//
-// SUMMARY
-//  mark a config section and its ancestors as having been set
-//
-void config_accumulate(config_base * cfg, uint32_t h)
-  __attribute__((nonnull));
-
-#define CONFIG_MARK_AND_SET(section, member, value) do {  \
-    section.member = value;                               \
-    config_accumulate(&section.cb, (value)->hash);        \
-  } while(0)
-#endif
 
 xapi config_writer_write(config * const restrict cfg, struct value_writer * const restrict writer)
   __attribute__((nonnull));

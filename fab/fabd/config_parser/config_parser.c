@@ -77,9 +77,7 @@ xapi config_parser_create(config_parser ** rv)
   p->yyu.logs = L_CONFIG;
 #endif
 
-  fatal(yyu_define_tokenrange, &p->yyu, config_BUILD, config_SUCCESS);
-  fatal(yyu_define_tokenrange, &p->yyu, config_STAT, config_NEVER);
-  fatal(yyu_define_tokenrange, &p->yyu, config_LEADING, config_NONE);
+  fatal(yyu_define_tokenrange, &p->yyu, config_BUILD, config_NONE);
 
   // configure sub-parsers
   fatal(value_parser_create, &p->value_parser);

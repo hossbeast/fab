@@ -21,7 +21,7 @@
 use strict;
 use warnings;
 
-die "flex not found in environment" unless $ENV{flex};
+die "flex not found" unless $ENV{flex};
 
 my $name = "$ENV{bm_source}";
 $name =~ s/^.*\///;
@@ -56,3 +56,11 @@ char ${name}_yyget_hold_char(yyscan_t yyscanner) {
   return yyg->yy_hold_char;
 }
 END
+
+__DATA__
+
+envs : {
+  flex : {
+    path-search : flex
+  }
+}

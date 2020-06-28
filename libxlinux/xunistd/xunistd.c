@@ -626,6 +626,17 @@ finally:
 coda;
 }
 
+xapi API xfexecve(int fd, char * const argv[], char * const envp[])
+{
+  enter;
+
+  tfatalize(perrtab_KERNEL, errno, fexecve, fd, argv, envp);
+
+finally:
+  xapi_infof("fd", "%d", fd);
+coda;
+}
+
 xapi API xchdirs(const char * const restrict path)
 {
   enter;

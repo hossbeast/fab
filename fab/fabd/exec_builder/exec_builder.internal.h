@@ -35,6 +35,7 @@ struct narrator;
 struct formula_value;
 struct value;
 struct buildplan_entity;
+struct path_cache_entry;
 
 xapi exec_builder_arg_add(exec_builder * restrict builder, xapi (*render_val)(const void * ud, struct narrator * restrict N), const void * ud)
   __attribute__((nonnull));
@@ -52,18 +53,19 @@ xapi exec_builder_env_addf(exec_builder * restrict builder, const char * restric
   __attribute__((format(printf, 3, 4)));
 
 enum builder_add_mode {
-  PREPEND = 1,
-  APPEND
+  BUILDER_PREPEND = 1,
+  BUILDER_APPEND
 };
 
 enum builder_add_item {
-  PATH = 1,
-  ARGS,
-  ENVS
+  BUILDER_FILE = 1,
+  BUILDER_ARGS,
+  BUILDER_ENVS
 };
 
 enum builder_render_function {
     RENDER_PROPERTY = 1
+  , RENDER_PATH_CACHE_ENTRY
   , RENDER_STRING
   , RENDER_FORMULA_VALUE
   , RENDER_VALUE
@@ -85,6 +87,7 @@ typedef struct builder_add_args {
     const char * s;
     const struct formula_value * f;
     const struct value * v;
+    const struct path_cache_entry *pe;
     struct {
       const struct node * n;
       node_property prop;

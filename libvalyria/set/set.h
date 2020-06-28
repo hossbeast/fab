@@ -39,6 +39,9 @@ typedef struct set {
   uint32_t hash;      // order invariant hash of elements
 } set;
 
+typedef uint32_t (*set_key_hash)(uint32_t h, const void * key, size_t sz);
+typedef int (*set_key_cmp)(const void * A, size_t Asz, const void * key, size_t sz);
+
 /// set_create
 //
 // SUMMARY
@@ -130,6 +133,9 @@ void * set_get(const set * s, const void * key, size_t key_len)
 
 bool set_get_element(const set * s, const void * key, size_t key_len, void * elp, size_t * restrict ell)
   __attribute__((nonnull(1, 2)));
+
+void * set_search(const set * s, void *key, size_t key_len, set_key_hash hash, set_key_cmp cmp)
+  __attribute__((nonnull));
 
 /// set_equal
 //

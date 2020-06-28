@@ -30,29 +30,29 @@ struct attrs32;
 struct build_slot;
 struct narrator;
 struct value_writer;
-struct map;
 struct exec_builder;
 struct exec_render_context;
 
 #define FORMULA_VALUE_OPT 0xfff
-#define FORMULA_VALUE_TABLE                                               \
-  /* aggregates */                                                        \
-  DEF(FORMULA_VALUE_SET       , "set"       , FORMULA_VALUE_OPT , 0x001)  \
-  DEF(FORMULA_VALUE_LIST      , "list"      , FORMULA_VALUE_OPT , 0x002)  \
-  DEF(FORMULA_VALUE_MAPPING   , "mapping"   , FORMULA_VALUE_OPT , 0x003)  \
-  /* scalars */                                                           \
-  DEF(FORMULA_VALUE_STRING    , "string"    , FORMULA_VALUE_OPT , 0x010)  \
-  DEF(FORMULA_VALUE_FLOAT     , "float"     , FORMULA_VALUE_OPT , 0x020)  \
-  DEF(FORMULA_VALUE_BOOLEAN   , "bool"      , FORMULA_VALUE_OPT , 0x030)  \
-  DEF(FORMULA_VALUE_POSINT    , "posint"    , FORMULA_VALUE_OPT , 0x040)  \
-  DEF(FORMULA_VALUE_NEGINT    , "negint"    , FORMULA_VALUE_OPT , 0x050)  \
-  DEF(FORMULA_VALUE_VARIABLE  , "variable"  , FORMULA_VALUE_OPT , 0x060)  \
-  DEF(FORMULA_VALUE_SYSVAR    , "sysvar"    , FORMULA_VALUE_OPT , 0x070)  \
-  /* operations */                                                        \
-  DEF(FORMULA_VALUE_SELECT    , "select"    , FORMULA_VALUE_OPT , 0x100)  \
-  DEF(FORMULA_VALUE_PROPERTY  , "property"  , FORMULA_VALUE_OPT , 0x200)  \
-  DEF(FORMULA_VALUE_PREPEND   , "prepend"   , FORMULA_VALUE_OPT , 0x300)  \
-  DEF(FORMULA_VALUE_SEQUENCE  , "sequence"  , FORMULA_VALUE_OPT , 0x400)  \
+#define FORMULA_VALUE_TABLE                                                   \
+  /* aggregates */                                                            \
+  DEF(FORMULA_VALUE_SET         , "set"         , FORMULA_VALUE_OPT , 0x001)  \
+  DEF(FORMULA_VALUE_LIST        , "list"        , FORMULA_VALUE_OPT , 0x002)  \
+  DEF(FORMULA_VALUE_MAPPING     , "mapping"     , FORMULA_VALUE_OPT , 0x003)  \
+  /* scalars */                                                               \
+  DEF(FORMULA_VALUE_STRING      , "string"      , FORMULA_VALUE_OPT , 0x010)  \
+  DEF(FORMULA_VALUE_FLOAT       , "float"       , FORMULA_VALUE_OPT , 0x020)  \
+  DEF(FORMULA_VALUE_BOOLEAN     , "bool"        , FORMULA_VALUE_OPT , 0x030)  \
+  DEF(FORMULA_VALUE_POSINT      , "posint"      , FORMULA_VALUE_OPT , 0x040)  \
+  DEF(FORMULA_VALUE_NEGINT      , "negint"      , FORMULA_VALUE_OPT , 0x050)  \
+  DEF(FORMULA_VALUE_VARIABLE    , "variable"    , FORMULA_VALUE_OPT , 0x060)  \
+  DEF(FORMULA_VALUE_SYSVAR      , "sysvar"      , FORMULA_VALUE_OPT , 0x070)  \
+  /* operations */                                                            \
+  DEF(FORMULA_VALUE_SELECT      , "select"      , FORMULA_VALUE_OPT , 0x100)  \
+  DEF(FORMULA_VALUE_PROPERTY    , "property"    , FORMULA_VALUE_OPT , 0x200)  \
+  DEF(FORMULA_VALUE_PREPEND     , "prepend"     , FORMULA_VALUE_OPT , 0x300)  \
+  DEF(FORMULA_VALUE_SEQUENCE    , "sequence"    , FORMULA_VALUE_OPT , 0x400)  \
+  DEF(FORMULA_VALUE_PATH_SEARCH , "path-search" , FORMULA_VALUE_OPT , 0x500)  \
 
 typedef enum formula_value_type {
 #define DEF(x, s, r, y) x = UINT32_C(y),
@@ -86,7 +86,7 @@ typedef struct formula_operation {
   union {
     struct selector * selector;       // select
     node_property property;           // property
-    struct formula_value *operand;    // prepend
+    struct formula_value *operand;    // prepend, path-search
     struct formula_value *list_head;  // sequence
   };
 } formula_operation;
@@ -137,6 +137,7 @@ typedef struct formula_value {
 } formula_value;
 
 void formula_value_free(formula_value * restrict v);
+void formula_value_ifree(formula_value ** restrict v);
 
 xapi formula_value_say(const formula_value * restrict fv, struct narrator * restrict N)
   __attribute__((nonnull));

@@ -39,7 +39,6 @@ struct attrs16;
 struct artifact;
 struct narrator;
 struct list;
-struct map;
 struct node;
 struct pattern;
 struct variant;

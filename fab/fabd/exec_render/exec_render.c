@@ -36,7 +36,7 @@
 #include "path.h"
 #include "logging.h"
 #include "variant.h"
-#include "formula.internal.h"
+#include "formula.h"
 #include "formula_value.internal.h"
 #include "build_thread.h"
 #include "build_slot.h"
@@ -66,14 +66,14 @@ xapi exec_builder_env_addf(exec_builder * restrict builder, const char * restric
 
   namel = vsnprintf(name, sizeof(name), name_fmt, va);
 
-  args.item = ENVS;
+  args.item = BUILDER_ENVS;
   args.position = -1;
   args.name = name;
   args.name_len = namel;
   args.render_val = RENDER_FMT;
   args.val.fmt = val_fmt;
   args.val.va = &va;
-  args.mode = APPEND;
+  args.mode = BUILDER_APPEND;
 
   args.render_sep = RENDER_STRING;
   args.sep.s = " ";
@@ -118,7 +118,7 @@ xapi exec_render_context_xreset(exec_render_context * restrict ctx)
 {
   enter;
 
-  fatal(exec_builder_xreset, &ctx->operation_builder);
+//  fatal(exec_builder_xreset, &ctx->operation_builder);
   memset(&ctx->builder_add_args, 0, sizeof(ctx->builder_add_args));
 
   finally : coda;
@@ -138,14 +138,14 @@ xapi exec_render_context_xdestroy(struct exec_render_context * restrict ctx)
 //
 //
 
-xapi exec_render_path(exec_render_context * restrict ctx, const formula_value * restrict path)
+xapi exec_render_file(exec_render_context * restrict ctx, const formula_value * restrict file)
 {
   enter;
 
   fatal(exec_render_context_xreset, ctx);
 
-  ctx->builder_add_args.item = PATH;
-  fatal(exec_render_formula_value, path, ctx);
+  ctx->builder_add_args.item = BUILDER_FILE;
+  fatal(exec_render_formula_value, file, ctx);
 
   finally : coda;
 }
@@ -158,7 +158,7 @@ xapi exec_render_args(exec_render_context * restrict ctx, const formula_value * 
 
   fatal(exec_render_context_xreset, ctx);
 
-  ctx->builder_add_args.item = ARGS;
+  ctx->builder_add_args.item = BUILDER_ARGS;
   ctx->builder_add_args.position = -1;
   fatal(exec_render_formula_value, args, ctx);
 
@@ -175,11 +175,11 @@ xapi exec_render_envs(exec_render_context * restrict ctx, const formula_value * 
 
   fatal(exec_render_context_xreset, ctx);
 
-  ctx->builder_add_args.item = ENVS;
+  ctx->builder_add_args.item = BUILDER_ENVS;
   ctx->builder_add_args.position = -1;
   ctx->builder_add_args.render_sep = RENDER_STRING;
   ctx->builder_add_args.sep.s = " ";
-  ctx->builder_add_args.mode = APPEND;
+  ctx->builder_add_args.mode = BUILDER_APPEND;
 
   rbtree_foreach(envs->set, mapping, rbn) {
     RUNTIME_ASSERT(mapping->type == FORMULA_VALUE_MAPPING);
@@ -220,11 +220,11 @@ xapi exec_render_env_vars(exec_render_context * restrict ctx)
 
   fatal(exec_render_context_xreset, ctx);
 
-  ctx->builder_add_args.item = ENVS;
+  ctx->builder_add_args.item = BUILDER_ENVS;
   ctx->builder_add_args.position = -1;
   ctx->builder_add_args.render_sep = RENDER_STRING;
   ctx->builder_add_args.sep.s = " ";
-  ctx->builder_add_args.mode = APPEND;
+  ctx->builder_add_args.mode = BUILDER_APPEND;
 
   for(x = 0; x < ctx->vars->els->table_size; x++)
   {
@@ -236,7 +236,7 @@ xapi exec_render_env_vars(exec_render_context * restrict ctx)
 
     ctx->builder_add_args.name = v->key->s->s;
     ctx->builder_add_args.name_len = v->key->s->size;
-    ctx->builder_add_args.mode = APPEND;
+    ctx->builder_add_args.mode = BUILDER_APPEND;
 
     fatal(exec_render_value, v->val, ctx);
   }

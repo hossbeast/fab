@@ -21,14 +21,7 @@
 use strict;
 use warnings;
 
-#path : $bison
-#args : [
-#  $bisonflags
-#  "-o" $bm_target0
-#  "-d" $bm_source
-#]
-
-die "bison not found in environment" unless $ENV{bison};
+die "bison not found" unless $ENV{bison};
 
 my $cfile = substr($ENV{bm_target0}, -2) eq ".c" ? $ENV{bm_target0} : $ENV{bm_target1};
 
@@ -41,3 +34,11 @@ my @cmd = (
 
 print(join(" ", @cmd) . "\n");
 exec { $cmd[0] } @cmd;
+
+__DATA__
+
+envs : {
+  bison : {
+    path-search : bison
+  }
+}

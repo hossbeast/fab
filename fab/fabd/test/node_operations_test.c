@@ -58,7 +58,12 @@ static xapi node_operations_connect(graph * const restrict g, vertex * const res
   node *An = vertex_value(A);
   node *Bn = vertex_value(B);
 
-  fatal(node_connect, An, Bn, attrs, &invalidation, 0, 0);
+  if((attrs & EDGE_TYPE_FS) == EDGE_TYPE_FS)
+    fatal(node_connect_fs, An, Bn, attrs, &invalidation, e, 0);
+  else if((attrs & EDGE_TYPE_STRONG) == EDGE_TYPE_STRONG)
+    fatal(node_connect_dependency, An, Bn, attrs, &invalidation, 0, 0);
+  else
+    fatal(node_connect_generic, An, Bn, attrs, &invalidation, e);
 
   finally : coda;
 }
@@ -92,10 +97,7 @@ static xapi node_operations_disconnect(graph * const restrict g, edge * restrict
 {
   enter;
 
-  node_edge *ne;
-
-  ne = edge_value(e);
-  fatal(node_edge_disconnect, ne, &invalidation);
+  fatal(node_edge_disconnect, e, &invalidation);
 
   finally : coda;
 }
