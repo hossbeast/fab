@@ -26,9 +26,9 @@ SUMMARY
 
 #include "xapi.h"
 #include "types.h"
+#include "yyutil/grammar.h"
 
 struct attrs16;
-struct yyu_location;
 
 #define BOX_TYPE_OPT 0xf
 #define BOX_TYPE_TABLE                    \
@@ -52,22 +52,9 @@ BOX_TYPE_TABLE
 
 struct attrs16 * box_type_attrs;
 
-typedef struct box_loc {
-  const char * fname;
-
-  int f_lin;
-  int f_col;
-  int l_lin;
-  int l_col;
-
-  char * s;
-  char * e;
-  size_t l;
-} box_loc;
-
 typedef struct box {
   box_type type;
-  box_loc loc;
+  yyu_location loc;
   uint32_t hash;
 } box;
 
@@ -75,7 +62,7 @@ typedef struct box {
   box bx;               \
   struct {              \
     box_type type;      \
-    box_loc loc;        \
+    yyu_location loc;   \
     uint32_t hash;      \
   };                    \
 }
