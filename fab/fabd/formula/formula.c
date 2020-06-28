@@ -18,52 +18,48 @@
 #include "types.h"
 #include "xapi.h"
 
+#include "valyria/llist.h"
 #include "xlinux/xstdlib.h"
-#include "xlinux/xstring.h"
 #include "xlinux/xunistd.h"
 #include "xlinux/xfcntl.h"
-#include "valyria/array.h"
-#include "valyria/list.h"
-#include "valyria/pstring.h"
-#include "valyria/set.h"
-#include "value.h"
-#include "moria/traverse.h"
-#include "narrator.h"
-#include "narrator/growing.h"
+#include "xlinux/xstring.h"
 
-#include "formula.internal.h"
+#include "formula.h"
 #include "formula_parser.h"
 #include "formula_value.h"
-#include "build_thread.internal.h"
-#include "config.h"
 #include "logging.h"
-#include "module.internal.h"
-#include "node.h"
-#include "path.h"
-#include "selector.h"
-#include "variant.h"
 #include "node.h"
 
 #include "common/snarf.h"
-#include "macros.h"
-#include "common/attrs.h"
-#include "common/assure.h"
-#include "zbuffer.h"
-#include "common/hash.h"
 
-static xapi formula_create(formula ** restrict rv)
+static llist formulas_invalidated = LLIST_INITIALIZER(formulas_invalidated);
+static formula_parser *parser;
+
+static xapi formula_refresh(formula * restrict fml)
 {
   enter;
 
-  formula * fml = 0;
+  char * text = 0;
+  size_t text_len;
 
-  fatal(xmalloc, &fml, sizeof(*fml));
+  // open the file, both to read its contents, and to exec later
+  fatal(ixclose, &fml->fd);
+  fatal(xopenats, &fml->fd, O_RDONLY, 0, fml->abspath);
 
-  *rv = fml;
-  fml = 0;
+  formula_value_ifree(&fml->file);
+  formula_value_ifree(&fml->envs);
+  formula_value_ifree(&fml->args);
+
+  fatal(fsnarf, &text, &text_len, fml->fd);
+  if(text)
+  {
+    fatal(formula_parser_parse, parser, text, text_len, fml->abspath, fml);
+  }
+
+  logf(L_MODULE, "parsed formula @ %s", fml->abspath);
 
 finally:
-  fatal(formula_xfree, fml);
+  wfree(text);
 coda;
 }
 
@@ -77,8 +73,9 @@ xapi formula_xfree(formula * restrict fml)
 
   if(fml)
   {
+    fatal(xclose, fml->fd);
     wfree(fml->abspath);
-    formula_value_free(fml->path);
+    formula_value_free(fml->file);
     formula_value_free(fml->envs);
     formula_value_free(fml->args);
   }
@@ -87,44 +84,70 @@ xapi formula_xfree(formula * restrict fml)
   finally : coda;
 }
 
-xapi formula_node_parse(node * restrict fml_node)
+xapi formula_node_initialize(node * restrict fml_node)
 {
   enter;
 
-  char * text = 0;
-  size_t text_len;
-  formula * fml = 0;
-  formula_parser * formula_parser = 0;
-
   char path[512];
+  formula *fml;
 
-  if(!fml_node->not_parsed)
-    goto XAPI_FINALLY;
-
+  if(node_kind_get(fml_node) == VERTEX_FML) {
+    goto XAPI_FINALIZE;
+  }
   node_kind_set(fml_node, VERTEX_FML);
-  fatal(formula_create, &fml);
-  fatal(formula_parser_create, &formula_parser);
 
-  // absolute path, for exec
+  fatal(xmalloc, &fml, sizeof(*fml));
+  llist_init_node(&fml->lln_invalidated);
+  fml->fd = -1;
   node_get_absolute_path(fml_node, path, sizeof(path));
   fatal(ixstrdup, &fml->abspath, path);
 
-  fatal(snarfs, &text, &text_len, fml->abspath);
-  if(text)
-  {
-    fatal(formula_parser_parse, formula_parser, text, text_len, path, fml);
+  fml_node->self_fml = fml;
+  fml->fml_node = fml_node;
+
+  formula_invalidated(fml);
+
+  finally : coda;
+}
+
+void formula_invalidated(formula * restrict fml)
+{
+  if(llist_attached(fml, lln_invalidated)) {
+    llist_delete(fml, lln_invalidated);
   }
 
-  logf(L_MODULE, "parsed formula @ %s", path);
+  llist_append(&formulas_invalidated, fml, lln_invalidated);
+}
 
-  fml->fml_node = fml_node;
-  fml_node->self_fml = fml;
-  fml_node->not_parsed = 0;
-  fml = 0;
+xapi formula_full_refresh()
+{
+  enter;
 
-finally:
-  wfree(text);
-  fatal(formula_xfree, fml);
-  fatal(formula_parser_xfree, formula_parser);
-coda;
+  formula *fml;
+
+  llist_foreach(&formulas_invalidated, fml, lln_invalidated) {
+    fatal(formula_refresh, fml);
+  }
+
+  llist_init_node(&formulas_invalidated);
+
+  finally : coda;
+}
+
+xapi formula_setup()
+{
+  enter;
+
+  fatal(formula_parser_create, &parser);
+
+  finally : coda;
+}
+
+xapi formula_cleanup()
+{
+  enter;
+
+  fatal(formula_parser_xfree, parser);
+
+  finally : coda;
 }

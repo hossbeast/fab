@@ -49,6 +49,7 @@
 #include "rule.h"
 #include "params.h"
 #include "stats.h"
+#include "formula.h"
 
 #include "macros.h"
 #include "common/attrs.h"
@@ -909,6 +910,9 @@ xapi node_invalidate(node * restrict n, graph_invalidation_context * restrict in
       , MORIA_TRAVERSE_UP | MORIA_TRAVERSE_PRE
       , invalidation
     );
+
+printf("invalidated\n");
+    formula_invalidated(n->self_fml);
   }
 
   finally : coda;

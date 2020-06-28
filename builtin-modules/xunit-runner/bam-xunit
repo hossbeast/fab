@@ -22,7 +22,7 @@ use warnings;
 
 use POSIX;
 
-die "xunit not found in environment" unless $ENV{xunit};
+die "xunit not found" unless $ENV{xunit};
 
 my @cmd = (
     $ENV{xunit}
@@ -30,17 +30,20 @@ my @cmd = (
   , (split(/ /, $ENV{objs}))
 );
 
-print(join(" ", @cmd) . "\n");
-
 # redirect stdout -> auxout
 POSIX::dup2(1001, 1);
 
-# exec into the compiler
+print(join(" ", @cmd) . "\n");
+
 exec { $cmd[0] } @cmd;
 
 __DATA__
 
 envs : {
+  xunit : {
+    path-search : xunit
+  }
+
   objs : [
     select : [
       target

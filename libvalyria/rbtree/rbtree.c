@@ -527,7 +527,6 @@ rbnode * API rbtree_search(const rbtree * restrict rb, rbtree_search_context *ct
   return 0;
 }
 
-
 rbnode * API rbtree_lookup_node(const rbtree * restrict rb, void * key, rbtree_key_cmp cmp)
 {
   rbtree_search_context ctx;

@@ -15,34 +15,41 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef FABD_FORMULA_INTERNAL_H
-#define FABD_FORMULA_INTERNAL_H
+#ifndef FABD_PATH_CACHE_H
+#define FABD_PATH_CACHE_H
 
 #include "xapi.h"
 #include "types.h"
 
-#include "formula.h"
-#include "node.h"
+struct config;
 
-struct attrs32;
-struct build_slot;
-struct set;
-struct narrator;
+extern char *path_cache_env_path; // $PATH
 
-xapi render_vars(
-    struct set * restrict vars
-  , struct build_slot * restrict bs
-  , struct narrator * restrict N
-  , size_t ** restrict env_offs
-  , size_t * restrict env_offs_len
-)
+typedef struct path_cache_entry {
+  int fd;
+  uint16_t len;
+  const char *filename; // pointer into s
+  char s[];
+} path_cache_entry;
+
+xapi path_cache_setup(void);
+xapi path_cache_cleanup(void);
+
+/*
+ * reapply path cache configuration
+ *
+ * config - effective config tree
+ * dry    - whether to perform a dry-run
+ */
+xapi path_cache_reconfigure(struct config * restrict cfg, bool dry)
   __attribute__((nonnull));
 
-/// formula_vartab_create
-//
-//
-//
-xapi formula_vartab_create(struct set ** restrict rv)
+xapi path_cache_search(const path_cache_entry ** restrict entry, const char * restrict file, uint16_t len)
   __attribute__((nonnull));
+
+/*
+ * reset the path cache
+ */
+xapi path_cache_reset(void);
 
 #endif

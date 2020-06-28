@@ -24,7 +24,8 @@ use File::Basename;
 use Data::Dumper;
 use POSIX;
 
-die "cc not found in environment" unless $ENV{cc};
+
+die "cc not found" unless $ENV{cc};
 
 my @rpath;
 if($ENV{bm_variant} eq "devel.xapi")
@@ -56,6 +57,10 @@ exec { $cmd[0] } @cmd
 __DATA__
 
 envs : {
+  cc : {
+    path-search : cc
+  }
+
   includes : [
     select : [
       module

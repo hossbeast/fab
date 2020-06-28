@@ -28,7 +28,6 @@
 #include "moria/vertex.h"
 #include "moria/operations.h"
 #include "narrator.h"
-#include "valyria/dictionary.h"
 #include "valyria/list.h"
 #include "valyria/map.h"
 #include "valyria/set.h"
@@ -466,7 +465,7 @@ static xapi rule_formula_process(rule * restrict r, node * restrict fml_node)
     , 0
   );
 
-  fatal(formula_node_parse, r->fml_node);
+  fatal(formula_node_initialize, r->fml_node);
 
   finally : coda;
 }
@@ -487,7 +486,7 @@ static xapi module_refresh(module * restrict mod, graph_invalidation_context * r
   mod_dir_v = vertex_containerof(mod_dir_n);
   mod_file_n = mod->self_node;
 
-  // parse formulas, connect to rules
+  // connect formulas to rules
   if(mod->unscoped_block) {
     llist_foreach(&mod->unscoped_block->rules, r, lln) {
       if(!r->fml_node) {
@@ -505,6 +504,7 @@ static xapi module_refresh(module * restrict mod, graph_invalidation_context * r
     }
   }
 
+  /* the remainder applies to modules only */
   if(node_nodetype_get(mod_file_n) == VERTEX_NODETYPE_MODEL) {
     goto XAPI_FINALIZE;
   }

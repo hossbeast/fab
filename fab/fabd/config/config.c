@@ -46,20 +46,28 @@
 #include "params.h"
 #include "node.h"
 #include "var.h"
+#include "path_cache.h"
 
 #include "common/snarf.h"
 #include "macros.h"
 #include "common/hash.h"
 #include "common/attrs.h"
 
+#if DEVEL
+#define SYSTEM_CONFIG_PATH    "/etc/fabconfig+devel"  // absolute
+#define USER_CONFIG_PATH      ".fab/config+devel"     // relative to $HOME
+#define PROJECT_CONFIG_PATH   ".fab/config+devel"     // relative to project dir
+#else
 #define SYSTEM_CONFIG_PATH    "/etc/fabconfig"  // absolute
 #define USER_CONFIG_PATH      ".fab/config"     // relative to $HOME
 #define PROJECT_CONFIG_PATH   ".fab/config"     // relative to project dir
+#endif
 
 static config * config_staging;
 static config_parser * parser_staging;
 static config * config_active;
 static config_parser * parser_active;
+bool config_reconfigure_result;
 
 //
 // static
@@ -176,17 +184,26 @@ static void config_compare_formula_show_settings(config_base * restrict _new, co
     || box_cmp(refas(new->show_sources, bx), refas2(old, show_sources, bx))
     || box_cmp(refas(new->show_targets, bx), refas2(old, show_targets, bx))
     || box_cmp(refas(new->show_environment, bx), refas2(old, show_environment, bx))
-    || box_cmp(refas(new->show_status, bx), refas(old->show_status, bx))
-    || box_cmp(refas(new->show_stdout, bx), refas(old->show_stdout, bx))
-    || box_cmp(refas(new->show_stdout_limit_bytes, bx), refas(old->show_stdout_limit_bytes, bx))
-    || box_cmp(refas(new->show_stdout_limit_lines, bx), refas(old->show_stdout_limit_lines, bx))
-    || box_cmp(refas(new->show_stderr, bx), refas(old->show_stderr, bx))
-    || box_cmp(refas(new->show_stderr_limit_bytes, bx), refas(old->show_stderr_limit_bytes, bx))
-    || box_cmp(refas(new->show_stderr_limit_lines, bx), refas(old->show_stderr_limit_lines, bx))
-    || box_cmp(refas(new->show_auxout, bx), refas(old->show_auxout, bx))
-    || box_cmp(refas(new->show_auxout_limit_bytes, bx), refas(old->show_auxout_limit_bytes, bx))
-    || box_cmp(refas(new->show_auxout_limit_lines, bx), refas(old->show_auxout_limit_lines, bx))
+    || box_cmp(refas(new->show_status, bx), refas2(old, show_status, bx))
+    || box_cmp(refas(new->show_stdout, bx), refas2(old, show_stdout, bx))
+    || box_cmp(refas(new->show_stdout_limit_bytes, bx), refas2(old, show_stdout_limit_bytes, bx))
+    || box_cmp(refas(new->show_stdout_limit_lines, bx), refas2(old, show_stdout_limit_lines, bx))
+    || box_cmp(refas(new->show_stderr, bx), refas2(old, show_stderr, bx))
+    || box_cmp(refas(new->show_stderr_limit_bytes, bx), refas2(old, show_stderr_limit_bytes, bx))
+    || box_cmp(refas(new->show_stderr_limit_lines, bx), refas2(old, show_stderr_limit_lines, bx))
+    || box_cmp(refas(new->show_auxout, bx), refas2(old, show_auxout, bx))
+    || box_cmp(refas(new->show_auxout_limit_bytes, bx), refas2(old, show_auxout_limit_bytes, bx))
+    || box_cmp(refas(new->show_auxout_limit_lines, bx), refas2(old, show_auxout_limit_lines, bx))
     ;
+}
+
+static void config_compare_formula_path(config_base * restrict _new, config_base * restrict _old)
+{
+  struct config_formula_path * new = containerof(_new, struct config_formula_path, cb);
+  struct config_formula_path * old = containerof(_old, struct config_formula_path, cb);
+
+  new->changed = !old || !set_equal(new->dirs.entries, old->dirs.entries);
+  new->changed |= box_cmp(refas(new->copy_from_env, bx), refas2(old, copy_from_env, bx));
 }
 
 static void config_compare_formula(config_base * restrict _new, config_base * restrict _old)
@@ -196,10 +213,12 @@ static void config_compare_formula(config_base * restrict _new, config_base * re
 
   config_compare_formula_show_settings(&new->success.cb, refas(old, success.cb));
   config_compare_formula_show_settings(&new->error.cb, refas(old, error.cb));
+  config_compare_formula_path(&new->path.cb, refas(old, path.cb));
 
   new->changed =
          new->success.changed
       || new->error.changed
+      || new->path.changed
       || box_cmp(refas(new->capture_stdout, bx), refas(old->capture_stdout, bx))
       || box_cmp(refas(new->stdout_buffer_size, bx), refas(old->stdout_buffer_size, bx))
       || box_cmp(refas(new->capture_stderr, bx), refas(old->capture_stderr, bx))
@@ -276,7 +295,26 @@ xapi config_merge(config * restrict dst, config * restrict src)
   }
   dst->filesystems.merge_significant = src->filesystems.entries->size;
 
-  /* formula */
+  /* formula path */
+  dst->formula.path.merge_significant = false;
+  if(src->formula.merge_overwrite || src->formula.path.merge_overwrite || src->formula.path.dirs.merge_overwrite)
+  {
+    fatal(set_xfree, dst->formula.path.dirs.entries);
+    dst->formula.path.dirs.entries = src->formula.path.dirs.entries;
+    src->formula.path.dirs.entries = 0;
+  }
+  else
+  {
+    fatal(set_splice, dst->formula.path.dirs.entries, src->formula.path.dirs.entries);
+  }
+  dst->formula.path.dirs.merge_significant = dst->formula.path.dirs.entries->size;
+  dst->formula.path.merge_significant |= dst->formula.path.dirs.merge_significant;
+
+  empty = true;
+  CFGCOPY(dst, src, formula, path.copy_from_env);
+  dst->formula.path.merge_significant |= !empty;
+
+  /* formula success */
   empty = true;
   CFGCOPY(dst, src, formula, success.show_arguments);
   CFGCOPY(dst, src, formula, success.show_path);
@@ -297,6 +335,7 @@ xapi config_merge(config * restrict dst, config * restrict src)
   CFGCOPY(dst, src, formula, success.show_auxout_limit_lines);
   dst->formula.success.merge_significant = !empty;
 
+  /* formula error */
   empty = true;
   CFGCOPY(dst, src, formula, error.show_arguments);
   CFGCOPY(dst, src, formula, error.show_path);
@@ -317,6 +356,7 @@ xapi config_merge(config * restrict dst, config * restrict src)
   CFGCOPY(dst, src, formula, error.show_auxout_limit_lines);
   dst->formula.error.merge_significant = !empty;
 
+  /* formula */
   empty = true;
   CFGCOPY(dst, src, formula, capture_stdout);
   CFGCOPY(dst, src, formula, stdout_buffer_size);
@@ -404,6 +444,14 @@ xapi config_create(config ** restrict rv)
   fatal(map_createx, &cfg->filesystems.entries, 0, fse_free, 0);
   fatal(list_createx, &cfg->logging.logfile.exprs.items, 0, 0, box_free, 0);
   fatal(list_createx, &cfg->logging.console.exprs.items, 0, 0, box_free, 0);
+  fatal(set_createx
+    , &cfg->formula.path.dirs.entries
+    , 0
+    , box_string_ht_hash_fn
+    , box_string_ht_cmp_fn
+    , (void*)box_free
+    , 0
+  );
 
   *rv = cfg;
   cfg = 0;
@@ -429,6 +477,9 @@ xapi config_xfree(config * restrict cfg)
 
     fatal(set_xfree, cfg->extern_section.entries);
     fatal(map_xfree, cfg->filesystems.entries);
+    fatal(set_xfree, cfg->formula.path.dirs.entries);
+
+    box_free(refas(cfg->formula.path.copy_from_env, bx));
 
     box_free(refas(cfg->formula.success.show_arguments, bx));
     box_free(refas(cfg->formula.success.show_path, bx));
@@ -489,6 +540,11 @@ xapi config_writer_write(config * restrict cfg, value_writer * const restrict wr
   enter;
 
   int x;
+  const char *name;
+  const box_string *ent;
+  const box_string *item;
+  const char *key;
+  const struct config_filesystem_entry *fsent;
 
   if(cfg->build.merge_significant)
   {
@@ -508,7 +564,6 @@ xapi config_writer_write(config * restrict cfg, value_writer * const restrict wr
 
     for(x = 0; x < cfg->extern_section.entries->table_size; x++)
     {
-      const box_string * ent;
       if(!(ent = set_table_get(cfg->extern_section.entries, x)))
         continue;
 
@@ -526,15 +581,15 @@ xapi config_writer_write(config * restrict cfg, value_writer * const restrict wr
 
     for(x = 0; x < cfg->filesystems.entries->table_size; x++)
     {
-      const char * key = map_table_key(cfg->filesystems.entries, x);
+      key = map_table_key(cfg->filesystems.entries, x);
       if(!key)
         continue;
-      const struct config_filesystem_entry * ent = map_table_value(cfg->filesystems.entries, x);
+      fsent = map_table_value(cfg->filesystems.entries, x);
 
       fatal(value_writer_push_mapping, writer);
       fatal(value_writer_string, writer, key);
         fatal(value_writer_push_set, writer);
-          fatal(value_writer_mapping_string_string, writer, "invalidate", attrs16_name_byvalue(invalidate_attrs, INVALIDATE_OPT & ent->invalidate->v));
+          fatal(value_writer_mapping_string_string, writer, "invalidate", attrs16_name_byvalue(invalidate_attrs, INVALIDATE_OPT & fsent->invalidate->v));
         fatal(value_writer_pop_set, writer);
       fatal(value_writer_pop_mapping, writer);
     }
@@ -548,9 +603,37 @@ xapi config_writer_write(config * restrict cfg, value_writer * const restrict wr
     fatal(value_writer_string, writer, "formula");
     fatal(value_writer_push_set, writer);
 
+    if(cfg->formula.path.merge_significant)
+    {
+      fatal(value_writer_push_mapping, writer);
+      fatal(value_writer_string, writer, "path");
+      fatal(value_writer_push_set, writer);
+      if(cfg->formula.path.copy_from_env)
+        fatal(value_writer_mapping_string_bool, writer, "copy-from-env", cfg->formula.path.copy_from_env->v);
+
+      if(cfg->formula.path.dirs.merge_significant)
+      {
+        fatal(value_writer_push_mapping, writer);
+        fatal(value_writer_string, writer, "dirs");
+        fatal(value_writer_push_set, writer);
+        for(x = 0; x < cfg->formula.path.dirs.entries->table_size; x++)
+        {
+          if(!(ent = set_table_get(cfg->formula.path.dirs.entries, x)))
+            continue;
+
+          fatal(value_writer_string, writer, ent->v);
+        }
+        fatal(value_writer_pop_set, writer);
+        fatal(value_writer_pop_mapping, writer);
+      }
+
+      fatal(value_writer_pop_set, writer);
+      fatal(value_writer_pop_mapping, writer);
+    }
+
     if(cfg->formula.capture_stdout)
     {
-      const char * name = attrs32_name_byvalue(stream_part_attrs, STREAM_PART_OPT & cfg->formula.capture_stdout->v);
+      name = attrs32_name_byvalue(stream_part_attrs, STREAM_PART_OPT & cfg->formula.capture_stdout->v);
       fatal(value_writer_mapping_string_string, writer, "capture-stdout", name);
     }
     if(cfg->formula.stdout_buffer_size)
@@ -559,7 +642,7 @@ xapi config_writer_write(config * restrict cfg, value_writer * const restrict wr
     }
     if(cfg->formula.capture_stderr)
     {
-      const char * name = attrs32_name_byvalue(stream_part_attrs, STREAM_PART_OPT & cfg->formula.capture_stderr->v);
+      name = attrs32_name_byvalue(stream_part_attrs, STREAM_PART_OPT & cfg->formula.capture_stderr->v);
       fatal(value_writer_mapping_string_string, writer, "capture-stderr", name);
     }
     if(cfg->formula.stderr_buffer_size)
@@ -568,7 +651,7 @@ xapi config_writer_write(config * restrict cfg, value_writer * const restrict wr
     }
     if(cfg->formula.capture_auxout)
     {
-      const char * name = attrs32_name_byvalue(stream_part_attrs, STREAM_PART_OPT & cfg->formula.capture_auxout->v);
+      name = attrs32_name_byvalue(stream_part_attrs, STREAM_PART_OPT & cfg->formula.capture_auxout->v);
       fatal(value_writer_mapping_string_string, writer, "capture-auxout", name);
     }
     if(cfg->formula.auxout_buffer_size)
@@ -685,7 +768,7 @@ xapi config_writer_write(config * restrict cfg, value_writer * const restrict wr
         fatal(value_writer_push_list, writer);
         for(x = 0; x < cfg->logging.console.exprs.items->size; x++)
         {
-          const box_string * item = list_get(cfg->logging.console.exprs.items, x);
+          item = list_get(cfg->logging.console.exprs.items, x);
           fatal(value_writer_string, writer, item->v);
         }
         fatal(value_writer_pop_list, writer);
@@ -709,7 +792,7 @@ xapi config_writer_write(config * restrict cfg, value_writer * const restrict wr
         fatal(value_writer_push_list, writer);
         for(x = 0; x < cfg->logging.logfile.exprs.items->size; x++)
         {
-          const box_string * item = list_get(cfg->logging.logfile.exprs.items, x);
+          item = list_get(cfg->logging.logfile.exprs.items, x);
           fatal(value_writer_string, writer, item->v);
         }
         fatal(value_writer_pop_list, writer);
@@ -820,6 +903,11 @@ xapi config_begin_staging()
     logf(L_CONFIG, "no project config @ %s/%s", g_params.proj_dir, PROJECT_CONFIG_PATH);
   }
 
+  if(!config_staging)
+  {
+    fatal(config_create, &config_staging);
+  }
+
 finally:
   wfree(text);
   fatal(config_xfree, cfg);
@@ -861,6 +949,7 @@ xapi config_reconfigure()
     || (exit = invoke(extern_reconfigure, config_staging, true))
     || (exit = invoke(build_thread_reconfigure, config_staging, true))
     || (exit = invoke(var_reconfigure, config_staging, true))
+    || (exit = invoke(path_cache_reconfigure, config_staging, true))
   )
   {
     if(xapi_exit_errtab(exit) != perrtab_CONFIG)
@@ -874,6 +963,7 @@ xapi config_reconfigure()
     xapi_calltree_unwind();
 
     xlogs(L_WARN, L_NOCATEGORY, trace);
+    config_reconfigure_result = false;
   }
   else
   {
@@ -894,6 +984,8 @@ xapi config_reconfigure()
     fatal(extern_reconfigure, config_active, false);
     fatal(build_thread_reconfigure, config_active, false);
     fatal(var_reconfigure, config_active, false);
+    fatal(path_cache_reconfigure, config_active, false);
+    config_reconfigure_result = true;
   }
 
   finally : coda;

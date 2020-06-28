@@ -24,7 +24,7 @@ use warnings;
 use POSIX;
 use Data::Dumper;
 
-die "git not found in environment" unless $ENV{git};
+die "git not found" unless $ENV{git};
 
 #
 # runs a git command and returns the stdout as a single scalar
@@ -44,7 +44,7 @@ sub git
     POSIX::close($rdout);
     POSIX::dup2($wrout, 1);
 
-    exec { "git" } @cmd;
+    exec { $cmd[0] } @cmd;
   }
 
   POSIX::close($wrout);
@@ -106,3 +106,12 @@ const char * git_commit_hash = "$commit";
 const char * git_commit_date = "$date";
 int git_dirty = $dirty;
 END
+
+
+__DATA__
+
+envs : {
+  git : {
+    path-search : git
+  }
+}

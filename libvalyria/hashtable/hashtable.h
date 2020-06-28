@@ -108,6 +108,11 @@ static inline bool __attribute__((nonnull)) hashtable_contains(const hashtable *
   return hashtable_get(ht, entry) ? true : false;
 }
 
+typedef uint32_t (*hashtable_hash)(uint32_t h, const void * key, size_t sz);
+typedef int (*hashtable_cmp)(const void * A, const void * key, size_t sz);
+
+void * hashtable_search(const hashtable * restrict ht, void * key, size_t key_len, hashtable_hash, hashtable_cmp cmp)
+  __attribute__((nonnull));
 
 /// hashtable_equal
 //

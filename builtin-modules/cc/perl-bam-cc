@@ -18,41 +18,21 @@
 # along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 #
 
-die "cc not found in environment" unless $ENV{cc};
+use strict;
+use warnings;
 
-my $ccpath = undef;
-if(index($ENV{cc}, "/") > -1)
-{
-  $ccpath = $ENV{cc};
-}
-elsif($ENV{PATH})
-{
-  for my $dir (split(/:/, $ENV{PATH}))
-  {
-    my $path = "$dir/$ENV{cc}";
-    if (-e $path)
-    {
-      $ccpath = $path;
-      last;
-    }
-  }
-}
-
-die "cannot find $ENV{cc}" unless $ccpath;
+die "cc not found" unless $ENV{cc};
 
 my @cmd = (
-    $ccpath
+    $ENV{cc}
   , split(/ /, $ENV{cflags})
   , (map { "-I$_" } split(/ /, $ENV{includes}))
-#  , ((split(/ /, $ENV{deps}))[0])
   , $ENV{bm_source}
   , "-c"
   , "-o", $ENV{bm_target}
 );
 
 use Data::Dumper;
-#print Dumper \%ENV;
-#print Dumper \@cmd;
 print(join(" ", @cmd) . "\n");
 
 exec { $cmd[0] } @cmd
@@ -60,6 +40,10 @@ exec { $cmd[0] } @cmd
 __DATA__
 
 envs : {
+  cc : {
+    path-search : cc
+  }
+
   deps : [
     select : [
       target

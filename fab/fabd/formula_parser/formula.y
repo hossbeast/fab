@@ -25,7 +25,7 @@
   #include "valyria/chain.h"
 
   #include "formula_parser.internal.h"
-  #include "formula.internal.h"
+  #include "formula.h"
   #include "formula_value.internal.h"
   #include "selector.h"
 
@@ -115,10 +115,11 @@
 %token
   ARGS          "args"
   ENVS          "envs"
-  PATH          "path"
+  FILETOKEN     "file"
   PROPERTY      "property"
   PREPEND       "prepend"
   SELECT        "select"
+  PATH_SEARCH   "path-search"
 
 %token
   ABSDIR        "absdir"
@@ -144,9 +145,10 @@
 %type <yyu.u16> sysvar-token
 %type <yyu.s> string quoted-string unquoted-string strpart strparts
 %type <value> primitive boolean float negint posint variable sysvar
-%type <value> operation-list operation-list-item operation sequence-operation
+%type <value> operation-list operation-list-item operation sequence-operation path-search-operation
 %type <value> arg-values arg-value
 %type <value> env-var env-var-value
+%type <value> file-value
 %type <set> env-vars
 %type <node_property> node-property
 
@@ -166,18 +168,26 @@ sections
 section
   : envs-section
   | args-section
-  | path-section
+  | file-section
   ;
 
-path-section
-  : PATH ':' primitive
+file-section
+  : FILETOKEN ':' file-value
   {
-    PARSER->path = $3;
+    PARSER->file = $3;
+  }
+  ;
+
+file-value
+  : primitive
+  | '{' path-search-operation '}'
+  {
+    $$ = $2;
   }
   ;
 
 args-section
-  : ARGS ':' '[' arg-values ']' 
+  : ARGS ':' '[' arg-values ']'
   {
     YFATAL(formula_value_list_mk, &@$, &PARSER->args, $4);
   }
@@ -284,6 +294,14 @@ operation
   | PREPEND ':' primitive
   {
     YFATAL(formula_value_prepend_mk, &@$, &$$, $3);
+  }
+  | path-search-operation
+  ;
+
+path-search-operation
+  : PATH_SEARCH ':' primitive
+  {
+    YFATAL(formula_value_path_search_mk, &@$, &$$, $3);
   }
   ;
 

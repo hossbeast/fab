@@ -107,6 +107,53 @@ static ht_operations ht_ops = {
   , store_entry : store_entry
 };
 
+static int probe(const set_t* const restrict s, uint32_t h, void * ent, size_t ent_sz, set_key_cmp cmp, size_t * restrict i)
+{
+  ht_bucket *b;
+  element * el;
+  size_t li;
+  if(!i)
+    i = &li;
+
+  *i = h & s->ht.lm;
+
+  size_t ij = 0;
+  size_t * ijp = &ij;
+
+  while(1)
+  {
+    b = hashtable_bucket_at(&s->ht, s->ht.tab, *i);
+    RUNTIME_ASSERT((b->attr & ~(HT_OCCUPIED | HT_DELETED)) == 0);
+    el = (void*)b->p;
+    if(b->attr & HT_OCCUPIED)
+    {
+      if(b->attr & HT_DELETED)
+      {
+        if(ijp)
+          *ijp = *i;
+
+        ijp = 0;
+      }
+      else if(cmp(el->p, el->l, ent, ent_sz) == 0)
+      {
+        return 0;
+      }
+    }
+    else if(ijp == 0)
+    {
+      *i = ij;
+      return 1;
+    }
+    else
+    {
+      return -1;
+    }
+
+    (*i)++;
+    (*i) &= s->ht.lm;
+  }
+}
+
 //
 // api
 //
@@ -260,6 +307,25 @@ void * API set_get(const set * sx, const void * e, size_t len)
   element * el = hashtable_get(&s->htx, &key);
   if(el)
     return el->p;
+
+  return 0;
+}
+
+void * API set_search(const set * sx, void *key, size_t key_len, set_key_hash hash, set_key_cmp cmp)
+{
+  const set_t * s = containerof(sx, set_t, sx);
+  uint32_t h;
+  element * el;
+  ht_bucket * b;
+  size_t i;
+
+  h = hash(0, key, key_len);
+  if(probe(s, h, key, key_len, cmp, &i) == 0)
+  {
+    b = hashtable_bucket_at(&s->ht, s->ht.tab, i);
+    el = (void*)b->p;
+    return el->p;
+  }
 
   return 0;
 }

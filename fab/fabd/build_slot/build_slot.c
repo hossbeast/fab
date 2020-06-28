@@ -45,6 +45,7 @@
 #include "node.h"
 #include "path.h"
 #include "formula.h"
+#include "path_cache.h"
 #include "build_thread.internal.h"
 #include "notify_thread.h"
 #include "buildplan.h"
@@ -56,6 +57,7 @@
 #include "variant.h"
 #include "node_operations.h"
 #include "stats.h"
+#include "formula_value.h"
 
 #include "common/atomic.h"
 #include "common/assure.h"
@@ -139,18 +141,21 @@ static xapi bsexec(build_slot * restrict bs)
   // chdir to the module directory
   fatal(xfchdir, bs->mod->dirnode_fd);
 
+  // close fds
   for(x = 0; x < 1024; x++)
   {
-    if(x == 0 || x == 1 || x == 2 || x == 1001)
+    if(x == 0 || x == 1 || x == 2 || x == 1001 || x == bs->file_fd)
       continue;
 
     close(x);
   }
 
-// signals
-// close high fds
+  // signals
 
-  fatal(xexecve, bs->path, bs->argv, bs->envp);
+  if(bs->file_fd != -1)
+    fatal(xfexecve, bs->file_fd, bs->argv, bs->envp);
+  else
+    fatal(xexecve, bs->file_path, bs->argv, bs->envp);
 
   finally : coda;
 }
@@ -313,6 +318,7 @@ xapi build_slot_fork_and_exec(build_slot * restrict bs)
   size_t args_size = 0;
   size_t args_len = 0;
   size_t envs_size = 0;
+  const char *filename;
 
   RUNTIME_ASSERT(bs->bpe);
   RUNTIME_ASSERT(bs->bpe->fml);
@@ -329,34 +335,86 @@ xapi build_slot_fork_and_exec(build_slot * restrict bs)
   fatal(exec_builder_xreset, &bs->exec_builder);
   exec_render_context_configure(&bs->exec_builder_context, &bs->exec_builder, mod, vars, bs);
 
-  // path if any
-  if(fml->path)
-    fatal(exec_render_path, &bs->exec_builder_context, fml->path);
+//printf("fml name %s\n", fml->fml_node->name->name);
+//char space[512];
+//node_get_absolute_path(fml->fml_node, space, sizeof(space));
+//printf("fml path %s\n", space);
+//printf("fml file %p ", fml->file);
+//fflush(stdout);
+//if(fml->file)
+//  fatal(formula_value_say, fml->file, g_narrator_stdout);
+//printf("\n");
+//printf("fml envs %p ", fml->envs);
+//fflush(stdout);
+//if(fml->envs)
+//  fatal(formula_value_say, fml->envs, g_narrator_stdout);
+//printf("\n");
+//printf("fml args %p ", fml->args);
+//fflush(stdout);
+//if(fml->args)
+//  fatal(formula_value_say, fml->args, g_narrator_stdout);
+//printf("\n");
+  // file to execute if any
+  if(fml->file)
+    fatal(exec_render_file, &bs->exec_builder_context, fml->file);
 
-  // formula args if any
+//  if(fml->path)
+//    fatal(exec_render_path, &bs->exec_builder_context, fml->path);
+
+  // args to pass if any
   if(fml->args)
     fatal(exec_render_args, &bs->exec_builder_context, fml->args);
 
-  // formula env vars
+  // env vars to pass if any
   if(fml->envs)
-  {
     fatal(exec_render_envs, &bs->exec_builder_context, fml->envs);
-  }
 
   // builtins
   fatal(exec_render_env_sysvars, &bs->exec_builder_context, bs);
 
-  // build it
+  // render
   fatal(exec_builder_build, &bs->exec_builder, &local_exec);
 
   /*
    * path setup
    */
 
-  if(local_exec->path)
-    bs->path = local_exec->path;
+  bs->file_path = 0;
+  bs->file_fd = -1;
+  if(local_exec->file_pe)
+  {
+    bs->file_fd = local_exec->file_pe->fd;
+    filename = local_exec->file_pe->filename;
+  }
+  else if(local_exec->file)
+  {
+    bs->file_path = local_exec->file;
+    if((filename = strrchr(local_exec->file, '/')))
+      filename++;
+    else
+      filename = local_exec->file;
+  }
   else
-    bs->path = fml->abspath;
+  {
+    bs->file_fd = fml->fd;
+    filename = fml->fml_node->name->name;
+  }
+
+//  if(local_exec->file && local_exec->file[0] == '/')
+//  {
+//    bs->file_path = local_exec->file;
+//printf("abs file %s\n", local_exec->file);
+//  }
+//  else if(local_exec->file)
+//  {
+//    fatal(formula_path_search, &bs->file_fd, local_exec->file, local_exec->file_len);
+//printf("path search %s -> %d\n", local_exec->file, bs->file_fd);
+//  }
+//  else
+//  {
+//    bs->file_path = fml->abspath;
+//printf("fml abspath %s\n", fml->abspath);
+//  }
 
   /*
    * args setup
@@ -369,11 +427,12 @@ xapi build_slot_fork_and_exec(build_slot * restrict bs)
   args_size += 1;   // sentinel
 
   fatal(assure, &bs->argv_stor, sizeof(*bs->argv_stor), args_size, &bs->argv_stor_a);
-  if(local_exec->filename)
-    bs->argv_stor[0] = local_exec->filename;
-  else
-    bs->argv_stor[0] = fml->fml_node->name->name;
+//  if(local_exec->filename)
+//    bs->argv_stor[0] = local_exec->filename;
+//  else
+//    bs->argv_stor[0] = fml->fml_node->name->name;
 
+  bs->argv_stor[0] = (void*)filename;
   memcpy(&bs->argv_stor[1], local_exec->args, sizeof(*local_exec->args) * local_exec->args_size);
 
   bs->argv_stor[args_len] = 0;
@@ -401,21 +460,34 @@ xapi build_slot_fork_and_exec(build_slot * restrict bs)
   new_env_len = insertion_sort(bs->env_stor, envp_len, local_exec->envs, local_exec->envs_size);
   envp_len = new_env_len;
 
-  if(g_params.searchpath)
+  // $PATH if specified
+  if(path_cache_env_path)
   {
-    new_env_len = insertion_sort(bs->env_stor, envp_len, &g_params.searchpath, 1);
+    new_env_len = insertion_sort(bs->env_stor, envp_len, &path_cache_env_path, 1);
     envp_len = new_env_len;
   }
 
   bs->env_stor[envp_len] = 0;
   bs->envp = bs->env_stor;
 
+//if(strcmp(bs->argv_stor[0], "bam-xunit") == 0)
+//{
+//  printf("WTF\n");
+//extern int GOATS;
+//  GOATS=1;
+//  while(1) { sleep(1); }
+//}
+
   fatal(xfork, &bs->pid);
   if(bs->pid == 0)
+  {
     bsexec_jump(bs);
+  }
 
   finally : coda;
 }
+
+//int GOATS;
 
 xapi build_slot_read(build_slot * restrict bs, uint32_t stream)
 {
@@ -624,7 +696,16 @@ xapi build_slot_reap(build_slot * restrict bs, uint32_t slot_index, siginfo_t *i
 
     if((bs->success && build_thread_cfg.success.show_path) || (!bs->success && build_thread_cfg.error.show_path))
     {
-      xlogf(L_BUILD, color, " path %s", bs->path);
+      if(bs->file_fd != -1)
+      {
+        fatal(xreadlinkf, "/proc/%ld/fd/%d", space, sizeof(space), (void*)&z, g_params.pid, bs->file_fd);
+        space[z] = 0;
+        xlogf(L_BUILD, color, " path %s (fd %d)", space, bs->file_fd);
+      }
+      else
+      {
+        xlogf(L_BUILD, color, " path %s", bs->file_path);
+      }
     }
 
     if((bs->success && build_thread_cfg.success.show_arguments) || (!bs->success && build_thread_cfg.error.show_arguments))

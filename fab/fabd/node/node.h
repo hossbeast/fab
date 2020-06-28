@@ -409,22 +409,6 @@ const struct filesystem * node_filesystem_get(node * restrict n)
 xapi node_graft(const char * restrict base, node ** restrict rn, struct graph_invalidation_context * restrict invalidation)
   __attribute__((nonnull));
 
-/// node_var_loadp
-//
-// SUMMARY
-//  mark this node as NODETYPE_VAR and load the env associated with this node (idempotent)
-//
-xapi node_var_loadp(node * restrict n)
-  __attribute__((nonnull));
-
-/// node_fml_loadp
-//
-// SUMMARY
-//  mark this node as an NODETYPE_FML
-//
-xapi node_fml_loadp(node * restrict n)
-  __attribute__((nonnull));
-
 xapi node_full_refresh(void);
 
 xapi node_property_say(const node * restrict n, node_property property, const node_property_context * restrict ctx, struct narrator * restrict N)

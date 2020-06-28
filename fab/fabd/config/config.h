@@ -24,6 +24,9 @@
 struct config;
 typedef struct config config;
 
+// whether the most recent config_reconfigure was successful
+extern bool config_reconfigure_result;
+
 /// config_setup
 //
 // SUMMARY

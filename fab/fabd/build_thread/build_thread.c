@@ -308,6 +308,7 @@ static xapi build_thread()
       // check for end-of-build
       if(build_stage == numranks || (build_slots_bypid->size == 0 && build_stage_failure))
       {
+        logf(L_BUILDER, "END OF BUILD");
         build_stage = numranks + 1;
         sn = 0;
         if(notify_completion)

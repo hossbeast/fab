@@ -97,11 +97,6 @@ xapi params_setup(uint64_t *hash)
   fatal(xgetpwuid, ruid, &pwd);
   fatal(ixstrdup, &g_params.homedir, pwd->pw_dir);
 
-  g_params.searchpath = getenv("PATH");
-  if(g_params.searchpath) {
-    g_params.searchpath -= 5;
-  }
-
   finally : coda;
 }
 
@@ -133,7 +128,6 @@ xapi params_report()
   logf(L_PARAMS, "pagesize     %ld"  , g_params.pagesize);
   logf(L_PARAMS, "ipcdir       %s"   , g_params.ipcdir);
   logf(L_PARAMS, "homedir      %s"   , g_params.homedir);
-  logf(L_PARAMS, "searchpath   %s"   , g_params.searchpath);
 
   finally : coda;
 }

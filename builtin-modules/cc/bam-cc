@@ -17,7 +17,9 @@
 # along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 #
 
-path : $cc
+file : {
+  path-search : cc
+}
 args : [
   $cflags
   sequence : [

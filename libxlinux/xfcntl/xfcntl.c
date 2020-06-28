@@ -117,7 +117,7 @@ xapi API uxopenats(int * fd, int flags, int dirfd, const char * path)
 
   if((*fd = openat(dirfd, path, flags)) == -1)
   {
-    if(errno != ENOENT && errno != EEXIST)
+    if(errno != ENOENT && errno != EEXIST && errno != ENOTDIR)
       tfail(perrtab_KERNEL, errno);
 
     *fd = -1;

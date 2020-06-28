@@ -35,12 +35,13 @@ struct module;
 struct narrator;
 struct value;
 struct formula_value;
+struct path_cache_entry;
 
 /* set of key/value pairs, suitable for passing to exec as envp */
 typedef struct exec {
-  char * path;      // null-terminated, pointer into text
-  char * filename;  // pointer into path
-  char ** args;     // sentinel-terminated, pointer into text
+  const struct path_cache_entry *file_pe; // file to execute
+  char * file;      // null-terminated, pointer into text
+  char ** args;     // sentinel-terminated, pointers into text
   char ** envs;     // name=value, sentinel-terminated, sorted by name, pointers into text
   struct {
     uint16_t args_size;    // number of args
@@ -57,7 +58,8 @@ typedef struct exec_builder {
   struct narrator * Nexec;
   char Nexec_stor[NARRATOR_STATIC_SIZE];
 
-  uint32_t path;            // offset into the backing buffer, 0 = uninitialized
+  const struct path_cache_entry *file_pe;
+  uint32_t file;            // offset into the backing buffer, 0 = uninitialized
   uint32_t *args;           // offsets into the buffer backing Nexec
   uint16_t args_len;
   size_t args_alloc;
@@ -66,7 +68,7 @@ typedef struct exec_builder {
   size_t envs_alloc;
 
   /* allocations state */
-  char * path_stor;
+  char * file_stor;
   char ** args_stor;
   size_t args_stor_alloc;
   char ** envs_stor;

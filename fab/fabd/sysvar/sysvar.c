@@ -107,13 +107,13 @@ xapi sysvar_builder_variant(exec_builder * restrict builder, const build_slot * 
   /* if there's only one target, or if all targets have the same variant */
   if(args.val.n)
   {
-    args.item = ENVS;
+    args.item = BUILDER_ENVS;
     args.position = -1;
     args.name = "bm_variant";
     args.name_len = strlen("bm_variant");
     args.render_val = RENDER_PROPERTY;
     args.val.prop = NODE_PROPERTY_VARIANT;
-    args.mode = APPEND;
+    args.mode = BUILDER_APPEND;
     fatal(builder_add, builder, &args);
   }
 
@@ -153,14 +153,14 @@ xapi sysvar_builder_targets(exec_builder * restrict builder, const build_slot * 
     args.val.n = vertex_value(e->Blist[0].v);
   }
 
-  args.item = ENVS;
+  args.item = BUILDER_ENVS;
   args.position = -1;
   args.render_val = RENDER_PROPERTY;
   args.val.prop = NODE_PROPERTY_RELPATH;
   RUNTIME_ASSERT(bs->mod);
   /* paths are relative to the module */
   args.val.pctx.mod = bs->mod;
-  args.mode = APPEND;
+  args.mode = BUILDER_APPEND;
 
   if(args.val.n)
   {
@@ -225,12 +225,12 @@ xapi sysvar_builder_sources(exec_builder * restrict builder, const build_slot * 
     args.val.n = vertex_value(e->Alist[0].v);
   }
 
-  args.item = ENVS;
+  args.item = BUILDER_ENVS;
   args.position = -1;
   args.render_val = RENDER_PROPERTY;
   args.val.prop = NODE_PROPERTY_RELPATH;
   args.val.pctx.mod = bs->mod;
-  args.mode = APPEND;
+  args.mode = BUILDER_APPEND;
 
   if(args.val.n)
   {
@@ -441,7 +441,7 @@ xapi exec_render_sysvar_variant(exec_render_context * restrict ctx, const build_
   {
     ctx->builder_add_args.render_val = RENDER_PROPERTY;
     ctx->builder_add_args.val.prop = NODE_PROPERTY_VARIANT;
-    ctx->builder_add_args.mode = APPEND;
+    ctx->builder_add_args.mode = BUILDER_APPEND;
 
     fatal(builder_add, ctx->builder, &ctx->builder_add_args);
   }

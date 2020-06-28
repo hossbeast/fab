@@ -62,6 +62,7 @@ extern struct g_stats {
 #undef DEF
 #define DEF(x, t) t x;
 STATS_TABLE
+#undef DEF
 } g_stats;
 
 #define STATS_INC(x) do {   \

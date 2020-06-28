@@ -27,6 +27,8 @@
 #include "build_thread.h"
 #include "selector.h"
 #include "logging.h"
+#include "path_cache.h"
+
 #include "common/attrs.h"
 
 static bool goal_build;
@@ -266,6 +268,7 @@ xapi goals_run(bool notify, bool * restrict building)
   buildplan_context bpctx = { 0 };
 
   // potentially re-create the build plan
+  fatal(path_cache_reset);
   fatal(create_buildplan, &bpctx);
 
   if(goal_build && bpctx.state == UNSATISFIED) {

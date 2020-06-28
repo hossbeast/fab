@@ -69,7 +69,7 @@ var : {
 
 variant xapi.pic.devel : [
   # all the code
-  rule **~test/(*~main).?.o -> test/blob.?.so : ./bam-cc-blob-so
+  rule **~test/(*~main).?.o -> test/blob.?.so : fabd/bam-cc-blob-so
 
   # some test dependency code
   rule test/node_operations_test.?.o -> test/blob.?.so

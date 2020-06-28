@@ -59,7 +59,7 @@ static void handler(int signum, siginfo_t * info, void * ctx)
   }
   else
   {
-    z += znloadf(buf + z, sizeof(buf) - z, " sender %ld", (long)info->si_pid);
+    z += znloadf(buf + z, sizeof(buf) - z, " pid %ld", (long)info->si_pid);
   }
   z += znloadf(buf + z, sizeof(buf) - z, " }");
 
@@ -166,7 +166,7 @@ xapi API sigutil_log(const siginfo_t * info)
   }
   else
   {
-    xsayf(" sender %ld", (long)info->si_pid);
+    xsayf(" pid %ld", (long)info->si_pid);
   }
   xsayf(" }");
   fatal(log_finish);

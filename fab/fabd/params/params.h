@@ -50,7 +50,6 @@ extern struct g_params
   char *          proj_dir;         // absolute path of the project directory
   int             proj_dirfd;       // readonly file descriptor for the project dir
   char *          homedir;          // homedir of the real user
-  char *          searchpath;       // $ENV{PATH}
 
   int             shutdown;         // whether shutdown has been initiated
 } g_params;

@@ -16,7 +16,6 @@
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
 # tab.c files from parser y files
-#  each invocation yields all files on the right-hand-side
 rule **/(*).y -> [*] $^D/$1.tab.{c,h} : ./bam-bison
 
 # tokens.c / tokens.h files from .tab.c files

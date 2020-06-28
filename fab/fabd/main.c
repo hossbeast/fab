@@ -48,6 +48,7 @@
 #include "extern.h"
 #include "filesystem.h"
 #include "formula.h"
+#include "path_cache.h"
 #include "logging.h"
 #include "module.h"
 #include "monitor_thread.h"
@@ -174,6 +175,8 @@ static xapi xmain_load(char ** envp)
 
   // modules
   fatal(build_thread_setup);
+  fatal(path_cache_setup);
+  fatal(formula_setup);
   fatal(buildplan_setup);
   fatal(config_setup);
   fatal(extern_setup);
@@ -207,6 +210,8 @@ finally:
   fatal(params_cleanup);
   fatal(sweeper_thread_cleanup);
   fatal(build_thread_cleanup);
+  fatal(path_cache_cleanup);
+  fatal(formula_cleanup);
   fatal(request_cleanup);
   fatal(var_cleanup);
   fatal(variant_cleanup);
