@@ -369,9 +369,6 @@ xapi config_throw(box * restrict val)
 
   xapi_info_pushf("location", "[%d,%d - %d,%d]", val->loc.f_lin, val->loc.f_col, val->loc.l_lin, val->loc.l_col);
 
-  if(val->loc.fname)
-    xapi_info_pushs("file", val->loc.fname);
-
   fail(CONFIG_INVALID);
 
   finally : coda;
