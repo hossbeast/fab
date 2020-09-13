@@ -16,6 +16,7 @@
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
 #include <string.h>
+#include <sys/syscall.h>
 
 #define NARRATOR_NO_N
 
@@ -36,6 +37,8 @@
 #include "macros.h"
 
 #define L_FOO categories[0].id
+
+__thread int32_t tid;
 
 static logger_category * categories = (logger_category []) {
     { name : "FOO", description : "foo" }
@@ -207,6 +210,7 @@ int main()
 {
   enter;
 
+  tid = syscall(SYS_gettid);
   xapi R = 0;
   fatal(run_tests);
 

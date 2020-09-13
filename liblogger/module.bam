@@ -31,14 +31,13 @@ import libnarrator
 import libvalyria
 
 # variants for the module
-variant xapi.pic.{debug,devel,final}
+variant xapi.pic.{debug,devel,final,trace}
 
 # pull in object files in the module, except those under integ
 rule *~{integ,example,test}/**/*.?.o -> liblogger.$?.{so,a}
-#rule *~{integ,example,test}/**/*.?.o -> liblogger.$?.a
 
 # default build targets
-rule liblogger.?.so -> //module/targets
+rule liblogger.?.{so,a} -> //module/targets
 
 # run the tests at the end
 rule //module/tests/* <- liblogger.?.{so,a}
@@ -55,7 +54,7 @@ rule //module/imports/*/lib*.?.so -> liblogger.$?.so
 
 variant xapi.pic.devel : [
   # build individual test executables
-  rule test/(*)_test.?.o -> $^D/$1_test.$? : ./bam-cc-test
+  rule test/(*)_test.?.o -> $^D/$1_test.$? : ./cc-test.bam
   rule test/(*)_test.? <- fabtest/errtab/TEST.errtab.$?.o
   rule test/(*)_test.? <- fabtest/test_util.$?.o
   rule test/(*)_test.? <- libxapi/libxapi.$?.so
@@ -66,7 +65,7 @@ variant xapi.pic.devel : [
   rule test/(*)_test.? <- liblogger.$?.a
 
   # target to run each test
-  rule test/(*)_test.? -> //module/tests/test-$1.$? : ./bam-test
+  rule test/(*)_test.? -> //module/tests/test-$1.$? : ./test.bam
 
   # add to global tests
   rule //module/tests/* -> //tests

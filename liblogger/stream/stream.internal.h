@@ -22,6 +22,7 @@
 
 #include "xapi.h"
 #include "stream.h"
+#include "locks.h"
 
 struct pstring;
 struct array;
@@ -63,7 +64,7 @@ typedef struct stream
   };
 
   // the underlying narrator
-  int lock;
+  struct futexlock lock;
   union {
     struct narrator * narrator_base;
     struct narrator_fd * narrator_base_fd;
