@@ -21,17 +21,21 @@
 #include "logger/arguments.h"
 
 #include "cores.h"
+#include "macros.h"
 
 static inline xapi runf(narrator * restrict N, int * restrict status, const char * const restrict fmt, ...)
 {
   enter;
 
+  narrator_fixed *fixed;
+
   va_list va;
   va_start(va, fmt);
+  fixed = containerof(N, typeof(*fixed), base);
 
   fatal(narrator_xreset, N);
   fatal(narrator_xsayvf, N, fmt, va);
-  fatal(xsystem, narrator_fixed_buffer(N), status);
+  fatal(xsystem, fixed->s, status);
 
   finally : coda;
 }
@@ -84,10 +88,10 @@ xapi print_core_backtrace(pid_t pid)
   enter;
 
   char buf[512];
-  char fixed[NARRATOR_STATIC_SIZE];
   bool ready = false;
+  narrator_fixed fixed;
 
-  narrator * N = narrator_fixed_init(fixed, buf, sizeof(buf));
+  narrator * N = narrator_fixed_init(&fixed, buf, sizeof(buf));
 
   if(!ready)
     fatal(cwd_core, N, pid, &ready);

@@ -68,7 +68,7 @@ static xapi operations_test_entry(xunit_test * _test)
   enter;
 
   graph * g = 0;
-  narrator * N = 0;
+  narrator_growing * N = 0;
   list * operations = 0;
   operations_parser * op = 0;
 
@@ -95,16 +95,16 @@ static xapi operations_test_entry(xunit_test * _test)
   assert_eq_e(test->expected_status, status);
   if(test->expected)
   {
-    fatal(narrator_xreset, N);
-    fatal(graph_say, g, N);
-    const char * graph = narrator_growing_buffer(N);
-    size_t graph_len = narrator_growing_size(N);
+    fatal(narrator_xreset, &N->base);
+    fatal(graph_say, g, &N->base);
+    const char * graph = N->s;
+    size_t graph_len = N->l;
     assert_eq_w(test->expected, strlen(test->expected), graph, graph_len);
   }
 
 
 finally:
-  fatal(narrator_xfree, N);
+  fatal(narrator_growing_free, N);
   fatal(graph_xfree, g);
   fatal(list_xfree, operations);
   fatal(operations_parser_xfree, op);

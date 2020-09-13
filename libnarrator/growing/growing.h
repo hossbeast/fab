@@ -33,6 +33,15 @@ SUMMARY
 
 #include "narrator.h"
 
+typedef struct narrator_growing
+{
+  narrator base;
+  char *  s;    // the buffer
+  size_t  l;    // position
+  size_t  a;    // allocated size
+  size_t  m;    // maximum position
+} narrator_growing;
+
 /// narrator_growing_create
 //
 // SUMMARY
@@ -41,32 +50,23 @@ SUMMARY
 // PARAMETERS
 //  n - (returns) narrator
 //
-xapi narrator_growing_create(narrator ** const restrict n)
+xapi narrator_growing_create(narrator_growing ** const restrict n)
   __attribute__((nonnull));
+
+xapi narrator_growing_free(narrator_growing * restrict n);
 
 /// narrator_growing_init
 //
 // SUMMARY
 //  initialize a growing narrator
 //
-narrator * narrator_growing_init(char stor[NARRATOR_STATIC_SIZE])
+narrator * narrator_growing_init(narrator_growing * restrict n)
   __attribute__((nonnull));
 
-narrator * narrator_growing_init_from(char stor[NARRATOR_STATIC_SIZE], char * buf, size_t bufa)
+narrator * narrator_growing_init_from(narrator_growing * restrict n, char * buf, size_t bufa)
   __attribute__((nonnull(1)));
 
-/// narrator_growing_buffer
-//
-// SUMMARY
-//  get a pointer to the underlying buffer
-//
-// PARAMETERS
-//  n - growing narrator
-//
-// REMARKS
-//  subsequent operations on the narrator may free the buffer
-//
-char * narrator_growing_buffer(narrator * const restrict n)
+xapi narrator_growing_destroy(narrator_growing * restrict n)
   __attribute__((nonnull));
 
 /// narrator_growing_claim_buffer
@@ -74,21 +74,10 @@ char * narrator_growing_buffer(narrator * const restrict n)
 // SUMMARY
 //  claim the underlying buffer and reset the narrator
 //
-void narrator_growing_claim_buffer(narrator * restrict n, void * bufp, size_t * allocp)
+void narrator_growing_claim_buffer(narrator_growing * restrict n, void * bufp, size_t * allocp)
   __attribute__((nonnull(1)));
 
-/// narrator_growing_size
-//
-// SUMMARY
-//  get the size in bytes of the data written to the underlying store
-//
-// PARAMETERS
-//  n - growing narrator
-//
-size_t narrator_growing_size(narrator * const restrict n)
-  __attribute__((nonnull));
-
-xapi narrator_growing_allocate(narrator * restrict n, size_t size)
+xapi narrator_growing_allocate(narrator_growing * restrict n, size_t size)
   __attribute__((nonnull));
 
 #endif

@@ -31,6 +31,16 @@ SUMMARY
 #include "xapi.h"
 #include "types.h"
 
+#include "narrator.h"
+
+typedef struct narrator_fd
+{
+  narrator base;
+  int fd;
+} narrator_fd;
+
+extern struct narrator_vtable narrator_fd_vtable;
+
 /// narrator_fd_create
 //
 // SUMMARY
@@ -40,15 +50,9 @@ SUMMARY
 //  n  - (returns) narrator
 //  fd - file descriptor
 //
-xapi narrator_fd_create(narrator ** const restrict n, int fd)
+xapi narrator_fd_create(narrator_fd ** const restrict n, int fd)
   __attribute__((nonnull));
 
-/// narrator_fd_fd
-//
-// SUMMARY
-//  get the file descriptor for a fd narrator
-//
-int narrator_fd_fd(narrator * const restrict n)
-  __attribute__((nonnull));
+xapi narrator_fd_free(narrator_fd * const restrict n);
 
 #endif

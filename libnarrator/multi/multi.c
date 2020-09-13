@@ -20,20 +20,22 @@
 #include "xapi.h"
 #include "xlinux/xstdlib.h"
 
-#include "internal.h"
-#include "narrator/narrator.h"
-#include "multi.internal.h"
+#include "narrator.h"
+#include "multi.h"
+#include "vtable.h"
 
 #include "macros.h"
 #include "common/assure.h"
 
 //
-// public
+// static
 //
 
-xapi multi_xsayvf(narrator_multi * const restrict n, const char * const restrict fmt, va_list va)
+static __attribute__((nonnull)) xapi multi_sayvf(narrator* const restrict N, const char * const restrict fmt, va_list va)
 {
   enter;
+
+  narrator_multi *n = containerof(N, typeof(*n), base);
 
   va_list va2;
   va_list * vap = 0;
@@ -56,14 +58,11 @@ finally:
 coda;
 }
 
-void multi_sayvf(narrator_multi * const restrict n, const char * const restrict fmt, va_list va)
-{
-
-}
-
-xapi multi_xsayw(narrator_multi * const restrict n, const char * const restrict b, size_t l)
+static __attribute__((nonnull)) xapi multi_sayw(narrator* const restrict N, const void * const restrict b, size_t l)
 {
   enter;
+
+  narrator_multi *n = containerof(N, typeof(*n), base);
 
   int x;
   for(x = 0; x < n->l; x++)
@@ -72,9 +71,11 @@ xapi multi_xsayw(narrator_multi * const restrict n, const char * const restrict 
   finally : coda;
 }
 
-xapi multi_xseek(narrator_multi * const restrict n, off_t offset, int whence, off_t * restrict res)
+static __attribute__((nonnull)) xapi multi_seek(narrator* const restrict N, off_t offset, int whence, off_t * restrict res)
 {
   enter;
+
+  narrator_multi *n = containerof(N, typeof(*n), base);
 
   int x;
   for(x = 0; x < n->l; x++)
@@ -83,39 +84,66 @@ xapi multi_xseek(narrator_multi * const restrict n, off_t offset, int whence, of
   finally : coda;
 }
 
-void multi_destroy(narrator_multi * const restrict n)
+static __attribute__((nonnull)) xapi multi_destroy(narrator* const restrict N)
 {
+  enter;
+
+  narrator_multi *n = containerof(N, typeof(*n), base);
+
   wfree(n->v);
+
+  finally : coda;
 }
+
+/* not implemented */
+#define multi_read 0
+#define multi_flush 0
+static struct narrator_vtable multi_vtable = NARRATOR_VTABLE(multi);
+
+//
+// public
+//
 
 //
 // api
 //
 
-xapi API narrator_multi_create(narrator ** const restrict rv)
+xapi API narrator_multi_create(narrator_multi ** const restrict rv)
 {
   enter;
 
-  narrator * n = 0;
+  narrator_multi * n = 0;
   fatal(xmalloc, &n, sizeof(*n));
 
-  n->type = NARRATOR_MULTI;
-  fatal(xmalloc, &n->multi.v, sizeof(*n->multi.v));
+  n->base.vtab = &multi_vtable;
+  fatal(xmalloc, &n->v, sizeof(*n->v));
 
   *rv = n;
   n = 0;
 
 finally:
-  fatal(narrator_xfree, n);
+  fatal(narrator_multi_free, n);
 coda;
 }
 
-xapi API narrator_multi_add(narrator * const restrict n, narrator * const restrict np)
+xapi API narrator_multi_free(narrator_multi * restrict n)
 {
   enter;
 
-  fatal(assure, &n->multi.v, sizeof(*n->multi.v), n->multi.l + 1, &n->multi.a);
-  n->multi.v[n->multi.l++] = np;
+  if(n) {
+    fatal(multi_destroy, &n->base);
+  }
+  wfree(n);
+
+  finally : coda;
+}
+
+xapi API narrator_multi_add(narrator_multi * const restrict n, narrator * const restrict np)
+{
+  enter;
+
+  fatal(assure, &n->v, sizeof(*n->v), n->l + 1, &n->a);
+  n->v[n->l++] = np;
 
   finally : coda;
 }

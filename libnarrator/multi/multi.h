@@ -30,6 +30,15 @@ SUMMARY
 
 #include "xapi.h"
 #include "types.h"
+#include "narrator.h"
+
+typedef struct narrator_multi
+{
+  narrator base;
+  narrator ** v;    // narrators
+  size_t l;         // number in use
+  size_t a;         // allocated size
+} narrator_multi;
 
 /// narrator_multi_create
 //
@@ -39,8 +48,10 @@ SUMMARY
 // PARAMETERS
 //  n - (returns) narrator
 //
-xapi narrator_multi_create(narrator ** const restrict n)
+xapi narrator_multi_create(narrator_multi ** const restrict n)
   __attribute__((nonnull));
+
+xapi narrator_multi_free(narrator_multi * restrict n);
 
 /// narrator_multi_add
 //
@@ -51,7 +62,7 @@ xapi narrator_multi_create(narrator ** const restrict n)
 //  n  - multi narrator
 //  np - narrator to add to the multi narrator
 //
-xapi narrator_multi_add(narrator * const restrict n, narrator * const restrict np)
+xapi narrator_multi_add(narrator_multi * const restrict n, narrator * const restrict np)
   __attribute__((nonnull));
 
 #endif

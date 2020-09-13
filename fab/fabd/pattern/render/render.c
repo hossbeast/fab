@@ -151,7 +151,7 @@ xapi pattern_render(const pattern * restrict pattern, pattern_render_result ** r
 
   ctx.section_traversal.head = pattern->section_head;
   ctx.segment_traversal_stack = LLIST_INITIALIZER(ctx.segment_traversal_stack);
-  fatal(narrator_growing_create, &ctx.narrator);
+  fatal(narrator_growing_create, &ctx.narrator_growing);
 
   // save a place in the buffer for the number of path fragments
   fatal(narrator_xsayw, ctx.narrator, (uint16_t[]) { 0 }, sizeof(uint16_t));
@@ -170,9 +170,9 @@ xapi pattern_render(const pattern * restrict pattern, pattern_render_result ** r
   fatal(narrator_xsayw, ctx.narrator, &ctx.size, sizeof(ctx.size));
 
   // ownership transfer
-  narrator_growing_claim_buffer(ctx.narrator, (void*)result, 0);
+  narrator_growing_claim_buffer(ctx.narrator_growing, (void*)result, 0);
 
 finally:
-  fatal(narrator_xfree, ctx.narrator);
+  fatal(narrator_growing_free, ctx.narrator_growing);
 coda;
 }

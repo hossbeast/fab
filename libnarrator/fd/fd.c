@@ -22,12 +22,81 @@
 #include "xlinux/xunistd.h"
 #include "xlinux/xstdlib.h"
 
-#include "internal.h"
-#include "fd/fd.internal.h"
+#include "narrator.h"
+#include "fd.internal.h"
+#include "vtable.h"
+
+#include "macros.h"
 
 narrator * APIDATA g_narrator_stdout;
 narrator * APIDATA g_narrator_stderr;
-narrator * APIDATA N;
+
+//
+// static
+//
+
+static xapi __attribute__((nonnull)) fd_sayvf(narrator * const restrict N, const char * const restrict fmt, va_list va)
+{
+  enter;
+
+  narrator_fd *n = containerof(N, typeof(*n), base);
+
+  fatal(xvdprintf, n->fd, fmt, va);
+
+  finally : coda;
+}
+
+static xapi __attribute__((nonnull)) fd_sayw(narrator * const restrict N, const void * const restrict b, size_t l)
+{
+  enter;
+
+  narrator_fd *n = containerof(N, typeof(*n), base);
+
+  fatal(axwrite, n->fd, b, l);
+
+  finally : coda;
+}
+
+static xapi __attribute__((nonnull)) fd_seek(narrator * const restrict N, off_t offset, int whence, off_t * restrict res)
+{
+  enter;
+
+  narrator_fd *n = containerof(N, typeof(*n), base);
+
+  fatal(xlseek, n->fd, offset, whence, res);
+
+  finally : coda;
+}
+
+static xapi __attribute__((nonnull(1, 2))) fd_read(narrator * restrict N, void * dst, size_t count, size_t * restrict r)
+{
+  enter;
+
+  narrator_fd *n = containerof(N, typeof(*n), base);
+
+  fatal(axread, n->fd,dst, count);
+  if(r) {
+    *r = count;
+  }
+
+  finally : coda;
+}
+
+static xapi __attribute__((nonnull)) fd_flush(narrator * const restrict N)
+{
+  enter;
+
+  finally : coda;
+}
+
+static xapi __attribute__((nonnull)) fd_destroy(narrator * const restrict N)
+{
+  enter;
+
+  finally : coda;
+}
+
+struct narrator_vtable API narrator_fd_vtable = NARRATOR_VTABLE(fd);
 
 //
 // public
@@ -37,11 +106,13 @@ xapi fd_setup()
 {
   enter;
 
-  fatal(narrator_fd_create, &g_narrator_stdout, 1);
-  fatal(narrator_fd_create, &g_narrator_stderr, 2);
+  narrator_fd *fd;
 
-  // default narrator
-  N = g_narrator_stdout;
+  fatal(narrator_fd_create, &fd, 1);
+  g_narrator_stdout = &fd->base;
+
+  fatal(narrator_fd_create, &fd, 2);
+  g_narrator_stderr = &fd->base;
 
   finally : coda;
 }
@@ -50,60 +121,8 @@ xapi fd_cleanup()
 {
   enter;
 
-  fatal(narrator_xfree, g_narrator_stdout);
-  fatal(narrator_xfree, g_narrator_stderr);
-
-  finally : coda;
-}
-
-xapi fd_xsayvf(narrator_fd * const restrict n, const char * const restrict fmt, va_list va)
-{
-  xproxy(xvdprintf, n->fd, fmt, va);
-}
-
-int fd_sayvf(narrator_fd * const restrict n, const char * const restrict fmt, va_list va)
-{
-  return vdprintf(n->fd, fmt, va);
-}
-
-xapi fd_xsayw(narrator_fd * const restrict n, const char * const restrict b, size_t l)
-{
-  xproxy(axwrite, n->fd, b, l);
-}
-
-int fd_sayw(narrator_fd * const restrict n, const char * const restrict b, size_t l)
-{
-  return awrite(n->fd, b, l);
-}
-
-xapi fd_xseek(narrator_fd * const restrict n, off_t offset, int whence, off_t * restrict res)
-{
-  xproxy(xlseek, n->fd, offset, whence, res);
-}
-
-off_t fd_seek(narrator_fd * const restrict n, off_t offset, int whence)
-{
-  return lseek(n->fd, offset, whence);
-}
-
-xapi fd_xread(narrator_fd * restrict n, void * dst, size_t count, size_t * restrict r)
-{
-  enter;
-
-  fatal(axread, n->fd,dst, count);
-  if(r)
-    *r = count;
-
-  finally : coda;
-}
-
-void fd_destroy(narrator_fd * const restrict n)
-{
-}
-
-xapi fd_flush(narrator_fd * const restrict n)
-{
-  enter;
+  fatal(narrator_fd_free, containerof(g_narrator_stdout, narrator_fd, base));
+  fatal(narrator_fd_free, containerof(g_narrator_stderr, narrator_fd, base));
 
   finally : coda;
 }
@@ -112,18 +131,27 @@ xapi fd_flush(narrator_fd * const restrict n)
 // api
 //
 
-xapi API narrator_fd_create(narrator ** const restrict n, int fd)
+xapi API narrator_fd_create(narrator_fd ** const restrict n, int fd)
 {
   enter;
 
-  fatal(xmalloc, n, sizeof(**n));
-  (*n)->type = NARRATOR_FD;
-  (*n)->fd.fd = fd;
+  narrator_fd *nfd;
+
+  fatal(xmalloc, &nfd, sizeof(*nfd));
+
+  nfd->base.vtab = &narrator_fd_vtable;
+  nfd->fd = fd;
+  *n = nfd;
 
   finally : coda;
 }
 
-int API narrator_fd_fd(narrator * const restrict n)
+xapi API narrator_fd_free(narrator_fd * const restrict n)
 {
-  return n->fd.fd;
+  enter;
+
+  fatal(fd_destroy, &n->base);
+  wfree(n);
+
+  finally : coda;
 }

@@ -112,7 +112,7 @@ static xapi test_basic(xunit_test * _test)
 
   fatal(value_writer_pop_list, writer);
 
-  xsays("\n");
+  fatal(narrator_xsays, g_narrator_stdout, "\n");
 
 finally:
   fatal(value_writer_xfree, writer);
@@ -139,7 +139,7 @@ static xapi test_set(xunit_test * _test)
   fatal(value_writer_mapping_string_float, writer, "foo", 42);
   fatal(value_writer_pop_set, writer);
 
-  xsays("\n");
+  fatal(narrator_xsays, g_narrator_stdout, "\n");
 
 finally:
   fatal(value_writer_xfree, writer);
@@ -164,7 +164,7 @@ static xapi test_set_set_top(xunit_test * _test)
   fatal(value_writer_pop_mapping, writer);
   fatal(value_writer_mapping_string_float, writer, "foo", 42);
 
-  xsays("\n");
+  fatal(narrator_xsays, g_narrator_stdout, "\n");
 
 finally:
   fatal(value_writer_xfree, writer);
@@ -176,8 +176,6 @@ static xapi test_set_embedded(xunit_test * _test)
   enter;
 
   writer_test * test = (typeof(test))_test;
-
-//printf("\n++ %s\n", __FUNCTION__);
 
   value_writer * writer = 0;
   fatal(value_writer_create, &writer);
@@ -195,7 +193,7 @@ static xapi test_set_embedded(xunit_test * _test)
     fatal(value_writer_pop_mapping, writer);
   fatal(value_writer_pop_set, writer);
 
-  xsays("\n");
+  fatal(narrator_xsays, g_narrator_stdout, "\n");
 
 finally:
   fatal(value_writer_xfree, writer);
@@ -207,8 +205,6 @@ static xapi test_list(xunit_test * _test)
   enter;
 
   writer_test * test = (typeof(test))_test;
-
-//printf("\n++ %s\n", __FUNCTION__);
 
   value_writer * writer = 0;
   fatal(value_writer_create, &writer);
@@ -228,7 +224,7 @@ static xapi test_list(xunit_test * _test)
     fatal(value_writer_string, writer, "foo/bar");
   fatal(value_writer_pop_list, writer);
 
-  xsays("\n");
+  fatal(narrator_xsays, g_narrator_stdout, "\n");
 
 finally:
   fatal(value_writer_xfree, writer);
@@ -249,19 +245,15 @@ static xapi test_list_list_top(xunit_test * _test)
   fatal(value_writer_bool, writer, false);
   fatal(value_writer_bool, writer, true);
   fatal(value_writer_mapping_string_float, writer, "foo", 42);
-    //fatal(value_writer_bag_push_mapping, writer, "container");
   fatal(value_writer_push_mapping, writer);
     fatal(value_writer_string, writer, "path");
     fatal(value_writer_string, writer, "foo/bar");
   fatal(value_writer_pop_mapping, writer);
-    //fatal(value_writer_bag_pop_mapping, writer);
-    //fatal(value_writer_string, writer, "foobar");
-    //fatal(value_writer_string, writer, "foobar");
 
   fatal(value_writer_bool, writer, true);
   fatal(value_writer_bool, writer, false);
 
-  xsays("\n");
+  fatal(narrator_xsays, g_narrator_stdout, "\n");
 
 finally:
   fatal(value_writer_xfree, writer);

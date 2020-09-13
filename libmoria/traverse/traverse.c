@@ -642,7 +642,6 @@ static xapi vertex_is_extremum(graph * const restrict g, vertex_t * restrict v, 
 {
   enter;
 
-  narrator * N = 0;
   vertex_t * stack[32] = {};
   size_t stackz = 0;
   vertex_traversal_state * state = 0;
@@ -672,7 +671,6 @@ static xapi vertex_is_extremum(graph * const restrict g, vertex_t * restrict v, 
 
 finally:
   graph_vertex_traversal_end(g, state);
-  fatal(narrator_xfree, N);
 coda;
 }
 
@@ -750,7 +748,6 @@ xapi API graph_traverse_vertices(
 {
   enter;
 
-  narrator * N = 0;
   vertex_t * stack[32] = {};
   size_t stackz = 0;
   traversal_criteria local_criteria;
@@ -793,7 +790,6 @@ xapi API graph_traverse_vertices(
 
 finally:
   graph_vertex_traversal_end(g, local_state);
-  fatal(narrator_xfree, N);
 coda;
 }
 
@@ -809,7 +805,6 @@ xapi API graph_traverse_vertex_edges(
 {
   enter;
 
-  narrator * N = 0;
   edge_t * stack[32] = {};
   size_t stackz = 0;
   traversal_criteria local_criteria;
@@ -846,7 +841,6 @@ xapi API graph_traverse_vertex_edges(
 
 finally:
   graph_edge_traversal_end(g, local_state);
-  fatal(narrator_xfree, N);
 coda;
 }
 
@@ -862,7 +856,6 @@ xapi API graph_traverse_edges(
 {
   enter;
 
-  narrator * N = 0;
   edge_t * stack[32] = {};
   size_t stackz = 0;
   traversal_criteria local_criteria;
@@ -903,7 +896,6 @@ xapi API graph_traverse_edges(
 
 finally:
   graph_edge_traversal_end(g, local_state);
-  fatal(narrator_xfree, N);
 coda;
 }
 
@@ -919,7 +911,6 @@ xapi graph_traverse_edge_vertices(
 {
   enter;
 
-  narrator * N = 0;
   vertex_t * stack[32] = {};
   size_t stackz = 0;
   traversal_criteria local_criteria;
@@ -954,7 +945,6 @@ xapi graph_traverse_edge_vertices(
 
 finally:
   graph_vertex_traversal_end(g, local_state);
-  fatal(narrator_xfree, N);
 coda;
 }
 

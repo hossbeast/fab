@@ -20,19 +20,21 @@
 #include "xapi.h"
 #include "xlinux/xstdlib.h"
 
-#include "internal.h"
-#include "record.internal.h"
+#include "record.h"
+#include "vtable.h"
 
 #include "macros.h"
 #include "common/assure.h"
 
 //
-// public
+// static
 //
 
-xapi record_xsayvf(narrator_record * const restrict n, const char * const restrict fmt, va_list va)
+static __attribute__((nonnull)) xapi record_sayvf(narrator* const restrict N, const char * const restrict fmt, va_list va)
 {
   enter;
+
+  narrator_record *n = containerof(N, typeof(*n), base);
 
   va_list va2;
   va_copy(va2, va);
@@ -52,9 +54,11 @@ xapi record_xsayvf(narrator_record * const restrict n, const char * const restri
   finally : coda;
 }
 
-xapi record_xsayw(narrator_record * const restrict n, const char * const restrict b, size_t l)
+static __attribute__((nonnull)) xapi record_sayw(narrator* const restrict N, const void * const restrict b, size_t l)
 {
   enter;
+
+  narrator_record *n = containerof(N, typeof(*n), base);
 
   fatal(assure, &n->s, sizeof(*n->s), n->l + l + 1, &n->a);
   memcpy(n->s + n->l, b, l);
@@ -64,55 +68,87 @@ xapi record_xsayw(narrator_record * const restrict n, const char * const restric
   finally : coda;
 }
 
-xapi record_xseek(narrator_record * const restrict n, off_t offset, int whence, off_t * restrict res)
+static __attribute__((nonnull)) xapi record_seek(narrator* const restrict N, off_t offset, int whence, off_t * restrict res)
 {
-  xproxy(narrator_xseek, n->n, offset, whence, res);
+  enter;
+
+  narrator_record *n = containerof(N, typeof(*n), base);
+
+  fatal(narrator_xseek, n->n, offset, whence, res);
+
+  finally : coda;
 }
 
-void record_destroy(narrator_record * const restrict n)
+static __attribute__((nonnull)) xapi record_read(narrator* restrict N, void * dst, size_t count, size_t * restrict r)
 {
-  wfree(n->s);
-}
+  enter;
 
-xapi record_xread(narrator_record * restrict n, void * dst, size_t count, size_t * restrict r)
-{
+  narrator_record *n = containerof(N, typeof(*n), base);
+
   xproxy(narrator_xread, n->n, dst, count, r);
+
+  finally : coda;
 }
+
+static __attribute__((nonnull)) xapi record_flush(narrator* restrict N)
+{
+  enter;
+
+  finally : coda;
+}
+
+struct narrator_vtable API narrator_record_vtable = NARRATOR_VTABLE(record);
 
 //
 // api
 //
 
-xapi API narrator_record_create(narrator ** const restrict rv, narrator * const restrict np)
+xapi API narrator_record_create(narrator_record ** const restrict rv, narrator * const restrict np)
 {
   enter;
 
-  narrator * n = 0;
+  narrator_record * n = 0;
   fatal(xmalloc, &n, sizeof(*n));
 
-  n->type = NARRATOR_RECORD;
-  n->record.n = np;
+  n->base.vtab = &narrator_record_vtable;
+  n->n = np;
 
   *rv = n;
   n = 0;
 
 finally:
-  fatal(narrator_xfree, n);
+  fatal(narrator_record_free, n);
 coda;
 }
 
-xapi API narrator_record_flush(narrator * const restrict n)
+xapi API narrator_record_free(narrator_record * restrict n)
 {
   enter;
 
-  // flush to the underlying narrator and reset
-  fatal(narrator_xsayw, n->record.n, n->record.s, n->record.l);
-  n->record.l = 0;
+  if(n) {
+    fatal(narrator_record_destroy, n);
+  }
+  wfree(n);
 
   finally : coda;
 }
 
-size_t API narrator_record_size(narrator * const restrict n)
+xapi API narrator_record_destroy(narrator_record * restrict n)
 {
-  return n->record.l;
+  enter;
+
+  wfree(n->s);
+
+  finally : coda;
+}
+
+xapi API narrator_record_flush(narrator_record * const restrict n)
+{
+  enter;
+
+  // flush to the underlying narrator and reset
+  fatal(narrator_xsayw, n->n, n->s, n->l);
+  n->l = 0;
+
+  finally : coda;
 }

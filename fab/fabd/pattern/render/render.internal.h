@@ -28,6 +28,7 @@
 struct chain;
 struct pattern_render_result;
 struct narrator;
+struct narrator_growing;
 struct pattern_section;
 
 /// pattern_render_context
@@ -60,7 +61,10 @@ typedef struct pattern_render_context
   llist segment_traversal_stack;
 
   // state
-  struct narrator * narrator;
+  union {
+    struct narrator * narrator;
+    struct narrator_growing * narrator_growing;
+  };
   off_t pos;
 
   // results

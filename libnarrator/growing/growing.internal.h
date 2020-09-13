@@ -23,14 +23,7 @@
 
 #include "growing.h"
 
-typedef struct narrator_growing
-{
-  char *  s;    // the buffer
-  size_t  l;    // position
-  size_t  a;    // allocated size
-  size_t  m;    // maximum position
-} narrator_growing;
-
+#if 0
 /// growing_say
 //
 // SUMMARY
@@ -101,5 +94,6 @@ size_t growing_read(narrator_growing * restrict n, void * dst, size_t count)
 
 xapi growing_flush(narrator_growing * restrict n)
   __attribute__((nonnull));
+#endif
 
 #endif
