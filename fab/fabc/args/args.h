@@ -21,7 +21,7 @@
 #include "xapi.h"
 #include "types.h"
 
-struct g_args {
+extern struct g_args {
   char * lookup;
 } g_args;
 

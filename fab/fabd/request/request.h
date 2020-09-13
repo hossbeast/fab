@@ -46,7 +46,7 @@ TRAVERSE_TYPE_TABLE
 #undef TRAVERSE_ATTR_DEF
 } traverse_type;
 
-struct attrs32 * traverse_type_attrs;
+extern struct attrs32 * traverse_type_attrs;
 
 xapi request_create(request ** restrict rv)
   __attribute__((nonnull));;

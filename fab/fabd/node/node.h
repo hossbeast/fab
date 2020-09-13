@@ -169,7 +169,7 @@ typedef enum node_property {
 NODE_PROPERTY_TABLE
 } node_property;
 
-struct attrs32 * node_property_attrs;
+extern struct attrs32 * node_property_attrs;
 
 typedef struct node_property_context {
   const struct module * mod;

@@ -22,7 +22,9 @@ const char *__asan_default_options() {
       ":halt_on_error=1"
       ":abort_on_error=1"
       ":print_stacktrace=1"
-      ":report_objects=1"   // print leaked addresses
+      ":report_objects=1"         // print leaked addresses
+      ":fast_unwind_on_malloc=0"  // prevent crash-while-reporting-leaks in certain cases
+      ":detect_odr_violation=0"   // remove after changing xunit to not use dlopen
     ;
 };
 

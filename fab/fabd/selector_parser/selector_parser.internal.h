@@ -35,7 +35,7 @@ struct selector_parser {
 
   /* sub parsers */
   struct pattern_parser * pattern_parser;
-} selector_xtra;
+};
 
 /// selector_yyerror
 //

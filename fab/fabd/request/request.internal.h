@@ -42,7 +42,7 @@ COMMAND_TYPE_TABLE
 #undef DEF
 } command_type;
 
-struct attrs32 * command_type_attrs;
+extern struct attrs32 * command_type_attrs;
 
 typedef struct command {
   union {

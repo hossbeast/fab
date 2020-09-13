@@ -21,7 +21,7 @@
 #include "xapi.h"
 #include "types.h"
 
-struct g_args_t
+extern struct g_args_t
 {
   char ** objects;
   size_t  objectsl;

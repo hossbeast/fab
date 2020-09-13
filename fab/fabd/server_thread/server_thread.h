@@ -22,8 +22,8 @@
 #include "types.h"
 
 #if DEVEL
-bool g_server_no_initial_client;      // no client right at startup
-const char *g_server_initial_request; // initial request
+extern bool g_server_no_initial_client;      // no client right at startup
+extern const char *g_server_initial_request; // initial request
 #endif
 
 // true if currently autobuilding

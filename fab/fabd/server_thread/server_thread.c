@@ -74,6 +74,11 @@
 
 bool g_server_autorun;
 
+#if DEVEL
+bool g_server_no_initial_client;
+const char *g_server_initial_request;
+#endif
+
 static xapi load_client_pid(pid_t * client_pid)
 {
   enter;

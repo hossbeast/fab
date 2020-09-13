@@ -21,7 +21,7 @@
 #include "xapi.h"
 
 struct command;
-struct command * invalidate_command;
+extern struct command * invalidate_command;
 
 xapi invalidate_command_cleanup(void);
 

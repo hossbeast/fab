@@ -44,7 +44,7 @@ INVALIDATE_TYPE_TABLE
 #undef INVALIDATE_DEF
 } invalidate_type;
 
-struct attrs16 * invalidate_attrs;
+extern struct attrs16 * invalidate_attrs;
 
 typedef struct filesystem {
   union {
