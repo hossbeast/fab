@@ -88,17 +88,57 @@ static inline size_t znloadw(void * restrict dst, size_t sz, const void * b, siz
 #define znloads(dst, sz, s) znloadw(dst, sz, s, strlen(s))
 #define znloadc(dst, sz, c) znloadw(dst, sz, (char[]) { c }, 1)
 
-#if 0
-/// zloads
-//
-//
-//
-static inline size_t zloads(void * restrict dst, const char * const restrict src)
+static inline size_t znload_int(void * restrict dst, size_t sz, void *x, uint8_t xsz)
 {
-  size_t len = strlen(src);
-  memcpy(dst, src, len);
-  return len;
+  uint8_t pad;
+
+  pad = ((uintptr_t)dst) & (xsz - 1);
+
+  if(sz < pad) {
+    return 0;
+  }
+
+  return pad + memncpy(dst + pad, sz - pad, x, xsz);
 }
-#endif
+
+static inline size_t znload_u8(void * restrict dst, size_t sz, uint8_t x)
+{
+  return znload_int(dst, sz, &x, sizeof(x));
+}
+
+static inline size_t znload_u16(void * restrict dst, size_t sz, uint16_t x)
+{
+  return znload_int(dst, sz, &x, sizeof(x));
+}
+
+static inline size_t znload_u32(void * restrict dst, size_t sz, uint32_t x)
+{
+  return znload_int(dst, sz, &x, sizeof(x));
+}
+
+static inline size_t znload_u64(void * restrict dst, size_t sz, uint64_t x)
+{
+  return znload_int(dst, sz, &x, sizeof(x));
+}
+
+static inline size_t znload_i8(void * restrict dst, size_t sz, int8_t x)
+{
+  return znload_int(dst, sz, &x, sizeof(x));
+}
+
+static inline size_t znload_i16(void * restrict dst, size_t sz, int16_t x)
+{
+  return znload_int(dst, sz, &x, sizeof(x));
+}
+
+static inline size_t znload_i32(void * restrict dst, size_t sz, int32_t x)
+{
+  return znload_int(dst, sz, &x, sizeof(x));
+}
+
+static inline size_t znload_i64(void * restrict dst, size_t sz, int64_t x)
+{
+  return znload_int(dst, sz, &x, sizeof(x));
+}
 
 #endif

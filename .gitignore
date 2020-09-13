@@ -27,3 +27,5 @@ exports
 *.so.lnk
 git-state.c
 git-state.h
+*.desc.c
+*.desc.h
