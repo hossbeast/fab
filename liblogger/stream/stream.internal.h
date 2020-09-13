@@ -63,7 +63,7 @@ typedef struct stream
   };
 
   // the underlying narrator
-  int lock;
+  int32_t lock;
   union {
     struct narrator * narrator_base;
     struct narrator_fd * narrator_base_fd;

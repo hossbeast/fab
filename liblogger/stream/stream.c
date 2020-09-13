@@ -45,8 +45,8 @@
 
 #include "macros.h"
 #include "common/color.h"
-#include "locks.h"
 #include "zbuffer.h"
+#include "locks.h"
 
 // active streams
 stream g_streams[LOGGER_MAX_STREAMS];
@@ -55,6 +55,11 @@ uint8_t g_streams_l;
 //
 // static
 //
+
+static const char * months[] = {
+    "Jan", "Feb", "Mar", "Apr", "May", "Jun"
+  , "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+};
 
 // registered, not yet activated streams
 static list * registered;
@@ -245,10 +250,13 @@ xapi stream_write(stream *  restrict streamp, const uint64_t ids, uint32_t attrs
 
   // enable say
   narrator * N = streamp->narrator;
+  pid_t tid;
+  int prev;
 
-  spinlock_acquire(&streamp->lock, gettid());
+  tid = gettid();
+  futex_acquire(&streamp->lock, tid);
 
-  int prev = 0;
+  prev = 0;
   if((attrs & LOGGER_COLOR_OPT) && (attrs & LOGGER_COLOR_OPT) != L_NOCOLOR)
   {
     if((attrs & LOGGER_COLOR_OPT) == L_RED)
@@ -287,11 +295,6 @@ xapi stream_write(stream *  restrict streamp, const uint64_t ids, uint32_t attrs
     struct tm tm;
     time_t time = time_msec / 1000;
     localtime_r(&time, &tm);
-
-    char * months[] = {
-        "Jan", "Feb", "Mar", "Apr", "May", "Jun"
-      , "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
-    };
 
     if(prev)
       xsays(" ");
@@ -434,13 +437,18 @@ xapi stream_write(stream *  restrict streamp, const uint64_t ids, uint32_t attrs
   fatal(narrator_record_flush, streamp->narrator_record);
 
 finally:
-  spinlock_release(&streamp->lock, gettid());
+  futex_release(&streamp->lock, tid);
 coda;
 }
 
 xapi streams_write(const uint64_t ids, const uint32_t site_attrs, const char *  restrict b, size_t l,  const long time_msec, uint64_t vector)
 {
   enter;
+
+  uint32_t base_attrs;
+  uint32_t attrs;
+  int x;
+  int __attribute__((unused)) r;
 
   // misconfigured
   if(g_streams_l == 0)
@@ -456,15 +464,14 @@ xapi streams_write(const uint64_t ids, const uint32_t site_attrs, const char *  
 
   RUNTIME_ASSERT(ids);
 
-  uint32_t base_attrs = attrs_combine4(logger_process_attrs, logger_thread_attrs, categories_attrs(ids), site_attrs);
+  base_attrs = attrs_combine4(logger_process_attrs, logger_thread_attrs, categories_attrs(ids), site_attrs);
 
-  int x;
   for(x = 0; x < g_streams_l; x++)
   {
     stream * streamp = &g_streams[x];
     if(vector & (UINT64_C(1) << x))
     {
-      uint32_t attrs = attrs_combine2(base_attrs, streamp->attrs);
+      attrs = attrs_combine2(base_attrs, streamp->attrs);
       fatal(stream_write, streamp, ids, attrs, b, l, time_msec);
     }
   }
