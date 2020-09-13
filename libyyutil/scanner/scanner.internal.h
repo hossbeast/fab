@@ -28,4 +28,7 @@ const char * scanner_tokenname(struct yyu_parser * restrict parser, int token)
 const char * scanner_statename(struct yyu_parser * restrict parser, int state)
   __attribute__((nonnull));
 
+int token_table_bytoken_cmp_items(const void *, const void *)
+  __attribute__((nonnull));
+
 #endif

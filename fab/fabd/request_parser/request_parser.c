@@ -52,17 +52,7 @@ xapi request_parser_create(request_parser ** const rv)
   fatal(xmalloc, &p, sizeof(*p));
   fatal(yyu_parser_init, &p->yyu, &vtable, REQUEST_SYNTAX);
 
-  fatal(yyu_parser_init_tokens
-    , &p->yyu
-    , request_numtokens
-    , request_mintoken
-    , request_maxtoken
-    , request_tokenindexes
-    , request_tokennumbers
-    , request_tokennames
-    , request_tokenstrings
-    , request_tokenstring_tokens
-  );
+  fatal(yyu_parser_init_tokens, &p->yyu, request_token_table, request_TOKEN_TABLE_SIZE);
 
   fatal(yyu_parser_init_states
     , &p->yyu
@@ -75,7 +65,7 @@ xapi request_parser_create(request_parser ** const rv)
   p->yyu.logs = L_REQUEST;
 #endif
 
-  fatal(yyu_define_tokenrange, &p->yyu, request_AUTORUN, request_VARIANT);
+//  fatal(yyu_define_tokenrange, &p->yyu, request_AUTORUN, request_VARIANT);
 
   fatal(selector_parser_create, &p->selector_parser);
   fatal(config_parser_create, &p->config_parser);
