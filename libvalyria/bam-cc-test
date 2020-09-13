@@ -19,6 +19,7 @@
 
 use strict;
 use warnings;
+$SIG{__WARN__} = sub { die @_ };
 
 die "cc not found in environment" unless $ENV{cc};
 
@@ -36,13 +37,11 @@ my @cmd = (
   , @rpath
   # object files
   , split(/ /, $ENV{objects})
-#  # library files
+  # library files
   , "-Wl,--start-group"
   , split(/ /, $ENV{libraries})
   , "-Wl,--end-group"
 );
-
-print(join(" ", @cmd) . "\n");
 
 exec { $cmd[0] } @cmd
 

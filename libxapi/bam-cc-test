@@ -34,8 +34,6 @@ my @cmd = (
   , split(/ /, $ENV{libraries})
 );
 
-print(join(" ", @cmd) . "\n");
-
 exec { $cmd[0] } @cmd
 
 __DATA__
