@@ -21,7 +21,7 @@
 #include "xapi.h"
 #include "xapi/trace.h"
 
-#include "internal.h"
+#include "narrator.h"
 #include "narrator/record.h"
 #include "narrator/growing.h"
 
@@ -31,21 +31,23 @@ static xapi test_fatal()
 {
   enter;
 
-  narrator * N = 0;
-  narrator * N0 = 0;
-  fatal(narrator_growing_create, &N0);
-  fatal(narrator_record_create, &N, N0);
+  narrator * N;
+  narrator_growing * ng = 0;
+  narrator_record *nr = 0;
+  fatal(narrator_growing_create, &ng);
+  fatal(narrator_record_create, &nr, &ng->base);
+  N = &nr->base;
 
   xsays("hello");
   xsayc(' ');
   xsays("world");
-  fatal(narrator_record_flush, N);
+  fatal(narrator_record_flush, nr);
 
-  assert_eq_s("hello world", N0->growing.s);
+  assert_eq_s("hello world", ng->s);
 
 finally:
-  fatal(narrator_xfree, N);
-  fatal(narrator_xfree, N0);
+  fatal(narrator_record_free, nr);
+  fatal(narrator_growing_free, ng);
 coda;
 }
 

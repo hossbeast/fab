@@ -20,7 +20,7 @@
 #include "xapi.h"
 #include "xapi/trace.h"
 
-#include "internal.h"
+#include "narrator.h"
 #include "narrator/fixed.h"
 
 #include "test_util.h"
@@ -36,6 +36,7 @@ static xapi say(narrator * const N)
   xsayf(" %d", 43);
   xsayf(" %d", 4);
   xsayc('4');
+  fatal(narrator_flush, N);
 
   finally : coda;
 }
@@ -45,16 +46,19 @@ static xapi test_basic()
   enter;
 
   char s[64];
-  char fixed[NARRATOR_STATIC_SIZE];
+  narrator_fixed nf;
+  narrator *N;
 
-  narrator * N = narrator_fixed_init(fixed, s, sizeof(s));
+  narrator_fixed_init(&nf, s, sizeof(s));
+  N = &nf.base;
+
   fatal(say, N);
 
   char * expected = "40 41 42 43 44";
   size_t expectedl = strlen(expected);
 
-  assert_eq_s(expected, N->fixed.s);
-  assert_eq_zu(expectedl, N->fixed.l);
+  assert_eq_s(expected, nf.s);
+  assert_eq_zu(expectedl, nf.l);
 
   finally : coda;
 }
@@ -64,16 +68,16 @@ static xapi test_constrained()
   enter;
 
   char s[7];
-  char fixed[NARRATOR_STATIC_SIZE];
+  narrator_fixed nf;
 
-  narrator * N = narrator_fixed_init(fixed, s, sizeof(s));
+  narrator * N = narrator_fixed_init(&nf, s, sizeof(s));
   fatal(say, N);
 
   char * expected = "40 41 ";
   size_t expectedl = 6;
 
-  assert_eq_zu(expectedl, N->fixed.l);
-  assert_eq_s(expected, N->fixed.s);
+  assert_eq_zu(expectedl, nf.l);
+  assert_eq_s(expected, nf.s);
 
   finally : coda;
 }

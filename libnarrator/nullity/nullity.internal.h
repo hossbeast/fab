@@ -23,11 +23,6 @@
 
 #include "nullity.h"
 
-typedef struct narrator_nullity
-{
-} narrator_nullity;
-
-
 /// nullity_setup
 //
 // SUMMARY
@@ -42,6 +37,7 @@ xapi nullity_setup(void);
 //
 xapi nullity_cleanup(void);
 
+#if 0
 /// nullity_say
 //
 // SUMMARY
@@ -73,5 +69,6 @@ int nullity_read(narrator_nullity * restrict n, void * dst, size_t count)
 
 void nullity_flush(narrator_nullity * restrict n)
   __attribute__((nonnull));
+#endif
 
 #endif

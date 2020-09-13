@@ -208,6 +208,7 @@ static xapi rules_full_refresh(rule_run_context * restrict rule_ctx)
   enter;
 
   rule_module_association *rma;
+  narrator *N;
 
   /* re-run invalidated rules */
   fatal(rule_run_context_begin, rule_ctx);
@@ -243,6 +244,7 @@ static xapi server_thread()
   int iteration;
   bool building;
   rule_run_context rule_ctx = { 0 };
+  narrator *N;
 
   char * request_buf = 0;
   size_t request_buf_sz;
@@ -253,7 +255,7 @@ static xapi server_thread()
   int response_shm_id = -1;
   size_t response_shm_size;
   uint32_t response_len;
-  char response_narrator_space[NARRATOR_STATIC_SIZE];
+  narrator_fixed response_narrator_fixed;
   narrator * response_narrator = 0;
   value_writer response_writer;
   graph_invalidation_context invalidation = { 0 };
@@ -419,7 +421,7 @@ process_request:
     fatal(prepare_response_shm, &response_shm, &response_shm_id, &response_shm_size);
 
     // save a spot for the response length
-    response_narrator = narrator_fixed_init(response_narrator_space, response_shm, response_shm_size);
+    response_narrator = narrator_fixed_init(&response_narrator_fixed, response_shm, response_shm_size);
     fatal(narrator_xsayw, response_narrator, (char[]) { 0xde, 0xad, 0xbe, 0xef }, 4);
 
     fatal(value_writer_open, &response_writer, response_narrator);
@@ -480,7 +482,7 @@ if(g_server_no_initial_client && iteration != 0)
     fatal(value_writer_close, &response_writer);
 
     // stitch up the response length
-    response_len = narrator_fixed_size(response_narrator) - 4;
+    response_len = response_narrator_fixed.l - 4;
     fatal(narrator_xseek, response_narrator, 0, NARRATOR_SEEK_SET, 0);
     fatal(narrator_xsayw, response_narrator, &response_len, sizeof(response_len));
 

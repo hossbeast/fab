@@ -21,8 +21,7 @@
 #include "xapi.h"
 #include "xapi/trace.h"
 
-#include "internal.h"
-#include "narrator/rolling.h"
+#include "rolling.h"
 
 static xapi exercise_rolling()
 {

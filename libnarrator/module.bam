@@ -17,20 +17,43 @@
 
 use cc               # this module contains c sources
 use library/shared  # this module builds a shared library
+use library/static
 
 import fab/include
 import libcommon
 import libxapi
 import libxlinux
 
+import fab/test as fabtest
+
 # variants for the module
 variant xapi.pic.{debug,devel,final}
 
 # pull in object files in the module, except those under integ/example
-rule *~{integ,example}/**/*.?.o -> libnarrator.$?.so
+rule *~{integ,example}/**/*.?.o -> libnarrator.$?.{so,a}
 
 # default build targets
 rule libnarrator.?.so -> //module/targets
+rule libnarrator.?.a -> //module/targets
 
 # library dependencies
 rule //module/imports/*/lib*.?.so -> libnarrator.$?.so
+rule //module/imports/*/lib*.?.a -> libnarrator.$?.a
+
+#
+# test
+#
+
+# build individual test executables
+rule integ/test_(*).?.o -> $^D/test_$1.$? : ./bam-cc-test
+rule integ/test_(*).? <- fabtest/errtab/TEST.errtab.$?.o
+rule integ/test_(*).? <- fabtest/test_util.$?.o
+rule integ/test_(*).? <- libnarrator.$?.a
+
+# target to run each test
+rule integ/test_(*).? -> //module/tests/test-$1.$? : ./bam-test
+
+# add tests to global tests
+rule //module/tests/* -> //tests
+
+rule //tests -> //module/targets

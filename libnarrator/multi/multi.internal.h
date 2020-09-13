@@ -24,13 +24,6 @@
 #include "xapi.h"
 #include "multi.h"
 
-typedef struct narrator_multi
-{
-  narrator ** v;    // narrators
-  size_t l;         // number in use
-  size_t a;         // allocated size
-} narrator_multi;
-
 /// multi_say
 //
 // SUMMARY

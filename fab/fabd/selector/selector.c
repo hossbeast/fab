@@ -458,7 +458,7 @@ static xapi writer_write(selector * const restrict sel, value_writer * const res
   const char *name;
   char space[512];
   narrator * N;
-  char nstor[NARRATOR_STATIC_SIZE];
+  narrator_fixed nstor;
 
   if(sel->type == SELECTOR_SEQUENCE)
   {
@@ -529,9 +529,9 @@ static xapi writer_write(selector * const restrict sel, value_writer * const res
   }
   else if(sel->type == SELECTOR_PATTERN)
   {
-    N = narrator_fixed_init(nstor, space, sizeof(space));
+    N = narrator_fixed_init(&nstor, space, sizeof(space));
     fatal(pattern_say, sel->pattern, N);
-    fatal(value_writer_mapping_string_bytes, writer, "pattern", space, narrator_fixed_size(N));
+    fatal(value_writer_mapping_string_bytes, writer, "pattern", space, nstor.l);
   }
   else if(sel->type == SELECTOR_NODESET)
   {

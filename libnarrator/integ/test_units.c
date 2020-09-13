@@ -20,7 +20,7 @@
 #include "xapi.h"
 #include "xapi/trace.h"
 
-#include "internal.h"
+#include "narrator.h"
 #include "narrator/growing.h"
 #include "narrator/units.h"
 
@@ -31,8 +31,10 @@ static xapi test_interval_say()
   enter;
 
   // arrange
-  narrator * N = 0;
-  fatal(narrator_growing_create, &N);
+  narrator * N;
+  narrator_growing *ng = 0;
+  fatal(narrator_growing_create, &ng);
+  N = &ng->base;
 
   struct {
     time_t seconds;
@@ -57,11 +59,11 @@ static xapi test_interval_say()
     fatal(interval_say, tests[x].seconds, N);
 
     // assert
-    assert_eq_s(tests[x].expected, N->growing.s);
+    assert_eq_s(tests[x].expected, ng->s);
   }
 
 finally:
-  fatal(narrator_xfree, N);
+  fatal(narrator_growing_free, ng);
 coda;
 }
 
@@ -70,8 +72,10 @@ static xapi test_bytesize_say()
   enter;
 
   // arrange
-  narrator * N = 0;
-  fatal(narrator_growing_create, &N);
+  narrator * N;
+  narrator_growing *ng = 0;
+  fatal(narrator_growing_create, &ng);
+  N = &ng->base;
 
   struct {
     size_t bytes;
@@ -91,11 +95,11 @@ static xapi test_bytesize_say()
     fatal(bytesize_say, tests[x].bytes, N);
 
     // assert
-    assert_eq_s(tests[x].expected, N->growing.s);
+    assert_eq_s(tests[x].expected, ng->s);
   }
 
 finally:
-  fatal(narrator_xfree, N);
+  fatal(narrator_growing_free, ng);
 coda;
 }
 
@@ -104,8 +108,10 @@ static xapi test_elapsed_say()
   enter;
 
   // arrange
-  narrator * N = 0;
-  fatal(narrator_growing_create, &N);
+  narrator *N;
+  narrator_growing *ng = 0;
+  fatal(narrator_growing_create, &ng);
+  N = &ng->base;
 
   struct {
     struct timespec start;
@@ -127,11 +133,11 @@ static xapi test_elapsed_say()
     fatal(elapsed_say, &tests[x].start, &tests[x].end, N);
 
     // assert
-    assert_eq_s(tests[x].expected, N->growing.s);
+    assert_eq_s(tests[x].expected, ng->s);
   }
 
 finally:
-  fatal(narrator_xfree, N);
+  fatal(narrator_growing_free, ng);
 coda;
 }
 

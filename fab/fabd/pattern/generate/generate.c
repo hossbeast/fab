@@ -156,8 +156,8 @@ xapi pattern_segment_generate(pattern_generate_context * restrict ctx)
   }
 
   /* the end of a section */
-  section_len = narrator_fixed_size(ctx->section_narrator);
-  section = narrator_fixed_buffer(ctx->section_narrator);
+  section_len = ctx->section_narrator_fixed->l;
+  section = ctx->section_narrator_fixed->s;
 
   if(section_len == 0)
   {
@@ -228,7 +228,7 @@ xapi pattern_generate(
   enter;
 
   char space[512] = { 0 };
-  char fixed[NARRATOR_STATIC_SIZE];
+  narrator_fixed fixed;
 
   fatal(set_recycle, results);
 
@@ -249,7 +249,7 @@ xapi pattern_generate(
 
   ctx.section_traversal.head = pattern->section_head;
   ctx.section_traversal.variant_index = -1;
-  ctx.section_narrator = narrator_fixed_init(fixed, space, sizeof(space));
+  ctx.section_narrator = narrator_fixed_init(&fixed, space, sizeof(space));
 
   ctx.segment_traversal_stack = LLIST_INITIALIZER(ctx.segment_traversal_stack);
 

@@ -569,6 +569,7 @@ xapi build_slot_reap(build_slot * restrict bs, uint32_t slot_index, siginfo_t *i
   size_t z;
   uint16_t blen;
   int lines;
+  narrator *N;
 
   buildplan_entity *bpe;
   node *n;

@@ -35,6 +35,14 @@ REMARKS
 #include "types.h"
 #include "narrator.h"
 
+typedef struct narrator_fixed {
+  narrator base;
+  char *  s;      // buffer
+  size_t  l;      // position
+  size_t  a;      // buffer size
+  size_t  m;      // maximum position
+} narrator_fixed;
+
 /// narrator_fixed_init
 //
 // SUMMARY
@@ -46,29 +54,10 @@ REMARKS
 // RETURNS
 //  fixed size narrator suitable for passing to other narrator apis
 //
-narrator * narrator_fixed_init(char fixed[NARRATOR_STATIC_SIZE], char * s, size_t a)
+narrator * narrator_fixed_init(narrator_fixed * restrict n, char * s, size_t a)
   __attribute__((nonnull));
 
-/// narrator_fixed_buffer
-//
-// SUMMARY
-//  get a pointer to the underlying buffer, that is, storage->s
-//
-// PARAMETERS
-//  n - fixed narrator
-//
-const char * narrator_fixed_buffer(narrator * const restrict n)
-  __attribute__((nonnull));
-
-/// narrator_fixed_size
-//
-// SUMMARY
-//  get the size in bytes of the data written to the underlying buffer, that is, storage->l
-//
-// PARAMETERS
-//  n - fixed narrator
-//
-size_t narrator_fixed_size(narrator * const restrict n)
+xapi narrator_fixed_destroy(narrator_fixed * restrict n)
   __attribute__((nonnull));
 
 #endif

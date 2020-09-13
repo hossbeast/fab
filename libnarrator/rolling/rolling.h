@@ -33,6 +33,24 @@ REMARKS
 
 #include "xapi.h"
 #include "types.h"
+#include "narrator.h"
+
+typedef struct narrator_rolling {
+  narrator base;
+
+  int fd;           // file descriptor
+  size_t written;
+  uint16_t counter;
+  int scanned;
+
+  uint16_t max_files;
+  uint32_t threshold;
+  mode_t mode;
+  char * directory;
+  char * name_base;
+} narrator_rolling;
+
+extern struct narrator_vtable narrator_rolling_vtable;
 
 /// narrator_rolling_create
 //
@@ -47,12 +65,16 @@ REMARKS
 //  max_files   - reset the file counter to zero after this many files
 //
 xapi narrator_rolling_create(
-    narrator ** const restrict n
+    narrator_rolling ** const restrict n
   , const char * const restrict path_base
   , mode_t mode
   , uint32_t threshold
   , uint16_t max_files
 )
+  __attribute__((nonnull));
+
+xapi narrator_rolling_free(narrator_rolling *n);
+xapi narrator_rolling_destroy(narrator_rolling *n)
   __attribute__((nonnull));
 
 #endif

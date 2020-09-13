@@ -21,7 +21,7 @@
 #include "xapi.h"
 #include "xapi/trace.h"
 
-#include "internal.h"
+#include "narrator.h"
 #include "narrator/multi.h"
 #include "narrator/growing.h"
 
@@ -37,8 +37,8 @@ static xapi validate(int count, ...)
   int x;
   for(x = 0; x < count; x++)
   {
-    narrator * n = va_arg(va, narrator*);
-    assert_eq_s("hello world", n->growing.s);
+    narrator_growing * n = va_arg(va, narrator_growing*);
+    assert_eq_s("hello world", n->s);
   }
 
 finally:
@@ -51,24 +51,24 @@ static xapi test_basic()
 {
   enter;
 
-  narrator * N = 0;
-  narrator * N0 = 0;
-  narrator * N1 = 0;
+  narrator_multi * N = 0;
+  narrator_growing * N0 = 0;
+  narrator_growing * N1 = 0;
   fatal(narrator_multi_create, &N);
   fatal(narrator_growing_create, &N0);
   fatal(narrator_growing_create, &N1);
 
-  fatal(narrator_multi_add, N, N0);
-  fatal(narrator_multi_add, N, N1);
+  fatal(narrator_multi_add, N, &N0->base);
+  fatal(narrator_multi_add, N, &N1->base);
 
-  xsays("hello world");
+  fatal(narrator_xsays, &N->base, "hello world");
 
   fatal(validate, 2, N0, N1);
 
 finally:
-  fatal(narrator_xfree, N);
-  fatal(narrator_xfree, N0);
-  fatal(narrator_xfree, N1);
+  fatal(narrator_multi_free, N);
+  fatal(narrator_growing_free, N0);
+  fatal(narrator_growing_free, N1);
 coda;
 }
 

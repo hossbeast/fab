@@ -35,17 +35,22 @@ SUMMARY
 #include "xapi.h"
 #include "types.h"
 
-typedef struct narrator narrator;
+struct narrator;
+struct narrator_vtable;
+
+typedef struct narrator {
+  const struct narrator_vtable *vtab;
+} narrator;
 
 //
 // fatal-write to the active narration
 //
 
-#define xsayvf(...)       fatal(narrator_xsayvf, N, ##__VA_ARGS__)
-#define xsayf(...)        fatal(narrator_xsayf , N, ##__VA_ARGS__)
-#define xsays(...)        fatal(narrator_xsays , N, ##__VA_ARGS__)
-#define xsayw(...)        fatal(narrator_xsayw , N, ##__VA_ARGS__)
-#define xsayc(...)        fatal(narrator_xsayc , N, ##__VA_ARGS__)
+#define xsayvf(...) fatal(narrator_xsayvf, N, ##__VA_ARGS__)
+#define xsayf(...)  fatal(narrator_xsayf , N, ##__VA_ARGS__)
+#define xsays(...)  fatal(narrator_xsays , N, ##__VA_ARGS__)
+#define xsayw(...)  fatal(narrator_xsayw , N, ##__VA_ARGS__)
+#define xsayc(...)  fatal(narrator_xsayc , N, ##__VA_ARGS__)
 
 /// read-only singleton narrators that write to fixed file descriptors
 extern narrator * g_narrator_stdout;
@@ -53,39 +58,6 @@ extern narrator * g_narrator_stderr;
 
 /// read-only singleton nullity narrator that discards all output
 extern narrator * g_narrator_nullity;
-
-#ifndef NARRATOR_NO_N
-// default narrator ; points to g_narrator_stdout
-extern narrator * N;
-#endif
-
-#define NARRATOR_STATIC_SIZE 64
-
-/// narrator_xfree
-//
-// SUMMARY
-//  release resources associated with a narrator
-//
-// PARAMETERS
-//  [n]  - pointer to a narrator, or a pointer to null
-//
-// REMARKS
-//  sets *n = 0
-//
-xapi narrator_xfree(narrator * restrict n);
-
-/// narrator_ixfree
-//
-// narrator_xfree(*n) ; *n = 0;
-//
-xapi narrator_ixfree(narrator ** const restrict n)
-  __attribute__((nonnull));
-
-//
-// PARAMETERS
-//  n - narrator to destroy
-//
-xapi narrator_xdestroy(narrator * restrict n);
 
 /// narrator_sayvf
 //

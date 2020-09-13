@@ -54,7 +54,7 @@ static __thread narrator *  storage_narrator; // the log message
 static __thread long        storage_time_msec;
 
 static __thread char storage_fixed_buffer[1024*32];
-static __thread char storage_fixed_storage[NARRATOR_STATIC_SIZE];
+static __thread narrator_fixed storage_narrator_fixed;
 
 //
 // public
@@ -64,7 +64,7 @@ xapi log_cleanup()
 {
   enter;
 
-  fatal(narrator_xdestroy, storage_narrator);
+  fatal(narrator_fixed_destroy, &storage_narrator_fixed);
 
   finally : coda;
 }
@@ -137,7 +137,7 @@ xapi API log_xstart(uint64_t ids, uint32_t attrs, narrator ** restrict N)
 
   if(storage_narrator == 0)
   {
-    storage_narrator = narrator_fixed_init(storage_fixed_storage, storage_fixed_buffer, sizeof(storage_fixed_buffer));
+    storage_narrator = narrator_fixed_init(&storage_narrator_fixed, storage_fixed_buffer, sizeof(storage_fixed_buffer));
   }
 
   storage_ids = ids;
@@ -176,8 +176,8 @@ xapi API log_finish()
     fatal(streams_write
       , storage_ids
       , storage_attrs
-      , narrator_fixed_buffer(storage_narrator)
-      , narrator_fixed_size(storage_narrator)
+      , storage_narrator_fixed.s
+      , storage_narrator_fixed.l
       , storage_time_msec
       , storage_would_vector
     );
@@ -208,7 +208,7 @@ int API log_xwould(uint64_t ids, uint32_t attrs)
 int API log_bytes()
 {
   if(storage_narrator)
-    return narrator_fixed_size(storage_narrator);
+    return storage_narrator_fixed.l;
 
   return 0;
 }
@@ -216,7 +216,7 @@ int API log_bytes()
 int API log_chars()
 {
   if(storage_narrator)
-    return narrator_fixed_size(storage_narrator);
+    return storage_narrator_fixed.l;
 
   return 0;
 }

@@ -30,6 +30,19 @@ SUMMARY
 
 #include "xapi.h"
 #include "types.h"
+#include "narrator.h"
+
+typedef struct narrator_record
+{
+  narrator base;
+  char *  s;    // buffer
+  size_t  l;    // position
+  size_t  a;    // allocated size
+
+  narrator * n;    // underlying narrator, (not owned)
+} narrator_record;
+
+extern struct narrator_vtable narrator_record_vtable;
 
 /// narrator_record_create
 //
@@ -40,8 +53,13 @@ SUMMARY
 //  n  - (returns) narrator
 //  np - underlying narrator
 //
-xapi narrator_record_create(narrator ** const restrict n, narrator * const restrict np)
+xapi narrator_record_create(narrator_record ** const restrict n, narrator * const restrict np)
   __attribute__((nonnull(1)));
+
+xapi narrator_record_free(narrator_record * restrict n);
+
+xapi narrator_record_destroy(narrator_record * restrict n)
+  __attribute__((nonnull));
 
 /// narrator_record_reset
 //
@@ -51,7 +69,7 @@ xapi narrator_record_create(narrator ** const restrict n, narrator * const restr
 // PARAMETERS
 //  n - record narrator
 //
-void narrator_record_reset(narrator * const restrict n)
+void narrator_record_reset(narrator_record * const restrict n)
   __attribute__((nonnull));
 
 /// narrator_record_flush
@@ -59,18 +77,7 @@ void narrator_record_reset(narrator * const restrict n)
 // SUMMARY
 //  propagate to the underlying narrator with a single write
 //
-xapi narrator_record_flush(narrator * const restrict n)
-  __attribute__((nonnull));
-
-/// narrator_record_size
-//
-// SUMMARY
-//  get the size in bytes of the unwritten record
-//
-// PARAMETERS
-//  n - record narrator
-//
-size_t narrator_record_size(narrator * const restrict n)
+xapi narrator_record_flush(narrator_record * const restrict n)
   __attribute__((nonnull));
 
 #endif

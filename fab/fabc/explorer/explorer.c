@@ -312,7 +312,7 @@ static xapi make_request(fab_client * restrict client, xapi (*render)(value_writ
 {
   enter;
 
-  char nstor[NARRATOR_STATIC_SIZE];
+  narrator_fixed nstor;
   value_writer writer;
   narrator * request_narrator;
   uint32_t message_len;
@@ -324,7 +324,7 @@ static xapi make_request(fab_client * restrict client, xapi (*render)(value_writ
   fatal(fab_client_prepare_request_shm, client, &request_shm);
 
   // save a spot for the message length
-  request_narrator = narrator_fixed_init(nstor, request_shm, 0xfff);
+  request_narrator = narrator_fixed_init(&nstor, request_shm, 0xfff);
   fatal(narrator_xsayw, request_narrator, (char[]) { 0xde, 0xad, 0xbe, 0xef }, 4);
   fatal(value_writer_open, &writer, request_narrator);
 
@@ -333,7 +333,7 @@ static xapi make_request(fab_client * restrict client, xapi (*render)(value_writ
   // stitch up the message length
   fatal(value_writer_close, &writer);
   fatal(narrator_xsayw, request_narrator, (char[]) { 0x00, 0x00 }, 2);
-  message_len = narrator_fixed_size(request_narrator) - 4;
+  message_len = nstor.l - 4;
   fatal(narrator_xseek, request_narrator, 0, NARRATOR_SEEK_SET, 0);
   fatal(narrator_xsayw, request_narrator, &message_len, sizeof(message_len));
 

@@ -19,7 +19,7 @@
 #include <inttypes.h>
 #include <time.h>
 
-#include "internal.h"
+#include "narrator.h"
 #include "units.h"
 
 #include "macros.h"
@@ -105,7 +105,7 @@ static xapi __attribute__((nonnull)) compose(unit * cfg, double * parts, narrato
 // api
 //
 
-xapi API interval_say(time_t seconds, struct narrator * const restrict N)
+xapi API interval_say(time_t seconds, narrator * const restrict N)
 {
   enter;
 
@@ -125,7 +125,7 @@ xapi API interval_say(time_t seconds, struct narrator * const restrict N)
   finally : coda;
 }
 
-xapi API bytesize_say(size_t bytes, struct narrator * const restrict N)
+xapi API bytesize_say(size_t bytes, narrator * const restrict N)
 {
   enter;
 
@@ -144,7 +144,7 @@ xapi API bytesize_say(size_t bytes, struct narrator * const restrict N)
   finally : coda;
 }
 
-xapi API elapsed_say(const struct timespec * const restrict start, const struct timespec * const restrict end, struct narrator * const restrict N)
+xapi API elapsed_say(const struct timespec * const restrict start, const struct timespec * const restrict end, narrator * const restrict N)
 {
   enter;
 

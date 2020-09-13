@@ -181,16 +181,16 @@ xapi args_report()
 {
   enter;
 
-  narrator * N = 0;
+  narrator_growing * N = 0;
 
   fatal(narrator_growing_create, &N);
 
-  xsays("fabc");
-  xsayf(" %s", g_logvs);
+  fatal(narrator_xsays, &N->base, "fabc");
+  fatal(narrator_xsayf, &N->base, " %s", g_logvs);
 
-  logs(L_ARGS, narrator_growing_buffer(N));
+  logs(L_ARGS, N->s);
 
 finally:
-  fatal(narrator_xfree, N);
+  fatal(narrator_growing_free, N);
 coda;
 }

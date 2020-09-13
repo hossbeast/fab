@@ -21,7 +21,7 @@
 #include "xapi/trace.h"
 #include "xlinux/xstdlib.h"
 
-#include "internal.h"
+#include "narrator.h"
 #include "narrator/growing.h"
 
 #include "test_util.h"
@@ -45,19 +45,18 @@ static xapi test_basic()
 {
   enter;
 
-  narrator * N = 0;
+  narrator_growing * N = 0;
   fatal(narrator_growing_create, &N);
-  fatal(say, N);
+  fatal(say, &N->base);
 
   char * expected = "40 41 42 43 44";
   size_t expectedl = strlen(expected);
 
-  assert_eq_s(expected, N->growing.s);
-  assert_eq_zu(expectedl, N->growing.l);
-  assert_eq_p(narrator_growing_buffer(N), N->growing.s);
+  assert_eq_s(expected, N->s);
+  assert_eq_zu(expectedl, N->l);
 
 finally:
-  fatal(narrator_xfree, N);
+  fatal(narrator_growing_free, N);
 coda;
 }
 
@@ -65,8 +64,10 @@ static xapi test_seek()
 {
   enter;
 
-  narrator * N = 0;
-  fatal(narrator_growing_create, &N);
+  narrator_growing * ng = 0;
+  narrator *N = 0;
+  fatal(narrator_growing_create, &ng);
+  N = &ng->base;
 
   xsays("H");
 
@@ -82,10 +83,10 @@ static xapi test_seek()
   fatal(narrator_xseek, N, 3, NARRATOR_SEEK_SET, 0);
   xsays("L");
 
-  assert_eq_s("HELLO", N->growing.s);
+  assert_eq_s("HELLO", ng->s);
 
 finally:
-  fatal(narrator_xfree, N);
+  fatal(narrator_growing_free, ng);
 coda;
 }
 
@@ -94,21 +95,21 @@ static xapi test_init()
   enter;
 
   narrator * N = 0;
-  char Nstor[NARRATOR_STATIC_SIZE];
+  narrator_growing ng = { 0 };
   char * buf = 0;
 
-  N = narrator_growing_init(Nstor);
+  N = narrator_growing_init(&ng);
 
   xsays("hello");
   xsays(" ");
   xsays("world");
 
-  narrator_growing_claim_buffer(N, &buf, 0);
+  narrator_growing_claim_buffer(&ng, &buf, 0);
 
   assert_eq_s("hello world", buf);
 
 finally:
-  fatal(narrator_xdestroy, N);
+  fatal(narrator_growing_destroy, &ng);
   wfree(buf);
 coda;
 }

@@ -79,7 +79,7 @@ static xapi test_merge_entry(xunit_test * _test)
   value_parser * parser = 0;
   value * src = 0;
   value * dst = 0;
-  narrator * N0 = 0;
+  narrator_growing * N0 = 0;
   xapi exit;
 
   fatal(narrator_growing_create, &N0);
@@ -111,14 +111,14 @@ static xapi test_merge_entry(xunit_test * _test)
 //fatal(value_say, dst, g_narrator_stdout);
 //printf("\n");
 
-    fatal(value_say, dst, N0);
+    fatal(value_say, dst, &N0->base);
 
     char norm[512];
     int y = 0;
     int x;
-    for (x = 0; x < narrator_growing_size(N0); x++)
+    for (x = 0; x < N0->l; x++)
     {
-      char c = narrator_growing_buffer(N0)[x];
+      char c = N0->s[x];
       if (c == '\n') { c = ' '; }
       if (c == ' ')
       {
@@ -135,9 +135,9 @@ static xapi test_merge_entry(xunit_test * _test)
 
 finally:
   fatal(value_parser_xfree, parser);
-  fatal(narrator_xfree, N0);
+  fatal(narrator_growing_free, N0);
 coda;
-} 
+}
 
 //
 // public

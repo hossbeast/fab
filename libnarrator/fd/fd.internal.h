@@ -23,11 +23,6 @@
 
 #include "fd.h"
 
-typedef struct narrator_fd
-{
-  int fd;           // file descriptor
-} narrator_fd;
-
 /// fd_setup
 //
 // SUMMARY
@@ -42,6 +37,7 @@ xapi fd_setup(void);
 //
 xapi fd_cleanup(void);
 
+#if 0
 /// fd_say
 //
 // SUMMARY
@@ -110,5 +106,6 @@ xapi fd_xread(narrator_fd * restrict n, void * dst, size_t count, size_t * restr
 
 xapi fd_flush(narrator_fd * restrict n)
   __attribute__((nonnull));
+#endif
 
 #endif

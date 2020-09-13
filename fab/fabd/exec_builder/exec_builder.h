@@ -26,6 +26,7 @@ SUMMARY
 
 #include "types.h"
 #include "xapi.h"
+#include "narrator/growing.h"
 
 #include "narrator.h"
 #include "selector.h"
@@ -56,7 +57,7 @@ typedef struct exec_builder {
 
   /* intermediate state for builder_build */
   struct narrator * Nexec;
-  char Nexec_stor[NARRATOR_STATIC_SIZE];
+  struct narrator_growing Nexec_growing;
 
   const struct path_cache_entry *file_pe;
   uint32_t file;            // offset into the backing buffer, 0 = uninitialized

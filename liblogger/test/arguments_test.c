@@ -238,7 +238,7 @@ static xapi run_tests()
         fail(0);
 
       // print the stacktrace to stdout
-      xapi_backtrace_to(1);
+      xapi_backtrace(1, 0);
       xapi_calltree_unwind();
     }
 

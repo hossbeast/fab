@@ -180,7 +180,7 @@ static xapi run_tests()
       if(xapi_exit_errtab(exit) != perrtab_LOGGER)
         fail(0);
 
-      xapi_backtrace_to(1);
+      xapi_backtrace(1, 0);
       xapi_calltree_unwind();
     }
 

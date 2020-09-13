@@ -78,42 +78,35 @@ static xapi test_parser_entry(xunit_test * _test)
   value_parser * parser = 0;
   value * val0 = 0;
   value * val1 = 0;
-  narrator * N0 = 0;
-  narrator * N1 = 0;
+  narrator_growing * N0 = 0;
+  narrator_growing * N1 = 0;
 
   fatal(narrator_growing_create, &N0);
   fatal(narrator_growing_create, &N1);
 
   fatal(value_parser_create, &parser);
 
-printf("\n---------------\n");
-printf(">> INITIAL\n%s\n", test->text);
-
   // parse
   fatal(value_parser_parse, parser, MMS(test->text), 0, test->container, &val0);
-  fatal(value_say, val0, N0);
-
-printf(">> FIRST\n%s\n", narrator_growing_buffer(N0));
+  fatal(value_say, val0, &N0->base);
 
   // round-trip
   if(val0)
   {
-    size_t len = narrator_growing_size(N0);
-    fatal(narrator_xseek, N0, 0, NARRATOR_SEEK_SET, 0);
-    fatal(narrator_xread, N0, buf, len, 0);
+    size_t len = N0->l;
+    fatal(narrator_xseek, &N0->base, 0, NARRATOR_SEEK_SET, 0);
+    fatal(narrator_xread, &N0->base, buf, len, 0);
     buf[len] = 0;
     fatal(value_parser_parse, parser, buf, len, 0, 0, &val1);
   }
-  fatal(value_say, val1, N1);
-
-printf(">> SECOND\n%s\n", narrator_growing_buffer(N1));
+  fatal(value_say, val1, &N1->base);
 
   char norm[512];
   int y = 0;
   int x;
-  for (x = 0; x < narrator_growing_size(N1); x++)
+  for (x = 0; x < N1->l; x++)
   {
-    char c = narrator_growing_buffer(N1)[x];
+    char c = N1->s[x];
     if (c == '\n') { c = ' '; }
     if (c == ' ')
     {
@@ -130,10 +123,10 @@ printf(">> SECOND\n%s\n", narrator_growing_buffer(N1));
 
 finally:
   fatal(value_parser_xfree, parser);
-  fatal(narrator_xfree, N0);
-  fatal(narrator_xfree, N1);
+  fatal(narrator_growing_free, N0);
+  fatal(narrator_growing_free, N1);
 coda;
-} 
+}
 
 //
 // manifest

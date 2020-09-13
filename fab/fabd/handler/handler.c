@@ -93,7 +93,7 @@ static xapi handler_list(handler_context * restrict ctx, command * restrict cmd,
   enter;
 
   char space[512];
-  char nstor[NARRATOR_STATIC_SIZE];
+  narrator_fixed nstor;
   narrator * N;
   node_property_context pctx;
   selected_node *sn;
@@ -104,9 +104,9 @@ static xapi handler_list(handler_context * restrict ctx, command * restrict cmd,
 
   pctx.mod = g_project_root->mod;
   llist_foreach(&ctx->selection->list, sn, lln) {
-    N = narrator_fixed_init(nstor, space, sizeof(space));
+    N = narrator_fixed_init(&nstor, space, sizeof(space));
     fatal(node_property_say, sn->n, cmd->property, &pctx, N);
-    size_t len = narrator_growing_size(N);
+    size_t len = nstor.l;
     fatal(value_writer_bytes, writer, space, len);
   }
 
@@ -134,7 +134,7 @@ static xapi handler_describe(handler_context * restrict ctx, command * restrict 
   enter;
 
   char space[512];
-  char nstor[NARRATOR_STATIC_SIZE];
+  narrator_fixed nstor;
   narrator * N;
   node_property_context pctx;
   selected_node *sn;
@@ -152,9 +152,9 @@ static xapi handler_describe(handler_context * restrict ctx, command * restrict 
     fatal(value_writer_push_set, writer);
     for(x = 0; x < node_property_attrs->num; x++)
     {
-      N = narrator_fixed_init(nstor, space, sizeof(space));
+      N = narrator_fixed_init(&nstor, space, sizeof(space));
       fatal(node_property_say, sn->n, node_property_attrs->members[x].value, &pctx, N);
-      len = narrator_growing_size(N);
+      len = nstor.l;
 
       fatal(value_writer_push_mapping, writer);
         fatal(value_writer_bytes, writer, node_property_attrs->members[x].name, node_property_attrs->members[x].namel);

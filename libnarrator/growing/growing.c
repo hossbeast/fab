@@ -20,20 +20,22 @@
 #include "xapi.h"
 #include "xlinux/xstdlib.h"
 
-#include "internal.h"
+#include "narrator.h"
 #include "growing.internal.h"
+#include "vtable.h"
 
 #include "macros.h"
 #include "common/assure.h"
 
 //
-// public
+// static
 //
 
-xapi growing_xsayvf(narrator_growing * const restrict n, const char * const restrict fmt, va_list va)
+static xapi __attribute__((nonnull)) growing_sayvf(narrator * const restrict N, const char * const restrict fmt, va_list va)
 {
   enter;
 
+  narrator_growing *n = containerof(N, typeof(*n), base);
   va_list va2;
   va_copy(va2, va);
   int r;
@@ -61,9 +63,11 @@ xapi growing_xsayvf(narrator_growing * const restrict n, const char * const rest
   finally : coda;
 }
 
-xapi growing_xsayw(narrator_growing * const restrict n, const void * const restrict b, size_t l)
+static xapi __attribute__((nonnull)) growing_sayw(narrator * const restrict N, const void * const restrict b, size_t l)
 {
   enter;
+
+  narrator_growing *n = containerof(N, typeof(*n), base);
 
   fatal(assure, &n->s, sizeof(*n->s), n->l + l + 1, &n->a);
   memcpy(n->s + n->l, b, l);
@@ -74,13 +78,12 @@ xapi growing_xsayw(narrator_growing * const restrict n, const void * const restr
   finally : coda;
 }
 
-void growing_destroy(narrator_growing * const restrict n)
+static xapi __attribute__((nonnull(1))) growing_seek(narrator * restrict N, off_t offset, int whence, off_t * restrict res)
 {
-  wfree(n->s);
-}
+  enter;
 
-off_t growing_seek(narrator_growing * restrict n, off_t offset, int whence)
-{
+  narrator_growing *n = containerof(N, typeof(*n), base);
+
   if(whence == NARRATOR_SEEK_SET)
     n->l = offset;
   else if(whence == NARRATOR_SEEK_CUR)
@@ -90,25 +93,36 @@ off_t growing_seek(narrator_growing * restrict n, off_t offset, int whence)
   else if(whence == NARRATOR_SEEK_END)
     n->l = (n->m + offset);
 
-  return n->l;
+  if(res)
+  {
+    *res = n->l;
+  }
+
+  finally : coda;
 }
 
-off_t growing_reset(narrator_growing * restrict n)
-{
-  return n->m = n->l = 0;
-}
-
-size_t growing_read(narrator_growing * restrict n, void * dst, size_t count)
-{
-  size_t d = MIN(count, n->m - n->l);
-  memcpy(dst, n->s + n->l, d);
-  n->l += d;
-  return d;
-}
-
-xapi growing_flush(narrator_growing * restrict n)
+static xapi __attribute__((nonnull(1, 2))) growing_read(narrator * restrict N, void * dst, size_t count, size_t * restrict r)
 {
   enter;
+
+  narrator_growing *n = containerof(N, typeof(*n), base);
+  size_t d;
+
+  d = MIN(count, n->m - n->l);
+  memcpy(dst, n->s + n->l, d);
+  n->l += d;
+  if(r) {
+    *r = d;
+  }
+
+  finally : coda;
+}
+
+static xapi __attribute__((nonnull)) growing_flush(narrator * restrict N)
+{
+  enter;
+
+  narrator_growing *n = containerof(N, typeof(*n), base);
 
   fatal(assure, &n->s, sizeof(*n->s), n->l + 1, &n->a);
   n->s[n->l] = 0;
@@ -116,52 +130,76 @@ xapi growing_flush(narrator_growing * restrict n)
   finally : coda;
 }
 
+static struct narrator_vtable growing_vtable = NARRATOR_VTABLE(growing);
+
+//
+// public
+//
+
 //
 // api
 //
 
-xapi API narrator_growing_create(narrator ** const restrict rv)
+xapi API narrator_growing_create(narrator_growing ** const restrict rv)
 {
   enter;
 
-  narrator * n = 0;
+  narrator_growing * n = 0;
   fatal(xmalloc, &n, sizeof(*n));
 
-  n->type = NARRATOR_GROWING;
-  fatal(xmalloc, &n->growing.s, 1);
+  n->base.vtab = &growing_vtable;
+  fatal(xmalloc, &n->s, 1);
 
   *rv = n;
   n = 0;
 
 finally:
-  fatal(narrator_xfree, n);
+  fatal(narrator_growing_free, n);
 coda;
 }
 
-narrator * API narrator_growing_init_from(char stor[NARRATOR_STATIC_SIZE], char * buf, size_t bufa)
+xapi API narrator_growing_free(narrator_growing * restrict n)
 {
-  narrator * n = (void*)stor;
-  n->type = NARRATOR_GROWING;
-  memset(&n->growing, 0, sizeof(n->growing));
-  n->growing.s = buf;
-  n->growing.a = bufa;
-  return n;
+  enter;
+
+  if(n) {
+    fatal(narrator_growing_destroy, n);
+  }
+  wfree(n);
+
+  finally : coda;
 }
 
-narrator * API narrator_growing_init(char stor[NARRATOR_STATIC_SIZE])
+narrator * API narrator_growing_init_from(narrator_growing * restrict n, char * buf, size_t bufa)
 {
-  return narrator_growing_init_from(stor, 0, 0);
+  n->base.vtab = &growing_vtable;
+  n->s = buf;
+  n->l = 0;
+  n->a = bufa;
+  n->m = 0;
+
+  return &n->base;
 }
 
-char * API narrator_growing_buffer(narrator * const restrict n)
+narrator * API narrator_growing_init(narrator_growing * restrict n)
 {
-  return n->growing.s;
+  return narrator_growing_init_from(n, 0, 0);
+
 }
 
-void API narrator_growing_claim_buffer(narrator * const restrict n, void * bufp, size_t * allocp)
+xapi API narrator_growing_destroy(narrator_growing * restrict n)
 {
-  char * s = n->growing.s;
-  size_t a = n->growing.a;
+  enter;
+
+  wfree(n->s);
+
+  finally : coda;
+}
+
+void API narrator_growing_claim_buffer(narrator_growing * const restrict n, void * bufp, size_t * allocp)
+{
+  char * s = n->s;
+  size_t a = n->a;
 
   if(bufp)
     *(void**)bufp = s;
@@ -169,19 +207,15 @@ void API narrator_growing_claim_buffer(narrator * const restrict n, void * bufp,
   if(allocp)
     *allocp = a;
 
-  memset(&n->growing, 0, sizeof(n->growing));
+  n->s = 0;
+  n->l = 0;
+  n->a = 0;
+  n->m = 0;
 }
 
-size_t API narrator_growing_size(narrator * const restrict n)
-{
-  return n->growing.l;
-}
-
-xapi API narrator_growing_allocate(narrator * restrict _n, size_t size)
+xapi API narrator_growing_allocate(narrator_growing * restrict n, size_t size)
 {
   enter;
-
-  narrator_growing * n = &_n->growing;
 
   fatal(assure, &n->s, sizeof(*n->s), n->l + size + 1, &n->a);
 

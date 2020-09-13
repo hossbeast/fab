@@ -25,20 +25,6 @@
 
 #include "rolling.h"
 
-typedef struct narrator_rolling
-{
-  int fd;           // file descriptor
-  size_t written;
-  uint16_t counter;
-  int scanned;
-
-  uint16_t max_files;
-  uint32_t threshold;
-  mode_t mode;
-  char * directory;
-  char * name_base;
-} narrator_rolling;
-
 /// rolling_say
 //
 // SUMMARY

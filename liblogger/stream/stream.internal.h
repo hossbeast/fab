@@ -27,6 +27,9 @@ struct pstring;
 struct array;
 struct list;
 struct narrator;
+struct narrator_fd;
+struct narrator_rolling;
+struct narrator_record;
 struct filter;
 
 /// stream
@@ -54,13 +57,22 @@ typedef struct stream
   struct list * filters;
 
   // log messages are written to this record narrator
-  struct narrator * narrator;
+  union {
+    struct narrator * narrator;
+    struct narrator_record * narrator_record;
+  };
 
   // the underlying narrator
-  struct narrator * narrator_base;
-  struct narrator * narrator_owned;
-
   int lock;
+  union {
+    struct narrator * narrator_base;
+    struct narrator_fd * narrator_base_fd;
+  };
+  union {
+    struct narrator * narrator_owned;
+    struct narrator_fd * narrator_owned_fd;
+    struct narrator_rolling * narrator_owned_rolling;
+  };
 } stream;
 
 /// g_streams
