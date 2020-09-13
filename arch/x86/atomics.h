@@ -15,43 +15,33 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef _SPINLOCK
-#define _SPINLOCK
+#ifndef _ATOMIC_H
+#define _ATOMIC_H
 
-#include <sched.h>
+/* intel syntax */
 
-#include "xlinux/xunistd.h"
-
-#include "atomic.h"
-
-static inline void spinlock_engage_as(int * v, int as)
+static inline void atomic_inc(int * v)
 {
-  uint16_t x;
-
-  if(*v != as)
-  {
-    for(x = 0; ; x++)
-    {
-      if(atomic_cmpxchg(v, 0, as) == 0)
-      {
-        break;
-      }
-      else if((x % 256) == 0)
-      {
-        sched_yield();
-      }
-    }
-  }
+  asm("lock incl %0"
+      : "+m" (*v));
 }
 
-static inline void spinlock_engage(int * v)
+static inline void atomic_dec(int * v)
 {
-  spinlock_engage_as(v, gettid());
+  asm("lock decl %0"
+      : "+m" (*v));
 }
 
-static inline void spinlock_release(int * v)
+static inline bool atomic_cas_i32(int32_t *v, int32_t *old, int32_t *new)
 {
-  *v = 0;
+  return __atomic_compare_exchange(v, old, new, 1, __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST);
 }
+
+static inline int atomic_cas_u32(uint32_t *v, uint32_t *old, uint32_t *new)
+{
+  return __atomic_compare_exchange(v, old, new, 1, __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST);
+}
+
+#define ACCESS_ONCE(x) (*((volatile typeof(x) *) &(x)))
 
 #endif

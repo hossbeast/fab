@@ -45,7 +45,7 @@
 
 #include "macros.h"
 #include "common/color.h"
-#include "common/spinlock.h"
+#include "locks.h"
 #include "zbuffer.h"
 
 // active streams
@@ -246,7 +246,7 @@ xapi stream_write(stream *  restrict streamp, const uint64_t ids, uint32_t attrs
   // enable say
   narrator * N = streamp->narrator;
 
-  spinlock_engage(&streamp->lock);
+  spinlock_acquire(&streamp->lock, gettid());
 
   int prev = 0;
   if((attrs & LOGGER_COLOR_OPT) && (attrs & LOGGER_COLOR_OPT) != L_NOCOLOR)
@@ -434,7 +434,7 @@ xapi stream_write(stream *  restrict streamp, const uint64_t ids, uint32_t attrs
   fatal(narrator_record_flush, streamp->narrator_record);
 
 finally:
-  spinlock_release(&streamp->lock);
+  spinlock_release(&streamp->lock, gettid());
 coda;
 }
 

@@ -50,7 +50,7 @@
 #include "module.h"
 #include "path.h"
 
-#include "common/spinlock.h"
+#include "locks.h"
 #include "common/atomic.h"
 #include "macros.h"
 #include "zbuffer.h"
@@ -232,7 +232,7 @@ static xapi sweeper_thread()
 
   for(iteration = 1; !g_params.shutdown; iteration++)
   {
-    spinlock_engage(&event_queue_lock);
+    spinlock_acquire(&event_queue_lock);
     event_era++;
 
     if(!llist_empty(&event_queue))
@@ -244,7 +244,7 @@ static xapi sweeper_thread()
       }
     }
 
-    spinlock_release(&event_queue_lock);
+    spinlock_release(&event_queue_lock, gettid());
 
     /* sleep */
     next.tv_sec = start.tv_sec + (iteration * SWEEP_INTERVAL_SEC);
@@ -254,7 +254,7 @@ static xapi sweeper_thread()
   }
 
 finally:
-  spinlock_release(&event_queue_lock);
+  spinlock_release(&event_queue_lock, gettid());
 
 #if DEBUG || DEVEL
   logs(L_IPC, "terminating");
@@ -317,7 +317,7 @@ xapi sweeper_thread_enqueue(node *n, uint32_t mask, const char * restrict name, 
   rbnode *rbn;
   rbtree_search_context search_ctx;
 
-  spinlock_engage(&event_queue_lock);
+  spinlock_engage(&event_queue_lock, gettid());
 
   if(name)
   {
@@ -374,7 +374,7 @@ xapi sweeper_thread_enqueue(node *n, uint32_t mask, const char * restrict name, 
   e->era = event_era;
 
 finally:
-  spinlock_release(&event_queue_lock);
+  spinlock_release(&event_queue_lock, gettid());
 coda;
 }
 
