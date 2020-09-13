@@ -132,6 +132,8 @@ xapi API log_xstart(uint64_t ids, uint32_t attrs, narrator ** restrict N)
 {
   enter;
 
+  struct timespec times;
+
   ids |= logger_process_categories;
   ids |= logger_thread_categories;
 
@@ -147,7 +149,6 @@ xapi API log_xstart(uint64_t ids, uint32_t attrs, narrator ** restrict N)
     fatal(narrator_xreset, storage_narrator);
 
     // wall-clock milliseconds
-    struct timespec times;
     fatal(xclock_gettime, CLOCK_REALTIME_COARSE, &times);
     storage_time_msec = (times.tv_sec * 1000) + (times.tv_nsec / 1000 / 1000);
 
