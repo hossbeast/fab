@@ -20,11 +20,6 @@
 use strict;
 use warnings;
 $SIG{__WARN__} = sub { die @_ };
-$SIG{__DIE__} = sub {
-  die @_ if $^S;
-  die @_ unless $_[0] =~ /(.*) at .* line.*$/m;
-  die "$1\n"
-};
 
 use Digest::MD5;
 use File::Basename;
@@ -49,13 +44,6 @@ my %field_types = (
   , 'char**'    => { code => 6 }
 );
 
-print Dumper({
-    desc => $desc
-  , src_h => $src_h
-  , desc_h => $desc_h
-  , desc_c => $desc_c
-});
-
 # search for type_descriptor declarations
 my $path = $src_h;
 my %descriptors;
@@ -67,8 +55,6 @@ while(<FH>)
     $descriptors{$1} = [];
   }
 }
-
-#print Dumper \%descriptors;
 
 # regex to find the structs
 my $type_pat = 'struct (';
@@ -83,7 +69,6 @@ for my $name (keys %descriptors)
   $type_pat .= ')';
 }
 $type_pat .= ')';
-#print("REGEX $type_pat\n");
 $type_pat = qr/$type_pat/;
 
 my $type = undef;
@@ -95,7 +80,6 @@ while(<FH>)
     if(/$type_pat/)
     {
       $type = $1;
-#print("$. type >> $type\n");
     }
   }
   # insignificant lines
@@ -104,7 +88,6 @@ while(<FH>)
   # fields
   elsif(/^\s*([a-zA-Z0-9_ \*]+(?: |\*))([a-zA-Z0-9_]+);/)
   {
-#print("$. $1 -> $2\n");
     my $info = "$1";
     my $name = "$2";
     $info =~ s/const//g;
@@ -120,7 +103,6 @@ while(<FH>)
   elsif(/^\s*}[a-zA-Z0-9_ ]+;/)
   {
     $type = undef;
-#print("$. done\n");
   }
   else
   {
@@ -192,11 +174,6 @@ END
     $id++;
   }
 }
-
-#for my $field (@table)
-#{
-#  print FH ("    { offset : offsetof($name, $field), size : sizeof_member($name, $field) },\n");
-#}
 
 print FH <<"END";
   }

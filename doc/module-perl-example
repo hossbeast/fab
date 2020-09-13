@@ -2,6 +2,7 @@
 
 use strict;
 use warnings;
+$SIG{__WARN__} = sub { die @_ };
 
 use POSIX;
 use POSIX qw(:signal_h);

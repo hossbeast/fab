@@ -20,6 +20,7 @@
 
 use strict;
 use warnings;
+$SIG{__WARN__} = sub { die @_ };
 
 use POSIX;
 use Data::Dumper;
@@ -106,7 +107,6 @@ const char * git_commit_hash = "$commit";
 const char * git_commit_date = "$date";
 int git_dirty = $dirty;
 END
-
 
 __DATA__
 

@@ -16,20 +16,14 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with fab.  If not, see <http://www.gnu.org/licenses/>. */
+#
 
 use strict;
 use warnings;
-
 $SIG{__WARN__} = sub { die @_ };
-$SIG{__DIE__} = sub {
-  die @_ if $^S;
-  die @_ unless $_[0] =~ /(.*) at .* line.*$/m;
-  die "$1\n"
-};
 
 use Digest::MD5;
 use File::Basename;
-use Data::Dumper;
 
 my $errtab = $ENV{bm_source} or die('required: $bm_source');
 my $errtab_c = $ENV{bm_target0} or die('required: $bm_target0');

@@ -36,8 +36,6 @@ my @cmd = (
   , "-Wl,--end-group"
 );
 
-print(join(" ", @cmd) . "\n");
-
 exec { $cmd[0] } @cmd
 
 __DATA__
