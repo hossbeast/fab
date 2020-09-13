@@ -20,6 +20,7 @@
 
 #include <string.h>
 #include <stddef.h>
+#include <stdint.h>
 
 #define QUOTE(x) #x
 #define XQUOTE(x) QUOTE(x)
@@ -193,5 +194,25 @@ static inline size_t roundup2(size_t x)
 
 #define ffsll(x)   __builtin_ffsll(x)
 #define clz_u32(x) __builtin_clz(x)
+
+static inline uint32_t align(size_t x, size_t pow2)
+{
+  size_t r = x & (pow2 - 1);
+  if(!r)
+    return 0;
+
+  return pow2 - r;
+}
+
+static inline uint32_t alignp(const void *x, uint32_t pow2)
+{
+  uintptr_t xp = (uintptr_t)x;
+  uintptr_t r = xp & (pow2 - 1);
+
+  if(!r)
+    return 0;
+
+  return pow2 - r;
+}
 
 #endif
