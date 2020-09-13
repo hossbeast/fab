@@ -17,6 +17,7 @@
 
 use cc             # this module contains c sources
 use library/shared
+use library/static
 
 import libxapi
 import libxlinux
@@ -26,8 +27,12 @@ import fab/include
 variant xapi.pic.{debug,devel,final}
 
 # build the archive
-rule libcommon.?.so -> //module/targets
-rule */*.?.o -> libcommon.$?.so
+rule libcommon.?.{so,a} -> //module/targets
+rule */*.?.o -> libcommon.$?.{so,a}
+
+# direct library dependencies
+rule //module/imports/*/lib*.?.so -> libcommon.$?.so
+rule //module/imports/*/lib*.?.a -> libcommon.$?.a
 
 var : {
   cflags.pic : [ -fPIC ]
