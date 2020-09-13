@@ -170,7 +170,7 @@ static void bsexec_jump(build_slot * restrict bs)
 finally:
   if(XAPI_UNWINDING)
   {
-    xapi_backtrace();
+    xapi_backtrace(2, 0);
   }
 
 conclude(&R);

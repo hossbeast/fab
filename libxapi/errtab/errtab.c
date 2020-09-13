@@ -15,6 +15,8 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
+#include <stdlib.h>
+
 #include "types.h"
 
 #include "xapi.h"
@@ -45,6 +47,7 @@ void API xapi_errtab_stage(errtab * const restrict etab)
   if(hashtable_set(&tabmap, etab->tag, etab) == ENOMEM)
   {
     dprintf(2, "too many staged error tables ; use xapi_errtab_register\n");
+    exit(1);
   }
 }
 
