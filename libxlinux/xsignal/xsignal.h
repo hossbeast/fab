@@ -107,4 +107,6 @@ xapi uxsigwaitinfo(int * r, const sigset_t * mask, siginfo_t * info)
 //
 xapi xsignal(int signum, sighandler_t handler);
 
+const char * API signame(int signo);
+
 #endif

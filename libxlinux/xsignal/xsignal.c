@@ -23,6 +23,7 @@
 
 #include "xsignal/xsignal.h"
 #include "errtab/KERNEL.errtab.h"
+#include "sigtable.h"
 
 xapi API xkill(pid_t pid, int sig)
 {
@@ -69,6 +70,10 @@ coda;
 xapi API uxtgkill(int * r, pid_t pid, pid_t tid, int sig)
 {
   enter;
+
+  if(tid == 0) {
+    goto XAPI_FINALIZE;
+  }
 
   if(r && (*r = syscall(SYS_tgkill, pid, tid, sig)) != 0 && errno != ESRCH && errno != EINVAL)
   {
@@ -161,4 +166,13 @@ xapi API xsignal(int signum, sighandler_t handler)
 finally:
   xapi_infof("sig", "%d", signum);
 coda;
+}
+
+const char * API signame(int signo)
+{
+  if(signo < 0 || signo > sigtable_max) {
+    return 0;
+  }
+
+  return sigtable[signo];
 }
