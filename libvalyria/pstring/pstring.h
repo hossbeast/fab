@@ -51,6 +51,15 @@ xapi pscreate(pstring ** const restrict ps)
 xapi pscreatex(pstring ** const restrict ps, size_t capacity)
   __attribute__((nonnull));
 
+xapi psinit(pstring * restrict ps)
+  __attribute__((nonnull));
+
+xapi psinitx(pstring * restrict ps, size_t capacity)
+  __attribute__((nonnull));
+
+xapi psdestroy(pstring * restrict ps)
+  __attribute__((nonnull));
+
 /// psmk
 //
 // SUMMARY
