@@ -29,6 +29,12 @@ SUMMARY
 */
 
 #include "xapi.h"
+#include "narrator.h"
+
+typedef struct narrator_nullity {
+  narrator base;
+} narrator_nullity;
+
 
 /// narrator_nullity_create
 //
@@ -38,7 +44,9 @@ SUMMARY
 // PARAMETERS
 //  n - (returns) narrator
 //
-xapi narrator_nullity_create(narrator ** const restrict n)
+xapi narrator_nullity_create(narrator_nullity ** const restrict n)
   __attribute__((nonnull));
+
+xapi narrator_nullity_free(narrator_nullity * restrict n);
 
 #endif

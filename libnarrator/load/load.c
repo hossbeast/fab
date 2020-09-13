@@ -19,10 +19,9 @@
 
 #include "xlinux/load.h"
 
-#include "internal.h"
-#include "load.internal.h"
-#include "nullity.internal.h"
+#include "load.h"
 #include "fd.internal.h"
+#include "nullity.internal.h"
 
 static int handles;
 

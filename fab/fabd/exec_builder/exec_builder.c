@@ -21,7 +21,6 @@
 #include "value.h"
 #include "narrator.h"
 #include "narrator/growing.h"
-#include "narrator/fixed.h"
 #include "valyria/set.h"
 #include "valyria/list.h"
 #include "valyria/pstring.h"
@@ -203,7 +202,7 @@ xapi builder_add(exec_builder * restrict builder, const builder_add_args *args)
     }
     else if(builder->envs && args->name)
     {
-      textbase = narrator_growing_buffer(builder->Nexec);
+      textbase = builder->Nexec_growing.s;
       ctx.textbase = textbase;
       ctx.base = builder->envs;
       ctx.name = args->name;
@@ -249,21 +248,21 @@ xapi builder_add(exec_builder * restrict builder, const builder_add_args *args)
         fatal(dispatch_render_function, args->render_sep, &args->sep, builder->Nexec);
 
       // carry forward the existing definition
-      textbase = narrator_growing_buffer(builder->Nexec);
+      textbase = builder->Nexec_growing.s;
       if(args->item == BUILDER_ENVS)
       {
         eq = strchr(textbase + def, '=');
         len = strlen(eq + 1);
-        fatal(narrator_growing_allocate, builder->Nexec, len);
-        textbase = narrator_growing_buffer(builder->Nexec);
+        fatal(narrator_growing_allocate, &builder->Nexec_growing, len);
+        textbase = builder->Nexec_growing.s;
         eq = strchr(textbase + def, '=');
         fatal(narrator_xsayw, builder->Nexec, eq + 1, len);
       }
       else
       {
         len = strlen(textbase + def);
-        fatal(narrator_growing_allocate, builder->Nexec, len);
-        textbase = narrator_growing_buffer(builder->Nexec);
+        fatal(narrator_growing_allocate, &builder->Nexec_growing, len);
+        textbase = builder->Nexec_growing.s;
         fatal(narrator_xsayw, builder->Nexec, textbase + def, len);
       }
     }
@@ -275,10 +274,10 @@ xapi builder_add(exec_builder * restrict builder, const builder_add_args *args)
     if(def)
     {
       // carry forward the existing definition
-      textbase = narrator_growing_buffer(builder->Nexec);
+      textbase = builder->Nexec_growing.s;
       len = strlen(textbase + def);
-      fatal(narrator_growing_allocate, builder->Nexec, len);
-      textbase = narrator_growing_buffer(builder->Nexec);
+      fatal(narrator_growing_allocate, &builder->Nexec_growing, len);
+      textbase = builder->Nexec_growing.s;
       fatal(narrator_xsayw, builder->Nexec, textbase + def, len);
     }
     else if(args->item == BUILDER_ENVS)
@@ -308,7 +307,7 @@ xapi builder_add(exec_builder * restrict builder, const builder_add_args *args)
 
 void exec_builder_take(exec_builder * restrict builder, exec ** restrict envp)
 {
-  narrator_growing_claim_buffer(builder->Nexec, &builder->exec, &builder->exec_size);
+  narrator_growing_claim_buffer(&builder->Nexec_growing, &builder->exec, &builder->exec_size);
 
   *envp = builder->exec;
   builder->exec = 0;
@@ -345,7 +344,7 @@ xapi exec_builder_xinit(exec_builder * restrict builder)
 
   memset(builder, 0, sizeof(*builder));
 
-  builder->Nexec = narrator_growing_init(builder->Nexec_stor);
+  builder->Nexec = narrator_growing_init(&builder->Nexec_growing);
 
   // position immediately after the env struct
   fatal(narrator_xseek, builder->Nexec, sizeof(exec), NARRATOR_SEEK_SET, 0);
@@ -372,7 +371,7 @@ xapi exec_builder_xdestroy(exec_builder * restrict builder)
 {
   enter;
 
-  fatal(narrator_xdestroy, builder->Nexec);
+  fatal(narrator_growing_destroy, &builder->Nexec_growing);
   wfree(builder->args);
   wfree(builder->args_stor);
   wfree(builder->envs);
@@ -388,12 +387,12 @@ xapi exec_builder_build(exec_builder * restrict builder, exec ** restrict envp)
   int x;
   char * textbase;
 
-  textbase = narrator_growing_buffer(builder->Nexec);
+  textbase = builder->Nexec_growing.s;
   if(textbase == 0)
   {
     /* nothing has been added to the builder */
-    fatal(narrator_growing_allocate, builder->Nexec, sizeof(exec));
-    textbase = narrator_growing_buffer(builder->Nexec);
+    fatal(narrator_growing_allocate, &builder->Nexec_growing, sizeof(exec));
+    textbase = builder->Nexec_growing.s;
   }
 
   builder->exec = (typeof(builder->exec))textbase;
@@ -447,7 +446,7 @@ xapi exec_builder_build(exec_builder * restrict builder, exec ** restrict envp)
   finally : coda;
 }
 
-static xapi render_say(const char * restrict name, enum builder_render_function renderer, const union builder_render_function_args *args)
+static xapi render_say(const char * restrict name, enum builder_render_function renderer, const union builder_render_function_args *args, narrator * restrict N)
 {
   enter;
 
@@ -500,8 +499,8 @@ xapi builder_add_args_say(const exec_builder * restrict builder, const builder_a
   xsayf("name %.*s\n", (int)args->name_len, args->name);
   xsayf("name-len %hu\n", args->name_len);
   xsayf("mode %d %s\n", args->mode, args->mode == BUILDER_PREPEND ? "PREPEND" : args->mode == BUILDER_APPEND ? "APPEND" : "-wtf-");
-  fatal(render_say, "value", args->render_val, &args->val);
-  fatal(render_say, "sep", args->render_sep, &args->sep);
+  fatal(render_say, "value", args->render_val, &args->val, N);
+  fatal(render_say, "sep", args->render_sep, &args->sep, N);
 
   finally : coda;
 }

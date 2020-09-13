@@ -31,25 +31,6 @@
 
 #include "macros.h"
 
-#define NARRATOR_TYPE_TABLE       \
-  NARRATOR_TYPE_DEF(FIXED)        \
-  NARRATOR_TYPE_DEF(GROWING)      \
-  NARRATOR_TYPE_DEF(FD)           \
-  NARRATOR_TYPE_DEF(MULTI)        \
-  NARRATOR_TYPE_DEF(NULLITY)      \
-  NARRATOR_TYPE_DEF(RECORD)       \
-  NARRATOR_TYPE_DEF(ROLLING)      \
-
-typedef enum narrator_type {
-  NARRATOR_TYPE_RANGE_BEFORE = 0,
-
-#define NARRATOR_TYPE_DEF(x) NARRATOR_ ## x,
-NARRATOR_TYPE_TABLE
-#undef NARRATOR_TYPE_DEF
-
-  NARRATOR_TYPE_RANGE_AFTER
-} narrator_type;
-
 /// narrator
 //
 // SUMMARY
@@ -69,7 +50,5 @@ typedef struct narrator
     narrator_rolling rolling;
   };
 } narrator;
-
-STATIC_ASSERT(NARRATOR_STATIC_SIZE == sizeof(narrator));
 
 #endif

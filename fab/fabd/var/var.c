@@ -153,7 +153,7 @@ xapi var_denormalize(value_parser * restrict parser, variant * restrict var, val
 
   int x;
   narrator * Nkey = 0;
-  char Nstor_key[NARRATOR_STATIC_SIZE];
+  narrator_fixed Nstor_key;
   char keytext[128];
   const char *name;
   uint16_t name_len;
@@ -166,7 +166,7 @@ xapi var_denormalize(value_parser * restrict parser, variant * restrict var, val
   key.type = VALUE_TYPE_STRING;
   key.s = &ps;
 
-  Nkey = narrator_fixed_init(Nstor_key, keytext, sizeof(keytext));
+  Nkey = narrator_fixed_init(&Nstor_key, keytext, sizeof(keytext));
 
   fatal(value_set_mkv, parser, 0, 0, &vars, 0);
 

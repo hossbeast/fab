@@ -23,17 +23,6 @@
 
 #include "record.h"
 
-struct narrator;
-
-typedef struct narrator_record
-{
-  char *  s;    // buffer
-  size_t  l;    // position
-  size_t  a;    // allocated size
-
-  struct narrator * n;    // underlying narrator, (not owned)
-} narrator_record;
-
 /// record_say
 //
 // SUMMARY

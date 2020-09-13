@@ -79,7 +79,7 @@ static xapi test_merge_entry(xunit_test * _test)
   value_parser * parser = 0;
   value * src = 0;
   value * dst = 0;
-  narrator * N0 = 0;
+  narrator_growing * N0 = 0;
   xapi exit;
 
   fatal(narrator_growing_create, &N0);
@@ -88,15 +88,9 @@ static xapi test_merge_entry(xunit_test * _test)
 
   // parse
   fatal(value_parser_parse, parser, MMS(test->src), 0, 0, &src);
-//printf(">> SRC\n");
-//fatal(value_say, src, g_narrator_stdout);
-//printf("\n");
 
   if(test->dst)
     fatal(value_parser_parse, parser, MMS(test->dst), 0, 0, &dst);
-//printf(">> DST\n");
-//fatal(value_say, dst, g_narrator_stdout);
-//printf("\n");
 
   // merge
   exit = invoke(value_merge, parser, &dst, src, 0);
@@ -107,18 +101,14 @@ static xapi test_merge_entry(xunit_test * _test)
 
   if(test->exp)
   {
-//printf(">> RESULT\n");
-//fatal(value_say, dst, g_narrator_stdout);
-//printf("\n");
-
-    fatal(value_say, dst, N0);
+    fatal(value_say, dst, &N0->base);
 
     char norm[512];
     int y = 0;
     int x;
-    for (x = 0; x < narrator_growing_size(N0); x++)
+    for (x = 0; x < N0->l; x++)
     {
-      char c = narrator_growing_buffer(N0)[x];
+      char c = N0->s[x];
       if (c == '\n') { c = ' '; }
       if (c == ' ')
       {
@@ -135,9 +125,9 @@ static xapi test_merge_entry(xunit_test * _test)
 
 finally:
   fatal(value_parser_xfree, parser);
-  fatal(narrator_xfree, N0);
+  fatal(narrator_growing_free, N0);
 coda;
-} 
+}
 
 //
 // public
@@ -319,7 +309,6 @@ xunit_unit xunit = {
           src : "[ a b ]"
         , exp : "[ a b ]"
       }}
-      
     , 0
   }
 };

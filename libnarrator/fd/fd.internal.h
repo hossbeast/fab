@@ -23,11 +23,6 @@
 
 #include "fd.h"
 
-typedef struct narrator_fd
-{
-  int fd;           // file descriptor
-} narrator_fd;
-
 /// fd_setup
 //
 // SUMMARY
@@ -41,74 +36,5 @@ xapi fd_setup(void);
 //  module cleanup
 //
 xapi fd_cleanup(void);
-
-/// fd_say
-//
-// SUMMARY
-//  write to a fd_narrator
-//
-// PARAMETERS
-//  n     - fd narrator
-//  [fmt] - printf-style format string
-//  [va]  - varargs
-//  [b]   - buffer
-//  [l]   - size of buffer
-//
-xapi fd_xsayvf(narrator_fd * const restrict n, const char * const restrict fmt, va_list va)
-  __attribute__((nonnull));
-
-int fd_sayvf(narrator_fd * const restrict n, const char * const restrict fmt, va_list va)
-  __attribute__((nonnull));
-
-xapi fd_xsayw(narrator_fd * const restrict n, const char * const restrict b, size_t l);
-
-int fd_sayw(narrator_fd * const restrict n, const char * const restrict b, size_t l);
-
-/// fd_seek
-//
-// SUMMARY
-//  reposition a fd narrator
-//
-// PARAMETERS
-//  n      - narrator
-//  offset - byte offset
-//  whence - one of NARRATOR_SEEK_*, indicates how offset is interpreted
-//  [res]  - (returns) the resulting absolute offset
-//
-// REMARKS
-//  support depends on the underlying fd
-//
-xapi fd_xseek(narrator_fd * const restrict n, off_t offset, int whence, off_t * restrict res)
-  __attribute__((nonnull));
-
-off_t fd_seek(narrator_fd * const restrict n, off_t offset, int whence)
-  __attribute__((nonnull));
-
-/// fd_destroy
-//
-// SUMMARY
-//  destroy a fd narrator
-//
-void fd_destroy(narrator_fd * const restrict n)
-  __attribute__((nonnull));
-
-/// narrator_fd_read
-//
-// SUMMARY
-//  read from the underlying file descriptor
-//
-// PARAMETERS
-//  n     - fd narrator
-//  dst   - destination buffer
-//  count - number of bytes to read
-//
-// RETURNS
-//  number of bytes actually read <= count
-//
-xapi fd_xread(narrator_fd * restrict n, void * dst, size_t count, size_t * restrict r)
-  __attribute__((nonnull(1, 2)));
-
-xapi fd_flush(narrator_fd * restrict n)
-  __attribute__((nonnull));
 
 #endif
