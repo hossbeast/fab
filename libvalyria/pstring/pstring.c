@@ -55,13 +55,41 @@ static xapi __attribute__((nonnull)) psassure(pstring * const restrict ps, size_
 // api
 //
 
+xapi API psinitx(pstring * restrict ps, size_t capacity)
+{
+  enter;
+
+  fatal(psassure, ps, capacity ?: DEFAULT_CAPACITY);
+
+  finally : coda;
+}
+
+xapi API psinit(pstring * restrict ps)
+{
+  enter;
+
+  fatal(psassure, ps, DEFAULT_CAPACITY);
+
+  finally : coda;
+}
+
+xapi API psdestroy(pstring * restrict ps)
+{
+  enter;
+
+  wfree(ps->s);
+
+  finally : coda;
+}
+
 xapi API pscreatex(pstring ** const restrict rv, size_t capacity)
 {
   enter;
 
   pstring * ps = 0;
+
   fatal(xmalloc, &ps, sizeof(*ps));
-  fatal(psassure, ps, capacity ?: DEFAULT_CAPACITY);
+  fatal(psinitx, ps, capacity);
 
   *rv = ps;
   ps = 0;
