@@ -70,7 +70,6 @@
 
 #include "common/attrs.h"
 #include "macros.h"
-#include "common/atomic.h"
 
 bool g_server_autorun;
 

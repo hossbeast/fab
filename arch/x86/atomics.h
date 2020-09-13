@@ -15,8 +15,8 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef _ATOMIC
-#define _ATOMIC
+#ifndef _ATOMIC_H
+#define _ATOMIC_H
 
 /* intel syntax */
 
@@ -32,14 +32,14 @@ static inline void atomic_dec(int * v)
       : "+m" (*v));
 }
 
-static inline int atomic_cmpxchg(int * v, int old, int new)
+static inline bool atomic_cas_i32(int32_t *v, int32_t *old, int32_t *new)
 {
-  int ret;
-  asm volatile("lock cmpxchgl %2, %1"
-               : "=a" (ret), "+m" (*v)
-               : "r" (new), "0" (old)
-               : "memory");
-  return ret;
+  return __atomic_compare_exchange(v, old, new, 1, __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST);
+}
+
+static inline int atomic_cas_u32(uint32_t *v, uint32_t *old, uint32_t *new)
+{
+  return __atomic_compare_exchange(v, old, new, 1, __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST);
 }
 
 #endif

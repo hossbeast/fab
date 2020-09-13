@@ -16,6 +16,7 @@
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
 #include <string.h>
+#include <sys/syscall.h>
 
 #include "xapi.h"
 #include "types.h"
@@ -37,6 +38,8 @@
 #include "logging.h"
 
 #include "common/snarf.h"
+
+__thread int32_t tid;
 
 static xapi xmain()
 {
@@ -136,6 +139,8 @@ coda;
 int main(int argc, char ** argv, char ** envp)
 {
   enter;
+
+  tid = syscall(SYS_gettid);
 
   xapi R = 0;
   fatal(main_load, envp);

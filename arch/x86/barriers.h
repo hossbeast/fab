@@ -15,43 +15,16 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef _SPINLOCK
-#define _SPINLOCK
+#ifndef _BARRIER
+#define _BARRIER
 
-#include <sched.h>
+/* memory barrier */
+#define smp_mb() asm volatile ("mfence" ::: "memory")
 
-#include "xlinux/xunistd.h"
+/* write memory barrier */
+#define smp_wmb() asm volatile ("sfence" ::: "memory")
 
-#include "atomic.h"
-
-static inline void spinlock_engage_as(int * v, int as)
-{
-  uint16_t x;
-
-  if(*v != as)
-  {
-    for(x = 0; ; x++)
-    {
-      if(atomic_cmpxchg(v, 0, as) == 0)
-      {
-        break;
-      }
-      else if((x % 256) == 0)
-      {
-        sched_yield();
-      }
-    }
-  }
-}
-
-static inline void spinlock_engage(int * v)
-{
-  spinlock_engage_as(v, gettid());
-}
-
-static inline void spinlock_release(int * v)
-{
-  *v = 0;
-}
+/* read memory barrier */
+#define smp_rmb() asm volatile("lfence" ::: "memory")
 
 #endif
