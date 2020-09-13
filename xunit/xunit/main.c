@@ -15,6 +15,7 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
+#include <sys/syscall.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <dlfcn.h>
@@ -53,6 +54,8 @@
 #include "common/assure.h"
 #include "logging.h"
 #include "macros.h"
+
+__thread int32_t tid;
 
 static inline double pct(double a, double b)
 {
@@ -212,6 +215,9 @@ static xapi xmain()
         if(g_args.fork)
         {
           fatal(xfork, &pid);
+          if(pid == 0) {
+            tid = syscall(SYS_gettid);
+          }
         }
 
         if(!g_args.fork || pid == 0)
@@ -447,6 +453,7 @@ int main(int argc, char ** argv, char ** envp)
 
   setvbuf(stdout, NULL, _IONBF, 0);
   setvbuf(stderr, NULL, _IONBF, 0);
+  tid = syscall(SYS_gettid);
 
   xapi R = 0;
   fatal(main_load, envp);
