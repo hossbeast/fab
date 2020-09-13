@@ -34,6 +34,8 @@ cflags.devel : {
 }
 cflags.final : {
   -O3
+  # -Warray-bounds is NOT COMPATIBLE with containerof
+  -Wno-array-bounds
 }
 cflags.xunit : {
   -O0 -ggdb3 -DXUNIT -Wno-frame-address -DFAULT_INJECTION

@@ -28,11 +28,11 @@ typedef enum {
   INPUT_TEXT
 } input_type;
 
-struct g_args_t {
+extern struct g_args_t {
   struct {
     input_type type;
     enum value_type container;
-    char * s;   
+    char * s;
   } * inputs;
   uint16_t inputsl;
 } g_args;

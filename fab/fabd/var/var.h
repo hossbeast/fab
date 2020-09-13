@@ -34,7 +34,7 @@ struct variant;
 struct value_parser;
 
 /* global vars from config */
-struct value * g_var;
+extern struct value * g_var;
 
 /*
  * load a vars file

@@ -62,7 +62,7 @@ SELECTOR_TYPE_TABLE
 #undef SELECTOR_DEF
 } selector_type;
 
-struct attrs32 * selector_type_attrs;
+extern struct attrs32 * selector_type_attrs;
 
 typedef enum selector_nodeset {
 #define SELECTOR_DEF(x, s, r, y) x = UINT32_C(y),
@@ -70,7 +70,7 @@ SELECTOR_NODESET_TABLE
 #undef SELECTOR_DEF
 } selector_nodeset;
 
-struct attrs32 * selector_nodeset_attrs;
+extern struct attrs32 * selector_nodeset_attrs;
 
 struct selector;
 typedef struct selector {
