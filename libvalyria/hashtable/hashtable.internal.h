@@ -86,7 +86,7 @@ typedef struct ht_bucket
 {
   uint32_t attr;   // options and modifiers
   uint32_t h;      // hash
-  char     p[];    // payload
+  char __attribute__((aligned(8))) p[];    // payload
 } ht_bucket;
 
 typedef struct hashtable_t {

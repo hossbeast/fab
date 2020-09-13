@@ -191,7 +191,7 @@ int hashtable_probe(const hashtable_t * const restrict ht, uint32_t h, void * en
       {
         return 0;
       }
-      else if(ht->ops->compare_entries(ht, ent, b->p) == 0)
+      else if(!cmp && ht->ops->compare_entries(ht, ent, b->p) == 0)
       {
         return 0;
       }
@@ -462,7 +462,7 @@ void * API hashtable_get(const hashtable * restrict htx, void * entry)
   return 0;
 }
 
-void * hashtable_search(const hashtable * restrict htx, void * key, size_t key_len, hashtable_hash hash, hashtable_cmp cmp)
+void * API hashtable_search(const hashtable * restrict htx, void * key, size_t key_len, hashtable_hash hash, hashtable_cmp cmp)
 {
   size_t i;
   uint32_t h;
