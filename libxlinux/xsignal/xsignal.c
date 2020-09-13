@@ -37,7 +37,7 @@ finally:
 coda;
 }
 
-xapi API uxkill(pid_t pid, int sig, int * r)
+xapi API uxkill(int * restrict r, pid_t pid, int sig)
 {
   enter;
 
@@ -58,7 +58,9 @@ xapi API xtgkill(pid_t pid, pid_t tid, int sig)
   enter;
 
   if(syscall(SYS_tgkill, pid, tid, sig) != 0)
+  {
     tfail(perrtab_KERNEL, errno);
+  }
 
 finally:
   xapi_infof("pid", "%ld", (long)pid);
@@ -71,11 +73,11 @@ xapi API uxtgkill(int * r, pid_t pid, pid_t tid, int sig)
 {
   enter;
 
-  if(r && (*r = syscall(SYS_tgkill, pid, tid, sig)) != 0 && errno != ESRCH && errno != EINVAL)
+  if(r && (*r = syscall(SYS_tgkill, pid, tid, sig)) != 0 && errno != ESRCH)
   {
     tfail(perrtab_KERNEL, errno);
   }
-  else if(!r && syscall(SYS_tgkill, pid, tid, sig) != 0 && errno != ESRCH && errno != EINVAL)
+  else if(!r && syscall(SYS_tgkill, pid, tid, sig) != 0 && errno != ESRCH)
   {
     tfail(perrtab_KERNEL, errno);
   }
@@ -152,6 +154,27 @@ xapi API uxsigwaitinfo(int * r, const sigset_t * mask, siginfo_t * info)
   finally : coda;
 }
 
+xapi API uxsigtimedwait(int * restrict err, const sigset_t * restrict set, siginfo_t * restrict info, const struct timespec * restrict timeout)
+{
+  enter;
+
+  int r;
+
+  if((r = sigtimedwait(set, info, timeout)) == -1)
+  {
+    *err = errno;
+    if(*err != EAGAIN && *err != EINTR) {
+      tfail(perrtab_KERNEL, *err);
+    }
+  }
+  else
+  {
+    *err = 0;
+  }
+
+  finally : coda;
+}
+
 xapi API xsignal(int signum, sighandler_t handler)
 {
   enter;
@@ -162,6 +185,30 @@ xapi API xsignal(int signum, sighandler_t handler)
 finally:
   xapi_infof("sig", "%d", signum);
 coda;
+}
+
+xapi API uxrt_sigqueueinfo(int * restrict r, pid_t tgid, int sig, siginfo_t *info)
+{
+  enter;
+
+  if(((*r) = syscall(SYS_rt_sigqueueinfo, tgid, sig, info)) == -1 && errno != ESRCH)
+  {
+    tfail(perrtab_KERNEL, errno);
+  }
+
+  finally : coda;
+}
+
+xapi API uxrt_tgsigqueueinfo(int * restrict r, pid_t tgid, pid_t tid, int sig, siginfo_t *info)
+{
+  enter;
+
+  if(((*r) = syscall(SYS_rt_tgsigqueueinfo, tgid, tid, sig, info)) == -1 && errno != ESRCH)
+  {
+    tfail(perrtab_KERNEL, errno);
+  }
+
+  finally : coda;
 }
 
 const char * API signame(int signo)
