@@ -21,7 +21,6 @@
 #include "xapi/exit.h"
 #include "xlinux/xstdlib.h"
 #include "xlinux/KERNEL.errtab.h"
-#include "valyria/hashtable.h"
 
 #include "parser.internal.h"
 #include "scanner.internal.h"
@@ -36,19 +35,6 @@
 //
 // static
 //
-
-static uint32_t str_token_hash(uint32_t h, const void * _ent, size_t entsz)
-{
-  const str_token_entry * ent = _ent;
-  return hash32(h, ent->name, ent->namel);
-}
-
-static int str_token_cmp(const void * _A, size_t Asz, const void * _B, size_t Bsz)
-{
-  const str_token_entry * A = _A;
-  const str_token_entry * B = _B;
-  return memncmp(A->name, A->namel, B->name, B->namel);
-}
 
 static xapi reduce(yyu_parser * parser, uint16_t attrs)
 {
@@ -106,8 +92,8 @@ xapi API yyu_parser_xdestroy(yyu_parser * const parser)
   enter;
 
   wfree(parser->last_lval);
-  fatal(hashtable_xfree, parser->str_token_table);
   parser->vtable->yylex_destroy(parser->scanner);
+  wfree(parser->token_table_bytoken);
 
   finally : coda;
 }
@@ -123,110 +109,87 @@ xapi API yyu_parser_init(
   parser->vtable = vtable;
   parser->error_syntax = error_syntax;
 
-  fatal(hashtable_createx, &parser->str_token_table, sizeof(str_token_entry), 16, str_token_hash, str_token_cmp, 0, 0);
   fatalize(KERNEL_ENOMEM, parser->vtable->yylex_init, &parser->scanner);
 
   finally : coda;
 }
 
-xapi API yyu_parser_init_tokens(
-    yyu_parser * const restrict parser
-  , uint16_t numtokens
-  , uint16_t mintoken
-  , uint16_t maxtoken
-  , const uint16_t * tokenindexes
-  , const uint16_t * tokennumbers
-  , const char ** tokennames
-  , const char ** tokenstrings
-  , const uint16_t * tokenstring_tokens
-)
+xapi API yyu_parser_init_tokens(yyu_parser * const restrict parser, const yyu_token * restrict token_table, uint16_t token_table_size)
 {
   enter;
 
   int x;
 
-  parser->numtokens = numtokens;
-  parser->mintoken = mintoken;
-  parser->maxtoken = maxtoken;
-  parser->tokenindexes = tokenindexes;
-  parser->tokennumbers = tokennumbers;
-  parser->tokennames = tokennames;
-
-  // find the tokenstring base
-  for(x = 0 ;; x++)
-  {
-    if(tokenstrings[x] == 0)
-      break;
-
-    if(tokenstring_tokens[x] == mintoken)
-    {
-      parser->tokenstrings = &tokenstrings[x];
-      break;
-    }
-  }
+  /* token_table is pre-sorted by token->string */
+  parser->token_table = token_table;
+  parser->token_table_size = token_table_size;
 
 #if DEBUG || DEVEL || XUNIT
-
-  logf(parser->logs | L_YYUTIL | L_PARSER, "numtokens %d", parser->numtokens);
-  logf(parser->logs | L_YYUTIL | L_PARSER, "mintoken %d", parser->mintoken);
-  logf(parser->logs | L_YYUTIL | L_PARSER, "maxtoken %d", parser->maxtoken);
-  for(x = 0; x < numtokens; x++)
+  logf(parser->logs | L_YYUTIL | L_PARSER, "numtokens %d", parser->token_table_size);
+  for(x = 0; x < token_table_size; x++)
   {
     logf(parser->logs | L_YYUTIL | L_PARSER, "%2d %3d %-10s %s"
       , x
-      , parser->tokennumbers[x]
-      , parser->tokennames[x]
-      , parser->tokenstrings[x]
+      , parser->token_table[x].number
+      , parser->token_table[x].name
+      , parser->token_table[x].string
     );
   }
 #endif
 
-  memset(&parser->tokens, 0xff, sizeof(parser->tokens));
+  // set of indexes sorted by token
+  fatal(xmalloc, &parser->token_table_bytoken, sizeof(*parser->token_table_bytoken) * parser->token_table_size);
+  for(x = 0; x < token_table_size; x++)
+  {
+    parser->token_table_bytoken[x] = &parser->token_table[x];
+  }
+  qsort(parser->token_table_bytoken, token_table_size, sizeof(*parser->token_table_bytoken), token_table_bytoken_cmp_items);
 
   // find particular tokens
-  for(x = 0; x < numtokens; x++)
+  memset(&parser->tokens, 0xff, sizeof(parser->tokens));
+  for(x = 0; x < token_table_size; x++)
   {
-    if(strcmp(parser->tokennames[x], "STR") == 0)
+    if(strcmp(parser->token_table[x].name, "STR") == 0)
       parser->tokens.STR = x;
-    else if(strcmp(parser->tokennames[x], "CREF") == 0)
+    else if(strcmp(parser->token_table[x].name, "CREF") == 0)
       parser->tokens.CREF = x;
-    else if(strcmp(parser->tokennames[x], "HREF") == 0)
+    else if(strcmp(parser->token_table[x].name, "HREF") == 0)
       parser->tokens.HREF = x;
-    else if(strcmp(parser->tokennames[x], "BOOL") == 0)
+    else if(strcmp(parser->token_table[x].name, "BOOL") == 0)
       parser->tokens.BOOL = x;
-    else if(strcmp(parser->tokennames[x], "FLOAT") == 0)
+    else if(strcmp(parser->token_table[x].name, "FLOAT") == 0)
       parser->tokens.FLOAT = x;
-    else if (strcmp(parser->tokennames[x], "HEX8") == 0)
+    else if(strcmp(parser->token_table[x].name, "HEX8") == 0)
       parser->tokens.HEX8 = x;
-    else if (strcmp(parser->tokennames[x], "HEX16") == 0)
+    else if(strcmp(parser->token_table[x].name, "HEX16") == 0)
       parser->tokens.HEX16 = x;
-    else if(strcmp(parser->tokennames[x], "HEX32") == 0)
+    else if(strcmp(parser->token_table[x].name, "HEX32") == 0)
       parser->tokens.HEX32 = x;
-    else if(strcmp(parser->tokennames[x], "HEX64") == 0)
+    else if(strcmp(parser->token_table[x].name, "HEX64") == 0)
       parser->tokens.HEX64 = x;
-    else if (strcmp(parser->tokennames[x], "UINTMAX8") == 0)
+    else if(strcmp(parser->token_table[x].name, "UINTMAX8") == 0)
       parser->tokens.UINTMAX8 = x;
-    else if (strcmp(parser->tokennames[x], "UINTMAX16") == 0)
+    else if(strcmp(parser->token_table[x].name, "UINTMAX16") == 0)
       parser->tokens.UINTMAX16 = x;
-    else if(strcmp(parser->tokennames[x], "UINTMAX32") == 0)
+    else if(strcmp(parser->token_table[x].name, "UINTMAX32") == 0)
       parser->tokens.UINTMAX32 = x;
-    else if(strcmp(parser->tokennames[x], "UINTMAX64") == 0)
+    else if(strcmp(parser->token_table[x].name, "UINTMAX64") == 0)
       parser->tokens.UINTMAX64 = x;
-    else if(strcmp(parser->tokennames[x], "INTMIN8") == 0)
+    else if(strcmp(parser->token_table[x].name, "INTMIN8") == 0)
       parser->tokens.INTMIN8 = x;
-    else if(strcmp(parser->tokennames[x], "INTMIN16") == 0)
+    else if(strcmp(parser->token_table[x].name, "INTMIN16") == 0)
       parser->tokens.INTMIN16 = x;
-    else if(strcmp(parser->tokennames[x], "INTMIN32") == 0)
+    else if(strcmp(parser->token_table[x].name, "INTMIN32") == 0)
       parser->tokens.INTMIN32 = x;
-    else if(strcmp(parser->tokennames[x], "INTMIN64") == 0)
+    else if(strcmp(parser->token_table[x].name, "INTMIN64") == 0)
       parser->tokens.INTMIN64 = x;
-    else if(strcmp(parser->tokennames[x], "INTMAX8") == 0)
+    else if(strcmp(parser->token_table[x].name, "INTMAX8") == 0)
       parser->tokens.INTMAX8 = x;
-    else if(strcmp(parser->tokennames[x], "INTMAX16") == 0)
+    else if(strcmp(parser->token_table[x].name, "INTMAX16") == 0)
       parser->tokens.INTMAX16 = x;
-    else if(strcmp(parser->tokennames[x], "INTMAX32") == 0)
+    else if(strcmp(parser->token_table[x].name, "INTMAX32") == 0)
       parser->tokens.INTMAX32 = x;
-    else if(strcmp(parser->tokennames[x], "INTMAX64") == 0)
+    else if(strcmp(parser->token_table[x].name, "INTMAX64") == 0)
       parser->tokens.INTMAX64 = x;
   }
 
@@ -267,7 +230,7 @@ xapi API yyu_parse(
   size_t plen;
 
   // reset state for this parse
-  memset(&parser->scanerr, 0, offsetof(typeof(*parser), str_token_table));
+  memset(&parser->scanerr, 0, offsetof(typeof(*parser), end_of_per_parse_state));
 
   // create state specific to this parse
   if(attrs & YYU_INPLACE)
@@ -328,44 +291,4 @@ xapi API yyu_parse(
 finally:
   parser->vtable->yy_delete_buffer(state, parser->scanner);
 coda;
-}
-
-xapi API yyu_define_tokenrange(yyu_parser * restrict parser, int first, int last)
-{
-  enter;
-
-  int x;
-  bool in = false;
-
-  for(x = 0; x < parser->numtokens; x++)
-  {
-    if(in || parser->tokennumbers[x] == first)
-    {
-      in = true;
-
-      uint16_t token = parser->tokennumbers[x];
-      const char * name = parser->tokenstrings[x];
-      size_t namel = strlen(name);
-
-      if(namel >= 2 && name[0] == '"' && name[namel - 1] == '"')
-      {
-        name++;
-        namel -= 2;
-      }
-
-      str_token_entry entry = {
-          token : token
-        , lval : token
-        , name : name
-        , namel : namel
-      };
-
-      fatal(hashtable_put, parser->str_token_table, &entry);
-    }
-
-    if(parser->tokennumbers[x] == last)
-      break;
-  }
-
-  finally : coda;
 }

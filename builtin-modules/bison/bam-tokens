@@ -20,21 +20,20 @@
 
 use strict;
 use warnings;
+$SIG{__WARN__} = sub { die @_ };
 
 my $tabc = $ENV{bm_source};
 my $tokens_c = substr($ENV{bm_target0}, -2) eq ".c" ? $ENV{bm_target0} : $ENV{bm_target1};
 my $tokens_h = substr($ENV{bm_target0}, -2) eq ".h" ? $ENV{bm_target0} : $ENV{bm_target1};
 
-$tokens_c =~ m|(?:[^/]*/)?([^.]+)|;
+$tokens_c =~ m|/([^./]+)[.]tokens[.]c$|;
 my $pfx = "$1";
 
 my %yytokentype;
 my @yytname;
 my @yytoknum;
-my $mintoken = 0xffff;
-my $maxtoken = 0;
-my $numtokens = 0;
 
+# snarf bison datastructures
 open my $fh, "<$tabc" or die $!;
 my $mode = '';
 while(my $line = <$fh>)
@@ -46,12 +45,17 @@ while(my $line = <$fh>)
   }
   elsif($mode eq 'yytokentype')
   {
-    if($line =~ /([A-Z0-9_]+) = ([0-9]+)/)
+    if($line =~ m/^\s*{\s*$/)
+    {
+
+    }
+    elsif($line =~ m/^\s*([A-Z0-9_]+) = (-?[0-9]+),?/i)
     {
       $yytokentype{$2} = $1;
-      $mintoken = $2 if $2 < $mintoken;
-      $maxtoken = $2 if $2 > $maxtoken;
-      $numtokens++;
+    }
+    else
+    {
+      die "unexpected line";
     }
   }
   elsif($line =~ /^\s+enum [a-z_]+_yytokentype$/)
@@ -73,7 +77,7 @@ while(my $line = <$fh>)
   {
     while($line =~ m/[0-9]+/g)
     {
-      push @yytoknum, $&;
+      push @yytoknum, int($&);
     }
   }
   elsif($line =~ /static const yytype_int16 yytoknum/)
@@ -81,6 +85,31 @@ while(my $line = <$fh>)
     $mode = 'yytoknum';
   }
 }
+
+# build the token table
+my @tokens;
+for(my $x = 0; $x < scalar(@yytoknum); $x++)
+{
+  my $token = $x;
+  my $symbol = $yytoknum[$x];
+  my $string = $yytname[$x];
+  my $name = $yytokentype{$symbol};
+
+  # skip tokens with no name, such as punctuation characters
+  next unless $name;
+
+  # skip bison-implementation tokens
+  next if $name =~ /yyeof/i;
+  next if $name =~ /yyerror/i;
+
+  $string =~ s/^\\"//;
+  $string =~ s/\\"$//;
+
+  push @tokens, { name => $name, string => $string, string_len => length($string), number => $symbol };
+}
+
+@tokens = sort { $$a{string} cmp $$b{string} } @tokens;
+my $numtokens = scalar(@tokens);
 
 #
 # c file
@@ -90,58 +119,14 @@ close $fh;
 open $fh, ">$tokens_c" or die $!;
 print $fh <<END;
 #include <stdint.h>
-#define ${pfx}_MINTOKEN ${mintoken}
-#define ${pfx}_MAXTOKEN ${maxtoken}
-uint16_t ${pfx}_mintoken = ${pfx}_MINTOKEN;
-uint16_t ${pfx}_maxtoken = ${pfx}_MAXTOKEN;
-uint16_t ${pfx}_numtokens = ${numtokens};
-const uint16_t * ${pfx}_tokenindexes = (uint16_t[]) {
+#include "yyutil/parser.h"
+const struct yyu_token * ${pfx}_token_table = (struct yyu_token[]) {
 END
 
-my $x = 0;
-for my $k (sort keys %yytokentype)
-{
-  print $fh("[$k - ${pfx}_MINTOKEN] = " . ($x++) . ",\n");
-}
-
-print $fh <<END;
-};
-const char ** ${pfx}_tokennames = (const char *[]) {
+for my $tok (@tokens) {
+  print $fh <<END;
+    { number : $$tok{number}, name : "$$tok{name}", string_len : $$tok{string_len}, string : "$$tok{string}" },
 END
-
-for my $k (sort keys %yytokentype)
-{
-  print $fh('"' . $yytokentype{$k} . '",'."\n");
-}
-
-print $fh <<END;
-};
-const char ** ${pfx}_tokenstrings = (const char *[]) {
-END
-
-for my $k (@yytname)
-{
-  print $fh('"' . $k . '",' . "\n");
-}
-
-print $fh <<END;
-};
-const uint16_t * ${pfx}_tokenstring_tokens = (uint16_t []) {
-END
-
-for my $k (@yytoknum)
-{
-  print $fh($k . ",\n");
-}
-
-print $fh <<END;
-};
-uint16_t * ${pfx}_tokennumbers = (uint16_t []) {
-END
-
-for my $k (sort keys %yytokentype)
-{
-  print $fh($k . ",\n");
 }
 
 print $fh <<END;
@@ -158,16 +143,9 @@ print $fh <<END;
 #ifndef ${pfx}_TOKENS_H
 #define ${pfx}_TOKENS_H
 #include <stdint.h>
-#define ${pfx}_MINTOKEN ${mintoken}
-#define ${pfx}_MAXTOKEN ${maxtoken}
-extern uint16_t ${pfx}_numtokens;
-extern uint16_t ${pfx}_mintoken;
-extern uint16_t ${pfx}_maxtoken;
-extern uint16_t * ${pfx}_tokenindexes;
-extern uint16_t * ${pfx}_tokennumbers;
-extern const char ** ${pfx}_tokennames;
-extern const char ** ${pfx}_tokenstrings;
-extern const uint16_t * ${pfx}_tokenstring_tokens;
+#include "yyutil/parser.h"
+extern struct yyu_token * ${pfx}_token_table;
+#define ${pfx}_TOKEN_TABLE_SIZE @{[scalar(@tokens)]}
 enum ${pfx}_tokens {
 END
 
