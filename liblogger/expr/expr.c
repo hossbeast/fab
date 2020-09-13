@@ -110,6 +110,13 @@ int expr_validate(const char * restrict expr, int resolve)
     while(y < exprl && expr[y] != ' ' && expr[y] != '\t')
       y++;
 
+    /* any logger expression must be at least 3 characters
+     *  fixes '-V' as an  argument
+     */
+    if((y > x) && (y - x) < 3) {
+      return 0;
+    }
+
     if(y > x)
     {
       filter f;
