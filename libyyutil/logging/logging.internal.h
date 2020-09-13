@@ -28,7 +28,6 @@ extern logger_category * categories;
 #if DEBUG || DEVEL || XUNIT
 #define L_PARSER    categories[1].id
 #define L_TOKENS    categories[2].id
-#define L_STATES    categories[3].id
 #endif
 
 /// logging_setup

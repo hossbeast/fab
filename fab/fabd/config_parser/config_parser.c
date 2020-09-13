@@ -53,19 +53,7 @@ xapi config_parser_create(config_parser ** rv)
   fatal(xmalloc, &p, sizeof(*p));
 
   fatal(yyu_parser_init, &p->yyu, &vtable, CONFIG_SYNTAX);
-
-  fatal(yyu_parser_init_tokens
-    , &p->yyu
-    , config_numtokens
-    , config_mintoken
-    , config_maxtoken
-    , config_tokenindexes
-    , config_tokennumbers
-    , config_tokennames
-    , config_tokenstrings
-    , config_tokenstring_tokens
-  );
-
+  fatal(yyu_parser_init_tokens, &p->yyu, config_token_table, config_TOKEN_TABLE_SIZE);
   fatal(yyu_parser_init_states
     , &p->yyu
     , config_numstates
@@ -77,7 +65,7 @@ xapi config_parser_create(config_parser ** rv)
   p->yyu.logs = L_CONFIG;
 #endif
 
-  fatal(yyu_define_tokenrange, &p->yyu, config_BUILD, config_NONE);
+//  fatal(yyu_define_tokenrange, &p->yyu, config_BUILD, config_NONE);
 
   // configure sub-parsers
   fatal(value_parser_create, &p->value_parser);

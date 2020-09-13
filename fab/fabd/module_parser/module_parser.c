@@ -251,17 +251,7 @@ xapi module_parser_create(module_parser ** rv)
 
   fatal(yyu_parser_init, &p->yyu, &vtable, MODULE_SYNTAX);
 
-  fatal(yyu_parser_init_tokens
-    , &p->yyu
-    , module_numtokens
-    , module_mintoken
-    , module_maxtoken
-    , module_tokenindexes
-    , module_tokennumbers
-    , module_tokennames
-    , module_tokenstrings
-    , module_tokenstring_tokens
-  );
+  fatal(yyu_parser_init_tokens, &p->yyu, module_token_table, module_TOKEN_TABLE_SIZE);
 
   fatal(yyu_parser_init_states
     , &p->yyu
@@ -274,7 +264,7 @@ xapi module_parser_create(module_parser ** rv)
   p->yyu.logs = L_MODULE;
 #endif
 
-  fatal(yyu_define_tokenrange, &p->yyu, module_AS, module_VARIANT);
+//  fatal(yyu_define_tokenrange, &p->yyu, module_AS, module_VARIANT);
 
 //  fatal(value_parser_create, &p->value_parser);
   fatal(pattern_parser_create, &p->pattern_parser);

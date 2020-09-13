@@ -192,17 +192,7 @@ xapi formula_parser_create(formula_parser ** const rv)
   fatal(xmalloc, &p, sizeof(*p));
   fatal(yyu_parser_init, &p->yyu, &vtable, FORMULA_SYNTAX);
 
-  fatal(yyu_parser_init_tokens
-    , &p->yyu
-    , formula_numtokens
-    , formula_mintoken
-    , formula_maxtoken
-    , formula_tokenindexes
-    , formula_tokennumbers
-    , formula_tokennames
-    , formula_tokenstrings
-    , formula_tokenstring_tokens
-  );
+  fatal(yyu_parser_init_tokens, &p->yyu, formula_token_table, formula_TOKEN_TABLE_SIZE);
 
   fatal(yyu_parser_init_states
     , &p->yyu
@@ -215,7 +205,7 @@ xapi formula_parser_create(formula_parser ** const rv)
   p->yyu.logs = L_FORMULA;
 #endif
 
-  fatal(yyu_define_tokenrange, &p->yyu, formula_ARGS, formula_SUFFIX);
+//  fatal(yyu_define_tokenrange, &p->yyu, formula_ARGS, formula_SUFFIX);
 
   fatal(selector_parser_create, &p->selector_parser);
 

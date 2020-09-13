@@ -75,17 +75,7 @@ xapi API value_parser_create(value_parser ** const rp)
 
   // value
   fatal(yyu_parser_init, &p->value_yyu, &value_vtable, VALUE_SYNTAX);
-  fatal(yyu_parser_init_tokens
-    , &p->value_yyu
-    , value_numtokens
-    , value_mintoken
-    , value_maxtoken
-    , value_tokenindexes
-    , value_tokennumbers
-    , value_tokennames
-    , value_tokenstrings
-    , value_tokenstring_tokens
-  );
+  fatal(yyu_parser_init_tokens, &p->value_yyu, value_token_table, value_TOKEN_TABLE_SIZE);
   fatal(yyu_parser_init_states
     , &p->value_yyu
     , value_numstates
@@ -95,17 +85,7 @@ xapi API value_parser_create(value_parser ** const rp)
 
   // value-set
   fatal(yyu_parser_init, &p->value_set_yyu, &value_set_vtable, VALUE_SYNTAX);
-  fatal(yyu_parser_init_tokens
-    , &p->value_set_yyu
-    , value_set_numtokens
-    , value_set_mintoken
-    , value_set_maxtoken
-    , value_set_tokenindexes
-    , value_set_tokennumbers
-    , value_set_tokennames
-    , value_set_tokenstrings
-    , value_set_tokenstring_tokens
-  );
+  fatal(yyu_parser_init_tokens, &p->value_set_yyu, value_set_token_table, value_set_TOKEN_TABLE_SIZE);
   fatal(yyu_parser_init_states
     , &p->value_set_yyu
     , value_numstates
@@ -115,17 +95,7 @@ xapi API value_parser_create(value_parser ** const rp)
 
   // value-list
   fatal(yyu_parser_init, &p->value_list_yyu, &value_list_vtable, VALUE_SYNTAX);
-  fatal(yyu_parser_init_tokens
-    , &p->value_list_yyu
-    , value_list_numtokens
-    , value_list_mintoken
-    , value_list_maxtoken
-    , value_list_tokenindexes
-    , value_list_tokennumbers
-    , value_list_tokennames
-    , value_list_tokenstrings
-    , value_list_tokenstring_tokens
-  );
+  fatal(yyu_parser_init_tokens, &p->value_list_yyu, value_list_token_table, value_list_TOKEN_TABLE_SIZE);
   fatal(yyu_parser_init_states
     , &p->value_list_yyu
     , value_numstates

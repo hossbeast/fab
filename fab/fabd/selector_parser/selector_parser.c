@@ -52,17 +52,7 @@ xapi selector_parser_create(selector_parser ** rv)
   fatal(xmalloc, &p, sizeof(*p));
   fatal(yyu_parser_init, &p->yyu, &vtable, SELECTOR_SYNTAX);
 
-  fatal(yyu_parser_init_tokens
-    , &p->yyu
-    , selector_numtokens
-    , selector_mintoken
-    , selector_maxtoken
-    , selector_tokenindexes
-    , selector_tokennumbers
-    , selector_tokennames
-    , selector_tokenstrings
-    , selector_tokenstring_tokens
-  );
+  fatal(yyu_parser_init_tokens, &p->yyu, selector_token_table, selector_TOKEN_TABLE_SIZE);
 
   fatal(yyu_parser_init_states
     , &p->yyu
@@ -75,7 +65,7 @@ xapi selector_parser_create(selector_parser ** rv)
   p->yyu.logs = L_SELECTOR;
 #endif
 
-  fatal(yyu_define_tokenrange, &p->yyu, selector_ALL, selector_UP);
+//  fatal(yyu_define_tokenrange, &p->yyu, selector_ALL, selector_UP);
   fatal(pattern_parser_create, &p->pattern_parser);
 
   llist_init_node(&p->selector_stack);

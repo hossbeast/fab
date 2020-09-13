@@ -20,15 +20,4 @@
 
 #include "parser.h"
 
-struct attrs;
-struct member;
-
-typedef struct str_token_entry
-{
-  int token;
-  const char * name;
-  uint16_t namel;
-  int lval;
-} str_token_entry;
-
 #endif
