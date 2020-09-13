@@ -20,6 +20,7 @@
 
 use strict;
 use warnings;
+$SIG{__WARN__} = sub { die @_ };
 
 die "cc not found" unless $ENV{cc};
 

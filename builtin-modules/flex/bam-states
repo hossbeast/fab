@@ -20,6 +20,7 @@
 
 use strict;
 use warnings;
+$SIG{__WARN__} = sub { die @_ };
 
 my $lexh = $ENV{bm_source};
 my $states_c = substr($ENV{bm_target0}, -2) eq ".c" ? $ENV{bm_target0} : $ENV{bm_target1};
