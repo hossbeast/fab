@@ -64,22 +64,6 @@ static bool should_quote(const char * const restrict s, size_t len)
   return x < len;
 }
 
-static size_t escape(void * restrict dst, size_t sz, const char * const restrict src, size_t len)
-{
-  size_t z  = 0;
-
-  int x;
-  for(x = 0; x < len; x++)
-  {
-    if(src[x] >= 0x20 && src[x] <= 0x7e)
-      z += znloadc(dst + z, sz - z, src[x]);
-    else
-      z += znloadf(dst + z, sz - z, "\\x%02hhx", src[x]);
-  }
-
-  return z;
-}
-
 static xapi indent(value_writer * const restrict writer)
 {
   enter;
@@ -107,19 +91,40 @@ static xapi indent(value_writer * const restrict writer)
   finally : coda;
 }
 
+static xapi push_scalar(value_writer * const restrict writer)
+{
+  enter;
+
+  if(writer->scalar++ == 0) {
+    fatal(indent, writer);
+  }
+
+  finally : coda;
+}
+
+static xapi pop_scalar(value_writer * const restrict writer)
+{
+  enter;
+
+  writer->scalar--;
+
+  finally : coda;
+}
+
 static xapi write_bytes(value_writer * const restrict writer, const char * const restrict s, size_t len)
 {
   enter;
 
   int x;
   char buf[512];
+  size_t z;
 
-  if(should_quote(s, len))
+  if(!writer->noquote && should_quote(s, len))
   {
     fatal(narrator_xsayc, writer->N, '"');
     for(x = 0; x < len; x += sizeof(buf))
     {
-      size_t z = escape(buf, sizeof(buf), &s[x], MIN(sizeof(buf), len - x));
+      z = value_string_znloadw(buf, sizeof(buf), &s[x], MIN(sizeof(buf), len - x));
       fatal(narrator_xsayw, writer->N, buf, z);
     }
     fatal(narrator_xsayc, writer->N, '"');
@@ -267,6 +272,24 @@ xapi API value_writer_close(value_writer * restrict writer)
 // primitives
 //
 
+size_t API value_string_znloadw(void * restrict dst, size_t sz, const void * restrict b, size_t bz)
+{
+  size_t z  = 0;
+  const char *src;
+
+  src = b;
+  int x;
+  for(x = 0; x < bz; x++)
+  {
+    if(src[x] >= 0x20 && src[x] <= 0x7e)
+      z += znloadc(dst + z, sz - z, src[x]);
+    else
+      z += znloadf(dst + z, sz - z, "\\x%02hhx", src[x]);
+  }
+
+  return z;
+}
+
 xapi API value_writer_value(value_writer * const restrict writer, const value * restrict val)
 {
   enter;
@@ -374,8 +397,9 @@ xapi API value_writer_bytes(value_writer * const restrict writer, const char * c
 {
   enter;
 
-  fatal(indent, writer);
+  fatal(push_scalar, writer);
   fatal(write_bytes, writer, s, len);
+  fatal(pop_scalar, writer);
 
   finally : coda;
 }
@@ -404,9 +428,35 @@ xapi API value_writer_variable(value_writer * const restrict writer, const char 
 {
   enter;
 
-  fatal(indent, writer);
+  fatal(push_scalar, writer);
   fatal(narrator_xsayc, writer->N, '$');
   fatal(narrator_xsayw, writer->N, name, len);
+  fatal(pop_scalar, writer);
+
+  finally : coda;
+}
+
+//
+// string - incremental encoding
+//
+
+xapi API value_writer_bytes_start(value_writer * const restrict writer, narrator ** restrict N)
+{
+  enter;
+
+  writer->noquote = true;
+  fatal(push_scalar, writer);
+  *N = writer->N;
+
+  finally : coda;
+}
+
+xapi API value_writer_bytes_finish(value_writer * const restrict writer)
+{
+  enter;
+
+  fatal(pop_scalar, writer);
+  writer->noquote = false;
 
   finally : coda;
 }

@@ -319,7 +319,6 @@ xunit_unit xunit = {
           src : "[ a b ]"
         , exp : "[ a b ]"
       }}
-      
     , 0
   }
 };

@@ -29,6 +29,8 @@ struct value;
 typedef struct value_writer {
   struct narrator * N;
 
+  int scalar;       // nesting of scalar calls
+  bool noquote;
   bool any;         // whether anything has been written
   int mapping;      // true while a map entry is being written across calls
 
@@ -97,10 +99,16 @@ xapi value_writer_float(value_writer * const restrict writer, double f)
 xapi value_writer_string(value_writer * const restrict writer, const char * const restrict s)
   __attribute__((nonnull(1)));
 
+xapi value_writer_variable(value_writer * const restrict writer, const char * const restrict name, size_t len)
+  __attribute__((nonnull));
+
 xapi value_writer_bytes(value_writer * const restrict writer, const char * const restrict s, size_t len)
   __attribute__((nonnull(1)));
 
-xapi value_writer_variable(value_writer * const restrict writer, const char * const restrict name, size_t len)
+xapi value_writer_bytes_start(value_writer * const restrict writer, struct narrator ** restrict N)
+  __attribute__((nonnull));
+
+xapi value_writer_bytes_finish(value_writer * const restrict writer)
   __attribute__((nonnull));
 
 //

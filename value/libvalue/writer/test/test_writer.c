@@ -125,8 +125,6 @@ static xapi test_set(xunit_test * _test)
 
   writer_test * test = (typeof(test))_test;
 
-//printf("\n++ %s\n", __FUNCTION__);
-
   value_writer * writer = 0;
   fatal(value_writer_create, &writer);
   fatal(value_writer_open, writer, g_narrator_stdout);
@@ -151,8 +149,6 @@ static xapi test_set_set_top(xunit_test * _test)
   enter;
 
   writer_test * test = (typeof(test))_test;
-
-//printf("\n++ %s\n", __FUNCTION__);
 
   value_writer * writer = 0;
   fatal(value_writer_create, &writer);
