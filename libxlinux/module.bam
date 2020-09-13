@@ -17,6 +17,7 @@
 
 use cc              # this module contains c sources
 use library/shared  # this module builds a shared library
+use library/static  # this module builds a shared library
 use xapi/errtab     # this module contains errtabs
 
 # make common objects available for #inclusion and linking by files in this module
@@ -28,7 +29,7 @@ import libxapi
 variant xapi.pic.{debug,devel,final}
 
 # pull in object files in the module, except those under integ
-rule *~integ/**/*.?.o -> libxlinux.$?.so
+rule *~integ/**/*.?.o -> libxlinux.$?.{so,a}
 
 # default build targets
 rule libxlinux.?.{so,a} -> //module/targets
@@ -36,8 +37,12 @@ rule libxlinux.?.{so,a} -> //module/targets
 # intra module dependencies - generated files
 rule */*.?.o <- errtab/{XLINUX,KERNEL}.errtab.h
 
-# library dependencies
+# direct library dependencies
 rule //module/imports/*/lib*.?.so -> libxlinux.$?.so
+rule //module/imports/*/lib*.?.a -> libxlinux.$?.a
+
+# generated signals table
+#rule -- [*] sigtable/sigtable.{c,h} : ./bam-sigtable
 
 var : {
   cflags : [ -ldl -lrt ]
