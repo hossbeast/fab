@@ -67,6 +67,8 @@ extern struct node * g_project_shadow;  // project modules shadow node
 extern struct set * g_parse_nodes;
 extern struct map * g_nodes_by_wd;
 
+extern uint8_t node_valid_epoch;
+
 // VERTEX_TYPE_FSENT
 typedef struct node {
   struct path * name;               // name (not full path) of filesystem entry
@@ -104,6 +106,7 @@ typedef struct node {
       };
 
       uint16_t bp_plan_id;
+      uint8_t valid_epoch;
       uint32_t hash;              // for INVALIDATE_STAT | INVALIDATE_CONTENT
     };
   };
@@ -362,6 +365,12 @@ static inline bool node_exists_get(node * restrict n)
 static inline bool node_invalid_get(node * restrict n)
 {
   uint32_t attrs;
+  vertex *v;
+
+  v = vertex_containerof(n);
+  if(n->valid_epoch != node_valid_epoch && !rbtree_empty(&v->down)) {
+    return true;
+  }
 
   attrs = vertex_containerof(n)->attrs;
   attrs &= VERTEX_INVALID_BIT;
@@ -369,15 +378,14 @@ static inline bool node_invalid_get(node * restrict n)
   return !!attrs;
 }
 
-static inline void node_invalid_set(node * restrict n, bool invalid)
+static inline void node_invalid_set(node * restrict n)
 {
   uint32_t attrs;
 
   attrs = vertex_containerof(n)->attrs;
   attrs &= ~VERTEX_INVALID_BIT;
 
-  if(invalid)
-    attrs |= VERTEX_INVALID_BIT;
+  attrs |= VERTEX_INVALID_BIT;
 
   RUNTIME_ASSERT(attrs);
   vertex_containerof(n)->attrs = attrs;
@@ -414,25 +422,28 @@ xapi node_full_refresh(void);
 xapi node_property_say(const node * restrict n, node_property property, const node_property_context * restrict ctx, struct narrator * restrict N)
   __attribute__((nonnull));
 
+size_t node_property_znload(void * restrict dst, size_t sz, const node * restrict n, node_property property, const node_property_context * restrict ctx)
+  __attribute__((nonnull));
+
 /*
  * write the project-relative path to the node to a buffer
  */
-size_t node_get_project_relative_path(const node * restrict n, void * restrict dst, size_t dst_size)
+size_t node_project_relative_path_znload(void * restrict dst, size_t sz, const node * restrict n)
   __attribute__((nonnull));
 
 /*
  * write the module-relative path to the node to a buffer
  */
-size_t node_get_module_relative_path(const node * restrict n, void * restrict dst, size_t dst_size)
+size_t node_module_relative_path_znload(void * restrict dst, size_t sz, const node * restrict n)
   __attribute__((nonnull));
 
 /*
  * write the absolute path to the node to a buffer
  */
-size_t node_get_absolute_path(const node * restrict n, void * restrict dst, size_t dst_size)
+size_t node_absolute_path_znload(void * restrict dst, size_t sz, const node * restrict n)
   __attribute__((nonnull));
 
-size_t node_get_path(const node * restrict n, void * restrict dst, size_t dst_size)
+size_t node_path_znload(void * restrict dst, size_t sz, const node * restrict n)
   __attribute__((nonnull));
 
 /*

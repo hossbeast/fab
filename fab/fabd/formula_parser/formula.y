@@ -243,6 +243,10 @@ env-var-value
   {
     YFATAL(formula_value_sequence_mk, &@$, &$$, $2);
   }
+  | '{' path-search-operation '}'
+  {
+    $$ = $2;
+  }
   ;
 
 primitive
@@ -295,7 +299,6 @@ operation
   {
     YFATAL(formula_value_prepend_mk, &@$, &$$, $3);
   }
-  | path-search-operation
   ;
 
 path-search-operation

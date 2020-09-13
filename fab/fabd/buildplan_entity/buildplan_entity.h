@@ -23,6 +23,7 @@
 
 struct narrator;
 struct node;
+struct llist;
 
 #define BPE_NODE                   0xbeef
 #define BPE_NODE_EDGE_DEPENDENCY   0xdead
@@ -35,6 +36,12 @@ typedef struct buildplan_entity {
 
   const struct node * fml;
 } buildplan_entity;
+
+void bpe_sources(buildplan_entity * restrict bpe, struct llist * restrict list)
+  __attribute__((nonnull));
+
+void bpe_targets(buildplan_entity * restrict bpe, struct llist * restrict list)
+  __attribute__((nonnull));
 
 xapi bpe_say_sources(buildplan_entity * restrict bpe, struct narrator * restrict N)
   __attribute__((nonnull));

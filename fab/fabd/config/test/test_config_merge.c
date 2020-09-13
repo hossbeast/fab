@@ -76,8 +76,8 @@ static xapi config_merge_test_entry(xunit_test * _test)
   config * A = 0;
   config * B = 0;
   config * T = 0;
-  narrator * N1 = 0;
-  narrator * N2 = 0;
+  narrator_growing * N1 = 0;
+  narrator_growing * N2 = 0;
   char ** text = 0;
 
   // arrange
@@ -105,17 +105,17 @@ static xapi config_merge_test_entry(xunit_test * _test)
 
   fatal(config_parser_parse, parser, test->expected, strlen(test->expected) + 2, 0, 0, &B);
 
-  fatal(config_say, A, N1);
-  fatal(config_say, B, N2);
-  assert_eq_w(narrator_growing_buffer(N2), narrator_growing_size(N2), narrator_growing_buffer(N1), narrator_growing_size(N1));
+  fatal(config_say, A, &N1->base);
+  fatal(config_say, B, &N2->base);
+  assert_eq_w(N2->s, N2->l, N1->s, N1->l);
 
 finally:
   fatal(config_parser_xfree, parser);
   fatal(config_xfree, A);
   fatal(config_xfree, B);
   fatal(config_xfree, T);
-  fatal(narrator_xfree, N1);
-  fatal(narrator_xfree, N2);
+  fatal(narrator_growing_free, N1);
+  fatal(narrator_growing_free, N2);
 coda;
 }
 

@@ -160,12 +160,14 @@ xapi sysvar_builder_targets(exec_builder * restrict builder, const build_slot * 
   RUNTIME_ASSERT(bs->mod);
   /* paths are relative to the module */
   args.val.pctx.mod = bs->mod;
+
   args.mode = BUILDER_APPEND;
 
   if(args.val.n)
   {
     args.name = "bm_target";
     args.name_len = strlen("bm_target");
+    fatal(builder_add, builder, &args);
     fatal(builder_add, builder, &args);
   }
   else if(ne->dir == EDGE_TGT_SRC)

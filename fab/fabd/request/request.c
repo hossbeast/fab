@@ -111,6 +111,10 @@ static xapi request_writer_write(request * const restrict req, value_writer * co
     {
       fatal(value_writer_string, writer, "invalidate");
     }
+    else if(cmd->type == COMMAND_GLOBAL_INVALIDATE)
+    {
+      fatal(value_writer_string, writer, "global-invalidate");
+    }
     else if(cmd->type == COMMAND_LIST)
     {
       if(cmd->property)

@@ -100,7 +100,7 @@ static xapi node_lookup_test_entry(xunit_test * _test)
 
   // assert
   assert_notnull(node);
-  node_get_absolute_path(node, abspath, sizeof(abspath));
+  node_absolute_path_znload(abspath, sizeof(abspath), node);
   assert_eq_s(test->abspath, abspath);
 
 finally:

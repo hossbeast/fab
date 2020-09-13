@@ -22,6 +22,7 @@
 
 struct attrs32;
 struct config;
+struct handler_context;
 
 // configuration
 #define STREAM_PART_OPT 0xf
@@ -40,40 +41,6 @@ extern struct attrs32 * stream_part_attrs;
 
 typedef struct build_thread_config {
   int16_t concurrency;
-
-  stream_part capture_stdout;
-  uint16_t stdout_buffer_size;
-
-  stream_part capture_stderr;
-  uint16_t stderr_buffer_size;
-
-  stream_part capture_auxout;
-  uint16_t auxout_buffer_size;
-
-  struct show_settings {
-    bool show_path;
-    bool show_arguments;
-    bool show_command;
-    bool show_cwd;
-    bool show_sources;
-    bool show_targets;
-    bool show_environment;
-    bool show_status;
-
-    bool show_stdout;
-    int16_t show_stdout_limit_lines;
-    int16_t show_stdout_limit_bytes;
-
-    bool show_stderr;
-    int16_t show_stderr_limit_lines;
-    int16_t show_stderr_limit_bytes;
-
-    bool show_auxout;
-    int16_t show_auxout_limit_lines;
-    int16_t show_auxout_limit_bytes;
-  } error;
-
-  struct show_settings success;
 } build_thread_config;
 
 xapi build_thread_setup(void);
@@ -95,6 +62,7 @@ xapi build_thread_launch(void);
 xapi build_thread_reconfigure(struct config * restrict cfg, bool dry)
   __attribute__((nonnull));
 
-xapi build_thread_build(bool notify);
+xapi build_thread_build(struct handler_context * restrict ctx)
+  __attribute__((nonnull));
 
 #endif

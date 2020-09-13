@@ -106,8 +106,8 @@ static xapi formula_parser_test_entry(xunit_test * _test)
   formula_value *args = 0;
   formula_value *envs = 0;
   formula_value *path = 0;
-  narrator * N1 = 0;
-  narrator * N2 = 0;
+  narrator_growing * N1 = 0;
+  narrator_growing * N2 = 0;
   char buf[512];
 
   // arrange
@@ -118,24 +118,24 @@ static xapi formula_parser_test_entry(xunit_test * _test)
 
   // round-trip
   fatal(narrator_growing_create, &N1);
-  fatal(fml_say, N1, path, args, envs);
+  fatal(fml_say, &N1->base, path, args, envs);
   formula_value_free(path); path = 0;
   formula_value_free(args); args = 0;
   formula_value_free(envs); envs = 0;
 
-  size_t len = narrator_growing_size(N1);
-  fatal(narrator_xseek, N1, 0, NARRATOR_SEEK_SET, 0);
-  fatal(narrator_xread, N1, buf, len, 0);
+  size_t len = N1->l;
+  fatal(narrator_xseek, &N1->base, 0, NARRATOR_SEEK_SET, 0);
+  fatal(narrator_xread, &N1->base, buf, len, 0);
   buf[len] = buf[len + 1] = 0;
   fatal(formula_parser_bacon_parse, parser, buf, len + 2, 0, &path, &args, &envs);
 
   // round-trip
   fatal(narrator_growing_create, &N2);
-  fatal(fml_say, N2, path, args, envs);
+  fatal(fml_say, &N2->base, path, args, envs);
 
 finally:
-  fatal(narrator_xfree, N1);
-  fatal(narrator_xfree, N2);
+  fatal(narrator_growing_free, N1);
+  fatal(narrator_growing_free, N2);
   formula_value_free(path);
   formula_value_free(args);
   formula_value_free(envs);

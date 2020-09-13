@@ -78,6 +78,8 @@ static xapi pattern_test_unit_setup(xunit_unit * unit)
   fatal(filesystem_setup);
   fatal(graph_setup);
 
+logs(L_INFO, "GOATS");
+
   finally : coda;
 }
 
@@ -109,7 +111,7 @@ static xapi pattern_generate_test_entry(xunit_test * _test)
 
   pattern_generate_test * test = (pattern_generate_test *)_test;
 
-  narrator * N = 0;
+  narrator_growing * N = 0;
   pattern_parser * parser = 0;
   pattern * pattern = 0;
   set * nodes_list = 0;
@@ -233,15 +235,15 @@ static xapi pattern_generate_test_entry(xunit_test * _test)
   );
 
   // ordered list of vertices and edges
-  fatal(narrator_xreset, N);
-  fatal(graph_say, g_graph, N);
-  const char * graph = narrator_growing_buffer(N);
-  size_t graph_len = narrator_growing_size(N);
+  fatal(narrator_xreset, &N->base);
+  fatal(graph_say, g_graph, &N->base);
+  const char * graph = N->s;
+  size_t graph_len = N->l;
   assert_eq_s(test->graph, graph);
   assert_eq_w(test->graph, strlen(test->graph), graph, graph_len);
 
   // ordered list of nodes
-  fatal(narrator_xreset, N);
+  fatal(narrator_xreset, &N->base);
 
   fatal(set_elements, nodes_list, &node_list, &node_list_lens, &node_list_len);
   qsort(node_list, node_list_len, sizeof(*node_list), (void*)node_compare);
@@ -251,11 +253,11 @@ static xapi pattern_generate_test_entry(xunit_test * _test)
     node * n = node_list[x];
 
     if(x)
-      xsays(" ");
-    xsays(n->name->name);
+      fatal(narrator_xsays, &N->base, " ");
+    fatal(narrator_xsays, &N->base, n->name->name);
   }
-  const char * nodes = narrator_growing_buffer(N);
-  size_t nodes_len = narrator_growing_size(N);
+  const char * nodes = N->s;
+  size_t nodes_len = N->l;
   assert_eq_w(test->nodes, strlen(test->nodes), nodes, nodes_len);
 
 finally:
@@ -267,7 +269,7 @@ finally:
   pattern_free(pattern);
   fatal(node_cleanup);
   fatal(variant_cleanup);
-  fatal(narrator_xfree, N);
+  fatal(narrator_growing_free, N);
   fatal(pattern_parser_xfree, parser);
   fatal(set_xfree, nodes_list);
   fatal(list_xfree, operations);
@@ -998,6 +1000,7 @@ xunit_unit xunit = {
                   " 18:imports:16"
                   " 1:fs:4 1:fs:5 3:fs:1 3:fs:2 4:fs:6 4:fs:8 4:fs:10 4:fs:13 5:fs:7 5:fs:9 5:fs:11 5:fs:14 6:fs:12 15:fs:17 16:fs:19 17:fs:16 17:fs:18"
         , nodes : "goats"
+, xu_weight : 1
       }}
     , 0
   }

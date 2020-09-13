@@ -1,4 +1,4 @@
-/* Copyright (c) 2012-2015 Todd Freed <todd.freed@gmail.com>
+/* Copyright (c) 2012-2020 Todd Freed <todd.freed@gmail.com>
 
    This file is part of fab.
 
@@ -15,26 +15,12 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef _LOGGING_H
-#define _LOGGING_H
+#ifndef _CLIENT_THREAD_H
+#define _CLIENT_THREAD_H
 
-#include "logger.h"
-#include "logger/category.h"
+#include "xapi.h"
 
-extern logger_category * categories;
-
-#define L_ERROR   categories[0x0].id
-#define L_WATCHER categories[0x1].id
-#if DEBUG || DEVEL || XAPI
-# define L_IPC    categories[0x2].id
-#endif
-
-/// logging_setup
-//
-// SUMMARY
-//  register logging categories
-//
-xapi logging_setup(char ** restrict envp)
-  __attribute__((nonnull));
+xapi client_thread_launch(void);
+xapi client_thread_redrive(void);
 
 #endif

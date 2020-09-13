@@ -26,15 +26,16 @@
 #include "exec_builder.internal.h"
 #include "exec_render.h"
 
+struct path_cache_entry;
 struct buildplan_entity;
 struct module;
 struct variant;
 struct value;
 
 typedef struct build_slot {
-  pid_t pid;
-  int status;                  // process exit status
-  bool success;                // whether the process was successful
+  int32_t pid;
+  int32_t status;                 // process exit status
+  uint16_t stage;
   uint32_t stage_index;
 
   /* formula to execute */
@@ -44,24 +45,20 @@ typedef struct build_slot {
   const struct value * vars;      // vars for the variant
   const struct exec * exec;       // pre-rendered env vars for the variant
 
-  int file_fd;      // descriptor of file to execute
-  char * file_path; // or, absolute path of to execute
+  int file_fd;                      // descriptor of file to execute
+  const char * file_path;           // or absolute path of file to execute
+  const struct path_cache_entry *file_pe;  // path cache entry, if any
+
   char ** argv;     // sentinel-terminated args
   char ** envp;     // sentinel-terminated environment
 
   int stdout_pipe[2];
-  char * stdout_buf;
-  uint16_t stdout_buf_len;
   uint32_t stdout_total;
 
   int stderr_pipe[2];
-  char * stderr_buf;
-  uint16_t stderr_buf_len;
   uint32_t stderr_total;
 
   int auxout_pipe[2];
-  char * auxout_buf;
-  uint16_t auxout_buf_len;
   uint32_t auxout_total;
 
   //
@@ -86,7 +83,7 @@ typedef struct build_slot {
 xapi build_slot_read(struct build_slot * restrict bs, uint32_t stream)
   __attribute__((nonnull));
 
-xapi build_slot_reap(struct build_slot * restrict bs, uint32_t slot_index, siginfo_t * info)
+xapi build_slot_reap(struct build_slot * restrict bs, siginfo_t * info)
   __attribute__((nonnull));
 
 xapi build_slot_prep(struct build_slot * restrict bs, struct buildplan_entity * restrict bpe, uint32_t stage_index)

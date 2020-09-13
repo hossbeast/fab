@@ -127,7 +127,7 @@ xapi extern_refresh(int walk_id, struct graph_invalidation_context * restrict in
 
   llist_foreach(&entry_head, e, lln) {
     n = e->n;
-    node_get_absolute_path(n, path, sizeof(path));
+    node_absolute_path_znload(path, sizeof(path), n);
     fatal(walker_descend, 0, n, 0, path, walk_id, invalidation);
   }
 

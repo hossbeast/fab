@@ -21,14 +21,26 @@
 #include "xapi.h"
 #include "types.h"
 
-typedef enum display_mode {
-  DISPLAY_EXPLORER,
-} display_mode;
+struct fabipc_message;
+struct fab_client;
+
+enum {
+  REBIND = 1,
+  EXIT,
+};
 
 typedef struct display {
-  display_mode mode;
+  xapi (*setup)(void);
+  xapi (*redrive)(struct fab_client * restrict client);
+  void (*rebind)(const struct fabipc_message * restrict msg);
+  void (*result)(const struct fabipc_message * restrict msg);
+  xapi (*draw)(void);
+  int (*keypress)(int key);
 } display;
 
-extern struct display g_display;
+extern struct display * g_display;
+
+xapi display_switch(display * restrict dis)
+  __attribute__((nonnull));
 
 #endif

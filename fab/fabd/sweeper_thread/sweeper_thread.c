@@ -39,6 +39,7 @@
 #include "narrator.h"
 
 #include "sweeper_thread.h"
+#include "handler_thread.h"
 #include "server_thread.h"
 #include "filesystem.h"
 #include "inotify_mask.h"
@@ -51,14 +52,14 @@
 #include "path.h"
 
 #include "locks.h"
-#include "common/atomic.h"
+#include "atomics.h"
 #include "macros.h"
 #include "zbuffer.h"
 
-#define SWEEP_INTERVAL_SEC 1
+#define SWEEP_INTERVAL_NSEC (500 * 1000)  /* half a second */
 
-static llist event_queue;
-static llist child_event_freelist;
+static llist event_queue = LLIST_INITIALIZER(event_queue);
+static llist child_event_freelist = LLIST_INITIALIZER(child_event_freelist);
 static int event_queue_lock;
 static uint32_t event_era;
 
@@ -150,7 +151,7 @@ static xapi process_event(sweeper_event * restrict ev, graph_invalidation_contex
     /* entity was created */
     if(ev->mask & IN_ISDIR)
     {
-      z = node_get_absolute_path(cev->parent, path, sizeof(path));
+      z = node_absolute_path_znload(path, sizeof(path), cev->parent);
       z += znloadc(path + z, sizeof(path) - z, '/');
       z += znloadw(path + z, sizeof(path) - z, cev->name, cev->name_len);
       path[z] = 0;
@@ -212,27 +213,26 @@ static xapi sweeper_thread()
   enter;
 
   sigset_t sigs;
-  struct timespec start;
-  struct timespec next;
-  typeof(start.tv_sec) iteration;
+  struct timespec deadline;
   sigset_t orig;
+  int r;
 
   g_params.thread_sweeper = gettid();
 
   // signals handled on this thread
   sigfillset(&sigs);
-  sigdelset(&sigs, FABIPC_SIGINTR);
+  sigdelset(&sigs, SIGUSR1);
 
 #if DEBUG || DEVEL
   logs(L_IPC, "starting");
 #endif
 
-  fatal(xclock_gettime, CLOCK_MONOTONIC, &start);
-  memcpy(&next, &start, sizeof(next));
+  fatal(xclock_gettime, CLOCK_MONOTONIC, &deadline);
+  deadline.tv_nsec = 250 * 1000 * 1000;
 
-  for(iteration = 1; !g_params.shutdown; iteration++)
+  while(!g_params.shutdown)
   {
-    spinlock_acquire(&event_queue_lock);
+    spinlock_acquire(&event_queue_lock, g_params.thread_sweeper);
     event_era++;
 
     if(!llist_empty(&event_queue))
@@ -240,21 +240,36 @@ static xapi sweeper_thread()
       fatal(sweep);
       if(llist_empty(&event_queue) && g_server_autorun)
       {
-        fatal(sigutil_tgkill, g_params.pid, g_params.thread_server, FABIPC_SIGINTR);
+        fatal(handler_thread_launch, 0, 0, true);
       }
     }
 
-    spinlock_release(&event_queue_lock, gettid());
+    spinlock_release(&event_queue_lock, g_params.thread_sweeper);
 
     /* sleep */
-    next.tv_sec = start.tv_sec + (iteration * SWEEP_INTERVAL_SEC);
     fatal(xpthread_sigmask, SIG_SETMASK, &sigs, &orig);
-    fatal(uxclock_nanosleep, 0, CLOCK_MONOTONIC, TIMER_ABSTIME, &next, 0);
+    fatal(uxclock_nanosleep, &r, CLOCK_MONOTONIC, TIMER_ABSTIME, &deadline, 0);
     fatal(xpthread_sigmask, SIG_SETMASK, &orig, 0);
+
+    /* only advance the deadline if the sleep was not interrupted */
+    if(r) {
+      continue;
+    }
+
+    if(deadline.tv_nsec == 750 * 1000 * 1000) {
+      deadline.tv_sec++;
+      deadline.tv_nsec = 0;
+    } else if(deadline.tv_nsec == 500 * 1000 * 1000) {
+      deadline.tv_nsec = 750 * 1000 * 1000;
+    } else if(deadline.tv_nsec == 250 * 1000 * 1000) {
+      deadline.tv_nsec = 500 * 1000 * 1000;
+    } else {
+      deadline.tv_nsec = 250 * 1000 * 1000;
+    }
   }
 
 finally:
-  spinlock_release(&event_queue_lock, gettid());
+  spinlock_release(&event_queue_lock, g_params.thread_sweeper);
 
 #if DEBUG || DEVEL
   logs(L_IPC, "terminating");
@@ -287,7 +302,7 @@ finally:
 conclude(&R);
 
   atomic_dec(&g_params.thread_count);
-  syscall(SYS_tgkill, g_params.pid, g_params.thread_monitor, FABIPC_SIGSCH);
+  syscall(SYS_tgkill, g_params.pid, g_params.thread_monitor, SIGUSR1);
   return 0;
 }
 
@@ -317,7 +332,7 @@ xapi sweeper_thread_enqueue(node *n, uint32_t mask, const char * restrict name, 
   rbnode *rbn;
   rbtree_search_context search_ctx;
 
-  spinlock_engage(&event_queue_lock, gettid());
+  spinlock_acquire(&event_queue_lock, g_params.thread_sweeper);
 
   if(name)
   {
@@ -374,7 +389,7 @@ xapi sweeper_thread_enqueue(node *n, uint32_t mask, const char * restrict name, 
   e->era = event_era;
 
 finally:
-  spinlock_release(&event_queue_lock, gettid());
+  spinlock_release(&event_queue_lock, g_params.thread_sweeper);
 coda;
 }
 
@@ -406,12 +421,6 @@ xapi sweeper_thread_setup()
   enter;
 
   finally : coda;
-}
-
-static void __attribute__((constructor)) setup()
-{
-  llist_init_node(&event_queue);
-  llist_init_node(&child_event_freelist);
 }
 
 xapi sweeper_thread_cleanup()

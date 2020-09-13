@@ -18,13 +18,20 @@
 #include <getopt.h>
 
 #include "narrator.h"
+#include "narrator/fixed.h"
 #include "valyria/list.h"
 #include "value/writer.h"
 #include "logger/arguments.h"
+#include "fab/ipc.h"
+#include "fab/client.h"
+
+#include "common/attrs.h"
 
 #include "invalidate.h"
 #include "command.h"
 #include "MAIN.errtab.h"
+#include "params.h"
+#include "args.h"
 
 static struct {
   list * targets;
@@ -34,36 +41,40 @@ static struct {
 // static
 //
 
-static xapi usage_say(narrator * restrict N)
+static void usage(command * restrict cmd)
 {
-  enter;
-
-  xsays(
+  printf(
 "\n"
 "usage : fab invalidate [ <selector>... ] ...\n"
 "\n"
   );
-
-  finally : coda;
 }
 
-static xapi args_parse(const char ** restrict argv, size_t argc)
+static xapi parse_args(command * restrict cmd, int argc, char ** restrict argv)
 {
   enter;
 
   int x;
+  int longindex;
+
+  const struct option longopts[] = {
+      { }
+  };
+
+  const char *switches =
+    // no-argument switches
+    ""
+
+    // with-argument switches
+    ""
+  ;
 
   fatal(list_create, &args.targets);
 
-  struct option longopts[] = {
-    { }
-  };
-
   // disable getopt error messages
   opterr = 0;
-
-  int longindex;
-  while((x = getopt_long(argc, (void*)argv, "-Bftx", longopts, &longindex)) != -1)
+  optind = 0;
+  while((x = getopt_long(argc, argv, switches, longopts, &longindex)) != -1)
   {
     if(x == 0)
     {
@@ -89,24 +100,40 @@ static xapi args_parse(const char ** restrict argv, size_t argc)
   // options following --
   for(; optind < argc; optind++)
   {
-    fatal(list_push, args.targets, (void*)argv[optind], 0);
+    fatal(list_push, args.targets, argv[optind], 0);
   }
 
   finally : coda;
 }
 
-static xapi command_say(narrator * N)
+static xapi request_write(narrator * restrict N)
 {
   enter;
 
-  xsays(" invalidate");
-
-  if(args.targets->size)
-    xsays(" --");
-
   int x;
+  char *arg;
+
+  if(g_args.invalidate) {
+    fatal(narrator_xsays, N, " global-invalidate");
+    goto XAPI_FINALIZE;
+  }
+
+  fatal(narrator_xsays, N, ""
+" select : ["
+  );
+
   for(x = 0; x < args.targets->size; x++)
-    xsayf(" %s", (char*)list_get(args.targets, x));
+  {
+    arg = list_get(args.targets, x);
+    fatal(narrator_xsayf, N, ""
+" pattern : %s", arg
+    );
+  }
+
+  fatal(narrator_xsays, N, ""
+" ] "
+" invalidate "
+  );
 
   finally : coda;
 }
@@ -115,95 +142,39 @@ static xapi command_say(narrator * N)
 // build
 //
 
-static xapi invalidate_usage_say(narrator * restrict N)
+static xapi connected(command * restrict cmd, fab_client * restrict client)
 {
   enter;
 
-  fatal(usage_say, N);
+  narrator * request_narrator;
+  narrator_fixed nstor;
+  fabipc_message * msg;
+
+  /* send the request */
+  msg = fab_client_produce(client, 0);
+  msg->type = FABIPC_MSG_REQUEST;
+
+  request_narrator = narrator_fixed_init(&nstor, msg->text, sizeof(msg->text));
+  fatal(request_write, request_narrator);
+
+  // two terminating null bytes
+  fatal(narrator_xsayw, request_narrator, (char[]) { 0x00, 0x00 }, 2);
+  msg->size = nstor.l;
+  fab_client_post(client);
 
   finally : coda;
 }
 
-static xapi invalidate_args_parse(const char ** restrict argv, size_t argc)
+static xapi process(command * restrict cmd, fab_client * restrict client, fabipc_message * restrict msg)
 {
   enter;
 
-  fatal(args_parse, argv, argc);
-
-  finally : coda;
-}
-
-static xapi invalidate_command_say(narrator * N)
-{
-  enter;
-
-  fatal(command_say, N);
-
-  finally : coda;
-}
-
-static xapi invalidate_collate(value_writer * restrict writer)
-{
-  enter;
-
-  int x;
-  char *arg;
-
-  fatal(narrator_xsays, writer->N, ""
-"stage-config : {"
-  );
-
-  fatal(narrator_xsays, writer->N, ""
-"logging : {"
-" console : {"
-"   exprs : ["
-  );
-
-  fatal(narrator_xsays, writer->N, ""
-"   \"+ERROR +WARN +INFO +BUILD\""
-"   \"%CATEGORY\""
-#if DEVEL
-"   \"%NAMES %PID %TID\""
-#endif
-  );
-
-  fatal(narrator_xsayf, writer->N, "\"%s\"", g_logvs);
-  fatal(narrator_xsayf, writer->N, "\"%s\"", g_ulogvs);
-  fatal(narrator_xsays, writer->N, ""
-" ]"
-"}"
-  );
-
-  fatal(narrator_xsays, writer->N, ""
-"}} reconfigure "
-  );
-
-  fatal(narrator_xsays, writer->N, ""
-" select : ["
-  );
-
-  for(x = 0; x < args.targets->size; x++)
-  {
-    arg = list_get(args.targets, x);
-    fatal(narrator_xsayf, writer->N, ""
-" pattern : %s", arg
-    );
+  if(msg->type == FABIPC_MSG_RESPONSE) {
+    g_params.shutdown = true;
   }
 
-  fatal(narrator_xsays, writer->N, ""
-" ] "
-" invalidate "
-  );
-
   finally : coda;
 }
-
-struct command * invalidate_command = (struct command[]) {{
-    args_parse : invalidate_args_parse
-  , usage_say : invalidate_usage_say
-  , command_say : invalidate_command_say
-  , collate : invalidate_collate
-}};
 
 //
 // public
@@ -217,3 +188,10 @@ xapi invalidate_command_cleanup()
 
   finally : coda;
 }
+
+struct command invalidate_command = {
+    args_parse : parse_args
+  , usage : usage
+  , connected : connected
+  , process : process
+};

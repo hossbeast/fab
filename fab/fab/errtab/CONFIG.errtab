@@ -15,39 +15,10 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef _PARAMS_H
-#define _PARAMS_H
-
-#include "xapi.h"
-
-extern struct g_params
-{
-  //
-  // non-configurable execution parameters
-  //
-
-  char *          cwd;         // cwd
-  char *          exedir;      // location of the binary executable
-} g_params;
-
-xapi params_setup(void);
-void params_teardown(void);
-
-
-/// params_parse
-//
-// parses command-line options, populating g_params.
-//
-// Prints the usage statement and terminates the program if options are
-// invalid, for example required options are not present, or invalid
-// parameters are given to an option
-//
-xapi params_setup(void);
-
-/// params_teardown
-//
-// free g_params
-//
-void params_teardown(void);
-
-#endif
+1   SYNTAX    config could not be parsed
+2   ILLBYTE   config contains illegal byte(s)
+3   NOTMAP    top-level config value is not a map
+4   MISSING   config value required but missing
+5   INCOMPAT  config value of an incompatible type
+6   INVALID   config value outside of acceptable range
+7   CONFLICT  config values in conflict

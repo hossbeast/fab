@@ -31,8 +31,6 @@ struct graph_invalidation_context;
 enum edge_type;
 enum vertex_filetype;
 
-extern uint32_t node_invalidation_counter;
-
 /*
  * create a node in the graph
  *

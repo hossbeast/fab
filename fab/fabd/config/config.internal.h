@@ -90,38 +90,6 @@ struct config {
         struct set * entries;    // box_string
       } dirs;
     } path;
-
-    // output stream processing
-    struct box_int * capture_stdout;
-    struct box_uint16 * stdout_buffer_size;
-    struct box_int * capture_stderr;
-    struct box_uint16 * stderr_buffer_size;
-    struct box_int * capture_auxout;
-    struct box_uint16 * auxout_buffer_size;
-
-    struct config_formula_show_settings {
-      CONFIGBASE;
-
-      struct box_bool * show_path;
-      struct box_bool * show_cwd;
-      struct box_bool * show_command;
-      struct box_bool * show_arguments;
-      struct box_bool * show_sources;
-      struct box_bool * show_targets;
-      struct box_bool * show_environment;
-      struct box_bool * show_status;
-      struct box_bool * show_stdout;
-      struct box_int16 * show_stdout_limit_bytes;
-      struct box_int16 * show_stdout_limit_lines;
-      struct box_bool * show_stderr;
-      struct box_int16 * show_stderr_limit_bytes;
-      struct box_int16 * show_stderr_limit_lines;
-      struct box_bool * show_auxout;
-      struct box_int16 * show_auxout_limit_bytes;
-      struct box_int16 * show_auxout_limit_lines;
-    } success;
-
-    struct config_formula_show_settings error;
   } formula;
 
   struct config_logging {
@@ -144,6 +112,12 @@ struct config {
 
     struct value * value;
   } var;
+
+  struct config_channels {
+    CONFIGBASE;
+
+    struct box_uint16 * max_channels;
+  } channels;
 };
 
 /// config_throw

@@ -19,9 +19,9 @@
 #define _ADHOC_COMMAND_H
 
 #include "xapi.h"
+#include "command.h"
 
-struct command;
-extern struct command * adhoc_command;
+extern struct command adhoc_command;
 
 xapi adhoc_command_cleanup(void);
 

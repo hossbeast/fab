@@ -15,8 +15,10 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-use cc           # this module contains C sources
-use executable  # this module builds an executable
+use builtin-modules/cc          # this module contains C sources
+use builtin-modules/flex
+use builtin-modules/bison
+use builtin-modules/executable  # this module builds an executable
 use xapi/errtab
 
 # declare variants
@@ -27,7 +29,7 @@ rule fab.? -> //module/targets
 # make common objects available for #include and linking
 import fab/include
 import fab/asan
-import lib{common,xapi,xlinux,logger,xunit,narrator,valyria,yyutil,value,fab,lorien}
+import lib{common,descriptor,xapi,xlinux,logger,xunit,narrator,valyria,yyutil,value,fab,lorien}
 
 variant xapi.{debug,devel} : [
   rule fab.? <- asan/asan.$?.o

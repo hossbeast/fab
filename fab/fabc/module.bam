@@ -45,5 +45,5 @@ variant xapi.pic.{debug,devel,final} : [
 ]
 
 var : {
-  lflags : [ -lncurses ]
+  lflags : [ -lncurses -lpthread ]
 }

@@ -129,7 +129,7 @@ static xapi walker_test_entry(xunit_test * _test)
   graph_invalidation_context invalidation = { 0 };
   operations_parser * op_parser = 0;
   list * operations = 0;
-  narrator * N = 0;
+  narrator_growing * N = 0;
 
   fatal(narrator_growing_create, &N);
 
@@ -191,8 +191,8 @@ static xapi walker_test_entry(xunit_test * _test)
   }
 
   // ordered list of edges
-  fatal(graph_say, g_graph, N);
-  const char * graph = narrator_growing_buffer(N);
+  fatal(graph_say, g_graph, &N->base);
+  const char * graph = N->s;
   assert_eq_s(test->graph, graph);
 
 finally:
@@ -203,7 +203,7 @@ finally:
   fatal(list_xfree, operations);
   graph_invalidation_end(&invalidation);
   fatal(operations_parser_xfree, op_parser);
-  fatal(narrator_xfree, N);
+  fatal(narrator_growing_free, N);
 coda;
 }
 

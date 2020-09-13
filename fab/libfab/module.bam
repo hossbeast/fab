@@ -15,14 +15,14 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-use cc               # this module contains c sources
+use cc              # this module contains c sources
 use library/shared  # this module builds a library
 use xapi/errtab     # this module contains errtabs
 
 # make common objects available for #inclusion and linking by files in this module
 import fab/include
 
-import lib{common,xapi,xlinux,narrator,logger,lorien}
+import lib{common,xapi,xlinux,narrator,logger,lorien,descriptor}
 
 # variants for the module
 variant xapi.pic.{debug,devel,final}
@@ -38,3 +38,7 @@ rule */*.?.o <- errtab/FAB.errtab.h
 
 # library dependencies
 rule //module/imports/*/lib*.?.so -> libfab.$?.so
+
+# descriptors
+rule build_slot/build_slot.h -> $^D/build_slot.desc.c : bam-descriptor
+rule build/build.h -> $^D/build.desc.c : bam-descriptor

@@ -370,7 +370,7 @@ xapi walker_ascend(node * restrict basedir, int walk_id, graph_invalidation_cont
   dirn = basedir;
   dirv = vertex_containerof(dirn);
 
-  pathl = node_get_absolute_path(dirn, path, sizeof(path));
+  pathl = node_absolute_path_znload(path, sizeof(path), dirn);
 
   // ascend at least once
   while(1)

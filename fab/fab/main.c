@@ -30,11 +30,15 @@
 #include "xlinux/xstat.h"
 #include "xlinux/xshm.h"
 #include "xlinux/xpthread.h"
+#include "xlinux/KERNEL.errtab.h"
+#include "xlinux/xfutex.h"
+#include "xlinux/xsignal.h"
 #include "narrator.h"
 #include "logger.h"
 
 #include "fab/sigutil.h"
 #include "fab/client.h"
+#include "fab/ipc.h"
 #include "fab/FAB.errtab.h"
 
 #include "args.h"
@@ -43,8 +47,11 @@
 #include "logging.h"
 #include "build.h"
 #include "MAIN.errtab.h"
+#include "common/attrs.h"
+#include "config.h"
 
 #include "macros.h"
+#include "barriers.h"
 
 static xapi xmain_exit;
 static xapi xmain()
@@ -54,62 +61,130 @@ static xapi xmain()
 #if DEVEL
   char space[512];
 #endif
-  char * fabw_path = 0;
-  const command * cmd = 0;
-
+  command * cmd = 0;
+  sigset_t sigs;
+  siginfo_t info;
   fab_client * client = 0;
+  fabipc_message * msg = 0;
+  struct timespec interval;
+  int err;
+  uint16_t pulse;
+  int iter;
+  int channel_shmid;
+  int x;
+  int r;
 
-  void * request_shm = 0;
-  void * response_shm = 0;
-
-#if DEBUG || DEVEL
-  logs(L_IPC, "started");
-#endif
+  // parse configuration files
+  fatal(config_reconfigure);
 
   // parse cmdline arguments
   fatal(args_parse, &cmd);
-  fatal(args_report, cmd);
 
-  // ensure fabd can write to my stdout/stderr
-  fatal(xfchmod, 1, 0777);
-  fatal(xfchmod, 2, 0777);
+  fatal(sigutil_install_handlers);
+  sigfillset(&sigs);
+  sigdelset(&sigs, SIGINT);
+  sigdelset(&sigs, SIGTERM);
+  sigdelset(&sigs, SIGQUIT);
+  sigdelset(&sigs, SIGUSR1);
+  fatal(xpthread_sigmask, SIG_SETMASK, &sigs, 0);
 
 #if DEVEL
-  snprintf(space, sizeof(space), "%s/../fabw/fabw.devel.xapi", g_params.exedir);
-  fabw_path = space;
+  snprintf(space, sizeof(space), "%s/../fabd/fabd.devel.xapi", g_params.exedir);
+  g_fab_client_fabd_path = space;
 #endif
 
-  fatal(fab_client_create, &client, ".", XQUOTE(FABIPCDIR), fabw_path);
+  interval.tv_sec = 0;
+  interval.tv_nsec = 500000000;   // 500 millis
 
-#if 0
-  // kill the existing fabd instance, if any
-  if(changed credentials)
-    fatal(client_terminate);
-#endif
-
+  fatal(fab_client_create, &client, ".", XQUOTE(FABIPCDIR));
   fatal(fab_client_prepare, client);
-  fatal(fab_client_launchp, client);
 
-  fatal(fab_client_prepare_request_shm, client, &request_shm);
-  fatal(args_collate, cmd, request_shm);
+  /* kill an existing fabd - waiting at most 3s */
+  if(g_args.kill && client->fabd_pid != 0)
+  {
+    fatal(fab_client_kill, client);
 
-  void * shmaddr = request_shm;
-  request_shm = 0;
-  fatal(fab_client_make_request, client, shmaddr, &response_shm);
-
-  // consume the response
-  shmaddr = response_shm;
-  response_shm = 0;
-  if(cmd->process) {
-    fatal(cmd->process, shmaddr);
+    for(x = 0; x < (5 * 3); x++)
+    {
+      fatal(uxkill, &r, client->fabd_pid, 0);
+      if(r) {
+        break;
+      }
+      usleep(200 * 1000);
+    }
   }
 
-  fatal(fab_client_release_response, client, shmaddr);
-  fatal(fab_client_unlock, client);
+  fatal(fab_client_solicit, client);
 
-  if(cmd->conclusion) {
-    fatal(cmd->conclusion);
+  /* wait for the acknowledgement signal carrying the channel id */
+  sigemptyset(&sigs);
+  sigaddset(&sigs, SIGRTMIN);
+
+  while(1)
+  {
+    fatal(sigutil_timedwait, &err, &sigs, &info, &interval);
+    if(err == 0) {
+      break;
+    } else if(err == EAGAIN) {
+      goto XAPI_FINALLY; // timeout expired
+    } else if(err == EINTR) {
+      continue;
+    }
+
+    tfail(perrtab_KERNEL, err);
   }
+
+  channel_shmid = info.si_value.sival_int;
+  fatal(fab_client_attach, client, channel_shmid);
+
+  /* event subscription and send the request */
+  fatal(cmd->connected, cmd, client);
+
+  /* processing */
+  interval.tv_nsec = 125 * 1000 * 1000;   // 125 millis
+  iter = 1;
+  pulse = client->shm->server_pulse;
+  while(!g_sigterm && !g_params.shutdown)
+  {
+    client->shm->client_pulse++;
+    if(!(msg = fab_client_acquire(client))) {
+      if(client->shm->server_exit) {
+printf("BREAK ; server_exit\n");
+        break;
+      }
+
+      client->shm->server_ring.waiters = 1;
+      smp_wmb();
+      fatal(uxfutex, &err, &client->shm->server_ring.waiters, FUTEX_WAIT, 1, &interval, 0, 0);
+      if(err == EINTR || err == EAGAIN) {
+        continue;
+      }
+
+      if(((iter++) % 5) == 0) {
+        if(pulse == client->shm->server_pulse) {
+printf("BREAK ; server_pulse\n");
+          break;
+        }
+        pulse = client->shm->server_pulse;
+      }
+
+      continue;
+    }
+
+//printf("%8d %d %s", msg->id, msg->type, attrs32_name_byvalue(fabipc_msg_type_attrs, msg->type));
+//printf(" attrs 0x%08x", msg->attrs);
+//if(msg->type == FABIPC_MSG_EVENTS)
+//{
+//  printf(" %s", attrs32_name_byvalue(fabipc_event_type_attrs, msg->evtype));
+//}
+//printf(" size %hu\n", msg->size);
+
+    fatal(cmd->process, cmd, client, msg);
+
+    fab_client_consume(client);
+  }
+
+//printf("client: server exit %d server pulse %lu\n", client->shm->server_exit, client->shm->server_pulse);
 
 finally:
   if(XAPI_UNWINDING)
@@ -120,20 +195,12 @@ finally:
       // fabd exited - check for a coredump
 #endif
     }
-    else if(XAPI_ERRVAL == MAIN_BADARGS || XAPI_ERRVAL == MAIN_NOCOMMAND)
-    {
-      fatal(args_usage, cmd, 1, 1);
-    }
   }
 
-  // locals
+  if(client) {
+    fab_client_disconnect(client);
+  }
   fatal(fab_client_xfree, client);
-
-  fatal(xshmdt, request_shm);
-  fatal(xshmdt, response_shm);
-
-  // module teardown
-  fatal(build_command_cleanup);
 coda;
 }
 
@@ -152,9 +219,11 @@ finally:
     xapi_infof("pid", "%ld", (long)getpid());
     xapi_infof("tid", "%ld", (long)gettid());
 
-    fatal(logger_trace_full, L_ERROR, XAPI_TRACE_COLORIZE);
+    xapi_fulltrace(2, XAPI_TRACE_COLORIZE);
+    //fatal(logger_trace_full, L_ERROR, XAPI_TRACE_COLORIZE);
 #else
-    fatal(logger_trace_pithy, L_ERROR, XAPI_TRACE_COLORIZE);
+    xapi_pithytrace(2, XAPI_TRACE_COLORIZE);
+    //fatal(logger_trace_pithy, L_ERROR, XAPI_TRACE_COLORIZE);
 #endif
 
     xmain_exit = XAPI_ERRVAL;
@@ -179,22 +248,17 @@ static xapi xmain_load(char ** envp)
   // load modules
   fatal(logging_setup, envp);
   fatal(params_setup);
-  fatal(sigutil_defaults);
-
-  // unblock SIGINT
-  sigset_t cur;
-  sigset_t sigs;
-  sigemptyset(&sigs);
-  fatal(xpthread_sigmask, SIG_BLOCK, &sigs, &cur);
-  sigs = cur;
-  sigdelset(&sigs, SIGINT);
-  fatal(xpthread_sigmask, SIG_SETMASK, &sigs, 0);
+  fatal(config_setup);
+  fatal(build_command_setup);
 
   fatal(xmain_jump);
 
 finally:
   // modules
   params_teardown();
+  fatal(config_cleanup);
+  fatal(build_command_cleanup);
+  fatal(args_teardown);
 
   // libraries
   fatal(fab_unload);
@@ -217,7 +281,7 @@ finally:
   if(XAPI_UNWINDING)
   {
     // write failures before liblogger to stderr
-    xapi_backtrace(2, 0);
+    xapi_backtrace(2, XAPI_TRACE_COLORIZE);
   }
 
 conclude(&R);

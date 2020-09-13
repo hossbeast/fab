@@ -38,6 +38,7 @@
 #include "xlinux/xstdlib.h"
 #include "xlinux/xepoll.h"
 #include "xlinux/xwait.h"
+#include "xlinux/xunistd.h"
 
 #include "build_thread.internal.h"
 #include "CONFIG.errtab.h"
@@ -48,17 +49,21 @@
 #include "logging.h"
 #include "node.h"
 #include "params.h"
+#include "handler_thread.h"
 #include "path.h"
 #include "formula.h"
 #include "config.internal.h"
 #include "exec_builder.h"
+#include "fab/build.desc.h"
 
-#include "common/atomic.h"
+#include "atomics.h"
 #include "macros.h"
-#include "common/spinlock.h"
+#include "locks.h"
 #include "common/hash.h"
 #include "common/attrs.h"
 #include "box.h"
+#include "events.h"
+#include "zbuffer.h"
 
 // configuration
 static build_thread_config staging_cfg;
@@ -77,7 +82,7 @@ static bool build_thread_relaunching;
 static int build_thread_lock;
 static uint64_t stage_index_sum;
 static int64_t stage_index_sum_target;
-static bool notify_completion;
+static handler_context *handler;
 static selected_node *sn_first;
 static uint16_t build_stage;
 static uint16_t build_numranks;
@@ -119,39 +124,9 @@ static int build_slot_cmp(const void * A, size_t Al, const void * B, size_t Bl)
   return INTCMP((*Absp)->pid, (*Bbsp)->pid);
 }
 
-static void build_show_settings(const struct config_formula_show_settings * restrict settings, struct show_settings * restrict config)
-{
-  box_bool_setif(settings->show_path, &config->show_path);
-  box_bool_setif(settings->show_command, &config->show_command);
-  box_bool_setif(settings->show_cwd, &config->show_cwd);
-  box_bool_setif(settings->show_arguments, &config->show_arguments);
-  box_bool_setif(settings->show_sources, &config->show_sources);
-  box_bool_setif(settings->show_targets, &config->show_targets);
-  box_bool_setif(settings->show_environment, &config->show_environment);
-  box_bool_setif(settings->show_status, &config->show_status);
-  box_bool_setif(settings->show_stdout, &config->show_stdout);
-  box_int16_setif(settings->show_stdout_limit_bytes, &config->show_stdout_limit_bytes);
-  box_int16_setif(settings->show_stdout_limit_lines, &config->show_stdout_limit_lines);
-  box_bool_setif(settings->show_stderr, &config->show_stderr);
-  box_int16_setif(settings->show_stderr_limit_bytes, &config->show_stderr_limit_bytes);
-  box_int16_setif(settings->show_stderr_limit_lines, &config->show_stderr_limit_lines);
-  box_bool_setif(settings->show_auxout, &config->show_auxout);
-  box_int16_setif(settings->show_auxout_limit_bytes, &config->show_auxout_limit_bytes);
-  box_int16_setif(settings->show_auxout_limit_lines, &config->show_auxout_limit_lines);
-}
-
 static void build_config(const config * restrict cfg, build_thread_config * restrict config)
 {
   box_int16_setif(cfg->build.concurrency, &config->concurrency);
-  box_int_setif(cfg->formula.capture_stdout, (int*)&config->capture_stdout);
-  box_uint16_setif(cfg->formula.stdout_buffer_size, &config->stdout_buffer_size);
-  box_int_setif(cfg->formula.capture_stderr, (int*)&config->capture_stderr);
-  box_uint16_setif(cfg->formula.stderr_buffer_size, &config->stderr_buffer_size);
-  box_int_setif(cfg->formula.capture_auxout, (int*)&config->capture_auxout);
-  box_uint16_setif(cfg->formula.auxout_buffer_size, &config->auxout_buffer_size);
-
-  build_show_settings(&cfg->formula.error, &config->error);
-  build_show_settings(&cfg->formula.success, &config->success);
 
   if(config->concurrency == 0)
   {
@@ -176,8 +151,9 @@ static xapi build_thread()
   struct epoll_event events[64];
   int x;
   selected_node *sn;
-
-  g_params.thread_build = gettid();
+  fabipc_message *msg;
+  handler_context *evhandler;
+  size_t z;
 
 #if DEBUG || DEVEL
   logs(L_IPC, "starting");
@@ -185,7 +161,7 @@ static xapi build_thread()
 
   // signals handled on this thread
   sigfillset(&sigs);
-  sigdelset(&sigs, FABIPC_SIGSCH);
+  sigdelset(&sigs, SIGUSR1);
   sigdelset(&sigs, SIGCHLD);
 
   stage_index = 0;
@@ -208,6 +184,20 @@ static xapi build_thread()
         sn_first = 0;
         numranks = build_numranks;
         logf(L_BUILDER, "stage begin %3d", 0);
+
+        if(events_would(FABIPC_EVENT_BUILD_START, &evhandler, &msg)) {
+printf("build-start would %d\n", 1);
+          z = 0;
+          z += znload_u16(msg->text + z, sizeof(msg->text) - z, descriptor_fab_build_state.id);
+          z += znload_int(msg->text + z, sizeof(msg->text) - z, &handler->build_state, sizeof(handler->build_state));
+          z += znload_u16(msg->text + z, sizeof(msg->text) - z, descriptor_fab_build_numranks.id);
+          z += znload_u16(msg->text + z, sizeof(msg->text) - z, build_numranks);
+          z += znload_u16(msg->text + z, sizeof(msg->text) - z, descriptor_fab_build_numexecs.id);
+          z += znload_u16(msg->text + z, sizeof(msg->text) - z, llist_count(&sn->lln));
+          events_publish(evhandler, msg);
+        } else {
+printf("build-start would %d\n", 0);
+        }
       }
 
       if(!sn) { // no work
@@ -232,6 +222,7 @@ static xapi build_thread()
         fatal(build_slot_prep, bs, bpe, stage_index);
 
         /* launch the build slot */
+        bs->stage = build_stage;
         fatal(build_slot_fork_and_exec, bs);
 
         fatal(hashtable_put, build_slots_bypid, &bs);
@@ -277,9 +268,9 @@ static xapi build_thread()
       slot_index = bs - build_slots;
 
       logf(L_BUILDER, "%6s slot %3"PRIu32" stage %3d index %3d status %3d", "reap", (uint32_t)slot_index, build_stage, bs->stage_index, bs->status);
-      fatal(build_slot_reap, bs, slot_index, &siginfo);
+      fatal(build_slot_reap, bs, &siginfo);
 
-      if(!bs->success) {
+      if(bs->status || bs->stderr_total) {
         build_stage_failure = true;
       }
 
@@ -287,11 +278,8 @@ static xapi build_thread()
       fatal(hashtable_delete, build_slots_bypid, &key);
 
       bs->pid = 0;
-      bs->stdout_buf_len = 0;
       bs->stdout_total = 0;
-      bs->stderr_buf_len = 0;
       bs->stderr_total = 0;
-      bs->auxout_buf_len = 0;
       bs->auxout_total = 0;
 
       // check for end-of-stage
@@ -310,10 +298,18 @@ static xapi build_thread()
       {
         logf(L_BUILDER, "END OF BUILD");
         build_stage = numranks + 1;
+        handler->build_state = FAB_BUILD_SUCCEEDED;
+        if(build_stage_failure) {
+          handler->build_state = FAB_BUILD_FAILED;
+        }
         sn = 0;
-        if(notify_completion)
-        {
-          fatal(sigutil_tgkill, g_params.pid, g_params.thread_server, FABIPC_SIGSCH);
+        fatal(sigutil_tgkill, g_params.pid, handler->tid, SIGUSR1);
+
+        if(events_would(FABIPC_EVENT_BUILD_END, &evhandler, &msg)) {
+          z = 0;
+          z += znload_u16(msg->text + z, sizeof(msg->text) - z, descriptor_fab_build_state.id);
+          z += znload_int(msg->text + z, sizeof(msg->text) - z, &handler->build_state, sizeof(handler->build_state));
+          events_publish(evhandler, msg);
         }
       }
     }
@@ -326,15 +322,16 @@ finally:
 coda;
 }
 
-static void * build_thread_main(void * arg)
+static void * build_thread_jump(void * arg)
 {
   enter;
 
   xapi R;
   logger_set_thread_name("build");
   logger_set_thread_categories(L_BUILDER);
+  g_params.thread_build = gettid();
 
-  spinlock_engage(&build_thread_lock);
+  spinlock_acquire(&build_thread_lock, g_params.thread_build);
   fatal(build_thread);
 
 finally:
@@ -353,10 +350,11 @@ finally:
 conclude(&R);
 
   atomic_dec(&g_params.thread_count);
-  spinlock_release(&build_thread_lock);
+  spinlock_release(&build_thread_lock, g_params.thread_build);
 
-  if(!build_thread_relaunching)
-    syscall(SYS_tgkill, g_params.pid, g_params.thread_monitor, FABIPC_SIGSCH);
+  if(!build_thread_relaunching) {
+    syscall(SYS_tgkill, g_params.pid, g_params.thread_monitor, SIGUSR1);
+  }
 
   return 0;
 }
@@ -377,7 +375,7 @@ xapi build_thread_launch()
   fatal(xpthread_attr_setdetachstate, &attr, PTHREAD_CREATE_DETACHED);
 
   atomic_inc(&g_params.thread_count);
-  if((rv = pthread_create(&pthread_id, &attr, build_thread_main, 0)) != 0)
+  if((rv = pthread_create(&pthread_id, &attr, build_thread_jump, 0)) != 0)
   {
     atomic_dec(&g_params.thread_count);
     tfail(perrtab_KERNEL, rv);
@@ -408,13 +406,8 @@ xapi build_thread_setup()
   for(x = 0; x < build_thread_cfg.concurrency; x++)
   {
     fatal(xpipe, build_slots[x].stdout_pipe);
-    fatal(xmalloc, &build_slots[x].stdout_buf, build_thread_cfg.stdout_buffer_size);
-
     fatal(xpipe, build_slots[x].stderr_pipe);
-    fatal(xmalloc, &build_slots[x].stderr_buf, build_thread_cfg.stderr_buffer_size);
-
     fatal(xpipe, build_slots[x].auxout_pipe);
-    fatal(xmalloc, &build_slots[x].auxout_buf, build_thread_cfg.auxout_buffer_size);
 
     fatal(exec_builder_xinit, &build_slots[x].exec_builder);
     fatal(exec_render_context_xinit, &build_slots[x].exec_builder_context);
@@ -469,9 +462,6 @@ xapi build_thread_cleanup()
 
     wfree(build_slots[x].argv_stor);
     wfree(build_slots[x].env_stor);
-    wfree(build_slots[x].stdout_buf);
-    wfree(build_slots[x].stderr_buf);
-    wfree(build_slots[x].auxout_buf);
     fatal(exec_builder_xdestroy, &build_slots[x].exec_builder);
     fatal(exec_render_context_xdestroy, &build_slots[x].exec_builder_context);
   }
@@ -497,11 +487,11 @@ xapi build_thread_reconfigure(config * restrict cfg, bool dry)
     if(build_thread_lock)
     {
       build_thread_relaunching = true;
-      fatal(sigutil_tgkill, g_params.pid, g_params.thread_build, FABIPC_SIGSCH);
+      fatal(sigutil_tgkill, g_params.pid, g_params.thread_build, SIGUSR1);
 
       // wait
-      spinlock_engage(&build_thread_lock);
-      spinlock_release(&build_thread_lock);
+      spinlock_acquire(&build_thread_lock, g_params.thread_build);
+      spinlock_release(&build_thread_lock, g_params.thread_build);
 
       build_thread_relaunching = false;
     }
@@ -520,7 +510,7 @@ xapi build_thread_reconfigure(config * restrict cfg, bool dry)
 }
 
 /* called from server thread */
-xapi build_thread_build(bool notify)
+xapi build_thread_build(handler_context * restrict handler_ctx)
 {
   enter;
 
@@ -532,8 +522,8 @@ xapi build_thread_build(bool notify)
   build_numranks = bp_selection.numranks;
 
   // go for launch
-  notify_completion = notify;
-  fatal(sigutil_tgkill, g_params.pid, g_params.thread_build, FABIPC_SIGSCH);
+  handler = handler_ctx;
+  fatal(sigutil_tgkill, g_params.pid, g_params.thread_build, SIGUSR1);
 
   finally : coda;
 }

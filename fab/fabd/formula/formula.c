@@ -99,7 +99,7 @@ xapi formula_node_initialize(node * restrict fml_node)
   fatal(xmalloc, &fml, sizeof(*fml));
   llist_init_node(&fml->lln_invalidated);
   fml->fd = -1;
-  node_get_absolute_path(fml_node, path, sizeof(path));
+  node_absolute_path_znload(path, sizeof(path), fml_node);
   fatal(ixstrdup, &fml->abspath, path);
 
   fml_node->self_fml = fml;

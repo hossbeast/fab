@@ -38,7 +38,7 @@ struct g_params g_params;
 // public
 //
 
-xapi params_setup(uint64_t *hash)
+xapi params_setup(uint64_t hash)
 {
   enter;
 
@@ -51,16 +51,6 @@ xapi params_setup(uint64_t *hash)
   g_params.ppid = getppid();
   g_params.pgid = getpgid(0);
   g_params.proj_dirfd = -1;
-
-#if DEVEL
-  if(*hash == 0)
-  {
-    char * pwd;
-    fatal(xrealpaths, &pwd, 0, getenv("PWD"));
-    *hash = hash64(0, pwd, strlen(pwd));
-    free(pwd);
-  }
-#endif
 
   // exedir is the path to directory containing the executing binary
   ssize_t r = 0;
@@ -84,10 +74,10 @@ xapi params_setup(uint64_t *hash)
   // page size
   g_params.pagesize = sysconf(_SC_PAGESIZE);
 
-  snprintf(space, sizeof(space), "%s/%016"PRIx64, XQUOTE(FABIPCDIR), *hash);
+  snprintf(space, sizeof(space), "%s/%016"PRIx64, XQUOTE(FABIPCDIR), hash);
   fatal(ixstrdup, &g_params.ipcdir, space);
 
-  fatal(xrealpathf, &g_params.proj_dir, 0, "%s/%016"PRIx64"/projdir", XQUOTE(FABIPCDIR), *hash);
+  fatal(xrealpathf, &g_params.proj_dir, 0, "%s/%016"PRIx64"/projdir", XQUOTE(FABIPCDIR), hash);
   fatal(xopens, &g_params.proj_dirfd, O_PATH | O_DIRECTORY, g_params.proj_dir);
 
   // get real user identity

@@ -25,10 +25,9 @@
 // public
 //
 
-xapi bpe_say_sources(buildplan_entity * restrict bpe, narrator * restrict N)
+void bpe_sources(buildplan_entity * restrict bpe, llist * restrict list)
 {
-  enter;
-
+  vertex *v;
   node *n;
   node_edge_dependency *ne;
   edge *e;
@@ -37,7 +36,8 @@ xapi bpe_say_sources(buildplan_entity * restrict bpe, narrator * restrict N)
   if(bpe->typemark == BPE_NODE)
   {
     n = containerof(bpe, typeof(*n), self_bpe);
-    fatal(node_path_say, n, N);
+    v = vertex_containerof(n);
+    llist_append(list, v, lln);
   }
   else if(bpe->typemark == BPE_NODE_EDGE_DEPENDENCY)
   {
@@ -49,16 +49,16 @@ xapi bpe_say_sources(buildplan_entity * restrict bpe, narrator * restrict N)
         n = vertex_value(e->B);
       else
         n = vertex_value(e->A);
-      fatal(node_path_say, n, N);
+      v = vertex_containerof(n);
+      llist_append(list, v, lln);
     }
     else if(ne->dir == EDGE_TGT_SRC)
     {
       for(x = 0; x < e->Blen; x++)
       {
         n = vertex_value(e->Blist[x].v);
-        if(x)
-          fatal(narrator_xsays, N, ",");
-        fatal(node_path_say, n, N);
+        v = vertex_containerof(n);
+        llist_append(list, v, lln);
       }
     }
     else if(ne->dir == EDGE_SRC_TGT)
@@ -66,19 +66,78 @@ xapi bpe_say_sources(buildplan_entity * restrict bpe, narrator * restrict N)
       for(x = 0; x < e->Alen; x++)
       {
         n = vertex_value(e->Alist[x].v);
-        if(x)
-          fatal(narrator_xsays, N, ",");
-        fatal(node_path_say, n, N);
+        v = vertex_containerof(n);
+        llist_append(list, v, lln);
       }
     }
-    else
+  }
+}
+
+void bpe_targets(buildplan_entity * restrict bpe, llist * restrict list)
+{
+  vertex *v;
+  node *n;
+  node_edge_dependency *ne;
+  edge *e;
+  int x;
+
+  if(bpe->typemark == BPE_NODE)
+  {
+    n = containerof(bpe, typeof(*n), self_bpe);
+    v = vertex_containerof(n);
+    llist_append(list, v, lln);
+  }
+  else if(bpe->typemark == BPE_NODE_EDGE_DEPENDENCY)
+  {
+    ne = containerof(bpe, typeof(*ne), bpe);
+    e = edge_containerof(ne);
+    if(!(e->attrs & MORIA_EDGE_HYPER))
     {
-      RUNTIME_ABORT();
+      if(ne->dir == EDGE_TGT_SRC)
+        n = vertex_value(e->A);
+      else
+        n = vertex_value(e->B);
+      v = vertex_containerof(n);
+      llist_append(list, v, lln);
+    }
+    else if(ne->dir == EDGE_TGT_SRC)
+    {
+      for(x = 0; x < e->Alen; x++)
+      {
+        n = vertex_value(e->Alist[x].v);
+        v = vertex_containerof(n);
+        llist_append(list, v, lln);
+      }
+    }
+    else if(ne->dir == EDGE_SRC_TGT)
+    {
+      for(x = 0; x < e->Blen; x++)
+      {
+        n = vertex_value(e->Blist[x].v);
+        v = vertex_containerof(n);
+        llist_append(list, v, lln);
+      }
     }
   }
-  else
-  {
-    RUNTIME_ABORT();
+}
+
+xapi bpe_say_sources(buildplan_entity * restrict bpe, narrator * restrict N)
+{
+  enter;
+
+  llist list = LLIST_INITIALIZER(list);
+  vertex *v;
+  node *n;
+  int x;
+
+  bpe_sources(bpe, &list);
+  x = 0;
+  llist_foreach(&list, v, lln) {
+    n = vertex_value(v);
+    if(x++) {
+      fatal(narrator_xsays, N, ", ");
+    }
+    fatal(node_path_say, n, N);
   }
 
   finally : coda;
@@ -88,56 +147,19 @@ xapi bpe_say_targets(buildplan_entity * restrict bpe, narrator * restrict N)
 {
   enter;
 
+  llist list = LLIST_INITIALIZER(list);
+  vertex *v;
   node *n;
-  node_edge_dependency *ne;
-  edge *e;
   int x;
 
-  if(bpe->typemark == BPE_NODE)
-  {
-    n = containerof(bpe, typeof(*n), self_bpe);
+  bpe_targets(bpe, &list);
+  x = 0;
+  llist_foreach(&list, v, lln) {
+    n = vertex_value(v);
+    if(x++) {
+      fatal(narrator_xsays, N, ", ");
+    }
     fatal(node_path_say, n, N);
-  }
-  else if(bpe->typemark == BPE_NODE_EDGE_DEPENDENCY)
-  {
-    ne = containerof(bpe, typeof(*ne), bpe);
-    e = edge_containerof(ne);
-    if(!(e->attrs & MORIA_EDGE_HYPER))
-    {
-      if(ne->dir == EDGE_TGT_SRC)
-        n = vertex_value(e->A);
-      else
-        n = vertex_value(e->B);
-      fatal(node_path_say, n, N);
-    }
-    else if(ne->dir == EDGE_TGT_SRC)
-    {
-      for(x = 0; x < e->Alen; x++)
-      {
-        n = vertex_value(e->Alist[x].v);
-        if(x)
-          fatal(narrator_xsays, N, ", ");
-        fatal(node_path_say, n, N);
-      }
-    }
-    else if(ne->dir == EDGE_SRC_TGT)
-    {
-      for(x = 0; x < e->Blen; x++)
-      {
-        n = vertex_value(e->Blist[x].v);
-        if(x)
-          fatal(narrator_xsays, N, ", ");
-        fatal(node_path_say, n, N);
-      }
-    }
-    else
-    {
-      RUNTIME_ABORT();
-    }
-  }
-  else
-  {
-    RUNTIME_ABORT();
   }
 
   finally : coda;

@@ -105,7 +105,7 @@ static xapi rules_test_entry(xunit_test * _test)
 
   rules_test * test = (rules_test *)_test;
 
-  narrator * N = 0;
+  narrator_growing * N = 0;
   pattern_parser * parser = 0;
   operations_parser * op_parser = 0;
   list * operations = 0;
@@ -188,8 +188,8 @@ static xapi rules_test_entry(xunit_test * _test)
   fatal(rule_run, r, &rule_ctx);
 
   // ordered list of edges
-  fatal(graph_say, g_graph, N);
-  const char * graph = narrator_growing_buffer(N);
+  fatal(graph_say, g_graph, &N->base);
+  const char * graph = N->s;
   assert_eq_s(test->graph, graph);
 
 finally:
@@ -197,7 +197,7 @@ finally:
   pattern_free(generate_pat);
   fatal(node_cleanup);
   fatal(set_xfree, variants);
-  fatal(narrator_xfree, N);
+  fatal(narrator_growing_free, N);
   fatal(operations_parser_xfree, op_parser);
   fatal(pattern_parser_xfree, parser);
   fatal(list_xfree, operations);

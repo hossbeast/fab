@@ -171,32 +171,6 @@ static void config_compare_var(config_base * restrict _new, config_base * restri
     new->changed = value_cmp(new->value, old->value);
 }
 
-static void config_compare_formula_show_settings(config_base * restrict _new, config_base * restrict _old)
-{
-  struct config_formula_show_settings * new = containerof(_new, struct config_formula_show_settings, cb);
-  struct config_formula_show_settings * old = containerof(_old, struct config_formula_show_settings, cb);
-
-  new->changed =
-       box_cmp(refas(new->show_arguments, bx), refas2(old, show_arguments, bx))
-    || box_cmp(refas(new->show_path, bx), refas2(old, show_path, bx))
-    || box_cmp(refas(new->show_cwd, bx), refas2(old, show_cwd, bx))
-    || box_cmp(refas(new->show_command, bx), refas2(old, show_command, bx))
-    || box_cmp(refas(new->show_sources, bx), refas2(old, show_sources, bx))
-    || box_cmp(refas(new->show_targets, bx), refas2(old, show_targets, bx))
-    || box_cmp(refas(new->show_environment, bx), refas2(old, show_environment, bx))
-    || box_cmp(refas(new->show_status, bx), refas2(old, show_status, bx))
-    || box_cmp(refas(new->show_stdout, bx), refas2(old, show_stdout, bx))
-    || box_cmp(refas(new->show_stdout_limit_bytes, bx), refas2(old, show_stdout_limit_bytes, bx))
-    || box_cmp(refas(new->show_stdout_limit_lines, bx), refas2(old, show_stdout_limit_lines, bx))
-    || box_cmp(refas(new->show_stderr, bx), refas2(old, show_stderr, bx))
-    || box_cmp(refas(new->show_stderr_limit_bytes, bx), refas2(old, show_stderr_limit_bytes, bx))
-    || box_cmp(refas(new->show_stderr_limit_lines, bx), refas2(old, show_stderr_limit_lines, bx))
-    || box_cmp(refas(new->show_auxout, bx), refas2(old, show_auxout, bx))
-    || box_cmp(refas(new->show_auxout_limit_bytes, bx), refas2(old, show_auxout_limit_bytes, bx))
-    || box_cmp(refas(new->show_auxout_limit_lines, bx), refas2(old, show_auxout_limit_lines, bx))
-    ;
-}
-
 static void config_compare_formula_path(config_base * restrict _new, config_base * restrict _old)
 {
   struct config_formula_path * new = containerof(_new, struct config_formula_path, cb);
@@ -211,20 +185,10 @@ static void config_compare_formula(config_base * restrict _new, config_base * re
   struct config_formula * new = containerof(_new, struct config_formula, cb);
   struct config_formula * old = containerof(_old, struct config_formula, cb);
 
-  config_compare_formula_show_settings(&new->success.cb, refas(old, success.cb));
-  config_compare_formula_show_settings(&new->error.cb, refas(old, error.cb));
   config_compare_formula_path(&new->path.cb, refas(old, path.cb));
 
-  new->changed =
-         new->success.changed
-      || new->error.changed
+  new->changed = 0
       || new->path.changed
-      || box_cmp(refas(new->capture_stdout, bx), refas(old->capture_stdout, bx))
-      || box_cmp(refas(new->stdout_buffer_size, bx), refas(old->stdout_buffer_size, bx))
-      || box_cmp(refas(new->capture_stderr, bx), refas(old->capture_stderr, bx))
-      || box_cmp(refas(new->stderr_buffer_size, bx), refas(old->stderr_buffer_size, bx))
-      || box_cmp(refas(new->capture_auxout, bx), refas(old->capture_auxout, bx))
-      || box_cmp(refas(new->auxout_buffer_size, bx), refas(old->auxout_buffer_size, bx))
       ;
 }
 
@@ -313,58 +277,7 @@ xapi config_merge(config * restrict dst, config * restrict src)
   empty = true;
   CFGCOPY(dst, src, formula, path.copy_from_env);
   dst->formula.path.merge_significant |= !empty;
-
-  /* formula success */
-  empty = true;
-  CFGCOPY(dst, src, formula, success.show_arguments);
-  CFGCOPY(dst, src, formula, success.show_path);
-  CFGCOPY(dst, src, formula, success.show_cwd);
-  CFGCOPY(dst, src, formula, success.show_command);
-  CFGCOPY(dst, src, formula, success.show_sources);
-  CFGCOPY(dst, src, formula, success.show_targets);
-  CFGCOPY(dst, src, formula, success.show_environment);
-  CFGCOPY(dst, src, formula, success.show_status);
-  CFGCOPY(dst, src, formula, success.show_stdout);
-  CFGCOPY(dst, src, formula, success.show_stdout_limit_bytes);
-  CFGCOPY(dst, src, formula, success.show_stdout_limit_lines);
-  CFGCOPY(dst, src, formula, success.show_stderr);
-  CFGCOPY(dst, src, formula, success.show_stderr_limit_bytes);
-  CFGCOPY(dst, src, formula, success.show_stderr_limit_lines);
-  CFGCOPY(dst, src, formula, success.show_auxout);
-  CFGCOPY(dst, src, formula, success.show_auxout_limit_bytes);
-  CFGCOPY(dst, src, formula, success.show_auxout_limit_lines);
-  dst->formula.success.merge_significant = !empty;
-
-  /* formula error */
-  empty = true;
-  CFGCOPY(dst, src, formula, error.show_arguments);
-  CFGCOPY(dst, src, formula, error.show_path);
-  CFGCOPY(dst, src, formula, error.show_cwd);
-  CFGCOPY(dst, src, formula, error.show_command);
-  CFGCOPY(dst, src, formula, error.show_sources);
-  CFGCOPY(dst, src, formula, error.show_targets);
-  CFGCOPY(dst, src, formula, error.show_environment);
-  CFGCOPY(dst, src, formula, error.show_status);
-  CFGCOPY(dst, src, formula, error.show_stdout);
-  CFGCOPY(dst, src, formula, error.show_stdout_limit_bytes);
-  CFGCOPY(dst, src, formula, error.show_stdout_limit_lines);
-  CFGCOPY(dst, src, formula, error.show_stderr);
-  CFGCOPY(dst, src, formula, error.show_stderr_limit_bytes);
-  CFGCOPY(dst, src, formula, error.show_stderr_limit_lines);
-  CFGCOPY(dst, src, formula, error.show_auxout);
-  CFGCOPY(dst, src, formula, error.show_auxout_limit_bytes);
-  CFGCOPY(dst, src, formula, error.show_auxout_limit_lines);
-  dst->formula.error.merge_significant = !empty;
-
-  /* formula */
-  empty = true;
-  CFGCOPY(dst, src, formula, capture_stdout);
-  CFGCOPY(dst, src, formula, stdout_buffer_size);
-  CFGCOPY(dst, src, formula, capture_stderr);
-  CFGCOPY(dst, src, formula, stderr_buffer_size);
-  CFGCOPY(dst, src, formula, capture_auxout);
-  CFGCOPY(dst, src, formula, auxout_buffer_size);
-  dst->formula.merge_significant = !empty;
+  dst->formula.merge_significant = dst->formula.path.merge_significant;
 
   /* logging */
   dst->logging.merge_significant = false;
@@ -468,54 +381,12 @@ xapi config_xfree(config * restrict cfg)
   if(cfg)
   {
     box_free(refas(cfg->build.concurrency, bx));
-    box_free(refas(cfg->formula.capture_stdout, bx));
-    box_free(refas(cfg->formula.stdout_buffer_size, bx));
-    box_free(refas(cfg->formula.capture_stderr, bx));
-    box_free(refas(cfg->formula.stderr_buffer_size, bx));
-    box_free(refas(cfg->formula.capture_auxout, bx));
-    box_free(refas(cfg->formula.auxout_buffer_size, bx));
 
     fatal(set_xfree, cfg->extern_section.entries);
     fatal(map_xfree, cfg->filesystems.entries);
     fatal(set_xfree, cfg->formula.path.dirs.entries);
 
     box_free(refas(cfg->formula.path.copy_from_env, bx));
-
-    box_free(refas(cfg->formula.success.show_arguments, bx));
-    box_free(refas(cfg->formula.success.show_path, bx));
-    box_free(refas(cfg->formula.success.show_cwd, bx));
-    box_free(refas(cfg->formula.success.show_command, bx));
-    box_free(refas(cfg->formula.success.show_sources, bx));
-    box_free(refas(cfg->formula.success.show_targets, bx));
-    box_free(refas(cfg->formula.success.show_environment, bx));
-    box_free(refas(cfg->formula.success.show_status, bx));
-    box_free(refas(cfg->formula.success.show_stdout, bx));
-    box_free(refas(cfg->formula.success.show_stdout_limit_bytes, bx));
-    box_free(refas(cfg->formula.success.show_stdout_limit_lines, bx));
-    box_free(refas(cfg->formula.success.show_stderr, bx));
-    box_free(refas(cfg->formula.success.show_stderr_limit_bytes, bx));
-    box_free(refas(cfg->formula.success.show_stderr_limit_lines, bx));
-    box_free(refas(cfg->formula.success.show_auxout, bx));
-    box_free(refas(cfg->formula.success.show_auxout_limit_bytes, bx));
-    box_free(refas(cfg->formula.success.show_auxout_limit_lines, bx));
-
-    box_free(refas(cfg->formula.error.show_arguments, bx));
-    box_free(refas(cfg->formula.error.show_path, bx));
-    box_free(refas(cfg->formula.error.show_cwd, bx));
-    box_free(refas(cfg->formula.error.show_command, bx));
-    box_free(refas(cfg->formula.error.show_sources, bx));
-    box_free(refas(cfg->formula.error.show_targets, bx));
-    box_free(refas(cfg->formula.error.show_environment, bx));
-    box_free(refas(cfg->formula.error.show_status, bx));
-    box_free(refas(cfg->formula.error.show_stdout, bx));
-    box_free(refas(cfg->formula.error.show_stdout_limit_bytes, bx));
-    box_free(refas(cfg->formula.error.show_stdout_limit_lines, bx));
-    box_free(refas(cfg->formula.error.show_stderr, bx));
-    box_free(refas(cfg->formula.error.show_stderr_limit_bytes, bx));
-    box_free(refas(cfg->formula.error.show_stderr_limit_lines, bx));
-    box_free(refas(cfg->formula.error.show_auxout, bx));
-    box_free(refas(cfg->formula.error.show_auxout_limit_bytes, bx));
-    box_free(refas(cfg->formula.error.show_auxout_limit_lines, bx));
 
     fatal(list_xfree, cfg->logging.logfile.exprs.items);
     fatal(list_xfree, cfg->logging.console.exprs.items);
@@ -540,7 +411,6 @@ xapi config_writer_write(config * restrict cfg, value_writer * const restrict wr
   enter;
 
   int x;
-  const char *name;
   const box_string *ent;
   const box_string *item;
   const char *key;
@@ -626,122 +496,6 @@ xapi config_writer_write(config * restrict cfg, value_writer * const restrict wr
         fatal(value_writer_pop_set, writer);
         fatal(value_writer_pop_mapping, writer);
       }
-
-      fatal(value_writer_pop_set, writer);
-      fatal(value_writer_pop_mapping, writer);
-    }
-
-    if(cfg->formula.capture_stdout)
-    {
-      name = attrs32_name_byvalue(stream_part_attrs, STREAM_PART_OPT & cfg->formula.capture_stdout->v);
-      fatal(value_writer_mapping_string_string, writer, "capture-stdout", name);
-    }
-    if(cfg->formula.stdout_buffer_size)
-    {
-      fatal(value_writer_mapping_string_uint, writer, "stdout-buffer-size", cfg->formula.stdout_buffer_size->v);
-    }
-    if(cfg->formula.capture_stderr)
-    {
-      name = attrs32_name_byvalue(stream_part_attrs, STREAM_PART_OPT & cfg->formula.capture_stderr->v);
-      fatal(value_writer_mapping_string_string, writer, "capture-stderr", name);
-    }
-    if(cfg->formula.stderr_buffer_size)
-    {
-      fatal(value_writer_mapping_string_uint, writer, "stderr-buffer-size", cfg->formula.stderr_buffer_size->v);
-    }
-    if(cfg->formula.capture_auxout)
-    {
-      name = attrs32_name_byvalue(stream_part_attrs, STREAM_PART_OPT & cfg->formula.capture_auxout->v);
-      fatal(value_writer_mapping_string_string, writer, "capture-auxout", name);
-    }
-    if(cfg->formula.auxout_buffer_size)
-    {
-      fatal(value_writer_mapping_string_uint, writer, "auxout-buffer-size", cfg->formula.auxout_buffer_size->v);
-    }
-    if(cfg->formula.success.merge_significant)
-    {
-      fatal(value_writer_push_mapping, writer);
-      fatal(value_writer_string, writer, "success");
-      fatal(value_writer_push_set, writer);
-
-      if(cfg->formula.success.show_arguments)
-        fatal(value_writer_mapping_string_bool, writer, "show-arguments", cfg->formula.success.show_arguments->v);
-      if(cfg->formula.success.show_path)
-        fatal(value_writer_mapping_string_bool, writer, "show-path", cfg->formula.success.show_path->v);
-      if(cfg->formula.success.show_cwd)
-        fatal(value_writer_mapping_string_bool, writer, "show-cwd", cfg->formula.success.show_cwd->v);
-      if(cfg->formula.success.show_command)
-        fatal(value_writer_mapping_string_bool, writer, "show-command", cfg->formula.success.show_command->v);
-      if(cfg->formula.success.show_sources)
-        fatal(value_writer_mapping_string_bool, writer, "show-sources", cfg->formula.success.show_sources->v);
-      if(cfg->formula.success.show_targets)
-        fatal(value_writer_mapping_string_bool, writer, "show-targets", cfg->formula.success.show_targets->v);
-      if(cfg->formula.success.show_environment)
-        fatal(value_writer_mapping_string_bool, writer, "show-environment", cfg->formula.success.show_environment->v);
-      if(cfg->formula.success.show_status)
-        fatal(value_writer_mapping_string_bool, writer, "show-status", cfg->formula.success.show_status->v);
-      if(cfg->formula.success.show_stdout)
-        fatal(value_writer_mapping_string_bool, writer, "show-stdout", cfg->formula.success.show_stdout->v);
-      if(cfg->formula.success.show_stdout_limit_bytes)
-        fatal(value_writer_mapping_string_uint, writer, "show-stdout-limit-bytes", cfg->formula.success.show_stdout_limit_bytes->v);
-      if(cfg->formula.success.show_stdout_limit_lines)
-        fatal(value_writer_mapping_string_uint, writer, "show-stdout-limit-lines", cfg->formula.success.show_stdout_limit_lines->v);
-      if(cfg->formula.success.show_stderr)
-        fatal(value_writer_mapping_string_bool, writer, "show-stderr", cfg->formula.success.show_stderr->v);
-      if(cfg->formula.success.show_stderr_limit_bytes)
-        fatal(value_writer_mapping_string_uint, writer, "show-stderr-limit-bytes", cfg->formula.success.show_stderr_limit_bytes->v);
-      if(cfg->formula.success.show_stderr_limit_lines)
-        fatal(value_writer_mapping_string_uint, writer, "show-stderr-limit-lines", cfg->formula.success.show_stderr_limit_lines->v);
-      if(cfg->formula.success.show_auxout)
-        fatal(value_writer_mapping_string_bool, writer, "show-auxout", cfg->formula.success.show_auxout->v);
-      if(cfg->formula.success.show_auxout_limit_bytes)
-        fatal(value_writer_mapping_string_uint, writer, "show-auxout-limit-bytes", cfg->formula.success.show_auxout_limit_bytes->v);
-      if(cfg->formula.success.show_auxout_limit_lines)
-        fatal(value_writer_mapping_string_uint, writer, "show-auxout-limit-lines", cfg->formula.success.show_auxout_limit_lines->v);
-
-      fatal(value_writer_pop_set, writer);
-      fatal(value_writer_pop_mapping, writer);
-    }
-    if(cfg->formula.error.merge_significant)
-    {
-      fatal(value_writer_push_mapping, writer);
-      fatal(value_writer_string, writer, "error");
-      fatal(value_writer_push_set, writer);
-
-      if(cfg->formula.error.show_arguments)
-        fatal(value_writer_mapping_string_bool, writer, "show-arguments", cfg->formula.error.show_arguments->v);
-      if(cfg->formula.error.show_path)
-        fatal(value_writer_mapping_string_bool, writer, "show-path", cfg->formula.error.show_path->v);
-      if(cfg->formula.error.show_cwd)
-        fatal(value_writer_mapping_string_bool, writer, "show-cwd", cfg->formula.error.show_cwd->v);
-      if(cfg->formula.error.show_command)
-        fatal(value_writer_mapping_string_bool, writer, "show-command", cfg->formula.error.show_command->v);
-      if(cfg->formula.error.show_sources)
-        fatal(value_writer_mapping_string_bool, writer, "show-sources", cfg->formula.error.show_sources->v);
-      if(cfg->formula.error.show_targets)
-        fatal(value_writer_mapping_string_bool, writer, "show-targets", cfg->formula.error.show_targets->v);
-      if(cfg->formula.error.show_environment)
-        fatal(value_writer_mapping_string_bool, writer, "show-environment", cfg->formula.error.show_environment->v);
-      if(cfg->formula.error.show_status)
-        fatal(value_writer_mapping_string_bool, writer, "show-status", cfg->formula.error.show_status->v);
-      if(cfg->formula.error.show_stdout)
-        fatal(value_writer_mapping_string_bool, writer, "show-stdout", cfg->formula.error.show_stdout->v);
-      if(cfg->formula.error.show_stdout_limit_bytes)
-        fatal(value_writer_mapping_string_uint, writer, "show-stdout-limit-bytes", cfg->formula.error.show_stdout_limit_bytes->v);
-      if(cfg->formula.error.show_stdout_limit_lines)
-        fatal(value_writer_mapping_string_uint, writer, "show-stdout-limit-lines", cfg->formula.error.show_stdout_limit_lines->v);
-      if(cfg->formula.error.show_stderr)
-        fatal(value_writer_mapping_string_bool, writer, "show-stderr", cfg->formula.error.show_stderr->v);
-      if(cfg->formula.error.show_stderr_limit_bytes)
-        fatal(value_writer_mapping_string_uint, writer, "show-stderr-limit-bytes", cfg->formula.error.show_stderr_limit_bytes->v);
-      if(cfg->formula.error.show_stderr_limit_lines)
-        fatal(value_writer_mapping_string_uint, writer, "show-stderr-limit-lines", cfg->formula.error.show_stderr_limit_lines->v);
-      if(cfg->formula.error.show_auxout)
-        fatal(value_writer_mapping_string_bool, writer, "show-auxout", cfg->formula.error.show_auxout->v);
-      if(cfg->formula.error.show_auxout_limit_bytes)
-        fatal(value_writer_mapping_string_uint, writer, "show-auxout-limit-bytes", cfg->formula.error.show_auxout_limit_bytes->v);
-      if(cfg->formula.error.show_auxout_limit_lines)
-        fatal(value_writer_mapping_string_uint, writer, "show-auxout-limit-lines", cfg->formula.error.show_auxout_limit_lines->v);
 
       fatal(value_writer_pop_set, writer);
       fatal(value_writer_pop_mapping, writer);

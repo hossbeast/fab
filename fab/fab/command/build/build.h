@@ -15,15 +15,31 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef _BUILD_COMMAND_H
-#define _BUILD_COMMAND_H
+#ifndef COMMAND_BUILD_H
+#define COMMAND_BUILD_H
 
 #include "xapi.h"
+#include "types.h"
 
-struct command;
-extern struct command * build_command;
-extern struct command * autobuild_command;
+#include "command.h"
 
+struct config;
+struct narrator;
+struct fab_client;
+struct fabipc_message;
+
+extern struct command build_command;
+
+xapi build_command_setup(void);
 xapi build_command_cleanup(void);
+xapi build_command_reconfigure(struct config * restrict cfg);
+
+void build_command_usage(struct command * restrict cmd);
+xapi build_command_connected(struct command * restrict cmd, struct fab_client * restrict client);
+xapi build_command_args_parse(struct command * restrict cmd, int argc, char ** restrict argv);
+
+xapi build_command_request_collate(narrator * restrict N)
+  __attribute__((nonnull));
+xapi build_command_process_event(struct fab_client * restrict client, struct fabipc_message * restrict msg);
 
 #endif

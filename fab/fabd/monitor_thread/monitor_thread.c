@@ -23,13 +23,22 @@
 #include "xlinux/xpthread.h"
 #include "xlinux/xsignal.h"
 #include "xlinux/xunistd.h"
+#include "valyria/llist.h"
+#include "valyria/stack.h"
 #include "fab/ipc.h"
 #include "fab/sigutil.h"
 #include "logger/config.h"
 
 #include "monitor_thread.h"
+#include "handler_thread.h"
 #include "logging.h"
 #include "params.h"
+#include "rcu.h"
+
+//uint16_t monitor_quiesce_r[1024];
+//uint16_t monitor_quiesce_n[1024];
+//int monitor_boats = 0;
+rcu_thread monitor_rcu;
 
 xapi monitor_thread()
 {
@@ -37,9 +46,14 @@ xapi monitor_thread()
 
   sigset_t sigs;
   siginfo_t info;
+  handler_context * handler;
+  int r;
+  rcu_thread *rcu_self = &monitor_rcu;
+  struct timespec interval;
 
   logger_set_thread_name("monitor");
   logger_set_thread_categories(L_MONITOR);
+
 #if DEBUG || DEVEL
   logs(L_IPC, "starting");
 #endif
@@ -49,28 +63,50 @@ xapi monitor_thread()
   sigaddset(&sigs, SIGINT);
   sigaddset(&sigs, SIGTERM);
   sigaddset(&sigs, SIGQUIT);
-  sigaddset(&sigs, FABIPC_SIGSCH);
+  sigaddset(&sigs, SIGUSR1);
+  interval.tv_sec = 0;
+  interval.tv_nsec = 125000000;
 
-  fatal(sigutil_wait, &sigs, &info);
-
-  // teardown other threads
-  g_params.shutdown = true;
+  rcu_register(rcu_self);
   while(g_params.thread_count)
   {
-    // signal-event-driven threads
-    fatal(uxtgkill, 0, g_params.pid, g_params.thread_server, FABIPC_SIGSCH);
-    fatal(uxtgkill, 0, g_params.pid, g_params.thread_build, FABIPC_SIGSCH);
+//    union quiesced Xn;
+//    Xn.u32 = rcu_quiesce(rcu_self);
+//printf("monitor quiesce %d\n", goats);
+//    monitor_quiesce_r[monitor_boats] = Xn.r;
+//    monitor_quiesce_n[monitor_boats] = Xn.n;
+//    monitor_boats++;
+    rcu_quiesce(rcu_self);
 
-    // blocking-io-driven threads
-    fatal(uxtgkill, 0, g_params.pid, g_params.thread_notify, FABIPC_SIGINTR);
-    fatal(uxtgkill, 0, g_params.pid, g_params.thread_sweeper, FABIPC_SIGINTR);
+    fatal(sigutil_timedwait, &r, &sigs, &info, &interval);
+    if(r == EAGAIN) {
+      continue;
+    }
 
-    fatal(sigutil_wait, &sigs, 0);
+    if(info.si_signo != SIGUSR1) {
+      g_params.shutdown = true;
+    }
+
+    if(!g_params.shutdown) {
+      continue;
+    }
+
+    fatal(uxtgkill, 0, g_params.pid, g_params.thread_server, SIGUSR1);
+    fatal(uxtgkill, 0, g_params.pid, g_params.thread_build, SIGUSR1);
+    fatal(uxtgkill, 0, g_params.pid, g_params.thread_notify, SIGUSR1);
+    fatal(uxtgkill, 0, g_params.pid, g_params.thread_sweeper, SIGUSR1);
+    fatal(uxtgkill, 0, g_params.pid, g_params.thread_beholder, SIGUSR1);
+
+    /* handlers may have been moved to freelist */
+    stack_foreach(&g_handlers, handler, stk) {
+      fatal(uxtgkill, 0, g_params.pid, handler->tid, SIGUSR1);
+    }
   }
 
 finally:
 #if DEBUG || DEVEL
   logs(L_IPC, "terminating");
 #endif
+  rcu_unregister(rcu_self);
 coda;
 }

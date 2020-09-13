@@ -81,6 +81,7 @@ typedef struct module {
   struct node * self_node;        // file node for module.bam
   char * self_node_relpath;
   struct node * dir_node;         // directory node for the module
+  char * dir_node_abspath;
   struct node * shadow;           // shadow dirnode //modules/id/
   struct node * shadow_imports;   // shadow dirnode //modules/id/imports/
   struct node * shadow_targets;   // shadow dirnode //modules/id/targets

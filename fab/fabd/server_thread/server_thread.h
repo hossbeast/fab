@@ -23,7 +23,7 @@
 
 #if DEVEL
 extern bool g_server_no_initial_client;      // no client right at startup
-extern const char *g_server_initial_request; // initial request
+extern struct fabipc_channel *g_server_initial_channel;
 #endif
 
 // true if currently autobuilding

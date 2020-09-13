@@ -23,6 +23,12 @@
 
 struct command;
 struct value_writer;
+struct fabipc_message;
+
+extern struct g_args_t {
+  bool invalidate;
+  bool kill;
+} g_args;
 
 /// args_parse
 //
@@ -37,7 +43,7 @@ struct value_writer;
 // PARAMETERS
 //  cmd - (returns) subcommand dispatch
 //
-xapi args_parse(const struct command ** cmd)
+xapi args_parse(struct command ** cmd)
   __attribute__((nonnull));
 
 /// args_usage
@@ -48,25 +54,9 @@ xapi args_parse(const struct command ** cmd)
 // PARAMETERS
 //  cmd - subcommand dispatch
 //
-xapi args_usage(const struct command * restrict cmd, int version, int logcats);
+void args_usage(struct command * restrict cmd);
+void args_version(void);
 
-/// args_report
-//
-// SUMMARY
-//  log a summary of args as-parsed
-//
-xapi args_report(const struct command * restrict cmd)
-  __attribute__((nonnull));
-
-/// args_request_collate
-//
-// SUMMARY
-//  build a fab request from g_args
-//
-// PARAMETERS
-//  request - (returns) request
-//
-xapi args_collate(const struct command * restrict cmd, void * request_shm)
-  __attribute__((nonnull));
+xapi args_teardown(void);
 
 #endif

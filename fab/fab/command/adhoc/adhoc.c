@@ -21,6 +21,7 @@
 #include "xlinux/xstdlib.h"
 #include "narrator.h"
 #include "narrator/units.h"
+#include "narrator/fixed.h"
 #include "value.h"
 #include "value/writer.h"
 #include "value/parser.h"
@@ -29,8 +30,10 @@
 #include "command.h"
 #include "errtab/MAIN.errtab.h"
 #include "fab/client.h"
+#include "fab/ipc.h"
 
 #include "macros.h"
+#include "common/attrs.h"
 
 static struct {
   char * request;
@@ -45,20 +48,16 @@ xapi adhoc_command_cleanup()
   finally : coda;
 }
 
-static xapi adhoc_usage_say(narrator * restrict N)
+static void usage(command * restrict cmd)
 {
-  enter;
-
-  xsays(
+  printf(
 "\n"
 "usage : fab adhoc [request] ...\n"
 "\n"
   );
-
-  finally : coda;
 }
 
-static xapi adhoc_args_parse(const char ** restrict argv, size_t argc)
+static xapi args_parse(command * restrict cmd, int argc, char ** restrict argv)
 {
   enter;
 
@@ -112,42 +111,74 @@ finally:
 coda;
 }
 
-static xapi adhoc_command_say(narrator * N)
+static xapi adhoc_connected(command * restrict cmd, fab_client * restrict client)
 {
   enter;
 
-  xsays(" adhoc");
+  value_writer writer;
+  narrator * request_narrator;
+  narrator_fixed nstor;
+  fabipc_message * msg;
 
-  if(args.request)
-    xsays(" --");
+  /* subscribe to relevant events */
+  msg = fab_client_produce(client, 0);
+  msg->type = FABIPC_MSG_EVENTSUB;
+  msg->attrs = 0
+//    | (1 << (FABIPC_EVENT_INVALIDATED - 1))
+//    | (1 << (FABIPC_EVENT_UPDATED - 1))
+//    | (1 << (FABIPC_EVENT_FORMULA_EXEC - 1))
+//    | (1 << (FABIPC_EVENT_FORMULA_EXEC_STDOUT - 1))
+//    | (1 << (FABIPC_EVENT_FORMULA_EXEC_STDERR - 1))
+//    | (1 << (FABIPC_EVENT_FORMULA_EXEC_AUXOUT - 1))
+    ;
+  fab_client_post(client);
 
-  xsayf(" %s", args.request);
+  /* send the request */
+  msg = fab_client_produce(client, 0);
+  msg->type = FABIPC_MSG_REQUEST;
+
+  request_narrator = narrator_fixed_init(&nstor, msg->text, 0xfff);
+
+  fatal(narrator_xsays, request_narrator, args.request);
+
+  // two terminating null bytes
+  fatal(narrator_xsayw, request_narrator, (char[]) { 0x00, 0x00 }, 2);
+  msg->size = nstor.l;
+  fab_client_post(client);
+
+finally:
+  fatal(value_writer_destroy, &writer);
+coda;
+}
+
+static xapi adhoc_process(command * restrict cmd, fab_client * restrict client, fabipc_message * restrict msg)
+{
+  enter;
+
+  if(msg->type == FABIPC_MSG_STDOUT) {
+printf("server/stdout: %.*s\n", msg->size, msg->text);
+  } else if(msg->type == FABIPC_MSG_STDERR) {
+printf("server/stderr: %.*s\n", msg->size, msg->text);
+  } else if(msg->type == FABIPC_MSG_RESULT) {
+printf("result: %.*s\n", msg->size, msg->text);
+  } else if(msg->type == FABIPC_MSG_EVENTS) {
+printf("events: %s %.*s\n", attrs32_name_byvalue(fabipc_event_type_attrs, msg->evtype), msg->size, msg->text);
+  } else if(msg->type == FABIPC_MSG_RESPONSE) {
+printf("response: %d - %s\n", msg->code, msg->text);
+//    if(msg->code) {
+//      receiving = true; // false;
+//    }
+  } else {
+printf("WTF\n");
+  }
 
   finally : coda;
 }
 
-static xapi adhoc_collate(value_writer * const restrict writer)
-{
-  enter;
-
-  fatal(narrator_xsays, writer->N, args.request);
-
-  finally : coda;
-}
-
-static xapi adhoc_process(const struct fab_message * restrict response)
-{
-  enter;
-
-  printf("%s\n", response->text);
-
-  finally : coda;
-}
-
-command * adhoc_command = (command[]) {{
-    args_parse : adhoc_args_parse
-  , usage_say : adhoc_usage_say
-  , command_say : adhoc_command_say
-  , collate : adhoc_collate
+command adhoc_command = {
+    name : "adhoc"
+  , args_parse : args_parse
+  , usage : usage
+  , connected : adhoc_connected
   , process : adhoc_process
-}};
+};

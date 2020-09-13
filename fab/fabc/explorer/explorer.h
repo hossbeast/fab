@@ -21,9 +21,6 @@
 #include "xapi.h"
 #include "types.h"
 
-struct fab_client;
-
-xapi explorer_main(struct fab_client * restrict client)
-  __attribute__((nonnull));
+xapi explorer_display_switch(void);
 
 #endif

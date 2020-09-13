@@ -26,10 +26,11 @@ struct config;
 extern char *path_cache_env_path; // $PATH
 
 typedef struct path_cache_entry {
-  int fd;
-  uint16_t len;
-  const char *filename; // pointer into s
-  char s[];
+  struct path_cache_entry *dir;     // directory containing this entry
+  int fd;                           // file descriptor
+  uint16_t len;                     // length of s
+  const char *filename;             // pointer to the filename at the end of s
+  char s[];                         // path fragment, or name
 } path_cache_entry;
 
 xapi path_cache_setup(void);

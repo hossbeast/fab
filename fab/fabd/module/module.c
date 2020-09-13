@@ -670,7 +670,7 @@ static xapi module_initialize(module * restrict mod, graph_invalidation_context 
   mod_file_n = mod->self_node;
 
   /* module paths needed during loading */
-  node_get_absolute_path(mod_dir_n, mod_dir_abspath, sizeof(mod_dir_abspath));
+  node_absolute_path_znload(mod_dir_abspath, sizeof(mod_dir_abspath), mod_dir_n);
   fatal(xrealpaths, 0, mod_dir_realpath, mod_dir_abspath);
   mod_dir_realpathl = strlen(mod_dir_realpath);
 
@@ -678,8 +678,9 @@ static xapi module_initialize(module * restrict mod, graph_invalidation_context 
   u64 = hash64(0, mod_dir_realpath, mod_dir_realpathl);
   snprintf(mod_dir_n->mod->id, sizeof(mod_dir_n->mod->id), "%"PRIx64, u64);
 
-  node_get_project_relative_path(mod_file_n, mod_file_relpath, sizeof(mod_file_relpath));
+  node_project_relative_path_znload(mod_file_relpath, sizeof(mod_file_relpath), mod_file_n);
   fatal(ixstrdup, &mod->self_node_relpath, mod_file_relpath);
+  fatal(ixstrdup, &mod->dir_node_abspath, mod_dir_abspath);
 
   // enable the module directory to mirror updates to the scope shadow directory
   node_kind_set(mod_dir_n, VERTEX_MODULE_DIR);
@@ -859,6 +860,7 @@ static xapi module_xdestroy(module * restrict mod)
   statement_block *block;
 
   wfree(mod->self_node_relpath);
+  wfree(mod->dir_node_abspath);
 
   if(mod->unscoped_block) {
     llist_append(&mod->scoped_blocks, mod->unscoped_block, lln);

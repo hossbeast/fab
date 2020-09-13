@@ -108,7 +108,7 @@ static xapi resolve_import(module_parser * restrict parser, pattern * restrict r
 
     if(log_would(L_MODULE))
     {
-      node_get_path(refnode, path, sizeof(path));
+      node_path_znload(path, sizeof(path), refnode);
       logf(L_MODULE, " %s : imports %.*s -> %s", mod->dir_node->name->name, (int)refnamel, refname, path);
     }
   }
@@ -147,7 +147,7 @@ static xapi resolve_use(module_parser * restrict parser, pattern * restrict ref)
 
     if(log_would(L_MODULE))
     {
-      node_get_path(mod_dir_n, path, sizeof(path));
+      node_path_znload(path, sizeof(path), mod_dir_n);
       logf(L_MODULE, " %s : uses %s -> %s", mod->dir_node->name->name, mod_dir_n->name->name, path);
     }
   }
@@ -185,7 +185,7 @@ static xapi resolve_require(module_parser * restrict parser, pattern * restrict 
 
     if(log_would(L_MODULE))
     {
-      node_get_path(mod_dir_n, path, sizeof(path));
+      node_path_znload(path, sizeof(path), mod_dir_n);
       logf(L_MODULE, " %s : requires %s -> %s", mod->dir_node->name->name, mod_dir_n->name->name, path);
     }
   }

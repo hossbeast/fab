@@ -325,7 +325,7 @@ const fstree * fstree_down(fstree * restrict fst, const char * restrict name, ui
   return 0;
 }
 
-size_t filesystem_get_absolute_path(const filesystem * restrict fs, void * restrict dst, size_t sz)
+size_t filesystem_absolute_path_znload(void * restrict dst, size_t sz, const filesystem * restrict fs)
 {
   size_t z;
   const fstree *bs[64];

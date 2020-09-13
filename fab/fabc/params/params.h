@@ -30,6 +30,12 @@ extern struct g_params
   pid_t           ppid;    // pid of parent process
   pid_t           pgid;    // process group id
 
+  pid_t           thread_main;
+  pid_t           thread_ui;
+  pid_t           thread_client;
+  int             thread_count;
+  bool            shutdown;
+
   char *          exedir;  // path to the directory containing the executable
 } g_params;
 

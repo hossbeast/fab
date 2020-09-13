@@ -94,7 +94,7 @@ static xapi node_path_test_entry(xunit_test * _test)
   enter;
 
   node_path_test * test = (node_path_test *)_test;
-  narrator * N = 0;
+  narrator_growing * N = 0;
   list * operations = 0;
   operations_parser * parser = 0;
   node * subject;
@@ -145,34 +145,34 @@ static xapi node_path_test_entry(xunit_test * _test)
   // act
   if(test->project_relative_path)
   {
-    pathl = node_get_project_relative_path(subject, actual, sizeof(actual));
+    pathl = node_project_relative_path_znload(actual, sizeof(actual), subject);
     const char *project_relative = actual;
     assert_eq_w(test->project_relative_path, strlen(test->project_relative_path), project_relative, pathl);
   }
 
   if(test->module_relative_path)
   {
-    pathl = node_get_module_relative_path(subject, actual, sizeof(actual));
+    pathl = node_module_relative_path_znload(actual, sizeof(actual), subject);
     const char *module_relative = actual;
     assert_eq_w(test->module_relative_path, strlen(test->module_relative_path), module_relative, pathl);
   }
 
   if(test->absolute_path)
   {
-    pathl = node_get_absolute_path(subject, actual, sizeof(actual));
+    pathl = node_absolute_path_znload(actual, sizeof(actual), subject);
     const char *absolute = actual;
     assert_eq_w(test->absolute_path, strlen(test->absolute_path), absolute, pathl);
   }
 
   if(test->relative_path)
   {
-    pathl = node_get_relative_path(subject, base_node, actual, sizeof(actual));
+    pathl = node_relative_path_znload(actual, sizeof(actual), subject, base_node);
     const char *relative = actual;
     assert_eq_w(test->relative_path, strlen(test->relative_path), relative, pathl);
   }
 
 finally:
-  fatal(narrator_xfree, N);
+  fatal(narrator_growing_free, N);
   fatal(list_xfree, operations);
   fatal(operations_parser_xfree, parser);
 coda;

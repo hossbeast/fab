@@ -48,12 +48,12 @@
 #include "inotify_mask.h"
 #include "logging.h"
 
-#include "common/atomic.h"
+#include "atomics.h"
 #include "macros.h"
 
 uint16_t notify_thread_epoch;
 
-static int in_fd;
+static int in_fd = -1;
 
 static xapi notify_thread()
 {
@@ -75,7 +75,7 @@ static xapi notify_thread()
 
   // signals handled on this thread
   sigfillset(&sigs);
-  sigdelset(&sigs, FABIPC_SIGINTR);
+  sigdelset(&sigs, SIGUSR1);
 
 #if DEBUG || DEVEL
   logs(L_IPC, "starting");
@@ -198,7 +198,7 @@ finally:
 conclude(&R);
 
   atomic_dec(&g_params.thread_count);
-  syscall(SYS_tgkill, g_params.pid, g_params.thread_monitor, FABIPC_SIGSCH);
+  syscall(SYS_tgkill, g_params.pid, g_params.thread_monitor, SIGUSR1);
   return 0;
 }
 
@@ -257,7 +257,7 @@ xapi notify_thread_watch(node * n)
   mask |= IN_ONLYDIR;       /* ENOTDIR if the path is not a directory */
   mask |= IN_EXCL_UNLINK;   /* ignore events for files after they are unlinked */
 
-  node_get_absolute_path(n, space, sizeof(space));
+  node_absolute_path_znload(space, sizeof(space), n);
   fatal(xinotify_add_watch, &n->wd, in_fd, space, mask);
   fatal(map_put, g_nodes_by_wd, MM(n->wd), n, 0);
 
