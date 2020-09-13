@@ -75,7 +75,7 @@ finally:
   if(XAPI_UNWINDING)
   {
 #if XAPI_STACKTRACE
-    xapi_backtrace();
+    xapi_backtrace(2, 0);
 #endif
   }
 

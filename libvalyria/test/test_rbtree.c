@@ -331,7 +331,7 @@ int main()
 
 finally:
   if(XAPI_UNWINDING)
-    xapi_backtrace();
+    xapi_backtrace(2, 0);
 conclude(&R);
   xapi_teardown();
 

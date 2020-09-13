@@ -405,40 +405,25 @@ size_t API xapi_trace_full(char * const dst, const size_t sz, uint16_t attrs)
   return xapi_trace_calltree_full(g_calltree, dst, sz, attrs);
 }
 
-void API xapi_pithytrace_to(int fd)
+void API xapi_pithytrace(int fd, uint16_t attrs)
 {
   char space[4096];
-  size_t z = xapi_trace_pithy(space, sizeof(space), 0);
+  size_t z = xapi_trace_pithy(space, sizeof(space), attrs);
   int __attribute__((unused)) r = write(fd, space, z);
 }
 
-void API xapi_fulltrace_to(int fd)
+void API xapi_fulltrace(int fd, uint16_t attrs)
 {
   char space[4096];
-  size_t z = xapi_trace_full(space, sizeof(space), 0);
+  size_t z = xapi_trace_full(space, sizeof(space), attrs);
   int __attribute__((unused)) r = write(fd, space, z);
 }
 
-void API xapi_backtrace_to(int fd)
+void API xapi_backtrace(int fd, uint16_t attrs)
 {
   char space[4096];
-  size_t z = xapi_trace_full(space, sizeof(space), 0);
+  size_t z = xapi_trace_full(space, sizeof(space), attrs);
   int __attribute__((unused)) r = write(fd, space, z);
-}
-
-void API xapi_pithytrace()
-{
-  xapi_pithytrace_to(2);
-}
-
-void API xapi_fulltrace()
-{
-  xapi_fulltrace_to(2);
-}
-
-void API xapi_backtrace()
-{
-  xapi_backtrace_to(2);
 }
 
 size_t API xapi_trace_info(const char * restrict name, char * const restrict dst, const size_t sz)

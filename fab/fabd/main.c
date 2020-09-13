@@ -243,7 +243,7 @@ finally:
   if(XAPI_UNWINDING)
   {
     // failures which cannot be logged with liblogger to stderr
-    xapi_backtrace();
+    xapi_backtrace(2, 0);
   }
 
 conclude(&R);

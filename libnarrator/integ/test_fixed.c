@@ -91,7 +91,7 @@ finally:
   summarize;
   if(XAPI_UNWINDING)
   {
-    xapi_backtrace();
+    xapi_backtrace(2, 0);
   }
 conclude(&R);
 

@@ -19,6 +19,7 @@
 
 use strict;
 use warnings;
+$SIG{__WARN__} = sub { die @_ };
 
 die "cc not found in environment" unless $ENV{cc};
 

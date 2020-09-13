@@ -218,7 +218,7 @@ finally:
   if(XAPI_UNWINDING)
   {
     // write failures before liblogger to stderr
-    xapi_backtrace();
+    xapi_backtrace(2, 0);
   }
 
 conclude(&R);
