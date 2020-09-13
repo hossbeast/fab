@@ -60,7 +60,7 @@ FORMULA_VALUE_TABLE
 #undef DEF
 } formula_value_type;
 
-struct attrs32 * formula_value_attrs;
+extern struct attrs32 * formula_value_attrs;
 
 #define FORMULA_SYSVAR_OPT 0xf
 #define FORMULA_SYSVAR_TABLE                                              \
@@ -76,7 +76,7 @@ FORMULA_SYSVAR_TABLE
 #undef DEF
 } formula_sysvar;
 
-struct attrs32 * formula_sysvar_attrs;
+extern struct attrs32 * formula_sysvar_attrs;
 
 struct formula_value;
 struct formula_operation;

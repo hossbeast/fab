@@ -50,7 +50,7 @@ BOX_TYPE_TABLE
 #undef BOX_ATTR_DEF
 } box_type;
 
-struct attrs16 * box_type_attrs;
+extern struct attrs16 * box_type_attrs;
 
 typedef struct box {
   box_type type;

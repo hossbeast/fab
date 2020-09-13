@@ -21,8 +21,8 @@
 #include "xapi.h"
 
 struct command;
-struct command * build_command;
-struct command * autobuild_command;
+extern struct command * build_command;
+extern struct command * autobuild_command;
 
 xapi build_command_cleanup(void);
 
