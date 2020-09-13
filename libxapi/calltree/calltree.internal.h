@@ -59,7 +59,7 @@ extern __thread calltree * g_calltree;
 ** set to g_calltree for the executing thread on every api call
 ** makes it easy to access the calltree from gdb
 */
-calltree * S;
+extern calltree * S;
 #endif
 
 /// calltree_frame_push

@@ -26,19 +26,19 @@ struct calltree;
 
 // options and modifiers for rendering traces
 #define XAPI_TRACE_TABLE                                                                                         \
-  XAPI_TRACE_DEF(NOCOLORIZE     , 0x0001) /* (default) no terminal color escapes                              */ \
-  XAPI_TRACE_DEF(COLORIZE       , 0x0002) /* apply terminal color escape sequences                            */ \
-  XAPI_TRACE_DEF(NEWLINE        , 0x0004) /* (default) include a trailing newline                             */ \
-  XAPI_TRACE_DEF(NONEWLINE      , 0x000C) /* omit the trailing newline                                        */ \
-  XAPI_TRACE_DEF(INFOKEYED      , 0x0010) /* (default) include only infos whose name is unique in the stack   */ \
-  XAPI_TRACE_DEF(INFONAMED      , 0x0030) /* include all infos in the stack                                   */ \
-  XAPI_TRACE_DEF(INFOSTACK      , 0x0080) /* (default) report infos for a stack on the summary line           */ \
-  XAPI_TRACE_DEF(INFOFRAME      , 0x000C) /* report infos alongside the frame they are attached to            */ \
+  DEF(XAPI_TRACE_NOCOLORIZE     , 0x0001) /* (default) no terminal color escapes                              */ \
+  DEF(XAPI_TRACE_COLORIZE       , 0x0002) /* apply terminal color escape sequences                            */ \
+  DEF(XAPI_TRACE_NEWLINE        , 0x0004) /* (default) include a trailing newline                             */ \
+  DEF(XAPI_TRACE_NONEWLINE      , 0x000C) /* omit the trailing newline                                        */ \
+  DEF(XAPI_TRACE_INFOKEYED      , 0x0010) /* (default) include only infos whose name is unique in the stack   */ \
+  DEF(XAPI_TRACE_INFONAMED      , 0x0030) /* include all infos in the stack                                   */ \
+  DEF(XAPI_TRACE_INFOSTACK      , 0x0080) /* (default) report infos for a stack on the summary line           */ \
+  DEF(XAPI_TRACE_INFOFRAME      , 0x000C) /* report infos alongside the frame they are attached to            */ \
 
 enum {
-#define XAPI_TRACE_DEF(a, b) XAPI_TRACE_ ## a = UINT16_C(b),
+#undef DEF
+#define DEF(a, b) a = UINT16_C(b),
 XAPI_TRACE_TABLE
-#undef XAPI_TRACE_DEF
 };
 
 /*
@@ -53,8 +53,7 @@ XAPI_TRACE_TABLE
 // PARAMETERS
 //  [to] - file descriptor to write to
 //
-void xapi_pithytrace(void);
-void xapi_pithytrace_to(int fd);
+void xapi_pithytrace(int fd, uint16_t attrs);
 
 /// xapi_fulltrace
 /// xapi_backtrace
@@ -65,10 +64,8 @@ void xapi_pithytrace_to(int fd);
 // PARAMETERS
 //  [to] - file descriptor to write to
 //
-void xapi_fulltrace(void);
-void xapi_fulltrace_to(int fd);
-void xapi_backtrace(void);
-void xapi_backtrace_to(int fd);
+void xapi_fulltrace(int fd, uint16_t attrs);
+void xapi_backtrace(int fd, uint16_t attrs);
 
 /// xapi_trace_pithy
 //
