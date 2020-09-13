@@ -443,7 +443,7 @@ xapi streams_write(const uint64_t ids, const uint32_t site_attrs, const char *  
   enter;
 
   // misconfigured
-  if(ids == 0 || g_streams_l == 0)
+  if(g_streams_l == 0)
   {
     if(g_logger_default_stderr)
     {
@@ -453,6 +453,8 @@ xapi streams_write(const uint64_t ids, const uint32_t site_attrs, const char *  
 
     goto XAPI_FINALIZE;
   }
+
+  RUNTIME_ASSERT(ids);
 
   uint32_t base_attrs = attrs_combine4(logger_process_attrs, logger_thread_attrs, categories_attrs(ids), site_attrs);
 
@@ -473,8 +475,10 @@ xapi streams_write(const uint64_t ids, const uint32_t site_attrs, const char *  
 int streams_would(const uint64_t ids, uint32_t site_attrs, uint64_t * vector)
 {
   // misconfigured
-  if(ids == 0 || g_streams_l == 0)
+  if(g_streams_l == 0)
     return g_logger_default_stderr;
+
+  RUNTIME_ASSERT(ids);
 
   uint32_t base_attrs = attrs_combine4(logger_process_attrs, logger_thread_attrs, categories_attrs(ids), site_attrs);
 
