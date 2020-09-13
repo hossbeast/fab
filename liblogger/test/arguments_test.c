@@ -36,7 +36,7 @@
 #include "macros.h"
 
 static logger_category * logs_test_one = (logger_category[]) {
-    { name : "A" }
+    { name : "ABC" }
   , { name : "BAR" }
   , { name : "DELTA" }
   , {}
@@ -84,8 +84,8 @@ static xapi test_arguments_recognized()
   enter;
 
   // arrange
-  char * argvs = "+A\0+BAR\0";
-  size_t argvsl = 8;
+  char * argvs = "+ABC\0+BAR\0";
+  size_t argvsl = 10;
 
   // act
   fatal(arguments_process, argvs, argvsl, -1, -1);
@@ -95,12 +95,12 @@ static xapi test_arguments_recognized()
   assert_eq_d(0, g_argc);
   assert_eq_d(2, g_logc);
   assert_eq_d(0, g_ulogc);
-  assert_eq_s("+A", g_logv[0]);
+  assert_eq_s("+ABC", g_logv[0]);
   assert_eq_s("+BAR", g_logv[1]);
   assert_eq_d(0, g_argvsl);
-  assert_eq_d(7, g_logvsl);
+  assert_eq_d(9, g_logvsl);
   assert_eq_d(0, g_ulogvsl);
-  assert_eq_s("+A +BAR", g_logvs);
+  assert_eq_s("+ABC +BAR", g_logvs);
 
   finally : coda;
 }
@@ -136,8 +136,8 @@ static xapi test_arguments_mixed()
   enter;
 
   // arrange
-  char * argvs = "+BAZ\0+QUX\0+A\0foo\0bar\0";
-  size_t argvsl = 21;
+  char * argvs = "+BAZ\0+QUX\0+ABC\0foo\0bar\0";
+  size_t argvsl = 23;
 
   // act
   fatal(arguments_process, argvs, argvsl, -1, -1);
@@ -149,14 +149,14 @@ static xapi test_arguments_mixed()
   assert_eq_d(2, g_ulogc);
   assert_eq_s("foo", g_argv[0]);
   assert_eq_s("bar", g_argv[1]);
-  assert_eq_s("+A", g_logv[0]);
+  assert_eq_s("+ABC", g_logv[0]);
   assert_eq_s("+BAZ", g_ulogv[0]);
   assert_eq_s("+QUX", g_ulogv[1]);
   assert_eq_d(7, g_argvsl);
-  assert_eq_d(2, g_logvsl);
+  assert_eq_d(4, g_logvsl);
   assert_eq_d(9, g_ulogvsl);
   assert_eq_s("foo bar", g_argvs);
-  assert_eq_s("+A", g_logvs);
+  assert_eq_s("+ABC", g_logvs);
   assert_eq_s("+BAZ +QUX", g_ulogvs);
 
   finally : coda;
@@ -167,8 +167,8 @@ static xapi test_arguments_repeated()
   enter;
 
   // arrange
-  char * argvs = "+BAZ\0+QUX\0+A\0foo\0bar\0";
-  size_t argvsl = 21;
+  char * argvs = "+BAZ\0+QUX\0+ABC\0foo\0bar\0";
+  size_t argvsl = 23;
 
   // act
   fatal(arguments_process, argvs, argvsl, -1, -1);
@@ -180,7 +180,7 @@ static xapi test_arguments_repeated()
   assert_eq_d(2, g_ulogc);
   assert_eq_s("foo", g_argv[0]);
   assert_eq_s("bar", g_argv[1]);
-  assert_eq_s("+A", g_logv[0]);
+  assert_eq_s("+ABC", g_logv[0]);
   assert_eq_s("+BAZ", g_ulogv[0]);
   assert_eq_s("+QUX", g_ulogv[1]);
 
@@ -197,7 +197,7 @@ static xapi test_arguments_repeated()
   assert_eq_d(1, g_ulogc);
   assert_eq_s("foo", g_argv[0]);
   assert_eq_s("bar", g_argv[1]);
-  assert_eq_s("+A", g_logv[0]);
+  assert_eq_s("+ABC", g_logv[0]);
   assert_eq_s("+BAZ", g_logv[1]);
   assert_eq_s("+QUX", g_ulogv[1]);
 
