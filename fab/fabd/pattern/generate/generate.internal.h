@@ -27,6 +27,7 @@
 struct chain;
 struct set;
 struct narrator;
+struct narrator_fixed;
 struct pattern_match_node;
 struct pattern_section;
 struct variant;
@@ -68,7 +69,10 @@ typedef struct pattern_generate_context
 
   // state
   struct node * node;
-  struct narrator * restrict section_narrator;
+  union {
+    struct narrator * restrict section_narrator;
+    struct narrator_fixed * restrict section_narrator_fixed;
+  };
   off_t section_narrator_pos;
   struct graph_invalidation_context * invalidation;
 

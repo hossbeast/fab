@@ -15,15 +15,63 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#include <stdlib.h>
-
 #include "xapi.h"
 #include "xlinux/xstdlib.h"
 
-#include "internal.h"
 #include "nullity.internal.h"
+#include "vtable.h"
+
+#include "macros.h"
 
 narrator * APIDATA g_narrator_nullity = 0;
+
+//
+// static
+//
+
+static xapi __attribute__((nonnull)) nullity_sayvf(narrator * const restrict N, const char * const restrict fmt, va_list va)
+{
+  enter;
+
+  finally : coda;
+}
+
+static xapi __attribute__((nonnull)) nullity_sayw(narrator * const restrict N, const void * const restrict b, size_t l)
+{
+  enter;
+
+  finally : coda;
+}
+
+static xapi __attribute__((nonnull)) nullity_seek(narrator * const restrict N, off_t offset, int whence, off_t * restrict res)
+{
+  enter;
+
+  finally : coda;
+}
+
+static xapi __attribute__((nonnull)) nullity_destroy(narrator * const restrict N)
+{
+  enter;
+
+  finally : coda;
+}
+
+static xapi __attribute__((nonnull)) nullity_read(narrator * restrict N, void * dst, size_t count, size_t * restrict r)
+{
+  enter;
+
+  finally : coda;
+}
+
+static xapi __attribute__((nonnull)) nullity_flush(narrator * restrict N)
+{
+  enter;
+
+  finally : coda;
+}
+
+static struct narrator_vtable nullity_vtable = NARRATOR_VTABLE(nullity);
 
 //
 // public
@@ -33,55 +81,49 @@ xapi nullity_setup()
 {
   enter;
 
-  fatal(narrator_nullity_create, &g_narrator_nullity);
+  narrator_nullity *n;
+
+  fatal(narrator_nullity_create, &n);
+  g_narrator_nullity = &n->base;
 
   finally : coda;
 }
 
 xapi nullity_cleanup()
 {
-  xproxy(narrator_xfree, g_narrator_nullity);
-}
+  enter;
 
-int nullity_sayvf(narrator_nullity * const restrict n, const char * const restrict fmt, va_list va)
-{
-  return 0;
-}
+  if(g_narrator_nullity) {
+    fatal(narrator_nullity_free, containerof(g_narrator_nullity, narrator_nullity, base));
+  }
 
-int nullity_sayw(narrator_nullity * const restrict n, const char * const restrict b, size_t l)
-{
-  return 0;
-}
-
-off_t nullity_seek(narrator_nullity * const restrict n, off_t offset, int whence)
-{
-  return 0;
-}
-
-void nullity_destroy(narrator_nullity * const restrict n)
-{
-}
-
-int nullity_read(narrator_nullity * restrict n, void * dst, size_t count)
-{
-  return 0;
-}
-
-void nullity_flush(narrator_nullity * restrict n)
-{
-
+  finally : coda;
 }
 
 //
 // api
 //
 
-xapi API narrator_nullity_create(narrator ** const restrict rv)
+xapi API narrator_nullity_create(narrator_nullity ** const restrict rv)
 {
   enter;
 
-  fatal(xmalloc, rv, sizeof(**rv));
-  (*rv)->type = NARRATOR_NULLITY;
+  narrator_nullity *n;
+
+  fatal(xmalloc, &n, sizeof(*n));
+  n->base.vtab = &nullity_vtable;
+
+  *rv = n;
+
+  finally : coda;
+}
+
+xapi API narrator_nullity_free(narrator_nullity * restrict n)
+{
+  enter;
+
+  fatal(nullity_destroy, &n->base);
+  wfree(n);
 
   finally : coda;
 }

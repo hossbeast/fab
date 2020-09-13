@@ -47,7 +47,8 @@ static logger_stream * streams = (logger_stream []) {
   , { }
 };
 
-static narrator * N;
+static narrator *N;
+static narrator_growing *Ng;
 
 static xapi test_setup()
 {
@@ -57,7 +58,8 @@ static xapi test_setup()
   fatal(category_setup);
   fatal(stream_setup);
 
-  fatal(narrator_growing_create, &N);
+  fatal(narrator_growing_create, &Ng);
+  N = &Ng->base;
   streams[0].narrator = N;
 
   // register a stream
@@ -74,7 +76,8 @@ static xapi test_cleanup()
 {
   enter;
 
-  fatal(narrator_ixfree, &N);
+  fatal(narrator_growing_free, Ng);
+  Ng = 0;
   fatal(stream_cleanup);
   fatal(category_cleanup);
   fatal(log_cleanup);
@@ -185,7 +188,7 @@ static xapi run_tests()
         fail(0);
 
       // print the stacktrace to stdout
-      xapi_backtrace_to(1);
+      xapi_backtrace(1, 0);
       xapi_calltree_unwind();
     }
 

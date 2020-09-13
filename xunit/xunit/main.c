@@ -467,4 +467,3 @@ conclude(&R);
 
   return !!R;
 }
-

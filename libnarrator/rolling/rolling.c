@@ -28,10 +28,12 @@
 #include "xlinux/xunistd.h"
 #include "xlinux/xfcntl.h"
 
-#include "internal.h"
-#include "rolling.internal.h"
+#include "narrator.h"
+#include "rolling.h"
+#include "vtable.h"
 
 #include "common/parseint.h"
+#include "macros.h"
 
 //
 // static
@@ -75,12 +77,15 @@ static xapi __attribute__((nonnull)) scan(narrator_rolling * const restrict n)
 
   int found = 0;
   DIR * dd = 0;
+  size_t name_base_len;
+  uint16_t counter;
+  struct dirent * entp = 0;
+
   if((dd = opendir(n->directory)) == 0)
     goto XAPI_FINALIZE;
 
-  size_t name_base_len = strlen(n->name_base);
+  name_base_len = strlen(n->name_base);
 
-  struct dirent * entp = 0;
   fatal(xreaddir, dd, &entp);
   while(entp)
   {
@@ -92,7 +97,6 @@ static xapi __attribute__((nonnull)) scan(narrator_rolling * const restrict n)
         {
           if(entp->d_name[name_base_len] == '.')
           {
-            uint16_t counter;
             if(parseuint(entp->d_name + name_base_len + 1, SCNu16, 0, UINT16_MAX, 5, 5, &counter, 0) == 0)
             {
               if(counter < n->max_files && counter >= n->counter)
@@ -120,13 +124,11 @@ finally:
 coda;
 }
 
-//
-// public
-//
-
-xapi rolling_xsayvf(narrator_rolling * const restrict n, const char * const restrict fmt, va_list va)
+static xapi rolling_sayvf(narrator * const restrict N, const char * const restrict fmt, va_list va)
 {
   enter;
+
+  narrator_rolling *n = containerof(N, typeof(*n), base);
 
   // one-time directory scan
   if(n->scanned == 0)
@@ -140,9 +142,11 @@ xapi rolling_xsayvf(narrator_rolling * const restrict n, const char * const rest
   finally : coda;
 }
 
-xapi rolling_xsayw(narrator_rolling * const restrict n, const char * const restrict b, size_t l)
+static xapi rolling_sayw(narrator * const restrict N, const void * const restrict b, size_t l)
 {
   enter;
+
+  narrator_rolling *n = containerof(N, typeof(*n), base);
 
   // one-time directory scan
   if(n->scanned == 0)
@@ -157,60 +161,39 @@ xapi rolling_xsayw(narrator_rolling * const restrict n, const char * const restr
   finally : coda;
 }
 
-xapi rolling_xseek(narrator_rolling * const restrict n, off_t offset, int whence, off_t * restrict res)
-{
-  enter;
-
-  fail(SYS_NOTSUPP);
-
-  finally : coda;
-}
-
-xapi rolling_xdestroy(narrator_rolling * const restrict n)
-{
-  enter;
-
-  wfree(n->directory);
-  wfree(n->name_base);
-  if(n->fd != -1)
-    fatal(xclose, n->fd);
-
-  finally : coda;
-}
-
-xapi rolling_xread(narrator_rolling * restrict n, void * dst, size_t count, size_t * restrict r)
-{
-  enter;
-
-  fail(SYS_NOTSUPP);
-
-  finally : coda;
-}
-
-xapi rolling_flush(narrator_rolling * restrict n)
+static xapi rolling_flush(narrator * restrict N)
 {
   enter;
 
   finally : coda;
 }
+
+#define rolling_seek 0
+#define rolling_read 0
+struct narrator_vtable API narrator_rolling_vtable = NARRATOR_VTABLE(rolling);
 
 //
 // api
 //
 
-xapi API narrator_rolling_create(narrator ** const restrict n, const char * const restrict path_base, mode_t mode, uint32_t threshold, uint16_t max_files)
+xapi API narrator_rolling_create(narrator_rolling ** const restrict n, const char * const restrict path_base, mode_t mode, uint32_t threshold, uint16_t max_files)
 {
   enter;
 
-  fatal(xmalloc, n, sizeof(**n));
-  (*n)->type = NARRATOR_ROLLING;
-  (*n)->rolling.threshold = threshold;
-  (*n)->rolling.max_files = max_files;
-  (*n)->rolling.mode = mode;
-  (*n)->rolling.fd = -1;
+  narrator_rolling *rolling;
+  size_t path_base_len;
+  const char * e;
 
-  size_t path_base_len = strlen(path_base);
-  const char * e = path_base + path_base_len;
+  fatal(xmalloc, &rolling, sizeof(*rolling));
+
+  rolling->base.vtab = &narrator_rolling_vtable;
+  rolling->threshold = threshold;
+  rolling->max_files = max_files;
+  rolling->mode = mode;
+  rolling->fd = -1;
+
+  path_base_len = strlen(path_base);
+  e = path_base + path_base_len;
   while(e != path_base && *e != '/')
     e--;
 
@@ -222,8 +205,34 @@ xapi API narrator_rolling_create(narrator ** const restrict n, const char * cons
   if((e - path_base) == path_base_len)
     fail(SYS_INVALID);
 
-  fatal(ixstrndup, &(*n)->rolling.directory, path_base, e - path_base);
-  fatal(ixstrdup, &(*n)->rolling.name_base, e + 1);
+  fatal(ixstrndup, &rolling->directory, path_base, e - path_base);
+  fatal(ixstrdup, &rolling->name_base, e + 1);
+
+  *n = rolling;
+
+  finally : coda;
+}
+
+xapi API narrator_rolling_free(narrator_rolling *n)
+{
+  enter;
+
+  if(n) {
+    fatal(narrator_rolling_destroy, n);
+  }
+  wfree(n);
+
+  finally : coda;
+}
+
+xapi API narrator_rolling_destroy(narrator_rolling * restrict n)
+{
+  enter;
+
+  wfree(n->directory);
+  wfree(n->name_base);
+  if(n->fd != -1)
+    fatal(xclose, n->fd);
 
   finally : coda;
 }

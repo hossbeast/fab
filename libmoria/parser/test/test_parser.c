@@ -78,7 +78,7 @@ static xapi graph_parser_test_entry(xunit_test * _test)
 
   graph * g = 0;
   graph_parser * p = 0;
-  narrator * N1 = 0;
+  narrator_growing * N1 = 0;
   const char * actual;
   size_t actual_len;
 
@@ -101,14 +101,14 @@ static xapi graph_parser_test_entry(xunit_test * _test)
   if(test->expected)
   {
     fatal(narrator_growing_create, &N1);
-    fatal(graph_say, g, N1);
-    actual = narrator_growing_buffer(N1);
-    actual_len = narrator_growing_size(N1);
+    fatal(graph_say, g, &N1->base);
+    actual = N1->s;
+    actual_len = N1->l;
     assert_eq_w(test->expected, strlen(test->expected), actual, actual_len);
   }
 
 finally:
-  fatal(narrator_xfree, N1);
+  fatal(narrator_growing_free, N1);
   fatal(graph_xfree, g);
   fatal(graph_parser_xfree, p);
 coda;

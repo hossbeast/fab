@@ -72,6 +72,7 @@ static xapi process_event(sweeper_event * restrict ev, graph_invalidation_contex
   node *n;
   sweeper_child_event *cev = 0;
   size_t z;
+  narrator *N;
 
   if(ev->kind == SWEEPER_EVENT_SELF)
   {

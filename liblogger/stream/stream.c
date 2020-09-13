@@ -78,12 +78,12 @@ static xapi __attribute__((nonnull)) stream_initialize(stream *  restrict stream
   streamp->type = def->type;
   if(def->type == LOGGER_STREAM_FD)
   {
-    fatal(narrator_fd_create, &streamp->narrator_owned, def->fd);
+    fatal(narrator_fd_create, &streamp->narrator_owned_fd, def->fd);
     streamp->narrator_base = streamp->narrator_owned;
   }
   else if(def->type == LOGGER_STREAM_ROLLING)
   {
-    fatal(narrator_rolling_create, &streamp->narrator_owned, def->path_base, def->file_mode, def->threshold, def->max_files);
+    fatal(narrator_rolling_create, &streamp->narrator_owned_rolling, def->path_base, def->file_mode, def->threshold, def->max_files);
     streamp->narrator_base = streamp->narrator_owned;
   }
   else if(def->type == LOGGER_STREAM_NARRATOR)
@@ -94,7 +94,7 @@ static xapi __attribute__((nonnull)) stream_initialize(stream *  restrict stream
   {
     failf(LOGGER_NXSTREAM, "type", "%d", def->type);
   }
-  fatal(narrator_record_create, &streamp->narrator, streamp->narrator_base);
+  fatal(narrator_record_create, &streamp->narrator_record, streamp->narrator_base);
 
   // save expressions for late binding
   fatal(list_createx, &streamp->exprs, 0, 0, wfree, 0);
@@ -147,8 +147,14 @@ static xapi stream_xdestroy(stream *  restrict streamp)
     wfree(streamp->name);
 
     fatal(list_xfree, streamp->filters);
-    fatal(narrator_xfree, streamp->narrator);
-    fatal(narrator_xfree, streamp->narrator_owned);
+    fatal(narrator_record_free, streamp->narrator_record);
+    if(streamp->narrator_owned) {
+      if(streamp->narrator_owned->vtab == &narrator_fd_vtable) {
+        fatal(narrator_fd_free, streamp->narrator_owned_fd);
+      } else if(streamp->narrator_owned->vtab == &narrator_rolling_vtable) {
+        fatal(narrator_rolling_free, streamp->narrator_owned_rolling);
+      }
+    }
     fatal(list_xfree, streamp->exprs);
   }
 
@@ -425,8 +431,7 @@ xapi stream_write(stream *  restrict streamp, const uint64_t ids, uint32_t attrs
     xsayc('\n');
   }
 
-  // flush
-  fatal(narrator_record_flush, N);
+  fatal(narrator_record_flush, streamp->narrator_record);
 
 finally:
   spinlock_release(&streamp->lock);
@@ -522,9 +527,13 @@ xapi stream_say(stream *  restrict streamp, narrator * restrict N)
   xsays(" ]");
 
   if(streamp->type == LOGGER_STREAM_FD)
-    xsayf(", fd : %d", narrator_fd_fd(streamp->narrator_base));
+  {
+    xsayf(", fd : %d", streamp->narrator_base_fd->fd);
+  }
   else if(streamp->type == LOGGER_STREAM_NARRATOR)
+  {
     xsayf(", narrator : %p", streamp->narrator_base);
+  }
 
   finally : coda;
 }

@@ -22,14 +22,6 @@
 
 #include "fixed.h"
 
-typedef struct narrator_fixed
-{
-  char *  s;      // buffer
-  size_t  l;      // position
-  size_t  a;      // buffer size
-  size_t  m;      // maximum position
-} narrator_fixed;
-
 /// narrator_fixed_say
 //
 // SUMMARY

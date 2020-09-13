@@ -18,18 +18,12 @@
 #ifndef _NARRATOR_MULTI_INTERNAL_H
 #define _NARRATOR_MULTI_INTERNAL_H
 
-#include <sys/types.h>
 #include <stdarg.h>
 
 #include "xapi.h"
-#include "multi.h"
+#include "types.h"
 
-typedef struct narrator_multi
-{
-  narrator ** v;    // narrators
-  size_t l;         // number in use
-  size_t a;         // allocated size
-} narrator_multi;
+#include "multi.h"
 
 /// multi_say
 //

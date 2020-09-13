@@ -15,11 +15,8 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#include <stdio.h>
-#include <inttypes.h>
-#include <time.h>
-
-#include "internal.h"
+#include "xapi.h"
+#include "narrator.h"
 #include "units.h"
 
 #include "macros.h"
@@ -105,9 +102,11 @@ static xapi __attribute__((nonnull)) compose(unit * cfg, double * parts, narrato
 // api
 //
 
-xapi API interval_say(time_t seconds, struct narrator * const restrict N)
+xapi API interval_say(time_t seconds, narrator * const restrict N)
 {
   enter;
+
+  double parts[6];
 
   unit cfg[] = {
       { label : " sec(s)" , scale : 1    , fmt : "%.0f" }
@@ -118,16 +117,18 @@ xapi API interval_say(time_t seconds, struct narrator * const restrict N)
     , { }
   };
 
-  double parts[sizeof(cfg) / sizeof(cfg[0])] = { 0 };
+  memset(parts, 0, sizeof(*parts));
   decompose(seconds, cfg, parts);
   fatal(compose, cfg, parts, N);
 
   finally : coda;
 }
 
-xapi API bytesize_say(size_t bytes, struct narrator * const restrict N)
+xapi API bytesize_say(size_t bytes, narrator * const restrict N)
 {
   enter;
+
+  double parts[6];
 
   unit cfg[] = {
       { label : " byte(s)" , scale : 1        , fmt : "%.0f" }
@@ -137,16 +138,19 @@ xapi API bytesize_say(size_t bytes, struct narrator * const restrict N)
     , { }
   };
 
-  double parts[sizeof(cfg) / sizeof(cfg[0])] = { 0 };
+  memset(parts, 0, sizeof(*parts));
   decompose(bytes, cfg, parts);
   fatal(compose, cfg, parts, N);
 
   finally : coda;
 }
 
-xapi API elapsed_say(const struct timespec * const restrict start, const struct timespec * const restrict end, struct narrator * const restrict N)
+xapi API elapsed_say(const struct timespec * const restrict start, const struct timespec * const restrict end, narrator * const restrict N)
 {
   enter;
+
+  double parts[6];
+  double nsec;
 
   unit cfg[] = {
       { label : " sec(s)"  , scale : 1000000000  , fmt : "%4.02f" }
@@ -158,7 +162,7 @@ xapi API elapsed_say(const struct timespec * const restrict start, const struct 
   };
 
   // calculate interval size in nanoseconds
-  double nsec = end->tv_sec - start->tv_sec;
+  nsec = end->tv_sec - start->tv_sec;
   if(end->tv_nsec < start->tv_nsec)
   {
     nsec -= 1;
@@ -171,7 +175,7 @@ xapi API elapsed_say(const struct timespec * const restrict start, const struct 
     nsec += end->tv_nsec - start->tv_nsec;
   }
 
-  double parts[sizeof(cfg) / sizeof(cfg[0])];
+  memset(parts, 0, sizeof(*parts));
   decompose(nsec, cfg, parts);
   fatal(compose, cfg, parts, N);
 
