@@ -40,11 +40,11 @@ xapi xkill(pid_t pid, int sig);
 //  proxy for kill that only fails when errno != ESRCH (no such pid)
 //
 // PARAMETERS
+//  [r] - (returns) the return value from kill
 //  pid - pid
 //  sig - signal
-//  [r] - (returns) the return value from kill
 //
-xapi uxkill(pid_t pid, int sig, int * r);
+xapi uxkill(int * restrict r, pid_t pid, int sig);
 
 /// xtgkill
 //
@@ -100,12 +100,31 @@ xapi xsigwaitinfo(const sigset_t * mask, siginfo_t * info)
 xapi uxsigwaitinfo(int * r, const sigset_t * mask, siginfo_t * info)
   __attribute__((nonnull(2)));
 
+/**
+ * xapi wrapper for sigtimedwait that only fails when errno != { EINTR, EAGAIN }
+ *
+ * err - (returns) zero on success, errno otherwise
+ */
+xapi uxsigtimedwait(
+    int * restrict err
+  , const sigset_t * restrict mask
+  , siginfo_t * restrict info
+  , const struct timespec * restrict timeout
+)
+  __attribute__((nonnull));
+
 /// xsignal
 //
 // SUMMARY
 //  xapi proxy for signal
 //
 xapi xsignal(int signum, sighandler_t handler);
+
+xapi uxrt_sigqueueinfo(int * restrict r, pid_t tgid, int sig, siginfo_t *info)
+  __attribute__((nonnull));
+
+xapi uxrt_tgsigqueueinfo(int * restrict r, pid_t tgid, pid_t tid, int sig, siginfo_t *info)
+  __attribute__((nonnull));
 
 const char * API signame(int signo);
 

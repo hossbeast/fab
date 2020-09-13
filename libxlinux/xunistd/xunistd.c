@@ -92,11 +92,13 @@ xapi API axread(int fd, void * restrict buf, size_t count)
 {
   enter;
 
-  size_t actual = 0;
+  size_t actual;
+  size_t cur;
+
+  actual = 0;
   while(count - actual)
   {
-    ssize_t cur = read(fd, ((char*)buf) + actual, count - actual);
-
+    cur = read(fd, ((char*)buf) + actual, count - actual);
     if(cur == 0)
     {
       xapi_info_pushf("expected", "%zu", count);
@@ -104,7 +106,9 @@ xapi API axread(int fd, void * restrict buf, size_t count)
       fail(XLINUX_LESS);
     }
     else if(cur == -1)
+    {
       tfail(perrtab_KERNEL, errno);
+    }
 
     actual += cur;
   }
@@ -150,11 +154,13 @@ xapi API axwrite(int fd, const void * buf, size_t count)
 {
   enter;
 
-  size_t actual = 0;
+  size_t actual;
+  size_t cur;
+
+  actual = 0;
   while(count - actual)
   {
-    ssize_t cur = write(fd, ((char*)buf) + actual, count - actual);
-
+    cur = write(fd, ((char*)buf) + actual, count - actual);
     if(cur == 0)
     {
       xapi_info_pushf("expected", "%zu", count);
@@ -162,7 +168,9 @@ xapi API axwrite(int fd, const void * buf, size_t count)
       fail(XLINUX_LESS);
     }
     else if(cur == -1)
+    {
       tfail(perrtab_KERNEL, errno);
+    }
 
     actual += cur;
   }
@@ -200,8 +208,9 @@ xapi API xclose(int fd)
 {
   enter;
 
-  if(fd != -1)
+  if(fd != -1) {
     tfatalize(perrtab_KERNEL, errno, close, fd);
+  }
 
 finally:
   xapi_infof("fd", "%d", fd);
