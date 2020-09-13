@@ -241,19 +241,7 @@ xapi API operations_parser_create(operations_parser ** const parser)
 #endif
 
   fatal(yyu_parser_init, &(*parser)->yyu, &vtable, MORIA_SYNTAX);
-
-  fatal(yyu_parser_init_tokens
-    , &(*parser)->yyu
-    , operations_numtokens
-    , operations_mintoken
-    , operations_maxtoken
-    , operations_tokenindexes
-    , operations_tokennumbers
-    , operations_tokennames
-    , operations_tokenstrings
-    , operations_tokenstring_tokens
-  );
-
+  fatal(yyu_parser_init_tokens, &(*parser)->yyu, operations_token_table, operations_TOKEN_TABLE_SIZE);
   fatal(yyu_parser_init_states
     , &(*parser)->yyu
     , operations_numstates

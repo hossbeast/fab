@@ -68,59 +68,29 @@ xapi pattern_parser_create(pattern_parser ** rv)
 
   // match
   fatal(yyu_parser_init, &p->match_yyu, &match_vtable, PATTERN_SYNTAX);
-  fatal(yyu_parser_init_tokens
-    , &p->match_yyu
-    , match_pattern_numtokens
-    , match_pattern_mintoken
-    , match_pattern_maxtoken
-    , match_pattern_tokenindexes
-    , match_pattern_tokennumbers
-    , match_pattern_tokennames
-    , match_pattern_tokenstrings
-    , match_pattern_tokenstring_tokens
-  );
+  fatal(yyu_parser_init_tokens, &p->match_yyu, match_pattern_token_table, match_pattern_TOKEN_TABLE_SIZE);
   fatal(yyu_parser_init_states
     , &p->match_yyu
     , pattern_numstates
     , pattern_statenumbers
     , pattern_statenames
   );
-  fatal(yyu_define_tokenrange, &p->match_yyu, match_pattern_MODULE, match_pattern_USES);
+//  fatal(yyu_define_tokenrange, &p->match_yyu, match_pattern_MODULE, match_pattern_USES);
 
   // generate
   fatal(yyu_parser_init, &p->generate_yyu, &generate_vtable, PATTERN_SYNTAX);
-  fatal(yyu_parser_init_tokens
-    , &p->generate_yyu
-    , generate_pattern_numtokens
-    , generate_pattern_mintoken
-    , generate_pattern_maxtoken
-    , generate_pattern_tokenindexes
-    , generate_pattern_tokennumbers
-    , generate_pattern_tokennames
-    , generate_pattern_tokenstrings
-    , generate_pattern_tokenstring_tokens
-  );
+  fatal(yyu_parser_init_tokens, &p->generate_yyu, generate_pattern_token_table, generate_pattern_TOKEN_TABLE_SIZE);;
   fatal(yyu_parser_init_states
     , &p->generate_yyu
     , pattern_numstates
     , pattern_statenumbers
     , pattern_statenames
   );
-  fatal(yyu_define_tokenrange, &p->generate_yyu, generate_pattern_MODULE, generate_pattern_USES);
+//  fatal(yyu_define_tokenrange, &p->generate_yyu, generate_pattern_MODULE, generate_pattern_USES);
 
   // reference
   fatal(yyu_parser_init, &p->reference_yyu, &reference_vtable, PATTERN_SYNTAX);
-  fatal(yyu_parser_init_tokens
-    , &p->reference_yyu
-    , reference_pattern_numtokens
-    , reference_pattern_mintoken
-    , reference_pattern_maxtoken
-    , reference_pattern_tokenindexes
-    , reference_pattern_tokennumbers
-    , reference_pattern_tokennames
-    , reference_pattern_tokenstrings
-    , reference_pattern_tokenstring_tokens
-  );
+  fatal(yyu_parser_init_tokens, &p->reference_yyu, reference_pattern_token_table, reference_pattern_TOKEN_TABLE_SIZE);;
   fatal(yyu_parser_init_states
     , &p->reference_yyu
     , pattern_numstates
@@ -130,17 +100,7 @@ xapi pattern_parser_create(pattern_parser ** rv)
 
   // lookup
   fatal(yyu_parser_init, &p->lookup_yyu, &lookup_vtable, PATTERN_SYNTAX);
-  fatal(yyu_parser_init_tokens
-    , &p->lookup_yyu
-    , lookup_pattern_numtokens
-    , lookup_pattern_mintoken
-    , lookup_pattern_maxtoken
-    , lookup_pattern_tokenindexes
-    , lookup_pattern_tokennumbers
-    , lookup_pattern_tokennames
-    , lookup_pattern_tokenstrings
-    , lookup_pattern_tokenstring_tokens
-  );
+  fatal(yyu_parser_init_tokens, &p->lookup_yyu, lookup_pattern_token_table, lookup_pattern_TOKEN_TABLE_SIZE);
   fatal(yyu_parser_init_states
     , &p->lookup_yyu
     , pattern_numstates

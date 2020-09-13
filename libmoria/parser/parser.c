@@ -52,19 +52,7 @@ xapi API graph_parser_create(graph_parser ** const parser)
 #endif
 
   fatal(yyu_parser_init, &(*parser)->yyu, &vtable, MORIA_SYNTAX);
-
-  fatal(yyu_parser_init_tokens
-    , &(*parser)->yyu
-    , graph_numtokens
-    , graph_mintoken
-    , graph_maxtoken
-    , graph_tokenindexes
-    , graph_tokennumbers
-    , graph_tokennames
-    , graph_tokenstrings
-    , graph_tokenstring_tokens
-  );
-
+  fatal(yyu_parser_init_tokens, &(*parser)->yyu, graph_token_table, graph_TOKEN_TABLE_SIZE);
   fatal(yyu_parser_init_states
     , &(*parser)->yyu
     , graph_numstates
