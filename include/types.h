@@ -39,4 +39,16 @@ static inline size_t roundup(size_t x, size_t y)
 #define API
 #define APIDATA
 
+/*
+ * Get a pointer to a containing structure from an inner structure
+ *
+ * NOTE : under gcc10 and -O2, usage of this macro triggers -Warray-bounds
+ */
+#define containerof(ptr, type, member) ({        \
+  void *__mptr = (void*)(ptr);                   \
+  (type*)(__mptr - offsetof(type, member));      \
+})
+
+#define STATIC_ASSERT(x) _Static_assert(x, #x)
+
 #endif

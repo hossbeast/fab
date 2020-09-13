@@ -74,16 +74,6 @@
 #define MM(x) (void*)&(x), sizeof(x)
 #define MMS(x) (x), strlen(x)
 
-/// containerof
-//
-// SUMMARY
-//  get a pointer to a containing structure from an inner structure
-//
-#define containerof(ptr, type, member) ({               \
-  const typeof(((type*)0)->member) * __mptr = (ptr);    \
-  (type*)((char*)__mptr - offsetof(type, member));      \
-})
-
 /// memncmp
 //
 // SUMMARY
@@ -117,6 +107,16 @@ static inline int memncmp(const void * a, size_t alen, const void * b, size_t bl
   return 0;
 }
 
+static inline size_t memncpy(void *dst, size_t dst_sz, const void *src, size_t n)
+{
+  if(dst_sz < n) {
+    return 0;
+  }
+
+  memcpy(dst, src, n);
+  return n;
+}
+
 static inline int ptrcmp(const void *_A, const void *_B)
 {
   const void * const * A = _A;
@@ -141,8 +141,6 @@ static inline size_t roundup2(size_t x)
 
   return x;
 }
-
-#define STATIC_ASSERT(x) _Static_assert(x, #x)
 
 #define sizeof_member(s, m) sizeof(((s*)((void*)0))->m)
 
