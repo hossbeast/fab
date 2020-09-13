@@ -18,6 +18,8 @@
 #ifndef _LOGGER_CONFIG_H
 #define _LOGGER_CONFIG_H
 
+#include "types.h"
+
 /// g_logger_default_stderr
 //
 // SUMMARY

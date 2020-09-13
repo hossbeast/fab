@@ -17,6 +17,7 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <sys/syscall.h>
 
 #include "xapi.h"
 #include "xapi/errtab.h"
@@ -34,6 +35,8 @@
 
 #include "test_util.h"
 #include "macros.h"
+
+__thread int32_t tid;
 
 static logger_category * logs_test_one = (logger_category[]) {
     { name : "ABC" }
@@ -258,6 +261,7 @@ int main()
 {
   enter;
 
+  tid = syscall(SYS_gettid);
   xapi R = 0;
   fatal(run_tests);
 

@@ -17,7 +17,9 @@
 
 #include <stdio.h>
 #include <inttypes.h>
+#include <unistd.h>
 #include <stdlib.h>
+#include <sys/syscall.h>
 
 #include "xapi.h"
 #include "xapi/trace.h"
@@ -33,6 +35,8 @@
 #include "test_util.h"
 #include "macros.h"
 #include "zbuffer.h"
+
+__thread int32_t tid;
 
 static logger_category * logs_test = (logger_category[]) {
     { name : "A" }
@@ -161,6 +165,7 @@ int main()
 {
   enter;
 
+  tid = syscall(SYS_gettid);
   xapi R = 0;
   fatal(run_tests);
 
