@@ -104,8 +104,6 @@
 
 %type <yyu.imax>  int16_igroup
 %type <yyu.umax>  int16_ugroup
-%type <yyu.imax>  uint16_igroup
-%type <yyu.umax>  uint16_ugroup
 
 %token
  BUILD                    "build"
@@ -165,17 +163,13 @@
 %type <b_string> bstring
 %type <b_bool> bool
 %type <b_int16>  int16
-%type <b_uint16> uint16
 %type <b_int> invalidate-type
 %type <i> invalidate-type-enum
-%type <b_int> stream-part
-%type <i> stream-part-enum
 
 %destructor { wfree($$.s); } <str>
 %destructor { box_free(refas($$, bx)); } <b_bool>
 %destructor { box_free(refas($$, bx)); } <b_int>
 %destructor { box_free(refas($$, bx)); } <b_int16>
-%destructor { box_free(refas($$, bx)); } <b_uint16>
 %destructor { box_free(refas($$, bx)); } <b_string>
 
 %%
@@ -309,33 +303,7 @@ formula-mappings
   ;
 
 formula-mapping
-  : CAPTURE_STDERR ':' stream-part
-  {
-    PARSER->cfg->formula.capture_stderr = $3;
-  }
-  | CAPTURE_STDOUT ':' stream-part
-  {
-    PARSER->cfg->formula.capture_stdout = $3;
-  }
-  | CAPTURE_AUXOUT ':' stream-part
-  {
-    PARSER->cfg->formula.capture_auxout = $3;
-  }
-  | STDOUT_BUFFER_SIZE ':' uint16
-  {
-    PARSER->cfg->formula.stdout_buffer_size = $3;
-  }
-  | STDERR_BUFFER_SIZE ':' uint16
-  {
-    PARSER->cfg->formula.stderr_buffer_size = $3;
-  }
-  | AUXOUT_BUFFER_SIZE ':' uint16
-  {
-    PARSER->cfg->formula.auxout_buffer_size = $3;
-  }
-  | formula-success
-  | formula-error
-  | formula-path
+  : formula-path
   ;
 
 formula-path
@@ -377,124 +345,6 @@ formula-path-dir
     if($1) {
       YFATAL(set_put, PARSER->cfg->formula.path.dirs.entries, $1, 0);
     }
-  }
-  ;
-
-formula-success
-  : SUCCESS ':' '{' formula-show '}'
-  {
-    PARSER->cfg->formula.success = PARSER->show_settings;
-  }
-  | SUCCESS '=' '{' formula-show-epsilon '}'
-  {
-    PARSER->cfg->formula.success = PARSER->show_settings;
-    PARSER->cfg->formula.success.merge_overwrite = true;
-  }
-  ;
-
-formula-error
-  : ERROR ':' '{' formula-show '}'
-  {
-    PARSER->cfg->formula.error = PARSER->show_settings;
-  }
-  | ERROR '=' '{' formula-show-epsilon '}'
-  {
-    PARSER->cfg->formula.error = PARSER->show_settings;
-    PARSER->cfg->formula.error.merge_overwrite = true;
-  }
-  ;
-
-allocate-formula-show
-  : %empty
-  {
-    memset(&PARSER->show_settings, 0, sizeof(PARSER->show_settings));
-  }
-  ;
-
-formula-show-epsilon
-  : formula-show
-  | %empty
-  {
-    PARSER->show_settings.merge_significant = true;
-  }
-  ;
-
-formula-show
-  : formula-show formula-show-mapping
-  | allocate-formula-show formula-show-mapping
-  {
-    PARSER->show_settings.merge_significant = true;
-  }
-  ;
-
-formula-show-mapping
-  : SHOW_STDOUT ':' bool
-  {
-    PARSER->show_settings.show_stdout = $3;
-  }
-  | SHOW_STDOUT_LIMIT_LINES ':' int16
-  {
-    PARSER->show_settings.show_stdout_limit_lines = $3;
-  }
-  | SHOW_STDOUT_LIMIT_BYTES ':' int16
-  {
-    PARSER->show_settings.show_stdout_limit_bytes = $3;
-  }
-  | SHOW_STDERR ':' bool
-  {
-    PARSER->show_settings.show_stderr = $3;
-  }
-  | SHOW_STDERR_LIMIT_LINES ':' int16
-  {
-    PARSER->show_settings.show_stderr_limit_lines = $3;
-  }
-  | SHOW_STDERR_LIMIT_BYTES ':' int16
-  {
-    PARSER->show_settings.show_stderr_limit_bytes = $3;
-  }
-  | SHOW_AUXOUT ':' bool
-  {
-    PARSER->show_settings.show_auxout = $3;
-  }
-  | SHOW_AUXOUT_LIMIT_LINES ':' int16
-  {
-    PARSER->show_settings.show_auxout_limit_lines = $3;
-  }
-  | SHOW_AUXOUT_LIMIT_BYTES ':' int16
-  {
-    PARSER->show_settings.show_auxout_limit_bytes = $3;
-  }
-  | SHOW_ARGUMENTS ':' bool
-  {
-    PARSER->show_settings.show_arguments = $3;
-  }
-  | SHOW_CWD ':' bool
-  {
-    PARSER->show_settings.show_cwd = $3;
-  }
-  | SHOW_COMMAND ':' bool
-  {
-    PARSER->show_settings.show_command = $3;
-  }
-  | SHOW_SOURCES ':' bool
-  {
-    PARSER->show_settings.show_sources = $3;
-  }
-  | SHOW_PATH ':' bool
-  {
-    PARSER->show_settings.show_path = $3;
-  }
-  | SHOW_TARGETS ':' bool
-  {
-    PARSER->show_settings.show_targets = $3;
-  }
-  | SHOW_ENVIRONMENT ':' bool
-  {
-    PARSER->show_settings.show_environment = $3;
-  }
-  | SHOW_STATUS ':' bool
-  {
-    PARSER->show_settings.show_status = $3;
   }
   ;
 
@@ -739,28 +589,6 @@ invalidate-type-enum
   }
   ;
 
-stream-part
-  : stream-part-enum
-  {
-    YFATAL(box_int_mk, &@$, &$$, $1);
-  }
-  ;
-
-stream-part-enum
-  : LEADING
-  {
-    $$ = STREAM_PART_LEADING;
-  }
-  | TRAILING
-  {
-    $$ = STREAM_PART_TRAILING;
-  }
-  | NONE
-  {
-    $$ = STREAM_PART_NONE;
-  }
-  ;
-
 bool
   : BOOL
   {
@@ -788,27 +616,6 @@ int16_igroup
 
 int16_ugroup
   : UINTMAX8
-  ;
-
-uint16
-  : uint16_igroup
-  {
-    YFATAL(box_uint16_mk, &@$, &$$, $1);
-  }
-  | uint16_ugroup
-  {
-    YFATAL(box_uint16_mk, &@$, &$$, $1);
-  }
-  ;
-
-uint16_igroup
-  : INTMAX8
-  | INTMAX16
-  ;
-
-uint16_ugroup
-  : UINTMAX8
-  | UINTMAX16
   ;
 
 bstring

@@ -85,7 +85,7 @@ static xapi node_operations_test_entry(xunit_test * _test)
 
   node_operations_test * test = (node_operations_test *)_test;
 
-  narrator * N = 0;
+  narrator_growing * N = 0;
   list * operations = 0;
   operations_parser * parser = 0;
   const char *actual;
@@ -102,13 +102,13 @@ static xapi node_operations_test_entry(xunit_test * _test)
   fatal(operations_parser_parse, parser, g_graph, MMS(test->operations), operations);
   fatal(operations_perform, g_graph, node_operations_test_dispatch, operations);
 
-  fatal(narrator_xreset, N);
-  fatal(graph_say, g_graph, N);
-  actual = narrator_growing_buffer(N);
+  fatal(narrator_xreset, &N->base);
+  fatal(graph_say, g_graph, &N->base);
+  actual = N->s;
   assert_eq_s(test->expected, actual);
 
 finally:
-  fatal(narrator_xfree, N);
+  fatal(narrator_growing_free, N);
   fatal(list_xfree, operations);
   fatal(operations_parser_xfree, parser);
 coda;

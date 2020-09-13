@@ -19,6 +19,7 @@
 #include "moria/vertex.h"
 #include "valyria/set.h"
 #include "narrator.h"
+#include "fab/sigutil.h"
 
 #include "goals.h"
 #include "node.h"
@@ -28,8 +29,12 @@
 #include "selector.h"
 #include "logging.h"
 #include "path_cache.h"
+#include "handler_thread.h"
+#include "params.h"
 
 #include "common/attrs.h"
+#include "events.h"
+#include "zbuffer.h"
 
 static bool goal_build;
 static bool goal_script;
@@ -81,7 +86,7 @@ static xapi plan_visitor_direct(vertex * v, void * arg, traversal_mode mode, int
     if(n->bp_plan_id != bp_plan_id)
     {
       bpctx->state = UNSATISFIED;
-      node_get_path(n, path, sizeof(path));
+      node_path_znload(path, sizeof(path), n);
       logf(L_WARN, "no way to update %p %s state %s", n, path, attrs32_name_byvalue(graph_state_attrs, node_state_get(n)));
     }
     n->bp_plan_id = bp_plan_id;
@@ -249,19 +254,27 @@ xapi goals_cleanup()
   finally : coda;
 }
 
-xapi goals_set(bool build, bool script, selector * restrict target_direct, selector * restrict target_transitive)
+xapi goals_set(uint32_t msg_id, bool build, bool script, selector * restrict target_direct, selector * restrict target_transitive)
 {
   enter;
+
+  fabipc_message *msg;
+  handler_context *handler;
 
   goal_build = build;
   goal_script = script;
   goal_target_direct_selector = target_direct;
   goal_target_transitive_selector = target_transitive;
 
+  if(events_would(FABIPC_EVENT_GOALS, &handler, &msg)) {
+    msg->id = msg_id;
+    events_publish(handler, msg);
+  }
+
   finally : coda;
 }
 
-xapi goals_run(bool notify, bool * restrict building)
+xapi goals_kickoff(handler_context * restrict ctx)
 {
   enter;
 
@@ -278,12 +291,11 @@ xapi goals_run(bool notify, bool * restrict building)
   // kickoff
   if(goal_build && bpctx.state == READY)
   {
-    fatal(build_thread_build, notify);
-    *building = true;
+    fatal(build_thread_build, ctx);
   }
   else
   {
-    *building = false;
+    ctx->build_state = FAB_BUILD_NONE;
   }
 
   finally : coda;

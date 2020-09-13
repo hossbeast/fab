@@ -25,13 +25,11 @@
 
 extern struct logger_category * categories;
 
-#define L_ERROR     categories[0].id
-#define L_ARGS      categories[1].id
-#define L_PARAMS    categories[2].id
-#define L_CLIENT    categories[3].id
-#define L_PROTOCOL  categories[4].id
+#define L_CLIENT    categories[0].id
+#define L_PROTOCOL  categories[1].id
+#define L_CONFIG    categories[2].id
 #if DEBUG || DEVEL || XAPI
-# define L_IPC      categories[5].id
+# define L_IPC      categories[3].id
 #endif
 
 /// logging_setup

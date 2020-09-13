@@ -37,36 +37,34 @@
 #include "logger/category.h"
 #include "logger/arguments.h"
 #include "valyria/list.h"
+#include "fab/ipc.h"
 
 #include "args.h"
 #include "logging.h"
 #include "params.h"
 #include "errtab/MAIN.errtab.h"
 #include "build.h"
+#include "autobuild.h"
 #include "adhoc.h"
 #include "invalidate.h"
+#include "events.h"
 #include "command.h"
 
 #include "macros.h"
 #include "common/assure.h"
 
+static int argc;
+static char **argv;
+
+struct g_args_t g_args;
+
 //
 // public
 //
 
-xapi args_usage(const command * restrict cmd, int version, int logcats)
+void args_version()
 {
-  enter;
-
-  narrator * N = g_narrator_stdout;
-
-  xsays(
-"fab : build optimally\n"
-  );
-
-  if(version)
-  {
-    xsays(
+  printf(
 " fab-" XQUOTE(FABVERSIONS)
 #if DEVEL
 "+DEVEL"
@@ -75,118 +73,213 @@ xapi args_usage(const command * restrict cmd, int version, int logcats)
 #endif
 " @ " XQUOTE(BUILDSTAMP)
 "\n"
-    );
+  );
+
+  exit(0);
+}
+
+void args_usage(command * restrict cmd)
+{
+  printf(
+"fab : build optimally\n"
+"\n"
+"usage: fab [command | option]..\n"
+"\n"
+"commands\n"
+" adhoc                 adhoc request\n"
+" autobuild             as build, but remain connected\n"
+" build       (default) bring targets up-to-date\n"
+" events                listen for and print events\n"
+" invalidate            invalidate nodes\n"
+"\n"
+"global options\n"
+" --help | -h       this message\n"
+" --version | -V    print version information\n"
+" -B                first, global invalidation\n"
+" -K                first, kill extant fabd if any\n"
+  );
+
+  if(cmd) {
+    printf("\n");
+    cmd->usage(cmd);
   }
 
-  if(cmd)
-    fatal(cmd->usage_say, N);
-
-  if(logcats)
-  {
-    xsays(
+  printf(
 "\n"
-"----------------- [ logs ] -----------------------------------------------------------------------\n"
-"\n"
-    );
-
-    fatal(logger_expr_push, 0, "+LOGGER");
-    fatal(logger_categories_report);
-    fatal(logger_expr_pop, 0);
-  }
-
-  xsays(
-"\n"
-"For more information visit http://fabutil.org\n"
+"https://github.com/hossbeast/fab\n"
 "\n"
   );
 
-  finally : coda;
+  exit(0);
 }
 
-xapi args_parse(const command ** cmd)
+static command *command_lookup(const char *s)
+{
+  if(strcmp(s, "build") == 0) {
+    return &build_command;
+  } else if(strcmp(s, "autobuild") == 0) {
+    return &autobuild_command;
+  } else if(strcmp(s, "adhoc") == 0) {
+    return &adhoc_command;
+  } else if(strcmp(s, "invalidate") == 0) {
+    return &invalidate_command;
+  } else if(strcmp(s, "events") == 0) {
+    return &events_command;
+  }
+
+  return 0;
+}
+
+xapi args_parse(command ** cmdp)
 {
   enter;
 
   int x;
-  const char ** argv = 0;
-  size_t argc = 0;
-
-  // built-in subcommands
-  if(g_argc < 2)
-  {
-    x = 1;
-    *cmd = build_command;
-  }
-  else if(strcmp(g_argv[1], "build") == 0)
-  {
-    x = 2;
-    *cmd = build_command;
-  }
-  else if(strcmp(g_argv[1], "autobuild") == 0)
-  {
-    x = 2;
-    *cmd = autobuild_command;
-  }
-  else if(strcmp(g_argv[1], "adhoc") == 0)
-  {
-    x = 2;
-    *cmd = adhoc_command;
-  }
-  else if(strcmp(g_argv[1], "invalidate") == 0)
-  {
-    x = 2;
-    *cmd = invalidate_command;
-  }
-  else
-  {
-    fail(MAIN_NOCOMMAND);
-  }
-
-  fatal(xmalloc, &argv, sizeof(*argv) * (g_argc + 1));
-  argv[argc++] = (*cmd)->name;
-
+  int longindex;
   int help = 0;
   int version = 0;
-  int logs = 0;
-  for(; x < g_argc; x++)
+  command *cmd = 0;
+
+  const struct option longopts[] = {
+      { "help"    , no_argument , &help, 1 }
+    , { "version" , no_argument , &version, 1 }
+  };
+
+  const char *switches =
+    // no-argument switches
+    "hVBK"
+
+    // with-argument switches
+    ""
+  ;
+
+  fatal(xmalloc, &argv, sizeof(*argv) * (g_argc + 1));
+  argc = 1;
+
+//printf("g-argv %zu\n", g_argc);
+//for(x = 0; x < g_argc; x++) {
+//  printf(" %2d %s\n", x, g_argv[x]);
+//}
+
+  // disable getopt error messages
+  opterr = 0;
+  optind = 0;
+  while((x = getopt_long(g_argc, g_argv, switches, longopts, &longindex)) != -1)
   {
-    if(strcmp(g_argv[x], "--") == 0)
-      break;
-    else if(strcmp(g_argv[x], "help") == 0)
-      help = 1;
-    else if(strcmp(g_argv[x], "args") == 0)
-      help = 1;
-    else if(strcmp(g_argv[x], "params") == 0)
-      help = 1;
-    else if(strcmp(g_argv[x], "options") == 0)
-      help = 1;
-    else if(strcmp(g_argv[x], "opts") == 0)
-      help = 1;
-    else if(strcmp(g_argv[x], "version") == 0)
-      version = 1;
-    else if(strcmp(g_argv[x], "logs") == 0)
-      logs = 1;
+//printf("x %d optind %d\n", x, optind);
+    // longopts
+    if(x == 0)
+    {
+    }
+    else if(x == 'h')
+    {
+      help = true;
+    }
+    else if(x == 'V')
+    {
+      version = true;
+    }
+    else if(x == 'B')
+    {
+      g_args.invalidate = true;
+    }
+    else if(x == 'K')
+    {
+      g_args.kill = true;
+    }
+    else if(!cmd)
+    {
+      if((cmd = command_lookup(g_argv[optind - 1])) == 0)
+      {
+        fails(MAIN_BADARGS, "unknown command", g_argv[optind - 1]);
+      }
+    }
     else
-      goto add;
-    continue;
-    add : argv[argc++] = g_argv[x];
+    {
+      argv[argc++] = g_argv[optind - 1];
+    }
   }
 
-  for(; x < g_argc; x++)
-    g_argv[argc++] = g_argv[x];
+  for(; optind < g_argc; optind++) {
+    if(cmd) {
+      argv[argc++] = g_argv[optind];
+      continue;
+    }
+    if((cmd = command_lookup(g_argv[optind])) == 0)
+    {
+      fails(MAIN_BADARGS, "unknown command", g_argv[optind]);
+    }
+  }
 
-  if(*cmd)
+  if(help)
   {
-    fatal((*cmd)->args_parse, argv, argc);
+    args_usage(cmd);
+  }
+  if(version)
+  {
+    args_version();
   }
 
-  if(help || version || logs)
-  {
-    fatal(args_usage, *cmd, version, logs);
+  if(!cmd) {
+    cmd = &build_command;
   }
+
+  argv[0] = cmd->name;
+
+//printf("sub-argv %u\n", argc);
+//for(x = 0; x < argc; x++) {
+//  printf(" %2d %s\n", x, argv[x]);
+//}
+
+  fatal(cmd->args_parse, cmd, argc, argv);
+
+  *cmdp = cmd;
+
+  finally : coda;
+}
+
+xapi args_teardown(void)
+{
+  enter;
+
+  wfree(argv);
+
+  finally : coda;
+}
+
+#if 0
+xapi args_collate(const command * restrict cmd, fabipc_message * msg)
+{
+  enter;
+
+  value_writer writer;
+  narrator * request_narrator;
+  narrator_fixed nstor;
+
+  value_writer_init(&writer);
+
+  request_narrator = narrator_fixed_init(&nstor, msg->text, 0xfff);
+
+  fatal(value_writer_open, &writer, request_narrator);
+  fatal(cmd->collate, &writer);
+  fatal(value_writer_close, &writer);
+
+  // two terminating null bytes
+  fatal(narrator_xsayw, request_narrator, (char[]) { 0x00, 0x00 }, 2);
+  msg->size = nstor.l;
+
+//  // save a spot for the message length
+//  request_narrator = narrator_fixed_init(nstor, msg->text, 0xfff);
+//  fatal(narrator_xsayw, request_narrator, (char[]) { 0xde, 0xad, 0xbe, 0xef }, 4);
+  // stitch up the message length
+//  size_t message_size;
+//  message_size =
+//  message_len = message_size - 4;
+//  fatal(narrator_xseek, request_narrator, 0, NARRATOR_SEEK_SET, 0);
+//  fatal(narrator_xsayw, request_narrator, &message_len, sizeof(message_len));
 
 finally:
-  wfree(argv);
+  fatal(value_writer_destroy, &writer);
 coda;
 }
 
@@ -194,53 +287,40 @@ xapi args_report(const command * restrict cmd)
 {
   enter;
 
-  narrator * N = 0;
+  narrator_growing * N = 0;
 
   fatal(narrator_growing_create, &N);
 
-  xsays("fab");
-  fatal(cmd->command_say, N);
-  xsayf(" %s", g_logvs);
-
-  logs(L_ARGS, narrator_growing_buffer(N));
+  fatal(narrator_xsays, &N->base, "fab");
+  fatal(cmd->command_say, &N->base);
+  fatal(narrator_xsayf, &N->base, " %s", g_logvs);
+  logs(L_ARGS, N->s);
 
 finally:
-  fatal(narrator_xfree, N);
+  if(N) {
+    fatal(narrator_xfree, &N->base);
+  }
 coda;
 }
 
-xapi args_collate(const command * restrict cmd, void * request_shm)
-{
-  enter;
+#if 0
+/// args_report
+//
+// SUMMARY
+//  log a summary of args as-parsed
+//
+xapi args_report(const struct command * restrict cmd)
+  __attribute__((nonnull));
+#endif
 
-  char nstor[NARRATOR_STATIC_SIZE];
-  value_writer writer;
-  narrator * request_narrator;
-  uint32_t message_len;
-  size_t message_size;
-
-  value_writer_init(&writer);
-
-  // save a spot for the message length
-  request_narrator = narrator_fixed_init(nstor, request_shm, 0xfff);
-  fatal(narrator_xsayw, request_narrator, (char[]) { 0xde, 0xad, 0xbe, 0xef }, 4);
-
-  fatal(value_writer_open, &writer, request_narrator);
-
-  fatal(cmd->collate, &writer);
-
-  fatal(value_writer_close, &writer);
-
-  // two terminating null bytes
-  fatal(narrator_xsayw, request_narrator, (char[]) { 0x00, 0x00 }, 2);
-
-  // stitch up the message length
-  message_size = narrator_fixed_size(request_narrator);
-  message_len = message_size - 4;
-  fatal(narrator_xseek, request_narrator, 0, NARRATOR_SEEK_SET, 0);
-  fatal(narrator_xsayw, request_narrator, &message_len, sizeof(message_len));
-
-finally:
-  fatal(value_writer_destroy, &writer);
-coda;
-}
+/// args_request_collate
+//
+// SUMMARY
+//  build a fab request from g_args
+//
+// PARAMETERS
+//  request - (returns) request
+//
+xapi args_collate(const struct command * restrict cmd, struct fabipc_message *msg)
+  __attribute__((nonnull));
+#endif

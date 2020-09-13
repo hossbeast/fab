@@ -200,6 +200,9 @@ xapi graph_edge_say(const struct edge * restrict ne, struct narrator * restrict 
 typedef struct graph_invalidation_context {
   struct vertex_traversal_state * vertex_traversal;
   struct edge_traversal_state * edge_traversal;
+
+  /* whether any nodes were invalidated */
+  bool any;
 } graph_invalidation_context;
 
 xapi graph_invalidation_begin(graph_invalidation_context * restrict context)

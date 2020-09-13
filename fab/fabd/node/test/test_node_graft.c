@@ -84,7 +84,7 @@ static xapi node_graft_test_entry(xunit_test * _test)
 
   node_graft_test * test = (node_graft_test *)_test;
   const char * graph;
-  narrator * N = 0;
+  narrator_growing * N = 0;
   list * operations = 0;
   operations_parser * parser = 0;
   node * node;
@@ -103,12 +103,12 @@ static xapi node_graft_test_entry(xunit_test * _test)
 
   assert_notnull(node);
 
-  fatal(graph_say, g_graph, N);
-  graph = narrator_growing_buffer(N);
+  fatal(graph_say, g_graph, &N->base);
+  graph = N->s;
   assert_eq_s(test->graph, graph);
 
 finally:
-  fatal(narrator_xfree, N);
+  fatal(narrator_growing_free, N);
   graph_invalidation_end(&invalidation);
   fatal(list_xfree, operations);
   fatal(operations_parser_xfree, parser);

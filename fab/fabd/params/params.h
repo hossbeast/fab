@@ -23,6 +23,9 @@
 
 #include "xapi.h"
 
+#define EVENT_SWEEP       1
+#define EVENT_BUILD_DONE  2
+
 /// g_params
 //
 // SUMMARY
@@ -37,6 +40,7 @@ extern struct g_params
   pid_t           thread_server;    // thread id of the server thread
   pid_t           thread_notify;    // thread id of the notify thread
   pid_t           thread_sweeper;   // thread id of the sweeper thread
+  pid_t           thread_beholder;  // thread id of the beholder thread
   pid_t           thread_build;     // thread id of the build thread
   int             thread_count;     // number of extant threads, other than the monitor/main thread
 
@@ -52,6 +56,7 @@ extern struct g_params
   char *          homedir;          // homedir of the real user
 
   int             shutdown;         // whether shutdown has been initiated
+  bool            handler_error;    // error on any handler thread
 } g_params;
 
 /// params_parse
@@ -59,7 +64,7 @@ extern struct g_params
 // SUMMARY
 //  populates g_params
 //
-xapi params_setup(uint64_t *hash);
+xapi params_setup(uint64_t hash);
 
 /// params_teardown
 //

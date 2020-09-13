@@ -272,6 +272,7 @@ xapi graph_invalidation_begin(graph_invalidation_context * restrict invalidation
 
   fatal(graph_vertex_traversal_begin, g_graph, &invalidation->vertex_traversal);
   fatal(graph_edge_traversal_begin, g_graph, &invalidation->edge_traversal);
+  invalidation->any = false;
 
   finally : coda;
 }

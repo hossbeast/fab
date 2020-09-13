@@ -71,8 +71,8 @@ static xapi request_parser_test_entry(xunit_test * _test)
   request_parser * parser = 0;
   request * A = 0;
   request * B = 0;
-  narrator * N1 = 0;
-  narrator * N2 = 0;
+  narrator_growing * N1 = 0;
+  narrator_growing * N2 = 0;
 
   // arrange
   fatal(request_parser_create, &parser);
@@ -82,26 +82,26 @@ static xapi request_parser_test_entry(xunit_test * _test)
 
   // round-trip
   fatal(narrator_growing_create, &N1);
-  fatal(request_say, A, N1);
+  fatal(request_say, A, &N1->base);
 
-  size_t len = narrator_growing_size(N1);
-  fatal(narrator_xseek, N1, 0, NARRATOR_SEEK_SET, 0);
-  fatal(narrator_xread, N1, buf, len, 0);
+  size_t len = N1->l;
+  fatal(narrator_xseek, &N1->base, 0, NARRATOR_SEEK_SET, 0);
+  fatal(narrator_xread, &N1->base, buf, len, 0);
   buf[len] = buf[len + 1] = 0;
   fatal(request_parser_parse, parser, buf, len + 2, 0, &B);
 
   fatal(narrator_growing_create, &N2);
-  fatal(request_say, B, N2);
+  fatal(request_say, B, &N2->base);
 
   // round-trip
-  assert_eq_w(narrator_growing_buffer(N1), narrator_growing_size(N1), narrator_growing_buffer(N2), narrator_growing_size(N2));
+  assert_eq_w(N1->s, N1->l, N2->s, N2->l);
 
 finally:
   fatal(request_parser_xfree, parser);
   fatal(request_xfree, A);
   fatal(request_xfree, B);
-  fatal(narrator_xfree, N1);
-  fatal(narrator_xfree, N2);
+  fatal(narrator_growing_free, N1);
+  fatal(narrator_growing_free, N2);
 coda;
 }
 

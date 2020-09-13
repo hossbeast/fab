@@ -114,6 +114,11 @@ xapi request_parser_parse(
 {
   enter;
 
+  /* request must end with two null bytes */
+  RUNTIME_ASSERT(size > 2);
+  RUNTIME_ASSERT(buf[size - 1] == 0);
+  RUNTIME_ASSERT(buf[size - 2] == 0);
+
   fatal(yyu_parse, &parser->yyu, buf, size, fname, YYU_INPLACE, 0, 0);
   if(rv)
   {

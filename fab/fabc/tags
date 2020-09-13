@@ -1,0 +1,114 @@
+!_TAG_FILE_FORMAT	2	/extended format; --format=1 will not append ;" to lines/
+!_TAG_FILE_SORTED	1	/0=unsorted, 1=sorted, 2=foldcase/
+!_TAG_OUTPUT_FILESEP	slash	/slash or backslash/
+!_TAG_OUTPUT_MODE	u-ctags	/u-ctags or e-ctags/
+!_TAG_PROGRAM_AUTHOR	Universal Ctags Team	//
+!_TAG_PROGRAM_NAME	Universal Ctags	/Derived from Exuberant Ctags/
+!_TAG_PROGRAM_URL	https://ctags.io/	/official site/
+!_TAG_PROGRAM_VERSION	0.0.0	/a3c87ab5/
+APIDATA	errtab/MAIN.errtab.c	/^#define APIDATA$/;"	d	file:
+ERRMAX_MAIN	errtab/MAIN.errtab.h	/^#define ERRMAX_MAIN /;"	d
+ERRMIN_MAIN	errtab/MAIN.errtab.h	/^#define ERRMIN_MAIN /;"	d
+ERRTAB_MAIN	errtab/MAIN.errtab.h	/^#define ERRTAB_MAIN /;"	d
+ERRTAB_MAIN	errtab/MAIN.errtab.h	/^ERRTAB_MAIN$/;"	e	enum:__anon9382b89d0103
+ERRTAG_MAIN	errtab/MAIN.errtab.h	/^#define ERRTAG_MAIN /;"	d
+L_ARGS	logging/logging.h	/^#define L_ARGS /;"	d
+L_CLIENT	logging/logging.h	/^#define L_CLIENT /;"	d
+L_ERROR	logging/logging.h	/^#define L_ERROR /;"	d
+L_IPC	logging/logging.h	/^# define L_IPC /;"	d
+L_PARAMS	logging/logging.h	/^#define L_PARAMS /;"	d
+L_PROTOCOL	logging/logging.h	/^#define L_PROTOCOL /;"	d
+MAIN_ERRTAB_H	errtab/MAIN.errtab.h	/^#define MAIN_ERRTAB_H$/;"	d
+PROP_ABSDIR	explorer/explorer.c	/^#define PROP_ABSDIR /;"	d	file:
+PROP_NAME	explorer/explorer.c	/^#define PROP_NAME /;"	d	file:
+PROP_TYPE	explorer/explorer.c	/^#define PROP_TYPE /;"	d	file:
+_ARGS_H	args/args.h	/^#define _ARGS_H$/;"	d
+_CLIENT_THREAD_H	client_thread/client_thread.h	/^#define _CLIENT_THREAD_H$/;"	d
+_DISPLAY_H	display/display.h	/^#define _DISPLAY_H$/;"	d
+_ERRDEF	errtab/MAIN.errtab.c	/^#define _ERRDEF(/;"	d	file:
+_ERRDEF	errtab/MAIN.errtab.h	/^#define _ERRDEF(/;"	d
+_EXPLORER_H	explorer/explorer.h	/^#define _EXPLORER_H$/;"	d
+_LOGGING_H	logging/logging.h	/^#define _LOGGING_H$/;"	d
+_PARAMS_H	params/params.h	/^#define _PARAMS_H$/;"	d
+_UI_THREAD_H	ui_thread/ui_thread.h	/^#define _UI_THREAD_H$/;"	d
+_XCURSES_H	xcurses/xcurses.h	/^#define _XCURSES_H$/;"	d
+__anon9382b89d0103	errtab/MAIN.errtab.h	/^enum {$/;"	g
+abspath	explorer/explorer.c	/^static char *abspath;             \/\/ pointer into describe_text$/;"	v	typeref:typename:char *	file:
+abspath_len	explorer/explorer.c	/^static uint16_t abspath_len;$/;"	v	typeref:typename:uint16_t	file:
+args_parse	args/args.c	/^xapi args_parse()$/;"	f	typeref:typename:xapi
+args_report	args/args.c	/^xapi args_report()$/;"	f	typeref:typename:xapi
+args_usage	args/args.c	/^xapi args_usage(int version, int logcats)$/;"	f	typeref:typename:xapi
+client_thread	client_thread/client_thread.c	/^static xapi client_thread(fab_client * restrict client)$/;"	f	typeref:typename:xapi	file:
+client_thread_jump	client_thread/client_thread.c	/^static void * client_thread_jump(void * arg)$/;"	f	typeref:typename:void *	file:
+client_thread_launch	client_thread/client_thread.c	/^xapi client_thread_launch(fab_client * restrict client)$/;"	f	typeref:typename:xapi
+count_list	explorer/explorer.c	/^static inline void count_list(char *text, char ** items, uint16_t *items_lens, uint16_t *items_l/;"	f	typeref:typename:void	file:
+describe	explorer/explorer.c	/^static xapi describe(value_writer * restrict writer)$/;"	f	typeref:typename:xapi	file:
+describe_text	explorer/explorer.c	/^static char describe_text[4096];$/;"	v	typeref:typename:char[4096]	file:
+display	display/display.h	/^typedef struct display {$/;"	s
+display	display/display.h	/^} display;$/;"	t	typeref:struct:display
+down_labels	explorer/explorer.c	/^static char *down_labels[128];        \/\/ pointers into down_text$/;"	v	typeref:typename:char * [128]	file:
+down_labels_len	explorer/explorer.c	/^static uint16_t down_labels_len;$/;"	v	typeref:typename:uint16_t	file:
+down_labels_lens	explorer/explorer.c	/^static uint16_t down_labels_lens[128];$/;"	v	typeref:typename:uint16_t[128]	file:
+down_text	explorer/explorer.c	/^static char down_text[4096];$/;"	v	typeref:typename:char[4096]	file:
+draw	explorer/explorer.c	/^static xapi draw()$/;"	f	typeref:typename:xapi	file:
+errtab_MAIN	errtab/MAIN.errtab.c	/^errtab errtab_MAIN = {$/;"	v	typeref:typename:errtab
+exedir	params/params.h	/^  char *          exedir;  \/\/ path to the directory containing the executable$/;"	m	struct:g_params	typeref:typename:char *
+explorer_main	explorer/explorer.c	/^xapi explorer_main(fab_client * restrict client)$/;"	f	typeref:typename:xapi
+fini	errtab/MAIN.errtab.c	/^static void __attribute__((destructor)) fini() {$/;"	f	typeref:typename:void	file:
+fp	explorer/explorer.c	/^FILE *fp;$/;"	v	typeref:typename:FILE *
+g_args	args/args.c	/^struct g_args g_args;$/;"	v	typeref:struct:g_args
+g_args	args/args.h	/^struct g_args {$/;"	s
+g_args	args/args.h	/^} g_args;$/;"	v	typeref:struct:g_args
+g_display	display/display.c	/^struct display g_display;$/;"	v	typeref:struct:display
+g_logger_default_stderr	logging/logging.c	/^int g_logger_default_stderr = 1;$/;"	v	typeref:typename:int
+g_params	params/params.c	/^struct g_params g_params;$/;"	v	typeref:struct:g_params
+g_params	params/params.h	/^extern struct g_params$/;"	s
+g_params	params/params.h	/^} g_params;$/;"	v	typeref:struct:g_params
+getdata	explorer/explorer.c	/^static xapi getdata(fab_client * restrict client)$/;"	f	typeref:typename:xapi	file:
+init	errtab/MAIN.errtab.c	/^static void __attribute__((constructor)) init() {$/;"	f	typeref:typename:void	file:
+logging_setup	logging/logging.c	/^xapi logging_setup(char ** envp)$/;"	f	typeref:typename:xapi
+lookup	args/args.h	/^  char * lookup;$/;"	m	struct:g_args	typeref:typename:char *
+lookup_pattern	explorer/explorer.c	/^static char lookup_pattern[256];$/;"	v	typeref:typename:char[256]	file:
+main	main.c	/^int main(int argc, char ** argv, char ** envp)$/;"	f	typeref:typename:int
+make_request	explorer/explorer.c	/^static xapi make_request(fab_client * restrict client, xapi (*render)(value_writer * restrict wr/;"	f	typeref:typename:xapi	file:
+params_report	params/params.c	/^xapi params_report()$/;"	f	typeref:typename:xapi
+params_setup	params/params.c	/^xapi params_setup()$/;"	f	typeref:typename:xapi
+params_teardown	params/params.c	/^void params_teardown()$/;"	f	typeref:typename:void
+parse_describe	explorer/explorer.c	/^static inline void parse_describe(char *text, char **abspathp, uint16_t *abspath_lenp)$/;"	f	typeref:typename:void	file:
+perrtab_MAIN	errtab/MAIN.errtab.c	/^errtab * APIDATA perrtab_MAIN = &errtab_MAIN;$/;"	v	typeref:typename:errtab * APIDATA
+pgid	params/params.h	/^  pid_t           pgid;    \/\/ process group id$/;"	m	struct:g_params	typeref:typename:pid_t
+pid	params/params.h	/^  pid_t           pid;     \/\/ pid of this process$/;"	m	struct:g_params	typeref:typename:pid_t
+ppid	params/params.h	/^  pid_t           ppid;    \/\/ pid of parent process$/;"	m	struct:g_params	typeref:typename:pid_t
+properties	explorer/explorer.c	/^static char *properties[8];           \/\/ pointers into describe_text$/;"	v	typeref:typename:char * [8]	file:
+properties_lens	explorer/explorer.c	/^static uint16_t properties_lens[8];$/;"	v	typeref:typename:uint16_t[8]	file:
+selected_num	explorer/explorer.c	/^static int selected_num[3] = { -1, -1, -1 };$/;"	v	typeref:typename:int[3]	file:
+selected_win	explorer/explorer.c	/^static int selected_win = 1;$/;"	v	typeref:typename:int	file:
+setup	display/display.h	/^  xapi (*setup)(void);$/;"	m	struct:display	typeref:typename:xapi (*)(void)
+setup	explorer/explorer.c	/^static xapi setup()$/;"	f	typeref:typename:xapi	file:
+strong_down_request	explorer/explorer.c	/^static xapi strong_down_request(value_writer * restrict writer)$/;"	f	typeref:typename:xapi	file:
+strong_up_request	explorer/explorer.c	/^static xapi strong_up_request(value_writer * restrict writer)$/;"	f	typeref:typename:xapi	file:
+thread_client	params/params.h	/^  pid_t           thread_client;$/;"	m	struct:g_params	typeref:typename:pid_t
+thread_count	params/params.h	/^  int             thread_count;$/;"	m	struct:g_params	typeref:typename:int
+thread_main	params/params.h	/^  pid_t           thread_main;$/;"	m	struct:g_params	typeref:typename:pid_t
+thread_ui	params/params.h	/^  pid_t           thread_ui;$/;"	m	struct:g_params	typeref:typename:pid_t
+ui_thread	ui_thread/ui_thread.c	/^static xapi ui_thread()$/;"	f	typeref:typename:xapi	file:
+ui_thread_jump	ui_thread/ui_thread.c	/^static void * ui_thread_jump(void * arg)$/;"	f	typeref:typename:void *	file:
+ui_thread_launch	ui_thread/ui_thread.c	/^xapi ui_thread_launch()$/;"	f	typeref:typename:xapi
+unwrap_list	explorer/explorer.c	/^static inline void unwrap_list(const char **sp, uint16_t *lp)$/;"	f	typeref:typename:void	file:
+up_labels	explorer/explorer.c	/^static char *up_labels[128];          \/\/ pointers into up_text$/;"	v	typeref:typename:char * [128]	file:
+up_labels_len	explorer/explorer.c	/^static uint16_t up_labels_len;$/;"	v	typeref:typename:uint16_t	file:
+up_labels_lens	explorer/explorer.c	/^static uint16_t up_labels_lens[128];$/;"	v	typeref:typename:uint16_t[128]	file:
+up_text	explorer/explorer.c	/^static char up_text[4096];$/;"	v	typeref:typename:char[4096]	file:
+win2	explorer/explorer.c	/^static WINDOW *win2;$/;"	v	typeref:typename:WINDOW *	file:
+win5	explorer/explorer.c	/^static WINDOW *win5;$/;"	v	typeref:typename:WINDOW *	file:
+win_down	explorer/explorer.c	/^static WINDOW *win_down;$/;"	v	typeref:typename:WINDOW *	file:
+win_label	explorer/explorer.c	/^static WINDOW *win_label;$/;"	v	typeref:typename:WINDOW *	file:
+win_path	explorer/explorer.c	/^static WINDOW *win_path;$/;"	v	typeref:typename:WINDOW *	file:
+win_properties	explorer/explorer.c	/^static WINDOW *win_properties;$/;"	v	typeref:typename:WINDOW *	file:
+win_up	explorer/explorer.c	/^static WINDOW *win_up;$/;"	v	typeref:typename:WINDOW *	file:
+xinitscr	xcurses/xcurses.h	/^static inline xapi xinitscr(WINDOW ** winp)$/;"	f	typeref:typename:xapi
+xmain	main.c	/^static xapi xmain()$/;"	f	typeref:typename:xapi	file:
+xmain_exit	main.c	/^static xapi xmain_exit;$/;"	v	typeref:typename:xapi	file:
+xmain_jump	main.c	/^static xapi xmain_jump()$/;"	f	typeref:typename:xapi	file:
+xmain_load	main.c	/^static xapi xmain_load(char ** envp)$/;"	f	typeref:typename:xapi	file:
+xnewwin	xcurses/xcurses.h	/^static inline xapi xnewwin(WINDOW ** winp, int height, int width, int y, int x)$/;"	f	typeref:typename:xapi

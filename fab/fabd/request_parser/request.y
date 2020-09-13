@@ -70,6 +70,7 @@
   CONSOLE            "console"
   DESCRIBE           "describe"
   INVALIDATE         "invalidate"
+  GLOBAL_INVALIDATE  "global-invalidate"
   LIST               "list"
   RECONFIGURE        "reconfigure"
   RESET_SELECTION    "reset-selection"
@@ -116,9 +117,9 @@ request
   ;
 
 commands
-  : initial-commands final-command
+  : initial-commands build-command
   | initial-commands
-  | final-command
+  | build-command
   ;
 
 initial-commands
@@ -137,13 +138,14 @@ initial-command
   : allocate-command initial-command-branch
   ;
 
-final-command
-  : allocate-command final-command-branch
+build-command
+  : allocate-command build-command-branch
   ;
 
 initial-command-branch
   : describe-cmd
   | invalidate-cmd
+  | global-invalidate-cmd
   | list-cmd
   | stage-config-cmd
   | reconfigure-cmd
@@ -153,7 +155,7 @@ initial-command-branch
   ;
 
  /* only permitted as the last command */
-final-command-branch
+build-command-branch
   : run-cmd
   | autorun-cmd
   ;
@@ -182,7 +184,7 @@ run-cmd
   : RUN
   {
     PARSER->command->type = COMMAND_RUN;
-    PARSER->request->final_command = COMMAND_RUN;
+    PARSER->request->build_command = COMMAND_RUN;
   }
   ;
 
@@ -190,7 +192,7 @@ autorun-cmd
   : AUTORUN
   {
     PARSER->command->type = COMMAND_AUTORUN;
-    PARSER->request->final_command = COMMAND_AUTORUN;
+    PARSER->request->build_command = COMMAND_AUTORUN;
   }
   ;
 
@@ -200,6 +202,10 @@ describe-cmd
 
 invalidate-cmd
   : INVALIDATE { PARSER->command->type = COMMAND_INVALIDATE ; }
+  ;
+
+global-invalidate-cmd
+  : GLOBAL_INVALIDATE { PARSER->command->type = COMMAND_GLOBAL_INVALIDATE ; }
   ;
 
 list-cmd

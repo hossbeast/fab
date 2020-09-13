@@ -25,44 +25,22 @@
 #include "types.h"
 #include "xapi.h"
 
-#include "selector.h"
-
 struct request;
-struct value_writer;
-struct selection;
-struct graph_invalidation_context;
+struct handler_context;
 
-/// handler_context
-//
-// SUMMARY
-//  context for processing a request
-//
-typedef struct handler_context {
-  selector_context sel_ctx;
-  struct selection * selection;
-  struct graph_invalidation_context * invalidation;
-} handler_context;
+/* lock for processing any request */
+extern int32_t handler_lock;
 
-xapi handler_context_create(handler_context ** restrict ctx)
+/* lock for running the build, e.g. build or autobuild commands */
+extern int32_t handler_build_lock;
+
+xapi handler_process_request(struct handler_context * restrict ctx, struct request * restrict request)
   __attribute__((nonnull));
 
-xapi handler_context_xfree(handler_context * restrict ctx);
+void handler_request_completes(struct handler_context * restrict ctx, int code, const char * restrict text, uint16_t text_len)
+  __attribute__((nonnull(1)));
 
-xapi handler_context_reset(handler_context * restrict ctx)
-  __attribute__((nonnull));
-
-xapi handler_context_ixfree(handler_context ** restrict ctx)
-  __attribute__((nonnull));
-
-/// handler_dispatch
-//
-// SUMMARY
-//
-xapi handler_dispatch(
-    handler_context * restrict ctx
-  , struct request * restrict request
-  , struct value_writer * response_writer
-)
+void handler_request_complete(struct handler_context * restrict ctx, int code)
   __attribute__((nonnull));
 
 #endif

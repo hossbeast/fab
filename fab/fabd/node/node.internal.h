@@ -54,7 +54,10 @@ xapi graph_node_create(
 /*
  * write the path to the node, relative to another node, to a buffer
  */
-size_t node_get_relative_path(const node * n, const node * base, void * restrict dst, size_t dst_size)
+size_t node_relative_path_znload(void * restrict dst, size_t dst_size, const node * n, const node * base)
+  __attribute__((nonnull));
+
+size_t node_relative_path_znload_bacon(void * restrict dst, size_t dst_size, const node * n, const node * base)
   __attribute__((nonnull));
 
 /*

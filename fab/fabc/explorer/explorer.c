@@ -19,6 +19,7 @@
 #include <stdlib.h>
 
 #include "fab/client.h"
+#include "fab/ipc.h"
 #include "narrator.h"
 #include "narrator/fixed.h"
 #include "value/writer.h"
@@ -27,6 +28,7 @@
 #include "explorer.h"
 #include "xcurses.h"
 #include "args.h"
+#include "display.h"
 
 #include "zbuffer.h"
 
@@ -34,14 +36,14 @@
 #define PROP_NAME   1
 #define PROP_TYPE   2
 
-FILE *fp;
-
 static char up_text[4096];
+static uint16_t up_text_len;
 static char *up_labels[128];          // pointers into up_text
 static uint16_t up_labels_lens[128];
 static uint16_t up_labels_len;
 
 static char down_text[4096];
+static uint16_t down_text_len;
 static char *down_labels[128];        // pointers into down_text
 static uint16_t down_labels_lens[128];
 static uint16_t down_labels_len;
@@ -50,13 +52,11 @@ static char describe_text[4096];
 static char *properties[8];           // pointers into describe_text
 static uint16_t properties_lens[8];
 
-static char *abspath;             // pointer into describe_text
-static uint16_t abspath_len;
-
 static int selected_win = 1;
 static int selected_num[3] = { -1, -1, -1 };
 
-static char lookup_pattern[256];
+static const char *lookup_pattern;
+static uint16_t lookup_pattern_len;
 
 static WINDOW *win_path;
 static WINDOW *win2;
@@ -66,7 +66,313 @@ static WINDOW *win5;
 static WINDOW *win_up;
 static WINDOW *win_down;
 
-static xapi windows_setup()
+static uint32_t msgid;
+static uint32_t strong_up_id;
+static uint32_t strong_down_id;
+static uint32_t describe_id;
+
+static xapi strong_up_request(value_writer * restrict writer)
+{
+  enter;
+
+  char space[256];
+  uint16_t z;
+
+  fatal(value_writer_push_list, writer);
+    fatal(value_writer_push_mapping, writer);
+      fatal(value_writer_string, writer, "select");
+      fatal(value_writer_push_list, writer);
+        fatal(value_writer_push_mapping, writer);
+          fatal(value_writer_string, writer, "pattern");
+          if(lookup_pattern_len > 0 && lookup_pattern[0] != '.' && lookup_pattern[0] != '/') {
+            z = 0;
+            z += znloads(space + z, sizeof(space) - z, "./");
+            z += znloadw(space + z, sizeof(space) - z, lookup_pattern, lookup_pattern_len);
+            fatal(value_writer_bytes, writer, space, z);
+          } else {
+            fatal(value_writer_string, writer, lookup_pattern);
+          }
+        fatal(value_writer_pop_mapping, writer);
+        fatal(value_writer_push_mapping, writer);
+          fatal(value_writer_string, writer, "traverse");
+          fatal(value_writer_push_set, writer);
+            fatal(value_writer_push_mapping, writer);
+              fatal(value_writer_string, writer, "direction");
+              fatal(value_writer_string, writer, "up");
+            fatal(value_writer_pop_mapping, writer);
+            fatal(value_writer_push_mapping, writer);
+              fatal(value_writer_string, writer, "relation");
+              fatal(value_writer_string, writer, "strong");
+            fatal(value_writer_pop_mapping, writer);
+            fatal(value_writer_push_mapping, writer);
+              fatal(value_writer_string, writer, "min-distance");
+              fatal(value_writer_string, writer, "1");
+            fatal(value_writer_pop_mapping, writer);
+            fatal(value_writer_push_mapping, writer);
+              fatal(value_writer_string, writer, "max-distance");
+              fatal(value_writer_string, writer, "1");
+            fatal(value_writer_pop_mapping, writer);
+          fatal(value_writer_pop_set, writer);
+        fatal(value_writer_pop_mapping, writer);
+      fatal(value_writer_pop_list, writer);
+    fatal(value_writer_pop_mapping, writer);
+    fatal(value_writer_string, writer, "list");
+  fatal(value_writer_pop_list, writer);
+
+  finally : coda;
+}
+
+static xapi strong_down_request(value_writer * restrict writer)
+{
+  enter;
+
+  char space[256];
+  uint16_t z;
+
+  fatal(value_writer_push_list, writer);
+    fatal(value_writer_push_mapping, writer);
+      fatal(value_writer_string, writer, "select");
+      fatal(value_writer_push_list, writer);
+        fatal(value_writer_push_mapping, writer);
+          fatal(value_writer_string, writer, "pattern");
+          if(lookup_pattern_len > 0 && lookup_pattern[0] != '.' && lookup_pattern[0] != '/') {
+            z = 0;
+            z += znloads(space + z, sizeof(space) - z, "./");
+            z += znloadw(space + z, sizeof(space) - z, lookup_pattern, lookup_pattern_len);
+            fatal(value_writer_bytes, writer, space, z);
+          } else {
+            fatal(value_writer_string, writer, lookup_pattern);
+          }
+          fatal(value_writer_pop_mapping, writer);
+        fatal(value_writer_push_mapping, writer);
+          fatal(value_writer_string, writer, "traverse");
+          fatal(value_writer_push_set, writer);
+            fatal(value_writer_push_mapping, writer);
+              fatal(value_writer_string, writer, "direction");
+              fatal(value_writer_string, writer, "down");
+            fatal(value_writer_pop_mapping, writer);
+            fatal(value_writer_push_mapping, writer);
+              fatal(value_writer_string, writer, "relation");
+              fatal(value_writer_string, writer, "strong");
+            fatal(value_writer_pop_mapping, writer);
+            fatal(value_writer_push_mapping, writer);
+              fatal(value_writer_string, writer, "min-distance");
+              fatal(value_writer_string, writer, "1");
+            fatal(value_writer_pop_mapping, writer);
+            fatal(value_writer_push_mapping, writer);
+              fatal(value_writer_string, writer, "max-distance");
+              fatal(value_writer_string, writer, "1");
+            fatal(value_writer_pop_mapping, writer);
+          fatal(value_writer_pop_set, writer);
+        fatal(value_writer_pop_mapping, writer);
+      fatal(value_writer_pop_list, writer);
+    fatal(value_writer_pop_mapping, writer);
+    fatal(value_writer_string, writer, "list");
+  fatal(value_writer_pop_list, writer);
+
+  finally : coda;
+}
+
+static xapi describe(value_writer * restrict writer)
+{
+  enter;
+
+  char space[256];
+  uint16_t z;
+
+  fatal(value_writer_push_list, writer);
+    fatal(value_writer_push_mapping, writer);
+      fatal(value_writer_string, writer, "select");
+      fatal(value_writer_push_list, writer);
+        fatal(value_writer_push_mapping, writer);
+          fatal(value_writer_string, writer, "pattern");
+          if(lookup_pattern_len > 0 && lookup_pattern[0] != '.' && lookup_pattern[0] != '/') {
+            z = 0;
+            z += znloads(space + z, sizeof(space) - z, "./");
+            z += znloadw(space + z, sizeof(space) - z, lookup_pattern, lookup_pattern_len);
+            fatal(value_writer_bytes, writer, space, z);
+          } else {
+            fatal(value_writer_string, writer, lookup_pattern);
+          }
+        fatal(value_writer_pop_mapping, writer);
+      fatal(value_writer_pop_list, writer);
+    fatal(value_writer_pop_mapping, writer);
+    fatal(value_writer_string, writer, "describe");
+  fatal(value_writer_pop_list, writer);
+
+  finally : coda;
+}
+
+/*
+ * request new data - called on the client thread
+ */
+static xapi redrive(fab_client * restrict client)
+{
+  enter;
+
+  narrator_fixed nstor;
+  value_writer writer;
+  narrator * request_narrator;
+  uint32_t message_len;
+  fabipc_message *msg;
+
+#if 0
+  label = 0;
+  const char *label;
+  uint16_t label_len;
+  size_t z;
+
+  label = 0;
+  if(selected_win == 0) {
+    label = up_labels[selected_num[0]];
+    label_len = up_labels_lens[selected_num[0]];
+  } else if(selected_win == 2) {
+    label = down_labels[selected_num[2]];
+    label_len = down_labels_lens[selected_num[2]];
+  }
+
+  if(label)
+  {
+    z = 0;
+    if(label[0] != '.' && label[0] != '/')
+    {
+      z += znloads(lookup_pattern + z, sizeof(lookup_pattern) - z, "./");
+    }
+    z += znloadw(lookup_pattern + z, sizeof(lookup_pattern) - z, label, label_len);
+    lookup_pattern[z] = 0;
+  }
+#endif
+
+  value_writer_init(&writer);
+
+  // upwards dependencies
+  up_labels_len = 0;
+  msg = fab_client_produce(client, 0);
+  strong_up_id = msg->id = ++msgid;
+  request_narrator = narrator_fixed_init(&nstor, msg->text, 0xfff);
+  fatal(value_writer_open, &writer, request_narrator);
+  fatal(strong_up_request, &writer);
+  fatal(value_writer_close, &writer);
+  fatal(narrator_xsayw, request_narrator, (char[]) { 0x00, 0x00 }, 2);
+  message_len = nstor.l;
+  msg->size = message_len;
+  msg->type = FABIPC_MSG_REQUEST;
+  fab_client_post(client);
+
+  // downwards dependencies
+  down_labels_len = 0;
+  msg = fab_client_produce(client, 0);
+  strong_down_id = msg->id = ++msgid;
+  request_narrator = narrator_fixed_init(&nstor, msg->text, 0xfff);
+  fatal(value_writer_open, &writer, request_narrator);
+  fatal(strong_down_request, &writer);
+  fatal(value_writer_close, &writer);
+  fatal(narrator_xsayw, request_narrator, (char[]) { 0x00, 0x00 }, 2);
+  message_len = nstor.l;
+  msg->size = message_len;
+  msg->type = FABIPC_MSG_REQUEST;
+  fab_client_post(client);
+
+  // node details
+  describe_text[0] = 0;
+  msg = fab_client_produce(client, 0);
+  describe_id = msg->id = ++msgid;
+  request_narrator = narrator_fixed_init(&nstor, msg->text, 0xfff);
+  fatal(value_writer_open, &writer, request_narrator);
+  fatal(describe, &writer);
+  fatal(value_writer_close, &writer);
+  fatal(narrator_xsayw, request_narrator, (char[]) { 0x00, 0x00 }, 2);
+  message_len = nstor.l;
+  msg->size = message_len;
+  msg->type = FABIPC_MSG_REQUEST;
+  fab_client_post(client);
+
+printf("redrive : up %u down %u describe %u\n", strong_up_id, strong_down_id, describe_id);
+
+finally:
+  fatal(value_writer_destroy, &writer);
+coda;
+}
+
+static void parse_describe(char *text)
+{
+  char *s0, *s;
+  uint16_t len;
+
+  s0 = text;
+  s = s0;
+  while(*s)
+  {
+    if(*s == '\n')
+    {
+      len = s - s0;
+      if(len > 9 && memncmp(s0, 9, MMS("absdir : ")) == 0)
+      {
+        properties[PROP_ABSDIR] = s0 + 9;
+        properties_lens[PROP_ABSDIR] = len - 9;
+      }
+      else if(len > 7 && memncmp(s0, 7, MMS("name : ")) == 0)
+      {
+        properties[PROP_NAME] = s0 + 7;
+        properties_lens[PROP_NAME] = len - 7;
+      }
+      else if(len > 7 && memncmp(s0, 7, MMS("type : ")) == 0)
+      {
+        properties[PROP_TYPE] = s0 + 7;
+        properties_lens[PROP_TYPE] = len - 7;
+      }
+
+      s0 = s + 1;
+      while(*s0 == ' ')
+        s0++;
+      s = s0;
+    }
+    s++;
+  }
+}
+
+static void rebind(const fabipc_message * restrict msg)
+{
+//printf("rebind %u sz %hu text %.*s\n", msg->id, msg->size, (int)msg->size + 1, msg->text);
+
+  if(msg->id == strong_up_id)
+  {
+    if(msg->size > (sizeof(up_text) - up_text_len))
+      return;
+    if(up_labels_len == (sizeof(up_labels) / sizeof(*up_labels)))
+      return;
+
+    up_labels[up_labels_len] = up_text + up_text_len;
+    memcpy(up_text + up_text_len, msg->text, msg->size);
+    up_labels_lens[up_labels_len] = msg->size;
+    up_text_len += msg->size;
+    up_labels_len++;
+  }
+  else if(msg->id == strong_down_id)
+  {
+    if(msg->size > (sizeof(down_text) - down_text_len))
+      return;
+    if(down_labels_len == (sizeof(down_labels) / sizeof(*down_labels)))
+      return;
+
+    down_labels[down_labels_len] = down_text + down_text_len;
+    memcpy(down_text + down_text_len, msg->text, msg->size);
+    down_labels_lens[down_labels_len] = msg->size;
+    down_text_len += msg->size;
+    down_labels_len++;
+  }
+  else if(msg->id == describe_id)
+  {
+    if(msg->size > sizeof(describe_text))
+      return;
+
+    memcpy(describe_text, msg->text, msg->size);
+    describe_text[msg->size] = 0;
+    parse_describe(describe_text);
+  }
+}
+
+static xapi setup()
 {
   enter;
 
@@ -206,460 +512,73 @@ static xapi draw()
   finally : coda;
 }
 
-static xapi strong_up_request(value_writer * restrict writer)
+static int keypress(int key)
 {
-  enter;
-
-  fatal(value_writer_push_list, writer);
-    fatal(value_writer_push_mapping, writer);
-      fatal(value_writer_string, writer, "select");
-      fatal(value_writer_push_list, writer);
-        fatal(value_writer_push_mapping, writer);
-          fatal(value_writer_string, writer, "pattern");
-          fatal(value_writer_string, writer, lookup_pattern);
-        fatal(value_writer_pop_mapping, writer);
-        fatal(value_writer_push_mapping, writer);
-          fatal(value_writer_string, writer, "traverse");
-          fatal(value_writer_push_set, writer);
-            fatal(value_writer_push_mapping, writer);
-              fatal(value_writer_string, writer, "direction");
-              fatal(value_writer_string, writer, "up");
-            fatal(value_writer_pop_mapping, writer);
-            fatal(value_writer_push_mapping, writer);
-              fatal(value_writer_string, writer, "relation");
-              fatal(value_writer_string, writer, "strong");
-            fatal(value_writer_pop_mapping, writer);
-            fatal(value_writer_push_mapping, writer);
-              fatal(value_writer_string, writer, "min-distance");
-              fatal(value_writer_string, writer, "1");
-            fatal(value_writer_pop_mapping, writer);
-            fatal(value_writer_push_mapping, writer);
-              fatal(value_writer_string, writer, "max-distance");
-              fatal(value_writer_string, writer, "1");
-            fatal(value_writer_pop_mapping, writer);
-          fatal(value_writer_pop_set, writer);
-        fatal(value_writer_pop_mapping, writer);
-      fatal(value_writer_pop_list, writer);
-    fatal(value_writer_pop_mapping, writer);
-    fatal(value_writer_string, writer, "list");
-  fatal(value_writer_pop_list, writer);
-
-  finally : coda;
-}
-
-static xapi strong_down_request(value_writer * restrict writer)
-{
-  enter;
-
-  fatal(value_writer_push_list, writer);
-    fatal(value_writer_push_mapping, writer);
-      fatal(value_writer_string, writer, "select");
-      fatal(value_writer_push_list, writer);
-        fatal(value_writer_push_mapping, writer);
-          fatal(value_writer_string, writer, "pattern");
-          fatal(value_writer_string, writer, lookup_pattern);
-        fatal(value_writer_pop_mapping, writer);
-        fatal(value_writer_push_mapping, writer);
-          fatal(value_writer_string, writer, "traverse");
-          fatal(value_writer_push_set, writer);
-            fatal(value_writer_push_mapping, writer);
-              fatal(value_writer_string, writer, "direction");
-              fatal(value_writer_string, writer, "down");
-            fatal(value_writer_pop_mapping, writer);
-            fatal(value_writer_push_mapping, writer);
-              fatal(value_writer_string, writer, "relation");
-              fatal(value_writer_string, writer, "strong");
-            fatal(value_writer_pop_mapping, writer);
-            fatal(value_writer_push_mapping, writer);
-              fatal(value_writer_string, writer, "min-distance");
-              fatal(value_writer_string, writer, "1");
-            fatal(value_writer_pop_mapping, writer);
-            fatal(value_writer_push_mapping, writer);
-              fatal(value_writer_string, writer, "max-distance");
-              fatal(value_writer_string, writer, "1");
-            fatal(value_writer_pop_mapping, writer);
-          fatal(value_writer_pop_set, writer);
-        fatal(value_writer_pop_mapping, writer);
-      fatal(value_writer_pop_list, writer);
-    fatal(value_writer_pop_mapping, writer);
-    fatal(value_writer_string, writer, "list");
-  fatal(value_writer_pop_list, writer);
-
-  finally : coda;
-}
-
-static xapi describe(value_writer * restrict writer)
-{
-  enter;
-
-  fatal(value_writer_push_list, writer);
-    fatal(value_writer_push_mapping, writer);
-      fatal(value_writer_string, writer, "select");
-      fatal(value_writer_push_list, writer);
-        fatal(value_writer_push_mapping, writer);
-          fatal(value_writer_string, writer, "pattern");
-          fatal(value_writer_string, writer, lookup_pattern);
-        fatal(value_writer_pop_mapping, writer);
-      fatal(value_writer_pop_list, writer);
-    fatal(value_writer_pop_mapping, writer);
-    fatal(value_writer_string, writer, "describe");
-  fatal(value_writer_pop_list, writer);
-
-  finally : coda;
-}
-
-static xapi make_request(fab_client * restrict client, xapi (*render)(value_writer * restrict writer), void **response_shm)
-{
-  enter;
-
-  narrator_fixed nstor;
-  value_writer writer;
-  narrator * request_narrator;
-  uint32_t message_len;
-  void * request_shm = 0;
-  void * shmaddr;
-
-  value_writer_init(&writer);
-
-  fatal(fab_client_prepare_request_shm, client, &request_shm);
-
-  // save a spot for the message length
-  request_narrator = narrator_fixed_init(&nstor, request_shm, 0xfff);
-  fatal(narrator_xsayw, request_narrator, (char[]) { 0xde, 0xad, 0xbe, 0xef }, 4);
-  fatal(value_writer_open, &writer, request_narrator);
-
-  fatal(render, &writer);
-
-  // stitch up the message length
-  fatal(value_writer_close, &writer);
-  fatal(narrator_xsayw, request_narrator, (char[]) { 0x00, 0x00 }, 2);
-  message_len = nstor.l - 4;
-  fatal(narrator_xseek, request_narrator, 0, NARRATOR_SEEK_SET, 0);
-  fatal(narrator_xsayw, request_narrator, &message_len, sizeof(message_len));
-
-  /* perform request/response */
-  shmaddr = request_shm;
-  request_shm = 0;
-  fatal(fab_client_make_request, client, shmaddr, response_shm);
-
-finally:
-  fatal(value_writer_destroy, &writer);
-  fatal(xshmdt, request_shm);
-coda;
-}
-
-static inline void unwrap_list(const char **sp, uint16_t *lp)
-{
-  const char *s = *sp;
-  uint16_t l = *lp;
-
-  // leading whitespace
-  while(*s == ' ' || *s == '\n') {
-    s++;
-    l--;
-  }
-
-  // trailing whitespace
-  while(s[l - 1] == ' ' || s[l - 1] == '\n') {
-    l--;
-  }
-
-  // outermost list
-  s++;
-  l--;
-  l--;
-
-  // leading whitespace
-  while(*s == ' ' || *s == '\n') {
-    s++;
-    l--;
-  }
-
-  // trailing whitespace
-  while(s[l - 1] == ' ' || s[l - 1] == '\n') {
-    l--;
-  }
-
-  *sp = s;
-  *lp = l;
-}
-
-static inline void count_list(char *text, char ** items, uint16_t *items_lens, uint16_t *items_len)
-{
-  char *s0, *s;
-  uint16_t n;
-
-  // skip to the second line
-  s0 = text;
-  while(*s0 != '\n')
-    s0++;
-
-  // trim leading whitespace
-  s0++;
-  while(*s0 == ' ')
-    s0++;
-
-  s = s0;
-  n = 0;
-  while(*s)
-  {
-    if(*s == '\n')
-    {
-      items[n] = s0;
-      items_lens[n] = s - s0;
-      n++;
-
-      s0 = s + 1;
-      while(*s0 == ' ')
-        s0++;
-      s = s0;
+  if(key == KEY_UP || key == KEY_DOWN) {
+    if(key == KEY_UP) {
+      selected_num[selected_win]--;
+    } else if (key == KEY_DOWN) {
+      selected_num[selected_win]++;
     }
-    else
+
+    if(   (selected_win == 0 && selected_num[0] >= up_labels_len)
+       || (selected_win == 2 && selected_num[2] >= down_labels_len))
     {
-      s++;
+      selected_num[selected_win] = 0;
     }
-  }
-
-  *items_len = n;
-}
-
-static inline void parse_describe(char *text, char **abspathp, uint16_t *abspath_lenp)
-{
-  char *s0, *s;
-  uint16_t len;
-
-  s0 = text;
-  s = s0;
-  while(*s)
-  {
-    if(*s == '\n')
+    else if(selected_num[selected_win] < 0)
     {
-      len = s - s0;
-      if(len > 9 && memncmp(s0, 9, MMS("absdir : ")) == 0)
-      {
-        properties[PROP_ABSDIR] = s0 + 9;
-        properties_lens[PROP_ABSDIR] = len - 9;
-      }
-      else if(len > 7 && memncmp(s0, 7, MMS("name : ")) == 0)
-      {
-        properties[PROP_NAME] = s0 + 7;
-        properties_lens[PROP_NAME] = len - 7;
-      }
-      else if(len > 7 && memncmp(s0, 7, MMS("type : ")) == 0)
-      {
-        properties[PROP_TYPE] = s0 + 7;
-        properties_lens[PROP_TYPE] = len - 7;
-      }
-
-      s0 = s + 1;
-      while(*s0 == ' ')
-        s0++;
-      s = s0;
-    }
-    s++;
-  }
-}
-
-/*
- * retrieve node data
- */
-static xapi getdata(fab_client * restrict client)
-{
-  enter;
-
-  void * response_shm = 0;
-  void * shmaddr;
-  fab_message *msg;
-  const char *text;
-  uint16_t len;
-
-  // upwards
-  fatal(make_request, client, strong_up_request, &response_shm);
-
-  // consume the response
-  msg = response_shm;
-  text = msg->text;
-  len = msg->len;
-  unwrap_list(&text, &len);
-  memcpy(up_text, text, len);
-  up_text[len] = 0;
-  count_list(up_text, up_labels, up_labels_lens, &up_labels_len);
-
-  // release the response
-  shmaddr = response_shm;
-  response_shm = 0;
-  fatal(fab_client_release_response, client, shmaddr);
-
-  // downwards
-  fatal(make_request, client, strong_down_request, &response_shm);
-
-  // consume the response
-  msg = response_shm;
-  text = msg->text;
-  len = msg->len;
-  unwrap_list(&text, &len);
-  memcpy(down_text, text, len);
-  down_text[len] = 0;
-  count_list(down_text, down_labels, down_labels_lens, &down_labels_len);
-
-fprintf(fp, "'%s'\n", down_text);
-fprintf(fp, ">>>>>\n");
-int x;
-for(x = 0; x < down_labels_len; x++) {
-  fprintf(fp, "Z%.*sQ\n", (int)down_labels_lens[x], down_labels[x]);
-}
-fprintf(fp, "%d items\n", down_labels_len);
-
-  // release the response
-  shmaddr = response_shm;
-  response_shm = 0;
-  fatal(fab_client_release_response, client, shmaddr);
-
-  // downwards
-  fatal(make_request, client, describe, &response_shm);
-
-  // consume the response
-  msg = response_shm;
-  text = msg->text;
-  len = msg->len;
-  unwrap_list(&text, &len);
-  memcpy(describe_text, text, len);
-  describe_text[len] = 0;
-  parse_describe(describe_text, &abspath, &abspath_len);
-
-  // release the response
-  shmaddr = response_shm;
-  response_shm = 0;
-  fatal(fab_client_release_response, client, shmaddr);
-
-finally:
-  fatal(xshmdt, response_shm);
-coda;
-}
-
-xapi explorer_main(fab_client * restrict client)
-{
-  enter;
-
-  int key;
-  int x;
-  bool done;
-  bool rebind;
-  char *label;
-  uint16_t label_len;
-  size_t z;
-
-fp = fopen("/tmp/a", "w");
-setvbuf(fp, NULL, _IONBF, 0);
-
-  // initial lookup pattern
-  x = MIN(sizeof(lookup_pattern) - 1, strlen(g_args.lookup));
-  memcpy(lookup_pattern, g_args.lookup, x);
-  lookup_pattern[x] = 0;
-
-  fatal(getdata, client);
-  fatal(windows_setup);
-
-  done = false;
-  rebind = false;
-  while(!done)
-  {
-    if(rebind)
-    {
-      label = 0;
       if(selected_win == 0) {
-        label = up_labels[selected_num[0]];
-        label_len = up_labels_lens[selected_num[0]];
+        selected_num[selected_win] = MAX(up_labels_len - 1, 0);
       } else if(selected_win == 2) {
-        label = down_labels[selected_num[2]];
-        label_len = down_labels_lens[selected_num[2]];
-      }
-
-      if(label)
-      {
-        z = 0;
-        if(label[0] != '.' && label[0] != '/')
-        {
-          z += znloads(lookup_pattern + z, sizeof(lookup_pattern) - z, "./");
-        }
-        z += znloadw(lookup_pattern + z, sizeof(lookup_pattern) - z, label, label_len);
-        lookup_pattern[z] = 0;
-      }
-
-      fatal(getdata, client);
-      rebind = false;
-      selected_win = 1;
-      selected_num[0] = -1;
-      selected_num[2] = -1;
-    }
-
-    while(!done && !rebind)
-    {
-      fatal(draw);
-
-      key = getch();
-fprintf(fp, " 0x%04x %s\n", key, key_name(key));
-
-      switch (key)
-      {
-        case KEY_DOWN:
-          selected_num[selected_win]++;
-          break;
-        case KEY_UP:
-          selected_num[selected_win]--;
-          break;
-        case '\t':
-          selected_win++;
-          selected_win %= 3;
-fprintf(fp, "win %d\n", selected_win);
-          break;
-        case KEY_BTAB:  /* shift+tab */
-          if (selected_win == 0) {
-            selected_win = 2;
-          } else {
-            selected_win--;
-          }
-          break;
-fprintf(fp, "win %d\n", selected_win);
-        case KEY_ENTER:
-        case '\r':
-        case '\n':
-          rebind = true;
-          break;
-        default:
-          done = true;
+        selected_num[selected_win] = MAX(down_labels_len - 1, 0);
       }
     }
+  } else if (key == '\t') {
+    selected_win++;
+    selected_win %= 3;
+  } else if(key == KEY_BTAB) {  /* shift + tab */
+    if (selected_win == 0) {
+      selected_win = 2;
+    } else {
+      selected_win--;
+    }
+  } else if(key == KEY_ENTER) {
+    lookup_pattern = 0;
+    lookup_pattern_len = 0;
+    if(selected_win == 0) {
+      lookup_pattern = up_labels[selected_num[0]];
+      lookup_pattern_len = up_labels_lens[selected_num[0]];
+    } else if(selected_win == 2) {
+      lookup_pattern = down_labels[selected_num[2]];
+      lookup_pattern_len = down_labels_lens[selected_num[2]];
+    }
+
+    return REBIND;
+  } else {
+    return EXIT;
   }
 
-  endwin();
+  return 0;
+}
+
+static display * explorer_display = (display[]) {{
+    setup : setup
+  , draw : draw
+  , keypress : keypress
+  , redrive : redrive
+  , rebind : rebind
+}};
+
+xapi explorer_display_switch()
+{
+  enter;
+
+  lookup_pattern = g_args.lookup;
+  if(lookup_pattern) {
+    lookup_pattern_len = strlen(lookup_pattern);
+  }
+  fatal(display_switch, explorer_display);
 
   finally : coda;
 }
-
-#if 0
-#endif
-
-#if 0
-
-  while(1);
-
-//  nonl();
-//  intrflush(stdscr, false);
-//  keypad(stdscr, true);
-
-  int x;
-  for(x = 0; x < 50; x++)
-  {
-    mvaddch(x + 0, 0, 'a');
-    mvaddch(x + 1, 10, 'a');
-    mvaddch(x + 2, 20, 'a');
-    mvaddch(x + 3, 30, 'a');
-    mvaddch(x + 4, 40, 'a');
-    mvaddch(x + 5, 50, 'a');
-    refresh();
-    sleep(1);
-  }
-
-  while(1);
-#endif

@@ -97,7 +97,6 @@ static xapi pattern_match_test_entry(xunit_test * _test)
   pattern_match_test * test = (pattern_match_test *)_test;
 
   map * node_map = 0;
-  narrator * N = 0;
   pattern_parser * parser = 0;
   pattern * pattern = 0;
   list * nodes_list = 0;
@@ -173,7 +172,6 @@ static xapi pattern_match_test_entry(xunit_test * _test)
     mod = &mods[0];
   }
 
-  fatal(narrator_growing_create, &N);
   fatal(map_create, &node_map);
   fatal(list_create, &nodes_list);
 
@@ -210,7 +208,7 @@ static xapi pattern_match_test_entry(xunit_test * _test)
     if(!(m = set_table_get(matches, x)))
       continue;
 
-    size_t pz = node_get_absolute_path(m->node, path, sizeof(path));
+    size_t pz = node_absolute_path_znload(path, sizeof(path), m->node);
     size_t sz = pz;
 
     for(y = 0; y <= m->group_max; y++)
@@ -257,7 +255,6 @@ finally:
   fatal(set_xfree, variants);
   fatal(set_xfree, matches);
   fatal(map_xfree, node_map);
-  fatal(narrator_xfree, N);
   fatal(pattern_parser_xfree, parser);
   pattern_free(pattern);
   fatal(list_xfree, nodes_list);

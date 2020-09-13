@@ -50,12 +50,12 @@
 #include "params.h"
 #include "stats.h"
 #include "formula.h"
+#include "events.h"
+#include "handler_thread.h"
 
 #include "macros.h"
 #include "common/attrs.h"
 #include "common/hash.h"
-
-uint32_t node_invalidation_counter;
 
 //
 // static
@@ -76,6 +76,8 @@ static xapi log_connect(edge * restrict e)
     cat = L_FSGRAPH;
   } else if (type & EDGE_DEPENDENCY) {
     cat = L_DEPGRAPH;
+  } else if (type == EDGE_TYPE_IMPORTS) {
+    cat = L_MODULE;
   }
 
   if(log_would(cat))
@@ -98,12 +100,15 @@ static xapi children_changed_visitor(edge * e, void * ctx, traversal_mode mode, 
 
   rule_dirnode_edge *rde;
   rule_module_association *rma;
+  graph_invalidation_context *invalidation;
 
   RUNTIME_ASSERT(e->attrs == EDGE_TYPE_RULE_DIR);
   rde = edge_value(e);
   rma = rde->rma;
-
   graph_rma_enqueue(rma);
+
+  invalidation = ctx;
+  invalidation->any = true;
 
   finally : coda;
 }
@@ -126,7 +131,7 @@ static xapi dirnode_children_changed(node * restrict n, struct graph_invalidatio
         , edge_visit : EDGE_TYPE_RULE_DIR
       }}
     , MORIA_TRAVERSE_UP | MORIA_TRAVERSE_POST
-    , 0
+    , invalidation
   );
 
   finally : coda;
@@ -834,22 +839,38 @@ static xapi invalidate_visitor(vertex * v, void * arg, traversal_mode mode, int 
 {
   enter;
 
-  node * n = vertex_value(v);
+  node * n;
+  narrator * N;
+  char space[512];
+  uint16_t z;
+  handler_context *handler;
+  fabipc_message *msg;
+  graph_invalidation_context *invalidation = arg;
 
+  n = vertex_value(v);
   if(node_invalid_get(n)) {
     goto XAPI_FINALIZE;
   }
 
-  node_invalid_set(n, true);
-  node_invalidation_counter++;
+  node_invalid_set(n);
+  invalidation->any = true;
 
   if(log_would(L_DEPGRAPH))
   {
-    narrator * N;
+    z = node_relative_path_znload_bacon(space, sizeof(space), n, g_project_root);
+
     fatal(log_start, L_DEPGRAPH, &N);
     xsays("invalidate ");
-    fatal(node_project_relative_path_say, n, N);
+    xsayw(space, z);
     fatal(log_finish);
+  }
+
+  if(events_would(FABIPC_EVENT_NODE_STALE, &handler, &msg))
+  {
+    z = node_relative_path_znload_bacon(msg->text, sizeof(msg->text), n, g_project_root);
+    msg->size = z;
+    msg->id = 0;
+    events_publish(handler, msg);
   }
 
   finally : coda;
@@ -876,13 +897,13 @@ xapi node_invalidate(node * restrict n, graph_invalidation_context * restrict in
         , max_depth : UINT16_MAX
       }}
     , MORIA_TRAVERSE_UP | MORIA_TRAVERSE_PRE | MORIA_TRAVERSE_DEPTH
-    , 0
+    , invalidation
   );
 
   // for the node itself, invalidate only if consumers exist
   v = vertex_containerof(n);
   if(!rbtree_empty(&v->down)) {
-    fatal(invalidate_visitor, vertex_containerof(n), 0, 0, 0, 0);
+    fatal(invalidate_visitor, vertex_containerof(n), invalidation, 0, 0, 0);
   }
 
   ft = node_filetype_get(n);
@@ -894,6 +915,7 @@ xapi node_invalidate(node * restrict n, graph_invalidation_context * restrict in
   else if(nt == VERTEX_NODETYPE_MODULE || nt == VERTEX_NODETYPE_MODEL)
   {
     module_invalidated(node_module_get(n));
+    invalidation->any = true;
   }
   else if(nt == VERTEX_NODETYPE_FML)
   {
@@ -911,7 +933,6 @@ xapi node_invalidate(node * restrict n, graph_invalidation_context * restrict in
       , invalidation
     );
 
-printf("invalidated\n");
     formula_invalidated(n->self_fml);
   }
 
@@ -922,17 +943,34 @@ xapi node_ok(node * restrict n)
 {
   enter;
 
-  if(node_state_get(n) == VERTEX_OK)
+  narrator * N;
+  char space[512];
+  uint16_t z;
+  handler_context *handler;
+  fabipc_message *msg;
+
+  if(node_state_get(n) == VERTEX_OK && n->valid_epoch == node_valid_epoch) {
     goto XAPI_FINALIZE;
+  }
 
   node_state_set(n, VERTEX_OK);
+  n->valid_epoch = node_valid_epoch;
+
   if(log_would(L_DEPGRAPH))
   {
-    narrator * N;
+    z = node_relative_path_znload(space, sizeof(space), n, g_project_root);
     fatal(log_start, L_DEPGRAPH, &N);
     xsays("ok ");
-    fatal(node_project_relative_path_say, n, N);
+    xsayw(space, z);
     fatal(log_finish);
+  }
+
+  if(events_would(FABIPC_EVENT_NODE_FRESH, &handler, &msg))
+  {
+    z = node_relative_path_znload(msg->text, sizeof(msg->text), n, g_project_root);
+    msg->size = z;
+    msg->id = 0;
+    events_publish(handler, msg);
   }
 
   finally : coda;

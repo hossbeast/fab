@@ -67,12 +67,12 @@ static xapi node_lookup_test_unit_setup(xunit_unit * unit)
 
   fatal(valyria_load);
   fatal(moria_load);
+  fatal(logging_finalize);
 
   fatal(filesystem_setup);
   fatal(graph_setup);
   fatal(node_setup);
   fatal(shadow_setup);
-  fatal(logging_finalize);
 
   finally : coda;
 }
@@ -142,7 +142,7 @@ static xapi node_lookup_test_entry(xunit_test * _test)
 
   // assert
   assert_notnull(result);
-  node_get_absolute_path(result, abspath, sizeof(abspath));
+  node_absolute_path_znload(abspath, sizeof(abspath), result);
   assert_eq_s(test->abspath, abspath);
 
 finally:
@@ -219,18 +219,6 @@ xunit_unit xunit = {
         , pattern : (char[]) { "../c\0" }
         , from : "c"
         , abspath : "/a/bob/c"
-      }}
-
-    /* shadow */
-    , (node_lookup_test[]) {{
-          operations : ""
-            " //modules/00abcd!shadow-module"
-            " //modules/00abcd/tests/boats"
-            " mod"
-        , module : "mod"
-        , module_shadow : "00abcd"
-        , pattern : (char[]) { "//module/tests/boats\0" }
-        , abspath : "//module/tests/boats"
       }}
     , 0
   }

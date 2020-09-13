@@ -92,7 +92,7 @@ xapi var_node_parse(node * restrict var_node)
   node_kind_set(var_node, VERTEX_VAR_BAM);
 
   // absolute path, for exec
-  node_get_project_relative_path(var_node, path, sizeof(path));
+  node_project_relative_path_znload(path, sizeof(path), var_node);
 
   fatal(snarfats, &text, &text_len, g_params.proj_dirfd, path);
   if(text)

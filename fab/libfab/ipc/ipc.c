@@ -26,78 +26,109 @@
 #include "ipc.internal.h"
 
 #include "common/fmt.h"
+#include "common/attrs.h"
+
+attrs32 * APIDATA fabipc_msg_type_attrs = (attrs32[]) {{
+#undef DEF
+#define DEF(x, s, r, y) + 1
+    num : 0
+      FABIPC_MSG_TYPE_TABLE
+  , members : (member32[]) {
+#undef DEF
+#define DEF(x, s, r, y) { name : s, value : UINT32_C(y), range : UINT32_C(r) },
+FABIPC_MSG_TYPE_TABLE
+#undef DEF
+  }
+}};
+
+attrs32 * APIDATA fabipc_event_type_attrs = (attrs32[]) {{
+#undef DEF
+#define DEF(x, s, r, y) + 1
+    num : 0
+      FABIPC_EVENT_TYPE_TABLE
+  , members : (member32[]) {
+#undef DEF
+#define DEF(x, s, r, y) { name : s, value : UINT32_C(y), range : UINT32_C(r) },
+FABIPC_EVENT_TYPE_TABLE
+#undef DEF
+  }
+}};
+
+static void __attribute__((constructor)) init()
+{
+  attrs32_init(fabipc_msg_type_attrs);
+  attrs32_init(fabipc_event_type_attrs);
+}
 
 //
 // static
 //
-static xapi lock_obtain(pid_t * pgid, int * restrict fdp, const char * restrict path)
+
+static xapi lockfile_obtain(pid_t * pid, int * restrict fd, const char * restrict path)
 {
   enter;
 
   ssize_t bytes;
-  int fd = -1;
 
   // initialize the return value
-  *pgid = -1;
+  *pid = -1;
 
   // create the pidfile
-  fatal(uxopen_modes, &fd, O_CREAT | O_WRONLY | O_EXCL, FABIPC_MODE_DATA, path);
-  if(fd == -1)
+  fatal(uxopen_modes, fd, O_CREAT | O_WRONLY | O_EXCL, FABIPC_MODE_DATA, path);
+  if(*fd == -1)
   {
-    fatal(xopens, &fd, O_RDONLY, path);
-    fatal(xread, fd, pgid, sizeof(*pgid), &bytes);
-    if(bytes != sizeof(*pgid))
-      *pgid = -1;
+    fatal(xopens, fd, O_RDONLY, path);
+    fatal(xread, *fd, pid, sizeof(*pid), &bytes);
+    if(bytes != sizeof(*pid))
+      *pid = -1;
   }
   else
   {
-    fatal(axwrite, fd, (pid_t[]) { getpgid(0) }, sizeof(pid_t));
-    *pgid = 0;
-    if(fdp)
-      *fdp = fd;
-    fd = -1; // do not close
+    fatal(axwrite, *fd, (pid_t[]) { getpid() }, sizeof(pid_t));
+    *pid = 0;
   }
 
-finally:
-  fatal(ixclose, &fd);
-coda;
+  finally : coda;
 }
 
 //
 // api
 //
 
-xapi API ipc_lock_obtain(pid_t * pgid, int * restrict fdp, char * const restrict fmt, ...)
+xapi API fabipc_lockfile_obtain(pid_t * pid, int * restrict fd, char * const restrict fmt, ...)
 {
   enter;
 
   char path[512];
-
+  int x;
   va_list va;
+  int r;
+
   va_start(va, fmt);
   fatal(fmt_apply, path, sizeof(path), fmt, va);
 
-  int x;
   for(x = 1; 1; x++)
   {
-    fatal(lock_obtain, pgid, fdp, path);
+    fatal(xclose, *fd);
+    fatal(lockfile_obtain, pid, fd, path);
 
-    if(*pgid == 0)
+    if(*pid == 0)
       break;    // lock obtained
 
-    if(*pgid == -1)
+    if(*pid == -1)
     {
       // unable to determine lock holder from the pid file ; this can happen as a
       // result of a race reading/writing the pid file, or if the pid file is corrupted
 
-      if((x % 3) == 0)
+      if((x % 3) == 0) {
         fatal(xunlinks, path);
+      }
 
       continue;
     }
 
-    int r = 0;
-    fatal(uxkill, (*pgid) * -1, 0, &r);
+    r = 0;
+    fatal(uxkill, &r, *pid, 0);
     if(r == 0) {
       break;    // lock holder still running
     }
@@ -111,7 +142,7 @@ finally:
 coda;
 }
 
-xapi API ipc_lock_update(char * const restrict fmt, ...)
+xapi API fabipc_lockfile_update(char * const restrict fmt, ...)
 {
   enter;
 
@@ -119,16 +150,16 @@ xapi API ipc_lock_update(char * const restrict fmt, ...)
   va_list va;
   va_start(va, fmt);
 
-  // write our pgid to the lockfile
+  // write our pid to the lockfile
   fatal(xopenvf, &fd, O_WRONLY, fmt, va);
-  fatal(axwrite, fd, (pid_t[]) { getpgid(0) }, sizeof(pid_t));
+  fatal(axwrite, fd, (pid_t[]) { getpid() }, sizeof(pid_t));
 
 finally:
   fatal(ixclose, &fd);
 coda;
 }
 
-xapi API ipc_lock_release(char * const restrict fmt, ...)
+xapi API fabipc_lockfile_release(char * const restrict fmt, ...)
 {
   enter;
 

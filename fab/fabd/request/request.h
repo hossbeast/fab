@@ -28,10 +28,11 @@ struct attrs32;
 struct array;
 
 typedef struct request {
+  uint32_t msg_id;
   struct array * commands;
 
-  /* command type of last command if any, either run or autorun */
-  int final_command;
+  /* build command type if any (run or autorun) */
+  int build_command;
 } request;
 
 

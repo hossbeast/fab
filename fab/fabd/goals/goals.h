@@ -26,9 +26,16 @@
 #include "xapi.h"
 
 struct selector;
+struct handler_context;
 
-xapi goals_set(bool build, bool script, struct selector * restrict target_direct, struct selector * restrict target_transitive);
-xapi goals_run(bool notify, bool * restrict building)
+xapi goals_set(
+    uint32_t msg_id
+  , bool build
+  , bool script
+  , struct selector * restrict target_direct
+  , struct selector * restrict target_transitive
+);
+xapi goals_kickoff(struct handler_context * restrict handler)
   __attribute__((nonnull));
 
 xapi goals_setup(void);

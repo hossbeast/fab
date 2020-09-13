@@ -44,21 +44,20 @@
 #include "logger/arguments.h"
 
 #include "server_thread.internal.h"
+#include "handler_thread.h"
 #include "config.h"
 #include "errtab/FABD.errtab.h"
-#include "handler.h"
 #include "logging.h"
 #include "module.h"
 #include "node.h"
 #include "notify_thread.h"
 #include "params.h"
-#include "request_parser.h"
-#include "request.internal.h"
 #include "config.internal.h"
 #include "usage.h"
 #include "stats.h"
 #include "walker.internal.h"
 #include "buildplan.h"
+#include "channel.h"
 #include "goals.h"
 #include "build_thread.internal.h"
 #include "rule.h"
@@ -70,134 +69,14 @@
 
 #include "common/attrs.h"
 #include "macros.h"
+#include "atomics.h"
 
 bool g_server_autorun;
 
 #if DEVEL
-bool g_server_no_initial_client;
-const char *g_server_initial_request;
+bool g_server_no_initial_client;      // no client right at startup
+fabipc_channel *g_server_initial_channel;
 #endif
-
-static xapi load_client_pid(pid_t * client_pid)
-{
-  enter;
-
-  int fd = -1;
-
-  // load fab/pid
-  fatal(xopenf, &fd, O_RDONLY, "%s/client/pid", g_params.ipcdir);
-  fatal(axread, fd, client_pid, sizeof(*client_pid));
-  if(*client_pid <= 0)
-  {
-    xapi_info_pushs("expected client pid", "> 0");
-    xapi_info_pushf("actual client pid", "%ld", (long)*client_pid);
-    fail(FABD_BADIPC);
-  }
-
-finally:
-  fatal(ixclose, &fd);
-coda;
-}
-
-static xapi __attribute__((unused)) redirect()
-{
-  enter;
-
-  int fd = -1;
-  char space[512];
-
-  // redirect stdout/stderr to the client
-  snprintf(space, sizeof(space), "%s/client/out", g_params.ipcdir);
-  fatal(xopens, &fd, O_RDWR, space);
-  fatal(xdup2, fd, 1);
-  fatal(ixclose, &fd);
-
-  snprintf(space, sizeof(space), "%s/client/err", g_params.ipcdir);
-  fatal(xopens, &fd, O_RDWR, space);
-  fatal(xdup2, fd, 2);
-
-finally:
-  fatal(ixclose, &fd);
-coda;
-}
-
-static xapi receive_request(void ** request_shm)
-{
-  enter;
-
-  int shmid = -1;
-  int fd = -1;
-
-  // get the request shm
-  fatal(xopenf, &fd, O_RDONLY, "%s/client/request_shmid", g_params.ipcdir);
-  fatal(axread, fd, &shmid, sizeof(shmid));
-  fatal(xshmat, shmid, 0, 0, request_shm);
-
-finally:
-  fatal(xclose, fd);
-coda;
-}
-
-static xapi __attribute__((nonnull)) prepare_response_shm(
-    void ** restrict response_shm
-  , int * restrict response_shm_id
-  , size_t * restrict response_shm_size
-)
-{
-  enter;
-
-  int fd = -1;
-  int shmid = -1;
-  size_t RESPONSE_SIZE = 0xfff;
-
-  // create fixed-size shm for the response buffer
-  fatal(xshmget, ftok(g_params.ipcdir, FABIPC_TOKRES), RESPONSE_SIZE, IPC_CREAT | IPC_EXCL | FABIPC_MODE_DATA, &shmid);
-  fatal(xshmat, shmid, 0, 0, response_shm);
-  fatal(xshmctl, shmid, IPC_RMID, 0);
-
-  // save the shmid for the client
-  fatal(xopen_modef, &fd, O_CREAT | O_WRONLY, FABIPC_MODE_DATA, "%s/fabd/response_shmid", g_params.ipcdir);
-  fatal(axwrite, fd, &shmid, sizeof(shmid));
-
-  *response_shm_id = shmid;
-  *response_shm_size = RESPONSE_SIZE;
-
-  shmid = -1;
-
-finally:
-  if(shmid != -1)
-    fatal(xshmctl, shmid, IPC_RMID, 0);
-  fatal(xclose, fd);
-coda;
-}
-
-static xapi __attribute__((nonnull(2, 3))) send_response(
-    pid_t client_pid
-  , const sigset_t * restrict sigs
-  , void * restrict response_shm
-  , size_t response_shm_size
-  , int response_shm_id
-)
-{
-  enter;
-
-  siginfo_t siginfo;
-
-  struct {
-    uint32_t len;
-    char text[];
-  } *msg = response_shm;
-  logf(L_PROTOCOL, "response(%"PRIu32")\n%s", msg->len, msg->text);
-
-  // awaken client and await response
-  if(client_pid)
-  {
-    fatal(sigutil_exchange, FABIPC_SIGACK, client_pid, sigs, &siginfo);
-    fatal(sigutil_assert, FABIPC_SIGACK, client_pid, &siginfo);
-  }
-
-  finally : coda;
-}
 
 /**
  * run invalidated rules to quiesence
@@ -207,7 +86,7 @@ static xapi rules_full_refresh(rule_run_context * restrict rule_ctx)
   enter;
 
   rule_module_association *rma;
-  narrator *N;
+  narrator * N;
 
   /* re-run invalidated rules */
   fatal(rule_run_context_begin, rule_ctx);
@@ -236,34 +115,11 @@ static xapi server_thread()
   enter;
 
   sigset_t sigs;
-  pid_t client_pid = 0;
   siginfo_t siginfo;
-  handler_context * handler_ctx = 0;
-  request_parser * request_parser = 0;
   int iteration;
-  bool building;
   rule_run_context rule_ctx = { 0 };
-  narrator *N;
-
-  char * request_buf = 0;
-  size_t request_buf_sz;
-  void * request_shm = 0;
-  request * request = 0;
-
-  void * response_shm = 0;
-  int response_shm_id = -1;
-  size_t response_shm_size;
-  uint32_t response_len;
-  narrator_fixed response_narrator_fixed;
-  narrator * response_narrator = 0;
-  value_writer response_writer;
+  int walk_id;
   graph_invalidation_context invalidation = { 0 };
-  uint32_t invalidation_counter;
-
-#if DEVEL
-  char request_data[512 << 2];
-  size_t rl;
-#endif
 
   g_params.thread_server = gettid();
 
@@ -273,17 +129,11 @@ static xapi server_thread()
 
   // signals handled on this thread
   sigemptyset(&sigs);
-  sigaddset(&sigs, FABIPC_SIGSYN);
-  sigaddset(&sigs, FABIPC_SIGACK);
-  sigaddset(&sigs, FABIPC_SIGSCH);
-  sigaddset(&sigs, FABIPC_SIGINTR);
+  sigaddset(&sigs, SIGUSR1);
+  sigaddset(&sigs, SIGRTMIN);
 
-  fatal(handler_context_create, &handler_ctx);
-  fatal(request_parser_create, &request_parser);
   fatal(rule_run_context_xinit, &rule_ctx);
   rule_ctx.modules = &g_modules;
-
-  value_writer_init(&response_writer);
 
   // extern_reconfigure loads areas of the filesystem referenced via extern
   fatal(config_begin_staging);
@@ -295,7 +145,7 @@ static xapi server_thread()
   }
 
   // load the filesystem rooted at the project dir
-  int walk_id = walker_descend_begin();
+  walk_id = walker_descend_begin();
   fatal(graph_invalidation_begin, &invalidation);
   fatal(walker_descend, 0, g_project_root, 0, g_params.proj_dir, walk_id, &invalidation);
   fatal(walker_ascend, g_project_root, walk_id, &invalidation);
@@ -319,198 +169,55 @@ static xapi server_thread()
   fatal(rules_full_refresh, &rule_ctx);
   fatal(formula_full_refresh);
 
-  // signal to the client readiness to receive requests
-#if DEVEL
-  if(!g_server_no_initial_client)
-  {
-#endif
-    fatal(load_client_pid, &client_pid);
-    fatal(sigutil_kill, client_pid, FABIPC_SIGACK);
-#if DEVEL
-  }
-#endif
-
+  iteration = 0;
 #if DEVEL
   if(g_server_no_initial_client)
   {
-    rl = strlen(g_server_initial_request);
-    memcpy(request_data, g_server_initial_request, rl);
-    request_data[rl + 0] = 0;
-    request_data[rl + 1] = 0;
-
-    request_buf = request_data;
-    request_buf_sz = rl + 2;
-
-    goto process_request;
+    fatal(handler_thread_launch, 0, 0, false);
+    iteration = 1;
   }
 #endif
 
-  for(iteration = 0; !g_params.shutdown; iteration++)
+  for(; !g_params.shutdown; iteration++)
   {
     fatal(sigutil_wait, &sigs, &siginfo);
-    if(siginfo.si_signo == FABIPC_SIGSCH)
-      continue;
+    if(g_params.shutdown) {
+      break;
+    }
 
-    /* kicked by sweeper thread */
-    if(siginfo.si_signo == FABIPC_SIGINTR)
+    /* signal from monitor thread */
+    if(siginfo.si_signo == SIGUSR1)
     {
-      RUNTIME_ASSERT(siginfo.si_pid == g_params.pid);
-      RUNTIME_ASSERT(g_server_autorun);
+      continue;
+    }
 
-      /* update the graph - check all nodes, re-run invalidated rules */
+#if DEVEL
+    g_logging_skip_reconfigure = false;
+#endif
+
+    /* assumes the very first request always comes immediately after starting up */
+    if(iteration)
+    {
       fatal(node_full_refresh);
       fatal(graph_invalidation_begin, &invalidation);
       fatal(module_full_refresh, &invalidation);
       graph_invalidation_end(&invalidation);
       fatal(rules_full_refresh, &rule_ctx);
       fatal(formula_full_refresh);
-
-      bool building;
-      fatal(goals_run, false, &building);
-      continue;
     }
 
-    // validate the client interaction
-    fatal(load_client_pid, &client_pid);
-    fatal(xkill, client_pid, 0);
-    fatal(sigutil_assert, FABIPC_SIGSYN, client_pid, &siginfo);
-
-#if DEVEL
-    g_logging_skip_reconfigure = false;
-#endif
-
-    if(!g_server_autorun) {
-      fatal(redirect);
-    }
-
-    // release previous request, if any
-    fatal(ixshmdt, &request_shm);
-
-    // receive request from the client
-    fatal(receive_request, &request_shm);
-
-    struct {
-      uint32_t len;
-      char text[];
-    } * msg = request_shm;
-
-    request_buf = msg->text;
-    request_buf_sz = msg->len;
-
-#if DEVEL
-process_request:
-#endif
-    /* request must end with two null bytes */
-    RUNTIME_ASSERT(request_buf_sz > 2);
-    RUNTIME_ASSERT(request_buf[request_buf_sz - 1] == 0);
-    RUNTIME_ASSERT(request_buf[request_buf_sz - 2] == 0);
-
-    // parse the request
-    fatal(request_parser_parse, request_parser, request_buf, request_buf_sz, "fab-request", &request);
-
-    if(log_would(L_PROTOCOL))
+#if 0
+    /* signal from sweeper thread */
+    if(siginfo.si_pid == g_params.pid)
     {
-      fatal(log_start, L_PROTOCOL, &N);
-      xsayf("request (%zu) >>\n", request_buf_sz);
-      fatal(request_say, request, N);
-      fatal(log_finish);
-    }
-
-    // prepare shm for the response
-    fatal(prepare_response_shm, &response_shm, &response_shm_id, &response_shm_size);
-
-    // save a spot for the response length
-    response_narrator = narrator_fixed_init(&response_narrator_fixed, response_shm, response_shm_size);
-    fatal(narrator_xsayw, response_narrator, (char[]) { 0xde, 0xad, 0xbe, 0xef }, 4);
-
-    fatal(value_writer_open, &response_writer, response_narrator);
-    fatal(value_writer_push_list, &response_writer);
-
-#if DEVEL
-if(g_server_no_initial_client && iteration != 0)
-{
-#endif
-    /* update the graph - check all nodes, re-run invalidated rules */
-    fatal(node_full_refresh);
-    fatal(graph_invalidation_begin, &invalidation);
-    fatal(module_full_refresh, &invalidation);
-    graph_invalidation_end(&invalidation);
-    fatal(rules_full_refresh, &rule_ctx);
-#if DEVEL
-}
-#endif
-
-    /* execute the client request */
-    fatal(handler_context_reset, handler_ctx);
-    handler_ctx->invalidation = &invalidation;
-    fatal(graph_invalidation_begin, &invalidation);
-    invalidation_counter = node_invalidation_counter;
-    fatal(handler_dispatch, handler_ctx, request, &response_writer);
-    graph_invalidation_end(&invalidation);
-
-    if(request->final_command)
-    {
-      fatal(goals_run, true, &building);
-      fatal(value_writer_push_mapping, &response_writer);
-      fatal(value_writer_string, &response_writer, attrs32_name_byvalue(command_type_attrs, COMMAND_TYPE_OPT & request->final_command));
-
-      if(building)
-      {
-        fatal(sigutil_wait, &sigs, &siginfo);
-        if(g_params.shutdown)
-          continue;
-
-        if(build_stage_failure)
-        {
-          fatal(value_writer_string, &response_writer, "failed");
-        }
-        else
-        {
-          fatal(value_writer_string, &response_writer, "success");
-        }
-      }
-      else
-      {
-        fatal(value_writer_string, &response_writer, "noop");
-      }
-
-      fatal(value_writer_pop_mapping, &response_writer);
-    }
-
-    fatal(value_writer_pop_list, &response_writer);
-    fatal(value_writer_close, &response_writer);
-
-    // stitch up the response length
-    response_len = response_narrator_fixed.l - 4;
-    fatal(narrator_xseek, response_narrator, 0, NARRATOR_SEEK_SET, 0);
-    fatal(narrator_xsayw, response_narrator, &response_len, sizeof(response_len));
-
-    // send and release the response
-    fatal(send_response
-      , client_pid
-      , &sigs
-      , response_shm
-      , response_shm_size
-      , response_shm_id
-    );
-
-    if(client_pid == 0)
-    {
-      fatal(request_ixfree, &request);
+      RUNTIME_ASSERT(g_server_autorun);
+      fatal(handler_thread_launch, 0, 0, true);
     }
     else
     {
-      fatal(ixshmdt, &response_shm);
     }
-
-    /* autorun */
-    if(node_invalidation_counter != invalidation_counter && g_server_autorun)
-    {
-      fatal(goals_run, true, &building);
-      if(building) {
-        fatal(sigutil_wait, &sigs, &siginfo);
-      }
-    }
+#endif
+    fatal(handler_thread_launch, siginfo.si_pid, (intptr_t)siginfo.si_value.sival_ptr, false);
 
     fatal(usage_report);
     fatal(stats_report);
@@ -518,11 +225,6 @@ if(g_server_no_initial_client && iteration != 0)
 
 finally:
   // locals
-  fatal(request_xfree, request);
-  fatal(xshmdt, request_shm);
-  fatal(xshmdt, response_shm);
-  fatal(handler_context_ixfree, &handler_ctx);
-  fatal(request_parser_xfree, request_parser);
   graph_invalidation_end(&invalidation);
   fatal(rule_run_context_xdestroy, &rule_ctx);
 
@@ -558,7 +260,7 @@ finally:
 conclude(&R);
 
   atomic_dec(&g_params.thread_count);
-  syscall(SYS_tgkill, g_params.pid, g_params.thread_monitor, FABIPC_SIGSCH);
+  syscall(SYS_tgkill, g_params.pid, g_params.thread_monitor, SIGUSR1);
   return 0;
 }
 

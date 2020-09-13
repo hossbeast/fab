@@ -23,12 +23,9 @@
 #include "xapi.h"
 #include "types.h"
 
-/// sigutil_defaults
-//
-// SUMMARY
-//  establish default disposition and mask for all signals
-//
-xapi sigutil_defaults(void);
+extern bool g_sigterm;
+
+xapi sigutil_install_handlers(void);
 
 /// sigutil_wait
 //
@@ -41,6 +38,19 @@ xapi sigutil_defaults(void);
 //
 xapi sigutil_wait(const sigset_t * restrict sigs, siginfo_t * restrict info)
   __attribute__((nonnull(1)));
+
+/// sigutil_timedwait
+//
+// SUMMARY
+//  block until receipt of one of a set of signals
+//
+// PARAMETERS
+//  err   - (returns) zero on sucess (one of the signals in sigs caught), errno otherwise (one of EINTR, EAGAIN)
+//  sigs  - set of signals
+//  info  - returns information about the signal received
+//
+xapi sigutil_timedwait(int * restrict err, const sigset_t * restrict sigs, siginfo_t * restrict info, const struct timespec * restrict timeout)
+  __attribute__((nonnull));
 
 /// sigutil_exchange
 //
@@ -86,12 +96,16 @@ xapi sigutil_log(const siginfo_t * restrict info)
 //  call xkill and log under L_IPC
 //
 xapi sigutil_kill(pid_t pid, int sig);
-
-/// sigutil_tgkill
-//
-// SUMMARY
-//  call xtgkill and log under L_IPC
-//
+xapi sigutil_uxkill(int * restrict r, pid_t pid, int sig);
 xapi sigutil_tgkill(pid_t pid, pid_t tid, int sig);
+
+xapi sigutil_uxtgkill(int * restrict r, pid_t pid, pid_t tid, int signo)
+  __attribute__((nonnull));
+
+xapi sigutil_uxrt_sigqueueinfo(int * restrict r, pid_t pid, int signo, union sigval value)
+  __attribute__((nonnull));
+
+xapi sigutil_uxrt_tgsigqueueinfo(int * restrict r, pid_t pid, pid_t tid, int signo, union sigval value)
+  __attribute__((nonnull));
 
 #endif

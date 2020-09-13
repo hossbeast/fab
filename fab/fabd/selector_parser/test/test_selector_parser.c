@@ -73,8 +73,8 @@ static xapi selector_parser_test_entry(xunit_test * _test)
   selector_parser * parser = 0;
   selector * A = 0;
   selector * B = 0;
-  narrator * N1 = 0;
-  narrator * N2 = 0;
+  narrator_growing * N1 = 0;
+  narrator_growing * N2 = 0;
   yyu_location loc;
 
   // arrange
@@ -85,34 +85,34 @@ static xapi selector_parser_test_entry(xunit_test * _test)
   assert_eq_u32(strlen(test->text), loc.l);
 
   fatal(narrator_growing_create, &N1);
-  fatal(selector_say, A, N1);
+  fatal(selector_say, A, &N1->base);
 
   // re-parse
-  size_t len = narrator_growing_size(N1);
-  fatal(narrator_xseek, N1, 0, NARRATOR_SEEK_SET, 0);
-  fatal(narrator_xread, N1, buf, len, 0);
+  size_t len = N1->l;
+  fatal(narrator_xseek, &N1->base, 0, NARRATOR_SEEK_SET, 0);
+  fatal(narrator_xread, &N1->base, buf, len, 0);
   buf[len] = buf[len + 1] = 0;
   fatal(selector_parser_parse_partial, parser, buf, len + 2, 0, 0, &loc, &B);
   assert_eq_u32(len, loc.l);
 
   fatal(narrator_growing_create, &N2);
-  fatal(selector_say, B, N2);
+  fatal(selector_say, B, &N2->base);
 
   assert_eq_selector(A, B);
 
   // textual equivalence
-  assert_eq_w(narrator_growing_buffer(N1), narrator_growing_size(N1), narrator_growing_buffer(N2), narrator_growing_size(N2));
+  assert_eq_w(N1->s, N1->l, N2->s, N2->l);
 
   const char * expected = test->text;
   expected = test->expected ?: expected;
-  assert_eq_w(expected, strlen(expected), narrator_growing_buffer(N1), narrator_growing_size(N1));
+  assert_eq_w(expected, strlen(expected), N1->s, N1->l);
 
 finally:
   fatal(selector_parser_xfree, parser);
   selector_free(A);
   selector_free(B);
-  fatal(narrator_xfree, N1);
-  fatal(narrator_xfree, N2);
+  fatal(narrator_growing_free, N1);
+  fatal(narrator_growing_free, N2);
 coda;
 }
 

@@ -1,0 +1,9 @@
+filesystem {
+  "/" {
+    invalidate notify
+  }
+
+  "/mnt/remote" {
+    invalidate stat
+  }
+}

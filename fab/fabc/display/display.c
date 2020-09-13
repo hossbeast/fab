@@ -20,4 +20,14 @@
 
 #include "display.h"
 
-struct display g_display;
+struct display * g_display;
+
+xapi display_switch(display * restrict dis)
+{
+  enter;
+
+  g_display = dis;
+  fatal(g_display->setup);
+
+  finally : coda;
+}

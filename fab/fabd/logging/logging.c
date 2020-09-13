@@ -40,7 +40,6 @@ logger_category * categories = (logger_category []) {
   , { name : "INFO"       , description : "high-level summary of actions" }
   , { name : "PROTOCOL"   , description : "request/response exchange" }
   , { name : "CONFIG"     , description : "configuration" }
-  , { name : "FF"         , description : "fabfiles" }
   , { name : "PARAMS"     , description : "runtime parameters" }
   , { name : "USAGE"      , description : "resource usage reports" }
   , { name : "FSEVENT"    , description : "monitored filesystem events" }
@@ -64,6 +63,8 @@ logger_category * categories = (logger_category []) {
   , { name : "SWEEPER"    , description : "sweeper thread" , optional : 1 }
   , { name : "BUILDER"    , description : "builder thread" , optional : 1 }
   , { name : "MONITOR"    , description : "monitor thread" , optional : 1 }
+  , { name : "HANDLER"    , description : "handler thread" , optional : 1 }
+  , { name : "BEHOLDER"   , description : "beholder thread" , optional : 1 }
   , { }
 };
 
@@ -73,13 +74,11 @@ logger_category * categories = (logger_category []) {
  * the logging streams as well
  */
 logger_stream * streams = (logger_stream []) {
-    { name : "console"  , type : LOGGER_STREAM_FD , fd : 1, expr : "+INFO +WARN +ERROR %CATEGORY"
-#if DEBUG || DEVEL
-    " %NAMES %PID %TID"
-#endif
-    }
-  , { name : "logfile"  , type : LOGGER_STREAM_ROLLING, expr : "+INFO +WARN +ERROR %DATESTAMP %CATEGORY %NOCOLOR %NAMES %PID %TID"
+    { name : "logfile"  , type : LOGGER_STREAM_ROLLING, expr : "+INFO +WARN +ERROR %DATESTAMP %CATEGORY %NOCOLOR %NAMES %PID %TID"
       , file_mode : FABIPC_MODE_DATA, threshold : 1024 * 1024, max_files : 10, path_base : (char[256]) { } }
+#if DEVEL
+  , { name : "console"  , type : LOGGER_STREAM_FD , fd : 1, expr : "+INFO +WARN +ERROR %CATEGORY %NAMES %PID %TID" }
+#endif
   , { }
 };
 
@@ -106,7 +105,7 @@ xapi logging_setup(uint64_t hash)
 {
   enter;
 
-  snprintf(streams[1].path_base, 256, "%s/%016"PRIx64"/fabd/log", XQUOTE(FABIPCDIR), hash);
+  snprintf(streams[0].path_base, 256, "%s/%016"PRIx64"/fabd/log", XQUOTE(FABIPCDIR), hash);
   fatal(logger_stream_register, streams);
 
   // process-level properties
@@ -149,16 +148,6 @@ xapi logging_reconfigure(config * restrict cfg, bool dry)
   else
   {
     // apply new logger configuration
-    if(cfg->logging.console.changed)
-    {
-      fatal(logger_expr_reset, streams[0].id);
-      for(x = 0; x < cfg->logging.console.exprs.items->size; x++)
-      {
-        expr = list_get(cfg->logging.console.exprs.items, x);
-        fatal(logger_expr_push, streams[0].id, expr->v);
-      }
-    }
-
     if(cfg->logging.logfile.changed)
     {
       fatal(logger_expr_reset, streams[1].id);
@@ -166,6 +155,16 @@ xapi logging_reconfigure(config * restrict cfg, bool dry)
       {
         expr = list_get(cfg->logging.logfile.exprs.items, x);
         fatal(logger_expr_push, streams[1].id, expr->v);
+      }
+    }
+
+    if(cfg->logging.console.changed)
+    {
+      fatal(logger_expr_reset, streams[0].id);
+      for(x = 0; x < cfg->logging.console.exprs.items->size; x++)
+      {
+        expr = list_get(cfg->logging.console.exprs.items, x);
+        fatal(logger_expr_push, streams[0].id, expr->v);
       }
     }
 

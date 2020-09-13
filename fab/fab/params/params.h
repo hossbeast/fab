@@ -26,18 +26,20 @@
 // non-configurable execution parameters
 extern struct g_params
 {
-  pid_t           pid;                        // pid of this process
-  pid_t           ppid;                       // pid of parent process
-  pid_t           pgid;                       // process group id
+  pid_t    pid;            // pid of this process
+  pid_t    ppid;           // pid of parent process
+  pid_t    pgid;           // process group id
+  bool     shutdown;       // whether to terminate the main loop
 
-  char *          exedir;                     // path to the directory containing the executable
-  long            procs;                      // detected number of processors (0 means unknown)
+  char *   exedir;         // path to the directory containing the executable
+  char *   proj_dir;       // absolute path of the project directory
+  char *   homedir;        // homedir of the real user
 } g_params;
 
 /// params_parse
 //
 // SUMMARY
-//  parses command-line options, populating g_params.
+//  parses command-line options, populating g_params
 //
 xapi params_setup(void);
 
@@ -46,12 +48,5 @@ xapi params_setup(void);
 // free g_params
 //
 void params_teardown(void);
-
-/// params_report
-//
-// SUMMARY
-//  log a description of params
-//
-xapi params_report(void);
 
 #endif

@@ -33,7 +33,6 @@ struct config_parser {
   struct value_parser * value_parser;
 
   // under construction
-  struct config_formula_show_settings show_settings;
   struct config_filesystem_entry * fse;
   struct config_logging_section * logging_section;
 

@@ -93,7 +93,6 @@ static xapi node_path_test_entry(xunit_test * _test)
   enter;
 
   node_path_test * test = (node_path_test *)_test;
-  narrator * N = 0;
   list * operations = 0;
   operations_parser * ops_parser = 0;
   node * n;
@@ -137,7 +136,6 @@ static xapi node_path_test_entry(xunit_test * _test)
   }
 
 finally:
-  fatal(narrator_xfree, N);
   fatal(list_xfree, operations);
   fatal(operations_parser_xfree, ops_parser);
   fatal(config_parser_xfree, parser);

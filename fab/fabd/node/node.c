@@ -50,6 +50,7 @@
 #include "common/hash.h"
 
 static uint8_t node_fs_epoch;
+uint8_t node_valid_epoch;
 
 set * g_parse_nodes;
 map * g_nodes_by_wd;
@@ -135,11 +136,7 @@ finally:
 coda;
 }
 
-//
-// internal
-//
-
-size_t node_get_relative_path(const node * subject, const node * base, void * restrict dst, size_t sz)
+static size_t relative_path_znload(void * restrict dst, size_t sz, const node * subject, const node * base, size_t (*znloadw_fn)(void * restrict, size_t, const void * restrict, size_t))
 {
   const node *n;
   const node *bs[64];
@@ -152,7 +149,7 @@ size_t node_get_relative_path(const node * subject, const node * base, void * re
   /* subject and base are the same node */
   if(subject == base)
   {
-    z += znloads(dst + z, sz - z, ".");
+    z += znloadw_fn(dst + z, sz - z, ".", 1);
     goto end;
   }
 
@@ -208,14 +205,14 @@ end:
   for(x = 0; x < bsl; x++)
   {
     if(z)
-      z += znloads(dst + z, sz - z, "/");
-    z += znloads(dst + z, sz - z, "..");
+      z += znloadw_fn(dst + z, sz - z, "/", 1);
+    z += znloadw_fn(dst + z, sz - z, "..", 2);
   }
 
   /* symlink to the project module */
   if(nsl > 2 && node_shadowtype_get(ns[nsl - 1]) == VERTEX_SHADOWTYPE_MODULES && ns[nsl - 2] == g_project_shadow)
   {
-    z += znloads(dst + z, sz - z, "module");
+    z += znloadw_fn(dst + z, sz - z, "module", 7);
     nsl -= 2;
   }
 
@@ -225,13 +222,27 @@ end:
     n = ns[x];
 
     if(z)
-      z += znloads(dst + z, sz - z, "/");
-    z += znloadw(dst + z, sz - z, n->name->name, n->name->namel);
+      z += znloadw_fn(dst + z, sz - z, "/", 1);
+    z += znloadw_fn(dst + z, sz - z, n->name->name, n->name->namel);
   }
 
   ((char*)dst)[z] = 0;
 
   return z;
+}
+
+//
+// internal
+//
+
+size_t node_relative_path_znload(void * restrict dst, size_t sz, const node * subject, const node * base)
+{
+  return relative_path_znload(dst, sz, subject, base, znloadw);
+}
+
+size_t node_relative_path_znload_bacon(void * restrict dst, size_t sz, const node * subject, const node * base)
+{
+  return relative_path_znload(dst, sz, subject, base, value_string_znloadw);
 }
 
 xapi node_relative_path_say(const node * n, const node * base, narrator * restrict N)
@@ -241,7 +252,7 @@ xapi node_relative_path_say(const node * n, const node * base, narrator * restri
   char path[512];
   size_t pathl;
 
-  pathl = node_get_relative_path(n, base, path, sizeof(path));
+  pathl = node_relative_path_znload(path, sizeof(path), n, base);
 
   xsayw(path, pathl);
 
@@ -273,6 +284,7 @@ xapi node_setup()
   fatal(project_init);
 
   node_fs_epoch = 1;
+  node_valid_epoch = 1;
 
   finally : coda;
 }
@@ -309,8 +321,6 @@ xapi node_full_refresh(void)
   enter;
 
   int walk_id;
-  //const filesystem *fs;
-  //invalidate_type iv;
   graph_invalidation_context invalidation = { 0 };
 
   fatal(graph_invalidation_begin, &invalidation);
@@ -438,6 +448,7 @@ xapi node_createw(
   {
     (*n)->fs_epoch = node_fs_epoch;
   }
+  (*n)->valid_epoch = node_valid_epoch;
 
   finally : coda;
 }
@@ -465,21 +476,12 @@ xapi node_xdestroy(node * restrict n)
     fatal(formula_xfree, n->self_fml);
   }
 
-//  else if(kind == VERTEX_MODULE_BAM)
-//  {
-//    fatal(module_xfree, n->self_mod);
-//  }
-//  else if(kind == VERTEX_MODEL_BAM)
-//  {
-//    fatal(module_xfree, n->self_mod);
-//  }
-
   path_xfree(&n->name);
 
   finally : coda;
 }
 
-size_t node_get_absolute_path(const node * restrict n, void * restrict dst, size_t sz)
+size_t node_absolute_path_znload(void * restrict dst, size_t sz, const node * restrict n)
 {
   size_t z = 0;
   const node *base;
@@ -494,45 +496,118 @@ size_t node_get_absolute_path(const node * restrict n, void * restrict dst, size
     z += znloads(dst, sz, "/");
     base = g_root;
   }
-  z += node_get_relative_path(n, base, dst + z, sz - z);
+  z += node_relative_path_znload(dst + z, sz - z, n, base);
 
   return z;
 }
 
-size_t node_get_path(const node * restrict n, void * restrict dst, size_t dst_size)
+size_t node_path_znload(void * restrict dst, size_t sz, const node * restrict n)
 {
   /* absolute path for shadow nodes */
   if(node_shadowtype_get(n))
   {
-    return node_get_absolute_path(n, dst, dst_size);
+    return node_absolute_path_znload(dst, sz, n);
   }
   else
   {
-    return node_get_project_relative_path(n, dst, dst_size);
+    return node_project_relative_path_znload(dst, sz, n);
   }
 }
 
-size_t node_get_project_relative_path(const node * restrict n, void * restrict dst, size_t sz)
+size_t node_project_relative_path_znload(void * restrict dst, size_t sz, const node * restrict n)
 {
   if(g_project_root == 0)
   {
     /* project not yet initialized */
-    return node_get_absolute_path(n, dst, sz);
+    return node_absolute_path_znload(dst, sz, n);
   }
 
-  return node_get_relative_path(n, g_project_root, dst, sz);
+  return node_relative_path_znload(dst, sz, n, g_project_root);
 }
 
-size_t node_get_module_relative_path(const node * restrict n, void * restrict dst, size_t sz)
+size_t node_module_relative_path_znload(void * restrict dst, size_t sz, const node * restrict n)
 {
   const module *mod;
 
   if((mod = node_module_get(n)) == 0) {
-    /* WTF IS THIS SHIT */
-    return node_get_absolute_path(n, dst, sz);
+    return node_absolute_path_znload(dst, sz, n);
   }
 
-  return node_get_relative_path(n, mod->dir_node, dst, sz);
+  return node_relative_path_znload(dst, sz, n, mod->dir_node);
+}
+
+size_t node_property_znload(void * dst, size_t sz, const node * restrict n, node_property property, const node_property_context * restrict ctx)
+{
+  const filesystem *fs;
+  uint32_t attrs;
+  size_t z;
+
+  z = 0;
+  if(property == NODE_PROPERTY_NAME)
+    z += znloadw(dst + z, sz - z, n->name->name, n->name->namel);
+  else if(property == NODE_PROPERTY_EXT)
+    z += znloadw(dst + z, sz - z, n->name->ext, n->name->extl);
+  else if(property == NODE_PROPERTY_SUFFIX)
+    z += znloadw(dst + z, sz - z, n->name->suffix, n->name->suffixl);
+  else if(property == NODE_PROPERTY_BASE)
+    z += znloadw(dst + z, sz - z, n->name->base, n->name->basel);
+  else if(property == NODE_PROPERTY_ABSDIR || property == NODE_PROPERTY_RELDIR)
+  {
+    if(node_filetype_get(n) != VERTEX_FILETYPE_DIR) {
+      n = node_fsparent(n);
+    }
+
+    if(property == NODE_PROPERTY_ABSDIR || node_shadowtype_get(n))
+    {
+      z += node_absolute_path_znload(dst + z, sz - z, n);
+    }
+    else
+    {
+      z += node_relative_path_znload(dst + z, sz - z, n, ctx->mod->dir_node);
+    }
+  }
+  else if(property == NODE_PROPERTY_ABSPATH || property == NODE_PROPERTY_RELPATH)
+  {
+    if(property == NODE_PROPERTY_ABSPATH || node_shadowtype_get(n))
+    {
+      z += node_absolute_path_znload(dst + z, sz - z, n);
+    }
+    else
+    {
+      z += node_relative_path_znload(dst + z, sz - z, n, ctx->mod->dir_node);
+    }
+  }
+  else if(property == NODE_PROPERTY_VARIANT)
+  {
+    if(n->var)
+    {
+      z += znloadw(dst + z, sz - z, n->var->norm, n->var->norm_len);
+    }
+  }
+  else if(property == NODE_PROPERTY_FSROOT)
+  {
+    fs = node_filesystem_get((node*)n);
+    z += filesystem_absolute_path_znload(dst + z, sz - z, fs);
+  }
+  else if(property == NODE_PROPERTY_INVALIDATION)
+  {
+    fs = node_filesystem_get((node*)n);
+    z += znload_attrs16(dst + z, sz - z, invalidate_attrs, fs->invalidate);
+  }
+  else if(property == NODE_PROPERTY_STATE)
+  {
+    attrs = vertex_containerof(n)->attrs & VERTEX_STATE_OPT;
+    if(attrs)
+    {
+      z += znload_attrs32(dst + z, sz - z, graph_state_attrs, attrs);
+    }
+  }
+  else if(property == NODE_PROPERTY_TYPE)
+  {
+    z += znload_attrs32(dst + z, sz - z, graph_kind_attrs, vertex_containerof(n)->attrs & VERTEX_KIND_OPT);
+  }
+
+  return z;
 }
 
 xapi node_module_relative_path_say(const node * restrict n, narrator * restrict N)
@@ -542,7 +617,7 @@ xapi node_module_relative_path_say(const node * restrict n, narrator * restrict 
   char path[512];
   size_t pathl;
 
-  pathl = node_get_module_relative_path(n, path, sizeof(path));
+  pathl = node_module_relative_path_znload(path, sizeof(path), n);
   xsayw(path, pathl);
 
   finally : coda;
@@ -555,7 +630,7 @@ xapi node_project_relative_path_say(const node * restrict n, narrator * restrict
   char path[512];
   size_t pathl;
 
-  pathl = node_get_project_relative_path(n, path, sizeof(path));
+  pathl = node_project_relative_path_znload(path, sizeof(path), n);
   xsayw(path, pathl);
 
   finally : coda;
@@ -568,7 +643,7 @@ xapi node_absolute_path_say(const node * restrict n, narrator * restrict N)
   char path[512];
   size_t pathl;
 
-  pathl = node_get_absolute_path(n, path, sizeof(path));
+  pathl = node_absolute_path_znload(path, sizeof(path), n);
   xsayw(path, pathl);
 
   finally : coda;
@@ -581,7 +656,7 @@ xapi node_path_say(node * restrict n, struct narrator * restrict N)
   char path[512];
   size_t pathl;
 
-  pathl = node_get_path(n, path, sizeof(path));
+  pathl = node_path_znload(path, sizeof(path), n);
   xsayw(path, pathl);
 
   finally : coda;
@@ -591,93 +666,11 @@ xapi node_property_say(const node * restrict n, node_property property, const no
 {
   enter;
 
-  const filesystem *fs;
-  char path[512];
-  uint16_t pathl;
-  uint32_t attrs;
+  char space[512];
+  size_t sz;
 
-  /* node name */
-  if(property == NODE_PROPERTY_NAME)
-    fatal(narrator_xsayw, N, n->name->name, n->name->namel);
-  else if(property == NODE_PROPERTY_EXT)
-    fatal(narrator_xsayw, N, n->name->ext, n->name->extl);
-  else if(property == NODE_PROPERTY_SUFFIX)
-    fatal(narrator_xsayw, N, n->name->suffix, n->name->suffixl);
-  else if(property == NODE_PROPERTY_BASE)
-    fatal(narrator_xsayw, N, n->name->base, n->name->basel);
-
-  else if(property == NODE_PROPERTY_ABSDIR || property == NODE_PROPERTY_RELDIR)
-  {
-    if(node_filetype_get(n) != VERTEX_FILETYPE_DIR)
-    {
-      n = node_fsparent(n);
-    }
-
-    if(property == NODE_PROPERTY_ABSDIR)
-    {
-      fatal(node_absolute_path_say, n, N);
-    }
-    else if(node_shadowtype_get(n))
-    {
-      fatal(node_absolute_path_say, n, N);
-    }
-    else
-    {
-      fatal(node_relative_path_say, n, ctx->mod->dir_node, N);
-    }
-  }
-  else if(property == NODE_PROPERTY_ABSPATH || property == NODE_PROPERTY_RELPATH)
-  {
-    if(property == NODE_PROPERTY_ABSPATH)
-    {
-      fatal(node_absolute_path_say, n, N);
-    }
-    else if(node_shadowtype_get(n))
-    {
-      fatal(node_absolute_path_say, n, N);
-    }
-    else
-    {
-      fatal(node_relative_path_say, n, ctx->mod->dir_node, N);
-    }
-  }
-  /* derived properties */
-  else if(property == NODE_PROPERTY_VARIANT)
-  {
-    if(n->var)
-    {
-      fatal(narrator_xsayw, N, n->var->norm, n->var->norm_len);
-    }
-  }
-  else if(property == NODE_PROPERTY_FSROOT)
-  {
-    fs = node_filesystem_get((node*)n);
-    pathl = filesystem_get_absolute_path(fs, path, sizeof(path));
-    fatal(narrator_xsayw, N, path, pathl);
-  }
-  else if(property == NODE_PROPERTY_INVALIDATION)
-  {
-    fs = node_filesystem_get((node*)n);
-    fatal(narrator_xsayf, N, "%s 0x%04x"
-      , attrs16_name_byvalue(invalidate_attrs, fs->invalidate)
-      , fs->attrs
-    );
-  }
-  else if(property == NODE_PROPERTY_STATE)
-  {
-    attrs = vertex_containerof(n)->attrs & VERTEX_STATE_OPT;
-    if(attrs)
-    {
-      fatal(narrator_xsays, N, attrs32_name_byvalue(graph_state_attrs, vertex_containerof(n)->attrs & VERTEX_STATE_OPT));
-    }
-  }
-  else if(property == NODE_PROPERTY_TYPE)
-  {
-    fatal(narrator_xsayf, N, "%s 0x%08x"
-      , attrs32_name_byvalue(graph_kind_attrs, vertex_containerof(n)->attrs & VERTEX_KIND_OPT)
-      , vertex_containerof(n)->attrs & VERTEX_KIND_OPT
-    );
-  }
+  sz = node_property_znload(space, sizeof(space), n, property, ctx);
+  xsayw(space, sz);
 
   finally : coda;
 }

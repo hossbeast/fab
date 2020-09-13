@@ -242,10 +242,10 @@ xapi pattern_lookup_fragment(
   }
   else if(r == 2)
   {
-    sz = node_get_path(vertex_value(vertices[0]), path1, sizeof(path1));
+    sz = node_path_znload(path1, sizeof(path1), vertex_value(vertices[0]));
     xapi_info_pushw("one", path1, sz);
 
-    sz = node_get_path(vertex_value(vertices[1]), path2, sizeof(path2));
+    sz = node_path_znload(path2, sizeof(path2), vertex_value(vertices[1]));
     xapi_info_pushw("two", path2, sz);
 
     fail(MODULE_AMBIGREF);

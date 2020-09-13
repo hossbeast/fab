@@ -15,7 +15,6 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#include <curses.h>
 #include <stdlib.h>
 
 #include "xapi.h"
@@ -34,6 +33,7 @@
 #include "xlinux/xstat.h"
 #include "xlinux/xshm.h"
 #include "xlinux/xpthread.h"
+#include "xlinux/xsignal.h"
 #include "narrator.h"
 #include "logger.h"
 
@@ -45,7 +45,8 @@
 #include "params.h"
 #include "logging.h"
 #include "MAIN.errtab.h"
-#include "xcurses.h"
+#include "client_thread.h"
+#include "ui_thread.h"
 
 #include "macros.h"
 #include "explorer.h"
@@ -56,76 +57,50 @@ static xapi xmain()
 {
   enter;
 
-#if DEVEL
-  char space[512];
-#endif
-  char * fabw_path = 0;
-  fab_client * client = 0;
+  sigset_t sigs;
+  siginfo_t info;
 
 #if DEBUG || DEVEL
   logs(L_IPC, "started");
 #endif
 
-  // parse cmdline arguments
   fatal(args_parse);
   fatal(args_report);
 
-  // curses initialization - before signal handlers setup
-  fatal(xinitscr, 0);
-  fatal(start_color);
-  use_default_colors(); // somehow, this makes transparency work
-  fatal(noecho);          // dont display user input
-  fatal(nonl);            /* Disable conversion and detect newlines from input. */
-  // in cbreak mode, ctrl+c generates SIGINT
-  fatal(cbreak);
-  fatal(keypad, stdscr, TRUE);
-  curs_set(0);            /* cursor visibility state */
-  leaveok(stdscr, false); /* dont update cursor */
-  fatal(clear);
-  fatal(refresh);         /* mark stdscr as up-to-date so the implicit refresh of getch is suppressed */
+  // save stdin/stdout
+  fatal(xdup2, 0, 100);
+  fatal(xdup2, 1, 101);
 
-  // take over signal handling
-  fatal(sigutil_defaults);
+  // redirect stdout/stderr to a file
+  FILE *fp = fopen("/tmp/fabc", "w");
+  setvbuf(fp, NULL, _IONBF, 0);
+  setvbuf(stdout, NULL, _IONBF, 0);
+  setvbuf(stderr, NULL, _IONBF, 0);
+  int fd = fileno(fp);
+  fatal(xdup2, fd, 1);
+  fatal(xdup2, fd, 2);
 
-  // unblock some signals
-  sigset_t sigs;
+  fatal(sigutil_install_handlers);
   sigfillset(&sigs);
-  sigdelset(&sigs, SIGINT);
-  sigdelset(&sigs, SIGSTOP);
-  sigdelset(&sigs, SIGKILL);
-  sigdelset(&sigs, SIGQUIT);
-  fatal(xpthread_sigmask, SIG_SETMASK, &sigs, 0);
+  fatal(xsigprocmask, SIG_SETMASK, &sigs, 0);
 
-  // ensure fabd can write to my stdout/stderr
-  fatal(xfchmod, 1, 0777);
-  fatal(xfchmod, 2, 0777);
+  g_params.thread_main = gettid();
 
-#if DEVEL
-  snprintf(space, sizeof(space), "%s/../fabw/fabw.devel.xapi", g_params.exedir);
-  fabw_path = space;
-#endif
+  fatal(client_thread_launch);
+  fatal(ui_thread_launch);
 
-  fatal(fab_client_create, &client, ".", XQUOTE(FABIPCDIR), fabw_path);
-
-#if 0
-  // kill the existing fabd instance, if any
-  if(changed credentials)
-    fatal(client_terminate);
-#endif
-
-  // launch or connect
-  fatal(fab_client_prepare, client);
-  fatal(fab_client_launchp, client);
-
-  // setup colors
-  init_pair(1, COLOR_WHITE, -1);
-  init_pair(2, COLOR_RED, -1);
-  init_pair(3, COLOR_WHITE, -1);
-
-  // start out in explorer mode
-  g_display.mode = DISPLAY_EXPLORER;
-
-  fatal(explorer_main, client);
+  while(g_params.thread_count)
+  {
+printf("main thread wait %d\n", g_params.thread_count);
+    fatal(sigutil_wait, &sigs, &info);
+    g_params.shutdown = true;
+    int r;
+    fatal(uxtgkill, &r, g_params.pid, g_params.thread_client, SIGUSR1);
+printf("MAIN THREAD count %d kill client %d r %d errno %d %s\n", g_params.thread_count, g_params.thread_client, r, errno, strerror(errno));
+    fatal(uxtgkill, &r, g_params.pid, g_params.thread_ui, SIGUSR1);
+printf("MAIN THREAD count %d kill ui %d r %d errno %d %s\n", g_params.thread_count, g_params.thread_ui, r, errno, strerror(errno));
+  }
+printf("main thread exit\n");
 
 finally:
   if(XAPI_UNWINDING)
@@ -141,9 +116,6 @@ finally:
       fatal(args_usage, 1, 1);
     }
   }
-
-  // locals
-  fatal(fab_client_xfree, client);
 coda;
 }
 
@@ -228,3 +200,7 @@ conclude(&R);
 
   return !!R;
 }
+//  sigdelset(&sigs, SIGINT);
+//  sigdelset(&sigs, SIGTERM);
+//  sigdelset(&sigs, SIGQUIT);
+//  sigdelset(&sigs, SIGUSR1);

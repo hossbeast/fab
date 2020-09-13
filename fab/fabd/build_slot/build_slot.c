@@ -37,9 +37,12 @@
 #include "narrator/growing.h"
 #include "narrator/fixed.h"
 #include "value.h"
+#include "value/writer.h"
+#include "value/bacon_narrator.h"
 
 #include "fab/sigutil.h"
 #include "fab/ipc.h"
+#include "fab/build_slot.desc.h"
 
 #include "build_slot.h"
 #include "node.h"
@@ -58,8 +61,11 @@
 #include "node_operations.h"
 #include "stats.h"
 #include "formula_value.h"
+#include "events.h"
+#include "handler_thread.h"
+#include "channel.h"
 
-#include "common/atomic.h"
+#include "atomics.h"
 #include "common/assure.h"
 #include "zbuffer.h"
 
@@ -177,6 +183,170 @@ conclude(&R);
   xapi_teardown();
 
   exit(R);
+}
+
+static xapi build_slot_forked(build_slot * restrict bs)
+{
+  enter;
+
+  uint16_t z;
+  handler_context *handler;
+  fabipc_message *msg;
+  uint16_t len;
+  uint16_t list_size;
+  uint16_t list_size_off;
+  int x;
+  llist list;
+  vertex *v;
+  node *n;
+
+  if(!events_would(FABIPC_EVENT_FORMULA_EXEC_FORKED, &handler, &msg)) {
+    goto XAPI_FINALIZE;
+  }
+
+  z = 0;
+
+  /* stage */
+  z += znload_u16(msg->text + z, sizeof(msg->text) - z, descriptor_fab_build_slot_stage.id);
+  z += znload_u16(msg->text + z, sizeof(msg->text) - z, bs->stage);
+
+  /* path */
+  z += znload_u16(msg->text + z, sizeof(msg->text) - z, descriptor_fab_build_slot_path.id);
+  if(bs->file_path)
+  {
+    len = strlen(bs->file_path);
+    z += znload_u16(msg->text + z, sizeof(msg->text) - z, len);
+    z += znloadw(msg->text + z, sizeof(msg->text) - z, bs->file_path, len);
+  }
+  else  // path-cache entry
+  {
+    len = bs->file_pe->dir->len + 1 + bs->file_pe->len;
+    z += znload_u16(msg->text + z, sizeof(msg->text) - z, len);
+    z += znloadw(msg->text + z, sizeof(msg->text) - z, bs->file_pe->dir->s, bs->file_pe->dir->len);
+    z += znloadc(msg->text + z, sizeof(msg->text) - z, '/');
+    z += znloadw(msg->text + z, sizeof(msg->text) - z, bs->file_pe->s, bs->file_pe->len);
+  }
+
+  /* cwd */
+  z += znload_u16(msg->text + z, sizeof(msg->text) - z, descriptor_fab_build_slot_pwd.id);
+  len = strlen(bs->mod->dir_node_abspath);
+  z += znload_u16(msg->text + z, sizeof(msg->text) - z, len);
+  z += znloadw(msg->text + z, sizeof(msg->text) - z, bs->mod->dir_node_abspath, len);
+
+  /* args */
+  z += znload_u16(msg->text + z, sizeof(msg->text) - z, descriptor_fab_build_slot_args.id);
+  list_size_off = z;
+  z += 2;
+  z += znload_u16(msg->text + z, sizeof(msg->text) - z, sentinel(bs->argv));
+  for(x = 0; x < sentinel(bs->argv); x++)
+  {
+    len = strlen(bs->argv[x]);
+    z += znload_u16(msg->text + z, sizeof(msg->text) - z, len);
+    z += znloadw(msg->text + z, sizeof(msg->text) - z, bs->argv[x], len);
+  }
+  list_size = z - list_size_off - 4;  // excluding the size itself and the element count
+  znload_u16(msg->text + list_size_off, 2, list_size);
+
+  /* envs */
+  z += znload_u16(msg->text + z, sizeof(msg->text) - z, descriptor_fab_build_slot_envs.id);
+  list_size_off = z;
+  z += 2;
+  z += znload_u16(msg->text + z, sizeof(msg->text) - z, sentinel(bs->envp));
+  for(x = 0; x < sentinel(bs->envp); x++)
+  {
+    len = strlen(bs->envp[x]);
+    z += znload_u16(msg->text + z, sizeof(msg->text) - z, len);
+    z += znloadw(msg->text + z, sizeof(msg->text) - z, bs->envp[x], len);
+  }
+  list_size = z - list_size_off - 4;
+  znload_u16(msg->text + list_size_off, 2, list_size);
+
+  /* sources */
+  llist_init_node(&list);
+  bpe_sources(bs->bpe, &list);
+  len = llist_count(&list);
+  z += znload_u16(msg->text + z, sizeof(msg->text) - z, descriptor_fab_build_slot_sources.id);
+  list_size_off = z;
+  z += 2;
+  z += znload_u16(msg->text + z, sizeof(msg->text) - z, len);
+
+  llist_foreach(&list, v, lln) {
+    n = vertex_value(v);
+    if((sizeof(msg->text) - z) < 3) {
+      break;
+    }
+
+    // 2-byte alignment
+    z += (z & 1);
+    len = node_path_znload(msg->text + z + 2, sizeof(msg->text) - z - 4, n);
+    z += znload_u16(msg->text + z, sizeof(msg->text) - z, len);
+    z += len;
+  }
+  list_size = z - list_size_off - 4;
+  znload_u16(msg->text + list_size_off, 2, list_size);
+
+  /* targets */
+  llist_init_node(&list);
+  bpe_targets(bs->bpe, &list);
+  len = llist_count(&list);
+  z += znload_u16(msg->text + z, sizeof(msg->text) - z, descriptor_fab_build_slot_targets.id);
+  list_size_off = z;
+  z += 2;
+  z += znload_u16(msg->text + z, sizeof(msg->text) - z, len);
+
+  llist_foreach(&list, v, lln) {
+    n = vertex_value(v);
+    if((sizeof(msg->text) - z) < 3) {
+      break;
+    }
+
+    // 2-byte alignment
+    z += (z & 1);
+    len = node_path_znload(msg->text + z + 2, sizeof(msg->text) - z - 4, n);
+    z += znload_u16(msg->text + z, sizeof(msg->text) - z, len);
+    z += len;
+  }
+  list_size = z - list_size_off - 4;
+  znload_u16(msg->text + list_size_off, 2, list_size);
+
+  msg->size = z;
+  msg->id = bs->pid;
+  events_publish(handler, msg);
+
+  finally : coda;
+}
+
+static xapi build_slot_waited(build_slot * restrict bs)
+{
+  enter;
+
+  handler_context *handler;
+  fabipc_message *msg;
+  uint16_t z;
+
+  if(!events_would(FABIPC_EVENT_FORMULA_EXEC_WAITED, &handler, &msg)) {
+    goto XAPI_FINALIZE;
+  }
+
+  z = 0;
+
+  z += znload_u16(msg->text + z, sizeof(msg->text) - z, descriptor_fab_build_slot_status.id);
+  z += znload_i32(msg->text + z, sizeof(msg->text) - z, bs->status);
+
+  z += znload_u16(msg->text + z, sizeof(msg->text) - z, descriptor_fab_build_slot_stdout_total.id);
+  z += znload_u32(msg->text + z, sizeof(msg->text) - z, bs->stdout_total);
+
+  z += znload_u16(msg->text + z, sizeof(msg->text) - z, descriptor_fab_build_slot_stderr_total.id);
+  z += znload_u32(msg->text + z, sizeof(msg->text) - z, bs->stderr_total);
+
+  z += znload_u16(msg->text + z, sizeof(msg->text) - z, descriptor_fab_build_slot_auxout_total.id);
+  z += znload_u32(msg->text + z, sizeof(msg->text) - z, bs->auxout_total);
+
+  msg->size = z;
+  msg->id = bs->pid;
+  events_publish(handler, msg);
+
+  finally : coda;
 }
 
 //
@@ -379,14 +549,16 @@ xapi build_slot_fork_and_exec(build_slot * restrict bs)
    * path setup
    */
 
+  bs->file_pe = 0;
   bs->file_path = 0;
   bs->file_fd = -1;
-  if(local_exec->file_pe)
+  if(local_exec->file_pe)   // execute file given by path-cache entry
   {
+    bs->file_pe = local_exec->file_pe;
     bs->file_fd = local_exec->file_pe->fd;
     filename = local_exec->file_pe->filename;
   }
-  else if(local_exec->file)
+  else if(local_exec->file) // execute file given by absolute path
   {
     bs->file_path = local_exec->file;
     if((filename = strrchr(local_exec->file, '/')))
@@ -394,9 +566,10 @@ xapi build_slot_fork_and_exec(build_slot * restrict bs)
     else
       filename = local_exec->file;
   }
-  else
+  else                      // execute a formula directly
   {
     bs->file_fd = fml->fd;
+    bs->file_path = fml->abspath;
     filename = fml->fml_node->name->name;
   }
 
@@ -470,137 +643,81 @@ xapi build_slot_fork_and_exec(build_slot * restrict bs)
   bs->env_stor[envp_len] = 0;
   bs->envp = bs->env_stor;
 
-//if(strcmp(bs->argv_stor[0], "bam-xunit") == 0)
-//{
-//  printf("WTF\n");
-//extern int GOATS;
-//  GOATS=1;
-//  while(1) { sleep(1); }
-//}
-
   fatal(xfork, &bs->pid);
   if(bs->pid == 0)
   {
     bsexec_jump(bs);
   }
 
+  fatal(build_slot_forked, bs);
+
   finally : coda;
 }
-
-//int GOATS;
 
 xapi build_slot_read(build_slot * restrict bs, uint32_t stream)
 {
   enter;
 
-  int stream_part;
-  int fd;
-  char * buf;
-  uint16_t * buf_len;
-  uint32_t * total;
-  uint16_t buf_size;
   ssize_t bytes;
+  int fd = 0;
+  uint32_t * total = 0;
+  fabipc_event_type event = 0;
+  handler_context *handler;
+  fabipc_message *msg;
 
-  stream_part = 0;
-  buf_size = 0;
   if(stream == 1)
   {
-    stream_part = build_thread_cfg.capture_stdout;
     fd = bs->stdout_pipe[0];
-    buf = bs->stdout_buf;
-    buf_len = &bs->stdout_buf_len;
-    buf_size = build_thread_cfg.stdout_buffer_size;
     total = &bs->stdout_total;
+    event = FABIPC_EVENT_FORMULA_EXEC_STDOUT;
   }
   else if(stream == 2)
   {
-    stream_part = build_thread_cfg.capture_stderr;
     fd = bs->stderr_pipe[0];
-    buf = bs->stderr_buf;
-    buf_len = &bs->stderr_buf_len;
-    buf_size = build_thread_cfg.stderr_buffer_size;
     total = &bs->stderr_total;
+    event = FABIPC_EVENT_FORMULA_EXEC_STDERR;
   }
   else if(stream == 1001)
   {
-    stream_part = build_thread_cfg.capture_auxout;
     fd = bs->auxout_pipe[0];
-    buf = bs->auxout_buf;
-    buf_len = &bs->auxout_buf_len;
-    buf_size = build_thread_cfg.auxout_buffer_size;
     total = &bs->auxout_total;
+    event = FABIPC_EVENT_FORMULA_EXEC_AUXOUT;
   }
 
-  if(stream_part == STREAM_PART_LEADING)
+  if(events_would(event, &handler, &msg))
   {
-    if(*buf_len < buf_size)
-    {
-      fatal(xread, fd, buf + *buf_len, buf_size - *buf_len, &bytes);
-      *buf_len += bytes;
-      *total += bytes;
-    }
-    else
-    {
-      stream_part = STREAM_PART_NONE;
-    }
+    msg->id = bs->pid;
+    fatal(xread, fd, msg->text, sizeof(msg->text), &bytes);
+    msg->size = bytes;
+    events_publish(handler, msg);
   }
-
-  // discard excess
-  if(stream_part == STREAM_PART_NONE)
+  else
   {
     fatal(xsplice, &bytes, fd, 0, build_devnull_fd, 0, 0xffff, SPLICE_F_MOVE);
-    *total += bytes;
   }
+  *total += bytes;
 
   finally : coda;
 }
 
-xapi build_slot_reap(build_slot * restrict bs, uint32_t slot_index, siginfo_t *info)
+xapi build_slot_reap(build_slot * restrict bs, siginfo_t *info)
 {
   enter;
 
   int x;
-  int exit;
-  int sig;
-  bool core;
-  bool abnormal;
-  uint32_t color = 0;
-  char space[4096];
-  size_t z;
-  uint16_t blen;
-  int lines;
-  narrator *N;
-
   buildplan_entity *bpe;
   node *n;
   node_edge_dependency *ne;
   edge *e;
+  bool success;
 
   bs->status = info->si_status;
 
-  exit = 0;
-  sig = 0;
-  core = false;
-  abnormal = false;
-  if(WIFEXITED(bs->status))
-  {
-    exit = WEXITSTATUS(bs->status);
-  }
-  else if(WIFSIGNALED(bs->status))
-  {
-    sig = WTERMSIG(bs->status);
-    core = WCOREDUMP(bs->status);
-  }
-  else
-  {
-    abnormal = true;
-  }
+  success = true;
+  if(bs->status != 0 || bs->stderr_total > 0)
+    success = false;
 
-  bs->success = true;
-  if(bs->status != 0 || bs->stderr_buf_len > 0)
-    bs->success = false;
-
-  if(bs->success)
+  if(success)
   {
     /* mark targets as up to date */
     bpe = bs->bpe;
@@ -681,201 +798,7 @@ xapi build_slot_reap(build_slot * restrict bs, uint32_t slot_index, siginfo_t *i
     }
   }
 
-  if(log_would(L_BUILD))
-  {
-    if(bs->success)
-      color |= L_GREEN;
-    else
-      color |= L_RED;
-
-    // always show the program name, and targets
-    fatal(log_xstart, L_BUILD, color, &N);
-    fatal(narrator_xsayf, N, "%s", bs->argv[0]);
-    fatal(narrator_xsays, N, " -> ");
-    fatal(bpe_say_targets, bs->bpe, N);
-    fatal(log_finish);
-
-    if((bs->success && build_thread_cfg.success.show_path) || (!bs->success && build_thread_cfg.error.show_path))
-    {
-      if(bs->file_fd != -1)
-      {
-        fatal(xreadlinkf, "/proc/%ld/fd/%d", space, sizeof(space), (void*)&z, g_params.pid, bs->file_fd);
-        space[z] = 0;
-        xlogf(L_BUILD, color, " path %s (fd %d)", space, bs->file_fd);
-      }
-      else
-      {
-        xlogf(L_BUILD, color, " path %s", bs->file_path);
-      }
-    }
-
-    if((bs->success && build_thread_cfg.success.show_arguments) || (!bs->success && build_thread_cfg.error.show_arguments))
-    {
-      xlogf(L_BUILD, color, " argv %2d", (int)sentinel(bs->argv));
-      for(x = 0; x < sentinel(bs->argv); x++)
-        xlogf(L_BUILD, color, "  [%2d] %s", x, bs->argv[x]);
-    }
-
-    if((bs->success && build_thread_cfg.success.show_cwd) || (!bs->success && build_thread_cfg.error.show_cwd))
-    {
-      z = node_get_absolute_path(bs->mod->dir_node, space, sizeof(space));
-      xlogf(L_BUILD, color, " cwd %.*s", (int)z, space);
-    }
-
-    if((bs->success && build_thread_cfg.success.show_command) || (!bs->success && build_thread_cfg.error.show_command))
-    {
-      z = 0;
-      for(x = 0; x < sentinel(bs->argv); x++)
-      {
-        z += znloads(space + z, sizeof(space) - z, " ");
-        z += znloads(space + z, sizeof(space) - z, bs->argv[x]);
-      }
-
-      xlogf(L_BUILD, color, " command %.*s", (int)z, space);
-    }
-
-    if((bs->success && build_thread_cfg.success.show_environment) || (!bs->success && build_thread_cfg.error.show_environment))
-    {
-      xlogf(L_BUILD, color, " envp %2d", (int)sentinel(bs->envp));
-      for(x = 0; x < sentinel(bs->envp); x++)
-        xlogf(L_BUILD, color, "  [%2d] %s", x, bs->envp[x]);
-    }
-
-    if((bs->success && build_thread_cfg.success.show_sources) || (!bs->success && build_thread_cfg.error.show_sources))
-    {
-      xlogf(L_BUILD, color, " sources %2d", 1);
-      fatal(log_xstart, L_BUILD, color, &N);
-      fatal(narrator_xsayf, N, "  [%2d] ", 0);
-      fatal(bpe_say_sources, bs->bpe, N);
-      fatal(log_finish);
-    }
-
-    if((bs->success && build_thread_cfg.success.show_targets) || (!bs->success && build_thread_cfg.error.show_targets))
-    {
-      xlogf(L_BUILD, color, " targets %2d", 1);
-      fatal(log_xstart, L_BUILD, color, &N);
-      fatal(narrator_xsayf, N, "  [%2d] ", 0);
-      fatal(bpe_say_targets, bs->bpe, N);
-      fatal(log_finish);
-    }
-
-    if((bs->success && build_thread_cfg.success.show_status) || (!bs->success && build_thread_cfg.error.show_status))
-    {
-      xlogf(L_BUILD, color, " status %d", bs->status);
-      xlogf(L_BUILD, color, " exit %d signal %d core %s abnormal %s", exit, sig, core ? "true" : "false", abnormal ? "true" : "false");
-    }
-
-    if((bs->success && build_thread_cfg.success.show_stdout) || (!bs->success && build_thread_cfg.error.show_stdout))
-    {
-      blen = bs->stdout_buf_len;
-      if(build_thread_cfg.success.show_stdout_limit_bytes > 0)
-      {
-        blen = MIN(blen, build_thread_cfg.success.show_stdout_limit_bytes);
-      }
-
-      if(build_thread_cfg.success.show_stdout_limit_lines > 0)
-      {
-        lines = 0;
-        for(x = 0; x < blen; x++)
-        {
-          if(bs->stdout_buf[x] == '\n')
-          {
-            if(lines++ > build_thread_cfg.success.show_stdout_limit_lines)
-              break;
-          }
-        }
-
-        blen = MIN(blen, x);
-      }
-
-      if(blen || !bs->success)
-      {
-        fatal(log_xstart, L_BUILD, color, &N);
-        if((bs->stdout_total > blen) || !bs->success)
-          fatal(narrator_xsayf, N, " stdout - showing %"PRIu16" of %"PRIu32" bytes", blen, bs->stdout_total);
-        if(blen)
-        {
-          fatal(narrator_xsays, N, "\n");
-          fatal(narrator_xsayw, N, bs->stdout_buf, blen);
-        }
-        fatal(log_finish);
-      }
-    }
-
-    if((bs->success && build_thread_cfg.success.show_stderr) || (!bs->success && build_thread_cfg.error.show_stderr))
-    {
-      blen = bs->stderr_buf_len;
-      if(build_thread_cfg.success.show_stderr_limit_bytes > 0)
-      {
-        blen = MIN(blen, build_thread_cfg.success.show_stderr_limit_bytes);
-      }
-
-      if(build_thread_cfg.success.show_stderr_limit_lines > 0)
-      {
-        lines = 0;
-        for(x = 0; x < blen; x++)
-        {
-          if(bs->stderr_buf[x] == '\n')
-          {
-            if(lines++ > build_thread_cfg.success.show_stderr_limit_lines)
-              break;
-          }
-        }
-
-        blen = MIN(blen, x);
-      }
-
-      if(blen || !bs->success)
-      {
-        fatal(log_xstart, L_BUILD, color, &N);
-        if((bs->stderr_total > blen) || !bs->success)
-          fatal(narrator_xsayf, N, " stderr - showing %"PRIu16" of %"PRIu32" bytes", blen, bs->stderr_total);
-        if(blen)
-        {
-          fatal(narrator_xsays, N, "\n");
-          fatal(narrator_xsayw, N, bs->stderr_buf, blen);
-        }
-        fatal(log_finish);
-      }
-    }
-
-    if((bs->success && build_thread_cfg.success.show_auxout) || (!bs->success && build_thread_cfg.error.show_auxout))
-    {
-      blen = bs->auxout_buf_len;
-      if(build_thread_cfg.success.show_auxout_limit_bytes > 0)
-      {
-        blen = MIN(blen, build_thread_cfg.success.show_auxout_limit_bytes);
-      }
-
-      if(build_thread_cfg.success.show_auxout_limit_lines > 0)
-      {
-        lines = 0;
-        for(x = 0; x < blen; x++)
-        {
-          if(bs->auxout_buf[x] == '\n')
-          {
-            if(lines++ > build_thread_cfg.success.show_auxout_limit_lines)
-              break;
-          }
-        }
-
-        blen = MIN(blen, x);
-      }
-
-      if(blen || !bs->success)
-      {
-        if((bs->auxout_total > blen) || !bs->success)
-          xlogf(L_BUILD, color, " auxout - showing %"PRIu16" of %"PRIu32" bytes", blen, bs->auxout_total);
-        if(blen)
-        {
-          fatal(log_start, L_BUILD, &N);
-          fatal(narrator_xsays, N, "\n");
-          fatal(narrator_xsayw, N, bs->auxout_buf, blen);
-          fatal(log_finish);
-        }
-      }
-    }
-  }
+  fatal(build_slot_waited, bs);
 
   finally : coda;
 }

@@ -24,17 +24,18 @@
 struct attrs32;
 
 #define COMMAND_TYPE_OPT 0x000f
-#define COMMAND_TYPE_TABLE                                                                                                     \
-  DEF(COMMAND_STAGE_CONFIG    , "stage-config"   , COMMAND_TYPE_OPT, 0x01) /* stage config text */                             \
-  DEF(COMMAND_RECONFIGURE     , "reconfigure"    , COMMAND_TYPE_OPT, 0x02) /* apply staged config, reconfigure subsystems */   \
-  DEF(COMMAND_SELECT          , "select"         , COMMAND_TYPE_OPT, 0x03) /* add nodes to the selection */                    \
-  DEF(COMMAND_RESET_SELECTION , "reset-selection", COMMAND_TYPE_OPT, 0x04) /* reset the selection */                           \
-  DEF(COMMAND_LIST            , "list"           , COMMAND_TYPE_OPT, 0x05) /* get a list of the nodes in the selection */      \
-  DEF(COMMAND_DESCRIBE        , "describe"       , COMMAND_TYPE_OPT, 0x06) /* describe each of the nodes in the selection */   \
-  DEF(COMMAND_INVALIDATE      , "invalidate"     , COMMAND_TYPE_OPT, 0x07) /* invalidate each of the nodes in the selection */ \
-  DEF(COMMAND_RUN             , "run"            , COMMAND_TYPE_OPT, 0x09) /* refresh the graph, pursue goals */               \
-  DEF(COMMAND_AUTORUN         , "autorun"        , COMMAND_TYPE_OPT, 0x08) /* run, and autorun */                              \
-  DEF(COMMAND_GOALS           , "goals"          , COMMAND_TYPE_OPT, 0x0a) /* set the goal targets and outputs */              \
+#define COMMAND_TYPE_TABLE                                                                                                          \
+  DEF(COMMAND_STAGE_CONFIG      , "stage-config"      , COMMAND_TYPE_OPT, 0x01) /* stage config text */                             \
+  DEF(COMMAND_RECONFIGURE       , "reconfigure"       , COMMAND_TYPE_OPT, 0x02) /* apply staged config, reconfigure subsystems */   \
+  DEF(COMMAND_SELECT            , "select"            , COMMAND_TYPE_OPT, 0x03) /* add nodes to the selection */                    \
+  DEF(COMMAND_RESET_SELECTION   , "reset-selection"   , COMMAND_TYPE_OPT, 0x04) /* reset the selection */                           \
+  DEF(COMMAND_LIST              , "list"              , COMMAND_TYPE_OPT, 0x05) /* get a list of the nodes in the selection */      \
+  DEF(COMMAND_DESCRIBE          , "describe"          , COMMAND_TYPE_OPT, 0x06) /* describe each of the nodes in the selection */   \
+  DEF(COMMAND_INVALIDATE        , "invalidate"        , COMMAND_TYPE_OPT, 0x07) /* invalidate each of the nodes in the selection */ \
+  DEF(COMMAND_GLOBAL_INVALIDATE , "global-invalidate" , COMMAND_TYPE_OPT, 0x08) /* generation-based global node invalidation */     \
+  DEF(COMMAND_RUN               , "run"               , COMMAND_TYPE_OPT, 0x09) /* refresh the graph, pursue goals */               \
+  DEF(COMMAND_AUTORUN           , "autorun"           , COMMAND_TYPE_OPT, 0x0a) /* run, and autorun */                              \
+  DEF(COMMAND_GOALS             , "goals"             , COMMAND_TYPE_OPT, 0x0b) /* set the goal targets and outputs */              \
 
 typedef enum command_type {
 #define DEF(x, s, r, y) x = UINT32_C(y),

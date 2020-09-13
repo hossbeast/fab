@@ -81,8 +81,8 @@ static xapi pattern_parser_test_entry(xunit_test * _test)
 
   pattern * A = 0;
   pattern * B = 0;
-  narrator * N1 = 0;
-  narrator * N2 = 0;
+  narrator_growing * N1 = 0;
+  narrator_growing * N2 = 0;
   pattern_parser * parser = 0;
   char buf[512];
   size_t len;
@@ -100,28 +100,28 @@ static xapi pattern_parser_test_entry(xunit_test * _test)
   // round trip parse
   fatal(generate_pattern_parse_partial, parser, test->text, strlen(test->text) + 2, "-test-", 0, &loc, &A);
   assert_eq_zu(strlen(test->text), loc.l);
-  fatal(pattern_say, A, N1);
+  fatal(pattern_say, A, &N1->base);
 
-  len = narrator_growing_size(N1);
-  fatal(narrator_xseek, N1, 0, NARRATOR_SEEK_SET, 0);
-  fatal(narrator_xread, N1, buf, len, 0);
+  len = N1->l;
+  fatal(narrator_xseek, &N1->base, 0, NARRATOR_SEEK_SET, 0);
+  fatal(narrator_xread, &N1->base, buf, len, 0);
   buf[len] = buf[len + 1] = 0;
 
   fatal(generate_pattern_parse_partial, parser, buf, len + 2, "-test-", 0, &loc, &B);
   assert_eq_zu(strlen(expected), loc.l);
-  fatal(pattern_say, B, N2);
+  fatal(pattern_say, B, &N2->base);
 
   // round-trip
-  assert_eq_w(narrator_growing_buffer(N1), narrator_growing_size(N1), narrator_growing_buffer(N2), narrator_growing_size(N2));
+  assert_eq_w(N1->s, N1->l, N2->s, N2->l);
 
   // matches expected
-  const char * actual = narrator_growing_buffer(N1);
-  assert_eq_w(expected, strlen(expected), actual, narrator_growing_size(N1));
+  const char * actual = N1->s;
+  assert_eq_w(expected, strlen(expected), actual, N1->l);
 
 finally:
   fatal(pattern_parser_xfree, parser);
-  fatal(narrator_xfree, N1);
-  fatal(narrator_xfree, N2);
+  fatal(narrator_growing_free, N1);
+  fatal(narrator_growing_free, N2);
   pattern_free(A);
   pattern_free(B);
 coda;

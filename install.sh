@@ -20,7 +20,6 @@ rundir=/var/run
 
 # executables
 cp fab/fab/fab.$v.xapi       $bindir/fab
-cp fab/fabw/fabw.$v.xapi     $bindir/fabw
 cp fab/fabd/fabd.$v.xapi     $bindir/fabd
 cp fab/fabc/fabc.$v.xapi     $bindir/fabc
 cp value/value/value.$v.xapi $bindir/value
