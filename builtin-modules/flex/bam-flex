@@ -20,6 +20,7 @@
 
 use strict;
 use warnings;
+$SIG{__WARN__} = sub { die @_ };
 
 die "flex not found" unless $ENV{flex};
 

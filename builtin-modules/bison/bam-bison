@@ -20,6 +20,7 @@
 
 use strict;
 use warnings;
+$SIG{__WARN__} = sub { die @_ };
 
 die "bison not found" unless $ENV{bison};
 
@@ -32,7 +33,6 @@ my @cmd = (
   , $ENV{bm_source}
 );
 
-print(join(" ", @cmd) . "\n");
 exec { $cmd[0] } @cmd;
 
 __DATA__

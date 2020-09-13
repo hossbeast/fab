@@ -16,9 +16,11 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with fab.  If not, see <http://www.gnu.org/licenses/>. */
+#
 
 use strict;
 use warnings;
+$SIG{__WARN__} = sub { die @_ };
 
 use File::Basename;
 
@@ -49,11 +51,6 @@ my @cmd = (
   , grep { substr($_, -2) eq ".o" } split(/ /, $ENV{objects})
 );
 
-use Data::Dumper;
-print Dumper \@cmd;
-print(join(" ", @cmd) . "\n");
-
-# exec into the compiler
 exec { $cmd[0] } @cmd
 
 __DATA__

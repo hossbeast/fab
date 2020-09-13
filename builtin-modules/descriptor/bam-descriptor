@@ -20,11 +20,6 @@
 use strict;
 use warnings;
 $SIG{__WARN__} = sub { die @_ };
-$SIG{__DIE__} = sub {
-  die @_ if $^S;
-  die @_ unless $_[0] =~ /(.*) at .* line.*$/m;
-  die "$1\n"
-};
 
 use Digest::MD5;
 use File::Basename;
