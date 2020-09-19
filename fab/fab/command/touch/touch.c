@@ -27,7 +27,7 @@
 
 #include "common/attrs.h"
 
-#include "invalidate.h"
+#include "touch.h"
 #include "command.h"
 #include "MAIN.errtab.h"
 #include "params.h"
@@ -45,7 +45,7 @@ static void usage(command * restrict cmd)
 {
   printf(
 "\n"
-"usage : fab invalidate [ <selector>... ] ...\n"
+"usage : fab touch [ <selector>... ] ...\n"
 "\n"
   );
 }
@@ -149,9 +149,16 @@ static xapi connected(command * restrict cmd, fab_client * restrict client)
   narrator * request_narrator;
   narrator_fixed nstor;
   fabipc_message * msg;
+  uint32_t tail;
+
+  /* if no targets specified, invalidate everything */
+  if(args.targets->size == 0)
+  {
+    g_args.invalidate = true;
+  }
 
   /* send the request */
-  msg = fab_client_produce(client, 0);
+  msg = fab_client_produce(client, &tail);
   msg->type = FABIPC_MSG_REQUEST;
 
   request_narrator = narrator_fixed_init(&nstor, msg->text, sizeof(msg->text));
@@ -160,7 +167,7 @@ static xapi connected(command * restrict cmd, fab_client * restrict client)
   // two terminating null bytes
   fatal(narrator_xsayw, request_narrator, (char[]) { 0x00, 0x00 }, 2);
   msg->size = nstor.l;
-  fab_client_post(client);
+  fab_client_post(client, tail);
 
   finally : coda;
 }
@@ -180,7 +187,7 @@ static xapi process(command * restrict cmd, fab_client * restrict client, fabipc
 // public
 //
 
-xapi invalidate_command_cleanup()
+xapi touch_command_cleanup()
 {
   enter;
 
@@ -189,7 +196,7 @@ xapi invalidate_command_cleanup()
   finally : coda;
 }
 
-struct command invalidate_command = {
+struct command touch_command = {
     args_parse : parse_args
   , usage : usage
   , connected : connected

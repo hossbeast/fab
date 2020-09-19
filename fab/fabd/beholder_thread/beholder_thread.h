@@ -25,6 +25,9 @@
 #include "types.h"
 #include "xapi.h"
 
+#define BEHOLDER_STDOUT_REAL  601
+#define BEHOLDER_STDERR_REAL  602
+
 extern int beholder_stdout_rd;
 extern int beholder_stderr_rd;
 

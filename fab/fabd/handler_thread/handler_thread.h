@@ -58,16 +58,25 @@ typedef struct handler_context {
   struct selection * selection;
   struct graph_invalidation_context invalidation;
   struct request_parser * request_parser;
+  bool autorun;
+
+//  enum handler_build_state build_state;
+  enum fab_build_state build_state;
+
   pid_t tid;
   pid_t client_pid;
   pid_t client_tid;
   uint32_t client_msg_id;
-  bool autorun;
-//  enum handler_build_state build_state;
-  enum fab_build_state build_state;
+
+  /* fabipc channel for the client */
   struct fabipc_channel * chan;
-  uint32_t tail_next;
+
+  /* local tail for the channels server ring */
+  uint32_t local_tail;
+
   value_writer writer;
+
+  /* subscribed events */
   uint32_t event_mask;
 } handler_context;
 

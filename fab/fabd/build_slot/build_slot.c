@@ -199,8 +199,9 @@ static xapi build_slot_forked(build_slot * restrict bs)
   llist list;
   vertex *v;
   node *n;
+  uint32_t tail;
 
-  if(!events_would(FABIPC_EVENT_FORMULA_EXEC_FORKED, &handler, &msg)) {
+  if(!events_would(FABIPC_EVENT_FORMULA_EXEC_FORKED, &handler, &msg, &tail)) {
     goto XAPI_FINALIZE;
   }
 
@@ -311,7 +312,7 @@ static xapi build_slot_forked(build_slot * restrict bs)
 
   msg->size = z;
   msg->id = bs->pid;
-  events_publish(handler, msg);
+  events_publish(handler, msg, tail);
 
   finally : coda;
 }
@@ -323,8 +324,9 @@ static xapi build_slot_waited(build_slot * restrict bs)
   handler_context *handler;
   fabipc_message *msg;
   uint16_t z;
+  uint32_t tail;
 
-  if(!events_would(FABIPC_EVENT_FORMULA_EXEC_WAITED, &handler, &msg)) {
+  if(!events_would(FABIPC_EVENT_FORMULA_EXEC_WAITED, &handler, &msg, &tail)) {
     goto XAPI_FINALIZE;
   }
 
@@ -344,7 +346,7 @@ static xapi build_slot_waited(build_slot * restrict bs)
 
   msg->size = z;
   msg->id = bs->pid;
-  events_publish(handler, msg);
+  events_publish(handler, msg, tail);
 
   finally : coda;
 }
@@ -664,6 +666,7 @@ xapi build_slot_read(build_slot * restrict bs, uint32_t stream)
   fabipc_event_type event = 0;
   handler_context *handler;
   fabipc_message *msg;
+  uint32_t tail;
 
   if(stream == 1)
   {
@@ -684,12 +687,12 @@ xapi build_slot_read(build_slot * restrict bs, uint32_t stream)
     event = FABIPC_EVENT_FORMULA_EXEC_AUXOUT;
   }
 
-  if(events_would(event, &handler, &msg))
+  if(events_would(event, &handler, &msg, &tail))
   {
     msg->id = bs->pid;
     fatal(xread, fd, msg->text, sizeof(msg->text), &bytes);
     msg->size = bytes;
-    events_publish(handler, msg);
+    events_publish(handler, msg, tail);
   }
   else
   {

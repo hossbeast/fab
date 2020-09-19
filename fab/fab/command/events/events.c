@@ -112,11 +112,14 @@ static xapi connected(command * restrict cmd, fab_client * restrict client)
   enter;
 
   fabipc_message * msg;
+  uint32_t tail;
 
   /* subscribe to relevant events */
-  msg = fab_client_produce(client, 0);
+  msg = fab_client_produce(client, &tail);
   msg->type = FABIPC_MSG_EVENTSUB;
   msg->attrs = 0
+    | 1 << (FABIPC_EVENT_STDOUT - 1)
+    | 1 << (FABIPC_EVENT_STDERR - 1)
     | 1 << (FABIPC_EVENT_NODE_STALE - 1)
     | 1 << (FABIPC_EVENT_NODE_FRESH - 1)
     | 1 << (FABIPC_EVENT_GLOBAL_INVALIDATION - 1)
@@ -129,7 +132,7 @@ static xapi connected(command * restrict cmd, fab_client * restrict client)
     | 1 << (FABIPC_EVENT_BUILD_START - 1)
     | 1 << (FABIPC_EVENT_BUILD_END - 1)
     ;
-  fab_client_post(client);
+  fab_client_post(client, tail);
 
   finally : coda;
 }

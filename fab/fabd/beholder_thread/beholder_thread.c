@@ -37,14 +37,10 @@
 #include "logging.h"
 #include "params.h"
 #include "rcu.h"
+#include "events.h"
 
 int beholder_stdout_rd = -1;
 int beholder_stderr_rd = -1;
-
-uint16_t beholder_quiesce_r[1024];
-uint16_t beholder_quiesce_n[1024];
-int beholder_boats = 0;
-rcu_thread beholder_rcu;
 
 static xapi beholder_thread()
 {
@@ -58,8 +54,10 @@ static xapi beholder_thread()
   ssize_t bytes;
   handler_context *handler;
   fabipc_message *msg;
-  rcu_thread *rcu_self = &beholder_rcu;
-//  union quiesced Xn;
+  rcu_thread rcu_self = { 0 };
+  int real_fd;
+  uint32_t event;
+  uint32_t tail;
 
 #if DEBUG || DEVEL
   logs(L_IPC, "starting");
@@ -79,15 +77,10 @@ static xapi beholder_thread()
   sigfillset(&sigs);
   sigdelset(&sigs, SIGUSR1);
 
-  rcu_register(rcu_self);
+  rcu_register(&rcu_self);
   while(!g_params.shutdown)
   {
-    // receive epoll events, or a signal
-//    Xn.u32 = rcu_quiesce(rcu_self);
-//    beholder_quiesce_r[beholder_boats] = Xn.r;
-//    beholder_quiesce_n[beholder_boats] = Xn.n;
-//    beholder_boats++;
-    rcu_quiesce(rcu_self);
+    rcu_quiesce(&rcu_self);
 
     fatal(uxepoll_pwait, &rv, epfd, &ev, 1, 1000, &sigs);
     if(!rv) {
@@ -97,42 +90,44 @@ static xapi beholder_thread()
     fatal(xread, ev.data.u32, buf, sizeof(buf), &bytes);
 
     if(ev.data.u32 == beholder_stdout_rd) {
-      write(601, buf, bytes);
-      continue;
+      real_fd = BEHOLDER_STDOUT_REAL;
+      event = FABIPC_EVENT_STDOUT;
     } else {
-      write(602, buf, bytes);
-      continue;
+      real_fd = BEHOLDER_STDERR_REAL;
+      event = FABIPC_EVENT_STDERR;
     }
 
-    stack_foreach(&g_handlers, handler, stk) {
-      if(!handler->chan) {
-        continue;
-      }
-      if(!(msg = channel_produce(handler->chan, &handler->tail_next, bytes))) {
-        abort();
-        continue;
-      }
+    // propagate to the original fd
+    fatal(xwrite, real_fd, buf, bytes, 0);
 
+//if(real_fd == BEHOLDER_STDOUT_REAL) {
+//  continue;
+//}
+
+//if(real_fd == BEHOLDER_STDERR_REAL) {
+//  static int ZZ;
+//  if(++ZZ > 10) {
+//    continue;
+//  }
+//}
+
+    // propagate to event subscribers if any
+    if(events_would(event, &handler, &msg, &tail)) {
       msg->size = bytes;
-      msg->type = FABIPC_MSG_STDOUT;
       memcpy(msg->text, buf, bytes);
-
-      channel_post(handler->chan, handler->tail_next);
+      events_publish(handler, msg, tail);
     }
   }
 
-dup2(601, 1);
-dup2(602, 2);
+  /* restore original fds */
+  dup2(BEHOLDER_STDOUT_REAL, 1);
+  dup2(BEHOLDER_STDERR_REAL, 2);
 
 finally:
 #if DEBUG || DEVEL
   logs(L_IPC, "terminating");
 #endif
-  //Xn.u32 = rcu_unregister(rcu_self);
-  //beholder_quiesce_r[beholder_boats] = Xn.r;
-  //beholder_quiesce_n[beholder_boats] = Xn.n;
-  //beholder_boats++;
-  rcu_unregister(rcu_self);
+  rcu_unregister(&rcu_self);
 
   fatal(xclose, epfd);
 coda;

@@ -24,6 +24,7 @@
 #include <linux/futex.h>
 
 #include "barriers.h"
+#include "macros.h"
 
 static inline bool trylock_acquire(int32_t *lock, int32_t tid)
 {
@@ -63,6 +64,7 @@ static inline void futex_acquire(int32_t * futex, int32_t tid)
 {
   int32_t zero;
 
+  /* blocks until the futex can transition from zero -> tid */
   while(1)
   {
     zero = 0;
@@ -77,10 +79,15 @@ static inline void futex_acquire(int32_t * futex, int32_t tid)
 
 static inline void futex_release(int32_t * futex, int32_t tid)
 {
-  smp_mb();
-  if((__atomic_compare_exchange_n(futex, &tid, 0, false, __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST))) {
-    syscall(SYS_futex, futex, FUTEX_WAKE, 1, 0, 0, 0);
-  }
+#if DEBUG || DEVEL
+  int32_t old;
+  old = __atomic_exchange_n(futex, 0, __ATOMIC_SEQ_CST);
+  RUNTIME_ASSERT(old == tid);
+#else
+  __atomic_store_n(futex, 0, __ATOMIC_SEQ_CST);
+#endif
+
+  syscall(SYS_futex, futex, FUTEX_WAKE, 1, 0, 0, 0);
 }
 
 #endif

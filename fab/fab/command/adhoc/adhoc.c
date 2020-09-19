@@ -119,22 +119,19 @@ static xapi adhoc_connected(command * restrict cmd, fab_client * restrict client
   narrator * request_narrator;
   narrator_fixed nstor;
   fabipc_message * msg;
+  uint32_t tail;
 
   /* subscribe to relevant events */
-  msg = fab_client_produce(client, 0);
+  msg = fab_client_produce(client, &tail);
   msg->type = FABIPC_MSG_EVENTSUB;
   msg->attrs = 0
-//    | (1 << (FABIPC_EVENT_INVALIDATED - 1))
-//    | (1 << (FABIPC_EVENT_UPDATED - 1))
-//    | (1 << (FABIPC_EVENT_FORMULA_EXEC - 1))
-//    | (1 << (FABIPC_EVENT_FORMULA_EXEC_STDOUT - 1))
-//    | (1 << (FABIPC_EVENT_FORMULA_EXEC_STDERR - 1))
-//    | (1 << (FABIPC_EVENT_FORMULA_EXEC_AUXOUT - 1))
+    | (1 << (FABIPC_EVENT_STDERR - 1))
+    | (1 << (FABIPC_EVENT_STDOUT - 1))
     ;
-  fab_client_post(client);
+  fab_client_post(client, tail);
 
   /* send the request */
-  msg = fab_client_produce(client, 0);
+  msg = fab_client_produce(client, &tail);
   msg->type = FABIPC_MSG_REQUEST;
 
   request_narrator = narrator_fixed_init(&nstor, msg->text, 0xfff);
@@ -144,7 +141,7 @@ static xapi adhoc_connected(command * restrict cmd, fab_client * restrict client
   // two terminating null bytes
   fatal(narrator_xsayw, request_narrator, (char[]) { 0x00, 0x00 }, 2);
   msg->size = nstor.l;
-  fab_client_post(client);
+  fab_client_post(client, tail);
 
 finally:
   fatal(value_writer_destroy, &writer);
@@ -155,11 +152,7 @@ static xapi adhoc_process(command * restrict cmd, fab_client * restrict client, 
 {
   enter;
 
-  if(msg->type == FABIPC_MSG_STDOUT) {
-printf("server/stdout: %.*s\n", msg->size, msg->text);
-  } else if(msg->type == FABIPC_MSG_STDERR) {
-printf("server/stderr: %.*s\n", msg->size, msg->text);
-  } else if(msg->type == FABIPC_MSG_RESULT) {
+  if(msg->type == FABIPC_MSG_RESULT) {
 printf("result: %.*s\n", msg->size, msg->text);
   } else if(msg->type == FABIPC_MSG_EVENTS) {
 printf("events: %s %.*s\n", attrs32_name_byvalue(fabipc_event_type_attrs, msg->evtype), msg->size, msg->text);

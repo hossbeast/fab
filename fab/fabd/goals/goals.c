@@ -260,15 +260,16 @@ xapi goals_set(uint32_t msg_id, bool build, bool script, selector * restrict tar
 
   fabipc_message *msg;
   handler_context *handler;
+  uint32_t tail;
 
   goal_build = build;
   goal_script = script;
   goal_target_direct_selector = target_direct;
   goal_target_transitive_selector = target_transitive;
 
-  if(events_would(FABIPC_EVENT_GOALS, &handler, &msg)) {
+  if(events_would(FABIPC_EVENT_GOALS, &handler, &msg, &tail)) {
     msg->id = msg_id;
-    events_publish(handler, msg);
+    events_publish(handler, msg, tail);
   }
 
   finally : coda;

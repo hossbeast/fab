@@ -20,7 +20,7 @@ use builtin-modules/flex
 use builtin-modules/bison
 use builtin-modules/executable  # this module builds an executable
 use xapi/errtab
-#use xunit-tests
+use xunit-tests
 
 # declare variants
 variant xapi.{,pic.}{debug,devel,final}
@@ -89,15 +89,3 @@ variant xapi.pic.devel : [
   rule //four -> //five
   rule //five -> //xunit
 ]
-
-#require xunit-runner
-#
-## build test sos
-#variant xapi.pic.devel : [
-#  rule **/test/(test_*.?).o -> $^D/$1.so : xunit-tests/bam-cc-test-so
-#  rule config_parser/test/test_*.?.so -> //xunit
-#]
-#
-rule //tests -> //module/targets
-
-use xunit-tests

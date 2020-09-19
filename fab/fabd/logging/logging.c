@@ -75,7 +75,7 @@ logger_category * categories = (logger_category []) {
  */
 logger_stream * streams = (logger_stream []) {
     { name : "logfile"  , type : LOGGER_STREAM_ROLLING, expr : "+INFO +WARN +ERROR %DATESTAMP %CATEGORY %NOCOLOR %NAMES %PID %TID"
-      , file_mode : FABIPC_MODE_DATA, threshold : 1024 * 1024, max_files : 10, path_base : (char[256]) { } }
+      , file_mode : 0666, threshold : 1024 * 1024, max_files : 10, path_base : (char[256]) { } }
 #if DEVEL
   , { name : "console"  , type : LOGGER_STREAM_FD , fd : 1, expr : "+INFO +WARN +ERROR %CATEGORY %NAMES %PID %TID" }
 #endif

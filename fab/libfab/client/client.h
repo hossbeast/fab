@@ -37,8 +37,8 @@ typedef struct fab_client {
   char      hash[16 + 1];
   pid_t     fabd_pid;   // fabd process group id
   int32_t   futex;
-  uint32_t  tail_next;
 
+  uint32_t local_tail;
   struct fabipc_channel *shm;
 } fab_client;
 
@@ -89,10 +89,10 @@ void fab_client_disconnect(fab_client * restrict client)
   __attribute__((nonnull));
 
 
-struct fabipc_message * fab_client_produce(fab_client * restrict client, size_t size)
+struct fabipc_message * fab_client_produce(fab_client * restrict client, uint32_t * restrict tail)
   __attribute__((nonnull));
 
-void fab_client_post(fab_client * restrict client)
+void fab_client_post(fab_client * restrict client, uint32_t tail)
   __attribute__((nonnull));
 
 struct fabipc_message * fab_client_acquire(fab_client * restrict client)

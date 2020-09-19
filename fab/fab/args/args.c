@@ -46,7 +46,7 @@
 #include "build.h"
 #include "autobuild.h"
 #include "adhoc.h"
-#include "invalidate.h"
+#include "touch.h"
 #include "events.h"
 #include "command.h"
 
@@ -90,7 +90,7 @@ void args_usage(command * restrict cmd)
 " autobuild             as build, but remain connected\n"
 " build       (default) bring targets up-to-date\n"
 " events                listen for and print events\n"
-" invalidate            invalidate nodes\n"
+" touch                 mark files as out-of-date\n"
 "\n"
 "global options\n"
 " --help | -h       this message\n"
@@ -121,8 +121,8 @@ static command *command_lookup(const char *s)
     return &autobuild_command;
   } else if(strcmp(s, "adhoc") == 0) {
     return &adhoc_command;
-  } else if(strcmp(s, "invalidate") == 0) {
-    return &invalidate_command;
+  } else if(strcmp(s, "touch") == 0) {
+    return &touch_command;
   } else if(strcmp(s, "events") == 0) {
     return &events_command;
   }

@@ -86,7 +86,6 @@ static xapi context_xfree(handler_context * restrict ctx)
 
   if(ctx)
   {
-printf("FREE CONTEXT %p\n", ctx);
     fatal(selector_context_xdestroy, &ctx->sel_ctx);
     graph_invalidation_end(&ctx->invalidation);
     fatal(request_parser_xfree, ctx->request_parser);
@@ -104,11 +103,11 @@ static xapi handle_request(handler_context * restrict ctx, fabipc_message * rest
   narrator * N;
 
   futex_acquire(&handler_lock, ctx->tid);
-logs(L_IPC, "ACQ handler lock");
+printf("%.*s\n", (int)msg->size, msg->text);
   fatal(request_parser_parse, ctx->request_parser, msg->text, msg->size, "fab-request", &request);
   ctx->client_msg_id = msg->id;
   request->msg_id = msg->id;
-  channel_consume(ctx->chan);
+  handler_consume(ctx);
 
   if(log_would(L_PROTOCOL))
   {
@@ -123,14 +122,9 @@ logs(L_IPC, "ACQ handler lock");
   {
     if(!trylock_acquire(&handler_build_lock, ctx->tid))
     {
-logs(L_INFO, "trylock - failure\n");
       handler_request_completes(ctx, EBUSY, MMS("build command already in progress"));
       goto XAPI_FINALLY;
     }
-else
-{
-logs(L_INFO, "trylock - success\n");
-}
   }
 
   /* prepare to execute the request */
@@ -143,7 +137,6 @@ logs(L_INFO, "trylock - success\n");
   {
     ctx->build_state = FAB_BUILD_IN_PROGRESS;
     fatal(goals_kickoff, ctx);
-printf("goals-kickoff\n");
   }
   else
   {
@@ -151,16 +144,11 @@ printf("goals-kickoff\n");
 
     /* trigger a new build on invalidation if autorun is enabled */
     if(ctx->invalidation.any && g_server_autorun) {
-printf("handler-launch\n");
       fatal(handler_thread_launch, 0, 0, true);
     }
-else {
-printf("NO BUILD %d %d\n", ctx->invalidation.any, g_server_autorun);
-}
   }
 
 finally:
-logs(L_IPC, "REL handler lock");
   futex_release(&handler_lock, ctx->tid);
   graph_invalidation_end(&ctx->invalidation);
   fatal(request_xfree, request);
@@ -190,8 +178,7 @@ static xapi handler_thread(handler_context * restrict ctx)
   interval.tv_sec = 0;
   interval.tv_nsec = 125000000;   // 125 millis
 
-  fatal(channel_create, &chan, ctx->tid);
-  ctx->chan = chan;
+  chan = ctx->chan;
   chan->server_pulse = (uint16_t)ctx->tid;
   chan->client_pulse = 0;
 
@@ -215,8 +202,8 @@ static xapi handler_thread(handler_context * restrict ctx)
 #endif
 
   if(!chan->client_pid) {
-    fail(SYS_ABORT);
     fprintf(stderr, "channel not initialized!!\n");
+    fail(SYS_ABORT);
     goto XAPI_FINALIZE;
   }
 
@@ -235,10 +222,9 @@ static xapi handler_thread(handler_context * restrict ctx)
       handler_request_complete(ctx, ctx->build_state == FAB_BUILD_FAILED);
       ctx->build_state = 0;
       trylock_release(&handler_build_lock, ctx->tid);
-logs(L_INFO, "trylock - release");
     }
 
-    if(!(client_msg = channel_acquire(chan)))
+    if(!(client_msg = handler_acquire(ctx)))
     {
       if(chan->client_exit) {
 printf("BREAK ; client_exit\n");
@@ -266,8 +252,7 @@ printf("BREAK ; client_pulse\n");
     if(client_msg->type == FABIPC_MSG_EVENTSUB)
     {
       ctx->event_mask = client_msg->attrs;
-printf("eventsub 0x%08x\n", client_msg->attrs);
-      channel_consume(chan);
+      handler_consume(ctx);
       continue;
     }
 
@@ -287,37 +272,11 @@ finally:
   if(chan == g_server_initial_channel)
   {
     wfree(chan);
-    chan = 0;
+    ctx->chan = 0;
     g_server_initial_channel = 0;
   }
 #endif
-  fatal(xshmdt, chan);
 
-#if DEBUG || DEVEL
-  logs(L_IPC, "terminating");
-#endif
-coda;
-}
-
-static xapi autorun_thread(handler_context * restrict ctx)
-{
-  enter;
-
-  sigset_t sigs;
-  siginfo_t siginfo;
-
-#if DEBUG || DEVEL
-  logs(L_IPC, "starting");
-#endif
-
-  // signals handled on this thread
-  sigemptyset(&sigs);
-  sigaddset(&sigs, SIGUSR1);
-
-  fatal(goals_kickoff, ctx);
-  fatal(sigutil_wait, &sigs, &siginfo);
-
-finally:
 #if DEBUG || DEVEL
   logs(L_IPC, "terminating");
 #endif
@@ -331,6 +290,7 @@ static void * handler_thread_jump(void * arg)
   xapi R;
   handler_context *ctx;
   pid_t tid;
+  fabipc_channel *chan = 0;
 
   logger_set_thread_name("handler");
   logger_set_thread_categories(L_HANDLER);
@@ -338,15 +298,14 @@ static void * handler_thread_jump(void * arg)
   ctx = arg;
   tid = ctx->tid = gettid();
 
+  fatal(channel_create, &chan, ctx->tid);
+  ctx->chan = chan;
+
   futex_acquire(&g_handlers_lock, tid);
   stack_push(&g_handlers, &ctx->stk);
   futex_release(&g_handlers_lock, tid);
 
-  if(ctx->autorun) {
-    fatal(autorun_thread, ctx);
-  } else {
-    fatal(handler_thread, ctx);
-  }
+  fatal(handler_thread, ctx);
 
 finally:
   if(XAPI_UNWINDING)
@@ -378,7 +337,91 @@ conclude(&R);
   rcu_synchronize(tid);
 
   /* dispose of the context */
-printf("DISPOSE context %p\n", ctx);
+  if(chan) {
+    RUNTIME_ASSERT(shmdt(chan) == 0);
+  }
+  llist_append(&context_freelist, ctx, lln);
+
+  atomic_dec(&g_params.thread_count);
+  syscall(SYS_tgkill, g_params.pid, g_params.thread_monitor, SIGUSR1);
+  return 0;
+}
+
+static xapi autorun_thread(handler_context * restrict ctx)
+{
+  enter;
+
+  sigset_t sigs;
+  siginfo_t siginfo;
+
+#if DEBUG || DEVEL
+  logs(L_IPC, "starting");
+#endif
+
+  // signals handled on this thread
+  sigemptyset(&sigs);
+  sigaddset(&sigs, SIGUSR1);
+
+  fatal(goals_kickoff, ctx);
+  fatal(sigutil_wait, &sigs, &siginfo);
+
+finally:
+#if DEBUG || DEVEL
+  logs(L_IPC, "terminating");
+#endif
+coda;
+}
+
+static void * autorun_thread_jump(void * arg)
+{
+  enter;
+
+  xapi R;
+  handler_context *ctx;
+  pid_t tid;
+
+  logger_set_thread_name("handler");
+  logger_set_thread_categories(L_HANDLER);
+
+  ctx = arg;
+  tid = ctx->tid = gettid();
+
+  futex_acquire(&g_handlers_lock, tid);
+  stack_push(&g_handlers, &ctx->stk);
+  futex_release(&g_handlers_lock, tid);
+
+  fatal(autorun_thread, ctx);
+
+finally:
+  if(XAPI_UNWINDING)
+  {
+#if DEBUG || DEVEL
+    xapi_infos("name", "fabd/handler");
+    xapi_infof("pgid", "%ld", (long)g_params.pgid);
+    xapi_infof("pid", "%ld", (long)g_params.pid);
+    xapi_infof("tid", "%ld", (long)ctx->tid);
+    fatal(logger_xtrace_full, L_ERROR, L_NONAMES, XAPI_TRACE_COLORIZE | XAPI_TRACE_NONEWLINE);
+#else
+    fatal(logger_xtrace_pithy, L_ERROR, L_NONAMES, XAPI_TRACE_COLORIZE | XAPI_TRACE_NONEWLINE);
+#endif
+  }
+conclude(&R);
+
+  futex_acquire(&g_handlers_lock, tid);
+  stack_delete(&ctx->stk);
+  futex_release(&g_handlers_lock, tid);
+
+  if(R) {
+    g_params.shutdown = true;
+    g_params.handler_error = true;
+
+    /* speed up the rcu_synchronize wait time */
+    syscall(SYS_tgkill, g_params.pid, g_params.thread_monitor, SIGUSR1);
+  }
+
+  rcu_synchronize(tid);
+
+  /* dispose of the context */
   llist_append(&context_freelist, ctx, lln);
 
   atomic_dec(&g_params.thread_count);
@@ -419,16 +462,15 @@ xapi handler_thread_launch(pid_t client_pid, pid_t client_tid, bool autorun)
   pthread_attr_t attr;
   int rv;
   handler_context *ctx = 0;
+  void *(*handler)(void *);
 
   if((ctx = llist_shift(&context_freelist, typeof(*ctx), lln)) == 0)
   {
     fatal(context_create, &ctx);
-printf("CREATE CONTEXT %p\n", ctx);
   }
   else
   {
     fatal(context_reset, ctx);
-printf("REUSE CONTEXT %p\n", ctx);
   }
 
   ctx->client_pid = client_pid;
@@ -438,8 +480,16 @@ printf("REUSE CONTEXT %p\n", ctx);
   fatal(xpthread_attr_init, &attr);
   fatal(xpthread_attr_setdetachstate, &attr, PTHREAD_CREATE_DETACHED);
 
+  if(ctx->autorun)
+  {
+    handler = autorun_thread_jump;
+  }
+  else
+  {
+    handler = handler_thread_jump;
+  }
   atomic_inc(&g_params.thread_count);
-  if((rv = pthread_create(&pthread_id, &attr, handler_thread_jump, ctx)) != 0)
+  if((rv = pthread_create(&pthread_id, &attr, handler, ctx)) != 0)
   {
     atomic_dec(&g_params.thread_count);
     tfail(perrtab_KERNEL, rv);
@@ -451,8 +501,3 @@ finally:
   fatal(context_xfree, ctx);
 coda;
 }
-
-#if 0
-printf("server: client exit %d pulse %hu - CLIENT EXIT\n", chan->client_exit, pulse);
-printf("server: client exit %d pulse %hu - CLIENT DEAD\n", chan->client_exit, pulse);
-#endif

@@ -39,6 +39,7 @@
 #include "xlinux/xpthread.h"
 #include "fab/ipc.h"
 #include "fab/sigutil.h"
+#include "fab/lockfile.h"
 #include "logger.h"
 #include "logger/arguments.h"
 
@@ -133,8 +134,10 @@ static xapi xmain()
 
   setvbuf(stdout, NULL, _IONBF, 0);
   setvbuf(stderr, NULL, _IONBF, 0);
-  fatal(xdup2, 1, 601);
-  fatal(xdup2, 2, 602);
+
+  /* save original stdout/stderr fds */
+  fatal(xdup2, 1, BEHOLDER_STDOUT_REAL);
+  fatal(xdup2, 2, BEHOLDER_STDERR_REAL);
 
   /* reopen stdout/stderr to the beholder pipes */
   fatal(xpipe, fds);
@@ -153,7 +156,7 @@ static xapi xmain()
   fatal(sweeper_thread_launch);
   fatal(beholder_thread_launch);
 
-  /* the build thread is launched after the initial reconfiguration */
+  /* the build thread is launched by the initial reconfiguration */
 
   // become the monitor thread
   fatal(monitor_thread);
@@ -330,9 +333,6 @@ conclude(&R);
 
   R |= xmain_exit;              // error on the main thread
   R |= g_params.handler_error;  // error on a handler thread
-
-extern void rcu_log(void);
-rcu_log();
 
   return !!R;
 }

@@ -45,8 +45,8 @@ xapi stats_report()
   enter;
 
 #undef DEF
-#define DEF(x, t) do {                            \
-  logf(L_USAGE, "%20s %"PRIu64, #x, g_stats.x);   \
+#define DEF(x, t) do {                                      \
+  logf(L_USAGE, "%20s %"PRIu64, #x, (uint64_t)g_stats.x);   \
 } while(0);
 STATS_TABLE
 

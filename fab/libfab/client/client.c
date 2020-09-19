@@ -50,14 +50,15 @@
 #include "logger/arguments.h"
 #include "fab/ipc.h"
 #include "common/hash.h"
+#include "common/attrs.h"
 
 #include "client.internal.h"
 #include "errtab/FAB.errtab.h"
 #include "logging.internal.h"
-#include "ipc.internal.h"
-#include "common/attrs.h"
-
+#include "ipc.h"
+#include "lockfile.h"
 #include "sigutil.h"
+
 #include "macros.h"
 #include "barriers.h"
 #include "atomics.h"
@@ -65,6 +66,12 @@
 #if DEVEL
 const char * APIDATA g_fab_client_fabd_path;
 #endif
+
+/* ugo+rwx world read/write/execute */
+#define IPCDIR_MODE_DIR   0777
+
+/* ugo+rw  world read/write */
+#define IPCDIR_MODE_DATA  0666
 
 //
 // static
@@ -95,17 +102,15 @@ static xapi launch(fab_client * restrict client)
   fatal(xfork, &client->fabd_pid);
   if(client->fabd_pid == 0)
   {
-#if 1
     // reopen standard file descriptors
     fatal(xclose, 0);
     fatal(xopens, 0, O_RDONLY, "/dev/null");
 
     fatal(xclose, 1);
-    fatal(xopen_modef, 0, O_WRONLY | O_CREAT | O_EXCL, FABIPC_MODE_DATA, "%s/fabd/stdout", client->ipcdir);
+    fatal(xopen_modef, 0, O_WRONLY | O_CREAT | O_EXCL, IPCDIR_MODE_DATA, "%s/fabd/stdout", client->ipcdir);
 
     fatal(xclose, 2);
-    fatal(xopen_modef, 0, O_WRONLY | O_CREAT | O_EXCL, FABIPC_MODE_DATA, "%s/fabd/stderr", client->ipcdir);
-#endif
+    fatal(xopen_modef, 0, O_WRONLY | O_CREAT | O_EXCL, IPCDIR_MODE_DATA, "%s/fabd/stderr", client->ipcdir);
 
     // core file goes in cwd
     fatal(xchdirf, "%s/fabd", client->ipcdir);
@@ -219,7 +224,7 @@ xapi API fab_client_prepare(fab_client * restrict client)
 {
   enter;
 
-  fatal(mkdirpf, FABIPC_MODE_DIR, "%s/fabd", client->ipcdir);
+  fatal(mkdirpf, IPCDIR_MODE_DIR, "%s/fabd", client->ipcdir);
   fatal(fabipc_lockfile_obtain, &client->fabd_pid, &client->lockfd, "%s/fabd/lock", client->ipcdir);
 
   finally : coda;
@@ -272,17 +277,14 @@ xapi API fab_client_attach(fab_client * restrict client, int channel_shmid)
   void * shmaddr = 0;
 
   /* channel shmid is the value of the signal */
-//printf("client: attach: channel id %d\n", channel_shmid);
 
   /* attach the channel (owned by the server) */
   fatal(xshmat, channel_shmid, 0, 0, &shmaddr);
-//printf("client: attach: attached shm %d @ %p\n", channel_shmid, shmaddr);
 
   client->shm = shmaddr;
   shmaddr = 0;
 
   client->shm->client_pulse++;
-//printf("client: connect: server exit %d server pulse %hu\n", client->shm->server_exit, client->shm->server_pulse);
 
   /* at this point the lockfile, if any, is now held by fabd and no longer needed */
   fatal(ixclose, &client->lockfd);
@@ -301,167 +303,38 @@ void API fab_client_disconnect(fab_client * restrict client)
   }
 }
 
-fabipc_message * API fab_client_produce(fab_client * restrict client, size_t size)
+fabipc_message * API fab_client_produce(fab_client * restrict client, uint32_t * restrict tail)
 {
-  fabipc_message *msg;
-//  uint32_t head;
-
-  msg = fabipc_produce(
+  return fabipc_produce(
       client->shm->client_ring.pages
     , &client->shm->client_ring.head
-    , &client->shm->client_ring.tail
-    , &client->tail_next
-    , &client->shm->client_ring.overflow
+    , &client->local_tail
+    , tail
     , FABIPC_CLIENT_RINGSIZE - 1
-    , size
   );
-
-  if(!msg) {
-    return 0;
-  }
-
-//  head = client->shm->client_ring.head;
-//printf("client: %7s client ring head %u\n", "produce", head);
-
-  return msg;
 }
 
-void API fab_client_post(fab_client * restrict client)
+void API fab_client_post(fab_client * restrict client, uint32_t tail)
 {
-//  uint32_t tail;
-//  uint32_t index;
-//  fabipc_page *page;
-//  fabipc_message *msg;
-
-//  tail = client->shm->client_ring.tail;
-//  index = tail & (FABIPC_SERVER_RINGSIZE - 1);
-//  page = &client->shm->client_ring.pages[index];
-//  msg = &page->msg;
-
-//printf("client: %7s client ring tail %u msg %p type %s size %u\n"
-//  , "post"
-//  , client->shm->client_ring.tail
-//  , msg
-//  , attrs32_name_byvalue(fabipc_msg_type_attrs, FABIPC_MSG_TYPE_OPT & msg->type)
-//  , msg->size
-//);
-
-  fabipc_post(&client->shm->client_ring.tail, client->tail_next, &client->shm->client_ring.waiters);
+  fabipc_post(
+      &client->shm->client_ring.tail
+    , &client->local_tail
+    , tail
+    , &client->shm->client_ring.waiters
+  );
 }
 
 fabipc_message * API fab_client_acquire(fab_client * restrict client)
 {
-//  uint32_t head;
-  fabipc_message *msg;
-
-//  head = client->shm->server_ring.head;
-
-  msg = fabipc_acquire(
+  return fabipc_acquire(
       client->shm->server_ring.pages
     , &client->shm->server_ring.head
     , &client->shm->server_ring.tail
     , FABIPC_SERVER_RINGSIZE - 1
   );
-
-  if(!msg) {
-    return 0;
-  }
-
-//printf("client: %7s server ring head %u msg %p type %s size %u\n"
-//  , "acquire"
-//  , head
-//  , msg
-//  , attrs32_name_byvalue(fabipc_msg_type_attrs, FABIPC_MSG_TYPE_OPT & msg->type)
-//  , msg->size
-//);
-
-  return msg;
 }
 
 void API fab_client_consume(fab_client * restrict client)
 {
-//printf("client: %7s server ring head %u\n", "consume", client->shm->server_ring.head);
-
   fabipc_consume(&client->shm->server_ring.head);
 }
-
-#if 0
-{
-  uint32_t head;
-  uint32_t tail;
-  uint32_t index;
-  uint32_t next;
-  struct fabipc_page *page;
-
-  RUNTIME_ASSERT(size <= (sizeof(fabipc_page) - sizeof(fabipc_message)));
-
-  head = client->shm->client_ring.head;
-  tail = client->shm->client_ring.tail;
-  smp_rmb();
-  next = tail + 1;
-  if(next == head) {
-    client->shm->client_ring.overflow = 1;
-    return 0;
-  }
-
-  index = tail & (FABIPC_CLIENT_RINGSIZE - 1);
-  page = &client->shm->client_ring.pages[index];
-
-//printf("client: cx msg at client ring index %u size %zu\n", index, size);
-
-  return &page->msg;
-}
-{
-  uint32_t tail;
-  uint32_t index;
-  int32_t one = 1;
-  int32_t zero = 0;
-
-  tail = client->shm->client_ring.tail;
-  index = tail & (FABIPC_CLIENT_RINGSIZE - 1);
-
-//  fatal(log_start, L_PROTOCOL, &N);
-//  xsayf("post(%u)\n%s", msg->len, msg->text);
-//  fatal(log_finish);
-
-
-  // post to the client ring
-  client->shm->client_pulse++;
-  client->shm->client_ring.tail++;
-
-bool woken = false;
-  if(atomic_cas_i32(&client->shm->client_ring.waiters, &one, &zero)) {
-    smp_wmb();
-    syscall(SYS_futex, FUTEX_WAKE, 1, 0, 0, 0);
-woken = true;
-  }
-
-//printf("client: tx msg at client ring index %u%s\n", index, woken ? " [*]" : "");
-}
-{
-  uint32_t head;
-  uint32_t tail;
-  uint32_t index;
-  struct fabipc_page *page;
-  struct fabipc_message *msg;
-
-  client->shm->client_pulse++;
-
-  head = client->shm->server_ring.head;
-  tail = client->shm->server_ring.tail;
-  smp_rmb();
-
-  if(head == tail) {
-    return 0;
-  }
-
-  /* acquire the next message */
-  index = head & (FABIPC_CLIENT_RINGSIZE - 1);
-  page = &client->shm->server_ring.pages[index];
-  msg = &page->msg;
-
-//printf("client: rx msg at server ring index %u\n", index);
-
-  return msg;
-}
-#endif

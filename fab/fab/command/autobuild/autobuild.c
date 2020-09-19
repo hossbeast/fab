@@ -72,9 +72,10 @@ static xapi connected(command * restrict cmd, fab_client * restrict client)
   narrator * request_narrator;
   narrator_fixed nstor;
   fabipc_message * msg;
+  uint32_t tail;
 
   /* subscribe to relevant events */
-  msg = fab_client_produce(client, 0);
+  msg = fab_client_produce(client, &tail);
   msg->type = FABIPC_MSG_EVENTSUB;
   msg->attrs = 0
     | (1 << (FABIPC_EVENT_FORMULA_EXEC_FORKED - 1))
@@ -84,10 +85,10 @@ static xapi connected(command * restrict cmd, fab_client * restrict client)
     | (1 << (FABIPC_EVENT_FORMULA_EXEC_WAITED - 1))
     | (1 << (FABIPC_EVENT_GOALS - 1))
     ;
-  fab_client_post(client);
+  fab_client_post(client, tail);
 
   /* send the request */
-  msg = fab_client_produce(client, 0);
+  msg = fab_client_produce(client, &tail);
   msg->type = FABIPC_MSG_REQUEST;
   msg->id = getpid();
 
@@ -99,7 +100,7 @@ static xapi connected(command * restrict cmd, fab_client * restrict client)
   fatal(narrator_xsayw, request_narrator, (char[]) { 0x00, 0x00 }, 2);
   msg->size = nstor.l;
 
-  fab_client_post(client);
+  fab_client_post(client, tail);
 
   finally : coda;
 }

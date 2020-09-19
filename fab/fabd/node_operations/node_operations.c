@@ -846,6 +846,7 @@ static xapi invalidate_visitor(vertex * v, void * arg, traversal_mode mode, int 
   handler_context *handler;
   fabipc_message *msg;
   graph_invalidation_context *invalidation = arg;
+  uint32_t tail;
 
   n = vertex_value(v);
   if(node_invalid_get(n)) {
@@ -865,12 +866,12 @@ static xapi invalidate_visitor(vertex * v, void * arg, traversal_mode mode, int 
     fatal(log_finish);
   }
 
-  if(events_would(FABIPC_EVENT_NODE_STALE, &handler, &msg))
+  if(events_would(FABIPC_EVENT_NODE_STALE, &handler, &msg, &tail))
   {
     z = node_relative_path_znload_bacon(msg->text, sizeof(msg->text), n, g_project_root);
     msg->size = z;
     msg->id = 0;
-    events_publish(handler, msg);
+    events_publish(handler, msg, tail);
   }
 
   finally : coda;
@@ -948,6 +949,7 @@ xapi node_ok(node * restrict n)
   uint16_t z;
   handler_context *handler;
   fabipc_message *msg;
+  uint32_t tail;
 
   if(node_state_get(n) == VERTEX_OK && n->valid_epoch == node_valid_epoch) {
     goto XAPI_FINALIZE;
@@ -965,12 +967,12 @@ xapi node_ok(node * restrict n)
     fatal(log_finish);
   }
 
-  if(events_would(FABIPC_EVENT_NODE_FRESH, &handler, &msg))
+  if(events_would(FABIPC_EVENT_NODE_FRESH, &handler, &msg, &tail))
   {
     z = node_relative_path_znload(msg->text, sizeof(msg->text), n, g_project_root);
     msg->size = z;
     msg->id = 0;
-    events_publish(handler, msg);
+    events_publish(handler, msg, tail);
   }
 
   finally : coda;

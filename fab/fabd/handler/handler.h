@@ -27,6 +27,7 @@
 
 struct request;
 struct handler_context;
+struct fabipc_message;
 
 /* lock for processing any request */
 extern int32_t handler_lock;
@@ -41,6 +42,20 @@ void handler_request_completes(struct handler_context * restrict ctx, int code, 
   __attribute__((nonnull(1)));
 
 void handler_request_complete(struct handler_context * restrict ctx, int code)
+  __attribute__((nonnull));
+
+/* send/receive messages over the channel */
+
+struct fabipc_message * handler_produce(struct handler_context * restrict ctx, uint32_t * restrict tail)
+  __attribute__((nonnull));
+
+void handler_post(struct handler_context * restrict ctx, uint32_t tail)
+  __attribute__((nonnull));
+
+struct fabipc_message * handler_acquire(struct handler_context * restrict ctx)
+  __attribute__((nonnull));
+
+void handler_consume(struct handler_context * restrict ctx)
   __attribute__((nonnull));
 
 #endif

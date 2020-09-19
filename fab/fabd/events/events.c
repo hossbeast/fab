@@ -22,8 +22,9 @@
 #include "events.h"
 #include "channel.h"
 #include "handler_thread.h"
+#include "handler.h"
 
-bool events_would(fabipc_event_type type, handler_context ** restrict first, fabipc_message ** restrict msg)
+bool events_would(fabipc_event_type type, handler_context ** restrict first, fabipc_message ** restrict msg, uint32_t * restrict tail)
 {
   handler_context *handler;
 
@@ -37,7 +38,7 @@ bool events_would(fabipc_event_type type, handler_context ** restrict first, fab
     }
 
     *first = handler;
-    *msg = channel_produce(handler->chan, &handler->tail_next, 0);
+    *msg = handler_produce(handler, tail);
     (*msg)->type = FABIPC_MSG_EVENTS;
     (*msg)->evtype = type;
     return true;
@@ -46,10 +47,11 @@ bool events_would(fabipc_event_type type, handler_context ** restrict first, fab
   return false;
 }
 
-void events_publish(handler_context * first, fabipc_message * restrict firstmsg)
+void events_publish(handler_context * first, fabipc_message * restrict firstmsg, uint32_t firsttail)
 {
   fabipc_message *msg;
   handler_context *handler;
+  uint32_t tail;
 
   stack_foreach(&g_handlers, handler, stk) {
     if(handler == first) {
@@ -64,12 +66,7 @@ void events_publish(handler_context * first, fabipc_message * restrict firstmsg)
       continue;
     }
 
-    if(!(msg = channel_produce(handler->chan, &handler->tail_next, 0))) {
-      printf("WTF\n");
-      abort();
-      continue;
-    }
-
+    msg = handler_produce(handler, &tail);
     msg->type = FABIPC_MSG_EVENTS;
     msg->evtype = firstmsg->evtype;
     msg->size = firstmsg->size;
@@ -78,8 +75,8 @@ void events_publish(handler_context * first, fabipc_message * restrict firstmsg)
       memcpy(msg->text, firstmsg->text, firstmsg->size);
     }
 
-    channel_post(handler->chan, handler->tail_next);
+    handler_post(handler, tail);
   }
 
-  channel_post(first->chan, first->tail_next);
+  handler_post(first, firsttail);
 }

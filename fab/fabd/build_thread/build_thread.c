@@ -154,6 +154,7 @@ static xapi build_thread()
   fabipc_message *msg;
   handler_context *evhandler;
   size_t z;
+  uint32_t tail;
 
 #if DEBUG || DEVEL
   logs(L_IPC, "starting");
@@ -185,7 +186,7 @@ static xapi build_thread()
         numranks = build_numranks;
         logf(L_BUILDER, "stage begin %3d", 0);
 
-        if(events_would(FABIPC_EVENT_BUILD_START, &evhandler, &msg)) {
+        if(events_would(FABIPC_EVENT_BUILD_START, &evhandler, &msg, &tail)) {
 printf("build-start would %d\n", 1);
           z = 0;
           z += znload_u16(msg->text + z, sizeof(msg->text) - z, descriptor_fab_build_state.id);
@@ -194,7 +195,7 @@ printf("build-start would %d\n", 1);
           z += znload_u16(msg->text + z, sizeof(msg->text) - z, build_numranks);
           z += znload_u16(msg->text + z, sizeof(msg->text) - z, descriptor_fab_build_numexecs.id);
           z += znload_u16(msg->text + z, sizeof(msg->text) - z, llist_count(&sn->lln));
-          events_publish(evhandler, msg);
+          events_publish(evhandler, msg, tail);
         } else {
 printf("build-start would %d\n", 0);
         }
@@ -305,11 +306,11 @@ printf("build-start would %d\n", 0);
         sn = 0;
         fatal(sigutil_tgkill, g_params.pid, handler->tid, SIGUSR1);
 
-        if(events_would(FABIPC_EVENT_BUILD_END, &evhandler, &msg)) {
+        if(events_would(FABIPC_EVENT_BUILD_END, &evhandler, &msg, &tail)) {
           z = 0;
           z += znload_u16(msg->text + z, sizeof(msg->text) - z, descriptor_fab_build_state.id);
           z += znload_int(msg->text + z, sizeof(msg->text) - z, &handler->build_state, sizeof(handler->build_state));
-          events_publish(evhandler, msg);
+          events_publish(evhandler, msg, tail);
         }
       }
     }

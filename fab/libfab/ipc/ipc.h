@@ -30,77 +30,6 @@
 
 struct attrs32;
 
-/// FABIPC_DATA
-//
-// LOCATION
-//  {FABIPCDIR,FABTMPDIR}/*   files which need not be executable
-//
-// DESCRIPTION
-//  ugo+rw   world read/write
-//
-// RATIONALE
-//
-#define FABIPC_MODE_DATA 0666
-
-/// FABIPC_CODE
-//
-// LOCATION
-//  {FABIPCDIR,FABTMPDIR}/*    files which need to be executable
-//
-// DESCRIPTION
-//  ugo+rwx   world read/write/exec
-//
-// RATIONALE
-//
-#define FABIPC_MODE_CODE 0777
-
-/// FABIPC_DIR
-//
-// LOCATION
-//  {FABIPCDIR,FABTMPDIR}/*    directories
-//
-// DESCRIPTION
-//  ugo+rwx   world read/write/exec
-//
-// RATIONALE
-//
-#define FABIPC_MODE_DIR  0777
-
-/// ipc_lock_obtain
-//
-// SUMMARY
-//  attempt to obtain an exclusive lock
-//
-// PARAMETERS
-//  pid  - (returns) zero if the lock was obtained, otherwise pid of lock holder
-//  fmt  - printf-style format string for the path to the lockfile
-//
-xapi fabipc_lockfile_obtain(pid_t * restrict pid, int * restrict fd, char * const restrict fmt, ...)
-  __attribute__((nonnull(1, 2, 3)))
-  __attribute__((format(printf, 3, 4)));
-
-/// ipc_lock_update
-//
-// SUMMARY
-//  write the pid of the current process to a lockfile
-//
-// PARAMETERS
-//  fmt   - printf-style format string for the path to the lockfile
-//
-xapi fabipc_lockfile_update(char * const restrict fmt, ...)
-  __attribute__((nonnull(1)));
-
-/// ipc_lock_release
-//
-// SUMMARY
-//  unlink a lockfile
-//
-// PARAMETERS
-//  fmt   - printf-style format string for the path to the lockfile
-//
-xapi fabipc_lockfile_release(char * const restrict fmt, ...)
-  __attribute__((nonnull(1)));
-
 #define FABIPC_SHMSIZE          (16 * 1024 * 1024)
 #define FABIPC_PAGESIZE         8096
 #define FABIPC_CLIENT_RINGSIZE  1024
@@ -112,8 +41,6 @@ xapi fabipc_lockfile_release(char * const restrict fmt, ...)
   DEF(FABIPC_MSG_REQUEST   , "request"  , FABIPC_MSG_TYPE_OPT, 0x01)  /* request, a bacon-formatted string */  \
   DEF(FABIPC_MSG_RESPONSE  , "response" , FABIPC_MSG_TYPE_OPT, 0x02)  /* response, a bacon-formatted string */ \
   DEF(FABIPC_MSG_RESULT    , "result"   , FABIPC_MSG_TYPE_OPT, 0x03)  /* end of request processing */          \
-  DEF(FABIPC_MSG_STDOUT    , "stdout"   , FABIPC_MSG_TYPE_OPT, 0x04)  /* stdout text */                        \
-  DEF(FABIPC_MSG_STDERR    , "stderr"   , FABIPC_MSG_TYPE_OPT, 0x05)  /* stderr text */                        \
   DEF(FABIPC_MSG_EVENTSUB  , "eventsub" , FABIPC_MSG_TYPE_OPT, 0x06)  /* subscribe to events */                \
   DEF(FABIPC_MSG_EVENTS    , "events"   , FABIPC_MSG_TYPE_OPT, 0x07)  /* events */                             \
 
@@ -138,6 +65,8 @@ extern struct attrs32 * fabipc_msg_type_attrs;
   DEF(FABIPC_EVENT_GOALS               , "goals"               , FABIPC_EVENT_TYPE_OPT, 0x09)  /* goals changed */              \
   DEF(FABIPC_EVENT_BUILD_START         , "build-start"         , FABIPC_EVENT_TYPE_OPT, 0x0a)  /* build started */              \
   DEF(FABIPC_EVENT_BUILD_END           , "build-end"           , FABIPC_EVENT_TYPE_OPT, 0x0b)  /* build ended */                \
+  DEF(FABIPC_EVENT_STDOUT              , "fabd-stdout"         , FABIPC_EVENT_TYPE_OPT, 0x0c)  /* fabd - stdout text */         \
+  DEF(FABIPC_EVENT_STDERR              , "fabd-stderr"         , FABIPC_EVENT_TYPE_OPT, 0x0d)  /* fabd - stderr text */         \
 
 typedef enum fabipc_event_type {
 #undef DEF
@@ -200,7 +129,6 @@ typedef struct fabipc_channel
         uint32_t head;          // updated by server when message(s) consumed
         uint32_t tail;          // updated by client when message(s) posted
         int32_t __attribute__((aligned(4))) waiters;
-        uint8_t overflow;
       } client_ring;
 
       // messages server -> client
@@ -209,7 +137,6 @@ typedef struct fabipc_channel
         uint32_t head;          // updated by client when message(s) consumed
         uint32_t tail;          // updated by server when message(s) posted
         int32_t __attribute__((aligned(4))) waiters;
-        uint8_t overflow;
       } server_ring;
     };
 
@@ -219,68 +146,51 @@ typedef struct fabipc_channel
 
 STATIC_ASSERT(sizeof(fabipc_channel) == FABIPC_SHMSIZE);
 
-static inline fabipc_message * fabipc_produce(fabipc_page *pages, uint32_t *headp, uint32_t *tailp, uint32_t *nextp, uint8_t *overflow, uint32_t mask, size_t size)
-{
-  uint32_t head;
-  uint32_t tail;
-  uint32_t index;
-  uint32_t next;
-  struct fabipc_page *page;
+/*
+ * Get the next message in the ring. Multiple producers are supported.
+ *
+ * pages      - pointer to the ring pages
+ * ring_head  - pointer to ring head
+ * local_tail - local tail counter
+ * tail_used  - (returns) local tail value seen
+ * mask       - mask based on ring size
+ */
+fabipc_message * fabipc_produce(
+    fabipc_page * restrict pages
+  , uint32_t * restrict ring_head
+  , uint32_t * restrict local_tail
+  , uint32_t * restrict tail_used
+  , uint32_t tail_mask
+)
+  __attribute__((nonnull));
 
-  RUNTIME_ASSERT(size <= sizeof_member(fabipc_message, text));
+/*
+ * Post produced messages to the ring
+ *
+ * ring_tail - pointer to the ring tail
+ * local_tail - local tail counter
+ * tail_used - local tail value to post
+ * waiters   - pointer to ring waiters
+ */
+void fabipc_post(
+    uint32_t * restrict ring_tail
+  , uint32_t * restrict local_tail
+  , uint32_t tail_used
+  , int32_t * restrict waiters
+)
+  __attribute__((nonnull));
 
-  head = *headp;
-  tail = *tailp;
-  smp_rmb();
-  next = tail + 1;
-  if(next == head) {
-    *overflow = 1;
-    return 0;
-  }
+/*
+ * There may be only one consumer.
+ *
+ */
+fabipc_message * fabipc_acquire(fabipc_page * restrict pages, uint32_t * restrict ring_head, uint32_t * restrict ring_tail, uint32_t mask)
+  __attribute__((nonnull));
 
-  *nextp = next;
-  index = tail & mask;
-  page = &pages[index];
-// id is user-supplied
-//  page->msg.id = (tail >> 1) + 1;
-  return &page->msg;
-}
-
-static inline void fabipc_post(uint32_t * restrict tail, uint32_t next, int32_t * restrict waiters)
-{
-  int32_t one = 1;
-  int32_t zero = 0;
-
-  *tail = next;
-  if(atomic_cas_i32(waiters, &one, &zero)) {
-    smp_wmb();
-    syscall(SYS_futex, FUTEX_WAKE, 1, 0, 0, 0);
-  }
-}
-
-static inline fabipc_message * fabipc_acquire(fabipc_page *pages, uint32_t *headp, uint32_t *tailp, uint32_t mask)
-{
-  uint32_t head;
-  uint32_t tail;
-  uint32_t index;
-  fabipc_page *page;
-
-  head = *headp;
-  tail = *tailp;
-  smp_rmb();
-
-  if(head == tail) {
-    return 0;
-  }
-
-  index = head & mask;
-  page = &pages[index];
-  return &page->msg;
-}
-
-static inline void fabipc_consume(uint32_t *head)
-{
-  (*head)++;
-}
+/*
+ *
+ */
+void fabipc_consume(uint32_t * restrict head)
+  __attribute__((nonnull));
 
 #endif

@@ -15,14 +15,14 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef _INVALIDATE_COMMAND_H
-#define _INVALIDATE_COMMAND_H
+#ifndef _TOUCH_COMMAND_H
+#define _TOUCH_COMMAND_H
 
 #include "xapi.h"
 #include "command.h"
 
-extern struct command invalidate_command;
+extern struct command touch_command;
 
-xapi invalidate_command_cleanup(void);
+xapi touch_command_cleanup(void);
 
 #endif

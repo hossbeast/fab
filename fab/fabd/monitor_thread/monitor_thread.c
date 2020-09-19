@@ -70,12 +70,6 @@ xapi monitor_thread()
   rcu_register(rcu_self);
   while(g_params.thread_count)
   {
-//    union quiesced Xn;
-//    Xn.u32 = rcu_quiesce(rcu_self);
-//printf("monitor quiesce %d\n", goats);
-//    monitor_quiesce_r[monitor_boats] = Xn.r;
-//    monitor_quiesce_n[monitor_boats] = Xn.n;
-//    monitor_boats++;
     rcu_quiesce(rcu_self);
 
     fatal(sigutil_timedwait, &r, &sigs, &info, &interval);

@@ -43,20 +43,25 @@ xapi stats_cleanup(void);
 //
 xapi stats_report(void);
 
-#define STATS_TABLE                                                    \
-  DEF(stathash, uint64_t)       /* file is stat-hashed */              \
-  DEF(contenthash, uint64_t)    /* file is content-hash */             \
-  DEF(bsexec, uint64_t)         /* build slot is executed */           \
-  DEF(fstree_refresh, uint64_t) /* fstree refreshes */                 \
-  DEF(module_reload, uint64_t)  /* module is reloaded */               \
-  DEF(model_reload, uint64_t)   /* model is reloaded */                \
-  DEF(module_refresh, uint64_t) /* module is refreshed */              \
-  DEF(rules, uint64_t)          /* extant rules */                     \
-  DEF(rmas, uint64_t)           /* extant rmas */                      \
-  DEF(models, uint64_t)         /* extant models */                    \
-  DEF(modules, uint64_t)        /* extant modules */                   \
-  DEF(nodes_shadow, uint64_t)   /* extant shadow nodes */              \
-  DEF(nodes, uint64_t)          /* extant nodes */                     \
+#define STATS_TABLE                                                              \
+  DEF(stathash, uint64_t)                 /* file is stat-hashed */              \
+  DEF(contenthash, uint64_t)              /* file is content-hash */             \
+  DEF(bsexec, uint64_t)                   /* build slot is executed */           \
+  DEF(fstree_refresh, uint64_t)           /* fstree refreshes */                 \
+  DEF(module_reload, uint64_t)            /* module is reloaded */               \
+  DEF(model_reload, uint64_t)             /* model is reloaded */                \
+  DEF(module_refresh, uint64_t)           /* module is refreshed */              \
+  DEF(rules, uint64_t)                    /* extant rules */                     \
+  DEF(rmas, uint64_t)                     /* extant rmas */                      \
+  DEF(models, uint64_t)                   /* extant models */                    \
+  DEF(modules, uint64_t)                  /* extant modules */                   \
+  DEF(nodes_shadow, uint64_t)             /* extant shadow nodes */              \
+  DEF(nodes, uint64_t)                    /* extant nodes */                     \
+  DEF(rcu_synchronize_nobody, uint32_t)                                          \
+  DEF(rcu_synchronize_wait, uint32_t)                                            \
+  DEF(rcu_quiesce_nograce, uint32_t)                                             \
+  DEF(rcu_quiesce_notlast, uint32_t)                                             \
+  DEF(rcu_quiesce_wake, uint32_t)                                                \
 
 extern struct g_stats {
 #undef DEF
