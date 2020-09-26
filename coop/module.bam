@@ -1,0 +1,11 @@
+use cc
+use executable  # this module builds an executable
+
+rule **/*.o -> coop : executable/bam-cc
+rule coop -> //module/targets
+
+rule **/(*).S -> $^D/$1.?.o : cc/bam-cc
+
+var : {
+  cflags : [ -fverbose-asm -save-temps ]
+}
