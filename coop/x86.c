@@ -7,14 +7,7 @@
 #include "task.h"
 #include "x86.h"
 
-extern void *readrip(void);
-extern void jump_task_init(struct x86_task *task);
-extern void jump(struct x86_task *task);
-
-static void jumpframe(void)
-{
-  printf("jumpframe\n");
-}
+task main_task;
 
 #define containerof(ptr, type, member) ({        \
   void *__mptr = (void*)(ptr);                   \
@@ -30,7 +23,38 @@ static inline uint64_t pad_to(uint64_t x, uint64_t align)
   return align - r;
 }
 
-void x86_task_clone_finalize(x86_task *task)
+/* topmost frame of base task jumps here */
+void x86_base_task_finalize(x86_task *task, void *thread_sp)
+{
+extern x86_task sub_task;
+
+  printf("base-task-finalize %p -> %p\n", task, &sub_task);
+
+  while(sub_task.state != FINALIZED)
+  {
+    task_switch(&sub_task);
+  }
+
+printf("base-task-exit %p\n", task);
+
+  task->state = FINALIZED;
+  x86_task_thread_restore(thread_sp);
+}
+
+/* topmost frame of sub-tasks jump here */
+void x86_sub_task_finalize(x86_task *task)
+{
+  printf("sub-task-finalize %p\n", task);
+
+  task->state = FINALIZED;
+  x86_task_resume(main_task.sp);
+}
+
+/*
+ * x86 task api
+ */
+
+void x86_task_clone_finish(x86_task *task)
 {
   x86_registers *regs;
   size_t size;
@@ -54,18 +78,22 @@ void x86_task_clone_finalize(x86_task *task)
   /* build the new task stack */
   sp = task->stack + sizeof(task->stack);
 
-  /* allocate the jump frame */
-  sp -= 16;
+  /* alignment padding */
+  sp -= pad;
+
+  /* allocate the top frame */
+  sp -= 24;
 
   /* allocate the start frame */
-  sp -= (size + pad);
+  sp -= size;
 
   /* allocate the resume frame */
   sp -= sizeof(*regs);
   task->sp = sp;
 
   /* build the resume frame */
-  regs->rbp = (uint64_t)sp + sizeof(*regs) + size; // base of the start frame (highest address)
+  // frame pointer - base of the start frame (highest address)
+  regs->rbp = (uint64_t)sp + sizeof(*regs) + size;
   memcpy(sp, regs, sizeof(*regs));
   sp += sizeof(*regs);
 
@@ -73,62 +101,98 @@ void x86_task_clone_finalize(x86_task *task)
   memcpy(sp, rsp, size);
   sp += size;
 
-  /* the jump frame */
-  *(void**)sp = jumpframe;
+  /* build the top frame */
+  *(void**)sp = (void*)0xdeadbeef; // dummy frame pointer
+  sp += 8;
+
+  *(void**)sp = x86_sub_task_finalize_jump;
+  sp += 8;
+
+  *(void**)sp = task;
 }
 
-void x86_task_run(x86_task *task, void (*fn)(void *))
+void x86_base_task_run(x86_task *task, void (*fn)(void *))
 {
+  x86_registers *regs;
   void *sp;
+  size_t pad;
 
 printf("x86_task run, task %p fn %p\n", task, fn);
 printf(" stack 0x%08lx - 0x%08lx\n", (uint64_t)(void*)task->stack, (uint64_t)(void*)(task->stack + sizeof(task->stack)));
 
-  sp = task->stack + sizeof(task->stack);
-  sp -= sizeof(task->sp->regs);
+  pad = 0;
 
+  /* build the base task stack */
+  sp = task->stack + sizeof(task->stack);
+
+  /* alignment padding */
+  sp -= pad;
+
+  /* allocate the start frame */
+  sp -= sizeof(*regs);
+
+  /* allocate the top frame */
+  sp -= 24;
+
+  task->sp = sp;
+  regs = sp;
+
+  /* build the start frame */
+  memset(regs, 0, sizeof(*regs));
+  regs->rip = (uintptr_t)fn;
+  sp += sizeof(*regs);
+
+  /* build the top frame */
+  *(void**)sp = x86_base_task_finalize_jump; // x86_task_thread_restore;
+  sp += 8;
+
+  /* arg0 to x86_base_task_finalize */
+  *(void**)sp = task;
+  sp += 8;
+
+  /* x86_base_task_switch sets these 8 bytes to the original thread stack pointer */
+  sp += 8;
+
+  task->state = RUNNING;
+  x86_base_task_switch(task->sp);
+
+  //memset(&task->sp->regs, 0, sizeof(task->sp->regs));
+  //task->sp->regs.rip = (uintptr_t)fn;
+//  sp -= 8; /* for thread restore */
+//  sp -= 8; /* 16b alignment */
+//  sp -= 8; /* wtf */
 //printf(" sp 0x%08lx : end - 0x%lx\n", (uint64_t)sp, (uint64_t)(task->stack + sizeof(task->stack)) - (uint64_t)sp);
 //printf(" sp/64 %lu\n", (uint64_t)sp % 64);
 //printf(" sp/32 %lu\n", (uint64_t)sp % 32);
 //printf(" sp/16 %lu\n", (uint64_t)sp % 16);
 //printf(" sp/8  %lu\n", (uint64_t)sp % 8);
-
-  /* allocate the jump frame */
-  sp -= 16;
-
-  sp -= 8; /* for primeval restore */
-//  sp -= 8; /* 16b alignment */
-//  sp -= 8; /* wtf */
-
-printf(" sp 0x%08lx : end - 0x%lx\n", (uint64_t)sp, (uint64_t)(task->stack + sizeof(task->stack)) - (uint64_t)sp);
-printf(" sp/64 %lu\n", (uint64_t)sp % 64);
-printf(" sp/32 %lu\n", (uint64_t)sp % 32);
-printf(" sp/16 %lu\n", (uint64_t)sp % 16);
-printf(" sp/8  %lu\n", (uint64_t)sp % 8);
-
-  task->sp = sp;
-  memset(&task->sp->regs, 0, sizeof(task->sp->regs));
-  task->sp->regs.rip = (uintptr_t)fn;
-
-  /* return address beyond the base frame */
-  task->sp->u64[8] = (uintptr_t)x86_task_primeval_restore;
-  //    sp->u64[9] = primeval stack pointer
-
-printf("task jump\n");
-  x86_task_jump(task->sp);
+  ///* return address beyond the base frame */
+  //task->sp->u64[8] = (uintptr_t)x86_task_thread_restore;
+  ////    sp->u64[9] = primeval thread stack pointer
 }
+
+/*
+ * task api
+ */
 
 void task_switch(x86_task *next)
 {
   x86_task *prev;
 
   prev = task_active;
+  prev->state = SUSPENDED;
+
   task_active = next;
+  next->state = RUNNING;
 
   x86_task_switch(&prev->sp, &next->sp);
 }
 
 #if 0
+extern void *readrip(void);
+extern void jump_task_init(struct x86_task *task);
+extern void jump(struct x86_task *task);
+
 void x86_task_clone_finalize(x86_task *task)
 {
   x86_task *active;

@@ -7,9 +7,13 @@
 !_TAG_PROGRAM_URL	https://ctags.io/	/official site/
 !_TAG_PROGRAM_VERSION	0.0.0	/a3c87ab5/
 L2	main.s	/^.L2:$/;"	l
+L2	x86.s	/^.L2:$/;"	l
 L3	main.s	/^.L3:$/;"	l
+L3	x86.s	/^.L3:$/;"	l
 L4	main.s	/^.L4:$/;"	l
 L5	main.s	/^.L5:$/;"	l
+L7	main.s	/^.L7:$/;"	l
+L8	main.s	/^.L8:$/;"	l
 LASF0	main.s	/^.LASF0:$/;"	l
 LASF0	task.s	/^.LASF0:$/;"	l
 LASF0	x86.s	/^.LASF0:$/;"	l
@@ -41,13 +45,16 @@ LASF17	main.s	/^.LASF17:$/;"	l
 LASF17	task.s	/^.LASF17:$/;"	l
 LASF17	x86.s	/^.LASF17:$/;"	l
 LASF18	main.s	/^.LASF18:$/;"	l
+LASF18	task.s	/^.LASF18:$/;"	l
 LASF18	x86.s	/^.LASF18:$/;"	l
 LASF19	main.s	/^.LASF19:$/;"	l
+LASF19	task.s	/^.LASF19:$/;"	l
 LASF19	x86.s	/^.LASF19:$/;"	l
 LASF2	main.s	/^.LASF2:$/;"	l
 LASF2	task.s	/^.LASF2:$/;"	l
 LASF2	x86.s	/^.LASF2:$/;"	l
 LASF20	main.s	/^.LASF20:$/;"	l
+LASF20	task.s	/^.LASF20:$/;"	l
 LASF20	x86.s	/^.LASF20:$/;"	l
 LASF21	main.s	/^.LASF21:$/;"	l
 LASF21	x86.s	/^.LASF21:$/;"	l
@@ -58,18 +65,28 @@ LASF23	x86.s	/^.LASF23:$/;"	l
 LASF24	main.s	/^.LASF24:$/;"	l
 LASF24	x86.s	/^.LASF24:$/;"	l
 LASF25	main.s	/^.LASF25:$/;"	l
+LASF25	x86.s	/^.LASF25:$/;"	l
 LASF26	main.s	/^.LASF26:$/;"	l
+LASF26	x86.s	/^.LASF26:$/;"	l
 LASF27	main.s	/^.LASF27:$/;"	l
+LASF27	x86.s	/^.LASF27:$/;"	l
 LASF28	main.s	/^.LASF28:$/;"	l
+LASF28	x86.s	/^.LASF28:$/;"	l
 LASF29	main.s	/^.LASF29:$/;"	l
+LASF29	x86.s	/^.LASF29:$/;"	l
 LASF3	main.s	/^.LASF3:$/;"	l
 LASF3	task.s	/^.LASF3:$/;"	l
 LASF3	x86.s	/^.LASF3:$/;"	l
 LASF30	main.s	/^.LASF30:$/;"	l
+LASF30	x86.s	/^.LASF30:$/;"	l
 LASF31	main.s	/^.LASF31:$/;"	l
+LASF31	x86.s	/^.LASF31:$/;"	l
 LASF32	main.s	/^.LASF32:$/;"	l
+LASF32	x86.s	/^.LASF32:$/;"	l
 LASF33	main.s	/^.LASF33:$/;"	l
+LASF33	x86.s	/^.LASF33:$/;"	l
 LASF34	main.s	/^.LASF34:$/;"	l
+LASF34	x86.s	/^.LASF34:$/;"	l
 LASF35	main.s	/^.LASF35:$/;"	l
 LASF36	main.s	/^.LASF36:$/;"	l
 LASF37	main.s	/^.LASF37:$/;"	l
@@ -127,7 +144,6 @@ LC0	main.s	/^.LC0:$/;"	l
 LC0	x86.s	/^.LC0:$/;"	l
 LC1	main.s	/^.LC1:$/;"	l
 LC1	x86.s	/^.LC1:$/;"	l
-LC10	x86.s	/^.LC10:$/;"	l
 LC2	main.s	/^.LC2:$/;"	l
 LC2	x86.s	/^.LC2:$/;"	l
 LC3	main.s	/^.LC3:$/;"	l
@@ -143,23 +159,26 @@ LC7	x86.s	/^.LC7:$/;"	l
 LC8	main.s	/^.LC8:$/;"	l
 LC8	x86.s	/^.LC8:$/;"	l
 LC9	main.s	/^.LC9:$/;"	l
-LC9	x86.s	/^.LC9:$/;"	l
 LFB0	task.s	/^.LFB0:$/;"	l
-LFB0	x86.s	/^.LFB0:$/;"	l
-LFB1	task.s	/^.LFB1:$/;"	l
-LFB1	x86.s	/^.LFB1:$/;"	l
-LFB2	task.s	/^.LFB2:$/;"	l
+LFB10	x86.s	/^.LFB10:$/;"	l
 LFB6	main.s	/^.LFB6:$/;"	l
+LFB6	x86.s	/^.LFB6:$/;"	l
 LFB7	main.s	/^.LFB7:$/;"	l
+LFB7	x86.s	/^.LFB7:$/;"	l
 LFB8	main.s	/^.LFB8:$/;"	l
+LFB8	x86.s	/^.LFB8:$/;"	l
+LFB9	main.s	/^.LFB9:$/;"	l
+LFB9	x86.s	/^.LFB9:$/;"	l
 LFE0	task.s	/^.LFE0:$/;"	l
-LFE0	x86.s	/^.LFE0:$/;"	l
-LFE1	task.s	/^.LFE1:$/;"	l
-LFE1	x86.s	/^.LFE1:$/;"	l
-LFE2	task.s	/^.LFE2:$/;"	l
+LFE10	x86.s	/^.LFE10:$/;"	l
 LFE6	main.s	/^.LFE6:$/;"	l
+LFE6	x86.s	/^.LFE6:$/;"	l
 LFE7	main.s	/^.LFE7:$/;"	l
+LFE7	x86.s	/^.LFE7:$/;"	l
 LFE8	main.s	/^.LFE8:$/;"	l
+LFE8	x86.s	/^.LFE8:$/;"	l
+LFE9	main.s	/^.LFE9:$/;"	l
+LFE9	x86.s	/^.LFE9:$/;"	l
 Ldebug_abbrev0	main.s	/^.Ldebug_abbrev0:$/;"	l
 Ldebug_abbrev0	task.s	/^.Ldebug_abbrev0:$/;"	l
 Ldebug_abbrev0	x86.s	/^.Ldebug_abbrev0:$/;"	l
@@ -179,13 +198,8 @@ _TASK_ARCH_H	arch.h	/^#define _TASK_ARCH_H$/;"	d
 _TASK_H	task.h	/^#define _TASK_H$/;"	d
 _TASK_x86_H	x86.h	/^#define _TASK_x86_H$/;"	d
 __anon109a1de1010a	x86.h	/^  union {$/;"	u	struct:x86_task
-__anon109a1de1020a	x86.h	/^  union {$/;"	u	struct:x86_task
-arch_task_clone	x86-asm.S	/^arch_task_clone:$/;"	l
-arch_task_clone	x86-asm.s	/^arch_task_clone:$/;"	l
-arch_task_run	x86-asm.S	/^arch_task_run:$/;"	l
-arch_task_run	x86-asm.s	/^arch_task_run:$/;"	l
-arch_task_switch	x86-asm.S	/^arch_task_switch:$/;"	l
-arch_task_switch	x86-asm.s	/^arch_task_switch:$/;"	l
+boats	main.c	/^static void boats()$/;"	f	typeref:typename:void	file:
+boats	main.s	/^boats:$/;"	l
 comain	main.c	/^static void comain(void * arg)$/;"	f	typeref:typename:void	file:
 comain	main.s	/^comain:$/;"	l
 containerof	x86.c	/^#define containerof(/;"	d	file:
@@ -193,34 +207,38 @@ goats	main.c	/^static void goats(void)$/;"	f	typeref:typename:void	file:
 goats	main.s	/^goats:$/;"	l
 main	main.c	/^int main(int argc, char ** argv)$/;"	f	typeref:typename:int
 main	main.s	/^main:$/;"	l
-main_task	main.c	/^static x86_task main_task;$/;"	v	typeref:typename:x86_task	file:
-name	task.h	/^  char name[64];$/;"	m	struct:task	typeref:typename:char[64]
-name	x86.h	/^    char name[64];$/;"	m	union:x86_task::__anon109a1de1010a	typeref:typename:char[64]
+main_task	x86.c	/^task main_task;$/;"	v	typeref:typename:task
+main_task	x86.s	/^main_task:$/;"	l
+pad	x86.h	/^  char pad[64];$/;"	m	struct:x86_task	typeref:typename:char[64]
+pad_to	x86.c	/^static inline uint64_t pad_to(uint64_t x, uint64_t align)$/;"	f	typeref:typename:uint64_t	file:
+pad_to	x86.s	/^pad_to:$/;"	l
 r12	x86.h	/^  uint64_t r12;$/;"	m	struct:x86_registers	typeref:typename:uint64_t
 r13	x86.h	/^  uint64_t r13;$/;"	m	struct:x86_registers	typeref:typename:uint64_t
 r14	x86.h	/^  uint64_t r14;$/;"	m	struct:x86_registers	typeref:typename:uint64_t
 r15	x86.h	/^  uint64_t r15;$/;"	m	struct:x86_registers	typeref:typename:uint64_t
 rbp	x86.h	/^  uint64_t rbp;$/;"	m	struct:x86_registers	typeref:typename:uint64_t
 rbx	x86.h	/^  uint64_t rbx;$/;"	m	struct:x86_registers	typeref:typename:uint64_t
-regs	x86.h	/^    x86_registers regs;$/;"	m	union:x86_task::__anon109a1de1020a	typeref:typename:x86_registers
+regs	x86.h	/^    x86_registers regs;$/;"	m	union:x86_task::__anon109a1de1010a	typeref:typename:x86_registers
 rflags	x86.h	/^  uint64_t rflags;$/;"	m	struct:x86_registers	typeref:typename:uint64_t
 rip	x86.h	/^  uint64_t rip;         \/\/ 8 fields$/;"	m	struct:x86_registers	typeref:typename:uint64_t
-sp	x86.h	/^  } *sp;$/;"	m	struct:x86_task	typeref:union:x86_task::__anon109a1de1020a *
+sp	x86.h	/^  } *sp;$/;"	m	struct:x86_task	typeref:union:x86_task::__anon109a1de1010a *
 stack	x86.h	/^  char __attribute__((aligned(16))) stack[1024 * 1024 * 2]; \/\/ 2 MB stacks$/;"	m	struct:x86_task	typeref:typename:char[]
-sub_task	main.c	/^static x86_task sub_task;$/;"	v	typeref:typename:x86_task	file:
-t	x86.h	/^    struct task t;$/;"	m	union:x86_task::__anon109a1de1010a	typeref:struct:task
-task	task.h	/^typedef struct task {$/;"	s
-task	task.h	/^} task;$/;"	t	typeref:struct:task
+sub_task	main.c	/^static task sub_task;$/;"	v	typeref:typename:task	file:
+subtask_finalize	x86.c	/^static void subtask_finalize(void)$/;"	f	typeref:typename:void	file:
+subtask_finalize	x86.s	/^subtask_finalize:$/;"	l
+task	x86.h	/^typedef struct x86_task task;$/;"	t	typeref:struct:x86_task
 task_active	task.c	/^task *task_active;$/;"	v	typeref:typename:task *
 task_active	task.s	/^task_active:$/;"	l
-task_clone	task.c	/^void task_clone(task * dst)$/;"	f	typeref:typename:void
-task_clone	task.s	/^task_clone:$/;"	l
 task_run	task.c	/^void task_run(task *task, void (*fn)(void *))$/;"	f	typeref:typename:void
 task_run	task.s	/^task_run:$/;"	l
-task_switch	task.c	/^void task_switch(struct task *task)$/;"	f	typeref:typename:void
-task_switch	task.s	/^task_switch:$/;"	l
-u64	x86.h	/^    uint64_t u64[0];$/;"	m	union:x86_task::__anon109a1de1020a	typeref:typename:uint64_t[0]
-u8	x86.h	/^    char u8[0];$/;"	m	union:x86_task::__anon109a1de1020a	typeref:typename:char[0]
+task_switch	x86.c	/^void task_switch(x86_task *next)$/;"	f	typeref:typename:void
+task_switch	x86.s	/^task_switch:$/;"	l
+u64	x86.h	/^    uint64_t u64[0];$/;"	m	union:x86_task::__anon109a1de1010a	typeref:typename:uint64_t[0]
+u8	x86.h	/^    char u8[0];$/;"	m	union:x86_task::__anon109a1de1010a	typeref:typename:char[0]
+x86_base_task_jump	x86-asm.S	/^x86_base_task_jump:$/;"	l
+x86_base_task_jump	x86-asm.s	/^x86_base_task_jump:$/;"	l
+x86_base_task_run	x86.c	/^void x86_base_task_run(x86_task *task, void (*fn)(void *))$/;"	f	typeref:typename:void
+x86_base_task_run	x86.s	/^x86_base_task_run:$/;"	l
 x86_registers	x86.h	/^typedef struct x86_registers {$/;"	s
 x86_registers	x86.h	/^} x86_registers;$/;"	t	typeref:struct:x86_registers
 x86_task	x86.h	/^typedef struct x86_task {$/;"	s
@@ -229,15 +247,9 @@ x86_task_clone	x86-asm.S	/^x86_task_clone:$/;"	l
 x86_task_clone	x86-asm.s	/^x86_task_clone:$/;"	l
 x86_task_clone_finalize	x86.c	/^void x86_task_clone_finalize(x86_task *task)$/;"	f	typeref:typename:void
 x86_task_clone_finalize	x86.s	/^x86_task_clone_finalize:$/;"	l
-x86_task_jump	x86-asm.S	/^x86_task_jump:$/;"	l
-x86_task_jump	x86-asm.s	/^x86_task_jump:$/;"	l
-x86_task_primeval_restore	x86-asm.S	/^x86_task_primeval_restore:$/;"	l
-x86_task_primeval_restore	x86-asm.s	/^x86_task_primeval_restore:$/;"	l
 x86_task_resume	x86-asm.S	/^x86_task_resume:$/;"	l
 x86_task_resume	x86-asm.s	/^x86_task_resume:$/;"	l
-x86_task_run	x86.c	/^void x86_task_run(x86_task *task, void (*fn)(void *))$/;"	f	typeref:typename:void
-x86_task_run	x86.s	/^x86_task_run:$/;"	l
-x86_task_suspend	x86-asm.S	/^x86_task_suspend:$/;"	l
-x86_task_suspend	x86-asm.s	/^x86_task_suspend:$/;"	l
 x86_task_switch	x86-asm.S	/^x86_task_switch:$/;"	l
 x86_task_switch	x86-asm.s	/^x86_task_switch:$/;"	l
+x86_task_thread_restore	x86-asm.S	/^x86_task_thread_restore:$/;"	l
+x86_task_thread_restore	x86-asm.s	/^x86_task_thread_restore:$/;"	l
