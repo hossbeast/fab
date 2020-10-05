@@ -17,4 +17,4 @@
 
 1   BADARGS   failed to parse command-line arguments
 2   NOCOMMAND specify a subcommand
-3   NOCHANNEL server died
+3   CHANTIME  server failed to respond within the timeout

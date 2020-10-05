@@ -6,144 +6,391 @@
 !_TAG_PROGRAM_NAME	Universal Ctags	/Derived from Exuberant Ctags/
 !_TAG_PROGRAM_URL	https://ctags.io/	/official site/
 !_TAG_PROGRAM_VERSION	0.0.0	/a3c87ab5/
-L2	main.s	/^.L2:$/;"	l
-L2	x86.s	/^.L2:$/;"	l
+ALIGNEDOF	macros.h	/^#define ALIGNEDOF(/;"	d
+API	types.h	/^#define API$/;"	d
+APIDATA	types.h	/^#define APIDATA$/;"	d
+ARRAY_LEN	macros.h	/^#define ARRAY_LEN(/;"	d
+EXECUTING	x86.h	/^  EXECUTING,      \/* currently executing in a domain *\/$/;"	e	enum:x86_fiber_state
+FINALIZED	x86.h	/^  FINALIZED,      \/* exited *\/$/;"	e	enum:x86_fiber_state
+INTCMP	macros.h	/^#define INTCMP(/;"	d
+JOINING	x86.h	/^  JOINING,        \/* waiting for clones - not in any queue *\/$/;"	e	enum:x86_fiber_state
+L10	llist.s	/^.L10:$/;"	l
+L10	main.s	/^.L10:$/;"	l
+L10	x86.s	/^.L10:$/;"	l
+L11	llist.s	/^.L11:$/;"	l
+L11	main.s	/^.L11:$/;"	l
+L12	main.s	/^.L12:$/;"	l
+L12	x86.s	/^.L12:$/;"	l
+L13	llist.s	/^.L13:$/;"	l
+L13	main.s	/^.L13:$/;"	l
+L13	x86.s	/^.L13:$/;"	l
+L14	llist.s	/^.L14:$/;"	l
+L14	main.s	/^.L14:$/;"	l
+L15	llist.s	/^.L15:$/;"	l
+L15	x86.s	/^.L15:$/;"	l
+L16	main.s	/^.L16:$/;"	l
+L17	x86.s	/^.L17:$/;"	l
+L18	main.s	/^.L18:$/;"	l
+L18	x86.s	/^.L18:$/;"	l
+L19	x86.s	/^.L19:$/;"	l
+L20	main.s	/^.L20:$/;"	l
+L20	x86.s	/^.L20:$/;"	l
+L21	llist.s	/^.L21:$/;"	l
+L21	main.s	/^.L21:$/;"	l
+L21	x86.s	/^.L21:$/;"	l
+L22	llist.s	/^.L22:$/;"	l
+L22	main.s	/^.L22:$/;"	l
+L22	x86.s	/^.L22:$/;"	l
+L23	main.s	/^.L23:$/;"	l
+L24	x86.s	/^.L24:$/;"	l
+L25	llist.s	/^.L25:$/;"	l
+L25	main.s	/^.L25:$/;"	l
+L25	x86.s	/^.L25:$/;"	l
+L26	llist.s	/^.L26:$/;"	l
+L26	main.s	/^.L26:$/;"	l
+L27	main.s	/^.L27:$/;"	l
+L28	llist.s	/^.L28:$/;"	l
+L28	main.s	/^.L28:$/;"	l
+L28	x86.s	/^.L28:$/;"	l
+L29	llist.s	/^.L29:$/;"	l
+L29	main.s	/^.L29:$/;"	l
 L3	main.s	/^.L3:$/;"	l
 L3	x86.s	/^.L3:$/;"	l
-L4	main.s	/^.L4:$/;"	l
-L5	main.s	/^.L5:$/;"	l
-L7	main.s	/^.L7:$/;"	l
+L30	x86.s	/^.L30:$/;"	l
+L31	x86.s	/^.L31:$/;"	l
+L32	x86.s	/^.L32:$/;"	l
+L33	main.s	/^.L33:$/;"	l
+L33	x86.s	/^.L33:$/;"	l
+L34	main.s	/^.L34:$/;"	l
+L35	main.s	/^.L35:$/;"	l
+L36	main.s	/^.L36:$/;"	l
+L36	x86.s	/^.L36:$/;"	l
+L37	main.s	/^.L37:$/;"	l
+L41	x86.s	/^.L41:$/;"	l
+L42	x86.s	/^.L42:$/;"	l
+L43	x86.s	/^.L43:$/;"	l
+L44	x86.s	/^.L44:$/;"	l
+L46	x86.s	/^.L46:$/;"	l
+L47	x86.s	/^.L47:$/;"	l
+L48	x86.s	/^.L48:$/;"	l
+L49	x86.s	/^.L49:$/;"	l
+L51	x86.s	/^.L51:$/;"	l
+L52	x86.s	/^.L52:$/;"	l
+L53	x86.s	/^.L53:$/;"	l
+L54	x86.s	/^.L54:$/;"	l
+L6	main.s	/^.L6:$/;"	l
+L6	x86.s	/^.L6:$/;"	l
 L8	main.s	/^.L8:$/;"	l
+L8	x86.s	/^.L8:$/;"	l
+L9	llist.s	/^.L9:$/;"	l
+LASF0	llist.s	/^.LASF0:$/;"	l
 LASF0	main.s	/^.LASF0:$/;"	l
 LASF0	task.s	/^.LASF0:$/;"	l
 LASF0	x86.s	/^.LASF0:$/;"	l
+LASF1	llist.s	/^.LASF1:$/;"	l
 LASF1	main.s	/^.LASF1:$/;"	l
 LASF1	task.s	/^.LASF1:$/;"	l
 LASF1	x86.s	/^.LASF1:$/;"	l
+LASF10	llist.s	/^.LASF10:$/;"	l
 LASF10	main.s	/^.LASF10:$/;"	l
 LASF10	task.s	/^.LASF10:$/;"	l
 LASF10	x86.s	/^.LASF10:$/;"	l
+LASF100	main.s	/^.LASF100:$/;"	l
+LASF100	x86.s	/^.LASF100:$/;"	l
+LASF101	main.s	/^.LASF101:$/;"	l
+LASF101	x86.s	/^.LASF101:$/;"	l
+LASF102	main.s	/^.LASF102:$/;"	l
+LASF102	x86.s	/^.LASF102:$/;"	l
+LASF103	main.s	/^.LASF103:$/;"	l
+LASF103	x86.s	/^.LASF103:$/;"	l
+LASF104	main.s	/^.LASF104:$/;"	l
+LASF104	x86.s	/^.LASF104:$/;"	l
+LASF105	main.s	/^.LASF105:$/;"	l
+LASF105	x86.s	/^.LASF105:$/;"	l
+LASF106	main.s	/^.LASF106:$/;"	l
+LASF106	x86.s	/^.LASF106:$/;"	l
+LASF107	main.s	/^.LASF107:$/;"	l
+LASF107	x86.s	/^.LASF107:$/;"	l
+LASF108	main.s	/^.LASF108:$/;"	l
+LASF108	x86.s	/^.LASF108:$/;"	l
+LASF109	main.s	/^.LASF109:$/;"	l
+LASF109	x86.s	/^.LASF109:$/;"	l
+LASF11	llist.s	/^.LASF11:$/;"	l
 LASF11	main.s	/^.LASF11:$/;"	l
 LASF11	task.s	/^.LASF11:$/;"	l
 LASF11	x86.s	/^.LASF11:$/;"	l
+LASF110	main.s	/^.LASF110:$/;"	l
+LASF110	x86.s	/^.LASF110:$/;"	l
+LASF111	main.s	/^.LASF111:$/;"	l
+LASF111	x86.s	/^.LASF111:$/;"	l
+LASF112	main.s	/^.LASF112:$/;"	l
+LASF112	x86.s	/^.LASF112:$/;"	l
+LASF113	main.s	/^.LASF113:$/;"	l
+LASF113	x86.s	/^.LASF113:$/;"	l
+LASF114	main.s	/^.LASF114:$/;"	l
+LASF115	main.s	/^.LASF115:$/;"	l
+LASF116	main.s	/^.LASF116:$/;"	l
+LASF117	main.s	/^.LASF117:$/;"	l
+LASF118	main.s	/^.LASF118:$/;"	l
+LASF119	main.s	/^.LASF119:$/;"	l
+LASF12	llist.s	/^.LASF12:$/;"	l
 LASF12	main.s	/^.LASF12:$/;"	l
 LASF12	task.s	/^.LASF12:$/;"	l
 LASF12	x86.s	/^.LASF12:$/;"	l
+LASF120	main.s	/^.LASF120:$/;"	l
+LASF13	llist.s	/^.LASF13:$/;"	l
 LASF13	main.s	/^.LASF13:$/;"	l
 LASF13	task.s	/^.LASF13:$/;"	l
 LASF13	x86.s	/^.LASF13:$/;"	l
+LASF14	llist.s	/^.LASF14:$/;"	l
 LASF14	main.s	/^.LASF14:$/;"	l
-LASF14	task.s	/^.LASF14:$/;"	l
 LASF14	x86.s	/^.LASF14:$/;"	l
+LASF15	llist.s	/^.LASF15:$/;"	l
 LASF15	main.s	/^.LASF15:$/;"	l
-LASF15	task.s	/^.LASF15:$/;"	l
 LASF15	x86.s	/^.LASF15:$/;"	l
+LASF16	llist.s	/^.LASF16:$/;"	l
 LASF16	main.s	/^.LASF16:$/;"	l
-LASF16	task.s	/^.LASF16:$/;"	l
 LASF16	x86.s	/^.LASF16:$/;"	l
+LASF17	llist.s	/^.LASF17:$/;"	l
 LASF17	main.s	/^.LASF17:$/;"	l
-LASF17	task.s	/^.LASF17:$/;"	l
 LASF17	x86.s	/^.LASF17:$/;"	l
+LASF18	llist.s	/^.LASF18:$/;"	l
 LASF18	main.s	/^.LASF18:$/;"	l
-LASF18	task.s	/^.LASF18:$/;"	l
 LASF18	x86.s	/^.LASF18:$/;"	l
+LASF19	llist.s	/^.LASF19:$/;"	l
 LASF19	main.s	/^.LASF19:$/;"	l
-LASF19	task.s	/^.LASF19:$/;"	l
 LASF19	x86.s	/^.LASF19:$/;"	l
+LASF2	llist.s	/^.LASF2:$/;"	l
 LASF2	main.s	/^.LASF2:$/;"	l
 LASF2	task.s	/^.LASF2:$/;"	l
 LASF2	x86.s	/^.LASF2:$/;"	l
+LASF20	llist.s	/^.LASF20:$/;"	l
 LASF20	main.s	/^.LASF20:$/;"	l
-LASF20	task.s	/^.LASF20:$/;"	l
 LASF20	x86.s	/^.LASF20:$/;"	l
+LASF21	llist.s	/^.LASF21:$/;"	l
 LASF21	main.s	/^.LASF21:$/;"	l
 LASF21	x86.s	/^.LASF21:$/;"	l
+LASF22	llist.s	/^.LASF22:$/;"	l
 LASF22	main.s	/^.LASF22:$/;"	l
 LASF22	x86.s	/^.LASF22:$/;"	l
+LASF23	llist.s	/^.LASF23:$/;"	l
 LASF23	main.s	/^.LASF23:$/;"	l
 LASF23	x86.s	/^.LASF23:$/;"	l
+LASF24	llist.s	/^.LASF24:$/;"	l
 LASF24	main.s	/^.LASF24:$/;"	l
 LASF24	x86.s	/^.LASF24:$/;"	l
+LASF25	llist.s	/^.LASF25:$/;"	l
 LASF25	main.s	/^.LASF25:$/;"	l
 LASF25	x86.s	/^.LASF25:$/;"	l
+LASF26	llist.s	/^.LASF26:$/;"	l
 LASF26	main.s	/^.LASF26:$/;"	l
 LASF26	x86.s	/^.LASF26:$/;"	l
+LASF27	llist.s	/^.LASF27:$/;"	l
 LASF27	main.s	/^.LASF27:$/;"	l
 LASF27	x86.s	/^.LASF27:$/;"	l
+LASF28	llist.s	/^.LASF28:$/;"	l
 LASF28	main.s	/^.LASF28:$/;"	l
 LASF28	x86.s	/^.LASF28:$/;"	l
+LASF29	llist.s	/^.LASF29:$/;"	l
 LASF29	main.s	/^.LASF29:$/;"	l
 LASF29	x86.s	/^.LASF29:$/;"	l
+LASF3	llist.s	/^.LASF3:$/;"	l
 LASF3	main.s	/^.LASF3:$/;"	l
 LASF3	task.s	/^.LASF3:$/;"	l
 LASF3	x86.s	/^.LASF3:$/;"	l
+LASF30	llist.s	/^.LASF30:$/;"	l
 LASF30	main.s	/^.LASF30:$/;"	l
 LASF30	x86.s	/^.LASF30:$/;"	l
+LASF31	llist.s	/^.LASF31:$/;"	l
 LASF31	main.s	/^.LASF31:$/;"	l
 LASF31	x86.s	/^.LASF31:$/;"	l
+LASF32	llist.s	/^.LASF32:$/;"	l
 LASF32	main.s	/^.LASF32:$/;"	l
 LASF32	x86.s	/^.LASF32:$/;"	l
+LASF33	llist.s	/^.LASF33:$/;"	l
 LASF33	main.s	/^.LASF33:$/;"	l
 LASF33	x86.s	/^.LASF33:$/;"	l
+LASF34	llist.s	/^.LASF34:$/;"	l
 LASF34	main.s	/^.LASF34:$/;"	l
 LASF34	x86.s	/^.LASF34:$/;"	l
 LASF35	main.s	/^.LASF35:$/;"	l
+LASF35	x86.s	/^.LASF35:$/;"	l
 LASF36	main.s	/^.LASF36:$/;"	l
+LASF36	x86.s	/^.LASF36:$/;"	l
 LASF37	main.s	/^.LASF37:$/;"	l
+LASF37	x86.s	/^.LASF37:$/;"	l
 LASF38	main.s	/^.LASF38:$/;"	l
+LASF38	x86.s	/^.LASF38:$/;"	l
 LASF39	main.s	/^.LASF39:$/;"	l
+LASF39	x86.s	/^.LASF39:$/;"	l
+LASF4	llist.s	/^.LASF4:$/;"	l
 LASF4	main.s	/^.LASF4:$/;"	l
 LASF4	task.s	/^.LASF4:$/;"	l
 LASF4	x86.s	/^.LASF4:$/;"	l
 LASF40	main.s	/^.LASF40:$/;"	l
+LASF40	x86.s	/^.LASF40:$/;"	l
 LASF41	main.s	/^.LASF41:$/;"	l
+LASF41	x86.s	/^.LASF41:$/;"	l
 LASF42	main.s	/^.LASF42:$/;"	l
+LASF42	x86.s	/^.LASF42:$/;"	l
 LASF43	main.s	/^.LASF43:$/;"	l
+LASF43	x86.s	/^.LASF43:$/;"	l
 LASF44	main.s	/^.LASF44:$/;"	l
+LASF44	x86.s	/^.LASF44:$/;"	l
 LASF45	main.s	/^.LASF45:$/;"	l
+LASF45	x86.s	/^.LASF45:$/;"	l
 LASF46	main.s	/^.LASF46:$/;"	l
+LASF46	x86.s	/^.LASF46:$/;"	l
 LASF47	main.s	/^.LASF47:$/;"	l
+LASF47	x86.s	/^.LASF47:$/;"	l
 LASF48	main.s	/^.LASF48:$/;"	l
+LASF48	x86.s	/^.LASF48:$/;"	l
 LASF49	main.s	/^.LASF49:$/;"	l
+LASF49	x86.s	/^.LASF49:$/;"	l
+LASF5	llist.s	/^.LASF5:$/;"	l
 LASF5	main.s	/^.LASF5:$/;"	l
 LASF5	task.s	/^.LASF5:$/;"	l
 LASF5	x86.s	/^.LASF5:$/;"	l
 LASF50	main.s	/^.LASF50:$/;"	l
+LASF50	x86.s	/^.LASF50:$/;"	l
 LASF51	main.s	/^.LASF51:$/;"	l
+LASF51	x86.s	/^.LASF51:$/;"	l
 LASF52	main.s	/^.LASF52:$/;"	l
+LASF52	x86.s	/^.LASF52:$/;"	l
 LASF53	main.s	/^.LASF53:$/;"	l
+LASF53	x86.s	/^.LASF53:$/;"	l
 LASF54	main.s	/^.LASF54:$/;"	l
+LASF54	x86.s	/^.LASF54:$/;"	l
 LASF55	main.s	/^.LASF55:$/;"	l
+LASF55	x86.s	/^.LASF55:$/;"	l
 LASF56	main.s	/^.LASF56:$/;"	l
+LASF56	x86.s	/^.LASF56:$/;"	l
 LASF57	main.s	/^.LASF57:$/;"	l
+LASF57	x86.s	/^.LASF57:$/;"	l
 LASF58	main.s	/^.LASF58:$/;"	l
+LASF58	x86.s	/^.LASF58:$/;"	l
 LASF59	main.s	/^.LASF59:$/;"	l
+LASF59	x86.s	/^.LASF59:$/;"	l
+LASF6	llist.s	/^.LASF6:$/;"	l
 LASF6	main.s	/^.LASF6:$/;"	l
 LASF6	task.s	/^.LASF6:$/;"	l
 LASF6	x86.s	/^.LASF6:$/;"	l
 LASF60	main.s	/^.LASF60:$/;"	l
+LASF60	x86.s	/^.LASF60:$/;"	l
 LASF61	main.s	/^.LASF61:$/;"	l
+LASF61	x86.s	/^.LASF61:$/;"	l
 LASF62	main.s	/^.LASF62:$/;"	l
+LASF62	x86.s	/^.LASF62:$/;"	l
 LASF63	main.s	/^.LASF63:$/;"	l
+LASF63	x86.s	/^.LASF63:$/;"	l
 LASF64	main.s	/^.LASF64:$/;"	l
+LASF64	x86.s	/^.LASF64:$/;"	l
 LASF65	main.s	/^.LASF65:$/;"	l
+LASF65	x86.s	/^.LASF65:$/;"	l
 LASF66	main.s	/^.LASF66:$/;"	l
+LASF66	x86.s	/^.LASF66:$/;"	l
 LASF67	main.s	/^.LASF67:$/;"	l
+LASF67	x86.s	/^.LASF67:$/;"	l
 LASF68	main.s	/^.LASF68:$/;"	l
+LASF68	x86.s	/^.LASF68:$/;"	l
 LASF69	main.s	/^.LASF69:$/;"	l
+LASF69	x86.s	/^.LASF69:$/;"	l
+LASF7	llist.s	/^.LASF7:$/;"	l
 LASF7	main.s	/^.LASF7:$/;"	l
 LASF7	task.s	/^.LASF7:$/;"	l
 LASF7	x86.s	/^.LASF7:$/;"	l
+LASF70	main.s	/^.LASF70:$/;"	l
+LASF70	x86.s	/^.LASF70:$/;"	l
+LASF71	main.s	/^.LASF71:$/;"	l
+LASF71	x86.s	/^.LASF71:$/;"	l
+LASF72	main.s	/^.LASF72:$/;"	l
+LASF72	x86.s	/^.LASF72:$/;"	l
+LASF73	main.s	/^.LASF73:$/;"	l
+LASF73	x86.s	/^.LASF73:$/;"	l
+LASF74	main.s	/^.LASF74:$/;"	l
+LASF74	x86.s	/^.LASF74:$/;"	l
+LASF75	main.s	/^.LASF75:$/;"	l
+LASF75	x86.s	/^.LASF75:$/;"	l
+LASF76	main.s	/^.LASF76:$/;"	l
+LASF76	x86.s	/^.LASF76:$/;"	l
+LASF77	main.s	/^.LASF77:$/;"	l
+LASF77	x86.s	/^.LASF77:$/;"	l
+LASF78	main.s	/^.LASF78:$/;"	l
+LASF78	x86.s	/^.LASF78:$/;"	l
+LASF79	main.s	/^.LASF79:$/;"	l
+LASF79	x86.s	/^.LASF79:$/;"	l
+LASF8	llist.s	/^.LASF8:$/;"	l
 LASF8	main.s	/^.LASF8:$/;"	l
 LASF8	task.s	/^.LASF8:$/;"	l
 LASF8	x86.s	/^.LASF8:$/;"	l
+LASF80	main.s	/^.LASF80:$/;"	l
+LASF80	x86.s	/^.LASF80:$/;"	l
+LASF81	main.s	/^.LASF81:$/;"	l
+LASF81	x86.s	/^.LASF81:$/;"	l
+LASF82	main.s	/^.LASF82:$/;"	l
+LASF82	x86.s	/^.LASF82:$/;"	l
+LASF83	main.s	/^.LASF83:$/;"	l
+LASF83	x86.s	/^.LASF83:$/;"	l
+LASF84	main.s	/^.LASF84:$/;"	l
+LASF84	x86.s	/^.LASF84:$/;"	l
+LASF85	main.s	/^.LASF85:$/;"	l
+LASF85	x86.s	/^.LASF85:$/;"	l
+LASF86	main.s	/^.LASF86:$/;"	l
+LASF86	x86.s	/^.LASF86:$/;"	l
+LASF87	main.s	/^.LASF87:$/;"	l
+LASF87	x86.s	/^.LASF87:$/;"	l
+LASF88	main.s	/^.LASF88:$/;"	l
+LASF88	x86.s	/^.LASF88:$/;"	l
+LASF89	main.s	/^.LASF89:$/;"	l
+LASF89	x86.s	/^.LASF89:$/;"	l
+LASF9	llist.s	/^.LASF9:$/;"	l
 LASF9	main.s	/^.LASF9:$/;"	l
 LASF9	task.s	/^.LASF9:$/;"	l
 LASF9	x86.s	/^.LASF9:$/;"	l
+LASF90	main.s	/^.LASF90:$/;"	l
+LASF90	x86.s	/^.LASF90:$/;"	l
+LASF91	main.s	/^.LASF91:$/;"	l
+LASF91	x86.s	/^.LASF91:$/;"	l
+LASF92	main.s	/^.LASF92:$/;"	l
+LASF92	x86.s	/^.LASF92:$/;"	l
+LASF93	main.s	/^.LASF93:$/;"	l
+LASF93	x86.s	/^.LASF93:$/;"	l
+LASF94	main.s	/^.LASF94:$/;"	l
+LASF94	x86.s	/^.LASF94:$/;"	l
+LASF95	main.s	/^.LASF95:$/;"	l
+LASF95	x86.s	/^.LASF95:$/;"	l
+LASF96	main.s	/^.LASF96:$/;"	l
+LASF96	x86.s	/^.LASF96:$/;"	l
+LASF97	main.s	/^.LASF97:$/;"	l
+LASF97	x86.s	/^.LASF97:$/;"	l
+LASF98	main.s	/^.LASF98:$/;"	l
+LASF98	x86.s	/^.LASF98:$/;"	l
+LASF99	main.s	/^.LASF99:$/;"	l
+LASF99	x86.s	/^.LASF99:$/;"	l
+LBB2	main.s	/^.LBB2:$/;"	l
+LBB2	x86.s	/^.LBB2:$/;"	l
+LBB3	x86.s	/^.LBB3:$/;"	l
+LBB4	x86.s	/^.LBB4:$/;"	l
+LBB5	x86.s	/^.LBB5:$/;"	l
+LBB6	x86.s	/^.LBB6:$/;"	l
+LBB7	x86.s	/^.LBB7:$/;"	l
+LBE2	main.s	/^.LBE2:$/;"	l
+LBE2	x86.s	/^.LBE2:$/;"	l
+LBE3	x86.s	/^.LBE3:$/;"	l
+LBE4	x86.s	/^.LBE4:$/;"	l
+LBE5	x86.s	/^.LBE5:$/;"	l
+LBE6	x86.s	/^.LBE6:$/;"	l
+LBE7	x86.s	/^.LBE7:$/;"	l
 LC0	main.s	/^.LC0:$/;"	l
 LC0	x86.s	/^.LC0:$/;"	l
 LC1	main.s	/^.LC1:$/;"	l
 LC1	x86.s	/^.LC1:$/;"	l
+LC10	main.s	/^.LC10:$/;"	l
+LC10	x86.s	/^.LC10:$/;"	l
+LC11	x86.s	/^.LC11:$/;"	l
+LC12	x86.s	/^.LC12:$/;"	l
+LC13	x86.s	/^.LC13:$/;"	l
+LC14	x86.s	/^.LC14:$/;"	l
 LC2	main.s	/^.LC2:$/;"	l
 LC2	x86.s	/^.LC2:$/;"	l
 LC3	main.s	/^.LC3:$/;"	l
@@ -159,97 +406,305 @@ LC7	x86.s	/^.LC7:$/;"	l
 LC8	main.s	/^.LC8:$/;"	l
 LC8	x86.s	/^.LC8:$/;"	l
 LC9	main.s	/^.LC9:$/;"	l
-LFB0	task.s	/^.LFB0:$/;"	l
-LFB10	x86.s	/^.LFB10:$/;"	l
-LFB6	main.s	/^.LFB6:$/;"	l
-LFB6	x86.s	/^.LFB6:$/;"	l
-LFB7	main.s	/^.LFB7:$/;"	l
-LFB7	x86.s	/^.LFB7:$/;"	l
-LFB8	main.s	/^.LFB8:$/;"	l
-LFB8	x86.s	/^.LFB8:$/;"	l
-LFB9	main.s	/^.LFB9:$/;"	l
-LFB9	x86.s	/^.LFB9:$/;"	l
-LFE0	task.s	/^.LFE0:$/;"	l
-LFE10	x86.s	/^.LFE10:$/;"	l
-LFE6	main.s	/^.LFE6:$/;"	l
-LFE6	x86.s	/^.LFE6:$/;"	l
-LFE7	main.s	/^.LFE7:$/;"	l
-LFE7	x86.s	/^.LFE7:$/;"	l
-LFE8	main.s	/^.LFE8:$/;"	l
-LFE8	x86.s	/^.LFE8:$/;"	l
-LFE9	main.s	/^.LFE9:$/;"	l
-LFE9	x86.s	/^.LFE9:$/;"	l
+LC9	x86.s	/^.LC9:$/;"	l
+LFB11	llist.s	/^.LFB11:$/;"	l
+LFB12	llist.s	/^.LFB12:$/;"	l
+LFB13	llist.s	/^.LFB13:$/;"	l
+LFB14	llist.s	/^.LFB14:$/;"	l
+LFB15	llist.s	/^.LFB15:$/;"	l
+LFB15	main.s	/^.LFB15:$/;"	l
+LFB15	x86.s	/^.LFB15:$/;"	l
+LFB16	llist.s	/^.LFB16:$/;"	l
+LFB16	main.s	/^.LFB16:$/;"	l
+LFB16	x86.s	/^.LFB16:$/;"	l
+LFB17	llist.s	/^.LFB17:$/;"	l
+LFB17	main.s	/^.LFB17:$/;"	l
+LFB17	x86.s	/^.LFB17:$/;"	l
+LFB18	llist.s	/^.LFB18:$/;"	l
+LFB18	main.s	/^.LFB18:$/;"	l
+LFB18	x86.s	/^.LFB18:$/;"	l
+LFB19	llist.s	/^.LFB19:$/;"	l
+LFB19	main.s	/^.LFB19:$/;"	l
+LFB19	x86.s	/^.LFB19:$/;"	l
+LFB20	llist.s	/^.LFB20:$/;"	l
+LFB20	main.s	/^.LFB20:$/;"	l
+LFB20	x86.s	/^.LFB20:$/;"	l
+LFB21	llist.s	/^.LFB21:$/;"	l
+LFB21	main.s	/^.LFB21:$/;"	l
+LFB21	x86.s	/^.LFB21:$/;"	l
+LFB22	x86.s	/^.LFB22:$/;"	l
+LFB23	x86.s	/^.LFB23:$/;"	l
+LFB24	x86.s	/^.LFB24:$/;"	l
+LFB25	x86.s	/^.LFB25:$/;"	l
+LFB26	x86.s	/^.LFB26:$/;"	l
+LFB27	x86.s	/^.LFB27:$/;"	l
+LFB28	x86.s	/^.LFB28:$/;"	l
+LFE11	llist.s	/^.LFE11:$/;"	l
+LFE12	llist.s	/^.LFE12:$/;"	l
+LFE13	llist.s	/^.LFE13:$/;"	l
+LFE14	llist.s	/^.LFE14:$/;"	l
+LFE15	llist.s	/^.LFE15:$/;"	l
+LFE15	main.s	/^.LFE15:$/;"	l
+LFE15	x86.s	/^.LFE15:$/;"	l
+LFE16	llist.s	/^.LFE16:$/;"	l
+LFE16	main.s	/^.LFE16:$/;"	l
+LFE16	x86.s	/^.LFE16:$/;"	l
+LFE17	llist.s	/^.LFE17:$/;"	l
+LFE17	main.s	/^.LFE17:$/;"	l
+LFE17	x86.s	/^.LFE17:$/;"	l
+LFE18	llist.s	/^.LFE18:$/;"	l
+LFE18	main.s	/^.LFE18:$/;"	l
+LFE18	x86.s	/^.LFE18:$/;"	l
+LFE19	llist.s	/^.LFE19:$/;"	l
+LFE19	main.s	/^.LFE19:$/;"	l
+LFE19	x86.s	/^.LFE19:$/;"	l
+LFE20	llist.s	/^.LFE20:$/;"	l
+LFE20	main.s	/^.LFE20:$/;"	l
+LFE20	x86.s	/^.LFE20:$/;"	l
+LFE21	llist.s	/^.LFE21:$/;"	l
+LFE21	main.s	/^.LFE21:$/;"	l
+LFE21	x86.s	/^.LFE21:$/;"	l
+LFE22	x86.s	/^.LFE22:$/;"	l
+LFE23	x86.s	/^.LFE23:$/;"	l
+LFE24	x86.s	/^.LFE24:$/;"	l
+LFE25	x86.s	/^.LFE25:$/;"	l
+LFE26	x86.s	/^.LFE26:$/;"	l
+LFE27	x86.s	/^.LFE27:$/;"	l
+LFE28	x86.s	/^.LFE28:$/;"	l
+LLIST_INITIALIZER	llist.h	/^#define LLIST_INITIALIZER(/;"	d
+Ldebug_abbrev0	llist.s	/^.Ldebug_abbrev0:$/;"	l
 Ldebug_abbrev0	main.s	/^.Ldebug_abbrev0:$/;"	l
 Ldebug_abbrev0	task.s	/^.Ldebug_abbrev0:$/;"	l
 Ldebug_abbrev0	x86.s	/^.Ldebug_abbrev0:$/;"	l
+Ldebug_info0	llist.s	/^.Ldebug_info0:$/;"	l
 Ldebug_info0	main.s	/^.Ldebug_info0:$/;"	l
 Ldebug_info0	task.s	/^.Ldebug_info0:$/;"	l
 Ldebug_info0	x86.s	/^.Ldebug_info0:$/;"	l
+Ldebug_line0	llist.s	/^.Ldebug_line0:$/;"	l
 Ldebug_line0	main.s	/^.Ldebug_line0:$/;"	l
 Ldebug_line0	task.s	/^.Ldebug_line0:$/;"	l
 Ldebug_line0	x86.s	/^.Ldebug_line0:$/;"	l
+Letext0	llist.s	/^.Letext0:$/;"	l
 Letext0	main.s	/^.Letext0:$/;"	l
 Letext0	task.s	/^.Letext0:$/;"	l
 Letext0	x86.s	/^.Letext0:$/;"	l
+Ltext0	llist.s	/^.Ltext0:$/;"	l
 Ltext0	main.s	/^.Ltext0:$/;"	l
 Ltext0	task.s	/^.Ltext0:$/;"	l
 Ltext0	x86.s	/^.Ltext0:$/;"	l
+MAX	macros.h	/^#define MAX(/;"	d
+MIN	macros.h	/^#define MIN(/;"	d
+MM	macros.h	/^#define MM(/;"	d
+MMS	macros.h	/^#define MMS(/;"	d
+NARGS	macros.h	/^#define NARGS(/;"	d
+QUOTE	macros.h	/^#define QUOTE(/;"	d
+RUNNING	x86.h	/^  RUNNING,        \/* ready to execute - in a queue *\/$/;"	e	enum:x86_fiber_state
+RUNTIME_ABORT	macros.h	/^#define RUNTIME_ABORT(/;"	d
+RUNTIME_ASSERT	macros.h	/^#define RUNTIME_ASSERT(/;"	d
+STACKSIZE	main.c	/^#define STACKSIZE /;"	d	file:
+STATIC_ASSERT	types.h	/^#define STATIC_ASSERT(/;"	d
+UNINITIALIZED	x86.h	/^  UNINITIALIZED = 0,$/;"	e	enum:x86_fiber_state
+XQUOTE	macros.h	/^#define XQUOTE(/;"	d
+_BARRIER	barriers.h	/^#define _BARRIER$/;"	d
+_COMMON_TYPES_H	types.h	/^#define _COMMON_TYPES_H$/;"	d
+_LOCKS	locks.h	/^#define _LOCKS$/;"	d
+_MACROS_H	macros.h	/^#define _MACROS_H$/;"	d
 _TASK_ARCH_H	arch.h	/^#define _TASK_ARCH_H$/;"	d
 _TASK_H	task.h	/^#define _TASK_H$/;"	d
 _TASK_x86_H	x86.h	/^#define _TASK_x86_H$/;"	d
-__anon109a1de1010a	x86.h	/^  union {$/;"	u	struct:x86_task
-boats	main.c	/^static void boats()$/;"	f	typeref:typename:void	file:
-boats	main.s	/^boats:$/;"	l
-comain	main.c	/^static void comain(void * arg)$/;"	f	typeref:typename:void	file:
+_THREADS	threads.h	/^#define _THREADS$/;"	d
+_VALYRIA_LLIST_H	llist.h	/^#define _VALYRIA_LLIST_H$/;"	d
+__anon0d38083b0108	main.c	/^static struct {$/;"	s	file:
+__anon0d38083b0208	main.c	/^  struct {$/;"	s	struct:__anon0d38083b0108	file:
+__anon109a1de1010a	x86.h	/^  union {$/;"	u	struct:x86_fiber
+__anon109a1de10208	x86.h	/^    struct {$/;"	s	union:x86_fiber::__anon109a1de1010a
+children	x86.h	/^      uint16_t children;        \/\/ number of extant clones (fibers + tasks)$/;"	m	struct:x86_fiber::__anon109a1de1010a::__anon109a1de10208	typeref:typename:uint16_t
+clz_u32	macros.h	/^#define clz_u32(/;"	d
+cmt_join	x86.c	/^void cmt_join(x86_domain *thread)$/;"	f	typeref:typename:void
+cmt_join	x86.s	/^cmt_join:$/;"	l
+cmt_run	x86.c	/^void cmt_run(x86_domain * restrict domain, x86_fiber * restrict fiber, void (*fn)(x86_domain *))$/;"	f	typeref:typename:void
+cmt_run	x86.s	/^cmt_run:$/;"	l
+cmt_yield	x86.c	/^void cmt_yield(x86_domain *thread)$/;"	f	typeref:typename:void
+cmt_yield	x86.s	/^cmt_yield:$/;"	l
+comain	main.c	/^static void comain(x86_domain *domain)$/;"	f	typeref:typename:void	file:
 comain	main.s	/^comain:$/;"	l
-containerof	x86.c	/^#define containerof(/;"	d	file:
-goats	main.c	/^static void goats(void)$/;"	f	typeref:typename:void	file:
-goats	main.s	/^goats:$/;"	l
+compute	main.c	/^static void compute(x86_domain *domain)$/;"	f	typeref:typename:void	file:
+compute	main.s	/^compute:$/;"	l
+containerof	types.h	/^#define containerof(/;"	d
+die_expr	macros.h	/^#define die_expr(/;"	d
+domain	x86.h	/^      x86_domain *domain;$/;"	m	struct:x86_fiber::__anon109a1de1010a::__anon109a1de10208	typeref:typename:x86_domain *
+domain	x86.h	/^typedef struct x86_domain domain;$/;"	t	typeref:struct:x86_domain
+done	main.c	/^static int done;$/;"	v	typeref:typename:int	file:
+executing	x86.h	/^  struct x86_fiber *executing;  \/\/ fiber which is presently executing$/;"	m	struct:x86_domain	typeref:struct:x86_fiber *
+ffsll	macros.h	/^#define ffsll(/;"	d
+fiber	x86.h	/^typedef struct x86_fiber fiber;$/;"	t	typeref:struct:x86_fiber
+fieldof	macros.h	/^#define fieldof(/;"	d
+futex	x86.h	/^  int32_t __attribute__((aligned(4))) futex;$/;"	m	struct:x86_domain	typeref:typename:int32_t
+futex_acquire	locks.h	/^static inline void futex_acquire(int32_t * futex)$/;"	f	typeref:typename:void
+futex_acquire	main.s	/^futex_acquire:$/;"	l
+futex_acquire	x86.s	/^futex_acquire:$/;"	l
+futex_release	locks.h	/^static inline void futex_release(int32_t * futex)$/;"	f	typeref:typename:void
+futex_release	main.s	/^futex_release:$/;"	l
+futex_release	x86.s	/^futex_release:$/;"	l
+g_tid	main.c	/^__thread int32_t g_tid;$/;"	v	typeref:typename:__thread int32_t
+g_tid	main.s	/^g_tid:$/;"	l
+joinqueue	x86.h	/^  llist joinqueue;$/;"	m	struct:x86_domain	typeref:typename:llist
+joinqueue_lock	x86.h	/^  int32_t joinqueue_lock;$/;"	m	struct:x86_domain	typeref:typename:int32_t
+llist	llist.h	/^typedef struct llist {$/;"	s
+llist	llist.h	/^} llist;$/;"	t	typeref:struct:llist
+llist_append	llist.h	/^#define llist_append(/;"	d
+llist_append_node	llist.c	/^llist * API llist_append_node(llist * head, llist * node)$/;"	f	typeref:typename:llist * API
+llist_append_node	llist.s	/^llist_append_node:$/;"	l
+llist_attached	llist.h	/^#define llist_attached(/;"	d
+llist_attached_node	llist.c	/^bool API llist_attached_node(const llist *node)$/;"	f	typeref:typename:bool API
+llist_attached_node	llist.s	/^llist_attached_node:$/;"	l
+llist_count	llist.h	/^#define llist_count(/;"	d
+llist_count_node	llist.c	/^size_t API llist_count_node(const llist * head)$/;"	f	typeref:typename:size_t API
+llist_count_node	llist.s	/^llist_count_node:$/;"	l
+llist_delete	llist.h	/^#define llist_delete(/;"	d
+llist_delete_node	llist.c	/^void API llist_delete_node(llist * node)$/;"	f	typeref:typename:void API
+llist_delete_node	llist.s	/^llist_delete_node:$/;"	l
+llist_empty	llist.h	/^#define llist_empty(/;"	d
+llist_empty_node	llist.c	/^bool API llist_empty_node(const llist * head)$/;"	f	typeref:typename:bool API
+llist_empty_node	llist.s	/^llist_empty_node:$/;"	l
+llist_first	llist.h	/^#define llist_first(/;"	d
+llist_foreach	llist.h	/^#define llist_foreach(/;"	d
+llist_foreach_node	llist.h	/^#define llist_foreach_node(/;"	d
+llist_foreach_safe	llist.h	/^#define llist_foreach_safe(/;"	d
+llist_init_node	llist.c	/^llist * API llist_init_node(llist * head)$/;"	f	typeref:typename:llist * API
+llist_init_node	llist.s	/^llist_init_node:$/;"	l
+llist_last	llist.h	/^#define llist_last(/;"	d
+llist_next	llist.h	/^#define llist_next(/;"	d
+llist_next_node	llist.c	/^llist * API llist_next_node(const llist * head, const llist * node)$/;"	f	typeref:typename:llist * API
+llist_next_node	llist.s	/^llist_next_node:$/;"	l
+llist_pop	llist.h	/^#define llist_pop(/;"	d
+llist_prepend	llist.h	/^#define llist_prepend(/;"	d
+llist_prepend_node	llist.c	/^llist * API llist_prepend_node(llist * head, llist * node)$/;"	f	typeref:typename:llist * API
+llist_prepend_node	llist.s	/^llist_prepend_node:$/;"	l
+llist_prev	llist.h	/^#define llist_prev(/;"	d
+llist_prev_node	llist.c	/^llist * API llist_prev_node(const llist * head, const llist * node)$/;"	f	typeref:typename:llist * API
+llist_prev_node	llist.s	/^llist_prev_node:$/;"	l
+llist_push	llist.h	/^#define llist_push(/;"	d
+llist_push_node	llist.h	/^#define llist_push_node(/;"	d
+llist_shift	llist.h	/^#define llist_shift(/;"	d
+llist_size	llist.h	/^#define llist_size(/;"	d
+llist_splice_head	llist.c	/^llist * API llist_splice_head(llist * dst_head, llist * src_head)$/;"	f	typeref:typename:llist * API
+llist_splice_head	llist.s	/^llist_splice_head:$/;"	l
+llist_splice_tail	llist.c	/^llist * API llist_splice_tail(llist * dst_head, llist * src_head)$/;"	f	typeref:typename:llist * API
+llist_splice_tail	llist.s	/^llist_splice_tail:$/;"	l
+lln	x86.h	/^      llist lln;                \/\/ runqueue \/ joinqueue$/;"	m	struct:x86_fiber::__anon109a1de1010a::__anon109a1de10208	typeref:typename:llist
+lln	x86.h	/^  llist lln;$/;"	m	struct:x86_task	typeref:typename:llist
 main	main.c	/^int main(int argc, char ** argv)$/;"	f	typeref:typename:int
 main	main.s	/^main:$/;"	l
-main_task	x86.c	/^task main_task;$/;"	v	typeref:typename:task
-main_task	x86.s	/^main_task:$/;"	l
-pad	x86.h	/^  char pad[64];$/;"	m	struct:x86_task	typeref:typename:char[64]
+main_base_fiber	main.c	/^static fiber main_base_fiber;$/;"	v	typeref:typename:fiber	file:
+main_base_fiber_stack	main.c	/^static char __attribute__((aligned(16))) main_base_fiber_stack[STACKSIZE];$/;"	v	typeref:typename:char[]	file:
+main_domain	main.c	/^static domain main_domain;$/;"	v	typeref:typename:domain	file:
+main_fiber	main.c	/^static fiber main_fiber;$/;"	v	typeref:typename:fiber	file:
+main_fiber_stack	main.c	/^static char __attribute__((aligned(16))) main_fiber_stack[STACKSIZE];$/;"	v	typeref:typename:char[]	file:
+memncmp	macros.h	/^static inline int memncmp(const void * a, size_t alen, const void * b, size_t blen)$/;"	f	typeref:typename:int
+memncpy	macros.h	/^static inline size_t memncpy(void *dst, size_t dst_sz, const void *src, size_t n)$/;"	f	typeref:typename:size_t
+next	llist.h	/^  struct llist * next;$/;"	m	struct:llist	typeref:struct:llist *
+pad	x86.h	/^    char pad[80];$/;"	m	union:x86_fiber::__anon109a1de1010a	typeref:typename:char[80]
 pad_to	x86.c	/^static inline uint64_t pad_to(uint64_t x, uint64_t align)$/;"	f	typeref:typename:uint64_t	file:
 pad_to	x86.s	/^pad_to:$/;"	l
+parent	x86.h	/^      struct x86_fiber *parent; \/\/ (local) fiber from which this fiber was cloned$/;"	m	struct:x86_fiber::__anon109a1de1010a::__anon109a1de10208	typeref:struct:x86_fiber *
+parent	x86.h	/^  struct x86_fiber *parent;     \/\/ fiber from which this task was cloned$/;"	m	struct:x86_task	typeref:struct:x86_fiber *
+prev	llist.h	/^  struct llist * prev;$/;"	m	struct:llist	typeref:struct:llist *
+ptrcmp	macros.h	/^static inline int ptrcmp(const void *_A, const void *_B)$/;"	f	typeref:typename:int
 r12	x86.h	/^  uint64_t r12;$/;"	m	struct:x86_registers	typeref:typename:uint64_t
 r13	x86.h	/^  uint64_t r13;$/;"	m	struct:x86_registers	typeref:typename:uint64_t
 r14	x86.h	/^  uint64_t r14;$/;"	m	struct:x86_registers	typeref:typename:uint64_t
 r15	x86.h	/^  uint64_t r15;$/;"	m	struct:x86_registers	typeref:typename:uint64_t
 rbp	x86.h	/^  uint64_t rbp;$/;"	m	struct:x86_registers	typeref:typename:uint64_t
 rbx	x86.h	/^  uint64_t rbx;$/;"	m	struct:x86_registers	typeref:typename:uint64_t
-regs	x86.h	/^    x86_registers regs;$/;"	m	union:x86_task::__anon109a1de1010a	typeref:typename:x86_registers
+refas	llist.h	/^#define refas(/;"	d
+refas	macros.h	/^#define refas(/;"	d
+refas2	macros.h	/^#define refas2(/;"	d
+restrict	types.h	/^#define restrict /;"	d
 rflags	x86.h	/^  uint64_t rflags;$/;"	m	struct:x86_registers	typeref:typename:uint64_t
 rip	x86.h	/^  uint64_t rip;         \/\/ 8 fields$/;"	m	struct:x86_registers	typeref:typename:uint64_t
-sp	x86.h	/^  } *sp;$/;"	m	struct:x86_task	typeref:union:x86_task::__anon109a1de1010a *
-stack	x86.h	/^  char __attribute__((aligned(16))) stack[1024 * 1024 * 2]; \/\/ 2 MB stacks$/;"	m	struct:x86_task	typeref:typename:char[]
-sub_task	main.c	/^static task sub_task;$/;"	v	typeref:typename:task	file:
-subtask_finalize	x86.c	/^static void subtask_finalize(void)$/;"	f	typeref:typename:void	file:
-subtask_finalize	x86.s	/^subtask_finalize:$/;"	l
+roundup	types.h	/^static inline size_t roundup(size_t x, size_t y)$/;"	f	typeref:typename:size_t
+roundup2	macros.h	/^static inline size_t roundup2(size_t x)$/;"	f	typeref:typename:size_t
+runqueue	x86.h	/^  llist runqueue;$/;"	m	struct:x86_domain	typeref:typename:llist
+sentinel	macros.h	/^#define sentinel(/;"	d
+sizeof_member	macros.h	/^#define sizeof_member(/;"	d
+smp_mb	barriers.h	/^#define smp_mb(/;"	d
+smp_rmb	barriers.h	/^#define smp_rmb(/;"	d
+smp_wmb	barriers.h	/^#define smp_wmb(/;"	d
+sp	x86.h	/^      void *sp;                 \/\/ stack pointer$/;"	m	struct:x86_fiber::__anon109a1de1010a::__anon109a1de10208	typeref:typename:void *
+sp	x86.h	/^  void *sp;                     \/\/ stack pointer$/;"	m	struct:x86_task	typeref:typename:void *
+spinlock_acquire	locks.h	/^static inline void spinlock_acquire(int32_t *lock)$/;"	f	typeref:typename:void
+spinlock_release	locks.h	/^static inline void spinlock_release(int32_t * lock)$/;"	f	typeref:typename:void
+stack	main.c	/^    char stack[256];$/;"	m	struct:__anon0d38083b0108::__anon0d38083b0208	typeref:typename:char[256]	file:
+stack	x86.h	/^  char stack[0];$/;"	m	struct:x86_task	typeref:typename:char[0]
+stack	x86.h	/^  void *stack;              \/\/ stack base - 16-byte aligned$/;"	m	struct:x86_fiber	typeref:typename:void *
+stack_size	x86.h	/^  size_t stack_size;        \/\/ allocated stack size$/;"	m	struct:x86_fiber	typeref:typename:size_t
+stack_size	x86.h	/^  uint16_t stack_size;          \/\/ allocated stack size$/;"	m	struct:x86_task	typeref:typename:uint16_t
+state	x86.h	/^      x86_fiber_state state;$/;"	m	struct:x86_fiber::__anon109a1de1010a::__anon109a1de10208	typeref:typename:x86_fiber_state
+sum	main.c	/^static uint64_t sum;$/;"	v	typeref:typename:uint64_t	file:
+t	main.c	/^    x86_task t;$/;"	m	struct:__anon0d38083b0108::__anon0d38083b0208	typeref:typename:x86_task	file:
 task	x86.h	/^typedef struct x86_task task;$/;"	t	typeref:struct:x86_task
-task_active	task.c	/^task *task_active;$/;"	v	typeref:typename:task *
-task_active	task.s	/^task_active:$/;"	l
-task_run	task.c	/^void task_run(task *task, void (*fn)(void *))$/;"	f	typeref:typename:void
-task_run	task.s	/^task_run:$/;"	l
-task_switch	x86.c	/^void task_switch(x86_task *next)$/;"	f	typeref:typename:void
-task_switch	x86.s	/^task_switch:$/;"	l
-u64	x86.h	/^    uint64_t u64[0];$/;"	m	union:x86_task::__anon109a1de1010a	typeref:typename:uint64_t[0]
-u8	x86.h	/^    char u8[0];$/;"	m	union:x86_task::__anon109a1de1010a	typeref:typename:char[0]
-x86_base_task_jump	x86-asm.S	/^x86_base_task_jump:$/;"	l
-x86_base_task_jump	x86-asm.s	/^x86_base_task_jump:$/;"	l
-x86_base_task_run	x86.c	/^void x86_base_task_run(x86_task *task, void (*fn)(void *))$/;"	f	typeref:typename:void
-x86_base_task_run	x86.s	/^x86_base_task_run:$/;"	l
+taskqueue	x86.h	/^  llist taskqueue;$/;"	m	struct:x86_domain	typeref:typename:llist
+taskqueue_lock	x86.h	/^  int32_t taskqueue_lock;$/;"	m	struct:x86_domain	typeref:typename:int32_t
+tasks	main.c	/^} tasks[5];$/;"	v	typeref:struct:__anon0d38083b0108[5]
+trylock_acquire	locks.h	/^static inline bool trylock_acquire(int32_t *lock)$/;"	f	typeref:typename:bool
+trylock_release	locks.h	/^static inline void trylock_release(int32_t *lock)$/;"	f	typeref:typename:void
+waiting	x86.h	/^  int32_t waiting;$/;"	m	struct:x86_domain	typeref:typename:int32_t
+worker_domains	main.c	/^static domain worker_domains[5];$/;"	v	typeref:typename:domain[5]	file:
+worker_domains_done	main.c	/^static int worker_domains_done;$/;"	v	typeref:typename:int	file:
+worker_fiber_stacks	main.c	/^static char __attribute__((aligned(16))) worker_fiber_stacks[5][STACKSIZE];$/;"	v	typeref:typename:char[5][]	file:
+worker_fibers	main.c	/^static fiber worker_fibers[5];$/;"	v	typeref:typename:fiber[5]	file:
+worker_main	main.c	/^static void worker_main(x86_domain *domain)$/;"	f	typeref:typename:void	file:
+worker_main	main.s	/^worker_main:$/;"	l
+worker_thread	main.c	/^static void * worker_thread(void * arg)$/;"	f	typeref:typename:void *	file:
+worker_thread	main.s	/^worker_thread:$/;"	l
+x86_base_fiber_finalize	x86.c	/^void x86_base_fiber_finalize(x86_fiber *fiber, void *thread_sp)$/;"	f	typeref:typename:void
+x86_base_fiber_finalize	x86.s	/^x86_base_fiber_finalize:$/;"	l
+x86_base_fiber_finalize_jump	x86-asm.S	/^x86_base_fiber_finalize_jump:$/;"	l
+x86_base_fiber_finalize_jump	x86-asm.s	/^x86_base_fiber_finalize_jump:$/;"	l
+x86_base_fiber_run	x86.c	/^void x86_base_fiber_run(x86_fiber *fiber, void (*fn)(x86_domain *))$/;"	f	typeref:typename:void
+x86_base_fiber_run	x86.s	/^x86_base_fiber_run:$/;"	l
+x86_base_fiber_switch	x86-asm.S	/^x86_base_fiber_switch:$/;"	l
+x86_base_fiber_switch	x86-asm.s	/^x86_base_fiber_switch:$/;"	l
+x86_clone_fiber	x86-asm.S	/^x86_clone_fiber:$/;"	l
+x86_clone_fiber	x86-asm.s	/^x86_clone_fiber:$/;"	l
+x86_clone_fiber_finish	x86.c	/^x86_fiber *x86_clone_fiber_finish(x86_domain * restrict domain, x86_fiber * restrict fiber)$/;"	f	typeref:typename:x86_fiber *
+x86_clone_fiber_finish	x86.s	/^x86_clone_fiber_finish:$/;"	l
+x86_clone_task	x86-asm.S	/^x86_clone_task:$/;"	l
+x86_clone_task	x86-asm.s	/^x86_clone_task:$/;"	l
+x86_clone_task_finish	x86.c	/^x86_task * x86_clone_task_finish(x86_domain * restrict domain, x86_task * restrict task, void *r/;"	f	typeref:typename:x86_task *
+x86_clone_task_finish	x86.s	/^x86_clone_task_finish:$/;"	l
+x86_domain	x86.h	/^typedef struct x86_domain {$/;"	s
+x86_domain	x86.h	/^} x86_domain;$/;"	t	typeref:struct:x86_domain
+x86_fiber	x86.h	/^typedef struct x86_fiber {$/;"	s
+x86_fiber	x86.h	/^} x86_fiber;$/;"	t	typeref:struct:x86_fiber
+x86_fiber_state	x86.h	/^typedef enum x86_fiber_state {$/;"	g
+x86_fiber_state	x86.h	/^} x86_fiber_state;$/;"	t	typeref:enum:x86_fiber_state
 x86_registers	x86.h	/^typedef struct x86_registers {$/;"	s
 x86_registers	x86.h	/^} x86_registers;$/;"	t	typeref:struct:x86_registers
+x86_resume	x86-asm.S	/^x86_resume:$/;"	l
+x86_resume	x86-asm.s	/^x86_resume:$/;"	l
+x86_sub_fiber_clone_return	x86-asm.S	/^x86_sub_fiber_clone_return:$/;"	l
+x86_sub_fiber_clone_return	x86-asm.s	/^x86_sub_fiber_clone_return:$/;"	l
+x86_sub_fiber_finalize	x86.c	/^void x86_sub_fiber_finalize(x86_fiber *fiber)$/;"	f	typeref:typename:void
+x86_sub_fiber_finalize	x86.s	/^x86_sub_fiber_finalize:$/;"	l
+x86_sub_fiber_finalize_jump	x86-asm.S	/^x86_sub_fiber_finalize_jump:$/;"	l
+x86_sub_fiber_finalize_jump	x86-asm.s	/^x86_sub_fiber_finalize_jump:$/;"	l
+x86_switch	x86-asm.S	/^x86_switch:$/;"	l
+x86_switch	x86-asm.s	/^x86_switch:$/;"	l
 x86_task	x86.h	/^typedef struct x86_task {$/;"	s
-x86_task	x86.h	/^} __attribute__((aligned(16))) x86_task;$/;"	t	typeref:struct:x86_task
-x86_task_clone	x86-asm.S	/^x86_task_clone:$/;"	l
-x86_task_clone	x86-asm.s	/^x86_task_clone:$/;"	l
-x86_task_clone_finalize	x86.c	/^void x86_task_clone_finalize(x86_task *task)$/;"	f	typeref:typename:void
-x86_task_clone_finalize	x86.s	/^x86_task_clone_finalize:$/;"	l
-x86_task_resume	x86-asm.S	/^x86_task_resume:$/;"	l
-x86_task_resume	x86-asm.s	/^x86_task_resume:$/;"	l
-x86_task_switch	x86-asm.S	/^x86_task_switch:$/;"	l
-x86_task_switch	x86-asm.s	/^x86_task_switch:$/;"	l
-x86_task_thread_restore	x86-asm.S	/^x86_task_thread_restore:$/;"	l
-x86_task_thread_restore	x86-asm.s	/^x86_task_thread_restore:$/;"	l
+x86_task	x86.h	/^} x86_task;$/;"	t	typeref:struct:x86_task
+x86_task_assimilate	x86-asm.S	/^x86_task_assimilate:$/;"	l
+x86_task_assimilate	x86-asm.s	/^x86_task_assimilate:$/;"	l
+x86_task_assimilate_finish	x86.c	/^void x86_task_assimilate_finish(x86_domain * restrict domain, x86_task *restrict task, void *sp)$/;"	f	typeref:typename:void
+x86_task_assimilate_finish	x86.s	/^x86_task_assimilate_finish:$/;"	l
+x86_task_clone_return	x86-asm.S	/^x86_task_clone_return:$/;"	l
+x86_task_clone_return	x86-asm.s	/^x86_task_clone_return:$/;"	l
+x86_task_enqueue	x86.c	/^void x86_task_enqueue(x86_domain * restrict domain, x86_task * restrict task)$/;"	f	typeref:typename:void
+x86_task_enqueue	x86.s	/^x86_task_enqueue:$/;"	l
+x86_task_finalize	x86.c	/^void x86_task_finalize(x86_fiber * restrict fiber, x86_task *restrict task)$/;"	f	typeref:typename:void
+x86_task_finalize	x86.s	/^x86_task_finalize:$/;"	l
+x86_task_finalize_jump	x86-asm.S	/^x86_task_finalize_jump:$/;"	l
+x86_task_finalize_jump	x86-asm.s	/^x86_task_finalize_jump:$/;"	l
+x86_thread_restore	x86-asm.S	/^x86_thread_restore:$/;"	l
+x86_thread_restore	x86-asm.s	/^x86_thread_restore:$/;"	l

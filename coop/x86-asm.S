@@ -1,18 +1,15 @@
 .section .text
 
-//.global jump_task_init
-//.global readrip
-
 /*
- * Save state of the current task, switch into the next task
+ * Save state of the current task, switch to the next task
  *
  * %rdi pointer to prev task sp
  * %rsi pointer to next task sp
  *
  * %rip was pushed by the call
  */
-.global x86_task_switch
-x86_task_switch:
+.global x86_switch
+x86_switch:
   /* save general purpose registers */
   push %rbp
   push %rbx
@@ -38,24 +35,14 @@ x86_task_switch:
   /* pop, jump */
   ret
 
-.global x86_base_task_finalize_jump
-x86_base_task_finalize_jump:
-  pop %rdi
-  pop %rsi
-  jmp x86_base_task_finalize
-
-.global x86_sub_task_finalize_jump
-x86_sub_task_finalize_jump:
-  pop %rdi
-  jmp x86_sub_task_finalize
 
 /*
- * Switch into the next task (called from x86_task_finalize)
+ * Switch to the next task (called from x86_task_finalize)
  *
  * %rdi pointer to next task sp
  */
-.global x86_task_resume
-x86_task_resume:
+.global x86_resume
+x86_resume:
   /* switch stacks */
   mov %rdi, %rsp
 
@@ -72,37 +59,108 @@ x86_task_resume:
   ret
 
 /*
- * Write register state to the dst task, jump to clone_finalize
+ * foo
  *
- * %rdi pointer to the new task
+ * %rdi pointer to domain
+ * %rsi pointer to task
  */
-.global x86_task_clone
-x86_task_clone:
-  /* the order corresponds directly to struct x86_registers layout */
+.global x86_task_assimilate
+x86_task_assimilate:
+  /* current stack pointer */
+  mov %rsp, %rdx
+
+  jmp x86_task_assimilate_finish
+
+/*
+  push %rbp
+  push %rbx
+  push %r12
+  push %r13
+  push %r14
+  push %r15
+  pushf
+
+  return address from x86_task_assimilate
+  mov (%rsp), %rax
+  push %rax
+
+  current stack pointer
+  push %rsp
+  mov %rsp, %rdx
+
+  jmp x86_task_assimilate_finish
+*/
+
+/*
+ * Write register state to the dst fiber, jump to clone_finalize
+ *
+ * %rdi pointer to domain
+ * %rsi pointer to the new fiber
+ *
+ * %rsp was pushed by the call
+ */
+.global x86_clone_fiber
+x86_clone_fiber:
+  /* fiber stack */
+  mov 32(%rsi), %rcx
+
+  /* this order corresponds directly to x86_registers layout */
   pushf
   pop %rax
-  mov %rax, (%rdi)
-  mov %r15, 8(%rdi)
-  mov %r14, 16(%rdi)
-  mov %r13, 24(%rdi)
-  mov %r12, 32(%rdi)
-  mov %rbx, 40(%rdi)
-  mov %rbp, 48(%rdi)
+  mov %rax, (%rcx)
+  mov %r15, 8(%rcx)
+  mov %r14, 16(%rcx)
+  mov %r13, 24(%rcx)
+  mov %r12, 32(%rcx)
+  mov %rbx, 40(%rcx)
+  mov %rbp, 48(%rcx)
 
-  /* return address from x86_task_clone */
+  /* return address from x86_clone_fiber */
   mov (%rsp), %rax
-  mov %rax, 56(%rdi)
+  mov %rax, 56(%rcx)
 
   /* current stack pointer */
-  mov %rsp, 64(%rdi)
+  mov %rsp, %rdx
 
-  jmp x86_task_clone_finish
+  jmp x86_clone_fiber_finish
+
+
+/*
+ * Write register state to the dst fiber, jump to clone_finalize
+ *
+ * %rdi pointer to domain
+ * %rsi pointer to the task
+ *
+ * %rsp was pushed by the call
+ */
+.global x86_clone_task
+x86_clone_task:
+  /* this order corresponds directly to x86_registers layout */
+  pushf
+  pop %rax
+  mov %rax, 36+0(%rsi)
+  mov %r15, 36+8(%rsi)
+  mov %r14, 36+16(%rsi)
+  mov %r13, 36+24(%rsi)
+  mov %r12, 36+32(%rsi)
+  mov %rbx, 36+40(%rsi)
+  mov %rbp, 36+48(%rsi)
+
+  /* return address from x86_clone_task */
+  mov (%rsp), %rax
+  mov %rax, 36+56(%rsi)
+
+  /* current stack pointer */
+  mov %rsp, %rdx
+
+  jmp x86_clone_task_finish
+
 
 /*
  * Restore the original thread which called x86_task_base_run
  */
-.global x86_task_thread_restore
-x86_task_thread_restore:
+.global x86_thread_restore
+x86_thread_restore:
   /* restore the original thread stack pointer */
   mov %rdi, %rsp
 
@@ -119,14 +177,15 @@ x86_task_thread_restore:
   ret
 
 /*
- * Suspend the thread and jump into the base task
+ * Suspend the thread and switch to the base fiber
  *
- * %rdi pointer to next task sp
+ * %rdi pointer to domain
+ * %rsi pointer to next fiber sp
  *
  * %rip was pushed by the call
  */
-.global x86_base_task_switch
-x86_base_task_switch:
+.global x86_base_fiber_switch
+x86_base_fiber_switch:
   /* save the active frame onto the active stack */
   push %rbp
   push %rbx
@@ -136,11 +195,11 @@ x86_base_task_switch:
   push %r15
   pushf
 
-  /* save threads stack pointer onto base task stack */
-  mov %rsp, 80(%rdi)
+  /* save threads stack pointer onto base fiber stack */
+  mov %rsp, 80(%rsi)
 
-  /* switch to base task stack */
-  mov %rdi, %rsp
+  /* switch to base fiber stack */
+  mov %rsi, %rsp
 
   /* zero out registers from the blank (top) frame */
   popf
@@ -154,91 +213,29 @@ x86_base_task_switch:
   /* pop, jump */
   ret
 
-//readrip:
-//#  push %rbp       /* save stack base */
-//#  mov %rsp, %rbp  /* allocate new frame */
-//
-//  /* read return address off the stack into rax */
-//  movq (%rsp), %rax
-//
-//#  pop %rbp        /* restore caller base frame */
-//  ret
-//
-///*
-// * %rdi task
-// */
-//jump_task_init:
-//  /* read return address into rsi */
-//  mov (%rsp), %rsi
-//
-//  jmp task_init
-//
-///*
-// * %rdi task
-// */
-//jump:
-//  /* read return address into task task */
-//  mov (%rsp), %rsi
-//
+/* base fiber */
+.global x86_base_fiber_finalize_jump
+x86_base_fiber_finalize_jump:
+  pop %rdi
+  pop %rsi
+  jmp x86_base_fiber_finalize
 
-///*
-// * Suspend the active task onto its stack
-// *
-// * %rdi pointer to active task sp
-// *
-// * %rip was pushed by the call
-// */
-//.global x86_task_suspend
-//x86_task_suspend:
-//  /* save general purpose registers */
-//  push %rbp
-//  push %rbx
-//  push %r12
-//  push %r13
-//  push %r14
-//  push %r15
-//  pushf
-//
-//  /* return the stack pointer */
-//  mov %rsp, (%rdi)
-//
-//  jmp *56(%rsp)
-//
-//  //push *56(%rsp)
-//  //ret
-//
-//  ///* return without pop */
-//  //mov $1, %rax
-//  //jmp *56(%rsp)
-//
-///*
-// * Resume the active task - returns from x86_task_suspend
-// *
-// * %rdi pointer to active task sp
-// */
-//.global x86_task_resume
-//x86_task_resume:
-//  /* save the return address for this call */
-//  pop %rax
-//
-//  /* restore the stack pointer */
-//  mov (%rdi), %rsp
-//
-//  /* restore general purpose registers */
-//  popf
-//  pop %r15
-//  pop %r14
-//  pop %r13
-//  pop %r12
-//  pop %rbx
-//  pop %rbp
-//
-//  /* pop, jump */
-//  jmp *%rax
-//  #mov (%rsp), %rax
-//  #mov %rax, (%rdi)     /* return rip back into calling frame */
-//  #mov %rbp, 8(%rdi)    /* return rbp for calling frame */
-//  #mov %rsp, 16(%rdi)   /* return stack pointer */
-  #pop %rax  /* discard callers frame pointer */
-  #pop %rax  /* discard callers return address */
-  #pop %rsp  /* recover thread stack pointer */
+/* sub fibers */
+.global x86_sub_fiber_finalize_jump
+x86_sub_fiber_finalize_jump:
+  pop %rdi
+  jmp x86_sub_fiber_finalize
+
+/* tasks */
+.global x86_task_finalize_jump
+x86_task_finalize_jump:
+  pop %rdi          # task
+  pop %rsi          # fiber
+  jmp x86_task_finalize
+
+/* utils */
+
+.global x86_clone_return
+x86_clone_return:
+  mov $0, %rax
+  ret

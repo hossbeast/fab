@@ -29,7 +29,7 @@
 #include "selector.h"
 #include "logging.h"
 #include "path_cache.h"
-#include "handler_thread.h"
+#include "handler.h"
 #include "params.h"
 
 #include "common/attrs.h"

@@ -26,18 +26,14 @@
 #define EVENT_SWEEP       1
 #define EVENT_BUILD_DONE  2
 
-/// g_params
-//
-// SUMMARY
-//  non-configurable execution parameters
-//
-extern struct g_params
-{
+/* non-configurable execution parameters */
+extern struct g_params {
   pid_t           pid;              // process id of this process
   pid_t           ppid;             // process id of parent process
   pid_t           pgid;             // process group id of this process
   pid_t           thread_monitor;   // thread id of the monitor thread
   pid_t           thread_server;    // thread id of the server thread
+  pid_t           thread_loader;    // thread id of the loader thread
   pid_t           thread_notify;    // thread id of the notify thread
   pid_t           thread_sweeper;   // thread id of the sweeper thread
   pid_t           thread_beholder;  // thread id of the beholder thread

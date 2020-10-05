@@ -36,12 +36,13 @@
 #include "value/merge.h"
 
 #include "config.internal.h"
-#include "box.h"
+#include "yyutil/box.h"
 #include "CONFIG.errtab.h"
 #include "config_parser.internal.h"
 #include "filesystem.h"
 #include "logging.h"
 #include "build_thread.h"
+#include "worker_thread.h"
 #include "extern.h"
 #include "params.h"
 #include "node.h"
@@ -110,6 +111,14 @@ static void config_compare_build(config_base * restrict _new, config_base * rest
 {
   struct config_build * new = containerof(_new, struct config_build, cb);
   struct config_build * old = containerof(_old, struct config_build, cb);
+
+  new->changed = box_cmp(refas(new->concurrency, bx), old ? old->concurrency ? &old->concurrency->bx : 0 : 0);
+}
+
+static void config_compare_workers(config_base * restrict _new, config_base * restrict _old)
+{
+  struct config_workers * new = containerof(_new, struct config_workers, cb);
+  struct config_workers * old = containerof(_old, struct config_workers, cb);
 
   new->changed = box_cmp(refas(new->concurrency, bx), old ? old->concurrency ? &old->concurrency->bx : 0 : 0);
 }
@@ -204,6 +213,7 @@ static void config_compare_formula(config_base * restrict _new, config_base * re
 void config_compare(config * restrict new, config * restrict old)
 {
   config_compare_build(&new->build.cb, refas(old, build.cb));
+  config_compare_workers(&new->workers.cb, refas(old, workers.cb));
   config_compare_extern(&new->extern_section.cb, refas(old, extern_section.cb));
   config_compare_filesystems(&new->filesystems.cb, refas(old, filesystems.cb));
   config_compare_formula(&new->formula.cb, refas(old, formula.cb));
@@ -232,6 +242,11 @@ xapi config_merge(config * restrict dst, config * restrict src)
   empty = true;
   CFGCOPY(dst, src, build, concurrency);
   dst->build.merge_significant = !empty;
+
+  /* workers */
+  empty = true;
+  CFGCOPY(dst, src, workers, concurrency);
+  dst->workers.merge_significant = !empty;
 
   /* extern */
   if(src->extern_section.merge_overwrite)
@@ -381,6 +396,7 @@ xapi config_xfree(config * restrict cfg)
   if(cfg)
   {
     box_free(refas(cfg->build.concurrency, bx));
+    box_free(refas(cfg->workers.concurrency, bx));
 
     fatal(set_xfree, cfg->extern_section.entries);
     fatal(map_xfree, cfg->filesystems.entries);
@@ -426,6 +442,18 @@ xapi config_writer_write(config * restrict cfg, value_writer * const restrict wr
     fatal(value_writer_pop_set, writer);
     fatal(value_writer_pop_mapping, writer);
   }
+
+  if(cfg->workers.merge_significant)
+  {
+    fatal(value_writer_push_mapping, writer);
+    fatal(value_writer_string, writer, "workers");
+    fatal(value_writer_push_set, writer);
+    if(cfg->workers.concurrency)
+      fatal(value_writer_mapping_string_uint, writer, "concurrency", cfg->workers.concurrency->v);
+    fatal(value_writer_pop_set, writer);
+    fatal(value_writer_pop_mapping, writer);
+  }
+
   if(cfg->extern_section.merge_significant)
   {
     fatal(value_writer_push_mapping, writer);
@@ -702,8 +730,10 @@ xapi config_reconfigure()
     || (exit = invoke(node_reconfigure, config_staging, true))
     || (exit = invoke(extern_reconfigure, config_staging, true))
     || (exit = invoke(build_thread_reconfigure, config_staging, true))
+    || (exit = invoke(worker_thread_reconfigure, config_staging, true))
     || (exit = invoke(var_reconfigure, config_staging, true))
     || (exit = invoke(path_cache_reconfigure, config_staging, true))
+    || (exit = invoke(graph_reconfigure, config_staging, true))
   )
   {
     if(xapi_exit_errtab(exit) != perrtab_CONFIG)
@@ -737,8 +767,10 @@ xapi config_reconfigure()
     fatal(node_reconfigure, config_active, false);
     fatal(extern_reconfigure, config_active, false);
     fatal(build_thread_reconfigure, config_active, false);
+    fatal(worker_thread_reconfigure, config_active, false);
     fatal(var_reconfigure, config_active, false);
     fatal(path_cache_reconfigure, config_active, false);
+    fatal(graph_reconfigure, config_active, false);
     config_reconfigure_result = true;
   }
 

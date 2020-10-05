@@ -28,9 +28,10 @@ struct edge;
 struct narrator;
 struct vertex_traversal_state;
 struct edge_traversal_state;
-struct rule_run_context;
 struct vertex;
 struct rule_module_association;
+struct rbtree;
+struct config;
 
 #define GRAPH_VERTEX_VALUE_SIZE 256
 #define GRAPH_EDGE_VALUE_SIZE   64
@@ -211,13 +212,24 @@ xapi graph_invalidation_begin(graph_invalidation_context * restrict context)
 void graph_invalidation_end(graph_invalidation_context * restrict context)
   __attribute__((nonnull));
 
-xapi graph_full_refresh(struct rule_run_context * restrict ctx)
-  __attribute__((nonnull));
+/*
+ * run invalidated rules to quiesence
+ */
+xapi graph_full_refresh();
 
 /*
  * enqueue this rma to be executed during the next refresh
  */
 void graph_rma_enqueue(struct rule_module_association * restrict rma)
+  __attribute__((nonnull));
+
+void graph_rma_hit(struct rule_run_context * restrict ctx, struct rule_module_association * restrict rma)
+  __attribute__((nonnull));
+
+void graph_rma_nohit(struct rule_run_context * restrict ctx, struct rule_module_association * restrict rma)
+  __attribute__((nonnull));
+
+xapi graph_reconfigure(struct config * restrict cfg, bool dry)
   __attribute__((nonnull));
 
 #endif

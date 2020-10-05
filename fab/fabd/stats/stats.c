@@ -15,10 +15,15 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
+#include <time.h>
+
 #include "xapi.h"
 
 #include "stats.h"
 #include "logging.h"
+
+#include "timing.h"
+#include "macros.h"
 
 struct g_stats g_stats;
 
@@ -51,4 +56,51 @@ xapi stats_report()
 STATS_TABLE
 
   finally : coda;
+}
+
+void stats_timing_start(struct timespec * restrict starts, uint8_t n)
+{
+  int x;
+
+  RUNTIME_ASSERT(clock_gettime(CLOCK_MONOTONIC, &starts[0]) == 0);
+
+  for(x = 1; x < n; x++) {
+    memcpy(&starts[x], &starts[0], sizeof(*starts));
+  }
+}
+
+static void timing_stop(struct timespec * restrict start, struct timespec * restrict end, uint64_t * restrict stat)
+{
+  time_t sec;
+
+  RUNTIME_ASSERT(clock_gettime(CLOCK_MONOTONIC, end) == 0);
+
+  sec = end->tv_sec - start->tv_sec;
+  if(sec > 0) {
+    if(sec > 1) {
+      *stat = (sec - 1) * NSEC_PER_SEC;
+    }
+    *stat += (NSEC_PER_SEC - start->tv_nsec);
+    *stat += end->tv_nsec;
+  } else {
+    *stat += end->tv_nsec - start->tv_nsec;
+  }
+}
+
+void stats_timing_stop(struct timespec * restrict start, uint64_t * restrict stat)
+{
+  struct timespec end = {};
+
+  timing_stop(start, &end, stat);
+printf("ns %lu\n", *stat);
+}
+
+void stats_timing_mark(struct timespec * restrict start, uint64_t * restrict stat)
+{
+  struct timespec end = {};
+
+  timing_stop(start, &end, stat);
+printf("ns %lu\n", *stat);
+
+  memcpy(start, &end, sizeof(*start));
 }

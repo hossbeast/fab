@@ -28,7 +28,8 @@
 
   #include "config_parser.internal.h"
   #include "config.internal.h"
-  #include "box.h"
+  #include "build_thread.h"
+  #include "yyutil/box.h"
   #include "macros.h"
 
   struct value;
@@ -107,6 +108,7 @@
 
 %token
  BUILD                    "build"
+ WORKERS                  "workers"
  CAPTURE_STDERR           "capture-stderr"
  CAPTURE_STDOUT           "capture-stdout"
  CAPTURE_AUXOUT           "capture-auxout"
@@ -204,6 +206,7 @@ sections
 
 section
   : build-section
+  | workers-section
   | extern-section
   | filesystems-section
   | formula-section
@@ -245,6 +248,13 @@ build-section
   }
   ;
 
+workers-section
+  : WORKERS workers-map
+  {
+    PARSER->cfg->workers.merge_significant = true;
+  }
+  ;
+
 build-map
   : ':' '{' build-mapping-set '}'
   | '=' '{' build-mapping-set-epsilon '}'
@@ -271,6 +281,35 @@ build-mapping
   : CONCURRENCY ':' int16
   {
     PARSER->cfg->build.concurrency = $3;
+  }
+  ;
+ 
+workers-map
+  : ':' '{' workers-mapping-set '}'
+  | '=' '{' workers-mapping-set-epsilon '}'
+  {
+    PARSER->cfg->workers.merge_overwrite = true;
+  }
+  ;
+
+workers-mapping-set-epsilon
+  : workers-mapping-set
+  | %empty
+  ;
+
+workers-mapping-set
+  : workers-mappings
+  ;
+
+workers-mappings
+  : workers-mappings workers-mapping
+  | workers-mapping
+  ;
+
+workers-mapping
+  : CONCURRENCY ':' int16
+  {
+    PARSER->cfg->workers.concurrency = $3;
   }
   ;
   

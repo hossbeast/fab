@@ -39,7 +39,7 @@
 #include "variant.h"
 #include "pattern.h"
 
-#include "box.h"
+#include "yyutil/box.h"
 
 typedef struct {
   XUNITTEST;

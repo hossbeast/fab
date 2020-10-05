@@ -7,5 +7,5 @@ rule coop -> //module/targets
 rule **/(*).S -> $^D/$1.?.o : cc/bam-cc
 
 var : {
-  cflags : [ -fverbose-asm -save-temps ]
+  cflags : [ -fverbose-asm -save-temps -lpthread -DXUNIT -fno-stack-protector ] # -fsanitize=address -fsanitize=undefined -lasan -lubsan -DDEVEL ]
 }

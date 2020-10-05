@@ -34,7 +34,7 @@
 #include "node.h"
 #include "logging.h"
 
-#include "box.h"
+#include "yyutil/box.h"
 
 typedef struct {
   XUNITTEST;

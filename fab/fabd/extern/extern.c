@@ -31,7 +31,7 @@
 #include "config.internal.h"
 #include "node.h"
 #include "walker.h"
-#include "box.h"
+#include "yyutil/box.h"
 
 static llist entry_head;        // linked list of pointers to extern nodes
 static llist entry_freelist;    // freelist

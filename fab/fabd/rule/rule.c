@@ -216,11 +216,6 @@ static xapi rma_edge_associate(node_edge_dependency * restrict ne, rule_module_a
   finally : coda;
 }
 
-static int nohits_rbn_cmp(const rbnode * restrict a, const rbnode * restrict b)
-{
-  return INTCMP(a, b);
-}
-
 static xapi __attribute__((nonnull(1))) bpe_setup(buildplan_entity * restrict bpe, node * restrict fmlnode)
 {
   enter;
@@ -242,7 +237,7 @@ static xapi __attribute__((nonnull)) bpe_attach(node * restrict n, buildplan_ent
   finally : coda;
 }
 
-xapi rule_run(rule * restrict rule, rule_run_context * restrict ctx)
+xapi rule_run(rule * restrict rule, rule_run_context * restrict ctx, rule_run_parameters * restrict params)
 {
   enter;
 
@@ -260,7 +255,16 @@ xapi rule_run(rule * restrict rule, rule_run_context * restrict ctx)
   rule_module_association * rma;
   struct rule_dirnode_connect_context rdctx;
 
+  /* quick-lookup parameter copies */
+  ctx->rma = params->rma;
+  ctx->mod = params->mod;
+  ctx->mod_owner = params->mod_owner;
+  ctx->modules = params->modules;
+  ctx->variants = params->variants;
+
   rma = ctx->rma;
+
+  STATS_INC(rule_run);
 
   if(rule->match)
   {
@@ -276,16 +280,26 @@ xapi rule_run(rule * restrict rule, rule_run_context * restrict ctx)
     {
       if(ctx->match_nodes->size)
       {
-        if(rbnode_attached(&rma->nohits_rbn))
-        {
-          rbtree_delete(&ctx->nohits, rma, nohits_rbn);
-        }
+        graph_rma_hit(rma);
       }
-      else if(!rbnode_attached(&rma->nohits_rbn))
+      else
       {
-        rbtree_put(&ctx->nohits, rma, nohits_rbn, nohits_rbn_cmp);
+        graph_rma_nohit(rma);
       }
     }
+//    {
+//      if(ctx->match_nodes->size)
+//      {
+//        if(rbnode_attached(&rma->nohits_rbn))
+//        {
+//          rbtree_delete(&graph_nohits, rma, nohits_rbn);
+//        }
+//      }
+//      else if(!rbnode_attached(&rma->nohits_rbn))
+//      {
+//        rbtree_put(&graph_nohits, rma, nohits_rbn, nohits_rbn_cmp);
+//      }
+//    }
   }
   else if(rule->generate)
   {
@@ -296,16 +310,26 @@ xapi rule_run(rule * restrict rule, rule_run_context * restrict ctx)
     {
       if(ctx->generate_nodes->size)
       {
-        if(rbnode_attached(&rma->nohits_rbn))
-        {
-          rbtree_delete(&ctx->nohits, rma, nohits_rbn);
-        }
+        graph_rma_hit(rma);
       }
-      else if(!rbnode_attached(&rma->nohits_rbn))
+      else
       {
-        rbtree_put(&ctx->nohits, rma, nohits_rbn, nohits_rbn_cmp);
+        graph_rma_nohit(rma);
       }
     }
+//    {
+//      if(ctx->generate_nodes->size)
+//      {
+//        if(rbnode_attached(&rma->nohits_rbn))
+//        {
+//          rbtree_delete(&graph_nohits, rma, nohits_rbn);
+//        }
+//      }
+//      else if(!rbnode_attached(&rma->nohits_rbn))
+//      {
+//        rbtree_put(&graph_nohits, rma, nohits_rbn, nohits_rbn_cmp);
+//      }
+//    }
   }
 
   if(log_would(L_RULE))
@@ -633,7 +657,9 @@ xapi rule_run_context_xinit(rule_run_context * restrict rule_ctx)
 
   fatal(pattern_match_matches_create, &rule_ctx->match_nodes);
   fatal(set_create, &rule_ctx->generate_nodes);
-  rbtree_init(&rule_ctx->nohits);
+//  rbtree_init(&rule_ctx->nohits);
+
+  rule_ctx->modules = &g_modules;
 
   finally : coda;
 }
@@ -644,8 +670,8 @@ xapi rule_run_context_begin(rule_run_context * restrict rule_ctx)
 
   fatal(graph_invalidation_begin, &rule_ctx->invalidation);
 
-  /* reset tracking for which rules have hit */
-  rbtree_init(&rule_ctx->nohits);
+//  /* reset tracking for which rules have hit */
+//  rbtree_init(&rule_ctx->nohits);
 
   finally : coda;
 }

@@ -55,6 +55,7 @@
 #include "atomics.h"
 #include "macros.h"
 #include "zbuffer.h"
+#include "threads.h"
 
 #define SWEEP_INTERVAL_NSEC (500 * 1000)  /* half a second */
 
@@ -217,8 +218,6 @@ static xapi sweeper_thread()
   sigset_t orig;
   int r;
 
-  g_params.thread_sweeper = gettid();
-
   // signals handled on this thread
   sigfillset(&sigs);
   sigdelset(&sigs, SIGUSR1);
@@ -232,7 +231,7 @@ static xapi sweeper_thread()
 
   while(!g_params.shutdown)
   {
-    spinlock_acquire(&event_queue_lock, g_params.thread_sweeper);
+    spinlock_acquire(&event_queue_lock);
     event_era++;
 
     if(!llist_empty(&event_queue))
@@ -244,7 +243,7 @@ static xapi sweeper_thread()
       }
     }
 
-    spinlock_release(&event_queue_lock, g_params.thread_sweeper);
+    spinlock_release(&event_queue_lock);
 
     /* sleep */
     fatal(xpthread_sigmask, SIG_SETMASK, &sigs, &orig);
@@ -269,7 +268,7 @@ static xapi sweeper_thread()
   }
 
 finally:
-  spinlock_release(&event_queue_lock, g_params.thread_sweeper);
+  spinlock_release(&event_queue_lock);
 
 #if DEBUG || DEVEL
   logs(L_IPC, "terminating");
@@ -277,13 +276,16 @@ finally:
 coda;
 }
 
-static void * sweeper_thread_main(void * arg)
+static void * sweeper_thread_jump(void * arg)
 {
   enter;
 
   xapi R;
+
+  g_tid = g_params.thread_sweeper = gettid();
   logger_set_thread_name("sweeper");
   logger_set_thread_categories(L_SWEEPER);
+
   fatal(sweeper_thread);
 
 finally:
@@ -332,7 +334,7 @@ xapi sweeper_thread_enqueue(node *n, uint32_t mask, const char * restrict name, 
   rbnode *rbn;
   rbtree_search_context search_ctx;
 
-  spinlock_acquire(&event_queue_lock, g_params.thread_sweeper);
+  spinlock_acquire(&event_queue_lock);
 
   if(name)
   {
@@ -389,7 +391,7 @@ xapi sweeper_thread_enqueue(node *n, uint32_t mask, const char * restrict name, 
   e->era = event_era;
 
 finally:
-  spinlock_release(&event_queue_lock, g_params.thread_sweeper);
+  spinlock_release(&event_queue_lock);
 coda;
 }
 
@@ -405,7 +407,7 @@ xapi sweeper_thread_launch()
   fatal(xpthread_attr_setdetachstate, &attr, PTHREAD_CREATE_DETACHED);
 
   atomic_inc(&g_params.thread_count);
-  if((rv = pthread_create(&pthread_id, &attr, sweeper_thread_main, 0)) != 0)
+  if((rv = pthread_create(&pthread_id, &attr, sweeper_thread_jump, 0)) != 0)
   {
     atomic_dec(&g_params.thread_count);
     tfail(perrtab_KERNEL, rv);

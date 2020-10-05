@@ -64,7 +64,10 @@
 #include "sweeper_thread.h"
 #include "handler_thread.h"
 #include "beholder_thread.h"
+#include "loader_thread.h"
+#include "worker_thread.h"
 #include "channel.h"
+#include "handler.h"
 #include "var.h"
 #include "variant.h"
 #include "goals.h"
@@ -72,6 +75,8 @@
 #include "selection.h"
 #include "common/parseint.h"
 #include "common/hash.h"
+
+#include "locks.h"
 
 #if DEVEL
 static xapi setup_initial_channel(const char * restrict request)
@@ -115,8 +120,6 @@ static xapi xmain()
   logs(L_IPC, "started");
 #endif
 
-  g_params.thread_monitor = gettid();
-
   // allow creation of world+rw files
   umask(0);
   fatal(params_report);
@@ -150,13 +153,16 @@ static xapi xmain()
   beholder_stderr_rd = fds[0];
   fatal(xclose, fds[1]);
 
+  futex_acquire(&handler_lock);
+
   // launch other threads
   fatal(notify_thread_launch);
   fatal(server_thread_launch);
   fatal(sweeper_thread_launch);
   fatal(beholder_thread_launch);
+  fatal(loader_thread_launch);
 
-  /* the build thread is launched by the initial reconfiguration */
+  /* the build thread and worker threads are launched by the initial reconfiguration */
 
   // become the monitor thread
   fatal(monitor_thread);
@@ -168,6 +174,7 @@ static xapi xmain_jump()
 {
   enter;
 
+  g_tid = g_params.thread_monitor = gettid();
   fatal(xmain);
 
 finally:
@@ -271,7 +278,7 @@ static xapi xmain_load(char ** envp)
   fatal(goals_setup);
   fatal(stats_setup);
   fatal(selection_setup);
-  fatal(handler_thread_setup);
+  fatal(handler_setup);
   fatal(beholder_thread_setup);
 
   fatal(xmain_jump);
@@ -297,9 +304,10 @@ finally:
   fatal(variant_cleanup);
   fatal(goals_cleanup);
   fatal(stats_cleanup);
-  fatal(handler_thread_cleanup);
+  fatal(handler_cleanup);
   fatal(beholder_thread_cleanup);
   fatal(selection_cleanup);
+  fatal(worker_thread_cleanup);
 
   // libraries
   fatal(fab_unload);

@@ -23,7 +23,6 @@
 
 #include "config.h"
 #include "filesystem.h"
-#include "build_thread.h"
 
 struct box;
 struct box_int;
@@ -67,6 +66,11 @@ struct config {
     CONFIGBASE;
     struct box_int16 * concurrency;
   } build;
+
+  struct config_workers {
+    CONFIGBASE;
+    struct box_int16 * concurrency;
+  } workers;
 
   struct config_extern_section {
     CONFIGBASE;

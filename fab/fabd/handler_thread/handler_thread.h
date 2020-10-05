@@ -25,65 +25,6 @@
 #include "types.h"
 #include "xapi.h"
 
-#include "valyria/llist.h"
-#include "valyria/stack.h"
-#include "value/writer.h"
-
-#include "fab/build.h"
-
-#include "selector.h"
-#include "graph.h"
-
-struct selection;
-struct request_parser;
-struct fabipc_channel;
-
-extern stack g_handlers;    // list of active handlers
-extern int32_t g_handlers_lock;
-
-//enum handler_build_state {
-//  BUILD_NOT_STARTED,
-//  BUILD_IN_PROGRESS,
-//  BUILD_SUCCEEDED,
-//  BUILD_FAILED,
-//  BUILD_NONE,
-//};
-
-typedef struct handler_context {
-  union {
-    llist lln;    // freelist
-    stack stk;    // g_handlers
-  };
-  selector_context sel_ctx;
-  struct selection * selection;
-  struct graph_invalidation_context invalidation;
-  struct request_parser * request_parser;
-  bool autorun;
-
-//  enum handler_build_state build_state;
-  enum fab_build_state build_state;
-
-  pid_t tid;
-  pid_t client_pid;
-  pid_t client_tid;
-  uint32_t client_msg_id;
-
-  /* fabipc channel for the client */
-  struct fabipc_channel * chan;
-
-  /* local tail for the channels server ring */
-  uint32_t local_tail;
-
-  value_writer writer;
-
-  /* subscribed events */
-  uint32_t event_mask;
-} handler_context;
-
-xapi handler_thread_setup(void);
-
-xapi handler_thread_cleanup(void);
-
 xapi handler_thread_launch(pid_t client_pid, pid_t client_tid, bool autorun)
   __attribute__((nonnull));
 

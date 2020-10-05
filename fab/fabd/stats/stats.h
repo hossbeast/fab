@@ -43,6 +43,15 @@ xapi stats_cleanup(void);
 //
 xapi stats_report(void);
 
+void stats_timing_start(struct timespec * restrict start, uint8_t n)
+  __attribute__((nonnull));
+
+void stats_timing_stop(struct timespec * restrict start, uint64_t * restrict stat)
+  __attribute__((nonnull));
+
+void stats_timing_mark(struct timespec * restrict start, uint64_t * restrict stat)
+  __attribute__((nonnull));
+
 #define STATS_TABLE                                                              \
   DEF(stathash, uint64_t)                 /* file is stat-hashed */              \
   DEF(contenthash, uint64_t)              /* file is content-hash */             \
@@ -51,6 +60,7 @@ xapi stats_report(void);
   DEF(module_reload, uint64_t)            /* module is reloaded */               \
   DEF(model_reload, uint64_t)             /* model is reloaded */                \
   DEF(module_refresh, uint64_t)           /* module is refreshed */              \
+  DEF(rule_run, uint32_t)                 /* a rule is run */                    \
   DEF(rules, uint64_t)                    /* extant rules */                     \
   DEF(rmas, uint64_t)                     /* extant rmas */                      \
   DEF(models, uint64_t)                   /* extant models */                    \
@@ -62,6 +72,11 @@ xapi stats_report(void);
   DEF(rcu_quiesce_nograce, uint32_t)                                             \
   DEF(rcu_quiesce_notlast, uint32_t)                                             \
   DEF(rcu_quiesce_wake, uint32_t)                                                \
+  DEF(loader, uint64_t)                                                          \
+  DEF(loader_reconfigure, uint64_t)                                              \
+  DEF(loader_walker, uint64_t)                                              \
+  DEF(loader_modules, uint64_t)                                              \
+  DEF(loader_rules, uint64_t)                                              \
 
 extern struct g_stats {
 #undef DEF

@@ -44,53 +44,27 @@
 #include "goals.h"
 #include "channel.h"
 #include "rcu.h"
+#include "module.h"
+#include "formula.h"
 
 #include "common/attrs.h"
 #include "atomics.h"
 #include "barriers.h"
 #include "locks.h"
+#include "threads.h"
 
-static llist context_freelist = LLIST_INITIALIZER(context_freelist);
-stack g_handlers = STACK_INITIALIZER(g_handlers);
-int32_t g_handlers_lock;
+static int32_t handlers_lock;
 
-static xapi context_reset(handler_context * restrict ctx)
+static xapi update(handler_context * restrict ctx)
 {
   enter;
 
-  ctx->selection = 0;
-  ctx->build_state = 0;
-
-  finally : coda;
-}
-
-static xapi context_create(handler_context ** restrict rv)
-{
-  enter;
-
-  handler_context * ctx;
-
-  fatal(xmalloc, &ctx, sizeof(*ctx));
-  fatal(context_reset, ctx);
-  llist_init_node(&ctx->lln);
-  fatal(request_parser_create, &ctx->request_parser);
-
-  *rv = ctx;
-
-  finally : coda;
-}
-
-static xapi context_xfree(handler_context * restrict ctx)
-{
-  enter;
-
-  if(ctx)
-  {
-    fatal(selector_context_xdestroy, &ctx->sel_ctx);
-    graph_invalidation_end(&ctx->invalidation);
-    fatal(request_parser_xfree, ctx->request_parser);
-  }
-  wfree(ctx);
+  fatal(node_full_refresh);
+  fatal(graph_invalidation_begin, &ctx->invalidation);
+  fatal(module_full_refresh, &ctx->invalidation);
+  graph_invalidation_end(&ctx->invalidation);
+  fatal(graph_full_refresh);
+  fatal(formula_full_refresh);
 
   finally : coda;
 }
@@ -102,7 +76,7 @@ static xapi handle_request(handler_context * restrict ctx, fabipc_message * rest
   request * request = 0;
   narrator * N;
 
-  futex_acquire(&handler_lock, ctx->tid);
+  futex_acquire(&handler_lock);
 printf("%.*s\n", (int)msg->size, msg->text);
   fatal(request_parser_parse, ctx->request_parser, msg->text, msg->size, "fab-request", &request);
   ctx->client_msg_id = msg->id;
@@ -117,10 +91,12 @@ printf("%.*s\n", (int)msg->size, msg->text);
     fatal(log_finish);
   }
 
+  fatal(update, ctx);
+
   /* for a request including a build command, the build lock is also required */
   if(request->build_command)
   {
-    if(!trylock_acquire(&handler_build_lock, ctx->tid))
+    if(!trylock_acquire(&handler_build_lock))
     {
       handler_request_completes(ctx, EBUSY, MMS("build command already in progress"));
       goto XAPI_FINALLY;
@@ -128,7 +104,7 @@ printf("%.*s\n", (int)msg->size, msg->text);
   }
 
   /* prepare to execute the request */
-  fatal(context_reset, ctx);
+  fatal(handler_reset, ctx);
   fatal(graph_invalidation_begin, &ctx->invalidation);
   fatal(handler_process_request, ctx, request);
   graph_invalidation_end(&ctx->invalidation);
@@ -149,7 +125,7 @@ printf("%.*s\n", (int)msg->size, msg->text);
   }
 
 finally:
-  futex_release(&handler_lock, ctx->tid);
+  futex_release(&handler_lock);
   graph_invalidation_end(&ctx->invalidation);
   fatal(request_xfree, request);
 coda;
@@ -179,7 +155,7 @@ static xapi handler_thread(handler_context * restrict ctx)
   interval.tv_nsec = 125000000;   // 125 millis
 
   chan = ctx->chan;
-  chan->server_pulse = (uint16_t)ctx->tid;
+  chan->server_pulse = (uint16_t)g_tid;
   chan->client_pulse = 0;
 
 #if DEVEL
@@ -187,7 +163,7 @@ static xapi handler_thread(handler_context * restrict ctx)
   {
     chan = g_server_initial_channel;
     chan->client_pid = g_params.pid;
-    chan->client_tid = ctx->tid;
+    chan->client_tid = g_tid;
   }
   else
   {
@@ -219,9 +195,10 @@ static xapi handler_thread(handler_context * restrict ctx)
     }
     else if(ctx->build_state > FAB_BUILD_IN_PROGRESS)
     {
+printf("complete, chan %p\n", ctx->chan);
       handler_request_complete(ctx, ctx->build_state == FAB_BUILD_FAILED);
       ctx->build_state = 0;
-      trylock_release(&handler_build_lock, ctx->tid);
+      trylock_release(&handler_build_lock);
     }
 
     if(!(client_msg = handler_acquire(ctx)))
@@ -263,9 +240,7 @@ printf("BREAK ; client_pulse\n");
 finally:
   if(chan)
   {
-    if(!chan->server_exit) {
-      chan->server_exit = true;
-    }
+    chan->server_exit = true;
     syscall(SYS_tgkill, chan->client_pid, chan->client_tid, SIGUSR1);
   }
 #if DEVEL
@@ -289,21 +264,20 @@ static void * handler_thread_jump(void * arg)
 
   xapi R;
   handler_context *ctx;
-  pid_t tid;
   fabipc_channel *chan = 0;
 
+  g_tid = gettid();
   logger_set_thread_name("handler");
   logger_set_thread_categories(L_HANDLER);
 
   ctx = arg;
-  tid = ctx->tid = gettid();
 
-  fatal(channel_create, &chan, ctx->tid);
+  fatal(channel_create, &chan, g_tid);
   ctx->chan = chan;
 
-  futex_acquire(&g_handlers_lock, tid);
+  futex_acquire(&handlers_lock);
   stack_push(&g_handlers, &ctx->stk);
-  futex_release(&g_handlers_lock, tid);
+  futex_release(&handlers_lock);
 
   fatal(handler_thread, ctx);
 
@@ -314,7 +288,7 @@ finally:
     xapi_infos("name", "fabd/handler");
     xapi_infof("pgid", "%ld", (long)g_params.pgid);
     xapi_infof("pid", "%ld", (long)g_params.pid);
-    xapi_infof("tid", "%ld", (long)ctx->tid);
+    xapi_infof("tid", "%"PRId32, g_tid);
     fatal(logger_xtrace_full, L_ERROR, L_NONAMES, XAPI_TRACE_COLORIZE | XAPI_TRACE_NONEWLINE);
 #else
     fatal(logger_xtrace_pithy, L_ERROR, L_NONAMES, XAPI_TRACE_COLORIZE | XAPI_TRACE_NONEWLINE);
@@ -322,9 +296,9 @@ finally:
   }
 conclude(&R);
 
-  futex_acquire(&g_handlers_lock, tid);
+  futex_acquire(&handlers_lock);
   stack_delete(&ctx->stk);
-  futex_release(&g_handlers_lock, tid);
+  futex_release(&handlers_lock);
 
   if(R) {
     g_params.shutdown = true;
@@ -334,13 +308,13 @@ conclude(&R);
     syscall(SYS_tgkill, g_params.pid, g_params.thread_monitor, SIGUSR1);
   }
 
-  rcu_synchronize(tid);
+  rcu_synchronize();
 
   /* dispose of the context */
   if(chan) {
     RUNTIME_ASSERT(shmdt(chan) == 0);
   }
-  llist_append(&context_freelist, ctx, lln);
+  handler_release(ctx);
 
   atomic_dec(&g_params.thread_count);
   syscall(SYS_tgkill, g_params.pid, g_params.thread_monitor, SIGUSR1);
@@ -377,18 +351,17 @@ static void * autorun_thread_jump(void * arg)
   enter;
 
   xapi R;
-  handler_context *ctx;
-  pid_t tid;
+  handler_context *ctx = 0;
 
+  g_tid = gettid();
   logger_set_thread_name("handler");
   logger_set_thread_categories(L_HANDLER);
 
   ctx = arg;
-  tid = ctx->tid = gettid();
 
-  futex_acquire(&g_handlers_lock, tid);
+  futex_acquire(&handlers_lock);
   stack_push(&g_handlers, &ctx->stk);
-  futex_release(&g_handlers_lock, tid);
+  futex_release(&handlers_lock);
 
   fatal(autorun_thread, ctx);
 
@@ -399,7 +372,7 @@ finally:
     xapi_infos("name", "fabd/handler");
     xapi_infof("pgid", "%ld", (long)g_params.pgid);
     xapi_infof("pid", "%ld", (long)g_params.pid);
-    xapi_infof("tid", "%ld", (long)ctx->tid);
+    xapi_infof("tid", "%"PRId32, g_tid);
     fatal(logger_xtrace_full, L_ERROR, L_NONAMES, XAPI_TRACE_COLORIZE | XAPI_TRACE_NONEWLINE);
 #else
     fatal(logger_xtrace_pithy, L_ERROR, L_NONAMES, XAPI_TRACE_COLORIZE | XAPI_TRACE_NONEWLINE);
@@ -407,9 +380,9 @@ finally:
   }
 conclude(&R);
 
-  futex_acquire(&g_handlers_lock, tid);
+  futex_acquire(&handlers_lock);
   stack_delete(&ctx->stk);
-  futex_release(&g_handlers_lock, tid);
+  futex_release(&handlers_lock);
 
   if(R) {
     g_params.shutdown = true;
@@ -419,10 +392,8 @@ conclude(&R);
     syscall(SYS_tgkill, g_params.pid, g_params.thread_monitor, SIGUSR1);
   }
 
-  rcu_synchronize(tid);
-
-  /* dispose of the context */
-  llist_append(&context_freelist, ctx, lln);
+  rcu_synchronize();
+  handler_release(ctx);
 
   atomic_dec(&g_params.thread_count);
   syscall(SYS_tgkill, g_params.pid, g_params.thread_monitor, SIGUSR1);
@@ -433,27 +404,6 @@ conclude(&R);
 // public
 //
 
-xapi handler_thread_setup()
-{
-  enter;
-
-  finally : coda;
-}
-
-xapi handler_thread_cleanup()
-{
-  enter;
-
-  handler_context *ctx;
-  llist *T;
-
-  llist_foreach_safe(&context_freelist, ctx, lln, T) {
-    fatal(context_xfree, ctx);
-  }
-
-  finally : coda;
-}
-
 xapi handler_thread_launch(pid_t client_pid, pid_t client_tid, bool autorun)
 {
   enter;
@@ -462,16 +412,9 @@ xapi handler_thread_launch(pid_t client_pid, pid_t client_tid, bool autorun)
   pthread_attr_t attr;
   int rv;
   handler_context *ctx = 0;
-  void *(*handler)(void *);
+  void *(*handler_fn)(void *);
 
-  if((ctx = llist_shift(&context_freelist, typeof(*ctx), lln)) == 0)
-  {
-    fatal(context_create, &ctx);
-  }
-  else
-  {
-    fatal(context_reset, ctx);
-  }
+  fatal(handler_alloc, &ctx);
 
   ctx->client_pid = client_pid;
   ctx->client_tid = client_tid;
@@ -480,16 +423,18 @@ xapi handler_thread_launch(pid_t client_pid, pid_t client_tid, bool autorun)
   fatal(xpthread_attr_init, &attr);
   fatal(xpthread_attr_setdetachstate, &attr, PTHREAD_CREATE_DETACHED);
 
+printf("launching\n");
+
   if(ctx->autorun)
   {
-    handler = autorun_thread_jump;
+    handler_fn = autorun_thread_jump;
   }
   else
   {
-    handler = handler_thread_jump;
+    handler_fn = handler_thread_jump;
   }
   atomic_inc(&g_params.thread_count);
-  if((rv = pthread_create(&pthread_id, &attr, handler, ctx)) != 0)
+  if((rv = pthread_create(&pthread_id, &attr, handler_fn, ctx)) != 0)
   {
     atomic_dec(&g_params.thread_count);
     tfail(perrtab_KERNEL, rv);
@@ -498,6 +443,6 @@ xapi handler_thread_launch(pid_t client_pid, pid_t client_tid, bool autorun)
 
 finally:
   pthread_attr_destroy(&attr);
-  fatal(context_xfree, ctx);
+  handler_release(ctx);
 coda;
 }

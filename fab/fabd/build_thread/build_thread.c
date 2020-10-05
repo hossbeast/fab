@@ -49,9 +49,8 @@
 #include "logging.h"
 #include "node.h"
 #include "params.h"
-#include "handler_thread.h"
+#include "handler.h"
 #include "path.h"
-#include "formula.h"
 #include "config.internal.h"
 #include "exec_builder.h"
 #include "fab/build.desc.h"
@@ -61,13 +60,17 @@
 #include "locks.h"
 #include "common/hash.h"
 #include "common/attrs.h"
-#include "box.h"
+#include "yyutil/box.h"
 #include "events.h"
 #include "zbuffer.h"
 
 // configuration
+typedef struct build_thread_config {
+  int16_t concurrency;
+} build_thread_config;
+
 static build_thread_config staging_cfg;
-build_thread_config build_thread_cfg;
+static build_thread_config active_cfg;
 
 // internal
 int build_devnull_fd = -1;
@@ -172,7 +175,7 @@ static xapi build_thread()
   while(!g_params.shutdown && !build_thread_relaunching)
   {
     // launch up to max concurrency
-    while(build_slots_bypid->size < build_thread_cfg.concurrency)
+    while(build_slots_bypid->size < active_cfg.concurrency)
     {
       // stage has failed
       if(build_stage_failure) {
@@ -211,7 +214,7 @@ printf("build-start would %d\n", 0);
 
       // locate an open slot
       while(build_slots[slot].pid) {
-        slot = (slot + 1) % build_thread_cfg.concurrency;
+        slot = (slot + 1) % active_cfg.concurrency;
       }
 
       bs = &build_slots[slot];
@@ -328,11 +331,12 @@ static void * build_thread_jump(void * arg)
   enter;
 
   xapi R;
+
+  g_tid = g_params.thread_build = gettid();
   logger_set_thread_name("build");
   logger_set_thread_categories(L_BUILDER);
-  g_params.thread_build = gettid();
 
-  spinlock_acquire(&build_thread_lock, g_params.thread_build);
+  spinlock_acquire(&build_thread_lock);
   fatal(build_thread);
 
 finally:
@@ -351,7 +355,7 @@ finally:
 conclude(&R);
 
   atomic_dec(&g_params.thread_count);
-  spinlock_release(&build_thread_lock, g_params.thread_build);
+  spinlock_release(&build_thread_lock);
 
   if(!build_thread_relaunching) {
     syscall(SYS_tgkill, g_params.pid, g_params.thread_monitor, SIGUSR1);
@@ -403,8 +407,8 @@ xapi build_thread_setup()
   fatal(xepoll_create, &epfd);
 
   // setup pipes
-  fatal(xmalloc, &build_slots, sizeof(*build_slots) * build_thread_cfg.concurrency);
-  for(x = 0; x < build_thread_cfg.concurrency; x++)
+  fatal(xmalloc, &build_slots, sizeof(*build_slots) * active_cfg.concurrency);
+  for(x = 0; x < active_cfg.concurrency; x++)
   {
     fatal(xpipe, build_slots[x].stdout_pipe);
     fatal(xpipe, build_slots[x].stderr_pipe);
@@ -432,7 +436,7 @@ xapi build_thread_setup()
   fatal(hashtable_createx
     , &build_slots_bypid
     , sizeof(build_slot*)
-    , build_thread_cfg.concurrency
+    , active_cfg.concurrency
     , build_slot_hash
     , build_slot_cmp
     , 0
@@ -452,7 +456,7 @@ xapi build_thread_cleanup()
 
   fatal(ixclose, &build_devnull_fd);
 
-  for(x = 0; x < build_thread_cfg.concurrency; x++)
+  for(x = 0; x < active_cfg.concurrency; x++)
   {
     fatal(xclose, build_slots[x].stdout_pipe[0]);
     fatal(xclose, build_slots[x].stdout_pipe[1]);
@@ -483,7 +487,7 @@ xapi build_thread_reconfigure(config * restrict cfg, bool dry)
   {
     build_config(cfg, &staging_cfg);
   }
-  else if(cfg->build.changed || cfg->formula.changed)
+  else if(cfg->build.changed)
   {
     if(build_thread_lock)
     {
@@ -491,8 +495,8 @@ xapi build_thread_reconfigure(config * restrict cfg, bool dry)
       fatal(sigutil_tgkill, g_params.pid, g_params.thread_build, SIGUSR1);
 
       // wait
-      spinlock_acquire(&build_thread_lock, g_params.thread_build);
-      spinlock_release(&build_thread_lock, g_params.thread_build);
+      spinlock_acquire(&build_thread_lock);
+      spinlock_release(&build_thread_lock);
 
       build_thread_relaunching = false;
     }
@@ -500,7 +504,7 @@ xapi build_thread_reconfigure(config * restrict cfg, bool dry)
     fatal(build_thread_cleanup);
 
     // apply new config
-    memcpy(&build_thread_cfg, &staging_cfg, sizeof(build_thread_cfg));
+    memcpy(&active_cfg, &staging_cfg, sizeof(active_cfg));
 
     // relaunch
     fatal(build_thread_setup);

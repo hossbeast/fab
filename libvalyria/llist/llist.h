@@ -28,9 +28,7 @@ REMARKS
 
 */
 
-#include "xapi.h"
 #include "types.h"
-
 #include "macros.h"
 
 typedef struct llist {
@@ -78,7 +76,7 @@ bool llist_empty_node(const llist * head)
 bool llist_attached_node(const llist *node)
   __attribute__((nonnull));
 
-/// list_prepend
+/// list_prepend (unshift)
 //
 // add to a list such that the item will be first in an enumeration of the list
 //
@@ -92,7 +90,7 @@ bool llist_attached_node(const llist *node)
 llist * llist_prepend_node(llist * head, llist * node)
   __attribute__((nonnull));
 
-/// list_append
+/// list_append (push)
 //
 // add to a list such that the item will be last in an enumeration of the list
 //
@@ -102,6 +100,9 @@ llist * llist_prepend_node(llist * head, llist * node)
 //
 #define llist_append(head, item, member) \
   llist_append_node(head, &(item)->member)
+
+#define llist_push(head, item, member) llist_append(head, item, member)
+#define llist_push_node(head, node) llist_append_node(head, node)
 
 llist * llist_append_node(llist * head, llist * node)
   __attribute__((nonnull));

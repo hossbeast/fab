@@ -60,6 +60,8 @@ extern struct logger_category * categories;
 #define L_MONITOR   categories[L_B + 0x4].id
 #define L_HANDLER   categories[L_B + 0x5].id
 #define L_BEHOLDER  categories[L_B + 0x6].id
+#define L_LOADER    categories[L_B + 0x7].id
+#define L_WORKER    categories[L_B + 0x8].id
 
 /// logging_setup
 //

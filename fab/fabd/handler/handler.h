@@ -25,15 +25,55 @@
 #include "types.h"
 #include "xapi.h"
 
-struct request;
-struct handler_context;
+#include "valyria/stack.h"
+#include "fab/build.h"
+
+#include "selector.h"
+#include "rule.h"
+
+struct fabipc_channel;
 struct fabipc_message;
+struct handler_context;
+struct request;
+struct request_parser;
+struct selection;
+
+extern stack g_handlers;    // list of active handlers
 
 /* lock for processing any request */
 extern int32_t handler_lock;
 
 /* lock for running the build, e.g. build or autobuild commands */
 extern int32_t handler_build_lock;
+
+typedef struct handler_context {
+  union {
+    llist lln;    // freelist
+    stack stk;    // g_handlers
+  };
+  selector_context sel_ctx;
+  rule_run_context rule_ctx;
+  struct selection * selection;
+  struct graph_invalidation_context invalidation;
+  struct request_parser * request_parser;
+  bool autorun;
+
+  enum fab_build_state build_state;
+
+  pid_t tid;
+  pid_t client_pid;
+  pid_t client_tid;
+  uint32_t client_msg_id;
+
+  /* fabipc channel for the client */
+  struct fabipc_channel * chan;
+
+  /* local tail for the channels server ring */
+  uint32_t local_tail;
+
+  /* subscribed events */
+  uint32_t event_mask;
+} handler_context;
 
 xapi handler_process_request(struct handler_context * restrict ctx, struct request * restrict request)
   __attribute__((nonnull));
@@ -57,5 +97,16 @@ struct fabipc_message * handler_acquire(struct handler_context * restrict ctx)
 
 void handler_consume(struct handler_context * restrict ctx)
   __attribute__((nonnull));
+
+
+xapi handler_setup(void);
+
+xapi handler_cleanup(void);
+
+xapi handler_alloc(handler_context ** restrict rv)
+  __attribute__((nonnull));
+
+void handler_release(handler_context * restrict ctx);
+void handler_reset(handler_context * restrict ctx);
 
 #endif

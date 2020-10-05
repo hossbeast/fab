@@ -30,7 +30,7 @@
 #include "logging.h"
 #include "config.internal.h"
 #include "CONFIG.errtab.h"
-#include "box.h"
+#include "yyutil/box.h"
 
 #include "macros.h"
 
@@ -65,6 +65,8 @@ logger_category * categories = (logger_category []) {
   , { name : "MONITOR"    , description : "monitor thread" , optional : 1 }
   , { name : "HANDLER"    , description : "handler thread" , optional : 1 }
   , { name : "BEHOLDER"   , description : "beholder thread" , optional : 1 }
+  , { name : "LOADER"     , description : "loader thread" , optional : 1 }
+  , { name : "WORKER"     , description : "worker thread" , optional : 1 }
   , { }
 };
 
@@ -122,6 +124,8 @@ xapi logging_reconfigure(config * restrict cfg, bool dry)
 
   box_string * expr;
   int x;
+
+goto XAPI_FINALIZE;
 
 #if DEVEL
   if(g_logging_skip_reconfigure)

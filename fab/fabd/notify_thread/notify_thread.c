@@ -50,6 +50,7 @@
 
 #include "atomics.h"
 #include "macros.h"
+#include "threads.h"
 
 uint16_t notify_thread_epoch;
 
@@ -70,8 +71,6 @@ static xapi notify_thread()
   ssize_t r;
   size_t o;
   int rv;
-
-  g_params.thread_notify = gettid();
 
   // signals handled on this thread
   sigfillset(&sigs);
@@ -173,11 +172,13 @@ finally:
 coda;
 }
 
-static void * notify_thread_main(void * arg)
+static void * notify_thread_jump(void * arg)
 {
   enter;
 
   xapi R;
+
+  g_tid = g_params.thread_notify = gettid();
   logger_set_thread_name("notify");
   logger_set_thread_categories(L_NOTIFY);
   fatal(notify_thread, arg);
@@ -228,7 +229,7 @@ xapi notify_thread_launch()
   fatal(xpthread_attr_setdetachstate, &attr, PTHREAD_CREATE_DETACHED);
 
   atomic_inc(&g_params.thread_count);
-  if((rv = pthread_create(&pthread_id, &attr, notify_thread_main, 0)) != 0)
+  if((rv = pthread_create(&pthread_id, &attr, notify_thread_jump, 0)) != 0)
   {
     atomic_dec(&g_params.thread_count);
     tfail(perrtab_KERNEL, rv);

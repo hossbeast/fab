@@ -27,7 +27,7 @@
 #include "path_cache.h"
 #include "config.internal.h"
 #include "CONFIG.errtab.h"
-#include "box.h"
+#include "yyutil/box.h"
 
 #include "common/hash.h"
 #include "zbuffer.h"

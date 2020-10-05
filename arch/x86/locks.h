@@ -22,29 +22,38 @@
 #include <stdbool.h>
 #include <sys/syscall.h>
 #include <linux/futex.h>
+#include <unistd.h>
 
 #include "barriers.h"
 #include "macros.h"
+#include "threads.h"
 
-static inline bool trylock_acquire(int32_t *lock, int32_t tid)
+static inline bool trylock_acquire(int32_t *lock)
 {
   int32_t zero = 0;
-  return __atomic_compare_exchange_n(lock, &zero, tid, false, __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST);
+
+  RUNTIME_ASSERT(g_tid);
+
+  return __atomic_compare_exchange_n(lock, &zero, g_tid, false, __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST);
 }
 
-static inline void trylock_release(int32_t *lock, int32_t tid)
+static inline void trylock_release(int32_t *lock)
 {
-  __atomic_compare_exchange_n(lock, &tid, 0, false, __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST);
+  RUNTIME_ASSERT(g_tid);
+
+  __atomic_compare_exchange_n(lock, &g_tid, 0, false, __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST);
 }
 
-static inline void spinlock_acquire(int32_t *lock, int32_t tid)
+static inline void spinlock_acquire(int32_t *lock)
 {
   int32_t zero;
+
+  RUNTIME_ASSERT(g_tid);
 
   while(1)
   {
     zero = 0;
-    if((__atomic_compare_exchange_n(lock, &zero, tid, false, __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST)))
+    if((__atomic_compare_exchange_n(lock, &zero, g_tid, false, __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST)))
     {
       break;
     }
@@ -54,35 +63,39 @@ static inline void spinlock_acquire(int32_t *lock, int32_t tid)
   smp_mb();
 }
 
-static inline void spinlock_release(int32_t * lock, int32_t tid)
+static inline void spinlock_release(int32_t * lock)
 {
   smp_mb();
-  __atomic_compare_exchange_n(lock, &tid, 0, false, __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST);
+  __atomic_compare_exchange_n(lock, &g_tid, 0, false, __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST);
 }
 
-static inline void futex_acquire(int32_t * futex, int32_t tid)
+static inline void futex_acquire(int32_t * futex)
 {
   int32_t zero;
 
-  /* blocks until the futex can transition from zero -> tid */
+  RUNTIME_ASSERT(g_tid);
+
+  /* blocks until the futex can transition from zero -> g_tid */
   while(1)
   {
     zero = 0;
-    if((__atomic_compare_exchange_n(futex, &zero, tid, false, __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST))) {
+    if((__atomic_compare_exchange_n(futex, &zero, g_tid, false, __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST))) {
       break;
     }
 
-    syscall(SYS_futex, futex, FUTEX_WAIT, tid, 0, 0, 0);
+    syscall(SYS_futex, futex, FUTEX_WAIT, g_tid, 0, 0, 0);
   }
   smp_mb();
 }
 
-static inline void futex_release(int32_t * futex, int32_t tid)
+static inline void futex_release(int32_t * futex)
 {
+  RUNTIME_ASSERT(g_tid);
+
 #if DEBUG || DEVEL
   int32_t old;
   old = __atomic_exchange_n(futex, 0, __ATOMIC_SEQ_CST);
-  RUNTIME_ASSERT(old == tid);
+  RUNTIME_ASSERT(old == g_tid);
 #else
   __atomic_store_n(futex, 0, __ATOMIC_SEQ_CST);
 #endif

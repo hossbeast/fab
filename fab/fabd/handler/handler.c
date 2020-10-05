@@ -51,7 +51,10 @@
 #include "config.internal.h"
 #include "walker.h"
 #include "request.internal.h"
+#include "request_parser.h"
+#include "request.internal.h"
 #include "selector.h"
+#include "selector.internal.h"
 #include "REQUEST.errtab.h"
 #include "goals.h"
 #include "server_thread.h"
@@ -66,6 +69,9 @@
 
 int32_t handler_lock;
 int32_t handler_build_lock;
+
+static llist context_freelist = LLIST_INITIALIZER(context_freelist);
+stack g_handlers = STACK_INITIALIZER(g_handlers);
 
 //
 // handlers
@@ -237,6 +243,18 @@ static xapi handler_run(handler_context * restrict ctx)
   finally : coda;
 }
 
+static xapi handler_destroy(handler_context * restrict ctx)
+{
+  enter;
+
+  fatal(selector_context_xdestroy, &ctx->sel_ctx);
+  graph_invalidation_end(&ctx->invalidation);
+  fatal(request_parser_xfree, ctx->request_parser);
+  fatal(rule_run_context_xdestroy, &ctx->rule_ctx);
+
+  finally : coda;
+}
+
 //
 // public
 //
@@ -359,6 +377,7 @@ xapi handler_process_request(handler_context * restrict ctx, request * restrict 
   finally : coda;
 }
 
+
 fabipc_message * handler_produce(handler_context * restrict ctx, uint32_t * restrict tail)
 {
   return fabipc_produce(
@@ -397,4 +416,60 @@ fabipc_message * handler_acquire(handler_context * restrict ctx)
 void handler_consume(handler_context * restrict ctx)
 {
   fabipc_consume(&ctx->chan->client_ring.head);
+}
+
+
+xapi handler_setup()
+{
+  enter;
+
+  finally : coda;
+}
+
+xapi handler_cleanup()
+{
+  enter;
+
+  handler_context *ctx;
+  llist *T;
+
+  llist_foreach_safe(&context_freelist, ctx, lln, T) {
+    fatal(handler_destroy, ctx);
+    wfree(ctx);
+  }
+
+  finally : coda;
+}
+
+xapi handler_alloc(handler_context ** restrict rv)
+{
+  enter;
+
+  handler_context * ctx;
+
+  if((ctx = llist_shift(&context_freelist, typeof(*ctx), lln)) == 0)
+  {
+    fatal(xmalloc, &ctx, sizeof(*ctx));
+    llist_init_node(&ctx->lln);
+    fatal(request_parser_create, &ctx->request_parser);
+    fatal(rule_run_context_xinit, &ctx->rule_ctx);
+  }
+
+  *rv = ctx;
+
+  finally : coda;
+}
+
+void handler_release(handler_context * restrict ctx)
+{
+  if(ctx) {
+    llist_append(&context_freelist, ctx, lln);
+  }
+}
+
+void handler_reset(handler_context * restrict ctx)
+{
+  ctx->selection = 0;
+  ctx->build_state = 0;
+  ctx->chan = 0;
 }

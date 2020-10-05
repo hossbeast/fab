@@ -4,15 +4,10 @@
 #include <stddef.h>
 #include <string.h>
 
-#include "task.h"
 #include "x86.h"
-
-task main_task;
-
-#define containerof(ptr, type, member) ({        \
-  void *__mptr = (void*)(ptr);                   \
-  (type*)(__mptr - offsetof(type, member));      \
-})
+#include "task.h"
+#include "macros.h"
+#include "locks.h"
 
 static inline uint64_t pad_to(uint64_t x, uint64_t align)
 {
@@ -23,60 +18,122 @@ static inline uint64_t pad_to(uint64_t x, uint64_t align)
   return align - r;
 }
 
-/* topmost frame of base task jumps here */
-void x86_base_task_finalize(x86_task *task, void *thread_sp)
+/*
+ * topmost frame of base fiber jumps here
+ *
+ * thread_sp - stack pointer of original thread which called cmt_run
+ */
+void x86_base_fiber_finalize(x86_fiber *fiber, void *thread_sp)
 {
-extern x86_task sub_task;
+  RUNTIME_ASSERT(fiber->domain->executing == fiber);
 
-  printf("base-task-finalize %p -> %p\n", task, &sub_task);
-
-  while(sub_task.state != FINALIZED)
-  {
-    task_switch(&sub_task);
-  }
-
-printf("base-task-exit %p\n", task);
-
-  task->state = FINALIZED;
-  x86_task_thread_restore(thread_sp);
+  fiber->state = FINALIZED;
+  x86_thread_restore(thread_sp);
 }
 
-/* topmost frame of sub-tasks jump here */
-void x86_sub_task_finalize(x86_task *task)
+/* topmost frame of sub-fibers jumps here */
+void x86_sub_fiber_finalize(x86_fiber *fiber)
 {
-  printf("sub-task-finalize %p\n", task);
+  x86_domain *domain;
+  x86_fiber *next, *parent;
 
-  task->state = FINALIZED;
-  x86_task_resume(main_task.sp);
+  /* finalize the executing fiber */
+  domain = fiber->domain;
+  RUNTIME_ASSERT(domain->executing == fiber);
+  fiber->state = FINALIZED;
+
+  /* re-enable the parent fiber if any - it can only be in the same domain */
+  parent = fiber->parent;
+  if(__atomic_sub_fetch(&parent->children, 1, __ATOMIC_RELAXED) == 0) {
+    parent->state = RUNNING;
+    llist_push(&parent->domain->runqueue, parent, lln);
+  }
+
+  /* switch to the next fiber */
+  RUNTIME_ASSERT(!llist_empty(&domain->runqueue));
+
+  next = llist_shift(&domain->runqueue, typeof(*next), lln);
+  next->state = EXECUTING;
+  domain->executing = next;
+
+  x86_resume(next->sp);
+}
+
+/*
+ * topmost frame of tasks jumps here
+ *
+ * task  - task which has returned
+ * fiber - fiber which executed the task
+ */
+void x86_task_finalize(x86_task * restrict task, x86_fiber * restrict fiber)
+{
+  x86_fiber *parent;
+  x86_domain *domain;
+
+  /* re-enable the parent fiber if any - it may be in another domain */
+  parent = task->parent;
+  if(__atomic_sub_fetch(&parent->children, 1, __ATOMIC_RELAXED) == 0) {
+    parent->state = RUNNING;
+
+    domain = parent->domain;
+    futex_acquire(&domain->joinqueue_lock);
+    llist_push(&domain->joinqueue, parent, lln);
+    futex_release(&domain->joinqueue_lock);
+
+#if 0
+    if(domain->waiting) {
+//printf("JOIN WAKE\n");
+      syscall(SYS_futex, &domain->futex, FUTEX_WAKE, 1, 0, 0, 0);
+    }
+#endif
+  }
+
+  x86_resume(fiber->sp);
+}
+
+void x86_task_enqueue(x86_domain * restrict domain, x86_task * restrict task)
+{
+  futex_acquire(&domain->taskqueue_lock);
+  llist_push(&domain->taskqueue, task, lln);
+  futex_release(&domain->taskqueue_lock);
+
+#if 0
+  if(domain->waiting) {
+printf("ENQUEUE WAKE\n");
+    syscall(SYS_futex, &domain->futex, FUTEX_WAKE, 1, 0, 0, 0);
+  }
+#endif
 }
 
 /*
  * x86 task api
  */
 
-void x86_task_clone_finish(x86_task *task)
+x86_fiber *x86_clone_fiber_finish(x86_domain * restrict domain, x86_fiber * restrict fiber, void *rsp)
 {
   x86_registers *regs;
   size_t size;
   size_t pad;
   void *sp;
-  void *rsp;
+  void *rip;
 
-  /* get the size of the calling frame */
-  regs = (void*)task;
-  rsp = *(void**)&regs[1];
+  RUNTIME_ASSERT(fiber->stack);
+  RUNTIME_ASSERT(((uintptr_t)fiber->stack % 16) == 0);
+  RUNTIME_ASSERT((fiber->stack_size % 2) == 0);
+  RUNTIME_ASSERT(fiber->stack_size >= 8096);
+
+  /* x86_clone_fiber stashes register state here */
+  regs = fiber->stack;
+
+  /* top of the calling frame, excluding the return address */
+  rsp += 8;
+
+  /* size of the calling frame */
   size = regs->rbp - (uint64_t)rsp;
   pad = pad_to(size, 16);
 
-  printf("clone -> task %p\n", task);
-  printf(" rip 0x%08lx\n", regs->rip);
-  printf(" rbp 0x%08lx\n", regs->rbp);
-  printf(" rsp 0x%08lx\n", (uint64_t)rsp);
-  printf(" frame\n");
-  printf("  size %zu + %zu = %zu\n", size, pad, size + pad);
-
-  /* build the new task stack */
-  sp = task->stack + sizeof(task->stack);
+  /* build the new stack */
+  sp = fiber->stack + fiber->stack_size;
 
   /* alignment padding */
   sp -= pad;
@@ -88,42 +145,168 @@ void x86_task_clone_finish(x86_task *task)
   sp -= size;
 
   /* allocate the resume frame */
-  sp -= sizeof(*regs);
-  task->sp = sp;
+  sp -= (sizeof(*regs)) + 8;
+  fiber->sp = sp;
 
   /* build the resume frame */
   // frame pointer - base of the start frame (highest address)
-  regs->rbp = (uint64_t)sp + sizeof(*regs) + size;
+  regs->rbp = (uint64_t)sp + sizeof(*regs) + 8 + size;
+
+  // bounce through to arrange x86_fiber_clone return value
+  rip = (void*)regs->rip;
+  regs->rip = (uintptr_t)x86_clone_return;
+
   memcpy(sp, regs, sizeof(*regs));
   sp += sizeof(*regs);
 
-  /* copy the start frame from the active task */
+  /* popped in x86_clone_return */
+  *(void**)sp = rip;
+  sp += 8;
+
+  /* copy the start frame from the executing fiber */
   memcpy(sp, rsp, size);
   sp += size;
 
   /* build the top frame */
-  *(void**)sp = (void*)0xdeadbeef; // dummy frame pointer
+  *(void**)sp = (void*)0xfacefacefaceface; // dummy frame pointer
   sp += 8;
 
-  *(void**)sp = x86_sub_task_finalize_jump;
+  *(void**)sp = x86_sub_fiber_finalize_jump;
   sp += 8;
 
-  *(void**)sp = task;
+  /* arg0 to x86_sub_fiber_finalize */
+  *(void**)sp = fiber;
+
+  /* add to the runqueue */
+  fiber->state = RUNNING;
+  fiber->domain = domain;
+  fiber->parent = domain->executing;
+  __atomic_add_fetch(&fiber->parent->children, 1, __ATOMIC_RELAXED);
+  llist_push(&domain->runqueue, fiber, lln);
+
+  return fiber;
 }
 
-void x86_base_task_run(x86_task *task, void (*fn)(void *))
+x86_task * x86_clone_task_finish(x86_domain * restrict domain, x86_task * restrict task, void *rsp)
+{
+  x86_registers *regs;
+  size_t task_size;
+  size_t size;
+  void *sp;
+  void *rip;
+
+  /* x86_clone_task writes current state to the task stack */
+  regs = (void*)task->stack;
+
+  /* top of the calling frame excluding the return address */
+  rsp += 8;
+
+  /* this is the size of the calling frame */
+  task_size = regs->rbp - (uint64_t)rsp;
+
+//printf("regs @ %p\n", regs);
+//printf(" 0x%016lx\n", ((uint64_t*)regs)[0]);
+//printf(" 0x%016lx\n", ((uint64_t*)regs)[1]);
+//printf(" 0x%016lx\n", ((uint64_t*)regs)[2]);
+//printf(" 0x%016lx\n", ((uint64_t*)regs)[3]);
+//printf(" 0x%016lx\n", ((uint64_t*)regs)[4]);
+//printf(" 0x%016lx\n", ((uint64_t*)regs)[5]);
+//printf(" 0x%016lx\n", ((uint64_t*)regs)[6]);
+//printf(" 0x%016lx\n", ((uint64_t*)regs)[7]);
+//printf("task %p stack-size %hu\n", task, task->stack_size);
+
+  size = 0;
+  size += 32;                 // top frame
+  size += task_size;          // task frame
+  size += sizeof(*regs) + 8;  // resume frame
+
+//printf("start-size %zu size %zu\n", task_size, size);
+
+  RUNTIME_ASSERT(task->stack_size >= (size + sizeof(*regs)));
+
+  /* build the stack frames */
+  sp = task->stack + task->stack_size;
+  sp -= size;
+  task->sp = sp;
+
+  /* build the resume frame */
+  // frame pointer - base of the task frame (highest address)
+  regs->rbp = (uint64_t)sp + sizeof(*regs) + 8 + task_size;
+
+  // bounce through clone_return to arrange return value
+  rip = (void*)regs->rip;
+  regs->rip = (uintptr_t)x86_clone_return;
+
+  memcpy(sp, regs, sizeof(*regs));
+  sp += sizeof(*regs);
+
+  /* popped in x86_clone_return */
+  *(void**)sp = rip;
+  sp += 8;
+
+  /* ingest the task frame */
+  memcpy(sp, rsp, task_size);
+  sp += task_size;
+
+  /* build the top frame */
+  *(void**)sp = (void*)0xdeadbeefdeadbeef; // dummy frame pointer
+  sp += 8;
+  *(void**)sp = x86_task_finalize_jump;   // return address
+  sp += 8;
+  *(void**)sp = task;                     // arg0
+  sp += 8;
+  /* arg1 - fiber which executed the task */
+  sp += 8;
+
+  task->parent = domain->executing;
+  __atomic_add_fetch(&task->parent->children, 1, __ATOMIC_RELAXED);
+
+  return task;
+}
+
+void x86_task_assimilate_finish(x86_domain * restrict domain, x86_task *restrict task, void *sp)
+{
+  x86_fiber *fiber;
+  uint16_t size;
+
+  fiber = domain->executing;
+
+  /* stash this fiber onto the task stack */
+  *((void**)(((void*)task->stack) + task->stack_size - 8)) = fiber;
+
+//  // return address from task_assimilate call
+//  sp += 8;
+
+//printf("sp 0x%016lx\n", (uint64_t)sp);
+
+/* without this extra space, memcpy overwrites its own return address back to here */
+sp -= 256;
+
+//  /* executing fiber state */
+//  sp -= sizeof(x86_registers);
+
+  /* splice the task stack onto the executing fiber stack */
+  size = (task->stack + task->stack_size) - (char*)task->sp;
+  sp -= size;
+//printf("sp 0x%016lx size 0x%hx\n", (uint64_t)sp, size);
+  memcpy(sp, task->sp, size);
+
+  x86_switch(&fiber->sp, &sp);
+}
+
+void x86_base_fiber_run(x86_fiber *fiber, void (*fn)(x86_domain *))
 {
   x86_registers *regs;
   void *sp;
   size_t pad;
 
-printf("x86_task run, task %p fn %p\n", task, fn);
-printf(" stack 0x%08lx - 0x%08lx\n", (uint64_t)(void*)task->stack, (uint64_t)(void*)(task->stack + sizeof(task->stack)));
+//printf("x86_task run, task %p fn %p\n", task, fn);
+//printf(" stack 0x%08lx - 0x%08lx\n", (uint64_t)(void*)task->stack, (uint64_t)(void*)(task->stack + task->stack_size));
 
   pad = 0;
 
-  /* build the base task stack */
-  sp = task->stack + sizeof(task->stack);
+  /* build the base fiber stack */
+  sp = fiber->stack + fiber->stack_size;
 
   /* alignment padding */
   sp -= pad;
@@ -134,7 +317,7 @@ printf(" stack 0x%08lx - 0x%08lx\n", (uint64_t)(void*)task->stack, (uint64_t)(vo
   /* allocate the top frame */
   sp -= 24;
 
-  task->sp = sp;
+  fiber->sp = sp;
   regs = sp;
 
   /* build the start frame */
@@ -143,18 +326,19 @@ printf(" stack 0x%08lx - 0x%08lx\n", (uint64_t)(void*)task->stack, (uint64_t)(vo
   sp += sizeof(*regs);
 
   /* build the top frame */
-  *(void**)sp = x86_base_task_finalize_jump; // x86_task_thread_restore;
+  *(void**)sp = x86_base_fiber_finalize_jump;
   sp += 8;
 
   /* arg0 to x86_base_task_finalize */
-  *(void**)sp = task;
+  *(void**)sp = fiber;
   sp += 8;
 
   /* x86_base_task_switch sets these 8 bytes to the original thread stack pointer */
   sp += 8;
 
-  task->state = RUNNING;
-  x86_base_task_switch(task->sp);
+  fiber->state = EXECUTING;
+  fiber->domain->executing = fiber;
+  x86_base_fiber_switch(fiber->domain, fiber->sp);
 
   //memset(&task->sp->regs, 0, sizeof(task->sp->regs));
   //task->sp->regs.rip = (uintptr_t)fn;
@@ -175,65 +359,62 @@ printf(" stack 0x%08lx - 0x%08lx\n", (uint64_t)(void*)task->stack, (uint64_t)(vo
  * task api
  */
 
-void task_switch(x86_task *next)
+void cmt_run(x86_domain * restrict domain, x86_fiber * restrict fiber, void (*fn)(x86_domain *))
 {
-  x86_task *prev;
+  RUNTIME_ASSERT(fiber->stack);
+  RUNTIME_ASSERT(((uintptr_t)fiber->stack % 16) == 0);
+  RUNTIME_ASSERT((fiber->stack_size % 2) == 0);
+  RUNTIME_ASSERT(fiber->stack_size >= 8096);
 
-  prev = task_active;
-  prev->state = SUSPENDED;
+  memset(domain, 0, sizeof(*domain));
+  llist_init_node(&domain->runqueue);
+  llist_init_node(&domain->joinqueue);
+  llist_init_node(&domain->taskqueue);
 
-  task_active = next;
-  next->state = RUNNING;
-
-  x86_task_switch(&prev->sp, &next->sp);
+  fiber->domain = domain;
+  x86_base_fiber_run(fiber, fn);
 }
 
-#if 0
-extern void *readrip(void);
-extern void jump_task_init(struct x86_task *task);
-extern void jump(struct x86_task *task);
-
-void x86_task_clone_finalize(x86_task *task)
+void cmt_yield(x86_domain *domain)
 {
-  x86_task *active;
-  void *rsp;
-  void *rbp;
-  size_t size;
+  x86_fiber *prev, *next;
 
-  active = containerof(task_active, typeof(*active), t);
-
-  printf("suspend start\n");
-  x86_task_suspend(&active->sp);
-  printf("suspend done\n");
-
-  /* get the size of the current stack frame */
-  rbp = (void*)(uintptr_t)active->sp->regs.rbp;
-  rsp = active->sp->u8;
-  size = rbp - rsp;
-  /* excluding the state we just pushed onto the stack */
-  size -= 64;
-
-  /* allocate the jump frame */
-  rsp = task->stack + sizeof(task->stack);
-  rsp -= 8;
-
-  /* allocate start frame */
-  rsp = task->stack + sizeof(task->stack);
-  rsp -= size;
-
-printf("start frame : %zu\n", size);
-
-  /* copy the start frame */
-  memcpy(rsp, (void*)(uintptr_t)active->sp->regs.rbp, size);
-
-  /* setup the jump frame */
-  void *jt = jumpframe;
-  memcpy(rsp + size, &jt, sizeof(jt));
-
-  /* now undo damage to the active stack */
-  //active->sp += 64;
-
-  printf("calling resume\n");
-  x86_task_resume(&active->sp);
-}
+  /* no one to yield to */
+#if 1
+  RUNTIME_ASSERT(!llist_empty(&domain->runqueue));
+#else
+  if(llist_empty(&domain->runqueue)) {
+    return;
+  }
 #endif
+
+  prev = domain->executing;
+  prev->state = RUNNING;
+  llist_push(&domain->runqueue, prev, lln);
+
+  next = llist_shift(&domain->runqueue, typeof(*next), lln);
+  next->state = EXECUTING;
+  domain->executing = next;
+
+  x86_switch(&prev->sp, &next->sp);
+}
+
+void cmt_join(x86_domain *domain)
+{
+  x86_fiber *prev, *next;
+
+  prev = domain->executing;
+
+  /* no one to join */
+  if(prev->children == 0) {
+    return;
+  }
+
+  prev->state = JOINING;
+
+  next = llist_shift(&domain->runqueue, typeof(*next), lln);
+  next->state = EXECUTING;
+  domain->executing = next;
+
+  x86_switch(&prev->sp, &next->sp);
+}

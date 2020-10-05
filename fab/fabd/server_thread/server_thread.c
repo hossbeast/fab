@@ -53,8 +53,6 @@
 #include "notify_thread.h"
 #include "params.h"
 #include "config.internal.h"
-#include "usage.h"
-#include "stats.h"
 #include "walker.internal.h"
 #include "buildplan.h"
 #include "channel.h"
@@ -70,6 +68,7 @@
 #include "common/attrs.h"
 #include "macros.h"
 #include "atomics.h"
+#include "threads.h"
 
 bool g_server_autorun;
 
@@ -78,50 +77,12 @@ bool g_server_no_initial_client;      // no client right at startup
 fabipc_channel *g_server_initial_channel;
 #endif
 
-/**
- * run invalidated rules to quiesence
- */
-static xapi rules_full_refresh(rule_run_context * restrict rule_ctx)
-{
-  enter;
-
-  rule_module_association *rma;
-  narrator * N;
-
-  /* re-run invalidated rules */
-  fatal(rule_run_context_begin, rule_ctx);
-  fatal(graph_full_refresh, rule_ctx);
-
-  /* warn about rules that have no effect */
-  if(log_would(L_WARN))
-  {
-    rbtree_foreach(&rule_ctx->nohits, rma, nohits_rbn) {
-      fatal(log_start, L_WARN, &N);
-      xsays("0 matches : ");
-      fatal(rule_say, rma->rule, N);
-      xsays(" @ module ");
-      fatal(node_absolute_path_say, rma->mod->dir_node, N);
-      fatal(log_finish);
-    }
-  }
-
-finally:
-  rule_run_context_end(rule_ctx);
-coda;
-}
-
 static xapi server_thread()
 {
   enter;
 
   sigset_t sigs;
   siginfo_t siginfo;
-  int iteration;
-  rule_run_context rule_ctx = { 0 };
-  int walk_id;
-  graph_invalidation_context invalidation = { 0 };
-
-  g_params.thread_server = gettid();
 
 #if DEBUG || DEVEL
   logs(L_IPC, "starting");
@@ -132,53 +93,14 @@ static xapi server_thread()
   sigaddset(&sigs, SIGUSR1);
   sigaddset(&sigs, SIGRTMIN);
 
-  fatal(rule_run_context_xinit, &rule_ctx);
-  rule_ctx.modules = &g_modules;
-
-  // extern_reconfigure loads areas of the filesystem referenced via extern
-  fatal(config_begin_staging);
-  fatal(config_reconfigure);
-  if(!config_reconfigure_result)
-  {
-    fprintf(stderr, "config was not applied\n");
-    exit(1);
-  }
-
-  // load the filesystem rooted at the project dir
-  walk_id = walker_descend_begin();
-  fatal(graph_invalidation_begin, &invalidation);
-  fatal(walker_descend, 0, g_project_root, 0, g_params.proj_dir, walk_id, &invalidation);
-  fatal(walker_ascend, g_project_root, walk_id, &invalidation);
-  graph_invalidation_end(&invalidation);
-
-  // load the module in this directory (and nested modules, recursively)
-  fatal(graph_invalidation_begin, &invalidation);
-  fatal(module_load_project, g_project_root, g_params.proj_dir, &invalidation);
-  graph_invalidation_end(&invalidation);
-
-  if(g_project_root->mod == 0) {
-    fprintf(stderr, "module.bam not found\n");
-    exit(1);
-  }
-
-  if(g_project_root->mod->self_node->not_parsed) {
-    fprintf(stderr, "module.bam was not parsed\n");
-    exit(1);
-  }
-
-  fatal(rules_full_refresh, &rule_ctx);
-  fatal(formula_full_refresh);
-
-  iteration = 0;
 #if DEVEL
   if(g_server_no_initial_client)
   {
     fatal(handler_thread_launch, 0, 0, false);
-    iteration = 1;
   }
 #endif
 
-  for(; !g_params.shutdown; iteration++)
+  while(!g_params.shutdown)
   {
     fatal(sigutil_wait, &sigs, &siginfo);
     if(g_params.shutdown) {
@@ -195,51 +117,23 @@ static xapi server_thread()
     g_logging_skip_reconfigure = false;
 #endif
 
-    /* assumes the very first request always comes immediately after starting up */
-    if(iteration)
-    {
-      fatal(node_full_refresh);
-      fatal(graph_invalidation_begin, &invalidation);
-      fatal(module_full_refresh, &invalidation);
-      graph_invalidation_end(&invalidation);
-      fatal(rules_full_refresh, &rule_ctx);
-      fatal(formula_full_refresh);
-    }
-
-#if 0
-    /* signal from sweeper thread */
-    if(siginfo.si_pid == g_params.pid)
-    {
-      RUNTIME_ASSERT(g_server_autorun);
-      fatal(handler_thread_launch, 0, 0, true);
-    }
-    else
-    {
-    }
-#endif
     fatal(handler_thread_launch, siginfo.si_pid, (intptr_t)siginfo.si_value.sival_ptr, false);
-
-    fatal(usage_report);
-    fatal(stats_report);
   }
 
 finally:
-  // locals
-  graph_invalidation_end(&invalidation);
-  fatal(rule_run_context_xdestroy, &rule_ctx);
-
 #if DEBUG || DEVEL
   logs(L_IPC, "terminating");
 #endif
 coda;
 }
 
-static void * server_thread_main(void * arg)
+static void * server_thread_jump(void * arg)
 {
   enter;
 
   xapi R;
 
+  g_tid = g_params.thread_server = gettid();
   logger_set_thread_name("server");
   logger_set_thread_categories(L_SERVER);
   fatal(server_thread);
@@ -280,7 +174,7 @@ xapi server_thread_launch()
   fatal(xpthread_attr_setdetachstate, &attr, PTHREAD_CREATE_DETACHED);
 
   atomic_inc(&g_params.thread_count);
-  if((rv = pthread_create(&pthread_id, &attr, server_thread_main, 0)) != 0)
+  if((rv = pthread_create(&pthread_id, &attr, server_thread_jump, 0)) != 0)
   {
     atomic_dec(&g_params.thread_count);
     tfail(perrtab_KERNEL, rv);

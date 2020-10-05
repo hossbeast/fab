@@ -33,16 +33,22 @@
 #include "logging.h"
 #include "params.h"
 #include "path.h"
+#include "config.h"
 
 #include "common/attrs.h"
+#include "locks.h"
 
 graph * g_graph;
 
 /* refresh state */
 uint32_t graph_refresh_id;
+static int32_t graph_nohits_lock;
+
 static uint32_t graph_refresh_round_id;
-static llist graph_rma_list[2];
+static llist *graph_rma_list[2];
+static size_t graph_rma_list_alloc;
 static int graph_rma_list_index;
+static uint16_t graph_rma_list_x;
 
 attrs32 * graph_node_attrs = (attrs32[]) {{
 #undef DEF
@@ -154,7 +160,7 @@ static xapi edge_value_xdestroy(void * restrict val)
  *
  * v - rule node
  */
-static xapi rule_run_rma(rule_module_association * restrict rma, rule_run_context * restrict ctx)
+static xapi rule_run_rma(rule_module_association * restrict rma, rule_run_context * restrict ctx, rule_run_parameters * restrict params)
 {
   enter;
 
@@ -165,7 +171,7 @@ static xapi rule_run_rma(rule_module_association * restrict rma, rule_run_contex
   ctx->mod_owner = rma->mod_owner;
   ctx->rma = rma;
 
-  fatal(rule_run, rma->rule, ctx);
+  fatal(rule_run, rma->rule, ctx, params);
 
   finally : coda;
 }
@@ -185,8 +191,8 @@ xapi graph_setup()
 
   graph_refresh_id = 1;
   graph_refresh_round_id = 1;
-  llist_init_node(&graph_rma_list[0]);
-  llist_init_node(&graph_rma_list[1]);
+//  llist_init_node(&graph_rma_list[0]);
+//  llist_init_node(&graph_rma_list[1]);
 
   finally : coda;
 }
@@ -196,6 +202,27 @@ xapi graph_cleanup()
   enter;
 
   fatal(graph_xfree, g_graph);
+
+  finally : coda;
+}
+
+xapi graph_reconfigure(struct config * restrict cfg, bool dry)
+{
+  enter;
+
+  int x;
+
+  if(cfg->workers.changed && !dry)
+  {
+    fatal(xrealloc, &graph_rma_list, sizeof(*graph_rma_list), workers_len, &graph_rma_list_alloc);
+    for(x = 0; x < workers_len; x++)
+    {
+      llist_init_node(&graph_rma_list[0][x]);
+      llist_init_node(&graph_rma_list[1][x]);
+    }
+
+    graph_rma_list_x = 0;
+  }
 
   finally : coda;
 }
@@ -286,25 +313,85 @@ void graph_invalidation_end(graph_invalidation_context * restrict invalidation)
   invalidation->edge_traversal = 0;
 }
 
-xapi graph_full_refresh(rule_run_context * restrict ctx)
+xapi graph_rma_refresh_work(worker_thread_context * restrict worker, void *arg0, void *arg)
+{
+  enter;
+
+  llist *rma_list;
+  rule_module_association *rma;
+  rule_run_parameters *params;
+  rule_run_context rulectx;
+
+  params = arg0;
+  rma_list = arg;
+
+  memset(&rulectx, 0, sizeof(rulectx));
+  rulectx.match_nodes = worker->match_nodes;
+  rulectx.generate_nodes = worker->generate_nodes;
+
+  llist_foreach_safe(rma_list, rma, changed[!graph_rma_list_index].lln, T) {
+
+    fatal(rule_run_rma, rma, &rulectx, params);
+
+    if(rma->refresh_id != graph_refresh_id) {
+      llist_append(&rma_refresh_list, rma, refresh_lln);
+      rma->refresh_id = graph_refresh_id;
+    }
+
+    llist_delete(rma, changed[!graph_rma_list_index].lln);
+  }
+
+  finally : coda;
+}
+
+xapi graph_full_refresh(rule_run_parameters * restrict params)
 {
   enter;
 
   rule_module_association *rma;
-  llist *head;
+//  llist *head;
   node_edge_dependency *ne;
   llist *T;
+  narrator * N;
+  int x;
+  work *last;
+  rbtree nohits;  // rmas with no matches during a refresh period
+  int32_t nohits_lock;
 
   /* list of rmas run during the refresh operation */
   llist rma_refresh_list;
 
-  head = &graph_rma_list[graph_rma_list_index];
+//  head = &graph_rma_list[graph_rma_list_index];
 
+  fatal(rule_run_context_begin, ctx);
+  rbtree_init(&nohits);
+  nohits_lock = 0;
   do
   {
     graph_refresh_id++;
     llist_init_node(&rma_refresh_list);
 
+    while(!g_params.shutdown)
+    {
+      /* new round - toggle rma lists */
+      graph_refresh_round_id++;
+      graph_rma_list_index = !graph_rma_list_index;
+
+      /* quiescence */
+      if(llist_empty(&graph_rma_list[graph_rma_list_index][0])) {
+        break;
+      }
+
+      work_run(graph_rma_refresh_work, params, graph_rma_list[graph_rma_list_index], sizeof(graph_rma_list[0]));
+
+      work_begin(&workstate);
+      llist_foreach_safe(head, rma, changed[!graph_rma_list_index].lln, T) {
+        work(&workstate, refresh_work, rma);
+      }
+      work_join(&workstate);
+    }
+
+#if 0
     /* run rules to quiescence */
     while(!llist_empty(head))
     {
@@ -316,7 +403,9 @@ xapi graph_full_refresh(rule_run_context * restrict ctx)
       graph_rma_list_index = !graph_rma_list_index;
 
       llist_foreach_safe(head, rma, changed[!graph_rma_list_index].lln, T) {
+
         fatal(rule_run_rma, rma, ctx);
+
         if(rma->refresh_id != graph_refresh_id) {
           llist_append(&rma_refresh_list, rma, refresh_lln);
           rma->refresh_id = graph_refresh_id;
@@ -327,6 +416,7 @@ xapi graph_full_refresh(rule_run_context * restrict ctx)
 
       head = &graph_rma_list[graph_rma_list_index];
     }
+#endif
 
     /* consider each rma visited on this iteration -> their rules */
     llist_foreach(&rma_refresh_list, rma, refresh_lln) {
@@ -337,9 +427,51 @@ xapi graph_full_refresh(rule_run_context * restrict ctx)
         }
       }
     }
-  } while(!llist_empty(head));
+  } while(!llist_empty(head) && !g_params.shutdown);
 
-  finally : coda;
+  /* warn about rules that have no effect */
+  if(log_would(L_WARN))
+  {
+    rbtree_foreach(&nohits, rma, nohits_rbn) {
+      fatal(log_start, L_WARN, &N);
+      xsays("0 matches : ");
+      fatal(rule_say, rma->rule, N);
+      xsays(" @ module ");
+      fatal(node_absolute_path_say, rma->mod->dir_node, N);
+      fatal(log_finish);
+    }
+  }
+
+finally:
+  rule_run_context_end(ctx);
+coda;
+}
+
+static int nohits_rbn_cmp(const rbnode * restrict a, const rbnode * restrict b)
+{
+  return INTCMP(a, b);
+}
+
+void graph_rma_hit(rule_run_context * restrict ctx, rule_module_association * restrict rma)
+{
+  if(!rbnode_attached(&rma->nohits_rbn)) {
+    return;
+  }
+
+  futex_acquire(ctx->nohits_lock);
+  rbtree_delete(ctx->nohits, rma, nohits_rbn);
+  futex_release(ctx->nohits_lock);
+}
+
+void graph_rma_nohit(rule_run_context * restrict ctx, rule_module_association * restrict rma)
+{
+  if(rbnode_attached(&rma->nohits_rbn)) {
+    return;
+  }
+
+  futex_acquire(ctx->nohits_lock);
+  rbtree_put(ctx->nohits, rma, nohits_rbn, nohits_rbn_cmp);
+  futex_release(ctx->nohits_lock);
 }
 
 void graph_rma_enqueue(rule_module_association * restrict rma)
@@ -348,8 +480,11 @@ void graph_rma_enqueue(rule_module_association * restrict rma)
     return;
   }
 
-  llist_append(&graph_rma_list[graph_rma_list_index], rma, changed[graph_rma_list_index].lln);
+  llist_append(&graph_rma_list[graph_rma_list_x][graph_rma_list_index], rma, changed[graph_rma_list_index].lln);
   rma->changed[graph_rma_list_index].refresh_round_id = graph_refresh_round_id;
+
+  graph_rma_list_x++;
+  graph_rma_list_x %= workers_len;
 }
 
 xapi graph_delete_vertex(vertex *restrict v)

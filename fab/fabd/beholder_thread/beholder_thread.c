@@ -31,13 +31,15 @@
 #include "valyria/stack.h"
 
 #include "beholder_thread.h"
-#include "handler_thread.h"
+#include "handler.h"
 #include "channel.h"
 #include "epoll_attrs.h"
 #include "logging.h"
 #include "params.h"
 #include "rcu.h"
 #include "events.h"
+
+#include "threads.h"
 
 int beholder_stdout_rd = -1;
 int beholder_stderr_rd = -1;
@@ -139,9 +141,9 @@ static void * beholder_thread_jump(void * arg)
 
   xapi R;
 
+  g_tid = g_params.thread_beholder = gettid();
   logger_set_thread_name("beholder");
   logger_set_thread_categories(L_BEHOLDER);
-  g_params.thread_beholder = gettid();
 
   fatal(beholder_thread);
 

@@ -62,7 +62,7 @@
 #include "stats.h"
 #include "formula_value.h"
 #include "events.h"
-#include "handler_thread.h"
+#include "handler.h"
 #include "channel.h"
 
 #include "atomics.h"

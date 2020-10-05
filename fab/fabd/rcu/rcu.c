@@ -91,14 +91,14 @@ void rcu_quiesce(rcu_thread * restrict self)
   quiesce(self, 0);
 }
 
-void rcu_synchronize(int32_t tid)
+void rcu_synchronize()
 {
   uint16_t active;
 
-  futex_acquire(&state.lock, tid);
+  futex_acquire(&state.lock);
 
   if((active = __atomic_load_n(&state.active, __ATOMIC_SEQ_CST)) == 0) {
-    futex_release(&state.lock, tid);
+    futex_release(&state.lock);
     STATS_INC(rcu_synchronize_nobody);
     return;
   }
@@ -110,7 +110,7 @@ void rcu_synchronize(int32_t tid)
 
   syscall(SYS_futex, &state.futex, FUTEX_WAIT, 1, 0, 0, 0);
 
-  futex_release(&state.lock, tid);
+  futex_release(&state.lock);
 
   STATS_INC(rcu_synchronize_wait);
 }

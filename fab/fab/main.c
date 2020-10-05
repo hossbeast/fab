@@ -120,17 +120,21 @@ static xapi xmain()
   sigemptyset(&sigs);
   sigaddset(&sigs, SIGRTMIN);
 
+//interval.tv_sec = 1;
+//interval.tv_nsec = 0;
   while(1)
   {
     fatal(sigutil_timedwait, &err, &sigs, &info, &interval);
     if(err == 0) {
       break;
     } else if(err == EAGAIN) {
+      fail(MAIN_CHANTIME);
       goto XAPI_FINALLY; // timeout expired
     } else if(err == EINTR) {
       continue;
     }
 
+printf("2 TFAIL\n");
     tfail(perrtab_KERNEL, err);
   }
 
@@ -184,7 +188,7 @@ printf("BREAK ; server_pulse\n");
     fab_client_consume(client);
   }
 
-//printf("client: server exit %d server pulse %lu\n", client->shm->server_exit, client->shm->server_pulse);
+printf("client: server exit %d server pulse %hu\n", client->shm->server_exit, client->shm->server_pulse);
 
 finally:
   if(XAPI_UNWINDING)

@@ -34,7 +34,7 @@
 #include "config.internal.h"
 #include "config_parser.h"
 #include "CONFIG.errtab.h"
-#include "box.h"
+#include "yyutil/box.h"
 #include "stats.h"
 
 #include "zbuffer.h"

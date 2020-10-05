@@ -2,25 +2,17 @@
 #define _TASK_x86_H
 
 #include <stdint.h>
+#include <stdbool.h>
+
+#include "llist.h"
 
 /*
  * api
  */
 
+typedef struct x86_domain domain;
+typedef struct x86_fiber fiber;
 typedef struct x86_task task;
-
-/* executing task */
-extern task *task_active;
-extern task main_task;
-
-void task_switch(task *)
-  __attribute__((nonnull));
-
-void task_clone(task * restrict t)
-  __attribute__((nonnull));
-
-void task_run(task * restrict, void (*)(void *))
-  __attribute__((nonnull));
 
 /*
  * internal
@@ -35,94 +27,152 @@ typedef struct x86_registers {
   uint64_t rbx;
   uint64_t rbp;
   uint64_t rip;         // 8 fields
-
 //  uint64_t rip2;      // x86_task_primeval_restore address
 //  uint64_t rsp2;      // primeval stack pointer
 } x86_registers;
 
-typedef enum x86_task_state {
-  INVALID = 0,
-  RUNNING,
-  SUSPENDED,
-  FINALIZED,
-} x86_task_state;
+typedef enum x86_fiber_state {
+  UNINITIALIZED = 0,
+  EXECUTING,      /* currently executing in a domain */
+  RUNNING,        /* ready to execute - in a queue */
+  JOINING,        /* waiting for clones - not in any queue */
+  FINALIZED,      /* exited */
+} x86_fiber_state;
+
+struct x86_fiber;
+typedef struct x86_domain {
+  struct x86_fiber *executing;  // fiber which is presently executing
+
+  /* fibers in the RUNNING state */
+  llist runqueue;
+
+  /* fibers which have recently joined */
+  llist joinqueue;
+  int32_t joinqueue_lock;
+
+  /* incoming tasks */
+  llist taskqueue;
+  int32_t taskqueue_lock;
+
+  /* when all queues are empty */
+  int32_t waiting;
+  int32_t __attribute__((aligned(4))) futex;
+} x86_domain;
 
 typedef struct x86_task {
-  char pad[64];
-  x86_task_state state;
+  llist lln;
+  struct x86_fiber *parent;     // fiber from which this task was cloned
+  void *sp;                     // stack pointer
+  uint32_t stack_size;          // allocated stack size
+  char stack[0];
+} x86_task;
 
-  void *sp;
+STATIC_ASSERT(offsetof(x86_task, stack) == 36);
 
-  //union {
-  //  x86_registers regs;
-  //  char u8[0];
-  //  uint64_t u64[0];
-  //} *sp;
+typedef struct x86_fiber {
+  llist lln;                // runqueue / joinqueue
+  void *sp;                 // stack pointer
+  x86_domain *domain;
+  void *stack;              // stack base - 16-byte aligned
+  uint32_t stack_size;        // allocated stack size
+  struct x86_fiber *parent; // (local) fiber from which this fiber was cloned
+  uint16_t children;        // number of extant clones (fibers + tasks)
+  x86_fiber_state state;
+} x86_fiber;
 
-  char __attribute__((aligned(16))) stack[1024 * 1024 * 2]; // 2 MB stacks
-} __attribute__((aligned(16))) x86_task;
+STATIC_ASSERT(offsetof(x86_fiber, stack) == 32);
 
 /*
- * Suspend the running task, switch into the next task
+ * Suspend the running fiber, switch to the next fiber
  */
-void x86_task_switch(void * restrict prev_sp, void *restrict next_sp)
+void x86_switch(void * restrict prev_sp, void *restrict next_sp)
   __attribute__((nonnull));
 
 /*
- * Switch into the next task
+ * Switch into the next fiber
+ */
+void x86_resume(void *restrict next_sp)
+  __attribute__((nonnull));
+
+/*
  *
- * sp - next task stack pointer
  */
-void x86_task_resume(void *sp)
+void x86_sub_fiber_finalize_jump(void);
+void x86_sub_fiber_finalize(x86_fiber *fiber)
   __attribute__((nonnull));
+
+void x86_task_finalize_jump(void);
+void x86_task_finalize(x86_task *restrict, x86_fiber *restrict)
+  __attribute__((nonnull));
+
+void x86_clone_return(void);
+
 
 /*
  *
  */
-void x86_sub_task_finalize_jump(void);
-void x86_sub_task_finalize(x86_task *task)
+void x86_base_fiber_finalize_jump(void);
+void x86_base_fiber_finalize(x86_fiber * restrict fiber, void * restrict thread_sp)
   __attribute__((nonnull));
 
 /*
+ * Create a copy of the executing fiber
  *
- */
-void x86_base_task_finalize_jump(void);
-void x86_base_task_finalize(x86_task * restrict task, void * restrict thread_sp)
-  __attribute__((nonnull));
-
-/*
- * Create a copy of the active task
+ * domain - domain to which the executing fiber belongs
+ * fiber - new fiber
  *
- * task - new task
+ * returns fiber in the parent and 0 in the child
  */
-void x86_task_clone(task * restrict task)
+x86_fiber * x86_clone_fiber(x86_domain * restrict domain, x86_fiber * restrict fiber)
   __attribute__((nonnull));
 
 /*
- * Jumped to from x86_task_clone
+ * Jumped to from x86_clone_fiber
  */
-void x86_task_clone_finish(task * restrict task)
+x86_fiber * x86_clone_fiber_finish(x86_domain * restrict domain, x86_fiber * restrict fiber, void *sp)
   __attribute__((nonnull));
 
+/*
+ * Create a copy of the executing fiber
+ *
+ * returns task in the parent and 0 in the child
+ */
+x86_task * x86_clone_task(x86_domain * restrict domain, x86_task * restrict task)
+  __attribute__((nonnull));
+
+x86_task * x86_clone_task_finish(x86_domain * restrict domain, x86_task * restrict task, void *sp)
+  __attribute__((nonnull));
+
+void x86_task_enqueue(x86_domain * restrict domain, x86_task * restrict task)
+  __attribute__((nonnull));
+
+/*
+ * Ingest a task into the executing fiber
+ */
+void x86_task_assimilate(x86_domain * restrict domain, x86_task *restrict task)
+  __attribute__((nonnull));
+
+void x86_task_assimilate_finish(x86_domain * restrict domain, x86_task *restrict task, void *sp)
+  __attribute__((nonnull));
 
 /*
  * Restore the original thread which called x86_task_base_run
  */
-void x86_task_thread_restore(void * restrict sp)
+void x86_thread_restore(void * restrict sp)
   __attribute__((nonnull));
 
 /*
- * Suspend the calling thread, switch into the base task
+ * Suspend the calling thread, switch to the domains base fiber
  */
-void x86_base_task_run(task *restrict task, void (*fn)(void *))
+void x86_base_fiber_run(x86_fiber *restrict fiber, void (*fn)(x86_domain *))
   __attribute__((nonnull));
 
 /*
- * Suspend the original thread, switch into the base task
+ * Suspend the calling thread, switch to the domains base fiber
  *
- * sp - base task stack pointer
+ * sp - base fiber stack pointer
  */
-void x86_base_task_switch(void *sp)
+void x86_base_fiber_switch(x86_domain * restrict thread, void * restrict sp)
   __attribute__((nonnull));
 
 #endif

@@ -39,10 +39,6 @@ STREAM_PART_TABLE
 
 extern struct attrs32 * stream_part_attrs;
 
-typedef struct build_thread_config {
-  int16_t concurrency;
-} build_thread_config;
-
 xapi build_thread_setup(void);
 
 xapi build_thread_cleanup(void);

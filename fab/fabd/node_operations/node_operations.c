@@ -51,7 +51,7 @@
 #include "stats.h"
 #include "formula.h"
 #include "events.h"
-#include "handler_thread.h"
+#include "handler.h"
 
 #include "macros.h"
 #include "common/attrs.h"

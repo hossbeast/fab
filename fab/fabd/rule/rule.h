@@ -23,15 +23,12 @@
 Rules are attached to one or more directory nodes, based on what nodes their match pattern could
 possibly match.
 
-
-
 */
 
 #include "xapi.h"
 #include "types.h"
 
 #include "valyria/llist.h"
-#include "valyria/rbtree.h"
 
 #include "graph.h"
 
@@ -106,22 +103,32 @@ typedef struct rule_module_edge {
   struct rule_module_association *rma;
 } rule_module_edge;
 
-typedef struct rule_run_context {
-  struct module * mod;            // module the rule is associated to
-  struct module * mod_owner;      // module which defines the rule
+typedef struct rule_run_parameters {
+  struct rule_module_association *rma;  // rule-module-association
+  struct module * mod;                  // module the rule is associated to
+  struct module * mod_owner;            // module which defines the rule
   const struct llist * modules;
   const struct set * variants;
-  struct graph_invalidation_context invalidation;
+} rule_run_parameters;
 
-  /* outputs */
+typedef struct rule_run_context {
+  struct rule_run_parameters *params;
+
+  /* temp copies of rule-run parameters */
+  struct rule_module_association *rma;
+  struct module * mod;
+  struct module * mod_owner;
+  const struct llist * modules;
+  const struct set * variants;
+
+  /* scratch space */
+  struct graph_invalidation_context invalidation;
   struct set * match_nodes;
   struct set * generate_nodes;
 
-  /* multi-rule run situation */
-  struct rule_module_association *rma;
-
-  /* rule/module associations with no matches */
-  rbtree nohits;
+  /* tracking rule/module associations with no matches */
+  int32_t *nohits_lock;
+  rbtree *nohits;
 } rule_run_context;
 
 xapi rule_run_context_xinit(rule_run_context * rule_ctx)
@@ -149,7 +156,7 @@ xapi rule_run_context_xdestroy(rule_run_context * rule_ctx)
 //  match_nodes    - work space
 //  generate_nodes - work space
 //
-xapi rule_run(rule * restrict rule, rule_run_context * restrict ctx)
+xapi rule_run(rule * restrict rule, rule_run_context * restrict ctx, rule_run_parameters * restrict params)
   __attribute__((nonnull));
 
 xapi rule_mk(
