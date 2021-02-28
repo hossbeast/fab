@@ -238,14 +238,14 @@ xunit_unit xunit = {
         , dir : RULE_LTR
         , card : RULE_ONE_TO_ONE
         , relation : EDGE_DEPENDS
-        , graph :  "1-fs!shadow-link 2-modules!shadow-modules 3-module!shadow-module 4-(null)!shadow-dir 5-(shadow)!shadow-dir 6-import-scope!shadow-dir 7-imports!shadow-dir 8-requires!shadow-dir 9-use-scope!shadow-dir 10-uses!shadow-dir 11-targets!shadow-file"
-                  " 12-(root)!dir 13-MOD!dir 14-a!dir"
-                  " 15-b!file 16-c.c!file 17-c.o!U|file"
-                  " 18-!rule"
-                  " 18:rule-dir:13 18:rule-dir:14"
-                  " 17:depends:15"
-                  " 2:fs:4 4:fs:1 4:fs:6 4:fs:7 4:fs:8 4:fs:9 4:fs:10 4:fs:11 5:fs:2 5:fs:3"
-                  " 12:fs:13 13:fs:14 14:fs:15 14:fs:16 14:fs:17"
+        , graph :  "1-fs!shadow-link 2-modules!shadow-modules 3-module!shadow-module 4-(null)!shadow-dir 5-(shadow)!shadow-dir 6-imports!shadow-dir 7-requires!shadow-dir 8-uses!shadow-dir 9-targets!shadow-file"
+                  " 10-(root)!dir 11-MOD!dir 12-a!dir"
+                  " 13-b!file 14-c.c!file 15-c.o!U|file"
+                  " 16-!rule"
+                  " 16:rule-dir:11 16:rule-dir:12"
+                  " 15:depends:13"
+                  " 2:fs:4 4:fs:1 4:fs:6 4:fs:7 4:fs:8 4:fs:9 5:fs:2 5:fs:3"
+                  " 10:fs:11 11:fs:12 12:fs:13 12:fs:14 12:fs:15"
       }}
     , (rules_test[]) {{
           operations : ""
@@ -259,14 +259,14 @@ xunit_unit xunit = {
         , dir : RULE_LTR
         , card : RULE_ONE_TO_ONE
         , relation : EDGE_DEPENDS
-        , graph :  "1-fs!shadow-link 2-modules!shadow-modules 3-module!shadow-module 4-(null)!shadow-dir 5-(shadow)!shadow-dir 6-import-scope!shadow-dir 7-imports!shadow-dir 8-requires!shadow-dir 9-use-scope!shadow-dir 10-uses!shadow-dir 11-targets!shadow-file"
-                  " 12-(root)!dir 13-MOD!dir 14-a!dir"
-                  " 15-b.bar!file 16-b.foo!file 17-c.bar!U|file 18-c.foo!U|file"
-                  " 19-!rule"
-                  " 19:rule-dir:13 19:rule-dir:14"
-                  " 17:depends:15 18:depends:16"
-                  " 2:fs:4 4:fs:1 4:fs:6 4:fs:7 4:fs:8 4:fs:9 4:fs:10 4:fs:11 5:fs:2 5:fs:3"
-                  " 12:fs:13 13:fs:14 14:fs:15 14:fs:16 14:fs:17 14:fs:18"
+        , graph :  "1-fs!shadow-link 2-modules!shadow-modules 3-module!shadow-module 4-(null)!shadow-dir 5-(shadow)!shadow-dir 6-imports!shadow-dir 7-requires!shadow-dir 8-uses!shadow-dir 9-targets!shadow-file"
+                  " 10-(root)!dir 11-MOD!dir 12-a!dir"
+                  " 13-b.bar!file 14-b.foo!file 15-c.bar!U|file 16-c.foo!U|file"
+                  " 17-!rule"
+                  " 17:rule-dir:11 17:rule-dir:12"
+                  " 15:depends:13 16:depends:14"
+                  " 2:fs:4 4:fs:1 4:fs:6 4:fs:7 4:fs:8 4:fs:9 5:fs:2 5:fs:3"
+                  " 10:fs:11 11:fs:12 12:fs:13 12:fs:14 12:fs:15 12:fs:16"
       }}
     , (rules_test[]) {{
           operations : ""
@@ -279,13 +279,13 @@ xunit_unit xunit = {
         , dir : RULE_LTR
         , card : RULE_ONE_TO_ONE
         , relation : EDGE_DEPENDS
-        , graph :  "1-fs!shadow-link 2-modules!shadow-modules 3-module!shadow-module 4-(null)!shadow-dir 5-(shadow)!shadow-dir 6-import-scope!shadow-dir 7-imports!shadow-dir 8-requires!shadow-dir 9-use-scope!shadow-dir 10-uses!shadow-dir 11-targets!shadow-file"
-                  " 12-(root)!dir 13-MOD!dir"
-                  " 14-x.bar.o!U|file 15-x.c!file 16-x.foo.o!U|file"
-                  " 17-!rule 17:rule-dir:13"
-                  " 14:depends:15 16:depends:15"
-                  " 2:fs:4 4:fs:1 4:fs:6 4:fs:7 4:fs:8 4:fs:9 4:fs:10 4:fs:11 5:fs:2 5:fs:3"
-                  " 12:fs:13 13:fs:14 13:fs:15 13:fs:16"
+        , graph :  "1-fs!shadow-link 2-modules!shadow-modules 3-module!shadow-module 4-(null)!shadow-dir 5-(shadow)!shadow-dir 6-imports!shadow-dir 7-requires!shadow-dir 8-uses!shadow-dir 9-targets!shadow-file"
+                  " 10-(root)!dir 11-MOD!dir"
+                  " 12-x.bar.o!U|file 13-x.c!file 14-x.foo.o!U|file"
+                  " 15-!rule 15:rule-dir:11"
+                  " 12:depends:13 14:depends:13"
+                  " 2:fs:4 4:fs:1 4:fs:6 4:fs:7 4:fs:8 4:fs:9 5:fs:2 5:fs:3"
+                  " 10:fs:11 11:fs:12 11:fs:13 11:fs:14"
       }}
     /* shadow */
     , (rules_test[]) {{
@@ -300,14 +300,14 @@ xunit_unit xunit = {
         , dir : RULE_LTR
         , card : RULE_ONE_TO_ONE
         , relation : EDGE_DEPENDS
-        , graph :  "1-fs!shadow-link 2-modules!shadow-modules 3-module!shadow-module 4-(shadow)!shadow-dir 5-beef!shadow-dir 6-import-scope!shadow-dir 7-imports!shadow-dir 8-requires!shadow-dir 9-use-scope!shadow-dir 10-uses!shadow-dir 11-targets!shadow-file 12-tests!shadow-file"
-                  " 13-(root)!dir 14-MOD!dir"
-                  " 15-x.c!file"
-                  " 16-!rule"
-                  " 16:rule-dir:14"
-                  " 12:depends:15"
-                  " 2:fs:5 4:fs:2 4:fs:3 4:fs:12 5:fs:1 5:fs:6 5:fs:7 5:fs:8 5:fs:9 5:fs:10 5:fs:11"
-                  " 13:fs:14 14:fs:15"
+        , graph :  "1-fs!shadow-link 2-modules!shadow-modules 3-module!shadow-module 4-(shadow)!shadow-dir 5-beef!shadow-dir 6-imports!shadow-dir 7-requires!shadow-dir 8-uses!shadow-dir 9-targets!shadow-file 10-tests!shadow-file"
+                  " 11-(root)!dir 12-MOD!dir"
+                  " 13-x.c!file"
+                  " 14-!rule"
+                  " 14:rule-dir:12"
+                  " 10:depends:13"
+                  " 2:fs:5 4:fs:2 4:fs:3 4:fs:10 5:fs:1 5:fs:6 5:fs:7 5:fs:8 5:fs:9"
+                  " 11:fs:12 12:fs:13"
       }}
     , 0
   }

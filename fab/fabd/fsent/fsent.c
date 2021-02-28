@@ -1160,6 +1160,8 @@ xapi fsent_unlink(fsent *n, graph_invalidation_context * restrict invalidation)
     fatal(fsedge_disconnect, n->use_scope_edge);
   }
 
+  fsent_state_set(n, VERTEX_UNLINKED);
+
   if(log_would(L_NODE))
   {
     narrator * N;

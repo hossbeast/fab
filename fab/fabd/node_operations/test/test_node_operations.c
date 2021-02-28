@@ -129,7 +129,7 @@ xunit_unit xunit = {
     , (node_operations_test[]) {{
           graph :     "+A/B:depends:A/C"
         , operations : " =A:fs:C"
-        , expected :  "1-A!dir 2-B!I|file 3-C!X|file" // marked as unlinked, not deleted
+        , expected :  "1-A!dir 2-B!I|file 3-C!X|file" // fsent still exists but is marked as unlinked
                      " 2:depends:3"
                      " 1:fs:2 1:fs:3"
       }}

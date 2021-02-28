@@ -182,11 +182,11 @@ VERTEX_KIND_TABLE
 #define VERTEX_INVALID_BIT  0x00000004
 #define VERTEX_UNLINKED_BIT 0x00000008
 
-#define VERTEX_STATE_TABLE                                                               \
-  DEF(VERTEX_OK         , ""  , VERTEX_STATE_OPT, 0x00000002) /* up-to-date */           \
-  DEF(VERTEX_INVALID    , "I" , VERTEX_STATE_OPT, 0x00000006) /* needs to be updated */  \
-  DEF(VERTEX_UNCREATED  , "U" , VERTEX_STATE_OPT, 0x00000004) /* not yet created */      \
-  DEF(VERTEX_UNLINKED   , "X" , VERTEX_STATE_OPT, 0x0000000c) /* deleted from fs */      \
+#define VERTEX_STATE_TABLE                                                                                                                                  \
+  DEF(VERTEX_OK         , ""  , VERTEX_STATE_OPT,                                            VERTEX_EXISTS_BIT /* 0x00000002 */) /* up-to-date */           \
+  DEF(VERTEX_INVALID    , "I" , VERTEX_STATE_OPT,                       VERTEX_INVALID_BIT | VERTEX_EXISTS_BIT /* 0x00000006 */) /* needs to be updated */  \
+  DEF(VERTEX_UNCREATED  , "U" , VERTEX_STATE_OPT,                       VERTEX_INVALID_BIT                     /* 0x00000004 */) /* not yet created */      \
+  DEF(VERTEX_UNLINKED   , "X" , VERTEX_STATE_OPT, VERTEX_UNLINKED_BIT | VERTEX_INVALID_BIT                     /* 0x0000000c */) /* deleted from fs */      \
 
 typedef enum vertex_state {
 #undef DEF

@@ -253,6 +253,7 @@ xunit_unit xunit = {
                   " 3-main.o!U|file"
                   " 1:fs:2"
                   " 2:fs:3"
+, xu_weight : 1
       }}
       /* unlinked secondary file - marked unlinked, depends edge still in effect */
     , (rule_system_reconcile_test[]) {{

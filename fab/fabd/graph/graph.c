@@ -494,9 +494,9 @@ xapi graph_disintegrate(moria_edge * restrict e, graph_invalidation_context * re
     {
       llist_delete(e, lln);
 
-//printf(" e ");
-//fatal(graph_edge_say, e, g_narrator_stdout);
-//printf(" ");
+printf(" e ");
+fatal(graph_edge_say, e, g_narrator_stdout);
+printf(" ");
 
       /*
        * list of nodes in the edge, in bottom-up order. The order matters because when a directory
@@ -534,7 +534,7 @@ xapi graph_disintegrate(moria_edge * restrict e, graph_invalidation_context * re
 
         // some nodes are never actually deleted (config nodes, project module node)
         if(e->B->attrs & VERTEX_PROTECT_BIT) {
-//printf("%d", __LINE__);
+printf("%d", __LINE__);
           goto nexte;
         }
 
@@ -544,15 +544,9 @@ xapi graph_disintegrate(moria_edge * restrict e, graph_invalidation_context * re
           fatal(fsent_unlinking, n, invalidation);
         }
 
-        /* cant unlink from fstree while any references exist */
-        if(!rbtree_empty(&e->B->down)) {
-//printf("%d", __LINE__);
-          goto nexte;
-        }
-
-        /* cant unlink from fstree while any references exist */
+        /* some other vertex still depends on this vertex */
         if(!rbtree_empty(&e->B->up)) {
-//printf("%d", __LINE__);
+printf("%d", __LINE__);
           goto nexte;
         }
 
@@ -561,9 +555,13 @@ xapi graph_disintegrate(moria_edge * restrict e, graph_invalidation_context * re
           /* the delete event is fired when the node becomes unlinked - it may not actually be released yet */
           fatal(fsent_unlink, n, invalidation);
           fatal(fsent_dirnode_children_changed, containerof(e->A, fsent, vertex), invalidation);
-          fsent_state_set(n, VERTEX_UNLINKED);
         }
 
+        /* this vertex still depends on some other vertex */
+        if(!rbtree_empty(&e->B->down)) {
+printf("%d", __LINE__);
+          goto nexte;
+        }
       }
 
       ek = e->attrs & EDGE_KIND_OPT;
@@ -573,7 +571,7 @@ xapi graph_disintegrate(moria_edge * restrict e, graph_invalidation_context * re
         fatal(dependency_disconnect, containerof(e, dependency, edge), invalidation);
       }
 nexte:
-//printf("\n");
+printf("\n");
 continue;
     }
 
