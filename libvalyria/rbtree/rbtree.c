@@ -408,12 +408,12 @@ bool API rbtree_empty(rbtree * restrict rb)
   return rb->root == &rbleaf;
 }
 
-size_t API rbtree_count(rbtree * restrict rb)
+size_t API rbtree_count(const rbtree * restrict rb)
 {
   size_t c = 0;
   rbnode *rbn;
 
-  rbtree_foreach_node(rb, rbn) {
+  rbtree_foreach_node((rbtree*)rb, rbn) {
     c++;
   }
 
@@ -477,6 +477,9 @@ void API rbtree_insert_node(rbtree * restrict rb, rbtree_search_context * restri
 #endif
 #if RBTREE_SIZE
   rb->size++;
+#endif
+#if RBTREE_TRACK
+  n->deleted = 0;
 #endif
 }
 
@@ -558,6 +561,10 @@ void API rbtree_delete_node(rbtree * restrict rb, rbnode * restrict n)
   rbnode *o;
   enum rbcolor color;
 
+#if RBTREE_TRACK
+  RUNTIME_ASSERT(!n->deleted);
+#endif
+
   if(n->left == &rbleaf)
   {
     color = n->color;
@@ -601,7 +608,10 @@ void API rbtree_delete_node(rbtree * restrict rb, rbnode * restrict n)
 rb->hash -= (uint32_t)(uintptr_t)n;
 #endif
 #if RBTREE_SIZE
-  rb->size--;
+rb->size--;
+#endif
+#if RBTREE_TRACK
+  n->deleted = 1;
 #endif
 }
 

@@ -28,9 +28,7 @@ REMARKS
 
 */
 
-#include "xapi.h"
 #include "types.h"
-
 #include "macros.h"
 
 typedef struct llist {
@@ -45,8 +43,13 @@ typedef struct llist {
 // SUMMARY
 //  initialize an llist head
 //
-llist * llist_init_node(llist * head)
-  __attribute__((nonnull));
+static inline llist * __attribute__((nonnull)) llist_init_node(llist * head)
+{
+  head->next = head;
+  head->prev = head;
+
+  return head;
+}
 
 /// llist_count
 //
@@ -58,9 +61,6 @@ llist * llist_init_node(llist * head)
 
 #define llist_size(head) llist_count(head)
 
-size_t llist_count_node(const llist * head)
-  __attribute__((nonnull));
-
 /// llist_empty
 //
 // SUMMARY
@@ -69,16 +69,20 @@ size_t llist_count_node(const llist * head)
 #define llist_empty(head) \
   llist_empty_node(head)
 
-bool llist_empty_node(const llist * head)
-  __attribute__((nonnull));
+static inline bool __attribute__((nonnull)) llist_empty_node(const llist * head)
+{
+  return head->next == head;
+}
 
 #define llist_attached(item, member)  \
   llist_attached_node(&(item)->member)
 
-bool llist_attached_node(const llist *node)
-  __attribute__((nonnull));
+static inline bool __attribute__((nonnull)) llist_attached_node(const llist *node)
+{
+  return node->next != node;
+}
 
-/// list_prepend
+/// list_prepend (unshift)
 //
 // add to a list such that the item will be first in an enumeration of the list
 //
@@ -89,10 +93,17 @@ bool llist_attached_node(const llist *node)
 #define llist_prepend(head, item, member) \
   llist_prepend_node(head, &(item)->member)
 
-llist * llist_prepend_node(llist * head, llist * node)
-  __attribute__((nonnull));
+static inline llist * __attribute__((nonnull)) llist_prepend_node(llist * head, llist * node)
+{
+  node->prev = head;
+  node->next = head->next;
+  head->next->prev = node;
+  head->next = node;
 
-/// list_append
+  return head;
+}
+
+/// list_append (push)
 //
 // add to a list such that the item will be last in an enumeration of the list
 //
@@ -103,8 +114,18 @@ llist * llist_prepend_node(llist * head, llist * node)
 #define llist_append(head, item, member) \
   llist_append_node(head, &(item)->member)
 
-llist * llist_append_node(llist * head, llist * node)
-  __attribute__((nonnull));
+#define llist_push(head, item, member) llist_append(head, item, member)
+#define llist_push_node(head, node) llist_append_node(head, node)
+
+static inline llist * __attribute__((nonnull)) llist_append_node(llist * head, llist * node)
+{
+  node->prev = head->prev;
+  node->next = head;
+  head->prev->next = node;
+  head->prev = node;
+
+  return head;
+}
 
 /// llist_delete
 //
@@ -113,8 +134,13 @@ llist * llist_append_node(llist * head, llist * node)
 #define llist_delete(item, member) \
   llist_delete_node(&(item)->member)
 
-void llist_delete_node(llist * node)
-  __attribute__((nonnull));
+static inline void  __attribute__((nonnull)) llist_delete_node(llist * node)
+{
+  node->next->prev = node->prev;
+  node->prev->next = node->next;
+  node->next = node;
+  node->prev = node;
+}
 
 /// llist_shift
 //
@@ -178,8 +204,16 @@ void llist_delete_node(llist * node)
 #define llist_next(head, item, member) \
   ({ llist * node = llist_next_node(head, refas(item, member)); node ? containerof(node, typeof(*item), member) : NULL; })
 
-llist * llist_next_node(const llist * head, const llist * node)
-  __attribute__((nonnull(1)));
+static inline llist * __attribute__((nonnull(1))) llist_next_node(const llist * head, const llist * node)
+{
+  if(node == NULL)
+    return NULL;
+
+  if(node->next == head)
+    return NULL;
+
+  return node->next;
+}
 
 #undef refas
 #define refas(expr, as) ({    \
@@ -193,8 +227,16 @@ llist * llist_next_node(const llist * head, const llist * node)
 #define llist_prev(head, item, member) \
   ({ llist * node = llist_prev_node(head, refas(item, member)); node ? containerof(node, typeof(*item), member) : NULL; })
 
-llist * llist_prev_node(const llist * head, const llist * node)
-  __attribute__((nonnull(1)));
+static inline llist * __attribute__((nonnull(1))) llist_prev_node(const llist * head, const llist * node)
+{
+  if(node == NULL)
+    return NULL;
+
+  if(node->prev == head)
+    return NULL;
+
+  return node->prev;
+}
 
 /// llist_splice_head
 //
@@ -205,8 +247,22 @@ llist * llist_prev_node(const llist * head, const llist * node)
 //
 // after this operation, the source list is empty
 //
-llist * llist_splice_head(llist * dst_head, llist * src_head)
-  __attribute__((nonnull));
+static inline llist * __attribute__((nonnull)) llist_splice_head(llist * dst_head, llist * src_head)
+{
+  if(llist_empty(src_head)) {
+    return dst_head;
+  }
+
+  dst_head->next->prev = src_head->prev;
+  src_head->prev->next = dst_head->next;
+  dst_head->next = src_head->next;
+  src_head->next->prev = dst_head;
+
+  src_head->prev = src_head;
+  src_head->next = src_head;
+
+  return dst_head;
+}
 
 /// llist_splice_head
 //
@@ -217,7 +273,33 @@ llist * llist_splice_head(llist * dst_head, llist * src_head)
 //
 // after this operation, the source list is empty
 //
-llist * llist_splice_tail(llist * dst_head, llist * src_head)
-  __attribute__((nonnull));
+static inline llist * __attribute__((nonnull)) llist_splice_tail(llist * dst_head, llist * src_head)
+{
+  if(llist_empty(src_head)) {
+    return dst_head;
+  }
+
+  src_head->prev->next = dst_head;
+  src_head->next->prev = dst_head->prev;
+  dst_head->prev->next = src_head->next;
+  dst_head->prev = src_head->prev;
+
+  src_head->prev = src_head;
+  src_head->next = src_head;
+
+  return dst_head;
+}
+
+static inline size_t __attribute__((nonnull)) llist_count_node(const llist * head)
+{
+  size_t size = 0;
+  llist * node;
+
+  llist_foreach_node(head, node) {
+    size++;
+  }
+
+  return size;
+}
 
 #endif
