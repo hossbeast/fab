@@ -75,7 +75,7 @@ my $hfile = substr($ENV{bm_target0}, -2) eq ".h" ? $ENV{bm_target0} : $ENV{bm_ta
 $ENV{TZ} = 'UTC';
 my $describe = git(qw|describe --dirty --abbrev=99|);
 my $date =   git(qw|log -1 -s --format=%cd --date=iso-local|);
-$describe =~ m/^([^-]+)-([0-9]+)-g([0-9a-f]+)(-dirty)$/ or die "wtf describe";
+$describe =~ m/^([^-]+)-([0-9]+)-g([0-9a-f]+)(-dirty)?$/ or die "git describe : unexpected output";
 my $tag = $1;
 my $delta = $2;
 my $commit = $3;
