@@ -31,22 +31,14 @@
 #include "errtab/MAIN.errtab.h"
 #include "fab/client.h"
 #include "fab/ipc.h"
+#include "fab/events.h"
 
 #include "macros.h"
 #include "common/attrs.h"
+#include "zbuffer.h"
+#include "params.h"
 
-static struct {
-  char * request;
-} args;
-
-xapi adhoc_command_cleanup()
-{
-  enter;
-
-  wfree(args.request);
-
-  finally : coda;
-}
+struct adhoc_args adhoc_args;
 
 static void usage(command * restrict cmd)
 {
@@ -57,6 +49,62 @@ static void usage(command * restrict cmd)
   );
 }
 
+static xapi adhoc_connected(command * restrict cmd, fab_client * restrict client)
+{
+  enter;
+
+  fabipc_message * msg;
+  size_t z;
+
+  /* subscribe to relevant events */
+  msg = fab_client_produce(client);
+  msg->type = FABIPC_MSG_EVENTSUB;
+  msg->attrs = 0
+    | (1 << (FABIPC_EVENT_STDERR - 1))
+    | (1 << (FABIPC_EVENT_STDOUT - 1))
+    ;
+  fab_client_post(client, msg);
+
+  /* send the request */
+  msg = fab_client_produce(client);
+  msg->type = FABIPC_MSG_REQUEST;
+
+  z = 0;
+  z += znloadw(msg->text + z, sizeof(msg->text) - z, adhoc_args.request.s, adhoc_args.request.len);
+  z += znloadw(msg->text + z, sizeof(msg->text) - z, (char[]) { 0x00, 0x00 }, 2);
+  msg->size = z;
+
+  fab_client_post(client, msg);
+
+  finally : coda;
+}
+
+static xapi adhoc_process(command * restrict cmd, fab_client * restrict client, fabipc_message * restrict msg)
+{
+  enter;
+
+  if(msg->type == FABIPC_MSG_RESPONSE) {
+printf("response code %d msg %.*s\n", msg->code, msg->size, msg->text);
+    g_params.shutdown = true;
+    goto XAPI_FINALLY;
+  }
+
+  if(msg->type == FABIPC_MSG_RESULT) {
+printf("result %.*s\n", msg->size, msg->text);
+  }
+
+  finally : coda;
+}
+
+command adhoc_command = {
+    name : "adhoc"
+//  , args_parse : args_parse
+  , usage : usage
+  , connected : adhoc_connected
+  , process : adhoc_process
+};
+
+#if 0
 static xapi args_parse(command * restrict cmd, int argc, char ** restrict argv)
 {
   enter;
@@ -111,74 +159,12 @@ finally:
 coda;
 }
 
-static xapi adhoc_connected(command * restrict cmd, fab_client * restrict client)
+xapi adhoc_command_cleanup()
 {
   enter;
 
-  value_writer writer;
-  narrator * request_narrator;
-  narrator_fixed nstor;
-  fabipc_message * msg;
-
-  /* subscribe to relevant events */
-  msg = fab_client_produce(client, 0);
-  msg->type = FABIPC_MSG_EVENTSUB;
-  msg->attrs = 0
-//    | (1 << (FABIPC_EVENT_INVALIDATED - 1))
-//    | (1 << (FABIPC_EVENT_UPDATED - 1))
-//    | (1 << (FABIPC_EVENT_FORMULA_EXEC - 1))
-//    | (1 << (FABIPC_EVENT_FORMULA_EXEC_STDOUT - 1))
-//    | (1 << (FABIPC_EVENT_FORMULA_EXEC_STDERR - 1))
-//    | (1 << (FABIPC_EVENT_FORMULA_EXEC_AUXOUT - 1))
-    ;
-  fab_client_post(client);
-
-  /* send the request */
-  msg = fab_client_produce(client, 0);
-  msg->type = FABIPC_MSG_REQUEST;
-
-  request_narrator = narrator_fixed_init(&nstor, msg->text, 0xfff);
-
-  fatal(narrator_xsays, request_narrator, args.request);
-
-  // two terminating null bytes
-  fatal(narrator_xsayw, request_narrator, (char[]) { 0x00, 0x00 }, 2);
-  msg->size = nstor.l;
-  fab_client_post(client);
-
-finally:
-  fatal(value_writer_destroy, &writer);
-coda;
-}
-
-static xapi adhoc_process(command * restrict cmd, fab_client * restrict client, fabipc_message * restrict msg)
-{
-  enter;
-
-  if(msg->type == FABIPC_MSG_STDOUT) {
-printf("server/stdout: %.*s\n", msg->size, msg->text);
-  } else if(msg->type == FABIPC_MSG_STDERR) {
-printf("server/stderr: %.*s\n", msg->size, msg->text);
-  } else if(msg->type == FABIPC_MSG_RESULT) {
-printf("result: %.*s\n", msg->size, msg->text);
-  } else if(msg->type == FABIPC_MSG_EVENTS) {
-printf("events: %s %.*s\n", attrs32_name_byvalue(fabipc_event_type_attrs, msg->evtype), msg->size, msg->text);
-  } else if(msg->type == FABIPC_MSG_RESPONSE) {
-printf("response: %d - %s\n", msg->code, msg->text);
-//    if(msg->code) {
-//      receiving = true; // false;
-//    }
-  } else {
-printf("WTF\n");
-  }
+  wfree(args.request);
 
   finally : coda;
 }
-
-command adhoc_command = {
-    name : "adhoc"
-  , args_parse : args_parse
-  , usage : usage
-  , connected : adhoc_connected
-  , process : adhoc_process
-};
+#endif

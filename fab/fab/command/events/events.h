@@ -20,10 +20,12 @@
 
 #include "xapi.h"
 #include "command.h"
+#include "args.h"
 
-struct command;
+extern struct events_args {
+  uint32_t event_mask;
+} events_args;
+
 extern struct command events_command;
-
-xapi events_command_cleanup(void);
 
 #endif

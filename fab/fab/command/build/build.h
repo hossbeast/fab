@@ -28,17 +28,51 @@ struct narrator;
 struct fab_client;
 struct fabipc_message;
 
+extern struct build_args {
+  char mode;
+  struct build_target {
+    char *s;
+    uint16_t sl;
+    char mode;    // t = transitive | x = direct
+  } targets[64];
+  uint16_t targets_len;
+
+  struct show_settings {
+    bool show_path;
+    bool show_arguments;
+    bool show_command;
+    bool show_cwd;
+    bool show_sources;
+    bool show_targets;
+    bool show_environment;
+    bool show_status;
+
+    bool show_stdout;
+    int16_t show_stdout_limit_lines;
+    int16_t show_stdout_limit_bytes;
+
+    bool show_stderr;
+    int16_t show_stderr_limit_lines;
+    int16_t show_stderr_limit_bytes;
+
+    bool show_auxout;
+    int16_t show_auxout_limit_lines;
+    int16_t show_auxout_limit_bytes;
+  } error;
+
+  struct show_settings success;
+} build_args;
+
 extern struct command build_command;
 
 xapi build_command_setup(void);
 xapi build_command_cleanup(void);
-xapi build_command_reconfigure(struct config * restrict cfg);
 
 void build_command_usage(struct command * restrict cmd);
 xapi build_command_connected(struct command * restrict cmd, struct fab_client * restrict client);
 xapi build_command_args_parse(struct command * restrict cmd, int argc, char ** restrict argv);
 
-xapi build_command_request_collate(narrator * restrict N)
+xapi build_command_request_collate(struct narrator * restrict N)
   __attribute__((nonnull));
 xapi build_command_process_event(struct fab_client * restrict client, struct fabipc_message * restrict msg);
 

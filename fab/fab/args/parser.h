@@ -15,43 +15,17 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef CONFIG_PARSER_INTERNAL_H
-#define CONFIG_PARSER_INTERNAL_H
+#ifndef _ARGS_PARSER
+#define _ARGS_PARSER
 
 #include "yyutil/parser.h"
+#include "args.tab.h"
 
-#include "config_parser.h"
-#include "config.internal.h"
+struct pattern_parser {
 
-struct box_store;
-struct value_parser;
-
-struct config_parser {
-  yyu_parser yyu;
-
-  // sub-parsers
-  struct value_parser * value_parser;
-
-  // under construction
-  struct config_formula_show_settings show_settings;
-  struct config_filesystem_entry * fse;
-  struct config_logging_section * logging_section;
-
-  // (returns)
-  config * cfg; // parsed config
 };
 
-/// config_yyerror
-//
-// SUMMARY
-//  flag the parse as failed (by setting pp->r = 0)
-//  log the error under L_ERROR | L_FF
-//  log the last token under L_ERROR | L_FF
-//
-// DETAILS
-//  called from tab.o and lex.o
-//
-static void config_yyerror(yyu_location * loc, void * scanner, yyu_parser * pp, char const * err)
+static int args_yyerror(yyu_location* loc, void * scanner, yyu_parser * pp, char const * err)
   __attribute__((weakref("yyu_grammar_error")));
 
 #endif

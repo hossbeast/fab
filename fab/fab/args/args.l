@@ -1,6 +1,6 @@
 /* Copyright (c) 2012-2015 Todd Freed <todd.freed@gmail.com>
 
-   This file is part of fab.
+   0This file is part of fab.
 
    fab is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -17,30 +17,23 @@
 
 %{
   #include "yyutil/scanner.h"
+  #include "args.tab.h"
+  #include "args.tokens.h"
 
-  #include "CONFIG.errtab.h"
-  #include "config_parser.internal.h"
-  #include "config.tab.h"
-  #include "config.tokens.h"
-
-  #define YYSTYPE CONFIG_YYSTYPE
+  #define YYSTYPE union yyu_lval
   #define YYLTYPE yyu_location
 %}
 
 %option noinput nounput noyywrap noyy_top_state
 %option reentrant
 %option bison-bridge bison-locations
-%option prefix="config_yy"
+%option prefix="args_yy"
 %option stack
 
+%x adhoc
 %x multilinecomment
-%x quoted
-
-/* bytes that cannot appear in the input */
-ILL   [\x00-\x08\x0B-\x1F\x7F-\xFF]
 
 %%
-
  /* single-line comments */
 <INITIAL>[#][^\x00-\x08\x0B-\x1F\x7F-\xFF\n]*           { LOCWRITE; }
 
@@ -53,50 +46,37 @@ ILL   [\x00-\x08\x0B-\x1F\x7F-\xFF]
 <multilinecomment>[\n]                                  { LOCRESET; }
 
  /* whitespace */
-<INITIAL>[\n]                                           { LOCRESET; }
-<INITIAL>[\r\t ]+                                       { LOCWRITE; }
-
- /* tokens */
-<INITIAL>[[\]{}:=]                                      { lenter; LEX(yytext[0]); finally : lcoda; }
-<INITIAL>(?i:true|false)                                { lenter; LEXB(); finally : lcoda; }
+<*>[\n]                                                 { LOCRESET; }
+<*>[\r\t ]                                              { LOCWRITE; }
 
  /* integers */
 <INITIAL>[-][0-9]+                                      { lenter; LEXI("%"SCNdMAX); finally : lcoda; }
 <INITIAL>[0-9]+                                         { lenter; LEXI("%"SCNuMAX); finally : lcoda; }
 <INITIAL>(?i:0x[a-f0-9]+)                               { lenter; LEXI("%"SCNxMAX); finally : lcoda; }
 
+ /* tokens */
+<INITIAL>[-+bdghuvxtBK]                                 { lenter; LEX(yytext[0]); finally : lcoda; }
+
+<adhoc>[\x20-\x7E]+                                     { lenter; LEX(STR); finally : lcoda; }
+
  /* enums and unquoted strings */
-<INITIAL>[a-zA-Z0-9_][-a-zA-Z0-9_]+                     { lenter; LEXA(); finally : lcoda; }
-
- /*
-<INITIAL>[-a-zA-Z0-9_/]+                                { lenter; LEX(STR); finally : lcoda; }
-
- / quoted strings /
-<INITIAL>["]                                            { lenter; PUSHSTATE(quoted); LEX(yytext[0]); finally : lcoda; }
-<quoted>["]                                             { lenter; POPSTATE; LEX(yytext[0]); finally : lcoda; }
-<quoted>\\[\\"abtnvfrs0]                                { lenter; LEXC(1); finally : lcoda; }
-<quoted>\\x[0-9a-f]{2}                                  { lenter; LEXH(2); finally : lcoda; }
-<quoted>\\x\{[0-9a-f]{1,2}\}                            { lenter; LEXH(3); finally : lcoda; }
-<quoted>[^"\\\x00-\x1F\x7F-\xFF]+                       { lenter; LEX(STR); finally : lcoda; }
- */
+<INITIAL>"adhoc"                                        { lenter; PUSHSTATE(adhoc); LEX(ADHOC); finally : lcoda; }
+<INITIAL>[-_a-zA-Z0-9./]+                               { lenter; LEXA(); finally : lcoda; }
 
 <*>[\x00-\x1F\x7F-\xFF]                                 {
                                                           lenter;
-                                                          POPSTATES;
                                                           LOCWRITE;
-                                                          failf(CONFIG_ILLBYTE, "byte", "0x%02hhx", yytext[0]);
+                                                          failf(0, "byte", "0x%02hhx", yytext[0]);
                                                           finally : lcoda;
                                                         }
 <*>[\x20-\x7E]                                          {
                                                           lenter;
-                                                          POPSTATES;
                                                           LOCWRITE;
-                                                          failf(CONFIG_ILLBYTE, "character", "'%1$c'(0x%1$02hhx)", yytext[0]);
+                                                          failf(0, "character", "'%1$c'(0x%1$02hhx)", yytext[0]);
                                                           finally : lcoda;
                                                         }
 <<EOF>>                                                 {
                                                           lenter;
-                                                          POPSTATES;
                                                           _yyu_V = 0;       /* return end-of-input */
                                                           finally : lcoda;
                                                         }

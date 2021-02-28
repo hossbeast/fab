@@ -16,29 +16,35 @@
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
 #include <getopt.h>
-#include <stdlib.h>
-
-#include "xapi.h"
-#include "types.h"
+#include <inttypes.h>
 
 #include "narrator.h"
 #include "narrator/fixed.h"
-#include "valyria/list.h"
+//#include "valyria/list.h"
+//#include "valyria/pstring.h"
 #include "value/writer.h"
 #include "logger/arguments.h"
 #include "fab/ipc.h"
-#include "fab/events.h"
 #include "fab/client.h"
+#include "xlinux/xstdlib.h"
 
 #include "common/attrs.h"
 
-#include "events.h"
+#include "describe.h"
 #include "command.h"
 #include "MAIN.errtab.h"
 #include "params.h"
 #include "args.h"
 
-struct events_args events_args;
+#include "zbuffer.h"
+#include "marshal.h"
+
+//static struct {
+//  list * targets;
+//} args;
+
+struct describe_args describe_args;
+static struct describe_args *args = &describe_args;
 
 //
 // static
@@ -48,7 +54,7 @@ static void usage(command * restrict cmd)
 {
   printf(
 "\n"
-"usage : fab events [ <selector>... ] ...\n"
+"usage : fab describe\n"
 "\n"
   );
 }
@@ -62,28 +68,30 @@ static xapi connected(command * restrict cmd, fab_client * restrict client)
   enter;
 
   fabipc_message * msg;
+  size_t z;
+  int x;
 
-  /* subscribe to relevant events */
+  /* send the request */
   msg = fab_client_produce(client);
-  msg->type = FABIPC_MSG_EVENTSUB;
-  msg->attrs = events_args.event_mask;
+  msg->type = FABIPC_MSG_REQUEST;
 
-#if 0
-    | 1 << (FABIPC_EVENT_STDOUT - 1)
-    | 1 << (FABIPC_EVENT_STDERR - 1)
-    | 1 << (FABIPC_EVENT_NODE_STALE - 1)
-    | 1 << (FABIPC_EVENT_NODE_FRESH - 1)
-    | 1 << (FABIPC_EVENT_GLOBAL_INVALIDATION - 1)
-    | 1 << (FABIPC_EVENT_FORMULA_EXEC_FORKED - 1)
-    | 1 << (FABIPC_EVENT_FORMULA_EXEC_WAITED - 1)
-    | 1 << (FABIPC_EVENT_FORMULA_EXEC_STDOUT - 1)
-    | 1 << (FABIPC_EVENT_FORMULA_EXEC_STDERR - 1)
-    | 1 << (FABIPC_EVENT_FORMULA_EXEC_AUXOUT - 1)
-    | 1 << (FABIPC_EVENT_GOALS - 1)
-    | 1 << (FABIPC_EVENT_BUILD_START - 1)
-    | 1 << (FABIPC_EVENT_BUILD_END - 1)
-    ;
-#endif
+  z = 0;
+  z += znloads(msg->text + z, sizeof(msg->text) - z, "[ ");
+  z += znloads(msg->text + z, sizeof(msg->text) - z, "select : [");
+
+  for(x = 0; x < args->targets_len; x++)
+  {
+    z += znloadf(msg->text + z, sizeof(msg->text) - z, " path : \"%.*s\"", (int)args->targets[x].len, args->targets[x].s);
+  }
+
+  z += znloads(msg->text + z, sizeof(msg->text) - z, " ] ");
+  z += znloads(msg->text + z, sizeof(msg->text) - z, "describe");
+  z += znloads(msg->text + z, sizeof(msg->text) - z, " ]");
+
+  // two terminating null bytes
+  z += znloadc(msg->text + z, sizeof(msg->text) - z, 0);
+  z += znloadc(msg->text + z, sizeof(msg->text) - z, 0);
+  msg->size = z;
 
   fab_client_post(client, msg);
 
@@ -94,7 +102,27 @@ static xapi process(command * restrict cmd, fab_client * restrict client, fabipc
 {
   enter;
 
-  printf("%10u %s %.*s\n", msg->id, attrs32_name_byvalue(fabipc_event_type_attrs, msg->evtype), msg->size, msg->text);
+  //fab_global_stats stats;
+  //descriptor_field *member;
+  //int x;
+  //size_t z;
+  //void *src;
+  //size_t sz;
+
+  //src = msg->text;
+  //sz = msg->size;
+  //z = 0;
+  //z += descriptor_type_unmarshal(&stats, &descriptor_fab_node_stats, src + z, sz - z);
+  //RUNTIME_ASSERT(z == msg->size);
+
+  if(msg->type == FABIPC_MSG_RESPONSE) {
+    g_params.shutdown = true;
+    goto XAPI_FINALLY;
+  }
+
+  RUNTIME_ASSERT(msg->type == FABIPC_MSG_RESULT);
+
+  printf("%s\n", msg->text);
 
   finally : coda;
 }
@@ -103,12 +131,11 @@ static xapi process(command * restrict cmd, fab_client * restrict client, fabipc
 // public
 //
 
-struct command events_command = {
-    name : "events"
-//  , args_parse : parse_args
-  , usage : usage
+struct command describe_command = {
+    usage : usage
   , connected : connected
   , process : process
+//  , args_parse : parse_args
 };
 
 #if 0
@@ -118,23 +145,21 @@ static xapi parse_args(command * restrict cmd, int argc, char ** restrict argv)
 
   int x;
   int longindex;
-  uint32_t ev;
-  char name[64];
-  int all = 0;
-  char *s, *d;
+  pstring s = { };
 
   const struct option longopts[] = {
-      { "all", no_argument , &all, 1 },
       { }
   };
 
   const char *switches =
     // no-argument switches
-    "a"
+    ""
 
     // with-argument switches
     ""
   ;
+
+  fatal(list_createx, &args.targets, 0, 0, wfree, 0);
 
   // disable getopt error messages
   opterr = 0;
@@ -144,10 +169,6 @@ static xapi parse_args(command * restrict cmd, int argc, char ** restrict argv)
     if(x == 0)
     {
       // longopts
-    }
-    else if(x == 'a')
-    {
-      all = 1;
     }
     else if(x == '?')
     {
@@ -160,53 +181,26 @@ static xapi parse_args(command * restrict cmd, int argc, char ** restrict argv)
         fails(MAIN_BADARGS, "unknown argument", argv[optind-1]);
       }
     }
-    else
-    {
-      // unknown optarg
-      printf("unknown %s\n", argv[optind]);
-    }
   }
 
-  // unrecognized options
-  for(; optind < argc; optind++)
+  while(optind < argc)
   {
-    s = argv[optind];
-    d = name;
-    while(*s)
-    {
-      /* case insensitive */
-      if(*s >= 'A' && *s <= 'Z') {
-        *d = (*s - 'A') + 'a';
-      /* underscore / dash equality */
-      } else if(*s == '_') {
-        *d = '-';
-      } else {
-        *d = *s;
-      }
-
-      s++, d++;
-    }
-
-    *d = 0;
-    if(!(ev = attrs32_value_byname(fabipc_event_type_attrs, name)))
-    {
-      fprintf(stderr, "unknown event %s\n", argv[optind]);
-      exit(1);
-    }
-    event_mask |= (1 << (ev - 1));
+    fatal(psinit, &s);
+    fatal(pscats, &s, argv[optind++]);
+    fatal(list_push, args.targets, s.s, 0);
+    memset(&s, 0, sizeof(s));
   }
 
-  if(all)
-  {
-    event_mask = UINT32_MAX;
-  }
-
-  finally : coda;
+finally:
+  fatal(psdestroy, &s);
+coda;
 }
 
-xapi events_command_cleanup()
+xapi describe_command_cleanup()
 {
   enter;
+
+//  fatal(list_xfree, args.targets);
 
   finally : coda;
 }

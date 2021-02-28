@@ -15,6 +15,9 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
+#include <stdlib.h>
+#include <sys/syscall.h>
+
 #include "xapi.h"
 #include "xapi/calltree.h"
 #include "fab/load.h"
@@ -25,6 +28,7 @@
 #include "value/load.h"
 
 #include "xapi/trace.h"
+#include "xapi/SYS.errtab.h"
 #include "xlinux/xunistd.h"
 #include "xlinux/xfcntl.h"
 #include "xlinux/xstat.h"
@@ -39,6 +43,7 @@
 #include "fab/sigutil.h"
 #include "fab/client.h"
 #include "fab/ipc.h"
+#include "fab/events.h"
 #include "fab/FAB.errtab.h"
 
 #include "args.h"
@@ -48,10 +53,13 @@
 #include "build.h"
 #include "MAIN.errtab.h"
 #include "common/attrs.h"
+#include "kill.h"
 #include "config.h"
 
 #include "macros.h"
 #include "barriers.h"
+
+__thread int32_t tid;
 
 static xapi xmain_exit;
 static xapi xmain()
@@ -61,7 +69,6 @@ static xapi xmain()
 #if DEVEL
   char space[512];
 #endif
-  command * cmd = 0;
   sigset_t sigs;
   siginfo_t info;
   fab_client * client = 0;
@@ -74,11 +81,11 @@ static xapi xmain()
   int x;
   int r;
 
-  // parse configuration files
-  fatal(config_reconfigure);
+//  // parse configuration files
+//  fatal(config_reconfigure);
 
   // parse cmdline arguments
-  fatal(args_parse, &cmd);
+  fatal(args_parse);
 
   fatal(sigutil_install_handlers);
   sigfillset(&sigs);
@@ -91,6 +98,21 @@ static xapi xmain()
 #if DEVEL
   snprintf(space, sizeof(space), "%s/../fabd/fabd.devel.xapi", g_params.exedir);
   g_fab_client_fabd_path = space;
+  if(g_args.system_config_path.s) {
+    g_fab_client_system_config_path = strndup(g_args.system_config_path.s, g_args.system_config_path.len);
+  }
+  if(g_args.user_config_path.s) {
+    g_fab_client_user_config_path = strndup(g_args.user_config_path.s, g_args.user_config_path.len);
+  }
+  if(g_args.project_config_path.s) {
+    g_fab_client_project_config_path = strndup(g_args.project_config_path.s, g_args.project_config_path.len);
+  }
+  if(g_args.default_filesystem_invalidate.s) {
+    g_fab_client_default_filesystem_invalidate = strndup(g_args.default_filesystem_invalidate.s, g_args.default_filesystem_invalidate.len);
+  }
+  if(g_args.sweeper_period_nsec.s) {
+    g_fab_client_sweeper_period_nsec = strndup(g_args.sweeper_period_nsec.s, g_args.sweeper_period_nsec.len);
+  }
 #endif
 
   interval.tv_sec = 0;
@@ -112,6 +134,17 @@ static xapi xmain()
       }
       usleep(200 * 1000);
     }
+    client->fabd_pid = 0;
+  }
+#if DEVEL
+  if(g_args.no_launch && client->fabd_pid == 0)
+  {
+    fails(SYS_INVALID, "invariant", "fabd not running");
+  }
+#endif
+
+  if(g_cmd == &kill_command) {
+    goto XAPI_FINALLY;
   }
 
   fatal(fab_client_solicit, client);
@@ -120,17 +153,21 @@ static xapi xmain()
   sigemptyset(&sigs);
   sigaddset(&sigs, SIGRTMIN);
 
+//interval.tv_sec = 1;
+//interval.tv_nsec = 0;
   while(1)
   {
     fatal(sigutil_timedwait, &err, &sigs, &info, &interval);
-    if(err == 0) {
+    if(err == 0) {                  // signal received
       break;
-    } else if(err == EAGAIN) {
-      goto XAPI_FINALLY; // timeout expired
-    } else if(err == EINTR) {
+    } else if(err == EAGAIN) {      // timeout expired
+      fail(MAIN_CHANTIME);
+      goto XAPI_FINALLY;
+    } else if(err == EINTR) {       // interrupted by signal
       continue;
     }
 
+printf("2 TFAIL\n");
     tfail(perrtab_KERNEL, err);
   }
 
@@ -138,7 +175,7 @@ static xapi xmain()
   fatal(fab_client_attach, client, channel_shmid);
 
   /* event subscription and send the request */
-  fatal(cmd->connected, cmd, client);
+  fatal(g_cmd->connected, g_cmd, client);
 
   /* processing */
   interval.tv_nsec = 125 * 1000 * 1000;   // 125 millis
@@ -150,6 +187,7 @@ static xapi xmain()
     if(!(msg = fab_client_acquire(client))) {
       if(client->shm->server_exit) {
 printf("BREAK ; server_exit\n");
+        fail(FAB_NODAEMON);
         break;
       }
 
@@ -157,12 +195,15 @@ printf("BREAK ; server_exit\n");
       smp_wmb();
       fatal(uxfutex, &err, &client->shm->server_ring.waiters, FUTEX_WAIT, 1, &interval, 0, 0);
       if(err == EINTR || err == EAGAIN) {
+printf("CONTINUE ; futex : err %d\n", err);
         continue;
       }
 
-      if(((iter++) % 5) == 0) {
+      /* 5 seconds */
+      if(((iter++) % 25) == 0) {
         if(pulse == client->shm->server_pulse) {
-printf("BREAK ; server_pulse\n");
+printf("BREAK ; iter %d server_pulse %d\n", iter, pulse);
+          fail(FAB_NODAEMON);
           break;
         }
         pulse = client->shm->server_pulse;
@@ -171,20 +212,43 @@ printf("BREAK ; server_pulse\n");
       continue;
     }
 
-//printf("%8d %d %s", msg->id, msg->type, attrs32_name_byvalue(fabipc_msg_type_attrs, msg->type));
-//printf(" attrs 0x%08x", msg->attrs);
-//if(msg->type == FABIPC_MSG_EVENTS)
-//{
-//  printf(" %s", attrs32_name_byvalue(fabipc_event_type_attrs, msg->evtype));
+#if 0
+uint32_t h = client->shm->server_ring.head;
+char buf[64];
+size_t z = znload_attrs32(buf, sizeof(buf), fabipc_msg_type_attrs, msg->type);
+printf("rx head %5u id %8d code %8d type %.*s", h, msg->id, msg->code, (int)z, buf);
+if(msg->type == FABIPC_MSG_EVENTS)
+{
+  z = znload_attrs32(buf, sizeof(buf), fabipc_event_type_attrs, msg->evtype);
+  printf(" attrs %.*s", (int)z, buf);
+}
+else if(msg->attrs)
+{
+  printf(" attrs 0x%08x", msg->attrs);
+}
+printf(" size %hu text %.*s\n", msg->size, (int)msg->size, msg->text);
+#endif
+
+//static int ZZ;
+//if(ZZ++ == 5000) {
+//  fprintf(stderr, "WTF\n");
+//  exit(0);
 //}
-//printf(" size %hu\n", msg->size);
 
-    fatal(cmd->process, cmd, client, msg);
+    RUNTIME_ASSERT(msg->type);
+    if(msg->type == FABIPC_MSG_EVENTS && msg->evtype == FABIPC_EVENT_STDOUT) {
+      write(1, msg->text, msg->size);
+    } else if(msg->type == FABIPC_MSG_EVENTS && msg->evtype == FABIPC_EVENT_STDERR) {
+      write(1, msg->text, msg->size);
+    } else if(msg->type == FABIPC_MSG_RESPONSE && msg->code != 0) {
+      write(1, msg->text, msg->size);
+      write(1, "\n", 1);
+    }
 
-    fab_client_consume(client);
+    fatal(g_cmd->process, g_cmd, client, msg);
+
+    fab_client_consume(client, msg);
   }
-
-//printf("client: server exit %d server pulse %lu\n", client->shm->server_exit, client->shm->server_pulse);
 
 finally:
   if(XAPI_UNWINDING)
@@ -248,7 +312,6 @@ static xapi xmain_load(char ** envp)
   // load modules
   fatal(logging_setup, envp);
   fatal(params_setup);
-  fatal(config_setup);
   fatal(build_command_setup);
 
   fatal(xmain_jump);
@@ -256,9 +319,7 @@ static xapi xmain_load(char ** envp)
 finally:
   // modules
   params_teardown();
-  fatal(config_cleanup);
   fatal(build_command_cleanup);
-  fatal(args_teardown);
 
   // libraries
   fatal(fab_unload);
@@ -273,6 +334,8 @@ coda;
 int main(int argc, char ** argv, char ** envp)
 {
   enter;
+
+  tid = syscall(SYS_gettid);
 
   xapi R = 0;
   fatal(xmain_load, envp);

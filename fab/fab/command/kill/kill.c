@@ -15,17 +15,26 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef _ADHOC_COMMAND_H
-#define _ADHOC_COMMAND_H
-
-#include "xapi.h"
+#include "kill.h"
 #include "command.h"
-#include "args.h"
 
-extern struct adhoc_args {
-  bead request;
-} adhoc_args;
+//
+// static
+//
 
-extern struct command adhoc_command;
+static void usage(command * restrict cmd)
+{
+  printf(
+"\n"
+"usage : fab kill\n"
+"\n"
+  );
+}
 
-#endif
+//
+// public
+//
+
+struct command kill_command = {
+    usage : usage
+};

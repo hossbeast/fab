@@ -39,7 +39,7 @@
 #include "errtab/MAIN.errtab.h"
 #include "fab/client.h"
 #include "fab/ipc.h"
-#include "config.internal.h"
+#include "fab/events.h"
 #include "fab/build_slot.h"
 #include "fab/build_slot.desc.h"
 
@@ -50,52 +50,31 @@
 #include "common/assure.h"
 #include "common/color.h"
 
-struct build_config {
-  struct show_settings {
-    bool show_path;
-    bool show_arguments;
-    bool show_command;
-    bool show_cwd;
-    bool show_sources;
-    bool show_targets;
-    bool show_environment;
-    bool show_status;
-
-    bool show_stdout;
-    int16_t show_stdout_limit_lines;
-    int16_t show_stdout_limit_bytes;
-
-    bool show_stderr;
-    int16_t show_stderr_limit_lines;
-    int16_t show_stderr_limit_bytes;
-
-    bool show_auxout;
-    int16_t show_auxout_limit_lines;
-    int16_t show_auxout_limit_bytes;
-  } error;
-
-  struct show_settings success;
-} build_config;
-
-static struct {
-  list * targets;
-} args;
+struct build_args build_args = {
+  mode : 't'
+};
+static struct build_args *args = &build_args;
 
 typedef struct build_slot {
-  fab_build_slot base;
-  llist lln;
+  fab_build_slot_info info;
+  fab_build_slot_results results;
+  uint32_t stdout_len;
+  uint32_t stderr_len;
+  uint32_t auxout_len;
+
+  union {
+    llist lln;
+    char persisted;
+  };
 
   char *stdout_text;
   size_t stdout_alloc;
-  uint32_t stdout_len;
 
   char *stderr_text;
   size_t stderr_alloc;
-  uint32_t stderr_len;
 
   char *auxout_text;
   size_t auxout_alloc;
-  uint32_t auxout_len;
 } build_slot;
 
 static llist slots_freelist = LLIST_INITIALIZER(slots_freelist);
@@ -109,7 +88,7 @@ static uint32_t build_slot_hash(uint32_t h, const void * e, size_t el)
 {
   const build_slot * const * bsp = e;
 
-  return hash32(h, &(*bsp)->base.pid, sizeof((*bsp)->base.pid));
+  return hash32(h, &(*bsp)->info.pid, sizeof((*bsp)->info.pid));
 }
 
 static int build_slot_cmp(const void * A, size_t Al, const void * B, size_t Bl)
@@ -117,7 +96,7 @@ static int build_slot_cmp(const void * A, size_t Al, const void * B, size_t Bl)
   const build_slot * const * Absp = A;
   const build_slot * const * Bbsp = B;
 
-  return INTCMP((*Absp)->base.pid, (*Bbsp)->base.pid);
+  return INTCMP((*Absp)->info.pid, (*Bbsp)->info.pid);
 }
 
 static uint32_t build_slot_key_hash(uint32_t h, const void *key, size_t el)
@@ -130,7 +109,7 @@ static int build_slot_key_cmp(const void * A, const void *key, size_t keysz)
   const build_slot * const * Absp = A;
   const uint32_t * pidp = key;
 
-  return INTCMP((*Absp)->base.pid, *pidp);
+  return INTCMP((*Absp)->info.pid, *pidp);
 }
 
 static void build_slot_release(void *e)
@@ -138,7 +117,7 @@ static void build_slot_release(void *e)
   build_slot **bsp = e;
   build_slot *bs = *bsp;
 
-//printf("[%8d] RELEASE %p\n", bs->base.pid, bs);
+//printf("[%8d] RELEASE %p\n", bs->info.pid, bs);
   llist_append(&slots_freelist, bs, lln);
 }
 
@@ -151,7 +130,7 @@ static xapi connected(command * restrict cmd, fab_client * restrict client)
   fabipc_message * msg;
 
   /* subscribe to relevant events */
-  msg = fab_client_produce(client, 0);
+  msg = fab_client_produce(client);
   msg->type = FABIPC_MSG_EVENTSUB;
   msg->attrs = 0
     | (1 << (FABIPC_EVENT_FORMULA_EXEC_FORKED - 1))
@@ -159,11 +138,13 @@ static xapi connected(command * restrict cmd, fab_client * restrict client)
     | (1 << (FABIPC_EVENT_FORMULA_EXEC_STDERR - 1))
     | (1 << (FABIPC_EVENT_FORMULA_EXEC_AUXOUT - 1))
     | (1 << (FABIPC_EVENT_FORMULA_EXEC_WAITED - 1))
+    | (1 << (FABIPC_EVENT_STDOUT - 1))
+    | (1 << (FABIPC_EVENT_STDERR - 1))
     ;
-  fab_client_post(client);
+  fab_client_post(client, msg);
 
   /* send the request */
-  msg = fab_client_produce(client, 0);
+  msg = fab_client_produce(client);
   msg->type = FABIPC_MSG_REQUEST;
 
   request_narrator = narrator_fixed_init(&nstor, msg->text, 0xfff);
@@ -174,7 +155,7 @@ static xapi connected(command * restrict cmd, fab_client * restrict client)
   fatal(narrator_xsayw, request_narrator, (char[]) { 0x00, 0x00 }, 2);
   msg->size = nstor.l;
 
-  fab_client_post(client);
+  fab_client_post(client, msg);
 
   finally : coda;
 }
@@ -191,23 +172,27 @@ static xapi slot_alloc(build_slot ** slotp, int pid)
   }
   else
   {
+    memset(bs, 0, offsetof(typeof(*bs), persisted));
+
+#if 0
     bs->base.status = 0;
     bs->base.stage = 0;
     bs->base.path_len = 0;
     bs->base.pwd_len = 0;
-    bs->base.args_len = 0;
-    bs->base.envs_len = 0;
-    bs->base.sources_len = 0;
-    bs->base.targets_len = 0;
+    bs->base.arg_list_len = 0;
+    bs->base.env_list_len = 0;
+    bs->base.source_list_len = 0;
+    bs->base.target_list_len = 0;
     bs->base.stdout_total = 0;
     bs->base.stderr_total = 0;
     bs->base.auxout_total = 0;
     bs->stdout_len = 0;
     bs->stderr_len = 0;
     bs->auxout_len = 0;
+#endif
   }
 
-  bs->base.pid = pid;
+  bs->info.pid = pid;
 
   *slotp = bs;
 
@@ -231,7 +216,9 @@ static xapi slot_print(build_slot *bs)
   enter;
 
   narrator *N = g_narrator_stdout;
-  fab_build_slot *slot = &bs->base;
+  fab_build_slot_info *info = &bs->info;
+  fab_build_slot_results *results = &bs->results;
+  fab_build_string str;
   int exit;
   int sig;
   bool core;
@@ -243,23 +230,23 @@ static xapi slot_print(build_slot *bs)
   uint16_t blen;
   int x;
   int lines;
-  uint16_t yo;
+  size_t z;
 
   exit = 0;
   sig = 0;
   core = false;
-  if(WIFEXITED(slot->status))
+  if(WIFEXITED(results->status))
   {
-    exit = WEXITSTATUS(slot->status);
+    exit = WEXITSTATUS(results->status);
   }
-  else if(WIFSIGNALED(slot->status))
+  else if(WIFSIGNALED(results->status))
   {
-    sig = WTERMSIG(slot->status);
-    core = WCOREDUMP(slot->status);
+    sig = WTERMSIG(results->status);
+    core = WCOREDUMP(results->status);
   }
 
   success = true;
-  if(slot->status != 0 || slot->stderr_total > 0) {
+  if(results->status != 0 || results->stderr_total > 0) {
     success = false;
   }
 
@@ -273,111 +260,111 @@ static xapi slot_print(build_slot *bs)
     write(1, color.b, color.len);
   }
 
-  xsayf("%2d %.*s -> ", slot->stage, (int)slot->args->len[0], &slot->args->s[2]);
-  yo = 0;
-  for(x = 0; x < slot->targets_len; x++)
+  /* first arg is the program name */
+  descriptor_type_unmarshal(&str, &descriptor_fab_build_string, info->arg_list, info->arg_list_size);
+  xsayf("%2d %.*s -> ", info->stage, (int)str.text_len, str.text);
+  z = 0;
+  for(x = 0; x < info->target_list_len; x++)
   {
+    z += descriptor_type_unmarshal(&str, &descriptor_fab_build_string, info->target_list + z, info->target_list_size - z);
     if(x) {
       xsays(", ");
     }
-    xsayw(&slot->targets->s[yo+2], slot->targets->len[yo/2]);
-    yo += slot->targets->len[yo/2] + 2;
-    yo += (yo & 1);
+    xsayw(str.text, str.text_len);
   }
   xsays("\n");
+  RUNTIME_ASSERT((z + 6) == info->target_list_size);
 
-  if((success && build_config.success.show_path) || (!success && build_config.error.show_path))
+  if((success && build_args.success.show_path) || (!success && build_args.error.show_path))
   {
-    xsayf(" path %.*s\n", (int)slot->path_len, slot->path);
+    xsayf(" path %.*s\n", (int)info->path_len, info->path);
   }
-  if((success && build_config.success.show_command) || (!success && build_config.error.show_command))
+  if((success && build_args.success.show_command) || (!success && build_args.error.show_command))
   {
-    yo = 0;
-    for(x = 0; x < slot->args_len; x++)
+    z = 0;
+    for(x = 0; x < info->arg_list_len; x++)
     {
+      z += descriptor_type_unmarshal(&str, &descriptor_fab_build_string, info->arg_list + z, info->arg_list_size - z);
       if(x) {
         xsays(" ");
       }
-      xsayw(&slot->args->s[yo+2], slot->args->len[yo/2]);
-      yo += slot->args->len[yo/2] + 2;
-      yo += (yo & 1);
+      xsayw(str.text, str.text_len);
     }
     xsays("\n");
+    RUNTIME_ASSERT((z + 6) == info->arg_list_size);
   }
-  if((success && build_config.success.show_environment) || (!success && build_config.error.show_environment))
+  if((success && build_args.success.show_environment) || (!success && build_args.error.show_environment))
   {
-    xsayf(" envp %2d\n", slot->envs_len);
-    yo = 0;
-    for(x = 0; x < slot->envs_len; x++)
+    xsayf(" envp %2d\n", info->env_list_len);
+    z = 0;
+    for(x = 0; x < info->env_list_len; x++)
     {
-      xsayf("  [%2d] %.*s\n", x, (int)slot->envs->len[yo/2], &slot->envs->s[yo+2]);
-      yo += slot->envs->len[yo/2] + 2;
-      yo += (yo & 1);
+      z += descriptor_type_unmarshal(&str, &descriptor_fab_build_string, info->env_list + z, info->env_list_size - z);
+      xsayf("  [%2d] %.*s\n", x, (int)str.text_len, str.text);
     }
+    RUNTIME_ASSERT((z + 6) == info->env_list_size);
   }
-  if((success && build_config.success.show_arguments) || (!success && build_config.error.show_arguments))
+  if((success && build_args.success.show_arguments) || (!success && build_args.error.show_arguments))
   {
-    xsayf(" argv %2d\n", slot->args_len);
-    yo = 0;
-    for(x = 0; x < slot->args_len; x++)
+    xsayf(" argv %2d\n", info->arg_list_len);
+    z = 0;
+    for(x = 0; x < info->arg_list_len; x++)
     {
-      xsayf(" [%2d] %.*s\n", x, (int)slot->args->len[yo/2], &slot->args->s[yo+2]);
-      yo += slot->args->len[yo/2] + 2;
-      yo += (yo & 1);
+      z += descriptor_type_unmarshal(&str, &descriptor_fab_build_string, info->arg_list + z, info->arg_list_size - z);
+      xsayf("  [%2d] %.*s\n", x, (int)str.text_len, str.text);
     }
+    RUNTIME_ASSERT((z + 6) == info->arg_list_size);
   }
-  if((success && build_config.success.show_cwd) || (!success && build_config.error.show_cwd))
+  if((success && build_args.success.show_cwd) || (!success && build_args.error.show_cwd))
   {
-    xsayf(" cwd %.*s\n", (int)slot->pwd_len, slot->pwd);
+    xsayf(" cwd %.*s\n", (int)info->pwd_len, info->pwd);
   }
-  if((success && build_config.success.show_sources) || (!success && build_config.error.show_sources))
+  if((success && build_args.success.show_sources) || (!success && build_args.error.show_sources))
   {
-    xsayf(" sources %2d\n", 1);
-    xsayf("  [%2d] \n", slot->sources_len);
-    yo = 0;
-    for(x = 0; x < slot->sources_len; x++)
+    xsayf(" sources %2d\n", info->source_list_len);
+    z = 0;
+    for(x = 0; x < info->source_list_len; x++)
     {
-      xsayf(" %.*s\n", (int)slot->sources->len[yo/2], &slot->sources->s[yo+2]);
-      yo += slot->sources->len[yo/2] + 2;
-      yo += (yo & 1);
+      z += descriptor_type_unmarshal(&str, &descriptor_fab_build_string, info->source_list + z, info->source_list_size - z);
+      xsayf("  [%2d] %.*s\n", x, (int)str.text_len, str.text);
     }
+    RUNTIME_ASSERT((z + 6) == info->source_list_size);
   }
-  if((success && build_config.success.show_targets) || (!success && build_config.error.show_targets))
+  if((success && build_args.success.show_targets) || (!success && build_args.error.show_targets))
   {
-    xsayf(" targets %2d\n", 1);
-    xsayf("  [%2d] \n", slot->targets_len);
-    yo = 0;
-    for(x = 0; x < slot->targets_len; x++)
+    xsayf(" targets %2d\n", info->target_list_len);
+    z = 0;
+    for(x = 0; x < info->target_list_len; x++)
     {
-      xsayf(" %.*s\n", (int)slot->targets->len[yo/2], &slot->targets->s[yo+2]);
-      yo += slot->targets->len[yo/2] + 2;
-      yo += (yo & 1);
+      z += descriptor_type_unmarshal(&str, &descriptor_fab_build_string, info->target_list + z, info->target_list_size - z);
+      xsayf("  [%2d] %.*s\n", x, (int)str.text_len, str.text);
     }
+    RUNTIME_ASSERT((z + 6) == info->target_list_size);
   }
-  if((success && build_config.success.show_status) || (!success && build_config.error.show_status))
+  if((success && build_args.success.show_status) || (!success && build_args.error.show_status))
   {
-    xsayf(" status %d exit %d signal %d core %s\n", slot->status, exit, sig, core ? "true" : "false");
+    xsayf(" status %d exit %d signal %d core %s\n", results->status, exit, sig, core ? "true" : "false");
   }
   if(color.len) {
     write(1, NOCOLOR);
   }
 
-  if((success && build_config.success.show_stdout) || (!success && build_config.error.show_stdout))
+  if((success && build_args.success.show_stdout) || (!success && build_args.error.show_stdout))
   {
     blen = bs->stdout_len;
-    if(build_config.success.show_stdout_limit_bytes > 0)
+    if(build_args.success.show_stdout_limit_bytes > 0)
     {
-      blen = MIN(blen, build_config.success.show_stdout_limit_bytes);
+      blen = MIN(blen, build_args.success.show_stdout_limit_bytes);
     }
 
-    if(build_config.success.show_stdout_limit_lines > 0)
+    if(build_args.success.show_stdout_limit_lines > 0)
     {
       lines = 0;
       for(x = 0; x < blen; x++)
       {
         if(bs->stdout_text[x] == '\n')
         {
-          if(lines++ > build_config.success.show_stdout_limit_lines)
+          if(lines++ > build_args.success.show_stdout_limit_lines)
             break;
         }
       }
@@ -387,12 +374,12 @@ static xapi slot_print(build_slot *bs)
 
     if(blen || !success)
     {
-      if((slot->stdout_total > blen) || !success)
+      if((results->stdout_total > blen) || !success)
       {
         if(color.len) {
           write(1, color.b, color.len);
         }
-        xsayf(" stdout - showing %"PRIu16" of %"PRIu32" bytes\n", blen, slot->stdout_total);
+        xsayf(" stdout - showing %"PRIu16" of %"PRIu32" bytes\n", blen, results->stdout_total);
         if(color.len) {
           write(1, NOCOLOR);
         }
@@ -405,22 +392,22 @@ static xapi slot_print(build_slot *bs)
       }
     }
   }
-  if((success && build_config.success.show_stderr) || (!success && build_config.error.show_stderr))
+  if((success && build_args.success.show_stderr) || (!success && build_args.error.show_stderr))
   {
     blen = bs->stderr_len;
-    if(build_config.success.show_stderr_limit_bytes > 0)
+    if(build_args.success.show_stderr_limit_bytes > 0)
     {
-      blen = MIN(blen, build_config.success.show_stderr_limit_bytes);
+      blen = MIN(blen, build_args.success.show_stderr_limit_bytes);
     }
 
-    if(build_config.success.show_stderr_limit_lines > 0)
+    if(build_args.success.show_stderr_limit_lines > 0)
     {
       lines = 0;
       for(x = 0; x < blen; x++)
       {
         if(bs->stderr_text[x] == '\n')
         {
-          if(lines++ > build_config.success.show_stderr_limit_lines)
+          if(lines++ > build_args.success.show_stderr_limit_lines)
             break;
         }
       }
@@ -430,12 +417,12 @@ static xapi slot_print(build_slot *bs)
 
     if(blen || !success)
     {
-      if((slot->stderr_total > blen) || !success)
+      if((results->stderr_total > blen) || !success)
       {
         if(color.len) {
           write(1, color.b, color.len);
         }
-        xsayf(" stderr - showing %"PRIu16" of %"PRIu32" bytes\n", blen, slot->stderr_total);
+        xsayf(" stderr - showing %"PRIu16" of %"PRIu32" bytes\n", blen, results->stderr_total);
         if(color.len) {
           write(1, NOCOLOR);
         }
@@ -448,22 +435,22 @@ static xapi slot_print(build_slot *bs)
       }
     }
   }
-  if((success && build_config.success.show_auxout) || (!success && build_config.error.show_auxout))
+  if((success && build_args.success.show_auxout) || (!success && build_args.error.show_auxout))
   {
     blen = bs->auxout_len;
-    if(build_config.success.show_auxout_limit_bytes > 0)
+    if(build_args.success.show_auxout_limit_bytes > 0)
     {
-      blen = MIN(blen, build_config.success.show_auxout_limit_bytes);
+      blen = MIN(blen, build_args.success.show_auxout_limit_bytes);
     }
 
-    if(build_config.success.show_auxout_limit_lines > 0)
+    if(build_args.success.show_auxout_limit_lines > 0)
     {
       lines = 0;
       for(x = 0; x < blen; x++)
       {
         if(bs->auxout_text[x] == '\n')
         {
-          if(lines++ > build_config.success.show_auxout_limit_lines)
+          if(lines++ > build_args.success.show_auxout_limit_lines)
             break;
         }
       }
@@ -473,12 +460,12 @@ static xapi slot_print(build_slot *bs)
 
     if(blen || !success)
     {
-      if((slot->auxout_total > blen) || !success)
+      if((results->auxout_total > blen) || !success)
       {
         if(color.len) {
           write(1, color.b, color.len);
         }
-        xsayf(" auxout - showing %"PRIu16" of %"PRIu32" bytes\n", blen, slot->auxout_total);
+        xsayf(" auxout - showing %"PRIu16" of %"PRIu32" bytes\n", blen, results->auxout_total);
         if(color.len) {
           write(1, NOCOLOR);
         }
@@ -515,33 +502,6 @@ static xapi process(command * restrict cmd, fab_client * restrict client, fabipc
 // build
 //
 
-static void reconfigure_show_settings(const struct config_formula_show_settings * restrict settings, struct show_settings * restrict config)
-{
-  box_bool_setif(settings->show_path, &config->show_path);
-  box_bool_setif(settings->show_command, &config->show_command);
-  box_bool_setif(settings->show_cwd, &config->show_cwd);
-  box_bool_setif(settings->show_arguments, &config->show_arguments);
-  box_bool_setif(settings->show_sources, &config->show_sources);
-  box_bool_setif(settings->show_targets, &config->show_targets);
-  box_bool_setif(settings->show_environment, &config->show_environment);
-  box_bool_setif(settings->show_status, &config->show_status);
-  box_bool_setif(settings->show_stdout, &config->show_stdout);
-  box_int16_setif(settings->show_stdout_limit_bytes, &config->show_stdout_limit_bytes);
-  box_int16_setif(settings->show_stdout_limit_lines, &config->show_stdout_limit_lines);
-  box_bool_setif(settings->show_stderr, &config->show_stderr);
-  box_int16_setif(settings->show_stderr_limit_bytes, &config->show_stderr_limit_bytes);
-  box_int16_setif(settings->show_stderr_limit_lines, &config->show_stderr_limit_lines);
-  box_bool_setif(settings->show_auxout, &config->show_auxout);
-  box_int16_setif(settings->show_auxout_limit_bytes, &config->show_auxout_limit_bytes);
-  box_int16_setif(settings->show_auxout_limit_lines, &config->show_auxout_limit_lines);
-}
-
-static void reconfigure(const config * restrict cfg, struct build_config * restrict config)
-{
-  reconfigure_show_settings(&cfg->formula.error, &config->error);
-  reconfigure_show_settings(&cfg->formula.success, &config->success);
-}
-
 //
 // internal
 //
@@ -556,6 +516,273 @@ void build_command_usage(command * restrict cmd)
 " +x                  subsequent non-options are -t <arg>\n"
   );
 }
+
+xapi build_command_request_collate(narrator * restrict N)
+{
+  enter;
+
+  int x;
+  struct build_target *arg;
+
+  fatal(narrator_xsays, N, " reconcile");
+
+  if(g_args.invalidate) {
+    fatal(narrator_xsays, N, " global-invalidate");
+  }
+
+  /* transitive targets */
+  for(x = 0; x < args->targets_len; x++)
+  {
+    arg = &args->targets[x];
+    if(arg->mode == 't')
+      break;
+  }
+
+  if(x < args->targets_len)
+  {
+    fatal(narrator_xsays, N, ""
+" select : ["
+    );
+
+    for(x = 0; x < args->targets_len; x++)
+    {
+      arg = &args->targets[x];
+      if(arg->mode != 't')
+        continue;
+
+      fatal(narrator_xsayf, N, ""
+" path : %.*s", (int)arg->sl, arg->s
+      );
+    }
+
+    fatal(narrator_xsays, N, ""
+" ] "
+" invalidate "
+    );
+  }
+
+  /* direct targets */
+  for(x = 0; x < args->targets_len; x++)
+  {
+    arg = &args->targets[x];
+    if(arg->mode == 'x')
+      break;
+  }
+
+  if(x < args->targets_len)
+  {
+    fatal(narrator_xsays, N, ""
+" select : ["
+    );
+
+    for(x = 0; x < args->targets_len; x++)
+    {
+      arg = &args->targets[x];
+      if(arg->mode != 'x')
+        continue;
+
+      fatal(narrator_xsayf, N, ""
+" path : %.*s", (int)arg->sl, arg->s
+      );
+    }
+
+    fatal(narrator_xsays, N, ""
+" ] "
+"invalidate "
+    );
+  }
+
+  fatal(narrator_xsays, N, ""
+" goals : {"
+  );
+
+  /* transitive targets */
+  for(x = 0; x < args->targets_len; x++)
+  {
+    arg = &args->targets[x];
+    if(arg->mode == 't')
+      break;
+  }
+
+  if(x < args->targets_len)
+  {
+    fatal(narrator_xsays, N, ""
+" target-transitive : ["
+    );
+
+    for(x = 0; x < args->targets_len; x++)
+    {
+      arg = &args->targets[x];
+      if(arg->mode != 't')
+        continue;
+
+      fatal(narrator_xsayf, N, ""
+" path : %.*s", arg->sl, arg->s
+      );
+    }
+
+    fatal(narrator_xsays, N, ""
+" ] "
+    );
+  }
+
+  /* direct targets */
+  for(x = 0; x < args->targets_len; x++)
+  {
+    arg = &args->targets[x];
+    if(arg->mode == 'x')
+      break;
+  }
+
+  if(x < args->targets_len)
+  {
+    fatal(narrator_xsays, N, ""
+" target-direct: ["
+    );
+
+    for(x = 0; x < args->targets_len; x++)
+    {
+      arg = &args->targets[x];
+      if(arg->mode != 't')
+        continue;
+
+      fatal(narrator_xsayf, N, ""
+" path : %.*s", (int)arg->sl, arg->s
+      );
+    }
+
+    fatal(narrator_xsays, N, ""
+" ] "
+    );
+  }
+
+  fatal(narrator_xsayf, N, ""
+" build }"
+  );
+
+  finally : coda;
+}
+
+xapi build_command_process_event(fab_client * restrict client, fabipc_message * restrict msg)
+{
+  enter;
+
+  build_slot *bs, **bsp;
+  size_t __attribute__((unused)) z;
+
+  if(msg->evtype == FABIPC_EVENT_FORMULA_EXEC_FORKED)
+  {
+    fatal(slot_alloc, &bs, msg->id);
+    fatal(hashtable_put, build_slots_bypid, &bs);
+
+    z = descriptor_type_unmarshal(&bs->info, &descriptor_fab_build_slot_info, msg->text, msg->size);
+    RUNTIME_ASSERT(z == msg->size);
+  }
+  else if(msg->evtype == FABIPC_EVENT_STDOUT)
+  {
+  }
+  else if(msg->evtype == FABIPC_EVENT_STDERR)
+  {
+  }
+  else
+  {
+    bsp = hashtable_search(build_slots_bypid, (void*)&msg->id, sizeof(msg->id), build_slot_key_hash, build_slot_key_cmp);
+    if(!bsp) {
+      printf("UNKNOWN PID %u\n", msg->id);
+      goto XAPI_FINALLY;
+    }
+    bs = *bsp;
+
+    if(msg->evtype == FABIPC_EVENT_FORMULA_EXEC_STDOUT)
+    {
+      fatal(assure, &bs->stdout_text, 1, bs->stdout_len + msg->size, &bs->stdout_alloc);
+      memcpy(bs->stdout_text + bs->stdout_len, msg->text, msg->size);
+      bs->stdout_len += msg->size;
+    }
+    else if(msg->evtype == FABIPC_EVENT_FORMULA_EXEC_STDERR)
+    {
+      fatal(assure, &bs->stderr_text, 1, bs->stderr_len + msg->size, &bs->stderr_alloc);
+      memcpy(bs->stderr_text + bs->stderr_len, msg->text, msg->size);
+      bs->stderr_len += msg->size;
+    }
+    else if(msg->evtype == FABIPC_EVENT_FORMULA_EXEC_AUXOUT)
+    {
+      fatal(assure, &bs->auxout_text, 1, bs->auxout_len + msg->size, &bs->auxout_alloc);
+      memcpy(bs->auxout_text + bs->auxout_len, msg->text, msg->size);
+      bs->auxout_len += msg->size;
+    }
+    else if(msg->evtype == FABIPC_EVENT_FORMULA_EXEC_WAITED)
+    {
+      z = descriptor_type_unmarshal(&bs->results, &descriptor_fab_build_slot_results, msg->text, msg->size);
+      RUNTIME_ASSERT(z == msg->size);
+
+      fatal(slot_print, bs);
+      hashtable_delete(build_slots_bypid, &bs);
+    }
+  }
+
+  finally : coda;
+}
+
+//
+// public
+//
+
+xapi build_command_setup()
+{
+  enter;
+
+  fatal(hashtable_createx
+    , &build_slots_bypid
+    , sizeof(build_slot*)
+    , 256
+    , build_slot_hash
+    , build_slot_cmp
+    , build_slot_release
+    , 0
+  );
+
+  finally : coda;
+}
+
+xapi build_command_cleanup()
+{
+  enter;
+
+  build_slot *bs;
+  llist *lln;
+
+  fatal(hashtable_xfree, build_slots_bypid);
+
+  llist_foreach_safe(&slots_freelist, bs, lln, lln) {
+    slot_free(bs);
+  }
+
+  finally : coda;
+}
+
+command build_command = {
+    name : "build"
+  , usage : build_command_usage
+  , connected : connected
+  , process : process
+};
+
+
+
+#if 0
+  if(fragl > 2 && memncmp(frag, 2, "//", 2) == 0)
+  {
+    fatal(lookup_relative, g_shadow, mod, frag + 2, fragl - 2, vertices, &r);
+  }
+  else if(
+       (fragl == 1 && memncmp(frag, 1, ".", 1) == 0)
+    || (fragl == 2 && memncmp(frag, 2, "..", 2) == 0)
+    || (fragl > 2 && memncmp(frag, 2, "./", 2) == 0)
+    || (fragl > 3 && memncmp(frag, 3, "../", 3) == 0))
+  {
+    fatal(lookup_relative, base, mod, frag, fragl, vertices, &r);
+  }
 
 xapi build_command_args_parse(command * restrict cmd, int argc, char ** restrict argv)
 {
@@ -578,8 +805,6 @@ xapi build_command_args_parse(command * restrict cmd, int argc, char ** restrict
     // with-argument switches
     ""
   ;
-
-  fatal(list_createx, &args.targets, 0, 0, wfree, 0);
 
   // disable getopt error messages
   opterr = 0;
@@ -649,252 +874,30 @@ finally:
 coda;
 }
 
-xapi build_command_request_collate(narrator * restrict N)
+static void reconfigure_show_settings(const struct config_formula_show_settings * restrict settings, struct show_settings * restrict config)
 {
-  enter;
-
-  int x;
-  char *arg;
-
-  if(g_args.invalidate) {
-    fatal(narrator_xsays, N, " global-invalidate");
-  }
-
-  /* transitive targets */
-  for(x = 0; x < args.targets->size; x++)
-  {
-    arg = list_get(args.targets, x);
-    if(arg[0] == 't')
-      break;
-  }
-
-  if(x < args.targets->size)
-  {
-    fatal(narrator_xsays, N, ""
-" select : ["
-    );
-
-    for(x = 0; x < args.targets->size; x++)
-    {
-      arg = list_get(args.targets, x);
-      if(arg[0] != 't')
-        continue;
-
-      fatal(narrator_xsayf, N, ""
-" pattern : %s", &arg[1]
-      );
-    }
-
-    fatal(narrator_xsays, N, ""
-" ] "
-" invalidate "
-    );
-  }
-
-  /* direct targets */
-  for(x = 0; x < args.targets->size; x++)
-  {
-    arg = list_get(args.targets, x);
-    if(arg[0] == 'x')
-      break;
-  }
-
-  if(x < args.targets->size)
-  {
-    fatal(narrator_xsays, N, ""
-" select : ["
-    );
-
-    for(x = 0; x < args.targets->size; x++)
-    {
-      arg = list_get(args.targets, x);
-      if(arg[0] != 'x')
-        continue;
-
-      fatal(narrator_xsayf, N, ""
-" pattern : %s", &arg[1]
-      );
-    }
-
-    fatal(narrator_xsays, N, ""
-" ] "
-"invalidate "
-    );
-  }
-
-  fatal(narrator_xsays, N, ""
-" goals : {"
-  );
-
-  /* transitive targets */
-  for(x = 0; x < args.targets->size; x++)
-  {
-    arg = list_get(args.targets, x);
-    if(arg[0] == 't')
-      break;
-  }
-
-  if(x < args.targets->size)
-  {
-    fatal(narrator_xsays, N, ""
-" target-transitive : ["
-    );
-
-    for(x = 0; x < args.targets->size; x++)
-    {
-      arg = list_get(args.targets, x);
-      if(arg[0] != 't')
-        continue;
-
-      fatal(narrator_xsayf, N, ""
-" pattern : %s", &arg[1]
-      );
-    }
-
-    fatal(narrator_xsays, N, ""
-" ] "
-    );
-  }
-
-  /* direct targets */
-  for(x = 0; x < args.targets->size; x++)
-  {
-    arg = list_get(args.targets, x);
-    if(arg[0] == 'x')
-      break;
-  }
-
-  if(x < args.targets->size)
-  {
-    fatal(narrator_xsays, N, ""
-" target-direct: ["
-    );
-
-    for(x = 0; x < args.targets->size; x++)
-    {
-      arg = list_get(args.targets, x);
-      if(arg[0] != 't')
-        continue;
-
-      fatal(narrator_xsayf, N, ""
-" pattern : %s", &arg[1]
-      );
-    }
-
-    fatal(narrator_xsays, N, ""
-" ] "
-    );
-  }
-
-  fatal(narrator_xsayf, N, ""
-" build }"
-  );
-
-  finally : coda;
+  box_bool_setif(settings->show_path, &config->show_path);
+  box_bool_setif(settings->show_command, &config->show_command);
+  box_bool_setif(settings->show_cwd, &config->show_cwd);
+  box_bool_setif(settings->show_arguments, &config->show_arguments);
+  box_bool_setif(settings->show_sources, &config->show_sources);
+  box_bool_setif(settings->show_targets, &config->show_targets);
+  box_bool_setif(settings->show_environment, &config->show_environment);
+  box_bool_setif(settings->show_status, &config->show_status);
+  box_bool_setif(settings->show_stdout, &config->show_stdout);
+  box_int16_setif(settings->show_stdout_limit_bytes, &config->show_stdout_limit_bytes);
+  box_int16_setif(settings->show_stdout_limit_lines, &config->show_stdout_limit_lines);
+  box_bool_setif(settings->show_stderr, &config->show_stderr);
+  box_int16_setif(settings->show_stderr_limit_bytes, &config->show_stderr_limit_bytes);
+  box_int16_setif(settings->show_stderr_limit_lines, &config->show_stderr_limit_lines);
+  box_bool_setif(settings->show_auxout, &config->show_auxout);
+  box_int16_setif(settings->show_auxout_limit_bytes, &config->show_auxout_limit_bytes);
+  box_int16_setif(settings->show_auxout_limit_lines, &config->show_auxout_limit_lines);
 }
 
-xapi build_command_process_event(fab_client * restrict client, fabipc_message * restrict msg)
+static void reconfigure(const config * restrict cfg, struct build_args * restrict config)
 {
-  enter;
-
-  build_slot *bs, **bsp;
-
-  if(msg->evtype == FABIPC_EVENT_FORMULA_EXEC_FORKED)
-  {
-    fatal(slot_alloc, &bs, msg->id);
-    fatal(hashtable_put, build_slots_bypid, &bs);
-
-    descriptor_type_unmarshal(bs, &descriptor_fab_build_slot, msg->text, msg->size);
-  }
-  else
-  {
-    bsp = hashtable_search(build_slots_bypid, (void*)&msg->id, sizeof(msg->id), build_slot_key_hash, build_slot_key_cmp);
-    bs = *bsp;
-
-    if(msg->evtype == FABIPC_EVENT_FORMULA_EXEC_STDOUT)
-    {
-      fatal(assure, &bs->stdout_text, 1, bs->stdout_len + msg->size, &bs->stdout_alloc);
-      memcpy(bs->stdout_text + bs->stdout_len, msg->text, msg->size);
-      bs->stdout_len += msg->size;
-    }
-    else if(msg->evtype == FABIPC_EVENT_FORMULA_EXEC_STDERR)
-    {
-      fatal(assure, &bs->stderr_text, 1, bs->stderr_len + msg->size, &bs->stderr_alloc);
-      memcpy(bs->stderr_text + bs->stderr_len, msg->text, msg->size);
-      bs->stderr_len += msg->size;
-    }
-    else if(msg->evtype == FABIPC_EVENT_FORMULA_EXEC_AUXOUT)
-    {
-      fatal(assure, &bs->auxout_text, 1, bs->auxout_len + msg->size, &bs->auxout_alloc);
-      memcpy(bs->auxout_text + bs->auxout_len, msg->text, msg->size);
-      bs->auxout_len += msg->size;
-    }
-    else if(msg->evtype == FABIPC_EVENT_FORMULA_EXEC_WAITED)
-    {
-      descriptor_type_unmarshal(bs, &descriptor_fab_build_slot, msg->text, msg->size);
-
-      fatal(slot_print, bs);
-
-//printf("[%8d] DELETE %p\n", bs->base.pid, bs);
-      hashtable_delete(build_slots_bypid, &bs);
-    }
-  }
-
-  finally : coda;
+  reconfigure_show_settings(&cfg->formula.error, &config->error);
+  reconfigure_show_settings(&cfg->formula.success, &config->success);
 }
-
-//
-// public
-//
-
-xapi build_command_setup()
-{
-  enter;
-
-  fatal(hashtable_createx
-    , &build_slots_bypid
-    , sizeof(build_slot*)
-    , 256
-    , build_slot_hash
-    , build_slot_cmp
-    , build_slot_release
-    , 0
-  );
-
-  finally : coda;
-}
-
-xapi build_command_reconfigure(config * restrict cfg)
-{
-  enter;
-
-  reconfigure(cfg, &build_config);
-
-  finally : coda;
-}
-
-xapi build_command_cleanup()
-{
-  enter;
-
-  build_slot *bs;
-  llist *lln;
-
-  fatal(list_xfree, args.targets);
-  fatal(hashtable_xfree, build_slots_bypid);
-
-  llist_foreach_safe(&slots_freelist, bs, lln, lln) {
-//printf("[%8d] FREE %p\n", bs->base.pid, bs);
-    slot_free(bs);
-  }
-
-  finally : coda;
-}
-
-command build_command = {
-    name : "build"
-  , args_parse : build_command_args_parse
-  , usage : build_command_usage
-  , connected : connected
-  , process : process
-};
+#endif

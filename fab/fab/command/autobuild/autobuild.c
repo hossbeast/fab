@@ -34,7 +34,7 @@
 #include "errtab/MAIN.errtab.h"
 #include "fab/client.h"
 #include "fab/ipc.h"
-#include "config.internal.h"
+#include "fab/events.h"
 
 #include "macros.h"
 #include "common/attrs.h"
@@ -48,12 +48,17 @@ static xapi process(command * restrict cmd, fab_client * restrict client, fabipc
 {
   enter;
 
-  if(msg->type != FABIPC_MSG_EVENTS)
-    goto XAPI_FINALIZE;
+  if(msg->type == FABIPC_MSG_RESPONSE)
+  {
+    goto XAPI_FINALLY;
+  }
+
+  RUNTIME_ASSERT(msg->type == FABIPC_MSG_EVENTS);
 
   if(msg->evtype == FABIPC_EVENT_GOALS)
   {
-    if(msg->id != getpid()) {
+    if(msg->id != getpid())
+    {
       g_params.shutdown = true;
     }
   }
@@ -74,7 +79,7 @@ static xapi connected(command * restrict cmd, fab_client * restrict client)
   fabipc_message * msg;
 
   /* subscribe to relevant events */
-  msg = fab_client_produce(client, 0);
+  msg = fab_client_produce(client);
   msg->type = FABIPC_MSG_EVENTSUB;
   msg->attrs = 0
     | (1 << (FABIPC_EVENT_FORMULA_EXEC_FORKED - 1))
@@ -82,12 +87,14 @@ static xapi connected(command * restrict cmd, fab_client * restrict client)
     | (1 << (FABIPC_EVENT_FORMULA_EXEC_STDERR - 1))
     | (1 << (FABIPC_EVENT_FORMULA_EXEC_AUXOUT - 1))
     | (1 << (FABIPC_EVENT_FORMULA_EXEC_WAITED - 1))
+    | (1 << (FABIPC_EVENT_STDOUT - 1))
+    | (1 << (FABIPC_EVENT_STDERR - 1))
     | (1 << (FABIPC_EVENT_GOALS - 1))
     ;
-  fab_client_post(client);
+  fab_client_post(client, msg);
 
   /* send the request */
-  msg = fab_client_produce(client, 0);
+  msg = fab_client_produce(client);
   msg->type = FABIPC_MSG_REQUEST;
   msg->id = getpid();
 
@@ -99,14 +106,13 @@ static xapi connected(command * restrict cmd, fab_client * restrict client)
   fatal(narrator_xsayw, request_narrator, (char[]) { 0x00, 0x00 }, 2);
   msg->size = nstor.l;
 
-  fab_client_post(client);
+  fab_client_post(client, msg);
 
   finally : coda;
 }
 
 struct command autobuild_command = {
     name : "autobuild"
-  , args_parse : build_command_args_parse
   , usage : build_command_usage
   , connected : connected
   , process : process

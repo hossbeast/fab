@@ -21,14 +21,48 @@
 #include "xapi.h"
 #include "types.h"
 
+#include "fab/graph.h"
+
 struct command;
 struct value_writer;
 struct fabipc_message;
 
-extern struct g_args_t {
+struct stats_args;
+struct touch_args;
+struct build_args;
+struct describe_args;
+struct tree_args;
+struct ls_args;
+
+typedef struct bead {
+  const char *s;
+  uint16_t len;
+} bead;
+
+extern struct {
+  /* passthrough to fabd */
+  bead system_config_path;
+  bead user_config_path;
+  bead project_config_path;
+  bead default_filesystem_invalidate;
+  bead sweeper_period_nsec;
+  bool no_launch;
+
   bool invalidate;
   bool kill;
+  bool help;
+  bool version;
+
+  struct stats_args *stats;
+  struct touch_args *touch;
+  struct build_args *build;
+  struct tree_args *tree;
+  struct ls_args *ls;
+  struct describe_args *describe;
+  struct adhoc_args *adhoc;
 } g_args;
+
+extern struct command *g_cmd;
 
 /// args_parse
 //
@@ -43,9 +77,11 @@ extern struct g_args_t {
 // PARAMETERS
 //  cmd - (returns) subcommand dispatch
 //
-xapi args_parse(struct command ** cmd)
-  __attribute__((nonnull));
+xapi args_parse(void);
 
+void args_cleanup(void);
+
+#if 0
 /// args_usage
 //
 // SUMMARY
@@ -56,7 +92,6 @@ xapi args_parse(struct command ** cmd)
 //
 void args_usage(struct command * restrict cmd);
 void args_version(void);
-
-xapi args_teardown(void);
+#endif
 
 #endif

@@ -28,7 +28,7 @@ struct narrator;
 typedef struct command {
   char *name;
 
-  xapi (*args_parse)(struct command *cmd, int argc, char ** restrict argv);
+//  xapi (*args_parse)(struct command *cmd, int argc, char ** restrict argv);
   void (*usage)(struct command *cmd);
   xapi __attribute__((nonnull)) (*connected)(struct command *cmd, struct fab_client * restrict client);
   xapi __attribute__((nonnull)) (*process)(
