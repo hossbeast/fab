@@ -15,6 +15,8 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
+#define BOATS 1
+
 #include "xapi.h"
 #include "types.h"
 
@@ -30,8 +32,7 @@
 #include "generate.internal.h"
 #include "match.internal.h"
 #include "render.internal.h"
-#include "node.h"
-#include "path.h"
+#include "fsent.h"
 
 #include "macros.h"
 #include "common/attrs.h"
@@ -114,7 +115,7 @@ static xapi generate(const pattern_segment * pat, pattern_generate_context * res
 
   const chain *T;
   const pattern_segments * alt_segments;
-  node * saved_context_node;
+  fsent * saved_context_node;
   char saved_text[256];
   off_t saved_section_narrator_pos;
 

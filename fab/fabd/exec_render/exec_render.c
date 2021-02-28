@@ -32,8 +32,7 @@
 
 #include "exec_render.h"
 #include "exec_builder.internal.h"
-#include "node.h"
-#include "path.h"
+#include "fsent.h"
 #include "logging.h"
 #include "variant.h"
 #include "formula.h"
@@ -95,7 +94,7 @@ xapi exec_render_context_xinit(struct exec_render_context * restrict ctx)
 void exec_render_context_configure(
     exec_render_context * restrict ctx
   , exec_builder * restrict builder
-  , const module * restrict mod
+  , module * restrict mod
   , const value * restrict vars
   , const build_slot * restrict bs
 )
@@ -105,13 +104,14 @@ void exec_render_context_configure(
   ctx->bs = bs;
 
   ctx->selector_context.bpe = 0;
-  if(bs)
+  if(bs) {
     ctx->selector_context.bpe = bs->bpe;
+  }
 
   ctx->selector_context.mod = mod;
-  ctx->selector_context.base = 0;
-  if(mod)
-    ctx->selector_context.base = mod->dir_node;
+//  ctx->selector_context.base = 0;
+//  if(mod)
+//    ctx->selector_context.base = mod->dir_node;
 }
 
 xapi exec_render_context_xreset(exec_render_context * restrict ctx)
@@ -120,6 +120,7 @@ xapi exec_render_context_xreset(exec_render_context * restrict ctx)
 
 //  fatal(exec_builder_xreset, &ctx->operation_builder);
   memset(&ctx->builder_add_args, 0, sizeof(ctx->builder_add_args));
+  ctx->errlen = 0;
 
   finally : coda;
 }

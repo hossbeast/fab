@@ -35,11 +35,12 @@
 #include "common/assure.h"
 
 attrs32 * command_type_attrs = (attrs32[]) {{
-#define DEF(x, s, r, y) + 1
+#undef DEF
+#define DEF(x, s, r) + 1
     num : 0 COMMAND_TYPE_TABLE
   , members : (member32[]) {
 #undef DEF
-#define DEF(x, s, r, y) { name : s, value : UINT32_C(y), range : UINT32_C(r) },
+#define DEF(x, s, r) { name : s, value : x, range : UINT32_C(r) },
 COMMAND_TYPE_TABLE
   }
 }};
@@ -73,10 +74,6 @@ static xapi command_xdestroy(command * cmd)
   {
     selector_free(cmd->selector);
   }
-  else if(cmd->type == COMMAND_STAGE_CONFIG)
-  {
-    fatal(config_xfree, cmd->config);
-  }
   else if(cmd->type == COMMAND_GOALS)
   {
     selector_free(cmd->goals.target_direct);
@@ -86,14 +83,40 @@ static xapi command_xdestroy(command * cmd)
   finally : coda;
 }
 
+static xapi command_xfree(command * cmd)
+{
+  enter;
+
+  if(cmd)
+  {
+    fatal(command_xdestroy, cmd);
+  }
+
+  wfree(cmd);
+
+  finally : coda;
+}
+
 static xapi request_writer_write(request * const restrict req, value_writer * const restrict writer)
 {
   enter;
 
+  command *cmd;
   int x;
-  for(x = 0; x < req->commands->size; x++)
+
+  for(x = -1; x <= (int)req->commands->size; x++)
   {
-    command * cmd = array_get(req->commands, x);
+    if(x == -1) {
+      if((cmd = req->first_command) == NULL) {
+        continue;
+      }
+    } else if (x == req->commands->size) {
+      if((cmd = req->last_command) == NULL) {
+        continue;
+      }
+    } else {
+      cmd = array_get(req->commands, x);
+    }
 
     if(cmd->type == COMMAND_RUN)
     {
@@ -117,27 +140,27 @@ static xapi request_writer_write(request * const restrict req, value_writer * co
     }
     else if(cmd->type == COMMAND_LIST)
     {
-      if(cmd->property)
-      {
-        fatal(value_writer_push_mapping, writer);
-        fatal(value_writer_string, writer, "list");
-        const char * property = attrs32_name_byvalue(node_property_attrs, NODE_PROPERTY_OPT & cmd->property);
-        RUNTIME_ASSERT(property != NULL);
-        fatal(value_writer_string, writer, property);
-        fatal(value_writer_pop_mapping, writer);
-      }
-      else
-      {
-        fatal(value_writer_string, writer, "list");
-      }
+      fatal(value_writer_string, writer, "list");
     }
     else if(cmd->type == COMMAND_RESET_SELECTION)
     {
       fatal(value_writer_string, writer, "reset-selection");
     }
-    else if(cmd->type == COMMAND_RECONFIGURE)
+    else if(cmd->type == COMMAND_GLOBAL_STATS_READ)
     {
-      fatal(value_writer_string, writer, "reconfigure");
+      fatal(value_writer_string, writer, "global-stats-read");
+    }
+    else if(cmd->type == COMMAND_GLOBAL_STATS_RESET)
+    {
+      fatal(value_writer_string, writer, "global-stats-reset");
+    }
+    else if(cmd->type == COMMAND_STATS_READ)
+    {
+      fatal(value_writer_string, writer, "stats-read");
+    }
+    else if(cmd->type == COMMAND_STATS_RESET)
+    {
+      fatal(value_writer_string, writer, "stats-reset");
     }
     else if(cmd->type == COMMAND_SELECT)
     {
@@ -146,15 +169,6 @@ static xapi request_writer_write(request * const restrict req, value_writer * co
         fatal(value_writer_push_list, writer);
         fatal(selector_writer_write, cmd->selector, writer);
         fatal(value_writer_pop_list, writer);
-      fatal(value_writer_pop_mapping, writer);
-    }
-    else if(cmd->type == COMMAND_STAGE_CONFIG)
-    {
-      fatal(value_writer_push_mapping, writer);
-      fatal(value_writer_string, writer, "stage-config");
-        fatal(value_writer_push_set, writer);
-        fatal(config_writer_write, cmd->config, writer);
-        fatal(value_writer_pop_set, writer);
       fatal(value_writer_pop_mapping, writer);
     }
     else if(cmd->type == COMMAND_GOALS)
@@ -187,8 +201,21 @@ static xapi request_writer_write(request * const restrict req, value_writer * co
         fatal(value_writer_pop_set, writer);
       fatal(value_writer_pop_mapping, writer);
     }
+    else if(cmd->type == COMMAND_METADATA)
+    {
+      fatal(value_writer_string, writer, "metadata");
+    }
+    else if(cmd->type == COMMAND_BOOTSTRAP)
+    {
+      fatal(value_writer_string, writer, "bootstrap");
+    }
+    else if(cmd->type == COMMAND_RECONCILE)
+    {
+      fatal(value_writer_string, writer, "reconcile");
+    }
     else
     {
+printf("%d\n", cmd->type);
       RUNTIME_ABORT();
     }
   }
@@ -236,7 +263,11 @@ xapi request_xfree(request * restrict req)
   enter;
 
   if(req)
+  {
     fatal(array_xfree, req->commands);
+    fatal(command_xfree, req->first_command);
+    fatal(command_xfree, req->last_command);
+  }
 
   wfree(req);
 

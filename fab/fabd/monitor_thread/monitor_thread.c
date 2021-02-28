@@ -30,15 +30,10 @@
 #include "logger/config.h"
 
 #include "monitor_thread.h"
-#include "handler_thread.h"
+#include "handler.h"
 #include "logging.h"
 #include "params.h"
-#include "rcu.h"
-
-//uint16_t monitor_quiesce_r[1024];
-//uint16_t monitor_quiesce_n[1024];
-//int monitor_boats = 0;
-rcu_thread monitor_rcu;
+#include "threads.h"
 
 xapi monitor_thread()
 {
@@ -47,9 +42,8 @@ xapi monitor_thread()
   sigset_t sigs;
   siginfo_t info;
   handler_context * handler;
-  int r;
-  rcu_thread *rcu_self = &monitor_rcu;
   struct timespec interval;
+  int r;
 
   logger_set_thread_name("monitor");
   logger_set_thread_categories(L_MONITOR);
@@ -67,17 +61,8 @@ xapi monitor_thread()
   interval.tv_sec = 0;
   interval.tv_nsec = 125000000;
 
-  rcu_register(rcu_self);
   while(g_params.thread_count)
   {
-//    union quiesced Xn;
-//    Xn.u32 = rcu_quiesce(rcu_self);
-//printf("monitor quiesce %d\n", goats);
-//    monitor_quiesce_r[monitor_boats] = Xn.r;
-//    monitor_quiesce_n[monitor_boats] = Xn.n;
-//    monitor_boats++;
-    rcu_quiesce(rcu_self);
-
     fatal(sigutil_timedwait, &r, &sigs, &info, &interval);
     if(r == EAGAIN) {
       continue;
@@ -96,8 +81,8 @@ xapi monitor_thread()
     fatal(uxtgkill, 0, g_params.pid, g_params.thread_notify, SIGUSR1);
     fatal(uxtgkill, 0, g_params.pid, g_params.thread_sweeper, SIGUSR1);
     fatal(uxtgkill, 0, g_params.pid, g_params.thread_beholder, SIGUSR1);
+    fatal(uxtgkill, 0, g_params.pid, g_params.thread_bootstrap, SIGUSR1);
 
-    /* handlers may have been moved to freelist */
     stack_foreach(&g_handlers, handler, stk) {
       fatal(uxtgkill, 0, g_params.pid, handler->tid, SIGUSR1);
     }
@@ -107,6 +92,5 @@ finally:
 #if DEBUG || DEVEL
   logs(L_IPC, "terminating");
 #endif
-  rcu_unregister(rcu_self);
 coda;
 }

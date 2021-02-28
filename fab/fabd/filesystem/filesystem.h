@@ -25,9 +25,11 @@
 
 #include "valyria/rbtree.h"
 
-struct config;
+struct configblob;
 struct attrs16;
 struct fstree;
+
+#define FILESYSTEM_INVALIDATE_DEFAULT INVALIDATE_STAT
 
 // filesystem attributes
 #define INVALIDATE_OPT 0xf
@@ -84,7 +86,7 @@ xapi filesystem_cleanup(void);
 //  config - root of the config tree
 //  dry    - whether to perform a dry-run
 //
-xapi filesystem_reconfigure(struct config * restrict cfg, bool dry)
+xapi filesystem_reconfigure(struct configblob * restrict cfg, bool dry)
   __attribute__((nonnull));
 
 size_t filesystem_absolute_path_znload(void * restrict dst, size_t sz, const filesystem * restrict fs)

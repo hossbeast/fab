@@ -117,7 +117,7 @@ xapi formula_value_select_mk(
 xapi formula_value_property_mk(
     const struct yyu_location * restrict loc
   , struct formula_value ** rv
-  , node_property property
+  , fsent_property property
 )
   __attribute__((nonnull));
 

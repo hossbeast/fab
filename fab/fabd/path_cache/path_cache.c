@@ -27,7 +27,7 @@
 #include "path_cache.h"
 #include "config.internal.h"
 #include "CONFIG.errtab.h"
-#include "box.h"
+#include "yyutil/box.h"
 
 #include "common/hash.h"
 #include "zbuffer.h"
@@ -162,7 +162,7 @@ xapi path_cache_cleanup()
   finally : coda;
 }
 
-xapi path_cache_reconfigure(config * restrict cfg, bool dry)
+xapi path_cache_reconfigure(configblob * restrict cfg, bool dry)
 {
   enter;
 
@@ -272,6 +272,8 @@ xapi path_cache_search(const path_cache_entry ** restrict pep, const char * rest
   path_cache_entry *pe = 0;
   int fd = -1;
 
+//printf("SEARCH '%.*s'\n", (int)file_len, file);
+
   if((pe = set_search(path_search_cache, (void*)file, file_len, cache_key_hash, cache_key_cmp)))
   {
 //printf("GOT '%.*s'(%d) -> %d\n", (int)file_len, file, file_len, pe->fd);
@@ -284,6 +286,7 @@ xapi path_cache_search(const path_cache_entry ** restrict pep, const char * rest
   {
     pe = list_get(path_dirs, x);
     fatal(uxopenats, &fd, O_RDONLY, pe->fd, file);
+//printf("open %s // %s : %d\n", pe->s, file, fd);
     if(fd != -1)
       break;
   }

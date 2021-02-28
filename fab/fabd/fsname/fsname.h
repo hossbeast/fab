@@ -15,8 +15,8 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef _FABD_PATH_H
-#define _FABD_PATH_H
+#ifndef _FABD_FSNAME_H
+#define _FABD_FSNAME_H
 
 #include "types.h"
 #include "xapi.h"
@@ -33,11 +33,9 @@
 */
 
 // immutable
-typedef struct path
+typedef struct fsname
 {
-  char *    dir;
-  uint16_t  dirl;
-  char *    name;
+  char      name[255];
   uint16_t  namel;
   char *    ext;
   uint16_t  extl;
@@ -45,12 +43,7 @@ typedef struct path
   uint16_t  suffixl;
   char *    base;
   uint16_t  basel;
-  char *    stem;
-  uint16_t  steml;
-
-  uint16_t  pathl;
-  char      path[];
-} path;
+} fsname;
 
 /// path_create
 //
@@ -60,32 +53,10 @@ typedef struct path
 // PARAMETERS
 //  p  - (returns) path object
 //
-xapi path_creates(path ** const restrict p, const char * const restrict s)
-  __attribute__((nonnull));
+//xapi path_creates(path ** const restrict p, const char * const restrict s)
+//  __attribute__((nonnull));
 
-xapi path_createw(path ** const restrict p, const char * const restrict buf, size_t bufl)
-  __attribute__((nonnull));
-
-xapi path_createf(path ** const restrict p, const char * const restrict fmt, ...)
-  __attribute__((nonnull))
-  __attribute__((format(printf, 2, 3)));
-
-xapi path_createvf(path ** const restrict p, const char * const restrict fmt, va_list va)
-  __attribute__((nonnull));
-
-/// path_free
-//
-// SUMMARY
-//  free a path with free semantics
-//
-void path_free(path * const restrict);
-
-/// path_xfree
-//
-// SUMMARY
-//  free a path with wfree semantics
-//
-void path_xfree(path ** const restrict)
+void fsname_init(fsname * const restrict p, const char * const restrict buf, size_t bufl)
   __attribute__((nonnull));
 
 #endif

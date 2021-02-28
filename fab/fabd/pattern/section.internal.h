@@ -34,7 +34,7 @@ enum pattern_axis;
 enum pattern_nodeset;
 enum pattern_graph;
 struct narrator;
-struct node;
+struct fsent;
 struct pattern_match_context;
 struct pattern_section;
 struct pattern_segments;

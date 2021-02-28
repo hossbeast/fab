@@ -19,6 +19,7 @@
 #include "valyria/load.h"
 #include "moria/load.h"
 #include "xlinux/xstdlib.h"
+#include "value/load.h"
 
 #include "valyria/list.h"
 #include "valyria/llist.h"
@@ -26,6 +27,7 @@
 #include "valyria/set.h"
 #include "moria/graph.h"
 #include "moria/operations.h"
+#include "moria/parser.h"
 #include "xunit.h"
 #include "xunit/assert.h"
 #include "narrator.h"
@@ -34,7 +36,7 @@
 #include "logging.h"
 #include "rule.internal.h"
 #include "lookup.internal.h"
-#include "node.h"
+#include "fsent.h"
 #include "shadow.h"
 #include "node_operations.h"
 #include "pattern.h"
@@ -43,6 +45,12 @@
 #include "variant.h"
 #include "node_operations_test.h"
 #include "filesystem.h"
+#include "rule_module.h"
+#include "selection.h"
+#include "rule_system.h"
+#include "rule_module.h"
+#include "fsedge.h"
+#include "dependency.h"
 
 typedef struct rules_test {
   XUNITTEST;
@@ -69,13 +77,16 @@ static xapi rules_test_unit_setup(xunit_unit * unit)
 
   fatal(valyria_load);
   fatal(moria_load);
+  fatal(value_load);
   fatal(logging_finalize);
 
   fatal(module_setup);
   fatal(filesystem_setup);
   fatal(graph_setup);
-  fatal(node_setup);
+  fatal(fsent_setup);
   fatal(variant_setup);
+  fatal(shadow_setup);
+  fatal(rule_system_setup);
 
   finally : coda;
 }
@@ -91,6 +102,7 @@ static xapi rules_test_unit_cleanup(xunit_unit * unit)
 
   fatal(valyria_unload);
   fatal(moria_unload);
+  fatal(value_unload);
 
   finally : coda;
 }
@@ -107,10 +119,9 @@ static xapi rules_test_entry(xunit_test * _test)
 
   narrator_growing * N = 0;
   pattern_parser * parser = 0;
-  operations_parser * op_parser = 0;
-  list * operations = 0;
+  graph_parser * op_parser = 0;
   yyu_location loc;
-  module mod = { 0 };
+  module mod = { };
   set * variants = 0;
   variant *v = 0;
   rule * r;
@@ -119,29 +130,25 @@ static xapi rules_test_entry(xunit_test * _test)
   pattern * match_pat = 0;
   pattern * generate_pat = 0;
   rule_run_context rule_ctx = { 0 };
-  rule_module_association rma;
+  bool reconciled;
+  rule_module_edge *rme;
+  const char *graph;
+  llist *vertex_lists[2];
+  llist *edge_lists[3];
 
   fatal(narrator_growing_create, &N);
   fatal(pattern_parser_create, &parser);
-  fatal(operations_parser_create, &op_parser);
   fatal(rule_run_context_xinit, &rule_ctx);
-  rule_module_association_init(&rma);
+  fatal(rule_module_edge_alloc, &rme);
 
-  if(test->module_id)
-    snprintf(mod.id, sizeof(mod.id), "%s", test->module_id);
+  // setup the initial graph
+  fatal(graph_parser_create, &op_parser, &g_graph, &fsent_list, node_operations_test_dispatch, graph_vertex_attrs, graph_edge_attrs);
+  fatal(graph_parser_operations_parse, op_parser, MMS(test->operations));
 
-  fatal(rule_run_context_begin, &rule_ctx);
-
-  // setup initial graph
-  if(test->shadow)
-  {
-    fatal(shadow_setup);
-    fatal(shadow_graft_module, &mod, &rule_ctx.invalidation);
-  }
-
-  fatal(operations_parser_operations_create, &operations);
-  fatal(operations_parser_parse, op_parser, g_graph, MMS(test->operations), operations);
-  fatal(operations_perform, g_graph, node_operations_test_dispatch, operations);
+  // setup the module
+  snprintf(mod.id, sizeof(mod.id), "%s", test->module_id);
+  fatal(resolve_fragment, MMS(test->module), &mod.dir_node);
+  fatal(shadow_module_init, &mod, &rule_ctx.invalidation);
 
   // parse the patterns for the rule
   if(test->match_pattern)
@@ -156,7 +163,7 @@ static xapi rules_test_entry(xunit_test * _test)
     assert_eq_u32(strlen(test->generate_pattern), loc.l);
   }
 
-  fatal(rule_mk, &r, g_graph, match_pat, generate_pat, 0, 0);
+  fatal(rule_mk, &r, &g_graph, match_pat, generate_pat, 0, 0, 0);
   match_pat = 0;
   generate_pat = 0;
 
@@ -174,33 +181,38 @@ static xapi rules_test_entry(xunit_test * _test)
     }
   }
 
-  llist_init_node(&modules);
-
   // setup context
-  fatal(pattern_lookup_fragment, MMS(test->module), 0, 0, 0, 0, 0, 0, &mod.dir_node);
-  mod.shadow_scope = mod.dir_node;
-
-  // act
+  llist_init_node(&modules);
   rule_ctx.mod = &mod;
   rule_ctx.modules = &modules;
   rule_ctx.variants = variants;
-  rule_ctx.rma = &rma;
-  fatal(rule_run, r, &rule_ctx);
+  rule_ctx.rme = rme;
+  rme->rule = r;
+  reconciled = true;
+  rule_ctx.reconciled = &reconciled;
 
-  // ordered list of edges
-  fatal(graph_say, g_graph, &N->base);
-  const char * graph = N->s;
+  // act
+  fatal(rule_run, r, &rule_ctx);
+  assert_eq_b(true, reconciled);
+
+  vertex_lists[0] = &fsent_list;
+  vertex_lists[1] = &rule_list;
+  edge_lists[0] = &fsedge_list;
+  edge_lists[1] = &dependency_list;
+  edge_lists[2] = &rde_list;
+
+  fatal(graph_say_lists, &N->base, vertex_lists, sizeof(vertex_lists) / sizeof(*vertex_lists), edge_lists, sizeof(edge_lists) / sizeof(*edge_lists));
+  graph = N->s;
   assert_eq_s(test->graph, graph);
 
 finally:
   pattern_free(match_pat);
   pattern_free(generate_pat);
-  fatal(node_cleanup);
+  fatal(fsent_cleanup);
   fatal(set_xfree, variants);
   fatal(narrator_growing_free, N);
-  fatal(operations_parser_xfree, op_parser);
+  fatal(graph_parser_xfree, op_parser);
   fatal(pattern_parser_xfree, parser);
-  fatal(list_xfree, operations);
   fatal(rule_run_context_xdestroy, &rule_ctx);
 coda;
 }
@@ -220,18 +232,20 @@ xunit_unit xunit = {
           " MOD/a/c.c"
         , module : "MOD"
         , variants : (char*[]) { "foo", 0 }
-// a/b -> $^D/c.o
+        // a/b -> $^D/c.o
         , match_pattern : (char[]) { "a/b\0" }
         , generate_pattern : (char[]) { "$^D/c.o\0" }
         , dir : RULE_LTR
         , card : RULE_ONE_TO_ONE
-        , relation : EDGE_TYPE_STRONG
-        , graph :  "1-(root)!dir 2-MOD!dir 3-a!dir"
-                  " 4-b!file 5-c.c!file 6-c.o!U|file"
-                  " 7-!rule"
-                  " 7:rule-dir:2 7:rule-dir:3"             // rule edges
-                  " 6:strong:4"                            // strong edges
-                  " 1:fs:2 2:fs:3 3:fs:4 3:fs:5 3:fs:6"    // fs edges
+        , relation : EDGE_DEPENDS
+        , graph :  "1-fs!shadow-link 2-modules!shadow-modules 3-module!shadow-module 4-(null)!shadow-dir 5-(shadow)!shadow-dir 6-import-scope!shadow-dir 7-imports!shadow-dir 8-requires!shadow-dir 9-use-scope!shadow-dir 10-uses!shadow-dir 11-targets!shadow-file"
+                  " 12-(root)!dir 13-MOD!dir 14-a!dir"
+                  " 15-b!file 16-c.c!file 17-c.o!U|file"
+                  " 18-!rule"
+                  " 18:rule-dir:13 18:rule-dir:14"
+                  " 17:depends:15"
+                  " 2:fs:4 4:fs:1 4:fs:6 4:fs:7 4:fs:8 4:fs:9 4:fs:10 4:fs:11 5:fs:2 5:fs:3"
+                  " 12:fs:13 13:fs:14 14:fs:15 14:fs:16 14:fs:17"
       }}
     , (rules_test[]) {{
           operations : ""
@@ -239,36 +253,39 @@ xunit_unit xunit = {
           " MOD/a/b.bar"
         , module : "MOD"
         , variants : (char*[]) { "foo", "bar", 0 }
-// a/b.? -> $^D/c.$?
+        // a/b.? -> $^D/c.$?
         , match_pattern : (char[]) { "a/b.?\0" }
         , generate_pattern : (char[]) { "$^D/c.$?\0" }
         , dir : RULE_LTR
         , card : RULE_ONE_TO_ONE
-        , relation : EDGE_TYPE_STRONG
-        , graph :  "1-(root)!dir 2-MOD!dir 3-a!dir"
-                  " 4-b.bar!file 5-b.foo!file 6-c.bar!U|file 7-c.foo!U|file"
-                  " 8-!rule"
-                  " 8:rule-dir:2 8:rule-dir:3"
-                  " 6:strong:4 7:strong:5"
-                  " 1:fs:2 2:fs:3 3:fs:4 3:fs:5 3:fs:6 3:fs:7"
+        , relation : EDGE_DEPENDS
+        , graph :  "1-fs!shadow-link 2-modules!shadow-modules 3-module!shadow-module 4-(null)!shadow-dir 5-(shadow)!shadow-dir 6-import-scope!shadow-dir 7-imports!shadow-dir 8-requires!shadow-dir 9-use-scope!shadow-dir 10-uses!shadow-dir 11-targets!shadow-file"
+                  " 12-(root)!dir 13-MOD!dir 14-a!dir"
+                  " 15-b.bar!file 16-b.foo!file 17-c.bar!U|file 18-c.foo!U|file"
+                  " 19-!rule"
+                  " 19:rule-dir:13 19:rule-dir:14"
+                  " 17:depends:15 18:depends:16"
+                  " 2:fs:4 4:fs:1 4:fs:6 4:fs:7 4:fs:8 4:fs:9 4:fs:10 4:fs:11 5:fs:2 5:fs:3"
+                  " 12:fs:13 13:fs:14 14:fs:15 14:fs:16 14:fs:17 14:fs:18"
       }}
     , (rules_test[]) {{
           operations : ""
           " MOD/x.c"
         , module : "MOD"
         , variants : (char*[]) { "foo", "bar", 0 }
-// (*).c -> $1.?.o
+        // (*).c -> $1.?.o
         , match_pattern : (char[]) { "(*).c\0" }
         , generate_pattern : (char[]) { "$1.?.o\0" }
         , dir : RULE_LTR
         , card : RULE_ONE_TO_ONE
-        , relation : EDGE_TYPE_STRONG
-        , graph :  "1-(root)!dir 2-MOD!dir"
-                  " 3-x.bar.o!U|file 4-x.c!file 5-x.foo.o!U|file"
-                  " 6-!rule"
-                  " 6:rule-dir:2"
-                  " 3:strong:4 5:strong:4"
-                  " 1:fs:2 2:fs:3 2:fs:4 2:fs:5"
+        , relation : EDGE_DEPENDS
+        , graph :  "1-fs!shadow-link 2-modules!shadow-modules 3-module!shadow-module 4-(null)!shadow-dir 5-(shadow)!shadow-dir 6-import-scope!shadow-dir 7-imports!shadow-dir 8-requires!shadow-dir 9-use-scope!shadow-dir 10-uses!shadow-dir 11-targets!shadow-file"
+                  " 12-(root)!dir 13-MOD!dir"
+                  " 14-x.bar.o!U|file 15-x.c!file 16-x.foo.o!U|file"
+                  " 17-!rule 17:rule-dir:13"
+                  " 14:depends:15 16:depends:15"
+                  " 2:fs:4 4:fs:1 4:fs:6 4:fs:7 4:fs:8 4:fs:9 4:fs:10 4:fs:11 5:fs:2 5:fs:3"
+                  " 12:fs:13 13:fs:14 13:fs:15 13:fs:16"
       }}
     /* shadow */
     , (rules_test[]) {{
@@ -277,38 +294,20 @@ xunit_unit xunit = {
         , shadow : true
         , module : "MOD"
         , module_id : "beef"
-// //module/tests/* -> //shadow/tests
+        // x.c -> //tests
         , match_pattern : (char[]) { "x.c\0" }
         , generate_pattern : (char[]) { "//tests\0" }
         , dir : RULE_LTR
         , card : RULE_ONE_TO_ONE
-        , relation : EDGE_TYPE_STRONG
-        , graph :  "1-modules!shadow-modules"
-                  " 2-module!shadow-module"
-                  " 3-(shadow)!shadow-dir 4-beef!shadow-dir 5-imports!shadow-dir 6-scope!shadow-dir 7-targets!shadow-file"
-                  " 8-tests!U|shadow-file"
-                  " 9-fs!shadow-link"
-                  " 10-(root)!dir 11-MOD!dir"
-                  " 12-x.c!file"
-                  " 13-!rule"
-                  " 13:rule-dir:11"
-                  " 8:strong:12"
-                  " 1:fs:4 3:fs:1 3:fs:2 3:fs:8 4:fs:5 4:fs:6 4:fs:7 4:fs:9 10:fs:11 11:fs:12"
-      }}
-    /* zero-to-many */
-    , (rules_test[]) {{
-          operations : ""
-          " MOD"
-        , module : "MOD"
-// a/b -> $^D/c.o
-        , generate_pattern : (char[]) { "vcs.{c,h}\0" }
-        , card : RULE_ZERO_TO_MANY
-        , relation : EDGE_TYPE_STRONG
-        , graph :  "1-(root)!dir 2-MOD!dir"
-                  " 3-vcs.c!U|file 4-vcs.h!U|file"
-                  " 5-!rule"
-                  " 1:fs:2 2:fs:3 2:fs:4"                  // fs edges
-                  " _:strong:3,4"                          // strong edges (hyper)
+        , relation : EDGE_DEPENDS
+        , graph :  "1-fs!shadow-link 2-modules!shadow-modules 3-module!shadow-module 4-(shadow)!shadow-dir 5-beef!shadow-dir 6-import-scope!shadow-dir 7-imports!shadow-dir 8-requires!shadow-dir 9-use-scope!shadow-dir 10-uses!shadow-dir 11-targets!shadow-file 12-tests!shadow-file"
+                  " 13-(root)!dir 14-MOD!dir"
+                  " 15-x.c!file"
+                  " 16-!rule"
+                  " 16:rule-dir:14"
+                  " 12:depends:15"
+                  " 2:fs:5 4:fs:2 4:fs:3 4:fs:12 5:fs:1 5:fs:6 5:fs:7 5:fs:8 5:fs:9 5:fs:10 5:fs:11"
+                  " 13:fs:14 14:fs:15"
       }}
     , 0
   }

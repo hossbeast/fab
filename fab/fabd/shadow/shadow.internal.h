@@ -32,7 +32,7 @@ module/requires/ virtual directory with an entry for each required module
 
 #include "shadow.h"
 
-extern struct node * g_shadow_module;          /* the node at //module */
-extern struct node * g_shadow_modules;         /* the node at //modules */
+extern struct fsent * g_shadow_module;          /* the node at //module */
+extern struct fsent * g_shadow_modules;         /* the node at //modules */
 
 #endif

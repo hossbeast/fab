@@ -20,12 +20,12 @@
 
 #include "xapi.h"
 
-struct node;
+struct fsent;
 
 xapi notify_thread_setup(void);
 xapi notify_thread_cleanup(void);
 xapi notify_thread_launch(void);
-xapi notify_thread_watch(struct node * restrict n)
+xapi notify_thread_watch(struct fsent * restrict n)
   __attribute__((nonnull));
 
 /* incremented each time new events are available */

@@ -18,10 +18,16 @@
 #include <stdlib.h>
 
 #include "valyria/stack.h"
+#include "fab/ipc.h"
+#include "fab/events.h"
 
 #include "events.h"
 #include "channel.h"
 #include "handler_thread.h"
+#include "handler.h"
+
+#include "common/attrs.h"
+#include "params.h"
 
 bool events_would(fabipc_event_type type, handler_context ** restrict first, fabipc_message ** restrict msg)
 {
@@ -37,7 +43,7 @@ bool events_would(fabipc_event_type type, handler_context ** restrict first, fab
     }
 
     *first = handler;
-    *msg = channel_produce(handler->chan, &handler->tail_next, 0);
+    *msg = handler_produce(handler);
     (*msg)->type = FABIPC_MSG_EVENTS;
     (*msg)->evtype = type;
     return true;
@@ -64,22 +70,27 @@ void events_publish(handler_context * first, fabipc_message * restrict firstmsg)
       continue;
     }
 
-    if(!(msg = channel_produce(handler->chan, &handler->tail_next, 0))) {
-      printf("WTF\n");
-      abort();
-      continue;
-    }
-
+    msg = handler_produce(handler);
     msg->type = FABIPC_MSG_EVENTS;
     msg->evtype = firstmsg->evtype;
     msg->size = firstmsg->size;
     msg->id = firstmsg->id;
+
     if(firstmsg->size) {
       memcpy(msg->text, firstmsg->text, firstmsg->size);
     }
 
-    channel_post(handler->chan, handler->tail_next);
+    handler_post(handler, msg);
   }
 
-  channel_post(first->chan, first->tail_next);
+//msg = firstmsg;
+//dprintf(BEHOLDER_STDOUT_REAL, "tx %8d %d %s", msg->id, msg->type, attrs32_name_byvalue(fabipc_msg_type_attrs, msg->type));
+//dprintf(BEHOLDER_STDOUT_REAL, " attrs 0x%08x", msg->attrs);
+//if(msg->type == FABIPC_MSG_EVENTS)
+//{
+//  dprintf(BEHOLDER_STDOUT_REAL, " %s", attrs32_name_byvalue(fabipc_event_type_attrs, msg->evtype));
+//}
+//dprintf(BEHOLDER_STDOUT_REAL, " size %hu\n", msg->size);
+
+  handler_post(first, firstmsg);
 }

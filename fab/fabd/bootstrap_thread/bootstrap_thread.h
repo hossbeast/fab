@@ -15,9 +15,11 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef FABD_BUILDPLAN_ENTITY_INTERNAL_H
-#define FABD_BUILDPLAN_ENTITY_INTERNAL_H
+#ifndef _BOOTSTRAP_THREAD_H
+#define _BOOTSTRAP_THREAD_H
 
-#include "buildplan_entity.h"
+#include "xapi.h"
+
+xapi bootstrap_thread_launch(void);
 
 #endif

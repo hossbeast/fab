@@ -30,8 +30,7 @@
 #include "generate.internal.h"
 #include "render.internal.h"
 #include "match.internal.h"
-#include "node.h"
-#include "path.h"
+#include "fsent.h"
 
 #include "pattern_parser.h"
 
@@ -67,8 +66,8 @@ static xapi match(pattern_match_context * restrict ctx, const pattern_segment * 
   enter;
 
   const pattern_byte * byte = &segment->byte;
-  const char * restrict name = ctx->node->name->name;
-  uint16_t namel = ctx->node->name->namel;
+  const char * restrict name = ctx->node->name.name;
+  uint16_t namel = ctx->node->name.namel;
   uint16_t name_offset = ctx->traversal->offset;
 
   if((namel > name_offset) && (name[name_offset] == byte->code))

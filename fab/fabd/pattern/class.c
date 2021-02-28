@@ -31,8 +31,7 @@
 #include "generate.internal.h"
 #include "render.internal.h"
 #include "match.internal.h"
-#include "node.h"
-#include "path.h"
+#include "fsent.h"
 
 #include "common/attrs.h"
 
@@ -184,7 +183,7 @@ static xapi generate(const pattern_segment * restrict pat, pattern_generate_cont
   const chain *alt_cursor;
   const pattern_segment * alt_segment;
 
-  node * saved_context_node;
+  fsent * saved_context_node;
   char saved_section_text[256];
   off_t saved_section_narrator_pos;
 

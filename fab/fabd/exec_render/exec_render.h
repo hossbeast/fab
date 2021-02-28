@@ -28,9 +28,9 @@ SUMMARY
 #include "xapi.h"
 
 #include "exec_builder.internal.h"
-#include "node.h"
+#include "fsent.h"
 
-struct node;
+struct fsent;
 struct narrator;
 struct formula_value;
 struct value;
@@ -44,6 +44,8 @@ typedef struct exec_render_context {
 
   /* operation state */
   exec_builder operation_builder;
+  char err[256];
+  uint16_t errlen;
 
   exec_builder * base_builder;
   exec_builder * builder;
@@ -59,7 +61,7 @@ xapi exec_render_context_xreset(exec_render_context * restrict ctx)
 void exec_render_context_configure(
     exec_render_context * restrict ctx
   , exec_builder * restrict builder
-  , const struct module * restrict mod
+  , struct module * restrict mod
   , const struct value * restrict vars
   , const struct build_slot * restrict bs
 )

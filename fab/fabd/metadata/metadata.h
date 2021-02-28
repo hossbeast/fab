@@ -15,6 +15,13 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#include "xapi.h"
+#ifndef FABD_METADATA_H
+#define FABD_METADATA_H
 
-xapi usage_report(void);
+#include "xapi.h"
+#include "types.h"
+
+xapi metadata_collate(void *dst, size_t sz, size_t * restrict z)
+  __attribute__((nonnull));
+
+#endif

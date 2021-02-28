@@ -29,12 +29,17 @@ struct array;
 
 typedef struct request {
   uint32_t msg_id;
-  struct array * commands;
-
-  /* build command type if any (run or autorun) */
-  int build_command;
+  struct array * commands;  // struct command - internal commands
+  struct command *first_command;
+  struct command *last_command;
 } request;
 
+//{
+//  /* whether to perform full system-reload before carrying out the request */
+//  bool system_reload;
+//
+//  /* build command type if any (run or autorun) */
+//  int build_command;
 
 #define TRAVERSE_TYPE_OPT 0x3
 #define TRAVERSE_TYPE_TABLE                                                                                             \

@@ -26,9 +26,6 @@ extern bool g_server_no_initial_client;      // no client right at startup
 extern struct fabipc_channel *g_server_initial_channel;
 #endif
 
-// true if currently autobuilding
-extern bool g_server_autorun;
-
 /// create the server thread
 xapi server_thread_launch(void);
 

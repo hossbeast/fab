@@ -20,25 +20,25 @@
 
 #include "lookup.h"
 
-struct node;
+struct fsent;
 struct yyu_location;
 struct module;
 struct selection;
 
 /*
- * lookup nodes by path fragment - only used in test code
+ * lookup nodes by path fragment
  */
 xapi pattern_lookup_fragment(
     const char * restrict frag
   , uint16_t fragl
   , const char * restrict fname
   , const struct yyu_location * restrict loc
-  , const struct module * restrict mod
-  , const struct node * restrict base
   , uint32_t attrs
   , struct selection * restrict nodes
-  , struct node ** restrict np
+  , char * restrict err
+  , size_t errsz
+  , uint16_t * restrict errlen
 )
-  __attribute__((nonnull(1)));
+  __attribute__((nonnull(1, 7, 9)));
 
 #endif

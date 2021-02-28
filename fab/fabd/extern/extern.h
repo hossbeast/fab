@@ -30,7 +30,7 @@ SUMMARY
 #include "xapi.h"
 #include "types.h"
 
-struct config;
+struct configblob;
 struct graph_invalidation_context;
 
 xapi extern_setup(void);
@@ -46,10 +46,13 @@ xapi extern_cleanup(void);
 //  config - root of the config tree
 //  dry    - whether to perform a dry-run
 //
-xapi extern_reconfigure(struct config * restrict cfg, bool dry)
+xapi extern_reconfigure(struct configblob * restrict cfg, bool dry)
   __attribute__((nonnull));
 
-xapi extern_refresh(int walk_id, struct graph_invalidation_context * restrict invalidation)
+/*
+ * reload extern trees
+ */
+xapi extern_system_reconcile(int walk_id, struct graph_invalidation_context * restrict invalidation)
   __attribute__((nonnull));
 
 #endif

@@ -27,7 +27,7 @@
 #include "exec_render.h"
 
 struct path_cache_entry;
-struct buildplan_entity;
+struct dependency;
 struct module;
 struct variant;
 struct value;
@@ -39,8 +39,8 @@ typedef struct build_slot {
   uint32_t stage_index;
 
   /* formula to execute */
-  struct buildplan_entity * bpe;  // (not null) build plan entity to execute
-  const struct module * mod;      // module the nodes in the entity belong to
+  struct dependency * bpe;        // (not null) dependency edge with formula/sources/targets
+  struct module * mod;            // module the nodes in the entity belong to
   const struct variant * var;     // variant the nodes in the entity are associated with
   const struct value * vars;      // vars for the variant
   const struct exec * exec;       // pre-rendered env vars for the variant
@@ -86,7 +86,7 @@ xapi build_slot_read(struct build_slot * restrict bs, uint32_t stream)
 xapi build_slot_reap(struct build_slot * restrict bs, siginfo_t * info)
   __attribute__((nonnull));
 
-xapi build_slot_prep(struct build_slot * restrict bs, struct buildplan_entity * restrict bpe, uint32_t stage_index)
+xapi build_slot_prep(struct build_slot * restrict bs, struct dependency * restrict bpe, uint32_t stage_index)
   __attribute__((nonnull));
 
 xapi build_slot_fork_and_exec(struct build_slot * restrict bs)

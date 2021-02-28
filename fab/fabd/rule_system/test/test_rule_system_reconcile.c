@@ -26,6 +26,8 @@
 #include "valyria/set.h"
 #include "moria/graph.h"
 #include "moria/operations.h"
+#include "moria/parser.h"
+#include "value/load.h"
 
 #include "xunit.h"
 #include "lookup.internal.h"
@@ -34,7 +36,7 @@
 #include "narrator/growing.h"
 #include "logging.h"
 #include "rule.internal.h"
-#include "node.h"
+#include "fsent.h"
 #include "node_operations.h"
 #include "pattern.h"
 #include "filesystem.h"
@@ -42,8 +44,11 @@
 #include "module.internal.h"
 #include "variant.h"
 #include "node_operations_test.h"
+#include "rule_module.h"
+#include "rule_system.h"
+#include "module_parser.h"
 
-typedef struct graph_refresh_test {
+typedef struct rule_system_reconcile_test {
   XUNITTEST;
 
   // inputs
@@ -62,26 +67,28 @@ typedef struct graph_refresh_test {
 
   // outputs
   char * graph;             // expected graph at the end
-} graph_refresh_test;
+} rule_system_reconcile_test;
 
-static xapi graph_refresh_test_unit_setup(xunit_unit * unit)
+static xapi rule_system_reconcile_test_unit_setup(xunit_unit * unit)
 {
   enter;
 
   fatal(valyria_load);
   fatal(moria_load);
+  fatal(value_load);
   fatal(filesystem_setup);
   fatal(logging_finalize);
 
   fatal(module_setup);
   fatal(graph_setup);
   fatal(variant_setup);
-  fatal(node_setup);
+  fatal(fsent_setup);
+  fatal(rule_system_setup);
 
   finally : coda;
 }
 
-static xapi graph_refresh_test_unit_cleanup(xunit_unit * unit)
+static xapi rule_system_reconcile_test_unit_cleanup(xunit_unit * unit)
 {
   enter;
 
@@ -100,16 +107,17 @@ static xapi graph_refresh_test_unit_cleanup(xunit_unit * unit)
 // tests
 //
 
-static xapi graph_refresh_test_entry(xunit_test * _test)
+static xapi rule_system_reconcile_test_entry(xunit_test * _test)
 {
   enter;
 
-  graph_refresh_test * test = (graph_refresh_test *)_test;
+  rule_system_reconcile_test * test = (rule_system_reconcile_test *)_test;
 
   narrator_growing * N = 0;
   pattern_parser * parser = 0;
-  operations_parser * op_parser = 0;
-  list * operations = 0;
+  graph_parser * op_parser = 0;
+  module_parser *mod_parser = 0;
+
   yyu_location loc;
   module *module;
   rule * rule;
@@ -120,27 +128,28 @@ static xapi graph_refresh_test_entry(xunit_test * _test)
   rule_run_context rule_ctx = { 0 };
   const char * graph;
   set *variants = 0;
+  bool reconciled = true;
 
   fatal(rule_run_context_xinit, &rule_ctx);
-  fatal(rule_run_context_begin, &rule_ctx);
+
+  fatal(pattern_parser_create, &parser);
+  fatal(module_parser_create, &mod_parser);
 
   fatal(narrator_growing_create, &N);
-  fatal(pattern_parser_create, &parser);
-  fatal(operations_parser_create, &op_parser);
+  fatal(graph_parser_create, &op_parser, &g_graph, &fsent_list, node_operations_test_dispatch, graph_vertex_attrs, graph_edge_attrs);
   llist_init_node(&modules);
-  fatal(module_create, &module);
+  fatal(module_alloc, &module);
   rule_ctx.mod = module;
   rule_ctx.modules = &modules;
   fatal(set_create, &variants);
   rule_ctx.variants = variants;
+  rule_ctx.reconciled = &reconciled;
 
   /* setup - build the initial graph */
-  fatal(operations_parser_operations_create, &operations);
-  fatal(operations_parser_parse, op_parser, g_graph, MMS(test->setup_operations), operations);
-  fatal(operations_perform, g_graph, node_operations_test_dispatch, operations);
+  fatal(graph_parser_operations_parse, op_parser, MMS(test->setup_operations));
 
-  fatal(pattern_lookup_fragment, MMS(test->module), 0, 0, 0, 0, 0, 0, &module->dir_node);
-  module->shadow_scope = module->dir_node;
+  fatal(resolve_fragment, MMS(test->module), &module->dir_node);
+  module->shadow_import_scope = module->dir_node;
 
   /* setup - run the rules */
   for(x = 0; x < sentinel(test->rules); x++)
@@ -154,7 +163,7 @@ static xapi graph_refresh_test_entry(xunit_test * _test)
     fatal(generate_pattern_parse_partial, parser, test_rule->generate_pattern, strlen(test_rule->generate_pattern) + 2, "-test-", 0, &loc, &generate_pat);
     assert_eq_u32(strlen(test_rule->generate_pattern), loc.l);
 
-    fatal(rule_mk, &rule, g_graph, match_pat, generate_pat, 0, 0);
+    fatal(rule_mk, &rule, &g_graph, match_pat, generate_pat, 0, 0, 0);
     match_pat = 0;
     generate_pat = 0;
 
@@ -162,33 +171,31 @@ static xapi graph_refresh_test_entry(xunit_test * _test)
     rule->card = test_rule->card;
     rule->relation = test_rule->relation;
 
-    fatal(module_rule_associate, module, module, rule, variants, &rule_ctx.rma);
+    fatal(rule_module_connect, &rule_ctx.rme, module, module, rule, variants);
 
     fatal(rule_run, rule, &rule_ctx);
   }
 
-  /* setup - replay the mutation operations */
-  fatal(operations_parser_parse, op_parser, g_graph, MMS(test->operations), operations);
-  fatal(operations_perform, g_graph, node_operations_test_dispatch, operations);
+  /* setup - perform the mutation operations */
+  fatal(graph_parser_operations_parse, op_parser, MMS(test->operations));
 
   /* act - graph refresh */
-  fatal(graph_full_refresh, &rule_ctx);
+  fatal(rule_system_reconcile, &rule_ctx, &reconciled);
 
   // assert
-  fatal(graph_say, g_graph, &N->base);
+  fatal(graph_say, &N->base);
   graph = N->s;
   assert_eq_s(test->graph, graph);
 
 finally:
   fatal(set_xfree, variants);
-  fatal(module_xfree, module);
+  fatal(module_parser_xfree, mod_parser);
   pattern_free(match_pat);
   pattern_free(generate_pat);
-  fatal(node_cleanup);
+  fatal(fsent_cleanup);
   fatal(narrator_growing_free, N);
-  fatal(operations_parser_xfree, op_parser);
+  fatal(graph_parser_xfree, op_parser);
   fatal(pattern_parser_xfree, parser);
-  fatal(list_xfree, operations);
   fatal(rule_run_context_xdestroy, &rule_ctx);
 coda;
 }
@@ -198,47 +205,45 @@ coda;
 //
 
 xunit_unit xunit = {
-    xu_setup : graph_refresh_test_unit_setup
-  , xu_cleanup : graph_refresh_test_unit_cleanup
-  , xu_entry : graph_refresh_test_entry
-  , xu_tests : (graph_refresh_test*[]) {
-      /* no operations */
-      (graph_refresh_test[]) {{
+    xu_setup : rule_system_reconcile_test_unit_setup
+  , xu_cleanup : rule_system_reconcile_test_unit_cleanup
+  , xu_entry : rule_system_reconcile_test_entry
+  , xu_tests : (rule_system_reconcile_test*[]) {
+      /* no operations - dependency created */
+      (rule_system_reconcile_test[]) {{
           setup_operations : ""
           " MOD/main.c"
         , module : "MOD"
         , rules : (struct test_rule*[]) {
             (struct test_rule[]) {{
-              // a/b -> $^D/c.o
+              // main.c -> $^D/main.o
                 match_pattern : (char[]) { "main.c\0" }
               , generate_pattern : (char[]) { "$^D/main.o\0" }
               , dir : RULE_LTR
               , card : RULE_ONE_TO_ONE
-              , relation : EDGE_TYPE_STRONG
+              , relation : EDGE_DEPENDS
             }}
           , 0
         }
         , operations : ""
         , graph :  "1-(root)!dir 2-MOD!dir 3-main.c!file 4-main.o!U|file"
-                  " 5-!rule"
-                  " 5:rule-dir:2"                 // rule edges
-                  " 4:strong:3"                   // strong edges
-                  " 2:mod-rule:5"
-                  " 1:fs:2 2:fs:3 2:fs:4"         // fs edges
+                  " 4:depends:3"
+                  " 1:fs:2"
+                  " 2:fs:3 2:fs:4"
       }}
-      /* unlinked primary file - deleted, its secondary file remains */
-    , (graph_refresh_test[]) {{
+      /* unlinked primary file - deleted, and secondary file remains */
+    , (rule_system_reconcile_test[]) {{
           setup_operations : ""
           " MOD/main.c"
         , module : "MOD"
         , rules : (struct test_rule*[]) {
             (struct test_rule[]) {{
-              // a/b -> $^D/c.o
+              // main.c -> $^D/main.o
                 match_pattern : (char[]) { "main.c\0" }
               , generate_pattern : (char[]) { "$^D/main.o\0" }
               , dir : RULE_LTR
               , card : RULE_ONE_TO_ONE
-              , relation : EDGE_TYPE_STRONG
+              , relation : EDGE_DEPENDS
             }}
           , 0
         }
@@ -246,24 +251,22 @@ xunit_unit xunit = {
                   " =MOD:fs:main.c"
         , graph :  "1-(root)!dir 2-MOD!dir"
                   " 3-main.o!U|file"
-                  " 4-!rule"
-                  " 4:rule-dir:2"                 // rule edges
-                  " 2:mod-rule:4"
-                  " 1:fs:2 2:fs:3"                // fs edges
+                  " 1:fs:2"
+                  " 2:fs:3"
       }}
-      /* unlinked secondary file - marked notexists, strong edge still in effect */
-    , (graph_refresh_test[]) {{
+      /* unlinked secondary file - marked unlinked, depends edge still in effect */
+    , (rule_system_reconcile_test[]) {{
           setup_operations : ""
           " MOD/main.c"
         , module : "MOD"
         , rules : (struct test_rule*[]) {
             (struct test_rule[]) {{
-              // a/b -> $^D/c.o
+              // main.c -> $^D/main.o
                 match_pattern : (char[]) { "main.c\0" }
               , generate_pattern : (char[]) { "$^D/main.o\0" }
               , dir : RULE_LTR
               , card : RULE_ONE_TO_ONE
-              , relation : EDGE_TYPE_STRONG
+              , relation : EDGE_DEPENDS
             }}
           , 0
         }
@@ -271,14 +274,12 @@ xunit_unit xunit = {
                   " =MOD:fs:main.o"
         , graph :  "1-(root)!dir 2-MOD!dir"
                   " 3-main.c!file 4-main.o!U|file"
-                  " 5-!rule"
-                  " 5:rule-dir:2"                 // rule edges
-                  " 4:strong:3"                   // strong edges
-                  " 2:mod-rule:5"
-                  " 1:fs:2 2:fs:3 2:fs:4"         // fs edges
+                  " 4:depends:3"
+                  " 1:fs:2"
+                  " 2:fs:3 2:fs:4"
       }}
-      /* unlinked primary+secondary file - both are deleted */
-    , (graph_refresh_test[]) {{
+      /* unlinked primary+secondary file - both are deleted along with their dependency */
+    , (rule_system_reconcile_test[]) {{
           setup_operations : ""
           " MOD/main.c"
         , module : "MOD"
@@ -289,7 +290,7 @@ xunit_unit xunit = {
               , generate_pattern : (char[]) { "$^D/main.o\0" }
               , dir : RULE_LTR
               , card : RULE_ONE_TO_ONE
-              , relation : EDGE_TYPE_STRONG
+              , relation : EDGE_DEPENDS
             }}
           , 0
         }
@@ -297,14 +298,11 @@ xunit_unit xunit = {
                   " =MOD:fs:main.c"
                   " =MOD:fs:main.o"
         , graph :  "1-(root)!dir 2-MOD!dir"
-                  " 3-!rule"
-                  " 3:rule-dir:2"
-                  " 2:mod-rule:3"
                   " 1:fs:2"
       }}
 
       /* unlinked tree of primary files */
-    , (graph_refresh_test[]) {{
+    , (rule_system_reconcile_test[]) {{
           setup_operations : ""
           " MOD/src/main.c"
           " MOD/src/sub/args.c"
@@ -317,7 +315,7 @@ xunit_unit xunit = {
               , generate_pattern : (char[]) { "$^D/$1.o\0" }
               , dir : RULE_LTR
               , card : RULE_ONE_TO_ONE
-              , relation : EDGE_TYPE_STRONG
+              , relation : EDGE_DEPENDS
             }}
           , 0
         }
@@ -329,14 +327,12 @@ xunit_unit xunit = {
         , graph :  "1-(root)!dir 2-MOD!dir"
                   " 3-src!dir 4-sub!dir"
                   " 5-args.o!I|file 6-main.o!I|file"
-                  " 7-!rule"
-                  " 7:rule-dir:2 7:rule-dir:3 7:rule-dir:4"
-                  " 2:mod-rule:7"
-                  " 1:fs:2 2:fs:3 3:fs:4 3:fs:6 4:fs:5"
+                  " 1:fs:2"
+                  " 2:fs:3 3:fs:4 3:fs:6 4:fs:5"
       }}
 
       /* unlinked tree of all files */
-    , (graph_refresh_test[]) {{
+    , (rule_system_reconcile_test[]) {{
           setup_operations : ""
           " MOD/src/main.c"
           " MOD/src/sub/args.c"
@@ -349,7 +345,7 @@ xunit_unit xunit = {
               , generate_pattern : (char[]) { "$^D/$1.o\0" }
               , dir : RULE_LTR
               , card : RULE_ONE_TO_ONE
-              , relation : EDGE_TYPE_STRONG
+              , relation : EDGE_DEPENDS
             }}
           , 0
         }
@@ -362,14 +358,11 @@ xunit_unit xunit = {
                   " =MOD/src:fs:sub"
                   " =MOD:fs:src"
         , graph :  "1-(root)!dir 2-MOD!dir"
-                  " 3-!rule"
-                  " 3:rule-dir:2"
-                  " 2:mod-rule:3"
                   " 1:fs:2"
       }}
 
       /* new primary files added - new secondary files which are not marked not-exists */
-    , (graph_refresh_test[]) {{
+    , (rule_system_reconcile_test[]) {{
           setup_operations : ""
           " MOD/src/main.c"
         , module : "MOD"
@@ -380,7 +373,7 @@ xunit_unit xunit = {
               , generate_pattern : (char[]) { "$^D/$1.o\0" }
               , dir : RULE_LTR
               , card : RULE_ONE_TO_ONE
-              , relation : EDGE_TYPE_STRONG
+              , relation : EDGE_DEPENDS
             }}
           , 0
         }
@@ -388,15 +381,13 @@ xunit_unit xunit = {
                   " MOD/src/sub/args.c"
         , graph :  "1-(root)!dir 2-MOD!dir 3-src!dir 4-sub!dir"
                   " 5-args.c!file 6-args.o!U|file 7-main.c!file 8-main.o!U|file"
-                  " 9-!rule"
-                  " 9:rule-dir:2 9:rule-dir:3 9:rule-dir:4"
-                  " 6:strong:5 8:strong:7"
-                  " 2:mod-rule:9"
-                  " 1:fs:2 2:fs:3 3:fs:4 3:fs:7 3:fs:8 4:fs:5 4:fs:6"
+                  " 6:depends:5 8:depends:7"
+                  " 1:fs:2"
+                  " 2:fs:3 3:fs:4 3:fs:7 3:fs:8 4:fs:5 4:fs:6"
       }}
 
       /* primary file introduced, transitive target edge created */
-    , (graph_refresh_test[]) {{
+    , (rule_system_reconcile_test[]) {{
           setup_operations : ""
           " MOD/main.c"
         , module : "MOD"
@@ -406,14 +397,14 @@ xunit_unit xunit = {
                 , generate_pattern : (char[]) { "$^D/$1.o\0" }
                 , dir : RULE_LTR
                 , card : RULE_ONE_TO_ONE
-                , relation : EDGE_TYPE_STRONG
+                , relation : EDGE_DEPENDS
               }}
             , (struct test_rule[]) {{
                   match_pattern : (char[]) { "**/*.o\0" }
                 , generate_pattern : (char[]) { "exe\0" }
                 , dir : RULE_LTR
                 , card : RULE_ONE_TO_ONE
-                , relation : EDGE_TYPE_STRONG
+                , relation : EDGE_DEPENDS
               }}
           , 0
         }
@@ -421,15 +412,13 @@ xunit_unit xunit = {
                   " MOD/args.c"
         , graph :  "1-(root)!dir 2-MOD!dir"
                   " 3-args.c!file 4-args.o!U|file 5-exe!U|file 6-main.c!file 7-main.o!U|file"
-                  " 8-!rule 9-!rule"
-                  " 8:rule-dir:2 9:rule-dir:2"
-                  " 4:strong:3 5:strong:4 5:strong:7 7:strong:6"
-                  " 2:mod-rule:8 2:mod-rule:9"
-                  " 1:fs:2 2:fs:3 2:fs:4 2:fs:5 2:fs:6 2:fs:7"
+                  " 4:depends:3 5:depends:4 5:depends:7 7:depends:6"
+                  " 1:fs:2"
+                  " 2:fs:3 2:fs:4 2:fs:5 2:fs:6 2:fs:7"
       }}
 
       /* primary file introduced, transitive target edge created, consumers invalidated */
-    , (graph_refresh_test[]) {{
+    , (rule_system_reconcile_test[]) {{
           setup_operations : ""
           " MOD/main.c"
         , module : "MOD"
@@ -439,14 +428,14 @@ xunit_unit xunit = {
                 , generate_pattern : (char[]) { "$^D/$1.o\0" }
                 , dir : RULE_LTR
                 , card : RULE_ONE_TO_ONE
-                , relation : EDGE_TYPE_STRONG
+                , relation : EDGE_DEPENDS
               }}
             , (struct test_rule[]) {{
                   match_pattern : (char[]) { "**/*.o\0" }
                 , generate_pattern : (char[]) { "exe\0" }
                 , dir : RULE_LTR
                 , card : RULE_ONE_TO_ONE
-                , relation : EDGE_TYPE_STRONG
+                , relation : EDGE_DEPENDS
               }}
           , 0
         }
@@ -455,15 +444,13 @@ xunit_unit xunit = {
                   " MOD/args.c"
         , graph :  "1-(root)!dir 2-MOD!dir"
                   " 3-args.c!file 4-args.o!U|file 5-exe!I|file 6-main.c!file 7-main.o!file"
-                  " 8-!rule 9-!rule"
-                  " 8:rule-dir:2 9:rule-dir:2"
-                  " 4:strong:3 5:strong:4 5:strong:7 7:strong:6"
-                  " 2:mod-rule:8 2:mod-rule:9"
-                  " 1:fs:2 2:fs:3 2:fs:4 2:fs:5 2:fs:6 2:fs:7"
+                  " 4:depends:3 5:depends:4 5:depends:7 7:depends:6"
+                  " 1:fs:2"
+                  " 2:fs:3 2:fs:4 2:fs:5 2:fs:6 2:fs:7"
       }}
 
       /* primary file unlinked, transitive target edge removed */
-    , (graph_refresh_test[]) {{
+    , (rule_system_reconcile_test[]) {{
           setup_operations : ""
           " MOD/main.c"
           " MOD/args.c"
@@ -474,14 +461,14 @@ xunit_unit xunit = {
                 , generate_pattern : (char[]) { "$^D/$1.o\0" }
                 , dir : RULE_LTR
                 , card : RULE_ONE_TO_ONE
-                , relation : EDGE_TYPE_STRONG
+                , relation : EDGE_DEPENDS
               }}
             , (struct test_rule[]) {{
                   match_pattern : (char[]) { "**/*.o\0" }
                 , generate_pattern : (char[]) { "exe\0" }
                 , dir : RULE_LTR
                 , card : RULE_ONE_TO_ONE
-                , relation : EDGE_TYPE_STRONG
+                , relation : EDGE_DEPENDS
               }}
           , 0
         }
@@ -489,15 +476,13 @@ xunit_unit xunit = {
                   " =MOD:fs:args.c"
         , graph :  "1-(root)!dir 2-MOD!dir"
                   " 3-args.o!U|file 4-exe!U|file 5-main.c!file 6-main.o!U|file"
-                  " 7-!rule 8-!rule"
-                  " 7:rule-dir:2 8:rule-dir:2"
-                  " 4:strong:3 4:strong:6 6:strong:5"
-                  " 2:mod-rule:7 2:mod-rule:8"
-                  " 1:fs:2 2:fs:3 2:fs:4 2:fs:5 2:fs:6"
+                  " 4:depends:3 4:depends:6 6:depends:5"
+                  " 1:fs:2"
+                  " 2:fs:3 2:fs:4 2:fs:5 2:fs:6"
       }}
 
       /* transitive target unlinked, dependent edges unchanged */
-    , (graph_refresh_test[]) {{
+    , (rule_system_reconcile_test[]) {{
           setup_operations : ""
           " MOD/main.c"
           " MOD/args.c"
@@ -508,14 +493,14 @@ xunit_unit xunit = {
                 , generate_pattern : (char[]) { "$^D/$1.o\0" }
                 , dir : RULE_LTR
                 , card : RULE_ONE_TO_ONE
-                , relation : EDGE_TYPE_STRONG
+                , relation : EDGE_DEPENDS
               }}
             , (struct test_rule[]) {{
                   match_pattern : (char[]) { "**/*.o\0" }
                 , generate_pattern : (char[]) { "exe\0" }
                 , dir : RULE_LTR
                 , card : RULE_ONE_TO_ONE
-                , relation : EDGE_TYPE_STRONG
+                , relation : EDGE_DEPENDS
               }}
           , 0
         }
@@ -523,15 +508,13 @@ xunit_unit xunit = {
                   " =MOD:fs:exe"
         , graph :  "1-(root)!dir 2-MOD!dir"
                   " 3-args.c!file 4-args.o!U|file 5-exe!U|file 6-main.c!file 7-main.o!U|file"
-                  " 8-!rule 9-!rule"
-                  " 8:rule-dir:2 9:rule-dir:2"
-                  " 4:strong:3 5:strong:4 5:strong:7 7:strong:6"
-                  " 2:mod-rule:8 2:mod-rule:9"
-                  " 1:fs:2 2:fs:3 2:fs:4 2:fs:5 2:fs:6 2:fs:7"
+                  " 4:depends:3 5:depends:4 5:depends:7 7:depends:6"
+                  " 1:fs:2"
+                  " 2:fs:3 2:fs:4 2:fs:5 2:fs:6 2:fs:7"
       }}
 
       /* secondary file unlinked, transitive edges invalidated */
-    , (graph_refresh_test[]) {{
+    , (rule_system_reconcile_test[]) {{
           setup_operations : ""
           " MOD/main.c"
         , module : "MOD"
@@ -541,14 +524,14 @@ xunit_unit xunit = {
                 , generate_pattern : (char[]) { "$^D/$1.o\0" }
                 , dir : RULE_LTR
                 , card : RULE_ONE_TO_ONE
-                , relation : EDGE_TYPE_STRONG
+                , relation : EDGE_DEPENDS
               }}
             , (struct test_rule[]) {{
                   match_pattern : (char[]) { "**/*.o\0" }
                 , generate_pattern : (char[]) { "exe\0" }
                 , dir : RULE_LTR
                 , card : RULE_ONE_TO_ONE
-                , relation : EDGE_TYPE_STRONG
+                , relation : EDGE_DEPENDS
               }}
           , 0
         }
@@ -557,15 +540,13 @@ xunit_unit xunit = {
                   " =MOD:fs:main.o"
         , graph :  "1-(root)!dir 2-MOD!dir"
                   " 3-exe!U|file 4-main.c!file 5-main.o!X|file"
-                  " 6-!rule 7-!rule"
-                  " 6:rule-dir:2 7:rule-dir:2"
-                  " 5:strong:4"
-                  " 2:mod-rule:6 2:mod-rule:7"
-                  " 1:fs:2 2:fs:3 2:fs:4 2:fs:5"
+                  " 5:depends:4"
+                  " 1:fs:2"
+                  " 2:fs:3 2:fs:4 2:fs:5"
       }}
 
       /* secondary file unlinked, transitive edges are invalidated */
-    , (graph_refresh_test[]) {{
+    , (rule_system_reconcile_test[]) {{
           setup_operations : ""
           " MOD/main.c"
         , module : "MOD"
@@ -575,14 +556,14 @@ xunit_unit xunit = {
                 , generate_pattern : (char[]) { "$^D/$1.o\0" }
                 , dir : RULE_LTR
                 , card : RULE_ONE_TO_ONE
-                , relation : EDGE_TYPE_STRONG
+                , relation : EDGE_DEPENDS
               }}
             , (struct test_rule[]) {{
                   match_pattern : (char[]) { "**/*.o\0" }
                 , generate_pattern : (char[]) { "exe\0" }
                 , dir : RULE_LTR
                 , card : RULE_ONE_TO_ONE
-                , relation : EDGE_TYPE_STRONG
+                , relation : EDGE_DEPENDS
               }}
           , 0
         }
@@ -591,15 +572,13 @@ xunit_unit xunit = {
                   " =MOD:fs:main.o"
         , graph :  "1-(root)!dir 2-MOD!dir"
                   " 3-exe!I|file 4-main.c!file 5-main.o!X|file"
-                  " 6-!rule 7-!rule"
-                  " 6:rule-dir:2 7:rule-dir:2"
-                  " 5:strong:4"
-                  " 2:mod-rule:6 2:mod-rule:7"
-                  " 1:fs:2 2:fs:3 2:fs:4 2:fs:5"
+                  " 5:depends:4"
+                  " 1:fs:2"
+                  " 2:fs:3 2:fs:4 2:fs:5"
       }}
 
       /* unlinked many intermediate files */
-    , (graph_refresh_test[]) {{
+    , (rule_system_reconcile_test[]) {{
           setup_operations : ""
           " MOD/main.c"
           " MOD/args.c"
@@ -612,14 +591,14 @@ xunit_unit xunit = {
               , generate_pattern : (char[]) { "$^D/$1.o\0" }
               , dir : RULE_LTR
               , card : RULE_ONE_TO_ONE
-              , relation : EDGE_TYPE_STRONG
+              , relation : EDGE_DEPENDS
             }}
           , (struct test_rule[]) {{
                 match_pattern : (char[]) { "**/*.o\0" }
               , generate_pattern : (char[]) { "exe\0" }
               , dir : RULE_LTR
               , card : RULE_ONE_TO_ONE
-              , relation : EDGE_TYPE_STRONG
+              , relation : EDGE_DEPENDS
             }}
           , 0
         }
@@ -632,10 +611,8 @@ xunit_unit xunit = {
                   " =MOD:fs:args.h"
         , graph :  "1-(root)!dir 2-MOD!dir"
                   " 3-exe!I|file"
-                  " 4-!rule 5-!rule"
-                  " 4:rule-dir:2 5:rule-dir:2"
-                  " 2:mod-rule:4 2:mod-rule:5"
-                  " 1:fs:2 2:fs:3"
+                  " 1:fs:2"
+                  " 2:fs:3"
       }}
     , 0
   }

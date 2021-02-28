@@ -36,7 +36,7 @@
 #include "narrator/growing.h"
 #include "logging.h"
 #include "rule.internal.h"
-#include "node.h"
+#include "fsent.h"
 #include "node_operations.h"
 #include "pattern.h"
 #include "pattern_parser.h"
@@ -48,6 +48,7 @@
 #include "formula_value.h"
 #include "var.h"
 #include "build_slot.h"
+#include "dependency.h"
 
 typedef struct exec_builder_test {
   XUNITTEST;
@@ -113,7 +114,7 @@ static xapi exec_builder_test_entry(xunit_test * _test)
   variant * var = 0;
   value * vars = 0;
   module mod = { 0 };
-  buildplan_entity bpe = { 0 };
+  dependency bpe = { 0 };
   build_slot bs = { .bpe = &bpe };
 
   fatal(value_parser_create, &parser);

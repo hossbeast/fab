@@ -28,27 +28,6 @@
 
   #define YYSTYPE CONFIG_YYSTYPE
   #define YYLTYPE yyu_location
-
-#define PARSE_VALUE do {                                                \
-  config_parser * parser = containerof(yyextra, config_parser, yyu);    \
-  size_t off = yytext - parser->yyu.yybuffer;                           \
-  char * usr = parser->yyu.usrbuf + off;                                \
-  size_t bufsz = parser->yyu.usrbufsize - off;                          \
-  yyu_location subloc;                                                  \
-  fatal(value_parser_parse_partial                                      \
-    , parser->value_parser                                              \
-    , usr                                                               \
-    , bufsz                                                             \
-    , "var"                                                             \
-    , &parser->yyu.loc                                                  \
-    , &subloc                                                           \
-    , 0                                                                 \
-    , &yylval->value                                                    \
-  );                                                                    \
-  yyless(subloc.l);                                                     \
-  LEXLOC(config_VALUE, &subloc);                                        \
-} while(0);
-  
 %}
 
 %option noinput nounput noyywrap noyy_top_state
@@ -59,7 +38,6 @@
 
 %x multilinecomment
 %x quoted
-%x _var_stage _var
 
 /* bytes that cannot appear in the input */
 ILL   [\x00-\x08\x0B-\x1F\x7F-\xFF]
@@ -78,19 +56,12 @@ ILL   [\x00-\x08\x0B-\x1F\x7F-\xFF]
 <multilinecomment>[\n]                                  { LOCRESET; }
 
  /* whitespace */
-<_var,_var_stage>[\n]                                   |
 <INITIAL>[\n]                                           { LOCRESET; }
-<_var,_var_stage>[\r\t ]+                               |
 <INITIAL>[\r\t ]+                                       { LOCWRITE; }
 
  /* tokens */
 <INITIAL>[[\]{}:=]                                      { lenter; LEX(yytext[0]); finally : lcoda; }
 <INITIAL>(?i:true|false)                                { lenter; LEXB(); finally : lcoda; }
-
- /* invoke sub-parsers */
-<INITIAL>"var"                                          { lenter; PUSHSTATE(_var_stage); LEX(VAR); finally : lcoda; }
-<_var_stage>[:=]                                        { lenter; PUSHSTATE(_var); LEX(yytext[0]); finally : lcoda; }
-<_var>[^\n\r\t ][\x00-\xff]+                            { lenter; PARSE_VALUE; POPSTATE; POPSTATE; finally : lcoda; }
 
  /* integers */
 <INITIAL>[-][0-9]+                                      { lenter; LEXI("%"SCNdMAX); finally : lcoda; }

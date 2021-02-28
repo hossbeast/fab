@@ -15,6 +15,7 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
+#define BOATS 1
 
 #include "xapi.h"
 #include "types.h"
@@ -26,7 +27,6 @@
 #include "pattern.internal.h"
 #include "render.internal.h"
 #include "section.internal.h"
-#include "path.h"
 
 //
 // static

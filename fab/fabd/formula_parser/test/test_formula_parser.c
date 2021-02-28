@@ -109,11 +109,13 @@ static xapi formula_parser_test_entry(xunit_test * _test)
   narrator_growing * N1 = 0;
   narrator_growing * N2 = 0;
   char buf[512];
+  size_t len;
 
   // arrange
   fatal(formula_parser_create, &parser);
 
   // act - initial parse
+printf("1 >> %s\n", test->text);
   fatal(formula_parser_bacon_parse, parser, test->text, strlen(test->text) + 2, 0, &path, &args, &envs);
 
   // round-trip
@@ -123,10 +125,11 @@ static xapi formula_parser_test_entry(xunit_test * _test)
   formula_value_free(args); args = 0;
   formula_value_free(envs); envs = 0;
 
-  size_t len = N1->l;
+  len = N1->l;
   fatal(narrator_xseek, &N1->base, 0, NARRATOR_SEEK_SET, 0);
   fatal(narrator_xread, &N1->base, buf, len, 0);
   buf[len] = buf[len + 1] = 0;
+printf("2 >> %s\n", buf);
   fatal(formula_parser_bacon_parse, parser, buf, len + 2, 0, &path, &args, &envs);
 
   // round-trip
@@ -179,7 +182,7 @@ xunit_unit xunit = {
                 " select : ["
                   " traverse : {"
                     " direction : down"
-                    " relation : strong"
+                    " graph : depends"
                   " }"
                 " ]"
               " ]"
@@ -187,7 +190,7 @@ xunit_unit xunit = {
                 " select : ["
                   " traverse : {"
                     " direction : down"
-                    " relation : fs"
+                    " graph : fs"
                   " }"
                 " ]"
               " ]"
@@ -219,13 +222,12 @@ xunit_unit xunit = {
                     " traverse : {"
                       " direction : down"
                       " min-distance : 0"
-                      " relation : fs"
-                      " file-type : dir"
+                      " graph : dirtree"
                     " }"
 
                     " traverse : {"
                       " direction : down"
-                      " relation : requires"
+                      " graph : requires"
                     " }"
                   " ]"
                 " ]"

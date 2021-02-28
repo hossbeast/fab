@@ -16,6 +16,7 @@
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
 #include <inttypes.h>
+#include <time.h>
 
 #include "xapi.h"
 #include "xapi/SYS.errtab.h"
@@ -32,6 +33,7 @@
 #include "macros.h"
 #include "common/hash.h"
 
+__thread int32_t tid;
 struct g_params g_params;
 
 //
@@ -48,15 +50,14 @@ xapi params_setup(uint64_t hash)
   uid_t ruid;
 
   g_params.pid = getpid();
-  g_params.ppid = getppid();
-  g_params.pgid = getpgid(0);
   g_params.proj_dirfd = -1;
 
   // exedir is the path to directory containing the executing binary
   ssize_t r = 0;
   fatal(xreadlinks, "/proc/self/exe", space, sizeof(space), &r);
-  while(space[r - 1] != '/')
+  while(space[r - 1] != '/') {
     r--;
+  }
   fatal(ixstrndup, &g_params.exedir, space, r);
 
   // get available processors
@@ -73,6 +74,9 @@ xapi params_setup(uint64_t hash)
 
   // page size
   g_params.pagesize = sysconf(_SC_PAGESIZE);
+
+  // start time
+  RUNTIME_ASSERT(clock_gettime(CLOCK_MONOTONIC, &g_params.starttime) == 0);
 
   snprintf(space, sizeof(space), "%s/%016"PRIx64, XQUOTE(FABIPCDIR), hash);
   fatal(ixstrdup, &g_params.ipcdir, space);

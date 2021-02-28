@@ -22,7 +22,7 @@
 #include "types.h"
 
 struct pattern;
-struct node;
+struct fsent;
 struct set;
 struct module;
 struct variant;
@@ -46,9 +46,8 @@ xapi pattern_match(
   , /* 3 */ const struct llist * restrict modules
   , /* 4 */ const struct set * restrict variants
   , /* 5 */ struct set * restrict matches
-  , /* 6 */ struct set * restrict node_matches
-  , /* 7 */ xapi (*dirnode_visit)(void * ctx, struct node * dirnode)
-  , /* 8 */ void *dirnode_visit_ctx
+  , /* 6 */ xapi (*dirnode_visit)(void * ctx, struct fsent * dirnode)
+  , /* 7 */ void *dirnode_visit_ctx
 )
   __attribute__((nonnull(1, 2, 3)));
 

@@ -21,14 +21,14 @@
 #include "xapi.h"
 #include "types.h"
 
-struct node;
+struct fsent;
 struct pattern;
 struct selection;
 struct module;
 
 #define PATTERN_LOOKUP_DIR       0x01 /* only match directories */
-#define PATTERN_LOOKUP_MODULE    0x03 /* only match module directories */
-#define PATTERN_LOOKUP_MODEL     0x05 /* only match model directories */
+#define PATTERN_LOOKUP_MODULE    0x03 /* only match directories with a module file */
+#define PATTERN_LOOKUP_MODEL     0x05 /* only match directories with a model file */
 
 /*
  * Render a lookup or reference pattern, and lookup a node for up each fragment. For each fragment,
@@ -36,20 +36,17 @@ struct module;
  * reference pattern can only have a single fragment.
  *
  * ref    - reference pattern
- * module - module for shadow lookups e.g. //module/foo
- * base   - base node for relative lookups
  * attrs  - bitwise combo of PATTERN_LOOKUP_*
  * nodes  - found nodes added here
- * np     - (returns) the first node found
  */
 xapi pattern_lookup(
     const struct pattern * restrict ref
-  , const struct module * restrict module
-  , const struct node * restrict base
   , uint32_t attrs
   , struct selection * restrict nodes
-  , struct node ** restrict np
+  , char * restrict err
+  , size_t errsz
+  , uint16_t * restrict errlen
 )
-  __attribute__((nonnull(1)));
+  __attribute__((nonnull(1, 3, 4, 6)));
 
 #endif

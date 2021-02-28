@@ -163,7 +163,7 @@ pattern-sections-list
   ;
 
 pattern-initial-section
-  /* resolves to the directory of the match node */
+  /* resolves to the directory of the match fsent */
   : '$' '^' 'D'
   {
     YFATAL(pattern_section_mk, &$$, &@$, PATTERN_NODESET_MATCHDIR, 0, 0, NULL);
@@ -229,7 +229,7 @@ replacement
   {
     YFATAL(pattern_replacement_mk, &$$, &@$, PATTERN_REPLACEMENT_TYPE_NAME, 0, @2.s, @2.l, NULL, 0);
   }
-  /* resolves to the variant of the match node */
+  /* resolves to the variant of the match fsent */
   | variant-replacement
   ;
 

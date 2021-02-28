@@ -32,30 +32,22 @@ typedef struct rcu_thread {
 void rcu_register(rcu_thread * restrict rcu)
   __attribute__((nonnull));
 
-union quiesced {
-  struct {
-    uint16_t r;
-    uint16_t n;
-  };
-  uint32_t u32;
-};
-
 /*
  * unregister a thread for rcu
  */
-uint32_t rcu_unregister(rcu_thread * restrict rcu)
+void rcu_unregister(rcu_thread * restrict rcu)
   __attribute__((nonnull));
 
 /*
  * release rcu references on this thread
  */
-uint32_t rcu_quiesce(rcu_thread * restrict rcu)
+void rcu_quiesce(rcu_thread * restrict rcu)
   __attribute__((nonnull));
 
 /*
  * block until rcu references held by any registered thread are released
  */
-void rcu_synchronize(int32_t tid);
+void rcu_synchronize(void);
 
 /*
  * acquire a reference to an object through an rcu-protected pointer

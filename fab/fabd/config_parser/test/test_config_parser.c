@@ -31,10 +31,10 @@
 #include "config_parser.h"
 #include "config.internal.h"
 #include "request.h"
-#include "node.h"
+#include "fsent.h"
 #include "logging.h"
 
-#include "box.h"
+#include "yyutil/box.h"
 
 typedef struct {
   XUNITTEST;
@@ -72,8 +72,8 @@ static xapi config_parser_test_entry(xunit_test * _test)
   char buf[1024];
 
   config_parser * parser = 0;
-  config * A = 0;
-  config * B = 0;
+  configblob * A = 0;
+  configblob * B = 0;
   narrator_growing * N1 = 0;
   narrator_growing * N2 = 0;
 
@@ -180,27 +180,6 @@ xunit_unit xunit = {
             "   UNITS BAR baz wux"
             "  ]"
             " }"
-            "}\0\0"
-          }
-      }}
-    /* var */
-    , (config_parser_test[]) {{
-          text : (char[]) {
-            "var : {"
-            " cflags : foo"
-            " lflags : ["
-            "   UNITS "
-            " ]"
-            "}\0\0"
-          }
-      }}
-    , (config_parser_test[]) {{
-          text : (char[]) {
-            "var : {"
-            " cflags : foo"
-            " lflags = ["
-            "   bar"
-            " ]"
             "}\0\0"
           }
       }}

@@ -31,7 +31,6 @@ SUMMARY
 #include "narrator.h"
 #include "selector.h"
 
-struct buildplan_entity;
 struct module;
 struct narrator;
 struct value;

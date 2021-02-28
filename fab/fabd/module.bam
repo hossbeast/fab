@@ -20,7 +20,7 @@ use builtin-modules/flex
 use builtin-modules/bison
 use builtin-modules/executable  # this module builds an executable
 use xapi/errtab
-#use xunit-tests
+use xunit-tests
 
 # declare variants
 variant xapi.{debug,devel,final,trace}
@@ -35,7 +35,9 @@ import fab/include
 import fab/asan
 import lib{common,descriptor,xapi,xlinux,valyria,value,logger,narrator,fab,lorien,moria,yyutil,xunit}
 
-variant xapi.{debug,devel} : [
+rule */*.?.o <- //modules/libfab/fs/fab/stats.h
+
+variant xapi.devel : [
   rule fabd.? <- asan/asan.$?.o
 ]
 
@@ -67,6 +69,8 @@ var : {
 #
 
 variant xapi.pic.devel : [
+  rule //module/imports/libxunit/lib*.?.so -> fabd.${?-pic}
+
   # all the code
   rule **~test/(*~main).?.o -> test/blob.?.so : fabd/bam-cc-blob-so
 
@@ -88,15 +92,3 @@ variant xapi.pic.devel : [
   rule //four -> //five
   rule //five -> //xunit
 ]
-
-#require xunit-runner
-#
-## build test sos
-#variant xapi.pic.devel : [
-#  rule **/test/(test_*.?).o -> $^D/$1.so : xunit-tests/bam-cc-test-so
-#  rule config_parser/test/test_*.?.so -> //xunit
-#]
-#
-rule //tests -> //module/targets
-
-use xunit-tests

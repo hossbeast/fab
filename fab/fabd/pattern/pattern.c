@@ -31,7 +31,7 @@
 #include "segment.internal.h"
 #include "extern.h"
 #include "module.h"
-#include "node.h"
+#include "fsent.h"
 
 #include "common/attrs.h"
 #include "zbuffer.h"

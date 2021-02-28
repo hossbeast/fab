@@ -111,36 +111,12 @@ xapi config_parser_parse(
   , size_t size
   , const char * restrict fname
   , yyu_location * restrict init_loc
-  , config ** restrict rv
+  , configblob ** restrict rv
 )
 {
   enter;
 
   fatal(yyu_parse, &parser->yyu, buf, size, fname, YYU_INPLACE, init_loc, 0);
-  if(rv)
-  {
-    *rv = parser->cfg;
-    parser->cfg = 0;
-  }
-
-finally:
-  fatal(config_ixfree, &parser->cfg);
-coda;
-}
-
-xapi config_parser_parse_partial(
-    config_parser * restrict parser
-  , char * const restrict buf
-  , size_t size
-  , const char * restrict fname
-  , yyu_location * init_loc
-  , yyu_location * used_loc
-  , config ** restrict rv
-)
-{
-  enter;
-
-  fatal(yyu_parse, &parser->yyu, buf, size, fname, YYU_PARTIAL | YYU_INPLACE, init_loc, used_loc);
   if(rv)
   {
     *rv = parser->cfg;

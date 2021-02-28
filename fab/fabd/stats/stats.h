@@ -21,7 +21,11 @@
 #include <sys/types.h>
 #include <stdint.h>
 
+#include "fab/stats.h"
+
 #include "xapi.h"
+
+struct fsent;
 
 /// stats_parse
 //
@@ -36,41 +40,20 @@ xapi stats_setup(void);
 //
 xapi stats_cleanup(void);
 
-/// stats_report
-//
-// SUMMARY
-//  log a description of stats
-//
-xapi stats_report(void);
-
-#define STATS_TABLE                                                    \
-  DEF(stathash, uint64_t)       /* file is stat-hashed */              \
-  DEF(contenthash, uint64_t)    /* file is content-hash */             \
-  DEF(bsexec, uint64_t)         /* build slot is executed */           \
-  DEF(fstree_refresh, uint64_t) /* fstree refreshes */                 \
-  DEF(module_reload, uint64_t)  /* module is reloaded */               \
-  DEF(model_reload, uint64_t)   /* model is reloaded */                \
-  DEF(module_refresh, uint64_t) /* module is refreshed */              \
-  DEF(rules, uint64_t)          /* extant rules */                     \
-  DEF(rmas, uint64_t)           /* extant rmas */                      \
-  DEF(models, uint64_t)         /* extant models */                    \
-  DEF(modules, uint64_t)        /* extant modules */                   \
-  DEF(nodes_shadow, uint64_t)   /* extant shadow nodes */              \
-  DEF(nodes, uint64_t)          /* extant nodes */                     \
-
-extern struct g_stats {
-#undef DEF
-#define DEF(x, t) t x;
-STATS_TABLE
-#undef DEF
-} g_stats;
+extern fab_global_stats g_stats;
 
 #define STATS_INC(x) do {   \
-  g_stats.x++;              \
+  (x)++;                    \
 } while(0)
 
 #define STATS_DEC(x) do {   \
-  g_stats.x--;              \
+  (x)--;                    \
 } while(0)
+
+xapi stats_global_collate(void *dst, size_t sz, bool reset, size_t *zp)
+  __attribute__((nonnull));
+
+xapi stats_node_collate(void *dst, size_t sz, struct fsent * restrict n, bool reset, size_t *zp)
+  __attribute__((nonnull));
 
 #endif

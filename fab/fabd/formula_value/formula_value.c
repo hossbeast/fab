@@ -163,7 +163,7 @@ static xapi writer_write(const formula_value * restrict val, value_writer * cons
   {
     fatal(value_writer_push_mapping, writer);
       fatal(value_writer_string, writer, "property");
-      fatal(value_writer_string, writer, attrs32_name_byvalue(node_property_attrs, NODE_PROPERTY_OPT & val->op.property));
+      fatal(value_writer_string, writer, attrs32_name_byvalue(fsent_property_attrs, FSENT_PROPERTY_OPT & val->op.property));
     fatal(value_writer_pop_mapping, writer);
   }
   else if(val->type == FORMULA_VALUE_PREPEND)
@@ -401,7 +401,6 @@ xapi formula_value_set_mk(
 {
   enter;
 
-
   formula_value *v;
 
   fatal(allocate, &v, FORMULA_VALUE_SET);
@@ -415,7 +414,7 @@ xapi formula_value_set_mk(
 xapi formula_value_property_mk(
     const yyu_location * restrict loc
   , formula_value ** rv
-  , node_property property
+  , fsent_property property
 )
 {
   enter;
@@ -506,11 +505,30 @@ xapi formula_value_sequence_mk(
 // public
 //
 
+void formula_value_set_free(rbtree * restrict rbt)
+{
+  formula_value *sv;
+  llist list, *tmp;
+
+  if(rbt)
+  {
+    llist_init_node(&list);
+    rbtree_foreach(rbt, sv, rbn) {
+      llist_append(&list, sv, lln);
+    }
+
+    llist_foreach_safe(&list, sv, lln, tmp) {
+      formula_value_free(sv);
+    }
+  }
+
+  wfree(rbt);
+}
+
 void formula_value_free(formula_value * restrict v)
 {
   const chain *T[2];
   formula_value *sv;
-  llist lln, *tmp;
 
   if(!v)
     return;
@@ -523,16 +541,7 @@ void formula_value_free(formula_value * restrict v)
   }
   else if(v->type == FORMULA_VALUE_SET)
   {
-    llist_init_node(&lln);
-    rbtree_foreach(v->set, sv, rbn) {
-      llist_append(&lln, sv, lln);
-    }
-
-    llist_foreach_safe(&lln, sv, lln, tmp) {
-      formula_value_free(sv);
-    }
-
-    wfree(v->set);
+    formula_value_set_free(v->set);
   }
   else if(v->type == FORMULA_VALUE_STRING)
   {
@@ -681,25 +690,32 @@ xapi exec_render_formula_value(const formula_value * val, exec_render_context * 
   int x;
   exec * sequence_output;
   builder_add_args base_add_args;
-  selected_node *sn;
+  selected *sn;
   const path_cache_entry *pe;
 
   if(val->type == FORMULA_VALUE_LIST)
   {
     chain_foreach(T, sv, chn, val->list_head) {
       fatal(exec_render_formula_value, sv, ctx);
+      if(ctx->errlen) {
+        goto XAPI_FINALIZE;
+      }
     }
   }
   else if(val->type == FORMULA_VALUE_SET)
   {
     rbtree_foreach(val->set, sv, rbn) {
       fatal(exec_render_formula_value, sv, ctx);
+      if(ctx->errlen) {
+        goto XAPI_FINALIZE;
+      }
     }
   }
   else if(val->type == FORMULA_VALUE_VARIABLE)
   {
-    if(ctx->vars && (mapval = value_lookupw(ctx->vars, val->v.name, val->v.name_len)))
+    if(ctx->vars && (mapval = value_lookupw(ctx->vars, val->v.name, val->v.name_len))) {
       fatal(exec_render_value, mapval, ctx);
+    }
   }
   else if(val->type == FORMULA_VALUE_SYSVAR)
   {
@@ -718,7 +734,11 @@ xapi exec_render_formula_value(const formula_value * val, exec_render_context * 
   }
   else if(val->type == FORMULA_VALUE_SELECT)
   {
-    fatal(selector_exec, val->op.selector, &ctx->selector_context);
+    fatal(selector_exec, val->op.selector, &ctx->selector_context, SELECTION_ITERATION_TYPE_ORDER);
+    if(ctx->selector_context.errlen) {
+      memcpy(ctx->err, ctx->selector_context.err, ctx->selector_context.errlen);
+      ctx->errlen = ctx->selector_context.errlen;
+    }
   }
   else if(val->type == FORMULA_VALUE_PROPERTY)
   {
@@ -729,7 +749,13 @@ xapi exec_render_formula_value(const formula_value * val, exec_render_context * 
     ctx->builder_add_args.val.prop = val->op.property;
     ctx->builder_add_args.val.pctx.mod = ctx->bs->mod;
     llist_foreach(&ctx->selector_context.selection->list, sn, lln) {
-      ctx->builder_add_args.val.n = sn->n;
+      if((sn->v->attrs & VERTEX_TYPE_OPT) == VERTEX_TYPE_FSENT) {
+        ctx->builder_add_args.val.n = containerof(sn->v, fsent, vertex);
+      } else {
+        RUNTIME_ASSERT((sn->v->attrs & VERTEX_TYPE_OPT) == VERTEX_TYPE_MODULE);
+        ctx->builder_add_args.val.n = containerof(sn->v, module, vertex)->dir_node;
+      }
+
       fatal(builder_add, ctx->builder, &ctx->builder_add_args);
     }
 
@@ -757,11 +783,15 @@ xapi exec_render_formula_value(const formula_value * val, exec_render_context * 
   {
     /* assumes string */
     fatal(path_cache_search, &pe, MMS(val->op.operand->s));
+    if(pe->fd == -1)
+    {
+      ctx->errlen = snprintf(ctx->err, sizeof(ctx->err), "ENOENT path-search : %s", val->op.operand->s);
+      goto XAPI_FINALLY;
+    }
 
     ctx->builder_add_args.val.pe = pe;
     ctx->builder_add_args.mode = BUILDER_APPEND;
     ctx->builder_add_args.render_val = RENDER_PATH_CACHE_ENTRY;
-
     fatal(builder_add, ctx->builder, &ctx->builder_add_args);
   }
   else if(val->type == FORMULA_VALUE_SEQUENCE)
@@ -775,6 +805,9 @@ xapi exec_render_formula_value(const formula_value * val, exec_render_context * 
     chain_foreach(T, sv, chn, val->op.list_head) {
       ctx->builder_add_args.position = -1;
       fatal(exec_render_formula_value, sv, ctx);
+      if(ctx->errlen) {
+        goto XAPI_FINALIZE;
+      }
     }
 
     /* the output of the sequence is a list of strings */
@@ -802,7 +835,6 @@ xapi exec_render_formula_value(const formula_value * val, exec_render_context * 
     ctx->builder_add_args.render_val = RENDER_FORMULA_VALUE;
     fatal(builder_add, ctx->builder, &ctx->builder_add_args);
   }
-
   else
   {
     RUNTIME_ABORT();

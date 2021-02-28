@@ -18,15 +18,36 @@
 #ifndef FABD_EVENTS_H
 #define FABD_EVENTS_H
 
+/*
+ * events - publish events to subscribers
+ *
+ * may only be called from a thread which is registered for rcu
+ */
+
 #include "types.h"
 #include "fab/ipc.h"
 
 struct handler_context;
 struct fabipc_message;
 
-bool events_would(fabipc_event_type type, struct handler_context ** restrict first, struct fabipc_message ** restrict msg)
+/*
+ * check whether any subscribers exist for the specified event type
+ *
+ * first - (returns) handler for the first subscriber
+ * msg   - (returns) msg associated with the first channel
+ *
+ * returns true if any subscribers exist
+ */
+bool events_would(
+    fabipc_event_type type
+  , struct handler_context ** restrict first
+  , struct fabipc_message ** restrict msg
+)
   __attribute__((nonnull));
 
+/*
+ * publish an event - called after events_would
+ */
 void events_publish(struct handler_context * first, fabipc_message * msg)
   __attribute__((nonnull));
 

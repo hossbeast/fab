@@ -22,7 +22,7 @@
 
 #include "selection.h"
 
-struct buildplan_entity;
+struct dependency;
 
 extern selection bp_selection;
 extern uint16_t bp_plan_id;
@@ -33,7 +33,7 @@ xapi buildplan_cleanup(void);
 
 xapi buildplan_reset(void);
 
-xapi buildplan_add(struct buildplan_entity * restrict bpe, int distance)
+xapi buildplan_add(struct dependency * restrict bpe, int distance)
   __attribute__((nonnull));
 
 xapi buildplan_finalize(void)

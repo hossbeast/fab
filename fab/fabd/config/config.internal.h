@@ -23,7 +23,6 @@
 
 #include "config.h"
 #include "filesystem.h"
-#include "build_thread.h"
 
 struct box;
 struct box_int;
@@ -60,13 +59,27 @@ struct config_filesystem_entry {
   struct box_int * invalidate;
 };
 
-struct config {
+/* config blob */
+typedef struct configblob {
   CONFIGBASE;
 
   struct config_build {
     CONFIGBASE;
     struct box_int16 * concurrency;
   } build;
+
+  struct config_special {
+    CONFIGBASE;
+    struct box_string * module;
+    struct box_string * model;
+    struct box_string * var;
+    struct box_string * formula_suffix;
+  } special;
+
+  struct config_workers {
+    CONFIGBASE;
+    struct box_int16 * concurrency;
+  } workers;
 
   struct config_extern_section {
     CONFIGBASE;
@@ -75,7 +88,7 @@ struct config {
 
   struct config_filesystems {
     CONFIGBASE;
-    struct map * entries;  // keys are box_string, values are config_filesystem_entry
+    struct map * entries;    // keys are box_string, values are config_filesystem_entry
   } filesystems;
 
   struct config_formula {
@@ -107,18 +120,11 @@ struct config {
     struct config_logging_section logfile;
   } logging;
 
-  struct config_var {
-    CONFIGBASE;
-
-    struct value * value;
-  } var;
-
   struct config_channels {
     CONFIGBASE;
-
     struct box_uint16 * max_channels;
   } channels;
-};
+} configblob;
 
 /// config_throw
 //
@@ -138,7 +144,7 @@ xapi config_throw(struct box * restrict val)
 //
 //
 //
-xapi config_create(config ** restrict cfg)
+xapi config_create(configblob ** restrict cfg)
   __attribute__((nonnull));
 
 /// config_say
@@ -149,7 +155,7 @@ xapi config_create(config ** restrict cfg)
 //  cfg - config instance
 //  N   - narrator
 //
-xapi config_say(config * restrict cfg, struct narrator * restrict N)
+xapi config_say(configblob * restrict cfg, struct narrator * restrict N)
   __attribute__((nonnull));
 
 /// config_xfree
@@ -157,14 +163,14 @@ xapi config_say(config * restrict cfg, struct narrator * restrict N)
 // SUMMARY
 //  free a config struct with free semantics
 //
-xapi config_xfree(config * restrict cfg);
+xapi config_xfree(configblob * restrict cfg);
 
 /// config_ixfree
 //
 // SUMMARY
 //  free a config struct with ifree semantics
 //
-xapi config_ixfree(config ** restrict cfg)
+xapi config_ixfree(configblob ** restrict cfg)
   __attribute__((nonnull));
 
 /// config_compare
@@ -172,13 +178,13 @@ xapi config_ixfree(config ** restrict cfg)
 // SUMMARY
 //  mark sections of a new config struct as different from those of another config struct
 //
-void config_compare(config * restrict new, config * restrict old)
+bool config_compare(configblob * restrict new, configblob * restrict old)
   __attribute__((nonnull(1)));
 
-xapi config_writer_write(config * const restrict cfg, struct value_writer * const restrict writer)
+xapi config_writer_write(configblob * const restrict cfg, struct value_writer * const restrict writer)
   __attribute__((nonnull));
 
-xapi config_merge(config * restrict dst, config * restrict src)
+xapi config_merge(configblob * restrict dst, configblob * restrict src)
   __attribute__((nonnull));
 
 #endif

@@ -29,8 +29,7 @@
 #include "generate.internal.h"
 #include "byte.internal.h"
 #include "match.internal.h"
-#include "node.h"
-#include "path.h"
+#include "fsent.h"
 
 #include "common/attrs.h"
 
@@ -61,8 +60,8 @@ static xapi match(pattern_match_context * restrict ctx, const pattern_segment * 
 
   const pattern_range * range = &segment->range;
 
-  const char * restrict name = ctx->node->name->name;
-  uint16_t namel = ctx->node->name->namel;
+  const char * restrict name = ctx->node->name.name;
+  uint16_t namel = ctx->node->name.namel;
 
   if((namel > ctx->traversal->offset) && (name[ctx->traversal->offset] >= range->start && name[ctx->traversal->offset] <= range->end))
   {

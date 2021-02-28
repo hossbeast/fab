@@ -26,6 +26,7 @@ struct pattern;
 struct pattern_match_node;
 struct set;
 struct graph_invalidation_context;
+struct fsent;
 
 /// pattern_generate
 //
@@ -43,11 +44,13 @@ struct graph_invalidation_context;
 xapi pattern_generate(
     /* 1 */ const struct pattern * restrict pat
   , /* 2 */ struct module * restrict module
-  , /* 3 */ const struct set * restrict variants
-  , /* 4 */ struct graph_invalidation_context * invalidation
-  , /* 4 */ const struct pattern_match_node * restrict match
-  , /* 5 */ struct set * restrict results
+  , /* 3 */ struct fsent * restrict base
+  , /* 4 */ struct fsent * restrict scope
+  , /* 5 */ const struct set * restrict variants
+  , /* 6 */ struct graph_invalidation_context * invalidation
+  , /* 6 */ const struct pattern_match_node * restrict match
+  , /* 7 */ struct set * restrict results
 )
-  __attribute__((nonnull(1, 2, 4, 6)));
+  __attribute__((nonnull(1, 2, 3, 4, 6, 8)));
 
 #endif

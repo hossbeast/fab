@@ -24,7 +24,7 @@
 #include "valyria/chain.h"
 
 #include "formula.h"
-#include "node.h"
+#include "fsent.h"
 
 struct attrs32;
 struct build_slot;
@@ -32,6 +32,8 @@ struct narrator;
 struct value_writer;
 struct exec_builder;
 struct exec_render_context;
+struct value;
+struct rbtree;
 
 #define FORMULA_VALUE_OPT 0xfff
 #define FORMULA_VALUE_TABLE                                                   \
@@ -85,7 +87,7 @@ typedef struct formula_operation {
   formula_value_type type;
   union {
     struct selector * selector;       // select
-    node_property property;           // property
+    fsent_property property;           // property
     struct formula_value *operand;    // prepend, path-search
     struct formula_value *list_head;  // sequence
   };
@@ -129,7 +131,7 @@ typedef struct formula_value {
 
     /* aggregates */
     struct formula_value *list_head;
-    rbtree *set;
+    struct rbtree *set;
 
     /* operations */
     formula_operation op;
@@ -138,6 +140,7 @@ typedef struct formula_value {
 
 void formula_value_free(formula_value * restrict v);
 void formula_value_ifree(formula_value ** restrict v);
+void formula_value_set_free(struct rbtree * restrict rbt);
 
 xapi formula_value_say(const formula_value * restrict fv, struct narrator * restrict N)
   __attribute__((nonnull));

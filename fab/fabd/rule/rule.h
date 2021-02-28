@@ -23,15 +23,13 @@
 Rules are attached to one or more directory nodes, based on what nodes their match pattern could
 possibly match.
 
-
-
 */
 
 #include "xapi.h"
 #include "types.h"
 
 #include "valyria/llist.h"
-#include "valyria/rbtree.h"
+#include "moria.h"
 
 #include "graph.h"
 
@@ -39,14 +37,15 @@ struct attrs16;
 struct artifact;
 struct narrator;
 struct list;
-struct node;
+struct fsent;
 struct pattern;
 struct variant;
 struct set;
 struct module;
-struct graph;
+struct moria_graph;
 struct edge_traversal_state;
-struct rule_module_association;
+struct rule_module_edge;
+struct rbtree;
 
 #define RULE_DIRECTION_OPT    0x0003
 #define RULE_CARDINALITY_OPT  0x003c
@@ -65,10 +64,15 @@ extern struct attrs16 * rule_direction_attrs;
 
 #define RULE_CARDINALITY_TABLE                          \
   DEF(RULE_ZERO_TO_ONE  , 0x0004)     /*     --     */  \
-  DEF(RULE_ZERO_TO_MANY , 0x0008)     /* [*] -- [*] */  \
+                                      /*     -- [*] */  \
+  DEF(RULE_ZERO_TO_MANY , 0x0008)     /* [*] --     */  \
+                                      /*     <-     */  \
   DEF(RULE_ONE_TO_ONE   , 0x000c)     /*     ->     */  \
+                                      /*     <- [*] */  \
   DEF(RULE_ONE_TO_MANY  , 0x0010)     /*     -> [*] */  \
+                                      /* [*] <-     */  \
   DEF(RULE_MANY_TO_ONE  , 0x0014)     /* [*] ->     */  \
+                                      /* [*] <- [*] */  \
   DEF(RULE_MANY_TO_MANY , 0x0018)     /* [*] -> [*] */  \
 
 #undef DEF
@@ -78,12 +82,16 @@ RULE_CARDINALITY_TABLE
 } rule_cardinality;
 
 extern struct attrs16 * rule_cardinality_attrs;
+extern llist rule_list;
+extern llist rde_list;
 
-// allocated as the value of a vertex
+// VERTEX_TYPE_RULE
 typedef struct rule {
+  moria_vertex vertex;
+
   struct pattern * match;
   struct pattern * generate;
-  struct node * fml_node;   // lookup from formula
+  struct pattern * formula;
 
   edge_type relation;
   rule_direction dir;
@@ -92,44 +100,44 @@ typedef struct rule {
   llist lln;                // in module statement_block->rules
 } rule;
 
-STATIC_ASSERT(sizeof(rule) <= GRAPH_VERTEX_VALUE_SIZE);
-
-/* edge connecting a rule to a directory node */
+/* EDGE_TYPE_RULE_DIR : edge connecting a rule to a directory fsent */
 typedef struct rule_dirnode_edge {
-  struct rule_module_association *rma;
+  moria_edge edge;
+  struct rule_module_edge *rme;
 } rule_dirnode_edge;
 
-STATIC_ASSERT(sizeof(rule_dirnode_edge) <= GRAPH_EDGE_VALUE_SIZE);
-
-/* edge connecting a rule to a module */
-typedef struct rule_module_edge {
-  struct rule_module_association *rma;
-} rule_module_edge;
-
 typedef struct rule_run_context {
-  struct module * mod;            // module the rule is associated to
-  struct module * mod_owner;      // module which defines the rule
+  struct rule_module_edge *rme;         // rule-module-association
+  struct module * mod;                  // module the rule is associated to
+  struct module * mod_owner;            // module which defines the rule
   const struct llist * modules;
   const struct set * variants;
-  struct graph_invalidation_context invalidation;
 
-  /* outputs */
+  /* scratch space */
   struct set * match_nodes;
   struct set * generate_nodes;
 
-  /* multi-rule run situation */
-  struct rule_module_association *rma;
+  struct moria_vertex **Alist;
+  size_t Alist_alloc;
+  struct moria_vertex **Blist;
+  size_t Blist_alloc;
+  struct pattern_match_node **Mlist;
+  size_t Mlist_alloc;
 
-  /* rule/module associations with no matches */
-  rbtree nohits;
+  /* invalidation context for the ongoing operation */
+  struct graph_invalidation_context invalidation;
+
+  /* tracking rule/module associations with no matches */
+  struct rbtree *nohits;
+  bool *reconciled;
 } rule_run_context;
 
 xapi rule_run_context_xinit(rule_run_context * rule_ctx)
   __attribute__((nonnull));
-xapi rule_run_context_begin(rule_run_context * restrict rule_ctx)
-  __attribute__((nonnull));
-void rule_run_context_end(rule_run_context * rule_ctx)
-  __attribute__((nonnull));
+//xapi rule_run_context_begin(rule_run_context * restrict rule_ctx)
+//  __attribute__((nonnull));
+//void rule_run_context_end(rule_run_context * rule_ctx)
+//  __attribute__((nonnull));
 xapi rule_run_context_xdestroy(rule_run_context * rule_ctx)
   __attribute__((nonnull));
 
@@ -154,13 +162,20 @@ xapi rule_run(rule * restrict rule, rule_run_context * restrict ctx)
 
 xapi rule_mk(
     rule ** restrict rulep
-  , struct graph * restrict g
+  , struct moria_graph * restrict g
   , struct pattern * match
   , struct pattern * generate
-  , struct node * formula
+  , struct pattern * formula
+  , edge_type relation
   , uint32_t attrs
 )
   __attribute__((nonnull(1)));
+
+void rule_release(rule * restrict)
+  __attribute__((nonnull));
+
+void rule_dirnode_edge_release(rule_dirnode_edge * restrict)
+  __attribute__((nonnull));
 
 xapi rule_xdestroy(rule * restrict r)
   __attribute__((nonnull));
@@ -168,4 +183,13 @@ xapi rule_xdestroy(rule * restrict r)
 xapi rule_say(const rule * restrict r, struct narrator * restrict N)
   __attribute__((nonnull));
 
+void rule_cleanup(void);
+
+#endif
+
+#if 0
+/* edge connecting a rule to a module */
+typedef struct rule_module_edge {
+  struct rule_module_edge *rma;
+} rule_module_edge;
 #endif

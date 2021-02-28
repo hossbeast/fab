@@ -222,6 +222,7 @@ $1 = 0;
 word-tokens
   : STR
   | 'D'
+  | '+'
   ;
 
 escape

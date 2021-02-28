@@ -21,7 +21,7 @@
 #include "xapi.h"
 #include "types.h"
 
-struct config;
+struct configblob;
 
 extern char *path_cache_env_path; // $PATH
 
@@ -42,7 +42,7 @@ xapi path_cache_cleanup(void);
  * config - effective config tree
  * dry    - whether to perform a dry-run
  */
-xapi path_cache_reconfigure(struct config * restrict cfg, bool dry)
+xapi path_cache_reconfigure(struct configblob * restrict cfg, bool dry)
   __attribute__((nonnull));
 
 xapi path_cache_search(const path_cache_entry ** restrict entry, const char * restrict file, uint16_t len)

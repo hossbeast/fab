@@ -28,7 +28,8 @@
 
   #include "config_parser.internal.h"
   #include "config.internal.h"
-  #include "box.h"
+  #include "build_thread.h"
+  #include "yyutil/box.h"
   #include "macros.h"
 
   struct value;
@@ -107,9 +108,7 @@
 
 %token
  BUILD                    "build"
- CAPTURE_STDERR           "capture-stderr"
- CAPTURE_STDOUT           "capture-stdout"
- CAPTURE_AUXOUT           "capture-auxout"
+ WORKERS                  "workers"
  CONCURRENCY              "concurrency"
  CONSOLE                  "console"
  ERROR                    "error"
@@ -120,28 +119,11 @@
  INVALIDATE               "invalidate"
  LOGGING                  "logging"
  LOGFILE                  "logfile"
- SHOW_ARGUMENTS           "show-arguments"
- SHOW_COMMAND             "show-command"
- SHOW_CWD                 "show-cwd"
- SHOW_SOURCES             "show-sources"
- SHOW_PATH                "show-path"
- SHOW_TARGETS             "show-targets"
- SHOW_ENVIRONMENT         "show-environment"
- SHOW_STATUS              "show-status"
- SHOW_STDOUT              "show-stdout"
- SHOW_STDOUT_LIMIT_BYTES  "show-stdout-limit-bytes"
- SHOW_STDOUT_LIMIT_LINES  "show-stdout-limit-lines"
- SHOW_STDERR              "show-stderr"
- SHOW_STDERR_LIMIT_BYTES  "show-stderr-limit-bytes"
- SHOW_STDERR_LIMIT_LINES  "show-stderr-limit-lines"
- SHOW_AUXOUT              "show-auxout"
- SHOW_AUXOUT_LIMIT_BYTES  "show-auxout-limit-bytes"
- SHOW_AUXOUT_LIMIT_LINES  "show-auxout-limit-lines"
- STDOUT_BUFFER_SIZE       "stdout-buffer-size"
- STDERR_BUFFER_SIZE       "stderr-buffer-size"
- AUXOUT_BUFFER_SIZE       "auxout-buffer-size"
- SUCCESS                  "success"
+ SPECIAL                  "special"
+ MODEL                    "model"
+ MODULE                   "module"
  VAR                      "var"
+ FORMULA_SUFFIX           "formula-suffix"
  PATH                     "path"
  COPY_FROM_ENV            "copy-from-env"
  DIRS                     "dirs"
@@ -151,8 +133,6 @@
  ALWAYS                   "always"
  NEVER                    "never"
  LEADING                  "leading"
- TRAILING                 "trailing"
- NONE                     "none"
 
 /*
  EXECUTABLES              "executables"
@@ -204,44 +184,32 @@ sections
 
 section
   : build-section
+  | special-section
+  | workers-section
   | extern-section
   | filesystems-section
   | formula-section
   | logging-section
-  | var-section
-  ;
-
-var-section
-  : VAR var-section-body
-  {
-    PARSER->cfg->var.merge_significant = true;
-  }
-  ;
-
-var-section-body
-  : ':' var-section-set
-  | '=' var-section-set-epsilon
-  {
-    PARSER->cfg->var.merge_overwrite = true;
-  }
-  ;
-
-var-section-set-epsilon
-  : var-section-set
-  | %empty
-  ;
-
-var-section-set
-  : VALUE
-  {
-    PARSER->cfg->var.value = $1;
-  }
   ;
 
 build-section
   : BUILD build-map
   {
     PARSER->cfg->build.merge_significant = true;
+  }
+  ;
+
+special-section
+  : SPECIAL special-map
+  {
+    PARSER->cfg->special.merge_significant = true;
+  }
+  ;
+
+workers-section
+  : WORKERS workers-map
+  {
+    PARSER->cfg->workers.merge_significant = true;
   }
   ;
 
@@ -271,6 +239,64 @@ build-mapping
   : CONCURRENCY ':' int16
   {
     PARSER->cfg->build.concurrency = $3;
+  }
+  ;
+
+special-map
+  : ':' '{' special-mapping-set '}'
+  | '=' '{' special-mapping-set-epsilon '}'
+  {
+    PARSER->cfg->special.merge_overwrite = true;
+  }
+  ;
+
+special-mapping-set-epsilon
+  : special-mapping-set
+  | %empty
+  ;
+
+special-mapping-set
+  : special-mappings
+  ;
+
+special-mappings
+  : special-mappings special-mapping
+  | special-mapping
+  ;
+
+special-mapping
+  : MODEL ':' bstring          { PARSER->cfg->special.model = $3; }
+  | MODULE ':' bstring         { PARSER->cfg->special.module = $3; }
+  | VAR ':' bstring            { PARSER->cfg->special.var = $3; }
+  | FORMULA_SUFFIX ':' bstring { PARSER->cfg->special.formula_suffix = $3; }
+  ;
+ 
+workers-map
+  : ':' '{' workers-mapping-set '}'
+  | '=' '{' workers-mapping-set-epsilon '}'
+  {
+    PARSER->cfg->workers.merge_overwrite = true;
+  }
+  ;
+
+workers-mapping-set-epsilon
+  : workers-mapping-set
+  | %empty
+  ;
+
+workers-mapping-set
+  : workers-mappings
+  ;
+
+workers-mappings
+  : workers-mappings workers-mapping
+  | workers-mapping
+  ;
+
+workers-mapping
+  : CONCURRENCY ':' int16
+  {
+    PARSER->cfg->workers.concurrency = $3;
   }
   ;
   
@@ -337,6 +363,9 @@ formula-path-mapping
 formula-path-dirs
   : formula-path-dirs formula-path-dir
   | formula-path-dir
+  {
+    PARSER->cfg->formula.path.dirs.merge_significant = true;
+  }
   ;
 
 formula-path-dir

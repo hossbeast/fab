@@ -30,9 +30,8 @@
 #include "pattern.internal.h"
 #include "render.internal.h"
 #include "match.internal.h"
-#include "node.h"
+#include "fsent.h"
 #include "module.h"
-#include "path.h"
 
 #include "common/attrs.h"
 

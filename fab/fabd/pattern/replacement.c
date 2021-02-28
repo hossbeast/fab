@@ -30,8 +30,7 @@
 #include "replacement.internal.h"
 #include "generate.internal.h"
 #include "match.internal.h"
-#include "node.h"
-#include "path.h"
+#include "fsent.h"
 #include "variant.h"
 
 #include "zbuffer.h"

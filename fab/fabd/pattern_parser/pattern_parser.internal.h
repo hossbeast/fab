@@ -26,7 +26,7 @@
 struct pattern_yystype {
   yyu_lval yyu;
   pattern *pattern;
-}; 
+};
 
 struct pattern_parser {
   yyu_parser match_yyu;

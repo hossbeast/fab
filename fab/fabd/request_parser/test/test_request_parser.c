@@ -31,7 +31,7 @@
 #include "request_parser.h"
 #include "request.internal.h"
 #include "request.h"
-#include "node.h"
+#include "fsent.h"
 #include "logging.h"
 
 typedef struct {
@@ -128,7 +128,7 @@ xunit_unit xunit = {
               " module"
               " traverse : {"
                 " direction : down"
-                " relation : fs"
+                " graph : fs"
               " }"
             " ]"
             " run"
@@ -138,16 +138,6 @@ xunit_unit xunit = {
     , (request_parser_test[]) {{
           text : (char[]) {
             "["
-            " stage-config : { build : { concurrency : 0 } }"
-            " reconfigure"
-            "]\0\0"
-          }
-      }}
-    , (request_parser_test[]) {{
-          text : (char[]) {
-            "["
-            " stage-config : { build : { concurrency : 0 } }"
-            " reconfigure"
             " select : [ pattern : foo/bar/main.o ]"
             " invalidate"
             "]\0\0"

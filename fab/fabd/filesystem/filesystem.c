@@ -34,8 +34,9 @@
 #include "config.internal.h"
 #include "config_parser.h"
 #include "CONFIG.errtab.h"
-#include "box.h"
-#include "stats.h"
+#include "yyutil/box.h"
+#include "args.h"
+#include "graph.h"
 
 #include "zbuffer.h"
 #include "common/hash.h"
@@ -219,7 +220,7 @@ static int rbn_key_cmp(void *keyp, const rbnode *np)
   return memncmp(key->name, key->namel, fst->name, fst->namel);
 }
 
-xapi filesystem_reconfigure(config * restrict cfg, bool dry)
+xapi filesystem_reconfigure(configblob * restrict cfg, bool dry)
 {
   enter;
 
@@ -301,8 +302,14 @@ xapi filesystem_reconfigure(config * restrict cfg, bool dry)
       }
     }
 
-    fst->fs->attrs = fse->invalidate->v;
+    if((fst->fs->attrs = fse->invalidate->v) == 0) {
+      fst->fs->attrs = g_args.default_filesystem_invalidate;
+    }
     fst->fs->fst = fst;
+  }
+
+  if(filesystem_root.attrs == 0) {
+    filesystem_root.attrs = g_args.default_filesystem_invalidate;
   }
 
   finally : coda;

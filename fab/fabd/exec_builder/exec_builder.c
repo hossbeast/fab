@@ -30,8 +30,7 @@
 #include "xlinux/xstdlib.h"
 
 #include "exec_builder.internal.h"
-#include "node.h"
-#include "path.h"
+#include "fsent.h"
 #include "logging.h"
 #include "variant.h"
 #include "formula.h"
@@ -111,13 +110,11 @@ dispatch_render_function(
 {
   enter;
 
+  const path_cache_entry *pe;
+
   if(func == RENDER_PROPERTY)
   {
-    fatal(node_property_say, args->n, args->prop, &args->pctx, N);
-  }
-  else if(func == RENDER_PATH_CACHE_ENTRY)
-  {
-    fatal(narrator_xsayw, N, args->pe->s, args->pe->len);
+    fatal(fsent_property_say, args->n, args->prop, &args->pctx, N);
   }
   else if(func == RENDER_STRING)
   {
@@ -135,6 +132,18 @@ dispatch_render_function(
   {
     fatal(narrator_xsayvf, N, args->fmt, *args->va);
   }
+
+  if(func != RENDER_PATH_CACHE_ENTRY) {
+    goto XAPI_FINALLY;
+  }
+
+  pe = args->pe;
+  if(pe->dir) {
+    fatal(narrator_xsayw, N, pe->dir->s, pe->dir->len);
+    fatal(narrator_xsays, N, "/");
+  }
+
+  fatal(narrator_xsayw, N, pe->s, pe->len);
 
   finally : coda;
 }
@@ -453,8 +462,8 @@ static xapi render_say(const char * restrict name, enum builder_render_function 
   if(renderer == RENDER_PROPERTY)
   {
     xsayf("render-%s PROPERTY\n", name);
-    xsayf(" node %p %s\n", args->n, args->n->name->name);
-    xsayf(" prop %s\n", attrs32_name_byvalue(node_property_attrs, NODE_PROPERTY_OPT & args->prop));
+    xsayf(" node %p %s\n", args->n, args->n->name.name);
+    xsayf(" prop %s\n", attrs32_name_byvalue(fsent_property_attrs, FSENT_PROPERTY_OPT & args->prop));
   }
   else if(renderer == RENDER_PATH_CACHE_ENTRY)
   {

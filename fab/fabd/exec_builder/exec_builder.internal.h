@@ -28,13 +28,12 @@ SUMMARY
 #include "xapi.h"
 
 #include "exec_builder.h"
-#include "node.h"
+#include "fsent.h"
 
-struct node;
+struct fsent;
 struct narrator;
 struct formula_value;
 struct value;
-struct buildplan_entity;
 struct path_cache_entry;
 
 xapi exec_builder_arg_add(exec_builder * restrict builder, xapi (*render_val)(const void * ud, struct narrator * restrict N), const void * ud)
@@ -89,9 +88,9 @@ typedef struct builder_add_args {
     const struct value * v;
     const struct path_cache_entry *pe;
     struct {
-      const struct node * n;
-      node_property prop;
-      node_property_context pctx;
+      const struct fsent * n;
+      fsent_property prop;
+      fsent_property_context pctx;
     };
     struct {
       const char * fmt;

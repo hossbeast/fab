@@ -15,6 +15,10 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
+#include "xapi.h"
+#include "xapi/trace.h"
+#include "xapi/calltree.h"
+
 #include "value.h"
 #include "value/parser.h"
 #include "value/merge.h"
@@ -26,87 +30,78 @@
 #include "valyria/map.h"
 #include "narrator/fixed.h"
 #include "valyria/set.h"
+#include "xlinux/xstring.h"
+#include "moria/vertex.h"
 
 #include "var.h"
-#include "node.h"
+#include "fsent.h"
 #include "params.h"
 #include "logging.h"
 #include "config.internal.h"
 #include "variant.h"
+#include "stats.h"
+#include "node_operations.h"
+#include "marshal.h"
+#include "zbuffer.h"
+#include "global.h"
 
 #include "common/snarf.h"
 
+static llist var_list = LLIST_INITIALIZER(var_list);          // active
+static llist var_freelist = LLIST_INITIALIZER(var_freelist);  // free
 static value_parser * parser;
-value * g_var;
 
 //
-// public
+// static
 //
 
-xapi var_setup()
-{
-  enter;
-
-  fatal(value_parser_create, &parser);
-
-  finally : coda;
-}
-
-xapi var_cleanup()
-{
-  enter;
-
-  fatal(value_parser_xfree, parser);
-
-  finally : coda;
-}
-
-xapi var_reconfigure(config * restrict cfg, bool dry)
-{
-  enter;
-
-  if(dry)
-  {
-
-  }
-  else if(cfg->var.attrs & CONFIG_CHANGED)
-  {
-    g_var = cfg->var.value;
-  }
-
-  finally : coda;
-}
-
-xapi var_node_parse(node * restrict var_node)
+static xapi var_parse(var * restrict vp, bool * restrict success)
 {
   enter;
 
   char * text = 0;
   size_t text_len;
   value * val;
-  char path[512];
+  xapi exit;
+  char trace[4096 << 1];
 
-  if(!var_node->not_parsed)
-    goto XAPI_FINALLY;
+  vp->val = 0;
 
-  node_kind_set(var_node, VERTEX_VAR_BAM);
+  STATS_INC(vp->stats.parsed_try);
+  STATS_INC(g_stats.var_parsed_try);
 
-  // absolute path, for exec
-  node_project_relative_path_znload(path, sizeof(path), var_node);
+//printf("%10s %p %s\n", "reparse", vp, vp->abspath);
 
-  fatal(snarfats, &text, &text_len, g_params.proj_dirfd, path);
+  fatal(snarfs, &text, &text_len, vp->self_node_abspath);
+
   if(text)
   {
-    fatal(value_parser_parse, parser, text, text_len, path, VALUE_TYPE_SET, &val);
+    if((exit = invoke(value_parser_parse, parser, text, text_len, vp->self_node_abspath, VALUE_TYPE_SET, &val)))
+    {
+#if DEBUG || DEVEL || XAPI
+      xapi_trace_full(trace, sizeof(trace), 0);
+#else
+      xapi_trace_pithy(trace, sizeof(trace), 0);
+#endif
+      xapi_calltree_unwind();
+
+      xlogs(L_WARN, L_NOCATEGORY, trace);
+
+      *success = false;
+      goto XAPI_FINALLY;
+    }
+
+    vp->val = val;
   }
 
-  var_node->self_var = val;
+  STATS_INC(vp->stats.parsed);
+  STATS_INC(g_stats.var_parsed);
 
-  logf(L_MODULE, "parsed var @ %s", path);
-  var_node->not_parsed = 0;
+  logf(L_MODULE, "parsed var @ %s", vp->self_node_abspath);
 
 finally:
   wfree(text);
+  xapi_infos("path", vp->self_node_abspath);
 coda;
 }
 
@@ -142,6 +137,113 @@ static xapi __attribute__((nonnull)) get_mapping_key(narrator * restrict N, valu
   else
   {
     fatal(value_say, val, N);
+  }
+
+  finally : coda;
+}
+
+//
+// public
+//
+
+xapi var_alloc(var ** restrict vp, moria_graph * restrict g)
+{
+  enter;
+
+  var *v;
+
+  if((v = llist_shift(&var_freelist, typeof(*v), vertex.owner)) == 0)
+  {
+    fatal(xmalloc, &v, sizeof(*v));
+  }
+
+  moria_vertex_init(&v->vertex, g, VERTEX_VAR);
+
+  llist_append(&var_list, v, vertex.owner);
+  *vp = v;
+
+  finally : coda;
+}
+
+static void var_dispose(var * restrict vp)
+{
+  llist_delete_node(&vp->vertex.owner);
+  llist_append(&var_freelist, vp, vertex.owner);
+}
+
+void var_release(var * restrict vp)
+{
+  moria_vertex __attribute__((unused)) *v;
+
+  /* should be fully excised from the graph previously */
+  v = &vp->vertex;
+  RUNTIME_ASSERT(v->up_identity == 0);
+  RUNTIME_ASSERT(rbtree_empty(&v->up));
+  RUNTIME_ASSERT(rbtree_empty(&v->down));
+
+  var_dispose(vp);
+}
+
+xapi var_reconcile(var * restrict vp, bool * restrict reconciled)
+{
+  enter;
+
+  vp->reconciliation_id = global_reconciliation_id;
+  if(!fsent_invalid_get(vp->self_node)) {
+    goto XAPI_FINALLY;
+  }
+
+  fatal(var_parse, vp, reconciled);
+
+  if(*reconciled) {
+    fatal(fsent_ok, vp->self_node);
+  }
+
+  finally : coda;
+}
+
+xapi var_system_reconcile(bool * restrict reconciled)
+{
+  enter;
+
+  var *v;
+  llist *T;
+
+  llist_foreach_safe(&var_list, v, vertex.owner, T) {
+    if(v->reconciliation_id == global_reconciliation_id) {
+      continue;
+    }
+
+    var_release(v);
+  }
+
+  finally : coda;
+}
+
+xapi var_setup()
+{
+  enter;
+
+  fatal(value_parser_create, &parser);
+
+  finally : coda;
+}
+
+xapi var_cleanup()
+{
+  enter;
+
+  var *v;
+  llist *T;
+
+  fatal(value_parser_xfree, parser);
+
+  llist_foreach_safe(&var_list, v, vertex.owner, T) {
+    var_dispose(v);
+  }
+
+  llist_foreach_safe(&var_freelist, v, vertex.owner, T) {
+    free(v);
   }
 
   finally : coda;
@@ -197,6 +299,54 @@ xapi var_denormalize(value_parser * restrict parser, variant * restrict var, val
   }
 
   *varsp = vars;
+
+  finally : coda;
+}
+
+xapi var_collate_stats(void *dst, size_t sz, var *vp, bool reset, size_t *zp)
+{
+  enter;
+
+  size_t z;
+  fab_var_stats *stats;
+  fab_var_stats lstats;
+  descriptor_field *field;
+  int x;
+
+  stats = &vp->stats;
+  if(reset)
+  {
+    memcpy(&lstats, &stats, sizeof(lstats));
+    memset(stats, 0, sizeof(*stats));
+    stats = &lstats;
+  }
+
+  z = 0;
+  z += marshal_u32(dst + z, sz - z, descriptor_fab_var_stats.id);
+
+//  /* abspath */
+//  z += marshal_u16(dst + z, sz - z, vp->abspath_len);
+//  z += znloadw(dst + z, sz - z, vp->abspath, vp->abspath_len);
+
+  /* event counters */
+  for(x = 0; x < descriptor_fab_var_stats.members_len; x++)
+  {
+    field = descriptor_fab_var_stats.members[x];
+
+    if(field->size == 8) {
+      z += marshal_u64(dst + z, sz - z, stats->u64[field->offset / 8]);
+    } else if(field->size == 4) {
+      z += marshal_u32(dst + z, sz - z, stats->u32[field->offset / 4]);
+    } else if(field->size == 2) {
+      z += marshal_u16(dst + z, sz - z, stats->u16[field->offset / 2]);
+    } else if(field->size == 1) {
+      z += marshal_u16(dst + z, sz - z, stats->u8[field->offset / 1]);
+    } else {
+      RUNTIME_ABORT();
+    }
+  }
+
+  *zp += z;
 
   finally : coda;
 }

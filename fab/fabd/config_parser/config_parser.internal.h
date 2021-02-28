@@ -37,7 +37,7 @@ struct config_parser {
   struct config_logging_section * logging_section;
 
   // (returns)
-  config * cfg; // parsed config
+  configblob * cfg; // parsed config
 };
 
 /// config_yyerror

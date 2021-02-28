@@ -31,10 +31,10 @@
 #include "config_parser.h"
 #include "config.internal.h"
 #include "request.h"
-#include "node.h"
+#include "fsent.h"
 #include "logging.h"
 
-#include "box.h"
+#include "yyutil/box.h"
 
 typedef struct {
   XUNITTEST;
@@ -79,9 +79,9 @@ static xapi config_compare_test_entry(xunit_test * _test)
   config_compare_test * test = containerof(_test, config_compare_test, xu);
 
   config_parser * parser = 0;
-  config * A = 0;
-  config * B = 0;
-  config * T = 0;
+  configblob * A = 0;
+  configblob * B = 0;
+  configblob * T = 0;
   char ** text = 0;
 
   // arrange

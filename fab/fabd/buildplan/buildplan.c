@@ -28,14 +28,13 @@
 #include "fab/sigutil.h"
 
 #include "buildplan.h"
-#include "buildplan_entity.h"
+#include "dependency.h"
 #include "server_thread.internal.h"
 #include "config.internal.h"
 #include "formula.h"
 #include "logging.h"
-#include "node.h"
+#include "fsent.h"
 #include "params.h"
-#include "path.h"
 #include "selection.h"
 
 #include "common/assure.h"
@@ -67,17 +66,17 @@ xapi buildplan_reset()
 {
   enter;
 
-  fatal(selection_reset, &bp_selection);
+  fatal(selection_reset, &bp_selection, SELECTION_ITERATION_TYPE_RANK);
   bp_plan_id++;
 
   finally : coda;
 }
 
-xapi buildplan_add(buildplan_entity * restrict bpe, int distance)
+xapi buildplan_add(dependency * restrict bpe, int distance)
 {
   enter;
 
-  fatal(selection_add_bpe, &bp_selection, bpe, distance);
+  fatal(selection_add_dependency, &bp_selection, bpe, distance);
 
   finally : coda;
 }
@@ -95,11 +94,11 @@ xapi buildplan_report()
 {
   enter;
 
-  selected_node *sn;
-  buildplan_entity *bpe;
+  selected *sn;
+  const dependency *bpe;
   narrator *N;
 
-  logf(L_BUILDPLAN, "%3zu executions in %2hu stages", bp_selection.selected_nodes->size, bp_selection.numranks);
+  logf(L_BUILDPLAN, "%3zu executions in %2hu stages", bp_selection.selected_entities->size, bp_selection.numranks);
 
   llist_foreach(&bp_selection.list, sn, lln) {
     bpe = sn->bpe;
@@ -107,10 +106,10 @@ xapi buildplan_report()
     fatal(narrator_xsayf, N, " %-3d ", sn->rank);
     if(bpe->fml)
     {
-      fatal(narrator_xsays, N, bpe->fml->name->name);
+      fatal(narrator_xsays, N, bpe->fml->name.name);
       fatal(narrator_xsays, N, " -> ");
     }
-    fatal(bpe_say_targets, bpe, N);
+    fatal(dependency_say_targets, bpe, N);
     fatal(log_finish);
   }
 

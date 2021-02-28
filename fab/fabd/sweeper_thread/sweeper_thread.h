@@ -22,7 +22,7 @@
 #include "valyria/llist.h"
 #include "valyria/rbtree.h"
 
-struct node;
+struct fsent;
 
 #define SWEEPER_EVENT_SELF    1
 #define SWEEPER_EVENT_CHILD   2
@@ -37,7 +37,7 @@ typedef struct sweeper_event {
 typedef struct sweeper_child_event {
   sweeper_event sweep_event;
   rbnode rbn;            // in parent->pending_child
-  struct node *parent;
+  struct fsent *parent;
   char name[128];
   uint8_t name_len;
 } sweeper_child_event;
@@ -48,7 +48,7 @@ xapi sweeper_thread_cleanup(void);
 
 xapi sweeper_thread_launch(void);
 
-xapi sweeper_thread_enqueue(struct node *n, uint32_t m, const char * restrict name, uint16_t namel)
+xapi sweeper_thread_enqueue(struct fsent *n, uint32_t m, const char * restrict name, uint16_t namel)
   __attribute__((nonnull(1)));
 
 #endif

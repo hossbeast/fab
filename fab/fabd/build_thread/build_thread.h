@@ -21,7 +21,7 @@
 #include "xapi.h"
 
 struct attrs32;
-struct config;
+struct configblob;
 struct handler_context;
 
 // configuration
@@ -39,10 +39,6 @@ STREAM_PART_TABLE
 
 extern struct attrs32 * stream_part_attrs;
 
-typedef struct build_thread_config {
-  int16_t concurrency;
-} build_thread_config;
-
 xapi build_thread_setup(void);
 
 xapi build_thread_cleanup(void);
@@ -59,7 +55,7 @@ xapi build_thread_launch(void);
 //  config - root of the config tree
 //  dry    - whether to perform a dry-run
 //
-xapi build_thread_reconfigure(struct config * restrict cfg, bool dry)
+xapi build_thread_reconfigure(struct configblob * restrict cfg, bool dry)
   __attribute__((nonnull));
 
 xapi build_thread_build(struct handler_context * restrict ctx)

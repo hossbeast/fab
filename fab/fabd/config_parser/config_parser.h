@@ -23,7 +23,7 @@
 
 struct yyu_location;
 
-struct config;
+struct configblob;
 struct config_parser;
 typedef struct config_parser config_parser;
 
@@ -75,19 +75,8 @@ xapi config_parser_parse(
   , size_t size
   , const char * restrict fname
   , struct yyu_location * restrict init_loc
-  , struct config ** restrict rv
+  , struct configblob ** restrict rv
 )
   __attribute__((nonnull(1, 2)));
-
-xapi config_parser_parse_partial(
-    config_parser * restrict parser
-  , char * const restrict buf
-  , size_t size
-  , const char * restrict fname
-  , struct yyu_location * init_loc
-  , struct yyu_location * used_loc
-  , struct config ** restrict rv
-)
-  __attribute__((nonnull(2)));
 
 #endif

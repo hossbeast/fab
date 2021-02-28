@@ -23,7 +23,7 @@
 #include "xapi.h"
 #include "types.h"
 
-struct node;
+struct fsent;
 struct graph_invalidation_context;
 
 /*
@@ -40,9 +40,9 @@ struct graph_invalidation_context;
  * invalidation -
  */
 xapi walker_descend(
-    struct node ** restrict basep
-  , struct node * restrict base
-  , struct node * restrict parent
+    struct fsent ** restrict basep
+  , struct fsent * restrict base
+  , struct fsent * restrict parent
   , const char * restrict abspath
   , int walk_id
   , struct graph_invalidation_context * restrict invalidation
@@ -58,14 +58,14 @@ xapi walker_descend(
 //  base      - node to ascend from
 //  [walk_id] -
 //
-xapi walker_ascend(struct node * restrict base, int walk_id, struct graph_invalidation_context * restrict invalidation)
+xapi walker_ascend(struct fsent * restrict base, int walk_id, struct graph_invalidation_context * restrict invalidation)
   __attribute__((nonnull));
 
-/// walker_descend_begin
+/// walker_begin
 //
 // SUMMARY
 //  allocate a walk scope, in which each node is visited at most once
 //
-int walker_descend_begin(void);
+int walker_begin(void);
 
 #endif

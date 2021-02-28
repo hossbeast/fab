@@ -27,6 +27,7 @@
 
 struct selector;
 struct handler_context;
+struct narrator;
 
 xapi goals_set(
     uint32_t msg_id
@@ -40,5 +41,10 @@ xapi goals_kickoff(struct handler_context * restrict handler)
 
 xapi goals_setup(void);
 xapi goals_cleanup(void);
+xapi goals_say(struct narrator * restrict N)
+  __attribute__((nonnull));
+
+// true if autorun is enabled
+extern bool goals_autorun;
 
 #endif

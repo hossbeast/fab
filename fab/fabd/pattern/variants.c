@@ -31,8 +31,7 @@
 #include "generate.internal.h"
 #include "match.internal.h"
 #include "variant.h"
-#include "node.h"
-#include "path.h"
+#include "fsent.h"
 
 #include "common/attrs.h"
 
@@ -59,8 +58,8 @@ static xapi match(pattern_match_context * restrict ctx, const pattern_segment * 
   enter;
 
   int x;
-  const char * restrict name = ctx->node->name->name;
-  uint16_t namel = ctx->node->name->namel;
+  const char * restrict name = ctx->node->name.name;
+  uint16_t namel = ctx->node->name.namel;
 
   struct match_segments_traversal *traversal;
 
@@ -121,7 +120,7 @@ static xapi generate(const pattern_segment * restrict seg, pattern_generate_cont
   int x;
   variant *v;
 
-  node * saved_context_node;
+  fsent * saved_context_node;
   char saved_section_text[256];
   off_t saved_section_narrator_pos;
 

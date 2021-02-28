@@ -31,8 +31,7 @@
 #include "segment.internal.h"
 #include "generate.internal.h"
 #include "match.internal.h"
-#include "node.h"
-#include "path.h"
+#include "fsent.h"
 #include "common/attrs.h"
 
 //
