@@ -216,9 +216,9 @@ xapi arguments_process(const char * restrict argvs, size_t argvsl, int binaryx, 
   if(g_argc)
     tot += (g_argc - 1);
 
-  fatal(xmalloc, &g_argvs, tot + 1);
-  fatal(xmalloc, &g_logvs, tot + 1);
-  fatal(xmalloc, &g_ulogvs, tot + 1);
+  fatal(xmalloc, &g_argvs, tot + 2);
+  fatal(xmalloc, &g_logvs, tot + 2);
+  fatal(xmalloc, &g_ulogvs, tot + 2);
 
   // move logexpr options g_argv -> g_ulogv
   for(x = 0; x < g_argc; x++)

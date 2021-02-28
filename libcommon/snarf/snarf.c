@@ -29,24 +29,26 @@ static xapi snarf(int fd, char ** const restrict dst, size_t * restrict dstlp)
 
   size_t dstl = 0;
   size_t dsta = 0;
+  size_t newa;
+  ssize_t count;
 
   do
   {
     if((dsta - dstl) == 0)
     {
-      size_t newa = dsta ?: 128;
+      newa = dsta ?: 128;
       newa += newa * 2 + newa / 2;
-      fatal(xrealloc, dst, sizeof(**dst), newa, dsta);
+      fatal(xrealloc, dst, sizeof(**dst), newa + 2 /* YYU_INPLACE */, dsta);
       dsta = newa;
     }
 
-    ssize_t count;
     fatal(xread, fd, &(*dst)[dstl], dsta - dstl, &count);
     dstl += count;
   } while(dstl == dsta);
 
-  if(dstlp)
+  if(dstlp) {
     *dstlp = dstl;
+  }
 
   finally : coda;
 }
