@@ -27,7 +27,7 @@ import libcommon
 import lib{xapi,xlinux,narrator,valyria,logger,xunit,yyutil}
 
 # declare variants in the module
-variant xapi.pic.{devel,debug,final}
+variant xapi.pic.{devel,debug,final,trace}
 
 # default target for this module
 rule libmoria.?.so -> //module/targets

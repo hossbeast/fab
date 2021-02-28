@@ -1,0 +1,13 @@
+# started on Thu Mar 11 19:37:16 2021
+
+
+ Performance counter stats for '/home/todd/fab/fab/fab/fab.trace.xapi stats':
+
+              1.54 msec cpu-clock:u               #    0.006 CPUs utilized          
+
+       0.252284786 seconds time elapsed
+
+       0.001763000 seconds user
+       0.000000000 seconds sys
+
+

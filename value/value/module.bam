@@ -20,7 +20,7 @@ use executable  # this module builds an executable
 use xapi/errtab
 
 # declare variants
-variant xapi.{debug,devel,final}
+variant xapi.{debug,devel,final,trace}
 
 # make common objects available for #include and linking
 import fab/include
@@ -35,7 +35,7 @@ variant xapi.{debug,devel} : [
 rule **/*.?.o -> value.$? : executable/bam-cc
 
 # library dependencies
-variant xapi.pic.{debug,devel,final} : [
+variant xapi.pic.{debug,devel,final,trace} : [
   rule //module/imports/*~libxunit/lib*.?.so -> value.${?-pic}
 ]
 

@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+
+#perf record --call-graph fp -F max -e instructions:u -g $@
+#perf record -e instructions:u -c 1000 $@
+perf record -e cpu-clock,faults --call-graph fp -F max $@
+perf script | ~/FlameGraph/stackcollapse-perf.pl > out.perf-folded
+~/FlameGraph/flamegraph.pl out.perf-folded > /tmp/perf.svg

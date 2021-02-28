@@ -25,7 +25,7 @@ import fab/include
 import lib{common,xapi,xlinux,narrator,logger,lorien}
 
 # variants for the module
-variant xapi.pic.{debug,devel,final}
+variant xapi.pic.{debug,devel,final,trace}
 
 # pull in object files in the module, except those under integ
 rule **~test/*.?.o -> libfab.$?.so

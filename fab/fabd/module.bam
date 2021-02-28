@@ -23,9 +23,10 @@ use xapi/errtab
 use xunit-tests
 
 # declare variants
-variant xapi.{,pic.}{debug,devel,final}
+variant xapi.{debug,devel,final,trace}
+variant xapi.pic.devel
 
-variant xapi.{debug,devel,final} : [
+variant xapi.{debug,devel,final,trace} : [
   rule fabd.? -> //module/targets
 ]
 
@@ -39,7 +40,9 @@ variant xapi.{debug,devel} : [
 ]
 
 # invoke the compiler to build the executable
-rule **~test/*.?.o -> fabd.$? : executable/bam-cc
+variant xapi.{debug,devel,final,trace} : [
+  rule **~test/*.?.o -> fabd.$? : executable/bam-cc
+]
 
 # intra module dependencies - generated files
 rule */*.?.o <- errtab/CONFIG.errtab.h
@@ -51,12 +54,8 @@ rule */*.?.o <- errtab/REQUEST.errtab.h
 rule */*.?.o <- errtab/SELECTOR.errtab.h
 
 # library dependencies
-variant xapi.pic.{debug,devel,final} : [
+variant xapi.pic.{debug,devel,final,trace} : [
   rule //module/imports/*~libxunit/lib*.?.so -> fabd.${?-pic}
-]
-
-variant xapi.pic.devel : [
-  rule //module/imports/libxunit/lib*.?.so -> fabd.${?-pic}
 ]
 
 var : {

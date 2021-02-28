@@ -20,7 +20,7 @@ use executable  # this module builds an executable
 use xapi/errtab
 
 # declare variants
-variant xapi.{debug,devel,final}
+variant xapi.{debug,devel,final,trace}
 
 rule fab.? -> //module/targets
 
