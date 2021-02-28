@@ -57,8 +57,6 @@ xapi value_store_ixfree(value_store ** const store)
 
 /// store_recyle
 //
-//  
-//
 xapi value_store_recycle(value_store * const restrict store)
   __attribute__((nonnull));
 
