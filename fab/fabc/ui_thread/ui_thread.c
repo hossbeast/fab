@@ -41,6 +41,7 @@
 #include "explorer.h"
 #include "display.h"
 #include "client_thread.h"
+#include "threads.h"
 
 static xapi ui_thread()
 {
@@ -56,8 +57,6 @@ static xapi ui_thread()
   struct epoll_event events[1];
   int epfd = -1;
   sigset_t sigs;
-
-  g_params.thread_ui = gettid();
 
   logs(L_ERROR, "UI THREAD");
 
@@ -157,6 +156,7 @@ static void * ui_thread_jump(void * arg)
   enter;
 
   xapi R;
+  tid = g_params.thread_ui = gettid();
   fatal(ui_thread);
 
 finally:

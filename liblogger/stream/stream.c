@@ -250,11 +250,9 @@ xapi stream_write(stream *  restrict streamp, const uint64_t ids, uint32_t attrs
 
   // enable say
   narrator * N = streamp->narrator;
-  pid_t tid;
   int prev;
 
-  tid = gettid();
-  futex_acquire(&streamp->lock, tid);
+  futexlock_acquire(&streamp->lock);
 
   prev = 0;
   if((attrs & LOGGER_COLOR_OPT) && (attrs & LOGGER_COLOR_OPT) != L_NOCOLOR)
@@ -437,7 +435,7 @@ xapi stream_write(stream *  restrict streamp, const uint64_t ids, uint32_t attrs
   fatal(narrator_record_flush, streamp->narrator_record);
 
 finally:
-  futex_release(&streamp->lock, tid);
+  futexlock_release(&streamp->lock);
 coda;
 }
 

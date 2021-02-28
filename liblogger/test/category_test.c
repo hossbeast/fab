@@ -16,6 +16,8 @@
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
 #include <stdio.h>
+#include <unistd.h>
+#include <sys/syscall.h>
 
 #include "xapi.h"
 #include "xapi/trace.h"
@@ -31,6 +33,8 @@
 
 #include "test_util.h"
 #include "macros.h"
+
+__thread int32_t tid;
 
 struct test {
   xapi (*entry)(struct test *);
@@ -522,6 +526,7 @@ int main()
 {
   enter;
 
+  tid = syscall(SYS_gettid);
   xapi R = 0;
   fatal(run_tests);
 

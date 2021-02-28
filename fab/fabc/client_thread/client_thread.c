@@ -35,6 +35,7 @@
 #include "logging.h"
 #include "params.h"
 #include "display.h"
+#include "threads.h"
 
 static bool redrive;
 
@@ -51,8 +52,6 @@ static xapi client_thread()
   sigset_t sigs;
   siginfo_t info;
   int channel_shmid;
-
-  g_params.thread_client = gettid();
 
   logs(L_ERROR, "CLIENT THREAD");
 
@@ -153,6 +152,7 @@ static void * client_thread_jump(void * arg)
   enter;
 
   xapi R;
+  tid = g_params.thread_client = gettid();
   fatal(client_thread);
 
 finally:
