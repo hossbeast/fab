@@ -51,6 +51,9 @@ yyu_vtable name = {                                      \
 
 /* indexes of particular tokens */
 struct yyu_tokens {
+  uint16_t YYEOF;
+  uint16_t YYERROR;
+  uint16_t YYUNDEF;
   uint16_t STR;            // sequence of printable characters
   uint16_t CREF;           // character-escape of one byte in the printable range of 7-bit ascii
   uint16_t HREF;           // hex escape of one byte
@@ -78,7 +81,8 @@ struct yyu_tokens {
  * tokens defined by the grammar
  */
 typedef struct yyu_token {
-  int16_t number;
+  int16_t token;
+  int16_t symbol;
   const char *name;
   const char *string;
   uint16_t string_len;
