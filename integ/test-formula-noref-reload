@@ -1,0 +1,97 @@
+#!/usr/bin/env perl
+
+use strict;
+use warnings;
+$SIG{__WARN__} = sub { die @_ };
+
+use POSIX;
+use File::Basename;
+use Cwd;
+our $repodir;
+BEGIN { $repodir = dirname(Cwd::realpath("$0/..")) }
+use lib "$repodir/integ/lib";
+use util;
+use tree;
+use bam;
+
+# module file - reference to not-found formula
+my $testdir = setup(<<'TREE');
+|-- module.bam <<
+rule -- boats : foo.bam
+rule boats -> //module/targets
+>>
+TREE
+
+# before
+assert_stats(undef, {
+    modules => 1
+  , system_state_ok => 0
+});
+assert_stats(".", {
+    reloaded => 1
+});
+assert_stats("./module.bam", {
+    parsed_try => 1
+  , parsed => 1
+});
+assert_stats("foo.bam", {
+    state => "uncreated"
+  , parsed_try => 0
+  , parsed => 0
+});
+
+# reconcile - still not ok
+reconcile();
+assert_stats(undef, {
+    modules => 1
+  , system_state_ok => 0
+});
+assert_stats(".", {
+    reloaded => 1
+});
+assert_stats("./module.bam", {
+    parsed_try => 1
+  , parsed => 1
+});
+
+# create the formula
+open my $fh, ">", "$testdir/foo.bam" or die $!;
+print $fh <<'TEXT';
+#!/usr/bin/env perl
+open FH, ">", $ENV{bm_target} or die $!;
+print FH "foo\n";
+close FH;
+TEXT
+close $fh;
+chmod 0777, "$testdir/foo.bam" or die $!;
+
+# the module has not been reloaded, but the targets which the formula is now attached to have been invalidated
+reconcile();
+assert_stats(undef, {
+    modules => 1
+  , system_state_ok => 1
+});
+assert_stats(".", {
+    reloaded => 1
+});
+assert_stats("./module.bam", {
+    parsed_try => 1
+  , parsed => 1
+});
+assert_stats("foo.bam", {
+    state => "fresh"
+  , parsed_try => 1
+  , parsed => 1
+});
+assert_stats("boats", { state => "uncreated" });
+
+# run the build - this creates the file
+bam_build();
+sleep(1);
+assert_stats("boats", {
+    state => "fresh"
+  , fsent_fresh => 1
+});
+
+# file was created by the foo formula
+assert_file("$testdir/boats", "foo");

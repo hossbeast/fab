@@ -1,0 +1,81 @@
+#!/usr/bin/env perl
+
+use strict;
+use warnings;
+
+use POSIX;
+use Data::Dumper;
+
+my $RED = "\x1b\x5b\x33\x31\x6d";
+my $GREEN = "\x1b\x5b\x33\x32\x6d";
+my $NONE = "\x1b\x5b\x30\x3b\x30\x6d";
+
+if(! -e "/run/fab-integ")
+{
+  print("sudo mkdir -p /run/fab-integ && sudo chmod ugoa+rwx /run/fab-integ\n");
+  die("forgot?");
+}
+
+my $passed = 0;
+my $failed = 0;
+my @tests;
+my %table;
+opendir(my $dh, ".") or die;
+while(readdir($dh))
+{
+  next unless length($_) > 5 && substr($_, 0, 5) eq "test-";
+
+  push @tests, { path => "./$_", args => [ "stat" ] }; 
+  push @tests, { path => "./$_", args => [ "notify" ] }; 
+}
+
+$SIG{CHLD} = sub {
+  local ($!, $?);
+  while((my $pid = waitpid(-1, WNOHANG)) > 0) {
+    my $test = $table{$pid};
+    my $exit = $? >> 8;
+    my $sig = $? & 127;
+
+    if($? == 0) {
+      printf("${GREEN}[%5s]${NONE} $$test{path} @{$$test{args}}\n", "PASS");
+      $passed++;
+    } else {
+      printf("${RED}[%5s]${NONE} $$test{path} @{$$test{args}}\n", "FAIL");
+      $failed++;
+    }
+  }
+};
+
+# launch all the tests
+for my $test (@tests)
+{
+  if(($$test{pid} = fork()) == 0)
+  {
+    my @cmd = ($$test{path}, @{$$test{args}});
+
+    my $name  = $$test{path} . join("", @{$$test{args}});
+    $name =~ s/[^a-zA-Z0-0]//g;
+
+    POSIX::close(0);
+    POSIX::open("/dev/null", O_RDONLY);
+
+    POSIX::close(1);
+    POSIX::open("/run/fab-integ/logs/$name.out", O_WRONLY | O_CREAT | O_TRUNC);
+
+    POSIX::close(2);
+    POSIX::open("/run/fab-integ/logs/$name.err", O_WRONLY | O_CREAT | O_TRUNC);
+
+    exec { $cmd[0] } @cmd;
+  }
+
+  $table{$$test{pid}} = $test;
+}
+
+while(($passed + $failed) <= $#tests)
+{
+  select(undef, undef, undef, .025);
+}
+
+printf("${GREEN}[%5s]${NONE} $passed\n", "PASS");
+printf("${RED}[%5s]${NONE} $failed\n", "FAIL") if $failed;
+exit($failed != 0);

@@ -1,0 +1,135 @@
+#!/usr/bin/env perl
+
+use strict;
+use warnings;
+$SIG{__WARN__} = sub { die @_ };
+
+use POSIX;
+use File::Basename;
+use Cwd;
+our $repodir;
+BEGIN { $repodir = dirname(Cwd::realpath("$0/..")) }
+use lib "$repodir/integ/lib";
+use util;
+use tree;
+use bam;
+
+my $testdir = setup(<<'TREE');
+|-- A
+|   `-- B
+|       `-- module.bam
+|-- module.bam
+TREE
+
+# before
+assert_stats(undef, {
+    modules => 2
+  , system_state_ok => 1
+});
+assert_stats("A/B", {
+    reloaded => 1
+  , state => "fresh"
+});
+assert_stats("A/B/module.bam", {
+    parsed_try => 1
+  , parsed => 1
+  , state => "fresh"
+});
+
+open my $fh, ">>", "$testdir/A/B/var.bam" or die $!;
+print $fh <<'TEXT';
+lflags.devel : foo
+TEXT
+close $fh;
+
+# after - appearance of var file has invalidated the module
+reconcile();
+assert_stats(undef, {
+    modules => 2
+  , system_state_ok => 2
+});
+assert_stats("A/B", {
+    reloaded => 2
+  , state => "fresh"
+});
+assert_stats("A/B/module.bam", {
+    parsed_try => 2
+  , parsed => 2
+  , state => "fresh"
+});
+assert_stats("A/B/var.bam", {
+    parsed_try => 1
+  , parsed => 1
+  , state => "fresh"
+});
+
+# create varfile in parent dir
+open $fh, ">>", "$testdir/A/var.bam" or die $!;
+print $fh <<'TEXT';
+lflags.devel : bar
+TEXT
+close $fh;
+
+# after - appearance of var file has invalidated the module
+reconcile();
+assert_stats(undef, {
+    modules => 2
+  , system_state_ok => 3
+});
+assert_stats("A/B", {
+    reloaded => 3
+  , state => "fresh"
+});
+assert_stats("A/B/module.bam", {
+    parsed_try => 3
+  , parsed => 3
+  , state => "fresh"
+});
+assert_stats("A/B/var.bam", {
+    parsed_try => 1
+  , parsed => 1
+  , state => "fresh"
+});
+assert_stats("A/var.bam", {
+    parsed_try => 1
+  , parsed => 1
+  , state => "fresh"
+});
+
+# create varfile in grand-parent dir
+open $fh, ">>", "$testdir/var.bam" or die $!;
+print $fh <<'TEXT';
+lflags.devel : baz
+TEXT
+close $fh;
+
+# after - appearance of var file has invalidated the module
+reconcile();
+assert_stats(undef, {
+    modules => 2
+  , system_state_ok => 4
+});
+assert_stats("A/B", {
+    reloaded => 4
+  , state => "fresh"
+});
+assert_stats("A/B/module.bam", {
+    parsed_try => 4
+  , parsed => 4
+  , state => "fresh"
+});
+assert_stats("A/B/var.bam", {
+    parsed_try => 1
+  , parsed => 1
+  , state => "fresh"
+});
+assert_stats("A/var.bam", {
+    parsed_try => 1
+  , parsed => 1
+  , state => "fresh"
+});
+assert_stats("var.bam", {
+    parsed_try => 1
+  , parsed => 1
+  , state => "fresh"
+});

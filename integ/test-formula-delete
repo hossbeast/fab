@@ -1,0 +1,93 @@
+#!/usr/bin/env perl
+
+use strict;
+use warnings;
+$SIG{__WARN__} = sub { die @_ };
+
+use POSIX;
+use File::Basename;
+use Cwd;
+our $repodir;
+BEGIN { $repodir = dirname(Cwd::realpath("$0/..")) }
+use lib "$repodir/integ/lib";
+use util;
+use tree;
+use bam;
+
+# build out the fstree under /tmp
+my $testdir = setup(<<'TREE');
+|-- module.bam <<
+rule -- boats : foo.bam
+rule boats -> //module/targets
+>>
+|-- foo.bam << 0777
+#!/usr/bin/env perl
+open FH, ">>", $ENV{bm_target} or die $!;
+print FH "hi\n";
+close FH;
+>>
+TREE
+
+# before
+assert_stats(undef, {
+    modules => 1
+  , system_state_ok => 1
+});
+assert_stats(".", {
+    reloaded => 1
+  , state => "fresh"
+});
+assert_stats("module.bam", {
+    parsed_try => 1
+  , parsed => 1
+  , state => "fresh"
+});
+assert_stats("foo.bam", {
+    state => "fresh"
+  , parsed => 1
+  , parsed_try => 1
+});
+assert_stats("boats", {
+    state => "uncreated"
+});
+
+# build - creates the file
+bam_build();
+assert_stats(undef, {
+    modules => 1
+  , system_state_ok => 2
+});
+assert_stats("foo.bam", {
+    state => "fresh"
+  , parsed => 1
+  , parsed_try => 1
+});
+assert_stats("boats", {
+    state => "fresh"
+});
+
+# delete the formula file
+unlink("$testdir/foo.bam") or die $!;
+reconcile();
+
+# foo.bam node will have been re-created by running the rule
+# boats node will have been invalidated by disconnecting the formula
+assert_stats(undef, {
+    modules => 1
+  , system_state_ok => 2
+});
+assert_stats(".", {
+    reloaded => 2
+  , state => "fresh"
+});
+assert_stats("module.bam", {
+    parsed_try => 2
+  , parsed => 2
+  , state => "fresh"
+});
+assert_stats("foo.bam", {
+    state => "uncreated"
+});
+assert_stats("boats", {
+    state => "stale"
+});
