@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+
+mkdir -p /var/run/fab/perf
+ln -vfs $$ /var/run/fab/perf/latest
+exec 2>/var/run/fab/perf/$$
+set -x
+perf stat -e cpu-clock -o /var/run/fab/perf/$$ --append $@

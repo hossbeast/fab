@@ -27,28 +27,20 @@ cflags.xapi  : {
   -DXAPI -DXAPI_MODE_STACKTRACE
 }
 cflags.debug : {
-  -O0 -ggdb3 -DDEBUG "-fsanitize=address,undefined"
+  -O0 -ggdb3 -DDEBUG
 }
 cflags.devel : {
-  -O0 -ggdb3 -DDEVEL "-fsanitize=address,undefined" -Wno-frame-address -DFAULT_INJECTION -fno-omit-frame-pointer
+  -O0 -ggdb3 -DDEVEL -Wno-frame-address -DFAULT_INJECTION "-fsanitize=address,undefined"
+}
+cflags.trace : {
+  -O3 -ggdb3 -DDEVEL -DTRACE -Wno-frame-address -fno-omit-frame-pointer -Wno-array-bounds
 }
 cflags.final : {
-  -O3
-  # -Warray-bounds is NOT COMPATIBLE with containerof
-  -Wno-array-bounds
-}
-cflags.xunit : {
-  -O0 -ggdb3 -DXUNIT -Wno-frame-address -DFAULT_INJECTION
+  -O3 -Wno-array-bounds # -Warray-bounds is NOT COMPATIBLE with containerof
 }
 cflags.pic : {
   -fPIC
 }
-lflags : [
-
-]
-lflags.debug : [
-  -lasan -lubsan
-]
 lflags.devel : [
   -lasan -lubsan
 ]
