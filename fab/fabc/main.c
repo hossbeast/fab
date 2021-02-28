@@ -17,6 +17,7 @@
 
 #include <curses.h>
 #include <stdlib.h>
+#include <sys/syscall.h>
 
 #include "xapi.h"
 #include "xapi/calltree.h"
@@ -50,6 +51,8 @@
 #include "macros.h"
 #include "explorer.h"
 #include "display.h"
+
+__thread int32_t tid;
 
 static xapi xmain_exit;
 static xapi xmain()
@@ -210,6 +213,8 @@ coda;
 int main(int argc, char ** argv, char ** envp)
 {
   enter;
+
+  tid = g_params.thread_main = gettid();
 
   xapi R = 0;
   fatal(xmain_load, envp);
