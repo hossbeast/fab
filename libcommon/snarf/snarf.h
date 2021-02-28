@@ -19,7 +19,6 @@
 #define SNARF_H
 
 #include <stdarg.h>
-#include <sys/types.h>
 
 #include "types.h"
 #include "xapi.h"

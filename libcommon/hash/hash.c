@@ -73,9 +73,10 @@ uint32_t API strhash32(uint32_t h, const char * restrict s)
 
 uint32_t API hash32(uint32_t h, const void * const restrict v, size_t l)
 {
-  const char * s = v;
-
+  const char *s;
   size_t x;
+
+  s = v;
   for(x = 0; x < l; x++)
     h = mix32(h, s[x]);
 
@@ -95,11 +96,13 @@ uint64_t API strhash64(uint64_t h, const char * restrict s)
 
 uint64_t API hash64(uint64_t h, const void * const restrict v, size_t l)
 {
-  const char * s = v;
-
+  const char *s;
   size_t x;
-  for(x = 0; x < l; x++)
+
+  s = v;
+  for(x = 0; x < l; x++) {
     h = mix64(h, s[x]);
+  }
 
   return final64(h);
 }

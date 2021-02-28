@@ -18,9 +18,8 @@
 #ifndef _GROW_H
 #define _GROW_H
 
-#include <sys/types.h>
-
 #include "xapi.h"
+#include "types.h"
 
 /// grow
 //
@@ -34,12 +33,5 @@
 //  ac     - pointer to allocated size in elements
 //
 xapi grow(void * target, size_t es, size_t len, size_t ec, size_t * const restrict ac);
-
-/// grow2
-//
-// SUMMARY
-//  grow with the ability to specify the seed
-//
-xapi growx(void * target, size_t es, size_t len, size_t ec, size_t * const restrict ac, size_t seed);
 
 #endif
