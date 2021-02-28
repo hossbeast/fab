@@ -176,7 +176,7 @@ static inline size_t roundup2(size_t x)
 #include <stdio.h>
 #define RUNTIME_ASSERT(x) do {                          \
   if (!(x)) {                                           \
-    fprintf(stderr, "%s:%d failed runtime assert: " #x "\n", __FILE__, __LINE__); \
+    fprintf(stderr, "%s:%d failed runtime assert: %s\n", __FILE__, __LINE__, #x); \
     RUNTIME_ABORT();                                    \
   }                                                     \
 } while(0)
@@ -187,7 +187,7 @@ static inline size_t roundup2(size_t x)
 #if DEBUG || DEVEL || XUNIT
 #define RUNTIME_ABORT() do {  \
   fprintf(stderr, "%s:%d aborting\n", __FILE__, __LINE__); \
-  memcpy((void*)0x42, (void*)0x43, 43);       \
+  abort();  \
 } while(0)
 #else
 #define RUNTIME_ABORT()
