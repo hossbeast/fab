@@ -135,13 +135,13 @@ Types of inclusion
 
 ## use
 
-Allows a module to import rules and formulas from a language/template
+Apply rules and formulas from a model to the current module.
 
 (Those rules are applied to *this* module)
 
-ex. use C           // apply rules for building c sources to this module
+ex. use C           // apply rules/formulas for building c sources to this module
 
-## require
+## import
 
 Declare a module-level dependency between the current module and another module. The other module
 may be a child module, or a directory that is found by index/extern lookup
@@ -150,8 +150,12 @@ may be a child module, or a directory that is found by index/extern lookup
 2. Add its top-level path to my $FAB_REQUIRES list for cflags inclusion
 3. Place the resolved reference at the top of the lookup scope in the current module
 
-ex. require common      //
-ex. require libxlinux
+ex. import common      //
+ex. import libxlinux
+
+## require
+
+Demand only that another module be loaded. It does not affect the scope of the current module.
 
 # example
 

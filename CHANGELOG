@@ -1,3 +1,23 @@
+v0.7.0 - March 2021
+
+* formula features
+ * new rule types zero x many
+ * path-search
+* fab client features
+ * bidirectional shared memory channel
+ * event subscription
+ * many new commands
+ * configuration file
+* new builtin modules
+ * vcs/git-state
+* bootstrap/reconcile system for applying changes live
+ * module files
+ * formula files
+ * var files
+ * config files
+* fabw has been removed
+* integration test suite added
+
 v0.6.0 - May 2020
 
 The v0.6 release represents a rewrite of most of the functionality of the

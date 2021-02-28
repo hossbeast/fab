@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+
+perf record -F max -e cpu-clock -g $@
+perf script | ~/FlameGraph/stackcollapse-perf.pl > out.perf-folded
+~/FlameGraph/flamegraph.pl out.perf-folded > /tmp/perf.svg
