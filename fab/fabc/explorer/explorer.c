@@ -247,7 +247,7 @@ static xapi redrive(fab_client * restrict client)
 
   // upwards dependencies
   up_labels_len = 0;
-  msg = fab_client_produce(client, 0);
+  msg = fab_client_produce(client);
   strong_up_id = msg->id = ++msgid;
   request_narrator = narrator_fixed_init(&nstor, msg->text, 0xfff);
   fatal(value_writer_open, &writer, request_narrator);
@@ -257,11 +257,11 @@ static xapi redrive(fab_client * restrict client)
   message_len = nstor.l;
   msg->size = message_len;
   msg->type = FABIPC_MSG_REQUEST;
-  fab_client_post(client);
+  fab_client_post(client, msg);
 
   // downwards dependencies
   down_labels_len = 0;
-  msg = fab_client_produce(client, 0);
+  msg = fab_client_produce(client);
   strong_down_id = msg->id = ++msgid;
   request_narrator = narrator_fixed_init(&nstor, msg->text, 0xfff);
   fatal(value_writer_open, &writer, request_narrator);
@@ -271,11 +271,11 @@ static xapi redrive(fab_client * restrict client)
   message_len = nstor.l;
   msg->size = message_len;
   msg->type = FABIPC_MSG_REQUEST;
-  fab_client_post(client);
+  fab_client_post(client, msg);
 
   // node details
   describe_text[0] = 0;
-  msg = fab_client_produce(client, 0);
+  msg = fab_client_produce(client);
   describe_id = msg->id = ++msgid;
   request_narrator = narrator_fixed_init(&nstor, msg->text, 0xfff);
   fatal(value_writer_open, &writer, request_narrator);
@@ -285,7 +285,7 @@ static xapi redrive(fab_client * restrict client)
   message_len = nstor.l;
   msg->size = message_len;
   msg->type = FABIPC_MSG_REQUEST;
-  fab_client_post(client);
+  fab_client_post(client, msg);
 
 printf("redrive : up %u down %u describe %u\n", strong_up_id, strong_down_id, describe_id);
 

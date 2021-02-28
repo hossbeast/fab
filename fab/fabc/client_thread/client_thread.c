@@ -85,7 +85,6 @@ static xapi client_thread()
   }
 
   channel_shmid = info.si_value.sival_int;
-printf("attach %d\n", channel_shmid);
   fatal(fab_client_attach, client, channel_shmid);
 
   interval.tv_nsec = 125000000;   // 125 millis
@@ -102,7 +101,6 @@ printf("attach %d\n", channel_shmid);
 
     if(!(msg = fab_client_acquire(client))) {
       if(client->shm->server_exit) {
-printf("BREAK ; server_exit\n");
         break;
       }
 
@@ -115,7 +113,6 @@ printf("BREAK ; server_exit\n");
 
       if(((iter++) % 5) == 0) {
         if(pulse == client->shm->server_pulse) {
-printf("BREAK ; server_pulse\n");
           break;
         }
         pulse = client->shm->server_pulse;
@@ -124,18 +121,14 @@ printf("BREAK ; server_pulse\n");
       continue;
     }
 
-    if(msg->type == FABIPC_MSG_STDOUT) {
-      printf("server/stdout: %.*s\n", msg->size, msg->text);
-    } else if(msg->type == FABIPC_MSG_STDERR) {
-      printf("server/stderr: %.*s\n", msg->size, msg->text);
-    } else if(msg->type == FABIPC_MSG_RESULT) {
+    if(msg->type == FABIPC_MSG_RESULT) {
       // consume the message
       g_display->rebind(msg);
       // re-draw
       fatal(xtgkill, g_params.pid, g_params.thread_ui, SIGUSR1);
     }
 
-    fab_client_consume(client);
+    fab_client_consume(client, msg);
   }
 
 finally:
@@ -211,15 +204,3 @@ xapi client_thread_redrive(void)
 
   finally : coda;
 }
-  //sigdelset(&sigs, SIGINT);
-  //sigdelset(&sigs, SIGTERM);
-  //sigdelset(&sigs, SIGQUIT);
-#if 0
-  if(err == EAGAIN) {        // timeout expired
-    fail(FAB_NODAEMON);
-  } else if(err == EINTR) {  // signal other than RTMIN was received
-    goto XAPI_FINALLY;
-  } else if(err) {
-    fail(KERNEL_EINVAL);
-  }
-#endif

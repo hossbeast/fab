@@ -87,8 +87,6 @@ static xapi xmain()
   sigfillset(&sigs);
   fatal(xsigprocmask, SIG_SETMASK, &sigs, 0);
 
-  g_params.thread_main = gettid();
-
   fatal(client_thread_launch);
   fatal(ui_thread_launch);
 
