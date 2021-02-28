@@ -32,7 +32,7 @@ my $soname = substr($name, 0, $dot) . ".so";
 my $lnk = $ENV{bm_target} . ".lnk";
 
 # devel soname
-if($ENV{bm_variant} eq "devel.pic.xapi")
+if($ENV{bm_variant} eq "devel.pic.xapi" || ${ENV}{bm_variant} eq "pic.trace.xapi")
 {
   $soname = $name;
 }
@@ -51,6 +51,9 @@ my @cmd = (
   , grep { substr($_, -2) eq ".o" } split(/ /, $ENV{objects})
 );
 
+use Data::Dumper;
+print Dumper \@cmd;
+
 exec { $cmd[0] } @cmd
 
 __DATA__
@@ -66,7 +69,7 @@ envs : {
       target
       traverse : {
         direction : down
-        relation : strong
+        graph : depends
         max-distance : 1
         min-distance : 1
       }
@@ -81,7 +84,7 @@ envs : {
         # imported directories
         traverse : {
           direction : down
-          relation : imports
+          graph : imports
         }
       ]
     ]

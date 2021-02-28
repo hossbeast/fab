@@ -17,4 +17,4 @@
 
 # errtab.[ch] from errtab sources
 #  each invocation yields all files on the right-hand-side
-rule **/(*).errtab -> [*] $^D/$1.errtab.[ch] : ./bam-errtab
+rule **/(*).errtab -> [*] $^D/$1.errtab.[ch] : ./errtab.bam

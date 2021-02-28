@@ -33,8 +33,9 @@ args : [
       traverse : {
         direction : down
         min-distance : 0
-        relation : fs
-        file-type : dir
+        graph : dirtree
+#        file-type : dir
+#        module-only : true
       }
     ]
     property : relpath
@@ -47,7 +48,7 @@ args : [
       # imported directories
       traverse : {
         direction : down
-        relation : imports
+        graph : imports
       }
     ]
     property : relpath

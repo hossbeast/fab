@@ -16,6 +16,7 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with fab.  If not, see <http://www.gnu.org/licenses/>. */
+#
 
 use strict;
 use warnings;
@@ -23,28 +24,24 @@ $SIG{__WARN__} = sub { die @_ };
 
 use File::Basename;
 
-die "ar not found" unless $ENV{ar};
-
-my @arflags;
-push @arflags, split(/ /, $ENV{arflags}) if $ENV{arflags};
+die "cc not found" unless $ENV{cc};
 
 my @cmd = (
-    $ENV{ar}
-  , @arflags
-  , "rcs"
-  , $ENV{bm_target}
+    $ENV{cc}
+  , split(/ /, $ENV{cflags})
+  , "-shared"
+  , "-o", $ENV{bm_target}
   # object files in this module
-  , grep { substr($_, -2) eq ".o" } split(/ /, $ENV{objects})
+  , split(/ /, $ENV{objects})
 );
 
-# exec into the compiler
 exec { $cmd[0] } @cmd
 
 __DATA__
 
 envs : {
-  ar : {
-    path-search : ar
+  cc : {
+    path-search : cc
   }
 
   # object files for the library
@@ -53,26 +50,11 @@ envs : {
       target
       traverse : {
         direction : down
-        relation : strong
+        graph : depends
         max-distance : 1
-        min-distance : 0
+        min-distance : 1
       }
     ]
-    property : relpath
-  ]
-
-  includes : [
-    select : [
-      module
-      union : [
-        # imported directories
-        traverse : {
-          direction : down
-          relation : imports
-        }
-      ]
-    ]
-
     property : relpath
   ]
 }

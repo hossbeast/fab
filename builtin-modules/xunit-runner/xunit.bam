@@ -49,9 +49,8 @@ envs : {
       target
       traverse : {
         direction : down
-        relation : strong
+        graph : depends
         extension : so
-        module-only : false
       }
     ]
     property : relpath

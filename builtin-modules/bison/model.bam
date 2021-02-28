@@ -16,7 +16,7 @@
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
 # tab.c files from parser y files
-rule **/(*).y -> [*] $^D/$1.tab.{c,h} : ./bam-bison
+rule **/(*).y -> [*] $^D/$1.tab.[ch] : ./bison.bam
 
-# tokens.c / tokens.h files from .tab.c files
-rule **/(*).tab.c -> [*] $^D/$1.tokens.{c,h} : ./bam-tokens
+# tokens.c / tokens.h files from tab.c / tab.h files
+rule **/(*).tab.[ch] [*] -> [*] $^D/$1.tokens.[ch] : ./tokens.bam

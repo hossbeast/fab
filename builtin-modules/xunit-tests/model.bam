@@ -20,6 +20,6 @@ require xunit-runner
 
 # build test sos
 variant xapi.pic.devel : [
-  rule **/test/(test_*.?).o -> $^D/$1.so : ./bam-cc-test-so
+  rule **/test/(test_*.?).o -> $^D/$1.so : ./cc-test-so.bam
   rule **/test/test_*.?.so -> //xunit
 ]
