@@ -133,6 +133,15 @@ xapi value_unload(void);
 size_t value_znload(void * restrict dst, size_t sz, const value * const restrict val)
   __attribute__((nonnull));
 
+/*
+ *
+ */
+size_t value_string_znloadw(void * restrict dst, size_t sz, const void * restrict b, size_t bz)
+  __attribute__((nonnull));
+
+#define value_string_znloads(dst, sz, s) value_string_znloadw(dst, sz, s, strlen(s))
+#define value_string_znloadc(dst, sz, c) value_string_znloadw(dst, sz, (char[]) { c }, 1)
+
 /// value_say
 //
 // SUMMARY

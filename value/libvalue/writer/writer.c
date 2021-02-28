@@ -64,22 +64,6 @@ static bool should_quote(const char * const restrict s, size_t len)
   return x < len;
 }
 
-static size_t escape(void * restrict dst, size_t sz, const char * const restrict src, size_t len)
-{
-  size_t z  = 0;
-
-  int x;
-  for(x = 0; x < len; x++)
-  {
-    if(src[x] >= 0x20 && src[x] <= 0x7e)
-      z += znloadc(dst + z, sz - z, src[x]);
-    else
-      z += znloadf(dst + z, sz - z, "\\x%02hhx", src[x]);
-  }
-
-  return z;
-}
-
 static xapi indent(value_writer * const restrict writer)
 {
   enter;
@@ -113,13 +97,14 @@ static xapi write_bytes(value_writer * const restrict writer, const char * const
 
   int x;
   char buf[512];
+  size_t z;
 
   if(should_quote(s, len))
   {
     fatal(narrator_xsayc, writer->N, '"');
     for(x = 0; x < len; x += sizeof(buf))
     {
-      size_t z = escape(buf, sizeof(buf), &s[x], MIN(sizeof(buf), len - x));
+      z = value_string_znloadw(buf, sizeof(buf), &s[x], MIN(sizeof(buf), len - x));
       fatal(narrator_xsayw, writer->N, buf, z);
     }
     fatal(narrator_xsayc, writer->N, '"');
@@ -266,6 +251,24 @@ xapi API value_writer_close(value_writer * restrict writer)
 //
 // primitives
 //
+
+size_t API value_string_znloadw(void * restrict dst, size_t sz, const void * restrict b, size_t bz)
+{
+  size_t z  = 0;
+  const char *src;
+
+  src = b;
+  int x;
+  for(x = 0; x < bz; x++)
+  {
+    if(src[x] >= 0x20 && src[x] <= 0x7e)
+      z += znloadc(dst + z, sz - z, src[x]);
+    else
+      z += znloadf(dst + z, sz - z, "\\x%02hhx", src[x]);
+  }
+
+  return z;
+}
 
 xapi API value_writer_value(value_writer * const restrict writer, const value * restrict val)
 {
