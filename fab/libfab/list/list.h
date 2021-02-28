@@ -15,9 +15,31 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef _FAB_IPC_INTERNAL_H
-#define _FAB_IPC_INTERNAL_H
+#ifndef _FAB_BUILD_H
+#define _FAB_BUILD_H
 
-#include "ipc.h"
+#include <sys/types.h>
+#include <stdint.h>
+
+#include "descriptor.h"
+#include "fsent.h"
+
+extern descriptor_type descriptor_fab_list_item;
+
+typedef struct fab_list_item {
+  enum fab_fsent_type type;
+  enum fab_fsent_state state;
+
+  const char *label;
+  uint16_t label_len;
+
+  const char *abspath;
+  uint16_t abspath_len;
+
+  const char *ref;
+  uint16_t ref_len;
+
+  uint16_t distance;
+} fab_list_item;
 
 #endif

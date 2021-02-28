@@ -24,7 +24,13 @@
 #include "macros.h"
 
 #if DEVEL
+/* null-terminated strings */
 extern const char *g_fab_client_fabd_path;
+extern const char *g_fab_client_system_config_path;
+extern const char *g_fab_client_user_config_path;
+extern const char *g_fab_client_project_config_path;
+extern const char *g_fab_client_default_filesystem_invalidate;
+extern const char *g_fab_client_sweeper_period_nsec;
 #endif
 
 struct fabipc_channel;
@@ -37,7 +43,6 @@ typedef struct fab_client {
   char      hash[16 + 1];
   pid_t     fabd_pid;   // fabd process group id
   int32_t   futex;
-  uint32_t  tail_next;
 
   struct fabipc_channel *shm;
 } fab_client;
@@ -89,16 +94,16 @@ void fab_client_disconnect(fab_client * restrict client)
   __attribute__((nonnull));
 
 
-struct fabipc_message * fab_client_produce(fab_client * restrict client, size_t size)
+struct fabipc_message * fab_client_produce(fab_client * restrict client)
   __attribute__((nonnull));
 
-void fab_client_post(fab_client * restrict client)
+void fab_client_post(fab_client * restrict client, struct fabipc_message * restrict msg)
   __attribute__((nonnull));
 
 struct fabipc_message * fab_client_acquire(fab_client * restrict client)
   __attribute__((nonnull));
 
-void fab_client_consume(fab_client * restrict client)
+void fab_client_consume(fab_client * restrict client, struct fabipc_message * restrict msg)
   __attribute__((nonnull));
 
 #endif

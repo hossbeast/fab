@@ -15,17 +15,7 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#include <stdarg.h>
-
-#include "xapi.h"
-#include "xlinux/KERNEL.errtab.h"
-#include "xlinux/xfcntl.h"
-#include "xlinux/xunistd.h"
-#include "xlinux/xsignal.h"
-
-#include "ipc.internal.h"
-
-#include "common/fmt.h"
+#include "ipc.h"
 #include "common/attrs.h"
 
 attrs32 * APIDATA fabipc_msg_type_attrs = (attrs32[]) {{
@@ -41,131 +31,116 @@ FABIPC_MSG_TYPE_TABLE
   }
 }};
 
-attrs32 * APIDATA fabipc_event_type_attrs = (attrs32[]) {{
-#undef DEF
-#define DEF(x, s, r, y) + 1
-    num : 0
-      FABIPC_EVENT_TYPE_TABLE
-  , members : (member32[]) {
-#undef DEF
-#define DEF(x, s, r, y) { name : s, value : UINT32_C(y), range : UINT32_C(r) },
-FABIPC_EVENT_TYPE_TABLE
-#undef DEF
-  }
-}};
-
 static void __attribute__((constructor)) init()
 {
   attrs32_init(fabipc_msg_type_attrs);
-  attrs32_init(fabipc_event_type_attrs);
-}
-
-//
-// static
-//
-
-static xapi lockfile_obtain(pid_t * pid, int * restrict fd, const char * restrict path)
-{
-  enter;
-
-  ssize_t bytes;
-
-  // initialize the return value
-  *pid = -1;
-
-  // create the pidfile
-  fatal(uxopen_modes, fd, O_CREAT | O_WRONLY | O_EXCL, FABIPC_MODE_DATA, path);
-  if(*fd == -1)
-  {
-    fatal(xopens, fd, O_RDONLY, path);
-    fatal(xread, *fd, pid, sizeof(*pid), &bytes);
-    if(bytes != sizeof(*pid))
-      *pid = -1;
-  }
-  else
-  {
-    fatal(axwrite, *fd, (pid_t[]) { getpid() }, sizeof(pid_t));
-    *pid = 0;
-  }
-
-  finally : coda;
 }
 
 //
 // api
 //
 
-xapi API fabipc_lockfile_obtain(pid_t * pid, int * restrict fd, char * const restrict fmt, ...)
+fabipc_message * API fabipc_produce(
+    fabipc_page * restrict pages
+  , uint32_t * restrict ring_head
+  , uint32_t * restrict ring_tail
+  , uint32_t mask
+)
 {
-  enter;
+  uint32_t tail;
+  uint32_t index;
+  struct fabipc_page *page;
 
-  char path[512];
-  int x;
-  va_list va;
-  int r;
+  tail = __atomic_fetch_add(ring_tail, 1, __ATOMIC_SEQ_CST);
 
-  va_start(va, fmt);
-  fatal(fmt_apply, path, sizeof(path), fmt, va);
+  // overflow check
+  RUNTIME_ASSERT((tail + 1) != *ring_head);
 
-  for(x = 1; 1; x++)
+  index = tail & mask;
+  page = &pages[index];
+
+  return &page->msg;
+}
+
+void API fabipc_post(
+    fabipc_message * restrict msg
+  , int32_t * restrict waiters
+)
+{
+  int32_t one = 1;
+  int32_t zero = 0;
+  fabipc_page *page;
+
+  page = containerof(msg, fabipc_page, msg);
+  page->state = 1;
+  smp_wmb();
+
+  if(atomic_cas_i32(waiters, &one, &zero)) {
+    smp_wmb();
+    syscall(SYS_futex, FUTEX_WAKE, 1, 0, 0, 0);
+  }
+}
+
+fabipc_message * API fabipc_acquire(
+    fabipc_page * restrict pages
+  , uint32_t * restrict ring_head
+  , uint32_t * restrict ring_tail
+  , uint32_t mask
+)
+{
+  uint32_t head;
+  uint32_t tail;
+  uint32_t index;
+  fabipc_page *page;
+
+  head = *ring_head;
+  tail = *ring_tail;
+  smp_rmb();
+
+  while(head != tail)
   {
-    fatal(xclose, *fd);
-    fatal(lockfile_obtain, pid, fd, path);
+    index = head & mask;
+    page = &pages[index];
 
-    if(*pid == 0)
-      break;    // lock obtained
-
-    if(*pid == -1)
-    {
-      // unable to determine lock holder from the pid file ; this can happen as a
-      // result of a race reading/writing the pid file, or if the pid file is corrupted
-
-      if((x % 3) == 0) {
-        fatal(xunlinks, path);
-      }
-
-      continue;
+    if(page->state == 1) {
+      page->head = head;
+      return &page->msg;
     }
 
-    r = 0;
-    fatal(uxkill, &r, *pid, 0);
-    if(r == 0) {
-      break;    // lock holder still running
-    }
-
-    // lock holder is not running ; forcibly release the lock
-    fatal(xunlinks, path);
+    head++;
   }
 
-finally:
-  va_end(va);
-coda;
+  return 0;
 }
 
-xapi API fabipc_lockfile_update(char * const restrict fmt, ...)
+void API fabipc_consume(
+    fabipc_page * restrict pages
+  , uint32_t * restrict ring_head
+  , fabipc_message * restrict msg
+  , uint32_t mask
+)
 {
-  enter;
+  fabipc_page *page;
+  uint32_t head;
+  uint32_t x;
+  uint32_t index;
 
-  int fd = -1;
-  va_list va;
-  va_start(va, fmt);
+  /* fast path with exactly one message oustanding */
+  page = containerof(msg, fabipc_page, msg);
+  head = page->head;
+  if(__atomic_compare_exchange_n(ring_head, &head, page->head + 1, false, __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST)) {
+    return;
+  }
 
-  // write our pid to the lockfile
-  fatal(xopenvf, &fd, O_WRONLY, fmt, va);
-  fatal(axwrite, fd, (pid_t[]) { getpid() }, sizeof(pid_t));
+  page->state = 2;
+  for(x = *ring_head; x != (page->head + 1); x++)
+  {
+    index = x & mask;
+    page = &pages[index];
+    if(page->state != 2) {
+      return;
+    }
+  }
 
-finally:
-  fatal(ixclose, &fd);
-coda;
-}
-
-xapi API fabipc_lockfile_release(char * const restrict fmt, ...)
-{
-  enter;
-
-  va_list va;
-  va_start(va, fmt);
-  fatal(xunlinkvf, fmt, va);
-
-  finally : coda;
+  __atomic_store_n(ring_head, page->head, __ATOMIC_SEQ_CST);
 }

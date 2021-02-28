@@ -15,36 +15,37 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef _FAB_BUILD_H
-#define _FAB_BUILD_H
+#include "fsent.h"
+#include "common/attrs.h"
 
-#include <sys/types.h>
-#include <stdint.h>
-
-#include "descriptor.h"
-
-struct attrs16;
-extern descriptor_type descriptor_fab_build;
-
-#define FAB_BUILD_STATE_TABLE                 \
-  DEF(FAB_BUILD_IN_PROGRESS , "in-progress")  \
-  DEF(FAB_BUILD_SUCCEEDED   , "succeeded")    \
-  DEF(FAB_BUILD_FAILED      , "failed")       \
-  DEF(FAB_BUILD_NONE        , "none")         \
-
-typedef enum fab_build_state {
-  FAB_BUILD_STATE_RANGE_BEFORE,
+attrs16 * APIDATA fab_fsent_type_attrs = (attrs16[]) {{
 #undef DEF
-#define DEF(x, s) x,
-FAB_BUILD_STATE_TABLE
-} fab_build_state;
+#define DEF(x, s, v) + 1
+    num : 0
+      FAB_FSENT_TYPE_TABLE
+  , members : (member16[]) {
+#undef DEF
+#define DEF(x, s, v) { name : s, value : x, range : 0xff },
+FAB_FSENT_TYPE_TABLE
+#undef DEF
+  }
+}};
 
-extern struct attrs16 * fab_build_state_attrs;
+attrs16 * APIDATA fab_fsent_state_attrs = (attrs16[]) {{
+#undef DEF
+#define DEF(x, s, v) + 1
+    num : 0
+      FAB_FSENT_STATE_TABLE
+  , members : (member16[]) {
+#undef DEF
+#define DEF(x, s, v) { name : s, value : x, range : 0xff },
+FAB_FSENT_STATE_TABLE
+#undef DEF
+  }
+}};
 
-typedef struct fab_build {
-  enum fab_build_state state;
-  uint16_t numranks;
-  uint16_t numexecs;
-} fab_build;
-
-#endif
+static void __attribute__((constructor)) init()
+{
+  attrs16_init(fab_fsent_type_attrs);
+  attrs16_init(fab_fsent_state_attrs);
+}

@@ -18,6 +18,7 @@
 use cc              # this module contains c sources
 use library/shared  # this module builds a library
 use xapi/errtab     # this module contains errtabs
+use descriptor
 
 # make common objects available for #inclusion and linking by files in this module
 import fab/include
@@ -39,6 +40,9 @@ rule */*.?.o <- errtab/FAB.errtab.h
 # library dependencies
 rule //module/imports/*/lib*.?.so -> libfab.$?.so
 
-# descriptors
+# descriptor .c and .h files are generated
 rule build_slot/build_slot.h -> $^D/build_slot.desc.c : bam-descriptor
 rule build/build.h -> $^D/build.desc.c : bam-descriptor
+rule metadata/metadata.h -> $^D/metadata.desc.c : bam-descriptor
+rule stats/stats.h -> $^D/stats.desc.c : bam-descriptor
+rule list/list.h -> $^D/list.desc.c : bam-descriptor
