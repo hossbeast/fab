@@ -19,7 +19,6 @@
 #define _VALUE_CLONE_H
 
 #include "xapi.h"
-#include "types.h"
 
 struct value;
 struct value_parser;

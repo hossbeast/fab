@@ -17,23 +17,17 @@
 
 #include <inttypes.h>
 
-#include "xapi.h"
-#include "types.h"
-
-#include "valyria/list.h"
-#include "valyria/set.h"
-#include "valyria/pstring.h"
 #include "narrator.h"
+#include "valyria/list.h"
+#include "valyria/pstring.h"
 #include "valyria/set.h"
 #include "xapi/SYS.errtab.h"
 #include "xlinux/xstdlib.h"
 
 #include "value.h"
-#include "value.h"
 #include "writer.internal.h"
 
 #include "zbuffer.h"
-#include "common/hash.h"
 
 static set * keywords;
 
@@ -46,10 +40,11 @@ static set * keywords;
 // non-printable
 static bool should_quote(const char * const restrict s, size_t len)
 {
+  int x;
+
   if(set_contains(keywords, s, len))
     return true;
 
-  int x;
   for(x = 0; x < len; x++)
   {
     if((s[x] >= 'a' && s[x] <= 'z') || (s[x] >= 'A' && s[x] <= 'Z') || (s[x] >= '0' && s[x] <= '9') || s[x] == '_' || s[x] == '/' || s[x] == '.')

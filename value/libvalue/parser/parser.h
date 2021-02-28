@@ -21,8 +21,9 @@
 #include "types.h"
 #include "xapi.h"
 
+#include "value.h"
+
 struct value;       // value.h
-enum value_type;
 struct yyu_location;
 
 struct value_parser;
@@ -53,10 +54,7 @@ xapi value_parser_ixfree(value_parser ** const restrict)
 
 /// value_parser_recycle
 //
-// SUMMARY
-//  
-//
-xapi value_parser_recycle(value_parser ** const restrict)
+xapi value_parser_recycle(value_parser * const restrict)
   __attribute__((nonnull));
 
 /// value_parse

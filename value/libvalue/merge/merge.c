@@ -15,25 +15,16 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#include <stdio.h>
-
-#include "xapi.h"
 #include "valyria/list.h"
 #include "valyria/set.h"
-#include "valyria/pstring.h"
-#include "logger.h"
-#include "narrator.h"
 
 #include "value.h"
 #include "merge.internal.h"
-#include "VALUE.errtab.h"
-#include "parser.h"
-#include "make.h"
 #include "clone.h"
-#include "value.h"
+#include "make.h"
+#include "parser.h"
 
-#include "zbuffer.h"
-#include "common/attrs.h"
+#include "macros.h"
 
 xapi API value_merge(value_parser * restrict parser, value ** restrict dstp, const value * restrict src, uint16_t attrs)
 {

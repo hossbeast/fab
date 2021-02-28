@@ -19,6 +19,7 @@ use cc               # this module contains c sources
 use flex
 use bison
 use library/shared  # this module builds a library
+use library/static
 use xapi/errtab     # this module contains errtabs
 use xunit-tests     # this module contains xunit tests
 
@@ -32,16 +33,17 @@ import lib{xapi,xlinux,narrator,valyria,yyutil,xunit,logger}
 variant xapi.pic.{debug,devel,final,trace}
 
 # pull in object files in the module, except those under integ
-rule **~test/*.?.o -> libvalue.$?.so
+rule **~test/*.?.o -> libvalue.$?.{so,a}
 
 # default build targets
-rule libvalue.?.so -> //module/targets
+rule libvalue.?.{so,a} -> //module/targets
 
 # intra module dependencies - generated files
 rule */*.?.o <- errtab/VALUE.errtab.h
 
 # library dependencies
 rule //module/imports/*~libxunit/lib*.?.so -> libvalue.$?.so
+rule //module/imports/*~libxunit/lib*.?.a -> libvalue.$?.a
 
 # tests need the library
 variant xapi.pic.devel : [

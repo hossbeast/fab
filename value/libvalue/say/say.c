@@ -17,24 +17,17 @@
 
 #include <inttypes.h>
 
-#include "xapi.h"
-
-#include "valyria/set.h"
+#include "narrator.h"
 #include "valyria/list.h"
 #include "valyria/pstring.h"
-#include "narrator.h"
+#include "valyria/set.h"
 
-#include "value.h"
 #include "value.h"
 #include "say.internal.h"
-#include "parser.internal.h"
-#include "store.internal.h"
 #include "writer.internal.h"
-
-#include "common/hash.h"
 #include "zbuffer.h"
-#include "common/attrs.h"
-#include "common/stresc.h"
+
+#include "macros.h"
 
 static set * keywords;
 
@@ -47,10 +40,11 @@ static set * keywords;
 // non-printable
 static bool should_escape(char * const restrict s, size_t len)
 {
+  int x;
+
   if(set_contains(keywords, s, len))
     return true;
 
-  int x;
   for(x = 0; x < len; x++)
   {
     if(s[x] <= 0x20 || s[x] >= 0x7e)

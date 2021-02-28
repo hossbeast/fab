@@ -17,27 +17,21 @@
 
 #include <string.h>
 #include <sys/syscall.h>
+#include <unistd.h>
 
 #include "xapi.h"
-#include "types.h"
-
-#include "logger/load.h"
-#include "value/load.h"
-#include "xlinux/xstdlib.h"
-
-#include "logger.h"
-#include "xapi/trace.h"
-#include "xapi/calltree.h"
-#include "value.h"
-#include "value/parser.h"
-#include "value/merge.h"
-#include "narrator.h"
-
-#include "args.h"
-#include "MAIN.errtab.h"
-#include "logging.h"
 
 #include "common/snarf.h"
+#include "logger/load.h"
+#include "narrator.h"
+#include "value/merge.h"
+#include "value/parser.h"
+#include "xapi/calltree.h"
+#include "xapi/trace.h"
+#include "xlinux/xstdlib.h"
+
+#include "args.h"
+#include "logging.h"
 
 __thread int32_t tid;
 
@@ -49,6 +43,10 @@ static xapi xmain()
   char * text = 0;
   size_t text_len;
   value * result = 0;
+  const char * fname;
+  char * s;
+  size_t sl;
+  int x;
 
   // parse cmdline arguments
   fatal(args_parse);
@@ -56,12 +54,8 @@ static xapi xmain()
 
   fatal(value_parser_create, &parser);
 
-  int x;
   for(x = 0; x < g_args.inputsl; x++)
   {
-    const char * fname;
-    char * s;
-    size_t sl;
     if(g_args.inputs[x].type == INPUT_FILE)
     {
       fatal(snarfs, &text, &text_len, g_args.inputs[x].s);

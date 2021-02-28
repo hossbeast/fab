@@ -15,18 +15,14 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#include "xapi.h"
 #include "valyria/pstring.h"
 #include "valyria/list.h"
 #include "valyria/set.h"
-#include "yyutil/parser.h"
 
 #include "value.h"
-#include "value.h"
 #include "make.internal.h"
-#include "store.internal.h"
 #include "parser.internal.h"
-#include "merge.h"
+#include "store.internal.h"
 
 #include "macros.h"
 
