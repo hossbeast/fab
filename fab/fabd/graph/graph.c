@@ -544,12 +544,14 @@ xapi graph_disintegrate(moria_edge * restrict e, graph_invalidation_context * re
           fatal(fsent_unlinking, n, invalidation);
         }
 
-        //if(fsent_filetype_get(n) == VERTEX_FILETYPE_DIR) {
-        //  fatal(dirnode_deleting, n);
-        //}
-
         /* cant unlink from fstree while any references exist */
         if(!rbtree_empty(&e->B->down)) {
+//printf("%d", __LINE__);
+          goto nexte;
+        }
+
+        /* cant unlink from fstree while any references exist */
+        if(!rbtree_empty(&e->B->up)) {
 //printf("%d", __LINE__);
           goto nexte;
         }
@@ -558,31 +560,12 @@ xapi graph_disintegrate(moria_edge * restrict e, graph_invalidation_context * re
         {
           /* the delete event is fired when the node becomes unlinked - it may not actually be released yet */
           fatal(fsent_unlink, n, invalidation);
-
           fatal(fsent_dirnode_children_changed, containerof(e->A, fsent, vertex), invalidation);
           fsent_state_set(n, VERTEX_UNLINKED);
         }
 
-        /* cant unlink from fstree while any references exist */
-        if(!rbtree_empty(&e->B->up)) {
-//          printf("\n -- up\n");
-//          moria_edge *upe;
-//          rbtree_foreach(&e->B->up, upe, rbn_up) {
-//            fatal(graph_edge_say, upe, g_narrator_stdout);
-//            printf("\n");
-//          }
-
-//printf("%d", __LINE__);
-          goto nexte;
-        }
       }
 
-//      else if(e->attrs & EDGE_DEPENDENCY)
-//      {
-//        fatal(dependency_disconnecting, containerof(e, dependency, edge), invalidation);
-//      }
-
-//printf("disconnected %p", e);
       ek = e->attrs & EDGE_KIND_OPT;
       if(ek == EDGE_FSTREE) {
         fatal(fsedge_disconnect, containerof(e, fsedge, edge));

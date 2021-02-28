@@ -149,7 +149,7 @@ static xapi rule_system_reconcile_test_entry(xunit_test * _test)
   fatal(graph_parser_operations_parse, op_parser, MMS(test->setup_operations));
 
   fatal(resolve_fragment, MMS(test->module), &module->dir_node);
-  module->shadow_import_scope = module->dir_node;
+  module->shadow_imports = module->dir_node;
 
   /* setup - run the rules */
   for(x = 0; x < sentinel(test->rules); x++)

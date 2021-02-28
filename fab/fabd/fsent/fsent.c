@@ -102,8 +102,6 @@ static xapi __attribute__((nonnull(1, 2))) node_invalidate_visitor_first(moria_v
 {
   enter;
 
-//printf(" > %2d %s\n", distance, v->label);
-
   *result = MORIA_TRAVERSE_PRUNE;
   fatal(fsent_invalidate_visitor, v, arg, mode, distance, 0);
 
@@ -644,7 +642,6 @@ size_t fsent_absolute_path_znload(void * restrict dst, size_t sz, const fsent * 
 
 size_t fsent_path_znload(void * restrict dst, size_t sz, const fsent * restrict n)
 {
-  /* absolute path for shadow nodes */
   if(fsent_shadowtype_get(n))
   {
     return fsent_absolute_path_znload(dst, sz, n);
@@ -1136,7 +1133,7 @@ xapi fsent_unlink(fsent *n, graph_invalidation_context * restrict invalidation)
 
   if(fsent_kind_get(n) == VERTEX_MODULE_FILE)
   {
-    /* propagate to the immediate parent module */
+    /* when a module.bam file is unlinked, invalidate its immediate parent module */
     fatal(moria_traverse_vertices
       , &g_graph
       , &fsent_module_get(n)->dir_node->vertex

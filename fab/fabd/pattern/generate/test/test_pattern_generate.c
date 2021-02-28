@@ -190,7 +190,7 @@ static xapi pattern_generate_test_entry(xunit_test * _test)
   {
     fatal(resolve_fragment, MMS(test->module), &mods[0].dir_node);
     mod = &mods[0];
-    mod->shadow_use_scope = mod->dir_node;
+    mod->shadow_uses = mod->dir_node;
   }
 
   fatal(narrator_growing_create, &N);
@@ -234,7 +234,7 @@ static xapi pattern_generate_test_entry(xunit_test * _test)
     , pattern
     , mod
     , mod->dir_node
-    , mod->shadow_use_scope
+    , mod->shadow_uses
     , variants
     , &invalidation
     , &match

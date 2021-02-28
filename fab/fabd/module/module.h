@@ -91,12 +91,6 @@ typedef struct module {
   struct fsent * shadow_requires;      // shadow dirnode //modules/id/requires/
   struct fsent * shadow_uses;          // shadow dirnode //modules/id/uses/
 
-#if 0
-  /* these are used as the scope in generate patterns */
-  struct fsent * shadow_use_scope;     // (formula patterns) shadow dirnode //modules/id/use-scope/
-  struct fsent * shadow_import_scope;  // (other patterns)   shadow dirnode //modules/id/import-scope/
-#endif
-
   char id[16];                         // hash by which the module is accessed at //modules/id
   char self_node_relpath[512];
   char dir_node_abspath[512];

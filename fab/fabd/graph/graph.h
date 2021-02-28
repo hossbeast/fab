@@ -203,10 +203,8 @@ extern struct attrs32 * graph_edge_attrs;     /* edge definitions */
 
 extern struct attrs32 * graph_edge_type_attrs;
 extern struct attrs16 * graph_edge_direction_attrs;
-//extern struct attrs32 * graph_vertex_attrs;
 extern struct attrs32 * graph_vertex_kind_attrs;
 extern struct attrs32 * graph_vertex_state_attrs;
-//extern struct attrs32 * graph_vertex_shadow_attrs;
 extern struct moria_graph g_graph;
 extern struct hashtable * g_graph_mm;
 

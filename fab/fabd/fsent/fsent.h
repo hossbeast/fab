@@ -15,10 +15,16 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef FABD_NODE_H
-#define FABD_NODE_H
+#ifndef FSENT_H
+#define FSENT_H
 
-#include <stdint.h>
+/*
+
+fsent - vertices in the graph which represent files and directories in the filesystem
+
+
+
+*/
 
 #include "valyria/llist.h"
 #include "valyria/rbtree.h"
@@ -70,20 +76,20 @@ extern struct fsent * g_project_root;    // directory node at the project root
 extern struct fsent * g_project_self;    // project module self node
 extern struct fsent * g_project_shadow;  // project modules shadow node
 
-// fsent lookup datastructures
+// fsent lookup by inotify watch descriptor
 extern struct map * g_fsent_by_wd;
 
 // active list
 extern llist fsent_list;
 
-extern uint16_t fsent_valid_epoch;
-extern uint16_t fsent_module_epoch;
+extern uint16_t fsent_valid_epoch;        // when this changes, all fsents are invalid
+extern uint16_t fsent_module_epoch;       // when this changes, all fsent <-> module mappings are invalid
 
 // VERTEX_TYPE_FSENT
 typedef struct fsent {
   moria_vertex vertex;
 
-  struct fsname name;               // name (not full path)
+  struct fsname name;               // name (not a full path)
 
   uint16_t valid_epoch;
   bool not_loaded;
@@ -171,32 +177,11 @@ typedef struct fsent_property_context {
   const struct module * mod;
 } fsent_property_context;
 
-/// fsent_setup
-//
-// SUMMARY
-//  setup
-//
 xapi fsent_setup(void);
-
-/// fsent_setup_minimal
-//
-// SUMMARY
-//  setup
-//
 xapi fsent_setup_minimal(void);
-
-/// fsent_cleanup
-//
-// SUMMARY
-//  teardown
-//
 xapi fsent_cleanup(void);
 
-/// fsent_reconfigure
-//
-// SUMMARY
-//  apply configuration changes
-//
+/* apply configuration changes */
 xapi fsent_reconfigure(struct configblob * restrict cfg, bool dry)
   __attribute__((nonnull));
 
@@ -340,7 +325,6 @@ static inline void fsent_exists_set(fsent * restrict n)
   uint32_t attrs;
 
   attrs = n->vertex.attrs;
-//  attrs &= ~VERTEX_EXISTS_BIT;
   attrs |= VERTEX_EXISTS_BIT;
 
   n->vertex.attrs = attrs;
@@ -402,28 +386,46 @@ struct module * fsent_module_get(const fsent * restrict n)
 const struct filesystem * fsent_filesystem_get(fsent * restrict n)
   __attribute__((nonnull));
 
-/// fsent_graft
-//
-// SUMMARY
-//  get or create fsents starting at the root to some base path
-//
-// PARAMETERS
-//  base - absolute path from the root to the desired fsent
-//  rn   - (returns) fsent rooted at path base
-//
-xapi fsent_graft(const char * restrict base, fsent ** restrict rn, struct graph_invalidation_context * restrict invalidation)
+/*
+ * get or create fsents starting at the root to some base path
+ *
+ * base - absolute path from the root to the desired fsent
+ * rn   - (returns) fsent rooted at path base
+ */
+xapi fsent_graft(
+    const char * restrict base
+  , fsent ** restrict rn
+  , struct graph_invalidation_context * restrict invalidation
+)
   __attribute__((nonnull));
 
-xapi fsent_property_say(const fsent * restrict n, fsent_property property, const fsent_property_context * restrict ctx, struct narrator * restrict N)
+xapi fsent_property_say(
+    const fsent * restrict n
+  , fsent_property property
+  , const fsent_property_context * restrict ctx
+  , struct narrator * restrict N
+)
   __attribute__((nonnull));
 
-size_t fsent_property_znload(void * restrict dst, size_t sz, const fsent * restrict n, fsent_property property, const fsent_property_context * restrict ctx)
+size_t fsent_property_znload(
+    void * restrict dst
+  , size_t sz
+  , const fsent * restrict n
+  , fsent_property property
+  , const fsent_property_context * restrict ctx
+)
   __attribute__((nonnull));
 
 /*
  * write the path to the fsent, relative to another fsent, to a buffer
  */
 size_t fsent_relative_path_znload(void * restrict dst, size_t dst_size, const fsent * n, const fsent * base)
+  __attribute__((nonnull));
+
+/*
+ * write the path to the fsent, relative to another fsent, to a buffer, encoded as a bacon string
+ */
+size_t fsent_relative_path_znload_bacon(void * restrict dst, size_t dst_size, const fsent * n, const fsent * base)
   __attribute__((nonnull));
 
 /*
@@ -444,6 +446,9 @@ size_t fsent_module_relative_path_znload(void * restrict dst, size_t sz, const f
 size_t fsent_absolute_path_znload(void * restrict dst, size_t sz, const fsent * restrict n)
   __attribute__((nonnull));
 
+/*
+ * absolute path for shadow nodes, project relative path otherwise
+ */
 size_t fsent_path_znload(void * restrict dst, size_t sz, const fsent * restrict n)
   __attribute__((nonnull));
 
@@ -460,6 +465,12 @@ xapi fsent_module_relative_path_say(const fsent * restrict n, struct narrator * 
   __attribute__((nonnull));
 
 /*
+ * write the path to a fsent, relative to another fsent, to a narrator
+ */
+xapi fsent_relative_path_say(const fsent * n, const fsent * base, struct narrator * restrict N)
+  __attribute__((nonnull));
+
+/*
  * write the absolute path to a fsent to a narrator
  */
 xapi fsent_absolute_path_say(const fsent * restrict n, struct narrator * restrict N)
@@ -471,44 +482,48 @@ xapi fsent_absolute_path_say(const fsent * restrict n, struct narrator * restric
 xapi fsent_path_say(fsent * restrict n, struct narrator * restrict N)
   __attribute__((nonnull));
 
+/*
+ * get an fsent by traversing a path
+ */
 fsent *fsent_path_lookup(const struct module * restrict mod, const char * restrict path, uint16_t path_len)
   __attribute__((nonnull));
 
+/*
+ * mark an fsent as VERTEX_FORMULA_FILE and reconcile its formula
+ */
 xapi fsent_formula_bootstrap(fsent * restrict n, bool * restrict reconciled)
   __attribute__((nonnull));
 
+/*
+ * mark an fsent as VERTEX_VAR_FILE and reconcile its var
+ */
 xapi fsent_var_bootstrap(fsent * restrict n, bool * restrict reconciled)
   __attribute__((nonnull));
 
-
-size_t fsent_relative_path_znload_bacon(void * restrict dst, size_t dst_size, const fsent * n, const fsent * base)
-  __attribute__((nonnull));
-
 /*
- * write the path to a fsent, relative to another fsent, to a narrator
+ * mark a node and its transitive consumers (upward) as invalid
  */
-xapi fsent_relative_path_say(const fsent * n, const fsent * base, struct narrator * restrict N)
-  __attribute__((nonnull));
-
-/// fsent_invalidate
-//
-// SUMMARY
-//  mark a node and all of its consumers (upward) as invalid
-//
-// PARAMETERS
-//  g         - graph
-//  n         - node
-//  traversal - id of an open traversal
-//
 xapi fsent_invalidate(fsent * restrict n, struct graph_invalidation_context * restrict)
   __attribute__((nonnull));
 
 xapi fsent_invalidate_visitor(moria_vertex * restrict v, void * arg, moria_traversal_mode mode, int distance, int * result)
 __attribute__((nonnull(1, 2)));
 
+/*
+ * mark an fsent as up-to-date
+ */
 xapi fsent_ok(fsent * restrict n)
   __attribute__((nonnull));
 
+/*
+ * opportunistically delete edges from this node - it is about to be unlinked from the fstree
+ */
+xapi fsent_unlinking(fsent *n, struct graph_invalidation_context * restrict invalidation)
+  __attribute__((nonnull));
+
+/*
+ * 
+ */
 xapi fsent_unlink(fsent *n, graph_invalidation_context * restrict invalidation)
   __attribute__((nonnull));
 
@@ -516,12 +531,6 @@ xapi fsent_dirnode_children_changed(
     fsent * restrict n
   , struct graph_invalidation_context * restrict invalidation
 )
-  __attribute__((nonnull));
-
-/*
- * opportunistically delete edges when a node is about to be unlinked from the fstree
- */
-xapi fsent_unlinking(fsent *n, struct graph_invalidation_context * restrict invalidation)
   __attribute__((nonnull));
 
 xapi fsent_index(fsent * restrict n)
