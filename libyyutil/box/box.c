@@ -15,13 +15,7 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#include <string.h>
-
-#include "xapi.h"
-#include "types.h"
-
 #include "xlinux/xstdlib.h"
-#include "yyutil/parser.h"
 
 #include "box.h"
 

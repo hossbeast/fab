@@ -15,22 +15,14 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#include "xapi.h"
-#include "types.h"
-
-#include "xapi/exit.h"
-#include "xlinux/xstdlib.h"
 #include "xlinux/KERNEL.errtab.h"
+#include "xlinux/xstdlib.h"
 
 #include "parser.internal.h"
-#include "scanner.internal.h"
 #include "logging.internal.h"
+#include "scanner.internal.h"
 
-#include "common/attrs.h"
-#include "common/hash.h"
-#include "common/stresc.h"
 #include "macros.h"
-#include "zbuffer.h"
 
 //
 // static
@@ -92,8 +84,10 @@ xapi API yyu_parser_xdestroy(yyu_parser * const parser)
   enter;
 
   wfree(parser->last_lval);
-  parser->vtable->yylex_destroy(parser->scanner);
   wfree(parser->token_table_bytoken);
+  if(parser->vtable) {
+    parser->vtable->yylex_destroy(parser->scanner);
+  }
 
   finally : coda;
 }
@@ -128,9 +122,10 @@ xapi API yyu_parser_init_tokens(yyu_parser * const restrict parser, const yyu_to
   logf(parser->logs | L_YYUTIL | L_PARSER, "numtokens %d", parser->token_table_size);
   for(x = 0; x < token_table_size; x++)
   {
-    logf(parser->logs | L_YYUTIL | L_PARSER, "%2d %3d %-10s %s"
+    logf(parser->logs | L_YYUTIL | L_PARSER, "%3d %3d %3d %-10s %s"
       , x
-      , parser->token_table[x].number
+      , parser->token_table[x].token
+      , parser->token_table[x].symbol
       , parser->token_table[x].name
       , parser->token_table[x].string
     );
@@ -149,7 +144,13 @@ xapi API yyu_parser_init_tokens(yyu_parser * const restrict parser, const yyu_to
   memset(&parser->tokens, 0xff, sizeof(parser->tokens));
   for(x = 0; x < token_table_size; x++)
   {
-    if(strcmp(parser->token_table[x].name, "STR") == 0)
+    if(strcmp(parser->token_table[x].name, "YYEOF") == 0)
+      parser->tokens.YYEOF = x;
+    else if(strcmp(parser->token_table[x].name, "YYERROR") == 0)
+      parser->tokens.YYERROR = x;
+    else if(strcmp(parser->token_table[x].name, "YYUNDEF") == 0)
+      parser->tokens.YYUNDEF = x;
+    else if(strcmp(parser->token_table[x].name, "STR") == 0)
       parser->tokens.STR = x;
     else if(strcmp(parser->token_table[x].name, "CREF") == 0)
       parser->tokens.CREF = x;
@@ -192,6 +193,10 @@ xapi API yyu_parser_init_tokens(yyu_parser * const restrict parser, const yyu_to
     else if(strcmp(parser->token_table[x].name, "INTMAX64") == 0)
       parser->tokens.INTMAX64 = x;
   }
+
+  RUNTIME_ASSERT(parser->tokens.YYEOF);
+  RUNTIME_ASSERT(parser->tokens.YYERROR);
+  RUNTIME_ASSERT(parser->tokens.YYUNDEF);
 
   finally : coda;
 }
@@ -284,7 +289,7 @@ xapi API yyu_parse(
     /* for non-partial, assert the entire buffer was consumed */
     if((plen + 2) < text_len)
     {
-      fail(KERNEL_EINVAL);
+      fails(KERNEL_EINVAL, "error", "partial parse");
     }
   }
 

@@ -20,7 +20,7 @@
 
 /*
 
-SUMMARY
+A box is a heap-allocated scalar
 
 */
 
@@ -58,72 +58,83 @@ typedef struct box {
   uint32_t hash;
 } box;
 
-#define BOXBASE union { \
-  box bx;               \
-  struct {              \
-    box_type type;      \
-    yyu_location loc;   \
-    uint32_t hash;      \
-  };                    \
-}
-
 typedef struct box_int {
-  BOXBASE;
-  int v;
+  box bx;
+  struct {
+    int v;
+  };
 } box_int;
 
 typedef struct box_int8 {
-  BOXBASE;
-  int8_t v;
+  box bx;
+  struct {
+    int8_t v;
+  };
 } box_int8;
 
 typedef struct box_int16 {
-  BOXBASE;
-  int16_t v;
+  box bx;
+  struct {
+    int16_t v;
+  };
 } box_int16;
 
 typedef struct box_int32 {
-  BOXBASE;
-  int32_t v;
+  box bx;
+  struct {
+    int32_t v;
+  };
 } box_int32;
 
 typedef struct box_int64 {
-  BOXBASE;
-  int64_t v;
+  box bx;
+  struct {
+    int64_t v;
+  };
 } box_int64;
 
 typedef struct box_uint8 {
-  BOXBASE;
-  uint8_t v;
+  box bx;
+  struct {
+    uint8_t v;
+  };
 } box_uint8;
 
 typedef struct box_uint16 {
-  BOXBASE;
-  uint16_t v;
+  box bx;
+  struct {
+    uint16_t v;
+  };
 } box_uint16;
 
 typedef struct box_uint32 {
-  BOXBASE;
-  uint32_t v;
+  box bx;
+  struct {
+    uint32_t v;
+  };
 } box_uint32;
 
 typedef struct box_uint64 {
-  BOXBASE;
-  uint64_t v;
+  box bx;
+  struct {
+    uint64_t v;
+  };
 } box_uint64;
 
 typedef struct box_bool {
-  BOXBASE;
-  bool v;
+  box bx;
+  struct {
+    bool v;
+  };
 } box_bool;
 
 typedef struct box_string {
-  BOXBASE;
-  uint16_t l;
-  char * v;
+  box bx;
+  struct {
+    uint16_t l;
+    char * v;
+  };
 } box_string;
-
-#undef BOXBASE
 
 /// box_int_mk
 //
@@ -288,25 +299,11 @@ xapi box_string_mk(
 )
   __attribute__((nonnull(2)));
 
-/// box_hash
-//
-//
-//
 uint32_t box_hash(uint32_t h, box * restrict b)
   __attribute__((nonnull));
 
-/// box_cmp
-//
-// SUMMARY
-//
-//
 int box_cmp(const box * restrict A, const box * restrict B);
 
-/// box_equal
-//
-// SUMMARY
-//
-//
 bool box_equal(box * restrict A, box * restrict B);
 
 void box_string_setif(box_string * restrict b, char ** v)
