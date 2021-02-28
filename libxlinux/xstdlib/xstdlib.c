@@ -67,8 +67,6 @@ xapi API xmalloc(void* target, size_t size)
 {
   enter;
 
-  //void * mem = 0;
-
   if(policy)
   {
     fatal(policy->malloc, policy, target, size);
@@ -213,7 +211,7 @@ xapi API xrealpaths(char ** restrict r, char * restrict resolved_path, const cha
 {
   enter;
 
-  if(r && (*r= realpath(path, resolved_path)) == 0)
+  if(r && (*r = realpath(path, resolved_path)) == 0)
     tfail(perrtab_KERNEL, errno);
   else if(!r && realpath(path, resolved_path) == 0)
     tfail(perrtab_KERNEL, errno);

@@ -73,6 +73,10 @@ xapi API uxtgkill(int * r, pid_t pid, pid_t tid, int sig)
 {
   enter;
 
+  if(tid == 0) {
+    goto XAPI_FINALIZE;
+  }
+
   if(r && (*r = syscall(SYS_tgkill, pid, tid, sig)) != 0 && errno != ESRCH)
   {
     tfail(perrtab_KERNEL, errno);
