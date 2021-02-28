@@ -25,8 +25,9 @@
   #include "valyria/map.h"
 
   #include "parser.internal.h"
-  #include "vertex.internal.h"
-  #include "operations.internal.h"
+  #include "moria.h"
+  #include "vertex.h"
+  #include "operations.h"
   #include "graph.internal.h"
 
   #include "zbuffer.h"
@@ -35,7 +36,7 @@
 
 %code top {
   int graph_yylex(void *, void*, void*);
-  #define PARSER containerof(parser, graph_parser, yyu)
+  #define PARSER containerof(parser, graph_parser, graph_yyu)
   #define GRAPH_YYLTYPE yyu_location
 }
 
@@ -56,33 +57,36 @@
   uint32_t u32;
 
   struct {
-    struct vertex *v0;
-    struct vertex **v;
+    struct moria_vertex *v0;
+    struct moria_vertex **v;
     uint16_t len;
   } vertex_list;
 
-  struct vertex * vertex;
-  char * label;
+  struct moria_vertex * vertex;
 }
 
 /* tokens */
 %token
- ':'
  '!'
- '-'
+ '+' // --
+ ':'
+ '=' // --
  '_'
+ '~' // --
  ','
+ '-'
+ SLASH2
 
 /* terminals */
-%token            STR
-%token <yyu.imax> INTMAX8
-%token <yyu.imax> INTMAX16
-%token <yyu.umax> UINTMAX8
-%token <yyu.umax> UINTMAX16
-%token <yyu.umax> UINTMAX32
-%token <yyu.umax> HEX8
-%token <yyu.umax> HEX16
-%token <yyu.umax> HEX32
+%token            STR         104 "string"
+%token <yyu.imax> INTMAX8     105
+%token <yyu.imax> INTMAX16    106
+%token <yyu.umax> UINTMAX8    107
+%token <yyu.umax> UINTMAX16   108
+%token <yyu.umax> UINTMAX32   109
+%token <yyu.umax> HEX8        110
+%token <yyu.umax> HEX16       111
+%token <yyu.umax> HEX32       112
 
 /* nonterminals */
 %type <vertex>
@@ -93,16 +97,11 @@
 %type <vertex_list>
  edge_vertex_list
 
-%type <label>
- label
-
 %type <u32>
  vertex_attrs
  edge_attrs
  uint32
  hex32
-
-%destructor { wfree($$); } <label>
 
 %%
 utterance
@@ -119,49 +118,35 @@ graph
 edge
   : edge_vertex_list ':' edge_attrs ':' edge_vertex_list
   {
-    if($1.len == 1 && $5.len == 1)
-    {
-      YFATAL(graph_connect, PARSER->g, $1.v0, $5.v0, $3, 0, 0);
-    }
-    else
-    {
-      struct vertex ** A = $1.v;
-      if($1.len == 1)
-        A = &$1.v0;
+    struct moria_vertex ** A = $1.v;
+    if($1.len == 1)
+      A = &$1.v0;
 
-      struct vertex ** B = $5.v;
-      if($5.len == 1)
-        B = &$5.v0;
+    struct moria_vertex ** B = $5.v;
+    if($5.len == 1)
+      B = &$5.v0;
 
-      YFATAL(graph_hyperconnect, PARSER->g, A, $1.len, B, $5.len, $3, 0, 0);
-      if($1.len > 1)
-        wfree($1.v);
-      if($5.len > 1)
-        wfree($5.v);
-    }
+    YFATAL(graph_parser_hyperconnect, PARSER, A, $1.len, B, $5.len, $3, 0);
+    if($1.len > 1)
+      wfree($1.v);
+    if($5.len > 1)
+      wfree($5.v);
   }
   | edge_vertex_list ':' edge_vertex_list
   {
-    if($1.len == 1 && $3.len == 1)
-    {
-      YFATAL(graph_connect, PARSER->g, $1.v0, $3.v0, 0, 0, 0);
-    }
-    else
-    {
-      struct vertex ** A = $1.v;
-      if($1.len == 1)
-        A = &$1.v0;
+    struct moria_vertex ** A = $1.v;
+    if($1.len == 1)
+      A = &$1.v0;
 
-      struct vertex ** B = $3.v;
-      if($3.len == 1)
-        B = &$3.v0;
+    struct moria_vertex ** B = $3.v;
+    if($3.len == 1)
+      B = &$3.v0;
 
-      YFATAL(graph_hyperconnect, PARSER->g, A, $1.len, B, $3.len, 0, 0, 0);
-      if($1.len > 1)
-        wfree(A);
-      if($3.len > 1)
-        wfree(B);
-    }
+    YFATAL(graph_parser_hyperconnect, PARSER, A, $1.len, B, $3.len, 0, 0);
+    if($1.len > 1)
+      wfree(A);
+    if($3.len > 1)
+      wfree(B);
   }
   ;
 
@@ -217,18 +202,9 @@ vertex
   ;
 
 vertex_label
-  : label
-  {
-    YFATAL(vertex_creates, &$$, PARSER->g, 0, $1);
-    vertex_value_set($$, PARSER->g, &$1);
-  }
-  ;
-
-label
   : STR
   {
-    $$ = 0;
-    YFATAL(ixstrncat, &$$, @1.s, @1.l);
+    YFATAL(graph_parser_create_vertex, PARSER, &$$, 0, 0, @1.s, @1.l);
   }
   ;
 

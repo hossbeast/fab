@@ -27,6 +27,9 @@
 #include "xapi/info.h"
 
 #include "moria/load.h"
+#include "moria.h"
+#include "moria/traverse.h"
+#include "moria/edge.h"
 #include "xlinux/xstdlib.h"
 
 #include "xunit.h"
@@ -40,9 +43,9 @@
 #include "narrator/growing.h"
 #include "graph.internal.h"
 #include "edge.internal.h"
-#include "vertex.internal.h"
+#include "vertex.h"
 #include "errtab/MORIA.errtab.h"
-#include "operations.internal.h"
+#include "operations.h"
 #include "parser.internal.h"
 #include "logging.internal.h"
 
@@ -81,7 +84,7 @@ static int visitcmp(const void * _A, size_t Asz, const void * _B, size_t Bsz)
 }
 
 static int visit_counter;
-static xapi edge_visit(edge * const restrict e, void * arg, traversal_mode mode, int distance, int * result)
+static xapi edge_visit(moria_edge * const restrict e, void * arg, moria_traversal_mode mode, int distance, int * result)
 {
   enter;
 
@@ -145,41 +148,31 @@ static xapi graph_test_entry(xunit_test * _test)
 
   graph_test * test = containerof(_test, graph_test, xu);
 
+  moria_graph g;
   graph_parser * p = 0;
-  graph * g = 0;
-  void * mm_tmp = 0;
-  operations_parser * op = 0;
   list * operations = 0;
   array * visitations = 0;
   const char ** keys = 0;
   int x;
-  vertex_t * v;
+  moria_vertex * v;
   const char * spec;
 
   fatal(array_create, &visitations, sizeof(visit));
 
-  // setup the test graph
-  uint32_t identity = 0;
-  if(test->operations)
-    identity = 1;
+  moria_graph_init(&g);
+  fatal(graph_parser_create, &p, &g, 0, graph_operations_dispatch, 0, 0);
+  if(test->graph) {
+    fatal(graph_parser_parse, p, MMS(test->graph));
+  }
 
-  fatal(graph_parser_create, &p);
-  fatal(graph_parser_graph_create, &g, identity);
-  if(test->graph)
-    fatal(graph_parser_parse, p, g, MMS(test->graph));
-
-  if(test->operations)
-  {
-    fatal(operations_parser_operations_create, &operations);
-    fatal(operations_parser_create, &op);
-    fatal(operations_parser_parse, op, g, MMS(test->operations), operations);
-    fatal(operations_perform, g, graph_operations_dispatch, operations);
+  if(test->operations) {
+    fatal(graph_parser_operations_parse, p, MMS(test->operations));
   }
 
   // find the starting edge
-  vertex * fromA[4];
+  moria_vertex * fromA[4];
   size_t fromA_len = 0;
-  vertex * fromB[4];
+  moria_vertex * fromB[4];
   size_t fromB_len = 0;
   const char * froms = test->from;
   bool colon = false;
@@ -191,16 +184,16 @@ static xapi graph_test_entry(xunit_test * _test)
     }
     else
     {
-      llist_foreach(&g->vertices, v, graph_lln) {
+      llist_foreach(&p->vertices, v, owner) {
         if(v->label[0] == *froms)
         {
           if(!colon)
           {
-            fromA[fromA_len++] = &v->vx;
+            fromA[fromA_len++] = v;
           }
           else
           {
-            fromB[fromB_len++] = &v->vx;
+            fromB[fromB_len++] = v;
           }
           break;
         }
@@ -209,16 +202,16 @@ static xapi graph_test_entry(xunit_test * _test)
     froms++;
   }
 
-  edge * from = edge_of(fromA, fromA_len, fromB, fromB_len);
+  moria_edge * from = moria_edge_of(fromA, fromA_len, fromB, fromB_len);
   assert_notnull(from);
 
   // perform the traversal
-  fatal(graph_traverse_edges
-    , g
+  fatal(moria_traverse_edges
+    , &g
     , from
     , edge_visit
     , 0
-    , (traversal_criteria[]) {{
+    , (moria_traversal_criteria[]) {{
           edge_travel : test->travel
         , edge_visit : test->visit
         , min_depth : 1
@@ -346,13 +339,11 @@ static xapi graph_test_entry(xunit_test * _test)
   }
 
 finally:
-  fatal(graph_xfree, g);
-  wfree(mm_tmp);
+  moria_graph_destroy(&g);
   fatal(list_xfree, operations);
   fatal(array_xfree, visitations);
   wfree(keys);
   fatal(graph_parser_xfree, p);
-  fatal(operations_parser_xfree, op);
 coda;
 }
 
@@ -509,7 +500,6 @@ A -> B -> C -> D -> E -> F -> G ==>> A
               (char*[]) { "A:B", "B:A", 0 }
             , 0
           }
-
         }}
         // cycle, hyper-edges
       , (graph_test[]){{

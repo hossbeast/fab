@@ -29,6 +29,7 @@
 #include "logger.h"
 
 #include "graph.h"
+#include "moria.h"
 #include "parser.internal.h"
 #include "MORIA.errtab.h"
 
@@ -38,7 +39,6 @@ typedef struct graph_parser_test {
   XUNITTEST;
 
   char * graph;
-  uint32_t identity;
 
   char * expected;
   xapi expected_exit;
@@ -76,18 +76,18 @@ static xapi graph_parser_test_entry(xunit_test * _test)
 
   graph_parser_test * test = (typeof(test))_test;
 
-  graph * g = 0;
+  moria_graph g;
   graph_parser * p = 0;
   narrator_growing * N1 = 0;
   const char * actual;
   size_t actual_len;
 
   // arrange
-  fatal(graph_parser_graph_create, &g, test->identity);
-  fatal(graph_parser_create, &p);
+  moria_graph_init(&g);
+  fatal(graph_parser_create, &p, &g, 0, graph_operations_dispatch, 0, 0);
 
   // act
-  xapi exit = invoke(graph_parser_parse, p, g, MMS(test->graph));
+  xapi exit = invoke(graph_parser_parse, p, MMS(test->graph));
   if(exit)
   {
     if(exit != test->expected_exit)
@@ -101,15 +101,15 @@ static xapi graph_parser_test_entry(xunit_test * _test)
   if(test->expected)
   {
     fatal(narrator_growing_create, &N1);
-    fatal(graph_say, g, &N1->base);
+    fatal(moria_graph_say, &g, (llist *[]) { &p->vertices }, 1, (llist *[]) { &p->edges }, 1, 0, 0, &N1->base);
     actual = N1->s;
     actual_len = N1->l;
     assert_eq_w(test->expected, strlen(test->expected), actual, actual_len);
   }
 
 finally:
+  moria_graph_destroy(&g);
   fatal(narrator_growing_free, N1);
-  fatal(graph_xfree, g);
   fatal(graph_parser_xfree, p);
 coda;
 }
@@ -155,122 +155,117 @@ xunit_unit xunit = {
 
       // not unique labels, identity
     , (graph_parser_test[]) {{
-          identity : 8
-        , graph    : " 1-A 2-b 3-b"
-                     " 1:0x8:2 1:0x1:3"
+          graph    : " 1-A 2-b 3-b"
+                     " 1:0x40000000:2 1:0x1:3"
         , expected :  "1-A 2-b 3-b"
-                     " 1:0x1:3 1:0x8:2"
+                     " 1:0x1:3 1:0x40000000:2"
       }}
 
       // expected failure cases
     , (graph_parser_test[]){{
-          identity      : 8
-        , graph         : " 1-A 2-B 3-B"
-                          " 1:0x8:2"
-                          " 1:0x8:3"
+          graph         : " 1-A 2-B 3-B"
+                          " 1:0x40000000:2"
+                          " 1:0x40000000:3"
         , expected_exit : MORIA_LABELEXISTS
       }}
     , (graph_parser_test[]){{
-          identity      : 8
-        , graph         : " 1-A 2-B"
-                          " 1:0x8:2"
+          graph         : " 1-A 2-B"
+                          " 1:0x40000000:2"
                           " 1:2"
         , expected_exit : MORIA_VERTEXEXISTS
       }}
     , (graph_parser_test[]){{
-          identity      : 8
-        , graph         : " 1-A 2-B"
+          graph         : " 1-A 2-B"
                           " 1:2"
-                          " 1:0x8:2"
+                          " 1:0x40000000:2"
         , expected_exit : MORIA_VERTEXEXISTS
       }}
     , (graph_parser_test[]){{
-          identity      : 8
-        , graph         : " 1-A 2-B 3-C"
-                          " 1:0x8:3"
-                          " 2:0x8:3"
+          graph         : " 1-A 2-B 3-C"
+                          " 1:0x40000000:3"
+                          " 2:0x40000000:3"
         , expected_exit : MORIA_UPEXISTS
       }}
 
       // hyper-edges
     , (graph_parser_test[]){{
           graph     : " 1-A 2-B 3-C"
-                      " 1:2,3"
+                      " 1:0x80000000:2,3"
         , expected  :  "1-A 2-B 3-C"
-                      " 1:2,3"
+                      " 1:0x80000000:2,3"
       }}
     , (graph_parser_test[]){{
           graph     : " 1-A 2-B 3-C"
-                      " 1:0x42:2,3"
+                      " 1:0x80420000:2,3"
         , expected  :  "1-A 2-B 3-C"
-                      " 1:0x42:2,3"
+                      " 1:0x80420000:2,3"
       }}
     , (graph_parser_test[]){{
           graph     : " 1-A 2-B 3-C 4-D"
-                      " 1:2,3,4"
+                      " 1:0x80000000:2,3,4"
         , expected  :  "1-A 2-B 3-C 4-D"
-                      " 1:2,3,4"
+                      " 1:0x80000000:2,3,4"
       }}
     , (graph_parser_test[]){{
           graph     : " 1-A 2-B 3-C"
-                      " 1,2:3"
+                      " 1,2:0x80000000:3"
         , expected  :  "1-A 2-B 3-C"
-                      " 1,2:3"
+                      " 1,2:0x80000000:3"
       }}
     , (graph_parser_test[]){{
           graph     : " 1-A 2-B 3-C 4-D"
-                      " 1,2,3:4"
+                      " 1,2,3:0x80000000:4"
         , expected  :  "1-A 2-B 3-C 4-D"
-                      " 1,2,3:4"
+                      " 1,2,3:0x80000000:4"
       }}
     , (graph_parser_test[]){{
           graph     : " 1-A 2-B 3-C 4-D"
-                      " 1,2,3:0x42:4"
+                      " 1,2,3:0x84200000:4"
         , expected  :  "1-A 2-B 3-C 4-D"
-                      " 1,2,3:0x42:4"
+                      " 1,2,3:0x84200000:4"
       }}
     , (graph_parser_test[]){{
           graph     : " 1-A 2-B 3-C 4-D"
-                      " 1,2:3,4"
+                      " 1,2:0x80000000:3,4"
         , expected  :  "1-A 2-B 3-C 4-D"
-                      " 1,2:3,4"
+                      " 1,2:0x80000000:3,4"
       }}
     , (graph_parser_test[]){{
           graph     : " 1-A 2-B 3-C 4-D"
-                      " 1,2:0x42:3,4"
+                      " 1,2:0x84200000:3,4"
         , expected  :  "1-A 2-B 3-C 4-D"
-                      " 1,2:0x42:3,4"
+                      " 1,2:0x84200000:3,4"
       }}
     , (graph_parser_test[]){{
           graph     : " 1-A 2-B 3-C 4-D 5-E 6-F"
-                      " 1,2,3:4,5,6"
+                      " 1,2,3:0x80000000:4,5,6"
         , expected  :  "1-A 2-B 3-C 4-D 5-E 6-F"
-                      " 1,2,3:4,5,6"
+                      " 1,2,3:0x80000000:4,5,6"
       }}
     , (graph_parser_test[]){{
           graph     : " 1-A 2-B 3-C 4-D 5-E 6-F"
-                      " 1,2,3:0x42:4,5,6"
+                      " 1,2,3:0x84200000:4,5,6"
         , expected  :  "1-A 2-B 3-C 4-D 5-E 6-F"
-                      " 1,2,3:0x42:4,5,6"
+                      " 1,2,3:0x84200000:4,5,6"
       }}
       // hyper-edges, zero-to-many
     , (graph_parser_test[]){{
           graph     : " 1-A 2-B"
-                      " 1,2:_"
+                      " 1,2:0x80000000:_"
         , expected  :  "1-A 2-B"
-                      " 1,2:_"
+                      " 1,2:0x80000000:_"
       }}
     , (graph_parser_test[]){{
           graph     : " 1-A 2-B"
-                      " _:1,2"
+                      " _:0x80000000:1,2"
         , expected  :  "1-A 2-B"
-                      " _:1,2"
+                      " _:0x80000000:1,2"
       }}
     , (graph_parser_test[]){{
           graph     : " 1-A 2-B"
-                      " _:1"
+                      " _:0x80000000:1"
         , expected  :  "1-A 2-B"
-                      " _:1"
+                      " _:0x80000000:1"
       }}
     , 0
   }

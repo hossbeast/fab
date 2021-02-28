@@ -27,6 +27,9 @@
 
 #include "xlinux/xstdlib.h"
 #include "moria/load.h"
+#include "moria.h"
+#include "moria/traverse.h"
+#include "moria/edge.h"
 
 #include "xunit.h"
 #include "xunit/assert.h"
@@ -38,9 +41,9 @@
 #include "narrator.h"
 #include "narrator/growing.h"
 #include "graph.internal.h"
-#include "vertex.internal.h"
+#include "vertex.h"
 #include "errtab/MORIA.errtab.h"
-#include "operations.internal.h"
+#include "operations.h"
 #include "parser.internal.h"
 #include "logging.internal.h"
 
@@ -100,12 +103,12 @@ static xapi graph_unit_cleanup(xunit_unit * unit)
 
 struct traverse_context {
   int visit_counter;
-  graph * g;
+  moria_graph * g;
   array * visitations;
   graph_test * test;
 };
 
-static xapi inner_vertex_visit(vertex * const restrict v, void * arg, traversal_mode mode, int distance, int * result)
+static xapi inner_vertex_visit(moria_vertex * const restrict v, void * arg, moria_traversal_mode mode, int distance, int * result)
 {
   enter;
 
@@ -120,7 +123,7 @@ static xapi inner_vertex_visit(vertex * const restrict v, void * arg, traversal_
   finally : coda;
 }
 
-static xapi outer_vertex_visit(vertex * const restrict v, void * arg, traversal_mode mode, int distance, int * result)
+static xapi outer_vertex_visit(moria_vertex * const restrict v, void * arg, moria_traversal_mode mode, int distance, int * result)
 {
   enter;
 
@@ -135,12 +138,12 @@ static xapi outer_vertex_visit(vertex * const restrict v, void * arg, traversal_
   if(!ctx->test->inner_attrs)
     goto XAPI_FINALLY;
 
-  fatal(graph_traverse_vertices
+  fatal(moria_traverse_vertices
     , ctx->g
     , v
     , inner_vertex_visit
     , 0
-    , (traversal_criteria[]) {{
+    , (moria_traversal_criteria[]) {{
           edge_travel : ctx->test->inner_edge_travel
         , edge_visit : ctx->test->inner_edge_visit
         , min_depth : 1
@@ -160,37 +163,32 @@ static xapi graph_test_entry(xunit_test * _test)
   graph_test * test = (typeof(test))_test;
 
   graph_parser * p = 0;
-  graph * g = 0;
-  operations_parser * op = 0;
+  moria_graph g;
   list * operations = 0;
   array * visitations = 0;
   int x;
-  vertex_t * v;
+  moria_vertex * v;
 
   struct traverse_context ctx;
 
   fatal(array_createx, &visitations, sizeof(visit), 0, visitcmp, 0, 0, 0, 0);
 
   // setup the test graph
-  uint32_t identity = 0;
-  if(test->operations)
-    identity = 1;
+//  uint32_t identity = 0;
+//  if(test->operations)
+//    identity = 1;
 
-  fatal(graph_parser_create, &p);
-  fatal(graph_parser_graph_create, &g, identity);
-  if(test->graph)
-    fatal(graph_parser_parse, p, g, MMS(test->graph));
-
-  if(test->operations)
-  {
-    fatal(operations_parser_operations_create, &operations);
-    fatal(operations_parser_create, &op);
-    fatal(operations_parser_parse, op, g, MMS(test->operations), operations);
-    fatal(operations_perform, g, graph_operations_dispatch, operations);
+  moria_graph_init(&g);
+  fatal(graph_parser_create, &p, &g, 0, graph_operations_dispatch, 0, 0);
+  if(test->graph) {
+    fatal(graph_parser_parse, p, MMS(test->graph));
+  }
+  if(test->operations) {
+    fatal(graph_parser_operations_parse, p, MMS(test->operations));
   }
 
-  vertex_t * from = 0;
-  llist_foreach(&g->vertices, v, graph_lln) {
+  moria_vertex * from = 0;
+  llist_foreach(&p->vertices, v, owner) {
     if(test->from_label && strcmp(v->label, test->from_label) == 0)
       from = v;
 
@@ -202,14 +200,14 @@ static xapi graph_test_entry(xunit_test * _test)
   ctx = (typeof(ctx)) {
       visitations : visitations
     , test : test
-    , g : g
+    , g : &g
   };
-  fatal(graph_traverse_vertices
-    , g
-    , &from->vx
+  fatal(moria_traverse_vertices
+    , &g
+    , from
     , outer_vertex_visit
     , 0
-    , (traversal_criteria[]) {{
+    , (moria_traversal_criteria[]) {{
           edge_travel : test->edge_travel
         , edge_visit : test->edge_visit
       }}
@@ -312,11 +310,10 @@ static xapi graph_test_entry(xunit_test * _test)
   }
 
 finally:
-  fatal(graph_xfree, g);
+  moria_graph_destroy(&g);
   fatal(list_xfree, operations);
   fatal(array_xfree, visitations);
   fatal(graph_parser_xfree, p);
-  fatal(operations_parser_xfree, op);
 coda;
 }
 
@@ -413,7 +410,7 @@ xunit_unit xunit = {
     A
     B
    C D
-     E
+     E F
 */
             operations : "+A:B +B:C +B:D +D:E +_:E,F"
           , attrs      : MORIA_TRAVERSE_DOWN | MORIA_TRAVERSE_POST

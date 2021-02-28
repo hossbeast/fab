@@ -21,31 +21,19 @@
 #include "xapi.h"
 #include "types.h"
 
-#include "yyutil/parser.h"
 #include "parser.h"
 
-struct graph;
-struct vertex;
+struct moria_graph;
+struct moria_vertex;
+struct moria_edge;
 struct attrs32;
+struct moria_operations_dispatch;
 
 struct graph_yystype {
   yyu_lval yyu;
   uint32_t u32;
-  struct vertex * vertex;
+  struct moria_vertex * vertex;
   char * label;
-};
-
-struct graph_parser {
-  yyu_parser yyu;
-
-  // definitions map during parsing
-  const struct attrs32 * vertex_defs;
-  const struct attrs32 * edge_defs;
-
-  // vertex lookup during parsing
-  struct map * vertex_map;
-
-  struct graph * g;  // (returns) parsed graph
 };
 
 /// graph_yyerror
@@ -61,12 +49,88 @@ struct graph_parser {
 static void graph_yyerror(yyu_location * loc, void * scanner, graph_parser * pp, char const * err)
   __attribute__((weakref("yyu_grammar_error")));
 
-/// graph_parser_graph_create
+static void operations_yyerror(yyu_location * loc, void * scanner, graph_parser * pp, char const * err)
+  __attribute__((weakref("yyu_grammar_error")));
+
+/// identifier
 //
-// SUMMARY
-//  g - (returns) graph suitable for use with graph_parser_parse
+// represents a vertex
 //
-xapi graph_parser_graph_create(struct graph ** restrict g, uint32_t identity)
+typedef struct identifier {
+  struct identifier * next;   // next in the sequence
+  uint8_t opattrs;
+  uint32_t attrs;
+  uint16_t label_len;
+  char label[];
+} identifier;
+
+typedef struct identifier_list {
+  identifier *v0;
+  identifier **v;
+  uint16_t len;
+} identifier_list;
+
+/// operation
+//
+// represents an operation on a graph
+//
+typedef struct operation {
+//  operation_type type;
+  uint32_t attrs;
+  identifier_list * A;
+  identifier_list * B;
+} operation;
+
+void identifier_list_free(struct identifier_list * id);
+void identifier_free(struct identifier * id);
+void operation_free(struct operation * op);
+
+/* operations parser */
+xapi operation_vertex(graph_parser * restrict parser, identifier_list *A);
+xapi operation_refresh(graph_parser * restrict parser, identifier_list * restrict A);
+xapi operation_invalidate(graph_parser * restrict parser, identifier_list * restrict A);
+xapi operation_connect(graph_parser * restrict parser, identifier_list * restrict A, identifier_list * restrict B, uint32_t attrs);
+xapi operation_disconnect(graph_parser * restrict parser, identifier_list * restrict A, identifier_list * restrict B);
+
+/* graph parser */
+xapi graph_parser_create_vertex(
+    graph_parser * restrict p
+  , struct moria_vertex ** const restrict rv
+  , uint32_t attrs
+  , uint8_t opattrs
+  , const char * const restrict label
+  , uint16_t label_len
+)
   __attribute__((nonnull));
+
+xapi graph_parser_create_edge(
+    graph_parser * restrict p
+  , struct moria_edge ** const restrict er
+  , uint16_t Alen
+  , uint16_t Blen
+)
+  __attribute__((nonnull));
+
+xapi graph_parser_connect(
+    graph_parser * restrict p
+  , struct moria_vertex * restrict A
+  , struct moria_vertex * restrict B
+  , uint32_t attrs
+  , struct moria_edge ** restrict e
+)
+  __attribute__((nonnull(1, 2, 3)));
+
+xapi graph_parser_hyperconnect(
+    graph_parser * restrict p
+  , struct moria_vertex ** restrict Alist
+  , uint16_t Alen
+  , struct moria_vertex ** restrict Blist
+  , uint16_t Blen
+  , uint32_t attrs
+  , struct moria_edge ** restrict e
+)
+  __attribute__((nonnull(1)));
+
+extern struct moria_operations_dispatch * graph_operations_dispatch;
 
 #endif

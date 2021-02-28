@@ -25,7 +25,7 @@
   #include "valyria/dictionary.h"
   #include "valyria/list.h"
 
-  #include "operations.internal.h"
+  #include "parser.internal.h"
 
   #include "macros.h"
   #include "common/attrs.h"
@@ -33,7 +33,7 @@
 
 %code top {
   int operations_yylex(void *, void*, void*);
-  #define PARSER containerof(parser, operations_parser, yyu)
+  #define PARSER containerof(parser, graph_parser, operations_yyu)
   #define OPERATIONS_YYLTYPE yyu_location
 }
 
@@ -54,29 +54,33 @@
   uint32_t u32;
   struct identifier * identifier;
   struct identifier_list * identifier_list;
-  struct operation * operation;
+  struct {
+    uint32_t attrs;
+    identifier_list * A;
+    identifier_list * B;
+  } edge_spec;
 }
 
 /* tokens */
 %token
- ':'
  '!'
  '+'
+ ':'
  '='
- '~'
  '_'
+ '~'
  SLASH2
 
 /* terminals */
-%token            STR
-%token <yyu.imax> INTMAX8
-%token <yyu.imax> INTMAX16
-%token <yyu.umax> UINTMAX8
-%token <yyu.umax> UINTMAX16
-%token <yyu.umax> UINTMAX32
-%token <yyu.umax> HEX8
-%token <yyu.umax> HEX16
-%token <yyu.umax> HEX32
+%token            STR         104 "string"
+%token <yyu.imax> INTMAX8     105
+%token <yyu.imax> INTMAX16    106
+%token <yyu.umax> UINTMAX8    107
+%token <yyu.umax> UINTMAX16   108
+%token <yyu.umax> UINTMAX32   109
+%token <yyu.umax> HEX8        110
+%token <yyu.umax> HEX16       111
+%token <yyu.umax> HEX32       112
 
 /* nonterminals */
 %type <identifier>
@@ -87,8 +91,7 @@
 %type <identifier_list>
  identifier-sequence-list
 
-%type <operation>
- operation
+%type <edge_spec>
  edge
 
 %type <u32>
@@ -96,9 +99,9 @@
  edge_attrs
  uint32
 
+%destructor { identifier_list_free($$.A); identifier_list_free($$.B); } <edge_spec>
 %destructor { identifier_list_free($$); } <identifier_list>
 %destructor { identifier_free($$); } <identifier>
-%destructor { operation_free($$); } <operation>
 
 %%
 utterance
@@ -108,68 +111,53 @@ utterance
 
 operations
   : operations operation
-  {
-    YFATAL(list_push, PARSER->li, $2, 0);
-  }
   | operation
-  {
-    YFATAL(list_push, PARSER->li, $1, 0);
-  }
   ;
 
 operation
  /* declare some vertices */
   : identifier-sequence-list
   {
-    YFATAL(xmalloc, &$$, sizeof(*$$));
-    $$->A = $1;
-    $$->type = GRAPH_OPERATION_VERTEX;
+    YFATAL(operation_vertex, PARSER, $1);
   }
 
   /* refresh a vertex */
   | '@' identifier-sequence-list
   {
-    YFATAL(xmalloc, &$$, sizeof(*$$));
-    $$->A = $2;
-    $$->type = GRAPH_OPERATION_REFRESH;
+    YFATAL(operation_refresh, PARSER, $2);
   }
 
   /* invalidate a vertex */
   | '~' identifier-sequence-list
   {
-    YFATAL(xmalloc, &$$, sizeof(*$$));
-    $$->A = $2;
-    $$->type = GRAPH_OPERATION_REFRESH;
+    YFATAL(operation_invalidate, PARSER, $2);
   }
 
   /* connect an edge */
   | '+' edge
   {
-    $$ = $2;
-    $$->type = GRAPH_OPERATION_CONNECT;
+    YFATAL(operation_connect, PARSER, $2.A, $2.B, $2.attrs);
   }
 
   /* disconnect an edge */
   | '=' edge
   {
-    $$ = $2;
-    $$->type = GRAPH_OPERATION_DISCONNECT;
+    YFATAL(operation_disconnect, PARSER, $2.A, $2.B);
   }
   ;
 
 edge
   : identifier-sequence-list ':' edge_attrs ':' identifier-sequence-list
   {
-    YFATAL(xmalloc, &$$, sizeof(*$$));
-    $$->A = $1;
-    $$->B = $5;
-    $$->attrs = $3;
+    $$.A = $1;
+    $$.B = $5;
+    $$.attrs = $3;
   }
   | identifier-sequence-list ':' identifier-sequence-list
   {
-    YFATAL(xmalloc, &$$, sizeof(*$$));
-    $$->A = $1;
-    $$->B = $3;
+    $$.A = $1;
+    $$.B = $3;
+    $$.attrs = 0;
   }
   ;
 
@@ -203,12 +191,12 @@ identifier-sequence
   | SLASH2 identifier
   {
     $$ = $2;
-    $$->op_attrs = MORIA_OPATTRS_INIT_SLASH;
+    $$->opattrs = MORIA_OPATTRS_INIT_SLASH;
   }
   | identifier
   {
     $$ = $1;
-    $$->op_attrs = MORIA_OPATTRS_INIT;
+    $$->opattrs = MORIA_OPATTRS_INIT;
   }
   ;
 

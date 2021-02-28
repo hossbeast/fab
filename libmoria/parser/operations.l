@@ -19,7 +19,7 @@
   #include "yyutil/scanner.h"
 
   #include "MORIA.errtab.h"
-  #include "operations.internal.h"
+  #include "operations.h"
   #include "operations.tab.h"
   #include "operations.tokens.h"
 
