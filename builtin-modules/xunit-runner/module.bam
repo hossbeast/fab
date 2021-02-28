@@ -16,7 +16,7 @@
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
 # run the tests
-rule -- //xunit : ./bam-xunit
+rule -- //xunit : ./xunit.bam
 
 # add to main tests target
 rule //xunit -> //tests

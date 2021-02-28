@@ -17,7 +17,7 @@
 
 # lex.c files from lexer l files
 #  each invocation yields all files on the right-hand-side
-rule **/(*).l -> [*] $^D/$1.lex.{c,h} : ./bam-flex
+rule **/(*).l -> [*] $^D/$1.lex.{c,h} : ./flex.bam
 
 # states.c / states.h files from .lex.h files
-rule **/(*).lex.h -> [*] $^D/$1.states.{c,h} : ./bam-states
+rule **/(*).lex.h -> [*] $^D/$1.states.{c,h} : ./states.bam
