@@ -19,7 +19,9 @@
 #define _PARSEINT
 
 #include <inttypes.h>
+
 #include "xapi.h"
+#include "types.h"
 
 /// parseint
 //

@@ -15,20 +15,10 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#include "xapi.h"
-#include "xlinux/xstdlib.h"
-
 #include "grow.h"
 #include "assure.h"
-
-#define SEED 10
 
 xapi API grow(void * target, size_t es, size_t len, size_t ec, size_t * const restrict ac)
 {
   xproxy(assure, target, es, ec + len, ac);
-}
-
-xapi API growx(void * target, size_t es, size_t len, size_t ec, size_t * const restrict ac, size_t seed)
-{
-  xproxy(assurex, target, es, ec + len, ac, seed);
 }
