@@ -16,25 +16,25 @@
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
 #include <inttypes.h>
-#include <stdio.h>
 
-#include "types.h"
 #include "xapi.h"
 
-#include "xlinux/xstdlib.h"
-#include "valyria/dictionary.h"
-#include "valyria/list.h"
-#include "valyria/map.h"
-#include "valyria/multimap.h"
+#include "common/attrs.h"
+#include "common/hash.h"
 #include "narrator.h"
+#include "valyria/dictionary.h"
+#include "valyria/hashtable.h"
+#include "valyria/llist.h"
+#include "valyria/rbtree.h"
+#include "xlinux/xstdlib.h"
 
 #include "graph.internal.h"
 #include "MORIA.errtab.h"
 #include "edge.internal.h"
-#include "vertex.internal.h"
+#include "moria.h"
+#include "traverse.internal.h"
+#include "vertex.h"
 
-#include "common/attrs.h"
-#include "macros.h"
 #include "zbuffer.h"
 
 //
@@ -42,7 +42,7 @@
 //
 
 struct edge_compare_context {
-  graph * g;
+  moria_graph * g;
   dictionary * vertex_id_map;
 };
 
@@ -50,14 +50,14 @@ static int edge_compare(const void * _X, const void * _Y, void * _ctx)
 {
   dictionary * vertex_id_map = _ctx;
 
-  const edge_t * X = *(edge_t **)_X;
-  const edge_t * Y = *(edge_t **)_Y;
+  const moria_edge * X = *(moria_edge **)_X;
+  const moria_edge * Y = *(moria_edge **)_Y;
   uint32_t * xid;
   uint32_t * yid;
   int r;
   int x;
 
-  if((r = INTCMP(X->attrs & ~MORIA_EDGE_IDENTITY, Y->attrs & ~MORIA_EDGE_IDENTITY)))
+  if((r = INTCMP(X->attrs, Y->attrs)))
     return r;
 
   if(!(X->attrs & MORIA_EDGE_HYPER))
@@ -100,29 +100,39 @@ static int edge_compare(const void * _X, const void * _Y, void * _ctx)
   return 0;
 }
 
-static xapi edges_sorted(graph * const restrict g, dictionary * restrict vertex_id_map, size_t count, edge_t *** restrict edges)
+static xapi edges_sorted(llist ** restrict edge_lists, uint16_t edge_lists_len, dictionary * restrict vertex_id_map, moria_edge *** restrict edges, size_t * restrict count)
 {
   enter;
 
-  edge_t * e;
+  moria_edge * e;
   int x;
+  int y;
 
-  fatal(xmalloc, edges, count * sizeof(*edges));
-
-  x = 0;
-  llist_foreach(&g->edges, e, graph_lln) {
-    (*edges)[x++] = e;
+  *count = 0;
+  for(x = 0; x < edge_lists_len; x++)
+  {
+    *count += llist_count(edge_lists[x]);
   }
 
-  qsort_r(*edges, count, sizeof(**edges), edge_compare, vertex_id_map);
+  fatal(xmalloc, edges, (*count) * sizeof(*edges));
+
+  y = 0;
+  for(x = 0; x < edge_lists_len; x++)
+  {
+    llist_foreach(edge_lists[x], e, owner) {
+      (*edges)[y++] = e;
+    }
+  }
+
+  qsort_r(*edges, *count, sizeof(**edges), edge_compare, vertex_id_map);
 
   finally : coda;
 }
 
 static int vertex_compare(const void * _A, const void * _B)
 {
-  const vertex_t * A = *(vertex_t **)_A;
-  const vertex_t * B = *(vertex_t **)_B;
+  const moria_vertex * A = *(moria_vertex **)_A;
+  const moria_vertex * B = *(moria_vertex **)_B;
 
   int r;
   if((r = INTCMP(B->attrs & ~0x3f, A->attrs & ~0x3f)))
@@ -134,21 +144,31 @@ static int vertex_compare(const void * _A, const void * _B)
   return memncmp(A->label, A->label_len, B->label, B->label_len);
 }
 
-static xapi vertices_sorted(graph * const restrict g, size_t count, vertex_t *** restrict vertices)
+static xapi vertices_sorted(llist ** restrict vertex_lists, uint16_t vertex_lists_len, moria_vertex *** restrict vertices, size_t * restrict count)
 {
   enter;
 
-  vertex_t * v;
+  moria_vertex * v;
   int x;
+  int y;
 
-  fatal(xmalloc, vertices, count * sizeof(*vertices));
-
-  x = 0;
-  llist_foreach(&g->vertices, v, graph_lln) {
-    (*vertices)[x++] = v;
+  *count = 0;
+  for(x = 0; x < vertex_lists_len; x++)
+  {
+    *count += llist_count(vertex_lists[x]);
   }
 
-  qsort(*vertices, count, sizeof(**vertices), vertex_compare);
+  fatal(xmalloc, vertices, sizeof(*vertices) * (*count));
+
+  y = 0;
+  for(x = 0; x < vertex_lists_len; x++)
+  {
+    llist_foreach(vertex_lists[x], v, owner) {
+      (*vertices)[y++] = v;
+    }
+  }
+
+  qsort(*vertices, *count, sizeof(**vertices), vertex_compare);
 
   finally : coda;
 }
@@ -157,7 +177,7 @@ static xapi vertices_sorted(graph * const restrict g, size_t count, vertex_t ***
 // internal
 //
 
-void graph_vertex_init(graph * const restrict g, vertex_t * const restrict v)
+void graph_vertex_init(moria_graph * const restrict g, moria_vertex * const restrict v)
 {
   v->ent.index = g->vertex_index;
   v->ent.mask = g->vertex_mask;
@@ -170,7 +190,7 @@ void graph_vertex_init(graph * const restrict g, vertex_t * const restrict v)
   }
 }
 
-void graph_edge_init(graph * const restrict g, edge_t * const restrict e)
+void graph_edge_init(moria_graph * const restrict g, moria_edge * const restrict e)
 {
   e->ent.index = g->edge_index;
   e->ent.mask = g->edge_mask;
@@ -187,156 +207,67 @@ void graph_edge_init(graph * const restrict g, edge_t * const restrict e)
 // api
 //
 
-xapi API graph_create(graph ** const restrict g, uint32_t identity)
+void API moria_graph_init(moria_graph * const restrict g)
 {
-  xproxy(graph_createx, g, identity, 0, 0, 0, 0, 0, 0);
+  memset(g, 0, sizeof(*g));
+
+  g->vertex_mask = UINT64_C(1);
+  g->edge_mask = UINT64_C(1);
+  llist_init_node(&g->states);
 }
 
-xapi API graph_createx(
-    graph ** const restrict g
-  , uint32_t identity
-  , size_t vsz
-  , size_t esz
-  , void * vertex_value_destroy
-  , void * vertex_value_xdestroy
-  , void * edge_value_destroy
-  , void * edge_value_xdestroy
-)
+xapi API moria_graph_create(moria_graph ** const restrict g)
 {
   enter;
 
   fatal(xmalloc, g, sizeof(**g));
-  (*g)->identity = identity;
-  (*g)->vsz = vsz;
-  (*g)->esz = esz;
-  (*g)->vertex_value_destroy = vertex_value_destroy;
-  (*g)->vertex_value_xdestroy = vertex_value_xdestroy;
-  (*g)->edge_value_destroy = edge_value_destroy;
-  (*g)->edge_value_xdestroy = edge_value_xdestroy;
-
-  (*g)->vertex_mask = UINT64_C(1);
-  (*g)->edge_mask = UINT64_C(1);
-  llist_init_node(&(*g)->states);
-
-  fatal(multimap_create, &(*g)->mm);
-
-  llist_init_node(&(*g)->vertices);
-  llist_init_node(&(*g)->vertex_freelist);
-  llist_init_node(&(*g)->edges);
-  llist_init_node(&(*g)->edge_freelist);
+  moria_graph_init(*g);
 
   finally : coda;
 }
 
-xapi API graph_xfree(graph * const restrict g)
+void API moria_graph_destroy(moria_graph * const restrict g)
+{
+  traversal_state *state;
+  llist *T;
+
+  llist_foreach_safe(&g->states, state, lln, T) {
+    wfree(state);
+  }
+}
+
+xapi API moria_graph_xfree(moria_graph * const restrict g)
 {
   enter;
 
-  llist *T;
-  traversal_state * state;
-  vertex_t *v;
-  edge_t *e;
-
-  if(g)
-  {
-    fatal(graph_recycle, g);
-    fatal(multimap_xfree, g->mm);
-
-    llist_foreach_safe(&g->vertices, v, graph_lln, T) {
-      wfree(v);
-    }
-
-    llist_foreach_safe(&g->vertex_freelist, v, graph_lln, T) {
-      wfree(v);
-    }
-
-    llist_foreach_safe(&g->edges, e, graph_lln, T) {
-      edge_free(e);
-    }
-
-    llist_foreach_safe(&g->edge_freelist, e, graph_lln, T) {
-      edge_free(e);
-    }
-
-    llist_foreach_safe(&g->states, state, lln, T) {
-      wfree(state);
-    }
+  if(g) {
+    moria_graph_destroy(g);
   }
-
   wfree(g);
 
   finally : coda;
 }
 
-xapi API graph_recycle(graph * const restrict g)
+xapi API moria_graph_ixfree(moria_graph ** const restrict g)
 {
   enter;
 
-  vertex_t * v;
-  edge_t * e;
-
-  // free values
-  if(g->vertex_value_destroy || g->vertex_value_xdestroy)
-  {
-    llist_foreach(&g->vertices, v, graph_lln) {
-      if(g->vertex_value_destroy) {
-        g->vertex_value_destroy(v->value);
-      } else {
-        fatal(g->vertex_value_xdestroy, v->value);
-      }
-    }
-  }
-  llist_splice_tail(&g->vertex_freelist, &g->vertices);
-
-  // free edges
-  if(g->edge_value_destroy || g->edge_value_xdestroy)
-  {
-    llist_foreach(&g->edges, e, graph_lln) {
-      if(g->edge_value_destroy) {
-        g->edge_value_destroy(e->value);
-      } else {
-        fatal(g->edge_value_xdestroy, e->value);
-      }
-    }
-  }
-  llist_splice_tail(&g->edge_freelist, &g->edges);
-
-  fatal(multimap_recycle, g->mm);
-
-  finally : coda;
-}
-
-xapi API graph_ixfree(graph ** const restrict g)
-{
-  enter;
-
-  fatal(graph_xfree, *g);
+  fatal(moria_graph_xfree, *g);
   *g = 0;
 
   finally : coda;
 }
 
-struct llist * API graph_vertices(graph * restrict g)
-{
-  return &g->vertices;
-}
-
-struct llist * API graph_edges(graph * restrict g)
-{
-  return &g->edges;
-}
-
-void API graph_vertex_definitions_set(graph * restrict g, const struct attrs32 * restrict defs)
-{
-  g->vertex_defs = defs;
-}
-
-void API graph_edge_definitions_set(graph * restrict g, const struct attrs32 * restrict defs)
-{
-  g->edge_defs = defs;
-}
-
-xapi API graph_say(graph * const restrict g, struct narrator * const restrict N)
+xapi API moria_graph_say(
+    moria_graph * const restrict g
+  , llist ** restrict vertex_lists
+  , uint16_t vertex_lists_len
+  , llist ** restrict edge_lists
+  , uint16_t edge_lists_len
+  , const attrs32 * vertex_defs
+  , const attrs32 * edge_defs
+  , struct narrator * const restrict N
+)
 {
   enter;
 
@@ -344,22 +275,18 @@ xapi API graph_say(graph * const restrict g, struct narrator * const restrict N)
   int x;
   int y;
   uint32_t * id;
-  vertex_t ** vertices = 0;
-  edge_t ** edges = 0;
-  edge_t * e;
-  vertex_t * v;
+  moria_vertex ** vertices = 0;
+  moria_edge ** edges = 0;
+  moria_edge * e;
+  moria_vertex * v;
   size_t vertices_count;
   size_t edges_count;
-  uint32_t masked_attrs;
   char label[64];
   size_t label_len;
 
-  vertices_count = llist_count(&g->vertices);
-  edges_count = llist_count(&g->edges);
-
   fatal(dictionary_create, &vertex_id_map, sizeof(*id));
 
-  fatal(vertices_sorted, g, vertices_count, &vertices);
+  fatal(vertices_sorted, vertex_lists, vertex_lists_len, &vertices, &vertices_count);
   for(x = 0; x < vertices_count; x++)
   {
     v = vertices[x];
@@ -377,7 +304,7 @@ xapi API graph_say(graph * const restrict g, struct narrator * const restrict N)
 
     xsayf("%"PRIu32"-%.*s", *id, v->label_len, v->label);
 
-    if(g->vertex_defs && (label_len = znload_attrs32(label, sizeof(label), g->vertex_defs, v->attrs)))
+    if(vertex_defs && (label_len = znload_attrs32(label, sizeof(label), vertex_defs, v->attrs)))
     {
       xsayf("!%.*s", (int)label_len, label);
     }
@@ -387,8 +314,8 @@ xapi API graph_say(graph * const restrict g, struct narrator * const restrict N)
     }
   }
 
-  fatal(edges_sorted, g, vertex_id_map, edges_count, &edges);
-  for(x = 0; x < llist_count(&g->edges); x++)
+  fatal(edges_sorted, edge_lists, edge_lists_len, vertex_id_map, &edges, &edges_count);
+  for(x = 0; x < edges_count; x++)
   {
     xsays(" ");
     e = edges[x];
@@ -416,16 +343,13 @@ xapi API graph_say(graph * const restrict g, struct narrator * const restrict N)
       xsayf("%"PRIu32, *id);
     }
 
-    /* mask off internal bits */
-    masked_attrs = e->attrs & ~(MORIA_EDGE_IDENTITY | MORIA_EDGE_HYPER);
-
-    if(g->edge_defs && (label_len = znload_attrs32(label, sizeof(label), g->edge_defs, masked_attrs)))
+    if(edge_defs && (label_len = znload_attrs32(label, sizeof(label), edge_defs, e->attrs)))
     {
       xsayf(":%.*s", (int)label_len, label);
     }
-    else if(masked_attrs)
+    else if(e->attrs)
     {
-      xsayf(":0x%"PRIx32, masked_attrs);
+      xsayf(":0x%"PRIx32, e->attrs);
     }
 
     xsays(":");
@@ -462,11 +386,11 @@ finally:
 coda;
 }
 
-xapi API graph_lookup_sentinel(void * restrict _context, const char ** restrict label, uint16_t * restrict label_len)
+xapi API moria_graph_lookup_sentinel(void * restrict _context, const char ** restrict label, uint16_t * restrict label_len)
 {
   enter;
 
-  graph_lookup_sentinel_context * context = _context;
+  moria_graph_lookup_sentinel_context * context = _context;
 
   if(label)
   {
@@ -485,110 +409,133 @@ xapi API graph_lookup_sentinel(void * restrict _context, const char ** restrict 
   finally : coda;
 }
 
-xapi API graph_lookup(
-    graph * restrict g
-  , graph_lookup_identifier_callback identifier_callback
-  , bool (*candidate_callback)(void * context, const struct vertex * const restrict v)
+uint32_t API moria_vertex_entry_hash(uint32_t h, const void *p, size_t sz)
+{
+  const moria_vertex_entry *v = p;
+
+  return hash32(h, v->label, v->label_len);
+}
+
+int API moria_vertex_entry_cmp(const void *A, size_t Asz, const void *B, size_t Bsz)
+{
+  const moria_vertex_entry *a = A;
+  const moria_vertex_entry *b = B;
+
+  return memncmp(a->label, a->label_len, b->label, b->label_len);
+}
+
+int API moria_vertex_entry_key_cmp(const void *A, const void *K, size_t sz)
+{
+  const moria_vertex_entry *a = (void*)A;
+  const moria_vertex_entry *b = K;
+
+  return memncmp(a->label, a->label_len, b->label, b->label_len);
+}
+
+xapi API moria_graph_lookup(
+    moria_graph * restrict g
+  , const hashtable * restrict mm
+  , moria_graph_lookup_identifier_callback identifier_callback
+  , bool (*candidate_callback)(void * context, const struct moria_vertex * const restrict v)
   , void * restrict context
-  , void * mm_tmp
-  , vertex * restrict V[2]   // (returns) located vertices
-  , int * restrict r         // (returns) return code
+  , moria_vertex * restrict V[2]   // (returns) located vertices
+  , int * restrict r               // (returns) return code
 )
 {
   enter;
 
-  vertex ** nodes;
-  size_t nodesl;
   const char * label;
   uint16_t label_len;
+  moria_vertex_entry *entry, key;
+  moria_vertex *v, *p;
+  bool matched;
 
   *r = 0;
 
   // get the starting vertex label
   fatal(identifier_callback, context, 0, 0);
   fatal(identifier_callback, context, &label, &label_len);
-  if(!label)
+  if(!label) {
     goto XAPI_FINALIZE;
+  }
 
   // get the set of starting vertices having the initial label
-  fatal(multimap_get, g->mm, label, label_len, mm_tmp, &nodes, &nodesl);
+  key.label = label;
+  key.label_len = label_len;
+  if(!(entry = hashtable_search(mm, &key, sizeof(key), moria_vertex_entry_hash, moria_vertex_entry_key_cmp))) {
+    goto XAPI_FINALIZE;
+  }
 
-  size_t x[2] = { [0] = SIZE_MAX };
-  for(x[1] = 0; x[1] < nodesl; x[1]++)
-  {
-    const vertex * v = nodes[x[1]];
-
-    if(candidate_callback && !candidate_callback(context, v))
+  rbtree_foreach(&entry->rbt, v, rbn_lookup) {
+    if(candidate_callback && !candidate_callback(context, v)) {
       continue;
+    }
 
+    /* check whether the sequence of ancestors matches */
+    p = v;
     while(1)
     {
       fatal(identifier_callback, context, &label, &label_len);
-      if(!label)
+      if(!label) {
         break;
+      }
 
-      if((v = vertex_up(v)) == NULL)
+      if((p = moria_vertex_up(p)) == NULL) {
         break;
+      }
 
-      if(memncmp(label, label_len, v->label, v->label_len) != 0)
+      if(memncmp(label, label_len, ".", 1) == 0) {
+        continue;
+      }
+
+      if(memncmp(label, label_len, "..", 2) == 0) {
+        if((p = moria_vertex_up(p)) == NULL) {
+          break;
+        }
+        continue;
+      }
+
+      if(memncmp(label, label_len, p->label, p->label_len) != 0) {
         break;
+      }
     }
 
-    bool matched = !label;
+    matched = !label;
 
     // reset the cursor, discard the initial label
     fatal(identifier_callback, context, 0, 0);
     fatal(identifier_callback, context, &label, &label_len);
 
-    if(!matched)
-    {
-      // identifier was not fully matched
+    if(!matched) {
       continue;
     }
-    else if(x[0] != SIZE_MAX)
-    {
-      // identifier matched on multiple nodes
-      V[0] = nodes[x[0]];
-      V[1] = nodes[x[1]];
-      *r = 2;
-      goto XAPI_FINALIZE;
+
+    V[*r] = v;
+
+    /* identifier matched on multiple nodes */
+    if(((*r)++) == 2) {
+      break;
     }
-
-    x[0] = x[1];
-  }
-
-  if(x[0] != SIZE_MAX)
-  {
-    V[0] = nodes[x[0]];
-    *r = 1;
   }
 
   finally : coda;
 }
 
-xapi API graph_identity_indexs(graph * const restrict g, vertex * const restrict v, const char * const restrict name)
+xapi API moria_graph_linear_search(llist * restrict vertex_list, const char * restrict label, uint16_t label_len, moria_vertex ** restrict rv)
 {
   enter;
 
-  fatal(multimap_set, g->mm, MMS(name), v);
+  moria_vertex *v;
 
-  finally : coda;
-}
-
-xapi API graph_identity_indexw(graph * const restrict g, vertex * const restrict v, const char * const restrict name, uint16_t name_len)
-{
-  enter;
-
-  fatal(multimap_set, g->mm, name, name_len, v);
-
-  finally : coda;
-}
-
-xapi API graph_identity_deindex(graph * const restrict g, vertex * const restrict v)
-{
-  enter;
-
-  fatal(multimap_delete, g->mm, v->label, v->label_len);
+  *rv = 0;
+  llist_foreach(vertex_list, v, owner) {
+    if(memncmp(v->label, v->label_len, label, label_len) == 0) {
+      if(*rv) {
+        fail(MORIA_AMBIGUOUS);
+      }
+      *rv = v;
+    }
+  }
 
   finally : coda;
 }

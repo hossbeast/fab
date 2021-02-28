@@ -15,7 +15,10 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef _MORIA_ATTR_INTERNAL_H
-#define _MORIA_ATTR_INTERNAL_H
+#ifndef _MORIA_ATTR_H
+#define _MORIA_ATTR_H
+
+#define DIRECTION_OPT   UINT32_C(0x00000003)  // UP, DOWN
+#define METHOD_OPT      UINT32_C(0x0000000c)  // PRE, POST
 
 #endif

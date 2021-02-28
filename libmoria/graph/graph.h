@@ -19,32 +19,24 @@
 #define _MORIA_GRAPH_H
 
 /*
+An identity graph is a tree where each vertex is uniquely identified by its path in the upward
+direction to another vertex called the root. For example, a filesystem tree is an identity graph
+with a root vertex at '/'.
 
-MODULE
- graph
-
-SUMMARY
-
-REMARKS
- An identity graph is a tree where each vertex is uniquely identified by its path in the upward
- direction to another vertex called the root. For example, a filesystem tree is an identity graph
- with a root vertex at '/'.
-
- hyperedges cannot be part of the identity graph
+hyperedges cannot be part of the identity graph
 */
 
 #include "xapi.h"
 #include "types.h"
 
-struct llist;
-struct narrator;
+#include "valyria/rbtree.h"
+
 struct attrs32;
-
-struct vertex;
-struct edge;
-struct traversal_criteria;
-
-typedef struct graph graph;
+struct hashtable;    // valyria/hashtable
+struct narrator;
+struct moria_vertex;
+struct llist;
+struct moria_graph;
 
 /*
  * create a graph
@@ -55,37 +47,25 @@ typedef struct graph graph;
  * [vertex_value_destroy] - invoked on vertex user data before releasing
  * [edge_value_destroy] - invoked on vertex user data before releasing
  */
-xapi graph_create(graph ** const restrict g, uint32_t identity)
-  __attribute__((nonnull(1)));
+xapi moria_graph_create(struct moria_graph ** const restrict g)
+  __attribute__((nonnull));
 
-xapi graph_createx(
-    graph ** const restrict g
-  , uint32_t identity
-  , size_t vsz
-  , size_t esz
-  , void * vertex_value_destroy
-  , void * vertex_value_xdestroy
-  , void * edge_value_destroy
-  , void * edge_value_xdestroy
-)
-  __attribute__((nonnull(1)));
-
-/*
- * [defs]      - name/value mappings for parse and say
- */
-void graph_vertex_definitions_set(graph * restrict g, const struct attrs32 * restrict defs)
+void moria_graph_init(struct moria_graph * const restrict g)
   __attribute__((nonnull));
 
 /*
- * [defs]      - name/value mappings for parse and say
+ * [defs] - name/value mappings for parse and say
  */
-void graph_edge_definitions_set(graph * restrict g, const struct attrs32 * restrict defs)
+void moria_graph_vertex_definitions_set(struct moria_graph * restrict g, const struct attrs32 * restrict defs)
   __attribute__((nonnull));
 
-struct llist * graph_vertices(graph * restrict g)
+/*
+ * [defs] - name/value mappings for parse and say
+ */
+void moria_graph_edge_definitions_set(struct moria_graph * restrict g, const struct attrs32 * restrict defs)
   __attribute__((nonnull));
 
-struct llist * graph_edges(graph * restrict g)
+void moria_graph_destroy(struct moria_graph * const restrict g)
   __attribute__((nonnull));
 
 /// graph_xfree
@@ -93,22 +73,14 @@ struct llist * graph_edges(graph * restrict g)
 // SUMMARY
 //  free a graph
 //
-xapi graph_xfree(graph * const restrict g);
+xapi moria_graph_xfree(struct moria_graph * const restrict g);
 
 /// graph_ifree
 //
 // SUMMARY
 //  free a graph, zero its reference
 //
-xapi graph_ixfree(graph ** const restrict g)
-  __attribute__((nonnull));
-
-/// graph_recycle
-//
-// SUMMARY
-//  reset the graph to its initial state, without releasing allocations
-//
-xapi graph_recycle(graph * const restrict g)
+xapi moria_graph_ixfree(struct moria_graph ** const restrict g)
   __attribute__((nonnull));
 
 /// graph_say
@@ -121,19 +93,43 @@ xapi graph_recycle(graph * const restrict g)
 //  [d] - attrs name lookup
 //  N   - narrator
 //
-xapi graph_say(graph * const restrict g, struct narrator * const restrict N)
-  __attribute__((nonnull));
+xapi moria_graph_say(
+  /* 1 */   struct moria_graph * const restrict g
+  /* 2 */ , struct llist ** restrict vertex_lists
+  /* 3 */ , uint16_t vertex_lists_len
+  /* 4 */ , struct llist ** restrict edge_lists
+  /* 5 */ , uint16_t edge_lists_len
+  /* 6 */ , const struct attrs32 * vertex_defs
+  /* 7 */ , const struct attrs32 * edge_defs
+  /* 8 */ , struct narrator * const restrict N
+)
+  __attribute__((nonnull(1, 2, 4, 8)));
 
 /// graph_lookup_identifier_callback
 //
 // SUMMARY
 //  returns the next label in the lookup sequence, or resets the lookup sequence if label == NULL
 //
-typedef xapi (*graph_lookup_identifier_callback)(
+typedef xapi (*moria_graph_lookup_identifier_callback)(
     void * context                  // user context
   , const char ** restrict label    // (returns) next label
   , uint16_t * restrict label_len   // (returns) next label length
 );
+
+typedef struct moria_vertex_entry {
+  const char *label;
+  uint16_t label_len;
+  rbtree rbt;
+} moria_vertex_entry;
+
+int moria_vertex_entry_key_cmp(const void *A, const void *key, size_t sz)
+  __attribute__((nonnull));
+
+uint32_t moria_vertex_entry_hash(uint32_t h, const void *v, size_t sz)
+  __attribute__((nonnull));
+
+int moria_vertex_entry_cmp(const void *A, size_t Asz, const void *B, size_t Bsz)
+  __attribute__((nonnull));
 
 /// graph_lookup
 //
@@ -142,10 +138,10 @@ typedef xapi (*graph_lookup_identifier_callback)(
 //
 // PARAMETERS
 //  g                   - graph with nonzero identity
+//  mm                  - scope
 //  identifier_callback - user callback to get vertex labels in the lookup sequence
 //  candidate_callback  - user callback to qualify a vertex
 //  context             - opaque user context for identifier_callback
-//  mm_tmp              - required temp space for mm lookup
 //  *V                  - (returns) one, or two vertices (based on *r)
 //  *r                  - (returns) return code
 //
@@ -155,36 +151,35 @@ typedef xapi (*graph_lookup_identifier_callback)(
 //   1 - one matching vertex (*V)
 //   2 - two or more matching vertices (*V[0], *V[1])
 //
-xapi graph_lookup(
-    /* 1 */ struct graph * restrict g
-  , /* 2 */ graph_lookup_identifier_callback identifier_callback
-  , /* 3 */ bool (*candidate_callback)(void * context, const struct vertex * const restrict v)
-  , /* 4 */ void * context
-  , /* 5 */ void * mm_tmp
-  , /* 6 */ struct vertex * restrict V[2]
+xapi moria_graph_lookup(
+    /* 1 */ struct moria_graph * restrict g
+  , /* 2 */ const struct hashtable * restrict mm
+  , /* 3 */ moria_graph_lookup_identifier_callback identifier_callback
+  , /* 4 */ bool (*candidate_callback)(void * context, const struct moria_vertex * const restrict v)
+  , /* 5 */ void * context
+  , /* 6 */ struct moria_vertex * restrict V[2]
   , /* 7 */ int * restrict r
 )
-  __attribute__((nonnull(1, 2, 5, 6, 7)));
+  __attribute__((nonnull(1, 2, 3, 6, 7)));
 
-typedef struct graph_lookup_sentinel_context {
+typedef struct moria_graph_lookup_sentinel_context {
   char ** labels;     // sentinel-terminated sequence of labels
   uint16_t index;     // iteration state
-} graph_lookup_sentinel_context;
+} moria_graph_lookup_sentinel_context;
 
 /// graph_lookup_sentinel
 //
 // lookup callback for resolving an identifier comprised of a sentinel-terminated array of labels
 //
-xapi graph_lookup_sentinel(void * restrict context, const char ** restrict label, uint16_t * restrict label_len)
+xapi moria_graph_lookup_sentinel(void * restrict context, const char ** restrict label, uint16_t * restrict label_len)
   __attribute__((nonnull(1)));
 
-xapi graph_identity_indexs(graph * const restrict g, struct vertex * const restrict v, const char * const restrict name)
-  __attribute__((nonnull));
-
-xapi graph_identity_indexw(graph * const restrict g, struct vertex * const restrict v, const char * const restrict name, uint16_t name_len)
-  __attribute__((nonnull));
-
-xapi graph_identity_deindex(graph * const restrict g, struct vertex * const restrict v)
+xapi moria_graph_linear_search(
+    struct llist * restrict vertex_list
+  , const char * restrict label
+  , uint16_t label_len
+  , struct moria_vertex ** restrict rv
+)
   __attribute__((nonnull));
 
 #endif

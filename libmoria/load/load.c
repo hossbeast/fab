@@ -22,7 +22,7 @@
 #include "xlinux/load.h"
 #include "yyutil/load.h"
 
-#include "load.internal.h"
+#include "load.h"
 #include "logging.internal.h"
 
 //
