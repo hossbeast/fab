@@ -15,15 +15,11 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#include <inttypes.h>
-#include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 #include <getopt.h>
 
 #include "xapi.h"
 #include "errtab/MAIN.errtab.h"
-#include "xlinux/xstring.h"
 #include "xlinux/xstdlib.h"
 #include "logger.h"
 #include "logger/arguments.h"

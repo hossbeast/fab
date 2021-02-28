@@ -144,6 +144,15 @@ xapi API value_parser_ixfree(value_parser ** const p)
   finally : coda;
 }
 
+xapi API value_parser_recycle(value_parser * restrict p)
+{
+  enter;
+
+  fatal(value_store_recycle, p->store);
+
+  finally : coda;
+}
+
 xapi API value_parser_parse(
     value_parser * restrict parser
   , char * const restrict text
@@ -172,7 +181,9 @@ xapi API value_parser_parse(
   if(root)
     *root = parser->root;
 
-  finally : coda;
+finally:
+  xapi_infos("fname", fname);
+coda;
 }
 
 xapi API value_parser_parse_partial(

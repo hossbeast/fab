@@ -19,13 +19,11 @@
 #include "valyria/pstring.h"
 #include "valyria/list.h"
 #include "valyria/set.h"
-#include "yyutil/parser.h"
 
 #include "value.h"
-#include "make.internal.h"
+#include "clone.h"
 #include "store.internal.h"
 #include "parser.internal.h"
-#include "clone.h"
 
 //
 // static

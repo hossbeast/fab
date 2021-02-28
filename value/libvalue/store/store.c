@@ -15,22 +15,14 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#include "types.h"
-#include "xapi.h"
-
+#include "valyria/hashtable.h"
+#include "valyria/list.h"
+#include "valyria/pstring.h"
+#include "valyria/set.h"
 #include "xlinux/xstdlib.h"
 
-#include "valyria/list.h"
-#include "valyria/set.h"
-#include "valyria/pstring.h"
-
-#include "value.h"
-#include "value.h"
 #include "parser.internal.h"
 #include "store.internal.h"
-
-#include "common/grow.h"
-#include "common/assure.h"
 
 static uint32_t set_value_hash(uint32_t h, const void * restrict _val, size_t sz)
 {

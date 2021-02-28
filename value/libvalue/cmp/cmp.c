@@ -18,8 +18,8 @@
 #include "xapi.h"
 
 #include "valyria/list.h"
-#include "valyria/set.h"
 #include "valyria/pstring.h"
+#include "valyria/set.h"
 
 #include "value.h"
 #include "common/hash.h"
@@ -33,8 +33,8 @@ int API value_cmp(value * const restrict A, value * const restrict B)
 {
   int d;
   int x;
-
   int r = 0;
+
   if(A == 0 || B == 0)
   {
     r = (A == 0) - (B == 0);
@@ -114,11 +114,13 @@ bool API value_equal(value * const restrict A, value * const restrict B)
 
 uint32_t API value_hash(uint32_t h, value * const restrict val)
 {
+  uint32_t hash;
+  int x;
+
   if(!val->hash)
   {
-    uint32_t hash = hash32(0, &val->type, sizeof(val->type));
+    hash = hash32(0, &val->type, sizeof(val->type));
 
-    int x;
     if(val->type == VALUE_TYPE_LIST)
     {
       for(x = 0; x < val->items->size; x++)
