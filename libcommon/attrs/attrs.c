@@ -129,11 +129,13 @@ size_t API znload_attrs16(void * restrict dst, size_t sz, const attrs16 * restri
 {
   uint16_t erange;
   uint16_t evalue;
-  size_t z = 0;
+  size_t z;
   uint16_t bits = 0;
   uint16_t rem;
-
   int x;
+
+  z = 0;
+
   for(x = 0; x < e->num; x++)
   {
     erange = e->members[x].range;
@@ -141,8 +143,9 @@ size_t API znload_attrs16(void * restrict dst, size_t sz, const attrs16 * restri
 
     if((erange & attrs) == evalue)
     {
-      if(bits)
+      if(z) {
         z += znloadf(dst + z, sz - z, "|");
+      }
 
       z += znloadf(dst + z, sz - z, "%.*s", e->members[x].namel, e->members[x].name);
       bits |= e->members[x].range;
@@ -151,9 +154,9 @@ size_t API znload_attrs16(void * restrict dst, size_t sz, const attrs16 * restri
 
   if((rem = (attrs & ~bits)))
   {
-    if(bits)
+    if(z) {
       z += znloadf(dst + z, sz - z, "|");
-
+    }
     z += znloadf(dst + z, sz - z, "0x%x", rem);
   }
 
@@ -205,19 +208,19 @@ size_t API znload_attrs32(void * restrict dst, size_t sz, const attrs32 * restri
   size_t z = 0;
   uint32_t bits = 0;
   uint32_t rem;
-
-//printf(">LOAD 0x%08x\n", attrs);
   int x;
+
+  z = 0;
   for(x = 0; x < e->num; x++)
   {
     erange = e->members[x].range;
     evalue = e->members[x].value;
-//printf(" %08x %08x %08x : %08x == %08x ? %d\n", erange, evalue, attrs, erange & attrs, evalue, !!((erange & attrs) == evalue));
 
     if((erange & attrs) == evalue)
     {
-      if(z)
+      if(z) {
         z += znloadf(dst + z, sz - z, "|");
+      }
 
       z += znloadf(dst + z, sz - z, "%.*s", e->members[x].namel, e->members[x].name);
       bits |= e->members[x].range;
@@ -226,9 +229,9 @@ size_t API znload_attrs32(void * restrict dst, size_t sz, const attrs32 * restri
 
   if((rem = (attrs & ~bits)))
   {
-    if(z)
+    if(z) {
       z += znloadf(dst + z, sz - z, "|");
-
+    }
     z += znloadf(dst + z, sz - z, "0x%x", rem);
   }
 
