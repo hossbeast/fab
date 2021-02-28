@@ -16,58 +16,34 @@
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
 use cc               # this module contains c sources
+use flex
+use bison
 use library/shared  # this module builds a library
-use library/static  # this module builds a library
 use xapi/errtab     # this module contains errtabs
+use xunit-tests     # this module contains xunit tests
 
 # make common objects available for #inclusion and linking by files in this module
 import fab/include
-import fab/test as fabtest
-
 import libcommon
-import libxapi
-import libxlinux
-import libnarrator
-import libvalyria
+
+import lib{xapi,xlinux,narrator,valyria,yyutil,xunit,logger}
 
 # variants for the module
 variant xapi.pic.{debug,devel,final,trace}
 
 # pull in object files in the module, except those under integ
-rule *~{integ,example,test}/**/*.?.o -> liblogger.$?.{so,a}
-#rule *~{integ,example,test}/**/*.?.o -> liblogger.$?.a
+rule **~test/*.?.o -> libvalue.$?.so
 
 # default build targets
-rule liblogger.?.so -> //module/targets
-
-# run the tests at the end
-rule //module/tests/* <- liblogger.?.{so,a}
+rule libvalue.?.so -> //module/targets
 
 # intra module dependencies - generated files
-rule */*.?.o <- errtab/LOGGER.errtab.h
+rule */*.?.o <- errtab/VALUE.errtab.h
 
 # library dependencies
-rule //module/imports/*/lib*.?.so -> liblogger.$?.so
+rule //module/imports/*~libxunit/lib*.?.so -> libvalue.$?.so
 
-#
-# tests
-#
-
+# tests need the library
 variant xapi.pic.devel : [
-  # build individual test executables
-  rule test/(*)_test.?.o -> $^D/$1_test.$? : ./cc-test.bam
-  rule test/(*)_test.? <- fabtest/errtab/TEST.errtab.$?.o
-  rule test/(*)_test.? <- fabtest/test_util.$?.o
-  rule test/(*)_test.? <- libxapi/libxapi.$?.so
-  rule test/(*)_test.? <- libxlinux/libxlinux.$?.so
-  rule test/(*)_test.? <- libvalyria/libvalyria.$?.so
-  rule test/(*)_test.? <- libnarrator/libnarrator.$?.so
-  rule test/(*)_test.? <- libcommon/libcommon.$?.so
-  rule test/(*)_test.? <- liblogger.$?.a
-
-  # target to run each test
-  rule test/(*)_test.? -> //module/tests/test-$1.$? : ./test.bam
-
-  # add to global tests
-  rule //module/tests/* -> //tests
+  rule **/test/test_*.?.so <- libvalue.$?.so
 ]

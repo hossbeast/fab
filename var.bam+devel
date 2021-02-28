@@ -1,0 +1,46 @@
+/* Copyright (c) 2012-2019 Todd Freed <todd.freed@gmail.com>
+
+   This file is part of fab.
+
+   fab is free software: you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation, either version 3 of the License, or
+   (at your option) any later version.
+
+   fab is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+
+   You should have received a copy of the GNU General Public License
+   along with fab.  If not, see <http://www.gnu.org/licenses/>. */
+
+bisonflags   : "--warnings=error"
+cflags       : {
+  -g -m64 -Wall -Werror -D_GNU_SOURCE -fno-builtin-log -Wmissing-prototypes "-fdiagnostics-color=always" -Wno-misleading-indentation -Wno-trigraphs
+  "-DFABIPCDIR=/var/run/fab"
+}
+cflags.eapi  : {
+  -DEAPI -DXAPI_MODE_ERRORCODE
+}
+cflags.xapi  : {
+  -DXAPI -DXAPI_MODE_STACKTRACE
+}
+cflags.debug : {
+  -O0 -ggdb3 -DDEBUG
+}
+cflags.devel : {
+  -O0 -ggdb3 -DDEVEL -Wno-frame-address -DFAULT_INJECTION "-fsanitize=address,undefined"
+}
+cflags.trace : {
+  -O3 -ggdb3 -DDEVEL -DTRACE -Wno-frame-address -fno-omit-frame-pointer -Wno-array-bounds
+}
+cflags.final : {
+  -O3 -Wno-array-bounds # -Warray-bounds is NOT COMPATIBLE with containerof
+}
+cflags.pic : {
+  -fPIC
+}
+lflags.devel : [
+  -lasan -lubsan
+]
