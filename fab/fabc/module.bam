@@ -20,7 +20,7 @@ use executable  # this module builds an executable
 use xapi/errtab
 
 # declare variants
-variant xapi.{debug,devel,final}
+variant xapi.{debug,devel,final,trace}
 
 rule fabc.? -> //module/targets
 
@@ -40,7 +40,7 @@ rule **/*.?.o -> fabc.$? : executable/bam-cc
 rule */*.?.o <- errtab/MAIN.errtab.h
 
 # library dependencies
-variant xapi.pic.{debug,devel,final} : [
+variant xapi.pic.{debug,devel,final,trace} : [
   rule //module/imports/*/lib*.?.so -> fabc.${?-pic}
 ]
 

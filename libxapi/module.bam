@@ -20,10 +20,10 @@ use library/shared  # this module builds a library
 use library/static  # this module builds a library
 use xapi/errtab     # this module contains errtabs
 
-import fab/include as
+import fab/include
 
 # variants for the module
-variant xapi.pic.{debug,devel,final}
+variant xapi.pic.{debug,devel,final,trace}
 
 # build the libraries
 rule libxapi.?.{so,a} -> //module/targets
@@ -47,7 +47,7 @@ rule integ/test_(*).? <- integ/errtab/TEST.errtab.$?.o
 rule integ/test_(*).? <- libxapi.$?.a
 
 # target to run each test
-rule integ/test_(*).? -> //module/tests/test-$1.$? : ./bam-test
+rule integ/test_(*).? -> //module/tests/test-$1.$? : bam-test
 
 # add tests to global tests
 rule //module/tests/* -> //tests

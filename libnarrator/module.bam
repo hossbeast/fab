@@ -27,7 +27,7 @@ import libxlinux
 import fab/test as fabtest
 
 # variants for the module
-variant xapi.pic.{debug,devel,final}
+variant xapi.pic.{debug,devel,final,trace}
 
 # pull in object files in the module, except those under integ/example
 rule *~{integ,example}/**/*.?.o -> libnarrator.$?.{so,a}

@@ -24,7 +24,7 @@ import libxlinux
 import fab/include
 
 # variants for the module
-variant xapi.pic.{debug,devel,final}
+variant xapi.pic.{debug,devel,final,trace}
 
 # build the archive
 rule libcommon.?.{so,a} -> //module/targets

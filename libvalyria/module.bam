@@ -31,10 +31,10 @@ import fab/test as fabtest
 import libcommon
 
 # variants for the module
-variant xapi.pic.{debug,devel,final}
+variant xapi.pic.{debug,devel,final,trace}
 
 # pull in object files in the module, except those under integ/assert
-variant xapi.pic.{debug,final} : [
+variant xapi.pic.{debug,final,trace} : [
   rule *~test~assert~faults/**/*.?.o -> libvalyria.$?.so
 ]
 
