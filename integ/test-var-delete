@@ -1,0 +1,58 @@
+#!/usr/bin/env perl
+
+use strict;
+use warnings;
+$SIG{__WARN__} = sub { die @_ };
+
+use POSIX;
+use File::Basename;
+use Cwd;
+our $repodir;
+BEGIN { $repodir = dirname(Cwd::realpath("$0/..")) }
+use lib "$repodir/integ/lib";
+use util;
+use tree;
+use bam;
+
+# build out the fstree under /tmp
+my $testdir = setup(<<'TREE');
+|-- module.bam+devel
+|-- var.bam+devel <<
+lflags.devel : [
+  -lasan -lubsan
+]
+>>
+TREE
+
+# before
+assert_stats(undef, {
+    modules => 1
+  , system_state_ok => 1
+});
+assert_stats(".", {
+    reloaded => 1
+  , state => "fresh"
+});
+assert_stats("module.bam+devel", {
+    parsed_try => 1
+  , parsed => 1
+  , state => "fresh"
+});
+
+unlink("$testdir/var.bam+devel") or die $!;
+reconcile();
+
+# after - disappearance of var file in same dir has invalidated the module
+assert_stats(undef, {
+    modules => 1
+  , system_state_ok => 2
+});
+assert_stats(".", {
+    reloaded => 2
+  , state => "fresh"
+});
+assert_stats("module.bam+devel", {
+    parsed_try => 2
+  , parsed => 2
+  , state => "fresh"
+});

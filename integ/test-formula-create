@@ -1,0 +1,82 @@
+#!/usr/bin/env perl
+
+use strict;
+use warnings;
+$SIG{__WARN__} = sub { die @_ };
+
+use POSIX;
+use File::Basename;
+use Cwd;
+our $repodir;
+BEGIN { $repodir = dirname(Cwd::realpath("$0/..")) }
+use lib "$repodir/integ/lib";
+use util;
+use tree;
+use bam;
+
+# build out the fstree under /tmp
+my $testdir = setup(<<'TREE');
+|-- module.bam+devel <<
+# references a non-existent formula
+rule -- boats : foo.bam
+rule boats -> //module/targets
+>>
+TREE
+
+# before
+assert_stats(undef, {
+    modules => 1
+  , system_state_ok => 0
+});
+assert_stats(".", {
+    reloaded => 1
+  , state => "fresh"
+});
+assert_stats("module.bam+devel", {
+    parsed_try => 1
+  , parsed => 1
+  , state => "fresh"
+});
+assert_stats("foo.bam", {
+    parsed_try => 0
+  , parsed => 0
+  , state => "uncreated"
+});
+
+# appearance of the formula which is referenced by a rule
+open my $fh, ">>", "$testdir/foo.bam" or die $!;
+print $fh <<'TEXT';
+#!/usr/bin/env perl
+open FH, ">>", $ENV{bm_target} or die $!;
+print FH "hi\n";
+close FH;
+TEXT
+close $fh;
+chmod 0777, "$testdir/foo.bam" or die $!;
+
+# the module has *NOT* been reloaded
+reconcile();
+assert_stats(undef, {
+    modules => 1
+  , system_state_ok => 1
+});
+assert_stats(".", {
+    reloaded => 1
+  , state => "fresh"
+});
+assert_stats("module.bam+devel", {
+    parsed_try => 1
+  , parsed => 1
+  , state => "fresh"
+});
+assert_stats("foo.bam", {
+    parsed_try => 1
+  , parsed => 1
+  , state => "fresh"
+});
+
+# build - the file should be created
+build();
+assert_stats("boats", {
+    state => "fresh"
+});

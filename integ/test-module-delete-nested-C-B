@@ -1,0 +1,104 @@
+#!/usr/bin/env perl
+
+use strict;
+use warnings;
+$SIG{__WARN__} = sub { die @_ };
+
+use POSIX;
+use File::Basename;
+use Cwd;
+our $repodir;
+BEGIN { $repodir = dirname(Cwd::realpath("$0/..")) }
+use lib "$repodir/integ/lib";
+use util;
+use tree;
+use bam;
+
+# build out the fstree under /tmp
+my $testdir = setup(<<'TREE');
+|-- A
+|   `-- B
+|       |-- C
+|       |   |-- foo
+|       |   `-- module.bam+devel
+|       `-- module.bam+devel
+`-- module.bam+devel
+TREE
+
+assert_stats(undef, { modules => 3 });
+assert_stats(".", {
+    reloaded => 1
+  , modules_up => 0
+  , modules_down => 1
+  , fsent_fresh => 1
+  , fsent_stale => 0
+});
+assert_stats("module.bam+devel", {
+    parsed_try => 1
+  , parsed => 1
+});
+assert_stats("A/B", {
+    reloaded => 1
+  , modules_up => 1
+  , modules_down => 1
+  , fsent_fresh => 1
+  , fsent_stale => 0
+});
+assert_stats("A/B/module.bam+devel", {
+    parsed_try => 1
+  , parsed => 1
+});
+assert_stats("A/B/C", {
+    reloaded => 1
+  , modules_up => 1
+  , modules_down => 0
+  , fsent_fresh => 1
+  , fsent_stale => 0
+});
+assert_stats("A/B/C/module.bam+devel", {
+    parsed_try => 1
+  , parsed => 1
+});
+
+unlink("$testdir/A/B/C/module.bam+devel") or die $!;
+reconcile();
+
+assert_stats(undef, { modules => 2 });
+assert_stats(".", {
+    reloaded => 1
+  , modules_up => 0
+  , modules_down => 1
+  , fsent_fresh => 1
+  , fsent_stale => 0
+});
+assert_stats("module.bam+devel", {
+    parsed_try => 1
+  , parsed => 1
+});
+assert_stats("A/B", {
+    reloaded => 2
+  , modules_up => 1
+  , modules_down => 0
+  , fsent_fresh => 2
+  , fsent_stale => 1
+});
+assert_stats("A/B/module.bam+devel", {
+    parsed_try => 2
+  , parsed => 2
+});
+
+unlink("$testdir/A/B/module.bam+devel") or die $!;
+reconcile();
+
+assert_stats(undef, { modules => 1 });
+assert_stats(".", {
+    reloaded => 2
+  , modules_up => 0
+  , modules_down => 0
+  , fsent_fresh => 2
+  , fsent_stale => 1
+});
+assert_stats("module.bam+devel", {
+    parsed_try => 2
+  , parsed => 2
+});

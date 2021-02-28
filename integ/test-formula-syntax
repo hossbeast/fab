@@ -1,0 +1,77 @@
+#!/usr/bin/env perl
+
+use strict;
+use warnings;
+$SIG{__WARN__} = sub { die @_ };
+
+use POSIX;
+use File::Basename;
+use Cwd;
+our $repodir;
+BEGIN { $repodir = dirname(Cwd::realpath("$0/..")) }
+use lib "$repodir/integ/lib";
+use util;
+use tree;
+use bam;
+
+# references non-existent formula
+my $testdir = setup(<<'TREE');
+|-- module.bam+devel <<
+rule -- boats : foo.bam
+rule boats -> //module/targets
+>>
+|-- foo.bam << 0777
+# formula has a syntax error
+file : {
+  path-search goats : date
+}
+>>
+TREE
+
+# before - in spite of the invalid formula, the module has still loaded
+assert_stats(undef, {
+    modules => 1
+  , system_state_ok => 0
+});
+assert_stats(".", {
+    reloaded => 1
+});
+assert_stats("module.bam+devel", {
+    parsed_try => 1
+  , parsed => 1
+});
+assert_stats("foo.bam", {
+    parsed_try => 1
+  , parsed => 0
+  , state => "stale"
+});
+
+# fix the formula
+open my $fh, ">", "$testdir/foo.bam" or die $!;
+print $fh <<'TEXT';
+file : {
+  path-search : date
+}
+TEXT
+close $fh;
+
+# after - appearance of the formula invalidates the module
+reconcile();
+assert_stats(undef, {
+    modules => 1
+  , system_state_ok => 1
+});
+assert_stats(".", {
+    reloaded => 2
+  , state => "fresh"
+});
+assert_stats("module.bam+devel", {
+    parsed_try => 2
+  , parsed => 2
+  , state => "fresh"
+});
+assert_stats("foo.bam", {
+    parsed_try => 2
+  , parsed => 1
+  , state => "fresh"
+});

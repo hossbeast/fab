@@ -1,0 +1,68 @@
+#!/usr/bin/env perl
+
+use strict;
+use warnings;
+$SIG{__WARN__} = sub { die @_ };
+
+use POSIX;
+use File::Basename;
+use Cwd;
+our $repodir;
+BEGIN { $repodir = dirname(Cwd::realpath("$0/..")) }
+use lib "$repodir/integ/lib";
+use util;
+use tree;
+use bam;
+
+# module file with non-resolving reference
+my $testdir = setup(<<'TREE');
+|-- A
+|   `-- B
+`-- module.bam+devel <<
+use A
+>>
+TREE
+
+# before
+assert_stats(undef, {
+    modules => 1
+  , models => 0
+  , system_state_ok => 0
+});
+assert_stats(".", {
+    reloaded => 0
+  , modules_up => 0
+  , modules_down => 0
+});
+assert_stats("module.bam+devel", {
+    parsed_try => 1
+  , parsed => 0
+});
+
+# create the referent
+open my $fh, ">>", "$testdir/A/model.bam+devel" or die $!;
+close $fh;
+
+# after
+reconcile();
+assert_stats(undef, {
+    modules => 1
+  , models => 1
+  , system_state_ok => 1
+});
+assert_stats(".", {
+    reloaded => 1
+  , modules_up => 0
+  , modules_down => 1
+  , state => "fresh"
+});
+assert_stats("module.bam+devel", {
+    parsed_try => 2
+  , parsed => 1
+  , state => "fresh"
+});
+assert_stats("A", {
+    modules_up => 1
+  , modules_down => 0
+  , state => "fresh"
+});

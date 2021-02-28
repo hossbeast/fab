@@ -1,0 +1,55 @@
+#!/usr/bin/env perl
+
+use strict;
+use warnings;
+$SIG{__WARN__} = sub { die @_ };
+
+use POSIX;
+use File::Basename;
+use Cwd;
+our $repodir;
+BEGIN { $repodir = dirname(Cwd::realpath("$0/..")) }
+use lib "$repodir/integ/lib";
+use util;
+use tree;
+use bam;
+
+# config file with syntax error
+my $testdir = setup(<<'TREE');
+|-- module.bam+devel
+|-- config.bam+devel <<
+goats boats
+>>
+TREE
+
+# before
+assert_stats(undef, {
+    modules => 1
+  , system_state_ok => 0
+});
+assert_stats("config.bam+devel", {
+    parsed_try => 1
+  , parsed => 0
+  , state => 'stale'
+});
+
+# config file syntax fixed
+open my $fh, ">", "$testdir/config.bam+devel" or die $!;
+print $fh <<'TEXT';
+build : {
+  concurrency : 42
+}
+TEXT
+close $fh;
+
+# after
+reconcile();
+assert_stats(undef, {
+    modules => 1
+  , system_state_ok => 1
+});
+assert_stats("config.bam+devel", {
+    parsed_try => 2
+  , parsed => 1
+  , state => "fresh"
+});

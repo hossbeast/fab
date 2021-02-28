@@ -1,0 +1,51 @@
+#!/usr/bin/env perl
+
+use strict;
+use warnings;
+$SIG{__WARN__} = sub { die @_ };
+
+use POSIX;
+use File::Basename;
+use Cwd;
+our $repodir;
+BEGIN { $repodir = dirname(Cwd::realpath("$0/..")) }
+use lib "$repodir/integ/lib";
+use util;
+use tree;
+use bam;
+
+# build out the fstree under /tmp
+my $testdir = setup(<<'TREE');
+|-- module.bam+devel
+TREE
+
+# before
+assert_stats(undef, { modules => 1 });
+assert_stats(".", {
+    reloaded => 1
+  , modules_up => 0
+  , modules_down => 0
+});
+assert_stats("module.bam+devel", {
+    parsed_try => 1
+  , parsed => 1
+});
+
+# change the module file
+open my $fh, ">>", "$testdir/module.bam+devel" or die $!;
+print $fh "\n";
+close $fh;
+
+reconcile();
+
+# after
+assert_stats(undef, { modules => 1 });
+assert_stats(".", {
+    reloaded => 2
+  , modules_up => 0
+  , modules_down => 0
+});
+assert_stats("module.bam+devel", {
+    parsed_try => 2
+  , parsed => 2
+});

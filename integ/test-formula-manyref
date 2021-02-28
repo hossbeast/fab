@@ -1,0 +1,106 @@
+#!/usr/bin/env perl
+
+use strict;
+use warnings;
+$SIG{__WARN__} = sub { die @_ };
+
+use POSIX;
+use File::Basename;
+use Cwd;
+our $repodir;
+BEGIN { $repodir = dirname(Cwd::realpath("$0/..")) }
+use lib "$repodir/integ/lib";
+use util;
+use tree;
+use bam;
+
+# module file - boats is created by separate rules which each reference separate formulas
+my $testdir = setup(<<'TREE');
+|-- module.bam+devel <<
+rule -- boats : foo.bam
+rule -- boats : bar.bam
+rule boats -> //module/targets
+>>
+|-- foo.bam << 0777
+#!/usr/bin/env perl
+open FH, ">", $ENV{bm_target} or die $!;
+print FH "foo\n";
+close FH;
+>>
+|-- bar.bam << 0777
+#!/usr/bin/env perl
+open FH, ">", $ENV{bm_target} or die $!;
+print FH "bar\n";
+close FH;
+>>
+TREE
+
+# before
+assert_stats(undef, {
+    modules => 1
+  , system_state_ok => 0
+});
+assert_stats(".", {
+    reloaded => 1
+});
+assert_stats("module.bam+devel", {
+    parsed_try => 1
+  , parsed => 1
+});
+assert_stats("foo.bam", {
+    state => "fresh"
+  , parsed_try => 1
+  , parsed => 1
+});
+assert_stats("bar.bam", {
+    state => "fresh"
+  , parsed_try => 1
+  , parsed => 1
+});
+assert_stats("boats", { state => "uncreated" });
+
+# module file - fixed
+open my $fh, ">", "$testdir/module.bam+devel" or die $!;
+print $fh <<TEXT;
+rule -- boats : foo.bam
+rule boats -> //module/targets
+TEXT
+close $fh;
+
+reconcile();
+assert_stats(undef, {
+    modules => 1
+  , system_state_ok => 1
+});
+assert_stats(".", {
+    reloaded => 2
+});
+assert_stats("module.bam+devel", {
+    parsed_try => 2
+  , parsed => 2
+});
+assert_stats("foo.bam", {
+    state => "fresh"
+  , parsed_try => 1
+  , parsed => 1
+  , type => "formula-file"
+});
+assert_stats("bar.bam", {   # no longer referenced by any rule
+    state => "fresh"
+  , type => "file"
+});
+assert_stats("boats", { state => "uncreated" });
+
+# build - creates the file
+build();
+assert_stats("boats", {
+    state => "fresh"
+  , fsent_fresh => 1
+});
+
+# file was created by the foo formula
+open $fh, "<", "$testdir/boats" or die $!;
+my $text = do { local $/ ; <$fh> };
+chomp $text;
+close $fh;
+assert { $text eq "foo" };

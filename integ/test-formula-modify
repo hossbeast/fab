@@ -1,0 +1,120 @@
+#!/usr/bin/env perl
+
+use strict;
+use warnings;
+$SIG{__WARN__} = sub { die @_ };
+
+use POSIX;
+use File::Basename;
+use Cwd;
+our $repodir;
+BEGIN { $repodir = dirname(Cwd::realpath("$0/..")) }
+use lib "$repodir/integ/lib";
+use util;
+use tree;
+use bam;
+
+# build out the fstree under /tmp
+my $testdir = setup(<<'TREE');
+|-- module.bam+devel <<
+rule -- boats : foo.bam
+rule boats -> //module/targets
+>>
+|-- foo.bam << 0777
+#!/usr/bin/env perl
+open FH, ">", $ENV{bm_target} or die $!;
+print FH "v1\n";
+close FH;
+>>
+TREE
+
+# before
+assert_stats(undef, {
+    modules => 1
+  , system_state_ok => 1
+});
+assert_stats(".", {
+    reloaded => 1
+  , state => "fresh"
+});
+assert_stats("module.bam+devel", {
+    parsed_try => 1
+  , parsed => 1
+  , state => "fresh"
+});
+assert_stats("foo.bam", {
+    state => "fresh"
+  , parsed => 1
+  , parsed_try => 1
+});
+assert_stats("boats", {
+    state => "uncreated"
+});
+
+# build - creates the file
+build();
+assert_stats(undef, {
+    modules => 1
+  , system_state_ok => 2
+});
+assert_stats("foo.bam", {
+    state => "fresh"
+  , parsed => 1
+  , parsed_try => 1
+});
+assert_stats("boats", {
+    state => "fresh"
+});
+
+# boats - created by the v1 formula
+assert_file("$testdir/boats", "v1");
+
+# formula file - v2
+open my $fh, ">", "$testdir/foo.bam" or die $!;
+print $fh <<'TEXT';
+#!/usr/bin/env perl
+open FH, ">", $ENV{bm_target} or die $!;
+print FH "v2\n";
+close FH;
+TEXT
+close $fh;
+chmod 0777, "$testdir/foo.bam" or die $!;
+
+reconcile();
+
+# foo.bam node will have been re-created by running the rule, boats will have been invalidated
+assert_stats(undef, {
+    modules => 1
+  , system_state_ok => 3
+});
+assert_stats(".", {
+    reloaded => 2
+  , state => "fresh"
+});
+assert_stats("module.bam+devel", {
+    parsed_try => 2
+  , parsed => 2
+  , state => "fresh"
+});
+assert_stats("foo.bam", {
+    state => "fresh"
+  , parsed => 2
+  , parsed_try => 2
+});
+assert_stats("boats", {
+    state => "stale"
+});
+
+# build - re-create the file
+build();
+assert_stats("foo.bam", {
+    state => "fresh"
+  , parsed => 2
+  , parsed_try => 2
+});
+assert_stats("boats", {
+    state => "fresh"
+});
+
+# boats - created by the v2 formula
+assert_file("$testdir/boats", "v2");

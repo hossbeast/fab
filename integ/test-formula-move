@@ -1,0 +1,124 @@
+#!/usr/bin/env perl
+
+use strict;
+use warnings;
+$SIG{__WARN__} = sub { die @_ };
+
+use POSIX;
+use File::Basename;
+use Cwd;
+our $repodir;
+BEGIN { $repodir = dirname(Cwd::realpath("$0/..")) }
+use lib "$repodir/integ/lib";
+use util;
+use tree;
+use bam;
+
+# build out the fstree under /tmp
+my $testdir = setup(<<'TREE');
+|-- module.bam+devel <<
+rule -- boats : foo.bam
+rule boats -> //module/targets
+>>
+|-- foo.bam << 0777
+#!/usr/bin/env perl
+open FH, ">", $ENV{bm_target} or die $!;
+print FH "foo\n";
+close FH;
+>>
+|-- bar.bam << 0777
+#!/usr/bin/env perl
+open FH, ">", $ENV{bm_target} or die $!;
+print FH "bar\n";
+close FH;
+>>
+TREE
+
+# before
+assert_stats(undef, {
+    modules => 1
+  , system_state_ok => 1
+});
+assert_stats(".", {
+    reloaded => 1
+  , state => "fresh"
+});
+assert_stats("module.bam+devel", {
+    parsed_try => 1
+  , parsed => 1
+  , state => "fresh"
+  , type => "module-file"
+});
+assert_stats("foo.bam", {
+    state => "fresh"
+  , parsed => 1
+  , parsed_try => 1
+  , type => "formula-file"
+});
+assert_stats("bar.bam", {   # not yet referenced by any formula
+    state => "fresh"
+  , type => "file"
+});
+assert_stats("boats", {
+    state => "uncreated"
+});
+
+# build - creates the file
+build();
+assert_stats("foo.bam", {
+    state => "fresh"
+  , parsed => 1
+  , parsed_try => 1
+});
+assert_stats("boats", {
+    state => "fresh"
+});
+
+# file was created by the foo formula
+assert_file("$testdir/boats", "foo");
+
+# reassign the file to the other formula
+open my $fh, ">", "$testdir/module.bam+devel" or die $!;
+print $fh <<TEXT;
+rule -- boats : bar.bam
+rule boats -> //module/targets
+TEXT
+close $fh;
+
+reconcile();
+
+# new formula assigned - boats invalidated
+assert_stats("boats", {
+    state => "stale"
+});
+
+# build - re-creates the file
+build();
+
+# foo.bam node will have been re-created by running the rule, boats will have been invalidated
+assert_stats(".", {
+    reloaded => 2
+  , state => "fresh"
+});
+assert_stats("module.bam+devel", {
+    parsed_try => 2
+  , parsed => 2
+  , state => "fresh"
+  , type => "module-file"
+});
+assert_stats("foo.bam", {  # no longer referenced by any formula
+    state => "fresh"
+  , type => "file"
+});
+assert_stats("bar.bam", {
+    state => "fresh"
+  , parsed => 1
+  , parsed_try => 1
+  , type => "formula-file"
+});
+assert_stats("boats", {
+    state => "fresh"
+});
+
+# file was created by the foo formula
+assert_file("$testdir/boats", "bar");

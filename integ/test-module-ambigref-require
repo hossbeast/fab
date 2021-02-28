@@ -1,0 +1,73 @@
+#!/usr/bin/env perl
+
+use strict;
+use warnings;
+$SIG{__WARN__} = sub { die @_ };
+
+use POSIX;
+use File::Basename;
+use Cwd;
+our $repodir;
+BEGIN { $repodir = dirname(Cwd::realpath("$0/..")) }
+use lib "$repodir/integ/lib";
+use util;
+use tree;
+use bam;
+
+# module file with ambiguous reference
+my $testdir = setup(<<'TREE');
+|-- A
+|   `-- B
+|       `-- D
+|           `-- module.bam+devel
+|   `-- C
+|       `-- D
+|           `-- module.bam+devel
+`-- module.bam+devel <<
+require D
+>>
+TREE
+
+# before
+assert_stats(undef, {
+    modules => 3
+  , system_state_ok => 0
+});
+assert_stats(".", {
+    reloaded => 0
+  , modules_up => 0
+  , modules_down => 2
+});
+assert_stats("module.bam+devel", {
+    parsed_try => 1
+  , parsed => 0
+});
+assert_stats("A/C/D", {
+    modules_up => 1
+  , modules_down => 0
+});
+
+# fix the ambiguity
+unlink("$testdir/A/B/D/module.bam+devel") or die $!;
+rmdir("$testdir/A/B/D") or die $!;
+
+# after
+reconcile();
+assert_stats(undef, {
+    modules => 2
+  , system_state_ok => 1
+});
+assert_stats(".", {
+    reloaded => 1
+  , modules_up => 0
+  , modules_down => 1
+});
+assert_stats("module.bam+devel", {
+    parsed_try => 2
+  , parsed => 1
+});
+assert_stats("A/C/D", {
+    reloaded => 1
+  , modules_up => 1
+  , modules_down => 0
+});

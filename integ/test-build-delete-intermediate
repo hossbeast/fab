@@ -1,0 +1,67 @@
+#!/usr/bin/env perl
+
+use strict;
+use warnings;
+$SIG{__WARN__} = sub { die @_ };
+
+use POSIX;
+use File::Basename;
+use Cwd;
+our $repodir;
+BEGIN { $repodir = dirname(Cwd::realpath("$0/..")) }
+use lib "$repodir/integ/lib";
+use util;
+use tree;
+use bam;
+
+# build out the fstree under /tmp
+my $testdir = setup(<<'TREE');
+|-- cores.c <<
+foo
+>>
+|-- module.bam+devel <<
+rule cores.c -> cores.o : cp.bam
+rule cores.o -> cores : cp.bam
+rule cores -> //module/targets
+>>
+|-- cp.bam << 0777
+#!/usr/bin/env perl
+open A, "<", $ENV{bm_source} or die $!;
+open B, ">", $ENV{bm_target} or die $!;
+while(<A>)
+{
+  print B "$_";
+}
+>>
+TREE
+
+build();
+
+# intermediate and final file were created
+assert_file("$testdir/cores.o", "foo");
+assert_file("$testdir/cores", "foo");
+
+# delete the intermediate file only
+unlink("$testdir/cores.o") or die $!;
+reconcile();
+
+build();
+assert_file("$testdir/cores.o", "foo");
+assert_file("$testdir/cores", "foo");
+
+# delete the final file only
+unlink("$testdir/cores") or die $!;
+reconcile();
+
+build();
+assert_file("$testdir/cores.o", "foo");
+assert_file("$testdir/cores", "foo");
+
+# delete both intermediate and final file
+unlink("$testdir/cores.o") or die $!;
+unlink("$testdir/cores") or die $!;
+reconcile();
+
+build();
+assert_file("$testdir/cores.o", "foo");
+assert_file("$testdir/cores", "foo");
