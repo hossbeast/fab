@@ -23,16 +23,31 @@ use warnings;
 $SIG{__WARN__} = sub { die @_ };
 
 use File::Basename;
+use Data::Dumper;
+use POSIX;
 
 die "cc not found" unless $ENV{cc};
 
+my @rpath;
+if($ENV{bm_variant} eq "devel.xapi" || $ENV{bm_variant} eq "trace.xapi")
+{
+  for my $req (split(/ /, $ENV{imports}))
+  {
+    push @rpath, '-Wl,-rpath,$ORIGIN' . "/$req";
+  }
+}
+
+# exec into the compiler
 my @cmd = (
     $ENV{cc}
   , split(/ /, $ENV{cflags})
-  , "-shared"
+  , (map { "-I$_" } split(/ /, $ENV{includes}))
   , "-o", $ENV{bm_target}
-  # object files in this module
+  , @rpath
+  # object files
   , split(/ /, $ENV{objects})
+  , split(/ /, $ENV{lflags} || "")
+  , split(/ /, $ENV{libraries} || '')
 );
 
 exec { $cmd[0] } @cmd
@@ -44,15 +59,61 @@ envs : {
     path-search : cc
   }
 
-  # object files for the library
+  includes : [
+    select : [
+      module
+      union : [
+        # all directories in this module
+        traverse : {
+          direction : down
+          min-distance : 0
+          graph : dirtree
+        }
+
+        # plus imported directories
+        traverse : {
+          direction : down
+          graph : imports
+        }
+      ]
+    ]
+    property : relpath
+  ]
+
+  imports : [
+    select : [
+      module
+      traverse : {
+        direction : down
+        graph : imports
+      }
+    ]
+    property : relpath
+  ]
+
   objects : [
     select : [
       target
       traverse : {
         direction : down
-        relation : strong
+        graph : depends
         max-distance : 1
         min-distance : 1
+        extension : o
+      }
+    ]
+    property : relpath
+  ]
+
+  libraries : [
+    select : [
+      target
+      traverse : {
+        direction : down
+        graph : depends
+        max-distance : 1
+        min-distance : 1
+        extension : so
       }
     ]
     property : relpath

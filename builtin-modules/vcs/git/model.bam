@@ -18,4 +18,4 @@
 use cc
 
 # generate vcs files
-rule -- [*] git-state.{c,h} : ./bam-git-state
+rule -- [*] git-state.{c,h} : ./git-state.bam

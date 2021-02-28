@@ -16,10 +16,10 @@
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
 # write the linker script
-rule *.lnk -- : ./bam-linker-script
+rule *.lnk -- : linker-script.bam
 
 # propagate invalidation from the so to the linker script
 rule { relation : conduit } (*).so -> $^D/$1.so.lnk
 
 # dynamically linked shared objects
-rule (*).so.lnk -> $^D/$1.so : ./bam-cc-so
+rule (*).so.lnk -> $^D/$1.so : cc-so.bam

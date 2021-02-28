@@ -16,45 +16,48 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with fab.  If not, see <http://www.gnu.org/licenses/>. */
-#
 
 use strict;
 use warnings;
 $SIG{__WARN__} = sub { die @_ };
 
-die "cc not found" unless $ENV{cc};
+use File::Basename;
+
+die "ar not found" unless $ENV{ar};
+
+my @arflags;
+push @arflags, split(/ /, $ENV{arflags}) if $ENV{arflags};
 
 my @cmd = (
-    $ENV{cc}
-  , split(/ /, $ENV{cflags})
-  , (map { "-I$_" } split(/ /, $ENV{includes}))
-  , $ENV{bm_source}
-  , "-c"
-  , "-o", $ENV{bm_target}
+    $ENV{ar}
+  , @arflags
+  , "rcs"
+  , $ENV{bm_target}
+  # object files in this module
+  , grep { substr($_, -2) eq ".o" } split(/ /, $ENV{objects})
 );
 
-use Data::Dumper;
-print(join(" ", @cmd) . "\n");
-
+# exec into the compiler
 exec { $cmd[0] } @cmd
 
 __DATA__
 
 envs : {
-  cc : {
-    path-search : cc
+  ar : {
+    path-search : ar
   }
 
-  deps : [
+  # object files for the library
+  objects : [
     select : [
       target
       traverse : {
         direction : down
-        relation : strong
+        graph : depends
         max-distance : 1
+        min-distance : 0
       }
     ]
-
     property : relpath
   ]
 
@@ -62,18 +65,10 @@ envs : {
     select : [
       module
       union : [
-        # all directories in this module
-        traverse : {
-          direction : down
-          min-distance : 0
-          relation : fsmod
-          nodes : dir
-        }
-
         # imported directories
         traverse : {
           direction : down
-          relation : imports
+          graph : imports
         }
       ]
     ]

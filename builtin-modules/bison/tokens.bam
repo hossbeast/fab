@@ -22,11 +22,12 @@ use strict;
 use warnings;
 $SIG{__WARN__} = sub { die @_ };
 
-my $tabc = $ENV{bm_source};
+my $tab_c = substr($ENV{bm_source0}, -2) eq ".c" ? $ENV{bm_source0} : $ENV{bm_source1};
+my $tab_h = substr($ENV{bm_source0}, -2) eq ".h" ? $ENV{bm_source0} : $ENV{bm_source1};
 my $tokens_c = substr($ENV{bm_target0}, -2) eq ".c" ? $ENV{bm_target0} : $ENV{bm_target1};
 my $tokens_h = substr($ENV{bm_target0}, -2) eq ".h" ? $ENV{bm_target0} : $ENV{bm_target1};
 
-$tokens_c =~ m|/([^./]+)[.]tokens[.]c$|;
+$tokens_c =~ m|/?([^./]+)[.]tokens[.]c$|;
 my $pfx = "$1";
 
 my %yytokentype;
@@ -34,7 +35,7 @@ my @yytname;
 my @yytoknum;
 
 # snarf bison datastructures
-open my $fh, "<$tabc" or die $!;
+open my $fh, "<$tab_h" or die $!;
 my $mode = '';
 while(my $line = <$fh>)
 {
@@ -62,6 +63,17 @@ while(my $line = <$fh>)
   {
     $mode = 'yytokentype';
   }
+}
+
+open $fh, "<$tab_c" or die $!;
+$mode = '';
+while(my $line = <$fh>)
+{
+  chomp $line;
+  if($mode && $line =~ m/};$/)
+  {
+    $mode = '';
+  }
   elsif($mode eq 'yytname')
   {
     while($line =~ m/"((?:(?:[^"\\])|(?:\\"))+)"/g)
@@ -86,26 +98,29 @@ while(my $line = <$fh>)
   }
 }
 
+
 # build the token table
 my @tokens;
 for(my $x = 0; $x < scalar(@yytoknum); $x++)
 {
-  my $token = $x;
-  my $symbol = $yytoknum[$x];
+  my $symbol = $x;
+  my $token = $yytoknum[$x];
   my $string = $yytname[$x];
-  my $name = $yytokentype{$symbol};
+  my $name = $yytokentype{$token};
 
   # skip tokens with no name, such as punctuation characters
   next unless $name;
 
   # skip bison-implementation tokens
-  next if $name =~ /yyeof/i;
-  next if $name =~ /yyerror/i;
+  # use specific names for bison implementation tokens
+  $name = "YYEOF" if $name =~ /yyeof/i;
+  $name = "YYERROR" if $name =~ /yyerror/i;
+  $name = "YYUNDEF" if $name =~ /yyundef/i;
 
   $string =~ s/^\\"//;
   $string =~ s/\\"$//;
 
-  push @tokens, { name => $name, string => $string, string_len => length($string), number => $symbol };
+  push @tokens, { name => $name, string => $string, string_len => length($string), token => $token, symbol => $symbol };
 }
 
 @tokens = sort { $$a{string} cmp $$b{string} } @tokens;
@@ -125,7 +140,7 @@ END
 
 for my $tok (@tokens) {
   print $fh <<END;
-    { number : $$tok{number}, name : "$$tok{name}", string_len : $$tok{string_len}, string : "$$tok{string}" },
+    { token : $$tok{token}, symbol : $$tok{symbol}, name : "$$tok{name}", string_len : $$tok{string_len}, string : "$$tok{string}" },
 END
 }
 
@@ -158,3 +173,9 @@ print $fh <<END;
 };
 #endif
 END
+
+#use Data::Dumper;
+#print Dumper \%yytokentype;
+#print Dumper \@yytname;
+#print Dumper \@yytoknum;
+#print Dumper \@tokens;

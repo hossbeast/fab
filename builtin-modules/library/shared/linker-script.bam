@@ -24,8 +24,6 @@ use strict;
 use warnings;
 $SIG{__WARN__} = sub { die @_ };
 
-use Data::Dumper;
-
 open(my $wfh, ">", "$ENV{bm_target}") or die "open($ENV{bm_target}) : $!";
 
 print $wfh ("{ global: \n");
@@ -53,13 +51,13 @@ envs : {
       target              # the linker script
       traverse : {        # up to the so
         direction : up
-        relation : strong
+        graph : depends
         min-distance : 1
         max-distance : 1
       }
       traverse : {        # down to the primary files
         direction : down
-        relation : strong
+        graph : depends
         min-distance : 2
         max-distance : 2
         extension : c
