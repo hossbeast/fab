@@ -20,14 +20,46 @@
 
 #include "xapi.h"
 #include "types.h"
+#include "valyria/rbtree.h"
 
 #include "edge.h"
 #include "traverse.internal.h"
 
 #include "macros.h"
 
-struct vertex;
+struct moria_vertex;
 
+typedef struct edge_key {
+  uint32_t attrs;
+  struct moria_vertex ** Alist;   // sorted in ptr order
+  uint16_t Alen;
+  struct moria_vertex ** Blist;   // sorted in ptr order
+  uint16_t Blen;
+
+  uint32_t cmp_attrs;       // possibly contains NOFOLLOW
+} edge_key;
+
+int edge_cmp_up(const struct moria_edge * restrict a, const struct moria_edge * restrict b)
+  __attribute__((nonnull));
+
+int edge_cmp_rbn_up(const rbnode * restrict an, const rbnode * restrict bn)
+  __attribute__((nonnull));
+
+int edge_cmp_key_up(void * restrict key, const rbnode * restrict bn)
+  __attribute__((nonnull));
+
+int edge_cmp_down(const struct moria_edge * restrict a, const struct moria_edge * restrict b)
+  __attribute__((nonnull));
+
+int edge_cmp_key_down(void * restrict key, const rbnode * restrict rbn)
+  __attribute__((nonnull));
+
+int edge_cmp_rbn_down(const rbnode * restrict an, const rbnode * restrict bn)
+  __attribute__((nonnull));
+
+#endif
+
+#if 0
 typedef struct edge_t {
   union {
     edge ex;
@@ -82,34 +114,4 @@ xapi edge_alloc(struct graph * restrict g, edge_t ** restrict re)
   __attribute__((nonnull));
 
 void edge_free(edge_t * restrict e);
-
-
-typedef struct edge_key {
-  uint32_t attrs;
-  struct vertex ** Alist;   // sorted in ptr order
-  uint16_t Alen;
-  struct vertex ** Blist;   // sorted in ptr order
-  uint16_t Blen;
-
-  uint32_t cmp_attrs;       // possibly contains NOFOLLOW
-} edge_key;
-
-int edge_cmp_up(const edge_t * restrict a, const edge_t * restrict b)
-  __attribute__((nonnull));
-
-int edge_cmp_rbn_up(const rbnode * restrict an, const rbnode * restrict bn)
-  __attribute__((nonnull));
-
-int edge_cmp_key_up(void * restrict key, const rbnode * restrict bn)
-  __attribute__((nonnull));
-
-int edge_cmp_down(const edge_t * restrict a, const edge_t * restrict b)
-  __attribute__((nonnull));
-
-int edge_cmp_key_down(void * restrict key, const rbnode * restrict rbn)
-  __attribute__((nonnull));
-
-int edge_cmp_rbn_down(const rbnode * restrict an, const rbnode * restrict bn)
-  __attribute__((nonnull));
-
 #endif

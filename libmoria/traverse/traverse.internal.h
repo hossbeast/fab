@@ -39,16 +39,11 @@ typedef struct traversal_state {
   uint64_t bits[];
 } traversal_state;
 
-struct vertex_traversal_state {
+struct moria_vertex_traversal_state {
   traversal_state st;
 };
-struct edge_traversal_state {
+struct moria_edge_traversal_state {
   traversal_state st;
 };
-
-typedef struct entity {
-  size_t index;           // (entity id * 3) / 64
-  uint64_t mask;          // (entity id * 3) % 64
-} entity;
 
 #endif

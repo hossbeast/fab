@@ -32,15 +32,15 @@
 // public
 //
 
-int edge_cmp_up(const edge_t * restrict a, const edge_t * restrict b)
+int edge_cmp_up(const moria_edge * restrict a, const moria_edge * restrict b)
 {
   int r;
 
   uint32_t a_identity;
   uint32_t a_hyper;
   int x;
-  const vertex *A;
-  const vertex *B;
+  const moria_vertex *A;
+  const moria_vertex *B;
 
   a_identity = a->attrs & MORIA_EDGE_IDENTITY;
   if((r = INTCMP(a_identity, b->attrs & MORIA_EDGE_IDENTITY)))
@@ -94,11 +94,11 @@ int edge_cmp_key_up(void * restrict _key, const rbnode * restrict bn)
   uint32_t hyper;
   int x;
   const edge_key * key = _key;
-  const edge_t * b;
-  const vertex *A;
-  const vertex *B;
+  const moria_edge * b;
+  const moria_vertex *A;
+  const moria_vertex *B;
 
-  b = containerof(bn, edge_t, rbn_up);
+  b = containerof(bn, moria_edge, rbn_up);
 
   identity = key->attrs & MORIA_EDGE_IDENTITY;
   if((r = INTCMP(identity, b->attrs & MORIA_EDGE_IDENTITY)))
@@ -146,28 +146,28 @@ int edge_cmp_key_up(void * restrict _key, const rbnode * restrict bn)
 
 int edge_cmp_rbn_up(const rbnode * restrict an, const rbnode * restrict bn)
 {
-  const edge_t * restrict a;
-  const edge_t * restrict b;
+  const moria_edge * restrict a;
+  const moria_edge * restrict b;
 
   if((a = an->ud.p) == 0)
-    a = containerof(an, edge_t, rbn_up);
+    a = containerof(an, moria_edge, rbn_up);
 
   if((b = bn->ud.p) == 0)
-    b = containerof(bn, edge_t, rbn_up);
+    b = containerof(bn, moria_edge, rbn_up);
 
   return edge_cmp_up(a, b);
 }
 
 
-int edge_cmp_down(const edge_t * restrict a, const edge_t * restrict b)
+int edge_cmp_down(const moria_edge * restrict a, const moria_edge * restrict b)
 {
   int r;
 
   uint32_t a_identity;
   uint32_t a_hyper;
   int x;
-  const vertex *A;
-  const vertex *B;
+  const moria_vertex *A;
+  const moria_vertex *B;
 
   a_identity = a->attrs & MORIA_EDGE_IDENTITY;
   if((r = INTCMP(a_identity, b->attrs & MORIA_EDGE_IDENTITY)))
@@ -219,14 +219,14 @@ int edge_cmp_key_down(void * _key, const rbnode * restrict bn)
 
   uint32_t identity;
   uint32_t hyper;
-  int x;
   const edge_key * key = _key;
-  const edge_t * b;
-  const vertex *A;
-  const vertex *B;
+  const moria_edge * b;
+  const moria_vertex *A;
+  const moria_vertex *B;
+  int x;
 
   if((b = bn->ud.p) == 0)
-    b = containerof(bn, edge_t, rbn_down);
+    b = containerof(bn, moria_edge, rbn_down);
 
   identity = key->attrs & MORIA_EDGE_IDENTITY;
   if((r = INTCMP(identity, b->attrs & MORIA_EDGE_IDENTITY)))
@@ -250,121 +250,115 @@ int edge_cmp_key_down(void * _key, const rbnode * restrict bn)
   }
   else
   {
-    if((r = INTCMP(key->Alen, b->Alen)))
+//printf("[{");
+//for(x = 0; x < key->Blen; x++) {
+//  printf(" %.*s", key->Blist[x]->label_len, key->Blist[x]->label);
+//}
+//printf(" } -> {");
+//for(x = 0; x < key->Alen; x++) {
+//  printf(" %.*s", key->Alist[x]->label_len, key->Alist[x]->label);
+//}
+//printf(" }]\n <=> \n[{");
+//for(x = 0; x < b->Blen; x++) {
+//  printf(" %.*s", b->Blist[x].v->label_len, b->Blist[x].v->label);
+//}
+//printf(" } -> {");
+//for(x = 0; x < b->Alen; x++) {
+//  printf(" %.*s", b->Alist[x].v->label_len, b->Alist[x].v->label);
+//}
+//printf(" }] : ");
+
+    if((r = INTCMP(key->Alen, b->Alen))) {
+//printf("%d\n", r);
       return r;
+    }
 
     for(x = 0; x < key->Alen; x++)
     {
-      if((r = INTCMP(key->Alist[x], b->Alist[x].v)))
-        return r;
-    }
-
-    if((r = INTCMP(key->Blen, b->Blen)))
+      if((r = INTCMP(key->Alist[x], b->Alist[x].v))) {
+//printf("%d\n", r);
       return r;
-
-    for(x = 0; x < key->Blen; x++)
-    {
-      if((r = INTCMP(key->Blist[x], b->Blist[x].v)))
-        return r;
     }
   }
+
+  if((r = INTCMP(key->Blen, b->Blen))) {
+//printf("%d\n", r);
+    return r;
+  }
+
+  for(x = 0; x < key->Blen; x++)
+  {
+    if((r = INTCMP(key->Blist[x], b->Blist[x].v))) {
+//printf("%d\n", r);
+      return r;
+    }
+  }
+//printf("%d\n", 0);
+}
 
   return 0;
 }
 
 int edge_cmp_rbn_down(const rbnode * restrict an, const rbnode * restrict bn)
 {
-  const edge_t * restrict a;
-  const edge_t * restrict b;
+  const moria_edge * restrict a;
+  const moria_edge * restrict b;
 
   if((a = an->ud.p) == 0)
-    a = containerof(an, edge_t, rbn_down);
+    a = containerof(an, moria_edge, rbn_down);
 
   if((b = bn->ud.p) == 0)
-    b = containerof(bn, edge_t, rbn_down);
+    b = containerof(bn, moria_edge, rbn_down);
 
   return edge_cmp_down(a, b);
-}
-
-//
-//
-//
-
-xapi edge_alloc(graph * restrict g, edge_t ** restrict re)
-{
-  enter;
-
-  edge_t * e;
-
-  if((e = llist_shift(&g->edge_freelist, edge_t, graph_lln)) == 0)
-  {
-    fatal(xmalloc, &e, sizeof(*e) + g->esz);
-    graph_edge_init(g, e);
-  }
-  else
-  {
-    if(e->attrs & MORIA_EDGE_HYPER)
-    {
-      wfree(e->Alist);
-      wfree(e->Blist);
-    }
-
-    memset(e->value, 0, g->esz);
-  }
-  llist_append(&g->edges, e, graph_lln);
-
-  *re = e;
-  e = 0;
-
-  finally : coda;
-}
-
-void edge_free(edge_t * restrict e)
-{
-  if(e && (e->attrs & MORIA_EDGE_HYPER))
-  {
-    wfree(e->Alist);
-    wfree(e->Blist);
-  }
-
-  wfree(e);
 }
 
 //
 // api
 //
 
-edge * API edge_between(const vertex * restrict Ax, const vertex * restrict Bx)
+void API moria_edge_init(struct moria_edge * const restrict e, struct moria_graph * const restrict g)
 {
-  vertex_t * A = containerof(Ax, vertex_t, vx);
-  vertex_t * B = containerof(Bx, vertex_t, vx);
+  graph_edge_init(g, e);
+}
+
+moria_edge * API moria_edge_between(const moria_vertex * restrict Ax, const moria_vertex * restrict Bx)
+{
+  moria_vertex * A = (void*)Ax;
+  moria_vertex * B = (void*)Bx;
 
   rbnode * rbn;
   edge_key key;
 
   key = (typeof(key)) {
       attrs : MORIA_EDGE_IDENTITY
-    , Blist : (vertex*[]) { &B->vx }
+    , Blist : (moria_vertex*[]) { B }
     , Blen : 1
   };
 
   if((rbn = rbtree_lookup_node(&A->down, &key, edge_cmp_key_down)))
-    return containerof(rbn, edge, rbn_down);
+    return containerof(rbn, moria_edge, rbn_down);
 
   key.attrs &= ~MORIA_EDGE_IDENTITY;
   if((rbn = rbtree_lookup_node(&A->down, &key, edge_cmp_key_down)))
-    return containerof(rbn, edge, rbn_down);
+    return containerof(rbn, moria_edge, rbn_down);
 
   return 0;
 }
 
-edge * API edge_of(vertex ** restrict Axlist, uint16_t Axlen, vertex ** restrict Bxlist, uint16_t Bxlen)
+moria_edge * API moria_edge_of(
+    moria_vertex ** restrict Axlist
+  , uint16_t Axlen
+  , moria_vertex ** restrict Bxlist
+  , uint16_t Bxlen
+)
 {
   edge_key key;
   rbnode *rbn;
 
-  if(Axlen == 1 && Bxlen == 1)
-    return edge_between(Axlist[0], Bxlist[0]);
+  if(Axlen == 1 && Bxlen == 1) {
+    return moria_edge_between(Axlist[0], Bxlist[0]);
+  }
 
   qsort(Axlist, Axlen, sizeof(*Axlist), ptrcmp);
   qsort(Bxlist, Bxlen, sizeof(*Bxlist), ptrcmp);
@@ -389,13 +383,22 @@ edge * API edge_of(vertex ** restrict Axlist, uint16_t Axlen, vertex ** restrict
   return 0;
 }
 
-void API edge_value_set(edge * const restrict ex, graph * restrict g, void * value)
+#if 0
+moria_edge * API moria_edge_containerof(const void * value)
+{
+  if(!value)
+    return 0;
+
+  return (moria_edge*)(value - offsetof(moria_edge, value));
+}
+
+void API edge_value_set(moria_edge * const restrict ex, moria_graph * restrict g, void * value)
 {
   edge_t * e = containerof(ex, edge_t, ex);
   memcpy(e->value, value, g->vsz);
 }
 
-void * API edge_value(const edge * const restrict ex)
+void * API edge_value(const moria_edge * const restrict ex)
 {
   if(!ex)
     return 0;
@@ -405,10 +408,43 @@ void * API edge_value(const edge * const restrict ex)
   return (void*)e->value;
 }
 
-edge * API edge_containerof(const void * value)
+void edge_free(moria_edge * restrict e)
 {
-  if(!value)
-    return 0;
+  if(e && (e->attrs & MORIA_EDGE_HYPER))
+  {
+    wfree(e->Alist);
+    wfree(e->Blist);
+  }
 
-  return (edge*)(value - offsetof(edge_t, value));
+  wfree(e);
 }
+
+xapi edge_alloc(moria_graph * restrict g, moria_edge ** restrict re)
+{
+  enter;
+
+  moria_edge * e;
+
+  if((e = llist_shift(&g->edge_freelist, moria_edge, graph_lln)) == 0)
+  {
+    fatal(xmalloc, &e, sizeof(*e) + g->esz);
+    graph_edge_init(g, e);
+  }
+  else
+  {
+    if(e->attrs & MORIA_EDGE_HYPER)
+    {
+      wfree(e->Alist);
+      wfree(e->Blist);
+    }
+
+    memset(e->value, 0, g->esz);
+  }
+  llist_append(&g->edges, e, graph_lln);
+
+  *re = e;
+  e = 0;
+
+  finally : coda;
+}
+#endif

@@ -18,6 +18,7 @@
 #ifndef MORIA_OPERATIONS_INTERNAL_H
 #define MORIA_OPERATIONS_INTERNAL_H
 
+#if 0
 #include "yyutil/parser.h"
 #include "operations.h"
 
@@ -30,6 +31,7 @@ struct operations_parser {
 
   const struct attrs32 * vertex_defs;
   const struct attrs32 * edge_defs;
+
   struct list * li;  // sequence of operations
 };
 
@@ -45,9 +47,6 @@ struct operations_parser {
 //
 static void operations_yyerror(yyu_location * loc, void * scanner, yyu_parser * pp, char const * err)
   __attribute__((weakref("yyu_grammar_error")));
-
-void identifier_list_free(struct identifier_list * id);
-void identifier_free(struct identifier * id);
-void operation_free(struct operation * op);
+#endif
 
 #endif

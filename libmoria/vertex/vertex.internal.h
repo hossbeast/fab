@@ -19,6 +19,9 @@
 #define _MORIA_VERTEX_INTERNAL_H
 
 #include "vertex.h"
+
+#if 0
+#include "vertex.h"
 #include "macros.h"
 
 #include "traverse.internal.h"
@@ -74,5 +77,6 @@ xapi vertex_ixfree(vertex ** const restrict v)
 
 xapi vertex_delete(vertex_t * restrict v, struct graph * restrict g)
   __attribute__((nonnull));
+#endif
 
 #endif

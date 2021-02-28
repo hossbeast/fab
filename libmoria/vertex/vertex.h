@@ -35,35 +35,11 @@ MODULE
 #include "valyria/rbtree.h"
 #include "traverse.h"
 
-struct graph;
-struct edge;
+struct moria_graph;
+struct moria_vertex;
+struct moria_edge;
 
-#define MORIA_VERTEX_LINK   0x1 /* in attrs, vertex that refers to another vertex */
-
-typedef struct vertex {
-  const char *    label;        // (not owned)
-  uint16_t        label_len;
-
-  /* the bottom 6 bits are ignored for the purposes of ordering vertices in graph_say */
-  uint32_t        attrs;        // properties of the vertex
-
-  /* edges where this == B, i.e. { up } -> this */
-  rbtree up;
-
-  /* upwards identity edge - NOT stored in up */
-  struct edge * up_identity;
-
-  /* edges where this == A, i.e. this -> { down } */
-  rbtree down;
-
-  /* referent for VERTEX_LINK */
-  struct vertex *ref;
-
-  llist lln;            // user use
-  llist graph_lln;      // graph list/freelist
-} vertex;
-
-/// vertex_create
+/// vertex_init
 //
 // SUMMARY
 //  allocate a vertex in the graph
@@ -78,17 +54,52 @@ typedef struct vertex {
 //  w - provide label as pointer/length pair
 //
 // REMARKS
-//  the label is not copied or owned by the vertex
+//  the label is not copied into or owned by the vertex
 //
-xapi vertex_create(struct vertex ** const restrict v, struct graph * const restrict g, uint32_t attrs)
+void moria_vertex_init(struct moria_vertex * const restrict v, struct moria_graph * const restrict g, uint32_t attrs)
   __attribute__((nonnull));
 
-xapi vertex_creates(struct vertex ** const restrict v, struct graph * const restrict g, uint32_t attrs, const char * const restrict label)
+void moria_vertex_inits(struct moria_vertex * const restrict v, struct moria_graph * const restrict g, uint32_t attrs, const char * const restrict label)
   __attribute__((nonnull));
 
-xapi vertex_createw(struct vertex ** const restrict v, struct graph * const restrict g, uint32_t attrs, const char * const restrict label, uint16_t label_len)
+void moria_vertex_initw(struct moria_vertex * const restrict v, struct moria_graph * const restrict g, uint32_t attrs, const char * const restrict label, uint16_t label_len)
   __attribute__((nonnull));
 
+/*
+ * Get the vertex at distance 1 from a starting vertex on the identity tree having the
+ * specified label. These apis do not follow link nodes.
+ *
+ * v     - starting vertex
+ * label - select the vertex with this label
+ * attrs - one of MORIA_TRAVERSE_{UP,DOWN}
+ */
+struct moria_vertex * moria_vertex_downs(const struct moria_vertex * restrict v, const char * restrict label)
+  __attribute__((nonnull));
+
+struct moria_vertex * moria_vertex_downw(const struct moria_vertex * restrict v, const char * restrict label, uint16_t label_len)
+  __attribute__((nonnull));
+
+struct moria_edge * moria_vertex_edge_downs(const struct moria_vertex * restrict v, const char * restrict label)
+  __attribute__((nonnull));
+
+struct moria_edge * moria_vertex_edge_downw(const struct moria_vertex * restrict v, const char * restrict label, uint16_t label_len)
+  __attribute__((nonnull));
+
+struct moria_vertex * moria_vertex_up(const struct moria_vertex * restrict v)
+  __attribute__((nonnull));
+
+struct moria_edge * moria_vertex_edge_up(const struct moria_vertex * restrict v)
+  __attribute__((nonnull));
+
+struct moria_vertex * moria_vertex_descends(const struct moria_vertex * restrict v, const char * restrict label)
+  __attribute__((nonnull));
+
+struct moria_vertex * moria_vertex_descendw(const struct moria_vertex * restrict v, const char * restrict path, uint16_t path_len)
+  __attribute__((nonnull));
+
+#endif
+
+#if 0
 /// vertex_value_set
 //
 // SUMMARY
@@ -117,31 +128,4 @@ void * vertex_value(const vertex * const restrict v);
 //  get a pointer to the vertex containing the user value
 //
 vertex * vertex_containerof(const void * value);
-
-/*
- * Get the vertex at distance 1 from a starting vertex on the identity tree having the
- * specified label. These apis do not follow link nodes.
- *
- * v     - starting vertex
- * label - select the vertex with this label
- * attrs - one of MORIA_TRAVERSE_{UP,DOWN}
- */
-vertex * vertex_downs(const vertex * restrict v, const char * restrict label)
-  __attribute__((nonnull));
-
-vertex * vertex_downw(const vertex * restrict v, const char * restrict label, uint16_t label_len)
-  __attribute__((nonnull));
-
-struct edge * vertex_edge_downs(const vertex * restrict v, const char * restrict label)
-  __attribute__((nonnull));
-
-struct edge * vertex_edge_downw(const vertex * restrict v, const char * restrict label, uint16_t label_len)
-  __attribute__((nonnull));
-
-vertex * vertex_up(const vertex * restrict v)
-  __attribute__((nonnull));
-
-struct edge * vertex_edge_up(const vertex * restrict v)
-  __attribute__((nonnull));
-
 #endif
