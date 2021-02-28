@@ -1,0 +1,109 @@
+#!/usr/bin/env perl
+#
+# Copyright (c) 2012-2020 Todd Freed <todd.freed@gmail.com>
+#
+# This file is part of fab.
+#
+# fab is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# fab is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with fab.  If not, see <http://www.gnu.org/licenses/>. */
+#
+
+use strict;
+use warnings;
+$SIG{__WARN__} = sub { die @_ };
+
+my $lexh = $ENV{bm_source};
+my $states_c = substr($ENV{bm_target0}, -2) eq ".c" ? $ENV{bm_target0} : $ENV{bm_target1};
+my $states_h = substr($ENV{bm_target0}, -2) eq ".h" ? $ENV{bm_target0} : $ENV{bm_target1};
+
+$states_c =~ m|(?:[^/]*/)?([^.]+)|;
+my $pfx = "$1";
+
+my %yystates;
+open my $fh, "<$lexh" or die $!;
+my $mode = '';
+while(my $line = <$fh>)
+{
+  chomp $line;
+  if($mode eq 'yystates')
+  {
+    if($line =~ /^#endif$/)
+    {
+      $mode = '';
+    }
+    elsif($line =~ /#define ([-_a-zA-Z0-9]+) ([0-9]+)/)
+    {
+      $yystates{$2} = $1;
+    }
+  }
+  elsif($line =~ /^#ifdef YY_HEADER_EXPORT_START_CONDITIONS$/)
+  {
+    $mode = 'yystates';
+  }
+}
+
+#
+# c file
+#
+
+close $fh;
+open $fh, ">$states_c" or die $!;
+print $fh <<END;
+int ${pfx}_numstates = @{[scalar %yystates]};
+const char ** ${pfx}_statenames = (const char *[]) {
+END
+
+while(my($k, $v) = each %yystates)
+{
+  print $fh (" [${k}] = " . '"' . ${v} . '"' . ",\n");
+}
+
+
+print $fh <<END;
+};
+const int * ${pfx}_statenumbers = (const int []) {
+END
+
+while(my($k, $v) = each %yystates)
+{
+  print $fh (" ${k},\n");
+}
+
+print $fh <<END;
+};
+END
+
+#
+# header file
+#
+
+close $fh;
+open $fh, ">$states_h" or die $!;
+print $fh <<END;
+#ifndef ${pfx}_STATES_H
+#define ${pfx}_STATES_H
+extern int ${pfx}_numstates;
+extern const int * ${pfx}_statenumbers;
+extern const char ** ${pfx}_statenames;
+enum ${pfx}_statenames {
+END
+
+while(my($k, $v) = each %yystates)
+{
+  print $fh (" ${pfx}_${v} = ${k},\n");
+}
+
+print $fh <<END;
+};
+#endif
+END

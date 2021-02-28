@@ -1,0 +1,75 @@
+/* Copyright (c) 2012-2019 Todd Freed <todd.freed@gmail.com>
+
+   This file is part of fab.
+
+   fab is free software: you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation, either version 3 of the License, or
+   (at your option) any later version.
+
+   fab is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+
+   You should have received a copy of the GNU General Public License
+   along with fab.  If not, see <http://www.gnu.org/licenses/>. */
+
+use cc               # this module contains c sources
+use library/shared  # this module builds a library
+use library/static  # this module builds a library
+use xapi/errtab     # this module contains errtabs
+
+# make common objects available for #inclusion and linking by files in this module
+import fab/include
+import fab/test as fabtest
+
+import libcommon
+import libxapi
+import libxlinux
+import libnarrator
+import libvalyria
+
+# variants for the module
+variant xapi.pic.{debug,devel,final,trace}
+
+# pull in object files in the module, except those under integ
+rule *~{integ,example,test}/**/*.?.o -> liblogger.$?.{so,a}
+#rule *~{integ,example,test}/**/*.?.o -> liblogger.$?.a
+
+# default build targets
+rule liblogger.?.so -> //module/targets
+
+# run the tests at the end
+rule //module/tests/* <- liblogger.?.{so,a}
+
+# intra module dependencies - generated files
+rule */*.?.o <- errtab/LOGGER.errtab.h
+
+# library dependencies
+rule //module/imports/*/lib*.?.so -> liblogger.$?.so
+
+#
+# tests
+#
+
+variant xapi.pic.devel : [
+  # build individual test executables
+  rule test/(*)_test.?.o -> $^D/$1_test.$? : cc-test.bam+devel
+  rule test/(*)_test.? <- fabtest/errtab/TEST.errtab.$?.o
+  rule test/(*)_test.? <- fabtest/test_util.$?.o
+  rule test/(*)_test.? <- libxapi/libxapi.$?.so
+  rule test/(*)_test.? <- libxlinux/libxlinux.$?.so
+  rule test/(*)_test.? <- libvalyria/libvalyria.$?.so
+  rule test/(*)_test.? <- libnarrator/libnarrator.$?.so
+  rule test/(*)_test.? <- libcommon/libcommon.$?.so
+  rule test/(*)_test.? <- liblogger.$?.a
+
+  # target to run each test
+  rule test/(*)_test.? -> //module/tests/test-$1 : test.bam+devel
+
+  # add to global tests
+  rule //module/tests/* [*] -> //tests
+]
+
+rule //tests -> //module/targets

@@ -1,0 +1,94 @@
+/* Copyright (c) 2012-2019 Todd Freed <todd.freed@gmail.com>
+
+   This file is part of fab.
+
+   fab is free software: you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation, either version 3 of the License, or
+   (at your option) any later version.
+
+   fab is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+
+   You should have received a copy of the GNU General Public License
+   along with fab.  If not, see <http://www.gnu.org/licenses/>. */
+
+use builtin-modules/cc           # this module contains C sources
+use builtin-modules/flex
+use builtin-modules/bison
+use builtin-modules/executable  # this module builds an executable
+use xapi/errtab
+use xunit-tests
+
+# declare variants
+variant xapi.{debug,devel,final,trace}
+variant xapi.pic.devel
+
+variant xapi.{debug,devel,final,trace} : [
+  rule fabd.? -> //module/targets
+]
+
+# make common objects available for #include and linking
+import fab/include
+import fab/asan
+import lib{common,descriptor,xapi,xlinux,valyria,value,logger,narrator,fab,lorien,moria,yyutil,xunit}
+
+rule */*.?.o <- //modules/libfab/fs/fab/stats.h
+
+variant xapi.devel : [
+  rule fabd.? <- asan/asan.$?.o
+]
+
+# invoke the compiler to build the executable
+variant xapi.{debug,devel,final,trace} : [
+  rule **~test/*.?.o -> fabd.$? : executable/cc.bam+devel
+]
+
+# intra module dependencies - generated files
+rule */*.?.o <- errtab/CONFIG.errtab.h
+rule */*.?.o <- errtab/FABD.errtab.h
+rule */*.?.o <- errtab/FORMULA.errtab.h
+rule */*.?.o <- errtab/MODULE.errtab.h
+rule */*.?.o <- errtab/PATTERN.errtab.h
+rule */*.?.o <- errtab/REQUEST.errtab.h
+rule */*.?.o <- errtab/SELECTOR.errtab.h
+
+# library dependencies
+variant xapi.pic.{debug,devel,final,trace} : [
+  rule //module/imports/*~libxunit/lib*.?.so -> fabd.${?-pic}
+]
+
+var : {
+  cflags : [ -lrt -lpthread ]
+}
+
+#
+# tests
+#
+
+variant xapi.pic.devel : [
+  rule //module/imports/libxunit/lib*.?.so -> fabd.${?-pic}
+
+  # all the code into the blob
+  rule **~test/(*~main).?.o -> test/blob.?.so : ./cc-blob-so.bam+devel
+
+  # test utilities
+  rule test/node_operations_test.?.o -> test/blob.?.so
+
+  #
+  # here be hacks
+  #  these are arranged like this in order to be loaded in the proper order
+  #
+  rule //module/imports/libyyutil/libyyutil.?.so -> //two
+  rule //module/imports/libmoria/libmoria.?.so -> //three
+  rule //module/imports/libvalue/libvalue.?.so -> //three
+  rule //module/imports/liblorien/liblorien.?.so -> //three
+  rule //module/imports/libfab/libfab.?.so -> //four
+  rule test/blob.?.so -> //five
+  rule //two -> //three
+  rule //three -> //four
+  rule //four -> //five
+  rule //five -> //xunit
+]
