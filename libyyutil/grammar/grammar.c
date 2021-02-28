@@ -15,11 +15,6 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#include <string.h>
-
-#include "xapi.h"
-#include "types.h"
-
 #include "parser.internal.h"
 #include "scanner.internal.h"
 
@@ -32,7 +27,6 @@
 //
 // api
 //
-
 
 void API yyu_aggregate_location(yyu_location * loc, yyu_location * A, yyu_location * B)
 {
@@ -66,6 +60,15 @@ void API yyu_grammar_error(yyu_location * const restrict lloc, void * const rest
 {
   char abuf[256];
   char bbuf[256];
+  char *s;
+  char *e;
+  size_t blen;
+  size_t alen;
+  size_t sz;
+  size_t z;
+  size_t zt;
+  const char *tokname;
+  int errlen;
 
   if(parser->gramerr || parser->scanerr)
   {
@@ -83,7 +86,7 @@ void API yyu_grammar_error(yyu_location * const restrict lloc, void * const rest
         err += 14;
       }
 
-      int errlen = MIN(sizeof(parser->error_str) - 1, strlen(err));
+      errlen = MIN(sizeof(parser->error_str) - 1, strlen(err));
       memcpy(parser->error_str, err, errlen);
       parser->error_str[errlen] = 0;
     }
@@ -95,22 +98,22 @@ void API yyu_grammar_error(yyu_location * const restrict lloc, void * const rest
     if(parser->last_token)
     {
       // token source string
-      char * s    = parser->last_loc.s;
-      char * e    = parser->last_loc.e;
-      size_t alen = strescw(abuf, sizeof(abuf), s, e - s);
+      s    = parser->last_loc.s;
+      e    = parser->last_loc.e;
+      alen = strescw(abuf, sizeof(abuf), s, e - s);
 
       // token value
-      size_t blen = 0;
+      blen = 0;
       if(parser->lvalstr)
         blen = parser->lvalstr(parser, parser->last_token, parser->last_lval, bbuf, sizeof(bbuf));
 
       s = parser->tokenstring;
-      size_t sz = sizeof(parser->tokenstring);
-      size_t z = 0;
-      size_t zt = 0;
+      sz = sizeof(parser->tokenstring);
+      z = 0;
+      zt = 0;
 
       // token name
-      const char * tokname = scanner_tokenname(parser, parser->last_token);
+      tokname = scanner_tokenname(parser, parser->last_token);
       if(tokname)
       {
         zt = z;

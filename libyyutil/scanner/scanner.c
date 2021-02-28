@@ -15,25 +15,19 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#include <stdarg.h>
-#include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
-#include <errno.h>
 
-#include "xapi.h"
-#include "xlinux/xstdlib.h"
+#include "common/parseint.h"
+#include "common/stresc.h"
 #include "logger.h"
 #include "xlinux/KERNEL.errtab.h"
+#include "xlinux/xstdlib.h"
 
 #include "scanner.internal.h"
 #include "logging.internal.h"
 #include "parser.internal.h"
 
 #include "macros.h"
-#include "common/stresc.h"
-#include "common/attrs.h"
-#include "common/parseint.h"
 
 static int token_table_cmp_key(const void * _key, const void * _token)
 {
@@ -48,7 +42,7 @@ int token_table_bytoken_cmp_items(const void *_a, const void *_b)
   const yyu_token * const * a = _a;
   const yyu_token * const * b = _b;
 
-  return INTCMP((*a)->number, (*b)->number);
+  return INTCMP((*a)->token, (*b)->token);
 }
 
 static int token_table_bytoken_cmp_key(const void * _key, const void * _token)
@@ -56,7 +50,7 @@ static int token_table_bytoken_cmp_key(const void * _key, const void * _token)
   const int *key = _key;
   const yyu_token * const *token = _token;
 
-  return INTCMP(*key, (*token)->number);
+  return INTCMP(*key, (*token)->token);
 }
 
 //
@@ -110,7 +104,7 @@ static xapi __attribute__((nonnull)) ptoken(
 #if DEBUG || DEVEL || XUNIT
   char abuf[256];
   char bbuf[256];
-  const char *cbuf;
+  const char *cbuf = 0;
 
   if(log_would(xtra->logs | L_YYUTIL | L_TOKENS))
   {
@@ -223,7 +217,7 @@ xapi API yyu_pushstate(int state, yyu_parser * const xtra)
     );
 
     // input name
-    const char *cbuf;
+    const char *cbuf = 0;
     size_t clen = 0;
     if(xtra->fname)
     {
@@ -279,7 +273,7 @@ xapi API yyu_popstate(yyu_parser * const xtra)
     );
 
     // input name
-    const char *cbuf;
+    const char *cbuf = 0;
     size_t clen = 0;
     if(xtra->fname)
     {
@@ -398,11 +392,11 @@ xapi API yyu_lexify_attrs(
   yyu_token *ent = bsearch(&key, parser->token_table, parser->token_table_size, sizeof(*parser->token_table), token_table_cmp_key);
   if(ent)
   {
-    token = ent->number;
+    token = ent->token;
   }
   else
   {
-    token = parser->token_table[parser->tokens.STR].number;
+    token = parser->token_table[parser->tokens.STR].token;
   }
 
   fatal(yyu_lexify, parser, ytoken, lval, lvalsz, lloc, text, parser->loc.l_lin, parser->loc.l_col + leng, leng, token);
@@ -428,7 +422,11 @@ xapi API yyu_lexify_enum(
   yyu_token *ent = bsearch(&key, parser->token_table, parser->token_table_size, sizeof(*parser->token_table), token_table_cmp_key);
   if(ent)
   {
-    token = ent->number;
+    token = ent->token;
+  }
+  else
+  {
+    token = parser->token_table[parser->tokens.YYUNDEF].token;
   }
 
   fatal(yyu_lexify, parser, ytoken, lval, lvalsz, lloc, text, parser->loc.l_lin, parser->loc.l_col + leng, leng, token);
@@ -461,27 +459,27 @@ xapi API yyu_lexify_int(
       fail(KERNEL_ERANGE);
 
     if(lval->imax < INT32_MIN)
-      token = parser->token_table[parser->tokens.INTMIN64].number;
+      token = parser->token_table[parser->tokens.INTMIN64].token;
     else if(lval->imax < INT16_MIN)
-      token = parser->token_table[parser->tokens.INTMIN32].number;
+      token = parser->token_table[parser->tokens.INTMIN32].token;
     else if(lval->imax < INT8_MIN)
-      token = parser->token_table[parser->tokens.INTMIN16].number;
+      token = parser->token_table[parser->tokens.INTMIN16].token;
     else if(lval->imax < 0)
-      token = parser->token_table[parser->tokens.INTMIN8].number;
+      token = parser->token_table[parser->tokens.INTMIN8].token;
     else if(lval->imax <= INT8_MAX)
-      token = parser->token_table[parser->tokens.INTMAX8].number;
+      token = parser->token_table[parser->tokens.INTMAX8].token;
     else if(lval->imax <= UINT8_MAX)
-      token = parser->token_table[parser->tokens.UINTMAX8].number;
+      token = parser->token_table[parser->tokens.UINTMAX8].token;
     else if(lval->imax <= INT16_MAX)
-      token = parser->token_table[parser->tokens.INTMAX16].number;
+      token = parser->token_table[parser->tokens.INTMAX16].token;
     else if(lval->imax <= UINT16_MAX)
-      token = parser->token_table[parser->tokens.UINTMAX16].number;
+      token = parser->token_table[parser->tokens.UINTMAX16].token;
     else if(lval->imax <= INT32_MAX)
-      token = parser->token_table[parser->tokens.INTMAX32].number;
+      token = parser->token_table[parser->tokens.INTMAX32].token;
     else if(lval->imax <= UINT32_MAX)
-      token = parser->token_table[parser->tokens.UINTMAX32].number;
+      token = parser->token_table[parser->tokens.UINTMAX32].token;
     else
-      token = parser->token_table[parser->tokens.INTMAX64].number;
+      token = parser->token_table[parser->tokens.INTMAX64].token;
   }
   else if(strchr(fmt, 'u'))
   {
@@ -492,21 +490,21 @@ xapi API yyu_lexify_int(
       fail(KERNEL_ERANGE);
 
     if(lval->umax <= INT8_MAX)
-      token = parser->token_table[parser->tokens.INTMAX8].number;
+      token = parser->token_table[parser->tokens.INTMAX8].token;
     else if(lval->umax <= UINT8_MAX)
-      token = parser->token_table[parser->tokens.UINTMAX8].number;
+      token = parser->token_table[parser->tokens.UINTMAX8].token;
     else if(lval->umax <= INT16_MAX)
-      token = parser->token_table[parser->tokens.INTMAX16].number;
+      token = parser->token_table[parser->tokens.INTMAX16].token;
     else if(lval->umax <= UINT16_MAX)
-      token = parser->token_table[parser->tokens.UINTMAX16].number;
+      token = parser->token_table[parser->tokens.UINTMAX16].token;
     else if(lval->umax <= INT32_MAX)
-      token = parser->token_table[parser->tokens.INTMAX32].number;
+      token = parser->token_table[parser->tokens.INTMAX32].token;
     else if(lval->umax <= UINT32_MAX)
-      token = parser->token_table[parser->tokens.UINTMAX32].number;
+      token = parser->token_table[parser->tokens.UINTMAX32].token;
     else if(lval->umax <= INT64_MAX)
-      token = parser->token_table[parser->tokens.INTMAX64].number;
+      token = parser->token_table[parser->tokens.INTMAX64].token;
     else
-      token = parser->token_table[parser->tokens.UINTMAX64].number;
+      token = parser->token_table[parser->tokens.UINTMAX64].token;
   }
   else if(strchr(fmt, 'x'))
   {
@@ -517,13 +515,13 @@ xapi API yyu_lexify_int(
       fail(KERNEL_ERANGE);
 
     else if(lval->umax <= UINT8_MAX)
-      token = parser->token_table[parser->tokens.HEX8].number;
+      token = parser->token_table[parser->tokens.HEX8].token;
     else if(lval->umax <= UINT16_MAX)
-      token = parser->token_table[parser->tokens.HEX16].number;
+      token = parser->token_table[parser->tokens.HEX16].token;
     else if(lval->umax <= UINT32_MAX)
-      token = parser->token_table[parser->tokens.HEX32].number;
+      token = parser->token_table[parser->tokens.HEX32].token;
     else
-      token = parser->token_table[parser->tokens.HEX64].number;
+      token = parser->token_table[parser->tokens.HEX64].token;
   }
 
   fatal(yyu_lexify, parser, ytoken, lval, lvalsz, lloc, text, parser->loc.l_lin, parser->loc.l_col + leng, leng, token);
@@ -569,7 +567,7 @@ xapi API yyu_lexify_cref(
   else if(text[off] == '"')
     lval->c = '"';
 
-  int token = parser->token_table[parser->tokens.CREF].number;
+  int token = parser->token_table[parser->tokens.CREF].token;
   fatal(yyu_lexify, parser, ytoken, lval, lvalsz, lloc, text, parser->loc.l_lin, parser->loc.l_col + leng, leng, token);
 
   finally : coda;
@@ -592,7 +590,7 @@ xapi API yyu_lexify_href(
 
   fatal(xparseuint, text + off, "hhx", 0, UINT8_MAX, 1, 2, &lval->u8, 0);
 
-  int token = parser->token_table[parser->tokens.HREF].number;
+  int token = parser->token_table[parser->tokens.HREF].token;
   fatal(yyu_lexify, parser, ytoken, lval, lvalsz, lloc, text, parser->loc.l_lin, parser->loc.l_col + leng, leng, token);
 
   finally : coda;
@@ -611,13 +609,14 @@ xapi API yyu_lexify_bool(
   enter;
 
   yyu_lval* lval = (typeof(lval))_lval;
+  int token;
 
   if(memncmp(text, leng, "true", 4) == 0)
     lval->b = true;
   else
     lval->b = false;
 
-  int token = parser->token_table[parser->tokens.BOOL].number;
+  token = parser->token_table[parser->tokens.BOOL].token;
   fatal(yyu_lexify, parser, ytoken, lval, sizeof(*lval), lloc, text, parser->loc.l_lin, parser->loc.l_col + leng, leng, token);
 
   finally : coda;
@@ -636,6 +635,7 @@ xapi API yyu_lexify_float(
   enter;
 
   yyu_lval* lval = (typeof(lval))_lval;
+  int token;
 
   errno = 0;
   sscanf(text, "%lf", &lval->f);
@@ -643,7 +643,7 @@ xapi API yyu_lexify_float(
   if(errno != 0)
     fail(KERNEL_ERANGE);
 
-  int token = parser->token_table[parser->tokens.FLOAT].number;
+  token = parser->token_table[parser->tokens.FLOAT].token;
   fatal(yyu_lexify, parser, ytoken, lval, sizeof(*lval), lloc, text, parser->loc.l_lin, parser->loc.l_col + leng, leng, token);
 
   finally : coda;
