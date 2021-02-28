@@ -25,3 +25,5 @@ exports
 *.final.xapi
 *.xapi
 *.so.lnk
+git-state.c
+git-state.h
