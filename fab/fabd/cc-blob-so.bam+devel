@@ -16,24 +16,23 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with fab.  If not, see <http://www.gnu.org/licenses/>. */
+#
 
 use strict;
 use warnings;
 $SIG{__WARN__} = sub { die @_ };
 
+use File::Basename;
+
 die "cc not found in environment" unless $ENV{cc};
 
-# exec into the compiler
 my @cmd = (
     $ENV{cc}
   , split(/ /, $ENV{cflags})
+  , "-shared"
   , "-o", $ENV{bm_target}
-  # object files
+  # object files in this module
   , split(/ /, $ENV{objects})
-  # library files
-  , "-Wl,--start-group"
-  , split(/ /, $ENV{libraries})
-  , "-Wl,--end-group"
 );
 
 exec { $cmd[0] } @cmd
@@ -41,27 +40,19 @@ exec { $cmd[0] } @cmd
 __DATA__
 
 envs : {
+  cc : {
+    path-search : cc
+  }
+
+  # object files for the library
   objects : [
     select : [
       target
       traverse : {
         direction : down
-        relation : strong
+        graph : depends
         max-distance : 1
         min-distance : 1
-        extension : o
-      }
-    ]
-    property : relpath
-  ]
-
-  libraries : [
-    select : [
-      target
-      traverse : {
-        direction : down
-        relation : strong
-        extension : a
       }
     ]
     property : relpath

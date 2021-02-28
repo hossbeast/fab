@@ -1,0 +1,181 @@
+#!/usr/bin/env perl
+#
+# Copyright (c) 2012-2020 Todd Freed <todd.freed@gmail.com>
+#
+# This file is part of fab.
+#
+# fab is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# fab is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with fab.  If not, see <http://www.gnu.org/licenses/>. */
+#
+
+use strict;
+use warnings;
+$SIG{__WARN__} = sub { die @_ };
+
+my $tab_c = substr($ENV{bm_source0}, -2) eq ".c" ? $ENV{bm_source0} : $ENV{bm_source1};
+my $tab_h = substr($ENV{bm_source0}, -2) eq ".h" ? $ENV{bm_source0} : $ENV{bm_source1};
+my $tokens_c = substr($ENV{bm_target0}, -2) eq ".c" ? $ENV{bm_target0} : $ENV{bm_target1};
+my $tokens_h = substr($ENV{bm_target0}, -2) eq ".h" ? $ENV{bm_target0} : $ENV{bm_target1};
+
+$tokens_c =~ m|/?([^./]+)[.]tokens[.]c$|;
+my $pfx = "$1";
+
+my %yytokentype;
+my @yytname;
+my @yytoknum;
+
+# snarf bison datastructures
+open my $fh, "<$tab_h" or die $!;
+my $mode = '';
+while(my $line = <$fh>)
+{
+  chomp $line;
+  if($mode && $line =~ m/};$/)
+  {
+    $mode = '';
+  }
+  elsif($mode eq 'yytokentype')
+  {
+    if($line =~ m/^\s*{\s*$/)
+    {
+
+    }
+    elsif($line =~ m/^\s*([A-Z0-9_]+) = (-?[0-9]+),?/i)
+    {
+      $yytokentype{$2} = $1;
+    }
+    else
+    {
+      die "unexpected line";
+    }
+  }
+  elsif($line =~ /^\s+enum [a-z_]+_yytokentype$/)
+  {
+    $mode = 'yytokentype';
+  }
+}
+
+open $fh, "<$tab_c" or die $!;
+$mode = '';
+while(my $line = <$fh>)
+{
+  chomp $line;
+  if($mode && $line =~ m/};$/)
+  {
+    $mode = '';
+  }
+  elsif($mode eq 'yytname')
+  {
+    while($line =~ m/"((?:(?:[^"\\])|(?:\\"))+)"/g)
+    {
+      push @yytname, $1;
+    }
+  }
+  elsif($line =~ /static const char .const yytname/)
+  {
+    $mode = 'yytname';
+  }
+  elsif($mode eq 'yytoknum')
+  {
+    while($line =~ m/[0-9]+/g)
+    {
+      push @yytoknum, int($&);
+    }
+  }
+  elsif($line =~ /static const yytype_int16 yytoknum/)
+  {
+    $mode = 'yytoknum';
+  }
+}
+
+
+# build the token table
+my @tokens;
+for(my $x = 0; $x < scalar(@yytoknum); $x++)
+{
+  my $symbol = $x;
+  my $token = $yytoknum[$x];
+  my $string = $yytname[$x];
+  my $name = $yytokentype{$token};
+
+  # skip tokens with no name, such as punctuation characters
+  next unless $name;
+
+  # skip bison-implementation tokens
+  # use specific names for bison implementation tokens
+  $name = "YYEOF" if $name =~ /yyeof/i;
+  $name = "YYERROR" if $name =~ /yyerror/i;
+  $name = "YYUNDEF" if $name =~ /yyundef/i;
+
+  $string =~ s/^\\"//;
+  $string =~ s/\\"$//;
+
+  push @tokens, { name => $name, string => $string, string_len => length($string), token => $token, symbol => $symbol };
+}
+
+@tokens = sort { $$a{string} cmp $$b{string} } @tokens;
+my $numtokens = scalar(@tokens);
+
+#
+# c file
+#
+
+close $fh;
+open $fh, ">$tokens_c" or die $!;
+print $fh <<END;
+#include <stdint.h>
+#include "yyutil/parser.h"
+const struct yyu_token * ${pfx}_token_table = (struct yyu_token[]) {
+END
+
+for my $tok (@tokens) {
+  print $fh <<END;
+    { token : $$tok{token}, symbol : $$tok{symbol}, name : "$$tok{name}", string_len : $$tok{string_len}, string : "$$tok{string}" },
+END
+}
+
+print $fh <<END;
+};
+END
+
+#
+# header file
+#
+
+close $fh;
+open $fh, ">$tokens_h" or die $!;
+print $fh <<END;
+#ifndef ${pfx}_TOKENS_H
+#define ${pfx}_TOKENS_H
+#include <stdint.h>
+#include "yyutil/parser.h"
+extern struct yyu_token * ${pfx}_token_table;
+#define ${pfx}_TOKEN_TABLE_SIZE @{[scalar(@tokens)]}
+enum ${pfx}_tokens {
+END
+
+while(my($k, $v) = each %yytokentype)
+{
+  print $fh ("  ${pfx}_${v} = ${k},\n");
+}
+
+print $fh <<END;
+};
+#endif
+END
+
+#use Data::Dumper;
+#print Dumper \%yytokentype;
+#print Dumper \@yytname;
+#print Dumper \@yytoknum;
+#print Dumper \@tokens;

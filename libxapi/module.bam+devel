@@ -1,0 +1,53 @@
+/* Copyright (c) 2012-2019 Todd Freed <todd.freed@gmail.com>
+
+   This file is part of fab.
+
+   fab is free software: you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation, either version 3 of the License, or
+   (at your option) any later version.
+
+   fab is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+
+   You should have received a copy of the GNU General Public License
+   along with fab.  If not, see <http://www.gnu.org/licenses/>. */
+
+use cc              # this module contains c sources
+use library/shared  # this module builds a library
+use library/static  # this module builds a library
+use xapi/errtab     # this module contains errtabs
+
+import fab/include
+
+# variants for the module
+variant xapi.pic.{debug,devel,final,trace}
+
+# build the libraries
+rule libxapi.?.{so,a} -> //module/targets
+
+# intra module dependencies - generated files
+rule */*.?.o <- errtab/{SYS,XAPI}.errtab.h
+
+# pull in object files in the module, except those under integ
+rule *~integ/**/*.?.o -> libxapi.$?.so
+
+# library archives for static linking
+rule *~integ/**/*.?.o -> libxapi.$?.a
+
+#
+# tests
+#
+
+# build individual test executables
+rule integ/test_(*).?.o -> $^D/test_$1.$? : cc-test.bam+devel
+rule integ/test_(*).? <- integ/errtab/TEST.errtab.$?.o
+rule integ/test_(*).? <- libxapi.$?.a
+
+# target to run each test
+rule integ/test_(*).? -> //module/tests/test-$1.$? : test.bam+devel
+
+# add tests to global tests
+rule //module/tests/* -> //tests

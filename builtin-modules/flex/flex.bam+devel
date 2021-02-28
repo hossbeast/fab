@@ -1,0 +1,67 @@
+#!/usr/bin/env perl
+#
+# Copyright (c) 2012-2015 Todd Freed <todd.freed@gmail.com>
+#
+# This file is part of fab.
+#
+# fab is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# fab is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with fab.  If not, see <http://www.gnu.org/licenses/>. */
+#
+
+use strict;
+use warnings;
+$SIG{__WARN__} = sub { die @_ };
+
+die "flex not found" unless $ENV{flex};
+
+my $name = "$ENV{bm_source}";
+$name =~ s/^.*\///;
+$name =~ s/\.[^.]+$//;
+
+my $cfile = substr($ENV{bm_target0}, -2) eq ".c" ? $ENV{bm_target0} : $ENV{bm_target1};
+my $hfile = substr($ENV{bm_target0}, -2) eq ".h" ? $ENV{bm_target0} : $ENV{bm_target1};
+
+my @cmd = (
+    $ENV{flex}
+  , "-o", $cfile
+  , "--header-file=$hfile"
+  , $ENV{bm_source}
+);
+
+print(join(" ", @cmd) . "\n");
+system { $cmd[0] } @cmd;
+
+# append to .h
+open my $fh, ">>", $hfile or die "open($hfile) : $!";
+print $fh <<END;
+char ${name}_yyget_hold_char(yyscan_t yyscanner);
+END
+
+# append to .c
+close $fh;
+open $fh, ">>", $cfile or die "open($cfile) : $!";
+print $fh <<END;
+char ${name}_yyget_hold_char(yyscan_t yyscanner);
+char ${name}_yyget_hold_char(yyscan_t yyscanner) {
+  struct yyguts_t * yyg = (struct yyguts_t*)yyscanner;
+  return yyg->yy_hold_char;
+}
+END
+
+__DATA__
+
+envs : {
+  flex : {
+    path-search : flex
+  }
+}
