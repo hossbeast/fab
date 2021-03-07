@@ -18,6 +18,12 @@
 #ifndef FABD_FSEDGE_H
 #define FABD_FSEDGE_H
 
+/*
+
+fsedge objects are edges in the graph representing the filesystem tree
+
+*/
+
 #include "xapi.h"
 #include "types.h"
 #include "valyria/llist.h"
@@ -25,19 +31,18 @@
 
 #include "graph.h"
 
-struct narrator;
 struct fsent;
 struct graph_invalidation_context;
 
 // active list
 extern llist fsedge_list;
 
-/*
- * EDGE_TYPE_FSTREE
- */
 typedef struct fsedge {
   moria_edge edge;
 } fsedge;
+
+/* release edges */
+xapi fsedge_cleanup(void);
 
 xapi fsedge_alloc(fsedge ** restrict rv, struct moria_graph * restrict g)
   __attribute__((nonnull));
@@ -51,8 +56,6 @@ xapi fsedge_connect(
   , struct graph_invalidation_context * restrict invalidation
 )
   __attribute__((nonnull));
-
-xapi fsedge_cleanup(void);
 
 /// fsedge_disintegrate
 //

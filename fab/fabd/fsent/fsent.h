@@ -20,9 +20,10 @@
 
 /*
 
-fsent - vertices in the graph which represent files and directories in the filesystem
+fsent objects are vertices in the graph which represent entities in the filesystem
+like files, directories and symlink.
 
-
+unlinked fsents are not matched by rules. uncreated fsents are matched by rules.
 
 */
 
@@ -41,24 +42,19 @@ fsent - vertices in the graph which represent files and directories in the files
 #include "fsname.h"
 
 struct attrs32;
+struct config;
 struct configblob;
-struct pattern;
+struct dependency;
+struct filesystem;
 struct formula;
-struct var;
+struct fsedge;
+struct fstree;
+struct graph_invalidation_context;
 struct map;
 struct module;
 struct narrator;
-struct path;
-struct vertex;
-struct rule;
+struct var;
 struct variant;
-struct yyu_location;
-struct graph_invalidation_context;
-struct filesystem;
-struct fstree;
-struct dependency;
-struct fsedge;
-struct config;
 
 // specially named fsents
 extern const char *fsent_model_name;
@@ -516,27 +512,26 @@ xapi fsent_ok(fsent * restrict n)
   __attribute__((nonnull));
 
 /*
- * opportunistically delete edges from this node - it is about to be unlinked from the fstree
+ * opportunistically delete related edges from this node - it is about to be unlinked from the fstree
  */
-xapi fsent_unlinking(fsent *n, struct graph_invalidation_context * restrict invalidation)
+xapi fsent_unlink_related(fsent *n, struct graph_invalidation_context * restrict invalidation)
   __attribute__((nonnull));
 
 /*
- * 
+ * the delete event is fired when the node becomes unlinked though it may actually be released later
  */
 xapi fsent_unlink(fsent *n, graph_invalidation_context * restrict invalidation)
   __attribute__((nonnull));
 
-xapi fsent_dirnode_children_changed(
-    fsent * restrict n
-  , struct graph_invalidation_context * restrict invalidation
-)
+xapi fsent_dirnode_children_changed(fsent * restrict n, struct graph_invalidation_context * restrict invalidation)
   __attribute__((nonnull));
 
-xapi fsent_index(fsent * restrict n)
+/* index a non-shadow directory node for graph lookup by label */
+xapi fsent_lookup_index(fsent * restrict n)
   __attribute__((nonnull));
 
-xapi fsent_disindex(fsent * restrict n)
+/* remove a previously indexed node from the graph lookup data structure */
+xapi fsent_lookup_disindex(fsent * restrict n)
   __attribute__((nonnull));
 
 #endif

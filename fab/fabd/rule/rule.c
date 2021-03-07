@@ -15,40 +15,34 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#include <string.h>
-
 #include "xapi.h"
 #include "types.h"
-#include "narrator.h"
-#include "narrator/fixed.h"
-#include "valyria/list.h"
-#include "valyria/llist.h"
-#include "valyria/map.h"
-#include "xlinux/xstdlib.h"
-#include "valyria/set.h"
-#include "moria/vertex.h"
-#include "moria/graph.h"
-#include "moria/edge.h"
-#include "moria/operations.h"
 
-#include "rule.internal.h"
-#include "fsent.h"
-#include "node_operations.h"
-#include "lookup.h"
-#include "match.internal.h"
-#include "generate.h"
-#include "module.h"
-#include "logging.h"
-#include "variant.h"
-#include "formula.h"
-#include "MODULE.errtab.h"
-#include "stats.h"
-#include "rule_system.h"
-#include "rule_module.h"
+#include "moria/edge.h"
+#include "narrator.h"
+#include "valyria/set.h"
+#include "xlinux/xstdlib.h"
+
+#include "rule.h"
 #include "dependency.h"
+#include "formula.h"
+#include "fsent.h"
+#include "generate.h"
+#include "logging.h"
+#include "match.internal.h"
+#include "module.h"
+#include "rule_module.h"
+#include "rule_system.h"
+#include "stats.h"
 
 #include "common/assure.h"
 #include "common/attrs.h"
+
+llist rule_list = LLIST_INITIALIZER(rule_list);                 // active rule
+static llist rule_freelist = LLIST_INITIALIZER(rule_freelist);  // freelist
+
+llist rde_list = LLIST_INITIALIZER(rde_list);                   // active
+static llist rde_freelist = LLIST_INITIALIZER(rde_freelist);    // freelist
 
 attrs16 * rule_direction_attrs = (attrs16[]){{
 #undef DEF
@@ -71,12 +65,6 @@ attrs16 * rule_cardinality_attrs = (attrs16[]){{
 RULE_CARDINALITY_TABLE
   }
 }};
-
-llist rule_list = LLIST_INITIALIZER(rule_list);                 // active rule
-static llist rule_freelist = LLIST_INITIALIZER(rule_freelist);  // freelist
-
-llist rde_list = LLIST_INITIALIZER(rde_list);                   // active
-static llist rde_freelist = LLIST_INITIALIZER(rde_freelist);    // freelist
 
 static void __attribute__((constructor)) init()
 {
@@ -151,10 +139,6 @@ static xapi rule_dirnode_connect(void * restrict _ctx, fsent * restrict node)
   finally : coda;
 }
 
-//
-// public
-//
-
 static void rule_dispose(rule * restrict r)
 {
   pattern_free(r->match);
@@ -163,82 +147,6 @@ static void rule_dispose(rule * restrict r)
 
   llist_delete_node(&r->vertex.owner);
   llist_append(&rule_freelist, r, vertex.owner);
-}
-
-void rule_release(rule * restrict r)
-{
-  moria_vertex __attribute__((unused)) *v;
-
-  /* should be fully excised from the graph previously */
-  v = &r->vertex;
-  RUNTIME_ASSERT(v->up_identity == 0);
-  RUNTIME_ASSERT(rbtree_empty(&v->up));
-  RUNTIME_ASSERT(rbtree_empty(&v->down));
-
-  rule_dispose(r);
-}
-
-void rule_dirnode_edge_release(rule_dirnode_edge * restrict rde)
-{
-  llist_delete_node(&rde->edge.owner);
-  llist_append(&rde_freelist, rde, edge.owner);
-}
-
-void rule_cleanup(void)
-{
-  rule *r;
-  llist *T;
-  rule_dirnode_edge *rde;
-
-  llist_foreach_safe(&rule_list, r, vertex.owner, T) {
-    rule_dispose(r);
-  }
-
-  llist_foreach_safe(&rule_freelist, r, vertex.owner, T) {
-    wfree(r);
-  }
-
-  llist_foreach_safe(&rde_list, rde, edge.owner, T) {
-    rule_dirnode_edge_release(rde);
-  }
-
-  llist_foreach_safe(&rde_freelist, rde, edge.owner, T) {
-    wfree(rde);
-  }
-}
-
-xapi rule_mk(
-    rule ** restrict rulep
-  , moria_graph * restrict g
-  , pattern * match
-  , pattern * generate
-  , pattern * formula
-  , edge_type relation
-  , uint32_t attrs
-)
-{
-  enter;
-
-  rule * r;
-
-  if((r = llist_shift(&rule_freelist, typeof(*r), vertex.owner)) == 0)
-  {
-    fatal(xmalloc, &r, sizeof(*r));
-  }
-
-  moria_vertex_init(&r->vertex, g, VERTEX_RULE);
-  llist_append(&rule_list, r, vertex.owner);
-
-  r->match = match;
-  r->generate = generate;
-  r->formula = formula;
-  r->dir = attrs & EDGE_DIRECTION_OPT;
-  r->card = attrs & RULE_CARDINALITY_OPT;
-  r->relation = relation;
-
-  *rulep = r;
-
-  finally : coda;
 }
 
 static xapi log_rule_edge(rule * restrict rule, dependency * restrict ne)
@@ -288,13 +196,7 @@ static xapi __attribute__((nonnull)) fml_node_get(
     }
   }
 
-  /* formula attachment did not resolve, or resolved to non-formula fsent */
-//printf("generated %zu\n", ctx->generate_nodes->size);
-//if(ctx->generate_nodes->size == 1) {
-//  char path[512];
-//  fsent_absolute_path_znload(path, sizeof(path), *fml_node);
-//  printf(" %s exists %s\n", path, fsent_exists_get(*fml_node) ? "yes" : "no");
-//}
+  /* formula attachment did not resolve, or resolved to a non-formula fsent */
   if(ctx->generate_nodes->size != 1 || !fsent_exists_get(*fml_node)) {
     fprintf(stderr, "[MODULE:NOREF] unresolved reference ");
     fprintf(stderr, "pattern ");
@@ -426,9 +328,8 @@ static xapi matches_sorted(rule_run_context * restrict ctx)
 /*
  * Attach a newly-created dependency edge to a rule-module edge
  *
- * dep    - dependency edge
- * fml    - formula node if any
- * ctx    -
+ * dep - dependency edge
+ * fml - formula node if any
  */
 static xapi __attribute__((nonnull(1, 3))) dependency_setup(
     dependency * restrict dep
@@ -471,9 +372,6 @@ static xapi __attribute__((nonnull(1, 3))) dependency_setup(
   /* mark this edge as having been touched during the rules reconciliation */
   dep->reconciliation_id = rule_system_reconciliation_id;
 
-//fatal(graph_edge_say, &dep->edge, g_narrator_stdout);
-//printf(" -> reconciled in %d\n", rule_system_reconciliation_id);
-
   /* dependency already associated to this rme */
   if(dep->rme && dep->rme == rme) {
     goto XAPI_FINALIZE;
@@ -492,7 +390,6 @@ static xapi __attribute__((nonnull(1, 3))) dependency_setup(
 
   RUNTIME_ASSERT(dep->fml->self_fml);
   dep->fml->self_fml->refs++;
-//printf("FML %p refs %d -> %d\n", dep->fml->self_fml, dep->fml->self_fml->refs - 1, dep->fml->self_fml->refs);
 
   e = &dep->edge;
   x = 0;
@@ -507,23 +404,6 @@ static xapi __attribute__((nonnull(1, 3))) dependency_setup(
     {
       n = containerof(e->A, typeof(*n), vertex);
     }
-
-#if 0
-    /* node has two different dependency edges each of which has an associated formula */
-    if(n->dep && n->dep != dep) {
-      fprintf(stderr, "[MODULE:MANYREF] ");
-      fatal(fsent_project_relative_path_say, n, g_narrator_stderr);
-      fprintf(stderr, " already created by rule (attach)\n ");
-      fatal(rule_say, n->dep->rme->rule, g_narrator_stderr);
-      fprintf(stderr, " @ %s:%d\n", n->dep->rme->mod_owner->self_node_relpath, n->dep->rme->rule->formula->loc.f_lin + 1);
-      fprintf(stderr, "  dep %p rme %p rule %p\n ", n->dep, n->dep->rme, n->dep->rme->rule);
-      fatal(rule_say, ctx->rme->rule, g_narrator_stderr);
-      fprintf(stderr, " @ %s:%d\n", ctx->rme->mod_owner->self_node_relpath, ctx->rme->rule->formula->loc.f_lin + 1);
-      fprintf(stderr, "  dep %p rme %p rule %p\n ", dep, ctx->rme, ctx->rme->rule);
-      *ctx->reconciled = false;
-      goto XAPI_FINALIZE;
-    }
-#endif
 
     if(n->dep && n->dep != dep) {
       /* this can happen when a rule is run twice in a reconciliation and matches a different number
@@ -1094,15 +974,91 @@ static xapi __attribute__((nonnull)) generate_many_to_many(
   finally : coda;
 }
 
+//
+// public
+//
+
+void rule_release(rule * restrict r)
+{
+  moria_vertex __attribute__((unused)) *v;
+
+  /* should be fully excised from the graph previously */
+  v = &r->vertex;
+  RUNTIME_ASSERT(v->up_identity == 0);
+  RUNTIME_ASSERT(rbtree_empty(&v->up));
+  RUNTIME_ASSERT(rbtree_empty(&v->down));
+
+  rule_dispose(r);
+}
+
+void rule_dirnode_edge_release(rule_dirnode_edge * restrict rde)
+{
+  llist_delete_node(&rde->edge.owner);
+  llist_append(&rde_freelist, rde, edge.owner);
+}
+
+void rule_cleanup(void)
+{
+  rule *r;
+  llist *T;
+  rule_dirnode_edge *rde;
+
+  llist_foreach_safe(&rule_list, r, vertex.owner, T) {
+    rule_dispose(r);
+  }
+
+  llist_foreach_safe(&rule_freelist, r, vertex.owner, T) {
+    wfree(r);
+  }
+
+  llist_foreach_safe(&rde_list, rde, edge.owner, T) {
+    rule_dirnode_edge_release(rde);
+  }
+
+  llist_foreach_safe(&rde_freelist, rde, edge.owner, T) {
+    wfree(rde);
+  }
+}
+
+xapi rule_mk(
+    rule ** restrict rulep
+  , moria_graph * restrict g
+  , pattern * match
+  , pattern * generate
+  , pattern * formula
+  , edge_type relation
+  , uint32_t attrs
+)
+{
+  enter;
+
+  rule * r;
+
+  if((r = llist_shift(&rule_freelist, typeof(*r), vertex.owner)) == 0)
+  {
+    fatal(xmalloc, &r, sizeof(*r));
+  }
+
+  moria_vertex_init(&r->vertex, g, VERTEX_RULE);
+  llist_append(&rule_list, r, vertex.owner);
+
+  r->match = match;
+  r->generate = generate;
+  r->formula = formula;
+  r->dir = attrs & RULE_DIRECTION_OPT;
+  r->card = attrs & RULE_CARDINALITY_OPT;
+  r->relation = relation;
+
+  *rulep = r;
+
+  finally : coda;
+}
+
 xapi rule_run(rule * restrict rule, rule_run_context * restrict ctx)
 {
   enter;
 
   fsent *fml_node = 0;
-
-//fatal(narrator_xsayf, g_narrator_stdout, "RUN rma %p ", ctx->rme);
-//fatal(rule_say, rule, g_narrator_stdout);
-//fatal(narrator_xsays, g_narrator_stdout, "\n");
 
   RUNTIME_ASSERT(rule->relation);
   STATS_INC(g_stats.rule_run);

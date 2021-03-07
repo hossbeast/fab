@@ -18,6 +18,7 @@
 #include "xapi.h"
 #include "valyria/load.h"
 #include "moria/load.h"
+#include "value/load.h"
 
 #include "valyria/list.h"
 #include "valyria/map.h"
@@ -30,7 +31,7 @@
 #include "narrator.h"
 #include "narrator/growing.h"
 #include "logging.h"
-#include "rule.internal.h"
+#include "rule.h"
 #include "fsent.h"
 #include "node_operations.h"
 #include "node_operations_test.h"
@@ -55,11 +56,12 @@ static xapi node_operations_test_unit_setup(xunit_unit * unit)
 
   fatal(valyria_load);
   fatal(moria_load);
+  fatal(value_load);
   fatal(logging_finalize);
 
   fatal(graph_setup);
   fatal(filesystem_setup);
-  fatal(fsent_setup_minimal);
+  fatal(fsent_setup);
 
   finally : coda;
 }
@@ -122,58 +124,64 @@ xunit_unit xunit = {
       (node_operations_test[]) {{
           graph :     "+A/B:depends:A/C"
         , operations : "=A/B:depends:A/C"
-        , expected :  "1-A!dir 2-B!I|file 3-C!file"
-                     " 1:fs:2 1:fs:3"
+        , expected :  "1-(root)!dir 2-A!dir 3-B!I|file 4-C!file"
+                     " 1:fs:2 2:fs:3 2:fs:4"
       }}
     /* single-node, remove fs edge only */
     , (node_operations_test[]) {{
           graph :     "+A/B:depends:A/C"
         , operations : " =A:fs:C"
-        , expected :  "1-A!dir 2-B!I|file 3-C!X|file" // fsent still exists but is marked as unlinked
-                     " 2:depends:3"
-                     " 1:fs:2 1:fs:3"
+        , expected :  "1-(root)!dir 2-A!dir 3-B!I|file 4-C!X|file" // fsent still exists but is marked as unlinked
+                     " 3:depends:4"
+                     " 1:fs:2 2:fs:3 2:fs:4"
       }}
     /* single-node, remove fs, then strong edge */
     , (node_operations_test[]) {{
           graph :     "+A/B:depends:A/C"
         , operations : "=A:fs:C"
                       " =A/B:depends:A/C"
-        , expected :  "1-A!dir 2-B!I|file"
-                     " 1:fs:2"
+        , expected :  "1-(root)!dir 2-A!dir 3-B!I|file"
+                     " 1:fs:2 2:fs:3"
       }}
     /* single-node, remove strong, then fs edge */
     , (node_operations_test[]) {{
           graph :     "+A/B:depends:A/C"
         , operations : "=A/B:depends:A/C"
                        " =A:fs:C"
-        , expected :  "1-A!dir 2-B!I|file"
-                     " 1:fs:2"
+        , expected :  "1-(root)!dir 2-A!dir 3-B!I|file"
+                     " 1:fs:2 2:fs:3"
       }}
     /* tree, remove fs edges bottom-up */
     , (node_operations_test[]) {{
           graph :      "A/B/C"
         , operations : "=B:fs:C"
-        , expected :  "1-A!dir 2-B!dir"
-                     " 1:fs:2"
+        , expected :  "1-(root)!dir 2-A!dir 3-B!dir"
+                     " 1:fs:2 2:fs:3"
       }}
     , (node_operations_test[]) {{
           graph :      "A/B/C"
         , operations : "=B:fs:C"
                       " =A:fs:B"
-        , expected :  "1-A!dir"
+        , expected :  "1-(root)!dir 2-A!dir 1:fs:2"
       }}
     /* tree, remove fs edges top-down */
     , (node_operations_test[]) {{
           graph :      "A/B/C"
         , operations : "=A:fs:B"
-        , expected :  "1-A!dir 2-B!X|dir 3-C!file" // marked not-exists only
-                     " 1:fs:2 2:fs:3"
+        , expected :  "1-(root)!dir 2-A!dir 3-B!X|dir 4-C!file" // marked not-exists but not deleted
+                     " 1:fs:2 2:fs:3 3:fs:4"
       }}
     , (node_operations_test[]) {{
           graph :      "A/B/C"
         , operations : "=A:fs:B"
                       " =B:fs:C"
-        , expected :  "1-A!dir"
+        , expected :  "1-(root)!dir 2-A!dir 1:fs:2"
+      }}
+    , (node_operations_test[]) {{
+          graph :      "A/B/C"
+        , operations : "=B:fs:C"
+                      " =A:fs:B"
+        , expected :  "1-(root)!dir 2-A!dir 1:fs:2"
       }}
     , (node_operations_test[]) {{
           graph :      "A/B/C/D/E"
@@ -181,7 +189,7 @@ xunit_unit xunit = {
                       " =B:fs:C"
                       " =C:fs:D"
                       " =D:fs:E"
-        , expected :  "1-A!dir"
+        , expected :  "1-(root)!dir 2-A!dir 1:fs:2"
       }}
     , 0
   }

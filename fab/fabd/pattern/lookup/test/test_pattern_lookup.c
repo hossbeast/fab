@@ -33,7 +33,7 @@
 #include "narrator.h"
 #include "narrator/growing.h"
 #include "logging.h"
-#include "rule.internal.h"
+#include "rule.h"
 #include "fsent.h"
 #include "node_operations.h"
 #include "pattern_parser.h"

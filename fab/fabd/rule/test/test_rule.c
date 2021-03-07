@@ -34,7 +34,7 @@
 #include "narrator/growing.h"
 
 #include "logging.h"
-#include "rule.internal.h"
+#include "rule.h"
 #include "lookup.internal.h"
 #include "fsent.h"
 #include "shadow.h"
@@ -163,7 +163,7 @@ static xapi rules_test_entry(xunit_test * _test)
     assert_eq_u32(strlen(test->generate_pattern), loc.l);
   }
 
-  fatal(rule_mk, &r, &g_graph, match_pat, generate_pat, 0, 0, 0);
+  fatal(rule_mk, &r, match_pat, generate_pat, 0, 0, 0);
   match_pat = 0;
   generate_pat = 0;
 

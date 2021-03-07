@@ -20,8 +20,9 @@
 
 /*
 
-Rules are attached to one or more directory nodes, based on what nodes their match pattern could
-possibly match.
+rules are connected to each directory nodes where their match pattern runs via EDGE_RULE_DIR edges
+
+rules are connected to formula nodes which their formula pattern resolves to
 
 */
 
@@ -34,18 +35,13 @@ possibly match.
 #include "graph.h"
 
 struct attrs16;
-struct artifact;
-struct narrator;
-struct list;
-struct fsent;
-struct pattern;
-struct variant;
-struct set;
 struct module;
 struct moria_graph;
-struct edge_traversal_state;
-struct rule_module_edge;
+struct narrator;
+struct pattern;
 struct rbtree;
+struct rule_module_edge;
+struct set;
 
 #define RULE_DIRECTION_OPT    0x0003
 #define RULE_CARDINALITY_OPT  0x003c
@@ -82,8 +78,8 @@ RULE_CARDINALITY_TABLE
 } rule_cardinality;
 
 extern struct attrs16 * rule_cardinality_attrs;
-extern llist rule_list;
-extern llist rde_list;
+extern llist rule_list;     // active
+extern llist rde_list;      // active
 
 // VERTEX_TYPE_RULE
 typedef struct rule {
@@ -134,29 +130,16 @@ typedef struct rule_run_context {
 
 xapi rule_run_context_xinit(rule_run_context * rule_ctx)
   __attribute__((nonnull));
-//xapi rule_run_context_begin(rule_run_context * restrict rule_ctx)
-//  __attribute__((nonnull));
-//void rule_run_context_end(rule_run_context * rule_ctx)
-//  __attribute__((nonnull));
+
 xapi rule_run_context_xdestroy(rule_run_context * rule_ctx)
   __attribute__((nonnull));
 
-/// rule_run
-//
-// SUMMARY
-//  Apply all invalidated rules to add nodes and edges to the graph.
-//
-//  Rules are applied iteratively, starting with
-//  the artifact, and proceeding to its consequents, to their consequents, and so on.
-//
-// PARAMETERS
-//  rule           -
-//  module         -
-//  modules        - all modules
-//  variants       - variants the rule applies to (not all variants)
-//  match_nodes    - work space
-//  generate_nodes - work space
-//
+/*
+ * Apply all invalidated rules to add nodes and edges to the graph.
+ *
+ * Rules are applied iteratively, starting with
+ * the artifact, and proceeding to its consequents, to their consequents, and so on.
+ */
 xapi rule_run(rule * restrict rule, rule_run_context * restrict ctx)
   __attribute__((nonnull));
 
@@ -169,7 +152,7 @@ xapi rule_mk(
   , edge_type relation
   , uint32_t attrs
 )
-  __attribute__((nonnull(1)));
+  __attribute__((nonnull(1, 2)));
 
 void rule_release(rule * restrict)
   __attribute__((nonnull));
@@ -183,13 +166,7 @@ xapi rule_xdestroy(rule * restrict r)
 xapi rule_say(const rule * restrict r, struct narrator * restrict N)
   __attribute__((nonnull));
 
+/* release rules */
 void rule_cleanup(void);
 
-#endif
-
-#if 0
-/* edge connecting a rule to a module */
-typedef struct rule_module_edge {
-  struct rule_module_edge *rma;
-} rule_module_edge;
 #endif

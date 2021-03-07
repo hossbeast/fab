@@ -4,6 +4,8 @@ use strict;
 use warnings;
 $SIG{__WARN__} = sub { die @_ };
 
+use Carp::Always;
+
 use POSIX;
 use File::Basename;
 use Cwd;

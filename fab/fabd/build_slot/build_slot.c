@@ -365,7 +365,7 @@ static xapi build_slot_waited(build_slot * restrict bs)
 // public
 //
 
-xapi build_slot_prep(build_slot * restrict bs, dependency * restrict bpe, uint32_t stage_index)
+xapi build_slot_prep(build_slot * restrict bs, dependency * restrict dep, uint32_t stage_index)
 {
   enter;
 
@@ -373,9 +373,11 @@ xapi build_slot_prep(build_slot * restrict bs, dependency * restrict bpe, uint32
   const moria_edge *e;
   int x;
 
+  RUNTIME_ASSERT(dep->fml);
+
   bs->stage_index = stage_index;
-  bs->bpe = bpe;
-  e = &bpe->edge;
+  bs->bpe = dep;
+  e = &dep->edge;
   if(!(e->attrs & MORIA_EDGE_HYPER))
   {
     n = containerof(e->A, fsent, vertex); /* target */
@@ -430,7 +432,7 @@ xapi build_slot_prep(build_slot * restrict bs, dependency * restrict bpe, uint32
 
   /* mark targets for modification to suppress notify events
    * until the next sweep epoch */
-  e = &bpe->edge;
+  e = &dep->edge;
   if(!(e->attrs & MORIA_EDGE_HYPER))
   {
     n = containerof(e->A, fsent, vertex);

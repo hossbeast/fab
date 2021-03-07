@@ -22,6 +22,7 @@
 #include "narrator/fixed.h"
 #include "fab/sigutil.h"
 #include "fab/events.h"
+#include "fab/ipc.h"
 #include "value.h"
 #include "value/writer.h"
 

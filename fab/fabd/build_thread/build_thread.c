@@ -215,8 +215,6 @@ static xapi build_thread()
       bs = &build_slots[slot];
       bpe = sn->bpe;
 
-      RUNTIME_ASSERT(bpe->fml);
-
       /* configure the build slot */
       fatal(build_slot_prep, bs, bpe, stage_index);
 

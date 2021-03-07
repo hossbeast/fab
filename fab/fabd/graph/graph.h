@@ -18,6 +18,14 @@
 #ifndef FABD_GRAPH_H
 #define FABD_GRAPH_H
 
+/*
+
+There is a singleton moria/graph maintained by bamd containing the project, any
+extern referenced portions of the filesystem, and all the dependencies of various
+kinds among all these vertices
+
+*/
+
 #include "types.h"
 #include "xapi.h"
 #include "fab/fsent.h"
@@ -27,23 +35,8 @@
 struct attrs32;
 struct moria_edge;
 struct narrator;
-struct vertex_traversal_state;
-struct edge_traversal_state;
 struct moria_vertex;
-struct multimap;
 struct moria_connect_context;
-
-/* the arrow points from the sources towards the targets */
-#define EDGE_DIRECTION_OPT    0x0003
-#define EDGE_DIRECTION_TABLE          \
-  DEF(EDGE_LTR   , 0x0001)  /* -> */  \
-  DEF(EDGE_RTL   , 0x0002)  /* <- */  \
-
-#undef DEF
-#define DEF(x, y) x = UINT16_C(y),
-typedef enum edge_direction {
-EDGE_DIRECTION_TABLE
-} edge_direction;
 
 /* edge attrs ranges */
 #define EDGE_TYPE_OPT           0x40000fff
@@ -64,7 +57,7 @@ EDGE_DIRECTION_TABLE
   DEF(EDGE_TYPE_RULE_DIR     , "rule-dir"    , EDGE_TYPE_OPT, 0x00000040) /* rule A matches in directory B */                 \
   DEF(EDGE_TYPE_RULE_FML     , "rule-fml"    , EDGE_TYPE_OPT, 0x00000080) /* rule A has formula B */                          \
   DEF(EDGE_TYPE_MOD_RULE     , "mod-rule"    , EDGE_TYPE_OPT, 0x00000100) /* module A associated with rule B (rma exists) */  \
-  DEF(EDGE_TYPE_MOD_DIR      , "mod-dir"     , EDGE_TYPE_OPT, 0x00000200) /* module A : module directory */              \
+  DEF(EDGE_TYPE_MOD_DIR      , "mod-dir"     , EDGE_TYPE_OPT, 0x00000200) /* module A : module directory */                   \
 
 typedef enum edge_type {
 #undef DEF
@@ -182,11 +175,12 @@ VERTEX_KIND_TABLE
 #define VERTEX_INVALID_BIT  0x00000004
 #define VERTEX_UNLINKED_BIT 0x00000008
 
-#define VERTEX_STATE_TABLE                                                                                                                                  \
-  DEF(VERTEX_OK         , ""  , VERTEX_STATE_OPT,                                            VERTEX_EXISTS_BIT /* 0x00000002 */) /* up-to-date */           \
-  DEF(VERTEX_INVALID    , "I" , VERTEX_STATE_OPT,                       VERTEX_INVALID_BIT | VERTEX_EXISTS_BIT /* 0x00000006 */) /* needs to be updated */  \
-  DEF(VERTEX_UNCREATED  , "U" , VERTEX_STATE_OPT,                       VERTEX_INVALID_BIT                     /* 0x00000004 */) /* not yet created */      \
-  DEF(VERTEX_UNLINKED   , "X" , VERTEX_STATE_OPT, VERTEX_UNLINKED_BIT | VERTEX_INVALID_BIT                     /* 0x0000000c */) /* deleted from fs */      \
+/* each vertex is in one of the following states */
+#define VERTEX_STATE_TABLE                                                                                                                 \
+  DEF(VERTEX_OK         , ""  , VERTEX_STATE_OPT,                                            VERTEX_EXISTS_BIT) /* up-to-date */           \
+  DEF(VERTEX_INVALID    , "I" , VERTEX_STATE_OPT,                       VERTEX_INVALID_BIT | VERTEX_EXISTS_BIT) /* needs to be updated */  \
+  DEF(VERTEX_UNCREATED  , "U" , VERTEX_STATE_OPT,                       VERTEX_INVALID_BIT                    ) /* not yet created */      \
+  DEF(VERTEX_UNLINKED   , "X" , VERTEX_STATE_OPT, VERTEX_UNLINKED_BIT | VERTEX_INVALID_BIT                    ) /* unlinked from fs */     \
 
 typedef enum vertex_state {
 #undef DEF
@@ -194,42 +188,34 @@ typedef enum vertex_state {
 VERTEX_STATE_TABLE
 } vertex_state;
 
-/* comment */
-STATIC_ASSERT(EDGE_TYPE_FSTREE == MORIA_EDGE_IDENTITY);
-STATIC_ASSERT(VERTEX_FILETYPE_LINK == MORIA_VERTEX_LINK);
-
 extern struct attrs32 * graph_vertex_attrs;   /* vertex definitions */
 extern struct attrs32 * graph_edge_attrs;     /* edge definitions */
 
+/* sub-attrs */
 extern struct attrs32 * graph_edge_type_attrs;
-extern struct attrs16 * graph_edge_direction_attrs;
+//extern struct attrs16 * graph_edge_direction_attrs;
 extern struct attrs32 * graph_vertex_kind_attrs;
 extern struct attrs32 * graph_vertex_state_attrs;
-extern struct moria_graph g_graph;
-extern struct hashtable * g_graph_mm;
 
-/// graph_setup
-//
-// SUMMARY
-//  setup
-//
+extern struct moria_graph g_graph;      /* the graph */
+extern struct hashtable * g_graph_ht;   /* supports directory node lookup by label */
+
 xapi graph_setup(void);
-
-/// graph_cleanup
-//
-// SUMMARY
-//  teardown
-//
 xapi graph_cleanup(void);
+
+xapi graph_edge_alloc(struct moria_edge ** ep)
+  __attribute__((nonnull));
+
+void graph_edge_release(struct moria_edge *)
+  __attribute__((nonnull));
 
 xapi graph_edge_say(const struct moria_edge * restrict ne, struct narrator * restrict N)
   __attribute__((nonnull));
 
+/* An invalidation can visit each vertex and edge at most once */
 typedef struct graph_invalidation_context {
   struct moria_vertex_traversal_state * vertex_traversal;
   struct moria_edge_traversal_state * edge_traversal;
-
-  /* whether any nodes were invalidated */
   bool any;
 } graph_invalidation_context;
 
@@ -239,23 +225,22 @@ xapi graph_invalidation_begin(graph_invalidation_context * restrict context)
 void graph_invalidation_end(graph_invalidation_context * restrict context)
   __attribute__((nonnull));
 
-xapi graph_disconnect(struct moria_edge * restrict e)
-  __attribute__((nonnull));
-
 enum fab_fsent_type vertex_kind_remap(vertex_kind kind);
 enum fab_fsent_state vertex_state_remap(vertex_state state);
 
+/* create an edge in the graph */
 xapi graph_hyperconnect(
-    struct moria_connect_context * restrict ctx
-  , struct moria_vertex ** restrict Alist
-  , uint16_t Alen
-  , struct moria_vertex ** restrict Blist
-  , uint16_t Blen
-  , struct moria_edge * restrict e
-  , uint32_t attrs
+    /* 1 */ struct moria_connect_context * restrict ctx
+  , /* 2 */ struct moria_vertex ** restrict Alist
+  , /* 3 */ uint16_t Alen
+  , /* 4 */ struct moria_vertex ** restrict Blist
+  , /* 5 */ uint16_t Blen
+  , /* 6 */ struct moria_edge * restrict e
+  , /* 7 */ uint32_t attrs
 )
-  __attribute__((nonnull(6)));
+  __attribute__((nonnull(1, 6)));
 
+/* create an edge in the graph */
 xapi graph_connect(
     struct moria_connect_context * restrict ctx
   , struct moria_vertex * restrict A
@@ -265,19 +250,11 @@ xapi graph_connect(
 )
   __attribute__((nonnull));
 
-xapi graph_vertex_alloc(struct moria_vertex ** vp, vertex_kind kind)
+/* disconnect an edge in the graph */
+xapi graph_disconnect(struct moria_edge * restrict e)
   __attribute__((nonnull));
 
-void graph_vertex_release(struct moria_vertex *)
-  __attribute__((nonnull));
-
-xapi graph_edge_alloc(struct moria_edge ** ep)
-  __attribute__((nonnull));
-
-void graph_edge_release(struct moria_edge *)
-  __attribute__((nonnull));
-
-/* remove an fsedge/dependency edge and cascade */
+/* disconnect an fsedge or dependency edge and cascade */
 xapi graph_disintegrate(struct moria_edge * restrict ne, struct graph_invalidation_context * restrict context)
   __attribute__((nonnull(1)));
 

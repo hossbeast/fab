@@ -193,6 +193,7 @@ xapi walker_visit(int method, ftwinfo * info, void * arg, int * stop)
   moria_vertex *v;
   moria_edge *e;
   vertex_kind kind;
+  fsent * Bn;
 
 /* put this into config */
 if((info->pathl - info->name_off) == 4 && memcmp(info->path + info->name_off, ".git", 4) == 0) {
@@ -300,8 +301,7 @@ if((info->pathl - info->name_off) == 4 && memcmp(info->path + info->name_off, ".
           continue;
         }
 
-        moria_vertex * B = e->B;
-        fsent * Bn = containerof(B, fsent, vertex);
+        Bn = containerof(e->B, fsent, vertex);
         if(Bn->walk_id == ctx->walk_id) {
 //printf("%s:%d\n", __FUNCTION__, __LINE__);
           continue;

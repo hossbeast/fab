@@ -16,18 +16,14 @@
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
 #include "xlinux/xstdlib.h"
-
 #include "moria/edge.h"
-#include "moria/operations.h"
-#include "narrator.h"
 
 #include "fsedge.h"
 #include "fsent.h"
-#include "node_operations.h"
 #include "module.h"
 
-llist fsedge_list = LLIST_INITIALIZER(fsedge_list);          // active
-llist fsedge_freelist = LLIST_INITIALIZER(fsedge_freelist);  // free
+llist fsedge_list = LLIST_INITIALIZER(fsedge_list);                 // active
+static llist fsedge_freelist = LLIST_INITIALIZER(fsedge_freelist);  // free
 
 //
 // static
@@ -40,16 +36,12 @@ static xapi disintegrate_visitor(moria_edge * e, void * ctx, moria_traversal_mod
   llist *edges = ctx;
   llist_append(edges, e, lln);
 
-  printf(" disintegrate %*s %2d > %s : fstree : %s\n", distance, "", distance, e->A->label, e->B->label);
-
   finally : coda;
 }
 
 static xapi __attribute__((nonnull(1, 2))) node_invalidate_visitor_first(moria_vertex * v, void * arg, moria_traversal_mode mode, int distance, int * result)
 {
   enter;
-
-//printf(" > %2d %s\n", distance, v->label);
 
   *result = MORIA_TRAVERSE_PRUNE;
   fatal(fsent_invalidate_visitor, v, arg, mode, distance, 0);
@@ -104,17 +96,22 @@ static xapi linking(fsent *n, graph_invalidation_context * restrict invalidation
 // public
 //
 
-void fsedge_release(fsedge * restrict fse)
+xapi fsedge_cleanup()
 {
-  if(fse->edge.attrs & MORIA_EDGE_HYPER)
-  {
-RUNTIME_ASSERT(0);  // what??
-    wfree(fse->edge.Alist);
-    wfree(fse->edge.Blist);
+  enter;
+
+  llist *T;
+  fsedge *fse;
+
+  llist_foreach_safe(&fsedge_list, fse, edge.owner, T) {
+    fsedge_release(fse);
   }
 
-  llist_delete(fse, edge.owner);
-  llist_append(&fsedge_freelist, fse, edge.owner);
+  llist_foreach_safe(&fsedge_freelist, fse, edge.owner, T) {
+    wfree(fse);
+  }
+
+  finally : coda;
 }
 
 xapi fsedge_alloc(fsedge ** restrict rv, moria_graph * restrict g)
@@ -136,22 +133,17 @@ xapi fsedge_alloc(fsedge ** restrict rv, moria_graph * restrict g)
   finally : coda;
 }
 
-xapi fsedge_cleanup()
+void fsedge_release(fsedge * restrict fse)
 {
-  enter;
-
-  llist *T;
-  fsedge *fse;
-
-  llist_foreach_safe(&fsedge_list, fse, edge.owner, T) {
-    fsedge_release(fse);
+  if(fse->edge.attrs & MORIA_EDGE_HYPER)
+  {
+RUNTIME_ASSERT(0);  // what??
+    wfree(fse->edge.Alist);
+    wfree(fse->edge.Blist);
   }
 
-  llist_foreach_safe(&fsedge_freelist, fse, edge.owner, T) {
-    wfree(fse);
-  }
-
-  finally : coda;
+  llist_delete(fse, edge.owner);
+  llist_append(&fsedge_freelist, fse, edge.owner);
 }
 
 xapi fsedge_connect(
@@ -206,7 +198,7 @@ xapi fsedge_connect(
     fsent_filetype_set(A, VERTEX_FILETYPE_DIR);
 
     if(fsent_kind_get(A) == VERTEX_DIR) {
-      fatal(fsent_index, A);
+      fatal(fsent_lookup_index, A);
     }
   }
 
@@ -214,12 +206,30 @@ xapi fsedge_connect(
   if(!ft) {
     fsent_filetype_set(B, VERTEX_FILETYPE_REG);
   } else if(fsent_kind_get(B) == VERTEX_DIR) {
-    /* for cases where it is known up front that an fsent is a directory (walker) */
-    fatal(fsent_index, B);
+    /* for cases where it is known up front that an fsent is a directory (e.g. walker) */
+    fatal(fsent_lookup_index, B);
   }
 
   fatal(linking, B, invalidation);
   fatal(fsent_dirnode_children_changed, A, invalidation);
+
+  finally : coda;
+}
+
+xapi fsedge_disconnect(fsedge * restrict fse)
+{
+  enter;
+
+  fsent *B;
+
+  B = containerof(fse->edge.B, fsent, vertex);
+  if(fsent_kind_get(B) == VERTEX_DIR)
+  {
+    fatal(fsent_lookup_disindex, B);
+  }
+
+  fatal(graph_disconnect, &fse->edge);
+  fsedge_release(fse);
 
   finally : coda;
 }
@@ -248,24 +258,6 @@ xapi fsedge_disintegrate(fsedge * restrict fse, graph_invalidation_context * res
   while((e = llist_shift(&edges, typeof(*e), lln))) {
     fatal(graph_disintegrate, e, invalidation);
   }
-
-  finally : coda;
-}
-
-xapi fsedge_disconnect(fsedge * restrict fse)
-{
-  enter;
-
-  fsent *B;
-
-  B = containerof(fse->edge.B, fsent, vertex);
-  if(fsent_kind_get(B) == VERTEX_DIR)
-  {
-    fatal(fsent_disindex, B);
-  }
-
-  fatal(graph_disconnect, &fse->edge);
-  fsedge_release(fse);
 
   finally : coda;
 }

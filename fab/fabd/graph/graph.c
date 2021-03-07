@@ -15,41 +15,35 @@
  You should have received a copy of the GNU General Public License
  along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#include "valyria/map.h"
-#include "valyria/dictionary.h"
-#include "valyria/set.h"
-#include "valyria/hashtable.h"
-#include "xlinux/xstat.h"
-#include "xlinux/xstdlib.h"
-#include "moria/graph.h"
-#include "moria/vertex.h"
-#include "moria/operations.h"
+#include "macros.h"
+
 #include "moria/edge.h"
+#include "moria/graph.h"
 #include "narrator.h"
-#include "fab/fsent.h"
 #include "value/writer.h"
+#include "valyria/hashtable.h"
+#include "xlinux/xstdlib.h"
 
 #include "graph.h"
-#include "fsent.h"
-#include "rule.h"
-#include "module.h"
-#include "node_operations.h"
-#include "logging.h"
-#include "params.h"
-#include "stats.h"
-#include "zbuffer.h"
 #include "dependency.h"
-#include "rule_module.h"
 #include "fsedge.h"
+#include "fsent.h"
+#include "module.h"
 
+#include "zbuffer.h"
 #include "common/attrs.h"
-#include "locks.h"
+
+/* fstree is the identity subgraph - moria treats it specially */
+STATIC_ASSERT(EDGE_TYPE_FSTREE == MORIA_EDGE_IDENTITY);
+
+/* moria treats links specially */
+STATIC_ASSERT(VERTEX_FILETYPE_LINK == MORIA_VERTEX_LINK);
 
 static llist edge_list = LLIST_INITIALIZER(edge_list);              // active
 static llist edge_freelist = LLIST_INITIALIZER(edge_freelist);      // freelist
 
 moria_graph g_graph = MORIA_GRAPH_INITIALIZER(g_graph);
-hashtable * g_graph_mm;
+hashtable * g_graph_ht;
 
 attrs32 * graph_vertex_attrs = (attrs32[]) {{
 #undef DEF
@@ -74,18 +68,6 @@ attrs32 * graph_edge_attrs = (attrs32[]) {{
 #undef DEF
 #define DEF(x, s, r, y) { name : s, value : y, range : r },
 EDGE_KIND_TABLE
-  }
-}};
-
-
-attrs16 * graph_edge_direction_attrs = (attrs16[]){{
-#undef DEF
-#define DEF(x, y) + 1
-    num : 0 EDGE_DIRECTION_TABLE
-  , members : (member16[]) {
-#undef DEF
-#define DEF(x, y) { name : #x, value : UINT16_C(y), range : EDGE_DIRECTION_OPT },
-EDGE_DIRECTION_TABLE
   }
 }};
 
@@ -130,10 +112,8 @@ static void __attribute__((constructor)) init()
   attrs32_init(graph_edge_attrs);
   attrs32_init(graph_vertex_attrs);
   attrs32_init(graph_edge_type_attrs);
-  attrs16_init(graph_edge_direction_attrs);
   attrs32_init(graph_vertex_kind_attrs);
   attrs32_init(graph_vertex_state_attrs);
-//  attrs32_init(graph_node_attrs);
 }
 
 //
@@ -172,7 +152,7 @@ xapi graph_setup()
   enter;
 
   fatal(hashtable_createx,
-      &g_graph_mm
+      &g_graph_ht
     , sizeof(moria_vertex_entry)
     , 100
     , moria_vertex_entry_hash
@@ -192,7 +172,7 @@ xapi graph_cleanup()
   llist *T;
 
   moria_graph_destroy(&g_graph);
-  fatal(hashtable_xfree, g_graph_mm);
+  fatal(hashtable_xfree, g_graph_ht);
 
   llist_splice_head(&edge_freelist, &edge_list);
   llist_foreach_safe(&edge_freelist, e, owner, T) {
@@ -407,10 +387,6 @@ xapi graph_hyperconnect(
 
   moria_connect_hyper(ctx, &g_graph, e, Alist, Alen, Blist, Blen, attrs);
 
-//  printf("connect ");
-//  fatal(graph_edge_say, e, g_narrator_stdout);
-//  printf("\n");
-
   finally : coda;
 }
 
@@ -426,40 +402,12 @@ xapi graph_connect(
 
   moria_connect(ctx, &g_graph, e, A, B, attrs);
 
-#if 0
-  uint64_t cat = 0;
-
-  cat = 0;
-  if((attrs & EDGE_TYPE_OPT) == EDGE_TYPE_FSTREE) {
-    cat = L_FSGRAPH;
-  } else if (attrs & EDGE_DEPENDENCY) {
-    cat = L_DEPGRAPH;
-  } else if (attrs & EDGE_MODULES) {
-    cat = L_MODULE;
-  }
-
-  if(attrs)
-  {
-    printf("connect ");
-    fatal(graph_edge_say, e, g_narrator_stdout);
-    printf("\n");
-  }
-#endif
-
-//  printf("connect ");
-//  fatal(graph_edge_say, e, g_narrator_stdout);
-//  printf("\n");
-
   finally : coda;
 }
 
 xapi graph_disconnect(moria_edge * restrict e)
 {
   enter;
-
-//  printf("disconnect ");
-//  fatal(graph_edge_say, e, g_narrator_stdout);
-//  printf("\n");
 
   fatal(moria_edge_disconnect, &g_graph, e);
 
@@ -471,14 +419,12 @@ xapi graph_disintegrate(moria_edge * restrict e, graph_invalidation_context * re
   enter;
 
   moria_vertex *v;
-  fsent *n;
+  fsent *n, *Bn;
   int x;
   llist edges;
   llist vertices;
-  edge_kind ek;
 
-  ek = e->attrs & EDGE_KIND_OPT;
-  RUNTIME_ASSERT(ek == EDGE_FSTREE || ek == EDGE_DEPENDS);
+  RUNTIME_ASSERT((e->attrs & EDGE_KIND_OPT) == EDGE_FSTREE || (e->attrs & EDGE_KIND_OPT) == EDGE_DEPENDS);
 
   /* initialize work lists */
   llist_init_node(&edges);
@@ -487,16 +433,9 @@ xapi graph_disintegrate(moria_edge * restrict e, graph_invalidation_context * re
   llist_append(&edges, e, lln);
   while(!llist_empty(&edges) || !llist_empty(&vertices))
   {
-//printf("\n");
-//printf("edges %zu\n", llist_count(&edges));
-//printf("nodes %zu\n", llist_count(&vertices));
     if((e = llist_first(&edges, typeof(*e), lln)))
     {
       llist_delete(e, lln);
-
-printf(" e ");
-fatal(graph_edge_say, e, g_narrator_stdout);
-printf(" ");
 
       /*
        * list of nodes in the edge, in bottom-up order. The order matters because when a directory
@@ -530,118 +469,58 @@ printf(" ");
 
       if((e->attrs & EDGE_TYPE_OPT) == EDGE_TYPE_FSTREE)
       {
-        n = containerof(e->B, fsent, vertex);
+        Bn = containerof(e->B, fsent, vertex);
 
-        // some nodes are never actually deleted (config nodes, project module node)
+        // certain nodes are never actually deleted (config nodes, project module node)
         if(e->B->attrs & VERTEX_PROTECT_BIT) {
-printf("%d", __LINE__);
-          goto nexte;
+          continue;
         }
 
-        if(fsent_exists_get(n))
-        {
-          /* opportunistically deleted related edges */
-          fatal(fsent_unlinking, n, invalidation);
-        }
-
-        /* some other vertex still depends on this vertex */
-        if(!rbtree_empty(&e->B->up)) {
-printf("%d", __LINE__);
-          goto nexte;
-        }
-
-        if(fsent_exists_get(n))
-        {
-          /* the delete event is fired when the node becomes unlinked - it may not actually be released yet */
-          fatal(fsent_unlink, n, invalidation);
+        if(fsent_exists_get(Bn)) {
+          fatal(fsent_invalidate, Bn, invalidation);
           fatal(fsent_dirnode_children_changed, containerof(e->A, fsent, vertex), invalidation);
+          fatal(fsent_unlink, Bn, invalidation);
         }
 
-        /* this vertex still depends on some other vertex */
-        if(!rbtree_empty(&e->B->down)) {
-printf("%d", __LINE__);
-          goto nexte;
+        if(!rbtree_empty(&e->B->up) || !rbtree_empty(&e->B->down)) {
+          continue;
         }
-      }
 
-      ek = e->attrs & EDGE_KIND_OPT;
-      if(ek == EDGE_FSTREE) {
+        fatal(fsent_unlink_related, Bn, invalidation);
         fatal(fsedge_disconnect, containerof(e, fsedge, edge));
-      } else if(ek == EDGE_DEPENDS) {
+      }
+      else
+      {
         fatal(dependency_disconnect, containerof(e, dependency, edge), invalidation);
       }
-nexte:
-printf("\n");
-continue;
     }
 
     if((v = llist_shift(&vertices, typeof(*v), lln)))
     {
-//printf(" v ");
-//fatal(fsent_absolute_path_say, containerof(v, fsent, vertex), g_narrator_stdout);
-//printf(" ");
-
-      if(!rbtree_empty(&v->down)) {
-//printf("%d", __LINE__);
-        goto nextv;
+      if(!rbtree_empty(&v->up) || !rbtree_empty(&v->down)) {
+        continue;
       }
 
       if(v->attrs & VERTEX_PROTECT_BIT) {
-//printf("%d", __LINE__);
-        goto nextv;
+        continue;
       }
 
       n = containerof(v, fsent, vertex);
       if(fsent_exists_get(n)) {
-//printf("%d", __LINE__);
-        goto nextv;
+        continue;
       }
 
-      // node is still referenced, other than by its upwards facing identity edge
-      if(!rbtree_empty(&v->up)) {
-//printf("%d", __LINE__);
-        goto nextv;
-      }
-
+      // node has no references other than its upwards facing identity edge
       if(v->up_identity) {
         if(!llist_attached(v->up_identity, lln)) {
           llist_append(&edges, v->up_identity, lln);
         }
-//printf("%d", __LINE__);
-        goto nextv;
+        continue;
       }
 
-//printf("deleted %p", n);
       fsent_release(containerof(v, fsent, vertex));
-nextv:
-//printf("\n");
-continue;
     }
   }
 
   finally : coda;
 }
-
-#if 0
-        /* only actually unlink from the fstree if *no* other references exist */
-        if(!rbtree_empty(&e->B->down) || !rbtree_empty(&e->B->up)) {
-//printf("%d up %s down %s", __LINE__, rbtree_empty(&e->B->up) ? "empty" : "nonempty", rbtree_empty(&e->B->down) ? "empty" : "nonempty");
-
-printf("%d", __LINE__);
-          goto nexte;
-        }
-
-attrs32 * graph_node_attrs = (attrs32[]) {{
-#undef DEF
-#define DEF(x, s, r, y) + 1
-    num : 0
-      VERTEX_KIND_TABLE
-      VERTEX_STATE_TABLE
-  , members : (member32[]) {
-#undef DEF
-#define DEF(x, s, r, y) { name : s, value : y, range : r },
-VERTEX_KIND_TABLE
-VERTEX_STATE_TABLE
-  }
-}};
-#endif

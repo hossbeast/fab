@@ -194,11 +194,16 @@ xapi dependency_connect(
 
   RUNTIME_ASSERT(relation == EDGE_DEPENDS || relation == EDGE_CONDUIT);
 
-//  bool created = false;
   moria_edge *e;
   dependency *ne;
   moria_connect_context ctx;
   int r;
+
+  /* vivify the targets */
+  if(fsent_state_get(A) == VERTEX_UNLINKED) {
+    fsent_state_set(A, VERTEX_UNCREATED);
+    fatal(fsent_dirnode_children_changed, fsent_parent(A), invalidation);
+  }
 
   r = moria_preconnect(&ctx, &g_graph, &A->vertex, &B->vertex, relation, &e);
   if(r == MORIA_HASEDGE)
@@ -209,47 +214,13 @@ xapi dependency_connect(
   RUNTIME_ASSERT(r == MORIA_NOEDGE);
 
   fatal(dependency_alloc, &ne, &g_graph, 1, 1);
-//  moria_connect(&ctx, &g_graph, &ne->edge, &A->vertex, &B->vertex, relation);
   fatal(graph_connect, &ctx, &A->vertex, &B->vertex, &ne->edge, relation);
   *nep = ne;
-
-#if 0
-  if(oldp) {
-    oldvp = &old_vertex;
-    *oldp = 0;
-  }
-
-  fatal(moria_connect_replace
-    , g_graph
-    , &A->vertex
-    , &B->vertex
-    , relation
-    , &e
-    , &created
-    , oldvp
-  );
-
-  ne = edge_value(e);
-  if(nep)
-    *nep = ne;
-
-  if(!created)
-    goto XAPI_FINALLY;
-
-  if(oldp && old_vertex) {
-    *oldp = vertex_value(old_vertex);
-  }
-#endif
 
   llist_init_node(&ne->dependencies_lln);
 
   /* invalidate the target */
   fatal(fsent_invalidate, A, invalidation);
-
-  /* vivify the source */
-  if(fsent_state_get(B) == VERTEX_UNLINKED) {
-    fsent_state_set(B, VERTEX_UNCREATED);
-  }
 
   finally : coda;
 }
@@ -273,7 +244,17 @@ xapi dependency_hyperconnect(
   moria_edge *e;
   dependency *ne;
   moria_connect_context ctx;
-  fsent *B;
+  fsent *A;
+
+  /* vivify the targets */
+  for(x = 0; x < Alen; x++)
+  {
+    A = containerof(Alist[x], fsent, vertex);
+    if(fsent_state_get(A) == VERTEX_UNLINKED) {
+      fsent_state_set(A, VERTEX_UNCREATED);
+      fatal(fsent_dirnode_children_changed, fsent_parent(A), invalidation);
+    }
+  }
 
   r = moria_preconnect_hyper(&ctx, &g_graph, Alist, Alen, Blist, Blen, relation | MORIA_EDGE_HYPER, &e);
   if(r == MORIA_HASEDGE)
@@ -285,30 +266,7 @@ xapi dependency_hyperconnect(
 
   fatal(dependency_alloc, &ne, &g_graph, Alen, Blen);
   fatal(graph_hyperconnect, &ctx, Alist, Alen, Blist, Blen, &ne->edge, relation | MORIA_EDGE_HYPER);
-//  moria_connect_hyper(&ctx, &g_graph, &ne->edge, Alist, Alen, Blist, Blen, relation | MORIA_EDGE_HYPER);
   *nep = ne;
-
-#if 0
-  created = false;
-  e = 0;
-  fatal(moria_hyperconnect
-    , g_graph
-    , Alist
-    , Alen
-    , Blist
-    , Blen
-    , relation
-    , &e
-    , &created
-  );
-
-  ne = edge_value(e);
-  if(nep)
-    *nep = ne;
-
-  if(!created)
-    goto XAPI_FINALLY;
-#endif
 
   llist_init_node(&ne->dependencies_lln);
 
@@ -316,15 +274,6 @@ xapi dependency_hyperconnect(
   for(x = 0; x < Alen; x++)
   {
     fatal(fsent_invalidate, containerof(Alist[x], fsent, vertex), invalidation);
-  }
-
-  /* vivify the sources */
-  for(x = 0; x < Blen; x++)
-  {
-    B = containerof(Blist[x], fsent, vertex);
-    if(fsent_state_get(B) == VERTEX_UNLINKED) {
-      fsent_state_set(B, VERTEX_UNCREATED);
-    }
   }
 
   finally : coda;
@@ -369,7 +318,6 @@ xapi dependency_disconnect(dependency * restrict dep, graph_invalidation_context
 
   if(dep->fml) {
     RUNTIME_ASSERT(--dep->fml->self_fml->refs >= 0);
-//printf("FML %p refs %d -> %d\n", dep->fml->self_fml, dep->fml->self_fml->refs + 1, dep->fml->self_fml->refs);
   }
 
 
@@ -381,21 +329,3 @@ xapi dependency_disconnect(dependency * restrict dep, graph_invalidation_context
 
   finally : coda;
 }
-
-
-#if 0
-  e = &dep->edge;
-  if(!(e->attrs & MORIA_EDGE_HYPER)) {
-    n = containerof(e->A, fsent, vertex);
-    if(n->dep == dep) {
-      n->dep = 0;
-    }
-  } else {
-    for(x = 0; x < e->Alen; x++) {
-      n = containerof(e->Alist[x].v, fsent, vertex);
-      if(n->dep == dep) {
-        n->dep = 0;
-      }
-    }
-  }
-#endif

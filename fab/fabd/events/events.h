@@ -25,7 +25,7 @@
  */
 
 #include "types.h"
-#include "fab/ipc.h"
+#include "fab/events.h"
 
 struct handler_context;
 struct fabipc_message;
@@ -48,7 +48,7 @@ bool events_would(
 /*
  * publish an event - called after events_would
  */
-void events_publish(struct handler_context * first, fabipc_message * msg)
+void events_publish(struct handler_context * first, struct fabipc_message * msg)
   __attribute__((nonnull));
 
 #endif

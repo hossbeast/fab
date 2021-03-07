@@ -36,30 +36,8 @@
 
 /* refresh state */
 uint32_t rule_system_reconciliation_id;
-//static uint32_t rule_system_reconcile_round_id;
 static llist rma_list[2];
 static int rma_list_index;
-
-/* visit rules attached to a directory, part of run-invalid-rules
- *
- * v - rule node
- */
-static xapi rule_run_rma(rule_module_edge * restrict rma, rule_run_context * restrict ctx)
-{
-  enter;
-
-//  if((ctx->variants = rma->variants) == 0) {
-//    ctx->variants = rma->mod->unscoped_block->variants;
-//  }
-  ctx->variants = rma->variants;
-  ctx->mod = rma->mod;
-  ctx->mod_owner = rma->mod_owner;
-  ctx->rme = rma;
-
-  fatal(rule_run, rma->rule, ctx);
-
-  finally : coda;
-}
 
 static int nohits_rbn_cmp(const rbnode * restrict a, const rbnode * restrict b)
 {
@@ -75,7 +53,6 @@ xapi rule_system_setup()
   enter;
 
   rule_system_reconciliation_id = 1;
-//  rule_system_reconcile_round_id = 1;
   llist_init_node(&rma_list[0]);
   llist_init_node(&rma_list[1]);
 
@@ -94,28 +71,15 @@ xapi rule_system_reconcile(rule_run_context * restrict ctx, bool * restrict reco
   rbtree nohits;      // rmas with no matches during the reconciliation
   graph_invalidation_context invalidation = { };
 
-  /* list of rmas run during the refresh operation */
-//  llist rma_ranlist;
-
   rbtree_init(&nohits);
   ctx->nohits = &nohits;
   ctx->reconciled = reconciled;
-
-//printf("START\n");
 
   /* run rules to quiescence */
   head = &rma_list[rma_list_index];
   while(!llist_empty(head) && *reconciled)
   {
     rule_system_reconciliation_id++;
-//    llist_init_node(&rma_ranlist);
-//printf("RECONCILE ID %d index %d - rules %zu\n", rule_system_reconciliation_id, rma_list_index, llist_count(head));
-//
-//if(rule_system_reconciliation_id > 5) {
-//extern void exit(int);
-//  exit(0);
-//}
-
     graph_invalidation_end(&invalidation);
     fatal(graph_invalidation_begin, &invalidation);
 
@@ -125,7 +89,13 @@ xapi rule_system_reconcile(rule_run_context * restrict ctx, bool * restrict reco
     /* run all queued up rules - this can drive rule invalidations */
     llist_foreach(head, rma, changed[!rma_list_index].lln) { // , T) {
       if(*reconciled) {
-        fatal(rule_run_rma, rma, ctx);
+
+        ctx->variants = rma->variants;
+        ctx->mod = rma->mod;
+        ctx->mod_owner = rma->mod_owner;
+        ctx->rme = rma;
+
+        fatal(rule_run, rma->rule, ctx);
 
         if(!*reconciled) {
           fprintf(stderr, "rules were not run (unresolved formula references)\n");
@@ -150,15 +120,8 @@ xapi rule_system_reconcile(rule_run_context * restrict ctx, bool * restrict reco
 
     llist_init_node(head);
 
-//printf("REAPING for ID %d checking %zu rmas\n", rule_system_reconciliation_id, llist_count(&rma_ranlist));
-//extern llist dependency_list;
-//extern llist dependency_freelist;
-//printf(" active dependencies %zu free dependencies %zu\n", llist_count(&dependency_list), llist_count(&dependency_freelist));
-
     head = &rma_list[rma_list_index];
   }
-
-//printf("STOP - reconciled %d\n", *reconciled);
 
   /* warn about rules which have no effect */
   if(*reconciled && log_would(L_WARN))

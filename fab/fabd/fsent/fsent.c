@@ -15,49 +15,42 @@
  You should have received a copy of the GNU General Public License
  along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#include "xlinux/xstdlib.h"
+#include "xapi.h"
+#include "types.h"
+#include "macros.h"
+
 #include "moria/graph.h"
 #include "moria/vertex.h"
-#include "moria/edge.h"
-#include "moria/operations.h"
+#include "narrator.h"
+#include "value.h"
+#include "valyria/hashtable.h"
 #include "valyria/list.h"
 #include "valyria/map.h"
-#include "valyria/set.h"
-#include "value.h"
-#include "narrator.h"
-#include "narrator/fixed.h"
+#include "xlinux/xstdlib.h"
 #include "yyutil/box.h"
-#include "valyria/hashtable.h"
+#include "fab/ipc.h"
 
 #include "fsent.h"
-#include "shadow.h"
-#include "formula.h"
-#include "filesystem.h"
-#include "filesystem.internal.h"
-#include "logging.h"
-#include "fab/events.h"
-#include "module.internal.h"
-#include "node_operations.h"
-#include "params.h"
-#include "pattern.h"
-#include "config.internal.h"
 #include "CONFIG.errtab.h"
-#include "MODULE.errtab.h"
-#include "walker.h"
-#include "extern.h"
-#include "variant.h"
-#include "var.h"
-#include "stats.h"
+#include "config.internal.h"
 #include "dependency.h"
 #include "events.h"
+#include "filesystem.internal.h"
+#include "formula.h"
+#include "fsedge.h"
 #include "handler.h"
+#include "logging.h"
+#include "module.internal.h"
+#include "params.h"
 #include "rule_module.h"
 #include "rule_system.h"
-#include "fsedge.h"
+#include "shadow.h"
+#include "stats.h"
+#include "var.h"
+#include "variant.h"
 
 #include "common/attrs.h"
 #include "zbuffer.h"
-#include "common/hash.h"
 
 static uint16_t fsent_fs_epoch;
 uint16_t fsent_valid_epoch;
@@ -162,73 +155,13 @@ static xapi invalidate_fml_rule_visitor(moria_edge * e, void * arg, moria_traver
   finally : coda;
 }
 
-xapi fsent_create(
-    fsent ** restrict np
-  , vertex_kind kind
-  , uint32_t attrs
-  , const char * restrict label
-  , uint16_t label_len
-)
-{
-  enter;
-
-  fsent *n;
-
-  RUNTIME_ASSERT(label_len);
-  RUNTIME_ASSERT((attrs & VERTEX_KIND_OPT) == 0);
-
-  if((n = llist_shift(&fsent_freelist, typeof(*n), vertex.owner)) == 0)
-  {
-    fatal(xmalloc, &n, sizeof(*n));
-  }
-
-  fsname_init(&n->name, label, label_len);
-  moria_vertex_initw(&n->vertex, &g_graph, attrs | kind | VERTEX_TYPE_FSENT, n->name.name, n->name.namel);
-
-  n->notify_epoch = -1;
-  n->wd = -1;
-  n->not_parsed = 1;
-  n->not_loaded = 1;
-
-  llist_init_node(&n->pending.lln);
-  n->pending.kind = SWEEPER_EVENT_SELF;
-  rbtree_init(&n->pending_child);
-
-// printf("CREAT %.*s\n", (int)label_len, label);
-
-  llist_append(&fsent_list, n, vertex.owner);
-
-  *np = n;
-
-  finally : coda;
-}
-
 static void __attribute__((nonnull)) fsent_dispose(fsent * restrict n)
 {
   llist_delete_node(&n->vertex.owner);
   llist_append(&fsent_freelist, n, vertex.owner);
 }
 
-void fsent_release(fsent * restrict n)
-{
-  moria_vertex __attribute__((unused)) *v;
-
-//printf("FSENT RELEASE %p\n", n);
-
-  /* should be fully excised from the graph previously */
-  v = &n->vertex;
-  RUNTIME_ASSERT(v->up_identity == 0);
-  RUNTIME_ASSERT(rbtree_empty(&v->up));
-  RUNTIME_ASSERT(rbtree_empty(&v->down));
-
-  fsent_dispose(n);
-}
-
-/// fsent_root_init
-//
-// SUMMARY
-//  create the root fsent (g_root)
-//
+/* create the root fsent (g_root) */
 static xapi root_init()
 {
   enter;
@@ -245,11 +178,7 @@ static xapi root_init()
   finally : coda;
 }
 
-/// project_init
-//
-// SUMMARY
-//  create the project node (g_project_root) and attach it to the root
-//
+/* create the project node (g_project_root) and attach it to the root */
 static xapi project_init()
 {
   enter;
@@ -365,6 +294,58 @@ end:
   return z;
 }
 
+static void refresh_fstree(fsent * restrict n)
+{
+  fsent * parent;
+
+  if(n->fs_epoch == fsent_fs_epoch)
+    return;
+
+  /* the root node does not refresh */
+  if((parent = fsent_parent(n)) == 0)
+    return;
+
+  STATS_INC(g_stats.fstree_refresh);
+
+  refresh_fstree(parent);
+
+  n->fst = 0;
+  if(parent->fst)
+  {
+    if((n->fst = fstree_down((struct fstree *)parent->fst, n->name.name, n->name.namel)))
+    {
+      n->fs = n->fst->fs;
+    }
+  }
+
+  if(!n->fs)
+    n->fs = parent->fs;
+
+  n->fs_epoch = fsent_fs_epoch;
+}
+
+static void refresh_module(fsent * restrict n)
+{
+  fsent * parent;
+
+  if(n->module_epoch == fsent_module_epoch)
+    return;
+
+  n->module_epoch = fsent_module_epoch;
+
+  if(fsent_kind_get(n) == VERTEX_MODULE_DIR) {
+    return;
+  }
+
+  /* the root node does not refresh */
+  if((parent = fsent_parent(n)) == 0)
+    return;
+
+  refresh_module(parent);
+
+  n->mod = parent->mod;
+}
+
 //
 // internal
 //
@@ -391,6 +372,58 @@ xapi fsent_relative_path_say(const fsent * n, const fsent * base, narrator * res
   xsayw(path, pathl);
 
   finally : coda;
+}
+
+xapi fsent_create(
+    fsent ** restrict np
+  , vertex_kind kind
+  , uint32_t attrs
+  , const char * restrict label
+  , uint16_t label_len
+)
+{
+  enter;
+
+  fsent *n;
+
+  RUNTIME_ASSERT(label_len);
+  RUNTIME_ASSERT((attrs & VERTEX_KIND_OPT) == 0);
+
+  if((n = llist_shift(&fsent_freelist, typeof(*n), vertex.owner)) == 0)
+  {
+    fatal(xmalloc, &n, sizeof(*n));
+  }
+
+  fsname_init(&n->name, label, label_len);
+  moria_vertex_initw(&n->vertex, &g_graph, attrs | kind | VERTEX_TYPE_FSENT, n->name.name, n->name.namel);
+
+  n->notify_epoch = -1;
+  n->wd = -1;
+  n->not_parsed = 1;
+  n->not_loaded = 1;
+
+  llist_init_node(&n->pending.lln);
+  n->pending.kind = SWEEPER_EVENT_SELF;
+  rbtree_init(&n->pending_child);
+
+  llist_append(&fsent_list, n, vertex.owner);
+
+  *np = n;
+
+  finally : coda;
+}
+
+void fsent_release(fsent * restrict n)
+{
+  moria_vertex __attribute__((unused)) *v;
+
+  /* should be fully excised from the graph previously */
+  v = &n->vertex;
+  RUNTIME_ASSERT(v->up_identity == 0);
+  RUNTIME_ASSERT(rbtree_empty(&v->up));
+  RUNTIME_ASSERT(rbtree_empty(&v->down));
+
+  fsent_dispose(n);
 }
 
 //
@@ -540,36 +573,6 @@ xapi fsent_graft(const char * restrict base, fsent ** restrict rn, graph_invalid
   finally : coda;
 }
 
-static void fsent_fstree_refresh(fsent * restrict n)
-{
-  fsent * parent;
-
-  if(n->fs_epoch == fsent_fs_epoch)
-    return;
-
-  /* the root node does not refresh */
-  if((parent = fsent_parent(n)) == 0)
-    return;
-
-  STATS_INC(g_stats.fstree_refresh);
-
-  fsent_fstree_refresh(parent);
-
-  n->fst = 0;
-  if(parent->fst)
-  {
-    if((n->fst = fstree_down((struct fstree *)parent->fst, n->name.name, n->name.namel)))
-    {
-      n->fs = n->fst->fs;
-    }
-  }
-
-  if(!n->fs)
-    n->fs = parent->fs;
-
-  n->fs_epoch = fsent_fs_epoch;
-}
-
 const struct filesystem * fsent_filesystem_get(fsent * restrict n)
 {
   enum vertex_filetype filetype;
@@ -578,33 +581,10 @@ const struct filesystem * fsent_filesystem_get(fsent * restrict n)
   if(filetype != VERTEX_FILETYPE_DIR)
     n = fsent_parent(n);
 
-  fsent_fstree_refresh(n);
+  refresh_fstree(n);
 
   RUNTIME_ASSERT(n->fs);
   return n->fs;
-}
-
-static void fsent_module_refresh(fsent * restrict n)
-{
-  fsent * parent;
-
-  if(n->module_epoch == fsent_module_epoch)
-    return;
-
-  n->module_epoch = fsent_module_epoch;
-
-  if(fsent_kind_get(n) == VERTEX_MODULE_DIR) {
-//    RUNTIME_ASSERT(n->mod);
-    return;
-  }
-
-  /* the root node does not refresh */
-  if((parent = fsent_parent(n)) == 0)
-    return;
-
-  fsent_module_refresh(parent);
-
-  n->mod = parent->mod;
 }
 
 struct module * fsent_module_get(const fsent * restrict n)
@@ -615,7 +595,7 @@ struct module * fsent_module_get(const fsent * restrict n)
   if(filetype != VERTEX_FILETYPE_DIR)
     n = fsent_parent(n);
 
-  fsent_module_refresh((fsent*)n);
+  refresh_module((fsent*)n);
 
   return n->mod;
 }
@@ -1075,7 +1055,7 @@ xapi fsent_ok(fsent * restrict n)
   finally : coda;
 }
 
-xapi fsent_unlinking(fsent *n, graph_invalidation_context * restrict invalidation)
+xapi fsent_unlink_related(fsent *n, graph_invalidation_context * restrict invalidation)
 {
   enter;
 
@@ -1107,10 +1087,10 @@ xapi fsent_unlinking(fsent *n, graph_invalidation_context * restrict invalidatio
       }
     }
 
-    fatal(fsent_invalidate, n, invalidation);
+//    fatal(fsent_invalidate, n, invalidation);
   } else if(fsent_kind_get(n) == VERTEX_SHADOW_LINK) {
   } else {
-    fatal(fsent_invalidate, n, invalidation);
+//    fatal(fsent_invalidate, n, invalidation);
   }
 
   llist_foreach(&head, rbn, lln) {
@@ -1128,9 +1108,9 @@ xapi fsent_unlink(fsent *n, graph_invalidation_context * restrict invalidation)
   fabipc_message *msg;
   uint16_t z;
   handler_context *handler;
+  moria_vertex *v;
 
-  moria_vertex *v = &n->vertex;
-
+  v = &n->vertex;
   if(fsent_kind_get(n) == VERTEX_MODULE_FILE)
   {
     /* when a module.bam file is unlinked, invalidate its immediate parent module */
@@ -1150,7 +1130,7 @@ xapi fsent_unlink(fsent *n, graph_invalidation_context * restrict invalidation)
     );
   }
 
-  /* also remove related edges, e.g. //module/{imports,use}-scope */
+  /* also remove related edges, e.g. //module/{imports,uses} */
   if(n->import_scope_edge)
   {
     fatal(fsedge_disconnect, n->import_scope_edge);
@@ -1223,7 +1203,7 @@ xapi fsent_invalidate_visitor(moria_vertex * v, void * arg, moria_traversal_mode
   uint16_t z;
   handler_context *handler;
   fabipc_message *msg;
-  graph_invalidation_context *invalidation = arg;
+  graph_invalidation_context *invalidation;
 
   n = containerof(v, fsent, vertex);
   if(fsent_invalid_get(n)) {
@@ -1231,6 +1211,7 @@ xapi fsent_invalidate_visitor(moria_vertex * v, void * arg, moria_traversal_mode
   }
 
   fsent_invalid_set(n);
+  invalidation = arg;
   invalidation->any = true;
 
   if(log_would(L_DEPGRAPH))
@@ -1260,7 +1241,7 @@ xapi fsent_invalidate_visitor(moria_vertex * v, void * arg, moria_traversal_mode
   finally : coda;
 }
 
-xapi fsent_index(fsent * n)
+xapi fsent_lookup_index(fsent * n)
 {
   enter;
 
@@ -1275,16 +1256,18 @@ xapi fsent_index(fsent * n)
     goto XAPI_FINALLY;
   }
 
+  RUNTIME_ASSERT(fsent_kind_get(n) == VERTEX_DIR);
+
   key.label = n->vertex.label;
   key.label_len = n->vertex.label_len;
-  entry = hashtable_search(g_graph_mm, &key, sizeof(key), moria_vertex_entry_hash, moria_vertex_entry_key_cmp);
+  entry = hashtable_search(g_graph_ht, &key, sizeof(key), moria_vertex_entry_hash, moria_vertex_entry_key_cmp);
 
   if(!entry)
   {
     /* entry is using this nodes label */
     rbtree_init(&key.rbt);
-    fatal(hashtable_put, g_graph_mm, &key);
-    entry = hashtable_get(g_graph_mm, &key);
+    fatal(hashtable_put, g_graph_ht, &key);
+    entry = hashtable_get(g_graph_ht, &key);
   }
 
   rbtree_put(&entry->rbt, n, vertex.rbn_lookup, (void*)ptrcmp);
@@ -1292,7 +1275,7 @@ xapi fsent_index(fsent * n)
   finally : coda;
 }
 
-xapi fsent_disindex(fsent * n)
+xapi fsent_lookup_disindex(fsent * n)
 {
   enter;
 
@@ -1305,7 +1288,7 @@ xapi fsent_disindex(fsent * n)
 
   key.label = n->vertex.label;
   key.label_len = n->vertex.label_len;
-  entry = hashtable_search(g_graph_mm, &key, sizeof(key), moria_vertex_entry_hash, moria_vertex_entry_key_cmp);
+  entry = hashtable_search(g_graph_ht, &key, sizeof(key), moria_vertex_entry_hash, moria_vertex_entry_key_cmp);
   if(entry == 0) {
     RUNTIME_ASSERT(!rbnode_attached(&n->vertex.rbn_lookup));
     goto XAPI_FINALLY;

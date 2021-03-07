@@ -74,9 +74,14 @@
 //
 static inline size_t znloadw(void * restrict dst, size_t sz, const void * b, size_t bz)
 {
-  size_t z = MIN(sz - 1, bz); // leave room for a trailing null
-  if(z)
+  size_t z = 0;
+
+  if(sz) {
+    z = MIN(sz - 1, bz); // leave room for a trailing null
+  }
+  if(z) {
     memcpy(dst, b, z);
+  }
   return z;
 }
 

@@ -153,7 +153,7 @@ xapi pattern_lookup_fragment(
   ctx.attrs = attrs;
   ctx.path = frag;
   ctx.path_len = fragl;
-  fatal(moria_graph_lookup, &g_graph, g_graph_mm, lookup_callback, candidate, &ctx, vertices, &r);
+  fatal(moria_graph_lookup, &g_graph, g_graph_ht, lookup_callback, candidate, &ctx, vertices, &r);
 
   if(r == 1)
   {

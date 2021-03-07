@@ -31,6 +31,8 @@ xapi rule_system_setup(void);
 
 /*
  * run invalidated rules to quiescence
+ *
+ * reconciled - (returns) false if 
  */
 xapi rule_system_reconcile(struct rule_run_context * restrict ctx, bool * restrict reconciled)
   __attribute__((nonnull));

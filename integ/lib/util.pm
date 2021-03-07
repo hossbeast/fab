@@ -105,7 +105,7 @@ sub assert_file
 {
   my ($path, $expected) = @_;
 
-  open $fh, "<", "$path" or die $!;
+  open $fh, "<", "$path" or die("open($path) : $!");
   my $text = do { local $/ ; <$fh> };
   chomp $text;
   close $fh;
