@@ -15,14 +15,11 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef _INVALIDATE_COMMAND_H
-#define _INVALIDATE_COMMAND_H
+#ifndef _VARS_COMMAND_H
+#define _VARS_COMMAND_H
 
-#include "xapi.h"
+#include "command.h"
 
-struct command;
-extern struct command * invalidate_command;
-
-xapi invalidate_command_cleanup(void);
+extern struct command vars_command;
 
 #endif

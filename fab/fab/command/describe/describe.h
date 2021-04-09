@@ -15,17 +15,17 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef _ADHOC_COMMAND_H
-#define _ADHOC_COMMAND_H
+#ifndef _DESCRIBE_COMMAND_H
+#define _DESCRIBE_COMMAND_H
 
-#include "xapi.h"
 #include "command.h"
 #include "args.h"
 
-extern struct adhoc_args {
-  bead request;
-} adhoc_args;
+extern struct describe_args {
+  bead targets[64];
+  uint16_t targets_len;
+} describe_args;
 
-extern struct command adhoc_command;
+extern struct command describe_command;
 
 #endif

@@ -15,7 +15,9 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-use cc           # this module contains C sources
+use cc          # this module contains C sources
+use flex
+use bison
 use executable  # this module builds an executable
 use xapi/errtab
 
@@ -27,9 +29,9 @@ rule fab.? -> //module/targets
 # make common objects available for #include and linking
 import fab/include
 import fab/asan
-import lib{common,xapi,xlinux,logger,xunit,narrator,valyria,yyutil,value,fab,lorien}
+import lib{common,descriptor,xapi,xlinux,logger,xunit,narrator,valyria,yyutil,value,fab,lorien}
 
-variant xapi.{debug,devel} : [
+variant xapi.devel : [
   rule fab.? <- asan/asan.$?.o
 ]
 
@@ -40,10 +42,14 @@ rule **/*.?.o -> fab.$? : executable/bam-cc
 rule */*.?.o <- errtab/MAIN.errtab.h
 
 # library dependencies
-variant xapi.pic.{debug,devel,final} : [
+variant xapi.pic.{debug,final,trace} : [
   rule //module/imports/*~libxunit/lib*.?.so -> fab.${?-pic}
 ]
 
 variant xapi.pic.devel : [
-  rule //module/imports/libxunit/lib*.?.so -> fab.${?-pic}
+  rule //module/imports/*/lib*.?.so -> fab.${?-pic}
 ]
+
+var : {
+  lflags : -lpthread
+}

@@ -15,17 +15,22 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef _ADHOC_COMMAND_H
-#define _ADHOC_COMMAND_H
+#ifndef _LS_COMMAND_H
+#define _LS_COMMAND_H
 
 #include "xapi.h"
+#include "fab/graph.h"
+
 #include "command.h"
 #include "args.h"
 
-extern struct adhoc_args {
-  bead request;
-} adhoc_args;
+extern struct ls_args {
+  bead target;            // identifies the node to start the ls from
+  fab_graph graph;
+  const char *direction;
+  bool show_paths;
+} ls_args;
 
-extern struct command adhoc_command;
+extern struct command ls_command;
 
 #endif

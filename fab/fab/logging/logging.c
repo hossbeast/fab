@@ -23,11 +23,9 @@
 #include "logging.h"
 
 logger_category * categories = (logger_category[]) {
-    { name : "ERROR"      , description : "fatal errors" }
-  , { name : "ARGS"       , description : "program arguments report" }
-  , { name : "PARAMS"     , description : "program parameters report" }
-  , { name : "CLIENT"     , description : "fab client", optional : 1 }
+    { name : "CLIENT"     , description : "fab client", optional : 1 }
   , { name : "PROTOCOL"   , attr : L_NAMES | L_PID }
+  , { name : "CONFIG"     , description : "effective configuration" }
 #if DEBUG || DEVEL || XAPI
   , { name : "IPC"        , description : "signal-exchange", attr : L_NAMES | L_PID | L_YELLOW }
 #endif
@@ -35,9 +33,9 @@ logger_category * categories = (logger_category[]) {
 };
 
 logger_stream * streams = (logger_stream []) {
-    { name : "console"  , type : LOGGER_STREAM_FD , fd : 1  , expr : "+ERROR"
+    { name : "console"  , type : LOGGER_STREAM_FD , fd : 1
 #if DEBUG || DEVEL || XAPI
-" %CATEGORY %NAMES %PID %TID"
+, expr : " %CATEGORY %NAMES %PID %TID"
 #endif
     }
   , { }
@@ -58,4 +56,5 @@ xapi logging_setup(char ** envp)
   logger_set_process_categories(L_CLIENT);
 
   finally : coda;
+
 }
