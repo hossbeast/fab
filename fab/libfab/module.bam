@@ -15,26 +15,36 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-use cc               # this module contains c sources
+use cc              # this module contains c sources
 use library/shared  # this module builds a library
+use library/static  # this module builds a library
 use xapi/errtab     # this module contains errtabs
+use descriptor
 
 # make common objects available for #inclusion and linking by files in this module
 import fab/include
 
-import lib{common,xapi,xlinux,narrator,logger,lorien}
+import lib{common,xapi,xlinux,narrator,logger,lorien,descriptor}
 
 # variants for the module
 variant xapi.pic.{debug,devel,final,trace}
 
 # pull in object files in the module, except those under integ
-rule **~test/*.?.o -> libfab.$?.so
+rule **~test/*.?.o -> libfab.$?.{so,a}
 
 # default build targets
-rule libfab.?.so -> //module/targets
+rule libfab.?.{so,a} -> //module/targets
 
 # intra module dependencies - generated files
 rule */*.?.o <- errtab/FAB.errtab.h
 
 # library dependencies
 rule //module/imports/*/lib*.?.so -> libfab.$?.so
+rule //module/imports/*/lib*.?.a -> libfab.$?.a
+
+# descriptor .c and .h files are generated
+rule build_slot/build_slot.h -> $^D/build_slot.desc.c : bam-descriptor
+rule metadata/metadata.h -> $^D/metadata.desc.c : bam-descriptor
+rule stats/stats.h -> $^D/stats.desc.c : bam-descriptor
+rule list/list.h -> $^D/list.desc.c : bam-descriptor
+rule describe/describe.h -> $^D/describe.desc.c : bam-descriptor

@@ -23,12 +23,31 @@
 
 #include "macros.h"
 
-typedef struct fab_client fab_client;
+#if DEVEL
+/* null-terminated strings */
+extern const char *g_fab_client_fabd_path;
+extern const char *g_fab_client_system_config_path;
+extern const char *g_fab_client_user_config_path;
+extern const char *g_fab_client_default_filesystem_invalidate;
+extern const char *g_fab_client_sweeper_period_nsec;
+#endif
 
-typedef struct fab_message {
-  uint32_t len;
-  char text[]; // terminates with two null bytes
-} fab_message;
+struct fabipc_channel;
+struct fabipc_message;
+
+typedef struct fab_client {
+  int       lockfd;
+  char *    projdir;    // canonicalized
+  char *    ipcdir;
+  char      hash[16 + 1];
+  pid_t     fabd_pid;   // fabd process group id
+  int32_t   futex;
+
+  /* autoinc */
+  uint64_t  msgid;
+
+  struct fabipc_channel *shm;
+} fab_client;
 
 /// fab_client_create
 //
@@ -39,26 +58,13 @@ typedef struct fab_message {
 //  client      - (returns) client instance
 //  projdir     - project directory path (contains fabfile), e.g. "."
 //  ipcdir      - base ipc dir
-//  [fabw_path] - path to fabw binary
 //
-xapi fab_client_create(fab_client ** restrict client, const char * restrict projdir, const char * restrict ipcdir, const char * restrict fabw_path)
+xapi fab_client_create(
+    fab_client ** restrict client
+  , const char * restrict projdir
+  , const char * restrict ipcdir
+)
   __attribute__((nonnull(1, 2, 3)));
-
-/// fab_client_gethash
-//
-// SUMMARY
-//  get the hash
-//
-char * fab_client_gethash(fab_client * restrict client)
-  __attribute__((nonnull));
-
-/// fab_client_prepare
-//
-// SUMMARY
-//  prepare to make requests
-//
-xapi fab_client_prepare(fab_client * restrict client)
-  __attribute__((nonnull));
 
 /// fab_client_xfree
 //
@@ -66,57 +72,43 @@ xapi fab_client_prepare(fab_client * restrict client)
 //  free a client
 //
 xapi fab_client_xfree(fab_client * restrict client);
-
 xapi fab_client_ixfree(fab_client ** restrict client)
   __attribute__((nonnull));
 
-/// verify_fabd_state
-//
-// SUMMARY
-//  verify that fabd is still running and has not reported any failure
-//
-xapi fab_client_verify(fab_client * restrict client)
+xapi fab_client_prepare(fab_client * restrict client)
   __attribute__((nonnull));
 
-/// fab_client_prepare_request_shm
-//
-// SUMMARY
-//
-xapi fab_client_prepare_request_shm(fab_client * restrict client, void ** restrict request_shm)
+xapi fab_client_kill(fab_client * restrict client)
   __attribute__((nonnull));
 
-/// fab_client_make_request
-//
-// SUMMARY
-//
-xapi fab_client_make_request(
-    fab_client * restrict client
-  , void * restrict request_shm
-  , void ** response_shm
-)
+/*
+ * launch fabd if its not already running
+ */
+
+xapi fab_client_solicit(fab_client * restrict client)
   __attribute__((nonnull));
 
-/// fab_client_release_response
-//
-// SUMMARY
-//
-xapi fab_client_release_response(fab_client * restrict client, void * restrict response_shm)
+xapi fab_client_attach(fab_client * restrict client, int channel_id)
   __attribute__((nonnull));
 
-/// fab_client_terminatep
-//
-// SUMMARY
-//
-xapi fab_client_terminatep(fab_client * restrict client);
 
-/// fab_client_launchp
-//
-// SUMMARY
-//
-xapi fab_client_launchp(fab_client * restrict client)
+void fab_client_disconnect(fab_client * restrict client)
   __attribute__((nonnull));
 
-xapi fab_client_unlock(fab_client * restrict client)
+
+struct fabipc_message * fab_client_produce(fab_client * restrict client)
+  __attribute__((nonnull));
+
+void fab_client_post(fab_client * restrict client, struct fabipc_message * restrict msg)
+  __attribute__((nonnull));
+
+struct fabipc_message * fab_client_acquire(fab_client * restrict client)
+  __attribute__((nonnull));
+
+void fab_client_consume(fab_client * restrict client, struct fabipc_message * restrict msg)
+  __attribute__((nonnull));
+
+void fab_client_release(fab_client * restrict client, struct fabipc_message * restrict msg)
   __attribute__((nonnull));
 
 #endif

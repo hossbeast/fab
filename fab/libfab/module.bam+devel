@@ -42,7 +42,7 @@ rule //module/imports/*/lib*.?.so -> libfab.$?.so
 
 # descriptor .c and .h files are generated
 rule build_slot/build_slot.h -> $^D/build_slot.desc.c : descriptor/descriptor.bam+devel
-rule build/build.h -> $^D/build.desc.c : descriptor/descriptor.bam+devel
 rule metadata/metadata.h -> $^D/metadata.desc.c : descriptor/descriptor.bam+devel
 rule stats/stats.h -> $^D/stats.desc.c : descriptor/descriptor.bam+devel
 rule list/list.h -> $^D/list.desc.c : descriptor/descriptor.bam+devel
+rule describe/describe.h -> $^D/describe.desc.c : descriptor/descriptor.bam+devel
