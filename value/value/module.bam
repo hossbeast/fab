@@ -16,7 +16,7 @@
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
 use cc           # this module contains C sources
-use executable  # this module builds an executable
+use executable   # this module builds an executable
 use xapi/errtab
 
 # declare variants
@@ -32,7 +32,7 @@ variant xapi.{debug,devel} : [
 ]
 
 # invoke the compiler to build the executable
-rule **/*.?.o -> value.$? : executable/bam-cc
+rule **/*.?.o [*] -> value.$? : executable/cc.bam
 
 # library dependencies
 variant xapi.pic.{debug,devel,final,trace} : [

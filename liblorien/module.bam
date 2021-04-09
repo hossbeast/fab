@@ -17,7 +17,6 @@
 
 use cc                # this module contains c sources
 use library/shared    # this module builds a library
-use library/static
 use xunit-tests       # this module contains xunit tests
 
 # make common objects available for #inclusion and linking by files in this module
@@ -29,14 +28,13 @@ import lib{xapi,xlinux,narrator,valyria,logger,xunit}
 variant xapi.pic.{debug,devel,final,trace}
 
 # pull in object files in the module except those in test/
-rule **~test/*.?.o -> liblorien.$?.{so,a}
+rule **~test/*.?.o -> liblorien.$?.so
 
 # default build targets
-rule liblorien.?.{so,a} -> //module/targets
+rule liblorien.?.so -> //module/targets
 
 # library dependencies
 rule //module/imports/*~libxunit/lib*.?.so -> liblorien.$?.so
-rule //module/imports/*~libxunit/lib*.?.a -> liblorien.$?.a
 
 # tests need the library
 variant xapi.pic.devel : [

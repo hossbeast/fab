@@ -26,7 +26,9 @@ use xunit-tests
 variant xapi.{debug,devel,final,trace}
 variant xapi.pic.devel
 
-rule fabd.? -> //module/targets
+variant xapi.{debug,devel,final,trace} : [
+  rule fabd.? -> //module/targets
+]
 
 # make common objects available for #include and linking
 import fab/include
@@ -41,7 +43,7 @@ variant xapi.devel : [
 
 # invoke the compiler to build the executable
 variant xapi.{debug,devel,final,trace} : [
-  rule **~test/*.?.o -> fabd.$? : executable/bam-cc
+  rule **~test/*.?.o -> fabd.$? : executable/cc.bam
 ]
 
 # intra module dependencies - generated files
@@ -69,10 +71,10 @@ var : {
 variant xapi.pic.devel : [
   rule //module/imports/libxunit/lib*.?.so -> fabd.${?-pic}
 
-  # all the code
-  rule **~test/(*~main).?.o -> test/blob.?.so : bam-cc-blob-so
+  # all the code into the blob
+  rule **~test/(*~main).?.o -> test/blob.?.so : ./cc-blob-so.bam
 
-  # some test dependency code
+  # test utilities
   rule test/node_operations_test.?.o -> test/blob.?.so
 
   rule **/test/test_*.?.so <- test/blob.?.so

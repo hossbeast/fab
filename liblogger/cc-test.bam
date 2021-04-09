@@ -51,12 +51,16 @@ exec { $cmd[0] } @cmd
 __DATA__
 
 envs : {
+  cc : {
+    path-search : cc
+  }
+
   objects : [
     select : [
       target
       traverse : {
         direction : down
-        relation : strong
+        graph : depends
         max-distance : 1
         min-distance : 1
         extension : o
@@ -70,7 +74,7 @@ envs : {
       target
       traverse : {
         direction : down
-        relation : strong
+        graph : depends
         max-distance : 1
         min-distance : 1
         extension : a
@@ -84,7 +88,7 @@ envs : {
       module
       traverse : {
         direction : down
-        relation : imports
+        graph : imports
       }
     ]
     property : relpath

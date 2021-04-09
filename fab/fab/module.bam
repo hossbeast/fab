@@ -31,25 +31,21 @@ import fab/include
 import fab/asan
 import lib{common,descriptor,xapi,xlinux,logger,xunit,narrator,valyria,yyutil,value,fab,lorien}
 
-variant xapi.devel : [
+variant xapi.{devel} : [
   rule fab.? <- asan/asan.$?.o
 ]
 
 # invoke the compiler to build the executable
-rule **/*.?.o -> fab.$? : executable/bam-cc
+rule **/*.?.o -> fab.$? : executable/cc.bam
 
 # intra module dependencies - generated files
 rule */*.?.o <- errtab/MAIN.errtab.h
 
 # library dependencies
-variant xapi.pic.{debug,final,trace} : [
+variant xapi.pic.{debug,devel,final,trace} : [
   rule //module/imports/*~libxunit/lib*.?.so -> fab.${?-pic}
 ]
 
 variant xapi.pic.devel : [
-  rule //module/imports/*/lib*.?.so -> fab.${?-pic}
+  rule //module/imports/libxunit/lib*.?.so -> fab.${?-pic}
 ]
-
-var : {
-  lflags : -lpthread
-}

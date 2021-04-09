@@ -42,7 +42,7 @@ rule //module/imports/*/lib*.?.so -> libxlinux.$?.so
 rule //module/imports/*/lib*.?.a -> libxlinux.$?.a
 
 # generated signals table
-#rule -- [*] sigtable/sigtable.{c,h} : ./bam-sigtable
+rule -- [*] sigtable/sigtable.{c,h} : ./sigtable.bam
 
 var : {
   cflags : [ -ldl -lrt ]

@@ -31,9 +31,7 @@ my @cmd = (
   # object files
   , split(/ /, $ENV{objects})
   # library files
-  , "-Wl,--start-group"
   , split(/ /, $ENV{libraries})
-  , "-Wl,--end-group"
 );
 
 exec { $cmd[0] } @cmd
@@ -65,6 +63,8 @@ envs : {
       traverse : {
         direction : down
         graph : depends
+        max-distance : 1
+        min-distance : 1
         extension : a
       }
     ]

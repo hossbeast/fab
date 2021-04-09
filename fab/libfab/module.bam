@@ -17,7 +17,6 @@
 
 use cc              # this module contains c sources
 use library/shared  # this module builds a library
-use library/static  # this module builds a library
 use xapi/errtab     # this module contains errtabs
 use descriptor
 
@@ -30,21 +29,20 @@ import lib{common,xapi,xlinux,narrator,logger,lorien,descriptor}
 variant xapi.pic.{debug,devel,final,trace}
 
 # pull in object files in the module, except those under integ
-rule **~test/*.?.o -> libfab.$?.{so,a}
+rule **~test/*.?.o -> libfab.$?.so
 
 # default build targets
-rule libfab.?.{so,a} -> //module/targets
+rule libfab.?.so -> //module/targets
 
 # intra module dependencies - generated files
 rule */*.?.o <- errtab/FAB.errtab.h
 
 # library dependencies
 rule //module/imports/*/lib*.?.so -> libfab.$?.so
-rule //module/imports/*/lib*.?.a -> libfab.$?.a
 
 # descriptor .c and .h files are generated
-rule build_slot/build_slot.h -> $^D/build_slot.desc.c : bam-descriptor
-rule metadata/metadata.h -> $^D/metadata.desc.c : bam-descriptor
-rule stats/stats.h -> $^D/stats.desc.c : bam-descriptor
-rule list/list.h -> $^D/list.desc.c : bam-descriptor
-rule describe/describe.h -> $^D/describe.desc.c : bam-descriptor
+rule build_slot/build_slot.h -> $^D/build_slot.desc.c : descriptor/descriptor.bam
+rule metadata/metadata.h -> $^D/metadata.desc.c : descriptor/descriptor.bam
+rule stats/stats.h -> $^D/stats.desc.c : descriptor/descriptor.bam
+rule list/list.h -> $^D/list.desc.c : descriptor/descriptor.bam
+rule describe/describe.h -> $^D/describe.desc.c : descriptor/descriptor.bam

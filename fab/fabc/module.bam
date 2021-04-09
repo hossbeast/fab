@@ -34,7 +34,7 @@ variant xapi.devel : [
 ]
 
 # invoke the compiler to build the executable
-rule **/*.?.o -> fabc.$? : executable/bam-cc
+rule **/*.?.o [*] -> fabc.$? : executable/cc.bam
 
 # intra module dependencies - generated files
 rule */*.?.o <- errtab/MAIN.errtab.h
