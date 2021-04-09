@@ -42,6 +42,18 @@ finally:
 coda;
 }
 
+static inline xapi xnewterm(SCREEN ** rv, const char *type, FILE *outfd, FILE *infd)
+{
+  enter;
+
+  if(((*rv) = newterm(type, outfd, infd)) == 0)
+  {
+    fail(SYS_ABORT);
+  }
+
+  finally : coda;
+}
+
 static inline xapi xnewwin(WINDOW ** winp, int height, int width, int y, int x)
 {
   enter;

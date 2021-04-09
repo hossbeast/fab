@@ -1,4 +1,4 @@
-/* Copyright (c) 2012-2015 Todd Freed <todd.freed@gmail.com>
+/* Copyright (c) 2012-2020 Todd Freed <todd.freed@gmail.com>
 
    This file is part of fab.
 
@@ -15,19 +15,18 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
+#ifndef _CLIENT_THREAD_H
+#define _CLIENT_THREAD_H
+
 #include "xapi.h"
-#include "types.h"
 
-#include "display.h"
+struct fab_client;
+struct fabipc_message;
 
-struct display * g_display;
+xapi client_thread_launch(void);
+xapi client_thread_redrive(void);
 
-xapi display_switch(display * restrict dis)
-{
-  enter;
+void client_thread_post(struct fab_client * restrict client, struct fabipc_message * restrict msg)
+  __attribute__((nonnull));
 
-  g_display = dis;
-  fatal(g_display->setup);
-
-  finally : coda;
-}
+#endif

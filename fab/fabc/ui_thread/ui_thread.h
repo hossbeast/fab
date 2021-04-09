@@ -1,4 +1,4 @@
-/* Copyright (c) 2012-2015 Todd Freed <todd.freed@gmail.com>
+/* Copyright (c) 2012-2020 Todd Freed <todd.freed@gmail.com>
 
    This file is part of fab.
 
@@ -15,19 +15,11 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
+#ifndef _UI_THREAD_H
+#define _UI_THREAD_H
+
 #include "xapi.h"
-#include "types.h"
 
-#include "display.h"
+xapi ui_thread_launch(void);
 
-struct display * g_display;
-
-xapi display_switch(display * restrict dis)
-{
-  enter;
-
-  g_display = dis;
-  fatal(g_display->setup);
-
-  finally : coda;
-}
+#endif

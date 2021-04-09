@@ -19,39 +19,18 @@
 #define _ARGS_H
 
 #include "xapi.h"
-#include "types.h"
 
 extern struct g_args {
-  char * lookup;
+  char * path;    /* initial node path */
+#if DEVEL
+  int verbose;
+#endif
 } g_args;
 
-/// args_parse
-//
-// SUMMARY
-//  parses command-line options, populating g_args.
-//
-// REMARKS
-//  prints the usage statement and terminates the program if options are
-//  invalid, for example required options are not present, or invalid
-//  parameters are given to an option
-//
+/* parse command-line arguments */
 xapi args_parse(void);
 
-/// args_usage
-//
-// SUMMARY
-//
-//
-// PARAMETERS
-//  cmd - subcommand dispatch
-//
-xapi args_usage(int version, int logcats);
-
-/// args_report
-//
-// SUMMARY
-//  log a summary of args as-parsed
-//
-xapi args_report(void);
+/* print usage statement */
+void args_usage(void);
 
 #endif
