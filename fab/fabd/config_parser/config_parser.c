@@ -21,6 +21,7 @@
 #include "xlinux/xstdlib.h"
 #include "xlinux/KERNEL.errtab.h"
 #include "value/parser.h"
+#include "common/attrs.h"
 
 #include "narrator.h"
 
@@ -36,7 +37,7 @@
 #include "config.lex.h"
 #include "config.states.h"
 
-#include "common/attrs.h"
+#include "pattern_parser.h"
 
 static YYU_VTABLE(vtable, config, config);
 
@@ -61,14 +62,11 @@ xapi config_parser_create(config_parser ** rv)
     , config_statenames
   );
 
+  fatal(pattern_parser_create, &p->pattern_parser);
+
 #if DEBUG || DEVEL || XUNIT
   p->yyu.logs = L_CONFIG;
 #endif
-
-//  fatal(yyu_define_tokenrange, &p->yyu, config_BUILD, config_NONE);
-
-  // configure sub-parsers
-  fatal(value_parser_create, &p->value_parser);
 
   *rv = p;
   p = 0;
@@ -84,10 +82,10 @@ xapi config_parser_xfree(config_parser* const p)
 
   if(p)
   {
+    fatal(pattern_parser_xfree, p->pattern_parser);
+
     wfree(p->fse);
     fatal(yyu_parser_xdestroy, &p->yyu);
-
-    fatal(value_parser_xfree, p->value_parser);
   }
 
   wfree(p);
@@ -109,14 +107,14 @@ xapi config_parser_parse(
     config_parser * restrict parser
   , char * const restrict buf
   , size_t size
-  , const char * restrict fname
+  , const char * restrict path
   , yyu_location * restrict init_loc
-  , config ** restrict rv
+  , configblob ** restrict rv
 )
 {
   enter;
 
-  fatal(yyu_parse, &parser->yyu, buf, size, fname, YYU_INPLACE, init_loc, 0);
+  fatal(yyu_parse, &parser->yyu, buf, size, path, YYU_INPLACE, init_loc, 0);
   if(rv)
   {
     *rv = parser->cfg;
@@ -125,29 +123,6 @@ xapi config_parser_parse(
 
 finally:
   fatal(config_ixfree, &parser->cfg);
-coda;
-}
-
-xapi config_parser_parse_partial(
-    config_parser * restrict parser
-  , char * const restrict buf
-  , size_t size
-  , const char * restrict fname
-  , yyu_location * init_loc
-  , yyu_location * used_loc
-  , config ** restrict rv
-)
-{
-  enter;
-
-  fatal(yyu_parse, &parser->yyu, buf, size, fname, YYU_PARTIAL | YYU_INPLACE, init_loc, used_loc);
-  if(rv)
-  {
-    *rv = parser->cfg;
-    parser->cfg = 0;
-  }
-
-finally:
-  fatal(config_ixfree, &parser->cfg);
+  xapi_infos("path", path);
 coda;
 }

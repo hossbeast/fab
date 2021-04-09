@@ -15,59 +15,55 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#include <string.h>
-
-#include "xapi.h"
-#include "types.h"
-
+#include "common/hash.h"
+#include "lorien/nftwat.h"
 #include "xlinux/xfcntl.h"
-#include "xlinux/xinotify.h"
 #include "xlinux/xmman.h"
 #include "xlinux/xstat.h"
-#include "xlinux/xstdlib.h"
-#include "xlinux/xstring.h"
 #include "xlinux/xunistd.h"
+#include "xlinux/xstdlib.h"
+#include "yyutil/box.h"
 #include "valyria/set.h"
-#include "moria/graph.h"
-#include "moria/vertex.h"
-#include "moria/edge.h"
-#include "lorien/nftwat.h"
-#include "valyria/list.h"
-#include "valyria/map.h"
 
 #include "walker.internal.h"
 #include "filesystem.h"
-#include "module.internal.h"
-#include "node.h"
-#include "node_operations.h"
-#include "notify_thread.h"
-#include "path.h"
+#include "fsedge.h"
+#include "fsent.h"
 #include "params.h"
 #include "stats.h"
+#include "config.internal.h"
+#include "pattern.h"
+#include "generate.h"
+#include "match.h"
+#include "reconcile.h"
 
-#include "macros.h"
 #include "zbuffer.h"
-#include "common/hash.h"
-#include "common/attrs.h"
 
-static int walk_ids = 1;
+#include "narrator.h"
+
+static llist include_entry_list = LLIST_INITIALIZER(include_entry_list);         // active list
+static llist include_entry_freelist = LLIST_INITIALIZER(include_entry_freelist); // freelist
+
+/* exclude pattern list */
+llist * walker_exclude_list;
+
+typedef struct {
+  fsent * n;
+  char abspath[512];
+  uint16_t abspathl;
+
+  llist lln;
+} entry;
+
+static uint16_t walk_ids;
+static set *generate_nodes;
+static uint16_t reconciled;
 
 //
 // static
 //
 
-static vertex_filetype fstype_ftwinfo(ftwinfo * info)
-{
-  if(info->type == FTWAT_D)
-    return VERTEX_FILETYPE_DIR;
-
-  if(info->type == FTWAT_F)
-    return VERTEX_FILETYPE_REG;
-
-  return 0;
-}
-
-static xapi stathash(node * restrict n, char * restrict path, uint16_t pathl, uint32_t * restrict hash)
+static xapi stathash(fsent * restrict n, char * restrict path, uint16_t pathl, uint32_t * restrict hash)
 {
   enter;
 
@@ -75,7 +71,7 @@ static xapi stathash(node * restrict n, char * restrict path, uint16_t pathl, ui
   int r;
   char c;
 
-  STATS_INC(stathash);
+  STATS_INC(g_stats.stathash);
 
   *hash += 0xbeef;
 
@@ -84,7 +80,7 @@ static xapi stathash(node * restrict n, char * restrict path, uint16_t pathl, ui
   fatal(uxfstatats, &r, g_params.proj_dirfd, 0, &stb, path);
   if(r == 0)
   {
-    /* accumulate specific fields we care about */
+    /* accumulate specific fields we care about - surely this can be optimized alot */
     *hash = hash32(*hash, &stb.st_dev, sizeof(stb.st_dev));
     *hash = hash32(*hash, &stb.st_ino, sizeof(stb.st_ino));
     *hash = hash32(*hash, &stb.st_mode, sizeof(stb.st_mode));
@@ -101,7 +97,7 @@ finally:
 coda;
 }
 
-static xapi contenthash(node * restrict n, char * restrict path, uint16_t pathl, uint32_t * restrict hash)
+static xapi contenthash(fsent * restrict n, char * restrict path, uint16_t pathl, uint32_t * restrict hash)
 {
   enter;
 
@@ -110,7 +106,7 @@ static xapi contenthash(node * restrict n, char * restrict path, uint16_t pathl,
   void *buf = MAP_FAILED;
   char c;
 
-  STATS_INC(contenthash);
+  STATS_INC(g_stats.contenthash);
 
   *hash += 0xface;
 
@@ -134,24 +130,29 @@ finally:
 coda;
 }
 
-
-static xapi refresh(walker_context * restrict ctx, node * restrict n, char * restrict path, uint16_t pathl)
+static xapi refresh(walker_context * restrict ctx, fsent * restrict n, char * restrict path, uint16_t pathl)
 {
   enter;
 
   uint32_t hash;
   const filesystem *fs;
-  vertex *v;
+  moria_vertex *v;
 
-  fs = node_filesystem_get(n);
+  fsent_exists_set(n);
+
+  fs = fsent_filesystem_get(n);
   if(fs->attrs == INVALIDATE_ALWAYS)
   {
-    fatal(node_invalidate, n, ctx->invalidation);
+    fatal(fsent_invalidate, n, ctx->invalidation);
+    goto XAPI_FINALIZE;
+  }
+  else if(fs->attrs == INVALIDATE_NEVER)
+  {
     goto XAPI_FINALIZE;
   }
 
-  /* only hash/invalidate on primary files - those with no dependencies */
-  v = vertex_containerof(n);
+  /* only hash/invalidate on primary files - the leaf nodes */
+  v = &n->vertex;
   if(!rbtree_empty(&v->down)) {
     goto XAPI_FINALIZE;
   }
@@ -170,11 +171,30 @@ static xapi refresh(walker_context * restrict ctx, node * restrict n, char * res
   {
     if(hash)
     {
-      fatal(node_invalidate, n, ctx->invalidation);
+      fatal(fsent_invalidate, n, ctx->invalidation);
     }
 
     n->hash = hash;
   }
+
+  finally : coda;
+}
+
+static xapi include_entry_list_append(fsent * n)
+{
+  enter;
+
+  entry *e;
+
+  if((e = llist_shift(&include_entry_freelist, typeof(*e), lln)) == 0) {
+    fatal(xmalloc, &e, sizeof(*e));
+    llist_init_node(&e->lln);
+  }
+
+  e->n = n;
+  e->abspathl = fsent_absolute_path_znload(e->abspath, sizeof(e->abspath), n);
+
+  llist_append(&include_entry_list, e, lln);
 
   finally : coda;
 }
@@ -189,34 +209,31 @@ xapi walker_visit(int method, ftwinfo * info, void * arg, int * stop)
 
   walker_context * ctx = arg;
   const filesystem * fs = 0;
-  module * mod = 0;
-  vertex * lv;
-  node * n = 0;
-  node * parent;
+  moria_vertex * lv;
+  fsent * n = 0;
+  fsent * parent;
   llist edges;
-  vertex *v;
-  edge *e;
+  moria_vertex *v;
+  moria_edge *e;
+  vertex_filetype filetype;
+  fsent * Bn;
+  pattern *pat;
+  bool matched;
 
-/* put this into config */
-if((info->pathl - info->name_off) == 4 && memcmp(info->path + info->name_off, ".git", 4) == 0) {
-  *stop = 1;
-  goto XAPI_FINALIZE;
-}
-
-  /* if !info->parent, this is the top-level directory */
   if(!info->parent)
   {
+    /* this is the top-level directory */
     if(method == FTWAT_PRE && ctx->base)
     {
       n = ctx->base;
     }
     else if(method == FTWAT_PRE)
     {
-      mod = node_module_get(ctx->base_parent);
-      fs = node_filesystem_get(ctx->base_parent);
-
-      fatal(node_creates, &ctx->base, fstype_ftwinfo(info) | VERTEX_OK, fs, mod, info->path + info->name_off);
-      fatal(node_connect_fs, ctx->base_parent, ctx->base, EDGE_TYPE_FS, ctx->invalidation, 0, 0);
+      filetype = 0;
+      if(info->type == FTWAT_D)
+        filetype = VERTEX_FILETYPE_DIR;
+      fatal(fsent_create, &ctx->base, filetype, VERTEX_OK, info->path + info->name_off, info->pathl - info->name_off);
+      fatal(fsedge_connect, ctx->base_parent, ctx->base, ctx->invalidation);
 
       n = ctx->base;
     }
@@ -232,35 +249,48 @@ if((info->pathl - info->name_off) == 4 && memcmp(info->path + info->name_off, ".
   else
   {
     parent = info->parent->udata;
-    lv = vertex_downs(
-        vertex_containerof(parent)
-      , info->path + info->name_off
-    );
-    if(lv)
+
+    /* check whether this dirent matches any exclude pattern */
+    if(info->type == FTWAT_D && walker_exclude_list)
     {
-      n = vertex_value(lv);
+      llist_foreach(walker_exclude_list, pat, lln) {
+        fatal(pattern_match, pat, parent, info->path + info->name_off, info->pathl - info->name_off, &matched);
+        if(matched) {
+          *stop = 1;
+          goto XAPI_FINALIZE;
+        }
+      }
+    }
+
+    if((lv = moria_vertex_downs(&parent->vertex, info->path + info->name_off)))
+    {
+      n = containerof(lv, fsent, vertex);
     }
     else
     {
-      if(info->type == FTWAT_D)
-      {
-        mod = node_module_get(parent);
-        fs = node_filesystem_get(parent);
+      filetype = 0;
+      if(info->type == FTWAT_D) {
+        filetype = VERTEX_FILETYPE_DIR;
       }
-
-      fatal(node_creates, &n, fstype_ftwinfo(info) | VERTEX_OK, fs, mod, info->path + info->name_off);
-      fatal(node_connect_fs, parent, n, EDGE_TYPE_FS, ctx->invalidation, 0, 0);
+      fatal(fsent_create, &n, filetype, VERTEX_OK, info->path + info->name_off, info->pathl - info->name_off);
+      fatal(fsedge_connect, parent, n, ctx->invalidation);
     }
   }
 
   info->udata = n;
 
-  // this node was visited
+  // PRE (for directories), and 0 (for files)
   if(method != FTWAT_POST) {
-    n->walk_id = ctx->walk_id;
+    /* already been visited */
+    if(n->descend_walk_id == ctx->walk_id) {
+      *stop = 1;
+      goto XAPI_FINALIZE;
+    }
+
+    n->descend_walk_id = ctx->walk_id;
   }
 
-  fs = node_filesystem_get(n);
+  fs = fsent_filesystem_get(n);
   if(info->type == FTWAT_D && method == FTWAT_PRE)
   {
     // stop the traversal on a leaf inotify dir which has already been explored
@@ -269,7 +299,7 @@ if((info->pathl - info->name_off) == 4 && memcmp(info->path + info->name_off, ".
       if(n->wd == -1)
       {
         /* it's important that the watch happen in the PREORDER step */
-        fatal(notify_thread_watch, n);
+        fatal(notify_thread_add_watch, n);
       }
       else if(n->descended)
       {
@@ -287,15 +317,14 @@ if((info->pathl - info->name_off) == 4 && memcmp(info->path + info->name_off, ".
       // destroy edges connecting to vertices which were not visited by this walk
       llist_init_node(&edges);
 
-      v = vertex_containerof(n);
+      v = &n->vertex;
       rbtree_foreach(&v->down, e, rbn_down) {
-        if(e->attrs != (MORIA_EDGE_IDENTITY | EDGE_TYPE_FS)) {
+        if((e->attrs & EDGE_TYPE_OPT) != EDGE_TYPE_FSTREE) {
           continue;
         }
 
-        vertex * B = e->B;
-        node * Bn = vertex_value(B);
-        if(Bn->walk_id == ctx->walk_id) {
+        Bn = containerof(e->B, fsent, vertex);
+        if(Bn->descend_walk_id == ctx->walk_id) {
           continue;
         }
 
@@ -304,14 +333,13 @@ if((info->pathl - info->name_off) == 4 && memcmp(info->path + info->name_off, ".
 
       while((e = llist_shift(&edges, typeof(*e), lln)))
       {
-        fatal(node_disintegrate_fs, e, ctx->invalidation);
+        fatal(fsedge_disintegrate, containerof(e, fsedge, edge), ctx->invalidation);
       }
     }
   }
-
   else if(info->type == FTWAT_F)
   {
-    if(fs->invalidate != INVALIDATE_NOTIFY && fs->invalidate != INVALIDATE_NEVER)
+    if(fs->invalidate != INVALIDATE_NOTIFY)
     {
       fatal(refresh, ctx, n, info->path, info->pathl);
     }
@@ -324,7 +352,14 @@ if((info->pathl - info->name_off) == 4 && memcmp(info->path + info->name_off, ".
 // public
 //
 
-xapi walker_descend(node ** restrict basep, node * restrict base, node * restrict parent, const char * restrict abspath, int walk_id, graph_invalidation_context * restrict invalidation)
+xapi walker_descend(
+    fsent ** restrict basep
+  , fsent * restrict base
+  , fsent * restrict parent
+  , const char * restrict abspath
+  , uint16_t walk_id
+  , graph_invalidation_context * restrict invalidation
+)
 {
   enter;
 
@@ -332,8 +367,9 @@ xapi walker_descend(node ** restrict basep, node * restrict base, node * restric
 
   RUNTIME_ASSERT(!base ^ !parent);
 
-  if(walk_id != walk_ids)
+  if(walk_id != walk_ids) {
     walk_id = ++walk_ids;
+  }
 
   ctx.walk_id = walk_id;
   ctx.invalidation = invalidation;
@@ -350,73 +386,239 @@ xapi walker_descend(node ** restrict basep, node * restrict base, node * restric
   finally : coda;
 }
 
-xapi walker_ascend(node * restrict basedir, int walk_id, graph_invalidation_context * restrict invalidation)
+xapi walker_ascend(fsent * restrict base, uint16_t walk_id, graph_invalidation_context * restrict invalidation)
 {
   enter;
 
   char path[512];
   uint16_t pathl;
-  node * dirn;
-  vertex * dirv;
+  fsent * dirn;
+  moria_vertex * dirv;
   int r;
   const filesystem *fs = 0;
-  module *mod = 0;
-  walker_context ctx = { 0 };
+  walker_context ctx = { };
+  size_t z;
+  fsent *n;
+  moria_vertex *lv;
 
-  if(walk_id != walk_ids)
+  if(walk_id != walk_ids) {
     walk_id = ++walk_ids;
+  }
 
   ctx.invalidation = invalidation;
-  dirn = basedir;
-  dirv = vertex_containerof(dirn);
 
-  pathl = node_get_absolute_path(dirn, path, sizeof(path));
+  dirn = base;
+  dirv = &dirn->vertex;
 
-  // ascend at least once
+  pathl = fsent_absolute_path_znload(path, sizeof(path), dirn);
+
+  // dont visit base itself, ascend at least once
   while(1)
   {
     pathl -= (dirv->label_len + 1);
-    dirv = vertex_up(dirv);
-    dirn = vertex_value(dirv);
-    if(!dirv || dirn->walk_id == walk_id)
+    dirv = moria_vertex_up(dirv);
+    dirn = containerof(dirv, fsent, vertex);
+    if(!dirv || dirn->ascend_walk_id == walk_id) {
       break;
+    }
 
-    vertex * filev = vertex_downs(dirv, NODE_VAR_BAM);
-    node * filen = vertex_value(filev);
-
-    snprintf(path + pathl, sizeof(path) - pathl, "/" NODE_VAR_BAM);
+    fs = fsent_filesystem_get(dirn);
+    path[pathl] = 0;
     fatal(uxeuidaccesss, &r, F_OK, path);
     if(r == 0)
     {
-      if(filev)
+      if(fs->attrs == INVALIDATE_NOTIFY)
       {
-        fatal(refresh, &ctx, filen, path, pathl + strlen("/" NODE_VAR_BAM));
+        if(dirn->wd == -1) {
+          fatal(notify_thread_add_watch, dirn);
+        }
       }
-      else
-      {
-        fatal(node_creates, &filen, VERTEX_FILETYPE_REG | VERTEX_OK, fs, mod, NODE_VAR_BAM);
-        fatal(node_connect_fs, dirn, filen, EDGE_TYPE_FS, invalidation, 0, 0);
-      }
-    }
-    else if(filev)
-    {
-      fatal(node_disconnect, dirn, filen, invalidation);
-    }
 
-    if(dirn->fs->attrs == INVALIDATE_NOTIFY)
+      fatal(refresh, &ctx, dirn, path, pathl);
+    }
+    else if(fs->attrs != INVALIDATE_NOTIFY)
     {
-      if(dirn->wd == -1)
-        fatal(notify_thread_watch, dirn);
+      /* disintegrate */
     }
 
     // visited
-    dirn->walk_id = walk_id;
+    dirn->ascend_walk_id = walk_id;
+
+    /* check for var files in the directory */
+    if((lv = moria_vertex_downw(dirv, MMS(fsent_name_var))))
+    {
+      n = containerof(lv, fsent, vertex);
+      if(fs->attrs == INVALIDATE_NOTIFY)
+      {
+        z = 0;
+        z += znloads(path + pathl + z, sizeof(path) - pathl - z, "/");
+        z += znloadw(path + pathl + z, sizeof(path) - pathl - z, MMS(fsent_name_var));
+        path[pathl + z] = 0;
+
+        fatal(refresh, &ctx, n, path, pathl + z);
+      }
+      else if(fs->attrs != INVALIDATE_NOTIFY)
+      {
+        /* disintegrate */
+      }
+    }
+    else
+    {
+      z = 0;
+      z += znloads(path + pathl + z, sizeof(path) - pathl - z, "/");
+      z += znloadw(path + pathl + z, sizeof(path) - pathl - z, MMS(fsent_name_var));
+      path[pathl + z] = 0;
+
+      fatal(uxeuidaccesss, &r, F_OK, path);
+      if(r == 0)
+      {
+        fatal(fsent_create, &n, VERTEX_FILETYPE_REG, VERTEX_OK, MMS(fsent_name_var));
+        fatal(fsedge_connect, dirn, n, invalidation);
+      }
+    }
+
+    /* check for config files in the directory */
+    if((lv = moria_vertex_downw(dirv, MMS(fsent_name_config))))
+    {
+      n = containerof(lv, fsent, vertex);
+      if(fs->attrs == INVALIDATE_NOTIFY)
+      {
+        z = 0;
+        z += znloads(path + pathl + z, sizeof(path) - pathl - z, "/");
+        z += znloadw(path + pathl + z, sizeof(path) - pathl - z, MMS(fsent_name_config));
+        path[pathl + z] = 0;
+
+        fatal(refresh, &ctx, n, path, pathl + z);
+      }
+      else if(fs->attrs != INVALIDATE_NOTIFY)
+      {
+        /* disintegrate */
+      }
+    }
+    else
+    {
+      z = 0;
+      z += znloads(path + pathl + z, sizeof(path) - pathl - z, "/");
+      z += znloadw(path + pathl + z, sizeof(path) - pathl - z, MMS(fsent_name_config));
+      path[pathl + z] = 0;
+
+      fatal(uxeuidaccesss, &r, F_OK, path);
+      if(r == 0)
+      {
+        fatal(fsent_create, &n, VERTEX_FILETYPE_REG, VERTEX_OK, MMS(fsent_name_config));
+        fatal(fsedge_connect, dirn, n, invalidation);
+      }
+    }
+
   }
 
   finally : coda;
 }
 
-int walker_descend_begin()
+xapi walker_system_reconcile(graph_invalidation_context * restrict invalidation)
+{
+  enter;
+
+  entry *e;
+  fsent *n;
+  uint16_t walk_id;
+
+  /* already reconciled in this round */
+  if(reconciled == reconciliation_id) {
+    goto XAPI_FINALLY;
+  }
+
+  walk_id = ++walk_ids;
+  reconciled = reconciliation_id;
+
+  /* up and down from the project node */
+  fatal(walker_descend, 0, g_project_root, 0, g_params.proj_dir, walk_id, invalidation);
+  fatal(walker_ascend, g_project_root, walk_id, invalidation);
+
+  /* global config nodes */
+  fatal(walker_ascend, system_config_node, walk_id, invalidation);
+  fatal(walker_ascend, user_config_node, walk_id, invalidation);
+
+  /* other configured trees */
+  llist_foreach(&include_entry_list, e, lln) {
+    n = e->n;
+    fatal(walker_descend, 0, n, 0, e->abspath, walk_id, invalidation);
+    fatal(walker_ascend, n, walk_id, invalidation);
+  }
+
+  finally : coda;
+}
+
+xapi walker_system_reconfigure(configblob * restrict cfg, bool dry)
+{
+  enter;
+
+  graph_invalidation_context invalidation = { };
+  fsent *n;
+  int x;
+  pattern *pat;
+
+  if(dry) {
+    goto XAPI_FINALLY;
+  }
+
+  /* this flag controls whether the next reconcile actually does any work */
+  if(cfg->walker.changed) {
+    reconciled = 0;
+  }
+
+  /* re-load on any changes, because the exclude list from config is stored here */
+  if(!cfg->changed) {
+    goto XAPI_FINALLY;
+  }
+
+  /* store the exclude list for later evaluation */
+  walker_exclude_list = &cfg->walker.exclude.list;
+
+  /* process the include list up-front */
+  fatal(graph_invalidation_begin, &invalidation);
+
+  llist_splice_head(&include_entry_freelist, &include_entry_list);
+
+  /* these are all absolute paths */
+  fatal(set_recycle, generate_nodes);
+  llist_foreach(&cfg->walker.include.list, pat, lln) {
+    fatal(pattern_generate, pat, 0, 0, 0, 0, &invalidation, 0, generate_nodes);
+  }
+
+  for(x = 0; x < generate_nodes->table_size; x++)
+  {
+    if(!(n = set_table_get(generate_nodes, x))) {
+      continue;
+    }
+
+    fatal(include_entry_list_append, n);
+  }
+
+finally:
+  graph_invalidation_end(&invalidation);
+coda;
+}
+
+xapi walker_setup()
+{
+  enter;
+
+  fatal(set_create, &generate_nodes);
+
+  finally : coda;
+}
+
+xapi walker_cleanup()
+{
+  enter;
+
+  fatal(set_xfree, generate_nodes);
+
+  finally : coda;
+}
+
+uint16_t walker_begin()
 {
   return ++walk_ids;
 }

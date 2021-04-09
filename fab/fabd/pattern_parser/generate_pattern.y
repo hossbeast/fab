@@ -21,16 +21,16 @@
   #include "types.h"
   #include "valyria/chain.h"
 
-  #include "pattern/alternation.internal.h"
-  #include "pattern/byte.internal.h"
-  #include "pattern/class.internal.h"
-  #include "pattern/group.internal.h"
-  #include "pattern/range.internal.h"
-  #include "pattern/variants.internal.h"
-  #include "pattern/word.internal.h"
-  #include "pattern/replacement.internal.h"
+  #include "pattern/alternation.h"
+  #include "pattern/byte.h"
+  #include "pattern/class.h"
+  #include "pattern/group.h"
+  #include "pattern/range.h"
+  #include "pattern/variants.h"
+  #include "pattern/word.h"
+  #include "pattern/replacement.h"
 
-  #include "pattern/section.internal.h"
+  #include "pattern/section.h"
 
   #include "pattern_parser.internal.h"
   #include "pattern.internal.h"
@@ -163,7 +163,7 @@ pattern-sections-list
   ;
 
 pattern-initial-section
-  /* resolves to the directory of the match node */
+  /* resolves to the directory of the match fsent */
   : '$' '^' 'D'
   {
     YFATAL(pattern_section_mk, &$$, &@$, PATTERN_NODESET_MATCHDIR, 0, 0, NULL);
@@ -229,7 +229,7 @@ replacement
   {
     YFATAL(pattern_replacement_mk, &$$, &@$, PATTERN_REPLACEMENT_TYPE_NAME, 0, @2.s, @2.l, NULL, 0);
   }
-  /* resolves to the variant of the match node */
+  /* resolves to the variant of the match fsent */
   | variant-replacement
   ;
 
@@ -277,7 +277,6 @@ class
   {
     YFATAL(pattern_class_mk, &$$, &@$, $2, false);
   }
-
   | '[' '!' class-parts ']'
   {
     YFATAL(pattern_class_mk, &$$, &@$, $3, true);

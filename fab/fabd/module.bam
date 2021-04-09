@@ -15,10 +15,10 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-use builtin-modules/cc           # this module contains C sources
-use builtin-modules/flex
-use builtin-modules/bison
-use builtin-modules/executable  # this module builds an executable
+use cc           # this module contains C sources
+use flex
+use bison
+use executable  # this module builds an executable
 use xapi/errtab
 use xunit-tests
 
@@ -26,16 +26,16 @@ use xunit-tests
 variant xapi.{debug,devel,final,trace}
 variant xapi.pic.devel
 
-variant xapi.{debug,devel,final,trace} : [
-  rule fabd.? -> //module/targets
-]
+rule fabd.? -> //module/targets
 
 # make common objects available for #include and linking
 import fab/include
 import fab/asan
-import lib{common,xapi,xlinux,valyria,value,logger,narrator,fab,lorien,moria,yyutil,xunit}
+import lib{common,descriptor,xapi,xlinux,valyria,value,logger,narrator,fab,lorien,moria,yyutil,xunit}
 
-variant xapi.{debug,devel} : [
+rule */*.?.o <- //modules/libfab/fs/fab/stats.h
+
+variant xapi.devel : [
   rule fabd.? <- asan/asan.$?.o
 ]
 
@@ -67,24 +67,15 @@ var : {
 #
 
 variant xapi.pic.devel : [
+  rule //module/imports/libxunit/lib*.?.so -> fabd.${?-pic}
+
   # all the code
-  rule **~test/(*~main).?.o -> test/blob.?.so : fabd/bam-cc-blob-so
+  rule **~test/(*~main).?.o -> test/blob.?.so : bam-cc-blob-so
 
   # some test dependency code
   rule test/node_operations_test.?.o -> test/blob.?.so
 
-  #
-  # here be hacks
-  #  these are arranged like this in order to be loaded in the proper order
-  #
-  rule //module/imports/libyyutil/libyyutil.?.so -> //two
-  rule //module/imports/libmoria/libmoria.?.so -> //three
-  rule //module/imports/libvalue/libvalue.?.so -> //three
-  rule //module/imports/liblorien/liblorien.?.so -> //three
-  rule //module/imports/libfab/libfab.?.so -> //four
-  rule test/blob.?.so -> //five
-  rule //two -> //three
-  rule //three -> //four
-  rule //four -> //five
-  rule //five -> //xunit
+  rule **/test/test_*.?.so <- test/blob.?.so
+
+  rule //module/imports/lib*/lib*.?.so -> test/blob.?.so
 ]

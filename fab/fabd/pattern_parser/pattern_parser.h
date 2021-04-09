@@ -50,21 +50,18 @@ xapi pattern_parser_xfree(pattern_parser * restrict);
 xapi pattern_parser_ixfree(pattern_parser ** restrict)
   __attribute__((nonnull));
 
-/// pattern_parse
-//
-// SUMMARY
-//  parse pattern text in place
-//
-// PARAMETERS
-//  parser     - reusable parser
-//  buf        - buffer containing pattern text
-//  size       - size of buffer
-//  [fname]    - filename, for error messages
-//  [init_loc] - starting location
-//  [used_loc] - location delta from init_loc
-//  [rv]       - (returns) parsed pattern object
-//
-xapi match_pattern_parse_partial(
+/*
+ * parse pattern text in place
+ *
+ * parser     - reusable parser
+ * buf        - buffer containing pattern text
+ * size       - size of buffer
+ * [fname]    - filename, for error messages
+ * [init_loc] - starting location
+ * [used_loc] - location delta from init_loc
+ * [rv]       - (returns) parsed pattern object
+ */
+xapi search_pattern_parse_partial(
     pattern_parser * restrict parser
   , char * const restrict buf
   , size_t size
@@ -73,7 +70,7 @@ xapi match_pattern_parse_partial(
   , struct yyu_location * restrict used_loc
   , struct pattern ** restrict rv
 )
-  __attribute__((nonnull(1, 2, 4)));
+  __attribute__((nonnull(1, 2)));
 
 xapi generate_pattern_parse_partial(
     pattern_parser * restrict parser
@@ -84,7 +81,7 @@ xapi generate_pattern_parse_partial(
   , struct yyu_location * restrict used_loc
   , struct pattern ** restrict rv
 )
-  __attribute__((nonnull(1, 2, 4)));
+  __attribute__((nonnull(1, 2)));
 
 xapi reference_pattern_parse_partial(
     pattern_parser * restrict parser
@@ -95,7 +92,7 @@ xapi reference_pattern_parse_partial(
   , struct yyu_location * restrict used_loc
   , struct pattern ** restrict rv
 )
-  __attribute__((nonnull(1, 2, 4)));
+  __attribute__((nonnull(1, 2)));
 
 xapi lookup_pattern_parse_partial(
     pattern_parser * restrict parser
@@ -106,6 +103,28 @@ xapi lookup_pattern_parse_partial(
   , struct yyu_location * restrict used_loc
   , struct pattern ** restrict rv
 )
-  __attribute__((nonnull(1, 2, 4)));
+  __attribute__((nonnull(1, 2)));
+
+xapi include_pattern_parse_partial(
+    pattern_parser * restrict parser
+  , char * const restrict buf
+  , size_t size
+  , const char * restrict fname
+  , struct yyu_location * restrict init_loc
+  , struct yyu_location * restrict used_loc
+  , struct pattern ** restrict rv
+)
+  __attribute__((nonnull(1, 2)));
+
+xapi match_pattern_parse_partial(
+    pattern_parser * restrict parser
+  , char * const restrict buf
+  , size_t size
+  , const char * restrict fname
+  , struct yyu_location * restrict init_loc
+  , struct yyu_location * restrict used_loc
+  , struct pattern ** restrict rv
+)
+  __attribute__((nonnull(1, 2)));
 
 #endif

@@ -16,24 +16,22 @@
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
 %code requires {
-  #include <string.h>
-
   #include "types.h"
-  #include "valyria/chain.h"
 
-  #include "pattern/alternation.internal.h"
-  #include "pattern/byte.internal.h"
-  #include "pattern/class.internal.h"
-  #include "pattern/group.internal.h"
-  #include "pattern/range.internal.h"
-  #include "pattern/variants.internal.h"
-  #include "pattern/word.internal.h"
-  #include "pattern/star.internal.h"
-
-  #include "pattern/section.internal.h"
+  #include "pattern/alternation.h"
+  #include "pattern/byte.h"
+  #include "pattern/class.h"
+  #include "pattern/range.h"
+  #include "pattern/word.h"
+  #include "pattern/star.h"
+  #include "pattern/section.h"
 
   #include "pattern_parser.internal.h"
   #include "pattern.internal.h"
+
+#include <stdlib.h>
+#include <unistd.h>
+#include "types.h"
 
   #include "macros.h"
 }
@@ -60,8 +58,6 @@
   pattern_segments * segments;
   pattern_section * section;
   pattern_segment * segment;
-  pattern_graph graph;
-  pattern_axis axis;
 }
 
 /* tokens from pattern.l */
@@ -105,13 +101,12 @@
 %type <segments> pattern-dentry pattern-dentry-list
 
 %type <section> pattern-section pattern-sections-list
+%type <section> pattern-initial-section
 
 %type <segment> escape
 %type <segments> class-pattern class-parts
 %type <segment> class class-part class-range class-char
-%type <segment> group
 %type <segment> word
-%type <segment> variants
 %type <segment> star
 %type <segment> quoted-string-literal quoted-strpart quoted-strparts
 %type <segment> unquoted-string-literal unquoted-strpart
@@ -155,11 +150,16 @@ pattern-sections-list
   {
     $$ = chain_splice_tail($1, $3, chn);
   }
-  | pattern-section
-  | SLASH2
+  | pattern-initial-section
+  ;
+
+pattern-initial-section
+  : '/' pattern-section
   {
-    YFATAL(pattern_section_mk, &$$, &@$, PATTERN_NODESET_SHADOW, 0, 0, NULL);
+    YFATAL(pattern_section_mk, &$$, &@$, PATTERN_NODESET_ROOT, 0, 0, NULL);
+    $$ = chain_splice_tail($$, $2, chn);
   }
+  | pattern-section
   ;
 
 pattern-section
@@ -200,26 +200,13 @@ pattern-dentry-parts
 pattern-dentry-part
   : alternation
   | class
-  | group
   | star
   | string-literal
-  | variants
-  ;
-
-group
-  : '(' pattern-dentry-list ')'
-  {
-    YFATAL(pattern_group_mk, &$$, &@$, $2, NULL, 0, ++PARSER->group_counter);
-  }
-  | '(' '?' '<' word-tokens '>'  pattern-dentry-list ')'
-  {
-    YFATAL(pattern_group_mk, &$$, &@$, $6, @4.s, @4.l, ++PARSER->group_counter);
-  }
   ;
 
 pattern-qualifiers
   : pattern-qualifier-list
-  | %empty 
+  | %empty
   {
     $$ = NULL;
   }
@@ -255,15 +242,7 @@ pattern-qualifier-parts
 pattern-qualifier-part
   : alternation
   | class
-  | group
   | string-literal
-  ;
-
-variants
-  : '?'
-  {
-    YFATAL(pattern_variants_mk, &$$, &@$);
-  }
   ;
 
 star
@@ -423,14 +402,7 @@ word
 
 word-tokens
   : STR
-  | MODULE
-  | MODULES
-  | SHADOW
-  | SELF_OR_BELOW
-  | REQUIRES
-  | USES
   | 'D'
-  | '.'
   ;
 
 escape

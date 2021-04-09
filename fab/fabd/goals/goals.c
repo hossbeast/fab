@@ -15,214 +15,115 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#include "xapi.h"
-#include "moria/vertex.h"
-#include "valyria/set.h"
+#include "fab/events.h"
+#include "fab/ipc.h"
 #include "narrator.h"
+#include "value/writer.h"
+#include "valyria/llist.h"
+#include "valyria/set.h"
 
 #include "goals.h"
-#include "node.h"
-#include "module.internal.h"
+#include "build.h"
 #include "buildplan.h"
-#include "build_thread.h"
-#include "selector.h"
+#include "fsent.h"
+#include "channel.h"
 #include "logging.h"
+#include "module.internal.h"
+#include "selector.h"
+#include "channel.h"
+#include "handler.h"
 #include "path_cache.h"
 
 #include "common/attrs.h"
+#include "events.h"
+#include "zbuffer.h"
 
-static bool goal_build;
-static bool goal_script;
-static selector * goal_target_direct_selector;
-static selector * goal_target_transitive_selector;
-static selector_context goal_selector_context;
-
-typedef enum buildplan_state {
-    NOOP          // nothing to do
-  , UNSATISFIED   // cant build, unsatisfied dependencies
-  , READY         // DEW IT
-} buildplan_state;
-
-typedef struct buildplan_context {
-  buildplan_state state;
-} buildplan_context;
+bool goals_reconcile;
+bool goals_build;
+static bool goals_script;
+static selector * goals_target_direct_selector;
+static selector * goals_target_transitive_selector;
+static selector_context goals_selector_context;
 
 //
 // static
 //
 
-/*
- * Add a node to the plan - a node can be visited
- *
- * @distance - length of the path to this node from the target
- */
-static xapi plan_visitor_direct(vertex * v, void * arg, traversal_mode mode, int distance, int * restrict result)
-{
-  enter;
-
-  buildplan_context * restrict bpctx = arg;
-  node * n;
-  char path[512];
-
-  n = vertex_value(v);
-
-  if(!node_invalid_get(n)) {
-    goto XAPI_FINALIZE;
-  }
-
-  /* shadow nodes can act as placeholders */
-  if(!n->bpe && node_shadowtype_get(n)) {
-    goto XAPI_FINALIZE;
-  }
-
-  /* this is an error case - node is not up to date, with no way to update it */
-  else if(!n->bpe)
-  {
-    if(n->bp_plan_id != bp_plan_id)
-    {
-      bpctx->state = UNSATISFIED;
-      node_get_path(n, path, sizeof(path));
-      logf(L_WARN, "no way to update %p %s state %s", n, path, attrs32_name_byvalue(graph_state_attrs, node_state_get(n)));
-    }
-    n->bp_plan_id = bp_plan_id;
-    goto XAPI_FINALIZE;
-  }
-
-  fatal(buildplan_add, n->bpe, distance);
-
-  finally : coda;
-}
-
-static xapi plan_visitor_transitive(vertex * v, void * arg, traversal_mode mode, int distance, int * restrict result)
-{
-  enter;
-
-  buildplan_context * restrict bpctx = arg;
-
-  fatal(graph_traverse_vertices
-    , g_graph
-    , v
-    , plan_visitor_direct
-    , 0
-    , (traversal_criteria[]) {{
-          edge_travel : EDGE_TYPE_STRONG
-        , edge_visit : EDGE_TYPE_STRONG
-        , vertex_visit : VERTEX_FILETYPE_REG
-      }}
-    , MORIA_TRAVERSE_DOWN | MORIA_TRAVERSE_PRE
-    , bpctx
-  );
-
-  finally : coda;
-}
-
-/*
- * add each node in the selection to the plan, along with its dependencies, recursively
- */
-static xapi plan_select_transitive(llist * restrict selection, buildplan_context * restrict bpctx)
-{
-  enter;
-
-  selected_node *sn;
-
-  llist_foreach(selection, sn, lln) {
-    fatal(plan_visitor_transitive, vertex_containerof(sn->n), bpctx, 0, 0, 0);
-  }
-
-  finally : coda;
-}
-
-/*
- * add exactly those nodes in the selection to the plan
- */
-static xapi plan_select_direct(llist * restrict selection, buildplan_context * restrict bpctx)
-{
-  enter;
-
-  selected_node *sn;
-
-  llist_foreach(selection, sn, lln) {
-    fatal(plan_visitor_direct, vertex_containerof(sn->n), bpctx, 0, 0, 0);
-  }
-
-  finally : coda;
-}
-
-static xapi create_buildplan(buildplan_context * restrict bpctx)
+xapi goals_create_buildplan()
 {
   enter;
 
   module *mod;
 
+  fatal(path_cache_reset);
   fatal(buildplan_reset);
 
-  bpctx->state = NOOP;
-  if(goal_target_direct_selector || goal_target_transitive_selector)
+  if(goals_target_direct_selector || goals_target_transitive_selector)
   {
-    goal_selector_context.base = g_project_root->mod->dir_node;
-    goal_selector_context.mod = g_project_root->mod;
+    goals_selector_context.mod = g_project_root->mod;
+//    goals_selector_context.chan = bpctx->chan;
 
-    if(goal_target_direct_selector)
+    if(goals_target_direct_selector)
     {
-      fatal(selector_exec, goal_target_direct_selector, &goal_selector_context);
-      fatal(plan_select_direct, &goal_selector_context.selection->list, bpctx);
+      fatal(selector_exec, goals_target_direct_selector, &goals_selector_context, SELECTION_ITERATION_TYPE_ORDER);
+      fatal(buildplan_select_direct, &goals_selector_context.selection->list);
     }
 
-    if(goal_target_transitive_selector)
+    if(goals_target_transitive_selector)
     {
-      fatal(selector_exec, goal_target_transitive_selector, &goal_selector_context);
-      fatal(plan_select_transitive, &goal_selector_context.selection->list, bpctx);
+      fatal(selector_exec, goals_target_transitive_selector, &goals_selector_context, SELECTION_ITERATION_TYPE_ORDER);
+      fatal(buildplan_select_transitive, &goals_selector_context.selection->list);
     }
   }
-  else if(!rbtree_empty(&vertex_containerof(g_project_root->mod->shadow_targets)->down))
+  else if(!rbtree_empty(&g_project_root->mod->shadow_targets->vertex.down))
   {
     // select the targets of the project module
-    fatal(graph_traverse_vertices
-      , g_graph
-      , vertex_containerof(g_project_root->mod->shadow_targets)
-      , plan_visitor_direct
+    fatal(moria_traverse_vertices
+      , &g_graph
+      , &g_project_root->mod->shadow_targets->vertex
+      , buildplan_visitor_direct
       , 0
-      , (traversal_criteria[]) {{
-            edge_travel : EDGE_TYPE_STRONG
-          , edge_visit : EDGE_TYPE_STRONG
+      , (moria_traversal_criteria[]) {{
+            edge_travel : EDGE_DEPENDS
+          , edge_visit : EDGE_DEPENDS
           , vertex_visit : VERTEX_FILETYPE_REG
           , min_depth : 1
           , max_depth : UINT16_MAX
         }}
       , MORIA_TRAVERSE_DOWN | MORIA_TRAVERSE_PRE | MORIA_TRAVERSE_DEPTH | MORIA_TRAVERSE_EXHAUSTIVE
-      , bpctx
+      , 0
     );
   }
   else
   {
     // otherwise select the targets of all modules
-    llist_foreach(&g_modules, mod, lln_modules) {
-      fatal(graph_traverse_vertices
-        , g_graph
-        , vertex_containerof(mod->shadow_targets)
-        , plan_visitor_direct
+    llist_foreach(&module_list, mod, vertex.owner) {
+      fatal(moria_traverse_vertices
+        , &g_graph
+        , &mod->shadow_targets->vertex
+        , buildplan_visitor_direct
         , 0
-        , (traversal_criteria[]) {{
-              edge_travel : EDGE_TYPE_STRONG
-            , edge_visit : EDGE_TYPE_STRONG
+        , (moria_traversal_criteria[]) {{
+              edge_travel : EDGE_DEPENDS
+            , edge_visit : EDGE_DEPENDS
             , vertex_visit : VERTEX_FILETYPE_REG
             , min_depth : 1
             , max_depth : UINT16_MAX
           }}
         , MORIA_TRAVERSE_DOWN | MORIA_TRAVERSE_PRE | MORIA_TRAVERSE_DEPTH | MORIA_TRAVERSE_EXHAUSTIVE
-        , bpctx
+        , 0
       );
     }
   }
 
-  if(bpctx->state == NOOP)
+  if(buildplan_state == NOOP)
   {
     fatal(buildplan_finalize);
     fatal(buildplan_report);
 
-    if(bp_selection.selected_nodes->size != 0)
+    if(buildplan_selection.selected_entities->size != 0)
     {
-      bpctx->state = READY;
+      buildplan_state = READY;
     }
   }
 
@@ -244,46 +145,82 @@ xapi goals_cleanup()
 {
   enter;
 
-  fatal(selector_context_xdestroy, &goal_selector_context);
+  fatal(selector_context_xdestroy, &goals_selector_context);
+  selector_free(goals_target_direct_selector);
+  selector_free(goals_target_transitive_selector);
 
   finally : coda;
 }
 
-xapi goals_set(bool build, bool script, selector * restrict target_direct, selector * restrict target_transitive)
+xapi goals_say(narrator * restrict N)
 {
   enter;
 
-  goal_build = build;
-  goal_script = script;
-  goal_target_direct_selector = target_direct;
-  goal_target_transitive_selector = target_transitive;
+  value_writer writer;
 
-  finally : coda;
+  value_writer_init(&writer);
+  fatal(value_writer_open, &writer, N);
+  fatal(value_writer_push_set, &writer);
+
+  if(goals_reconcile) {
+    fatal(value_writer_string, &writer, "reconcile");
+  }
+  if(goals_target_direct_selector) {
+    fatal(value_writer_push_mapping, &writer);
+    fatal(value_writer_string, &writer, "target-direct");
+    fatal(value_writer_push_list, &writer);
+    fatal(selector_writer_write, goals_target_direct_selector, &writer);
+    fatal(value_writer_pop_list, &writer);
+    fatal(value_writer_pop_mapping, &writer);
+  }
+  if(goals_target_transitive_selector) {
+    fatal(value_writer_push_mapping, &writer);
+    fatal(value_writer_string, &writer, "target-transitive");
+    fatal(value_writer_push_list, &writer);
+    fatal(selector_writer_write, goals_target_transitive_selector, &writer);
+    fatal(value_writer_pop_list, &writer);
+    fatal(value_writer_pop_mapping, &writer);
+  }
+  if(goals_build) {
+    fatal(value_writer_string, &writer, "build");
+  }
+  if(goals_script) {
+    fatal(value_writer_string, &writer, "script");
+  }
+
+  fatal(value_writer_pop_set, &writer);
+  fatal(value_writer_close, &writer);
+
+finally:
+  fatal(value_writer_destroy, &writer);
+coda;
 }
 
-xapi goals_run(bool notify, bool * restrict building)
+xapi goals_set(
+    uint64_t msg_id
+  , bool reconcile
+  , bool build
+  , bool script
+  , selector * restrict target_direct
+  , selector * restrict target_transitive
+)
 {
   enter;
 
-  buildplan_context bpctx = { 0 };
+  fabipc_message *msg;
+  channel *chan;
 
-  // potentially re-create the build plan
-  fatal(path_cache_reset);
-  fatal(create_buildplan, &bpctx);
+  goals_reconcile = reconcile;
+  goals_build = build;
+  goals_script = script;
+  selector_ifree(&goals_target_direct_selector);
+  goals_target_direct_selector = target_direct;
+  selector_ifree(&goals_target_transitive_selector);
+  goals_target_transitive_selector = target_transitive;
 
-  if(goal_build && bpctx.state == UNSATISFIED) {
-    logf(L_WARN, "cannot build");
-  }
-
-  // kickoff
-  if(goal_build && bpctx.state == READY)
-  {
-    fatal(build_thread_build, notify);
-    *building = true;
-  }
-  else
-  {
-    *building = false;
+  if(events_would(FABIPC_EVENT_GOALS, &chan, &msg)) {
+    msg->id = msg_id;
+    events_publish(chan, msg);
   }
 
   finally : coda;

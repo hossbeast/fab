@@ -15,61 +15,71 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#include <inttypes.h>
-
+#include "common/hash.h"
+#include "moria.h"
 #include "valyria/set.h"
 #include "xlinux/xstdlib.h"
 
 #include "selection.h"
-#include "node.h"
+#include "dependency.h"
 
-#include "common/hash.h"
-#include "common/assure.h"
+static llist selected_entity_freelist = LLIST_INITIALIZER(selected_entity_freelist);
 
-static llist selected_node_freelist = LLIST_INITIALIZER(selected_node_freelist);
-
-static uint32_t selected_node_hash(uint32_t h, const void * restrict _val, size_t sz)
+static uint32_t selected_entity_hash(uint32_t h, const void * restrict _val, size_t sz)
 {
-  selected_node *sn = (void*)_val;
-  return hash32(h, &sn->v, sizeof(sn->v));
+  selected *sn = (void*)_val;
+  return hash32(h, &sn->p, sizeof(sn->p));
 }
 
-static int selected_node_cmp(const void * _A, size_t Az, const void *_B, size_t Bz)
+static int selected_entity_cmp(const void * _A, size_t Az, const void *_B, size_t Bz)
 {
-  selected_node *sa = (void*)_A;
-  selected_node *sb = (void*)_B;
+  selected *sa = (void*)_A;
+  selected *sb = (void*)_B;
 
-  return INTCMP(sa->v, sb->v);
+  return INTCMP(sa->p, sb->p);
 }
 
-static xapi __attribute__((nonnull)) selection_add(selection * restrict sel, void *v, uint16_t rank)
+static xapi __attribute__((nonnull)) selection_add(selection * restrict sel, void *v, uint16_t distance)
 {
   enter;
 
-  selected_node snk = { v : v };
-  selected_node *sn = 0;
+  selected snk = { p : v };
+  selected *sn = 0;
   size_t newa;
   int x;
 
-  if((sn = set_get(sel->selected_nodes, &snk, 0)) == 0)
+  if((sn = set_get(sel->selected_entities, &snk, 0)) == 0)
   {
-    if((sn = llist_shift(&selected_node_freelist, typeof(*sn), lln)) == 0)
+    if((sn = llist_shift(&selected_entity_freelist, typeof(*sn), lln)) == 0)
     {
       fatal(xmalloc, &sn, sizeof(*sn));
       llist_init_node(&sn->lln);
     }
-    sn->v = v;
-    sn->rank = -1;
-    fatal(set_put, sel->selected_nodes, sn, 0);
+    sn->p = v;
+    fatal(set_put, sel->selected_entities, sn, 0);
+
+    if(sel->iteration_type == SELECTION_ITERATION_TYPE_ORDER)
+    {
+      llist_append(&sel->list, sn, lln);
+      sn->distance = distance;
+    }
+    else
+    {
+      sn->rank = -1;
+    }
+  }
+
+  if(sel->iteration_type == SELECTION_ITERATION_TYPE_ORDER) {
+    goto end;
   }
 
   // max rank ever seen for this node
-  if(rank > sn->rank)
+  if(distance > sn->rank)
   {
-    if(rank >= sel->ranks_alloc)
+    if(distance >= sel->ranks_alloc)
     {
       newa = sel->ranks_alloc ?: 5;
-      while(newa <= rank) {
+      while(newa <= distance) {
         newa += newa * 2 + newa / 2;
       }
 
@@ -80,11 +90,13 @@ static xapi __attribute__((nonnull)) selection_add(selection * restrict sel, voi
       }
       sel->ranks_alloc = newa;
     }
-    sel->ranks_len = MAX(sel->ranks_len, rank + 1);
+    sel->ranks_len = MAX(sel->ranks_len, distance + 1);
     llist_delete(sn, lln);
-    sn->rank = rank;
+    sn->rank = distance;
     llist_append(sel->ranks[sn->rank], sn, lln);
   }
+
+end:
   sn = 0;
 
 finally:
@@ -93,39 +105,29 @@ coda;
 }
 
 //
+// public
 //
-//
-
-xapi selection_setup()
-{
-  enter;
-
-  finally : coda;
-}
 
 xapi selection_cleanup()
 {
   enter;
 
-  selected_node *sel;
+  selected *sel;
   llist *tmp;
 
-  llist_foreach_safe(&selected_node_freelist, sel, lln, tmp) {
+  llist_foreach_safe(&selected_entity_freelist, sel, lln, tmp) {
     free(sel);
   }
 
   finally : coda;
 }
 
-//
-//
-//
-
 xapi selection_xinit(selection * restrict sel)
 {
   enter;
 
-  fatal(set_createx, &sel->selected_nodes, 100, selected_node_hash, selected_node_cmp, 0, 0);
+  memset(sel, 0, sizeof(*sel));
+  fatal(set_createx, &sel->selected_entities, 100, selected_entity_hash, selected_entity_cmp, 0, 0);
   llist_init_node(&sel->list);
   sel->initialized = true;
 
@@ -138,12 +140,13 @@ xapi selection_xdestroy(selection * restrict sel)
 
   int x;
 
-  if(!sel->initialized)
+  if(!sel->initialized) {
     goto XAPI_FINALIZE;
+  }
 
-  fatal(selection_reset, sel);
+  fatal(selection_reset, sel, 0);
 
-  fatal(set_xfree, sel->selected_nodes);
+  fatal(set_xfree, sel->selected_entities);
 
   for(x = 0; x < sel->ranks_alloc; x++) {
     free(sel->ranks[x]);
@@ -154,12 +157,13 @@ xapi selection_xdestroy(selection * restrict sel)
   finally : coda;
 }
 
-xapi selection_create(selection ** restrict selp)
+xapi selection_create(selection ** restrict selp, selection_iteration_type iteration_type)
 {
   enter;
 
   fatal(xmalloc, selp, sizeof(**selp));
   fatal(selection_xinit, *selp);
+  (*selp)->iteration_type = iteration_type;
 
   finally : coda;
 }
@@ -168,27 +172,30 @@ xapi selection_xfree(selection * restrict sel)
 {
   enter;
 
-  if(sel)
+  if(sel) {
     fatal(selection_xdestroy, sel);
+  }
   free(sel);
 
   finally : coda;
 }
 
-xapi selection_reset(selection * restrict sel)
+xapi selection_reset(selection * restrict sel, selection_iteration_type iteration_type)
 {
   enter;
 
   int x;
 
-  fatal(set_recycle, sel->selected_nodes);
+  fatal(set_recycle, sel->selected_entities);
 
   for(x = 0; x < sel->ranks_len; x++) {
-    llist_splice_tail(&selected_node_freelist, sel->ranks[x]);
+    llist_splice_tail(&selected_entity_freelist, sel->ranks[x]);
   }
 
   sel->ranks_len = 0;
-  llist_splice_tail(&selected_node_freelist, &sel->list);
+  llist_splice_tail(&selected_entity_freelist, &sel->list);
+
+  sel->iteration_type = iteration_type;
 
   finally : coda;
 }
@@ -197,7 +204,11 @@ void selection_finalize(selection * restrict sel)
 {
   int x;
   int32_t rank;
-  selected_node *sn;
+  selected *sn;
+
+  if(sel->iteration_type == SELECTION_ITERATION_TYPE_ORDER) {
+    return;
+  }
 
   /* concatenate the ranks into one list */
   for(x = 0; x < sel->ranks_len; x++)
@@ -223,16 +234,16 @@ void selection_finalize(selection * restrict sel)
   }
 }
 
-xapi selection_add_node(selection * restrict sel, node * restrict n, uint16_t rank)
+xapi selection_add_vertex(selection * restrict sel, moria_vertex * restrict v, uint16_t rank)
 {
   enter;
 
-  fatal(selection_add, sel, n, rank);
+  fatal(selection_add, sel, v, rank);
 
   finally : coda;
 }
 
-xapi selection_add_bpe(selection * restrict sel, buildplan_entity * restrict bpe, uint16_t rank)
+xapi selection_add_dependency(selection * restrict sel, dependency * restrict bpe, uint16_t rank)
 {
   enter;
 
@@ -245,22 +256,24 @@ xapi selection_replicate(selection * restrict dst, selection * restrict src)
 {
   enter;
 
-  selected_node snk;
-  selected_node *sn;
-  selected_node *ssn;
+  selected snk;
+  selected *sn;
+  selected *ssn;
 
   llist_foreach(&src->list, ssn, lln) {
-    snk.v = ssn->v;
-    if((sn = set_get(dst->selected_nodes, &snk, 0)))
+    snk.p = ssn->p;
+    if((sn = set_get(dst->selected_entities, &snk, 0))) {
       continue;
+    }
 
-    if((sn = llist_shift(&selected_node_freelist, typeof(*sn), lln)) == 0)
+    if((sn = llist_shift(&selected_entity_freelist, typeof(*sn), lln)) == 0)
     {
       fatal(xmalloc, &sn, sizeof(*sn));
       llist_init_node(&sn->lln);
     }
-    sn->v = ssn->v;
-    fatal(set_put, dst->selected_nodes, sn, 0);
+/* this is wrong */
+    sn->p = ssn->p;
+    fatal(set_put, dst->selected_entities, sn, 0);
     llist_append(&dst->list, sn, lln);
   }
 

@@ -20,8 +20,10 @@
 
 use strict;
 use warnings;
+$SIG{__WARN__} = sub { die @_ };
 
 use File::Basename;
+use Data::Dumper;
 
 die "cc not found in environment" unless $ENV{cc};
 
@@ -33,6 +35,8 @@ my @cmd = (
   # object files in this module
   , split(/ /, $ENV{objects})
 );
+
+print Dumper \@cmd;
 
 exec { $cmd[0] } @cmd
 

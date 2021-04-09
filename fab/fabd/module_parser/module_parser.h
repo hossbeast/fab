@@ -27,42 +27,40 @@
 #include "module.h"
 #include "graph.h"
 
-struct module;
-struct pattern_parser;
-struct set;
-struct yyu_location;
-struct pattern;
+struct channel;
 struct graph;
-struct value_parser;
+struct module;
+struct pattern;
+struct pattern_parser;
 struct rule_run_context;
 struct selection;
+struct set;
+struct value_parser;
+struct yyu_location;
 
 typedef struct module_parser {
   yyu_parser yyu;
   llist lln;        // freelist
 
   // state
-  struct graph *g;
+  struct moria_graph *g;
   struct set * variants;
   struct selection * scratch;
   struct graph_invalidation_context *invalidation;
+//  struct channel *chan;
   llist statement_block_freelist;
   module * mod;
 
   // sub parsers
   struct value_parser * value_parser; // the value parser is owned by the module
   struct pattern_parser * pattern_parser;
-  xapi (*use_resolve)(struct module_parser * restrict parser, struct pattern * restrict ref);
+  xapi (*use_resolve)(struct module_parser * restrict parser, struct pattern * restrict ref, bool scoped, char * restrict name, uint16_t namel);
   xapi (*require_resolve)(struct module_parser * restrict parser, struct pattern * restrict ref);
   xapi (*import_resolve)(struct module_parser * restrict parser, struct pattern * restrict ref, bool scoped, char * restrict name, uint16_t namel);
-  xapi (*formula_resolve)(struct module_parser * restrict parser, struct pattern * restrict ref, struct node ** restrict target);
 
   // under construction
-  struct statement_block *block;
-
-  // struct module_formula_show_settings show_settings;
-  // struct module_filesystem_entry * fse;
-  // struct module_logging_section * logging_section;
+  statement_block *block;
+  statement_block *scoped_block;
 
   // (returns)
   statement_block *unscoped_block;

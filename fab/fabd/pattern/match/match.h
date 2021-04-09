@@ -1,4 +1,4 @@
-/* Copyright (c) 2012-2017 Todd Freed <todd.freed@gmail.com>
+/* Copyright (c) 2012-2019 Todd Freed <todd.freed@gmail.com>
 
    This file is part of fab.
 
@@ -15,44 +15,25 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef FABD_PATTERN_MATCH_H
-#define FABD_PATTERN_MATCH_H
+#ifndef _PATTERN_MATCH_H
+#define _PATTERN_MATCH_H
 
 #include "xapi.h"
 #include "types.h"
 
 struct pattern;
-struct node;
-struct set;
-struct module;
-struct variant;
-struct llist;
+struct fsent;
 
-/// pattern_match
-//
-// SUMMARY
-//  get nodes matching a pattern
-//
-// PARAMETERS
-//  pattern    - match pattern
-//  module     - module to begin matching at
-//  modules    - all modules
-//  [variants] - variants
-//  matches    - (returns) matching nodes
-//
+/*
+ * Determine whether an fsent matches a match pattern
+ */
 xapi pattern_match(
-    /* 1 */ const struct pattern * restrict pattern
-  , /* 2 */ const struct module * restrict module
-  , /* 3 */ const struct llist * restrict modules
-  , /* 4 */ const struct set * restrict variants
-  , /* 5 */ struct set * restrict matches
-  , /* 6 */ struct set * restrict node_matches
-  , /* 7 */ xapi (*dirnode_visit)(void * ctx, struct node * dirnode)
-  , /* 8 */ void *dirnode_visit_ctx
+    const struct pattern * restrict pat
+  , const struct fsent * restrict dirnode
+  , const char * restrict label
+  , uint16_t label_len
+  , bool * restrict matched
 )
-  __attribute__((nonnull(1, 2, 3)));
-
-xapi pattern_match_matches_create(struct set ** matches)
   __attribute__((nonnull));
 
 #endif

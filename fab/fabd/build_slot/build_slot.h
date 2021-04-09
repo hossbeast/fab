@@ -23,45 +23,49 @@
 #include "xapi.h"
 #include "types.h"
 
-#include "exec_builder.internal.h"
+#include "exec_builder.h"
 #include "exec_render.h"
 
-struct buildplan_entity;
+struct dependency;
 struct module;
-struct variant;
+struct path_cache_entry;
 struct value;
+struct variant;
 
 typedef struct build_slot {
-  pid_t pid;
-  int status;                  // process exit status
-  bool success;                // whether the process was successful
+  int32_t pid;
+  int32_t status;                 // process exit status
+  uint16_t stage;
   uint32_t stage_index;
 
-  /* formula to execute */
-  struct buildplan_entity * bpe;  // (not null) build plan entity to execute
-  const struct module * mod;      // module the nodes in the entity belong to
-  const struct variant * var;     // variant the nodes in the entity are associated with
+  /* (not null) dependency edge with formula/sources/targets */
+  /* this edge has 1+ targets and 0+ sources */
+  struct dependency * bpe;
+
+  /* (not null) module the target nodes belong to, if all targets belong to the same module
+   * otherwise the project module */
+  struct module * mod;
+
+  /* variant of the target nodes, if all targets are in the same variant */
+  const struct variant * var;
+
   const struct value * vars;      // vars for the variant
   const struct exec * exec;       // pre-rendered env vars for the variant
 
-  int file_fd;      // descriptor of file to execute
-  char * file_path; // or, absolute path of to execute
+  int file_fd;                      // descriptor of file to execute
+  const char * file_path;           // or absolute path of file to execute
+  const struct path_cache_entry *file_pe;  // path cache entry, if any
+
   char ** argv;     // sentinel-terminated args
   char ** envp;     // sentinel-terminated environment
 
   int stdout_pipe[2];
-  char * stdout_buf;
-  uint16_t stdout_buf_len;
   uint32_t stdout_total;
 
   int stderr_pipe[2];
-  char * stderr_buf;
-  uint16_t stderr_buf_len;
   uint32_t stderr_total;
 
   int auxout_pipe[2];
-  char * auxout_buf;
-  uint16_t auxout_buf_len;
   uint32_t auxout_total;
 
   //
@@ -86,10 +90,10 @@ typedef struct build_slot {
 xapi build_slot_read(struct build_slot * restrict bs, uint32_t stream)
   __attribute__((nonnull));
 
-xapi build_slot_reap(struct build_slot * restrict bs, uint32_t slot_index, siginfo_t * info)
+xapi build_slot_reap(struct build_slot * restrict bs, siginfo_t * info)
   __attribute__((nonnull));
 
-xapi build_slot_prep(struct build_slot * restrict bs, struct buildplan_entity * restrict bpe, uint32_t stage_index)
+xapi build_slot_prep(struct build_slot * restrict bs, struct dependency * restrict bpe, uint32_t stage_index)
   __attribute__((nonnull));
 
 xapi build_slot_fork_and_exec(struct build_slot * restrict bs)

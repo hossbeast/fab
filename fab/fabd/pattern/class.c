@@ -15,26 +15,17 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#include "types.h"
-#include "xapi.h"
-
 #include "narrator.h"
-#include "value/writer.h"
-#include "narrator/fixed.h"
-#include "narrator/growing.h"
-#include "valyria/list.h"
 #include "xlinux/xstdlib.h"
 
-#include "class.internal.h"
+#include "class.h"
 #include "pattern.internal.h"
-#include "segment.internal.h"
+#include "fsent.h"
 #include "generate.internal.h"
-#include "render.internal.h"
+#include "search.internal.h"
 #include "match.internal.h"
-#include "node.h"
-#include "path.h"
-
-#include "common/attrs.h"
+#include "render.internal.h"
+#include "segment.h"
 
 //
 // static
@@ -45,7 +36,6 @@ static xapi say(const pattern_segment * restrict fn, narrator * restrict N)
   enter;
 
   const pattern_class * n = &fn->class;
-
   const chain *T;
   pattern_segments *segments;
 
@@ -148,12 +138,11 @@ static void destroy(pattern_segment * restrict n)
   pattern_segments_list_free(n->class.segments_head);
 }
 
-static xapi match(pattern_match_context * restrict ctx, const pattern_segment * restrict segment)
+static xapi match(const pattern_segment * restrict segment, pattern_match_context * restrict ctx)
 {
   enter;
 
   const pattern_class * class = &segment->class;
-
   struct match_segments_traversal traversal;
 
   traversal = (typeof(traversal)) {
@@ -173,18 +162,45 @@ static xapi match(pattern_match_context * restrict ctx, const pattern_segment * 
   finally : coda;
 }
 
+static xapi search(const pattern_segment * restrict segment, pattern_search_context * restrict ctx)
+{
+  enter;
+
+  const pattern_class * class = &segment->class;
+  struct search_segments_traversal traversal;
+
+  traversal = (typeof(traversal)) {
+      segments_head : class->segments_head
+  };
+  traversal.container.segment = segment;
+  traversal.segments = chain_next(traversal.segments_head, &traversal.segments_cursor, chn);
+  traversal.start = traversal.offset = ctx->traversal->offset;
+
+  traversal.u.prev = ctx->traversal;
+  ctx->traversal = &traversal;
+
+  fatal(ctx->segments_process, ctx);
+
+  ctx->traversal = traversal.u.prev;
+
+  finally : coda;
+}
+
 static xapi generate(const pattern_segment * restrict pat, pattern_generate_context * restrict ctx)
 {
   enter;
 
   const pattern_class * class = &pat->class;
-
   const chain *T;
   const pattern_segments * alt_segments;
   const chain *alt_cursor;
   const pattern_segment * alt_segment;
 
-  node * saved_context_node;
+  uint8_t c;
+  uint8_t start = 0;
+  uint8_t end = 0;
+
+  fsent * saved_context_node;
   char saved_section_text[256];
   off_t saved_section_narrator_pos;
 
@@ -203,9 +219,8 @@ static xapi generate(const pattern_segment * restrict pat, pattern_generate_cont
     alt_cursor = 0;
     alt_segment = chain_next(alt_segments->segment_head, &alt_cursor, chn);
 
-    uint8_t c;
-    uint8_t start = 0;
-    uint8_t end = 0;
+    start = 0;
+    end = 0;
 
     if(alt_segment->vtab->type == PATTERN_CHARACTER)
     {
@@ -248,6 +263,7 @@ static pattern_segment_vtable vtable = {
   , say : say
   , render : render
   , destroy : destroy
+  , search : search
   , match : match
   , generate : generate
   , cmp : cmp

@@ -15,7 +15,15 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#include <string.h>
+/*
+
+config keys that should *only* be legal in the global/user config files
+ filesystems
+ special
+
+*/
+
+#include <unistd.h>
 
 #include "types.h"
 #include "xapi.h"
@@ -23,51 +31,56 @@
 #include "xapi/trace.h"
 #include "xapi/calltree.h"
 #include "xlinux/xstdlib.h"
-#include "xlinux/xfcntl.h"
-#include "xlinux/xunistd.h"
 #include "narrator.h"
-#include "logger.h"
+#include "narrator/fixed.h"
 #include "valyria/set.h"
 #include "valyria/map.h"
-#include "valyria/pstring.h"
 #include "valyria/list.h"
-#include "value.h"
+#include "valyria/llist.h"
 #include "value/writer.h"
-#include "value/merge.h"
-
-#include "config.internal.h"
-#include "box.h"
-#include "CONFIG.errtab.h"
-#include "config_parser.internal.h"
-#include "filesystem.h"
-#include "logging.h"
-#include "build_thread.h"
-#include "extern.h"
-#include "params.h"
-#include "node.h"
-#include "var.h"
-#include "path_cache.h"
-
+#include "fab/stats.h"
 #include "common/snarf.h"
-#include "macros.h"
 #include "common/hash.h"
 #include "common/attrs.h"
 
-#if DEVEL
-#define SYSTEM_CONFIG_PATH    "/etc/fabconfig+devel"  // absolute
-#define USER_CONFIG_PATH      ".fab/config+devel"     // relative to $HOME
-#define PROJECT_CONFIG_PATH   ".fab/config+devel"     // relative to project dir
-#else
-#define SYSTEM_CONFIG_PATH    "/etc/fabconfig"  // absolute
-#define USER_CONFIG_PATH      ".fab/config"     // relative to $HOME
-#define PROJECT_CONFIG_PATH   ".fab/config"     // relative to project dir
-#endif
+#include "config.internal.h"
+#include "yyutil/box.h"
+#include "CONFIG.errtab.h"
+#include "config_parser.internal.h"
+#include "filesystem.h"
+#include "build.h"
+#include "params.h"
+#include "fsent.h"
+#include "path_cache.h"
+#include "walker.h"
+#include "args.h"
+#include "zbuffer.h"
+#include "channel.h"
+#include "logging.h"
+#include "pattern.h"
+#include "stats.h"
+#include "system_state.h"
+#include "events.h"
+#include "reconcile.h"
 
-static config * config_staging;
+#include "macros.h"
+#include "marshal.h"
+
+static configblob * config_staging;
 static config_parser * parser_staging;
-static config * config_active;
+static configblob * config_active;
 static config_parser * parser_active;
-bool config_reconfigure_result;
+
+/* these config nodes always exist */
+fsent *system_config_node;
+fsent *user_config_node;
+
+/* active list is maintained in precendence order, including system and user config files */
+static llist config_list = LLIST_INITIALIZER(config_list);          // active
+static llist config_freelist = LLIST_INITIALIZER(config_freelist);  // free
+
+/* whether a reconfiguration has ever completed */
+bool config_reconfigured;
 
 //
 // static
@@ -87,164 +100,297 @@ static int box_string_ht_cmp_fn(const void * _A, size_t Asz, const void * _B, si
   return memncmp(A->v, A->l, B->v, B->l);
 }
 
-static xapi stage(config ** cfg)
+static void config_compare_build(struct config_build * restrict new, struct config_build * restrict old)
+{
+  new->changed = !config_reconfigured
+    || box_int16_cmp(new->concurrency, old->concurrency)
+    ;
+}
+
+static void config_compare_workers(struct config_workers * restrict new, struct config_workers * restrict old)
+{
+  new->changed = !config_reconfigured
+    || box_int16_cmp(new->concurrency, old->concurrency)
+    ;
+}
+
+static void config_compare_filesystems(struct config_filesystems * restrict new, struct config_filesystems * restrict old)
+{
+  new->changed = !config_reconfigured
+    || !map_equal(new->entries, old->entries)
+    ;
+}
+
+static void config_compare_formula_path(struct config_formula_path * restrict new, struct config_formula_path * restrict old)
+{
+  new->changed = !config_reconfigured
+    || !set_equal(new->dirs.entries, old->dirs.entries)
+    || box_bool_cmp(new->copy_from_env, old->copy_from_env)
+    ;
+}
+
+static void config_compare_formula(struct config_formula * restrict new, struct config_formula * restrict old)
+{
+  config_compare_formula_path(&new->path, &old->path);
+
+  new->changed = !config_reconfigured
+      || new->path.changed
+      ;
+}
+
+static void config_compare_walker_list(struct config_walker_list * restrict new, struct config_walker_list * restrict old)
+{
+  llist *a = new->list.next;
+  llist *b = old->list.next;
+
+  pattern *A, *B;
+
+  if(!config_reconfigured) {
+    new->changed = true;
+    return;
+  }
+
+  /* this will consider lists containing identical patterns in different order as different lists */
+  while(a != &new->list && b != &old->list)
+  {
+    A = containerof(a, pattern, lln);
+    B = containerof(b, pattern, lln);
+
+    if(pattern_cmp(A, B)) {
+      break;
+    }
+
+    a = a->next;
+    b = b->next;
+  }
+
+  new->changed = false;
+  if(a != &new->list || b != &old->list)
+  {
+    new->changed = true;
+  }
+}
+
+static void config_compare_walker(struct config_walker * restrict new, struct config_walker * restrict old)
+{
+  config_compare_walker_list(&new->include, &old->include);
+  config_compare_walker_list(&new->exclude, &old->exclude);
+
+  new->changed = !config_reconfigured
+      || new->include.changed
+      || new->exclude.changed
+      ;
+}
+
+static xapi parse(config_parser * restrict parser, config * restrict cfgn, configblob **cfgp)
 {
   enter;
 
-  if(config_staging == 0)
+  char * text = 0;
+  size_t text_len;
+  channel *chan;
+  fabipc_message *msg;
+  xapi exit;
+
+  STATS_INC(cfgn->stats.parsed_try);
+  STATS_INC(g_stats.config_parsed_try);
+
+  fatal(usnarfs, &text, &text_len, cfgn->self_node_abspath);
+  if(text)
   {
-    config_staging = *cfg;
-  }
-  else
-  {
-    fatal(config_merge, config_staging, *cfg);
-    fatal(config_xfree, *cfg);
+    if((exit = invoke(config_parser_parse, parser, text, text_len + 2, cfgn->self_node_abspath, 0, cfgp)))
+    {
+      system_error = true;
+      if(!events_would(FABIPC_EVENT_SYSTEM_STATE, &chan, &msg)) {
+        xapi_calltree_unwind();
+        goto XAPI_FINALLY;
+      }
+
+      msg->code = EINVAL;
+#if DEBUG || DEVEL
+      msg->size = xapi_trace_full(msg->text, sizeof(msg->text), 0);
+#else
+      msg->size = xapi_trace_pithy(msg->text, sizeof(msg->text), 0);
+#endif
+      events_publish(chan, msg);
+
+      xapi_calltree_unwind();
+      goto XAPI_FINALLY;
+    }
   }
 
-  *cfg = 0;
+  STATS_INC(cfgn->stats.parsed);
+  STATS_INC(g_stats.config_parsed);
+
+finally:
+  wfree(text);
+  xapi_infos("path", cfgn->self_node_abspath);
+coda;
+}
+
+static xapi reparse()
+{
+  enter;
+
+  configblob * cfg = 0;
+  fsent *n;
+  config *cfgn;
+
+  // reset staging config
+  fatal(config_parser_ixfree, &parser_staging);
+  fatal(config_parser_create, &parser_staging);
+  fatal(config_ixfree, &config_staging);
+
+  /* all files must be re-parsed, not only those which have changed, because
+   * config_merge is destructive to the source config */
+  llist_foreach(&config_list, cfgn, vertex.owner) {
+    n = cfgn->self_node;
+    logf(L_CONFIG, "staging config file @ %s", n->self_config->self_node_abspath);
+    fatal(parse, parser_staging, cfgn, &cfg);
+
+    if(system_error) {
+      break;
+    }
+    if(!cfg) {
+      continue;
+    }
+
+    if(config_staging == 0)
+    {
+      config_staging = cfg;
+    }
+    else
+    {
+      fatal(config_merge, config_staging, cfg);
+      fatal(config_xfree, cfg);
+    }
+    cfg = 0;
+  }
+
+  /* all files empty */
+  if(!config_staging)
+  {
+    fatal(config_create, &config_staging);
+  }
+
+finally:
+  fatal(config_xfree, cfg);
+coda;
+}
+
+xapi config_alloc(config ** restrict vp, moria_graph * restrict g)
+{
+  enter;
+
+  config *v;
+
+  if((v = llist_shift(&config_freelist, typeof(*v), vertex.owner)) == 0)
+  {
+    fatal(xmalloc, &v, sizeof(*v));
+  }
+
+  moria_vertex_init(&v->vertex, g, VERTEX_CONFIG);
+
+  llist_prepend(&config_list, v, vertex.owner);
+  *vp = v;
 
   finally : coda;
 }
 
-static void config_compare_build(config_base * restrict _new, config_base * restrict _old)
+static void config_dispose(config * restrict vp)
 {
-  struct config_build * new = containerof(_new, struct config_build, cb);
-  struct config_build * old = containerof(_old, struct config_build, cb);
-
-  new->changed = box_cmp(refas(new->concurrency, bx), old ? old->concurrency ? &old->concurrency->bx : 0 : 0);
+  llist_delete_node(&vp->vertex.owner);
+  llist_append(&config_freelist, vp, vertex.owner);
 }
 
-static void config_compare_extern(config_base * restrict _new, config_base * restrict _old)
+static xapi bootstrap_global_node(fsent ** restrict np, const char * restrict pathspec)
 {
-  struct config_extern_section * new = containerof(_new, struct config_extern_section, cb);
-  struct config_extern_section * old = containerof(_old, struct config_extern_section, cb);
+  enter;
 
-  new->changed = !old || !set_equal(new->entries, old->entries);
-}
+  graph_invalidation_context invalidation = { };
+  char text[512];
+  const char *path;
+  size_t len, z = 0;
+  config *cfg = 0;
 
-static void config_compare_filesystems(config_base * restrict _new, config_base * restrict _old)
-{
-  struct config_filesystems * new = containerof(_new, struct config_filesystems, cb);
-  struct config_filesystems * old = containerof(_old, struct config_filesystems, cb);
+  len = strlen(pathspec);
+  RUNTIME_ASSERT(len > 1);
 
-  new->changed = !old || !map_equal(new->entries, old->entries);
-}
+  if(len >= 2 && memcmp(pathspec, "~/", 2) == 0)
+  {
+    z += znloads(text + z, sizeof(text) - z, g_params.homedir);
+    z += znloads(text + z, sizeof(text) - z, "/");
+    z += znloads(text + z, sizeof(text) - z, pathspec + 2);
+    text[z] = 0;
+    len = z;
+    path = text;
+  }
+  else if(len >= 6 && memcmp(pathspec, "$HOME/", 6) == 0)
+  {
+    z += znloads(text + z, sizeof(text) - z, g_params.homedir);
+    z += znloads(text + z, sizeof(text) - z, "/");
+    z += znloads(text + z, sizeof(text) - z, pathspec + 6);
+    text[z] = 0;
+    len = z;
+    path = text;
+  }
+  else if(pathspec[0] != '/')
+  {
+    z += znloads(text + z, sizeof(text) - z, g_params.proj_dir);
+    z += znloads(text + z, sizeof(text) - z, "/");
+    z += znloads(text + z, sizeof(text) - z, pathspec);
+    text[z] = 0;
+    len = z;
+    path = text;
+  }
+  else
+  {
+    path = pathspec;
+    len = strlen(path);
+  }
 
-static void config_compare_logging_exprs(config_base * restrict _new, config_base * restrict _old)
-{
-  struct config_logging_exprs * new = containerof(_new, struct config_logging_exprs, cb);
-  struct config_logging_exprs * old = containerof(_old, struct config_logging_exprs, cb);
+  fatal(fsent_graft, path, np, &invalidation);
+  fsent_kind_set(*np, VERTEX_CONFIG_FILE);
+  fsent_protect_set(*np);
+  fsent_invalid_set(*np);
 
-  new->changed = !old || !list_equal(new->items, old->items, 0);
-}
+  fatal(config_alloc, &cfg, &g_graph);
+  znloadw(cfg->self_node_abspath, sizeof(cfg->self_node_abspath), path, len);
+  cfg->self_node_abspath_len = len;
+  (*np)->self_config = cfg;
+  cfg->self_node = *np;
 
-static void config_compare_logging_section(config_base * restrict _new, config_base * restrict _old)
-{
-  struct config_logging_section * new = containerof(_new, struct config_logging_section, cb);
-  struct config_logging_section * old = containerof(_old, struct config_logging_section, cb);
-
-  config_compare_logging_exprs(&new->exprs.cb, refas(old, exprs.cb));
-
-  new->changed = new->exprs.changed;
-}
-
-static void config_compare_logging(config_base * restrict _new, config_base * restrict _old)
-{
-  struct config_logging * new = containerof(_new, struct config_logging, cb);
-  struct config_logging * old = containerof(_old, struct config_logging, cb);
-
-  config_compare_logging_section(&new->console.cb, refas(old, console.cb));
-  config_compare_logging_section(&new->logfile.cb, refas(old, logfile.cb));
-
-  new->changed = new->console.changed || new->logfile.changed;
-}
-
-static void config_compare_var(config_base * restrict _new, config_base * restrict _old)
-{
-  struct config_var * new = containerof(_new, struct config_var, cb);
-  struct config_var * old = containerof(_old, struct config_var, cb);
-
-  if((new->changed = INTCMP(old, new)))
-    return;
-
-  if(new)
-    new->changed = value_cmp(new->value, old->value);
-}
-
-static void config_compare_formula_show_settings(config_base * restrict _new, config_base * restrict _old)
-{
-  struct config_formula_show_settings * new = containerof(_new, struct config_formula_show_settings, cb);
-  struct config_formula_show_settings * old = containerof(_old, struct config_formula_show_settings, cb);
-
-  new->changed =
-       box_cmp(refas(new->show_arguments, bx), refas2(old, show_arguments, bx))
-    || box_cmp(refas(new->show_path, bx), refas2(old, show_path, bx))
-    || box_cmp(refas(new->show_cwd, bx), refas2(old, show_cwd, bx))
-    || box_cmp(refas(new->show_command, bx), refas2(old, show_command, bx))
-    || box_cmp(refas(new->show_sources, bx), refas2(old, show_sources, bx))
-    || box_cmp(refas(new->show_targets, bx), refas2(old, show_targets, bx))
-    || box_cmp(refas(new->show_environment, bx), refas2(old, show_environment, bx))
-    || box_cmp(refas(new->show_status, bx), refas2(old, show_status, bx))
-    || box_cmp(refas(new->show_stdout, bx), refas2(old, show_stdout, bx))
-    || box_cmp(refas(new->show_stdout_limit_bytes, bx), refas2(old, show_stdout_limit_bytes, bx))
-    || box_cmp(refas(new->show_stdout_limit_lines, bx), refas2(old, show_stdout_limit_lines, bx))
-    || box_cmp(refas(new->show_stderr, bx), refas2(old, show_stderr, bx))
-    || box_cmp(refas(new->show_stderr_limit_bytes, bx), refas2(old, show_stderr_limit_bytes, bx))
-    || box_cmp(refas(new->show_stderr_limit_lines, bx), refas2(old, show_stderr_limit_lines, bx))
-    || box_cmp(refas(new->show_auxout, bx), refas2(old, show_auxout, bx))
-    || box_cmp(refas(new->show_auxout_limit_bytes, bx), refas2(old, show_auxout_limit_bytes, bx))
-    || box_cmp(refas(new->show_auxout_limit_lines, bx), refas2(old, show_auxout_limit_lines, bx))
-    ;
-}
-
-static void config_compare_formula_path(config_base * restrict _new, config_base * restrict _old)
-{
-  struct config_formula_path * new = containerof(_new, struct config_formula_path, cb);
-  struct config_formula_path * old = containerof(_old, struct config_formula_path, cb);
-
-  new->changed = !old || !set_equal(new->dirs.entries, old->dirs.entries);
-  new->changed |= box_cmp(refas(new->copy_from_env, bx), refas2(old, copy_from_env, bx));
-}
-
-static void config_compare_formula(config_base * restrict _new, config_base * restrict _old)
-{
-  struct config_formula * new = containerof(_new, struct config_formula, cb);
-  struct config_formula * old = containerof(_old, struct config_formula, cb);
-
-  config_compare_formula_show_settings(&new->success.cb, refas(old, success.cb));
-  config_compare_formula_show_settings(&new->error.cb, refas(old, error.cb));
-  config_compare_formula_path(&new->path.cb, refas(old, path.cb));
-
-  new->changed =
-         new->success.changed
-      || new->error.changed
-      || new->path.changed
-      || box_cmp(refas(new->capture_stdout, bx), refas(old->capture_stdout, bx))
-      || box_cmp(refas(new->stdout_buffer_size, bx), refas(old->stdout_buffer_size, bx))
-      || box_cmp(refas(new->capture_stderr, bx), refas(old->capture_stderr, bx))
-      || box_cmp(refas(new->stderr_buffer_size, bx), refas(old->stderr_buffer_size, bx))
-      || box_cmp(refas(new->capture_auxout, bx), refas(old->capture_auxout, bx))
-      || box_cmp(refas(new->auxout_buffer_size, bx), refas(old->auxout_buffer_size, bx))
-      ;
+finally:
+  graph_invalidation_end(&invalidation);
+coda;
 }
 
 //
 // internal
 //
 
-/// config_compare
-//
-// SUMMARY
-//  mark sections of a new config struct as different from those of another config struct
-//
-void config_compare(config * restrict new, config * restrict old)
+/*
+* mark sections of a new config struct as different from those of another config struct
+*
+* returns boolean value indicating whether old and new are equal
+*/
+bool config_compare(configblob * restrict new, configblob * restrict old)
 {
-  config_compare_build(&new->build.cb, refas(old, build.cb));
-  config_compare_extern(&new->extern_section.cb, refas(old, extern_section.cb));
-  config_compare_filesystems(&new->filesystems.cb, refas(old, filesystems.cb));
-  config_compare_formula(&new->formula.cb, refas(old, formula.cb));
-  config_compare_logging(&new->logging.cb, refas(old, logging.cb));
-  config_compare_var(&new->var.cb, refas(old, var.cb));
+  config_compare_build(&new->build, &old->build);
+  config_compare_workers(&new->workers, &old->workers);
+  config_compare_filesystems(&new->filesystems, &old->filesystems);
+  config_compare_formula(&new->formula, &old->formula);
+  config_compare_walker(&new->walker, &old->walker);
+
+  new->changed = !config_reconfigured
+    || new->build.changed
+    || new->workers.changed
+    || new->filesystems.changed
+    || new->formula.changed
+    || new->walker.changed
+    ;
+
+  return !new->changed;
 }
 
 #define CFGCOPY(dst, src, section, field) do {              \
@@ -258,7 +404,19 @@ void config_compare(config * restrict new, config * restrict old)
   }                                                         \
 } while(0)
 
-xapi config_merge(config * restrict dst, config * restrict src)
+static void pattern_list_free(llist * restrict list)
+{
+  pattern *pat;
+  llist *T;
+
+  llist_foreach_safe(list, pat, lln, T) {
+    pattern_free(pat);
+  }
+
+  llist_init_node(list);
+}
+
+xapi config_merge(configblob * restrict dst, configblob * restrict src)
 {
   enter;
 
@@ -269,18 +427,28 @@ xapi config_merge(config * restrict dst, config * restrict src)
   CFGCOPY(dst, src, build, concurrency);
   dst->build.merge_significant = !empty;
 
-  /* extern */
-  if(src->extern_section.merge_overwrite)
+  /* workers */
+  empty = true;
+  CFGCOPY(dst, src, workers, concurrency);
+  dst->workers.merge_significant = !empty;
+
+  /* walker */
+  dst->walker.merge_significant = false;
+  if(src->walker.merge_overwrite || src->walker.include.merge_overwrite)
   {
-    fatal(set_xfree, dst->extern_section.entries);
-    dst->extern_section.entries = src->extern_section.entries;
-    src->extern_section.entries = 0;
+    pattern_list_free(&dst->walker.include.list);
   }
-  else
+  llist_splice_head(&dst->walker.include.list, &src->walker.include.list);
+  dst->walker.include.merge_significant = !llist_empty(&dst->walker.include.list);
+  dst->walker.merge_significant |= dst->walker.include.merge_significant;
+
+  if(src->walker.merge_overwrite || src->walker.exclude.merge_overwrite)
   {
-    fatal(set_splice, dst->extern_section.entries, src->extern_section.entries);
+    pattern_list_free(&dst->walker.exclude.list);
   }
-  dst->extern_section.merge_significant = dst->extern_section.entries->size;
+  llist_splice_head(&dst->walker.exclude.list, &src->walker.exclude.list);
+  dst->walker.exclude.merge_significant = !llist_empty(&dst->walker.exclude.list);
+  dst->walker.merge_significant |= dst->walker.exclude.merge_significant;
 
   /* filesystems */
   if(src->filesystems.merge_overwrite)
@@ -293,7 +461,7 @@ xapi config_merge(config * restrict dst, config * restrict src)
   {
     fatal(map_splice, dst->filesystems.entries, src->filesystems.entries);
   }
-  dst->filesystems.merge_significant = src->filesystems.entries->size;
+  dst->filesystems.merge_significant = dst->filesystems.entries->size;
 
   /* formula path */
   dst->formula.path.merge_significant = false;
@@ -313,92 +481,7 @@ xapi config_merge(config * restrict dst, config * restrict src)
   empty = true;
   CFGCOPY(dst, src, formula, path.copy_from_env);
   dst->formula.path.merge_significant |= !empty;
-
-  /* formula success */
-  empty = true;
-  CFGCOPY(dst, src, formula, success.show_arguments);
-  CFGCOPY(dst, src, formula, success.show_path);
-  CFGCOPY(dst, src, formula, success.show_cwd);
-  CFGCOPY(dst, src, formula, success.show_command);
-  CFGCOPY(dst, src, formula, success.show_sources);
-  CFGCOPY(dst, src, formula, success.show_targets);
-  CFGCOPY(dst, src, formula, success.show_environment);
-  CFGCOPY(dst, src, formula, success.show_status);
-  CFGCOPY(dst, src, formula, success.show_stdout);
-  CFGCOPY(dst, src, formula, success.show_stdout_limit_bytes);
-  CFGCOPY(dst, src, formula, success.show_stdout_limit_lines);
-  CFGCOPY(dst, src, formula, success.show_stderr);
-  CFGCOPY(dst, src, formula, success.show_stderr_limit_bytes);
-  CFGCOPY(dst, src, formula, success.show_stderr_limit_lines);
-  CFGCOPY(dst, src, formula, success.show_auxout);
-  CFGCOPY(dst, src, formula, success.show_auxout_limit_bytes);
-  CFGCOPY(dst, src, formula, success.show_auxout_limit_lines);
-  dst->formula.success.merge_significant = !empty;
-
-  /* formula error */
-  empty = true;
-  CFGCOPY(dst, src, formula, error.show_arguments);
-  CFGCOPY(dst, src, formula, error.show_path);
-  CFGCOPY(dst, src, formula, error.show_cwd);
-  CFGCOPY(dst, src, formula, error.show_command);
-  CFGCOPY(dst, src, formula, error.show_sources);
-  CFGCOPY(dst, src, formula, error.show_targets);
-  CFGCOPY(dst, src, formula, error.show_environment);
-  CFGCOPY(dst, src, formula, error.show_status);
-  CFGCOPY(dst, src, formula, error.show_stdout);
-  CFGCOPY(dst, src, formula, error.show_stdout_limit_bytes);
-  CFGCOPY(dst, src, formula, error.show_stdout_limit_lines);
-  CFGCOPY(dst, src, formula, error.show_stderr);
-  CFGCOPY(dst, src, formula, error.show_stderr_limit_bytes);
-  CFGCOPY(dst, src, formula, error.show_stderr_limit_lines);
-  CFGCOPY(dst, src, formula, error.show_auxout);
-  CFGCOPY(dst, src, formula, error.show_auxout_limit_bytes);
-  CFGCOPY(dst, src, formula, error.show_auxout_limit_lines);
-  dst->formula.error.merge_significant = !empty;
-
-  /* formula */
-  empty = true;
-  CFGCOPY(dst, src, formula, capture_stdout);
-  CFGCOPY(dst, src, formula, stdout_buffer_size);
-  CFGCOPY(dst, src, formula, capture_stderr);
-  CFGCOPY(dst, src, formula, stderr_buffer_size);
-  CFGCOPY(dst, src, formula, capture_auxout);
-  CFGCOPY(dst, src, formula, auxout_buffer_size);
-  dst->formula.merge_significant = !empty;
-
-  /* logging */
-  dst->logging.merge_significant = false;
-  if(src->logging.merge_overwrite || src->logging.logfile.merge_overwrite || src->logging.logfile.exprs.merge_overwrite)
-  {
-    fatal(list_xfree, dst->logging.logfile.exprs.items);
-    dst->logging.logfile.exprs.items = src->logging.logfile.exprs.items;
-    src->logging.logfile.exprs.items = 0;
-  }
-  else
-  {
-    fatal(list_splice, dst->logging.logfile.exprs.items, dst->logging.logfile.exprs.items->size, src->logging.logfile.exprs.items, 0, -1);
-  }
-  dst->logging.logfile.exprs.merge_significant = dst->logging.logfile.exprs.items->size;
-  dst->logging.logfile.merge_significant = dst->logging.logfile.exprs.merge_significant;
-  dst->logging.merge_significant |= dst->logging.logfile.exprs.merge_significant;
-
-  if(src->logging.merge_overwrite || src->logging.console.merge_overwrite || src->logging.console.exprs.merge_overwrite)
-  {
-    fatal(list_xfree, dst->logging.console.exprs.items);
-    dst->logging.console.exprs.items = src->logging.console.exprs.items;
-    src->logging.console.exprs.items = 0;
-  }
-  else
-  {
-    fatal(list_splice, dst->logging.console.exprs.items, dst->logging.console.exprs.items->size, src->logging.console.exprs.items, 0, -1);
-  }
-  dst->logging.console.exprs.merge_significant = dst->logging.console.exprs.items->size;
-  dst->logging.console.merge_significant = dst->logging.console.exprs.merge_significant;
-  dst->logging.merge_significant |= dst->logging.console.exprs.merge_significant;
-
-  /* var */
-  fatal(value_merge, parser_staging->value_parser, &dst->var.value, src->var.value, src->var.merge_overwrite ? VALUE_MERGE_SET : 0);
-  dst->var.merge_significant = dst->var.value != NULL;
+  dst->formula.merge_significant = dst->formula.path.merge_significant;
 
   finally : coda;
 }
@@ -407,7 +490,7 @@ xapi config_throw(box * restrict val)
 {
   enter;
 
-  xapi_info_pushf("location", "[%d,%d - %d,%d]", val->loc.f_lin, val->loc.f_col, val->loc.l_lin, val->loc.l_col);
+  xapi_info_pushf("location", "[%d,%d - %d,%d]", val->loc.f_lin + 1, val->loc.f_col + 1, val->loc.l_lin + 1, val->loc.l_col + 1);
 
   fail(CONFIG_INVALID);
 
@@ -425,25 +508,18 @@ static void fse_free(void * _fse)
   wfree(fse);
 }
 
-xapi config_create(config ** restrict rv)
+xapi config_create(configblob ** restrict rv)
 {
   enter;
 
-  config * cfg = 0;
+  configblob * cfg = 0;
 
   fatal(xmalloc, &cfg, sizeof(*cfg));
 
-  fatal(set_createx
-    , &cfg->extern_section.entries
-    , 0
-    , box_string_ht_hash_fn
-    , box_string_ht_cmp_fn
-    , (void*)box_free
-    , 0
-  );
+  llist_init_node(&cfg->walker.exclude.list);
+  llist_init_node(&cfg->walker.include.list);
+
   fatal(map_createx, &cfg->filesystems.entries, 0, fse_free, 0);
-  fatal(list_createx, &cfg->logging.logfile.exprs.items, 0, 0, box_free, 0);
-  fatal(list_createx, &cfg->logging.console.exprs.items, 0, 0, box_free, 0);
   fatal(set_createx
     , &cfg->formula.path.dirs.entries
     , 0
@@ -461,71 +537,29 @@ finally:
 coda;
 }
 
-xapi config_xfree(config * restrict cfg)
+xapi config_xfree(configblob * restrict cfg)
 {
   enter;
 
   if(cfg)
   {
     box_free(refas(cfg->build.concurrency, bx));
-    box_free(refas(cfg->formula.capture_stdout, bx));
-    box_free(refas(cfg->formula.stdout_buffer_size, bx));
-    box_free(refas(cfg->formula.capture_stderr, bx));
-    box_free(refas(cfg->formula.stderr_buffer_size, bx));
-    box_free(refas(cfg->formula.capture_auxout, bx));
-    box_free(refas(cfg->formula.auxout_buffer_size, bx));
+    box_free(refas(cfg->workers.concurrency, bx));
 
-    fatal(set_xfree, cfg->extern_section.entries);
     fatal(map_xfree, cfg->filesystems.entries);
     fatal(set_xfree, cfg->formula.path.dirs.entries);
 
     box_free(refas(cfg->formula.path.copy_from_env, bx));
 
-    box_free(refas(cfg->formula.success.show_arguments, bx));
-    box_free(refas(cfg->formula.success.show_path, bx));
-    box_free(refas(cfg->formula.success.show_cwd, bx));
-    box_free(refas(cfg->formula.success.show_command, bx));
-    box_free(refas(cfg->formula.success.show_sources, bx));
-    box_free(refas(cfg->formula.success.show_targets, bx));
-    box_free(refas(cfg->formula.success.show_environment, bx));
-    box_free(refas(cfg->formula.success.show_status, bx));
-    box_free(refas(cfg->formula.success.show_stdout, bx));
-    box_free(refas(cfg->formula.success.show_stdout_limit_bytes, bx));
-    box_free(refas(cfg->formula.success.show_stdout_limit_lines, bx));
-    box_free(refas(cfg->formula.success.show_stderr, bx));
-    box_free(refas(cfg->formula.success.show_stderr_limit_bytes, bx));
-    box_free(refas(cfg->formula.success.show_stderr_limit_lines, bx));
-    box_free(refas(cfg->formula.success.show_auxout, bx));
-    box_free(refas(cfg->formula.success.show_auxout_limit_bytes, bx));
-    box_free(refas(cfg->formula.success.show_auxout_limit_lines, bx));
-
-    box_free(refas(cfg->formula.error.show_arguments, bx));
-    box_free(refas(cfg->formula.error.show_path, bx));
-    box_free(refas(cfg->formula.error.show_cwd, bx));
-    box_free(refas(cfg->formula.error.show_command, bx));
-    box_free(refas(cfg->formula.error.show_sources, bx));
-    box_free(refas(cfg->formula.error.show_targets, bx));
-    box_free(refas(cfg->formula.error.show_environment, bx));
-    box_free(refas(cfg->formula.error.show_status, bx));
-    box_free(refas(cfg->formula.error.show_stdout, bx));
-    box_free(refas(cfg->formula.error.show_stdout_limit_bytes, bx));
-    box_free(refas(cfg->formula.error.show_stdout_limit_lines, bx));
-    box_free(refas(cfg->formula.error.show_stderr, bx));
-    box_free(refas(cfg->formula.error.show_stderr_limit_bytes, bx));
-    box_free(refas(cfg->formula.error.show_stderr_limit_lines, bx));
-    box_free(refas(cfg->formula.error.show_auxout, bx));
-    box_free(refas(cfg->formula.error.show_auxout_limit_bytes, bx));
-    box_free(refas(cfg->formula.error.show_auxout_limit_lines, bx));
-
-    fatal(list_xfree, cfg->logging.logfile.exprs.items);
-    fatal(list_xfree, cfg->logging.console.exprs.items);
+    pattern_list_free(&cfg->walker.exclude.list);
+    pattern_list_free(&cfg->walker.include.list);
   }
   wfree(cfg);
 
   finally : coda;
 }
 
-xapi config_ixfree(config ** restrict cfg)
+xapi config_ixfree(configblob ** restrict cfg)
 {
   enter;
 
@@ -535,16 +569,18 @@ xapi config_ixfree(config ** restrict cfg)
   finally : coda;
 }
 
-xapi config_writer_write(config * restrict cfg, value_writer * const restrict writer)
+xapi config_writer_write(configblob * restrict cfg, value_writer * const restrict writer)
 {
   enter;
 
   int x;
-  const char *name;
   const box_string *ent;
-  const box_string *item;
   const char *key;
   const struct config_filesystem_entry *fsent;
+  pattern *pat;
+  narrator_fixed fixed;
+  char space[512];
+  narrator *N;
 
   if(cfg->build.merge_significant)
   {
@@ -556,23 +592,60 @@ xapi config_writer_write(config * restrict cfg, value_writer * const restrict wr
     fatal(value_writer_pop_set, writer);
     fatal(value_writer_pop_mapping, writer);
   }
-  if(cfg->extern_section.merge_significant)
+
+  if(cfg->workers.merge_significant)
   {
     fatal(value_writer_push_mapping, writer);
-    fatal(value_writer_string, writer, "extern");
+    fatal(value_writer_string, writer, "workers");
+    fatal(value_writer_push_set, writer);
+    if(cfg->workers.concurrency)
+      fatal(value_writer_mapping_string_uint, writer, "concurrency", cfg->workers.concurrency->v);
+    fatal(value_writer_pop_set, writer);
+    fatal(value_writer_pop_mapping, writer);
+  }
+
+  if(cfg->walker.merge_significant)
+  {
+    fatal(value_writer_push_mapping, writer);
+    fatal(value_writer_string, writer, "walker");
     fatal(value_writer_push_set, writer);
 
-    for(x = 0; x < cfg->extern_section.entries->table_size; x++)
+    if(cfg->walker.include.merge_significant)
     {
-      if(!(ent = set_table_get(cfg->extern_section.entries, x)))
-        continue;
+      fatal(value_writer_push_mapping, writer);
+      fatal(value_writer_string, writer, "include");
+      fatal(value_writer_push_set, writer);
 
-      fatal(value_writer_string, writer, ent->v);
+      llist_foreach(&cfg->walker.include.list, pat, lln) {
+        N = narrator_fixed_init(&fixed, space, sizeof(space));
+        fatal(pattern_say, pat, N);
+        fatal(value_writer_bytes, writer, fixed.s, fixed.l);
+      }
+
+      fatal(value_writer_pop_set, writer);
+      fatal(value_writer_pop_mapping, writer);
+    }
+
+    if(cfg->walker.exclude.merge_significant)
+    {
+      fatal(value_writer_push_mapping, writer);
+      fatal(value_writer_string, writer, "exclude");
+      fatal(value_writer_push_set, writer);
+
+      llist_foreach(&cfg->walker.exclude.list, pat, lln) {
+        N = narrator_fixed_init(&fixed, space, sizeof(space));
+        fatal(pattern_say, pat, N);
+        fatal(value_writer_bytes, writer, fixed.s, fixed.l);
+      }
+
+      fatal(value_writer_pop_set, writer);
+      fatal(value_writer_pop_mapping, writer);
     }
 
     fatal(value_writer_pop_set, writer);
     fatal(value_writer_pop_mapping, writer);
   }
+
   if(cfg->filesystems.merge_significant)
   {
     fatal(value_writer_push_mapping, writer);
@@ -597,6 +670,7 @@ xapi config_writer_write(config * restrict cfg, value_writer * const restrict wr
     fatal(value_writer_pop_set, writer);
     fatal(value_writer_pop_mapping, writer);
   }
+
   if(cfg->formula.merge_significant)
   {
     fatal(value_writer_push_mapping, writer);
@@ -631,187 +705,7 @@ xapi config_writer_write(config * restrict cfg, value_writer * const restrict wr
       fatal(value_writer_pop_mapping, writer);
     }
 
-    if(cfg->formula.capture_stdout)
-    {
-      name = attrs32_name_byvalue(stream_part_attrs, STREAM_PART_OPT & cfg->formula.capture_stdout->v);
-      fatal(value_writer_mapping_string_string, writer, "capture-stdout", name);
-    }
-    if(cfg->formula.stdout_buffer_size)
-    {
-      fatal(value_writer_mapping_string_uint, writer, "stdout-buffer-size", cfg->formula.stdout_buffer_size->v);
-    }
-    if(cfg->formula.capture_stderr)
-    {
-      name = attrs32_name_byvalue(stream_part_attrs, STREAM_PART_OPT & cfg->formula.capture_stderr->v);
-      fatal(value_writer_mapping_string_string, writer, "capture-stderr", name);
-    }
-    if(cfg->formula.stderr_buffer_size)
-    {
-      fatal(value_writer_mapping_string_uint, writer, "stderr-buffer-size", cfg->formula.stderr_buffer_size->v);
-    }
-    if(cfg->formula.capture_auxout)
-    {
-      name = attrs32_name_byvalue(stream_part_attrs, STREAM_PART_OPT & cfg->formula.capture_auxout->v);
-      fatal(value_writer_mapping_string_string, writer, "capture-auxout", name);
-    }
-    if(cfg->formula.auxout_buffer_size)
-    {
-      fatal(value_writer_mapping_string_uint, writer, "auxout-buffer-size", cfg->formula.auxout_buffer_size->v);
-    }
-    if(cfg->formula.success.merge_significant)
-    {
-      fatal(value_writer_push_mapping, writer);
-      fatal(value_writer_string, writer, "success");
-      fatal(value_writer_push_set, writer);
-
-      if(cfg->formula.success.show_arguments)
-        fatal(value_writer_mapping_string_bool, writer, "show-arguments", cfg->formula.success.show_arguments->v);
-      if(cfg->formula.success.show_path)
-        fatal(value_writer_mapping_string_bool, writer, "show-path", cfg->formula.success.show_path->v);
-      if(cfg->formula.success.show_cwd)
-        fatal(value_writer_mapping_string_bool, writer, "show-cwd", cfg->formula.success.show_cwd->v);
-      if(cfg->formula.success.show_command)
-        fatal(value_writer_mapping_string_bool, writer, "show-command", cfg->formula.success.show_command->v);
-      if(cfg->formula.success.show_sources)
-        fatal(value_writer_mapping_string_bool, writer, "show-sources", cfg->formula.success.show_sources->v);
-      if(cfg->formula.success.show_targets)
-        fatal(value_writer_mapping_string_bool, writer, "show-targets", cfg->formula.success.show_targets->v);
-      if(cfg->formula.success.show_environment)
-        fatal(value_writer_mapping_string_bool, writer, "show-environment", cfg->formula.success.show_environment->v);
-      if(cfg->formula.success.show_status)
-        fatal(value_writer_mapping_string_bool, writer, "show-status", cfg->formula.success.show_status->v);
-      if(cfg->formula.success.show_stdout)
-        fatal(value_writer_mapping_string_bool, writer, "show-stdout", cfg->formula.success.show_stdout->v);
-      if(cfg->formula.success.show_stdout_limit_bytes)
-        fatal(value_writer_mapping_string_uint, writer, "show-stdout-limit-bytes", cfg->formula.success.show_stdout_limit_bytes->v);
-      if(cfg->formula.success.show_stdout_limit_lines)
-        fatal(value_writer_mapping_string_uint, writer, "show-stdout-limit-lines", cfg->formula.success.show_stdout_limit_lines->v);
-      if(cfg->formula.success.show_stderr)
-        fatal(value_writer_mapping_string_bool, writer, "show-stderr", cfg->formula.success.show_stderr->v);
-      if(cfg->formula.success.show_stderr_limit_bytes)
-        fatal(value_writer_mapping_string_uint, writer, "show-stderr-limit-bytes", cfg->formula.success.show_stderr_limit_bytes->v);
-      if(cfg->formula.success.show_stderr_limit_lines)
-        fatal(value_writer_mapping_string_uint, writer, "show-stderr-limit-lines", cfg->formula.success.show_stderr_limit_lines->v);
-      if(cfg->formula.success.show_auxout)
-        fatal(value_writer_mapping_string_bool, writer, "show-auxout", cfg->formula.success.show_auxout->v);
-      if(cfg->formula.success.show_auxout_limit_bytes)
-        fatal(value_writer_mapping_string_uint, writer, "show-auxout-limit-bytes", cfg->formula.success.show_auxout_limit_bytes->v);
-      if(cfg->formula.success.show_auxout_limit_lines)
-        fatal(value_writer_mapping_string_uint, writer, "show-auxout-limit-lines", cfg->formula.success.show_auxout_limit_lines->v);
-
-      fatal(value_writer_pop_set, writer);
-      fatal(value_writer_pop_mapping, writer);
-    }
-    if(cfg->formula.error.merge_significant)
-    {
-      fatal(value_writer_push_mapping, writer);
-      fatal(value_writer_string, writer, "error");
-      fatal(value_writer_push_set, writer);
-
-      if(cfg->formula.error.show_arguments)
-        fatal(value_writer_mapping_string_bool, writer, "show-arguments", cfg->formula.error.show_arguments->v);
-      if(cfg->formula.error.show_path)
-        fatal(value_writer_mapping_string_bool, writer, "show-path", cfg->formula.error.show_path->v);
-      if(cfg->formula.error.show_cwd)
-        fatal(value_writer_mapping_string_bool, writer, "show-cwd", cfg->formula.error.show_cwd->v);
-      if(cfg->formula.error.show_command)
-        fatal(value_writer_mapping_string_bool, writer, "show-command", cfg->formula.error.show_command->v);
-      if(cfg->formula.error.show_sources)
-        fatal(value_writer_mapping_string_bool, writer, "show-sources", cfg->formula.error.show_sources->v);
-      if(cfg->formula.error.show_targets)
-        fatal(value_writer_mapping_string_bool, writer, "show-targets", cfg->formula.error.show_targets->v);
-      if(cfg->formula.error.show_environment)
-        fatal(value_writer_mapping_string_bool, writer, "show-environment", cfg->formula.error.show_environment->v);
-      if(cfg->formula.error.show_status)
-        fatal(value_writer_mapping_string_bool, writer, "show-status", cfg->formula.error.show_status->v);
-      if(cfg->formula.error.show_stdout)
-        fatal(value_writer_mapping_string_bool, writer, "show-stdout", cfg->formula.error.show_stdout->v);
-      if(cfg->formula.error.show_stdout_limit_bytes)
-        fatal(value_writer_mapping_string_uint, writer, "show-stdout-limit-bytes", cfg->formula.error.show_stdout_limit_bytes->v);
-      if(cfg->formula.error.show_stdout_limit_lines)
-        fatal(value_writer_mapping_string_uint, writer, "show-stdout-limit-lines", cfg->formula.error.show_stdout_limit_lines->v);
-      if(cfg->formula.error.show_stderr)
-        fatal(value_writer_mapping_string_bool, writer, "show-stderr", cfg->formula.error.show_stderr->v);
-      if(cfg->formula.error.show_stderr_limit_bytes)
-        fatal(value_writer_mapping_string_uint, writer, "show-stderr-limit-bytes", cfg->formula.error.show_stderr_limit_bytes->v);
-      if(cfg->formula.error.show_stderr_limit_lines)
-        fatal(value_writer_mapping_string_uint, writer, "show-stderr-limit-lines", cfg->formula.error.show_stderr_limit_lines->v);
-      if(cfg->formula.error.show_auxout)
-        fatal(value_writer_mapping_string_bool, writer, "show-auxout", cfg->formula.error.show_auxout->v);
-      if(cfg->formula.error.show_auxout_limit_bytes)
-        fatal(value_writer_mapping_string_uint, writer, "show-auxout-limit-bytes", cfg->formula.error.show_auxout_limit_bytes->v);
-      if(cfg->formula.error.show_auxout_limit_lines)
-        fatal(value_writer_mapping_string_uint, writer, "show-auxout-limit-lines", cfg->formula.error.show_auxout_limit_lines->v);
-
-      fatal(value_writer_pop_set, writer);
-      fatal(value_writer_pop_mapping, writer);
-    }
-
     fatal(value_writer_pop_set, writer);
-  }
-  if(cfg->logging.merge_significant)
-  {
-    fatal(value_writer_push_mapping, writer);
-    fatal(value_writer_string, writer, "logging");
-    fatal(value_writer_push_set, writer);
-
-    if(cfg->logging.console.merge_significant)
-    {
-      fatal(value_writer_push_mapping, writer);
-      fatal(value_writer_string, writer, "console");
-      fatal(value_writer_push_set, writer);
-
-      if(cfg->logging.console.exprs.merge_significant)
-      {
-        fatal(value_writer_push_mapping, writer);
-        fatal(value_writer_string, writer, "exprs");
-        fatal(value_writer_push_list, writer);
-        for(x = 0; x < cfg->logging.console.exprs.items->size; x++)
-        {
-          item = list_get(cfg->logging.console.exprs.items, x);
-          fatal(value_writer_string, writer, item->v);
-        }
-        fatal(value_writer_pop_list, writer);
-        fatal(value_writer_pop_mapping, writer);
-      }
-
-      fatal(value_writer_pop_set, writer);
-      fatal(value_writer_pop_mapping, writer);
-    }
-
-    if(cfg->logging.logfile.merge_significant)
-    {
-      fatal(value_writer_push_mapping, writer);
-      fatal(value_writer_string, writer, "logfile");
-      fatal(value_writer_push_set, writer);
-
-      if(cfg->logging.logfile.exprs.merge_significant)
-      {
-        fatal(value_writer_push_mapping, writer);
-        fatal(value_writer_string, writer, "exprs");
-        fatal(value_writer_push_list, writer);
-        for(x = 0; x < cfg->logging.logfile.exprs.items->size; x++)
-        {
-          item = list_get(cfg->logging.logfile.exprs.items, x);
-          fatal(value_writer_string, writer, item->v);
-        }
-        fatal(value_writer_pop_list, writer);
-        fatal(value_writer_pop_mapping, writer);
-      }
-
-      fatal(value_writer_pop_set, writer);
-      fatal(value_writer_pop_mapping, writer);
-    }
-
-    fatal(value_writer_pop_set, writer);
-    fatal(value_writer_pop_mapping, writer);
-  }
-  if(cfg->var.merge_significant)
-  {
-    fatal(value_writer_push_mapping, writer);
-    fatal(value_writer_string, writer, "var");
-    fatal(value_writer_value, writer, cfg->var.value);
-    fatal(value_writer_pop_mapping, writer);
   }
 
   finally : coda;
@@ -826,6 +720,18 @@ xapi config_setup()
   enter;
 
   fatal(config_parser_create, &parser_staging);
+  fatal(config_create, &config_active);
+
+  finally : coda;
+}
+
+xapi config_system_bootstrap()
+{
+  enter;
+
+  /* create the immutable config nodes, in precedence order */
+  fatal(bootstrap_global_node, &user_config_node, g_args.user_config_path);
+  fatal(bootstrap_global_node, &system_config_node, g_args.system_config_path);
 
   finally : coda;
 }
@@ -834,164 +740,26 @@ xapi config_cleanup()
 {
   enter;
 
+  config *v;
+  llist *T;
+
   fatal(config_parser_xfree, parser_active);
   fatal(config_xfree, config_active);
   fatal(config_parser_xfree, parser_staging);
   fatal(config_xfree, config_staging);
 
-  finally : coda;
-}
-
-xapi config_report()
-{
-  enter;
-
-  finally : coda;
-}
-
-xapi config_begin_staging()
-{
-  enter;
-
-  char * text = 0;
-  size_t text_len = 0;
-  config * cfg = 0;
-
-  // reset staging config
-  fatal(config_parser_ixfree, &parser_staging);
-  fatal(config_parser_create, &parser_staging);
-  fatal(config_ixfree, &config_staging);
-
-  // system-level config
-  fatal(usnarfs, &text, &text_len, SYSTEM_CONFIG_PATH);
-  if(text)
-  {
-    logf(L_CONFIG, "staging global config @ %s", SYSTEM_CONFIG_PATH);
-    fatal(config_parser_parse, parser_staging, text, text_len + 2, SYSTEM_CONFIG_PATH, 0, &cfg);
-    fatal(stage, &cfg);
-  }
-  else
-  {
-    logf(L_CONFIG, "no global config @ %s", SYSTEM_CONFIG_PATH);
+  llist_foreach_safe(&config_list, v, vertex.owner, T) {
+    config_dispose(v);
   }
 
-  // user-level config
-  iwfree(&text);
-  fatal(usnarff, &text, &text_len, "%s/%s", g_params.homedir, USER_CONFIG_PATH);
-  if(text)
-  {
-    logf(L_CONFIG, "staging user config @ %s/%s", g_params.homedir, USER_CONFIG_PATH);
-    fatal(config_parser_parse, parser_staging, text, text_len + 2, USER_CONFIG_PATH, 0, &cfg);
-    fatal(stage, &cfg);
-  }
-  else
-  {
-    logf(L_CONFIG, "no user config @ %s/%s", g_params.homedir, USER_CONFIG_PATH);
-  }
-
-  // project-level config
-  iwfree(&text);
-  fatal(usnarfats, &text, &text_len, g_params.proj_dirfd, PROJECT_CONFIG_PATH);
-  if(text)
-  {
-    logf(L_CONFIG, "staging project config @ %s/%s", g_params.proj_dir, PROJECT_CONFIG_PATH);
-    fatal(config_parser_parse, parser_staging, text, text_len + 2, PROJECT_CONFIG_PATH, 0, &cfg);
-    fatal(stage, &cfg);
-  }
-  else
-  {
-    logf(L_CONFIG, "no project config @ %s/%s", g_params.proj_dir, PROJECT_CONFIG_PATH);
-  }
-
-  if(!config_staging)
-  {
-    fatal(config_create, &config_staging);
-  }
-
-finally:
-  wfree(text);
-  fatal(config_xfree, cfg);
-coda;
-}
-
-xapi config_stage(config ** restrict cfg)
-{
-  enter;
-
-  logs(L_CONFIG, "staging config");
-  fatal(stage, cfg);
-
-  finally : coda;
-}
-
-xapi config_reconfigure()
-{
-  enter;
-
-  char trace[4096];
-  narrator * N;
-
-  config_compare(config_staging, config_active);
-
-  if(log_would(L_CONFIG))
-  {
-    fatal(log_start, L_CONFIG, &N);
-    xsays("effective config\n");
-    fatal(config_say, config_staging, N);
-    fatal(log_finish);
-  }
-
-  // validate the new config
-  xapi exit = 0;
-  if(  (exit = invoke(logging_reconfigure, config_staging, true))
-    || (exit = invoke(filesystem_reconfigure, config_staging, true))
-    || (exit = invoke(node_reconfigure, config_staging, true))
-    || (exit = invoke(extern_reconfigure, config_staging, true))
-    || (exit = invoke(build_thread_reconfigure, config_staging, true))
-    || (exit = invoke(var_reconfigure, config_staging, true))
-    || (exit = invoke(path_cache_reconfigure, config_staging, true))
-  )
-  {
-    if(xapi_exit_errtab(exit) != perrtab_CONFIG)
-      fail(0);
-
-#if DEBUG || DEVEL || XAPI
-    xapi_trace_full(trace, sizeof(trace), 0);
-#else
-    xapi_trace_pithy(trace, sizeof(trace), 0);
-#endif
-    xapi_calltree_unwind();
-
-    xlogs(L_WARN, L_NOCATEGORY, trace);
-    config_reconfigure_result = false;
-  }
-  else
-  {
-    // promote the staging config
-    fatal(config_parser_ixfree, &parser_active);
-    parser_active = parser_staging;
-    parser_staging = 0;
-
-    fatal(config_ixfree, &config_active);
-    config_active = config_staging;
-    config_staging = 0;
-
-    // reconfigure subsystems
-    fatal(config_report);
-    fatal(logging_reconfigure, config_active, false);
-    fatal(filesystem_reconfigure, config_active, false);
-    fatal(node_reconfigure, config_active, false);
-    fatal(extern_reconfigure, config_active, false);
-    fatal(build_thread_reconfigure, config_active, false);
-    fatal(var_reconfigure, config_active, false);
-    fatal(path_cache_reconfigure, config_active, false);
-    config_reconfigure_result = true;
+  llist_foreach_safe(&config_freelist, v, vertex.owner, T) {
+    free(v);
   }
 
   finally : coda;
 }
 
-xapi config_say(config * restrict cfg, narrator * restrict N)
+xapi config_say(configblob * restrict cfg, narrator * restrict N)
 {
   enter;
 
@@ -1005,4 +773,214 @@ xapi config_say(config * restrict cfg, narrator * restrict N)
 finally:
   fatal(value_writer_destroy, &writer);
 coda;
+}
+
+xapi config_active_say(narrator * restrict N)
+{
+  enter;
+
+  config *cfg;
+
+  fatal(narrator_xsays, N, "#\n");
+  fatal(narrator_xsays, N, "# active config files in ascending order of precedence\n");
+  fatal(narrator_xsays, N, "#\n");
+  llist_foreach(&config_list, cfg, vertex.owner) {
+    fatal(narrator_xsayf, N, "#  %.*s\n", (int)cfg->self_node_abspath_len, cfg->self_node_abspath);
+  }
+  fatal(narrator_xsays, N, "#\n");
+  fatal(narrator_xsays, N, "\n");
+
+  fatal(config_say, config_active, N);
+
+  finally : coda;
+}
+
+static xapi reconfigure()
+{
+  enter;
+
+  channel *chan;
+  fabipc_message *msg;
+
+  // validate the new config
+  xapi exit = 0;
+  if(  (exit = invoke(filesystem_reconfigure, config_staging, true))
+    || (exit = invoke(fsent_reconfigure, config_staging, true))
+    || (exit = invoke(walker_system_reconfigure, config_staging, true))
+    || (exit = invoke(build_reconfigure, config_staging, true))
+    || (exit = invoke(path_cache_reconfigure, config_staging, true))
+  )
+  {
+    if(xapi_exit_errtab(exit) != perrtab_CONFIG) {
+      fail(0);
+    }
+
+    system_error = true;
+    if(events_would(FABIPC_EVENT_SYSTEM_STATE, &chan, &msg)) {
+      msg->code = EINVAL;
+#if DEBUG || DEVEL
+      msg->size = xapi_trace_full(msg->text, sizeof(msg->text), 0);
+#else
+      msg->size = xapi_trace_pithy(msg->text, sizeof(msg->text), 0);
+#endif
+      events_publish(chan, msg);
+    }
+    xapi_calltree_unwind();
+  }
+  else
+  {
+    // promote the staging config
+    fatal(config_parser_ixfree, &parser_active);
+    parser_active = parser_staging;
+    parser_staging = 0;
+
+    fatal(config_ixfree, &config_active);
+    config_active = config_staging;
+    config_staging = 0;
+
+    // reconfigure subsystems
+    fatal(filesystem_reconfigure, config_active, false);
+    fatal(fsent_reconfigure, config_active, false);
+    fatal(walker_system_reconfigure, config_active, false);
+    fatal(build_reconfigure, config_active, false);
+    fatal(path_cache_reconfigure, config_active, false);
+  }
+
+  finally : coda;
+}
+
+xapi config_system_reconcile(bool * restrict work, graph_invalidation_context * restrict invalidation)
+{
+  enter;
+
+  fsent *n;
+  moria_vertex *dirv, *v;
+  llist unused, *T;
+  config *cfg;
+
+  *work = false;
+
+  /* bootstrap any config files in the ancestry of the project root */
+  dirv = &g_project_root->vertex;
+  while(dirv)
+  {
+    if((v = moria_vertex_downw(dirv, MMS(fsent_name_config))))
+    {
+      n = containerof(v, fsent, vertex);
+      fatal(fsent_config_bootstrap, n);
+    }
+
+    dirv = moria_vertex_up(dirv);
+  }
+
+  /* now, rebuild the active list, in precedence order */
+  llist_delete_node(&system_config_node->self_config->vertex.owner);
+  llist_delete_node(&user_config_node->self_config->vertex.owner);
+  llist_init_node(&unused);
+  llist_splice_head(&unused, &config_list);
+
+  /* check for config files in the ancestry of the project root */
+  dirv = &g_project_root->vertex;
+  while(dirv)
+  {
+    if((v = moria_vertex_downw(dirv, MMS(fsent_name_config))))
+    {
+      n = containerof(v, fsent, vertex);
+      llist_delete_node(&n->self_config->vertex.owner);
+      llist_prepend(&config_list, n->self_config, vertex.owner);
+    }
+
+    dirv = moria_vertex_up(dirv);
+  }
+
+  llist_prepend(&config_list, user_config_node->self_config, vertex.owner);
+  llist_prepend(&config_list, system_config_node->self_config, vertex.owner);
+
+  llist_foreach_node(&config_list, T) {
+    cfg = containerof(T, config, vertex.owner);
+  }
+
+  llist_foreach_node(&config_list, T) {
+    cfg = containerof(T, config, vertex.owner);
+    if(fsent_invalid_get(cfg->self_node)) {
+      break;
+    }
+  }
+
+  /* no invalid or unused nodes - no work */
+  if(T == &config_list && llist_empty(&unused)) {
+    goto XAPI_FINALIZE;
+  }
+
+  *work = true;
+
+  /* config nodes not seen by the above loop are now unused */
+  llist_foreach_safe(&unused, cfg, vertex.owner, T) {
+    config_dispose(cfg);
+  }
+
+  /* all config files must be parsed any time config is reloaded */
+  fatal(reparse);
+  if(system_error) {
+    goto XAPI_FINALIZE;
+  }
+
+  if(!config_compare(config_staging, config_active)) {
+    fatal(reconfigure);
+    if(system_error) {
+      goto XAPI_FINALIZE;
+    }
+  }
+
+  llist_foreach(&config_list, cfg, vertex.owner) {
+    fatal(fsent_ok, cfg->self_node);
+  }
+
+  config_reconfigured = true;
+
+  finally : coda;
+}
+
+xapi config_collate_stats(void *dst, size_t sz, config *cfg, bool reset, size_t *zp)
+{
+  enter;
+
+  size_t z;
+  fab_config_stats *stats;
+  fab_config_stats lstats;
+  descriptor_field *field;
+  int x;
+
+  stats = &cfg->stats;
+  if(reset)
+  {
+    memcpy(&lstats, &stats, sizeof(lstats));
+    memset(stats, 0, sizeof(*stats));
+    stats = &lstats;
+  }
+
+  z = 0;
+  z += marshal_u32(dst + z, sz - z, descriptor_fab_config_stats.id);
+
+  /* event counters */
+  for(x = 0; x < descriptor_fab_config_stats.members_len; x++)
+  {
+    field = descriptor_fab_config_stats.members[x];
+
+    if(field->size == 8) {
+      z += marshal_u64(dst + z, sz - z, stats->u64[field->offset / 8]);
+    } else if(field->size == 4) {
+      z += marshal_u32(dst + z, sz - z, stats->u32[field->offset / 4]);
+    } else if(field->size == 2) {
+      z += marshal_u16(dst + z, sz - z, stats->u16[field->offset / 2]);
+    } else if(field->size == 1) {
+      z += marshal_u16(dst + z, sz - z, stats->u8[field->offset / 1]);
+    } else {
+      RUNTIME_ABORT();
+    }
+  }
+
+  *zp += z;
+
+  finally : coda;
 }

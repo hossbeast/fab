@@ -29,8 +29,10 @@ static map * variants_map;
 
 static void variant_free(variant * v)
 {
-  if(v)
+  if(v) {
     wfree(v->tags);
+  }
+
   wfree(v);
 }
 
@@ -226,13 +228,6 @@ xapi variant_cleanup()
   enter;
 
   fatal(map_xfree, variants_map);
-
-  finally : coda;
-}
-
-xapi variant_report()
-{
-  enter;
 
   finally : coda;
 }

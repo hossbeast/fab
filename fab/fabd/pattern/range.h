@@ -18,11 +18,18 @@
 #ifndef FABD_PATTERN_RANGE_H
 #define FABD_PATTERN_RANGE_H
 
-/*
+#include "xapi.h"
+#include "types.h"
 
-SUMMARY
- fab-file node
+union pattern_segment;
+struct yyu_location;
 
-*/
+xapi pattern_range_mk(
+    union pattern_segment ** restrict rv
+  , const struct yyu_location * restrict loc
+  , uint8_t start
+  , uint8_t end
+)
+  __attribute__((nonnull));
 
 #endif

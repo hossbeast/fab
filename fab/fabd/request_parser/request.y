@@ -24,7 +24,7 @@
   #include "request_parser.internal.h"
   #include "request.internal.h"
   #include "selector.h"
-  #include "node.h"
+  #include "fsent.h"
 
   #include "macros.h"
 }
@@ -49,9 +49,7 @@
 %union {
   yyu_lval yyu;
 
-  node_property node_property;
   struct selector * selector;
-  struct config * config;
   struct request * request;
 }
 
@@ -61,40 +59,31 @@
 %token ':'
 %token '='
 
-%token <config> CONFIG
 %token <selector> SELECTOR
 
 %token
   AUTORUN            "autorun"
   BUILD              "build"
   CONSOLE            "console"
+  CONFIG_READ        "config-read"
+  VARS_READ          "vars-read"
   DESCRIBE           "describe"
   INVALIDATE         "invalidate"
+  GLOBAL_INVALIDATE  "global-invalidate"
   LIST               "list"
-  RECONFIGURE        "reconfigure"
   RESET_SELECTION    "reset-selection"
   RUN                "run"
   SCRIPT             "script"
   SELECT             "select"
-  STAGE_CONFIG       "stage-config"
+  GLOBAL_STATS_READ  "global-stats-read"
+  GLOBAL_STATS_RESET "global-stats-reset"
+  STATS_READ         "stats-read"
+  STATS_RESET        "stats-reset"
+  METADATA           "metadata"
+  RECONCILE          "reconcile"
   GOALS              "goals"
   TARGET_DIRECT      "target-direct"
   TARGET_TRANSITIVE  "target-transitive"
-
-/* node property names */
-  NAME          "name"
-  EXT           "ext"
-  SUFFIX        "suffix"
-  BASE          "base"
-  ABSPATH       "abspath"
-  ABSDIR        "absdir"
-  RELDIR        "reldir"
-  RELPATH       "relpath"
-  FSROOT        "fsroot"
-  VARIANT       "variant"
-
-/* nonterminals */
-%type <node_property> node-property
 
 %destructor { selector_free($$); } <selector>
 
@@ -106,56 +95,44 @@ utterance
 
 allocate-request
   : %empty
-  {
-    YFATAL(request_create, &PARSER->request);
-  }
   ;
 
 request
   : allocate-request commands
   ;
 
-commands
-  : initial-commands final-command
-  | initial-commands
-  | final-command
-  ;
-
-initial-commands
-  : initial-commands initial-command
-  | initial-command
-  ;
-
 allocate-command
   : %empty
   {
-    YFATAL(array_push, PARSER->request->commands, &PARSER->command);
+    YFATAL(request_command_alloc, PARSER->request, &PARSER->command);
   }
   ;
 
-initial-command
-  : allocate-command initial-command-branch
+commands
+  : commands command
+  | command
   ;
 
-final-command
-  : allocate-command final-command-branch
+command
+  : allocate-command command-branch
   ;
 
-initial-command-branch
+command-branch
   : describe-cmd
-  | invalidate-cmd
   | list-cmd
-  | stage-config-cmd
-  | reconfigure-cmd
+  | invalidate-cmd
+  | global-invalidate-cmd
+  | stats-cmd
+  | global-stats-cmd
   | select-cmd
   | reset-selection-cmd
   | goals-cmd
-  ;
-
- /* only permitted as the last command */
-final-command-branch
-  : run-cmd
+  | metadata-cmd
+  | config-read-cmd
+  | vars-read-cmd
+  | run-cmd
   | autorun-cmd
+  | reconcile-cmd
   ;
 
 select-cmd
@@ -166,32 +143,16 @@ select-cmd
   }
   ;
 
-reset-selection-cmd
-  : RESET_SELECTION { PARSER->command->type = COMMAND_RESET_SELECTION; }
-  ;
-
-stage-config-cmd
-  : STAGE_CONFIG ':' CONFIG
-  {
-    PARSER->command->type = COMMAND_STAGE_CONFIG;
-    PARSER->command->config = $3;
-  }
-  ;
-
 run-cmd
-  : RUN
-  {
-    PARSER->command->type = COMMAND_RUN;
-    PARSER->request->final_command = COMMAND_RUN;
-  }
+  : RUN { PARSER->command->type = COMMAND_RUN; }
   ;
 
 autorun-cmd
-  : AUTORUN
-  {
-    PARSER->command->type = COMMAND_AUTORUN;
-    PARSER->request->final_command = COMMAND_AUTORUN;
-  }
+  : AUTORUN { PARSER->command->type = COMMAND_AUTORUN; }
+  ;
+
+reset-selection-cmd
+  : RESET_SELECTION { PARSER->command->type = COMMAND_RESET_SELECTION; }
   ;
 
 describe-cmd
@@ -202,34 +163,34 @@ invalidate-cmd
   : INVALIDATE { PARSER->command->type = COMMAND_INVALIDATE ; }
   ;
 
+global-invalidate-cmd
+  : GLOBAL_INVALIDATE { PARSER->command->type = COMMAND_GLOBAL_INVALIDATE ; }
+  ;
+
 list-cmd
-  : LIST
-  {
-    PARSER->command->type = COMMAND_LIST;
-    PARSER->command->property = NODE_PROPERTY_RELPATH;
-  }
-  | LIST ':' node-property
-  {
-    PARSER->command->type = COMMAND_LIST;
-    PARSER->command->property = $3;
-  }
+  : LIST { PARSER->command->type = COMMAND_LIST; }
   ;
 
-node-property
-  : NAME         { $$ = NODE_PROPERTY_NAME; }
-  | EXT          { $$ = NODE_PROPERTY_EXT; }
-  | SUFFIX       { $$ = NODE_PROPERTY_SUFFIX; }
-  | BASE         { $$ = NODE_PROPERTY_BASE; }
-  | ABSPATH      { $$ = NODE_PROPERTY_ABSPATH; }
-  | ABSDIR       { $$ = NODE_PROPERTY_ABSDIR; }
-  | RELPATH      { $$ = NODE_PROPERTY_RELPATH; }
-  | RELDIR       { $$ = NODE_PROPERTY_RELDIR; }
-  | FSROOT       { $$ = NODE_PROPERTY_FSROOT; }
-  | VARIANT      { $$ = NODE_PROPERTY_VARIANT; }
+config-read-cmd
+  : CONFIG_READ { PARSER->command->type = COMMAND_CONFIG_READ; }
   ;
 
-reconfigure-cmd
-  : RECONFIGURE { PARSER->command->type = COMMAND_RECONFIGURE; }
+vars-read-cmd
+  : VARS_READ { PARSER->command->type = COMMAND_VARS_READ; }
+  ;
+
+stats-cmd
+  : STATS_READ { PARSER->command->type = COMMAND_STATS_READ; }
+  | STATS_RESET { PARSER->command->type = COMMAND_STATS_RESET; }
+  ;
+
+global-stats-cmd
+  : GLOBAL_STATS_READ { PARSER->command->type = COMMAND_GLOBAL_STATS_READ; }
+  | GLOBAL_STATS_RESET { PARSER->command->type = COMMAND_GLOBAL_STATS_RESET; }
+  ;
+
+metadata-cmd
+  : METADATA { PARSER->command->type = COMMAND_METADATA; }
   ;
 
 goals-cmd
@@ -245,18 +206,28 @@ goals-cmd-list
   ;
 
 goals-subcmd
-  : build-cmd
+  : reconcile-cmd
+  {
+    PARSER->command->goals.reconcile = true;
+  }
+  | build-cmd
   | script-cmd
   | target-direct-cmd
   | target-transitive-cmd
   ;
 
 build-cmd
-  : BUILD { PARSER->command->goals.build = true; }
+  : BUILD
+  {
+    PARSER->command->goals.build = true;
+  }
   ;
 
 script-cmd
-  : SCRIPT { PARSER->command->goals.script = true; }
+  : SCRIPT
+  {
+    PARSER->command->goals.script = true;
+  }
   ;
 
 target-direct-cmd
@@ -271,4 +242,8 @@ target-transitive-cmd
   {
     PARSER->command->goals.target_transitive = $3;
   }
+  ;
+
+reconcile-cmd
+  : RECONCILE { PARSER->command->type = COMMAND_RECONCILE; }
   ;

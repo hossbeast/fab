@@ -51,13 +51,13 @@
     LEXLOC(module_VALUE, &subloc);                                        \
   } while(0);
 
-  #define PARSE_MATCH_PATTERN do {                                        \
+  #define PARSE_SEARCH_PATTERN do {                                       \
     module_parser * parser = containerof(yyextra, module_parser, yyu);    \
     size_t off = yytext - parser->yyu.yybuffer;                           \
     char * usr = parser->yyu.usrbuf + off;                                \
     size_t bufsz = parser->yyu.usrbufsize - off;                          \
     yyu_location subloc;                                                  \
-    fatal(match_pattern_parse_partial                                     \
+    fatal(search_pattern_parse_partial                                    \
       , parser->pattern_parser                                            \
       , usr                                                               \
       , bufsz                                                             \
@@ -136,12 +136,12 @@
 
 %x multilinecomment
 %x quoted
-%x match
+%x search
 %x generate
 %x reference
 %x parse_lookup
 %x rule_bacon
-%x rule_match
+%x rule_search
 %x rule_colon
 %x rule_arrow
 %x rule_starbox
@@ -169,7 +169,7 @@ ILL   [\x00-\x08\x0B-\x1F\x7F-\xFF]
 <*>[\r\t ]                                              { LOCWRITE; }
 
  /* tokens */
-<INITIAL>[[\]{}:=,]                                     { lenter; LEX(yytext[0]); finally : lcoda; }
+<INITIAL>[+[\]{}:=,]                                    { lenter; LEX(yytext[0]); finally : lcoda; }
 
  /* sub-parsers */
 <INITIAL>"use"                                          { lenter; PUSHSTATE(parse_lookup); LEX(USE); finally : lcoda; }
@@ -182,10 +182,10 @@ ILL   [\x00-\x08\x0B-\x1F\x7F-\xFF]
 <_var_stage>[:=]                                        { lenter; PUSHSTATE(_var); LEX(yytext[0]); finally : lcoda; }
 <_var>[^\n\r\t ][\x00-\xff]+                            { lenter; PARSE_VALUE; POPSTATE; POPSTATE; finally : lcoda; }
 
-<INITIAL>"rule"                                         { lenter; PUSHSTATE(rule_match); LEX(RULE); finally : lcoda; }
-<rule_match>"{ "                                        { lenter; PUSHSTATE(rule_bacon); LEX('{'); finally : lcoda; }
-<rule_match>"-- "                                       { lenter; POPSTATE; PUSHSTATE(generate); PUSHSTATE(rule_starbox); LEX(DASHES); finally : lcoda; }
-<rule_match>[\x00-\xff]                                 { lenter; POPSTATE; yyless(0); PUSHSTATE(match); finally : lcoda; }
+<INITIAL>"rule"                                         { lenter; PUSHSTATE(rule_search); LEX(RULE); finally : lcoda; }
+<rule_search>"{ "                                       { lenter; PUSHSTATE(rule_bacon); LEX('{'); finally : lcoda; }
+<rule_search>"-- "                                      { lenter; POPSTATE; PUSHSTATE(generate); PUSHSTATE(rule_starbox); LEX(DASHES); finally : lcoda; }
+<rule_search>[\x00-\xff]                                { lenter; POPSTATE; yyless(0); PUSHSTATE(search); finally : lcoda; }
 <rule_connector>"["[*]"]"                               { lenter; LEX(STARBOX); finally : lcoda; }
 <rule_connector>"-- "                                   { lenter; POPSTATE; PUSHSTATE(rule_colon); LEX(DASHES); finally : lcoda; }
 <rule_connector>[\x00-\xff]                             { lenter; POPSTATE; yyless(0); PUSHSTATE(generate); PUSHSTATE(rule_starbox); PUSHSTATE(rule_arrow); PUSHSTATE(rule_starbox); finally : lcoda; }
@@ -193,13 +193,13 @@ ILL   [\x00-\x08\x0B-\x1F\x7F-\xFF]
 <rule_starbox>[\x00-\xff]                               { lenter; POPSTATE; yyless(0); finally : lcoda; }
 <rule_arrow>"<-"                                        { lenter; POPSTATE; LEX(LARROW); finally : lcoda; }
 <rule_arrow>"->"                                        { lenter; POPSTATE; LEX(RARROW); finally : lcoda; }
-<rule_match,rule_colon>":"                              { lenter; PUSHSTATE(reference); LEX(':'); finally : lcoda; }
-<rule_match,rule_colon>[\x00-\xff]                      { lenter; POPSTATE; yyless(0); finally : lcoda; }
+<rule_search,rule_colon>":"                             { lenter; PUSHSTATE(reference); LEX(':'); finally : lcoda; }
+<rule_search,rule_colon>[\x00-\xff]                     { lenter; POPSTATE; yyless(0); finally : lcoda; }
 <rule_bacon>[:]                                         { lenter; LEX(yytext[0]); finally : lcoda; }
 <rule_bacon>[}]                                         { lenter; POPSTATE; LEX(yytext[0]); finally : lcoda; }
 
  /* sub-parsers ; consume whitespace in this parser */
-<match>[^\n\r\t ][\x00-\xff]+                           { lenter; PARSE_MATCH_PATTERN;     POPSTATE; PUSHSTATE(rule_connector); finally : lcoda; }
+<search>[^\n\r\t ][\x00-\xff]+                          { lenter; PARSE_SEARCH_PATTERN;    POPSTATE; PUSHSTATE(rule_connector); finally : lcoda; }
 <generate>[^\n\r\t ][\x00-\xff]+                        { lenter; PARSE_GENERATE_PATTERN;  POPSTATE; PUSHSTATE(rule_colon); finally : lcoda; }
 <reference>[^\n\r\t ][\x00-\xff]+                       { lenter; PARSE_REFERENCE_PATTERN; POPSTATE; finally : lcoda; }
 <parse_lookup>[^\n\r\t ][\x00-\xff]+                    { lenter; PARSE_LOOKUP_PATTERN;    POPSTATE; finally : lcoda; }

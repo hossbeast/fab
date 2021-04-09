@@ -18,12 +18,6 @@
 #ifndef FABD_VARIANT_H
 #define FABD_VARIANT_H
 
-/*
-
-SUMMARY
-
-*/
-
 #include "types.h"
 
 typedef struct variant {
@@ -39,7 +33,6 @@ typedef struct variant {
 
 xapi variant_setup(void);
 xapi variant_cleanup(void);
-xapi variant_report(void);
 
 xapi variant_get(const char * restrict name, uint16_t len, variant ** restrict variantp)
   __attribute__((nonnull));

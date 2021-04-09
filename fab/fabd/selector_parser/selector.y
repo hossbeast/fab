@@ -27,7 +27,7 @@
 
   #include "selector_parser.internal.h"
   #include "selector.h"
-  #include "node.h"
+  #include "fsent.h"
   #include "pattern.h"
 
   #include "macros.h"
@@ -60,9 +60,15 @@
 
   // enums
   selector_nodeset selector_nodeset;
-  edge_type relation_type;
-  vertex_filetype file_type;
-  traversal_direction traverse_direction;
+  moria_traversal_direction traverse_direction;
+  moria_traversal_mode traverse_mode;
+  struct {
+    edge_type edge_travel;
+    edge_type edge_visit;
+    vertex_filetype vertex_travel;
+    vertex_filetype vertex_visit;
+    bool cross_module;
+  } graph_type;
 
   // result
   selector *  selector;
@@ -87,33 +93,35 @@
 %token <yyu.imax>  INTMAX64
 
 %type <selector_nodeset> selector-nodeset
-%type <relation_type> relation-type
-%type <file_type> file-type
+%type <graph_type> graph-type
 %type <traverse_direction> traverse-direction
+%type <traverse_mode> traverse-mode
 
  /* keywords */
 %token
   ALL             "all"
   DIRECTION       "direction"
-  DIR             "dir"
   DOWN            "down"
   EXTENSION       "extension"
   EXHAUSTIVE      "exhaustive"
   FS              "fs"
+  DIRTREE         "dirtree"
+  MODTREE         "modtree"
   FILE_TYPE       "file-type"
   IMPORTS         "imports"
   MAX_DISTANCE    "max-distance"
   MIN_DISTANCE    "min-distance"
   MODULE          "module"
-  MODULE_ONLY     "module-only"
   MODULES         "modules"
   NONE            "none"
   PATTERN         "pattern"
+  PATH            "path"
   REG             "reg"
-  RELATION        "relation"
+  GRAPH           "graph"
   REQUIRES        "requires"
   SEQUENCE        "sequence"
-  STRONG          "strong"
+  DEPENDS         "depends"
+  USES            "uses"
   SOURCE          "source"
   SOURCES         "sources"
   TARGET          "target"
@@ -121,6 +129,9 @@
   TRAVERSE        "traverse"
   UNION           "union"
   UP              "up"
+  ORDER           "order"
+  PREORDER        "preorder"
+  POSTORDER       "postorder"
 
 %token <pattern> LOOKUP_PATTERN "lookup-pattern"
 %type <pattern> lookup-pattern
@@ -170,12 +181,27 @@ allocate-pattern-selector
   }
   ;
 
+allocate-path-selector
+  : %empty
+  {
+    selector * sel;
+    YFATAL(selector_alloc, SELECTOR_PATH, &sel);
+    llist_prepend(&PARSER->selector_stack, sel, lln);
+  }
+  ;
+
 allocate-traverse-selector
   : %empty
   {
     selector * sel;
     YFATAL(selector_alloc, SELECTOR_TRAVERSE, &sel);
     llist_prepend(&PARSER->selector_stack, sel, lln);
+    sel->criteria = SELECTOR_TRAVERSE_DEFAULT_CRITERIA;
+    sel->mode = SELECTOR_TRAVERSE_DEFAULT_MODE;
+    sel->direction = SELECTOR_TRAVERSE_DEFAULT_DIRECTION;
+    sel->cross_module = SELECTOR_TRAVERSE_DEFAULT_CROSS_MODULE;
+//    sel->min_distance = SELECTOR_TRAVERSE_DEFAULT_MIN_DISTANCE;
+//    sel->max_distance = SELECTOR_TRAVERSE_DEFAULT_MAX_DISTANCE;
   }
   ;
 
@@ -229,6 +255,7 @@ aggregate-selector
 operation-selector
   : nodeset-selector
   | pattern-selector
+  | path-selector
   | traverse-selector
   ;
 
@@ -254,6 +281,14 @@ pattern-selector
   }
   ;
 
+path-selector
+  : allocate-path-selector PATH join string
+  {
+    llist_first(&PARSER->selector_stack, selector, lln)->path = $4;
+    llist_first(&PARSER->selector_stack, selector, lln)->path_len = strlen($4);
+  }
+  ;
+
 traverse-selector
   : allocate-traverse-selector TRAVERSE join '{' traverse-settings '}'
   ;
@@ -265,10 +300,13 @@ traverse-settings
 
 traverse-setting
   /* control the traversal */
-  : RELATION join relation-type
+  : GRAPH join graph-type
   {
-    llist_first(&PARSER->selector_stack, selector, lln)->criteria.edge_travel = $3;
-    llist_first(&PARSER->selector_stack, selector, lln)->criteria.edge_visit = $3;
+    llist_first(&PARSER->selector_stack, selector, lln)->criteria.edge_travel = $3.edge_travel;
+    llist_first(&PARSER->selector_stack, selector, lln)->criteria.edge_visit = $3.edge_visit;
+    llist_first(&PARSER->selector_stack, selector, lln)->criteria.vertex_travel = $3.vertex_travel;
+    llist_first(&PARSER->selector_stack, selector, lln)->criteria.vertex_visit = $3.vertex_visit;
+    llist_first(&PARSER->selector_stack, selector, lln)->cross_module = $3.cross_module;
   }
   | DIRECTION join traverse-direction
   {
@@ -276,26 +314,19 @@ traverse-setting
   }
   | MIN_DISTANCE join uint16
   {
-    llist_first(&PARSER->selector_stack, selector, lln)->min_distance = $3;
+    llist_first(&PARSER->selector_stack, selector, lln)->criteria.min_depth = $3;
   }
   | MAX_DISTANCE join uint16
   {
-    llist_first(&PARSER->selector_stack, selector, lln)->max_distance = $3;
+    llist_first(&PARSER->selector_stack, selector, lln)->criteria.max_depth = $3;
   }
   | EXHAUSTIVE join BOOL
   {
     llist_first(&PARSER->selector_stack, selector, lln)->exhaustive = $3;
   }
-
-  /* node filters */
-  | MODULE_ONLY join BOOL
+  | ORDER join traverse-mode
   {
-    llist_first(&PARSER->selector_stack, selector, lln)->module_only = $3;
-  }
-  | FILE_TYPE join file-type
-  {
-    llist_first(&PARSER->selector_stack, selector, lln)->criteria.vertex_travel = $3;
-    llist_first(&PARSER->selector_stack, selector, lln)->criteria.vertex_visit = $3;
+    llist_first(&PARSER->selector_stack, selector, lln)->mode = $3;
   }
   | EXTENSION join string
   {
@@ -305,22 +336,24 @@ traverse-setting
   }
   ;
 
-relation-type
-  : FS        { $$ = EDGE_TYPE_FS; }
-  | IMPORTS   { $$ = EDGE_TYPE_IMPORTS; }
-  | STRONG    { $$ = EDGE_TYPE_STRONG; }
-  | REQUIRES  { $$ = EDGE_TYPE_REQUIRES; }
-  ;
-
-file-type
-  : REG { $$ = VERTEX_FILETYPE_REG; }
-  | DIR { $$ = VERTEX_FILETYPE_DIR; }
+graph-type
+  : FS        { $$ = (typeof($$)){ edge_travel : EDGE_FSTREE, cross_module : true }; }
+  | MODTREE   { $$ = (typeof($$)){ edge_travel : EDGE_FSTREE, vertex_visit : VERTEX_MODULE_DIR, cross_module : true }; }
+  | DIRTREE   { $$ = (typeof($$)){ edge_travel : EDGE_FSTREE, vertex_visit : VERTEX_FILETYPE_DIR }; }
+  | DEPENDS   { $$ = (typeof($$)){ edge_travel : EDGE_DEPENDS }; }
+  | IMPORTS   { $$ = (typeof($$)){ edge_travel : EDGE_IMPORTS }; }
+  | USES      { $$ = (typeof($$)){ edge_travel : EDGE_USES }; }
+  | REQUIRES  { $$ = (typeof($$)){ edge_travel : EDGE_REQUIRES }; }
   ;
 
 traverse-direction
   : UP   { $$ = MORIA_TRAVERSE_UP; }
   | DOWN { $$ = MORIA_TRAVERSE_DOWN; }
   ;
+
+traverse-mode
+  : PREORDER  { $$ = MORIA_TRAVERSE_PRE; }
+  | POSTORDER { $$ = MORIA_TRAVERSE_POST; }
 
 selector-nodeset
   : SOURCE  { $$ = SELECTOR_NODESET_SOURCE; }

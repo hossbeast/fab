@@ -20,10 +20,11 @@
 
 /*
 
-Rules are attached to one or more directory nodes, based on what nodes their match pattern could
-possibly match.
+A rule is connected to each directory node where its match pattern is run with a EGE_RULE_DIR edge
 
+A rule is connected to each formula node which its formula pattern resolves to with a EDGE_RULE_FML edge
 
+A rule is connected to each module for which it is run with an EDGE_MOD_RULE edge
 
 */
 
@@ -31,22 +32,19 @@ possibly match.
 #include "types.h"
 
 #include "valyria/llist.h"
-#include "valyria/rbtree.h"
+#include "moria.h"
 
 #include "graph.h"
 
 struct attrs16;
-struct artifact;
-struct narrator;
-struct list;
-struct node;
-struct pattern;
-struct variant;
-struct set;
 struct module;
-struct graph;
-struct edge_traversal_state;
-struct rule_module_association;
+struct moria_graph;
+struct narrator;
+struct pattern;
+struct rbtree;
+struct rule_module_edge;
+struct set;
+struct channel;
 
 #define RULE_DIRECTION_OPT    0x0003
 #define RULE_CARDINALITY_OPT  0x003c
@@ -65,10 +63,15 @@ extern struct attrs16 * rule_direction_attrs;
 
 #define RULE_CARDINALITY_TABLE                          \
   DEF(RULE_ZERO_TO_ONE  , 0x0004)     /*     --     */  \
-  DEF(RULE_ZERO_TO_MANY , 0x0008)     /* [*] -- [*] */  \
+                                      /*     -- [*] */  \
+  DEF(RULE_ZERO_TO_MANY , 0x0008)     /* [*] --     */  \
+                                      /*     <-     */  \
   DEF(RULE_ONE_TO_ONE   , 0x000c)     /*     ->     */  \
+                                      /*     <- [*] */  \
   DEF(RULE_ONE_TO_MANY  , 0x0010)     /*     -> [*] */  \
+                                      /* [*] <-     */  \
   DEF(RULE_MANY_TO_ONE  , 0x0014)     /* [*] ->     */  \
+                                      /* [*] <- [*] */  \
   DEF(RULE_MANY_TO_MANY , 0x0018)     /* [*] -> [*] */  \
 
 #undef DEF
@@ -78,12 +81,16 @@ RULE_CARDINALITY_TABLE
 } rule_cardinality;
 
 extern struct attrs16 * rule_cardinality_attrs;
+extern llist rule_list;     // active
+extern llist rde_list;      // active
 
-// allocated as the value of a vertex
+// VERTEX_TYPE_RULE
 typedef struct rule {
+  moria_vertex vertex;
+
   struct pattern * match;
   struct pattern * generate;
-  struct node * fml_node;   // lookup from formula
+  struct pattern * formula;
 
   edge_type relation;
   rule_direction dir;
@@ -92,80 +99,68 @@ typedef struct rule {
   llist lln;                // in module statement_block->rules
 } rule;
 
-STATIC_ASSERT(sizeof(rule) <= GRAPH_VERTEX_VALUE_SIZE);
-
-/* edge connecting a rule to a directory node */
+/* EDGE_RULE_DIR : edge connecting a rule to a directory fsent */
 typedef struct rule_dirnode_edge {
-  struct rule_module_association *rma;
+  moria_edge edge;
+  struct rule_module_edge *rme;
 } rule_dirnode_edge;
 
-STATIC_ASSERT(sizeof(rule_dirnode_edge) <= GRAPH_EDGE_VALUE_SIZE);
-
-/* edge connecting a rule to a module */
-typedef struct rule_module_edge {
-  struct rule_module_association *rma;
-} rule_module_edge;
-
 typedef struct rule_run_context {
-  struct module * mod;            // module the rule is associated to
-  struct module * mod_owner;      // module which defines the rule
+  struct rule_module_edge *rme;         // rule-module-association
+  struct module * mod;                  // module the rule is associated to
+  struct module * mod_owner;            // module which defines the rule
   const struct llist * modules;
   const struct set * variants;
-  struct graph_invalidation_context invalidation;
 
-  /* outputs */
+  /* scratch space */
   struct set * match_nodes;
   struct set * generate_nodes;
 
-  /* multi-rule run situation */
-  struct rule_module_association *rma;
+  struct moria_vertex **Alist;
+  size_t Alist_alloc;
+  struct moria_vertex **Blist;
+  size_t Blist_alloc;
+  struct pattern_search_node **Mlist;
+  size_t Mlist_alloc;
 
-  /* rule/module associations with no matches */
-  rbtree nohits;
+  /* invalidation context for the ongoing operation */
+  struct graph_invalidation_context invalidation;
+
+  /* tracking rule/module associations with no matches */
+  struct rbtree *nohits;
+  struct channel *chan;
 } rule_run_context;
 
 xapi rule_run_context_xinit(rule_run_context * rule_ctx)
   __attribute__((nonnull));
-xapi rule_run_context_begin(rule_run_context * restrict rule_ctx)
-  __attribute__((nonnull));
-void rule_run_context_end(rule_run_context * rule_ctx)
-  __attribute__((nonnull));
+
 xapi rule_run_context_xdestroy(rule_run_context * rule_ctx)
   __attribute__((nonnull));
 
-/// rule_run
-//
-// SUMMARY
-//  Apply all invalidated rules to add nodes and edges to the graph.
-//
-//  Rules are applied iteratively, starting with
-//  the artifact, and proceeding to its consequents, to their consequents, and so on.
-//
-// PARAMETERS
-//  rule           -
-//  module         -
-//  modules        - all modules
-//  variants       - variants the rule applies to (not all variants)
-//  match_nodes    - work space
-//  generate_nodes - work space
-//
+/*
+ * Run a rule to add nodes and edges to the graph.
+ */
 xapi rule_run(rule * restrict rule, rule_run_context * restrict ctx)
   __attribute__((nonnull));
 
 xapi rule_mk(
     rule ** restrict rulep
-  , struct graph * restrict g
+  , struct moria_graph * restrict g
   , struct pattern * match
   , struct pattern * generate
-  , struct node * formula
+  , struct pattern * formula
+  , edge_type relation
   , uint32_t attrs
 )
-  __attribute__((nonnull(1)));
+  __attribute__((nonnull(1, 2)));
 
-xapi rule_xdestroy(rule * restrict r)
+void rule_release(rule * restrict)
   __attribute__((nonnull));
 
 xapi rule_say(const rule * restrict r, struct narrator * restrict N)
   __attribute__((nonnull));
+
+/* release rules */
+void rule_cleanup(void);
 
 #endif

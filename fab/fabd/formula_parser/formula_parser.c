@@ -18,9 +18,6 @@
 #include "xapi.h"
 #include "xapi/exit.h"
 
-#include "xlinux/xstdlib.h"
-#include "xlinux/KERNEL.errtab.h"
-
 /* flex and bison do not agree on these names */
 #define YYSTYPE FORMULA_YYSTYPE
 #define YYLTYPE yyu_location
@@ -33,7 +30,6 @@
 #include "formula.lex.h"
 #include "formula.states.h"
 #include "selector_parser.internal.h"
-#include "node.h"
 
 /* marks the start of the embedded bacon block */
 static const char * marker = "__DATA__";
@@ -63,15 +59,20 @@ void formula_parser_extract(const char * restrict text, size_t text_len, bool * 
   {
     /* check if the first line is a valid shebang */
     if(i == 0 && shebang_len == 0 && text[i] == '#')
+    {
       shebang_len++;
+    }
     else if(i == 1 && shebang_len == 1 && text[i] == '!')
+    {
       shebang_len++;
-    else if(first_line && (
+    }
+    else if(i > 1 && first_line && (
             (text[i] >= '0' && text[i] <= '9') ||
             (text[i] >= 'a' && text[i] <= 'z') ||
             (text[i] >= 'A' && text[i] <= 'Z') ||
             text[i] == '-' ||
             text[i] == '_' ||
+            text[i] == ' ' ||
             text[i] == '/'))
     {
       shebang_len++;
@@ -79,7 +80,7 @@ void formula_parser_extract(const char * restrict text, size_t text_len, bool * 
 
     if(*e == '\n')
     {
-      if(first_line && (shebang_len + 1) == i)
+      if(first_line && shebang_len == i && i > 3)
       {
         *shebang = true;
       }
@@ -91,17 +92,20 @@ void formula_parser_extract(const char * restrict text, size_t text_len, bool * 
       }
 
       first_line = false;
-      if(!s)
+      if(!s) {
         continue;
+      }
 
-      if(((l = e - s) < marker_len))
+      if(((l = e - s) < marker_len)) {
         continue;
+      }
 
       // tail of quotes and semicolons
       for(x = l - 1; x > marker_len; x--)
       {
-        if(s[x] != '"' && s[x] != '\'' && s[x] != ';')
+        if(s[x] != '"' && s[x] != '\'' && s[x] != ';') {
           break;
+        }
       }
 
       x -= (marker_len - 1);
@@ -119,8 +123,9 @@ void formula_parser_extract(const char * restrict text, size_t text_len, bool * 
     }
   }
 
-  if(!bacon)
+  if(!bacon) {
     return;
+  }
 
   s = 0;
   for(; (e - text) < text_len; e++)
@@ -205,8 +210,6 @@ xapi formula_parser_create(formula_parser ** const rv)
   p->yyu.logs = L_FORMULA;
 #endif
 
-//  fatal(yyu_define_tokenrange, &p->yyu, formula_ARGS, formula_SUFFIX);
-
   fatal(selector_parser_create, &p->selector_parser);
 
   *rv = p;
@@ -257,7 +260,7 @@ xapi formula_parser_parse(
   bool shebang;
   formula_parser_extract(text, len, &shebang, &bacon, &bacon_len);
 
-  if(bacon && bacon_len)
+  if(bacon_len)
   {
     fatal(formula_parser_bacon_parse, parser, bacon, bacon_len + 2, fname, &fml->file, &fml->args, &fml->envs);
   }

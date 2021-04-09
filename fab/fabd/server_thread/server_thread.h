@@ -19,17 +19,8 @@
 #define _SERVER_THREAD_H
 
 #include "xapi.h"
-#include "types.h"
 
-#if DEVEL
-extern bool g_server_no_initial_client;      // no client right at startup
-extern const char *g_server_initial_request; // initial request
-#endif
-
-// true if currently autobuilding
-extern bool g_server_autorun;
-
-/// create the server thread
+/* create the server thread */
 xapi server_thread_launch(void);
 
 #endif

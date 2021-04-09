@@ -18,11 +18,13 @@
 #include "xapi.h"
 #include "xapi/exit.h"
 
-#include "xlinux/xstdlib.h"
-#include "xlinux/KERNEL.errtab.h"
-#include "valyria/set.h"
-#include "value/parser.h"
+#include "common/attrs.h"
 #include "moria/edge.h"
+#include "moria/operations.h"
+#include "value/parser.h"
+#include "valyria/set.h"
+#include "xlinux/KERNEL.errtab.h"
+#include "xlinux/xstdlib.h"
 
 #include "narrator.h"
 
@@ -38,17 +40,15 @@
 #include "module.lex.h"
 #include "module.states.h"
 
-#include "node.h"
-#include "node_operations.h"
-#include "pattern_parser.h"
+#include "channel.h"
+#include "fsedge.h"
+#include "fsent.h"
 #include "graph.h"
+#include "lookup.h"
+#include "pattern_parser.h"
 #include "render.h"
-#include "path.h"
-#include "lookup.internal.h"
 #include "selection.h"
 #include "shadow.h"
-
-#include "common/attrs.h"
 
 static YYU_VTABLE(vtable, module, module);
 
@@ -56,27 +56,30 @@ static YYU_VTABLE(vtable, module, module);
 // static
 //
 
+/* module A imports directory B */
 static xapi resolve_import(module_parser * restrict parser, pattern * restrict ref, bool scoped, char * restrict name, uint16_t namel)
 {
   enter;
 
-  char path[512];
-  node * refnode;
-  selected_node *sn;
+  moria_vertex *referent;
+  fsent * refnode;
+  selected *sn;
   module *mod;
-  edge *e, *iep, *sep;
-  node_edge_imports *nei;
   const char * refname;
   uint16_t refnamel;
 
   mod = parser->mod;
 
-  fatal(selection_reset, parser->scratch);
-  fatal(pattern_lookup, ref, 0, 0, PATTERN_LOOKUP_DIR, parser->scratch, 0);
+  fatal(selection_reset, parser->scratch, SELECTION_ITERATION_TYPE_ORDER);
+  fatal(pattern_lookup, ref, PATTERN_LOOKUP_DIR, parser->scratch, 0);
   fatal(selection_finalize, parser->scratch);
 
   llist_foreach(&parser->scratch->list, sn, lln) {
-    refnode = sn->n;
+    RUNTIME_ASSERT((sn->v->attrs & VERTEX_TYPE_OPT) == VERTEX_TYPE_FSENT);
+
+    // referent is directory node B
+    referent = sn->v;
+    refnode = containerof(referent, fsent, vertex);
     if(name)
     {
       refname = name;
@@ -84,33 +87,11 @@ static xapi resolve_import(module_parser * restrict parser, pattern * restrict r
     }
     else
     {
-      refname = refnode->name->name;
-      refnamel = refnode->name->namel;
+      refname = referent->label;
+      refnamel = referent->label_len;
     }
 
-    iep = 0;
-    sep = 0;
-    if(scoped)
-    {
-      // attach to //module/imports/
-      fatal(shadow_graft_imports, mod, refnode, refname, refnamel, &iep, parser->invalidation);
-
-      // attach to (or override in) //module/scope/
-      fatal(shadow_graft_scope, mod, refnode, refname, refnamel, false, &sep, parser->invalidation);
-    }
-
-    // allow traversal via the imports graph
-    fatal(node_connect_generic, mod->dir_node, refnode, EDGE_TYPE_IMPORTS, parser->invalidation, &e);
-    nei = edge_value(e);
-    nei->shadow_epoch = node_shadow_epoch;
-    nei->scope_edge = sep;
-    nei->imports_edge = iep;
-
-    if(log_would(L_MODULE))
-    {
-      node_get_path(refnode, path, sizeof(path));
-      logf(L_MODULE, " %s : imports %.*s -> %s", mod->dir_node->name->name, (int)refnamel, refname, path);
-    }
+    fatal(module_resolve_import, mod, refnode, refname, refnamel, scoped, parser->invalidation);
   }
 
 finally:
@@ -119,91 +100,85 @@ finally:
 coda;
 }
 
-static xapi resolve_use(module_parser * restrict parser, pattern * restrict ref)
+/* module A uses model B */
+static xapi resolve_use(module_parser * restrict parser, pattern * restrict ref, bool scoped, char * restrict name, uint16_t namel)
 {
   enter;
 
-  char path[512];
-  node * mod_dir_n;
-  node * mod_file_n;
-  vertex * mod_file_v;
-  vertex * mod_dir_v;
+  fsent * mod_file_n;
+  moria_vertex * mod_file_v;
   module *mod;
-  selected_node *sn;
+  selected *sn;
+  const char *refname;
+  uint16_t refnamel;
+  moria_vertex *referent;
+  fsent * refnode;
 
   mod = parser->mod;
 
-  fatal(selection_reset, parser->scratch);
-  fatal(pattern_lookup, ref, 0, 0, PATTERN_LOOKUP_MODEL, parser->scratch, 0);
+  fatal(selection_reset, parser->scratch, SELECTION_ITERATION_TYPE_ORDER);
+  fatal(pattern_lookup, ref, PATTERN_LOOKUP_MODEL, parser->scratch, 0);
   fatal(selection_finalize, parser->scratch);
 
   llist_foreach(&parser->scratch->list, sn, lln) {
-    mod_dir_n = sn->n;
-    mod_dir_v = vertex_containerof(mod_dir_n);
-    mod_file_v = vertex_downs(mod_dir_v, NODE_MODEL_BAM);
-    mod_file_n = vertex_value(mod_file_v);
-    fatal(module_load, mod_dir_n, mod_file_n, parser->invalidation);
-    fatal(node_connect_generic, mod->dir_node, mod_dir_n, EDGE_TYPE_USES, parser->invalidation, 0);
+    RUNTIME_ASSERT((sn->v->attrs & VERTEX_TYPE_OPT) == VERTEX_TYPE_FSENT);
 
-    if(log_would(L_MODULE))
+    // referent is the directory node
+    referent = sn->v;
+    refnode = containerof(referent, fsent, vertex);
+
+    mod_file_v = moria_vertex_downw(referent, MMS(fsent_name_model));
+    mod_file_n = containerof(mod_file_v, fsent, vertex);
+    fatal(module_bootstrap, refnode, mod_file_n, parser->invalidation);
+
+    if(name)
     {
-      node_get_path(mod_dir_n, path, sizeof(path));
-      logf(L_MODULE, " %s : uses %s -> %s", mod->dir_node->name->name, mod_dir_n->name->name, path);
+      refname = name;
+      refnamel = namel;
     }
+    else
+    {
+      refname = referent->label;
+      refnamel = referent->label_len;
+    }
+
+    fatal(module_resolve_use, mod, refnode->mod, refname, refnamel, scoped, parser->invalidation);
   }
 
 finally:
   pattern_free(ref);
+  free(name);
 coda;
 }
 
+/* module A requires module B */
 static xapi resolve_require(module_parser * restrict parser, pattern * restrict ref)
 {
   enter;
 
-  char path[512];
-  node * mod_dir_n;
-  node * mod_file_n;
-  vertex * mod_file_v;
-  vertex * mod_dir_v;
+  fsent * mod_dir_n;
+  fsent * mod_file_n;
+  moria_vertex * mod_file_v;
+  moria_vertex * mod_dir_v;
   module *mod;
-  selected_node *sn;
+  selected *sn;
 
   mod = parser->mod;
 
-  fatal(selection_reset, parser->scratch);
-  fatal(pattern_lookup, ref, 0, 0, PATTERN_LOOKUP_MODULE, parser->scratch, 0);
+  fatal(selection_reset, parser->scratch, SELECTION_ITERATION_TYPE_ORDER);
+  fatal(pattern_lookup, ref, PATTERN_LOOKUP_MODULE, parser->scratch, 0);
   fatal(selection_finalize, parser->scratch);
 
   llist_foreach(&parser->scratch->list, sn, lln) {
-    mod_dir_n = sn->n;
-    mod_dir_v = vertex_containerof(mod_dir_n);
-    mod_file_v = vertex_downs(mod_dir_v, NODE_MODULE_BAM);
-    mod_file_n = vertex_value(mod_file_v);
-    fatal(module_load, mod_dir_n, mod_file_n, parser->invalidation);
-    fatal(node_connect_generic, mod->dir_node, mod_dir_n, EDGE_TYPE_REQUIRES, parser->invalidation, 0);
+    RUNTIME_ASSERT((sn->v->attrs & VERTEX_TYPE_OPT) == VERTEX_TYPE_FSENT);
 
-    if(log_would(L_MODULE))
-    {
-      node_get_path(mod_dir_n, path, sizeof(path));
-      logf(L_MODULE, " %s : requires %s -> %s", mod->dir_node->name->name, mod_dir_n->name->name, path);
-    }
+    mod_dir_v = sn->v;
+    mod_dir_n = containerof(mod_dir_v, fsent, vertex);
+    mod_file_v = moria_vertex_downw(mod_dir_v, MMS(fsent_name_module));
+    mod_file_n = containerof(mod_file_v, fsent, vertex);
+    fatal(module_bootstrap, mod_dir_n, mod_file_n, parser->invalidation);
+    fatal(module_resolve_require, mod, mod_dir_n->mod, parser->invalidation);
   }
-
-finally:
-  pattern_free(ref);
-coda;
-}
-
-static xapi resolve_formula(module_parser * restrict parser, pattern * restrict ref, struct node ** restrict target)
-{
-  enter;
-
-  module *mod;
-
-  /* note that a reference pattern can only render down to a single fragment */
-  mod = parser->mod;
-  fatal(pattern_lookup, ref, 0, mod->dir_node, 0, 0, target);
 
 finally:
   pattern_free(ref);
@@ -250,9 +225,7 @@ xapi module_parser_create(module_parser ** rv)
   fatal(xmalloc, &p, sizeof(*p));
 
   fatal(yyu_parser_init, &p->yyu, &vtable, MODULE_SYNTAX);
-
   fatal(yyu_parser_init_tokens, &p->yyu, module_token_table, module_TOKEN_TABLE_SIZE);
-
   fatal(yyu_parser_init_states
     , &p->yyu
     , module_numstates
@@ -264,19 +237,15 @@ xapi module_parser_create(module_parser ** rv)
   p->yyu.logs = L_MODULE;
 #endif
 
-//  fatal(yyu_define_tokenrange, &p->yyu, module_AS, module_VARIANT);
-
-//  fatal(value_parser_create, &p->value_parser);
   fatal(pattern_parser_create, &p->pattern_parser);
   fatal(set_create, &p->variants);
-  p->g = g_graph;
-  fatal(selection_create, &p->scratch);
+  p->g = &g_graph;
+  fatal(selection_create, &p->scratch, 0);
 
   // callbacks
   p->require_resolve = resolve_require;
   p->use_resolve = resolve_use;
   p->import_resolve = resolve_import;
-  p->formula_resolve = resolve_formula;
 
   llist_init_node(&p->statement_block_freelist);
   llist_init_node(&p->scoped_blocks);
@@ -305,6 +274,9 @@ xapi module_parser_xfree(module_parser* const p)
 
     if(p->unscoped_block) {
       llist_append(&p->statement_block_freelist, p->unscoped_block, lln);
+    }
+    if(p->scoped_block) {
+      llist_append(&p->statement_block_freelist, p->scoped_block, lln);
     }
     llist_splice_head(&p->statement_block_freelist, &p->scoped_blocks);
 

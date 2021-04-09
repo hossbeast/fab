@@ -15,41 +15,52 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#include "moria/vertex.h"
-#include "fab/ipc.h"
-#include "xlinux/xstdlib.h"
-#include "xlinux/xsignal.h"
-#include "xlinux/xfcntl.h"
-#include "xlinux/xunistd.h"
+#include "xapi.h"
+
 #include "valyria/set.h"
-#include "moria/edge.h"
 #include "narrator.h"
-#include "value.h"
-#include "fab/sigutil.h"
 
 #include "buildplan.h"
-#include "buildplan_entity.h"
-#include "server_thread.internal.h"
-#include "config.internal.h"
-#include "formula.h"
+#include "dependency.h"
 #include "logging.h"
-#include "node.h"
-#include "params.h"
-#include "path.h"
-#include "selection.h"
+#include "fsent.h"
+#include "channel.h"
+#include "zbuffer.h"
+#include "common/attrs.h"
+#include "events.h"
+#include "system_state.h"
 
-#include "common/assure.h"
-#include "macros.h"
+selection buildplan_selection;
+uint16_t buildplan_id;
+enum buildplan_state buildplan_state;
 
-selection bp_selection;
-uint16_t bp_plan_id;
+static xapi plan_visitor_transitive(moria_vertex * v, void * arg, moria_traversal_mode mode, int distance, int * restrict result)
+{
+  enter;
+
+  fatal(moria_traverse_vertices
+    , &g_graph
+    , v
+    , buildplan_visitor_direct
+    , 0
+    , (moria_traversal_criteria[]) {{
+          edge_travel : EDGE_DEPENDS
+        , edge_visit : EDGE_DEPENDS
+        , vertex_visit : VERTEX_FILETYPE_REG
+      }}
+    , MORIA_TRAVERSE_DOWN | MORIA_TRAVERSE_PRE
+    , 0
+  );
+
+  finally : coda;
+}
 
 xapi buildplan_setup()
 {
   enter;
 
-  fatal(selection_xinit, &bp_selection);
-  bp_plan_id = 1;
+  fatal(selection_xinit, &buildplan_selection);
+  buildplan_id = 1;
 
   finally : coda;
 }
@@ -58,7 +69,7 @@ xapi buildplan_cleanup()
 {
   enter;
 
-  fatal(selection_xdestroy, &bp_selection);
+  fatal(selection_xdestroy, &buildplan_selection);
 
   finally : coda;
 }
@@ -67,17 +78,18 @@ xapi buildplan_reset()
 {
   enter;
 
-  fatal(selection_reset, &bp_selection);
-  bp_plan_id++;
+  fatal(selection_reset, &buildplan_selection, SELECTION_ITERATION_TYPE_RANK);
+  buildplan_id++;
+  buildplan_state = NOOP;
 
   finally : coda;
 }
 
-xapi buildplan_add(buildplan_entity * restrict bpe, int distance)
+xapi buildplan_add(dependency * restrict bpe, int distance)
 {
   enter;
 
-  fatal(selection_add_bpe, &bp_selection, bpe, distance);
+  fatal(selection_add_dependency, &buildplan_selection, bpe, distance);
 
   finally : coda;
 }
@@ -86,7 +98,7 @@ xapi buildplan_finalize()
 {
   enter;
 
-  selection_finalize(&bp_selection);
+  selection_finalize(&buildplan_selection);
 
   finally : coda;
 }
@@ -95,23 +107,107 @@ xapi buildplan_report()
 {
   enter;
 
-  selected_node *sn;
-  buildplan_entity *bpe;
+  selected *sn;
+  const dependency *bpe;
   narrator *N;
 
-  logf(L_BUILDPLAN, "%3zu executions in %2hu stages", bp_selection.selected_nodes->size, bp_selection.numranks);
+  logf(L_BUILDPLAN, "%3zu executions in %2hu stages", buildplan_selection.selected_entities->size, buildplan_selection.numranks);
 
-  llist_foreach(&bp_selection.list, sn, lln) {
+  llist_foreach(&buildplan_selection.list, sn, lln) {
     bpe = sn->bpe;
     fatal(log_start, L_BUILDPLAN, &N);
     fatal(narrator_xsayf, N, " %-3d ", sn->rank);
     if(bpe->fml)
     {
-      fatal(narrator_xsays, N, bpe->fml->name->name);
+      fatal(narrator_xsays, N, bpe->fml->name.name);
       fatal(narrator_xsays, N, " -> ");
     }
-    fatal(bpe_say_targets, bpe, N);
+    fatal(dependency_say_targets, bpe, N);
     fatal(log_finish);
+  }
+
+  finally : coda;
+}
+
+/*
+ * Add a node to the plan
+ *
+ * @distance - length of the path to this node from the target
+ */
+xapi buildplan_visitor_direct(moria_vertex * v, void * arg, moria_traversal_mode mode, int distance, int * restrict result)
+{
+  enter;
+
+  fsent * n;
+  channel * chan;
+  char path[512];
+  fabipc_message *msg;
+
+  n = containerof(v, fsent, vertex);
+
+  if(!fsent_invalid_get(n)) {
+    goto XAPI_FINALIZE;
+  }
+
+  /* shadow nodes can act as placeholders, but are never actually built */
+  if(!n->dep) { // && fsent_shadowtype_get(n)) {
+    goto XAPI_FINALIZE;
+  }
+
+  /* this is an error case - node is not up to date, and theres no way to update it */
+  else if(!n->dep)
+  {
+    if(n->bp_plan_id != buildplan_id)
+    {
+      buildplan_state = UNSATISFIED;
+      fsent_path_znload(path, sizeof(path), n);
+
+      system_error = true;
+      if(events_would(FABIPC_EVENT_SYSTEM_STATE, &chan, &msg)) {
+        msg->code = EINVAL;
+        msg->size = znloadf(msg->text, sizeof(msg->text), "cannot update %s state %s"
+          , path
+          , attrs32_name_byvalue(graph_vertex_state_attrs, fsent_state_get(n))
+        );
+        events_publish(chan, msg);
+      }
+    }
+    n->bp_plan_id = buildplan_id;
+    goto XAPI_FINALIZE;
+  }
+
+  fatal(buildplan_add, n->dep, distance);
+
+  finally : coda;
+}
+
+/*
+ * add each node in the selection to the plan, along with its dependencies, recursively
+ */
+xapi buildplan_select_transitive(llist * restrict selection)
+{
+  enter;
+
+  selected *sn;
+
+  llist_foreach(selection, sn, lln) {
+    fatal(plan_visitor_transitive, (void*)sn->v, 0, 0, 0, 0);
+  }
+
+  finally : coda;
+}
+
+/*
+ * add exactly those nodes in the selection to the plan
+ */
+xapi buildplan_select_direct(llist * restrict selection)
+{
+  enter;
+
+  selected *sn;
+
+  llist_foreach(selection, sn, lln) {
+    fatal(buildplan_visitor_direct, (void*)sn->v, 0, 0, 0, 0);
   }
 
   finally : coda;

@@ -18,51 +18,69 @@
 #ifndef FABD_HANDLER_H
 #define FABD_HANDLER_H
 
-/*
-
-*/
-
 #include "types.h"
 #include "xapi.h"
 
+#include "rcu_list.h"
 #include "selector.h"
+#include "rule.h"
 
+#include "locks.h"
+
+struct channel;
+struct fabipc_message;
 struct request;
-struct value_writer;
+struct request_parser;
 struct selection;
-struct graph_invalidation_context;
+struct command;
 
-/// handler_context
-//
-// SUMMARY
-//  context for processing a request
-//
+extern rcu_list g_handlers; // list of active handlers
+
+/* lock for running the build, e.g. build or autobuild commands */
+extern struct trylock handler_build_lock;
+
 typedef struct handler_context {
+  union {
+    llist lln;      // freelist
+    rcu_list stk;   // g_handlers
+  };
+
   selector_context sel_ctx;
   struct selection * selection;
-  struct graph_invalidation_context * invalidation;
+  struct graph_invalidation_context invalidation;
+  struct request_parser * request_parser;
+  bool running;
+
+  pid_t tid;
+  pid_t client_pid;
+  pid_t client_tid;
+  uint32_t client_msg_id;
+
+  union {
+    char channel_state;
+
+    struct {
+      /* fabipc channel for the client */
+      struct channel * chan;
+    };
+  };
 } handler_context;
 
-xapi handler_context_create(handler_context ** restrict ctx)
+xapi handler_setup(void);
+xapi handler_cleanup(void);
+xapi handler_system_reload(struct handler_context * restrict ctx)
   __attribute__((nonnull));
 
-xapi handler_context_xfree(handler_context * restrict ctx);
+/* create/release handlers */
 
-xapi handler_context_reset(handler_context * restrict ctx)
+xapi handler_alloc(handler_context ** restrict rv)
   __attribute__((nonnull));
 
-xapi handler_context_ixfree(handler_context ** restrict ctx)
-  __attribute__((nonnull));
+void handler_release(handler_context * restrict ctx);
+void handler_reset(handler_context * restrict ctx);
 
-/// handler_dispatch
-//
-// SUMMARY
-//
-xapi handler_dispatch(
-    handler_context * restrict ctx
-  , struct request * restrict request
-  , struct value_writer * response_writer
-)
+/* complete a request */
+xapi handler_process_command(struct handler_context * restrict ctx, struct command* restrict cmd)
   __attribute__((nonnull));
 
 #endif

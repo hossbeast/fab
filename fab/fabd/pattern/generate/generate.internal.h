@@ -18,7 +18,6 @@
 #ifndef FABD_PATTERN_GENERATE_INTERNAL_H
 #define FABD_PATTERN_GENERATE_INTERNAL_H
 
-#include "valyria/chain.h"
 #include "valyria/llist.h"
 
 #include "generate.h"
@@ -28,11 +27,11 @@ struct chain;
 struct set;
 struct narrator;
 struct narrator_fixed;
-struct pattern_match_node;
+struct pattern_search_node;
 struct pattern_section;
 struct variant;
 struct graph_invalidation_context;
-struct vertex;
+struct moria_vertex;
 
 /// pattern_generate_context
 //
@@ -68,7 +67,7 @@ typedef struct pattern_generate_context
   llist segment_traversal_stack;
 
   // state
-  struct node * node;
+  struct fsent * node;
   union {
     struct narrator * restrict section_narrator;
     struct narrator_fixed * restrict section_narrator_fixed;
@@ -77,10 +76,10 @@ typedef struct pattern_generate_context
   struct graph_invalidation_context * invalidation;
 
   // input context
-  struct node * base;
+  struct fsent * base;
   struct module * mod;
-  struct vertex * scope;
-  const struct pattern_match_node * match;
+  struct moria_vertex * scope;
+  const struct pattern_search_node * match;
   const struct set * restrict variants;
 
   // output context

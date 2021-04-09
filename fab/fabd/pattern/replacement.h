@@ -18,11 +18,23 @@
 #ifndef FABD_PATTERN_REPLACEMENT_H
 #define FABD_PATTERN_REPLACEMENT_H
 
-/*
+#include "xapi.h"
+#include "types.h"
+#include "pattern.h"
 
-SUMMARY
- fab-file node
+struct yyu_location;
+union pattern_segment;
 
-*/
+xapi pattern_replacement_mk(
+    union pattern_segment ** restrict rv
+  , const struct yyu_location * restrict loc
+  , enum pattern_replacement_type replacement_type
+  , uint16_t num
+  , const char * restrict name
+  , uint16_t name_len
+  , const char * restrict tag_text
+  , uint8_t tag_text_len
+)
+  __attribute__((nonnull(1, 2)));
 
 #endif

@@ -18,30 +18,29 @@
 #ifndef FABD_PATTERN_MATCH_INTERNAL_H
 #define FABD_PATTERN_MATCH_INTERNAL_H
 
-#include "valyria/llist.h"
+#include "xapi.h"
+#include "types.h"
 
 #include "match.h"
-#include "pattern.h"
 
-struct pattern_section;
-struct node;
-struct variant;
-struct set;
-struct chain;
-struct module;
+struct fsent;
+struct pattern_match_context;
+struct pattern_segments;
 
-/// pattern_match_context
-//
-// SUMMARY
-//  dynamic matching context
-//
+xapi pattern_section_match(
+    struct pattern_match_context * restrict ctx
+  , const struct fsent * restrict dirnode
+)
+  __attribute__((nonnull));
+
+xapi pattern_segments_match(struct pattern_match_context * ctx)
+  __attribute__((nonnull));
+
 typedef struct pattern_match_context {
   struct match_section_traversal {
     const struct pattern_section * section;
     const struct pattern_section * head;
     const struct chain * cursor;
-    int mindepth;
-    int maxdepth;
   } section_traversal;
 
   struct match_segments_traversal {
@@ -65,57 +64,21 @@ typedef struct pattern_match_context {
     uint16_t offset;  // len is offset - start
 
     // MUST be at the end b/c of how RESTORE works!
-    struct unrestored {
+    struct {
       struct match_segments_traversal *prev;
       struct match_segments_traversal *child;
       struct match_segments_traversal *next;
+      bool match;
     } u;
   } *traversal;
 
-  // input context
-  const struct module * restrict module;
-  const struct llist * modules;
-  xapi (*dirnode_visit)(void *ctx, struct node *dirnode);
-  void * dirnode_visit_ctx;
-  const struct set * restrict variants;
-  uint8_t variants_len;
-
   // state
-  const struct node * restrict node;
-  bool matched;
-
-  int16_t variant_index;
-  pattern_match_group groups[16];
-  uint16_t group_max;
+  const struct fsent * dirnode;
+  const char * label;
+  uint16_t label_len;
 
   // output context
-  struct set * restrict matches;  // struct pattern_match
-  struct set * restrict matched_nodes;  // struct node
+  bool matched;
 } pattern_match_context;
-
-typedef struct pattern_match_node {
-  struct node * node;
-  pattern_match_group groups[16];
-  uint16_t group_max;
-  const struct variant * variant;
-} pattern_match_node;
-
-xapi pattern_section_match(
-    struct pattern_match_context * restrict ctx
-  , struct node * restrict dirnode
-)
-  __attribute__((nonnull));
-
-xapi pattern_segment_match(
-    struct pattern_match_context * restrict ctx
-  , const union pattern_segment * restrict segment
-  , const struct node * restrict node
-  , uint16_t * restrict name_offset
-  , bool * restrict r
-)
-  __attribute__((nonnull));
-
-xapi pattern_segments_match(struct pattern_match_context * ctx)
-  __attribute__((nonnull));
 
 #endif

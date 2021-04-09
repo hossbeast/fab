@@ -21,19 +21,17 @@
 #include "types.h"
 #include "xapi.h"
 
+#include "valyria/llist.h"
 #include "moria/traverse.h"
 
 struct narrator;
 struct attrs32;
-struct array;
+struct command;
 
 typedef struct request {
-  struct array * commands;
-
-  /* command type of last command if any, either run or autorun */
-  int final_command;
+  llist commands;           // struct command
+  bool has_last_command;
 } request;
-
 
 #define TRAVERSE_TYPE_OPT 0x3
 #define TRAVERSE_TYPE_TABLE                                                                                             \
@@ -48,17 +46,18 @@ TRAVERSE_TYPE_TABLE
 
 extern struct attrs32 * traverse_type_attrs;
 
-xapi request_create(request ** restrict rv)
-  __attribute__((nonnull));;
-
-xapi request_xfree(request * restrict);
-xapi request_ixfree(request ** restrict)
+void request_init(request * restrict req)
   __attribute__((nonnull));
 
-xapi request_say(request * restrict request, struct narrator * restrict N)
+void request_destroy(request * restrict req)
   __attribute__((nonnull));
 
-xapi request_setup(void);
+xapi request_say(request * restrict req, struct narrator * restrict N)
+  __attribute__((nonnull));
+
+xapi request_command_alloc(request * restrict req, struct command ** cmdp)
+  __attribute__((nonnull));
+
 xapi request_cleanup(void);
 
 #endif

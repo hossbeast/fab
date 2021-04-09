@@ -41,7 +41,7 @@
   #include "valyria/rbtree.h"
   #include "xlinux/xstdlib.h"
 
-  static xapi rbtree_create(rbtree ** restrict rbt)
+  static xapi rbt_create(rbtree ** restrict rbt)
   {
     enter;
 
@@ -50,6 +50,8 @@
 
     finally : coda;
   }
+
+  void formula_value_set_free(struct rbtree * restrict);
 }
 
 %define api.pure
@@ -70,7 +72,7 @@
   rbtree * set;
 
   // enums
-  node_property node_property;
+  fsent_property node_property;
 
   // delegated
   struct selector * selector;
@@ -154,10 +156,12 @@
 
 %destructor { formula_value_free($$); } <value>
 %destructor { selector_free($$); } <selector>
+%destructor { formula_value_set_free($$); } <set>
 
 %%
 utterance
   : sections
+  | %empty
   ;
 
 sections
@@ -225,7 +229,7 @@ env-vars
   }
   | env-var
   {
-    YFATAL(rbtree_create, &$$);
+    YFATAL(rbt_create, &$$);
     rbtree_put($$, $1, rbn, fmlval_rbn_cmp);
   }
   ;
@@ -242,6 +246,10 @@ env-var-value
   | '[' operation-list ']'
   {
     YFATAL(formula_value_sequence_mk, &@$, &$$, $2);
+  }
+  | '{' path-search-operation '}'
+  {
+    $$ = $2;
   }
   ;
 
@@ -295,7 +303,6 @@ operation
   {
     YFATAL(formula_value_prepend_mk, &@$, &$$, $3);
   }
-  | path-search-operation
   ;
 
 path-search-operation
@@ -306,16 +313,16 @@ path-search-operation
   ;
 
 node-property
-  : NAME         { $$ = NODE_PROPERTY_NAME; }
-  | EXT          { $$ = NODE_PROPERTY_EXT; }
-  | SUFFIX       { $$ = NODE_PROPERTY_SUFFIX; }
-  | BASE         { $$ = NODE_PROPERTY_BASE; }
-  | ABSPATH      { $$ = NODE_PROPERTY_ABSPATH; }
-  | ABSDIR       { $$ = NODE_PROPERTY_ABSDIR; }
-  | RELPATH      { $$ = NODE_PROPERTY_RELPATH; }
-  | RELDIR       { $$ = NODE_PROPERTY_RELDIR; }
-  | FSROOT       { $$ = NODE_PROPERTY_FSROOT; }
-  | VARIANT      { $$ = NODE_PROPERTY_VARIANT; }
+  : NAME         { $$ = FSENT_PROPERTY_NAME; }
+  | EXT          { $$ = FSENT_PROPERTY_EXT; }
+  | SUFFIX       { $$ = FSENT_PROPERTY_SUFFIX; }
+  | BASE         { $$ = FSENT_PROPERTY_BASE; }
+  | ABSPATH      { $$ = FSENT_PROPERTY_ABSPATH; }
+  | ABSDIR       { $$ = FSENT_PROPERTY_ABSDIR; }
+  | RELPATH      { $$ = FSENT_PROPERTY_RELPATH; }
+  | RELDIR       { $$ = FSENT_PROPERTY_RELDIR; }
+  | FSROOT       { $$ = FSENT_PROPERTY_FSROOT; }
+  | VARIANT      { $$ = FSENT_PROPERTY_VARIANT; }
   ;
 
 string

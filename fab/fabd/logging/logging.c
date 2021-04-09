@@ -30,7 +30,7 @@
 #include "logging.h"
 #include "config.internal.h"
 #include "CONFIG.errtab.h"
-#include "box.h"
+#include "yyutil/box.h"
 
 #include "macros.h"
 
@@ -40,7 +40,6 @@ logger_category * categories = (logger_category []) {
   , { name : "INFO"       , description : "high-level summary of actions" }
   , { name : "PROTOCOL"   , description : "request/response exchange" }
   , { name : "CONFIG"     , description : "configuration" }
-  , { name : "FF"         , description : "fabfiles" }
   , { name : "PARAMS"     , description : "runtime parameters" }
   , { name : "USAGE"      , description : "resource usage reports" }
   , { name : "FSEVENT"    , description : "monitored filesystem events" }
@@ -64,38 +63,29 @@ logger_category * categories = (logger_category []) {
   , { name : "SWEEPER"    , description : "sweeper thread" , optional : 1 }
   , { name : "BUILDER"    , description : "builder thread" , optional : 1 }
   , { name : "MONITOR"    , description : "monitor thread" , optional : 1 }
+  , { name : "HANDLER"    , description : "handler thread" , optional : 1 }
+  , { name : "BEHOLDER"   , description : "beholder thread" , optional : 1 }
+  , { name : "LOADER"     , description : "loader thread" , optional : 1 }
+  , { name : "WORKER"     , description : "worker thread" , optional : 1 }
   , { }
 };
 
 /*
- * NOTE : these configurations are only effective until the first reconfiguration (very close to startup).
- * After that, the logging configuration from config is applied. Then, each request may optionally reconfigure
- * the logging streams as well
+ * logging stream categories are applied during first reconfiguration
  */
 logger_stream * streams = (logger_stream []) {
-    { name : "console"  , type : LOGGER_STREAM_FD , fd : 1, expr : "+INFO +WARN +ERROR %CATEGORY"
-#if DEBUG || DEVEL
-    " %NAMES %PID %TID"
-#endif
-    }
-  , { name : "logfile"  , type : LOGGER_STREAM_ROLLING, expr : "+INFO +WARN +ERROR %DATESTAMP %CATEGORY %NOCOLOR %NAMES %PID %TID"
-      , file_mode : FABIPC_MODE_DATA, threshold : 1024 * 1024, max_files : 10, path_base : (char[256]) { } }
+    { name : "console"  , type : LOGGER_STREAM_FD , fd : 1, expr : "+INFO +WARN +ERROR" }
   , { }
 };
 
 // while misconfigured, log any messages to stderr
 int g_logger_default_stderr = 1;
 
-#if DEVEL
-int g_logging_skip_reconfigure;
-#endif
-
 xapi logging_finalize()
 {
   enter;
 
   /* this function is only called from unit tests */
-
   fatal(logger_category_register, categories);
   fatal(logger_finalize);
 
@@ -106,74 +96,12 @@ xapi logging_setup(uint64_t hash)
 {
   enter;
 
-  snprintf(streams[1].path_base, 256, "%s/%016"PRIx64"/fabd/log", XQUOTE(FABIPCDIR), hash);
   fatal(logger_stream_register, streams);
 
   // process-level properties
   logger_set_process_name("fabd");
 
   fatal(logging_finalize);
-
-  finally : coda;
-}
-
-xapi logging_reconfigure(config * restrict cfg, bool dry)
-{
-  enter;
-
-  box_string * expr;
-  int x;
-
-#if DEVEL
-  if(g_logging_skip_reconfigure)
-    goto XAPI_FINALIZE;
-#endif
-
-  if(dry)
-  {
-    // validate logging exprs
-    for(x = 0; x < cfg->logging.console.exprs.items->size; x++)
-    {
-       expr = list_get(cfg->logging.console.exprs.items, x);
-      if(!logger_expr_validate(expr->v))
-        fatal(config_throw, &expr->bx);
-    }
-
-    for(x = 0; x < cfg->logging.logfile.exprs.items->size; x++)
-    {
-      expr = list_get(cfg->logging.logfile.exprs.items, x);
-      if(!logger_expr_validate(expr->v))
-        fatal(config_throw, &expr->bx);
-    }
-  }
-  else
-  {
-    // apply new logger configuration
-    if(cfg->logging.console.changed)
-    {
-      fatal(logger_expr_reset, streams[0].id);
-      for(x = 0; x < cfg->logging.console.exprs.items->size; x++)
-      {
-        expr = list_get(cfg->logging.console.exprs.items, x);
-        fatal(logger_expr_push, streams[0].id, expr->v);
-      }
-    }
-
-    if(cfg->logging.logfile.changed)
-    {
-      fatal(logger_expr_reset, streams[1].id);
-      for(x = 0; x < cfg->logging.logfile.exprs.items->size; x++)
-      {
-        expr = list_get(cfg->logging.logfile.exprs.items, x);
-        fatal(logger_expr_push, streams[1].id, expr->v);
-      }
-    }
-
-    if(cfg->logging.changed)
-    {
-      fatal(logger_streams_report);
-    }
-  }
 
   finally : coda;
 }

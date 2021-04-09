@@ -18,22 +18,29 @@
 #include "types.h"
 #include "xapi.h"
 
+#include "narrator.h"
 #include "moria/operations.h"
 #include "moria/graph.h"
 #include "moria/vertex.h"
 #include "moria/edge.h"
+#include "moria/parser.h"
 
 #include "node_operations_test.h"
-#include "node.h"
+#include "fsent.h"
 #include "shadow.h"
-#include "node_operations.h"
+#include "fsedge.h"
+#include "dependency.h"
 #include "filesystem.h"
+#include "graph.h"
+#include "selection.h"
+#include "lookup.h"
+#include "dependency.h"
 #include "graph.h"
 
 /* used in unit tests */
 static graph_invalidation_context invalidation;
 
-static xapi node_operations_setup(operations_dispatch * restrict dispatch, graph * restrict g)
+static xapi node_operations_setup(graph_parser * restrict parser)
 {
   enter;
 
@@ -42,7 +49,7 @@ static xapi node_operations_setup(operations_dispatch * restrict dispatch, graph
   finally : coda;
 }
 
-static xapi node_operations_cleanup(operations_dispatch * restrict dispatch, graph * restrict g)
+static xapi node_operations_cleanup(graph_parser * restrict parser)
 {
   enter;
 
@@ -51,60 +58,73 @@ static xapi node_operations_cleanup(operations_dispatch * restrict dispatch, gra
   finally : coda;
 }
 
-static xapi node_operations_connect(graph * const restrict g, vertex * const restrict A, vertex * const restrict B, uint32_t attrs, edge ** restrict e, bool * restrict r)
+static xapi node_operations_connect(
+    graph_parser * const restrict parser
+  , moria_vertex * const restrict A
+  , moria_vertex * const restrict B
+  , uint32_t attrs
+  , moria_edge ** restrict e
+)
 {
   enter;
 
-  node *An = vertex_value(A);
-  node *Bn = vertex_value(B);
+  fsent *An = containerof(A, fsent, vertex);
+  fsent *Bn = containerof(B, fsent, vertex);
+  dependency *dep;
 
-  if((attrs & EDGE_TYPE_FS) == EDGE_TYPE_FS)
-    fatal(node_connect_fs, An, Bn, attrs, &invalidation, e, 0);
-  else if((attrs & EDGE_TYPE_STRONG) == EDGE_TYPE_STRONG)
-    fatal(node_connect_dependency, An, Bn, attrs, &invalidation, 0, 0);
+  if((attrs & EDGE_TYPE_OPT) == EDGE_TYPE_FSTREE)
+  {
+    fatal(fsedge_connect, An, Bn, &invalidation);
+  }
+  else if((attrs & EDGE_TYPE_OPT) == EDGE_TYPE_DEPENDS)
+  {
+    fatal(dependency_connect, An, Bn, attrs, &invalidation, &dep);
+  }
   else
-    fatal(node_connect_generic, An, Bn, attrs, &invalidation, e);
+  {
+    RUNTIME_ABORT();
+  }
 
   finally : coda;
 }
 
-static xapi node_operations_refresh_vertex(graph * const restrict g, vertex * const restrict v)
+static xapi node_operations_refresh_vertex(graph_parser * restrict parser, moria_vertex * const restrict v)
 {
   enter;
 
-  node *n;
+  fsent *n;
 
-  n = vertex_value(v);
+  n = containerof(v, fsent, vertex);
 
-  node_state_set(n, VERTEX_OK);
+  fatal(fsent_ok, n);
 
   finally : coda;
 }
 
-static xapi node_operations_invalidate_vertex(graph * const restrict g, vertex * const restrict v)
+static xapi node_operations_invalidate_vertex(graph_parser * restrict parser, moria_vertex * const restrict v)
 {
   enter;
 
-  node *n;
+  fsent *n;
 
-  n = vertex_value(v);
-  fatal(node_invalidate, n, &invalidation);
+  n = containerof(v, fsent, vertex);
+  fatal(fsent_invalidate, n, &invalidation);
 
   finally : coda;
 }
 
-static xapi node_operations_disconnect(graph * const restrict g, edge * restrict e)
+static xapi node_operations_disconnect(graph_parser * restrict parser, moria_edge * restrict e)
 {
   enter;
 
-  fatal(node_edge_disconnect, e, &invalidation);
+  fatal(graph_disintegrate, e, &invalidation);
 
   finally : coda;
 }
 
 static xapi create_vertex(
-    vertex ** const restrict rv
-  , graph * const restrict g
+    graph_parser * restrict parser
+  , moria_vertex ** const restrict rv
   , uint32_t attrs
   , uint8_t opattrs
   , const char * const restrict label
@@ -113,18 +133,18 @@ static xapi create_vertex(
 {
   enter;
 
-  node *n;
-  node *b;
+  fsent *n;
+  fsent *b;
   bool shadow = false;
   bool root = false;
 
   /* first segment in the identifier, and starting with double-slash */
-  if(opattrs & MORIA_OPATTRS_INIT_SLASH) // 0x80000000)
+  if(opattrs & MORIA_OPATTRS_INIT_SLASH)
   {
     shadow = true;
   }
   /* first segment in the identifier */
-  else if(opattrs & MORIA_OPATTRS_INIT) // 0x40000000)
+  else if(opattrs & MORIA_OPATTRS_INIT)
   {
     root = true;
   }
@@ -134,11 +154,11 @@ static xapi create_vertex(
   {
     if(memncmp(label, label_len, MMS("module")) == 0)
     {
-      *rv = vertex_containerof(g_shadow_module);
+      *rv = &g_shadow_module->vertex;
     }
     else if(memncmp(label, label_len, MMS("modules")) == 0)
     {
-      *rv = vertex_containerof(g_shadow_modules);
+      *rv = &g_shadow_modules->vertex;
     }
     else
     {
@@ -149,8 +169,8 @@ static xapi create_vertex(
     goto XAPI_FINALLY;
   }
 
-  fatal(node_operations_create_vertex, rv, g, attrs | VERTEX_OK, label, label_len);
-  n = vertex_value(*rv);
+  fatal(fsent_create, &n, attrs, VERTEX_OK, label, label_len);
+  *rv = &n->vertex;
 
   b = 0;
   if(root && g_root)
@@ -164,13 +184,61 @@ static xapi create_vertex(
 
   if(b)
   {
-    fatal(node_operations_connect, g, vertex_containerof(b), vertex_containerof(n), EDGE_TYPE_FS, 0, 0);
+    fatal(node_operations_connect, parser, &b->vertex, &n->vertex, EDGE_TYPE_FSTREE, 0);
   }
 
   finally : coda;
 }
 
-operations_dispatch * node_operations_test_dispatch = (operations_dispatch[]) {{
+xapi resolve_fragment(const char *frag, uint16_t fragl, fsent **entp)
+{
+  enter;
+
+  moria_vertex *v;
+
+  fatal(moria_graph_linear_search, &fsent_list, frag, fragl, &v);
+  RUNTIME_ASSERT(v);
+
+  *entp = containerof(v, fsent, vertex);
+
+  finally : coda;
+}
+
+xapi graph_say_lists(narrator * restrict N, llist ** vertex_lists, uint16_t vertex_lists_len, llist ** edge_lists, uint16_t edge_lists_len)
+{
+  enter;
+
+  fatal(moria_graph_say
+    , &g_graph
+    , vertex_lists
+    , vertex_lists_len
+    , edge_lists
+    , edge_lists_len
+    , graph_vertex_attrs
+    , graph_edge_attrs
+    , N
+  );
+
+  finally : coda;
+}
+
+xapi graph_say(narrator * restrict N)
+{
+  enter;
+
+  llist *vertex_lists[1];
+  llist *edge_lists[2];
+
+  vertex_lists[0] = &fsent_list;
+  edge_lists[0] = &fsedge_list;
+  edge_lists[1] = &dependency_list;
+
+  fatal(graph_say_lists, N, vertex_lists, sizeof(vertex_lists) / sizeof(*vertex_lists), edge_lists, sizeof(edge_lists) / sizeof(*edge_lists));
+
+  finally : coda;
+}
+
+moria_operations_dispatch * node_operations_test_dispatch = (moria_operations_dispatch[]) {{
     .create_vertex = create_vertex
   , .connect = node_operations_connect
   , .disconnect = node_operations_disconnect

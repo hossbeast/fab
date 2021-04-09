@@ -35,19 +35,21 @@
 #include "narrator.h"
 #include "narrator/growing.h"
 #include "logging.h"
-#include "rule.internal.h"
-#include "node.h"
-#include "node_operations.h"
+#include "rule.h"
+#include "fsent.h"
+#include "exec.h"
 #include "pattern.h"
 #include "pattern_parser.h"
 #include "module.internal.h"
-#include "exec_builder.internal.h"
+#include "exec_builder.h"
 #include "exec_render.h"
 #include "variant.h"
 #include "formula_parser.internal.h"
 #include "formula_value.h"
 #include "var.h"
 #include "build_slot.h"
+#include "dependency.h"
+#include "channel.h"
 
 typedef struct exec_builder_test {
   XUNITTEST;
@@ -113,13 +115,15 @@ static xapi exec_builder_test_entry(xunit_test * _test)
   variant * var = 0;
   value * vars = 0;
   module mod = { 0 };
-  buildplan_entity bpe = { 0 };
+  dependency bpe = { 0 };
   build_slot bs = { .bpe = &bpe };
+  channel *chan;
 
   fatal(value_parser_create, &parser);
   fatal(formula_parser_create, &fml_parser);
   fatal(exec_builder_xinit, &builder);
   fatal(exec_render_context_xinit, &renderer);
+  fatal(xmalloc, &chan, sizeof(*chan));
 
   // arrange
   if(test->variant)
@@ -177,7 +181,7 @@ static xapi exec_builder_test_entry(xunit_test * _test)
 
   fatal(exec_builder_build, &builder, &e);
 
-  assert_eq_s(test->file, e->file);
+  assert_eq_s(test->file, e->path);
 
   if(test->args)
   {
@@ -205,6 +209,7 @@ finally:
   formula_value_free(fml_file);
   formula_value_free(fml_args);
   formula_value_free(fml_envs);
+  wfree(chan);
 coda;
 }
 

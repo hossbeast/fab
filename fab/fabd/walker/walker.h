@@ -18,13 +18,12 @@
 #ifndef _WALKER_H
 #define _WALKER_H
 
-#include <fcntl.h>
-
 #include "xapi.h"
 #include "types.h"
 
-struct node;
+struct fsent;
 struct graph_invalidation_context;
+struct configblob;
 
 /*
  * visit directory entries in a filesystem tree, creating graph nodes for each node as necessary
@@ -32,40 +31,50 @@ struct graph_invalidation_context;
  * either base is specified (if traversing an already-instantiated tree), or parent is specified
  * (node to which the tree is to be attached)
  *
- * [basep]      - (returns) base of tree rooted at abspath
- * [base]       - base of the tree rooted at abspath, if it already exists
- * [parent]     - parent of base to which it is attached when created
- * abspath      - absolute path to a base directory
- * [walk_id]    -
- * invalidation -
+ * [basep]    - (returns) base of tree rooted at abspath
+ * [base]     - base of the tree rooted at abspath, if it already exists
+ * [parent]   - parent of base to which it is attached when created
+ * abspath    - absolute path to a base directory
  */
 xapi walker_descend(
-    struct node ** restrict basep
-  , struct node * restrict base
-  , struct node * restrict parent
+    struct fsent ** restrict basep
+  , struct fsent * restrict base
+  , struct fsent * restrict parent
   , const char * restrict abspath
-  , int walk_id
+  , uint16_t walk_id
   , struct graph_invalidation_context * restrict invalidation
 )
   __attribute__((nonnull(4, 6)));
 
-/// walker_ascend
-//
-// SUMMARY
-//  traverse upwards in a filesystem tree from a base node, visiting only nodes relevant for modules
-//
-// PARAMETERS
-//  base      - node to ascend from
-//  [walk_id] -
-//
-xapi walker_ascend(struct node * restrict base, int walk_id, struct graph_invalidation_context * restrict invalidation)
+/*
+ * traverse upwards in a filesystem tree from a base node, visiting only nodes relevant for modules
+ *
+ *  base      - node to ascend from
+ *  [walk_id] -
+ */
+xapi walker_ascend(
+    struct fsent * restrict base
+  , uint16_t walk_id
+  , struct graph_invalidation_context * restrict invalidation
+)
+  __attribute__((nonnull(1, 3)));
+
+xapi walker_system_reconcile(struct graph_invalidation_context * restrict invalidation)
   __attribute__((nonnull));
 
-/// walker_descend_begin
-//
-// SUMMARY
-//  allocate a walk scope, in which each node is visited at most once
-//
-int walker_descend_begin(void);
+/*
+ * reapply configuration to the extern module
+ *
+ * ctx    - reconfiguration context
+ * config - root of the config tree
+ * dry    - whether to perform a dry-run
+ */
+xapi walker_system_reconfigure(struct configblob * restrict cfg, bool dry)
+  __attribute__((nonnull));
+
+xapi walker_setup(void);
+xapi walker_cleanup(void);
+
+uint16_t walker_begin(void);
 
 #endif

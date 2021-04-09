@@ -24,12 +24,15 @@
 #include "walker.h"
 
 struct ftwinfo;
-struct node;
+struct fsent;
 struct graph_invalidation_context;
+struct llist;
+
+extern struct llist * walker_exclude_list;
 
 typedef struct walker_context {
-  struct node * base;        // base of the tree
-  struct node * base_parent; // base attached here if/when created
+  struct fsent * base;        // base of the tree
+  struct fsent * base_parent; // base attached here if/when created
   int walk_id;
   struct graph_invalidation_context * invalidation;
 } walker_context;

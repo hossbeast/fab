@@ -15,24 +15,14 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#include <string.h>
-
-#include "xapi.h"
-#include "types.h"
-
 #include "narrator.h"
-#include "value/writer.h"
 #include "xlinux/xstdlib.h"
-#include "valyria/list.h"
 
-#include "star.internal.h"
-#include "pattern.internal.h"
-#include "generate.internal.h"
+#include "star.h"
+#include "fsent.h"
+#include "search.internal.h"
 #include "match.internal.h"
-#include "node.h"
-#include "path.h"
-
-#include "common/attrs.h"
+#include "pattern.internal.h"
 
 //
 // static
@@ -52,18 +42,18 @@ static void destroy(pattern_segment * restrict n)
 
 }
 
-static xapi match(pattern_match_context * restrict ctx, const pattern_segment * restrict segment)
+static xapi match(const pattern_segment * restrict segment, pattern_match_context * restrict ctx)
 {
   enter;
 
-  uint16_t namel = ctx->node->name->namel;
-
+  uint16_t namel;
   uint16_t delta;
   uint16_t start;
-
   struct match_segments_traversal *traversal;
-  traversal = ctx->traversal;
 
+  //namel = ctx->node->name.namel;
+  namel = ctx->label_len;
+  traversal = ctx->traversal;
   start = ctx->traversal->offset;
 
   for(delta = namel - start; delta >= 0 && delta != 0xffff; delta--)
@@ -71,7 +61,35 @@ static xapi match(pattern_match_context * restrict ctx, const pattern_segment * 
     ctx->traversal->offset = start + delta;
 
     fatal(pattern_segments_match, ctx);
+    if(ctx->traversal->u.match) {
+      break;
+    }
 
+    ctx->traversal = traversal;
+  }
+
+  finally : coda;
+}
+
+static xapi search(const pattern_segment * restrict segment, pattern_search_context * restrict ctx)
+{
+  enter;
+
+  uint16_t namel;
+  uint16_t delta;
+  uint16_t start;
+  struct search_segments_traversal *traversal;
+
+  namel = ctx->node->name.namel;
+  //namel = ctx->label_len;
+  traversal = ctx->traversal;
+  start = ctx->traversal->offset;
+
+  for(delta = namel - start; delta >= 0 && delta != 0xffff; delta--)
+  {
+    ctx->traversal->offset = start + delta;
+
+    fatal(pattern_segments_search, ctx);
     if(ctx->matched)
       break;
 
@@ -90,6 +108,7 @@ static pattern_segment_vtable vtable = {
     type : PATTERN_STAR
   , say : say
   , destroy : destroy
+  , search : search
   , match : match
   , cmp : cmp
 };

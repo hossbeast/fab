@@ -20,6 +20,7 @@
 #include "yyutil/load.h"
 #include "logger/load.h"
 #include "value/load.h"
+#include "xlinux/xstdlib.h"
 
 #include "valyria/map.h"
 #include "valyria/set.h"
@@ -34,12 +35,13 @@
 #include "module.internal.h"
 #include "rule.h"
 #include "request.h"
-#include "node.h"
+#include "fsent.h"
 #include "logging.h"
 #include "variant.h"
 #include "pattern.h"
+#include "system_state.h"
 
-#include "box.h"
+#include "yyutil/box.h"
 
 typedef struct {
   XUNITTEST;
@@ -82,16 +84,6 @@ static xapi load_submodule(module_parser * restrict parser, pattern * c, bool sc
   finally : coda;
 }
 
-static xapi load_formula(module_parser * restrict parser, pattern * c, node ** restrict target)
-{
-  enter;
-
-  pattern_free(c);
-  *target = 0;
-
-  finally : coda;
-}
-
 static xapi module_parser_test_entry(xunit_test * _test)
 {
   enter;
@@ -100,21 +92,21 @@ static xapi module_parser_test_entry(xunit_test * _test)
 
   module_parser * parser = 0;
   module * mod = 0;
-  graph_invalidation_context invalidation = { 0 };
+  graph_invalidation_context invalidation = { };
 
   // arrange
   fatal(module_parser_create, &parser);
   parser->import_resolve = load_submodule;
-  parser->formula_resolve = load_formula;
   fatal(graph_invalidation_begin, &invalidation);
 
   // parse
-  fatal(module_create, &mod);
+  fatal(module_alloc, &mod);
   fatal(module_parser_parse, parser, mod, &invalidation, test->text, strlen(test->text) + 2, "-fname-");
+  assert_eq_b(false, system_error);
 
 finally:
+  fatal(module_xrelease, mod, parser);
   fatal(module_parser_xfree, parser);
-  fatal(module_xfree, mod);
   graph_invalidation_end(&invalidation);
 coda;
 }

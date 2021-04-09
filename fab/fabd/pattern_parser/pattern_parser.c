@@ -18,41 +18,48 @@
 #include "xapi.h"
 #include "xapi/exit.h"
 
-#include "xlinux/xstdlib.h"
-#include "xlinux/KERNEL.errtab.h"
-#include "xlinux/xstring.h"
-
+#include "common/attrs.h"
 #include "narrator.h"
+#include "xlinux/KERNEL.errtab.h"
+#include "xlinux/xstdlib.h"
+#include "xlinux/xstring.h"
 
 /* flex and bison do not agree on these names */
 #define YYSTYPE struct pattern_yystype
 #define YYLTYPE yyu_location
 
 /* the token enums shadow each other - only include one set */
-#define MATCH_PATTERN_YYTOKENTYPE
+#define SEARCH_PATTERN_YYTOKENTYPE
 #define REFERENCE_PATTERN_YYTOKENTYPE
 #define LOOKUP_PATTERN_YYTOKENTYPE
+#define INCLUDE_PATTERN_YYTOKENTYPE
+#define MATCH_PATTERN_YYTOKENTYPE
 
 #include "pattern_parser.internal.h"
 #include "PATTERN.errtab.h"
-#include "logging.h"
 #include "pattern.lex.h"
 #include "pattern.states.h"
-#include "match_pattern.tab.h"
-#include "match_pattern.tokens.h"
+#include "search_pattern.tab.h"
+#include "search_pattern.tokens.h"
 #include "generate_pattern.tab.h"
 #include "generate_pattern.tokens.h"
 #include "reference_pattern.tab.h"
 #include "reference_pattern.tokens.h"
 #include "lookup_pattern.tab.h"
 #include "lookup_pattern.tokens.h"
+#include "include_pattern.tab.h"
+#include "include_pattern.tokens.h"
+#include "match_pattern.tab.h"
+#include "match_pattern.tokens.h"
 
-#include "common/attrs.h"
+#include "logging.h"
 
-static YYU_VTABLE(match_vtable, pattern, match_pattern);
+static YYU_VTABLE(search_vtable, pattern, search_pattern);
 static YYU_VTABLE(generate_vtable, pattern, generate_pattern);
 static YYU_VTABLE(reference_vtable, pattern, reference_pattern);
 static YYU_VTABLE(lookup_vtable, pattern, lookup_pattern);
+static YYU_VTABLE(include_vtable, pattern, include_pattern);
+static YYU_VTABLE(match_vtable, pattern, match_pattern);
 
 //
 // public
@@ -66,31 +73,29 @@ xapi pattern_parser_create(pattern_parser ** rv)
 
   fatal(xmalloc, &p, sizeof(*p));
 
-  // match
-  fatal(yyu_parser_init, &p->match_yyu, &match_vtable, PATTERN_SYNTAX);
-  fatal(yyu_parser_init_tokens, &p->match_yyu, match_pattern_token_table, match_pattern_TOKEN_TABLE_SIZE);
+  // search
+  fatal(yyu_parser_init, &p->search_yyu, &search_vtable, PATTERN_SYNTAX);
+  fatal(yyu_parser_init_tokens, &p->search_yyu, search_pattern_token_table, search_pattern_TOKEN_TABLE_SIZE);
   fatal(yyu_parser_init_states
-    , &p->match_yyu
+    , &p->search_yyu
     , pattern_numstates
     , pattern_statenumbers
     , pattern_statenames
   );
-//  fatal(yyu_define_tokenrange, &p->match_yyu, match_pattern_MODULE, match_pattern_USES);
 
   // generate
   fatal(yyu_parser_init, &p->generate_yyu, &generate_vtable, PATTERN_SYNTAX);
-  fatal(yyu_parser_init_tokens, &p->generate_yyu, generate_pattern_token_table, generate_pattern_TOKEN_TABLE_SIZE);;
+  fatal(yyu_parser_init_tokens, &p->generate_yyu, generate_pattern_token_table, generate_pattern_TOKEN_TABLE_SIZE);
   fatal(yyu_parser_init_states
     , &p->generate_yyu
     , pattern_numstates
     , pattern_statenumbers
     , pattern_statenames
   );
-//  fatal(yyu_define_tokenrange, &p->generate_yyu, generate_pattern_MODULE, generate_pattern_USES);
 
-  // reference
+  // reference (formula)
   fatal(yyu_parser_init, &p->reference_yyu, &reference_vtable, PATTERN_SYNTAX);
-  fatal(yyu_parser_init_tokens, &p->reference_yyu, reference_pattern_token_table, reference_pattern_TOKEN_TABLE_SIZE);;
+  fatal(yyu_parser_init_tokens, &p->reference_yyu, reference_pattern_token_table, reference_pattern_TOKEN_TABLE_SIZE);
   fatal(yyu_parser_init_states
     , &p->reference_yyu
     , pattern_numstates
@@ -108,11 +113,33 @@ xapi pattern_parser_create(pattern_parser ** rv)
     , pattern_statenames
   );
 
+  // include
+  fatal(yyu_parser_init, &p->include_yyu, &include_vtable, PATTERN_SYNTAX);
+  fatal(yyu_parser_init_tokens, &p->include_yyu, include_pattern_token_table, include_pattern_TOKEN_TABLE_SIZE);
+  fatal(yyu_parser_init_states
+    , &p->include_yyu
+    , pattern_numstates
+    , pattern_statenumbers
+    , pattern_statenames
+  );
+
+  // match
+  fatal(yyu_parser_init, &p->match_yyu, &match_vtable, PATTERN_SYNTAX);
+  fatal(yyu_parser_init_tokens, &p->match_yyu, match_pattern_token_table, match_pattern_TOKEN_TABLE_SIZE);
+  fatal(yyu_parser_init_states
+    , &p->match_yyu
+    , pattern_numstates
+    , pattern_statenumbers
+    , pattern_statenames
+  );
+
 #if DEBUG || DEVEL || XUNIT
-  p->match_yyu.logs = L_PATTERN;
+  p->search_yyu.logs = L_PATTERN;
   p->generate_yyu.logs = L_PATTERN;
   p->reference_yyu.logs = L_PATTERN;
   p->lookup_yyu.logs = L_PATTERN;
+  p->include_yyu.logs = L_PATTERN;
+  p->match_yyu.logs = L_PATTERN;
 #endif
 
   *rv = p;
@@ -129,10 +156,12 @@ xapi pattern_parser_xfree(pattern_parser* const p)
 
   if(p)
   {
-    fatal(yyu_parser_xdestroy, &p->match_yyu);
+    fatal(yyu_parser_xdestroy, &p->search_yyu);
     fatal(yyu_parser_xdestroy, &p->generate_yyu);
     fatal(yyu_parser_xdestroy, &p->reference_yyu);
     fatal(yyu_parser_xdestroy, &p->lookup_yyu);
+    fatal(yyu_parser_xdestroy, &p->include_yyu);
+    fatal(yyu_parser_xdestroy, &p->match_yyu);
   }
 
   wfree(p);
@@ -150,7 +179,7 @@ xapi pattern_parser_ixfree(pattern_parser ** const p)
   finally : coda;
 }
 
-xapi match_pattern_parse_partial(
+xapi search_pattern_parse_partial(
     pattern_parser * restrict parser
   , char * const restrict buf
   , size_t size
@@ -163,10 +192,12 @@ xapi match_pattern_parse_partial(
   enter;
 
   parser->group_counter = 0;
-  fatal(yyu_parse, &parser->match_yyu, buf, size, fname, YYU_PARTIAL | YYU_INPLACE, init_loc, used_loc);
+  fatal(yyu_parse, &parser->search_yyu, buf, size, fname, YYU_PARTIAL | YYU_INPLACE, init_loc, used_loc);
   if(rv)
   {
-    fatal(ixstrdup, &parser->pattern->fname, fname);
+    if(fname) {
+      fatal(ixstrdup, &parser->pattern->fname, fname);
+    }
     *rv = parser->pattern;
     parser->pattern = 0;
   }
@@ -191,7 +222,9 @@ xapi generate_pattern_parse_partial(
   fatal(yyu_parse, &parser->generate_yyu, buf, size, fname, YYU_PARTIAL | YYU_INPLACE, init_loc, used_loc);
   if(rv)
   {
-    fatal(ixstrdup, &parser->pattern->fname, fname);
+    if(fname) {
+      fatal(ixstrdup, &parser->pattern->fname, fname);
+    }
     *rv = parser->pattern;
     parser->pattern = 0;
   }
@@ -216,7 +249,9 @@ xapi reference_pattern_parse_partial(
   fatal(yyu_parse, &parser->reference_yyu, buf, size, fname, YYU_PARTIAL | YYU_INPLACE, init_loc, used_loc);
   if(rv)
   {
-    fatal(ixstrdup, &parser->pattern->fname, fname);
+    if(fname) {
+      fatal(ixstrdup, &parser->pattern->fname, fname);
+    }
     *rv = parser->pattern;
     parser->pattern = 0;
   }
@@ -241,7 +276,63 @@ xapi lookup_pattern_parse_partial(
   fatal(yyu_parse, &parser->lookup_yyu, buf, size, fname, YYU_PARTIAL | YYU_INPLACE, init_loc, used_loc);
   if(rv)
   {
-    fatal(ixstrdup, &parser->pattern->fname, fname);
+    if(fname) {
+      fatal(ixstrdup, &parser->pattern->fname, fname);
+    }
+    *rv = parser->pattern;
+    parser->pattern = 0;
+  }
+
+finally:
+  pattern_free(parser->pattern);
+coda;
+}
+
+xapi include_pattern_parse_partial(
+    pattern_parser * restrict parser
+  , char * const restrict buf
+  , size_t size
+  , const char * restrict fname
+  , yyu_location * init_loc
+  , yyu_location * used_loc
+  , pattern ** restrict rv
+)
+{
+  enter;
+
+  fatal(yyu_parse, &parser->include_yyu, buf, size, fname, YYU_PARTIAL | YYU_INPLACE, init_loc, used_loc);
+  if(rv)
+  {
+    if(fname) {
+      fatal(ixstrdup, &parser->pattern->fname, fname);
+    }
+    *rv = parser->pattern;
+    parser->pattern = 0;
+  }
+
+finally:
+  pattern_free(parser->pattern);
+coda;
+}
+
+xapi match_pattern_parse_partial(
+    pattern_parser * restrict parser
+  , char * const restrict buf
+  , size_t size
+  , const char * restrict fname
+  , yyu_location * init_loc
+  , yyu_location * used_loc
+  , pattern ** restrict rv
+)
+{
+  enter;
+
+  fatal(yyu_parse, &parser->match_yyu, buf, size, fname, YYU_PARTIAL | YYU_INPLACE, init_loc, used_loc);
+  if(rv)
+  {
+    if(fname) {
+      fatal(ixstrdup, &parser->pattern->fname, fname);
+    }
     *rv = parser->pattern;
     parser->pattern = 0;
   }

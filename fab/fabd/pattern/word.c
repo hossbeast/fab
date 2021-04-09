@@ -27,12 +27,12 @@
 #include "xlinux/xstring.h"
 
 #include "pattern.internal.h"
-#include "word.internal.h"
+#include "word.h"
 #include "generate.internal.h"
 #include "render.internal.h"
+#include "search.internal.h"
 #include "match.internal.h"
-#include "node.h"
-#include "path.h"
+#include "fsent.h"
 
 #include "common/attrs.h"
 
@@ -68,13 +68,38 @@ static void destroy(pattern_segment * restrict fn)
   wfree(n->text);
 }
 
-static xapi match(pattern_match_context * restrict ctx, const pattern_segment * restrict segment)
+static xapi match(const pattern_segment * restrict segment, pattern_match_context * restrict ctx)
 {
   enter;
 
-  const pattern_word * word = &segment->word;
-  const char * restrict name = ctx->node->name->name;
-  uint16_t namel = ctx->node->name->namel;
+  const pattern_word * word;
+  const char * restrict name;
+  uint16_t namel;
+
+  word = &segment->word;
+  name = ctx->label;
+  namel = ctx->label_len;
+
+  if(     (namel - ctx->traversal->offset) >= word->len
+       && strncmp(name + ctx->traversal->offset, word->text, word->len) == 0)
+  {
+    ctx->traversal->offset += word->len;
+  }
+
+  finally : coda;
+}
+
+static xapi search(const pattern_segment * restrict segment, pattern_search_context * restrict ctx)
+{
+  enter;
+
+  const pattern_word * word;
+  const char * restrict name;
+  uint16_t namel;
+
+  word = &segment->word;
+  name = ctx->node->name.name;
+  namel = ctx->node->name.namel;
 
   if(     (namel - ctx->traversal->offset) >= word->len
        && strncmp(name + ctx->traversal->offset, word->text, word->len) == 0)
@@ -107,6 +132,7 @@ static pattern_segment_vtable vtable = {
   , say : say
   , destroy : destroy
   , render : render
+  , search : search
   , match : match
   , generate : generate
   , cmp : cmp

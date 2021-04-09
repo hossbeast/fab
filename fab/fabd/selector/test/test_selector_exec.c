@@ -20,6 +20,7 @@
 #include "yyutil/load.h"
 #include "logger/load.h"
 #include "value/load.h"
+#include "xlinux/xstdlib.h"
 
 #include "yyutil/grammar.h"
 #include "valyria/map.h"
@@ -28,6 +29,7 @@
 #include "valyria/llist.h"
 #include "moria/operations.h"
 #include "moria/graph.h"
+#include "moria/parser.h"
 
 #include "xunit.h"
 #include "xunit/assert.h"
@@ -37,14 +39,15 @@
 #include "selector_parser.h"
 #include "selector.internal.h"
 #include "request.h"
-#include "node.h"
-#include "node_operations.h"
-#include "path.h"
+#include "fsent.h"
 #include "logging.h"
 #include "node_operations_test.h"
 #include "filesystem.internal.h"
-#include "lookup.internal.h"
+#include "lookup.h"
 #include "selection.h"
+#include "dependency.h"
+#include "module.internal.h"
+#include "channel.h"
 
 #include "zbuffer.h"
 
@@ -53,8 +56,7 @@ typedef struct {
 
   char * operations;  // build the node graph
   char * selector;    // selector
-  char * target;
-  char * base;
+  char * module;
 
   // outputs
   char * result;      // expected result set
@@ -69,6 +71,8 @@ static xapi selector_exec_test_unit_setup(xunit_unit * unit)
   fatal(logging_finalize);
   fatal(graph_setup);
   fatal(filesystem_setup);
+
+  fsent_name_module = "module.bam";
 
   finally : coda;
 }
@@ -93,51 +97,51 @@ static xapi selector_exec_test_entry(xunit_test * _test)
 
   selector_parser * parser = 0;
   selector * sel = 0;
-  list * operations = 0;
-  operations_parser * op_parser = 0;
+  graph_parser * op_parser = 0;
   list * actual_list = 0;
-  node *target = 0;
-  node *base = 0;
   char actual[512];
   selector_context ctx = { 0 };
   int x;
-  selected_node *sn;
+  selected *sn;
   yyu_location loc = { 0 };
-  buildplan_entity *bpe;
+  dependency *bpe = 0;
+  module mod = { };
+  fsent *mod_dir_n;
+  graph_invalidation_context invalidation = { };
+  channel *chan;
 
   // arrange
-  fatal(node_setup);
+  fatal(fsent_setup);
   fatal(list_create, &actual_list);
+  fatal(graph_invalidation_begin, &invalidation);
+  fatal(xmalloc, &chan, sizeof(*chan));
 
   // setup initial graph
-  fatal(operations_parser_operations_create, &operations);
-  fatal(operations_parser_create, &op_parser);
-  fatal(operations_parser_parse, op_parser, g_graph, MMS(test->operations), operations);
-  fatal(operations_perform, g_graph, node_operations_test_dispatch, operations);
+  fatal(graph_parser_create, &op_parser, &g_graph, &fsent_list, node_operations_test_dispatch, graph_vertex_attrs, graph_edge_attrs);
+  fatal(graph_parser_operations_parse, op_parser, MMS(test->operations));
+
+  fatal(resolve_fragment, MMS(test->module), &mod_dir_n);
+  fatal(module_initialize, mod_dir_n, containerof(moria_vertex_downs(&mod_dir_n->vertex, "module.bam"), fsent, vertex), &invalidation);
+
+  // setup the module
+  fatal(resolve_fragment, MMS(test->module), &mod.dir_node);
+  mod.dir_node->mod = &mod;
+  snprintf(mod.id, sizeof(mod.id), "%.*s", 15, mod.dir_node->name.name);
+  fsent_module_epoch++;
 
   fatal(selector_parser_create, &parser);
   fatal(selector_parser_parse_partial, parser, test->selector, strlen(test->selector) + 2, 0, 0, &loc, &sel);
   assert_eq_u32(strlen(test->selector), loc.l);
 
-  if(test->target)
-  {
-    fatal(pattern_lookup_fragment, MMS(test->target), 0, 0, 0, 0, 0, 0, &target);
-    bpe = &target->self_bpe;
-  }
-
-  if(test->base)
-  {
-    fatal(pattern_lookup_fragment, MMS(test->base), 0, 0, 0, 0, 0, 0, &base);
-  }
-
   // act
+  ctx.mod = &mod;
   ctx.bpe = bpe;
-  ctx.mod = 0;
-  ctx.base = base;
-  fatal(selector_exec, sel, &ctx);
+  ctx.chan = chan;
+  fatal(selector_exec, sel, &ctx, SELECTION_ITERATION_TYPE_ORDER);
+  assert_eq_b(false, chan->error);
 
   llist_foreach(&ctx.selection->list, sn, lln) {
-    fatal(list_push, actual_list, &sn->n->name->name, 1);
+    fatal(list_push, actual_list, &sn->v->label, 1);
   }
 
   int cmp(const void *_A, size_t Asz, const void *_B, size_t Bsz)
@@ -166,9 +170,10 @@ finally:
   selector_free(sel);
   fatal(selector_context_xdestroy, &ctx);
   fatal(list_xfree, actual_list);
-  fatal(node_cleanup);
-  fatal(list_xfree, operations);
-  fatal(operations_parser_xfree, op_parser);
+  fatal(fsent_cleanup);
+  fatal(graph_parser_xfree, op_parser);
+  graph_invalidation_end(&invalidation);
+  wfree(chan);
 coda;
 }
 
@@ -181,32 +186,35 @@ xunit_unit xunit = {
   , xu_cleanup : selector_exec_test_unit_cleanup
   , xu_entry : selector_exec_test_entry
   , xu_tests : (selector_exec_test*[]) {
+    /* default traversal is fstree, skip self */
       (selector_exec_test[]) {{
           operations :
-            " +A/B/C:strong:E/F/G"
-        , target : "A"
+            " M/module.bam"
+            " +M/A/B/C:depends:E/F/G"
+        , module : "M"
         , selector : (char[]) {
             "["
-            " target"
+            " path : /M/A"
             " traverse : {"
              " direction : down"
             " }"
             "]"
             "\0\0"
           }
-        , result : "B C G"
+        , result : "B C"
       }}
     , (selector_exec_test[]) {{
           operations :
-            " +A/B/C:strong:E/F/G"
-        , target : "C"
+            " M/module.bam"
+            " +M/A/B/C:depends:E/F/G"
+        , module : "M"
         , selector : (char[]) {
             "sequence : ["       // the output of sequence is the output of the last operation
-             " target"
+             " path : /M/A/B/C"
              " traverse : {"
               " min-distance : 0"
               " direction : down"
-              " relation : fs"
+              " graph : fs"
              " }"
             " ]"
             "\0\0"
@@ -215,86 +223,91 @@ xunit_unit xunit = {
       }}
     , (selector_exec_test[]) {{
           operations :
-           " +A/B/C:strong:E/F/G"
-        , target: "B"
+           " M/module.bam"
+           " +M/A/B/C:depends:E/F/G"
+        , module : "M"
         , selector : (char[]) {
             "["
-             " target"
+             " path : /M/A/B"
              " traverse : {"
               " direction : up"
-              " relation : fs"
+              " graph : fs"
               " min-distance : 0"
              " }"
             "]"
             "\0\0"
           }
-        , result : "A B"
+        , result : "A B M"
       }}
     , (selector_exec_test[]) {{
           operations :
-           " +A/B/C:strong:E/F/G"
-        , target : "B"
+           " M/module.bam"
+           " +M/A/B/C:depends:E/F/G"
+        , module : "M"
         , selector : (char[]) {
             "sequence : ["
-             " target"
+             " path : /M/A/B"
              " traverse : {"
               " direction : up"
-              " relation : fs"
+              " graph : fs"
               " min-distance : 1"
              " }"
             " ]"
             "\0\0"
           }
-        , result : "A"
+        , result : "A M"
       }}
     , (selector_exec_test[]) {{
           operations :
-            " +A/B/C:strong:E/F/G"
-        , target : "B"
+           " M/module.bam"
+           " +M/A/B/C:depends:E/F/G"
+        , module : "M"
         , selector : (char[]) {
             "sequence : ["
-             " target"
+             " path : /M/A/B"
              " traverse : {"
               " direction : up"
-              " relation : fs"
+              " graph : fs"
               " min-distance : 2"
              " }"
             " ]"
             "\0\0"
           }
-        , result : ""
+        , result : "M"
       }}
 
     /* multiple traverse in sequence */
     , (selector_exec_test[]) {{
           operations :
-           " +A/B/C:strong:E/F/G"
-        , target : "G"
+           " M/module.bam"
+           " +M/A/B/C:depends:E/F/G"
+        , module : "M"
         , selector : (char[]) {
             "["
-            " target"
+            " path : /E/F/G"
             " traverse : {"
              " direction : up"
-             " relation : strong"
+             " graph : depends"
             " }"
             " traverse : {"
              " direction : up"
-             " relation : fs"
+             " graph : fs"
             " }"
             "]"
             "\0\0"
           }
-        , result : "A B"
+        , result : "A B M"
       }}
 
     /* union selector */
     , (selector_exec_test[]) {{
           operations :
-           " A/B/C/D/E"
-        , target : "C"
+           " M/module.bam"
+           " M/A/B/C/D/E"
+        , module : "M"
         , selector : (char[]) {
             "["
-            " target "
+            " path : /M/A/B/C"
             " union : ["
               " traverse : {"
                " direction : up"
@@ -306,64 +319,68 @@ xunit_unit xunit = {
             "]"
             "\0\0"
           }
-        , result : "A B D E"
+        , result : "A B D E M"
       }}
     , (selector_exec_test[]) {{
           operations :
-            " +A/B/C:strong:E/F/G"
-        , target : "C"
+           " M/module.bam"
+           " +M/A/B/C:depends:E/F/G"
+        , module : "M"
         , selector : (char[]) {
             "["
-            " target"
+            " path : /M/A/B/C"
             " union : ["
              " traverse : {"
               " direction : up"
              " }"
              " traverse : {"
               " direction : down"
+              " graph : depends"
              " }"
             " ]"
             "]"
             "\0\0"
           }
-        , result : "A B G"
+        , result : "A B G M"
       }}
     , (selector_exec_test[]) {{
           operations :
-            " +A/B/C:strong:E/F/G"
-        , target : "C"
+           " M/module.bam"
+           " +M/A/B/C:depends:E/F/G"
+        , module : "M"
         , selector : (char[]) {
             "union : ["
               " sequence : ["
-                " target"
+                " path : /M/A/B/C"
                 " traverse : {"
                   " direction : down"
-                  " relation : strong"
+                  " graph : depends"
                 " }"
               " ]"
               " sequence : ["
-                " target"
+                " path : /M/A/B/C"
                 " traverse : {"
                   " direction : up"
-                  " relation : fs"
+                  " graph : fs"
                 " }"
               " ]"
             "]"
             "\0\0"
           }
-        , result : "A B G"
+        , result : "A B G M"
       }}
     , (selector_exec_test[]) {{
           operations :
-            " +A/B/C:strong:E/F/G"
-        , target : "C"
+           " M/module.bam"
+           " +M/A/B/C:depends:E/F/G"
+        , module : "M"
         , selector : (char[]) {
             "sequence : ["
               " sequence : ["
-                " target"
+                " path : /M/A/B/C"
                 " traverse : {"
                   " direction : down"
-                  " relation : strong"
+                  " graph : depends"
                 " }"
               " ]"
             "]"
@@ -373,29 +390,31 @@ xunit_unit xunit = {
       }}
     , (selector_exec_test[]) {{
           operations :
-            " +A/B/C/D:strong:E/F/G"
-        , target : "B"
+            " M/module.bam"
+            " +M/A/B/C/D:depends:E/F/G"
+        , module : "M"
         , selector : (char[]) {
             "["
-            " target"
+            " path : /M/A/B"
             " union : ["
              " traverse : {"
               " direction : up"
              " }"
              " traverse : {"
               " direction : down"
-              " file-type : dir"
+              " graph : dirtree"
              " }"
             " ]"
             "]"
             "\0\0"
           }
-        , result : "A C"
+        , result : "A C M"
       }}
     , (selector_exec_test[]) {{
           operations :
-            " +A/B/C/D:strong:E/F/G"
-        , base : "A"
+           " M/module.bam"
+           " +M/A/B/C/D:depends:E/F/G"
+        , module : "M"
         , selector : (char[]) {
             "["
             " pattern : B"
@@ -405,13 +424,13 @@ xunit_unit xunit = {
              " }"
              " traverse : {"
               " direction : down"
-              " file-type : dir"
+              " graph : dirtree"
              " }"
             " ]"
             "]"
             "\0\0"
           }
-        , result : "A C"
+        , result : "A C M"
       }}
     , 0
   }

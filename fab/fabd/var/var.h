@@ -18,32 +18,35 @@
 #ifndef FABD_VAR_H
 #define FABD_VAR_H
 
-/*
-
-SUMMARY
-
-*/
-
 #include "types.h"
 #include "xapi.h"
 
-struct config;
-struct node;
+#include "moria.h"
+
+struct fsent;
 struct value;
 struct variant;
 struct value_parser;
+struct moria_graph;
 
-/* global vars from config */
-extern struct value * g_var;
+/* VERTEX_VAR */
+typedef struct var {
+  moria_vertex vertex;
 
-/*
- * load a vars file
- *
- * @param var_node  - node for the var.bam file
- * @param var_value - (returns) parsed bacon
- */
-xapi var_node_parse(struct node * restrict var_node)
-  __attribute__((nonnull));
+  /* regarding the var fsent */
+  char self_node_abspath[512];
+  uint16_t self_node_abspath_len;
+
+  struct fsent *self_node;
+  fab_var_stats stats;
+  uint16_t reconciliation_id;
+
+  /* parsed from the file */
+  struct value *val;
+} var;
+
+xapi var_setup(void);
+xapi var_cleanup(void);
 
 /*
  * out - (returns) key -> value set
@@ -51,15 +54,23 @@ xapi var_node_parse(struct node * restrict var_node)
 xapi var_denormalize(struct value_parser * restrict parser, struct variant * restrict var, struct value * restrict valset, struct value ** restrict out)
   __attribute__((nonnull(1, 3, 4)));
 
-xapi var_setup(void);
-xapi var_cleanup(void);
+xapi var_system_reconcile(void);
 
-/// var_reconfigure
-//
-// SUMMARY
-//  apply configuration changes
-//
-xapi var_reconfigure(struct config * restrict cfg, bool dry)
+/*
+ * Write a vars stats to a buffer
+ *
+ * reset - true to reset the stats while reading them
+ * zp    - (returns) number of bytes written to dst
+ */
+xapi var_collate_stats(void *dst, size_t sz, var *vp, bool reset, size_t *zp)
+  __attribute__((nonnull));
+
+/* allocate a new var in the invalid state */
+xapi var_alloc(var ** restrict vp, struct moria_graph * restrict g)
+  __attribute__((nonnull));
+
+/* reload the var if invalid */
+xapi var_reconcile(var * restrict vp)
   __attribute__((nonnull));
 
 #endif

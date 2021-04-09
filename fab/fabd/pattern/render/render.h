@@ -28,23 +28,20 @@ typedef struct pattern_render_fragment {
 } pattern_render_fragment;
 STATIC_ASSERT(sizeof(pattern_render_fragment) == 2);
 
-// sequence of path fragments rendered from a reference pattern
+// sequence of path fragments rendered from a lookup pattern
 typedef struct pattern_render_result {
   uint16_t size;      /* number of path fragments */
   pattern_render_fragment fragments[];
 } pattern_render_result;
 STATIC_ASSERT(sizeof(pattern_render_result) == 2);
 
-/// pattern_render
-//
-//
-//
 xapi pattern_render(const struct pattern * restrict pat, pattern_render_result ** result)
   __attribute__((nonnull));
 
 static inline struct pattern_render_fragment * pattern_render_fragment_next(struct pattern_render_fragment * fragment)
 {
   char * next;
+
   next = (char*)(fragment + 1);       // fragment struct
   next += fragment->len;              // fragment text
   next += 1;                          // trailing null

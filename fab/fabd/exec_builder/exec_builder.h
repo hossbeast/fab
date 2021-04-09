@@ -19,52 +19,39 @@
 #define EXEC_BUILDER_H
 
 /*
-
-SUMMARY
-
+exec_builder - build up the parameters to an exec call, namely
+ * file to execute
+ * arguments to the program (argv)
+ * program environment (envp)
 */
 
 #include "types.h"
 #include "xapi.h"
+
 #include "narrator/growing.h"
+#include "fsent.h"
 
-#include "narrator.h"
-#include "selector.h"
-
-struct buildplan_entity;
-struct module;
-struct narrator;
-struct value;
+struct exec;
 struct formula_value;
+struct fsent;
+struct narrator;
 struct path_cache_entry;
+struct value;
 
-/* set of key/value pairs, suitable for passing to exec as envp */
-typedef struct exec {
-  const struct path_cache_entry *file_pe; // file to execute
-  char * file;      // null-terminated, pointer into text
-  char ** args;     // sentinel-terminated, pointers into text
-  char ** envs;     // name=value, sentinel-terminated, sorted by name, pointers into text
-  struct {
-    uint16_t args_size;    // number of args
-    uint16_t envs_size;    // number of envs
-  } __attribute__((aligned(8)));
-  char text[];
-} exec;
-
+/* intermediate state for building an exec */
 typedef struct exec_builder {
-  exec * exec;    // points into Nexec
-  size_t exec_size;
+  struct exec * exec;       // points into Nexec
 
-  /* intermediate state for builder_build */
-  struct narrator * Nexec;
+  /* narrator into which the exec strings are accumulated */
   struct narrator_growing Nexec_growing;
+  struct narrator * Nexec;
 
   const struct path_cache_entry *file_pe;
   uint32_t file;            // offset into the backing buffer, 0 = uninitialized
-  uint32_t *args;           // offsets into the buffer backing Nexec
+  uint32_t *args;           // offsets into the backing buffer
   uint16_t args_len;
   size_t args_alloc;
-  uint32_t *envs;           // offsets into the buffer backing Nexec
+  uint32_t *envs;           // offsets into the backing buffer
   uint16_t envs_len;
   size_t envs_alloc;
 
@@ -76,25 +63,100 @@ typedef struct exec_builder {
   size_t envs_stor_alloc;
 } exec_builder;
 
-void exec_free(exec * e);
-void exec_ifree(exec ** ep);
-
-int env_def_cmp(const char * restrict a, const char * restrict b)
-  __attribute__((nonnull));
-
-xapi exec_builder_build(exec_builder * restrict builder, exec ** restrict envp)
+/*
+ * build an exec from the builder
+ *
+ * [envp] - (returns) exec stored in the builder
+ */
+xapi exec_builder_build(exec_builder * restrict builder, struct exec ** restrict envp)
   __attribute__((nonnull(1)));
 
-void exec_builder_take(exec_builder * restrict builder, exec ** restrict envp)
+/*
+ * claim the built exec stored in the builder
+ *
+ * envp - (returns) exec stored in the builder - its now owned by the caller
+ */
+void exec_builder_take(exec_builder * restrict builder, struct exec ** restrict envp)
   __attribute__((nonnull));
 
+/* initialize an exec builder */
 xapi exec_builder_xinit(exec_builder * restrict builder)
   __attribute__((nonnull));
 
+/* reset an exec builder */
 xapi exec_builder_xreset(exec_builder * restrict builder)
   __attribute__((nonnull));
 
+/* destroy an exec builder */
 xapi exec_builder_xdestroy(exec_builder * restrict builder)
   __attribute__((nonnull));
+
+enum builder_add_mode {
+  BUILDER_PREPEND = 1,    /* if the item already exists, prepend to it */
+  BUILDER_APPEND          /* if the item already exists, append to it */
+};
+
+enum builder_add_item {
+  BUILDER_FILE = 1,       /* the file to execute */
+  BUILDER_ARGS,           /* the arguments list */
+  BUILDER_ENVS            /* the environment name=value set */
+};
+
+enum builder_render_function {
+    BUILDER_STRING = 1
+  , BUILDER_FORMULA_VALUE
+  , BUILDER_VALUE
+  , BUILDER_PATH_CACHE_ENTRY
+  , BUILDER_PROPERTY
+  , BUILDER_FMT
+};
+
+union builder_render_function_args {
+  const char *s;
+  const struct formula_value * f;
+  const struct value * v;
+  const struct path_cache_entry *pe;
+  struct {
+    const struct fsent * n;
+    fsent_property prop;
+    fsent_property_context pctx;
+  };
+  struct {
+    const char *fmt;
+    va_list *va;
+  };
+};
+
+typedef struct exec_builder_args {
+  enum builder_add_item item;
+  enum builder_add_mode mode;
+
+  /* args / envs */
+  int32_t position;   // for argv/envp, index of the item in the collection to modify, -1 to add to the collection
+  const char * name;  // for a new envp, its name
+  uint16_t name_len;
+
+  /* value */
+  enum builder_render_function render_val;
+  union builder_render_function_args val;
+
+  /* separator, in case of append/prepend */
+  enum builder_render_function render_sep;
+  union builder_render_function_args sep;
+} exec_builder_args;
+
+/* add an item to an exec builder */
+xapi exec_builder_add(exec_builder * restrict builder, const exec_builder_args *args)
+  __attribute__((nonnull));
+
+/*
+ * add an envp to an exec builder
+ *
+ * name_fmt - format string for the envp name
+ * val_fmt  - format string for the envp value
+ */
+xapi exec_builder_env_addf(exec_builder * restrict builder, const char * restrict name_fmt, const char * restrict val_fmt, ...)
+  __attribute__((nonnull))
+  __attribute__((format(printf, 3, 4)));
 
 #endif

@@ -26,7 +26,6 @@
 #include "render.h"
 
 struct chain;
-struct pattern_render_result;
 struct narrator;
 struct narrator_growing;
 struct pattern_section;

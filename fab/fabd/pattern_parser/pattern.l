@@ -23,6 +23,9 @@
   #include "match_pattern.tab.h"
   #include "match_pattern.tokens.h"
 
+#include <unistd.h>
+#include "types.h"
+
   #define YYSTYPE struct pattern_yystype
   #define YYLTYPE yyu_location
 %}
@@ -46,7 +49,7 @@
  /* tokens */
 <INITIAL>[*][*]                                         { lenter; LEX(STARSTAR); finally : lcoda; }
 <INITIAL>[/][/]                                         { lenter; LEX(SLASH2); yyless(1); finally : lcoda; }
-<INITIAL>[(){}<>:*?,/~+^D]                              { lenter; LEX(yytext[0]); finally : lcoda; }
+<INITIAL>[+(){}<>:*?,/~^D]                              { lenter; LEX(yytext[0]); finally : lcoda; }
 <INITIAL>[.][/]                                         { lenter; LEX(yytext[0]); yyless(1); finally : lcoda; }
 
  /* integers */

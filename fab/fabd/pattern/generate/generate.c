@@ -18,28 +18,17 @@
 #include "xapi.h"
 #include "types.h"
 
-#include "moria/vertex.h"
 #include "narrator.h"
 #include "narrator/fixed.h"
-#include "valyria/list.h"
 #include "valyria/set.h"
-#include "valyria/map.h"
-#include "xlinux/xstdlib.h"
-#include "xapi/SYS.errtab.h"
 
 #include "generate.internal.h"
 #include "variant.h"
-#include "errtab/FABD.errtab.h"
-#include "pattern.internal.h"
-#include "section.internal.h"
-#include "filesystem.h"
+#include "fsedge.h"
+#include "fsent.h"
+#include "search.internal.h"
 #include "module.internal.h"
-#include "node.h"
 #include "shadow.h"
-#include "node_operations.h"
-#include "match.internal.h"
-#include "path.h"
-#include "common/attrs.h"
 
 //
 // static
@@ -51,7 +40,7 @@ static xapi pattern_section_generate(pattern_generate_context * restrict ctx)
 
   struct segment_traversal segment_traversal;
   const variant * var = 0;
-  vertex * v;
+  moria_vertex * v;
 
   fatal(narrator_xreset, ctx->section_narrator);
 
@@ -59,7 +48,7 @@ static xapi pattern_section_generate(pattern_generate_context * restrict ctx)
 
   if(!ctx->section_traversal.section)
   {
-    if(ctx->node && (node_kind_get(ctx->node) == VERTEX_SHADOW_MODULE || node_kind_get(ctx->node) == VERTEX_SHADOW_MODULES))
+    if(ctx->node && (fsent_kind_get(ctx->node) == VERTEX_SHADOW_MODULE || fsent_kind_get(ctx->node) == VERTEX_SHADOW_MODULES))
     {
       RUNTIME_ABORT();
     }
@@ -81,9 +70,9 @@ static xapi pattern_section_generate(pattern_generate_context * restrict ctx)
   }
   else if(ctx->section_traversal.section->nodeset == PATTERN_NODESET_MATCHDIR)
   {
-    v = vertex_containerof(ctx->match->node);
-    v = vertex_up(v);
-    ctx->node = vertex_value(v);
+    v = &ctx->match->node->vertex;
+    v = moria_vertex_up(v);
+    ctx->node = containerof(v, fsent, vertex);
 
     fatal(pattern_section_generate, ctx);
   }
@@ -93,15 +82,23 @@ static xapi pattern_section_generate(pattern_generate_context * restrict ctx)
   }
   else if(ctx->section_traversal.section->nodeset == PATTERN_NODESET_SHADOW)
   {
-    v = vertex_containerof(g_shadow);
-    ctx->node = vertex_value(v);
+    v = &g_shadow->vertex;
+    ctx->node = containerof(v, fsent, vertex);
+    RUNTIME_ASSERT(ctx->node);
+
+    fatal(pattern_section_generate, ctx);
+  }
+  else if(ctx->section_traversal.section->nodeset == PATTERN_NODESET_ROOT)
+  {
+    v = &g_root->vertex;
+    ctx->node = containerof(v, fsent, vertex);
     RUNTIME_ASSERT(ctx->node);
 
     fatal(pattern_section_generate, ctx);
   }
   else
   {
-    if(ctx->node && node_kind_get(ctx->node) == VERTEX_SHADOW_MODULE)
+    if(ctx->node && fsent_kind_get(ctx->node) == VERTEX_SHADOW_MODULE)
     {
       ctx->node = ctx->mod->shadow;
       RUNTIME_ASSERT(ctx->node);
@@ -128,8 +125,8 @@ xapi pattern_segment_generate(pattern_generate_context * restrict ctx)
 {
   enter;
 
-  node * next_context_node;
-  vertex * next_context_vertex;
+  fsent * next_context_node;
+  moria_vertex * next_context_vertex;
   const char * section;
   size_t section_len;
   struct segment_traversal *segment_traversal;
@@ -167,9 +164,9 @@ xapi pattern_segment_generate(pattern_generate_context * restrict ctx)
   next_context_vertex = 0;
   if(!ctx->node)
   {
-    if((next_context_vertex = vertex_downw(ctx->scope, section, section_len)))
+    if((next_context_vertex = moria_vertex_downw(ctx->scope, section, section_len)))
     {
-      ctx->node = vertex_value(next_context_vertex);
+      ctx->node = containerof(next_context_vertex, fsent, vertex);
     }
     else
     {
@@ -179,28 +176,29 @@ xapi pattern_segment_generate(pattern_generate_context * restrict ctx)
 
   if(!next_context_vertex)
   {
-    next_context_vertex = vertex_downw(
-        vertex_containerof(ctx->node)
+    next_context_vertex = moria_vertex_downw(
+        &ctx->node->vertex
       , section
       , section_len
     );
+  }
+  if(next_context_vertex)
+  {
+    while(next_context_vertex->attrs & MORIA_VERTEX_LINK) {
+      next_context_vertex = next_context_vertex->ref;
+    }
   }
 
   // only the final section is a file
   if(next_context_vertex)
   {
-    next_context_node = vertex_value(next_context_vertex);
-    if(node_kind_get(next_context_node) == VERTEX_SHADOW_LINK)
-    {
-      next_context_node = vertex_value(next_context_vertex->ref);
-      RUNTIME_ASSERT(next_context_node);
-    }
+    next_context_node = containerof(next_context_vertex, fsent, vertex);
   }
   else
   {
     /* create as not yet existing */
-    fatal(node_createw, &next_context_node, VERTEX_UNCREATED, 0, 0, section, section_len);
-    fatal(node_connect_fs, ctx->node, next_context_node, EDGE_TYPE_FS, ctx->invalidation, 0, 0);
+    fatal(fsent_create, &next_context_node, VERTEX_FILE, VERTEX_UNCREATED, section, section_len);
+    fatal(fsedge_connect, ctx->node, next_context_node, ctx->invalidation);
   }
 
   // continue to the next section
@@ -219,25 +217,26 @@ coda;
 xapi pattern_generate(
     const pattern * restrict pattern
   , module * restrict mod
+  , fsent * restrict base
+  , fsent * restrict scope
   , const set * restrict variants
   , graph_invalidation_context * invalidation
-  , const pattern_match_node * restrict match
+  , const pattern_search_node * restrict match
   , set * restrict results
 )
 {
   enter;
 
-  char space[512] = { 0 };
+  char space[512] = { };
   narrator_fixed fixed;
 
-  fatal(set_recycle, results);
+  RUNTIME_ASSERT(!mod || base);
+  RUNTIME_ASSERT(!mod || scope);
 
   // setup the dynamic context
   pattern_generate_context ctx =  {
     /* inputs */
-      base : mod->dir_node
-    /* generate patterns begin at the module scope */
-    , scope : vertex_containerof(mod->shadow_scope)
+      base : base
     , variants : variants
     , invalidation : invalidation
     , match : match
@@ -247,10 +246,18 @@ xapi pattern_generate(
     , nodes : results
   };
 
+  if(scope)
+  {
+    /* generate patterns begin at scope fsent */
+    ctx.scope = &scope->vertex;
+    while(ctx.scope->attrs & MORIA_VERTEX_LINK) {
+      ctx.scope = ctx.scope->ref;
+    }
+  }
+
   ctx.section_traversal.head = pattern->section_head;
   ctx.section_traversal.variant_index = -1;
   ctx.section_narrator = narrator_fixed_init(&fixed, space, sizeof(space));
-
   ctx.segment_traversal_stack = LLIST_INITIALIZER(ctx.segment_traversal_stack);
 
   fatal(pattern_section_generate, &ctx);

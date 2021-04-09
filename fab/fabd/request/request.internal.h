@@ -19,32 +19,43 @@
 #define _FABD_REQUEST_INTERNAL_H
 
 #include "request.h"
-#include "node.h"
+#include "fsent.h"
 
 struct attrs32;
 
-#define COMMAND_TYPE_OPT 0x000f
-#define COMMAND_TYPE_TABLE                                                                                                     \
-  DEF(COMMAND_STAGE_CONFIG    , "stage-config"   , COMMAND_TYPE_OPT, 0x01) /* stage config text */                             \
-  DEF(COMMAND_RECONFIGURE     , "reconfigure"    , COMMAND_TYPE_OPT, 0x02) /* apply staged config, reconfigure subsystems */   \
-  DEF(COMMAND_SELECT          , "select"         , COMMAND_TYPE_OPT, 0x03) /* add nodes to the selection */                    \
-  DEF(COMMAND_RESET_SELECTION , "reset-selection", COMMAND_TYPE_OPT, 0x04) /* reset the selection */                           \
-  DEF(COMMAND_LIST            , "list"           , COMMAND_TYPE_OPT, 0x05) /* get a list of the nodes in the selection */      \
-  DEF(COMMAND_DESCRIBE        , "describe"       , COMMAND_TYPE_OPT, 0x06) /* describe each of the nodes in the selection */   \
-  DEF(COMMAND_INVALIDATE      , "invalidate"     , COMMAND_TYPE_OPT, 0x07) /* invalidate each of the nodes in the selection */ \
-  DEF(COMMAND_RUN             , "run"            , COMMAND_TYPE_OPT, 0x09) /* refresh the graph, pursue goals */               \
-  DEF(COMMAND_AUTORUN         , "autorun"        , COMMAND_TYPE_OPT, 0x08) /* run, and autorun */                              \
-  DEF(COMMAND_GOALS           , "goals"          , COMMAND_TYPE_OPT, 0x0a) /* set the goal targets and outputs */              \
+#define COMMAND_TYPE_OPT 0x00ff
+#define COMMAND_TYPE_TABLE                                                                                                      \
+  DEF(COMMAND_GLOBAL_STATS_READ  , "global-stats-read"  , COMMAND_TYPE_OPT) /* retrieve global stats */                         \
+  DEF(COMMAND_GLOBAL_STATS_RESET , "global-stats-reset" , COMMAND_TYPE_OPT) /* reset global stats, retrieve previous values */  \
+  DEF(COMMAND_STATS_READ         , "stats-read"         , COMMAND_TYPE_OPT) /* retrieve node stats */                           \
+  DEF(COMMAND_STATS_RESET        , "stats-reset"        , COMMAND_TYPE_OPT) /* reset node stats, retrieve previous values */    \
+  DEF(COMMAND_CONFIG_READ        , "config-read"        , COMMAND_TYPE_OPT) /* read effective configuration */                  \
+  DEF(COMMAND_VARS_READ          , "vars-read"          , COMMAND_TYPE_OPT) /* read effective vars */                           \
+  DEF(COMMAND_SELECT             , "select"             , COMMAND_TYPE_OPT) /* add nodes to the selection */                    \
+  DEF(COMMAND_RESET_SELECTION    , "reset-selection"    , COMMAND_TYPE_OPT) /* reset the selection */                           \
+  DEF(COMMAND_LIST               , "list"               , COMMAND_TYPE_OPT) /* get minimal info about each selected node */     \
+  DEF(COMMAND_DESCRIBE           , "describe"           , COMMAND_TYPE_OPT) /* describe each of the nodes in the selection */   \
+  DEF(COMMAND_INVALIDATE         , "invalidate"         , COMMAND_TYPE_OPT) /* invalidate the nodes in the selection */         \
+  DEF(COMMAND_GLOBAL_INVALIDATE  , "global-invalidate"  , COMMAND_TYPE_OPT) /* generation-based global node invalidation */     \
+  DEF(COMMAND_METADATA           , "metadata"           , COMMAND_TYPE_OPT) /* retrieve project metadata */                     \
+  DEF(COMMAND_GOALS              , "goals"              , COMMAND_TYPE_OPT) /* set the goal targets */                          \
+  DEF(COMMAND_RECONCILE          , "reconcile"          , COMMAND_TYPE_OPT) /* reload everything */                             \
+  /* needs reconcile */                                                                                                         \
+  DEF(COMMAND_RUN                , "run"                , COMMAND_TYPE_OPT) /* pursue goals */                                  \
+  DEF(COMMAND_AUTORUN            , "autorun"            , COMMAND_TYPE_OPT) /* pursue goals */                                  \
 
 typedef enum command_type {
-#define DEF(x, s, r, y) x = UINT32_C(y),
-COMMAND_TYPE_TABLE
+COMMAND_TYPE_RANGE_BEFORE = 0,
 #undef DEF
+#define DEF(x, s, r) x,
+COMMAND_TYPE_TABLE
 } command_type;
 
 extern struct attrs32 * command_type_attrs;
 
 typedef struct command {
+  llist lln;
+
   union {
     uint32_t attrs;       // bitwise combo of FAB_REQUEST_*
     struct {
@@ -54,9 +65,8 @@ typedef struct command {
 
   union {
     struct selector * selector;   // SELECT
-    struct config * config;       // STAGE_CONFIG
-    node_property property;       // LIST
     struct {                      // GOALS
+      bool reconcile;
       bool build;
       bool script;
       struct selector * target_direct;

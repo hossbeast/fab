@@ -30,7 +30,8 @@
 
 #include "formula_value.internal.h"
 #include "formula.tokens.h"
-#include "exec_builder.internal.h"
+#include "exec.h"
+#include "exec_builder.h"
 #include "exec_render.h"
 #include "selector.h"
 #include "sysvar.h"
@@ -43,6 +44,7 @@
 #include "common/attrs.h"
 
 attrs32 * formula_value_attrs = (attrs32[]) {{
+#undef DEF
 #define DEF(x, s, r, y) + 1
     num : 0
       FORMULA_VALUE_TABLE
@@ -50,11 +52,11 @@ attrs32 * formula_value_attrs = (attrs32[]) {{
 #undef DEF
 #define DEF(x, s, r, y) { name : s, value : UINT32_C(y), range : UINT32_C(r) },
 FORMULA_VALUE_TABLE
-#undef DEF
   }
 }};
 
 attrs32 * formula_sysvar_attrs = (attrs32[]) {{
+#undef DEF
 #define DEF(x, s, r, y) + 1
     num : 0
       FORMULA_SYSVAR_TABLE
@@ -62,7 +64,6 @@ attrs32 * formula_sysvar_attrs = (attrs32[]) {{
 #undef DEF
 #define DEF(x, s, r, y) { name : s, value : UINT32_C(y), range : UINT32_C(r) },
 FORMULA_SYSVAR_TABLE
-#undef DEF
   }
 }};
 
@@ -163,7 +164,7 @@ static xapi writer_write(const formula_value * restrict val, value_writer * cons
   {
     fatal(value_writer_push_mapping, writer);
       fatal(value_writer_string, writer, "property");
-      fatal(value_writer_string, writer, attrs32_name_byvalue(node_property_attrs, NODE_PROPERTY_OPT & val->op.property));
+      fatal(value_writer_string, writer, attrs32_name_byvalue(fsent_property_attrs, FSENT_PROPERTY_OPT & val->op.property));
     fatal(value_writer_pop_mapping, writer);
   }
   else if(val->type == FORMULA_VALUE_PREPEND)
@@ -205,6 +206,26 @@ static xapi writer_write(const formula_value * restrict val, value_writer * cons
   }
 
   finally : coda;
+}
+
+//
+// tracing
+//
+
+xapi formula_value_say(const formula_value * restrict fv, struct narrator * restrict N)
+{
+  enter;
+
+  value_writer writer;
+
+  value_writer_init(&writer);
+  fatal(value_writer_open, &writer, N);
+  fatal(writer_write, fv, &writer, true);
+  fatal(value_writer_close, &writer);
+
+finally:
+  fatal(value_writer_destroy, &writer);
+coda;
 }
 
 //
@@ -401,7 +422,6 @@ xapi formula_value_set_mk(
 {
   enter;
 
-
   formula_value *v;
 
   fatal(allocate, &v, FORMULA_VALUE_SET);
@@ -415,7 +435,7 @@ xapi formula_value_set_mk(
 xapi formula_value_property_mk(
     const yyu_location * restrict loc
   , formula_value ** rv
-  , node_property property
+  , fsent_property property
 )
 {
   enter;
@@ -506,11 +526,30 @@ xapi formula_value_sequence_mk(
 // public
 //
 
+void formula_value_set_free(rbtree * restrict rbt)
+{
+  formula_value *sv;
+  llist list, *tmp;
+
+  if(rbt)
+  {
+    llist_init_node(&list);
+    rbtree_foreach(rbt, sv, rbn) {
+      llist_append(&list, sv, lln);
+    }
+
+    llist_foreach_safe(&list, sv, lln, tmp) {
+      formula_value_free(sv);
+    }
+  }
+
+  wfree(rbt);
+}
+
 void formula_value_free(formula_value * restrict v)
 {
   const chain *T[2];
   formula_value *sv;
-  llist lln, *tmp;
 
   if(!v)
     return;
@@ -523,16 +562,7 @@ void formula_value_free(formula_value * restrict v)
   }
   else if(v->type == FORMULA_VALUE_SET)
   {
-    llist_init_node(&lln);
-    rbtree_foreach(v->set, sv, rbn) {
-      llist_append(&lln, sv, lln);
-    }
-
-    llist_foreach_safe(&lln, sv, lln, tmp) {
-      formula_value_free(sv);
-    }
-
-    wfree(v->set);
+    formula_value_set_free(v->set);
   }
   else if(v->type == FORMULA_VALUE_STRING)
   {
@@ -579,31 +609,6 @@ int fmlval_rbn_cmp(const rbnode * restrict a, const rbnode * restrict b)
   RUNTIME_ASSERT(B->type == FORMULA_VALUE_MAPPING);
 
   return memncmp(A->m.name, A->m.name_len, B->m.name, B->m.name_len);
-}
-
-xapi formula_value_write(const formula_value * restrict val, value_writer * const restrict writer)
-{
-  enter;
-
-  fatal(writer_write, val, writer, true);
-
-  finally : coda;
-}
-
-xapi formula_value_say(const formula_value * restrict fv, struct narrator * restrict N)
-{
-  enter;
-
-  value_writer writer;
-
-  value_writer_init(&writer);
-  fatal(value_writer_open, &writer, N);
-  fatal(formula_value_write, fv, &writer);
-  fatal(value_writer_close, &writer);
-
-finally:
-  fatal(value_writer_destroy, &writer);
-coda;
 }
 
 xapi formula_value_render(const formula_value * restrict v, struct narrator * restrict N)
@@ -666,187 +671,6 @@ xapi formula_value_render(const formula_value * restrict v, struct narrator * re
   else if(v->type == FORMULA_VALUE_NEGINT)
   {
     fatal(narrator_xsayf, N, "%"PRId64, v->i);
-  }
-
-  finally : coda;
-}
-
-xapi exec_render_formula_value(const formula_value * val, exec_render_context * restrict ctx)
-{
-  enter;
-
-  const chain *T;
-  formula_value *sv;
-  value *mapval;
-  int x;
-  exec * sequence_output;
-  builder_add_args base_add_args;
-  selected_node *sn;
-  const path_cache_entry *pe;
-
-  if(val->type == FORMULA_VALUE_LIST)
-  {
-    chain_foreach(T, sv, chn, val->list_head) {
-      fatal(exec_render_formula_value, sv, ctx);
-    }
-  }
-  else if(val->type == FORMULA_VALUE_SET)
-  {
-    rbtree_foreach(val->set, sv, rbn) {
-      fatal(exec_render_formula_value, sv, ctx);
-    }
-  }
-  else if(val->type == FORMULA_VALUE_VARIABLE)
-  {
-    if(ctx->vars && (mapval = value_lookupw(ctx->vars, val->v.name, val->v.name_len)))
-      fatal(exec_render_value, mapval, ctx);
-  }
-  else if(val->type == FORMULA_VALUE_SYSVAR)
-  {
-    if(val->sv == FORMULA_SYSVAR_VARIANT)
-    {
-      fatal(exec_render_sysvar_variant, ctx, ctx->bs);
-    }
-    else if(val->sv == FORMULA_SYSVAR_SOURCE || val->sv == FORMULA_SYSVAR_SOURCES)
-    {
-      fatal(exec_render_sysvar_sources, ctx, ctx->bs);
-    }
-    else if(val->sv == FORMULA_SYSVAR_TARGET || val->sv == FORMULA_SYSVAR_TARGETS)
-    {
-      fatal(exec_render_sysvar_targets, ctx, ctx->bs);
-    }
-  }
-  else if(val->type == FORMULA_VALUE_SELECT)
-  {
-    fatal(selector_exec, val->op.selector, &ctx->selector_context);
-  }
-  else if(val->type == FORMULA_VALUE_PROPERTY)
-  {
-    base_add_args = ctx->builder_add_args;
-
-    ctx->builder_add_args.mode = BUILDER_APPEND;
-    ctx->builder_add_args.render_val = RENDER_PROPERTY;
-    ctx->builder_add_args.val.prop = val->op.property;
-    ctx->builder_add_args.val.pctx.mod = ctx->bs->mod;
-    llist_foreach(&ctx->selector_context.selection->list, sn, lln) {
-      ctx->builder_add_args.val.n = sn->n;
-      fatal(builder_add, ctx->builder, &ctx->builder_add_args);
-    }
-
-    ctx->builder_add_args = base_add_args;
-  }
-  else if(val->type == FORMULA_VALUE_PREPEND)
-  {
-    base_add_args = ctx->builder_add_args;
-
-    ctx->builder_add_args.render_val = RENDER_FORMULA_VALUE;
-    ctx->builder_add_args.val.f = val->op.operand;
-    ctx->builder_add_args.mode = BUILDER_PREPEND;
-    ctx->builder_add_args.render_sep = 0;
-
-    ctx->builder_add_args.item = BUILDER_ARGS;
-    for(x = 0; x < ctx->builder->args_len; x++)
-    {
-      ctx->builder_add_args.position = x;
-      fatal(builder_add, ctx->builder, &ctx->builder_add_args);
-    }
-
-    ctx->builder_add_args = base_add_args;
-  }
-  else if(val->type == FORMULA_VALUE_PATH_SEARCH)
-  {
-    /* assumes string */
-    fatal(path_cache_search, &pe, MMS(val->op.operand->s));
-
-    ctx->builder_add_args.val.pe = pe;
-    ctx->builder_add_args.mode = BUILDER_APPEND;
-    ctx->builder_add_args.render_val = RENDER_PATH_CACHE_ENTRY;
-
-    fatal(builder_add, ctx->builder, &ctx->builder_add_args);
-  }
-  else if(val->type == FORMULA_VALUE_SEQUENCE)
-  {
-    /* operations are always couched in a sequence operation */
-    base_add_args = ctx->builder_add_args;
-    fatal(exec_builder_xreset, &ctx->operation_builder);
-    ctx->builder = &ctx->operation_builder;
-
-    ctx->builder_add_args.item = BUILDER_ARGS;
-    chain_foreach(T, sv, chn, val->op.list_head) {
-      ctx->builder_add_args.position = -1;
-      fatal(exec_render_formula_value, sv, ctx);
-    }
-
-    /* the output of the sequence is a list of strings */
-    fatal(exec_builder_build, ctx->builder, &sequence_output);
-
-    // restore
-    ctx->builder = ctx->base_builder;
-    ctx->builder_add_args = base_add_args;
-
-    ctx->builder_add_args.render_val = RENDER_STRING;
-    ctx->builder_add_args.mode = BUILDER_APPEND;
-
-    for(x = 0; x < sequence_output->args_size; x++)
-    {
-      ctx->builder_add_args.val.s = sequence_output->args[x];
-      fatal(builder_add, ctx->builder, &ctx->builder_add_args);
-    }
-
-    ctx->builder_add_args = base_add_args;
-  }
-  else if(val->type & VALUE_TYPE_SCALAR)
-  {
-    ctx->builder_add_args.val.f = val;
-    ctx->builder_add_args.mode = BUILDER_APPEND;
-    ctx->builder_add_args.render_val = RENDER_FORMULA_VALUE;
-    fatal(builder_add, ctx->builder, &ctx->builder_add_args);
-  }
-
-  else
-  {
-    RUNTIME_ABORT();
-  }
-
-  finally : coda;
-}
-
-/*
- * write environment variable value text
- *
- * N   narrator to write to
- * val value to render
- */
-xapi exec_render_value(const value * restrict val, exec_render_context * restrict ctx)
-{
-  enter;
-
-  value *item;
-  int x;
-
-  if(val->type == VALUE_TYPE_LIST)
-  {
-    for(x = 0; x < val->items->size; x++)
-    {
-      fatal(exec_render_value, list_get(val->items, x), ctx);
-    }
-  }
-  else if(val->type == VALUE_TYPE_SET)
-  {
-    for(x = 0; x < val->els->table_size; x++)
-    {
-      if((item = set_table_get(val->els, x)) == 0)
-        continue;
-
-      fatal(exec_render_value, item, ctx);
-    }
-  }
-  else if(val->type & VALUE_TYPE_SCALAR)
-  {
-    ctx->builder_add_args.val.v = val;
-    ctx->builder_add_args.render_val = RENDER_VALUE;
-    ctx->builder_add_args.mode = BUILDER_APPEND;
-    fatal(builder_add, ctx->builder, &ctx->builder_add_args);
   }
 
   finally : coda;

@@ -21,9 +21,10 @@
 #include "types.h"
 #include "xapi.h"
 
+#include "valyria/llist.h"
+
 #include "config.h"
 #include "filesystem.h"
-#include "build_thread.h"
 
 struct box;
 struct box_int;
@@ -33,7 +34,8 @@ struct set;
 struct list;
 struct narrator;
 struct value_writer;
-struct value;
+
+extern bool config_reconfigured;
 
 #define CONFIG_CHANGED            0x1
 #define CONFIG_MERGE_SIGNIFICANT  0x2
@@ -60,7 +62,8 @@ struct config_filesystem_entry {
   struct box_int * invalidate;
 };
 
-struct config {
+/* config blob */
+typedef struct configblob {
   CONFIGBASE;
 
   struct config_build {
@@ -68,14 +71,24 @@ struct config {
     struct box_int16 * concurrency;
   } build;
 
-  struct config_extern_section {
+  struct config_workers {
     CONFIGBASE;
-    struct set * entries;    // box_string
-  } extern_section;
+    struct box_int16 * concurrency;
+  } workers;
+
+  struct config_walker {
+    CONFIGBASE;
+    struct config_walker_list {
+      CONFIGBASE;
+      llist list;               // struct pattern
+    } include;
+
+    struct config_walker_list exclude;
+  } walker;
 
   struct config_filesystems {
     CONFIGBASE;
-    struct map * entries;  // keys are box_string, values are config_filesystem_entry
+    struct map * entries;    // keys are box_string, values are config_filesystem_entry
   } filesystems;
 
   struct config_formula {
@@ -90,61 +103,13 @@ struct config {
         struct set * entries;    // box_string
       } dirs;
     } path;
-
-    // output stream processing
-    struct box_int * capture_stdout;
-    struct box_uint16 * stdout_buffer_size;
-    struct box_int * capture_stderr;
-    struct box_uint16 * stderr_buffer_size;
-    struct box_int * capture_auxout;
-    struct box_uint16 * auxout_buffer_size;
-
-    struct config_formula_show_settings {
-      CONFIGBASE;
-
-      struct box_bool * show_path;
-      struct box_bool * show_cwd;
-      struct box_bool * show_command;
-      struct box_bool * show_arguments;
-      struct box_bool * show_sources;
-      struct box_bool * show_targets;
-      struct box_bool * show_environment;
-      struct box_bool * show_status;
-      struct box_bool * show_stdout;
-      struct box_int16 * show_stdout_limit_bytes;
-      struct box_int16 * show_stdout_limit_lines;
-      struct box_bool * show_stderr;
-      struct box_int16 * show_stderr_limit_bytes;
-      struct box_int16 * show_stderr_limit_lines;
-      struct box_bool * show_auxout;
-      struct box_int16 * show_auxout_limit_bytes;
-      struct box_int16 * show_auxout_limit_lines;
-    } success;
-
-    struct config_formula_show_settings error;
   } formula;
 
-  struct config_logging {
+  struct config_channels {
     CONFIGBASE;
-
-    struct config_logging_section {
-      CONFIGBASE;
-
-      struct config_logging_exprs {
-        CONFIGBASE;
-        struct list * items;
-      } exprs;
-    } console;
-
-    struct config_logging_section logfile;
-  } logging;
-
-  struct config_var {
-    CONFIGBASE;
-
-    struct value * value;
-  } var;
-};
+    struct box_uint16 * max_channels;
+  } channels;
+} configblob;
 
 /// config_throw
 //
@@ -159,52 +124,27 @@ struct config {
 xapi config_throw(struct box * restrict val)
   __attribute__((nonnull));
 
-/// config_create
-//
-//
-//
-//
-xapi config_create(config ** restrict cfg)
+xapi config_create(configblob ** restrict cfg)
   __attribute__((nonnull));
 
-/// config_say
-//
-// SUMMARY
-//
-// PARAMETERS
-//  cfg - config instance
-//  N   - narrator
-//
-xapi config_say(config * restrict cfg, struct narrator * restrict N)
+xapi config_say(configblob * restrict cfg, struct narrator * restrict N)
   __attribute__((nonnull));
 
-/// config_xfree
-//
-// SUMMARY
-//  free a config struct with free semantics
-//
-xapi config_xfree(config * restrict cfg);
+/* free a config struct with free semantics */
+xapi config_xfree(configblob * restrict cfg);
 
-/// config_ixfree
-//
-// SUMMARY
-//  free a config struct with ifree semantics
-//
-xapi config_ixfree(config ** restrict cfg)
+/* free a config struct with ifree semantics */
+xapi config_ixfree(configblob ** restrict cfg)
   __attribute__((nonnull));
 
-/// config_compare
-//
-// SUMMARY
-//  mark sections of a new config struct as different from those of another config struct
-//
-void config_compare(config * restrict new, config * restrict old)
-  __attribute__((nonnull(1)));
-
-xapi config_writer_write(config * const restrict cfg, struct value_writer * const restrict writer)
+/* mark sections of a new config struct as different from those of another config struct */
+bool config_compare(configblob * restrict new, configblob * restrict old)
   __attribute__((nonnull));
 
-xapi config_merge(config * restrict dst, config * restrict src)
+xapi config_writer_write(configblob * const restrict cfg, struct value_writer * const restrict writer)
+  __attribute__((nonnull));
+
+xapi config_merge(configblob * restrict dst, configblob * restrict src)
   __attribute__((nonnull));
 
 #endif

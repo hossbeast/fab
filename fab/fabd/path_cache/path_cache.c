@@ -27,12 +27,13 @@
 #include "path_cache.h"
 #include "config.internal.h"
 #include "CONFIG.errtab.h"
-#include "box.h"
+#include "yyutil/box.h"
 
 #include "common/hash.h"
 #include "zbuffer.h"
+#include "macros.h"
 
-static list * path_dirs;
+static list * path_dirs;            // effective
 static list * staging_path_dirs[2];
 static set * path_search_cache;
 static char env_path_buf[2048];
@@ -50,9 +51,6 @@ static xapi path_entry_xfree(void * arg)
 
   if(pe)
   {
-//if(pe->fd != -1) {
-//  printf("3 close %d for %.*s (%s)\n", pe->fd, (int)pe->len, pe->s, pe->filename);
-//}
     fatal(close, pe->fd);
   }
 
@@ -101,7 +99,7 @@ static char * render_env_path(void)
   return env_path_buf;
 }
 
-static xapi path_entry_alloc(path_cache_entry ** pep, const char *s, uint16_t l, int fd)
+static xapi path_entry_alloc(path_cache_entry ** pep, const char *s, uint16_t l, int fd, path_cache_entry *dir)
 {
   enter;
 
@@ -111,13 +109,12 @@ static xapi path_entry_alloc(path_cache_entry ** pep, const char *s, uint16_t l,
   memcpy(pe->s, s, l);
   pe->len = l;
   pe->fd = fd;
+  pe->dir = dir;
 
   if((pe->filename = strrchr(pe->s, '/')))
     pe->filename++;
   else
     pe->filename = pe->s;
-
-//printf("opened %d -> %.*s (%s)\n", pe->fd, pe->len, pe->s, pe->filename);
 
   *pep = pe;
 
@@ -161,7 +158,7 @@ xapi path_cache_cleanup()
   finally : coda;
 }
 
-xapi path_cache_reconfigure(config * restrict cfg, bool dry)
+xapi path_cache_reconfigure(configblob * restrict cfg, bool dry)
 {
   enter;
 
@@ -199,7 +196,7 @@ xapi path_cache_reconfigure(config * restrict cfg, bool dry)
         fatal(config_throw, &ent->bx);
       }
 
-      fatal(path_entry_alloc, &pe, ent->v, ent->l, fd);
+      fatal(path_entry_alloc, &pe, ent->v, ent->l, fd, 0);
       fd = -1;
 
       fatal(list_push, staging, pe, 0);
@@ -223,7 +220,7 @@ xapi path_cache_reconfigure(config * restrict cfg, bool dry)
           fail(CONFIG_INVALID);
         }
 
-        fatal(path_entry_alloc, &pe, s, e - s, fd);
+        fatal(path_entry_alloc, &pe, s, e - s, fd, 0);
         fd = -1;
 
         fatal(list_push, staging, pe, 0);
@@ -250,14 +247,9 @@ xapi path_cache_reconfigure(config * restrict cfg, bool dry)
     {
       path_cache_env_path = render_env_path();
     }
-
-//    printf("$PATH : %s\n", path_cache_env_path);
   }
 
 finally:
-if(fd != -1) {
-//  printf("1 close %d\n", fd);
-}
   fatal(xclose, fd);
   fatal(path_entry_xfree, pe);
 coda;
@@ -273,7 +265,6 @@ xapi path_cache_search(const path_cache_entry ** restrict pep, const char * rest
 
   if((pe = set_search(path_search_cache, (void*)file, file_len, cache_key_hash, cache_key_cmp)))
   {
-//printf("GOT '%.*s'(%d) -> %d\n", (int)file_len, file, file_len, pe->fd);
     *pep = pe;
     pe = 0;
     goto XAPI_FINALLY;
@@ -288,19 +279,15 @@ xapi path_cache_search(const path_cache_entry ** restrict pep, const char * rest
   }
 
   /* cache the result, positive or negative */
-  fatal(path_entry_alloc, &pe, file, file_len, fd);
+  fatal(path_entry_alloc, &pe, file, file_len, fd, pe);
   fd = -1;
 
   fatal(set_put, path_search_cache, pe, 0);
-//printf("PUT '%.*s'(%d) -> %d\n", (int)file_len, file, file_len, pe->fd);
 
   *pep = pe;
   pe = 0;
 
 finally:
-//if(fd != -1) {
-//  printf("2 close %d\n", fd);
-//}
   fatal(xclose, fd);
   fatal(path_entry_xfree, pe);
 coda;
@@ -310,7 +297,6 @@ xapi path_cache_reset()
 {
   enter;
 
-//printf("PATH CACHE RESET\n");
   fatal(set_recycle, path_search_cache);
 
   finally : coda;

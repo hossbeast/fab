@@ -28,10 +28,13 @@
 
   #include "config_parser.internal.h"
   #include "config.internal.h"
-  #include "box.h"
+  #include "build.h"
+  #include "yyutil/box.h"
   #include "macros.h"
+  #include "pattern.h"
 
   struct value;
+  struct pattern;
 }
 
 %code top {
@@ -55,6 +58,7 @@
   yyu_lval  yyu;
 
   struct value * value;
+  struct pattern * pattern;
 
   int       i;
   struct {
@@ -64,7 +68,6 @@
 
   // enums
   invalidate_type invalidate_type_e;
-  stream_part stream_part_e;
 
   struct box_bool * b_bool;
   struct box_int * b_int;
@@ -104,46 +107,18 @@
 
 %type <yyu.imax>  int16_igroup
 %type <yyu.umax>  int16_ugroup
-%type <yyu.imax>  uint16_igroup
-%type <yyu.umax>  uint16_ugroup
 
 %token
  BUILD                    "build"
- CAPTURE_STDERR           "capture-stderr"
- CAPTURE_STDOUT           "capture-stdout"
- CAPTURE_AUXOUT           "capture-auxout"
+ WORKERS                  "workers"
  CONCURRENCY              "concurrency"
  CONSOLE                  "console"
  ERROR                    "error"
- EXTERN                   "extern"
  EXPRS                    "exprs"
  FILESYSTEMS              "filesystems"
  FORMULA                  "formula"
  INVALIDATE               "invalidate"
- LOGGING                  "logging"
  LOGFILE                  "logfile"
- SHOW_ARGUMENTS           "show-arguments"
- SHOW_COMMAND             "show-command"
- SHOW_CWD                 "show-cwd"
- SHOW_SOURCES             "show-sources"
- SHOW_PATH                "show-path"
- SHOW_TARGETS             "show-targets"
- SHOW_ENVIRONMENT         "show-environment"
- SHOW_STATUS              "show-status"
- SHOW_STDOUT              "show-stdout"
- SHOW_STDOUT_LIMIT_BYTES  "show-stdout-limit-bytes"
- SHOW_STDOUT_LIMIT_LINES  "show-stdout-limit-lines"
- SHOW_STDERR              "show-stderr"
- SHOW_STDERR_LIMIT_BYTES  "show-stderr-limit-bytes"
- SHOW_STDERR_LIMIT_LINES  "show-stderr-limit-lines"
- SHOW_AUXOUT              "show-auxout"
- SHOW_AUXOUT_LIMIT_BYTES  "show-auxout-limit-bytes"
- SHOW_AUXOUT_LIMIT_LINES  "show-auxout-limit-lines"
- STDOUT_BUFFER_SIZE       "stdout-buffer-size"
- STDERR_BUFFER_SIZE       "stderr-buffer-size"
- AUXOUT_BUFFER_SIZE       "auxout-buffer-size"
- SUCCESS                  "success"
- VAR                      "var"
  PATH                     "path"
  COPY_FROM_ENV            "copy-from-env"
  DIRS                     "dirs"
@@ -153,30 +128,31 @@
  ALWAYS                   "always"
  NEVER                    "never"
  LEADING                  "leading"
- TRAILING                 "trailing"
- NONE                     "none"
+ WALKER                   "walker"
+ EXCLUDE                  "exclude"
+ INCLUDE                  "include"
 
-/*
- EXECUTABLES              "executables"
- */
+%token
+ <pattern> INCLUDE_PATTERN  "include-pattern"
+ <pattern> MATCH_PATTERN    "match-pattern"
+
+%type <pattern> match-pattern
+%type <pattern> include-pattern
 
 /* nonterminals */
 %type <str> string strpart strparts quoted_string unquoted_string
 %type <b_string> bstring
 %type <b_bool> bool
 %type <b_int16>  int16
-%type <b_uint16> uint16
 %type <b_int> invalidate-type
 %type <i> invalidate-type-enum
-%type <b_int> stream-part
-%type <i> stream-part-enum
 
 %destructor { wfree($$.s); } <str>
 %destructor { box_free(refas($$, bx)); } <b_bool>
 %destructor { box_free(refas($$, bx)); } <b_int>
 %destructor { box_free(refas($$, bx)); } <b_int16>
-%destructor { box_free(refas($$, bx)); } <b_uint16>
 %destructor { box_free(refas($$, bx)); } <b_string>
+%destructor { pattern_free($$); } <pattern>
 
 %%
 utterance
@@ -210,38 +186,10 @@ sections
 
 section
   : build-section
-  | extern-section
+  | workers-section
   | filesystems-section
   | formula-section
-  | logging-section
-  | var-section
-  ;
-
-var-section
-  : VAR var-section-body
-  {
-    PARSER->cfg->var.merge_significant = true;
-  }
-  ;
-
-var-section-body
-  : ':' var-section-set
-  | '=' var-section-set-epsilon
-  {
-    PARSER->cfg->var.merge_overwrite = true;
-  }
-  ;
-
-var-section-set-epsilon
-  : var-section-set
-  | %empty
-  ;
-
-var-section-set
-  : VALUE
-  {
-    PARSER->cfg->var.value = $1;
-  }
+  | walker-section
   ;
 
 build-section
@@ -251,8 +199,15 @@ build-section
   }
   ;
 
+workers-section
+  : WORKERS workers-map
+  {
+    PARSER->cfg->workers.merge_significant = true;
+  }
+  ;
+
 build-map
-  : ':' '{' build-mapping-set '}'
+  : ':' '{' build-mapping-set-epsilon '}'
   | '=' '{' build-mapping-set-epsilon '}'
   {
     PARSER->cfg->build.merge_overwrite = true;
@@ -279,13 +234,42 @@ build-mapping
     PARSER->cfg->build.concurrency = $3;
   }
   ;
-  
+
+workers-map
+  : ':' '{' workers-mapping-set-epsilon '}'
+  | '=' '{' workers-mapping-set-epsilon '}'
+  {
+    PARSER->cfg->workers.merge_overwrite = true;
+  }
+  ;
+
+workers-mapping-set-epsilon
+  : workers-mapping-set
+  | %empty
+  ;
+
+workers-mapping-set
+  : workers-mappings
+  ;
+
+workers-mappings
+  : workers-mappings workers-mapping
+  | workers-mapping
+  ;
+
+workers-mapping
+  : CONCURRENCY ':' int16
+  {
+    PARSER->cfg->workers.concurrency = $3;
+  }
+  ;
+
 formula-section
   : FORMULA formula-map
   ;
 
 formula-map
-  : ':' '{' formula-mappings '}'
+  : ':' '{' formula-mappings-epsilon '}'
   | '=' '{' formula-mappings-epsilon '}'
   {
     PARSER->cfg->formula.merge_overwrite = true;
@@ -309,33 +293,7 @@ formula-mappings
   ;
 
 formula-mapping
-  : CAPTURE_STDERR ':' stream-part
-  {
-    PARSER->cfg->formula.capture_stderr = $3;
-  }
-  | CAPTURE_STDOUT ':' stream-part
-  {
-    PARSER->cfg->formula.capture_stdout = $3;
-  }
-  | CAPTURE_AUXOUT ':' stream-part
-  {
-    PARSER->cfg->formula.capture_auxout = $3;
-  }
-  | STDOUT_BUFFER_SIZE ':' uint16
-  {
-    PARSER->cfg->formula.stdout_buffer_size = $3;
-  }
-  | STDERR_BUFFER_SIZE ':' uint16
-  {
-    PARSER->cfg->formula.stderr_buffer_size = $3;
-  }
-  | AUXOUT_BUFFER_SIZE ':' uint16
-  {
-    PARSER->cfg->formula.auxout_buffer_size = $3;
-  }
-  | formula-success
-  | formula-error
-  | formula-path
+  : formula-path
   ;
 
 formula-path
@@ -369,6 +327,9 @@ formula-path-mapping
 formula-path-dirs
   : formula-path-dirs formula-path-dir
   | formula-path-dir
+  {
+    PARSER->cfg->formula.path.dirs.merge_significant = true;
+  }
   ;
 
 formula-path-dir
@@ -380,253 +341,20 @@ formula-path-dir
   }
   ;
 
-formula-success
-  : SUCCESS ':' '{' formula-show '}'
-  {
-    PARSER->cfg->formula.success = PARSER->show_settings;
-  }
-  | SUCCESS '=' '{' formula-show-epsilon '}'
-  {
-    PARSER->cfg->formula.success = PARSER->show_settings;
-    PARSER->cfg->formula.success.merge_overwrite = true;
-  }
-  ;
-
-formula-error
-  : ERROR ':' '{' formula-show '}'
-  {
-    PARSER->cfg->formula.error = PARSER->show_settings;
-  }
-  | ERROR '=' '{' formula-show-epsilon '}'
-  {
-    PARSER->cfg->formula.error = PARSER->show_settings;
-    PARSER->cfg->formula.error.merge_overwrite = true;
-  }
-  ;
-
-allocate-formula-show
-  : %empty
-  {
-    memset(&PARSER->show_settings, 0, sizeof(PARSER->show_settings));
-  }
-  ;
-
-formula-show-epsilon
-  : formula-show
-  | %empty
-  {
-    PARSER->show_settings.merge_significant = true;
-  }
-  ;
-
-formula-show
-  : formula-show formula-show-mapping
-  | allocate-formula-show formula-show-mapping
-  {
-    PARSER->show_settings.merge_significant = true;
-  }
-  ;
-
-formula-show-mapping
-  : SHOW_STDOUT ':' bool
-  {
-    PARSER->show_settings.show_stdout = $3;
-  }
-  | SHOW_STDOUT_LIMIT_LINES ':' int16
-  {
-    PARSER->show_settings.show_stdout_limit_lines = $3;
-  }
-  | SHOW_STDOUT_LIMIT_BYTES ':' int16
-  {
-    PARSER->show_settings.show_stdout_limit_bytes = $3;
-  }
-  | SHOW_STDERR ':' bool
-  {
-    PARSER->show_settings.show_stderr = $3;
-  }
-  | SHOW_STDERR_LIMIT_LINES ':' int16
-  {
-    PARSER->show_settings.show_stderr_limit_lines = $3;
-  }
-  | SHOW_STDERR_LIMIT_BYTES ':' int16
-  {
-    PARSER->show_settings.show_stderr_limit_bytes = $3;
-  }
-  | SHOW_AUXOUT ':' bool
-  {
-    PARSER->show_settings.show_auxout = $3;
-  }
-  | SHOW_AUXOUT_LIMIT_LINES ':' int16
-  {
-    PARSER->show_settings.show_auxout_limit_lines = $3;
-  }
-  | SHOW_AUXOUT_LIMIT_BYTES ':' int16
-  {
-    PARSER->show_settings.show_auxout_limit_bytes = $3;
-  }
-  | SHOW_ARGUMENTS ':' bool
-  {
-    PARSER->show_settings.show_arguments = $3;
-  }
-  | SHOW_CWD ':' bool
-  {
-    PARSER->show_settings.show_cwd = $3;
-  }
-  | SHOW_COMMAND ':' bool
-  {
-    PARSER->show_settings.show_command = $3;
-  }
-  | SHOW_SOURCES ':' bool
-  {
-    PARSER->show_settings.show_sources = $3;
-  }
-  | SHOW_PATH ':' bool
-  {
-    PARSER->show_settings.show_path = $3;
-  }
-  | SHOW_TARGETS ':' bool
-  {
-    PARSER->show_settings.show_targets = $3;
-  }
-  | SHOW_ENVIRONMENT ':' bool
-  {
-    PARSER->show_settings.show_environment = $3;
-  }
-  | SHOW_STATUS ':' bool
-  {
-    PARSER->show_settings.show_status = $3;
-  }
-  ;
-
-logging-section
-  : LOGGING logging-map
-  ;
-
-logging-map
-  : ':' '{' logging-mappings '}'
-  | '=' '{' logging-mappings-epsilon '}'
-  {
-    PARSER->cfg->logging.merge_overwrite = true;
-  }
-  ;
-
-logging-mappings-epsilon
-  : logging-mappings
-  | %empty
-  {
-    PARSER->cfg->logging.merge_significant = true;
-  }
-  ;
-
-logging-mappings
-  : logging-mappings logging-mapping
-  | logging-mapping
-  {
-    PARSER->cfg->logging.merge_significant = true;
-  }
-  ;
-
-allocate-console-logging-settings
-  : %empty
-  {
-    PARSER->logging_section = &PARSER->cfg->logging.console;
-  }
-  ;
-
-console-logging-settings
-  : allocate-console-logging-settings CONSOLE
-  {
-    PARSER->cfg->logging.console.merge_significant = true;
-  }
-  ;
-
-allocate-logfile-logging-settings
-  : %empty
-  {
-    PARSER->logging_section = &PARSER->cfg->logging.logfile;
-  }
-  ;
-
-logfile-logging-settings
-  : allocate-logfile-logging-settings LOGFILE
-  {
-    PARSER->cfg->logging.logfile.merge_significant = true;
-  }
-  ;
-
-logging-mapping
-  : console-logging-settings ':' '{' logging-settings '}'
-  | console-logging-settings '=' '{' logging-settings-epsilon '}'
-  {
-    PARSER->cfg->logging.console.merge_overwrite = true;
-  }
-  | logfile-logging-settings ':' '{' logging-settings '}'
-  | logfile-logging-settings '=' '{' logging-settings-epsilon '}'
-  {
-    PARSER->cfg->logging.logfile.merge_overwrite = true;
-  }
-  ;
-
-logging-settings-epsilon
-  : logging-settings
-  {
-    PARSER->logging_section->merge_significant = true;
-  }
-  | %empty
-  {
-    PARSER->logging_section->merge_significant = true;
-  }
-  ;
-
-logging-settings
-  : EXPRS ':' '[' logging-exprs ']'
-  {
-    PARSER->logging_section->merge_significant = true;
-  }
-  | EXPRS '=' '[' logging-exprs-epsilon ']'
-  {
-    PARSER->logging_section->exprs.merge_overwrite = true;
-  }
-  ;
-
-logging-exprs-epsilon
-  : logging-exprs
-  | %empty
-  {
-    PARSER->logging_section->exprs.merge_significant = true;
-  }
-  ;
-
-logging-exprs
-  : logging-exprs logging-expr
-  | logging-expr
-  {
-    PARSER->logging_section->exprs.merge_significant = true;
-  }
-  ;
-
-logging-expr
-  : bstring
-  {
-    if($1) {
-      YFATAL(list_push, PARSER->logging_section->exprs.items, $1, 0);
-    }
-  }
-  ;
-
 filesystems-section
   : FILESYSTEMS filesystems-map
   ;
 
 filesystems-map
-  : ':' '{' filesystems-mappings '}'
+  : ':' '{' filesystems-mappings-epsilon '}'
   | '=' '{' filesystems-mappings-epsilon '}'
   {
     PARSER->cfg->filesystems.merge_overwrite = true;
   }
   ;
+
 filesystems-mappings-epsilon
-  : filesystems-mappings 
+  : filesystems-mappings
   | %empty
   ;
 
@@ -649,7 +377,7 @@ filesystems-mapping
   ;
 
 filesystems-entry-map
-  : ':' '{' filesystems-entry-mappings '}'
+  : ':' '{' filesystems-entry-mappings-epsilon '}'
   | '=' '{' filesystems-entry-mappings-epsilon '}'
   {
     PARSER->fse->merge_overwrite = true;
@@ -679,33 +407,92 @@ filesystems-entry-mapping
   }
   ;
 
-extern-section
-  : EXTERN ':' '{' extern-entry-list '}'
-  | EXTERN '=' '{' extern-entry-list-epsilon '}'
+walker-section
+  : WALKER walker-section-settings
+  ;
+
+walker-section-settings
+  : ':' '{' walker-settings-epsilon '}'
+  | '=' '{' walker-settings-epsilon '}'
   {
-    PARSER->cfg->extern_section.merge_overwrite = true;
+    PARSER->cfg->walker.merge_overwrite = true;
   }
   ;
 
-extern-entry-list-epsilon
-  : extern-entry-list
+walker-settings-epsilon
+  : walker-settings
+  {
+    PARSER->cfg->walker.merge_significant = 0
+      || PARSER->cfg->walker.include.merge_significant
+      || PARSER->cfg->walker.exclude.merge_significant
+      ;
+  }
   | %empty
   ;
 
-extern-entry-list
-  : extern-entry-list extern-entry
-  | extern-entry
+walker-settings
+  : walker-settings walker-setting
+  | walker-setting
+  ;
+
+walker-setting
+  : INCLUDE walker-include-entries
+  | EXCLUDE walker-exclude-entries
+  ;
+
+walker-exclude-entries
+  : ':' '{' walker-exclude-entry-list-epsilon '}'
+  | '=' '{' walker-exclude-entry-list-epsilon '}'
   {
-    PARSER->cfg->extern_section.merge_significant = true;
+    PARSER->cfg->walker.exclude.merge_overwrite = true;
   }
   ;
 
-extern-entry
-  : bstring
+walker-exclude-entry-list-epsilon
+  : walker-exclude-entry-list
+  | %empty
+  ;
+
+walker-exclude-entry-list
+  : walker-exclude-entry-list walker-exclude-entry
+  | walker-exclude-entry
   {
-    if($1) {
-      YFATAL(set_put, PARSER->cfg->extern_section.entries, $1, 0);
-    }
+    PARSER->cfg->walker.exclude.merge_significant = true;
+  }
+  ;
+
+walker-exclude-entry
+  : match-pattern
+  {
+    llist_append(&PARSER->cfg->walker.exclude.list, $1, lln);
+  }
+  ;
+
+walker-include-entries
+  : ':' '{' walker-include-entry-list-epsilon '}'
+  | '=' '{' walker-include-entry-list-epsilon '}'
+  {
+    PARSER->cfg->walker.include.merge_overwrite = true;
+  }
+  ;
+
+walker-include-entry-list-epsilon
+  : walker-include-entry-list
+  | %empty
+  ;
+
+walker-include-entry-list
+  : walker-include-entry-list walker-include-entry
+  | walker-include-entry
+  {
+    PARSER->cfg->walker.include.merge_significant = true;
+  }
+  ;
+
+walker-include-entry
+  : include-pattern
+  {
+    llist_append(&PARSER->cfg->walker.include.list, $1, lln);
   }
   ;
 
@@ -739,28 +526,6 @@ invalidate-type-enum
   }
   ;
 
-stream-part
-  : stream-part-enum
-  {
-    YFATAL(box_int_mk, &@$, &$$, $1);
-  }
-  ;
-
-stream-part-enum
-  : LEADING
-  {
-    $$ = STREAM_PART_LEADING;
-  }
-  | TRAILING
-  {
-    $$ = STREAM_PART_TRAILING;
-  }
-  | NONE
-  {
-    $$ = STREAM_PART_NONE;
-  }
-  ;
-
 bool
   : BOOL
   {
@@ -790,27 +555,6 @@ int16_ugroup
   : UINTMAX8
   ;
 
-uint16
-  : uint16_igroup
-  {
-    YFATAL(box_uint16_mk, &@$, &$$, $1);
-  }
-  | uint16_ugroup
-  {
-    YFATAL(box_uint16_mk, &@$, &$$, $1);
-  }
-  ;
-
-uint16_igroup
-  : INTMAX8
-  | INTMAX16
-  ;
-
-uint16_ugroup
-  : UINTMAX8
-  | UINTMAX16
-  ;
-
 bstring
   : string
   {
@@ -821,6 +565,14 @@ bstring
     }
     $1.s = 0;
   }
+  ;
+
+include-pattern
+  : INCLUDE_PATTERN
+  ;
+
+match-pattern
+  : MATCH_PATTERN
   ;
 
 string

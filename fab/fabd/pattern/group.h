@@ -18,11 +18,21 @@
 #ifndef FABD_PATTERN_GROUP_H
 #define FABD_PATTERN_GROUP_H
 
-/*
+#include "xapi.h"
+#include "types.h"
 
-SUMMARY
- fab-file node
+struct yyu_location;
+union pattern_segment;
+struct pattern_segments;
 
-*/
+xapi pattern_group_mk(
+    union pattern_segment ** restrict rv
+  , const struct yyu_location * restrict loc
+  , struct pattern_segments * restrict chain
+  , const char * restrict name
+  , uint8_t name_len
+  , uint16_t group_number
+)
+  __attribute__((nonnull(1, 2)));
 
 #endif

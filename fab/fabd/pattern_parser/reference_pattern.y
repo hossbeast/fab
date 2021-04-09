@@ -20,11 +20,11 @@
 
   #include "types.h"
 
-  #include "pattern/byte.internal.h"
-  #include "pattern/range.internal.h"
-  #include "pattern/word.internal.h"
+  #include "pattern/byte.h"
+  #include "pattern/range.h"
+  #include "pattern/word.h"
 
-  #include "pattern/section.internal.h"
+  #include "pattern/section.h"
 
   #include "pattern_parser.internal.h"
   #include "pattern.internal.h"
@@ -222,6 +222,7 @@ $1 = 0;
 word-tokens
   : STR
   | 'D'
+  | '+'
   ;
 
 escape

@@ -18,49 +18,62 @@
 #ifndef FABD_FORMULA_H
 #define FABD_FORMULA_H
 
+/* A formula is a program which can be run to update the targets of a dependency edge. */
+
 #include "xapi.h"
 #include "types.h"
 
+#include "moria.h"
 #include "valyria/llist.h"
+#include "fab/stats.h"
 
-struct node;
+#include "graph.h"
+
+struct fsent;
 struct formula_value;
+struct moria_graph;
+struct channel;
 
-typedef struct formula
-{
-  llist lln_invalidated;  // formulas_invalidated
+/* VERTEX_TYPE_FML */
+typedef struct formula {
+  moria_vertex vertex;
 
   /* regarding the formula node itself */
   int fd;
-  char *abspath;
-  struct node * fml_node;
-  bool shebang;
+  char self_node_abspath[512];
+  uint16_t abspath_len;
+
+  struct fsent * self_node;
+  fab_formula_stats stats;
+
+  /* reference counting of dependency edges having this formula */
+  int32_t refs;
 
   /* parsed from the embedded bacon block */
+  bool shebang;
   struct formula_value *file;   // primitive
-  struct formula_value *envs;   // mappings set
+  struct formula_value *envs;   // set of mappings
   struct formula_value *args;   // list
 } formula;
 
-xapi formula_xfree(formula * restrict fml);
-
-void formula_invalidated(formula * restrict fml)
+xapi formula_create(formula ** restrict fml, struct moria_graph * restrict g)
   __attribute__((nonnull));
 
-/// formula_load
-//
-// SUMMARY
-//
-// PARAMETERS
-//  parser
-//  fml    - (returns)
-//
-xapi formula_node_initialize(struct node * restrict fml_node)
+xapi formula_reconcile(formula * restrict fml)
   __attribute__((nonnull));
 
-xapi formula_full_refresh(void);
+xapi formula_system_reconcile(void);
 
 xapi formula_setup(void);
 xapi formula_cleanup(void);
+
+/*
+ * Write a formulas stats to a buffer
+ *
+ * reset - true to reset the stats while reading them
+ * zp    - (returns) number of bytes written to dst
+ */
+xapi formula_collate_stats(void *dst, size_t sz, formula *fml, bool reset, size_t *zp)
+  __attribute__((nonnull));
 
 #endif

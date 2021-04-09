@@ -16,110 +16,94 @@
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
 #include <sys/syscall.h>
-#include <string.h>
 
-#include "xapi.h"
-#include "types.h"
-
-#include "fab/ipc.h"
-#include "fab/sigutil.h"
 #include "logger/config.h"
-#include "moria/graph.h"
-#include "moria/vertex.h"
 #include "narrator.h"
 #include "valyria/map.h"
 #include "xapi/trace.h"
 #include "xlinux/KERNEL.errtab.h"
-#include "xlinux/xdirent.h"
-#include "xlinux/xepoll.h"
-#include "xlinux/xfcntl.h"
 #include "xlinux/xinotify.h"
 #include "xlinux/xpthread.h"
-#include "xlinux/xsignal.h"
-#include "xlinux/xstring.h"
 #include "xlinux/xunistd.h"
-#include "xlinux/xepoll.h"
+#include "xlinux/xtime.h"
 
 #include "notify_thread.h"
-#include "params.h"
-#include "node.h"
-#include "sweeper_thread.h"
-#include "path.h"
-#include "inotify_mask.h"
+#include "fsent.h"
 #include "logging.h"
+#include "params.h"
+#include "sweeper_thread.h"
 
-#include "common/atomic.h"
-#include "macros.h"
+#include "atomics.h"
+#include "threads.h"
+#include "times.h"
+#include "locks.h"
 
 uint16_t notify_thread_epoch;
 
-static int in_fd;
+static int in_fd = -1;
+
+/* the map is protected by the lock */
+static struct futexlock in_lock;
+static map *in_fsent_by_wd;
+
+/* inotify event buffer */
+static char evbuf[4096];
 
 static xapi notify_thread()
 {
   enter;
 
   sigset_t sigs;
-  char buffer[4096] = {};
-  int epfd = -1;
-  struct epoll_event event;
-  node *n;
-  vertex *v;
+  fsent *n;
+  moria_vertex *v;
   const char *label = 0;
   uint16_t label_len = 0;
+  uint16_t evbuf_off;
+  uint16_t evbuf_len;
   ssize_t r;
-  size_t o;
-  int rv;
-
-  g_params.thread_notify = gettid();
+  struct inotify_event *ev;
+  struct timespec interval;
 
   // signals handled on this thread
   sigfillset(&sigs);
-  sigdelset(&sigs, FABIPC_SIGINTR);
+  sigdelset(&sigs, SIGUSR1);
 
 #if DEBUG || DEVEL
   logs(L_IPC, "starting");
 #endif
 
-  // setup epoll
-  fatal(xepoll_create, &epfd);
-  memset(&event, 0, sizeof(event));
-  event.events = EPOLLIN | EPOLLPRI | EPOLLERR;
-  fatal(xepoll_ctl, epfd, EPOLL_CTL_ADD, in_fd, &event);
+  interval.tv_sec = 0;
+  interval.tv_nsec = MSEC_AS_NSEC(100);
 
-  r = 0;
+  /* current offset into evbuf */
+  evbuf_off = 0;
+
+  /* length of data in evbuf */
+  evbuf_len = 0;
   while(!g_params.shutdown)
   {
-    if(r == 0)
+    if(evbuf_off < evbuf_len)
     {
-      fatal(uxepoll_pwait, &rv, epfd, &event, 1, -1, &sigs);
-      if(rv < 0)
-        continue;
+      ev = (void*)evbuf + evbuf_off;
 
-      notify_thread_epoch++;
-    }
-
-    fatal(uxread, in_fd, buffer, sizeof(buffer), &r);
-
-    o = 0;
-    while(o < r)
-    {
-      struct inotify_event * ev = (void*)buffer + o;
-
-      if(ev->mask & IN_IGNORED)
+      if(ev->mask & IN_IGNORED) {
         goto next;
+      }
 
       if(ev->name[0] == '.') {
         /* ignore dotfiles for now */
         goto next;
       }
 
-      if((n = map_get(g_nodes_by_wd, MM(ev->wd))) == 0) {
-        logs(L_WARN, "unknown event");
+      futexlock_acquire(&in_lock);
+      n = map_get(in_fsent_by_wd, MM(ev->wd));
+      futexlock_release(&in_lock);
+
+      if(n == 0) {
         goto next;
       }
 
-      v = vertex_containerof(n);
+      v = &n->vertex;
 
       if(ev->mask & (IN_MOVE_SELF | IN_DELETE_SELF))
       {
@@ -131,8 +115,8 @@ static xapi notify_thread()
         label = ev->name;
         label_len = strlen(ev->name);
 
-        if((v = vertex_downw(v, label, label_len))) {
-          n = vertex_value(v);
+        if((v = moria_vertex_downw(v, label, label_len))) {
+          n = containerof(v, fsent, vertex);
           label = 0;
         }
       }
@@ -160,7 +144,20 @@ static xapi notify_thread()
       fatal(sweeper_thread_enqueue, n, ev->mask, label, label_len);
 
 next:
-      o += sizeof(*ev) + ev->len;
+      evbuf_off += sizeof(*ev) + ev->len;
+      continue;
+    }
+
+    fatal(uxread, in_fd, evbuf, sizeof(evbuf), &r);
+    if(r == 0)
+    {
+      notify_thread_epoch++;
+      fatal(uxclock_nanosleep, 0, CLOCK_MONOTONIC, 0, &interval, 0);
+    }
+    else
+    {
+      evbuf_len = r;
+      evbuf_off = 0;
     }
   }
 
@@ -173,11 +170,13 @@ finally:
 coda;
 }
 
-static void * notify_thread_main(void * arg)
+static void * notify_thread_jump(void * arg)
 {
   enter;
 
   xapi R;
+
+  tid = g_params.thread_notify = gettid();
   logger_set_thread_name("notify");
   logger_set_thread_categories(L_NOTIFY);
   fatal(notify_thread, arg);
@@ -186,8 +185,7 @@ finally:
   if(XAPI_UNWINDING)
   {
 #if DEBUG || DEVEL || XAPI
-    xapi_infos("name", "fabd/notify");
-    xapi_infof("pgid", "%ld", (long)getpgid(0));
+    xapi_infos("thread", "notify");
     xapi_infof("pid", "%ld", (long)getpid());
     xapi_infof("tid", "%ld", (long)gettid());
     fatal(logger_xtrace_full, L_ERROR, L_NONAMES, XAPI_TRACE_COLORIZE | XAPI_TRACE_NONEWLINE);
@@ -198,7 +196,7 @@ finally:
 conclude(&R);
 
   atomic_dec(&g_params.thread_count);
-  syscall(SYS_tgkill, g_params.pid, g_params.thread_monitor, FABIPC_SIGSCH);
+  syscall(SYS_tgkill, g_params.pid, g_params.thread_monitor, SIGUSR1);
   return 0;
 }
 
@@ -208,12 +206,22 @@ conclude(&R);
 
 xapi notify_thread_setup()
 {
-  xproxy(xinotify_init, &in_fd, IN_NONBLOCK);
+  enter;
+
+  fatal(xinotify_init, &in_fd, IN_NONBLOCK);
+  fatal(map_create, &in_fsent_by_wd);
+
+  finally : coda;
 }
 
 xapi notify_thread_cleanup()
 {
-  xproxy(ixclose, &in_fd);
+  enter;
+
+  fatal(ixclose, &in_fd);
+  fatal(map_xfree, in_fsent_by_wd);
+
+  finally : coda;
 }
 
 xapi notify_thread_launch()
@@ -228,7 +236,7 @@ xapi notify_thread_launch()
   fatal(xpthread_attr_setdetachstate, &attr, PTHREAD_CREATE_DETACHED);
 
   atomic_inc(&g_params.thread_count);
-  if((rv = pthread_create(&pthread_id, &attr, notify_thread_main, 0)) != 0)
+  if((rv = pthread_create(&pthread_id, &attr, notify_thread_jump, 0)) != 0)
   {
     atomic_dec(&g_params.thread_count);
     tfail(perrtab_KERNEL, rv);
@@ -239,12 +247,13 @@ finally:
 coda;
 }
 
-xapi notify_thread_watch(node * n)
+xapi notify_thread_add_watch(fsent * n)
 {
   enter;
 
   char space[512];
   uint32_t mask = 0;
+  struct futexlock *lockp = 0;
 
   RUNTIME_ASSERT(n->wd == -1);
 
@@ -257,18 +266,35 @@ xapi notify_thread_watch(node * n)
   mask |= IN_ONLYDIR;       /* ENOTDIR if the path is not a directory */
   mask |= IN_EXCL_UNLINK;   /* ignore events for files after they are unlinked */
 
-  node_get_absolute_path(n, space, sizeof(space));
+  fsent_absolute_path_znload(space, sizeof(space), n);
   fatal(xinotify_add_watch, &n->wd, in_fd, space, mask);
-  fatal(map_put, g_nodes_by_wd, MM(n->wd), n, 0);
+
+  lockp = futexlock_acquire(&in_lock);
+  fatal(map_put, in_fsent_by_wd, MM(n->wd), n, 0);
+  futexlock_release(&in_lock);
+  lockp = 0;
 
   if(log_would(L_NOTIFY))
   {
     narrator * N;
     fatal(log_start, L_NOTIFY, &N);
     xsayf("%8s ", "watch");
-    fatal(node_absolute_path_say, n, N);
+    fatal(fsent_absolute_path_say, n, N);
     fatal(log_finish);
   }
+
+finally:
+  if(lockp) {
+    futexlock_release(lockp);
+  }
+coda;
+}
+
+xapi notify_thread_rm_watch(fsent * n)
+{
+  enter;
+
+  /* there should be code here */
 
   finally : coda;
 }

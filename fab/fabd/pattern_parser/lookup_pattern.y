@@ -20,13 +20,13 @@
 
   #include "types.h"
 
-  #include "pattern/alternation.internal.h"
-  #include "pattern/byte.internal.h"
-  #include "pattern/class.internal.h"
-  #include "pattern/range.internal.h"
-  #include "pattern/word.internal.h"
+  #include "pattern/alternation.h"
+  #include "pattern/byte.h"
+  #include "pattern/class.h"
+  #include "pattern/range.h"
+  #include "pattern/word.h"
 
-  #include "pattern/section.internal.h"
+  #include "pattern/section.h"
 
   #include "pattern_parser.internal.h"
   #include "pattern.internal.h"
