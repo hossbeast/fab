@@ -1,3 +1,31 @@
+v0.7.0 - March 2021
+
+formula features
+ * new rule types zero x many (useful for generated files)
+ * path-search (search path specified in config)
+
+new builtin modules
+ * git
+
+fab client features
+ * event subscription
+ * new commands stats, tree, ls, several others
+ * configuration file
+
+fab commander features
+ * shows node stats
+ * switch between filesystem and dependency graph explorers
+
+bootstrap/reconcile system for applying changes live
+ * module files
+ * formula files
+ * var files
+ * config files
+
+other
+ * fabd now supports multiple concurrent clients
+ * integration test suite added
+
 v0.6.0 - May 2020
 
 The v0.6 release represents a rewrite of most of the functionality of the
