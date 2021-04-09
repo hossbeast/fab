@@ -34,10 +34,11 @@ xapi API mkdirpw(mode_t mode, const char * const path, size_t pathl)
   enter;
 
   char space[256];
+  const char * t;
+  const char * e;
 
-  const char * t = path;
-  const char * e = path + pathl;
-
+  t = path;
+  e = path + pathl;
   while(t != e)
   {
     t++;
@@ -78,8 +79,9 @@ xapi API mkdirpvf(mode_t mode, const char * const restrict fmt, va_list va)
   enter;
 
   char space[256];
+  size_t sz;
 
-  size_t sz = vsnprintf(space, sizeof(space), fmt, va);
+  sz = vsnprintf(space, sizeof(space), fmt, va);
   if(sz < sizeof(space))
   {
     fatal(mkdirpw, mode, space, sz);

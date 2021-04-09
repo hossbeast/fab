@@ -15,11 +15,10 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef _RMDIRP_H
-#define _RMDIRP_H
+#ifndef _LORIEN_RMDIRP_H
+#define _LORIEN_RMDIRP_H
 
 #include <stdarg.h>
-#include <sys/types.h>
 
 #include "xapi.h"
 

@@ -15,11 +15,10 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef _SYMLINKP_H
-#define _SYMLINKP_H
+#ifndef _LORIEN_SYMLINKP_H
+#define _LORIEN_SYMLINKP_H
 
 #include <stdarg.h>
-#include <sys/types.h>
 
 #include "xapi.h"
 
