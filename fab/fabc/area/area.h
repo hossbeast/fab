@@ -15,19 +15,31 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#include "xapi.h"
-#include "types.h"
+#ifndef _AREA_H
+#define _AREA_H
 
-#include "display.h"
+#include <curses.h>
 
-struct display * g_display;
+typedef struct region {
+  WINDOW *w;
+  int x;
+  int y;
+  int yext;
+  int xext;
+} region;
 
-xapi display_switch(display * restrict dis)
-{
-  enter;
+/* section of the gui */
+typedef struct area {
+  region border;        /* 1px box */
+  region body;          /* the area, minus the border and the footer */
+  region footer;        /* 1px row at the bottom */
+} area;
 
-  g_display = dis;
-  fatal(g_display->setup);
+xapi area_init(area * restrict a, int yext, int xext, int y, int x)
+  __attribute__((nonnull));
 
-  finally : coda;
-}
+void region_print_rightjust(region *reg, const char * restrict fmt, ...)
+  __attribute__((nonnull(1, 2)))
+  __attribute__((format(printf, 2, 3)));
+
+#endif

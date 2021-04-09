@@ -27,9 +27,9 @@ rule fabc.? -> //module/targets
 # make common objects available for #include and linking
 import fab/include
 import fab/asan
-import lib{common,xapi,xlinux,logger,narrator,fab,value,yyutil,valyria,lorien}
+import lib{common,xapi,xlinux,logger,narrator,fab,value,yyutil,valyria,lorien,descriptor}
 
-variant xapi.{debug,devel} : [
+variant xapi.devel : [
   rule fabc.? <- asan/asan.$?.o
 ]
 
@@ -45,5 +45,5 @@ variant xapi.pic.{debug,devel,final,trace} : [
 ]
 
 var : {
-  lflags : [ -lncurses ]
+  lflags : [ -lncurses -lpthread ]
 }

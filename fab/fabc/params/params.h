@@ -23,14 +23,23 @@
 
 #include "xapi.h"
 
+#define TERMINAL_IN  100
+#define TERMINAL_OUT 101
+
 // non-configurable execution parameters
 extern struct g_params
 {
   pid_t           pid;     // pid of this process
-  pid_t           ppid;    // pid of parent process
-  pid_t           pgid;    // process group id
 
+  pid_t           thread_main;
+  pid_t           thread_ui;
+  pid_t           thread_client;
+  int             thread_count;
+  bool            shutdown;
+
+#if DEVEL
   char *          exedir;  // path to the directory containing the executable
+#endif
 } g_params;
 
 /// params_parse
@@ -45,12 +54,5 @@ xapi params_setup(void);
 // free g_params
 //
 void params_teardown(void);
-
-/// params_report
-//
-// SUMMARY
-//  log a description of params
-//
-xapi params_report(void);
 
 #endif

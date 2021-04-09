@@ -15,42 +15,31 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#include <curses.h>
-#include <stdlib.h>
-#include <sys/syscall.h>
+#include <unistd.h>
+#include <fcntl.h>
 
 #include "xapi.h"
-#include "xapi/calltree.h"
 #include "fab/load.h"
 #include "logger/load.h"
 #include "narrator/load.h"
-#include "xlinux/load.h"
 #include "value/load.h"
-#include "yyutil/load.h"
 #include "valyria/load.h"
+#include "xlinux/load.h"
+#include "yyutil/load.h"
 
-#include "xapi/trace.h"
-#include "xlinux/xunistd.h"
-#include "xlinux/xfcntl.h"
-#include "xlinux/xstat.h"
-#include "xlinux/xshm.h"
-#include "xlinux/xpthread.h"
-#include "narrator.h"
-#include "logger.h"
-
-#include "fab/sigutil.h"
 #include "fab/client.h"
-#include "fab/FAB.errtab.h"
+#include "fab/sigutil.h"
+#include "xapi/calltree.h"
+#include "xapi/trace.h"
+#include "xlinux/xsignal.h"
+#include "xlinux/xunistd.h"
 
 #include "args.h"
-#include "params.h"
-#include "logging.h"
 #include "MAIN.errtab.h"
-#include "xcurses.h"
-
-#include "macros.h"
-#include "explorer.h"
-#include "display.h"
+#include "client_thread.h"
+#include "logging.h"
+#include "params.h"
+#include "ui_thread.h"
 
 __thread int32_t tid;
 
@@ -59,94 +48,62 @@ static xapi xmain()
 {
   enter;
 
-#if DEVEL
-  char space[512];
-#endif
-  char * fabw_path = 0;
-  fab_client * client = 0;
+  sigset_t sigs;
+  siginfo_t info;
+  int r;
+  int fd;
 
 #if DEBUG || DEVEL
   logs(L_IPC, "started");
 #endif
 
-  // parse cmdline arguments
   fatal(args_parse);
-  fatal(args_report);
-
-  // curses initialization - before signal handlers setup
-  fatal(xinitscr, 0);
-  fatal(start_color);
-  use_default_colors(); // somehow, this makes transparency work
-  fatal(noecho);          // dont display user input
-  fatal(nonl);            /* Disable conversion and detect newlines from input. */
-  // in cbreak mode, ctrl+c generates SIGINT
-  fatal(cbreak);
-  fatal(keypad, stdscr, TRUE);
-  curs_set(0);            /* cursor visibility state */
-  leaveok(stdscr, false); /* dont update cursor */
-  fatal(clear);
-  fatal(refresh);         /* mark stdscr as up-to-date so the implicit refresh of getch is suppressed */
-
-  // take over signal handling
-  fatal(sigutil_defaults);
-
-  // unblock some signals
-  sigset_t sigs;
-  sigfillset(&sigs);
-  sigdelset(&sigs, SIGINT);
-  sigdelset(&sigs, SIGSTOP);
-  sigdelset(&sigs, SIGKILL);
-  sigdelset(&sigs, SIGQUIT);
-  fatal(xpthread_sigmask, SIG_SETMASK, &sigs, 0);
-
-  // ensure fabd can write to my stdout/stderr
-  fatal(xfchmod, 1, 0777);
-  fatal(xfchmod, 2, 0777);
 
 #if DEVEL
-  snprintf(space, sizeof(space), "%s/../fabw/fabw.devel.xapi", g_params.exedir);
-  fabw_path = space;
+  char space[512];
+  snprintf(space, sizeof(space), "%s/../fabd/fabd.devel.xapi", g_params.exedir);
+  g_fab_client_fabd_path = space;
 #endif
 
-  fatal(fab_client_create, &client, ".", XQUOTE(FABIPCDIR), fabw_path);
+  setvbuf(stdout, NULL, _IONBF, 0);
+  setvbuf(stderr, NULL, _IONBF, 0);
 
-#if 0
-  // kill the existing fabd instance, if any
-  if(changed credentials)
-    fatal(client_terminate);
+  // save stdin/stdout - ui thread fetches them from here
+  fatal(xdup2, 0, TERMINAL_IN);
+  fatal(xdup2, 1, TERMINAL_OUT);
+
+  // discard stdout/stderr
+#if DEVEL
+  fd = open("/tmp/fabc", O_CREAT | O_WRONLY);
+#else
+  fd = open("/dev/null", O_WRONLY);
 #endif
+  fatal(xdup2, fd, 1);
+  fatal(xdup2, fd, 2);
 
-  // launch or connect
-  fatal(fab_client_prepare, client);
-  fatal(fab_client_launchp, client);
+  fatal(sigutil_install_handlers);
+  sigfillset(&sigs);
+  fatal(xsigprocmask, SIG_SETMASK, &sigs, 0);
 
-  // setup colors
-  init_pair(1, COLOR_WHITE, -1);
-  init_pair(2, COLOR_RED, -1);
-  init_pair(3, COLOR_WHITE, -1);
+  fatal(client_thread_launch);
+  fatal(ui_thread_launch);
 
-  // start out in explorer mode
-  g_display.mode = DISPLAY_EXPLORER;
-
-  fatal(explorer_main, client);
+  while(g_params.thread_count)
+  {
+    fatal(sigutil_wait, &sigs, &info);
+    g_params.shutdown = true;
+    fatal(uxtgkill, &r, g_params.pid, g_params.thread_client, SIGUSR1);
+    fatal(uxtgkill, &r, g_params.pid, g_params.thread_ui, SIGUSR1);
+  }
 
 finally:
   if(XAPI_UNWINDING)
   {
-    if(XAPI_ERRVAL == FAB_NODAEMON)
+    if(XAPI_ERRVAL == MAIN_BADARGS || XAPI_ERRVAL == MAIN_NOCOMMAND)
     {
-#if DEBUG || DEVEL
-      // fabd exited - check for a coredump
-#endif
-    }
-    else if(XAPI_ERRVAL == MAIN_BADARGS || XAPI_ERRVAL == MAIN_NOCOMMAND)
-    {
-      fatal(args_usage, 1, 1);
+      args_usage();
     }
   }
-
-  // locals
-  fatal(fab_client_xfree, client);
 coda;
 }
 

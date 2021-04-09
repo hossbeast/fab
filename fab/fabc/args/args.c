@@ -15,32 +15,16 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#include <sys/types.h>
-#include <inttypes.h>
-#include <unistd.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 #include <getopt.h>
-#include <stdarg.h>
 
-#include "xlinux/xstring.h"
-#include "xlinux/xstdlib.h"
-#include "xlinux/mempolicy.h"
-#include "value/writer.h"
-#include "narrator.h"
-#include "narrator/units.h"
-#include "narrator/fixed.h"
-#include "narrator/growing.h"
-#include "logger.h"
-#include "logger/expr.h"
-#include "logger/category.h"
+#include "xapi.h"
 #include "logger/arguments.h"
+#include "narrator.h"
+#include "xlinux/xstdlib.h"
+#include "xlinux/xstring.h"
 
 #include "args.h"
-#include "logging.h"
-#include "params.h"
-#include "errtab/MAIN.errtab.h"
+#include "MAIN.errtab.h"
 
 #include "macros.h"
 
@@ -50,50 +34,24 @@ struct g_args g_args;
 // public
 //
 
-xapi args_usage(int version, int logcats)
+void args_usage()
 {
-  enter;
-
-  narrator * N = g_narrator_stdout;
-
-  xsays(
-"fab : build optimally\n"
+  printf(
+"fabc : fab commander\n"
+"\n"
+"usage: fab [path | option]..\n"
+"\n"
+"options\n"
+" --help | -h       this message\n"
+" --version         print version information\n"
   );
 
-  if(version)
-  {
-    xsays(
-" fab-" XQUOTE(FABVERSIONS)
-#if DEVEL
-"+DEVEL"
-#elif DEBUG
-"+DEBUG"
-#endif
-" @ " XQUOTE(BUILDSTAMP)
+  printf(
 "\n"
-    );
-  }
-
-  if(logcats)
-  {
-    xsays(
-"\n"
-"----------------- [ logs ] -----------------------------------------------------------------------\n"
-"\n"
-    );
-
-    fatal(logger_expr_push, 0, "+LOGGER");
-    fatal(logger_categories_report);
-    fatal(logger_expr_pop, 0);
-  }
-
-  xsays(
-"\n"
-"For more information visit http://fabutil.org\n"
-"\n"
+"Build optimally. More info at https://github.com/hossbeast/fab\n"
   );
 
-  finally : coda;
+  exit(0);
 }
 
 xapi args_parse()
@@ -102,46 +60,34 @@ xapi args_parse()
 
   int help = 0;
   int version = 0;
-  int logs = 0;
+  int x;
+  int indexptr;
+  const char *p;
 
   struct option longopts[] = {
-      { "help"                        , no_argument       , &help, 1 }
-    , { "args"                        , no_argument       , &help, 1 }
-    , { "params"                      , no_argument       , &help, 1 }
-    , { "options"                     , no_argument       , &help, 1 }
-    , { "opts"                        , no_argument       , &help, 1 }
-    , { "version"                     , no_argument       , &version, 1 }
-    , { "vers"                        , no_argument       , &version, 1 }
-    , { "vrs"                         , no_argument       , &version, 1 }
-    , { "log"                         , no_argument       , &logs, 1 }
-    , { "logs"                        , no_argument       , &logs, 1 }
-    , { "logcat"                      , no_argument       , &logs, 1 }
-    , { "logcats"                     , no_argument       , &logs, 1 }
-    , { "logexpr"                     , no_argument       , &logs, 1 }
-    , { "logexprs"                    , no_argument       , &logs, 1 }
+      { "help"     , no_argument , &help, 1 }
+    , { "version"  , no_argument , &version, 1 }
     , { }
   };
 
-  char * switches =
-    // getopt options
-    "-"
+  p = "";
+#if DEVEL
+  p = "v";
+#endif
 
-    // no-argument switches
-    ""
-
-    // with-argument switches
-    ""
-  ;
-
-  int x;
-  int indexptr;
   opterr = 0;
-  while(indexptr = 0, (x = getopt_long(g_argc, &g_argv[0], switches, longopts, &indexptr)) != -1)
+  while(indexptr = 0, (x = getopt_long(g_argc, &g_argv[0], p, longopts, &indexptr)) != -1)
   {
     if(x == 0)
     {
       // longopts - placeholder
     }
+#if DEVEL
+    else if(x == 'v')
+    {
+      g_args.verbose++;
+    }
+#endif
     else if(x == '?')
     {
       // unrecognized argv element
@@ -157,40 +103,22 @@ xapi args_parse()
     else
     {
       // non-option argv elements
-      free(g_args.lookup);
-      fatal(ixstrdup, &g_args.lookup, optarg);
+      free(g_args.path);
+      fatal(ixstrdup, &g_args.path, optarg);
     }
   }
 
   for(; optind < g_argc; optind++)
   {
     // options following --
-    free(g_args.lookup);
-    fatal(ixstrdup, &g_args.lookup, g_argv[optind]);
+    free(g_args.path);
+    fatal(ixstrdup, &g_args.path, g_argv[optind]);
   }
 
-  if(help || version || logs)
+  if(help || version)
   {
-    fatal(args_usage, version, logs);
+    args_usage();
   }
 
   finally : coda;
-}
-
-xapi args_report()
-{
-  enter;
-
-  narrator_growing * N = 0;
-
-  fatal(narrator_growing_create, &N);
-
-  fatal(narrator_xsays, &N->base, "fabc");
-  fatal(narrator_xsayf, &N->base, " %s", g_logvs);
-
-  logs(L_ARGS, N->s);
-
-finally:
-  fatal(narrator_growing_free, N);
-coda;
 }
