@@ -15,6 +15,8 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
+#include <string.h>
+
 #include "path_normalize.h"
 
 #include "zbuffer.h"
@@ -30,6 +32,7 @@ size_t API path_normalize(char * restrict dst, size_t sz, const char * restrict 
   const char * A;
   const char * B;
   const char * backtrack = 0;
+  const char * t;
 
   int nofile = 0;
   int abs = 0;
@@ -55,7 +58,7 @@ size_t API path_normalize(char * restrict dst, size_t sz, const char * restrict 
     else if((B - A) == 2 && A[0] == '.' && A[1] == '.' && backtrack)
     {
       // separator following the segment
-      const char * t = backtrack;
+      t = backtrack;
 
       // first character in the segment
       t--;
@@ -121,5 +124,6 @@ size_t API path_normalize(char * restrict dst, size_t sz, const char * restrict 
     dst_len += znloadc(dst + dst_len, sz - dst_len, '/');
 
   dst[dst_len] = 0;
+
   return dst_len;
 }

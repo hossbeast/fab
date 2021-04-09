@@ -15,18 +15,12 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#include <stdio.h>
-#include <stdarg.h>
-#include <unistd.h>
-#include <sys/stat.h>
-#include <sys/types.h>
 #include <string.h>
 
 #include "xapi.h"
-#include "xlinux/xunistd.h"
-#include "xlinux/xstat.h"
-#include "xlinux/xunistd.h"
+
 #include "xlinux/xdirent.h"
+#include "xlinux/xstat.h"
 #include "xlinux/xstdlib.h"
 
 #include "nftwat.h"
@@ -55,6 +49,7 @@ static xapi __attribute__((nonnull(1, 3, 5, 7, 9))) walk(
   int stop = 0;
   struct stat stb;
   uint8_t type;
+  struct dirent *entp;
 
   patho = *pathl;
 
@@ -77,7 +72,6 @@ static xapi __attribute__((nonnull(1, 3, 5, 7, 9))) walk(
   child.parent = dirinfo;
   child.path = path;
 
-  struct dirent * entp;
   fatal(xreaddir, dd, &entp);
   fatal(xtelldir, &dirloc, dd);
   do
@@ -163,9 +157,9 @@ xapi API nftwat(
 
   DIR *** dds = 0;
   size_t ddsp = 0;
-
-  char path[512]; // = {};
+  char path[512];
   size_t pathl = 0;
+  const char *e;
 
   fatal(xmalloc, &dds, sizeof(*dds) * nopenfd);
   pathl = snprintf(path, sizeof(path), "%s", dirpath);
@@ -175,12 +169,14 @@ xapi API nftwat(
   rootinfo.pathl = pathl;
   rootinfo.type = FTWAT_D;
 
-  const char * e = path + pathl;
-  while(e != path && *e != '/')
+  e = path + pathl;
+  while(e != path && *e != '/') {
     e--;
+  }
 
-  if(*e == '/')
+  if(*e == '/') {
     e++;
+  }
 
   rootinfo.name_off = e - path;
 

@@ -15,13 +15,13 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef _MKDIRP_H
-#define _MKDIRP_H
+#ifndef _LORIEN_MKDIRP_H
+#define _LORIEN_MKDIRP_H
 
 #include <stdarg.h>
-#include <sys/types.h>
 
 #include "xapi.h"
+#include "types.h"
 
 /// mkdirp
 //

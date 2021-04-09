@@ -15,19 +15,12 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#include <stdio.h>
-#include <stdarg.h>
-#include <unistd.h>
-#include <sys/stat.h>
-#include <sys/types.h>
-#include <string.h>
-
-#include "xapi.h"
-#include "xlinux/xunistd.h"
 #include "xlinux/xftw.h"
-#include "xlinux/xstat.h"
+#include "xlinux/xunistd.h"
 
 #include "rmdirp.h"
+
+#include "macros.h"
 
 struct context
 {
@@ -53,7 +46,7 @@ static xapi rmdirp_fn(const char * fpath, const struct stat * sb, int typeflag, 
   }
   else
   {
-    // WTF
+    RUNTIME_ABORT();
   }
 
 finally:
