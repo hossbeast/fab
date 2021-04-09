@@ -32,17 +32,15 @@ shadow filesystem layout
 
 */
 
-struct edge;
-struct node;
-struct module;
+struct fsedge;
+struct fsent;
 struct graph_invalidation_context;
+struct module;
 
 // globally scoped nodes
-extern struct node * g_shadow;                 /* root of the shadow fs */
-extern struct node * g_shadow_module;          /* the node at //module */
-extern struct node * g_shadow_modules;         /* the node at //modules */
-
-extern uint8_t node_shadow_epoch;
+extern struct fsent * g_shadow;                 /* root of the shadow fs */
+extern struct fsent * g_shadow_module;          /* the node at //module */
+extern struct fsent * g_shadow_modules;         /* the node at //modules */
 
 /* module initialization */
 xapi shadow_setup(void);
@@ -50,44 +48,41 @@ xapi shadow_setup(void);
 /* module cleanup */
 xapi shadow_cleanup(void);
 
-void shadow_generation(void);
-
 /* attaach a module to the shadow fs */
-xapi shadow_graft_module(struct module * restrict mod, struct graph_invalidation_context * restrict invalidation)
+xapi shadow_module_init(
+    struct module * restrict mod
+  , struct graph_invalidation_context * restrict invalidation
+)
   __attribute__((nonnull));
 
 xapi shadow_graft_imports(
     struct module * restrict mod
-  , struct node * restrict ref
+  , struct fsent * restrict ref
   , const char * restrict as
   , uint16_t asl
-  , struct edge ** restrict ep
+  , struct fsedge ** restrict ep
   , struct graph_invalidation_context * restrict invalidation
 )
   __attribute__((nonnull(1, 2, 3, 6)));
 
-/*
- * attach a node to the //module/scope directory
- *
- * mod          - module
- * ref          - node to attach
- * as           - name to attach under
- * asl          - name length
- * overwrite    - whether to allow replacement of an existing node
- * invalidation - ongoing invalidation
- */
-xapi shadow_graft_scope(
+xapi shadow_graft_requires(
     struct module * restrict mod
-  , struct node * restrict ref
+  , struct fsent * restrict ref
   , const char * restrict as
   , uint16_t asl
-  , bool overwrite
-  , struct edge ** restrict ep
+  , struct fsedge ** restrict ep
   , struct graph_invalidation_context * restrict invalidation
 )
-  __attribute__((nonnull(1, 2, 3, 7)));
+  __attribute__((nonnull(1, 2, 3, 6)));
 
-xapi shadow_prune_imports(struct module * restrict mod, struct graph_invalidation_context * restrict invalidation)
-  __attribute__((nonnull));
+xapi shadow_graft_uses(
+    struct module * restrict mod
+  , struct fsent * restrict ref
+  , const char * restrict as
+  , uint16_t asl
+  , struct fsedge ** restrict ep
+  , struct graph_invalidation_context * restrict invalidation
+)
+  __attribute__((nonnull(1, 2, 3, 6)));
 
 #endif

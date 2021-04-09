@@ -20,18 +20,33 @@
 
 /*
 
+The goals describe the set of nodes which are to be brought up to date by building.
+
 */
 
 #include "types.h"
 #include "xapi.h"
 
+struct handler_context;
+struct narrator;
 struct selector;
 
-xapi goals_set(bool build, bool script, struct selector * restrict target_direct, struct selector * restrict target_transitive);
-xapi goals_run(bool notify, bool * restrict building)
+extern bool goals_autorun;
+
+xapi goals_set(
+    uint32_t msg_id
+  , bool build
+  , bool script
+  , struct selector * restrict target_direct
+  , struct selector * restrict target_transitive
+);
+
+xapi goals_kickoff(struct handler_context * restrict handler)
   __attribute__((nonnull));
 
 xapi goals_setup(void);
 xapi goals_cleanup(void);
+xapi goals_say(struct narrator * restrict N)
+  __attribute__((nonnull));
 
 #endif

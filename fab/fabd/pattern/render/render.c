@@ -15,18 +15,10 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-
-#include "xapi.h"
-#include "types.h"
-
-#include "xlinux/xstdlib.h"
-#include "narrator.h"
 #include "narrator/growing.h"
 
-#include "pattern.internal.h"
 #include "render.internal.h"
-#include "section.internal.h"
-#include "path.h"
+#include "pattern.internal.h"
 
 //
 // static
@@ -54,7 +46,7 @@ static xapi pattern_section_render(pattern_render_context * restrict ctx)
     len = start - ctx->pos - sizeof(pattern_render_fragment) - 1;
 
     // two-byte alignment
-    if ((len & 1) == 0) {
+    if((len & 1) == 0) {
       fatal(narrator_xsayc, ctx->narrator, 0);
       start++;
     }

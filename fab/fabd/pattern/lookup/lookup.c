@@ -18,20 +18,15 @@
 #include "types.h"
 #include "xapi.h"
 
-#include "xlinux/xstdlib.h"
-#include "yyutil/parser.h"
-#include "moria/vertex.h"
 #include "moria/graph.h"
-#include "valyria/rbtree.h"
+#include "moria/vertex.h"
+#include "xlinux/xstdlib.h"
 
-#include "lookup.internal.h"
+#include "lookup.h"
+#include "fsent.h"
 #include "pattern.h"
-#include "node.h"
-#include "MODULE.errtab.h"
-#include "shadow.h"
-#include "module.h"
-#include "selection.h"
 #include "render.h"
+#include "selection.h"
 
 typedef struct lookup_context {
   const char * path;
@@ -92,178 +87,82 @@ static xapi __attribute__((nonnull(1))) lookup_callback(
   finally : coda;
 }
 
-static xapi lookup_relative(
-    const node * restrict base
-  , const module * restrict mod
-  , const char * restrict text
-  , uint16_t len
-  , uint32_t attrs
-  , vertex * restrict vertices[2]
-  , int * restrict r
-)
-{
-  enter;
-
-  uint16_t label_len;
-  vertex *v;
-
-  v = vertex_containerof(base);
-  while(v && len)
-  {
-    label_len = 0;
-    while(1)
-    {
-      if(text[label_len] == '/' || label_len == len)
-        break;
-
-      label_len++;
-    }
-
-    if(memncmp(text, label_len, ".", 1) == 0)
-    {
-
-    }
-    else if(memncmp(text, label_len, "..", 2) == 0)
-    {
-      if((v = vertex_up(v)) == 0)
-        break;
-    }
-    else
-    {
-      if((v = vertex_downw(v, text, label_len)) == 0)
-        break;
-
-      if(node_shadowtype_get(vertex_value(v)) == VERTEX_SHADOWTYPE_MODULE)
-        v = vertex_containerof(mod->shadow);
-    }
-
-    if(text[label_len] == '/')
-      label_len++;
-
-    text += label_len;
-    len -= label_len;
-  }
-
-  *r = 0;
-  if(len == 0 && v != NULL)
-  {
-    *r = 1;
-    vertices[0] = v;
-  }
-
-  finally : coda;
-}
-
-static bool candidate(void * ctxp, const vertex * restrict v)
+static bool candidate(void * ctxp, const moria_vertex * restrict v)
 {
   lookup_context * ctx = ctxp;
 
   if((ctx->attrs & PATTERN_LOOKUP_DIR) == PATTERN_LOOKUP_DIR)
   {
-    if(node_filetype_get(vertex_value(v)) != VERTEX_FILETYPE_DIR)
+    if(fsent_filetype_get(containerof(v, fsent, vertex)) != VERTEX_FILETYPE_DIR) {
       return false;
+    }
   }
   if((ctx->attrs & PATTERN_LOOKUP_MODEL) == PATTERN_LOOKUP_MODEL)
   {
-    if(!vertex_downs(v, NODE_MODEL_BAM))
+    if(!moria_vertex_downw(v, fsent_model_name, fsent_model_name_len)) {
       return false;
+    }
   }
   else if((ctx->attrs & PATTERN_LOOKUP_MODULE) == PATTERN_LOOKUP_MODULE)
   {
-    if(!vertex_downs(v, NODE_MODULE_BAM))
+    if(!moria_vertex_downw(v, fsent_module_name, fsent_module_name_len)) {
       return false;
+    }
   }
 
   return true;
 }
 
-/* this function is only called from unit test code */
-xapi pattern_lookup_fragment(
+static xapi pattern_lookup_fragment(
     const char * restrict frag
   , uint16_t fragl
   , const char * restrict fname
   , const yyu_location * restrict loc
-  , const module * restrict mod
-  , const node * restrict base
   , uint32_t attrs
   , selection * restrict nodes
-  , node ** restrict np
+  , char * restrict err
+  , size_t errsz
+  , uint16_t * restrict errlen
 )
 {
   enter;
 
   int r;
   lookup_context ctx = { 0 };
-  vertex * vertices[2];
-  void * mm_tmp = 0;
+  moria_vertex * vertices[2];
   char path1[512];
   char path2[512];
   size_t sz;
 
   ctx.attrs = attrs;
-
-  if(fragl > 2 && memncmp(frag, 2, "//", 2) == 0)
-  {
-    fatal(lookup_relative, g_shadow, mod, frag + 2, fragl - 2, attrs, vertices, &r);
-  }
-  else if(
-       (fragl == 1 && memncmp(frag, 1, ".", 1) == 0)
-    || (fragl == 2 && memncmp(frag, 2, "..", 2) == 0)
-    || (fragl > 2 && memncmp(frag, 2, "./", 2) == 0)
-    || (fragl > 3 && memncmp(frag, 3, "../", 3) == 0))
-  {
-    fatal(lookup_relative, base, mod, frag, fragl, attrs, vertices, &r);
-  }
-  else
-  {
-    ctx.path = frag;
-    ctx.path_len = fragl;
-    fatal(graph_lookup, g_graph, lookup_callback, candidate, &ctx, &mm_tmp, vertices, &r);
-  }
+  ctx.path = frag;
+  ctx.path_len = fragl;
+  fatal(moria_graph_lookup, &g_graph, g_graph_ht, lookup_callback, candidate, &ctx, vertices, &r);
 
   if(r == 1)
   {
-    if(np)
-      *np = vertex_value(vertices[0]);
-    if(nodes)
-      fatal(selection_add_node, nodes, vertex_value(vertices[0]), 0);
-
+    fatal(selection_add_vertex, nodes, vertices[0], 0);
     goto XAPI_FINALIZE;
   }
 
-  xapi_info_pushw("ref", frag, fragl);
-  if(fname && loc) {
-    xapi_info_pushf("location", "%s line %d", fname, loc->f_lin + 1);
+  if(r == 0) {
+    *errlen = snprintf(err, errsz, "[%s] ref %.*s\n", "NOREF", (int)fragl, frag);
+  } else {
+    *errlen = snprintf(err, errsz, "[%s] ref %.*s\n", "AMBIGREF", (int)fragl, frag);
+  }
+  *errlen = snprintf(err, errsz, " location %s line %d\n", fname, loc->f_lin + 1);
+  if(r == 2) {
+    sz = fsent_path_znload(path1, sizeof(path1), containerof(vertices[0], fsent, vertex));
+    *errlen = snprintf(err, errsz, " one %.*s\n", (int)sz, path1);
+
+    sz = fsent_path_znload(path2, sizeof(path2), containerof(vertices[1], fsent, vertex));
+    *errlen = snprintf(err, errsz, " two %.*s\n", (int)sz, path2);
   }
 
-  if(r == 0)
-  {
-    fail(MODULE_NOREF);
-  }
-  else if(r == 2)
-  {
-    sz = node_get_path(vertex_value(vertices[0]), path1, sizeof(path1));
-    xapi_info_pushw("one", path1, sz);
-
-    sz = node_get_path(vertex_value(vertices[1]), path2, sizeof(path2));
-    xapi_info_pushw("two", path2, sz);
-
-    fail(MODULE_AMBIGREF);
-  }
-
-finally:
-  free(mm_tmp);
-coda;
+  finally : coda;
 }
 
-xapi pattern_lookup(
-    const pattern * restrict ref
-  , const module * restrict mod
-  , const node * restrict base
-  , uint32_t attrs
-  , selection * restrict nodes
-  , node ** restrict np
-)
+xapi pattern_lookup(const pattern * restrict ref, uint32_t attrs, selection * restrict nodes, char * restrict err, size_t errsz, uint16_t * errlen)
 {
   enter;
 
@@ -275,14 +174,18 @@ xapi pattern_lookup(
   /* render the reference pattern to resolve classes and alternations */
   fatal(pattern_render, ref, &rendered);
 
+  *errlen = 0;
   fragment = rendered->fragments;
   for(x = 0; x < rendered->size; x++)
   {
-    fatal(pattern_lookup_fragment, fragment->text, fragment->len, ref->fname, &ref->loc, mod, base, attrs, nodes, np);
+    fatal(pattern_lookup_fragment, fragment->text, fragment->len, ref->fname, &ref->loc, attrs, nodes, err, errsz, errlen);
+    if(*errlen) {
+      break;
+    }
     fragment = pattern_render_fragment_next(fragment);
   }
 
 finally:
-  free(rendered);
+  wfree(rendered);
 coda;
 }

@@ -38,26 +38,21 @@ typedef struct formula_parser {
   // (returns)
   struct formula_value * file;  // primitive
   struct formula_value * args;  // list
-  struct formula_value * envs;  // set
+  struct formula_value * envs;  // set of mappings
 } formula_parser;
 
-/// formula_yyerror
-//
-// SUMMARY
-//  flag the parse as failed (by setting pp->r = 0)
-//  log the error under L_ERROR | L_FF
-//  log the last token under L_ERROR | L_FF
-//
-// DETAILS
-//  called from tab.o and lex.o
-//
+/* called from tab.o and lex.o */
 static void formula_yyerror(yyu_location * loc, void * scanner, yyu_parser * pp, char const * err)
   __attribute__((weakref("yyu_grammar_error")));
 
-/*
- * locate the bacon block
- */
-void formula_parser_extract(const char * restrict text, size_t text_len, bool * restrict shebang, char ** restrict baconp, size_t * restrict bacon_lenp)
+/* locate the embedded bacon block in formula text, if any */
+void formula_parser_extract(
+    const char * restrict text
+  , size_t text_len
+  , bool * restrict shebang
+  , char ** restrict baconp
+  , size_t * restrict bacon_lenp
+)
   __attribute__((nonnull));
 
 xapi formula_parser_bacon_parse(

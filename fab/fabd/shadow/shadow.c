@@ -15,180 +15,111 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#include <string.h>
-
-#include "types.h"
 #include "xapi.h"
-
-#include "moria/edge.h"
-#include "moria/operations.h"
-#include "narrator.h"
+#include "types.h"
 
 #include "shadow.h"
-#include "node.internal.h"
-#include "path.h"
 #include "filesystem.internal.h"
-#include "module.h"
-#include "node_operations.h"
-#include "graph.h"
-#include "MODULE.errtab.h"
+#include "fsedge.h"
+#include "fsent.h"
 #include "logging.h"
-#include "stats.h"
+#include "module.h"
 
-#include "zbuffer.h"
-#include "common/attrs.h"
-
-uint8_t node_shadow_epoch;
-
-node * g_shadow;
-node * g_shadow_module;
-node * g_shadow_modules;
+fsent * g_shadow;
+fsent * g_shadow_module;
+fsent * g_shadow_modules;
 
 static xapi shadow_root_create()
 {
   enter;
 
-  vertex * v;
-  node * n;
-  path * p = 0;
+  fatal(fsent_create, &g_shadow, VERTEX_SHADOW_DIR, 0, MMS("(shadow)"));
 
-  STATS_INC(nodes_shadow);
-  fatal(vertex_create, &v, g_graph, VERTEX_FILETYPE_DIR | VERTEX_TYPE_NODE | VERTEX_SHADOWTYPE_FS);
-  n = vertex_value(v);
-
-  fatal(path_creates, &p, "(shadow)");
-  n->name = p;
-  p = 0;
-
-  v->label = n->name->name;
-  v->label_len = n->name->namel;
-
-  n->wd = -1;
-  n->fst = &fstree_shadow;
-  n->fs = n->fst->fs;
-
-  g_shadow = n;
-
-finally:
-  fatal(path_free, p);
-coda;
+  finally : coda;
 }
 
 static xapi shadow_link(
-    node * restrict parent
+    fsent * restrict parent
   , module * restrict mod
   , const char * restrict name
   , uint16_t namel
-  , node * restrict ref
-  , edge ** restrict nep
-  , node ** restrict displacedp
+  , fsent * restrict ref
+  , fsedge ** restrict nep
+  , fsent ** restrict displaced
   , graph_invalidation_context * restrict invalidation
 )
 {
   enter;
 
-  vertex * v;
-  node * n;
-  path * p = 0;
-  node * displaced;
-  edge *ne;
-  path plocal;
+  fsent *n;
+  moria_connect_context ctx;
+  fsedge *fse;
+  moria_edge *e;
+  int r;
 
-  fatal(vertex_create, &v, g_graph, VERTEX_SHADOW_LINK);
-  n = vertex_value(v);
+  fatal(fsent_create, &n, VERTEX_SHADOW_LINK, 0, name, namel);
+  n->vertex.ref = &ref->vertex;
 
-  /* temp name - might delete this vertex */
-  n->name = &plocal;
-  plocal.name = (void*)name;
-  plocal.namel = namel;
-  v->label = n->name->name;
-  v->label_len = n->name->namel;
-  v->ref = vertex_containerof(ref);
+  r = moria_preconnect(&ctx, &g_graph, &parent->vertex, &n->vertex, EDGE_FSTREE, &e);
 
-  n->wd = -1;
-  n->fst = &fstree_shadow;
-  n->fs = n->fst->fs;
-  n->mod = mod;
-
-  fatal(node_connect_fs, parent, n, EDGE_TYPE_FS, invalidation, &ne, &displaced);
-
-  if(nep) {
-    *nep = ne;
-  }
-
-  if(displacedp) {
-    *displacedp = 0;
-  }
-
-  /* existing link by this name - same referent */
-  if(!displaced && ne->B != v)
+  if(r == MORIA_EDGEDOWN)
   {
-    n->name = 0;
-    fatal(graph_vertex_delete, g_graph, v);
+    *nep = containerof(e, fsedge, edge);
+
+    /* existing edge with the same referent */
+    if(e->B->ref == &ref->vertex)
+    {
+      *displaced = 0;
+      fsent_release(n);
+    }
+    else
+    {
+      /* the edge is still in use, but no longer connected to this vertex */
+      *displaced = containerof(e->B, fsent, vertex);
+      e->B->up_identity = 0;
+
+      /* this is valid because the old/new B vertices have the same label */
+      e->B = &n->vertex;
+    }
   }
   else
   {
-    STATS_INC(nodes_shadow);
-    fatal(path_createw, &p, name, namel);
-    n->name = p;
-    p = 0;
-    v->label = n->name->name;
-    v->label_len = n->name->namel;
-
-    /* existing link replaced with a link to some other referent */
-    if(displaced)
-    {
-      *displacedp = displaced;
-    }
-    /* otherwise, no existing link by this name */
+    RUNTIME_ASSERT(r == MORIA_NOEDGE);
+    fatal(fsedge_alloc, &fse, &g_graph);
+    fatal(graph_connect, &ctx, &parent->vertex, &n->vertex, &fse->edge, EDGE_FSTREE);
+    *nep = fse;
   }
 
-finally:
-  fatal(path_free, p);
-coda;
+  finally : coda;
 }
 
 static xapi shadow_create(
-    node * restrict parent
-  , node ** restrict np
+    fsent * restrict parent
+  , fsent ** restrict np
   , module * restrict mod
   , const char * restrict name
   , uint16_t namel
-  , uint32_t attrs
+  , vertex_kind kind
   , graph_invalidation_context * restrict invalidation
 )
 {
   enter;
 
-  vertex * v;
-  node * n;
-  path * p = 0;
+  fsent * n;
 
-  STATS_INC(nodes_shadow);
-  fatal(vertex_create, &v, g_graph, attrs);
-  n = vertex_value(v);
+  fatal(fsent_create, &n, kind, 0, name, namel);
 
-  fatal(path_createw, &p, name, namel);
-  n->name = p;
-  p = 0;
-
-  v->label = n->name->name;
-  v->label_len = n->name->namel;
-
-  n->wd = -1;
   n->fst = &fstree_shadow;
   n->fs = n->fst->fs;
   n->mod = mod;
 
-  fatal(node_connect_fs, parent, n, EDGE_TYPE_FS, invalidation, 0, 0);
+  fatal(fsedge_connect, parent, n, invalidation);
 
   if(np) {
     *np = n;
   }
 
-finally:
-  fatal(path_free, p);
-coda;
+  finally : coda;
 }
 
 //
@@ -207,16 +138,9 @@ xapi shadow_setup()
   fatal(shadow_create, g_shadow, &g_shadow_module, 0, MMS("module"), VERTEX_SHADOW_MODULE, &invalidation);
   fatal(shadow_create, g_shadow, &g_shadow_modules, 0, MMS("modules"), VERTEX_SHADOW_MODULES, &invalidation);
 
-  node_shadow_epoch = 1;
-
 finally:
   graph_invalidation_end(&invalidation);
 coda;
-}
-
-void shadow_generation()
-{
-  node_shadow_epoch++;
 }
 
 xapi shadow_cleanup()
@@ -226,146 +150,84 @@ xapi shadow_cleanup()
   finally : coda;
 }
 
-xapi shadow_graft_module(struct module * restrict mod, graph_invalidation_context * restrict invalidation)
+xapi shadow_module_init(struct module * restrict mod, graph_invalidation_context * restrict invalidation)
 {
   enter;
 
-  fatal(shadow_create, g_shadow_modules, &mod->shadow, mod, MMS(mod->id), VERTEX_SHADOW_DIR, invalidation);
+  fatal(shadow_create, g_shadow_modules, &mod->shadow, mod, mod->id, 16, VERTEX_SHADOW_DIR, invalidation);
   fatal(shadow_create, mod->shadow, &mod->shadow_imports, mod, MMS("imports"), VERTEX_SHADOW_DIR, invalidation);
+  fatal(shadow_create, mod->shadow, &mod->shadow_requires, mod, MMS("requires"), VERTEX_SHADOW_DIR, invalidation);
+  fatal(shadow_create, mod->shadow, &mod->shadow_uses, mod, MMS("uses"), VERTEX_SHADOW_DIR, invalidation);
   fatal(shadow_create, mod->shadow, &mod->shadow_targets, mod, MMS("targets"), VERTEX_SHADOW_FILE, invalidation);
-  fatal(shadow_create, mod->shadow, &mod->shadow_scope, mod, MMS("scope"), VERTEX_SHADOW_DIR, invalidation);
 
-  /* //module/this/fs -> module directory node */
-  fatal(shadow_link, mod->shadow, mod, MMS("fs"), mod->dir_node, 0, 0, invalidation);
+  /* //module/this/fs -> module directory fsent */
+  fatal(shadow_link, mod->shadow, mod, MMS("fs"), mod->dir_node, &mod->shadow_fs, 0, invalidation);
 
   finally : coda;
 }
 
-xapi shadow_graft_imports(struct module * restrict mod, node * restrict ref, const char * restrict as, uint16_t asl, edge ** restrict nep, graph_invalidation_context * restrict invalidation)
+xapi shadow_graft_requires(struct module * restrict mod, fsent * restrict ref, const char * restrict as, uint16_t asl, fsedge ** restrict nep, graph_invalidation_context * restrict invalidation)
 {
   enter;
 
-  node *displaced = 0;
+  fsent *displaced = 0;
+
+  fatal(shadow_link, mod->shadow_requires, mod, as, asl, ref, nep, &displaced, invalidation);
+
+  if(displaced)
+  {
+    logf(L_WARN, "require '%.*s' displaces earlier name", (int)asl, as);
+
+    /* the displaced vertex was a link; it is now orphaned and can be deleted */
+    fsent_release(displaced);
+  }
+
+  finally : coda;
+}
+
+xapi shadow_graft_imports(struct module * restrict mod, fsent * restrict ref, const char * restrict as, uint16_t asl, fsedge ** restrict nep, graph_invalidation_context * restrict invalidation)
+{
+  enter;
+
+  fsent *n, *displaced = 0;
 
   fatal(shadow_link, mod->shadow_imports, mod, as, asl, ref, nep, &displaced, invalidation);
 
-  /* imports must be unique by name */
-  if(!displaced)
+  if(displaced)
   {
+    logf(L_WARN, "import '%.*s' displaces earlier name", (int)asl, as);
 
-  }
-  else
-  {
-    logf(L_WARN, "import '%.*s' displaces earlier imported name", (int)asl, as);
+    /* erase the referent */
+    n = containerof(displaced->vertex.ref, fsent, vertex);
+    RUNTIME_ASSERT(n->import_scope_edge);
+    n->import_scope_edge = 0;
 
     /* the displaced vertex was a link; it is now orphaned and can be deleted */
-    STATS_DEC(nodes_shadow);
-
-    fatal(graph_delete_vertex, vertex_containerof(displaced));
+    fsent_release(displaced);
   }
 
   finally : coda;
 }
 
-xapi shadow_graft_scope(struct module * restrict mod, node * restrict ref, const char * restrict as, uint16_t asl, bool overwrite, edge ** restrict nep, graph_invalidation_context * restrict invalidation)
+xapi shadow_graft_uses(struct module * restrict mod, fsent * restrict ref, const char * restrict as, uint16_t asl, fsedge ** restrict nep, graph_invalidation_context * restrict invalidation)
 {
   enter;
 
-  node *displaced = 0;
+  fsent *n, *displaced = 0;
 
-  // this will always replace what was in the scope, if anything
-  fatal(shadow_link, mod->shadow_scope, mod, as, asl, ref, nep, &displaced, invalidation);
+  fatal(shadow_link, mod->shadow_uses, mod, as, asl, ref, nep, &displaced, invalidation);
 
-  if(!displaced)
+  if(displaced)
   {
+    logf(L_WARN, "uses '%.*s' displaces earlier name", (int)asl, as);
 
-  }
-  else
-  {
-    if(overwrite)
-    {
-      /* module directory entry has replaced a required node */
-      logf(L_WARN, "directory entry '%.*s' displaces required node under that name", (int)asl, as);
-    }
-    else
-    {
-      /* required node has replaced a module directory entry */
-      logf(L_WARN, "required node '%.*s' displaces directory entry of the same name", (int)asl, as);
-    }
+    /* erase the referent */
+    n = containerof(displaced->vertex.ref, fsent, vertex);
+    RUNTIME_ASSERT(n->use_scope_edge);
+    n->use_scope_edge = 0;
 
     /* the displaced vertex was a link; it is now orphaned and can be deleted */
-    STATS_DEC(nodes_shadow);
-    fatal(graph_delete_vertex, vertex_containerof(displaced));
-  }
-
-  finally : coda;
-}
-
-static xapi prune_visitor(edge * e, void * ctx, traversal_mode mode, int distance, int * result)
-{
-  enter;
-
-  llist *lln = ctx;
-  node_edge_imports *ne;
-
-  ne = edge_value(e);
-
-  if(ne->shadow_epoch != node_shadow_epoch) {
-    llist_append_node(lln, &e->lln);
-  }
-
-  finally : coda;
-}
-
-xapi shadow_prune_imports(struct module * restrict mod, graph_invalidation_context * restrict invalidation)
-{
-  enter;
-
-  llist lln, *cursor;
-  edge *e, *scope_edge, *imports_edge;
-  node_edge_imports *ne;
-
-  llist_init_node(&lln);
-  fatal(graph_traverse_vertex_edges
-    , g_graph
-    , vertex_containerof(mod->dir_node)
-    , prune_visitor
-    , 0
-    , (traversal_criteria[]) {{
-          edge_travel: EDGE_TYPE_IMPORTS
-        , edge_visit : EDGE_TYPE_IMPORTS
-        , min_depth : 0
-        , max_depth : 0
-      }}
-    , MORIA_TRAVERSE_DOWN | MORIA_TRAVERSE_PRE | MORIA_TRAVERSE_DEPTH
-    , &lln
-  );
-
-  llist_foreach_safe(&lln, e, lln, cursor) {
-    ne = edge_value(e);
-
-    /* save the related edges */
-    scope_edge = edge_containerof(ne->scope_edge);
-    imports_edge = edge_containerof(ne->imports_edge);
-
-    /* import not refreshed in this generation - remove IMPORTS edge */
-    fatal(graph_edge_disconnect, g_graph, e);
-
-    /* also remove from //module/imports */
-    if(imports_edge)
-    {
-      STATS_DEC(nodes_shadow);
-      fatal(graph_edge_disconnect, g_graph, imports_edge);
-      fatal(graph_delete_vertex, imports_edge->B);
-    }
-
-    /* also remove from //module/scope */
-    if(scope_edge)
-    {
-      STATS_DEC(nodes_shadow);
-      fatal(graph_edge_disconnect, g_graph, scope_edge);
-      fatal(graph_delete_vertex, scope_edge->B);
-    }
+    fsent_release(displaced);
   }
 
   finally : coda;

@@ -15,26 +15,16 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#include "types.h"
-#include "xapi.h"
-
 #include "narrator.h"
-#include "value/writer.h"
-#include "narrator/fixed.h"
-#include "narrator/growing.h"
-#include "valyria/list.h"
 #include "xlinux/xstdlib.h"
 
-#include "class.internal.h"
+#include "class.h"
 #include "pattern.internal.h"
-#include "segment.internal.h"
+#include "fsent.h"
 #include "generate.internal.h"
-#include "render.internal.h"
 #include "match.internal.h"
-#include "node.h"
-#include "path.h"
-
-#include "common/attrs.h"
+#include "render.internal.h"
+#include "segment.h"
 
 //
 // static
@@ -45,7 +35,6 @@ static xapi say(const pattern_segment * restrict fn, narrator * restrict N)
   enter;
 
   const pattern_class * n = &fn->class;
-
   const chain *T;
   pattern_segments *segments;
 
@@ -178,13 +167,16 @@ static xapi generate(const pattern_segment * restrict pat, pattern_generate_cont
   enter;
 
   const pattern_class * class = &pat->class;
-
   const chain *T;
   const pattern_segments * alt_segments;
   const chain *alt_cursor;
   const pattern_segment * alt_segment;
 
-  node * saved_context_node;
+  uint8_t c;
+  uint8_t start = 0;
+  uint8_t end = 0;
+
+  fsent * saved_context_node;
   char saved_section_text[256];
   off_t saved_section_narrator_pos;
 
@@ -203,9 +195,8 @@ static xapi generate(const pattern_segment * restrict pat, pattern_generate_cont
     alt_cursor = 0;
     alt_segment = chain_next(alt_segments->segment_head, &alt_cursor, chn);
 
-    uint8_t c;
-    uint8_t start = 0;
-    uint8_t end = 0;
+    start = 0;
+    end = 0;
 
     if(alt_segment->vtab->type == PATTERN_CHARACTER)
     {

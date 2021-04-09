@@ -15,37 +15,35 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#include <string.h>
-
 #include "xapi.h"
 #include "types.h"
-#include "narrator.h"
-#include "valyria/list.h"
-#include "valyria/llist.h"
-#include "valyria/map.h"
-#include "xlinux/xstdlib.h"
-#include "valyria/set.h"
-#include "moria/vertex.h"
-#include "moria/graph.h"
-#include "moria/edge.h"
-#include "moria/operations.h"
-#include "narrator.h"
 
-#include "rule.internal.h"
-#include "node.h"
-#include "node_operations.h"
-#include "lookup.h"
-#include "path.h"
-#include "match.internal.h"
-#include "generate.h"
-#include "module.h"
-#include "logging.h"
-#include "variant.h"
+#include "common/assure.h"
+#include "common/attrs.h"
+#include "moria/edge.h"
+#include "narrator.h"
+#include "valyria/set.h"
+#include "xlinux/xstdlib.h"
+
+#include "rule.h"
+#include "dependency.h"
 #include "formula.h"
-#include "MODULE.errtab.h"
+#include "fsent.h"
+#include "generate.h"
+#include "logging.h"
+#include "match.internal.h"
+#include "module.h"
+#include "rule_module.h"
+#include "rule_system.h"
 #include "stats.h"
 
-#include "common/attrs.h"
+#include "macros.h"
+
+llist rule_list = LLIST_INITIALIZER(rule_list);                 // active rule
+static llist rule_freelist = LLIST_INITIALIZER(rule_freelist);  // freelist
+
+llist rde_list = LLIST_INITIALIZER(rde_list);                   // active
+static llist rde_freelist = LLIST_INITIALIZER(rde_freelist);    // freelist
 
 attrs16 * rule_direction_attrs = (attrs16[]){{
 #undef DEF
@@ -75,6 +73,25 @@ static void __attribute__((constructor)) init()
   attrs16_init(rule_cardinality_attrs);
 }
 
+static xapi rde_alloc(rule_dirnode_edge ** rdep)
+{
+  enter;
+
+  rule_dirnode_edge *rde;
+
+  if((rde = llist_shift(&rde_freelist, typeof(*rde), edge.owner)) == 0)
+  {
+    fatal(xmalloc, &rde, sizeof(*rde));
+  }
+
+  moria_edge_init(&rde->edge, &g_graph);
+  llist_append(&rde_list, rde, edge.owner);
+
+  *rdep = rde;
+
+  finally : coda;
+}
+
 static xapi connector_say(const rule * restrict r, narrator * restrict N)
 {
   enter;
@@ -96,148 +113,946 @@ static xapi connector_say(const rule * restrict r, narrator * restrict N)
 struct rule_dirnode_connect_context {
   rule *r;
   module *mod;
-  rule_module_association *rma;
+  rule_module_edge *rme;
 };
 
-/* connect rule -> directory node */
-static xapi rule_dirnode_connect(void * restrict _ctx, node * restrict node)
+/* connect rule -> directory fsent */
+static xapi rule_dirnode_connect(void * restrict _ctx, fsent * restrict node)
 {
   enter;
 
+  int r;
+  moria_connect_context connect_ctx;
   struct rule_dirnode_connect_context *ctx = _ctx;
-  edge_type relation = EDGE_TYPE_RULE_DIR;
-  bool created = false;
-  rule_dirnode_edge *rde;
-  edge *e = 0;
+  rule_dirnode_edge *rde = 0;
 
-  fatal(graph_connect
-    , g_graph
-    , vertex_containerof(ctx->r)
-    , vertex_containerof(node)
-    , relation
-    , &e
-    , &created
-  );
-
-  if(!created)
+  r = moria_preconnect(&connect_ctx, &g_graph, &ctx->r->vertex, &node->vertex, EDGE_RULE_DIR, 0);
+  if (r == MORIA_HASEDGE) {
     goto XAPI_FINALLY;
+  }
+  RUNTIME_ASSERT(r == MORIA_NOEDGE);
 
-  rde = edge_value(e);
-  rde->rma = ctx->rma;
+  fatal(rde_alloc, &rde);
+  fatal(graph_connect, &connect_ctx, &ctx->r->vertex, &node->vertex, &rde->edge, EDGE_RULE_DIR);
+
+  rde->rme = ctx->rme;
 
   finally : coda;
+}
+
+static void rule_dispose(rule * restrict r)
+{
+  pattern_free(r->match);
+  pattern_free(r->generate);
+  pattern_free(r->formula);
+
+  llist_delete_node(&r->vertex.owner);
+  llist_append(&rule_freelist, r, vertex.owner);
+}
+
+static xapi log_rule_edge(rule * restrict rule, dependency * restrict ne)
+{
+  enter;
+
+  narrator *N = 0;
+
+  fatal(log_start, L_RULE, &N);
+  fatal(rule_say, rule, N);
+  fatal(narrator_xsays, N, " ");
+  fatal(graph_edge_say, &ne->edge, N);
+  fatal(log_finish);
+
+  finally : coda;
+}
+
+static xapi __attribute__((nonnull)) fml_node_get(
+    rule * restrict rule
+  , rule_run_context * restrict ctx
+  , fsent ** restrict fml_node
+)
+{
+  enter;
+
+  rule_module_edge * rma;
+  int x;
+  moria_connect_context connect_ctx;
+  int __attribute__((unused)) r;
+  moria_edge *e;
+  formula *fml = 0;
+
+  rma = ctx->rme;
+
+  fatal(pattern_generate, rule->formula, ctx->mod, rma->mod_owner->dir_node, ctx->mod->shadow_uses, 0, &ctx->invalidation, 0, ctx->generate_nodes);
+
+  /* reference patterns can specify at most one fsent */
+  RUNTIME_ASSERT(ctx->generate_nodes->size <= 1);
+
+  if(ctx->generate_nodes->size)
+  {
+    for(x = 0; x < ctx->generate_nodes->table_size; x++)
+    {
+      if((*fml_node = set_table_get(ctx->generate_nodes, x))) {
+        break;
+      }
+    }
+  }
+
+  /* formula attachment did not resolve, or resolved to a non-formula fsent */
+  if(ctx->generate_nodes->size != 1 || !fsent_exists_get(*fml_node)) {
+    fprintf(stderr, "[MODULE:NOREF] unresolved reference ");
+    fprintf(stderr, "pattern ");
+    fatal(pattern_say, rule->formula, g_narrator_stderr);
+    fprintf(stderr, " location %s line %d\n", rma->mod_owner->self_node_relpath, rule->formula->loc.f_lin + 1);
+    *ctx->reconciled = false;
+    goto XAPI_FINALIZE;
+  }
+
+  fatal(fsent_formula_bootstrap, *fml_node, ctx->reconciled);
+  fml = (*fml_node)->self_fml;
+
+  /* connect the rule vertex and the formula vertex */
+  r = moria_preconnect(&connect_ctx, &g_graph, &rule->vertex, &fml->vertex, EDGE_RULE_FML, 0);
+  if(r == MORIA_NOEDGE)
+  {
+    fatal(graph_edge_alloc, &e);
+    fatal(graph_connect, &connect_ctx, &rule->vertex, &fml->vertex, e, EDGE_RULE_FML);
+  }
+  else
+  {
+    RUNTIME_ASSERT(r == MORIA_HASEDGE);
+  }
+
+  finally : coda;
+}
+
+static xapi run_match_tracking(rule * restrict rule, rule_run_context * restrict ctx)
+{
+  enter;
+
+  struct rule_dirnode_connect_context rdctx;
+
+  rdctx = (typeof(rdctx)){
+      .r = rule
+    , .mod = ctx->mod
+    , .rme = ctx->rme
+  };
+
+  fatal(pattern_match, rule->match, ctx->mod, ctx->modules, ctx->variants, ctx->match_nodes, rule_dirnode_connect, &rdctx);
+
+  if(log_would(L_WARN))
+  {
+    if(ctx->match_nodes->size)
+    {
+      rule_system_rma_hit(ctx, ctx->rme);
+    }
+    else
+    {
+      rule_system_rma_nohit(ctx, ctx->rme);
+    }
+  }
+
+  finally : coda;
+}
+
+static xapi run_generate_tracking(rule * restrict rule, rule_run_context * restrict ctx)
+{
+  enter;
+
+  fatal(pattern_generate, rule->generate, ctx->mod, ctx->mod->dir_node, ctx->mod->shadow_imports, ctx->variants, &ctx->invalidation, 0, ctx->generate_nodes);
+
+  if(log_would(L_WARN))
+  {
+    if(ctx->generate_nodes->size)
+    {
+      rule_system_rma_hit(ctx, ctx->rme);
+    }
+    else
+    {
+      rule_system_rma_nohit(ctx, ctx->rme);
+    }
+  }
+
+  finally : coda;
+}
+
+static int pattern_match_compare(const void *a, const void *b)
+{
+  const struct pattern_match_node *A = *(typeof(A)*)a;
+  const struct pattern_match_node *B = *(typeof(B)*)b;
+
+  int r;
+  int x;
+
+  if((r = INTCMP(A->variant, B->variant))) {
+    return r;
+  }
+
+  if((r = INTCMP(A->group_max, B->group_max))) {
+    return r;
+  }
+
+  for(x = 1; x <= A->group_max; x++) {
+    if((r = memncmp(A->groups[x].start, A->groups[x].len, B->groups[x].start, B->groups[x].len))) {
+      return r;
+    }
+  }
+
+  return 0;
+}
+
+/* sort the matches into a set of groups, where each match in a group has the same variant and capture groups */
+static xapi matches_sorted(rule_run_context * restrict ctx)
+{
+  enter;
+
+  int y;
+  size_t Msz;
+  pattern_match_node *match;
+
+  fatal(assure, &ctx->Mlist, sizeof(*ctx->Mlist), ctx->match_nodes->size, &ctx->Mlist_alloc);
+
+  Msz = 0;
+  for(y = 0; y < ctx->match_nodes->table_size; y++)
+  {
+    if(!(match = set_table_get(ctx->match_nodes, y)))
+      continue;
+
+    ctx->Mlist[Msz++] = match;
+  }
+
+  /* sorted by sets of matching capture groups */
+  qsort(ctx->Mlist, Msz, sizeof(*ctx->Mlist), pattern_match_compare);
+
+  finally : coda;
+}
+
+/*
+ * Attach a newly-created dependency edge to a rule-module edge
+ *
+ * dep - dependency edge
+ * fml - formula node if any
+ */
+static xapi __attribute__((nonnull(1, 3))) dependency_setup(
+    dependency * restrict dep
+  , fsent * restrict fml
+  , rule_run_context * restrict ctx
+)
+{
+  enter;
+
+  moria_edge *e;
+  fsent *n;
+  int x;
+  rule_module_edge * restrict rme = ctx->rme;
+
+  /* this particular dependency edge is instantiated by two different rmes */
+  if(dep->rme && dep->rme != rme)
+  {
+    /* representative target fsent */
+    e = &dep->edge;
+    if(e->attrs & MORIA_EDGE_HYPER) {
+      n = containerof(e->Alist[0].v, typeof(*n), vertex);
+    } else {
+      n = containerof(e->A, typeof(*n), vertex);
+    }
+
+    fprintf(stderr, "[MODULE:MANYREF] ");
+    fatal(fsent_project_relative_path_say, n, g_narrator_stderr);
+    fprintf(stderr, " already created by rule (setup)\n ");
+    fatal(rule_say, dep->rme->rule, g_narrator_stderr);
+    fprintf(stderr, " @ %s:%d\n", dep->rme->mod_owner->self_node_relpath, dep->rme->rule->formula->loc.f_lin + 1);
+    fprintf(stderr, "  dep %p rme %p rule %p\n ", dep, dep->rme, dep->rme->rule);
+    fatal(rule_say, rme->rule, g_narrator_stderr);
+    fprintf(stderr, " @ %s:%d\n", rme->mod_owner->self_node_relpath, rme->rule->formula->loc.f_lin + 1);
+    fprintf(stderr, "  dep %p rme %p rule %p\n ", dep, rme, rme->rule);
+    *ctx->reconciled = false;
+    goto XAPI_FINALIZE;
+  }
+
+  /* mark this edge as having been touched during the rules reconciliation */
+  dep->reconciliation_id = rule_system_reconciliation_id;
+
+  /* dependency already associated to this rme */
+  if(dep->rme && dep->rme == rme) {
+    goto XAPI_FINALIZE;
+  }
+
+  RUNTIME_ASSERT(!llist_attached(dep, dependencies_lln));
+  llist_append(&rme->dependencies, dep, dependencies_lln);
+
+  dep->rme = rme;
+  dep->fml = fml;
+
+  if(!dep->fml) {
+    fatal(log_rule_edge, rme->rule, dep);
+    goto XAPI_FINALIZE;
+  }
+
+  RUNTIME_ASSERT(dep->fml->self_fml);
+  dep->fml->self_fml->refs++;
+
+  e = &dep->edge;
+  x = 0;
+  while(!(e->attrs & MORIA_EDGE_HYPER) || x < e->Alen)
+  {
+    if((e->attrs & MORIA_EDGE_HYPER))
+    {
+      n = containerof(e->Alist[x].v, typeof(*n), vertex);
+      x++;
+    }
+    else
+    {
+      n = containerof(e->A, typeof(*n), vertex);
+    }
+
+    if(n->dep && n->dep != dep) {
+      /* this can happen when a rule is run twice in a reconciliation and matches a different number
+       * of nodes on the different executions - the first edge will be cleaned up */
+    }
+
+    if(n->dep != dep) {
+      n->dep = dep;
+      fatal(fsent_invalidate, n, &ctx->invalidation);
+    }
+
+    if(!(e->attrs & MORIA_EDGE_HYPER)) {
+      break;
+    }
+  }
+
+  fatal(log_rule_edge, rme->rule, dep);
+
+  finally : coda;
+}
+
+/*
+ * connector : match --
+ */
+static xapi __attribute__((nonnull)) match_zero_to_one(
+    rule * restrict rule
+  , fsent * restrict fml_node
+  , rule_run_context * restrict ctx
+)
+{
+  enter;
+
+  pattern_match_node *match;
+  dependency *ne;
+  int x;
+  fsent *n;
+  moria_vertex *v;
+
+  /* run the match pattern */
+  fatal(run_match_tracking, rule, ctx);
+  for(x = 0; x < ctx->match_nodes->table_size; x++)
+  {
+    if(!(match = set_table_get(ctx->match_nodes, x)))
+      continue;
+
+    n = match->node;
+    v = &n->vertex;
+
+    fatal(dependency_hyperconnect, &v, 1, 0, 0, rule->relation, &ctx->invalidation, &ne);
+    fatal(dependency_setup, ne, fml_node, ctx);
+    if(!*ctx->reconciled) {
+      break;
+    }
+  }
+
+  finally : coda;
+}
+
+/*
+ * connector : -- generate
+ */
+static xapi __attribute__((nonnull)) generate_zero_to_one(
+    rule * restrict rule
+  , fsent * restrict fml_node
+  , rule_run_context * restrict ctx
+)
+{
+  enter;
+
+  dependency *ne;
+  int x;
+  moria_vertex *v;
+  fsent *n;
+
+  fatal(run_generate_tracking, rule, ctx);
+  for(x = 0; x < ctx->generate_nodes->table_size; x++)
+  {
+    if(!(n = set_table_get(ctx->generate_nodes, x)))
+      continue;
+
+    v = &n->vertex;
+
+    fatal(dependency_hyperconnect, &v, 1, 0, 0, rule->relation, &ctx->invalidation, &ne);
+    fatal(dependency_setup, ne, fml_node, ctx);
+    if(!*ctx->reconciled) {
+      break;
+    }
+  }
+
+  finally : coda;
+}
+
+/*
+ * connector : match-pattern [*] --
+ */
+static xapi __attribute__((nonnull)) match_zero_to_many(
+    rule * restrict rule
+  , fsent * restrict fml_node
+  , rule_run_context * restrict ctx
+)
+{
+  enter;
+
+  pattern_match_node * match = 0;
+  dependency *ne;
+  int x;
+  size_t z;
+
+  fatal(run_match_tracking, rule, ctx);
+
+  z = 0;
+  fatal(assure, &ctx->Alist, sizeof(*ctx->Alist), ctx->match_nodes->size, &ctx->Alist_alloc);
+
+  for(x = 0; x < ctx->match_nodes->table_size; x++)
+  {
+    if(!(match = set_table_get(ctx->match_nodes, x)))
+      continue;
+
+    ctx->Alist[z++] = &match->node->vertex;
+  }
+
+  if(z)
+  {
+    fatal(dependency_hyperconnect, ctx->Alist, z, 0, 0, rule->relation, &ctx->invalidation, &ne);
+    fatal(dependency_setup, ne, fml_node, ctx);
+  }
+
+  finally : coda;
+}
+
+/*
+ * connector : -- [*] generate
+ */
+static xapi __attribute__((nonnull)) generate_zero_to_many(
+    rule * restrict rule
+  , fsent * restrict fml_node
+  , rule_run_context * restrict ctx
+)
+{
+  enter;
+
+  dependency *ne;
+  int x;
+  fsent *n;
+  size_t z;
+
+  fatal(run_generate_tracking, rule, ctx);
+
+  z = 0;
+  fatal(assure, &ctx->Alist, sizeof(*ctx->Alist), ctx->generate_nodes->size, &ctx->Alist_alloc);
+
+  for(x = 0; x < ctx->generate_nodes->table_size; x++)
+  {
+    if(!(n = set_table_get(ctx->generate_nodes, x)))
+      continue;
+
+    ctx->Alist[z++] = &n->vertex;
+  }
+
+  fatal(dependency_hyperconnect, ctx->Alist, z, 0, 0, rule->relation, &ctx->invalidation, &ne);
+  fatal(dependency_setup, ne, fml_node, ctx);
+
+  finally : coda;
+}
+
+/*
+ * connector : match -> generate
+ */
+static xapi __attribute__((nonnull(1, 3))) match_one_to_one(
+    rule * restrict rule
+  , fsent * restrict fml_node
+  , rule_run_context * restrict ctx
+)
+{
+  enter;
+
+  pattern_match_node * match = 0;
+  dependency *ne;
+  int x, y;
+  fsent * generated;
+
+  fatal(run_match_tracking, rule, ctx);
+  for(x = 0; x < ctx->match_nodes->table_size; x++)
+  {
+    if(!(match = set_table_get(ctx->match_nodes, x)))
+      continue;
+
+    fatal(pattern_generate
+      , rule->generate
+      , ctx->mod
+      , ctx->mod->dir_node
+      , ctx->mod->shadow_imports
+      , ctx->variants
+      , &ctx->invalidation
+      , match
+      , ctx->generate_nodes
+    );
+
+    for(y = 0; y < ctx->generate_nodes->table_size; y++)
+    {
+      if(!(generated = set_table_get(ctx->generate_nodes, y)))
+        continue;
+
+      fatal(dependency_connect, generated, match->node, rule->relation, &ctx->invalidation, &ne);
+      fatal(dependency_setup, ne, fml_node, ctx);
+      if(!*ctx->reconciled) {
+        goto XAPI_FINALIZE;
+      }
+    }
+  }
+
+  finally : coda;
+}
+
+/*
+ * connector : match <- generate
+ */
+static xapi __attribute__((nonnull(1, 3))) generate_one_to_one(
+    rule * restrict rule
+  , fsent * restrict fml_node
+  , rule_run_context * restrict ctx
+)
+{
+  enter;
+
+  pattern_match_node * match = 0;
+  dependency *ne;
+  int x, y;
+  fsent * generated;
+
+  fatal(run_match_tracking, rule, ctx);
+  for(x = 0; x < ctx->match_nodes->table_size; x++)
+  {
+    if(!(match = set_table_get(ctx->match_nodes, x)))
+      continue;
+
+    fatal(pattern_generate, rule->generate, ctx->mod, ctx->mod->dir_node, ctx->mod->shadow_imports, ctx->variants, &ctx->invalidation, match, ctx->generate_nodes);
+
+    for(y = 0; y < ctx->generate_nodes->table_size; y++)
+    {
+      if(!(generated = set_table_get(ctx->generate_nodes, y)))
+        continue;
+
+      fatal(dependency_connect, match->node, generated, rule->relation, &ctx->invalidation, &ne);
+      fatal(dependency_setup, ne, fml_node, ctx);
+      if(!*ctx->reconciled) {
+        goto XAPI_FINALIZE;
+      }
+    }
+  }
+
+  finally : coda;
+}
+
+/*
+ * connector : match -> [*] generate
+ */
+static xapi __attribute__((nonnull)) match_one_to_many(
+    rule * restrict rule
+  , fsent * restrict fml_node
+  , rule_run_context * restrict ctx
+)
+{
+  enter;
+
+  pattern_match_node * match = 0;
+  dependency *ne;
+  int x, y;
+  size_t Bsz;
+  fsent *n = 0;
+
+  fatal(assure, &ctx->Alist, sizeof(*ctx->Alist), 1, &ctx->Alist_alloc);
+
+  fatal(run_match_tracking, rule, ctx);
+  for(x = 0; x < ctx->match_nodes->table_size; x++)
+  {
+    if(!(match = set_table_get(ctx->match_nodes, x)))
+      continue;
+
+    ctx->Alist[0] = &match->node->vertex;
+
+    fatal(pattern_generate, rule->generate, ctx->mod, ctx->mod->dir_node, ctx->mod->shadow_imports, ctx->variants, &ctx->invalidation, match, ctx->generate_nodes);
+
+    fatal(assure, &ctx->Blist, sizeof(*ctx->Blist), ctx->generate_nodes->size, &ctx->Blist_alloc);
+    Bsz = 0;
+    for(y = 0; y < ctx->generate_nodes->table_size; y++)
+    {
+      if(!(n = set_table_get(ctx->generate_nodes, y)))
+        continue;
+
+      ctx->Blist[Bsz++] = &n->vertex;
+    }
+
+    fatal(dependency_hyperconnect, ctx->Blist, Bsz, ctx->Alist, 1, rule->relation, &ctx->invalidation, &ne);
+    fatal(dependency_setup, ne, fml_node, ctx);
+    if(!*ctx->reconciled) {
+      break;
+    }
+  }
+
+  finally : coda;
+}
+
+/*
+ * connector : match [*] <- generate
+ */
+static xapi __attribute__((nonnull)) generate_one_to_many(
+    rule * restrict rule
+  , fsent * restrict fml_node
+  , rule_run_context * restrict ctx
+)
+{
+  enter;
+
+  pattern_match_node * match = 0;
+  dependency *ne;
+  int x, y;
+  size_t Bsz;
+  fsent *n = 0;
+
+  fatal(assure, &ctx->Alist, sizeof(*ctx->Alist), 1, &ctx->Alist_alloc);
+
+  fatal(run_match_tracking, rule, ctx);
+  for(x = 0; x < ctx->match_nodes->table_size; x++)
+  {
+    if(!(match = set_table_get(ctx->match_nodes, x)))
+      continue;
+
+    ctx->Alist[0] = &match->node->vertex;
+
+    fatal(pattern_generate, rule->generate, ctx->mod, ctx->mod->dir_node, ctx->mod->shadow_imports, ctx->variants, &ctx->invalidation, match, ctx->generate_nodes);
+
+    fatal(assure, &ctx->Blist, sizeof(*ctx->Blist), ctx->generate_nodes->size, &ctx->Blist_alloc);
+    Bsz = 0;
+    for(y = 0; y < ctx->generate_nodes->table_size; y++)
+    {
+      if(!(n = set_table_get(ctx->generate_nodes, y)))
+        continue;
+
+      ctx->Blist[Bsz++] = &n->vertex;
+    }
+
+    fatal(dependency_hyperconnect, ctx->Alist, 1, ctx->Blist, Bsz, rule->relation, &ctx->invalidation, &ne);
+    fatal(dependency_setup, ne, fml_node, ctx);
+    if(!*ctx->reconciled) {
+      break;
+    }
+  }
+
+  finally : coda;
+}
+
+/*
+ * connector : match [*] -> generate
+ */
+static xapi __attribute__((nonnull(1, 3))) match_many_to_one(
+    rule * restrict rule
+  , fsent * restrict fml_node
+  , rule_run_context * restrict ctx
+)
+{
+  enter;
+
+  size_t Asz;
+  dependency *ne;
+  int x, y, z;
+  fsent *n = 0;
+
+  fatal(run_match_tracking, rule, ctx);
+  fatal(matches_sorted, ctx);
+  fatal(assure, &ctx->Alist, sizeof(*ctx->Alist), ctx->match_nodes->size, &ctx->Alist_alloc);
+  fatal(assure, &ctx->Blist, sizeof(*ctx->Blist), 1, &ctx->Blist_alloc);
+
+  x = 0;
+  for(y = 1; y <= ctx->match_nodes->size; y++)
+  {
+    if(y < ctx->match_nodes->size && pattern_match_compare(&ctx->Mlist[x], &ctx->Mlist[y]) == 0) {
+      continue;
+    }
+
+    for(Asz = 0; Asz < (y - x); Asz++) {
+      ctx->Alist[Asz] = &ctx->Mlist[x + Asz]->node->vertex;
+    }
+
+    /* run the generate pattern in context of a match node in the group */
+    fatal(pattern_generate, rule->generate, ctx->mod, ctx->mod->dir_node, ctx->mod->shadow_imports, ctx->variants, &ctx->invalidation, ctx->Mlist[x], ctx->generate_nodes);
+
+    for(z = 0; z < ctx->generate_nodes->table_size; z++)
+    {
+      if(!(n = set_table_get(ctx->generate_nodes, z)))
+        continue;
+
+      ctx->Blist[0] = &n->vertex;
+      fatal(dependency_hyperconnect, ctx->Blist, 1, ctx->Alist, Asz, rule->relation, &ctx->invalidation, &ne);
+      fatal(dependency_setup, ne, fml_node, ctx);
+      if(!*ctx->reconciled) {
+        goto XAPI_FINALIZE;
+      }
+    }
+
+    x = y;
+  }
+
+  finally : coda;
+}
+
+/*
+ * connector : match <- [*] generate
+ */
+static xapi __attribute__((nonnull)) generate_many_to_one(
+    rule * restrict rule
+  , fsent * restrict fml_node
+  , rule_run_context * restrict ctx
+)
+{
+  enter;
+
+  pattern_match_node * match = 0;
+  dependency *ne;
+  int x, y;
+  size_t Bsz;
+  fsent *n = 0;
+
+  fatal(run_match_tracking, rule, ctx);
+
+  for(x = 0; x < ctx->match_nodes->table_size; x++)
+  {
+    if(!(match = set_table_get(ctx->match_nodes, x)))
+      continue;
+
+    ctx->Alist[0] = &match->node->vertex;
+    fatal(pattern_generate, rule->generate, ctx->mod, ctx->mod->dir_node, ctx->mod->shadow_imports, ctx->variants, &ctx->invalidation, match, ctx->generate_nodes);
+
+    Bsz = 0;
+    fatal(assure, &ctx->Blist, sizeof(*ctx->Blist), ctx->generate_nodes->size, &ctx->Blist_alloc);
+    for(y = 0; y < ctx->generate_nodes->table_size; y++)
+    {
+      if(!(n = set_table_get(ctx->generate_nodes, y)))
+        continue;
+
+      ctx->Blist[Bsz++] = &n->vertex;
+    }
+
+    fatal(dependency_hyperconnect, ctx->Alist, 1, ctx->Blist, Bsz, rule->relation, &ctx->invalidation, &ne);
+    fatal(dependency_setup, ne, fml_node, ctx);
+    if(!*ctx->reconciled) {
+      break;
+    }
+  }
+
+  finally : coda;
+}
+
+/*
+ * connector : match [*] -> [*] generate
+ */
+static xapi __attribute__((nonnull)) match_many_to_many(
+    rule * restrict rule
+  , fsent * restrict fml_node
+  , rule_run_context * restrict ctx
+)
+{
+  enter;
+
+  size_t Asz;
+  size_t Bsz;
+  dependency *ne;
+  int x;
+  int y;
+  int z;
+  fsent *n = 0;
+
+  /* run the match pattern */
+  fatal(run_match_tracking, rule, ctx);
+  fatal(matches_sorted, ctx);
+  fatal(assure, &ctx->Alist, sizeof(*ctx->Alist), ctx->match_nodes->size, &ctx->Alist_alloc);
+
+  x = 0;
+  for(y = 1; y <= ctx->match_nodes->size; y++)
+  {
+    if(y < ctx->match_nodes->size && pattern_match_compare(&ctx->Mlist[x], &ctx->Mlist[y]) == 0) {
+      continue;
+    }
+
+    for(Asz = 0; Asz < (y - x); Asz++) {
+      ctx->Alist[Asz] = &ctx->Mlist[x + Asz]->node->vertex;
+    }
+
+    /* run the generate pattern in context of a match node in the group */
+    fatal(pattern_generate, rule->generate, ctx->mod, ctx->mod->dir_node, ctx->mod->shadow_imports, ctx->variants, &ctx->invalidation, ctx->Mlist[x], ctx->generate_nodes);
+
+    fatal(assure, &ctx->Blist, sizeof(*ctx->Blist), ctx->generate_nodes->size, &ctx->Blist_alloc);
+    Bsz = 0;
+    for(z = 0; z < ctx->generate_nodes->table_size; z++)
+    {
+      if(!(n = set_table_get(ctx->generate_nodes, z)))
+        continue;
+
+      ctx->Blist[Bsz++] = &n->vertex;
+    }
+
+    fatal(dependency_hyperconnect, ctx->Blist, Bsz, ctx->Alist, Asz, rule->relation, &ctx->invalidation, &ne);
+    fatal(dependency_setup, ne, fml_node, ctx);
+    if(!*ctx->reconciled) {
+      break;
+    }
+
+    x = y;
+  }
+
+  finally : coda;
+}
+
+/*
+ * connector : match [*] <- [*] generate
+ */
+static xapi __attribute__((nonnull)) generate_many_to_many(
+    rule * restrict rule
+  , fsent * restrict fml_node
+  , rule_run_context * restrict ctx
+)
+{
+  enter;
+
+  size_t Asz;
+  size_t Bsz;
+  dependency *ne;
+  int x;
+  int y;
+  int z;
+  fsent *n;
+
+  /* run the match pattern */
+  fatal(run_match_tracking, rule, ctx);
+  fatal(matches_sorted, ctx);
+  fatal(assure, &ctx->Alist, sizeof(*ctx->Alist), ctx->match_nodes->size, &ctx->Alist_alloc);
+
+  x = 0;
+  for(y = 1; y <= ctx->match_nodes->size; y++)
+  {
+    if(y < ctx->match_nodes->size && pattern_match_compare(&ctx->Mlist[x], &ctx->Mlist[y]) == 0) {
+      continue;
+    }
+
+    for(Asz = 0; Asz < (y - x); Asz++) {
+      ctx->Alist[Asz] = &ctx->Mlist[x + Asz]->node->vertex;
+    }
+
+    /* run the generate pattern in context of a match node in the group */
+    fatal(pattern_generate, rule->generate, ctx->mod, ctx->mod->dir_node, ctx->mod->shadow_imports, ctx->variants, &ctx->invalidation, ctx->Mlist[x], ctx->generate_nodes);
+
+    fatal(assure, &ctx->Blist, sizeof(*ctx->Blist), ctx->generate_nodes->size, &ctx->Blist_alloc);
+    Bsz = 0;
+    for(z = 0; z < ctx->generate_nodes->table_size; z++)
+    {
+      if(!(n = set_table_get(ctx->generate_nodes, z)))
+        continue;
+
+      ctx->Blist[Bsz++] = &n->vertex;
+    }
+
+    fatal(dependency_hyperconnect, ctx->Alist, Asz, ctx->Blist, Bsz, rule->relation, &ctx->invalidation, &ne);
+    fatal(dependency_setup, ne, fml_node, ctx);
+    if(!*ctx->reconciled) {
+      break;
+    }
+
+    x = y;
+  }
+
+  finally : coda;
+}
+
+static void rule_dirnode_edge_release(rule_dirnode_edge * restrict rde)
+{
+  llist_delete_node(&rde->edge.owner);
+  llist_append(&rde_freelist, rde, edge.owner);
 }
 
 //
 // public
 //
 
+void rule_release(rule * restrict r)
+{
+  moria_vertex __attribute__((unused)) *v;
+
+  /* should be fully excised from the graph previously */
+  v = &r->vertex;
+  RUNTIME_ASSERT(v->up_identity == 0);
+  RUNTIME_ASSERT(rbtree_empty(&v->up));
+  RUNTIME_ASSERT(rbtree_empty(&v->down));
+
+  rule_dispose(r);
+}
+
+void rule_cleanup(void)
+{
+  rule *r;
+  llist *T;
+  rule_dirnode_edge *rde;
+
+  llist_foreach_safe(&rule_list, r, vertex.owner, T) {
+    rule_dispose(r);
+  }
+
+  llist_foreach_safe(&rule_freelist, r, vertex.owner, T) {
+    wfree(r);
+  }
+
+  llist_foreach_safe(&rde_list, rde, edge.owner, T) {
+    rule_dirnode_edge_release(rde);
+  }
+
+  llist_foreach_safe(&rde_freelist, rde, edge.owner, T) {
+    wfree(rde);
+  }
+}
+
 xapi rule_mk(
     rule ** restrict rulep
-  , graph * restrict g
+  , moria_graph * restrict g
   , pattern * match
   , pattern * generate
-  , node * formula
+  , pattern * formula
+  , edge_type relation
   , uint32_t attrs
 )
 {
   enter;
 
   rule * r;
-  vertex *v;
 
-  STATS_INC(rules);
-  fatal(vertex_create, &v, g, VERTEX_RULE);
-  r = vertex_value(v);
+  if((r = llist_shift(&rule_freelist, typeof(*r), vertex.owner)) == 0)
+  {
+    fatal(xmalloc, &r, sizeof(*r));
+  }
+
+  moria_vertex_init(&r->vertex, g, VERTEX_RULE);
+  llist_append(&rule_list, r, vertex.owner);
 
   r->match = match;
   r->generate = generate;
-  r->fml_node = formula;
+  r->formula = formula;
   r->dir = attrs & RULE_DIRECTION_OPT;
   r->card = attrs & RULE_CARDINALITY_OPT;
-  r->relation = attrs & EDGE_TYPE_OPT;
+  r->relation = relation;
 
   *rulep = r;
-
-  finally : coda;
-}
-
-xapi rule_xdestroy(rule * restrict r)
-{
-  enter;
-
-  pattern_free(r->match);
-  pattern_free(r->generate);
-
-  finally : coda;
-}
-
-static xapi rma_edge_associate(node_edge_dependency * restrict ne, rule_module_association * restrict rma)
-{
-  enter;
-
-  narrator * N;
-
-  if(llist_attached(ne, lln))
-  {
-    if(ne->rma != rma)
-    {
-      logs(L_ERROR, "edge info");
-
-      fatal(log_start, L_ERROR, &N);
-      fatal(narrator_xsayf, N, " edge : %p ", ne);
-      fatal(graph_edge_say, edge_containerof(ne), N);
-      fatal(log_finish);
-
-      fatal(log_start, L_ERROR, &N);
-      fatal(narrator_xsayf, N, " rule : %p ", ne->rma ? ne->rma->rule : 0);
-      if(ne->rma) {
-        fatal(rule_say, ne->rma->rule, N);
-      }
-      fatal(log_finish);
-
-      fatal(log_start, L_ERROR, &N);
-      fatal(narrator_xsayf, N, " rule : %p ", rma->rule);
-      fatal(rule_say, rma->rule, N);
-      fatal(log_finish);
-
-      fail(MODULE_EDGEINUSE);
-    }
-  }
-  else
-  {
-    llist_append(&rma->edges, ne, lln);
-    ne->rma = rma;
-  }
-
-  /* mark this edge as having been touched during the refresh */
-  ne->refresh_id = graph_refresh_id;
-
-  finally : coda;
-}
-
-static int nohits_rbn_cmp(const rbnode * restrict a, const rbnode * restrict b)
-{
-  return INTCMP(a, b);
-}
-
-static xapi __attribute__((nonnull(1))) bpe_setup(buildplan_entity * restrict bpe, node * restrict fmlnode)
-{
-  enter;
-
-  RUNTIME_ASSERT(!bpe->fml || bpe->fml == fmlnode);
-
-  bpe->fml = fmlnode;
-
-  finally : coda;
-}
-
-static xapi __attribute__((nonnull)) bpe_attach(node * restrict n, buildplan_entity * restrict bpe, graph_invalidation_context * restrict invalidation)
-{
-  enter;
-
-  RUNTIME_ASSERT(!n->bpe || n->bpe == bpe);
-  n->bpe = bpe;
 
   finally : coda;
 }
@@ -246,333 +1061,62 @@ xapi rule_run(rule * restrict rule, rule_run_context * restrict ctx)
 {
   enter;
 
-  int x, y, z;
-  pattern_match_node * match;
-  node * generated;
-  node * above = 0;
-  node * below = 0;
-  narrator *N;
-  node_edge_dependency * ne;
-  node *n;
-  vertex ** Alist = 0;
-  vertex ** vlist = 0;
-  vertex * Blist[1];
-  rule_module_association * rma;
-  struct rule_dirnode_connect_context rdctx;
+  fsent *fml_node = 0;
 
-  rma = ctx->rma;
+  RUNTIME_ASSERT(rule->relation);
+  STATS_INC(g_stats.rule_run);
 
-  if(rule->match)
+  if(rule->formula)
   {
-    rdctx = (typeof(rdctx)){
-        .r = rule
-      , .mod = ctx->mod
-      , .rma = rma
-    };
-
-    fatal(pattern_match, rule->match, ctx->mod, ctx->modules, ctx->variants, ctx->match_nodes, 0, rule_dirnode_connect, &rdctx);
-
-    if(log_would(L_WARN))
-    {
-      if(ctx->match_nodes->size)
-      {
-        if(rbnode_attached(&rma->nohits_rbn))
-        {
-          rbtree_delete(&ctx->nohits, rma, nohits_rbn);
-        }
-      }
-      else if(!rbnode_attached(&rma->nohits_rbn))
-      {
-        rbtree_put(&ctx->nohits, rma, nohits_rbn, nohits_rbn_cmp);
-      }
-    }
-  }
-  else if(rule->generate)
-  {
-    // generate-only
-    fatal(pattern_generate, rule->generate, ctx->mod, ctx->variants, &ctx->invalidation, 0, ctx->generate_nodes);
-
-    if(log_would(L_WARN))
-    {
-      if(ctx->generate_nodes->size)
-      {
-        if(rbnode_attached(&rma->nohits_rbn))
-        {
-          rbtree_delete(&ctx->nohits, rma, nohits_rbn);
-        }
-      }
-      else if(!rbnode_attached(&rma->nohits_rbn))
-      {
-        rbtree_put(&ctx->nohits, rma, nohits_rbn, nohits_rbn_cmp);
-      }
+    fatal(fml_node_get, rule, ctx, &fml_node);
+    if(!*ctx->reconciled) {
+      goto XAPI_FINALIZE;
     }
   }
 
-  if(log_would(L_RULE))
+  switch(rule->card | rule->dir)
   {
-    fatal(log_start, L_RULE, &N);
-    fatal(rule_say, rule, N);
-    xsays(" @ module ");
-    fatal(node_absolute_path_say, ctx->mod->dir_node, N);
-    fatal(log_finish);
-
-    fatal(log_start, L_RULE, &N);
-    xsayf(" variants %zu { ", ctx->variants->size);
-    for(x = 0; x < ctx->variants->table_size; x++)
-    {
-      variant *var;
-      if(!(var = set_table_get(ctx->variants, x)))
-        continue;
-
-      xsayf("%s ", var->norm);
-    }
-    xsays("}");
-    if(rule->match)
-      logf(L_RULE, " matches %zu", ctx->match_nodes->size);
-    else
-      logs(L_RULE, " matches -");
-    if(rule->generate)
-      logf(L_RULE, " generates %zu", ctx->generate_nodes->size);
-    else
-      logs(L_RULE, " generates -");
+    case RULE_ZERO_TO_ONE | RULE_LTR:
+      fatal(generate_zero_to_one, rule, fml_node, ctx);
+      break;
+    case RULE_ZERO_TO_MANY | RULE_LTR:
+      fatal(generate_zero_to_many, rule, fml_node, ctx);
+      break;
+    case RULE_ONE_TO_ONE | RULE_LTR:
+      fatal(match_one_to_one, rule, fml_node, ctx);
+      break;
+    case RULE_ONE_TO_MANY | RULE_LTR:
+      fatal(match_one_to_many, rule, fml_node, ctx);
+      break;
+    case RULE_MANY_TO_ONE | RULE_LTR:
+      fatal(match_many_to_one, rule, fml_node, ctx);
+      break;
+    case RULE_MANY_TO_MANY | RULE_LTR:
+      fatal(match_many_to_many, rule, fml_node, ctx);
+      break;
+    case RULE_ZERO_TO_ONE | RULE_RTL:
+      fatal(match_zero_to_one, rule, fml_node, ctx);
+      break;
+    case RULE_ZERO_TO_MANY | RULE_RTL:
+      fatal(match_zero_to_many, rule, fml_node, ctx);
+      break;
+    case RULE_ONE_TO_ONE | RULE_RTL:
+      fatal(generate_one_to_one, rule, fml_node, ctx);
+      break;
+    case RULE_ONE_TO_MANY | RULE_RTL:
+      fatal(generate_one_to_many, rule, fml_node, ctx);
+      break;
+    case RULE_MANY_TO_ONE | RULE_RTL:
+      fatal(generate_many_to_one, rule, fml_node, ctx);
+      break;
+    case RULE_MANY_TO_MANY | RULE_RTL:
+      fatal(generate_many_to_many, rule, fml_node, ctx);
+      break;
+    default:
+      RUNTIME_ABORT();
   }
 
-  if(!rule->match && rule->generate)
-  {
-    if(rule->card == RULE_ZERO_TO_ONE)
-    {
-      for(x = 0; x < ctx->generate_nodes->table_size; x++)
-      {
-        if(!(generated = set_table_get(ctx->generate_nodes, x)))
-          continue;
-
-        fatal(bpe_setup, &generated->self_bpe, rule->fml_node);
-        fatal(bpe_attach, generated, &generated->self_bpe, &ctx->invalidation);
-
-        if(log_would(L_RULE))
-        {
-          fatal(log_start, L_RULE, &N);
-          fatal(node_path_say, generated, N);
-          if(rule->fml_node)
-          {
-            xsays(" : ");
-            fatal(node_path_say, rule->fml_node, N);
-          }
-          fatal(log_finish);
-        }
-      }
-    }
-    else if(rule->card == RULE_ZERO_TO_MANY)
-    {
-      RUNTIME_ASSERT(rule->dir == 0);
-      RUNTIME_ASSERT(rule->relation);
-
-      fatal(xrealloc, &vlist, sizeof(*vlist), ctx->generate_nodes->size, 0);
-      z = 0;
-      for(y = 0; y < ctx->generate_nodes->table_size; y++)
-      {
-        if(!(generated = set_table_get(ctx->generate_nodes, y)))
-          continue;
-
-        vlist[z++] = vertex_containerof(generated);
-      }
-
-      if(log_would(L_RULE))
-      {
-        logs(L_RULE, "  {");
-        for(y = 0; y < z; y++)
-        {
-          n = vertex_value(vlist[y]);
-          fatal(log_start, L_RULE, &N);
-          xsays("   ");
-          fatal(node_path_say, n, N);
-          if(rule->fml_node)
-          {
-            xsays(" : ");
-            fatal(node_path_say, rule->fml_node, N);
-          }
-          xsayf(" var %s", n->var ? n->var->norm : "(none)");
-          fatal(log_finish);
-        }
-        logs(L_RULE, "  }");
-      }
-
-      fatal(node_hyperconnect_dependency, 0, 0, vlist, z, rule->relation, &ctx->invalidation, &ne);
-      fatal(rma_edge_associate, ne, rma);
-      ne->dir = EDGE_SRC_TGT;
-      fatal(bpe_setup, &ne->bpe, rule->fml_node);
-
-      for(y = 0; y < z; y++) {
-        n = vertex_value(vlist[y]);
-        fatal(bpe_attach, n, &ne->bpe, &ctx->invalidation);
-      }
-    }
-  }
-
-  if(rule->match && !rule->generate)
-  {
-    for(x = 0; x < ctx->match_nodes->table_size; x++)
-    {
-      if(!(match = set_table_get(ctx->match_nodes, x)))
-        continue;
-
-      fatal(bpe_setup, &match->node->self_bpe, rule->fml_node);
-      fatal(bpe_attach, match->node, &match->node->self_bpe, &ctx->invalidation);
-
-      if(log_would(L_RULE))
-      {
-        fatal(log_start, L_RULE, &N);
-        fatal(node_path_say, match->node, N);
-        xsays(" : ");
-        fatal(node_path_say, rule->fml_node, N);
-        fatal(log_finish);
-      }
-    }
-  }
-
-  if(rule->match && rule->generate)
-  {
-    for(x = 0; x < ctx->match_nodes->table_size; x++)
-    {
-      if(!(match = set_table_get(ctx->match_nodes, x)))
-        continue;
-
-      fatal(set_recycle, ctx->generate_nodes);
-      fatal(pattern_generate, rule->generate, ctx->mod, ctx->variants, &ctx->invalidation, match, ctx->generate_nodes);
-
-      if(log_would(L_RULE))
-      {
-        fatal(log_start, L_RULE, &N);
-        xsays("  ");
-        fatal(node_path_say, match->node, N);
-        xsays(" ");
-        fatal(connector_say, rule, N);
-        xsays(" {");
-        fatal(log_finish);
-      }
-
-      if(rule->card == RULE_ONE_TO_ONE)
-      {
-        for(y = 0; y < ctx->generate_nodes->table_size; y++)
-        {
-          if(!(generated = set_table_get(ctx->generate_nodes, y)))
-            continue;
-
-          if(rule->dir == RULE_LTR)
-          {
-            above = generated;
-            below = match->node;
-          }
-          else if(rule->dir == RULE_RTL)
-          {
-            above = match->node;
-            below = generated;
-          }
-          else
-          {
-            RUNTIME_ABORT();
-          }
-
-          if(log_would(L_RULE))
-          {
-            fatal(log_start, L_RULE, &N);
-            xsays("   ");
-            fatal(node_path_say, generated, N);
-            if(rule->fml_node)
-            {
-              xsays(" : ");
-              fatal(node_path_say, rule->fml_node, N);
-            }
-            xsayf(" var %s", generated->var ? generated->var->norm : "(none)");
-            fatal(log_finish);
-          }
-
-          RUNTIME_ASSERT(rule->relation);
-          fatal(node_connect_dependency, above, below, rule->relation, &ctx->invalidation, &ne, 0);
-          fatal(rma_edge_associate, ne, rma);
-
-          if(rule->fml_node)
-          {
-            if(!generated->bpe)
-            {
-              fatal(bpe_setup, &ne->bpe, rule->fml_node);
-              fatal(bpe_attach, generated, &ne->bpe, &ctx->invalidation);
-            }
-
-            if(rule->dir == RULE_LTR)
-              ne->dir = EDGE_TGT_SRC;
-            else if(rule->dir == RULE_RTL)
-              ne->dir = EDGE_SRC_TGT;
-          }
-        }
-
-        logs(L_RULE, "  }");
-      }
-      else if(rule->card == RULE_ONE_TO_MANY)
-      {
-        RUNTIME_ASSERT(rule->dir == RULE_LTR);
-        RUNTIME_ASSERT(rule->fml_node);
-        RUNTIME_ASSERT(rule->relation);
-
-        fatal(xrealloc, &Alist, sizeof(*Alist), ctx->generate_nodes->size, 0);
-        z = 0;
-        for(y = 0; y < ctx->generate_nodes->table_size; y++)
-        {
-          if(!(generated = set_table_get(ctx->generate_nodes, y)))
-            continue;
-
-          Alist[z++] = vertex_containerof(generated);
-        }
-
-        Blist[0] = vertex_containerof(match->node);
-
-        if(log_would(L_RULE))
-        {
-          for(y = 0; y < z; y++)
-          {
-            n = vertex_value(Alist[y]);
-            fatal(log_start, L_RULE, &N);
-            xsays("   ");
-            fatal(node_path_say, n, N);
-            xsayf(" var %s", n->var ? n->var->norm : "(none)");
-            fatal(log_finish);
-          }
-
-          fatal(log_start, L_RULE, &N);
-          xsays("  }");
-          if(rule->fml_node)
-          {
-            xsays(" : ");
-            fatal(node_path_say, rule->fml_node, N);
-          }
-          fatal(log_finish);
-        }
-
-        fatal(node_hyperconnect_dependency, Alist, z, Blist, 1, rule->relation, &ctx->invalidation, &ne);
-        fatal(rma_edge_associate, ne, rma);
-
-        if(rule->fml_node)
-        {
-          ne->dir = EDGE_TGT_SRC;
-          fatal(bpe_setup, &ne->bpe, rule->fml_node);
-
-          for(y = 0; y < z; y++) {
-            n = vertex_value(Alist[y]);
-            fatal(bpe_attach, n, &ne->bpe, &ctx->invalidation);
-          }
-        }
-      }
-      else
-      {
-        RUNTIME_ABORT();
-      }
-    }
-  }
-
-finally:
-  wfree(Alist);
-  wfree(vlist);
-coda;
+  finally : coda;
 }
 
 xapi rule_say(const rule * restrict r, narrator * restrict N)
@@ -581,9 +1125,9 @@ xapi rule_say(const rule * restrict r, narrator * restrict N)
 
   xsays("rule ");
 
-  if(r->relation != EDGE_TYPE_STRONG)
+  if((r->relation & EDGE_TYPE_OPT) != EDGE_TYPE_DEPENDS)
   {
-    xsays(" { relation : conduit } ");
+    xsayf(" { relation : %s } ", attrs32_name_byvalue(graph_edge_type_attrs, r->relation));
   }
 
   if(r->match)
@@ -616,10 +1160,10 @@ xapi rule_say(const rule * restrict r, narrator * restrict N)
     xsays(" --");
   }
 
-  if(r->fml_node)
+  if(r->formula)
   {
     fatal(narrator_xsays, N, " : ");
-    fatal(node_project_relative_path_say, r->fml_node, N);
+    fatal(pattern_say, r->formula, N);
   }
 
   finally : coda;
@@ -633,26 +1177,10 @@ xapi rule_run_context_xinit(rule_run_context * restrict rule_ctx)
 
   fatal(pattern_match_matches_create, &rule_ctx->match_nodes);
   fatal(set_create, &rule_ctx->generate_nodes);
-  rbtree_init(&rule_ctx->nohits);
+
+  rule_ctx->modules = &module_list;
 
   finally : coda;
-}
-
-xapi rule_run_context_begin(rule_run_context * restrict rule_ctx)
-{
-  enter;
-
-  fatal(graph_invalidation_begin, &rule_ctx->invalidation);
-
-  /* reset tracking for which rules have hit */
-  rbtree_init(&rule_ctx->nohits);
-
-  finally : coda;
-}
-
-void rule_run_context_end(rule_run_context * restrict rule_ctx)
-{
-  graph_invalidation_end(&rule_ctx->invalidation);
 }
 
 xapi rule_run_context_xdestroy(rule_run_context * restrict rule_ctx)
@@ -662,6 +1190,9 @@ xapi rule_run_context_xdestroy(rule_run_context * restrict rule_ctx)
   graph_invalidation_end(&rule_ctx->invalidation);
   fatal(set_xfree, rule_ctx->match_nodes);
   fatal(set_xfree, rule_ctx->generate_nodes);
+  wfree(rule_ctx->Alist);
+  wfree(rule_ctx->Blist);
+  wfree(rule_ctx->Mlist);
 
   finally : coda;
 }

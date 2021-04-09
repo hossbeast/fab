@@ -28,7 +28,8 @@
 
   #include "config_parser.internal.h"
   #include "config.internal.h"
-  #include "box.h"
+  #include "build_thread.h"
+  #include "yyutil/box.h"
   #include "macros.h"
 
   struct value;
@@ -104,14 +105,10 @@
 
 %type <yyu.imax>  int16_igroup
 %type <yyu.umax>  int16_ugroup
-%type <yyu.imax>  uint16_igroup
-%type <yyu.umax>  uint16_ugroup
 
 %token
  BUILD                    "build"
- CAPTURE_STDERR           "capture-stderr"
- CAPTURE_STDOUT           "capture-stdout"
- CAPTURE_AUXOUT           "capture-auxout"
+ WORKERS                  "workers"
  CONCURRENCY              "concurrency"
  CONSOLE                  "console"
  ERROR                    "error"
@@ -122,28 +119,11 @@
  INVALIDATE               "invalidate"
  LOGGING                  "logging"
  LOGFILE                  "logfile"
- SHOW_ARGUMENTS           "show-arguments"
- SHOW_COMMAND             "show-command"
- SHOW_CWD                 "show-cwd"
- SHOW_SOURCES             "show-sources"
- SHOW_PATH                "show-path"
- SHOW_TARGETS             "show-targets"
- SHOW_ENVIRONMENT         "show-environment"
- SHOW_STATUS              "show-status"
- SHOW_STDOUT              "show-stdout"
- SHOW_STDOUT_LIMIT_BYTES  "show-stdout-limit-bytes"
- SHOW_STDOUT_LIMIT_LINES  "show-stdout-limit-lines"
- SHOW_STDERR              "show-stderr"
- SHOW_STDERR_LIMIT_BYTES  "show-stderr-limit-bytes"
- SHOW_STDERR_LIMIT_LINES  "show-stderr-limit-lines"
- SHOW_AUXOUT              "show-auxout"
- SHOW_AUXOUT_LIMIT_BYTES  "show-auxout-limit-bytes"
- SHOW_AUXOUT_LIMIT_LINES  "show-auxout-limit-lines"
- STDOUT_BUFFER_SIZE       "stdout-buffer-size"
- STDERR_BUFFER_SIZE       "stderr-buffer-size"
- AUXOUT_BUFFER_SIZE       "auxout-buffer-size"
- SUCCESS                  "success"
+ SPECIAL                  "special"
+ MODEL                    "model"
+ MODULE                   "module"
  VAR                      "var"
+ FORMULA_SUFFIX           "formula-suffix"
  PATH                     "path"
  COPY_FROM_ENV            "copy-from-env"
  DIRS                     "dirs"
@@ -153,8 +133,6 @@
  ALWAYS                   "always"
  NEVER                    "never"
  LEADING                  "leading"
- TRAILING                 "trailing"
- NONE                     "none"
 
 /*
  EXECUTABLES              "executables"
@@ -165,17 +143,13 @@
 %type <b_string> bstring
 %type <b_bool> bool
 %type <b_int16>  int16
-%type <b_uint16> uint16
 %type <b_int> invalidate-type
 %type <i> invalidate-type-enum
-%type <b_int> stream-part
-%type <i> stream-part-enum
 
 %destructor { wfree($$.s); } <str>
 %destructor { box_free(refas($$, bx)); } <b_bool>
 %destructor { box_free(refas($$, bx)); } <b_int>
 %destructor { box_free(refas($$, bx)); } <b_int16>
-%destructor { box_free(refas($$, bx)); } <b_uint16>
 %destructor { box_free(refas($$, bx)); } <b_string>
 
 %%
@@ -210,44 +184,32 @@ sections
 
 section
   : build-section
+  | special-section
+  | workers-section
   | extern-section
   | filesystems-section
   | formula-section
   | logging-section
-  | var-section
-  ;
-
-var-section
-  : VAR var-section-body
-  {
-    PARSER->cfg->var.merge_significant = true;
-  }
-  ;
-
-var-section-body
-  : ':' var-section-set
-  | '=' var-section-set-epsilon
-  {
-    PARSER->cfg->var.merge_overwrite = true;
-  }
-  ;
-
-var-section-set-epsilon
-  : var-section-set
-  | %empty
-  ;
-
-var-section-set
-  : VALUE
-  {
-    PARSER->cfg->var.value = $1;
-  }
   ;
 
 build-section
   : BUILD build-map
   {
     PARSER->cfg->build.merge_significant = true;
+  }
+  ;
+
+special-section
+  : SPECIAL special-map
+  {
+    PARSER->cfg->special.merge_significant = true;
+  }
+  ;
+
+workers-section
+  : WORKERS workers-map
+  {
+    PARSER->cfg->workers.merge_significant = true;
   }
   ;
 
@@ -277,6 +239,64 @@ build-mapping
   : CONCURRENCY ':' int16
   {
     PARSER->cfg->build.concurrency = $3;
+  }
+  ;
+
+special-map
+  : ':' '{' special-mapping-set '}'
+  | '=' '{' special-mapping-set-epsilon '}'
+  {
+    PARSER->cfg->special.merge_overwrite = true;
+  }
+  ;
+
+special-mapping-set-epsilon
+  : special-mapping-set
+  | %empty
+  ;
+
+special-mapping-set
+  : special-mappings
+  ;
+
+special-mappings
+  : special-mappings special-mapping
+  | special-mapping
+  ;
+
+special-mapping
+  : MODEL ':' bstring          { PARSER->cfg->special.model = $3; }
+  | MODULE ':' bstring         { PARSER->cfg->special.module = $3; }
+  | VAR ':' bstring            { PARSER->cfg->special.var = $3; }
+  | FORMULA_SUFFIX ':' bstring { PARSER->cfg->special.formula_suffix = $3; }
+  ;
+ 
+workers-map
+  : ':' '{' workers-mapping-set '}'
+  | '=' '{' workers-mapping-set-epsilon '}'
+  {
+    PARSER->cfg->workers.merge_overwrite = true;
+  }
+  ;
+
+workers-mapping-set-epsilon
+  : workers-mapping-set
+  | %empty
+  ;
+
+workers-mapping-set
+  : workers-mappings
+  ;
+
+workers-mappings
+  : workers-mappings workers-mapping
+  | workers-mapping
+  ;
+
+workers-mapping
+  : CONCURRENCY ':' int16
+  {
+    PARSER->cfg->workers.concurrency = $3;
   }
   ;
   
@@ -309,33 +329,7 @@ formula-mappings
   ;
 
 formula-mapping
-  : CAPTURE_STDERR ':' stream-part
-  {
-    PARSER->cfg->formula.capture_stderr = $3;
-  }
-  | CAPTURE_STDOUT ':' stream-part
-  {
-    PARSER->cfg->formula.capture_stdout = $3;
-  }
-  | CAPTURE_AUXOUT ':' stream-part
-  {
-    PARSER->cfg->formula.capture_auxout = $3;
-  }
-  | STDOUT_BUFFER_SIZE ':' uint16
-  {
-    PARSER->cfg->formula.stdout_buffer_size = $3;
-  }
-  | STDERR_BUFFER_SIZE ':' uint16
-  {
-    PARSER->cfg->formula.stderr_buffer_size = $3;
-  }
-  | AUXOUT_BUFFER_SIZE ':' uint16
-  {
-    PARSER->cfg->formula.auxout_buffer_size = $3;
-  }
-  | formula-success
-  | formula-error
-  | formula-path
+  : formula-path
   ;
 
 formula-path
@@ -369,6 +363,9 @@ formula-path-mapping
 formula-path-dirs
   : formula-path-dirs formula-path-dir
   | formula-path-dir
+  {
+    PARSER->cfg->formula.path.dirs.merge_significant = true;
+  }
   ;
 
 formula-path-dir
@@ -377,124 +374,6 @@ formula-path-dir
     if($1) {
       YFATAL(set_put, PARSER->cfg->formula.path.dirs.entries, $1, 0);
     }
-  }
-  ;
-
-formula-success
-  : SUCCESS ':' '{' formula-show '}'
-  {
-    PARSER->cfg->formula.success = PARSER->show_settings;
-  }
-  | SUCCESS '=' '{' formula-show-epsilon '}'
-  {
-    PARSER->cfg->formula.success = PARSER->show_settings;
-    PARSER->cfg->formula.success.merge_overwrite = true;
-  }
-  ;
-
-formula-error
-  : ERROR ':' '{' formula-show '}'
-  {
-    PARSER->cfg->formula.error = PARSER->show_settings;
-  }
-  | ERROR '=' '{' formula-show-epsilon '}'
-  {
-    PARSER->cfg->formula.error = PARSER->show_settings;
-    PARSER->cfg->formula.error.merge_overwrite = true;
-  }
-  ;
-
-allocate-formula-show
-  : %empty
-  {
-    memset(&PARSER->show_settings, 0, sizeof(PARSER->show_settings));
-  }
-  ;
-
-formula-show-epsilon
-  : formula-show
-  | %empty
-  {
-    PARSER->show_settings.merge_significant = true;
-  }
-  ;
-
-formula-show
-  : formula-show formula-show-mapping
-  | allocate-formula-show formula-show-mapping
-  {
-    PARSER->show_settings.merge_significant = true;
-  }
-  ;
-
-formula-show-mapping
-  : SHOW_STDOUT ':' bool
-  {
-    PARSER->show_settings.show_stdout = $3;
-  }
-  | SHOW_STDOUT_LIMIT_LINES ':' int16
-  {
-    PARSER->show_settings.show_stdout_limit_lines = $3;
-  }
-  | SHOW_STDOUT_LIMIT_BYTES ':' int16
-  {
-    PARSER->show_settings.show_stdout_limit_bytes = $3;
-  }
-  | SHOW_STDERR ':' bool
-  {
-    PARSER->show_settings.show_stderr = $3;
-  }
-  | SHOW_STDERR_LIMIT_LINES ':' int16
-  {
-    PARSER->show_settings.show_stderr_limit_lines = $3;
-  }
-  | SHOW_STDERR_LIMIT_BYTES ':' int16
-  {
-    PARSER->show_settings.show_stderr_limit_bytes = $3;
-  }
-  | SHOW_AUXOUT ':' bool
-  {
-    PARSER->show_settings.show_auxout = $3;
-  }
-  | SHOW_AUXOUT_LIMIT_LINES ':' int16
-  {
-    PARSER->show_settings.show_auxout_limit_lines = $3;
-  }
-  | SHOW_AUXOUT_LIMIT_BYTES ':' int16
-  {
-    PARSER->show_settings.show_auxout_limit_bytes = $3;
-  }
-  | SHOW_ARGUMENTS ':' bool
-  {
-    PARSER->show_settings.show_arguments = $3;
-  }
-  | SHOW_CWD ':' bool
-  {
-    PARSER->show_settings.show_cwd = $3;
-  }
-  | SHOW_COMMAND ':' bool
-  {
-    PARSER->show_settings.show_command = $3;
-  }
-  | SHOW_SOURCES ':' bool
-  {
-    PARSER->show_settings.show_sources = $3;
-  }
-  | SHOW_PATH ':' bool
-  {
-    PARSER->show_settings.show_path = $3;
-  }
-  | SHOW_TARGETS ':' bool
-  {
-    PARSER->show_settings.show_targets = $3;
-  }
-  | SHOW_ENVIRONMENT ':' bool
-  {
-    PARSER->show_settings.show_environment = $3;
-  }
-  | SHOW_STATUS ':' bool
-  {
-    PARSER->show_settings.show_status = $3;
   }
   ;
 
@@ -739,28 +618,6 @@ invalidate-type-enum
   }
   ;
 
-stream-part
-  : stream-part-enum
-  {
-    YFATAL(box_int_mk, &@$, &$$, $1);
-  }
-  ;
-
-stream-part-enum
-  : LEADING
-  {
-    $$ = STREAM_PART_LEADING;
-  }
-  | TRAILING
-  {
-    $$ = STREAM_PART_TRAILING;
-  }
-  | NONE
-  {
-    $$ = STREAM_PART_NONE;
-  }
-  ;
-
 bool
   : BOOL
   {
@@ -788,27 +645,6 @@ int16_igroup
 
 int16_ugroup
   : UINTMAX8
-  ;
-
-uint16
-  : uint16_igroup
-  {
-    YFATAL(box_uint16_mk, &@$, &$$, $1);
-  }
-  | uint16_ugroup
-  {
-    YFATAL(box_uint16_mk, &@$, &$$, $1);
-  }
-  ;
-
-uint16_igroup
-  : INTMAX8
-  | INTMAX16
-  ;
-
-uint16_ugroup
-  : UINTMAX8
-  | UINTMAX16
   ;
 
 bstring

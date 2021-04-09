@@ -18,4 +18,12 @@
 #ifndef FABD_PATTERN_STAR_H
 #define FABD_PATTERN_STAR_H
 
+#include "xapi.h"
+
+struct yyu_location;
+union pattern_segment;
+
+xapi pattern_star_mk(union pattern_segment ** restrict rv, const struct yyu_location * restrict loc)
+  __attribute__((nonnull));
+
 #endif

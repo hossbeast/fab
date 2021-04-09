@@ -20,20 +20,22 @@
 
 /*
 
+PATTERN TYPES
+
 match pattern - match nodes starting from a base
  * used in rules, leftmost (match) pattern
+ * does not support NODESET_SELF '.'
 
 generate pattern - create nodes, starting from a base
  * used in rules, middle (generate) pattern
 
-reference pattern - find nodes, disambiguate by prefix (class/alternation not permitted)
- * used in module.bam rules, rightmost (formula) pattern     PATTERN_LOOKUP_ONE - thus exactly one matching node
- * supports NODESET_SELF '.'
-
 lookup pattern - find nodes, disambiguating via prefix
- * used in module.bam to specify use and require references  PATTERN_LOOKUP_ONE - one matching node per frag
- * also used in module.bam to specify variants               render only
- * used in selectors for node lookup                         matches zero or more
+ * used in module.bam for use, import, and require references  PATTERN_LOOKUP_ONE - one matching node per frag
+ * used in module.bam to specify variants                      render only
+ * used in selector pattern for node lookup                    matches zero or more
+
+reference pattern - find nodes by left -> right descent (class/alternation not permitted)
+ * used in module.bam for formula-binding pattern
 
 */
 
@@ -102,10 +104,10 @@ extern struct attrs16 * pattern_graph_attrs;
 #define PATTERN_AXIS_OPT  0x000f
 #define PATTERN_AXIS_TABLE                                                                                                      \
   /* contextual */                                                                                                              \
-  ATTR_NAME_DEF(PATTERN_AXIS_UP               , "up"            , 0x0005) /* parent, .. : nodes up 1 level from current node */ \
+  ATTR_NAME_DEF(PATTERN_AXIS_UP               , "up"            , 0x0005) /* parent, .. : nodes up 1 level from current fsent */ \
   ATTR_NAME_DEF(PATTERN_AXIS_ABOVE            , "above"         , 0x0006) /* nodes above the current node, any level */         \
   ATTR_NAME_DEF(PATTERN_AXIS_SELF_OR_ABOVE    , "self-or-above" , 0x0007) /* current and nodes above, any level */              \
-  ATTR_NAME_DEF(PATTERN_AXIS_DOWN             , "down"          , 0x0008) /* child : nodes down 1 level from current node */    \
+  ATTR_NAME_DEF(PATTERN_AXIS_DOWN             , "down"          , 0x0008) /* child : nodes down 1 level from current fsent */    \
   ATTR_NAME_DEF(PATTERN_AXIS_BELOW            , "below"         , 0x0009) /* nodes below the current node, any level */         \
   ATTR_NAME_DEF(PATTERN_AXIS_SELF_OR_BELOW    , "self-or-below" , 0x000a) /* ** : current and nodes below, any level */         \
 
@@ -120,7 +122,7 @@ extern struct attrs16 * pattern_axis_attrs;
 #define PATTERN_NODESET_OPT 0x000f
 #define PATTERN_NODESET_TABLE                                                                                \
   /* non-contextual */                                                                                       \
-  ATTR_NAME_DEF(PATTERN_NODESET_SELF     , "self"      , 0x0001) /* . : the current context node */          \
+  ATTR_NAME_DEF(PATTERN_NODESET_SELF     , "self"      , 0x0001) /* . : the current context fsent */          \
   ATTR_NAME_DEF(PATTERN_NODESET_MATCH    , "match"     , 0x0002) /* matched node, (generate pattern) */      \
   ATTR_NAME_DEF(PATTERN_NODESET_MATCHDIR , "match-dir" , 0x0003) /* $^D directory of the matched node  */    \
   ATTR_NAME_DEF(PATTERN_NODESET_SHADOW   , "shadow"    , 0x0004) /* root of the shadow fs */                 \
@@ -336,7 +338,7 @@ xapi pattern_say(const pattern * restrict ffn, struct narrator * restrict N)
   __attribute__((nonnull));
 
 typedef struct pattern_match_group {
-  const char * start; // points into node->name->name
+  const char * start; // points into node->name.name
   uint16_t len;
 } pattern_match_group;
 

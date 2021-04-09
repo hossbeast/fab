@@ -50,20 +50,17 @@ xapi pattern_parser_xfree(pattern_parser * restrict);
 xapi pattern_parser_ixfree(pattern_parser ** restrict)
   __attribute__((nonnull));
 
-/// pattern_parse
-//
-// SUMMARY
-//  parse pattern text in place
-//
-// PARAMETERS
-//  parser     - reusable parser
-//  buf        - buffer containing pattern text
-//  size       - size of buffer
-//  [fname]    - filename, for error messages
-//  [init_loc] - starting location
-//  [used_loc] - location delta from init_loc
-//  [rv]       - (returns) parsed pattern object
-//
+/*
+ * parse pattern text in place
+ *
+ * parser     - reusable parser
+ * buf        - buffer containing pattern text
+ * size       - size of buffer
+ * [fname]    - filename, for error messages
+ * [init_loc] - starting location
+ * [used_loc] - location delta from init_loc
+ * [rv]       - (returns) parsed pattern object
+ */
 xapi match_pattern_parse_partial(
     pattern_parser * restrict parser
   , char * const restrict buf

@@ -19,36 +19,30 @@
 #define FABD_PATTERN_MATCH_H
 
 #include "xapi.h"
-#include "types.h"
 
 struct pattern;
-struct node;
+struct fsent;
 struct set;
 struct module;
-struct variant;
 struct llist;
 
-/// pattern_match
-//
-// SUMMARY
-//  get nodes matching a pattern
-//
-// PARAMETERS
-//  pattern    - match pattern
-//  module     - module to begin matching at
-//  modules    - all modules
-//  [variants] - variants
-//  matches    - (returns) matching nodes
-//
+/*
+ * find nodes matching a pattern
+ *
+ * pattern    - match pattern
+ * module     - module to begin matching at
+ * modules    - all modules
+ * [variants] - variants
+ * matches    - (returns) matching nodes
+ */
 xapi pattern_match(
     /* 1 */ const struct pattern * restrict pattern
   , /* 2 */ const struct module * restrict module
   , /* 3 */ const struct llist * restrict modules
   , /* 4 */ const struct set * restrict variants
   , /* 5 */ struct set * restrict matches
-  , /* 6 */ struct set * restrict node_matches
-  , /* 7 */ xapi (*dirnode_visit)(void * ctx, struct node * dirnode)
-  , /* 8 */ void *dirnode_visit_ctx
+  , /* 6 */ xapi (*dirnode_visit)(void * ctx, struct fsent * dirnode)
+  , /* 7 */ void *dirnode_visit_ctx
 )
   __attribute__((nonnull(1, 2, 3)));
 

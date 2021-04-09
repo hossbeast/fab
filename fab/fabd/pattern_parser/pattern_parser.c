@@ -75,22 +75,20 @@ xapi pattern_parser_create(pattern_parser ** rv)
     , pattern_statenumbers
     , pattern_statenames
   );
-//  fatal(yyu_define_tokenrange, &p->match_yyu, match_pattern_MODULE, match_pattern_USES);
 
   // generate
   fatal(yyu_parser_init, &p->generate_yyu, &generate_vtable, PATTERN_SYNTAX);
-  fatal(yyu_parser_init_tokens, &p->generate_yyu, generate_pattern_token_table, generate_pattern_TOKEN_TABLE_SIZE);;
+  fatal(yyu_parser_init_tokens, &p->generate_yyu, generate_pattern_token_table, generate_pattern_TOKEN_TABLE_SIZE);
   fatal(yyu_parser_init_states
     , &p->generate_yyu
     , pattern_numstates
     , pattern_statenumbers
     , pattern_statenames
   );
-//  fatal(yyu_define_tokenrange, &p->generate_yyu, generate_pattern_MODULE, generate_pattern_USES);
 
-  // reference
+  // reference (formula)
   fatal(yyu_parser_init, &p->reference_yyu, &reference_vtable, PATTERN_SYNTAX);
-  fatal(yyu_parser_init_tokens, &p->reference_yyu, reference_pattern_token_table, reference_pattern_TOKEN_TABLE_SIZE);;
+  fatal(yyu_parser_init_tokens, &p->reference_yyu, reference_pattern_token_table, reference_pattern_TOKEN_TABLE_SIZE);
   fatal(yyu_parser_init_states
     , &p->reference_yyu
     , pattern_numstates

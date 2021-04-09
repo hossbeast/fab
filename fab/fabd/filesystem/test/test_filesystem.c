@@ -74,7 +74,7 @@ static xapi filesystem_test_entry(xunit_test * _test)
   filesystem_test * test = (filesystem_test *)_test;
 
   config_parser * parser = 0;
-  config * cfg = 0;
+  configblob * cfg = 0;
   char space[1024];
 
   // arrange

@@ -15,25 +15,14 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#include "types.h"
-#include "xapi.h"
-
 #include "narrator.h"
-#include "value/writer.h"
-#include "narrator/fixed.h"
-#include "valyria/list.h"
-#include "valyria/dictionary.h"
 #include "xlinux/xstdlib.h"
 #include "xlinux/xstring.h"
 
-#include "group.internal.h"
+#include "group.h"
 #include "pattern.internal.h"
-#include "segment.internal.h"
-#include "generate.internal.h"
 #include "match.internal.h"
-#include "node.h"
-#include "path.h"
-#include "common/attrs.h"
+#include "segment.h"
 
 //
 // static

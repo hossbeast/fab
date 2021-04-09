@@ -27,11 +27,11 @@
 #include "xlinux/xstring.h"
 
 #include "pattern.internal.h"
-#include "section.internal.h"
-#include "segment.internal.h"
+#include "section.h"
+#include "segment.h"
 #include "extern.h"
 #include "module.h"
-#include "node.h"
+#include "fsent.h"
 
 #include "common/attrs.h"
 #include "zbuffer.h"

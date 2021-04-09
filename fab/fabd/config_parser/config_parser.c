@@ -65,11 +65,6 @@ xapi config_parser_create(config_parser ** rv)
   p->yyu.logs = L_CONFIG;
 #endif
 
-//  fatal(yyu_define_tokenrange, &p->yyu, config_BUILD, config_NONE);
-
-  // configure sub-parsers
-  fatal(value_parser_create, &p->value_parser);
-
   *rv = p;
   p = 0;
 
@@ -86,8 +81,6 @@ xapi config_parser_xfree(config_parser* const p)
   {
     wfree(p->fse);
     fatal(yyu_parser_xdestroy, &p->yyu);
-
-    fatal(value_parser_xfree, p->value_parser);
   }
 
   wfree(p);
@@ -111,36 +104,12 @@ xapi config_parser_parse(
   , size_t size
   , const char * restrict fname
   , yyu_location * restrict init_loc
-  , config ** restrict rv
+  , configblob ** restrict rv
 )
 {
   enter;
 
   fatal(yyu_parse, &parser->yyu, buf, size, fname, YYU_INPLACE, init_loc, 0);
-  if(rv)
-  {
-    *rv = parser->cfg;
-    parser->cfg = 0;
-  }
-
-finally:
-  fatal(config_ixfree, &parser->cfg);
-coda;
-}
-
-xapi config_parser_parse_partial(
-    config_parser * restrict parser
-  , char * const restrict buf
-  , size_t size
-  , const char * restrict fname
-  , yyu_location * init_loc
-  , yyu_location * used_loc
-  , config ** restrict rv
-)
-{
-  enter;
-
-  fatal(yyu_parse, &parser->yyu, buf, size, fname, YYU_PARTIAL | YYU_INPLACE, init_loc, used_loc);
   if(rv)
   {
     *rv = parser->cfg;

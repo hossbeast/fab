@@ -15,24 +15,14 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#include <string.h>
-
-#include "xapi.h"
-#include "types.h"
-
-#include "xlinux/xstdlib.h"
-#include "value/writer.h"
 #include "narrator.h"
+#include "xlinux/xstdlib.h"
 
-#include "pattern.internal.h"
-#include "range.internal.h"
-#include "generate.internal.h"
-#include "byte.internal.h"
+#include "range.h"
+#include "byte.h"
+#include "fsent.h"
 #include "match.internal.h"
-#include "node.h"
-#include "path.h"
-
-#include "common/attrs.h"
+#include "pattern.internal.h"
 
 //
 // static
@@ -61,8 +51,8 @@ static xapi match(pattern_match_context * restrict ctx, const pattern_segment * 
 
   const pattern_range * range = &segment->range;
 
-  const char * restrict name = ctx->node->name->name;
-  uint16_t namel = ctx->node->name->namel;
+  const char * restrict name = ctx->node->name.name;
+  uint16_t namel = ctx->node->name.namel;
 
   if((namel > ctx->traversal->offset) && (name[ctx->traversal->offset] >= range->start && name[ctx->traversal->offset] <= range->end))
   {

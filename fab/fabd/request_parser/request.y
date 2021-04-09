@@ -24,7 +24,7 @@
   #include "request_parser.internal.h"
   #include "request.internal.h"
   #include "selector.h"
-  #include "node.h"
+  #include "fsent.h"
 
   #include "macros.h"
 }
@@ -49,9 +49,7 @@
 %union {
   yyu_lval yyu;
 
-  node_property node_property;
   struct selector * selector;
-  struct config * config;
   struct request * request;
 }
 
@@ -61,40 +59,31 @@
 %token ':'
 %token '='
 
-%token <config> CONFIG
 %token <selector> SELECTOR
 
 %token
   AUTORUN            "autorun"
   BUILD              "build"
+  BOOTSTRAP          "bootstrap"
   CONSOLE            "console"
+  CONFIG_READ        "config-read"
   DESCRIBE           "describe"
   INVALIDATE         "invalidate"
+  GLOBAL_INVALIDATE  "global-invalidate"
   LIST               "list"
-  RECONFIGURE        "reconfigure"
   RESET_SELECTION    "reset-selection"
   RUN                "run"
   SCRIPT             "script"
   SELECT             "select"
-  STAGE_CONFIG       "stage-config"
+  GLOBAL_STATS_READ  "global-stats-read"
+  GLOBAL_STATS_RESET "global-stats-reset"
+  STATS_READ         "stats-read"
+  STATS_RESET        "stats-reset"
+  METADATA           "metadata"
+  RECONCILE          "reconcile"
   GOALS              "goals"
   TARGET_DIRECT      "target-direct"
   TARGET_TRANSITIVE  "target-transitive"
-
-/* node property names */
-  NAME          "name"
-  EXT           "ext"
-  SUFFIX        "suffix"
-  BASE          "base"
-  ABSPATH       "abspath"
-  ABSDIR        "absdir"
-  RELDIR        "reldir"
-  RELPATH       "relpath"
-  FSROOT        "fsroot"
-  VARIANT       "variant"
-
-/* nonterminals */
-%type <node_property> node-property
 
 %destructor { selector_free($$); } <selector>
 
@@ -112,50 +101,75 @@ allocate-request
   ;
 
 request
-  : allocate-request commands
+  : allocate-request solo-command
+  | allocate-request first-command internal-commands last-command
+  | allocate-request first-command internal-commands
+  | allocate-request internal-commands last-command
+  | allocate-request internal-commands
   ;
 
-commands
-  : initial-commands final-command
-  | initial-commands
-  | final-command
+allocate-first-command
+  : %empty
+  {
+    YFATAL(xmalloc, &PARSER->request->first_command, sizeof(*PARSER->request->first_command));
+    PARSER->command = PARSER->request->first_command;
+  }
   ;
 
-initial-commands
-  : initial-commands initial-command
-  | initial-command
+first-command
+  : allocate-first-command first-command-branch
   ;
 
-allocate-command
+first-command-branch
+  : reconcile-cmd
+  ;
+
+solo-command
+  : allocate-first-command solo-command-branch
+  ;
+
+solo-command-branch
+  : bootstrap-cmd
+  | reconcile-cmd
+  ;
+
+bootstrap-cmd
+  : BOOTSTRAP { PARSER->command->type = COMMAND_BOOTSTRAP; }
+  ;
+
+reconcile-cmd
+  : RECONCILE { PARSER->command->type = COMMAND_RECONCILE; }
+  ;
+
+ /* internal commands may appear in any position */
+allocate-internal-command
   : %empty
   {
     YFATAL(array_push, PARSER->request->commands, &PARSER->command);
   }
   ;
 
-initial-command
-  : allocate-command initial-command-branch
+internal-commands
+  : internal-commands internal-command
+  | internal-command
   ;
 
-final-command
-  : allocate-command final-command-branch
+internal-command
+  : allocate-internal-command internal-command-branch
   ;
 
-initial-command-branch
+internal-command-branch
   : describe-cmd
-  | invalidate-cmd
   | list-cmd
-  | stage-config-cmd
-  | reconfigure-cmd
+  | invalidate-cmd
+  | global-invalidate-cmd
+  | stats-cmd
+  | global-stats-cmd
   | select-cmd
   | reset-selection-cmd
   | goals-cmd
-  ;
-
- /* only permitted as the last command */
-final-command-branch
-  : run-cmd
-  | autorun-cmd
+  | metadata-cmd
+  | config-read-cmd
   ;
 
 select-cmd
@@ -170,30 +184,6 @@ reset-selection-cmd
   : RESET_SELECTION { PARSER->command->type = COMMAND_RESET_SELECTION; }
   ;
 
-stage-config-cmd
-  : STAGE_CONFIG ':' CONFIG
-  {
-    PARSER->command->type = COMMAND_STAGE_CONFIG;
-    PARSER->command->config = $3;
-  }
-  ;
-
-run-cmd
-  : RUN
-  {
-    PARSER->command->type = COMMAND_RUN;
-    PARSER->request->final_command = COMMAND_RUN;
-  }
-  ;
-
-autorun-cmd
-  : AUTORUN
-  {
-    PARSER->command->type = COMMAND_AUTORUN;
-    PARSER->request->final_command = COMMAND_AUTORUN;
-  }
-  ;
-
 describe-cmd
   : DESCRIBE { PARSER->command->type = COMMAND_DESCRIBE; }
   ;
@@ -202,34 +192,30 @@ invalidate-cmd
   : INVALIDATE { PARSER->command->type = COMMAND_INVALIDATE ; }
   ;
 
+global-invalidate-cmd
+  : GLOBAL_INVALIDATE { PARSER->command->type = COMMAND_GLOBAL_INVALIDATE ; }
+  ;
+
 list-cmd
-  : LIST
-  {
-    PARSER->command->type = COMMAND_LIST;
-    PARSER->command->property = NODE_PROPERTY_RELPATH;
-  }
-  | LIST ':' node-property
-  {
-    PARSER->command->type = COMMAND_LIST;
-    PARSER->command->property = $3;
-  }
+  : LIST { PARSER->command->type = COMMAND_LIST; }
   ;
 
-node-property
-  : NAME         { $$ = NODE_PROPERTY_NAME; }
-  | EXT          { $$ = NODE_PROPERTY_EXT; }
-  | SUFFIX       { $$ = NODE_PROPERTY_SUFFIX; }
-  | BASE         { $$ = NODE_PROPERTY_BASE; }
-  | ABSPATH      { $$ = NODE_PROPERTY_ABSPATH; }
-  | ABSDIR       { $$ = NODE_PROPERTY_ABSDIR; }
-  | RELPATH      { $$ = NODE_PROPERTY_RELPATH; }
-  | RELDIR       { $$ = NODE_PROPERTY_RELDIR; }
-  | FSROOT       { $$ = NODE_PROPERTY_FSROOT; }
-  | VARIANT      { $$ = NODE_PROPERTY_VARIANT; }
+config-read-cmd
+  : CONFIG_READ { PARSER->command->type = COMMAND_CONFIG_READ; }
   ;
 
-reconfigure-cmd
-  : RECONFIGURE { PARSER->command->type = COMMAND_RECONFIGURE; }
+stats-cmd
+  : STATS_READ { PARSER->command->type = COMMAND_STATS_READ; }
+  | STATS_RESET { PARSER->command->type = COMMAND_STATS_RESET; }
+  ;
+
+global-stats-cmd
+  : GLOBAL_STATS_READ { PARSER->command->type = COMMAND_GLOBAL_STATS_READ; }
+  | GLOBAL_STATS_RESET { PARSER->command->type = COMMAND_GLOBAL_STATS_RESET; }
+  ;
+
+metadata-cmd
+  : METADATA { PARSER->command->type = COMMAND_METADATA; }
   ;
 
 goals-cmd
@@ -271,4 +257,30 @@ target-transitive-cmd
   {
     PARSER->command->goals.target_transitive = $3;
   }
+  ;
+
+ /* only permitted as the last command */
+allocate-last-command
+  : %empty
+  {
+    YFATAL(xmalloc, &PARSER->request->last_command, sizeof(*PARSER->request->last_command));
+    PARSER->command = PARSER->request->last_command;
+  }
+  ;
+
+last-command
+  : allocate-last-command last-command-branch
+  ;
+
+last-command-branch
+  : run-cmd
+  | autorun-cmd
+  ;
+
+run-cmd
+  : RUN { PARSER->command->type = COMMAND_RUN; }
+  ;
+
+autorun-cmd
+  : AUTORUN { PARSER->command->type = COMMAND_AUTORUN; }
   ;

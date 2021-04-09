@@ -48,21 +48,14 @@ xapi request_parser_xfree(request_parser * restrict);
 xapi request_parser_ixfree(request_parser ** restrict)
   __attribute__((nonnull));
 
-/// request_parser_parse
-//
-// SUMMARY
-//  parse the fabfile at the specified path
-//
-// PARAMETERS
-//  parser    - reusable parser
-//  text      - config text
-//  len       - size of text
-//  [root]    - (returns) root of the parse tree
-//
-// REMARKS
-//  not passing stor means that the parsed config tree will have been freed before this function
-//  returns, and is therefore only useful to log the parse tree
-//
+/*
+ * parse the fabfile at the specified path
+ *
+ * parser    - reusable parser
+ * text      - config text
+ * len       - size of text
+ * [root]    - (returns) root of the parse tree
+ */
 xapi request_parser_parse(
     request_parser * restrict parser
   , char * const restrict buf

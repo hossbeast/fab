@@ -18,20 +18,26 @@
 #ifndef FORMULA_VALUE_H
 #define FORMULA_VALUE_H
 
+/*
+
+formula_value - values to be provided to a formula when executed, as specified in the bacon block in
+the formula text
+
+*/
+
 #include "xapi.h"
 #include "types.h"
 
 #include "valyria/chain.h"
 
 #include "formula.h"
-#include "node.h"
+#include "fsent.h"
 
 struct attrs32;
-struct build_slot;
+struct formula_value;
 struct narrator;
+struct rbtree;
 struct value_writer;
-struct exec_builder;
-struct exec_render_context;
 
 #define FORMULA_VALUE_OPT 0xfff
 #define FORMULA_VALUE_TABLE                                                   \
@@ -45,8 +51,8 @@ struct exec_render_context;
   DEF(FORMULA_VALUE_BOOLEAN     , "bool"        , FORMULA_VALUE_OPT , 0x030)  \
   DEF(FORMULA_VALUE_POSINT      , "posint"      , FORMULA_VALUE_OPT , 0x040)  \
   DEF(FORMULA_VALUE_NEGINT      , "negint"      , FORMULA_VALUE_OPT , 0x050)  \
-  DEF(FORMULA_VALUE_VARIABLE    , "variable"    , FORMULA_VALUE_OPT , 0x060)  \
-  DEF(FORMULA_VALUE_SYSVAR      , "sysvar"      , FORMULA_VALUE_OPT , 0x070)  \
+  DEF(FORMULA_VALUE_VARIABLE    , "variable"    , FORMULA_VALUE_OPT , 0x060) /* value of variant var by name */  \
+  DEF(FORMULA_VALUE_SYSVAR      , "sysvar"      , FORMULA_VALUE_OPT , 0x070) /* implicit sysvar by name */ \
   /* operations */                                                            \
   DEF(FORMULA_VALUE_SELECT      , "select"      , FORMULA_VALUE_OPT , 0x100)  \
   DEF(FORMULA_VALUE_PROPERTY    , "property"    , FORMULA_VALUE_OPT , 0x200)  \
@@ -55,9 +61,9 @@ struct exec_render_context;
   DEF(FORMULA_VALUE_PATH_SEARCH , "path-search" , FORMULA_VALUE_OPT , 0x500)  \
 
 typedef enum formula_value_type {
+#undef DEF
 #define DEF(x, s, r, y) x = UINT32_C(y),
 FORMULA_VALUE_TABLE
-#undef DEF
 } formula_value_type;
 
 extern struct attrs32 * formula_value_attrs;
@@ -71,21 +77,18 @@ extern struct attrs32 * formula_value_attrs;
   DEF(FORMULA_SYSVAR_VARIANT  , "bm_variant"  , FORMULA_SYSVAR_OPT, 0x5)  \
 
 typedef enum formula_sysvar {
+#undef DEF
 #define DEF(x, s, r, y) x = UINT32_C(y),
 FORMULA_SYSVAR_TABLE
-#undef DEF
 } formula_sysvar;
 
 extern struct attrs32 * formula_sysvar_attrs;
-
-struct formula_value;
-struct formula_operation;
 
 typedef struct formula_operation {
   formula_value_type type;
   union {
     struct selector * selector;       // select
-    node_property property;           // property
+    fsent_property property;          // property
     struct formula_value *operand;    // prepend, path-search
     struct formula_value *list_head;  // sequence
   };
@@ -99,7 +102,7 @@ typedef struct formula_value {
     rbnode rbn;     /* in set */
   };
 
-  llist lln;      // for cleanup
+  llist lln;        /* used in cleanup */
 
   union {
     /* scalars */
@@ -129,7 +132,7 @@ typedef struct formula_value {
 
     /* aggregates */
     struct formula_value *list_head;
-    rbtree *set;
+    struct rbtree *set;
 
     /* operations */
     formula_operation op;
@@ -138,20 +141,13 @@ typedef struct formula_value {
 
 void formula_value_free(formula_value * restrict v);
 void formula_value_ifree(formula_value ** restrict v);
-
-xapi formula_value_say(const formula_value * restrict fv, struct narrator * restrict N)
-  __attribute__((nonnull));
+void formula_value_set_free(struct rbtree * restrict rbt);
 
 xapi formula_value_render(const formula_value * restrict fv, struct narrator * restrict N)
   __attribute__((nonnull));
 
-xapi formula_value_write(const formula_value * restrict fv, struct value_writer * restrict writer)
-  __attribute__((nonnull));
-
-xapi exec_render_formula_value(const formula_value * restrict val, struct exec_render_context * restrict ctx)
-  __attribute__((nonnull));
-
-xapi exec_render_value(const struct value * restrict val, struct exec_render_context * restrict ctx)
+/* tracing */
+xapi formula_value_say(const formula_value * restrict fv, struct narrator * restrict N)
   __attribute__((nonnull));
 
 #endif

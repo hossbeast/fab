@@ -17,24 +17,16 @@
 
 #include <string.h>
 
-#include "xapi.h"
-#include "types.h"
-
 #include "narrator.h"
-#include "value/writer.h"
-#include "xlinux/xstdlib.h"
-#include "valyria/list.h"
 #include "valyria/set.h"
+#include "xlinux/xstdlib.h"
 
-#include "variants.internal.h"
-#include "pattern.internal.h"
+#include "variants.h"
+#include "fsent.h"
 #include "generate.internal.h"
 #include "match.internal.h"
+#include "pattern.internal.h"
 #include "variant.h"
-#include "node.h"
-#include "path.h"
-
-#include "common/attrs.h"
 
 //
 // static
@@ -59,10 +51,11 @@ static xapi match(pattern_match_context * restrict ctx, const pattern_segment * 
   enter;
 
   int x;
-  const char * restrict name = ctx->node->name->name;
-  uint16_t namel = ctx->node->name->namel;
-
+  const char * restrict name;
+  uint16_t namel;
   struct match_segments_traversal *traversal;
+  const char *var;
+  uint16_t var_len;
 
 /*
 
@@ -80,25 +73,30 @@ aybxc
 
 */
 
-//  saved_segments_traversal = ctx->segments_traversal;
   traversal = ctx->traversal;
+  name = ctx->node->name.name;
+  namel = ctx->node->name.namel;
 
   variant *v;
   for(x = 0; x < ctx->variants->table_size; x++)
   {
-    if(!(v = set_table_get(ctx->variants, x)))
+    if(!(v = set_table_get(ctx->variants, x))) {
       continue;
+    }
 
-    if(ctx->variant_index != -1 && x != ctx->variant_index)
+    if(ctx->variant_index != -1 && x != ctx->variant_index) {
       continue;
+    }
 
-    const char * var = v->norm;
-    uint16_t var_len = v->norm_len;
+    var = v->norm;
+    var_len = v->norm_len;
 
-    if((namel - ctx->traversal->offset) < var_len)
+    if((namel - ctx->traversal->offset) < var_len) {
       continue;
-    if(strncmp(name + ctx->traversal->offset, var, var_len))
+    }
+    if(strncmp(name + ctx->traversal->offset, var, var_len)) {
       continue;
+    }
 
     ctx->variant_index = x;
 
@@ -121,7 +119,7 @@ static xapi generate(const pattern_segment * restrict seg, pattern_generate_cont
   int x;
   variant *v;
 
-  node * saved_context_node;
+  fsent * saved_context_node;
   char saved_section_text[256];
   off_t saved_section_narrator_pos;
 
@@ -138,11 +136,13 @@ static xapi generate(const pattern_segment * restrict seg, pattern_generate_cont
 
   for(x = 0; x < ctx->variants->table_size; x++)
   {
-    if(!(v = set_table_get(ctx->variants, x)))
+    if(!(v = set_table_get(ctx->variants, x))) {
       continue;
+    }
 
-    if(ctx->section_traversal.variant_index != -1 && x != ctx->section_traversal.variant_index)
+    if(ctx->section_traversal.variant_index != -1 && x != ctx->section_traversal.variant_index) {
       continue;
+    }
 
     ctx->section_traversal.variant_index = x;
 

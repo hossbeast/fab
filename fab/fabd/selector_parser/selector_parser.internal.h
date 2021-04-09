@@ -18,13 +18,10 @@
 #ifndef _FABD_SELECTOR_PARSER_INTERNAL_H
 #define _FABD_SELECTOR_PARSER_INTERNAL_H
 
-#include "yyutil/parser.h"
 #include "selector_parser.h"
+#include "valyria/llist.h"
+#include "yyutil/parser.h"
 
-#include "selector.h"
-
-struct selector;
-struct list;
 struct pattern_parser;
 
 struct selector_parser {

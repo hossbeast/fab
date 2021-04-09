@@ -20,51 +20,30 @@
 
 /*
 
-SUMMARY
- A module is the smallest component which fab can build.
+A module consists of a set of rules which generate the dependencies among files in a region of the
+filesystem
 
 */
 
-#include "types.h"
 #include "xapi.h"
-#include "valyria/llist.h"
-#include "valyria/rbtree.h"
+#include "types.h"
 
-struct array;
+#include "valyria/llist.h"
+#include "moria.h"
+#include "fab/stats.h"
+
+#include "graph.h"
+
 struct map;
-struct node;
-struct pattern;
+struct fsent;
 struct set;
 struct value;
 struct graph_invalidation_context;
-struct rule;
+struct fsedge;
+struct module_parser;
 
-/* edge connecting a rule to a module */
-typedef struct rule_module_association {
-  llist lln_owner;           // in module->rmas_owner, or freelist
-  rbnode rbn_rmas;           // in module->rmas
-  rbnode nohits_rbn;         // in rule_run_context->nohits
-  struct edge * associating_edge; //
-  struct module * mod_owner; // module which defines this rule
-
-  struct rule * rule;        // rule to run
-  struct module * mod;       // module to run in context of
-  struct set * variants;     // variants for rule execution
-
-  /* considered during a refresh period */
-  uint32_t refresh_id;
-  union {
-    llist refresh_lln;
-    llist lln;
-  };
-
-  llist edges;              // struct node_edge_depends - created by this rma
-
-  struct {
-    llist lln;              // in module_rma_list
-    uint32_t refresh_round_id;
-  } changed[2];
-} rule_module_association;
+extern uint16_t module_system_reconcile_epoch;
+extern llist module_list;    // loaded/active modules
 
 typedef struct statement_block {
   llist lln;
@@ -72,89 +51,117 @@ typedef struct statement_block {
   llist rules;               // struct rule
 } statement_block;
 
+/* VERTEX_TYPE_MODULE */
 typedef struct module {
-  llist lln_modules;      // in g_modules
-  llist lln_invalidated;  // in modules_invalidated
+  moria_vertex vertex;
+
+  llist lln_reconcile;    // in module_system_reconcile
+  llist rmas_owner;       // rmas for rules in this modules statement blocks
 
   /* runtime state */
-  char id[16];                    // hash by which the module is indexed in the shadow fs
-  struct node * self_node;        // file node for module.bam
-  char * self_node_relpath;
-  struct node * dir_node;         // directory node for the module
-  struct node * shadow;           // shadow dirnode //modules/id/
-  struct node * shadow_imports;   // shadow dirnode //modules/id/imports/
-  struct node * shadow_targets;   // shadow dirnode //modules/id/targets
-  struct node * shadow_scope;     // shadow dirnode //modules/id/scope/
-  bool leaf;                      // true if there do not exist more specific modules under this path
+  fab_module_stats stats;
+
+  struct fsent * self_node;        // module.bam
+  struct fsent * dir_node;         // module directory node
   int dirnode_fd;                 // open file descriptor to the module directory node
 
-  llist rmas_owner;               // rmas for rules owned/defined by this module
-//  rbtree rmas;                    // rmas for rules associated to this module
+  /* rules */
+  statement_block * unscoped_block;
+  llist scoped_blocks;
+
+  /* var : { } block in module.bam */
+  struct value * var_value;
+  bool var_merge_overwrite;
+  struct value * novariant_var;
+  struct exec * novariant_envs;
+
+  /* adhoc */
+  llist lln;
+
+  struct fsent * shadow;               // shadow dirnode //modules/id/
+  struct fsent * shadow_targets;       // shadow dirnode //modules/id/targets
+
+  /* these exist for rules to match against */
+  struct fsedge * shadow_fs;           // shadow link    //modules/id/fs
+  struct fsent * shadow_imports;       // shadow dirnode //modules/id/imports/
+  struct fsent * shadow_requires;      // shadow dirnode //modules/id/requires/
+  struct fsent * shadow_uses;          // shadow dirnode //modules/id/uses/
+
+  char id[16];                         // hash by which the module is accessed at //modules/id
+  char self_node_relpath[512];
+  char dir_node_abspath[512];
 
   /*
    * values in this module are owned by the value_parser : variant_var, novariant_var
    */
   struct value_parser *value_parser;
-
-  /* from here down - rebuilt each time the module is refreshed */
-  struct map * variant_var;       // map<struct variant, value*>
-  struct value * novariant_var;
+  struct map * variant_var;       // map<struct variant*, value*>
   struct map * variant_envs;      // map<struct variant*, exec*>
-  struct exec * novariant_envs;
-
-  /* parse state */
-  statement_block * unscoped_block;
-  llist scoped_blocks;
-  struct value * var_value;     // var : { } block in module.bam
-  bool var_merge_overwrite;
-
-  llist lln;                    // adhoc
 } module;
 
-// loaded modules
-extern llist g_modules;
+/* EDGE_TYPE_MODULES - edge connecting two module vertices */
+typedef struct module_edge {
+  struct moria_edge edge;
+  uint16_t module_system_reconcile_epoch;
+
+  /* related edges, e.g. //module/requires, //module/uses */
+  struct fsedge *edges[2];
+} module_edge;
 
 xapi module_setup(void);
 xapi module_cleanup(void);
 
-/// module_load_project
-//
-// SUMMARY
-//  load the module in the project directory, and nested modules, recursively
-//
-// PARAMETERS
-//  project_root - base node for the starting module
-//  project_dir  - absolute path for the
-//  rule_ctx     - tracks which rules have hit
-//
-xapi module_load_project(struct node * restrict root, const char * restrict absdir, struct graph_invalidation_context * restrict invalidation)
+xapi module_edge_alloc(module_edge ** restrict mep)
   __attribute__((nonnull));
 
-xapi module_full_refresh(struct graph_invalidation_context * restrict invalidation)
+/*
+ * load the module in the project directory, and nested modules, recursively
+ *
+ * project_root - base node for the starting module
+ * project_dir  - absolute path for the starting module directory
+ */
+xapi module_system_bootstrap(void);//struct fsent * restrict root, const char * restrict absdir)
+
+/*
+ * reload invalidated modules
+ */
+xapi module_system_reconcile(struct graph_invalidation_context * restrict invalidation, bool * restrict reconciled)
   __attribute__((nonnull));
 
-void module_invalidated(module * mod)
-  __attribute__((nonnull));
-
-/// module_lookup
-//
-// SUMMARY
-//  get the module for the specified path, if any
-//
-// PARAMETERS
-//  path - normalized absolute path
-//  mod  - (returns) owning module, if any
-//
+/*
+ * get the module for the specified path, if any
+ *
+ * path - normalized absolute path
+ * mod  - (returns) owning module, if any
+ */
 module * module_lookup(const char * const restrict path, size_t pathl)
   __attribute__((nonnull));
 
-xapi module_rule_associate(
-    module * mod
-  , module * mod_owner
-  , struct rule * restrict rule
-  , struct set * restrict variants
-  , rule_module_association ** restrict rma
-)
-  __attribute__((nonnull(1, 2, 3, 5)));
+/*
+ * Write a modules stats to a buffer
+ *
+ * reset - true to reset the stats while reading them
+ * zp    - (returns) number of bytes written to dst
+ */
+xapi module_collate_stats(void *dst, size_t sz, module *mod, bool reset, size_t *zp)
+  __attribute__((nonnull));
+
+xapi module_file_collate_stats(void *dst, size_t sz, struct fsent *modfile, bool reset, size_t *zp)
+  __attribute__((nonnull));
+
+xapi module_alloc(module ** restrict mod)
+  __attribute__((nonnull));
+
+xapi module_xrelease(module * restrict mod, struct module_parser * restrict parser)
+  __attribute__((nonnull));
+
+xapi module_resolve_require(module * restrict A, module * restrict B, graph_invalidation_context * restrict invalidation)
+  __attribute__((nonnull));
+
+xapi module_resolve_use(module * restrict A, module * restrict B, const char * restrict refname, uint16_t refname_len, bool scoped, graph_invalidation_context * restrict invalidation)
+  __attribute__((nonnull));
+
+xapi module_resolve_import(module * restrict A, struct fsent * restrict B, const char * restrict refname, uint16_t refname_len, bool scoped, graph_invalidation_context * restrict invalidation)
+  __attribute__((nonnull));
 
 #endif

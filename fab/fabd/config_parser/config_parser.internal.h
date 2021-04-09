@@ -23,22 +23,15 @@
 #include "config_parser.h"
 #include "config.internal.h"
 
-struct box_store;
-struct value_parser;
-
 struct config_parser {
   yyu_parser yyu;
 
-  // sub-parsers
-  struct value_parser * value_parser;
-
   // under construction
-  struct config_formula_show_settings show_settings;
   struct config_filesystem_entry * fse;
   struct config_logging_section * logging_section;
 
   // (returns)
-  config * cfg; // parsed config
+  configblob * cfg; // parsed config
 };
 
 /// config_yyerror

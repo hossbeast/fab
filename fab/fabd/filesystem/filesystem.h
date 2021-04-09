@@ -18,16 +18,19 @@
 #ifndef FABD_FILESYSTEM_H
 #define FABD_FILESYSTEM_H
 
-#include <stdint.h>
+/*
+ * configuration of how to reconcile fsent state with actual filesystem state
+ */
 
 #include "xapi.h"
 #include "types.h"
+#include "valyria/llist.h"
 
-#include "valyria/rbtree.h"
-
-struct config;
+struct configblob;
 struct attrs16;
 struct fstree;
+
+#define FILESYSTEM_INVALIDATE_DEFAULT INVALIDATE_STAT
 
 // filesystem attributes
 #define INVALIDATE_OPT 0xf
@@ -60,34 +63,20 @@ typedef struct filesystem {
 extern struct filesystem filesystem_root;
 extern struct filesystem filesystem_shadow;
 
-/// filesystem_setup
-//
-// SUMMARY
-//  setup
-//
 xapi filesystem_setup(void);
-
-/// filesystem_cleanup
-//
-// SUMMARY
-//  teardown
-//
 xapi filesystem_cleanup(void);
 
-/// filesystem_reconfigure
-//
-// SUMMARY
-//  rebuild the filesystem lookup structure from config
-//
-// PARAMETERS
-/// ctx    - reconfiguration context
-//  config - root of the config tree
-//  dry    - whether to perform a dry-run
-//
-xapi filesystem_reconfigure(struct config * restrict cfg, bool dry)
+/*
+ * filesystem_reconfigure - rebuild the filesystem lookup structure from config
+ *
+ * ctx    - reconfiguration context
+ * config - root of the config tree
+ * dry    - whether to perform a dry-run
+ */
+xapi filesystem_reconfigure(struct configblob * restrict cfg, bool dry)
   __attribute__((nonnull));
 
-size_t filesystem_get_absolute_path(const filesystem * restrict fs, void * restrict dst, size_t sz)
+size_t filesystem_absolute_path_znload(void * restrict dst, size_t sz, const filesystem * restrict fs)
   __attribute__((nonnull));
 
 #endif

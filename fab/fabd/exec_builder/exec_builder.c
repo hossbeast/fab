@@ -15,43 +15,63 @@
  You should have received a copy of the GNU General Public License
  along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#include "types.h"
-#include "xapi.h"
-
 #include "value.h"
-#include "narrator.h"
-#include "narrator/growing.h"
-#include "valyria/set.h"
-#include "valyria/list.h"
-#include "valyria/pstring.h"
-#include "valyria/map.h"
-#include "value/parser.h"
-#include "moria/edge.h"
 #include "xlinux/xstdlib.h"
 
-#include "exec_builder.internal.h"
-#include "node.h"
-#include "path.h"
-#include "logging.h"
-#include "variant.h"
-#include "formula.h"
-#include "path_cache.h"
+#include "exec_builder.h"
+#include "exec.h"
 #include "formula_value.internal.h"
-#include "build_thread.h"
-#include "build_slot.h"
-#include "module.h"
-#include "selector.h"
-#include "params.h"
-#include "sysvar.h"
+#include "path_cache.h"
 
-#include "common/snarf.h"
 #include "common/assure.h"
-#include "common/grow.h"
 #include "common/attrs.h"
 
 //
 // static
 //
+
+static xapi render_say(const char * restrict name, enum builder_render_function renderer, const union builder_render_function_args *args, narrator * restrict N)
+{
+  enter;
+
+  if(renderer == BUILDER_PROPERTY)
+  {
+    xsayf("render-%s PROPERTY\n", name);
+    xsayf(" node %p %s\n", args->n, args->n->name.name);
+    xsayf(" prop %s\n", attrs32_name_byvalue(fsent_property_attrs, FSENT_PROPERTY_OPT & args->prop));
+  }
+  else if(renderer == BUILDER_PATH_CACHE_ENTRY)
+  {
+    xsayf("render-%s PATH-CACHE-ENTRY\n", name);
+  }
+  else if(renderer == BUILDER_STRING)
+  {
+    xsayf("render-%s STRING\n", name);
+    xsayf(" string '%s'\n", args->s);
+  }
+  else if(renderer == BUILDER_FORMULA_VALUE)
+  {
+    xsayf("render-%s FORMULA-VALUE\n", name);
+    xsays(" formula-value ");
+    fatal(formula_value_say, args->f, N);
+    xsays("\n");
+  }
+  else if(renderer == BUILDER_VALUE)
+  {
+    xsayf("render-%s VALUE\n", name);
+    xsays(" value ");
+    fatal(value_say, args->v, N);
+    xsays("\n");
+  }
+  else if(renderer == BUILDER_FMT)
+  {
+    xsayf("render-%s FMT\n", name);
+    xsayf(" fmt %s\n", args->fmt);
+    xsayf(" va %p\n", args->va);
+  }
+
+  finally : coda;
+}
 
 struct def_name_compare_context {
   const char * textbase;
@@ -62,12 +82,6 @@ struct def_name_compare_context {
   int lc; // last compare result
 };
 
-/*
-* compare two environment key/value strings by key name
-*
-* name - var name
-* text - env key/value string
-*/
 int env_def_cmp(const char * restrict name, const char * restrict text)
 {
   int r;
@@ -102,8 +116,7 @@ static int def_name_compare(const void * _ctx, const void * _item)
   return ctx->lc = env_def_cmp(ctx->name, ctx->textbase + *item);
 }
 
-static xapi __attribute__((nonnull))
-dispatch_render_function(
+static xapi __attribute__((nonnull)) dispatch_render_function(
     enum builder_render_function func
   , const union builder_render_function_args * restrict args
   , narrator * restrict N
@@ -111,35 +124,45 @@ dispatch_render_function(
 {
   enter;
 
-  if(func == RENDER_PROPERTY)
+  const path_cache_entry *pe;
+
+  if(func == BUILDER_PROPERTY)
   {
-    fatal(node_property_say, args->n, args->prop, &args->pctx, N);
+    fatal(fsent_property_say, args->n, args->prop, &args->pctx, N);
   }
-  else if(func == RENDER_PATH_CACHE_ENTRY)
-  {
-    fatal(narrator_xsayw, N, args->pe->s, args->pe->len);
-  }
-  else if(func == RENDER_STRING)
+  else if(func == BUILDER_STRING)
   {
     fatal(narrator_xsays, N, args->s);
   }
-  else if(func == RENDER_FORMULA_VALUE)
+  else if(func == BUILDER_FORMULA_VALUE)
   {
     fatal(formula_value_render, args->f, N);
   }
-  else if(func == RENDER_VALUE)
+  else if(func == BUILDER_VALUE)
   {
     fatal(value_render, args->v, N);
   }
-  else if(func == RENDER_FMT)
+  else if(func == BUILDER_FMT)
   {
     fatal(narrator_xsayvf, N, args->fmt, *args->va);
   }
 
+  if(func != BUILDER_PATH_CACHE_ENTRY) {
+    goto XAPI_FINALLY;
+  }
+
+  pe = args->pe;
+  if(pe->dir) {
+    fatal(narrator_xsayw, N, pe->dir->s, pe->dir->len);
+    fatal(narrator_xsays, N, "/");
+  }
+
+  fatal(narrator_xsayw, N, pe->s, pe->len);
+
   finally : coda;
 }
 
-xapi builder_add(exec_builder * restrict builder, const builder_add_args *args)
+xapi exec_builder_add(exec_builder * restrict builder, const exec_builder_args *args)
 {
   enter;
 
@@ -154,7 +177,7 @@ xapi builder_add(exec_builder * restrict builder, const builder_add_args *args)
   const char *eq;
 
   /* special case of rendering a path entry to the file - save the pe so that exec can use the fd */
-  if(args->item == BUILDER_FILE && args->render_val == RENDER_PATH_CACHE_ENTRY)
+  if(args->item == BUILDER_FILE && args->render_val == BUILDER_PATH_CACHE_ENTRY)
   {
     builder->file_pe = args->val.pe;
     goto XAPI_FINALLY;
@@ -244,8 +267,9 @@ xapi builder_add(exec_builder * restrict builder, const builder_add_args *args)
 
     if(def)
     {
-      if(args->render_sep)
+      if(args->render_sep) {
         fatal(dispatch_render_function, args->render_sep, &args->sep, builder->Nexec);
+      }
 
       // carry forward the existing definition
       textbase = builder->Nexec_growing.s;
@@ -286,8 +310,9 @@ xapi builder_add(exec_builder * restrict builder, const builder_add_args *args)
       fatal(narrator_xsays, builder->Nexec, "=");
     }
 
-    if(def && args->render_sep)
+    if(def && args->render_sep) {
       fatal(dispatch_render_function, args->render_sep, &args->sep, builder->Nexec);
+    }
 
     // append the value from this definition
     fatal(dispatch_render_function, args->render_val, &args->val, builder->Nexec);
@@ -301,13 +326,67 @@ xapi builder_add(exec_builder * restrict builder, const builder_add_args *args)
   finally : coda;
 }
 
+xapi exec_builder_env_addf(exec_builder * restrict builder, const char * restrict name_fmt, const char * restrict val_fmt, ...)
+{
+  enter;
+
+  va_list va;
+  char name[64];
+  size_t namel;
+  struct exec_builder_args args = { };
+
+  va_start(va, val_fmt);
+
+  namel = vsnprintf(name, sizeof(name), name_fmt, va);
+
+  args.item = BUILDER_ENVS;
+  args.position = -1;
+  args.name = name;
+  args.name_len = namel;
+  args.render_val = BUILDER_FMT;
+  args.val.fmt = val_fmt;
+  args.val.va = &va;
+  args.mode = BUILDER_APPEND;
+
+  args.render_sep = BUILDER_STRING;
+  args.sep.s = " ";
+  fatal(exec_builder_add, builder, &args);
+
+  finally : coda;
+}
+
+//
+// tracing
+//
+
+xapi exec_builder_args_say(const exec_builder * restrict builder, const exec_builder_args * restrict args, narrator * restrict N)
+  __attribute__((nonnull));
+
+xapi exec_builder_args_say(const exec_builder * restrict builder, const exec_builder_args * restrict args, narrator * restrict N)
+{
+  enter;
+
+  xsayf("builder %p\n", builder);
+  xsayf("item %s\n", args->item == BUILDER_FILE ? "FILE" : args->item == BUILDER_ARGS ? "ARGS" : args->item == BUILDER_ENVS ? "ENVS" : "-wtf-");
+  xsayf("position %d\n", args->position);
+  xsayf("name %.*s\n", (int)args->name_len, args->name);
+  xsayf("name-len %hu\n", args->name_len);
+  xsayf("mode %d %s\n", args->mode, args->mode == BUILDER_PREPEND ? "PREPEND" : args->mode == BUILDER_APPEND ? "APPEND" : "-wtf-");
+  fatal(render_say, "value", args->render_val, &args->val, N);
+  fatal(render_say, "sep", args->render_sep, &args->sep, N);
+
+  finally : coda;
+}
+
 //
 // public
 //
 
 void exec_builder_take(exec_builder * restrict builder, exec ** restrict envp)
 {
-  narrator_growing_claim_buffer(&builder->Nexec_growing, &builder->exec, &builder->exec_size);
+  size_t exec_size;
+
+  narrator_growing_claim_buffer(&builder->Nexec_growing, &builder->exec, &exec_size);
 
   *envp = builder->exec;
   builder->exec = 0;
@@ -323,7 +402,6 @@ void exec_free(exec * e)
 {
   if(e)
   {
-//    wfree(e->path);
     wfree(e->args);
     wfree(e->envs);
   }
@@ -400,11 +478,11 @@ xapi exec_builder_build(exec_builder * restrict builder, exec ** restrict envp)
 
   // file - pointer from offset
   builder->exec->file_pe = builder->file_pe;
-  builder->exec->file = 0;
+  builder->exec->path = 0;
   if(builder->file)
   {
     builder->file_stor = textbase + builder->file;
-    builder->exec->file = builder->file_stor;
+    builder->exec->path = builder->file_stor;
   }
 
   // args - space
@@ -442,65 +520,6 @@ xapi exec_builder_build(exec_builder * restrict builder, exec ** restrict envp)
   {
     *envp = builder->exec;
   }
-
-  finally : coda;
-}
-
-static xapi render_say(const char * restrict name, enum builder_render_function renderer, const union builder_render_function_args *args, narrator * restrict N)
-{
-  enter;
-
-  if(renderer == RENDER_PROPERTY)
-  {
-    xsayf("render-%s PROPERTY\n", name);
-    xsayf(" node %p %s\n", args->n, args->n->name->name);
-    xsayf(" prop %s\n", attrs32_name_byvalue(node_property_attrs, NODE_PROPERTY_OPT & args->prop));
-  }
-  else if(renderer == RENDER_PATH_CACHE_ENTRY)
-  {
-    xsayf("render-%s PATH-ENTRY\n", name);
-  }
-  else if(renderer == RENDER_STRING)
-  {
-    xsayf("render-%s STRING\n", name);
-    xsayf(" string '%s'\n", args->s);
-  }
-  else if(renderer == RENDER_FORMULA_VALUE)
-  {
-    xsayf("render-%s FORMULA-VALUE\n", name);
-    xsays(" formula-value ");
-    fatal(formula_value_say, args->f, N);
-    xsays("\n");
-  }
-  else if(renderer == RENDER_VALUE)
-  {
-    xsayf("render-%s VALUE\n", name);
-    xsays(" value ");
-    fatal(value_say, args->v, N);
-    xsays("\n");
-  }
-  else if(renderer == RENDER_FMT)
-  {
-    xsayf("render-%s FMT\n", name);
-    xsayf(" fmt %s\n", args->fmt);
-    xsayf(" va %p\n", args->va);
-  }
-
-  finally : coda;
-}
-
-xapi builder_add_args_say(const exec_builder * restrict builder, const builder_add_args * restrict args, narrator * restrict N)
-{
-  enter;
-
-  xsayf("builder %p\n", builder);
-  xsayf("item %s\n", args->item == BUILDER_FILE ? "FILE" : args->item == BUILDER_ARGS ? "ARGS" : args->item == BUILDER_ENVS ? "ENVS" : "-wtf-");
-  xsayf("position %d\n", args->position);
-  xsayf("name %.*s\n", (int)args->name_len, args->name);
-  xsayf("name-len %hu\n", args->name_len);
-  xsayf("mode %d %s\n", args->mode, args->mode == BUILDER_PREPEND ? "PREPEND" : args->mode == BUILDER_APPEND ? "APPEND" : "-wtf-");
-  fatal(render_say, "value", args->render_val, &args->val, N);
-  fatal(render_say, "sep", args->render_sep, &args->sep, N);
 
   finally : coda;
 }

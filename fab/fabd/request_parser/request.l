@@ -23,7 +23,6 @@
   #include "request.tab.h"
   #include "request.tokens.h"
   #include "selector_parser.h"
-  #include "config_parser.h"
   #include "selector.h"
   #include "macros.h"
 
@@ -48,25 +47,6 @@
   yyless(subloc.l);                                                     \
   LEXLOC(request_SELECTOR, &subloc);                                    \
 } while(0);
-
-#define PARSE_CONFIG do {                                               \
-  request_parser * parser = containerof(yyextra, request_parser, yyu);  \
-  size_t off = yytext - parser->yyu.yybuffer;                           \
-  char * usr = parser->yyu.usrbuf + off;                                \
-  size_t bufsz = parser->yyu.usrbufsize - off;                          \
-  yyu_location subloc;                                                  \
-  fatal(config_parser_parse_partial                                     \
-    , parser->config_parser                                             \
-    , usr                                                               \
-    , bufsz                                                             \
-    , "config"                                                          \
-    , &parser->yyu.loc                                                  \
-    , &subloc                                                           \
-    , &yylval->config                                                   \
-  );                                                                    \
-  yyless(subloc.l);                                                     \
-  LEXLOC(request_CONFIG, &subloc);                                      \
-} while(0);
 %}
 
 %option noinput nounput noyywrap noyy_top_state
@@ -77,7 +57,6 @@
 
 %x multilinecomment
 %x _select _selector
-%x _stage_config _config
 
 /* bytes that cannot appear in the input */
 ILL   [\x00-\x08\x0B-\x1F\x7F-\xFF]
@@ -86,12 +65,10 @@ ILL   [\x00-\x08\x0B-\x1F\x7F-\xFF]
 
  /* single-line comments */
 <_select,_selector>[#][^\x00-\x08\x0B-\x1F\x7F-\xFF\n]*     |
-<_stage_config,_config>[#][^\x00-\x08\x0B-\x1F\x7F-\xFF\n]* |
 <INITIAL>[#][^\x00-\x08\x0B-\x1F\x7F-\xFF\n]*               { LOCWRITE; }
 
  /* multiline comments are nestable */
 <_select,_selector>[/][*]                               |
-<_stage_config,_config>[/][*]                           |
 <INITIAL,multilinecomment>[/][*]                        { lenter; LOCWRITE; PUSHSTATE(multilinecomment); finally : lcoda; }
 <multilinecomment>[*][/]                                { lenter; LOCWRITE; POPSTATE; finally : lcoda; }
 <multilinecomment>[^*\x00-\x08\x0B-\x1F\x7F-\xFF\n*/]+  { LOCWRITE; }
@@ -101,10 +78,8 @@ ILL   [\x00-\x08\x0B-\x1F\x7F-\xFF]
 
  /* whitespace */
 <_select,_selector>[\n]                                 |
-<_stage_config,_config>[\n]                             |
 <INITIAL>[\n]                                           { LOCRESET; }
 <_select,_selector>[\r\t ]+                             |
-<_stage_config,_config>[\r\t ]+                         |
 <INITIAL>[\r\t ]+                                       { LOCWRITE; }
 
  /* tokens */
@@ -117,12 +92,6 @@ ILL   [\x00-\x08\x0B-\x1F\x7F-\xFF]
 <_select>":"                                            { lenter; PUSHSTATE(_selector); LEX(':'); finally : lcoda; }
  /* consume whitespace in this parser */
 <_selector>[^\n\r\t ][\x00-\xff]+                       { lenter; PARSE_SELECTOR; POPSTATE; POPSTATE; finally : lcoda; }
-
- /* invoke config sub-parser */
-<INITIAL>"stage-config"                                 { lenter; PUSHSTATE(_stage_config); LEX(STAGE_CONFIG); finally : lcoda; }
-<_stage_config>":"                                      { lenter; PUSHSTATE(_config); LEX(':'); finally : lcoda; }
- /* consume whitespace in this parser */
-<_config>[^\n\r\t ][\x00-\xff]+                         { lenter; PARSE_CONFIG; POPSTATE; POPSTATE; finally : lcoda; }
 
  /* enumerated tokenrange */
 <INITIAL>[a-zA-Z0-9_][-a-zA-Z0-9_]*                     { lenter; LEXE(); finally : lcoda; }

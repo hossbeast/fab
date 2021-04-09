@@ -26,16 +26,16 @@ use xunit-tests
 variant xapi.{debug,devel,final,trace}
 variant xapi.pic.devel
 
-variant xapi.{debug,devel,final,trace} : [
-  rule fabd.? -> //module/targets
-]
+rule fabd.? -> //module/targets
 
 # make common objects available for #include and linking
 import fab/include
 import fab/asan
-import lib{common,xapi,xlinux,valyria,value,logger,narrator,fab,lorien,moria,yyutil,xunit}
+import lib{common,descriptor,xapi,xlinux,valyria,value,logger,narrator,fab,lorien,moria,yyutil,xunit}
 
-variant xapi.{debug,devel} : [
+rule */*.?.o <- //modules/libfab/fs/fab/stats.h
+
+variant xapi.devel : [
   rule fabd.? <- asan/asan.$?.o
 ]
 
@@ -67,6 +67,8 @@ var : {
 #
 
 variant xapi.pic.devel : [
+  rule //module/imports/libxunit/lib*.?.so -> fabd.${?-pic}
+
   # all the code
   rule **~test/(*~main).?.o -> test/blob.?.so : fabd/bam-cc-blob-so
 

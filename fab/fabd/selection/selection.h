@@ -23,44 +23,51 @@
 
 #include "valyria/llist.h"
 
-struct node;
+struct dependency;
+struct moria_vertex;
 struct set;
-struct buildplan_entity;
 
 /*
- * stores a set of nodes and provides rank-based traversal, in which the nodes are divided
- * into groups by rank, having the property that for node N in rank X, all of its
- * dependencies are in rank Y, where Y > X.
- *
+ * A selection is a set of nodes grouped by rank. For two nodes X and Y, the rank of X denoted
+ * Xr < the rank of Y denoted Yr, iff Xd < Yd, where Xd is the depth at which X was visited and
+ * Yd is the depth at which Y was visited. A selection supports rank-based traversal.
  */
 
-typedef struct selected_node {
+typedef struct selected {
   union {
-    void * v;
-    struct node * n;
-    struct buildplan_entity * bpe;
+    void * p;
+    struct moria_vertex * v;
+    struct dependency * bpe;
   };
-  int32_t rank;
+  union {
+    int32_t rank;
+    uint16_t distance;
+  };
   llist lln;
-} selected_node;
+} selected;
+
+typedef enum selection_iteration_type {
+  SELECTION_ITERATION_TYPE_RANK,
+  SELECTION_ITERATION_TYPE_ORDER,
+} selection_iteration_type;
 
 typedef struct selection {
-  struct set * selected_nodes;
+  struct set * selected_entities;
 
+  selection_iteration_type iteration_type;
   llist ** ranks;
   uint16_t ranks_len;
   size_t ranks_alloc;
   bool initialized;
 
   // after finalize ; this is the list to iterate in rank order
-  llist list;           // struct selected_node
+  llist list;           // struct selected
   uint16_t numranks;    // ranks are numbered 0 - (numranks - 1)
 } selection;
 
-xapi selection_setup(void);
 xapi selection_cleanup(void);
 
-xapi selection_create(selection ** restrict selp)
+xapi selection_create(selection ** restrict selp, selection_iteration_type type)
   __attribute__((nonnull));
 
 xapi selection_xfree(selection * restrict sel);
@@ -71,16 +78,16 @@ xapi selection_xinit(selection * restrict selp)
 xapi selection_xdestroy(selection * restrict sel)
   __attribute__((nonnull));
 
-xapi selection_add_node(selection * restrict sel, struct node * restrict n, uint16_t rank)
+xapi selection_add_vertex(selection * restrict sel, struct moria_vertex* restrict v, uint16_t distance)
   __attribute__((nonnull));
 
-xapi selection_add_bpe(selection * restrict sel, struct buildplan_entity * restrict bpe, uint16_t rank)
+xapi selection_add_dependency(selection * restrict sel, struct dependency * restrict bpe, uint16_t distance)
   __attribute__((nonnull));
 
 void selection_finalize(selection * restrict sel)
   __attribute__((nonnull));
 
-xapi selection_reset(selection * restrict sel)
+xapi selection_reset(selection * restrict sel, selection_iteration_type type)
   __attribute__((nonnull));
 
 xapi selection_replicate(selection * restrict dst, selection * restrict src)

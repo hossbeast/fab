@@ -15,30 +15,16 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#include <stdlib.h>
-#include <string.h>
-
-#include "types.h"
-#include "xapi.h"
-
 #include "lorien/path_normalize.h"
-#include "value.h"
-#include "valyria/list.h"
-#include "valyria/rbtree.h"
 #include "valyria/map.h"
 #include "xlinux/xstdlib.h"
-#include "xlinux/xstring.h"
-#include "narrator.h"
+#include "yyutil/box.h"
 
 #include "filesystem.internal.h"
 #include "config.internal.h"
-#include "config_parser.h"
-#include "CONFIG.errtab.h"
-#include "box.h"
-#include "stats.h"
+#include "args.h"
 
 #include "zbuffer.h"
-#include "common/hash.h"
 #include "common/attrs.h"
 
 fstree fstree_root;
@@ -86,7 +72,7 @@ static void fstree_destroy()
   if(fstree_root.fs == 0)
     return;
 
-  // fstree_root
+  // fstree root
   rbtree_foreach(&fstree_root.down, child, rbn) {
     fstree_node_destroy(child);
   }
@@ -95,7 +81,7 @@ static void fstree_destroy()
   rbnode_init(&fstree_root.rbn);
   filesystem_root.attrs = 0;
 
-  // fstree_shadow
+  // shadow root
   rbtree_foreach(&fstree_shadow.down, child, rbn) {
     fstree_node_destroy(child);
   }
@@ -103,6 +89,23 @@ static void fstree_destroy()
   rbtree_init(&fstree_shadow.down);
   rbnode_init(&fstree_shadow.rbn);
 }
+
+struct fs_rbn_key {
+  const char *name;
+  uint16_t namel;
+};
+
+static int fs_rbn_key_cmp(void *keyp, const rbnode *np)
+{
+  const struct fs_rbn_key *key = keyp;
+  const fstree *fst = containerof(np, typeof(*fst), rbn);
+
+  return memncmp(key->name, key->namel, fst->name, fst->namel);
+}
+
+//
+// trace
+//
 
 static int children_compare(const void *Ap, const void *Bp)
 {
@@ -133,6 +136,7 @@ static size_t fstree_node_znload(fstree * restrict fst, uint8_t lvl, void * rest
 
   children_len = 0;
   rbtree_foreach(&fst->down, child, rbn) {
+    RUNTIME_ASSERT(children_len < (sizeof(children) / sizeof(*children)));
     children[children_len++] = child;
   }
 
@@ -144,10 +148,6 @@ static size_t fstree_node_znload(fstree * restrict fst, uint8_t lvl, void * rest
 
   return z;
 }
-
-//
-// internal
-//
 
 size_t fstree_znload(void * restrict dst, size_t sz)
 {
@@ -206,20 +206,7 @@ xapi filesystem_cleanup()
   finally : coda;
 }
 
-struct fs_rbn_key {
-  const char *name;
-  uint16_t namel;
-};
-
-static int rbn_key_cmp(void *keyp, const rbnode *np)
-{
-  const struct fs_rbn_key *key = keyp;
-  const fstree *fst = containerof(np, typeof(*fst), rbn);
-
-  return memncmp(key->name, key->namel, fst->name, fst->namel);
-}
-
-xapi filesystem_reconfigure(config * restrict cfg, bool dry)
+xapi filesystem_reconfigure(configblob * restrict cfg, bool dry)
 {
   enter;
 
@@ -265,7 +252,7 @@ xapi filesystem_reconfigure(config * restrict cfg, bool dry)
       rbn_key.name = seg;
       rbn_key.namel = end - seg;
 
-      if((rbn = rbtree_search(&parent->down, &search_ctx, &rbn_key, rbn_key_cmp)))
+      if((rbn = rbtree_search(&parent->down, &search_ctx, &rbn_key, fs_rbn_key_cmp)))
       {
         fst = containerof(rbn, typeof(*fst), rbn);
       }
@@ -301,8 +288,14 @@ xapi filesystem_reconfigure(config * restrict cfg, bool dry)
       }
     }
 
-    fst->fs->attrs = fse->invalidate->v;
+    if((fst->fs->attrs = fse->invalidate->v) == 0) {
+      fst->fs->attrs = g_args.default_filesystem_invalidate;
+    }
     fst->fs->fst = fst;
+  }
+
+  if(filesystem_root.attrs == 0) {
+    filesystem_root.attrs = g_args.default_filesystem_invalidate;
   }
 
   finally : coda;
@@ -317,7 +310,7 @@ const fstree * fstree_down(fstree * restrict fst, const char * restrict name, ui
   rbn_key.name = name;
   rbn_key.namel = namel;
 
-  if((rbn = rbtree_search(&fst->down, &search_ctx, &rbn_key, rbn_key_cmp)))
+  if((rbn = rbtree_search(&fst->down, &search_ctx, &rbn_key, fs_rbn_key_cmp)))
   {
     return containerof(rbn, typeof(*fst), rbn);
   }
@@ -325,7 +318,7 @@ const fstree * fstree_down(fstree * restrict fst, const char * restrict name, ui
   return 0;
 }
 
-size_t filesystem_get_absolute_path(const filesystem * restrict fs, void * restrict dst, size_t sz)
+size_t filesystem_absolute_path_znload(void * restrict dst, size_t sz, const filesystem * restrict fs)
 {
   size_t z;
   const fstree *bs[64];

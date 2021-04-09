@@ -19,23 +19,14 @@
 #define FABD_MODULE_INTERNAL_H
 
 #include "types.h"
-#include "valyria/llist.h"
 
 #include "module.h"
 
 struct graph_invalidation_context;
-
-xapi module_create(module ** restrict modp)
-  __attribute__((nonnull));
+struct pattern;
+struct rule_module_edge;
 
 xapi module_block_variants(statement_block * restrict block, const struct pattern * restrict references)
-  __attribute__((nonnull));
-
-xapi module_xfree(module * restrict modp);
-xapi module_ixfree(module ** restrict modp)
-  __attribute__((nonnull));
-
-void rule_module_association_init(rule_module_association * restrict rma)
   __attribute__((nonnull));
 
 xapi statement_block_xinit(statement_block * restrict block)
@@ -45,17 +36,20 @@ xapi statement_block_xdestroy(statement_block * restrict block)
   __attribute__((nonnull));
 
 /*
- * load the module at the specified node
+ * bootstrap the module at the specified node
  */
-xapi module_load(struct node * restrict mod_dir_n, struct node * restrict mod_file_v, struct graph_invalidation_context * restrict rule_ctx)
+xapi module_bootstrap(
+    struct fsent * restrict mod_dir_n
+  , struct fsent * restrict mod_file_v
+  , struct graph_invalidation_context * restrict rule_ctx
+)
   __attribute__((nonnull));
 
-#if 0
-/*
- * load the module
- */
-xapi module_load(module * mod, bool use, struct rule_run_context * restrict rule_ctx)
+xapi module_initialize(
+    struct fsent * restrict mod_dir_n
+  , struct fsent * restrict mod_file_v
+  , struct graph_invalidation_context * restrict rule_ctx
+)
   __attribute__((nonnull));
-#endif
 
 #endif

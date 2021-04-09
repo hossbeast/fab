@@ -169,7 +169,7 @@ ILL   [\x00-\x08\x0B-\x1F\x7F-\xFF]
 <*>[\r\t ]                                              { LOCWRITE; }
 
  /* tokens */
-<INITIAL>[[\]{}:=,]                                     { lenter; LEX(yytext[0]); finally : lcoda; }
+<INITIAL>[+[\]{}:=,]                                    { lenter; LEX(yytext[0]); finally : lcoda; }
 
  /* sub-parsers */
 <INITIAL>"use"                                          { lenter; PUSHSTATE(parse_lookup); LEX(USE); finally : lcoda; }

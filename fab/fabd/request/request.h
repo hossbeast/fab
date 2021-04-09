@@ -28,12 +28,11 @@ struct attrs32;
 struct array;
 
 typedef struct request {
-  struct array * commands;
-
-  /* command type of last command if any, either run or autorun */
-  int final_command;
+  uint32_t msg_id;
+  struct array * commands;  // struct command - internal commands
+  struct command *first_command;
+  struct command *last_command;
 } request;
-
 
 #define TRAVERSE_TYPE_OPT 0x3
 #define TRAVERSE_TYPE_TABLE                                                                                             \
@@ -57,8 +56,5 @@ xapi request_ixfree(request ** restrict)
 
 xapi request_say(request * restrict request, struct narrator * restrict N)
   __attribute__((nonnull));
-
-xapi request_setup(void);
-xapi request_cleanup(void);
 
 #endif

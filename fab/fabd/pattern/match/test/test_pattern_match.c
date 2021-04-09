@@ -24,6 +24,7 @@
 #include "moria/graph.h"
 #include "moria/vertex.h"
 #include "moria/operations.h"
+#include "moria/parser.h"
 #include "valyria/list.h"
 #include "valyria/map.h"
 #include "valyria/set.h"
@@ -33,15 +34,13 @@
 
 #include "match.internal.h"
 #include "pattern_parser.h"
-#include "lookup.internal.h"
+#include "lookup.h"
 #include "pattern.h"
 #include "logging.h"
-#include "node.h"
+#include "fsent.h"
 #include "shadow.h"
-#include "node_operations.h"
 #include "module.internal.h"
 #include "variant.h"
-#include "path.h"
 #include "filesystem.h"
 #include "node_operations_test.h"
 
@@ -74,6 +73,12 @@ static xapi pattern_match_test_unit_setup(xunit_unit * unit)
   fatal(logging_finalize);
   fatal(filesystem_setup);
 
+  // arrange
+  fatal(graph_setup);
+  fatal(fsent_setup);
+  fatal(shadow_setup);
+  fatal(variant_setup);
+
   finally : coda;
 }
 
@@ -82,6 +87,9 @@ static xapi pattern_match_test_unit_cleanup(xunit_unit * unit)
   enter;
 
   fatal(filesystem_cleanup);
+
+  fatal(fsent_cleanup);
+  fatal(variant_cleanup);
 
   finally : coda;
 }
@@ -97,39 +105,32 @@ static xapi pattern_match_test_entry(xunit_test * _test)
   pattern_match_test * test = (pattern_match_test *)_test;
 
   map * node_map = 0;
-  narrator * N = 0;
   pattern_parser * parser = 0;
   pattern * pattern = 0;
   list * nodes_list = 0;
-  list * operations = 0;
-  operations_parser * op_parser = 0;
+  graph_parser * op_parser = 0;
   set * matches = 0;
   module mods[4] = { 0 };
   module *mod;
   set * expected = 0;
   set * actual = 0;
   int x;
+  int y;
   char path[512];
   char * actual_match = 0;
   yyu_location loc;
   set * variants = 0;
   llist modules;
   variant *v = 0;
-  int y;
-  node *na, *nb;
+  fsent *na, *nb;
   graph_invalidation_context invalidation = { 0 };
 
-  // arrange
-  fatal(graph_setup);
-  fatal(node_setup);
-  fatal(shadow_setup);
-  fatal(variant_setup);
-
   // setup initial graph
-  fatal(operations_parser_operations_create, &operations);
-  fatal(operations_parser_create, &op_parser);
-  fatal(operations_parser_parse, op_parser, g_graph, MMS(test->operations), operations);
-  fatal(operations_perform, g_graph, node_operations_test_dispatch, operations);
+  fatal(graph_parser_create, &op_parser, &g_graph, &fsent_list, node_operations_test_dispatch, graph_vertex_attrs, graph_edge_attrs);
+  fatal(graph_parser_operations_parse, op_parser, MMS(test->operations));
+
+//fatal(graph_say, g_narrator_stdout);
+//printf("\n");
 
   // setup the shadow fs
   if(test->modules_shadow)
@@ -139,9 +140,12 @@ static xapi pattern_match_test_entry(xunit_test * _test)
 
     for(x = 0; x < sentinel(test->modules_shadow); x += 2)
     {
-      fatal(pattern_lookup_fragment, MMS(test->modules_shadow[x]), 0, 0, 0, 0, 0, 0, &mods[x / 2].dir_node);
+      fatal(resolve_fragment, MMS(test->modules_shadow[x]), &mods[x / 2].dir_node);
+      moria_vertex_init(&mods[x/2].vertex, &g_graph, VERTEX_MODULE);
       snprintf(mods[x / 2].id, sizeof(mods[x / 2].id), "%s", test->modules_shadow[x + 1]);
-      fatal(shadow_graft_module, &mods[x / 2], &invalidation);
+      fatal(shadow_module_init, &mods[x / 2], &invalidation);
+      mods[x/2].vertex.label = test->modules_shadow[x];
+      mods[x/2].vertex.label_len = strlen(test->modules_shadow[x]);
       mods[x / 2].dir_node->mod = &mods[x / 2];
     }
 
@@ -149,9 +153,10 @@ static xapi pattern_match_test_entry(xunit_test * _test)
     {
       for(x = 0; x < sentinel(test->modules_imports); x += 2)
       {
-        fatal(pattern_lookup_fragment, MMS(test->modules_imports[x + 0]), 0, 0, 0, 0, 0, 0, &na);
-        fatal(pattern_lookup_fragment, MMS(test->modules_imports[x + 1]), 0, 0, 0, 0, 0, 0, &nb);
-        fatal(shadow_graft_imports, na->mod, nb, nb->name->name, nb->name->namel, 0, &invalidation);
+        fatal(resolve_fragment, MMS(test->modules_imports[x + 0]), &na);
+        fatal(resolve_fragment, MMS(test->modules_imports[x + 1]), &nb);
+//        fatal(shadow_graft_imports, na->mod, nb, nb->name.name, nb->name.namel, 0, &invalidation);
+        fatal(module_resolve_import, na->mod, nb, nb->name.name, nb->name.namel, 0, &invalidation);
       }
     }
 
@@ -159,7 +164,7 @@ static xapi pattern_match_test_entry(xunit_test * _test)
 
     for(x = 0; x < sizeof(mods) / sizeof(*mods); x++)
     {
-      if(strcmp(mods[x].dir_node->name->name, test->module) == 0)
+      if(strcmp(mods[x].dir_node->name.name, test->module) == 0)
       {
         mod = &mods[x];
         break;
@@ -169,11 +174,10 @@ static xapi pattern_match_test_entry(xunit_test * _test)
 
   if(!test->modules_shadow)
   {
-    fatal(pattern_lookup_fragment, MMS(test->module), 0, 0, 0, 0, 0, 0, &mods[0].dir_node);
+    fatal(resolve_fragment, MMS(test->module), &mods[0].dir_node);
     mod = &mods[0];
   }
 
-  fatal(narrator_growing_create, &N);
   fatal(map_create, &node_map);
   fatal(list_create, &nodes_list);
 
@@ -196,7 +200,7 @@ static xapi pattern_match_test_entry(xunit_test * _test)
 
   // act
   fatal(pattern_match_matches_create, &matches);
-  fatal(pattern_match, pattern, mod, &modules, variants, matches, 0, 0, 0);
+  fatal(pattern_match, pattern, mod, &modules, variants, matches, 0, 0);
 
   // assert
   fatal(set_createx, &expected, 0, hash32, memncmp, 0, 0);
@@ -210,7 +214,7 @@ static xapi pattern_match_test_entry(xunit_test * _test)
     if(!(m = set_table_get(matches, x)))
       continue;
 
-    size_t pz = node_get_absolute_path(m->node, path, sizeof(path));
+    size_t pz = fsent_absolute_path_znload(path, sizeof(path), m->node);
     size_t sz = pz;
 
     for(y = 0; y <= m->group_max; y++)
@@ -252,17 +256,13 @@ static xapi pattern_match_test_entry(xunit_test * _test)
   assert_eq_set(expected, actual);
 
 finally:
-  fatal(node_cleanup);
-  fatal(variant_cleanup);
   fatal(set_xfree, variants);
   fatal(set_xfree, matches);
   fatal(map_xfree, node_map);
-  fatal(narrator_xfree, N);
   fatal(pattern_parser_xfree, parser);
   pattern_free(pattern);
   fatal(list_xfree, nodes_list);
-  fatal(list_xfree, operations);
-  fatal(operations_parser_xfree, op_parser);
+  fatal(graph_parser_xfree, op_parser);
   fatal(set_xfree, expected);
   fatal(set_xfree, actual);
   wfree(actual_match);
@@ -362,14 +362,14 @@ xunit_unit xunit = {
             " mod/foo/abcd/bar/a"
             " mod/foo/abcd/bar/gondor/valyria/b"
             " mod/foo/abcd/baz"
-            " mod/foo/abcd/foo/a"
-            " mod/foo/abcd/foo/b"
+            " mod/foo/abcd/oof/a"
+            " mod/foo/abcd/oof/b"
             " mod/foo/abcd/qux/a"
             " mod/foo/abcd/qux/b"
         , module : "mod"
-        , pattern : (char[]) { "foo/abcd/foo/b\0" }
+        , pattern : (char[]) { "foo/abcd/oof/b\0" }
         , matches : (char*[]) {
-              "/mod/foo/abcd/foo/b"
+              "/mod/foo/abcd/oof/b"
             , 0
           }
       }}
@@ -1089,100 +1089,6 @@ xunit_unit xunit = {
         , matches : (char*[]) {
             /* patterns only ever match nodes, not directories */
             0
-          }
-      }}
-    , (pattern_match_test[]) {{
-          operations : ""
-            " mods/mod/a"
-            " mods/foo/A"
-            " mods/bar/B"
-        , module : "mod"
-        , modules_shadow : (char*[]) { "foo", "00foo", "mod", "00mod", "bar", "00bar", 0 }
-        , modules_imports : (char*[]) { "mod", "foo", "mod", "bar", 0 }
-        , pattern : (char[]) { "//module/imports/*/*\0" }
-        , matches : (char*[]) {
-              "/mods/foo/A"
-            , "/mods/bar/B"
-            , 0
-          }
-      }}
-    , (pattern_match_test[]) {{
-          operations : ""
-            " mods/mod/a"
-            " mods/foo/A"
-            " mods/bar/B"
-        , module : "mod"
-        , modules_shadow : (char*[]) { "foo", "00foo", "mod", "00mod", "bar", "00bar", 0 }
-        , modules_imports : (char*[]) { "mod", "foo", "mod", "bar", 0 }
-        , pattern : (char[]) { "//module/imports/foo/{A,B}\0" }
-        , matches : (char*[]) {
-              "/mods/foo/A"
-            , 0
-          }
-      }}
-    , (pattern_match_test[]) {{
-          operations : ""
-            " mods/mod/a"
-            " mods/foo/A"
-            " mods/bar/B"
-        , module : "mod"
-        , modules_shadow : (char*[]) { "foo", "00foo", "mod", "00mod", "bar", "00bar", 0 }
-        , modules_imports : (char*[]) { "mod", "foo", "mod", "bar", 0 }
-        , pattern : (char[]) { "//module/imports/{foo,bar}/{A,B}\0" }
-        , matches : (char*[]) {
-              "/mods/foo/A"
-            , "/mods/bar/B"
-            , 0
-          }
-      }}
-    , (pattern_match_test[]) {{
-          operations : ""
-            " mods/mod/zu"
-            " mods/bar/zu"
-            " mods/baz/zu"
-        , module : "mod"
-        , modules_shadow : (char*[]) { "mod", "00mod", "bar", "00bar", "baz", "00baz", 0 }
-        , modules_imports : (char*[]) { "mod", "bar", "bar", "baz", 0 }
-        , pattern : (char[]) { "//module/imports/*/zu\0" }
-        , matches : (char*[]) {
-              "/mods/bar/zu"
-            , 0
-          }
-      }}
-    , (pattern_match_test[]) {{
-          operations : ""
-            " mods/mod/A"
-            " mods/bar/B"
-            " mods/baz/C"
-        , module : "mod"
-        , modules_shadow : (char*[]) { "mod", "00mod", "bar", "00bar", "baz", "00baz", 0 }
-        , modules_imports : (char*[]) { "mod", "bar", "bar", "baz", 0 }
-        , pattern : (char[]) { "//module/imports/*/*\0" }
-        , matches : (char*[]) {
-              "/mods/bar/B"
-            , 0
-          }
-      }}
-
-    /* following partial match - this at one point caused a crash */
-    , (pattern_match_test[]) {{
-          operations : ""
-            " mod/X.c"
-        , module : "mod"
-        , pattern : (char[]) { "?\0" }
-        , variants : (char*[]) { "X", 0 }
-        , matches : (char*[]) { 0 }
-      }}
-    , (pattern_match_test[]) {{
-          operations : ""
-            " mod/libxapi.final.xapi.so.lnk"
-            " mod/libxapi.final.xapi.so"
-        , module : "mod"
-        , pattern : (char[]) { "libxapi.?.so\0" }
-        , variants : (char*[]) { "xapi.final", "xapi.debug", "xapi.devel", 0 }
-        , matches : (char*[]) {
-              "/mod/libxapi.final.xapi.so ? final.xapi"
-            , 0
           }
       }}
     , 0

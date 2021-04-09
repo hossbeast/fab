@@ -16,44 +16,29 @@
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
 #include <sys/syscall.h>
-#include <string.h>
 
-#include "xapi.h"
-#include "types.h"
-
-#include "fab/ipc.h"
-#include "fab/sigutil.h"
 #include "logger/config.h"
-#include "moria/graph.h"
-#include "moria/vertex.h"
 #include "narrator.h"
 #include "valyria/map.h"
 #include "xapi/trace.h"
 #include "xlinux/KERNEL.errtab.h"
-#include "xlinux/xdirent.h"
 #include "xlinux/xepoll.h"
-#include "xlinux/xfcntl.h"
 #include "xlinux/xinotify.h"
 #include "xlinux/xpthread.h"
-#include "xlinux/xsignal.h"
-#include "xlinux/xstring.h"
 #include "xlinux/xunistd.h"
-#include "xlinux/xepoll.h"
 
 #include "notify_thread.h"
-#include "params.h"
-#include "node.h"
-#include "sweeper_thread.h"
-#include "path.h"
-#include "inotify_mask.h"
+#include "fsent.h"
 #include "logging.h"
+#include "params.h"
+#include "sweeper_thread.h"
 
-#include "common/atomic.h"
-#include "macros.h"
+#include "atomics.h"
+#include "threads.h"
 
 uint16_t notify_thread_epoch;
 
-static int in_fd;
+static int in_fd = -1;
 
 static xapi notify_thread()
 {
@@ -63,19 +48,18 @@ static xapi notify_thread()
   char buffer[4096] = {};
   int epfd = -1;
   struct epoll_event event;
-  node *n;
-  vertex *v;
+  fsent *n;
+  moria_vertex *v;
   const char *label = 0;
   uint16_t label_len = 0;
   ssize_t r;
   size_t o;
   int rv;
-
-  g_params.thread_notify = gettid();
+  struct inotify_event *ev;
 
   // signals handled on this thread
   sigfillset(&sigs);
-  sigdelset(&sigs, FABIPC_SIGINTR);
+  sigdelset(&sigs, SIGUSR1);
 
 #if DEBUG || DEVEL
   logs(L_IPC, "starting");
@@ -93,8 +77,9 @@ static xapi notify_thread()
     if(r == 0)
     {
       fatal(uxepoll_pwait, &rv, epfd, &event, 1, -1, &sigs);
-      if(rv < 0)
+      if(rv < 0) {
         continue;
+      }
 
       notify_thread_epoch++;
     }
@@ -104,22 +89,23 @@ static xapi notify_thread()
     o = 0;
     while(o < r)
     {
-      struct inotify_event * ev = (void*)buffer + o;
+      ev = (void*)buffer + o;
 
-      if(ev->mask & IN_IGNORED)
+      if(ev->mask & IN_IGNORED) {
         goto next;
+      }
 
       if(ev->name[0] == '.') {
         /* ignore dotfiles for now */
         goto next;
       }
 
-      if((n = map_get(g_nodes_by_wd, MM(ev->wd))) == 0) {
+      if((n = map_get(g_fsent_by_wd, MM(ev->wd))) == 0) {
         logs(L_WARN, "unknown event");
         goto next;
       }
 
-      v = vertex_containerof(n);
+      v = &n->vertex;
 
       if(ev->mask & (IN_MOVE_SELF | IN_DELETE_SELF))
       {
@@ -131,8 +117,8 @@ static xapi notify_thread()
         label = ev->name;
         label_len = strlen(ev->name);
 
-        if((v = vertex_downw(v, label, label_len))) {
-          n = vertex_value(v);
+        if((v = moria_vertex_downw(v, label, label_len))) {
+          n = containerof(v, fsent, vertex);
           label = 0;
         }
       }
@@ -173,11 +159,13 @@ finally:
 coda;
 }
 
-static void * notify_thread_main(void * arg)
+static void * notify_thread_jump(void * arg)
 {
   enter;
 
   xapi R;
+
+  tid = g_params.thread_notify = gettid();
   logger_set_thread_name("notify");
   logger_set_thread_categories(L_NOTIFY);
   fatal(notify_thread, arg);
@@ -186,8 +174,7 @@ finally:
   if(XAPI_UNWINDING)
   {
 #if DEBUG || DEVEL || XAPI
-    xapi_infos("name", "fabd/notify");
-    xapi_infof("pgid", "%ld", (long)getpgid(0));
+    xapi_infos("thread", "notify");
     xapi_infof("pid", "%ld", (long)getpid());
     xapi_infof("tid", "%ld", (long)gettid());
     fatal(logger_xtrace_full, L_ERROR, L_NONAMES, XAPI_TRACE_COLORIZE | XAPI_TRACE_NONEWLINE);
@@ -198,7 +185,7 @@ finally:
 conclude(&R);
 
   atomic_dec(&g_params.thread_count);
-  syscall(SYS_tgkill, g_params.pid, g_params.thread_monitor, FABIPC_SIGSCH);
+  syscall(SYS_tgkill, g_params.pid, g_params.thread_monitor, SIGUSR1);
   return 0;
 }
 
@@ -228,7 +215,7 @@ xapi notify_thread_launch()
   fatal(xpthread_attr_setdetachstate, &attr, PTHREAD_CREATE_DETACHED);
 
   atomic_inc(&g_params.thread_count);
-  if((rv = pthread_create(&pthread_id, &attr, notify_thread_main, 0)) != 0)
+  if((rv = pthread_create(&pthread_id, &attr, notify_thread_jump, 0)) != 0)
   {
     atomic_dec(&g_params.thread_count);
     tfail(perrtab_KERNEL, rv);
@@ -239,7 +226,7 @@ finally:
 coda;
 }
 
-xapi notify_thread_watch(node * n)
+xapi notify_thread_watch(fsent * n)
 {
   enter;
 
@@ -257,16 +244,16 @@ xapi notify_thread_watch(node * n)
   mask |= IN_ONLYDIR;       /* ENOTDIR if the path is not a directory */
   mask |= IN_EXCL_UNLINK;   /* ignore events for files after they are unlinked */
 
-  node_get_absolute_path(n, space, sizeof(space));
+  fsent_absolute_path_znload(space, sizeof(space), n);
   fatal(xinotify_add_watch, &n->wd, in_fd, space, mask);
-  fatal(map_put, g_nodes_by_wd, MM(n->wd), n, 0);
+  fatal(map_put, g_fsent_by_wd, MM(n->wd), n, 0);
 
   if(log_would(L_NOTIFY))
   {
     narrator * N;
     fatal(log_start, L_NOTIFY, &N);
     xsayf("%8s ", "watch");
-    fatal(node_absolute_path_say, n, N);
+    fatal(fsent_absolute_path_say, n, N);
     fatal(log_finish);
   }
 

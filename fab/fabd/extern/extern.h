@@ -20,36 +20,31 @@
 
 /*
 
-SUMMARY
-
- portions of the filesystem outside the module directory are loaded from directory trees specified
- in config under the "extern" key.
+regions of the filesystem specified in config under the extern key are loaded along with the module
+directory, and are used in resolution of import/use/require statements.
 
 */
 
 #include "xapi.h"
 #include "types.h"
 
-struct config;
+struct configblob;
 struct graph_invalidation_context;
 
-xapi extern_setup(void);
-xapi extern_cleanup(void);
-
-/// extern_reconfigure
-//
-// SUMMARY
-//  reapply configuration to the extern module
-//
-// PARAMETERS
-/// ctx    - reconfiguration context
-//  config - root of the config tree
-//  dry    - whether to perform a dry-run
-//
-xapi extern_reconfigure(struct config * restrict cfg, bool dry)
+/*
+ * reapply configuration to the extern module
+ *
+ * ctx    - reconfiguration context
+ * config - root of the config tree
+ * dry    - whether to perform a dry-run
+ */
+xapi extern_reconfigure(struct configblob * restrict cfg, bool dry)
   __attribute__((nonnull));
 
-xapi extern_refresh(int walk_id, struct graph_invalidation_context * restrict invalidation)
+/*
+ * reload extern trees
+ */
+xapi extern_system_reconcile(int walk_id, struct graph_invalidation_context * restrict invalidation)
   __attribute__((nonnull));
 
 #endif

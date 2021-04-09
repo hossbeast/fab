@@ -18,4 +18,12 @@
 #ifndef FABD_PATTERN_SEGMENT_H
 #define FABD_PATTERN_SEGMENT_H
 
+#include "xapi.h"
+
+union pattern_segment;
+struct pattern_segments;
+
+int pattern_segments_cmp(const struct pattern_segments * A, const struct pattern_segments * B);
+int pattern_segment_cmp(const union pattern_segment * A, const union pattern_segment * B);
+
 #endif

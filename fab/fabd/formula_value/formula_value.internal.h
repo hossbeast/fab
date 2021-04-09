@@ -27,6 +27,8 @@ struct yyu_location;
 struct selector;
 struct rbtree;
 
+/* create formula_value from the parser */
+
 xapi formula_value_posint_mk(
     const struct yyu_location * restrict loc
   , struct formula_value ** rv
@@ -117,7 +119,7 @@ xapi formula_value_select_mk(
 xapi formula_value_property_mk(
     const struct yyu_location * restrict loc
   , struct formula_value ** rv
-  , node_property property
+  , fsent_property property
 )
   __attribute__((nonnull));
 

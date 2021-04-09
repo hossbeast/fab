@@ -15,27 +15,13 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#include <string.h>
-
-#include "xapi.h"
-#include "types.h"
-
-#include "narrator.h"
-#include "value/writer.h"
-#include "xlinux/xstdlib.h"
-#include "valyria/list.h"
-#include "valyria/set.h"
-
-#include "section.internal.h"
-#include "pattern.internal.h"
-#include "segment.internal.h"
-#include "render.internal.h"
-#include "match.internal.h"
-#include "node.h"
-#include "module.h"
-#include "path.h"
-
 #include "common/attrs.h"
+#include "narrator.h"
+#include "xlinux/xstdlib.h"
+
+#include "section.h"
+#include "pattern.internal.h"
+#include "segment.h"
 
 //
 // internal

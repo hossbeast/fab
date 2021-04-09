@@ -21,7 +21,16 @@
 #include "xapi.h"
 
 struct attrs32;
-struct config;
+struct build_slot;
+struct configblob;
+struct handler_context;
+struct hashtable;
+
+extern struct build_slot * build_slots;
+extern struct hashtable * build_slots_bypid;
+extern int build_slots_bypid_lock;
+extern bool build_stage_failure;
+extern int build_devnull_fd;
 
 // configuration
 #define STREAM_PART_OPT 0xf
@@ -38,63 +47,20 @@ STREAM_PART_TABLE
 
 extern struct attrs32 * stream_part_attrs;
 
-typedef struct build_thread_config {
-  int16_t concurrency;
-
-  stream_part capture_stdout;
-  uint16_t stdout_buffer_size;
-
-  stream_part capture_stderr;
-  uint16_t stderr_buffer_size;
-
-  stream_part capture_auxout;
-  uint16_t auxout_buffer_size;
-
-  struct show_settings {
-    bool show_path;
-    bool show_arguments;
-    bool show_command;
-    bool show_cwd;
-    bool show_sources;
-    bool show_targets;
-    bool show_environment;
-    bool show_status;
-
-    bool show_stdout;
-    int16_t show_stdout_limit_lines;
-    int16_t show_stdout_limit_bytes;
-
-    bool show_stderr;
-    int16_t show_stderr_limit_lines;
-    int16_t show_stderr_limit_bytes;
-
-    bool show_auxout;
-    int16_t show_auxout_limit_lines;
-    int16_t show_auxout_limit_bytes;
-  } error;
-
-  struct show_settings success;
-} build_thread_config;
-
 xapi build_thread_setup(void);
-
 xapi build_thread_cleanup(void);
-
 xapi build_thread_launch(void);
 
-/// build_thread_reconfigure
-//
-// SUMMARY
-//  reapply configuration to the build module
-//
-// PARAMETERS
-/// ctx    - reconfiguration context
-//  config - root of the config tree
-//  dry    - whether to perform a dry-run
-//
-xapi build_thread_reconfigure(struct config * restrict cfg, bool dry)
+/*
+ * reapply configuration to the build thread
+ *
+ * config - root of the config tree
+ * dry    - whether to perform a dry-run
+ */
+xapi build_thread_reconfigure(struct configblob * restrict cfg, bool dry)
   __attribute__((nonnull));
 
-xapi build_thread_build(bool notify);
+xapi build_thread_build(struct handler_context * restrict ctx)
+  __attribute__((nonnull));
 
 #endif

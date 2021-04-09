@@ -15,27 +15,15 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#include <string.h>
-
-#include "xapi.h"
-#include "types.h"
-
 #include "xlinux/xstdlib.h"
-#include "value/writer.h"
 #include "narrator.h"
-#include "valyria/list.h"
 
-#include "byte.internal.h"
+#include "byte.h"
 #include "pattern.internal.h"
+#include "fsent.h"
 #include "generate.internal.h"
-#include "render.internal.h"
 #include "match.internal.h"
-#include "node.h"
-#include "path.h"
-
-#include "pattern_parser.h"
-
-#include "common/attrs.h"
+#include "render.internal.h"
 
 //
 // static
@@ -67,8 +55,8 @@ static xapi match(pattern_match_context * restrict ctx, const pattern_segment * 
   enter;
 
   const pattern_byte * byte = &segment->byte;
-  const char * restrict name = ctx->node->name->name;
-  uint16_t namel = ctx->node->name->namel;
+  const char * restrict name = ctx->node->name.name;
+  uint16_t namel = ctx->node->name.namel;
   uint16_t name_offset = ctx->traversal->offset;
 
   if((namel > name_offset) && (name[name_offset] == byte->code))

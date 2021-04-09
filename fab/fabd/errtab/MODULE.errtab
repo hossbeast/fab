@@ -22,3 +22,4 @@
 5   AMBIGREF   ambiguous reference
 6   EDGEINUSE  edge is instantiated by more than one rule
 7   UNIQIMPORT imports must be unique by name
+8   NOTFORMULA rule evaluation associated with non-formula node

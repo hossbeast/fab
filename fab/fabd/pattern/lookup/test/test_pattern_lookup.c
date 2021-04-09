@@ -24,6 +24,7 @@
 #include "valyria/map.h"
 #include "moria/graph.h"
 #include "moria/operations.h"
+#include "moria/parser.h"
 #include "yyutil/parser.h"
 #include "yyutil/load.h"
 
@@ -32,17 +33,16 @@
 #include "narrator.h"
 #include "narrator/growing.h"
 #include "logging.h"
-#include "rule.internal.h"
-#include "node.h"
-#include "node_operations.h"
-#include "path.h"
+#include "rule.h"
+#include "fsent.h"
 #include "pattern_parser.h"
 #include "pattern.h"
 #include "shadow.h"
 #include "node_operations_test.h"
 #include "filesystem.internal.h"
-#include "lookup.internal.h"
+#include "lookup.h"
 #include "module.internal.h"
+#include "selection.h"
 
 typedef struct node_lookup_test
 {
@@ -55,7 +55,6 @@ typedef struct node_lookup_test
   char * pattern;      // lookup pattern
   char * module;       // name for module node
   char * module_shadow; // module shadow id
-  char * from;         // starting node
 
   // expected
   char * abspath;
@@ -67,12 +66,12 @@ static xapi node_lookup_test_unit_setup(xunit_unit * unit)
 
   fatal(valyria_load);
   fatal(moria_load);
+  fatal(logging_finalize);
 
   fatal(filesystem_setup);
   fatal(graph_setup);
-  fatal(node_setup);
+  fatal(fsent_setup);
   fatal(shadow_setup);
-  fatal(logging_finalize);
 
   finally : coda;
 }
@@ -85,7 +84,7 @@ static xapi node_lookup_test_unit_cleanup(xunit_unit * unit)
   fatal(value_unload);
 
   fatal(filesystem_cleanup);
-  fatal(node_cleanup);
+  fatal(fsent_cleanup);
   fatal(graph_cleanup);
 
   finally : coda;
@@ -104,52 +103,52 @@ static xapi node_lookup_test_entry(xunit_test * _test)
   pattern_parser * parser = 0;
   yyu_location loc;
   pattern * pat = 0;
-  list * operations = 0;
-  operations_parser * op_parser = 0;
-  node * result = 0;
-  node * base = 0;
+  graph_parser * op_parser = 0;
+  selection sel;
+  selected *result;
   module mod;
+  char err[256];
+  uint16_t errlen;
 
+  fatal(selection_xinit, &sel);
   fatal(pattern_parser_create, &parser);
 
   // setup initial graph
-  fatal(operations_parser_operations_create, &operations);
-  fatal(operations_parser_create, &op_parser);
-  fatal(operations_parser_parse, op_parser, g_graph, MMS(test->operations), operations);
-  fatal(operations_perform, g_graph, node_operations_test_dispatch, operations);
+  fatal(graph_parser_create, &op_parser, &g_graph, &fsent_list, node_operations_test_dispatch, graph_vertex_attrs, graph_edge_attrs);
+  fatal(graph_parser_operations_parse, op_parser, MMS(test->operations));
 
   memset(&mod, 0, sizeof(mod));
   if(test->module)
   {
-    fatal(pattern_lookup_fragment, MMS(test->module), 0, 0, 0, 0, 0, 0, &mod.dir_node);
+    fatal(resolve_fragment, MMS(test->module), &mod.dir_node);
   }
   if(test->module_shadow)
   {
-    fatal(pattern_lookup_fragment, MMS(test->module_shadow), 0, 0, 0, 0, 0, 0, &mod.shadow);
+    fatal(resolve_fragment, MMS(test->module_shadow), &mod.shadow);
     g_project_shadow = mod.shadow;
   }
 
   fatal(lookup_pattern_parse_partial, parser, test->pattern, strlen(test->pattern) + 2, "-test-", 0, &loc, &pat);
   assert_eq_u32(strlen(test->pattern), loc.l);
 
-  if(test->from)
-  {
-    fatal(pattern_lookup_fragment, MMS(test->from), 0, 0, 0, 0, 0, 0, &base);
-  }
-
   // act
-  fatal(pattern_lookup, pat, &mod, base, 0, 0, &result);
+  fatal(pattern_lookup, pat, 0, &sel, err, sizeof(err), &errlen);
+  assert_eq_w(0, 0, err, errlen);
 
   // assert
-  assert_notnull(result);
-  node_get_absolute_path(result, abspath, sizeof(abspath));
+  fatal(selection_finalize, &sel);
+  assert_eq_zu(1, llist_count(&sel.list));
+
+  result = llist_first(&sel.list, selected, lln);
+
+  fsent_absolute_path_znload(abspath, sizeof(abspath), containerof(result->v, fsent, vertex));
   assert_eq_s(test->abspath, abspath);
 
 finally:
   fatal(pattern_parser_xfree, parser);
   pattern_free(pat);
-  fatal(list_xfree, operations);
-  fatal(operations_parser_xfree, op_parser);
+  fatal(graph_parser_xfree, op_parser);
+  fatal(selection_xdestroy, &sel);
 coda;
 }
 
@@ -164,28 +163,28 @@ xunit_unit xunit = {
   , xu_tests : (node_lookup_test*[]) {
       (node_lookup_test[]) {{
           operations : "a/b/c/d"
-        , pattern : (char[]) { "d\0" }
-        , abspath : "/a/b/c/d"
+        , pattern : (char[]) { "c\0" }
+        , abspath : "/a/b/c"
       }}
     , (node_lookup_test[]) {{
           operations : "a/b/c/d"
-        , pattern : (char[]) { "c/d\0" }
-        , abspath : "/a/b/c/d"
+        , pattern : (char[]) { "b/c\0" }
+        , abspath : "/a/b/c"
       }}
     , (node_lookup_test[]) {{
           operations : "a/b/c/d"
-        , pattern : (char[]) { "\"\\x63\"/\"\\x64\"\0" }
-        , abspath : "/a/b/c/d"
+        , pattern : (char[]) { "\"\\x63\"\0" }
+        , abspath : "/a/b/c"
       }}
     , (node_lookup_test[]) {{
           operations : "a/bob/c/d"
-        , pattern : (char[]) { "b\"o\"b/c/d\0" }
-        , abspath : "/a/bob/c/d"
+        , pattern : (char[]) { "b\"o\"b/c\0" }
+        , abspath : "/a/bob/c"
       }}
     , (node_lookup_test[]) {{
           operations : "a/.D/c"
-        , pattern : (char[]) { ".D/c\0" }
-        , abspath : "/a/.D/c"
+        , pattern : (char[]) { "a/.D\0" }
+        , abspath : "/a/.D"
       }}
     , (node_lookup_test[]) {{
           operations : "a/b.D/c/d"
@@ -195,42 +194,21 @@ xunit_unit xunit = {
 
     /* relative, down */
     , (node_lookup_test[]) {{
-          operations : "a/bob/c/d"
+          operations : "a/bob/c/d/e"
         , pattern : (char[]) { "./c/d\0" }
-        , from : "bob"
         , abspath : "/a/bob/c/d"
       }}
     , (node_lookup_test[]) {{
           operations : "a/bob/c/d"
         , pattern : (char[]) { "bob/c\0" }
-        , from : "a"
         , abspath : "/a/bob/c"
       }}
 
     /* relative, up */
     , (node_lookup_test[]) {{
           operations : "a/bob/c/d"
-        , pattern : (char[]) { "..\0" }
-        , from : "bob"
-        , abspath : "/a"
-      }}
-    , (node_lookup_test[]) {{
-          operations : "a/bob/c/d"
         , pattern : (char[]) { "../c\0" }
-        , from : "c"
         , abspath : "/a/bob/c"
-      }}
-
-    /* shadow */
-    , (node_lookup_test[]) {{
-          operations : ""
-            " //modules/00abcd!shadow-module"
-            " //modules/00abcd/tests/boats"
-            " mod"
-        , module : "mod"
-        , module_shadow : "00abcd"
-        , pattern : (char[]) { "//module/tests/boats\0" }
-        , abspath : "//module/tests/boats"
       }}
     , 0
   }

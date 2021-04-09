@@ -42,7 +42,7 @@ typedef struct module_parser {
   llist lln;        // freelist
 
   // state
-  struct graph *g;
+  struct moria_graph *g;
   struct set * variants;
   struct selection * scratch;
   struct graph_invalidation_context *invalidation;
@@ -52,10 +52,9 @@ typedef struct module_parser {
   // sub parsers
   struct value_parser * value_parser; // the value parser is owned by the module
   struct pattern_parser * pattern_parser;
-  xapi (*use_resolve)(struct module_parser * restrict parser, struct pattern * restrict ref);
+  xapi (*use_resolve)(struct module_parser * restrict parser, struct pattern * restrict ref, bool scoped, char * restrict name, uint16_t namel);
   xapi (*require_resolve)(struct module_parser * restrict parser, struct pattern * restrict ref);
   xapi (*import_resolve)(struct module_parser * restrict parser, struct pattern * restrict ref, bool scoped, char * restrict name, uint16_t namel);
-  xapi (*formula_resolve)(struct module_parser * restrict parser, struct pattern * restrict ref, struct node ** restrict target);
 
   // under construction
   struct statement_block *block;
@@ -69,6 +68,8 @@ typedef struct module_parser {
   llist scoped_blocks;
   struct value * var_value;
   bool var_merge_overwrite;
+  char err[256];
+  uint16_t errlen;
 } module_parser;
 
 /// module_parser_create

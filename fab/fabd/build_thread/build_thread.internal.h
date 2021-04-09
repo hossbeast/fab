@@ -23,18 +23,4 @@
 
 #include "build_thread.h"
 
-struct hashtable;
-struct build_slot;
-
-// runtime
-extern int build_devnull_fd;
-
-extern struct build_slot * build_slots;
-extern struct hashtable * build_slots_bypid;
-extern int build_slots_bypid_lock;
-extern bool build_stage_failure;
-
-// config
-extern build_thread_config build_thread_cfg;
-
 #endif

@@ -182,15 +182,15 @@ xunit_unit xunit = {
         , bacon : ""
       }}
     , (formula_parser_extract_test[]) {{
-          formula : "__DATA__ "
+          formula : "__DATA__ " // trailing space
         , bacon : ""
       }}
     , (formula_parser_extract_test[]) {{
-          formula : " __DATA__"
+          formula : " __DATA__" // leading space
         , bacon : ""
       }}
     , (formula_parser_extract_test[]) {{
-          formula : "__DATA__\n"
+          formula : "__DATA__\n"  // trailing newline
         , bacon : ""
       }}
     , 0

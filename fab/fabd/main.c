@@ -33,10 +33,14 @@
 #include "xapi/calltree.h"
 #include "xapi/trace.h"
 #include "xapi/errtab.h"
+#include "xlinux/xstdlib.h"
 #include "xlinux/xfcntl.h"
 #include "xlinux/xunistd.h"
+#include "xlinux/xpthread.h"
+#include "xlinux/xsignal.h"
 #include "fab/ipc.h"
 #include "fab/sigutil.h"
+#include "fab/lockfile.h"
 #include "logger.h"
 #include "logger/arguments.h"
 
@@ -45,70 +49,116 @@
 #include "buildplan.h"
 #include "config.h"
 #include "config.internal.h"
-#include "extern.h"
 #include "filesystem.h"
 #include "formula.h"
 #include "path_cache.h"
+#include "rule_system.h"
 #include "logging.h"
 #include "module.h"
+#include "rule_module.h"
 #include "monitor_thread.h"
-#include "node.h"
+#include "fsent.h"
 #include "shadow.h"
 #include "notify_thread.h"
 #include "params.h"
+#include "args.h"
 #include "request.internal.h"
 #include "server_thread.h"
+#include "dependency.h"
 #include "sweeper_thread.h"
+#include "handler_thread.h"
+#include "beholder_thread.h"
+#include "bootstrap_thread.h"
+#include "channel.h"
+#include "handler.h"
 #include "var.h"
 #include "variant.h"
 #include "goals.h"
 #include "stats.h"
 #include "selection.h"
 #include "common/parseint.h"
+#include "common/hash.h"
+
+#include "locks.h"
+
+#if DEVEL
+static xapi setup_initial_channel(const char * restrict request)
+{
+  enter;
+
+  size_t len;
+  fabipc_channel * chan;
+  fabipc_page *page;
+  fabipc_message *msg;
+
+  RUNTIME_ASSERT(g_argc > 2);
+
+  len = strlen(request);
+  fatal(xmalloc, &chan, sizeof(*chan));
+  page = &chan->client_ring.pages[0];
+  msg = &page->msg;
+  chan->client_ring.tail++;
+
+  memcpy(msg->text, request, len);
+  msg->text[len + 0] = 0;
+  msg->text[len + 1] = 0;
+  msg->size = sizeof(*msg) + len + 2;
+  g_server_initial_channel = chan;
+
+  finally : coda;
+}
+#endif
 
 static xapi xmain_exit;
 static xapi xmain()
 {
   enter;
 
+  int fds[2];
+  sigset_t sigs;
+
 #if DEBUG || DEVEL
   logs(L_IPC, "started");
 #endif
 
-  fatal(params_report);
-
   // allow creation of world+rw files
   umask(0);
+  fatal(sigutil_install_handlers);
 
-  // close standard file descriptors
-  fatal(xclose, 0);
-  fatal(xopens, 0, O_RDONLY, "/dev/null");
+  sigfillset(&sigs);
+  fatal(xpthread_sigmask, SIG_SETMASK, &sigs, 0);
 
 #if DEVEL
-  if(g_argc > 1 && strcmp(g_argv[1], "--request") == 0)
+  if(g_argc > 2 && strcmp(g_argv[1], "--request") == 0)
   {
-    g_logging_skip_reconfigure = true;
-    g_server_no_initial_client = true;
-    RUNTIME_ASSERT(g_argc > 2);
-    g_server_initial_request = g_argv[2];
-
-    pid_t pgid;
-    fatal(ipc_lock_obtain, &pgid, 0, "%s/fabd/lock", g_params.ipcdir);
-
-    if(pgid)
-      failf(FABD_DAEMONEXCL, "pgid", "%ld", (long)pgid);
+    fatal(setup_initial_channel, g_argv[2]);
   }
 #endif
 
-  g_params.thread_monitor = gettid();
+  setvbuf(stdout, NULL, _IONBF, 0);
+  setvbuf(stderr, NULL, _IONBF, 0);
 
-  // launch other threads
-  fatal(sigutil_defaults);
+  /* save original stdout/stderr fds */
+  fatal(xdup2, 1, STDOUT_SAVED_REAL);
+  fatal(xdup2, 2, STDERR_SAVED_REAL);
+
+  /* reopen stdout/stderr to the beholder pipes */
+  fatal(xpipe, fds);
+  beholder_stdout_rd = fds[0];
+  fatal(xdup2, fds[1], 1);
+  fatal(xclose, fds[1]);
+
+  fatal(xpipe, fds);
+  fatal(xdup2, fds[1], 2);
+  beholder_stderr_rd = fds[0];
+  fatal(xclose, fds[1]);
+
+  /* the build thread and worker threads are launched by the initial reconfiguration */
   fatal(notify_thread_launch);
   fatal(server_thread_launch);
   fatal(sweeper_thread_launch);
-
-  /* the build thread is launched after the initial reconfiguration */
+  fatal(beholder_thread_launch);
+  fatal(bootstrap_thread_launch);
 
   // become the monitor thread
   fatal(monitor_thread);
@@ -126,8 +176,7 @@ finally:
   if(XAPI_UNWINDING)
   {
 #if DEBUG || DEVEL || XAPI
-    xapi_infos("name", "fabd");
-    xapi_infof("pgid", "%ld", (long)getpgid(0));
+    xapi_infos("thread", "fabd");
     xapi_infof("pid", "%ld", (long)getpid());
     xapi_infof("tid", "%ld", (long)gettid());
     fatal(logger_trace_full, L_ERROR, XAPI_TRACE_COLORIZE | XAPI_TRACE_NONEWLINE);
@@ -145,7 +194,7 @@ static xapi xmain_load(char ** envp)
 {
   enter;
 
-  uint64_t hash = 0;
+  tid = g_params.thread_monitor = gettid();
 
   // libraries
   fatal(fab_load);
@@ -160,18 +209,39 @@ static xapi xmain_load(char ** envp)
 
   // initialize logger, main program
   fatal(logger_arguments_setup, envp);
+  fatal(args_setup);
+  fatal(params_setup, g_args.hash);
 
-#if !DEVEL
-  if(g_argc < 2 || parseuint(g_argv[1], SCNx64, 1, UINT64_MAX, 1, UINT8_MAX, &hash, 0) != 0)
-    fail(SYS_BADARGS);
+#if DEVEL
+  /* this normally happens in libfab/client right before fork */
+  pid_t pid;
+  int lockfd = -1;
+  int x;
+  for(x = 0; x < 3; x++)
+  {
+    fatal(fabipc_lockfile_obtain, &pid, &lockfd, "%s/fabd/lock", g_params.ipcdir);
+    if(!pid || pid == getpid()) {
+      break;
+    }
+
+    if(!g_args.kill) {
+      break;
+    }
+
+    fatal(uxkill, 0, pid, SIGTERM);
+    sleep(1);
+  }
+  if(pid && pid != getpid()) {
+    failf(FABD_DAEMONEXCL, "pid", "%ld", (long)pid);
+  }
+
+  /* this normally happens in libfab/client right after fork */
+  fatal(xchdirf, "%s/fabd", g_params.ipcdir);
+  fatal(uxunlinks, "exit");
+  fatal(uxunlinks, "core");
 #endif
 
-  // core file goes in cwd
-  fatal(params_setup, &hash);
-  fatal(xchdirf, "%s/fabd", g_params.ipcdir);
-
-  // logging with per-ipc logfiles
-  fatal(logging_setup, hash);
+  fatal(logging_setup, g_args.hash);
 
   // modules
   fatal(build_thread_setup);
@@ -179,20 +249,18 @@ static xapi xmain_load(char ** envp)
   fatal(formula_setup);
   fatal(buildplan_setup);
   fatal(config_setup);
-  fatal(extern_setup);
   fatal(filesystem_setup);
   fatal(graph_setup);
+  fatal(rule_system_setup);
   fatal(module_setup);
-  fatal(node_setup);
+  fatal(fsent_setup);
   fatal(shadow_setup);
   fatal(notify_thread_setup);
-  fatal(request_setup);
-  fatal(sweeper_thread_setup);
   fatal(var_setup);
   fatal(variant_setup);
   fatal(goals_setup);
-  fatal(stats_setup);
-  fatal(selection_setup);
+  fatal(handler_setup);
+  fatal(beholder_thread_setup);
 
   fatal(xmain_jump);
 
@@ -200,24 +268,25 @@ finally:
   // modules
   fatal(buildplan_cleanup);
   fatal(config_cleanup);
-  fatal(extern_cleanup);
   fatal(filesystem_cleanup);
-  fatal(module_cleanup);
-  fatal(node_cleanup);
-  fatal(shadow_cleanup);
   fatal(graph_cleanup);
+  fatal(module_cleanup);
+  fatal(rule_module_cleanup);
+  fatal(fsent_cleanup);
+  fatal(shadow_cleanup);
   fatal(notify_thread_cleanup);
   fatal(params_cleanup);
   fatal(sweeper_thread_cleanup);
   fatal(build_thread_cleanup);
   fatal(path_cache_cleanup);
   fatal(formula_cleanup);
-  fatal(request_cleanup);
   fatal(var_cleanup);
   fatal(variant_cleanup);
   fatal(goals_cleanup);
-  fatal(stats_cleanup);
+  fatal(handler_cleanup);
+  fatal(beholder_thread_cleanup);
   fatal(selection_cleanup);
+  fatal(dependency_cleanup);
 
   // libraries
   fatal(fab_unload);
@@ -249,8 +318,8 @@ finally:
 conclude(&R);
   xapi_teardown();
 
-  R |= xmain_exit;
+  R |= xmain_exit;              // error on the main thread
+  R |= g_params.handler_error;  // error on a handler thread
 
   return !!R;
 }
-

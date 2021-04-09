@@ -31,10 +31,10 @@
 #include "config_parser.h"
 #include "config.internal.h"
 #include "request.h"
-#include "node.h"
+#include "fsent.h"
 #include "logging.h"
 
-#include "box.h"
+#include "yyutil/box.h"
 
 typedef struct {
   XUNITTEST;
@@ -72,10 +72,10 @@ static xapi config_parser_test_entry(xunit_test * _test)
   char buf[1024];
 
   config_parser * parser = 0;
-  config * A = 0;
-  config * B = 0;
-  narrator * N1 = 0;
-  narrator * N2 = 0;
+  configblob * A = 0;
+  configblob * B = 0;
+  narrator_growing * N1 = 0;
+  narrator_growing * N2 = 0;
 
   // arrange
   fatal(config_parser_create, &parser);
@@ -85,26 +85,26 @@ static xapi config_parser_test_entry(xunit_test * _test)
 
   // round-trip
   fatal(narrator_growing_create, &N1);
-  fatal(config_say, A, N1);
+  fatal(config_say, A, &N1->base);
 
-  size_t len = narrator_growing_size(N1);
-  fatal(narrator_xseek, N1, 0, NARRATOR_SEEK_SET, 0);
-  fatal(narrator_xread, N1, buf, len, 0);
+  size_t len = N1->l;
+  fatal(narrator_xseek, &N1->base, 0, NARRATOR_SEEK_SET, 0);
+  fatal(narrator_xread, &N1->base, buf, len, 0);
   buf[len] = buf[len + 1] = 0;
   fatal(config_parser_parse, parser, buf, len + 2, 0, 0, &B);
 
   fatal(narrator_growing_create, &N2);
-  fatal(config_say, B, N2);
+  fatal(config_say, B, &N2->base);
 
   // roound trip
-  assert_eq_w(narrator_growing_buffer(N1), narrator_growing_size(N1), narrator_growing_buffer(N2), narrator_growing_size(N2));
+  assert_eq_w(N1->s, N1->l, N2->s, N2->l);
 
 finally:
   fatal(config_parser_xfree, parser);
   fatal(config_xfree, A);
   fatal(config_xfree, B);
-  fatal(narrator_xfree, N1);
-  fatal(narrator_xfree, N2);
+  fatal(narrator_growing_free, N1);
+  fatal(narrator_growing_free, N2);
 coda;
 }
 
@@ -147,46 +147,6 @@ xunit_unit xunit = {
             "}\0\0"
           }
       }}
-   , (config_parser_test[]) {{
-          text : (char[]) {
-            "formula : {"
-            "  capture-stdout : leading"
-            "  stdout-buffer-size : 4096"
-            "}\0\0"
-          }
-      }}
-   , (config_parser_test[]) {{
-          text : (char[]) {
-            "formula : {"
-            "  capture-stdout : leading"
-            "  stdout-buffer-size : 4096"
-            "  capture-stderr : leading"
-            "  stderr-buffer-size : 4096"
-            "  success : {"
-            "    show-arguments : false"
-            "    show-environment : false"
-            "    show-status : false"
-            "    show-stdout : false"
-            "    show-stdout-limit-lines : 40"
-            "    show-stdout-limit-bytes : 0"
-            "    show-stderr : true"
-            "    show-stderr-limit-lines : 0"
-            "    show-stderr-limit-bytes : 0"
-            "  }"
-            "  error : {"
-            "    show-arguments : true"
-            "    show-environment : true"
-            "    show-status : true"
-            "    show-stdout : true"
-            "    show-stdout-limit-lines : 0"
-            "    show-stdout-limit-bytes : 0"
-            "    show-stderr : true"
-            "    show-stderr-limit-lines : 0"
-            "    show-stderr-limit-bytes : 0"
-            "  }"
-            "}\0\0"
-          }
-      }}
     , (config_parser_test[]) {{
           text : (char[]) {
             "extern : {"
@@ -204,21 +164,7 @@ xunit_unit xunit = {
             "build : {"
             "  concurrency : 0"
             "}"
-            "formula : {"
-            "  capture-stdout : leading"
-            "  stdout-buffer-size : 4096"
-            "  error : {"
-            "    show-arguments : true"
-            "    show-environment : true"
-            "    show-status : true"
-            "    show-stdout : false"
-            "    show-stdout-limit-lines : 0"
-            "    show-stdout-limit-bytes : 10"
-            "    show-stderr : true"
-            "    show-stderr-limit-lines : 440"
-            "    show-stderr-limit-bytes : 0"
-            "  }"
-            "}\0\0"
+            "\0\0"
           }
       }}
     , (config_parser_test[]) {{
@@ -234,27 +180,6 @@ xunit_unit xunit = {
             "   UNITS BAR baz wux"
             "  ]"
             " }"
-            "}\0\0"
-          }
-      }}
-    /* var */
-    , (config_parser_test[]) {{
-          text : (char[]) {
-            "var : {"
-            " cflags : foo"
-            " lflags : ["
-            "   UNITS "
-            " ]"
-            "}\0\0"
-          }
-      }}
-    , (config_parser_test[]) {{
-          text : (char[]) {
-            "var : {"
-            " cflags : foo"
-            " lflags = ["
-            "   bar"
-            " ]"
             "}\0\0"
           }
       }}

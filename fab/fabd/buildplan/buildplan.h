@@ -18,27 +18,30 @@
 #ifndef FABD_BUILDPLAN_H
 #define FABD_BUILDPLAN_H
 
-#include "xapi.h"
+/*
 
+The buildplan represents a set of formulas to be executed in order to satisfy the current goals.
+
+*/
+
+#include "xapi.h"
 #include "selection.h"
 
-struct buildplan_entity;
+struct dependency;
 
-extern selection bp_selection;
-extern uint16_t bp_plan_id;
+extern selection buildplan_selection;
+extern uint16_t buildplan_id;
 
 xapi buildplan_setup(void);
-
 xapi buildplan_cleanup(void);
-
 xapi buildplan_reset(void);
+xapi buildplan_report(void);
 
-xapi buildplan_add(struct buildplan_entity * restrict bpe, int distance)
+/* add a dependency edge which has a formula to the current buildplan */
+xapi buildplan_add(struct dependency * restrict bpe, int distance)
   __attribute__((nonnull));
 
 xapi buildplan_finalize(void)
   __attribute__((nonnull));
-
-xapi buildplan_report(void);
 
 #endif

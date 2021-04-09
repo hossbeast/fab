@@ -30,7 +30,7 @@
 #include "logging.h"
 #include "config.internal.h"
 #include "CONFIG.errtab.h"
-#include "box.h"
+#include "yyutil/box.h"
 
 #include "macros.h"
 
@@ -40,7 +40,6 @@ logger_category * categories = (logger_category []) {
   , { name : "INFO"       , description : "high-level summary of actions" }
   , { name : "PROTOCOL"   , description : "request/response exchange" }
   , { name : "CONFIG"     , description : "configuration" }
-  , { name : "FF"         , description : "fabfiles" }
   , { name : "PARAMS"     , description : "runtime parameters" }
   , { name : "USAGE"      , description : "resource usage reports" }
   , { name : "FSEVENT"    , description : "monitored filesystem events" }
@@ -64,38 +63,33 @@ logger_category * categories = (logger_category []) {
   , { name : "SWEEPER"    , description : "sweeper thread" , optional : 1 }
   , { name : "BUILDER"    , description : "builder thread" , optional : 1 }
   , { name : "MONITOR"    , description : "monitor thread" , optional : 1 }
+  , { name : "HANDLER"    , description : "handler thread" , optional : 1 }
+  , { name : "BEHOLDER"   , description : "beholder thread" , optional : 1 }
+  , { name : "LOADER"     , description : "loader thread" , optional : 1 }
+  , { name : "WORKER"     , description : "worker thread" , optional : 1 }
   , { }
 };
 
 /*
- * NOTE : these configurations are only effective until the first reconfiguration (very close to startup).
- * After that, the logging configuration from config is applied. Then, each request may optionally reconfigure
- * the logging streams as well
+ * logging stream categories are applied during first reconfiguration
  */
 logger_stream * streams = (logger_stream []) {
-    { name : "console"  , type : LOGGER_STREAM_FD , fd : 1, expr : "+INFO +WARN +ERROR %CATEGORY"
-#if DEBUG || DEVEL
-    " %NAMES %PID %TID"
+    { name : "logfile"  , type : LOGGER_STREAM_ROLLING, expr : "+INFO +WARN +ERROR"
+      , file_mode : 0666, threshold : 1024 * 1024, max_files : 10, path_base : (char[256]) { } }
+#if DEVEL
+  , { name : "console"  , type : LOGGER_STREAM_FD , fd : 1, expr : "+INFO +WARN +ERROR" } //  +FSEVENT +BUILDPLAN" }
 #endif
-    }
-  , { name : "logfile"  , type : LOGGER_STREAM_ROLLING, expr : "+INFO +WARN +ERROR %DATESTAMP %CATEGORY %NOCOLOR %NAMES %PID %TID"
-      , file_mode : FABIPC_MODE_DATA, threshold : 1024 * 1024, max_files : 10, path_base : (char[256]) { } }
   , { }
 };
 
 // while misconfigured, log any messages to stderr
 int g_logger_default_stderr = 1;
 
-#if DEVEL
-int g_logging_skip_reconfigure;
-#endif
-
 xapi logging_finalize()
 {
   enter;
 
   /* this function is only called from unit tests */
-
   fatal(logger_category_register, categories);
   fatal(logger_finalize);
 
@@ -106,7 +100,7 @@ xapi logging_setup(uint64_t hash)
 {
   enter;
 
-  snprintf(streams[1].path_base, 256, "%s/%016"PRIx64"/fabd/log", XQUOTE(FABIPCDIR), hash);
+  snprintf(streams[0].path_base, 256, "%s/%016"PRIx64"/fabd/log", XQUOTE(FABIPCDIR), hash);
   fatal(logger_stream_register, streams);
 
   // process-level properties
@@ -117,17 +111,14 @@ xapi logging_setup(uint64_t hash)
   finally : coda;
 }
 
-xapi logging_reconfigure(config * restrict cfg, bool dry)
+xapi logging_reconfigure(configblob * restrict cfg, bool dry)
 {
   enter;
 
   box_string * expr;
   int x;
 
-#if DEVEL
-  if(g_logging_skip_reconfigure)
-    goto XAPI_FINALIZE;
-#endif
+goto XAPI_FINALLY;
 
   if(dry)
   {
@@ -149,23 +140,69 @@ xapi logging_reconfigure(config * restrict cfg, bool dry)
   else
   {
     // apply new logger configuration
-    if(cfg->logging.console.changed)
-    {
-      fatal(logger_expr_reset, streams[0].id);
-      for(x = 0; x < cfg->logging.console.exprs.items->size; x++)
-      {
-        expr = list_get(cfg->logging.console.exprs.items, x);
-        fatal(logger_expr_push, streams[0].id, expr->v);
-      }
-    }
-
     if(cfg->logging.logfile.changed)
     {
-      fatal(logger_expr_reset, streams[1].id);
+      fatal(logger_expr_reset, streams[0].id);
+
+      /* exprs from config */
       for(x = 0; x < cfg->logging.logfile.exprs.items->size; x++)
       {
         expr = list_get(cfg->logging.logfile.exprs.items, x);
+        fatal(logger_expr_push, streams[0].id, expr->v);
+      }
+
+      /* exprs from stream defs */
+      if(streams[0].expr)
+      {
+        fatal(logger_expr_push, streams[0].id, streams[0].expr);
+      }
+      if(streams[0].exprs)
+      {
+        char ** exprs = streams[0].exprs;
+        while(*exprs)
+        {
+          fatal(logger_expr_push, streams[0].id, *exprs);
+          exprs++;
+        }
+      }
+
+      /* exprs from cmdline */
+      for(x = 0; x < g_logc; x++)
+      {
+        fatal(logger_expr_push, streams[0].id, g_logv[x]);
+      }
+    }
+
+    if(cfg->logging.console.changed)
+    {
+      fatal(logger_expr_reset, streams[1].id);
+
+      /* exprs from config */
+      for(x = 0; x < cfg->logging.console.exprs.items->size; x++)
+      {
+        expr = list_get(cfg->logging.console.exprs.items, x);
         fatal(logger_expr_push, streams[1].id, expr->v);
+      }
+
+      /* exprs from stream defs */
+      if(streams[1].expr)
+      {
+        fatal(logger_expr_push, streams[1].id, streams[1].expr);
+      }
+      if(streams[1].exprs)
+      {
+        char ** exprs = streams[1].exprs;
+        while(*exprs)
+        {
+          fatal(logger_expr_push, streams[1].id, *exprs);
+          exprs++;
+        }
+      }
+
+      /* exprs from cmdline */
+      for(x = 0; x < g_logc; x++)
+      {
+        fatal(logger_expr_push, streams[1].id, g_logv[x]);
       }
     }
 

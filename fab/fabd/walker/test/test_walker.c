@@ -25,6 +25,7 @@
 #include "moria/load.h"
 #include "moria/vertex.h"
 #include "moria/operations.h"
+#include "moria/parser.h"
 #include "narrator.h"
 #include "narrator/fixed.h"
 #include "narrator/growing.h"
@@ -41,12 +42,11 @@
 #include "walker.internal.h"
 #include "filesystem.h"
 #include "logging.h"
-#include "lookup.internal.h"
+#include "lookup.h"
 #include "module.h"
-#include "node.h"
-#include "node_operations.h"
+#include "fsent.h"
+#include "fsedge.h"
 #include "node_operations_test.h"
-#include "path.h"
 
 typedef struct {
   XUNITTEST;
@@ -64,12 +64,12 @@ typedef struct
 {
   int op;
   union {
-    node * n;
+    fsent * n;
     struct {          // connect
-      node * parent;
-      node * child;
+      fsent * parent;
+      fsent * child;
     };
-    edge * e;
+    fsedge * e;
   };
 } walker_test_operation;
 
@@ -99,7 +99,10 @@ static xapi walker_test_unit_setup(xunit_unit * unit)
 
   fatal(filesystem_setup);
   fatal(graph_setup);
-  fatal(node_setup);
+  fatal(fsent_setup);
+
+/* suppress rcu-registration checks */
+extern __thread bool rcu_is_registered ; rcu_is_registered = true;
 
   finally : coda;
 }
@@ -127,17 +130,18 @@ static xapi walker_test_entry(xunit_test * _test)
   dictionary * infos = 0;
   map * nodes = 0;
   graph_invalidation_context invalidation = { 0 };
-  operations_parser * op_parser = 0;
-  list * operations = 0;
-  narrator * N = 0;
+  graph_parser * op_parser = 0;
+  narrator_growing * N = 0;
+  int method;
+  int stop;
+  char * seq;
+  const char * graph;
 
   fatal(narrator_growing_create, &N);
 
   // setup initial graph
-  fatal(operations_parser_operations_create, &operations);
-  fatal(operations_parser_create, &op_parser);
-  fatal(operations_parser_parse, op_parser, g_graph, MMS(test->operations), operations);
-  fatal(operations_perform, g_graph, node_operations_test_dispatch, operations);
+  fatal(graph_parser_create, &op_parser, &g_graph, &fsent_list, node_operations_test_dispatch, graph_vertex_attrs, graph_edge_attrs);
+  fatal(graph_parser_operations_parse, op_parser, MMS(test->operations));
 
   fatal(map_create, &nodes);
   fatal(dictionary_createx, &infos, sizeof(ftwinfo), 0, info_destroy, 0);
@@ -147,15 +151,15 @@ static xapi walker_test_entry(xunit_test * _test)
   static int walk_ids;
   ctx.base.walk_id = ++walk_ids;
   if(test->base)
-    fatal(pattern_lookup_fragment, MMS(test->base), 0, 0, 0, 0, 0, 0, &ctx.base.base);
+    fatal(resolve_fragment, MMS(test->base), &ctx.base.base);
 
   ctx.base.invalidation = &invalidation;
 
   // carry out the test operation sequence
-  char * seq = test->sequence;
+  seq = test->sequence;
   while(*seq)
   {
-    int method = 0;
+    method = 0;
     if(*seq == '*')
     {
       method = FTWAT_PRE;
@@ -183,7 +187,6 @@ static xapi walker_test_entry(xunit_test * _test)
     B->parent = A;
     B->type = method ? FTWAT_D : FTWAT_F;
 
-    int stop;
     fatal(walker_visit, method, B, &ctx, &stop);
 
     while(*seq == ' ')
@@ -191,19 +194,18 @@ static xapi walker_test_entry(xunit_test * _test)
   }
 
   // ordered list of edges
-  fatal(graph_say, g_graph, N);
-  const char * graph = narrator_growing_buffer(N);
+  fatal(graph_say, &N->base);
+  graph = N->s;
   assert_eq_s(test->graph, graph);
 
 finally:
-  fatal(node_cleanup);
+  fatal(fsent_cleanup);
   fatal(map_xfree, nodes);
   fatal(dictionary_xfree, infos);
   fatal(array_xfree, ctx.operations);
-  fatal(list_xfree, operations);
   graph_invalidation_end(&invalidation);
-  fatal(operations_parser_xfree, op_parser);
-  fatal(narrator_xfree, N);
+  fatal(graph_parser_xfree, op_parser);
+  fatal(narrator_growing_free, N);
 coda;
 }
 

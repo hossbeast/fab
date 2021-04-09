@@ -15,33 +15,28 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#include <string.h>
-
-#include "types.h"
 #include "xapi.h"
 
-#include "xlinux/xstdlib.h"
 #include "lorien/path_normalize.h"
+#include "valyria/llist.h"
 #include "valyria/set.h"
-#include "value.h"
-#include "valyria/hashtable.h"
-#include "valyria/pstring.h"
+#include "xlinux/xstdlib.h"
+#include "yyutil/box.h"
 
 #include "extern.h"
 #include "config.internal.h"
-#include "node.h"
+#include "fsent.h"
 #include "walker.h"
-#include "box.h"
 
-static llist entry_head;        // linked list of pointers to extern nodes
-static llist entry_freelist;    // freelist
+static llist entry_list = LLIST_INITIALIZER(entry_list);         // active list
+static llist entry_freelist = LLIST_INITIALIZER(entry_freelist); // freelist
 
 typedef struct {
-  node * n;
+  fsent * n;
   llist lln;
 } entry;
 
-static xapi extern_list_append(node * n)
+static xapi extern_list_append(fsent * n)
 {
   enter;
 
@@ -55,18 +50,17 @@ static xapi extern_list_append(node * n)
 
   e->n = n;
 
-  llist_append(&entry_head, e, lln);
+  llist_append(&entry_list, e, lln);
 
   finally : coda;
 }
 
-xapi extern_reconfigure(config * restrict cfg, bool dry)
+xapi extern_reconfigure(configblob * restrict cfg, bool dry)
 {
   enter;
 
   char space[512];
-  int walk_id;
-  node * base;
+  fsent * base;
   box_string * elp;
   graph_invalidation_context invalidation = { 0 };
   int x;
@@ -75,11 +69,10 @@ xapi extern_reconfigure(config * restrict cfg, bool dry)
     goto XAPI_FINALLY;
   }
 
-  walk_id = walker_descend_begin();
   fatal(graph_invalidation_begin, &invalidation);
 
   /* move the extern node list to the freelist */
-  llist_splice_head(&entry_freelist, &entry_head);
+  llist_splice_head(&entry_freelist, &entry_list);
 
   for(x = 0; x < cfg->extern_section.entries->table_size; x++)
   {
@@ -88,10 +81,7 @@ xapi extern_reconfigure(config * restrict cfg, bool dry)
 
     path_normalize(space, sizeof(space), elp->v);
 
-    fatal(node_graft, space, &base, &invalidation);
-    fatal(walker_descend, 0, base, 0, space, walk_id, &invalidation);
-    fatal(walker_ascend, base, walk_id, &invalidation);
-
+    fatal(fsent_graft, space, &base, &invalidation);
     fatal(extern_list_append, base);
   }
 
@@ -100,35 +90,19 @@ finally:
 coda;
 }
 
-xapi extern_setup()
-{
-  enter;
-
-  llist_init_node(&entry_head);
-  llist_init_node(&entry_freelist);
-
-  finally : coda;
-}
-
-xapi extern_cleanup()
-{
-  enter;
-
-  finally : coda;
-}
-
-xapi extern_refresh(int walk_id, struct graph_invalidation_context * restrict invalidation)
+xapi extern_system_reconcile(int walk_id, struct graph_invalidation_context * restrict invalidation)
 {
   enter;
 
   entry *e;
-  node *n;
+  fsent *n;
   char path[512];
 
-  llist_foreach(&entry_head, e, lln) {
+  llist_foreach(&entry_list, e, lln) {
     n = e->n;
-    node_get_absolute_path(n, path, sizeof(path));
+    fsent_absolute_path_znload(path, sizeof(path), n);
     fatal(walker_descend, 0, n, 0, path, walk_id, invalidation);
+    fatal(walker_ascend, n, walk_id, invalidation);
   }
 
   finally : coda;

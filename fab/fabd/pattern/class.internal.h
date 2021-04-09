@@ -25,24 +25,4 @@ SUMMARY
 
 */
 
-#include "xapi.h"
-#include "types.h"
-
-#include "valyria/llist.h"
-
-#include "class.h"
-
-struct yyu_location;
-struct pattern_class;
-union pattern_segment;
-struct pattern_segments;
-
-xapi pattern_class_mk(
-    union pattern_segment ** restrict rv
-  , const struct yyu_location * restrict loc
-  , struct pattern_segments * restrict segments
-  , bool invert
-)
-  __attribute__((nonnull));
-
 #endif

@@ -19,35 +19,31 @@
 #define FABD_PATTERN_GENERATE_H
 
 #include "types.h"
-#include "xapi.h"
 
 struct module;
 struct pattern;
 struct pattern_match_node;
 struct set;
 struct graph_invalidation_context;
+struct fsent;
 
-/// pattern_generate
-//
-// SUMMARY
-//  create nodes as specified by a pattern
-//
-// PARAMETERS
-//  pattern       - generate pattern
-//  base          - node to which new nodes are attached (directory node for the module)
-//  af            - artifact to generate in the context of
-//  [stem]        - stem from a previous match
-//  [stem_len]    - stem length
-//  results       - newly created nodes are appended to this list
-//
+/*
+ * create nodes as specified by a pattern
+ *
+ * pattern  - generate pattern
+ * base     - node to which new nodes are attached (directory node for the module)
+ * results  - newly created nodes are appended to this list
+ */
 xapi pattern_generate(
     /* 1 */ const struct pattern * restrict pat
   , /* 2 */ struct module * restrict module
-  , /* 3 */ const struct set * restrict variants
-  , /* 4 */ struct graph_invalidation_context * invalidation
-  , /* 4 */ const struct pattern_match_node * restrict match
-  , /* 5 */ struct set * restrict results
+  , /* 3 */ struct fsent * restrict base
+  , /* 4 */ struct fsent * restrict scope
+  , /* 5 */ const struct set * restrict variants
+  , /* 6 */ struct graph_invalidation_context * invalidation
+  , /* 7 */ const struct pattern_match_node * restrict match
+  , /* 8 */ struct set * restrict results
 )
-  __attribute__((nonnull(1, 2, 4, 6)));
+  __attribute__((nonnull(1, 2, 3, 4, 6, 8)));
 
 #endif

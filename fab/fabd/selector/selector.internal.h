@@ -20,6 +20,7 @@
 
 #include "selector.h"
 
+/* unit test only assertion stuff */
 extern struct xunit_type * xunit_selector;
 
 #define assert_eq_selector(expected, actual)   _assertion(xunit_selector, XU_EQ, QUOTE(actual), expected, actual)

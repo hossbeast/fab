@@ -18,13 +18,6 @@
 #ifndef SYSVAR_H
 #define SYSVAR_H
 
-/*
-
-SUMMARY
-
-*/
-
-#include "types.h"
 #include "xapi.h"
 
 struct exec_builder;

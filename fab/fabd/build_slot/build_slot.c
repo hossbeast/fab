@@ -37,31 +37,39 @@
 #include "narrator/growing.h"
 #include "narrator/fixed.h"
 #include "value.h"
+#include "value/writer.h"
 
 #include "fab/sigutil.h"
 #include "fab/ipc.h"
+#include "fab/events.h"
+#include "fab/build_slot.h"
+#include "fab/build_slot.desc.h"
 
 #include "build_slot.h"
-#include "node.h"
-#include "path.h"
+#include "fsent.h"
 #include "formula.h"
 #include "path_cache.h"
-#include "build_thread.internal.h"
+#include "build_thread.h"
 #include "notify_thread.h"
 #include "buildplan.h"
-#include "epoll_attrs.h"
+#include "dependency.h"
 #include "logging.h"
+#include "exec.h"
 #include "exec_builder.h"
 #include "params.h"
 #include "module.h"
 #include "variant.h"
-#include "node_operations.h"
 #include "stats.h"
 #include "formula_value.h"
+#include "events.h"
+#include "handler.h"
+#include "channel.h"
 
-#include "common/atomic.h"
+#include "atomics.h"
 #include "common/assure.h"
 #include "zbuffer.h"
+#include "marshal.h"
+#include "hexdump.h"
 
 struct insertion_sort_ctx {
   char ** base;
@@ -107,8 +115,9 @@ static size_t insertion_sort(char ** restrict dst, size_t dst_len, char ** src, 
     }
 
     dst[idx] = src[x];
-    if(ctx.lc)
+    if(ctx.lc) {
       dst_len++;
+    }
   }
 
   return dst_len;
@@ -122,8 +131,9 @@ static xapi bsexec(build_slot * restrict bs)
   enter;
 
   int x;
+  int fd = -1;
 
-  // kill if parent dies
+  // kill me if parent dies, prevent zombies
   fatal(xprctl, PR_SET_PDEATHSIG, 9, 0, 0, 0);
 
   // stdin
@@ -141,21 +151,37 @@ static xapi bsexec(build_slot * restrict bs)
   // chdir to the module directory
   fatal(xfchdir, bs->mod->dirnode_fd);
 
+  if(bs->file_fd != -1) {
+    /*
+     * It depends on the program, but with some interpreters (perl), when a shebang-script is
+     * executed with fexec, the program is read from the current position of the file descriptor.
+     * This causes two problems. 1) The fd is already the end, because we read and parsed the script
+     * earlier, so if we do nothing then the interpreter just sees an empty program and exits
+     * successfully after having done nothing. 2) It's not sufficient to simply seek to the
+     * beginning, because the formula may be executed concurrently in several child processes, each
+     * of which inherits the same open file description and seeks it to the end when reading the
+     * program. Reopening a local copy of the file here solves both problems.
+     */
+    fatal(xopenatf, &fd, O_RDONLY, 0, "/proc/self/fd/%d", bs->file_fd);
+  }
+
   // close fds
   for(x = 0; x < 1024; x++)
   {
-    if(x == 0 || x == 1 || x == 2 || x == 1001 || x == bs->file_fd)
+    if(x == 0 || x == 1 || x == 2 || x == 1001 || x == fd) {
       continue;
+    }
 
     close(x);
   }
 
-  // signals
+  /* signals */
 
-  if(bs->file_fd != -1)
-    fatal(xfexecve, bs->file_fd, bs->argv, bs->envp);
-  else
+  if(fd != -1) {
+    fatal(xfexecve, fd, bs->argv, bs->envp);
+  } else {
     fatal(xexecve, bs->file_path, bs->argv, bs->envp);
+  }
 
   finally : coda;
 }
@@ -179,77 +205,218 @@ conclude(&R);
   exit(R);
 }
 
+/* publish the exec-forked event */
+static xapi build_slot_forked(build_slot * restrict bs)
+{
+  enter;
+
+  size_t z;
+  handler_context *handler;
+  fabipc_message *msg;
+  uint16_t len;
+  uint32_t list_size;
+  uint16_t list_size_off;
+  uint16_t len_off;
+  int x;
+  llist list;
+  moria_vertex *v;
+  fsent *n;
+  char *dst;
+  size_t sz;
+
+  if(!events_would(FABIPC_EVENT_FORMULA_EXEC_FORKED, &handler, &msg)) {
+    goto XAPI_FINALIZE;
+  }
+
+  dst = msg->text;
+  sz = sizeof(msg->text);
+  z = 0;
+  z += marshal_u32(dst + z, sz - z, descriptor_fab_build_slot_info.id);
+
+  /* pid, stage */
+  z += marshal_u32(dst + z, sz - z, bs->pid);
+  z += marshal_u16(dst + z, sz - z, bs->stage);
+
+  /* path */
+  if(bs->file_pe)
+  {
+    len = bs->file_pe->dir->len + 1 + bs->file_pe->len;
+    z += marshal_u16(dst + z, sz - z, len);
+    z += znloadw(dst + z, sz - z, bs->file_pe->dir->s, bs->file_pe->dir->len);
+    z += znloadc(dst + z, sz - z, '/');
+    z += znloadw(dst + z, sz - z, bs->file_pe->s, bs->file_pe->len);
+  }
+  else
+  {
+    len = strlen(bs->file_path);
+    z += marshal_u16(dst + z, sz - z, len);
+    z += znloadw(dst + z, sz - z, bs->file_path, len);
+  }
+
+  /* cwd */
+  len = strlen(bs->mod->dir_node_abspath);
+  z += marshal_u16(dst + z, sz - z, len);
+  z += znloadw(dst + z, sz - z, bs->mod->dir_node_abspath, len);
+
+  /* args */
+  z += align(z, 4);
+  list_size_off = z;
+  z += marshal_u32(dst + z, sz - z, 0);
+  z += marshal_u16(dst + z, sz - z, sentinel(bs->argv));
+  for(x = 0; x < sentinel(bs->argv); x++)
+  {
+    z += marshal_u32(dst + z, sz - z, descriptor_fab_build_string.id);
+    len = strlen(bs->argv[x]);
+    z += marshal_u16(dst + z, sz - z, len);
+    z += znloadw(dst + z, sz - z, bs->argv[x], len);
+  }
+  list_size = z - list_size_off;
+  marshal_u32(dst + list_size_off, sz - list_size_off, list_size);
+
+  /* envs */
+  z += align(z, 4);
+  list_size_off = z;
+  z += marshal_u32(dst + z, sz - z, 0);                   /* size */
+  z += marshal_u16(dst + z, sz - z, sentinel(bs->envp));  /* length */
+  for(x = 0; x < sentinel(bs->envp); x++)
+  {
+    z += marshal_u32(dst + z, sz - z, descriptor_fab_build_string.id);
+    len = strlen(bs->envp[x]);
+    z += marshal_u16(dst + z, sz - z, len);
+    z += znloadw(dst + z, sz - z, bs->envp[x], len);
+  }
+  list_size = z - list_size_off;
+  marshal_u32(dst + list_size_off, sz - list_size_off, list_size);
+
+  /* sources */
+  llist_init_node(&list);
+  dependency_sources(bs->bpe, &list);
+  len = llist_count(&list);
+  z += align(z, 4);
+  list_size_off = z;
+  z += marshal_u32(dst + z, sz - z, 0);   /* size */
+  z += marshal_u16(dst + z, sz - z, len); /* length */
+  llist_foreach(&list, v, lln) {
+    z += marshal_u32(dst + z, sz - z, descriptor_fab_build_string.id);
+    n = containerof(v, fsent, vertex);
+    len_off = z;
+    z += marshal_u16(dst + z, sz - z, 0);
+    len = fsent_path_znload(dst + z, sz - z, n);
+    marshal_u16(dst + len_off, sz - len_off, len);
+    z += len;
+  }
+  list_size = z - list_size_off;
+  marshal_u32(dst + list_size_off, sz - list_size_off, list_size);
+
+  /* targets */
+  llist_init_node(&list);
+  dependency_targets(bs->bpe, &list);
+  len = llist_count(&list);
+  z += align(z, 4);
+  list_size_off = z;
+  z += marshal_u32(dst + z, sz - z, 0);
+  z += marshal_u16(dst + z, sz - z, len);
+  llist_foreach(&list, v, lln) {
+    z += marshal_u32(dst + z, sz - z, descriptor_fab_build_string.id);
+    n = containerof(v, fsent, vertex);
+    len_off = z;
+    z += marshal_u16(dst + z, sz - z, 0);
+    len = fsent_path_znload(dst + z, sz - z, n);
+    marshal_u16(dst + len_off, sz - len_off, len);
+    z += len;
+  }
+  list_size = z - list_size_off;
+  marshal_u32(dst + list_size_off, sz - list_size_off, list_size);
+
+  msg->size = z;
+
+  msg->id = bs->pid;
+  events_publish(handler, msg);
+
+  finally : coda;
+}
+
+/* publish the exec-waited event */
+static xapi build_slot_waited(build_slot * restrict bs)
+{
+  enter;
+
+  handler_context *handler;
+  fabipc_message *msg;
+  uint16_t z;
+
+  if(!events_would(FABIPC_EVENT_FORMULA_EXEC_WAITED, &handler, &msg)) {
+    goto XAPI_FINALIZE;
+  }
+
+  z = 0;
+  z += marshal_u32(msg->text + z, sizeof(msg->text) - z, descriptor_fab_build_slot_results.id);
+  z += marshal_i32(msg->text + z, sizeof(msg->text) - z, bs->status);
+  z += marshal_u32(msg->text + z, sizeof(msg->text) - z, bs->stdout_total);
+  z += marshal_u32(msg->text + z, sizeof(msg->text) - z, bs->stderr_total);
+  z += marshal_u32(msg->text + z, sizeof(msg->text) - z, bs->auxout_total);
+
+  msg->size = z;
+  msg->id = bs->pid;
+  events_publish(handler, msg);
+
+  finally : coda;
+}
+
 //
 // public
 //
 
-xapi build_slot_prep(build_slot * restrict bs, buildplan_entity * restrict bpe, uint32_t stage_index)
+xapi build_slot_prep(build_slot * restrict bs, dependency * restrict dep, uint32_t stage_index)
 {
   enter;
 
-  node *n = 0;
-  edge *e;
-  node_edge_dependency *ne;
+  fsent *n = 0;
+  const moria_edge *e;
   int x;
 
+  RUNTIME_ASSERT(dep->fml);
+
   bs->stage_index = stage_index;
-  bs->bpe = bpe;
-  if(bpe->typemark == BPE_NODE)
+  bs->bpe = dep;
+
+  e = &dep->edge;
+  if(!(e->attrs & MORIA_EDGE_HYPER))
   {
-    n = containerof(bpe, typeof(*n), self_bpe);
+    n = containerof(e->A, fsent, vertex); /* target */
     bs->var = n->var;
+    bs->mod = fsent_module_get(n);
   }
-  else if(bpe->typemark == BPE_NODE_EDGE_DEPENDENCY)
+  else
   {
-    ne = containerof(bpe, typeof(*ne), bpe);
-    e = edge_containerof(ne);
-    if(!(e->attrs & MORIA_EDGE_HYPER))
+    n = containerof(e->Alist[0].v, fsent, vertex);
+    bs->mod = fsent_module_get(n);
+    for(x = 0; x < e->Alen; x++)
     {
-      n = vertex_value(e->A);
-      bs->var = n->var;
+      n = containerof(e->Alist[x].v, fsent, vertex);
+      if(fsent_module_get(n) != bs->mod)
+      {
+        bs->mod = 0;
+        break;
+      }
     }
-    else
+
+    n = containerof(e->Alist[0].v, fsent, vertex);
+    bs->var = n->var;
+    for(x = 0; x < e->Alen; x++)
     {
-      /* all nodes in a hyperedge must belong to the same module */
-      if(e->Alen) {
-        n = vertex_value(e->Alist[0].v);
-      } else {
-        n = vertex_value(e->Blist[0].v);
-      }
-      bs->var = n->var;
-
-      /* they need not all belong to the same variant ; only set the variant
-       * on the buildslot if all nodes agree */
-      for(x = 0; x < e->Alen; x++)
+      n = containerof(e->Alist[x].v, fsent, vertex);
+      if(n->var != bs->var)
       {
-        n = vertex_value(e->Alist[x].v);
-        if(n->var != bs->var)
-        {
-          bs->var = 0;
-          break;
-        }
-      }
-      for(x = 0; x < e->Blen; x++)
-      {
-        n = vertex_value(e->Blist[x].v);
-        if(n->var != bs->var)
-        {
-          bs->var = 0;
-          break;
-        }
-      }
-
-      if(e->Alen) {
-        n = vertex_value(e->Alist[0].v);
-      } else {
-        n = vertex_value(e->Blist[0].v);
+        bs->var = 0;
+        break;
       }
     }
   }
 
-  if((bs->mod = node_module_get(n)) == 0)
+  if(bs->mod == 0)
   {
-    /* use the project module for tasks under // */
+    /* fallback to the project module for e.g. tasks under // */
     bs->mod = g_project_root->mod;
   }
   if(bs->var)
@@ -265,39 +432,18 @@ xapi build_slot_prep(build_slot * restrict bs, buildplan_entity * restrict bpe, 
 
   /* mark targets for modification to suppress notify events
    * until the next sweep epoch */
-  if(bpe->typemark == BPE_NODE)
+  e = &dep->edge;
+  if(!(e->attrs & MORIA_EDGE_HYPER))
   {
-    n = containerof(bpe, typeof(*n), self_bpe);
+    n = containerof(e->A, fsent, vertex);
     n->notify_state = NOTIFY_SUPPRESS;
   }
-  else if(bpe->typemark == BPE_NODE_EDGE_DEPENDENCY)
+  else
   {
-    ne = containerof(bpe, typeof(*ne), bpe);
-    e = edge_containerof(ne);
-    if(!(e->attrs & MORIA_EDGE_HYPER))
+    for(x = 0; x < e->Alen; x++)
     {
-      if(ne->dir == EDGE_TGT_SRC)
-        n = vertex_value(e->A);
-      else
-        n = vertex_value(e->B);
-
+      n = containerof(e->Alist[x].v, fsent, vertex);
       n->notify_state = NOTIFY_SUPPRESS;
-    }
-    else if(ne->dir == EDGE_TGT_SRC)
-    {
-      for(x = 0; x < e->Alen; x++)
-      {
-        n = vertex_value(e->Alist[x].v);
-        n->notify_state = NOTIFY_SUPPRESS;
-      }
-    }
-    else if(ne->dir == EDGE_SRC_TGT)
-    {
-      for(x = 0; x < e->Blen; x++)
-      {
-        n = vertex_value(e->Blist[x].v);
-        n->notify_state = NOTIFY_SUPPRESS;
-      }
     }
   }
 
@@ -308,130 +454,95 @@ xapi build_slot_fork_and_exec(build_slot * restrict bs)
 {
   enter;
 
-  const module * mod;
+  module * mod;
   const formula * fml;
   const value * vars;
   const exec * variant_exec = 0;
   exec * local_exec = 0;
   size_t envp_len = 0;
   uint16_t new_env_len;
-  size_t args_size = 0;
-  size_t args_len = 0;
-  size_t envs_size = 0;
+  size_t args_len;
+  size_t envs_size;
   const char *filename;
 
   RUNTIME_ASSERT(bs->bpe);
   RUNTIME_ASSERT(bs->bpe->fml);
   RUNTIME_ASSERT(bs->bpe->fml->self_fml);
+  RUNTIME_ASSERT(bs->mod);
 
-  STATS_INC(bsexec);
+  STATS_INC(g_stats.bsexec);
 
   mod = bs->mod;
   fml = bs->bpe->fml->self_fml;
   vars = bs->vars;
   variant_exec = bs->exec;
 
-  // pre-rendered envs, if any
   fatal(exec_builder_xreset, &bs->exec_builder);
   exec_render_context_configure(&bs->exec_builder_context, &bs->exec_builder, mod, vars, bs);
 
-//printf("fml name %s\n", fml->fml_node->name->name);
-//char space[512];
-//node_get_absolute_path(fml->fml_node, space, sizeof(space));
-//printf("fml path %s\n", space);
-//printf("fml file %p ", fml->file);
-//fflush(stdout);
-//if(fml->file)
-//  fatal(formula_value_say, fml->file, g_narrator_stdout);
-//printf("\n");
-//printf("fml envs %p ", fml->envs);
-//fflush(stdout);
-//if(fml->envs)
-//  fatal(formula_value_say, fml->envs, g_narrator_stdout);
-//printf("\n");
-//printf("fml args %p ", fml->args);
-//fflush(stdout);
-//if(fml->args)
-//  fatal(formula_value_say, fml->args, g_narrator_stdout);
-//printf("\n");
-  // file to execute if any
-  if(fml->file)
+  // render file if any
+  if(fml->file) {
     fatal(exec_render_file, &bs->exec_builder_context, fml->file);
+    if(bs->exec_builder_context.errlen) {
+      goto XAPI_FINALLY;
+    }
+  }
 
-//  if(fml->path)
-//    fatal(exec_render_path, &bs->exec_builder_context, fml->path);
-
-  // args to pass if any
-  if(fml->args)
+  // render args if any
+  if(fml->args) {
     fatal(exec_render_args, &bs->exec_builder_context, fml->args);
+    if(bs->exec_builder_context.errlen) {
+      goto XAPI_FINALLY;
+    }
+  }
 
-  // env vars to pass if any
-  if(fml->envs)
+  // render envs if any
+  if(fml->envs) {
     fatal(exec_render_envs, &bs->exec_builder_context, fml->envs);
+    if(bs->exec_builder_context.errlen) {
+      goto XAPI_FINALLY;
+    }
+  }
 
-  // builtins
+  // render sysvars
   fatal(exec_render_env_sysvars, &bs->exec_builder_context, bs);
 
   // render
   fatal(exec_builder_build, &bs->exec_builder, &local_exec);
 
-  /*
-   * path setup
-   */
-
+  // path setup
+  bs->file_pe = 0;
   bs->file_path = 0;
   bs->file_fd = -1;
-  if(local_exec->file_pe)
+  if(local_exec->file_pe)   // execute file given by path-cache entry
   {
+    bs->file_pe = local_exec->file_pe;
     bs->file_fd = local_exec->file_pe->fd;
     filename = local_exec->file_pe->filename;
   }
-  else if(local_exec->file)
+  else if(local_exec->path) // execute file given by absolute path
   {
-    bs->file_path = local_exec->file;
-    if((filename = strrchr(local_exec->file, '/')))
+    bs->file_path = local_exec->path;
+    if((filename = strrchr(local_exec->path, '/')))
       filename++;
     else
-      filename = local_exec->file;
+      filename = local_exec->path;
   }
-  else
+  else                      // execute formula file itself
   {
     bs->file_fd = fml->fd;
-    filename = fml->fml_node->name->name;
+    bs->file_path = fml->self_node_abspath;
+    filename = fml->self_node->name.name;
   }
-
-//  if(local_exec->file && local_exec->file[0] == '/')
-//  {
-//    bs->file_path = local_exec->file;
-//printf("abs file %s\n", local_exec->file);
-//  }
-//  else if(local_exec->file)
-//  {
-//    fatal(formula_path_search, &bs->file_fd, local_exec->file, local_exec->file_len);
-//printf("path search %s -> %d\n", local_exec->file, bs->file_fd);
-//  }
-//  else
-//  {
-//    bs->file_path = fml->abspath;
-//printf("fml abspath %s\n", fml->abspath);
-//  }
 
   /*
    * args setup
    */
 
-  args_len += 1;    // program name
+  args_len = 1;    // program name
   args_len += local_exec->args_size;
 
-  args_size = args_len;
-  args_size += 1;   // sentinel
-
-  fatal(assure, &bs->argv_stor, sizeof(*bs->argv_stor), args_size, &bs->argv_stor_a);
-//  if(local_exec->filename)
-//    bs->argv_stor[0] = local_exec->filename;
-//  else
-//    bs->argv_stor[0] = fml->fml_node->name->name;
-
+  fatal(assure, &bs->argv_stor, sizeof(*bs->argv_stor), args_len + 1 /* sentinel */, &bs->argv_stor_a);
   bs->argv_stor[0] = (void*)filename;
   memcpy(&bs->argv_stor[1], local_exec->args, sizeof(*local_exec->args) * local_exec->args_size);
 
@@ -442,6 +553,7 @@ xapi build_slot_fork_and_exec(build_slot * restrict bs)
    * env setup
    */
 
+  envs_size = 0;
   if(variant_exec)
     envs_size += variant_exec->envs_size;
   envs_size += local_exec->envs_size;
@@ -470,412 +582,103 @@ xapi build_slot_fork_and_exec(build_slot * restrict bs)
   bs->env_stor[envp_len] = 0;
   bs->envp = bs->env_stor;
 
-//if(strcmp(bs->argv_stor[0], "bam-xunit") == 0)
-//{
-//  printf("WTF\n");
-//extern int GOATS;
-//  GOATS=1;
-//  while(1) { sleep(1); }
-//}
-
   fatal(xfork, &bs->pid);
-  if(bs->pid == 0)
-  {
+  if(bs->pid == 0) {
     bsexec_jump(bs);
   }
 
+  fatal(build_slot_forked, bs);
+
   finally : coda;
 }
-
-//int GOATS;
 
 xapi build_slot_read(build_slot * restrict bs, uint32_t stream)
 {
   enter;
 
-  int stream_part;
-  int fd;
-  char * buf;
-  uint16_t * buf_len;
-  uint32_t * total;
-  uint16_t buf_size;
   ssize_t bytes;
+  int fd = 0;
+  uint32_t * total = 0;
+  fabipc_event_type event = 0;
+  handler_context *handler;
+  fabipc_message *msg;
 
-  stream_part = 0;
-  buf_size = 0;
   if(stream == 1)
   {
-    stream_part = build_thread_cfg.capture_stdout;
     fd = bs->stdout_pipe[0];
-    buf = bs->stdout_buf;
-    buf_len = &bs->stdout_buf_len;
-    buf_size = build_thread_cfg.stdout_buffer_size;
     total = &bs->stdout_total;
+    event = FABIPC_EVENT_FORMULA_EXEC_STDOUT;
   }
   else if(stream == 2)
   {
-    stream_part = build_thread_cfg.capture_stderr;
     fd = bs->stderr_pipe[0];
-    buf = bs->stderr_buf;
-    buf_len = &bs->stderr_buf_len;
-    buf_size = build_thread_cfg.stderr_buffer_size;
     total = &bs->stderr_total;
+    event = FABIPC_EVENT_FORMULA_EXEC_STDERR;
   }
   else if(stream == 1001)
   {
-    stream_part = build_thread_cfg.capture_auxout;
     fd = bs->auxout_pipe[0];
-    buf = bs->auxout_buf;
-    buf_len = &bs->auxout_buf_len;
-    buf_size = build_thread_cfg.auxout_buffer_size;
     total = &bs->auxout_total;
+    event = FABIPC_EVENT_FORMULA_EXEC_AUXOUT;
   }
 
-  if(stream_part == STREAM_PART_LEADING)
+  if(events_would(event, &handler, &msg))
   {
-    if(*buf_len < buf_size)
-    {
-      fatal(xread, fd, buf + *buf_len, buf_size - *buf_len, &bytes);
-      *buf_len += bytes;
-      *total += bytes;
-    }
-    else
-    {
-      stream_part = STREAM_PART_NONE;
-    }
+    msg->id = bs->pid;
+    fatal(xread, fd, msg->text, sizeof(msg->text), &bytes);
+    msg->size = bytes;
+    events_publish(handler, msg);
   }
-
-  // discard excess
-  if(stream_part == STREAM_PART_NONE)
+  else
   {
     fatal(xsplice, &bytes, fd, 0, build_devnull_fd, 0, 0xffff, SPLICE_F_MOVE);
-    *total += bytes;
   }
+  *total += bytes;
 
   finally : coda;
 }
 
-xapi build_slot_reap(build_slot * restrict bs, uint32_t slot_index, siginfo_t *info)
+xapi build_slot_reap(build_slot * restrict bs, siginfo_t *info)
 {
   enter;
 
   int x;
-  int exit;
-  int sig;
-  bool core;
-  bool abnormal;
-  uint32_t color = 0;
-  char space[4096];
-  size_t z;
-  uint16_t blen;
-  int lines;
-  narrator *N;
-
-  buildplan_entity *bpe;
-  node *n;
-  node_edge_dependency *ne;
-  edge *e;
+  const dependency *bpe;
+  fsent *n;
+  const moria_edge *e;
+  bool success;
 
   bs->status = info->si_status;
+  success = true;
+  if(bs->status != 0 || bs->stderr_total > 0)
+    success = false;
 
-  exit = 0;
-  sig = 0;
-  core = false;
-  abnormal = false;
-  if(WIFEXITED(bs->status))
+  /* re-enable inotify monitoring for the dependency targets */
+  bpe = bs->bpe;
+  e = &bpe->edge;
+  if(!(e->attrs & MORIA_EDGE_HYPER))
   {
-    exit = WEXITSTATUS(bs->status);
-  }
-  else if(WIFSIGNALED(bs->status))
-  {
-    sig = WTERMSIG(bs->status);
-    core = WCOREDUMP(bs->status);
+    n = containerof(e->A, fsent, vertex);
+    n->notify_epoch = notify_thread_epoch;
+    n->notify_state = NOTIFY_EXPIRING;
+    if(success) {
+      fatal(fsent_ok, n);
+    }
   }
   else
   {
-    abnormal = true;
-  }
-
-  bs->success = true;
-  if(bs->status != 0 || bs->stderr_buf_len > 0)
-    bs->success = false;
-
-  if(bs->success)
-  {
-    /* mark targets as up to date */
-    bpe = bs->bpe;
-    if(bpe->typemark == BPE_NODE)
+    for(x = 0; x < e->Alen; x++)
     {
-      n = containerof(bpe, typeof(*n), self_bpe);
-      fatal(node_ok, n);
-    }
-    else if(bpe->typemark == BPE_NODE_EDGE_DEPENDENCY)
-    {
-      ne = containerof(bpe, typeof(*ne), bpe);
-      e = edge_containerof(ne);
-      if(!(e->attrs & MORIA_EDGE_HYPER))
-      {
-        if(ne->dir == EDGE_TGT_SRC)
-          n = vertex_value(e->A);
-        else
-          n = vertex_value(e->B);
-        fatal(node_ok, n);
-      }
-      else if(ne->dir == EDGE_TGT_SRC)
-      {
-        for(x = 0; x < e->Alen; x++)
-        {
-          n = vertex_value(e->Alist[x].v);
-          fatal(node_ok, n);
-        }
-      }
-      else if(ne->dir == EDGE_SRC_TGT)
-      {
-        for(x = 0; x < e->Blen; x++)
-        {
-          n = vertex_value(e->Blist[x].v);
-          fatal(node_ok, n);
-        }
-      }
-    }
-  }
-
-  /* re-enable inotify monitoring */
-  bpe = bs->bpe;
-  if(bpe->typemark == BPE_NODE)
-  {
-    n = containerof(bpe, typeof(*n), self_bpe);
-    n->notify_epoch = notify_thread_epoch;
-    n->notify_state = NOTIFY_EXPIRING;
-  }
-  else if(bpe->typemark == BPE_NODE_EDGE_DEPENDENCY)
-  {
-    ne = containerof(bpe, typeof(*ne), bpe);
-    e = edge_containerof(ne);
-    if(!(e->attrs & MORIA_EDGE_HYPER))
-    {
-      if(ne->dir == EDGE_TGT_SRC)
-        n = vertex_value(e->A);
-      else
-        n = vertex_value(e->B);
+      n = containerof(e->Alist[x].v, fsent, vertex);
       n->notify_epoch = notify_thread_epoch;
       n->notify_state = NOTIFY_EXPIRING;
-    }
-    else if(ne->dir == EDGE_TGT_SRC)
-    {
-      for(x = 0; x < e->Alen; x++)
-      {
-        n = vertex_value(e->Alist[x].v);
-        n->notify_epoch = notify_thread_epoch;
-        n->notify_state = NOTIFY_EXPIRING;
-      }
-    }
-    else if(ne->dir == EDGE_SRC_TGT)
-    {
-      for(x = 0; x < e->Blen; x++)
-      {
-        n = vertex_value(e->Blist[x].v);
-        n->notify_epoch = notify_thread_epoch;
-        n->notify_state = NOTIFY_EXPIRING;
+      if(success) {
+        fatal(fsent_ok, n);
       }
     }
   }
 
-  if(log_would(L_BUILD))
-  {
-    if(bs->success)
-      color |= L_GREEN;
-    else
-      color |= L_RED;
-
-    // always show the program name, and targets
-    fatal(log_xstart, L_BUILD, color, &N);
-    fatal(narrator_xsayf, N, "%s", bs->argv[0]);
-    fatal(narrator_xsays, N, " -> ");
-    fatal(bpe_say_targets, bs->bpe, N);
-    fatal(log_finish);
-
-    if((bs->success && build_thread_cfg.success.show_path) || (!bs->success && build_thread_cfg.error.show_path))
-    {
-      if(bs->file_fd != -1)
-      {
-        fatal(xreadlinkf, "/proc/%ld/fd/%d", space, sizeof(space), (void*)&z, g_params.pid, bs->file_fd);
-        space[z] = 0;
-        xlogf(L_BUILD, color, " path %s (fd %d)", space, bs->file_fd);
-      }
-      else
-      {
-        xlogf(L_BUILD, color, " path %s", bs->file_path);
-      }
-    }
-
-    if((bs->success && build_thread_cfg.success.show_arguments) || (!bs->success && build_thread_cfg.error.show_arguments))
-    {
-      xlogf(L_BUILD, color, " argv %2d", (int)sentinel(bs->argv));
-      for(x = 0; x < sentinel(bs->argv); x++)
-        xlogf(L_BUILD, color, "  [%2d] %s", x, bs->argv[x]);
-    }
-
-    if((bs->success && build_thread_cfg.success.show_cwd) || (!bs->success && build_thread_cfg.error.show_cwd))
-    {
-      z = node_get_absolute_path(bs->mod->dir_node, space, sizeof(space));
-      xlogf(L_BUILD, color, " cwd %.*s", (int)z, space);
-    }
-
-    if((bs->success && build_thread_cfg.success.show_command) || (!bs->success && build_thread_cfg.error.show_command))
-    {
-      z = 0;
-      for(x = 0; x < sentinel(bs->argv); x++)
-      {
-        z += znloads(space + z, sizeof(space) - z, " ");
-        z += znloads(space + z, sizeof(space) - z, bs->argv[x]);
-      }
-
-      xlogf(L_BUILD, color, " command %.*s", (int)z, space);
-    }
-
-    if((bs->success && build_thread_cfg.success.show_environment) || (!bs->success && build_thread_cfg.error.show_environment))
-    {
-      xlogf(L_BUILD, color, " envp %2d", (int)sentinel(bs->envp));
-      for(x = 0; x < sentinel(bs->envp); x++)
-        xlogf(L_BUILD, color, "  [%2d] %s", x, bs->envp[x]);
-    }
-
-    if((bs->success && build_thread_cfg.success.show_sources) || (!bs->success && build_thread_cfg.error.show_sources))
-    {
-      xlogf(L_BUILD, color, " sources %2d", 1);
-      fatal(log_xstart, L_BUILD, color, &N);
-      fatal(narrator_xsayf, N, "  [%2d] ", 0);
-      fatal(bpe_say_sources, bs->bpe, N);
-      fatal(log_finish);
-    }
-
-    if((bs->success && build_thread_cfg.success.show_targets) || (!bs->success && build_thread_cfg.error.show_targets))
-    {
-      xlogf(L_BUILD, color, " targets %2d", 1);
-      fatal(log_xstart, L_BUILD, color, &N);
-      fatal(narrator_xsayf, N, "  [%2d] ", 0);
-      fatal(bpe_say_targets, bs->bpe, N);
-      fatal(log_finish);
-    }
-
-    if((bs->success && build_thread_cfg.success.show_status) || (!bs->success && build_thread_cfg.error.show_status))
-    {
-      xlogf(L_BUILD, color, " status %d", bs->status);
-      xlogf(L_BUILD, color, " exit %d signal %d core %s abnormal %s", exit, sig, core ? "true" : "false", abnormal ? "true" : "false");
-    }
-
-    if((bs->success && build_thread_cfg.success.show_stdout) || (!bs->success && build_thread_cfg.error.show_stdout))
-    {
-      blen = bs->stdout_buf_len;
-      if(build_thread_cfg.success.show_stdout_limit_bytes > 0)
-      {
-        blen = MIN(blen, build_thread_cfg.success.show_stdout_limit_bytes);
-      }
-
-      if(build_thread_cfg.success.show_stdout_limit_lines > 0)
-      {
-        lines = 0;
-        for(x = 0; x < blen; x++)
-        {
-          if(bs->stdout_buf[x] == '\n')
-          {
-            if(lines++ > build_thread_cfg.success.show_stdout_limit_lines)
-              break;
-          }
-        }
-
-        blen = MIN(blen, x);
-      }
-
-      if(blen || !bs->success)
-      {
-        fatal(log_xstart, L_BUILD, color, &N);
-        if((bs->stdout_total > blen) || !bs->success)
-          fatal(narrator_xsayf, N, " stdout - showing %"PRIu16" of %"PRIu32" bytes", blen, bs->stdout_total);
-        if(blen)
-        {
-          fatal(narrator_xsays, N, "\n");
-          fatal(narrator_xsayw, N, bs->stdout_buf, blen);
-        }
-        fatal(log_finish);
-      }
-    }
-
-    if((bs->success && build_thread_cfg.success.show_stderr) || (!bs->success && build_thread_cfg.error.show_stderr))
-    {
-      blen = bs->stderr_buf_len;
-      if(build_thread_cfg.success.show_stderr_limit_bytes > 0)
-      {
-        blen = MIN(blen, build_thread_cfg.success.show_stderr_limit_bytes);
-      }
-
-      if(build_thread_cfg.success.show_stderr_limit_lines > 0)
-      {
-        lines = 0;
-        for(x = 0; x < blen; x++)
-        {
-          if(bs->stderr_buf[x] == '\n')
-          {
-            if(lines++ > build_thread_cfg.success.show_stderr_limit_lines)
-              break;
-          }
-        }
-
-        blen = MIN(blen, x);
-      }
-
-      if(blen || !bs->success)
-      {
-        fatal(log_xstart, L_BUILD, color, &N);
-        if((bs->stderr_total > blen) || !bs->success)
-          fatal(narrator_xsayf, N, " stderr - showing %"PRIu16" of %"PRIu32" bytes", blen, bs->stderr_total);
-        if(blen)
-        {
-          fatal(narrator_xsays, N, "\n");
-          fatal(narrator_xsayw, N, bs->stderr_buf, blen);
-        }
-        fatal(log_finish);
-      }
-    }
-
-    if((bs->success && build_thread_cfg.success.show_auxout) || (!bs->success && build_thread_cfg.error.show_auxout))
-    {
-      blen = bs->auxout_buf_len;
-      if(build_thread_cfg.success.show_auxout_limit_bytes > 0)
-      {
-        blen = MIN(blen, build_thread_cfg.success.show_auxout_limit_bytes);
-      }
-
-      if(build_thread_cfg.success.show_auxout_limit_lines > 0)
-      {
-        lines = 0;
-        for(x = 0; x < blen; x++)
-        {
-          if(bs->auxout_buf[x] == '\n')
-          {
-            if(lines++ > build_thread_cfg.success.show_auxout_limit_lines)
-              break;
-          }
-        }
-
-        blen = MIN(blen, x);
-      }
-
-      if(blen || !bs->success)
-      {
-        if((bs->auxout_total > blen) || !bs->success)
-          xlogf(L_BUILD, color, " auxout - showing %"PRIu16" of %"PRIu32" bytes", blen, bs->auxout_total);
-        if(blen)
-        {
-          fatal(log_start, L_BUILD, &N);
-          fatal(narrator_xsays, N, "\n");
-          fatal(narrator_xsayw, N, bs->auxout_buf, blen);
-          fatal(log_finish);
-        }
-      }
-    }
-  }
+  fatal(build_slot_waited, bs);
 
   finally : coda;
 }

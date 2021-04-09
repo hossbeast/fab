@@ -21,15 +21,16 @@
 #include "xapi.h"
 #include "types.h"
 
-struct config;
+struct configblob;
 
-extern char *path_cache_env_path; // $PATH
+extern char *path_cache_env_path;   // $PATH, if specified in config
 
 typedef struct path_cache_entry {
-  int fd;
-  uint16_t len;
-  const char *filename; // pointer into s
-  char s[];
+  struct path_cache_entry *dir;     // directory containing this entry
+  int fd;                           // file descriptor
+  uint16_t len;                     // length of s
+  const char *filename;             // pointer to the filename at the end of s
+  char s[];                         // path fragment, or name
 } path_cache_entry;
 
 xapi path_cache_setup(void);
@@ -41,9 +42,12 @@ xapi path_cache_cleanup(void);
  * config - effective config tree
  * dry    - whether to perform a dry-run
  */
-xapi path_cache_reconfigure(struct config * restrict cfg, bool dry)
+xapi path_cache_reconfigure(struct configblob * restrict cfg, bool dry)
   __attribute__((nonnull));
 
+/*
+ * get an entry from the path cache
+ */
 xapi path_cache_search(const path_cache_entry ** restrict entry, const char * restrict file, uint16_t len)
   __attribute__((nonnull));
 

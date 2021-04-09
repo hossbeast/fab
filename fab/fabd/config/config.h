@@ -21,56 +21,38 @@
 #include "types.h"
 #include "xapi.h"
 
-struct config;
-typedef struct config config;
+#include "moria.h"
 
-// whether the most recent config_reconfigure was successful
-extern bool config_reconfigure_result;
+struct graph_invalidation_context;
+struct narrator;
+struct fsent;
+struct configblob;
 
-/// config_setup
-//
-// SUMMARY
-//  initializes the config module, does not apply any config files
-//
+/* VERTEX_CONFIG */
+typedef struct config {
+  moria_vertex vertex;
+
+  /* regarding the corresponding VERTEX_CONFIG_FILE */
+  struct fsent *self_node;
+  char self_node_abspath[512];
+  uint16_t self_node_abspath_len;
+
+  /* parsed from the file */
+  struct configblob *cfg;
+} config;
+
+/* initializes the config module, does not apply any config files */
 xapi config_setup(void);
 
-/// config_cleanup
-//
-// SUMMARY
-//  free resources
-//
+/* free resources */
 xapi config_cleanup(void);
 
-/// config_report
-//
-// SUMMARY
-//  log the active config with L_CONFIG
-//
-xapi config_report(void);
+xapi config_system_bootstrap(void);
 
-/// config_begin_staging
-//
-// SUMMARY
-//  reset the staging config, reload config files and apply them to the staging config
-//
-xapi config_begin_staging(void);
-
-/// config_stage
-//
-// SUMMARY
-//  cumulatively apply config to the staging config
-//
-// PARAMETERS
-//  text - configuration text to apply
-//
-xapi config_stage(config ** const restrict)
+xapi config_system_reconcile(int walk_id, struct graph_invalidation_context * restrict invalidation, bool * restrict reconciled)
   __attribute__((nonnull));
 
-/// reconfigure
-//
-// SUMMARY
-//  promote the staging config to the active config, reconfigure subsystems, and call config_report
-//
-xapi config_reconfigure(void);
+xapi config_active_say(struct narrator * restrict N)
+  __attribute__((nonnull));
 
 #endif

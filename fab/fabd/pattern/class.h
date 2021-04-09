@@ -18,11 +18,19 @@
 #ifndef FABD_PATTERN_CLASS_H
 #define FABD_PATTERN_CLASS_H
 
-/*
+#include "xapi.h"
+#include "types.h"
 
-SUMMARY
- fab-file node
+struct yyu_location;
+union pattern_segment;
+struct pattern_segments;
 
-*/
+xapi pattern_class_mk(
+    union pattern_segment ** restrict rv
+  , const struct yyu_location * restrict loc
+  , struct pattern_segments * restrict segments
+  , bool invert
+)
+  __attribute__((nonnull));
 
 #endif

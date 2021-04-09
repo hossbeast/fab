@@ -24,45 +24,95 @@
 
 #include "types.h"
 #include "xapi.h"
+#include "locks.h"
 
+#include "fab/build.h"
+
+#include "rcu_list.h"
 #include "selector.h"
+#include "rule.h"
 
+struct fabipc_channel;
+struct fabipc_message;
 struct request;
-struct value_writer;
+struct request_parser;
 struct selection;
-struct graph_invalidation_context;
 
-/// handler_context
-//
-// SUMMARY
-//  context for processing a request
-//
+extern rcu_list g_handlers;    // list of active handlers
+
+/* lock for running the build, e.g. build or autobuild commands */
+extern struct trylock handler_build_lock;
+
 typedef struct handler_context {
+  union {
+    llist lln;      // freelist
+    rcu_list stk;   // g_handlers
+  };
   selector_context sel_ctx;
+  rule_run_context rule_ctx;
   struct selection * selection;
-  struct graph_invalidation_context * invalidation;
+  struct graph_invalidation_context invalidation;
+  struct request_parser * request_parser;
+  bool autorun;
+  char err[256];
+  uint16_t errlen;
+
+  enum fab_build_state build_state;
+
+  pid_t tid;
+  pid_t client_pid;
+  pid_t client_tid;
+  uint32_t client_msg_id;
+
+  union {
+    char channel_state;
+
+    struct {
+      /* fabipc channel for the client */
+      struct fabipc_channel * chan;
+
+      /* subscribed events */
+      uint32_t event_mask;
+    };
+  };
 } handler_context;
 
-xapi handler_context_create(handler_context ** restrict ctx)
+xapi handler_setup(void);
+xapi handler_cleanup(void);
+xapi handler_system_reload(struct handler_context * restrict ctx)
   __attribute__((nonnull));
 
-xapi handler_context_xfree(handler_context * restrict ctx);
+/* create/release handlers */
 
-xapi handler_context_reset(handler_context * restrict ctx)
+xapi handler_alloc(handler_context ** restrict rv)
   __attribute__((nonnull));
 
-xapi handler_context_ixfree(handler_context ** restrict ctx)
+void handler_release(handler_context * restrict ctx);
+void handler_reset(handler_context * restrict ctx);
+
+/* send/receive messages over the channel */
+
+struct fabipc_message * handler_produce(struct handler_context * restrict ctx)
   __attribute__((nonnull));
 
-/// handler_dispatch
-//
-// SUMMARY
-//
-xapi handler_dispatch(
-    handler_context * restrict ctx
-  , struct request * restrict request
-  , struct value_writer * response_writer
-)
+void handler_post(struct handler_context * restrict ctx, struct fabipc_message * restrict msg)
+  __attribute__((nonnull));
+
+struct fabipc_message * handler_acquire(struct handler_context * restrict ctx)
+  __attribute__((nonnull));
+
+void handler_consume(struct handler_context * restrict ctx, struct fabipc_message * restrict msg)
+  __attribute__((nonnull));
+
+/* complete a request */
+
+xapi handler_process_request(struct handler_context * restrict ctx, struct request * restrict request)
+  __attribute__((nonnull));
+
+void handler_request_completes(struct handler_context * restrict ctx, int code, const char * restrict text, uint16_t text_len)
+  __attribute__((nonnull(1)));
+
+void handler_request_complete(struct handler_context * restrict ctx, int code)
   __attribute__((nonnull));
 
 #endif

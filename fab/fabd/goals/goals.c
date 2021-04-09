@@ -15,22 +15,28 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#include "xapi.h"
-#include "moria/vertex.h"
-#include "valyria/set.h"
+#include "fab/events.h"
+#include "fab/ipc.h"
 #include "narrator.h"
+#include "narrator/fixed.h"
+#include "value/writer.h"
+#include "valyria/llist.h"
+#include "valyria/set.h"
 
 #include "goals.h"
-#include "node.h"
-#include "module.internal.h"
-#include "buildplan.h"
 #include "build_thread.h"
-#include "selector.h"
+#include "buildplan.h"
+#include "fsent.h"
+#include "handler.h"
 #include "logging.h"
+#include "module.internal.h"
 #include "path_cache.h"
+#include "selector.h"
 
 #include "common/attrs.h"
+#include "events.h"
 
+bool goals_autorun;
 static bool goal_build;
 static bool goal_script;
 static selector * goal_target_direct_selector;
@@ -52,61 +58,61 @@ typedef struct buildplan_context {
 //
 
 /*
- * Add a node to the plan - a node can be visited
+ * Add a node to the plan
  *
  * @distance - length of the path to this node from the target
  */
-static xapi plan_visitor_direct(vertex * v, void * arg, traversal_mode mode, int distance, int * restrict result)
+static xapi plan_visitor_direct(moria_vertex * v, void * arg, moria_traversal_mode mode, int distance, int * restrict result)
 {
   enter;
 
   buildplan_context * restrict bpctx = arg;
-  node * n;
+  fsent * n;
   char path[512];
 
-  n = vertex_value(v);
+  n = containerof(v, fsent, vertex);
 
-  if(!node_invalid_get(n)) {
+  if(!fsent_invalid_get(n)) {
     goto XAPI_FINALIZE;
   }
 
-  /* shadow nodes can act as placeholders */
-  if(!n->bpe && node_shadowtype_get(n)) {
+  /* shadow nodes can act as placeholders, but are never actually built */
+  if(!n->dep && fsent_shadowtype_get(n)) {
     goto XAPI_FINALIZE;
   }
 
   /* this is an error case - node is not up to date, with no way to update it */
-  else if(!n->bpe)
+  else if(!n->dep)
   {
-    if(n->bp_plan_id != bp_plan_id)
+    if(n->bp_plan_id != buildplan_id)
     {
       bpctx->state = UNSATISFIED;
-      node_get_path(n, path, sizeof(path));
-      logf(L_WARN, "no way to update %p %s state %s", n, path, attrs32_name_byvalue(graph_state_attrs, node_state_get(n)));
+      fsent_path_znload(path, sizeof(path), n);
+      fprintf(stderr, "no way to update %p %s state %s", n, path, attrs32_name_byvalue(graph_vertex_state_attrs, fsent_state_get(n)));
     }
-    n->bp_plan_id = bp_plan_id;
+    n->bp_plan_id = buildplan_id;
     goto XAPI_FINALIZE;
   }
 
-  fatal(buildplan_add, n->bpe, distance);
+  fatal(buildplan_add, n->dep, distance);
 
   finally : coda;
 }
 
-static xapi plan_visitor_transitive(vertex * v, void * arg, traversal_mode mode, int distance, int * restrict result)
+static xapi plan_visitor_transitive(moria_vertex * v, void * arg, moria_traversal_mode mode, int distance, int * restrict result)
 {
   enter;
 
   buildplan_context * restrict bpctx = arg;
 
-  fatal(graph_traverse_vertices
-    , g_graph
+  fatal(moria_traverse_vertices
+    , &g_graph
     , v
     , plan_visitor_direct
     , 0
-    , (traversal_criteria[]) {{
-          edge_travel : EDGE_TYPE_STRONG
-        , edge_visit : EDGE_TYPE_STRONG
+    , (moria_traversal_criteria[]) {{
+          edge_travel : EDGE_DEPENDS
+        , edge_visit : EDGE_DEPENDS
         , vertex_visit : VERTEX_FILETYPE_REG
       }}
     , MORIA_TRAVERSE_DOWN | MORIA_TRAVERSE_PRE
@@ -123,10 +129,10 @@ static xapi plan_select_transitive(llist * restrict selection, buildplan_context
 {
   enter;
 
-  selected_node *sn;
+  selected *sn;
 
   llist_foreach(selection, sn, lln) {
-    fatal(plan_visitor_transitive, vertex_containerof(sn->n), bpctx, 0, 0, 0);
+    fatal(plan_visitor_transitive, (void*)sn->v, bpctx, 0, 0, 0);
   }
 
   finally : coda;
@@ -139,10 +145,10 @@ static xapi plan_select_direct(llist * restrict selection, buildplan_context * r
 {
   enter;
 
-  selected_node *sn;
+  selected *sn;
 
   llist_foreach(selection, sn, lln) {
-    fatal(plan_visitor_direct, vertex_containerof(sn->n), bpctx, 0, 0, 0);
+    fatal(plan_visitor_direct, (void*)sn->v, bpctx, 0, 0, 0);
   }
 
   finally : coda;
@@ -159,32 +165,37 @@ static xapi create_buildplan(buildplan_context * restrict bpctx)
   bpctx->state = NOOP;
   if(goal_target_direct_selector || goal_target_transitive_selector)
   {
-    goal_selector_context.base = g_project_root->mod->dir_node;
     goal_selector_context.mod = g_project_root->mod;
 
     if(goal_target_direct_selector)
     {
-      fatal(selector_exec, goal_target_direct_selector, &goal_selector_context);
+      fatal(selector_exec, goal_target_direct_selector, &goal_selector_context, SELECTION_ITERATION_TYPE_ORDER);
+      if(goal_selector_context.errlen) {
+        fprintf(stderr, "target-direct selector error!");
+      }
       fatal(plan_select_direct, &goal_selector_context.selection->list, bpctx);
     }
 
     if(goal_target_transitive_selector)
     {
-      fatal(selector_exec, goal_target_transitive_selector, &goal_selector_context);
+      fatal(selector_exec, goal_target_transitive_selector, &goal_selector_context, SELECTION_ITERATION_TYPE_ORDER);
+      if(goal_selector_context.errlen) {
+        fprintf(stderr, "target-transitive selector error!");
+      }
       fatal(plan_select_transitive, &goal_selector_context.selection->list, bpctx);
     }
   }
-  else if(!rbtree_empty(&vertex_containerof(g_project_root->mod->shadow_targets)->down))
+  else if(!rbtree_empty(&g_project_root->mod->shadow_targets->vertex.down))
   {
     // select the targets of the project module
-    fatal(graph_traverse_vertices
-      , g_graph
-      , vertex_containerof(g_project_root->mod->shadow_targets)
+    fatal(moria_traverse_vertices
+      , &g_graph
+      , &g_project_root->mod->shadow_targets->vertex
       , plan_visitor_direct
       , 0
-      , (traversal_criteria[]) {{
-            edge_travel : EDGE_TYPE_STRONG
-          , edge_visit : EDGE_TYPE_STRONG
+      , (moria_traversal_criteria[]) {{
+            edge_travel : EDGE_DEPENDS
+          , edge_visit : EDGE_DEPENDS
           , vertex_visit : VERTEX_FILETYPE_REG
           , min_depth : 1
           , max_depth : UINT16_MAX
@@ -196,15 +207,15 @@ static xapi create_buildplan(buildplan_context * restrict bpctx)
   else
   {
     // otherwise select the targets of all modules
-    llist_foreach(&g_modules, mod, lln_modules) {
-      fatal(graph_traverse_vertices
-        , g_graph
-        , vertex_containerof(mod->shadow_targets)
+    llist_foreach(&module_list, mod, vertex.owner) {
+      fatal(moria_traverse_vertices
+        , &g_graph
+        , &mod->shadow_targets->vertex
         , plan_visitor_direct
         , 0
-        , (traversal_criteria[]) {{
-              edge_travel : EDGE_TYPE_STRONG
-            , edge_visit : EDGE_TYPE_STRONG
+        , (moria_traversal_criteria[]) {{
+              edge_travel : EDGE_DEPENDS
+            , edge_visit : EDGE_DEPENDS
             , vertex_visit : VERTEX_FILETYPE_REG
             , min_depth : 1
             , max_depth : UINT16_MAX
@@ -220,7 +231,7 @@ static xapi create_buildplan(buildplan_context * restrict bpctx)
     fatal(buildplan_finalize);
     fatal(buildplan_report);
 
-    if(bp_selection.selected_nodes->size != 0)
+    if(buildplan_selection.selected_entities->size != 0)
     {
       bpctx->state = READY;
     }
@@ -245,27 +256,85 @@ xapi goals_cleanup()
   enter;
 
   fatal(selector_context_xdestroy, &goal_selector_context);
+  selector_free(goal_target_direct_selector);
+  selector_free(goal_target_transitive_selector);
 
   finally : coda;
 }
 
-xapi goals_set(bool build, bool script, selector * restrict target_direct, selector * restrict target_transitive)
+xapi goals_say(narrator * restrict N)
 {
   enter;
+
+  value_writer writer;
+
+  value_writer_init(&writer);
+  fatal(value_writer_open, &writer, N);
+
+  fatal(value_writer_push_set, &writer);
+
+  if(goal_target_direct_selector) {
+    fatal(value_writer_push_mapping, &writer);
+    fatal(value_writer_string, &writer, "target-direct");
+    fatal(value_writer_push_list, &writer);
+    fatal(selector_writer_write, goal_target_direct_selector, &writer);
+    fatal(value_writer_pop_list, &writer);
+    fatal(value_writer_pop_mapping, &writer);
+  }
+  if(goal_target_transitive_selector) {
+    fatal(value_writer_push_mapping, &writer);
+    fatal(value_writer_string, &writer, "target-transitive");
+    fatal(value_writer_push_list, &writer);
+    fatal(selector_writer_write, goal_target_transitive_selector, &writer);
+    fatal(value_writer_pop_list, &writer);
+    fatal(value_writer_pop_mapping, &writer);
+  }
+  if(goal_build) {
+    fatal(value_writer_string, &writer, "build");
+  }
+  if(goal_script) {
+    fatal(value_writer_string, &writer, "script");
+  }
+
+  fatal(value_writer_pop_set, &writer);
+  fatal(value_writer_close, &writer);
+
+finally:
+  fatal(value_writer_destroy, &writer);
+coda;
+}
+
+xapi goals_set(uint32_t msg_id, bool build, bool script, selector * restrict target_direct, selector * restrict target_transitive)
+{
+  enter;
+
+  fabipc_message *msg;
+  handler_context *handler;
+  narrator *N;
+  narrator_fixed fixed;
 
   goal_build = build;
   goal_script = script;
+  selector_ifree(&goal_target_direct_selector);
   goal_target_direct_selector = target_direct;
+  selector_ifree(&goal_target_transitive_selector);
   goal_target_transitive_selector = target_transitive;
+
+  if(events_would(FABIPC_EVENT_GOALS, &handler, &msg)) {
+    msg->id = msg_id;
+    N = narrator_fixed_init(&fixed, msg->text, sizeof(msg->text));
+    fatal(goals_say, N);
+    events_publish(handler, msg);
+  }
 
   finally : coda;
 }
 
-xapi goals_run(bool notify, bool * restrict building)
+xapi goals_kickoff(handler_context * restrict ctx)
 {
   enter;
 
-  buildplan_context bpctx = { 0 };
+  buildplan_context bpctx = { };
 
   // potentially re-create the build plan
   fatal(path_cache_reset);
@@ -278,12 +347,11 @@ xapi goals_run(bool notify, bool * restrict building)
   // kickoff
   if(goal_build && bpctx.state == READY)
   {
-    fatal(build_thread_build, notify);
-    *building = true;
+    fatal(build_thread_build, ctx);
   }
   else
   {
-    *building = false;
+    ctx->build_state = FAB_BUILD_NONE;
   }
 
   finally : coda;

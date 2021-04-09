@@ -26,7 +26,7 @@
 struct pattern_yystype {
   yyu_lval yyu;
   pattern *pattern;
-}; 
+};
 
 struct pattern_parser {
   yyu_parser match_yyu;
@@ -36,11 +36,6 @@ struct pattern_parser {
 
   // state
   uint16_t group_counter;
-
-  // under construction
-  // struct pattern_formula_show_settings show_settings;
-  // struct pattern_filesystem_entry * fse;
-  // struct pattern_logging_section * logging_section;
 
   // (returns)
   pattern * pattern;

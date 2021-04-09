@@ -16,12 +16,9 @@
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
 #include "xapi.h"
-#include "xapi/exit.h"
-
-#include "xlinux/xstdlib.h"
-#include "xlinux/KERNEL.errtab.h"
 
 #include "narrator.h"
+#include "xlinux/xstdlib.h"
 
 /* flex and bison do not agree on these names */
 #define YYSTYPE REQUEST_YYSTYPE
@@ -51,9 +48,7 @@ xapi request_parser_create(request_parser ** const rv)
 
   fatal(xmalloc, &p, sizeof(*p));
   fatal(yyu_parser_init, &p->yyu, &vtable, REQUEST_SYNTAX);
-
   fatal(yyu_parser_init_tokens, &p->yyu, request_token_table, request_TOKEN_TABLE_SIZE);
-
   fatal(yyu_parser_init_states
     , &p->yyu
     , request_numstates
@@ -64,8 +59,6 @@ xapi request_parser_create(request_parser ** const rv)
 #if DEBUG || DEVEL || XUNIT
   p->yyu.logs = L_REQUEST;
 #endif
-
-//  fatal(yyu_define_tokenrange, &p->yyu, request_AUTORUN, request_VARIANT);
 
   fatal(selector_parser_create, &p->selector_parser);
   fatal(config_parser_create, &p->config_parser);
@@ -113,6 +106,11 @@ xapi request_parser_parse(
 )
 {
   enter;
+
+  /* request must end with two null bytes */
+  RUNTIME_ASSERT(size > 2);
+  RUNTIME_ASSERT(buf[size - 1] == 0);
+  RUNTIME_ASSERT(buf[size - 2] == 0);
 
   fatal(yyu_parse, &parser->yyu, buf, size, fname, YYU_INPLACE, 0, 0);
   if(rv)

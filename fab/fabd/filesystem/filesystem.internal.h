@@ -44,10 +44,11 @@ extern struct fstree fstree_shadow;
 xapi fstree_say(struct narrator * restrict N)
   __attribute__((nonnull));
 
-size_t fstree_znload(void * restrict dst, size_t sz)
+const fstree * fstree_down(fstree * restrict fst, const char * restrict name, uint16_t namel)
   __attribute__((nonnull));
 
-const fstree * fstree_down(fstree * restrict fst, const char * restrict name, uint16_t namel)
+/* trace */
+size_t fstree_znload(void * restrict dst, size_t sz)
   __attribute__((nonnull));
 
 #endif

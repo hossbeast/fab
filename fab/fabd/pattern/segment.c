@@ -15,32 +15,12 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#include <string.h>
-
-#include "xapi.h"
-#include "types.h"
-
-#include "narrator.h"
-#include "value/writer.h"
-#include "xlinux/xstdlib.h"
-#include "valyria/list.h"
-#include "valyria/set.h"
-
-#include "segment.internal.h"
+#include "segment.h"
 #include "pattern.internal.h"
-#include "render.internal.h"
-#include "match.internal.h"
-#include "node.h"
-#include "module.h"
-#include "path.h"
-
-#include "common/attrs.h"
-
 
 //
 // internal
 //
-
 
 int pattern_segment_cmp(const pattern_segment * A, const pattern_segment * B)
 {
