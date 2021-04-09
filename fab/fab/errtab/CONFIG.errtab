@@ -15,17 +15,10 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef _ADHOC_COMMAND_H
-#define _ADHOC_COMMAND_H
-
-#include "xapi.h"
-#include "command.h"
-#include "args.h"
-
-extern struct adhoc_args {
-  bead request;
-} adhoc_args;
-
-extern struct command adhoc_command;
-
-#endif
+1   SYNTAX    config could not be parsed
+2   ILLBYTE   config contains illegal byte(s)
+3   NOTMAP    top-level config value is not a map
+4   MISSING   config value required but missing
+5   INCOMPAT  config value of an incompatible type
+6   INVALID   config value outside of acceptable range
+7   CONFLICT  config values in conflict

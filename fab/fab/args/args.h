@@ -21,8 +21,49 @@
 #include "xapi.h"
 #include "types.h"
 
+#include "fab/graph.h"
+
 struct command;
-struct value_writer;
+
+struct build_args;
+struct describe_args;
+struct events_args;
+struct ls_args;
+struct stats_args;
+struct touch_args;
+struct tree_args;
+
+typedef struct bead {
+  const char *s;
+  uint16_t len;
+} bead;
+
+extern struct {
+  /* passthrough to fabd */
+  bead system_config_path;
+  bead user_config_path;
+  bead project_config_path;
+  bead default_filesystem_invalidate;
+  bead sweeper_period_nsec;
+  bool no_launch;
+
+  bool invalidate;    // trigger global invalidation
+  bool kill;          // kill extant daemon if any
+  bool help;
+  bool version;
+  int verbose;        // show request/response, and daemon stdout/stderr
+
+  struct stats_args *stats;
+  struct touch_args *touch;
+  struct build_args *build;
+  struct tree_args *tree;
+  struct ls_args *ls;
+  struct describe_args *describe;
+  struct adhoc_args *adhoc;
+  struct events_args *events;
+} g_args;
+
+extern struct command *g_cmd;
 
 /// args_parse
 //
@@ -37,36 +78,6 @@ struct value_writer;
 // PARAMETERS
 //  cmd - (returns) subcommand dispatch
 //
-xapi args_parse(const struct command ** cmd)
-  __attribute__((nonnull));
-
-/// args_usage
-//
-// SUMMARY
-//
-//
-// PARAMETERS
-//  cmd - subcommand dispatch
-//
-xapi args_usage(const struct command * restrict cmd, int version, int logcats);
-
-/// args_report
-//
-// SUMMARY
-//  log a summary of args as-parsed
-//
-xapi args_report(const struct command * restrict cmd)
-  __attribute__((nonnull));
-
-/// args_request_collate
-//
-// SUMMARY
-//  build a fab request from g_args
-//
-// PARAMETERS
-//  request - (returns) request
-//
-xapi args_collate(const struct command * restrict cmd, void * request_shm)
-  __attribute__((nonnull));
+xapi args_parse(void);
 
 #endif

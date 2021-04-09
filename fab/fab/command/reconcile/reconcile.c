@@ -15,27 +15,30 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#include "fab/client.h"
-#include "fab/events.h"
 #include "fab/ipc.h"
+#include "fab/client.h"
 
-#include "adhoc.h"
-
-#include "zbuffer.h"
+#include "reconcile.h"
 #include "params.h"
+#include "zbuffer.h"
 
-struct adhoc_args adhoc_args;
+//
+// static
+//
 
 static void usage(command * restrict cmd)
 {
   printf(
 "\n"
-"adhoc [request]\n"
-"\n"
+"reconcile options\n"
   );
 }
 
-static xapi adhoc_connected(command * restrict cmd, fab_client * restrict client)
+//
+// build
+//
+
+static xapi connected(command * restrict cmd, fab_client * restrict client)
 {
   enter;
 
@@ -47,8 +50,11 @@ static xapi adhoc_connected(command * restrict cmd, fab_client * restrict client
   msg->type = FABIPC_MSG_REQUEST;
 
   z = 0;
-  z += znloadw(msg->text + z, sizeof(msg->text) - z, adhoc_args.request.s, adhoc_args.request.len);
-  z += znloadw(msg->text + z, sizeof(msg->text) - z, (char[]) { 0x00, 0x00 }, 2);
+  z += znloads(msg->text + z, sizeof(msg->text) - z, "reconcile");
+
+  // two terminating null bytes
+  z += znloadc(msg->text + z, sizeof(msg->text) - z, 0);
+  z += znloadc(msg->text + z, sizeof(msg->text) - z, 0);
   msg->size = z;
 
   client_post(client, msg);
@@ -56,29 +62,22 @@ static xapi adhoc_connected(command * restrict cmd, fab_client * restrict client
   finally : coda;
 }
 
-static xapi adhoc_process(command * restrict cmd, fab_client * restrict client, fabipc_message * restrict msg)
+static xapi process(command * restrict cmd, fab_client * restrict client, fabipc_message * restrict msg)
 {
   enter;
 
-  if(msg->type == FABIPC_MSG_RESPONSE) {
-    if(msg->code != 0) {
-      fprintf(stderr, "response code %d msg %.*s\n", msg->code, msg->size, msg->text);
-    }
-    g_params.shutdown = true;
-    goto XAPI_FINALLY;
-  }
-
-  if(msg->type == FABIPC_MSG_RESULT) {
-    write(1, msg->text, msg->size);
-    write(1, "\n", 1);
-  }
+  g_params.shutdown = true;
 
   finally : coda;
 }
 
-command adhoc_command = {
-    name : "adhoc"
+//
+// public
+//
+
+struct command reconcile_command = {
+    name : "reconcile"
   , usage : usage
-  , connected : adhoc_connected
-  , process : adhoc_process
+  , connected : connected
+  , process : process
 };

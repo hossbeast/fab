@@ -21,19 +21,23 @@
 #include "xapi.h"
 #include "types.h"
 
-struct fab_message;
+struct fab_client;
+struct fabipc_message;
 struct narrator;
-struct value_writer;
 
-typedef struct command
-{
-  const char * name;
-  xapi (*args_parse)(const char ** restrict argv, size_t argc);
-  xapi __attribute__((nonnull)) (*usage_say)(struct narrator * restrict);
-  xapi __attribute__((nonnull)) (*command_say)(struct narrator * restrict);
-  xapi __attribute__((nonnull)) (*collate)(struct value_writer * restrict);
-  xapi __attribute__((nonnull)) (*process)(const struct fab_message * restrict response);
-  xapi __attribute__((nonnull)) (*conclusion)(void);
+typedef struct command {
+  char *name;
+
+  void (*usage)(struct command *cmd);
+  xapi __attribute__((nonnull)) (*connected)(struct command *cmd, struct fab_client * restrict client);
+  xapi __attribute__((nonnull)) (*process)(
+      struct command *cmd
+    , struct fab_client * restrict client
+    , struct fabipc_message * restrict msg
+  );
 } command;
+
+void client_post(struct fab_client * restrict client, struct fabipc_message * restrict msg)
+  __attribute__((nonnull));
 
 #endif

@@ -15,17 +15,13 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef _ADHOC_COMMAND_H
-#define _ADHOC_COMMAND_H
+#ifndef _ARGS_PARSER
+#define _ARGS_PARSER
 
-#include "xapi.h"
-#include "command.h"
-#include "args.h"
+#include "yyutil/parser.h"
+#include "args.tab.h"
 
-extern struct adhoc_args {
-  bead request;
-} adhoc_args;
-
-extern struct command adhoc_command;
+static int args_yyerror(yyu_location* loc, void * scanner, yyu_parser * pp, char const * err)
+  __attribute__((weakref("yyu_grammar_error")));
 
 #endif
