@@ -40,11 +40,11 @@ void API xapi_errtab_stage(errtab * const restrict etab)
 {
   if(!tabmap_setup)
   {
-    hashtable_init(&tabmap, keytab, valtab, TABMAP_TABLE_SIZE);
+    lx_hashtable_init(&tabmap, keytab, valtab, TABMAP_TABLE_SIZE);
     tabmap_setup = true;
   }
 
-  if(hashtable_set(&tabmap, etab->tag, etab) == ENOMEM)
+  if(lx_hashtable_set(&tabmap, etab->tag, etab) == ENOMEM)
   {
     dprintf(2, "too many staged error tables ; use xapi_errtab_register\n");
     exit(1);
@@ -64,7 +64,7 @@ xapi API xapi_errtab_register(errtab * const etab)
 
 const errtab * API xapi_errtab_bytag(xapi_errtab_tag tag)
 {
-  return hashtable_get(&tabmap, tag);
+  return lx_hashtable_get(&tabmap, tag);
 }
 
 //

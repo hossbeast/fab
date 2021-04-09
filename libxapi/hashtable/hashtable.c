@@ -57,7 +57,7 @@ static bool __attribute__((nonnull)) probe(const hashtable * restrict ht, uint16
 // api
 //
 
-int hashtable_init(struct hashtable * restrict ht, uint16_t * restrict _tk, void ** restrict _tv, uint16_t _size)
+int lx_hashtable_init(struct hashtable * restrict ht, uint16_t * restrict _tk, void ** restrict _tv, uint16_t _size)
 {
   if((_size & (_size - 1)) != 0)
     return EINVAL;
@@ -70,7 +70,7 @@ int hashtable_init(struct hashtable * restrict ht, uint16_t * restrict _tk, void
   return 0;
 }
 
-int hashtable_set(hashtable * restrict ht, uint16_t key, void * restrict v)
+int lx_hashtable_set(hashtable * restrict ht, uint16_t key, void * restrict v)
 {
   if(key == 0)
     return EINVAL;
@@ -92,31 +92,11 @@ int hashtable_set(hashtable * restrict ht, uint16_t key, void * restrict v)
   return 0;
 }
 
-void * hashtable_get(const hashtable * restrict ht, uint16_t key)
+void * lx_hashtable_get(const hashtable * restrict ht, uint16_t key)
 {
   uint16_t i = 0;
   if(!probe(ht, key, &i))
     return 0;
 
   return ht->tv[i];
-}
-
-uint16_t hashtable_entries(const hashtable * restrict ht)
-{
-  return ht->entries;
-}
-
-uint16_t hashtable_size(const hashtable * restrict ht)
-{
-  return ht->size;
-}
-
-uint16_t hashtable_keyat(const hashtable * restrict ht, uint16_t x)
-{
-  return ht->tk[x];
-}
-
-void * hashtable_valueat(const hashtable * restrict ht, uint16_t x)
-{
-  return ht->tv[x];
 }
