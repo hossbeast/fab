@@ -25,8 +25,9 @@
 #include "types.h"
 #include "llist.h"
 
-#define RBTREE_HASH 0
-#define RBTREE_SIZE 0
+#define RBTREE_HASH  0
+#define RBTREE_SIZE  0
+#define RBTREE_TRACK 0
 
 struct rbnode;
 
@@ -44,10 +45,13 @@ typedef struct rbnode {
     uint64_t u64;
     void *p;
   } ud;
-  llist lln;
+  llist lln;      // adhoc
 
 #if RBTREE_HASH
   struct rbtree *rbt;
+#endif
+#if RBTREE_TRACK
+  int deleted;
 #endif
 } rbnode;
 
@@ -106,7 +110,7 @@ void rbnode_init(rbnode * restrict rbn)
 bool rbnode_attached(rbnode * restrict rbn)
   __attribute__((nonnull));
 
-size_t rbtree_count(rbtree * restrict rb)
+size_t rbtree_count(const rbtree * restrict rb)
   __attribute__((nonnull));
 
 /*
@@ -159,8 +163,10 @@ void rbtree_delete_node(rbtree * restrict rb, rbnode * restrict n)
 })
 #endif
 
+#if DEVEL
 void rbtree_print(rbtree * rb);
 void rbnode_print(rbnode * n);
+#endif
 
 rbnode * rbtree_search(const rbtree * restrict rb, rbtree_search_context *ctx, void *key, rbtree_key_cmp cmp)
   __attribute__((nonnull));
