@@ -35,12 +35,13 @@ uint32_t API xunit_assertions_failed;
 bool API xunit_assertion_evaluate(const xunit_type * const restrict type, uint8_t op, const char * const restrict value, ...)
 {
   va_list va;
-  va_start(va, value);
-
   xunit_arg expected;
   xunit_arg actual;
-
   int r;
+  const char *expected_label;
+
+  va_start(va, value);
+
   if(op == XU_NULL || op == XU_NOTNULL)
   {
     type->xu_unpack(va, &actual);
@@ -81,7 +82,7 @@ bool API xunit_assertion_evaluate(const xunit_type * const restrict type, uint8_
   }
   else
   {
-    const char * expected_label = "expected";
+    expected_label = "expected";
     if(op == XU_GT) { expected_label = "expected >"; }
     if(op == XU_GE) { expected_label = "expected >="; }
     if(op == XU_LT) { expected_label = "expected <"; }

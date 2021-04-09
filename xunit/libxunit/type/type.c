@@ -79,15 +79,17 @@ static void stringl_unpack(va_list va, xunit_arg * a)
 
 static int stringl_compare(xunit_arg * A, xunit_arg * B)
 {
+  int d;
+
   if(A->l == 0 && B->l == 0)
   {
     return 0;
   }
   else if(A->p && B->p)
   {
-    int d;
-    if((d = A->l - B->l))
+    if((d = A->l - B->l)) {
       return d;
+    }
 
     return memcmp(A->p, B->p, A->l);
   }
@@ -123,15 +125,17 @@ static void buffer_unpack(va_list va, xunit_arg * a)
 
 static int buffer_compare(xunit_arg * A, xunit_arg * B)
 {
+  int d;
+
   if(A->l == 0 && B->l == 0)
   {
     return 0;
   }
   else if(A->p && B->p)
   {
-    int d;
-    if((d = A->l - B->l))
+    if((d = A->l - B->l)) {
       return d;
+    }
 
     return memcmp(A->p, B->p, A->l);
   }
@@ -149,6 +153,12 @@ static int buffer_compare(xunit_arg * A, xunit_arg * B)
 
 static void buffer_info_push(const char * const restrict name, xunit_arg * a)
 {
+  char space[128];
+  char * buf;
+  size_t bufz;
+  size_t bufo;
+  int x;
+
   if(a->p == 0)
   {
     xapi_info_pushs(name, "(null)");
@@ -159,15 +169,14 @@ static void buffer_info_push(const char * const restrict name, xunit_arg * a)
   }
   else
   {
-    char space[128];
-    char * buf = space;
-    size_t bufz = sizeof(space);
-    size_t bufo = 0;
+    buf = space;
+    bufz = sizeof(space);
 
-    bufo += znloads(buf + bufo, bufz - bufo, "0x");
-    int x;
-    for(x = 0; x < a->l; x++)
+    bufo = 0;
+    bufo = znloads(buf + bufo, bufz - bufo, "0x");
+    for(x = 0; x < a->l; x++) {
       bufo += znloadf(buf + bufo, bufz - bufo, "%02hhx", ((char*)a->p)[x]);
+    }
 
     xapi_info_pushs(name, space);
   }
@@ -349,11 +358,15 @@ static void pointer_unpack(va_list va, xunit_arg * a)
 
 static int pointer_compare(xunit_arg * A, xunit_arg * B)
 {
-  ptrdiff_t delta = A->p - B->p;
+  ptrdiff_t delta;
+
+  delta = A->p - B->p;
   if(delta > 0)
     return 1;
+
   if(delta < 0)
     return -1;
+
   return 0;
 }
 
