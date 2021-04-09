@@ -1,20 +1,21 @@
 /* Copyright (c) 2012-2015 Todd Freed <todd.freed@gmail.com>
 
-   This file is part of fab.
+ This file is part of fab.
 
-   fab is free software: you can redistribute it and/or modify
-   it under the terms of the GNU General Public License as published by
-   the Free Software Foundation, either version 3 of the License, or
-   (at your option) any later version.
+ fab is free software: you can redistribute it and/or modify
+ it under the terms of the GNU General Public License as published by
+ the Free Software Foundation, either version 3 of the License, or
+ (at your option) any later version.
 
-   fab is distributed in the hope that it will be useful,
-   but WITHOUT ANY WARRANTY; without even the implied warranty of
-   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-   GNU General Public License for more details.
+ fab is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU General Public License for more details.
 
-   You should have received a copy of the GNU General Public License
-   along with fab.  If not, see <http://www.gnu.org/licenses/>. */
+ You should have received a copy of the GNU General Public License
+ along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
+#include <sys/syscall.h>
 #include <stdlib.h>
 #include <inttypes.h>
 #include <stdio.h>
@@ -25,10 +26,12 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/wait.h>
+#include <linux/futex.h>
 
 #include "xapi.h"
 #include "xapi/trace.h"
 
+#include "xlinux/KERNEL.errtab.h"
 #include "xlinux/xunistd.h"
 #include "xlinux/xfcntl.h"
 #include "xlinux/xunistd.h"
@@ -46,121 +49,183 @@
 #include "logger.h"
 #include "logger/arguments.h"
 #include "fab/ipc.h"
+#include "common/hash.h"
+#include "common/attrs.h"
 
 #include "client.internal.h"
 #include "errtab/FAB.errtab.h"
 #include "logging.internal.h"
-#include "ipc.internal.h"
-
+#include "ipc.h"
+#include "lockfile.h"
 #include "sigutil.h"
-#include "macros.h"
-#include "common/hash.h"
 
-struct fab_client
-{
-  char *    projdir;    // canonicalized
-  char *    ipcdir;
-  char      hash[16 + 1];
-  char *    fabw_path;
-  pid_t     pgid;       // fabd process group id
-};
+#include "macros.h"
+#include "barriers.h"
+#include "atomics.h"
+
+#if DEVEL
+const char * APIDATA g_fab_client_fabd_path;
+const char * APIDATA g_fab_client_system_config_path;
+const char * APIDATA g_fab_client_user_config_path;
+const char * APIDATA g_fab_client_project_config_path;
+const char * APIDATA g_fab_client_default_filesystem_invalidate;
+const char * APIDATA g_fab_client_sweeper_period_nsec;
+#endif
+
+/* ugo+rwx world read/write/execute */
+#define IPCDIR_MODE_DIR   0777
+
+/* ugo+rw  world read/write */
+#define IPCDIR_MODE_DATA  0666
 
 //
 // static
 //
 
-static xapi pgid_load(fab_client * restrict client)
+static xapi launch(fab_client * restrict client)
 {
   enter;
 
-  char space[512];
-  int fd = -1;
+  sigset_t sigs;
+  sigset_t oset;
+  char *argv[16];
+  int i;
 
-  client->pgid = 0;
+  // canonical project directory symlink
+  fatal(uxsymlinkf, "%s", "%s/projdir", client->projdir, client->ipcdir);
 
-  snprintf(space, sizeof(space), "%s/fabd/pgid", client->ipcdir);
-  fatal(uxopens, &fd, O_RDONLY, space);
+  // cleanup the directory
+  fatal(uxunlinkf, "%s/fabd/exit", client->ipcdir);
+  fatal(uxunlinkf, "%s/fabd/core", client->ipcdir);
+  fatal(uxunlinkf, "%s/fabd/stdout", client->ipcdir);
+  fatal(uxunlinkf, "%s/fabd/stderr", client->ipcdir);
 
-  if(fd != -1)
+  // block all signals
+  sigfillset(&sigs);
+  fatal(xpthread_sigmask, SIG_SETMASK, &sigs, &oset);
+
+  fatal(xfork, &client->fabd_pid);
+  if(client->fabd_pid == 0)
   {
-    // read and validate the pid
-    fatal(axread, fd, &client->pgid, sizeof(client->pgid));
-    if(client->pgid <= 0)
+    // prepare the command
+    i = 0;
+    argv[i++] = "fabd";
+    argv[i++] = client->hash;
+
+#if DEBUG || DEVEL
+    narrator * N;
+    fatal(log_start, L_IPC, &N);
+    xsayf("execv(");
+#if TRACE || DEVEL
+#if TRACE
+    argv[0] = "fabd.trace.xapi";
+#else
+    argv[0] = "fabd.devel.xapi";
+#endif
+    xsays(g_fab_client_fabd_path);
+
+    if(g_fab_client_system_config_path)
     {
-      xapi_info_pushs("expected pgid", "> 0");
-      xapi_info_pushf("actual pgid", "%ld", (long)client->pgid);
-      fail(FAB_BADIPC);
+      argv[i++] = "--system-config-path";
+      argv[i++] = (char*)g_fab_client_system_config_path;
     }
+    if(g_fab_client_user_config_path)
+    {
+      argv[i++] = "--user-config-path";
+      argv[i++] = (char*)g_fab_client_user_config_path;
+    }
+    if(g_fab_client_project_config_path)
+    {
+      argv[i++] = "--project-config-path";
+      argv[i++] = (char*)g_fab_client_project_config_path;
+    }
+    if(g_fab_client_default_filesystem_invalidate)
+    {
+      argv[i++] = "--default-filesystem-invalidate";
+      argv[i++] = (char*)g_fab_client_default_filesystem_invalidate;
+    }
+    if(g_fab_client_sweeper_period_nsec)
+    {
+      argv[i++] = "--sweeper-period-nsec";
+      argv[i++] = (char*)g_fab_client_sweeper_period_nsec;
+    }
+#else
+    xsays("fabd");
+#endif
+    int x;
+    for(x = 0; x < i; x++)
+    {
+      xsays(",");
+      xsays(argv[x]);
+    }
+    xsays(")");
+    fatal(log_finish);
+#endif
+
+    argv[i] = (void*)0;
+
+    // reopen standard file descriptors
+    fatal(xclose, 0);
+    fatal(xopens, 0, O_RDONLY, "/dev/null");
+
+    fatal(xclose, 1);
+    fatal(xopen_modef, 0, O_WRONLY | O_CREAT | O_EXCL, IPCDIR_MODE_DATA, "%s/fabd/stdout", client->ipcdir);
+
+    fatal(xclose, 2);
+    fatal(xopen_modef, 0, O_WRONLY | O_CREAT | O_EXCL, IPCDIR_MODE_DATA, "%s/fabd/stderr", client->ipcdir);
+
+    // core file goes in cwd
+    fatal(xchdirf, "%s/fabd", client->ipcdir);
+
+    // create new session/process group
+    fatal(xsetsid);
+
+    // update the lockfile
+    fatal(fabipc_lockfile_update, "%s/fabd/lock", client->ipcdir);
+
+#if DEVEL
+    fatal(xexecv, g_fab_client_fabd_path, argv);
+#else
+    fatal(xexecvp, "fabd", argv);
+#endif
+
+    exit(1);
   }
 
-finally:
-  fatal(ixclose, &fd);
-coda;
-}
+  fatal(xpthread_sigmask, SIG_SETMASK, &oset, 0);
 
-static xapi validate_result(fab_client * restrict client, int expsig, siginfo_t * actual)
-{
-  enter;
-
-  int exit;
-  int fd = -1;
-
-  // SIGEND is sent by fabw
-  if(actual->si_signo == FABIPC_SIGEND)
-  {
-    fatal(ixclose, &fd);
-    fatal(xopenf, &fd, O_RDONLY, "%s/fabd/exit", client->ipcdir);
-    fatal(axread, fd, MM(exit));
-
-    if(WIFEXITED(exit))
-    {
-      xapi_info_pushf("exit", "%d", WEXITSTATUS(exit));
-      fail(FAB_NODAEMON);
-    }
-    else if(WIFSIGNALED(exit))
-    {
-      xapi_info_pushf("signal", "%d", WTERMSIG(exit));
-      xapi_info_pushf("core", "%s", WCOREDUMP(exit) ? "yes" : "no");
-      fail(FAB_NODAEMON);
-    }
-    fail(FAB_BADIPC);
-  }
-
-  fatal(sigutil_assert, expsig, 0, actual);
-
-finally:
-  fatal(ixclose, &fd);
-coda;
+  finally : coda;
 }
 
 //
 // public
 //
 
-xapi API fab_client_create(fab_client ** restrict client, const char * restrict projdir, const char * restrict ipcdir_base, const char * restrict fabw_path)
+xapi API fab_client_create(fab_client ** restrict clientp, const char * restrict projdir, const char * restrict ipcdir_base)
 {
   enter;
 
   char space[512];
   size_t len;
   uint64_t u64;
+  fab_client *client;
 
-  fatal(xmalloc, client, sizeof(**client));
+  fatal(xmalloc, &client, sizeof(*client));
 
   // canonicalized project path
-  fatal(xrealpaths, &(*client)->projdir, 0, projdir);
+  fatal(xrealpaths, &client->projdir, 0, projdir);
 
   // project path hash
-  u64 = hash64(0, (*client)->projdir, strlen((*client)->projdir));
-  snprintf((*client)->hash, sizeof((*client)->hash), "%016"PRIx64, u64);
+  u64 = hash64(0, client->projdir, strlen(client->projdir));
+  snprintf(client->hash, sizeof(client->hash), "%016"PRIx64, u64);
 
   // ipc dir for the project
-  len = snprintf(space, sizeof(space), "%s/%s", ipcdir_base, (*client)->hash);
-  fatal(xmalloc, &(*client)->ipcdir, len + 1);
-  memcpy((*client)->ipcdir, space, len);
+  len = snprintf(space, sizeof(space), "%s/%s", ipcdir_base, client->hash);
+  fatal(xmalloc, &client->ipcdir, len + 1);
+  memcpy(client->ipcdir, space, len);
 
-  if(fabw_path)
-    fatal(ixstrdup, &(*client)->fabw_path, fabw_path);
+  client->lockfd = -1;
+  *clientp = client;
 
   finally : coda;
 }
@@ -172,10 +237,11 @@ xapi API fab_client_xfree(fab_client * restrict client)
   if(client)
   {
     wfree(client->ipcdir);
-    wfree(client->fabw_path);
     wfree(client->projdir);
-    wfree(client);
+    fatal(xshmdt, client->shm);
+    fatal(xclose, client->lockfd);
   }
+  wfree(client);
 
   finally : coda;
 }
@@ -194,266 +260,163 @@ xapi API fab_client_prepare(fab_client * restrict client)
 {
   enter;
 
-  char space[512];
-  pid_t pid;
-  pid_t pgid;
-  int fd = -1;
+  fatal(mkdirpf, IPCDIR_MODE_DIR, "%s/fabd", client->ipcdir);
+  fatal(fabipc_lockfile_obtain, &client->fabd_pid, &client->lockfd, "%s/fabd/lock", client->ipcdir);
 
-  // client directory
-  fatal(mkdirpf, FABIPC_MODE_DIR, "%s/client", client->ipcdir);
-
-  // obtain the client lock
-  fatal(ipc_lock_obtain, &pgid, 0, "%s/client/lock", client->ipcdir);
-
-  // client already running
-  if(pgid)
-    failf(FAB_CLIENTEXCL, "pgid", "%ld", (long)pgid);
-
-  // canonical projdir symlink
-  fatal(uxsymlinkf, "%s", "%s/projdir", client->projdir, client->ipcdir);
-
-  // canonical cwd symlink
-  fatal(symlinkpf, "%s", "%s/client/cwd", getcwd(space, sizeof(space)), client->ipcdir);
-
-  pid = getpid();
-
-  // client stdout symlink
-  ssize_t ss = 0;
-  fatal(xreadlinkf, "/proc/%ld/fd/1", space, sizeof(space), &ss, (long)pid);
-  if(ss >= sizeof(space))
-    ss = sizeof(space) - 1;
-  if(ss >= 0)
-    space[ss] = 0;
-  fatal(symlinkpf, "%s", "%s/client/out", space, client->ipcdir);
-
-  // client stderr symlink
-  ss = 0;
-  fatal(xreadlinkf, "/proc/%ld/fd/2", space, sizeof(space), &ss, (long)pid);
-  if(ss >= sizeof(space))
-    ss = sizeof(space) - 1;
-  if(ss >= 0)
-    space[ss] = 0;
-  fatal(symlinkpf, "%s", "%s/client/err", space, client->ipcdir);
-
-  // client pid file
-  snprintf(space, sizeof(space), "%s/client/pid", client->ipcdir);
-  fatal(xopen_modes, &fd, O_CREAT | O_WRONLY, FABIPC_MODE_DATA, space);
-  fatal(axwrite, fd, &pid, sizeof(pid));
-  fatal(ixclose, &fd);
-
-  // fabd directories
-  fatal(mkdirpf, FABIPC_MODE_DIR, "%s/fabd", client->ipcdir);
-
-finally:
-  fatal(ixclose, &fd);
-coda;
+  finally : coda;
 }
 
-xapi API fab_client_terminatep(fab_client * restrict client)
+xapi API fab_client_kill(fab_client * restrict client)
 {
   enter;
 
-  fatal(pgid_load, client);
-  if(client->pgid)
-  {
-    // existence assertion
-    fatal(xkill, -client->pgid, 0);
+  fatal(uxkill, 0, client->fabd_pid, SIGTERM);
+
+  /* force re-loading the fabd pid in solicit */
+  fatal(ixclose, &client->lockfd);
+
+  finally : coda;
+}
+
+xapi API fab_client_solicit(fab_client * restrict client)
+{
+  enter;
+
+  int r;
+  union sigval value;
+  pid_t tid;
+
+  if(client->lockfd == -1) {
+    fatal(fabipc_lockfile_obtain, &client->fabd_pid, &client->lockfd, "%s/fabd/lock", client->ipcdir);
+  }
+
+  // lock obtained, server not running - launch the server
+  if(client->fabd_pid == 0) {
+    fatal(launch, client);
+  }
+
+  // send tid via signal to initialize the channel
+  tid = gettid();
+  value.sival_ptr = (void*)(intptr_t)tid;
+  fatal(sigutil_uxrt_sigqueueinfo, &r, client->fabd_pid, SIGRTMIN, value);
+  if(r) {
+    fail(FAB_NODAEMON); // no such process
   }
 
   finally : coda;
 }
 
-xapi API fab_client_launchp(fab_client * restrict client)
+xapi API fab_client_attach(fab_client * restrict client, int channel_shmid)
 {
   enter;
 
-  sigset_t sigs;
-  sigset_t oset;
-  char ** argv = 0;
-  int i;
-  int x;
-
-  // attempt to obtain the server lock
-  fatal(ipc_lock_obtain, &client->pgid, 0, "%s/fabd/lock", client->ipcdir);
-
-  // server daemon is already running
-  if(client->pgid)
-    goto XAPI_FINALIZE;
-
-  // cleanup the directory
-  fatal(uxunlinkf, "%s/fabd/exit", client->ipcdir);
-  fatal(uxunlinkf, "%s/fabd/core", client->ipcdir);
-
-  // block signals
-  sigfillset(&sigs);
-  fatal(xpthread_sigmask, SIG_SETMASK, &sigs, &oset);
-
-  fatal(xfork, &client->pgid);
-  if(client->pgid == 0)
-  {
-    // core file goes in cwd
-    fatal(xchdirf, "%s/fabd", client->ipcdir);
-
-    // create new session/process group
-    fatal(xsetsid);
-
-    // update the lockfile
-    fatal(ipc_lock_update, "%s/fabd/lock", client->ipcdir);
-
-    // daemonize
-    fatal(xfork, &client->pgid);
-    if(client->pgid != 0)
-      exit(0);
-
-    fatal(xmalloc, &argv, sizeof(*argv) * (g_logc + g_ulogc + 3));
-    i = 0;
-    argv[i++] = "fabw";
-    argv[i++] = client->hash;
-
-    for(x = 0; x < g_logc; x++)
-      argv[i++] = g_logv[x];
-
-    for(x = 0; x < g_ulogc; x++)
-      argv[i++] = g_ulogv[x];
-
-#if DEVEL
-    argv[0] = "fabw.devel.xapi";
-    narrator * N;
-    fatal(log_start, L_IPC, &N);
-    xsayf("execv(");
-    xsays(client->fabw_path ?: "fabw");
-    for(x = 0; x < i; x++)
-    {
-      xsays(",");
-      xsays(argv[x]);
-    }
-    xsays(")");
-    fatal(log_finish);
-#endif
-
-    if(client->fabw_path)
-      fatal(xexecv, client->fabw_path, argv);
-    else
-      fatal(xexecvp, "fabw", argv);
-  }
-
-  fatal(xpthread_sigmask, SIG_SETMASK, &oset, 0);
-
-  // await ready signal from the child
-  sigfillset(&sigs);
-  siginfo_t info;
-  while(1)
-  {
-    fatal(sigutil_wait, &sigs, &info);
-    if(info.si_signo == SIGCHLD)
-      continue;
-    break;
-  }
-  fatal(validate_result, client, FABIPC_SIGACK, &info);
-
-finally:
-  wfree(argv);
-coda;
-}
-
-xapi API fab_client_prepare_request_shm(fab_client * restrict client, void ** restrict request_shm)
-{
-  enter;
-
-  int fd = -1;
   void * shmaddr = 0;
-  int shmid = -1;
-  size_t REQUEST_SIZE = 0xfff;
-  int request_shmid;
 
-  // create shm for the request
-  fatal(xshmget, ftok(client->ipcdir, FABIPC_TOKREQ), REQUEST_SIZE, IPC_CREAT | IPC_EXCL | FABIPC_MODE_DATA, &shmid);
-  fatal(xshmat, shmid, 0, 0, &shmaddr);
-  fatal(xshmctl, shmid, IPC_RMID, 0);
-  request_shmid = shmid;
-  shmid = -1;
+  /* channel shmid is the value of the signal */
 
-  // save the shmid
-  fatal(xopen_modef, &fd, O_CREAT | O_WRONLY, FABIPC_MODE_DATA, "%s/client/request_shmid", client->ipcdir);
-  fatal(axwrite, fd, &request_shmid, sizeof(request_shmid));
+  /* attach the channel (owned by the server) */
+  fatal(xshmat, channel_shmid, 0, 0, &shmaddr);
 
-  *request_shm = shmaddr;
+  client->shm = shmaddr;
   shmaddr = 0;
 
+#if 0
+printf("CHANNEL shmid %d @ %p\n", channel_shmid, client->shm);
+printf(" client-pid %u\n", client->shm->client_pid);
+printf(" client-tid %u\n", client->shm->client_tid);
+printf(" client-pulse %hu\n", client->shm->client_pulse);
+printf(" server-pid %u\n", client->shm->server_pid);
+printf(" server-tid %u\n", client->shm->server_tid);
+printf(" server-pulse %hu\n", client->shm->server_pulse);
+printf(" client-ring\n");
+printf("  head %u\n", client->shm->client_ring.head);
+printf("  tail %u\n", client->shm->client_ring.tail);
+printf(" server-ring\n");
+printf("  head %u\n", client->shm->server_ring.head);
+printf("  tail %u\n", client->shm->server_ring.tail);
+#endif
+
+  client->shm->client_pulse++;
+
+  /* at this point the lockfile, if any, is now held by fabd and no longer needed */
+  fatal(ixclose, &client->lockfd);
+
 finally:
-  fatal(ixclose, &fd);
   fatal(xshmdt, shmaddr);
-  if(shmid != -1)
-    fatal(xshmctl, shmid, IPC_RMID, 0);
 coda;
 }
 
-xapi API fab_client_make_request(fab_client * restrict client, void * request_shm, void ** restrict response_shm)
+void API fab_client_disconnect(fab_client * restrict client)
 {
-  enter;
+  if(client->shm)
+  {
+    client->shm->client_exit = 1;
+    syscall(SYS_tgkill, client->shm->server_pid, client->shm->server_tid, SIGUSR1);
+  }
+}
 
-  int fd = -1;
-  void * shmaddr = 0;
-  int shmid;
+fabipc_message * API fab_client_produce(fab_client * restrict client)
+{
+  return fabipc_produce(
+      client->shm->client_ring.pages
+    , &client->shm->client_ring.head
+    , &client->shm->client_ring.tail
+    , FABIPC_CLIENT_RINGSIZE - 1
+  );
+}
 
-  narrator * N;
-  fab_message * msg = request_shm;
-  fatal(log_start, L_PROTOCOL, &N);
-  xsayf("request(%u)\n%s", msg->len, msg->text);
-  fatal(log_finish);
-
-  // awaken fabd and await response
-  sigset_t sigs;
-  sigfillset(&sigs);
-  siginfo_t info;
-  fatal(sigutil_exchange, FABIPC_SIGSYN, -client->pgid, &sigs, &info);
-  fatal(validate_result, client, FABIPC_SIGACK, &info);
-
-  // release the request
-  fatal(ixshmdt, &request_shm);
-
-  // attach response shms
-  fatal(xopenf, &fd, O_RDONLY, "%s/fabd/response_shmid", client->ipcdir);
-  fatal(axread, fd, &shmid, sizeof(shmid));
-  fatal(xshmat, shmid, 0, 0, &shmaddr);
-
+void API fab_client_post(fab_client * restrict client, fabipc_message * restrict msg)
+{
 #if DEBUG || DEVEL
-  msg = shmaddr;
-  fatal(log_start, L_PROTOCOL, &N);
-  xsayf("response(%u)\n%s", msg->len, msg->text);
-  fatal(log_finish);
+  RUNTIME_ASSERT(msg->type);
+  if(msg->type == FABIPC_MSG_EVENTS) {
+    RUNTIME_ASSERT(msg->evtype);
+  }
 #endif
 
-  *response_shm = shmaddr;
-  shmaddr = 0;
-
-finally:
-  fatal(xshmdt, request_shm);
-  fatal(xshmdt, shmaddr);
-  fatal(ixclose, &fd);
-coda;
+  fabipc_post(msg, &client->shm->client_ring.waiters);
 }
 
-xapi API fab_client_release_response(fab_client * restrict client, void * restrict response_shm)
+fabipc_message * API fab_client_acquire(fab_client * restrict client)
 {
-  enter;
+  fabipc_message *msg;
+  msg = fabipc_acquire(
+      client->shm->server_ring.pages
+    , &client->shm->server_ring.head
+    , &client->shm->server_ring.tail
+    , FABIPC_SERVER_RINGSIZE - 1
+  );
 
-  fatal(xshmdt, response_shm);
-  fatal(sigutil_kill, -client->pgid, FABIPC_SIGACK);
+#if 0
+#if DEBUG || DEVEL
+  if(msg) {
+    RUNTIME_ASSERT(msg->type);
+  }
+  if(msg && msg->type == FABIPC_MSG_EVENTS) {
+    RUNTIME_ASSERT(msg->evtype);
+  }
+#endif
+#endif
 
-  finally : coda;
+  return msg;
 }
 
-char * API fab_client_gethash(fab_client * restrict client)
+void API fab_client_consume(fab_client * restrict client, fabipc_message * restrict msg)
 {
-  return client->hash;
+  fabipc_consume(
+      client->shm->server_ring.pages
+    , &client->shm->server_ring.head
+    , msg
+    , FABIPC_SERVER_RINGSIZE - 1
+  );
 }
 
-xapi API fab_client_unlock(fab_client * restrict client)
+void API fab_client_release(fab_client * restrict client, fabipc_message * restrict msg)
 {
-  enter;
-
-  fatal(ipc_lock_release, "%s/client/lock", client->ipcdir);
-
-  finally : coda;
+  fabipc_release(
+      client->shm->server_ring.pages
+    , &client->shm->server_ring.head
+    , msg
+    , FABIPC_SERVER_RINGSIZE - 1
+  );
 }
