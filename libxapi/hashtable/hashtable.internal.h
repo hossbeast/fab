@@ -55,7 +55,7 @@ typedef struct hashtable
 // RETURNS
 //  EINVAL if size is not a power of 2
 //
-int hashtable_init(struct hashtable * restrict ht, uint16_t * restrict tk, void ** restrict tv, uint16_t size)
+int lx_hashtable_init(struct hashtable * restrict ht, uint16_t * restrict tk, void ** restrict tv, uint16_t size)
   __attribute__((nonnull));
 
 /// hashtable_set
@@ -68,7 +68,7 @@ int hashtable_init(struct hashtable * restrict ht, uint16_t * restrict tk, void 
 //  key     - pointer to key
 //  [value] - pointer to value
 //
-int hashtable_set(hashtable * restrict ht, uint16_t key, void * restrict value)
+int lx_hashtable_set(hashtable * restrict ht, uint16_t key, void * restrict value)
   __attribute__((nonnull(1)));
 
 /// hashtable_get
@@ -89,50 +89,7 @@ int hashtable_set(hashtable * restrict ht, uint16_t key, void * restrict value)
 // SUMMARY
 //  returns pointer to the stored value, or 0 if not found
 //
-void * hashtable_get(const hashtable * restrict ht, uint16_t key)
-  __attribute__((nonnull));
-
-/// hashtable_entries
-//
-// SUMMARY
-//  get the number of entries in the hashtable
-//
-uint16_t hashtable_entries(const hashtable * restrict ht)
-  __attribute__((nonnull));
-
-/// hashtable_size
-//
-// SUMMARY
-//  get the allocated table size, for use with hashtable_keyat / hashtable_valueat
-//
-// PARAMETERS
-//  ht - hashtable
-//
-uint16_t hashtable_size(const hashtable * restrict ht)
-  __attribute__((nonnull));
-
-/// hashtable_keyat
-//
-// SUMMARY
-//  get the key at the specified slot, if any
-//
-// PARAMETERS
-//  ht - hashtable
-//  x  - slot index
-//
-uint16_t hashtable_keyat(const hashtable * restrict ht, uint16_t x)
-  __attribute__((nonnull));
-
-/// hashtable_valueat
-//
-// SUMMARY
-//  get the value at the specified slot, if any
-//
-// PARAMETERS
-//  ht - hashtable
-//  x  - slot index
-//
-void * hashtable_valueat(const hashtable * restrict ht, uint16_t x)
+void * lx_hashtable_get(const hashtable * restrict ht, uint16_t key)
   __attribute__((nonnull));
 
 #endif

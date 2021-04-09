@@ -29,7 +29,7 @@ const char * API xapi_exit_errname(const xapi exit)
   xapi_errtab_tag tag = exit >> 16;
 
   const errtab * tab;
-  if((tab = hashtable_get(&tabmap, tag)) == 0)
+  if((tab = lx_hashtable_get(&tabmap, tag)) == 0)
     return 0;
 
   return xapi_errtab_errname(tab, exit);
@@ -40,7 +40,7 @@ const char * API xapi_exit_errdesc(const xapi exit)
   xapi_errtab_tag tag = exit >> 16;
 
   const errtab * tab;
-  if((tab = hashtable_get(&tabmap, tag)) == 0)
+  if((tab = lx_hashtable_get(&tabmap, tag)) == 0)
     return 0;
 
   return xapi_errtab_errdesc(tab, exit);
@@ -51,7 +51,7 @@ const char * API xapi_exit_errstr(const xapi exit)
   xapi_errtab_tag tag = exit >> 16;
 
   const errtab * tab;
-  if((tab = hashtable_get(&tabmap, tag)) == 0)
+  if((tab = lx_hashtable_get(&tabmap, tag)) == 0)
     return 0;
 
   return xapi_errtab_errstr(tab, exit);
@@ -62,7 +62,7 @@ const errtab * API xapi_exit_errtab(const xapi exit)
   xapi_errtab_tag tag = exit >> 16;
 
   const errtab * tab;
-  if((tab = hashtable_get(&tabmap, tag)) == 0)
+  if((tab = lx_hashtable_get(&tabmap, tag)) == 0)
     return 0;
 
   return tab;
@@ -73,7 +73,7 @@ xapi_code API xapi_exit_errcode(const xapi exit)
   xapi_errtab_tag tag = exit >> 16;
 
   const errtab * tab;
-  if((tab = hashtable_get(&tabmap, tag)) == 0)
+  if((tab = lx_hashtable_get(&tabmap, tag)) == 0)
     return 0;
 
   return xapi_errtab_errcode(tab, exit);
@@ -84,7 +84,7 @@ const char * API xapi_exit_errtab_name(const xapi exit)
   xapi_errtab_tag tag = exit >> 16;
 
   const errtab * tab;
-  if((tab = hashtable_get(&tabmap, tag)) == 0)
+  if((tab = lx_hashtable_get(&tabmap, tag)) == 0)
     return 0;
 
   return tab->name;
@@ -95,7 +95,7 @@ xapi_errtab_tag API xapi_exit_errtab_tag(const xapi exit)
   xapi_errtab_tag tag = exit >> 16;
 
   const errtab * tab;
-  if((tab = hashtable_get(&tabmap, tag)) == 0)
+  if((tab = lx_hashtable_get(&tabmap, tag)) == 0)
     return 0;
 
   return tab->tag;
