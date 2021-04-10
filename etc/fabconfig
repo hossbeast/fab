@@ -1,0 +1,38 @@
+# file invalidation
+filesystems : {
+  "/" : {
+    invalidate : notify
+  }
+}
+
+# heuristic based on detected cpus
+workers : {
+  concurrency : 0
+}
+
+# heuristic based on detected cpus
+build : {
+  concurrency : 0
+}
+
+# formula execution $PATH
+formula : {
+  path : {
+    dirs : {
+      /usr/bin
+    }
+  }
+}
+
+walker : {
+  # external modules
+  include : {
+    /usr/share/fab/modules
+  }
+
+  # except skip this stuff
+  exclude : {
+    /home/todd/fab/builtin-modules
+    .git
+  }
+}
