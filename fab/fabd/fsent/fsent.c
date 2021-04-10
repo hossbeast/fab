@@ -54,8 +54,8 @@ const char *fsent_model_name;
 uint16_t fsent_model_name_len;
 const char *fsent_module_name = "module.bam";
 uint16_t fsent_module_name_len = 10;
-const char *fsent_var_name = "model.bam";
-uint16_t fsent_var_name_len = 9;
+const char *fsent_var_name = "var.bam";
+uint16_t fsent_var_name_len = 7;
 const char *fsent_formula_suffix;
 uint16_t fsent_formula_suffix_len;
 
@@ -523,9 +523,6 @@ xapi fsent_graft(const char * restrict base, fsent ** restrict rn, graph_invalid
   const char *seg;
   const char *end;
   moria_vertex *v;
-  int __attribute__((unused)) r;
-  moria_connect_context ctx;
-  dependency *dep;
 
   parent = g_root;
   seg = base + 1;
@@ -543,17 +540,7 @@ xapi fsent_graft(const char * restrict base, fsent ** restrict rn, graph_invalid
     else
     {
       fatal(fsent_create, &child, VERTEX_DIR, VERTEX_UNCREATED, seg, end - seg);
-      r = moria_preconnect(
-          &ctx
-        , &g_graph
-        , &parent->vertex
-        , &child->vertex
-        , EDGE_FSTREE
-        , 0
-      );
-      RUNTIME_ASSERT(r == MORIA_NOEDGE);
-      fatal(dependency_alloc, &dep, &g_graph, 1, 1);
-      moria_connect(&ctx, &g_graph, &dep->edge, &parent->vertex, &child->vertex, EDGE_FSTREE);
+      fatal(fsedge_connect, parent, child, invalidation);
     }
     parent = child;
 

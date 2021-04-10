@@ -311,7 +311,7 @@ static xapi module_parse(module * restrict mod, module_parser * restrict parser,
   {
     mod_file_n->not_parsed = 0;
   }
-  else if((exit = invoke(module_parser_parse, parser, mod, invalidation, text, text_len + 2, mod_file_n->name.name)))
+  else if((exit = invoke(module_parser_parse, parser, mod, invalidation, text, text_len + 2, mod_file_relpath)))
   {
 #if DEBUG || DEVEL || XAPI
     xapi_trace_full(trace, sizeof(trace), 0);

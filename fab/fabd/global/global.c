@@ -76,7 +76,7 @@ xapi global_system_reconcile(handler_context * restrict ctx, bool * restrict rec
   global_system_state = BAM_SYSTEM_STATE_MODULE_SYSTEM_RECONCILE;
   fatal(module_system_reconcile, &ctx->invalidation, reconciled);
   if(!*reconciled) {
-    fprintf(stderr, "module files were not parsed!\n");
+    fprintf(stderr, "module files were not reconciled\n");
     goto XAPI_FINALLY;
   }
 
@@ -84,7 +84,7 @@ xapi global_system_reconcile(handler_context * restrict ctx, bool * restrict rec
   global_system_state = BAM_SYSTEM_STATE_VAR_SYSTEM_RECONCILE;
   fatal(var_system_reconcile, reconciled);
   if(!*reconciled) {
-    fprintf(stderr, "var files were not parsed!\n");
+    fprintf(stderr, "var files were not reconciled\n");
     goto XAPI_FINALLY;
   }
 
@@ -92,6 +92,7 @@ xapi global_system_reconcile(handler_context * restrict ctx, bool * restrict rec
   global_system_state = BAM_SYSTEM_STATE_RULE_SYSTEM_RECONCILE;
   fatal(rule_system_reconcile, &ctx->rule_ctx, reconciled);
   if(!*reconciled) {
+    fprintf(stderr, "rules were not reconciled!\n");
     goto XAPI_FINALLY;
   }
 

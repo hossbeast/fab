@@ -29,6 +29,8 @@
 #include "params.h"
 #include "stats.h"
 
+#include "zbuffer.h"
+
 static int walk_ids = 1;
 
 //
@@ -326,7 +328,10 @@ xapi walker_ascend(fsent * restrict base, int walk_id, graph_invalidation_contex
   moria_vertex * dirv;
   int r;
   const filesystem *fs = 0;
-  walker_context ctx = { 0 };
+  walker_context ctx = { };
+  size_t z;
+  fsent *n;
+  moria_vertex *lv;
 
   if(walk_id != walk_ids) {
     walk_id = ++walk_ids;
@@ -369,6 +374,39 @@ xapi walker_ascend(fsent * restrict base, int walk_id, graph_invalidation_contex
 
     // visited
     dirn->walk_id = walk_id;
+
+    /* check for special files */
+    if((lv = moria_vertex_downw(dirv, fsent_var_name, fsent_var_name_len)))
+    {
+      n = containerof(lv, fsent, vertex);
+      if(fs->attrs == INVALIDATE_NOTIFY)
+      {
+        z = 0;
+        z += znloads(path + pathl + z, sizeof(path) - pathl - z, "/");
+        z += znloadw(path + pathl + z, sizeof(path) - pathl - z, fsent_var_name, fsent_var_name_len);
+        path[pathl + z] = 0;
+
+        fatal(refresh, &ctx, n, path, pathl + z);
+      }
+      else if(fs->attrs != INVALIDATE_NOTIFY)
+      {
+        /* disintegrate */
+      }
+    }
+    else
+    {
+      z = 0;
+      z += znloads(path + pathl + z, sizeof(path) - pathl - z, "/");
+      z += znloadw(path + pathl + z, sizeof(path) - pathl - z, fsent_var_name, fsent_var_name_len);
+      path[pathl + z] = 0;
+
+      fatal(uxeuidaccesss, &r, F_OK, path);
+      if(r == 0)
+      {
+        fatal(fsent_create, &n, VERTEX_FILETYPE_REG, VERTEX_OK, fsent_var_name, fsent_var_name_len);
+        fatal(fsedge_connect, dirn, n, invalidation);
+      }
+    }
   }
 
   finally : coda;

@@ -202,7 +202,13 @@ static xapi __attribute__((nonnull)) fml_node_get(
     fprintf(stderr, "[MODULE:NOREF] unresolved reference ");
     fprintf(stderr, "pattern ");
     fatal(pattern_say, rule->formula, g_narrator_stderr);
-    fprintf(stderr, " location %s line %d\n", rma->mod_owner->self_node_relpath, rule->formula->loc.f_lin + 1);
+    fprintf(stderr, " @ %s [%d,%d - %d,%d]\n"
+      , rma->mod_owner->self_node_relpath
+      , rule->formula->loc.f_lin
+      , rule->formula->loc.f_col
+      , rule->formula->loc.l_lin
+      , rule->formula->loc.l_col
+    );
     *ctx->reconciled = false;
     goto XAPI_FINALIZE;
   }

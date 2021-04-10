@@ -44,6 +44,12 @@ static xapi bootstrap_thread(handler_context * restrict ctx)
   rcu_register(&rcu_self);
   fatal(global_system_reconcile, ctx, &reconciled);
 
+  /* the initial reconciliation has to be successful */
+  if(!reconciled)
+  {
+    g_params.shutdown = true;
+  }
+
 finally:
   trylock_reset(&global_system_reconcile_lock);
 #if DEBUG || DEVEL

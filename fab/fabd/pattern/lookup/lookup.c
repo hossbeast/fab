@@ -28,6 +28,8 @@
 #include "render.h"
 #include "selection.h"
 
+#include "zbuffer.h"
+
 typedef struct lookup_context {
   const char * path;
   uint16_t path_len;
@@ -130,9 +132,9 @@ static xapi pattern_lookup_fragment(
   int r;
   lookup_context ctx = { 0 };
   moria_vertex * vertices[2];
-  char path1[512];
-  char path2[512];
   size_t sz;
+  char *s;
+  size_t z;
 
   ctx.attrs = attrs;
   ctx.path = frag;
@@ -145,19 +147,27 @@ static xapi pattern_lookup_fragment(
     goto XAPI_FINALIZE;
   }
 
-  if(r == 0) {
-    *errlen = snprintf(err, errsz, "[%s] ref %.*s\n", "NOREF", (int)fragl, frag);
-  } else {
-    *errlen = snprintf(err, errsz, "[%s] ref %.*s\n", "AMBIGREF", (int)fragl, frag);
-  }
-  *errlen = snprintf(err, errsz, " location %s line %d\n", fname, loc->f_lin + 1);
-  if(r == 2) {
-    sz = fsent_path_znload(path1, sizeof(path1), containerof(vertices[0], fsent, vertex));
-    *errlen = snprintf(err, errsz, " one %.*s\n", (int)sz, path1);
+  z = 0;
+  s = err;
+  sz = errsz;
 
-    sz = fsent_path_znload(path2, sizeof(path2), containerof(vertices[1], fsent, vertex));
-    *errlen = snprintf(err, errsz, " two %.*s\n", (int)sz, path2);
+  if(r == 0) {
+    z += znloadf(s + z, sz - z, "unresolved ref %.*s\n", (int)fragl, frag);
+  } else {
+    z += znloadf(s + z, sz - z, "ambiguous ref %.*s\n", (int)fragl, frag);
   }
+  z += znloadf(s + z, sz - z, " @ %s", fname);
+  z += znloadf(s + z, sz - z, " [%d,%d - %d,%d]", loc->f_lin, loc->f_col, loc->l_lin, loc->l_col);
+
+  if(r == 2) {
+    z += znloads(s + z, sz - z, " one ");
+    z += fsent_path_znload(s + z, sz - z, containerof(vertices[0], fsent, vertex));
+
+    z += znloads(s + z, sz - z, " two ");
+    z += fsent_path_znload(s + z, sz - z, containerof(vertices[1], fsent, vertex));
+  }
+
+  *errlen = z;
 
   finally : coda;
 }
