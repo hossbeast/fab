@@ -1,0 +1,37 @@
+# what to show on success
+--on-success-show-path false
+--on-success-show-cwd false
+--on-success-show-command false
+--on-success-show-arguments false
+--on-success-show-environment false
+--on-success-show-sources false
+--on-success-show-targets false
+--on-success-show-status false
+--on-success-show-stdout false
+--on-success-show-stdout-limit-lines 45
+--on-success-show-stdout-limit-bytes 0
+--on-success-show-stderr false
+--on-success-show-stderr-limit-lines 45
+--on-success-show-stderr-limit-bytes 0
+--on-success-show-auxout true
+--on-success-show-auxout-limit-lines 45
+--on-success-show-auxout-limit-bytes 0
+
+# what to show on error
+--on-error-show-path true
+--on-error-show-cwd true
+--on-error-show-command true
+--on-error-show-arguments true
+--on-error-show-environment true
+--on-error-show-sources true
+--on-error-show-targets true
+--on-error-show-status true
+--on-error-show-stdout true
+--on-error-show-stdout-limit-lines 45
+--on-error-show-stdout-limit-bytes 0
+--on-error-show-stderr true
+--on-error-show-stderr-limit-lines 45
+--on-error-show-stderr-limit-bytes 0
+--on-error-show-auxout true
+--on-error-show-auxout-limit-lines 45
+--on-error-show-auxout-limit-bytes 0
