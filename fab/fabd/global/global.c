@@ -27,6 +27,7 @@
 #include "stats.h"
 #include "var.h"
 #include "walker.h"
+#include "channel.h"
 
 /* boostrap thread inherits this lock */
 struct trylock global_system_reconcile_lock = TRYLOCK_INIT_HELD;
@@ -36,17 +37,19 @@ uint16_t global_reconciliation_id;
 /* on the first reconciliation, the config and module systems must be bootstrapped */
 static bool subsequent;
 
-xapi global_system_reconcile(handler_context * restrict ctx, bool * restrict reconciled)
+xapi global_system_reconcile(channel * restrict chan)
 {
   enter;
 
   int walk_id;
   graph_invalidation_context invalidation = { };
+  rule_run_context rule_ctx;
+
+  fatal(rule_run_context_xinit, &rule_ctx);
 
   global_reconciliation_id++;
   fatal(graph_invalidation_begin, &invalidation);
   walk_id = walker_begin();
-  *reconciled = true;
 
   if(!subsequent) {
     fatal(config_system_bootstrap);
@@ -54,10 +57,22 @@ xapi global_system_reconcile(handler_context * restrict ctx, bool * restrict rec
 
   /* reload config files */
   global_system_state = BAM_SYSTEM_STATE_CONFIG_SYSTEM_RECONCILE;
-  fatal(config_system_reconcile, walk_id, &invalidation, reconciled);
-  if(!*reconciled) {
+  fatal(config_system_reconcile, walk_id, &invalidation, chan);
+  if(chan->error) {
     fprintf(stderr, "config files were not parsed!\n");
     goto XAPI_FINALLY;
+  }
+
+  if(!subsequent)
+  {
+    walk_id = walker_begin();
+    graph_invalidation_end(&invalidation);
+    fatal(graph_invalidation_begin, &invalidation);
+    fatal(config_system_reconcile, walk_id, &invalidation, chan);
+    if(chan->error) {
+      fprintf(stderr, "config files were not parsed!\n");
+      goto XAPI_FINALLY;
+    }
   }
 
   /* this must come after the first config parse */
@@ -74,32 +89,32 @@ xapi global_system_reconcile(handler_context * restrict ctx, bool * restrict rec
 
   /* reload modules */
   global_system_state = BAM_SYSTEM_STATE_MODULE_SYSTEM_RECONCILE;
-  fatal(module_system_reconcile, &ctx->invalidation, reconciled);
-  if(!*reconciled) {
+  fatal(module_system_reconcile, chan);
+  if(chan->error) {
     fprintf(stderr, "module files were not reconciled\n");
     goto XAPI_FINALLY;
   }
 
   /* cleanup var files not reloaded by any module */
   global_system_state = BAM_SYSTEM_STATE_VAR_SYSTEM_RECONCILE;
-  fatal(var_system_reconcile, reconciled);
-  if(!*reconciled) {
+  fatal(var_system_reconcile, chan);
+  if(chan->error) {
     fprintf(stderr, "var files were not reconciled\n");
     goto XAPI_FINALLY;
   }
 
   /* run rules to quiescence */
   global_system_state = BAM_SYSTEM_STATE_RULE_SYSTEM_RECONCILE;
-  fatal(rule_system_reconcile, &ctx->rule_ctx, reconciled);
-  if(!*reconciled) {
+  fatal(rule_system_reconcile, &rule_ctx, chan);
+  if(chan->error) {
     fprintf(stderr, "rules were not reconciled!\n");
     goto XAPI_FINALLY;
   }
 
   /* cleanup formulas which are no longer referenced */
   global_system_state = BAM_SYSTEM_STATE_FORMULA_SYSTEM_RECONCILE;
-  fatal(formula_system_reconcile, reconciled);
-  if(!*reconciled) {
+  fatal(formula_system_reconcile, chan);
+  if(chan->error) {
     fprintf(stderr, "formula files were not parsed!\n");
     goto XAPI_FINALLY;
   }
@@ -109,5 +124,6 @@ xapi global_system_reconcile(handler_context * restrict ctx, bool * restrict rec
 
 finally:
   graph_invalidation_end(&invalidation);
+  fatal(rule_run_context_xdestroy, &rule_ctx);
 coda;
 }

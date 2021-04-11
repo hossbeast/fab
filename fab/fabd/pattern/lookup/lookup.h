@@ -23,6 +23,7 @@
 
 struct pattern;
 struct selection;
+struct channel;
 
 #define PATTERN_LOOKUP_DIR       0x01 /* only match directories */
 #define PATTERN_LOOKUP_MODULE    0x03 /* only match directories which have a module file */
@@ -40,10 +41,8 @@ xapi pattern_lookup(
     const struct pattern * restrict ref
   , uint32_t attrs
   , struct selection * restrict nodes
-  , char * restrict err
-  , size_t errsz
-  , uint16_t * restrict errlen
+  , struct channel * restrict chan
 )
-  __attribute__((nonnull(1, 3, 4, 6)));
+  __attribute__((nonnull));
 
 #endif

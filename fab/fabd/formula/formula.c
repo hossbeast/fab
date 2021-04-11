@@ -30,6 +30,7 @@
 #include "fsent.h"
 #include "stats.h"
 #include "marshal.h"
+#include "channel.h"
 
 #include "common/snarf.h"
 
@@ -38,14 +39,14 @@ static llist formula_freelist = LLIST_INITIALIZER(formula_freelist);
 
 static formula_parser *parser;
 
-static xapi formula_parse(formula * restrict fml, bool * restrict success)
+static xapi formula_parse(formula * restrict fml, channel * restrict chan)
 {
   enter;
 
   char * text = 0;
   size_t text_len;
   xapi exit;
-  char trace[4096 << 1];
+  fabipc_message *msg;
 
   // open the file, both to read its contents, and to exec later
   fatal(ixclose, &fml->fd);
@@ -64,16 +65,19 @@ static xapi formula_parse(formula * restrict fml, bool * restrict success)
   {
     if((exit = invoke(formula_parser_parse, parser, text, text_len, fml->self_node_abspath, fml)))
     {
-#if DEBUG || DEVEL || XAPI
-      xapi_trace_full(trace, sizeof(trace), 0);
+      msg = channel_produce(chan);
+      msg->id = chan->msgid;
+      msg->type = FABIPC_MSG_RESPONSE;
+      msg->code = EINVAL;
+
+#if DEBUG || DEVEL
+      msg->size = xapi_trace_full(msg->text, sizeof(msg->text), 0);
 #else
-      xapi_trace_pithy(trace, sizeof(trace), 0);
+      msg->size = xapi_trace_pithy(msg->text, sizeof(msg->text), 0);
 #endif
+      channel_post(chan, msg);
+
       xapi_calltree_unwind();
-
-      xlogs(L_WARN, L_NOCATEGORY, trace);
-
-      *success = false;
       goto XAPI_FINALLY;
     }
   }
@@ -81,7 +85,7 @@ static xapi formula_parse(formula * restrict fml, bool * restrict success)
   STATS_INC(fml->stats.parsed);
   STATS_INC(g_stats.formula_parsed);
 
-  logf(L_MODULE, "parsed formula @ %s via fd %d", fml->self_node_abspath, fml->fd);
+  //logf(L_MODULE, "parsed formula @ %s via fd %d", fml->self_node_abspath, fml->fd);
 
 finally:
   wfree(text);
@@ -154,7 +158,7 @@ xapi formula_cleanup()
   finally : coda;
 }
 
-xapi formula_reconcile(formula * restrict fml, bool * restrict reconciled)
+xapi formula_reconcile(formula * restrict fml, channel * restrict chan)
 {
   enter;
 
@@ -162,16 +166,16 @@ xapi formula_reconcile(formula * restrict fml, bool * restrict reconciled)
     goto XAPI_FINALLY;
   }
 
-  fatal(formula_parse, fml, reconciled);
+  fatal(formula_parse, fml, chan);
 
-  if(*reconciled) {
+  if(!chan->error) {
     fatal(fsent_ok, fml->self_node);
   }
 
   finally : coda;
 }
 
-xapi formula_system_reconcile(bool * restrict reconciled)
+xapi formula_system_reconcile(channel * restrict chan)
 {
   enter;
 

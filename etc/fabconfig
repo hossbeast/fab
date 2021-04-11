@@ -1,0 +1,36 @@
+# file invalidation
+filesystems : {
+  "/" : {
+    invalidate : notify
+  }
+}
+
+# external modules
+extern : {
+  /usr/share/fab/modules
+}
+
+# heuristic based on detected cpus
+workers : {
+  concurrency : 0
+}
+
+# heuristic based on detected cpus
+build : {
+  concurrency : 0
+}
+
+# formula execution $PATH
+formula : {
+  path : {
+    dirs : {
+      /usr/bin
+    }
+  }
+}
+
+special : {
+  module : "module.bam"
+  model : "model.bam"
+  var : "var.bam"
+}

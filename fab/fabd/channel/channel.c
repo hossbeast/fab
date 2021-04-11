@@ -29,11 +29,11 @@
 // public
 //
 
-xapi channel_create(fabipc_channel ** restrict chanp, pid_t thread_id)
+xapi channel_create(channel ** restrict chanp, pid_t thread_id)
 {
   enter;
 
-  fabipc_channel *chan;
+  channel *chan;
   int shmid = -1;
   void * shmaddr = 0;
 
@@ -41,10 +41,10 @@ xapi channel_create(fabipc_channel ** restrict chanp, pid_t thread_id)
   fatal(xshmat, shmid, 0, 0, &shmaddr);
 
   chan = shmaddr;
-  chan->shmid = shmid;
-  chan->server_pid = g_params.pid;
-  chan->server_tid = thread_id;
-  chan->server_pulse = thread_id;
+  chan->ipc.shmid = shmid;
+  chan->ipc.server_pid = g_params.pid;
+  chan->ipc.server_tid = thread_id;
+  chan->ipc.server_pulse = thread_id;
   *chanp = chan;
 
 finally:
@@ -54,9 +54,98 @@ finally:
 coda;
 }
 
-void channel_release(fabipc_channel * restrict chan)
+void channel_release(channel * restrict chan)
 {
   shmdt(chan);
+}
+
+fabipc_message * channel_acquire(channel * restrict chan)
+{
+  fabipc_message *msg;
+
+  msg = fabipc_acquire(
+      chan->ipc.client_ring.pages
+    , &chan->ipc.client_ring.head
+    , &chan->ipc.client_ring.tail
+    , FABIPC_CLIENT_RINGSIZE - 1
+  );
+
+#if DEBUG || DEVEL
+  if (msg) {
+    RUNTIME_ASSERT(msg->type);
+  }
+#endif
+
+  return msg;
+}
+
+void channel_post(channel * restrict chan, fabipc_message * restrict msg)
+{
+#if DEBUG || DEVEL
+  RUNTIME_ASSERT(msg->type);
+  if(msg->type == FABIPC_MSG_EVENTS) {
+    RUNTIME_ASSERT(msg->evtype);
+  }
+#endif
+
+  if((msg->type == FABIPC_MSG_RESULT || msg->type == FABIPC_MSG_RESPONSE) && msg->code != 0)
+  {
+    chan->error = true;
+    dprintf(2, msg->text, msg->size);
+  }
+
+  fabipc_post(msg, &chan->ipc.server_ring.waiters);
+}
+
+fabipc_message * channel_produce(channel * restrict chan)
+{
+  fabipc_message *msg;
+  msg = fabipc_produce(
+      chan->ipc.server_ring.pages
+    , &chan->ipc.server_ring.head
+    , &chan->ipc.server_ring.tail
+    , FABIPC_SERVER_RINGSIZE - 1
+  );
+
+  msg->id = chan->msgid;
+
+  return msg;
+}
+
+void channel_consume(channel * restrict chan, fabipc_message * restrict msg)
+{
+  fabipc_consume(
+      chan->ipc.client_ring.pages
+    , &chan->ipc.client_ring.head
+    , msg
+    , FABIPC_CLIENT_RINGSIZE - 1
+  );
+}
+
+void channel_response(channel * restrict chan, int code)
+{
+  channel_responsew(chan, code, 0, 0);
+}
+
+void channel_responses(channel * restrict chan, int code, const char * restrict text)
+{
+  channel_responsew(chan, code, text, strlen(text));
+}
+
+void channel_responsew(channel * restrict chan, int code, const char * restrict text, uint16_t text_len)
+{
+  fabipc_message *msg;
+
+  msg = channel_produce(chan);
+  msg->id = chan->msgid;
+  msg->size = text_len;
+  msg->type = FABIPC_MSG_RESPONSE;
+  msg->code = code;
+  if(text_len) {
+    memcpy(msg->text, text, text_len);
+  }
+
+  channel_post(chan, msg);
 }
 
 xapi channel_setup()

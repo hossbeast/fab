@@ -20,6 +20,7 @@ use flex
 use bison
 use library/shared      # this module builds a library
 use xunit-tests         # this module contains xunit tests
+use xapi/errtab         # this module contains errtabs
 
 # make common objects available for #inclusion and linking by files in this module
 import fab/include

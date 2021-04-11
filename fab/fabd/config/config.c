@@ -34,7 +34,6 @@
 #include "CONFIG.errtab.h"
 #include "config_parser.internal.h"
 #include "filesystem.h"
-#include "logging.h"
 #include "build_thread.h"
 #include "extern.h"
 #include "params.h"
@@ -43,6 +42,8 @@
 #include "walker.h"
 #include "args.h"
 #include "zbuffer.h"
+#include "channel.h"
+#include "logging.h"
 
 #include "common/snarf.h"
 #include "macros.h"
@@ -53,7 +54,6 @@ static configblob * config_staging;
 static config_parser * parser_staging;
 static configblob * config_active;
 static config_parser * parser_active;
-bool config_reconfigure_result;
 
 static llist config_list = LLIST_INITIALIZER(config_list);          // active
 static llist config_freelist = LLIST_INITIALIZER(config_freelist);  // free
@@ -132,7 +132,6 @@ static void config_compare_special(config_base * restrict _new, config_base * re
          || box_cmp(refas(new->model, bx), refas(old->model, bx))
          || box_cmp(refas(new->module, bx), refas(old->module, bx))
          || box_cmp(refas(new->var, bx), refas(old->var, bx))
-         || box_cmp(refas(new->formula_suffix, bx), refas(old->formula_suffix, bx))
          ;
 }
 
@@ -164,35 +163,6 @@ static void config_compare_filesystems(config_base * restrict _new, config_base 
   struct config_filesystems * old = containerof(_old, struct config_filesystems, cb);
 
   new->changed = !old || !map_equal(new->entries, old->entries);
-}
-
-static void config_compare_logging_exprs(config_base * restrict _new, config_base * restrict _old)
-{
-  struct config_logging_exprs * new = containerof(_new, struct config_logging_exprs, cb);
-  struct config_logging_exprs * old = containerof(_old, struct config_logging_exprs, cb);
-
-  new->changed = !old || !list_equal(new->items, old->items, 0);
-}
-
-static void config_compare_logging_section(config_base * restrict _new, config_base * restrict _old)
-{
-  struct config_logging_section * new = containerof(_new, struct config_logging_section, cb);
-  struct config_logging_section * old = containerof(_old, struct config_logging_section, cb);
-
-  config_compare_logging_exprs(&new->exprs.cb, refas(old, exprs.cb));
-
-  new->changed = new->exprs.changed;
-}
-
-static void config_compare_logging(config_base * restrict _new, config_base * restrict _old)
-{
-  struct config_logging * new = containerof(_new, struct config_logging, cb);
-  struct config_logging * old = containerof(_old, struct config_logging, cb);
-
-  config_compare_logging_section(&new->console.cb, refas(old, console.cb));
-  config_compare_logging_section(&new->logfile.cb, refas(old, logfile.cb));
-
-  new->changed = new->console.changed || new->logfile.changed;
 }
 
 static void config_compare_formula_path(config_base * restrict _new, config_base * restrict _old)
@@ -344,7 +314,6 @@ bool config_compare(configblob * restrict new, configblob * restrict old)
   config_compare_extern(&new->extern_section.cb, refas(old, extern_section.cb));
   config_compare_filesystems(&new->filesystems.cb, refas(old, filesystems.cb));
   config_compare_formula(&new->formula.cb, refas(old, formula.cb));
-  config_compare_logging(&new->logging.cb, refas(old, logging.cb));
 
   new->changed = 0
     || new->build.changed
@@ -352,7 +321,6 @@ bool config_compare(configblob * restrict new, configblob * restrict old)
     || new->extern_section.changed
     || new->filesystems.changed
     || new->formula.changed
-    || new->logging.changed
     ;
 
   return !new->changed;
@@ -431,36 +399,6 @@ xapi config_merge(configblob * restrict dst, configblob * restrict src)
   dst->formula.path.merge_significant |= !empty;
   dst->formula.merge_significant = dst->formula.path.merge_significant;
 
-  /* logging */
-  dst->logging.merge_significant = false;
-  if(src->logging.merge_overwrite || src->logging.logfile.merge_overwrite || src->logging.logfile.exprs.merge_overwrite)
-  {
-    fatal(list_xfree, dst->logging.logfile.exprs.items);
-    dst->logging.logfile.exprs.items = src->logging.logfile.exprs.items;
-    src->logging.logfile.exprs.items = 0;
-  }
-  else
-  {
-    fatal(list_splice, dst->logging.logfile.exprs.items, dst->logging.logfile.exprs.items->size, src->logging.logfile.exprs.items, 0, -1);
-  }
-  dst->logging.logfile.exprs.merge_significant = dst->logging.logfile.exprs.items->size;
-  dst->logging.logfile.merge_significant = dst->logging.logfile.exprs.merge_significant;
-  dst->logging.merge_significant |= dst->logging.logfile.exprs.merge_significant;
-
-  if(src->logging.merge_overwrite || src->logging.console.merge_overwrite || src->logging.console.exprs.merge_overwrite)
-  {
-    fatal(list_xfree, dst->logging.console.exprs.items);
-    dst->logging.console.exprs.items = src->logging.console.exprs.items;
-    src->logging.console.exprs.items = 0;
-  }
-  else
-  {
-    fatal(list_splice, dst->logging.console.exprs.items, dst->logging.console.exprs.items->size, src->logging.console.exprs.items, 0, -1);
-  }
-  dst->logging.console.exprs.merge_significant = dst->logging.console.exprs.items->size;
-  dst->logging.console.merge_significant = dst->logging.console.exprs.merge_significant;
-  dst->logging.merge_significant |= dst->logging.console.exprs.merge_significant;
-
   finally : coda;
 }
 
@@ -468,7 +406,7 @@ xapi config_throw(box * restrict val)
 {
   enter;
 
-  xapi_info_pushf("location", "[%d,%d - %d,%d]", val->loc.f_lin, val->loc.f_col, val->loc.l_lin, val->loc.l_col);
+  xapi_info_pushf("location", "[%d,%d - %d,%d]", val->loc.f_lin + 1, val->loc.f_col + 1, val->loc.l_lin + 1, val->loc.l_col + 1);
 
   fail(CONFIG_INVALID);
 
@@ -503,8 +441,6 @@ xapi config_create(configblob ** restrict rv)
     , 0
   );
   fatal(map_createx, &cfg->filesystems.entries, 0, fse_free, 0);
-  fatal(list_createx, &cfg->logging.logfile.exprs.items, 0, 0, box_free, 0);
-  fatal(list_createx, &cfg->logging.console.exprs.items, 0, 0, box_free, 0);
   fatal(set_createx
     , &cfg->formula.path.dirs.entries
     , 0
@@ -532,7 +468,6 @@ xapi config_xfree(configblob * restrict cfg)
     box_free(refas(cfg->special.module, bx));
     box_free(refas(cfg->special.model, bx));
     box_free(refas(cfg->special.var, bx));
-    box_free(refas(cfg->special.formula_suffix, bx));
     box_free(refas(cfg->workers.concurrency, bx));
 
     fatal(set_xfree, cfg->extern_section.entries);
@@ -540,9 +475,6 @@ xapi config_xfree(configblob * restrict cfg)
     fatal(set_xfree, cfg->formula.path.dirs.entries);
 
     box_free(refas(cfg->formula.path.copy_from_env, bx));
-
-    fatal(list_xfree, cfg->logging.logfile.exprs.items);
-    fatal(list_xfree, cfg->logging.console.exprs.items);
   }
   wfree(cfg);
 
@@ -565,7 +497,6 @@ xapi config_writer_write(configblob * restrict cfg, value_writer * const restric
 
   int x;
   const box_string *ent;
-  const box_string *item;
   const char *key;
   const struct config_filesystem_entry *fsent;
 
@@ -671,64 +602,6 @@ xapi config_writer_write(configblob * restrict cfg, value_writer * const restric
     fatal(value_writer_pop_set, writer);
   }
 
-  if(cfg->logging.merge_significant)
-  {
-    fatal(value_writer_push_mapping, writer);
-    fatal(value_writer_string, writer, "logging");
-    fatal(value_writer_push_set, writer);
-
-    if(cfg->logging.console.merge_significant)
-    {
-      fatal(value_writer_push_mapping, writer);
-      fatal(value_writer_string, writer, "console");
-      fatal(value_writer_push_set, writer);
-
-      if(cfg->logging.console.exprs.merge_significant)
-      {
-        fatal(value_writer_push_mapping, writer);
-        fatal(value_writer_string, writer, "exprs");
-        fatal(value_writer_push_list, writer);
-        for(x = 0; x < cfg->logging.console.exprs.items->size; x++)
-        {
-          item = list_get(cfg->logging.console.exprs.items, x);
-          fatal(value_writer_string, writer, item->v);
-        }
-        fatal(value_writer_pop_list, writer);
-        fatal(value_writer_pop_mapping, writer);
-      }
-
-      fatal(value_writer_pop_set, writer);
-      fatal(value_writer_pop_mapping, writer);
-    }
-
-    if(cfg->logging.logfile.merge_significant)
-    {
-      fatal(value_writer_push_mapping, writer);
-      fatal(value_writer_string, writer, "logfile");
-      fatal(value_writer_push_set, writer);
-
-      if(cfg->logging.logfile.exprs.merge_significant)
-      {
-        fatal(value_writer_push_mapping, writer);
-        fatal(value_writer_string, writer, "exprs");
-        fatal(value_writer_push_list, writer);
-        for(x = 0; x < cfg->logging.logfile.exprs.items->size; x++)
-        {
-          item = list_get(cfg->logging.logfile.exprs.items, x);
-          fatal(value_writer_string, writer, item->v);
-        }
-        fatal(value_writer_pop_list, writer);
-        fatal(value_writer_pop_mapping, writer);
-      }
-
-      fatal(value_writer_pop_set, writer);
-      fatal(value_writer_pop_mapping, writer);
-    }
-
-    fatal(value_writer_pop_set, writer);
-    fatal(value_writer_pop_mapping, writer);
-  }
-
   if(cfg->special.merge_significant)
   {
     fatal(value_writer_push_mapping, writer);
@@ -742,9 +615,6 @@ xapi config_writer_write(configblob * restrict cfg, value_writer * const restric
     }
     if(cfg->special.var) {
       fatal(value_writer_mapping_string_string, writer, "var", cfg->special.var->v);
-    }
-    if(cfg->special.formula_suffix) {
-      fatal(value_writer_mapping_string_string, writer, "formula-suffix", cfg->special.formula_suffix->v);
     }
     fatal(value_writer_pop_set, writer);
   }
@@ -813,37 +683,37 @@ xapi config_active_say(narrator * restrict N)
   finally : coda;
 }
 
-static xapi reconfigure(bool * restrict reconciled)
+static xapi reconfigure(channel * restrict chan)
 {
   enter;
 
-  char trace[4096 << 1];
-  size_t trace_len;
+  fabipc_message *msg;
 
   // validate the new config
   xapi exit = 0;
-  if(  (exit = invoke(logging_reconfigure, config_staging, true))
-    || (exit = invoke(filesystem_reconfigure, config_staging, true))
+  if(  (exit = invoke(filesystem_reconfigure, config_staging, true))
     || (exit = invoke(fsent_reconfigure, config_staging, true))
     || (exit = invoke(extern_reconfigure, config_staging, true))
     || (exit = invoke(build_thread_reconfigure, config_staging, true))
     || (exit = invoke(path_cache_reconfigure, config_staging, true))
   )
   {
-    if(xapi_exit_errtab(exit) != perrtab_CONFIG)
+    if(xapi_exit_errtab(exit) != perrtab_CONFIG) {
       fail(0);
+    }
 
-#if DEBUG || DEVEL || XAPI
-    trace_len = xapi_trace_full(trace, sizeof(trace), 0);
+    msg = channel_produce(chan);
+    msg->id = chan->msgid;
+    msg->type = FABIPC_MSG_RESULT;
+    msg->code = EINVAL;
+
+#if DEBUG || DEVEL
+    msg->size = xapi_trace_full(msg->text, sizeof(msg->text), 0);
 #else
-    trace_len = xapi_trace_pithy(trace, sizeof(trace), 0);
+    msg->size = xapi_trace_pithy(msg->text, sizeof(msg->text), 0);
 #endif
+    channel_post(chan, msg);
     xapi_calltree_unwind();
-
-    /* write error to stderr */
-    write(2, trace, trace_len);
-    config_reconfigure_result = false;
-    *reconciled = false;
   }
   else
   {
@@ -857,13 +727,11 @@ static xapi reconfigure(bool * restrict reconciled)
     config_staging = 0;
 
     // reconfigure subsystems
-    fatal(logging_reconfigure, config_active, false);
     fatal(filesystem_reconfigure, config_active, false);
     fatal(fsent_reconfigure, config_active, false);
     fatal(extern_reconfigure, config_active, false);
     fatal(build_thread_reconfigure, config_active, false);
     fatal(path_cache_reconfigure, config_active, false);
-    config_reconfigure_result = true;
 
     fatal(fsent_ok, system_config_node);
     fatal(fsent_ok, user_config_node);
@@ -873,7 +741,7 @@ static xapi reconfigure(bool * restrict reconciled)
   finally : coda;
 }
 
-xapi config_system_reconcile(int walk_id, graph_invalidation_context * restrict invalidation, bool * restrict reconciled)
+xapi config_system_reconcile(int walk_id, graph_invalidation_context * restrict invalidation, channel * restrict chan)
 {
   enter;
 
@@ -890,7 +758,7 @@ xapi config_system_reconcile(int walk_id, graph_invalidation_context * restrict 
     goto XAPI_FINALIZE;
   }
 
-  fatal(reconfigure, reconciled);
+  fatal(reconfigure, chan);
 
   finally : coda;
 }
@@ -899,7 +767,7 @@ static xapi bootstrap_node(fsent ** restrict np, const char * restrict pathspec)
 {
   enter;
 
-  graph_invalidation_context invalidation = { 0 };
+  graph_invalidation_context invalidation = { };
   char text[512];
   const char *path;
   size_t len, z = 0;
@@ -941,6 +809,7 @@ static xapi bootstrap_node(fsent ** restrict np, const char * restrict pathspec)
     len = strlen(path);
   }
 
+printf("GRAFT %s\n", path);
   fatal(fsent_graft, path, np, &invalidation);
   fsent_kind_set(*np, VERTEX_CONFIG_FILE);
   fsent_protect_set(*np);

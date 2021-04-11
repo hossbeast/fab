@@ -329,11 +329,6 @@ void pattern_section_free(pattern_section * const restrict);
 void pattern_segment_list_free(pattern_segment * const restrict);
 void pattern_segment_free(pattern_segment * const restrict);
 
-/// pattern_say
-//
-// SUMMARY
-//  write a normalized representation of an ffn to a narrator
-//
 xapi pattern_say(const pattern * restrict ffn, struct narrator * restrict N)
   __attribute__((nonnull));
 

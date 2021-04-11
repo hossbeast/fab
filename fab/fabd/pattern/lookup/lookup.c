@@ -27,6 +27,7 @@
 #include "pattern.h"
 #include "render.h"
 #include "selection.h"
+#include "channel.h"
 
 #include "zbuffer.h"
 
@@ -122,9 +123,7 @@ static xapi pattern_lookup_fragment(
   , const yyu_location * restrict loc
   , uint32_t attrs
   , selection * restrict nodes
-  , char * restrict err
-  , size_t errsz
-  , uint16_t * restrict errlen
+  , channel * restrict chan
 )
 {
   enter;
@@ -135,6 +134,7 @@ static xapi pattern_lookup_fragment(
   size_t sz;
   char *s;
   size_t z;
+  fabipc_message *msg;
 
   ctx.attrs = attrs;
   ctx.path = frag;
@@ -147,32 +147,38 @@ static xapi pattern_lookup_fragment(
     goto XAPI_FINALIZE;
   }
 
+  msg = channel_produce(chan);
+  msg->id = chan->msgid;
+  msg->type = FABIPC_MSG_RESULT;
+  msg->code = EINVAL;
+
   z = 0;
-  s = err;
-  sz = errsz;
+  s = msg->text;
+  sz = sizeof(msg->text);
 
   if(r == 0) {
-    z += znloadf(s + z, sz - z, "unresolved ref %.*s\n", (int)fragl, frag);
+    z += znloadf(s + z, sz - z, "unresolved ref %.*s", (int)fragl, frag);
   } else {
-    z += znloadf(s + z, sz - z, "ambiguous ref %.*s\n", (int)fragl, frag);
+    z += znloadf(s + z, sz - z, "ambiguous ref %.*s", (int)fragl, frag);
   }
   z += znloadf(s + z, sz - z, " @ %s", fname);
-  z += znloadf(s + z, sz - z, " [%d,%d - %d,%d]", loc->f_lin, loc->f_col, loc->l_lin, loc->l_col);
+  z += znloadf(s + z, sz - z, " [%d,%d - %d,%d]", loc->f_lin + 1, loc->f_col + 1, loc->l_lin + 1, loc->l_col + 1);
 
   if(r == 2) {
-    z += znloads(s + z, sz - z, " one ");
+    z += znloads(s + z, sz - z, " ");
     z += fsent_path_znload(s + z, sz - z, containerof(vertices[0], fsent, vertex));
-
-    z += znloads(s + z, sz - z, " two ");
+    z += znloads(s + z, sz - z, " and ");
     z += fsent_path_znload(s + z, sz - z, containerof(vertices[1], fsent, vertex));
   }
+  z += znloads(s + z, sz - z, "\n");
 
-  *errlen = z;
+  msg->size = z;
+  channel_post(chan, msg);
 
   finally : coda;
 }
 
-xapi pattern_lookup(const pattern * restrict ref, uint32_t attrs, selection * restrict nodes, char * restrict err, size_t errsz, uint16_t * errlen)
+xapi pattern_lookup(const pattern * restrict ref, uint32_t attrs, selection * restrict nodes, channel * restrict chan)
 {
   enter;
 
@@ -184,14 +190,10 @@ xapi pattern_lookup(const pattern * restrict ref, uint32_t attrs, selection * re
   /* render the reference pattern to resolve classes and alternations */
   fatal(pattern_render, ref, &rendered);
 
-  *errlen = 0;
   fragment = rendered->fragments;
   for(x = 0; x < rendered->size; x++)
   {
-    fatal(pattern_lookup_fragment, fragment->text, fragment->len, ref->fname, &ref->loc, attrs, nodes, err, errsz, errlen);
-    if(*errlen) {
-      break;
-    }
+    fatal(pattern_lookup_fragment, fragment->text, fragment->len, ref->fname, &ref->loc, attrs, nodes, chan);
     fragment = pattern_render_fragment_next(fragment);
   }
 

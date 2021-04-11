@@ -27,15 +27,16 @@
 #include "module.h"
 #include "graph.h"
 
-struct module;
-struct pattern_parser;
-struct set;
-struct yyu_location;
-struct pattern;
+struct channel;
 struct graph;
-struct value_parser;
+struct module;
+struct pattern;
+struct pattern_parser;
 struct rule_run_context;
 struct selection;
+struct set;
+struct value_parser;
+struct yyu_location;
 
 typedef struct module_parser {
   yyu_parser yyu;
@@ -46,6 +47,7 @@ typedef struct module_parser {
   struct set * variants;
   struct selection * scratch;
   struct graph_invalidation_context *invalidation;
+  struct channel *chan;
   llist statement_block_freelist;
   module * mod;
 
@@ -68,8 +70,6 @@ typedef struct module_parser {
   llist scoped_blocks;
   struct value * var_value;
   bool var_merge_overwrite;
-  char err[256];
-  uint16_t errlen;
 } module_parser;
 
 /// module_parser_create
@@ -111,6 +111,7 @@ xapi module_parser_parse(
     module_parser * restrict parser
   , struct module * restrict mod
   , struct graph_invalidation_context * restrict invalidation
+  , struct channel * restrict chan
   , char * const restrict buf
   , size_t size
   , const char * restrict fname

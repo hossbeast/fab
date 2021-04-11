@@ -44,6 +44,7 @@ struct pattern;
 struct rbtree;
 struct rule_module_edge;
 struct set;
+struct channel;
 
 #define RULE_DIRECTION_OPT    0x0003
 #define RULE_CARDINALITY_OPT  0x003c
@@ -127,7 +128,7 @@ typedef struct rule_run_context {
 
   /* tracking rule/module associations with no matches */
   struct rbtree *nohits;
-  bool *reconciled;
+  struct channel *chan;
 } rule_run_context;
 
 xapi rule_run_context_xinit(rule_run_context * rule_ctx)

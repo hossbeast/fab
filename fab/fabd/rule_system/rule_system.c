@@ -29,6 +29,7 @@
 #include "module.h"
 #include "rule.h"
 #include "rule_module.h"
+#include "channel.h"
 
 /* refresh state */
 uint32_t rule_system_reconciliation_id;
@@ -55,7 +56,7 @@ xapi rule_system_setup()
   finally : coda;
 }
 
-xapi rule_system_reconcile(rule_run_context * restrict ctx, bool * restrict reconciled)
+xapi rule_system_reconcile(rule_run_context * restrict ctx, channel* restrict chan)
 {
   enter;
 
@@ -69,11 +70,11 @@ xapi rule_system_reconcile(rule_run_context * restrict ctx, bool * restrict reco
 
   rbtree_init(&nohits);
   ctx->nohits = &nohits;
-  ctx->reconciled = reconciled;
+  ctx->chan = chan;
 
   /* run rules to quiescence */
   head = &rma_list[rma_list_index];
-  while(!llist_empty(head) && *reconciled)
+  while(!llist_empty(head) && !chan->error)
   {
     rule_system_reconciliation_id++;
     graph_invalidation_end(&invalidation);
@@ -84,14 +85,14 @@ xapi rule_system_reconcile(rule_run_context * restrict ctx, bool * restrict reco
 
     /* run all queued up rules - this can drive rule invalidations */
     llist_foreach(head, rma, changed[!rma_list_index].lln) {
-      if(*reconciled) {
+      if(!chan->error) {
         ctx->variants = rma->variants;
         ctx->mod = rma->mod;
         ctx->mod_owner = rma->mod_owner;
         ctx->rme = rma;
         fatal(rule_run, rma->rule, ctx);
       }
-      if(!*reconciled) {
+      if(chan->error) {
         rule_system_rma_enqueue(rma);
         continue;
       }
@@ -113,7 +114,7 @@ xapi rule_system_reconcile(rule_run_context * restrict ctx, bool * restrict reco
   }
 
   /* warn about rules which had no effect */
-  if(*reconciled && log_would(L_WARN))
+  if(!chan->error && log_would(L_WARN))
   {
     rbtree_foreach(&nohits, rma, nohits_rbn) {
       fatal(log_start, L_WARN, &N);

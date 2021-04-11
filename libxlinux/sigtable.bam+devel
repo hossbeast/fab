@@ -1,0 +1,109 @@
+#!/usr/bin/env perl
+#
+# Copyright (c) 2012-2018 Todd Freed <todd.freed@gmail.com>
+#
+# This file is part of fab.
+#
+# fab is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# fab is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with fab.  If not, see <http://www.gnu.org/licenses/>. */
+
+use strict;
+use warnings;
+$SIG{__WARN__} = sub { die @_ };
+
+use POSIX;
+
+die "cc not found" unless $ENV{cc};
+
+my $cfile = substr($ENV{bm_target0}, -2) eq ".c" ? $ENV{bm_target0} : $ENV{bm_target1};
+my $hfile = substr($ENV{bm_target0}, -2) eq ".h" ? $ENV{bm_target0} : $ENV{bm_target1};
+
+my ($inrd, $inwr) = POSIX::pipe();
+my ($outrd, $outwr) = POSIX::pipe();
+
+if(fork == 0)
+{
+  POSIX::dup2($inrd, 0);
+  POSIX::close($inwr);
+  POSIX::dup2($outwr, 1);
+  POSIX::close($outrd);
+
+  my @cmd = ($ENV{cc}, "-xc", "-", "-E", "-fdirectives-only");
+  exec { $cmd[0] } @cmd;
+  die;
+}
+
+POSIX::close($inrd);
+POSIX::close($outwr);
+
+my $program = "#include <signal.h>\nint main(int argc, char ** argv) { return 0; }";
+POSIX::write($inwr, $program, length($program));
+POSIX::close($inwr);
+
+my $out = '';
+while(1)
+{
+  my $data;
+  my $rv = POSIX::read($outrd, $data, 0xffff);
+  $out .= $data;
+  last if $rv == 0;
+  die "read $outrd : $rv : $!" if $rv < 0;
+}
+
+my @sigs;
+while(my $match = ($out =~ /#define +(SIG[A-Z0-9]+) +([0-9]+)/g))
+{
+  next if int($2) > 64;
+  $sigs[$2] = $1;
+}
+
+open FH, ">$cfile" or die "open($cfile) : $!";
+print FH <<END;
+#include "types.h"
+#include "sigtable.h"
+
+int sigtable_max = 63;
+const char ** sigtable = (const char*[]) {
+END
+
+for(my $x = 0; $x < 64;  $x++)
+{
+  print FH " [$x] = \"$sigs[$x]\",\n" if $sigs[$x];
+  print FH " [$x] = \"SIG$x\",\n" unless $sigs[$x];
+}
+
+  print FH <<END;
+};
+END
+
+close FH;
+
+open FH, ">$hfile" or die "open($hfile) : $!";
+print FH <<END;
+#ifndef XLINUX_SIGTABLE_H
+#define XLINUX_SIGTABLE_H
+
+extern const char **sigtable;
+extern int sigtable_max;
+
+#endif
+END
+close FH;
+
+__DATA__
+
+envs : {
+  cc : {
+    path-search : cc
+  }
+}

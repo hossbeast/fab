@@ -28,6 +28,7 @@ struct value;
 struct variant;
 struct value_parser;
 struct moria_graph;
+struct channel;
 
 /* VERTEX_VAR */
 typedef struct var {
@@ -54,7 +55,7 @@ xapi var_cleanup(void);
 xapi var_denormalize(struct value_parser * restrict parser, struct variant * restrict var, struct value * restrict valset, struct value ** restrict out)
   __attribute__((nonnull(1, 3, 4)));
 
-xapi var_system_reconcile(bool * restrict reconciled)
+xapi var_system_reconcile(struct channel * restrict chan)
   __attribute__((nonnull));
 
 /*
@@ -71,7 +72,7 @@ xapi var_alloc(var ** restrict vp, struct moria_graph * restrict g)
   __attribute__((nonnull));
 
 /* reload the var if invalid */
-xapi var_reconcile(var * restrict vp, bool * restrict reconciled)
+xapi var_reconcile(var * restrict vp, struct channel * restrict chan)
   __attribute__((nonnull));
 
 #endif

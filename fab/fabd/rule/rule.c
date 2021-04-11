@@ -22,6 +22,7 @@
 #include "common/attrs.h"
 #include "moria/edge.h"
 #include "narrator.h"
+#include "narrator/fixed.h"
 #include "valyria/set.h"
 #include "xlinux/xstdlib.h"
 
@@ -36,6 +37,7 @@
 #include "rule_module.h"
 #include "rule_system.h"
 #include "stats.h"
+#include "channel.h"
 
 #include "macros.h"
 
@@ -179,6 +181,9 @@ static xapi __attribute__((nonnull)) fml_node_get(
   int __attribute__((unused)) r;
   moria_edge *e;
   formula *fml = 0;
+  narrator_fixed fixed;
+  narrator *N;
+  fabipc_message *msg;
 
   rma = ctx->rme;
 
@@ -199,21 +204,28 @@ static xapi __attribute__((nonnull)) fml_node_get(
 
   /* formula attachment did not resolve, or resolved to a non-formula fsent */
   if(ctx->generate_nodes->size != 1 || !fsent_exists_get(*fml_node)) {
-    fprintf(stderr, "[MODULE:NOREF] unresolved reference ");
-    fprintf(stderr, "pattern ");
-    fatal(pattern_say, rule->formula, g_narrator_stderr);
-    fprintf(stderr, " @ %s [%d,%d - %d,%d]\n"
+    msg = channel_produce(ctx->chan);
+    msg->id = ctx->chan->msgid;
+    msg->type = FABIPC_MSG_RESULT;
+    msg->code = EINVAL;
+
+    N = narrator_fixed_init(&fixed, msg->text, sizeof(msg->text));
+    fatal(narrator_xsays, N, "[MODULE:NOREF] unresolved reference, pattern ");
+    fatal(pattern_say, rule->formula, N);
+    fatal(narrator_xsayf, N, " @ %s [%d,%d - %d,%d]\n"
       , rma->mod_owner->self_node_relpath
-      , rule->formula->loc.f_lin
-      , rule->formula->loc.f_col
-      , rule->formula->loc.l_lin
-      , rule->formula->loc.l_col
+      , rule->formula->loc.f_lin + 1
+      , rule->formula->loc.f_col + 1
+      , rule->formula->loc.l_lin + 1
+      , rule->formula->loc.l_col + 1
     );
-    *ctx->reconciled = false;
+    msg->size = fixed.l;
+    channel_post(ctx->chan, msg);
+
     goto XAPI_FINALIZE;
   }
 
-  fatal(fsent_formula_bootstrap, *fml_node, ctx->reconciled);
+  fatal(fsent_formula_bootstrap, *fml_node, ctx->chan);
   fml = (*fml_node)->self_fml;
 
   /* connect the rule vertex and the formula vertex */
@@ -350,6 +362,9 @@ static xapi __attribute__((nonnull(1, 3))) dependency_setup(
   fsent *n;
   int x;
   rule_module_edge * restrict rme = ctx->rme;
+  narrator_fixed fixed;
+  narrator *N;
+  fabipc_message *msg;
 
   /* this particular dependency edge is instantiated by two different rmes */
   if(dep->rme && dep->rme != rme)
@@ -362,16 +377,30 @@ static xapi __attribute__((nonnull(1, 3))) dependency_setup(
       n = containerof(e->A, typeof(*n), vertex);
     }
 
-    fprintf(stderr, "[MODULE:MANYREF] ");
-    fatal(fsent_project_relative_path_say, n, g_narrator_stderr);
-    fprintf(stderr, " already created by rule (setup)\n ");
+    msg = channel_produce(ctx->chan);
+    msg->id = ctx->chan->msgid;
+    msg->type = FABIPC_MSG_RESULT;
+    msg->code = EINVAL;
+
+    N = narrator_fixed_init(&fixed, msg->text, sizeof(msg->text));
+    fatal(narrator_xsays, N, "[MODULE:MANYREF] ");
+    fatal(fsent_project_relative_path_say, n, N);
+    fatal(narrator_xsays, N, " already created by rule (setup)\n ");
     fatal(rule_say, dep->rme->rule, g_narrator_stderr);
-    fprintf(stderr, " @ %s:%d\n", dep->rme->mod_owner->self_node_relpath, dep->rme->rule->formula->loc.f_lin + 1);
-    fprintf(stderr, "  dep %p rme %p rule %p\n ", dep, dep->rme, dep->rme->rule);
-    fatal(rule_say, rme->rule, g_narrator_stderr);
-    fprintf(stderr, " @ %s:%d\n", rme->mod_owner->self_node_relpath, rme->rule->formula->loc.f_lin + 1);
-    fprintf(stderr, "  dep %p rme %p rule %p\n ", dep, rme, rme->rule);
-    *ctx->reconciled = false;
+    fatal(narrator_xsayf, N, " @ %s:%d\n"
+      , dep->rme->mod_owner->self_node_relpath
+      , dep->rme->rule->formula->loc.f_lin + 1
+    );
+    fatal(narrator_xsayf, N, "  dep %p rme %p rule %p\n ", dep, dep->rme, dep->rme->rule);
+    fatal(rule_say, rme->rule, N);
+    fatal(narrator_xsayf, N, " @ %s:%d\n"
+      , rme->mod_owner->self_node_relpath
+      , rme->rule->formula->loc.f_lin + 1
+    );
+    fatal(narrator_xsayf, N, "  dep %p rme %p rule %p\n ", dep, rme, rme->rule);
+    msg->size = fixed.l;
+    channel_post(ctx->chan, msg);
+
     goto XAPI_FINALIZE;
   }
 
@@ -460,9 +489,9 @@ static xapi __attribute__((nonnull)) match_zero_to_one(
 
     fatal(dependency_hyperconnect, &v, 1, 0, 0, rule->relation, &ctx->invalidation, &ne);
     fatal(dependency_setup, ne, fml_node, ctx);
-    if(!*ctx->reconciled) {
-      break;
-    }
+   // if(ctx->err->l) {
+   //   break;
+   // }
   }
 
   finally : coda;
@@ -494,9 +523,9 @@ static xapi __attribute__((nonnull)) generate_zero_to_one(
 
     fatal(dependency_hyperconnect, &v, 1, 0, 0, rule->relation, &ctx->invalidation, &ne);
     fatal(dependency_setup, ne, fml_node, ctx);
-    if(!*ctx->reconciled) {
-      break;
-    }
+    //if(ctx->err->l) {
+    //  break;
+    //}
   }
 
   finally : coda;
@@ -615,9 +644,9 @@ static xapi __attribute__((nonnull(1, 3))) match_one_to_one(
 
       fatal(dependency_connect, generated, match->node, rule->relation, &ctx->invalidation, &ne);
       fatal(dependency_setup, ne, fml_node, ctx);
-      if(!*ctx->reconciled) {
-        goto XAPI_FINALIZE;
-      }
+      //if(ctx->err->l) {
+      //  goto XAPI_FINALIZE;
+      //}
     }
   }
 
@@ -655,9 +684,9 @@ static xapi __attribute__((nonnull(1, 3))) generate_one_to_one(
 
       fatal(dependency_connect, match->node, generated, rule->relation, &ctx->invalidation, &ne);
       fatal(dependency_setup, ne, fml_node, ctx);
-      if(!*ctx->reconciled) {
-        goto XAPI_FINALIZE;
-      }
+      //if(ctx->err->l) {
+      //  goto XAPI_FINALIZE;
+      //}
     }
   }
 
@@ -705,9 +734,9 @@ static xapi __attribute__((nonnull)) match_one_to_many(
 
     fatal(dependency_hyperconnect, ctx->Blist, Bsz, ctx->Alist, 1, rule->relation, &ctx->invalidation, &ne);
     fatal(dependency_setup, ne, fml_node, ctx);
-    if(!*ctx->reconciled) {
-      break;
-    }
+    //if(ctx->err->l) {
+    //  break;
+    //}
   }
 
   finally : coda;
@@ -754,9 +783,9 @@ static xapi __attribute__((nonnull)) generate_one_to_many(
 
     fatal(dependency_hyperconnect, ctx->Alist, 1, ctx->Blist, Bsz, rule->relation, &ctx->invalidation, &ne);
     fatal(dependency_setup, ne, fml_node, ctx);
-    if(!*ctx->reconciled) {
-      break;
-    }
+    //if(ctx->err->l) {
+    //  break;
+    //}
   }
 
   finally : coda;
@@ -805,9 +834,9 @@ static xapi __attribute__((nonnull(1, 3))) match_many_to_one(
       ctx->Blist[0] = &n->vertex;
       fatal(dependency_hyperconnect, ctx->Blist, 1, ctx->Alist, Asz, rule->relation, &ctx->invalidation, &ne);
       fatal(dependency_setup, ne, fml_node, ctx);
-      if(!*ctx->reconciled) {
-        goto XAPI_FINALIZE;
-      }
+      //if(ctx->err->l) {
+      //  goto XAPI_FINALIZE;
+      //}
     }
 
     x = y;
@@ -855,9 +884,9 @@ static xapi __attribute__((nonnull)) generate_many_to_one(
 
     fatal(dependency_hyperconnect, ctx->Alist, 1, ctx->Blist, Bsz, rule->relation, &ctx->invalidation, &ne);
     fatal(dependency_setup, ne, fml_node, ctx);
-    if(!*ctx->reconciled) {
-      break;
-    }
+    //if(ctx->err->l) {
+    //  break;
+    //}
   }
 
   finally : coda;
@@ -913,9 +942,9 @@ static xapi __attribute__((nonnull)) match_many_to_many(
 
     fatal(dependency_hyperconnect, ctx->Blist, Bsz, ctx->Alist, Asz, rule->relation, &ctx->invalidation, &ne);
     fatal(dependency_setup, ne, fml_node, ctx);
-    if(!*ctx->reconciled) {
-      break;
-    }
+    //if(ctx->err->l) {
+    //  break;
+    //}
 
     x = y;
   }
@@ -973,9 +1002,9 @@ static xapi __attribute__((nonnull)) generate_many_to_many(
 
     fatal(dependency_hyperconnect, ctx->Alist, Asz, ctx->Blist, Bsz, rule->relation, &ctx->invalidation, &ne);
     fatal(dependency_setup, ne, fml_node, ctx);
-    if(!*ctx->reconciled) {
-      break;
-    }
+    //if(ctx->err->l) {
+    //  break;
+    //}
 
     x = y;
   }
@@ -1075,7 +1104,7 @@ xapi rule_run(rule * restrict rule, rule_run_context * restrict ctx)
   if(rule->formula)
   {
     fatal(fml_node_get, rule, ctx, &fml_node);
-    if(!*ctx->reconciled) {
+    if(ctx->chan->error) {
       goto XAPI_FINALIZE;
     }
   }

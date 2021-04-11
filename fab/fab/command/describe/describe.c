@@ -97,7 +97,7 @@ static xapi process(command * restrict cmd, fab_client * restrict client, fabipc
 
   descriptor_type_unmarshal(&node, &descriptor_fab_describe_item, msg->text, msg->size);
 
-  printf("%.*s : {\n", (int)node.abspath_len, node.abspath);
+  printf("%.*s : {\n", (int)node.path_len, node.path);
   printf(" %s : %s\n", "type", attrs16_name_byvalue(fab_fsent_type_attrs, node.type));
   printf(" %s : %s\n", "state", attrs16_name_byvalue(fab_fsent_state_attrs, node.state));
 
@@ -106,7 +106,11 @@ static xapi process(command * restrict cmd, fab_client * restrict client, fabipc
     member = descriptor_fab_describe_item.members[x];
     str = node.s[member->offset / sizeof(str)];
     len = node.u16[member->len_offset / sizeof(len)];
-    printf(" %.*s : %.*s\n", (int)member->name_len, member->name, (int)len, str);
+    printf(" %.*s", (int)member->name_len, member->name);
+    if(len) {
+      printf(" : %.*s", (int)len, str);
+    }
+    printf("\n");
   }
   printf("}\n");
 

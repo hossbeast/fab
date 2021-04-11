@@ -27,6 +27,9 @@
 #include "path_cache.h"
 #include "module.h"
 #include "sysvar.h"
+#include "channel.h"
+
+#include "zbuffer.h"
 
 xapi exec_render_context_xinit(struct exec_render_context * restrict ctx)
 {
@@ -44,11 +47,13 @@ void exec_render_context_configure(
   , module * restrict mod
   , const value * restrict vars
   , const build_slot * restrict bs
+  , channel * restrict chan
 )
 {
   ctx->base_builder = ctx->builder = builder;
   ctx->vars = vars;
   ctx->bs = bs;
+  ctx->chan = chan;
 
   ctx->selector_context.bpe = 0;
   if(bs) {
@@ -56,6 +61,7 @@ void exec_render_context_configure(
   }
 
   ctx->selector_context.mod = mod;
+  ctx->selector_context.chan = chan;
 }
 
 xapi exec_render_context_xreset(exec_render_context * restrict ctx)
@@ -63,7 +69,6 @@ xapi exec_render_context_xreset(exec_render_context * restrict ctx)
   enter;
 
   memset(&ctx->builder_args, 0, sizeof(ctx->builder_args));
-  ctx->errlen = 0;
 
   finally : coda;
 }
@@ -236,7 +241,7 @@ xapi exec_render_formula_value(exec_render_context * restrict ctx, const formula
   {
     chain_foreach(T, sv, chn, val->list_head) {
       fatal(exec_render_formula_value, ctx, sv);
-      if(ctx->errlen) {
+      if(ctx->chan->error) {
         goto XAPI_FINALIZE;
       }
     }
@@ -245,7 +250,7 @@ xapi exec_render_formula_value(exec_render_context * restrict ctx, const formula
   {
     rbtree_foreach(val->set, sv, rbn) {
       fatal(exec_render_formula_value, ctx, sv);
-      if(ctx->errlen) {
+      if(ctx->chan->error) {
         goto XAPI_FINALIZE;
       }
     }
@@ -274,10 +279,10 @@ xapi exec_render_formula_value(exec_render_context * restrict ctx, const formula
   else if(val->type == FORMULA_VALUE_SELECT)
   {
     fatal(selector_exec, val->op.selector, &ctx->selector_context, SELECTION_ITERATION_TYPE_ORDER);
-    if(ctx->selector_context.errlen) {
-      memcpy(ctx->err, ctx->selector_context.err, ctx->selector_context.errlen);
-      ctx->errlen = ctx->selector_context.errlen;
-    }
+  //  if(ctx->selector_context.err.l) {
+  //    memcpy(ctx->err.s, ctx->selector_context.err.s, ctx->selector_context.err.l);
+  //    ctx->err.l = ctx->selector_context.err.l;
+  //  }
   }
   else if(val->type == FORMULA_VALUE_PROPERTY)
   {
@@ -324,7 +329,7 @@ xapi exec_render_formula_value(exec_render_context * restrict ctx, const formula
     fatal(path_cache_search, &pe, MMS(val->op.operand->s));
     if(pe->fd == -1)
     {
-      ctx->errlen = snprintf(ctx->err, sizeof(ctx->err), "ENOENT path-search : %s", val->op.operand->s);
+      channel_responses(ctx->chan, ENOENT, val->op.operand->s);
       goto XAPI_FINALLY;
     }
 
@@ -344,7 +349,7 @@ xapi exec_render_formula_value(exec_render_context * restrict ctx, const formula
     chain_foreach(T, sv, chn, val->op.list_head) {
       ctx->builder_args.position = -1;
       fatal(exec_render_formula_value, ctx, sv);
-      if(ctx->errlen) {
+      if(ctx->chan->error) {
         goto XAPI_FINALIZE;
       }
     }

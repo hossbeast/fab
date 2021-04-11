@@ -22,7 +22,7 @@
 #include "types.h"
 
 #if DEVEL
-extern struct fabipc_channel *g_server_initial_channel;
+extern struct channel *g_server_initial_channel;
 #endif
 
 /* create the server thread */

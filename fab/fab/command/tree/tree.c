@@ -158,7 +158,7 @@ static xapi process(command * restrict cmd, fab_client * restrict client, fabipc
   }
 
   if(tree_args.show_paths) {
-    dprintf(1, "%.*s", item.abspath_len, item.abspath);
+    dprintf(1, "%.*s", item.path_len, item.path);
   } else {
     dprintf(1, "%.*s", item.label_len, item.label);
   }

@@ -23,6 +23,7 @@
 
 struct rule_module_edge;
 struct rule_run_context;
+struct channel;
 
 /* auto-inc reconciliation round */
 extern uint32_t rule_system_reconciliation_id;
@@ -34,7 +35,7 @@ xapi rule_system_setup(void);
  *
  * reconciled - (returns) false if any rules could not be run
  */
-xapi rule_system_reconcile(struct rule_run_context * restrict ctx, bool * restrict reconciled)
+xapi rule_system_reconcile(struct rule_run_context * restrict ctx, struct channel * restrict chan)
   __attribute__((nonnull));
 
 /*

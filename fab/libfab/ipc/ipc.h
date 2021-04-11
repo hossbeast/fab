@@ -30,6 +30,7 @@
 
 struct attrs32;
 
+/* allocated size of the channel */
 #define FABIPC_SHMSIZE          (16 * 1024 * 1024)
 #define FABIPC_PAGESIZE         8096
 #define FABIPC_CLIENT_RINGSIZE  1024
@@ -94,42 +95,36 @@ STATIC_ASSERT(sizeof(fabipc_page) == FABIPC_PAGESIZE);
  */
 typedef struct fabipc_channel
 {
-  union {
-    struct {
-      int shmid;
+  int shmid;
 
-      pid_t client_pid;
-      pid_t client_tid;
-      uint16_t client_pulse;
-      bool client_exit;
+  pid_t client_pid;
+  pid_t client_tid;
+  uint16_t client_pulse;
+  bool client_exit;
 
-      pid_t server_pid;
-      pid_t server_tid;
-      uint16_t server_pulse;
-      bool server_exit;
+  pid_t server_pid;
+  pid_t server_tid;
+  uint16_t server_pulse;
+  bool server_exit;
 
-      // messages client -> server
-      struct __attribute__((aligned(8))) {
-        struct fabipc_page pages[FABIPC_CLIENT_RINGSIZE];
-        uint32_t head;          // updated by server when message(s) consumed
-        uint32_t tail;          // updated by client when message(s) posted
-        int32_t __attribute__((aligned(4))) waiters;
-      } client_ring;
+  // messages client -> server
+  struct __attribute__((aligned(8))) {
+    struct fabipc_page pages[FABIPC_CLIENT_RINGSIZE];
+    uint32_t head;          // updated by server when message(s) consumed
+    uint32_t tail;          // updated by client when message(s) posted
+    int32_t __attribute__((aligned(4))) waiters;
+  } client_ring;
 
-      // messages server -> client
-      struct __attribute__((aligned(8))) {
-        struct fabipc_page pages[FABIPC_SERVER_RINGSIZE];
-        uint32_t head;          // updated by client when message(s) consumed
-        uint32_t tail;          // updated by server when message(s) posted
-        int32_t __attribute__((aligned(4))) waiters;
-      } server_ring;
-    };
-
-    char pad[FABIPC_SHMSIZE];
-  };
+  // messages server -> client
+  struct __attribute__((aligned(8))) {
+    struct fabipc_page pages[FABIPC_SERVER_RINGSIZE];
+    uint32_t head;          // updated by client when message(s) consumed
+    uint32_t tail;          // updated by server when message(s) posted
+    int32_t __attribute__((aligned(4))) waiters;
+  } server_ring;
 } fabipc_channel;
 
-STATIC_ASSERT(sizeof(fabipc_channel) == FABIPC_SHMSIZE);
+STATIC_ASSERT(sizeof(fabipc_channel) <= FABIPC_SHMSIZE);
 
 /*
  * Prepare to use the next message at the ring tail. Messages are not visible

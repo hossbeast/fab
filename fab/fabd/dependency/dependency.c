@@ -316,7 +316,8 @@ xapi dependency_disconnect(dependency * restrict dep, graph_invalidation_context
   }
 
   if(dep->fml) {
-    RUNTIME_ASSERT(--dep->fml->self_fml->refs >= 0);
+    dep->fml->self_fml->refs--;
+    RUNTIME_ASSERT(dep->fml->self_fml->refs >= 0);
   }
 
 

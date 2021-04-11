@@ -27,6 +27,7 @@
 #include "handler.h"
 #include "logging.h"
 #include "params.h"
+#include "channel.h"
 
 #include "atomics.h"
 
@@ -34,7 +35,6 @@ static xapi bootstrap_thread(handler_context * restrict ctx)
 {
   enter;
 
-  bool reconciled;
   rcu_thread rcu_self = { };
 
 #if DEBUG || DEVEL
@@ -42,16 +42,12 @@ static xapi bootstrap_thread(handler_context * restrict ctx)
 #endif
 
   rcu_register(&rcu_self);
-  fatal(global_system_reconcile, ctx, &reconciled);
-
-  /* the initial reconciliation has to be successful */
-  if(!reconciled)
-  {
-    g_params.shutdown = true;
-  }
+  fatal(global_system_reconcile, ctx->chan);
 
 finally:
+  // drop inherited reconcile lock
   trylock_reset(&global_system_reconcile_lock);
+
 #if DEBUG || DEVEL
   logs(L_IPC, "terminating");
 #endif
@@ -65,13 +61,15 @@ static void * bootstrap_thread_jump(void * arg)
 
   xapi R;
   handler_context *ctx;
+  channel *chan = 0;
 
+  ctx = arg;
   tid = g_params.thread_bootstrap = gettid();
-
   logger_set_thread_name("bootstrap");
   logger_set_thread_categories(L_LOADER);
 
-  ctx = arg;
+  fatal(channel_create, &chan, tid);
+  ctx->chan = chan;
   fatal(bootstrap_thread, ctx);
 
 finally:
@@ -93,6 +91,7 @@ conclude(&R);
     g_params.handler_error = true;
   }
 
+  channel_release(chan);
   handler_release(ctx);
 
   atomic_dec(&g_params.thread_count);
@@ -121,6 +120,7 @@ xapi bootstrap_thread_launch()
   atomic_inc(&g_params.thread_count);
   if((rv = pthread_create(&pthread_id, &attr, bootstrap_thread_jump, ctx)) != 0)
   {
+    // inherited lock
     trylock_reset(&global_system_reconcile_lock);
     atomic_dec(&g_params.thread_count);
     tfail(perrtab_KERNEL, rv);

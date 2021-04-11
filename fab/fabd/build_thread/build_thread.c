@@ -85,7 +85,7 @@ static bool build_thread_relaunching;
 static struct spinlock build_thread_lock;
 static uint64_t stage_index_sum;
 static int64_t stage_index_sum_target;
-static handler_context *handler;
+static handler_context *handler;    // handler for the client which requested the build
 static selected *sn_first;
 static uint16_t build_stage;
 static uint16_t build_numranks;
@@ -226,7 +226,7 @@ static xapi build_thread()
 
       /* launch the build slot */
       bs->stage = build_stage;
-      fatal(build_slot_fork_and_exec, bs);
+      fatal(build_slot_fork_and_exec, bs, handler->chan);
 
       fatal(hashtable_put, build_slots_bypid, &bs);
 

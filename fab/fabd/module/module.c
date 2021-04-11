@@ -52,6 +52,7 @@
 #include "stats.h"
 #include "var.h"
 #include "variant.h"
+#include "channel.h"
 
 #include "common/assure.h"
 #include "common/snarf.h"
@@ -143,8 +144,13 @@ xapi module_alloc(module ** restrict modp)
   finally : coda;
 }
 
-static xapi __attribute__((nonnull(1, 3)))
-build_block_variant_envs(module * restrict mod, statement_block * restrict block, value * restrict vars)
+static xapi __attribute__((nonnull(1, 3, 4)))
+build_block_variant_envs(
+    module * restrict mod
+  , statement_block * restrict block
+  , value * restrict vars
+  , channel * restrict chan
+)
 {
   enter;
 
@@ -162,7 +168,7 @@ build_block_variant_envs(module * restrict mod, statement_block * restrict block
 
     fatal(exec_builder_xreset, &local_exec_builder);
     fatal(exec_render_context_xreset, &local_exec_render);
-    exec_render_context_configure(&local_exec_render, &local_exec_builder, mod, mod->novariant_var, 0);
+    exec_render_context_configure(&local_exec_render, &local_exec_builder, mod, mod->novariant_var, 0, chan);
     fatal(exec_render_env_vars, &local_exec_render);
     fatal(exec_builder_build, &local_exec_builder, 0);
     exec_builder_take(&local_exec_builder, &e);
@@ -188,7 +194,7 @@ build_block_variant_envs(module * restrict mod, statement_block * restrict block
 
     fatal(exec_builder_xreset, &local_exec_builder);
     fatal(exec_render_context_xreset, &local_exec_render);
-    exec_render_context_configure(&local_exec_render, &local_exec_builder, mod, bagg, 0);
+    exec_render_context_configure(&local_exec_render, &local_exec_builder, mod, bagg, 0, chan);
     fatal(exec_render_env_vars, &local_exec_render);
     fatal(exec_builder_build, &local_exec_builder, 0);
     exec_builder_take(&local_exec_builder, &e);
@@ -282,18 +288,23 @@ static xapi module_edge_visitor(moria_edge * e, void * ctx, moria_traversal_mode
   finally : coda;
 }
 
-static xapi module_parse(module * restrict mod, module_parser * restrict parser, graph_invalidation_context * restrict invalidation, bool * restrict reconciled)
+static xapi module_parse(
+    module * restrict mod
+  , module_parser * restrict parser
+  , graph_invalidation_context * restrict invalidation
+  , channel * restrict chan
+)
 {
   enter;
 
   xapi exit;
-  char trace[4096 << 1];
   char * text = 0;
   size_t text_len;
   fsent * mod_file_n;
   char * mod_file_relpath;
   rule *r;
   statement_block *block;
+  fabipc_message *msg;
 
   mod_file_n = mod->self_node;
   mod_file_relpath = mod->self_node_relpath;
@@ -311,16 +322,21 @@ static xapi module_parse(module * restrict mod, module_parser * restrict parser,
   {
     mod_file_n->not_parsed = 0;
   }
-  else if((exit = invoke(module_parser_parse, parser, mod, invalidation, text, text_len + 2, mod_file_relpath)))
+  else if((exit = invoke(module_parser_parse, parser, mod, invalidation, chan, text, text_len + 2, mod_file_relpath)))
   {
-#if DEBUG || DEVEL || XAPI
-    xapi_trace_full(trace, sizeof(trace), 0);
-#else
-    xapi_trace_pithy(trace, sizeof(trace), 0);
-#endif
-    xapi_calltree_unwind();
+    msg = channel_produce(chan);
+    msg->id = chan->msgid;
+    msg->type = FABIPC_MSG_RESULT;
+    msg->code = EINVAL;
 
-    xlogs(L_WARN, L_NOCATEGORY, trace);
+#if DEBUG || DEVEL
+    msg->size = xapi_trace_full(msg->text, sizeof(msg->text), 0);
+#else
+    msg->size = xapi_trace_pithy(msg->text, sizeof(msg->text), 0);
+#endif
+    channel_post(chan, msg);
+
+    xapi_calltree_unwind();
 
     // release blocks which were parsed but which will not be used
     if(parser->unscoped_block) {
@@ -336,12 +352,10 @@ static xapi module_parse(module * restrict mod, module_parser * restrict parser,
     llist_splice_head(&parser->statement_block_freelist, &parser->scoped_blocks);
 
     mod_file_n->not_parsed = 1;
-    *reconciled = 0;
   }
-  else if(parser->errlen)
+  else if(chan->error)
   {
     mod_file_n->not_parsed = 1;
-    *reconciled = 0;
   }
   else
   {
@@ -396,7 +410,7 @@ static xapi module_bootstrap_visitor(moria_vertex * mod_dir_v, void * ctx, moria
   finally : coda;
 }
 
-static xapi rebuild_variant_envs(module * restrict mod, bool * restrict reconciled)
+static xapi rebuild_variant_envs(module * restrict mod, channel * restrict chan)
 {
   enter;
 
@@ -429,8 +443,8 @@ static xapi rebuild_variant_envs(module * restrict mod, bool * restrict reconcil
     if((var_v = moria_vertex_downw(ancestry[x], fsent_var_name, fsent_var_name_len)))
     {
       var_n = containerof(var_v, fsent, vertex);
-      fatal(fsent_var_bootstrap, var_n, reconciled);
-      if(!*reconciled) {
+      fatal(fsent_var_bootstrap, var_n, chan);
+      if(chan->error) {
         goto XAPI_FINALLY;
       }
 
@@ -444,16 +458,16 @@ static xapi rebuild_variant_envs(module * restrict mod, bool * restrict reconcil
   if(vars)
   {
     /* no-variant vars */
-    fatal(build_block_variant_envs, mod, 0, vars);
+    fatal(build_block_variant_envs, mod, 0, vars, chan);
 
     /* top-level block, if it's not also a no-variant block */
     if(mod->unscoped_block && mod->unscoped_block->variants->size)
     {
-      fatal(build_block_variant_envs, mod, mod->unscoped_block, vars);
+      fatal(build_block_variant_envs, mod, mod->unscoped_block, vars, chan);
     }
 
     llist_foreach(&mod->scoped_blocks, block, lln) {
-      fatal(build_block_variant_envs, mod, block, vars);
+      fatal(build_block_variant_envs, mod, block, vars, chan);
     }
   }
 
@@ -757,15 +771,20 @@ static xapi module_excise(module * restrict mod, graph_invalidation_context * re
   finally : coda;
 }
 
-static xapi module_reparse(module * restrict mod, module_parser * restrict parser, graph_invalidation_context * restrict invalidation, bool * restrict reconciled)
+static xapi module_reparse(
+    module * restrict mod
+  , module_parser * restrict parser
+  , graph_invalidation_context * restrict invalidation
+  , channel * restrict chan
+)
 {
   enter;
 
   /* re-parse the module.bam file */
-  fatal(module_parse, mod, parser, invalidation, reconciled);
+  fatal(module_parse, mod, parser, invalidation, chan);
 
   /* parse not successful */
-  if(!*reconciled) {
+  if(chan->error) {
     goto XAPI_FINALIZE;
   }
 
@@ -779,7 +798,7 @@ static xapi module_reparse(module * restrict mod, module_parser * restrict parse
   mod->var_merge_overwrite = parser->var_merge_overwrite;
 
   // rebuild variant envs from var.bams
-  fatal(rebuild_variant_envs, mod, reconciled);
+  fatal(rebuild_variant_envs, mod, chan);
 
   finally : coda;
 }
@@ -990,17 +1009,17 @@ finally:
 coda;
 }
 
-xapi module_system_reconcile(graph_invalidation_context * restrict invalidation, bool * restrict reconciled)
+xapi module_system_reconcile(channel * restrict chan)
 {
   enter;
 
   module *mod;
   module_parser * parser = 0;
   llist *T;
-
+  graph_invalidation_context invalidation = { };
   llist rebuild = LLIST_INITIALIZER(rebuild);
 
-  fatal(graph_invalidation_begin, invalidation);
+  fatal(graph_invalidation_begin, &invalidation);
   module_system_reconcile_epoch++;
 
   /* bootstrap modules under the project module */
@@ -1016,7 +1035,7 @@ xapi module_system_reconcile(graph_invalidation_context * restrict invalidation,
         , vertex_visit : VERTEX_FILETYPE_DIR
       }}
     , MORIA_TRAVERSE_DOWN | MORIA_TRAVERSE_PRE
-    , invalidation
+    , &invalidation
   );
 
   if((parser = llist_shift(&parsers, typeof(*parser), lln)) == 0) {
@@ -1029,10 +1048,10 @@ xapi module_system_reconcile(graph_invalidation_context * restrict invalidation,
       continue;
     }
 
-    fatal(module_rules_dismantle, mod, parser, invalidation);
+    fatal(module_rules_dismantle, mod, parser, &invalidation);
 
     /* excise from the graph */
-    fatal(module_excise, mod, invalidation);
+    fatal(module_excise, mod, &invalidation);
 
     /* delete, move to freelist */
     fatal(module_xrelease, mod, parser);
@@ -1045,8 +1064,8 @@ xapi module_system_reconcile(graph_invalidation_context * restrict invalidation,
       continue;
     }
 
-    fatal(module_reparse, mod, parser, invalidation, reconciled);
-    if(!*reconciled) {
+    fatal(module_reparse, mod, parser, &invalidation, chan);
+    if(chan->error) {
       goto XAPI_FINALIZE;
     }
 
@@ -1063,7 +1082,7 @@ xapi module_system_reconcile(graph_invalidation_context * restrict invalidation,
 
   /* before rebuilding a given module, all of its imports/uses/requires must have been parsed */
   while((mod = llist_shift(&rebuild, typeof(*mod), lln_reconcile))) {
-    fatal(module_rebuild, mod, invalidation);
+    fatal(module_rebuild, mod, &invalidation);
     fatal(fsent_ok, mod->dir_node);
   }
 
@@ -1071,7 +1090,7 @@ finally:
   if(parser) {
     llist_append(&parsers, parser, lln);
   }
-  graph_invalidation_end(invalidation);
+  graph_invalidation_end(&invalidation);
 coda;
 }
 

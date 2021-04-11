@@ -42,6 +42,43 @@
 int beholder_stdout_rd = -1;
 int beholder_stderr_rd = -1;
 
+static xapi process(struct epoll_event *ev, int len)
+{
+  enter;
+
+  char buf[4096];
+  int x;
+  ssize_t bytes;
+  handler_context *handler;
+  fabipc_message *msg;
+  int real_fd;
+  uint32_t event;
+
+  for(x = 0; x < len; x++)
+  {
+    fatal(xread, ev[x].data.u32, buf, sizeof(buf), &bytes);
+    if(ev[x].data.u32 == beholder_stdout_rd) {
+      real_fd = STDOUT_SAVED_REAL;
+      event = FABIPC_EVENT_BAMD_STDOUT;
+    } else {
+      real_fd = STDERR_SAVED_REAL;
+      event = FABIPC_EVENT_BAMD_STDERR;
+    }
+
+    // propagate to the original fd
+    fatal(xwrite, real_fd, buf, bytes, 0);
+
+    // propagate to event subscribers if any
+    if(events_would(event, &handler, &msg)) {
+      msg->size = bytes;
+      memcpy(msg->text, buf, bytes);
+      events_publish(handler, msg);
+    }
+  }
+
+  finally : coda;
+}
+
 static xapi beholder_thread()
 {
   enter;
@@ -50,14 +87,7 @@ static xapi beholder_thread()
   struct epoll_event ev[8];
   int rv;
   sigset_t sigs;
-  char buf[4096];
-  ssize_t bytes;
-  handler_context *handler;
-  fabipc_message *msg;
   rcu_thread rcu_self = { };
-  int real_fd;
-  uint32_t event;
-  int x;
 
 #if DEBUG || DEVEL
   logs(L_IPC, "starting");
@@ -82,28 +112,19 @@ static xapi beholder_thread()
   {
     rcu_quiesce(&rcu_self);
 
+    /* blocking, with timeout */
     fatal(uxepoll_pwait, &rv, epfd, ev, sizeof(ev) / sizeof(*ev), SEC_AS_MSEC(1), &sigs);
-    for(x = 0; x < rv; x++)
-    {
-      fatal(xread, ev[x].data.u32, buf, sizeof(buf), &bytes);
-      if(ev[x].data.u32 == beholder_stdout_rd) {
-        real_fd = STDOUT_SAVED_REAL;
-        event = FABIPC_EVENT_BAMD_STDOUT;
-      } else {
-        real_fd = STDERR_SAVED_REAL;
-        event = FABIPC_EVENT_BAMD_STDERR;
-      }
+    fatal(process, ev, rv);
+  }
 
-      // propagate to the original fd
-      fatal(xwrite, real_fd, buf, bytes, 0);
+  rv = 1;
+  while(rv > 0)
+  {
+    rcu_quiesce(&rcu_self);
 
-      // propagate to event subscribers if any
-      if(events_would(event, &handler, &msg)) {
-        msg->size = bytes;
-        memcpy(msg->text, buf, bytes);
-        events_publish(handler, msg);
-      }
-    }
+    /* non-blocking */
+    fatal(uxepoll_pwait, &rv, epfd, ev, sizeof(ev) / sizeof(*ev), 0, &sigs);
+    fatal(process, ev, rv);
   }
 
   /* restore original fds */

@@ -41,6 +41,7 @@ struct value;
 struct graph_invalidation_context;
 struct fsedge;
 struct module_parser;
+struct channel;
 
 extern uint16_t module_system_reconcile_epoch;
 extern llist module_list;    // loaded/active modules
@@ -125,7 +126,7 @@ xapi module_system_bootstrap(void);//struct fsent * restrict root, const char * 
 /*
  * reload invalidated modules
  */
-xapi module_system_reconcile(struct graph_invalidation_context * restrict invalidation, bool * restrict reconciled)
+xapi module_system_reconcile(struct channel * restrict chan)
   __attribute__((nonnull));
 
 /*

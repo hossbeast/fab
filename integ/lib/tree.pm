@@ -128,7 +128,6 @@ special : {
   module : "module.bam"
   model : "model.bam"
   var : "var.bam"
-  formula-suffix : ".bam"
 }
 TEXT
   close $fh;

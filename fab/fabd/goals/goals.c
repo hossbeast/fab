@@ -170,18 +170,12 @@ static xapi create_buildplan(buildplan_context * restrict bpctx)
     if(goal_target_direct_selector)
     {
       fatal(selector_exec, goal_target_direct_selector, &goal_selector_context, SELECTION_ITERATION_TYPE_ORDER);
-      if(goal_selector_context.errlen) {
-        fprintf(stderr, "target-direct selector error!");
-      }
       fatal(plan_select_direct, &goal_selector_context.selection->list, bpctx);
     }
 
     if(goal_target_transitive_selector)
     {
       fatal(selector_exec, goal_target_transitive_selector, &goal_selector_context, SELECTION_ITERATION_TYPE_ORDER);
-      if(goal_selector_context.errlen) {
-        fprintf(stderr, "target-transitive selector error!");
-      }
       fatal(plan_select_transitive, &goal_selector_context.selection->list, bpctx);
     }
   }

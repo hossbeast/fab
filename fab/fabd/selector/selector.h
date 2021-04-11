@@ -28,10 +28,11 @@
 #include "selection.h"
 
 struct attrs32;
-struct narrator;
-struct module;
-struct pattern;
+struct channel;
 struct dependency;
+struct module;
+struct narrator;
+struct pattern;
 struct value_writer;
 
 #define SELECTOR_TRAVERSE_DEFAULT_MODE          MORIA_TRAVERSE_PRE
@@ -131,8 +132,7 @@ typedef struct selector_context {
 
   // results
   struct selection * selection; // the active selection
-  char err[256];
-  uint16_t errlen;
+  struct channel * chan;
 } selector_context;
 
 xapi selector_context_xdestroy(selector_context *ctx)

@@ -18,13 +18,8 @@
 #ifndef FABD_HANDLER_H
 #define FABD_HANDLER_H
 
-/*
-
-*/
-
 #include "types.h"
 #include "xapi.h"
-#include "locks.h"
 
 #include "fab/build.h"
 
@@ -32,7 +27,9 @@
 #include "selector.h"
 #include "rule.h"
 
-struct fabipc_channel;
+#include "locks.h"
+
+struct channel;
 struct fabipc_message;
 struct request;
 struct request_parser;
@@ -49,13 +46,11 @@ typedef struct handler_context {
     rcu_list stk;   // g_handlers
   };
   selector_context sel_ctx;
-  rule_run_context rule_ctx;
+//  rule_run_context rule_ctx;
   struct selection * selection;
   struct graph_invalidation_context invalidation;
   struct request_parser * request_parser;
   bool autorun;
-  char err[256];
-  uint16_t errlen;
 
   enum fab_build_state build_state;
 
@@ -69,7 +64,7 @@ typedef struct handler_context {
 
     struct {
       /* fabipc channel for the client */
-      struct fabipc_channel * chan;
+      struct channel * chan;
 
       /* subscribed events */
       uint32_t event_mask;
@@ -90,29 +85,17 @@ xapi handler_alloc(handler_context ** restrict rv)
 void handler_release(handler_context * restrict ctx);
 void handler_reset(handler_context * restrict ctx);
 
-/* send/receive messages over the channel */
-
-struct fabipc_message * handler_produce(struct handler_context * restrict ctx)
-  __attribute__((nonnull));
-
-void handler_post(struct handler_context * restrict ctx, struct fabipc_message * restrict msg)
-  __attribute__((nonnull));
-
-struct fabipc_message * handler_acquire(struct handler_context * restrict ctx)
-  __attribute__((nonnull));
-
-void handler_consume(struct handler_context * restrict ctx, struct fabipc_message * restrict msg)
-  __attribute__((nonnull));
-
 /* complete a request */
 
 xapi handler_process_request(struct handler_context * restrict ctx, struct request * restrict request)
   __attribute__((nonnull));
 
+#if 0
 void handler_request_completes(struct handler_context * restrict ctx, int code, const char * restrict text, uint16_t text_len)
   __attribute__((nonnull(1)));
 
 void handler_request_complete(struct handler_context * restrict ctx, int code)
   __attribute__((nonnull));
+#endif
 
 #endif

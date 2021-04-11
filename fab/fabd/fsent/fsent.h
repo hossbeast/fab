@@ -32,11 +32,8 @@ unlinked fsents are not matched by rules. uncreated fsents are matched by rules.
 
 #include "valyria/llist.h"
 #include "valyria/rbtree.h"
-//#include "moria.h"
-//#include "moria/vertex.h"
 #include "fab/stats.h"
-//
-//
+
 #include "graph.h"
 #include "sweeper_thread.h"
 #include "notify_thread.h"
@@ -56,6 +53,7 @@ struct module;
 struct narrator;
 struct var;
 struct variant;
+struct channel;
 
 enum moria_traversal_mode;
 
@@ -66,8 +64,6 @@ extern const char *fsent_module_name;
 extern uint16_t fsent_module_name_len;
 extern const char *fsent_var_name;
 extern uint16_t fsent_var_name_len;
-extern const char *fsent_formula_suffix;
-extern uint16_t fsent_formula_suffix_len;
 
 // globally scoped fsents
 extern struct fsent * g_root;            // directory node at /
@@ -490,13 +486,13 @@ fsent *fsent_path_lookup(const struct module * restrict mod, const char * restri
 /*
  * mark an fsent as VERTEX_FORMULA_FILE and reconcile its formula
  */
-xapi fsent_formula_bootstrap(fsent * restrict n, bool * restrict reconciled)
+xapi fsent_formula_bootstrap(fsent * restrict n, struct channel * restrict chan)
   __attribute__((nonnull));
 
 /*
  * mark an fsent as VERTEX_VAR_FILE and reconcile its var
  */
-xapi fsent_var_bootstrap(fsent * restrict n, bool * restrict reconciled)
+xapi fsent_var_bootstrap(fsent * restrict n, struct channel * restrict chan)
   __attribute__((nonnull));
 
 /*

@@ -32,6 +32,7 @@
 struct fsent;
 struct formula_value;
 struct moria_graph;
+struct channel;
 
 /* VERTEX_TYPE_FML */
 typedef struct formula {
@@ -58,10 +59,10 @@ typedef struct formula {
 xapi formula_create(formula ** restrict fml, struct moria_graph * restrict g)
   __attribute__((nonnull));
 
-xapi formula_reconcile(formula * restrict fml, bool * restrict reconciled)
+xapi formula_reconcile(formula * restrict fml, struct channel * restrict chan)
   __attribute__((nonnull));
 
-xapi formula_system_reconcile(bool * restrict reconciled)
+xapi formula_system_reconcile(struct channel * restrict chan)
   __attribute__((nonnull));
 
 xapi formula_setup(void);

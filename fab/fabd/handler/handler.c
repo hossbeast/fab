@@ -34,6 +34,8 @@
 #include "request_parser.h"
 #include "stats.h"
 #include "variant.h"
+#include "dependency.h"
+#include "channel.h"
 
 #include "marshal.h"
 #include "zbuffer.h"
@@ -53,17 +55,12 @@ static xapi handler_select(handler_context * restrict ctx, command * restrict cm
 
   ctx->sel_ctx.bpe = 0;
   ctx->sel_ctx.mod = g_project_root->mod;
+  ctx->sel_ctx.chan = ctx->chan;
 
   fatal(selector_exec, cmd->selector, &ctx->sel_ctx, SELECTION_ITERATION_TYPE_ORDER);
 
   // return the active selection
   ctx->selection = ctx->sel_ctx.selection;
-
-  // return the error if any
-  if(ctx->sel_ctx.errlen) {
-    memcpy(ctx->err, ctx->sel_ctx.err, ctx->sel_ctx.errlen);
-    ctx->errlen = ctx->sel_ctx.errlen;
-  }
 
   finally : coda;
 }
@@ -110,8 +107,7 @@ static xapi handler_list(handler_context * restrict ctx, command * restrict cmd)
 
   llist_foreach(&ctx->selection->list, sn, lln) {
     n = selected_node(sn);
-    msg = handler_produce(ctx);
-    msg->id = ctx->client_msg_id;
+    msg = channel_produce(ctx->chan);
     msg->type = FABIPC_MSG_RESULT;
 
     dst = msg->text;
@@ -152,7 +148,7 @@ static xapi handler_list(handler_context * restrict ctx, command * restrict cmd)
     z += marshal_u16(dst + z, sz - z, sn->rank);
 
     msg->size = z;
-    handler_post(ctx, msg);
+    channel_post(ctx->chan, msg);
   }
 
   finally : coda;
@@ -209,8 +205,7 @@ static xapi handler_describe(handler_context * restrict ctx, command * restrict 
 
   llist_foreach(&ctx->selection->list, sn, lln) {
     n = selected_node(sn);
-    msg = handler_produce(ctx);
-    msg->id = ctx->client_msg_id;
+    msg = channel_produce(ctx->chan);
     msg->type = FABIPC_MSG_RESULT;
 
     dst = msg->text;
@@ -285,8 +280,22 @@ static xapi handler_describe(handler_context * restrict ctx, command * restrict 
     z += len;
     marshal_u16(dst + off, sz - off, len);
 
+    if(n->dep)
+    {
+      RUNTIME_ASSERT(n->dep->fml);
+      off = z;
+      z += marshal_u16(dst + z, sz - z, 0);
+      len = fsent_absolute_path_znload(dst + z, sz - z, n->dep->fml);
+      z += len;
+      marshal_u16(dst + off, sz - off, len);
+    }
+    else
+    {
+      z += marshal_u16(dst + z, sz - z, 0);
+    }
+
     msg->size = z;
-    handler_post(ctx, msg);
+    channel_post(ctx->chan, msg);
   }
 
   finally : coda;
@@ -299,14 +308,13 @@ static xapi handler_metadata(handler_context * restrict ctx, command * restrict 
   size_t z;
   fabipc_message *msg = 0;
 
-  msg = handler_produce(ctx);
-  msg->id = ctx->client_msg_id;
+  msg = channel_produce(ctx->chan);
   msg->type = FABIPC_MSG_RESULT;
 
   fatal(metadata_collate, msg->text, sizeof(msg->text), &z);
 
   msg->size = z;
-  handler_post(ctx, msg);
+  channel_post(ctx->chan, msg);
 
   finally : coda;
 }
@@ -318,15 +326,14 @@ static xapi handler_global_stats(handler_context * restrict ctx, command * restr
   fabipc_message *msg = 0;
   size_t z;
 
-  msg = handler_produce(ctx);
-  msg->id = ctx->client_msg_id;
+  msg = channel_produce(ctx->chan);
   msg->type = FABIPC_MSG_RESULT;
 
   z = 0;
   fatal(stats_global_collate, msg->text, sizeof(msg->text), reset, &z);
   msg->size = z;
 
-  handler_post(ctx, msg);
+  channel_post(ctx->chan, msg);
 
   finally : coda;
 }
@@ -346,14 +353,13 @@ static xapi handler_config_read(handler_context * restrict ctx, command * restri
   x = 0;
   while(x < growing.l)
   {
-    msg = handler_produce(ctx);
-    msg->id = ctx->client_msg_id;
+    msg = channel_produce(ctx->chan);
     msg->type = FABIPC_MSG_RESULT;
 
     msg->size = MIN(growing.l - x, sizeof(msg->text));
     memcpy(msg->text, growing.s + x, msg->size);
 
-    handler_post(ctx, msg);
+    channel_post(ctx->chan, msg);
     x += msg->size;
   }
 
@@ -374,15 +380,14 @@ static xapi handler_stats(handler_context * restrict ctx, command * restrict cmd
   llist_foreach(&ctx->selection->list, sn, lln) {
     n = selected_node(sn);
 
-    msg = handler_produce(ctx);
-    msg->id = ctx->client_msg_id;
+    msg = channel_produce(ctx->chan);
     msg->type = FABIPC_MSG_RESULT;
 
     z = 0;
     fatal(stats_node_collate, msg->text, sizeof(msg->text), n, reset, &z);
     msg->size = z;
 
-    handler_post(ctx, msg);
+    channel_post(ctx->chan, msg);
   }
 
   finally : coda;
@@ -401,7 +406,7 @@ static xapi handler_goals(handler_context * restrict ctx, command * restrict cmd
   transitive = cmd->goals.target_transitive;
   cmd->goals.target_transitive = 0;
 
-  fatal(goals_set, ctx->client_msg_id, cmd->goals.build, cmd->goals.script, direct, transitive);
+  fatal(goals_set, ctx->chan->msgid, cmd->goals.build, cmd->goals.script, direct, transitive);
   direct = 0;
   transitive = 0;
 
@@ -418,7 +423,6 @@ static xapi handler_destroy(handler_context * restrict ctx)
   fatal(selector_context_xdestroy, &ctx->sel_ctx);
   graph_invalidation_end(&ctx->invalidation);
   fatal(request_parser_xfree, ctx->request_parser);
-  fatal(rule_run_context_xdestroy, &ctx->rule_ctx);
 
   finally : coda;
 }
@@ -426,27 +430,6 @@ static xapi handler_destroy(handler_context * restrict ctx)
 //
 // public
 //
-
-void handler_request_completes(handler_context * restrict ctx, int code, const char * restrict text, uint16_t text_len)
-{
-  fabipc_message *msg;
-
-  msg = handler_produce(ctx);
-  msg->id = ctx->client_msg_id;
-  msg->size = text_len;
-  msg->type = FABIPC_MSG_RESPONSE;
-  msg->code = code;
-  if(text_len) {
-    memcpy(msg->text, text, text_len);
-  }
-
-  handler_post(ctx, msg);
-}
-
-void handler_request_complete(handler_context * restrict ctx, int code)
-{
-  handler_request_completes(ctx, code, 0, 0);
-}
 
 xapi handler_process_request(handler_context * restrict ctx, request * restrict req)
 {
@@ -519,67 +502,12 @@ xapi handler_process_request(handler_context * restrict ctx, request * restrict 
       RUNTIME_ABORT();
     }
 
-    if(ctx->errlen) {
+    if(ctx->chan->error) {
       break;
     }
   }
 
   finally : coda;
-}
-
-fabipc_message * handler_produce(handler_context * restrict ctx)
-{
-  return fabipc_produce(
-      ctx->chan->server_ring.pages
-    , &ctx->chan->server_ring.head
-    , &ctx->chan->server_ring.tail
-    , FABIPC_SERVER_RINGSIZE - 1
-  );
-}
-
-void handler_post(handler_context * restrict ctx, fabipc_message * restrict msg)
-{
-#if DEBUG || DEVEL
-  RUNTIME_ASSERT(msg->type);
-  if(msg->type == FABIPC_MSG_EVENTS) {
-    RUNTIME_ASSERT(msg->evtype);
-  }
-#endif
-
-  fabipc_post(
-      msg
-    , &ctx->chan->server_ring.waiters
-  );
-}
-
-fabipc_message * handler_acquire(handler_context * restrict ctx)
-{
-  fabipc_message *msg;
-
-  msg = fabipc_acquire(
-      ctx->chan->client_ring.pages
-    , &ctx->chan->client_ring.head
-    , &ctx->chan->client_ring.tail
-    , FABIPC_CLIENT_RINGSIZE - 1
-  );
-
-#if DEBUG || DEVEL
-  if (msg) {
-    RUNTIME_ASSERT(msg->type);
-  }
-#endif
-
-  return msg;
-}
-
-void handler_consume(handler_context * restrict ctx, fabipc_message * restrict msg)
-{
-  fabipc_consume(
-      ctx->chan->client_ring.pages
-    , &ctx->chan->client_ring.head
-    , msg
-    , FABIPC_CLIENT_RINGSIZE - 1
-  );
 }
 
 xapi handler_setup()
@@ -615,7 +543,6 @@ xapi handler_alloc(handler_context ** restrict rv)
     fatal(xmalloc, &ctx, sizeof(*ctx));
     llist_init_node(&ctx->lln);
     fatal(request_parser_create, &ctx->request_parser);
-    fatal(rule_run_context_xinit, &ctx->rule_ctx);
   }
   else
   {
@@ -638,5 +565,4 @@ void handler_reset(handler_context * restrict ctx)
 {
   ctx->selection = 0;
   ctx->build_state = 0;
-  ctx->errlen = 0;
 }

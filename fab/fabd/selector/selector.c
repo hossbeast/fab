@@ -32,6 +32,7 @@
 #include "module.h"
 #include "pattern.h"
 #include "request.h"
+#include "channel.h"
 
 attrs32 * selector_type_attrs = (attrs32[]) {{
 #define SELECTOR_DEF(x, s, r, y) + 1
@@ -141,8 +142,6 @@ static int selector_cmp(selector * A, selector * B)
   else if(A->type == SELECTOR_TRAVERSE)
   {
     return 0
-//      ?: INTCMP(A->min_distance, B->min_distance)
-//      ?: INTCMP(A->max_distance, B->max_distance)
       ?: memcmp(&A->direction, &B->direction, sizeof(A->direction))
       ?: memcmp(&A->criteria, &B->criteria, sizeof(A->criteria))
       ;
@@ -223,7 +222,7 @@ static xapi selector_ctx_exec(selector_context * restrict ctx)
     llist_foreach(&sel->head, op, lln) {
       ctx->sel = op;
       fatal(selector_ctx_exec, ctx);
-      if(ctx->errlen) {
+      if(ctx->chan->error) {
         break;
       }
     }
@@ -248,7 +247,7 @@ static xapi selector_ctx_exec(selector_context * restrict ctx)
       fatal(selection_replicate, out, ctx->selection);
       x++;
 
-      if(ctx->errlen) {
+      if(ctx->chan->error) {
         /* should probably break here only if all selectors in the union have an error */
         break;
       }
@@ -267,7 +266,7 @@ static xapi selector_ctx_exec(selector_context * restrict ctx)
     else if(!ctx->bpe)
     {
       name = attrs32_name_byvalue(selector_nodeset_attrs, SELECTOR_NODESET_OPT & sel->nodeset);
-      ctx->errlen = snprintf(ctx->err, sizeof(ctx->err), "ENOENT %s", name);
+      channel_responses(ctx->chan, ENOENT, name);
     }
     else if(sel->nodeset == SELECTOR_NODESET_TARGET)
     {
@@ -334,7 +333,7 @@ static xapi selector_ctx_exec(selector_context * restrict ctx)
   }
   else if(sel->type == SELECTOR_PATTERN)
   {
-    fatal(pattern_lookup, sel->pattern, 0, ctx->selection, ctx->err, sizeof(ctx->err), &ctx->errlen);
+    fatal(pattern_lookup, sel->pattern, 0, ctx->selection, ctx->chan);
   }
   else if(sel->type == SELECTOR_PATH)
   {
@@ -344,7 +343,7 @@ static xapi selector_ctx_exec(selector_context * restrict ctx)
     }
     else
     {
-      ctx->errlen = snprintf(ctx->err, sizeof(ctx->err), "ENOENT path : %.*s", (int)sel->path_len, sel->path);
+      channel_responsew(ctx->chan, ENOENT, sel->path, sel->path_len);
     }
   }
   else if(sel->type == SELECTOR_TRAVERSE)
@@ -356,12 +355,6 @@ static xapi selector_ctx_exec(selector_context * restrict ctx)
     fatal(selection_create, &ctx->selection, ctx->iteration_type);
 
     llist_foreach(&in->list, sn, lln) {
-//extern int goats;
-//goats = 1;
-//printf("SELECTOR TRAVERSE start\n");
-//fatal(selector_say, sel, g_narrator_stdout);
-//printf("\n");
-
       v = sn->v;
 
       /* special handling for stuff */
@@ -387,19 +380,9 @@ static xapi selector_ctx_exec(selector_context * restrict ctx)
         , state
         /* selectors can only visit fsent nodes */
         , &sel->criteria
-//        , (moria_traversal_criteria[]) {{
-//              vertex_travel : sel->criteria.vertex_travel // | VERTEX_TYPE_FSENT
-//            , vertex_visit : sel->criteria.vertex_visit // | VERTEX_TYPE_FSENT
-//            , edge_travel : sel->criteria.edge_travel
-//            , edge_visit : sel->criteria.edge_visit
-//            , min_depth : sel->min_distance
-//            , max_depth : sel->max_distance
-//          }}
-        , sel->direction | sel->mode | sel->exhaustive | MORIA_TRAVERSE_DEPTH // | MORIA_TRAVERSE_NOFOLLOW
+        , sel->direction | sel->mode | sel->exhaustive | MORIA_TRAVERSE_DEPTH
         , ctx
       );
-//printf("SELECTOR TRAVERSE done\n");
-//goats = 0;
     }
   }
 
@@ -612,13 +595,9 @@ xapi selector_exec(selector * restrict sel, selector_context * restrict ctx, sel
 
   ctx->sel = sel;
   ctx->iteration_type = iteration_type;
-  ctx->errlen = 0;
-
-//xsays("selector-exec\n");
-//fatal(selector_say, sel, g_narrator_stdout);
-//xsays("\n");
 
   RUNTIME_ASSERT(ctx->mod);
+  RUNTIME_ASSERT(ctx->chan);
 
   fatal(selector_ctx_exec, ctx);
 
@@ -645,12 +624,3 @@ xunit_type * xunit_selector = (xunit_type[]) {{
   , xu_compare : selector_compare
   , xu_info_push : selector_info_push
 }};
-
-#if 0
-    if(sel->criteria.vertex_travel)
-    {
-      name = attrs32_name_byvalue(graph_vertex_attrs, VERTEX_FILETYPE_OPT & sel->criteria.vertex_travel);
-      RUNTIME_ASSERT(name);
-      fatal(value_writer_mapping_string_string, writer, "file-type", name);
-    }
-#endif

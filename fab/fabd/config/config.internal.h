@@ -72,7 +72,6 @@ typedef struct configblob {
     struct box_string * module;
     struct box_string * model;
     struct box_string * var;
-    struct box_string * formula_suffix;
   } special;
 
   struct config_workers {
@@ -103,21 +102,6 @@ typedef struct configblob {
       } dirs;
     } path;
   } formula;
-
-  struct config_logging {
-    CONFIGBASE;
-
-    struct config_logging_section {
-      CONFIGBASE;
-
-      struct config_logging_exprs {
-        CONFIGBASE;
-        struct list * items;
-      } exprs;
-    } console;
-
-    struct config_logging_section logfile;
-  } logging;
 
   struct config_channels {
     CONFIGBASE;

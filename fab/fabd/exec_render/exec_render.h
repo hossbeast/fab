@@ -31,6 +31,7 @@ exec_render - write strings to an exec_builder
 #include "selector.h"
 #include "fsent.h"
 
+struct channel;
 struct fsent;
 struct narrator;
 struct formula_value;
@@ -45,8 +46,7 @@ typedef struct exec_render_context {
 
   /* operation state */
   exec_builder operation_builder;
-  char err[256];
-  uint16_t errlen;
+  struct channel * chan;  // not null
 
   exec_builder * base_builder;
   exec_builder * builder;
@@ -68,8 +68,9 @@ void exec_render_context_configure(
   , struct module * restrict mod
   , const struct value * restrict vars
   , const struct build_slot * restrict bs
+  , struct channel * restrict chan
 )
-  __attribute__((nonnull(1, 2)));
+  __attribute__((nonnull(1, 2, 6)));
 
 /*
  * render a formula value to the file parameter of an exec builder

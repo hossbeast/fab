@@ -294,10 +294,6 @@ xapi graph_edge_say(const moria_edge * restrict e, narrator * restrict N)
   }
   fatal(value_writer_mapping_string_bool, &writer, "hyper", e->attrs & MORIA_EDGE_HYPER);
 
-  char foo[64];
-  snprintf(foo, sizeof(foo), "0x%016lx", (uintptr_t)e);
-  fatal(value_writer_mapping_string_string, &writer, "addr", foo);
-
   fatal(value_writer_pop_set, &writer);
   fatal(value_writer_close, &writer);
 
@@ -308,7 +304,10 @@ xapi graph_invalidation_begin(graph_invalidation_context * restrict invalidation
 {
   enter;
 
+  RUNTIME_ASSERT(invalidation->vertex_traversal == 0);
   fatal(moria_vertex_traversal_begin, &g_graph, &invalidation->vertex_traversal);
+
+  RUNTIME_ASSERT(invalidation->edge_traversal == 0);
   fatal(moria_edge_traversal_begin, &g_graph, &invalidation->edge_traversal);
   invalidation->any = false;
 

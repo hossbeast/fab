@@ -39,6 +39,8 @@
 #include "marshal.h"
 #include "stats.h"
 #include "variant.h"
+#include "handler.h"
+#include "channel.h"
 
 static llist var_list = LLIST_INITIALIZER(var_list);          // active
 static llist var_freelist = LLIST_INITIALIZER(var_freelist);  // free
@@ -48,7 +50,7 @@ static value_parser * parser;
 // static
 //
 
-static xapi var_parse(var * restrict vp, bool * restrict success)
+static xapi var_parse(var * restrict vp, channel * restrict chan)
 {
   enter;
 
@@ -56,7 +58,7 @@ static xapi var_parse(var * restrict vp, bool * restrict success)
   size_t text_len;
   value * val;
   xapi exit;
-  char trace[4096 << 1];
+  fabipc_message *msg;
 
   vp->val = 0;
 
@@ -69,16 +71,19 @@ static xapi var_parse(var * restrict vp, bool * restrict success)
   {
     if((exit = invoke(value_parser_parse, parser, text, text_len, vp->self_node_abspath, VALUE_TYPE_SET, &val)))
     {
-#if DEBUG || DEVEL || XAPI
-      xapi_trace_full(trace, sizeof(trace), 0);
+      msg = channel_produce(chan);
+      msg->id = chan->msgid;
+      msg->type = FABIPC_MSG_RESULT;
+      msg->code = EINVAL;
+
+#if DEBUG || DEVEL
+      msg->size = xapi_trace_full(msg->text, sizeof(msg->text), 0);
 #else
-      xapi_trace_pithy(trace, sizeof(trace), 0);
+      msg->size = xapi_trace_pithy(msg->text, sizeof(msg->text), 0);
 #endif
+      channel_post(chan, msg);
       xapi_calltree_unwind();
 
-      xlogs(L_WARN, L_NOCATEGORY, trace);
-
-      *success = false;
       goto XAPI_FINALLY;
     }
 
@@ -88,8 +93,7 @@ static xapi var_parse(var * restrict vp, bool * restrict success)
   STATS_INC(vp->stats.parsed);
   STATS_INC(g_stats.var_parsed);
 
-  logf(L_MODULE, "parsed var @ %s", vp->self_node_abspath);
-
+  //logf(L_MODULE, "parsed var @ %s", vp->self_node_abspath);
 finally:
   wfree(text);
 coda;
@@ -174,7 +178,7 @@ xapi var_alloc(var ** restrict vp, moria_graph * restrict g)
   finally : coda;
 }
 
-xapi var_reconcile(var * restrict vp, bool * restrict reconciled)
+xapi var_reconcile(var * restrict vp, channel * restrict chan)
 {
   enter;
 
@@ -183,16 +187,16 @@ xapi var_reconcile(var * restrict vp, bool * restrict reconciled)
     goto XAPI_FINALLY;
   }
 
-  fatal(var_parse, vp, reconciled);
+  fatal(var_parse, vp, chan);
 
-  if(*reconciled) {
+  if(!chan->error) {
     fatal(fsent_ok, vp->self_node);
   }
 
   finally : coda;
 }
 
-xapi var_system_reconcile(bool * restrict reconciled)
+xapi var_system_reconcile(channel * restrict chan)
 {
   enter;
 

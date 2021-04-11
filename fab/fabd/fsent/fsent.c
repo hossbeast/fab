@@ -42,6 +42,7 @@
 #include "stats.h"
 #include "var.h"
 #include "variant.h"
+#include "channel.h"
 
 #include "common/attrs.h"
 #include "zbuffer.h"
@@ -56,8 +57,6 @@ const char *fsent_module_name = "module.bam";
 uint16_t fsent_module_name_len = 10;
 const char *fsent_var_name = "var.bam";
 uint16_t fsent_var_name_len = 7;
-const char *fsent_formula_suffix;
-uint16_t fsent_formula_suffix_len;
 
 llist fsent_list = LLIST_INITIALIZER(fsent_list);                 // active fsents
 static llist fsent_freelist = LLIST_INITIALIZER(fsent_freelist);  // free fsents
@@ -488,10 +487,6 @@ xapi fsent_reconfigure(configblob * restrict cfg, bool dry)
       xapi_info_pushs("field", "special.var");
       fail(CONFIG_INVALID);
     }
-    if(cfg->special.formula_suffix == 0 || cfg->special.formula_suffix->l == 0) {
-      xapi_info_pushs("field", "special.formula-suffix");
-      fail(CONFIG_INVALID);
-    }
   }
   else
   {
@@ -507,8 +502,6 @@ xapi fsent_reconfigure(configblob * restrict cfg, bool dry)
     fsent_model_name_len = cfg->special.model->l;
     fsent_var_name = cfg->special.var->v;
     fsent_var_name_len = cfg->special.var->l;
-    fsent_formula_suffix = cfg->special.formula_suffix->v;
-    fsent_formula_suffix_len = cfg->special.formula_suffix->l;
   }
 
   finally : coda;
@@ -834,7 +827,7 @@ fsent *fsent_path_lookup(const module * restrict mod, const char * restrict path
   return 0;
 }
 
-xapi fsent_formula_bootstrap(fsent * restrict n, bool * restrict reconciled)
+xapi fsent_formula_bootstrap(fsent * restrict n, channel * restrict chan)
 {
   enter;
 
@@ -855,12 +848,12 @@ xapi fsent_formula_bootstrap(fsent * restrict n, bool * restrict reconciled)
     fsent_invalid_set(n);
   }
 
-  fatal(formula_reconcile, n->self_fml, reconciled);
+  fatal(formula_reconcile, n->self_fml, chan);
 
   finally : coda;
 }
 
-xapi fsent_var_bootstrap(fsent * restrict n, bool * restrict reconciled)
+xapi fsent_var_bootstrap(fsent * restrict n, channel * restrict chan)
 {
   enter;
 
@@ -880,7 +873,7 @@ xapi fsent_var_bootstrap(fsent * restrict n, bool * restrict reconciled)
     fsent_invalid_set(n);
   }
 
-  fatal(var_reconcile, n->self_var, reconciled);
+  fatal(var_reconcile, n->self_var, chan);
 
   finally : coda;
 }

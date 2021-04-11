@@ -18,12 +18,13 @@
 #include "xapi.h"
 #include "xapi/exit.h"
 
-#include "xlinux/xstdlib.h"
-#include "xlinux/KERNEL.errtab.h"
-#include "valyria/set.h"
-#include "value/parser.h"
+#include "common/attrs.h"
 #include "moria/edge.h"
 #include "moria/operations.h"
+#include "value/parser.h"
+#include "valyria/set.h"
+#include "xlinux/KERNEL.errtab.h"
+#include "xlinux/xstdlib.h"
 
 #include "narrator.h"
 
@@ -39,16 +40,15 @@
 #include "module.lex.h"
 #include "module.states.h"
 
+#include "channel.h"
+#include "fsedge.h"
 #include "fsent.h"
-#include "pattern_parser.h"
 #include "graph.h"
-#include "render.h"
 #include "lookup.h"
+#include "pattern_parser.h"
+#include "render.h"
 #include "selection.h"
 #include "shadow.h"
-#include "fsedge.h"
-
-#include "common/attrs.h"
 
 static YYU_VTABLE(vtable, module, module);
 
@@ -71,14 +71,9 @@ static xapi resolve_import(module_parser * restrict parser, pattern * restrict r
   mod = parser->mod;
 
   fatal(selection_reset, parser->scratch, SELECTION_ITERATION_TYPE_ORDER);
-  fatal(pattern_lookup, ref, PATTERN_LOOKUP_DIR, parser->scratch, parser->err, sizeof(parser->err), &parser->errlen);
-  if(parser->errlen) {
-    write(2, parser->err, parser->errlen);
-    write(2, "\n", 1);
-    goto XAPI_FINALLY;
-  }
-
+  fatal(pattern_lookup, ref, PATTERN_LOOKUP_DIR, parser->scratch, parser->chan);
   fatal(selection_finalize, parser->scratch);
+
   llist_foreach(&parser->scratch->list, sn, lln) {
     RUNTIME_ASSERT((sn->v->attrs & VERTEX_TYPE_OPT) == VERTEX_TYPE_FSENT);
 
@@ -122,12 +117,7 @@ static xapi resolve_use(module_parser * restrict parser, pattern * restrict ref,
   mod = parser->mod;
 
   fatal(selection_reset, parser->scratch, SELECTION_ITERATION_TYPE_ORDER);
-  fatal(pattern_lookup, ref, PATTERN_LOOKUP_MODEL, parser->scratch, parser->err, sizeof(parser->err), &parser->errlen);
-  if(parser->errlen) {
-    write(2, parser->err, parser->errlen);
-    write(2, "\n", 1);
-    goto XAPI_FINALLY;
-  }
+  fatal(pattern_lookup, ref, PATTERN_LOOKUP_MODEL, parser->scratch, parser->chan);
   fatal(selection_finalize, parser->scratch);
 
   llist_foreach(&parser->scratch->list, sn, lln) {
@@ -176,12 +166,7 @@ static xapi resolve_require(module_parser * restrict parser, pattern * restrict 
   mod = parser->mod;
 
   fatal(selection_reset, parser->scratch, SELECTION_ITERATION_TYPE_ORDER);
-  fatal(pattern_lookup, ref, PATTERN_LOOKUP_MODULE, parser->scratch, parser->err, sizeof(parser->err), &parser->errlen);
-  if(parser->errlen) {
-    write(2, parser->err, parser->errlen);
-    write(2, "\n", 1);
-    goto XAPI_FINALLY;
-  }
+  fatal(pattern_lookup, ref, PATTERN_LOOKUP_MODULE, parser->scratch, parser->chan);
   fatal(selection_finalize, parser->scratch);
 
   llist_foreach(&parser->scratch->list, sn, lln) {
@@ -317,6 +302,7 @@ xapi module_parser_parse(
     module_parser * restrict parser
   , module * restrict mod
   , graph_invalidation_context * restrict invalidation
+  , channel * restrict chan
   , char * const restrict buf
   , size_t size
   , const char * fname
@@ -328,6 +314,7 @@ xapi module_parser_parse(
 
   parser->mod = mod;
   parser->invalidation = invalidation;
+  parser->chan = chan;
   parser->value_parser = mod->value_parser;
   fatal(yyu_parse, &parser->yyu, buf, size, fname, YYU_INPLACE, 0, 0);
 

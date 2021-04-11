@@ -117,13 +117,11 @@
  FILESYSTEMS              "filesystems"
  FORMULA                  "formula"
  INVALIDATE               "invalidate"
- LOGGING                  "logging"
  LOGFILE                  "logfile"
  SPECIAL                  "special"
  MODEL                    "model"
  MODULE                   "module"
  VAR                      "var"
- FORMULA_SUFFIX           "formula-suffix"
  PATH                     "path"
  COPY_FROM_ENV            "copy-from-env"
  DIRS                     "dirs"
@@ -189,7 +187,6 @@ section
   | extern-section
   | filesystems-section
   | formula-section
-  | logging-section
   ;
 
 build-section
@@ -268,7 +265,6 @@ special-mapping
   : MODEL ':' bstring          { PARSER->cfg->special.model = $3; }
   | MODULE ':' bstring         { PARSER->cfg->special.module = $3; }
   | VAR ':' bstring            { PARSER->cfg->special.var = $3; }
-  | FORMULA_SUFFIX ':' bstring { PARSER->cfg->special.formula_suffix = $3; }
   ;
  
 workers-map
@@ -373,122 +369,6 @@ formula-path-dir
   {
     if($1) {
       YFATAL(set_put, PARSER->cfg->formula.path.dirs.entries, $1, 0);
-    }
-  }
-  ;
-
-logging-section
-  : LOGGING logging-map
-  ;
-
-logging-map
-  : ':' '{' logging-mappings '}'
-  | '=' '{' logging-mappings-epsilon '}'
-  {
-    PARSER->cfg->logging.merge_overwrite = true;
-  }
-  ;
-
-logging-mappings-epsilon
-  : logging-mappings
-  | %empty
-  {
-    PARSER->cfg->logging.merge_significant = true;
-  }
-  ;
-
-logging-mappings
-  : logging-mappings logging-mapping
-  | logging-mapping
-  {
-    PARSER->cfg->logging.merge_significant = true;
-  }
-  ;
-
-allocate-console-logging-settings
-  : %empty
-  {
-    PARSER->logging_section = &PARSER->cfg->logging.console;
-  }
-  ;
-
-console-logging-settings
-  : allocate-console-logging-settings CONSOLE
-  {
-    PARSER->cfg->logging.console.merge_significant = true;
-  }
-  ;
-
-allocate-logfile-logging-settings
-  : %empty
-  {
-    PARSER->logging_section = &PARSER->cfg->logging.logfile;
-  }
-  ;
-
-logfile-logging-settings
-  : allocate-logfile-logging-settings LOGFILE
-  {
-    PARSER->cfg->logging.logfile.merge_significant = true;
-  }
-  ;
-
-logging-mapping
-  : console-logging-settings ':' '{' logging-settings '}'
-  | console-logging-settings '=' '{' logging-settings-epsilon '}'
-  {
-    PARSER->cfg->logging.console.merge_overwrite = true;
-  }
-  | logfile-logging-settings ':' '{' logging-settings '}'
-  | logfile-logging-settings '=' '{' logging-settings-epsilon '}'
-  {
-    PARSER->cfg->logging.logfile.merge_overwrite = true;
-  }
-  ;
-
-logging-settings-epsilon
-  : logging-settings
-  {
-    PARSER->logging_section->merge_significant = true;
-  }
-  | %empty
-  {
-    PARSER->logging_section->merge_significant = true;
-  }
-  ;
-
-logging-settings
-  : EXPRS ':' '[' logging-exprs ']'
-  {
-    PARSER->logging_section->merge_significant = true;
-  }
-  | EXPRS '=' '[' logging-exprs-epsilon ']'
-  {
-    PARSER->logging_section->exprs.merge_overwrite = true;
-  }
-  ;
-
-logging-exprs-epsilon
-  : logging-exprs
-  | %empty
-  {
-    PARSER->logging_section->exprs.merge_significant = true;
-  }
-  ;
-
-logging-exprs
-  : logging-exprs logging-expr
-  | logging-expr
-  {
-    PARSER->logging_section->exprs.merge_significant = true;
-  }
-  ;
-
-logging-expr
-  : bstring
-  {
-    if($1) {
-      YFATAL(list_push, PARSER->logging_section->exprs.items, $1, 0);
     }
   }
   ;

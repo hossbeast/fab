@@ -44,6 +44,7 @@ xapi params_setup(uint64_t hash)
   uid_t ruid;
   uid_t euid;
   uid_t suid;
+  int __attribute__((unused)) r;
 
   g_params.pid = getpid();
   g_params.proj_dirfd = -1;
@@ -61,7 +62,8 @@ xapi params_setup(uint64_t hash)
   }
 
   // start time
-  RUNTIME_ASSERT(clock_gettime(CLOCK_MONOTONIC, &g_params.starttime) == 0);
+  r = clock_gettime(CLOCK_MONOTONIC, &g_params.starttime);
+  RUNTIME_ASSERT(r == 0);
 
   snprintf(space, sizeof(space), "%s/%016"PRIx64, XQUOTE(FABIPCDIR), hash);
   fatal(ixstrdup, &g_params.ipcdir, space);

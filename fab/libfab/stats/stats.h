@@ -84,8 +84,8 @@ typedef union fab_global_stats {
 typedef union fab_fsent_stats {
   struct {
     /* current state */
-    const char *abspath;    /* node absolute path */
-    uint16_t abspath_len;
+    const char *path;       /* node absolute path */
+    uint16_t path_len;
     uint32_t type;          /* node type */
     uint32_t state;         /* node state */
 

@@ -23,13 +23,13 @@
 #include "locks.h"
 #include "fab/metadata.h"
 
-struct handler_context;
+struct channel;
 
 extern struct trylock global_system_reconcile_lock;
 extern enum bam_system_state global_system_state;
 extern uint16_t global_reconciliation_id;
 
-xapi global_system_reconcile(struct handler_context * restrict ctx, bool * restrict success)
+xapi global_system_reconcile(struct channel * restrict chan)
   __attribute__((nonnull));
 
 #endif

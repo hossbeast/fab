@@ -36,8 +36,8 @@ typedef union fab_describe_item {
     const char *label;
     uint16_t label_len;
 
-    const char *abspath;
-    uint16_t abspath_len;
+    const char *path;
+    uint16_t path_len;
 
     const char *ref;
     uint16_t ref_len;
@@ -59,6 +59,9 @@ typedef union fab_describe_item {
 
     const char *invalidation;
     uint16_t invalidation_len;
+
+    const char *formula;
+    uint16_t formula_len;
   };
 
   const char *s[0];

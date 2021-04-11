@@ -23,8 +23,6 @@
 #include "logger.h"
 #include "logger/category.h"
 
-struct configblob;
-
 extern struct logger_category * categories;
 
 #define L_ERROR     categories[0x00].id
@@ -71,17 +69,5 @@ extern struct logger_category * categories;
 xapi logging_setup(uint64_t hash);
 
 xapi logging_finalize(void);
-
-/// logging_reconfigure
-//
-// SUMMARY
-//  apply new configuration
-//
-// PARAMETERS
-//  config - root of the effective config tree
-//  dry    - if true, do not commit the new config
-//
-xapi logging_reconfigure(struct configblob * restrict config, bool dry)
-  __attribute__((nonnull));
 
 #endif

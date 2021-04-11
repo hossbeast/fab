@@ -148,7 +148,7 @@ static xapi process_node(fabipc_message * restrict msg)
   // base node stats
   z += descriptor_type_unmarshal(&node, &descriptor_fab_fsent_stats, src + z, sz - z);
 
-  printf("%30s : %s\n", "abspath", node.abspath);
+  printf("%30s : %s\n", "path", node.path);
   printf("%30s : %s\n", "type", attrs16_name_byvalue(fab_fsent_type_attrs, node.type));
   printf("%30s : %s\n", "state", attrs16_name_byvalue(fab_fsent_state_attrs, node.state));
   for(x = 3; x < descriptor_fab_fsent_stats.members_len; x++)

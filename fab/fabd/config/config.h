@@ -23,10 +23,11 @@
 
 #include "moria.h"
 
-struct graph_invalidation_context;
 struct narrator;
 struct fsent;
 struct configblob;
+struct graph_invalidation_context;
+struct channel;
 
 /* VERTEX_CONFIG */
 typedef struct config {
@@ -49,7 +50,7 @@ xapi config_cleanup(void);
 
 xapi config_system_bootstrap(void);
 
-xapi config_system_reconcile(int walk_id, struct graph_invalidation_context * restrict invalidation, bool * restrict reconciled)
+xapi config_system_reconcile(int walk_id, struct graph_invalidation_context * restrict invalidation, struct channel * restrict chan)
   __attribute__((nonnull));
 
 xapi config_active_say(struct narrator * restrict N)

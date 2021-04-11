@@ -26,11 +26,12 @@
 #include "exec_builder.h"
 #include "exec_render.h"
 
-struct path_cache_entry;
+struct channel;
 struct dependency;
 struct module;
-struct variant;
+struct path_cache_entry;
 struct value;
+struct variant;
 
 typedef struct build_slot {
   int32_t pid;
@@ -96,7 +97,7 @@ xapi build_slot_reap(struct build_slot * restrict bs, siginfo_t * info)
 xapi build_slot_prep(struct build_slot * restrict bs, struct dependency * restrict bpe, uint32_t stage_index)
   __attribute__((nonnull));
 
-xapi build_slot_fork_and_exec(struct build_slot * restrict bs)
+xapi build_slot_fork_and_exec(struct build_slot * restrict bs, struct channel * restrict chan)
   __attribute__((nonnull));
 
 #endif

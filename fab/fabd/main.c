@@ -87,7 +87,7 @@ static xapi setup_initial_channel(const char * restrict request)
   enter;
 
   size_t len;
-  fabipc_channel * chan;
+  channel * chan;
   fabipc_page *page;
   fabipc_message *msg;
 
@@ -95,9 +95,9 @@ static xapi setup_initial_channel(const char * restrict request)
 
   len = strlen(request);
   fatal(xmalloc, &chan, sizeof(*chan));
-  page = &chan->client_ring.pages[0];
+  page = &chan->ipc.client_ring.pages[0];
   msg = &page->msg;
-  chan->client_ring.tail++;
+  chan->ipc.client_ring.tail++;
 
   memcpy(msg->text, request, len);
   msg->text[len + 0] = 0;
@@ -154,11 +154,11 @@ static xapi xmain()
   fatal(xclose, fds[1]);
 
   /* the build thread and worker threads are launched by the initial reconfiguration */
+  fatal(bootstrap_thread_launch);
   fatal(notify_thread_launch);
   fatal(server_thread_launch);
   fatal(sweeper_thread_launch);
   fatal(beholder_thread_launch);
-  fatal(bootstrap_thread_launch);
 
   // become the monitor thread
   fatal(monitor_thread);
@@ -175,7 +175,7 @@ static xapi xmain_jump()
 finally:
   if(XAPI_UNWINDING)
   {
-#if DEBUG || DEVEL || XAPI
+#if DEBUG || DEVEL
     xapi_infos("thread", "fabd");
     xapi_infof("pid", "%ld", (long)getpid());
     xapi_infof("tid", "%ld", (long)gettid());
@@ -312,7 +312,11 @@ finally:
   if(XAPI_UNWINDING)
   {
     // failures which cannot be logged with liblogger to stderr
+#if DEBUG || DEVEL
     xapi_backtrace(2, 0);
+#else
+    xapi_pithytrace(2, 0);
+#endif
   }
 
 conclude(&R);

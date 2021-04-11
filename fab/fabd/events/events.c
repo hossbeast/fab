@@ -41,7 +41,7 @@ bool events_would(fabipc_event_type type, handler_context ** restrict first, fab
     }
 
     *first = handler;
-    *msg = handler_produce(handler);
+    *msg = channel_produce(handler->chan);
     (*msg)->type = FABIPC_MSG_EVENTS;
     (*msg)->evtype = type;
     return true;
@@ -68,7 +68,7 @@ void events_publish(handler_context * first, fabipc_message * restrict firstmsg)
       continue;
     }
 
-    msg = handler_produce(handler);
+    msg = channel_produce(handler->chan);
     msg->type = FABIPC_MSG_EVENTS;
     msg->evtype = firstmsg->evtype;
     msg->size = firstmsg->size;
@@ -78,8 +78,8 @@ void events_publish(handler_context * first, fabipc_message * restrict firstmsg)
       memcpy(msg->text, firstmsg->text, firstmsg->size);
     }
 
-    handler_post(handler, msg);
+    channel_post(handler->chan, msg);
   }
 
-  handler_post(first, firstmsg);
+  channel_post(first->chan, firstmsg);
 }

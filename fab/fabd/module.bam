@@ -15,10 +15,10 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-use builtin-modules/cc           # this module contains C sources
-use builtin-modules/flex
-use builtin-modules/bison
-use builtin-modules/executable  # this module builds an executable
+use cc           # this module contains C sources
+use flex
+use bison
+use executable  # this module builds an executable
 use xapi/errtab
 use xunit-tests
 

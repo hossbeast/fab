@@ -187,6 +187,7 @@
  su   "-u"
  sv   "-v"
  svv  "-vv"
+ svvv "-vvv"
  sV   "-V"
  st   "-t"
  sx   "-x"
@@ -225,6 +226,7 @@ global-argument
   | version         { ARGS->version = true; }
   | sv              { ARGS->verbose++; }
   | svv             { ARGS->verbose += 2; }
+  | svvv            { ARGS->verbose += 3; }
   | sK              { ARGS->kill = true; }
   | sB              { ARGS->invalidate = true; }
   | lno_launch      { ARGS->no_launch = true; }

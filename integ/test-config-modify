@@ -1,0 +1,68 @@
+#!/usr/bin/env perl
+
+use strict;
+use warnings;
+$SIG{__WARN__} = sub { die @_ };
+
+use POSIX;
+use File::Basename;
+use Cwd;
+our $repodir;
+BEGIN { $repodir = dirname(Cwd::realpath("$0/..")) }
+use lib "$repodir/integ/lib";
+use util;
+use tree;
+use bam;
+
+# var file syntax error
+my $testdir = setup(<<'TREE');
+|-- module.bam
+|-- project-config <<
+>>
+TREE
+
+# before
+assert_stats(undef, {
+    modules => 1
+  , system_state_ok => 1
+});
+assert_stats(".", {
+    reloaded => 1
+});
+assert_stats("module.bam", {
+    parsed_try => 1
+  , parsed => 1
+});
+assert_stats("project-config", {
+    parsed_try => 1
+  , parsed => 0
+  , state => 'stale'
+});
+
+# var file syntax fixed
+open my $fh, ">", "$testdir/var.bam" or die $!;
+print $fh <<'TEXT';
+lflags.devel : A
+TEXT
+close $fh;
+
+# after - appearance of var file in same dir has invalidated the module
+reconcile();
+assert_stats(undef, {
+    modules => 1
+  , system_state_ok => 1
+});
+assert_stats(".", {
+    reloaded => 1
+  , state => "fresh"
+});
+assert_stats("module.bam", {
+    parsed_try => 2
+  , parsed => 2
+  , state => "fresh"
+});
+assert_stats("var.bam", {
+    parsed_try => 2
+  , parsed => 1
+  , state => "fresh"
+});

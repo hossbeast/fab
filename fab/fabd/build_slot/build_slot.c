@@ -450,7 +450,7 @@ xapi build_slot_prep(build_slot * restrict bs, dependency * restrict dep, uint32
   finally : coda;
 }
 
-xapi build_slot_fork_and_exec(build_slot * restrict bs)
+xapi build_slot_fork_and_exec(build_slot * restrict bs, channel * restrict chan)
 {
   enter;
 
@@ -478,12 +478,12 @@ xapi build_slot_fork_and_exec(build_slot * restrict bs)
   variant_exec = bs->exec;
 
   fatal(exec_builder_xreset, &bs->exec_builder);
-  exec_render_context_configure(&bs->exec_builder_context, &bs->exec_builder, mod, vars, bs);
+  exec_render_context_configure(&bs->exec_builder_context, &bs->exec_builder, mod, vars, bs, chan);
 
   // render file if any
   if(fml->file) {
     fatal(exec_render_file, &bs->exec_builder_context, fml->file);
-    if(bs->exec_builder_context.errlen) {
+    if(chan->error) {
       goto XAPI_FINALLY;
     }
   }
@@ -491,7 +491,7 @@ xapi build_slot_fork_and_exec(build_slot * restrict bs)
   // render args if any
   if(fml->args) {
     fatal(exec_render_args, &bs->exec_builder_context, fml->args);
-    if(bs->exec_builder_context.errlen) {
+    if(chan->error) {
       goto XAPI_FINALLY;
     }
   }
@@ -499,7 +499,7 @@ xapi build_slot_fork_and_exec(build_slot * restrict bs)
   // render envs if any
   if(fml->envs) {
     fatal(exec_render_envs, &bs->exec_builder_context, fml->envs);
-    if(bs->exec_builder_context.errlen) {
+    if(chan->error) {
       goto XAPI_FINALLY;
     }
   }

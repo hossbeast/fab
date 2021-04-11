@@ -53,14 +53,14 @@ __thread int32_t tid;
 
 static void client_acquired(fab_client * restrict client, fabipc_message * restrict msg)
 {
-#if DEBUG || DEVEL
+#if DEBUG || DEVEL || 1
   uint32_t h;
   char buf[64];
   size_t z;
 
-  //if(g_args.verbose < 2) {
-  //  return;
-  //}
+  if(g_args.verbose < 2) {
+    return;
+  }
 
   h = client->shm->server_ring.head;
   z = znload_attrs32(buf, sizeof(buf), fabipc_msg_type_attrs, msg->type);
@@ -82,7 +82,7 @@ void client_post(struct fab_client * restrict client, fabipc_message * restrict 
 {
   fab_client_post(client, msg);
 
-#if DEBUG || DEVEL
+#if DEBUG || DEVEL || 1
   uint32_t h;
   char buf[64];
   size_t z;
@@ -214,19 +214,14 @@ static xapi xmain()
   channel_shmid = info.si_value.sival_int;
   fatal(fab_client_attach, client, channel_shmid);
 
-#if DEBUG || DEVEL
-  if(g_args.verbose > 0)
-  {
-    /* subscribe to stdout/stderr */
-    msg = fab_client_produce(client);
-    msg->type = FABIPC_MSG_EVENTSUB;
-    msg->attrs = 0
-      | FABIPC_EVENT_BAMD_STDERR
-      | FABIPC_EVENT_BAMD_STDOUT
-      ;
-    client_post(client, msg);
-  }
-#endif
+  /* always subscribe to stdout/stderr */
+  msg = fab_client_produce(client);
+  msg->type = FABIPC_MSG_EVENTSUB;
+  msg->attrs = 0
+    | FABIPC_EVENT_BAMD_STDERR
+    | FABIPC_EVENT_BAMD_STDOUT
+    ;
+  client_post(client, msg);
 
   /* event subscription and send the request */
   fatal(g_cmd->connected, g_cmd, client);
@@ -269,18 +264,20 @@ static xapi xmain()
     client_acquired(client, msg);
     if(msg->type == FABIPC_MSG_EVENTS && msg->evtype == FABIPC_EVENT_BAMD_STDOUT)
     {
+      dprintf(1, "[out] ");
       write(1, msg->text, msg->size);
     }
     else if(msg->type == FABIPC_MSG_EVENTS && msg->evtype == FABIPC_EVENT_BAMD_STDERR)
+    {
+      dprintf(2, "[err] ");
+      write(2, msg->text, msg->size);
+    }
+    else if(msg->type == FABIPC_MSG_RESULT && msg->code != 0)
     {
       write(2, msg->text, msg->size);
     }
     else
     {
-      if(msg->type == FABIPC_MSG_RESPONSE && msg->code != 0)
-      {
-        write(2, msg->text, msg->size);
-      }
       fatal(g_cmd->process, g_cmd, client, msg);
     }
 
@@ -295,6 +292,10 @@ finally:
 #if DEBUG || DEVEL
       // fabd exited - check for a coredump
 #endif
+    }
+
+    if(client) {
+      xapi_infos("hash", client->hash);
     }
   }
 
@@ -317,12 +318,9 @@ finally:
 #if DEBUG || DEVEL
     xapi_infof("pid", "%ld", (long)getpid());
     xapi_infof("tid", "%ld", (long)gettid());
-
     xapi_fulltrace(2, XAPI_TRACE_COLORIZE);
-    //fatal(logger_trace_full, L_ERROR, XAPI_TRACE_COLORIZE);
 #else
     xapi_pithytrace(2, XAPI_TRACE_COLORIZE);
-    //fatal(logger_trace_pithy, L_ERROR, XAPI_TRACE_COLORIZE);
 #endif
 
     xmain_exit = XAPI_ERRVAL;

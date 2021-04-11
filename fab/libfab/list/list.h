@@ -34,8 +34,8 @@ typedef struct fab_list_item {
   const char *label;
   uint16_t label_len;
 
-  const char *abspath;
-  uint16_t abspath_len;
+  const char *path;
+  uint16_t path_len;
 
   const char *ref;
   uint16_t ref_len;

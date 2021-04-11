@@ -30,12 +30,13 @@
 #include "handler_thread.h"
 #include "logging.h"
 #include "params.h"
+#include "channel.h"
 
 #include "atomics.h"
 #include "threads.h"
 
 #if DEVEL
-fabipc_channel *g_server_initial_channel;   // server run with --request parameter
+channel *g_server_initial_channel;   // server run with --request parameter
 #endif
 
 static xapi server_thread()

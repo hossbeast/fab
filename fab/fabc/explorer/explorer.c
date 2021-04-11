@@ -453,7 +453,7 @@ static void print_item(region *reg, int winnum, fab_list_item * restrict items, 
   }
 
   if(items[x].type & FAB_FSENT_SHADOW) {
-    wprintw(reg->w, "%.*s", (int)items[x].abspath_len, items[x].abspath);
+    wprintw(reg->w, "%.*s", (int)items[x].path_len, items[x].path);
   } else {
     wprintw(reg->w, "%.*s", (int)items[x].label_len, items[x].label);
   }
@@ -477,7 +477,7 @@ static xapi redraw()
   wrefresh(winpath.border.w);
 
   werase(winpath.body.w);
-  wprintw(winpath.body.w, "%.*s", node.abspath_len, node.abspath);
+  wprintw(winpath.body.w, "%.*s", node.path_len, node.path);
   wrefresh(winpath.body.w);
 
   // top-right pinned
@@ -534,7 +534,7 @@ static xapi redraw()
   werase(winnode.body.w);
   wattrset(winnode.body.w, COLOR_PAIR(3) | A_BOLD);
   if(node.type & FAB_FSENT_SHADOW) {
-    wprintw(winnode.body.w, "%.*s", node.abspath_len, node.abspath);
+    wprintw(winnode.body.w, "%.*s", node.path_len, node.path);
   } else {
     wprintw(winnode.body.w, "%.*s", node.label_len, node.label);
   }
@@ -569,7 +569,7 @@ static xapi redraw()
   wrefresh(winproperties.border.w);
 
   werase(winproperties.body.w);
-  if(node.abspath_len) {
+  if(node.path_len) {
     wprintw(winproperties.body.w, "%s : %s\n", "type", attrs16_name_byvalue(fab_fsent_type_attrs, node.type));
     wprintw(winproperties.body.w, "%s : %s\n", "state", attrs16_name_byvalue(fab_fsent_state_attrs, node.state));
 
@@ -726,17 +726,17 @@ static int keypress(int key)
       if(up_items_len == 0) {
         return 0;
       }
-      lookup_path = up_items[selected_num[0]].abspath;
-      lookup_pattern_len = up_items[selected_num[0]].abspath_len;
+      lookup_path = up_items[selected_num[0]].path;
+      lookup_pattern_len = up_items[selected_num[0]].path_len;
     } else if(selected_win == 1) {
-      lookup_path = node.abspath;
-      lookup_pattern_len = node.abspath_len;
+      lookup_path = node.path;
+      lookup_pattern_len = node.path_len;
     } else if(selected_win == 2) {
       if(down_items_len == 0) {
         return 0;
       }
-      lookup_path = down_items[selected_num[2]].abspath;
-      lookup_pattern_len = down_items[selected_num[2]].abspath_len;
+      lookup_path = down_items[selected_num[2]].path;
+      lookup_pattern_len = down_items[selected_num[2]].path_len;
     }
 
     selected_num[0] = 0;
