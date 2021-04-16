@@ -29,7 +29,8 @@ die "xunit not found" unless $ENV{xunit};
 my @cmd = (
     $ENV{xunit}
   , "+UNIT +TEST"
-  , (split(/ /, $ENV{objs}))
+  , (split(/ /, ($ENV{deps} || '')))
+  , (split(/ /, ($ENV{objs} || '')))
 );
 
 # redirect stdout -> auxout
@@ -41,8 +42,23 @@ __DATA__
 
 envs : {
   xunit : {
-    path-search : xunit
+    path-search : xunit.devel.xapi
   }
+
+  deps : [
+    select : [
+      path : //xunit-deps
+      traverse : {
+        direction : down
+        graph : depends
+        extension : so
+
+        # an .so is listed after all of its dependencies (transitive)
+        order : postorder
+      }
+    ]
+    property : relpath
+  ]
 
   objs : [
     select : [
@@ -51,6 +67,9 @@ envs : {
         direction : down
         graph : depends
         extension : so
+
+        # an .so is listed after all of its dependencies (transitive)
+        order : postorder
       }
     ]
     property : relpath
