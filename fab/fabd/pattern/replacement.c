@@ -21,7 +21,7 @@
 
 #include "replacement.h"
 #include "generate.internal.h"
-#include "match.internal.h"
+#include "search.internal.h"
 #include "pattern.internal.h"
 #include "variant.h"
 

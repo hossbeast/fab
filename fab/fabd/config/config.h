@@ -28,6 +28,11 @@ struct fsent;
 struct configblob;
 struct graph_invalidation_context;
 struct channel;
+struct moria_graph;
+
+/* global/protected config nodes */
+extern struct fsent *system_config_node;
+extern struct fsent *user_config_node;
 
 /* VERTEX_CONFIG */
 typedef struct config {
@@ -50,10 +55,13 @@ xapi config_cleanup(void);
 
 xapi config_system_bootstrap(void);
 
-xapi config_system_reconcile(int walk_id, struct graph_invalidation_context * restrict invalidation, struct channel * restrict chan)
+xapi config_system_reconcile(struct graph_invalidation_context * restrict invalidation, bool * restrict filesystems_changed, struct channel * restrict chan)
   __attribute__((nonnull));
 
 xapi config_active_say(struct narrator * restrict N)
+  __attribute__((nonnull));
+
+xapi config_alloc(config ** restrict vp, struct moria_graph * restrict g)
   __attribute__((nonnull));
 
 #endif

@@ -46,6 +46,9 @@ xapi pattern_section_say(const pattern_section * restrict n, bool first, narrato
   {
     xsays("/");
   }
+  else if(n->nodeset == PATTERN_NODESET_ROOT)
+  {
+  }
   else if(n->nodeset)
   {
     xsays("//");

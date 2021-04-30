@@ -23,11 +23,49 @@
   #include "config.tab.h"
   #include "config.tokens.h"
 
-  #include "value.h"
-  #include "value/parser.h"
+  #include "pattern_parser.h"
 
   #define YYSTYPE CONFIG_YYSTYPE
   #define YYLTYPE yyu_location
+
+  #define PARSE_INCLUDE_PATTERN do {                                      \
+    config_parser * parser = containerof(yyextra, config_parser, yyu);    \
+    size_t off = yytext - parser->yyu.yybuffer;                           \
+    char * usr = parser->yyu.usrbuf + off;                                \
+    size_t bufsz = parser->yyu.usrbufsize - off;                          \
+    yyu_location subloc;                                                  \
+    fatal(include_pattern_parse_partial                                   \
+      , parser->pattern_parser                                            \
+      , usr                                                               \
+      , bufsz                                                             \
+      , parser->yyu.fname                                                 \
+      , &parser->yyu.loc                                                  \
+      , &subloc                                                           \
+      , &yylval->pattern                                                  \
+    );                                                                    \
+    yyless(subloc.l);                                                     \
+    LEXLOC(config_INCLUDE_PATTERN, &subloc);                              \
+  } while(0);
+
+  #define PARSE_MATCH_PATTERN do {                                        \
+    config_parser * parser = containerof(yyextra, config_parser, yyu);    \
+    size_t off = yytext - parser->yyu.yybuffer;                           \
+    char * usr = parser->yyu.usrbuf + off;                                \
+    size_t bufsz = parser->yyu.usrbufsize - off;                          \
+    yyu_location subloc;                                                  \
+    fatal(match_pattern_parse_partial                                     \
+      , parser->pattern_parser                                            \
+      , usr                                                               \
+      , bufsz                                                             \
+      , parser->yyu.fname                                                 \
+      , &parser->yyu.loc                                                  \
+      , &subloc                                                           \
+      , &yylval->pattern                                                  \
+    );                                                                    \
+    yyless(subloc.l);                                                     \
+    LEXLOC(config_MATCH_PATTERN, &subloc);                                \
+  } while(0);
+
 %}
 
 %option noinput nounput noyywrap noyy_top_state
@@ -38,6 +76,10 @@
 
 %x multilinecomment
 %x quoted
+%x include
+%x include_pattern
+%x exclude
+%x match_pattern
 
 /* bytes that cannot appear in the input */
 ILL   [\x00-\x08\x0B-\x1F\x7F-\xFF]
@@ -45,10 +87,10 @@ ILL   [\x00-\x08\x0B-\x1F\x7F-\xFF]
 %%
 
  /* single-line comments */
-<INITIAL>[#][^\x00-\x08\x0B-\x1F\x7F-\xFF\n]*           { LOCWRITE; }
+<INITIAL,include,exclude>[#][^\x00-\x08\x0B-\x1F\x7F-\xFF\n]*           { LOCWRITE; }
 
  /* multiline comments are nestable */
-<INITIAL,multilinecomment>[/][*]                        { lenter; LOCWRITE; PUSHSTATE(multilinecomment); finally : lcoda; }
+<INITIAL,include,exclude,multilinecomment>[/][*]        { lenter; LOCWRITE; PUSHSTATE(multilinecomment); finally : lcoda; }
 <multilinecomment>[*][/]                                { lenter; LOCWRITE; POPSTATE; finally : lcoda; }
 <multilinecomment>[^*\x00-\x08\x0B-\x1F\x7F-\xFF\n*/]+  { LOCWRITE; }
 <multilinecomment>[*][^\x00-\x08\x0B-\x1F\x7F-\xFF\n/]  { LOCWRITE; }
@@ -56,12 +98,25 @@ ILL   [\x00-\x08\x0B-\x1F\x7F-\xFF]
 <multilinecomment>[\n]                                  { LOCRESET; }
 
  /* whitespace */
-<INITIAL>[\n]                                           { LOCRESET; }
-<INITIAL>[\r\t ]+                                       { LOCWRITE; }
+<*>[\n]                                                 { LOCRESET; }
+<*>[\r\t ]+                                             { LOCWRITE; }
 
  /* tokens */
 <INITIAL>[[\]{}:=]                                      { lenter; LEX(yytext[0]); finally : lcoda; }
 <INITIAL>(?i:true|false)                                { lenter; LEXB(); finally : lcoda; }
+
+ /* sub-parsers */
+<INITIAL>"include"                                      { lenter; PUSHSTATE(include); LEX(INCLUDE); finally : lcoda; }
+<include>[{:=]                                          { lenter; LEX(yytext[0]); finally : lcoda; }
+<include>"}"                                            { lenter; POPSTATE; LEX(yytext[0]); finally : lcoda; }
+<include>[^}:=]                                         { lenter; yyless(0); PUSHSTATE(include_pattern); finally : lcoda; }
+<include_pattern>[^\n\r\t ][\x00-\xff]+                 { lenter; PARSE_INCLUDE_PATTERN; POPSTATE; finally : lcoda; }
+
+<INITIAL>"exclude"                                      { lenter; PUSHSTATE(exclude); LEX(EXCLUDE); finally : lcoda; }
+<exclude>[{:=]                                          { lenter; LEX(yytext[0]); finally : lcoda; }
+<exclude>"}"                                            { lenter; POPSTATE; LEX(yytext[0]); finally : lcoda; }
+<exclude>[^}:=]                                         { lenter; yyless(0); PUSHSTATE(match_pattern); finally : lcoda; }
+<match_pattern>[^\n\r\t ][\x00-\xff]+                   { lenter; PARSE_MATCH_PATTERN; POPSTATE; finally : lcoda; }
 
  /* integers */
 <INITIAL>[-][0-9]+                                      { lenter; LEXI("%"SCNdMAX); finally : lcoda; }

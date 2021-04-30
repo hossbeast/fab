@@ -86,7 +86,7 @@ static xapi node_graft_test_entry(xunit_test * _test)
   narrator_growing * N = 0;
   graph_parser * parser = 0;
   fsent * node;
-  graph_invalidation_context invalidation;
+  graph_invalidation_context invalidation = { };
 
   fatal(narrator_growing_create, &N);
   fatal(graph_parser_create, &parser, &g_graph, &fsent_list, node_operations_test_dispatch, graph_vertex_attrs, graph_edge_attrs);

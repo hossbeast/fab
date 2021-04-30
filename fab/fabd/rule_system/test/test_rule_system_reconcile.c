@@ -46,6 +46,7 @@
 #include "rule_module.h"
 #include "rule_system.h"
 #include "module_parser.h"
+#include "channel.h"
 
 typedef struct rule_system_reconcile_test {
   XUNITTEST;
@@ -130,9 +131,11 @@ static xapi rule_system_reconcile_test_entry(xunit_test * _test)
   rule_run_context rule_ctx = { 0 };
   const char * graph;
   set *variants = 0;
-  bool reconciled = true;
+//  bool reconciled = true;
+  channel *chan = 0;
 
   fatal(rule_run_context_xinit, &rule_ctx);
+  fatal(xmalloc, &chan, sizeof(*chan));
 
   fatal(pattern_parser_create, &parser);
   fatal(module_parser_create, &mod_parser);
@@ -145,7 +148,7 @@ static xapi rule_system_reconcile_test_entry(xunit_test * _test)
   rule_ctx.modules = &modules;
   fatal(set_create, &variants);
   rule_ctx.variants = variants;
-  rule_ctx.reconciled = &reconciled;
+//  rule_ctx.reconciled = &reconciled;
 
   /* setup - build the initial graph */
   fatal(graph_parser_operations_parse, op_parser, MMS(test->setup_operations));
@@ -182,7 +185,8 @@ static xapi rule_system_reconcile_test_entry(xunit_test * _test)
   fatal(graph_parser_operations_parse, op_parser, MMS(test->operations));
 
   /* act - graph refresh */
-  fatal(rule_system_reconcile, &rule_ctx, &reconciled);
+  fatal(rule_system_reconcile, &rule_ctx, chan);
+  assert_eq_b(false, chan->error);
 
   // assert
   fatal(graph_say, &N->base);
@@ -199,6 +203,7 @@ finally:
   fatal(graph_parser_xfree, op_parser);
   fatal(pattern_parser_xfree, parser);
   fatal(rule_run_context_xdestroy, &rule_ctx);
+  wfree(chan);
 coda;
 }
 

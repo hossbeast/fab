@@ -20,13 +20,16 @@
 
 /*
 
-PATTERN TYPES
-
-match pattern - match nodes starting from a base
- * used in rules, leftmost (match) pattern
+search pattern - find nodes, starting from a base node
+ * left-to-right node matching
+ * used in rules, leftmost pattern
  * does not support NODESET_SELF '.'
 
-generate pattern - create nodes, starting from a base
+match pattern - subset of search pattern
+ * right-to-left node matching
+ * used in walker.exclude config
+
+generate pattern - create nodes, starting from a base node
  * used in rules, middle (generate) pattern
 
 lookup pattern - find nodes, disambiguating via prefix
@@ -34,8 +37,17 @@ lookup pattern - find nodes, disambiguating via prefix
  * used in module.bam to specify variants                      render only
  * used in selector pattern for node lookup                    matches zero or more
 
-reference pattern - find nodes by left -> right descent (class/alternation not permitted)
+reference pattern - subset of generate pattern
+ * class/alternation not permitted
+ * absolute paths not permitted
+ * variable/variant/replacement not permitted
  * used in module.bam for formula-binding pattern
+
+include pattern - subset of generate pattern
+ * absolute paths required
+ * shadow paths not permitted
+ * variable/variant/replacement not permitted
+ * used in walker.include config
 
 */
 
@@ -52,6 +64,7 @@ struct narrator;      // narrator.h
 
 struct pattern_render_context;
 struct pattern_generate_context;
+struct pattern_search_context;
 struct pattern_match_context;
 
 #define PATTERN_SEGMENT_TYPE_OPT 0x00ff
@@ -102,14 +115,14 @@ extern struct attrs16 * pattern_graph_attrs;
 
 // axis
 #define PATTERN_AXIS_OPT  0x000f
-#define PATTERN_AXIS_TABLE                                                                                                      \
-  /* contextual */                                                                                                              \
+#define PATTERN_AXIS_TABLE                                                                                                       \
+  /* contextual */                                                                                                               \
   ATTR_NAME_DEF(PATTERN_AXIS_UP               , "up"            , 0x0005) /* parent, .. : nodes up 1 level from current fsent */ \
-  ATTR_NAME_DEF(PATTERN_AXIS_ABOVE            , "above"         , 0x0006) /* nodes above the current node, any level */         \
-  ATTR_NAME_DEF(PATTERN_AXIS_SELF_OR_ABOVE    , "self-or-above" , 0x0007) /* current and nodes above, any level */              \
+  ATTR_NAME_DEF(PATTERN_AXIS_ABOVE            , "above"         , 0x0006) /* nodes above the current node, any level */          \
+  ATTR_NAME_DEF(PATTERN_AXIS_SELF_OR_ABOVE    , "self-or-above" , 0x0007) /* current and nodes above, any level */               \
   ATTR_NAME_DEF(PATTERN_AXIS_DOWN             , "down"          , 0x0008) /* child : nodes down 1 level from current fsent */    \
-  ATTR_NAME_DEF(PATTERN_AXIS_BELOW            , "below"         , 0x0009) /* nodes below the current node, any level */         \
-  ATTR_NAME_DEF(PATTERN_AXIS_SELF_OR_BELOW    , "self-or-below" , 0x000a) /* ** : current and nodes below, any level */         \
+  ATTR_NAME_DEF(PATTERN_AXIS_BELOW            , "below"         , 0x0009) /* nodes below the current node, any level */          \
+  ATTR_NAME_DEF(PATTERN_AXIS_SELF_OR_BELOW    , "self-or-below" , 0x000a) /* ** : current and nodes below, any level */          \
 
 #undef ATTR_NAME_DEF
 #define ATTR_NAME_DEF(x, s, y) x = UINT16_C(y),
@@ -122,10 +135,10 @@ extern struct attrs16 * pattern_axis_attrs;
 #define PATTERN_NODESET_OPT 0x000f
 #define PATTERN_NODESET_TABLE                                                                                \
   /* non-contextual */                                                                                       \
-  ATTR_NAME_DEF(PATTERN_NODESET_SELF     , "self"      , 0x0001) /* . : the current context fsent */          \
-  ATTR_NAME_DEF(PATTERN_NODESET_MATCH    , "match"     , 0x0002) /* matched node, (generate pattern) */      \
-  ATTR_NAME_DEF(PATTERN_NODESET_MATCHDIR , "match-dir" , 0x0003) /* $^D directory of the matched node  */    \
-  ATTR_NAME_DEF(PATTERN_NODESET_SHADOW   , "shadow"    , 0x0004) /* root of the shadow fs */                 \
+  ATTR_NAME_DEF(PATTERN_NODESET_SELF     , "self"      , 0x0001) /* . : the current context fsent */         \
+  ATTR_NAME_DEF(PATTERN_NODESET_MATCHDIR , "match-dir" , 0x0002) /* $^D directory of the matched node  */    \
+  ATTR_NAME_DEF(PATTERN_NODESET_SHADOW   , "shadow"    , 0x0003) /* root of the shadow fs */                 \
+  ATTR_NAME_DEF(PATTERN_NODESET_ROOT     , "root"      , 0x0004) /* root of the actual fs */                 \
 
 #undef ATTR_NAME_DEF
 #define ATTR_NAME_DEF(x, s, y) x = UINT16_C(y),
@@ -176,10 +189,14 @@ typedef struct pattern_segment_vtable {
     , struct narrator * restrict N
   );
 
+  xapi __attribute__((nonnull)) (*search)(
+      const union pattern_segment * seg
+    , struct pattern_search_context * ctx
+  );
+
   xapi __attribute__((nonnull)) (*match)(
-/* switch these */
-      struct pattern_match_context * ctx
-    , const union pattern_segment * seg
+      const union pattern_segment * seg
+    , struct pattern_match_context * ctx
   );
 
   xapi __attribute__((nonnull)) (*render)(
@@ -313,17 +330,14 @@ typedef union pattern_segment {
   pattern_replacement replacement;
 } pattern_segment;
 
-/// pattern_free
-//
-// SUMMARY
-//  free a pattern with free semantics
-//
+/*
+ * free a pattern with free semantics
+ */
 void pattern_free(pattern * const restrict);
 
 void pattern_segments_list_free(pattern_segments * const restrict);
 void pattern_segments_free(pattern_segments * const restrict);
 
-// void pattern_section_list_free(pattern_section * const restrict);
 void pattern_section_free(pattern_section * const restrict);
 
 void pattern_segment_list_free(pattern_segment * const restrict);
@@ -332,10 +346,10 @@ void pattern_segment_free(pattern_segment * const restrict);
 xapi pattern_say(const pattern * restrict ffn, struct narrator * restrict N)
   __attribute__((nonnull));
 
-typedef struct pattern_match_group {
+typedef struct pattern_search_group {
   const char * start; // points into node->name.name
   uint16_t len;
-} pattern_match_group;
+} pattern_search_group;
 
 /// pattern_segments_say
 //

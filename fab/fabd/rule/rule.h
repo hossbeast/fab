@@ -120,7 +120,7 @@ typedef struct rule_run_context {
   size_t Alist_alloc;
   struct moria_vertex **Blist;
   size_t Blist_alloc;
-  struct pattern_match_node **Mlist;
+  struct pattern_search_node **Mlist;
   size_t Mlist_alloc;
 
   /* invalidation context for the ongoing operation */

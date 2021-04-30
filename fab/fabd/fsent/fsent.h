@@ -64,6 +64,8 @@ extern const char *fsent_module_name;
 extern uint16_t fsent_module_name_len;
 extern const char *fsent_var_name;
 extern uint16_t fsent_var_name_len;
+extern const char *fsent_config_name;
+extern uint16_t fsent_config_name_len;
 
 // globally scoped fsents
 extern struct fsent * g_root;            // directory node at /
@@ -124,7 +126,7 @@ typedef struct fsent {
       union {
         struct formula * self_fml;    // VERTEX_FORMULA_FILE     e.g. cc.bam
         struct var * self_var;        // VERTEX_VAR_FILE         var.bam
-        struct config *self_config;   // VERTEX_CONFIG_FILE      config file
+        struct config *self_config;   // VERTEX_CONFIG_FILE      e.g. config.bam (or /etc/fabconfig)
         struct {
           struct module * self_mod;   // VERTEX_MODULE_FILE      module.bam
           fab_module_file_stats modfile_stats;
@@ -135,7 +137,8 @@ typedef struct fsent {
 
   fab_fsent_stats stats;
 
-  int walk_id;                    // walker
+  uint16_t ascend_walk_id;        // walker
+  uint16_t descend_walk_id;       // walker
   sweeper_event pending;          // sweeper-thread
   enum notify_state notify_state;
   uint32_t notify_epoch;
@@ -493,6 +496,12 @@ xapi fsent_formula_bootstrap(fsent * restrict n, struct channel * restrict chan)
  * mark an fsent as VERTEX_VAR_FILE and reconcile its var
  */
 xapi fsent_var_bootstrap(fsent * restrict n, struct channel * restrict chan)
+  __attribute__((nonnull));
+
+/*
+ * mark an fsent as VERTEX_CONFIG_FILE and reconcile its config blob
+ */
+xapi fsent_config_bootstrap(fsent * restrict n, struct channel * restrict chan)
   __attribute__((nonnull));
 
 /*

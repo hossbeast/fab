@@ -15,6 +15,14 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
+/*
+
+config keys that should *only* be legal in the global/user config files
+ filesystems
+ special
+
+*/
+
 #include <unistd.h>
 
 #include "types.h"
@@ -24,9 +32,11 @@
 #include "xapi/calltree.h"
 #include "xlinux/xstdlib.h"
 #include "narrator.h"
+#include "narrator/fixed.h"
 #include "valyria/set.h"
 #include "valyria/map.h"
 #include "valyria/list.h"
+#include "valyria/llist.h"
 #include "value/writer.h"
 
 #include "config.internal.h"
@@ -35,7 +45,6 @@
 #include "config_parser.internal.h"
 #include "filesystem.h"
 #include "build_thread.h"
-#include "extern.h"
 #include "params.h"
 #include "fsent.h"
 #include "path_cache.h"
@@ -44,6 +53,7 @@
 #include "zbuffer.h"
 #include "channel.h"
 #include "logging.h"
+#include "pattern.h"
 
 #include "common/snarf.h"
 #include "macros.h"
@@ -55,13 +65,13 @@ static config_parser * parser_staging;
 static configblob * config_active;
 static config_parser * parser_active;
 
+/* these config nodes always exist */
+fsent *system_config_node;
+fsent *user_config_node;
+
+/* active list is maintained in precendence order, including system and user config files */
 static llist config_list = LLIST_INITIALIZER(config_list);          // active
 static llist config_freelist = LLIST_INITIALIZER(config_freelist);  // free
-
-/* these config nodes always exist */
-static fsent *system_config_node;
-static fsent *user_config_node;
-static fsent *project_config_node;
 
 //
 // static
@@ -79,25 +89,6 @@ static int box_string_ht_cmp_fn(const void * _A, size_t Asz, const void * _B, si
   const box_string * B = _B;
 
   return memncmp(A->v, A->l, B->v, B->l);
-}
-
-static xapi stage(configblob ** cfg)
-{
-  enter;
-
-  if(config_staging == 0)
-  {
-    config_staging = *cfg;
-  }
-  else
-  {
-    fatal(config_merge, config_staging, *cfg);
-    fatal(config_xfree, *cfg);
-  }
-
-  *cfg = 0;
-
-  finally : coda;
 }
 
 static void config_compare_build(config_base * restrict _new, config_base * restrict _old)
@@ -149,14 +140,6 @@ static void config_compare_workers(config_base * restrict _new, config_base * re
   }
 }
 
-static void config_compare_extern(config_base * restrict _new, config_base * restrict _old)
-{
-  struct config_extern_section * new = containerof(_new, struct config_extern_section, cb);
-  struct config_extern_section * old = containerof(_old, struct config_extern_section, cb);
-
-  new->changed = !old || !set_equal(new->entries, old->entries);
-}
-
 static void config_compare_filesystems(config_base * restrict _new, config_base * restrict _old)
 {
   struct config_filesystems * new = containerof(_new, struct config_filesystems, cb);
@@ -186,6 +169,56 @@ static void config_compare_formula(config_base * restrict _new, config_base * re
       ;
 }
 
+static void config_compare_walker_list(config_base * restrict _new, config_base * restrict _old)
+{
+  struct config_walker_list * new = containerof(_new, struct config_walker_list, cb);
+  struct config_walker_list * old = containerof(_old, struct config_walker_list, cb);
+
+  llist *a = new->list.next;
+  llist *b = old->list.next;
+
+  pattern *A, *B;
+
+  /* this will consider lists containing identical patterns in different order as different lists */
+  while(a != &new->list && b != &old->list)
+  {
+    A = containerof(a, pattern, lln);
+    B = containerof(b, pattern, lln);
+
+    if(pattern_cmp(A, B)) {
+      break;
+    }
+
+    a = a->next;
+    b = b->next;
+  }
+
+  new->changed = false;
+  if(a != &new->list || b != &old->list)
+  {
+    new->changed = true;
+  }
+}
+
+static void config_compare_walker(config_base * restrict _new, config_base * restrict _old)
+{
+  struct config_walker * new = containerof(_new, struct config_walker, cb);
+  struct config_walker * old = containerof(_old, struct config_walker, cb);
+
+  if(!_old) {
+    new->changed = true;
+    return;
+  }
+
+  config_compare_walker_list(&new->include.cb, &old->include.cb);
+  config_compare_walker_list(&new->exclude.cb, &old->exclude.cb);
+
+  new->changed = 0
+      || new->include.changed
+      || new->exclude.changed
+      ;
+}
+
 static xapi parse(config_parser * restrict parser, const char * restrict path, char * restrict text, size_t text_len, configblob **cfg)
 {
   enter;
@@ -204,63 +237,38 @@ static xapi reparse()
   char * text = 0;
   size_t text_len;
   configblob * cfg = 0;
+  fsent *n;
+  config *cfgn;
 
   // reset staging config
   fatal(config_parser_ixfree, &parser_staging);
   fatal(config_parser_create, &parser_staging);
   fatal(config_ixfree, &config_staging);
 
-  // stage system-level config
-  if(fsent_invalid_get(system_config_node))
-  {
-    fatal(usnarfs, &text, &text_len, system_config_node->self_config->self_node_abspath);
-  }
-  if(text)
-  {
-    logf(L_CONFIG, "staging system config @ %s", system_config_node->self_config->self_node_abspath);
-    fatal(parse, parser_staging, system_config_node->self_config->self_node_abspath, text, text_len, &cfg);
-    fatal(stage, &cfg);
-    iwfree(&text);
-  }
-  else
-  {
-    logf(L_CONFIG, "no system config @ %s", system_config_node->self_config->self_node_abspath);
+  llist_foreach(&config_list, cfgn, vertex.owner) {
+    n = cfgn->self_node;
+    fatal(usnarfs, &text, &text_len, n->self_config->self_node_abspath);
+    if(text)
+    {
+      logf(L_CONFIG, "staging config file @ %s", n->self_config->self_node_abspath);
+      fatal(parse, parser_staging, n->self_config->self_node_abspath, text, text_len, &cfg);
+
+      if(config_staging == 0)
+      {
+        config_staging = cfg;
+      }
+      else
+      {
+        fatal(config_merge, config_staging, cfg);
+        fatal(config_xfree, cfg);
+      }
+      cfg = 0;
+
+      iwfree(&text);
+    }
   }
 
-  // stage user-level config
-  if(fsent_invalid_get(user_config_node))
-  {
-    fatal(usnarfs, &text, &text_len, user_config_node->self_config->self_node_abspath);
-  }
-  if(text)
-  {
-    logf(L_CONFIG, "staging user config @ %s", user_config_node->self_config->self_node_abspath);
-    fatal(parse, parser_staging, user_config_node->self_config->self_node_abspath, text, text_len, &cfg);
-    fatal(stage, &cfg);
-    iwfree(&text);
-  }
-  else
-  {
-    logf(L_CONFIG, "no user config @ %s", user_config_node->self_config->self_node_abspath);
-  }
-
-  // stage project-level config
-  if(fsent_invalid_get(project_config_node))
-  {
-    fatal(usnarfs, &text, &text_len, project_config_node->self_config->self_node_abspath);
-  }
-  if(text)
-  {
-    logf(L_CONFIG, "staging project config @ %s", project_config_node->self_config->self_node_abspath);
-    fatal(parse, parser_staging, project_config_node->self_config->self_node_abspath, text, text_len, &cfg);
-    fatal(stage, &cfg);
-    iwfree(&text);
-  }
-  else
-  {
-    logf(L_CONFIG, "no project config @ %s", project_config_node->self_config->self_node_abspath);
-  }
-
+  /* all files empty */
   if(!config_staging)
   {
     fatal(config_create, &config_staging);
@@ -272,7 +280,7 @@ finally:
 coda;
 }
 
-static xapi config_alloc(config ** restrict vp, moria_graph * restrict g)
+xapi config_alloc(config ** restrict vp, moria_graph * restrict g)
 {
   enter;
 
@@ -285,7 +293,7 @@ static xapi config_alloc(config ** restrict vp, moria_graph * restrict g)
 
   moria_vertex_init(&v->vertex, g, VERTEX_CONFIG);
 
-  llist_append(&config_list, v, vertex.owner);
+  llist_prepend(&config_list, v, vertex.owner);
   *vp = v;
 
   finally : coda;
@@ -311,16 +319,16 @@ bool config_compare(configblob * restrict new, configblob * restrict old)
   config_compare_build(&new->build.cb, refas(old, build.cb));
   config_compare_special(&new->special.cb, refas(old, special.cb));
   config_compare_workers(&new->workers.cb, refas(old, workers.cb));
-  config_compare_extern(&new->extern_section.cb, refas(old, extern_section.cb));
   config_compare_filesystems(&new->filesystems.cb, refas(old, filesystems.cb));
   config_compare_formula(&new->formula.cb, refas(old, formula.cb));
+  config_compare_walker(&new->walker.cb, refas(old, walker.cb));
 
   new->changed = 0
     || new->build.changed
     || new->workers.changed
-    || new->extern_section.changed
     || new->filesystems.changed
     || new->formula.changed
+    || new->walker.changed
     ;
 
   return !new->changed;
@@ -336,6 +344,18 @@ bool config_compare(configblob * restrict new, configblob * restrict old)
     empty = false;                                          \
   }                                                         \
 } while(0)
+
+static void pattern_list_free(llist * restrict list)
+{
+  pattern *pat;
+  llist *T;
+
+  llist_foreach_safe(list, pat, lln, T) {
+    pattern_free(pat);
+  }
+
+  llist_init_node(list);
+}
 
 xapi config_merge(configblob * restrict dst, configblob * restrict src)
 {
@@ -353,18 +373,23 @@ xapi config_merge(configblob * restrict dst, configblob * restrict src)
   CFGCOPY(dst, src, workers, concurrency);
   dst->workers.merge_significant = !empty;
 
-  /* extern */
-  if(src->extern_section.merge_overwrite)
+  /* walker */
+  dst->walker.merge_significant = false;
+  if(src->walker.merge_overwrite || src->walker.include.merge_overwrite)
   {
-    fatal(set_xfree, dst->extern_section.entries);
-    dst->extern_section.entries = src->extern_section.entries;
-    src->extern_section.entries = 0;
+    pattern_list_free(&dst->walker.include.list);
   }
-  else
+  llist_splice_head(&dst->walker.include.list, &src->walker.include.list);
+  dst->walker.include.merge_significant = !llist_empty(&dst->walker.include.list);
+  dst->walker.merge_significant |= dst->walker.include.merge_significant;
+
+  if(src->walker.merge_overwrite || src->walker.exclude.merge_overwrite)
   {
-    fatal(set_splice, dst->extern_section.entries, src->extern_section.entries);
+    pattern_list_free(&dst->walker.exclude.list);
   }
-  dst->extern_section.merge_significant = dst->extern_section.entries->size;
+  llist_splice_head(&dst->walker.exclude.list, &src->walker.exclude.list);
+  dst->walker.exclude.merge_significant = !llist_empty(&dst->walker.exclude.list);
+  dst->walker.merge_significant |= dst->walker.exclude.merge_significant;
 
   /* filesystems */
   if(src->filesystems.merge_overwrite)
@@ -432,14 +457,9 @@ xapi config_create(configblob ** restrict rv)
 
   fatal(xmalloc, &cfg, sizeof(*cfg));
 
-  fatal(set_createx
-    , &cfg->extern_section.entries
-    , 0
-    , box_string_ht_hash_fn
-    , box_string_ht_cmp_fn
-    , (void*)box_free
-    , 0
-  );
+  llist_init_node(&cfg->walker.exclude.list);
+  llist_init_node(&cfg->walker.include.list);
+
   fatal(map_createx, &cfg->filesystems.entries, 0, fse_free, 0);
   fatal(set_createx
     , &cfg->formula.path.dirs.entries
@@ -470,11 +490,13 @@ xapi config_xfree(configblob * restrict cfg)
     box_free(refas(cfg->special.var, bx));
     box_free(refas(cfg->workers.concurrency, bx));
 
-    fatal(set_xfree, cfg->extern_section.entries);
     fatal(map_xfree, cfg->filesystems.entries);
     fatal(set_xfree, cfg->formula.path.dirs.entries);
 
     box_free(refas(cfg->formula.path.copy_from_env, bx));
+
+    pattern_list_free(&cfg->walker.exclude.list);
+    pattern_list_free(&cfg->walker.include.list);
   }
   wfree(cfg);
 
@@ -499,6 +521,10 @@ xapi config_writer_write(configblob * restrict cfg, value_writer * const restric
   const box_string *ent;
   const char *key;
   const struct config_filesystem_entry *fsent;
+  pattern *pat;
+  narrator_fixed fixed;
+  char space[512];
+  narrator *N;
 
   if(cfg->build.merge_significant)
   {
@@ -522,18 +548,42 @@ xapi config_writer_write(configblob * restrict cfg, value_writer * const restric
     fatal(value_writer_pop_mapping, writer);
   }
 
-  if(cfg->extern_section.merge_significant)
+  if(cfg->walker.merge_significant)
   {
     fatal(value_writer_push_mapping, writer);
-    fatal(value_writer_string, writer, "extern");
+    fatal(value_writer_string, writer, "walker");
     fatal(value_writer_push_set, writer);
 
-    for(x = 0; x < cfg->extern_section.entries->table_size; x++)
+    if(cfg->walker.include.merge_significant)
     {
-      if(!(ent = set_table_get(cfg->extern_section.entries, x)))
-        continue;
+      fatal(value_writer_push_mapping, writer);
+      fatal(value_writer_string, writer, "include");
+      fatal(value_writer_push_set, writer);
 
-      fatal(value_writer_string, writer, ent->v);
+      llist_foreach(&cfg->walker.include.list, pat, lln) {
+        N = narrator_fixed_init(&fixed, space, sizeof(space));
+        fatal(pattern_say, pat, N);
+        fatal(value_writer_bytes, writer, fixed.s, fixed.l);
+      }
+
+      fatal(value_writer_pop_set, writer);
+      fatal(value_writer_pop_mapping, writer);
+    }
+
+    if(cfg->walker.exclude.merge_significant)
+    {
+      fatal(value_writer_push_mapping, writer);
+      fatal(value_writer_string, writer, "exclude");
+      fatal(value_writer_push_set, writer);
+
+      llist_foreach(&cfg->walker.exclude.list, pat, lln) {
+        N = narrator_fixed_init(&fixed, space, sizeof(space));
+        fatal(pattern_say, pat, N);
+        fatal(value_writer_bytes, writer, fixed.s, fixed.l);
+      }
+
+      fatal(value_writer_pop_set, writer);
+      fatal(value_writer_pop_mapping, writer);
     }
 
     fatal(value_writer_pop_set, writer);
@@ -678,6 +728,17 @@ xapi config_active_say(narrator * restrict N)
 {
   enter;
 
+  config *cfg;
+
+  fatal(narrator_xsays, N, "#\n");
+  fatal(narrator_xsays, N, "# active config files in ascending order of precedence\n");
+  fatal(narrator_xsays, N, "#\n");
+  llist_foreach(&config_list, cfg, vertex.owner) {
+    fatal(narrator_xsayf, N, "#  %.*s\n", (int)cfg->self_node_abspath_len, cfg->self_node_abspath);
+  }
+  fatal(narrator_xsays, N, "#\n");
+  fatal(narrator_xsays, N, "\n");
+
   fatal(config_say, config_active, N);
 
   finally : coda;
@@ -693,7 +754,7 @@ static xapi reconfigure(channel * restrict chan)
   xapi exit = 0;
   if(  (exit = invoke(filesystem_reconfigure, config_staging, true))
     || (exit = invoke(fsent_reconfigure, config_staging, true))
-    || (exit = invoke(extern_reconfigure, config_staging, true))
+    || (exit = invoke(walker_system_reconfigure, config_staging, true))
     || (exit = invoke(build_thread_reconfigure, config_staging, true))
     || (exit = invoke(path_cache_reconfigure, config_staging, true))
   )
@@ -729,41 +790,98 @@ static xapi reconfigure(channel * restrict chan)
     // reconfigure subsystems
     fatal(filesystem_reconfigure, config_active, false);
     fatal(fsent_reconfigure, config_active, false);
-    fatal(extern_reconfigure, config_active, false);
+    fatal(walker_system_reconfigure, config_active, false);
     fatal(build_thread_reconfigure, config_active, false);
     fatal(path_cache_reconfigure, config_active, false);
-
-    fatal(fsent_ok, system_config_node);
-    fatal(fsent_ok, user_config_node);
-    fatal(fsent_ok, project_config_node);
   }
 
   finally : coda;
 }
 
-xapi config_system_reconcile(int walk_id, graph_invalidation_context * restrict invalidation, channel * restrict chan)
+xapi config_system_reconcile(graph_invalidation_context * restrict invalidation, bool * restrict filesystems_changed, channel * restrict chan)
 {
   enter;
 
-  fatal(walker_ascend, system_config_node, walk_id, invalidation);
-  fatal(walker_ascend, user_config_node, walk_id, invalidation);
-  fatal(walker_ascend, project_config_node, walk_id, invalidation);
+  fsent *n;
+  moria_vertex *dirv, *v;
+  llist unused, *T;
+  config *cfg;
 
-  if(!fsent_invalid_get(system_config_node) && !fsent_invalid_get(user_config_node) && !fsent_invalid_get(project_config_node)) {
+  *filesystems_changed = false;
+
+  /* bootstrap any config files in the ancestry of the project root */
+  dirv = &g_project_root->vertex;
+  while(dirv)
+  {
+    if((v = moria_vertex_downw(dirv, fsent_config_name, fsent_config_name_len)))
+    {
+      n = containerof(v, fsent, vertex);
+      fatal(fsent_config_bootstrap, n, chan);
+    }
+
+    dirv = moria_vertex_up(dirv);
+  }
+
+  /* now, rebuild the active list, in precedence order */
+  llist_delete_node(&system_config_node->self_config->vertex.owner);
+  llist_delete_node(&user_config_node->self_config->vertex.owner);
+  llist_init_node(&unused);
+  llist_splice_head(&unused, &config_list);
+
+  /* check for config files in the ancestry of the project root */
+  dirv = &g_project_root->vertex;
+  while(dirv)
+  {
+    if((v = moria_vertex_downw(dirv, fsent_config_name, fsent_config_name_len)))
+    {
+      n = containerof(v, fsent, vertex);
+      llist_delete_node(&n->self_config->vertex.owner);
+      llist_prepend(&config_list, n->self_config, vertex.owner);
+    }
+
+    dirv = moria_vertex_up(dirv);
+  }
+
+  llist_prepend(&config_list, user_config_node->self_config, vertex.owner);
+  llist_prepend(&config_list, system_config_node->self_config, vertex.owner);
+
+  llist_foreach_node(&config_list, T) {
+    cfg = containerof(T, config, vertex.owner);
+  }
+
+  llist_foreach_node(&config_list, T) {
+    cfg = containerof(T, config, vertex.owner);
+    if(fsent_invalid_get(cfg->self_node)) {
+      break;
+    }
+  }
+
+  if(T == &config_list && llist_empty(&unused)) {
     goto XAPI_FINALIZE;
+  }
+
+  /* config nodes not seen by the above loop are now unused */
+  llist_foreach_safe(&unused, cfg, vertex.owner, T) {
+    config_dispose(cfg);
   }
 
   fatal(reparse);
-  if(config_compare(config_staging, config_active)) {
-    goto XAPI_FINALIZE;
+
+  if(!config_compare(config_staging, config_active)) {
+    *filesystems_changed = config_staging->filesystems.changed;
+    fatal(reconfigure, chan);
   }
 
-  fatal(reconfigure, chan);
+  if(!chan->error) {
+    llist_foreach(&config_list, cfg, vertex.owner) {
+      fatal(fsent_ok, cfg->self_node);
+    }
+  }
 
   finally : coda;
 }
 
-static xapi bootstrap_node(fsent ** restrict np, const char * restrict pathspec)
+static xapi bootstrap_global_node(fsent ** restrict np, const char * restrict pathspec)
 {
   enter;
 
@@ -809,7 +927,6 @@ static xapi bootstrap_node(fsent ** restrict np, const char * restrict pathspec)
     len = strlen(path);
   }
 
-printf("GRAFT %s\n", path);
   fatal(fsent_graft, path, np, &invalidation);
   fsent_kind_set(*np, VERTEX_CONFIG_FILE);
   fsent_protect_set(*np);
@@ -817,6 +934,7 @@ printf("GRAFT %s\n", path);
 
   fatal(config_alloc, &cfg, &g_graph);
   znloadw(cfg->self_node_abspath, sizeof(cfg->self_node_abspath), path, len);
+  cfg->self_node_abspath_len = len;
   (*np)->self_config = cfg;
   cfg->self_node = *np;
 
@@ -829,10 +947,9 @@ xapi config_system_bootstrap()
 {
   enter;
 
-  /* create the immutable config nodes */
-  fatal(bootstrap_node, &system_config_node, g_args.system_config_path);
-  fatal(bootstrap_node, &user_config_node, g_args.user_config_path);
-  fatal(bootstrap_node, &project_config_node, g_args.project_config_path);
+  /* create the immutable config nodes, in precedent order */
+  fatal(bootstrap_global_node, &user_config_node, g_args.user_config_path);
+  fatal(bootstrap_global_node, &system_config_node, g_args.system_config_path);
 
   finally : coda;
 }

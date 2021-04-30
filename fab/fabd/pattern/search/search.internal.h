@@ -15,30 +15,29 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef FABD_PATTERN_MATCH_INTERNAL_H
-#define FABD_PATTERN_MATCH_INTERNAL_H
+#ifndef FABD_PATTERN_SEARCH_INTERNAL_H
+#define FABD_PATTERN_SEARCH_INTERNAL_H
 
 #include "xapi.h"
 #include "types.h"
 
-#include "match.h"
+#include "search.h"
+#include "pattern.h"
 
+struct chain;
 struct fsent;
-struct pattern_search_context;
-struct pattern_segments;
+struct module;
+struct pattern_section;
+struct set;
+struct variant;
 
-xapi pattern_section_match(
-    struct pattern_search_context * restrict ctx
-  , const struct fsent * restrict dirnode
-)
-  __attribute__((nonnull));
-
-xapi pattern_segments_match(struct pattern_search_context * ctx)
-  __attribute__((nonnull));
-
-#if 0
-typedef struct pattern_match_context {
-  struct match_section_traversal {
+/// pattern_search_context
+//
+// SUMMARY
+//  dynamic matching context
+//
+typedef struct pattern_search_context {
+  struct search_section_traversal {
     const struct pattern_section * section;
     const struct pattern_section * head;
     const struct chain * cursor;
@@ -46,7 +45,7 @@ typedef struct pattern_match_context {
 //    int maxdepth;
   } section_traversal;
 
-  struct match_segments_traversal {
+  struct search_segments_traversal {
     struct {
       const struct pattern_section * section;
       const union pattern_segment * segment;
@@ -68,22 +67,47 @@ typedef struct pattern_match_context {
 
     // MUST be at the end b/c of how RESTORE works!
     struct unrestored {
-      struct match_segments_traversal *prev;
-      struct match_segments_traversal *child;
-      struct match_segments_traversal *next;
+      struct search_segments_traversal *prev;
+      struct search_segments_traversal *child;
+      struct search_segments_traversal *next;
     } u;
   } *traversal;
 
+  // input context
+  const struct module * restrict module;
+  const struct llist * modules;
+  xapi (*dirnode_visit)(void *ctx, struct fsent *dirnode);
+  void * dirnode_visit_ctx;
+  const struct set * restrict variants;
+  uint8_t variants_len;
+
   // state
-  const struct fsent * restrict parent;
-  const char *label;
-  uint16_t label_len;
+  const struct fsent * restrict node;
+  bool matched;
 
-  uint16_t offset;
-} pattern_match_context;
+  int16_t variant_index;
+  pattern_search_group groups[16];
+  uint16_t group_max;
 
-xapi pattern_segment_match(
-    struct pattern_match_context * restrict ctx
+  // output context
+  struct set * restrict matches;  // struct pattern_search
+} pattern_search_context;
+
+typedef struct pattern_search_node {
+  struct fsent * node;
+  pattern_search_group groups[16];
+  uint16_t group_max;
+  const struct variant * variant;
+} pattern_search_node;
+
+xapi pattern_section_search(
+    struct pattern_search_context * restrict ctx
+  , struct fsent * restrict dirnode
+)
+  __attribute__((nonnull));
+
+xapi pattern_segment_search(
+    struct pattern_search_context * restrict ctx
   , const union pattern_segment * restrict segment
   , const struct fsent * restrict node
   , uint16_t * restrict name_offset
@@ -91,6 +115,7 @@ xapi pattern_segment_match(
 )
   __attribute__((nonnull));
 
-#endif
+xapi pattern_segments_search(struct pattern_search_context * ctx)
+  __attribute__((nonnull));
 
 #endif

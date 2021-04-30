@@ -90,6 +90,21 @@ chain * API chain_next_node(const chain * head, const chain * cursor[1])
   return (chain*)T;
 }
 
+chain * API chain_prev_node(const chain * head, const chain * cursor[1])
+{
+  if(cursor[0] == NULL) {
+    cursor[0] = head->prev;
+    return (void*)head;
+  }
+
+  if(cursor[0] == head)
+    return NULL;
+
+  const chain * T = cursor[0];
+  cursor[0] = (cursor[0])->prev;
+  return (chain*)T;
+}
+
 bool API chain_has_next_node(const chain * head, const chain cursor[1])
 {
   if(cursor == NULL)

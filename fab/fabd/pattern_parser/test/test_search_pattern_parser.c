@@ -99,7 +99,7 @@ static xapi pattern_parser_test_entry(xunit_test * _test)
   fatal(pattern_parser_create, &parser);
 
   // round trip parse
-  fatal(match_pattern_parse_partial, parser, test->text, strlen(test->text) + 2, "-test-", 0, &loc, &A);
+  fatal(search_pattern_parse_partial, parser, test->text, strlen(test->text) + 2, "-test-", 0, &loc, &A);
   assert_eq_zu(strlen(test->text), loc.l);
   fatal(pattern_say, A, &N1->base);
 
@@ -108,7 +108,7 @@ static xapi pattern_parser_test_entry(xunit_test * _test)
   fatal(narrator_xread, &N1->base, buf, len, 0);
   buf[len] = buf[len + 1] = 0;
 
-  fatal(match_pattern_parse_partial, parser, buf, len + 2, "-test-", 0, &loc, &B);
+  fatal(search_pattern_parse_partial, parser, buf, len + 2, "-test-", 0, &loc, &B);
   assert_eq_zu(len, loc.l);
   fatal(pattern_say, B, &N2->base);
 

@@ -38,15 +38,11 @@
 
 #include "common/hash.h"
 
-#define TYPE_LOOKUP     0
-#define TYPE_REFERENCE  1
-
 typedef struct pattern_render_test {
   XUNITTEST;
 
   // context
   char * pattern;
-  int type;
 
   // results
   char ** paths;
@@ -97,10 +93,7 @@ static xapi pattern_render_test_entry(xunit_test * _test)
 
   // parse the pattern
   fatal(pattern_parser_create, &parser);
-  if(test->type == TYPE_LOOKUP)
-    fatal(lookup_pattern_parse_partial, parser, test->pattern, strlen(test->pattern) + 2, "-test-", 0, &loc, &pattern);
-  else if(test->type == TYPE_REFERENCE)
-    fatal(reference_pattern_parse_partial, parser, test->pattern, strlen(test->pattern) + 2, "-test-", 0, &loc, &pattern);
+  fatal(lookup_pattern_parse_partial, parser, test->pattern, strlen(test->pattern) + 2, "-test-", 0, &loc, &pattern);
   assert_eq_u32(strlen(test->pattern), loc.l);
 
   // act

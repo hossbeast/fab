@@ -32,16 +32,6 @@ struct configblob;
 struct graph_invalidation_context;
 
 /*
- * reapply configuration to the extern module
- *
- * ctx    - reconfiguration context
- * config - root of the config tree
- * dry    - whether to perform a dry-run
- */
-xapi extern_reconfigure(struct configblob * restrict cfg, bool dry)
-  __attribute__((nonnull));
-
-/*
  * reload extern trees
  */
 xapi extern_system_reconcile(int walk_id, struct graph_invalidation_context * restrict invalidation)

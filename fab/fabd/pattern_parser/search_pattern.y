@@ -28,7 +28,7 @@
   #include "pattern/range.h"
   #include "pattern/variants.h"
   #include "pattern/word.h"
-  #include "pattern/replacement.h"
+  #include "pattern/star.h"
 
   #include "pattern/section.h"
 
@@ -39,14 +39,14 @@
 }
 
 %code top {
-  #define PARSER containerof(parser, pattern_parser, generate_yyu)
-  #define GENERATE_PATTERN_YYLTYPE yyu_location
+  #define PARSER containerof(parser, pattern_parser, search_yyu)
+  #define SEARCH_PATTERN_YYLTYPE yyu_location
 }
 
 %define api.pure
 %define parse.error verbose
 %locations
-%define api.prefix {generate_pattern_yy}
+%define api.prefix {search_pattern_yy}
 %parse-param { void* scanner }
 %parse-param { void* parser }
 %lex-param { void* scanner }
@@ -55,18 +55,11 @@
 %initial-action { yyu_loc_initialize(parser, &@$); }
 
 %union {
-  yyu_lval  yyu;
-
-  struct {
-    char s[64];
-    uint8_t l;
-  } tag_text;
-
+  yyu_lval yyu;
   pattern * pattern;
   pattern_segments * segments;
   pattern_section * section;
   pattern_segment * segment;
-  pattern_nodeset nodeset;
   pattern_graph graph;
   pattern_axis axis;
 }
@@ -103,31 +96,34 @@
 %token USES                   118 "uses"
 
 %type <yyu.umax>   uint16
-%type <tag_text>   variant-spec
 
 /* nonterminals */
 %type <pattern> pattern
-%type <segments> pattern-dentry
+%type <segments> pattern-qualifiers
+%type <segments> pattern-qualifier
+%type <segments> pattern-qualifier-list
+%type <segments> pattern-dentry pattern-dentry-list
 
 %type <section> pattern-section pattern-sections-list
-%type <section> pattern-section-fs-child
-%type <section> pattern-initial-section pattern-section-self
 
 %type <segment> escape
 %type <segments> class-pattern class-parts
 %type <segment> class class-part class-range class-char
+%type <segment> group
 %type <segment> word
-%type <segment> replacement variant-replacement
 %type <segment> variants
+%type <segment> star
 %type <segment> quoted-string-literal quoted-strpart quoted-strparts
 %type <segment> unquoted-string-literal unquoted-strpart
 %type <segment> string-literal
 %type <segment> pattern-dentry-part pattern-dentry-parts
+%type <segment> pattern-qualifier-part pattern-qualifier-parts
 %type <segment> alternation
 %type <segment> alternation-pattern-part
 %type <segment> alternation-pattern-parts
 %type <segments> alternation-pattern
-%type <segments> alternation-parts
+%type <segments> alternation-parts-with-epsilon
+%type <segments> alternation-parts-without-epsilon
 
 %destructor { pattern_free($$); } <pattern>
 %destructor { pattern_section_free($$); } <section>
@@ -139,9 +135,9 @@ utterance
   : pattern
   {
     PARSER->pattern = $1;
-    if(PARSER->generate_yyu.attrs & YYU_PARTIAL)
+    if(PARSER->search_yyu.attrs & YYU_PARTIAL)
     {
-      yyu_loc_final(&PARSER->generate_yyu, &@1);
+      yyu_loc_final(&PARSER->search_yyu, &@1);
       YYACCEPT;
     }
   }
@@ -159,45 +155,36 @@ pattern-sections-list
   {
     $$ = chain_splice_tail($1, $3, chn);
   }
-  | pattern-initial-section
-  ;
-
-pattern-initial-section
-  /* resolves to the directory of the match fsent */
-  : '$' '^' 'D'
-  {
-    YFATAL(pattern_section_mk, &$$, &@$, PATTERN_NODESET_MATCHDIR, 0, 0, NULL);
-  }
+  | pattern-section
   | SLASH2
   {
     YFATAL(pattern_section_mk, &$$, &@$, PATTERN_NODESET_SHADOW, 0, 0, NULL);
   }
-  | pattern-section
   ;
 
 pattern-section
-  : pattern-section-fs-child
-  | pattern-section-self
-  ;
-
-pattern-section-self
-  : '.'
-  {
-    YFATAL(pattern_section_mk, &$$, &@$, PATTERN_NODESET_SELF, PATTERN_GRAPH_FS, PATTERN_AXIS_DOWN, NULL);
-  }
-  ;
-
-pattern-section-fs-child
-  : pattern-dentry
+  : pattern-dentry-list
   {
     YFATAL(pattern_section_mk, &$$, &@$, 0, PATTERN_GRAPH_FS, PATTERN_AXIS_DOWN, $1);
   }
+  | STARSTAR pattern-qualifiers
+  {
+    YFATAL(pattern_section_mk, &$$, &@$, 0, PATTERN_GRAPH_DIRS, PATTERN_AXIS_SELF_OR_BELOW, $2);
+  }
+  ;
+
+pattern-dentry-list
+  : pattern-dentry pattern-qualifier-list
+  {
+    $$ = chain_splice_tail($1, $2, chn);
+  }
+  | pattern-dentry
   ;
 
 pattern-dentry
   : pattern-dentry-parts
   {
-    YFATAL(pattern_segments_mk, &$$, &@$, 0, $1);
+    YFATAL(pattern_segments_mk, &$$, &@$, PATTERN_QUALIFIER_TYPE_AND, $1);
   }
   ;
 
@@ -209,66 +196,80 @@ pattern-dentry-parts
   | pattern-dentry-part
   ;
 
- /* may appear at any position in a pattern */
+ /* appears at any position in a pattern-dirnode section */
 pattern-dentry-part
   : alternation
   | class
+  | group
+  | star
   | string-literal
   | variants
-  | replacement
   ;
 
-replacement
-  /* resolves to a parenthesized matching group which is referenced by number */
-  : '$' uint16
+group
+  : '(' pattern-dentry-list ')'
   {
-    YFATAL(pattern_replacement_mk, &$$, &@$, PATTERN_REPLACEMENT_TYPE_NUM, $2, NULL, 0, NULL, 0);
+    YFATAL(pattern_group_mk, &$$, &@$, $2, NULL, 0, ++PARSER->group_counter);
   }
-  /* resolves to a parenthesized matching group which is referenced by name */
-  | '$' STR
+  | '(' '?' '<' word-tokens '>'  pattern-dentry-list ')'
   {
-    YFATAL(pattern_replacement_mk, &$$, &@$, PATTERN_REPLACEMENT_TYPE_NAME, 0, @2.s, @2.l, NULL, 0);
-  }
-  /* resolves to the variant of the match fsent */
-  | variant-replacement
-  ;
-
-variant-replacement
-  : '$' '?'
-  {
-    YFATAL(pattern_replacement_mk, &$$, &@$, PATTERN_REPLACEMENT_TYPE_VARIANT, 0, NULL, 0, NULL, 0);
-  }
-  | '$' '{' variant-spec '}'
-  {
-    YFATAL(pattern_replacement_mk, &$$, &@$, PATTERN_REPLACEMENT_TYPE_VARIANT, 0, NULL, 0, $3.s, $3.l);
+    YFATAL(pattern_group_mk, &$$, &@$, $6, @4.s, @4.l, ++PARSER->group_counter);
   }
   ;
 
-variant-spec
-  : variant-spec '+' STR
+pattern-qualifiers
+  : pattern-qualifier-list
+  | %empty
   {
-    $$.s[$$.l++] = (char)@3.l;       /* tag len */
-    $$.s[$$.l++] = '+';              /* operation */
-    memcpy($$.s + $$.l, @3.s, @3.l);
-    $$.l += @3.l;
+    $$ = NULL;
   }
-  | variant-spec '-' STR
+  ;
+
+pattern-qualifier-list
+  : pattern-qualifier-list pattern-qualifier
   {
-    $$.s[$$.l++] = (char)@3.l;
-    $$.s[$$.l++] = '-';
-    memcpy($$.s + $$.l, @3.s, @3.l);
-    $$.l += @3.l;
+    $$ = chain_add($1, $2, chn);
   }
-  | '?'
+  | pattern-qualifier
+  ;
+
+pattern-qualifier
+  : '+' pattern-qualifier-parts
   {
-    $$.l = 0;
+    YFATAL(pattern_segments_mk, &$$, &@$, PATTERN_QUALIFIER_TYPE_AND, $2);
   }
+  | '~' pattern-qualifier-parts
+  {
+    YFATAL(pattern_segments_mk, &$$, &@$, PATTERN_QUALIFIER_TYPE_NOT, $2);
+  }
+  ;
+
+pattern-qualifier-parts
+  : pattern-qualifier-parts pattern-qualifier-part
+  {
+    $$ = chain_add($1, $2, chn);
+  }
+  | pattern-qualifier-part
+  ;
+
+pattern-qualifier-part
+  : alternation
+  | class
+  | group
+  | string-literal
   ;
 
 variants
   : '?'
   {
     YFATAL(pattern_variants_mk, &$$, &@$);
+  }
+  ;
+
+star
+  : '*'
+  {
+    YFATAL(pattern_star_mk, &$$, &@$);
   }
   ;
 
@@ -294,7 +295,7 @@ class-parts
 class-pattern
   : class-part
   {
-    YFATAL(pattern_segments_mk, &$$, &@$, 0, $1);
+    YFATAL(pattern_segments_mk, &$$, &@$, PATTERN_QUALIFIER_TYPE_AND, $1);
   }
   ;
 
@@ -318,32 +319,43 @@ class-char
   ;
 
 alternation
-  : '{' alternation-parts '}'
-  {
-    YFATAL(pattern_alternation_mk, &$$, &@$, $2, false);
-  }
-  | '{' ',' alternation-parts '}'
-  {
-    YFATAL(pattern_alternation_mk, &$$, &@$, $3, true);
-  }
-  | '{' alternation-parts ',' '}'
+  : '{' alternation-parts-with-epsilon '}'
   {
     YFATAL(pattern_alternation_mk, &$$, &@$, $2, true);
   }
+  | '{' alternation-parts-without-epsilon '}'
+  {
+    YFATAL(pattern_alternation_mk, &$$, &@$, $2, false);
+  }
   ;
 
-alternation-parts
-  : alternation-parts ',' alternation-pattern
+alternation-parts-without-epsilon
+  : alternation-parts-without-epsilon ',' alternation-pattern
   {
     $$ = chain_add($1, $3, chn);
   }
   | alternation-pattern
   ;
 
+alternation-parts-with-epsilon
+  : alternation-parts-without-epsilon ',' alternation-part-epsilon
+  {
+    $$ = $1;
+  }
+  | alternation-part-epsilon ',' alternation-parts-without-epsilon
+  {
+    $$ = $3;
+  }
+  ;
+
+alternation-part-epsilon
+  : %empty
+  ;
+
 alternation-pattern
   : alternation-pattern-parts
   {
-    YFATAL(pattern_segments_mk, &$$, &@$, 0, $1);
+    YFATAL(pattern_segments_mk, &$$, &@$, PATTERN_QUALIFIER_TYPE_AND, $1);
   }
   ;
 
@@ -413,8 +425,12 @@ word-tokens
   : STR
   | MODULE
   | MODULES
-  | DOWN
+  | SHADOW
+  | SELF_OR_BELOW
+  | REQUIRES
+  | USES
   | 'D'
+  | '.'
   ;
 
 escape

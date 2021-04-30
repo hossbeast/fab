@@ -34,64 +34,67 @@ struct trylock global_system_reconcile_lock = TRYLOCK_INIT_HELD;
 enum bam_system_state global_system_state = BAM_SYSTEM_STATE_BOOTSTRAP;
 uint16_t global_reconciliation_id;
 
-/* on the first reconciliation, the config and module systems must be bootstrapped */
-static bool subsequent;
-
 xapi global_system_reconcile(channel * restrict chan)
 {
   enter;
 
-  int walk_id;
   graph_invalidation_context invalidation = { };
   rule_run_context rule_ctx;
+  bool filesystems_changed;
 
   fatal(rule_run_context_xinit, &rule_ctx);
 
   global_reconciliation_id++;
   fatal(graph_invalidation_begin, &invalidation);
-  walk_id = walker_begin();
 
-  if(!subsequent) {
+  /* in the first reconciliation, so that errors if any may be surfaced to the initial client */
+  if(global_reconciliation_id == 1)
+  {
+    /* creates the global/protected config nodes */
     fatal(config_system_bootstrap);
+
+    /* loads global/protected config nodes only */
+    fatal(config_system_reconcile, &invalidation, &filesystems_changed, chan);
+    if(chan->error) {
+      goto XAPI_FINALLY;
+    }
+
+    /* special.module config value is needed here
+     * create the protected project module file
+     * runs before the first walker reconcile, which would create the project module file as not-protected */
+    fatal(module_system_bootstrap);
   }
 
-  /* reload config files */
-  global_system_state = BAM_SYSTEM_STATE_CONFIG_SYSTEM_RECONCILE;
-  fatal(config_system_reconcile, walk_id, &invalidation, chan);
+  /* walk filesystem trees (this can find more config files) */
+  global_system_state = BAM_SYSTEM_STATE_FILESYSTEM_RECONCILE;
+  fatal(walker_system_reconcile, &invalidation, chan);
   if(chan->error) {
-    fprintf(stderr, "config files were not parsed!\n");
     goto XAPI_FINALLY;
   }
 
-  if(!subsequent)
+  /* reload all config files (this can change filesystem invalidation settings)
+   * which are applied by walker reconciliation */
+  global_system_state = BAM_SYSTEM_STATE_CONFIG_SYSTEM_RECONCILE;
+  fatal(config_system_reconcile, &invalidation, &filesystems_changed, chan);
+  if(chan->error) {
+    goto XAPI_FINALLY;
+  }
+
+  if(filesystems_changed)
   {
-    walk_id = walker_begin();
-    graph_invalidation_end(&invalidation);
-    fatal(graph_invalidation_begin, &invalidation);
-    fatal(config_system_reconcile, walk_id, &invalidation, chan);
+    /* re-walk filesystem trees with updated filesystems settings */
+    global_system_state = BAM_SYSTEM_STATE_FILESYSTEM_RECONCILE;
+    fatal(walker_system_reconcile, &invalidation, chan);
     if(chan->error) {
-      fprintf(stderr, "config files were not parsed!\n");
       goto XAPI_FINALLY;
     }
   }
 
-  /* this must come after the first config parse */
-  if(!subsequent) {
-    subsequent = true;
-    fatal(module_system_bootstrap);
-  }
-
-  /* reload filesystem trees */
-  global_system_state = BAM_SYSTEM_STATE_FILESYSTEM_RECONCILE;
-  fatal(walker_descend, 0, g_project_root, 0, g_params.proj_dir, walk_id, &invalidation);
-  fatal(walker_ascend, g_project_root, walk_id, &invalidation);
-  fatal(extern_system_reconcile, walk_id, &invalidation);
-
   /* reload modules */
   global_system_state = BAM_SYSTEM_STATE_MODULE_SYSTEM_RECONCILE;
+  if(global_reconciliation_id == 1)
   fatal(module_system_reconcile, chan);
   if(chan->error) {
-    fprintf(stderr, "module files were not reconciled\n");
     goto XAPI_FINALLY;
   }
 
@@ -99,7 +102,6 @@ xapi global_system_reconcile(channel * restrict chan)
   global_system_state = BAM_SYSTEM_STATE_VAR_SYSTEM_RECONCILE;
   fatal(var_system_reconcile, chan);
   if(chan->error) {
-    fprintf(stderr, "var files were not reconciled\n");
     goto XAPI_FINALLY;
   }
 
@@ -107,7 +109,6 @@ xapi global_system_reconcile(channel * restrict chan)
   global_system_state = BAM_SYSTEM_STATE_RULE_SYSTEM_RECONCILE;
   fatal(rule_system_reconcile, &rule_ctx, chan);
   if(chan->error) {
-    fprintf(stderr, "rules were not reconciled!\n");
     goto XAPI_FINALLY;
   }
 
@@ -115,7 +116,6 @@ xapi global_system_reconcile(channel * restrict chan)
   global_system_state = BAM_SYSTEM_STATE_FORMULA_SYSTEM_RECONCILE;
   fatal(formula_system_reconcile, chan);
   if(chan->error) {
-    fprintf(stderr, "formula files were not parsed!\n");
     goto XAPI_FINALLY;
   }
 

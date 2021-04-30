@@ -49,6 +49,7 @@
 #include "var.h"
 #include "build_slot.h"
 #include "dependency.h"
+#include "channel.h"
 
 typedef struct exec_builder_test {
   XUNITTEST;
@@ -116,11 +117,13 @@ static xapi exec_builder_test_entry(xunit_test * _test)
   module mod = { 0 };
   dependency bpe = { 0 };
   build_slot bs = { .bpe = &bpe };
+  channel *chan;
 
   fatal(value_parser_create, &parser);
   fatal(formula_parser_create, &fml_parser);
   fatal(exec_builder_xinit, &builder);
   fatal(exec_render_context_xinit, &renderer);
+  fatal(xmalloc, &chan, sizeof(*chan));
 
   // arrange
   if(test->variant)
@@ -132,7 +135,7 @@ static xapi exec_builder_test_entry(xunit_test * _test)
     fatal(value_parser_parse, parser, test->vars, strlen(test->vars), "-test-", VALUE_TYPE_SET, &val);
     fatal(var_denormalize, parser, var, val, &vars);
 
-    exec_render_context_configure(&renderer, &builder, 0, vars, 0);
+    exec_render_context_configure(&renderer, &builder, 0, vars, 0, chan);;
     fatal(exec_render_env_vars, &renderer);
   }
 
@@ -158,7 +161,7 @@ static xapi exec_builder_test_entry(xunit_test * _test)
   {
     fatal(formula_parser_bacon_parse, fml_parser, test->fml, strlen(test->fml) + 2, "-formula-", &fml_file, &fml_args, &fml_envs);
 
-    exec_render_context_configure(&renderer, &builder, &mod, vars, &bs);
+    exec_render_context_configure(&renderer, &builder, &mod, vars, &bs, chan);
 
     if(fml_file)
     {
@@ -206,6 +209,7 @@ finally:
   formula_value_free(fml_file);
   formula_value_free(fml_args);
   formula_value_free(fml_envs);
+  wfree(chan);
 coda;
 }
 

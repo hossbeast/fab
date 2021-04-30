@@ -21,6 +21,8 @@
 #include "types.h"
 #include "xapi.h"
 
+#include "valyria/llist.h"
+
 #include "config.h"
 #include "filesystem.h"
 
@@ -72,6 +74,7 @@ typedef struct configblob {
     struct box_string * module;
     struct box_string * model;
     struct box_string * var;
+    struct box_string * config;
   } special;
 
   struct config_workers {
@@ -79,10 +82,15 @@ typedef struct configblob {
     struct box_int16 * concurrency;
   } workers;
 
-  struct config_extern_section {
+  struct config_walker {
     CONFIGBASE;
-    struct set * entries;    // box_string
-  } extern_section;
+    struct config_walker_list {
+      CONFIGBASE;
+      llist list;               // struct pattern
+    } include;
+
+    struct config_walker_list exclude;
+  } walker;
 
   struct config_filesystems {
     CONFIGBASE;

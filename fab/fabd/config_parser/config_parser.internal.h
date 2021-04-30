@@ -23,8 +23,13 @@
 #include "config_parser.h"
 #include "config.internal.h"
 
+struct pattern_parser;
+
 struct config_parser {
   yyu_parser yyu;
+
+  // sub parsers
+  struct pattern_parser * pattern_parser;
 
   // under construction
   struct config_filesystem_entry * fse;

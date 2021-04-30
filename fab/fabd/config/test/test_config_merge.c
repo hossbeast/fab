@@ -212,214 +212,94 @@ xunit_unit xunit = {
           }
       }}
 
-      /* extern */
+      /* walker */
     , (config_merge_test[]) {{
           texts : (char*[]) {
               (char[]) {
-                "extern : {"
-                "  /usr/lib/fab/builtin-modules"
-                "  /home/todd/my/modules"
-                "}\0\0"
+                "walker : { include : {"
+                "  /usr/lib/fab/builtin-goats"
+                "  /home/todd/my/goats"
+                "}}\0\0"
               }
             , (char[]) {
-                "extern :{"
-                "  foo"
-                "}\0\0"
+                "walker : { include :{"
+                "  /foo"
+                "}}\0\0"
               }
             , 0
           }
         , expected : (char[]) {
-                "extern : {"
-                " foo"
-                " /usr/lib/fab/builtin-modules"
-                " /home/todd/my/modules"
-                "}\0\0"
+                "walker : { include : {"
+                " /foo"
+                " /usr/lib/fab/builtin-goats"
+                " /home/todd/my/goats"
+                "}}\0\0"
           }
       }}
     , (config_merge_test[]) {{
           texts : (char*[]) {
               (char[]) {
-                "extern : {"
-                "  /usr/lib/fab/builtin-modules"
-                "}"
+                "walker : { include : {"
+                "  /usr/lib/fab/builtin-goats"
+                "}}"
                 "\0\0"
               }
             , (char[]) {
-                "extern = {"
-                " foo"
-                "}\0\0"
+                "walker : { include = {"
+                " /foo"
+                "}}\0\0"
               }
             , 0
           }
         , expected : (char[]) {
-                "extern : {"
-                " foo"
-                "}"
-                "\0\0"
-          }
-      }}
-    , (config_merge_test[]) {{
-          texts : (char*[]) {
-              (char[]) {
-                "extern : {"
-                "  /usr/lib/fab/builtin-modules"
-                "}"
-                "logging : {"
-                " console : {"
-                "  exprs : ["
-                "   foo"
-                "  ]"
-                " }"
-                "}"
-                "\0\0"
-              }
-            , (char[]) {
-                "extern : {"
-                "  foo"
-                "}\0\0"
-              }
-            , 0
-          }
-        , expected : (char[]) {
-                "extern : {"
-                " /usr/lib/fab/builtin-modules"
-                " foo"
-                "}"
-                "logging : {"
-                " console : {"
-                "  exprs : ["
-                "   foo"
-                "  ]"
-                " }"
-                "}"
+                "walker : { include : {"
+                " /foo"
+                "}}"
                 "\0\0"
           }
       }}
     , (config_merge_test[]) {{
           texts : (char*[]) {
               (char[]) {
-                "extern : {"
-                "  /usr/lib/fab/builtin-modules"
-                "}"
-                "logging : {"
-                " console : {"
-                "  exprs : ["
-                "   foo"
-                "  ]"
-                " }"
-                "}"
+                "walker : { include : {"
+                "  /usr/lib/fab/builtin-goats"
+                "}}"
                 "\0\0"
               }
             , (char[]) {
-                "extern = {"
-                "  foo"
-                "}\0\0"
+                "walker : { include : {"
+                "  /foo"
+                "}}\0\0"
               }
             , 0
           }
         , expected : (char[]) {
-                "extern : {"
-                " foo"
-                "}"
-                "logging : {"
-                " console : {"
-                "  exprs : ["
-                "   foo"
-                "  ]"
-                " }"
-                "}"
+                "walker : { include : {"
+                " /foo"
+                " /usr/lib/fab/builtin-goats"
+                "}}"
                 "\0\0"
-            }
+          }
       }}
     , (config_merge_test[]) {{
           texts : (char*[]) {
               (char[]) {
-                "logging : {"
-                " console : {"
-                "  exprs : ["
-                "   foo"
-                "  ]"
-                " }"
-                "}"
+                "walker : { include : {"
+                "  /usr/lib/fab/builtin-goats"
+                "}}"
                 "\0\0"
               }
             , (char[]) {
-                "logging : {"
-                " console : {"
-                "  exprs : ["
-                "   bar"
-                "  ]"
-                " }"
-                "}"
-                "\0\0"
+                "walker : { include = {"
+                "  /foo"
+                "}}\0\0"
               }
             , 0
           }
         , expected : (char[]) {
-                "logging : {"
-                " console : {"
-                "  exprs : ["
-                "   foo"
-                "   bar"
-                "  ]"
-                " }"
-                "}"
-                "\0\0"
-            }
-      }}
-    , (config_merge_test[]) {{
-          texts : (char*[]) {
-              (char[]) {
-                "extern : {"
-                " foo"
-                "}"
-                "\0\0"
-              }
-            , (char[]) {
-                "logging : {"
-                " console : {"
-                "  exprs : ["
-                "   bar"
-                "  ]"
-                " }"
-                "}"
-                "\0\0"
-              }
-            , 0
-          }
-        , expected : (char[]) {
-                "extern : {"
-                " foo"
-                "}"
-                "logging : {"
-                " console : {"
-                "  exprs : ["
-                "   bar"
-                "  ]"
-                " }"
-                "}"
-                "\0\0"
-            }
-      }}
-    , (config_merge_test[]) {{
-          texts : (char*[]) {
-              (char[]) {
-                "logging : {"
-                " console : {"
-                "  exprs : ["
-                "   bar"
-                "  ]"
-                " }"
-                "}"
-                "\0\0"
-              }
-            , (char[]) {
-                "logging = {}"
-                "\0\0"
-              }
-            , 0
-          }
-        , expected : (char[]) {
+                "walker : { include : {"
+                " /foo"
+                "}}"
                 "\0\0"
             }
       }}

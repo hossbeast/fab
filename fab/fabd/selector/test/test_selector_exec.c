@@ -20,6 +20,7 @@
 #include "yyutil/load.h"
 #include "logger/load.h"
 #include "value/load.h"
+#include "xlinux/xstdlib.h"
 
 #include "yyutil/grammar.h"
 #include "valyria/map.h"
@@ -46,6 +47,7 @@
 #include "selection.h"
 #include "dependency.h"
 #include "module.internal.h"
+#include "channel.h"
 
 #include "zbuffer.h"
 
@@ -104,11 +106,13 @@ static xapi selector_exec_test_entry(xunit_test * _test)
   module mod = { };
   fsent *mod_dir_n;
   graph_invalidation_context invalidation = { };
+  channel *chan;
 
   // arrange
   fatal(fsent_setup);
   fatal(list_create, &actual_list);
   fatal(graph_invalidation_begin, &invalidation);
+  fatal(xmalloc, &chan, sizeof(*chan));
 
   // setup initial graph
   fatal(graph_parser_create, &op_parser, &g_graph, &fsent_list, node_operations_test_dispatch, graph_vertex_attrs, graph_edge_attrs);
@@ -131,8 +135,9 @@ static xapi selector_exec_test_entry(xunit_test * _test)
   // act
   ctx.mod = &mod;
   ctx.bpe = bpe;
+  ctx.chan = chan;
   fatal(selector_exec, sel, &ctx, SELECTION_ITERATION_TYPE_ORDER);
-  assert_eq_w(0, 0, ctx.err, ctx.errlen);
+  assert_eq_b(false, chan->error);
 
   llist_foreach(&ctx.selection->list, sn, lln) {
     fatal(list_push, actual_list, &sn->v->label, 1);
@@ -167,6 +172,7 @@ finally:
   fatal(fsent_cleanup);
   fatal(graph_parser_xfree, op_parser);
   graph_invalidation_end(&invalidation);
+  wfree(chan);
 coda;
 }
 

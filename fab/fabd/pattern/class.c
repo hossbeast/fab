@@ -22,6 +22,7 @@
 #include "pattern.internal.h"
 #include "fsent.h"
 #include "generate.internal.h"
+#include "search.internal.h"
 #include "match.internal.h"
 #include "render.internal.h"
 #include "segment.h"
@@ -137,13 +138,12 @@ static void destroy(pattern_segment * restrict n)
   pattern_segments_list_free(n->class.segments_head);
 }
 
-static xapi match(pattern_match_context * restrict ctx, const pattern_segment * restrict segment)
+static xapi search(const pattern_segment * restrict segment, pattern_search_context * restrict ctx)
 {
   enter;
 
   const pattern_class * class = &segment->class;
-
-  struct match_segments_traversal traversal;
+  struct search_segments_traversal traversal;
 
   traversal = (typeof(traversal)) {
       segments_head : class->segments_head
@@ -155,7 +155,7 @@ static xapi match(pattern_match_context * restrict ctx, const pattern_segment * 
   traversal.u.prev = ctx->traversal;
   ctx->traversal = &traversal;
 
-  fatal(pattern_segments_match, ctx);
+  fatal(pattern_segments_search, ctx);
 
   ctx->traversal = traversal.u.prev;
 
@@ -239,7 +239,7 @@ static pattern_segment_vtable vtable = {
   , say : say
   , render : render
   , destroy : destroy
-  , match : match
+  , search : search
   , generate : generate
   , cmp : cmp
 };

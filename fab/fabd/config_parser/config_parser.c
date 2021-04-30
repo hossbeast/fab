@@ -21,6 +21,7 @@
 #include "xlinux/xstdlib.h"
 #include "xlinux/KERNEL.errtab.h"
 #include "value/parser.h"
+#include "common/attrs.h"
 
 #include "narrator.h"
 
@@ -36,7 +37,7 @@
 #include "config.lex.h"
 #include "config.states.h"
 
-#include "common/attrs.h"
+#include "pattern_parser.h"
 
 static YYU_VTABLE(vtable, config, config);
 
@@ -61,6 +62,8 @@ xapi config_parser_create(config_parser ** rv)
     , config_statenames
   );
 
+  fatal(pattern_parser_create, &p->pattern_parser);
+
 #if DEBUG || DEVEL || XUNIT
   p->yyu.logs = L_CONFIG;
 #endif
@@ -79,6 +82,8 @@ xapi config_parser_xfree(config_parser* const p)
 
   if(p)
   {
+    fatal(pattern_parser_xfree, p->pattern_parser);
+
     wfree(p->fse);
     fatal(yyu_parser_xdestroy, &p->yyu);
   }

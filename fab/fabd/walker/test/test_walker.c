@@ -189,8 +189,9 @@ static xapi walker_test_entry(xunit_test * _test)
 
     fatal(walker_visit, method, B, &ctx, &stop);
 
-    while(*seq == ' ')
+    while(*seq == ' ') {
       seq++;
+    }
   }
 
   // ordered list of edges
@@ -250,6 +251,7 @@ xunit_unit xunit = {
         , graph :  "1-(root)!dir 2-A!dir 3-B!dir 4-C!dir"
                   " 5-D!file 6-E!file 7-F!file 8-G!file"
                   " 1:fs:2 2:fs:3 2:fs:4 3:fs:5 3:fs:6 4:fs:7 4:fs:8"
+, xu_weight : 1
       }}
     , (walker_test[]) {{
           operations : "A/B B/D B/E"

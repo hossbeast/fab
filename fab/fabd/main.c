@@ -76,6 +76,7 @@
 #include "goals.h"
 #include "stats.h"
 #include "selection.h"
+#include "walker.h"
 #include "common/parseint.h"
 #include "common/hash.h"
 
@@ -261,6 +262,7 @@ static xapi xmain_load(char ** envp)
   fatal(goals_setup);
   fatal(handler_setup);
   fatal(beholder_thread_setup);
+  fatal(walker_setup);
 
   fatal(xmain_jump);
 
@@ -287,6 +289,7 @@ finally:
   fatal(beholder_thread_cleanup);
   fatal(selection_cleanup);
   fatal(dependency_cleanup);
+  fatal(walker_cleanup);
 
   // libraries
   fatal(fab_unload);

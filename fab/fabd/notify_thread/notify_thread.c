@@ -117,16 +117,10 @@ static xapi notify_thread()
         label = ev->name;
         label_len = strlen(ev->name);
 
-char path[512];
-fsent_absolute_path_znload(path, sizeof(path), n);
-
         if((v = moria_vertex_downw(v, label, label_len))) {
-printf("%s:%d %s//'%.*s'\n", __FUNCTION__, __LINE__, path, (int)label_len, label);
           n = containerof(v, fsent, vertex);
           label = 0;
-        } else {
-printf("%s:%d %s//'%.*s'\n", __FUNCTION__, __LINE__, path, (int)label_len, label);
-}
+        }
       }
 
       if(n->notify_state != NOTIFY_MONITOR)

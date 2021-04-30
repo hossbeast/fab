@@ -22,7 +22,7 @@
 
 struct module;
 struct pattern;
-struct pattern_match_node;
+struct pattern_search_node;
 struct set;
 struct graph_invalidation_context;
 struct fsent;
@@ -32,6 +32,7 @@ struct fsent;
  *
  * pattern  - generate pattern
  * base     - node to which new nodes are attached (directory node for the module)
+ * scope    -
  * results  - newly created nodes are appended to this list
  */
 xapi pattern_generate(
@@ -41,9 +42,9 @@ xapi pattern_generate(
   , /* 4 */ struct fsent * restrict scope
   , /* 5 */ const struct set * restrict variants
   , /* 6 */ struct graph_invalidation_context * invalidation
-  , /* 7 */ const struct pattern_match_node * restrict match
+  , /* 7 */ const struct pattern_search_node * restrict match
   , /* 8 */ struct set * restrict results
 )
-  __attribute__((nonnull(1, 2, 3, 4, 6, 8)));
+  __attribute__((nonnull(1, 6, 8)));
 
 #endif

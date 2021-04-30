@@ -30,6 +30,7 @@
 #include "word.h"
 #include "generate.internal.h"
 #include "render.internal.h"
+#include "search.internal.h"
 #include "match.internal.h"
 #include "fsent.h"
 
@@ -67,13 +68,19 @@ static void destroy(pattern_segment * restrict fn)
   wfree(n->text);
 }
 
-static xapi match(pattern_match_context * restrict ctx, const pattern_segment * restrict segment)
+static xapi search(const pattern_segment * restrict segment, pattern_search_context * restrict ctx)
 {
   enter;
 
-  const pattern_word * word = &segment->word;
-  const char * restrict name = ctx->node->name.name;
-  uint16_t namel = ctx->node->name.namel;
+  const pattern_word * word;
+  const char * restrict name;
+  uint16_t namel;
+
+  word = &segment->word;
+  name = ctx->node->name.name;
+  namel = ctx->node->name.namel;
+
+printf("%s:%d %.*s <=> %.*s\n", __FUNCTION__, __LINE__, namel - ctx->traversal->offset, name + ctx->traversal->offset, word->len, word->text);
 
   if(     (namel - ctx->traversal->offset) >= word->len
        && strncmp(name + ctx->traversal->offset, word->text, word->len) == 0)
@@ -106,7 +113,7 @@ static pattern_segment_vtable vtable = {
   , say : say
   , destroy : destroy
   , render : render
-  , match : match
+  , search : search
   , generate : generate
   , cmp : cmp
 };

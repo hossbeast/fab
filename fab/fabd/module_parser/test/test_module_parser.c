@@ -20,6 +20,7 @@
 #include "yyutil/load.h"
 #include "logger/load.h"
 #include "value/load.h"
+#include "xlinux/xstdlib.h"
 
 #include "valyria/map.h"
 #include "valyria/set.h"
@@ -38,6 +39,7 @@
 #include "logging.h"
 #include "variant.h"
 #include "pattern.h"
+#include "channel.h"
 
 #include "yyutil/box.h"
 
@@ -90,21 +92,25 @@ static xapi module_parser_test_entry(xunit_test * _test)
 
   module_parser * parser = 0;
   module * mod = 0;
-  graph_invalidation_context invalidation = { 0 };
+  graph_invalidation_context invalidation = { };
+  channel *chan;
 
   // arrange
+  fatal(xmalloc, &chan, sizeof(*chan));
   fatal(module_parser_create, &parser);
   parser->import_resolve = load_submodule;
   fatal(graph_invalidation_begin, &invalidation);
 
   // parse
   fatal(module_alloc, &mod);
-  fatal(module_parser_parse, parser, mod, &invalidation, test->text, strlen(test->text) + 2, "-fname-");
+  fatal(module_parser_parse, parser, mod, &invalidation, chan, test->text, strlen(test->text) + 2, "-fname-");
+  assert_eq_b(false, chan->error);
 
 finally:
   fatal(module_xrelease, mod, parser);
   fatal(module_parser_xfree, parser);
   graph_invalidation_end(&invalidation);
+  wfree(chan);
 coda;
 }
 

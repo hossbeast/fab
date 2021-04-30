@@ -19,6 +19,7 @@
 #include "valyria/load.h"
 #include "moria/load.h"
 #include "value/load.h"
+#include "xlinux/xstdlib.h"
 
 #include "valyria/list.h"
 #include "valyria/map.h"
@@ -43,6 +44,7 @@
 #include "lookup.h"
 #include "module.internal.h"
 #include "selection.h"
+#include "channel.h"
 
 typedef struct node_lookup_test
 {
@@ -107,11 +109,11 @@ static xapi node_lookup_test_entry(xunit_test * _test)
   selection sel;
   selected *result;
   module mod;
-  char err[256];
-  uint16_t errlen;
+  channel *chan = 0;
 
   fatal(selection_xinit, &sel);
   fatal(pattern_parser_create, &parser);
+  fatal(xmalloc, &chan, sizeof(*chan));
 
   // setup initial graph
   fatal(graph_parser_create, &op_parser, &g_graph, &fsent_list, node_operations_test_dispatch, graph_vertex_attrs, graph_edge_attrs);
@@ -132,8 +134,8 @@ static xapi node_lookup_test_entry(xunit_test * _test)
   assert_eq_u32(strlen(test->pattern), loc.l);
 
   // act
-  fatal(pattern_lookup, pat, 0, &sel, err, sizeof(err), &errlen);
-  assert_eq_w(0, 0, err, errlen);
+  fatal(pattern_lookup, pat, 0, &sel, chan);
+  assert_eq_b(false, chan->error);
 
   // assert
   fatal(selection_finalize, &sel);
@@ -149,6 +151,7 @@ finally:
   pattern_free(pat);
   fatal(graph_parser_xfree, op_parser);
   fatal(selection_xdestroy, &sel);
+  wfree(chan);
 coda;
 }
 

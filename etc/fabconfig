@@ -5,11 +5,6 @@ filesystems : {
   }
 }
 
-# external modules
-extern : {
-  /usr/share/fab/modules
-}
-
 # heuristic based on detected cpus
 workers : {
   concurrency : 0
@@ -33,4 +28,18 @@ special : {
   module : "module.bam"
   model : "model.bam"
   var : "var.bam"
+  config : "config.bam"
+}
+
+walker : {
+  # external modules
+  include : {
+    /usr/share/fab/modules
+  }
+
+  # except skip this stuff
+  exclude : {
+    /home/todd/builtin-modules
+    .git
+  }
 }

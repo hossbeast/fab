@@ -21,7 +21,7 @@
 
 #include "group.h"
 #include "pattern.internal.h"
-#include "match.internal.h"
+#include "search.internal.h"
 #include "segment.h"
 
 //
@@ -53,12 +53,12 @@ static void destroy(pattern_segment * restrict n)
   wfree(group->name);
 }
 
-static xapi match(pattern_match_context * restrict ctx, const pattern_segment * restrict segment)
+static xapi search(const pattern_segment * restrict segment, pattern_search_context * restrict ctx)
 {
   enter;
 
   const pattern_group * group = &segment->group;
-  struct match_segments_traversal traversal;
+  struct search_segments_traversal traversal;
 
   traversal = (typeof(traversal)) {
     segments_head : group->segments_head
@@ -71,7 +71,7 @@ static xapi match(pattern_match_context * restrict ctx, const pattern_segment * 
 
   ctx->traversal = &traversal;
 
-  fatal(pattern_segments_match, ctx);
+  fatal(pattern_segments_search, ctx);
 
   // pop
   ctx->traversal = traversal.u.prev;
@@ -96,7 +96,7 @@ static pattern_segment_vtable vtable = {
     type : PATTERN_GROUP
   , say : say
   , destroy : destroy
-  , match : match
+  , search : search
   , cmp : cmp
 };
 

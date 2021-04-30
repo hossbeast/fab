@@ -26,7 +26,7 @@
 #include "variant.h"
 #include "fsedge.h"
 #include "fsent.h"
-#include "match.internal.h"
+#include "search.internal.h"
 #include "module.internal.h"
 #include "shadow.h"
 
@@ -83,6 +83,14 @@ static xapi pattern_section_generate(pattern_generate_context * restrict ctx)
   else if(ctx->section_traversal.section->nodeset == PATTERN_NODESET_SHADOW)
   {
     v = &g_shadow->vertex;
+    ctx->node = containerof(v, fsent, vertex);
+    RUNTIME_ASSERT(ctx->node);
+
+    fatal(pattern_section_generate, ctx);
+  }
+  else if(ctx->section_traversal.section->nodeset == PATTERN_NODESET_ROOT)
+  {
+    v = &g_root->vertex;
     ctx->node = containerof(v, fsent, vertex);
     RUNTIME_ASSERT(ctx->node);
 
@@ -213,7 +221,7 @@ xapi pattern_generate(
   , fsent * restrict scope
   , const set * restrict variants
   , graph_invalidation_context * invalidation
-  , const pattern_match_node * restrict match
+  , const pattern_search_node * restrict match
   , set * restrict results
 )
 {
@@ -222,7 +230,8 @@ xapi pattern_generate(
   char space[512] = { };
   narrator_fixed fixed;
 
-  fatal(set_recycle, results);
+  RUNTIME_ASSERT(!mod || base);
+  RUNTIME_ASSERT(!mod || scope);
 
   // setup the dynamic context
   pattern_generate_context ctx =  {
@@ -232,15 +241,18 @@ xapi pattern_generate(
     , invalidation : invalidation
     , match : match
     , mod : mod
-    /* generate patterns begin at scope fsent */
-    , scope : &scope->vertex
 
     /* outputs */
     , nodes : results
   };
 
-  while(ctx.scope->attrs & MORIA_VERTEX_LINK) {
-    ctx.scope = ctx.scope->ref;
+  if(scope)
+  {
+    /* generate patterns begin at scope fsent */
+    ctx.scope = &scope->vertex;
+    while(ctx.scope->attrs & MORIA_VERTEX_LINK) {
+      ctx.scope = ctx.scope->ref;
+    }
   }
 
   ctx.section_traversal.head = pattern->section_head;

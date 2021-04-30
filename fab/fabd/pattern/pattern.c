@@ -183,6 +183,7 @@ xapi pattern_mk(
   memcpy(&p->loc, loc, sizeof(p->loc));
 
   p->section_head = section_head;
+  llist_init_node(&p->lln);
 
   *rv = p;
   p = 0;
@@ -272,8 +273,8 @@ xapi pattern_say(const pattern * restrict pattern, narrator * restrict N)
 
   pattern_section * section;
   const chain *T;
-
   int x = 0;
+
   chain_foreach(T, section, chn, pattern->section_head) {
     fatal(pattern_section_say, section, x++ == 0, N);
   }

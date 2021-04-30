@@ -22,7 +22,7 @@
 #include "pattern.internal.h"
 #include "fsent.h"
 #include "generate.internal.h"
-#include "match.internal.h"
+#include "search.internal.h"
 #include "render.internal.h"
 
 //
@@ -50,7 +50,7 @@ static xapi render(const pattern_segment * restrict fn, pattern_render_context *
   finally : coda;
 }
 
-static xapi match(pattern_match_context * restrict ctx, const pattern_segment * restrict segment)
+static xapi search(const pattern_segment * restrict segment, pattern_search_context * restrict ctx)
 {
   enter;
 
@@ -87,7 +87,7 @@ static int cmp(const pattern_segment * A, const pattern_segment *B)
 static pattern_segment_vtable vtable = {
     type : PATTERN_CHARACTER
   , say : say
-  , match : match
+  , search : search
   , generate : generate
   , destroy : destroy
   , render : render

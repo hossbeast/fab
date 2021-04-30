@@ -275,6 +275,9 @@ xapi module_parser_xfree(module_parser* const p)
     if(p->unscoped_block) {
       llist_append(&p->statement_block_freelist, p->unscoped_block, lln);
     }
+    if(p->scoped_block) {
+      llist_append(&p->statement_block_freelist, p->scoped_block, lln);
+    }
     llist_splice_head(&p->statement_block_freelist, &p->scoped_blocks);
 
     llist_foreach_safe(&p->statement_block_freelist, block, lln, cursor) {

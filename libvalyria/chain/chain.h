@@ -86,9 +86,6 @@ chain * chain_add_head_node(chain * dst, chain * node)
 
 /* chain traversal */
 
-#define chain_prev(_head, _member)  \
-  containerof((_head)->_member.prev, typeof(*_head), _member)
-
 /// chain_next
 //
 // returns the next item in a cursor traversal
@@ -96,10 +93,22 @@ chain * chain_add_head_node(chain * dst, chain * node)
 chain * chain_next_node(const chain * head, const chain * cursor[1])
   __attribute__((nonnull));
 
+chain * chain_prev_node(const chain * head, const chain * cursor[1])
+  __attribute__((nonnull));
+
 #define chain_next(_head, _cursorp, _member) ({                 \
   typeof(*_head) *__i = NULL;                                   \
   const chain * __T;                                            \
   if((__T = chain_next_node(&(_head)->_member, (_cursorp)))) {  \
+    __i = containerof(__T, typeof(*_head), _member);            \
+  }                                                             \
+  __i;                                                          \
+})
+
+#define chain_prev(_head, _cursorp, _member) ({                 \
+  typeof(*_head) *__i = NULL;                                   \
+  const chain * __T;                                            \
+  if((__T = chain_prev_node(&(_head)->_member, (_cursorp)))) {  \
     __i = containerof(__T, typeof(*_head), _member);            \
   }                                                             \
   __i;                                                          \

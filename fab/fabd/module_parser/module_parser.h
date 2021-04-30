@@ -59,11 +59,8 @@ typedef struct module_parser {
   xapi (*import_resolve)(struct module_parser * restrict parser, struct pattern * restrict ref, bool scoped, char * restrict name, uint16_t namel);
 
   // under construction
-  struct statement_block *block;
-
-  // struct module_formula_show_settings show_settings;
-  // struct module_filesystem_entry * fse;
-  // struct module_logging_section * logging_section;
+  statement_block *block;
+  statement_block *scoped_block;
 
   // (returns)
   statement_block *unscoped_block;

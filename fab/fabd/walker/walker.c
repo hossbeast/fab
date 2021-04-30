@@ -21,6 +21,9 @@
 #include "xlinux/xmman.h"
 #include "xlinux/xstat.h"
 #include "xlinux/xunistd.h"
+#include "xlinux/xstdlib.h"
+#include "yyutil/box.h"
+#include "valyria/set.h"
 
 #include "walker.internal.h"
 #include "filesystem.h"
@@ -28,10 +31,30 @@
 #include "fsent.h"
 #include "params.h"
 #include "stats.h"
+#include "config.internal.h"
+#include "channel.h"
+#include "pattern.h"
+#include "generate.h"
+#include "match.h"
 
 #include "zbuffer.h"
 
-static int walk_ids = 1;
+static llist include_entry_list = LLIST_INITIALIZER(include_entry_list);         // active list
+static llist include_entry_freelist = LLIST_INITIALIZER(include_entry_freelist); // freelist
+
+/* exclude pattern list */
+static llist * exclude_list;
+
+typedef struct {
+  fsent * n;
+  char abspath[512];
+  uint16_t abspathl;
+
+  llist lln;
+} entry;
+
+static uint16_t walk_ids;
+static set *generate_nodes;
 
 //
 // static
@@ -154,6 +177,27 @@ static xapi refresh(walker_context * restrict ctx, fsent * restrict n, char * re
   finally : coda;
 }
 
+static xapi include_entry_list_append(fsent * n)
+{
+  enter;
+
+  entry *e;
+
+  if((e = llist_shift(&include_entry_freelist, typeof(*e), lln)) == 0) {
+    fatal(xmalloc, &e, sizeof(*e));
+    llist_init_node(&e->lln);
+  }
+
+  e->n = n;
+  e->abspathl = fsent_absolute_path_znload(e->abspath, sizeof(e->abspath), n);
+
+//printf("INCLUDED %s\n", e->abspath);
+
+  llist_append(&include_entry_list, e, lln);
+
+  finally : coda;
+}
+
 //
 // internal
 //
@@ -170,28 +214,24 @@ xapi walker_visit(int method, ftwinfo * info, void * arg, int * stop)
   llist edges;
   moria_vertex *v;
   moria_edge *e;
-  vertex_kind kind;
+  vertex_filetype filetype;
   fsent * Bn;
+  pattern *pat;
+  bool matched;
 
-/* put this into config */
-if((info->pathl - info->name_off) == 4 && memcmp(info->path + info->name_off, ".git", 4) == 0) {
-  *stop = 1;
-  goto XAPI_FINALIZE;
-}
-
-  /* if !info->parent, this is the top-level directory */
   if(!info->parent)
   {
+    /* this is the top-level directory */
     if(method == FTWAT_PRE && ctx->base)
     {
       n = ctx->base;
     }
     else if(method == FTWAT_PRE)
     {
-      kind = 0;
+      filetype = 0;
       if(info->type == FTWAT_D)
-        kind = VERTEX_FILETYPE_DIR;
-      fatal(fsent_create, &ctx->base, kind, VERTEX_OK, info->path + info->name_off, info->pathl - info->name_off);
+        filetype = VERTEX_FILETYPE_DIR;
+      fatal(fsent_create, &ctx->base, filetype, VERTEX_OK, info->path + info->name_off, info->pathl - info->name_off);
       fatal(fsedge_connect, ctx->base_parent, ctx->base, ctx->invalidation);
 
       n = ctx->base;
@@ -208,26 +248,53 @@ if((info->pathl - info->name_off) == 4 && memcmp(info->path + info->name_off, ".
   else
   {
     parent = info->parent->udata;
+
+//printf("%s:%d\n", __FUNCTION__, __LINE__);
     if((lv = moria_vertex_downs(&parent->vertex, info->path + info->name_off)))
     {
+//printf("%s:%d\n", __FUNCTION__, __LINE__);
       n = containerof(lv, fsent, vertex);
     }
     else
     {
-      kind = 0;
+      filetype = 0;
       if(info->type == FTWAT_D) {
-        kind = VERTEX_FILETYPE_DIR;
+        filetype = VERTEX_FILETYPE_DIR;
       }
-      fatal(fsent_create, &n, kind, VERTEX_OK, info->path + info->name_off, info->pathl - info->name_off);
+      fatal(fsent_create, &n, filetype, VERTEX_OK, info->path + info->name_off, info->pathl - info->name_off);
       fatal(fsedge_connect, parent, n, ctx->invalidation);
+
+//printf("%s:%d %.*s %d\n", __FUNCTION__, __LINE__, (int)info->pathl - info->name_off, info->path + info->name_off, filetype);
+
+      /* check whether this dirent matches an exclude pattern */
+      if(filetype == VERTEX_FILETYPE_DIR && exclude_list)
+      {
+        llist_foreach(exclude_list, pat, lln) {
+          fatal(pattern_match, pat, n, &matched);
+if(matched) {
+  printf("%d %.*s\n", matched, (int)n->vertex.label_len, n->vertex.label);
+}
+          if(matched) {
+            *stop = 1;
+            goto XAPI_FINALIZE;
+          }
+        }
+      }
     }
   }
 
   info->udata = n;
 
-  // this node was visited
+  // PRE (for directories), and 0 (for files)
   if(method != FTWAT_POST) {
-    n->walk_id = ctx->walk_id;
+    /* already been visited */
+    if(n->descend_walk_id == ctx->walk_id) {
+//printf("%.*s VISITED\n", (int)n->vertex.label_len, n->vertex.label);
+      *stop = 1;
+      goto XAPI_FINALIZE;
+    }
+
+    n->descend_walk_id = ctx->walk_id;
   }
 
   fs = fsent_filesystem_get(n);
@@ -264,7 +331,7 @@ if((info->pathl - info->name_off) == 4 && memcmp(info->path + info->name_off, ".
         }
 
         Bn = containerof(e->B, fsent, vertex);
-        if(Bn->walk_id == ctx->walk_id) {
+        if(Bn->descend_walk_id == ctx->walk_id) {
           continue;
         }
 
@@ -292,7 +359,14 @@ if((info->pathl - info->name_off) == 4 && memcmp(info->path + info->name_off, ".
 // public
 //
 
-xapi walker_descend(fsent ** restrict basep, fsent * restrict base, fsent * restrict parent, const char * restrict abspath, int walk_id, graph_invalidation_context * restrict invalidation)
+xapi walker_descend(
+    fsent ** restrict basep
+  , fsent * restrict base
+  , fsent * restrict parent
+  , const char * restrict abspath
+  , uint16_t walk_id
+  , graph_invalidation_context * restrict invalidation
+)
 {
   enter;
 
@@ -300,8 +374,11 @@ xapi walker_descend(fsent ** restrict basep, fsent * restrict base, fsent * rest
 
   RUNTIME_ASSERT(!base ^ !parent);
 
-  if(walk_id != walk_ids)
+printf("descend %s\n", abspath);
+
+  if(walk_id != walk_ids) {
     walk_id = ++walk_ids;
+  }
 
   ctx.walk_id = walk_id;
   ctx.invalidation = invalidation;
@@ -318,7 +395,7 @@ xapi walker_descend(fsent ** restrict basep, fsent * restrict base, fsent * rest
   finally : coda;
 }
 
-xapi walker_ascend(fsent * restrict base, int walk_id, graph_invalidation_context * restrict invalidation)
+xapi walker_ascend(fsent * restrict base, uint16_t walk_id, graph_invalidation_context * restrict invalidation)
 {
   enter;
 
@@ -349,7 +426,7 @@ xapi walker_ascend(fsent * restrict base, int walk_id, graph_invalidation_contex
     pathl -= (dirv->label_len + 1);
     dirv = moria_vertex_up(dirv);
     dirn = containerof(dirv, fsent, vertex);
-    if(!dirv || dirn->walk_id == walk_id) {
+    if(!dirv || dirn->ascend_walk_id == walk_id) {
       break;
     }
 
@@ -373,9 +450,9 @@ xapi walker_ascend(fsent * restrict base, int walk_id, graph_invalidation_contex
     }
 
     // visited
-    dirn->walk_id = walk_id;
+    dirn->ascend_walk_id = walk_id;
 
-    /* check for special files */
+    /* check for var files in the directory */
     if((lv = moria_vertex_downw(dirv, fsent_var_name, fsent_var_name_len)))
     {
       n = containerof(lv, fsent, vertex);
@@ -407,12 +484,136 @@ xapi walker_ascend(fsent * restrict base, int walk_id, graph_invalidation_contex
         fatal(fsedge_connect, dirn, n, invalidation);
       }
     }
+
+    /* check for config files in the directory */
+    if((lv = moria_vertex_downw(dirv, fsent_config_name, fsent_config_name_len)))
+    {
+      n = containerof(lv, fsent, vertex);
+      if(fs->attrs == INVALIDATE_NOTIFY)
+      {
+        z = 0;
+        z += znloads(path + pathl + z, sizeof(path) - pathl - z, "/");
+        z += znloadw(path + pathl + z, sizeof(path) - pathl - z, fsent_config_name, fsent_config_name_len);
+        path[pathl + z] = 0;
+
+        fatal(refresh, &ctx, n, path, pathl + z);
+      }
+      else if(fs->attrs != INVALIDATE_NOTIFY)
+      {
+        /* disintegrate */
+      }
+    }
+    else
+    {
+      z = 0;
+      z += znloads(path + pathl + z, sizeof(path) - pathl - z, "/");
+      z += znloadw(path + pathl + z, sizeof(path) - pathl - z, fsent_config_name, fsent_config_name_len);
+      path[pathl + z] = 0;
+
+      fatal(uxeuidaccesss, &r, F_OK, path);
+      if(r == 0)
+      {
+        fatal(fsent_create, &n, VERTEX_FILETYPE_REG, VERTEX_OK, fsent_config_name, fsent_config_name_len);
+        fatal(fsedge_connect, dirn, n, invalidation);
+      }
+    }
+
   }
 
   finally : coda;
 }
 
-int walker_begin()
+xapi walker_system_reconcile(graph_invalidation_context * restrict invalidation, channel * restrict chan)
 {
-  return ++walk_ids;
+  enter;
+
+  entry *e;
+  fsent *n;
+  uint16_t walk_id;
+
+  walk_id = ++walk_ids;
+
+  /* up and down from the project node */
+  fatal(walker_descend, 0, g_project_root, 0, g_params.proj_dir, walk_id, invalidation);
+  fatal(walker_ascend, g_project_root, walk_id, invalidation);
+
+  /* global config nodes */
+  fatal(walker_ascend, system_config_node, walk_id, invalidation);
+  fatal(walker_ascend, user_config_node, walk_id, invalidation);
+
+  /* other configured trees */
+  llist_foreach(&include_entry_list, e, lln) {
+//printf("%3d INCLUDE WALK %s\n", walk_id, e->abspath);
+    n = e->n;
+    fatal(walker_descend, 0, n, 0, e->abspath, walk_id, invalidation);
+    fatal(walker_ascend, n, walk_id, invalidation);
+  }
+
+  finally : coda;
 }
+
+xapi walker_system_reconfigure(configblob * restrict cfg, bool dry)
+{
+  enter;
+
+  graph_invalidation_context invalidation = { };
+  fsent *n;
+  int x;
+  pattern *pat;
+
+  if(dry || !cfg->walker.changed) {
+    goto XAPI_FINALLY;
+  }
+
+  /* store the exclude list for later evaluation */
+  exclude_list = &cfg->walker.exclude.list;
+
+  /* process the include list up-front */
+  fatal(graph_invalidation_begin, &invalidation);
+
+  llist_splice_head(&include_entry_freelist, &include_entry_list);
+
+  /* these are all absolute paths */
+  fatal(set_recycle, generate_nodes);
+  llist_foreach(&cfg->walker.include.list, pat, lln) {
+    fatal(pattern_generate, pat, 0, 0, 0, 0, &invalidation, 0, generate_nodes);
+  }
+
+  for(x = 0; x < generate_nodes->table_size; x++)
+  {
+    if(!(n = set_table_get(generate_nodes, x)))
+      continue;
+
+    fatal(include_entry_list_append, n);
+  }
+
+finally:
+  graph_invalidation_end(&invalidation);
+coda;
+}
+
+xapi walker_setup()
+{
+  enter;
+
+  fatal(set_create, &generate_nodes);
+
+  finally : coda;
+}
+
+xapi walker_cleanup()
+{
+  enter;
+
+  fatal(set_xfree, generate_nodes);
+
+  finally : coda;
+}
+
+#if 0
+/* put this into config */
+if((info->pathl - info->name_off) == 4 && memcmp(info->path + info->name_off, ".git", 4) == 0) {
+  *stop = 1;
+  goto XAPI_FINALIZE;
+}
+#endif

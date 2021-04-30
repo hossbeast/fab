@@ -154,6 +154,7 @@ xapi args_parse()
     , { "logexprs"                    , no_argument       , &logs, 1 }
     , { "fork"                        , no_argument       , &fork, 1 }
     , { "nofork"                      , no_argument       , &fork, 0 }
+    , { "no-fork"                     , no_argument       , &fork, 0 }
     , { }
   };
 

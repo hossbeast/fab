@@ -51,12 +51,14 @@ static uint16_t fsent_fs_epoch;
 uint16_t fsent_valid_epoch;
 uint16_t fsent_module_epoch;
 
-const char *fsent_model_name;
-uint16_t fsent_model_name_len;
+const char *fsent_model_name= "model.bam";
+uint16_t fsent_model_name_len = 9;
 const char *fsent_module_name = "module.bam";
 uint16_t fsent_module_name_len = 10;
 const char *fsent_var_name = "var.bam";
 uint16_t fsent_var_name_len = 7;
+const char *fsent_config_name = "config.bam";
+uint16_t fsent_config_name_len = 10;
 
 llist fsent_list = LLIST_INITIALIZER(fsent_list);                 // active fsents
 static llist fsent_freelist = LLIST_INITIALIZER(fsent_freelist);  // free fsents
@@ -498,8 +500,10 @@ xapi fsent_reconfigure(configblob * restrict cfg, bool dry)
 
     fsent_module_name = cfg->special.module->v;
     fsent_module_name_len = cfg->special.module->l;
+
     fsent_model_name = cfg->special.model->v;
     fsent_model_name_len = cfg->special.model->l;
+
     fsent_var_name = cfg->special.var->v;
     fsent_var_name_len = cfg->special.var->l;
   }
@@ -874,6 +878,29 @@ xapi fsent_var_bootstrap(fsent * restrict n, channel * restrict chan)
   }
 
   fatal(var_reconcile, n->self_var, chan);
+
+  finally : coda;
+}
+
+xapi fsent_config_bootstrap(fsent * restrict n, channel * restrict chan)
+{
+  enter;
+
+  config *cfg;
+
+  if(fsent_kind_get(n) != VERTEX_CONFIG_FILE) {
+    RUNTIME_ASSERT(fsent_kind_get(n) == VERTEX_FILE);
+    fsent_kind_set(n, VERTEX_CONFIG_FILE);
+
+    fatal(config_alloc, &cfg, &g_graph);
+
+    fsent_absolute_path_znload(cfg->self_node_abspath, sizeof(cfg->self_node_abspath), n);
+    cfg->self_node_abspath_len = strlen(cfg->self_node_abspath);
+
+    n->self_config = cfg;
+    cfg->self_node = n;
+    fsent_invalid_set(n);
+  }
 
   finally : coda;
 }

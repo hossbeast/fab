@@ -235,10 +235,8 @@ static xapi sweeper_thread()
     if(!llist_empty(&event_queue))
     {
       fatal(sweep);
-printf("%s:%d\n", __FUNCTION__, __LINE__);
       if(llist_empty(&event_queue) && goals_autorun)
       {
-printf("%s:%d\n", __FUNCTION__, __LINE__);
         fatal(handler_thread_launch, 0, 0, true);
       }
     }

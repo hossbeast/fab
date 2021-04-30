@@ -26,7 +26,7 @@ struct graph_invalidation_context;
 struct pattern;
 struct rule_module_edge;
 
-xapi module_block_variants(statement_block * restrict block, const struct pattern * restrict references)
+xapi module_block_variants(statement_block * restrict block, struct pattern * restrict references)
   __attribute__((nonnull));
 
 xapi statement_block_xinit(statement_block * restrict block)

@@ -912,7 +912,7 @@ xapi statement_block_xdestroy(statement_block * restrict block)
 // internal
 //
 
-xapi module_block_variants(statement_block * restrict block, const pattern * restrict variants_pat)
+xapi module_block_variants(statement_block * restrict block, pattern * restrict lookup)
 {
   enter;
 
@@ -921,7 +921,7 @@ xapi module_block_variants(statement_block * restrict block, const pattern * res
   variant * variant;
   int x;
 
-  fatal(pattern_render, variants_pat, &rendered);
+  fatal(pattern_render, lookup, &rendered);
 
   fragment = rendered->fragments;
   for(x = 0; x < rendered->size; x++)
@@ -934,6 +934,7 @@ xapi module_block_variants(statement_block * restrict block, const pattern * res
 
 finally:
   wfree(rendered);
+  pattern_free(lookup);
 coda;
 }
 
@@ -985,7 +986,7 @@ xapi module_system_bootstrap()
   enter;
 
   fsent * mod_file_n;
-  graph_invalidation_context invalidation = { 0 };
+  graph_invalidation_context invalidation = { };
   moria_connect_context ctx;
   fsedge *fse;
   int __attribute__((unused)) r;

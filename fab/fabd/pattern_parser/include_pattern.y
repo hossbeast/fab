@@ -19,16 +19,12 @@
   #include <string.h>
 
   #include "types.h"
-  #include "valyria/chain.h"
 
-  #include "pattern/alternation.h"
   #include "pattern/byte.h"
-  #include "pattern/class.h"
-  #include "pattern/group.h"
   #include "pattern/range.h"
-  #include "pattern/variants.h"
   #include "pattern/word.h"
-  #include "pattern/replacement.h"
+  #include "pattern/alternation.h"
+  #include "pattern/class.h"
 
   #include "pattern/section.h"
 
@@ -39,14 +35,14 @@
 }
 
 %code top {
-  #define PARSER containerof(parser, pattern_parser, generate_yyu)
-  #define GENERATE_PATTERN_YYLTYPE yyu_location
+  #define PARSER containerof(parser, pattern_parser, include_yyu)
+  #define INCLUDE_PATTERN_YYLTYPE yyu_location
 }
 
 %define api.pure
 %define parse.error verbose
 %locations
-%define api.prefix {generate_pattern_yy}
+%define api.prefix {include_pattern_yy}
 %parse-param { void* scanner }
 %parse-param { void* parser }
 %lex-param { void* scanner }
@@ -55,20 +51,11 @@
 %initial-action { yyu_loc_initialize(parser, &@$); }
 
 %union {
-  yyu_lval  yyu;
-
-  struct {
-    char s[64];
-    uint8_t l;
-  } tag_text;
-
+  yyu_lval yyu;
   pattern * pattern;
   pattern_segments * segments;
   pattern_section * section;
   pattern_segment * segment;
-  pattern_nodeset nodeset;
-  pattern_graph graph;
-  pattern_axis axis;
 }
 
 /* tokens from pattern.l */
@@ -103,22 +90,18 @@
 %token USES                   118 "uses"
 
 %type <yyu.umax>   uint16
-%type <tag_text>   variant-spec
 
 /* nonterminals */
 %type <pattern> pattern
 %type <segments> pattern-dentry
 
-%type <section> pattern-section pattern-sections-list
+%type <section> pattern-section pattern-sections-list pattern-initial-section
 %type <section> pattern-section-fs-child
-%type <section> pattern-initial-section pattern-section-self
 
 %type <segment> escape
 %type <segments> class-pattern class-parts
 %type <segment> class class-part class-range class-char
 %type <segment> word
-%type <segment> replacement variant-replacement
-%type <segment> variants
 %type <segment> quoted-string-literal quoted-strpart quoted-strparts
 %type <segment> unquoted-string-literal unquoted-strpart
 %type <segment> string-literal
@@ -139,9 +122,9 @@ utterance
   : pattern
   {
     PARSER->pattern = $1;
-    if(PARSER->generate_yyu.attrs & YYU_PARTIAL)
+    if(PARSER->include_yyu.attrs & YYU_PARTIAL)
     {
-      yyu_loc_final(&PARSER->generate_yyu, &@1);
+      yyu_loc_final(&PARSER->include_yyu, &@1);
       YYACCEPT;
     }
   }
@@ -152,6 +135,10 @@ pattern
   {
     YFATAL(pattern_mk, &$$, &@$, $1);
   }
+  | pattern-initial-section
+  {
+    YFATAL(pattern_mk, &$$, &@$, $1);
+  }
   ;
 
 pattern-sections-list
@@ -159,32 +146,22 @@ pattern-sections-list
   {
     $$ = chain_splice_tail($1, $3, chn);
   }
-  | pattern-initial-section
+  | pattern-initial-section pattern-section
+  {
+    $$ = chain_splice_tail($1, $2, chn);
+  }
   ;
 
 pattern-initial-section
-  /* resolves to the directory of the match fsent */
-  : '$' '^' 'D'
+  /* include patterns must be absolute */
+  : '/'
   {
-    YFATAL(pattern_section_mk, &$$, &@$, PATTERN_NODESET_MATCHDIR, 0, 0, NULL);
+    YFATAL(pattern_section_mk, &$$, &@$, PATTERN_NODESET_ROOT, 0, 0, NULL);
   }
-  | SLASH2
-  {
-    YFATAL(pattern_section_mk, &$$, &@$, PATTERN_NODESET_SHADOW, 0, 0, NULL);
-  }
-  | pattern-section
   ;
 
 pattern-section
   : pattern-section-fs-child
-  | pattern-section-self
-  ;
-
-pattern-section-self
-  : '.'
-  {
-    YFATAL(pattern_section_mk, &$$, &@$, PATTERN_NODESET_SELF, PATTERN_GRAPH_FS, PATTERN_AXIS_DOWN, NULL);
-  }
   ;
 
 pattern-section-fs-child
@@ -197,7 +174,7 @@ pattern-section-fs-child
 pattern-dentry
   : pattern-dentry-parts
   {
-    YFATAL(pattern_segments_mk, &$$, &@$, 0, $1);
+    YFATAL(pattern_segments_mk, &$$, &@$, PATTERN_QUALIFIER_TYPE_AND, $1);
   }
   ;
 
@@ -209,67 +186,11 @@ pattern-dentry-parts
   | pattern-dentry-part
   ;
 
- /* may appear at any position in a pattern */
+ /* appears at any position in a pattern-dirnode section */
 pattern-dentry-part
   : alternation
   | class
   | string-literal
-  | variants
-  | replacement
-  ;
-
-replacement
-  /* resolves to a parenthesized matching group which is referenced by number */
-  : '$' uint16
-  {
-    YFATAL(pattern_replacement_mk, &$$, &@$, PATTERN_REPLACEMENT_TYPE_NUM, $2, NULL, 0, NULL, 0);
-  }
-  /* resolves to a parenthesized matching group which is referenced by name */
-  | '$' STR
-  {
-    YFATAL(pattern_replacement_mk, &$$, &@$, PATTERN_REPLACEMENT_TYPE_NAME, 0, @2.s, @2.l, NULL, 0);
-  }
-  /* resolves to the variant of the match fsent */
-  | variant-replacement
-  ;
-
-variant-replacement
-  : '$' '?'
-  {
-    YFATAL(pattern_replacement_mk, &$$, &@$, PATTERN_REPLACEMENT_TYPE_VARIANT, 0, NULL, 0, NULL, 0);
-  }
-  | '$' '{' variant-spec '}'
-  {
-    YFATAL(pattern_replacement_mk, &$$, &@$, PATTERN_REPLACEMENT_TYPE_VARIANT, 0, NULL, 0, $3.s, $3.l);
-  }
-  ;
-
-variant-spec
-  : variant-spec '+' STR
-  {
-    $$.s[$$.l++] = (char)@3.l;       /* tag len */
-    $$.s[$$.l++] = '+';              /* operation */
-    memcpy($$.s + $$.l, @3.s, @3.l);
-    $$.l += @3.l;
-  }
-  | variant-spec '-' STR
-  {
-    $$.s[$$.l++] = (char)@3.l;
-    $$.s[$$.l++] = '-';
-    memcpy($$.s + $$.l, @3.s, @3.l);
-    $$.l += @3.l;
-  }
-  | '?'
-  {
-    $$.l = 0;
-  }
-  ;
-
-variants
-  : '?'
-  {
-    YFATAL(pattern_variants_mk, &$$, &@$);
-  }
   ;
 
 class
@@ -405,16 +326,15 @@ word
   }
   | uint16
   {
+$1 = 0;
     YFATAL(pattern_word_mk, &$$, &@$, @1.s, @1.l);
   }
   ;
 
 word-tokens
   : STR
-  | MODULE
-  | MODULES
-  | DOWN
   | 'D'
+  | '+'
   ;
 
 escape

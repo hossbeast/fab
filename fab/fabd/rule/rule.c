@@ -32,7 +32,7 @@
 #include "fsent.h"
 #include "generate.h"
 #include "logging.h"
-#include "match.internal.h"
+#include "search.internal.h"
 #include "module.h"
 #include "rule_module.h"
 #include "rule_system.h"
@@ -187,7 +187,17 @@ static xapi __attribute__((nonnull)) fml_node_get(
 
   rma = ctx->rme;
 
-  fatal(pattern_generate, rule->formula, ctx->mod, rma->mod_owner->dir_node, ctx->mod->shadow_uses, 0, &ctx->invalidation, 0, ctx->generate_nodes);
+  fatal(set_recycle, ctx->generate_nodes);
+  fatal(pattern_generate
+    , rule->formula
+    , ctx->mod
+    , rma->mod_owner->dir_node
+    , ctx->mod->shadow_uses
+    , 0
+    , &ctx->invalidation
+    , 0
+    , ctx->generate_nodes
+  );
 
   /* reference patterns can specify at most one fsent */
   RUNTIME_ASSERT(ctx->generate_nodes->size <= 1);
@@ -255,7 +265,7 @@ static xapi run_match_tracking(rule * restrict rule, rule_run_context * restrict
     , .rme = ctx->rme
   };
 
-  fatal(pattern_match, rule->match, ctx->mod, ctx->modules, ctx->variants, ctx->match_nodes, rule_dirnode_connect, &rdctx);
+  fatal(pattern_search, rule->match, ctx->mod, ctx->modules, ctx->variants, ctx->match_nodes, rule_dirnode_connect, &rdctx);
 
   if(log_would(L_WARN))
   {
@@ -276,6 +286,7 @@ static xapi run_generate_tracking(rule * restrict rule, rule_run_context * restr
 {
   enter;
 
+  fatal(set_recycle, ctx->generate_nodes);
   fatal(pattern_generate, rule->generate, ctx->mod, ctx->mod->dir_node, ctx->mod->shadow_imports, ctx->variants, &ctx->invalidation, 0, ctx->generate_nodes);
 
   if(log_would(L_WARN))
@@ -293,10 +304,10 @@ static xapi run_generate_tracking(rule * restrict rule, rule_run_context * restr
   finally : coda;
 }
 
-static int pattern_match_compare(const void *a, const void *b)
+static int pattern_search_compare(const void *a, const void *b)
 {
-  const struct pattern_match_node *A = *(typeof(A)*)a;
-  const struct pattern_match_node *B = *(typeof(B)*)b;
+  const struct pattern_search_node *A = *(typeof(A)*)a;
+  const struct pattern_search_node *B = *(typeof(B)*)b;
 
   int r;
   int x;
@@ -325,7 +336,7 @@ static xapi matches_sorted(rule_run_context * restrict ctx)
 
   int y;
   size_t Msz;
-  pattern_match_node *match;
+  pattern_search_node *match;
 
   fatal(assure, &ctx->Mlist, sizeof(*ctx->Mlist), ctx->match_nodes->size, &ctx->Mlist_alloc);
 
@@ -339,7 +350,7 @@ static xapi matches_sorted(rule_run_context * restrict ctx)
   }
 
   /* sorted by sets of matching capture groups */
-  qsort(ctx->Mlist, Msz, sizeof(*ctx->Mlist), pattern_match_compare);
+  qsort(ctx->Mlist, Msz, sizeof(*ctx->Mlist), pattern_search_compare);
 
   finally : coda;
 }
@@ -471,7 +482,7 @@ static xapi __attribute__((nonnull)) match_zero_to_one(
 {
   enter;
 
-  pattern_match_node *match;
+  pattern_search_node *match;
   dependency *ne;
   int x;
   fsent *n;
@@ -542,7 +553,7 @@ static xapi __attribute__((nonnull)) match_zero_to_many(
 {
   enter;
 
-  pattern_match_node * match = 0;
+  pattern_search_node * match = 0;
   dependency *ne;
   int x;
   size_t z;
@@ -615,7 +626,7 @@ static xapi __attribute__((nonnull(1, 3))) match_one_to_one(
 {
   enter;
 
-  pattern_match_node * match = 0;
+  pattern_search_node * match = 0;
   dependency *ne;
   int x, y;
   fsent * generated;
@@ -626,6 +637,7 @@ static xapi __attribute__((nonnull(1, 3))) match_one_to_one(
     if(!(match = set_table_get(ctx->match_nodes, x)))
       continue;
 
+    fatal(set_recycle, ctx->generate_nodes);
     fatal(pattern_generate
       , rule->generate
       , ctx->mod
@@ -664,7 +676,7 @@ static xapi __attribute__((nonnull(1, 3))) generate_one_to_one(
 {
   enter;
 
-  pattern_match_node * match = 0;
+  pattern_search_node * match = 0;
   dependency *ne;
   int x, y;
   fsent * generated;
@@ -675,6 +687,7 @@ static xapi __attribute__((nonnull(1, 3))) generate_one_to_one(
     if(!(match = set_table_get(ctx->match_nodes, x)))
       continue;
 
+    fatal(set_recycle, ctx->generate_nodes);
     fatal(pattern_generate, rule->generate, ctx->mod, ctx->mod->dir_node, ctx->mod->shadow_imports, ctx->variants, &ctx->invalidation, match, ctx->generate_nodes);
 
     for(y = 0; y < ctx->generate_nodes->table_size; y++)
@@ -704,7 +717,7 @@ static xapi __attribute__((nonnull)) match_one_to_many(
 {
   enter;
 
-  pattern_match_node * match = 0;
+  pattern_search_node * match = 0;
   dependency *ne;
   int x, y;
   size_t Bsz;
@@ -720,6 +733,7 @@ static xapi __attribute__((nonnull)) match_one_to_many(
 
     ctx->Alist[0] = &match->node->vertex;
 
+    fatal(set_recycle, ctx->generate_nodes);
     fatal(pattern_generate, rule->generate, ctx->mod, ctx->mod->dir_node, ctx->mod->shadow_imports, ctx->variants, &ctx->invalidation, match, ctx->generate_nodes);
 
     fatal(assure, &ctx->Blist, sizeof(*ctx->Blist), ctx->generate_nodes->size, &ctx->Blist_alloc);
@@ -753,7 +767,7 @@ static xapi __attribute__((nonnull)) generate_one_to_many(
 {
   enter;
 
-  pattern_match_node * match = 0;
+  pattern_search_node * match = 0;
   dependency *ne;
   int x, y;
   size_t Bsz;
@@ -769,6 +783,7 @@ static xapi __attribute__((nonnull)) generate_one_to_many(
 
     ctx->Alist[0] = &match->node->vertex;
 
+    fatal(set_recycle, ctx->generate_nodes);
     fatal(pattern_generate, rule->generate, ctx->mod, ctx->mod->dir_node, ctx->mod->shadow_imports, ctx->variants, &ctx->invalidation, match, ctx->generate_nodes);
 
     fatal(assure, &ctx->Blist, sizeof(*ctx->Blist), ctx->generate_nodes->size, &ctx->Blist_alloc);
@@ -815,7 +830,7 @@ static xapi __attribute__((nonnull(1, 3))) match_many_to_one(
   x = 0;
   for(y = 1; y <= ctx->match_nodes->size; y++)
   {
-    if(y < ctx->match_nodes->size && pattern_match_compare(&ctx->Mlist[x], &ctx->Mlist[y]) == 0) {
+    if(y < ctx->match_nodes->size && pattern_search_compare(&ctx->Mlist[x], &ctx->Mlist[y]) == 0) {
       continue;
     }
 
@@ -824,6 +839,7 @@ static xapi __attribute__((nonnull(1, 3))) match_many_to_one(
     }
 
     /* run the generate pattern in context of a match node in the group */
+    fatal(set_recycle, ctx->generate_nodes);
     fatal(pattern_generate, rule->generate, ctx->mod, ctx->mod->dir_node, ctx->mod->shadow_imports, ctx->variants, &ctx->invalidation, ctx->Mlist[x], ctx->generate_nodes);
 
     for(z = 0; z < ctx->generate_nodes->table_size; z++)
@@ -856,7 +872,7 @@ static xapi __attribute__((nonnull)) generate_many_to_one(
 {
   enter;
 
-  pattern_match_node * match = 0;
+  pattern_search_node * match = 0;
   dependency *ne;
   int x, y;
   size_t Bsz;
@@ -870,6 +886,7 @@ static xapi __attribute__((nonnull)) generate_many_to_one(
       continue;
 
     ctx->Alist[0] = &match->node->vertex;
+    fatal(set_recycle, ctx->generate_nodes);
     fatal(pattern_generate, rule->generate, ctx->mod, ctx->mod->dir_node, ctx->mod->shadow_imports, ctx->variants, &ctx->invalidation, match, ctx->generate_nodes);
 
     Bsz = 0;
@@ -919,7 +936,7 @@ static xapi __attribute__((nonnull)) match_many_to_many(
   x = 0;
   for(y = 1; y <= ctx->match_nodes->size; y++)
   {
-    if(y < ctx->match_nodes->size && pattern_match_compare(&ctx->Mlist[x], &ctx->Mlist[y]) == 0) {
+    if(y < ctx->match_nodes->size && pattern_search_compare(&ctx->Mlist[x], &ctx->Mlist[y]) == 0) {
       continue;
     }
 
@@ -928,6 +945,7 @@ static xapi __attribute__((nonnull)) match_many_to_many(
     }
 
     /* run the generate pattern in context of a match node in the group */
+    fatal(set_recycle, ctx->generate_nodes);
     fatal(pattern_generate, rule->generate, ctx->mod, ctx->mod->dir_node, ctx->mod->shadow_imports, ctx->variants, &ctx->invalidation, ctx->Mlist[x], ctx->generate_nodes);
 
     fatal(assure, &ctx->Blist, sizeof(*ctx->Blist), ctx->generate_nodes->size, &ctx->Blist_alloc);
@@ -979,7 +997,7 @@ static xapi __attribute__((nonnull)) generate_many_to_many(
   x = 0;
   for(y = 1; y <= ctx->match_nodes->size; y++)
   {
-    if(y < ctx->match_nodes->size && pattern_match_compare(&ctx->Mlist[x], &ctx->Mlist[y]) == 0) {
+    if(y < ctx->match_nodes->size && pattern_search_compare(&ctx->Mlist[x], &ctx->Mlist[y]) == 0) {
       continue;
     }
 
@@ -988,6 +1006,7 @@ static xapi __attribute__((nonnull)) generate_many_to_many(
     }
 
     /* run the generate pattern in context of a match node in the group */
+    fatal(set_recycle, ctx->generate_nodes);
     fatal(pattern_generate, rule->generate, ctx->mod, ctx->mod->dir_node, ctx->mod->shadow_imports, ctx->variants, &ctx->invalidation, ctx->Mlist[x], ctx->generate_nodes);
 
     fatal(assure, &ctx->Blist, sizeof(*ctx->Blist), ctx->generate_nodes->size, &ctx->Blist_alloc);
@@ -1210,7 +1229,7 @@ xapi rule_run_context_xinit(rule_run_context * restrict rule_ctx)
 
   memset(rule_ctx, 0, sizeof(*rule_ctx));
 
-  fatal(pattern_match_matches_create, &rule_ctx->match_nodes);
+  fatal(pattern_search_matches_create, &rule_ctx->match_nodes);
   fatal(set_create, &rule_ctx->generate_nodes);
 
   rule_ctx->modules = &module_list;

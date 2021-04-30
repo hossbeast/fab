@@ -24,7 +24,7 @@
 #include "variants.h"
 #include "fsent.h"
 #include "generate.internal.h"
-#include "match.internal.h"
+#include "search.internal.h"
 #include "pattern.internal.h"
 #include "variant.h"
 
@@ -46,14 +46,14 @@ static void destroy(pattern_segment * restrict n)
 
 }
 
-static xapi match(pattern_match_context * restrict ctx, const pattern_segment * restrict segment)
+static xapi search(const pattern_segment * restrict segment, pattern_search_context * restrict ctx)
 {
   enter;
 
   int x;
   const char * restrict name;
   uint16_t namel;
-  struct match_segments_traversal *traversal;
+  struct search_segments_traversal *traversal;
   const char *var;
   uint16_t var_len;
 
@@ -101,7 +101,7 @@ aybxc
     ctx->variant_index = x;
 
     ctx->traversal->offset += var_len;
-    fatal(pattern_segments_match, ctx);
+    fatal(pattern_segments_search, ctx);
 
     if(ctx->matched)
       break;
@@ -172,7 +172,7 @@ static int cmp(const pattern_segment * A, const pattern_segment *B)
 static pattern_segment_vtable vtable = {
     type : PATTERN_VARIANTS
   , say : say
-  , match : match
+  , search : search
   , generate : generate
   , destroy : destroy
   , cmp : cmp

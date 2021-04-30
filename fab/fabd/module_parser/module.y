@@ -112,7 +112,6 @@
 %type <pattern> lookup-pattern
 %type <relation_type> relation-type rule-bacon
 
-// %destructor { module_free($$); } <module>
 %destructor { pattern_free($$); } <pattern>
 
 /* nonterminals */
@@ -235,28 +234,30 @@ var-section-set
 variant
   : VARIANT lookup-pattern
   {
-    YFATAL(module_block_variants, PARSER->block, $2);
-    /* no longer needed */
-    pattern_free($2);
+    /* frees $2 */
+    YFATAL(module_block_variants, PARSER->unscoped_block, $2);
   }
   ;
 
 open-block
   : %empty
   {
-    YFATAL(module_parser_block_alloc, PARSER, &PARSER->block);
+    YFATAL(module_parser_block_alloc, PARSER, &PARSER->scoped_block);
+
+    /* block-statement-list accumulates to the block under construction */
+    PARSER->block = PARSER->scoped_block;
   }
   ;
 
 block
   : VARIANT lookup-pattern ':' open-block '[' block-statement-list ']'
   {
-    YFATAL(module_block_variants, PARSER->block, $2);
-    /* no longer needed */
-    pattern_free($2);
+    /* frees $2 */
+    YFATAL(module_block_variants, PARSER->scoped_block, $2);
 
     /* restore */
-    llist_append(&PARSER->scoped_blocks, PARSER->block, lln);
+    llist_append(&PARSER->scoped_blocks, PARSER->scoped_block, lln);
+    PARSER->scoped_block = 0;
     PARSER->block = PARSER->unscoped_block;
   }
   ;

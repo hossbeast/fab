@@ -27,7 +27,7 @@ struct chain;
 struct set;
 struct narrator;
 struct narrator_fixed;
-struct pattern_match_node;
+struct pattern_search_node;
 struct pattern_section;
 struct variant;
 struct graph_invalidation_context;
@@ -79,7 +79,7 @@ typedef struct pattern_generate_context
   struct fsent * base;
   struct module * mod;
   struct moria_vertex * scope;
-  const struct pattern_match_node * match;
+  const struct pattern_search_node * match;
   const struct set * restrict variants;
 
   // output context

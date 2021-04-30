@@ -21,7 +21,7 @@
 #include "range.h"
 #include "byte.h"
 #include "fsent.h"
-#include "match.internal.h"
+#include "search.internal.h"
 #include "pattern.internal.h"
 
 //
@@ -45,7 +45,7 @@ static void destroy(pattern_segment * restrict fn)
 {
 }
 
-static xapi match(pattern_match_context * restrict ctx, const pattern_segment * restrict segment)
+static xapi search(const pattern_segment * restrict segment, pattern_search_context * restrict ctx)
 {
   enter;
 
@@ -79,7 +79,7 @@ static pattern_segment_vtable vtable = {
     type : PATTERN_RANGE
   , say : say
   , destroy : destroy
-  , match : match
+  , search : search
   , cmp : cmp
 };
 

@@ -32,7 +32,7 @@
 #include "yyutil/load.h"
 
 #include "generate.internal.h"
-#include "match.internal.h"
+#include "search.internal.h"
 #include "lookup.h"
 #include "pattern_parser.h"
 #include "pattern.h"
@@ -124,7 +124,7 @@ static xapi pattern_generate_test_entry(xunit_test * _test)
   graph_parser * op_parser = 0;
   set * variants = 0;
   variant * var = 0;
-  pattern_match_node match = { 0 };
+  pattern_search_node match = { 0 };
   int x;
   graph_invalidation_context invalidation = { 0 };
   fsent *na, *nb;

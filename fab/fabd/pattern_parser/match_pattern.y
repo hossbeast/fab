@@ -16,20 +16,14 @@
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
 %code requires {
-  #include <string.h>
-
   #include "types.h"
-  #include "valyria/chain.h"
 
   #include "pattern/alternation.h"
   #include "pattern/byte.h"
   #include "pattern/class.h"
-  #include "pattern/group.h"
   #include "pattern/range.h"
-  #include "pattern/variants.h"
   #include "pattern/word.h"
   #include "pattern/star.h"
-
   #include "pattern/section.h"
 
   #include "pattern_parser.internal.h"
@@ -60,8 +54,6 @@
   pattern_segments * segments;
   pattern_section * section;
   pattern_segment * segment;
-  pattern_graph graph;
-  pattern_axis axis;
 }
 
 /* tokens from pattern.l */
@@ -109,9 +101,7 @@
 %type <segment> escape
 %type <segments> class-pattern class-parts
 %type <segment> class class-part class-range class-char
-%type <segment> group
 %type <segment> word
-%type <segment> variants
 %type <segment> star
 %type <segment> quoted-string-literal quoted-strpart quoted-strparts
 %type <segment> unquoted-string-literal unquoted-strpart
@@ -124,6 +114,7 @@
 %type <segments> alternation-pattern
 %type <segments> alternation-parts-with-epsilon
 %type <segments> alternation-parts-without-epsilon
+
 
 %destructor { pattern_free($$); } <pattern>
 %destructor { pattern_section_free($$); } <section>
@@ -156,10 +147,6 @@ pattern-sections-list
     $$ = chain_splice_tail($1, $3, chn);
   }
   | pattern-section
-  | SLASH2
-  {
-    YFATAL(pattern_section_mk, &$$, &@$, PATTERN_NODESET_SHADOW, 0, 0, NULL);
-  }
   ;
 
 pattern-section
@@ -200,26 +187,13 @@ pattern-dentry-parts
 pattern-dentry-part
   : alternation
   | class
-  | group
   | star
   | string-literal
-  | variants
-  ;
-
-group
-  : '(' pattern-dentry-list ')'
-  {
-    YFATAL(pattern_group_mk, &$$, &@$, $2, NULL, 0, ++PARSER->group_counter);
-  }
-  | '(' '?' '<' word-tokens '>'  pattern-dentry-list ')'
-  {
-    YFATAL(pattern_group_mk, &$$, &@$, $6, @4.s, @4.l, ++PARSER->group_counter);
-  }
   ;
 
 pattern-qualifiers
   : pattern-qualifier-list
-  | %empty 
+  | %empty
   {
     $$ = NULL;
   }
@@ -255,15 +229,7 @@ pattern-qualifier-parts
 pattern-qualifier-part
   : alternation
   | class
-  | group
   | string-literal
-  ;
-
-variants
-  : '?'
-  {
-    YFATAL(pattern_variants_mk, &$$, &@$);
-  }
   ;
 
 star
@@ -423,14 +389,7 @@ word
 
 word-tokens
   : STR
-  | MODULE
-  | MODULES
-  | SHADOW
-  | SELF_OR_BELOW
-  | REQUIRES
-  | USES
   | 'D'
-  | '.'
   ;
 
 escape

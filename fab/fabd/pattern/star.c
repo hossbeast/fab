@@ -20,7 +20,7 @@
 
 #include "star.h"
 #include "fsent.h"
-#include "match.internal.h"
+#include "search.internal.h"
 #include "pattern.internal.h"
 
 //
@@ -41,25 +41,24 @@ static void destroy(pattern_segment * restrict n)
 
 }
 
-static xapi match(pattern_match_context * restrict ctx, const pattern_segment * restrict segment)
+static xapi search(const pattern_segment * restrict segment, pattern_search_context * restrict ctx)
 {
   enter;
 
-  uint16_t namel = ctx->node->name.namel;
-
+  uint16_t namel;
   uint16_t delta;
   uint16_t start;
+  struct search_segments_traversal *traversal;
 
-  struct match_segments_traversal *traversal;
+  namel = ctx->node->name.namel;
   traversal = ctx->traversal;
-
   start = ctx->traversal->offset;
 
   for(delta = namel - start; delta >= 0 && delta != 0xffff; delta--)
   {
     ctx->traversal->offset = start + delta;
 
-    fatal(pattern_segments_match, ctx);
+    fatal(pattern_segments_search, ctx);
 
     if(ctx->matched)
       break;
@@ -79,7 +78,7 @@ static pattern_segment_vtable vtable = {
     type : PATTERN_STAR
   , say : say
   , destroy : destroy
-  , match : match
+  , search : search
   , cmp : cmp
 };
 

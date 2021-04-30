@@ -119,19 +119,19 @@ xunit_unit xunit = {
   , xu_tests : (config_parser_test*[]) {
       (config_parser_test[]) {{
           text : (char[]) {
-            "extern : {"
-            "  /usr/lib/fab/builtin-modules"
-            "  /home/todd/my/modules"
-            "}\0\0"
+            "walker : { include : {"
+            "  /usr/lib/fab/builtin-goats"
+            "  /home/todd/my/goats"
+            "}}\0\0"
           }
       }}
     , (config_parser_test[]) {{
           text : (char[]) {
             "{"
-            " extern : {"
-            "   /usr/lib/fab/builtin-modules"
-            "   /home/todd/my/modules"
-            " }"
+            " walker : { include : {"
+            "   /usr/lib/fab/builtin-goats"
+            "   /home/todd/my/goats"
+            " }}"
             "}\0\0"
           }
       }}
@@ -149,10 +149,10 @@ xunit_unit xunit = {
       }}
     , (config_parser_test[]) {{
           text : (char[]) {
-            "extern : {"
-            "  /usr/lib/fab/builtin-modules"
-            "  /home/todd/my/modules"
-            "}"
+            "walker : { include : {"
+            "  /usr/lib/fab/builtin-goats"
+            "  /home/todd/my/goats"
+            "}}"
             "filesystems : {"
             "  \"/\" : {"
             "    invalidate : notify"
@@ -165,22 +165,6 @@ xunit_unit xunit = {
             "  concurrency : 0"
             "}"
             "\0\0"
-          }
-      }}
-    , (config_parser_test[]) {{
-          text : (char[]) {
-            "logging : {"
-            " console : {"
-            "  exprs : ["
-            "   UNITS "
-            "  ]"
-            " }"
-            " logfile : {"
-            "  exprs : ["
-            "   UNITS BAR baz wux"
-            "  ]"
-            " }"
-            "}\0\0"
           }
       }}
     , 0

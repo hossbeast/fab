@@ -50,6 +50,7 @@
 #include "rule_module.h"
 #include "fsedge.h"
 #include "dependency.h"
+#include "channel.h"
 
 typedef struct rules_test {
   XUNITTEST;
@@ -60,7 +61,7 @@ typedef struct rules_test {
   char * module_id;
   char * module;              // context node for applying rules
   char ** variants;
-  char * match_pattern;
+  char * search_pattern;
   char * generate_pattern;
   rule_direction dir;
   rule_cardinality card;
@@ -126,19 +127,20 @@ static xapi rules_test_entry(xunit_test * _test)
   rule * r;
   int x;
   llist modules;
-  pattern * match_pat = 0;
+  pattern * search_pat = 0;
   pattern * generate_pat = 0;
   rule_run_context rule_ctx = { 0 };
-  bool reconciled;
   rule_module_edge *rme;
   const char *graph;
   llist *vertex_lists[2];
   llist *edge_lists[3];
+  channel *chan = 0;
 
   fatal(narrator_growing_create, &N);
   fatal(pattern_parser_create, &parser);
   fatal(rule_run_context_xinit, &rule_ctx);
   fatal(rule_module_edge_alloc, &rme);
+  fatal(xmalloc, &chan, sizeof(*chan));
 
   // setup the initial graph
   fatal(graph_parser_create, &op_parser, &g_graph, &fsent_list, node_operations_test_dispatch, graph_vertex_attrs, graph_edge_attrs);
@@ -150,10 +152,10 @@ static xapi rules_test_entry(xunit_test * _test)
   fatal(shadow_module_init, &mod, &rule_ctx.invalidation);
 
   // parse the patterns for the rule
-  if(test->match_pattern)
+  if(test->search_pattern)
   {
-    fatal(match_pattern_parse_partial, parser, test->match_pattern, strlen(test->match_pattern) + 2, "-test-", 0, &loc, &match_pat);
-    assert_eq_u32(strlen(test->match_pattern), loc.l);
+    fatal(search_pattern_parse_partial, parser, test->search_pattern, strlen(test->search_pattern) + 2, "-test-", 0, &loc, &search_pat);
+    assert_eq_u32(strlen(test->search_pattern), loc.l);
   }
 
   if(test->generate_pattern)
@@ -162,8 +164,8 @@ static xapi rules_test_entry(xunit_test * _test)
     assert_eq_u32(strlen(test->generate_pattern), loc.l);
   }
 
-  fatal(rule_mk, &r, &g_graph, match_pat, generate_pat, 0, 0, 0);
-  match_pat = 0;
+  fatal(rule_mk, &r, &g_graph, search_pat, generate_pat, 0, 0, 0);
+  search_pat = 0;
   generate_pat = 0;
 
   r->dir = test->dir;
@@ -187,12 +189,11 @@ static xapi rules_test_entry(xunit_test * _test)
   rule_ctx.variants = variants;
   rule_ctx.rme = rme;
   rme->rule = r;
-  reconciled = true;
-  rule_ctx.reconciled = &reconciled;
+  rule_ctx.chan = chan;
 
   // act
   fatal(rule_run, r, &rule_ctx);
-  assert_eq_b(true, reconciled);
+  assert_eq_b(false, chan->error);
 
   vertex_lists[0] = &fsent_list;
   vertex_lists[1] = &rule_list;
@@ -205,7 +206,7 @@ static xapi rules_test_entry(xunit_test * _test)
   assert_eq_s(test->graph, graph);
 
 finally:
-  pattern_free(match_pat);
+  pattern_free(search_pat);
   pattern_free(generate_pat);
   fatal(fsent_cleanup);
   fatal(set_xfree, variants);
@@ -213,6 +214,7 @@ finally:
   fatal(graph_parser_xfree, op_parser);
   fatal(pattern_parser_xfree, parser);
   fatal(rule_run_context_xdestroy, &rule_ctx);
+  wfree(chan);
 coda;
 }
 
@@ -232,7 +234,7 @@ xunit_unit xunit = {
         , module : "MOD"
         , variants : (char*[]) { "foo", 0 }
         // a/b -> $^D/c.o
-        , match_pattern : (char[]) { "a/b\0" }
+        , search_pattern : (char[]) { "a/b\0" }
         , generate_pattern : (char[]) { "$^D/c.o\0" }
         , dir : RULE_LTR
         , card : RULE_ONE_TO_ONE
@@ -253,7 +255,7 @@ xunit_unit xunit = {
         , module : "MOD"
         , variants : (char*[]) { "foo", "bar", 0 }
         // a/b.? -> $^D/c.$?
-        , match_pattern : (char[]) { "a/b.?\0" }
+        , search_pattern : (char[]) { "a/b.?\0" }
         , generate_pattern : (char[]) { "$^D/c.$?\0" }
         , dir : RULE_LTR
         , card : RULE_ONE_TO_ONE
@@ -273,7 +275,7 @@ xunit_unit xunit = {
         , module : "MOD"
         , variants : (char*[]) { "foo", "bar", 0 }
         // (*).c -> $1.?.o
-        , match_pattern : (char[]) { "(*).c\0" }
+        , search_pattern : (char[]) { "(*).c\0" }
         , generate_pattern : (char[]) { "$1.?.o\0" }
         , dir : RULE_LTR
         , card : RULE_ONE_TO_ONE
@@ -294,7 +296,7 @@ xunit_unit xunit = {
         , module : "MOD"
         , module_id : "beef"
         // x.c -> //tests
-        , match_pattern : (char[]) { "x.c\0" }
+        , search_pattern : (char[]) { "x.c\0" }
         , generate_pattern : (char[]) { "//tests\0" }
         , dir : RULE_LTR
         , card : RULE_ONE_TO_ONE

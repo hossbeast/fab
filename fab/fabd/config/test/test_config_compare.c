@@ -43,7 +43,7 @@ typedef struct {
   char ** Btexts;
 
   bool build_changed;
-  bool extern_changed;
+  bool walker_changed;
   bool filesystems_changed;
   bool formula_changed;
   bool logging_changed;
@@ -108,6 +108,7 @@ static xapi config_compare_test_entry(xunit_test * _test)
   text = test->Btexts;
   while(*text)
   {
+//printf("Btext %s\n", *text);
     fatal(config_parser_parse, parser, *text, strlen(*text) + 2, 0, 0, &T);
     if(!B)
     {
@@ -120,12 +121,15 @@ static xapi config_compare_test_entry(xunit_test * _test)
     }
     T = 0;
     text++;
+//printf("B ");
+//fatal(config_say, B, g_narrator_stdout);
+//printf("\n");
   }
 
   config_compare(B, A);
 
   assert_eq_b(test->build_changed, B->build.changed);
-  assert_eq_b(test->extern_changed, B->extern_section.changed);
+  assert_eq_b(test->walker_changed, B->walker.changed);
 
 finally:
   fatal(config_parser_xfree, parser);
@@ -216,18 +220,18 @@ xunit_unit xunit = {
     , (config_compare_test[]) {{
           Atexts : (char*[]) {
               (char[]) {
-                "extern : {"
-                " foo"
-                "}"
+                "walker : { include : {"
+                " /foo"
+                "}}"
                 "\0\0"
               }
             , 0
           }
         , Btexts : (char*[]) {
               (char[]) {
-                "extern : {"
-                " foo"
-                "}"
+                "walker : { include : {"
+                " /foo"
+                "}}"
                 "\0\0"
               }
             , 0
@@ -236,45 +240,45 @@ xunit_unit xunit = {
     , (config_compare_test[]) {{
           Atexts : (char*[]) {
               (char[]) {
-                "extern : {"
-                " foo"
-                "}"
+                "walker : { include : {"
+                " /foo"
+                "}}"
                 "\0\0"
               }
             , 0
           }
         , Btexts : (char*[]) {
               (char[]) {
-                "extern : {"
-                " bar"
-                "}"
+                "walker : { include : {"
+                " /bar"
+                "}}"
                 "\0\0"
               }
             , 0
           }
-        , extern_changed : true
+        , walker_changed : true
       }}
     , (config_compare_test[]) {{
           Atexts : (char*[]) {
               (char[]) {
-                "extern : {"
-                " foo"
-                "}"
+                "walker : { include : {"
+                " /foo"
+                "}}"
                 "\0\0"
               }
             , 0
           }
         , Btexts : (char*[]) {
               (char[]) {
-                "extern : {"
-                " bar"
-                "}"
+                "walker : { include : {"
+                " /bar"
+                "}}"
                 "\0\0"
               }
             , (char[]) {
-                "extern = {"
-                " foo"
-                "}"
+                "walker : { include = {"
+                " /foo"
+                "}}"
                 "\0\0"
               }
             , 0
@@ -283,29 +287,56 @@ xunit_unit xunit = {
     , (config_compare_test[]) {{
           Atexts : (char*[]) {
               (char[]) {
-                "extern : {"
-                " foo"
-                "}"
+                "walker : { include : {"
+                " /bar"
+                "}}"
                 "\0\0"
               }
             , 0
           }
         , Btexts : (char*[]) {
               (char[]) {
-                "extern : {"
-                " bar"
-                "}"
+                "walker : { include : {"
+                " /bar"
+                "}}"
                 "\0\0"
               }
             , (char[]) {
-                "extern : {"
-                " foo"
-                "}"
+                "walker : { include = {"
+                " /foo"
+                "}}"
                 "\0\0"
               }
             , 0
           }
-        , extern_changed : true
+        , walker_changed : true
+      }}
+    , (config_compare_test[]) {{
+          Atexts : (char*[]) {
+              (char[]) {
+                "walker : { include : {"
+                " /foo"
+                "}}"
+                "\0\0"
+              }
+            , 0
+          }
+        , Btexts : (char*[]) {
+              (char[]) {
+                "walker : { include : {"
+                " /bar"
+                "}}"
+                "\0\0"
+              }
+            , (char[]) {
+                "walker : { include : {"
+                " /foo"
+                "}}"
+                "\0\0"
+              }
+            , 0
+          }
+        , walker_changed : true
       }}
     , 0
   }

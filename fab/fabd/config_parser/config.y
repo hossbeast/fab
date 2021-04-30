@@ -31,8 +31,10 @@
   #include "build_thread.h"
   #include "yyutil/box.h"
   #include "macros.h"
+  #include "pattern.h"
 
   struct value;
+  struct pattern;
 }
 
 %code top {
@@ -56,6 +58,7 @@
   yyu_lval  yyu;
 
   struct value * value;
+  struct pattern * pattern;
 
   int       i;
   struct {
@@ -108,11 +111,11 @@
 
 %token
  BUILD                    "build"
+ CONFIG                   "config"
  WORKERS                  "workers"
  CONCURRENCY              "concurrency"
  CONSOLE                  "console"
  ERROR                    "error"
- EXTERN                   "extern"
  EXPRS                    "exprs"
  FILESYSTEMS              "filesystems"
  FORMULA                  "formula"
@@ -131,10 +134,16 @@
  ALWAYS                   "always"
  NEVER                    "never"
  LEADING                  "leading"
+ WALKER                   "walker"
+ EXCLUDE                  "exclude"
+ INCLUDE                  "include"
 
-/*
- EXECUTABLES              "executables"
- */
+%token
+ <pattern> INCLUDE_PATTERN  "include-pattern"
+ <pattern> MATCH_PATTERN    "match-pattern"
+
+%type <pattern> match-pattern
+%type <pattern> include-pattern
 
 /* nonterminals */
 %type <str> string strpart strparts quoted_string unquoted_string
@@ -149,6 +158,7 @@
 %destructor { box_free(refas($$, bx)); } <b_int>
 %destructor { box_free(refas($$, bx)); } <b_int16>
 %destructor { box_free(refas($$, bx)); } <b_string>
+%destructor { pattern_free($$); } <pattern>
 
 %%
 utterance
@@ -184,9 +194,9 @@ section
   : build-section
   | special-section
   | workers-section
-  | extern-section
   | filesystems-section
   | formula-section
+  | walker-section
   ;
 
 build-section
@@ -211,7 +221,7 @@ workers-section
   ;
 
 build-map
-  : ':' '{' build-mapping-set '}'
+  : ':' '{' build-mapping-set-epsilon '}'
   | '=' '{' build-mapping-set-epsilon '}'
   {
     PARSER->cfg->build.merge_overwrite = true;
@@ -240,7 +250,7 @@ build-mapping
   ;
 
 special-map
-  : ':' '{' special-mapping-set '}'
+  : ':' '{' special-mapping-set-epsilon '}'
   | '=' '{' special-mapping-set-epsilon '}'
   {
     PARSER->cfg->special.merge_overwrite = true;
@@ -265,10 +275,11 @@ special-mapping
   : MODEL ':' bstring          { PARSER->cfg->special.model = $3; }
   | MODULE ':' bstring         { PARSER->cfg->special.module = $3; }
   | VAR ':' bstring            { PARSER->cfg->special.var = $3; }
+  | CONFIG ':' bstring         { PARSER->cfg->special.config = $3; }
   ;
  
 workers-map
-  : ':' '{' workers-mapping-set '}'
+  : ':' '{' workers-mapping-set-epsilon '}'
   | '=' '{' workers-mapping-set-epsilon '}'
   {
     PARSER->cfg->workers.merge_overwrite = true;
@@ -301,7 +312,7 @@ formula-section
   ;
 
 formula-map
-  : ':' '{' formula-mappings '}'
+  : ':' '{' formula-mappings-epsilon '}'
   | '=' '{' formula-mappings-epsilon '}'
   {
     PARSER->cfg->formula.merge_overwrite = true;
@@ -378,12 +389,13 @@ filesystems-section
   ;
 
 filesystems-map
-  : ':' '{' filesystems-mappings '}'
+  : ':' '{' filesystems-mappings-epsilon '}'
   | '=' '{' filesystems-mappings-epsilon '}'
   {
     PARSER->cfg->filesystems.merge_overwrite = true;
   }
   ;
+
 filesystems-mappings-epsilon
   : filesystems-mappings 
   | %empty
@@ -408,7 +420,7 @@ filesystems-mapping
   ;
 
 filesystems-entry-map
-  : ':' '{' filesystems-entry-mappings '}'
+  : ':' '{' filesystems-entry-mappings-epsilon '}'
   | '=' '{' filesystems-entry-mappings-epsilon '}'
   {
     PARSER->fse->merge_overwrite = true;
@@ -438,33 +450,92 @@ filesystems-entry-mapping
   }
   ;
 
-extern-section
-  : EXTERN ':' '{' extern-entry-list '}'
-  | EXTERN '=' '{' extern-entry-list-epsilon '}'
+walker-section
+  : WALKER walker-section-settings
+  ;
+
+walker-section-settings
+  : ':' '{' walker-settings-epsilon '}'
+  | '=' '{' walker-settings-epsilon '}'
   {
-    PARSER->cfg->extern_section.merge_overwrite = true;
+    PARSER->cfg->walker.merge_overwrite = true;
   }
   ;
 
-extern-entry-list-epsilon
-  : extern-entry-list
+walker-settings-epsilon
+  : walker-settings
+  {
+    PARSER->cfg->walker.merge_significant = 0
+      || PARSER->cfg->walker.include.merge_significant
+      || PARSER->cfg->walker.exclude.merge_significant
+      ;
+  }
   | %empty
   ;
 
-extern-entry-list
-  : extern-entry-list extern-entry
-  | extern-entry
+walker-settings
+  : walker-settings walker-setting
+  | walker-setting
+  ;
+
+walker-setting
+  : INCLUDE walker-include-entries
+  | EXCLUDE walker-exclude-entries
+  ;
+
+walker-exclude-entries
+  : ':' '{' walker-exclude-entry-list-epsilon '}'
+  | '=' '{' walker-exclude-entry-list-epsilon '}'
   {
-    PARSER->cfg->extern_section.merge_significant = true;
+    PARSER->cfg->walker.exclude.merge_overwrite = true;
   }
   ;
 
-extern-entry
-  : bstring
+walker-exclude-entry-list-epsilon
+  : walker-exclude-entry-list
+  | %empty
+  ;
+
+walker-exclude-entry-list
+  : walker-exclude-entry-list walker-exclude-entry
+  | walker-exclude-entry
   {
-    if($1) {
-      YFATAL(set_put, PARSER->cfg->extern_section.entries, $1, 0);
-    }
+    PARSER->cfg->walker.exclude.merge_significant = true;
+  }
+  ;
+
+walker-exclude-entry
+  : match-pattern
+  {
+    llist_append(&PARSER->cfg->walker.exclude.list, $1, lln);
+  }
+  ;
+
+walker-include-entries
+  : ':' '{' walker-include-entry-list-epsilon '}'
+  | '=' '{' walker-include-entry-list-epsilon '}'
+  {
+    PARSER->cfg->walker.include.merge_overwrite = true;
+  }
+  ;
+
+walker-include-entry-list-epsilon
+  : walker-include-entry-list
+  | %empty
+  ;
+
+walker-include-entry-list
+  : walker-include-entry-list walker-include-entry
+  | walker-include-entry
+  {
+    PARSER->cfg->walker.include.merge_significant = true;
+  }
+  ;
+
+walker-include-entry
+  : include-pattern
+  {
+    llist_append(&PARSER->cfg->walker.include.list, $1, lln);
   }
   ;
 
@@ -537,6 +608,14 @@ bstring
     }
     $1.s = 0;
   }
+  ;
+
+include-pattern
+  : INCLUDE_PATTERN
+  ;
+
+match-pattern
+  : MATCH_PATTERN
   ;
 
 string

@@ -29,10 +29,12 @@ struct pattern_yystype {
 };
 
 struct pattern_parser {
-  yyu_parser match_yyu;
+  yyu_parser search_yyu;
   yyu_parser generate_yyu;
   yyu_parser reference_yyu;
   yyu_parser lookup_yyu;
+  yyu_parser include_yyu;
+  yyu_parser match_yyu;
 
   // state
   uint16_t group_counter;
@@ -41,10 +43,10 @@ struct pattern_parser {
   pattern * pattern;
 };
 
-static int match_pattern_yylex(void*, void*, void*)
+static int search_pattern_yylex(void*, void*, void*)
   __attribute__((weakref("pattern_yylex")));
 
-static int match_pattern_yyerror(yyu_location* loc, void * scanner, yyu_parser * pp, char const * err)
+static int search_pattern_yyerror(yyu_location* loc, void * scanner, yyu_parser * pp, char const * err)
   __attribute__((weakref("yyu_grammar_error")));
 
 static int generate_pattern_yylex(void*, void*, void*)
@@ -63,6 +65,18 @@ static int lookup_pattern_yylex(void*, void*, void*)
   __attribute__((weakref("pattern_yylex")));
 
 static int lookup_pattern_yyerror(yyu_location* loc, void * scanner, yyu_parser * pp, char const * err)
+  __attribute__((weakref("yyu_grammar_error")));
+
+static int include_pattern_yylex(void*, void*, void*)
+  __attribute__((weakref("pattern_yylex")));
+
+static int include_pattern_yyerror(yyu_location* loc, void * scanner, yyu_parser * pp, char const * err)
+  __attribute__((weakref("yyu_grammar_error")));
+
+static int match_pattern_yylex(void*, void*, void*)
+  __attribute__((weakref("pattern_yylex")));
+
+static int match_pattern_yyerror(yyu_location* loc, void * scanner, yyu_parser * pp, char const * err)
   __attribute__((weakref("yyu_grammar_error")));
 
 #endif
