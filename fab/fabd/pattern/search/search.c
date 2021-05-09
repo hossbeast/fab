@@ -258,9 +258,9 @@ xapi pattern_segments_search(pattern_search_context * ctx)
       continue;
     }
 
-    //if(matches) {
-    //  ctx->matched = true;
-    //}
+    if(matches) {
+      ctx->matched = true;
+    }
 
     break;
   }
