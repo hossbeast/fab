@@ -55,9 +55,13 @@ static xapi search(const pattern_segment * restrict segment, pattern_search_cont
   enter;
 
   const pattern_byte * byte = &segment->byte;
-  const char * restrict name = ctx->node->name.name;
-  uint16_t namel = ctx->node->name.namel;
-  uint16_t name_offset = ctx->traversal->offset;
+  const char * restrict name; // = ctx->node->name.name;
+  uint16_t namel; // = ctx->node->name.namel;
+  uint16_t name_offset; // = ctx->traversal->offset;
+
+  name = ctx->label;
+  namel = ctx->label_len;
+  name_offset = ctx->traversal->offset;
 
   if((namel > name_offset) && (name[name_offset] == byte->code))
   {

@@ -30,8 +30,8 @@ struct fsent;
 xapi pattern_match(
     const struct pattern * restrict pat
   , const struct fsent * restrict dirnode
-//  , const char * restrict label
-//  , uint16_t label_len
+  , const char * restrict label
+  , uint16_t label_len
   , bool * restrict matched
 )
   __attribute__((nonnull));

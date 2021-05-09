@@ -74,8 +74,10 @@ aybxc
 */
 
   traversal = ctx->traversal;
-  name = ctx->node->name.name;
-  namel = ctx->node->name.namel;
+  //name = ctx->node->name.name;
+  //namel = ctx->node->name.namel;
+  name = ctx->label;
+  namel = ctx->label_len;
 
   variant *v;
   for(x = 0; x < ctx->variants->table_size; x++)
@@ -99,10 +101,9 @@ aybxc
     }
 
     ctx->variant_index = x;
-
     ctx->traversal->offset += var_len;
-    fatal(pattern_segments_search, ctx);
 
+    fatal(ctx->segments_process, ctx);
     if(ctx->matched)
       break;
 

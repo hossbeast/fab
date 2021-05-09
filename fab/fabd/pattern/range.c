@@ -50,9 +50,11 @@ static xapi search(const pattern_segment * restrict segment, pattern_search_cont
   enter;
 
   const pattern_range * range = &segment->range;
+  const char * restrict name; // = ctx->node->name.name;
+  uint16_t namel; // = ctx->node->name.namel;
 
-  const char * restrict name = ctx->node->name.name;
-  uint16_t namel = ctx->node->name.namel;
+  name = ctx->label;
+  namel = ctx->label_len;
 
   if((namel > ctx->traversal->offset) && (name[ctx->traversal->offset] >= range->start && name[ctx->traversal->offset] <= range->end))
   {

@@ -249,6 +249,21 @@ xapi walker_visit(int method, ftwinfo * info, void * arg, int * stop)
   {
     parent = info->parent->udata;
 
+    /* check whether this dirent matches an exclude pattern */
+    if(info->type == FTWAT_D)
+    {
+      llist_foreach(exclude_list, pat, lln) {
+        fatal(pattern_match, pat, parent, info->path + info->name_off, info->pathl - info->name_off, &matched);
+if(matched) {
+printf("%d %.*s\n", matched, (int)n->vertex.label_len, n->vertex.label);
+}
+        if(matched) {
+          *stop = 1;
+          goto XAPI_FINALIZE;
+        }
+      }
+    }
+
 //printf("%s:%d\n", __FUNCTION__, __LINE__);
     if((lv = moria_vertex_downs(&parent->vertex, info->path + info->name_off)))
     {
@@ -265,21 +280,6 @@ xapi walker_visit(int method, ftwinfo * info, void * arg, int * stop)
       fatal(fsedge_connect, parent, n, ctx->invalidation);
 
 //printf("%s:%d %.*s %d\n", __FUNCTION__, __LINE__, (int)info->pathl - info->name_off, info->path + info->name_off, filetype);
-
-      /* check whether this dirent matches an exclude pattern */
-      if(filetype == VERTEX_FILETYPE_DIR && exclude_list)
-      {
-        llist_foreach(exclude_list, pat, lln) {
-          fatal(pattern_match, pat, n, &matched);
-if(matched) {
-  printf("%d %.*s\n", matched, (int)n->vertex.label_len, n->vertex.label);
-}
-          if(matched) {
-            *stop = 1;
-            goto XAPI_FINALIZE;
-          }
-        }
-      }
     }
   }
 

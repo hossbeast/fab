@@ -70,8 +70,7 @@ static xapi search(const pattern_segment * restrict segment, pattern_search_cont
   traversal.u.prev = ctx->traversal;
 
   ctx->traversal = &traversal;
-
-  fatal(pattern_segments_search, ctx);
+  fatal(ctx->segments_process, ctx);
 
   // pop
   ctx->traversal = traversal.u.prev;

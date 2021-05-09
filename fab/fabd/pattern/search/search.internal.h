@@ -43,6 +43,7 @@ typedef struct pattern_search_context {
     const struct chain * cursor;
 //    int mindepth;
 //    int maxdepth;
+    bool match;
   } section_traversal;
 
   struct search_segments_traversal {
@@ -64,6 +65,7 @@ typedef struct pattern_search_context {
     // characters matched by the segments block
     uint16_t start;
     uint16_t offset;  // len is offset - start
+    bool match;
 
     // MUST be at the end b/c of how RESTORE works!
     struct unrestored {
@@ -80,10 +82,13 @@ typedef struct pattern_search_context {
   void * dirnode_visit_ctx;
   const struct set * restrict variants;
   uint8_t variants_len;
+  xapi (*segments_process)(struct pattern_search_context * restrict);
 
   // state
-  const struct fsent * restrict node;
-  bool matched;
+  const struct fsent * dirnode;
+  const char * label;
+  uint16_t label_len;
+  bool match;
 
   int16_t variant_index;
   pattern_search_group groups[16];

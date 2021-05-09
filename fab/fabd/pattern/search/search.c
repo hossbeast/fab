@@ -89,7 +89,9 @@ static xapi search_visit(moria_vertex * restrict v, void * _ctx, moria_traversal
 
   ctx->traversal = &traversal;
 
-  ctx->node = n;
+  //ctx->node = n;
+  ctx->label = n->vertex.label;
+  ctx->label_len = n->vertex.label_len;
   ctx->matched = false;
   fatal(pattern_segments_search, ctx);
 
@@ -109,10 +111,11 @@ static xapi search_visit(moria_vertex * restrict v, void * _ctx, moria_traversal
     memcpy(m->groups, ctx->groups, sizeof(m->groups));
     m->group_max = ctx->group_max;
 
-    m->groups[0].start = ctx->node->name.name;
-    m->groups[0].len = ctx->node->name.namel;
-    for(x = 1; x <= ctx->group_max; x++)
+    m->groups[0].start = ctx->label; // ctx->node->name.name;
+    m->groups[0].len = ctx->label_len; // ctx->node->name.namel;
+    for(x = 1; x <= ctx->group_max; x++) {
       m->groups[x] = ctx->groups[x];
+    }
 
     fatal(set_put, ctx->matches, m, 0);
     m = 0;
@@ -181,7 +184,7 @@ xapi pattern_segments_search(pattern_search_context * ctx)
 
     if(traversal->segments_head)
     {
-      matches = traversal->offset == ctx->node->name.namel;
+      matches = traversal->offset == ctx->label_len; // ctx->node->name.namel;
       next = end;
 
       if(traversal->container.segment && traversal->container.segment->type == PATTERN_ALTERNATION)
@@ -191,13 +194,11 @@ xapi pattern_segments_search(pattern_search_context * ctx)
           abandon = !end && !chain_has_next(traversal->segments_head, traversal->segments_cursor, chn);
         next = !end;
       }
-
       else if(traversal->container.segment && traversal->container.segment->type == PATTERN_CLASS)
       {
         abandon = !end && !chain_has_next(traversal->segments_head, traversal->segments_cursor, chn);
         next = !end;
       }
-
       else  // group, section
       {
         abandon = !end;
@@ -221,16 +222,18 @@ xapi pattern_segments_search(pattern_search_context * ctx)
       num = traversal->container.segment->group.num;
       if(num < (sizeof(ctx->groups) / sizeof(*ctx->groups)))
       {
-        ctx->groups[num].start = ctx->node->name.name + traversal->start;
+        ctx->groups[num].start = ctx->label + traversal->start; // ctx->node->name.name + traversal->start;
         ctx->groups[num].len = traversal->offset - traversal->start;
 
         ctx->group_max = MAX(ctx->group_max, num);
       }
     }
 
-    if(abandon)
+    if(abandon) {
       break;
+    }
 
+    // next alternation, class, or qualifier
     if(next && traversal->segments_head)
     {
       traversal->segment = 0;
@@ -255,9 +258,9 @@ xapi pattern_segments_search(pattern_search_context * ctx)
       continue;
     }
 
-    if(matches) {
-      ctx->matched = true;
-    }
+    //if(matches) {
+    //  ctx->matched = true;
+    //}
 
     break;
   }
@@ -375,6 +378,7 @@ xapi pattern_search(
 
   ctx.section_traversal.head = pattern->section_head;
   ctx.section_traversal.section = chain_next(ctx.section_traversal.head, &ctx.section_traversal.cursor, chn);
+  ctx.segments_process = pattern_segments_search;
 
   /* search pattern begins at the module dirnode */
   fatal(pattern_section_search, &ctx, module->dir_node);

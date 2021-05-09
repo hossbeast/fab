@@ -77,10 +77,12 @@ static xapi search(const pattern_segment * restrict segment, pattern_search_cont
   uint16_t namel;
 
   word = &segment->word;
-  name = ctx->node->name.name;
-  namel = ctx->node->name.namel;
+  //name = ctx->node->name.name;
+  //namel = ctx->node->name.namel;
+  name = ctx->label;
+  namel = ctx->label_len;
 
-printf("%s:%d %.*s <=> %.*s\n", __FUNCTION__, __LINE__, namel - ctx->traversal->offset, name + ctx->traversal->offset, word->len, word->text);
+printf("%s:%d ctx->label %.*s <=> word %.*s\n", __FILE__, __LINE__, namel - ctx->traversal->offset, name + ctx->traversal->offset, word->len, word->text);
 
   if(     (namel - ctx->traversal->offset) >= word->len
        && strncmp(name + ctx->traversal->offset, word->text, word->len) == 0)

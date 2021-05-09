@@ -50,7 +50,8 @@ static xapi search(const pattern_segment * restrict segment, pattern_search_cont
   uint16_t start;
   struct search_segments_traversal *traversal;
 
-  namel = ctx->node->name.namel;
+  //namel = ctx->node->name.namel;
+  namel = ctx->label_len;
   traversal = ctx->traversal;
   start = ctx->traversal->offset;
 
@@ -58,8 +59,7 @@ static xapi search(const pattern_segment * restrict segment, pattern_search_cont
   {
     ctx->traversal->offset = start + delta;
 
-    fatal(pattern_segments_search, ctx);
-
+    fatal(ctx->segments_process, ctx);
     if(ctx->matched)
       break;
 
