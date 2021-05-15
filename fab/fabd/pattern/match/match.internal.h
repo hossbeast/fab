@@ -24,26 +24,23 @@
 #include "match.h"
 
 struct fsent;
-struct pattern_search_context;
+struct pattern_match_context;
 struct pattern_segments;
 
 xapi pattern_section_match(
-    struct pattern_search_context * restrict ctx
+    struct pattern_match_context * restrict ctx
   , const struct fsent * restrict dirnode
 )
   __attribute__((nonnull));
 
-xapi pattern_segments_match(struct pattern_search_context * ctx)
+xapi pattern_segments_match(struct pattern_match_context * ctx)
   __attribute__((nonnull));
 
-#if 0
 typedef struct pattern_match_context {
   struct match_section_traversal {
     const struct pattern_section * section;
     const struct pattern_section * head;
     const struct chain * cursor;
-//    int mindepth;
-//    int maxdepth;
   } section_traversal;
 
   struct match_segments_traversal {
@@ -67,30 +64,21 @@ typedef struct pattern_match_context {
     uint16_t offset;  // len is offset - start
 
     // MUST be at the end b/c of how RESTORE works!
-    struct unrestored {
+    struct {
       struct match_segments_traversal *prev;
       struct match_segments_traversal *child;
       struct match_segments_traversal *next;
+      bool match;
     } u;
   } *traversal;
 
   // state
-  const struct fsent * restrict parent;
-  const char *label;
+  const struct fsent * dirnode;
+  const char * label;
   uint16_t label_len;
 
-  uint16_t offset;
+  // output context
+  bool matched;
 } pattern_match_context;
-
-xapi pattern_segment_match(
-    struct pattern_match_context * restrict ctx
-  , const union pattern_segment * restrict segment
-  , const struct fsent * restrict node
-  , uint16_t * restrict name_offset
-  , bool * restrict r
-)
-  __attribute__((nonnull));
-
-#endif
 
 #endif

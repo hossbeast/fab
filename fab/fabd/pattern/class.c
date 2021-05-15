@@ -138,6 +138,30 @@ static void destroy(pattern_segment * restrict n)
   pattern_segments_list_free(n->class.segments_head);
 }
 
+static xapi match(const pattern_segment * restrict segment, pattern_match_context * restrict ctx)
+{
+  enter;
+
+  const pattern_class * class = &segment->class;
+  struct match_segments_traversal traversal;
+
+  traversal = (typeof(traversal)) {
+      segments_head : class->segments_head
+  };
+  traversal.container.segment = segment;
+  traversal.segments = chain_next(traversal.segments_head, &traversal.segments_cursor, chn);
+  traversal.start = traversal.offset = ctx->traversal->offset;
+
+  traversal.u.prev = ctx->traversal;
+  ctx->traversal = &traversal;
+
+  fatal(pattern_segments_match, ctx);
+
+  ctx->traversal = traversal.u.prev;
+
+  finally : coda;
+}
+
 static xapi search(const pattern_segment * restrict segment, pattern_search_context * restrict ctx)
 {
   enter;
@@ -240,6 +264,7 @@ static pattern_segment_vtable vtable = {
   , render : render
   , destroy : destroy
   , search : search
+  , match : match
   , generate : generate
   , cmp : cmp
 };

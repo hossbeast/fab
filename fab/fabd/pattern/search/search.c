@@ -89,9 +89,9 @@ static xapi search_visit(moria_vertex * restrict v, void * _ctx, moria_traversal
 
   ctx->traversal = &traversal;
 
-  //ctx->node = n;
-  ctx->label = n->vertex.label;
-  ctx->label_len = n->vertex.label_len;
+  ctx->node = n;
+  //ctx->label = n->vertex.label;
+  //ctx->label_len = n->vertex.label_len;
   ctx->matched = false;
   fatal(pattern_segments_search, ctx);
 
@@ -111,8 +111,8 @@ static xapi search_visit(moria_vertex * restrict v, void * _ctx, moria_traversal
     memcpy(m->groups, ctx->groups, sizeof(m->groups));
     m->group_max = ctx->group_max;
 
-    m->groups[0].start = ctx->label; // ctx->node->name.name;
-    m->groups[0].len = ctx->label_len; // ctx->node->name.namel;
+    m->groups[0].start = ctx->node->name.name;
+    m->groups[0].len = ctx->node->name.namel;
     for(x = 1; x <= ctx->group_max; x++) {
       m->groups[x] = ctx->groups[x];
     }
@@ -184,7 +184,7 @@ xapi pattern_segments_search(pattern_search_context * ctx)
 
     if(traversal->segments_head)
     {
-      matches = traversal->offset == ctx->label_len; // ctx->node->name.namel;
+      matches = traversal->offset == ctx->node->name.namel;
       next = end;
 
       if(traversal->container.segment && traversal->container.segment->type == PATTERN_ALTERNATION)
@@ -222,7 +222,7 @@ xapi pattern_segments_search(pattern_search_context * ctx)
       num = traversal->container.segment->group.num;
       if(num < (sizeof(ctx->groups) / sizeof(*ctx->groups)))
       {
-        ctx->groups[num].start = ctx->label + traversal->start; // ctx->node->name.name + traversal->start;
+        ctx->groups[num].start = ctx->node->name.name + traversal->start;
         ctx->groups[num].len = traversal->offset - traversal->start;
 
         ctx->group_max = MAX(ctx->group_max, num);
@@ -251,7 +251,7 @@ xapi pattern_segments_search(pattern_search_context * ctx)
     if((ctx->traversal = ctx->traversal->u.prev))
     {
       ctx->traversal->offset = traversal->offset;
-      memcpy(traversal, &saved_traversal, sizeof(*traversal) - sizeof(struct unrestored));
+      memcpy(traversal, &saved_traversal, sizeof(*traversal) - sizeof(typeof(traversal->u)));
       traversal = ctx->traversal;
       saved_traversal = *traversal;
 
@@ -265,7 +265,7 @@ xapi pattern_segments_search(pattern_search_context * ctx)
     break;
   }
 
-  memcpy(traversal, &saved_traversal, sizeof(*traversal) - sizeof(struct unrestored));
+  memcpy(traversal, &saved_traversal, sizeof(*traversal) - sizeof(typeof(traversal->u)));
 
   finally : coda;
 }

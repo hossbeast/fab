@@ -113,10 +113,6 @@ static xapi pattern_match_test_entry(xunit_test * _test)
   fatal(graph_parser_create, &op_parser, &g_graph, &fsent_list, node_operations_test_dispatch, graph_vertex_attrs, graph_edge_attrs);
   fatal(graph_parser_operations_parse, op_parser, MMS(test->operations));
 
-printf("G ");
-fatal(graph_say, g_narrator_stdout);
-printf("\n");
-
   // parse the pattern
   fatal(pattern_parser_create, &parser);
   fatal(match_pattern_parse_partial, parser, test->pattern, strlen(test->pattern) + 2, "-test-", 0, &loc, &pattern);
@@ -218,13 +214,9 @@ xunit_unit xunit = {
     /* multi directory */
     , (pattern_match_test[]) {{
           operations : ""
-            " mod/foo/abcd/bar/a"
-            " mod/foo/abcd/bar/gondor/valyria/b"
             " mod/foo/abcd/baz"
             " mod/foo/abcd/oof/a"
             " mod/foo/abcd/oof/b"
-            " mod/foo/abcd/qux/a"
-            " mod/foo/abcd/qux/b"
         , pattern : (char[]) { "foo/abcd/oof/b\0" }
         , node : "b"
         , expected : true
@@ -399,7 +391,6 @@ xunit_unit xunit = {
         , pattern : (char[]) { "A/B{X,{C,Y}}D/E\0" }
         , node : "E"
         , expected : true
-, xu_weight : 0
       }}
     , (pattern_match_test[]) {{
           operations : ""
@@ -407,14 +398,12 @@ xunit_unit xunit = {
         , pattern : (char[]) { "{A.B,X}/E\0" }
         , node : "E"
         , expected : false
-, xu_weight : 0
       }}
     , (pattern_match_test[]) {{
           operations : ""
             " mod/A/E"
         , pattern : (char[]) { "{{A.B,X}}/E\0" }
         , node : "E"
-, xu_weight : 0
       }}
     , (pattern_match_test[]) {{
           operations : ""
@@ -422,7 +411,6 @@ xunit_unit xunit = {
         , pattern : (char[]) { "AB{,X}/E\0" }
         , node : "E"
         , expected : true
-, xu_weight : 0
       }}
 
     /* alternations + epsilon */
@@ -434,7 +422,6 @@ xunit_unit xunit = {
         , matches : (char*[]) { "/mod/A", 0 }
         , node : "A"
         , expected : true
-, xu_weight : 0
       }}
     , (pattern_match_test[]) {{
           operations : ""
@@ -443,7 +430,6 @@ xunit_unit xunit = {
         , pattern : (char[]) { "[A-Za-z]\0" }
         , node : "A"
         , expected : true
-, xu_weight : 0
       }}
     , (pattern_match_test[]) {{
           operations : ""
@@ -452,7 +438,6 @@ xunit_unit xunit = {
         , pattern : (char[]) { "[A-Za-z]\0" }
         , node : "b"
         , expected : true
-, xu_weight : 0
       }}
     , (pattern_match_test[]) {{
           operations : ""
@@ -461,7 +446,6 @@ xunit_unit xunit = {
         , pattern : (char[]) { "[A-Z][a-z]\0" }
         , node : "Bb"
         , expected : true
-, xu_weight : 0
       }}
 
     /* star */
@@ -471,7 +455,6 @@ xunit_unit xunit = {
         , pattern : (char[]) { "ab*\0" }
         , node : "abcd"
         , expected : true
-, xu_weight : 0
       }}
     , (pattern_match_test[]) {{
           operations : ""
@@ -479,7 +462,6 @@ xunit_unit xunit = {
         , pattern : (char[]) { "*cd\0" }
         , node : "abcd"
         , expected : true
-, xu_weight : 0
       }}
     , (pattern_match_test[]) {{
           operations : ""
@@ -487,7 +469,6 @@ xunit_unit xunit = {
         , pattern : (char[]) { "a*d\0" }
         , node : "abcd"
         , expected : true
-, xu_weight : 0
       }}
     , (pattern_match_test[]) {{
           operations : ""
@@ -495,7 +476,6 @@ xunit_unit xunit = {
         , pattern : (char[]) { "ab*cd\0" }
         , node : "abcd"
         , expected : true
-, xu_weight : 0
       }}
     , (pattern_match_test[]) {{
           operations : ""
@@ -503,7 +483,6 @@ xunit_unit xunit = {
         , pattern : (char[]) { "a*c*\0" }
         , node : "abcd"
         , expected : true
-, xu_weight : 0
       }}
     , (pattern_match_test[]) {{
           operations : ""
@@ -511,7 +490,6 @@ xunit_unit xunit = {
         , pattern : (char[]) { "*c*\0" }
         , node : "abcd"
         , expected : true
-, xu_weight : 0
       }}
 
     /* star + alternation */
@@ -522,7 +500,6 @@ xunit_unit xunit = {
         , pattern : (char[]) { "*{d,cd}/e\0" }
         , node : "e"
         , expected : true
-, xu_weight : 0
       }}
     , (pattern_match_test[]) {{
           operations : ""
@@ -531,7 +508,6 @@ xunit_unit xunit = {
         , pattern : (char[]) { "*{d,cd}/f\0" }
         , node : "f"
         , expected : true
-, xu_weight : 0
       }}
 
     /* star / multi directory */
@@ -542,7 +518,6 @@ xunit_unit xunit = {
         , pattern : (char[]) { "*/*/abc\0" }
         , node : "abc"
         , expected : true
-, xu_weight : 0
       }}
     , (pattern_match_test[]) {{
           operations : ""
@@ -551,7 +526,6 @@ xunit_unit xunit = {
         , pattern : (char[]) { "*/*/bcd\0" }
         , node : "bcd"
         , expected : true
-, xu_weight : 0
       }}
 
     /* starstar */
@@ -559,10 +533,9 @@ xunit_unit xunit = {
           operations : ""
             " mod/foo/a"
             " mod/foo/bar/b"
-        , pattern : (char[]) { "**\0" }
+        , pattern : (char[]) { "**/*\0" }
         , node : "a"
         , expected : true
-, xu_weight : 0
       }}
     , (pattern_match_test[]) {{
           operations : ""
@@ -571,7 +544,6 @@ xunit_unit xunit = {
         , pattern : (char[]) { "**\0" }
         , node : "foo"
         , expected : true
-, xu_weight : 0
       }}
     , (pattern_match_test[]) {{
           operations : ""
@@ -580,7 +552,6 @@ xunit_unit xunit = {
         , pattern : (char[]) { "**\0" }
         , node : "b"
         , expected : true
-, xu_weight : 0
       }}
     , (pattern_match_test[]) {{
           operations : ""
@@ -598,7 +569,6 @@ xunit_unit xunit = {
         , pattern : (char[]) { "**/*\0" }
         , node : "qux"
         , expected : true
-, xu_weight : 0
       }}
     , (pattern_match_test[]) {{
           operations : ""
@@ -607,7 +577,6 @@ xunit_unit xunit = {
         , pattern : (char[]) { "**/*\0" }
         , node : "foo"
         , expected : true
-, xu_weight : 0
       }}
     , (pattern_match_test[]) {{
           operations : ""
@@ -616,260 +585,104 @@ xunit_unit xunit = {
         , pattern : (char[]) { "**/*\0" }
         , node : "baz"
         , expected : true
-, xu_weight : 0
       }}
     , (pattern_match_test[]) {{
           operations : ""
             " mod/foo/qux"
             " mod/foo/bar/baz"
-        , pattern : (char[]) { "**/*\0" }
+        , pattern : (char[]) { "**/*\0" }   // starstar only matches directories
         , node : "mod"
         , expected : false
-, xu_weight : 1
       }}
     , (pattern_match_test[]) {{
           operations : ""
-            " mod/foo/qux"
-            " mod/foo/bar/qux"
-            " mod/foo/bar/baz/qux"
-        , pattern : (char[]) { "**/**\0" }  // only matches directories
-        , matches : (char*[]) {
-              0
-          }
-      }}
-    , (pattern_match_test[]) {{
-          operations : ""
-            " mod/foo/qux"
-            " mod/foo/bar/qux"
             " mod/foo/bar/baz/qux"
         , pattern : (char[]) { "**/**/*\0" }
-        , matches : (char*[]) {
-              "/mod/foo/qux"
-            , "/mod/foo/bar/qux"
-            , "/mod/foo/bar/baz/qux"
-            , 0
-          }
+        , node : "qux"
+        , expected : true
       }}
     , (pattern_match_test[]) {{
           operations : ""
-            " mod/foo/qux"
-            " mod/foo/bar/qux"
+            " mod/foo/bar/baz/qux"
+        , pattern : (char[]) { "**/**/*\0" }
+        , node : "bar"
+        , expected : true
+      }}
+    , (pattern_match_test[]) {{
+          operations : ""
+            " mod/foo/bar/baz/qux"
+        , pattern : (char[]) { "**/**/*\0" }
+        , node : "foo"
+        , expected : false
+      }}
+    , (pattern_match_test[]) {{
+          operations : ""
             " mod/foo/bar/baz/qux"
         , pattern : (char[]) { "**/qux\0" }
-        , matches : (char*[]) {
-              "/mod/foo/qux"
-            , "/mod/foo/bar/qux"
-            , "/mod/foo/bar/baz/qux"
-            , 0
-          }
-      }}
-    , (pattern_match_test[]) {{
-          operations : ""
-            " mod/A"
-            " mod/foo/B"
-            " mod/foo/bar/C"
-            " mod/foo/bar/baz/D"
-        , pattern : (char[]) { "**/*\0" }
-        , matches : (char*[]) {
-              "/mod/A"
-            , "/mod/foo/B"
-            , "/mod/foo/bar/C"
-            , "/mod/foo/bar/baz/D"
-            , 0
-          }
-      }}
-    , (pattern_match_test[]) {{
-          operations : ""
-            " mod/A"
-            " mod/foo/B"
-            " mod/foo/bar/C"
-            " mod/foo/bar/baz/D"
-        , pattern : (char[]) { "**/**/*\0" }
-        , matches : (char*[]) {
-              "/mod/A"
-            , "/mod/foo/B"
-            , "/mod/foo/bar/C"
-            , "/mod/foo/bar/baz/D"
-            , 0
-          }
+        , node : "qux"
+        , expected : true
       }}
 
     /* starstar+conjunctions */
     , (pattern_match_test[]) {{
           operations : ""
-            " mod/foo/qux"
-            " mod/foo/bar/qux"
-            " mod/foo/bar/baz/qux"
-        , pattern : (char[]) { "**~baz/*\0" }
-        , matches : (char*[]) {
-              "/mod/foo/qux"
-            , "/mod/foo/bar/qux"
-            , 0
-          }
+            " foo/bar/A"
+            " foo/bar/baz/B"
+/* in a match pattern, qualifiers on a starstar are only evaluated against the immediate parent */
+        , pattern : (char[]) { "**~baz/B\0" }
+        , node : "B"
+        , expected : false
+      }}
+    , (pattern_match_test[]) {{
+          operations : ""
+            " foo/bar/A"
+            " foo/bar/baz/B"
+        , pattern : (char[]) { "**+baz/B\0" }
+        , node : "B"
+        , expected : true
+      }}
+    , (pattern_match_test[]) {{
+          operations : ""
+            " foo/bar/A"
+            " foo/bar/baz/B"
+        , pattern : (char[]) { "**~baz/A\0" }
+        , node : "A"
+        , expected : true
+      }}
+    , (pattern_match_test[]) {{
+          operations : ""
+            " foo/bar/A"
+            " foo/bar/baz/B"
+        , pattern : (char[]) { "**+baz/A\0" }
+        , node : "A"
+        , expected : false
       }}
 
-    /* star+conjunctions */
+    /* multi-starstar */
     , (pattern_match_test[]) {{
           operations : ""
-            " mod/bar"
-            " mod/baz"
-        , pattern : (char[]) { "*~baz\0" }
-        , matches : (char*[]) {
-              "/mod/bar"
-            , 0
-          }
+            " X/Y/bar/baz/A"
+            " X/Z/bar/baz/qux/B"
+        , pattern : (char[]) { "Y/**/[AB]\0" }
+        , node : "A"
+        , expected : true
       }}
     , (pattern_match_test[]) {{
           operations : ""
-            " mod/bar"
-            " mod/baz"
-        , pattern : (char[]) { "*+baz\0" }
-        , matches : (char*[]) {
-              "/mod/baz"
-            , 0
-          }
+            " X/Y/bar/baz/A"
+            " X/Z/bar/baz/qux/B"
+        , pattern : (char[]) { "Y/**/[AB]\0" }
+        , node : "B"
+        , expected : false
       }}
     , (pattern_match_test[]) {{
           operations : ""
-            " mod/foo"
-            " mod/bar"
-            " mod/baz"
-        , pattern : (char[]) { "*~bar~baz\0" }
-        , matches : (char*[]) {
-              "/mod/foo"
-            , 0
-          }
+            " X/Y/bar/baz/A"
+            " X/Z/bar/baz/qux/B"
+        , pattern : (char[]) { "Z/**+qux/[AB]\0" }
+        , node : "B"
+        , expected : true
       }}
-    , (pattern_match_test[]) {{
-          operations : ""
-            " mod/integ/a"
-            " mod/integ/a/a"
-            " mod/integ/a/a/a"
-            " mod/src/a"
-            " mod/src/b/a"
-            " mod/src/c/d/a"
-        , pattern : (char[]) { "*~integ/**/a\0" }
-        , matches : (char*[]) {
-              "/mod/src/a"
-            , "/mod/src/b/a"
-            , "/mod/src/c/d/a"
-            , 0
-          }
-      }}
-
-    /* groups */
-    , (pattern_match_test[]) {{
-          operations : ""
-            " mod/bar"
-        , pattern : (char[]) { "ba([rz])\0" }
-        , matches : (char*[]) {
-              "/mod/bar 1 r"
-            , 0
-          }
-      }}
-    , (pattern_match_test[]) {{
-          operations : ""
-            " mod/bar"
-            " mod/baz"
-        , pattern : (char[]) { "ba({r,z})\0" }
-        , matches : (char*[]) {
-              "/mod/bar 1 r"
-            , "/mod/baz 1 z"
-            , 0
-          }
-      }}
-    , (pattern_match_test[]) {{
-          operations : ""
-            " mod/bar"
-            " mod/baz"
-        , pattern : (char[]) { "*ba(r)\0" }
-        , matches : (char*[]) {
-              "/mod/bar 1 r"
-            , 0
-          }
-      }}
-    , (pattern_match_test[]) {{
-          operations : ""
-            " mods/mod/foo/bar"
-        , pattern : (char[]) { "(f)oo/ba(r)\0" }
-        , matches : (char*[]) {
-              "/mods/mod/foo/bar 1 f 2 r"
-            , 0
-          }
-      }}
-    , (pattern_match_test[]) {{
-          operations : ""
-            " mods/mod/A"
-            " mods/mod/foo/B"
-            " mods/mod/foo/bar/C"
-        , pattern : (char[]) { "**/(*)\0" }
-        , matches : (char*[]) {
-              "/mods/mod/A 1 A"
-            , "/mods/mod/foo/B 1 B"
-            , "/mods/mod/foo/bar/C 1 C"
-            , 0
-          }
-      }}
-    , (pattern_match_test[]) {{
-          operations : ""
-            " mods/mod/abc"
-        , pattern : (char[]) { "(*)bc\0" }
-        , matches : (char*[]) {
-              "/mods/mod/abc 1 a"
-            , 0
-          }
-      }}
-
-    /* nested groups */
-    , (pattern_match_test[]) {{
-          operations : ""
-            " mod/car"
-            " mod/carf"
-            " mod/carff"
-        , pattern : (char[]) { "c((ar))f\0" }
-        , matches : (char*[]) {
-              "/mod/carf 1 ar 2 ar"
-            , 0
-          }
-      }}
-    , (pattern_match_test[]) {{
-          operations : ""
-            " mod/c"
-            " mod/ca"
-            " mod/car"
-            " mod/carf"
-            " mod/carff"
-        , pattern : (char[]) { "c(((ar)))f\0" }
-        , matches : (char*[]) {
-              "/mod/carf 1 ar 2 ar 3 ar"
-            , 0
-          }
-      }}
-
-    /* conjunctions + groups */
-    , (pattern_match_test[]) {{
-          operations : ""
-            " mod/barf"
-            " mod/barb"
-        , pattern : (char[]) { "(([bc]ar)+(bar))f\0" }
-        , matches : (char*[]) {
-              "/mod/barf 1 bar 2 bar 3 bar"
-            , 0
-          }
-      }}
-    , (pattern_match_test[]) {{
-          operations : ""
-            " mod/barf"
-            " mod/carb"
-            " mod/carf"
-        , pattern : (char[]) { "([bc]ar~bar)f\0" }
-        , matches : (char*[]) {
-              "/mod/carf 1 car"
-            , 0
-          }
-      }}
-
-    /* shadow-requires */
     , 0
   }
 };

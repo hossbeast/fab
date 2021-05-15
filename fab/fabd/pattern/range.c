@@ -22,6 +22,7 @@
 #include "byte.h"
 #include "fsent.h"
 #include "search.internal.h"
+#include "match.internal.h"
 #include "pattern.internal.h"
 
 //
@@ -45,7 +46,7 @@ static void destroy(pattern_segment * restrict fn)
 {
 }
 
-static xapi search(const pattern_segment * restrict segment, pattern_search_context * restrict ctx)
+static xapi match(const pattern_segment * restrict segment, pattern_match_context * restrict ctx)
 {
   enter;
 
@@ -55,6 +56,26 @@ static xapi search(const pattern_segment * restrict segment, pattern_search_cont
 
   name = ctx->label;
   namel = ctx->label_len;
+
+  if((namel > ctx->traversal->offset) && (name[ctx->traversal->offset] >= range->start && name[ctx->traversal->offset] <= range->end))
+  {
+    ctx->traversal->offset += 1;
+  }
+
+  finally : coda;
+}
+
+static xapi search(const pattern_segment * restrict segment, pattern_search_context * restrict ctx)
+{
+  enter;
+
+  const pattern_range * range;
+  const char * restrict name;
+  uint16_t namel;
+
+  range = &segment->range;
+  name = ctx->node->name.name;
+  namel = ctx->node->name.namel;
 
   if((namel > ctx->traversal->offset) && (name[ctx->traversal->offset] >= range->start && name[ctx->traversal->offset] <= range->end))
   {
@@ -82,6 +103,7 @@ static pattern_segment_vtable vtable = {
   , say : say
   , destroy : destroy
   , search : search
+  , match : match
   , cmp : cmp
 };
 

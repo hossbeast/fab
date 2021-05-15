@@ -21,6 +21,7 @@
 #include "star.h"
 #include "fsent.h"
 #include "search.internal.h"
+#include "match.internal.h"
 #include "pattern.internal.h"
 
 //
@@ -41,14 +42,14 @@ static void destroy(pattern_segment * restrict n)
 
 }
 
-static xapi search(const pattern_segment * restrict segment, pattern_search_context * restrict ctx)
+static xapi match(const pattern_segment * restrict segment, pattern_match_context * restrict ctx)
 {
   enter;
 
   uint16_t namel;
   uint16_t delta;
   uint16_t start;
-  struct search_segments_traversal *traversal;
+  struct match_segments_traversal *traversal;
 
   //namel = ctx->node->name.namel;
   namel = ctx->label_len;
@@ -59,7 +60,36 @@ static xapi search(const pattern_segment * restrict segment, pattern_search_cont
   {
     ctx->traversal->offset = start + delta;
 
-    fatal(ctx->segments_process, ctx);
+    fatal(pattern_segments_match, ctx);
+    if(ctx->traversal->u.match) {
+      break;
+    }
+
+    ctx->traversal = traversal;
+  }
+
+  finally : coda;
+}
+
+static xapi search(const pattern_segment * restrict segment, pattern_search_context * restrict ctx)
+{
+  enter;
+
+  uint16_t namel;
+  uint16_t delta;
+  uint16_t start;
+  struct search_segments_traversal *traversal;
+
+  namel = ctx->node->name.namel;
+  //namel = ctx->label_len;
+  traversal = ctx->traversal;
+  start = ctx->traversal->offset;
+
+  for(delta = namel - start; delta >= 0 && delta != 0xffff; delta--)
+  {
+    ctx->traversal->offset = start + delta;
+
+    fatal(pattern_segments_search, ctx);
     if(ctx->matched)
       break;
 
@@ -79,6 +109,7 @@ static pattern_segment_vtable vtable = {
   , say : say
   , destroy : destroy
   , search : search
+  , match : match
   , cmp : cmp
 };
 

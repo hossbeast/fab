@@ -68,7 +68,7 @@ typedef struct pattern_search_context {
     bool match;
 
     // MUST be at the end b/c of how RESTORE works!
-    struct unrestored {
+    struct {
       struct search_segments_traversal *prev;
       struct search_segments_traversal *child;
       struct search_segments_traversal *next;
@@ -85,10 +85,8 @@ typedef struct pattern_search_context {
   xapi (*segments_process)(struct pattern_search_context * restrict);
 
   // state
-  const struct fsent * dirnode;
-  const char * label;
-  uint16_t label_len;
-  bool match;
+  const struct fsent * node;
+  bool matched;
 
   int16_t variant_index;
   pattern_search_group groups[16];

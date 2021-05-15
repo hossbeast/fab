@@ -23,6 +23,7 @@
 #include "fsent.h"
 #include "generate.internal.h"
 #include "search.internal.h"
+#include "match.internal.h"
 #include "render.internal.h"
 
 //
@@ -50,6 +51,27 @@ static xapi render(const pattern_segment * restrict fn, pattern_render_context *
   finally : coda;
 }
 
+static xapi match(const pattern_segment * restrict segment, pattern_match_context * restrict ctx)
+{
+  enter;
+
+  const pattern_byte * byte = &segment->byte;
+  const char * restrict name;
+  uint16_t namel;
+  uint16_t name_offset;
+
+  name = ctx->label;
+  namel = ctx->label_len;
+  name_offset = ctx->traversal->offset;
+
+  if((namel > name_offset) && (name[name_offset] == byte->code))
+  {
+    ctx->traversal->offset += 1;
+  }
+
+  finally : coda;
+}
+
 static xapi search(const pattern_segment * restrict segment, pattern_search_context * restrict ctx)
 {
   enter;
@@ -59,8 +81,8 @@ static xapi search(const pattern_segment * restrict segment, pattern_search_cont
   uint16_t namel; // = ctx->node->name.namel;
   uint16_t name_offset; // = ctx->traversal->offset;
 
-  name = ctx->label;
-  namel = ctx->label_len;
+  name = ctx->node->name.name;
+  namel = ctx->node->name.namel;
   name_offset = ctx->traversal->offset;
 
   if((namel > name_offset) && (name[name_offset] == byte->code))
@@ -92,6 +114,7 @@ static pattern_segment_vtable vtable = {
     type : PATTERN_CHARACTER
   , say : say
   , search : search
+  , match : match
   , generate : generate
   , destroy : destroy
   , render : render

@@ -74,10 +74,8 @@ aybxc
 */
 
   traversal = ctx->traversal;
-  //name = ctx->node->name.name;
-  //namel = ctx->node->name.namel;
-  name = ctx->label;
-  namel = ctx->label_len;
+  name = ctx->node->name.name;
+  namel = ctx->node->name.namel;
 
   variant *v;
   for(x = 0; x < ctx->variants->table_size; x++)

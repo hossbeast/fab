@@ -115,14 +115,14 @@ extern struct attrs16 * pattern_graph_attrs;
 
 // axis
 #define PATTERN_AXIS_OPT  0x000f
-#define PATTERN_AXIS_TABLE                                                                                                       \
-  /* contextual */                                                                                                               \
-  ATTR_NAME_DEF(PATTERN_AXIS_UP               , "up"            , 0x0005) /* parent, .. : nodes up 1 level from current fsent */ \
-  ATTR_NAME_DEF(PATTERN_AXIS_ABOVE            , "above"         , 0x0006) /* nodes above the current node, any level */          \
-  ATTR_NAME_DEF(PATTERN_AXIS_SELF_OR_ABOVE    , "self-or-above" , 0x0007) /* current and nodes above, any level */               \
-  ATTR_NAME_DEF(PATTERN_AXIS_DOWN             , "down"          , 0x0008) /* child : nodes down 1 level from current fsent */    \
-  ATTR_NAME_DEF(PATTERN_AXIS_BELOW            , "below"         , 0x0009) /* nodes below the current node, any level */          \
-  ATTR_NAME_DEF(PATTERN_AXIS_SELF_OR_BELOW    , "self-or-below" , 0x000a) /* ** : current and nodes below, any level */          \
+#define PATTERN_AXIS_TABLE                                                                                                        \
+  /* contextual */                                                                                                                \
+  ATTR_NAME_DEF(PATTERN_AXIS_UP               , "up"            , 0x0005) /* parent, .. : nodes up 1 level from current fsent */  \
+  ATTR_NAME_DEF(PATTERN_AXIS_ABOVE            , "above"         , 0x0006) /* nodes above the current node, any level */           \
+  ATTR_NAME_DEF(PATTERN_AXIS_SELF_OR_ABOVE    , "self-or-above" , 0x0007) /* current and nodes above, any level */                \
+  ATTR_NAME_DEF(PATTERN_AXIS_DOWN             , "down"          , 0x0008) /* child : nodes down 1 level from current fsent */     \
+  ATTR_NAME_DEF(PATTERN_AXIS_BELOW            , "below"         , 0x0009) /* nodes below the current node, any level */           \
+  ATTR_NAME_DEF(PATTERN_AXIS_SELF_OR_BELOW    , "self-or-below" , 0x000a) /* ** : current and directory nodes below, any level */ \
 
 #undef ATTR_NAME_DEF
 #define ATTR_NAME_DEF(x, s, y) x = UINT16_C(y),
