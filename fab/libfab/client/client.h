@@ -28,7 +28,6 @@
 extern const char *g_fab_client_fabd_path;
 extern const char *g_fab_client_system_config_path;
 extern const char *g_fab_client_user_config_path;
-extern const char *g_fab_client_project_config_path;
 extern const char *g_fab_client_default_filesystem_invalidate;
 extern const char *g_fab_client_sweeper_period_nsec;
 #endif
@@ -43,6 +42,9 @@ typedef struct fab_client {
   char      hash[16 + 1];
   pid_t     fabd_pid;   // fabd process group id
   int32_t   futex;
+
+  /* autoinc */
+  uint64_t  msgid;
 
   struct fabipc_channel *shm;
 } fab_client;

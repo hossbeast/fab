@@ -48,6 +48,8 @@
 #include "fsedge.h"
 #include "node_operations_test.h"
 
+static llist exclude_list;
+
 typedef struct {
   XUNITTEST;
 
@@ -101,8 +103,11 @@ static xapi walker_test_unit_setup(xunit_unit * unit)
   fatal(graph_setup);
   fatal(fsent_setup);
 
-/* suppress rcu-registration checks */
-extern __thread bool rcu_is_registered ; rcu_is_registered = true;
+  /* suppress rcu-registration checks performed under devel build for events fired from the walker */
+  extern __thread bool rcu_is_registered ; rcu_is_registered = true;
+
+  walker_exclude_list = &exclude_list;
+  llist_init_node(walker_exclude_list);
 
   finally : coda;
 }
@@ -251,7 +256,6 @@ xunit_unit xunit = {
         , graph :  "1-(root)!dir 2-A!dir 3-B!dir 4-C!dir"
                   " 5-D!file 6-E!file 7-F!file 8-G!file"
                   " 1:fs:2 2:fs:3 2:fs:4 3:fs:5 3:fs:6 4:fs:7 4:fs:8"
-, xu_weight : 1
       }}
     , (walker_test[]) {{
           operations : "A/B B/D B/E"

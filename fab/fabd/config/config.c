@@ -38,6 +38,7 @@ config keys that should *only* be legal in the global/user config files
 #include "valyria/list.h"
 #include "valyria/llist.h"
 #include "value/writer.h"
+#include "fab/stats.h"
 
 #include "config.internal.h"
 #include "yyutil/box.h"
@@ -54,11 +55,14 @@ config keys that should *only* be legal in the global/user config files
 #include "channel.h"
 #include "logging.h"
 #include "pattern.h"
+#include "stats.h"
 
 #include "common/snarf.h"
-#include "macros.h"
 #include "common/hash.h"
 #include "common/attrs.h"
+
+#include "macros.h"
+#include "marshal.h"
 
 static configblob * config_staging;
 static config_parser * parser_staging;
@@ -72,6 +76,9 @@ fsent *user_config_node;
 /* active list is maintained in precendence order, including system and user config files */
 static llist config_list = LLIST_INITIALIZER(config_list);          // active
 static llist config_freelist = LLIST_INITIALIZER(config_freelist);  // free
+
+/* whether a reconfiguration has completed */
+bool config_reconfigured;
 
 //
 // static
@@ -91,93 +98,65 @@ static int box_string_ht_cmp_fn(const void * _A, size_t Asz, const void * _B, si
   return memncmp(A->v, A->l, B->v, B->l);
 }
 
-static void config_compare_build(config_base * restrict _new, config_base * restrict _old)
+static void config_compare_build(struct config_build * restrict new, struct config_build * restrict old)
 {
-  struct config_build * new = containerof(_new, struct config_build, cb);
-  struct config_build * old = containerof(_old, struct config_build, cb);
-
-  if(!old ^ !new) {
-    new->changed = true;
-  } else if (old && old->concurrency && new && new->concurrency) {
-    new->changed = box_cmp(&new->concurrency->bx, &old->concurrency->bx);
-  } else {
-    new->changed = false;
-  }
+  new->changed = !config_reconfigured
+    || box_int16_cmp(new->concurrency, old->concurrency)
+    ;
 }
 
-static void config_compare_special(config_base * restrict _new, config_base * restrict _old)
+static void config_compare_special(struct config_special * restrict new, struct config_special * restrict old)
 {
-  struct config_special * new = containerof(_new, struct config_special, cb);
-  struct config_special * old = containerof(_old, struct config_special, cb);
-
-  if(!old ^ !new) {
-    new->changed = true;
-    return;
-  }
-  if(!old) {
-    new->changed = false;
-    return;
-  }
-
-  new->changed = 0
-         || box_cmp(refas(new->model, bx), refas(old->model, bx))
-         || box_cmp(refas(new->module, bx), refas(old->module, bx))
-         || box_cmp(refas(new->var, bx), refas(old->var, bx))
+  new->changed = !config_reconfigured
+         || box_string_cmp(new->model, old->model)
+         || box_string_cmp(new->module, old->module)
+         || box_string_cmp(new->var, old->var)
+         || box_string_cmp(new->config, old->config)
          ;
 }
 
-static void config_compare_workers(config_base * restrict _new, config_base * restrict _old)
+static void config_compare_workers(struct config_workers * restrict new, struct config_workers * restrict old)
 {
-  struct config_workers * new = containerof(_new, struct config_workers, cb);
-  struct config_workers * old = containerof(_old, struct config_workers, cb);
-
-  if(!old ^ !new) {
-    new->changed = true;
-  } else if (old && old->concurrency && new && new->concurrency) {
-    new->changed = box_cmp(&new->concurrency->bx, &old->concurrency->bx);
-  } else {
-    new->changed = false;
-  }
+  new->changed = !config_reconfigured
+    || box_int16_cmp(new->concurrency, old->concurrency)
+    ;
 }
 
-static void config_compare_filesystems(config_base * restrict _new, config_base * restrict _old)
+static void config_compare_filesystems(struct config_filesystems * restrict new, struct config_filesystems * restrict old)
 {
-  struct config_filesystems * new = containerof(_new, struct config_filesystems, cb);
-  struct config_filesystems * old = containerof(_old, struct config_filesystems, cb);
-
-  new->changed = !old || !map_equal(new->entries, old->entries);
+  new->changed = !config_reconfigured
+    || !map_equal(new->entries, old->entries)
+    ;
 }
 
-static void config_compare_formula_path(config_base * restrict _new, config_base * restrict _old)
+static void config_compare_formula_path(struct config_formula_path * restrict new, struct config_formula_path * restrict old)
 {
-  struct config_formula_path * new = containerof(_new, struct config_formula_path, cb);
-  struct config_formula_path * old = containerof(_old, struct config_formula_path, cb);
-
-  new->changed = !old || !set_equal(new->dirs.entries, old->dirs.entries);
-  new->changed |= box_cmp(refas(new->copy_from_env, bx), refas2(old, copy_from_env, bx));
+  new->changed = !config_reconfigured
+    || !set_equal(new->dirs.entries, old->dirs.entries)
+    || box_bool_cmp(new->copy_from_env, old->copy_from_env)
+    ;
 }
 
-static void config_compare_formula(config_base * restrict _new, config_base * restrict _old)
+static void config_compare_formula(struct config_formula * restrict new, struct config_formula * restrict old)
 {
-  struct config_formula * new = containerof(_new, struct config_formula, cb);
-  struct config_formula * old = containerof(_old, struct config_formula, cb);
+  config_compare_formula_path(&new->path, &old->path);
 
-  config_compare_formula_path(&new->path.cb, refas(old, path.cb));
-
-  new->changed = 0
+  new->changed = !config_reconfigured
       || new->path.changed
       ;
 }
 
-static void config_compare_walker_list(config_base * restrict _new, config_base * restrict _old)
+static void config_compare_walker_list(struct config_walker_list * restrict new, struct config_walker_list * restrict old)
 {
-  struct config_walker_list * new = containerof(_new, struct config_walker_list, cb);
-  struct config_walker_list * old = containerof(_old, struct config_walker_list, cb);
-
   llist *a = new->list.next;
   llist *b = old->list.next;
 
   pattern *A, *B;
+
+  if(!config_reconfigured) {
+    new->changed = true;
+    return;
+  }
 
   /* this will consider lists containing identical patterns in different order as different lists */
   while(a != &new->list && b != &old->list)
@@ -200,42 +179,63 @@ static void config_compare_walker_list(config_base * restrict _new, config_base 
   }
 }
 
-static void config_compare_walker(config_base * restrict _new, config_base * restrict _old)
+static void config_compare_walker(struct config_walker * restrict new, struct config_walker * restrict old)
 {
-  struct config_walker * new = containerof(_new, struct config_walker, cb);
-  struct config_walker * old = containerof(_old, struct config_walker, cb);
+  config_compare_walker_list(&new->include, &old->include);
+  config_compare_walker_list(&new->exclude, &old->exclude);
 
-  if(!_old) {
-    new->changed = true;
-    return;
-  }
-
-  config_compare_walker_list(&new->include.cb, &old->include.cb);
-  config_compare_walker_list(&new->exclude.cb, &old->exclude.cb);
-
-  new->changed = 0
+  new->changed = !config_reconfigured
       || new->include.changed
       || new->exclude.changed
       ;
 }
 
-static xapi parse(config_parser * restrict parser, const char * restrict path, char * restrict text, size_t text_len, configblob **cfg)
-{
-  enter;
-
-  fatal(config_parser_parse, parser, text, text_len + 2, path, 0, cfg);
-
-finally:
-  xapi_infos("path", path);
-coda;
-}
-
-static xapi reparse()
+static xapi parse(config_parser * restrict parser, config * restrict cfgn, configblob **cfgp, channel * restrict chan)
 {
   enter;
 
   char * text = 0;
   size_t text_len;
+  fabipc_message *msg;
+  xapi exit;
+
+  STATS_INC(cfgn->stats.parsed_try);
+  STATS_INC(g_stats.config_parsed_try);
+
+  fatal(usnarfs, &text, &text_len, cfgn->self_node_abspath);
+  if(text)
+  {
+    if((exit = invoke(config_parser_parse, parser, text, text_len + 2, cfgn->self_node_abspath, 0, cfgp)))
+    {
+      msg = channel_produce(chan);
+      msg->id = chan->msgid;
+      msg->type = FABIPC_MSG_RESULT;
+      msg->code = EINVAL;
+
+#if DEBUG || DEVEL
+      msg->size = xapi_trace_full(msg->text, sizeof(msg->text), 0);
+#else
+      msg->size = xapi_trace_pithy(msg->text, sizeof(msg->text), 0);
+#endif
+      channel_post(chan, msg);
+      xapi_calltree_unwind();
+
+      goto XAPI_FINALLY;
+    }
+  }
+
+  STATS_INC(cfgn->stats.parsed);
+  STATS_INC(g_stats.config_parsed);
+
+finally:
+  wfree(text);
+coda;
+}
+
+static xapi reparse(channel * restrict chan)
+{
+  enter;
+
   configblob * cfg = 0;
   fsent *n;
   config *cfgn;
@@ -247,25 +247,26 @@ static xapi reparse()
 
   llist_foreach(&config_list, cfgn, vertex.owner) {
     n = cfgn->self_node;
-    fatal(usnarfs, &text, &text_len, n->self_config->self_node_abspath);
-    if(text)
-    {
-      logf(L_CONFIG, "staging config file @ %s", n->self_config->self_node_abspath);
-      fatal(parse, parser_staging, n->self_config->self_node_abspath, text, text_len, &cfg);
+    logf(L_CONFIG, "staging config file @ %s", n->self_config->self_node_abspath);
+    fatal(parse, parser_staging, cfgn, &cfg, chan);
 
-      if(config_staging == 0)
-      {
-        config_staging = cfg;
-      }
-      else
-      {
-        fatal(config_merge, config_staging, cfg);
-        fatal(config_xfree, cfg);
-      }
-      cfg = 0;
-
-      iwfree(&text);
+    if(chan->error) {
+      break;
     }
+    if(!cfg) {
+      continue;
+    }
+
+    if(config_staging == 0)
+    {
+      config_staging = cfg;
+    }
+    else
+    {
+      fatal(config_merge, config_staging, cfg);
+      fatal(config_xfree, cfg);
+    }
+    cfg = 0;
   }
 
   /* all files empty */
@@ -275,7 +276,6 @@ static xapi reparse()
   }
 
 finally:
-  wfree(text);
   fatal(config_xfree, cfg);
 coda;
 }
@@ -316,15 +316,16 @@ static void config_dispose(config * restrict vp)
 //
 bool config_compare(configblob * restrict new, configblob * restrict old)
 {
-  config_compare_build(&new->build.cb, refas(old, build.cb));
-  config_compare_special(&new->special.cb, refas(old, special.cb));
-  config_compare_workers(&new->workers.cb, refas(old, workers.cb));
-  config_compare_filesystems(&new->filesystems.cb, refas(old, filesystems.cb));
-  config_compare_formula(&new->formula.cb, refas(old, formula.cb));
-  config_compare_walker(&new->walker.cb, refas(old, walker.cb));
+  config_compare_build(&new->build, &old->build);
+  config_compare_special(&new->special, &old->special);
+  config_compare_workers(&new->workers, &old->workers);
+  config_compare_filesystems(&new->filesystems, &old->filesystems);
+  config_compare_formula(&new->formula, &old->formula);
+  config_compare_walker(&new->walker, &old->walker);
 
-  new->changed = 0
+  new->changed = !config_reconfigured
     || new->build.changed
+    || new->special.changed
     || new->workers.changed
     || new->filesystems.changed
     || new->formula.changed
@@ -681,6 +682,7 @@ xapi config_setup()
   enter;
 
   fatal(config_parser_create, &parser_staging);
+  fatal(config_create, &config_active);
 
   finally : coda;
 }
@@ -865,18 +867,26 @@ xapi config_system_reconcile(graph_invalidation_context * restrict invalidation,
     config_dispose(cfg);
   }
 
-  fatal(reparse);
+  /* all config files must be parsed any time config is reloaded */
+  fatal(reparse, chan);
+  if(chan->error) {
+    goto XAPI_FINALIZE;
+  }
 
   if(!config_compare(config_staging, config_active)) {
     *filesystems_changed = config_staging->filesystems.changed;
     fatal(reconfigure, chan);
   }
 
-  if(!chan->error) {
-    llist_foreach(&config_list, cfg, vertex.owner) {
-      fatal(fsent_ok, cfg->self_node);
-    }
+  if(chan->error) {
+    goto XAPI_FINALIZE;
   }
+
+  llist_foreach(&config_list, cfg, vertex.owner) {
+    fatal(fsent_ok, cfg->self_node);
+  }
+
+  config_reconfigured = true;
 
   finally : coda;
 }
@@ -947,9 +957,53 @@ xapi config_system_bootstrap()
 {
   enter;
 
-  /* create the immutable config nodes, in precedent order */
+  /* create the immutable config nodes, in precedence order */
   fatal(bootstrap_global_node, &user_config_node, g_args.user_config_path);
   fatal(bootstrap_global_node, &system_config_node, g_args.system_config_path);
+
+  finally : coda;
+}
+
+xapi config_collate_stats(void *dst, size_t sz, config *cfg, bool reset, size_t *zp)
+{
+  enter;
+
+  size_t z;
+  fab_config_stats *stats;
+  fab_config_stats lstats;
+  descriptor_field *field;
+  int x;
+
+  stats = &cfg->stats;
+  if(reset)
+  {
+    memcpy(&lstats, &stats, sizeof(lstats));
+    memset(stats, 0, sizeof(*stats));
+    stats = &lstats;
+  }
+
+  z = 0;
+  z += marshal_u32(dst + z, sz - z, descriptor_fab_config_stats.id);
+
+  /* event counters */
+  for(x = 0; x < descriptor_fab_config_stats.members_len; x++)
+  {
+    field = descriptor_fab_config_stats.members[x];
+
+    if(field->size == 8) {
+      z += marshal_u64(dst + z, sz - z, stats->u64[field->offset / 8]);
+    } else if(field->size == 4) {
+      z += marshal_u32(dst + z, sz - z, stats->u32[field->offset / 4]);
+    } else if(field->size == 2) {
+      z += marshal_u16(dst + z, sz - z, stats->u16[field->offset / 2]);
+    } else if(field->size == 1) {
+      z += marshal_u16(dst + z, sz - z, stats->u8[field->offset / 1]);
+    } else {
+      RUNTIME_ABORT();
+    }
+  }
+
+  *zp += z;
 
   finally : coda;
 }

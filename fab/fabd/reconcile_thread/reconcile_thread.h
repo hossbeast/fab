@@ -15,11 +15,25 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef _BOOTSTRAP_THREAD_H
-#define _BOOTSTRAP_THREAD_H
+#ifndef _RECONCILE_THREAD_H
+#define _RECONCILE_THREAD_H
 
 #include "xapi.h"
+#include "types.h"
 
-xapi bootstrap_thread_launch(void);
+#include "locks.h"
+#include "fab/metadata.h"
+
+struct handler_context;
+
+extern struct trylock reconcile_lock;
+extern enum bam_system_state global_system_state;
+extern uint16_t reconciliation_id;
+
+/*
+ * launch the reconcile thread, run global reconciliation
+ */
+xapi reconcile_thread_launch(struct handler_context *ctx)
+  __attribute__((nonnull));
 
 #endif

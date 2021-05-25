@@ -102,7 +102,7 @@ xapi request_parser_parse(
   , char * const restrict buf
   , size_t size
   , const char * restrict fname
-  , request ** restrict rv
+  , request * restrict req
 )
 {
   enter;
@@ -112,16 +112,9 @@ xapi request_parser_parse(
   RUNTIME_ASSERT(buf[size - 1] == 0);
   RUNTIME_ASSERT(buf[size - 2] == 0);
 
-  fatal(yyu_parse, &parser->yyu, buf, size, fname, YYU_INPLACE, 0, 0);
-  if(rv)
-  {
-    *rv = parser->request;
-    parser->request = 0;
-  }
+  request_init(parser->request = req);
 
-finally:
-  if(parser->request) {
-    fatal(request_ixfree, &parser->request);
-  }
-coda;
+  fatal(yyu_parse, &parser->yyu, buf, size, fname, YYU_INPLACE, 0, 0);
+
+  finally : coda;
 }

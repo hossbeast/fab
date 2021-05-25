@@ -49,19 +49,19 @@ xapi request_parser_ixfree(request_parser ** restrict)
   __attribute__((nonnull));
 
 /*
- * parse the fabfile at the specified path
+ * parse a request
  *
- * parser    - reusable parser
- * text      - config text
- * len       - size of text
- * [root]    - (returns) root of the parse tree
+ *  parser    - reusable parser
+ *  text      - config text
+ *  len       - size of text
+ *  req       - request to return the result in
  */
 xapi request_parser_parse(
     request_parser * restrict parser
   , char * const restrict buf
   , size_t len
   , const char * restrict fname
-  , struct request ** restrict root
+  , struct request * restrict req
 )
   __attribute__((nonnull(1, 2)));
 

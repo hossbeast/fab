@@ -431,80 +431,75 @@ static xapi handler_destroy(handler_context * restrict ctx)
 // public
 //
 
-xapi handler_process_request(handler_context * restrict ctx, request * restrict req)
+xapi handler_process_command(handler_context * restrict ctx, command * restrict cmd)
 {
   enter;
 
-  int x;
-  command *cmd;
-
-  for(x = 0; x < req->commands->size; x++)
+  if(cmd->type == COMMAND_SELECT)
   {
-    cmd = array_get(req->commands, x);
-
-    if(cmd->type == COMMAND_SELECT)
-    {
-      fatal(handler_select, ctx, cmd);
-    }
-    else if(cmd->type == COMMAND_RESET_SELECTION)
-    {
-      fatal(handler_reset_selection, ctx, cmd);
-    }
-    else if(cmd->type == COMMAND_LIST)
-    {
-      fatal(handler_list, ctx, cmd);
-    }
-    else if(cmd->type == COMMAND_INVALIDATE)
-    {
-      fatal(handler_invalidate, ctx, cmd);
-    }
-    else if(cmd->type == COMMAND_GLOBAL_INVALIDATE)
-    {
-      fatal(handler_global_invalidate, ctx, cmd);
-    }
-    else if(cmd->type == COMMAND_DESCRIBE)
-    {
-      fatal(handler_describe, ctx, cmd);
-    }
-    else if(cmd->type == COMMAND_GOALS)
-    {
-      fatal(handler_goals, ctx, cmd);
-    }
-    else if(cmd->type == COMMAND_GLOBAL_STATS_READ)
-    {
-      fatal(handler_global_stats, ctx, cmd, false);
-    }
-    else if(cmd->type == COMMAND_GLOBAL_STATS_RESET)
-    {
-      fatal(handler_global_stats, ctx, cmd, true);
-    }
-    else if(cmd->type == COMMAND_STATS_READ)
-    {
-      fatal(handler_stats, ctx, cmd, false);
-    }
-    else if(cmd->type == COMMAND_STATS_RESET)
-    {
-      fatal(handler_stats, ctx, cmd, true);
-    }
-    else if(cmd->type == COMMAND_CONFIG_READ)
-    {
-      fatal(handler_config_read, ctx, cmd);
-    }
-    else if(cmd->type == COMMAND_METADATA)
-    {
-      fatal(handler_metadata, ctx, cmd, true);
-    }
-    else if(cmd->type == COMMAND_BOOTSTRAP) { }
-    else if(cmd->type == COMMAND_RECONCILE) { }
-
-    else
-    {
-      RUNTIME_ABORT();
-    }
-
-    if(ctx->chan->error) {
-      break;
-    }
+    fatal(handler_select, ctx, cmd);
+  }
+  else if(cmd->type == COMMAND_RESET_SELECTION)
+  {
+    fatal(handler_reset_selection, ctx, cmd);
+  }
+  else if(cmd->type == COMMAND_LIST)
+  {
+    fatal(handler_list, ctx, cmd);
+  }
+  else if(cmd->type == COMMAND_INVALIDATE)
+  {
+    fatal(handler_invalidate, ctx, cmd);
+  }
+  else if(cmd->type == COMMAND_GLOBAL_INVALIDATE)
+  {
+    fatal(handler_global_invalidate, ctx, cmd);
+  }
+  else if(cmd->type == COMMAND_DESCRIBE)
+  {
+    fatal(handler_describe, ctx, cmd);
+  }
+  else if(cmd->type == COMMAND_GOALS)
+  {
+    fatal(handler_goals, ctx, cmd);
+  }
+  else if(cmd->type == COMMAND_GLOBAL_STATS_READ)
+  {
+    fatal(handler_global_stats, ctx, cmd, false);
+  }
+  else if(cmd->type == COMMAND_GLOBAL_STATS_RESET)
+  {
+    fatal(handler_global_stats, ctx, cmd, true);
+  }
+  else if(cmd->type == COMMAND_STATS_READ)
+  {
+    fatal(handler_stats, ctx, cmd, false);
+  }
+  else if(cmd->type == COMMAND_STATS_RESET)
+  {
+    fatal(handler_stats, ctx, cmd, true);
+  }
+  else if(cmd->type == COMMAND_CONFIG_READ)
+  {
+    fatal(handler_config_read, ctx, cmd);
+  }
+  else if(cmd->type == COMMAND_METADATA)
+  {
+    fatal(handler_metadata, ctx, cmd, true);
+  }
+  else if(cmd->type == COMMAND_BOOTSTRAP) { }
+  else if(cmd->type == COMMAND_RECONCILE) { }
+  else if(cmd->type == COMMAND_RUN)
+  {
+    goals_autorun = false;
+  }
+  else if(cmd->type == COMMAND_AUTORUN)
+  {
+    goals_autorun = true;
+  }
+  else
+  {
+    RUNTIME_ABORT();
   }
 
   finally : coda;
@@ -564,5 +559,4 @@ void handler_release(handler_context * restrict ctx)
 void handler_reset(handler_context * restrict ctx)
 {
   ctx->selection = 0;
-  ctx->build_state = 0;
 }

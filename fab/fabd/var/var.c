@@ -34,7 +34,7 @@
 
 #include "var.h"
 #include "fsent.h"
-#include "global.h"
+#include "reconcile_thread.h"
 #include "logging.h"
 #include "marshal.h"
 #include "stats.h"
@@ -182,7 +182,7 @@ xapi var_reconcile(var * restrict vp, channel * restrict chan)
 {
   enter;
 
-  vp->reconciliation_id = global_reconciliation_id;
+  vp->reconciliation_id = reconciliation_id;
   if(!fsent_invalid_get(vp->self_node)) {
     goto XAPI_FINALLY;
   }
@@ -204,7 +204,7 @@ xapi var_system_reconcile(channel * restrict chan)
   llist *T;
 
   llist_foreach_safe(&var_list, v, vertex.owner, T) {
-    if(v->reconciliation_id == global_reconciliation_id) {
+    if(v->reconciliation_id == reconciliation_id) {
       continue;
     }
 
@@ -268,8 +268,9 @@ xapi var_denormalize(value_parser * restrict parser, variant * restrict var, val
 
   for(x = 0; x < valset->els->table_size; x++)
   {
-    if((v = set_table_get(valset->els, x)) == 0)
+    if((v = set_table_get(valset->els, x)) == 0) {
       continue;
+    }
 
     RUNTIME_ASSERT(v->type == VALUE_TYPE_MAPPING);
 

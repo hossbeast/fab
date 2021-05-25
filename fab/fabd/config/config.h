@@ -20,6 +20,7 @@
 
 #include "types.h"
 #include "xapi.h"
+#include "fab/stats.h"
 
 #include "moria.h"
 
@@ -40,6 +41,7 @@ typedef struct config {
 
   /* regarding the corresponding VERTEX_CONFIG_FILE */
   struct fsent *self_node;
+  fab_config_stats stats;
   char self_node_abspath[512];
   uint16_t self_node_abspath_len;
 
@@ -62,6 +64,15 @@ xapi config_active_say(struct narrator * restrict N)
   __attribute__((nonnull));
 
 xapi config_alloc(config ** restrict vp, struct moria_graph * restrict g)
+  __attribute__((nonnull));
+
+/*
+ * Write a config stats to a buffer
+ *
+ * reset - true to reset the stats while reading them
+ * zp    - (returns) number of bytes written to dst
+ */
+xapi config_collate_stats(void *dst, size_t sz, config *cfg, bool reset, size_t *zp)
   __attribute__((nonnull));
 
 #endif

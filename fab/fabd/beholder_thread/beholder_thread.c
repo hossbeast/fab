@@ -68,6 +68,7 @@ static xapi process(struct epoll_event *ev, int len)
     // propagate to the original fd
     fatal(xwrite, real_fd, buf, bytes, 0);
 
+continue;
     // propagate to event subscribers if any
     if(events_would(event, &handler, &msg)) {
       msg->size = bytes;

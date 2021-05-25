@@ -30,7 +30,6 @@
   /* commands */
   #include "adhoc.h"
   #include "autobuild.h"
-  #include "bootstrap.h"
   #include "build.h"
   #include "describe.h"
   #include "events.h"
@@ -110,7 +109,6 @@
  DESCRIBE                       "describe"
  METADATA                       "metadata"
  CONFIG                         "config"
- BOOTSTRAP                      "bootstrap"
  RECONCILE                      "reconcile"
  TRUE                           "true"
  FALSE                          "false"
@@ -290,7 +288,6 @@ command-arguments
   | BUILD     build-arguments     { g_cmd = &build_command; }
   | AUTOBUILD build-arguments     { g_cmd = &autobuild_command; }
   | TOUCH     touch-arguments     { g_cmd = &touch_command; }
-  | BOOTSTRAP bootstrap-arguments { g_cmd = &bootstrap_command; }
   | STATS     stats-arguments     { g_cmd = &stats_command; }
   | ADHOC     adhoc-arguments     { g_cmd = &adhoc_command; }
   | EVENTS    events-arguments    { g_cmd = &events_command; }
@@ -468,19 +465,6 @@ kill-argument-list
   ;
 
 kill-argument
-  : global-argument
-  ;
-
-bootstrap-arguments
-  : bootstrap-arguments-list
-  | %empty;
-
-bootstrap-arguments-list
-  : bootstrap-arguments-list bootstrap-argument
-  | bootstrap-argument
-  ;
-
-bootstrap-argument
   : global-argument
   ;
 

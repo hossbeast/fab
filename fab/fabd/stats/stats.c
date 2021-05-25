@@ -16,6 +16,7 @@
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
 #include "stats.h"
+#include "config.h"
 #include "formula.h"
 #include "fsent.h"
 #include "marshal.h"
@@ -206,6 +207,10 @@ xapi stats_node_collate(void *dst, size_t sz, fsent * restrict n, bool reset, si
   else if(kind == VERTEX_VAR_FILE)
   {
     fatal(var_collate_stats, dst + z, sz - z, n->self_var, reset, &z);
+  }
+  else if(kind == VERTEX_CONFIG_FILE)
+  {
+    fatal(config_collate_stats, dst + z, sz - z, n->self_config, reset, &z);
   }
 
   *zp += z;

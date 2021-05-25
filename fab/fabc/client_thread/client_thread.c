@@ -49,7 +49,7 @@ static void client_acquired(fab_client * restrict client, fabipc_message * restr
 
   h = client->shm->server_ring.head;
   z = znload_attrs32(buf, sizeof(buf), fabipc_msg_type_attrs, msg->type);
-  printf("rx head %5u id %8d code %8d type %.*s", h, msg->id, msg->code, (int)z, buf);
+  printf("rx head %5u id 0x%016"PRIx64" code %8d type %.*s", h, msg->id, msg->code, (int)z, buf);
   if(msg->type == FABIPC_MSG_EVENTS)
   {
     z = znload_attrs32(buf, sizeof(buf), fabipc_event_type_attrs, msg->evtype);
@@ -76,7 +76,7 @@ static void client_posted(fab_client * restrict client, fabipc_message * restric
 
   h = client->shm->client_ring.tail;
   z = znload_attrs32(buf, sizeof(buf), fabipc_msg_type_attrs, msg->type);
-  printf("tx tail %5u id %8d code %8d type %.*s", h, msg->id, msg->code, (int)z, buf);
+  printf("tx tail %5u id 0x%016"PRIx64" code %8d type %.*s", h, msg->id, msg->code, (int)z, buf);
   if(msg->type == FABIPC_MSG_EVENTS)
   {
     z = znload_attrs32(buf, sizeof(buf), fabipc_event_type_attrs, msg->evtype);

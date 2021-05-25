@@ -31,7 +31,7 @@ extern struct g_params {
   pid_t           pid;              // process id of this process
   pid_t           thread_monitor;   // thread id of the monitor thread
   pid_t           thread_server;    // thread id of the server thread
-  pid_t           thread_bootstrap; // thread id of the bootstrap thread
+  pid_t           thread_reconcile; // thread id of the reconcile thread
   pid_t           thread_notify;    // thread id of the notify thread
   pid_t           thread_sweeper;   // thread id of the sweeper thread
   pid_t           thread_beholder;  // thread id of the beholder thread

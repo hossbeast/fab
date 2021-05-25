@@ -43,7 +43,7 @@ static llist include_entry_list = LLIST_INITIALIZER(include_entry_list);        
 static llist include_entry_freelist = LLIST_INITIALIZER(include_entry_freelist); // freelist
 
 /* exclude pattern list */
-static llist * exclude_list;
+llist * walker_exclude_list;
 
 typedef struct {
   fsent * n;
@@ -191,8 +191,6 @@ static xapi include_entry_list_append(fsent * n)
   e->n = n;
   e->abspathl = fsent_absolute_path_znload(e->abspath, sizeof(e->abspath), n);
 
-//printf("INCLUDED %s\n", e->abspath);
-
   llist_append(&include_entry_list, e, lln);
 
   finally : coda;
@@ -249,14 +247,11 @@ xapi walker_visit(int method, ftwinfo * info, void * arg, int * stop)
   {
     parent = info->parent->udata;
 
-    /* check whether this dirent matches an exclude pattern */
+    /* check whether this dirent matches any exclude pattern */
     if(info->type == FTWAT_D)
     {
-      llist_foreach(exclude_list, pat, lln) {
+      llist_foreach(walker_exclude_list, pat, lln) {
         fatal(pattern_match, pat, parent, info->path + info->name_off, info->pathl - info->name_off, &matched);
-if(matched) {
-printf("%d %.*s\n", matched, (int)n->vertex.label_len, n->vertex.label);
-}
         if(matched) {
           *stop = 1;
           goto XAPI_FINALIZE;
@@ -264,10 +259,8 @@ printf("%d %.*s\n", matched, (int)n->vertex.label_len, n->vertex.label);
       }
     }
 
-//printf("%s:%d\n", __FUNCTION__, __LINE__);
     if((lv = moria_vertex_downs(&parent->vertex, info->path + info->name_off)))
     {
-//printf("%s:%d\n", __FUNCTION__, __LINE__);
       n = containerof(lv, fsent, vertex);
     }
     else
@@ -278,8 +271,6 @@ printf("%d %.*s\n", matched, (int)n->vertex.label_len, n->vertex.label);
       }
       fatal(fsent_create, &n, filetype, VERTEX_OK, info->path + info->name_off, info->pathl - info->name_off);
       fatal(fsedge_connect, parent, n, ctx->invalidation);
-
-//printf("%s:%d %.*s %d\n", __FUNCTION__, __LINE__, (int)info->pathl - info->name_off, info->path + info->name_off, filetype);
     }
   }
 
@@ -289,7 +280,6 @@ printf("%d %.*s\n", matched, (int)n->vertex.label_len, n->vertex.label);
   if(method != FTWAT_POST) {
     /* already been visited */
     if(n->descend_walk_id == ctx->walk_id) {
-//printf("%.*s VISITED\n", (int)n->vertex.label_len, n->vertex.label);
       *stop = 1;
       goto XAPI_FINALIZE;
     }
@@ -373,8 +363,6 @@ xapi walker_descend(
   walker_context ctx;
 
   RUNTIME_ASSERT(!base ^ !parent);
-
-printf("descend %s\n", abspath);
 
   if(walk_id != walk_ids) {
     walk_id = ++walk_ids;
@@ -543,7 +531,6 @@ xapi walker_system_reconcile(graph_invalidation_context * restrict invalidation,
 
   /* other configured trees */
   llist_foreach(&include_entry_list, e, lln) {
-//printf("%3d INCLUDE WALK %s\n", walk_id, e->abspath);
     n = e->n;
     fatal(walker_descend, 0, n, 0, e->abspath, walk_id, invalidation);
     fatal(walker_ascend, n, walk_id, invalidation);
@@ -566,7 +553,7 @@ xapi walker_system_reconfigure(configblob * restrict cfg, bool dry)
   }
 
   /* store the exclude list for later evaluation */
-  exclude_list = &cfg->walker.exclude.list;
+  walker_exclude_list = &cfg->walker.exclude.list;
 
   /* process the include list up-front */
   fatal(graph_invalidation_begin, &invalidation);
@@ -581,8 +568,9 @@ xapi walker_system_reconfigure(configblob * restrict cfg, bool dry)
 
   for(x = 0; x < generate_nodes->table_size; x++)
   {
-    if(!(n = set_table_get(generate_nodes, x)))
+    if(!(n = set_table_get(generate_nodes, x))) {
       continue;
+    }
 
     fatal(include_entry_list_append, n);
   }
@@ -609,11 +597,3 @@ xapi walker_cleanup()
 
   finally : coda;
 }
-
-#if 0
-/* put this into config */
-if((info->pathl - info->name_off) == 4 && memcmp(info->path + info->name_off, ".git", 4) == 0) {
-  *stop = 1;
-  goto XAPI_FINALIZE;
-}
-#endif

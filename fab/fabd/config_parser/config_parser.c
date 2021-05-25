@@ -123,5 +123,6 @@ xapi config_parser_parse(
 
 finally:
   fatal(config_ixfree, &parser->cfg);
+  xapi_infos("fname", fname);
 coda;
 }

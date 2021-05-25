@@ -68,7 +68,6 @@
 
   // enums
   invalidate_type invalidate_type_e;
-  stream_part stream_part_e;
 
   struct box_bool * b_bool;
   struct box_int * b_int;

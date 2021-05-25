@@ -35,10 +35,6 @@
 #include "atomics.h"
 #include "threads.h"
 
-#if DEVEL
-channel *g_server_initial_channel;   // server run with --request parameter
-#endif
-
 static xapi server_thread()
 {
   enter;
@@ -54,13 +50,6 @@ static xapi server_thread()
   sigemptyset(&sigs);
   sigaddset(&sigs, SIGUSR1);
   sigaddset(&sigs, SIGRTMIN);
-
-#if DEVEL
-  if(g_server_initial_channel)
-  {
-    fatal(handler_thread_launch, 0, 0, false);
-  }
-#endif
 
   while(!g_params.shutdown)
   {

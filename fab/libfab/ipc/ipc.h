@@ -55,7 +55,7 @@ extern struct attrs32 * fabipc_msg_type_attrs;
 
 #define FABIPC_MESSAGE_FIELDS                               \
   fabipc_msg_type type;                                     \
-  uint32_t id;                                              \
+  uint64_t id;                                              \
   union {                                                   \
     uint32_t attrs;                                         \
     uint32_t evtype;                                        \
@@ -82,7 +82,10 @@ typedef struct fabipc_page {
   union {
     struct {
       int state;
-      uint32_t head;
+      union {
+        uint32_t head;
+        uint32_t tail;  // not needed - debug only
+      };
       fabipc_message msg;
     };
     char pad[FABIPC_PAGESIZE];

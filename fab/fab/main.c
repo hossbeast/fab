@@ -62,9 +62,9 @@ static void client_acquired(fab_client * restrict client, fabipc_message * restr
     return;
   }
 
-  h = client->shm->server_ring.head;
+  h = containerof(msg, fabipc_page, msg)->tail; // client->shm->server_ring.head;
   z = znload_attrs32(buf, sizeof(buf), fabipc_msg_type_attrs, msg->type);
-  printf("rx head %5u id %8d code %8d type %.*s", h, msg->id, msg->code, (int)z, buf);
+  printf("rx head %5u id 0x%016"PRIx64" code %8d type %.*s", h, msg->id, msg->code, (int)z, buf);
   if(msg->type == FABIPC_MSG_EVENTS)
   {
     z = znload_attrs32(buf, sizeof(buf), fabipc_event_type_attrs, msg->evtype);
@@ -91,9 +91,9 @@ void client_post(struct fab_client * restrict client, fabipc_message * restrict 
     return;
   }
 
-  h = client->shm->client_ring.tail;
+  h = containerof(msg, fabipc_page, msg)->tail; // client->shm->client_ring.tail;
   z = znload_attrs32(buf, sizeof(buf), fabipc_msg_type_attrs, msg->type);
-  printf("tx tail %5u id %8d code %8d type %.*s", h, msg->id, msg->code, (int)z, buf);
+  printf("tx tail %5u id 0x%016"PRIx64" code %8d type %.*s", h, msg->id, msg->code, (int)z, buf);
   if(msg->type == FABIPC_MSG_EVENTS)
   {
     z = znload_attrs32(buf, sizeof(buf), fabipc_event_type_attrs, msg->evtype);
@@ -125,6 +125,7 @@ static xapi xmain()
   int channel_shmid;
   int x;
   int r;
+  uint64_t sub_id;
 
   // parse cmdline arguments
   fatal(args_parse);
@@ -146,9 +147,6 @@ static xapi xmain()
   }
   if(g_args.user_config_path.s) {
     g_fab_client_user_config_path = strndup(g_args.user_config_path.s, g_args.user_config_path.len);
-  }
-  if(g_args.project_config_path.s) {
-    g_fab_client_project_config_path = strndup(g_args.project_config_path.s, g_args.project_config_path.len);
   }
   if(g_args.default_filesystem_invalidate.s) {
     g_fab_client_default_filesystem_invalidate = strndup(g_args.default_filesystem_invalidate.s, g_args.default_filesystem_invalidate.len);
@@ -217,6 +215,7 @@ static xapi xmain()
   /* always subscribe to stdout/stderr */
   msg = fab_client_produce(client);
   msg->type = FABIPC_MSG_EVENTSUB;
+  sub_id = msg->id = ++client->msgid;
   msg->attrs = 0
     | FABIPC_EVENT_BAMD_STDERR
     | FABIPC_EVENT_BAMD_STDOUT
@@ -276,6 +275,7 @@ static xapi xmain()
     {
       write(2, msg->text, msg->size);
     }
+    else if(msg->type == FABIPC_MSG_RESPONSE && msg->id == sub_id) { }
     else
     {
       fatal(g_cmd->process, g_cmd, client, msg);

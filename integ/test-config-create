@@ -14,26 +14,17 @@ use util;
 use tree;
 use bam;
 
-# config file with syntax error
 my $testdir = setup(<<'TREE');
 |-- module.bam
-|-- config.bam <<
-goats boats
->>
 TREE
 
 # before
 assert_stats(undef, {
     modules => 1
-  , system_state_ok => 0
-});
-assert_stats("config.bam", {
-    parsed_try => 1
-  , parsed => 0
-  , state => 'stale'
+  , system_state_ok => 1
 });
 
-# config file syntax fixed
+# create config file
 open my $fh, ">", "$testdir/config.bam" or die $!;
 print $fh <<'TEXT';
 build : {
@@ -46,10 +37,10 @@ close $fh;
 reconcile();
 assert_stats(undef, {
     modules => 1
-  , system_state_ok => 1
+  , system_state_ok => 2
 });
 assert_stats("config.bam", {
-    parsed_try => 2
+    parsed_try => 1
   , parsed => 1
   , state => "fresh"
 });

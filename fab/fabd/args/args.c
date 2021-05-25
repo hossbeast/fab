@@ -56,7 +56,6 @@ static xapi args_parse()
   const struct option longopts[] = {
       { "system-config-path"            , required_argument, 0, 0 }
     , { "user-config-path"              , required_argument, 0, 0 }
-    , { "project-config-path"           , required_argument, 0, 0 }
     , { "default-filesystem-invalidate" , required_argument, 0, 0 }
     , { "sweeper-period-nsec"           , required_argument, 0, 0 }
     , { }
@@ -77,9 +76,6 @@ static xapi args_parse()
     } else if(x == 0 && strcmp(longopts[longindex].name, "user-config-path") == 0) {
       iwfree(&g_args.user_config_path);
       fatal(ixstrdup, &g_args.user_config_path, optarg);
-    } else if(x == 0 && strcmp(longopts[longindex].name, "project-config-path") == 0) {
-      iwfree(&g_args.project_config_path);
-      fatal(ixstrdup, &g_args.project_config_path, optarg);
     } else if(x == 0 && strcmp(longopts[longindex].name, "default-filesystem-invalidate") == 0) {
       if((g_args.default_filesystem_invalidate = attrs16_value_byname(invalidate_attrs, optarg)) == 0) {
         fail(SYS_BADARGS);
@@ -133,7 +129,6 @@ xapi args_setup()
   /* default config paths */
   fatal(ixstrdup, &g_args.system_config_path, SYSTEM_CONFIG_PATH);
   fatal(ixstrdup, &g_args.user_config_path, USER_CONFIG_PATH);
-  fatal(ixstrdup, &g_args.project_config_path, PROJECT_CONFIG_PATH);
 
   fatal(args_parse);
   snprintf(space, sizeof(space), "%016"PRIx64, g_args.hash);
@@ -148,7 +143,6 @@ xapi args_teardown()
 
   wfree(g_args.system_config_path);
   wfree(g_args.user_config_path);
-  wfree(g_args.project_config_path);
 
   finally : coda;
 }

@@ -206,6 +206,10 @@ sub run
     last if($or == 0 && $er == 0 && exists $status_by_pid{$pid});
   }
 
+  if($$params{discard_stderr}) {
+    $err = 0;
+  }
+
   if($status_by_pid{$pid} || $err)
   {
     print STDERR ("cmd : " . join(" ", @cmd) . "\n");

@@ -24,6 +24,7 @@
 #include "command.h"
 #include "params.h"
 
+static uint64_t requestid;
 struct touch_args touch_args;
 static struct touch_args *args = &touch_args;
 
@@ -90,6 +91,7 @@ static xapi connected(command * restrict cmd, fab_client * restrict client)
   /* send the request */
   msg = fab_client_produce(client);
   msg->type = FABIPC_MSG_REQUEST;
+  requestid = msg->id = ++client->msgid;
 
   request_narrator = narrator_fixed_init(&nstor, msg->text, sizeof(msg->text));
   fatal(request_write, request_narrator);
@@ -105,6 +107,8 @@ static xapi connected(command * restrict cmd, fab_client * restrict client)
 static xapi process(command * restrict cmd, fab_client * restrict client, fabipc_message * restrict msg)
 {
   enter;
+
+  RUNTIME_ASSERT(msg->id == requestid);
 
   if(msg->type == FABIPC_MSG_RESPONSE) {
     g_params.shutdown = true;

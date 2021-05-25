@@ -224,18 +224,21 @@ xapi filesystem_reconfigure(configblob * restrict cfg, bool dry)
   rbnode *rbn;
   struct fs_rbn_key rbn_key;
 
-  if(dry)
+  if(dry) {
     goto XAPI_FINALIZE;
+  }
 
-  if(!(cfg->filesystems.attrs & CONFIG_CHANGED))
+  if(!cfg->filesystems.changed) {
     goto XAPI_FINALIZE;
+  }
 
   fstree_destroy();
 
   for(x = 0; x < cfg->filesystems.entries->table_size; x++)
   {
-    if(!(key = map_table_key(cfg->filesystems.entries, x)))
+    if(!(key = map_table_key(cfg->filesystems.entries, x))) {
       continue;
+    }
 
     fse = map_table_value(cfg->filesystems.entries, x);
     path_normalize(path, sizeof(path), key);

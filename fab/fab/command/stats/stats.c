@@ -30,10 +30,7 @@
 
 struct stats_args stats_args;
 static struct stats_args *args = &stats_args;
-
-//
-// static
-//
+static uint64_t requestid;
 
 static void usage(command * restrict cmd)
 {
@@ -58,6 +55,7 @@ static xapi connected(command * restrict cmd, fab_client * restrict client)
   /* send the request */
   msg = fab_client_produce(client);
   msg->type = FABIPC_MSG_REQUEST;
+  requestid = msg->id = ++client->msgid;
 
   z = 0;
   if(args->targets_len == 0)
@@ -137,6 +135,7 @@ static xapi process_node(fabipc_message * restrict msg)
 
   fab_fsent_stats node;
   fab_module_stats mod;
+  descriptor_type *substats;
   descriptor_field *member;
   int x;
   size_t z;
@@ -166,6 +165,84 @@ static xapi process_node(fabipc_message * restrict msg)
   }
 
   /* per node-type stats */
+  switch(node.type)
+  {
+    case FAB_FSENT_TYPE_MODULE_DIR:
+      substats = &descriptor_fab_module_stats;
+      break;
+    case FAB_FSENT_TYPE_MODULE_FILE:
+      substats = &descriptor_fab_module_file_stats;
+      break;
+    case FAB_FSENT_TYPE_FORMULA_FILE:
+      substats = &descriptor_fab_formula_stats;
+      break;
+    case FAB_FSENT_TYPE_VAR_FILE:
+      substats = &descriptor_fab_var_stats;
+      break;
+    case FAB_FSENT_TYPE_CONFIG_FILE:
+      substats = &descriptor_fab_config_stats;
+      break;
+    default:
+      substats = 0;
+  }
+
+  if(substats)
+  {
+    z += descriptor_type_unmarshal(&mod, substats, src + z, sz - z);
+
+    for(x = 0; x < substats->members_len; x++)
+    {
+      member = substats->members[x];
+      if(member->size == 8) {
+        printf("%30.*s : %"PRIu64"\n", (int)member->name_len, member->name, mod.u64[member->offset / 8]);
+      } else if(member->size == 4) {
+        printf("%30.*s : %"PRIu32"\n", (int)member->name_len, member->name, mod.u32[member->offset / 4]);
+      } else if(member->size == 2) {
+        printf("%30.*s : %"PRIu16"\n", (int)member->name_len, member->name, mod.u16[member->offset / 2]);
+      } else if(member->size == 1) {
+        printf("%30.*s : %"PRIu16"\n", (int)member->name_len, member->name, mod.u8[member->offset / 1]);
+      }
+    }
+  }
+
+  RUNTIME_ASSERT(z == msg->size);
+
+  finally : coda;
+}
+
+static xapi process(command * restrict cmd, fab_client * restrict client, fabipc_message * restrict msg)
+{
+  enter;
+
+  RUNTIME_ASSERT(msg->id == requestid);
+
+  if(msg->type == FABIPC_MSG_RESPONSE) {
+    g_params.shutdown = true;
+    goto XAPI_FINALLY;
+  }
+
+  RUNTIME_ASSERT(msg->type == FABIPC_MSG_RESULT);
+
+  if(args->targets_len == 0) {
+    fatal(process_global, msg);
+  } else {
+    fatal(process_node, msg);
+  }
+
+  finally : coda;
+}
+
+//
+// public
+//
+
+struct command stats_command = {
+    usage : usage
+  , connected : connected
+  , process : process
+};
+
+#if 0
   if(node.type == FAB_FSENT_TYPE_MODULE_DIR)
   {
     z += descriptor_type_unmarshal(&mod, &descriptor_fab_module_stats, src + z, sz - z);
@@ -238,38 +315,22 @@ static xapi process_node(fabipc_message * restrict msg)
       }
     }
   }
+  else if(node.type == FAB_FSENT_TYPE_CONFIG_FILE)
+  {
+    z += descriptor_type_unmarshal(&mod, &descriptor_fab_config_stats, src + z, sz - z);
 
-  RUNTIME_ASSERT(z == msg->size);
-
-  finally : coda;
-}
-
-static xapi process(command * restrict cmd, fab_client * restrict client, fabipc_message * restrict msg)
-{
-  enter;
-
-  if(msg->type == FABIPC_MSG_RESPONSE) {
-    g_params.shutdown = true;
-    goto XAPI_FINALLY;
+    for(x = 0; x < descriptor_fab_config_stats.members_len; x++)
+    {
+      member = descriptor_fab_config_stats.members[x];
+      if(member->size == 8) {
+        printf("%30.*s : %"PRIu64"\n", (int)member->name_len, member->name, mod.u64[member->offset / 8]);
+      } else if(member->size == 4) {
+        printf("%30.*s : %"PRIu32"\n", (int)member->name_len, member->name, mod.u32[member->offset / 4]);
+      } else if(member->size == 2) {
+        printf("%30.*s : %"PRIu16"\n", (int)member->name_len, member->name, mod.u16[member->offset / 2]);
+      } else if(member->size == 1) {
+        printf("%30.*s : %"PRIu16"\n", (int)member->name_len, member->name, mod.u8[member->offset / 1]);
+      }
+    }
   }
-
-  RUNTIME_ASSERT(msg->type == FABIPC_MSG_RESULT);
-
-  if(args->targets_len == 0) {
-    fatal(process_global, msg);
-  } else {
-    fatal(process_node, msg);
-  }
-
-  finally : coda;
-}
-
-//
-// public
-//
-
-struct command stats_command = {
-    usage : usage
-  , connected : connected
-  , process : process
-};
+#endif

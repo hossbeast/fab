@@ -25,7 +25,7 @@
 #include "params.h"
 
 #include "metadata.h"
-#include "global.h"
+#include "reconcile_thread.h"
 #include "times.h"
 
 #include "marshal.h"

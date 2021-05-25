@@ -34,17 +34,33 @@ struct fabipc_message;
 struct request;
 struct request_parser;
 struct selection;
+struct command;
 
 extern rcu_list g_handlers;    // list of active handlers
 
 /* lock for running the build, e.g. build or autobuild commands */
 extern struct trylock handler_build_lock;
 
+enum handler_state {
+  /* build thread dependent states */
+    HANDLER_BUILD_PENDING     = FAB_BUILD_PENDING
+  , HANDLER_BUILD_IN_PROGRESS = FAB_BUILD_IN_PROGRESS
+  , HANDLER_BUILD_SUCCEEDED   = FAB_BUILD_SUCCEEDED
+  , HANDLER_BUILD_FAILED      = FAB_BUILD_FAILED
+  , HANDLER_BUILD_NONE        = FAB_BUILD_NONE
+
+  /* reconcile thread dependent states */
+  , HANDLER_RECONCILE_PENDING
+  , HANDLER_RECONCILE_IN_PROGRESS
+  , HANDLER_RECONCILE_DONE
+};
+
 typedef struct handler_context {
   union {
     llist lln;      // freelist
     rcu_list stk;   // g_handlers
   };
+
   selector_context sel_ctx;
 //  rule_run_context rule_ctx;
   struct selection * selection;
@@ -52,7 +68,7 @@ typedef struct handler_context {
   struct request_parser * request_parser;
   bool autorun;
 
-  enum fab_build_state build_state;
+  enum handler_state state;
 
   pid_t tid;
   pid_t client_pid;
@@ -86,8 +102,7 @@ void handler_release(handler_context * restrict ctx);
 void handler_reset(handler_context * restrict ctx);
 
 /* complete a request */
-
-xapi handler_process_request(struct handler_context * restrict ctx, struct request * restrict request)
+xapi handler_process_command(struct handler_context * restrict ctx, struct command* restrict cmd)
   __attribute__((nonnull));
 
 #if 0

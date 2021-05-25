@@ -32,6 +32,7 @@
 #include "module.internal.h"
 #include "path_cache.h"
 #include "selector.h"
+#include "channel.h"
 
 #include "common/attrs.h"
 #include "events.h"
@@ -154,7 +155,7 @@ static xapi plan_select_direct(llist * restrict selection, buildplan_context * r
   finally : coda;
 }
 
-static xapi create_buildplan(buildplan_context * restrict bpctx)
+static xapi create_buildplan(buildplan_context * restrict bpctx, channel * restrict chan)
 {
   enter;
 
@@ -166,6 +167,7 @@ static xapi create_buildplan(buildplan_context * restrict bpctx)
   if(goal_target_direct_selector || goal_target_transitive_selector)
   {
     goal_selector_context.mod = g_project_root->mod;
+    goal_selector_context.chan = chan;
 
     if(goal_target_direct_selector)
     {
@@ -298,7 +300,7 @@ finally:
 coda;
 }
 
-xapi goals_set(uint32_t msg_id, bool build, bool script, selector * restrict target_direct, selector * restrict target_transitive)
+xapi goals_set(uint64_t msg_id, bool build, bool script, selector * restrict target_direct, selector * restrict target_transitive)
 {
   enter;
 
@@ -332,7 +334,7 @@ xapi goals_kickoff(handler_context * restrict ctx)
 
   // potentially re-create the build plan
   fatal(path_cache_reset);
-  fatal(create_buildplan, &bpctx);
+  fatal(create_buildplan, &bpctx, ctx->chan);
 
   if(goal_build && bpctx.state == UNSATISFIED) {
     logf(L_WARN, "cannot build");
@@ -341,11 +343,12 @@ xapi goals_kickoff(handler_context * restrict ctx)
   // kickoff
   if(goal_build && bpctx.state == READY)
   {
-    fatal(build_thread_build, ctx);
+    ctx->state = HANDLER_BUILD_IN_PROGRESS;
+    fatal(build_thread_launch, ctx);
   }
   else
   {
-    ctx->build_state = FAB_BUILD_NONE;
+    ctx->state = HANDLER_BUILD_NONE;
   }
 
   finally : coda;

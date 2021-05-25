@@ -34,7 +34,7 @@ struct selector;
 extern bool goals_autorun;
 
 xapi goals_set(
-    uint32_t msg_id
+    uint64_t msg_id
   , bool build
   , bool script
   , struct selector * restrict target_direct

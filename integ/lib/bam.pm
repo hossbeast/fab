@@ -58,7 +58,7 @@ sub bam
   my @args = @_;
   unshift @args, $bam_fabpath;
 
-  run({ cwd => $bam_testdir}, @args);
+  run({ cwd => $bam_testdir, discard_stderr => 1 }, @args);
 }
 
 sub bam_bootstrap
@@ -68,7 +68,6 @@ sub bam_bootstrap
     , "-K"
     , "--system-config-path", "system-config"
     , "--user-config-path", "user-config"
-    , "--project-config-path", "project-config"
     , "--default-filesystem-invalidate", $bam_invalidate
     , "--sweeper-period-nsec", $bam_sweeper_period
   );

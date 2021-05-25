@@ -27,8 +27,8 @@
 
 #define MSEC_PER_SEC  1000
 
-#define MSEC_AS_NSEC(x) ((x) * 1000 * 1000)
-#define SEC_AS_MSEC(x) ((x) * MSEC_PER_SEC)
+#define MSEC_AS_NSEC(x) ((x) * MSEC_PER_USEC * USEC_PER_NSEC)
+#define SEC_AS_MSEC(x)  ((x) * MSEC_PER_SEC)
 
 static inline uint64_t timespec_delta(struct timespec * restrict start, struct timespec * restrict end)
 {

@@ -25,7 +25,6 @@ extern struct g_args_t {
   /* devel only */
   char *system_config_path;
   char *user_config_path;
-  char *project_config_path;
   uint16_t default_filesystem_invalidate;
   uint64_t sweeper_period_nsec;
   bool kill;

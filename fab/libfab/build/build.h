@@ -27,6 +27,7 @@ struct attrs16;
 extern descriptor_type descriptor_fab_build;
 
 #define FAB_BUILD_STATE_TABLE                 \
+  DEF(FAB_BUILD_PENDING     , "pending")      \
   DEF(FAB_BUILD_IN_PROGRESS , "in-progress")  \
   DEF(FAB_BUILD_SUCCEEDED   , "succeeded")    \
   DEF(FAB_BUILD_FAILED      , "failed")       \

@@ -54,6 +54,11 @@ COMMAND_TYPE_TABLE
 extern struct attrs32 * command_type_attrs;
 
 typedef struct command {
+  llist lln;
+
+  bool first;
+  bool last;
+
   union {
     uint32_t attrs;       // bitwise combo of FAB_REQUEST_*
     struct {

@@ -21,8 +21,8 @@
 #include "common/attrs.h"
 #include "narrator.h"
 #include "value/writer.h"
-#include "valyria/array.h"
 #include "xlinux/xstdlib.h"
+#include "valyria/llist.h"
 
 #include "request.internal.h"
 #include "selector.internal.h"
@@ -49,6 +49,8 @@ TRAVERSE_TYPE_TABLE
   }
 }};
 
+static llist command_freelist = LLIST_INITIALIZER(command_freelist);
+
 static void __attribute__((constructor)) init()
 {
   attrs32_init(command_type_attrs);
@@ -59,10 +61,8 @@ static void __attribute__((constructor)) init()
 // static
 //
 
-static xapi command_xdestroy(command * cmd)
+static void command_destroy(command * cmd)
 {
-  enter;
-
   if(cmd->type == COMMAND_SELECT)
   {
     selector_free(cmd->selector);
@@ -72,22 +72,6 @@ static xapi command_xdestroy(command * cmd)
     selector_free(cmd->goals.target_direct);
     selector_free(cmd->goals.target_transitive);
   }
-
-  finally : coda;
-}
-
-static xapi command_xfree(command * cmd)
-{
-  enter;
-
-  if(cmd)
-  {
-    fatal(command_xdestroy, cmd);
-  }
-
-  wfree(cmd);
-
-  finally : coda;
 }
 
 static xapi request_writer_write(request * const restrict req, value_writer * const restrict writer)
@@ -95,120 +79,95 @@ static xapi request_writer_write(request * const restrict req, value_writer * co
   enter;
 
   command *cmd;
-  int x;
 
-  for(x = -1; x <= (int)req->commands->size; x++)
-  {
-    if(x == -1) {
-      if((cmd = req->first_command) == NULL) {
-        continue;
-      }
-    } else if (x == req->commands->size) {
-      if((cmd = req->last_command) == NULL) {
-        continue;
-      }
-    } else {
-      cmd = array_get(req->commands, x);
-    }
-
-    if(cmd->type == COMMAND_RUN)
+  llist_foreach(&req->commands, cmd, lln) {
+    switch(cmd->type)
     {
-      fatal(value_writer_string, writer, "run");
-    }
-    else if(cmd->type == COMMAND_AUTORUN)
-    {
-      fatal(value_writer_string, writer, "autorun");
-    }
-    else if(cmd->type == COMMAND_DESCRIBE)
-    {
-      fatal(value_writer_string, writer, "describe");
-    }
-    else if(cmd->type == COMMAND_INVALIDATE)
-    {
-      fatal(value_writer_string, writer, "invalidate");
-    }
-    else if(cmd->type == COMMAND_GLOBAL_INVALIDATE)
-    {
-      fatal(value_writer_string, writer, "global-invalidate");
-    }
-    else if(cmd->type == COMMAND_LIST)
-    {
-      fatal(value_writer_string, writer, "list");
-    }
-    else if(cmd->type == COMMAND_RESET_SELECTION)
-    {
-      fatal(value_writer_string, writer, "reset-selection");
-    }
-    else if(cmd->type == COMMAND_GLOBAL_STATS_READ)
-    {
-      fatal(value_writer_string, writer, "global-stats-read");
-    }
-    else if(cmd->type == COMMAND_GLOBAL_STATS_RESET)
-    {
-      fatal(value_writer_string, writer, "global-stats-reset");
-    }
-    else if(cmd->type == COMMAND_STATS_READ)
-    {
-      fatal(value_writer_string, writer, "stats-read");
-    }
-    else if(cmd->type == COMMAND_STATS_RESET)
-    {
-      fatal(value_writer_string, writer, "stats-reset");
-    }
-    else if(cmd->type == COMMAND_SELECT)
-    {
-      fatal(value_writer_push_mapping, writer);
-      fatal(value_writer_string, writer, "select");
-        fatal(value_writer_push_list, writer);
-        fatal(selector_writer_write, cmd->selector, writer);
-        fatal(value_writer_pop_list, writer);
-      fatal(value_writer_pop_mapping, writer);
-    }
-    else if(cmd->type == COMMAND_GOALS)
-    {
-      fatal(value_writer_push_mapping, writer);
-      fatal(value_writer_string, writer, "goals");
-        fatal(value_writer_push_set, writer);
-        if(cmd->goals.build)
-          fatal(value_writer_string, writer, "build");
-        if(cmd->goals.script)
-          fatal(value_writer_string, writer, "script");
-        if(cmd->goals.target_direct)
-        {
-          fatal(value_writer_push_mapping, writer);
-            fatal(value_writer_string, writer, "target-direct");
-            fatal(value_writer_push_list, writer);
-              fatal(selector_writer_write, cmd->goals.target_direct, writer);
-            fatal(value_writer_pop_list, writer);
-          fatal(value_writer_pop_mapping, writer);
-        }
-        if(cmd->goals.target_transitive)
-        {
-          fatal(value_writer_push_mapping, writer);
-            fatal(value_writer_string, writer, "target-transitive");
-            fatal(value_writer_push_list, writer);
-              fatal(selector_writer_write, cmd->goals.target_transitive, writer);
-            fatal(value_writer_pop_list, writer);
-          fatal(value_writer_pop_mapping, writer);
-        }
-        fatal(value_writer_pop_set, writer);
-      fatal(value_writer_pop_mapping, writer);
-    }
-    else if(cmd->type == COMMAND_METADATA)
-    {
-      fatal(value_writer_string, writer, "metadata");
-    }
-    else if(cmd->type == COMMAND_BOOTSTRAP)
-    {
-      fatal(value_writer_string, writer, "bootstrap");
-    }
-    else if(cmd->type == COMMAND_RECONCILE)
-    {
-      fatal(value_writer_string, writer, "reconcile");
-    }
-    else
-    {
-      RUNTIME_ABORT();
+      case COMMAND_RUN:
+        fatal(value_writer_string, writer, "run");
+        break;
+      case COMMAND_AUTORUN:
+        fatal(value_writer_string, writer, "autorun");
+        break;
+      case COMMAND_DESCRIBE:
+        fatal(value_writer_string, writer, "describe");
+        break;
+      case COMMAND_INVALIDATE:
+        fatal(value_writer_string, writer, "invalidate");
+        break;
+      case COMMAND_GLOBAL_INVALIDATE:
+        fatal(value_writer_string, writer, "global-invalidate");
+        break;
+      case COMMAND_CONFIG_READ:
+        fatal(value_writer_string, writer, "config-read");
+        break;
+      case COMMAND_LIST:
+        fatal(value_writer_string, writer, "list");
+        break;
+      case COMMAND_RESET_SELECTION:
+        fatal(value_writer_string, writer, "reset-selection");
+        break;
+      case COMMAND_GLOBAL_STATS_READ:
+        fatal(value_writer_string, writer, "global-stats-read");
+        break;
+      case COMMAND_GLOBAL_STATS_RESET:
+        fatal(value_writer_string, writer, "global-stats-reset");
+        break;
+      case COMMAND_STATS_READ:
+        fatal(value_writer_string, writer, "stats-read");
+        break;
+      case COMMAND_STATS_RESET:
+        fatal(value_writer_string, writer, "stats-reset");
+        break;
+      case COMMAND_SELECT:
+        fatal(value_writer_push_mapping, writer);
+        fatal(value_writer_string, writer, "select");
+          fatal(value_writer_push_list, writer);
+          fatal(selector_writer_write, cmd->selector, writer);
+          fatal(value_writer_pop_list, writer);
+        fatal(value_writer_pop_mapping, writer);
+        break;
+      case COMMAND_GOALS:
+        fatal(value_writer_push_mapping, writer);
+        fatal(value_writer_string, writer, "goals");
+          fatal(value_writer_push_set, writer);
+          if(cmd->goals.build)
+            fatal(value_writer_string, writer, "build");
+          if(cmd->goals.script)
+            fatal(value_writer_string, writer, "script");
+          if(cmd->goals.target_direct)
+          {
+            fatal(value_writer_push_mapping, writer);
+              fatal(value_writer_string, writer, "target-direct");
+              fatal(value_writer_push_list, writer);
+                fatal(selector_writer_write, cmd->goals.target_direct, writer);
+              fatal(value_writer_pop_list, writer);
+            fatal(value_writer_pop_mapping, writer);
+          }
+          if(cmd->goals.target_transitive)
+          {
+            fatal(value_writer_push_mapping, writer);
+              fatal(value_writer_string, writer, "target-transitive");
+              fatal(value_writer_push_list, writer);
+                fatal(selector_writer_write, cmd->goals.target_transitive, writer);
+              fatal(value_writer_pop_list, writer);
+            fatal(value_writer_pop_mapping, writer);
+          }
+          fatal(value_writer_pop_set, writer);
+        fatal(value_writer_pop_mapping, writer);
+        break;
+      case COMMAND_METADATA:
+        fatal(value_writer_string, writer, "metadata");
+        break;
+      case COMMAND_BOOTSTRAP:
+        fatal(value_writer_string, writer, "bootstrap");
+        break;
+      case COMMAND_RECONCILE:
+        fatal(value_writer_string, writer, "reconcile");
+        break;
+      default:
+printf("type %d\n", cmd->type);
+        RUNTIME_ABORT();
     }
   }
 
@@ -219,47 +178,35 @@ static xapi request_writer_write(request * const restrict req, value_writer * co
 // public
 //
 
-xapi request_create(request ** restrict rv)
+xapi request_cleanup()
 {
   enter;
 
-  request * req = 0;
+  command *cmd;
+  llist *T;
 
-  fatal(xmalloc, &req, sizeof(*req));
-  fatal(array_createx, &req->commands, sizeof(command), 0, 0, 0, 0, 0, command_xdestroy);
-
-  *rv = req;
-  req = 0;
-
-finally:
-  fatal(request_xfree, req);
-coda;
-}
-
-xapi request_xfree(request * restrict req)
-{
-  enter;
-
-  if(req)
-  {
-    fatal(array_xfree, req->commands);
-    fatal(command_xfree, req->first_command);
-    fatal(command_xfree, req->last_command);
+  llist_foreach_safe(&command_freelist, cmd, lln, T) {
+    wfree(cmd);
   }
 
-  wfree(req);
-
   finally : coda;
 }
 
-xapi request_ixfree(request ** restrict req)
+void request_init(request * restrict req)
 {
-  enter;
+  llist_init_node(&req->commands);
+}
 
-  fatal(request_xfree, *req);
-  *req = 0;
+void request_destroy(request * restrict req)
+{
+  command *cmd;
+  llist *T;
 
-  finally : coda;
+  llist_foreach_safe(&req->commands, cmd, lln, T) {
+    command_destroy(cmd);
+    llist_delete(cmd, lln);
+    llist_append(&command_freelist, cmd, lln);
+  }
 }
 
 xapi request_say(request * restrict req, narrator * restrict N)
@@ -277,4 +224,26 @@ xapi request_say(request * restrict req, narrator * restrict N)
 finally:
   fatal(value_writer_xfree, writer);
 coda;
+}
+
+xapi request_command_alloc(request * restrict req, command ** restrict cmdp)
+{
+  enter;
+
+  command *cmd;
+
+  if((cmd = llist_shift(&command_freelist, typeof(*cmd), lln)) == 0) {
+    fatal(xmalloc, &cmd, sizeof(*cmd));
+  } else {
+    memset(cmd, 0, sizeof(*cmd));
+  }
+
+  //cmd->first = false;
+  //cmd->last = false;
+
+  llist_append(&req->commands, cmd, lln);
+
+  *cmdp = cmd;
+
+  finally : coda;
 }

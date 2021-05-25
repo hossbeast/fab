@@ -29,6 +29,7 @@ extern descriptor_type descriptor_fab_module_stats;
 extern descriptor_type descriptor_fab_module_file_stats;
 extern descriptor_type descriptor_fab_formula_stats;
 extern descriptor_type descriptor_fab_var_stats;
+extern descriptor_type descriptor_fab_config_stats;
 
 typedef union fab_global_stats {
     struct {
@@ -55,6 +56,8 @@ typedef union fab_global_stats {
       uint16_t formula_parsed;          /* formula is parsed */
       uint16_t var_parsed_try;          /* var.bam parse attempt */
       uint16_t var_parsed;              /* var.bam is parsed */
+      uint16_t config_parsed_try;       /* config.bam parse attempt */
+      uint16_t config_parsed;           /* config.bam is parsed */
       uint16_t rule_run;                /* a rule is run */
       uint32_t rcu_synchronize_nobody;
       uint32_t rcu_synchronize_wait;
@@ -64,15 +67,6 @@ typedef union fab_global_stats {
       uint32_t fsent_stale;             /* fsent marked as stale */
       uint32_t fsent_fresh;             /* fsent marked as fresh */
       uint16_t system_state_ok;         /* system-state set to ok */
-
-      /* operation latencies */
-      uint64_t global_system_reconcile;
-      uint64_t config_system_reconcile;
-      uint64_t filesystem_system_reconcile;
-      uint64_t var_system_reconcile;
-      uint64_t formula_system_reconcile;
-      uint64_t module_system_reconcile;
-      uint64_t rule_system_reconcile;
   };
 
   uint16_t u8[0];
@@ -100,7 +94,7 @@ typedef union fab_fsent_stats {
   uint64_t u64[0];
 } fab_fsent_stats;
 
-/* FAB_NODE_TYPE_DIR - directory containing module.bam */
+/* FAB_FSENT_TYPE_DIR - directory containing module.bam */
 typedef union fab_module_stats {
   struct {
     /* relation/entity counts */
@@ -127,7 +121,7 @@ typedef union fab_module_stats {
   uint64_t u64[0];
 } fab_module_stats;
 
-/* FAB_NODE_MODULE_FILE - module.bam file */
+/* FAB_NODE_TYPE_MODULE_FILE - module.bam file */
 typedef union fab_module_file_stats {
   struct {
     /* event counters */
@@ -141,7 +135,7 @@ typedef union fab_module_file_stats {
   uint64_t u64[0];
 } fab_module_file_stats;
 
-/* FAB_NODE_FORMULA_FILE - cc.bam file - referenced as formula from a rule */
+/* FAB_NODE_TYPE_FORMULA_FILE - cc.bam file - referenced as formula from a rule */
 typedef union fab_formula_stats {
   struct {
     /* event counters */
@@ -155,7 +149,7 @@ typedef union fab_formula_stats {
   uint64_t u64[0];
 } fab_formula_stats;
 
-/* FAB_NODE_TYPE_VAR_FILE - var.bam file */
+/* FAB_FSENT_TYPE_VAR_FILE - var.bam file */
 typedef union fab_var_stats {
   struct {
     /* event counters */
@@ -168,5 +162,19 @@ typedef union fab_var_stats {
   uint32_t u32[0];
   uint64_t u64[0];
 } fab_var_stats;
+
+/* FAB_FSENT_TYPE_CONFIG_FILE - config.bam file */
+typedef union fab_config_stats {
+  struct {
+    /* event counters */
+    uint16_t parsed_try;      /* parsed successfully */
+    uint16_t parsed;          /* parse attempted */
+  };
+
+  uint16_t u8[0];
+  uint16_t u16[0];
+  uint32_t u32[0];
+  uint64_t u64[0];
+} fab_config_stats;
 
 #endif

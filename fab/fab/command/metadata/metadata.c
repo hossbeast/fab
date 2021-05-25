@@ -29,9 +29,7 @@
 #include "zbuffer.h"
 #include "times.h"
 
-//
-// static
-//
+static uint64_t requestid;
 
 static void usage(command * restrict cmd)
 {
@@ -55,6 +53,7 @@ static xapi connected(command * restrict cmd, fab_client * restrict client)
   /* send the request */
   msg = fab_client_produce(client);
   msg->type = FABIPC_MSG_REQUEST;
+  requestid = msg->id = ++client->msgid;
 
   z = 0;
   z += znloads(msg->text + z, sizeof(msg->text) - z, "metadata");
@@ -77,6 +76,8 @@ static xapi process(command * restrict cmd, fab_client * restrict client, fabipc
   char buf[128];
   narrator_fixed fixed;
   size_t z;
+
+  RUNTIME_ASSERT(msg->id == requestid);
 
   if(msg->type == FABIPC_MSG_RESPONSE) {
     g_params.shutdown = true;

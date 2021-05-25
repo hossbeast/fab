@@ -21,6 +21,12 @@
 #include "xapi.h"
 #include "types.h"
 
+/* bottom 32 bits of the pid shifted into the top 32 bits */
+#define PID_AS_MSGID(pid) ((((uint64_t)pid & UINT32_MAX) << 32) | 1)
+
+/* top 32 bits shifted down */
+#define PID_FROM_MSGID(id) (uint32_t)(id >> 32)
+
 // non-configurable execution parameters
 extern struct g_params
 {

@@ -224,6 +224,7 @@ xapi API fab_client_create(fab_client ** restrict clientp, const char * restrict
   fatal(xmalloc, &client->ipcdir, len + 1);
   memcpy(client->ipcdir, space, len);
 
+  client->msgid = 2;
   client->lockfd = -1;
   *clientp = client;
 

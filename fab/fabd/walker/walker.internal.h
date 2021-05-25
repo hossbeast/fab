@@ -26,6 +26,9 @@
 struct ftwinfo;
 struct fsent;
 struct graph_invalidation_context;
+struct llist;
+
+extern struct llist * walker_exclude_list;
 
 typedef struct walker_context {
   struct fsent * base;        // base of the tree

@@ -33,6 +33,7 @@ struct tree_args tree_args = {
 static struct tree_args *args = &tree_args;
 static bool upwards;
 static bool second;
+static uint64_t requestid;
 
 //
 // static
@@ -80,6 +81,7 @@ static void post_request(fab_client * restrict client)
 
   msg = fab_client_produce(client);
   msg->type = FABIPC_MSG_REQUEST;
+  requestid = msg->id = ++client->msgid;
 
   dst = msg->text;
   sz = sizeof(msg->text);
@@ -126,6 +128,8 @@ static xapi process(command * restrict cmd, fab_client * restrict client, fabipc
   int x;
   size_t z;
   fab_list_item item;
+
+  RUNTIME_ASSERT(msg->id == requestid);
 
   if(msg->type == FABIPC_MSG_RESPONSE && args->both && !second) {
     upwards = false;

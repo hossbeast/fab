@@ -39,7 +39,7 @@ typedef struct channel {
       bool error;
 
       /* message id to use for messages on this channel */
-      uint32_t msgid;
+      uint64_t msgid;
     };
 
     char pad[FABIPC_SHMSIZE];

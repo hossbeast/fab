@@ -95,9 +95,6 @@ utterance
 
 allocate-request
   : %empty
-  {
-    YFATAL(request_create, &PARSER->request);
-  }
   ;
 
 request
@@ -111,8 +108,8 @@ request
 allocate-first-command
   : %empty
   {
-    YFATAL(xmalloc, &PARSER->request->first_command, sizeof(*PARSER->request->first_command));
-    PARSER->command = PARSER->request->first_command;
+    YFATAL(request_command_alloc, PARSER->request, &PARSER->command);
+    PARSER->command->first = true;
   }
   ;
 
@@ -145,7 +142,7 @@ reconcile-cmd
 allocate-internal-command
   : %empty
   {
-    YFATAL(array_push, PARSER->request->commands, &PARSER->command);
+    YFATAL(request_command_alloc, PARSER->request, &PARSER->command);
   }
   ;
 
@@ -263,8 +260,9 @@ target-transitive-cmd
 allocate-last-command
   : %empty
   {
-    YFATAL(xmalloc, &PARSER->request->last_command, sizeof(*PARSER->request->last_command));
-    PARSER->command = PARSER->request->last_command;
+    YFATAL(request_command_alloc, PARSER->request, &PARSER->command);
+    PARSER->command->last = true;
+    PARSER->request->has_last_command = true;
   }
   ;
 

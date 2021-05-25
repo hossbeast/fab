@@ -35,6 +35,8 @@ struct list;
 struct narrator;
 struct value_writer;
 
+extern bool config_reconfigured;
+
 #define CONFIG_CHANGED            0x1
 #define CONFIG_MERGE_SIGNIFICANT  0x2
 #define CONFIG_MERGE_SET          0x4
@@ -145,7 +147,7 @@ xapi config_ixfree(configblob ** restrict cfg)
 
 /* mark sections of a new config struct as different from those of another config struct */
 bool config_compare(configblob * restrict new, configblob * restrict old)
-  __attribute__((nonnull(1)));
+  __attribute__((nonnull));
 
 xapi config_writer_write(configblob * const restrict cfg, struct value_writer * const restrict writer)
   __attribute__((nonnull));

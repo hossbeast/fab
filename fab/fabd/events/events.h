@@ -30,6 +30,9 @@
 struct handler_context;
 struct fabipc_message;
 
+/* mask of events for which any handler has subscribed */
+extern uint32_t events_mask;
+
 /*
  * check whether any subscribers exist for the specified event type
  *

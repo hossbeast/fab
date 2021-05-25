@@ -15,6 +15,8 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
+#include <inttypes.h>
+
 #include "fab/ipc.h"
 #include "fab/events.h"
 #include "fab/client.h"
@@ -63,6 +65,7 @@ static xapi connected(command * restrict cmd, fab_client * restrict client)
   /* subscribe to relevant events */
   msg = fab_client_produce(client);
   msg->type = FABIPC_MSG_EVENTSUB;
+  msg->id = ++client->msgid;
   msg->attrs = events_args.event_mask;
 
   client_post(client, msg);
@@ -81,10 +84,10 @@ static xapi process(command * restrict cmd, fab_client * restrict client, fabipc
     case FABIPC_EVENT_FORMULA_EXEC_STDERR:
     case FABIPC_EVENT_FORMULA_EXEC_AUXOUT:
       /* these events carry a build_slot object */
-      printf("%-10u %s\n", msg->id, attrs32_name_byvalue(fabipc_event_type_attrs, msg->evtype));
+      printf("0x%-16"PRIx64" %s\n", msg->id, attrs32_name_byvalue(fabipc_event_type_attrs, msg->evtype));
       break;
     default:
-      printf("%-10u %s %.*s\n", msg->id, attrs32_name_byvalue(fabipc_event_type_attrs, msg->evtype), msg->size, msg->text);
+      printf("0x%-16"PRIx64" %s %.*s\n", msg->id, attrs32_name_byvalue(fabipc_event_type_attrs, msg->evtype), msg->size, msg->text);
   }
 
   finally : coda;

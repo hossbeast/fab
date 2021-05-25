@@ -68,7 +68,7 @@
 #include "sweeper_thread.h"
 #include "handler_thread.h"
 #include "beholder_thread.h"
-#include "bootstrap_thread.h"
+#include "reconcile_thread.h"
 #include "channel.h"
 #include "handler.h"
 #include "var.h"
@@ -77,38 +77,11 @@
 #include "stats.h"
 #include "selection.h"
 #include "walker.h"
+
 #include "common/parseint.h"
 #include "common/hash.h"
 
 #include "locks.h"
-
-#if DEVEL
-static xapi setup_initial_channel(const char * restrict request)
-{
-  enter;
-
-  size_t len;
-  channel * chan;
-  fabipc_page *page;
-  fabipc_message *msg;
-
-  RUNTIME_ASSERT(g_argc > 2);
-
-  len = strlen(request);
-  fatal(xmalloc, &chan, sizeof(*chan));
-  page = &chan->ipc.client_ring.pages[0];
-  msg = &page->msg;
-  chan->ipc.client_ring.tail++;
-
-  memcpy(msg->text, request, len);
-  msg->text[len + 0] = 0;
-  msg->text[len + 1] = 0;
-  msg->size = sizeof(*msg) + len + 2;
-  g_server_initial_channel = chan;
-
-  finally : coda;
-}
-#endif
 
 static xapi xmain_exit;
 static xapi xmain()
@@ -129,13 +102,6 @@ static xapi xmain()
   sigfillset(&sigs);
   fatal(xpthread_sigmask, SIG_SETMASK, &sigs, 0);
 
-#if DEVEL
-  if(g_argc > 2 && strcmp(g_argv[1], "--request") == 0)
-  {
-    fatal(setup_initial_channel, g_argv[2]);
-  }
-#endif
-
   setvbuf(stdout, NULL, _IONBF, 0);
   setvbuf(stderr, NULL, _IONBF, 0);
 
@@ -155,7 +121,7 @@ static xapi xmain()
   fatal(xclose, fds[1]);
 
   /* the build thread and worker threads are launched by the initial reconfiguration */
-  fatal(bootstrap_thread_launch);
+  /* the reconcile thread is launched by a client thread */
   fatal(notify_thread_launch);
   fatal(server_thread_launch);
   fatal(sweeper_thread_launch);
@@ -271,7 +237,6 @@ finally:
   fatal(buildplan_cleanup);
   fatal(config_cleanup);
   fatal(filesystem_cleanup);
-  fatal(graph_cleanup);
   fatal(module_cleanup);
   fatal(rule_module_cleanup);
   fatal(fsent_cleanup);
@@ -290,6 +255,8 @@ finally:
   fatal(selection_cleanup);
   fatal(dependency_cleanup);
   fatal(walker_cleanup);
+  fatal(request_cleanup);
+  fatal(graph_cleanup);
 
   // libraries
   fatal(fab_unload);

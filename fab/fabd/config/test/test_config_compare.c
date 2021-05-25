@@ -58,6 +58,9 @@ static xapi config_compare_test_unit_setup(xunit_unit * unit)
   fatal(logging_finalize);
   fatal(config_setup);
 
+  /* override first-reconfiguration logic */
+  config_reconfigured = true;
+
   finally : coda;
 }
 
@@ -108,7 +111,6 @@ static xapi config_compare_test_entry(xunit_test * _test)
   text = test->Btexts;
   while(*text)
   {
-//printf("Btext %s\n", *text);
     fatal(config_parser_parse, parser, *text, strlen(*text) + 2, 0, 0, &T);
     if(!B)
     {
@@ -121,9 +123,6 @@ static xapi config_compare_test_entry(xunit_test * _test)
     }
     T = 0;
     text++;
-//printf("B ");
-//fatal(config_say, B, g_narrator_stdout);
-//printf("\n");
   }
 
   config_compare(B, A);

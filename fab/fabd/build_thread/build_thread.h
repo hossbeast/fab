@@ -19,8 +19,9 @@
 #define _BUILD_THREAD_H
 
 #include "xapi.h"
+#include "types.h"
 
-struct attrs32;
+//struct attrs32;
 struct build_slot;
 struct configblob;
 struct handler_context;
@@ -32,6 +33,27 @@ extern int build_slots_bypid_lock;
 extern bool build_stage_failure;
 extern int build_devnull_fd;
 
+xapi build_thread_setup(void);
+xapi build_thread_cleanup(void);
+
+/*
+ * reapply configuration to the build thread
+ *
+ * config - root of the config tree
+ * dry    - whether to perform a dry-run
+ */
+xapi build_thread_reconfigure(struct configblob * restrict cfg, bool dry)
+  __attribute__((nonnull));
+
+/*
+ * launch the build thread, run the build the completion
+ */
+xapi build_thread_launch(struct handler_context * restrict ctx)
+  __attribute__((nonnull));
+
+#endif
+
+#if 0
 // configuration
 #define STREAM_PART_OPT 0xf
 #define STREAM_PART_TABLE                                                 \
@@ -46,21 +68,4 @@ STREAM_PART_TABLE
 } stream_part;
 
 extern struct attrs32 * stream_part_attrs;
-
-xapi build_thread_setup(void);
-xapi build_thread_cleanup(void);
-xapi build_thread_launch(void);
-
-/*
- * reapply configuration to the build thread
- *
- * config - root of the config tree
- * dry    - whether to perform a dry-run
- */
-xapi build_thread_reconfigure(struct configblob * restrict cfg, bool dry)
-  __attribute__((nonnull));
-
-xapi build_thread_build(struct handler_context * restrict ctx)
-  __attribute__((nonnull));
-
 #endif

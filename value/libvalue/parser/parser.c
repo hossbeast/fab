@@ -178,8 +178,9 @@ xapi API value_parser_parse(
   fatal(yyu_parse, pfn, text, len, fname, 0, 0, 0);
 
   // ownership transfer
-  if(root)
+  if(root) {
     *root = parser->root;
+  }
 
 finally:
   xapi_infos("fname", fname);

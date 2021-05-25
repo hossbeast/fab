@@ -318,174 +318,103 @@ void API box_int_setif(box_int * restrict b, int * v)
 // box
 //
 
-uint32_t API box_hash(uint32_t h, box * restrict bx)
+int API box_int_cmp(const box_int *a, const box_int *b)
 {
-  if(!bx->hash)
+  if(a == 0 || b == 0)
   {
-    uint32_t hash = hash32(0, &bx->type, sizeof(bx->type));
-
-    if(bx->type == BOX_INT)
-    {
-      box_int * b = containerof(bx, box_int, bx);
-      hash = hash32(hash, &b->v, sizeof(b->v));
-    }
-    else if(bx->type == BOX_BOOL)
-    {
-      box_bool * b = containerof(bx, box_bool, bx);
-      hash = hash32(hash, &b->v, sizeof(b->v));
-    }
-    else if(bx->type == BOX_STRING)
-    {
-      box_string * b = containerof(bx, box_string, bx);
-      hash = hash32(hash, b->v, b->l);
-    }
-    else if(bx->type == BOX_INT8)
-    {
-      box_int8 * b = containerof(bx, box_int8, bx);
-      hash = hash32(hash, &b->v, sizeof(b->v));
-    }
-    else if(bx->type == BOX_INT16)
-    {
-      box_int16 * b = containerof(bx, box_int16, bx);
-      hash = hash32(hash, &b->v, sizeof(b->v));
-    }
-    else if(bx->type == BOX_INT32)
-    {
-      box_int32 * b = containerof(bx, box_int32, bx);
-      hash = hash32(hash, &b->v, sizeof(b->v));
-    }
-    else if(bx->type == BOX_INT64)
-    {
-      box_int64 * b = containerof(bx, box_int64, bx);
-      hash = hash32(hash, &b->v, sizeof(b->v));
-    }
-    else if(bx->type == BOX_UINT8)
-    {
-      box_uint8 * b = containerof(bx, box_uint8, bx);
-      hash = hash32(hash, &b->v, sizeof(b->v));
-    }
-    else if(bx->type == BOX_UINT16)
-    {
-      box_uint16 * b = containerof(bx, box_uint16, bx);
-      hash = hash32(hash, &b->v, sizeof(b->v));
-    }
-    else if(bx->type == BOX_UINT32)
-    {
-      box_uint32 * b = containerof(bx, box_uint32, bx);
-      hash = hash32(hash, &b->v, sizeof(b->v));
-    }
-    else if(bx->type == BOX_UINT64)
-    {
-      box_uint64 * b = containerof(bx, box_uint64, bx);
-      hash = hash32(hash, &b->v, sizeof(b->v));
-    }
-
-    bx->hash = hash;
+    return !!a - !!b;
   }
-
-  return h + bx->hash;
+  return INTCMP(a->v, b->v);
 }
 
-int API box_cmp(const box * restrict Ax, const box * restrict Bx)
+int API box_bool_cmp(const box_bool *a, const box_bool *b)
 {
-  int r = 0;
-  int d;
-  if(Ax == 0 || Bx == 0)
+  if(a == 0 || b == 0)
   {
-    r = (Ax == 0) - (Bx == 0);
+    return !!a - !!b;
   }
-  else if((d = Ax->type - Bx->type))
-  {
-    r = d;
-  }
-  else if(Ax->type == BOX_INT)
-  {
-    const box_int * A = containerof(Ax, box_int, bx);
-    const box_int * B = containerof(Bx, box_int, bx);
-    r = INTCMP(A->v, B->v);
-  }
-  else if(Ax->type == BOX_BOOL)
-  {
-    const box_bool * A = containerof(Ax, box_bool, bx);
-    const box_bool * B = containerof(Bx, box_bool, bx);
-    r = A->v != B->v;
-  }
-  else if(Ax->type == BOX_STRING)
-  {
-    const box_string * A = containerof(Ax, box_string, bx);
-    const box_string * B = containerof(Bx, box_string, bx);
-    r = memncmp(A->v, A->l, B->v, B->l);
-  }
-  else if(Ax->type == BOX_INT8)
-  {
-    const box_int8 * A = containerof(Ax, box_int8, bx);
-    const box_int8 * B = containerof(Bx, box_int8, bx);
-    r = INTCMP(A->v, B->v);
-  }
-  else if(Ax->type == BOX_INT16)
-  {
-    const box_int16 * A = containerof(Ax, box_int16, bx);
-    const box_int16 * B = containerof(Bx, box_int16, bx);
-    r = INTCMP(A->v, B->v);
-  }
-  else if(Ax->type == BOX_INT32)
-  {
-    const box_int32 * A = containerof(Ax, box_int32, bx);
-    const box_int32 * B = containerof(Bx, box_int32, bx);
-    r = INTCMP(A->v, B->v);
-  }
-  else if(Ax->type == BOX_INT64)
-  {
-    const box_int64 * A = containerof(Ax, box_int64, bx);
-    const box_int64 * B = containerof(Bx, box_int64, bx);
-    r = INTCMP(A->v, B->v);
-  }
-  else if(Ax->type == BOX_UINT8)
-  {
-    const box_uint8 * A = containerof(Ax, box_uint8, bx);
-    const box_uint8 * B = containerof(Bx, box_uint8, bx);
-    r = INTCMP(A->v, B->v);
-  }
-  else if(Ax->type == BOX_UINT16)
-  {
-    const box_uint16 * A = containerof(Ax, box_uint16, bx);
-    const box_uint16 * B = containerof(Bx, box_uint16, bx);
-    r = INTCMP(A->v, B->v);
-  }
-  else if(Ax->type == BOX_UINT32)
-  {
-    const box_uint32 * A = containerof(Ax, box_uint32, bx);
-    const box_uint32 * B = containerof(Bx, box_uint32, bx);
-    r = INTCMP(A->v, B->v);
-  }
-  else if(Ax->type == BOX_UINT64)
-  {
-    const box_uint64 * A = containerof(Ax, box_uint64, bx);
-    const box_uint64 * B = containerof(Bx, box_uint64, bx);
-    r = INTCMP(A->v, B->v);
-  }
-
-  return r;
+  return INTCMP(a->v, b->v);
 }
 
-bool API box_equal(box * restrict A, box * restrict B)
+int API box_string_cmp(const box_string *a, const box_string *b)
 {
-  if(A == 0 || B == 0)
-    return !!A == !!B;
-
-  if(A->type != B->type)
-    return false;
-
-  if(box_hash(0, A) != box_hash(0, B))
-    return false;
-
-  return box_cmp(A, B) == 0;
+  if(a == 0 || b == 0)
+  {
+    return !!a - !!b;
+  }
+  return memncmp(a->v, a->l, b->v, b->l);
 }
 
-void API box_copyif(box ** restrict dst, box * restrict src)
+int API box_int8_cmp(const box_int8 *a, const box_int8 *b)
 {
-  if(src)
-    *dst = src;
+  if(a == 0 || b == 0)
+  {
+    return !!a - !!b;
+  }
+  return INTCMP(a->v, b->v);
+}
+
+int API box_int16_cmp(const box_int16 *a, const box_int16 *b)
+{
+  if(a == 0 || b == 0)
+  {
+    return !!a - !!b;
+  }
+  return INTCMP(a->v, b->v);
+}
+
+int API box_int32_cmp(const box_int32 *a, const box_int32 *b)
+{
+  if(a == 0 || b == 0)
+  {
+    return !!a - !!b;
+  }
+  return INTCMP(a->v, b->v);
+}
+
+int API box_int64_cmp(const box_int64 *a, const box_int64 *b)
+{
+  if(a == 0 || b == 0)
+  {
+    return !!a - !!b;
+  }
+  return INTCMP(a->v, b->v);
+}
+
+int API box_uint8_cmp(const box_uint8 *a, const box_uint8 *b)
+{
+  if(a == 0 || b == 0)
+  {
+    return !!a - !!b;
+  }
+  return INTCMP(a->v, b->v);
+}
+
+int API box_uint16_cmp(const box_uint16 *a, const box_uint16 *b)
+{
+  if(a == 0 || b == 0)
+  {
+    return !!a - !!b;
+  }
+  return INTCMP(a->v, b->v);
+}
+
+int API box_uint32_cmp(const box_uint32 *a, const box_uint32 *b)
+{
+  if(a == 0 || b == 0)
+  {
+    return !!a - !!b;
+  }
+  return INTCMP(a->v, b->v);
+}
+
+int API box_uint64_cmp(const box_uint64 *a, const box_uint64 *b)
+{
+  if(a == 0 || b == 0)
+  {
+    return !!a - !!b;
+  }
+  return INTCMP(a->v, b->v);
 }
 
 void API box_free(box * bx)

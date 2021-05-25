@@ -26,6 +26,7 @@
 #include "params.h"
 #include "zbuffer.h"
 
+static uint64_t requestid;
 struct ls_args ls_args = {
     graph : FAB_GRAPH_FSTREE
   , direction : "down"
@@ -65,6 +66,7 @@ static xapi connected(command * restrict cmd, fab_client * restrict client)
 
   msg = fab_client_produce(client);
   msg->type = FABIPC_MSG_REQUEST;
+  requestid = msg->id = ++client->msgid;
 
   dst = msg->text;
   sz = sizeof(msg->text);
@@ -98,6 +100,8 @@ static xapi process(command * restrict cmd, fab_client * restrict client, fabipc
   int x;
   size_t z;
   fab_list_item item;
+
+  RUNTIME_ASSERT(msg->id == requestid);
 
   if(msg->type == FABIPC_MSG_RESPONSE) {
     g_params.shutdown = true;

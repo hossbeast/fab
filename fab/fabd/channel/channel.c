@@ -25,6 +25,10 @@
 /* ugo+rw  world read/write */
 #define SHMCHANNEL_MODE 0666
 
+#include <inttypes.h>
+#include "fab/events.h"
+#include "common/attrs.h"
+
 //
 // public
 //
@@ -59,22 +63,19 @@ void channel_release(channel * restrict chan)
   shmdt(chan);
 }
 
-fabipc_message * channel_acquire(channel * restrict chan)
+/* TX : produce -> post */
+
+fabipc_message * channel_produce(channel * restrict chan)
 {
   fabipc_message *msg;
-
-  msg = fabipc_acquire(
-      chan->ipc.client_ring.pages
-    , &chan->ipc.client_ring.head
-    , &chan->ipc.client_ring.tail
-    , FABIPC_CLIENT_RINGSIZE - 1
+  msg = fabipc_produce(
+      chan->ipc.server_ring.pages
+    , &chan->ipc.server_ring.head
+    , &chan->ipc.server_ring.tail
+    , FABIPC_SERVER_RINGSIZE - 1
   );
 
-#if DEBUG || DEVEL
-  if (msg) {
-    RUNTIME_ASSERT(msg->type);
-  }
-#endif
+  msg->id = chan->msgid;
 
   return msg;
 }
@@ -94,20 +95,73 @@ void channel_post(channel * restrict chan, fabipc_message * restrict msg)
     dprintf(2, msg->text, msg->size);
   }
 
+#if 0
+  uint32_t h;
+  char buf[64];
+  size_t z;
+
+  h = containerof(msg, fabipc_page, msg)->tail;
+  z = znload_attrs32(buf, sizeof(buf), fabipc_msg_type_attrs, msg->type);
+  printf("tx tail %5u id 0x%016"PRIx64" code %8d type %.*s", h, msg->id, msg->code, (int)z, buf);
+  if(msg->type == FABIPC_MSG_EVENTS)
+  {
+    z = znload_attrs32(buf, sizeof(buf), fabipc_event_type_attrs, msg->evtype);
+    printf(" attrs %.*s", (int)z, buf);
+  }
+  else if(msg->attrs)
+  {
+    printf(" attrs 0x%08x", msg->attrs);
+  }
+  printf(" size %hu\n", msg->size);
+  write(1, msg->text, msg->size);
+  if(msg->size) {
+    printf("\n");
+  }
+#endif
+
   fabipc_post(msg, &chan->ipc.server_ring.waiters);
 }
 
-fabipc_message * channel_produce(channel * restrict chan)
+/* RX : acquire -> consume */
+
+fabipc_message * channel_acquire(channel * restrict chan)
 {
   fabipc_message *msg;
-  msg = fabipc_produce(
-      chan->ipc.server_ring.pages
-    , &chan->ipc.server_ring.head
-    , &chan->ipc.server_ring.tail
-    , FABIPC_SERVER_RINGSIZE - 1
+
+  msg = fabipc_acquire(
+      chan->ipc.client_ring.pages
+    , &chan->ipc.client_ring.head
+    , &chan->ipc.client_ring.tail
+    , FABIPC_CLIENT_RINGSIZE - 1
   );
 
-  msg->id = chan->msgid;
+#if 0
+  if(!msg) { return msg; }
+
+  uint32_t h;
+  char buf[64];
+  size_t z;
+
+  h = containerof(msg, fabipc_page, msg)->head;
+  z = znload_attrs32(buf, sizeof(buf), fabipc_msg_type_attrs, msg->type);
+  printf("rx head %5u id 0x%016"PRIx64" code %8d type %.*s", h, msg->id, msg->code, (int)z, buf);
+  if(msg->type == FABIPC_MSG_EVENTS)
+  {
+    z = znload_attrs32(buf, sizeof(buf), fabipc_event_type_attrs, msg->evtype);
+    printf(" attrs %.*s", (int)z, buf);
+  }
+  else if(msg->attrs)
+  {
+    printf(" attrs 0x%08x", msg->attrs);
+  }
+  printf(" size %hu\n", msg->size);
+#endif
+
+#if DEBUG || DEVEL
+  if (msg) {
+    RUNTIME_ASSERT(msg->type);
+  }
+#endif
 
   return msg;
 }

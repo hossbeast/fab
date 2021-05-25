@@ -31,7 +31,7 @@
 
 #include "handler_thread.h"
 #include "channel.h"
-#include "global.h"
+#include "reconcile_thread.h"
 #include "goals.h"
 #include "handler.h"
 #include "logging.h"
@@ -40,22 +40,22 @@
 #include "request_parser.h"
 #include "server_thread.h"
 #include "times.h"
-#include "bootstrap_thread.h"
+#include "build_thread.h"
+
+#include "common/attrs.h"
 
 static struct futexlock handlers_lock;
 
-static xapi handle_request(handler_context * restrict ctx, fabipc_message * restrict msg)
+static xapi parse_request(handler_context * restrict ctx, fabipc_message * restrict msg, request * restrict req)
 {
   enter;
 
-  request * request = 0;
   narrator * N;
   xapi exit;
-  struct timespec interval;
   char trace[4096];
   size_t tracesz;
 
-  if((exit = invoke(request_parser_parse, ctx->request_parser, msg->text, msg->size, "fab-request", &request)))
+  if((exit = invoke(request_parser_parse, ctx->request_parser, msg->text, msg->size, "fab-request", req)))
   {
     channel_consume(ctx->chan, msg);
 
@@ -70,89 +70,15 @@ static xapi handle_request(handler_context * restrict ctx, fabipc_message * rest
     goto XAPI_FINALLY;
   }
 
-  ctx->chan->msgid = msg->id;
-  request->msg_id = msg->id;
-  channel_consume(ctx->chan, msg);
-
   if(log_would(L_PROTOCOL))
   {
     fatal(log_start, L_PROTOCOL, &N);
-    xsayf("request (msgid %u) >>\n", request->msg_id);
-    fatal(request_say, request, N);
+    xsayf("request (msgid 0x%016"PRIx64") >>\n", msg->id);
+    fatal(request_say, req, N);
     fatal(log_finish);
   }
 
-  if(request->first_command && request->first_command->type == COMMAND_BOOTSTRAP)
-  {
-    channel_response(ctx->chan, 0);
-    goto XAPI_FINALLY;
-  }
-
-  /* for the reconcile command, the reconcile lock is required */
-  if(request->first_command)
-  {
-    while(!g_params.shutdown && !trylock_acquire(&global_system_reconcile_lock))
-    {
-      ctx->chan->ipc.server_pulse++;
-      interval.tv_sec = 0;
-      interval.tv_nsec = MSEC_AS_NSEC(1);
-      fatal(uxclock_nanosleep, 0, CLOCK_MONOTONIC, 0, &interval, 0);
-    }
-  }
-
-  /* for a request including a build command, the global build lock is required */
-  if(request->last_command)
-  {
-    while(!g_params.shutdown && !trylock_acquire(&handler_build_lock))
-    {
-      ctx->chan->ipc.server_pulse++;
-      interval.tv_sec = 0;
-      interval.tv_nsec = MSEC_AS_NSEC(1);
-      fatal(uxclock_nanosleep, 0, CLOCK_MONOTONIC, 0, &interval, 0);
-    }
-  }
-
-  if(request->first_command)
-  {
-    fatal(global_system_reconcile, ctx->chan);
-    if(ctx->chan->error) {
-      channel_response(ctx->chan, EINVAL);
-      goto XAPI_FINALLY;
-    }
-  }
-
-  if(request->last_command)
-  {
-    goals_autorun = (request->last_command->type == COMMAND_AUTORUN);
-  }
-
-  /* prepare to execute the request */
-  fatal(handler_reset, ctx);
-  fatal(graph_invalidation_begin, &ctx->invalidation);
-  fatal(handler_process_request, ctx, request);
-  graph_invalidation_end(&ctx->invalidation);
-
-  if(request->last_command)
-  {
-    ctx->build_state = FAB_BUILD_IN_PROGRESS;
-    fatal(goals_kickoff, ctx);
-  }
-  else
-  {
-    channel_response(ctx->chan, 0);
-
-    // no build-command in this request, but some nodes were invalidated
-    if(ctx->invalidation.any && goals_autorun) {
-      fatal(handler_thread_launch, 0, 0, true);
-    }
-  }
-
-finally:
-  trylock_release(&global_system_reconcile_lock);
-  trylock_release(&handler_build_lock);
-  graph_invalidation_end(&ctx->invalidation);
-  fatal(request_xfree, request);
-coda;
+  finally : coda;
 }
 
 static xapi handler_thread(handler_context * restrict ctx)
@@ -161,7 +87,7 @@ static xapi handler_thread(handler_context * restrict ctx)
 
   sigset_t sigs;
   siginfo_t siginfo;
-  fabipc_message *client_msg;
+  fabipc_message *client_msg = 0;
   union sigval sival;
   channel *chan = 0;
   struct timespec interval;
@@ -169,6 +95,9 @@ static xapi handler_thread(handler_context * restrict ctx)
   int r;
   uint16_t iter;
   rcu_thread rcu_self = { };
+  command *cmd = 0;
+  request req = { };
+  bool consider_autorun = false;
 
 #if DEBUG || DEVEL
   logs(L_IPC, "starting");
@@ -177,30 +106,17 @@ static xapi handler_thread(handler_context * restrict ctx)
   sigemptyset(&sigs);
   sigaddset(&sigs, SIGUSR1);
   interval.tv_sec = 0;
-  interval.tv_nsec = 125000000;   // 125 millis
+  interval.tv_nsec = MSEC_AS_NSEC(125);
 
   chan = ctx->chan;
   chan->ipc.server_pulse = (uint16_t)tid;
   chan->ipc.client_pulse = 0;
 
-#if DEVEL
-  if(g_server_initial_channel)
-  {
-    chan = g_server_initial_channel;
-    chan->ipc.client_pid = g_params.pid;
-    chan->ipc.client_tid = tid;
-  }
-  else
-  {
-#endif
-    sival.sival_int = chan->ipc.shmid;
-    fatal(sigutil_uxrt_tgsigqueueinfo, &r, ctx->client_pid, ctx->client_tid, SIGRTMIN, sival);
+  sival.sival_int = chan->ipc.shmid;
+  fatal(sigutil_uxrt_tgsigqueueinfo, &r, ctx->client_pid, ctx->client_tid, SIGRTMIN, sival);
 
-    chan->ipc.client_pid = ctx->client_pid;
-    chan->ipc.client_tid = ctx->client_tid;
-#if DEVEL
-  }
-#endif
+  chan->ipc.client_pid = ctx->client_pid;
+  chan->ipc.client_tid = ctx->client_tid;
 
   if(chan->ipc.client_pid == 0) {
     dprintf(2, "channel not initialized\n");
@@ -215,19 +131,74 @@ static xapi handler_thread(handler_context * restrict ctx)
     rcu_quiesce(&rcu_self);
     chan->ipc.server_pulse++;
 
-    if(ctx->build_state == FAB_BUILD_IN_PROGRESS)
+    if(ctx->state == HANDLER_BUILD_PENDING)
+    {
+      if(trylock_acquire(&handler_build_lock))
+      {
+        ctx->state = HANDLER_BUILD_IN_PROGRESS;
+        fatal(goals_kickoff, ctx);
+      }
+      else
+      {
+        fatal(sigutil_timedwait, &r, &sigs, &siginfo, &interval);
+      }
+    }
+    else if(ctx->state == HANDLER_BUILD_IN_PROGRESS)
     {
       fatal(sigutil_timedwait, &r, &sigs, &siginfo, &interval);
-      continue;
     }
-    else if(ctx->build_state > FAB_BUILD_IN_PROGRESS)
+    else if(ctx->state == HANDLER_BUILD_SUCCEEDED || ctx->state == HANDLER_BUILD_FAILED)
     {
-      channel_response(ctx->chan, ctx->build_state == FAB_BUILD_FAILED);
-      ctx->build_state = 0;
+      ctx->state = 0;
       trylock_release(&handler_build_lock);
     }
+    else if(ctx->state == HANDLER_RECONCILE_PENDING)
+    {
+      if(trylock_acquire(&reconcile_lock))
+      {
+        ctx->state = HANDLER_RECONCILE_IN_PROGRESS;
+        fatal(reconcile_thread_launch, ctx);
+      }
+      else
+      {
+        fatal(sigutil_timedwait, &r, &sigs, &siginfo, &interval);
+      }
+    }
+    else if(ctx->state == HANDLER_RECONCILE_IN_PROGRESS)
+    {
+      fatal(sigutil_timedwait, &r, &sigs, &siginfo, &interval);
+    }
+    else if(ctx->state == HANDLER_RECONCILE_DONE)
+    {
+      ctx->state = 0;
+      trylock_release(&reconcile_lock);
+    }
+    else if(cmd)
+    {
+      if(cmd->last)
+      {
+        ctx->state = HANDLER_BUILD_PENDING;
+      }
+      else if(cmd->first)
+      {
+        ctx->state = HANDLER_RECONCILE_PENDING;
+      }
 
-    if(!(client_msg = channel_acquire(ctx->chan)))
+      fatal(handler_process_command, ctx, cmd);
+      cmd = llist_next(&req.commands, cmd, lln);
+    }
+    else if(client_msg)
+    {
+      channel_response(ctx->chan, 0);
+      client_msg = 0;
+
+      if(consider_autorun && ctx->invalidation.any && goals_autorun)
+      {
+        /* no build-command in this request, but some nodes were invalidated while processing it */
+        fatal(handler_thread_launch, 0, 0, true);
+      }
+    }
+    else if(!(client_msg = channel_acquire(ctx->chan)))
     {
       if(chan->ipc.client_exit) {
         break;
@@ -247,41 +218,50 @@ static xapi handler_thread(handler_context * restrict ctx)
         }
         pulse = chan->ipc.client_pulse;
       }
-
-      continue;
     }
-
-    if(client_msg->type == FABIPC_MSG_EVENTSUB)
+    else
     {
-      ctx->event_mask = client_msg->attrs;
-      channel_consume(ctx->chan, client_msg);
-      continue;
-    }
+      ctx->chan->msgid = client_msg->id;
+      consider_autorun = false;
 
-    RUNTIME_ASSERT(client_msg->type == FABIPC_MSG_REQUEST);
-    fatal(handle_request, ctx, client_msg);
+      /* message received */
+      if(client_msg->type == FABIPC_MSG_EVENTSUB)
+      {
+        ctx->event_mask = client_msg->attrs;
+        channel_consume(ctx->chan, client_msg);
+        continue;
+      }
+
+      RUNTIME_ASSERT(client_msg->type == FABIPC_MSG_REQUEST);
+      fatal(parse_request, ctx, client_msg, &req);
+      channel_consume(ctx->chan, client_msg);
+
+      /* prepare to process the request */
+      fatal(handler_reset, ctx);
+      graph_invalidation_end(&ctx->invalidation);
+      fatal(graph_invalidation_begin, &ctx->invalidation);
+      cmd = llist_first(&req.commands, typeof(*cmd), lln);
+      consider_autorun = !req.has_last_command;
+    }
   }
 
 finally:
+  trylock_release(&handler_build_lock);
+  trylock_release(&reconcile_lock);
+
   if(chan)
   {
     chan->ipc.server_exit = true;
     syscall(SYS_tgkill, chan->ipc.client_pid, chan->ipc.client_tid, SIGUSR1);
   }
-#if DEVEL
-  if(chan == g_server_initial_channel)
-  {
-    wfree(chan);
-    ctx->chan = 0;
-    g_server_initial_channel = 0;
-  }
-#endif
 
 #if DEBUG || DEVEL
   logs(L_IPC, "terminating");
 #endif
 
   rcu_unregister(&rcu_self);
+
+  request_destroy(&req);
 coda;
 }
 
@@ -295,7 +275,6 @@ static void * handler_thread_jump(void * arg)
 
   ctx = arg;
   ctx->tid = tid = gettid();
-printf("%5d handler start\n", tid);
   logger_set_thread_name("handler");
   logger_set_thread_categories(L_HANDLER);
 
@@ -309,7 +288,6 @@ printf("%5d handler start\n", tid);
   fatal(handler_thread, ctx);
 
 finally:
-printf("%5d handler done\n", tid);
   if(XAPI_UNWINDING)
   {
 #if DEBUG || DEVEL
@@ -359,29 +337,40 @@ static xapi autorun_thread(handler_context * restrict ctx)
   sigemptyset(&sigs);
   sigaddset(&sigs, SIGUSR1);
 
+  if(!trylock_acquire(&reconcile_lock)) {
+    fprintf(stderr, "reconcile already in progress %d\n", reconcile_lock.i32);
+    goto XAPI_FINALIZE;
+  }
+
   if(!trylock_acquire(&handler_build_lock)) {
     fprintf(stderr, "build already in progress by %d\n", handler_build_lock.i32);
     goto XAPI_FINALIZE;
   }
 
-  /* global reload */
-  fatal(global_system_reconcile, ctx->chan);
+  /* global reconciliation */
+  ctx->state = HANDLER_RECONCILE_IN_PROGRESS;
+  fatal(reconcile_thread_launch, ctx);
+  while(!g_params.shutdown && ctx->state == HANDLER_RECONCILE_IN_PROGRESS) {
+    rcu_quiesce(&rcu_self);
+    fatal(sigutil_wait, &sigs, &siginfo);
+  }
   if(ctx->chan->error) {
     goto XAPI_FINALLY;
   }
 
   /* prosecute the same goals */
-  ctx->build_state = FAB_BUILD_IN_PROGRESS;
+  ctx->state = HANDLER_BUILD_IN_PROGRESS;
   fatal(goals_kickoff, ctx);
 
   /* wait for the build to complete */
-  while(!g_params.shutdown && ctx->build_state == FAB_BUILD_IN_PROGRESS) {
+  while(!g_params.shutdown && ctx->state == HANDLER_BUILD_IN_PROGRESS) {
     rcu_quiesce(&rcu_self);
     fatal(sigutil_wait, &sigs, &siginfo);
   }
 
 finally:
   trylock_release(&handler_build_lock);
+  trylock_release(&reconcile_lock);
 
 #if DEBUG || DEVEL
   logs(L_IPC, "terminating");
@@ -499,5 +488,75 @@ coda;
     channel_responsew(ctx->chan, ENOSYS, bootstrap_err.s, bootstrap_err.l);
     g_params.shutdown = true;
     goto XAPI_FINALLY;
+  }
+#endif
+
+#if 0
+  /* for the reconcile command, the reconcile lock is required */
+  if(request->first_command)
+  {
+    while(!g_params.shutdown && !trylock_acquire(&reconcile_lock))
+    {
+      ctx->chan->ipc.server_pulse++;
+      interval.tv_sec = 0;
+      interval.tv_nsec = MSEC_AS_NSEC(1);
+      fatal(uxclock_nanosleep, 0, CLOCK_MONOTONIC, 0, &interval, 0);
+    }
+  }
+
+
+  if(request->first_command)
+  {
+    while(!g_params.shutdown && !trylock_acquire(&reconcile_lock))
+    {
+      rcu_quiesce(&rcu_self);
+      ctx->chan->ipc.server_pulse++;
+      fatal(sigutil_timedwait, &r, &sigs, &siginfo, &interval);
+    }
+
+    ctx->state = HANDLER_RECONCILE_IN_PROGRESS;
+    fatal(reconcile_thread_launch, ctx);
+  }
+
+  if(request->first_command && request->first_command->type == COMMAND_BOOTSTRAP)
+  {
+    channel_response(ctx->chan, 0);
+    goto XAPI_FINALLY;
+  }
+
+  /* for a request including a build command, the global build lock is required */
+  if(request->last_command)
+  {
+    while(!g_params.shutdown && !trylock_acquire(&handler_build_lock))
+    {
+      rcu_quiesce(&rcu_self);
+      ctx->chan->ipc.server_pulse++;
+      fatal(sigutil_timedwait, &r, &sigs, &siginfo, &interval);
+    }
+  }
+
+  if(request->last_command)
+  {
+    goals_autorun = (request->last_command->type == COMMAND_AUTORUN);
+  }
+
+  /* prepare to execute the request */
+  fatal(handler_reset, ctx);
+  fatal(graph_invalidation_begin, &ctx->invalidation);
+  fatal(handler_process_request, ctx, request);
+  graph_invalidation_end(&ctx->invalidation);
+
+  if(request->last_command)
+  {
+    fatal(goals_kickoff, ctx);
+  }
+  else
+  {
+    channel_response(ctx->chan, 0);
+
+    // no build-command in this request, but some nodes were invalidated
+    if(ctx->invalidation.any && goals_autorun) {
+      fatal(handler_thread_launch, 0, 0, true);
+    }
   }
 #endif

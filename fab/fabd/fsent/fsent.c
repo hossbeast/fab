@@ -384,6 +384,10 @@ xapi fsent_create(
   RUNTIME_ASSERT(label_len);
   RUNTIME_ASSERT((attrs & VERTEX_KIND_OPT) == 0);
 
+if(memncmp(label, label_len, MMS("libxlinux.debug.pic.xapi.so.lnklibxlinux.debug.pic.xapi.so.lnk")) == 0) {
+  abort();
+}
+
   if((n = llist_shift(&fsent_freelist, typeof(*n), vertex.owner)) == 0)
   {
     fatal(xmalloc, &n, sizeof(*n));
@@ -1215,18 +1219,15 @@ xapi fsent_invalidate_visitor(moria_vertex * v, void * arg, moria_traversal_mode
   invalidation = arg;
   invalidation->any = true;
 
-  if(log_would(L_DEPGRAPH))
-  {
-    if(g_project_root)
-    {
-      z = fsent_relative_path_znload_bacon(space, sizeof(space), n, g_project_root);
+//  if(log_would(L_DEPGRAPH) && g_project_root)
+//  {
+    z = fsent_relative_path_znload_bacon(space, sizeof(space), n, g_project_root);
 
-      fatal(log_start, L_DEPGRAPH, &N);
-      xsays("stale ");
-      xsayw(space, z);
-      fatal(log_finish);
-    }
-  }
+    fatal(log_start, L_DEPGRAPH, &N);
+    xsays("stale ");
+    xsayw(space, z);
+    fatal(log_finish);
+//  }
 
   STATS_INC(n->stats.fsent_stale);
   STATS_INC(g_stats.fsent_stale);

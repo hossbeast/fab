@@ -19,11 +19,6 @@
 #define _SERVER_THREAD_H
 
 #include "xapi.h"
-#include "types.h"
-
-#if DEVEL
-extern struct channel *g_server_initial_channel;
-#endif
 
 /* create the server thread */
 xapi server_thread_launch(void);

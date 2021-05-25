@@ -15,6 +15,8 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
+#include <inttypes.h>
+
 #include "fab/client.h"
 #include "fab/events.h"
 #include "fab/ipc.h"
@@ -26,16 +28,18 @@
 
 #include "params.h"
 
-//
-// autobuild
-//
+static uint64_t requestid;
+static uint64_t eventsubid;
 
 static xapi process(command * restrict cmd, fab_client * restrict client, fabipc_message * restrict msg)
 {
   enter;
 
+  uint32_t pid;
+
   if(msg->type == FABIPC_MSG_RESPONSE)
   {
+    RUNTIME_ASSERT(msg->id == requestid || msg->id == eventsubid);
     goto XAPI_FINALLY;
   }
 
@@ -43,8 +47,12 @@ static xapi process(command * restrict cmd, fab_client * restrict client, fabipc
 
   if(msg->evtype == FABIPC_EVENT_GOALS)
   {
-    if(msg->id != g_params.pid)
+    RUNTIME_ASSERT((msg->id & UINT32_MAX) == 1);
+
+    pid = PID_FROM_MSGID(msg->id);
+    if(pid != g_params.pid)
     {
+      printf("goals reassigned by %"PRIu32"\n", pid);
       g_params.shutdown = true;
     }
   }
@@ -67,6 +75,7 @@ static xapi connected(command * restrict cmd, fab_client * restrict client)
   /* subscribe to relevant events */
   msg = fab_client_produce(client);
   msg->type = FABIPC_MSG_EVENTSUB;
+  eventsubid = msg->id = ++client->msgid;
   msg->attrs = 0
     | FABIPC_EVENT_FORMULA_EXEC_FORKED
     | FABIPC_EVENT_FORMULA_EXEC_STDOUT
@@ -80,7 +89,7 @@ static xapi connected(command * restrict cmd, fab_client * restrict client)
   /* send the request */
   msg = fab_client_produce(client);
   msg->type = FABIPC_MSG_REQUEST;
-  msg->id = getpid();
+  requestid = msg->id = PID_AS_MSGID(getpid());
 
   request_narrator = narrator_fixed_init(&nstor, msg->text, 0xfff);
   fatal(build_command_request_collate, request_narrator);

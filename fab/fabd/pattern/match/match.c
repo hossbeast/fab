@@ -48,6 +48,7 @@ static xapi match_node(pattern_match_context * ctx, bool quals, bool * restrict 
 
   saved_section_traversal = ctx->section_traversal;
 
+  *matches = true;
   if(ctx->section_traversal.section->qualifiers_head && quals)
   {
     traversal = (typeof(traversal)) {
@@ -63,10 +64,6 @@ static xapi match_node(pattern_match_context * ctx, bool quals, bool * restrict 
     fatal(pattern_segments_match, ctx);
 
     *matches = traversal.u.match;
-  }
-  else
-  {
-    *matches = true;
   }
 
   // match from next section, reverse order

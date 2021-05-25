@@ -81,15 +81,15 @@ bool build_stage_failure;
 static build_thread_config staging_cfg;
 static build_thread_config active_cfg;
 static int epfd = -1;
-static bool build_thread_relaunching;
-static struct spinlock build_thread_lock;
+//static bool build_thread_relaunching;
+//static struct spinlock build_thread_lock;
 static uint64_t stage_index_sum;
 static int64_t stage_index_sum_target;
-static handler_context *handler;    // handler for the client which requested the build
 static selected *sn_first;
 static uint16_t build_stage;
 static uint16_t build_numranks;
 
+#if 0
 attrs32 * stream_part_attrs = (attrs32[]) {{
 #define STREAM_PART_DEF(x, n, r, y) + 1
     num : 0 STREAM_PART_TABLE
@@ -104,6 +104,7 @@ static void __attribute__((constructor)) init()
 {
   attrs32_init(stream_part_attrs);
 }
+#endif
 
 /*
  * closed form calcuation of the sum of integers [1 .. n]
@@ -127,7 +128,7 @@ static int build_slot_cmp(const void * A, size_t Al, const void * B, size_t Bl)
   return INTCMP((*Absp)->pid, (*Bbsp)->pid);
 }
 
-static void build_config(const configblob * restrict cfg, build_thread_config * restrict config)
+static void configure(const configblob * restrict cfg, build_thread_config * restrict config)
 {
   box_int16_setif(cfg->build.concurrency, &config->concurrency);
 
@@ -137,7 +138,7 @@ static void build_config(const configblob * restrict cfg, build_thread_config * 
   }
 }
 
-static xapi build_thread()
+static xapi build_thread(handler_context * restrict handler)
 {
   enter;
 
@@ -150,7 +151,6 @@ static xapi build_thread()
   ptrdiff_t slot_index;
   uint32_t slot;
   uint32_t stream;
-  uint16_t numranks = 0;
   struct epoll_event events[64];
   int x;
   selected *sn;
@@ -163,6 +163,7 @@ static xapi build_thread()
 #if DEBUG || DEVEL
   logs(L_IPC, "starting");
 #endif
+//say("build thread start");
 
   // signals handled on this thread
   sigfillset(&sigs);
@@ -174,12 +175,24 @@ static xapi build_thread()
 
   sn = 0;
   rcu_register(&rcu_self);
-  while(!g_params.shutdown && !build_thread_relaunching)
+  while(!g_params.shutdown)
   {
     rcu_quiesce(&rcu_self);
 
+    /* build is complete */
+    if(build_stage == build_numranks) {
+//say("build finished");
+      break;
+    }
+
+    /* build has failed, all slots have exited  */
+    if(build_stage_failure && build_slots_bypid->size == 0) {
+//say("build failed");
+      break;
+    }
+
     // launch up to max concurrency
-    while(build_slots_bypid->size < active_cfg.concurrency)
+    while(!g_params.shutdown && build_slots_bypid->size < active_cfg.concurrency)
     {
       rcu_quiesce(&rcu_self);
 
@@ -192,13 +205,13 @@ static xapi build_thread()
       if(sn == 0 && sn_first) {
         sn = sn_first;
         sn_first = 0;
-        numranks = build_numranks;
         logf(L_BUILDER, "stage begin %3d", 0);
+//say("stage %d", build_stage);
 
         if(events_would(FABIPC_EVENT_BUILD_START, &evhandler, &msg)) {
           z = 0;
           z += marshal_u16(msg->text + z, sizeof(msg->text) - z, descriptor_fab_build.id);
-          z += marshal_int(msg->text + z, sizeof(msg->text) - z, &handler->build_state, sizeof(handler->build_state));
+          z += marshal_int(msg->text + z, sizeof(msg->text) - z, &handler->state, sizeof(handler->state));
           z += marshal_u16(msg->text + z, sizeof(msg->text) - z, build_numranks);
           z += marshal_u16(msg->text + z, sizeof(msg->text) - z, sn_count = llist_count(&sn->lln));
           events_publish(evhandler, msg);
@@ -233,6 +246,8 @@ static xapi build_thread()
       slot_index = bs - build_slots;
       logf(L_BUILDER, "%6s slot %3"PRIu32" stage %3d index %3d", "launch", (uint32_t)slot_index, build_stage, bs->stage_index);
 
+//say("stage %d", build_stage);
+
       // cycle to the next slot
       stage_index++;
       sn = llist_next(&buildplan_selection.list, sn, lln);
@@ -248,6 +263,8 @@ static xapi build_thread()
     /* read slots */
     for(x = 0; x < rv; x++)
     {
+      rcu_quiesce(&rcu_self);
+
       slot = events[x].data.u32 >> 16;
       stream = events[x].data.u32 & 0xFFFF;
 
@@ -256,7 +273,7 @@ static xapi build_thread()
     }
 
     /* reap children */
-    while(true)
+    while(!g_params.shutdown)
     {
       rcu_quiesce(&rcu_self);
 
@@ -297,34 +314,34 @@ static xapi build_thread()
         stage_index_sum = 0;
         stage_index_sum_target = -1;
       }
-
-      // check for end-of-build
-      if(build_stage == numranks || (build_slots_bypid->size == 0 && build_stage_failure))
-      {
-        logf(L_BUILDER, "END OF BUILD");
-        build_stage = numranks + 1;
-        handler->build_state = FAB_BUILD_SUCCEEDED;
-        if(build_stage_failure) {
-          handler->build_state = FAB_BUILD_FAILED;
-        }
-        fatal(sigutil_tgkill, g_params.pid, handler->tid, SIGUSR1);
-
-        if(events_would(FABIPC_EVENT_BUILD_END, &evhandler, &msg)) {
-          z = 0;
-          z += marshal_u16(msg->text + z, sizeof(msg->text) - z, descriptor_fab_build.id);
-          z += marshal_int(msg->text + z, sizeof(msg->text) - z, &handler->build_state, sizeof(handler->build_state));
-          z += marshal_u16(msg->text + z, sizeof(msg->text) - z, build_numranks);
-          z += marshal_u16(msg->text + z, sizeof(msg->text) - z, sn_count);
-          events_publish(evhandler, msg);
-        }
-      }
     }
+  }
+
+//say("build end");
+
+  logf(L_BUILDER, "END OF BUILD");
+//  build_stage = build_numranks + 1;
+  handler->state = HANDLER_BUILD_SUCCEEDED;
+  if(build_stage_failure) {
+    handler->state = HANDLER_BUILD_FAILED;
+  }
+  fatal(sigutil_tgkill, g_params.pid, handler->tid, SIGUSR1);
+
+  if(events_would(FABIPC_EVENT_BUILD_END, &evhandler, &msg)) {
+    z = 0;
+    z += marshal_u16(msg->text + z, sizeof(msg->text) - z, descriptor_fab_build.id);
+    z += marshal_int(msg->text + z, sizeof(msg->text) - z, &handler->state, sizeof(handler->state));
+    z += marshal_u16(msg->text + z, sizeof(msg->text) - z, build_numranks);
+    z += marshal_u16(msg->text + z, sizeof(msg->text) - z, sn_count);
+    events_publish(evhandler, msg);
   }
 
 finally:
 #if DEBUG || DEVEL
   logs(L_IPC, "terminating");
 #endif
+
+//say("build thread end");
 
   rcu_unregister(&rcu_self);
 coda;
@@ -335,13 +352,15 @@ static void * build_thread_jump(void * arg)
   enter;
 
   xapi R;
+  handler_context *ctx;
 
+  ctx = arg;
   tid = g_params.thread_build = gettid();
   logger_set_thread_name("build");
   logger_set_thread_categories(L_BUILDER);
 
-  spinlock_acquire(&build_thread_lock);
-  fatal(build_thread);
+//  spinlock_acquire(&build_thread_lock);
+  fatal(build_thread, ctx);
 
 finally:
   if(XAPI_UNWINDING)
@@ -362,11 +381,11 @@ conclude(&R);
   }
 
   atomic_dec(&g_params.thread_count);
-  spinlock_release(&build_thread_lock);
+//  spinlock_release(&build_thread_lock);
 
-  if(!build_thread_relaunching) {
+//  if(!build_thread_relaunching) {
     syscall(SYS_tgkill, g_params.pid, g_params.thread_monitor, SIGUSR1);
-  }
+//  }
 
   return 0;
 }
@@ -374,29 +393,6 @@ conclude(&R);
 //
 // public
 //
-
-xapi build_thread_launch()
-{
-  enter;
-
-  pthread_t pthread_id;
-  pthread_attr_t attr;
-  int rv;
-
-  fatal(xpthread_attr_init, &attr);
-  fatal(xpthread_attr_setdetachstate, &attr, PTHREAD_CREATE_DETACHED);
-
-  atomic_inc(&g_params.thread_count);
-  if((rv = pthread_create(&pthread_id, &attr, build_thread_jump, 0)) != 0)
-  {
-    atomic_dec(&g_params.thread_count);
-    tfail(perrtab_KERNEL, rv);
-  }
-
-finally:
-  pthread_attr_destroy(&attr);
-coda;
-}
 
 xapi build_thread_setup()
 {
@@ -450,7 +446,7 @@ xapi build_thread_setup()
     , 0
   );
 
-  build_stage = UINT16_MAX;
+//  build_stage = UINT16_MAX;
 
   finally : coda;
 }
@@ -490,24 +486,27 @@ xapi build_thread_reconfigure(configblob * restrict cfg, bool dry)
 {
   enter;
 
+  // cannot reconfigure while build is in progress
+  RUNTIME_ASSERT(g_params.thread_build == 0);
+
   if(dry)
   {
-    build_config(cfg, &staging_cfg);
+    configure(cfg, &staging_cfg);
   }
   else if(cfg->build.changed)
   {
-    if(build_thread_lock.i32)
-    {
-      build_thread_relaunching = true;
-      fatal(sigutil_tgkill, g_params.pid, g_params.thread_build, SIGUSR1);
-
-      // wait
-      spinlock_acquire(&build_thread_lock);
-      spinlock_release(&build_thread_lock);
-
-      build_thread_relaunching = false;
-    }
-
+//    if(build_thread_lock.i32)
+//    {
+//      build_thread_relaunching = true;
+//      fatal(sigutil_tgkill, g_params.pid, g_params.thread_build, SIGUSR1);
+//
+//      // wait
+//      spinlock_acquire(&build_thread_lock);
+//      spinlock_release(&build_thread_lock);
+//
+//      build_thread_relaunching = false;
+//    }
+//
     fatal(build_thread_cleanup);
 
     // apply new config
@@ -515,16 +514,20 @@ xapi build_thread_reconfigure(configblob * restrict cfg, bool dry)
 
     // relaunch
     fatal(build_thread_setup);
-    fatal(build_thread_launch);
+//    fatal(build_thread_launch);
   }
 
   finally : coda;
 }
 
 /* called from server thread */
-xapi build_thread_build(handler_context * restrict handler_ctx)
+xapi build_thread_launch(handler_context * restrict ctx)
 {
   enter;
+
+  pthread_t pthread_id;
+  pthread_attr_t attr;
+  int rv;
 
   build_stage = 0;
   build_stage_failure = false;
@@ -533,9 +536,19 @@ xapi build_thread_build(handler_context * restrict handler_ctx)
   sn_first = llist_first(&buildplan_selection.list, typeof(*sn_first), lln);
   build_numranks = buildplan_selection.numranks;
 
-  // go for launch
-  handler = handler_ctx;
-  fatal(sigutil_tgkill, g_params.pid, g_params.thread_build, SIGUSR1);
+//say("build configure stage %d ranks %d", build_stage, build_numranks);
 
-  finally : coda;
+  fatal(xpthread_attr_init, &attr);
+  fatal(xpthread_attr_setdetachstate, &attr, PTHREAD_CREATE_DETACHED);
+
+  atomic_inc(&g_params.thread_count);
+  if((rv = pthread_create(&pthread_id, &attr, build_thread_jump, ctx)) != 0)
+  {
+    atomic_dec(&g_params.thread_count);
+    tfail(perrtab_KERNEL, rv);
+  }
+
+finally:
+  pthread_attr_destroy(&attr);
+coda;
 }

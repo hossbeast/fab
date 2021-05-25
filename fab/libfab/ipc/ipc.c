@@ -59,6 +59,8 @@ fabipc_message * API fabipc_produce(
   index = tail & mask;
   page = &pages[index];
 
+page->tail = tail;
+
   return &page->msg;
 }
 

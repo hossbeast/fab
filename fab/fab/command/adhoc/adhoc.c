@@ -25,6 +25,7 @@
 #include "params.h"
 
 struct adhoc_args adhoc_args;
+static uint64_t requestid;
 
 static void usage(command * restrict cmd)
 {
@@ -45,6 +46,7 @@ static xapi adhoc_connected(command * restrict cmd, fab_client * restrict client
   /* send the request */
   msg = fab_client_produce(client);
   msg->type = FABIPC_MSG_REQUEST;
+  requestid = msg->id = ++client->msgid;
 
   z = 0;
   z += znloadw(msg->text + z, sizeof(msg->text) - z, adhoc_args.request.s, adhoc_args.request.len);
@@ -59,6 +61,8 @@ static xapi adhoc_connected(command * restrict cmd, fab_client * restrict client
 static xapi adhoc_process(command * restrict cmd, fab_client * restrict client, fabipc_message * restrict msg)
 {
   enter;
+
+  RUNTIME_ASSERT(msg->id == requestid);
 
   if(msg->type == FABIPC_MSG_RESPONSE) {
     if(msg->code != 0) {

@@ -30,6 +30,7 @@
 
 struct describe_args describe_args;
 static struct describe_args *args = &describe_args;
+static uint64_t requestid;
 
 //
 // static
@@ -54,6 +55,7 @@ static xapi connected(command * restrict cmd, fab_client * restrict client)
   /* send the request */
   msg = fab_client_produce(client);
   msg->type = FABIPC_MSG_REQUEST;
+  requestid = msg->id = ++client->msgid;
 
   z = 0;
   z += znloads(msg->text + z, sizeof(msg->text) - z, "[ ");
@@ -87,6 +89,8 @@ static xapi process(command * restrict cmd, fab_client * restrict client, fabipc
   descriptor_field *member;
   const char *str;
   uint16_t len;
+
+  RUNTIME_ASSERT(msg->id == requestid);
 
   if(msg->type == FABIPC_MSG_RESPONSE) {
     g_params.shutdown = true;

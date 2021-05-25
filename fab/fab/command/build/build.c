@@ -37,6 +37,9 @@
 #include "command.h"
 #include "params.h"
 
+static uint64_t requestid;
+static uint64_t eventsubid;
+
 struct build_args build_args = {
   mode : 't'
 };
@@ -118,6 +121,7 @@ static xapi connected(command * restrict cmd, fab_client * restrict client)
   /* subscribe to relevant events */
   msg = fab_client_produce(client);
   msg->type = FABIPC_MSG_EVENTSUB;
+  eventsubid = msg->id = ++client->msgid;
   msg->attrs = 0
     | FABIPC_EVENT_FORMULA_EXEC_FORKED
     | FABIPC_EVENT_FORMULA_EXEC_STDOUT
@@ -130,6 +134,7 @@ static xapi connected(command * restrict cmd, fab_client * restrict client)
   /* send the request */
   msg = fab_client_produce(client);
   msg->type = FABIPC_MSG_REQUEST;
+  requestid = msg->id = PID_AS_MSGID(getpid());
 
   request_narrator = narrator_fixed_init(&nstor, msg->text, 0xfff);
   fatal(build_command_request_collate, request_narrator);
@@ -144,7 +149,7 @@ static xapi connected(command * restrict cmd, fab_client * restrict client)
   finally : coda;
 }
 
-static xapi slot_alloc(build_slot ** slotp, int pid)
+static xapi slot_alloc(build_slot ** slotp, uint32_t pid)
 {
   enter;
 
@@ -455,7 +460,11 @@ static xapi process(command * restrict cmd, fab_client * restrict client, fabipc
 
   if(msg->type == FABIPC_MSG_RESPONSE)
   {
-    g_params.shutdown = true;
+    if(msg->id == requestid) {
+      g_params.shutdown = true;
+    } else {
+      RUNTIME_ASSERT(msg->id == eventsubid);
+    }
   }
   else if(msg->type == FABIPC_MSG_EVENTS)
   {
@@ -632,6 +641,7 @@ xapi build_command_process_event(fab_client * restrict client, fabipc_message * 
 
   build_slot *bs, **bsp;
   size_t __attribute__((unused)) z;
+  uint32_t pid;
 
   if(msg->evtype == FABIPC_EVENT_FORMULA_EXEC_FORKED)
   {
@@ -643,9 +653,10 @@ xapi build_command_process_event(fab_client * restrict client, fabipc_message * 
   }
   else
   {
-    bsp = hashtable_search(build_slots_bypid, (void*)&msg->id, sizeof(msg->id), build_slot_key_hash, build_slot_key_cmp);
+    pid = msg->id;
+    bsp = hashtable_search(build_slots_bypid, (void*)&pid, sizeof(pid), build_slot_key_hash, build_slot_key_cmp);
     if(!bsp) {
-      printf("UNKNOWN PID %u\n", msg->id);
+printf("UNKNOWN PID %u\n", pid);
       goto XAPI_FINALLY;
     }
     bs = *bsp;

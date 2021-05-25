@@ -72,7 +72,6 @@ static void args_usage(command * restrict cmd)
 " metadata              print metadata\n"
 " config                print effective configuration\n"
 " reconcile             reload everything\n"
-" bootstrap             startup only\n"
 "\n"
 "global options\n"
 " --help | -h       this message\n"
