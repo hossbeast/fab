@@ -67,7 +67,6 @@
 #include "dependency.h"
 #include "sweeper_thread.h"
 #include "handler_thread.h"
-#include "beholder_thread.h"
 #include "reconcile_thread.h"
 #include "channel.h"
 #include "handler.h"
@@ -88,7 +87,7 @@ static xapi xmain()
 {
   enter;
 
-  int fds[2];
+//  int fds[2];
   sigset_t sigs;
 
 #if DEBUG || DEVEL
@@ -105,6 +104,7 @@ static xapi xmain()
   setvbuf(stdout, NULL, _IONBF, 0);
   setvbuf(stderr, NULL, _IONBF, 0);
 
+#if 0
   /* save original stdout/stderr fds */
   fatal(xdup2, 1, STDOUT_SAVED_REAL);
   fatal(xdup2, 2, STDERR_SAVED_REAL);
@@ -119,13 +119,14 @@ static xapi xmain()
   fatal(xdup2, fds[1], 2);
   beholder_stderr_rd = fds[0];
   fatal(xclose, fds[1]);
+#endif
 
   /* the build thread and worker threads are launched by the initial reconfiguration */
   /* the reconcile thread is launched by a client thread */
   fatal(notify_thread_launch);
   fatal(server_thread_launch);
   fatal(sweeper_thread_launch);
-  fatal(beholder_thread_launch);
+//  fatal(beholder_thread_launch);
 
   // become the monitor thread
   fatal(monitor_thread);
@@ -215,19 +216,19 @@ static xapi xmain_load(char ** envp)
   fatal(path_cache_setup);
   fatal(formula_setup);
   fatal(buildplan_setup);
-  fatal(config_setup);
   fatal(filesystem_setup);
   fatal(graph_setup);
   fatal(rule_system_setup);
-  fatal(module_setup);
   fatal(fsent_setup);
   fatal(shadow_setup);
+  fatal(module_setup);
+  fatal(config_setup);
   fatal(notify_thread_setup);
   fatal(var_setup);
   fatal(variant_setup);
   fatal(goals_setup);
   fatal(handler_setup);
-  fatal(beholder_thread_setup);
+//  fatal(beholder_thread_setup);
   fatal(walker_setup);
 
   fatal(xmain_jump);
@@ -251,7 +252,7 @@ finally:
   fatal(variant_cleanup);
   fatal(goals_cleanup);
   fatal(handler_cleanup);
-  fatal(beholder_thread_cleanup);
+//  fatal(beholder_thread_cleanup);
   fatal(selection_cleanup);
   fatal(dependency_cleanup);
   fatal(walker_cleanup);

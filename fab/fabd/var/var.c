@@ -41,6 +41,7 @@
 #include "variant.h"
 #include "handler.h"
 #include "channel.h"
+#include "system_state.h"
 
 static llist var_list = LLIST_INITIALIZER(var_list);          // active
 static llist var_freelist = LLIST_INITIALIZER(var_freelist);  // free
@@ -59,6 +60,7 @@ static xapi var_parse(var * restrict vp, channel * restrict chan)
   value * val;
   xapi exit;
   fabipc_message *msg;
+  channel *chan;
 
   vp->val = 0;
 
@@ -71,19 +73,21 @@ static xapi var_parse(var * restrict vp, channel * restrict chan)
   {
     if((exit = invoke(value_parser_parse, parser, text, text_len, vp->self_node_abspath, VALUE_TYPE_SET, &val)))
     {
-      msg = channel_produce(chan);
-      msg->id = chan->msgid;
-      msg->type = FABIPC_MSG_RESULT;
-      msg->code = EINVAL;
+      system_error = true;
+      if(!events_would(FABIPC_EVENT_SYSTEM_STATE, &chan, &msg)) {
+        xapi_calltree_unwind();
+        goto XAPI_FINALLY;
+      }
 
+      msg->code = EINVAL;
 #if DEBUG || DEVEL
       msg->size = xapi_trace_full(msg->text, sizeof(msg->text), 0);
 #else
       msg->size = xapi_trace_pithy(msg->text, sizeof(msg->text), 0);
 #endif
-      channel_post(chan, msg);
-      xapi_calltree_unwind();
+      events_publish(chan, msg);
 
+      xapi_calltree_unwind();
       goto XAPI_FINALLY;
     }
 
@@ -96,6 +100,7 @@ static xapi var_parse(var * restrict vp, channel * restrict chan)
   //logf(L_MODULE, "parsed var @ %s", vp->self_node_abspath);
 finally:
   wfree(text);
+  xapi_infos("path", vp->self_node_abspath);
 coda;
 }
 

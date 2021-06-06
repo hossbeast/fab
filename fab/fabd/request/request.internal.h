@@ -39,10 +39,9 @@ struct attrs32;
   DEF(COMMAND_GLOBAL_INVALIDATE  , "global-invalidate"  , COMMAND_TYPE_OPT) /* generation-based global node invalidation */     \
   DEF(COMMAND_METADATA           , "metadata"           , COMMAND_TYPE_OPT) /* retrieve project metadata */                     \
   DEF(COMMAND_GOALS              , "goals"              , COMMAND_TYPE_OPT) /* set the goal targets */                          \
-  /* needs system-reload */                                                                                                     \
   DEF(COMMAND_RECONCILE          , "reconcile"          , COMMAND_TYPE_OPT) /* reload everything */                             \
-  DEF(COMMAND_RUN                , "run"                , COMMAND_TYPE_OPT) /* reload, pursue goals */                          \
-  DEF(COMMAND_AUTORUN            , "autorun"            , COMMAND_TYPE_OPT) /* reload, run, and autorun */                      \
+  /* needs reconcile */                                                                                                         \
+  DEF(COMMAND_RUN                , "run"                , COMMAND_TYPE_OPT) /* pursue goals */                                  \
 
 typedef enum command_type {
 COMMAND_TYPE_RANGE_BEFORE = 0,
@@ -56,9 +55,6 @@ extern struct attrs32 * command_type_attrs;
 typedef struct command {
   llist lln;
 
-  bool first;
-  bool last;
-
   union {
     uint32_t attrs;       // bitwise combo of FAB_REQUEST_*
     struct {
@@ -69,6 +65,7 @@ typedef struct command {
   union {
     struct selector * selector;   // SELECT
     struct {                      // GOALS
+      bool autorun;
       bool build;
       bool script;
       struct selector * target_direct;

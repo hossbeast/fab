@@ -17,6 +17,7 @@
 
 #include "fab/ipc.h"
 #include "moria/graph.h"
+#include "moria/traverse.h"
 #include "narrator.h"
 #include "value.h"
 #include "valyria/hashtable.h"
@@ -32,7 +33,7 @@
 #include "filesystem.internal.h"
 #include "formula.h"
 #include "fsedge.h"
-#include "handler.h"
+#include "channel.h"
 #include "logging.h"
 #include "module.internal.h"
 #include "params.h"
@@ -50,15 +51,6 @@
 static uint16_t fsent_fs_epoch;
 uint16_t fsent_valid_epoch;
 uint16_t fsent_module_epoch;
-
-const char *fsent_model_name= "model.bam";
-uint16_t fsent_model_name_len = 9;
-const char *fsent_module_name = "module.bam";
-uint16_t fsent_module_name_len = 10;
-const char *fsent_var_name = "var.bam";
-uint16_t fsent_var_name_len = 7;
-const char *fsent_config_name = "config.bam";
-uint16_t fsent_config_name_len = 10;
 
 llist fsent_list = LLIST_INITIALIZER(fsent_list);                 // active fsents
 static llist fsent_freelist = LLIST_INITIALIZER(fsent_freelist);  // free fsents
@@ -479,37 +471,13 @@ xapi fsent_reconfigure(configblob * restrict cfg, bool dry)
 {
   enter;
 
-  if(dry)
-  {
-    if(cfg->special.module == 0 || cfg->special.module->l == 0) {
-      xapi_info_pushs("field", "special.module");
-      fail(CONFIG_INVALID);
-    }
-    if(cfg->special.model == 0 || cfg->special.model->l == 0) {
-      xapi_info_pushs("field", "special.model");
-      fail(CONFIG_INVALID);
-    }
-    if(cfg->special.var == 0 || cfg->special.var->l == 0) {
-      xapi_info_pushs("field", "special.var");
-      fail(CONFIG_INVALID);
-    }
-  }
-  else
+  if(!dry)
   {
     if(cfg->filesystems.attrs & CONFIG_CHANGED)
     {
       /* invalidate node -> filesystem assignments */
       fsent_fs_epoch++;
     }
-
-    fsent_module_name = cfg->special.module->v;
-    fsent_module_name_len = cfg->special.module->l;
-
-    fsent_model_name = cfg->special.model->v;
-    fsent_model_name_len = cfg->special.model->l;
-
-    fsent_var_name = cfg->special.var->v;
-    fsent_var_name_len = cfg->special.var->l;
   }
 
   finally : coda;
@@ -1027,7 +995,7 @@ xapi fsent_ok(fsent * restrict n)
   narrator * N;
   char space[512];
   uint16_t z;
-  handler_context *handler;
+  channel *handler;
   fabipc_message *msg;
 
   if(fsent_state_get(n) == VERTEX_OK && n->valid_epoch == fsent_valid_epoch) {
@@ -1049,12 +1017,12 @@ xapi fsent_ok(fsent * restrict n)
   STATS_INC(n->stats.fsent_fresh);
   STATS_INC(g_stats.fsent_fresh);
 
-  if(events_would(FABIPC_EVENT_NODE_FRESH, &handler, &msg))
+  if(events_would(FABIPC_EVENT_NODE_FRESH, &chan, &msg))
   {
     z = fsent_relative_path_znload(msg->text, sizeof(msg->text), n, g_project_root);
     msg->size = z;
     msg->id = 0;
-    events_publish(handler, msg);
+    events_publish(chan, msg);
   }
 
   finally : coda;
@@ -1112,7 +1080,7 @@ xapi fsent_unlink(fsent *n, graph_invalidation_context * restrict invalidation)
 
   fabipc_message *msg;
   uint16_t z;
-  handler_context *handler;
+  channel *chan;
   moria_vertex *v;
 
   v = &n->vertex;
@@ -1155,12 +1123,12 @@ xapi fsent_unlink(fsent *n, graph_invalidation_context * restrict invalidation)
     fatal(log_finish);
   }
 
-  if(events_would(FABIPC_EVENT_NODE_DELETE, &handler, &msg))
+  if(events_would(FABIPC_EVENT_NODE_DELETE, &chan, &msg))
   {
     z = fsent_relative_path_znload_bacon(msg->text, sizeof(msg->text), n, g_project_root);
     msg->size = z;
     msg->id = 0;
-    events_publish(handler, msg);
+    events_publish(chan, msg);
   }
 
   finally : coda;
@@ -1206,7 +1174,7 @@ xapi fsent_invalidate_visitor(moria_vertex * v, void * arg, moria_traversal_mode
   narrator * N;
   char space[512];
   uint16_t z;
-  handler_context *handler;
+  channel *chan;
   fabipc_message *msg;
   graph_invalidation_context *invalidation;
 
@@ -1232,12 +1200,12 @@ xapi fsent_invalidate_visitor(moria_vertex * v, void * arg, moria_traversal_mode
   STATS_INC(n->stats.fsent_stale);
   STATS_INC(g_stats.fsent_stale);
 
-  if(events_would(FABIPC_EVENT_NODE_STALE, &handler, &msg))
+  if(events_would(FABIPC_EVENT_NODE_STALE, &chan, &msg))
   {
     z = fsent_relative_path_znload_bacon(msg->text, sizeof(msg->text), n, g_project_root);
     msg->size = z;
     msg->id = 0;
-    events_publish(handler, msg);
+    events_publish(chan, msg);
   }
 
   finally : coda;

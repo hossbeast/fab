@@ -15,23 +15,24 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#include "build.h"
-#include "common/attrs.h"
+#ifndef FABD_AUTORUN_THREAD_H
+#define FABD_AUTORUN_THREAD_H
 
-attrs16 * APIDATA fab_build_state_attrs = (attrs16[]) {{
-#undef DEF
-#define DEF(x, s) + 1
-    num : 0
-      FAB_BUILD_STATE_TABLE
-  , members : (member16[]) {
-#undef DEF
-#define DEF(x, s) { name : s, value : x, range : 0xff },
-FAB_BUILD_STATE_TABLE
-#undef DEF
-  }
-}};
+/*
 
-static void __attribute__((constructor)) init()
-{
-  attrs16_init(fab_build_state_attrs);
-}
+There is up to one run thread
+
+*/
+
+#include "xapi.h"
+
+struct handler_context;
+
+/*
+ * launch the run thread
+ *
+ * [handler] - handler thread to notify if any
+ */
+xapi run_thread_launch(struct handler_context * restrict handler);
+
+#endif

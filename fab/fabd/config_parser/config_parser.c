@@ -107,14 +107,14 @@ xapi config_parser_parse(
     config_parser * restrict parser
   , char * const restrict buf
   , size_t size
-  , const char * restrict fname
+  , const char * restrict path
   , yyu_location * restrict init_loc
   , configblob ** restrict rv
 )
 {
   enter;
 
-  fatal(yyu_parse, &parser->yyu, buf, size, fname, YYU_INPLACE, init_loc, 0);
+  fatal(yyu_parse, &parser->yyu, buf, size, path, YYU_INPLACE, init_loc, 0);
   if(rv)
   {
     *rv = parser->cfg;
@@ -123,6 +123,6 @@ xapi config_parser_parse(
 
 finally:
   fatal(config_ixfree, &parser->cfg);
-  xapi_infos("fname", fname);
+  xapi_infos("path", path);
 coda;
 }

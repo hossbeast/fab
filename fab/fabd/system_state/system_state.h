@@ -1,4 +1,4 @@
-/* Copyright (c) 2012-2021 Todd Freed <todd.freed@gmail.com>
+/* Copyright (c) 2012-2015 Todd Freed <todd.freed@gmail.com>
 
    This file is part of fab.
 
@@ -15,24 +15,14 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef FABD_BEHOLDER_THREAD_H
-#define FABD_BEHOLDER_THREAD_H
+#ifndef _SYSTEM_STATE_H
+#define _SYSTEM_STATE_H
 
-/*
+#include "fab/metadata.h"
 
-The beholder thread captures writes to stdout and stderr and propagates them to the original file
-descriptor, and also to to any relevant FABIPC event subscribers
+extern enum bam_system_state system_state;
+extern bool system_error;
 
-*/
-
-#include "types.h"
-#include "xapi.h"
-
-extern int beholder_stdout_rd;
-extern int beholder_stderr_rd;
-
-xapi beholder_thread_setup(void);
-xapi beholder_thread_cleanup(void);
-xapi beholder_thread_launch(void);
+void system_state_change(enum bam_system_state state);
 
 #endif

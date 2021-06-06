@@ -64,7 +64,6 @@
 %token
   AUTORUN            "autorun"
   BUILD              "build"
-  BOOTSTRAP          "bootstrap"
   CONSOLE            "console"
   CONFIG_READ        "config-read"
   DESCRIBE           "describe"
@@ -98,66 +97,29 @@ allocate-request
   ;
 
 request
-  : allocate-request solo-command
-  | allocate-request first-command internal-commands last-command
-  | allocate-request first-command internal-commands
-  | allocate-request internal-commands last-command
-  | allocate-request internal-commands
+  : allocate-request commands
   ;
 
-allocate-first-command
-  : %empty
-  {
-    YFATAL(request_command_alloc, PARSER->request, &PARSER->command);
-    PARSER->command->first = true;
-  }
-  ;
-
-first-command
-  : allocate-first-command first-command-branch
-  ;
-
-first-command-branch
-  : reconcile-cmd
-  ;
-
-solo-command
-  : allocate-first-command solo-command-branch
-  ;
-
-solo-command-branch
-  : bootstrap-cmd
-  | reconcile-cmd
-  ;
-
-bootstrap-cmd
-  : BOOTSTRAP { PARSER->command->type = COMMAND_BOOTSTRAP; }
-  ;
-
-reconcile-cmd
-  : RECONCILE { PARSER->command->type = COMMAND_RECONCILE; }
-  ;
-
- /* internal commands may appear in any position */
-allocate-internal-command
+allocate-command
   : %empty
   {
     YFATAL(request_command_alloc, PARSER->request, &PARSER->command);
   }
   ;
 
-internal-commands
-  : internal-commands internal-command
-  | internal-command
+commands
+  : commands command
+  | command
   ;
 
-internal-command
-  : allocate-internal-command internal-command-branch
+command
+  : allocate-command command-branch
   ;
 
-internal-command-branch
+command-branch
   : describe-cmd
   | list-cmd
+  | reconcile-cmd
   | invalidate-cmd
   | global-invalidate-cmd
   | stats-cmd
@@ -167,6 +129,11 @@ internal-command-branch
   | goals-cmd
   | metadata-cmd
   | config-read-cmd
+  | run-cmd
+  ;
+
+reconcile-cmd
+  : RECONCILE { PARSER->command->type = COMMAND_RECONCILE; }
   ;
 
 select-cmd
@@ -175,6 +142,10 @@ select-cmd
     PARSER->command->type = COMMAND_SELECT;
     PARSER->command->selector = $3;
   }
+  ;
+
+run-cmd
+  : RUN { PARSER->command->type = COMMAND_RUN; }
   ;
 
 reset-selection-cmd
@@ -232,14 +203,21 @@ goals-subcmd
   | script-cmd
   | target-direct-cmd
   | target-transitive-cmd
+  | autorun-cmd
   ;
 
 build-cmd
-  : BUILD { PARSER->command->goals.build = true; }
+  : BUILD
+  {
+    PARSER->command->goals.build = true;
+  }
   ;
 
 script-cmd
-  : SCRIPT { PARSER->command->goals.script = true; }
+  : SCRIPT
+  {
+    PARSER->command->goals.script = true;
+  }
   ;
 
 target-direct-cmd
@@ -256,29 +234,9 @@ target-transitive-cmd
   }
   ;
 
- /* only permitted as the last command */
-allocate-last-command
-  : %empty
-  {
-    YFATAL(request_command_alloc, PARSER->request, &PARSER->command);
-    PARSER->command->last = true;
-    PARSER->request->has_last_command = true;
-  }
-  ;
-
-last-command
-  : allocate-last-command last-command-branch
-  ;
-
-last-command-branch
-  : run-cmd
-  | autorun-cmd
-  ;
-
-run-cmd
-  : RUN { PARSER->command->type = COMMAND_RUN; }
-  ;
-
 autorun-cmd
-  : AUTORUN { PARSER->command->type = COMMAND_AUTORUN; }
+  : AUTORUN
+  {
+    PARSER->command->goals.autorun = true;
+  }
   ;

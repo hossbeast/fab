@@ -24,13 +24,6 @@ formula : {
   }
 }
 
-special : {
-  module : "module.bam"
-  model : "model.bam"
-  var : "var.bam"
-  config : "config.bam"
-}
-
 walker : {
   # external modules
   include : {

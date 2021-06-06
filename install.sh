@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 
 set -e
-set -x
 
 #
 # installs binaries/libraries built by fab-v0.7
@@ -27,6 +26,7 @@ mkdir -p       $sharedir/fab/modules/
 mkdir -p       $etcdir/bam/
 
 # executables
+set -x
 cp fab/fab/fab.$v.xapi       $bindir/fab
 cp fab/fabd/fabd.$v.xapi     $bindir/fabd
 cp fab/fabc/fabc.$v.xapi     $bindir/fabc
@@ -45,14 +45,19 @@ cp value/libvalue/libvalue.$v.pic.xapi.so          $libdir/libvalue.so
 cp fab/libfab/libfab.$v.pic.xapi.so                $libdir/libfab.so
 cp libcommon/libcommon.$v.pic.xapi.so              $libdir/libcommon.so
 cp libdescriptor/libdescriptor.$v.pic.xapi.so      $libdir/libdescriptor.so
+set +x
 
 # builtin modules
 for x in $(find builtin-modules -type f | grep -v +devel); do
   frag=${x##builtin-modules/}
   mkdir -p $(dirname $sharedir/fab/modules/$frag/)
+  set -x
   cp $x $sharedir/fab/modules/$frag
+  set +x
 done
 
 # default config files
+set -x
 cp etc/fabconfig          $etcdir/fabconfig
 cp etc/bam/client_config  $etcdir/bam/client_config
+set +x

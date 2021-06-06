@@ -18,7 +18,6 @@
 #include "fab/events.h"
 #include "fab/ipc.h"
 #include "narrator.h"
-#include "narrator/fixed.h"
 #include "value/writer.h"
 #include "valyria/llist.h"
 #include "valyria/set.h"
@@ -36,13 +35,14 @@
 
 #include "common/attrs.h"
 #include "events.h"
+#include "zbuffer.h"
 
 bool goals_autorun;
-static bool goal_build;
-static bool goal_script;
-static selector * goal_target_direct_selector;
-static selector * goal_target_transitive_selector;
-static selector_context goal_selector_context;
+static bool goals_build;
+static bool goals_script;
+static selector * goals_target_direct_selector;
+static selector * goals_target_transitive_selector;
+static selector_context goals_selector_context;
 
 typedef enum buildplan_state {
     NOOP          // nothing to do
@@ -52,6 +52,7 @@ typedef enum buildplan_state {
 
 typedef struct buildplan_context {
   buildplan_state state;
+  channel * chan;
 } buildplan_context;
 
 //
@@ -67,9 +68,14 @@ static xapi plan_visitor_direct(moria_vertex * v, void * arg, moria_traversal_mo
 {
   enter;
 
-  buildplan_context * restrict bpctx = arg;
+  buildplan_context * restrict bpctx;
   fsent * n;
+  channel * chan;
   char path[512];
+  fabipc_message *msg;
+
+  bpctx = arg;
+  chan = bpctx->chan;
 
   n = containerof(v, fsent, vertex);
 
@@ -82,14 +88,23 @@ static xapi plan_visitor_direct(moria_vertex * v, void * arg, moria_traversal_mo
     goto XAPI_FINALIZE;
   }
 
-  /* this is an error case - node is not up to date, with no way to update it */
+  /* this is an error case - node is not up to date, and theres no way to update it */
   else if(!n->dep)
   {
     if(n->bp_plan_id != buildplan_id)
     {
       bpctx->state = UNSATISFIED;
       fsent_path_znload(path, sizeof(path), n);
-      fprintf(stderr, "no way to update %p %s state %s", n, path, attrs32_name_byvalue(graph_vertex_state_attrs, fsent_state_get(n)));
+
+      msg = channel_produce(chan);
+      msg->id = chan->msgid;
+      msg->type = FABIPC_MSG_RESULT;
+      msg->code = EINVAL;
+      msg->size = znloadf(msg->text, sizeof(msg->text), "cannot update %s state %s"
+        , path
+        , attrs32_name_byvalue(graph_vertex_state_attrs, fsent_state_get(n))
+      );
+      channel_post(chan, msg);
     }
     n->bp_plan_id = buildplan_id;
     goto XAPI_FINALIZE;
@@ -155,7 +170,7 @@ static xapi plan_select_direct(llist * restrict selection, buildplan_context * r
   finally : coda;
 }
 
-static xapi create_buildplan(buildplan_context * restrict bpctx, channel * restrict chan)
+static xapi create_buildplan(buildplan_context * restrict bpctx)
 {
   enter;
 
@@ -164,21 +179,21 @@ static xapi create_buildplan(buildplan_context * restrict bpctx, channel * restr
   fatal(buildplan_reset);
 
   bpctx->state = NOOP;
-  if(goal_target_direct_selector || goal_target_transitive_selector)
+  if(goals_target_direct_selector || goals_target_transitive_selector)
   {
-    goal_selector_context.mod = g_project_root->mod;
-    goal_selector_context.chan = chan;
+    goals_selector_context.mod = g_project_root->mod;
+    goals_selector_context.chan = bpctx->chan;
 
-    if(goal_target_direct_selector)
+    if(goals_target_direct_selector)
     {
-      fatal(selector_exec, goal_target_direct_selector, &goal_selector_context, SELECTION_ITERATION_TYPE_ORDER);
-      fatal(plan_select_direct, &goal_selector_context.selection->list, bpctx);
+      fatal(selector_exec, goals_target_direct_selector, &goals_selector_context, SELECTION_ITERATION_TYPE_ORDER);
+      fatal(plan_select_direct, &goals_selector_context.selection->list, bpctx);
     }
 
-    if(goal_target_transitive_selector)
+    if(goals_target_transitive_selector)
     {
-      fatal(selector_exec, goal_target_transitive_selector, &goal_selector_context, SELECTION_ITERATION_TYPE_ORDER);
-      fatal(plan_select_transitive, &goal_selector_context.selection->list, bpctx);
+      fatal(selector_exec, goals_target_transitive_selector, &goals_selector_context, SELECTION_ITERATION_TYPE_ORDER);
+      fatal(plan_select_transitive, &goals_selector_context.selection->list, bpctx);
     }
   }
   else if(!rbtree_empty(&g_project_root->mod->shadow_targets->vertex.down))
@@ -251,9 +266,9 @@ xapi goals_cleanup()
 {
   enter;
 
-  fatal(selector_context_xdestroy, &goal_selector_context);
-  selector_free(goal_target_direct_selector);
-  selector_free(goal_target_transitive_selector);
+  fatal(selector_context_xdestroy, &goals_selector_context);
+  selector_free(goals_target_direct_selector);
+  selector_free(goals_target_transitive_selector);
 
   finally : coda;
 }
@@ -266,29 +281,31 @@ xapi goals_say(narrator * restrict N)
 
   value_writer_init(&writer);
   fatal(value_writer_open, &writer, N);
-
   fatal(value_writer_push_set, &writer);
 
-  if(goal_target_direct_selector) {
+  if(goals_autorun) {
+    fatal(value_writer_string, &writer, "autorun");
+  }
+  if(goals_target_direct_selector) {
     fatal(value_writer_push_mapping, &writer);
     fatal(value_writer_string, &writer, "target-direct");
     fatal(value_writer_push_list, &writer);
-    fatal(selector_writer_write, goal_target_direct_selector, &writer);
+    fatal(selector_writer_write, goals_target_direct_selector, &writer);
     fatal(value_writer_pop_list, &writer);
     fatal(value_writer_pop_mapping, &writer);
   }
-  if(goal_target_transitive_selector) {
+  if(goals_target_transitive_selector) {
     fatal(value_writer_push_mapping, &writer);
     fatal(value_writer_string, &writer, "target-transitive");
     fatal(value_writer_push_list, &writer);
-    fatal(selector_writer_write, goal_target_transitive_selector, &writer);
+    fatal(selector_writer_write, goals_target_transitive_selector, &writer);
     fatal(value_writer_pop_list, &writer);
     fatal(value_writer_pop_mapping, &writer);
   }
-  if(goal_build) {
+  if(goals_build) {
     fatal(value_writer_string, &writer, "build");
   }
-  if(goal_script) {
+  if(goals_script) {
     fatal(value_writer_string, &writer, "script");
   }
 
@@ -300,26 +317,23 @@ finally:
 coda;
 }
 
-xapi goals_set(uint64_t msg_id, bool build, bool script, selector * restrict target_direct, selector * restrict target_transitive)
+xapi goals_set(uint64_t msg_id, bool autorun, bool build, bool script, selector * restrict target_direct, selector * restrict target_transitive)
 {
   enter;
 
   fabipc_message *msg;
   handler_context *handler;
-  narrator *N;
-  narrator_fixed fixed;
 
-  goal_build = build;
-  goal_script = script;
-  selector_ifree(&goal_target_direct_selector);
-  goal_target_direct_selector = target_direct;
-  selector_ifree(&goal_target_transitive_selector);
-  goal_target_transitive_selector = target_transitive;
+  goals_autorun = autorun;
+  goals_build = build;
+  goals_script = script;
+  selector_ifree(&goals_target_direct_selector);
+  goals_target_direct_selector = target_direct;
+  selector_ifree(&goals_target_transitive_selector);
+  goals_target_transitive_selector = target_transitive;
 
   if(events_would(FABIPC_EVENT_GOALS, &handler, &msg)) {
     msg->id = msg_id;
-    N = narrator_fixed_init(&fixed, msg->text, sizeof(msg->text));
-    fatal(goals_say, N);
     events_publish(handler, msg);
   }
 
@@ -334,14 +348,11 @@ xapi goals_kickoff(handler_context * restrict ctx)
 
   // potentially re-create the build plan
   fatal(path_cache_reset);
-  fatal(create_buildplan, &bpctx, ctx->chan);
 
-  if(goal_build && bpctx.state == UNSATISFIED) {
-    logf(L_WARN, "cannot build");
-  }
+  bpctx.chan = ctx->chan;
+  fatal(create_buildplan, &bpctx);
 
-  // kickoff
-  if(goal_build && bpctx.state == READY)
+  if(goals_build && bpctx.state == READY)
   {
     ctx->state = HANDLER_BUILD_IN_PROGRESS;
     fatal(build_thread_launch, ctx);

@@ -31,11 +31,12 @@ extern struct g_params {
   pid_t           pid;              // process id of this process
   pid_t           thread_monitor;   // thread id of the monitor thread
   pid_t           thread_server;    // thread id of the server thread
-  pid_t           thread_reconcile; // thread id of the reconcile thread
+//  pid_t           thread_reconcile; // thread id of the reconcile thread
   pid_t           thread_notify;    // thread id of the notify thread
   pid_t           thread_sweeper;   // thread id of the sweeper thread
   pid_t           thread_beholder;  // thread id of the beholder thread
-  pid_t           thread_build;     // thread id of the build thread
+//  pid_t           thread_build;     // thread id of the build thread
+  pid_t           thread_run;       // thread id of the run thread
   int             thread_count;     // number of extant threads, other than the monitor/main thread
 
   struct timespec starttime;

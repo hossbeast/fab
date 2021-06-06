@@ -89,13 +89,13 @@ void channel_post(channel * restrict chan, fabipc_message * restrict msg)
   }
 #endif
 
-  if((msg->type == FABIPC_MSG_RESULT || msg->type == FABIPC_MSG_RESPONSE) && msg->code != 0)
+  if(msg->type == FABIPC_MSG_RESULT && msg->code != 0)
   {
     chan->error = true;
-    dprintf(2, msg->text, msg->size);
+    write(2, msg->text, msg->size);
   }
 
-#if 0
+#if 1
   uint32_t h;
   char buf[64];
   size_t z;
@@ -113,10 +113,10 @@ void channel_post(channel * restrict chan, fabipc_message * restrict msg)
     printf(" attrs 0x%08x", msg->attrs);
   }
   printf(" size %hu\n", msg->size);
-  write(1, msg->text, msg->size);
-  if(msg->size) {
-    printf("\n");
-  }
+  //write(1, msg->text, msg->size);
+  //if(msg->size) {
+  //  printf("\n");
+  //}
 #endif
 
   fabipc_post(msg, &chan->ipc.server_ring.waiters);
@@ -135,7 +135,7 @@ fabipc_message * channel_acquire(channel * restrict chan)
     , FABIPC_CLIENT_RINGSIZE - 1
   );
 
-#if 0
+#if 1
   if(!msg) { return msg; }
 
   uint32_t h;

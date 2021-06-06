@@ -28,7 +28,6 @@ struct narrator;
 struct fsent;
 struct configblob;
 struct graph_invalidation_context;
-struct channel;
 struct moria_graph;
 
 /* global/protected config nodes */
@@ -55,9 +54,10 @@ xapi config_setup(void);
 /* free resources */
 xapi config_cleanup(void);
 
-xapi config_system_bootstrap(void);
-
-xapi config_system_reconcile(struct graph_invalidation_context * restrict invalidation, bool * restrict filesystems_changed, struct channel * restrict chan)
+xapi config_system_reconcile(
+    bool * restrict work
+  , struct graph_invalidation_context * restrict invalidation
+)
   __attribute__((nonnull));
 
 xapi config_active_say(struct narrator * restrict N)

@@ -35,7 +35,7 @@
 #include "fsent.h"
 #include "goals.h"
 #include "graph.h"
-#include "handler_thread.h"
+#include "autorun_thread.h"
 #include "logging.h"
 #include "params.h"
 #include "rcu.h"
@@ -148,7 +148,7 @@ static xapi process_event(sweeper_event * restrict ev, graph_invalidation_contex
       path[z] = 0;
 
       /* traverse the directory (recursively) and attach at cev->parent */
-      fatal(walker_descend, 0, 0, cev->parent, path, 0, invalidation);
+      fatal(walker_descend, 0, 0, cev->parent, path, 0, 0, invalidation);
     }
     else
     {
@@ -237,7 +237,7 @@ static xapi sweeper_thread()
       fatal(sweep);
       if(llist_empty(&event_queue) && goals_autorun)
       {
-        fatal(handler_thread_launch, 0, 0, true);
+        fatal(autorun_thread_launch);
       }
     }
 

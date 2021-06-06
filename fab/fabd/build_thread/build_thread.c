@@ -208,14 +208,7 @@ static xapi build_thread(handler_context * restrict handler)
         logf(L_BUILDER, "stage begin %3d", 0);
 //say("stage %d", build_stage);
 
-        if(events_would(FABIPC_EVENT_BUILD_START, &evhandler, &msg)) {
-          z = 0;
-          z += marshal_u16(msg->text + z, sizeof(msg->text) - z, descriptor_fab_build.id);
-          z += marshal_int(msg->text + z, sizeof(msg->text) - z, &handler->state, sizeof(handler->state));
-          z += marshal_u16(msg->text + z, sizeof(msg->text) - z, build_numranks);
-          z += marshal_u16(msg->text + z, sizeof(msg->text) - z, sn_count = llist_count(&sn->lln));
-          events_publish(evhandler, msg);
-        }
+        system_state_change(BAMD_SYSTEM_STATE_BUILDING);
       }
 
       if(!sn) { // no work
@@ -327,14 +320,7 @@ static xapi build_thread(handler_context * restrict handler)
   }
   fatal(sigutil_tgkill, g_params.pid, handler->tid, SIGUSR1);
 
-  if(events_would(FABIPC_EVENT_BUILD_END, &evhandler, &msg)) {
-    z = 0;
-    z += marshal_u16(msg->text + z, sizeof(msg->text) - z, descriptor_fab_build.id);
-    z += marshal_int(msg->text + z, sizeof(msg->text) - z, &handler->state, sizeof(handler->state));
-    z += marshal_u16(msg->text + z, sizeof(msg->text) - z, build_numranks);
-    z += marshal_u16(msg->text + z, sizeof(msg->text) - z, sn_count);
-    events_publish(evhandler, msg);
-  }
+  system_state_change(BAMD_SYSTEM_STATE_OK);
 
 finally:
 #if DEBUG || DEVEL
@@ -552,3 +538,25 @@ finally:
   pthread_attr_destroy(&attr);
 coda;
 }
+
+#if 0
+        if(events_would(FABIPC_EVENT_BUILD_START, &evhandler, &msg)) {
+          /* struct fab_build */
+          z = 0;
+          z += marshal_u16(msg->text + z, sizeof(msg->text) - z, descriptor_fab_build.id);
+          z += marshal_int(msg->text + z, sizeof(msg->text) - z, &handler->state, sizeof(handler->state));
+          z += marshal_u16(msg->text + z, sizeof(msg->text) - z, build_numranks);
+          z += marshal_u16(msg->text + z, sizeof(msg->text) - z, sn_count = llist_count(&sn->lln));
+          events_publish(evhandler, msg);
+        }
+
+
+  if(events_would(FABIPC_EVENT_BUILD_END, &evhandler, &msg)) {
+    z = 0;
+    z += marshal_u16(msg->text + z, sizeof(msg->text) - z, descriptor_fab_build.id);
+    z += marshal_int(msg->text + z, sizeof(msg->text) - z, &handler->state, sizeof(handler->state));
+    z += marshal_u16(msg->text + z, sizeof(msg->text) - z, build_numranks);
+    z += marshal_u16(msg->text + z, sizeof(msg->text) - z, sn_count);
+    events_publish(evhandler, msg);
+  }
+#endif

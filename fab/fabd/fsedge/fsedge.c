@@ -58,7 +58,7 @@ static xapi linking(fsent *n, graph_invalidation_context * restrict invalidation
 
   mod = fsent_module_get(n);
 
-  if(memncmp(n->name.name, n->name.namel, fsent_module_name, fsent_module_name_len) == 0) {
+  if(memncmp(n->name.name, n->name.namel, MMS(FSENT_NAME_MODULE)) == 0) {
     if(mod) {
       /* propagate new module.bam to the immediate parent module */
       fatal(moria_traverse_vertices
@@ -74,7 +74,7 @@ static xapi linking(fsent *n, graph_invalidation_context * restrict invalidation
         , invalidation
       );
     }
-  } else if(memncmp(n->name.name, n->name.namel, fsent_var_name, fsent_var_name_len) == 0) {
+  } else if(memncmp(n->name.name, n->name.namel, MMS(FSENT_NAME_VAR)) == 0) {
     /* propagate : var.bam -> this and descendant modules */
     fatal(moria_traverse_vertices
       , &g_graph

@@ -21,8 +21,6 @@
 #include "types.h"
 #include "xapi.h"
 
-#include "fab/build.h"
-
 #include "rcu_list.h"
 #include "selector.h"
 #include "rule.h"
@@ -41,6 +39,7 @@ extern rcu_list g_handlers;    // list of active handlers
 /* lock for running the build, e.g. build or autobuild commands */
 extern struct trylock handler_build_lock;
 
+#if 0
 enum handler_state {
   /* build thread dependent states */
     HANDLER_BUILD_PENDING     = FAB_BUILD_PENDING
@@ -54,6 +53,7 @@ enum handler_state {
   , HANDLER_RECONCILE_IN_PROGRESS
   , HANDLER_RECONCILE_DONE
 };
+#endif
 
 typedef struct handler_context {
   union {
@@ -66,9 +66,11 @@ typedef struct handler_context {
   struct selection * selection;
   struct graph_invalidation_context invalidation;
   struct request_parser * request_parser;
-  bool autorun;
+  //bool autorun;
 
-  enum handler_state state;
+  /* set by the run thread */
+  //fab_build_state build_state;
+  //fab_reconcile_state reconcile_state;
 
   pid_t tid;
   pid_t client_pid;
@@ -81,9 +83,6 @@ typedef struct handler_context {
     struct {
       /* fabipc channel for the client */
       struct channel * chan;
-
-      /* subscribed events */
-      uint32_t event_mask;
     };
   };
 } handler_context;

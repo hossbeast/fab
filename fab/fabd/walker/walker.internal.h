@@ -35,6 +35,7 @@ typedef struct walker_context {
   struct fsent * base_parent; // base attached here if/when created
   int walk_id;
   struct graph_invalidation_context * invalidation;
+  bool * restrict work;
 } walker_context;
 
 xapi walker_visit(int method, struct ftwinfo * info, void * arg, int * stop)

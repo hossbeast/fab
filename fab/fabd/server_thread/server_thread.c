@@ -64,7 +64,7 @@ static xapi server_thread()
       continue;
     }
 
-    fatal(handler_thread_launch, siginfo.si_pid, (intptr_t)siginfo.si_value.sival_ptr, false);
+    fatal(handler_thread_launch, siginfo.si_pid, (intptr_t)siginfo.si_value.sival_ptr);
   }
 
 finally:

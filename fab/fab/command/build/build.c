@@ -137,8 +137,7 @@ static xapi connected(command * restrict cmd, fab_client * restrict client)
   requestid = msg->id = PID_AS_MSGID(getpid());
 
   request_narrator = narrator_fixed_init(&nstor, msg->text, 0xfff);
-  fatal(build_command_request_collate, request_narrator);
-  fatal(narrator_xsays, request_narrator, " run");
+  fatal(build_command_request_collate, request_narrator, false);
 
   // two terminating null bytes
   fatal(narrator_xsayw, request_narrator, (char[]) { 0x00, 0x00 }, 2);
@@ -474,32 +473,16 @@ static xapi process(command * restrict cmd, fab_client * restrict client, fabipc
   finally : coda;
 }
 
-//
-// internal
-//
-
-void build_command_usage(command * restrict cmd)
-{
-  printf(
-"build options\n"
-" -t                  transitive build targets\n"
-" +t        (default) subsequent non-options are -t <arg>\n"
-" -x                  direct build targets\n"
-" +x                  subsequent non-options are -t <arg>\n"
-  );
-}
-
-xapi build_command_request_collate(narrator * restrict N)
+static xapi collate_invalidations(narrator * restrict N)
 {
   enter;
 
-  int x;
   struct build_target *arg;
-
-  fatal(narrator_xsays, N, " reconcile");
+  int x;
 
   if(g_args.invalidate) {
     fatal(narrator_xsays, N, " global-invalidate");
+    goto XAPI_FINALLY;
   }
 
   /* transitive targets */
@@ -523,7 +506,7 @@ xapi build_command_request_collate(narrator * restrict N)
         continue;
 
       fatal(narrator_xsayf, N, ""
-" path : %.*s", (int)arg->sl, arg->s
+" path : \"%.*s\"", (int)arg->sl, arg->s
       );
     }
 
@@ -554,7 +537,7 @@ xapi build_command_request_collate(narrator * restrict N)
         continue;
 
       fatal(narrator_xsayf, N, ""
-" path : %.*s", (int)arg->sl, arg->s
+" path : \"%.*s\"", (int)arg->sl, arg->s
       );
     }
 
@@ -564,9 +547,23 @@ xapi build_command_request_collate(narrator * restrict N)
     );
   }
 
+  finally : coda;
+}
+
+static xapi collate_goals(narrator * restrict N, bool autorun)
+{
+  enter;
+
+  int x;
+  struct build_target *arg;
+
   fatal(narrator_xsays, N, ""
-" goals : {"
+" goals : { "
   );
+
+  if(autorun) {
+    fatal(narrator_xsays, N, "autorun ");
+  }
 
   /* transitive targets */
   for(x = 0; x < args->targets_len; x++)
@@ -589,7 +586,7 @@ xapi build_command_request_collate(narrator * restrict N)
         continue;
 
       fatal(narrator_xsayf, N, ""
-" path : %.*s", arg->sl, arg->s
+" path : \"%.*s\"", arg->sl, arg->s
       );
     }
 
@@ -619,7 +616,7 @@ xapi build_command_request_collate(narrator * restrict N)
         continue;
 
       fatal(narrator_xsayf, N, ""
-" path : %.*s", (int)arg->sl, arg->s
+" path : \"%.*s\"", (int)arg->sl, arg->s
       );
     }
 
@@ -628,9 +625,41 @@ xapi build_command_request_collate(narrator * restrict N)
     );
   }
 
-  fatal(narrator_xsayf, N, ""
-" build }"
+  fatal(narrator_xsays, N, " build }");
+
+  finally : coda;
+}
+
+//
+// internal
+//
+
+void build_command_usage(command * restrict cmd)
+{
+  printf(
+"build options\n"
+" -t                  transitive build targets\n"
+" +t        (default) subsequent non-options are -t <arg>\n"
+" -x                  direct build targets\n"
+" +x                  subsequent non-options are -t <arg>\n"
   );
+}
+
+xapi build_command_request_collate(narrator * restrict N, bool autorun)
+{
+  enter;
+
+  /* re-configure goals */
+  fatal(collate_goals, N, autorun);
+
+  /* reconcile */
+  fatal(narrator_xsays, N, " reconcile");
+
+  /* invalidate targets */
+  fatal(collate_invalidations, N);
+
+  /* build the targets */
+  fatal(narrator_xsayf, N, " run");
 
   finally : coda;
 }

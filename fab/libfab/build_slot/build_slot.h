@@ -27,11 +27,7 @@ extern descriptor_type descriptor_fab_build_string;
 extern descriptor_type descriptor_fab_build_slot_results;
 extern descriptor_type descriptor_fab_build_slot_info;
 
-typedef struct fab_build_string {
-  uint16_t text_len;
-  const char *text;
-} fab_build_string;
-
+/* FABIPC_EVENT_FORMULA_EXEC_FORKED */
 typedef struct fab_build_slot_info {
   int32_t pid;            // process id
   uint16_t stage;         // slots in the same stage can execute concurrently
@@ -43,23 +39,34 @@ typedef struct fab_build_slot_info {
   char *pwd;              // working directory
   uint16_t pwd_len;
 
+  /* struct fab_build_string */
   void *arg_list;
   uint32_t arg_list_size;
   uint16_t arg_list_len;
 
+  /* struct fab_build_string */
   void *env_list;
   uint32_t env_list_size;
   uint16_t env_list_len;
 
+  /* struct fab_build_string */
   void *source_list;
   uint32_t source_list_size;
   uint16_t source_list_len;
 
+  /* struct fab_build_string */
   void *target_list;
   uint32_t target_list_size;
   uint16_t target_list_len;
 } fab_build_slot_info;
 
+/* fab_build_slot_info strings */
+typedef struct fab_build_string {
+  uint16_t text_len;
+  const char *text;
+} fab_build_string;
+
+/* FABIPC_EVENT_FORMULA_EXEC_WAITED */
 typedef struct fab_build_slot_results {
   int32_t status;         // process exit status
   uint32_t stdout_total;

@@ -127,7 +127,7 @@ static xapi resolve_use(module_parser * restrict parser, pattern * restrict ref,
     referent = sn->v;
     refnode = containerof(referent, fsent, vertex);
 
-    mod_file_v = moria_vertex_downw(referent, fsent_model_name, fsent_model_name_len);
+    mod_file_v = moria_vertex_downw(referent, MMS(FSENT_NAME_MODEL));
     mod_file_n = containerof(mod_file_v, fsent, vertex);
     fatal(module_bootstrap, refnode, mod_file_n, parser->invalidation);
 
@@ -174,7 +174,7 @@ static xapi resolve_require(module_parser * restrict parser, pattern * restrict 
 
     mod_dir_v = sn->v;
     mod_dir_n = containerof(mod_dir_v, fsent, vertex);
-    mod_file_v = moria_vertex_downw(mod_dir_v, fsent_module_name, fsent_module_name_len);
+    mod_file_v = moria_vertex_downw(mod_dir_v, MMS(FSENT_NAME_MODULE));
     mod_file_n = containerof(mod_file_v, fsent, vertex);
     fatal(module_bootstrap, mod_dir_n, mod_file_n, parser->invalidation);
     fatal(module_resolve_require, mod, mod_dir_n->mod, parser->invalidation);
@@ -305,7 +305,6 @@ xapi module_parser_parse(
     module_parser * restrict parser
   , module * restrict mod
   , graph_invalidation_context * restrict invalidation
-  , channel * restrict chan
   , char * const restrict buf
   , size_t size
   , const char * fname
@@ -317,7 +316,6 @@ xapi module_parser_parse(
 
   parser->mod = mod;
   parser->invalidation = invalidation;
-  parser->chan = chan;
   parser->value_parser = mod->value_parser;
   fatal(yyu_parse, &parser->yyu, buf, size, fname, YYU_INPLACE, 0, 0);
 

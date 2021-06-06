@@ -110,7 +110,6 @@
 
 %token
  BUILD                    "build"
- CONFIG                   "config"
  WORKERS                  "workers"
  CONCURRENCY              "concurrency"
  CONSOLE                  "console"
@@ -120,10 +119,6 @@
  FORMULA                  "formula"
  INVALIDATE               "invalidate"
  LOGFILE                  "logfile"
- SPECIAL                  "special"
- MODEL                    "model"
- MODULE                   "module"
- VAR                      "var"
  PATH                     "path"
  COPY_FROM_ENV            "copy-from-env"
  DIRS                     "dirs"
@@ -191,7 +186,6 @@ sections
 
 section
   : build-section
-  | special-section
   | workers-section
   | filesystems-section
   | formula-section
@@ -202,13 +196,6 @@ build-section
   : BUILD build-map
   {
     PARSER->cfg->build.merge_significant = true;
-  }
-  ;
-
-special-section
-  : SPECIAL special-map
-  {
-    PARSER->cfg->special.merge_significant = true;
   }
   ;
 
@@ -246,35 +233,6 @@ build-mapping
   {
     PARSER->cfg->build.concurrency = $3;
   }
-  ;
-
-special-map
-  : ':' '{' special-mapping-set-epsilon '}'
-  | '=' '{' special-mapping-set-epsilon '}'
-  {
-    PARSER->cfg->special.merge_overwrite = true;
-  }
-  ;
-
-special-mapping-set-epsilon
-  : special-mapping-set
-  | %empty
-  ;
-
-special-mapping-set
-  : special-mappings
-  ;
-
-special-mappings
-  : special-mappings special-mapping
-  | special-mapping
-  ;
-
-special-mapping
-  : MODEL ':' bstring          { PARSER->cfg->special.model = $3; }
-  | MODULE ':' bstring         { PARSER->cfg->special.module = $3; }
-  | VAR ':' bstring            { PARSER->cfg->special.var = $3; }
-  | CONFIG ':' bstring         { PARSER->cfg->special.config = $3; }
   ;
  
 workers-map

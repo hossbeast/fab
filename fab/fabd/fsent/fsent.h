@@ -53,19 +53,21 @@ struct module;
 struct narrator;
 struct var;
 struct variant;
-struct channel;
 
 enum moria_traversal_mode;
 
-// specially named fsents
-extern const char *fsent_model_name;
-extern uint16_t fsent_model_name_len;
-extern const char *fsent_module_name;
-extern uint16_t fsent_module_name_len;
-extern const char *fsent_var_name;
-extern uint16_t fsent_var_name_len;
-extern const char *fsent_config_name;
-extern uint16_t fsent_config_name_len;
+// special fsent names
+#if DEVEL
+#define FSENT_NAME_MODULE "module.bam+devel"
+#define FSENT_NAME_MODEL  "model.bam+devel"
+#define FSENT_NAME_VAR    "var.bam+devel"
+#define FSENT_NAME_CONFIG "config.bam+devel"
+#else
+#define FSENT_NAME_MODULE "module.bam"
+#define FSENT_NAME_MODEL  "model.bam"
+#define FSENT_NAME_VAR    "var.bam"
+#define FSENT_NAME_CONFIG "config.bam"
+#endif
 
 // globally scoped fsents
 extern struct fsent * g_root;            // directory node at /
@@ -489,19 +491,19 @@ fsent *fsent_path_lookup(const struct module * restrict mod, const char * restri
 /*
  * mark an fsent as VERTEX_FORMULA_FILE and reconcile its formula
  */
-xapi fsent_formula_bootstrap(fsent * restrict n, struct channel * restrict chan)
+xapi fsent_formula_bootstrap(fsent * restrict n)
   __attribute__((nonnull));
 
 /*
  * mark an fsent as VERTEX_VAR_FILE and reconcile its var
  */
-xapi fsent_var_bootstrap(fsent * restrict n, struct channel * restrict chan)
+xapi fsent_var_bootstrap(fsent * restrict n)
   __attribute__((nonnull));
 
 /*
  * mark an fsent as VERTEX_CONFIG_FILE and reconcile its config blob
  */
-xapi fsent_config_bootstrap(fsent * restrict n, struct channel * restrict chan)
+xapi fsent_config_bootstrap(fsent * restrict n)
   __attribute__((nonnull));
 
 /*

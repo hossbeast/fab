@@ -62,7 +62,6 @@
 #include "stats.h"
 #include "formula_value.h"
 #include "events.h"
-#include "handler.h"
 #include "channel.h"
 
 #include "atomics.h"
@@ -211,7 +210,7 @@ static xapi build_slot_forked(build_slot * restrict bs)
   enter;
 
   size_t z;
-  handler_context *handler;
+  channel *chan;
   fabipc_message *msg;
   uint16_t len;
   uint32_t list_size;
@@ -224,7 +223,8 @@ static xapi build_slot_forked(build_slot * restrict bs)
   char *dst;
   size_t sz;
 
-  if(!events_would(FABIPC_EVENT_FORMULA_EXEC_FORKED, &handler, &msg)) {
+  /* struct fab_build_slot_info */
+  if(!events_would(FABIPC_EVENT_FORMULA_EXEC_FORKED, &chan, &msg)) {
     goto XAPI_FINALIZE;
   }
 
@@ -331,7 +331,7 @@ static xapi build_slot_forked(build_slot * restrict bs)
   msg->size = z;
 
   msg->id = bs->pid;
-  events_publish(handler, msg);
+  events_publish(chan, msg);
 
   finally : coda;
 }
@@ -341,14 +341,15 @@ static xapi build_slot_waited(build_slot * restrict bs)
 {
   enter;
 
-  handler_context *handler;
+  channel *chan;
   fabipc_message *msg;
   uint16_t z;
 
-  if(!events_would(FABIPC_EVENT_FORMULA_EXEC_WAITED, &handler, &msg)) {
+  if(!events_would(FABIPC_EVENT_FORMULA_EXEC_WAITED, &chan, &msg)) {
     goto XAPI_FINALIZE;
   }
 
+  /* struct fab_build_slot_results */
   z = 0;
   z += marshal_u32(msg->text + z, sizeof(msg->text) - z, descriptor_fab_build_slot_results.id);
   z += marshal_i32(msg->text + z, sizeof(msg->text) - z, bs->status);
@@ -358,7 +359,7 @@ static xapi build_slot_waited(build_slot * restrict bs)
 
   msg->size = z;
   msg->id = bs->pid;
-  events_publish(handler, msg);
+  events_publish(chan, msg);
 
   finally : coda;
 }
@@ -600,7 +601,7 @@ xapi build_slot_read(build_slot * restrict bs, uint32_t stream)
   int fd = 0;
   uint32_t * total = 0;
   fabipc_event_type event = 0;
-  handler_context *handler;
+  channel *chan;
   fabipc_message *msg;
 
   if(stream == 1)
@@ -622,12 +623,12 @@ xapi build_slot_read(build_slot * restrict bs, uint32_t stream)
     event = FABIPC_EVENT_FORMULA_EXEC_AUXOUT;
   }
 
-  if(events_would(event, &handler, &msg))
+  if(events_would(event, &chan, &msg))
   {
     msg->id = bs->pid;
     fatal(xread, fd, msg->text, sizeof(msg->text), &bytes);
     msg->size = bytes;
-    events_publish(handler, msg);
+    events_publish(chan, msg);
   }
   else
   {

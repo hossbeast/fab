@@ -39,6 +39,9 @@ config keys that should *only* be legal in the global/user config files
 #include "valyria/llist.h"
 #include "value/writer.h"
 #include "fab/stats.h"
+#include "common/snarf.h"
+#include "common/hash.h"
+#include "common/attrs.h"
 
 #include "config.internal.h"
 #include "yyutil/box.h"
@@ -56,10 +59,8 @@ config keys that should *only* be legal in the global/user config files
 #include "logging.h"
 #include "pattern.h"
 #include "stats.h"
-
-#include "common/snarf.h"
-#include "common/hash.h"
-#include "common/attrs.h"
+#include "system_state.h"
+#include "events.h"
 
 #include "macros.h"
 #include "marshal.h"
@@ -103,16 +104,6 @@ static void config_compare_build(struct config_build * restrict new, struct conf
   new->changed = !config_reconfigured
     || box_int16_cmp(new->concurrency, old->concurrency)
     ;
-}
-
-static void config_compare_special(struct config_special * restrict new, struct config_special * restrict old)
-{
-  new->changed = !config_reconfigured
-         || box_string_cmp(new->model, old->model)
-         || box_string_cmp(new->module, old->module)
-         || box_string_cmp(new->var, old->var)
-         || box_string_cmp(new->config, old->config)
-         ;
 }
 
 static void config_compare_workers(struct config_workers * restrict new, struct config_workers * restrict old)
@@ -190,12 +181,13 @@ static void config_compare_walker(struct config_walker * restrict new, struct co
       ;
 }
 
-static xapi parse(config_parser * restrict parser, config * restrict cfgn, configblob **cfgp, channel * restrict chan)
+static xapi parse(config_parser * restrict parser, config * restrict cfgn, configblob **cfgp)
 {
   enter;
 
   char * text = 0;
   size_t text_len;
+  channel *chan;
   fabipc_message *msg;
   xapi exit;
 
@@ -205,23 +197,28 @@ static xapi parse(config_parser * restrict parser, config * restrict cfgn, confi
   fatal(usnarfs, &text, &text_len, cfgn->self_node_abspath);
   if(text)
   {
+tracef();
     if((exit = invoke(config_parser_parse, parser, text, text_len + 2, cfgn->self_node_abspath, 0, cfgp)))
     {
-      msg = channel_produce(chan);
-      msg->id = chan->msgid;
-      msg->type = FABIPC_MSG_RESULT;
-      msg->code = EINVAL;
+tracef();
+      system_error = true;
+      if(!events_would(FABIPC_EVENT_SYSTEM_STATE, &chan, &msg)) {
+        xapi_calltree_unwind();
+        goto XAPI_FINALLY;
+      }
 
+      msg->code = EINVAL;
 #if DEBUG || DEVEL
       msg->size = xapi_trace_full(msg->text, sizeof(msg->text), 0);
 #else
       msg->size = xapi_trace_pithy(msg->text, sizeof(msg->text), 0);
 #endif
-      channel_post(chan, msg);
-      xapi_calltree_unwind();
+      events_publish(chan, msg);
 
+      xapi_calltree_unwind();
       goto XAPI_FINALLY;
     }
+tracef();
   }
 
   STATS_INC(cfgn->stats.parsed);
@@ -229,10 +226,11 @@ static xapi parse(config_parser * restrict parser, config * restrict cfgn, confi
 
 finally:
   wfree(text);
+  xapi_infos("path", cfgn->self_node_abspath);
 coda;
 }
 
-static xapi reparse(channel * restrict chan)
+static xapi reparse()
 {
   enter;
 
@@ -248,9 +246,9 @@ static xapi reparse(channel * restrict chan)
   llist_foreach(&config_list, cfgn, vertex.owner) {
     n = cfgn->self_node;
     logf(L_CONFIG, "staging config file @ %s", n->self_config->self_node_abspath);
-    fatal(parse, parser_staging, cfgn, &cfg, chan);
+    fatal(parse, parser_staging, cfgn, &cfg);
 
-    if(chan->error) {
+    if(system_error) {
       break;
     }
     if(!cfg) {
@@ -305,6 +303,68 @@ static void config_dispose(config * restrict vp)
   llist_append(&config_freelist, vp, vertex.owner);
 }
 
+static xapi bootstrap_global_node(fsent ** restrict np, const char * restrict pathspec)
+{
+  enter;
+
+  graph_invalidation_context invalidation = { };
+  char text[512];
+  const char *path;
+  size_t len, z = 0;
+  config *cfg = 0;
+
+  len = strlen(pathspec);
+  RUNTIME_ASSERT(len > 1);
+
+  if(len >= 2 && memcmp(pathspec, "~/", 2) == 0)
+  {
+    z += znloads(text + z, sizeof(text) - z, g_params.homedir);
+    z += znloads(text + z, sizeof(text) - z, "/");
+    z += znloads(text + z, sizeof(text) - z, pathspec + 2);
+    text[z] = 0;
+    len = z;
+    path = text;
+  }
+  else if(len >= 6 && memcmp(pathspec, "$HOME/", 6) == 0)
+  {
+    z += znloads(text + z, sizeof(text) - z, g_params.homedir);
+    z += znloads(text + z, sizeof(text) - z, "/");
+    z += znloads(text + z, sizeof(text) - z, pathspec + 6);
+    text[z] = 0;
+    len = z;
+    path = text;
+  }
+  else if(pathspec[0] != '/')
+  {
+    z += znloads(text + z, sizeof(text) - z, g_params.proj_dir);
+    z += znloads(text + z, sizeof(text) - z, "/");
+    z += znloads(text + z, sizeof(text) - z, pathspec);
+    text[z] = 0;
+    len = z;
+    path = text;
+  }
+  else
+  {
+    path = pathspec;
+    len = strlen(path);
+  }
+
+  fatal(fsent_graft, path, np, &invalidation);
+  fsent_kind_set(*np, VERTEX_CONFIG_FILE);
+  fsent_protect_set(*np);
+  fsent_invalid_set(*np);
+
+  fatal(config_alloc, &cfg, &g_graph);
+  znloadw(cfg->self_node_abspath, sizeof(cfg->self_node_abspath), path, len);
+  cfg->self_node_abspath_len = len;
+  (*np)->self_config = cfg;
+  cfg->self_node = *np;
+
+finally:
+  graph_invalidation_end(&invalidation);
+coda;
+}
+
 //
 // internal
 //
@@ -317,7 +377,6 @@ static void config_dispose(config * restrict vp)
 bool config_compare(configblob * restrict new, configblob * restrict old)
 {
   config_compare_build(&new->build, &old->build);
-  config_compare_special(&new->special, &old->special);
   config_compare_workers(&new->workers, &old->workers);
   config_compare_filesystems(&new->filesystems, &old->filesystems);
   config_compare_formula(&new->formula, &old->formula);
@@ -325,7 +384,6 @@ bool config_compare(configblob * restrict new, configblob * restrict old)
 
   new->changed = !config_reconfigured
     || new->build.changed
-    || new->special.changed
     || new->workers.changed
     || new->filesystems.changed
     || new->formula.changed
@@ -486,9 +544,6 @@ xapi config_xfree(configblob * restrict cfg)
   if(cfg)
   {
     box_free(refas(cfg->build.concurrency, bx));
-    box_free(refas(cfg->special.module, bx));
-    box_free(refas(cfg->special.model, bx));
-    box_free(refas(cfg->special.var, bx));
     box_free(refas(cfg->workers.concurrency, bx));
 
     fatal(map_xfree, cfg->filesystems.entries);
@@ -653,23 +708,6 @@ xapi config_writer_write(configblob * restrict cfg, value_writer * const restric
     fatal(value_writer_pop_set, writer);
   }
 
-  if(cfg->special.merge_significant)
-  {
-    fatal(value_writer_push_mapping, writer);
-    fatal(value_writer_string, writer, "special");
-    fatal(value_writer_push_set, writer);
-    if(cfg->special.module) {
-      fatal(value_writer_mapping_string_string, writer, "module", cfg->special.module->v);
-    }
-    if(cfg->special.model) {
-      fatal(value_writer_mapping_string_string, writer, "model", cfg->special.model->v);
-    }
-    if(cfg->special.var) {
-      fatal(value_writer_mapping_string_string, writer, "var", cfg->special.var->v);
-    }
-    fatal(value_writer_pop_set, writer);
-  }
-
   finally : coda;
 }
 
@@ -683,6 +721,10 @@ xapi config_setup()
 
   fatal(config_parser_create, &parser_staging);
   fatal(config_create, &config_active);
+
+  /* create the immutable config nodes, in precedence order */
+  fatal(bootstrap_global_node, &user_config_node, g_args.user_config_path);
+  fatal(bootstrap_global_node, &system_config_node, g_args.system_config_path);
 
   finally : coda;
 }
@@ -746,10 +788,11 @@ xapi config_active_say(narrator * restrict N)
   finally : coda;
 }
 
-static xapi reconfigure(channel * restrict chan)
+static xapi reconfigure()
 {
   enter;
 
+  channel *chan;
   fabipc_message *msg;
 
   // validate the new config
@@ -765,17 +808,15 @@ static xapi reconfigure(channel * restrict chan)
       fail(0);
     }
 
-    msg = channel_produce(chan);
-    msg->id = chan->msgid;
-    msg->type = FABIPC_MSG_RESULT;
-    msg->code = EINVAL;
-
+    if(events_would(FABIPC_EVENT_SYSTEM_STATE, &chan, &msg)) {
+      msg->code = EINVAL;
 #if DEBUG || DEVEL
-    msg->size = xapi_trace_full(msg->text, sizeof(msg->text), 0);
+      msg->size = xapi_trace_full(msg->text, sizeof(msg->text), 0);
 #else
-    msg->size = xapi_trace_pithy(msg->text, sizeof(msg->text), 0);
+      msg->size = xapi_trace_pithy(msg->text, sizeof(msg->text), 0);
 #endif
-    channel_post(chan, msg);
+      events_publish(chan, msg);
+    }
     xapi_calltree_unwind();
   }
   else
@@ -800,7 +841,7 @@ static xapi reconfigure(channel * restrict chan)
   finally : coda;
 }
 
-xapi config_system_reconcile(graph_invalidation_context * restrict invalidation, bool * restrict filesystems_changed, channel * restrict chan)
+xapi config_system_reconcile(bool * restrict work, graph_invalidation_context * restrict invalidation)
 {
   enter;
 
@@ -809,16 +850,16 @@ xapi config_system_reconcile(graph_invalidation_context * restrict invalidation,
   llist unused, *T;
   config *cfg;
 
-  *filesystems_changed = false;
+  *work = false;
 
   /* bootstrap any config files in the ancestry of the project root */
   dirv = &g_project_root->vertex;
   while(dirv)
   {
-    if((v = moria_vertex_downw(dirv, fsent_config_name, fsent_config_name_len)))
+    if((v = moria_vertex_downw(dirv, MMS(FSENT_NAME_CONFIG))))
     {
       n = containerof(v, fsent, vertex);
-      fatal(fsent_config_bootstrap, n, chan);
+      fatal(fsent_config_bootstrap, n);
     }
 
     dirv = moria_vertex_up(dirv);
@@ -834,7 +875,7 @@ xapi config_system_reconcile(graph_invalidation_context * restrict invalidation,
   dirv = &g_project_root->vertex;
   while(dirv)
   {
-    if((v = moria_vertex_downw(dirv, fsent_config_name, fsent_config_name_len)))
+    if((v = moria_vertex_downw(dirv, MMS(FSENT_NAME_CONFIG))))
     {
       n = containerof(v, fsent, vertex);
       llist_delete_node(&n->self_config->vertex.owner);
@@ -858,9 +899,12 @@ xapi config_system_reconcile(graph_invalidation_context * restrict invalidation,
     }
   }
 
+  /* no invalid or unused nodes - no work */
   if(T == &config_list && llist_empty(&unused)) {
     goto XAPI_FINALIZE;
   }
+
+  *work = true;
 
   /* config nodes not seen by the above loop are now unused */
   llist_foreach_safe(&unused, cfg, vertex.owner, T) {
@@ -868,17 +912,16 @@ xapi config_system_reconcile(graph_invalidation_context * restrict invalidation,
   }
 
   /* all config files must be parsed any time config is reloaded */
-  fatal(reparse, chan);
-  if(chan->error) {
+  fatal(reparse);
+  if(system_error) {
     goto XAPI_FINALIZE;
   }
 
   if(!config_compare(config_staging, config_active)) {
-    *filesystems_changed = config_staging->filesystems.changed;
-    fatal(reconfigure, chan);
+    fatal(reconfigure);
   }
 
-  if(chan->error) {
+  if(system_error) {
     goto XAPI_FINALIZE;
   }
 
@@ -887,79 +930,6 @@ xapi config_system_reconcile(graph_invalidation_context * restrict invalidation,
   }
 
   config_reconfigured = true;
-
-  finally : coda;
-}
-
-static xapi bootstrap_global_node(fsent ** restrict np, const char * restrict pathspec)
-{
-  enter;
-
-  graph_invalidation_context invalidation = { };
-  char text[512];
-  const char *path;
-  size_t len, z = 0;
-  config *cfg = 0;
-
-  len = strlen(pathspec);
-  RUNTIME_ASSERT(len > 1);
-
-  if(len >= 2 && memcmp(pathspec, "~/", 2) == 0)
-  {
-    z += znloads(text + z, sizeof(text) - z, g_params.homedir);
-    z += znloads(text + z, sizeof(text) - z, "/");
-    z += znloads(text + z, sizeof(text) - z, pathspec + 2);
-    text[z] = 0;
-    len = z;
-    path = text;
-  }
-  else if(len >= 6 && memcmp(pathspec, "$HOME/", 6) == 0)
-  {
-    z += znloads(text + z, sizeof(text) - z, g_params.homedir);
-    z += znloads(text + z, sizeof(text) - z, "/");
-    z += znloads(text + z, sizeof(text) - z, pathspec + 6);
-    text[z] = 0;
-    len = z;
-    path = text;
-  }
-  else if(pathspec[0] != '/')
-  {
-    z += znloads(text + z, sizeof(text) - z, g_params.proj_dir);
-    z += znloads(text + z, sizeof(text) - z, "/");
-    z += znloads(text + z, sizeof(text) - z, pathspec);
-    text[z] = 0;
-    len = z;
-    path = text;
-  }
-  else
-  {
-    path = pathspec;
-    len = strlen(path);
-  }
-
-  fatal(fsent_graft, path, np, &invalidation);
-  fsent_kind_set(*np, VERTEX_CONFIG_FILE);
-  fsent_protect_set(*np);
-  fsent_invalid_set(*np);
-
-  fatal(config_alloc, &cfg, &g_graph);
-  znloadw(cfg->self_node_abspath, sizeof(cfg->self_node_abspath), path, len);
-  cfg->self_node_abspath_len = len;
-  (*np)->self_config = cfg;
-  cfg->self_node = *np;
-
-finally:
-  graph_invalidation_end(&invalidation);
-coda;
-}
-
-xapi config_system_bootstrap()
-{
-  enter;
-
-  /* create the immutable config nodes, in precedence order */
-  fatal(bootstrap_global_node, &user_config_node, g_args.user_config_path);
-  fatal(bootstrap_global_node, &system_config_node, g_args.system_config_path);
 
   finally : coda;
 }

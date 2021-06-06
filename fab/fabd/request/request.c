@@ -86,9 +86,6 @@ static xapi request_writer_write(request * const restrict req, value_writer * co
       case COMMAND_RUN:
         fatal(value_writer_string, writer, "run");
         break;
-      case COMMAND_AUTORUN:
-        fatal(value_writer_string, writer, "autorun");
-        break;
       case COMMAND_DESCRIBE:
         fatal(value_writer_string, writer, "describe");
         break;
@@ -237,9 +234,6 @@ xapi request_command_alloc(request * restrict req, command ** restrict cmdp)
   } else {
     memset(cmd, 0, sizeof(*cmd));
   }
-
-  //cmd->first = false;
-  //cmd->last = false;
 
   llist_append(&req->commands, cmd, lln);
 

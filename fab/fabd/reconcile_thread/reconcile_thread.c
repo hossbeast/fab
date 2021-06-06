@@ -40,95 +40,79 @@
 
 #include "atomics.h"
 
-struct trylock reconcile_lock;
-enum bam_system_state global_system_state = BAM_SYSTEM_STATE_BOOTSTRAP;
+//struct trylock reconcile_lock;
+bool system_error;
 uint16_t reconciliation_id;
 
-static xapi reconcile(channel * restrict chan)
+xapi reconcile(channel * restrict chan)
 {
   enter;
 
   graph_invalidation_context invalidation = { };
   rule_run_context rule_ctx;
-  bool filesystems_changed;
+  uint16_t walk_id;
+  bool work;
+  int x;
 
   fatal(rule_run_context_xinit, &rule_ctx);
 
   reconciliation_id++;
+  walk_id = walker_begin();
   fatal(graph_invalidation_begin, &invalidation);
 
-  /* in the first reconciliation, so that errors if any may be surfaced to the initial client */
-  if(reconciliation_id == 1)
+  work = true;
+  for(x = 0; work; x++)
   {
-    /* creates the global/protected config nodes */
-    fatal(config_system_bootstrap);
-
-    /* loads global/protected config nodes only */
-    fatal(config_system_reconcile, &invalidation, &filesystems_changed, chan);
-    if(chan->error) {
-      goto XAPI_FINALLY;
+    if((x % 2) == 0)
+    {
+      /* reload all config files (this can change filesystem invalidation settings)
+       * it can also change walker include/exclude settings */
+      system_state_change(BAM_SYSTEM_STATE_CONFIG_SYSTEM_RECONCILE);
+      fatal(config_system_reconcile, &work, &invalidation);
+tracef("x %2d config-system work %d", x, work);
     }
-
-    /* special.module config value is needed here
-     * create the protected project module file
-     * runs before the first walker reconcile, which would create the project module file as not-protected */
-    fatal(module_system_bootstrap);
-  }
-
-  /* walk filesystem trees (this can find more config files) */
-  global_system_state = BAM_SYSTEM_STATE_FILESYSTEM_RECONCILE;
-  fatal(walker_system_reconcile, &invalidation, chan);
-  if(chan->error) {
-    goto XAPI_FINALLY;
-  }
-
-  /* reload all config files (this can change filesystem invalidation settings)
-   * which are applied by walker reconciliation */
-  global_system_state = BAM_SYSTEM_STATE_CONFIG_SYSTEM_RECONCILE;
-  fatal(config_system_reconcile, &invalidation, &filesystems_changed, chan);
-  if(chan->error) {
-    goto XAPI_FINALLY;
-  }
-
-  if(filesystems_changed)
-  {
-    /* re-walk filesystem trees with updated filesystems settings */
-    global_system_state = BAM_SYSTEM_STATE_FILESYSTEM_RECONCILE;
-    fatal(walker_system_reconcile, &invalidation, chan);
-    if(chan->error) {
+    else
+    {
+      /* walk filesystem trees (this can find config files in the ancestry of the project root)
+       * it can also invalidate config files */
+      system_state_change(BAM_SYSTEM_STATE_FILESYSTEM_RECONCILE);
+      fatal(walker_system_reconcile, walk_id, &work, &invalidation);
+tracef("x %2d walker-system work %d", x, work);
+    }
+    if(system_error) {
       goto XAPI_FINALLY;
     }
   }
 
   /* reload modules */
-  global_system_state = BAM_SYSTEM_STATE_MODULE_SYSTEM_RECONCILE;
-  fatal(module_system_reconcile, chan);
-  if(chan->error) {
+  system_state_change(BAM_SYSTEM_STATE_MODULE_SYSTEM_RECONCILE);
+  fatal(module_system_reconcile);
+  if(system_error) {
     goto XAPI_FINALLY;
   }
 
   /* cleanup var files not reloaded by any module */
-  global_system_state = BAM_SYSTEM_STATE_VAR_SYSTEM_RECONCILE;
-  fatal(var_system_reconcile, chan);
-  if(chan->error) {
+  system_state_change(BAM_SYSTEM_STATE_VAR_SYSTEM_RECONCILE);
+  fatal(var_system_reconcile);
+  if(system_error) {
     goto XAPI_FINALLY;
   }
 
   /* run rules to quiescence */
-  global_system_state = BAM_SYSTEM_STATE_RULE_SYSTEM_RECONCILE;
-  fatal(rule_system_reconcile, &rule_ctx, chan);
-  if(chan->error) {
+  system_state_change(BAM_SYSTEM_STATE_RULE_SYSTEM_RECONCILE);
+  fatal(rule_system_reconcile, &rule_ctx);
+  if(system_error) {
     goto XAPI_FINALLY;
   }
 
   /* cleanup formulas which are no longer referenced */
-  global_system_state = BAM_SYSTEM_STATE_FORMULA_SYSTEM_RECONCILE;
-  fatal(formula_system_reconcile, chan);
-  if(chan->error) {
+  system_state_change(BAM_SYSTEM_STATE_FORMULA_SYSTEM_RECONCILE);
+  fatal(formula_system_reconcile);
+  if(system_error) {
     goto XAPI_FINALLY;
   }
 
-  global_system_state = BAM_SYSTEM_STATE_OK;
+  system_state_change(BAM_SYSTEM_STATE_OK);
   STATS_INC(g_stats.system_state_ok);
 
 finally:
@@ -137,6 +121,7 @@ finally:
 coda;
 }
 
+#if 0
 static xapi reconcile_thread(handler_context * restrict handler)
 {
   enter;
@@ -216,6 +201,8 @@ xapi reconcile_thread_launch(handler_context * restrict ctx)
   fatal(xpthread_attr_init, &attr);
   fatal(xpthread_attr_setdetachstate, &attr, PTHREAD_CREATE_DETACHED);
 
+tracef();
+
   atomic_inc(&g_params.thread_count);
   if((rv = pthread_create(&pthread_id, &attr, reconcile_thread_jump, ctx)) != 0)
   {
@@ -227,3 +214,4 @@ finally:
   pthread_attr_destroy(&attr);
 coda;
 }
+#endif

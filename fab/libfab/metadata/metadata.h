@@ -27,15 +27,16 @@ extern descriptor_type descriptor_fab_metadata;
 
 struct attrs16;
 
-#define BAM_SYSTEM_STATE_TABLE                                                       \
-  DEF(BAM_SYSTEM_STATE_BOOTSTRAP                  , "bootstrap"                 , 1) \
-  DEF(BAM_SYSTEM_STATE_CONFIG_SYSTEM_RECONCILE    , "config-system-reconcile"   , 2) \
-  DEF(BAM_SYSTEM_STATE_FILESYSTEM_RECONCILE       , "filesystem-reconcile"      , 3) \
-  DEF(BAM_SYSTEM_STATE_VAR_SYSTEM_RECONCILE       , "var-system-reconcile"      , 4) \
-  DEF(BAM_SYSTEM_STATE_FORMULA_SYSTEM_RECONCILE   , "formula-system-reconcile"  , 5) \
-  DEF(BAM_SYSTEM_STATE_MODULE_SYSTEM_RECONCILE    , "module-system-reconcile"   , 6) \
-  DEF(BAM_SYSTEM_STATE_RULE_SYSTEM_RECONCILE      , "rule-system-reconcile"     , 7) \
-  DEF(BAM_SYSTEM_STATE_OK                         , "ok"                        , 8) \
+#define BAM_SYSTEM_STATE_TABLE                                                   \
+  DEF(BAM_SYSTEM_STATE_BOOTSTRAP                  , "bootstrap"             , 1) \
+  DEF(BAM_SYSTEM_STATE_CONFIG_SYSTEM_RECONCILE    , "config-reconcile"      , 2) \
+  DEF(BAM_SYSTEM_STATE_FILESYSTEM_RECONCILE       , "filesystem-reconcile"  , 3) \
+  DEF(BAM_SYSTEM_STATE_VAR_SYSTEM_RECONCILE       , "var-reconcile"         , 4) \
+  DEF(BAM_SYSTEM_STATE_FORMULA_SYSTEM_RECONCILE   , "formula-reconcile"     , 5) \
+  DEF(BAM_SYSTEM_STATE_MODULE_SYSTEM_RECONCILE    , "module-reconcile"      , 6) \
+  DEF(BAM_SYSTEM_STATE_RULE_SYSTEM_RECONCILE      , "rule-reconcile"        , 7) \
+  DEF(BAM_SYSTEM_STATE_BUILDING                   , "building"              , 8) \
+  DEF(BAM_SYSTEM_STATE_OK                         , "ok"                    , 9) \
 
 enum bam_system_state {
 #undef DEF
@@ -62,6 +63,7 @@ typedef struct fab_metadata {
   uint16_t project_hash_len;
 
   enum bam_system_state system_state;
+  uint8_t system_error;
 
   const char *goals;
   uint16_t goals_len;
@@ -70,4 +72,3 @@ typedef struct fab_metadata {
 } fab_metadata;
 
 #endif
-

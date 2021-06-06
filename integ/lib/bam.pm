@@ -64,7 +64,7 @@ sub bam
 sub bam_bootstrap
 {
   bam(
-      "bootstrap"
+      "reconcile"
     , "-K"
     , "--system-config-path", "system-config"
     , "--user-config-path", "user-config"

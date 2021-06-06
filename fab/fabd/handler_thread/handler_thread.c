@@ -30,6 +30,7 @@
 #include "xlinux/xtime.h"
 
 #include "handler_thread.h"
+#include "run_thread.h"
 #include "channel.h"
 #include "reconcile_thread.h"
 #include "goals.h"
@@ -44,7 +45,7 @@
 
 #include "common/attrs.h"
 
-static struct futexlock handlers_lock;
+struct futexlock handlers_lock;
 
 static xapi parse_request(handler_context * restrict ctx, fabipc_message * restrict msg, request * restrict req)
 {
@@ -97,7 +98,7 @@ static xapi handler_thread(handler_context * restrict ctx)
   rcu_thread rcu_self = { };
   command *cmd = 0;
   request req = { };
-  bool consider_autorun = false;
+  bool hasrun = false;
 
 #if DEBUG || DEVEL
   logs(L_IPC, "starting");
@@ -135,7 +136,6 @@ static xapi handler_thread(handler_context * restrict ctx)
     {
       if(trylock_acquire(&handler_build_lock))
       {
-        ctx->state = HANDLER_BUILD_IN_PROGRESS;
         fatal(goals_kickoff, ctx);
       }
       else
@@ -147,7 +147,7 @@ static xapi handler_thread(handler_context * restrict ctx)
     {
       fatal(sigutil_timedwait, &r, &sigs, &siginfo, &interval);
     }
-    else if(ctx->state == HANDLER_BUILD_SUCCEEDED || ctx->state == HANDLER_BUILD_FAILED)
+    else if(ctx->state == HANDLER_BUILD_SUCCEEDED || ctx->state == HANDLER_BUILD_FAILED || ctx->state == HANDLER_BUILD_NONE)
     {
       ctx->state = 0;
       trylock_release(&handler_build_lock);
@@ -173,13 +173,14 @@ static xapi handler_thread(handler_context * restrict ctx)
       ctx->state = 0;
       trylock_release(&reconcile_lock);
     }
-    else if(cmd)
+    else if(cmd && !ctx->chan->error)
     {
-      if(cmd->last)
+      if(cmd->type == COMMAND_RUN)
       {
+        hasrun = true;
         ctx->state = HANDLER_BUILD_PENDING;
       }
-      else if(cmd->first)
+      else if(cmd->type == COMMAND_RECONCILE)
       {
         ctx->state = HANDLER_RECONCILE_PENDING;
       }
@@ -189,13 +190,13 @@ static xapi handler_thread(handler_context * restrict ctx)
     }
     else if(client_msg)
     {
-      channel_response(ctx->chan, 0);
+      channel_response(ctx->chan, !!ctx->chan->error);
       client_msg = 0;
 
-      if(consider_autorun && ctx->invalidation.any && goals_autorun)
+      if(ctx->invalidation.any && goals_autorun && !hasrun)
       {
         /* no build-command in this request, but some nodes were invalidated while processing it */
-        fatal(handler_thread_launch, 0, 0, true);
+        fatal(run_thread_launch, 0);
       }
     }
     else if(!(client_msg = channel_acquire(ctx->chan)))
@@ -222,7 +223,6 @@ static xapi handler_thread(handler_context * restrict ctx)
     else
     {
       ctx->chan->msgid = client_msg->id;
-      consider_autorun = false;
 
       /* message received */
       if(client_msg->type == FABIPC_MSG_EVENTSUB)
@@ -241,7 +241,7 @@ static xapi handler_thread(handler_context * restrict ctx)
       graph_invalidation_end(&ctx->invalidation);
       fatal(graph_invalidation_begin, &ctx->invalidation);
       cmd = llist_first(&req.commands, typeof(*cmd), lln);
-      consider_autorun = !req.has_last_command;
+      hasrun = false;
     }
   }
 
@@ -277,6 +277,7 @@ static void * handler_thread_jump(void * arg)
   ctx->tid = tid = gettid();
   logger_set_thread_name("handler");
   logger_set_thread_categories(L_HANDLER);
+  tracef("handler for %5d thread start", ctx->client_pid);
 
   fatal(channel_create, &chan, tid);
   ctx->chan = chan;
@@ -288,6 +289,7 @@ static void * handler_thread_jump(void * arg)
   fatal(handler_thread, ctx);
 
 finally:
+  tracef("handler for %5d thread done", ctx->client_pid);
   if(XAPI_UNWINDING)
   {
 #if DEBUG || DEVEL
@@ -319,130 +321,11 @@ conclude(&R);
   return 0;
 }
 
-static xapi autorun_thread(handler_context * restrict ctx)
-{
-  enter;
-
-  sigset_t sigs;
-  siginfo_t siginfo;
-  rcu_thread rcu_self = { };
-
-#if DEBUG || DEVEL
-  logs(L_IPC, "starting");
-#endif
-
-  rcu_register(&rcu_self);
-
-  // signals handled on this thread
-  sigemptyset(&sigs);
-  sigaddset(&sigs, SIGUSR1);
-
-  if(!trylock_acquire(&reconcile_lock)) {
-    fprintf(stderr, "reconcile already in progress %d\n", reconcile_lock.i32);
-    goto XAPI_FINALIZE;
-  }
-
-  if(!trylock_acquire(&handler_build_lock)) {
-    fprintf(stderr, "build already in progress by %d\n", handler_build_lock.i32);
-    goto XAPI_FINALIZE;
-  }
-
-  /* global reconciliation */
-  ctx->state = HANDLER_RECONCILE_IN_PROGRESS;
-  fatal(reconcile_thread_launch, ctx);
-  while(!g_params.shutdown && ctx->state == HANDLER_RECONCILE_IN_PROGRESS) {
-    rcu_quiesce(&rcu_self);
-    fatal(sigutil_wait, &sigs, &siginfo);
-  }
-  if(ctx->chan->error) {
-    goto XAPI_FINALLY;
-  }
-
-  /* prosecute the same goals */
-  ctx->state = HANDLER_BUILD_IN_PROGRESS;
-  fatal(goals_kickoff, ctx);
-
-  /* wait for the build to complete */
-  while(!g_params.shutdown && ctx->state == HANDLER_BUILD_IN_PROGRESS) {
-    rcu_quiesce(&rcu_self);
-    fatal(sigutil_wait, &sigs, &siginfo);
-  }
-
-finally:
-  trylock_release(&handler_build_lock);
-  trylock_release(&reconcile_lock);
-
-#if DEBUG || DEVEL
-  logs(L_IPC, "terminating");
-#endif
-
-  rcu_unregister(&rcu_self);
-coda;
-}
-
-static void * autorun_thread_jump(void * arg)
-{
-  enter;
-
-  xapi R;
-  handler_context *ctx = 0;
-  channel *chan = 0;
-
-  ctx = arg;
-  ctx->tid = tid = gettid();
-  logger_set_thread_name("autorun");
-  logger_set_thread_categories(L_HANDLER);
-
-  fatal(channel_create, &chan, tid);
-  ctx->chan = chan;
-
-  printf("[%d] autorun thread start\n", tid);
-
-  futexlock_acquire(&handlers_lock);
-  rcu_list_push(&g_handlers, &ctx->stk);
-  futexlock_release(&handlers_lock);
-
-  fatal(autorun_thread, ctx);
-
-finally:
-  printf("[%d] autorun thread done\n", tid);
-
-  if(XAPI_UNWINDING)
-  {
-#if DEBUG || DEVEL
-    xapi_infos("name", "autorun");
-    xapi_infof("pid", "%ld", (long)g_params.pid);
-    xapi_infof("tid", "%"PRId32, tid);
-    fatal(logger_xtrace_full, L_ERROR, L_NONAMES, XAPI_TRACE_COLORIZE | XAPI_TRACE_NONEWLINE);
-#else
-    fatal(logger_xtrace_pithy, L_ERROR, L_NONAMES, XAPI_TRACE_COLORIZE | XAPI_TRACE_NONEWLINE);
-#endif
-  }
-conclude(&R);
-
-  futexlock_acquire(&handlers_lock);
-  rcu_list_delete(&ctx->stk);
-  futexlock_release(&handlers_lock);
-
-  if(R) {
-    g_params.shutdown = true;
-    g_params.handler_error = true;
-  }
-
-  rcu_synchronize();
-  channel_release(chan);
-  handler_release(ctx);
-
-  atomic_dec(&g_params.thread_count);
-  syscall(SYS_tgkill, g_params.pid, g_params.thread_monitor, SIGUSR1);
-  return 0;
-}
-
 //
 // public
 //
 
-xapi handler_thread_launch(pid_t client_pid, pid_t client_tid, bool autorun)
+xapi handler_thread_launch(pid_t client_pid, pid_t client_tid)
 {
   enter;
 
@@ -450,27 +333,17 @@ xapi handler_thread_launch(pid_t client_pid, pid_t client_tid, bool autorun)
   pthread_attr_t attr;
   int rv;
   handler_context *ctx = 0;
-  void *(*handler_fn)(void *);
 
   fatal(handler_alloc, &ctx);
 
   ctx->client_pid = client_pid;
   ctx->client_tid = client_tid;
-  ctx->autorun = autorun;
 
   fatal(xpthread_attr_init, &attr);
   fatal(xpthread_attr_setdetachstate, &attr, PTHREAD_CREATE_DETACHED);
 
-  if(ctx->autorun)
-  {
-    handler_fn = autorun_thread_jump;
-  }
-  else
-  {
-    handler_fn = handler_thread_jump;
-  }
   atomic_inc(&g_params.thread_count);
-  if((rv = pthread_create(&pthread_id, &attr, handler_fn, ctx)) != 0)
+  if((rv = pthread_create(&pthread_id, &attr, handler_thread_jump, ctx)) != 0)
   {
     atomic_dec(&g_params.thread_count);
     tfail(perrtab_KERNEL, rv);
@@ -480,83 +353,3 @@ finally:
   pthread_attr_destroy(&attr);
 coda;
 }
-
-
-#if 0
-  /* if the bootstrap thread has failed, bail with its error */
-  if(bootstrap_err.l) {
-    channel_responsew(ctx->chan, ENOSYS, bootstrap_err.s, bootstrap_err.l);
-    g_params.shutdown = true;
-    goto XAPI_FINALLY;
-  }
-#endif
-
-#if 0
-  /* for the reconcile command, the reconcile lock is required */
-  if(request->first_command)
-  {
-    while(!g_params.shutdown && !trylock_acquire(&reconcile_lock))
-    {
-      ctx->chan->ipc.server_pulse++;
-      interval.tv_sec = 0;
-      interval.tv_nsec = MSEC_AS_NSEC(1);
-      fatal(uxclock_nanosleep, 0, CLOCK_MONOTONIC, 0, &interval, 0);
-    }
-  }
-
-
-  if(request->first_command)
-  {
-    while(!g_params.shutdown && !trylock_acquire(&reconcile_lock))
-    {
-      rcu_quiesce(&rcu_self);
-      ctx->chan->ipc.server_pulse++;
-      fatal(sigutil_timedwait, &r, &sigs, &siginfo, &interval);
-    }
-
-    ctx->state = HANDLER_RECONCILE_IN_PROGRESS;
-    fatal(reconcile_thread_launch, ctx);
-  }
-
-  if(request->first_command && request->first_command->type == COMMAND_BOOTSTRAP)
-  {
-    channel_response(ctx->chan, 0);
-    goto XAPI_FINALLY;
-  }
-
-  /* for a request including a build command, the global build lock is required */
-  if(request->last_command)
-  {
-    while(!g_params.shutdown && !trylock_acquire(&handler_build_lock))
-    {
-      rcu_quiesce(&rcu_self);
-      ctx->chan->ipc.server_pulse++;
-      fatal(sigutil_timedwait, &r, &sigs, &siginfo, &interval);
-    }
-  }
-
-  if(request->last_command)
-  {
-    goals_autorun = (request->last_command->type == COMMAND_AUTORUN);
-  }
-
-  /* prepare to execute the request */
-  fatal(handler_reset, ctx);
-  fatal(graph_invalidation_begin, &ctx->invalidation);
-  fatal(handler_process_request, ctx, request);
-  graph_invalidation_end(&ctx->invalidation);
-
-  if(request->last_command)
-  {
-    fatal(goals_kickoff, ctx);
-  }
-  else
-  {
-    channel_response(ctx->chan, 0);
-
-    // no build-command in this request, but some nodes were invalidated
-    if(ctx->invalidation.any && goals_autorun) {
-      fatal(handler_thread_launch, 0, 0, true);
-    }
-  }
-#endif

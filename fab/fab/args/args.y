@@ -568,10 +568,48 @@ events-argument
   ;
 
 bead
-  : STR
+  : strtoken
   {
     $$ = (bead){ s : @1.s, len : @1.l };
   }
+
+strtoken
+  : STR
+  | BUILD
+  | DEPENDS
+  | FSTREE
+  | DIRTREE
+  | MODTREE
+  | IMPORTS
+  | MODULES
+  | REQUIRES
+  | LS
+  | TREE
+  | USES
+  | AUTOBUILD
+  | ADHOC
+  | TOUCH
+  | KILL
+  | EVENTS
+  | STATS
+  | DESCRIBE
+  | METADATA
+  | CONFIG
+  | RECONCILE
+  | TRUE
+  | FALSE
+  | STALE
+  | FRESH
+  | DELETE
+  | GLOBAL_INVALIDATE
+  | EXEC_FORKED
+  | EXEC_WAITED
+  | EXEC_STDOUT
+  | EXEC_STDERR
+  | EXEC_AUXOUT
+  | GOALS
+  | BUILD_START
+  | BUILD_END
   ;
 
 bool

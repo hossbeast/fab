@@ -43,9 +43,10 @@ xapi walker_descend(
   , struct fsent * restrict parent
   , const char * restrict abspath
   , uint16_t walk_id
+  , bool * restrict work
   , struct graph_invalidation_context * restrict invalidation
 )
-  __attribute__((nonnull(4, 6)));
+  __attribute__((nonnull(4, 7)));
 
 /*
  * traverse upwards in a filesystem tree from a base node, visiting only nodes relevant for modules
@@ -53,10 +54,20 @@ xapi walker_descend(
  *  base      - node to ascend from
  *  [walk_id] -
  */
-xapi walker_ascend(struct fsent * restrict base, uint16_t walk_id, struct graph_invalidation_context * restrict invalidation)
-  __attribute__((nonnull));
+xapi walker_ascend(
+    struct fsent * restrict base
+  , uint16_t walk_id
+  , bool * restrict work
+  , struct graph_invalidation_context * restrict invalidation
+)
+  __attribute__((nonnull(1, 4)));
 
-xapi walker_system_reconcile(struct graph_invalidation_context * restrict invalidation, struct channel * restrict chan)
+xapi walker_system_reconcile(
+    uint16_t walk_id
+  , bool * restrict work
+  , struct graph_invalidation_context * restrict invalidation
+  , struct channel * restrict chan
+)
   __attribute__((nonnull));
 
 /*
@@ -71,5 +82,7 @@ xapi walker_system_reconfigure(struct configblob * restrict cfg, bool dry)
 
 xapi walker_setup(void);
 xapi walker_cleanup(void);
+
+uint16_t walker_begin(void);
 
 #endif

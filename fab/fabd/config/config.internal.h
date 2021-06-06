@@ -71,14 +71,6 @@ typedef struct configblob {
     struct box_int16 * concurrency;
   } build;
 
-  struct config_special {
-    CONFIGBASE;
-    struct box_string * module;
-    struct box_string * model;
-    struct box_string * var;
-    struct box_string * config;
-  } special;
-
   struct config_workers {
     CONFIGBASE;
     struct box_int16 * concurrency;

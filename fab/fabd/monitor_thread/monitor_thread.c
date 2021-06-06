@@ -80,18 +80,21 @@ xapi monitor_thread()
     }
 
     fatal(uxtgkill, 0, g_params.pid, g_params.thread_server, SIGUSR1);
-    fatal(uxtgkill, 0, g_params.pid, g_params.thread_build, SIGUSR1);
+//    fatal(uxtgkill, 0, g_params.pid, g_params.thread_build, SIGUSR1);
     fatal(uxtgkill, 0, g_params.pid, g_params.thread_notify, SIGUSR1);
     fatal(uxtgkill, 0, g_params.pid, g_params.thread_sweeper, SIGUSR1);
-    fatal(uxtgkill, 0, g_params.pid, g_params.thread_beholder, SIGUSR1);
-    fatal(uxtgkill, 0, g_params.pid, g_params.thread_reconcile, SIGUSR1);
+//    fatal(uxtgkill, 0, g_params.pid, g_params.thread_beholder, SIGUSR1);
+//    fatal(uxtgkill, 0, g_params.pid, g_params.thread_reconcile, SIGUSR1);
+    fatal(uxtgkill, 0, g_params.pid, g_params.thread_run, SIGUSR1);
 
     rcu_list_foreach(&g_handlers, handler, stk) {
       fatal(uxtgkill, 0, g_params.pid, handler->tid, SIGUSR1);
     }
   }
+tracef();
 
 finally:
+tracef();
 #if DEBUG || DEVEL
   logs(L_IPC, "terminating");
 #endif

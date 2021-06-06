@@ -53,6 +53,8 @@
 #include "var.h"
 #include "variant.h"
 #include "channel.h"
+#include "system_state.h"
+#include "events.h"
 
 #include "common/assure.h"
 #include "common/snarf.h"
@@ -149,7 +151,6 @@ build_block_variant_envs(
     module * restrict mod
   , statement_block * restrict block
   , value * restrict vars
-  , channel * restrict chan
 )
 {
   enter;
@@ -168,7 +169,7 @@ build_block_variant_envs(
 
     fatal(exec_builder_xreset, &local_exec_builder);
     fatal(exec_render_context_xreset, &local_exec_render);
-    exec_render_context_configure(&local_exec_render, &local_exec_builder, mod, mod->novariant_var, 0, chan);
+    exec_render_context_configure(&local_exec_render, &local_exec_builder, mod, mod->novariant_var, 0, 0);
     fatal(exec_render_env_vars, &local_exec_render);
     fatal(exec_builder_build, &local_exec_builder, 0);
     exec_builder_take(&local_exec_builder, &e);
@@ -194,7 +195,7 @@ build_block_variant_envs(
 
     fatal(exec_builder_xreset, &local_exec_builder);
     fatal(exec_render_context_xreset, &local_exec_render);
-    exec_render_context_configure(&local_exec_render, &local_exec_builder, mod, bagg, 0, chan);
+    exec_render_context_configure(&local_exec_render, &local_exec_builder, mod, bagg, 0, 0);
     fatal(exec_render_env_vars, &local_exec_render);
     fatal(exec_builder_build, &local_exec_builder, 0);
     exec_builder_take(&local_exec_builder, &e);
@@ -292,7 +293,6 @@ static xapi module_parse(
     module * restrict mod
   , module_parser * restrict parser
   , graph_invalidation_context * restrict invalidation
-  , channel * restrict chan
 )
 {
   enter;
@@ -305,6 +305,7 @@ static xapi module_parse(
   rule *r;
   statement_block *block;
   fabipc_message *msg;
+  channel *chan;
 
   mod_file_n = mod->self_node;
   mod_file_relpath = mod->self_node_relpath;
@@ -322,11 +323,14 @@ static xapi module_parse(
   {
     mod_file_n->not_parsed = 0;
   }
-  else if((exit = invoke(module_parser_parse, parser, mod, invalidation, chan, text, text_len + 2, mod_file_relpath)))
+  else if((exit = invoke(module_parser_parse, parser, mod, invalidation, text, text_len + 2, mod_file_relpath)))
   {
-    msg = channel_produce(chan);
-    msg->id = chan->msgid;
-    msg->type = FABIPC_MSG_RESULT;
+    system_error = true;
+    if(!events_would(FABIPC_EVENT_SYSTEM_STATE, &chan, &msg)) {
+      xapi_calltree_unwind();
+      goto XAPI_FINALLY;
+    }
+
     msg->code = EINVAL;
 
 #if DEBUG || DEVEL
@@ -334,7 +338,7 @@ static xapi module_parse(
 #else
     msg->size = xapi_trace_pithy(msg->text, sizeof(msg->text), 0);
 #endif
-    channel_post(chan, msg);
+    events_publish(chan, msg);
 
     xapi_calltree_unwind();
 
@@ -353,7 +357,7 @@ static xapi module_parse(
 
     mod_file_n->not_parsed = 1;
   }
-  else if(chan->error)
+  else if(system_error)
   {
     mod_file_n->not_parsed = 1;
   }
@@ -373,8 +377,8 @@ static xapi module_parse(
   }
 
 finally:
-  xapi_infos("path", mod_file_relpath);
   wfree(text);
+  xapi_infos("path", mod_file_relpath);
 coda;
 }
 
@@ -396,7 +400,7 @@ static xapi module_bootstrap_visitor(moria_vertex * mod_dir_v, void * ctx, moria
   moria_vertex * mod_file_v;
 
   // no module.bam file present
-  if((mod_file_v = moria_vertex_downw(mod_dir_v, fsent_module_name, fsent_module_name_len)) == 0) {
+  if((mod_file_v = moria_vertex_downw(mod_dir_v, MMS(FSENT_NAME_MODULE))) == 0) {
     if(distance == 0) {
       fail(MODULE_NOMODULE);
     }
@@ -410,7 +414,7 @@ static xapi module_bootstrap_visitor(moria_vertex * mod_dir_v, void * ctx, moria
   finally : coda;
 }
 
-static xapi rebuild_variant_envs(module * restrict mod, channel * restrict chan)
+static xapi rebuild_variant_envs(module * restrict mod)
 {
   enter;
 
@@ -440,11 +444,11 @@ static xapi rebuild_variant_envs(module * restrict mod, channel * restrict chan)
   /* apply ancestor var.bam files in reverse order */
   for(x = ancestryl - 1; x >= 0; x--)
   {
-    if((var_v = moria_vertex_downw(ancestry[x], fsent_var_name, fsent_var_name_len)))
+    if((var_v = moria_vertex_downw(ancestry[x], MMS(FSENT_NAME_VAR))))
     {
       var_n = containerof(var_v, fsent, vertex);
-      fatal(fsent_var_bootstrap, var_n, chan);
-      if(chan->error) {
+      fatal(fsent_var_bootstrap, var_n);
+      if(system_error) {
         goto XAPI_FINALLY;
       }
 
@@ -458,16 +462,16 @@ static xapi rebuild_variant_envs(module * restrict mod, channel * restrict chan)
   if(vars)
   {
     /* no-variant vars */
-    fatal(build_block_variant_envs, mod, 0, vars, chan);
+    fatal(build_block_variant_envs, mod, 0, vars);
 
     /* top-level block, if it's not also a no-variant block */
     if(mod->unscoped_block && mod->unscoped_block->variants->size)
     {
-      fatal(build_block_variant_envs, mod, mod->unscoped_block, vars, chan);
+      fatal(build_block_variant_envs, mod, mod->unscoped_block, vars);
     }
 
     llist_foreach(&mod->scoped_blocks, block, lln) {
-      fatal(build_block_variant_envs, mod, block, vars, chan);
+      fatal(build_block_variant_envs, mod, block, vars);
     }
   }
 
@@ -775,16 +779,15 @@ static xapi module_reparse(
     module * restrict mod
   , module_parser * restrict parser
   , graph_invalidation_context * restrict invalidation
-  , channel * restrict chan
 )
 {
   enter;
 
   /* re-parse the module.bam file */
-  fatal(module_parse, mod, parser, invalidation, chan);
+  fatal(module_parse, mod, parser, invalidation);
 
   /* parse not successful */
-  if(chan->error) {
+  if(system_error) {
     goto XAPI_FINALIZE;
   }
 
@@ -798,7 +801,7 @@ static xapi module_reparse(
   mod->var_merge_overwrite = parser->var_merge_overwrite;
 
   // rebuild variant envs from var.bams
-  fatal(rebuild_variant_envs, mod, chan);
+  fatal(rebuild_variant_envs, mod);
 
   finally : coda;
 }
@@ -825,11 +828,11 @@ xapi module_initialize(fsent * restrict mod_dir_n, fsent * restrict mod_file_n, 
   mod->self_node = mod_file_n;
   mod_file_n->self_mod = mod;
 
-  if(memncmp(mod_file_n->name.name, mod_file_n->name.namel, fsent_module_name, fsent_module_name_len) == 0)
+  if(memncmp(mod_file_n->name.name, mod_file_n->name.namel, MMS(FSENT_NAME_MODULE)) == 0)
   {
     fsent_kind_set(mod_file_n, VERTEX_MODULE_FILE);
   }
-  else if(memncmp(mod_file_n->name.name, mod_file_n->name.namel, fsent_model_name, fsent_model_name_len) == 0)
+  else if(memncmp(mod_file_n->name.name, mod_file_n->name.namel, MMS(FSENT_NAME_MODEL)) == 0)
   {
     fsent_kind_set(mod_file_n, VERTEX_MODEL_FILE);
   }
@@ -991,9 +994,14 @@ xapi module_system_bootstrap()
   fsedge *fse;
   int __attribute__((unused)) r;
 
+    /* special.module config value is needed here
+     * create the protected project module file
+     * runs before the first walker reconcile, which would create the project module file as not-protected */
+//    fatal(module_system_bootstrap);
+
   /* bootstrap just the project module */
   fatal(graph_invalidation_begin, &invalidation);
-  fatal(fsent_create, &mod_file_n, VERTEX_MODULE_FILE, VERTEX_OK, fsent_module_name, fsent_module_name_len);
+  fatal(fsent_create, &mod_file_n, VERTEX_MODULE_FILE, VERTEX_OK, MMS(FSENT_NAME_MODULE));
   fsent_protect_set(mod_file_n);
 
   r = moria_preconnect(&ctx, &g_graph, &g_project_root->vertex, &mod_file_n->vertex, EDGE_FSTREE, 0);
@@ -1065,8 +1073,8 @@ xapi module_system_reconcile(channel * restrict chan)
       continue;
     }
 
-    fatal(module_reparse, mod, parser, &invalidation, chan);
-    if(chan->error) {
+    fatal(module_reparse, mod, parser, &invalidation);
+    if(system_error) {
       goto XAPI_FINALIZE;
     }
 
@@ -1106,6 +1114,8 @@ xapi module_setup()
 
   fatal(module_parser_create, &parser);
   llist_append(&parsers, parser, lln);
+
+  fatal(module_system_bootstrap);
 
   finally : coda;
 }

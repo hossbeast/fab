@@ -58,7 +58,7 @@ static xapi request_write(narrator * restrict N)
   for(x = 0; x < args->targets_len; x++)
   {
     fatal(narrator_xsayf, N, ""
-" path : %.*s", (int)args->targets[x].len, args->targets[x].s
+" path : \"%.*s\"", (int)args->targets[x].len, args->targets[x].s
     );
   }
 

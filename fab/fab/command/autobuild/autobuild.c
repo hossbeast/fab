@@ -40,25 +40,38 @@ static xapi process(command * restrict cmd, fab_client * restrict client, fabipc
   if(msg->type == FABIPC_MSG_RESPONSE)
   {
     RUNTIME_ASSERT(msg->id == requestid || msg->id == eventsubid);
-    goto XAPI_FINALLY;
-  }
 
-  RUNTIME_ASSERT(msg->type == FABIPC_MSG_EVENTS);
-
-  if(msg->evtype == FABIPC_EVENT_GOALS)
-  {
-    RUNTIME_ASSERT((msg->id & UINT32_MAX) == 1);
-
-    pid = PID_FROM_MSGID(msg->id);
-    if(pid != g_params.pid)
-    {
-      printf("goals reassigned by %"PRIu32"\n", pid);
+#if 0
+    /* reconciliation failed */
+    if(msg->id == requestid && msg->code != 0) {
       g_params.shutdown = true;
     }
+#endif
+
+    goto XAPI_FINALLY;
+  }
+  else if(msg->type == FABIPC_MSG_RESULT)
+  {
+
   }
   else
   {
-    fatal(build_command_process_event, client, msg);
+    RUNTIME_ASSERT(msg->type == FABIPC_MSG_EVENTS);
+
+    if(msg->evtype == FABIPC_EVENT_GOALS)
+    {
+      RUNTIME_ASSERT((msg->id & UINT32_MAX) == 1);
+      pid = PID_FROM_MSGID(msg->id);
+      if(pid != g_params.pid)
+      {
+        printf("goals reassigned by %"PRIu32"\n", pid);
+        g_params.shutdown = true;
+      }
+    }
+    else
+    {
+      fatal(build_command_process_event, client, msg);
+    }
   }
 
   finally : coda;
@@ -92,8 +105,7 @@ static xapi connected(command * restrict cmd, fab_client * restrict client)
   requestid = msg->id = PID_AS_MSGID(getpid());
 
   request_narrator = narrator_fixed_init(&nstor, msg->text, 0xfff);
-  fatal(build_command_request_collate, request_narrator);
-  fatal(narrator_xsays, request_narrator, " autorun");
+  fatal(build_command_request_collate, request_narrator, true);
 
   // two terminating null bytes
   fatal(narrator_xsayw, request_narrator, (char[]) { 0x00, 0x00 }, 2);

@@ -173,15 +173,14 @@ static xapi handler_global_invalidate(handler_context * restrict ctx, command * 
 {
   enter;
 
-  handler_context *handler;
+  channel *chan;
   fabipc_message *msg;
 
   fsent_valid_epoch++;
   ctx->invalidation.any = true;
 
-  if(events_would(FABIPC_EVENT_GLOBAL_INVALIDATE, &handler, &msg))
-  {
-    events_publish(handler, msg);
+  if(events_would(FABIPC_EVENT_GLOBAL_INVALIDATE, &chan, &msg)) {
+    events_publish(chan, msg);
   }
 
   finally : coda;
@@ -406,7 +405,7 @@ static xapi handler_goals(handler_context * restrict ctx, command * restrict cmd
   transitive = cmd->goals.target_transitive;
   cmd->goals.target_transitive = 0;
 
-  fatal(goals_set, ctx->chan->msgid, cmd->goals.build, cmd->goals.script, direct, transitive);
+  fatal(goals_set, ctx->chan->msgid, cmd->goals.autorun, cmd->goals.build, cmd->goals.script, direct, transitive);
   direct = 0;
   transitive = 0;
 
@@ -489,14 +488,7 @@ xapi handler_process_command(handler_context * restrict ctx, command * restrict 
   }
   else if(cmd->type == COMMAND_BOOTSTRAP) { }
   else if(cmd->type == COMMAND_RECONCILE) { }
-  else if(cmd->type == COMMAND_RUN)
-  {
-    goals_autorun = false;
-  }
-  else if(cmd->type == COMMAND_AUTORUN)
-  {
-    goals_autorun = true;
-  }
+  else if(cmd->type == COMMAND_RUN) { }
   else
   {
     RUNTIME_ABORT();

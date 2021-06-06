@@ -47,7 +47,7 @@ typedef struct module_parser {
   struct set * variants;
   struct selection * scratch;
   struct graph_invalidation_context *invalidation;
-  struct channel *chan;
+//  struct channel *chan;
   llist statement_block_freelist;
   module * mod;
 
@@ -108,7 +108,6 @@ xapi module_parser_parse(
     module_parser * restrict parser
   , struct module * restrict mod
   , struct graph_invalidation_context * restrict invalidation
-  , struct channel * restrict chan
   , char * const restrict buf
   , size_t size
   , const char * restrict fname

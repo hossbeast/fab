@@ -125,7 +125,6 @@ static xapi xmain()
   int channel_shmid;
   int x;
   int r;
-  uint64_t sub_id;
 
   // parse cmdline arguments
   fatal(args_parse);
@@ -212,16 +211,6 @@ static xapi xmain()
   channel_shmid = info.si_value.sival_int;
   fatal(fab_client_attach, client, channel_shmid);
 
-  /* always subscribe to stdout/stderr */
-  msg = fab_client_produce(client);
-  msg->type = FABIPC_MSG_EVENTSUB;
-  sub_id = msg->id = ++client->msgid;
-  msg->attrs = 0
-    | FABIPC_EVENT_BAMD_STDERR
-    | FABIPC_EVENT_BAMD_STDOUT
-    ;
-  client_post(client, msg);
-
   /* event subscription and send the request */
   fatal(g_cmd->connected, g_cmd, client);
 
@@ -261,26 +250,12 @@ static xapi xmain()
 
     RUNTIME_ASSERT(msg->type);
     client_acquired(client, msg);
-    if(msg->type == FABIPC_MSG_EVENTS && msg->evtype == FABIPC_EVENT_BAMD_STDOUT)
-    {
-      dprintf(1, "[out] ");
-      write(1, msg->text, msg->size);
-    }
-    else if(msg->type == FABIPC_MSG_EVENTS && msg->evtype == FABIPC_EVENT_BAMD_STDERR)
-    {
-      dprintf(2, "[err] ");
-      write(2, msg->text, msg->size);
-    }
-    else if(msg->type == FABIPC_MSG_RESULT && msg->code != 0)
+    if((msg->type == FABIPC_MSG_RESULT || msg->type == FABIPC_MSG_RESPONSE) && msg->code != 0)
     {
       write(2, msg->text, msg->size);
+      write(2, "\n", 1);
     }
-    else if(msg->type == FABIPC_MSG_RESPONSE && msg->id == sub_id) { }
-    else
-    {
-      fatal(g_cmd->process, g_cmd, client, msg);
-    }
-
+    fatal(g_cmd->process, g_cmd, client, msg);
     fab_client_consume(client, msg);
   }
 

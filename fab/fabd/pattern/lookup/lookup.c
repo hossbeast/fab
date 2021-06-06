@@ -102,13 +102,13 @@ static bool candidate(void * ctxp, const moria_vertex * restrict v)
   }
   if((ctx->attrs & PATTERN_LOOKUP_MODEL) == PATTERN_LOOKUP_MODEL)
   {
-    if(!moria_vertex_downw(v, fsent_model_name, fsent_model_name_len)) {
+    if(!moria_vertex_downw(v, MMS(FSENT_NAME_MODEL))) {
       return false;
     }
   }
   else if((ctx->attrs & PATTERN_LOOKUP_MODULE) == PATTERN_LOOKUP_MODULE)
   {
-    if(!moria_vertex_downw(v, fsent_module_name, fsent_module_name_len)) {
+    if(!moria_vertex_downw(v, MMS(FSENT_NAME_MODULE))) {
       return false;
     }
   }

@@ -35,7 +35,10 @@ typedef struct channel {
     struct {
       struct fabipc_channel ipc;
 
-      /* whether an error has been returned on this channel */
+      /* subscribed events */
+      uint32_t event_mask;
+
+      /* whether a response with nonzero code has been txd on this channel */
       bool error;
 
       /* message id to use for messages on this channel */

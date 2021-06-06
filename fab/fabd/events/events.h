@@ -27,7 +27,7 @@
 #include "types.h"
 #include "fab/events.h"
 
-struct handler_context;
+struct channel;
 struct fabipc_message;
 
 /* mask of events for which any handler has subscribed */
@@ -43,7 +43,7 @@ extern uint32_t events_mask;
  */
 bool events_would(
     fabipc_event_type type
-  , struct handler_context ** restrict first
+  , struct channel ** restrict first
   , struct fabipc_message ** restrict msg
 )
   __attribute__((nonnull));
@@ -51,7 +51,7 @@ bool events_would(
 /*
  * publish an event - called after events_would
  */
-void events_publish(struct handler_context * first, struct fabipc_message * msg)
+void events_publish(struct channel * first, struct fabipc_message * msg)
   __attribute__((nonnull));
 
 #endif

@@ -20,21 +20,23 @@
 
 /*
 
-There is one handler thread per client, plus up to one autorun handler thread when autorun is enabled
+There is one handler thread per client
 
 */
 
 #include "types.h"
 #include "xapi.h"
+#include "locks.h"
+
+extern struct futexlock handlers_lock;
 
 /*
  * launch a handler thread
  *
  * client_pid - pid of the client, if any
  * client_tid - thread id of the client, if any
- * autorun    - true for autorun (there is no client)
  */
-xapi handler_thread_launch(pid_t client_pid, pid_t client_tid, bool autorun)
+xapi handler_thread_launch(pid_t client_pid, pid_t client_tid)
   __attribute__((nonnull));
 
 #endif

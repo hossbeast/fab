@@ -69,7 +69,7 @@ xapi build_command_cleanup(void);
 
 void build_command_usage(struct command * restrict cmd);
 
-xapi build_command_request_collate(struct narrator * restrict N)
+xapi build_command_request_collate(struct narrator * restrict N, bool autorun)
   __attribute__((nonnull));
 
 xapi build_command_process_event(struct fab_client * restrict client, struct fabipc_message * restrict msg);

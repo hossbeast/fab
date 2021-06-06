@@ -39,13 +39,14 @@ static llist formula_freelist = LLIST_INITIALIZER(formula_freelist);
 
 static formula_parser *parser;
 
-static xapi formula_parse(formula * restrict fml, channel * restrict chan)
+static xapi formula_parse(formula * restrict fml)
 {
   enter;
 
   char * text = 0;
   size_t text_len;
   xapi exit;
+  channel *chan;
   fabipc_message *msg;
 
   // open the file, both to read its contents, and to exec later
@@ -65,17 +66,19 @@ static xapi formula_parse(formula * restrict fml, channel * restrict chan)
   {
     if((exit = invoke(formula_parser_parse, parser, text, text_len, fml->self_node_abspath, fml)))
     {
-      msg = channel_produce(chan);
-      msg->id = chan->msgid;
-      msg->type = FABIPC_MSG_RESPONSE;
-      msg->code = EINVAL;
+      system_error = true;
+      if(!events_would(FABIPC_EVENT_SYSTEM_STATE, &chan, &msg)) {
+        xapi_calltree_unwind();
+        goto XAPI_FINALLY;
+      }
 
+      msg->code = EINVAL;
 #if DEBUG || DEVEL
       msg->size = xapi_trace_full(msg->text, sizeof(msg->text), 0);
 #else
       msg->size = xapi_trace_pithy(msg->text, sizeof(msg->text), 0);
 #endif
-      channel_post(chan, msg);
+      events_publish(chan, msg);
 
       xapi_calltree_unwind();
       goto XAPI_FINALLY;
@@ -158,7 +161,7 @@ xapi formula_cleanup()
   finally : coda;
 }
 
-xapi formula_reconcile(formula * restrict fml, channel * restrict chan)
+xapi formula_reconcile(formula * restrict fml)
 {
   enter;
 
@@ -166,16 +169,16 @@ xapi formula_reconcile(formula * restrict fml, channel * restrict chan)
     goto XAPI_FINALLY;
   }
 
-  fatal(formula_parse, fml, chan);
+  fatal(formula_parse, fml);
 
-  if(!chan->error) {
+  if(!global_system_error) {
     fatal(fsent_ok, fml->self_node);
   }
 
   finally : coda;
 }
 
-xapi formula_system_reconcile(channel * restrict chan)
+xapi formula_system_reconcile()
 {
   enter;
 

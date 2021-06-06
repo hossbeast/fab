@@ -45,3 +45,4 @@ var : {
   cflags : { -ldl -lasan -lubsan }
 }
 
+rule xunit.final.xapi <- goats

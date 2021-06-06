@@ -440,23 +440,3 @@ strpart
     YFATAL(ixstrndup, &$$, (char*)&$1, 1);
   }
   ;
-
-  /* node filters */
-/*
-  | MODULE_ONLY join BOOL
-  {
-    llist_first(&PARSER->selector_stack, selector, lln)->module_only = $3;
-  }
-  | FILE_TYPE join file-type
-  {
-    llist_first(&PARSER->selector_stack, selector, lln)->criteria.vertex_travel = $3;
-    llist_first(&PARSER->selector_stack, selector, lln)->criteria.vertex_visit = $3;
-  }
-*/
-
- /*
-file-type
-  : REG { $$ = VERTEX_FILETYPE_REG; }
-  | DIR { $$ = VERTEX_FILETYPE_DIR; }
-  ;
- */
