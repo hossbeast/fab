@@ -64,29 +64,54 @@ chain * API chain_splice_tail_node(chain * dst_head, chain * src_head)
 {
 // src : D E F
 // dst : A B C
+//  ->
+// dst : A B C D E F
 
   chain * T = dst_head->prev;
 
-  dst_head->prev->next = src_head;        // C->next = D    A->next = D
-  dst_head->prev       = src_head->prev;  // A->prev = F    A->prev = D
-  src_head->prev->next = dst_head;        // F->next = A    D->next = A
-  src_head->prev       = T;               // D->prev = C    D->prev = A
+  dst_head->prev->next = src_head;        // C->next = D
+  dst_head->prev       = src_head->prev;  // A->prev = F
+  src_head->prev->next = dst_head;        // F->next = A
+  src_head->prev       = T;               // D->prev = C
 
   return dst_head;
 }
 
 chain * API chain_next_node(const chain * head, const chain * cursor[1])
 {
+  const chain *T;
+
   if(cursor[0] == NULL) {
     cursor[0] = head->next;
     return (void*)head;
   }
 
-  if(cursor[0] == head)
+  if(cursor[0] == head) {
     return NULL;
+  }
 
-  const chain * T = cursor[0];
+  T = cursor[0];
   cursor[0] = (cursor[0])->next;
+
+  return (chain*)T;
+}
+
+chain * API chain_prev_node(const chain * head, const chain * cursor[1])
+{
+  const chain *T;
+
+  if(cursor[0] == NULL) {
+    cursor[0] = head->prev->prev;
+    return (void*)head->prev;
+  }
+
+  if(cursor[0] == head->prev) {
+    return NULL;
+  }
+
+  T = cursor[0];
+  cursor[0] = (cursor[0])->prev;
+
   return (chain*)T;
 }
 
