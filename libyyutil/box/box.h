@@ -299,13 +299,6 @@ xapi box_string_mk(
 )
   __attribute__((nonnull(2)));
 
-uint32_t box_hash(uint32_t h, box * restrict b)
-  __attribute__((nonnull));
-
-int box_cmp(const box * restrict A, const box * restrict B);
-
-bool box_equal(box * restrict A, box * restrict B);
-
 void box_string_setif(box_string * restrict b, char ** v)
   __attribute__((nonnull(2)));
 
@@ -313,5 +306,17 @@ void box_copyif(box ** restrict dst, box * restrict src)
   __attribute__((nonnull(1)));
 
 void box_free(box * bx);
+
+int box_int_cmp(const box_int * a, const box_int *b);
+int box_bool_cmp(const box_bool * a, const box_bool *b);
+int box_string_cmp(const box_string * a, const box_string *b);
+int box_int8_cmp(const box_int8 * a, const box_int8 *b);
+int box_int16_cmp(const box_int16 * a, const box_int16 *b);
+int box_int32_cmp(const box_int32 * a, const box_int32 *b);
+int box_int64_cmp(const box_int64 * a, const box_int64 *b);
+int box_uint8_cmp(const box_uint8 * a, const box_uint8 *b);
+int box_uint16_cmp(const box_uint16 * a, const box_uint16 *b);
+int box_uint32_cmp(const box_uint32 * a, const box_uint32 *b);
+int box_uint64_cmp(const box_uint64 * a, const box_uint64 *b);
 
 #endif
