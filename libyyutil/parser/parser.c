@@ -60,10 +60,10 @@ finally :
     if(parser->scanerr || parser->gramerr)
     {
       xapi_infof("location", "[%d,%d - %d,%d]"
-        , parser->error_loc.f_lin
-        , parser->error_loc.f_col
-        , parser->error_loc.l_lin
-        , parser->error_loc.l_col
+        , parser->error_loc.f_lin + 1
+        , parser->error_loc.f_col + 1
+        , parser->error_loc.l_lin + 1
+        , parser->error_loc.l_col + 1
       );
 
       if(parser->gramerr)
