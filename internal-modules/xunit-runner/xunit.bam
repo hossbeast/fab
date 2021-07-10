@@ -24,12 +24,12 @@ $SIG{__WARN__} = sub { die @_ };
 
 use POSIX;
 
-die "xunit not found" unless $ENV{xunit};
+die "xunit not found!" unless $ENV{xunit};
 
 my @cmd = (
     $ENV{xunit}
   , "+UNIT +TEST"
-  , (split(/ /, $ENV{objs}))
+  , (split(/ /, ($ENV{objs} || '')))
 );
 
 # redirect stdout -> auxout
@@ -41,7 +41,7 @@ __DATA__
 
 envs : {
   xunit : {
-    path-search : xunit
+    path-search : xunit.devel.xapi
   }
 
   objs : [
@@ -51,6 +51,9 @@ envs : {
         direction : down
         graph : depends
         extension : so
+
+        # an .so is listed after all of its dependencies (transitive)
+        order : postorder
       }
     ]
     property : relpath
