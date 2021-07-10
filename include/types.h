@@ -51,4 +51,10 @@ static inline size_t roundup(size_t x, size_t y)
 
 #define STATIC_ASSERT(x) _Static_assert(x, #x)
 
+#if DEVEL
+#define tracef(fmt, ...) do { printf("[%5d/%-5d]%50s:%-5d "fmt"\n", getpid(), gettid(), __FUNCTION__, __LINE__, ##__VA_ARGS__); } while(0)
+#else
+#define tracef(fmt, ...)
+#endif
+
 #endif
