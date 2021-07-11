@@ -74,24 +74,34 @@ my $cfile = substr($ENV{bm_target0}, -2) eq ".c" ? $ENV{bm_target0} : $ENV{bm_ta
 my $hfile = substr($ENV{bm_target0}, -2) eq ".h" ? $ENV{bm_target0} : $ENV{bm_target1};
 
 $ENV{TZ} = 'UTC';
-my $describe = git(qw|describe --dirty --abbrev=99|);
-my $date =   git(qw|log -1 -s --format=%cd --date=iso-local|);
-$describe =~ m/^([^-]+)-([0-9]+)-g([0-9a-f]+)(-dirty)?$/ or die "git describe : unexpected output";
-my $tag = $1;
-my $delta = $2;
-my $commit = $3;
-my $dirty = !!$4;
+my $describe = git(qw|describe --dirty --abbrev=16|);
+
+my $fmt = "commit %H";
+$fmt .= "%n%GG";
+$fmt .= "Author       %an <%ae>";
+$fmt .= "%nAuthorDate   %ai";
+$fmt .= "%nCommit       %cn <%ce>";
+$fmt .= "%nCommitDate   %ci";
+$fmt .= "%n%n%w(0,4,4)%s";
+$fmt .= "%n%n%w(0,4,4)%b";
+
+my @cmd = ("show", "--quiet", "--expand-tabs", "--pretty=format:$fmt");
+my $metadata = git(@cmd);
+
+# c string literal encoding
+$metadata =~ s/"/""\\x22""/g;
+$metadata =~ s/\n/""\\x0a""/g;
 
 open my $fh, ">$hfile" or die $!;
 print $fh <<END;
-#ifndef _VCS_H
-#define _VCS_H
+#ifndef __GENERATED_GIT_STATE_H
+#define __GENERATED_GIT_STATE_H
 
-extern const char * git_tag;
-extern int git_tag_delta;
-extern const char * git_commit_hash;
-extern const char * git_commit_date;
-extern int git_dirty;
+// git describe --dirty --abbrev=16
+extern const char git_describe[];
+
+// extended git metadata
+extern const char git_metadata[];
 
 #endif
 END
@@ -101,11 +111,8 @@ open $fh, ">$cfile" or die $!;
 print $fh <<END;
 #include "$hfile"
 
-const char * git_tag = "$tag";
-int git_tag_delta = $delta;
-const char * git_commit_hash = "$commit";
-const char * git_commit_date = "$date";
-int git_dirty = $dirty;
+const char git_describe[] = { "$describe" };
+const char git_metadata[] = { "$metadata" };
 END
 
 __DATA__

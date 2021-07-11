@@ -72,8 +72,6 @@ static xapi selector_visitor(moria_vertex * v, void * arg, moria_traversal_mode 
   selector * sel = ctx->sel;
   fsent *n;
 
-//printf("%2d %s\n", distance, v->label);
-
   if((v->attrs & VERTEX_TYPE_OPT) == VERTEX_TYPE_FSENT)
   {
     n = containerof(v, fsent, vertex);
@@ -89,7 +87,6 @@ static xapi selector_visitor(moria_vertex * v, void * arg, moria_traversal_mode 
     {
       if(!sel->cross_module && fsent_module_get(n) != ctx->mod)
       {
-printf("SELECTOR no-cross node %p %s mod %p vs %p\n", n, n->name.name, fsent_module_get(n), ctx->mod);
         *result = MORIA_TRAVERSE_PRUNE;
         goto XAPI_FINALLY;
       }

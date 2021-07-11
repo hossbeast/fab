@@ -31,6 +31,7 @@
 #include "common/hash.h"
 #include "filesystem.h"
 #include "common/attrs.h"
+#include "git-state.h"
 
 struct g_args_t g_args;
 
@@ -44,7 +45,31 @@ struct g_args_t g_args;
 
 #define DEFAULT_SWEEPER_PERIOD MSEC_AS_NSEC(250)
 
-#if DEVEL
+static void args_version()
+{
+  printf("fabd - fab daemon %s\n\n%s\n", git_describe, git_metadata);
+
+  exit(0);
+}
+
+static void args_usage()
+{
+  printf(
+"fabd - fab daemon %s\n"
+"\n"
+"usage: fabd [option] <hash>\n"
+"\n"
+"options\n"
+" --help | -h       print this message\n"
+" --version | -V    print version information\n"
+"\n"
+"build optimally      https://github.com/hossbeast/fab\n"
+    , git_describe
+  );
+
+  exit(0);
+}
+
 static xapi args_parse()
 {
   enter;
@@ -52,24 +77,37 @@ static xapi args_parse()
   char *pwd = 0;
   int x;
   int longindex;
+  int version = 0;
+  int help = 0;
 
   const struct option longopts[] = {
-      { "system-config-path"            , required_argument, 0, 0 }
+      { "help"     , no_argument , &help, 1 }
+    , { "version"  , no_argument , &version, 1 }
+#if DEVEL
+    , { "system-config-path"            , required_argument, 0, 0 }
     , { "user-config-path"              , required_argument, 0, 0 }
     , { "default-filesystem-invalidate" , required_argument, 0, 0 }
     , { "sweeper-period-nsec"           , required_argument, 0, 0 }
+#endif
     , { }
   };
 
-  const char *switches = "K";
+  const char *switches = "hV"
+#if DEVEL
+    "K"
+#endif
+  ;
 
   g_args.default_filesystem_invalidate = FILESYSTEM_INVALIDATE_DEFAULT;
+  fatal(ixstrdup, &g_args.system_config_path, SYSTEM_CONFIG_PATH);
+  fatal(ixstrdup, &g_args.user_config_path, USER_CONFIG_PATH);
 
   // disable getopt error messages
   opterr = 0;
   optind = 0;
   while((x = getopt_long(g_argc, g_argv, switches, longopts, &longindex)) != -1)
   {
+#if DEVEL
     if(x == 0 && strcmp(longopts[longindex].name, "system-config-path") == 0) {
       iwfree(&g_args.system_config_path);
       fatal(ixstrdup, &g_args.system_config_path, optarg);
@@ -87,6 +125,21 @@ static xapi args_parse()
     } else if(x == 'K') {
       g_args.kill = true;
     }
+#endif
+    if(x == 'h') {
+      help = 1;
+    } else if(x == 'V') {
+      version = 1;
+    }
+  }
+
+  if(help)
+  {
+    args_usage();
+  }
+  if(version)
+  {
+    args_version();
   }
 
   if(optind == g_argc) {
@@ -106,19 +159,6 @@ finally:
   free(pwd);
 coda;
 }
-#else
-static xapi args_parse()
-{
-  enter;
-
-  /* single, required argument */
-  if(g_argc < 2 || parseuint(g_argv[1], SCNx64, 1, UINT64_MAX, 1, UINT8_MAX, &g_args.hash, 0) != 0) {
-    fail(SYS_BADARGS);
-  }
-
-  finally : coda;
-}
-#endif
 
 xapi args_setup()
 {
@@ -126,11 +166,8 @@ xapi args_setup()
 
   char space[64];
 
-  /* defaults */
-  fatal(ixstrdup, &g_args.system_config_path, SYSTEM_CONFIG_PATH);
-  fatal(ixstrdup, &g_args.user_config_path, USER_CONFIG_PATH);
-
   fatal(args_parse);
+
   snprintf(space, sizeof(space), "%016"PRIx64, g_args.hash);
   fatal(ixstrdup, &g_args.hash_str, space);
 

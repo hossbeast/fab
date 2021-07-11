@@ -20,6 +20,7 @@ use flex
 use bison
 use executable  # this module builds an executable
 use xapi/errtab
+use git
 
 # declare variants
 variant xapi.{debug,devel,final,trace}

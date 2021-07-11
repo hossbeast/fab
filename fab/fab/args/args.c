@@ -44,6 +44,8 @@
 #define USER_CONFIG_PATH      "$HOME/.bam/client_config"
 #endif
 
+#include "git-state.h"
+
 static YYU_VTABLE(args_vtable, args, args);
 typeof(g_args) g_args;
 typeof(g_cmd) g_cmd;
@@ -52,10 +54,17 @@ typeof(g_cmd) g_cmd;
 // public
 //
 
-static void args_usage(command * restrict cmd)
+static void version()
+{
+  printf("fab %s\n\n%s\n", git_describe, git_metadata);
+
+  exit(0);
+}
+
+static void usage(command * restrict cmd)
 {
   printf(
-"fab : fab client\n"
+"fab %s\n"
 "\n"
 "usage: fab [command | option]..\n"
 "\n"
@@ -75,13 +84,14 @@ static void args_usage(command * restrict cmd)
 " reconcile             reload everything\n"
 "\n"
 "global options\n"
-" --help | -h       this message\n"
+" --help | -h       print this message\n"
 " --version | -V    print version information\n"
 " -B                first, global invalidation\n"
 " -K                first, kill extant fabd if any\n"
 #if DEVEL
 " --no-launch       only talk to an existing fabd\n"
 #endif
+    , git_describe
   );
 
   if(cmd) {
@@ -95,7 +105,7 @@ static void args_usage(command * restrict cmd)
 " "SYSTEM_CONFIG_PATH"\n"
 " "USER_CONFIG_PATH"\n"
 "\n"
-"Build optimally. More info at https://github.com/hossbeast/fab\n"
+"build optimally      https://github.com/hossbeast/fab\n"
   );
 
   exit(0);
@@ -205,9 +215,13 @@ xapi args_parse()
   /* parse cmd-line args */
   fatal(parse, &yyu, argvs, argvsl, "-args-");
 
-  if(g_args.help || g_args.version)
+  if(g_args.help)
   {
-    args_usage(g_cmd);
+    usage(g_cmd);
+  }
+  if(g_args.version)
+  {
+    version();
   }
 
   if(!g_cmd) {

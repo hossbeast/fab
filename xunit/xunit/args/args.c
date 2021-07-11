@@ -35,67 +35,35 @@
 
 #include "macros.h"
 #include "common/assure.h"
+#include "git-state.h"
 
 struct g_args_t g_args;
 
-static xapi usage(int valid, int version, int help, int logs)
+static void args_version()
 {
-  enter;
+  printf("xunit test runner  %s\n\n%s\n", git_describe, git_metadata);
 
-  printf(
-"xunit : test runner\n"
-);
-if(version)
-{
-  printf(" fab-" XQUOTE(FABVERSIONS)
-#if DEVEL
-  "+DEVEL"
-#elif DEBUG
-  "+DEBUG"
-#endif
-    " @ " XQUOTE(BUILDSTAMP)
-    "\n"
-  );
+  exit(0);
 }
-if(help)
+
+static void args_usage()
 {
   printf(
+"xunit test runner %s\n"
 "\n"
 "usage : xunit [ [ option ] [ logexpr ] [ /path/to/object ] ] ...\n"
 "\n"
-" --help    : this message\n"
-" --version : version information\n"
-" --logs    : logger configuration\n"
+" --help    : print this message\n"
+" --version : print version information\n"
 "\n"
-"----------------- [ options ] --------------------------------------------------------------------\n"
-"\n"
+"options\n"
 " --nofork  : don't fork before each test\n"
 "\n"
+"build optimally      https://github.com/hossbeast/fab\n"
+    , git_describe
   );
-}
 
-if(logs)
-{
-printf(
-"\n"
-"----------------- [ logs ] -----------------------------------------------------------------------\n"
-"\n"
-);
-
-  fatal(logger_expr_push, 0, "+LOGGER");
-  fatal(logger_categories_report);
-  fatal(logger_expr_pop, 0);
-}
-
-printf(
-"\n"
-"For more information visit http://fabutil.org\n"
-"\n"
-);
-
-exit(!valid);
-
-  finally : coda;
+  exit(0);
 }
 
 static xapi objects_push(char * path, size_t * objectsa)
@@ -133,7 +101,6 @@ xapi args_parse()
 
   int help = 0;
   int version = 0;
-  int logs = 0;
   size_t objectsa = 0;
   int fork = 1;
 
@@ -146,12 +113,6 @@ xapi args_parse()
     , { "version"                     , no_argument       , &version, 1 }
     , { "vers"                        , no_argument       , &version, 1 }
     , { "vrs"                         , no_argument       , &version, 1 }
-    , { "log"                         , no_argument       , &logs, 1 }
-    , { "logs"                        , no_argument       , &logs, 1 }
-    , { "logcat"                      , no_argument       , &logs, 1 }
-    , { "logcats"                     , no_argument       , &logs, 1 }
-    , { "logexpr"                     , no_argument       , &logs, 1 }
-    , { "logexprs"                    , no_argument       , &logs, 1 }
     , { "fork"                        , no_argument       , &fork, 1 }
     , { "nofork"                      , no_argument       , &fork, 0 }
     , { "no-fork"                     , no_argument       , &fork, 0 }
@@ -163,7 +124,7 @@ xapi args_parse()
     "-"
 
     // no-argument switches
-    ""
+    "hV"
 
     // with-argument switches
     ""
@@ -177,6 +138,14 @@ xapi args_parse()
     if(x == 0)
     {
       // longopts - placeholder
+    }
+    else if(x == 'h')
+    {
+      help = 1;
+    }
+    else if(x == 'V')
+    {
+      version = 1;
     }
     else if(x == '?')
     {
@@ -205,9 +174,13 @@ xapi args_parse()
 
   g_args.fork = fork;
 
-  if(help || version || logs)
+  if(help)
   {
-    fatal(usage, 1, 1, help, logs);
+    args_usage();
+  }
+  if(version)
+  {
+    args_version();
   }
 
   finally : coda;

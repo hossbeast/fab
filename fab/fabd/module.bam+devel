@@ -21,6 +21,7 @@ use bison
 use executable  # this module builds an executable
 use xapi/errtab
 use xunit-tests
+use git
 
 # declare variants
 variant xapi.{debug,devel,final,trace}
