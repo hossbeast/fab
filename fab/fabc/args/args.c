@@ -27,8 +27,16 @@
 #include "MAIN.errtab.h"
 
 #include "macros.h"
+#include "git-state.h"
 
 struct g_args g_args;
+
+static void args_version()
+{
+  printf("fabc - fab commander %s\n\n%s\n", git_describe, git_metadata);
+
+  exit(0);
+}
 
 //
 // public
@@ -37,18 +45,16 @@ struct g_args g_args;
 void args_usage()
 {
   printf(
-"fabc : fab commander\n"
+"fabc - fab commander %s\n"
 "\n"
-"usage: fab [path | option]..\n"
+"usage: fabc [path | option]..\n"
 "\n"
 "options\n"
-" --help | -h       this message\n"
-" --version         print version information\n"
-  );
-
-  printf(
+" --help | -h       print this message\n"
+" --version | -V    print version information\n"
 "\n"
-"Build optimally. More info at https://github.com/hossbeast/fab\n"
+"build optimally      https://github.com/hossbeast/fab\n"
+    , git_describe
   );
 
   exit(0);
@@ -70,10 +76,11 @@ xapi args_parse()
     , { }
   };
 
-  p = "";
+  p = "hV"
 #if DEVEL
-  p = "v";
+  "v"
 #endif
+  ;
 
   opterr = 0;
   while(indexptr = 0, (x = getopt_long(g_argc, &g_argv[0], p, longopts, &indexptr)) != -1)
@@ -88,6 +95,14 @@ xapi args_parse()
       g_args.verbose++;
     }
 #endif
+    else if(x == 'h')
+    {
+      help = 1;
+    }
+    else if(x == 'V')
+    {
+      version = 1;
+    }
     else if(x == '?')
     {
       // unrecognized argv element
@@ -115,9 +130,13 @@ xapi args_parse()
     fatal(ixstrdup, &g_args.path, g_argv[optind]);
   }
 
-  if(help || version)
+  if(help)
   {
     args_usage();
+  }
+  if(version)
+  {
+    args_version();
   }
 
   finally : coda;
