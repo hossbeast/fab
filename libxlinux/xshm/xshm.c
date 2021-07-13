@@ -18,69 +18,52 @@
 #include <errno.h>
 
 #include "xshm/xshm.h"
-#include "errtab/KERNEL.errtab.h"
 
-xapi API uxshmget(key_t key, size_t size, int shmflg, int * const restrict shmid)
+int API uxshmget(key_t key, size_t size, int shmflg)
 {
-  enter;
+  int r;
 
-  if((*shmid = shmget(key, size, shmflg)) == -1 && errno != ENOENT)
-    tfail(perrtab_KERNEL, errno);
+  r = shmget(key, size, shmflg);
+  RUNTIME_ASSERT(r == 0 || errno == ENOENT);
 
-finally:
-  xapi_infof("key", "0x%08lx", (long)key);
-  xapi_infof("size", "%zu", size);
-coda;
+  return r;
 }
 
-xapi API xshmget(key_t key, size_t size, int shmflg, int * const restrict shmid)
+int API xshmget(key_t key, size_t size, int shmflg)
 {
-  enter;
+  int r;
 
-  if((*shmid = shmget(key, size, shmflg)) == -1)
-    tfail(perrtab_KERNEL, errno);
+  r = shmget(key, size, shmflg);
+  RUNTIME_ASSERT(r == 0);
 
-finally:
-  xapi_infof("key", "0x%08lx", (long)key);
-  xapi_infof("size", "%zu", size);
-coda;
+  return r;
 }
 
-xapi API xshmctl(int shmid, int cmd, struct shmid_ds * const restrict buf)
+void API xshmctl(int shmid, int cmd, struct shmid_ds * const restrict buf)
 {
-  enter;
-
-  tfatalize(perrtab_KERNEL, errno, shmctl, shmid, cmd, buf);
-
-  finally : coda;
+  RUNTIME_ASSERT(shmctl(shmid, cmd, buf) == 0);
 }
 
-xapi API xshmat(int shmid, const void * shmaddr, int shmflg, void ** const restrict addr)
+void * API xshmat(int shmid, const void * shmaddr, int shmflg)
 {
-  enter;
+  void *r;
 
-  if((*addr = shmat(shmid, shmaddr, shmflg)) == (void*)-1)
-    tfail(perrtab_KERNEL, errno);
+  r = shmat(shmid, shmaddr, shmflg);
+  RUNTIME_ASSERT(r != (void*)-1);
 
-  finally : coda;
+  return r;
 }
 
-xapi API xshmdt(const void * shmaddr)
+void API xshmdt(const void * restrict shmaddr)
 {
-  enter;
+  if(!shmaddr)
+    return;
 
-  if(shmaddr)
-    tfatalize(perrtab_KERNEL, errno, shmdt, shmaddr);
-
-  finally : coda;
+  RUNTIME_ASSERT(shmdt(shmaddr) == 0);
 }
 
-xapi API ixshmdt(void ** shmaddr)
+void API ixshmdt(void ** shmaddr)
 {
-  enter;
-
-  fatal(xshmdt, *shmaddr);
+  xshmdt(*shmaddr);
   *shmaddr = 0;
-
-  finally : coda;
 }

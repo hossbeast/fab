@@ -25,6 +25,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <sys/types.h>
+#include <stdlib.h>
 
 #define restrict __restrict
 
@@ -50,6 +51,25 @@ static inline size_t roundup(size_t x, size_t y)
 })
 
 #define STATIC_ASSERT(x) _Static_assert(x, #x)
+
+#define RUNTIME_ASSERT(x) do {                          \
+  if (!(x)) {                                           \
+    RUNTIME_ABORT();                                    \
+  }                                                     \
+} while(0)
+
+#define RUNTIME_ABORT() do { abort(); } while(0)
+
+#if 0
+#if DEBUG || DEVEL || XUNIT
+#define RUNTIME_ABORT() do {  \
+  fprintf(stderr, "%s:%d aborting\n", __FILE__, __LINE__); \
+  abort();  \
+} while(0)
+#else
+#define RUNTIME_ABORT()
+#endif
+#endif
 
 #if DEVEL
 #define tracef(fmt, ...) do { printf("[%5d/%-5d]%50s:%-5d "fmt"\n", getpid(), gettid(), __FUNCTION__, __LINE__, ##__VA_ARGS__); } while(0)

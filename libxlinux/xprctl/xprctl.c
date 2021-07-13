@@ -18,14 +18,11 @@
 #include <errno.h>
 #include <sys/prctl.h>
 
+#include "types.h"
+
 #include "xprctl/xprctl.h"
-#include "errtab/KERNEL.errtab.h"
 
-xapi API xprctl(int option, unsigned long arg2, unsigned long arg3, unsigned long arg4, unsigned long arg5)
+void API xprctl(int option, unsigned long arg2, unsigned long arg3, unsigned long arg4, unsigned long arg5)
 {
-  enter;
-
-  tfatalize(perrtab_KERNEL, errno, prctl, option, arg2, arg3, arg4, arg5);
-
-  finally : coda;
+  RUNTIME_ASSERT(prctl(option, arg2, arg3, arg4, arg5) == 0);
 }

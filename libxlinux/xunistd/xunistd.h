@@ -21,7 +21,6 @@
 #include <unistd.h>
 #include <stdarg.h>
 
-#include "xapi.h"
 #include "types.h"
 
 /// xread
@@ -32,7 +31,7 @@
 // PARAMETERS
 //  [bytes] - returns the number of bytes read
 //
-xapi xread(int fd, void * restrict buf, size_t count, ssize_t * restrict bytes)
+ssize_t xread(int fd, void * restrict buf, size_t count)
   __attribute__((nonnull(2)));
 
 /// uxread
@@ -46,44 +45,16 @@ xapi xread(int fd, void * restrict buf, size_t count, ssize_t * restrict bytes)
 // REMARKS
 //  using uxread with an fd not marked with O_NONBLOCK is probably an error
 //
-xapi uxread(int fd, void * restrict buf, size_t count, ssize_t * restrict bytes)
+ssize_t uxread(int fd, void * restrict buf, size_t count)
   __attribute__((nonnull(2)));
 
-/// aread
-//
-// SUMMARY
-//  proxy for read that also fails when count != actual
-//
-// PARAMETERS
-//
-int aread(int fd, void * restrict buf, size_t count)
+
+/* calls read in a loop until count bytes have been read */
+void axread(int fd, void * restrict buf, size_t count)
   __attribute__((nonnull));
 
-xapi axread(int fd, void * restrict buf, size_t count)
-  __attribute__((nonnull));
-
-/// xwrite
-//
-// SUMMARY
-//  proxy for write
-//
-// PARAMETERS
-//  [bytes] - returns the number of bytes written
-//
-xapi xwrite(int fd, const void * buf, size_t count, ssize_t * bytes)
-  __attribute__((nonnull(2)));
-
-/// awrite
-//
-// SUMMARY
-//  proxy for write that also fails when count != actual
-//
-// PARAMETERS
-//
-int awrite(int fd, const void * buf, size_t count)
-  __attribute__((nonnull));
-
-xapi axwrite(int fd, const void * buf, size_t count)
+/* calls write in a loop until count bytes have been written */
+void axwrite(int fd, const void * buf, size_t count)
   __attribute__((nonnull));
 
 /// xgetcwd
@@ -94,7 +65,8 @@ xapi axwrite(int fd, const void * buf, size_t count)
 // PARAMETERS
 //  [res] - *res is set to the return from getcwd
 //
-xapi xgetcwd(char * buf, size_t size, char ** res);
+char * xgetcwd(char * buf, size_t size)
+  __attribute__((nonnull));
 
 /// xlseek
 //
@@ -104,21 +76,21 @@ xapi xgetcwd(char * buf, size_t size, char ** res);
 // PARAMETERS
 //  [res] - *res is set to the return from lseek
 //
-xapi xlseek(int fd, off_t offset, int whence, off_t * res);
+off_t xlseek(int fd, off_t offset, int whence);
 
 /// xclose
 //
 // SUMMARY
 //  proxy for close
 //
-xapi xclose(int fd);
+void xclose(int fd);
 
 /// ixclose
 //
 // SUMMARY
 //  idempotent proxy for close
 //
-xapi ixclose(int * const restrict fd)
+void ixclose(int * const restrict fd)
   __attribute__((nonnull));
 
 /// xsymlink
@@ -129,13 +101,13 @@ xapi ixclose(int * const restrict fd)
 // VARIANTS
 //  s/f/vf - different ways to pass parameters
 //
-xapi xsymlinks(const char * restrict target, const char * restrict linkpath)
+void xsymlinks(const char * restrict target, const char * restrict linkpath)
   __attribute__((nonnull));
 
-xapi xsymlinkf(const char * restrict target_fmt, const char * restrict linkpath_fmt, ...)
+void xsymlinkf(const char * restrict target_fmt, const char * restrict linkpath_fmt, ...)
   __attribute__((nonnull(1, 2)));
 
-xapi xsymlinkvf(const char * restrict target_fmt, const char * restrict linkpath_fmt, va_list va)
+void xsymlinkvf(const char * restrict target_fmt, const char * restrict linkpath_fmt, va_list va)
   __attribute__((nonnull));
 
 /// uxsymlink
@@ -146,13 +118,13 @@ xapi xsymlinkvf(const char * restrict target_fmt, const char * restrict linkpath
 // VARIANTS
 //  s/f/vf - different ways to pass
 //
-xapi uxsymlinks(const char * restrict target, const char * restrict linkpath)
+int uxsymlinks(const char * restrict target, const char * restrict linkpath)
   __attribute__((nonnull));
 
-xapi uxsymlinkf(const char * restrict target_fmt, const char * restrict linkpath_fmt, ...)
+int uxsymlinkf(const char * restrict target_fmt, const char * restrict linkpath_fmt, ...)
   __attribute__((nonnull(1, 2)));
 
-xapi uxsymlinkvf(const char * restrict target_fmt, const char * restrict linkpath_fmt, va_list va)
+int uxsymlinkvf(const char * restrict target_fmt, const char * restrict linkpath_fmt, va_list va)
   __attribute__((nonnull));
 
 /// xunlink
@@ -163,13 +135,13 @@ xapi uxsymlinkvf(const char * restrict target_fmt, const char * restrict linkpat
 // VARIANTS
 //  s/f/vf - different ways to pass path
 //
-xapi xunlinks(const char * restrict pathname)
+void xunlinks(const char * restrict pathname)
   __attribute__((nonnull));
 
-xapi xunlinkf(const char * restrict fmt, ...)
+void xunlinkf(const char * restrict fmt, ...)
   __attribute__((nonnull(1)));
 
-xapi xunlinkvf(const char * restrict fmt, va_list va)
+void xunlinkvf(const char * restrict fmt, va_list va)
   __attribute__((nonnull));
 
 /// uxunlink
@@ -180,13 +152,13 @@ xapi xunlinkvf(const char * restrict fmt, va_list va)
 // VARIANTS
 //  s/f/vf - different ways to pass path
 //
-xapi uxunlinks(const char * const restrict pathname)
+int uxunlinks(const char * const restrict pathname)
   __attribute__((nonnull));
 
-xapi uxunlinkf(const char * const restrict fmt, ...)
+int uxunlinkf(const char * const restrict fmt, ...)
   __attribute__((nonnull(1)));
 
-xapi uxunlinkvf(const char * const restrict fmt, va_list va)
+int uxunlinkvf(const char * const restrict fmt, va_list va)
   __attribute__((nonnull));
 
 /// xfork
@@ -194,86 +166,56 @@ xapi uxunlinkvf(const char * const restrict fmt, va_list va)
 // SUMMARY
 //  proxy for fork
 //
-xapi xfork(pid_t * const restrict pid);
+pid_t xfork(void);
 
 /// xdup
 //
 // SUMMARY
 //  proxy for dup
 //
-xapi xdup(int oldfd);
+void xdup(int oldfd);
 
 /// xdup2
 //
 // SUMMARY
 //  proxy for dup2
 //
-xapi xdup2(int oldfd, int newfd);
+void xdup2(int oldfd, int newfd);
 
 /// xsetresuid
 //
 // SUMMARY
 //  proxy for setresuid
 //
-xapi xsetresuid(uid_t ruid, uid_t euid, uid_t suid);
+void xsetresuid(uid_t ruid, uid_t euid, uid_t suid);
 
 /// xsetresgid
 //
 // SUMMARY
 //  proxy for setresgid
 //
-xapi xsetresgid(gid_t rgid, gid_t egid, gid_t sgid);
-
-/// xeuidaccess
-//
-// SUMMARY
-//  proxy for euidaccess
-//
-xapi xeuidaccesss(int * restrict r, int mode, const char * restrict path)
-  __attribute__((nonnull(3)));
-
-xapi xeuidaccessf(int * restrict r, int mode, const char * restrict path_fmt, ...)
-  __attribute__((nonnull(3)))
-  __attribute__((format(printf, 3, 4)));
-
-xapi xeuidaccessvf(int * restrict r, int mode, const char * restrict path_fmt, va_list va)
-  __attribute__((nonnull(3)));
-
-/// uxeuidaccess
-//
-// SUMMARY
-//  proxy for euidaccess that only fails when errno !: { EACCES, ENOENT, ENOTDIR }
-//
-xapi uxeuidaccesss(int * restrict r, int mode, const char * restrict path)
-  __attribute__((nonnull(3)));
-
-xapi uxeuidaccessf(int * restrict r, int mode, const char * restrict path_fmt, ...)
-  __attribute__((nonnull(3)))
-  __attribute__((format(printf, 3, 4)));
-
-xapi uxeuidaccessvf(int * restrict r, int mode, const char * restrict path_fmt, va_list va)
-  __attribute__((nonnull(3)));
+void xsetresgid(gid_t rgid, gid_t egid, gid_t sgid);
 
 /// xseteuid
 //
 // SUMMARY
 //  proxy for seteuid
 //
-xapi xseteuid(uid_t euid);
+void xseteuid(uid_t euid);
 
 /// xsetegid
 //
 // SUMMARY
 //  proxy for setegid
 //
-xapi xsetegid(gid_t egid);
+void xsetegid(gid_t egid);
 
 /// xgetresuid
 //
 // SUMMARY
 //  proxy for getresuid
 //
-xapi xgetresuid(uid_t * const restrict ruid, uid_t * const restrict euid, uid_t * const restrict suid)
+void xgetresuid(uid_t * const restrict ruid, uid_t * const restrict euid, uid_t * const restrict suid)
   __attribute__((nonnull));
 
 /// xgetresgid
@@ -281,7 +223,7 @@ xapi xgetresuid(uid_t * const restrict ruid, uid_t * const restrict euid, uid_t 
 // SUMMARY
 //  proxy for getresgid
 //
-xapi xgetresgid(gid_t * const restrict rgid, gid_t * const restrict egid, gid_t * const restrict sgid)
+void xgetresgid(gid_t * const restrict rgid, gid_t * const restrict egid, gid_t * const restrict sgid)
   __attribute__((nonnull));
 
 /// xtruncate
@@ -289,7 +231,7 @@ xapi xgetresgid(gid_t * const restrict rgid, gid_t * const restrict egid, gid_t 
 // SUMMARY
 //  proxy for truncate
 //
-xapi xtruncate(const char * restrict path, off_t length)
+void xtruncate(const char * restrict path, off_t length)
   __attribute__((nonnull));
 
 /// xftruncate
@@ -297,14 +239,14 @@ xapi xtruncate(const char * restrict path, off_t length)
 // SUMMARY
 //  proxy for ftruncate
 //
-xapi xftruncate(int fd, off_t length);
+void xftruncate(int fd, off_t length);
 
 /// xrmdir
 //
 // SUMMARY
 //  proxy for rmdir
 //
-xapi xrmdir(const char * restrict pathname)
+void xrmdir(const char * restrict pathname)
   __attribute__((nonnull));
 
 /// xsetpgid
@@ -312,21 +254,21 @@ xapi xrmdir(const char * restrict pathname)
 // SUMMARY
 //  proxy for setpgid
 //
-xapi xsetpgid(pid_t pid, pid_t pgid);
+void xsetpgid(pid_t pid, pid_t pgid);
 
 /// xsetsid
 //
 // SUMMARY
 //  proxy for setsid
 //
-xapi xsetsid(void);
+void xsetsid(void);
 
 /// xexecv
 //
 // SUMMARY
 //  xapi proxy for execv
 //
-xapi xexecv(const char * path, char * const argv[])
+void xexecv(const char * path, char * const argv[])
   __attribute__((nonnull));
 
 /// xexecve
@@ -334,7 +276,7 @@ xapi xexecv(const char * path, char * const argv[])
 // SUMMARY
 //  xapi proxy for execvpe
 //
-xapi xexecve(const char * path, char * const argv[], char * const envp[])
+void xexecve(const char * path, char * const argv[], char * const envp[])
   __attribute__((nonnull));
 
 /// xexecvp
@@ -342,7 +284,7 @@ xapi xexecve(const char * path, char * const argv[], char * const envp[])
 // SUMMARY
 //  xapi proxy for execvp
 //
-xapi xexecvp(const char * file, char * const argv[])
+void xexecvp(const char * file, char * const argv[])
   __attribute__((nonnull));
 
 /// xfexecve
@@ -350,7 +292,7 @@ xapi xexecvp(const char * file, char * const argv[])
 // SUMMARY
 //  xapi proxy for fexecve
 //
-xapi xfexecve(int fd, char * const argv[], char * const envp[])
+void xfexecve(int fd, char * const argv[], char * const envp[])
   __attribute__((nonnull));
 
 /// xchdir
@@ -361,13 +303,13 @@ xapi xfexecve(int fd, char * const argv[], char * const envp[])
 // VARIANTS
 //  s/f/vf - different ways to pass path
 //
-xapi xchdirs(const char * const restrict path)
+void xchdirs(const char * const restrict path)
   __attribute__((nonnull));
 
-xapi xchdirf(const char * const restrict fmt, ...)
+void xchdirf(const char * const restrict fmt, ...)
   __attribute__((nonnull));
 
-xapi xchdirvf(const char * const restrict fmt, va_list va)
+void xchdirvf(const char * const restrict fmt, va_list va)
   __attribute__((nonnull));
 
 /// xfchdir
@@ -375,7 +317,7 @@ xapi xchdirvf(const char * const restrict fmt, va_list va)
 // SUMMARY
 //  xapi proxy for fchdir
 //
-xapi xfchdir(int fd);
+void xfchdir(int fd);
 
 /// gettid
 //
@@ -389,7 +331,7 @@ pid_t gettid(void);
 // SUMMARY
 //  xapi proxy for pipe
 //
-xapi xpipe(int filedes[2])
+void xpipe(int filedes[2])
   __attribute__((nonnull));
 
 #endif

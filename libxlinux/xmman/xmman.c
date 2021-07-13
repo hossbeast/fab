@@ -17,46 +17,33 @@
 
 #include <errno.h>
 
+#include "types.h"
+
 #include "xmman/xmman.h"
-#include "errtab/KERNEL.errtab.h"
 
-xapi API xmmap(void * addr, size_t length, int prot, int flags, int fd, off_t offset, void ** r)
+void * API xmmap(void * addr, size_t length, int prot, int flags, int fd, off_t offset)
 {
-  enter;
+  void *r;
 
-  if(r && (*r = mmap(addr, length, prot, flags, fd, offset)) == MAP_FAILED)
-    tfail(perrtab_KERNEL, errno);
+  r = mmap(addr, length, prot, flags, fd, offset);
+  RUNTIME_ASSERT(r != MAP_FAILED);
 
-  else if(!r && mmap(addr, length, prot, flags, fd, offset) == MAP_FAILED)
-    tfail(perrtab_KERNEL, errno);
-
-finally:
-  xapi_infof("length", "%zu", length);
-coda;
+  return r;
 }
 
-xapi API xmunmap(void * addr, size_t length)
+void API xmunmap(void * addr, size_t length)
 {
-  enter;
+  if(addr == MAP_FAILED)
+    return;
 
-  if(addr != MAP_FAILED)
-  {
-    tfatalize(perrtab_KERNEL, errno, munmap, addr, length);
-  }
-
-  finally : coda;
+  RUNTIME_ASSERT(munmap(addr, length) == 0);
 }
 
-xapi API ixmunmap(void * addr, size_t length)
+void API ixmunmap(void * addr, size_t length)
 {
-  enter;
+  void **addrp;
 
-  if(*(void**)addr != MAP_FAILED)
-  {
-    tfatalize(perrtab_KERNEL, errno, munmap, *(void**)addr, length);
-  }
-
-  *(void**)addr = MAP_FAILED;
-
-  finally : coda;
+  addrp = addr;
+  xmunmap(*addrp, length);
+  *addrp = MAP_FAILED;
 }

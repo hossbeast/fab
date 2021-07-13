@@ -19,248 +19,125 @@
 #include <errno.h>
 #include <string.h>
 
+#include "types.h"
+#include "macros.h"
+
 #include "xstdlib/xstdlib.h"
-#include "KERNEL.errtab.h"
-#include "XLINUX.errtab.h"
-#include "mempolicy/mempolicy.internal.h"
 
 #include "common/fmt.h"
-
-//
-// static
-//
-
-struct xqsort_context
-{
-  xapi (*xcompar)(const void *, const void *, void *, int *);
-  void * arg;
-  int hasfailed;
-};
-
-static int xqsort_compar(const void * A, const void * B, void * arg)
-{
-  enter_nochecks;
-
-  struct xqsort_context * ctx = arg;
-
-  int r = 0;
-  if(!ctx->hasfailed)
-    fatal(ctx->xcompar, A, B, ctx->arg, &r);
-
-  int R = 0;
-  finally : conclude(&R);
-
-  if(R)
-  {
-    ctx->hasfailed = 1;
-    r = 0;
-  }
-
-  return r;
-};
 
 //
 // api
 //
 
-xapi API xmalloc(void* target, size_t size)
+void API xmalloc(void* target, size_t size)
 {
-  enter;
-
-  //void * mem = 0;
-
-  if(policy)
-  {
-    fatal(policy->malloc, policy, target, size);
-  }
-  else
-  {
-    posix_memalign(target, sizeof(void*) * 2, size);
-    memset(*(void**)target, 0, size);
-  }
-
-finally:
-  xapi_infof("size", "%zu", size);
-coda;
+  RUNTIME_ASSERT(posix_memalign(target, sizeof(void*) * 2, size) != 0);
+  memset(*(void**)target, 0, size);
 }
 
-xapi API xrealloc(void* target, size_t es, size_t ec, size_t oec)
+void API xrealloc(void* target, size_t es, size_t ec, size_t oec)
 {
-  enter;
+  void** t;
+  void * mem = 0;
 
-  void** t = ((void**)target);
-
-  if(policy)
-  {
-    fatal(policy->realloc, policy, target, es, ec, oec);
-  }
-  else if(!es || !ec)
+  t = ((void**)target);
+  if(!es || !ec)
   {
     *t = 0;
   }
   else
   {
-    void * mem = 0;
-    if((mem = realloc(*t, es * ec)) == 0)
-      tfail(perrtab_KERNEL, errno);
+    RUNTIME_ASSERT((mem = realloc(*t, es * ec)) != 0);
     *t = mem;
 
-    if(*t)
+    if(((ssize_t)ec - (ssize_t)oec) > 0)
     {
-      if(((ssize_t)ec - (ssize_t)oec) > 0)
-        memset(((char*)*t) + (oec * es), 0, ((ssize_t)ec - (ssize_t)oec) * es);
-    }
-    else
-    {
-      tfail(perrtab_KERNEL, errno);
+      memset(((char*)*t) + (oec * es), 0, ((ssize_t)ec - (ssize_t)oec) * es);
     }
   }
-
-finally :
-  xapi_infof("size", "%zu", es * ec);
-coda;
 }
 
 void API iwfree(void* target)
 {
   void** t = (void**)target;
 
-  if(policy)
-  {
-    if(policy->ifree)
-      policy->ifree(policy, target);
-  }
-  else
-  {
-    wfree(*t);
-  }
-
+  wfree(*t);
   *t = 0;
 }
 
 void API wfree(void* target)
 {
-  if(policy)
-  {
-    if(policy->free)
-      policy->free(policy, target);
-  }
-  else
-  {
-    free(target);
-  }
+  free(target);
 }
 
-xapi API xqsort_r(void * base, size_t nmemb, size_t size, xapi (*xcompar)(const void *, const void *, void *, int * r), void * arg)
+ssize_t API xreadlinks(const char * pathname, char * buf, size_t bufsiz)
 {
-  enter;
+  ssize_t r;
 
-  struct xqsort_context ctx = { 0 };
-  ctx.xcompar = xcompar;
-  ctx.arg = arg;
+  r = readlink(pathname, buf, bufsiz);
+  RUNTIME_ASSERT(r != -1);
 
-  qsort_r(base, nmemb, size, xqsort_compar, &ctx);
-
-  if(ctx.hasfailed)
-    fail(0);
-
-  finally : coda;
+  return r;
 }
 
-xapi API xreadlinks(const char * pathname, char * buf, size_t bufsiz, ssize_t * r)
+ssize_t API xreadlinkf(const char * pathname_fmt, char * buf, size_t bufsiz, ...)
 {
-  enter;
-
-  ssize_t lr;
-  if(!r)
-    r = &lr;
-
-  if((*r = readlink(pathname, buf, bufsiz)) == -1)
-    tfail(perrtab_KERNEL, errno);
-
-finally:
-  xapi_infos("pathname", pathname);
-coda;
-}
-
-xapi API xreadlinkf(const char * pathname_fmt, char * buf, size_t bufsiz, ssize_t * r, ...)
-{
-  enter;
-
+  ssize_t r;
   va_list va;
-  va_start(va, r);
 
-  fatal(xreadlinkvf, pathname_fmt, buf, bufsiz, r, va);
-
-finally:
+  va_start(va, bufsiz);
+  r = xreadlinkvf(pathname_fmt, buf, bufsiz, va);
   va_end(va);
-coda;
+
+  return r;
 }
 
-xapi API xreadlinkvf(const char * pathname_fmt, char * buf, size_t bufsiz, ssize_t * r, va_list va)
+ssize_t API xreadlinkvf(const char * pathname_fmt, char * buf, size_t bufsiz, va_list va)
 {
-  enter;
-
   char pathname[512];
 
-  fatal(fmt_apply, pathname, sizeof(pathname), pathname_fmt, va);
-  fatal(xreadlinks, pathname, buf, bufsiz, r);
-
-  finally : coda;
+  fmt_apply(pathname, sizeof(pathname), pathname_fmt, va);
+  return xreadlinks(pathname, buf, bufsiz);
 }
 
-xapi API xrealpaths(char ** restrict r, char * restrict resolved_path, const char * restrict path)
+char * API xrealpaths(char * restrict resolved_path, const char * restrict path)
 {
-  enter;
+  char *r;
 
-  if(r && (*r= realpath(path, resolved_path)) == 0)
-    tfail(perrtab_KERNEL, errno);
-  else if(!r && realpath(path, resolved_path) == 0)
-    tfail(perrtab_KERNEL, errno);
+  r = realpath(path, resolved_path);
+  RUNTIME_ASSERT(r != 0);
 
-finally:
-  xapi_infos("path", path);
-coda;
+  return r;
 }
 
-xapi API xrealpathf(char ** restrict r, char * restrict resolved_path, const char * restrict path_fmt, ...)
+char * API xrealpathf(char * restrict resolved_path, const char * restrict path_fmt, ...)
 {
-  enter;
-
+  char * r;
   va_list va;
+
   va_start(va, path_fmt);
-
-  fatal(xrealpathvf, r, resolved_path, path_fmt, va);
-
-finally:
+  r = xrealpathvf(resolved_path, path_fmt, va);
   va_end(va);
-coda;
+
+  return r;
 }
 
-xapi API xrealpathvf(char ** restrict r, char * restrict resolved_path, const char * restrict path_fmt, va_list va)
+char * API xrealpathvf(char * restrict resolved_path, const char * restrict path_fmt, va_list va)
 {
-  enter;
-
   char pathname[512];
 
-  fatal(fmt_apply, pathname, sizeof(pathname), path_fmt, va);
-  fatal(xrealpaths, r, resolved_path, pathname);
-
-finally:
-  va_end(va);
-coda;
+  fmt_apply(pathname, sizeof(pathname), path_fmt, va);
+  return xrealpaths(resolved_path, pathname);
 }
 
-xapi API xsystem(const char * restrict command, int * restrict status)
+int API xsystem(const char * restrict command)
 {
-  enter;
+  int r;
 
-  if(status && ((*status) = system(command)) == -1)
-    fail(XLINUX_SYSFAIL);
-  else if(system(command) == -1)
-    fail(XLINUX_SYSFAIL);
+  r = system(command);
 
-finally:
-  xapi_infos("command", command);
-coda;
+  RUNTIME_ASSERT(r != -1);
+
+  return r;
 }

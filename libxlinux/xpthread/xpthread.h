@@ -21,45 +21,43 @@
 #include <pthread.h>
 #include <signal.h>
 
-#include "xapi.h"
-
 /// xpthread_attr_init
 //
 // SUMMARY
-//  xapi proxy for pthread_attr_init
+//  void proxy for pthread_attr_init
 //
-xapi xpthread_attr_init(pthread_attr_t * attr)
+void xpthread_attr_init(pthread_attr_t * attr)
   __attribute__((nonnull));
 
 /// xpthread_attr_destroy
 //
 // SUMMARY
-//  xapi proxy for pthread_attr_destroy
+//  void proxy for pthread_attr_destroy
 //
-xapi xpthread_attr_destroy(pthread_attr_t * attr)
+void xpthread_attr_destroy(pthread_attr_t * attr)
   __attribute__((nonnull));
 
 /// xpthread_create
 //
 // SUMMARY
-//  xapi proxy for pthread_create
+//  void proxy for pthread_create
 //
-xapi xpthread_create(pthread_t * thread, const pthread_attr_t * attr, void *(*start_routine)(void *), void * arg)
+void xpthread_create(pthread_t * thread, const pthread_attr_t * attr, void *(*start_routine)(void *), void * arg)
   __attribute__((nonnull(1, 3)));
 
 /// xpthread_sigmask
 //
 // SUMMARY
-//  xapi proxy for pthread_sigmask
+//  void proxy for pthread_sigmask
 //
-xapi xpthread_sigmask(int how, const sigset_t * set, sigset_t * oldset);
+void xpthread_sigmask(int how, const sigset_t * set, sigset_t * oldset);
 
 /// xpthread_attr_setdetachstate
 //
 // SUMMARY
-//  xapi proxy for pthread_attr_setdetachstate
+//  void proxy for pthread_attr_setdetachstate
 //
-xapi xpthread_attr_setdetachstate(pthread_attr_t * attr, int detachstate)
+void xpthread_attr_setdetachstate(pthread_attr_t * attr, int detachstate)
   __attribute__((nonnull));
 
 #endif

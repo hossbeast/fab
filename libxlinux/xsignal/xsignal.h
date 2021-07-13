@@ -21,7 +21,6 @@
 #include <sys/types.h>
 #include <signal.h>
 
-#include "xapi.h"
 
 /// xkill
 //
@@ -32,7 +31,7 @@
 //  pid - pid
 //  sig - signal
 //
-xapi xkill(pid_t pid, int sig);
+void xkill(pid_t pid, int sig);
 
 /// uxkill
 //
@@ -44,28 +43,28 @@ xapi xkill(pid_t pid, int sig);
 //  pid - pid
 //  sig - signal
 //
-xapi uxkill(int * restrict r, pid_t pid, int sig);
+int uxkill(pid_t pid, int sig);
 
 /// xtgkill
 //
 // SUMMARY
 //  proxy for tgkill
 //
-xapi xtgkill(int tgid, int tid, int sig);
+void xtgkill(int tgid, int tid, int sig);
 
 /// xtgkill
 //
 // SUMMARY
 //  proxy for tgkill that only fails when errno != ESRCH (no such pid/thread)
 //
-xapi uxtgkill(int * r, int tgid, int tid, int sig);
+int uxtgkill(int tgid, int tid, int sig);
 
 /// xsigaction
 //
 // SUMMARY
 //  xapi proxy for sigaction
 //
-xapi xsigaction(int signum, const struct sigaction * act, struct sigaction * oldact)
+void xsigaction(int signum, const struct sigaction * act, struct sigaction * oldact)
   __attribute__((nonnull(2)));
 
 /// xsigprocmask
@@ -73,7 +72,7 @@ xapi xsigaction(int signum, const struct sigaction * act, struct sigaction * old
 // SUMMARY
 //  xapi proxy for sigprocmask
 //
-xapi xsigprocmask(int how, const sigset_t * set, sigset_t * oldset);
+void xsigprocmask(int how, const sigset_t * set, sigset_t * oldset);
 
 /// uxsigsuspend
 //
@@ -81,7 +80,7 @@ xapi xsigprocmask(int how, const sigset_t * set, sigset_t * oldset);
 //  xapi proxy for sigsuspend that only fails when errno != EINTR
 //  (it is kind of the whole point ...)
 //
-xapi uxsigsuspend(const sigset_t * mask)
+void uxsigsuspend(const sigset_t * mask)
   __attribute__((nonnull));
 
 /// sigwaitinfo
@@ -89,25 +88,24 @@ xapi uxsigsuspend(const sigset_t * mask)
 // SUMMARY
 //  xapi proxy for sigwaitinfo
 //
-xapi xsigwaitinfo(const sigset_t * mask, siginfo_t * info)
-  __attribute__((nonnull(1)));
+void xsigwaitinfo(const sigset_t * mask, siginfo_t * info)
+  __attribute__((nonnull));
 
 /// uxsigwaitinfo
 //
 // SUMMARY
 //  xapi proxy for sigwaitinfo that only fails when errno != EINTR
 //
-xapi uxsigwaitinfo(int * r, const sigset_t * mask, siginfo_t * info)
-  __attribute__((nonnull(2)));
+int uxsigwaitinfo(const sigset_t * mask, siginfo_t * info)
+  __attribute__((nonnull));
 
 /**
  * xapi wrapper for sigtimedwait that only fails when errno != { EINTR, EAGAIN }
  *
  * err - (returns) zero on success, errno otherwise
  */
-xapi uxsigtimedwait(
-    int * restrict err
-  , const sigset_t * restrict mask
+int uxsigtimedwait(
+    const sigset_t * restrict mask
   , siginfo_t * restrict info
   , const struct timespec * restrict timeout
 )
@@ -118,14 +116,14 @@ xapi uxsigtimedwait(
 // SUMMARY
 //  xapi proxy for signal
 //
-xapi xsignal(int signum, sighandler_t handler);
+void xsignal(int signum, sighandler_t handler);
 
-xapi uxrt_sigqueueinfo(int * restrict r, pid_t tgid, int sig, siginfo_t *info)
+int uxrt_sigqueueinfo(pid_t tgid, int sig, siginfo_t *info)
   __attribute__((nonnull));
 
-xapi uxrt_tgsigqueueinfo(int * restrict r, pid_t tgid, pid_t tid, int sig, siginfo_t *info)
+int uxrt_tgsigqueueinfo(pid_t tgid, pid_t tid, int sig, siginfo_t *info)
   __attribute__((nonnull));
 
-const char * API signame(int signo);
+const char * signame(int signo);
 
 #endif

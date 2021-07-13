@@ -19,79 +19,42 @@
 #include <stdio.h>
 #include <sys/syscall.h>
 
-#include "xapi.h"
-#include "xapi/exit.h"
 #include "types.h"
+#include "macros.h"
 
 #include "xunistd/xunistd.h"
-#include "errtab/KERNEL.errtab.h"
-#include "errtab/XLINUX.errtab.h"
-
 #include "common/fmt.h"
 
 //
 // api
 //
 
-xapi API xread(int fd, void * buf, size_t count, ssize_t * bytes)
+ssize_t API xread(int fd, void * buf, size_t count)
 {
-  enter;
+  ssize_t rv;
 
-  if(bytes && ((*bytes) = read(fd, buf, count)) == -1)
-    tfail(perrtab_KERNEL, errno);
+  rv = read(fd, buf, count);
+  RUNTIME_ASSERT(rv != -1);
 
-  else if(!bytes && read(fd, buf, count) == -1)
-    tfail(perrtab_KERNEL, errno);
-
-  finally : coda;
+  return rv;
 }
 
-xapi API uxread(int fd, void * buf, size_t count, ssize_t * bytes)
+ssize_t API uxread(int fd, void * buf, size_t count)
 {
-  enter;
+  ssize_t rv;
 
-  if(bytes && ((*bytes) = read(fd, buf, count)) == -1)
+  rv = read(fd, buf, count);
+  if(rv == -1)
   {
-    if(errno != EAGAIN && errno != EWOULDBLOCK && errno != EINTR)
-    {
-      tfail(perrtab_KERNEL, errno);
-    }
-
-    *bytes = 0;
-  }
-  else if(!bytes && read(fd, buf, count) == -1 && errno != EAGAIN && errno != EWOULDBLOCK && errno != EINTR)
-  {
-    tfail(perrtab_KERNEL, errno);
+    RUNTIME_ASSERT(errno == EAGAIN || errno == EWOULDBLOCK || errno == EINTR);
+    rv = 0;
   }
 
-  finally : coda;
+  return rv;
 }
 
-int API aread(int fd, void * restrict buf, size_t count)
+void API axread(int fd, void * restrict buf, size_t count)
 {
-  size_t actual = 0;
-  while(count - actual)
-  {
-    ssize_t cur = read(fd, ((char*)buf) + actual, count - actual);
-    if(cur == 0)
-    {
-      return XLINUX_LESS;
-    }
-    else if(cur == -1)
-    {
-      return xapi_exit_synth(perrtab_KERNEL, errno);
-    }
-
-    actual += cur;
-  }
-
-  return actual;
-}
-
-xapi API axread(int fd, void * restrict buf, size_t count)
-{
-  enter;
-
   size_t actual;
   size_t cur;
 
@@ -99,61 +62,13 @@ xapi API axread(int fd, void * restrict buf, size_t count)
   while(count - actual)
   {
     cur = read(fd, ((char*)buf) + actual, count - actual);
-    if(cur == 0)
-    {
-      xapi_info_pushf("expected", "%zu", count);
-      xapi_info_pushf("actual", "%zd", actual);
-      fail(XLINUX_LESS);
-    }
-    else if(cur == -1)
-    {
-      tfail(perrtab_KERNEL, errno);
-    }
-
+    RUNTIME_ASSERT(cur > 0);
     actual += cur;
   }
-
-  finally : coda;
 }
 
-xapi API xwrite(int fd, const void * buf, size_t count, ssize_t * bytes)
+void API axwrite(int fd, const void * buf, size_t count)
 {
-  enter;
-
-  if(bytes && (*bytes = write(fd, buf, count)) == -1)
-    tfail(perrtab_KERNEL, errno);
-
-  else if(!bytes && write(fd, buf, count) == -1)
-    tfail(perrtab_KERNEL, errno);
-
-  finally : coda;
-}
-
-int API awrite(int fd, const void * buf, size_t count)
-{
-  size_t actual = 0;
-  while(count - actual)
-  {
-    ssize_t cur = write(fd, ((char*)buf) + actual, count - actual);
-    if(cur == 0)
-    {
-      return XLINUX_LESS;
-    }
-    else if(cur == -1)
-    {
-      return xapi_exit_synth(perrtab_KERNEL, errno);
-    }
-
-    actual += cur;
-  }
-
-  return actual;
-}
-
-xapi API axwrite(int fd, const void * buf, size_t count)
-{
-  enter;
-
   size_t actual;
   size_t cur;
 
@@ -161,535 +76,284 @@ xapi API axwrite(int fd, const void * buf, size_t count)
   while(count - actual)
   {
     cur = write(fd, ((char*)buf) + actual, count - actual);
-    if(cur == 0)
-    {
-      xapi_info_pushf("expected", "%zu", count);
-      xapi_info_pushf("actual", "%zd", actual);
-      fail(XLINUX_LESS);
-    }
-    else if(cur == -1)
-    {
-      tfail(perrtab_KERNEL, errno);
-    }
-
+    RUNTIME_ASSERT(cur > 0);
     actual += cur;
   }
-
-  finally : coda;
 }
 
-xapi API xgetcwd(char * buf, size_t size, char ** res)
+char * API xgetcwd(char * buf, size_t size)
 {
-  enter;
+  char * res;
 
-  if(res && (((*res) = getcwd(buf, size)) == 0))
-    tfail(perrtab_KERNEL, errno);
+  res = getcwd(buf, size);
+  RUNTIME_ASSERT(res);
 
-  else if(!res && getcwd(buf, size) == 0)
-    tfail(perrtab_KERNEL, errno);
-
-  finally : coda;
+  return res;
 }
 
-xapi API xlseek(int fd, off_t offset, int whence, off_t * res)
+off_t API xlseek(int fd, off_t offset, int whence)
 {
-  enter;
+  off_t res;
 
-  if(res && ((*res) = lseek(fd, offset, whence)) == (off_t)-1)
-    tfail(perrtab_KERNEL, errno);
+  res = lseek(fd, offset, whence);
+  RUNTIME_ASSERT(res != (off_t)-1);
 
-  else if(!res && lseek(fd, offset, whence) == (off_t)-1)
-    tfail(perrtab_KERNEL, errno);
-
-  finally : coda;
+  return res;
 }
 
-xapi API xclose(int fd)
+void API xclose(int fd)
 {
-  enter;
+  int rv;
 
-  if(fd != -1) {
-    tfatalize(perrtab_KERNEL, errno, close, fd);
+  if(fd == -1) {
+    return;
   }
 
-finally:
-  xapi_infof("fd", "%d", fd);
-coda;
+  rv = close(fd);
+  RUNTIME_ASSERT(rv == 0);
 }
 
-xapi API ixclose(int * fd)
+void API ixclose(int * fd)
 {
-  enter;
-
-  fatal(xclose, *fd);
+  xclose(*fd);
   *fd = -1;
-
-finally:
-  xapi_infof("fd", "%d", *fd);
-coda;
 }
 
-xapi API xsymlinks(const char * target, const char * linkpath)
+void API xsymlinks(const char * target, const char * linkpath)
 {
-  enter;
+  int rv;
 
-  tfatalize(perrtab_KERNEL, errno, symlink, target, linkpath);
+  rv = symlink(target, linkpath);
 
-finally:
-  xapi_infos("target", target);
-  xapi_infos("linkpath", linkpath);
-coda;
+  RUNTIME_ASSERT(rv == 0);
 }
 
-xapi API xsymlinkf(const char * restrict target_fmt, const char * restrict linkpath_fmt, ...)
+void API xsymlinkf(const char * restrict target_fmt, const char * restrict linkpath_fmt, ...)
 {
-  enter;
-
   va_list va;
+
   va_start(va, linkpath_fmt);
-
-  fatal(xsymlinkvf, target_fmt, linkpath_fmt, va);
-
-finally:
+  xsymlinkvf(target_fmt, linkpath_fmt, va);
   va_end(va);
-coda;
 }
 
-xapi API xsymlinkvf(const char * restrict target_fmt, const char * restrict linkpath_fmt, va_list va)
+void API xsymlinkvf(const char * restrict target_fmt, const char * restrict linkpath_fmt, va_list va)
 {
-  enter;
-
   char target[512];
   char linkpath[512];
 
-  fatal(fmt_apply, target, sizeof(target), target_fmt, va);
-  fatal(fmt_apply, linkpath, sizeof(linkpath), linkpath_fmt, va);
+  fmt_apply(target, sizeof(target), target_fmt, va);
+  fmt_apply(linkpath, sizeof(linkpath), linkpath_fmt, va);
 
-  fatal(xsymlinks, target, linkpath);
-
-  finally : coda;
+  return xsymlinks(target, linkpath);
 }
 
-xapi API uxsymlinks(const char * target, const char * linkpath)
+int API uxsymlinks(const char * target, const char * linkpath)
 {
-  enter;
+  int rv;
 
-  if(symlink(target, linkpath) != 0 && errno != EEXIST)
-    tfail(perrtab_KERNEL, errno);
+  rv = symlink(target, linkpath);
+  RUNTIME_ASSERT(rv == 0 || errno == EEXIST);
 
-finally:
-  xapi_infos("target", target);
-  xapi_infos("linkpath", linkpath);
-coda;
+  return rv;
 }
 
-xapi API uxsymlinkf(const char * restrict target_fmt, const char * restrict linkpath_fmt, ...)
+int API uxsymlinkf(const char * restrict target_fmt, const char * restrict linkpath_fmt, ...)
 {
-  enter;
-
+  int rv;
   va_list va;
+
   va_start(va, linkpath_fmt);
-
-  fatal(uxsymlinkvf, target_fmt, linkpath_fmt, va);
-
-finally:
+  rv = uxsymlinkvf(target_fmt, linkpath_fmt, va);
   va_end(va);
-coda;
+
+  return rv;
 }
 
-xapi API uxsymlinkvf(const char * restrict target_fmt, const char * restrict linkpath_fmt, va_list va)
+int API uxsymlinkvf(const char * restrict target_fmt, const char * restrict linkpath_fmt, va_list va)
 {
-  enter;
-
   char target[512];
   char linkpath[512];
 
-  fatal(fmt_apply, target, sizeof(target), target_fmt, va);
-  fatal(fmt_apply, linkpath, sizeof(linkpath), linkpath_fmt, va);
+  fmt_apply(target, sizeof(target), target_fmt, va);
+  fmt_apply(linkpath, sizeof(linkpath), linkpath_fmt, va);
 
-  fatal(uxsymlinks, target, linkpath);
-
-  finally : coda;
+  return uxsymlinks(target, linkpath);
 }
 
-xapi API xunlinks(const char * paths)
+void API xunlinks(const char * paths)
 {
-  enter;
-
-  if(unlink(paths) != 0)
-    tfail(perrtab_KERNEL, errno);
-
-finally:
-  xapi_infos("path", paths);
-coda;
+  RUNTIME_ASSERT(unlink(paths) == 0);
 }
 
-xapi API xunlinkvf(const char * fmt, va_list va)
+void API xunlinkvf(const char * fmt, va_list va)
 {
-  enter;
-
   char space[512];
-  fatal(fmt_apply, space, sizeof(space), fmt, va);
-  fatal(xunlinks, space);
 
-  finally : coda;
+  fmt_apply(space, sizeof(space), fmt, va);
+  xunlinks(space);
 }
 
-xapi API xunlinkf(const char * fmt, ...)
+void API xunlinkf(const char * fmt, ...)
 {
-  enter;
-
   va_list va;
   va_start(va, fmt);
-  fatal(xunlinkvf, fmt, va);
-
-  finally : coda;
+  xunlinkvf(fmt, va);
 }
 
-xapi API uxunlinks(const char * const restrict path)
+int API uxunlinks(const char * const restrict path)
 {
-  enter;
+  int rv;
 
-  if(unlink(path) != 0 && errno != ENOENT)
-    tfail(perrtab_KERNEL, errno);
+  rv = unlink(path);
+  RUNTIME_ASSERT(rv == 0 || errno == ENOENT);
 
-finally:
-  xapi_infof("path", "%s", path);
-coda;
+  return rv;
 }
 
-xapi API uxunlinkf(const char * const restrict fmt, ...)
+int API uxunlinkf(const char * const restrict fmt, ...)
 {
-  enter;
-
+  int rv;
   va_list va;
-  va_start(va, fmt);
-  fatal(uxunlinkvf, fmt, va);
 
-finally:
+  va_start(va, fmt);
+  rv = uxunlinkvf(fmt, va);
   va_end(va);
-coda;
+
+  return rv;
 }
 
-xapi API uxunlinkvf(const char * const restrict fmt, va_list va)
+int API uxunlinkvf(const char * const restrict fmt, va_list va)
 {
-  enter;
-
   char space[512];
-  fatal(fmt_apply, space, sizeof(space), fmt, va);
-  fatal(uxunlinks, space);
 
-  finally : coda;
+  fmt_apply(space, sizeof(space), fmt, va);
+  return uxunlinks(space);
 }
 
-xapi API xfork(pid_t * r)
+pid_t API xfork(void)
 {
-  enter;
+  pid_t rv;
 
-  if(r && (((*r) = fork()) == -1))
-    tfail(perrtab_KERNEL, errno);
+  rv = fork();
+  RUNTIME_ASSERT(rv != -1);
 
-  else if(!r && fork() == -1)
-    tfail(perrtab_KERNEL, errno);
-
-  finally : coda;
+  return rv;
 }
 
-xapi API xdup(int oldfd)
+void API xdup(int oldfd)
 {
-  enter;
-
-  if(dup(oldfd) == -1)
-    tfail(perrtab_KERNEL, errno);
-
-  finally : coda;
+  RUNTIME_ASSERT(dup(oldfd) != -1);
 }
 
-xapi API xdup2(int oldfd, int newfd)
+void API xdup2(int oldfd, int newfd)
 {
-  enter;
-
-  if(dup2(oldfd, newfd) == -1)
-    tfail(perrtab_KERNEL, errno);
-
-finally:
-  xapi_infof("oldfd", "%d", oldfd);
-  xapi_infof("newfd", "%d", newfd);
-coda;
+  RUNTIME_ASSERT(dup2(oldfd, newfd) != -1);
 }
 
-xapi API xgetresuid(uid_t * const ruid, uid_t * const euid, uid_t * const suid)
+void API xgetresuid(uid_t * const ruid, uid_t * const euid, uid_t * const suid)
 {
-  enter;
-
-  tfatalize(perrtab_KERNEL, errno, getresuid, ruid, euid, suid);
-
-  finally : coda;
+  RUNTIME_ASSERT(getresuid(ruid, euid, suid) == 0);
 }
 
-xapi API xgetresgid(gid_t * const rgid, gid_t * const egid, gid_t * const sgid)
+void API xgetresgid(gid_t * const rgid, gid_t * const egid, gid_t * const sgid)
 {
-  enter;
-
-  tfatalize(perrtab_KERNEL, errno, getresgid, rgid, egid, sgid);
-
-  finally : coda;
+  RUNTIME_ASSERT(getresgid(rgid, egid, sgid) == 0);
 }
 
-xapi API xsetresuid(uid_t ruid, uid_t euid, uid_t suid)
+void API xsetresuid(uid_t ruid, uid_t euid, uid_t suid)
 {
-  enter;
-
-  tfatalize(perrtab_KERNEL, errno, setresuid, ruid, euid, suid);
-
-  finally : coda;
+  RUNTIME_ASSERT(setresuid(ruid, euid, suid) == 0);
 }
 
-xapi API xsetresgid(gid_t rgid, gid_t egid, gid_t sgid)
+void API xsetresgid(gid_t rgid, gid_t egid, gid_t sgid)
 {
-  enter;
-
-  tfatalize(perrtab_KERNEL, errno, setresgid, rgid, egid, sgid);
-
-  finally : coda;
+  RUNTIME_ASSERT(setresgid(rgid, egid, sgid) == 0);
 }
 
-xapi API xeuidaccesss(int * restrict r, int mode, const char * restrict path)
+void API xseteuid(uid_t euid)
 {
-  enter;
-
-  if((r && ((*r) = euidaccess(path, mode)) == -1) || (!r && euidaccess(path, mode) == -1))
-    tfail(perrtab_KERNEL, errno);
-
-finally:
-  xapi_infos("path", path);
-coda;
+  RUNTIME_ASSERT(seteuid(euid) == 0);
 }
 
-xapi API xeuidaccessf(int * restrict r, int mode, const char * restrict fmt, ...)
+void API xsetegid(gid_t egid)
 {
-  enter;
+  RUNTIME_ASSERT(setegid(egid) == 0);
+}
 
+void API xtruncate(const char * path, off_t length)
+{
+  RUNTIME_ASSERT(truncate(path, length) == 0);
+}
+
+void API xftruncate(int fd, off_t length)
+{
+  RUNTIME_ASSERT(ftruncate(fd, length));
+}
+
+void API xrmdir(const char * pathname)
+{
+  RUNTIME_ASSERT(rmdir(pathname) == 0);
+}
+
+void API xsetpgid(pid_t pid, pid_t pgid)
+{
+  RUNTIME_ASSERT(setpgid(pid, pgid));
+}
+
+void API xsetsid()
+{
+  RUNTIME_ASSERT(setsid() != -1);
+}
+
+void API xexecv(const char * path, char * const argv[])
+{
+  execv(path, argv);
+  RUNTIME_ABORT();
+}
+
+void API xexecve(const char * path, char * const argv[], char * const envp[])
+{
+  execve(path, argv, envp);
+  RUNTIME_ABORT();
+}
+
+void API xexecvp(const char * file, char * const argv[])
+{
+  execvp(file, argv);
+  RUNTIME_ABORT();
+}
+
+void API xfexecve(int fd, char * const argv[], char * const envp[])
+{
+  fexecve(fd, argv, envp);
+}
+
+void API xchdirs(const char * const restrict path)
+{
+  RUNTIME_ASSERT(chdir(path) == 0);
+}
+
+void API xchdirf(const char * const restrict fmt, ...)
+{
   va_list va;
+
   va_start(va, fmt);
-  fatal(xeuidaccessvf, r, mode, fmt, va);
-
-finally:
+  xchdirvf(fmt, va);
   va_end(va);
-coda;
 }
 
-xapi API xeuidaccessvf(int * restrict r, int mode, const char * restrict fmt, va_list va)
+void API xchdirvf(const char * const restrict fmt, va_list va)
 {
-  enter;
-
   char space[512];
-  fatal(fmt_apply, space, sizeof(space), fmt, va);
-  fatal(xeuidaccesss, r, mode, space);
 
-  finally : coda;
+  fmt_apply(space, sizeof(space), fmt, va);
+  xchdirs(space);
 }
 
-xapi API uxeuidaccesss(int * restrict r, int mode, const char * restrict path)
+void API xfchdir(int fd)
 {
-  enter;
-
-  int lr;
-  if(!r)
-    r = &lr;
-
-  if(((*r) = euidaccess(path, mode)) == -1 && errno != EACCES && errno != ENOENT && errno != ENOTDIR)
-    tfail(perrtab_KERNEL, errno);
-
-finally:
-  xapi_infos("path", path);
-coda;
-}
-
-xapi API uxeuidaccessf(int * restrict r, int mode, const char * restrict fmt, ...)
-{
-  enter;
-
-  va_list va;
-  va_start(va, fmt);
-  fatal(uxeuidaccessvf, r, mode, fmt, va);
-
-finally:
-  va_end(va);
-coda;
-}
-
-xapi API uxeuidaccessvf(int * restrict r, int mode, const char * restrict fmt, va_list va)
-{
-  enter;
-
-  char space[512];
-  fatal(fmt_apply, space, sizeof(space), fmt, va);
-  fatal(uxeuidaccesss, r, mode, space);
-
-  finally : coda;
-}
-
-xapi API xseteuid(uid_t euid)
-{
-  enter;
-
-  tfatalize(perrtab_KERNEL, errno, seteuid, euid);
-
-finally:
-  xapi_infof("euid", "%d", euid);
-coda;
-}
-
-xapi API xsetegid(gid_t egid)
-{
-  enter;
-
-  tfatalize(perrtab_KERNEL, errno, setegid, egid);
-
-finally:
-  xapi_infof("egid", "%d", egid);
-coda;
-}
-
-xapi API xtruncate(const char * path, off_t length)
-{
-  enter;
-
-  tfatalize(perrtab_KERNEL, errno, truncate, path, length);
-
-finally :
-  xapi_infos("path", path);
-coda;
-}
-
-xapi API xftruncate(int fd, off_t length)
-{
-  enter;
-
-  tfatalize(perrtab_KERNEL, errno, ftruncate, fd, length);
-
-  finally : coda;
-}
-
-xapi API xrmdir(const char * pathname)
-{
-  enter;
-
-  tfatalize(perrtab_KERNEL, errno, rmdir, pathname);
-
-finally:
-  xapi_infos("path", pathname);
-coda;
-}
-
-xapi API xsetpgid(pid_t pid, pid_t pgid)
-{
-  enter;
-
-  tfatalize(perrtab_KERNEL, errno, setpgid, pid, pgid);
-
-  finally : coda;
-}
-
-xapi API xsetsid()
-{
-  enter;
-
-  if(setsid() == -1)
-    tfail(perrtab_KERNEL, errno);
-
-  finally : coda;
-}
-
-xapi API xexecv(const char * path, char * const argv[])
-{
-  enter;
-
-  tfatalize(perrtab_KERNEL, errno, execv, path, argv);
-
-finally:
-  xapi_infos("path", path);
-coda;
-}
-
-xapi API xexecve(const char * path, char * const argv[], char * const envp[])
-{
-  enter;
-
-  tfatalize(perrtab_KERNEL, errno, execve, path, argv, envp);
-
-finally:
-  xapi_infos("path", path);
-coda;
-}
-
-xapi API xexecvp(const char * file, char * const argv[])
-{
-  enter;
-
-  tfatalize(perrtab_KERNEL, errno, execvp, file, argv);
-
-finally:
-  xapi_infos("file", file);
-coda;
-}
-
-xapi API xfexecve(int fd, char * const argv[], char * const envp[])
-{
-  enter;
-
-  tfatalize(perrtab_KERNEL, errno, fexecve, fd, argv, envp);
-
-finally:
-  xapi_infof("fd", "%d", fd);
-coda;
-}
-
-xapi API xchdirs(const char * const restrict path)
-{
-  enter;
-
-  tfatalize(perrtab_KERNEL, errno, chdir, path);
-
-finally:
-  xapi_infof("path", "%s", path);
-coda;
-}
-
-xapi API xchdirf(const char * const restrict fmt, ...)
-{
-  enter;
-
-  va_list va;
-  va_start(va, fmt);
-  fatal(xchdirvf, fmt, va);
-
-finally:
-  va_end(va);
-coda;
-}
-
-xapi API xchdirvf(const char * const restrict fmt, va_list va)
-{
-  enter;
-
-  char space[512];
-  fatal(fmt_apply, space, sizeof(space), fmt, va);
-  fatal(xchdirs, space);
-
-  finally : coda;
-}
-
-xapi API xfchdir(int fd)
-{
-  enter;
-
-  tfatalize(perrtab_KERNEL, errno, fchdir, fd);
-
-finally:
-  xapi_infof("fd", "%d", fd);
-coda;
+  RUNTIME_ASSERT(fchdir(fd) == 0);
 }
 
 pid_t API gettid()
@@ -702,11 +366,7 @@ pid_t API gettid()
   return self;
 }
 
-xapi API xpipe(int filedes[2])
+void API xpipe(int filedes[2])
 {
-  enter;
-
-  tfatalize(perrtab_KERNEL, errno, pipe, filedes);
-
-  finally : coda;
+  RUNTIME_ASSERT(pipe(filedes) == 0);
 }

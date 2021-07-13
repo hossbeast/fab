@@ -20,25 +20,26 @@
 
 #include <time.h>
 
-#include "xapi.h"
-
 /// xlocaltime_r
 //
 // SUMMARY
 //  proxy for localtime_r
 //
-xapi xlocaltime_r(const time_t * timep, struct tm * result);
+void xlocaltime_r(const time_t * restrict timep, struct tm * restrict result)
+  __attribute__((nonnull));
 
 /// clock_gettime
 //
 // SUMMARY
 //  xapi proxy for clock_gettime
 //
-xapi xclock_gettime(clockid_t clk_id, struct timespec * tp)
+void xclock_gettime(clockid_t clk_id, struct timespec * tp)
   __attribute__((nonnull));
 
-xapi xclock_nanosleep(clockid_t clock_id, int flags, const struct timespec *request, struct timespec *remain);
+void xclock_nanosleep(clockid_t clock_id, int flags, const struct timespec * restrict request, struct timespec * restrict remain)
+  __attribute__((nonnull));
 
-xapi uxclock_nanosleep(int * r, clockid_t clock_id, int flags, const struct timespec *request, struct timespec *remain);
+int uxclock_nanosleep(clockid_t clock_id, int flags, const struct timespec * restrict request, struct timespec * restrict remain)
+  __attribute__((nonnull));
 
 #endif

@@ -19,7 +19,6 @@ use cc             # this module contains c sources
 use library/shared
 use library/static
 
-import libxapi
 import libxlinux
 import fab/include
 

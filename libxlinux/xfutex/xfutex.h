@@ -22,7 +22,6 @@
 #include <linux/futex.h>
 #include <sys/syscall.h>
 
-#include "xapi.h"
 #include "types.h"
 
 struct timespec;
@@ -32,15 +31,14 @@ struct timespec;
  *
  * futex_wordp - must be 4 byte aligned
  */
-xapi uxfutex(
-    int * restrict r
-  , int32_t * restrict futex_wordp
+int uxfutex(
+    int32_t * restrict futex_wordp
   , int futex_op
   , int32_t val
   , const struct timespec * restrict timeout
   , int32_t * restrict uaddr2
   , int32_t val3
 )
-  __attribute__((nonnull(1, 2)));
+  __attribute__((nonnull(1)));
 
 #endif

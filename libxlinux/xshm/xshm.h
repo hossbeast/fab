@@ -20,7 +20,6 @@
 
 #include <sys/shm.h>
 
-#include "xapi.h"
 #include "types.h"
 
 /// uxshmget
@@ -28,29 +27,29 @@
 // SUMMARY
 //  xapi proxy for shmget that only fails when errno != ENOENT
 //
-xapi uxshmget(key_t key, size_t size, int shmflg, int * const restrict shmid);
+int uxshmget(key_t key, size_t size, int shmflg);
 
 /// xshmget
 //
 // SUMMARY
 //  xapi proxy for shmget
 //
-xapi xshmget(key_t key, size_t size, int shmflg, int * const restrict shmid);
+int xshmget(key_t key, size_t size, int shmflg);
 
 /// xshmctl
 //
 // SUMMARY
 //  xapi proxy for shmctl
 //
-xapi xshmctl(int shmid, int cmd, struct shmid_ds * const restrict buf);
+void xshmctl(int shmid, int cmd, struct shmid_ds * const restrict buf);
 
 /// xshmat
 //
 // SUMMARY
 //  xapi proxy for shmat
 //
-xapi xshmat(int shmid, const void * shmaddr, int shmflg, void ** const restrict addr)
-  __attribute__((nonnull(4)));
+void * xshmat(int shmid, const void * restrict shmaddr, int shmflg)
+  __attribute__((nonnull));
 
 /// xshmdt
 //
@@ -60,7 +59,7 @@ xapi xshmat(int shmid, const void * shmaddr, int shmflg, void ** const restrict 
 // PARAMETERS
 //  shmaddr
 //
-xapi xshmdt(const void * shmaddr);
+void xshmdt(const void * restrict shmaddr);
 
 /// ixshmdt
 //
@@ -70,7 +69,7 @@ xapi xshmdt(const void * shmaddr);
 // PARAMETERS
 //  shmaddr
 //
-xapi ixshmdt(void ** shmaddr)
+void ixshmdt(void ** shmaddr)
   __attribute__((nonnull));
 
 #endif

@@ -24,8 +24,6 @@
 #include <stdarg.h>
 #include <fcntl.h>
 
-#include "xapi.h"
-
 /// xfstatat
 //
 // SUMMARY
@@ -34,14 +32,14 @@
 // VARIANTS
 //  s/f/vf - different ways to pass path
 //
-xapi xfstatats(int dirfd, int flags, struct stat * restrict buf, const char * restrict path)
+void xfstatats(int dirfd, int flags, struct stat * restrict buf, const char * restrict path)
   __attribute__((nonnull(3, 4)));
 
-xapi xfstatatf(int dirfd, int flags, struct stat * restrict buf, const char * restrict path_fmt, ...)
+void xfstatatf(int dirfd, int flags, struct stat * restrict buf, const char * restrict path_fmt, ...)
   __attribute__((nonnull(3, 4)))
   __attribute__((format(printf, 4, 5)));
 
-xapi xfstatatvf(int dirfd, int flags, struct stat * restrict buf, const char * restrict path_fmt, va_list va)
+void xfstatatvf(int dirfd, int flags, struct stat * restrict buf, const char * restrict path_fmt, va_list va)
   __attribute__((nonnull(3, 4)));
 
 /// uxfstatat
@@ -53,15 +51,15 @@ xapi xfstatatvf(int dirfd, int flags, struct stat * restrict buf, const char * r
 // VARIANTS
 //  s/f/vf - different ways to pass path
 //
-xapi uxfstatats(int * restrict r, int dirfd, int flags, struct stat * restrict buf, const char * restrict path)
-  __attribute__((nonnull(4, 5)));
+int uxfstatats(int dirfd, int flags, struct stat * restrict buf, const char * restrict path)
+  __attribute__((nonnull(3, 4)));
 
-xapi uxfstatatf(int * restrict r, int dirfd, int flags, struct stat * restrict buf, const char * restrict path_fmt, ...)
-  __attribute__((nonnull(4, 5)))
-  __attribute__((format(printf, 5, 6)));
+int uxfstatatf(int dirfd, int flags, struct stat * restrict buf, const char * restrict path_fmt, ...)
+  __attribute__((nonnull(3, 4)))
+  __attribute__((format(printf, 4, 5)));
 
-xapi uxfstatatvf(int * restrict r, int dirfd, int flags, struct stat * restrict buf, const char * restrict path_fmt, va_list va)
-  __attribute__((nonnull(4, 5)));
+int uxfstatatvf(int dirfd, int flags, struct stat * restrict buf, const char * restrict path_fmt, va_list va)
+  __attribute__((nonnull(3, 4)));
 
 
 /// xfutimens
@@ -69,14 +67,14 @@ xapi uxfstatatvf(int * restrict r, int dirfd, int flags, struct stat * restrict 
 // SUMMARY
 //  proxy for futimens
 //
-xapi xfutimens(int fd, const struct timespec times[2]);
+void xfutimens(int fd, const struct timespec times[2]);
 
 /// xutimensat
 //
 // SUMMARY
 //  proxy for utimensat
 //
-xapi xutimensats(int dirfd, const struct timespec times[2], int flags, const char * const restrict path)
+void xutimensats(int dirfd, const struct timespec times[2], int flags, const char * const restrict path)
   __attribute__((nonnull));
 
 /// xutimensat
@@ -84,21 +82,21 @@ xapi xutimensats(int dirfd, const struct timespec times[2], int flags, const cha
 // SUMMARY
 //  proxy for utimensat that only fails when errno != ENOENT
 //
-xapi uxutimensats(int dirfd, const struct timespec times[2], int flags, int * restrict r, const char * const restrict path)
-  __attribute__((nonnull(5)));
+int uxutimensats(int dirfd, const struct timespec times[2], int flags, const char * const restrict path)
+  __attribute__((nonnull(4)));
 
 /// xmkdir
 //
 // SUMMARY
 //  proxy for mkdir
 //
-xapi xmkdirs(mode_t mode, const char * path)
+void xmkdirs(mode_t mode, const char * path)
   __attribute__((nonnull));
 
-xapi xmkdirf(mode_t mode, const char * path_fmt, ...)
+void xmkdirf(mode_t mode, const char * path_fmt, ...)
   __attribute__((nonnull));
 
-xapi xmkdirvf(mode_t mode, const char * path_fmt, va_list va)
+void xmkdirvf(mode_t mode, const char * path_fmt, va_list va)
   __attribute__((nonnull));
 
 /// uxmkdir
@@ -106,13 +104,13 @@ xapi xmkdirvf(mode_t mode, const char * path_fmt, va_list va)
 // SUMMARY
 //  proxy for mkdir which only fails when errno != ENOENT
 //
-xapi uxmkdirs(mode_t mode, const char * path)
+int uxmkdirs(mode_t mode, const char * path)
   __attribute__((nonnull));
 
-xapi uxmkdirf(mode_t mode, const char * path_fmt, ...)
+int uxmkdirf(mode_t mode, const char * path_fmt, ...)
   __attribute__((nonnull));
 
-xapi uxmkdirvf(mode_t mode, const char * path_fmt, va_list va)
+int uxmkdirvf(mode_t mode, const char * path_fmt, va_list va)
   __attribute__((nonnull));
 
 /// xfchmod
@@ -120,6 +118,6 @@ xapi uxmkdirvf(mode_t mode, const char * path_fmt, va_list va)
 // SUMMARY
 //  proxy for fchmod
 //
-xapi xfchmod(int fd, mode_t mode);
+void xfchmod(int fd, mode_t mode);
 
 #endif

@@ -22,8 +22,6 @@
 #include <sys/types.h>
 #include <stdarg.h>
 
-#include "xapi.h"
-
 /// xmalloc
 //
 // SUMMARY
@@ -33,7 +31,7 @@
 // RETURNS
 //  returns 0 on success
 //
-xapi xmalloc(void* target, size_t size)
+void xmalloc(void* target, size_t size)
   __attribute__((nonnull));
 
 /// xrealloc
@@ -49,7 +47,7 @@ xapi xmalloc(void* target, size_t size)
 // RETURNS
 //  returns 0 on success
 //
-xapi xrealloc(void* target, size_t es, size_t ec, size_t oec)
+void xrealloc(void* target, size_t es, size_t ec, size_t oec)
   __attribute__((nonnull));
 
 /// wfree
@@ -67,23 +65,6 @@ void wfree(void* target);
 void iwfree(void* target)
   __attribute__((nonnull));
 
-/// xqsort_r
-//
-// SUMMARY
-//  proxy for qsort_r which invokes the sorting function with fatal
-//
-// PARAMETERS
-//  arg - user context
-//
-// CALLBACK
-//  A     - first element
-//  B     - second element
-//  arg   - user context
-//  delta - (returns) the result of the comparison
-//
-xapi xqsort_r(void * base, size_t nmemb, size_t size, xapi (*xcompar)(const void * A, const void * B, void * arg, int * delta), void * arg)
-  __attribute__((nonnull(1, 4)));
-
 /// xreadlink
 //
 // SUMMARY
@@ -92,13 +73,13 @@ xapi xqsort_r(void * base, size_t nmemb, size_t size, xapi (*xcompar)(const void
 // VARIANTS
 //  s/f/vf - different ways of providing pathname
 //
-xapi xreadlinks(const char * pathname, char * buf, size_t bufsiz, ssize_t * r)
+ssize_t xreadlinks(const char * pathname, char * buf, size_t bufsiz)
   __attribute__((nonnull(1, 2)));
 
-xapi xreadlinkf(const char * pathname_fmt, char * buf, size_t bufsiz, ssize_t * r, ...)
+ssize_t xreadlinkf(const char * pathname_fmt, char * buf, size_t bufsiz, ...)
   __attribute__((nonnull(1, 2)));
 
-xapi xreadlinkvf(const char * pathname_fmt, char * buf, size_t bufsiz, ssize_t * r, va_list va)
+ssize_t xreadlinkvf(const char * pathname_fmt, char * buf, size_t bufsiz, va_list va)
   __attribute__((nonnull(1, 2)));
 
 /// xrealpath
@@ -106,17 +87,17 @@ xapi xreadlinkvf(const char * pathname_fmt, char * buf, size_t bufsiz, ssize_t *
 // SUMMARY
 //  proxy for realpath
 //
-xapi xrealpaths(char ** restrict r, char * restrict resolved_path, const char * restrict path)
-  __attribute__((nonnull(3)));
+char * xrealpaths(char * restrict resolved_path, const char * restrict path)
+  __attribute__((nonnull(2)));
 
-xapi xrealpathf(char ** restrict r, char * restrict resolved_path, const char * restrict path_fmt, ...)
-  __attribute__((nonnull(3)))
-  __attribute__((format(printf, 3, 4)));
+char * xrealpathf(char * restrict resolved_path, const char * restrict path_fmt, ...)
+  __attribute__((nonnull(2)))
+  __attribute__((format(printf, 2, 3)));
 
-xapi xrealpathvf(char ** restrict r, char * restrict resolved_path, const char * restrict path_fmt, va_list va)
-  __attribute__((nonnull(3)));
+char * xrealpathvf(char * restrict resolved_path, const char * restrict path_fmt, va_list va)
+  __attribute__((nonnull(2)));
 
-xapi xsystem(const char * restrict command, int * restrict status)
-  __attribute__((nonnull(1)));
+int xsystem(const char * restrict command)
+  __attribute__((nonnull));
 
 #endif

@@ -17,13 +17,13 @@
 
 #include <errno.h>
 
-#include "xgrp/xgrp.h"
-#include "errtab/KERNEL.errtab.h"
+#include "types.h"
+#include "macros.h"
 
-xapi API uxgetgrgid_r(gid_t gid, struct group * grp, char * buf, size_t buflen, struct group ** result)
+#include "xgrp.h"
+
+void API uxgetgrgid_r(gid_t gid, struct group * grp, char * buf, size_t buflen, struct group ** result)
 {
-  enter;
-
   if(getgrgid_r(gid, grp, buf, buflen, result) == 0)
   {
     // possibly found, check *result
@@ -34,21 +34,17 @@ xapi API uxgetgrgid_r(gid_t gid, struct group * grp, char * buf, size_t buflen, 
   }
   else
   {
-    tfail(perrtab_KERNEL, errno);
+    RUNTIME_ABORT();
   }
-
-finally :
-  xapi_infof("gid", "%lu", (unsigned long)gid);
-coda;
 }
 
-xapi API xgetgrgid(gid_t gid, struct group ** const grp)
+struct group * API xgetgrgid(gid_t gid)
 {
-  enter;
+  struct group * grp;
 
   errno = 0;
-  if(((*grp) = getgrgid(gid)) == 0)
-    tfail(perrtab_KERNEL, errno);
+  grp = getgrgid(gid);
+  RUNTIME_ASSERT(grp != 0);
 
-  finally : coda;
+  return grp;
 }

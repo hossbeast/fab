@@ -1,1 +1,0 @@
-../errtab/KERNEL.errtab.h

@@ -18,15 +18,13 @@
 use cc              # this module contains c sources
 use library/shared  # this module builds a shared library
 use library/static  # this module builds a shared library
-use xapi/errtab     # this module contains errtabs
 
 # make common objects available for #inclusion and linking by files in this module
 import fab/include
 import libcommon
-import libxapi
 
 # variants for the module
-variant xapi.pic.{debug,devel,final,trace}
+variant pic.{debug,devel,final,trace}
 
 # pull in object files in the module, except those under integ
 rule *~integ/**/*.?.o -> libxlinux.$?.{so,a}

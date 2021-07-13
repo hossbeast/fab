@@ -19,7 +19,6 @@
 #define _XFTW_H
 
 #include <ftw.h>
-#include "xapi.h"
 
 struct FTW;
 struct stat;
@@ -35,9 +34,9 @@ struct stat;
 // REMARKS
 //  this function uses static storage and is therefore not threadsafe
 //
-xapi xnftw(
+void xnftw(
     const char * restrict dirpath
-  , xapi (* xfn)(const char * fpath, const struct stat * sb, int typeflag, struct FTW * ftwbuf, void * arg)
+  , void (* xfn)(const char * fpath, const struct stat * sb, int typeflag, struct FTW * ftwbuf, void * arg)
   , int nopenfd
   , int flags
   , void * arg
@@ -55,9 +54,9 @@ xapi xnftw(
 // REMARKS
 //  this function uses static storage and is therefore not threadsafe
 //
-xapi xnftw_nth(
+void xnftw_nth(
     const char * restrict dirpath
-  , xapi (* xfn)(const char * fpath, const struct stat * sb, int typeflag, struct FTW * ftwbuf, void * arg)
+  , void (* xfn)(const char * fpath, const struct stat * sb, int typeflag, struct FTW * ftwbuf, void * arg)
   , int nopenfd
   , int flags
   , int level

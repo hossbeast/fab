@@ -15,7 +15,6 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#include "xapi.h"
 
 #include "xlinux/xstdlib.h"
 #include "xlinux/xunistd.h"
@@ -24,10 +23,8 @@
 #include "snarf.h"
 #include "fmt.h"
 
-static xapi snarf(int fd, char ** const restrict dst, size_t * restrict dstlp)
+static void snarf(int fd, char ** const restrict dst, size_t * restrict dstlp)
 {
-  enter;
-
   size_t dstl = 0;
   size_t dsta = 0;
   size_t newa;
@@ -39,64 +36,52 @@ static xapi snarf(int fd, char ** const restrict dst, size_t * restrict dstlp)
     {
       newa = dsta ?: 128;
       newa += newa * 2 + newa / 2;
-      fatal(xrealloc, dst, sizeof(**dst), newa + 2 /* YYU_INPLACE */, dsta);
+      xrealloc(dst, sizeof(**dst), newa + 2 /* YYU_INPLACE */, dsta);
       dsta = newa;
     }
 
-    fatal(xread, fd, &(*dst)[dstl], dsta - dstl, &count);
+    count = xread(fd, &(*dst)[dstl], dsta - dstl);
     dstl += count;
   } while(dstl == dsta);
 
   if(dstlp) {
     *dstlp = dstl;
   }
-
-  finally : coda;
 }
 
 //
 // public
 //
 
-xapi API snarfs(char ** const restrict dst, size_t * const restrict dstlp, const char * const restrict path)
+void API snarfs(char ** const restrict dst, size_t * const restrict dstlp, const char * const restrict path)
 {
-  xproxy(snarfats, dst, dstlp, AT_FDCWD, path);
+  snarfats(dst, dstlp, AT_FDCWD, path);
 }
 
-xapi API snarff(char ** const restrict dst, size_t * const restrict dstlp, const char * const restrict path_fmt, ...)
+void API snarff(char ** const restrict dst, size_t * const restrict dstlp, const char * const restrict path_fmt, ...)
 {
-  enter;
-
   va_list va;
+
   va_start(va, path_fmt);
-
   fatal(snarfatvf, dst, dstlp, AT_FDCWD, path_fmt, va);
-
-finally:
   va_end(va);
-coda;
 }
 
-xapi API snarfvf(char ** const restrict dst, size_t * const restrict dstlp, const char * const restrict path_fmt, va_list va)
+void API snarfvf(char ** const restrict dst, size_t * const restrict dstlp, const char * const restrict path_fmt, va_list va)
 {
-  xproxy(snarfatvf, dst, dstlp, AT_FDCWD, path_fmt, va);
+  return snarfatvf(dst, dstlp, AT_FDCWD, path_fmt, va);
 }
 
 
-xapi API snarfats(char ** const restrict dst, size_t * const restrict dstlp, int dirfd, const char * const restrict path)
+void API snarfats(char ** const restrict dst, size_t * const restrict dstlp, int dirfd, const char * const restrict path)
 {
-  enter;
-
-  int fd = -1;
-  fatal(xopenats, &fd, O_RDONLY, dirfd, path);
-  fatal(snarf, fd, dst, dstlp);
-
-finally:
-  fatal(ixclose, &fd);
-coda;
+  int fd;
+  xopenats(&fd, O_RDONLY, dirfd, path);
+  snarf(fd, dst, dstlp);
+  xclose(fd);
 }
 
-xapi API snarfatf(char ** const restrict dst, size_t * const restrict dstlp, int dirfd, const char * const restrict path_fmt, ...)
+void API snarfatf(char ** const restrict dst, size_t * const restrict dstlp, int dirfd, const char * const restrict path_fmt, ...)
 {
   enter;
 
@@ -110,7 +95,7 @@ finally:
 coda;
 }
 
-xapi API snarfatvf(char ** const restrict dst, size_t * const restrict dstlp, int dirfd, const char * const restrict path_fmt, va_list va)
+void API snarfatvf(char ** const restrict dst, size_t * const restrict dstlp, int dirfd, const char * const restrict path_fmt, va_list va)
 {
   enter;
 
@@ -124,12 +109,12 @@ coda;
 }
 
 
-xapi API usnarfs(char ** const restrict dst, size_t * const restrict dstlp, const char * const restrict path)
+void API usnarfs(char ** const restrict dst, size_t * const restrict dstlp, const char * const restrict path)
 {
   xproxy(usnarfats, dst, dstlp, AT_FDCWD, path);
 }
 
-xapi API usnarff(char ** const restrict dst, size_t * const restrict dstlp, const char * const restrict path_fmt, ...)
+void API usnarff(char ** const restrict dst, size_t * const restrict dstlp, const char * const restrict path_fmt, ...)
 {
   enter;
 
@@ -143,27 +128,27 @@ finally:
 coda;
 }
 
-xapi API usnarfvf(char ** const restrict dst, size_t * const restrict dstlp, const char * const restrict path_fmt, va_list va)
+void API usnarfvf(char ** const restrict dst, size_t * const restrict dstlp, const char * const restrict path_fmt, va_list va)
 {
   xproxy(usnarfatvf, dst, dstlp, AT_FDCWD, path_fmt, va);
 }
 
 
-xapi API usnarfats(char ** const restrict dst, size_t * const restrict dstlp, int dirfd, const char * const restrict path)
+void API usnarfats(char ** const restrict dst, size_t * const restrict dstlp, int dirfd, const char * const restrict path)
 {
   enter;
 
   int fd = -1;
   fatal(uxopenats, &fd, O_RDONLY, dirfd, path);
   if(fd != -1)
-    fatal(snarf, fd, dst, dstlp);
+    snarf(fd, dst, dstlp);
 
 finally:
   fatal(ixclose, &fd);
 coda;
 }
 
-xapi API usnarfatf(char ** const restrict dst, size_t * const restrict dstlp, int dirfd, const char * const restrict path_fmt, ...)
+void API usnarfatf(char ** const restrict dst, size_t * const restrict dstlp, int dirfd, const char * const restrict path_fmt, ...)
 {
   enter;
 
@@ -177,7 +162,7 @@ finally:
 coda;
 }
 
-xapi API usnarfatvf(char ** const restrict dst, size_t * const restrict dstlp, int dirfd, const char * const restrict path_fmt, va_list va)
+void API usnarfatvf(char ** const restrict dst, size_t * const restrict dstlp, int dirfd, const char * const restrict path_fmt, va_list va)
 {
   enter;
 
@@ -190,12 +175,12 @@ finally:
 coda;
 }
 
-xapi API fsnarf(char ** const restrict dst, size_t * const restrict dstlp, int fd)
+void API fsnarf(char ** const restrict dst, size_t * const restrict dstlp, int fd)
 {
   enter;
 
   fatal(xlseek, fd, 0, SEEK_SET, 0);
-  fatal(snarf, fd, dst, dstlp);
+  snarf(fd, dst, dstlp);
 
   finally : coda;
 }

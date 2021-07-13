@@ -17,20 +17,19 @@
 
 #include <errno.h>
 
+#include "types.h"
+#include "macros.h"
+
 #include "xinotify.h"
-#include "errtab/KERNEL.errtab.h"
 
-xapi API xinotify_init(int * id, int flags)
+int API xinotify_init(int flags)
 {
-  enter;
+  int r;
 
-  int rv;
-  if((rv = inotify_init1(flags)) < 0)
-    tfail(perrtab_KERNEL, rv);
+  r = inotify_init1(flags);
+  RUNTIME_ASSERT(r >= 0);
 
-  *id = rv;
-
-  finally : coda;
+  return r;
 }
 
 /// inotify_add_watch
@@ -38,18 +37,12 @@ xapi API xinotify_init(int * id, int flags)
 // SUMMARY
 //  proxy for inotify_add_watch
 //
-xapi API xinotify_add_watch(int * wd, int id, const char *path, uint32_t mask)
+int API xinotify_add_watch(int id, const char *path, uint32_t mask)
 {
-  enter;
+  int r;
 
-  int rv;
-  if((rv = inotify_add_watch(id, path, mask)) < 0)
-    tfail(perrtab_KERNEL, errno);
+  r = inotify_add_watch(id, path, mask);
+  RUNTIME_ASSERT(r >= 0);
 
-  *wd = rv;
-
-finally:
-  xapi_infos("path", path);
-  xapi_infof("id", "%d", id);
-coda;
+  return r;
 }

@@ -18,209 +18,145 @@
 #include <string.h>
 #include <errno.h>
 
-#include "xapi.h"
 #include "types.h"
+#include "macros.h"
 
 #include "xstat/xstat.h"
-#include "errtab/KERNEL.errtab.h"
 #include "common/fmt.h"
 
-xapi API xfstatats(int dirfd, int flags, struct stat * restrict buf, const char * restrict path)
+void API xfstatats(int dirfd, int flags, struct stat * restrict buf, const char * restrict path)
 {
-  enter;
-
-  if(fstatat(dirfd, path, buf, flags) != 0)
-    tfail(perrtab_KERNEL, errno);
-
-finally:
-  xapi_infof("path", "%s", path);
-coda;
+  RUNTIME_ASSERT(fstatat(dirfd, path, buf, flags) == 0);
 }
 
-xapi API xfstatatf(int dirfd, int flags, struct stat * restrict buf, const char * restrict path_fmt, ...)
+void API xfstatatf(int dirfd, int flags, struct stat * restrict buf, const char * restrict path_fmt, ...)
 {
-  enter;
-
   va_list va;
   va_start(va, path_fmt);
 
-  fatal(xfstatatvf, dirfd, flags, buf, path_fmt, va);
-
-finally:
+  xfstatatvf(dirfd, flags, buf, path_fmt, va);
   va_end(va);
-coda;
 }
 
-xapi API xfstatatvf(int dirfd, int flags, struct stat * restrict buf, const char * restrict path_fmt, va_list va)
+void API xfstatatvf(int dirfd, int flags, struct stat * restrict buf, const char * restrict path_fmt, va_list va)
 {
-  enter;
-
   char path[512];
 
-  fatal(fmt_apply, path, sizeof(path), path_fmt, va);
-  fatal(xfstatats, dirfd, flags, buf, path);
-
-  finally : coda;
+  fmt_apply(path, sizeof(path), path_fmt, va);
+  xfstatats(dirfd, flags, buf, path);
 }
 
-xapi API uxfstatats(int * restrict r, int dirfd, int flags, struct stat * restrict buf, const char * restrict path)
+int API uxfstatats(int dirfd, int flags, struct stat * restrict buf, const char * restrict path)
 {
-  enter;
+  int r;
 
-  int lr;
-  if(!r)
-    r = &lr;
-
-  if(((*r) = fstatat(dirfd, path, buf, flags)) != 0)
+  r = fstatat(dirfd, path, buf, flags);
+  if(r != 0)
   {
-    if(errno != ENOENT && errno != ENOTDIR)
-      tfail(perrtab_KERNEL, errno);
-
+    RUNTIME_ASSERT(errno == ENOENT || errno == ENOTDIR);
     memset(buf, 0, sizeof(*buf));
   }
 
-finally:
-  xapi_infof("path", "%s", path);
-coda;
+  return r;
 }
 
-xapi API uxfstatatf(int * restrict r, int dirfd, int flags, struct stat * restrict buf, const char * restrict path_fmt, ...)
+int API uxfstatatf(int dirfd, int flags, struct stat * restrict buf, const char * restrict path_fmt, ...)
 {
-  enter;
-
+  int r;
   va_list va;
+
   va_start(va, path_fmt);
-
-  fatal(uxfstatatvf, r, dirfd, flags, buf, path_fmt, va);
-
-finally:
+  r = uxfstatatvf(dirfd, flags, buf, path_fmt, va);
   va_end(va);
-coda;
+
+  return r;
 }
 
-xapi API uxfstatatvf(int * restrict r, int dirfd, int flags, struct stat * restrict buf, const char * restrict path_fmt, va_list va)
+int API uxfstatatvf(int dirfd, int flags, struct stat * restrict buf, const char * restrict path_fmt, va_list va)
 {
-  enter;
-
   char path[512];
 
-  fatal(fmt_apply, path, sizeof(path), path_fmt, va);
-  fatal(uxfstatats, r, dirfd, flags, buf, path);
-
-  finally : coda;
+  fmt_apply(path, sizeof(path), path_fmt, va);
+  return uxfstatats(dirfd, flags, buf, path);
 }
 
-xapi API xfutimens(int fd, const struct timespec times[2])
+void API xfutimens(int fd, const struct timespec times[2])
 {
-  enter;
-
-  tfatalize(perrtab_KERNEL, errno, futimens, fd, times);
-
-  finally : coda;
+  RUNTIME_ASSERT(futimens(fd, times) == 0);
 }
 
-xapi API xutimensats(int dirfd, const struct timespec times[2], int flags, const char * const restrict path)
+void API xutimensats(int dirfd, const struct timespec times[2], int flags, const char * const restrict path)
 {
-  enter;
-
-  tfatalize(perrtab_KERNEL, errno, utimensat, dirfd, path, times, flags);
-
-  finally : coda;
+  RUNTIME_ASSERT(utimensat(dirfd, path, times, flags) == 0);
 }
 
-xapi API uxutimensats(int dirfd, const struct timespec times[2], int flags, int * restrict r, const char * const restrict path)
+int API uxutimensats(int dirfd, const struct timespec times[2], int flags, const char * const restrict path)
 {
-  enter;
+  int r;
 
-  if((r && ((*r) = utimensat(dirfd, path, times, flags)) != 0) || (!r && utimensat(dirfd, path, times, flags) != 0))
+  r = utimensat(dirfd, path, times, flags);
+  if(r != 0)
   {
-    if(errno != ENOENT)
-      tfail(perrtab_KERNEL, errno);
+    RUNTIME_ASSERT(errno == ENOENT);
   }
 
-finally:
-  xapi_infof("path", "%s", path);
-coda;
+  return r;
 }
 
-xapi API xmkdirs(mode_t mode, const char * path)
+void API xmkdirs(mode_t mode, const char * path)
 {
-  enter;
-
-  tfatalize(perrtab_KERNEL, errno, mkdir, path, mode);
-
-finally:
-  xapi_infos("path", path);
-coda;
+  RUNTIME_ASSERT(mkdir(path, mode) == 0);
 }
 
-xapi API xmkdirf(mode_t mode, const char * path_fmt, ...)
+void API xmkdirf(mode_t mode, const char * path_fmt, ...)
 {
-  enter;
-
   va_list va;
   va_start(va, path_fmt);
 
-  fatal(xmkdirvf, mode, path_fmt, va);
+  xmkdirvf(mode, path_fmt, va);
 
-  finally : coda;
+  va_end(va);
 }
 
-xapi API xmkdirvf(mode_t mode, const char * path_fmt, va_list va)
+void API xmkdirvf(mode_t mode, const char * path_fmt, va_list va)
 {
-  enter;
-
   char path[512];
 
-  fatal(fmt_apply, path, sizeof(path), path_fmt, va);
-  fatal(xmkdirs, mode, path);
-
-  finally : coda;
+  fmt_apply(path, sizeof(path), path_fmt, va);
+  xmkdirs(mode, path);
 }
 
-xapi API uxmkdirs(mode_t mode, const char * path)
+int API uxmkdirs(mode_t mode, const char * path)
 {
-  enter;
+  int r;
 
-  if(mkdir(path, mode) != 0 && errno != EEXIST)
-    tfail(perrtab_KERNEL, errno);
+  r = mkdir(path, mode);
+  RUNTIME_ASSERT(r == 0 || errno == EEXIST);
 
-finally:
-  xapi_infos("path", path);
-coda;
+  return r;
 }
 
-xapi API uxmkdirf(mode_t mode, const char * path_fmt, ...)
+int API uxmkdirf(mode_t mode, const char * path_fmt, ...)
 {
-  enter;
-
+  int r;
   va_list va;
+
   va_start(va, path_fmt);
+  r = uxmkdirvf(mode, path_fmt, va);
+  va_end(va);
 
-  fatal(uxmkdirvf, mode, path_fmt, va);
-
-  finally : coda;
+  return r;
 }
 
-xapi API uxmkdirvf(mode_t mode, const char * path_fmt, va_list va)
+int API uxmkdirvf(mode_t mode, const char * path_fmt, va_list va)
 {
-  enter;
-
   char path[512];
 
-  fatal(fmt_apply, path, sizeof(path), path_fmt, va);
-  fatal(uxmkdirs, mode, path);
-
-  finally : coda;
+  fmt_apply(path, sizeof(path), path_fmt, va);
+  return uxmkdirs(mode, path);
 }
 
-xapi API xfchmod(int fd, mode_t mode)
+void API xfchmod(int fd, mode_t mode)
 {
-  enter;
-
-  tfatalize(perrtab_KERNEL, errno, fchmod, fd, mode);
-
-finally:
-  xapi_infof("fd", "%d", fd);
-coda;
+  RUNTIME_ASSERT(fchmod(fd, mode) == 0);
 }

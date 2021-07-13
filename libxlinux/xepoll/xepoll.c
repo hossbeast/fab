@@ -18,69 +18,43 @@
 #include <errno.h>
 
 #include "xepoll.h"
-
-#include "KERNEL.errtab.h"
+#include "macros.h"
 
 //
 // api
 //
 
-xapi API xepoll_create(int * restrict fd)
+int API xepoll_create()
 {
-  enter;
+  int fd;
 
+  fd = epoll_create(0x42);
+  RUNTIME_ASSERT(fd >= 0);
+
+  return fd;
+}
+
+void API xepoll_ctl(int epfd, int op, int fd, struct epoll_event *event)
+{
+  RUNTIME_ASSERT(epoll_ctl(epfd, op, fd, event) == 0);
+}
+
+void API xepoll_wait(int epfd, struct epoll_event *events, int maxevents, int timeout)
+{
+  RUNTIME_ASSERT(epoll_wait(epfd, events, maxevents, timeout) != -1);
+}
+
+void API xepoll_pwait(int epfd, struct epoll_event *events, int maxevents, int timeout, const sigset_t *sigmask)
+{
+  RUNTIME_ASSERT(epoll_pwait(epfd, events, maxevents, timeout, sigmask) != -1);
+}
+
+int API uxepoll_pwait(int epfd, struct epoll_event *events, int maxevents, int timeout, const sigset_t *sigmask)
+{
   int r;
-  if((r = epoll_create(0x42)) < 0)
-  {
-    tfail(perrtab_KERNEL, errno);
-  }
 
-  *fd = r;
+  r = epoll_pwait(epfd, events, maxevents, timeout, sigmask);
+  RUNTIME_ASSERT(r == 0 || errno == EINTR);
 
-  finally : coda;
-}
-
-xapi API xepoll_ctl(int epfd, int op, int fd, struct epoll_event *event)
-{
-  enter;
-
-  tfatalize(perrtab_KERNEL, errno, epoll_ctl, epfd, op, fd, event);
-
-  finally : coda;
-}
-
-xapi API xepoll_wait(int * restrict r, int epfd, struct epoll_event *events, int maxevents, int timeout)
-{
-  enter;
-
-  if(((*r) = epoll_wait(epfd, events, maxevents, timeout)) == -1)
-  {
-    tfail(perrtab_KERNEL, errno);
-  }
-
-  finally : coda;
-}
-
-xapi API xepoll_pwait(int * restrict r, int epfd, struct epoll_event *events, int maxevents, int timeout, const sigset_t *sigmask)
-{
-  enter;
-
-  if(((*r) = epoll_pwait(epfd, events, maxevents, timeout, sigmask)) == -1)
-  {
-    tfail(perrtab_KERNEL, errno);
-  }
-
-  finally : coda;
-}
-
-xapi API uxepoll_pwait(int * restrict r, int epfd, struct epoll_event *events, int maxevents, int timeout, const sigset_t *sigmask)
-{
-  enter;
-
-  if(((*r) = epoll_pwait(epfd, events, maxevents, timeout, sigmask)) == -1 && errno != EINTR)
-  {
-    tfail(perrtab_KERNEL, errno);
-  }
-
-  finally : coda;
+  return r;
 }

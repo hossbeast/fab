@@ -18,37 +18,25 @@
 #include <errno.h>
 #include <sys/wait.h>
 
+#include "types.h"
+#include "macros.h"
+
 #include "xwait/xwait.h"
-#include "errtab/KERNEL.errtab.h"
 
-xapi API xwait(int * status)
+void API xwait(int * restrict status)
 {
-  enter;
-
-  if(wait(status) == -1)
-    tfail(perrtab_KERNEL, errno);
-
-  finally : coda;
+  RUNTIME_ASSERT(wait(status) == 0);
 }
 
-xapi API xwaitpid(pid_t pid, int * status, int options)
+void API xwaitpid(pid_t pid, int * restrict status, int options)
 {
-  enter;
-
-  if(waitpid(pid, status, options) == -1)
-    tfail(perrtab_KERNEL, errno);
-
-  finally : coda;
+  RUNTIME_ASSERT(waitpid(pid, status, options) == 0);
 }
 
-xapi API uxwaitid(idtype_t idtype, id_t id, siginfo_t *infop, int options)
+void API uxwaitid(idtype_t idtype, id_t id, siginfo_t *infop, int options)
 {
-  enter;
+  int r;
 
-  if(waitid(idtype, id, infop, options) == -1 && errno != ECHILD)
-  {
-    tfail(perrtab_KERNEL, errno);
-  }
-
-  finally : coda;
+  r = waitid(idtype, id, infop, options);
+  RUNTIME_ASSERT(r == 0 || errno == ECHILD);
 }

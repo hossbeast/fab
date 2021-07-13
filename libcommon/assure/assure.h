@@ -18,7 +18,6 @@
 #ifndef _ASSURE_H
 #define _ASSURE_H
 
-#include "xapi.h"
 #include "types.h"
 
 /// assure

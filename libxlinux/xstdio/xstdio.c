@@ -19,103 +19,66 @@
 #include <stdarg.h>
 #include <errno.h>
 
-#include "xapi.h"
 #include "types.h"
 
 #include "xstdio/xstdio.h"
-#include "errtab/KERNEL.errtab.h"
 
 #include "common/fmt.h"
 
-xapi API xvdprintf(int fd, const char * const restrict fmt, va_list va)
+void API xvdprintf(int fd, const char * const restrict fmt, va_list va)
 {
-  enter;
-
-  if(vdprintf(fd, fmt, va) < 0)
-    tfail(perrtab_KERNEL, errno);
-
-finally:
-  xapi_infof("fd", "%d", fd);
-coda;
+  RUNTIME_ASSERT(vdprintf(fd, fmt, va) >= 0);
 }
 
-xapi API xrenames(const char * const restrict old, const char * const restrict new)
+void API xrenames(const char * const restrict old, const char * const restrict new)
 {
-  enter;
-
-  tfatalize(perrtab_KERNEL, errno, rename, old, new);
-
-finally:
-  xapi_infof("old", "%s", old);
-  xapi_infof("new", "%s", new);
-coda;
+  RUNTIME_ASSERT(rename(old, new) == 0);
 }
 
-xapi API xrenamef(const char * const restrict oldfmt, const char * const restrict newfmt, ...)
+void API xrenamef(const char * const restrict oldfmt, const char * const restrict newfmt, ...)
 {
-  enter;
-
   va_list va;
+
   va_start(va, newfmt);
-
-  fatal(xrenamevf, oldfmt, newfmt, va);
-
-finally:
+  xrenamevf(oldfmt, newfmt, va);
   va_end(va);
-coda;
 }
 
-xapi API xrenamevf(const char * const restrict oldfmt, const char * const restrict newfmt, va_list va)
+void API xrenamevf(const char * const restrict oldfmt, const char * const restrict newfmt, va_list va)
 {
-  enter;
-
   char old[512];
   char new[512];
-  fatal(fmt_apply, old, sizeof(old), oldfmt, va);
-  fatal(fmt_apply, new, sizeof(new), newfmt, va);
 
-  fatal(xrenames, old, new);
+  fmt_apply(old, sizeof(old), oldfmt, va);
+  fmt_apply(new, sizeof(new), newfmt, va);
 
-  finally : coda;
+  xrenames(old, new);
 }
 
-xapi API uxrenames(const char * const restrict old, const char * const restrict new)
+void API uxrenames(const char * const restrict old, const char * const restrict new)
 {
-  enter;
+  int r;
 
-  if(rename(old, new) != 0 && errno != ENOENT && errno != ENOTDIR)
-    tfail(perrtab_KERNEL, errno);
-
-finally:
-  xapi_infof("old", "%s", old);
-  xapi_infof("new", "%s", new);
-coda;
+  r = rename(old, new);
+  RUNTIME_ASSERT(r == 0 || errno == ENOENT || errno == ENOTDIR);
 }
 
-xapi API uxrenamef(const char * const restrict oldfmt, const char * const restrict newfmt, ...)
+void API uxrenamef(const char * const restrict oldfmt, const char * const restrict newfmt, ...)
 {
-  enter;
-
   va_list va;
+
   va_start(va, newfmt);
-
-  fatal(uxrenamevf, oldfmt, newfmt, va);
-
-finally:
+  uxrenamevf(oldfmt, newfmt, va);
   va_end(va);
-coda;
 }
 
-xapi API uxrenamevf(const char * const restrict oldfmt, const char * const restrict newfmt, va_list va)
+void API uxrenamevf(const char * const restrict oldfmt, const char * const restrict newfmt, va_list va)
 {
-  enter;
-
   char old[512];
   char new[512];
-  fatal(fmt_apply, old, sizeof(old), oldfmt, va);
-  fatal(fmt_apply, new, sizeof(new), newfmt, va);
 
-  fatal(uxrenames, old, new);
+  fmt_apply(old, sizeof(old), oldfmt, va);
+  fmt_apply(new, sizeof(new), newfmt, va);
 
-  finally : coda;
+  uxrenames(old, new);
 }

@@ -21,21 +21,18 @@
 #include <sys/types.h>
 #include <pwd.h>
 
-#include "xapi.h"
-
 /// uxgetpwuid_r
 //
 // SUMMARY
 //  proxy for getpwuid_r that only fails when errno != { ENOENT, ESRCH, EBAD, EPERM }
 //
-xapi uxgetpwuid_r(uid_t uid, struct passwd * pwd, char * buf, size_t buflen, struct passwd ** result);
+void uxgetpwuid_r(uid_t uid, struct passwd * pwd, char * buf, size_t buflen, struct passwd ** result);
 
 /// xgetpwuid
 //
 // SUMMARY
 //  proxy for getpwuid
 //
-xapi xgetpwuid(uid_t uid, struct passwd ** const restrict pwd)
-  __attribute__((nonnull));
+struct passwd * xgetpwuid(uid_t uid);
 
 #endif

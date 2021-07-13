@@ -21,198 +21,118 @@
 #include <unistd.h>
 #include <sys/syscall.h>
 
+#include "types.h"
+
 #include "xsignal/xsignal.h"
-#include "errtab/KERNEL.errtab.h"
 #include "sigtable.h"
 
-xapi API xkill(pid_t pid, int sig)
+void API xkill(pid_t pid, int sig)
 {
-  enter;
-
-  tfatalize(perrtab_KERNEL, errno, kill, pid, sig);
-
-finally:
-  xapi_infof("pid", "%ld", (long)pid);
-  xapi_infof("sig", "%d", sig);
-coda;
+  RUNTIME_ASSERT(kill(pid, sig) == 0);
 }
 
-xapi API uxkill(int * restrict r, pid_t pid, int sig)
+int API uxkill(pid_t pid, int sig)
 {
-  enter;
+  int r;
 
-  if(r && ((*r) = kill(pid, sig)) == -1 && errno != ESRCH)
-  {
-    tfail(perrtab_KERNEL, errno);
-  }
-  else if(!r && kill(pid, sig) == -1 && errno != ESRCH)
-  {
-    tfail(perrtab_KERNEL, errno);
-  }
+  r = kill(pid, sig);
+  RUNTIME_ASSERT(r == 0 || errno == ESRCH);
 
-  finally : coda;
+  return r;
 }
 
-xapi API xtgkill(pid_t pid, pid_t tid, int sig)
+void API xtgkill(pid_t pid, pid_t tid, int sig)
 {
-  enter;
-
-  if(syscall(SYS_tgkill, pid, tid, sig) != 0)
-  {
-    tfail(perrtab_KERNEL, errno);
-  }
-
-finally:
-  xapi_infof("pid", "%ld", (long)pid);
-  xapi_infof("tid", "%ld", (long)tid);
-  xapi_infof("sig", "%d", sig);
-coda;
+  RUNTIME_ASSERT(syscall(SYS_tgkill, pid, tid, sig) == 0);
 }
 
-xapi API uxtgkill(int * r, pid_t pid, pid_t tid, int sig)
+int API uxtgkill(pid_t pid, pid_t tid, int sig)
 {
-  enter;
+  int r;
 
   if(tid == 0) {
-    goto XAPI_FINALIZE;
+    return 0;
   }
 
-  if(r && (*r = syscall(SYS_tgkill, pid, tid, sig)) != 0 && errno != ESRCH)
-  {
-    tfail(perrtab_KERNEL, errno);
-  }
-  else if(!r && syscall(SYS_tgkill, pid, tid, sig) != 0 && errno != ESRCH)
-  {
-    tfail(perrtab_KERNEL, errno);
-  }
+  r = syscall(SYS_tgkill, pid, tid, sig);
+  RUNTIME_ASSERT(r == 0 || errno == ESRCH);
 
-finally:
-  xapi_infof("pid", "%ld", (long)pid);
-  xapi_infof("tid", "%ld", (long)tid);
-  xapi_infof("sig", "%d", sig);
-coda;
+  return r;
 }
 
-xapi API xsigaction(int signum, const struct sigaction * act, struct sigaction * oldact)
+void API xsigaction(int signum, const struct sigaction * act, struct sigaction * oldact)
 {
-  enter;
-
-  tfatalize(perrtab_KERNEL, errno, sigaction, signum, act, oldact);
-
-finally:
-  xapi_infof("sig", "%d", signum);
-coda;
+  RUNTIME_ASSERT(sigaction(signum, act, oldact) == 0);
 }
 
-xapi API xsigprocmask(int how, const sigset_t * set, sigset_t * oldset)
+void API xsigprocmask(int how, const sigset_t * set, sigset_t * oldset)
 {
-  enter;
-
-  tfatalize(perrtab_KERNEL, errno, sigprocmask, how, set, oldset);
-
-  finally : coda;
+  RUNTIME_ASSERT(sigprocmask(how, set, oldset) == 0);
 }
 
-xapi API uxsigsuspend(const sigset_t * mask)
+void API uxsigsuspend(const sigset_t * mask)
 {
-  enter;
+  int r;
 
-  if(sigsuspend(mask))
-  {
-    if(errno == EINTR)
-    {
-      /* the whole reason to use this function ... */
-    }
-    else
-    {
-      tfail(perrtab_KERNEL, errno);
-    }
-  }
-
-  finally : coda;
+  r = sigsuspend(mask);
+  RUNTIME_ASSERT(r == 0 || errno == EINTR);
 }
 
-xapi API xsigwaitinfo(const sigset_t * mask, siginfo_t * info)
+void API xsigwaitinfo(const sigset_t * mask, siginfo_t * info)
 {
-  enter;
-
-  if(sigwaitinfo(mask, info) == -1)
-    tfail(perrtab_KERNEL, errno);
-
-  finally : coda;
+  RUNTIME_ASSERT(sigwaitinfo(mask, info) == 0);
 }
 
-xapi API uxsigwaitinfo(int * r, const sigset_t * mask, siginfo_t * info)
+int API uxsigwaitinfo(const sigset_t * mask, siginfo_t * info)
 {
-  enter;
+  int r;
 
-  siginfo_t linfo;
-  if(!info)
-    info = &linfo;
+  r = sigwaitinfo(mask, info);
+  RUNTIME_ASSERT(r == 0 || errno == EINTR);
 
-  if(r && (((*r) = sigwaitinfo(mask, info)) == -1) && errno != EINTR)
-    tfail(perrtab_KERNEL, errno);
-  else if(!r && sigwaitinfo(mask, info) == -1 && errno != EINTR)
-    tfail(perrtab_KERNEL, errno);
-
-  finally : coda;
+  return r;
 }
 
-xapi API uxsigtimedwait(int * restrict err, const sigset_t * restrict set, siginfo_t * restrict info, const struct timespec * restrict timeout)
+int API uxsigtimedwait(const sigset_t * restrict set, siginfo_t * restrict info, const struct timespec * restrict timeout)
 {
-  enter;
-
   int r;
 
   if((r = sigtimedwait(set, info, timeout)) == -1)
   {
-    *err = errno;
-    if(*err != EAGAIN && *err != EINTR) {
-      tfail(perrtab_KERNEL, *err);
-    }
+    r = errno;
+    RUNTIME_ASSERT(r == EAGAIN || r == EINTR);
   }
   else
   {
-    *err = 0;
+    r = 0;
   }
 
-  finally : coda;
+  return r;
 }
 
-xapi API xsignal(int signum, sighandler_t handler)
+void API xsignal(int signum, sighandler_t handler)
 {
-  enter;
-
-  if(signal(signum, handler) == SIG_ERR)
-    tfail(perrtab_KERNEL, errno);
-
-finally:
-  xapi_infof("sig", "%d", signum);
-coda;
+  RUNTIME_ASSERT(signal(signum, handler) != SIG_ERR);
 }
 
-xapi API uxrt_sigqueueinfo(int * restrict r, pid_t tgid, int sig, siginfo_t *info)
+int API uxrt_sigqueueinfo(pid_t tgid, int sig, siginfo_t *info)
 {
-  enter;
+  int r;
 
-  if(((*r) = syscall(SYS_rt_sigqueueinfo, tgid, sig, info)) == -1 && errno != ESRCH)
-  {
-    tfail(perrtab_KERNEL, errno);
-  }
+  r = syscall(SYS_rt_sigqueueinfo, tgid, sig, info);
+  RUNTIME_ASSERT(r == 0 || errno == ESRCH);
 
-  finally : coda;
+  return r;
 }
 
-xapi API uxrt_tgsigqueueinfo(int * restrict r, pid_t tgid, pid_t tid, int sig, siginfo_t *info)
+int API uxrt_tgsigqueueinfo(pid_t tgid, pid_t tid, int sig, siginfo_t *info)
 {
-  enter;
+  int r;
 
-  if(((*r) = syscall(SYS_rt_tgsigqueueinfo, tgid, tid, sig, info)) == -1 && errno != ESRCH)
-  {
-    tfail(perrtab_KERNEL, errno);
-  }
+  r = syscall(SYS_rt_tgsigqueueinfo, tgid, tid, sig, info);
+  RUNTIME_ASSERT(r == 0 || errno == ESRCH);
 
-  finally : coda;
+  return r;
 }
 
 const char * API signame(int signo)

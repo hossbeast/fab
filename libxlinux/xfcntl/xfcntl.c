@@ -17,291 +17,249 @@
 
 #include <errno.h>
 
-#include "xfcntl/xfcntl.h"
-#include "errtab/KERNEL.errtab.h"
+#include "types.h"
+#include "macros.h"
 
+#include "xfcntl/xfcntl.h"
 #include "common/fmt.h"
 
-xapi API xopens(int * fd, int flags, const char * path)
+int API xopens(int flags, const char * path)
 {
-  xproxy(xopenats, fd, flags, AT_FDCWD, path);
+  return xopenats(flags, AT_FDCWD, path);
 }
 
-xapi API xopenf(int * fd, int flags, const char * path_fmt, ...)
+int API xopenf(int flags, const char * path_fmt, ...)
 {
-  enter;
+  int fd;
+  va_list va;
 
+  va_start(va, path_fmt);
+  fd = xopenatvf(flags, AT_FDCWD, path_fmt, va);
+  va_end(va);
+
+  return fd;
+}
+
+int API xopenvf(int flags, const char * path_fmt, va_list va)
+{
+  return xopenatvf(flags, AT_FDCWD, path_fmt, va);
+}
+
+int API xopenats(int flags, int dirfd, const char * path)
+{
+  int fd;
+
+  if((fd = openat(dirfd, path, flags)) == -1)
+  {
+    RUNTIME_ABORT();
+  }
+
+  return fd;
+}
+
+int API xopenatf(int flags, int dirfd, const char * path_fmt, ...)
+{
+  int fd;
   va_list va;
   va_start(va, path_fmt);
 
-  fatal(xopenatvf, fd, flags, AT_FDCWD, path_fmt, va);
-
-finally:
+  fd = xopenatvf(flags, dirfd, path_fmt, va);
   va_end(va);
-coda;
+
+  return fd;
 }
 
-xapi API xopenvf(int * fd, int flags, const char * path_fmt, va_list va)
+int API xopenatvf(int flags, int dirfd, const char * path_fmt, va_list va)
 {
-  xproxy(xopenatvf, fd, flags, AT_FDCWD, path_fmt, va);
-}
-
-xapi API xopenats(int * fd, int flags, int dirfd, const char * path)
-{
-  enter;
-
-  if(fd && (*fd = openat(dirfd, path, flags)) == -1)
-    tfail(perrtab_KERNEL, errno);
-
-  else if(!fd && openat(dirfd, path, flags) == -1)
-    tfail(perrtab_KERNEL, errno);
-
-finally:
-  xapi_infof("dirfd", "%d", dirfd);
-  xapi_infof("path", "%s", path);
-coda;
-}
-
-xapi API xopenatf(int * fd, int flags, int dirfd, const char * path_fmt, ...)
-{
-  enter;
-
-  va_list va;
-  va_start(va, path_fmt);
-
-  fatal(xopenatvf, fd, flags, dirfd, path_fmt, va);
-
-finally:
-  va_end(va);
-coda;
-}
-
-xapi API xopenatvf(int * fd, int flags, int dirfd, const char * path_fmt, va_list va)
-{
-  enter;
-
   char path[512];
-
-  fatal(fmt_apply, path, sizeof(path), path_fmt, va);
-  fatal(xopenats, fd, flags, dirfd, path);
-
-  finally : coda;
+  fmt_apply(path, sizeof(path), path_fmt, va);
+  return xopenats(flags, dirfd, path);
 }
 
-xapi API uxopens(int * fd, int flags, const char * path)
+int API uxopens(int flags, const char * path)
 {
-  xproxy(uxopenats, fd, flags, AT_FDCWD, path);
+  return uxopenats(flags, AT_FDCWD, path);
 }
 
-xapi API uxopenf(int * fd, int flags, const char * path_fmt, ...)
+int API uxopenf(int flags, const char * path_fmt, ...)
 {
-  enter;
-
+  int fd;
   va_list va;
+
   va_start(va, path_fmt);
-  fatal(uxopenatvf, fd, flags, AT_FDCWD, path_fmt, va);
-
-finally:
+  fd = uxopenatvf(flags, AT_FDCWD, path_fmt, va);
   va_end(va);
-coda;
+
+  return fd;
 }
 
-xapi API uxopenvf(int * fd, int flags, const char * path_fmt, va_list va)
+int API uxopenvf(int flags, const char * path_fmt, va_list va)
 {
-  xproxy(uxopenatvf, fd, flags, AT_FDCWD, path_fmt, va);
+  return uxopenatvf(flags, AT_FDCWD, path_fmt, va);
 }
 
-xapi API uxopenats(int * fd, int flags, int dirfd, const char * path)
+int API uxopenats(int flags, int dirfd, const char * path)
 {
-  enter;
+  int fd;
 
-  if((*fd = openat(dirfd, path, flags)) == -1)
+  if((fd = openat(dirfd, path, flags)) == -1)
   {
     if(errno != ENOENT && errno != EEXIST && errno != ENOTDIR)
-      tfail(perrtab_KERNEL, errno);
-
-    *fd = -1;
+    {
+      RUNTIME_ABORT();
+    }
   }
 
-finally:
-  xapi_infof("path", "%s", path);
-coda;
+  return fd;
 }
 
-xapi API uxopenatf(int * fd, int flags, int dirfd, const char * path_fmt, ...)
+int API uxopenatf(int flags, int dirfd, const char * path_fmt, ...)
 {
-  enter;
-
+  int fd;
   va_list va;
+
   va_start(va, path_fmt);
-  fatal(uxopenatvf, fd, flags, dirfd, path_fmt, va);
-
-finally:
+  fd = uxopenatvf(flags, dirfd, path_fmt, va);
   va_end(va);
-coda;
+
+  return fd;
 }
 
-xapi API uxopenatvf(int * fd, int flags, int dirfd, const char * path_fmt, va_list va)
+int API uxopenatvf(int flags, int dirfd, const char * path_fmt, va_list va)
 {
-  enter;
-
-  char path[512];
-  fatal(fmt_apply, path, sizeof(path), path_fmt, va);
-  fatal(uxopenats, fd, flags, dirfd, path);
-
-finally:
-  va_end(va);
-coda;
-}
-
-xapi API xopen_modes(int * fd, int flags, mode_t mode, const char * path)
-{
-  xproxy(xopenat_modes, fd, flags, mode, AT_FDCWD, path);
-}
-
-xapi API xopen_modef(int * fd, int flags, mode_t mode, const char * path_fmt, ...)
-{
-  enter;
-
-  va_list va;
-  va_start(va, path_fmt);
-
-  fatal(xopenat_modevf, fd, flags, mode, AT_FDCWD, path_fmt, va);
-
-finally:
-  va_end(va);
-coda;
-}
-
-xapi API xopen_modevf(int * fd, int flags, mode_t mode, const char * path_fmt, va_list va)
-{
-  xproxy(xopenat_modevf, fd, flags, mode, AT_FDCWD, path_fmt, va);
-}
-
-xapi API xopenat_modes(int * fd, int flags, mode_t mode, int dirfd, const char * path)
-{
-  enter;
-
-  if(fd && (*fd = openat(dirfd, path, flags, mode)) == -1)
-    tfail(perrtab_KERNEL, errno);
-
-  else if(!fd && openat(dirfd, path, flags, mode) == -1)
-    tfail(perrtab_KERNEL, errno);
-
-finally:
-  xapi_infof("path", "%s", path);
-coda;
-}
-
-xapi API xopenat_modef(int * fd, int flags, mode_t mode, int dirfd, const char * path_fmt, ...)
-{
-  enter;
-
-  va_list va;
-  va_start(va, path_fmt);
-
-  fatal(xopenat_modevf, fd, flags, mode, dirfd, path_fmt, va);
-
-finally:
-  va_end(va);
-coda;
-}
-
-xapi API xopenat_modevf(int * fd, int flags, mode_t mode, int dirfd, const char * path_fmt, va_list va)
-{
-  enter;
-
+  int fd;
   char path[512];
 
-  fatal(fmt_apply, path, sizeof(path), path_fmt, va);
-  fatal(xopenat_modes, fd, flags, mode, dirfd, path);
-
-finally:
+  fmt_apply(path, sizeof(path), path_fmt, va);
+  fd = uxopenats(flags, dirfd, path);
   va_end(va);
-coda;
+
+  return fd;
 }
 
-xapi API uxopen_modes(int * fd, int flags, mode_t mode, const char * path)
+int API xopen_modes(int flags, mode_t mode, const char * path)
 {
-  xproxy(uxopenat_modes, fd, flags, mode, AT_FDCWD, path);
+  return xopenat_modes(flags, mode, AT_FDCWD, path);
 }
 
-xapi API uxopen_modef(int * fd, int flags, mode_t mode, const char * path_fmt, ...)
+int API xopen_modef(int flags, mode_t mode, const char * path_fmt, ...)
 {
-  enter;
-
+  int fd;
   va_list va;
+
   va_start(va, path_fmt);
-
-  fatal(uxopenat_modevf, fd, flags, mode, AT_FDCWD, path_fmt, va);
-
-finally:
+  fd = xopenat_modevf(flags, mode, AT_FDCWD, path_fmt, va);
   va_end(va);
-coda;
+
+  return fd;
 }
 
-xapi API uxopen_modevf(int * fd, int flags, mode_t mode, const char * path_fmt, va_list va)
+int API xopen_modevf(int flags, mode_t mode, const char * path_fmt, va_list va)
 {
-  xproxy(uxopenat_modevf, fd, flags, mode, AT_FDCWD, path_fmt, va);
+  return xopenat_modevf(flags, mode, AT_FDCWD, path_fmt, va);
 }
 
-xapi API uxopenat_modes(int * fd, int flags, mode_t mode, int dirfd, const char * path)
+int API xopenat_modes(int flags, mode_t mode, int dirfd, const char * path)
 {
-  enter;
+  int fd;
 
-  if((*fd = openat(dirfd, path, flags, mode)) == -1)
+  fd = openat(dirfd, path, flags, mode);
+  RUNTIME_ASSERT(fd != -1);
+
+  return fd;
+}
+
+int API xopenat_modef(int flags, mode_t mode, int dirfd, const char * path_fmt, ...)
+{
+  int fd;
+  va_list va;
+
+  va_start(va, path_fmt);
+  fd = xopenat_modevf(flags, mode, dirfd, path_fmt, va);
+  va_end(va);
+
+  return fd;
+}
+
+int API xopenat_modevf(int flags, mode_t mode, int dirfd, const char * path_fmt, va_list va)
+{
+  int fd;
+  char path[512];
+
+  fmt_apply(path, sizeof(path), path_fmt, va);
+  fd = xopenat_modes(flags, mode, dirfd, path);
+  va_end(va);
+
+  return fd;
+}
+
+int API uxopen_modes(int flags, mode_t mode, const char * path)
+{
+  return uxopenat_modes(flags, mode, AT_FDCWD, path);
+}
+
+int API uxopen_modef(int flags, mode_t mode, const char * path_fmt, ...)
+{
+  int fd;
+  va_list va;
+
+  va_start(va, path_fmt);
+  fd = uxopenat_modevf(flags, mode, AT_FDCWD, path_fmt, va);
+  va_end(va);
+
+  return fd;
+}
+
+int API uxopen_modevf(int flags, mode_t mode, const char * path_fmt, va_list va)
+{
+  return uxopenat_modevf(flags, mode, AT_FDCWD, path_fmt, va);
+}
+
+int API uxopenat_modes(int flags, mode_t mode, int dirfd, const char * path)
+{
+  int fd;
+
+  if((fd = openat(dirfd, path, flags, mode)) == -1)
   {
     if(errno != ENOENT && errno != EEXIST)
-      tfail(perrtab_KERNEL, errno);
-
-    *fd = -1;
+    {
+      RUNTIME_ABORT();
+    }
   }
 
-finally:
-  xapi_infof("path", "%s", path);
-coda;
+  return fd;
 }
 
-xapi API uxopenat_modef(int * fd, int flags, mode_t mode, int dirfd, const char * path_fmt, ...)
+int API uxopenat_modef(int flags, mode_t mode, int dirfd, const char * path_fmt, ...)
 {
-  enter;
-
+  int fd;
   va_list va;
+
   va_start(va, path_fmt);
-
-  fatal(uxopenat_modevf, fd, flags, mode, dirfd, path_fmt, va);
-
-finally:
+  fd = uxopenat_modevf(flags, mode, dirfd, path_fmt, va);
   va_end(va);
-coda;
+
+  return fd;
 }
 
-xapi API uxopenat_modevf(int * fd, int flags, mode_t mode, int dirfd, const char * path_fmt, va_list va)
+int API uxopenat_modevf(int flags, mode_t mode, int dirfd, const char * path_fmt, va_list va)
 {
-  enter;
-
+  int fd;
   char path[512];
 
-  fatal(fmt_apply, path, sizeof(path), path_fmt, va);
-  fatal(uxopenat_modes, fd, flags, mode, dirfd, path);
-
-finally:
+  fmt_apply(path, sizeof(path), path_fmt, va);
+  fd = uxopenat_modes(flags, mode, dirfd, path);
   va_end(va);
-coda;
+
+  return fd;
 }
 
-xapi API xsplice(ssize_t * restrict r, int fd_in, loff_t *off_in, int fd_out, loff_t *off_out, size_t len, unsigned int flags)
+ssize_t API xsplice(int fd_in, loff_t *off_in, int fd_out, loff_t *off_out, size_t len, unsigned int flags)
 {
-  enter;
+  ssize_t rv;
 
-  if(r && (*r = splice(fd_in, off_in, fd_out, off_out, len, flags)) == -1)
-  {
-    tfail(perrtab_KERNEL, errno);
-  }
-  else if(!r && splice(fd_in, off_in, fd_out, off_out, len, flags) == -1)
-  {
-    tfail(perrtab_KERNEL, errno);
-  }
+  rv = splice(fd_in, off_in, fd_out, off_out, len, flags);
+  RUNTIME_ASSERT(rv != -1);
 
-  finally : coda;
+  return rv;
 }

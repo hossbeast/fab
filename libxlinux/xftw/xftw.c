@@ -19,8 +19,8 @@
 #include <errno.h>
 
 #include "xftw/xftw.h"
-#include "errtab/XLINUX.errtab.h"
 
+#if 0
 //
 // static
 //
@@ -125,3 +125,4 @@ finally:
   xapi_infof("path", "%s", dirpath);
 coda;
 }
+#endif

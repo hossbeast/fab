@@ -21,14 +21,13 @@
 #include <sys/types.h>
 #include <sys/inotify.h>
 
-#include "xapi.h"
 
 /// xinotify_init
 //
 // SUMMARY
 //  proxy for inotify_init
 //
-xapi xinotify_init(int * id, int flags)
+int xinotify_init(int flags)
   __attribute__((nonnull));
 
 /// inotify_add_watch
@@ -36,7 +35,7 @@ xapi xinotify_init(int * id, int flags)
 // SUMMARY
 //  proxy for inotify_add_watch
 //
-xapi xinotify_add_watch(int * wd, int id, const char *path, uint32_t mask)
+int xinotify_add_watch(int id, const char *path, uint32_t mask)
   __attribute__((nonnull));
 
 #endif

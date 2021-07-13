@@ -23,134 +23,132 @@
 #include <fcntl.h>
 #include <stdarg.h>
 
-#include "xapi.h"
 
 /// xopen
 //
 // SUMMARY
 //  proxy for open
 //
-xapi xopens(int * fd, int flags, const char * path)
-  __attribute__((nonnull(3)));
+int xopens(int flags, const char * path)
+  __attribute__((nonnull(2)));
 
-xapi xopenf(int * fd, int flags, const char * path_fmt, ...)
-  __attribute__((nonnull(3)))
-  __attribute__((format(printf, 3, 4)));
+int xopenf(int flags, const char * path_fmt, ...)
+  __attribute__((nonnull(2)))
+  __attribute__((format(printf, 2, 3)));
 
-xapi xopenvf(int * fd, int flags, const char * path_fmt, va_list va)
-  __attribute__((nonnull(3)));
+int xopenvf(int flags, const char * path_fmt, va_list va)
+  __attribute__((nonnull(2)));
 
 /// xopenat
 //
 // SUMMARY
 //  proxy for opent
 //
-xapi xopenats(int * fd, int flags, int dirfd, const char * path)
-  __attribute__((nonnull(4)));
+int xopenats(int flags, int dirfd, const char * path)
+  __attribute__((nonnull(3)));
 
-xapi xopenatf(int * fd, int flags, int dirfd, const char * path_fmt, ...)
-  __attribute__((nonnull(4)))
-  __attribute__((format(printf, 4, 5)));
+int xopenatf(int flags, int dirfd, const char * path_fmt, ...)
+  __attribute__((nonnull(3)))
+  __attribute__((format(printf, 3, 4)));
 
-xapi xopenatvf(int * fd, int flags, int dirfd, const char * path_fmt, va_list va)
-  __attribute__((nonnull(4)));
+int xopenatvf(int flags, int dirfd, const char * path_fmt, va_list va)
+  __attribute__((nonnull(3)));
 
 /// xopen_mode
 //
 // SUMMARY
 //  proxy for open
 //
-xapi xopen_modes(int * fd, int flags, mode_t mode, const char * path)
-  __attribute__((nonnull(4)));
+int xopen_modes(int flags, mode_t mode, const char * path)
+  __attribute__((nonnull(3)));
 
-xapi xopen_modef(int * fd, int flags, mode_t mode, const char * path_fmt, ...)
-  __attribute__((nonnull(4)))
-  __attribute__((format(printf, 4, 5)));
+int xopen_modef(int flags, mode_t mode, const char * path_fmt, ...)
+  __attribute__((nonnull(3)))
+  __attribute__((format(printf, 3, 4)));
 
-xapi xopen_modevf(int * fd, int flags, mode_t mode, const char * path_fmt, va_list va)
-  __attribute__((nonnull(4)));
+int xopen_modevf(int flags, mode_t mode, const char * path_fmt, va_list va)
+  __attribute__((nonnull(3)));
 
 /// xopenat_mode
 //
 // SUMMARY
 //  proxy for open
 //
-xapi xopenat_modes(int * fd, int flags, mode_t mode, int dirfd, const char * path)
-  __attribute__((nonnull(5)));
+int xopenat_modes(int flags, mode_t mode, int dirfd, const char * path)
+  __attribute__((nonnull(4)));
 
-xapi xopenat_modef(int * fd, int flags, mode_t mode, int dirfd, const char * path_fmt, ...)
-  __attribute__((nonnull(5)))
-  __attribute__((format(printf, 5, 6)));
+int xopenat_modef(int flags, mode_t mode, int dirfd, const char * path_fmt, ...)
+  __attribute__((nonnull(4)))
+  __attribute__((format(printf, 4, 5)));
 
-
-xapi xopenat_modevf(int * fd, int flags, mode_t mode, int dirfd, const char * path_fmt, va_list va)
-  __attribute__((nonnull(5)));
+int xopenat_modevf(int flags, mode_t mode, int dirfd, const char * path_fmt, va_list va)
+  __attribute__((nonnull(4)));
 
 /// uxopen
 //
 // SUMMARY
 //  proxy for open that only fails when errno not in { ENOENT, EEXIST }
 //
-xapi uxopens(int * fd, int flags, const char * path)
-  __attribute__((nonnull(3)));
+int uxopens(int flags, const char * path)
+  __attribute__((nonnull(2)));
 
-xapi uxopenf(int * fd, int flags, const char * path_fmt, ...)
-  __attribute__((nonnull(3)))
-  __attribute__((format(printf, 3, 4)));
+int uxopenf(int flags, const char * path_fmt, ...)
+  __attribute__((nonnull(2)))
+  __attribute__((format(printf, 2, 3)));
 
-xapi uxopenvf(int * fd, int flags, const char * path_fmt, va_list va)
-  __attribute__((nonnull(3)));
+int uxopenvf(int flags, const char * path_fmt, va_list va)
+  __attribute__((nonnull(2)));
 
 /// uxopenat
 //
 // SUMMARY
 //  proxy for openat that only fails when errno not in { ENOENT, EEXIST }
 //
-xapi uxopenats(int * fd, int flags, int dirfd, const char * path)
-  __attribute__((nonnull(4)));
+int uxopenats(int flags, int dirfd, const char * path)
+  __attribute__((nonnull(3)));
 
-xapi uxopenatf(int * fd, int flags, int dirfd, const char * path_fmt, ...)
-  __attribute__((nonnull(4)))
-  __attribute__((format(printf, 4, 5)));
+int uxopenatf(int flags, int dirfd, const char * path_fmt, ...)
+  __attribute__((nonnull(3)))
+  __attribute__((format(printf, 3, 4)));
 
-xapi uxopenatvf(int * fd, int flags, int dirfd, const char * path_fmt, va_list va)
-  __attribute__((nonnull(4)));
+int uxopenatvf(int flags, int dirfd, const char * path_fmt, va_list va)
+  __attribute__((nonnull(3)));
 
 /// xopen_mode
 //
 // SUMMARY
 //  proxy for open that only fails when errno not in { ENOENT, EEXIST }
 //
-xapi uxopen_modes(int * fd, int flags, mode_t mode, const char * path)
-  __attribute__((nonnull(4)));
+int uxopen_modes(int flags, mode_t mode, const char * path)
+  __attribute__((nonnull(3)));
 
-xapi uxopen_modef(int * fd, int flags, mode_t mode, const char * path_fmt, ...)
-  __attribute__((nonnull(4)))
-  __attribute__((format(printf, 4, 5)));
+int uxopen_modef(int flags, mode_t mode, const char * path_fmt, ...)
+  __attribute__((nonnull(3)))
+  __attribute__((format(printf, 3, 4)));
 
-xapi uxopen_modevf(int * fd, int flags, mode_t mode, const char * path_fmt, va_list va)
-  __attribute__((nonnull(4)));
+int uxopen_modevf(int flags, mode_t mode, const char * path_fmt, va_list va)
+  __attribute__((nonnull(3)));
 
 /// xopenat_mode
 //
 // SUMMARY
 //  proxy for open that only fails when errno not in { ENOENT, EEXIST }
 //
-xapi uxopenat_modes(int * fd, int flags, mode_t mode, int dirfd, const char * path)
-  __attribute__((nonnull(5)));
+int uxopenat_modes(int flags, mode_t mode, int dirfd, const char * path)
+  __attribute__((nonnull(4)));
 
-xapi uxopenat_modef(int * fd, int flags, mode_t mode, int dirfd, const char * path_fmt, ...)
-  __attribute__((nonnull(5)))
-  __attribute__((format(printf, 5, 6)));
+int uxopenat_modef(int flags, mode_t mode, int dirfd, const char * path_fmt, ...)
+  __attribute__((nonnull(4)))
+  __attribute__((format(printf, 4, 5)));
 
-xapi uxopenat_modevf(int * fd, int flags, mode_t mode, int dirfd, const char * path_fmt, va_list va)
-  __attribute__((nonnull(5)));
+int uxopenat_modevf(int flags, mode_t mode, int dirfd, const char * path_fmt, va_list va)
+  __attribute__((nonnull(4)));
 
 /// xsplice
 //
 // SUMMARY
 //  proxy for splice
 //
-xapi xsplice(ssize_t * restrict r, int fd_in, loff_t *off_in, int fd_out, loff_t *off_out, size_t len, unsigned int flags);
+ssize_t xsplice(int fd_in, loff_t *off_in, int fd_out, loff_t *off_out, size_t len, unsigned int flags);
 
 #endif

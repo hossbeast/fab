@@ -15,97 +15,89 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
+#include "types.h"
+#include "macros.h"
+
 #include "xdirent.h"
-#include "KERNEL.errtab.h"
 #include "xfcntl.h"
 #include "xunistd.h"
 
-xapi API xopendir(const char * name, DIR ** dd)
+
+DIR * API xopendir(const char * name)
 {
-  enter;
+  DIR *dd;
 
-  if(((*dd) = opendir(name)) == 0)
-    tfail(perrtab_KERNEL, errno);
+  dd = opendir(name);
+  RUNTIME_ASSERT(dd);
 
-finally:
-  xapi_infof("path", "%s", name);
-coda;
+  return dd;
 }
 
-xapi API uxopendir(const char * name, DIR ** dd)
+DIR * API uxopendir(const char * name)
 {
-  enter;
+  DIR *dd;
 
-  if(((*dd) = opendir(name)) == 0 && errno != ENOENT)
-    tfail(perrtab_KERNEL, errno);
+  if((dd = opendir(name)) == 0 && errno != ENOENT)
+  {
+    RUNTIME_ABORT();
+  }
 
-finally:
-  xapi_infof("path", "%s", name);
-coda;
+  return dd;
 }
 
-xapi API xfdopendir(int fd, DIR ** dd)
+DIR * API xfdopendir(int fd)
 {
-  enter;
+  DIR *dd;
 
-  if(((*dd) = fdopendir(fd)) == 0)
-    tfail(perrtab_KERNEL, errno);
+  if((dd = fdopendir(fd)) == 0)
+  {
+    RUNTIME_ABORT();
+  }
 
-  finally : coda;
+  return dd;
 }
 
-xapi API xopendirat(DIR ** dd, int dirfd, const char * const restrict path)
+DIR * API xopendirat(int dirfd, const char * const restrict path)
 {
-  enter;
+  DIR *dd;
+  int fd;
 
-  int fd = -1;
+  fd = xopenats(O_RDONLY | O_DIRECTORY, dirfd, path);
+  dd = xfdopendir(fd);
 
-  fatal(xopenats, &fd, O_RDONLY | O_DIRECTORY, dirfd, path);
-  fatal(xfdopendir, fd, dd);
-  fd = -1;
-
-finally:
-  fatal(ixclose, &fd);
-coda;
+  return dd;
 }
 
-xapi API xreaddir(DIR * dirp, struct dirent ** result)
+struct dirent * API xreaddir(DIR * dd)
 {
-  enter;
+  struct dirent *result;
 
   errno = 0;
-  if((*result = readdir(dirp)) == 0 && errno)
-    fail(errno);
+  if((result = readdir(dd)) == 0 && errno != 0)
+  {
+    RUNTIME_ABORT();
+  }
 
-  finally : coda;
+  return result;
 }
 
-xapi API xclosedir(DIR * dd)
+void API xclosedir(DIR * dd)
 {
-  enter;
-
-  if(dd && closedir(dd) != 0)
-    tfail(perrtab_KERNEL, errno);
-
-  finally : coda;
+  RUNTIME_ASSERT(closedir(dd) == 0);
 }
 
-xapi API ixclosedir(DIR ** dd)
+void API ixclosedir(DIR ** dd)
 {
-  enter;
-
-  fatal(xclosedir, *dd);
+  xclosedir(*dd);
   *dd = 0;
-
-  finally : coda;
 }
 
-xapi API xtelldir(long * loc, DIR * dirp)
+long API xtelldir(DIR * dd)
 {
-  enter;
+  long loc;
 
-  if((*loc = telldir(dirp)) == -1)
-    tfail(perrtab_KERNEL, errno);
+  loc = telldir(dd);
+  RUNTIME_ASSERT(loc != -1);
 
-  finally : coda;
+  return loc;
 }

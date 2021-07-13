@@ -17,13 +17,12 @@
 
 #include <errno.h>
 
+#include "types.h"
+
 #include "xpwd/xpwd.h"
-#include "errtab/KERNEL.errtab.h"
 
-xapi API uxgetpwuid_r(uid_t uid, struct passwd * pwd, char * buf, size_t buflen, struct passwd ** result)
+void API uxgetpwuid_r(uid_t uid, struct passwd * pwd, char * buf, size_t buflen, struct passwd ** result)
 {
-  enter;
-
   if(getpwuid_r(uid, pwd, buf, buflen, result) == 0)
   {
     // possibly found, check *result
@@ -34,23 +33,17 @@ xapi API uxgetpwuid_r(uid_t uid, struct passwd * pwd, char * buf, size_t buflen,
   }
   else
   {
-    tfail(perrtab_KERNEL, errno);
+    RUNTIME_ABORT();
   }
-
-finally :
-  xapi_infof("uid", "%lu", (unsigned long)uid);
-coda;
 }
 
-xapi API xgetpwuid(uid_t uid, struct passwd ** const pwd)
+struct passwd * API xgetpwuid(uid_t uid)
 {
-  enter;
+  struct passwd * pwd;
 
   errno = 0;
-  if(((*pwd) = getpwuid(uid)) == 0)
-    tfail(perrtab_KERNEL, errno);
+  pwd = getpwuid(uid);
+  RUNTIME_ASSERT(pwd != 0);
 
-finally:
-  xapi_infof("uid", "%lu", (unsigned long)uid);
-coda;
+  return pwd;
 }

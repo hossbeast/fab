@@ -21,8 +21,6 @@
 #include <sys/time.h>
 #include <sys/resource.h>
 
-#include "xapi.h"
-
 struct rlimit;
 
 /// xsetrlimit
@@ -30,7 +28,7 @@ struct rlimit;
 // SUMMARY
 //  xapi proxy for setrlimit
 //
-xapi xsetrlimit(int resource, const struct rlimit * restrict rlim)
+void xsetrlimit(int resource, const struct rlimit * restrict rlim)
   __attribute__((nonnull));
 
 #endif

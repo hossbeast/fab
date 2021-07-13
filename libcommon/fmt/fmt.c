@@ -15,7 +15,6 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#include "xapi.h"
 
 #include "fmt.h"
 #include "xlinux/XLINUX.errtab.h"
@@ -24,17 +23,13 @@
 // public
 //
 
-xapi API fmt_apply(char * const restrict dst, size_t dst_size, const char * const restrict fmt, va_list va)
+void API fmt_apply(char * const restrict dst, size_t dst_size, const char * const restrict fmt, va_list va)
 {
-  enter;
+  int rv;
 
-  size_t sz = vsnprintf(dst, dst_size, fmt, va);
-  if(sz >= dst_size)
+  rv = vsnprintf(dst, dst_size, fmt, va);
+  if(rv < 0 || rv >= dst_size)
   {
-    xapi_info_pushf("max size", "%zu", dst_size);
-    xapi_info_pushf("actual size", "%zu", sz);
-    fail(XLINUX_NAMETOOLONG);
+    RUNTIME_ABORT();
   }
-
-  finally : coda;
 }

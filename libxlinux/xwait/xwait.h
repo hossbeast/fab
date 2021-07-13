@@ -18,7 +18,6 @@
 #ifndef _XWAIT_H
 #define _XWAIT_H
 
-#include "xapi.h"
 #include "types.h"
 
 /// xwait
@@ -26,7 +25,7 @@
 // SUMMARY
 //  xapi proxy for wait
 //
-xapi xwait(int * status)
+void xwait(int * restrict status)
   __attribute__((nonnull));
 
 /// xwaitpid
@@ -34,10 +33,10 @@ xapi xwait(int * status)
 // SUMMARY
 //  xapi proxy for waitpid
 //
-xapi xwaitpid(pid_t pid, int * status, int options)
+void xwaitpid(pid_t pid, int * restrict status, int options)
   __attribute__((nonnull(2)));
 
-xapi uxwaitid(idtype_t idtype, id_t id, siginfo_t *infop, int options)
+void uxwaitid(idtype_t idtype, id_t id, siginfo_t * restrict infop, int options)
   __attribute__((nonnull));
 
 #endif

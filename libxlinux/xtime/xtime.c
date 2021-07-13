@@ -17,50 +17,33 @@
 
 #include <errno.h>
 
+#include "types.h"
+#include "macros.h"
+
 #include "xtime/xtime.h"
-#include "errtab/KERNEL.errtab.h"
 
-xapi API xlocaltime_r(const time_t * timep, struct tm * result)
+void API xlocaltime_r(const time_t * timep, struct tm * result)
 {
-  enter;
-
-  if(localtime_r(timep, result) == 0)
-    tfail(perrtab_KERNEL, errno);
-
-  finally : coda;
+  RUNTIME_ASSERT(localtime_r(timep, result) != 0);
 }
 
-xapi API xclock_gettime(clockid_t clk_id, struct timespec * tp)
+void API xclock_gettime(clockid_t clk_id, struct timespec * tp)
 {
-  enter;
-
-  tfatalize(perrtab_KERNEL, errno, clock_gettime, clk_id, tp);
-
-  finally : coda;
+  RUNTIME_ASSERT(clock_gettime(clk_id, tp) == 0);
 }
 
 
-xapi API xclock_nanosleep(clockid_t clock_id, int flags, const struct timespec *request, struct timespec *remain)
+void API xclock_nanosleep(clockid_t clock_id, int flags, const struct timespec *request, struct timespec *remain)
 {
-  enter;
+  RUNTIME_ASSERT(clock_nanosleep(clock_id, flags, request, remain) != 0);
+}
 
+int API uxclock_nanosleep(clockid_t clock_id, int flags, const struct timespec *request, struct timespec *remain)
+{
   int r;
-  if((r = clock_nanosleep(clock_id, flags, request, remain)) != 0)
-    tfail(perrtab_KERNEL, r);
 
-  finally : coda;
-}
+  r = clock_nanosleep(clock_id, flags, request, remain);
+  RUNTIME_ASSERT(r == 0 || r == EINTR);
 
-xapi API uxclock_nanosleep(int * r, clockid_t clock_id, int flags, const struct timespec *request, struct timespec *remain)
-{
-  enter;
-
-  int rv;
-  if(!r)
-    r = &rv;
-
-  if((*r = clock_nanosleep(clock_id, flags, request, remain)) != 0 && *r != EINTR)
-    tfail(perrtab_KERNEL, *r);
-
-  finally : coda;
+  return r;
 }

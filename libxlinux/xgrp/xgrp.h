@@ -21,21 +21,19 @@
 #include <sys/types.h>
 #include <grp.h>
 
-#include "xapi.h"
 
 /// uxgetgrgid_r
 //
 // SUMMARY
 //  proxy for getgrgid_r that only fails when errno != { ENOENT, ESRCH, EBAD, EPERM }
 //
-xapi uxgetgrgid_r(gid_t uid, struct group * grp, char * buf, size_t buflen, struct group ** result);
+void uxgetgrgid_r(gid_t uid, struct group * grp, char * buf, size_t buflen, struct group ** result);
 
 /// xgetgrgid
 //
 // SUMMARY
 //  proxy for getgrgid
 //
-xapi xgetgrgid(gid_t gid, struct group ** const restrict grp)
-  __attribute__((nonnull));
+struct group * xgetgrgid(gid_t gid);
 
 #endif

@@ -18,7 +18,6 @@
 #ifndef _GROW_H
 #define _GROW_H
 
-#include "xapi.h"
 #include "types.h"
 
 /// grow

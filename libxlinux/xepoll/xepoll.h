@@ -21,7 +21,6 @@
 #include <sys/epoll.h>
 #include <signal.h>
 
-#include "xapi.h"
 #include "types.h"
 
 struct epoll_event;
@@ -34,15 +33,14 @@ struct epoll_event;
 // PARAMETERS
 //  fd   - (returns) newly created epoll fd
 //
-xapi xepoll_create(int * restrict fd)
-  __attribute__((nonnull));
+int xepoll_create(void);
 
 /// xepoll_ctl
 //
 // SUMMARY
 //  proxy for epoll_ctl
 //
-xapi xepoll_ctl(int epfd, int op, int fd, struct epoll_event *event)
+void xepoll_ctl(int epfd, int op, int fd, struct epoll_event *event)
   __attribute__((nonnull));
 
 /// xepoll_wait
@@ -50,7 +48,7 @@ xapi xepoll_ctl(int epfd, int op, int fd, struct epoll_event *event)
 // SUMMARY
 //  proxy for epoll_wait
 //
-xapi xepoll_wait(int * restrict r, int epfd, struct epoll_event *events, int maxevents, int timeout)
+void xepoll_wait(int epfd, struct epoll_event *events, int maxevents, int timeout)
   __attribute__((nonnull));
 
 /// xepoll_pwait
@@ -58,7 +56,7 @@ xapi xepoll_wait(int * restrict r, int epfd, struct epoll_event *events, int max
 // SUMMARY
 //  proxy for epoll_pwait
 //
-xapi xepoll_pwait(int * restrict r, int epfd, struct epoll_event *events, int maxevents, int timeout, const sigset_t *sigmask)
+void xepoll_pwait(int epfd, struct epoll_event *events, int maxevents, int timeout, const sigset_t *sigmask)
   __attribute__((nonnull));
 
 /// uxepoll_pwait
@@ -66,7 +64,7 @@ xapi xepoll_pwait(int * restrict r, int epfd, struct epoll_event *events, int ma
 // SUMMARY
 //  proxy for epoll_pwait that fails only when errno != EINTR
 //
-xapi uxepoll_pwait(int * restrict r, int epfd, struct epoll_event *events, int maxevents, int timeout, const sigset_t *sigmask)
+int uxepoll_pwait(int epfd, struct epoll_event *events, int maxevents, int timeout, const sigset_t *sigmask)
   __attribute__((nonnull));
 
 #endif
