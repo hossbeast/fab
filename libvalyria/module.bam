@@ -16,12 +16,9 @@
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
 use cc               # this module contains c sources
-use library/shared  # this module builds a library
 use library/static  # this module builds a library
-use xapi/errtab     # this module contains errtabs
 
 # libraries
-import libxapi
 import libxlinux
 import libxunit
 
@@ -31,40 +28,33 @@ import fab/test as fabtest
 import libcommon
 
 # variants for the module
-variant xapi.pic.{debug,devel,final,trace}
+variant pic.{debug,devel,final,trace}
 
-# pull in object files in the module, except those under integ/assert
-variant xapi.pic.{debug,final,trace} : [
-  rule *~test~assert~faults/**/*.?.o -> libvalyria.$?.so
+# pull in object files in the module, except those under test/assert
+variant pic.{debug,final,trace} : [
   rule *~test~assert~faults/**/*.?.o -> libvalyria.$?.a
 ]
 
-variant xapi.pic.devel : [
-  rule *~test/**/*.?.o -> libvalyria.$?.so
+variant pic.devel : [
+  rule *~test/**/*.?.o -> libvalyria.$?.a
 ]
 
 # default build targets
-rule libvalyria.?.{so,a} -> //module/targets
-
-# intra module dependencies - generated files
-rule */*.?.o <- errtab/VALYRIA.errtab.h
+rule libvalyria.?.a -> //module/targets
 
 # library dependencies
-rule //module/imports/*~libxunit/lib*.?.so -> libvalyria.$?.so
 rule //module/imports/*~libxunit/lib*.?.a -> libvalyria.$?.a
 
 #
 # tests
 #
 
-variant xapi.pic.devel : [
+variant pic.devel : [
   # build individual test executables
   rule test/test_(*).?.o -> $^D/test_$1.$? : ./cc-test.bam
-  rule test/test_(*).? <- fabtest/errtab/TEST.errtab.$?.o
   rule test/test_(*).? <- fabtest/test_util.$?.o
-  rule test/test_(*).? <- libxapi/libxapi.$?.so
-  rule test/test_(*).? <- libxlinux/libxlinux.$?.so
-  rule test/test_(*).? <- libcommon/libcommon.$?.so
+  rule test/test_(*).? <- libxlinux/libxlinux.$?.a
+  rule test/test_(*).? <- libcommon/libcommon.$?.a
   rule test/test_(*).? <- libvalyria.$?.a
 
   # target to run each test

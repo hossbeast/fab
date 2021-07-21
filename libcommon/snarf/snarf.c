@@ -63,7 +63,7 @@ void API snarff(char ** const restrict dst, size_t * const restrict dstlp, const
   va_list va;
 
   va_start(va, path_fmt);
-  fatal(snarfatvf, dst, dstlp, AT_FDCWD, path_fmt, va);
+  snarfatvf(dst, dstlp, AT_FDCWD, path_fmt, va);
   va_end(va);
 }
 
@@ -76,111 +76,81 @@ void API snarfvf(char ** const restrict dst, size_t * const restrict dstlp, cons
 void API snarfats(char ** const restrict dst, size_t * const restrict dstlp, int dirfd, const char * const restrict path)
 {
   int fd;
-  xopenats(&fd, O_RDONLY, dirfd, path);
+  fd = xopenats(O_RDONLY, dirfd, path);
   snarf(fd, dst, dstlp);
   xclose(fd);
 }
 
 void API snarfatf(char ** const restrict dst, size_t * const restrict dstlp, int dirfd, const char * const restrict path_fmt, ...)
 {
-  enter;
-
   va_list va;
+
   va_start(va, path_fmt);
-
-  fatal(snarfatvf, dst, dstlp, dirfd, path_fmt, va);
-
-finally:
+  snarfatvf(dst, dstlp, dirfd, path_fmt, va);
   va_end(va);
-coda;
 }
 
 void API snarfatvf(char ** const restrict dst, size_t * const restrict dstlp, int dirfd, const char * const restrict path_fmt, va_list va)
 {
-  enter;
-
   char path[512];
-  fatal(fmt_apply, path, sizeof(path), path_fmt, va);
-  fatal(snarfats, dst, dstlp, dirfd, path);
 
-finally:
+  fmt_apply(path, sizeof(path), path_fmt, va);
+  snarfats(dst, dstlp, dirfd, path);
   va_end(va);
-coda;
 }
 
 
 void API usnarfs(char ** const restrict dst, size_t * const restrict dstlp, const char * const restrict path)
 {
-  xproxy(usnarfats, dst, dstlp, AT_FDCWD, path);
+  usnarfats(dst, dstlp, AT_FDCWD, path);
 }
 
 void API usnarff(char ** const restrict dst, size_t * const restrict dstlp, const char * const restrict path_fmt, ...)
 {
-  enter;
-
   va_list va;
+
   va_start(va, path_fmt);
-
-  fatal(usnarfatvf, dst, dstlp, AT_FDCWD, path_fmt, va);
-
-finally:
-  va_end(va);
-coda;
+  usnarfatvf(dst, dstlp, AT_FDCWD, path_fmt, va);
 }
 
 void API usnarfvf(char ** const restrict dst, size_t * const restrict dstlp, const char * const restrict path_fmt, va_list va)
 {
-  xproxy(usnarfatvf, dst, dstlp, AT_FDCWD, path_fmt, va);
+  usnarfatvf(dst, dstlp, AT_FDCWD, path_fmt, va);
 }
 
 
 void API usnarfats(char ** const restrict dst, size_t * const restrict dstlp, int dirfd, const char * const restrict path)
 {
-  enter;
+  int fd;
 
-  int fd = -1;
-  fatal(uxopenats, &fd, O_RDONLY, dirfd, path);
-  if(fd != -1)
+  fd = uxopenats(O_RDONLY, dirfd, path);
+  if(fd != -1) {
     snarf(fd, dst, dstlp);
+  }
 
-finally:
-  fatal(ixclose, &fd);
-coda;
+  xclose(fd);
 }
 
 void API usnarfatf(char ** const restrict dst, size_t * const restrict dstlp, int dirfd, const char * const restrict path_fmt, ...)
 {
-  enter;
-
   va_list va;
+
   va_start(va, path_fmt);
-
-  fatal(usnarfatvf, dst, dstlp, dirfd, path_fmt, va);
-
-finally:
+  usnarfatvf(dst, dstlp, dirfd, path_fmt, va);
   va_end(va);
-coda;
 }
 
 void API usnarfatvf(char ** const restrict dst, size_t * const restrict dstlp, int dirfd, const char * const restrict path_fmt, va_list va)
 {
-  enter;
-
   char path[512];
-  fatal(fmt_apply, path, sizeof(path), path_fmt, va);
-  fatal(usnarfats, dst, dstlp, dirfd, path);
 
-finally:
+  fmt_apply(path, sizeof(path), path_fmt, va);
+  usnarfats(dst, dstlp, dirfd, path);
   va_end(va);
-coda;
 }
 
 void API fsnarf(char ** const restrict dst, size_t * const restrict dstlp, int fd)
 {
-  enter;
-
-  fatal(xlseek, fd, 0, SEEK_SET, 0);
+  xlseek(fd, 0, SEEK_SET);
   snarf(fd, dst, dstlp);
-
-  finally : coda;
 }

@@ -19,8 +19,6 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-#include "xapi.h"
-#include "xapi/trace.h"
 #include "xlinux/xstdlib.h"
 
 #include "chain.h"
@@ -33,10 +31,8 @@ typedef struct item
   chain chn;
 } item;
 
-static xapi test_add()
+static void test_add()
 {
-  enter;
-
   const chain *T;
   item * e;
   int x;
@@ -77,14 +73,10 @@ static xapi test_add()
     x++;
   }
   assert_eq_d(4, x);
-
-  finally : coda;
 }
 
-static xapi test_splice()
+static void test_splice()
 {
-  enter;
-
   const chain *T;
   item *e;
   int x;
@@ -152,14 +144,10 @@ static xapi test_splice()
     x++;
   }
   assert_eq_d(8, x);
-
-  finally : coda;
 }
 
-static xapi test_cursor()
+static void test_cursor()
 {
-  enter;
-
   const chain *c;
   item *e;
 
@@ -187,14 +175,10 @@ static xapi test_cursor()
   assert_eq_b(false, chain_has_next(&i1, c, chn));
   e = chain_next(&i1, &c, chn); assert_null(e);
   e = chain_next(&i1, &c, chn); assert_null(e); // idempotent
-
-  finally : coda;
 }
 
-static xapi test_safe()
+static void test_safe()
 {
-  enter;
-
   const chain *T[2];
   item *e;
   int x;
@@ -229,36 +213,15 @@ static xapi test_safe()
     x++;
   }
   assert_eq_d(4, x);
-
-  finally : coda;
-}
-
-static xapi run_tests()
-{
-  enter;
-
-  fatal(test_add);
-  fatal(test_splice);
-  fatal(test_cursor);
-  fatal(test_safe);
-
-  summarize;
-
-  finally : coda;
 }
 
 int main()
 {
-  enter;
+  test_add();
+  test_splice();
+  test_cursor();
+  test_safe();
 
-  xapi R = 0;
-  fatal(run_tests);
-
-finally:
-  if(XAPI_UNWINDING)
-    xapi_backtrace(2, 0);
-conclude(&R);
-  xapi_teardown();
-
-  return !!R;
+  summarize;
+  return 0;
 }

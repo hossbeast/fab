@@ -16,21 +16,21 @@
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
 use cc             # this module contains c sources
-use library/shared       # this module builds a library
+use library/static # this module builds a library
 
 # make common objects available for #inclusion and linking by files in this module
 import fab/include
 import libcommon
-import lib{xapi,xlinux,narrator,valyria,logger}
+import lib{xlinux,narrator,valyria}
 
 # variants for the module
-variant xapi.pic.{debug,devel,final,trace}
+variant pic.{debug,devel,final,trace}
 
 # pull in object files in the module, except those under integ
-rule *~integ/**/*.?.o -> libyyutil.$?.so
+rule *~integ/**/*.?.o -> libyyutil.$?.a
 
 # default build targets
-rule libyyutil.?.so -> //module/targets
+rule libyyutil.?.a -> //module/targets
 
 # library dependencies
-rule //module/imports/*/lib*.?.so -> libyyutil.$?.so
+rule //module/imports/*/lib*.?.a -> libyyutil.$?.a

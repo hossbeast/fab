@@ -19,26 +19,18 @@
 #include <sys/syscall.h>
 #include <unistd.h>
 
-#include "xapi.h"
-
 #include "common/snarf.h"
-#include "logger/load.h"
 #include "narrator.h"
 #include "value/merge.h"
 #include "value/parser.h"
-#include "xapi/calltree.h"
-#include "xapi/trace.h"
 #include "xlinux/xstdlib.h"
 
 #include "args.h"
-#include "logging.h"
 
 __thread int32_t tid;
 
-static xapi xmain()
+int main(int argc, char ** argv, char ** envp)
 {
-  enter;
-
   value_parser * parser = 0;
   char * text = 0;
   size_t text_len;
@@ -48,17 +40,20 @@ static xapi xmain()
   size_t sl;
   int x;
 
-  // parse cmdline arguments
-  fatal(args_parse);
-  fatal(args_summarize);
+  tid = syscall(SYS_gettid);
 
-  fatal(value_parser_create, &parser);
+  value_load();
+
+  // parse cmdline arguments
+  args_parse(argc, argv);
+
+  value_parser_create(&parser);
 
   for(x = 0; x < g_args.inputsl; x++)
   {
     if(g_args.inputs[x].type == INPUT_FILE)
     {
-      fatal(snarfs, &text, &text_len, g_args.inputs[x].s);
+      snarfs(&text, &text_len, g_args.inputs[x].s);
       s = text;
       sl = text_len;
       fname = g_args.inputs[x].s;
@@ -71,7 +66,7 @@ static xapi xmain()
     }
 
     value * val;
-    fatal(value_parser_parse, parser, s, sl, fname, g_args.inputs[x].container, &val);
+    value_parser_parse(parser, s, sl, fname, g_args.inputs[x].container, &val);
 
     if(x == 0)
     {
@@ -79,75 +74,16 @@ static xapi xmain()
     }
     else
     {
-      fatal(value_merge, parser, &result, val, 0);
+      value_merge(parser, &result, val, 0);
     }
   }
 
-  fatal(value_say, result, g_narrator_stdout);
-  fatal(narrator_xsays, g_narrator_stdout, "\n");
+  value_say(result, g_narrator_stdout);
+  narrator_xsays(g_narrator_stdout, "\n");
 
-finally:
   wfree(text);
-  fatal(value_parser_xfree, parser);
-coda;
-}
+  value_parser_xfree(parser);
 
-static xapi main_jump()
-{
-  enter;
-
-  fatal(xmain);
-
-finally:
-  if(XAPI_UNWINDING)
-  {
-    fatal(logger_trace_full, L_ERROR, XAPI_TRACE_COLORIZE);
-    xapi_calltree_unwind();
-  }
-coda;
-}
-
-static xapi main_load(char ** envp)
-{
-  enter;
-
-  // load libraries
-  fatal(logger_load);
-  fatal(value_load);
-
-  // load modules
-  fatal(logging_setup, envp);
-
-  fatal(main_jump);
-
-finally:
-  // modules
   args_teardown();
-
-  // libraries
-  fatal(logger_unload);
-  fatal(value_unload);
-coda;
-}
-
-int main(int argc, char ** argv, char ** envp)
-{
-  enter;
-
-  tid = syscall(SYS_gettid);
-
-  xapi R = 0;
-  fatal(main_load, envp);
-
-finally:
-  if(XAPI_UNWINDING)
-  {
-    // failures which cannot be logged with liblogger to stderr
-    xapi_backtrace(2, 0);
-  }
-
-conclude(&R);
-  xapi_teardown();
-
-  return !!R;
+  value_unload();
 }

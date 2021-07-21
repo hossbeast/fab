@@ -31,7 +31,6 @@ REMARKS
 
 */
 
-#include "xapi.h"
 #include "types.h"
 #include "narrator.h"
 
@@ -64,7 +63,7 @@ extern struct narrator_vtable narrator_rolling_vtable;
 //  threshold   - rollover after a file exceeds this size
 //  max_files   - reset the file counter to zero after this many files
 //
-xapi narrator_rolling_create(
+void narrator_rolling_create(
     narrator_rolling ** const restrict n
   , const char * const restrict path_base
   , mode_t mode
@@ -73,8 +72,8 @@ xapi narrator_rolling_create(
 )
   __attribute__((nonnull));
 
-xapi narrator_rolling_free(narrator_rolling *n);
-xapi narrator_rolling_destroy(narrator_rolling *n)
+void narrator_rolling_free(narrator_rolling *n);
+void narrator_rolling_destroy(narrator_rolling *n)
   __attribute__((nonnull));
 
 #endif

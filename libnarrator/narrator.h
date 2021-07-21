@@ -32,7 +32,6 @@ SUMMARY
 #include <sys/types.h>
 #include <unistd.h>
 
-#include "xapi.h"
 #include "types.h"
 
 struct narrator;
@@ -46,11 +45,11 @@ typedef struct narrator {
 // fatal-write to the active narration
 //
 
-#define xsayvf(...) fatal(narrator_xsayvf, N, ##__VA_ARGS__)
-#define xsayf(...)  fatal(narrator_xsayf , N, ##__VA_ARGS__)
-#define xsays(...)  fatal(narrator_xsays , N, ##__VA_ARGS__)
-#define xsayw(...)  fatal(narrator_xsayw , N, ##__VA_ARGS__)
-#define xsayc(...)  fatal(narrator_xsayc , N, ##__VA_ARGS__)
+#define xsayvf(...) narrator_xsayvf(N, ##__VA_ARGS__)
+#define xsayf(...)  narrator_xsayf( N, ##__VA_ARGS__)
+#define xsays(...)  narrator_xsays( N, ##__VA_ARGS__)
+#define xsayw(...)  narrator_xsayw( N, ##__VA_ARGS__)
+#define xsayc(...)  narrator_xsayc( N, ##__VA_ARGS__)
 
 /// read-only singleton narrators that write to fixed file descriptors
 extern narrator * g_narrator_stdout;
@@ -64,7 +63,7 @@ extern narrator * g_narrator_nullity;
 // SUMMARY
 //  formatted write from va_list to the specified narrator
 //
-xapi narrator_xsayvf(narrator * const restrict n, const char * const restrict fmt, va_list va)
+void narrator_xsayvf(narrator * const restrict n, const char * const restrict fmt, va_list va)
   __attribute__((nonnull));
 
 /// narrator_sayf
@@ -72,7 +71,7 @@ xapi narrator_xsayvf(narrator * const restrict n, const char * const restrict fm
 // SUMMARY
 //  formatted write to the specified narrator
 //
-xapi narrator_xsayf(narrator * const restrict n, const char * const restrict fmt, ...)
+void narrator_xsayf(narrator * const restrict n, const char * const restrict fmt, ...)
   __attribute__((nonnull(1, 2)))
   __attribute__((format(printf, 2, 3)));
 
@@ -81,14 +80,14 @@ xapi narrator_xsayf(narrator * const restrict n, const char * const restrict fmt
 // SUMMARY
 //  write to the specified narrator
 //
-xapi narrator_xsayw(narrator * const restrict n, const void * const restrict b, size_t l);
+void narrator_xsayw(narrator * const restrict n, const void * const restrict b, size_t l);
 
 /// narrator_says
 //
 // SUMMARY
 //  write to the specified narrator
 //
-xapi narrator_xsays(narrator * const restrict n, const char * const restrict s)
+void narrator_xsays(narrator * const restrict n, const char * const restrict s)
   __attribute__((nonnull(1)));
 
 /// narrator_sayc
@@ -96,7 +95,7 @@ xapi narrator_xsays(narrator * const restrict n, const char * const restrict s)
 // SUMMARY
 //  write a byte to the specified narrator
 //
-xapi narrator_xsayc(narrator * const restrict n, int c)
+void narrator_xsayc(narrator * const restrict n, int c)
   __attribute__((nonnull));
 
 /// narrator_flush
@@ -104,7 +103,7 @@ xapi narrator_xsayc(narrator * const restrict n, int c)
 // SUMMARY
 //  flush
 //
-xapi narrator_flush(narrator * const restrict n)
+void narrator_flush(narrator * const restrict n)
   __attribute__((nonnull));
 
 #define NARRATOR_SEEK_TABLE(x)                                                                      \
@@ -129,7 +128,7 @@ NARRATOR_SEEK_TABLE(0)
 //  whence - one of NARRATOR_SEEK_*, indicates how offset is interpreted
 //  [res]  - (returns) the resulting absolute offset
 //
-xapi narrator_xseek(narrator * const restrict n, off_t offset, int whence, off_t * restrict res)
+void narrator_xseek(narrator * const restrict n, off_t offset, int whence, off_t * restrict res)
   __attribute__((nonnull(1)));
 
 /// narrator_reset
@@ -137,7 +136,7 @@ xapi narrator_xseek(narrator * const restrict n, off_t offset, int whence, off_t
 // SUMMARY
 //  reposition the narrator such that subsequent writes start at the beginning
 //
-xapi narrator_xreset(narrator * const restrict n)
+void narrator_xreset(narrator * const restrict n)
   __attribute__((nonnull));
 
 /// narrator_read
@@ -154,7 +153,7 @@ xapi narrator_xreset(narrator * const restrict n)
 // REMARKS
 //  not supported for many narrator types
 //
-xapi narrator_xread(narrator * restrict n, void * dst, size_t count, size_t * restrict r)
+void narrator_xread(narrator * restrict n, void * dst, size_t count, size_t * restrict r)
   __attribute__((nonnull(1, 2)));
 
 #endif

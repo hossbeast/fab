@@ -18,7 +18,6 @@
 #include <string.h>
 #include <stdio.h>
 
-#include "xapi.h"
 #include "types.h"
 #include "xlinux/xstdlib.h"
 
@@ -136,10 +135,8 @@ static bool __attribute__((nonnull)) probe(const multimap_t * restrict m, uint32
   }
 }
 
-xapi multimap_rehash(multimap_t * restrict m)
+void multimap_rehash(multimap_t * restrict m)
 {
-  enter;
-
   multimap_key ** ks = 0; // old keytable
   char * vs = 0;          // old value table
   size_t ksl = 0;
@@ -148,11 +145,11 @@ xapi multimap_rehash(multimap_t * restrict m)
 
   // allocate new tables
   tmp = m->tk;
-  fatal(xmalloc, &m->tk, sizeof(*m->tk) * (m->table_size << 2));
+  xmalloc(&m->tk, sizeof(*m->tk) * (m->table_size << 2));
   ks = tmp;
 
   tmp = m->tv;
-  fatal(xmalloc, &m->tv, sizeof(void*) * (m->table_size << 2));
+  xmalloc(&m->tv, sizeof(void*) * (m->table_size << 2));
   vs = tmp;
 
   ksl = m->table_size;
@@ -223,36 +220,32 @@ xapi multimap_rehash(multimap_t * restrict m)
     }
   }
 
-finally:
-  for(i = 0; i < ksl; i++)
+  for(i = 0; i < ksl; i++) {
     wfree(ks[i]);
+  }
 
   wfree(ks);
   wfree(vs);
-coda;
 }
 
 //
 // api
 //
 
-xapi API multimap_create(multimap ** const restrict m)
+void API multimap_create(multimap ** const restrict m)
 {
-  xproxy(multimap_createx, m, 0, 0, 0);
+  multimap_createx(m, 0, 0);
 }
 
-xapi API multimap_createx(
+void API multimap_createx(
     multimap ** const restrict mx
   , void * free_value
-  , void * xfree_value
   , size_t capacity
 )
 {
-  enter;
-
   multimap_t * m = 0;
 
-  fatal(xmalloc, &m, sizeof(*m));
+  xmalloc(&m, sizeof(*m));
 
   // compute initial table size for 100 keys @ given saturation
   m->table_size = (capacity ?: DEFAULT_CAPACITY) * (1 / MAX_SATURATION);
@@ -263,29 +256,24 @@ xapi API multimap_createx(
   m->lm = m->table_size - 1;
 
   m->free_value = free_value;
-  m->xfree_value = xfree_value;
 
-  fatal(xmalloc, &m->tk, sizeof(*m->tk) * m->table_size);
-  fatal(xmalloc, &m->tv, VALUE_SIZE(m) * m->table_size);
+  xmalloc(&m->tk, sizeof(*m->tk) * m->table_size);
+  xmalloc(&m->tv, VALUE_SIZE(m) * m->table_size);
 
   *mx = &m->mx;
   m = 0;
 
-finally:
   if(m)
-    fatal(multimap_xfree, &m->mx);
-coda;
+    multimap_xfree(&m->mx);
 }
 
-xapi API multimap_set(multimap * restrict mx, const void * restrict key, size_t keyl, void * restrict value)
+void API multimap_set(multimap * restrict mx, const void * restrict key, size_t keyl, void * restrict value)
 {
-  enter;
-
   multimap_t * m = containerof(mx, multimap_t, mx);
 
   // grow the table and rehash the entryset
   if(m->size == m->overflow_size)
-    fatal(multimap_rehash, m);
+    multimap_rehash(m);
 
   uint32_t h = hash(key, keyl);
 
@@ -298,7 +286,7 @@ xapi API multimap_set(multimap * restrict mx, const void * restrict key, size_t 
   {
     if(k == 0 || keyl >= k->a)
     {
-      fatal(xrealloc, &m->tk[i], 1, sizeof(multimap_key) + keyl + 1, (k ? k->a : 0));
+      xrealloc(&m->tk[i], 1, sizeof(multimap_key) + keyl + 1, (k ? k->a : 0));
       k = m->tk[i];
       k->a = keyl + 1;
     }
@@ -327,7 +315,7 @@ xapi API multimap_set(multimap * restrict mx, const void * restrict key, size_t 
 
     if(m->tk[next] == 0)
     {
-      fatal(xmalloc, &m->tk[next], sizeof(multimap_key));
+      xmalloc(&m->tk[next], sizeof(multimap_key));
       m->tk[next]->a = 0;
     }
 
@@ -350,11 +338,9 @@ xapi API multimap_set(multimap * restrict mx, const void * restrict key, size_t 
   // copy the value
   if(value)
     ((void**)m->tv)[m->tk[i]->last] = value;
-
-  finally : coda;
 }
 
-xapi API multimap_get(
+void API multimap_get(
     const multimap * restrict mx
   , const void * restrict key
   , size_t keyl
@@ -363,8 +349,6 @@ xapi API multimap_get(
   , size_t * restrict valsl
 )
 {
-  enter;
-
   struct {
     uint16_t sz;
     char v[];
@@ -392,7 +376,7 @@ xapi API multimap_get(
       size_t oldsz = 0;
       if(*tmp)
         oldsz = (*tmp)->sz;
-      fatal(xrealloc, tmp, 1, sizeof(**tmp) + (sizeof(void*) * m->tk[i]->n), oldsz);
+      xrealloc(tmp, 1, sizeof(**tmp) + (sizeof(void*) * m->tk[i]->n), oldsz);
       (*tmp)->sz = m->tk[i]->n;
 
       size_t x = 0;
@@ -411,19 +395,15 @@ xapi API multimap_get(
 
     *valsl = m->tk[m->tk[i]->first]->n;
   }
-
-  finally : coda;
 }
 
-xapi API multimap_xfree(multimap * const restrict mx)
+void API multimap_xfree(multimap * const restrict mx)
 {
-  enter;
-
   multimap_t * m = containerof(mx, multimap_t, mx);
 
   if(m)   // free-like semantics
   {
-    fatal(multimap_recycle, &m->mx);
+    multimap_recycle(&m->mx);
 
     int x;
     for(x = 0; x < m->table_size; x++)
@@ -434,18 +414,12 @@ xapi API multimap_xfree(multimap * const restrict mx)
   }
 
   wfree(m);
-
-  finally : coda;
 }
 
-xapi API multimap_ixfree(multimap ** const restrict m)
+void API multimap_ixfree(multimap ** const restrict m)
 {
-  enter;
-
-  fatal(multimap_xfree, *m);
+  multimap_xfree(*m);
   *m = 0;
-
-  finally : coda;
 }
 
 const void * API multimap_table_key(const multimap * restrict mx, size_t x)
@@ -479,10 +453,8 @@ void * API multimap_table_value(const multimap * restrict mx, size_t x)
   return VALUE(m, x);
 }
 
-xapi API multimap_delete(multimap * const restrict mx, const void * restrict key, size_t keyl)
+void API multimap_delete(multimap * const restrict mx, const void * restrict key, size_t keyl)
 {
-  enter;
-
   multimap_t * m = containerof(mx, multimap_t, mx);
   uint32_t h = hash(key, keyl);
 
@@ -500,8 +472,6 @@ xapi API multimap_delete(multimap * const restrict mx, const void * restrict key
 
       if(m->free_value)
         m->free_value(VALUE(m, x));
-      else if(m->xfree_value)
-        fatal(m->xfree_value, VALUE(m, x));
 
       m->tk[x]->attr = MAP_KEY_DELETED;
     } while(next);
@@ -509,14 +479,10 @@ xapi API multimap_delete(multimap * const restrict mx, const void * restrict key
     m->tk[i]->attr = MAP_KEY_DELETED;
     m->size -= m->tk[i]->n;
   }
-
-  finally : coda;
 }
 
-xapi API multimap_recycle(multimap * const restrict mx)
+void API multimap_recycle(multimap * const restrict mx)
 {
-  enter;
-
   multimap_t * m = containerof(mx, multimap_t, mx);
 
   // reset all lengths; all allocations remain intact
@@ -527,8 +493,6 @@ xapi API multimap_recycle(multimap * const restrict mx)
     {
       if(m->free_value)
         m->free_value(VALUE(m, x));
-      else if(m->xfree_value)
-        fatal(m->xfree_value, VALUE(m, x));
     }
 
     if(m->tk[x])
@@ -536,17 +500,13 @@ xapi API multimap_recycle(multimap * const restrict mx)
   }
 
   m->size = 0;
-
-  finally : coda;
 }
 
-xapi API multimap_keys(const multimap * restrict mx, const char *** restrict keys, size_t * restrict keysl)
+void API multimap_keys(const multimap * restrict mx, const char *** restrict keys, size_t * restrict keysl)
 {
-  enter;
-
   const multimap_t * m = containerof(mx, multimap_t, mx);
 
-  fatal(xmalloc, keys, m->size * sizeof(*keys));
+  xmalloc(keys, m->size * sizeof(*keys));
   (*keysl) = 0;
 
   size_t x;
@@ -555,6 +515,4 @@ xapi API multimap_keys(const multimap * restrict mx, const char *** restrict key
     if(m->tk[x] && !(m->tk[x]->attr & MAP_KEY_DELETED))
       (*keys)[(*keysl)++] = m->tk[x]->p;
   }
-
-  finally : coda;
 }

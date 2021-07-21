@@ -18,8 +18,6 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-#include "xapi.h"
-#include "xapi/trace.h"
 #include "xlinux/xstdlib.h"
 
 #include "multimap.internal.h"
@@ -39,16 +37,12 @@ static void destructor(void * value)
   wfree(value);
 }
 
-static xapi set(multimap * restrict m, const char * restrict key, int val)
+static void set(multimap * restrict m, const char * restrict key, int val)
 {
-  enter;
-
   item * itemp;
-  fatal(xmalloc, &itemp, sizeof(*itemp));
+  xmalloc(&itemp, sizeof(*itemp));
   itemp->x = val;
-  fatal(multimap_set, m, MMS(key), itemp);
-
-  finally : coda;
+  multimap_set(m, MMS(key), itemp);
 }
 
 static bool in_valset(const int * restrict valset, int val)
@@ -126,10 +120,8 @@ static bool is_tenth_factor(int product, int value)
 // also verify that, for each key/value pair in the multimap, the relation holds that values are
 // powers of 10 of the key
 //
-static xapi validate_tables(multimap * restrict m)
+static void validate_tables(multimap * restrict m)
 {
-  enter;
-
   int x;
   for(x = 0; x < m->table_size; x++)
   {
@@ -153,14 +145,10 @@ static xapi validate_tables(multimap * restrict m)
       }
     }
   }
-
-  finally : coda;
 }
 
-static xapi validate_lookup(multimap * restrict m, const char * restrict key, int * valset)
+static void validate_lookup(multimap * restrict m, const char * restrict key, int * valset)
 {
-  enter;
-
   int x;
   int i;
 
@@ -168,7 +156,7 @@ static xapi validate_lookup(multimap * restrict m, const char * restrict key, in
   item ** values = 0;
   size_t valuesl = 0;
 
-  fatal(multimap_get, m, MMS(key), &tmp, &values, &valuesl);
+  multimap_get(m, MMS(key), &tmp, &values, &valuesl);
 
   size_t n = sentinel(valset);
   assert_eq_zu(n, valuesl);
@@ -179,16 +167,11 @@ static xapi validate_lookup(multimap * restrict m, const char * restrict key, in
   for(i = 0; i < n; i++)
     assert_that(in_mapvals(values, valuesl, valset[i]));
 
-finally:
-  xapi_infos("key", key);
   wfree(tmp);
-coda;
 }
 
-static xapi validate_keyset(const multimap * restrict m, const char ** restrict keyset)
+static void validate_keyset(const multimap * restrict m, const char ** restrict keyset)
 {
-  enter;
-
   int n = sentinel(keyset);
   int x;
 
@@ -203,137 +186,113 @@ static xapi validate_keyset(const multimap * restrict m, const char ** restrict 
   // keys that are in the keyset are in the map
   for(x = 0; x < n; x++)
     assert_that(in_mapkeys(m, keyset[x]));
-
-  finally : coda;
 }
 
-static xapi validate_absent(multimap * restrict m, const char * restrict key)
+static void validate_absent(multimap * restrict m, const char * restrict key)
 {
-  enter;
-
   size_t itemsl = 0;
-  fatal(multimap_get, m, MMS(key), 0, 0, &itemsl);
+  multimap_get(m, MMS(key), 0, 0, &itemsl);
   assert_eq_zu(0, itemsl);
-
-  finally : coda;
 }
 
 static const char *set_keyset[] = { "100", "2", "30", "", 0 };
 
-static xapi validate_set_entryset(multimap * m)
+static void validate_set_entryset(multimap * m)
 {
-  enter;
-
   // size tracking
   assert_eq_d(8, m->size);
 
   // entries by validate_lookup
-  fatal(validate_lookup, m, "100", (int[]) { 1, 10, 100, 0 });
-  fatal(validate_lookup, m, "2", (int[]) { 2, 0 });
-  fatal(validate_lookup, m, "30", (int[]) { 3, 30, 0 });
-  fatal(validate_lookup, m, "", (int[]) { 0xdead, 0xface, 0 });
+  validate_lookup(m, "100", (int[]) { 1, 10, 100, 0 });
+  validate_lookup(m, "2", (int[]) { 2, 0 });
+  validate_lookup(m, "30", (int[]) { 3, 30, 0 });
+  validate_lookup(m, "", (int[]) { 0xdead, 0xface, 0 });
 
   // entries by enumeration
-  fatal(validate_tables, m);
-  fatal(validate_keyset, m, set_keyset);
-
-  finally : coda;
+  validate_tables(m);
+  validate_keyset(m, set_keyset);
 }
 
-static xapi validate_delete_last(multimap * restrict m, const char ** keyset, size_t new_size)
+static void validate_delete_last(multimap * restrict m, const char ** keyset, size_t new_size)
 {
-  enter;
-
   size_t last = sentinel(keyset) - 1;
 
-  fatal(multimap_delete, m, MMS(keyset[last]));
-  fatal(validate_absent, m, keyset[last]);
-  fatal(validate_tables, m);
+  multimap_delete(m, MMS(keyset[last]));
+  validate_absent(m, keyset[last]);
+  validate_tables(m);
   keyset[last] = 0;
-  fatal(validate_keyset, m, keyset);
+  validate_keyset(m, keyset);
   assert_eq_zu(new_size, m->size);
-
-  finally : coda;
 }
 
-static xapi test_set()
+static void test_set()
 {
-  enter;
-
   multimap * m = 0;
-  fatal(multimap_createx, &m, destructor, 0, 0);
+  multimap_createx(&m, destructor, 0);
 
   // force this key to hash onto the last slot
   valyria_faults_reset();
   valyria_fault_activate(VALYRIA_KEY_INDEX_BOUNDARY, MMS("100"));
 
-  fatal(set, m, "100", 1);
-  fatal(set, m, "100", 10);
-  fatal(set, m, "100", 100);
-  fatal(set, m, "2", 2);
-  fatal(set, m, "30", 3);
-  fatal(set, m, "30", 30);
-  fatal(set, m, "", 0xdead);
-  fatal(set, m, "", 0xface);
+  set(m, "100", 1);
+  set(m, "100", 10);
+  set(m, "100", 100);
+  set(m, "2", 2);
+  set(m, "30", 3);
+  set(m, "30", 30);
+  set(m, "", 0xdead);
+  set(m, "", 0xface);
 
-  fatal(validate_set_entryset, m);
+  validate_set_entryset(m);
 
   // force a different key to rehash onto the boundary
   valyria_faults_reset();
   valyria_fault_activate(VALYRIA_KEY_INDEX_BOUNDARY, MMS("30"));
-  fatal(multimap_rehash, (multimap_t*)m);
+  multimap_rehash((multimap_t*)m);
 
-  fatal(validate_set_entryset, m);
+  validate_set_entryset(m);
 
-finally:
-  fatal(multimap_xfree, m);
-coda;
+  multimap_xfree(m);
 }
 
-static xapi test_set_mingle()
+static void test_set_mingle()
 {
-  enter;
-
   multimap * m = 0;
-  fatal(multimap_createx, &m, destructor, 0, 0);
+  multimap_createx(&m, destructor, 0);
 
   // force these keys to hash onto the same slot
   valyria_faults_reset();
   valyria_fault_activate(VALYRIA_KEY_INDEX_BOUNDARY, MMS("100"));
   valyria_fault_activate(VALYRIA_KEY_INDEX_BOUNDARY, MMS("2"));
 
-  fatal(set, m, "100", 1);
-  fatal(set, m, "2", 2);
-  fatal(set, m, "100", 10);
-  fatal(set, m, "100", 100);
-  fatal(set, m, "30", 3);
-  fatal(set, m, "30", 30);
-  fatal(set, m, "", 0xdead);
-  fatal(set, m, "", 0xface);
+  set(m, "100", 1);
+  set(m, "2", 2);
+  set(m, "100", 10);
+  set(m, "100", 100);
+  set(m, "30", 3);
+  set(m, "30", 30);
+  set(m, "", 0xdead);
+  set(m, "", 0xface);
 
-  fatal(validate_set_entryset, m);
+  validate_set_entryset(m);
 
   // force different keys to rehash onto the boundary
   valyria_faults_reset();
   valyria_fault_activate(VALYRIA_KEY_INDEX_BOUNDARY, MMS("30"));
   valyria_fault_activate(VALYRIA_KEY_INDEX_BOUNDARY, MMS("2"));
-  fatal(multimap_rehash, (multimap_t*)m);
+  multimap_rehash((multimap_t*)m);
 
-  fatal(validate_set_entryset, m);
+  validate_set_entryset(m);
 
-finally:
-  fatal(multimap_xfree, m);
-coda;
+  multimap_xfree(m);
 }
 
 static const char * delete_keyset[] = { "100", "200", "3", "37", "9000000", "", 0 };
 
-static xapi test_delete()
+static void test_delete()
 {
-  enter;
-
   multimap * m = 0;
-  fatal(multimap_createx, &m, destructor, 0, 0);
+  multimap_createx(&m, destructor, 0);
 
   const char * keyset[8];
   memcpy(keyset, delete_keyset, sizeof(delete_keyset));
@@ -341,35 +300,31 @@ static xapi test_delete()
   valyria_faults_reset();
   valyria_fault_activate(VALYRIA_KEY_INDEX_BOUNDARY, MMS("100"));
 
-  fatal(set, m, "100", 1);
-  fatal(set, m, "100", 10);
-  fatal(set, m, "100", 100);
-  fatal(set, m, "200", 200);
-  fatal(set, m, "3", 3);
-  fatal(set, m, "37", 37);
-  fatal(set, m, "9000000", 9000000);
-  fatal(set, m, "", 0xdead);
-  fatal(set, m, "", 0xface);
+  set(m, "100", 1);
+  set(m, "100", 10);
+  set(m, "100", 100);
+  set(m, "200", 200);
+  set(m, "3", 3);
+  set(m, "37", 37);
+  set(m, "9000000", 9000000);
+  set(m, "", 0xdead);
+  set(m, "", 0xface);
 
   // iterative deletion
-  fatal(validate_delete_last, m, keyset, 7);
-  fatal(validate_delete_last, m, keyset, 6);
-  fatal(validate_delete_last, m, keyset, 5);
-  fatal(validate_delete_last, m, keyset, 4);
-  fatal(validate_delete_last, m, keyset, 3);
-  fatal(validate_delete_last, m, keyset, 0);
+  validate_delete_last(m, keyset, 7);
+  validate_delete_last(m, keyset, 6);
+  validate_delete_last(m, keyset, 5);
+  validate_delete_last(m, keyset, 4);
+  validate_delete_last(m, keyset, 3);
+  validate_delete_last(m, keyset, 0);
 
-finally:
-  fatal(multimap_xfree, m);
-coda;
+  multimap_xfree(m);
 }
 
-static xapi test_delete_mingle()
+static void test_delete_mingle()
 {
-  enter;
-
   multimap * m = 0;
-  fatal(multimap_createx, &m, destructor, 0, 0);
+  multimap_createx(&m, destructor, 0);
 
   const char * keyset[8];
   memcpy(keyset, delete_keyset, sizeof(delete_keyset));
@@ -379,45 +334,41 @@ static xapi test_delete_mingle()
   valyria_fault_activate(VALYRIA_KEY_INDEX_BOUNDARY, MMS("200"));
   valyria_fault_activate(VALYRIA_KEY_INDEX_BOUNDARY, MMS("37"));
 
-  fatal(set, m, "3", 3);
-  fatal(set, m, "100", 1);
-  fatal(set, m, "100", 10);
-  fatal(set, m, "200", 200);
-  fatal(set, m, "37", 37);
-  fatal(set, m, "9000000", 9000000);
-  fatal(set, m, "100", 100);
-  fatal(set, m, "", 0xdead);
-  fatal(set, m, "", 0xface);
+  set(m, "3", 3);
+  set(m, "100", 1);
+  set(m, "100", 10);
+  set(m, "200", 200);
+  set(m, "37", 37);
+  set(m, "9000000", 9000000);
+  set(m, "100", 100);
+  set(m, "", 0xdead);
+  set(m, "", 0xface);
 
   // iterative deletion
-  fatal(validate_delete_last, m, keyset, 7);
-  fatal(validate_delete_last, m, keyset, 6);
-  fatal(validate_delete_last, m, keyset, 5);
-  fatal(validate_delete_last, m, keyset, 4);
-  fatal(validate_delete_last, m, keyset, 3);
-  fatal(validate_delete_last, m, keyset, 0);
+  validate_delete_last(m, keyset, 7);
+  validate_delete_last(m, keyset, 6);
+  validate_delete_last(m, keyset, 5);
+  validate_delete_last(m, keyset, 4);
+  validate_delete_last(m, keyset, 3);
+  validate_delete_last(m, keyset, 0);
 
-finally:
-  fatal(multimap_xfree, m);
-coda;
+  multimap_xfree(m);
 }
 
-static xapi test_load()
+static void test_load()
 {
-  enter;
-
   char space[64];
   multimap * m = 0;
 
-  fatal(multimap_createx, &m, destructor, 0, 0);
+  multimap_createx(&m, destructor, 0);
 
   int x;
   for(x = 1; x <= 5000; x++)
   {
     snprintf(space, sizeof(space), "%d", x);
-    fatal(set, m, space, x * 10);
-    fatal(set, m, space, x * 100);
-    fatal(set, m, space, x * 1000);
+    set(m, space, x * 10);
+    set(m, space, x * 100);
+    set(m, space, x * 1000);
   }
 
   assert_eq_d(5000 * 3, m->size);
@@ -426,41 +377,20 @@ static xapi test_load()
   for(x = 1; x <= 5000; x++)
   {
     snprintf(space, sizeof(space), "%d", x);
-    fatal(validate_lookup, m, space, (int[]) { x * 10, x * 100, x * 1000, 0 });
+    validate_lookup(m, space, (int[]) { x * 10, x * 100, x * 1000, 0 });
   }
 
-finally:
-  fatal(multimap_xfree, m);
-coda;
-}
-
-static xapi run_tests()
-{
-  enter;
-
-  fatal(test_set);
-  fatal(test_set_mingle);
-  fatal(test_delete);
-  fatal(test_delete_mingle);
-  fatal(test_load);
-
-  summarize;
-
-  finally : coda;
+  multimap_xfree(m);
 }
 
 int main()
 {
-  enter;
+  test_set();
+  test_set_mingle();
+  test_delete();
+  test_delete_mingle();
+  test_load();
 
-  xapi R = 0;
-  fatal(run_tests);
-
-finally:
-  if(XAPI_UNWINDING)
-    xapi_backtrace(2, 0);
-conclude(&R);
-  xapi_teardown();
-
-  return !!R;
+  summarize;
+  return 0;
 }

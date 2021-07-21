@@ -21,7 +21,6 @@
 #include <dirent.h>
 #include <stdint.h>
 
-#include "xapi.h"
 #include "types.h"
 
 #define FTWAT_F       1  // regular file
@@ -69,10 +68,10 @@ typedef struct ftwinfo
 //  man 2 ftw
 //  man 2 openat
 //
-xapi nftwat(
+void nftwat(
     int dirfd
   , const char * dirpath
-  , xapi (*fn)(int method, ftwinfo * restrict info, void * udata, int * stop)
+  , void (*fn)(int method, ftwinfo * restrict info, void * udata, int * stop)
   , int nopenfd
   , void * udata
 )

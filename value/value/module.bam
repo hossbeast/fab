@@ -17,17 +17,16 @@
 
 use cc           # this module contains C sources
 use executable   # this module builds an executable
-use xapi/errtab
 
 # declare variants
-variant xapi.{debug,devel,final,trace}
+variant {debug,devel,final,trace}
 
 # make common objects available for #include and linking
 import fab/include
 import fab/asan
-import lib{common,xapi,xlinux,logger,xunit,narrator,valyria,yyutil,value}
+import lib{common,xlinux,xunit,narrator,valyria,yyutil,value}
 
-variant xapi.{debug,devel} : [
+variant {debug,devel} : [
   rule value.? <- asan/asan.$?.o
 ]
 
@@ -35,11 +34,11 @@ variant xapi.{debug,devel} : [
 rule **/*.?.o [*] -> value.$? : executable/cc.bam
 
 # library dependencies
-variant xapi.pic.{debug,devel,final,trace} : [
+variant pic.{debug,devel,final,trace} : [
   rule //module/imports/*~libxunit/lib*.?.so -> value.${?-pic}
 ]
 
-variant xapi.pic.devel : [
+variant pic.devel : [
   rule //module/imports/libxunit/lib*.?.so -> value.${?-pic}
 ]
 

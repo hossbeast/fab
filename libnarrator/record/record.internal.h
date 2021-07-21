@@ -18,7 +18,6 @@
 #ifndef _NARRATOR_RECORD_INTERNAL_H
 #define _NARRATOR_RECORD_INTERNAL_H
 
-#include "xapi.h"
 #include "types.h"
 
 #include "record.h"

@@ -118,31 +118,31 @@ operation
  /* declare some vertices */
   : identifier-sequence-list
   {
-    YFATAL(operation_vertex, PARSER, $1);
+    operation_vertex(PARSER, $1);
   }
 
   /* refresh a vertex */
   | '@' identifier-sequence-list
   {
-    YFATAL(operation_refresh, PARSER, $2);
+    operation_refresh(PARSER, $2);
   }
 
   /* invalidate a vertex */
   | '~' identifier-sequence-list
   {
-    YFATAL(operation_invalidate, PARSER, $2);
+    operation_invalidate(PARSER, $2);
   }
 
   /* connect an edge */
   | '+' edge
   {
-    YFATAL(operation_connect, PARSER, $2.A, $2.B, $2.attrs);
+    operation_connect(PARSER, $2.A, $2.B, $2.attrs);
   }
 
   /* disconnect an edge */
   | '=' edge
   {
-    YFATAL(operation_disconnect, PARSER, $2.A, $2.B);
+    operation_disconnect(PARSER, $2.A, $2.B);
   }
   ;
 
@@ -165,14 +165,14 @@ identifier-sequence-list
   : identifier-sequence-list ',' identifier-sequence
   {
     $$ = $1;
-    YFATAL(xrealloc, &$$->v, sizeof(*$$->v), $$->len + 1, $$->len);
+    xrealloc(&$$->v, sizeof(*$$->v), $$->len + 1, $$->len);
     if($$->len == 1)
       $$->v[0] = $$->v0;
     $$->v[$$->len++] = $3;
   }
   | identifier-sequence
   {
-    YFATAL(xmalloc, &$$, sizeof(*$$));
+    xmalloc(&$$, sizeof(*$$));
     $$->v0 = $1;
     $$->len = 1;
   }
@@ -212,7 +212,7 @@ identifier
 label
   : STR
   {
-    YFATAL(xmalloc, &$$, sizeof(*$$) + @1.l + 1);
+    xmalloc(&$$, sizeof(*$$) + @1.l + 1);
     memcpy($$->label, @1.s, @1.l);
     $$->label_len = @1.l;
   }

@@ -15,7 +15,6 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#include "xapi.h"
 
 #include "xunit.h"
 #include "xunit/assert.h"
@@ -29,12 +28,9 @@
 
 #include "moria.h"
 #include "graph.internal.h"
-#include "logging.internal.h"
 #include "operations.h"
 #include "parser.internal.h"
 #include "vertex.h"
-
-#include "xlinux/KERNEL.errtab.h"
 
 typedef struct graph_test {
   XUNITTEST;
@@ -49,49 +45,42 @@ typedef struct graph_test {
   uint32_t expected_attrs;
 } graph_test;
 
-static xapi graph_unit_setup(xunit_unit * unit)
+static void graph_unit_setup(xunit_unit * unit)
 {
-  enter;
-
-  fatal(moria_load);
-  fatal(logger_finalize);
-
-  finally : coda;
+  moria_load();
 }
 
-static xapi graph_unit_cleanup(xunit_unit * unit)
+static void graph_unit_cleanup(xunit_unit * unit)
 {
-  enter;
-
-  fatal(moria_unload);
-
-  finally : coda;
+  moria_unload();
 }
 
 //
 // TESTs for vertex_identity_travel
 //
 
-static xapi graph_test_entry(xunit_test * _test)
+static void graph_test_entry(xunit_test * _test)
 {
-  enter;
-
   moria_graph g;
   graph_parser * p = 0;
   moria_vertex * from = 0;
   moria_vertex * v;
+  int r;
 
   graph_test * test = containerof(_test, graph_test, xu);
 
   moria_graph_init(&g);
-  fatal(graph_parser_create, &p, &g, 0, graph_operations_dispatch, 0, 0);
+  graph_parser_create(&p, &g, 0, graph_operations_dispatch, 0, 0);
 
   if(test->graph) {
-    fatal(graph_parser_parse, p, MMS(test->graph));
+    graph_parser_parse(p, MMS(test->graph));
   }
 
   if(test->operations) {
-    fatal(graph_parser_operations_parse, p, MMS(test->operations));
+    r = graph_parser_operations_parse(p, MMS(test->operations));
+    if(r == 1) {
+      printf("%s\n", p->operations_yyu.error_str);
+    }
   }
 
   llist_foreach(&p->vertices, v, owner) {
@@ -123,13 +112,11 @@ static xapi graph_test_entry(xunit_test * _test)
     assert_null(actual);
   }
 
-finally:
   moria_graph_destroy(&g);
-  fatal(graph_parser_xfree, p);
-coda;
+  graph_parser_xfree(p);
 }
 
-xunit_unit xunit = {
+static xunit_unit xunit = {
     .xu_setup = graph_unit_setup
   , .xu_cleanup = graph_unit_cleanup
   , .xu_entry = graph_test_entry
@@ -237,3 +224,4 @@ xunit_unit xunit = {
       , 0
   }
 };
+XUNIT_UNIT(xunit);

@@ -18,7 +18,6 @@
 %{
   #include "yyutil/scanner.h"
 
-  #include "VALUE.errtab.h"
   #include "parser.internal.h"
   #include "value.tab.h"
   #include "value.tokens.h"
@@ -29,9 +28,8 @@
   #define YYSTYPE struct value_yystype
   #define YYLTYPE yyu_location
 
-  static xapi lexify_variable(
+  static int lexify_variable(
       struct yyu_parser * const restrict parser
-    , int * const restrict ytoken
     , void * const restrict _lval
     , size_t lvalsz
     , struct yyu_location * const restrict lloc
@@ -42,22 +40,17 @@
     , int token
   )
   {
-    enter;
-
     yyu_lval* lval = (typeof(lval))_lval;
 
     lval->t.s = text + 1;
     lval->t.l = bytes - 1;
 
-    fatal(yyu_lexify, parser, ytoken, lval, lvalsz, lloc, text, end_line, end_col, bytes, token);
-
-    finally : coda;
+    return yyu_lexify(parser, lval, lvalsz, lloc, text, end_line, end_col, bytes, token);
   }
 
-  #define LEXVAR() do {             \
-    fatal(lexify_variable           \
+  #define LEXVAR()                  \
+    LEXIFY(lexify_variable          \
       , yyextra                     \
-      , &_yyu_V                     \
       , yylval                      \
       , sizeof(yylval)              \
       , yylloc                      \
@@ -66,8 +59,7 @@
       , YYUXTRA->loc.l_lin          \
       , YYUXTRA->loc.l_col + yyleng \
       , VARIABLE                    \
-    );                              \
-  } while(0)
+    )
 %}
 
 %option noinput nounput noyywrap noyy_top_state
@@ -88,8 +80,8 @@ ILL   [\x00-\x08\x0B-\x1F\x7F-\xFF]
 <INITIAL>[#][^\x00-\x08\x0B-\x1F\x7F-\xFF\n]*           { LOCWRITE; }
 
  /* multiline comments are nestable */
-<INITIAL,multilinecomment>[/][*]                        { lenter; LOCWRITE; PUSHSTATE(multilinecomment); finally : lcoda; }
-<multilinecomment>[*][/]                                { lenter; LOCWRITE; POPSTATE; finally : lcoda; }
+<INITIAL,multilinecomment>[/][*]                        { LOCWRITE; PUSHSTATE(multilinecomment); }
+<multilinecomment>[*][/]                                { LOCWRITE; POPSTATE; }
 <multilinecomment>[^*\x00-\x08\x0B-\x1F\x7F-\xFF\n*/]+  { LOCWRITE; }
 <multilinecomment>[*][^\x00-\x08\x0B-\x1F\x7F-\xFF\n/]  { LOCWRITE; }
 <multilinecomment>[/]                                   { LOCWRITE; }
@@ -100,50 +92,46 @@ ILL   [\x00-\x08\x0B-\x1F\x7F-\xFF]
 <INITIAL>[\r\t ]+                                       { LOCWRITE; }
 
  /* tokens */
-<INITIAL>[[\]{}()+=:]                                   { lenter; LEX(yytext[0]); finally : lcoda; }
+<INITIAL>[[\]{}()+=:]                                   { LEX(yytext[0]); }
 
  /* variables */
-<INITIAL>[$][a-zA-Z_][a-zA-Z0-9_]{0,62}                 { lenter; LEXVAR(); finally : lcoda; }
+<INITIAL>[$][a-zA-Z_][a-zA-Z0-9_]{0,62}                 { LEXVAR(); }
 
  /* bools */
-<INITIAL>(?i:true|false)                                { lenter; LEXB(); finally : lcoda; }
+<INITIAL>(?i:true|false)                                { LEXB(); }
 
  /* integers */
-<INITIAL>[0-9]+                                         { lenter; LEXI("%"SCNuMAX); finally : lcoda; }
-<INITIAL>[-][0-9]+                                      { lenter; LEXI("%"SCNdMAX); finally : lcoda; }
-<INITIAL>(?i:0x[a-f0-9]+)                               { lenter; LEXI("%"SCNxMAX); finally : lcoda; }
+<INITIAL>[0-9]+                                         { LEXI("%"SCNuMAX); }
+<INITIAL>[-][0-9]+                                      { LEXI("%"SCNdMAX); }
+<INITIAL>(?i:0x[a-f0-9]+)                               { LEXI("%"SCNxMAX); }
 
  /* floats */
-<INITIAL>[+-]?[0-9]+[.][0-9]+                           { lenter; LEXF(); finally : lcoda; }
+<INITIAL>[+-]?[0-9]+[.][0-9]+                           { LEXF(); }
 
  /* strings */
-<INITIAL>[-a-zA-Z0-9_/.][-a-zA-Z0-9_/.]*                { lenter; LEX(STR); finally : lcoda; }
+<INITIAL>[-a-zA-Z0-9_/.][-a-zA-Z0-9_/.]*                { LEX(STR); }
 
  /* quoted strings */
-<INITIAL>["]                                            { lenter; PUSHSTATE(quoted); LEX(yytext[0]); finally : lcoda; }
-<quoted>["]                                             { lenter; POPSTATE; LEX(yytext[0]); finally : lcoda; }
-<quoted>\\[\\"abtnvfrs0]                                { lenter; LEXC(1); finally : lcoda; }
-<quoted>\\x[0-9a-f]{2}                                  { lenter; LEXH(2); finally : lcoda; }
-<quoted>\\x\{[0-9a-f]{1,2}\}                            { lenter; LEXH(3); finally : lcoda; }
-<quoted>[^"\\\x00-\x1F\x7F-\xFF]+                       { lenter; LEX(STR); finally : lcoda; }
+<INITIAL>["]                                            { PUSHSTATE(quoted); LEX(yytext[0]); }
+<quoted>["]                                             { POPSTATE; LEX(yytext[0]); }
+<quoted>\\[\\"abtnvfrs0]                                { LEXC(1); }
+<quoted>\\x[0-9a-f]{2}                                  { LEXH(2); }
+<quoted>\\x\{[0-9a-f]{1,2}\}                            { LEXH(3); }
+<quoted>[^"\\\x00-\x1F\x7F-\xFF]+                       { LEX(STR); }
 
 <*>[\x00-\x1F\x7F-\xFF]                                 {
-                                                          lenter;
                                                           POPSTATES;
                                                           LOCWRITE;
-                                                          failf(VALUE_ILLBYTE, "byte", "0x%02hhx", yytext[0]);
-                                                          finally : lcoda;
+                                                          yyu_errorf(YYUXTRA, "invalid byte 0x%02hhx", yytext[0]);
+                                                          return 0;
                                                         }
 <*>[\x20-\x7E]                                          {
-                                                          lenter;
                                                           POPSTATES;
                                                           LOCWRITE;
-                                                          failf(VALUE_ILLBYTE, "character", "'%1$c'(0x%1$02hhx)", yytext[0]);
-                                                          finally : lcoda;
+                                                          yyu_errorf(YYUXTRA, "character '%1$c'(0x%1$02hhx)", yytext[0]);
+                                                          return 0;
                                                         }
 <<EOF>>                                                 {
-                                                          lenter;
                                                           POPSTATES;
-                                                          _yyu_V = 0; /* return end-of-input */
-                                                          finally : lcoda;
+                                                          return 0;
                                                         }

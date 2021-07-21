@@ -18,7 +18,6 @@
 #ifndef GRAPH_PARSER_INTERNAL_H
 #define GRAPH_PARSER_INTERNAL_H
 
-#include "xapi.h"
 #include "types.h"
 
 #include "parser.h"
@@ -86,14 +85,14 @@ void identifier_free(struct identifier * id);
 void operation_free(struct operation * op);
 
 /* operations parser */
-xapi operation_vertex(graph_parser * restrict parser, identifier_list *A);
-xapi operation_refresh(graph_parser * restrict parser, identifier_list * restrict A);
-xapi operation_invalidate(graph_parser * restrict parser, identifier_list * restrict A);
-xapi operation_connect(graph_parser * restrict parser, identifier_list * restrict A, identifier_list * restrict B, uint32_t attrs);
-xapi operation_disconnect(graph_parser * restrict parser, identifier_list * restrict A, identifier_list * restrict B);
+void operation_vertex(graph_parser * restrict parser, identifier_list *A);
+void operation_refresh(graph_parser * restrict parser, identifier_list * restrict A);
+void operation_invalidate(graph_parser * restrict parser, identifier_list * restrict A);
+void operation_connect(graph_parser * restrict parser, identifier_list * restrict A, identifier_list * restrict B, uint32_t attrs);
+void operation_disconnect(graph_parser * restrict parser, identifier_list * restrict A, identifier_list * restrict B);
 
 /* graph parser */
-xapi graph_parser_create_vertex(
+void graph_parser_create_vertex(
     graph_parser * restrict p
   , struct moria_vertex ** const restrict rv
   , uint32_t attrs
@@ -103,7 +102,7 @@ xapi graph_parser_create_vertex(
 )
   __attribute__((nonnull));
 
-xapi graph_parser_create_edge(
+void graph_parser_create_edge(
     graph_parser * restrict p
   , struct moria_edge ** const restrict er
   , uint16_t Alen
@@ -111,7 +110,7 @@ xapi graph_parser_create_edge(
 )
   __attribute__((nonnull));
 
-xapi graph_parser_connect(
+void graph_parser_connect(
     graph_parser * restrict p
   , struct moria_vertex * restrict A
   , struct moria_vertex * restrict B
@@ -120,7 +119,7 @@ xapi graph_parser_connect(
 )
   __attribute__((nonnull(1, 2, 3)));
 
-xapi graph_parser_hyperconnect(
+void graph_parser_hyperconnect(
     graph_parser * restrict p
   , struct moria_vertex ** restrict Alist
   , uint16_t Alen

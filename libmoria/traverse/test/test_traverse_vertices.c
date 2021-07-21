@@ -19,12 +19,6 @@
 #include <unistd.h>
 #include <string.h>
 
-#include "xapi.h"
-#include "xapi/trace.h"
-#include "xapi/exit.h"
-#include "xapi/calltree.h"
-#include "xapi/errtab.h"
-
 #include "xlinux/xstdlib.h"
 #include "moria/load.h"
 #include "moria.h"
@@ -42,10 +36,8 @@
 #include "narrator/growing.h"
 #include "graph.internal.h"
 #include "vertex.h"
-#include "errtab/MORIA.errtab.h"
 #include "operations.h"
 #include "parser.internal.h"
-#include "logging.internal.h"
 
 #include "macros.h"
 
@@ -82,23 +74,14 @@ static int visitcmp(const void * _A, size_t Asz, const void * _B, size_t Bsz)
   return INTCMP(A->label, B->label);
 }
 
-static xapi graph_unit_setup(xunit_unit * unit)
+static void graph_unit_setup(xunit_unit * unit)
 {
-  enter;
-
-  fatal(moria_load);
-  fatal(logger_finalize);
-
-  finally : coda;
+  moria_load();
 }
 
-static xapi graph_unit_cleanup(xunit_unit * unit)
+static void graph_unit_cleanup(xunit_unit * unit)
 {
-  enter;
-
-  fatal(moria_unload);
-
-  finally : coda;
+  moria_unload();
 }
 
 struct traverse_context {
@@ -108,38 +91,32 @@ struct traverse_context {
   graph_test * test;
 };
 
-static xapi inner_vertex_visit(moria_vertex * const restrict v, void * arg, moria_traversal_mode mode, int distance, int * result)
+static void inner_vertex_visit(moria_vertex * const restrict v, void * arg, moria_traversal_mode mode, int distance, int * result)
 {
-  enter;
-
   struct traverse_context * ctx = arg;
   visit * visitation;
 
-  fatal(array_push, ctx->visitations, &visitation);
+  array_push(ctx->visitations, &visitation);
   visitation->label = v->label[0];
   visitation->position = ++ctx->visit_counter;
   visitation->distance = distance;
-
-  finally : coda;
 }
 
-static xapi outer_vertex_visit(moria_vertex * const restrict v, void * arg, moria_traversal_mode mode, int distance, int * result)
+static void outer_vertex_visit(moria_vertex * const restrict v, void * arg, moria_traversal_mode mode, int distance, int * result)
 {
-  enter;
-
   struct traverse_context * ctx = arg;
   visit * visitation;
 
-  fatal(array_push, ctx->visitations, &visitation);
+  array_push(ctx->visitations, &visitation);
   visitation->label = v->label[0];
   visitation->position = ++ctx->visit_counter;
   visitation->distance = distance;
 
   if(!ctx->test->inner_attrs)
-    goto XAPI_FINALLY;
+    return;
 
-  fatal(moria_traverse_vertices
-    , ctx->g
+  moria_traverse_vertices(
+      ctx->g
     , v
     , inner_vertex_visit
     , 0
@@ -152,14 +129,10 @@ static xapi outer_vertex_visit(moria_vertex * const restrict v, void * arg, mori
     , ctx->test->inner_attrs | MORIA_TRAVERSE_DEPTH
     , ctx
   );
-
-  finally : coda;
 }
 
-static xapi graph_test_entry(xunit_test * _test)
+static void graph_test_entry(xunit_test * _test)
 {
-  enter;
-
   graph_test * test = (typeof(test))_test;
 
   graph_parser * p = 0;
@@ -171,7 +144,7 @@ static xapi graph_test_entry(xunit_test * _test)
 
   struct traverse_context ctx;
 
-  fatal(array_createx, &visitations, sizeof(visit), 0, visitcmp, 0, 0, 0, 0);
+  array_createx(&visitations, sizeof(visit), 0, visitcmp, 0, 0);
 
   // setup the test graph
 //  uint32_t identity = 0;
@@ -179,12 +152,12 @@ static xapi graph_test_entry(xunit_test * _test)
 //    identity = 1;
 
   moria_graph_init(&g);
-  fatal(graph_parser_create, &p, &g, 0, graph_operations_dispatch, 0, 0);
+  graph_parser_create(&p, &g, 0, graph_operations_dispatch, 0, 0);
   if(test->graph) {
-    fatal(graph_parser_parse, p, MMS(test->graph));
+    graph_parser_parse(p, MMS(test->graph));
   }
   if(test->operations) {
-    fatal(graph_parser_operations_parse, p, MMS(test->operations));
+    graph_parser_operations_parse(p, MMS(test->operations));
   }
 
   moria_vertex * from = 0;
@@ -202,8 +175,8 @@ static xapi graph_test_entry(xunit_test * _test)
     , test : test
     , g : &g
   };
-  fatal(moria_traverse_vertices
-    , &g
+  moria_traverse_vertices(
+      &g
     , from
     , outer_vertex_visit
     , 0
@@ -303,21 +276,19 @@ static xapi graph_test_entry(xunit_test * _test)
       }
 
       bool observed = *expected_sets;
-      xapi_info_pushf("label", "%c", visitation->label);
+      xunit_info_pushf("label", "%c", visitation->label);
       assert_true(observed);
-      xapi_info_unstage();
+      xunit_info_unstage();
     }
   }
 
-finally:
   moria_graph_destroy(&g);
-  fatal(list_xfree, operations);
-  fatal(array_xfree, visitations);
-  fatal(graph_parser_xfree, p);
-coda;
+  list_xfree(operations);
+  array_xfree(visitations);
+  graph_parser_xfree(p);
 }
 
-xunit_unit xunit = {
+static xunit_unit xunit = {
     .xu_setup = graph_unit_setup
   , .xu_cleanup = graph_unit_cleanup
   , .xu_entry = graph_test_entry
@@ -555,3 +526,4 @@ A -> B -> C -> D -> E
       , 0
     }
 };
+XUNIT_UNIT(xunit);

@@ -25,13 +25,13 @@
 // SUMMARY
 //  initialize the say module
 //
-xapi say_setup(void);
+void say_setup(void);
 
 /// say_cleanup
 //
 // SUMMARY
 //  teardown the say module
 //
-xapi say_cleanup(void);
+void say_cleanup(void);
 
 #endif

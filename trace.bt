@@ -1,0 +1,52 @@
+#!/usr/bin/env bpftrace
+
+#include <sys/types.h>
+#include <string.h>
+
+struct yyu_token {
+  int16_t                    token;
+  int16_t                    symbol;
+  
+  char pad0[4];
+  
+  const char  *              name;
+  const char  *              string;
+  uint16_t                   string_len;
+};
+
+struct yyu_parser {
+  char pad0[352];
+  int last_token;
+  int last_line;
+
+  char pad1[40];
+
+  char error_str[256];
+  uint16_t error_len;
+
+  char tokenstring[256];
+
+  char pad2[6];
+
+  const char *fname;
+
+  char pad3[48];
+
+  const struct yyu_token* token_table;
+  uint16_t token_table_size;
+};
+
+usdt:/home/todd/fab/libmoria//vertex/test/test_vertex.devel.pic.xunit:token
+{
+  $parser = (struct yyu_parser*)arg0;
+
+  printf("pid %d fname %s token %s\n", pid, str($parser->fname), str(arg1));
+}
+
+usdt:/home/todd/fab/libmoria//vertex/test/test_vertex.devel.pic.xunit:pushstate,
+usdt:/home/todd/fab/libmoria//vertex/test/test_vertex.devel.pic.xunit:popstate
+{
+  $parser = (struct yyu_parser*)arg0;
+
+  printf("[%d] %s\n", pid, str(arg1));
+}

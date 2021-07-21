@@ -40,37 +40,25 @@ static int compare_entries(const hashtable_t * ht, void * _A, void * _B)
   return ht->cmp_fn(A->k, A->kl, B->k, B->kl);
 }
 
-static xapi delete_entry(const hashtable_t * ht, void * _ent)
+static void delete_entry(const hashtable_t * ht, void * _ent)
 {
-  enter;
-
   const dictionary_t * d = containerof(ht, dictionary_t, ht);
   entry * ent = _ent;
 
   if(d->destroy_fn)
     d->destroy_fn(ent->v);
-  else if(d->xdestroy_fn)
-    fatal(d->xdestroy_fn, ent->v);
 
   memset(ent->v, 0, d->vsz);
-
-  finally : coda;
 }
 
-static xapi destroy_entry(const hashtable_t * ht, void * _ent)
+static void destroy_entry(const hashtable_t * ht, void * _ent)
 {
-  enter;
-
   entry * ent = _ent;
   wfree(ent->k);
-
-  finally : coda;
 }
 
-static xapi store_entry(const hashtable_t * ht, void * _dst, void * _src, bool found)
+static void store_entry(const hashtable_t * ht, void * _dst, void * _src, bool found)
 {
-  enter;
-
   const dictionary_t * d = containerof(ht, dictionary_t, ht);
   entry * dst = _dst;
   entry * src = _src;
@@ -79,7 +67,7 @@ static xapi store_entry(const hashtable_t * ht, void * _dst, void * _src, bool f
   {
     if(dst->k == 0 || src->kl >= dst->ka)
     {
-      fatal(xrealloc, &dst->k, 1, src->kl + 1, dst->ka);
+      xrealloc(&dst->k, 1, src->kl + 1, dst->ka);
       dst->ka = src->kl + 1;
     }
 
@@ -89,15 +77,13 @@ static xapi store_entry(const hashtable_t * ht, void * _dst, void * _src, bool f
   }
   else if(src->val)
   {
-    fatal(delete_entry, ht, dst);
+    delete_entry(ht, dst);
   }
 
   if(src->val)
   {
     memcpy(dst->v, src->v, d->vsz);
   }
-
-  finally : coda;
 }
 
 static ht_operations ht_ops = {
@@ -112,24 +98,21 @@ static ht_operations ht_ops = {
 // api
 //
 
-xapi API dictionary_createx(
+void API dictionary_createx(
     dictionary ** restrict dictx
   , size_t vsz
   , size_t capacity
   , void (*destroy_value)(void * value)
-  , xapi (*xdestroy_value)(void * value)
 )
 {
-  enter;
-
   dictionary_t * dict = 0;
-  fatal(xmalloc, &dict, sizeof(*dict));
+  xmalloc(&dict, sizeof(*dict));
 
   // alignment
   size_t vssz = roundup(vsz, sizeof(entry));
 
-  fatal(hashtable_init
-    , &dict->ht
+  hashtable_init(
+    &dict->ht
     , sizeof(entry) + vssz
     , capacity
     , &ht_ops
@@ -138,28 +121,24 @@ xapi API dictionary_createx(
   );
 
   dict->destroy_fn = destroy_value;
-  dict->xdestroy_fn = xdestroy_value;
 
   dict->vsz = vsz;
 
   *dictx = &dict->dx;
   dict = 0;
 
-finally:
-  if(dict)
-    fatal(dictionary_xfree, &dict->dx);
-coda;
+  if(dict) {
+    dictionary_xfree(&dict->dx);
+  }
 }
 
-xapi API dictionary_create(dictionary ** restrict d, size_t vsz)
+void API dictionary_create(dictionary ** restrict d, size_t vsz)
 {
-  xproxy(dictionary_createx, d, vsz, 0, 0, 0);
+  dictionary_createx(d, vsz, 0, 0);
 }
 
-xapi API dictionary_put(dictionary * restrict dx, const void * restrict k, uint16_t kl, void * v)
+void API dictionary_put(dictionary * restrict dx, const void * restrict k, uint16_t kl, void * v)
 {
-  enter;
-
   dictionary_t * d = containerof(dx, dictionary_t, dx);
   ht_bucket * bp;
   entry * ent;
@@ -171,18 +150,14 @@ xapi API dictionary_put(dictionary * restrict dx, const void * restrict k, uint1
   memcpy(entp->v, v, d->vsz);
   entp->val = true;
 
-  fatal(hashtable_store, &d->ht, entp, &bp);
+  hashtable_store(&d->ht, entp, &bp);
 
   ent = (typeof(ent))bp->p;
   ent->val = true;
-
-  finally : coda;
 }
 
-xapi API dictionary_store(dictionary * restrict dx, const void * restrict k, uint16_t kl, void * v)
+void API dictionary_store(dictionary * restrict dx, const void * restrict k, uint16_t kl, void * v)
 {
-  enter;
-
   dictionary_t * d = containerof(dx, dictionary_t, dx);
   ht_bucket * bp;
   entry * ent;
@@ -193,13 +168,11 @@ xapi API dictionary_store(dictionary * restrict dx, const void * restrict k, uin
   entp->kl = kl;
   entp->val = false;
 
-  fatal(hashtable_store, &d->ht, entp, &bp);
+  hashtable_store(&d->ht, entp, &bp);
 
   ent = (typeof(ent))bp->p;
   ent->val = true;
   *(void**)v = ent->v;
-
-  finally : coda;
 }
 
 void * API dictionary_get(dictionary* restrict dx, const void * restrict k, uint16_t kl)
@@ -214,56 +187,38 @@ void * API dictionary_get(dictionary* restrict dx, const void * restrict k, uint
   return 0;
 }
 
-xapi API dictionary_recycle(dictionary* restrict dx)
+void API dictionary_recycle(dictionary* restrict dx)
 {
-  enter;
-
   dictionary_t * d = containerof(dx, dictionary_t, dx);
-  fatal(hashtable_recycle, &d->htx);
-
-  finally : coda;
+  hashtable_recycle(&d->htx);
 }
 
-xapi API dictionary_replicate(dictionary* restrict dstx, dictionary * restrict srcx)
+void API dictionary_replicate(dictionary* restrict dstx, dictionary * restrict srcx)
 {
-  enter;
-
   dictionary_t * dst = containerof(dstx, dictionary_t, dx);
   dictionary_t * src = containerof(srcx, dictionary_t, dx);
 
-  fatal(hashtable_replicate, &dst->htx, &src->htx);
-
-  finally : coda;
+  hashtable_replicate(&dst->htx, &src->htx);
 }
 
-xapi API dictionary_splice(dictionary * restrict dstx, dictionary * restrict srcx)
+void API dictionary_splice(dictionary * restrict dstx, dictionary * restrict srcx)
 {
-  enter;
-
   dictionary_t * dst = containerof(dstx, dictionary_t, dx);
   dictionary_t * src = containerof(srcx, dictionary_t, dx);
 
-  fatal(hashtable_splice, &dst->htx, &src->htx);
-
-  finally : coda;
+  hashtable_splice(&dst->htx, &src->htx);
 }
 
-xapi API dictionary_delete(dictionary * restrict dx, const void * restrict k, uint16_t kl)
+void API dictionary_delete(dictionary * restrict dx, const void * restrict k, uint16_t kl)
 {
-  enter;
-
   dictionary_t * d = containerof(dx, dictionary_t, dx);
 
   entry key = { k : (void*)k, kl : kl };
-  fatal(hashtable_delete, &d->htx, &key);
-
-  finally : coda;
+  hashtable_delete(&d->htx, &key);
 }
 
-xapi API dictionary_keys(const dictionary * restrict dx, void * restrict _keys, uint16_t * restrict keysl)
+void API dictionary_keys(const dictionary * restrict dx, void * restrict _keys, uint16_t * restrict keysl)
 {
-  enter;
-
   size_t x;
   size_t i;
 
@@ -272,7 +227,7 @@ xapi API dictionary_keys(const dictionary * restrict dx, void * restrict _keys, 
   dictionary_t * d = containerof(dx, dictionary_t, dx);
   entry * ent;
 
-  fatal(xmalloc, keys, sizeof(*keys) * d->size);
+  xmalloc(keys, sizeof(*keys) * d->size);
 
   i = 0;
   for(x = 0; x < d->table_size; x++)
@@ -281,14 +236,10 @@ xapi API dictionary_keys(const dictionary * restrict dx, void * restrict _keys, 
       (*keys)[i++] = ent->k;
   }
   (*keysl) = d->size;
-
-  finally : coda;
 }
 
-xapi API dictionary_values(const dictionary* restrict dx, void * restrict _values, size_t * restrict valuesl)
+void API dictionary_values(const dictionary* restrict dx, void * restrict _values, size_t * restrict valuesl)
 {
-  enter;
-
   size_t x;
   size_t i;
 
@@ -297,7 +248,7 @@ xapi API dictionary_values(const dictionary* restrict dx, void * restrict _value
   dictionary_t * d = containerof(dx, dictionary_t, dx);
   entry * ent;
 
-  fatal(xmalloc, values, sizeof(*values) * d->size);
+  xmalloc(values, sizeof(*values) * d->size);
 
   i = 0;
   for(x = 0; x < d->table_size; x++)
@@ -306,32 +257,22 @@ xapi API dictionary_values(const dictionary* restrict dx, void * restrict _value
       (*values)[i++] = ent->v;
   }
   (*valuesl) = d->size;
-
-  finally : coda;
 }
 
-xapi API dictionary_xfree(dictionary* restrict dx)
+void API dictionary_xfree(dictionary* restrict dx)
 {
-  enter;
-
   dictionary_t * d = containerof(dx, dictionary_t, dx);
 
   if(d)
-    fatal(hashtable_xdestroy, &d->ht);
+    hashtable_xdestroy(&d->ht);
 
   wfree(d);
-
-  finally : coda;
 }
 
-xapi API dictionary_ixfree(dictionary** restrict d)
+void API dictionary_ixfree(dictionary** restrict d)
 {
-  enter;
-
-  fatal(dictionary_xfree, *d);
+  dictionary_xfree(*d);
   *d = 0;
-
-  finally : coda;
 }
 
 const void * API dictionary_table_key(const dictionary * restrict dx, size_t x)

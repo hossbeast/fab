@@ -16,25 +16,21 @@
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
 use cc              # this module contains c sources
-use library/shared  # this module builds a shared library
 use library/static
 
 import fab/include
 import libcommon
-import libxapi
 
 import fab/test as fabtest
 
 # variants for the module
-variant xapi.pic.{debug,devel,final,trace}
+variant pic.{debug,devel,final,trace}
 
 # pull in object files in the module, except those under integ/example
-rule **/*.?.o -> libdescriptor.$?.{so,a}
+rule **/*.?.o -> libdescriptor.$?.a
 
 # default build targets
-rule libdescriptor.?.so -> //module/targets
 rule libdescriptor.?.a -> //module/targets
 
 # library dependencies
-rule //module/imports/*/lib*.?.so -> libdescriptor.$?.so
 rule //module/imports/*/lib*.?.a -> libdescriptor.$?.a

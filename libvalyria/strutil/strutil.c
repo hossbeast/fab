@@ -18,7 +18,6 @@
 #include <string.h>
 #include <stdio.h>
 
-#include "xapi.h"
 #include "xlinux/xstdlib.h"
 
 #include "strutil.internal.h"
@@ -28,46 +27,36 @@
 //
 
 
-xapi API strloadc(char ** restrict dst, int c)
+void API strloadc(char ** restrict dst, int c)
 {
-  xproxy(strloadw, dst, (char[]) { c }, 1);
+  strloadw(dst, (char[]) { c }, 1);
 }
 
-xapi API strloads(char ** restrict dst, const char * restrict s)
+void API strloads(char ** restrict dst, const char * restrict s)
 {
-  xproxy(strloadw, dst, s, strlen(s));
+  strloadw(dst, s, strlen(s));
 }
 
-xapi API strloadw(char ** restrict dst, const void * restrict buf, size_t bufl)
+void API strloadw(char ** restrict dst, const void * restrict buf, size_t bufl)
 {
-  enter;
-
   wfree(*dst);
-  fatal(xmalloc, dst, bufl + 1);
+  xmalloc(dst, bufl + 1);
   memcpy(*dst, buf, bufl);
   (*dst)[bufl] = 0;
-
-  finally : coda;
 }
 
-xapi API strloadf(char ** restrict dst, const char * restrict fmt, ...)
+void API strloadf(char ** restrict dst, const char * restrict fmt, ...)
 {
-  enter;
-
   va_list va;
   va_start(va, fmt);
 
-  fatal(strloadvf, dst, fmt, va);
+  strloadvf(dst, fmt, va);
 
-finally:
   va_end(va);
-coda;
 }
 
-xapi API strloadvf(char ** restrict dst, const char * restrict fmt, va_list va)
+void API strloadvf(char ** restrict dst, const char * restrict fmt, va_list va)
 {
-  enter;
-
   va_list va2;
   va_copy(va2, va);
 
@@ -75,10 +64,8 @@ xapi API strloadvf(char ** restrict dst, const char * restrict fmt, va_list va)
   va_end(va2);
 
   wfree(*dst);
-  fatal(xmalloc, dst, r + 1);
+  xmalloc(dst, r + 1);
   vsprintf(*dst, fmt, va);
 
-finally:
   va_end(va);
-coda;
 }

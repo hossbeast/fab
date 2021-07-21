@@ -18,7 +18,6 @@
 #ifndef _VALUE_MAKE_H
 #define _VALUE_MAKE_H
 
-#include "xapi.h"
 #include "types.h"
 
 struct value;
@@ -36,7 +35,7 @@ struct yyu_location;
 //  rv    - (returns) value containing the float
 //  i     - posint value
 //
-xapi value_posint_mk(
+void value_posint_mk(
     struct value_parser * const restrict parser
   , const struct yyu_location * const restrict loc
   , struct value ** rv
@@ -55,7 +54,7 @@ xapi value_posint_mk(
 //  rv    - (returns) value containing the float
 //  i     - negint value
 //
-xapi value_negint_mk(
+void value_negint_mk(
     struct value_parser * const restrict parser
   , const struct yyu_location * const restrict loc
   , struct value ** rv
@@ -74,7 +73,7 @@ xapi value_negint_mk(
 //  rv    - (returns) value containing the float
 //  fp    - float value
 //
-xapi value_float_mk(
+void value_float_mk(
     struct value_parser * const restrict parser
   , const struct yyu_location * const restrict loc
   , struct value ** rv
@@ -93,7 +92,7 @@ xapi value_float_mk(
 //  rv    - (returns) value containing the boolean
 //  b     - boolean value
 //
-xapi value_boolean_mk(
+void value_boolean_mk(
     struct value_parser * const restrict parser
   , const struct yyu_location * const restrict loc
   , struct value ** rv
@@ -118,7 +117,7 @@ xapi value_boolean_mk(
 //  v - value
 //  c - character
 //
-xapi value_string_mks(
+void value_string_mks(
     struct value_parser * const restrict parser
   , const struct yyu_location * const restrict loc
   , struct value * e
@@ -127,7 +126,7 @@ xapi value_string_mks(
 )
   __attribute__((nonnull(1, 4, 5)));
 
-xapi value_string_mkw(
+void value_string_mkw(
     struct value_parser * const restrict parser
   , const struct yyu_location * const restrict loc
   , struct value * e
@@ -137,7 +136,7 @@ xapi value_string_mkw(
 )
   __attribute__((nonnull(1, 4, 5)));
 
-xapi value_string_mkc(
+void value_string_mkc(
     struct value_parser * const restrict parser
   , const struct yyu_location * const restrict loc
   , struct value * e
@@ -146,7 +145,7 @@ xapi value_string_mkc(
 )
   __attribute__((nonnull(1, 4)));
 
-xapi value_string_mkv(
+void value_string_mkv(
     struct value_parser * const restrict parser
   , const struct yyu_location * const restrict loc
   , struct value * e
@@ -159,7 +158,7 @@ xapi value_string_mkv(
 //
 //
 //
-xapi value_variable_mkw(
+void value_variable_mkw(
     struct value_parser * const restrict parser
   , const struct yyu_location * const restrict loc
   , struct value ** rv
@@ -181,7 +180,7 @@ xapi value_variable_mkw(
 //  val     - value
 //  [attr]  - attributes to apply to the mapping
 //
-xapi value_mapping_mk(
+void value_mapping_mk(
     struct value_parser * const restrict parser
   , const struct yyu_location * const restrict loc
   , struct value ** rv
@@ -206,7 +205,7 @@ xapi value_mapping_mk(
 // REMARKS
 //  list size is unchanged if el is null
 //
-xapi value_list_mkv(
+void value_list_mkv(
     struct value_parser * const restrict parser
   , const struct yyu_location * const restrict loc
   , struct value * e
@@ -230,7 +229,7 @@ xapi value_list_mkv(
 // REMARKS
 //  set size is unchanged if el is null
 //
-xapi value_set_mkv(
+void value_set_mkv(
     struct value_parser * const restrict parser
   , const struct yyu_location * const restrict loc
   , struct value * e

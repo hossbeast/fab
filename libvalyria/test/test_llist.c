@@ -19,8 +19,6 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-#include "xapi.h"
-#include "xapi/trace.h"
 #include "xlinux/xstdlib.h"
 
 #include "llist.h"
@@ -33,10 +31,8 @@ typedef struct item
   llist lln;
 } item;
 
-static xapi test_append()
+static void test_append()
 {
-  enter;
-
   llist list;
   item * e;
   int x;
@@ -75,14 +71,10 @@ static xapi test_append()
     assert_eq_d(x, e->x);
     x++;
   };
-
-  finally : coda;
 }
 
-static xapi test_prepend()
+static void test_prepend()
 {
-  enter;
-
   llist list;
   item * e;
   int x;
@@ -120,14 +112,10 @@ static xapi test_prepend()
     assert_eq_d(x, e->x);
     x--;
   };
-
-  finally : coda;
 }
 
-static xapi test_delete()
+static void test_delete()
 {
-  enter;
-
   llist list;
 
   item i1 = { .x = 1 };
@@ -186,14 +174,10 @@ static xapi test_delete()
 
   llist_delete(&i1, lln);
   assert_eq_zu(0, llist_count(&list));
-
-  finally : coda;
 }
 
-static xapi test_splice_head()
+static void test_splice_head()
 {
-  enter;
-
   llist A;
   llist B;
   item *e;
@@ -251,14 +235,10 @@ static xapi test_splice_head()
 
   e = llist_next(&A, e, lln);
   assert_eq_d(3, e->x);
-
-  finally : coda;
 }
 
-static xapi test_splice_tail()
+static void test_splice_tail()
 {
-  enter;
-
   llist A;
   llist B;
   item *e;
@@ -306,14 +286,10 @@ static xapi test_splice_tail()
 
   e = llist_next(&A, e, lln);
   assert_eq_d(6, e->x);
-
-  finally : coda;
 }
 
-static xapi test_safe()
+static void test_safe()
 {
-  enter;
-
   llist list;
   llist *T;
   item * e;
@@ -352,38 +328,17 @@ static xapi test_safe()
     assert_eq_d(x, e->x);
     x++;
   };
-
-  finally : coda;
-}
-
-static xapi run_tests()
-{
-  enter;
-
-  fatal(test_append);
-  fatal(test_prepend);
-  fatal(test_delete);
-  fatal(test_splice_head);
-  fatal(test_splice_tail);
-  fatal(test_safe);
-
-  summarize;
-
-  finally : coda;
 }
 
 int main()
 {
-  enter;
+  test_append();
+  test_prepend();
+  test_delete();
+  test_splice_head();
+  test_splice_tail();
+  test_safe();
 
-  xapi R = 0;
-  fatal(run_tests);
-
-finally:
-  if(XAPI_UNWINDING)
-    xapi_backtrace(2, 0);
-conclude(&R);
-  xapi_teardown();
-
-  return !!R;
+  summarize;
+  return 0;
 }

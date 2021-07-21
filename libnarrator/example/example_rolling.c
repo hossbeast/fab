@@ -18,8 +18,6 @@
 #include <stdio.h>
 #include <fcntl.h>
 
-#include "xapi.h"
-#include "xapi/trace.h"
 
 #include "rolling.h"
 

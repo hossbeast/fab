@@ -29,7 +29,6 @@ SUMMARY
 */
 
 #include "types.h"
-#include "xapi.h"
 
 #include "traverse.h"
 
@@ -69,7 +68,7 @@ GRAPH_OPERATION_TABLE
 const char * operation_type_name(operation_type type);
 
 typedef struct moria_operations_dispatch {
-  xapi (*connect)(
+  void (*connect)(
       struct graph_parser * restrict parser
     , struct moria_vertex * restrict A
     , struct moria_vertex * restrict B
@@ -78,7 +77,7 @@ typedef struct moria_operations_dispatch {
   )
     __attribute__((nonnull(1, 2, 3)));
 
-  xapi (*hyperconnect)(
+  void (*hyperconnect)(
       struct graph_parser * restrict parser
     , struct moria_vertex ** restrict Alist
     , uint16_t Alen
@@ -89,13 +88,13 @@ typedef struct moria_operations_dispatch {
   )
     __attribute__((nonnull(1)));
 
-  xapi (*disconnect)(
+  void (*disconnect)(
       struct graph_parser * restrict parser
     , struct moria_edge * restrict e
   )
     __attribute__((nonnull));
 
-  xapi (*create_vertex)(
+  void (*create_vertex)(
       struct graph_parser * restrict parser
     , struct moria_vertex ** restrict v
     , uint32_t attrs
@@ -105,24 +104,24 @@ typedef struct moria_operations_dispatch {
   )
     __attribute__((nonnull));
 
-  xapi (*invalidate_vertex)(
+  void (*invalidate_vertex)(
       struct graph_parser * restrict parser
     , struct moria_vertex * restrict v
   )
     __attribute__((nonnull));
 
-  xapi (*refresh_vertex)(
+  void (*refresh_vertex)(
       struct graph_parser * restrict parser
     , struct moria_vertex * restrict v
   )
     __attribute__((nonnull));
 
   /* called at the start of operations_perform */
-  xapi (*setup)(struct graph_parser * restrict)
+  void (*setup)(struct graph_parser * restrict)
     __attribute__((nonnull));
 
   /* called at the end of operations_perform */
-  xapi (*cleanup)(struct graph_parser * restrict)
+  void (*cleanup)(struct graph_parser * restrict)
     __attribute__((nonnull));
 } moria_operations_dispatch;
 

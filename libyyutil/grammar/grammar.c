@@ -68,7 +68,6 @@ void API yyu_grammar_error(yyu_location * const restrict lloc, void * const rest
   size_t z;
   size_t zt;
   const char *tokname;
-  int errlen;
 
   if(parser->gramerr || parser->scanerr)
   {
@@ -76,7 +75,7 @@ void API yyu_grammar_error(yyu_location * const restrict lloc, void * const rest
   }
   else
   {
-    parser->gramerr = 1;
+    parser->gramerr = true;
 
     // save the error string
     if(err)
@@ -86,9 +85,7 @@ void API yyu_grammar_error(yyu_location * const restrict lloc, void * const rest
         err += 14;
       }
 
-      errlen = MIN(sizeof(parser->error_str) - 1, strlen(err));
-      memcpy(parser->error_str, err, errlen);
-      parser->error_str[errlen] = 0;
+      parser->error_len = znloadf(parser->error_str, sizeof(parser->error_str), "%s", err);
     }
 
     // save the location

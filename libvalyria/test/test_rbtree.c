@@ -20,8 +20,6 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "xapi.h"
-#include "xapi/trace.h"
 #include "xlinux/xstdlib.h"
 #include "llist.h"
 
@@ -42,44 +40,36 @@ invariants
   max height is log(size of tree)
   max node height / min node height <= 2
  */
-static xapi depth(rbnode * restrict n, int * restrict d)
+static void depth(rbnode * restrict n, int * restrict d)
 {
-  enter;
-
   int left;
   int right;
 
   if(n == &rbleaf)
   {
     *d = 1;
-    goto XAPI_FINALIZE;
+    return;
   }
 
-  fatal(depth, n->left, &left);
-  fatal(depth, n->right, &right);
+  depth(n->left, &left);
+  depth(n->right, &right);
 
   assert_eq_d(left, right);
 
   if(n->color == RB_BLACK)
     left++;
   *d = left;
-
-  finally : coda;
 }
 
-static xapi validate(rbtree * rb)
+static void validate(rbtree * rb)
 {
-  enter;
-
   int d;
-  fatal(depth, rb->root, &d);
+  depth(rb->root, &d);
 
   if(rb->root == &rbleaf)
     assert_eq_d(1, d);
   else
     assert_eq_p(&rbleaf, rb->root->parent);
-
-  finally : coda;
 }
 
 static int item_rbn_key_cmp(void * _a, const rbnode * _b)
@@ -105,10 +95,8 @@ static void item_rbn_free(rbnode * _a)
   free(a);
 }
 
-static xapi test_put()
+static void test_put()
 {
-  enter;
-
   rbtree rb;
   llist freelist;
   llist *T;
@@ -127,13 +115,13 @@ static xapi test_put()
   };
   for(x = 0; x < sizeof(labels) / sizeof(*labels); x++)
   {
-    fatal(xmalloc, &i, sizeof(struct item));
+    xmalloc(&i, sizeof(struct item));
     i->label = labels[x];
     found = rbtree_put(&rb, i, rbn, item_rbn_node_cmp);
     assert_eq_b(false, found);
 
     // validate redblack properties
-    fatal(validate, &rb);
+    validate(&rb);
 
     // for each item thus far inserted
     int y;
@@ -161,18 +149,14 @@ static xapi test_put()
     }
   }
 
-finally:
   rbtree_destroy(&rb, item_rbn_free);
   llist_foreach_safe(&freelist, i, lln, T) {
     wfree(i);
   }
-coda;
 }
 
-static xapi test_delete()
+static void test_delete()
 {
-  enter;
-
   rbtree rb;
   llist freelist;
   llist *T;
@@ -198,7 +182,7 @@ static xapi test_delete()
   };
   for(x = 0; x < sizeof(labels) / sizeof(*labels); x++)
   {
-    fatal(xmalloc, &i, sizeof(struct item));
+    xmalloc(&i, sizeof(struct item));
     i->label = labels[x];
     found = rbtree_put(&rb, i, rbn, item_rbn_node_cmp);
     assert_eq_b(false, found);
@@ -214,7 +198,7 @@ static xapi test_delete()
     llist_append(&freelist, i, lln);
 
     // validate redblack properties
-    fatal(validate, &rb);
+    validate(&rb);
 
     // for each item remaining
     int y;
@@ -251,7 +235,7 @@ static xapi test_delete()
 
   for(x = 0; x < sizeof(labels) / sizeof(*labels); x++)
   {
-    fatal(xmalloc, &i, sizeof(struct item));
+    xmalloc(&i, sizeof(struct item));
     i->label = labels[x];
     found = rbtree_put(&rb, i, rbn, item_rbn_node_cmp);
     assert_eq_b(false, found);
@@ -267,7 +251,7 @@ static xapi test_delete()
     llist_append(&freelist, i, lln);
 
     // validate redblack properties
-    fatal(validate, &rb);
+    validate(&rb);
 
     // for each item remaining
     int y;
@@ -302,38 +286,17 @@ static xapi test_delete()
   }
   assert_eq_d(0, x);
 
-finally:
   rbtree_destroy(&rb, item_rbn_free);
   llist_foreach_safe(&freelist, i, lln, T) {
     wfree(i);
   }
-coda;
-}
-
-static xapi run_tests()
-{
-  enter;
-
-  fatal(test_put);
-  fatal(test_delete);
-
-  summarize;
-
-  finally : coda;
 }
 
 int main()
 {
-  enter;
+  test_put();
+  test_delete();
 
-  xapi R = 0;
-  fatal(run_tests);
-
-finally:
-  if(XAPI_UNWINDING)
-    xapi_backtrace(2, 0);
-conclude(&R);
-  xapi_teardown();
-
-  return !!R;
+  summarize;
+  return 0;
 }

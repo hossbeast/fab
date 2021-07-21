@@ -28,7 +28,6 @@ SUMMARY
 
 */
 
-#include "xapi.h"
 #include "narrator.h"
 
 typedef struct narrator_nullity {
@@ -44,9 +43,9 @@ typedef struct narrator_nullity {
 // PARAMETERS
 //  n - (returns) narrator
 //
-xapi narrator_nullity_create(narrator_nullity ** const restrict n)
+void narrator_nullity_create(narrator_nullity ** const restrict n)
   __attribute__((nonnull));
 
-xapi narrator_nullity_free(narrator_nullity * restrict n);
+void narrator_nullity_free(narrator_nullity * restrict n);
 
 #endif

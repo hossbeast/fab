@@ -126,7 +126,7 @@ edge
     if($5.len == 1)
       B = &$5.v0;
 
-    YFATAL(graph_parser_hyperconnect, PARSER, A, $1.len, B, $5.len, $3, 0);
+    graph_parser_hyperconnect(PARSER, A, $1.len, B, $5.len, $3, 0);
     if($1.len > 1)
       wfree($1.v);
     if($5.len > 1)
@@ -142,7 +142,7 @@ edge
     if($3.len == 1)
       B = &$3.v0;
 
-    YFATAL(graph_parser_hyperconnect, PARSER, A, $1.len, B, $3.len, 0, 0);
+    graph_parser_hyperconnect(PARSER, A, $1.len, B, $3.len, 0, 0);
     if($1.len > 1)
       wfree(A);
     if($3.len > 1)
@@ -154,7 +154,7 @@ edge_vertex_list
   : edge_vertex_list ',' edge_vertex
   {
     $$ = $1;
-    YFATAL(xrealloc, &$$.v, sizeof(*$$.v), $$.len + 1, $$.len);
+    xrealloc(&$$.v, sizeof(*$$.v), $$.len + 1, $$.len);
     if($$.len == 1)
       $$.v[0] = $$.v0;
     $$.v[$$.len++] = $3;
@@ -186,12 +186,12 @@ vertex
   {
     $$ = $3;
     $$->attrs = $5;
-    YFATAL(map_put, PARSER->vertex_map, (void*)&$1, sizeof($1), $$, 0);
+    map_put(PARSER->vertex_map, (void*)&$1, sizeof($1), $$, 0);
   }
   | uint32 '-' vertex_label
   {
     $$ = $3;
-    YFATAL(map_put, PARSER->vertex_map, (void*)&$1, sizeof($1), $$, 0);
+    map_put(PARSER->vertex_map, (void*)&$1, sizeof($1), $$, 0);
   }
   | vertex_label '!' vertex_attrs
   {
@@ -204,7 +204,7 @@ vertex
 vertex_label
   : STR
   {
-    YFATAL(graph_parser_create_vertex, PARSER, &$$, 0, 0, @1.s, @1.l);
+    graph_parser_create_vertex(PARSER, &$$, 0, 0, @1.s, @1.l);
   }
   ;
 

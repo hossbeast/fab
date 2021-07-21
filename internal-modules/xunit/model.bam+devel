@@ -1,0 +1,31 @@
+/* Copyright (c) 2012-2015 Todd Freed <todd.freed@gmail.com>
+
+   This file is part of fab.
+
+   fab is free software: you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation, either version 3 of the License, or
+   (at your option) any later version.
+
+   fab is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+
+   You should have received a copy of the GNU General Public License
+   along with fab.  If not, see <http://www.gnu.org/licenses/>. */
+
+variant pic.devel : [
+  # per-test executables
+  rule **/test/(test_*.?).o -> $^D/$1.xunit : ./cc-test.bam+devel
+
+  # omnibus test executable
+  rule **/test/test_*.?.o [*] -> tests.xunit : ./cc-test.bam+devel
+
+  # pull in libxunit
+  rule **/test/(test_*.?.xunit) <- //module/imports/libxunit/libxunit.?.a
+  rule tests.xunit <- //module/imports/libxunit/libxunit.?.a
+
+  # global xunit target to run the omnibus executable
+  rule tests.xunit -> //xunit : ./run.bam+devel
+]

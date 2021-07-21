@@ -17,8 +17,6 @@
 
 #include <stdio.h>
 
-#include "xapi.h"
-#include "xapi/trace.h"
 #include "xlinux/xstdlib.h"
 
 #include "narrator.h"
@@ -26,10 +24,8 @@
 
 #include "test_util.h"
 
-static xapi say(narrator * const N)
+static void say(narrator * const N)
 {
-  enter;
-
   // says the string : 40 41 42 43 44
   xsayf("%d", 40);
   xsays(" 41");
@@ -37,17 +33,13 @@ static xapi say(narrator * const N)
   xsayf(" %d", 43);
   xsayf(" %d", 4);
   xsayc('4');
-
-  finally : coda;
 }
 
-static xapi test_basic()
+static void test_basic()
 {
-  enter;
-
   narrator_growing * N = 0;
-  fatal(narrator_growing_create, &N);
-  fatal(say, &N->base);
+  narrator_growing_create(&N);
+  say(&N->base);
 
   char * expected = "40 41 42 43 44";
   size_t expectedl = strlen(expected);
@@ -55,45 +47,37 @@ static xapi test_basic()
   assert_eq_s(expected, N->s);
   assert_eq_zu(expectedl, N->l);
 
-finally:
-  fatal(narrator_growing_free, N);
-coda;
+  narrator_growing_free(N);
 }
 
-static xapi test_seek()
+static void test_seek()
 {
-  enter;
-
   narrator_growing * ng = 0;
   narrator *N = 0;
-  fatal(narrator_growing_create, &ng);
+  narrator_growing_create(&ng);
   N = &ng->base;
 
   xsays("H");
 
-  fatal(narrator_xseek, N, 2, NARRATOR_SEEK_SET, 0);
+  narrator_xseek(N, 2, NARRATOR_SEEK_SET, 0);
   xsays("L");
 
-  fatal(narrator_xseek, N, 1, NARRATOR_SEEK_SET, 0);
+  narrator_xseek(N, 1, NARRATOR_SEEK_SET, 0);
   xsays("E");
 
-  fatal(narrator_xseek, N, 4, NARRATOR_SEEK_SET, 0);
+  narrator_xseek(N, 4, NARRATOR_SEEK_SET, 0);
   xsays("O");
 
-  fatal(narrator_xseek, N, 3, NARRATOR_SEEK_SET, 0);
+  narrator_xseek(N, 3, NARRATOR_SEEK_SET, 0);
   xsays("L");
 
   assert_eq_s("HELLO", ng->s);
 
-finally:
-  fatal(narrator_growing_free, ng);
-coda;
+  narrator_growing_free(ng);
 }
 
-static xapi test_init()
+static void test_init()
 {
-  enter;
-
   narrator * N = 0;
   narrator_growing ng = { 0 };
   char * buf = 0;
@@ -108,29 +92,17 @@ static xapi test_init()
 
   assert_eq_s("hello world", buf);
 
-finally:
-  fatal(narrator_growing_destroy, &ng);
+  narrator_growing_destroy(&ng);
   wfree(buf);
-coda;
 }
 
 int main()
 {
-  enter;
+  test_basic();
+  test_seek();
+  test_init();
 
-  xapi R = 0;
-  fatal(test_basic);
-  fatal(test_seek);
-  fatal(test_init);
-
-finally:
   summarize;
-  if(XAPI_UNWINDING)
-  {
-    xapi_backtrace(2, 0);
-  }
-conclude(&R);
 
-  xapi_teardown();
-  return !!R;
+  return 0;
 }

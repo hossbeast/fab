@@ -28,7 +28,6 @@ SUMMARY
 #include <stdarg.h>
 
 #include "types.h"
-#include "xapi.h"
 
 typedef struct pstring {
   char * s;     // buffer
@@ -45,19 +44,19 @@ typedef struct pstring {
 //  ps         - (returns) pstring
 //  [capacity] - initial capacity
 //
-xapi pscreate(pstring ** const restrict ps)
+void pscreate(pstring ** const restrict ps)
   __attribute__((nonnull));
 
-xapi pscreatex(pstring ** const restrict ps, size_t capacity)
+void pscreatex(pstring ** const restrict ps, size_t capacity)
   __attribute__((nonnull));
 
-xapi psinit(pstring * restrict ps)
+void psinit(pstring * restrict ps)
   __attribute__((nonnull));
 
-xapi psinitx(pstring * restrict ps, size_t capacity)
+void psinitx(pstring * restrict ps, size_t capacity)
   __attribute__((nonnull));
 
-xapi psdestroy(pstring * restrict ps)
+void psdestroy(pstring * restrict ps)
   __attribute__((nonnull));
 
 /// psmk
@@ -75,19 +74,19 @@ xapi psdestroy(pstring * restrict ps)
 //  [l]   - buffer length
 //  [c]   - single byte
 //
-xapi psvmkf(pstring ** restrict ps, pstring * restrict e, const char * const restrict fmt, va_list va)
+void psvmkf(pstring ** restrict ps, pstring * restrict e, const char * const restrict fmt, va_list va)
   __attribute__((nonnull(3)));
 
-xapi psmkf(pstring ** restrict ps, pstring * restrict e, const char * const restrict fmt, ...)
+void psmkf(pstring ** restrict ps, pstring * restrict e, const char * const restrict fmt, ...)
   __attribute__((nonnull(3)));
 
-xapi psmks(pstring ** restrict ps, pstring * restrict e, const char * const restrict s)
+void psmks(pstring ** restrict ps, pstring * restrict e, const char * const restrict s)
   __attribute__((nonnull(3)));
 
-xapi psmkw(pstring ** restrict ps, pstring * restrict e, const char * const restrict b, size_t l)
+void psmkw(pstring ** restrict ps, pstring * restrict e, const char * const restrict b, size_t l)
   __attribute__((nonnull(3)));
 
-xapi psmkc(pstring ** restrict ps, pstring * restrict e, int c);
+void psmkc(pstring ** restrict ps, pstring * restrict e, int c);
 
 /// psfree
 //
@@ -143,19 +142,19 @@ void psclear(pstring * restrict p)
 //  psloadc : load a byte
 //
 
-xapi psloadvf(pstring * restrict p, const char * const restrict fmt, va_list va)
+void psloadvf(pstring * restrict p, const char * const restrict fmt, va_list va)
   __attribute__((nonnull));
 
-xapi psloadf(pstring * restrict p, const char * const restrict fmt, ...)
+void psloadf(pstring * restrict p, const char * const restrict fmt, ...)
   __attribute__((nonnull(1, 2)));
 
-xapi psloads(pstring * restrict p, const char * const restrict s)
+void psloads(pstring * restrict p, const char * const restrict s)
   __attribute__((nonnull));
 
-xapi psloadw(pstring * restrict p, const char * const restrict b, size_t l)
+void psloadw(pstring * restrict p, const char * const restrict b, size_t l)
   __attribute__((nonnull));
 
-xapi psloadc(pstring * restrict p, int c)
+void psloadc(pstring * restrict p, int c)
   __attribute__((nonnull));
 
 /// pscat
@@ -171,19 +170,19 @@ xapi psloadc(pstring * restrict p, int c)
 //  [l]   - buffer length
 //  [c]   - single byte
 //
-xapi psvcatf(pstring * restrict p, const char * const restrict fmt, va_list va)
+void psvcatf(pstring * restrict p, const char * const restrict fmt, va_list va)
   __attribute__((nonnull));
 
-xapi pscatf(pstring * restrict p, const char * const restrict fmt, ...)
+void pscatf(pstring * restrict p, const char * const restrict fmt, ...)
   __attribute__((nonnull(1, 2)));
 
-xapi pscats(pstring * restrict p, const char * const restrict s)
+void pscats(pstring * restrict p, const char * const restrict s)
   __attribute__((nonnull));
 
-xapi pscatw(pstring * restrict p, const char * const restrict b, size_t l)
+void pscatw(pstring * restrict p, const char * const restrict b, size_t l)
   __attribute__((nonnull));
 
-xapi pscatc(pstring * restrict p, int c)
+void pscatc(pstring * restrict p, int c)
   __attribute__((nonnull));
 
 /// pscmp

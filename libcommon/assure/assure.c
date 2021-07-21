@@ -21,25 +21,25 @@
 
 #define DEFAULT_SEED 10
 
-xapi API assure(void * target, size_t es, size_t len, size_t * const restrict ac)
+void API assure(void * target, size_t es, size_t len, size_t * const restrict ac)
 {
-  xproxy(assurex, target, es, len, ac, DEFAULT_SEED);
+  assurex(target, es, len, ac, DEFAULT_SEED);
 }
 
-xapi API assurex(void * target, size_t es, size_t len, size_t * const restrict ac, size_t seed)
+void API assurex(void * target, size_t es, size_t len, size_t * const restrict ac, size_t seed)
 {
-  enter;
+  size_t nc;
+  void ** p;
 
-  void ** p = (void**)target;
+  p = (void**)target;
   if(!*p || len > *ac)
   {
-    size_t nc = *ac ?: seed;
-    while(nc < len)
+    nc = *ac ?: seed;
+    while(nc < len) {
       nc = nc * 2 + nc / 2;
+    }
 
-    fatal(xrealloc, p, es, nc, *ac);
+    xrealloc(p, es, nc, *ac);
     *ac = nc;
   }
-
-  finally : coda;
 }

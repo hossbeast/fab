@@ -15,59 +15,37 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#include "xapi.h"
-#include "xlinux/load.h"
 #include "narrator/load.h"
-#include "valyria/load.h"
-#include "yyutil/load.h"
 
 #include "value.h"
 #include "load.internal.h"
-#include "logging.internal.h"
 #include "say.internal.h"
 #include "writer.internal.h"
 
 static int handles;
 
-#include <stdio.h>
-
-xapi API value_load()
+void API value_load()
 {
-  enter;
-
   if(handles++ == 0)
   {
     // dependencies
-    fatal(xlinux_load);
-    fatal(narrator_load);
-    fatal(valyria_load);
-    fatal(yyutil_load);
+    narrator_load();
 
     // modules
-    fatal(logging_setup);
-    fatal(say_setup);
-    fatal(writer_setup);
+    say_setup();
+    writer_setup();
   }
-
-  finally : coda;
 }
 
-xapi API value_unload()
+void API value_unload()
 {
-  enter;
-
   if(--handles == 0)
   {
     // modules
-    fatal(say_cleanup);
-    fatal(writer_cleanup);
+    say_cleanup();
+    writer_cleanup();
 
     // dependencies
-    fatal(xlinux_unload);
-    fatal(valyria_unload);
-    fatal(narrator_unload);
-    fatal(yyutil_unload);
+    narrator_unload();
   }
-
-  finally : coda;
 }

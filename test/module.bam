@@ -1,9 +1,7 @@
 use cc
-use xapi/errtab
 
-variant xapi.pic.{debug,devel,final,trace}
+variant pic.{debug,devel,final,trace}
 
 import fab/include
-import libxapi
 
 rule **/*.?.o -> //module/targets

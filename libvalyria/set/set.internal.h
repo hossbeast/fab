@@ -42,7 +42,6 @@ typedef struct set_t {
 
   // user callbacks
   void (*destroy_fn)(void * entry);
-  xapi (*xdestroy_fn)(void * entry);
 } set_t;
 
 STATIC_ASSERT(offsetof(set, size) == offsetof(set_t, size));

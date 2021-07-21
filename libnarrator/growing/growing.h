@@ -28,7 +28,6 @@ SUMMARY
 
 */
 
-#include "xapi.h"
 #include "types.h"
 
 #include "narrator.h"
@@ -50,10 +49,10 @@ typedef struct narrator_growing
 // PARAMETERS
 //  n - (returns) narrator
 //
-xapi narrator_growing_create(narrator_growing ** const restrict n)
+void narrator_growing_create(narrator_growing ** const restrict n)
   __attribute__((nonnull));
 
-xapi narrator_growing_free(narrator_growing * restrict n);
+void narrator_growing_free(narrator_growing * restrict n);
 
 /// narrator_growing_init
 //
@@ -66,7 +65,7 @@ narrator * narrator_growing_init(narrator_growing * restrict n)
 narrator * narrator_growing_init_from(narrator_growing * restrict n, char * buf, size_t bufa)
   __attribute__((nonnull(1)));
 
-xapi narrator_growing_destroy(narrator_growing * restrict n)
+void narrator_growing_destroy(narrator_growing * restrict n)
   __attribute__((nonnull));
 
 /// narrator_growing_claim_buffer
@@ -77,7 +76,7 @@ xapi narrator_growing_destroy(narrator_growing * restrict n)
 void narrator_growing_claim_buffer(narrator_growing * restrict n, void * bufp, size_t * allocp)
   __attribute__((nonnull(1)));
 
-xapi narrator_growing_allocate(narrator_growing * restrict n, size_t size)
+void narrator_growing_allocate(narrator_growing * restrict n, size_t size)
   __attribute__((nonnull));
 
 #endif

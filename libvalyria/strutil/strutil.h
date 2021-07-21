@@ -27,23 +27,22 @@ SUMMARY
 
 #include <stdarg.h>
 
-#include "xapi.h"
 #include "types.h"
 
-xapi strloadc(char ** restrict dst, int c)
+void strloadc(char ** restrict dst, int c)
   __attribute__((nonnull));
 
-xapi strloads(char ** restrict dst, const char * restrict s)
+void strloads(char ** restrict dst, const char * restrict s)
   __attribute__((nonnull));
 
-xapi strloadw(char ** restrict dst, const void * restrict buf, size_t bufl)
+void strloadw(char ** restrict dst, const void * restrict buf, size_t bufl)
   __attribute__((nonnull));
 
-xapi strloadf(char ** restrict dst, const char * restrict fmt, ...)
+void strloadf(char ** restrict dst, const char * restrict fmt, ...)
   __attribute__((nonnull(2)))
   __attribute__((format(printf, 2, 3)));
 
-xapi strloadvf(char ** restrict dst, const char * restrict fmt, va_list va)
+void strloadvf(char ** restrict dst, const char * restrict fmt, va_list va)
   __attribute__((nonnull));
 
 #endif

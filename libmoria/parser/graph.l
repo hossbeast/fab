@@ -18,7 +18,6 @@
 %{
   #include "yyutil/scanner.h"
 
-  #include "MORIA.errtab.h"
   #include "parser.internal.h"
   #include "graph.tab.h"
   #include "graph.tokens.h"
@@ -44,8 +43,8 @@ ILL   [\x00-\x08\x0B-\x1F\x7F-\xFF]
 <INITIAL>[#][^\x00-\x08\x0B-\x1F\x7F-\xFF\n]*           { LOCWRITE; }
 
  /* multiline comments are nestable */
-<INITIAL,multilinecomment>[/][*]                        { lenter; LOCWRITE; PUSHSTATE(multilinecomment); finally : lcoda; }
-<multilinecomment>[*][/]                                { lenter; LOCWRITE; POPSTATE; finally : lcoda; }
+<INITIAL,multilinecomment>[/][*]                        { LOCWRITE; PUSHSTATE(multilinecomment); }
+<multilinecomment>[*][/]                                { LOCWRITE; POPSTATE; }
 <multilinecomment>[^*\x00-\x08\x0B-\x1F\x7F-\xFF\n*/]+  { LOCWRITE; }
 <multilinecomment>[*][^\x00-\x08\x0B-\x1F\x7F-\xFF\n/]  { LOCWRITE; }
 <multilinecomment>[/]                                   { LOCWRITE; }
@@ -56,36 +55,32 @@ ILL   [\x00-\x08\x0B-\x1F\x7F-\xFF]
 <INITIAL>[\r\t ]+                                       { LOCWRITE; }
 
  /* tokens */
-<INITIAL>[-:!,_]                                        { lenter; LEX(yytext[0]); finally : lcoda; }
+<INITIAL>[-:!,_]                                        { LEX(yytext[0]); }
 
  /* operations rules */
-<INITIAL>[/][/]                                         { lenter; LEX(SLASH2); finally : lcoda; }
-<INITIAL>[=:!+~/,@_]                                    { lenter; LEX(yytext[0]); finally : lcoda; }
+<INITIAL>[/][/]                                         { LEX(SLASH2); }
+<INITIAL>[=:!+~/,@_]                                    { LEX(yytext[0]); }
 
  /* integers */
-<INITIAL>[0-9]+                                         { lenter; LEXI("%"SCNuMAX); finally : lcoda; }
-<INITIAL>(?i:0x[a-f0-9]+)                               { lenter; LEXI("%"SCNxMAX); finally : lcoda; }
+<INITIAL>[0-9]+                                         { LEXI("%"SCNuMAX); }
+<INITIAL>(?i:0x[a-f0-9]+)                               { LEXI("%"SCNxMAX); }
 
  /* strings */
-<INITIAL>[a-zA-Z_][-a-zA-Z0-9_]*                        { lenter; LEX(STR); finally : lcoda; }
+<INITIAL>[a-zA-Z_][-a-zA-Z0-9_]*                        { LEX(STR); }
 
 <*>[\x00-\x1F\x7F-\xFF]                                 {
-                                                          lenter;
                                                           POPSTATES;
                                                           LOCWRITE;
-                                                          failf(MORIA_ILLBYTE, "byte", "0x%02hhx", yytext[0]);
-                                                          finally : lcoda;
+                                                          yyu_errorf(YYUXTRA, "invalid byte 0x%02hhx", yytext[0]);
+                                                          return 0;
                                                         }
 <*>[\x20-\x7E]                                          {
-                                                          lenter;
                                                           POPSTATES;
                                                           LOCWRITE;
-                                                          failf(MORIA_ILLBYTE, "character", "'%1$c'(0x%1$02hhx)", yytext[0]);
-                                                          finally : lcoda;
+                                                          yyu_errorf(YYUXTRA, "character '%1$c'(0x%1$02hhx)", yytext[0]);
+                                                          return 0;
                                                         }
 <<EOF>>                                                 {
-                                                          lenter;
                                                           POPSTATES;
-                                                          _yyu_V = 0; /* return end-of-input */
-                                                          finally : lcoda;
+                                                          return 0;
                                                         }

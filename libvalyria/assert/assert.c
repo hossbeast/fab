@@ -19,7 +19,6 @@
 
 #include <stdarg.h>
 
-#include "xapi.h"
 #include "types.h"
 
 #include "xunit/type.h"
@@ -34,6 +33,7 @@
 // types
 //
 
+#if 0
 static void set_unpack(va_list va, xunit_arg * a)
 {
   a->p = va_arg(va, void*);
@@ -87,5 +87,6 @@ xunit_type * APIDATA valyria_xunit_set = (xunit_type[]) {{
   , xu_compare : set_compare
   , xu_info_push : set_info_push
 }};
+#endif
 
 #endif

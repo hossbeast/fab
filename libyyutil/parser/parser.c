@@ -15,23 +15,22 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#include "xlinux/KERNEL.errtab.h"
+#include <string.h>
+
 #include "xlinux/xstdlib.h"
 
 #include "parser.internal.h"
-#include "logging.internal.h"
 #include "scanner.internal.h"
 
 #include "macros.h"
+#include "zbuffer.h"
 
 //
 // static
 //
 
-static xapi reduce(yyu_parser * parser, uint16_t attrs)
+static int reduce(yyu_parser * parser, uint16_t attrs)
 {
-  enter;
-
   int r;
 
   // error from the parser means failure to reduce
@@ -40,85 +39,81 @@ static xapi reduce(yyu_parser * parser, uint16_t attrs)
     if(r == 2)
     {
       // memory exhaustion error from the parser
-      fail(KERNEL_ENOMEM);
+      RUNTIME_ABORT();
     }
-    else if(XAPI_UNWINDING)
-    {
-      // propagate fail from within a lexer or parser rule
-      fail(0);
-    }
-    else if(parser->gramerr)
-    {
-      // failure to reduce from the parser
-      fails(parser->error_syntax, "message", parser->error_str);
-    }
+//    else if(XAPI_UNWINDING)
+//    {
+//      // propagate fail from within a lexer or parser rule
+//      fail(0);
+//    }
+//    else if(parser->gramerr)
+//    {
+//      // failure to reduce from the parser
+//      fails(parser->error_syntax, "message", parser->error_str);
+//    }
   }
-
-finally :
-  if(XAPI_UNWINDING)
+  else
   {
-    if(parser->scanerr || parser->gramerr)
-    {
-      xapi_infof("location", "[%d,%d - %d,%d]"
-        , parser->error_loc.f_lin + 1
-        , parser->error_loc.f_col + 1
-        , parser->error_loc.l_lin + 1
-        , parser->error_loc.l_col + 1
-      );
+    goto out;
+  }
 
-      if(parser->gramerr)
-      {
-        xapi_infos("token", parser->tokenstring);
-      }
+  if(parser->scanerr || parser->gramerr)
+  {
+    r = 1;
+    parser->error_len += znloadf(
+        parser->error_str + parser->error_len
+      , sizeof(parser->error_str) - parser->error_len
+      , " location [%d,%d - %d,%d]"
+      , parser->error_loc.f_lin + 1
+      , parser->error_loc.f_col + 1
+      , parser->error_loc.l_lin + 1
+      , parser->error_loc.l_col + 1
+    );
+
+    if(parser->gramerr)
+    {
+      parser->error_len += znloadf(
+          parser->error_str + parser->error_len
+        , sizeof(parser->error_str) - parser->error_len
+        , " token %s"
+        , parser->tokenstring
+      );
     }
   }
-coda;
+
+out:
+  return r;
 }
 
 //
 // api
 //
 
-xapi API yyu_parser_xdestroy(yyu_parser * const parser)
+void API yyu_parser_xdestroy(yyu_parser * const parser)
 {
-  enter;
-
   wfree(parser->last_lval);
   wfree(parser->token_table_bytoken);
   if(parser->vtable) {
     parser->vtable->yylex_destroy(parser->scanner);
   }
-
-  finally : coda;
 }
 
-xapi API yyu_parser_init(
-    yyu_parser * const restrict parser
-  , const yyu_vtable * const restrict vtable
-  , xapi error_syntax
-)
+void API yyu_parser_init(yyu_parser * const restrict parser, const yyu_vtable * const restrict vtable)
 {
-  enter;
-
   parser->vtable = vtable;
-  parser->error_syntax = error_syntax;
 
-  fatalize(KERNEL_ENOMEM, parser->vtable->yylex_init, &parser->scanner);
-
-  finally : coda;
+  RUNTIME_ASSERT(parser->vtable->yylex_init(&parser->scanner) == 0);
 }
 
-xapi API yyu_parser_init_tokens(yyu_parser * const restrict parser, const yyu_token * restrict token_table, uint16_t token_table_size)
+void API yyu_parser_init_tokens(yyu_parser * const restrict parser, const yyu_token * restrict token_table, uint16_t token_table_size)
 {
-  enter;
-
   int x;
 
   /* token_table is pre-sorted by token->string */
   parser->token_table = token_table;
   parser->token_table_size = token_table_size;
 
-#if DEBUG || DEVEL || XUNIT
+#if 0
   logf(parser->logs | L_YYUTIL | L_PARSER, "numtokens %d", parser->token_table_size);
   for(x = 0; x < token_table_size; x++)
   {
@@ -133,7 +128,7 @@ xapi API yyu_parser_init_tokens(yyu_parser * const restrict parser, const yyu_to
 #endif
 
   // set of indexes sorted by token
-  fatal(xmalloc, &parser->token_table_bytoken, sizeof(*parser->token_table_bytoken) * parser->token_table_size);
+  xmalloc(&parser->token_table_bytoken, sizeof(*parser->token_table_bytoken) * parser->token_table_size);
   for(x = 0; x < token_table_size; x++)
   {
     parser->token_table_bytoken[x] = &parser->token_table[x];
@@ -197,27 +192,21 @@ xapi API yyu_parser_init_tokens(yyu_parser * const restrict parser, const yyu_to
   RUNTIME_ASSERT(parser->tokens.YYEOF);
   RUNTIME_ASSERT(parser->tokens.YYERROR);
   RUNTIME_ASSERT(parser->tokens.YYUNDEF);
-
-  finally : coda;
 }
 
-xapi API yyu_parser_init_states(
+void API yyu_parser_init_states(
     yyu_parser * const restrict parser
   , int numstates
   , const int * restrict statenumbers
   , const char ** restrict statenames
 )
 {
-  enter;
-
   parser->numstates = numstates;
   parser->statenumbers = statenumbers;
   parser->statenames = statenames;
-
-  finally : coda;
 }
 
-xapi API yyu_parse(
+int API yyu_parse(
     yyu_parser * const restrict parser
   , char * const restrict text
   , size_t text_len
@@ -227,12 +216,11 @@ xapi API yyu_parse(
   , yyu_location * restrict final_loc
 )
 {
-  enter;
-
   void * state = 0;
   yyu_location lfinal_loc;
   char hold_char;
   size_t plen;
+  int r = 0;
 
   // reset state for this parse
   memset(&parser->scanerr, 0, offsetof(typeof(*parser), end_of_per_parse_state));
@@ -240,13 +228,15 @@ xapi API yyu_parse(
   // create state specific to this parse
   if(attrs & YYU_INPLACE)
   {
-    if((state = parser->vtable->yy_scan_buffer(text, text_len, parser->scanner)) == 0)
-      fail(KERNEL_ENOMEM);
+    if((state = parser->vtable->yy_scan_buffer(text, text_len, parser->scanner)) == 0) {
+      RUNTIME_ABORT();
+    }
   }
   else
   {
-    if((state = parser->vtable->yy_scan_bytes(text, text_len, parser->scanner)) == 0)
-      fail(KERNEL_ENOMEM);
+    if((state = parser->vtable->yy_scan_bytes(text, text_len, parser->scanner)) == 0) {
+      RUNTIME_ABORT();
+    }
   }
 
   parser->usrbuf = text;
@@ -255,14 +245,15 @@ xapi API yyu_parse(
   parser->attrs = attrs;
   parser->final_loc = final_loc ?: &lfinal_loc;
 
-  if(init_loc)
+  if(init_loc) {
     parser->loc = *init_loc;
+  }
 
   // make parser available to the lexer
   parser->vtable->yyset_extra(parser, parser->scanner);
 
   // invoke the appropriate parser, raise errors as needed
-  fatal(reduce, parser, attrs);
+  r = reduce(parser, attrs);
 
   if(attrs & YYU_INPLACE)
   {
@@ -289,11 +280,11 @@ xapi API yyu_parse(
     /* for non-partial, assert the entire buffer was consumed */
     if((plen + 2) < text_len)
     {
-      fails(KERNEL_EINVAL, "error", "partial parse");
+      r = 2;
     }
   }
 
-finally:
   parser->vtable->yy_delete_buffer(state, parser->scanner);
-coda;
+
+  return r;
 }

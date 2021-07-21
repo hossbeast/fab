@@ -15,11 +15,7 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#include "xapi.h"
-#include "xapi/exit.h"
-
 #include "xlinux/xstdlib.h"
-#include "xlinux/KERNEL.errtab.h"
 
 #include "narrator.h"
 
@@ -41,8 +37,6 @@
 #define VALUE_LIST_YYTOKENTYPE
 
 #include "parser.internal.h"
-#include "VALUE.errtab.h"
-#include "logging.internal.h"
 
 #include "value.lex.h"
 #include "value.states.h"
@@ -63,97 +57,69 @@ static YYU_VTABLE(value_list_vtable, value, value_list);
 // public
 //
 
-xapi API value_parser_create(value_parser ** const rp)
+void API value_parser_create(value_parser ** const rp)
 {
-  enter;
-
   value_parser *p = 0;
 
-  fatal(xmalloc, &p, sizeof(*p));
+  xmalloc(&p, sizeof(*p));
 
-  fatal(value_store_create, &p->store);
+  value_store_create(&p->store);
 
   // value
-  fatal(yyu_parser_init, &p->value_yyu, &value_vtable, VALUE_SYNTAX);
-  fatal(yyu_parser_init_tokens, &p->value_yyu, value_token_table, value_TOKEN_TABLE_SIZE);
-  fatal(yyu_parser_init_states
-    , &p->value_yyu
+  yyu_parser_init(&p->value_yyu, &value_vtable);
+  yyu_parser_init_tokens(&p->value_yyu, value_token_table, value_TOKEN_TABLE_SIZE);
+  yyu_parser_init_states(&p->value_yyu
     , value_numstates
     , value_statenumbers
     , value_statenames
   );
 
   // value-set
-  fatal(yyu_parser_init, &p->value_set_yyu, &value_set_vtable, VALUE_SYNTAX);
-  fatal(yyu_parser_init_tokens, &p->value_set_yyu, value_set_token_table, value_set_TOKEN_TABLE_SIZE);
-  fatal(yyu_parser_init_states
-    , &p->value_set_yyu
+  yyu_parser_init(&p->value_set_yyu, &value_set_vtable);
+  yyu_parser_init_tokens(&p->value_set_yyu, value_set_token_table, value_set_TOKEN_TABLE_SIZE);
+  yyu_parser_init_states(&p->value_set_yyu
     , value_numstates
     , value_statenumbers
     , value_statenames
   );
 
   // value-list
-  fatal(yyu_parser_init, &p->value_list_yyu, &value_list_vtable, VALUE_SYNTAX);
-  fatal(yyu_parser_init_tokens, &p->value_list_yyu, value_list_token_table, value_list_TOKEN_TABLE_SIZE);
-  fatal(yyu_parser_init_states
-    , &p->value_list_yyu
+  yyu_parser_init(&p->value_list_yyu, &value_list_vtable);
+  yyu_parser_init_tokens(&p->value_list_yyu, value_list_token_table, value_list_TOKEN_TABLE_SIZE);
+  yyu_parser_init_states(&p->value_list_yyu
     , value_numstates
     , value_statenumbers
     , value_statenames
   );
 
-#if DEBUG || DEVEL || XUNIT
-  p->value_yyu.logs = L_VALUE;
-  p->value_set_yyu.logs = L_VALUE;
-  p->value_list_yyu.logs = L_VALUE;
-#endif
-
   *rp = p;
-  p = 0;
-
-finally:
-  fatal(value_parser_xfree, p);
-coda;
 }
 
-xapi API value_parser_xfree(value_parser* const p)
+void API value_parser_xfree(value_parser* const p)
 {
-  enter;
-
   if(p)
   {
-    fatal(value_store_xfree, p->store);
-    fatal(yyu_parser_xdestroy, &p->value_yyu);
-    fatal(yyu_parser_xdestroy, &p->value_set_yyu);
-    fatal(yyu_parser_xdestroy, &p->value_list_yyu);
+    value_store_xfree(p->store);
+    yyu_parser_xdestroy(&p->value_yyu);
+    yyu_parser_xdestroy(&p->value_set_yyu);
+    yyu_parser_xdestroy(&p->value_list_yyu);
   }
 
   wfree(p);
-
-  finally : coda;
 }
 
-xapi API value_parser_ixfree(value_parser ** const p)
+void API value_parser_ixfree(value_parser ** const p)
 {
-  enter;
-
-  fatal(value_parser_xfree, *p);
+  value_parser_xfree(*p);
   *p = 0;
-
-  finally : coda;
 }
 
-xapi API value_parser_recycle(value_parser * restrict p)
+void API value_parser_recycle(value_parser * restrict p)
 {
-  enter;
-
-  fatal(value_store_recycle, p->store);
-
-  finally : coda;
+  value_store_recycle(p->store);
 }
 
-xapi API value_parser_parse(
+int value_parser_parse(
     value_parser * restrict parser
   , char * const restrict text
   , size_t len
@@ -162,7 +128,7 @@ xapi API value_parser_parse(
   , value ** restrict root
 )
 {
-  enter;
+  int r;
 
   typeof(parser->value_yyu) *pfn = 0;
 
@@ -175,19 +141,17 @@ xapi API value_parser_parse(
   else if(initial_state == VALUE_TYPE_SET)
     pfn = &parser->value_set_yyu;
 
-  fatal(yyu_parse, pfn, text, len, fname, 0, 0, 0);
+  r = yyu_parse(pfn, text, len, fname, 0, 0, 0);
 
   // ownership transfer
   if(root) {
     *root = parser->root;
   }
 
-finally:
-  xapi_infos("fname", fname);
-coda;
+  return r;
 }
 
-xapi API value_parser_parse_partial(
+int API value_parser_parse_partial(
     value_parser * restrict parser
   , char * const restrict text
   , size_t len
@@ -198,8 +162,7 @@ xapi API value_parser_parse_partial(
   , value ** restrict root
 )
 {
-  enter;
-
+  int r;
   typeof(parser->value_yyu) *pfn = 0;
 
   parser->root = 0;
@@ -211,11 +174,11 @@ xapi API value_parser_parse_partial(
   else if(initial_state == VALUE_TYPE_SET)
     pfn = &parser->value_set_yyu;
 
-  fatal(yyu_parse, pfn, text, len, fname, YYU_PARTIAL | YYU_INPLACE, init_loc, used_loc);
+  r = yyu_parse(pfn, text, len, fname, YYU_PARTIAL | YYU_INPLACE, init_loc, used_loc);
 
   // ownership transfer
   if(root)
     *root = parser->root;
 
-  finally : coda;
+  return r;
 }

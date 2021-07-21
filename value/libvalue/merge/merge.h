@@ -39,8 +39,6 @@ REMARKS
  if two scalars are merged, a list is created to contain them
 */
 
-#include "xapi.h"
-
 struct value;         // value.h
 struct value_parser;  // value/parser.h
 
@@ -60,7 +58,7 @@ struct value_parser;  // value/parser.h
 //  src - source tree
 //  attrs - VALUE_MERGE_*
 //
-xapi value_merge(struct value_parser * restrict parser, struct value ** dst, const struct value * src, uint16_t attrs)
+void value_merge(struct value_parser * restrict parser, struct value ** dst, const struct value * src, uint16_t attrs)
   __attribute__((nonnull(1)));
 
 #endif

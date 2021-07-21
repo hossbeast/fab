@@ -17,7 +17,6 @@
 
 #include <stdio.h>
 
-#include "xapi.h"
 #include "types.h"
 
 #include "xlinux/xstdlib.h"
@@ -63,40 +62,27 @@ static int compare_entries(const hashtable_t * ht, void * _A, void * _B)
   return ht->cmp_fn(A->p, A->l, B->p, B->l);
 }
 
-static xapi delete_entry(const hashtable_t * ht, void * entry)
+static void delete_entry(const hashtable_t * ht, void * entry)
 {
-  enter;
-
   const set_t * s = (typeof(s))ht;
   element * el = entry;
 
   if(s->destroy_fn)
     s->destroy_fn(el->p);
-  else if(s->xdestroy_fn)
-    fatal(s->xdestroy_fn, el->p);
-
-  finally : coda;
 }
 
-static xapi destroy_entry(const hashtable_t * ht, void * entry)
+static void destroy_entry(const hashtable_t * ht, void * entry)
 {
-  enter;
-
-  finally : coda;
 }
 
-static xapi store_entry(const hashtable_t * ht, void * dst, void * entry, bool found)
+static void store_entry(const hashtable_t * ht, void * dst, void * entry, bool found)
 {
-  enter;
-
   if(found)
   {
-    fatal(delete_entry, ht, dst);
+    delete_entry(ht, dst);
   }
 
   memcpy(dst, entry, ht->esz);
-
-  finally : coda;
 }
 
 static ht_operations ht_ops = {
@@ -158,20 +144,17 @@ static int probe(const set_t* const restrict s, uint32_t h, void * ent, size_t e
 // api
 //
 
-xapi API set_createx(
+void API set_createx(
     set ** const restrict rv
   , size_t capacity
   , uint32_t (*hash_fn)(uint32_t h, const void * element, size_t sz)
   , int (*cmp_fn)(const void * A, size_t Asz, const void * B, size_t Bsz)
   , void (*destroy_fn)(void * element)
-  , xapi (*xdestroy_fn)(void * element)
 )
 {
-  enter;
-
   set_t * s = 0;
 
-  fatal(xmalloc, &s, sizeof(*s));
+  xmalloc(&s, sizeof(*s));
 
   if(!hash_fn)
     hash_fn = set_default_hash_fn;
@@ -179,8 +162,8 @@ xapi API set_createx(
   if(!cmp_fn)
     cmp_fn = set_default_cmp_fn;
 
-  fatal(hashtable_init
-    , &s->ht
+  hashtable_init(
+    &s->ht
     , sizeof(element)
     , capacity
     , &ht_ops
@@ -189,106 +172,76 @@ xapi API set_createx(
   );
 
   s->destroy_fn = destroy_fn;
-  s->xdestroy_fn = xdestroy_fn;
 
   *rv = &s->sx;
   s = 0;
 
-finally:
-  if(s)
-    fatal(set_xfree, &s->sx);
-coda;
+  if(s) {
+    set_xfree(&s->sx);
+  }
 }
 
-xapi API set_create(set ** restrict sx)
+void API set_create(set ** restrict sx)
 {
-  xproxy(set_createx, sx, 0, 0, 0, 0, 0);
+  set_createx(sx, 0, 0, 0, 0);
 }
 
-xapi API set_xfree(set * restrict sx)
+void API set_xfree(set * restrict sx)
 {
-  enter;
-
   set_t * s = containerof(sx, set_t, sx);
 
   if(s)   // free-like semantics
-    fatal(hashtable_xdestroy, &s->ht);
+    hashtable_xdestroy(&s->ht);
 
   wfree(s);
-
-  finally : coda;
 }
 
-xapi API set_ixfree(set ** restrict sx)
+void API set_ixfree(set ** restrict sx)
 {
-  enter;
-
-  fatal(set_xfree, *sx);
+  set_xfree(*sx);
   *sx = 0;
-
-  finally : coda;
 }
 
-xapi API set_recycle(set * restrict sx)
+void API set_recycle(set * restrict sx)
 {
-  enter;
-
   set_t * s = containerof(sx, set_t, sx);
-  fatal(hashtable_recycle, &s->htx);
-
-  finally : coda;
+  hashtable_recycle(&s->htx);
 }
 
-xapi API set_put(set * restrict sx, void * e, size_t len)
+void API set_put(set * restrict sx, void * e, size_t len)
 {
-  enter;
-
   set_t * s = containerof(sx, set_t, sx);
 
   element el = { p : e, l : len };
-  fatal(hashtable_put, &s->htx, &el);
-
-  finally : coda;
+  hashtable_put(&s->htx, &el);
 }
 
-xapi set_store(set * sx, void * e, size_t len, void ** restrict elementp)
+void set_store(set * sx, void * e, size_t len, void ** restrict elementp)
 {
-  enter;
-
   set_t *s = containerof(sx, set_t, sx);
   ht_bucket * bp;
 
   element el = { p : e, l : len };
-  fatal(hashtable_store, &s->ht, &el, &bp);
+  hashtable_store(&s->ht, &el, &bp);
 
   element * elp = (typeof(elp))bp->p;
   *(void**)elementp = elp->p;
-
-  finally : coda;
 }
 
-xapi API set_splice(set * restrict dstx, set * restrict srcx)
+void API set_splice(set * restrict dstx, set * restrict srcx)
 {
-  enter;
-
   set_t * src = containerof(srcx, set_t, sx);
   set_t * dst = containerof(dstx, set_t, sx);
 
-  fatal(hashtable_splice, &dst->htx, &src->htx);
-
-  finally : coda;
+  hashtable_splice(&dst->htx, &src->htx);
 }
 
-xapi API set_replicate(set * restrict dstx, set * restrict srcx)
+void API set_replicate(set * restrict dstx, set * restrict srcx)
 {
-  enter;
-
   set_t * src = containerof(srcx, set_t, sx);
   set_t * dst = containerof(dstx, set_t, sx);
 
-  fatal(hashtable_replicate, &dst->htx, &src->htx);
-
-  finally : coda;
+  hashtable_replicate(&dst->htx, &src->htx);
 }
 
 bool API set_contains(const set * sx, const void * e, size_t len)
@@ -357,22 +310,16 @@ bool API set_equal(set * const Ax, set * const Bx)
   return hashtable_equal(&A->htx, &B->htx);
 }
 
-xapi API set_delete(set * sx, const void * e, size_t len)
+void API set_delete(set * sx, const void * e, size_t len)
 {
-  enter;
-
   set_t * s = containerof(sx, set_t, sx);
 
   element el = { .p = (void*)e, .l = len };
-  fatal(hashtable_delete, &s->htx, &el);
-
-  finally : coda;
+  hashtable_delete(&s->htx, &el);
 }
 
-xapi API set_elements(const set * restrict sx, void * restrict _els, size_t ** restrict elsls, size_t * restrict elsl)
+void API set_elements(const set * restrict sx, void * restrict _els, size_t ** restrict elsls, size_t * restrict elsl)
 {
-  enter;
-
   element * el;
   size_t x;
   size_t i;
@@ -380,8 +327,8 @@ xapi API set_elements(const set * restrict sx, void * restrict _els, size_t ** r
   const set_t * s = containerof(sx, set_t, sx);
   void *** els = _els;
 
-  fatal(xmalloc, els, sizeof(**els) * s->size);
-  fatal(xmalloc, elsls, sizeof(**elsls) * s->size);
+  xmalloc(els, sizeof(**els) * s->size);
+  xmalloc(elsls, sizeof(**elsls) * s->size);
 
   i = 0;
   for(x = 0; x < s->table_size; x++)
@@ -394,8 +341,6 @@ xapi API set_elements(const set * restrict sx, void * restrict _els, size_t ** r
     }
   }
   (*elsl) = s->size;
-
-  finally : coda;
 }
 
 bool API set_table_element(const set * restrict sx, size_t x, void * elp, size_t * elenp)
@@ -434,13 +379,9 @@ void * API set_table_get(const set * restrict sx, size_t x)
   return 0;
 }
 
-xapi API set_table_delete(set * restrict sx, size_t x)
+void API set_table_delete(set * restrict sx, size_t x)
 {
-  enter;
-
   set_t * s = containerof(sx, set_t, sx);
 
-  fatal(hashtable_table_delete, &s->htx, x);
-
-  finally : coda;
+  hashtable_table_delete(&s->htx, x);
 }

@@ -35,13 +35,7 @@ REMARKS
 #include <stdio.h>
 #include <string.h>
 
-#include "xapi.h"
-#include "xapi/exit.h"
-#include "xapi/errtab.h"
 #include "types.h"
-
-#include "errtab/TEST.errtab.h"
-
 #include "macros.h"
 
 extern uint32_t assertions_passed;
@@ -55,7 +49,7 @@ void ufails_info(const char * restrict value, const char * restrict exp, const c
 #define ufail()           \
   do {                    \
     assertions_failed++;  \
-    fail(TEST_FAIL);      \
+    RUNTIME_ABORT();      \
   } while(0)
 
 #define ufailf(value, expfmt, actfmt, ...)                \
@@ -200,6 +194,7 @@ void ufails_info(const char * restrict value, const char * restrict exp, const c
 #define assert_notnull(act)                   \
   _assertf(act, QUOTE(act), "not null", "%p", act)
 
+#if 0
 static inline void assert_infos(const char * restrict key, const char * restrict val)
 {
   xapi_info_pushs(key, val);
@@ -224,6 +219,7 @@ static inline void assert_info_unstage()
 {
   xapi_info_unstage();
 }
+#endif
 
 #define summarize                                                                           \
   do {                                                                                      \

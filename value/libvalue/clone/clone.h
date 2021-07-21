@@ -18,12 +18,10 @@
 #ifndef _VALUE_CLONE_H
 #define _VALUE_CLONE_H
 
-#include "xapi.h"
-
 struct value;
 struct value_parser;
 
-xapi value_clone(
+void value_clone(
     struct value_parser * const restrict parser
   , struct value ** dst
   , const struct value * src

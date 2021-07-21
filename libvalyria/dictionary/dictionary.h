@@ -31,7 +31,6 @@ REMARKS
 
 */
 
-#include "xapi.h"
 #include "types.h"
 
 typedef struct dictionary {
@@ -48,18 +47,16 @@ typedef struct dictionary {
 //  dictionary       - (returns) newly allocated dictionary
 //  vsz              - value size > 0
 //  [destroy_value]  - invoked with the value just before freeing it (keys may not be managed in this way)
-//  [xdestroy_value] - invoked with the value just before freeing it (keys may not be managed in this way)
 //  [capacity]       - initial capacity, the minimum number of entries which can be set without rehashing
 //
-xapi dictionary_create(dictionary ** restrict m, size_t vsz)
+void dictionary_create(dictionary ** restrict m, size_t vsz)
   __attribute__((nonnull));
 
-xapi dictionary_createx(
+void dictionary_createx(
     dictionary ** restrict m
   , size_t vsz
   , size_t capacity
   , void (*destroy_value)(void * entry)
-  , xapi (*xdestroy_value)(void * entry)
 )
   __attribute__((nonnull(1)));
 
@@ -68,14 +65,14 @@ xapi dictionary_createx(
 // SUMMARY
 //  free a dictionary
 //
-xapi dictionary_xfree(dictionary * restrict dictionary);
+void dictionary_xfree(dictionary * restrict dictionary);
 
 /// dictionary_ixfree
 //
 // SUMMARY
 //  free a dictionary, zero its reference
 //
-xapi dictionary_ixfree(dictionary ** restrict dictionary)
+void dictionary_ixfree(dictionary ** restrict dictionary)
   __attribute__((nonnull));
 
 /// dictionary_put
@@ -92,7 +89,7 @@ xapi dictionary_ixfree(dictionary ** restrict dictionary)
 //  keyl    - key length
 //  [value] - pointer to value to store
 //
-xapi dictionary_put(dictionary * restrict m, const void * restrict key, uint16_t keyl, void * restrict value)
+void dictionary_put(dictionary * restrict m, const void * restrict key, uint16_t keyl, void * restrict value)
   __attribute__((nonnull(1, 2)));
 
 /// dictionary_store
@@ -109,7 +106,7 @@ xapi dictionary_put(dictionary * restrict m, const void * restrict key, uint16_t
 //  keyl  - key length
 //  value - (returns) pointer to value
 //
-xapi dictionary_store(dictionary * restrict m, const void * restrict key, uint16_t keyl, void * restrict value)
+void dictionary_store(dictionary * restrict m, const void * restrict key, uint16_t keyl, void * restrict value)
   __attribute__((nonnull));
 
 /// dictionary_get
@@ -133,7 +130,7 @@ void * dictionary_get(dictionary * restrict m, const void * restrict key, uint16
 // SUMMARY
 //  disassociate all keys, retain internal allocations
 //
-xapi dictionary_recycle(dictionary * restrict dictionary)
+void dictionary_recycle(dictionary * restrict dictionary)
   __attribute__((nonnull));
 
 /// dictionary_splice
@@ -141,7 +138,7 @@ xapi dictionary_recycle(dictionary * restrict dictionary)
 // SUMMARY
 //  move entries from one dictionary to another
 //
-xapi dictionary_splice(dictionary * restrict dst, dictionary * restrict src)
+void dictionary_splice(dictionary * restrict dst, dictionary * restrict src)
   __attribute__((nonnull));
 
 /// dictionary_replicate
@@ -149,7 +146,7 @@ xapi dictionary_splice(dictionary * restrict dst, dictionary * restrict src)
 // SUMMARY
 //  copy entries from one dictionary to another
 //
-xapi dictionary_replicate(dictionary * restrict dst, dictionary * restrict src)
+void dictionary_replicate(dictionary * restrict dst, dictionary * restrict src)
   __attribute__((nonnull));
 
 /// dictionary_delete
@@ -162,7 +159,7 @@ xapi dictionary_replicate(dictionary * restrict dst, dictionary * restrict src)
 //  key  - pointer to key
 //  keyl - length of key
 //
-xapi dictionary_delete(dictionary * restrict m, const void * restrict key, uint16_t keyl)
+void dictionary_delete(dictionary * restrict m, const void * restrict key, uint16_t keyl)
   __attribute__((nonnull));
 
 /// dictionary_keys
@@ -175,7 +172,7 @@ xapi dictionary_delete(dictionary * restrict m, const void * restrict key, uint1
 //  keys   - (returns) list of keys, to be freed by the caller
 //  keysl  - (returns) size of list
 //
-xapi dictionary_keys(const dictionary * restrict m, void * restrict keys, uint16_t * restrict keysl)
+void dictionary_keys(const dictionary * restrict m, void * restrict keys, uint16_t * restrict keysl)
   __attribute__((nonnull));
 
 /// dictionary_values
@@ -188,7 +185,7 @@ xapi dictionary_keys(const dictionary * restrict m, void * restrict keys, uint16
 //  values  - (returns) list, to be freed by the caller
 //  valuesl - (returns) size of list
 //
-xapi dictionary_values(const dictionary * restrict m, void * restrict values, size_t * restrict valuesl)
+void dictionary_values(const dictionary * restrict m, void * restrict values, size_t * restrict valuesl)
   __attribute__((nonnull));
 
 /// dictionary_table_key

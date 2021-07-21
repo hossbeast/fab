@@ -31,13 +31,13 @@
 //  len    - required number of elements
 //  ac     - pointer to allocated size in elements
 //
-xapi assure(void * target, size_t es, size_t len, size_t * const restrict ac);
+void assure(void * target, size_t es, size_t len, size_t * const restrict ac);
 
 /// assurex
 //
 // SUMMARY
 //  assure with the ability to specify the seed
 //
-xapi assurex(void * target, size_t es, size_t len, size_t * const restrict ac, size_t seed);
+void assurex(void * target, size_t es, size_t len, size_t * const restrict ac, size_t seed);
 
 #endif

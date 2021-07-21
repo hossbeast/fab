@@ -28,7 +28,6 @@ REMARKS
 
 */
 
-#include "xapi.h"
 #include "types.h"
 
 #include "array.h"
@@ -46,20 +45,18 @@ typedef struct list {
 //  list         - created list goes here
 //  [capacity]   - initial capacity
 //  [free_item]  - invoked on an element before releasing its storage
-//  [xfree_item] - invoked on an element before releasing its storage
 //
 // REMARKS
 //  free_item follows the free idiom
 //
-xapi list_create(list ** const restrict li)
+void list_create(list ** const restrict li)
   __attribute__((nonnull(1)));
 
-xapi list_createx(
+void list_createx(
     list ** const restrict li
   , size_t capacity
   , int (*cmp_fn)(const void * A, size_t Asz, const void * B, size_t Bsz)
   , void * free_fn // void (*free_fn)(void * item)
-  , void * xfree_fn // xapi (*xfree_fn)(void * item)
 )
   __attribute__((nonnull(1)));
 
@@ -68,14 +65,14 @@ xapi list_createx(
 // SUMMARY
 //  free a list
 //
-xapi list_xfree(list * const restrict li);
+void list_xfree(list * const restrict li);
 
 /// list_ixfree
 //
 // SUMMARY
 //  free a list, zero its reference
 //
-xapi list_ixfree(list ** const restrict li)
+void list_ixfree(list ** const restrict li)
   __attribute__((nonnull));
 
 void list_suppress_free_fn(list * const restrict li)
@@ -89,7 +86,7 @@ void list_restore_free_fn(list * const restrict li)
 // SUMMARY
 //  reset the number of elements in the list - the allocation remains intact
 //
-xapi list_recycle(list * const restrict li)
+void list_recycle(list * const restrict li)
   __attribute__((nonnull));
 
 /// list_truncate
@@ -100,7 +97,7 @@ xapi list_recycle(list * const restrict li)
 // PARAMETERS
 //  len - new size of the list, 0 <= len <= li->l
 //
-xapi list_truncate(list * const restrict li, size_t len)
+void list_truncate(list * const restrict li, size_t len)
   __attribute__((nonnull));
 
 /// list_get
@@ -134,7 +131,7 @@ bool list_get_item(const list * const restrict li, int x, void * restrict item, 
 //  li     - list
 //  [item] - pointer to item
 //
-xapi list_push(list * const li, void * item, size_t item_len)
+void list_push(list * const li, void * item, size_t item_len)
   __attribute__((nonnull));
 
 /// list_push_range
@@ -148,7 +145,7 @@ xapi list_push(list * const li, void * item, size_t item_len)
 //  [items_lens] - pointer to item lengths
 //  len          - number of items
 //
-xapi list_push_range(list * const restrict li, void * restrict items, size_t * restrict items_lens, size_t len)
+void list_push_range(list * const restrict li, void * restrict items, size_t * restrict items_lens, size_t len)
   __attribute__((nonnull(1, 2)));
 
 /// list_pop
@@ -162,7 +159,7 @@ xapi list_push_range(list * const restrict li, void * restrict items, size_t * r
 // REMARKS
 //  x/free_item is called on the element before this function returns
 //
-xapi list_pop(list * const li)
+void list_pop(list * const li)
   __attribute__((nonnull(1)));
 
 /// list_unshift
@@ -175,7 +172,7 @@ xapi list_pop(list * const li)
 //  item       - pointer to item
 //  [item_len] - item length
 //
-xapi list_unshift(list * const li, void * item, size_t item_len)
+void list_unshift(list * const li, void * item, size_t item_len)
   __attribute__((nonnull));
 
 /// list_unshift_range
@@ -192,7 +189,7 @@ xapi list_unshift(list * const li, void * item, size_t item_len)
 //  items_lens - pointer to item lengths
 //  len        - number of items
 //
-xapi list_unshift_range(list * const li, void * items, size_t * restrict items_lens, size_t len)
+void list_unshift_range(list * const li, void * items, size_t * restrict items_lens, size_t len)
   __attribute__((nonnull(1, 2)));
 
 /// list_shift
@@ -206,7 +203,7 @@ xapi list_unshift_range(list * const li, void * items, size_t * restrict items_l
 // REMARKS
 //  x/free_item is called on the element before this function returns
 //
-xapi list_shift(list * const li)
+void list_shift(list * const li)
   __attribute__((nonnull(1)));
 
 /// list_insert
@@ -220,7 +217,7 @@ xapi list_shift(list * const li)
 //  item     - pointer to item
 //  item_len - item length
 //
-xapi list_insert(list * const li, size_t index, void * item, size_t item_len)
+void list_insert(list * const li, size_t index, void * item, size_t item_len)
   __attribute__((nonnull));
 
 /// list_insert_range
@@ -235,7 +232,7 @@ xapi list_insert(list * const li, size_t index, void * item, size_t item_len)
 //  [items_lens] - pointer to item lengths
 //  len          - number of items
 //
-xapi list_insert_range(list * const li, size_t index, void * items, size_t * restrict items_lens, size_t len)
+void list_insert_range(list * const li, size_t index, void * items, size_t * restrict items_lens, size_t len)
   __attribute__((nonnull(1, 3)));
 
 /// list_update
@@ -251,7 +248,7 @@ xapi list_insert_range(list * const li, size_t index, void * items, size_t * res
 //  index - 0 <= index < li->l
 //  el    - pointer to the element to place
 //
-xapi list_update(list * const restrict li, size_t index, void * item, size_t item_len)
+void list_update(list * const restrict li, size_t index, void * item, size_t item_len)
   __attribute__((nonnull));
 
 /// list_update_range
@@ -269,7 +266,7 @@ xapi list_update(list * const restrict li, size_t index, void * item, size_t ite
 //  [items_lens] - pointer to item lengths
 //  len          - number of items
 //
-xapi list_update_range(list * const restrict li, size_t index, void * items, size_t * restrict items_lens, size_t len)
+void list_update_range(list * const restrict li, size_t index, void * items, size_t * restrict items_lens, size_t len)
   __attribute__((nonnull(1, 3)));
 
 /// list_delete
@@ -283,7 +280,7 @@ xapi list_update_range(list * const restrict li, size_t index, void * items, siz
 //  [item]     - (returns) removed item
 //  [item_len] - (returns) removed item length
 //
-xapi list_delete(list * const restrict li, size_t index)
+void list_delete(list * const restrict li, size_t index)
   __attribute__((nonnull));
 
 /// list_delete_range
@@ -295,7 +292,7 @@ xapi list_delete(list * const restrict li, size_t index)
 //  li         - list
 //  index      - index of the first item to delete
 //
-xapi list_delete_range(list * const restrict li, size_t index, size_t len)
+void list_delete_range(list * const restrict li, size_t index, size_t len)
   __attribute__((nonnull));
 
 /// list_sublist
@@ -309,7 +306,7 @@ xapi list_delete_range(list * const restrict li, size_t index, size_t len)
 //  len   - number of elements to copy
 //  lc    - (returns) pointer to list, or reuses an existing list
 //
-xapi list_sublist(list * const restrict lip, size_t index, size_t len, list ** const restrict lc)
+void list_sublist(list * const restrict lip, size_t index, size_t len, list ** const restrict lc)
   __attribute__((nonnull));
 
 /// list_splice
@@ -327,7 +324,7 @@ xapi list_sublist(list * const restrict lip, size_t index, size_t len, list ** c
 //  src_index - 0 <= src_index <= src->size
 //  len       - number >= 0 of elements to copy
 //
-xapi list_splice(list * const restrict dst, size_t dst_index, list * const restrict src, size_t src_index, int len)
+void list_splice(list * const restrict dst, size_t dst_index, list * const restrict src, size_t src_index, int len)
   __attribute__((nonnull));
 
 /// list_replicate
@@ -345,7 +342,7 @@ xapi list_splice(list * const restrict dst, size_t dst_index, list * const restr
 //  src_index - 0 <= src_index <= src->l
 //  len       - number >= 0 of elements to copy
 //
-xapi list_replicate(list * const restrict dst, size_t dst_index, list * const restrict src, size_t src_index, int len)
+void list_replicate(list * const restrict dst, size_t dst_index, list * const restrict src, size_t src_index, int len)
   __attribute__((nonnull));
 
 /// list_equal

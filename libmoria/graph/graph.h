@@ -26,7 +26,6 @@ with a root vertex at '/'.
 hyperedges cannot be part of the identity graph
 */
 
-#include "xapi.h"
 #include "types.h"
 
 #include "valyria/rbtree.h"
@@ -47,7 +46,7 @@ struct moria_graph;
  * [vertex_value_destroy] - invoked on vertex user data before releasing
  * [edge_value_destroy] - invoked on vertex user data before releasing
  */
-xapi moria_graph_create(struct moria_graph ** const restrict g)
+void moria_graph_create(struct moria_graph ** const restrict g)
   __attribute__((nonnull));
 
 void moria_graph_init(struct moria_graph * const restrict g)
@@ -73,14 +72,14 @@ void moria_graph_destroy(struct moria_graph * const restrict g)
 // SUMMARY
 //  free a graph
 //
-xapi moria_graph_xfree(struct moria_graph * const restrict g);
+void moria_graph_xfree(struct moria_graph * const restrict g);
 
 /// graph_ifree
 //
 // SUMMARY
 //  free a graph, zero its reference
 //
-xapi moria_graph_ixfree(struct moria_graph ** const restrict g)
+void moria_graph_ixfree(struct moria_graph ** const restrict g)
   __attribute__((nonnull));
 
 /// graph_say
@@ -93,7 +92,7 @@ xapi moria_graph_ixfree(struct moria_graph ** const restrict g)
 //  [d] - attrs name lookup
 //  N   - narrator
 //
-xapi moria_graph_say(
+void moria_graph_say(
   /* 1 */   struct moria_graph * const restrict g
   /* 2 */ , struct llist ** restrict vertex_lists
   /* 3 */ , uint16_t vertex_lists_len
@@ -110,7 +109,7 @@ xapi moria_graph_say(
 // SUMMARY
 //  returns the next label in the lookup sequence, or resets the lookup sequence if label == NULL
 //
-typedef xapi (*moria_graph_lookup_identifier_callback)(
+typedef void (*moria_graph_lookup_identifier_callback)(
     void * context                  // user context
   , const char ** restrict label    // (returns) next label
   , uint16_t * restrict label_len   // (returns) next label length
@@ -151,7 +150,7 @@ int moria_vertex_entry_cmp(const void *A, size_t Asz, const void *B, size_t Bsz)
 //   1 - one matching vertex (*V)
 //   2 - two or more matching vertices (*V[0], *V[1])
 //
-xapi moria_graph_lookup(
+void moria_graph_lookup(
     /* 1 */ struct moria_graph * restrict g
   , /* 2 */ const struct hashtable * restrict mm
   , /* 3 */ moria_graph_lookup_identifier_callback identifier_callback
@@ -171,10 +170,10 @@ typedef struct moria_graph_lookup_sentinel_context {
 //
 // lookup callback for resolving an identifier comprised of a sentinel-terminated array of labels
 //
-xapi moria_graph_lookup_sentinel(void * restrict context, const char ** restrict label, uint16_t * restrict label_len)
+void moria_graph_lookup_sentinel(void * restrict context, const char ** restrict label, uint16_t * restrict label_len)
   __attribute__((nonnull(1)));
 
-xapi moria_graph_linear_search(
+void moria_graph_linear_search(
     struct llist * restrict vertex_list
   , const char * restrict label
   , uint16_t label_len

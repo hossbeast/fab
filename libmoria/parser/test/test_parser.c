@@ -16,22 +16,17 @@
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
 #include "types.h"
-#include "xapi.h"
 
 #include "narrator.h"
 #include "narrator/growing.h"
-#include "xapi/calltree.h"
-#include "xapi/errtab.h"
 #include "xlinux/xstdlib.h"
 #include "xunit.h"
 #include "xunit/assert.h"
 #include "moria/load.h"
-#include "logger.h"
 
 #include "graph.h"
 #include "moria.h"
 #include "parser.internal.h"
-#include "MORIA.errtab.h"
 
 #include "macros.h"
 
@@ -41,39 +36,30 @@ typedef struct graph_parser_test {
   char * graph;
 
   char * expected;
-  xapi expected_exit;
+  int expected_exit;
 } graph_parser_test;
 
 //
 // public
 //
 
-static xapi graph_parser_unit_setup(xunit_unit * unit)
+static void graph_parser_unit_setup(xunit_unit * unit)
 {
-  enter;
-
   // load libraries
-  fatal(moria_load);
-
-  // logging
-  fatal(logger_finalize);
-
-  finally : coda;
+  moria_load();
 }
 
-static xapi graph_parser_unit_cleanup(xunit_unit * unit)
+static void graph_parser_unit_cleanup(xunit_unit * unit)
 {
-  xproxy(moria_unload);
+  moria_unload();
 }
 
 //
 // tests
 //
 
-static xapi graph_parser_test_entry(xunit_test * _test)
+static void graph_parser_test_entry(xunit_test * _test)
 {
-  enter;
-
   graph_parser_test * test = (typeof(test))_test;
 
   moria_graph g;
@@ -84,41 +70,32 @@ static xapi graph_parser_test_entry(xunit_test * _test)
 
   // arrange
   moria_graph_init(&g);
-  fatal(graph_parser_create, &p, &g, 0, graph_operations_dispatch, 0, 0);
+  graph_parser_create(&p, &g, 0, graph_operations_dispatch, 0, 0);
 
   // act
-  xapi exit = invoke(graph_parser_parse, p, MMS(test->graph));
-  if(exit)
-  {
-    if(exit != test->expected_exit)
-      fail(0);
-
-    xapi_calltree_unwind();
-  }
+  int exit = graph_parser_parse(p, MMS(test->graph));
 
   // assert
-  assert_eq_e(test->expected_exit, exit);
+  assert_eq_d(test->expected_exit, exit);
   if(test->expected)
   {
-    fatal(narrator_growing_create, &N1);
-    fatal(moria_graph_say, &g, (llist *[]) { &p->vertices }, 1, (llist *[]) { &p->edges }, 1, 0, 0, &N1->base);
+    narrator_growing_create(&N1);
+    moria_graph_say(&g, (llist *[]) { &p->vertices }, 1, (llist *[]) { &p->edges }, 1, 0, 0, &N1->base);
     actual = N1->s;
     actual_len = N1->l;
     assert_eq_w(test->expected, strlen(test->expected), actual, actual_len);
   }
 
-finally:
   moria_graph_destroy(&g);
-  fatal(narrator_growing_free, N1);
-  fatal(graph_parser_xfree, p);
-coda;
+  narrator_growing_free(N1);
+  graph_parser_xfree(p);
 }
 
 //
 // manifest
 //
 
-xunit_unit xunit = {
+static xunit_unit xunit = {
     xu_setup : graph_parser_unit_setup
   , xu_cleanup : graph_parser_unit_cleanup
   , xu_entry : graph_parser_test_entry
@@ -167,7 +144,9 @@ xunit_unit xunit = {
                           " 1:0x40000000:2"
                           " 1:0x40000000:3"
         , expected_exit : MORIA_LABELEXISTS
+, xu_weight : 1
       }}
+#if 0
     , (graph_parser_test[]){{
           graph         : " 1-A 2-B"
                           " 1:0x40000000:2"
@@ -186,6 +165,7 @@ xunit_unit xunit = {
                           " 2:0x40000000:3"
         , expected_exit : MORIA_UPEXISTS
       }}
+#endif
 
       // hyper-edges
     , (graph_parser_test[]){{
@@ -270,3 +250,4 @@ xunit_unit xunit = {
     , 0
   }
 };
+XUNIT_UNIT(xunit);

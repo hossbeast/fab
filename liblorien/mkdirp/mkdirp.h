@@ -20,7 +20,6 @@
 
 #include <stdarg.h>
 
-#include "xapi.h"
 #include "types.h"
 
 /// mkdirp
@@ -36,16 +35,16 @@
 // PARAMETERS
 //  s/w/f/vf - different ways of providing path
 //
-xapi mkdirps(mode_t mode, const char * const restrict path)
+void mkdirps(mode_t mode, const char * const restrict path)
   __attribute__((nonnull));
 
-xapi mkdirpw(mode_t mode, const char * const restrict path, size_t pathl)
+void mkdirpw(mode_t mode, const char * const restrict path, size_t pathl)
   __attribute__((nonnull));
 
-xapi mkdirpf(mode_t mode, const char * const restrict fmt, ...)
+void mkdirpf(mode_t mode, const char * const restrict fmt, ...)
   __attribute__((nonnull));
 
-xapi mkdirpvf(mode_t mode, const char * const restrict fmt, va_list va)
+void mkdirpvf(mode_t mode, const char * const restrict fmt, va_list va)
   __attribute__((nonnull));
 
 #endif

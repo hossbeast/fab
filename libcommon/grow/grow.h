@@ -31,6 +31,6 @@
 //  ec     - used size in elements
 //  ac     - pointer to allocated size in elements
 //
-xapi grow(void * target, size_t es, size_t len, size_t ec, size_t * const restrict ac);
+void grow(void * target, size_t es, size_t len, size_t ec, size_t * const restrict ac);
 
 #endif

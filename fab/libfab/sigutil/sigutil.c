@@ -126,6 +126,9 @@ xapi API sigutil_install_handlers()
   // realtime signals
   for(x = SIGRTMIN; x <= SIGRTMAX; x++)
   {
+    if(x == SIGABRT) {
+      continue;
+    }
     fatal(xsigaction, x, &intr_act, 0);
   }
 

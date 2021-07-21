@@ -24,7 +24,6 @@ A box is a heap-allocated scalar
 
 */
 
-#include "xapi.h"
 #include "types.h"
 #include "yyutil/grammar.h"
 
@@ -147,28 +146,28 @@ typedef struct box_string {
 //  rv    - (returns) value containing the int
 //  v     - integer value
 //
-xapi box_int8_mk(
+void box_int8_mk(
     const struct yyu_location * const restrict loc
   , box_int8 ** rv
   , int8_t v
 )
   __attribute__((nonnull(2)));
 
-xapi box_int16_mk(
+void box_int16_mk(
     const struct yyu_location * const restrict loc
   , box_int16 ** rv
   , int16_t v
 )
   __attribute__((nonnull(2)));
 
-xapi box_int32_mk(
+void box_int32_mk(
     const struct yyu_location * const restrict loc
   , box_int32 ** rv
   , int32_t v
 )
   __attribute__((nonnull(2)));
 
-xapi box_int64_mk(
+void box_int64_mk(
     const struct yyu_location * const restrict loc
   , box_int64 ** rv
   , int64_t v
@@ -198,28 +197,28 @@ void box_int64_setif(box_int64 * restrict b, int64_t * v)
 //  rv    - (returns) value containing the uint
 //  v     - integer value
 //
-xapi box_uint8_mk(
+void box_uint8_mk(
     const struct yyu_location * const restrict loc
   , box_uint8 ** rv
   , uint8_t v
 )
   __attribute__((nonnull(2)));
 
-xapi box_uint16_mk(
+void box_uint16_mk(
     const struct yyu_location * const restrict loc
   , box_uint16 ** rv
   , uint16_t v
 )
   __attribute__((nonnull(2)));
 
-xapi box_uint32_mk(
+void box_uint32_mk(
     const struct yyu_location * const restrict loc
   , box_uint32 ** rv
   , uint32_t v
 )
   __attribute__((nonnull(2)));
 
-xapi box_uint64_mk(
+void box_uint64_mk(
     const struct yyu_location * const restrict loc
   , box_uint64 ** rv
   , uint64_t v
@@ -249,7 +248,7 @@ void box_uint64_setif(box_uint64 * restrict b, uint64_t * v)
 //  rv    - (returns) value containing the int
 //  v     - intean value
 //
-xapi box_int_mk(
+void box_int_mk(
     const struct yyu_location * const restrict loc
   , box_int ** rv
   , int v
@@ -270,7 +269,7 @@ void box_int_setif(box_int * restrict b, int * v)
 //  rv    - (returns) value containing the bool
 //  v     - boolean value
 //
-xapi box_bool_mk(
+void box_bool_mk(
     const struct yyu_location * const restrict loc
   , box_bool ** rv
   , bool v
@@ -291,7 +290,7 @@ void box_bool_setif(box_bool * restrict b, bool * v)
 //  rv    - (returns) value containing the string
 //  v     - string value
 //
-xapi box_string_mk(
+void box_string_mk(
     const struct yyu_location * const restrict loc
   , box_string ** rv
   , char * restrict v

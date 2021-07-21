@@ -17,18 +17,14 @@
 
 #include <stdio.h>
 
-#include "xapi.h"
-#include "xapi/trace.h"
 
 #include "narrator.h"
 #include "narrator/fixed.h"
 
 #include "test_util.h"
 
-static xapi say(narrator * const N)
+static void say(narrator * const N)
 {
-  enter;
-
   // says the string : 40 41 42 43 44
   xsayf("%d", 40);
   xsays(" 41");
@@ -36,15 +32,11 @@ static xapi say(narrator * const N)
   xsayf(" %d", 43);
   xsayf(" %d", 4);
   xsayc('4');
-  fatal(narrator_flush, N);
-
-  finally : coda;
+  narrator_flush(N);
 }
 
-static xapi test_basic()
+static void test_basic()
 {
-  enter;
-
   char s[64];
   narrator_fixed nf;
   narrator *N;
@@ -52,53 +44,34 @@ static xapi test_basic()
   narrator_fixed_init(&nf, s, sizeof(s));
   N = &nf.base;
 
-  fatal(say, N);
+  say(N);
 
   char * expected = "40 41 42 43 44";
   size_t expectedl = strlen(expected);
 
   assert_eq_s(expected, nf.s);
   assert_eq_zu(expectedl, nf.l);
-
-  finally : coda;
 }
 
-static xapi test_constrained()
+static void test_constrained()
 {
-  enter;
-
   char s[7];
   narrator_fixed nf;
 
   narrator * N = narrator_fixed_init(&nf, s, sizeof(s));
-  fatal(say, N);
+  say(N);
 
   char * expected = "40 41 ";
   size_t expectedl = 6;
 
   assert_eq_zu(expectedl, nf.l);
   assert_eq_s(expected, nf.s);
-
-  finally : coda;
 }
 
 int main()
 {
-  enter;
+  test_basic();
+  test_constrained();
 
-  xapi R = 0;
-
-  fatal(test_basic);
-  fatal(test_constrained);
-
-finally:
   summarize;
-  if(XAPI_UNWINDING)
-  {
-    xapi_backtrace(2, 0);
-  }
-conclude(&R);
-
-  xapi_teardown();
-  return !!R;
 }

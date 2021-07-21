@@ -32,7 +32,7 @@
 
 void API xmalloc(void* target, size_t size)
 {
-  RUNTIME_ASSERT(posix_memalign(target, sizeof(void*) * 2, size) != 0);
+  RUNTIME_ASSERT(posix_memalign(target, sizeof(void*) * 2, size) == 0);
   memset(*(void**)target, 0, size);
 }
 

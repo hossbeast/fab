@@ -18,7 +18,6 @@
 #ifndef _MORIA_H
 #define _MORIA_H
 
-#include "xapi.h"
 #include "types.h"
 
 #include "valyria/llist.h"
@@ -189,14 +188,14 @@ void moria_connect_hyper(
 )
   __attribute__((nonnull(1, 2, 3)));
 
-xapi moria_disconnect(
+void moria_disconnect(
     struct moria_graph * const restrict g
   , struct moria_vertex * A
   , struct moria_vertex * B
 )
   __attribute__((nonnull));
 
-xapi moria_hyperdisconnect(
+void moria_hyperdisconnect(
     struct moria_graph * restrict g
   , struct moria_vertex ** Alist
   , uint16_t Alen
@@ -205,7 +204,7 @@ xapi moria_hyperdisconnect(
 )
   __attribute__((nonnull));
 
-xapi moria_edge_disconnect(
+void moria_edge_disconnect(
     struct moria_graph * const restrict g
   , struct moria_edge * restrict e
 )

@@ -16,21 +16,19 @@
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
 use cc             # this module contains c sources
-use library/shared
 use library/static
 
 import libxlinux
 import fab/include
 
 # variants for the module
-variant xapi.pic.{debug,devel,final,trace}
+variant pic.{debug,devel,final,trace}
 
 # build the archive
-rule libcommon.?.{so,a} -> //module/targets
-rule */*.?.o -> libcommon.$?.{so,a}
+rule libcommon.?.a -> //module/targets
+rule */*.?.o -> libcommon.$?.a
 
 # direct library dependencies
-rule //module/imports/*/lib*.?.so -> libcommon.$?.so
 rule //module/imports/*/lib*.?.a -> libcommon.$?.a
 
 var : {

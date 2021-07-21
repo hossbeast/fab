@@ -22,17 +22,14 @@
 #include <sys/types.h>
 #include <string.h>
 
-#include "xapi.h"
 #include "xlinux/xunistd.h"
 #include "xlinux/xftw.h"
 #include "xlinux/xstat.h"
 
 #include "mkdirp.h"
 
-xapi API mkdirpw(mode_t mode, const char * const path, size_t pathl)
+void API mkdirpw(mode_t mode, const char * const path, size_t pathl)
 {
-  enter;
-
   char space[256];
   const char * t;
   const char * e;
@@ -48,44 +45,33 @@ xapi API mkdirpw(mode_t mode, const char * const path, size_t pathl)
     memcpy(space, path, t - path);
     space[t - path] = 0;
 
-    fatal(uxmkdirs, mode, space);
+    uxmkdirs(mode, space);
   }
-
-finally:
-  xapi_infos("path", space);
-coda;
 }
 
-xapi API mkdirps(mode_t mode, const char * const path)
+void API mkdirps(mode_t mode, const char * const path)
 {
-  xproxy(mkdirpw, mode, path, strlen(path));
+  mkdirpw(mode, path, strlen(path));
 }
 
-xapi API mkdirpf(mode_t mode, const char * const restrict fmt, ...)
+void API mkdirpf(mode_t mode, const char * const restrict fmt, ...)
 {
-  enter;
-
   va_list va;
   va_start(va, fmt);
-  fatal(mkdirpvf, mode, fmt, va);
 
-finally:
+  mkdirpvf(mode, fmt, va);
+
   va_end(va);
-coda;
 }
 
-xapi API mkdirpvf(mode_t mode, const char * const restrict fmt, va_list va)
+void API mkdirpvf(mode_t mode, const char * const restrict fmt, va_list va)
 {
-  enter;
-
   char space[256];
   size_t sz;
 
   sz = vsnprintf(space, sizeof(space), fmt, va);
   if(sz < sizeof(space))
   {
-    fatal(mkdirpw, mode, space, sz);
+    mkdirpw(mode, space, sz);
   }
-
-  finally : coda;
 }

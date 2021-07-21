@@ -17,11 +17,6 @@
 
 #include <string.h>
 
-#include "xapi.h"
-#include "xapi/errtab.h"
-#include "xapi/calltree.h"
-#include "xapi/trace.h"
-#include "xapi/SYS.errtab.h"
 #include "value.h"
 #include "value/assert.h"
 #include "value/load.h"
@@ -36,7 +31,6 @@
 
 #include "store.internal.h"
 #include "merge.internal.h"
-#include "VALUE.errtab.h"
 #include "make.internal.h"
 #include "parser.internal.h"
 #include "writer.internal.h"

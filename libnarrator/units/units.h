@@ -32,7 +32,7 @@ struct narrator;
 //  seconds - the interval, in seconds
 //  N       - narrator to write to
 //
-xapi interval_say(time_t seconds, struct narrator * const restrict N)
+void interval_say(time_t seconds, struct narrator * const restrict N)
   __attribute__((nonnull));
 
 /// elapsed_say
@@ -46,7 +46,7 @@ xapi interval_say(time_t seconds, struct narrator * const restrict N)
 //  end   - end of the interval
 //  N     - narrator to write to
 //
-xapi elapsed_say(const struct timespec * const restrict start, const struct timespec * const restrict end, struct narrator * const restrict N)
+void elapsed_say(const struct timespec * const restrict start, const struct timespec * const restrict end, struct narrator * const restrict N)
   __attribute__((nonnull));
 
 /// bytesize_say
@@ -58,7 +58,7 @@ xapi elapsed_say(const struct timespec * const restrict start, const struct time
 //  bytes - number of bytes
 //  N     - narrator to write to
 //
-xapi bytesize_say(size_t bytes, struct narrator * const restrict N)
+void bytesize_say(size_t bytes, struct narrator * const restrict N)
   __attribute__((nonnull));
 
 #endif

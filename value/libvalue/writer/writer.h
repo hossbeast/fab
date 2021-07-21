@@ -18,7 +18,6 @@
 #ifndef VALUE_WRITER_H
 #define VALUE_WRITER_H
 
-#include "xapi.h"
 #include "types.h"
 
 struct narrator;
@@ -40,11 +39,11 @@ typedef struct value_writer {
 // create/free
 //
 
-xapi value_writer_create(value_writer ** restrict writer)
+void value_writer_create(value_writer ** restrict writer)
   __attribute__((nonnull));
 
-xapi value_writer_xfree(value_writer * restrict writer);
-xapi value_writer_ixfree(value_writer ** restrict writer)
+void value_writer_xfree(value_writer * restrict writer);
+void value_writer_ixfree(value_writer ** restrict writer)
   __attribute__((nonnull));
 
 //
@@ -54,7 +53,7 @@ xapi value_writer_ixfree(value_writer ** restrict writer)
 void value_writer_init(value_writer * restrict writer)
   __attribute__((nonnull));
 
-xapi value_writer_destroy(value_writer * restrict writer)
+void value_writer_destroy(value_writer * restrict writer)
   __attribute__((nonnull));
 
 /// value_writer_open
@@ -66,92 +65,92 @@ xapi value_writer_destroy(value_writer * restrict writer)
 //  writer    - value writer
 //  N         - narrator to write to
 //
-xapi value_writer_open(value_writer * const restrict writer, struct narrator * const restrict N)
+void value_writer_open(value_writer * const restrict writer, struct narrator * const restrict N)
   __attribute__((nonnull));
 
-xapi value_writer_close(value_writer * const restrict writer)
+void value_writer_close(value_writer * const restrict writer)
   __attribute__((nonnull));
 
-xapi value_writer_value(value_writer * const restrict writer, const struct value * restrict val)
+void value_writer_value(value_writer * const restrict writer, const struct value * restrict val)
   __attribute__((nonnull));
 
 //
 // writer/primitive
 //
 
-xapi value_writer_char(value_writer * const restrict writer, char c)
+void value_writer_char(value_writer * const restrict writer, char c)
   __attribute__((nonnull));
 
-xapi value_writer_int(value_writer * const restrict writer, int64_t u)
+void value_writer_int(value_writer * const restrict writer, int64_t u)
   __attribute__((nonnull));
 
-xapi value_writer_uint(value_writer * const restrict writer, uint64_t u)
+void value_writer_uint(value_writer * const restrict writer, uint64_t u)
   __attribute__((nonnull));
 
-xapi value_writer_bool(value_writer * const restrict writer, bool b)
+void value_writer_bool(value_writer * const restrict writer, bool b)
   __attribute__((nonnull));
 
-xapi value_writer_float(value_writer * const restrict writer, double f)
+void value_writer_float(value_writer * const restrict writer, double f)
   __attribute__((nonnull));
 
-xapi value_writer_string(value_writer * const restrict writer, const char * const restrict s)
+void value_writer_string(value_writer * const restrict writer, const char * const restrict s)
   __attribute__((nonnull(1)));
 
-xapi value_writer_bytes(value_writer * const restrict writer, const char * const restrict s, size_t len)
+void value_writer_bytes(value_writer * const restrict writer, const char * const restrict s, size_t len)
   __attribute__((nonnull(1)));
 
-xapi value_writer_variable(value_writer * const restrict writer, const char * const restrict name, size_t len)
+void value_writer_variable(value_writer * const restrict writer, const char * const restrict name, size_t len)
   __attribute__((nonnull));
 
 //
 // writer/set
 //
 
-xapi value_writer_push_set(value_writer * const restrict writer)
+void value_writer_push_set(value_writer * const restrict writer)
   __attribute__((nonnull));
 
-xapi value_writer_pop_set(value_writer * const restrict writer)
+void value_writer_pop_set(value_writer * const restrict writer)
   __attribute__((nonnull));
 
 //
 // writer/list
 //
 
-xapi value_writer_push_list(value_writer * const restrict writer)
+void value_writer_push_list(value_writer * const restrict writer)
   __attribute__((nonnull));
 
-xapi value_writer_pop_list(value_writer * const restrict writer)
+void value_writer_pop_list(value_writer * const restrict writer)
   __attribute__((nonnull));
 
 //
 // writer/mapping
 //
 
-xapi value_writer_push_mapping(value_writer * const restrict writer)
+void value_writer_push_mapping(value_writer * const restrict writer)
   __attribute__((nonnull));
 
-xapi value_writer_pop_mapping(value_writer * const restrict writer)
+void value_writer_pop_mapping(value_writer * const restrict writer)
   __attribute__((nonnull));
 
-xapi value_writer_mapping_string_char(value_writer * const restrict writer, const char * const restrict k, char c)
+void value_writer_mapping_string_char(value_writer * const restrict writer, const char * const restrict k, char c)
   __attribute__((nonnull));
 
-xapi value_writer_mapping_string_int(value_writer * const restrict writer, const char * const restrict k, int64_t i)
+void value_writer_mapping_string_int(value_writer * const restrict writer, const char * const restrict k, int64_t i)
   __attribute__((nonnull));
 
-xapi value_writer_mapping_string_uint(value_writer * const restrict writer, const char * const restrict k, uint64_t u)
+void value_writer_mapping_string_uint(value_writer * const restrict writer, const char * const restrict k, uint64_t u)
   __attribute__((nonnull));
 
-xapi value_writer_mapping_string_bool(value_writer * const restrict writer, const char * const restrict k, bool b)
+void value_writer_mapping_string_bool(value_writer * const restrict writer, const char * const restrict k, bool b)
   __attribute__((nonnull));
 
-xapi value_writer_mapping_string_float(value_writer * const restrict writer, const char * const restrict k, double f)
+void value_writer_mapping_string_float(value_writer * const restrict writer, const char * const restrict k, double f)
   __attribute__((nonnull));
 
-xapi value_writer_mapping_string_string(value_writer * const restrict writer, const char * const restrict k, const char * const restrict s)
+void value_writer_mapping_string_string(value_writer * const restrict writer, const char * const restrict k, const char * const restrict s)
   __attribute__((nonnull));
 
-xapi value_writer_mapping_string_bytes(value_writer * const restrict writer, const char * const restrict k, const char * const restrict s, size_t len)
+void value_writer_mapping_string_bytes(value_writer * const restrict writer, const char * const restrict k, const char * const restrict s, size_t len)
   __attribute__((nonnull));
 
 #endif

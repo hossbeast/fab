@@ -18,20 +18,19 @@
 #ifndef _MORIA_LOAD_H
 #define _MORIA_LOAD_H
 
-#include "xapi.h"
 
 /// moria_load
 //
 // SUMMARY
 //  initialize the library
 //
-xapi moria_load(void);
+void moria_load(void);
 
 /// moria_unload
 //
 // SUMMARY
 //  release the library
 //
-xapi moria_unload(void);
+void moria_unload(void);
 
 #endif

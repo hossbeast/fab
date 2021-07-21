@@ -18,7 +18,6 @@
 #ifndef _YYUTIL_GRAMMAR_H
 #define _YYUTIL_GRAMMAR_H
 
-#include "xapi.h"
 #include "types.h"
 
 struct yy_buffer_state;
@@ -99,11 +98,8 @@ void yyu_loc_final(struct yyu_parser * parser, struct yyu_location * lloc);
 //
 #define YFATAL(x, ...)                \
 do {                                  \
-  enter_nochecks;                     \
-  xapi _yyu_R = 0;                    \
-  fatal(x, ##__VA_ARGS__);            \
-  finally : conclude(&_yyu_R);        \
-  if(_yyu_R)                          \
+  int r = x(__VA_ARGS__);           \
+  if(r != 0)                          \
   {                                   \
     YYABORT;                          \
   }                                   \

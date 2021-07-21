@@ -21,7 +21,6 @@
 #include "valyria/list.h"
 #include "valyria/pstring.h"
 #include "valyria/set.h"
-#include "xapi/SYS.errtab.h"
 #include "xlinux/xstdlib.h"
 
 #include "value.h"
@@ -59,13 +58,11 @@ static bool should_quote(const char * const restrict s, size_t len)
   return x < len;
 }
 
-static xapi indent(value_writer * const restrict writer)
+static void indent(value_writer * const restrict writer)
 {
-  enter;
-
   if(writer->mapping != 0 && (writer->mapping % 2) == 0)
   {
-    fatal(narrator_xsays, writer->N, " : ");
+    narrator_xsays(writer->N, " : ");
     writer->mapping -= 2;
   }
   else
@@ -76,120 +73,89 @@ static xapi indent(value_writer * const restrict writer)
     }
 
     if(writer->any)
-      fatal(narrator_xsayc, writer->N, '\n');
+      narrator_xsayc(writer->N, '\n');
 
-    fatal(narrator_xsayf, writer->N, "%*s", writer->level * 2, "");
+    narrator_xsayf(writer->N, "%*s", writer->level * 2, "");
   }
 
   writer->any = true;
-
-  finally : coda;
 }
 
-static xapi write_bytes(value_writer * const restrict writer, const char * const restrict s, size_t len)
+static void write_bytes(value_writer * const restrict writer, const char * const restrict s, size_t len)
 {
-  enter;
-
   int x;
   char buf[512];
   size_t z;
 
   if(should_quote(s, len))
   {
-    fatal(narrator_xsayc, writer->N, '"');
+    narrator_xsayc(writer->N, '"');
     for(x = 0; x < len; x += sizeof(buf))
     {
       z = value_string_znloadw(buf, sizeof(buf), &s[x], MIN(sizeof(buf), len - x));
-      fatal(narrator_xsayw, writer->N, buf, z);
+      narrator_xsayw(writer->N, buf, z);
     }
-    fatal(narrator_xsayc, writer->N, '"');
+    narrator_xsayc(writer->N, '"');
   }
   else
   {
-    fatal(narrator_xsayw, writer->N, s, len);
+    narrator_xsayw(writer->N, s, len);
   }
-
-  finally : coda;
 }
 
-static xapi pop(value_writer * restrict writer)
+static void pop(value_writer * restrict writer)
 {
-  enter;
+  RUNTIME_ASSERT(writer->level != 0);
 
-  if(writer->level == 0)
-    fail(SYS_INVALID);
-
-  fatal(narrator_xsayc, writer->N, '\n');
+  narrator_xsayc(writer->N, '\n');
   writer->level--;
 
-  fatal(narrator_xsayf, writer->N, "%*s", writer->level * 2, "");
+  narrator_xsayf(writer->N, "%*s", writer->level * 2, "");
 
   if(writer->levels[writer->level])
-    fatal(narrator_xsayc, writer->N, writer->levels[writer->level]);
-
-  finally : coda;
+    narrator_xsayc(writer->N, writer->levels[writer->level]);
 }
 
 //
 // public
 //
 
-xapi writer_setup()
+void writer_setup()
 {
-  enter;
-
-  fatal(set_create, &keywords);
+  set_create(&keywords);
 
   // keywords
-  fatal(set_put, keywords, MMS("true"));
-  fatal(set_put, keywords, MMS("false"));
-
-  finally : coda;
+  set_put(keywords, MMS("true"));
+  set_put(keywords, MMS("false"));
 }
 
-xapi writer_cleanup()
+void writer_cleanup()
 {
-  enter;
-
-  fatal(set_xfree, keywords);
-
-  finally : coda;
+  set_xfree(keywords);
 }
 
 //
 // api
 //
 
-xapi API value_writer_create(value_writer ** restrict writer)
+void API value_writer_create(value_writer ** restrict writer)
 {
-  enter;
-
-  fatal(xmalloc, writer, sizeof(**writer));
-
-  finally : coda;
+  xmalloc(writer, sizeof(**writer));
 }
 
-xapi API value_writer_xfree(value_writer * restrict writer)
+void API value_writer_xfree(value_writer * restrict writer)
 {
-  enter;
-
   if(writer)
   {
-    fatal(value_writer_close, writer);
+    value_writer_close(writer);
   }
   wfree(writer);
-
-  finally : coda;
 }
 
-xapi API value_writer_ixfree(value_writer ** restrict writer)
+void API value_writer_ixfree(value_writer ** restrict writer)
 {
-  enter;
-
-  fatal(value_writer_xfree, *writer);
+  value_writer_xfree(*writer);
   *writer = 0;
-
-  finally : coda;
 }
 
 void API value_writer_init(value_writer * restrict writer)
@@ -197,50 +163,26 @@ void API value_writer_init(value_writer * restrict writer)
   memset(writer, 0, sizeof(*writer));
 }
 
-xapi API value_writer_destroy(value_writer * restrict writer)
+void API value_writer_destroy(value_writer * restrict writer)
 {
-  enter;
-
-  fatal(value_writer_close, writer);
-
-  finally : coda;
+  value_writer_close(writer);
 }
 
-xapi API value_writer_open(value_writer * restrict writer, struct narrator * restrict N)
+void API value_writer_open(value_writer * restrict writer, struct narrator * restrict N)
 {
-  enter;
-
   writer->N = N;
-
-  finally : coda;
 }
 
-xapi API value_writer_close(value_writer * restrict writer)
+void API value_writer_close(value_writer * restrict writer)
 {
-  enter;
-
   if(writer->N)
   {
-/* change these to runtime asserts */
-    if(writer->level != 0)
-    {
-      xapi_info_pushf("level", "%d", writer->level);
-      fail(SYS_INVALID);
-    }
-    if(writer->mapping != 0)
-    {
-      xapi_info_pushf("mapping", "%s", writer->mapping ? "true" : "false");
-      fail(SYS_INVALID);
-    }
-
     RUNTIME_ASSERT(writer->level == 0);
     RUNTIME_ASSERT(writer->mapping == 0);
 
-    fatal(narrator_flush, writer->N);
+    narrator_flush(writer->N);
   }
   writer->N = 0;
-
-  finally : coda;
 }
 
 //
@@ -265,285 +207,208 @@ size_t API value_string_znloadw(void * restrict dst, size_t sz, const void * res
   return z;
 }
 
-xapi API value_writer_value(value_writer * const restrict writer, const value * restrict val)
+void API value_writer_value(value_writer * const restrict writer, const value * restrict val)
 {
-  enter;
-
   int x;
 
   if(val->type == VALUE_TYPE_LIST)
   {
-    fatal(value_writer_push_list, writer);
+    value_writer_push_list(writer);
 
     for(x = 0; x < val->items->size; x++)
-      fatal(value_writer_value, writer, list_get(val->items, x));
+      value_writer_value(writer, list_get(val->items, x));
 
-    fatal(value_writer_pop_list, writer);
+    value_writer_pop_list(writer);
   }
   else if(val->type == VALUE_TYPE_SET)
   {
-    fatal(value_writer_push_set, writer);
+    value_writer_push_set(writer);
     for(x = 0; x < val->els->table_size; x++)
     {
       value * elp;
       if((elp = set_table_get(val->els, x)))
       {
-        fatal(value_writer_value, writer, elp);
+        value_writer_value(writer, elp);
       }
     }
-    fatal(value_writer_pop_set, writer);
+    value_writer_pop_set(writer);
   }
   else if(val->type == VALUE_TYPE_MAPPING)
   {
-    fatal(value_writer_push_mapping, writer);
-    fatal(value_writer_value, writer, val->key);
-    fatal(value_writer_value, writer, val->val);
-    fatal(value_writer_pop_mapping, writer);
+    value_writer_push_mapping(writer);
+    value_writer_value(writer, val->key);
+    value_writer_value(writer, val->val);
+    value_writer_pop_mapping(writer);
   }
   else if(val->type == VALUE_TYPE_STRING)
   {
-    fatal(value_writer_bytes, writer, val->s->s, val->s->size);
+    value_writer_bytes(writer, val->s->s, val->s->size);
   }
   else if(val->type == VALUE_TYPE_FLOAT)
   {
-    fatal(value_writer_float, writer, val->f);
+    value_writer_float(writer, val->f);
   }
   else if(val->type == VALUE_TYPE_BOOLEAN)
   {
-    fatal(value_writer_bool, writer, val->b);
+    value_writer_bool(writer, val->b);
   }
   else if(val->type == VALUE_TYPE_POSINT)
   {
-    fatal(value_writer_uint, writer, val->u);
+    value_writer_uint(writer, val->u);
   }
   else if(val->type == VALUE_TYPE_NEGINT)
   {
-    fatal(value_writer_int, writer, val->i);
+    value_writer_int(writer, val->i);
   }
   else if(val->type == VALUE_TYPE_VARIABLE)
   {
-    fatal(value_writer_variable, writer, val->v.name, val->v.len);
+    value_writer_variable(writer, val->v.name, val->v.len);
   }
-
-  finally : coda;
 }
 
-xapi API value_writer_uint(value_writer * const restrict writer, uint64_t u)
+void API value_writer_uint(value_writer * const restrict writer, uint64_t u)
 {
-  enter;
-
-  fatal(indent, writer);
-  fatal(narrator_xsayf, writer->N, "%"PRIu64, u);
-
-  finally : coda;
+  indent(writer);
+  narrator_xsayf(writer->N, "%"PRIu64, u);
 }
 
-xapi API value_writer_int(value_writer * const restrict writer, int64_t i)
+void API value_writer_int(value_writer * const restrict writer, int64_t i)
 {
-  enter;
-
-  fatal(indent, writer);
-  fatal(narrator_xsayf, writer->N, "%"PRId64, i);
-
-  finally : coda;
+  indent(writer);
+  narrator_xsayf(writer->N, "%"PRId64, i);
 }
 
-xapi API value_writer_bool(value_writer * const restrict writer, bool b)
+void API value_writer_bool(value_writer * const restrict writer, bool b)
 {
-  enter;
-
-  fatal(indent, writer);
-  fatal(narrator_xsayf, writer->N, "%s", b ? "true" : "false");
-
-  finally : coda;
+  indent(writer);
+  narrator_xsayf(writer->N, "%s", b ? "true" : "false");
 }
 
-xapi API value_writer_float(value_writer * const restrict writer, double f)
+void API value_writer_float(value_writer * const restrict writer, double f)
 {
-  enter;
-
-  fatal(indent, writer);
-  fatal(narrator_xsayf, writer->N, "%.2lf", f);
-
-  finally : coda;
+  indent(writer);
+  narrator_xsayf(writer->N, "%.2lf", f);
 }
 
-xapi API value_writer_bytes(value_writer * const restrict writer, const char * const restrict s, size_t len)
+void API value_writer_bytes(value_writer * const restrict writer, const char * const restrict s, size_t len)
 {
-  enter;
-
-  fatal(indent, writer);
-  fatal(write_bytes, writer, s, len);
-
-  finally : coda;
+  indent(writer);
+  write_bytes(writer, s, len);
 }
 
-xapi API value_writer_string(value_writer * restrict writer, const char * const restrict s)
+void API value_writer_string(value_writer * restrict writer, const char * const restrict s)
 {
-  enter;
-
   if(s) {
-    fatal(value_writer_bytes, writer, s, strlen(s));
+    value_writer_bytes(writer, s, strlen(s));
   }
-
-  finally : coda;
 }
 
-xapi API value_writer_char(value_writer * const restrict writer, char c)
+void API value_writer_char(value_writer * const restrict writer, char c)
 {
-  enter;
-
-  fatal(value_writer_bytes, writer, &c, 1);
-
-  finally : coda;
+  value_writer_bytes(writer, &c, 1);
 }
 
-xapi API value_writer_variable(value_writer * const restrict writer, const char * const restrict name, size_t len)
+void API value_writer_variable(value_writer * const restrict writer, const char * const restrict name, size_t len)
 {
-  enter;
-
-  fatal(indent, writer);
-  fatal(narrator_xsayc, writer->N, '$');
-  fatal(narrator_xsayw, writer->N, name, len);
-
-  finally : coda;
+  indent(writer);
+  narrator_xsayc(writer->N, '$');
+  narrator_xsayw(writer->N, name, len);
 }
 
 //
 // set
 //
 
-xapi API value_writer_push_set(value_writer * restrict writer)
+void API value_writer_push_set(value_writer * restrict writer)
 {
-  enter;
+  RUNTIME_ASSERT(writer->level != (sizeof(writer->levels) / sizeof(writer->levels[0])));
 
-  if(writer->level == (sizeof(writer->levels) / sizeof(writer->levels[0])))
-    fail(SYS_INVALID);
-
-  fatal(indent, writer);
-  fatal(narrator_xsayc, writer->N, '{');
+  indent(writer);
+  narrator_xsayc(writer->N, '{');
   writer->levels[writer->level++] = '}';
-
-  finally : coda;
 }
 
-xapi API value_writer_pop_set(value_writer * restrict writer)
+void API value_writer_pop_set(value_writer * restrict writer)
 {
-  xproxy(pop, writer);
+  pop(writer);
 }
 
 //
 // list
 //
 
-xapi API value_writer_push_list(value_writer * restrict writer)
+void API value_writer_push_list(value_writer * restrict writer)
 {
-  enter;
+  RUNTIME_ASSERT(writer->level != (sizeof(writer->levels) / sizeof(writer->levels[0])));
 
-  if(writer->level == (sizeof(writer->levels) / sizeof(writer->levels[0])))
-    fail(SYS_INVALID);
-
-  fatal(indent, writer);
-  fatal(narrator_xsayc, writer->N, '[');
+  indent(writer);
+  narrator_xsayc(writer->N, '[');
   writer->levels[writer->level++] = ']';
-
-  finally : coda;
 }
 
-xapi API value_writer_pop_list(value_writer * restrict writer)
+void API value_writer_pop_list(value_writer * restrict writer)
 {
-  xproxy(pop, writer);
+  pop(writer);
 }
 
 //
 // mapping
 //
 
-xapi API value_writer_push_mapping(value_writer * const restrict writer)
+void API value_writer_push_mapping(value_writer * const restrict writer)
 {
-  enter;
-
   RUNTIME_ASSERT(writer->mapping >= 0);
   writer->mapping++;
-
-  finally : coda;
 }
 
-xapi API value_writer_pop_mapping(value_writer * const restrict writer)
+void API value_writer_pop_mapping(value_writer * const restrict writer)
 {
-  enter;
-
-  finally : coda;
 }
 
-xapi API value_writer_mapping_string_string(value_writer * const restrict writer, const char * const restrict k, const char * const restrict s)
+void API value_writer_mapping_string_string(value_writer * const restrict writer, const char * const restrict k, const char * const restrict s)
 {
-  enter;
-
-  fatal(value_writer_push_mapping, writer);
-  fatal(value_writer_string, writer, k);
-  fatal(value_writer_string, writer, s);
-  fatal(value_writer_pop_mapping, writer);
-
-  finally : coda;
+  value_writer_push_mapping(writer);
+  value_writer_string(writer, k);
+  value_writer_string(writer, s);
+  value_writer_pop_mapping(writer);
 }
 
-xapi API value_writer_mapping_string_bytes(value_writer * const restrict writer, const char * const restrict k, const char * const restrict s, size_t len)
+void API value_writer_mapping_string_bytes(value_writer * const restrict writer, const char * const restrict k, const char * const restrict s, size_t len)
 {
-  enter;
-
-  fatal(value_writer_push_mapping, writer);
-  fatal(value_writer_string, writer, k);
-  fatal(value_writer_bytes, writer, s, len);
-  fatal(value_writer_pop_mapping, writer);
-
-  finally : coda;
+  value_writer_push_mapping(writer);
+  value_writer_string(writer, k);
+  value_writer_bytes(writer, s, len);
+  value_writer_pop_mapping(writer);
 }
 
-xapi API value_writer_mapping_string_uint(value_writer * const restrict writer, const char * const restrict k, uint64_t u)
+void API value_writer_mapping_string_uint(value_writer * const restrict writer, const char * const restrict k, uint64_t u)
 {
-  enter;
-
-  fatal(value_writer_push_mapping, writer);
-  fatal(value_writer_string, writer, k);
-  fatal(value_writer_uint, writer, u);
-  fatal(value_writer_pop_mapping, writer);
-
-  finally : coda;
+  value_writer_push_mapping(writer);
+  value_writer_string(writer, k);
+  value_writer_uint(writer, u);
+  value_writer_pop_mapping(writer);
 }
 
-xapi API value_writer_mapping_string_int(value_writer * const restrict writer, const char * const restrict k, int64_t i)
+void API value_writer_mapping_string_int(value_writer * const restrict writer, const char * const restrict k, int64_t i)
 {
-  enter;
-
-  fatal(value_writer_push_mapping, writer);
-  fatal(value_writer_string, writer, k);
-  fatal(value_writer_int, writer, i);
-  fatal(value_writer_pop_mapping, writer);
-
-  finally : coda;
+  value_writer_push_mapping(writer);
+  value_writer_string(writer, k);
+  value_writer_int(writer, i);
+  value_writer_pop_mapping(writer);
 }
 
-xapi API value_writer_mapping_string_bool(value_writer * const restrict writer, const char * const restrict k, bool b)
+void API value_writer_mapping_string_bool(value_writer * const restrict writer, const char * const restrict k, bool b)
 {
-  enter;
-
-  fatal(value_writer_push_mapping, writer);
-  fatal(value_writer_string, writer, k);
-  fatal(value_writer_bool, writer, b);
-  fatal(value_writer_pop_mapping, writer);
-
-  finally : coda;
+  value_writer_push_mapping(writer);
+  value_writer_string(writer, k);
+  value_writer_bool(writer, b);
+  value_writer_pop_mapping(writer);
 }
 
-xapi API value_writer_mapping_string_float(value_writer * const restrict writer, const char * const restrict k, double f)
+void API value_writer_mapping_string_float(value_writer * const restrict writer, const char * const restrict k, double f)
 {
-  enter;
-
-  fatal(value_writer_push_mapping, writer);
-  fatal(value_writer_string, writer, k);
-  fatal(value_writer_float, writer, f);
-  fatal(value_writer_pop_mapping, writer);
-
-  finally : coda;
+  value_writer_push_mapping(writer);
+  value_writer_string(writer, k);
+  value_writer_float(writer, f);
+  value_writer_pop_mapping(writer);
 }

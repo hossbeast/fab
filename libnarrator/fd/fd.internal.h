@@ -18,7 +18,6 @@
 #ifndef _NARRATOR_FD_INTERNAL_H
 #define _NARRATOR_FD_INTERNAL_H
 
-#include "xapi.h"
 #include "types.h"
 
 #include "fd.h"
@@ -28,13 +27,13 @@
 // SUMMARY
 //  module initialization
 //
-xapi fd_setup(void);
+void fd_setup(void);
 
 /// fd_cleanup
 //
 // SUMMARY
 //  module cleanup
 //
-xapi fd_cleanup(void);
+void fd_cleanup(void);
 
 #endif

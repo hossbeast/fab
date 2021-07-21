@@ -17,12 +17,11 @@
 
 use cc             # this module contains c sources
 
-import libxapi
 import libxlinux
 import fab/include
 
 # variants for the module
-variant xapi.{debug,devel,final}{,.pic}
+variant {debug,devel,final}{,.pic}
 
 rule **/*.?.o -> //module/targets
 

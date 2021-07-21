@@ -30,7 +30,10 @@ void API xwait(int * restrict status)
 
 void API xwaitpid(pid_t pid, int * restrict status, int options)
 {
-  RUNTIME_ASSERT(waitpid(pid, status, options) == 0);
+  int r;
+
+  r = waitpid(pid, status, options);
+  RUNTIME_ASSERT(r == pid);
 }
 
 void API uxwaitid(idtype_t idtype, id_t id, siginfo_t *infop, int options)

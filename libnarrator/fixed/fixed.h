@@ -57,7 +57,7 @@ typedef struct narrator_fixed {
 narrator * narrator_fixed_init(narrator_fixed * restrict n, char * s, size_t a)
   __attribute__((nonnull));
 
-xapi narrator_fixed_destroy(narrator_fixed * restrict n)
+void narrator_fixed_destroy(narrator_fixed * restrict n)
   __attribute__((nonnull));
 
 #endif

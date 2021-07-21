@@ -17,7 +17,6 @@
 
 #include <string.h>
 
-#include "xapi.h"
 
 #include "xlinux/xdirent.h"
 #include "xlinux/xstat.h"
@@ -27,8 +26,8 @@
 
 #include "zbuffer.h"
 
-static xapi __attribute__((nonnull(1, 3, 5, 7, 9))) walk(
-    xapi (*fn)(int method, ftwinfo * info, void * arg, int * stop)
+static void __attribute__((nonnull(1, 3, 5, 7, 9))) walk(
+    void (*fn)(int method, ftwinfo * info, void * arg, int * stop)
   , void * arg
   , DIR *** const restrict dds
   , size_t ddsz
@@ -40,8 +39,6 @@ static xapi __attribute__((nonnull(1, 3, 5, 7, 9))) walk(
   , ftwinfo * dirinfo
 )
 {
-  enter;
-
   DIR * dd = 0;
   size_t patho;
   long dirloc;
@@ -54,16 +51,16 @@ static xapi __attribute__((nonnull(1, 3, 5, 7, 9))) walk(
   patho = *pathl;
 
   // pre-order callback for directories
-  fatal(fn, FTWAT_PRE, dirinfo, arg, &stop);
+  fn(FTWAT_PRE, dirinfo, arg, &stop);
 
   if(stop)
-    goto XAPI_FINALIZE;
+    goto end;
 
   // if theres no room, close the descriptor in an earlier activation/frame
   if(dds[*ddsp])
-    fatal(ixclosedir, dds[*ddsp]);
+    ixclosedir(dds[*ddsp]);
 
-  fatal(xopendirat, &dd, dirfd, path);
+  dd = xopendirat(dirfd, path);
   ddso = *ddsp;
   *ddsp = ((*ddsp) + 1) % ddsz;
   dds[ddso] = &dd;
@@ -72,8 +69,8 @@ static xapi __attribute__((nonnull(1, 3, 5, 7, 9))) walk(
   child.parent = dirinfo;
   child.path = path;
 
-  fatal(xreaddir, dd, &entp);
-  fatal(xtelldir, &dirloc, dd);
+  entp = xreaddir(dd);
+  dirloc = xtelldir(dd);
   do
   {
     if(strcmp(entp->d_name, ".") && strcmp(entp->d_name, ".."))
@@ -88,20 +85,20 @@ static xapi __attribute__((nonnull(1, 3, 5, 7, 9))) walk(
       type = entp->d_type;
       if(type == DT_UNKNOWN || type == DT_LNK)
       {
-        fatal(xfstatats, dirfd, 0, &stb, path);
+        xfstatats(dirfd, 0, &stb, path);
         type = (stb.st_mode & S_IFMT) >> 12;
       }
 
       if(type == DT_REG)
       {
         child.type = FTWAT_F;
-        fatal(fn, 0, &child, arg, &stop);
+        fn(0, &child, arg, &stop);
       }
       else if(type == DT_DIR)
       {
         child.type = FTWAT_D;
-        fatal(walk
-          , fn
+        walk(
+          fn
           , arg
           , dds
           , ddsz
@@ -119,7 +116,7 @@ static xapi __attribute__((nonnull(1, 3, 5, 7, 9))) walk(
           *pathl = patho;
           path[*pathl] = 0;
 
-          fatal(xopendirat, &dd, dirfd, path);
+          dd = xopendirat(dirfd, path);
           ddso = *ddsp;
           *ddsp = ((*ddsp) + 1) % ddsz;
           dds[ddso] = &dd;
@@ -131,37 +128,35 @@ static xapi __attribute__((nonnull(1, 3, 5, 7, 9))) walk(
     path[*pathl] = 0;
 
     seekdir(dd, dirloc);
-    fatal(xreaddir, dd, &entp);
-    fatal(xtelldir, &dirloc, dd);
+    entp = xreaddir(dd);
+    dirloc = xtelldir(dd);
   } while(entp);
 
   // post-order callback for directories
-  fatal(fn, FTWAT_POST, dirinfo, arg, &stop);
+  fn(FTWAT_POST, dirinfo, arg, &stop);
 
-finally:
-  fatal(ixclosedir, &dd);
-  if(ddso > -1 && dds[ddso] == &dd)
+end:
+  ixclosedir(&dd);
+  if(ddso > -1 && dds[ddso] == &dd) {
     dds[ddso] = 0;
-coda;
+  }
 }
 
-xapi API nftwat(
+void API nftwat(
     int dirfd
   , const char * dirpath
-  , xapi (*fn)(int method, ftwinfo * restrict info, void * arg, int * stop)
+  , void (*fn)(int method, ftwinfo * restrict info, void * arg, int * stop)
   , int nopenfd
   , void * arg
 )
 {
-  enter;
-
   DIR *** dds = 0;
   size_t ddsp = 0;
   char path[512];
   size_t pathl = 0;
   const char *e;
 
-  fatal(xmalloc, &dds, sizeof(*dds) * nopenfd);
+  xmalloc(&dds, sizeof(*dds) * nopenfd);
   pathl = snprintf(path, sizeof(path), "%s", dirpath);
 
   ftwinfo rootinfo = {};
@@ -180,8 +175,8 @@ xapi API nftwat(
 
   rootinfo.name_off = e - path;
 
-  fatal(walk
-    , fn
+  walk(
+    fn
     , arg
     , dds
     , nopenfd
@@ -193,7 +188,5 @@ xapi API nftwat(
     , &rootinfo
   );
 
-finally:
   wfree(dds);
-coda;
 }

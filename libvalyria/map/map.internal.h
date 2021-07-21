@@ -43,7 +43,6 @@ typedef struct map_t {
 
   // user callbacks
   void (*destroy_fn)(void * entry);
-  xapi (*xdestroy_fn)(void * entry);
 } map_t;
 
 STATIC_ASSERT(offsetof(map, size) == offsetof(map_t, size));

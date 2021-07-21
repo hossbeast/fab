@@ -72,6 +72,8 @@ static inline size_t roundup(size_t x, size_t y)
 #endif
 
 #if DEVEL
+#include <stdio.h>
+#include <unistd.h>
 #define tracef(fmt, ...) do { printf("[%5d/%-5d]%50s:%-5d "fmt"\n", getpid(), gettid(), __FUNCTION__, __LINE__, ##__VA_ARGS__); } while(0)
 #else
 #define tracef(fmt, ...)

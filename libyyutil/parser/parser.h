@@ -18,7 +18,6 @@
 #ifndef _YYUTIL_PARSER_H
 #define _YYUTIL_PARSER_H
 
-#include "xapi.h"
 #include "types.h"
 
 #include "grammar.h"
@@ -115,6 +114,7 @@ typedef struct yyu_parser {
                                     // upon error
   yyu_location    error_loc;        //  location
   char            error_str[256];   //  string
+  uint16_t        error_len;
   char            tokenstring[256]; //  tokenstring (gramerr only)
   const char *    fname;            //  filename
 
@@ -124,7 +124,6 @@ typedef struct yyu_parser {
     char end_of_per_parse_state;
   };
   const yyu_vtable * vtable;
-  xapi error_syntax;
   void * scanner;                     // flex scanner
   void * last_lval;                   //  semantic value
   yyu_location * final_loc;
@@ -152,16 +151,12 @@ typedef struct yyu_parser {
 // SUMMARY
 //
 //
-xapi yyu_parser_init(
-    yyu_parser * const restrict parser
-  , const yyu_vtable * const restrict vtable
-  , xapi error_syntax
-)
+void yyu_parser_init(yyu_parser * const restrict parser , const yyu_vtable * const restrict vtable)
   __attribute__((nonnull));
 
-xapi yyu_parser_init_tokens(yyu_parser * const restrict parser, const yyu_token * restrict token_table, uint16_t token_table_size);
+void yyu_parser_init_tokens(yyu_parser * const restrict parser, const yyu_token * restrict token_table, uint16_t token_table_size);
 
-xapi yyu_parser_init_states(
+void yyu_parser_init_states(
     yyu_parser * const restrict parser
   , int numstates
   , const int * restrict statenumbers
@@ -174,7 +169,7 @@ xapi yyu_parser_init_states(
 // SUMMARY
 //  destroy an yyu_parser
 //
-xapi yyu_parser_xdestroy(yyu_parser * const restrict parser)
+void yyu_parser_xdestroy(yyu_parser * const restrict parser)
   __attribute__((nonnull));
 
 #define YYU_PARTIAL 1  // stop parsing after recognizing an utterance
@@ -194,7 +189,17 @@ xapi yyu_parser_xdestroy(yyu_parser * const restrict parser)
 //  [init_loc]  -
 //  [final_loc] - (returns)
 //
-xapi yyu_parse(
+
+/*
+ * parse some text
+ *
+ *  attrs - bitwise combo of YYU_*
+ *
+ * returns zero on success, or
+ *  1 - scanner, parser, or grammar error
+ *  2 - YYU_PARTIAL is not in effect, but the entire text was not parsed
+ */
+int yyu_parse(
     yyu_parser * const restrict parser
   , char * const restrict text
   , size_t text_len

@@ -18,7 +18,6 @@
 #ifndef _NARRATOR_NULLITY_INTERNAL_H
 #define _NARRATOR_NULLITY_INTERNAL_H
 
-#include "xapi.h"
 #include "types.h"
 
 #include "nullity.h"
@@ -28,13 +27,13 @@
 // SUMMARY
 //  module initialization
 //
-xapi nullity_setup(void);
+void nullity_setup(void);
 
 /// nullity_cleanup
 //
 // SUMMARY
 //  module cleanup
 //
-xapi nullity_cleanup(void);
+void nullity_cleanup(void);
 
 #endif

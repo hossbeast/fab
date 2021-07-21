@@ -18,20 +18,18 @@
 #ifndef _VALUE_LOAD_H
 #define _VALUE_LOAD_H
 
-#include "xapi.h"
-
 /// value_load
 //
 // SUMMARY
 //  initialize the library
 //
-xapi value_load(void);
+void value_load(void);
 
 /// value_unload
 //
 // SUMMARY
 //  release the library
 //
-xapi value_unload(void);
+void value_unload(void);
 
 #endif

@@ -27,47 +27,35 @@ struct context
   int rmself;
 };
 
-static xapi rmdirp_fn(const char * fpath, const struct stat * sb, int typeflag, struct FTW * ftwbuf, void * arg)
+static void rmdirp_fn(const char * fpath, const struct stat * sb, int typeflag, struct FTW * ftwbuf, void * arg)
 {
-  enter;
-
   struct context * ctx = arg;
 
   if(typeflag == FTW_F || typeflag == FTW_SL)
   {
-    fatal(xunlinks, fpath);
+    xunlinks(fpath);
   }
   else if(typeflag == FTW_DP)
   {
     if(ftwbuf->level > 0 || ctx->rmself)
     {
-      fatal(xrmdir, fpath);
+      xrmdir(fpath);
     }
   }
   else
   {
     RUNTIME_ABORT();
   }
-
-finally:
-  xapi_infos("path", fpath);
-coda;
-};
-
-
+}
 
 //
 // api
 //
 
-xapi API rmdirp(const char * const dirpath, int rmself)
+void API rmdirp(const char * const dirpath, int rmself)
 {
-  enter;
-
   struct context ctx = { 0 };
   ctx.rmself = rmself;
 
-  fatal(xnftw, dirpath, rmdirp_fn, 32, FTW_DEPTH | FTW_PHYS, &ctx);
-
-  finally : coda;
+  xnftw(dirpath, rmdirp_fn, 32, FTW_DEPTH | FTW_PHYS, &ctx);
 }
