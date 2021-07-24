@@ -15,7 +15,6 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#include "xapi.h"
 #include "valyria/load.h"
 #include "moria/load.h"
 #include "xlinux/xstdlib.h"
@@ -34,7 +33,6 @@
 #include "xunit/assert.h"
 #include "narrator.h"
 #include "narrator/growing.h"
-#include "logging.h"
 #include "rule.h"
 #include "fsent.h"
 #include "pattern.h"
@@ -70,51 +68,41 @@ typedef struct rule_system_reconcile_test {
   char * graph;             // expected graph at the end
 } rule_system_reconcile_test;
 
-static xapi rule_system_reconcile_test_unit_setup(xunit_unit * unit)
+static void rule_system_reconcile_test_unit_setup(xunit_unit * unit)
 {
-  enter;
+  valyria_load();
+  moria_load();
+  value_load();
+  filesystem_setup();
+  logging_finalize();
 
-  fatal(valyria_load);
-  fatal(moria_load);
-  fatal(value_load);
-  fatal(filesystem_setup);
-  fatal(logging_finalize);
-
-  fatal(graph_setup);
-  fatal(variant_setup);
-  fatal(fsent_setup);
-  fatal(module_setup);
-  fatal(rule_system_setup);
+  graph_setup();
+  variant_setup();
+  fsent_setup();
+  module_setup();
+  rule_system_setup();
 
 /* suppress rcu-registration checks */
 extern __thread bool rcu_is_registered ; rcu_is_registered = true;
-
-  finally : coda;
 }
 
-static xapi rule_system_reconcile_test_unit_cleanup(xunit_unit * unit)
+static void rule_system_reconcile_test_unit_cleanup(xunit_unit * unit)
 {
-  enter;
+  graph_cleanup();
+  variant_cleanup();
+  module_cleanup();
+  filesystem_cleanup();
 
-  fatal(graph_cleanup);
-  fatal(variant_cleanup);
-  fatal(module_cleanup);
-  fatal(filesystem_cleanup);
-
-  fatal(valyria_unload);
-  fatal(moria_unload);
-
-  finally : coda;
+  valyria_unload();
+  moria_unload();
 }
 
 //
 // tests
 //
 
-static xapi rule_system_reconcile_test_entry(xunit_test * _test)
+static void rule_system_reconcile_test_entry(xunit_test * _test)
 {
-  enter;
-
   rule_system_reconcile_test * test = (rule_system_reconcile_test *)_test;
 
   narrator_growing * N = 0;
@@ -133,24 +121,24 @@ static xapi rule_system_reconcile_test_entry(xunit_test * _test)
   const char * graph;
   set *variants = 0;
 
-  fatal(rule_run_context_xinit, &rule_ctx);
+  rule_run_context_xinit(&rule_ctx);
 
-  fatal(pattern_parser_create, &parser);
-  fatal(module_parser_create, &mod_parser);
+  pattern_parser_create(&parser);
+  module_parser_create(&mod_parser);
 
-  fatal(narrator_growing_create, &N);
-  fatal(graph_parser_create, &op_parser, &g_graph, &fsent_list, node_operations_test_dispatch, graph_vertex_attrs, graph_edge_attrs);
+  narrator_growing_create(&N);
+  graph_parser_create(&op_parser, &g_graph, &fsent_list, node_operations_test_dispatch, graph_vertex_attrs, graph_edge_attrs);
   llist_init_node(&modules);
-  fatal(module_alloc, &module);
+  module_alloc(&module);
   rule_ctx.mod = module;
   rule_ctx.modules = &modules;
-  fatal(set_create, &variants);
+  set_create(&variants);
   rule_ctx.variants = variants;
 
   /* setup - build the initial graph */
-  fatal(graph_parser_operations_parse, op_parser, MMS(test->setup_operations));
+  graph_parser_operations_parse(op_parser, MMS(test->setup_operations));
 
-  fatal(resolve_fragment, MMS(test->module), &module->dir_node);
+  resolve_fragment(MMS(test->module), &module->dir_node);
   module->shadow_imports = module->dir_node;
 
   /* setup - run the rules */
@@ -159,13 +147,13 @@ static xapi rule_system_reconcile_test_entry(xunit_test * _test)
     typeof(*test->rules) test_rule = test->rules[x];
 
     // parse the patterns for the rule
-    fatal(search_pattern_parse_partial, parser, test_rule->search_pattern, strlen(test_rule->search_pattern) + 2, "-test-", 0, &loc, &match_pat);
+    search_pattern_parse_partial(parser, test_rule->search_pattern, strlen(test_rule->search_pattern) + 2, "-test-", 0, &loc, &match_pat);
     assert_eq_u32(strlen(test_rule->search_pattern), loc.l);
 
-    fatal(generate_pattern_parse_partial, parser, test_rule->generate_pattern, strlen(test_rule->generate_pattern) + 2, "-test-", 0, &loc, &generate_pat);
+    generate_pattern_parse_partial(parser, test_rule->generate_pattern, strlen(test_rule->generate_pattern) + 2, "-test-", 0, &loc, &generate_pat);
     assert_eq_u32(strlen(test_rule->generate_pattern), loc.l);
 
-    fatal(rule_mk, &rule, &g_graph, match_pat, generate_pat, 0, 0, 0);
+    rule_mk(&rule, &g_graph, match_pat, generate_pat, 0, 0, 0);
     match_pat = 0;
     generate_pat = 0;
 
@@ -173,33 +161,33 @@ static xapi rule_system_reconcile_test_entry(xunit_test * _test)
     rule->card = test_rule->card;
     rule->relation = test_rule->relation;
 
-    fatal(rule_module_connect, &rule_ctx.rme, module, module, rule, variants);
+    rule_module_connect(&rule_ctx.rme, module, module, rule, variants);
 
-    fatal(rule_run, rule, &rule_ctx);
+    rule_run(rule, &rule_ctx);
   }
 
   /* setup - perform specified mutations if any */
-  fatal(graph_parser_operations_parse, op_parser, MMS(test->operations));
+  graph_parser_operations_parse(op_parser, MMS(test->operations));
 
   /* act - reconcile rules */
-  fatal(rule_system_reconcile, &rule_ctx);
+  rule_system_reconcile(&rule_ctx);
   assert_eq_b(false, system_error);
 
   // assert
-  fatal(graph_say, &N->base);
+  graph_say(&N->base);
   graph = N->s;
   assert_eq_s(test->graph, graph);
 
 finally:
-  fatal(set_xfree, variants);
-  fatal(module_parser_xfree, mod_parser);
+  set_xfree(variants);
+  module_parser_xfree(mod_parser);
   pattern_free(match_pat);
   pattern_free(generate_pat);
-  fatal(fsent_cleanup);
-  fatal(narrator_growing_free, N);
-  fatal(graph_parser_xfree, op_parser);
-  fatal(pattern_parser_xfree, parser);
-  fatal(rule_run_context_xdestroy, &rule_ctx);
+  fsent_cleanup();
+  narrator_growing_free(N);
+  graph_parser_xfree(op_parser);
+  pattern_parser_xfree(parser);
+  rule_run_context_xdestroy(&rule_ctx);
 coda;
 }
 

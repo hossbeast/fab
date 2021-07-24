@@ -31,10 +31,8 @@
 // static
 //
 
-static xapi say(const pattern_segment * restrict fn, narrator * restrict N)
+static void say(const pattern_segment * restrict fn, narrator * restrict N)
 {
-  enter;
-
   const pattern_replacement * n = &fn->replacement;
   uint8_t x;
   uint8_t len;
@@ -64,8 +62,6 @@ static xapi say(const pattern_segment * restrict fn, narrator * restrict N)
       xsayc('?');
     }
   }
-
-  finally : coda;
 }
 
 static void destroy(pattern_segment * restrict fn)
@@ -76,10 +72,8 @@ static void destroy(pattern_segment * restrict fn)
     wfree(n->name);
 }
 
-static xapi generate(const pattern_segment * restrict seg, pattern_generate_context * restrict ctx)
+static void generate(const pattern_segment * restrict seg, pattern_generate_context * restrict ctx)
 {
-  enter;
-
   char space[256];
   uint16_t len = 0;
   uint16_t tag_len;
@@ -133,10 +127,10 @@ static xapi generate(const pattern_segment * restrict seg, pattern_generate_cont
           x += tag_len + 1;
         }
 
-        fatal(variant_get, space, len, (variant **)&v);
+        variant_get(space, len, (variant **)&v);
       }
 
-      fatal(narrator_xsays, ctx->section_narrator, v->norm);
+      narrator_xsays(ctx->section_narrator, v->norm);
     }
   }
   else if(n->replacement_type == PATTERN_REPLACEMENT_TYPE_NAME)
@@ -148,7 +142,7 @@ static xapi generate(const pattern_segment * restrict seg, pattern_generate_cont
   {
     if(ctx->match && ctx->match->group_max >= n->num)
     {
-        fatal(narrator_xsayw, ctx->section_narrator
+        narrator_xsayw(ctx->section_narrator
           , ctx->match->groups[n->num].start
           , ctx->match->groups[n->num].len
         );
@@ -159,9 +153,7 @@ static xapi generate(const pattern_segment * restrict seg, pattern_generate_cont
     RUNTIME_ABORT();
   }
 
-  fatal(pattern_segment_generate, ctx);
-
-  finally : coda;
+  pattern_segment_generate(ctx);
 }
 
 static int cmp(const pattern_segment * A, const pattern_segment *B)
@@ -182,7 +174,7 @@ static pattern_segment_vtable vtable = {
   , cmp : cmp
 };
 
-xapi pattern_replacement_mk(
+void pattern_replacement_mk(
     pattern_segment ** restrict rv
   , const yyu_location * restrict loc
   , pattern_replacement_type replacement_type
@@ -193,12 +185,10 @@ xapi pattern_replacement_mk(
   , uint8_t tag_text_len
 )
 {
-  enter;
-
   pattern_segment * n = 0;
 
-  fatal(xmalloc, &n, sizeof(*n));
-  fatal(pattern_segment_init, n, &vtable, loc);
+  xmalloc(&n, sizeof(*n));
+  pattern_segment_init(n, &vtable, loc);
 
   n->replacement.replacement_type = replacement_type;
   if(n->replacement.replacement_type == PATTERN_REPLACEMENT_TYPE_NUM)
@@ -207,7 +197,7 @@ xapi pattern_replacement_mk(
   }
   else if(replacement_type == PATTERN_REPLACEMENT_TYPE_NAME)
   {
-    fatal(ixstrndup, &n->replacement.name, name, name_len);
+    ixstrndup(&n->replacement.name, name, name_len);
     n->replacement.name_len = name_len;
   }
   else if(replacement_type == PATTERN_REPLACEMENT_TYPE_VARIANT)
@@ -226,6 +216,4 @@ xapi pattern_replacement_mk(
   chain_init(n, chn);
 
   *rv = n;
-
-  finally : coda;
 }

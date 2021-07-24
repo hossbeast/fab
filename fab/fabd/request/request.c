@@ -15,7 +15,6 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#include "xapi.h"
 #include "types.h"
 
 #include "common/attrs.h"
@@ -74,115 +73,107 @@ static void command_destroy(command * cmd)
   }
 }
 
-static xapi request_writer_write(request * const restrict req, value_writer * const restrict writer)
+static void request_writer_write(request * const restrict req, value_writer * const restrict writer)
 {
-  enter;
-
   command *cmd;
 
   llist_foreach(&req->commands, cmd, lln) {
     switch(cmd->type)
     {
       case COMMAND_RUN:
-        fatal(value_writer_string, writer, "run");
+        value_writer_string(writer, "run");
         break;
       case COMMAND_DESCRIBE:
-        fatal(value_writer_string, writer, "describe");
+        value_writer_string(writer, "describe");
         break;
       case COMMAND_INVALIDATE:
-        fatal(value_writer_string, writer, "invalidate");
+        value_writer_string(writer, "invalidate");
         break;
       case COMMAND_GLOBAL_INVALIDATE:
-        fatal(value_writer_string, writer, "global-invalidate");
+        value_writer_string(writer, "global-invalidate");
         break;
       case COMMAND_CONFIG_READ:
-        fatal(value_writer_string, writer, "config-read");
+        value_writer_string(writer, "config-read");
         break;
       case COMMAND_LIST:
-        fatal(value_writer_string, writer, "list");
+        value_writer_string(writer, "list");
         break;
       case COMMAND_RESET_SELECTION:
-        fatal(value_writer_string, writer, "reset-selection");
+        value_writer_string(writer, "reset-selection");
         break;
       case COMMAND_GLOBAL_STATS_READ:
-        fatal(value_writer_string, writer, "global-stats-read");
+        value_writer_string(writer, "global-stats-read");
         break;
       case COMMAND_GLOBAL_STATS_RESET:
-        fatal(value_writer_string, writer, "global-stats-reset");
+        value_writer_string(writer, "global-stats-reset");
         break;
       case COMMAND_STATS_READ:
-        fatal(value_writer_string, writer, "stats-read");
+        value_writer_string(writer, "stats-read");
         break;
       case COMMAND_STATS_RESET:
-        fatal(value_writer_string, writer, "stats-reset");
+        value_writer_string(writer, "stats-reset");
         break;
       case COMMAND_SELECT:
-        fatal(value_writer_push_mapping, writer);
-        fatal(value_writer_string, writer, "select");
-          fatal(value_writer_push_list, writer);
-          fatal(selector_writer_write, cmd->selector, writer);
-          fatal(value_writer_pop_list, writer);
-        fatal(value_writer_pop_mapping, writer);
+        value_writer_push_mapping(writer);
+        value_writer_string(writer, "select");
+          value_writer_push_list(writer);
+          selector_writer_write(cmd->selector, writer);
+          value_writer_pop_list(writer);
+        value_writer_pop_mapping(writer);
         break;
       case COMMAND_GOALS:
-        fatal(value_writer_push_mapping, writer);
-        fatal(value_writer_string, writer, "goals");
-          fatal(value_writer_push_set, writer);
+        value_writer_push_mapping(writer);
+        value_writer_string(writer, "goals");
+          value_writer_push_set(writer);
           if(cmd->goals.build)
-            fatal(value_writer_string, writer, "build");
+            value_writer_string(writer, "build");
           if(cmd->goals.script)
-            fatal(value_writer_string, writer, "script");
+            value_writer_string(writer, "script");
           if(cmd->goals.target_direct)
           {
-            fatal(value_writer_push_mapping, writer);
-              fatal(value_writer_string, writer, "target-direct");
-              fatal(value_writer_push_list, writer);
-                fatal(selector_writer_write, cmd->goals.target_direct, writer);
-              fatal(value_writer_pop_list, writer);
-            fatal(value_writer_pop_mapping, writer);
+            value_writer_push_mapping(writer);
+              value_writer_string(writer, "target-direct");
+              value_writer_push_list(writer);
+                selector_writer_write(cmd->goals.target_direct, writer);
+              value_writer_pop_list(writer);
+            value_writer_pop_mapping(writer);
           }
           if(cmd->goals.target_transitive)
           {
-            fatal(value_writer_push_mapping, writer);
-              fatal(value_writer_string, writer, "target-transitive");
-              fatal(value_writer_push_list, writer);
-                fatal(selector_writer_write, cmd->goals.target_transitive, writer);
-              fatal(value_writer_pop_list, writer);
-            fatal(value_writer_pop_mapping, writer);
+            value_writer_push_mapping(writer);
+              value_writer_string(writer, "target-transitive");
+              value_writer_push_list(writer);
+                selector_writer_write(cmd->goals.target_transitive, writer);
+              value_writer_pop_list(writer);
+            value_writer_pop_mapping(writer);
           }
-          fatal(value_writer_pop_set, writer);
-        fatal(value_writer_pop_mapping, writer);
+          value_writer_pop_set(writer);
+        value_writer_pop_mapping(writer);
         break;
       case COMMAND_METADATA:
-        fatal(value_writer_string, writer, "metadata");
+        value_writer_string(writer, "metadata");
         break;
       case COMMAND_RECONCILE:
-        fatal(value_writer_string, writer, "reconcile");
+        value_writer_string(writer, "reconcile");
         break;
       default:
         RUNTIME_ABORT();
     }
   }
-
-  finally : coda;
 }
 
 //
 // public
 //
 
-xapi request_cleanup()
+void request_cleanup()
 {
-  enter;
-
   command *cmd;
   llist *T;
 
   llist_foreach_safe(&command_freelist, cmd, lln, T) {
     wfree(cmd);
   }
-
-  finally : coda;
 }
 
 void request_init(request * restrict req)
@@ -203,31 +194,24 @@ void request_destroy(request * restrict req)
   }
 }
 
-xapi request_say(request * restrict req, narrator * restrict N)
+void request_say(request * restrict req, narrator * restrict N)
 {
-  enter;
-
   value_writer * writer = 0;
-  fatal(value_writer_create, &writer);
-  fatal(value_writer_open, writer, N);
+  value_writer_create(&writer);
+  value_writer_open(writer, N);
 
-  fatal(request_writer_write, req, writer);
+  request_writer_write(req, writer);
 
-  fatal(value_writer_close, writer);
-
-finally:
-  fatal(value_writer_xfree, writer);
-coda;
+  value_writer_close(writer);
+  value_writer_xfree(writer);
 }
 
-xapi request_command_alloc(request * restrict req, command ** restrict cmdp)
+void request_command_alloc(request * restrict req, command ** restrict cmdp)
 {
-  enter;
-
   command *cmd;
 
   if((cmd = llist_shift(&command_freelist, typeof(*cmd), lln)) == 0) {
-    fatal(xmalloc, &cmd, sizeof(*cmd));
+    xmalloc(&cmd, sizeof(*cmd));
   } else {
     memset(cmd, 0, sizeof(*cmd));
   }
@@ -235,6 +219,4 @@ xapi request_command_alloc(request * restrict req, command ** restrict cmdp)
   llist_append(&req->commands, cmd, lln);
 
   *cmdp = cmd;
-
-  finally : coda;
 }

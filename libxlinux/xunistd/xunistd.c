@@ -370,3 +370,16 @@ void API xpipe(int filedes[2])
 {
   RUNTIME_ASSERT(pipe(filedes) == 0);
 }
+
+int API uxeuidaccesss(const char * restrict path, int mode)
+{
+  int r;
+
+  if((r = euidaccess(path, mode)) == -1)
+  {
+    RUNTIME_ASSERT(errno == EACCES || errno == ENOENT || errno == ENOTDIR);
+    r = errno;
+  }
+
+  return r;
+}

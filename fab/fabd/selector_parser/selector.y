@@ -158,7 +158,7 @@ allocate-sequence-selector
   : %empty
   {
     selector * sel;
-    YFATAL(selector_alloc, SELECTOR_SEQUENCE, &sel);
+    selector_alloc(SELECTOR_SEQUENCE, &sel);
     llist_prepend(&PARSER->selector_stack, sel, lln);
   }
   ;
@@ -167,7 +167,7 @@ allocate-union-selector
   : %empty
   {
     selector * sel;
-    YFATAL(selector_alloc, SELECTOR_UNION, &sel);
+    selector_alloc(SELECTOR_UNION, &sel);
     llist_prepend(&PARSER->selector_stack, sel, lln);
   }
   ;
@@ -176,7 +176,7 @@ allocate-pattern-selector
   : %empty
   {
     selector * sel;
-    YFATAL(selector_alloc, SELECTOR_PATTERN, &sel);
+    selector_alloc(SELECTOR_PATTERN, &sel);
     llist_prepend(&PARSER->selector_stack, sel, lln);
   }
   ;
@@ -185,7 +185,7 @@ allocate-path-selector
   : %empty
   {
     selector * sel;
-    YFATAL(selector_alloc, SELECTOR_PATH, &sel);
+    selector_alloc(SELECTOR_PATH, &sel);
     llist_prepend(&PARSER->selector_stack, sel, lln);
   }
   ;
@@ -194,7 +194,7 @@ allocate-traverse-selector
   : %empty
   {
     selector * sel;
-    YFATAL(selector_alloc, SELECTOR_TRAVERSE, &sel);
+    selector_alloc(SELECTOR_TRAVERSE, &sel);
     llist_prepend(&PARSER->selector_stack, sel, lln);
     sel->criteria = SELECTOR_TRAVERSE_DEFAULT_CRITERIA;
     sel->mode = SELECTOR_TRAVERSE_DEFAULT_MODE;
@@ -209,7 +209,7 @@ allocate-nodeset-selector
   : %empty
   {
     selector * sel;
-    YFATAL(selector_alloc, SELECTOR_NODESET, &sel);
+    selector_alloc(SELECTOR_NODESET, &sel);
     llist_prepend(&PARSER->selector_stack, sel, lln);
   }
   ;
@@ -418,7 +418,7 @@ strparts
   : strparts strpart
   {
     $$ = $1;
-    YFATAL(ixstrcat, &$$, $2);
+    ixstrcat(&$$, $2);
   }
   | strpart
   ;
@@ -427,16 +427,16 @@ strpart
   : STR
   {
     $$ = 0;
-    YFATAL(ixstrndup, &$$, @1.s, @1.l);
+    ixstrndup(&$$, @1.s, @1.l);
   }
   | CREF
   {
     $$ = 0;
-    YFATAL(ixstrndup, &$$, (char*)&$1, 1);
+    ixstrndup(&$$, (char*)&$1, 1);
   }
   | HREF
   {
     $$ = 0;
-    YFATAL(ixstrndup, &$$, (char*)&$1, 1);
+    ixstrndup(&$$, (char*)&$1, 1);
   }
   ;

@@ -17,7 +17,6 @@
 
 #include <unistd.h>
 
-#include "xapi.h"
 #include "types.h"
 
 #include "xlinux/xstdlib.h"
@@ -31,10 +30,8 @@ struct g_params g_params;
 // public
 //
 
-xapi params_setup()
+void params_setup()
 {
-  enter;
-
   g_params.pid = getpid();
 
 #if DEVEL
@@ -42,17 +39,14 @@ xapi params_setup()
   ssize_t r;
 
   // exedir is the canonical path to directory containing the executing binary
-  r = 0;
-  fatal(xreadlinks, "/proc/self/exe", space, sizeof(space), &r);
+  r = xreadlinks("/proc/self/exe", space, sizeof(space));
   r--;
   while(space[r] != '/') {
     r--;
   }
 
-  fatal(ixstrndup, &g_params.exedir, space, r);
+  ixstrndup(&g_params.exedir, space, r);
 #endif
-
-  finally : coda;
 }
 
 void params_teardown()

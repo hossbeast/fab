@@ -36,10 +36,8 @@ static void usage(command * restrict cmd)
   );
 }
 
-static xapi adhoc_connected(command * restrict cmd, fab_client * restrict client)
+static void adhoc_connected(command * restrict cmd, fab_client * restrict client)
 {
-  enter;
-
   fabipc_message * msg;
   size_t z;
 
@@ -54,14 +52,10 @@ static xapi adhoc_connected(command * restrict cmd, fab_client * restrict client
   msg->size = z;
 
   client_post(client, msg);
-
-  finally : coda;
 }
 
-static xapi adhoc_process(command * restrict cmd, fab_client * restrict client, fabipc_message * restrict msg)
+static void adhoc_process(command * restrict cmd, fab_client * restrict client, fabipc_message * restrict msg)
 {
-  enter;
-
   RUNTIME_ASSERT(msg->id == requestid);
 
   if(msg->type == FABIPC_MSG_RESPONSE) {
@@ -69,15 +63,13 @@ static xapi adhoc_process(command * restrict cmd, fab_client * restrict client, 
       fprintf(stderr, "response code %d msg %.*s\n", msg->code, msg->size, msg->text);
     }
     g_params.shutdown = true;
-    goto XAPI_FINALLY;
+    return;
   }
 
   if(msg->type == FABIPC_MSG_RESULT) {
     write(1, msg->text, msg->size);
     write(1, "\n", 1);
   }
-
-  finally : coda;
 }
 
 command adhoc_command = {

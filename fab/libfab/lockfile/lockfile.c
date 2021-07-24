@@ -17,7 +17,6 @@
 
 #include <stdarg.h>
 
-#include "xapi.h"
 #include "xlinux/xfcntl.h"
 #include "xlinux/xunistd.h"
 #include "xlinux/xsignal.h"
@@ -33,53 +32,52 @@
 // static
 //
 
-static xapi lockfile_obtain(pid_t * pid, int * restrict fd, const char * restrict path)
+static void lockfile_obtain(pid_t * pid, int * restrict fdp, const char * restrict path)
 {
-  enter;
-
   ssize_t bytes;
+  int fd;
 
   // initialize the return value
   *pid = -1;
 
   // create the pidfile
-  fatal(uxopen_modes, fd, O_CREAT | O_WRONLY | O_EXCL, LOCKFILE_MODE, path);
-  if(*fd == -1)
+  fd = uxopen_modes(O_CREAT | O_WRONLY | O_EXCL, LOCKFILE_MODE, path);
+  if(fd == -1)
   {
-    fatal(xopens, fd, O_RDONLY, path);
-    fatal(xread, *fd, pid, sizeof(*pid), &bytes);
-    if(bytes != sizeof(*pid))
+    xopens(O_RDONLY, path);
+    bytes = xread(fd, pid, sizeof(*pid));
+    if(bytes != sizeof(*pid)) {
       *pid = -1;
+    }
   }
   else
   {
-    fatal(axwrite, *fd, (pid_t[]) { getpid() }, sizeof(pid_t));
+    axwrite(fd, (pid_t[]) { getpid() }, sizeof(pid_t));
     *pid = 0;
   }
 
-  finally : coda;
+  *fdp = fd;
 }
 
 //
 // api
 //
 
-xapi API fabipc_lockfile_obtain(pid_t * pid, int * restrict fd, char * const restrict fmt, ...)
+void API fabipc_lockfile_obtain(pid_t * pid, int * restrict fd, char * const restrict fmt, ...)
 {
-  enter;
-
   char path[512];
   int x;
   va_list va;
   int r;
 
   va_start(va, fmt);
-  fatal(fmt_apply, path, sizeof(path), fmt, va);
+  fmt_apply(path, sizeof(path), fmt, va);
+  va_end(va);
 
   for(x = 1; 1; x++)
   {
-    fatal(xclose, *fd);
-    fatal(lockfile_obtain, pid, fd, path);
+    xclose(*fd);
+    lockfile_obtain(pid, fd, path);
 
     if(*pid == 0)
       break;    // lock obtained
@@ -89,51 +87,41 @@ xapi API fabipc_lockfile_obtain(pid_t * pid, int * restrict fd, char * const res
       // unable to determine lock holder from the pid file ; this can happen as a
       // result of a race reading/writing the pid file, or if the pid file is corrupted
       if((x % 3) == 0) {
-        fatal(xunlinks, path);
+        xunlinks(path);
       }
 
       continue;
     }
 
     r = 0;
-    fatal(uxkill, &r, *pid, 0);
+    r = uxkill(*pid, 0);
     if(r == 0) {
       break;    // lock holder still running
     }
 
     // lock holder is not running ; forcibly release the lock
-    fatal(xunlinks, path);
+    xunlinks(path);
   }
-
-finally:
-  va_end(va);
-coda;
 }
 
-xapi API fabipc_lockfile_update(char * const restrict fmt, ...)
+void API fabipc_lockfile_update(char * const restrict fmt, ...)
 {
-  enter;
-
   int fd = -1;
   va_list va;
   va_start(va, fmt);
+  va_end(va);
 
   // write our pid to the lockfile
-  fatal(xopenvf, &fd, O_WRONLY, fmt, va);
-  fatal(axwrite, fd, (pid_t[]) { getpid() }, sizeof(pid_t));
+  fd = xopenvf(O_WRONLY, fmt, va);
+  axwrite(fd, (pid_t[]) { getpid() }, sizeof(pid_t));
 
-finally:
-  fatal(ixclose, &fd);
-coda;
+  ixclose(&fd);
 }
 
-xapi API fabipc_lockfile_release(char * const restrict fmt, ...)
+void API fabipc_lockfile_release(char * const restrict fmt, ...)
 {
-  enter;
-
   va_list va;
   va_start(va, fmt);
-  fatal(xunlinkvf, fmt, va);
-
-  finally : coda;
+  xunlinkvf(fmt, va);
+  va_end(va);
 }

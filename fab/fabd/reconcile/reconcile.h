@@ -18,7 +18,6 @@
 #ifndef _RECONCILE_H
 #define _RECONCILE_H
 
-#include "xapi.h"
 #include "types.h"
 
 /* autoinc each time reconcile is run */
@@ -27,6 +26,6 @@ extern uint16_t reconciliation_id;
 /*
  * run global reconciliation
  */
-xapi reconcile(void);
+void reconcile(void);
 
 #endif

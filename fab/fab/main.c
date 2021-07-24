@@ -15,43 +15,34 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#include "xapi.h"
+#include <stdio.h>
+#include <inttypes.h>
+#include <errno.h>
 
 #include "fab/load.h"
-#include "logger/load.h"
 #include "narrator/load.h"
-#include "valyria/load.h"
-#include "xlinux/load.h"
 #include "value/load.h"
 
-#include "xapi/SYS.errtab.h"
-#include "xapi/calltree.h"
-#include "xapi/trace.h"
-#include "xlinux/KERNEL.errtab.h"
 #include "xlinux/xfutex.h"
 #include "xlinux/xpthread.h"
 #include "xlinux/xsignal.h"
 
 #include "common/attrs.h"
-#include "fab/FAB.errtab.h"
 #include "fab/client.h"
 #include "fab/events.h"
 #include "fab/ipc.h"
 #include "fab/sigutil.h"
 
-#include "MAIN.errtab.h"
 #include "args.h"
 #include "build.h"
 #include "command.h"
 #include "kill.h"
-#include "logging.h"
 #include "params.h"
 
 #include "barriers.h"
 
 __thread int32_t tid;
 static uint64_t eventsubid;
-static xapi xmain_exit;
 static bool waserror;
 
 static void client_acquired(fab_client * restrict client, fabipc_message * restrict msg)
@@ -117,10 +108,8 @@ void client_post(struct fab_client * restrict client, fabipc_message * restrict 
 #endif
 }
 
-static xapi xmain()
+static void xmain()
 {
-  enter;
-
   sigset_t sigs;
   siginfo_t info;
   fab_client * client = 0;
@@ -133,20 +122,17 @@ static xapi xmain()
   int x;
   int r;
 
-  // parse cmdline arguments
-  fatal(args_parse);
-
-  fatal(sigutil_install_handlers);
+  sigutil_install_handlers();
   sigfillset(&sigs);
   sigdelset(&sigs, SIGINT);
   sigdelset(&sigs, SIGTERM);
   sigdelset(&sigs, SIGQUIT);
   sigdelset(&sigs, SIGUSR1);
-  fatal(xpthread_sigmask, SIG_SETMASK, &sigs, 0);
+  xpthread_sigmask(SIG_SETMASK, &sigs, 0);
 
 #if DEVEL
   static char space[512];
-  snprintf(space, sizeof(space), "%s/../fabd/fabd.devel.xapi", g_params.exedir);
+  snprintf(space, sizeof(space), "%s/../fabd/fabd.devel.void", g_params.exedir);
   g_fab_client_fabd_path = space;
   if(g_args.system_config_path.s) {
     g_fab_client_system_config_path = strndup(g_args.system_config_path.s, g_args.system_config_path.len);
@@ -165,17 +151,17 @@ static xapi xmain()
   interval.tv_sec = 0;
   interval.tv_nsec = 500000000;   // 500 millis
 
-  fatal(fab_client_create, &client, ".", XQUOTE(FABIPCDIR));
-  fatal(fab_client_prepare, client);
+  fab_client_create(&client, ".", XQUOTE(FABIPCDIR));
+  fab_client_prepare(client);
 
   /* kill an existing fabd - waiting at most 3s */
   if(g_args.kill && client->fabd_pid != 0)
   {
-    fatal(fab_client_kill, client);
+    fab_client_kill(client);
 
     for(x = 0; x < (5 * 3); x++)
     {
-      fatal(uxkill, &r, client->fabd_pid, 0);
+      r = uxkill(client->fabd_pid, 0);
       if(r) {
         break;
       }
@@ -186,15 +172,16 @@ static xapi xmain()
 #if DEVEL
   if(g_args.no_launch && client->fabd_pid == 0)
   {
-    fails(SYS_INVALID, "invariant", "fabd not running");
+    fprintf(stderr, "fabd not running\n");
+    RUNTIME_ABORT();
   }
 #endif
 
   if(g_cmd == &kill_command) {
-    goto XAPI_FINALLY;
+    goto end;
   }
 
-  fatal(fab_client_solicit, client);
+  fab_client_solicit(client);
 
   /* wait for the acknowledgement signal carrying the channel id */
   sigemptyset(&sigs);
@@ -202,21 +189,21 @@ static xapi xmain()
 
   while(!g_sigterm && !g_params.shutdown)
   {
-    fatal(sigutil_timedwait, &err, &sigs, &info, &interval);
+    sigutil_timedwait(&err, &sigs, &info, &interval);
     if(err == 0) {                  // signal received
       break;
     } else if(err == EAGAIN) {      // timeout expired
-      fail(MAIN_CHANTIME);
-      goto XAPI_FINALLY;
+      fprintf(stderr, "TIMEOUT EXPIRED\n");
+      goto end;
     } else if(err == EINTR) {       // interrupted by signal
       continue;
     }
 
-    tfail(perrtab_KERNEL, err);
+    RUNTIME_ABORT();
   }
 
   channel_shmid = info.si_value.sival_int;
-  fatal(fab_client_attach, client, channel_shmid);
+  fab_client_attach(client, channel_shmid);
 
   /* always-on subscriptions */
   msg = fab_client_produce(client);
@@ -228,7 +215,7 @@ static xapi xmain()
   client_post(client, msg);
 
   /* event subscription and send the request */
-  fatal(g_cmd->connected, g_cmd, client);
+  g_cmd->connected(g_cmd, client);
 
   /* processing */
   interval.tv_nsec = 125 * 1000 * 1000;   // 125 millis
@@ -240,13 +227,13 @@ static xapi xmain()
     if(!(msg = fab_client_acquire(client))) {
       if(client->shm->server_exit) {
         /* normally the daemon will send a response message with nonzero code on error */
-        fail(FAB_NODAEMON);
+        fprintf(stderr, "daemon exited unexpectedly\n");
         break;
       }
 
       client->shm->server_ring.waiters = 1;
       smp_wmb();
-      fatal(uxfutex, &err, &client->shm->server_ring.waiters, FUTEX_WAIT, 1, &interval, 0, 0);
+      err = uxfutex(&client->shm->server_ring.waiters, FUTEX_WAIT, 1, &interval, 0, 0);
       if(err == EINTR || err == EAGAIN) {
         continue;
       }
@@ -255,7 +242,7 @@ static xapi xmain()
       if(((iter++) % 25) == 0) {
         if(pulse == client->shm->server_pulse) {
           /* watchdog timeout - unresponsive daemon */
-          fail(FAB_NODAEMON);
+          fprintf(stderr, "daemon unresponsive\n");
           break;
         }
         pulse = client->shm->server_pulse;
@@ -284,111 +271,37 @@ static xapi xmain()
       write(2, "\n", 1);
       waserror = true;
     }
-    fatal(g_cmd->process, g_cmd, client, msg);
+    g_cmd->process(g_cmd, client, msg);
     fab_client_consume(client, msg);
   }
 
-finally:
-  if(XAPI_UNWINDING)
-  {
-    if(XAPI_ERRVAL == FAB_NODAEMON)
-    {
-#if DEBUG || DEVEL
-      // fabd exited - check for a coredump
-#endif
-    }
-
-    if(client) {
-      xapi_infos("hash", client->hash);
-    }
-  }
-
-  if(client) {
-    fab_client_disconnect(client);
-  }
-  fatal(fab_client_xfree, client);
-coda;
+end:
+  fab_client_disconnect(client);
+  fab_client_xfree(client);
 }
 
-static xapi xmain_jump()
+int main(int argc, char ** argv)
 {
-  enter;
-
-  fatal(xmain);
-
-finally:
-  if(XAPI_UNWINDING)
-  {
-#if DEBUG || DEVEL
-    xapi_infof("pid", "%ld", (long)getpid());
-    xapi_infof("tid", "%ld", (long)gettid());
-    xapi_fulltrace(2, XAPI_TRACE_COLORIZE);
-#else
-    xapi_pithytrace(2, XAPI_TRACE_COLORIZE);
-#endif
-
-    xmain_exit = XAPI_ERRVAL;
-    xapi_calltree_unwind();
-  }
-coda;
-}
-
-static xapi xmain_load(char ** envp)
-{
-  enter;
-
-  // load libraries
-  fatal(fab_load);
-  fatal(logger_load);
-  fatal(logger_load);
-  fatal(narrator_load);
-  fatal(valyria_load);
-  fatal(xlinux_load);
-  fatal(value_load);
-
-  // load modules
-  fatal(logging_setup, envp);
-  fatal(params_setup);
-  fatal(build_command_setup);
-
-  fatal(xmain_jump);
-
-finally:
-  // modules
-  params_teardown();
-  fatal(build_command_cleanup);
-
-  // libraries
-  fatal(fab_unload);
-  fatal(logger_unload);
-  fatal(narrator_unload);
-  fatal(valyria_unload);
-  fatal(xlinux_unload);
-  fatal(value_unload);
-coda;
-}
-
-int main(int argc, char ** argv, char ** envp)
-{
-  enter;
-
   tid = syscall(SYS_gettid);
 
-  xapi R = 0;
-  fatal(xmain_load, envp);
+  // load libraries
+  fab_load();
+  narrator_load();
+  value_load();
 
-finally:
-  if(XAPI_UNWINDING)
-  {
-    // write failures before liblogger to stderr
-    xapi_backtrace(2, XAPI_TRACE_COLORIZE);
-  }
+  // load modules
+  params_setup();
+  args_parse(argc, argv);
+  build_command_setup();
 
-conclude(&R);
-  xapi_teardown();
+  xmain();
 
-  R |= xmain_exit;
-  R |= waserror;
+  // modules
+  params_teardown();
+  build_command_cleanup();
 
-  return !!R;
+  // libraries
+  fab_unload();
+  narrator_unload();
+  value_unload();
 }

@@ -18,20 +18,10 @@
 #ifndef VALUE_PARSER_INTERNAL_H
 #define VALUE_PARSER_INTERNAL_H
 
-#include "yyutil/parser.h"
 #include "parser.h"
 
 struct value_store;
 struct YYLTYPE;
-
-struct value_parser {
-  yyu_parser value_yyu;
-  yyu_parser value_set_yyu;
-  yyu_parser value_list_yyu;
-
-  struct value_store * store; // value storage
-  struct value *       root;  // (returns) root of the parsed tree
-};
 
 static void value_yyerror(struct YYLTYPE * loc, void * scanner, value_parser * parser, char const * err)
   __attribute__((weakref("yyu_grammar_error")));

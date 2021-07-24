@@ -15,10 +15,8 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#include "xapi.h"
 #include "lorien/load.h"
 #include "yyutil/load.h"
-#include "logger/load.h"
 #include "value/load.h"
 
 #include "valyria/map.h"
@@ -33,7 +31,6 @@
 #include "selector.internal.h"
 #include "request.h"
 #include "fsent.h"
-#include "logging.h"
 
 typedef struct {
   XUNITTEST;
@@ -42,31 +39,21 @@ typedef struct {
   char * expected;
 } selector_parser_test;
 
-static xapi selector_parser_test_unit_setup(xunit_unit * unit)
+static void selector_parser_test_unit_setup(xunit_unit * unit)
 {
-  enter;
-
-  fatal(yyutil_load);
-  fatal(value_load);
-  fatal(logging_finalize);
-
-  finally : coda;
+  yyutil_load();
+  value_load();
+  logging_finalize();
 }
 
-static xapi selector_parser_test_unit_cleanup(xunit_unit * unit)
+static void selector_parser_test_unit_cleanup(xunit_unit * unit)
 {
-  enter;
-
-  fatal(yyutil_unload);
-  fatal(value_unload);
-
-  finally : coda;
+  yyutil_unload();
+  value_unload();
 }
 
-static xapi selector_parser_test_entry(xunit_test * _test)
+static void selector_parser_test_entry(xunit_test * _test)
 {
-  enter;
-
   selector_parser_test * test = (typeof(test))_test;
   char buf[512];
   size_t len;
@@ -80,25 +67,25 @@ static xapi selector_parser_test_entry(xunit_test * _test)
   yyu_location loc;
 
   // arrange
-  fatal(selector_parser_create, &parser);
+  selector_parser_create(&parser);
 
   // act - initial parse
-  fatal(selector_parser_parse_partial, parser, test->text, strlen(test->text) + 2, 0, 0, &loc, &A);
+  selector_parser_parse_partial(parser, test->text, strlen(test->text) + 2, 0, 0, &loc, &A);
   assert_eq_u32(strlen(test->text), loc.l);
 
-  fatal(narrator_growing_create, &N1);
-  fatal(selector_say, A, &N1->base);
+  narrator_growing_create(&N1);
+  selector_say(A, &N1->base);
 
   // re-parse
   len = N1->l;
-  fatal(narrator_xseek, &N1->base, 0, NARRATOR_SEEK_SET, 0);
-  fatal(narrator_xread, &N1->base, buf, len, 0);
+  narrator_xseek(&N1->base, 0, NARRATOR_SEEK_SET, 0);
+  narrator_xread(&N1->base, buf, len, 0);
   buf[len] = buf[len + 1] = 0;
-  fatal(selector_parser_parse_partial, parser, buf, len + 2, 0, 0, &loc, &B);
+  selector_parser_parse_partial(parser, buf, len + 2, 0, 0, &loc, &B);
   assert_eq_u32(len, loc.l);
 
-  fatal(narrator_growing_create, &N2);
-  fatal(selector_say, B, &N2->base);
+  narrator_growing_create(&N2);
+  selector_say(B, &N2->base);
 
   // round-trip textual equivalence
   assert_eq_w(N1->s, N1->l, N2->s, N2->l);
@@ -107,11 +94,11 @@ static xapi selector_parser_test_entry(xunit_test * _test)
   assert_eq_w(expected, strlen(expected), N1->s, N1->l);
 
 finally:
-  fatal(selector_parser_xfree, parser);
+  selector_parser_xfree(parser);
   selector_free(A);
   selector_free(B);
-  fatal(narrator_growing_free, N1);
-  fatal(narrator_growing_free, N2);
+  narrator_growing_free(N1);
+  narrator_growing_free(N2);
 coda;
 }
 

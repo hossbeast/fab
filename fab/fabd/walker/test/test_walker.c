@@ -15,7 +15,6 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#include "xapi.h"
 #include "types.h"
 
 #include "lorien/load.h"
@@ -41,7 +40,6 @@
 
 #include "walker.internal.h"
 #include "filesystem.h"
-#include "logging.h"
 #include "lookup.h"
 #include "module.h"
 #include "fsent.h"
@@ -90,45 +88,35 @@ static void info_destroy(void * _info)
   wfree((void*)info->path);
 }
 
-static xapi walker_test_unit_setup(xunit_unit * unit)
+static void walker_test_unit_setup(xunit_unit * unit)
 {
-  enter;
+  valyria_load();
+  lorien_load();
+  moria_load();
+  logging_finalize();
 
-  fatal(valyria_load);
-  fatal(lorien_load);
-  fatal(moria_load);
-  fatal(logging_finalize);
-
-  fatal(filesystem_setup);
-  fatal(graph_setup);
-  fatal(fsent_setup);
+  filesystem_setup();
+  graph_setup();
+  fsent_setup();
 
   /* suppress rcu-registration checks performed under devel build for events fired from the walker */
   extern __thread bool rcu_is_registered ; rcu_is_registered = true;
 
   walker_exclude_list = &exclude_list;
   llist_init_node(walker_exclude_list);
-
-  finally : coda;
 }
 
-static xapi walker_test_unit_cleanup(xunit_unit * unit)
+static void walker_test_unit_cleanup(xunit_unit * unit)
 {
-  enter;
-
-  fatal(valyria_unload);
-  fatal(lorien_unload);
-  fatal(moria_unload);
-  fatal(graph_cleanup);
-  fatal(filesystem_cleanup);
-
-  finally : coda;
+  valyria_unload();
+  lorien_unload();
+  moria_unload();
+  graph_cleanup();
+  filesystem_cleanup();
 }
 
-static xapi walker_test_entry(xunit_test * _test)
+static void walker_test_entry(xunit_test * _test)
 {
-  enter;
-
   walker_test * test = (walker_test *)_test;
 
   walker_test_context ctx = {};
@@ -142,21 +130,21 @@ static xapi walker_test_entry(xunit_test * _test)
   char * seq;
   const char * graph;
 
-  fatal(narrator_growing_create, &N);
+  narrator_growing_create(&N);
 
   // setup initial graph
-  fatal(graph_parser_create, &op_parser, &g_graph, &fsent_list, node_operations_test_dispatch, graph_vertex_attrs, graph_edge_attrs);
-  fatal(graph_parser_operations_parse, op_parser, MMS(test->operations));
+  graph_parser_create(&op_parser, &g_graph, &fsent_list, node_operations_test_dispatch, graph_vertex_attrs, graph_edge_attrs);
+  graph_parser_operations_parse(op_parser, MMS(test->operations));
 
-  fatal(map_create, &nodes);
-  fatal(dictionary_createx, &infos, sizeof(ftwinfo), 0, info_destroy, 0);
-  fatal(array_create, &ctx.operations, sizeof(walker_test_operation));
-  fatal(graph_invalidation_begin, &invalidation);
+  map_create(&nodes);
+  dictionary_createx(&infos, sizeof(ftwinfo), 0, info_destroy, 0);
+  array_create(&ctx.operations, sizeof(walker_test_operation));
+  graph_invalidation_begin(&invalidation);
 
   static int walk_ids;
   ctx.base.walk_id = ++walk_ids;
   if(test->base)
-    fatal(resolve_fragment, MMS(test->base), &ctx.base.base);
+    resolve_fragment(MMS(test->base), &ctx.base.base);
 
   ctx.base.invalidation = &invalidation;
 
@@ -177,9 +165,9 @@ static xapi walker_test_entry(xunit_test * _test)
     ftwinfo * B = 0;
     if((B = dictionary_get(infos, MM(*seq))) == 0)
     {
-      fatal(dictionary_store, infos, MM(*seq), &B);
+      dictionary_store(infos, MM(*seq), &B);
       B->pathl = 1;
-      fatal(ixsprintf, (void*)&B->path, "%c", *seq);
+      ixsprintf((void*)&B->path, "%c", *seq);
     }
     seq++;
 
@@ -192,7 +180,7 @@ static xapi walker_test_entry(xunit_test * _test)
     B->parent = A;
     B->type = method ? FTWAT_D : FTWAT_F;
 
-    fatal(walker_visit, method, B, &ctx, &stop);
+    walker_visit(method, B, &ctx, &stop);
 
     while(*seq == ' ') {
       seq++;
@@ -200,18 +188,18 @@ static xapi walker_test_entry(xunit_test * _test)
   }
 
   // ordered list of edges
-  fatal(graph_say, &N->base);
+  graph_say(&N->base);
   graph = N->s;
   assert_eq_s(test->graph, graph);
 
 finally:
-  fatal(fsent_cleanup);
-  fatal(map_xfree, nodes);
-  fatal(dictionary_xfree, infos);
-  fatal(array_xfree, ctx.operations);
+  fsent_cleanup();
+  map_xfree(nodes);
+  dictionary_xfree(infos);
+  array_xfree(ctx.operations);
   graph_invalidation_end(&invalidation);
-  fatal(graph_parser_xfree, op_parser);
-  fatal(narrator_growing_free, N);
+  graph_parser_xfree(op_parser);
+  narrator_growing_free(N);
 coda;
 }
 

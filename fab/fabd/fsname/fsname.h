@@ -52,7 +52,7 @@ typedef struct fsname
 // PARAMETERS
 //  p  - (returns) path object
 //
-//xapi path_creates(path ** const restrict p, const char * const restrict s)
+//void path_creates(path ** const restrict p, const char * const restrict s)
 //  __attribute__((nonnull));
 
 void fsname_init(fsname * const restrict p, const char * const restrict buf, size_t bufl)

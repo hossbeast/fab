@@ -32,10 +32,8 @@
 #include "marshal.h"
 #include "zbuffer.h"
 
-xapi metadata_collate(void *dst, size_t sz, size_t * restrict zp)
+void metadata_collate(void *dst, size_t sz, size_t * restrict zp)
 {
-  enter;
-
   size_t z;
   size_t off;
   struct timespec now;
@@ -73,7 +71,7 @@ xapi metadata_collate(void *dst, size_t sz, size_t * restrict zp)
   z += marshal_u16(dst + z, sz - z, 0);
 
   N = narrator_fixed_init(&fixed, dst + z, sz - z);
-  fatal(goals_say, N);
+  goals_say(N);
   z += fixed.l;
 
   marshal_u16(dst + off, sz - off, fixed.l);
@@ -82,6 +80,4 @@ xapi metadata_collate(void *dst, size_t sz, size_t * restrict zp)
   z += marshal_u8(dst + z, sz - z, run_thread_autorun);
 
   *zp = z;
-
-  finally : coda;
 }

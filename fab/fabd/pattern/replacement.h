@@ -18,14 +18,13 @@
 #ifndef FABD_PATTERN_REPLACEMENT_H
 #define FABD_PATTERN_REPLACEMENT_H
 
-#include "xapi.h"
 #include "types.h"
 #include "pattern.h"
 
 struct yyu_location;
 union pattern_segment;
 
-xapi pattern_replacement_mk(
+void pattern_replacement_mk(
     union pattern_segment ** restrict rv
   , const struct yyu_location * restrict loc
   , enum pattern_replacement_type replacement_type

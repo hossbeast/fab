@@ -31,10 +31,10 @@ typedef struct variant {
   char norm[];        // normalized
 } variant;
 
-xapi variant_setup(void);
-xapi variant_cleanup(void);
+void variant_setup(void);
+void variant_cleanup(void);
 
-xapi variant_get(const char * restrict name, uint16_t len, variant ** restrict variantp)
+void variant_get(const char * restrict name, uint16_t len, variant ** restrict variantp)
   __attribute__((nonnull));
 
 bool variant_key_compatible(

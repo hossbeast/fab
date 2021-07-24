@@ -15,7 +15,6 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#include "xapi.h"
 #include "xunit.h"
 #include "xunit/assert.h"
 
@@ -36,7 +35,6 @@
 #include "pattern_parser.h"
 #include "lookup.h"
 #include "pattern.h"
-#include "logging.h"
 #include "fsent.h"
 #include "shadow.h"
 #include "module.internal.h"
@@ -65,43 +63,33 @@ typedef struct pattern_search_test {
   char ** matches;  // space separated, 1, 2, etc
 } pattern_search_test;
 
-static xapi pattern_search_test_unit_setup(xunit_unit * unit)
+static void pattern_search_test_unit_setup(xunit_unit * unit)
 {
-  enter;
-
-  fatal(yyutil_load);
-  fatal(logging_finalize);
-  fatal(filesystem_setup);
+  yyutil_load();
+  logging_finalize();
+  filesystem_setup();
 
   // arrange
-  fatal(graph_setup);
-  fatal(fsent_setup);
-  fatal(shadow_setup);
-  fatal(variant_setup);
-
-  finally : coda;
+  graph_setup();
+  fsent_setup();
+  shadow_setup();
+  variant_setup();
 }
 
-static xapi pattern_search_test_unit_cleanup(xunit_unit * unit)
+static void pattern_search_test_unit_cleanup(xunit_unit * unit)
 {
-  enter;
+  filesystem_cleanup();
 
-  fatal(filesystem_cleanup);
-
-  fatal(fsent_cleanup);
-  fatal(variant_cleanup);
-
-  finally : coda;
+  fsent_cleanup();
+  variant_cleanup();
 }
 
 //
 // tests
 //
 
-static xapi pattern_search_test_entry(xunit_test * _test)
+static void pattern_search_test_entry(xunit_test * _test)
 {
-  enter;
-
   pattern_search_test * test = (pattern_search_test *)_test;
 
   map * node_map = 0;
@@ -126,21 +114,21 @@ static xapi pattern_search_test_entry(xunit_test * _test)
   graph_invalidation_context invalidation = { 0 };
 
   // setup initial graph
-  fatal(graph_parser_create, &op_parser, &g_graph, &fsent_list, node_operations_test_dispatch, graph_vertex_attrs, graph_edge_attrs);
-  fatal(graph_parser_operations_parse, op_parser, MMS(test->operations));
+  graph_parser_create(&op_parser, &g_graph, &fsent_list, node_operations_test_dispatch, graph_vertex_attrs, graph_edge_attrs);
+  graph_parser_operations_parse(op_parser, MMS(test->operations));
 
   // setup the shadow fs
   if(test->modules_shadow)
   {
-    fatal(shadow_setup);
-    fatal(graph_invalidation_begin, &invalidation);
+    shadow_setup();
+    graph_invalidation_begin(&invalidation);
 
     for(x = 0; x < sentinel(test->modules_shadow); x += 2)
     {
-      fatal(resolve_fragment, MMS(test->modules_shadow[x]), &mods[x / 2].dir_node);
+      resolve_fragment(MMS(test->modules_shadow[x]), &mods[x / 2].dir_node);
       moria_vertex_init(&mods[x/2].vertex, &g_graph, VERTEX_MODULE);
       snprintf(mods[x / 2].id, sizeof(mods[x / 2].id), "%s", test->modules_shadow[x + 1]);
-      fatal(shadow_module_init, &mods[x / 2], &invalidation);
+      shadow_module_init(&mods[x / 2], &invalidation);
       mods[x/2].vertex.label = test->modules_shadow[x];
       mods[x/2].vertex.label_len = strlen(test->modules_shadow[x]);
       mods[x / 2].dir_node->mod = &mods[x / 2];
@@ -150,9 +138,9 @@ static xapi pattern_search_test_entry(xunit_test * _test)
     {
       for(x = 0; x < sentinel(test->modules_imports); x += 2)
       {
-        fatal(resolve_fragment, MMS(test->modules_imports[x + 0]), &na);
-        fatal(resolve_fragment, MMS(test->modules_imports[x + 1]), &nb);
-        fatal(module_resolve_import, na->mod, nb, nb->name.name, nb->name.namel, 0, &invalidation);
+        resolve_fragment(MMS(test->modules_imports[x + 0]), &na);
+        resolve_fragment(MMS(test->modules_imports[x + 1]), &nb);
+        module_resolve_import(na->mod, nb, nb->name.name, nb->name.namel, 0, &invalidation);
       }
     }
 
@@ -170,40 +158,40 @@ static xapi pattern_search_test_entry(xunit_test * _test)
 
   if(!test->modules_shadow)
   {
-    fatal(resolve_fragment, MMS(test->module), &mods[0].dir_node);
+    resolve_fragment(MMS(test->module), &mods[0].dir_node);
     mod = &mods[0];
   }
 
-  fatal(map_create, &node_map);
-  fatal(list_create, &nodes_list);
+  map_create(&node_map);
+  list_create(&nodes_list);
 
-  fatal(set_create, &variants);
+  set_create(&variants);
   if(test->variants)
   {
     for(x = 0; x < sentinel(test->variants); x++)
     {
-      fatal(variant_get, test->variants[x], strlen(test->variants[x]), &v);
-      fatal(set_put, variants, v, 0);
+      variant_get(test->variants[x], strlen(test->variants[x]), &v);
+      set_put(variants, v, 0);
     }
   }
 
   llist_init_node(&modules);
 
   // parse the pattern
-  fatal(pattern_parser_create, &parser);
-  fatal(search_pattern_parse_partial, parser, test->pattern, strlen(test->pattern) + 2, "-test-", 0, &loc, &pattern);
+  pattern_parser_create(&parser);
+  search_pattern_parse_partial(parser, test->pattern, strlen(test->pattern) + 2, "-test-", 0, &loc, &pattern);
   assert_eq_u32(strlen(test->pattern), loc.l);
 
   // act
-  fatal(pattern_search_matches_create, &matches);
-  fatal(pattern_search, pattern, mod, &modules, variants, matches, 0, 0);
+  pattern_search_matches_create(&matches);
+  pattern_search(pattern, mod, &modules, variants, matches, 0, 0);
 
   // assert
-  fatal(set_createx, &expected, 0, hash32, memncmp, 0, 0);
+  set_createx(&expected, 0, hash32, memncmp, 0, 0);
   for(x = 0; x < sentinel(test->matches); x++)
-    fatal(set_put, expected, MMS(test->matches[x]));
+    set_put(expected, MMS(test->matches[x]));
 
-  fatal(set_createx, &actual, 0, hash32, memncmp, wfree, 0);
+  set_createx(&actual, 0, hash32, memncmp, wfree, 0);
   for(x = 0; x < matches->table_size; x++)
   {
     pattern_search_node * m;
@@ -228,7 +216,7 @@ static xapi pattern_search_test_entry(xunit_test * _test)
       sz += m->variant->norm_len + 3;
 
     sz += 1;
-    fatal(xmalloc, &actual_match, sz);
+    xmalloc(&actual_match, sz);
 
     size_t z = 0;
     z += znloadw(actual_match + z, sz - z, path, pz);
@@ -245,22 +233,22 @@ static xapi pattern_search_test_entry(xunit_test * _test)
     if(m->variant)
       z += znloadf(actual_match + z, sz - z, " ? %.*s", m->variant->norm_len, m->variant->norm);
 
-    fatal(set_put, actual, actual_match, z);
+    set_put(actual, actual_match, z);
     actual_match = 0;
   }
 
   assert_eq_set(expected, actual);
 
 finally:
-  fatal(set_xfree, variants);
-  fatal(set_xfree, matches);
-  fatal(map_xfree, node_map);
-  fatal(pattern_parser_xfree, parser);
+  set_xfree(variants);
+  set_xfree(matches);
+  map_xfree(node_map);
+  pattern_parser_xfree(parser);
   pattern_free(pattern);
-  fatal(list_xfree, nodes_list);
-  fatal(graph_parser_xfree, op_parser);
-  fatal(set_xfree, expected);
-  fatal(set_xfree, actual);
+  list_xfree(nodes_list);
+  graph_parser_xfree(op_parser);
+  set_xfree(expected);
+  set_xfree(actual);
   wfree(actual_match);
   graph_invalidation_end(&invalidation);
 coda;

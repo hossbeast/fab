@@ -15,10 +15,8 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#include "xapi.h"
 #include "lorien/load.h"
 #include "yyutil/load.h"
-#include "logger/load.h"
 #include "value/load.h"
 #include "xlinux/xstdlib.h"
 
@@ -36,7 +34,6 @@
 #include "rule.h"
 #include "request.h"
 #include "fsent.h"
-#include "logging.h"
 #include "variant.h"
 #include "pattern.h"
 #include "system_state.h"
@@ -50,44 +47,30 @@ typedef struct {
   module * cfg;
 } module_parser_test;
 
-static xapi module_parser_test_unit_setup(xunit_unit * unit)
+static void module_parser_test_unit_setup(xunit_unit * unit)
 {
-  enter;
-
-  fatal(yyutil_load);
-  fatal(value_load);
-  fatal(logging_finalize);
-  fatal(variant_setup);
-  fatal(graph_setup);
-
-  finally : coda;
+  yyutil_load();
+  value_load();
+  logging_finalize();
+  variant_setup();
+  graph_setup();
 }
 
-static xapi module_parser_test_unit_cleanup(xunit_unit * unit)
+static void module_parser_test_unit_cleanup(xunit_unit * unit)
 {
-  enter;
-
-  fatal(yyutil_unload);
-  fatal(value_unload);
-  fatal(variant_cleanup);
-  fatal(graph_cleanup);
-
-  finally : coda;
+  yyutil_unload();
+  value_unload();
+  variant_cleanup();
+  graph_cleanup();
 }
 
-static xapi load_submodule(module_parser * restrict parser, pattern * c, bool scoped, char * restrict name, uint16_t namel)
+static void load_submodule(module_parser * restrict parser, pattern * c, bool scoped, char * restrict name, uint16_t namel)
 {
-  enter;
-
   pattern_free(c);
-
-  finally : coda;
 }
 
-static xapi module_parser_test_entry(xunit_test * _test)
+static void module_parser_test_entry(xunit_test * _test)
 {
-  enter;
-
   module_parser_test * test = containerof(_test, module_parser_test, xu);
 
   module_parser * parser = 0;
@@ -95,18 +78,18 @@ static xapi module_parser_test_entry(xunit_test * _test)
   graph_invalidation_context invalidation = { };
 
   // arrange
-  fatal(module_parser_create, &parser);
+  module_parser_create(&parser);
   parser->import_resolve = load_submodule;
-  fatal(graph_invalidation_begin, &invalidation);
+  graph_invalidation_begin(&invalidation);
 
   // parse
-  fatal(module_alloc, &mod);
-  fatal(module_parser_parse, parser, mod, &invalidation, test->text, strlen(test->text) + 2, "-fname-");
+  module_alloc(&mod);
+  module_parser_parse(parser, mod, &invalidation, test->text, strlen(test->text) + 2, "-fname-");
   assert_eq_b(false, system_error);
 
 finally:
-  fatal(module_xrelease, mod, parser);
-  fatal(module_parser_xfree, parser);
+  module_xrelease(mod, parser);
+  module_parser_xfree(parser);
   graph_invalidation_end(&invalidation);
 coda;
 }
@@ -123,14 +106,14 @@ xunit_unit xunit = {
       /* variant declarations */
       (module_parser_test[]) {{
           text : (char[]) {
-            "variant {foo,bar}.xapi.{debug,devel,final}\0"
+            "variant {foo,bar}.void.{debug,devel,final}\0"
           }
       }}
 
       /* ltr one-to-one */
     , (module_parser_test[]) {{
           text : (char[]) {
-            "rule *~integ/**/*.?.o -> libxapi.$?.so\0"
+            "rule *~integ/**/*.?.o -> libvoid.$?.so\0"
           }
       }}
 
@@ -150,20 +133,20 @@ xunit_unit xunit = {
       /* zero-to-one generate */
     , (module_parser_test[]) {{
           text : (char[]) {
-            "rule -- libxapi.?.so : ./bam-cc\0"
+            "rule -- libvoid.?.so : ./bam-cc\0"
           }
       }}
       /* zero-to-many generate */
     , (module_parser_test[]) {{
           text : (char[]) {
-            "rule -- [*] libxapi.?.so : ./bam-cc\0"
+            "rule -- [*] libvoid.?.so : ./bam-cc\0"
           }
       }}
 
       /* ltr one-to-many */
     , (module_parser_test[]) {{
           text : (char[]) {
-            "rule *~integ/**/*.?.o -> [*] libxapi.$?.so : ./bam-cc\0"
+            "rule *~integ/**/*.?.o -> [*] libvoid.$?.so : ./bam-cc\0"
           }
       }}
     , 0

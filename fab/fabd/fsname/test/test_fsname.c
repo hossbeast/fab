@@ -17,8 +17,6 @@
 
 #include <stdlib.h>
 
-#include "xapi.h"
-#include "xapi/errtab.h"
 
 #include "xunit.h"
 #include "xunit/assert.h"
@@ -38,10 +36,8 @@ typedef struct path_test {
   char * base;
 } path_test;
 
-static xapi path_test_entry(xunit_test * _test)
+static void path_test_entry(xunit_test * _test)
 {
-  enter;
-
   path_test * test = containerof(_test, path_test, xu);
 
   fsname p;
@@ -51,8 +47,6 @@ static xapi path_test_entry(xunit_test * _test)
   assert_eq_w(test->ext, istrlen(test->ext), p.ext, p.extl);
   assert_eq_w(test->suffix, istrlen(test->suffix), p.suffix, p.suffixl);
   assert_eq_w(test->base, istrlen(test->base), p.base, p.basel);
-
-  finally : coda;
 }
 
 //

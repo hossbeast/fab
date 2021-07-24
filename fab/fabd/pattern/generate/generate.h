@@ -35,7 +35,7 @@ struct fsent;
  * scope    -
  * results  - newly created nodes are appended to this list
  */
-xapi pattern_generate(
+void pattern_generate(
     /* 1 */ const struct pattern * restrict pat
   , /* 2 */ struct module * restrict module
   , /* 3 */ struct fsent * restrict base

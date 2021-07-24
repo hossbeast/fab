@@ -19,7 +19,6 @@
 #define _FABD_REQUEST_H
 
 #include "types.h"
-#include "xapi.h"
 
 #include "valyria/llist.h"
 #include "moria/traverse.h"
@@ -52,12 +51,12 @@ void request_init(request * restrict req)
 void request_destroy(request * restrict req)
   __attribute__((nonnull));
 
-xapi request_say(request * restrict req, struct narrator * restrict N)
+void request_say(request * restrict req, struct narrator * restrict N)
   __attribute__((nonnull));
 
-xapi request_command_alloc(request * restrict req, struct command ** cmdp)
+void request_command_alloc(request * restrict req, struct command ** cmdp)
   __attribute__((nonnull));
 
-xapi request_cleanup(void);
+void request_cleanup(void);
 
 #endif

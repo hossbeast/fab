@@ -18,7 +18,6 @@
 #ifndef _LS_COMMAND_H
 #define _LS_COMMAND_H
 
-#include "xapi.h"
 #include "fab/graph.h"
 
 #include "command.h"

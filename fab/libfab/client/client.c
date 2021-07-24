@@ -28,10 +28,6 @@
 #include <sys/wait.h>
 #include <linux/futex.h>
 
-#include "xapi.h"
-#include "xapi/trace.h"
-
-#include "xlinux/KERNEL.errtab.h"
 #include "xlinux/xunistd.h"
 #include "xlinux/xfcntl.h"
 #include "xlinux/xunistd.h"
@@ -46,15 +42,11 @@
 #include "narrator/units.h"
 #include "lorien/mkdirp.h"
 #include "lorien/symlinkp.h"
-#include "logger.h"
-#include "logger/arguments.h"
 #include "fab/ipc.h"
 #include "common/hash.h"
 #include "common/attrs.h"
 
 #include "client.internal.h"
-#include "errtab/FAB.errtab.h"
-#include "logging.internal.h"
 #include "ipc.h"
 #include "lockfile.h"
 #include "sigutil.h"
@@ -82,29 +74,27 @@ const char * APIDATA g_fab_client_sweeper_period_nsec;
 // static
 //
 
-static xapi launch(fab_client * restrict client)
+static void launch(fab_client * restrict client)
 {
-  enter;
-
   sigset_t sigs;
   sigset_t oset;
   char *argv[16];
   int i;
 
   // canonical project directory symlink
-  fatal(uxsymlinkf, "%s", "%s/projdir", client->projdir, client->ipcdir);
+  uxsymlinkf("%s", "%s/projdir", client->projdir, client->ipcdir);
 
   // cleanup the directory
-  fatal(uxunlinkf, "%s/fabd/exit", client->ipcdir);
-  fatal(uxunlinkf, "%s/fabd/core", client->ipcdir);
-  fatal(uxunlinkf, "%s/fabd/stdout", client->ipcdir);
-  fatal(uxunlinkf, "%s/fabd/stderr", client->ipcdir);
+  uxunlinkf("%s/fabd/exit", client->ipcdir);
+  uxunlinkf("%s/fabd/core", client->ipcdir);
+  uxunlinkf("%s/fabd/stdout", client->ipcdir);
+  uxunlinkf("%s/fabd/stderr", client->ipcdir);
 
   // block all signals
   sigfillset(&sigs);
-  fatal(xpthread_sigmask, SIG_SETMASK, &sigs, &oset);
+  xpthread_sigmask(SIG_SETMASK, &sigs, &oset);
 
-  fatal(xfork, &client->fabd_pid);
+  client->fabd_pid = xfork();
   if(client->fabd_pid == 0)
   {
     // prepare the command
@@ -113,16 +103,14 @@ static xapi launch(fab_client * restrict client)
     argv[i++] = client->hash;
 
 #if DEBUG || DEVEL
-    narrator * N;
-    fatal(log_start, L_IPC, &N);
-    xsayf("execv(");
+    printf("execv(");
 #if TRACE || DEVEL
 #if TRACE
-    argv[0] = "fabd.trace.xapi";
+    argv[0] = "fabd.trace";
 #else
-    argv[0] = "fabd.devel.xapi";
+    argv[0] = "fabd.devel";
 #endif
-    xsays(g_fab_client_fabd_path);
+    printf("%s", g_fab_client_fabd_path);
 
     if(g_fab_client_system_config_path)
     {
@@ -149,71 +137,64 @@ static xapi launch(fab_client * restrict client)
       argv[i++] = "--sweeper-period-nsec";
       argv[i++] = (char*)g_fab_client_sweeper_period_nsec;
     }
-#else
-    xsays("fabd");
 #endif
     int x;
     for(x = 0; x < i; x++)
     {
-      xsays(",");
-      xsays(argv[x]);
+      printf(",");
+      printf("%s", argv[x]);
     }
-    xsays(")");
-    fatal(log_finish);
+    printf(")");
 #endif
 
     argv[i] = (void*)0;
 
     // reopen standard file descriptors
-    fatal(xclose, 0);
-    fatal(xopens, 0, O_RDONLY, "/dev/null");
+    xclose(0);
+    xopens(O_RDONLY, "/dev/null");
 
-    fatal(xclose, 1);
-    fatal(xopen_modef, 0, O_WRONLY | O_CREAT | O_EXCL, IPCDIR_MODE_DATA, "%s/fabd/stdout", client->ipcdir);
+    xclose(1);
+    xopen_modef(O_WRONLY | O_CREAT | O_EXCL, IPCDIR_MODE_DATA, "%s/fabd/stdout", client->ipcdir);
 
-    fatal(xclose, 2);
-    fatal(xopen_modef, 0, O_WRONLY | O_CREAT | O_EXCL, IPCDIR_MODE_DATA, "%s/fabd/stderr", client->ipcdir);
+    xclose(2);
+    xopen_modef(O_WRONLY | O_CREAT | O_EXCL, IPCDIR_MODE_DATA, "%s/fabd/stderr", client->ipcdir);
 
     // core file goes in cwd
-    fatal(xchdirf, "%s/fabd", client->ipcdir);
+    xchdirf("%s/fabd", client->ipcdir);
 
     // create new session/process group
-    fatal(xsetsid);
+    xsetsid();
 
     // update the lockfile
-    fatal(fabipc_lockfile_update, "%s/fabd/lock", client->ipcdir);
+    fabipc_lockfile_update("%s/fabd/lock", client->ipcdir);
 
 #if DEVEL
-    fatal(xexecv, g_fab_client_fabd_path, argv);
+    xexecv(g_fab_client_fabd_path, argv);
 #else
-    fatal(xexecvp, "fabd", argv);
+    xexecvp("fabd", argv);
 #endif
 
     exit(1);
   }
 
-  fatal(xpthread_sigmask, SIG_SETMASK, &oset, 0);
-
-  finally : coda;
+  xpthread_sigmask(SIG_SETMASK, &oset, 0);
 }
 
 //
 // public
 //
 
-xapi API fab_client_create(fab_client ** restrict clientp, const char * restrict projdir, const char * restrict ipcdir_base)
+void API fab_client_create(fab_client ** restrict clientp, const char * restrict projdir, const char * restrict ipcdir_base)
 {
-  enter;
-
   char space[512];
   size_t len;
   uint64_t u64;
   fab_client *client;
 
-  fatal(xmalloc, &client, sizeof(*client));
+  xmalloc(&client, sizeof(*client));
 
   // canonicalized project path
-  fatal(xrealpaths, &client->projdir, 0, projdir);
+  client->projdir = xrealpaths(0, projdir);
 
   // project path hash
   u64 = hash64(0, client->projdir, strlen(client->projdir));
@@ -221,114 +202,85 @@ xapi API fab_client_create(fab_client ** restrict clientp, const char * restrict
 
   // ipc dir for the project
   len = snprintf(space, sizeof(space), "%s/%s", ipcdir_base, client->hash);
-  fatal(xmalloc, &client->ipcdir, len + 1);
+  xmalloc(&client->ipcdir, len + 1);
   memcpy(client->ipcdir, space, len);
 
   client->msgid = 2;
   client->lockfd = -1;
   *clientp = client;
-
-  finally : coda;
 }
 
-xapi API fab_client_xfree(fab_client * restrict client)
+void API fab_client_xfree(fab_client * restrict client)
 {
-  enter;
-
   if(client)
   {
     wfree(client->ipcdir);
     wfree(client->projdir);
-    fatal(xshmdt, client->shm);
-    fatal(xclose, client->lockfd);
+    xshmdt(client->shm);
+    xclose(client->lockfd);
   }
   wfree(client);
-
-  finally : coda;
 }
 
-xapi API fab_client_ixfree(fab_client ** restrict client)
+void API fab_client_ixfree(fab_client ** restrict client)
 {
-  enter;
-
-  fatal(fab_client_xfree, *client);
+  fab_client_xfree(*client);
   *client = 0;
-
-  finally : coda;
 }
 
-xapi API fab_client_prepare(fab_client * restrict client)
+void API fab_client_prepare(fab_client * restrict client)
 {
-  enter;
-
-  fatal(mkdirpf, IPCDIR_MODE_DIR, "%s/fabd", client->ipcdir);
-  fatal(fabipc_lockfile_obtain, &client->fabd_pid, &client->lockfd, "%s/fabd/lock", client->ipcdir);
-
-  finally : coda;
+  mkdirpf(IPCDIR_MODE_DIR, "%s/fabd", client->ipcdir);
+  fabipc_lockfile_obtain(&client->fabd_pid, &client->lockfd, "%s/fabd/lock", client->ipcdir);
 }
 
-xapi API fab_client_kill(fab_client * restrict client)
+void API fab_client_kill(fab_client * restrict client)
 {
-  enter;
-
-  fatal(uxkill, 0, client->fabd_pid, SIGTERM);
+  uxkill(client->fabd_pid, SIGTERM);
 
   /* force re-loading the fabd pid in solicit */
-  fatal(ixclose, &client->lockfd);
-
-  finally : coda;
+  ixclose(&client->lockfd);
 }
 
-xapi API fab_client_solicit(fab_client * restrict client)
+void API fab_client_solicit(fab_client * restrict client)
 {
-  enter;
-
   int r;
   union sigval value;
   pid_t tid;
 
   if(client->lockfd == -1) {
-    fatal(fabipc_lockfile_obtain, &client->fabd_pid, &client->lockfd, "%s/fabd/lock", client->ipcdir);
+    fabipc_lockfile_obtain(&client->fabd_pid, &client->lockfd, "%s/fabd/lock", client->ipcdir);
   }
 
   // lock obtained, server not running - launch the server
   if(client->fabd_pid == 0) {
-    fatal(launch, client);
+    launch(client);
   }
 
   // send tid via signal to initialize the channel
   tid = gettid();
   value.sival_ptr = (void*)(intptr_t)tid;
-  fatal(sigutil_uxrt_sigqueueinfo, &r, client->fabd_pid, SIGRTMIN, value);
+  r = sigutil_uxrt_sigqueueinfo(client->fabd_pid, SIGRTMIN, value);
   if(r) {
-    fail(FAB_NODAEMON); // no such process
+    RUNTIME_ABORT(); // no such process
   }
-
-  finally : coda;
 }
 
-xapi API fab_client_attach(fab_client * restrict client, int channel_shmid)
+void API fab_client_attach(fab_client * restrict client, int channel_shmid)
 {
-  enter;
-
   void * shmaddr = 0;
 
   /* channel shmid is the value of the signal */
 
   /* attach the channel (owned by the server) */
-  fatal(xshmat, channel_shmid, 0, 0, &shmaddr);
+  shmaddr = xshmat(channel_shmid, &shmaddr, 0);
 
   client->shm = shmaddr;
-  shmaddr = 0;
 
   client->shm->client_pulse++;
 
   /* at this point the lockfile, if any, is now held by fabd and no longer needed */
-  fatal(ixclose, &client->lockfd);
-
-finally:
-  fatal(xshmdt, shmaddr);
-coda;
+  ixclose(&client->lockfd);
 }
 
 void API fab_client_disconnect(fab_client * restrict client)

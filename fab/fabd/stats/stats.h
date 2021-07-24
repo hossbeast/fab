@@ -18,7 +18,6 @@
 #ifndef FABD_STATS_H
 #define FABD_STATS_H
 
-#include "xapi.h"
 #include "types.h"
 
 #include "fab/stats.h"
@@ -35,10 +34,10 @@ extern fab_global_stats g_stats;
   (x)--;                    \
 } while(0)
 
-xapi stats_global_collate(void *dst, size_t sz, bool reset, size_t *zp)
+void stats_global_collate(void *dst, size_t sz, bool reset, size_t *zp)
   __attribute__((nonnull));
 
-xapi stats_node_collate(void *dst, size_t sz, struct fsent * restrict n, bool reset, size_t *zp)
+void stats_node_collate(void *dst, size_t sz, struct fsent * restrict n, bool reset, size_t *zp)
   __attribute__((nonnull));
 
 #endif

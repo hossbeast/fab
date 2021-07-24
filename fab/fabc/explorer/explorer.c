@@ -18,7 +18,6 @@
 #include <inttypes.h>
 #include <string.h>
 
-#include "xapi.h"
 #include "common/attrs.h"
 #include "fab/client.h"
 #include "fab/describe.h"
@@ -90,175 +89,157 @@ static uint32_t describe_request_id;
 /* autoinc request id counter */
 static uint32_t msgid;
 
-static xapi up_request(value_writer * restrict writer)
+static void up_request(value_writer * restrict writer)
 {
-  enter;
-
   char space[256];
   uint16_t z;
 
-  fatal(value_writer_push_list, writer);
-    fatal(value_writer_push_mapping, writer);
-      fatal(value_writer_string, writer, "select");
-      fatal(value_writer_push_list, writer);
-        fatal(value_writer_push_mapping, writer);
-          fatal(value_writer_string, writer, "path");
+  value_writer_push_list(writer);
+    value_writer_push_mapping(writer);
+      value_writer_string(writer, "select");
+      value_writer_push_list(writer);
+        value_writer_push_mapping(writer);
+          value_writer_string(writer, "path");
           if(lookup_pattern_len > 0 && lookup_path[0] != '.' && lookup_path[0] != '/') {
             z = 0;
             z += znloads(space + z, sizeof(space) - z, "./");
             z += znloadw(space + z, sizeof(space) - z, lookup_path, lookup_pattern_len);
-            fatal(value_writer_bytes, writer, space, z);
+            value_writer_bytes(writer, space, z);
           } else {
-            fatal(value_writer_bytes, writer, lookup_path, lookup_pattern_len);
+            value_writer_bytes(writer, lookup_path, lookup_pattern_len);
           }
-        fatal(value_writer_pop_mapping, writer);
-        fatal(value_writer_push_mapping, writer);
-          fatal(value_writer_string, writer, "traverse");
-          fatal(value_writer_push_set, writer);
-            fatal(value_writer_push_mapping, writer);
-              fatal(value_writer_string, writer, "direction");
-              fatal(value_writer_string, writer, "up");
-            fatal(value_writer_pop_mapping, writer);
-            fatal(value_writer_push_mapping, writer);
-              fatal(value_writer_string, writer, "graph");
-              fatal(value_writer_string, writer, graph);
-            fatal(value_writer_pop_mapping, writer);
-            fatal(value_writer_push_mapping, writer);
-              fatal(value_writer_string, writer, "min-distance");
-              fatal(value_writer_string, writer, "1");
-            fatal(value_writer_pop_mapping, writer);
-            fatal(value_writer_push_mapping, writer);
-              fatal(value_writer_string, writer, "max-distance");
-              fatal(value_writer_string, writer, "1");
-            fatal(value_writer_pop_mapping, writer);
-          fatal(value_writer_pop_set, writer);
-        fatal(value_writer_pop_mapping, writer);
-      fatal(value_writer_pop_list, writer);
-    fatal(value_writer_pop_mapping, writer);
-    fatal(value_writer_string, writer, "list");
-  fatal(value_writer_pop_list, writer);
-
-  finally : coda;
+        value_writer_pop_mapping(writer);
+        value_writer_push_mapping(writer);
+          value_writer_string(writer, "traverse");
+          value_writer_push_set(writer);
+            value_writer_push_mapping(writer);
+              value_writer_string(writer, "direction");
+              value_writer_string(writer, "up");
+            value_writer_pop_mapping(writer);
+            value_writer_push_mapping(writer);
+              value_writer_string(writer, "graph");
+              value_writer_string(writer, graph);
+            value_writer_pop_mapping(writer);
+            value_writer_push_mapping(writer);
+              value_writer_string(writer, "min-distance");
+              value_writer_string(writer, "1");
+            value_writer_pop_mapping(writer);
+            value_writer_push_mapping(writer);
+              value_writer_string(writer, "max-distance");
+              value_writer_string(writer, "1");
+            value_writer_pop_mapping(writer);
+          value_writer_pop_set(writer);
+        value_writer_pop_mapping(writer);
+      value_writer_pop_list(writer);
+    value_writer_pop_mapping(writer);
+    value_writer_string(writer, "list");
+  value_writer_pop_list(writer);
 }
 
-static xapi down_request(value_writer * restrict writer)
+static void down_request(value_writer * restrict writer)
 {
-  enter;
-
   char space[256];
   uint16_t z;
 
-  fatal(value_writer_push_list, writer);
-    fatal(value_writer_push_mapping, writer);
-      fatal(value_writer_string, writer, "select");
-      fatal(value_writer_push_list, writer);
-        fatal(value_writer_push_mapping, writer);
-          fatal(value_writer_string, writer, "path");
+  value_writer_push_list(writer);
+    value_writer_push_mapping(writer);
+      value_writer_string(writer, "select");
+      value_writer_push_list(writer);
+        value_writer_push_mapping(writer);
+          value_writer_string(writer, "path");
           if(lookup_pattern_len > 0 && lookup_path[0] != '.' && lookup_path[0] != '/') {
             z = 0;
             z += znloads(space + z, sizeof(space) - z, "./");
             z += znloadw(space + z, sizeof(space) - z, lookup_path, lookup_pattern_len);
-            fatal(value_writer_bytes, writer, space, z);
+            value_writer_bytes(writer, space, z);
           } else {
-            fatal(value_writer_bytes, writer, lookup_path, lookup_pattern_len);
+            value_writer_bytes(writer, lookup_path, lookup_pattern_len);
           }
-          fatal(value_writer_pop_mapping, writer);
-        fatal(value_writer_push_mapping, writer);
-          fatal(value_writer_string, writer, "traverse");
-          fatal(value_writer_push_set, writer);
-            fatal(value_writer_push_mapping, writer);
-              fatal(value_writer_string, writer, "direction");
-              fatal(value_writer_string, writer, "down");
-            fatal(value_writer_pop_mapping, writer);
-            fatal(value_writer_push_mapping, writer);
-              fatal(value_writer_string, writer, "graph");
-              fatal(value_writer_string, writer, graph);
-            fatal(value_writer_pop_mapping, writer);
-            fatal(value_writer_push_mapping, writer);
-              fatal(value_writer_string, writer, "min-distance");
-              fatal(value_writer_string, writer, "1");
-            fatal(value_writer_pop_mapping, writer);
-            fatal(value_writer_push_mapping, writer);
-              fatal(value_writer_string, writer, "max-distance");
-              fatal(value_writer_string, writer, "1");
-            fatal(value_writer_pop_mapping, writer);
-          fatal(value_writer_pop_set, writer);
-        fatal(value_writer_pop_mapping, writer);
-      fatal(value_writer_pop_list, writer);
-    fatal(value_writer_pop_mapping, writer);
-    fatal(value_writer_string, writer, "list");
-  fatal(value_writer_pop_list, writer);
-
-  finally : coda;
+          value_writer_pop_mapping(writer);
+        value_writer_push_mapping(writer);
+          value_writer_string(writer, "traverse");
+          value_writer_push_set(writer);
+            value_writer_push_mapping(writer);
+              value_writer_string(writer, "direction");
+              value_writer_string(writer, "down");
+            value_writer_pop_mapping(writer);
+            value_writer_push_mapping(writer);
+              value_writer_string(writer, "graph");
+              value_writer_string(writer, graph);
+            value_writer_pop_mapping(writer);
+            value_writer_push_mapping(writer);
+              value_writer_string(writer, "min-distance");
+              value_writer_string(writer, "1");
+            value_writer_pop_mapping(writer);
+            value_writer_push_mapping(writer);
+              value_writer_string(writer, "max-distance");
+              value_writer_string(writer, "1");
+            value_writer_pop_mapping(writer);
+          value_writer_pop_set(writer);
+        value_writer_pop_mapping(writer);
+      value_writer_pop_list(writer);
+    value_writer_pop_mapping(writer);
+    value_writer_string(writer, "list");
+  value_writer_pop_list(writer);
 }
 
-static xapi stats_request(value_writer * restrict writer)
+static void stats_request(value_writer * restrict writer)
 {
-  enter;
-
   char space[256];
   uint16_t z;
 
-  fatal(value_writer_push_list, writer);
-    fatal(value_writer_push_mapping, writer);
-      fatal(value_writer_string, writer, "select");
-      fatal(value_writer_push_list, writer);
-        fatal(value_writer_push_mapping, writer);
-          fatal(value_writer_string, writer, "path");
+  value_writer_push_list(writer);
+    value_writer_push_mapping(writer);
+      value_writer_string(writer, "select");
+      value_writer_push_list(writer);
+        value_writer_push_mapping(writer);
+          value_writer_string(writer, "path");
           if(lookup_pattern_len > 0 && lookup_path[0] != '.' && lookup_path[0] != '/') {
             z = 0;
             z += znloads(space + z, sizeof(space) - z, "./");
             z += znloadw(space + z, sizeof(space) - z, lookup_path, lookup_pattern_len);
-            fatal(value_writer_bytes, writer, space, z);
+            value_writer_bytes(writer, space, z);
           } else {
-            fatal(value_writer_bytes, writer, lookup_path, lookup_pattern_len);
+            value_writer_bytes(writer, lookup_path, lookup_pattern_len);
           }
-        fatal(value_writer_pop_mapping, writer);
-      fatal(value_writer_pop_list, writer);
-    fatal(value_writer_pop_mapping, writer);
-    fatal(value_writer_string, writer, "stats-read");
-  fatal(value_writer_pop_list, writer);
-
-  finally : coda;
+        value_writer_pop_mapping(writer);
+      value_writer_pop_list(writer);
+    value_writer_pop_mapping(writer);
+    value_writer_string(writer, "stats-read");
+  value_writer_pop_list(writer);
 }
 
-static xapi describe_request(value_writer * restrict writer)
+static void describe_request(value_writer * restrict writer)
 {
-  enter;
-
   char space[256];
   uint16_t z;
 
-  fatal(value_writer_push_list, writer);
-    fatal(value_writer_push_mapping, writer);
-      fatal(value_writer_string, writer, "select");
-      fatal(value_writer_push_list, writer);
-        fatal(value_writer_push_mapping, writer);
-          fatal(value_writer_string, writer, "path");
+  value_writer_push_list(writer);
+    value_writer_push_mapping(writer);
+      value_writer_string(writer, "select");
+      value_writer_push_list(writer);
+        value_writer_push_mapping(writer);
+          value_writer_string(writer, "path");
           if(lookup_pattern_len > 0 && lookup_path[0] != '.' && lookup_path[0] != '/') {
             z = 0;
             z += znloads(space + z, sizeof(space) - z, "./");
             z += znloadw(space + z, sizeof(space) - z, lookup_path, lookup_pattern_len);
-            fatal(value_writer_bytes, writer, space, z);
+            value_writer_bytes(writer, space, z);
           } else {
-            fatal(value_writer_bytes, writer, lookup_path, lookup_pattern_len);
+            value_writer_bytes(writer, lookup_path, lookup_pattern_len);
           }
-        fatal(value_writer_pop_mapping, writer);
-      fatal(value_writer_pop_list, writer);
-    fatal(value_writer_pop_mapping, writer);
-    fatal(value_writer_string, writer, "describe");
-  fatal(value_writer_pop_list, writer);
-
-  finally : coda;
+        value_writer_pop_mapping(writer);
+      value_writer_pop_list(writer);
+    value_writer_pop_mapping(writer);
+    value_writer_string(writer, "describe");
+  value_writer_pop_list(writer);
 }
 
 /*
  * post new requests - called on the client thread
  */
-static xapi redrive(fab_client * restrict client)
+static void redrive(fab_client * restrict client)
 {
-  enter;
-
   narrator_fixed nstor;
   value_writer writer;
   narrator * request_narrator;
@@ -272,67 +253,63 @@ static xapi redrive(fab_client * restrict client)
   msg = fab_client_produce(client);
   up_request_id = msg->id = ++msgid;
   request_narrator = narrator_fixed_init(&nstor, msg->text, 0xfff);
-  fatal(value_writer_open, &writer, request_narrator);
-  fatal(up_request, &writer);
-  fatal(value_writer_close, &writer);
-  fatal(narrator_xsayw, request_narrator, (char[]) { 0x00, 0x00 }, 2);
+  value_writer_open(&writer, request_narrator);
+  up_request(&writer);
+  value_writer_close(&writer);
+  narrator_xsayw(request_narrator, (char[]) { 0x00, 0x00 }, 2);
   message_len = nstor.l;
   msg->size = message_len;
   msg->type = FABIPC_MSG_REQUEST;
-  fatal(client_thread_post, client, msg);
+  client_thread_post(client, msg);
 
   // downward nodes
   down_items_len = down_items_count = 0;
   msg = fab_client_produce(client);
   down_request_id = msg->id = ++msgid;
   request_narrator = narrator_fixed_init(&nstor, msg->text, 0xfff);
-  fatal(value_writer_open, &writer, request_narrator);
-  fatal(down_request, &writer);
-  fatal(value_writer_close, &writer);
-  fatal(narrator_xsayw, request_narrator, (char[]) { 0x00, 0x00 }, 2);
+  value_writer_open(&writer, request_narrator);
+  down_request(&writer);
+  value_writer_close(&writer);
+  narrator_xsayw(request_narrator, (char[]) { 0x00, 0x00 }, 2);
   message_len = nstor.l;
   msg->size = message_len;
   msg->type = FABIPC_MSG_REQUEST;
-  fatal(client_thread_post, client, msg);
+  client_thread_post(client, msg);
 
   // selected node stats
   msg = fab_client_produce(client);
   stats_request_id = msg->id = ++msgid;
   request_narrator = narrator_fixed_init(&nstor, msg->text, 0xfff);
-  fatal(value_writer_open, &writer, request_narrator);
-  fatal(stats_request, &writer);
-  fatal(value_writer_close, &writer);
-  fatal(narrator_xsayw, request_narrator, (char[]) { 0x00, 0x00 }, 2);
+  value_writer_open(&writer, request_narrator);
+  stats_request(&writer);
+  value_writer_close(&writer);
+  narrator_xsayw(request_narrator, (char[]) { 0x00, 0x00 }, 2);
   message_len = nstor.l;
   msg->size = message_len;
   msg->type = FABIPC_MSG_REQUEST;
-  fatal(client_thread_post, client, msg);
+  client_thread_post(client, msg);
 
   // selected node details
   msg = fab_client_produce(client);
   describe_request_id = msg->id = ++msgid;
   request_narrator = narrator_fixed_init(&nstor, msg->text, 0xfff);
-  fatal(value_writer_open, &writer, request_narrator);
-  fatal(describe_request, &writer);
-  fatal(value_writer_close, &writer);
-  fatal(narrator_xsayw, request_narrator, (char[]) { 0x00, 0x00 }, 2);
+  value_writer_open(&writer, request_narrator);
+  describe_request(&writer);
+  value_writer_close(&writer);
+  narrator_xsayw(request_narrator, (char[]) { 0x00, 0x00 }, 2);
   message_len = nstor.l;
   msg->size = message_len;
   msg->type = FABIPC_MSG_REQUEST;
-  fatal(client_thread_post, client, msg);
+  client_thread_post(client, msg);
 
-finally:
-  fatal(value_writer_destroy, &writer);
-coda;
+  value_writer_destroy(&writer);
 }
 
 /*
  * process received messages - called on the client thread
  */
-static xapi rebind(fab_client * restrict client, fabipc_message * restrict msg)
+static void rebind(fab_client * restrict client, fabipc_message * restrict msg)
 {
-  enter;
-
   size_t z;
   void *src;
   size_t sz;
@@ -346,7 +323,7 @@ static xapi rebind(fab_client * restrict client, fabipc_message * restrict msg)
       describe_msg_index ^= 1;
 
       /* now re-draw */
-      fatal(xtgkill, g_params.pid, g_params.thread_ui, SIGUSR1);
+      xtgkill(g_params.pid, g_params.thread_ui, SIGUSR1);
 
       /* release pages associated with the previous display */
       if(describe_msgs[!describe_msg_index]) {
@@ -355,7 +332,7 @@ static xapi rebind(fab_client * restrict client, fabipc_message * restrict msg)
       }
     }
 
-    goto XAPI_FINALLY;
+    return;
   }
 
   /* process the result messages */
@@ -401,47 +378,41 @@ static xapi rebind(fab_client * restrict client, fabipc_message * restrict msg)
     describe_msgs[!describe_msg_index] = msg;
     descriptor_type_unmarshal(&node, &descriptor_fab_describe_item, msg->text, msg->size);
   }
-
-  finally : coda;
 }
 
-static xapi setup()
+static void setup()
 {
-  enter;
-
   uint16_t centery = LINES / 2;
 
   // top-left pinned
-  fatal(area_init, &winpath, 3, 100, 0, 0);
+  area_init(&winpath, 3, 100, 0, 0);
   wattrset(winpath.body.w, COLOR_PAIR(1) | A_NORMAL);
   wattrset(winpath.border.w, COLOR_PAIR(2) | A_DIM);
 
   // top-right pinned
-  fatal(area_init, &wingraph, 3, COLS - 100, 0, 100);
+  area_init(&wingraph, 3, COLS - 100, 0, 100);
   wattrset(wingraph.body.w, COLOR_PAIR(1) | A_NORMAL);
   wattrset(wingraph.border.w, COLOR_PAIR(2) | A_DIM);
 
   // up-and-left of label
-  fatal(area_init, &winup, (LINES / 2) - 4, 70, 3, 2);
+  area_init(&winup, (LINES / 2) - 4, 70, 3, 2);
   wattrset(winup.footer.w, COLOR_PAIR(1) | A_DIM);
 
   // vertically centered, pinned to and offset from left edge
-  fatal(area_init, &winnode, 3, 70, centery - 1, 4);
+  area_init(&winnode, 3, 70, centery - 1, 4);
 
   // down-and-right of label
-  fatal(area_init, &windown, (LINES / 2) - 5, 70, (LINES / 2) + 2, 6);
+  area_init(&windown, (LINES / 2) - 5, 70, (LINES / 2) + 2, 6);
   wattrset(windown.footer.w, COLOR_PAIR(1) | A_DIM);
 
   // right-side pinned
-  fatal(area_init, &winproperties, LINES - 6, COLS - 70 - 6, 3, 76);
+  area_init(&winproperties, LINES - 6, COLS - 70 - 6, 3, 76);
   wattrset(winproperties.body.w, COLOR_PAIR(1) | A_NORMAL);
 
   // bottom pinned
-  fatal(area_init, &winmode, 3, COLS, LINES - 3, 0);
+  area_init(&winmode, 3, COLS, LINES - 3, 0);
   wattrset(winmode.body.w, COLOR_PAIR(1) | A_NORMAL);
   wattrset(winmode.border.w, COLOR_PAIR(2) | A_DIM);
-
-  finally : coda;
 }
 
 static void print_item(region *reg, int winnum, fab_list_item * restrict items, int x)
@@ -463,17 +434,15 @@ static void print_item(region *reg, int winnum, fab_list_item * restrict items, 
 }
 
 /* called on the ui thread */
-static xapi redraw()
+static void redraw()
 {
-  enter;
-
   int x;
   descriptor_field *member;
   const char *str;
   uint16_t len;
 
   // top-left pinned
-  fatal(wborder, winpath.border.w, 0, 0, 0, 0, 0, 0, 0, 0);
+  wborder(winpath.border.w, 0, 0, 0, 0, 0, 0, 0, 0);
   wrefresh(winpath.border.w);
 
   werase(winpath.body.w);
@@ -481,7 +450,7 @@ static xapi redraw()
   wrefresh(winpath.body.w);
 
   // top-right pinned
-  fatal(wborder, wingraph.border.w, 0, 0, 0, 0, 0, 0, 0, 0);
+  wborder(wingraph.border.w, 0, 0, 0, 0, 0, 0, 0, 0);
   wrefresh(wingraph.border.w);
 
   werase(wingraph.body.w);
@@ -507,7 +476,7 @@ static xapi redraw()
   } else {
       wattrset(winup.border.w, COLOR_PAIR(1) | A_DIM);
   }
-  fatal(wborder, winup.border.w, 0, 0, 0, 0, 0, 0, 0, 0);
+  wborder(winup.border.w, 0, 0, 0, 0, 0, 0, 0, 0);
   wrefresh(winup.border.w);
 
   werase(winup.body.w);
@@ -528,7 +497,7 @@ static xapi redraw()
   } else {
       wattrset(winnode.border.w, COLOR_PAIR(1) | A_DIM);
   }
-  fatal(wborder, winnode.border.w, 0, 0, 0, 0, 0, 0, 0, 0);
+  wborder(winnode.border.w, 0, 0, 0, 0, 0, 0, 0, 0);
   wrefresh(winnode.border.w);
 
   werase(winnode.body.w);
@@ -548,7 +517,7 @@ static xapi redraw()
   } else {
       wattrset(windown.border.w, COLOR_PAIR(1) | A_DIM);
   }
-  fatal(wborder, windown.border.w, 0, 0, 0, 0, 0, 0, 0, 0);
+  wborder(windown.border.w, 0, 0, 0, 0, 0, 0, 0, 0);
   wrefresh(windown.border.w);
 
   werase(windown.body.w);
@@ -565,7 +534,7 @@ static xapi redraw()
 
   // right-side pinned
   wattrset(winproperties.border.w, COLOR_PAIR(2) | A_DIM);
-  fatal(wborder, winproperties.border.w, 0, 0, 0, 0, 0, 0, 0, 0);
+  wborder(winproperties.border.w, 0, 0, 0, 0, 0, 0, 0, 0);
   wrefresh(winproperties.border.w);
 
   werase(winproperties.body.w);
@@ -665,7 +634,7 @@ static xapi redraw()
   wrefresh(winproperties.body.w);
 
   // bottom pinned
-  fatal(wborder, winmode.border.w, 0, 0, 0, 0, 0, 0, 0, 0);
+  wborder(winmode.border.w, 0, 0, 0, 0, 0, 0, 0, 0);
   wrefresh(winmode.border.w);
 
   werase(winmode.body.w);
@@ -673,8 +642,6 @@ static xapi redraw()
   wprintw(winmode.body.w, "graph explorer");
   wattrset(winmode.body.w, COLOR_PAIR(1) | A_DIM);
   wrefresh(winmode.body.w);
-
-  finally : coda;
 }
 
 static void selection_wrap()
@@ -765,10 +732,8 @@ static display * explorer_display = (display[]) {{
   , rebind : rebind
 }};
 
-xapi explorer_display_switch()
+void explorer_display_switch()
 {
-  enter;
-
   lookup_path = g_args.path;
   if((lookup_path = g_args.path)) {
     lookup_pattern_len = strlen(lookup_path);
@@ -777,7 +742,5 @@ xapi explorer_display_switch()
     lookup_pattern_len = 1;
     graph = "fs";
   }
-  fatal(display_switch, explorer_display);
-
-  finally : coda;
+  display_switch(explorer_display);
 }

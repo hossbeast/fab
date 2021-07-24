@@ -20,7 +20,6 @@
 
 /* A formula is a program which can be run to update the targets of a dependency edge. */
 
-#include "xapi.h"
 #include "types.h"
 
 #include "moria.h"
@@ -56,16 +55,16 @@ typedef struct formula {
   struct formula_value *args;   // list
 } formula;
 
-xapi formula_create(formula ** restrict fml, struct moria_graph * restrict g)
+void formula_create(formula ** restrict fml, struct moria_graph * restrict g)
   __attribute__((nonnull));
 
-xapi formula_reconcile(formula * restrict fml)
+void formula_reconcile(formula * restrict fml)
   __attribute__((nonnull));
 
-xapi formula_system_reconcile(void);
+void formula_system_reconcile(void);
 
-xapi formula_setup(void);
-xapi formula_cleanup(void);
+void formula_setup(void);
+void formula_cleanup(void);
 
 /*
  * Write a formulas stats to a buffer
@@ -73,7 +72,7 @@ xapi formula_cleanup(void);
  * reset - true to reset the stats while reading them
  * zp    - (returns) number of bytes written to dst
  */
-xapi formula_collate_stats(void *dst, size_t sz, formula *fml, bool reset, size_t *zp)
+void formula_collate_stats(void *dst, size_t sz, formula *fml, bool reset, size_t *zp)
   __attribute__((nonnull));
 
 #endif

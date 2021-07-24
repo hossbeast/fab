@@ -15,19 +15,14 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#include "xapi.h"
 #include "types.h"
 
 #include "display.h"
 
 struct display * g_display;
 
-xapi display_switch(display * restrict dis)
+void display_switch(display * restrict dis)
 {
-  enter;
-
   g_display = dis;
-  fatal(g_display->setup);
-
-  finally : coda;
+  g_display->setup();
 }

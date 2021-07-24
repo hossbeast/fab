@@ -15,7 +15,6 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#include "xapi.h"
 #include "xunit.h"
 #include "xunit/assert.h"
 
@@ -36,7 +35,6 @@
 #include "pattern_parser.h"
 #include "lookup.h"
 #include "pattern.h"
-#include "logging.h"
 #include "fsent.h"
 #include "shadow.h"
 #include "module.internal.h"
@@ -62,43 +60,33 @@ typedef struct pattern_match_test {
   char ** matches;  // space separated, 1, 2, etc
 } pattern_match_test;
 
-static xapi pattern_match_test_unit_setup(xunit_unit * unit)
+static void pattern_match_test_unit_setup(xunit_unit * unit)
 {
-  enter;
-
-  fatal(yyutil_load);
-  fatal(logging_finalize);
-  fatal(filesystem_setup);
+  yyutil_load();
+  logging_finalize();
+  filesystem_setup();
 
   // arrange
-  fatal(graph_setup);
-  fatal(fsent_setup);
-  fatal(shadow_setup);
-  fatal(variant_setup);
-
-  finally : coda;
+  graph_setup();
+  fsent_setup();
+  shadow_setup();
+  variant_setup();
 }
 
-static xapi pattern_match_test_unit_cleanup(xunit_unit * unit)
+static void pattern_match_test_unit_cleanup(xunit_unit * unit)
 {
-  enter;
+  filesystem_cleanup();
 
-  fatal(filesystem_cleanup);
-
-  fatal(fsent_cleanup);
-  fatal(variant_cleanup);
-
-  finally : coda;
+  fsent_cleanup();
+  variant_cleanup();
 }
 
 //
 // tests
 //
 
-static xapi pattern_match_test_entry(xunit_test * _test)
+static void pattern_match_test_entry(xunit_test * _test)
 {
-  enter;
-
   pattern_match_test * test = (pattern_match_test *)_test;
 
   pattern_parser * parser = 0;
@@ -110,15 +98,15 @@ static xapi pattern_match_test_entry(xunit_test * _test)
   fsent *n = 0;
 
   // setup initial graph
-  fatal(graph_parser_create, &op_parser, &g_graph, &fsent_list, node_operations_test_dispatch, graph_vertex_attrs, graph_edge_attrs);
-  fatal(graph_parser_operations_parse, op_parser, MMS(test->operations));
+  graph_parser_create(&op_parser, &g_graph, &fsent_list, node_operations_test_dispatch, graph_vertex_attrs, graph_edge_attrs);
+  graph_parser_operations_parse(op_parser, MMS(test->operations));
 
-fatal(graph_say, g_narrator_stdout);
+graph_say(g_narrator_stdout);
 printf("\n");
 
   // parse the pattern
-  fatal(pattern_parser_create, &parser);
-  fatal(match_pattern_parse_partial, parser, test->pattern, strlen(test->pattern) + 2, "-test-", 0, &loc, &pattern);
+  pattern_parser_create(&parser);
+  match_pattern_parse_partial(parser, test->pattern, strlen(test->pattern) + 2, "-test-", 0, &loc, &pattern);
   assert_eq_u32(strlen(test->pattern), loc.l);
 
   llist_foreach(&fsent_list, n, vertex.owner) {
@@ -130,15 +118,15 @@ printf("\n");
   RUNTIME_ASSERT(n);
 
   // act
-  fatal(pattern_match, pattern, fsent_parent(n), n->vertex.label, n->vertex.label_len, &matched);
+  pattern_match(pattern, fsent_parent(n), n->vertex.label, n->vertex.label_len, &matched);
 
   // assert
   assert_eq_b(test->expected, matched);
 
 finally:
-  fatal(pattern_parser_xfree, parser);
+  pattern_parser_xfree(parser);
   pattern_free(pattern);
-  fatal(graph_parser_xfree, op_parser);
+  graph_parser_xfree(op_parser);
   graph_invalidation_end(&invalidation);
 coda;
 }

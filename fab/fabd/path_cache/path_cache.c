@@ -16,7 +16,6 @@
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
 #include "types.h"
-#include "xapi.h"
 
 #include "xlinux/xstdlib.h"
 #include "xlinux/xunistd.h"
@@ -26,7 +25,6 @@
 
 #include "path_cache.h"
 #include "config.internal.h"
-#include "CONFIG.errtab.h"
 #include "yyutil/box.h"
 
 #include "common/hash.h"
@@ -43,20 +41,16 @@ char *path_cache_env_path;
 // static
 //
 
-static xapi path_entry_xfree(void * arg)
+static void path_entry_free(void * arg)
 {
-  enter;
-
   path_cache_entry *pe = arg;
 
   if(pe)
   {
-    fatal(close, pe->fd);
+    close(pe->fd);
   }
 
   wfree(pe);
-
-  finally : coda;
 }
 
 static uint32_t path_entry_hash(uint32_t h, const void * restrict _val, size_t sz)
@@ -99,13 +93,11 @@ static char * render_env_path(void)
   return env_path_buf;
 }
 
-static xapi path_entry_alloc(path_cache_entry ** pep, const char *s, uint16_t l, int fd, path_cache_entry *dir)
+static void path_entry_alloc(path_cache_entry ** pep, const char *s, uint16_t l, int fd, path_cache_entry *dir)
 {
-  enter;
-
   path_cache_entry *pe;
 
-  fatal(xmalloc, &pe, sizeof(*pe) + l + 1);
+  xmalloc(&pe, sizeof(*pe) + l + 1);
   memcpy(pe->s, s, l);
   pe->len = l;
   pe->fd = fd;
@@ -117,8 +109,6 @@ static xapi path_entry_alloc(path_cache_entry ** pep, const char *s, uint16_t l,
     pe->filename = pe->s;
 
   *pep = pe;
-
-  finally : coda;
 }
 
 static uint32_t cache_key_hash(uint32_t h, const void * key, size_t sz)
@@ -136,32 +126,22 @@ static int cache_key_cmp(const void * A, size_t Asz, const void * key, size_t sz
 // public
 //
 
-xapi path_cache_setup()
+void path_cache_setup()
 {
-  enter;
-
-  fatal(list_createx, &staging_path_dirs[0], 0, 0, 0, path_entry_xfree);
-  fatal(list_createx, &staging_path_dirs[1], 0, 0, 0, path_entry_xfree);
-  fatal(set_createx, &path_search_cache, 0, path_entry_hash, path_entry_cmp, 0, path_entry_xfree);
-
-  finally : coda;
+  list_createx(&staging_path_dirs[0], 0, 0, path_entry_free);
+  list_createx(&staging_path_dirs[1], 0, 0, path_entry_free);
+  set_createx(&path_search_cache, 0, path_entry_hash, path_entry_cmp, path_entry_free);
 }
 
-xapi path_cache_cleanup()
+void path_cache_cleanup()
 {
-  enter;
-
-  fatal(list_xfree, staging_path_dirs[0]);
-  fatal(list_xfree, staging_path_dirs[1]);
-  fatal(set_xfree, path_search_cache);
-
-  finally : coda;
+  list_xfree(staging_path_dirs[0]);
+  list_xfree(staging_path_dirs[1]);
+  set_xfree(path_search_cache);
 }
 
-xapi path_cache_reconfigure(configblob * restrict cfg, bool dry)
+int path_cache_reconfigure(configblob * restrict cfg, char * restrict err, uint16_t err_sz)
 {
-  enter;
-
   int x;
   char *pathenv;
   char *s;
@@ -171,15 +151,16 @@ xapi path_cache_reconfigure(configblob * restrict cfg, bool dry)
   int fd = -1;
   char T;
   path_cache_entry *pe = 0;
+  uint16_t z;
 
-  if(dry)
+  if(err)
   {
     staging = staging_path_dirs[0];
     if(path_dirs == staging) {
       staging = staging_path_dirs[1];
     }
 
-    fatal(list_recycle, staging);
+    list_recycle(staging);
 
     /* paths from config have precedence over paths from $PATH */
     for(x = 0; x < cfg->formula.path.dirs.entries->table_size; x++)
@@ -188,18 +169,25 @@ xapi path_cache_reconfigure(configblob * restrict cfg, bool dry)
         continue;
 
       /* open an fd on the directory */
-      fatal(uxopenats, &fd, O_PATH | O_DIRECTORY, 0, ent->v);
+      fd = uxopenats(O_PATH | O_DIRECTORY, 0, ent->v);
 
       if(fd == -1)
       {
-        xapi_info_pushw("path", ent->v, ent->l);
-        fatal(config_throw, &ent->bx);
+        z = 0;
+        z += znloadf(err + z, err_sz - z, "path %.*s", (int)ent->l, ent->v);
+        z += znloadf(err + z, err_sz - z, " location [%d,%d - %d,%d]"
+          , ent->bx.loc.f_lin + 1
+          , ent->bx.loc.f_col + 1
+          , ent->bx.loc.l_lin + 1
+          , ent->bx.loc.l_col + 1
+        );
+        return z;
       }
 
-      fatal(path_entry_alloc, &pe, ent->v, ent->l, fd, 0);
+      path_entry_alloc(&pe, ent->v, ent->l, fd, 0);
       fd = -1;
 
-      fatal(list_push, staging, pe, 0);
+      list_push(staging, pe, 0);
       pe = 0;
     }
 
@@ -212,18 +200,20 @@ xapi path_cache_reconfigure(configblob * restrict cfg, bool dry)
 
         T = *e;
         *e = 0;
-        fatal(uxopenats, &fd, O_PATH | O_DIRECTORY, 0, s);
+        fd = uxopenats(O_PATH | O_DIRECTORY, 0, s);
         *e = T;
 
-        if(fd == -1) {
-          xapi_info_pushw("path", s, e - s);
-          fail(CONFIG_INVALID);
+        if(fd == -1)
+        {
+          z = 0;
+          z += znloadf(err + z, err_sz - z, "path %.*s", (int)(e - s), s);
+          return z;
         }
 
-        fatal(path_entry_alloc, &pe, s, e - s, fd, 0);
+        path_entry_alloc(&pe, s, e - s, fd, 0);
         fd = -1;
 
-        fatal(list_push, staging, pe, 0);
+        list_push(staging, pe, 0);
         pe = 0;
 
         s = e;
@@ -236,7 +226,7 @@ xapi path_cache_reconfigure(configblob * restrict cfg, bool dry)
   else if(cfg->formula.path.changed)
   {
     if(path_dirs)
-      fatal(list_recycle, path_dirs);
+      list_recycle(path_dirs);
     if(path_dirs == staging_path_dirs[0])
       path_dirs = staging_path_dirs[1];
     else
@@ -249,16 +239,14 @@ xapi path_cache_reconfigure(configblob * restrict cfg, bool dry)
     }
   }
 
-finally:
-  fatal(xclose, fd);
-  fatal(path_entry_xfree, pe);
-coda;
+  xclose(fd);
+  path_entry_free(pe);
+
+  return 0;
 }
 
-xapi path_cache_search(const path_cache_entry ** restrict pep, const char * restrict file, uint16_t file_len)
+void path_cache_search(const path_cache_entry ** restrict pep, const char * restrict file, uint16_t file_len)
 {
-  enter;
-
   int x;
   path_cache_entry *pe = 0;
   int fd = -1;
@@ -267,37 +255,33 @@ xapi path_cache_search(const path_cache_entry ** restrict pep, const char * rest
   {
     *pep = pe;
     pe = 0;
-    goto XAPI_FINALLY;
+    goto end;
   }
 
   for(x = 0; x < path_dirs->size; x++)
   {
     pe = list_get(path_dirs, x);
-    fatal(uxopenats, &fd, O_RDONLY, pe->fd, file);
-    if(fd != -1)
+    fd = uxopenats(O_RDONLY, pe->fd, file);
+    if(fd != -1) {
       break;
+    }
   }
 
   /* cache the result, positive or negative */
-  fatal(path_entry_alloc, &pe, file, file_len, fd, pe);
+  path_entry_alloc(&pe, file, file_len, fd, pe);
   fd = -1;
 
-  fatal(set_put, path_search_cache, pe, 0);
+  set_put(path_search_cache, pe, 0);
 
   *pep = pe;
   pe = 0;
 
-finally:
-  fatal(xclose, fd);
-  fatal(path_entry_xfree, pe);
-coda;
+end:
+  xclose(fd);
+  path_entry_free(pe);
 }
 
-xapi path_cache_reset()
+void path_cache_reset()
 {
-  enter;
-
-  fatal(set_recycle, path_search_cache);
-
-  finally : coda;
+  set_recycle(path_search_cache);
 }

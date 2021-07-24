@@ -18,7 +18,6 @@
 #ifndef _TREE_COMMAND_H
 #define _TREE_COMMAND_H
 
-#include "xapi.h"
 #include "fab/graph.h"
 
 #include "command.h"

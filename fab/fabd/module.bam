@@ -19,31 +19,31 @@ use cc           # this module contains C sources
 use flex
 use bison
 use executable  # this module builds an executable
-use xapi/errtab
+use void/errtab
 use xunit-tests
 use git
 
 # declare variants
-variant xapi.{debug,devel,final,trace}
-variant xapi.pic.devel
+variant void.{debug,devel,final,trace}
+variant void.pic.devel
 
-variant xapi.{debug,devel,final,trace} : [
+variant void.{debug,devel,final,trace} : [
   rule fabd.? -> //module/targets
 ]
 
 # make common objects available for #include and linking
 import fab/include
 import fab/asan
-import lib{common,descriptor,xapi,xlinux,valyria,value,logger,narrator,fab,lorien,moria,yyutil,xunit}
+import lib{common,descriptor,void,xlinux,valyria,value,logger,narrator,fab,lorien,moria,yyutil,xunit}
 
 rule */*.?.o <- //modules/libfab/fs/fab/stats.h
 
-variant xapi.devel : [
+variant void.devel : [
   rule fabd.? <- asan/asan.$?.o
 ]
 
 # invoke the compiler to build the executable
-variant xapi.{debug,devel,final,trace} : [
+variant void.{debug,devel,final,trace} : [
   rule **~test/*.?.o -> fabd.$? : executable/cc.bam
 ]
 
@@ -57,7 +57,7 @@ rule */*.?.o <- errtab/REQUEST.errtab.h
 rule */*.?.o <- errtab/SELECTOR.errtab.h
 
 # library dependencies
-variant xapi.pic.{debug,devel,final,trace} : [
+variant void.pic.{debug,devel,final,trace} : [
   rule //module/imports/*~libxunit/lib*.?.so -> fabd.${?-pic}
 ]
 
@@ -69,7 +69,7 @@ var : {
 # tests
 #
 
-variant xapi.pic.devel : [
+variant void.pic.devel : [
   rule //module/imports/libxunit/lib*.?.so -> fabd.${?-pic}
 
   # all the code into the blob

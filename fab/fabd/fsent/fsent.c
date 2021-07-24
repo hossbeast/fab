@@ -26,7 +26,6 @@
 #include "yyutil/box.h"
 
 #include "fsent.h"
-#include "CONFIG.errtab.h"
 #include "config.internal.h"
 #include "dependency.h"
 #include "events.h"
@@ -34,7 +33,6 @@
 #include "formula.h"
 #include "fsedge.h"
 #include "channel.h"
-#include "logging.h"
 #include "module.internal.h"
 #include "params.h"
 #include "rule_module.h"
@@ -45,6 +43,7 @@
 #include "var.h"
 #include "variant.h"
 #include "channel.h"
+#include "probes.h"
 
 #include "common/attrs.h"
 #include "zbuffer.h"
@@ -96,23 +95,17 @@ static void __attribute__((constructor)) init()
   attrs32_init(fsent_property_attrs);
 }
 
-static xapi __attribute__((nonnull(1, 2))) node_invalidate_visitor_first(moria_vertex * v, void * arg, moria_traversal_mode mode, int distance, int * result)
+static void __attribute__((nonnull(1, 2))) node_invalidate_visitor_first(moria_vertex * v, void * arg, moria_traversal_mode mode, int distance, int * result)
 {
-  enter;
-
   *result = MORIA_TRAVERSE_PRUNE;
-  fatal(fsent_invalidate_visitor, v, arg, mode, distance, 0);
-
-  finally : coda;
+  fsent_invalidate_visitor(v, arg, mode, distance, 0);
 }
 
 /*
  * visit rules attached to a directory, queue up their rma for re-evaluation
  */
-static xapi children_changed_visitor(moria_edge * e, void * ctx, moria_traversal_mode mode, int distance, int * result)
+static void children_changed_visitor(moria_edge * e, void * ctx, moria_traversal_mode mode, int distance, int * result)
 {
-  enter;
-
   rule_dirnode_edge *rde;
   rule_module_edge *rme;
   graph_invalidation_context *invalidation;
@@ -124,14 +117,10 @@ static xapi children_changed_visitor(moria_edge * e, void * ctx, moria_traversal
 
   invalidation = ctx;
   invalidation->any = true;
-
-  finally : coda;
 }
 
-static xapi invalidate_fml_rule_visitor(moria_edge * e, void * arg, moria_traversal_mode mode, int distance, int * result)
+static void invalidate_fml_rule_visitor(moria_edge * e, void * arg, moria_traversal_mode mode, int distance, int * result)
 {
-  enter;
-
   graph_invalidation_context * invalidation = arg;
   rule_module_edge *rme;
   dependency *ne;
@@ -145,19 +134,17 @@ static xapi invalidate_fml_rule_visitor(moria_edge * e, void * arg, moria_traver
     e = &ne->edge;
     if(!(e->attrs & MORIA_EDGE_HYPER)) {
       n = containerof(e->A, fsent, vertex);
-      fatal(fsent_invalidate, n, invalidation);
+      fsent_invalidate(n, invalidation);
     }
     else
     {
       for(x = 0; x < e->Alen; x++)
       {
         n = containerof(e->Alist[x].v, fsent, vertex);
-        fatal(fsent_invalidate, n, invalidation);
+        fsent_invalidate(n, invalidation);
       }
     }
   }
-
-  finally : coda;
 }
 
 static void __attribute__((nonnull)) fsent_dispose(fsent * restrict n)
@@ -167,20 +154,16 @@ static void __attribute__((nonnull)) fsent_dispose(fsent * restrict n)
 }
 
 /* create the root fsent (g_root) */
-static xapi root_init()
+static void root_init()
 {
-  enter;
-
   fsent * n = 0;
 
-  fatal(fsent_create, &n, VERTEX_DIR, 0, MMS("(root)"));
+  fsent_create(&n, VERTEX_DIR, 0, MMS("(root)"));
 
   n->fst = &fstree_root;
   n->fs = n->fst->fs;
 
   g_root = n;
-
-  finally : coda;
 }
 
 static size_t relative_path_znload(void * restrict dst, size_t sz, const fsent * subject, const fsent * base, size_t (*znloadw_fn)(void * restrict, size_t, const void * restrict, size_t))
@@ -346,21 +329,17 @@ size_t fsent_relative_path_znload_bacon(void * restrict dst, size_t sz, const fs
   return relative_path_znload(dst, sz, subject, base, value_string_znloadw);
 }
 
-xapi fsent_relative_path_say(const fsent * n, const fsent * base, narrator * restrict N)
+void fsent_relative_path_say(const fsent * n, const fsent * base, narrator * restrict N)
 {
-  enter;
-
   char path[512];
   size_t pathl;
 
   pathl = fsent_relative_path_znload(path, sizeof(path), n, base);
 
   xsayw(path, pathl);
-
-  finally : coda;
 }
 
-xapi fsent_create(
+void fsent_create(
     fsent ** restrict np
   , vertex_kind kind
   , uint32_t attrs
@@ -368,20 +347,18 @@ xapi fsent_create(
   , uint16_t label_len
 )
 {
-  enter;
-
   fsent *n;
 
   RUNTIME_ASSERT(label_len);
   RUNTIME_ASSERT((attrs & VERTEX_KIND_OPT) == 0);
 
-if(memncmp(label, label_len, MMS("libxlinux.debug.pic.xapi.so.lnklibxlinux.debug.pic.xapi.so.lnk")) == 0) {
+if(memncmp(label, label_len, MMS("libxlinux.debug.pic.void.so.lnklibxlinux.debug.pic.xapi.so.lnk")) == 0) {
   abort();
 }
 
   if((n = llist_shift(&fsent_freelist, typeof(*n), vertex.owner)) == 0)
   {
-    fatal(xmalloc, &n, sizeof(*n));
+    xmalloc(&n, sizeof(*n));
   }
 
   fsname_init(&n->name, label, label_len);
@@ -399,8 +376,6 @@ if(memncmp(label, label_len, MMS("libxlinux.debug.pic.xapi.so.lnklibxlinux.debug
   llist_append(&fsent_list, n, vertex.owner);
 
   *np = n;
-
-  finally : coda;
 }
 
 void fsent_release(fsent * restrict n)
@@ -420,39 +395,29 @@ void fsent_release(fsent * restrict n)
 // public
 //
 
-xapi fsent_setup()
+void fsent_setup()
 {
-  enter;
-
   // setup basic nodes
-  fatal(root_init);
+  root_init();
 
   fsent_fs_epoch = 1;
   fsent_valid_epoch = 1;
   fsent_module_epoch = 1;
-
-  finally : coda;
 }
 
 /* create the project node (g_project_root) and attach it to the root */
-xapi fsent_system_bootstrap()
+void fsent_system_bootstrap()
 {
-  enter;
-
   graph_invalidation_context invalidation = { 0 };
 
-  fatal(graph_invalidation_begin, &invalidation);
-  fatal(fsent_graft, g_params.proj_dir, &g_project_root, &invalidation);
+  graph_invalidation_begin(&invalidation);
+  fsent_graft(g_params.proj_dir, &g_project_root, &invalidation);
 
-finally:
   graph_invalidation_end(&invalidation);
-coda;
 }
 
-xapi fsent_cleanup()
+void fsent_cleanup()
 {
-  enter;
-
   llist *T;
   fsent *n;
 
@@ -463,15 +428,11 @@ xapi fsent_cleanup()
   llist_foreach_safe(&fsent_freelist, n, vertex.owner, T) {
     wfree(n);
   }
-
-  finally : coda;
 }
 
-xapi fsent_reconfigure(configblob * restrict cfg, bool dry)
+int fsent_reconfigure(configblob * restrict cfg, char * restrict err, uint16_t err_sz)
 {
-  enter;
-
-  if(!dry)
+  if(err)
   {
     if(cfg->filesystems.attrs & CONFIG_CHANGED)
     {
@@ -480,13 +441,11 @@ xapi fsent_reconfigure(configblob * restrict cfg, bool dry)
     }
   }
 
-  finally : coda;
+  return 0;
 }
 
-xapi fsent_graft(const char * restrict base, fsent ** restrict rn, graph_invalidation_context * restrict invalidation)
+void fsent_graft(const char * restrict base, fsent ** restrict rn, graph_invalidation_context * restrict invalidation)
 {
-  enter;
-
   fsent * parent;
   fsent * child = 0;
   const char *seg;
@@ -508,8 +467,8 @@ xapi fsent_graft(const char * restrict base, fsent ** restrict rn, graph_invalid
     }
     else
     {
-      fatal(fsent_create, &child, VERTEX_DIR, VERTEX_UNCREATED, seg, end - seg);
-      fatal(fsedge_connect, parent, child, invalidation);
+      fsent_create(&child, VERTEX_DIR, VERTEX_UNCREATED, seg, end - seg);
+      fsedge_connect(parent, child, invalidation);
     }
     parent = child;
 
@@ -519,8 +478,6 @@ xapi fsent_graft(const char * restrict base, fsent ** restrict rn, graph_invalid
   }
 
   *rn = child;
-
-  finally : coda;
 }
 
 const struct filesystem * fsent_filesystem_get(fsent * restrict n)
@@ -678,69 +635,49 @@ size_t fsent_property_znload(void * dst, size_t sz, const fsent * restrict n, fs
   return z;
 }
 
-xapi fsent_module_relative_path_say(const fsent * restrict n, narrator * restrict N)
+void fsent_module_relative_path_say(const fsent * restrict n, narrator * restrict N)
 {
-  enter;
-
   char path[512];
   size_t pathl;
 
   pathl = fsent_module_relative_path_znload(path, sizeof(path), n);
   xsayw(path, pathl);
-
-  finally : coda;
 }
 
-xapi fsent_project_relative_path_say(const fsent * restrict n, narrator * restrict N)
+void fsent_project_relative_path_say(const fsent * restrict n, narrator * restrict N)
 {
-  enter;
-
   char path[512];
   size_t pathl;
 
   pathl = fsent_project_relative_path_znload(path, sizeof(path), n);
   xsayw(path, pathl);
-
-  finally : coda;
 }
 
-xapi fsent_absolute_path_say(const fsent * restrict n, narrator * restrict N)
+void fsent_absolute_path_say(const fsent * restrict n, narrator * restrict N)
 {
-  enter;
-
   char path[512];
   size_t pathl;
 
   pathl = fsent_absolute_path_znload(path, sizeof(path), n);
   xsayw(path, pathl);
-
-  finally : coda;
 }
 
-xapi fsent_path_say(fsent * restrict n, struct narrator * restrict N)
+void fsent_path_say(fsent * restrict n, struct narrator * restrict N)
 {
-  enter;
-
   char path[512];
   size_t pathl;
 
   pathl = fsent_path_znload(path, sizeof(path), n);
   xsayw(path, pathl);
-
-  finally : coda;
 }
 
-xapi fsent_property_say(const fsent * restrict n, fsent_property property, const fsent_property_context * restrict ctx, narrator * restrict N)
+void fsent_property_say(const fsent * restrict n, fsent_property property, const fsent_property_context * restrict ctx, narrator * restrict N)
 {
-  enter;
-
   char space[512];
   size_t sz;
 
   sz = fsent_property_znload(space, sizeof(space), n, property, ctx);
   xsayw(space, sz);
-
-  finally : coda;
 }
 
 fsent *fsent_path_lookup(const module * restrict mod, const char * restrict path, uint16_t path_len)
@@ -803,17 +740,15 @@ fsent *fsent_path_lookup(const module * restrict mod, const char * restrict path
   return 0;
 }
 
-xapi fsent_formula_bootstrap(fsent * restrict n)
+void fsent_formula_bootstrap(fsent * restrict n)
 {
-  enter;
-
   formula *fml;
 
   if(fsent_kind_get(n) != VERTEX_FORMULA_FILE) {
     RUNTIME_ASSERT(fsent_kind_get(n) == VERTEX_FILE);
     fsent_kind_set(n, VERTEX_FORMULA_FILE);
 
-    fatal(formula_create, &fml, &g_graph);
+    formula_create(&fml, &g_graph);
 
     fsent_absolute_path_znload(fml->self_node_abspath, sizeof(fml->self_node_abspath), n);
     fml->abspath_len = strlen(fml->self_node_abspath);
@@ -824,22 +759,18 @@ xapi fsent_formula_bootstrap(fsent * restrict n)
     fsent_invalid_set(n);
   }
 
-  fatal(formula_reconcile, n->self_fml);
-
-  finally : coda;
+  formula_reconcile(n->self_fml);
 }
 
-xapi fsent_var_bootstrap(fsent * restrict n)
+void fsent_var_bootstrap(fsent * restrict n)
 {
-  enter;
-
   var *vp;
 
   if(fsent_kind_get(n) != VERTEX_VAR_FILE) {
     RUNTIME_ASSERT(fsent_kind_get(n) == VERTEX_FILE);
     fsent_kind_set(n, VERTEX_VAR_FILE);
 
-    fatal(var_alloc, &vp, &g_graph);
+    var_alloc(&vp, &g_graph);
 
     fsent_absolute_path_znload(vp->self_node_abspath, sizeof(vp->self_node_abspath), n);
     vp->self_node_abspath_len = strlen(vp->self_node_abspath);
@@ -849,22 +780,18 @@ xapi fsent_var_bootstrap(fsent * restrict n)
     fsent_invalid_set(n);
   }
 
-  fatal(var_reconcile, n->self_var);
-
-  finally : coda;
+  var_reconcile(n->self_var);
 }
 
-xapi fsent_config_bootstrap(fsent * restrict n)
+void fsent_config_bootstrap(fsent * restrict n)
 {
-  enter;
-
   config *cfg;
 
   if(fsent_kind_get(n) != VERTEX_CONFIG_FILE) {
     RUNTIME_ASSERT(fsent_kind_get(n) == VERTEX_FILE);
     fsent_kind_set(n, VERTEX_CONFIG_FILE);
 
-    fatal(config_alloc, &cfg, &g_graph);
+    config_alloc(&cfg, &g_graph);
 
     fsent_absolute_path_znload(cfg->self_node_abspath, sizeof(cfg->self_node_abspath), n);
     cfg->self_node_abspath_len = strlen(cfg->self_node_abspath);
@@ -873,14 +800,10 @@ xapi fsent_config_bootstrap(fsent * restrict n)
     cfg->self_node = n;
     fsent_invalid_set(n);
   }
-
-  finally : coda;
 }
 
-xapi fsent_invalidate(fsent * restrict n, graph_invalidation_context * restrict invalidation)
+void fsent_invalidate(fsent * restrict n, graph_invalidation_context * restrict invalidation)
 {
-  enter;
-
   vertex_fsenttype nt;
   vertex_filetype ft;
   int min;
@@ -896,8 +819,8 @@ xapi fsent_invalidate(fsent * restrict n, graph_invalidation_context * restrict 
   }
 
   // propagate
-  fatal(moria_traverse_vertices
-    , &g_graph
+  moria_traverse_vertices(
+      &g_graph
     , &n->vertex
     , fsent_invalidate_visitor
     , invalidation->vertex_traversal
@@ -914,15 +837,15 @@ xapi fsent_invalidate(fsent * restrict n, graph_invalidation_context * restrict 
   if(ft == VERTEX_FILETYPE_DIR)
   {
     /* propagate : directory node -> attached rules */
-    fatal(fsent_dirnode_children_changed, n, invalidation);
+    fsent_dirnode_children_changed(n, invalidation);
   }
   else if(nt == VERTEX_FSENTTYPE_MODULE || nt == VERTEX_FSENTTYPE_MODEL)
   {
     /* propagate : module -> uses, requires, imports -> module */
     if((mod = fsent_module_get(n)))
     {
-      fatal(moria_traverse_vertices
-        , &g_graph
+      moria_traverse_vertices(
+          &g_graph
         , &mod->vertex
         , fsent_invalidate_visitor
         , 0
@@ -938,8 +861,8 @@ xapi fsent_invalidate(fsent * restrict n, graph_invalidation_context * restrict 
   else if(nt == VERTEX_FSENTTYPE_FML)
   {
     /* propagate : formula-file -> rules -> rmas */
-    fatal(moria_traverse_vertex_edges
-      , &g_graph
+    moria_traverse_vertex_edges(
+        &g_graph
       , &n->self_fml->vertex
       , invalidate_fml_rule_visitor
       , invalidation->edge_traversal
@@ -954,8 +877,8 @@ xapi fsent_invalidate(fsent * restrict n, graph_invalidation_context * restrict 
     /* propagate : formula-file -> module -> uses -> module */
     if((mod = fsent_module_get(n)))
     {
-      fatal(moria_traverse_vertices
-        , &g_graph
+      moria_traverse_vertices(
+          &g_graph
         , &mod->vertex
         , fsent_invalidate_visitor
         , 0
@@ -971,8 +894,8 @@ xapi fsent_invalidate(fsent * restrict n, graph_invalidation_context * restrict 
   else if(nt == VERTEX_FSENTTYPE_VAR)
   {
     /* propagate : var.bam -> this and descendant modules */
-    fatal(moria_traverse_vertices
-      , &g_graph
+    moria_traverse_vertices(
+        &g_graph
       , &fsent_parent(n)->vertex
       , fsent_invalidate_visitor
       , 0
@@ -984,20 +907,16 @@ xapi fsent_invalidate(fsent * restrict n, graph_invalidation_context * restrict 
       , invalidation
     );
   }
-
-  finally : coda;
 }
 
-xapi fsent_ok(fsent * restrict n)
+void fsent_ok(fsent * restrict n)
 {
-  enter;
-
   uint16_t z;
   channel *chan;
   fabipc_message *msg;
 
   if(fsent_state_get(n) == VERTEX_OK && n->valid_epoch == fsent_valid_epoch) {
-    goto XAPI_FINALIZE;
+    return;
   }
 
   fsent_state_set(n, VERTEX_OK);
@@ -1013,14 +932,10 @@ xapi fsent_ok(fsent * restrict n)
     msg->id = 0;
     events_publish(chan, msg);
   }
-
-  finally : coda;
 }
 
-xapi fsent_fstree_disconnecting(fsent *n, graph_invalidation_context * restrict invalidation)
+void fsent_fstree_disconnecting(fsent *n, graph_invalidation_context * restrict invalidation)
 {
-  enter;
-
   moria_vertex *v;
   moria_edge *upe;
   llist head;
@@ -1037,23 +952,19 @@ xapi fsent_fstree_disconnecting(fsent *n, graph_invalidation_context * restrict 
       if(upe->attrs == EDGE_RULE_FML) {
         llist_append(&head, &upe->rbn_up, lln);
       } else {
-        goto XAPI_FINALIZE;
+        return;
       }
     }
   }
 
   llist_foreach(&head, rbn, lln) {
     upe = containerof(rbn, typeof(*upe), rbn_up);
-    fatal(moria_edge_disconnect, &g_graph, upe);
+    moria_edge_disconnect(&g_graph, upe);
   }
-
-  finally : coda;
 }
 
-xapi fsent_unlink(fsent *n, graph_invalidation_context * restrict invalidation)
+void fsent_unlink(fsent *n, graph_invalidation_context * restrict invalidation)
 {
-  enter;
-
   fabipc_message *msg;
   uint16_t z;
   channel *chan;
@@ -1076,14 +987,14 @@ xapi fsent_unlink(fsent *n, graph_invalidation_context * restrict invalidation)
 
   llist_foreach(&head, rbn, lln) {
     upe = containerof(rbn, typeof(*upe), rbn_up);
-    fatal(moria_edge_disconnect, &g_graph, upe);
+    moria_edge_disconnect(&g_graph, upe);
   }
 
   if(fsent_kind_get(n) == VERTEX_MODULE_FILE)
   {
     /* when a module.bam file is unlinked, invalidate its immediate parent module */
-    fatal(moria_traverse_vertices
-      , &g_graph
+    moria_traverse_vertices(
+        &g_graph
       , &fsent_module_get(n)->dir_node->vertex
       , node_invalidate_visitor_first
       , 0
@@ -1101,22 +1012,16 @@ xapi fsent_unlink(fsent *n, graph_invalidation_context * restrict invalidation)
   /* also remove related edges, e.g. //module/{imports,uses} */
   if(n->import_scope_edge)
   {
-    fatal(fsedge_disconnect, n->import_scope_edge);
+    fsedge_disconnect(n->import_scope_edge);
   }
   if(n->use_scope_edge)
   {
-    fatal(fsedge_disconnect, n->use_scope_edge);
+    fsedge_disconnect(n->use_scope_edge);
   }
 
   fsent_state_set(n, VERTEX_UNLINKED);
 
-  if(log_would(L_NODE))
-  {
-    narrator * N;
-    fatal(log_start, L_NODE, &N);
-    xsayf("delete %p %s", n, v->label);
-    fatal(log_finish);
-  }
+  fsent_deleted_probe(n);
 
   if(events_would(FABIPC_EVENT_NODE_DELETE, &chan, &msg))
   {
@@ -1125,20 +1030,16 @@ xapi fsent_unlink(fsent *n, graph_invalidation_context * restrict invalidation)
     msg->id = 0;
     events_publish(chan, msg);
   }
-
-  finally : coda;
 }
 
 /*
  * n - directory node
  */
-xapi fsent_dirnode_children_changed(fsent * restrict n, struct graph_invalidation_context * restrict invalidation)
+void fsent_dirnode_children_changed(fsent * restrict n, struct graph_invalidation_context * restrict invalidation)
 {
-  enter;
-
   // traverse to rules attached to this directory node
-  fatal(moria_traverse_vertex_edges
-    , &g_graph
+  moria_traverse_vertex_edges(
+      &g_graph
     , &n->vertex
     , children_changed_visitor
     , invalidation->edge_traversal
@@ -1149,8 +1050,6 @@ xapi fsent_dirnode_children_changed(fsent * restrict n, struct graph_invalidatio
     , MORIA_TRAVERSE_UP | MORIA_TRAVERSE_POST
     , invalidation
   );
-
-  finally : coda;
 }
 
 /*
@@ -1161,10 +1060,8 @@ xapi fsent_dirnode_children_changed(fsent * restrict n, struct graph_invalidatio
  * distance - unused
  * result   - unused
  */
-xapi fsent_invalidate_visitor(moria_vertex * v, void * arg, moria_traversal_mode mode, int distance, int * result)
+void fsent_invalidate_visitor(moria_vertex * v, void * arg, moria_traversal_mode mode, int distance, int * result)
 {
-  enter;
-
   fsent * n;
   uint16_t z;
   channel *chan;
@@ -1173,7 +1070,7 @@ xapi fsent_invalidate_visitor(moria_vertex * v, void * arg, moria_traversal_mode
 
   n = containerof(v, fsent, vertex);
   if(fsent_invalid_get(n)) {
-    goto XAPI_FINALIZE;
+    return;
   }
 
   fsent_invalid_set(n);
@@ -1190,23 +1087,19 @@ xapi fsent_invalidate_visitor(moria_vertex * v, void * arg, moria_traversal_mode
     msg->id = 0;
     events_publish(chan, msg);
   }
-
-  finally : coda;
 }
 
-xapi fsent_lookup_index(fsent * n)
+void fsent_lookup_index(fsent * n)
 {
-  enter;
-
   moria_vertex_entry *entry, key;
 
   if(rbnode_attached(&n->vertex.rbn_lookup)) {
-    goto XAPI_FINALLY;
+    return;
   }
 
   /* shadow nodes are not indexed */
   if(fsent_shadowtype_get(n)) {
-    goto XAPI_FINALLY;
+    return;
   }
 
   RUNTIME_ASSERT(fsent_kind_get(n) == VERTEX_DIR);
@@ -1219,24 +1112,20 @@ xapi fsent_lookup_index(fsent * n)
   {
     /* entry is using this nodes label */
     rbtree_init(&key.rbt);
-    fatal(hashtable_put, g_graph_ht, &key);
+    hashtable_put(g_graph_ht, &key);
     entry = hashtable_get(g_graph_ht, &key);
   }
 
   rbtree_put(&entry->rbt, n, vertex.rbn_lookup, (void*)ptrcmp);
-
-  finally : coda;
 }
 
-xapi fsent_lookup_disindex(fsent * n)
+void fsent_lookup_disindex(fsent * n)
 {
-  enter;
-
   moria_vertex_entry *entry, key;
   fsent *fse;
 
   if(!rbnode_attached(&n->vertex.rbn_lookup)) {
-    goto XAPI_FINALLY;
+    return;
   }
 
   key.label = n->vertex.label;
@@ -1244,7 +1133,7 @@ xapi fsent_lookup_disindex(fsent * n)
   entry = hashtable_search(g_graph_ht, &key, sizeof(key), moria_vertex_entry_hash, moria_vertex_entry_key_cmp);
   if(entry == 0) {
     RUNTIME_ASSERT(!rbnode_attached(&n->vertex.rbn_lookup));
-    goto XAPI_FINALLY;
+    return;
   }
 
   /* delete this node from the tree */
@@ -1257,6 +1146,4 @@ xapi fsent_lookup_disindex(fsent * n)
     fse = rbtree_first(&entry->rbt, fsent, vertex.rbn_lookup);
     entry->label = fse->vertex.label;
   }
-
-  finally : coda;
 }

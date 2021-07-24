@@ -334,4 +334,6 @@ pid_t gettid(void);
 void xpipe(int filedes[2])
   __attribute__((nonnull));
 
+int API uxeuidaccesss(const char * restrict path, int mode);
+
 #endif

@@ -15,7 +15,6 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#include "xapi.h"
 #include "types.h"
 
 #include "narrator.h"
@@ -34,15 +33,13 @@
 // static
 //
 
-static xapi pattern_section_generate(pattern_generate_context * restrict ctx)
+static void pattern_section_generate(pattern_generate_context * restrict ctx)
 {
-  enter;
-
   struct segment_traversal segment_traversal;
   const variant * var = 0;
   moria_vertex * v;
 
-  fatal(narrator_xreset, ctx->section_narrator);
+  narrator_xreset(ctx->section_narrator);
 
   ctx->section_traversal.section = chain_next(ctx->section_traversal.head, &ctx->section_traversal.cursor, chn);
 
@@ -66,7 +63,7 @@ static xapi pattern_section_generate(pattern_generate_context * restrict ctx)
       ctx->node->var = var;
     }
 
-    fatal(set_put, ctx->nodes, ctx->node, 0);
+    set_put(ctx->nodes, ctx->node, 0);
   }
   else if(ctx->section_traversal.section->nodeset == PATTERN_NODESET_MATCHDIR)
   {
@@ -74,11 +71,11 @@ static xapi pattern_section_generate(pattern_generate_context * restrict ctx)
     v = moria_vertex_up(v);
     ctx->node = containerof(v, fsent, vertex);
 
-    fatal(pattern_section_generate, ctx);
+    pattern_section_generate(ctx);
   }
   else if(ctx->section_traversal.section->nodeset == PATTERN_NODESET_SELF)
   {
-    fatal(pattern_section_generate, ctx);
+    pattern_section_generate(ctx);
   }
   else if(ctx->section_traversal.section->nodeset == PATTERN_NODESET_SHADOW)
   {
@@ -86,7 +83,7 @@ static xapi pattern_section_generate(pattern_generate_context * restrict ctx)
     ctx->node = containerof(v, fsent, vertex);
     RUNTIME_ASSERT(ctx->node);
 
-    fatal(pattern_section_generate, ctx);
+    pattern_section_generate(ctx);
   }
   else if(ctx->section_traversal.section->nodeset == PATTERN_NODESET_ROOT)
   {
@@ -94,7 +91,7 @@ static xapi pattern_section_generate(pattern_generate_context * restrict ctx)
     ctx->node = containerof(v, fsent, vertex);
     RUNTIME_ASSERT(ctx->node);
 
-    fatal(pattern_section_generate, ctx);
+    pattern_section_generate(ctx);
   }
   else
   {
@@ -109,22 +106,18 @@ static xapi pattern_section_generate(pattern_generate_context * restrict ctx)
     };
     llist_append(&ctx->segment_traversal_stack, &segment_traversal, lln);
     ctx->segment_traversal = llist_last(&ctx->segment_traversal_stack, typeof(*ctx->segment_traversal), lln);
-    fatal(pattern_segment_generate, ctx);
+    pattern_segment_generate(ctx);
 
     llist_delete(&segment_traversal, lln);
   }
-
-  finally : coda;
 }
 
 //
 // internal
 //
 
-xapi pattern_segment_generate(pattern_generate_context * restrict ctx)
+void pattern_segment_generate(pattern_generate_context * restrict ctx)
 {
-  enter;
-
   fsent * next_context_node;
   moria_vertex * next_context_vertex;
   const char * section;
@@ -140,7 +133,7 @@ xapi pattern_segment_generate(pattern_generate_context * restrict ctx)
   // continue with the current segment
   if(segment_traversal->segment)
   {
-    fatal(segment_traversal->segment->vtab->generate, segment_traversal->segment, ctx);
+    segment_traversal->segment->vtab->generate(segment_traversal->segment, ctx);
     goto XAPI_FINALIZE;
   }
 
@@ -148,7 +141,7 @@ xapi pattern_segment_generate(pattern_generate_context * restrict ctx)
   ctx->segment_traversal = llist_prev(&ctx->segment_traversal_stack, ctx->segment_traversal, lln);
   if(ctx->segment_traversal)
   {
-    fatal(pattern_segment_generate, ctx);
+    pattern_segment_generate(ctx);
     goto XAPI_FINALIZE;
   }
 
@@ -197,13 +190,13 @@ xapi pattern_segment_generate(pattern_generate_context * restrict ctx)
   else
   {
     /* create as not yet existing */
-    fatal(fsent_create, &next_context_node, VERTEX_FILE, VERTEX_UNCREATED, section, section_len);
-    fatal(fsedge_connect, ctx->node, next_context_node, ctx->invalidation);
+    fsent_create(&next_context_node, VERTEX_FILE, VERTEX_UNCREATED, section, section_len);
+    fsedge_connect(ctx->node, next_context_node, ctx->invalidation);
   }
 
   // continue to the next section
   ctx->node = next_context_node;
-  fatal(pattern_section_generate, ctx);
+  pattern_section_generate(ctx);
 
 finally:
   segment_traversal->cursor = segchain;
@@ -214,7 +207,7 @@ coda;
 // public
 //
 
-xapi pattern_generate(
+void pattern_generate(
     const pattern * restrict pattern
   , module * restrict mod
   , fsent * restrict base
@@ -225,8 +218,6 @@ xapi pattern_generate(
   , set * restrict results
 )
 {
-  enter;
-
   char space[512] = { };
   narrator_fixed fixed;
 
@@ -260,7 +251,5 @@ xapi pattern_generate(
   ctx.section_narrator = narrator_fixed_init(&fixed, space, sizeof(space));
   ctx.segment_traversal_stack = LLIST_INITIALIZER(ctx.segment_traversal_stack);
 
-  fatal(pattern_section_generate, &ctx);
-
-  finally : coda;
+  pattern_section_generate(&ctx);
 }

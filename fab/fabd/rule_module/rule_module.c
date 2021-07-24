@@ -16,7 +16,6 @@
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
 #include "types.h"
-#include "xapi.h"
 
 #include "valyria/set.h"
 #include "xlinux/xstdlib.h"
@@ -39,10 +38,8 @@ static void rule_module_edge_release(rule_module_edge * restrict rme)
   llist_append(&rme_freelist, rme, edge.owner);
 }
 
-xapi rule_module_edge_alloc(rule_module_edge ** restrict rmep)
+void rule_module_edge_alloc(rule_module_edge ** restrict rmep)
 {
-  enter;
-
   rule_module_edge *rme;
 
   if((rme = llist_shift(&rme_freelist, typeof(*rme), edge.owner)))
@@ -51,7 +48,7 @@ xapi rule_module_edge_alloc(rule_module_edge ** restrict rmep)
   }
   else
   {
-    fatal(xmalloc, &rme, sizeof(*rme));
+    xmalloc(&rme, sizeof(*rme));
   }
 
   rbnode_init(&rme->nohits_rbn);
@@ -62,18 +59,14 @@ xapi rule_module_edge_alloc(rule_module_edge ** restrict rmep)
   llist_append(&rme_list, rme, edge.owner);
 
   *rmep = rme;
-
-  finally : coda;
 }
 
 //
 // public
 //
 
-xapi rule_module_cleanup(void)
+void rule_module_cleanup(void)
 {
-  enter;
-
   llist *T;
   rule_module_edge *rme;
 
@@ -84,19 +77,15 @@ xapi rule_module_cleanup(void)
   llist_foreach_safe(&rme_freelist, rme, edge.owner, T) {
     wfree(rme);
   }
-
-  finally : coda;
 }
 
-xapi rule_module_disconnect(rule_module_edge * restrict rme, graph_invalidation_context * restrict invalidation)
+void rule_module_disconnect(rule_module_edge * restrict rme, graph_invalidation_context * restrict invalidation)
 {
-  enter;
-
   dependency *dep;
 
   /* remove dependency edges created by this rma */
   llist_foreach(&rme->dependencies, dep, dependencies_lln) {
-    fatal(dependency_disconnect, dep, invalidation);
+    dependency_disconnect(dep, invalidation);
   }
 
   /*
@@ -115,13 +104,11 @@ xapi rule_module_disconnect(rule_module_edge * restrict rme, graph_invalidation_
     llist_delete(rme, lln_rmas_owner);
   }
 
-  fatal(graph_disconnect, &rme->edge);
+  graph_disconnect(&rme->edge);
   rule_module_edge_release(rme);
-
-  finally : coda;
 }
 
-xapi rule_module_connect(
+void rule_module_connect(
     rule_module_edge ** restrict rmep
   , module * mod
   , module * mod_owner
@@ -129,8 +116,6 @@ xapi rule_module_connect(
   , set * restrict variants
 )
 {
-  enter;
-
   moria_edge *e;
   rule_module_edge *rme = 0;
   moria_connect_context ctx;
@@ -143,8 +128,8 @@ xapi rule_module_connect(
     goto XAPI_FINALLY;
   }
   RUNTIME_ASSERT(rv == MORIA_NOEDGE);
-  fatal(rule_module_edge_alloc, &rme);
-  fatal(graph_connect, &ctx, &mod->vertex, &r->vertex, &rme->edge, EDGE_MOD_RULE);
+  rule_module_edge_alloc(&rme);
+  graph_connect(&ctx, &mod->vertex, &r->vertex, &rme->edge, EDGE_MOD_RULE);
 
   rme->rule = r;
   rme->mod = mod;
@@ -155,6 +140,4 @@ xapi rule_module_connect(
   llist_append(&mod_owner->rmas_owner, rme, lln_rmas_owner);
 
   *rmep = rme;
-
-  finally : coda;
 }

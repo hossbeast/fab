@@ -15,7 +15,6 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#include "xapi.h"
 #include "xunit.h"
 #include "xunit/assert.h"
 
@@ -36,7 +35,6 @@
 #include "lookup.h"
 #include "pattern_parser.h"
 #include "pattern.h"
-#include "logging.h"
 #include "fsent.h"
 #include "shadow.h"
 #include "variant.h"
@@ -67,29 +65,21 @@ typedef struct pattern_generate_test {
   char * nodes;
 } pattern_generate_test;
 
-static xapi pattern_test_unit_setup(xunit_unit * unit)
+static void pattern_test_unit_setup(xunit_unit * unit)
 {
-  enter;
+  yyutil_load();
+  logging_finalize();
 
-  fatal(yyutil_load);
-  fatal(logging_finalize);
-
-  fatal(filesystem_setup);
-  fatal(graph_setup);
+  filesystem_setup();
+  graph_setup();
 
 logs(L_INFO, "GOATS");
-
-  finally : coda;
 }
 
-static xapi pattern_test_unit_cleanup(xunit_unit * unit)
+static void pattern_test_unit_cleanup(xunit_unit * unit)
 {
-  enter;
-
-  fatal(graph_cleanup);
-  fatal(filesystem_cleanup);
-
-  finally : coda;
+  graph_cleanup();
+  filesystem_cleanup();
 }
 
 static int node_compare(const void * _A, const void * _B)
@@ -105,10 +95,8 @@ static int node_compare(const void * _A, const void * _B)
 // tests
 //
 
-static xapi pattern_generate_test_entry(xunit_test * _test)
+static void pattern_generate_test_entry(xunit_test * _test)
 {
-  enter;
-
   pattern_generate_test * test = (pattern_generate_test *)_test;
 
   narrator_growing * N = 0;
@@ -133,29 +121,29 @@ static xapi pattern_generate_test_entry(xunit_test * _test)
   const char *nodes;
   size_t nodes_len;
 
-  fatal(variant_setup);
+  variant_setup();
 
   /* whether to include the root fs */
   if(test->root) {
-    fatal(fsent_setup);
+    fsent_setup();
   }
 
   // build out the initial graph
-  fatal(graph_parser_create, &op_parser, &g_graph, &fsent_list, node_operations_test_dispatch, graph_vertex_attrs, graph_edge_attrs);
-  fatal(graph_parser_operations_parse, op_parser, MMS(test->operations));
+  graph_parser_create(&op_parser, &g_graph, &fsent_list, node_operations_test_dispatch, graph_vertex_attrs, graph_edge_attrs);
+  graph_parser_operations_parse(op_parser, MMS(test->operations));
 
   // setup the shadow fs
   if(test->modules_shadow)
   {
-    fatal(shadow_setup);
-    fatal(graph_invalidation_begin, &invalidation);
+    shadow_setup();
+    graph_invalidation_begin(&invalidation);
 
     for(x = 0; x < sentinel(test->modules_shadow); x += 2)
     {
-      fatal(resolve_fragment, MMS(test->modules_shadow[x]), &mods[x / 2].dir_node);
+      resolve_fragment(MMS(test->modules_shadow[x]), &mods[x / 2].dir_node);
       moria_vertex_init(&mods[x/2].vertex, &g_graph, VERTEX_MODULE);
       snprintf(mods[x / 2].id, sizeof(mods[x / 2].id), "%s", test->modules_shadow[x + 1]);
-      fatal(shadow_module_init, &mods[x / 2], &invalidation);
+      shadow_module_init(&mods[x / 2], &invalidation);
       mods[x/2].vertex.label = test->modules_shadow[x];
       mods[x/2].vertex.label_len = strlen(test->modules_shadow[x]);
       mods[x / 2].dir_node->mod = &mods[x / 2];
@@ -165,10 +153,10 @@ static xapi pattern_generate_test_entry(xunit_test * _test)
     {
       for(x = 0; x < sentinel(test->modules_requires); x += 2)
       {
-        fatal(resolve_fragment, MMS(test->modules_requires[x + 0]), &na);
-        fatal(resolve_fragment, MMS(test->modules_requires[x + 1]), &nb);
+        resolve_fragment(MMS(test->modules_requires[x + 0]), &na);
+        resolve_fragment(MMS(test->modules_requires[x + 1]), &nb);
 
-        fatal(module_resolve_require, na->self_mod, nb->self_mod, &invalidation);
+        module_resolve_require(na->self_mod, nb->self_mod, &invalidation);
       }
     }
 
@@ -186,25 +174,25 @@ static xapi pattern_generate_test_entry(xunit_test * _test)
 
   if(!test->modules_shadow)
   {
-    fatal(resolve_fragment, MMS(test->module), &mods[0].dir_node);
+    resolve_fragment(MMS(test->module), &mods[0].dir_node);
     mod = &mods[0];
     mod->shadow_uses = mod->dir_node;
   }
 
-  fatal(narrator_growing_create, &N);
+  narrator_growing_create(&N);
 
-  fatal(set_create, &variants);
+  set_create(&variants);
   if(test->variants)
   {
     for(x = 0; x < sentinel(test->variants); x++)
     {
-      fatal(variant_get, test->variants[x], strlen(test->variants[x]), &var);
-      fatal(set_put, variants, var, 0);
+      variant_get(test->variants[x], strlen(test->variants[x]), &var);
+      set_put(variants, var, 0);
     }
   }
 
   if(test->match)
-    fatal(resolve_fragment, MMS(test->match), &match.node);
+    resolve_fragment(MMS(test->match), &match.node);
 
   if(test->groups)
   {
@@ -218,16 +206,16 @@ static xapi pattern_generate_test_entry(xunit_test * _test)
 
   if(test->match_variant)
   {
-    fatal(variant_get, MMS(test->match_variant), (variant **)&match.variant);
+    variant_get(MMS(test->match_variant), (variant **)&match.variant);
   }
 
   // parse the pattern
-  fatal(pattern_parser_create, &parser);
-  fatal(generate_pattern_parse_partial, parser, test->pattern, strlen(test->pattern) + 2, "-test-", 0, &loc, &pattern);
+  pattern_parser_create(&parser);
+  generate_pattern_parse_partial(parser, test->pattern, strlen(test->pattern) + 2, "-test-", 0, &loc, &pattern);
   assert_eq_u32(strlen(test->pattern), loc.l);
 
   // act
-  fatal(set_create, &nodes_list);
+  set_create(&nodes_list);
   fatal(pattern_generate
     , pattern
     , mod
@@ -240,17 +228,17 @@ static xapi pattern_generate_test_entry(xunit_test * _test)
   );
 
   // ordered list of vertices and edges
-  fatal(narrator_xreset, &N->base);
-  fatal(graph_say, &N->base);
+  narrator_xreset(&N->base);
+  graph_say(&N->base);
   graph = N->s;
   graph_len = N->l;
   assert_eq_s(test->graph, graph);
   assert_eq_w(test->graph, strlen(test->graph), graph, graph_len);
 
   // ordered list of nodes
-  fatal(narrator_xreset, &N->base);
+  narrator_xreset(&N->base);
 
-  fatal(set_elements, nodes_list, &node_list, &node_list_lens, &node_list_len);
+  set_elements(nodes_list, &node_list, &node_list_lens, &node_list_len);
   qsort(node_list, node_list_len, sizeof(*node_list), (void*)node_compare);
 
   for(x = 0; x < node_list_len; x++)
@@ -258,26 +246,26 @@ static xapi pattern_generate_test_entry(xunit_test * _test)
     fsent * n = node_list[x];
 
     if(x)
-      fatal(narrator_xsays, &N->base, " ");
-    fatal(narrator_xsays, &N->base, n->name.name);
+      narrator_xsays(&N->base, " ");
+    narrator_xsays(&N->base, n->name.name);
   }
   nodes = N->s;
   nodes_len = N->l;
   assert_eq_w(test->nodes, strlen(test->nodes), nodes, nodes_len);
 
 finally:
-  xapi_infos("test->pattern", test->pattern);
+  void_infos("test->pattern", test->pattern);
 
   wfree(node_list);
   wfree(node_list_lens);
-  fatal(set_xfree, variants);
+  set_xfree(variants);
   pattern_free(pattern);
-  fatal(fsent_cleanup);
-  fatal(variant_cleanup);
-  fatal(narrator_growing_free, N);
-  fatal(pattern_parser_xfree, parser);
-  fatal(set_xfree, nodes_list);
-  fatal(graph_parser_xfree, op_parser);
+  fsent_cleanup();
+  variant_cleanup();
+  narrator_growing_free(N);
+  pattern_parser_xfree(parser);
+  set_xfree(nodes_list);
+  graph_parser_xfree(op_parser);
 coda;
 }
 
@@ -704,22 +692,22 @@ xunit_unit xunit = {
     , (pattern_generate_test[]) {{
           operations : "MOD"
         , module : "MOD"
-        , variants : (char*[]) { "xapi", 0 }
+        , variants : (char*[]) { "void", 0 }
         , pattern : (char[]) { "b.?\0" }
         , graph :  ""
-                  "1-MOD!dir 2-b.xapi!U|file"
+                  "1-MOD!dir 2-b.void!U|file"
                   " 1:fs:2"
-        , nodes : "b.xapi"
+        , nodes : "b.void"
       }}
     , (pattern_generate_test[]) {{
           operations : "MOD"
         , module : "MOD"
-        , variants : (char*[]) { "xapi", "devel", 0 }
+        , variants : (char*[]) { "void", "devel", 0 }
         , pattern : (char[]) { "b.?\0" }
         , graph :  ""
-                  "1-MOD!dir 2-b.devel!U|file 3-b.xapi!U|file"
+                  "1-MOD!dir 2-b.devel!U|file 3-b.void!U|file"
                   " 1:fs:2 1:fs:3"
-        , nodes : "b.devel b.xapi"
+        , nodes : "b.devel b.void"
       }}
     , (pattern_generate_test[]) {{
           operations : "MOD"
@@ -925,12 +913,12 @@ xunit_unit xunit = {
     , (pattern_generate_test[]) {{
           operations : "MOD"
         , module : "MOD"
-        , match_variant : "xapi.xunit.final"
+        , match_variant : "void.xunit.final"
         , pattern : (char[]) { "foo.${?+pic}\0" }
         , graph :  ""
-                  "1-MOD!dir 2-foo.final.pic.xapi.xunit!U|file"
+                  "1-MOD!dir 2-foo.final.pic.void.xunit!U|file"
                   " 1:fs:2"
-        , nodes : "foo.final.pic.xapi.xunit"
+        , nodes : "foo.final.pic.void.xunit"
       }}
 
     /* under the shadow fs */

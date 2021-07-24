@@ -15,7 +15,6 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#include "xapi.h"
 #include "valyria/load.h"
 #include "moria/load.h"
 #include "xlinux/xstdlib.h"
@@ -33,7 +32,6 @@
 #include "narrator.h"
 #include "narrator/growing.h"
 
-#include "logging.h"
 #include "rule.h"
 #include "lookup.h"
 #include "fsent.h"
@@ -71,50 +69,40 @@ typedef struct rules_test {
   char * graph;               // expectant result graph
 } rules_test;
 
-static xapi rules_test_unit_setup(xunit_unit * unit)
+static void rules_test_unit_setup(xunit_unit * unit)
 {
-  enter;
+  valyria_load();
+  moria_load();
+  value_load();
+  logging_finalize();
 
-  fatal(valyria_load);
-  fatal(moria_load);
-  fatal(value_load);
-  fatal(logging_finalize);
-
-  fatal(module_setup);
-  fatal(filesystem_setup);
-  fatal(graph_setup);
-  fatal(fsent_setup);
-  fatal(variant_setup);
-  fatal(shadow_setup);
-  fatal(rule_system_setup);
-
-  finally : coda;
+  module_setup();
+  filesystem_setup();
+  graph_setup();
+  fsent_setup();
+  variant_setup();
+  shadow_setup();
+  rule_system_setup();
 }
 
-static xapi rules_test_unit_cleanup(xunit_unit * unit)
+static void rules_test_unit_cleanup(xunit_unit * unit)
 {
-  enter;
+  graph_cleanup();
+  variant_cleanup();
+  module_cleanup();
+  filesystem_cleanup();
 
-  fatal(graph_cleanup);
-  fatal(variant_cleanup);
-  fatal(module_cleanup);
-  fatal(filesystem_cleanup);
-
-  fatal(valyria_unload);
-  fatal(moria_unload);
-  fatal(value_unload);
-
-  finally : coda;
+  valyria_unload();
+  moria_unload();
+  value_unload();
 }
 
 //
 // tests
 //
 
-static xapi rules_test_entry(xunit_test * _test)
+static void rules_test_entry(xunit_test * _test)
 {
-  enter;
-
   rules_test * test = (rules_test *)_test;
 
   narrator_growing * N = 0;
@@ -136,35 +124,35 @@ static xapi rules_test_entry(xunit_test * _test)
   llist *edge_lists[3];
   channel *chan = 0;
 
-  fatal(narrator_growing_create, &N);
-  fatal(pattern_parser_create, &parser);
-  fatal(rule_run_context_xinit, &rule_ctx);
-  fatal(rule_module_edge_alloc, &rme);
-  fatal(xmalloc, &chan, sizeof(*chan));
+  narrator_growing_create(&N);
+  pattern_parser_create(&parser);
+  rule_run_context_xinit(&rule_ctx);
+  rule_module_edge_alloc(&rme);
+  xmalloc(&chan, sizeof(*chan));
 
   // setup the initial graph
-  fatal(graph_parser_create, &op_parser, &g_graph, &fsent_list, node_operations_test_dispatch, graph_vertex_attrs, graph_edge_attrs);
-  fatal(graph_parser_operations_parse, op_parser, MMS(test->operations));
+  graph_parser_create(&op_parser, &g_graph, &fsent_list, node_operations_test_dispatch, graph_vertex_attrs, graph_edge_attrs);
+  graph_parser_operations_parse(op_parser, MMS(test->operations));
 
   // setup the module
   snprintf(mod.id, sizeof(mod.id), "%s", test->module_id);
-  fatal(resolve_fragment, MMS(test->module), &mod.dir_node);
-  fatal(shadow_module_init, &mod, &rule_ctx.invalidation);
+  resolve_fragment(MMS(test->module), &mod.dir_node);
+  shadow_module_init(&mod, &rule_ctx.invalidation);
 
   // parse the patterns for the rule
   if(test->search_pattern)
   {
-    fatal(search_pattern_parse_partial, parser, test->search_pattern, strlen(test->search_pattern) + 2, "-test-", 0, &loc, &search_pat);
+    search_pattern_parse_partial(parser, test->search_pattern, strlen(test->search_pattern) + 2, "-test-", 0, &loc, &search_pat);
     assert_eq_u32(strlen(test->search_pattern), loc.l);
   }
 
   if(test->generate_pattern)
   {
-    fatal(generate_pattern_parse_partial, parser, test->generate_pattern, strlen(test->generate_pattern) + 2, "-test-", 0, &loc, &generate_pat);
+    generate_pattern_parse_partial(parser, test->generate_pattern, strlen(test->generate_pattern) + 2, "-test-", 0, &loc, &generate_pat);
     assert_eq_u32(strlen(test->generate_pattern), loc.l);
   }
 
-  fatal(rule_mk, &r, &g_graph, search_pat, generate_pat, 0, 0, 0);
+  rule_mk(&r, &g_graph, search_pat, generate_pat, 0, 0, 0);
   search_pat = 0;
   generate_pat = 0;
 
@@ -172,13 +160,13 @@ static xapi rules_test_entry(xunit_test * _test)
   r->card = test->card;
   r->relation = test->relation;
 
-  fatal(set_create, &variants);
+  set_create(&variants);
   if(test->variants)
   {
     for(x = 0; x < sentinel(test->variants); x++)
     {
-      fatal(variant_get, test->variants[x], strlen(test->variants[x]), &v);
-      fatal(set_put, variants, v, 0);
+      variant_get(test->variants[x], strlen(test->variants[x]), &v);
+      set_put(variants, v, 0);
     }
   }
 
@@ -192,7 +180,7 @@ static xapi rules_test_entry(xunit_test * _test)
   rule_ctx.chan = chan;
 
   // act
-  fatal(rule_run, r, &rule_ctx);
+  rule_run(r, &rule_ctx);
   assert_eq_b(false, chan->error);
 
   vertex_lists[0] = &fsent_list;
@@ -201,19 +189,19 @@ static xapi rules_test_entry(xunit_test * _test)
   edge_lists[1] = &dependency_list;
   edge_lists[2] = &rde_list;
 
-  fatal(graph_say_lists, &N->base, vertex_lists, sizeof(vertex_lists) / sizeof(*vertex_lists), edge_lists, sizeof(edge_lists) / sizeof(*edge_lists));
+  graph_say_lists(&N->base, vertex_lists, sizeof(vertex_lists) / sizeof(*vertex_lists), edge_lists, sizeof(edge_lists) / sizeof(*edge_lists));
   graph = N->s;
   assert_eq_s(test->graph, graph);
 
 finally:
   pattern_free(search_pat);
   pattern_free(generate_pat);
-  fatal(fsent_cleanup);
-  fatal(set_xfree, variants);
-  fatal(narrator_growing_free, N);
-  fatal(graph_parser_xfree, op_parser);
-  fatal(pattern_parser_xfree, parser);
-  fatal(rule_run_context_xdestroy, &rule_ctx);
+  fsent_cleanup();
+  set_xfree(variants);
+  narrator_growing_free(N);
+  graph_parser_xfree(op_parser);
+  pattern_parser_xfree(parser);
+  rule_run_context_xdestroy(&rule_ctx);
   wfree(chan);
 coda;
 }

@@ -125,7 +125,7 @@ utterance
 allocate-module
   : %empty
   {
-    YFATAL(module_parser_block_alloc, PARSER, &PARSER->unscoped_block);
+    module_parser_block_alloc(PARSER, &PARSER->unscoped_block);
     PARSER->block = PARSER->unscoped_block;
     PARSER->var_value = 0;
     PARSER->var_merge_overwrite = 0;
@@ -167,17 +167,17 @@ use
   : USE lookup-pattern AS string
   {
     /* frees $2 */
-    YFATAL(PARSER->use_resolve, PARSER, $2, true, $4, strlen($4));
+    PARSER->use_resolve(PARSER, $2, true, $4, strlen($4));
   }
   | USE lookup-pattern AS
   {
     /* frees $2 */
-    YFATAL(PARSER->use_resolve, PARSER, $2, false, NULL, 0);
+    PARSER->use_resolve(PARSER, $2, false, NULL, 0);
   }
   | USE lookup-pattern
   {
     /* frees $2 */
-    YFATAL(PARSER->use_resolve, PARSER, $2, true, NULL, 0);
+    PARSER->use_resolve(PARSER, $2, true, NULL, 0);
   }
   ;
 
@@ -185,17 +185,17 @@ import
   : IMPORT lookup-pattern AS string
   {
     /* frees $2 and $4 */
-    YFATAL(PARSER->import_resolve, PARSER, $2, true, $4, strlen($4));
+    PARSER->import_resolve(PARSER, $2, true, $4, strlen($4));
   }
   | IMPORT lookup-pattern AS
   {
     /* frees $2 */
-    YFATAL(PARSER->import_resolve, PARSER, $2, false, NULL, 0);
+    PARSER->import_resolve(PARSER, $2, false, NULL, 0);
   }
   | IMPORT lookup-pattern
   {
     /* frees $2 */
-    YFATAL(PARSER->import_resolve, PARSER, $2, true, NULL, 0);
+    PARSER->import_resolve(PARSER, $2, true, NULL, 0);
   }
   ;
 
@@ -203,7 +203,7 @@ require
   : REQUIRE lookup-pattern
   {
     /* frees $2 */
-    YFATAL(PARSER->require_resolve, PARSER, $2);
+    PARSER->require_resolve(PARSER, $2);
   }
   ;
 
@@ -235,14 +235,14 @@ variant
   : VARIANT lookup-pattern
   {
     /* frees $2 */
-    YFATAL(module_block_variants, PARSER->unscoped_block, $2);
+    module_block_variants(PARSER->unscoped_block, $2);
   }
   ;
 
 open-block
   : %empty
   {
-    YFATAL(module_parser_block_alloc, PARSER, &PARSER->scoped_block);
+    module_parser_block_alloc(PARSER, &PARSER->scoped_block);
 
     /* block-statement-list accumulates to the block under construction */
     PARSER->block = PARSER->scoped_block;
@@ -253,7 +253,7 @@ block
   : VARIANT lookup-pattern ':' open-block '[' block-statement-list ']'
   {
     /* frees $2 */
-    YFATAL(module_block_variants, PARSER->scoped_block, $2);
+    module_block_variants(PARSER->scoped_block, $2);
 
     /* restore */
     llist_append(&PARSER->scoped_blocks, PARSER->scoped_block, lln);
@@ -266,31 +266,31 @@ rule
  /* (match) antecedent(s) -> (generate) consequent(s) : (reference) formula */
   : RULE rule-bacon match-pattern connector generate-pattern ':' reference-pattern
   {
-    YFATAL(rule_mk, &$$, PARSER->g, $3, $5, $7, $2, $4);
+    rule_mk(&$$, PARSER->g, $3, $5, $7, $2, $4);
   }
   | RULE rule-bacon match-pattern connector generate-pattern
   {
-    YFATAL(rule_mk, &$$, PARSER->g, $3, $5, NULL, $2, $4);
+    rule_mk(&$$, PARSER->g, $3, $5, NULL, $2, $4);
   }
  /* match -- */
   | RULE rule-bacon match-pattern DASHES ':' reference-pattern
   {
-    YFATAL(rule_mk, &$$, PARSER->g, $3, NULL, $6, $2, RULE_ZERO_TO_ONE | RULE_RTL);
+    rule_mk(&$$, PARSER->g, $3, NULL, $6, $2, RULE_ZERO_TO_ONE | RULE_RTL);
   }
   /* match [*] -- */
   | RULE rule-bacon match-pattern STARBOX DASHES ':' reference-pattern
   {
-    YFATAL(rule_mk, &$$, PARSER->g, $3, NULL, $7, $2, RULE_ZERO_TO_MANY | RULE_RTL);
+    rule_mk(&$$, PARSER->g, $3, NULL, $7, $2, RULE_ZERO_TO_MANY | RULE_RTL);
   }
  /* -- generate */
   | RULE rule-bacon DASHES generate-pattern ':' reference-pattern
   {
-    YFATAL(rule_mk, &$$, PARSER->g, NULL, $4, $6, $2, RULE_ZERO_TO_ONE | RULE_LTR);
+    rule_mk(&$$, PARSER->g, NULL, $4, $6, $2, RULE_ZERO_TO_ONE | RULE_LTR);
   }
   /* -- [*] generate */
   | RULE rule-bacon DASHES STARBOX generate-pattern ':' reference-pattern
   {
-    YFATAL(rule_mk, &$$, PARSER->g, NULL, $5, $7, $2, RULE_ZERO_TO_MANY | RULE_LTR);
+    rule_mk(&$$, PARSER->g, NULL, $5, $7, $2, RULE_ZERO_TO_MANY | RULE_LTR);
   }
   ;
 
@@ -385,7 +385,7 @@ strparts
   : strparts strpart
   {
     $$ = $1;
-    YFATAL(ixstrcat, &$$, $2);
+    ixstrcat(&$$, $2);
   }
   | strpart
   ;
@@ -394,16 +394,16 @@ strpart
   : STR
   {
     $$ = 0;
-    YFATAL(ixstrndup, &$$, @1.s, @1.l);
+    ixstrndup(&$$, @1.s, @1.l);
   }
   | CREF
   {
     $$ = 0;
-    YFATAL(ixstrndup, &$$, (char*)&$1, 1);
+    ixstrndup(&$$, (char*)&$1, 1);
   }
   | HREF
   {
     $$ = 0;
-    YFATAL(ixstrndup, &$$, (char*)&$1, 1);
+    ixstrndup(&$$, (char*)&$1, 1);
   }
   ;

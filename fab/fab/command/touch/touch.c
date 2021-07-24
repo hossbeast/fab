@@ -15,6 +15,8 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
+#include <stdio.h>
+
 #include "fab/client.h"
 #include "fab/ipc.h"
 #include "narrator.h"
@@ -40,44 +42,38 @@ static void usage(command * restrict cmd)
   );
 }
 
-static xapi request_write(narrator * restrict N)
+static void request_write(narrator * restrict N)
 {
-  enter;
-
   int x;
 
   if(g_args.invalidate) {
-    fatal(narrator_xsays, N, " global-invalidate");
-    goto XAPI_FINALIZE;
+    narrator_xsays(N, " global-invalidate");
+    return;
   }
 
-  fatal(narrator_xsays, N, ""
+  narrator_xsays(N, ""
 " select : ["
   );
 
   for(x = 0; x < args->targets_len; x++)
   {
-    fatal(narrator_xsayf, N, ""
+    narrator_xsayf(N, ""
 " path : \"%.*s\"", (int)args->targets[x].len, args->targets[x].s
     );
   }
 
-  fatal(narrator_xsays, N, ""
+  narrator_xsays(N, ""
 " ] "
 " invalidate "
   );
-
-  finally : coda;
 }
 
 //
 // build
 //
 
-static xapi connected(command * restrict cmd, fab_client * restrict client)
+static void connected(command * restrict cmd, fab_client * restrict client)
 {
-  enter;
-
   narrator * request_narrator;
   narrator_fixed nstor;
   fabipc_message * msg;
@@ -94,27 +90,21 @@ static xapi connected(command * restrict cmd, fab_client * restrict client)
   requestid = msg->id = ++client->msgid;
 
   request_narrator = narrator_fixed_init(&nstor, msg->text, sizeof(msg->text));
-  fatal(request_write, request_narrator);
+  request_write(request_narrator);
 
   // two terminating null bytes
-  fatal(narrator_xsayw, request_narrator, (char[]) { 0x00, 0x00 }, 2);
+  narrator_xsayw(request_narrator, (char[]) { 0x00, 0x00 }, 2);
   msg->size = nstor.l;
   client_post(client, msg);
-
-  finally : coda;
 }
 
-static xapi process(command * restrict cmd, fab_client * restrict client, fabipc_message * restrict msg)
+static void process(command * restrict cmd, fab_client * restrict client, fabipc_message * restrict msg)
 {
-  enter;
-
   RUNTIME_ASSERT(msg->id == requestid);
 
   if(msg->type == FABIPC_MSG_RESPONSE) {
     g_params.shutdown = true;
   }
-
-  finally : coda;
 }
 
 //

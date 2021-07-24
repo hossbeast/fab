@@ -95,7 +95,7 @@ typedef struct pattern_generate_context
 //  context - dynamic context
 //  walk    - by-directories-segment ffn walk
 //
-xapi pattern_segment_generate(pattern_generate_context * restrict context)
+void pattern_segment_generate(pattern_generate_context * restrict context)
   __attribute__((nonnull));
 
 #endif

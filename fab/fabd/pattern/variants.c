@@ -32,13 +32,9 @@
 // static
 //
 
-static xapi say(const pattern_segment * restrict n, narrator * restrict N)
+static void say(const pattern_segment * restrict n, narrator * restrict N)
 {
-  enter;
-
   xsayc('?');
-
-  finally : coda;
 }
 
 static void destroy(pattern_segment * restrict n)
@@ -46,10 +42,8 @@ static void destroy(pattern_segment * restrict n)
 
 }
 
-static xapi search(const pattern_segment * restrict segment, pattern_search_context * restrict ctx)
+static void search(const pattern_segment * restrict segment, pattern_search_context * restrict ctx)
 {
-  enter;
-
   int x;
   const char * restrict name;
   uint16_t namel;
@@ -101,20 +95,16 @@ aybxc
     ctx->variant_index = x;
     ctx->traversal->offset += var_len;
 
-    fatal(ctx->segments_process, ctx);
+    ctx->segments_process(ctx);
     if(ctx->matched)
       break;
 
     ctx->traversal = traversal;
   }
-
-  finally : coda;
 }
 
-static xapi generate(const pattern_segment * restrict seg, pattern_generate_context * restrict ctx)
+static void generate(const pattern_segment * restrict seg, pattern_generate_context * restrict ctx)
 {
-  enter;
-
   int x;
   variant *v;
 
@@ -129,9 +119,9 @@ static xapi generate(const pattern_segment * restrict seg, pattern_generate_cont
   saved_context_node = ctx->node;
   saved_section_traversal = ctx->section_traversal;
   saved_segment_traversal = ctx->segment_traversal;
-  fatal(narrator_xseek, ctx->section_narrator, 0, NARRATOR_SEEK_CUR, &saved_section_narrator_pos);
-  fatal(narrator_xseek, ctx->section_narrator, 0, NARRATOR_SEEK_SET, 0);
-  fatal(narrator_xread, ctx->section_narrator, saved_section_text, saved_section_narrator_pos, 0);
+  narrator_xseek(ctx->section_narrator, 0, NARRATOR_SEEK_CUR, &saved_section_narrator_pos);
+  narrator_xseek(ctx->section_narrator, 0, NARRATOR_SEEK_SET, 0);
+  narrator_xread(ctx->section_narrator, saved_section_text, saved_section_narrator_pos, 0);
 
   for(x = 0; x < ctx->variants->table_size; x++)
   {
@@ -146,21 +136,19 @@ static xapi generate(const pattern_segment * restrict seg, pattern_generate_cont
     ctx->section_traversal.variant_index = x;
 
     ctx->segment_traversal = saved_segment_traversal;
-    fatal(narrator_xsayw, ctx->section_narrator, v->norm, v->norm_len);
-    fatal(pattern_segment_generate, ctx);
+    narrator_xsayw(ctx->section_narrator, v->norm, v->norm_len);
+    pattern_segment_generate(ctx);
 
     ctx->node = saved_context_node;
     ctx->section_traversal = saved_section_traversal;
-    fatal(narrator_xseek, ctx->section_narrator, 0, NARRATOR_SEEK_SET, 0);
-    fatal(narrator_xsayw, ctx->section_narrator, saved_section_text, saved_section_narrator_pos);
+    narrator_xseek(ctx->section_narrator, 0, NARRATOR_SEEK_SET, 0);
+    narrator_xsayw(ctx->section_narrator, saved_section_text, saved_section_narrator_pos);
   }
 
   if(ctx->variants->size == 0)
   {
-    fatal(pattern_segment_generate, ctx);
+    pattern_segment_generate(ctx);
   }
-
-  finally : coda;
 }
 
 static int cmp(const pattern_segment * A, const pattern_segment *B)
@@ -181,18 +169,14 @@ static pattern_segment_vtable vtable = {
 // public
 //
 
-xapi pattern_variants_mk(pattern_segment ** restrict rv, const yyu_location * restrict loc)
+void pattern_variants_mk(pattern_segment ** restrict rv, const yyu_location * restrict loc)
 {
-  enter;
-
   pattern_segment * n = 0;
 
-  fatal(xmalloc, &n, sizeof(*n));
-  fatal(pattern_segment_init, n, &vtable, loc);
+  xmalloc(&n, sizeof(*n));
+  pattern_segment_init(n, &vtable, loc);
 
   chain_init(n, chn);
 
   *rv = n;
-
-  finally : coda;
 }

@@ -25,7 +25,6 @@ exec_render - write strings to an exec_builder
 */
 
 #include "types.h"
-#include "xapi.h"
 
 #include "exec_builder.h"
 #include "selector.h"
@@ -51,13 +50,13 @@ typedef struct exec_render_context {
   exec_builder_args builder_args;
 } exec_render_context;
 
-xapi exec_render_context_xinit(exec_render_context * restrict ctx)
+void exec_render_context_xinit(exec_render_context * restrict ctx)
   __attribute__((nonnull));
 
-xapi exec_render_context_xreset(exec_render_context * restrict ctx)
+void exec_render_context_xreset(exec_render_context * restrict ctx)
   __attribute__((nonnull));
 
-xapi exec_render_context_xdestroy(exec_render_context * restrict ctx)
+void exec_render_context_xdestroy(exec_render_context * restrict ctx)
   __attribute__((nonnull));
 
 void exec_render_context_configure(
@@ -72,40 +71,40 @@ void exec_render_context_configure(
 /*
  * render a formula value to the file parameter of an exec builder
  */
-xapi exec_render_file(exec_render_context * restrict ctx, const struct formula_value * restrict path)
+void exec_render_file(exec_render_context * restrict ctx, const struct formula_value * restrict path)
   __attribute__((nonnull));
 
 /*
  * render a formula value to the args parameter of an exec builder
  */
-xapi exec_render_args(exec_render_context * restrict ctx, const struct formula_value * restrict args)
+void exec_render_args(exec_render_context * restrict ctx, const struct formula_value * restrict args)
   __attribute__((nonnull));
 
 /*
  * render a formula value to the envs parameter of an exec builder
  */
-xapi exec_render_envs(exec_render_context * restrict ctx, const struct formula_value * restrict envs)
+void exec_render_envs(exec_render_context * restrict ctx, const struct formula_value * restrict envs)
   __attribute__((nonnull));
 
 /*
  *
  */
-xapi exec_render_env_sysvars(exec_render_context * restrict ctx, const struct build_slot * restrict bs)
+void exec_render_env_sysvars(exec_render_context * restrict ctx, const struct build_slot * restrict bs)
   __attribute__((nonnull));
 
 /*
  * build an env list from a VALUE_TYPE_SET
  */
-xapi exec_render_env_vars(exec_render_context * restrict ctx)
+void exec_render_env_vars(exec_render_context * restrict ctx)
   __attribute__((nonnull));
 
 /*
  * write environment variable value text
  */
-xapi exec_render_value(exec_render_context * restrict ctx, const struct value * restrict val)
+void exec_render_value(exec_render_context * restrict ctx, const struct value * restrict val)
   __attribute__((nonnull));
 
-xapi exec_render_formula_value(exec_render_context * restrict ctx, const struct formula_value * restrict val)
+void exec_render_formula_value(exec_render_context * restrict ctx, const struct formula_value * restrict val)
   __attribute__((nonnull));
 
 #endif

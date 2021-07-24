@@ -124,10 +124,8 @@ static bool hastag(const variant * restrict var, const char *tag, uint16_t len)
 // public
 //
 
-xapi variant_get(const char * restrict name, uint16_t len, variant ** restrict variantp)
+void variant_get(const char * restrict name, uint16_t len, variant ** restrict variantp)
 {
-  enter;
-
   variant * lv = 0;
   variant * v;
   char norm[256];
@@ -143,13 +141,13 @@ xapi variant_get(const char * restrict name, uint16_t len, variant ** restrict v
 
   if((v = map_get(variants_map, norm, norm_len)) == 0)
   {
-    fatal(xmalloc, &lv, sizeof(*lv) + norm_len + 1);
+    xmalloc(&lv, sizeof(*lv) + norm_len + 1);
     memcpy(lv->norm, norm, norm_len);
     lv->norm_len = norm_len;
 
     if(num_labels)
     {
-      fatal(xmalloc, &lv->tags, sizeof(*lv->tags) * num_labels);
+      xmalloc(&lv->tags, sizeof(*lv->tags) * num_labels);
       x = 0;
       for(i = 0; i < norm_len; i++)
       {
@@ -165,7 +163,7 @@ xapi variant_get(const char * restrict name, uint16_t len, variant ** restrict v
       lv->tags_len = num_labels;
     }
 
-    fatal(map_put, variants_map, norm, norm_len, lv, 0);
+    map_put(variants_map, norm, norm_len, lv, 0);
     v = lv;
     lv = 0;
   }
@@ -214,20 +212,12 @@ bool variant_key_compatible(
   return *key[0] == 0;
 }
 
-xapi variant_setup()
+void variant_setup()
 {
-  enter;
-
-  fatal(map_createx, &variants_map, 0, (void*)variant_free, 0);
-
-  finally : coda;
+  map_createx(&variants_map, 0, (void*)variant_free, 0);
 }
 
-xapi variant_cleanup()
+void variant_cleanup()
 {
-  enter;
-
-  fatal(map_xfree, variants_map);
-
-  finally : coda;
+  map_xfree(variants_map);
 }

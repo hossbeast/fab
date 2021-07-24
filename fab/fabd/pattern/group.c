@@ -28,10 +28,8 @@
 // static
 //
 
-static xapi say(const pattern_segment * restrict fn, narrator * restrict N)
+static void say(const pattern_segment * restrict fn, narrator * restrict N)
 {
-  enter;
-
   const pattern_group * n = &fn->group;
 
   xsayc('(');
@@ -39,10 +37,8 @@ static xapi say(const pattern_segment * restrict fn, narrator * restrict N)
     xsayf("?<%.*s>", n->name_len, n->name);
   }
 
-  fatal(pattern_segments_say, n->segments_head, true, N);
+  pattern_segments_say(n->segments_head, true, N);
   xsayc(')');
-
-  finally : coda;
 }
 
 static void destroy(pattern_segment * restrict n)
@@ -53,10 +49,8 @@ static void destroy(pattern_segment * restrict n)
   wfree(group->name);
 }
 
-static xapi search(const pattern_segment * restrict segment, pattern_search_context * restrict ctx)
+static void search(const pattern_segment * restrict segment, pattern_search_context * restrict ctx)
 {
-  enter;
-
   const pattern_group * group = &segment->group;
   struct search_segments_traversal traversal;
 
@@ -70,12 +64,10 @@ static xapi search(const pattern_segment * restrict segment, pattern_search_cont
   traversal.u.prev = ctx->traversal;
 
   ctx->traversal = &traversal;
-  fatal(ctx->segments_process, ctx);
+  ctx->segments_process(ctx);
 
   // pop
   ctx->traversal = traversal.u.prev;
-
-  finally : coda;
 }
 
 static int cmp(const pattern_segment * A, const pattern_segment *B)
@@ -103,7 +95,7 @@ static pattern_segment_vtable vtable = {
 // public
 //
 
-xapi pattern_group_mk(
+void pattern_group_mk(
     pattern_segment ** restrict rv
   , const yyu_location * restrict loc
   , pattern_segments * restrict segments_head
@@ -112,12 +104,10 @@ xapi pattern_group_mk(
   , uint16_t group_number
 )
 {
-  enter;
-
   pattern_segment * n = 0;
 
-  fatal(xmalloc, &n, sizeof(*n));
-  fatal(pattern_segment_init, n, &vtable, loc);
+  xmalloc(&n, sizeof(*n));
+  pattern_segment_init(n, &vtable, loc);
 
   n->group.segments_head = segments_head;
   n->group.num = group_number;
@@ -125,12 +115,10 @@ xapi pattern_group_mk(
   if(name)
   {
     n->group.name_len = name_len;
-    fatal(ixstrndup, &n->group.name, name, name_len);
+    ixstrndup(&n->group.name, name, name_len);
   }
 
   chain_init(n, chn);
 
   *rv = n;
-
-  finally : coda;
 }

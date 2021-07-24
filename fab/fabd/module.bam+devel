@@ -19,77 +19,42 @@ use cc          # this module contains C sources
 use flex
 use bison
 use executable  # this module builds an executable
-use xapi/errtab
-use xunit-tests
+use xunit
 use git
-
-# declare variants
-variant xapi.{debug,devel,final,trace}
-variant xapi.pic.devel
-
-variant xapi.{debug,devel,final,trace} : [
-  rule fabd.? -> //module/targets
-]
 
 # make common objects available for #include and linking
 import fab/include
 import fab/asan
-import lib{common,descriptor,xapi,xlinux,valyria,value,logger,narrator,fab,lorien,moria,yyutil,xunit}
+import lib{common,descriptor,xlinux,valyria,value,narrator,fab,lorien,moria,yyutil,xunit}
 
-rule */*.?.o <- //modules/libfab/fs/fab/stats.h
+variant pic.{debug,devel,final,trace}
 
-variant xapi.devel : [
+# invoke the compiler to build the executable
+rule **~test/*.?.o -> fabd.$? : executable/cc.bam+devel
+
+rule fabd.? -> //module/targets
+
+variant pic.devel : [
   rule fabd.? <- asan/asan.$?.o
 ]
 
-# invoke the compiler to build the executable
-variant xapi.{debug,devel,final,trace} : [
-  rule **~test/*.?.o -> fabd.$? : executable/cc.bam+devel
-]
-
-# intra module dependencies - generated files
-rule */*.?.o <- errtab/CONFIG.errtab.h
-rule */*.?.o <- errtab/FABD.errtab.h
-rule */*.?.o <- errtab/FORMULA.errtab.h
-rule */*.?.o <- errtab/MODULE.errtab.h
-rule */*.?.o <- errtab/PATTERN.errtab.h
-rule */*.?.o <- errtab/REQUEST.errtab.h
-rule */*.?.o <- errtab/SELECTOR.errtab.h
-
 # library dependencies
-variant xapi.pic.{debug,devel,final,trace} : [
-  rule //module/imports/*~libxunit/lib*.?.so -> fabd.${?-pic}
-]
+rule //module/imports/*~libxunit/lib*.?.so -> fabd.$?
 
 var : {
-  cflags : [ -lrt -lpthread ]
+  lflags : [ -lrt -lpthread ]
 }
 
 #
 # tests
 #
 
-variant xapi.pic.devel : [
-  rule //module/imports/libxunit/lib*.?.so -> fabd.${?-pic}
+variant pic.devel : [
+  rule //module/imports/libxunit/lib*.?.so -> fabd.$?
 
   # all the code into the blob
   rule **~test/(*~main).?.o -> test/blob.?.so : ./cc-blob-so.bam+devel
 
   # test utilities
   rule test/node_operations_test.?.o -> test/blob.?.so
-
-  #
-  # here be hacks
-  #  these are arranged like this in order to be loaded in the proper order
-  #
-  rule //module/imports/libyyutil/libyyutil.?.so -> //two
-  rule //module/imports/libmoria/libmoria.?.so -> //three
-  rule //module/imports/libvalue/libvalue.?.so -> //three
-  rule //module/imports/liblorien/liblorien.?.so -> //three
-  rule //module/imports/libfab/libfab.?.so -> //four
-  rule test/blob.?.so -> //five
-  rule //two -> //three
-  rule //three -> //four
-  rule //four -> //five
-  rule //five -> //xunit
 ]

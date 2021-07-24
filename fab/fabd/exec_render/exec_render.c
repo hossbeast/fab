@@ -32,14 +32,10 @@
 
 #include "zbuffer.h"
 
-xapi exec_render_context_xinit(struct exec_render_context * restrict ctx)
+void exec_render_context_xinit(struct exec_render_context * restrict ctx)
 {
-  enter;
-
   memset(ctx, 0, sizeof(*ctx));
-  fatal(exec_builder_xinit, &ctx->operation_builder);
-
-  finally : coda;
+  exec_builder_xinit(&ctx->operation_builder);
 }
 
 void exec_render_context_configure(
@@ -62,51 +58,37 @@ void exec_render_context_configure(
   ctx->selector_context.mod = mod;
 }
 
-xapi exec_render_context_xreset(exec_render_context * restrict ctx)
+void exec_render_context_xreset(exec_render_context * restrict ctx)
 {
-  enter;
-
   memset(&ctx->builder_args, 0, sizeof(ctx->builder_args));
-
-  finally : coda;
 }
 
-xapi exec_render_context_xdestroy(struct exec_render_context * restrict ctx)
+void exec_render_context_xdestroy(struct exec_render_context * restrict ctx)
 {
-  enter;
-
-  fatal(exec_builder_xdestroy, &ctx->operation_builder);
-  fatal(selector_context_xdestroy, &ctx->selector_context);
-
-  finally : coda;
+  exec_builder_xdestroy(&ctx->operation_builder);
+  selector_context_xdestroy(&ctx->selector_context);
 }
 
-xapi exec_render_env_sysvars(exec_render_context * restrict ctx, const build_slot * restrict bs)
+void exec_render_env_sysvars(exec_render_context * restrict ctx, const build_slot * restrict bs)
 {
-  enter;
-
-  fatal(exec_render_context_xreset, ctx);
+  exec_render_context_xreset(ctx);
 
   /* targets variant */
-  fatal(sysvar_builder_variant, ctx->builder, bs);
+  sysvar_builder_variant(ctx->builder, bs);
 
   /* targets paths */
-  fatal(sysvar_builder_targets, ctx->builder, bs);
+  sysvar_builder_targets(ctx->builder, bs);
 
   /* sources paths */
-  fatal(sysvar_builder_sources, ctx->builder, bs);
-
-  finally : coda;
+  sysvar_builder_sources(ctx->builder, bs);
 }
 
-xapi exec_render_env_vars(exec_render_context * restrict ctx)
+void exec_render_env_vars(exec_render_context * restrict ctx)
 {
-  enter;
-
   int x;
   value * v;
 
-  fatal(exec_render_context_xreset, ctx);
+  exec_render_context_xreset(ctx);
 
   ctx->builder_args.item = BUILDER_ENVS;
   ctx->builder_args.position = -1;
@@ -126,48 +108,36 @@ xapi exec_render_env_vars(exec_render_context * restrict ctx)
     ctx->builder_args.name_len = v->key->s->size;
     ctx->builder_args.mode = BUILDER_APPEND;
 
-    fatal(exec_render_value, ctx, v->val);
+    exec_render_value(ctx, v->val);
   }
-
-  finally : coda;
 }
 
-xapi exec_render_file(exec_render_context * restrict ctx, const formula_value * restrict file)
+void exec_render_file(exec_render_context * restrict ctx, const formula_value * restrict file)
 {
-  enter;
-
-  fatal(exec_render_context_xreset, ctx);
+  exec_render_context_xreset(ctx);
 
   ctx->builder_args.item = BUILDER_FILE;
-  fatal(exec_render_formula_value, ctx, file);
-
-  finally : coda;
+  exec_render_formula_value(ctx, file);
 }
 
-xapi exec_render_args(exec_render_context * restrict ctx, const formula_value * restrict args)
+void exec_render_args(exec_render_context * restrict ctx, const formula_value * restrict args)
 {
-  enter;
-
   RUNTIME_ASSERT(args->type == FORMULA_VALUE_LIST);
 
-  fatal(exec_render_context_xreset, ctx);
+  exec_render_context_xreset(ctx);
 
   ctx->builder_args.item = BUILDER_ARGS;
   ctx->builder_args.position = -1;
-  fatal(exec_render_formula_value, ctx, args);
-
-  finally : coda;
+  exec_render_formula_value(ctx, args);
 }
 
-xapi exec_render_envs(exec_render_context * restrict ctx, const formula_value * restrict envs)
+void exec_render_envs(exec_render_context * restrict ctx, const formula_value * restrict envs)
 {
-  enter;
-
   formula_value *mapping;
 
   RUNTIME_ASSERT(envs->type == FORMULA_VALUE_SET);
 
-  fatal(exec_render_context_xreset, ctx);
+  exec_render_context_xreset(ctx);
 
   ctx->builder_args.item = BUILDER_ENVS;
   ctx->builder_args.position = -1;
@@ -181,16 +151,12 @@ xapi exec_render_envs(exec_render_context * restrict ctx, const formula_value * 
     ctx->builder_args.name = mapping->m.name;
     ctx->builder_args.name_len = mapping->m.name_len;
 
-    fatal(exec_render_formula_value, ctx, mapping->m.value);
+    exec_render_formula_value(ctx, mapping->m.value);
   }
-
-  finally : coda;
 }
 
-xapi exec_render_value(exec_render_context * restrict ctx, const value * restrict val)
+void exec_render_value(exec_render_context * restrict ctx, const value * restrict val)
 {
-  enter;
-
   value *item;
   int x;
 
@@ -198,7 +164,7 @@ xapi exec_render_value(exec_render_context * restrict ctx, const value * restric
   {
     for(x = 0; x < val->items->size; x++)
     {
-      fatal(exec_render_value, ctx, list_get(val->items, x));
+      exec_render_value(ctx, list_get(val->items, x));
     }
   }
   else if(val->type == VALUE_TYPE_SET)
@@ -208,7 +174,7 @@ xapi exec_render_value(exec_render_context * restrict ctx, const value * restric
       if((item = set_table_get(val->els, x)) == 0)
         continue;
 
-      fatal(exec_render_value, ctx, item);
+      exec_render_value(ctx, item);
     }
   }
   else if(val->type & VALUE_TYPE_SCALAR)
@@ -216,16 +182,12 @@ xapi exec_render_value(exec_render_context * restrict ctx, const value * restric
     ctx->builder_args.val.v = val;
     ctx->builder_args.render_val = BUILDER_VALUE;
     ctx->builder_args.mode = BUILDER_APPEND;
-    fatal(exec_builder_add, ctx->builder, &ctx->builder_args);
+    exec_builder_add(ctx->builder, &ctx->builder_args);
   }
-
-  finally : coda;
 }
 
-xapi exec_render_formula_value(exec_render_context * restrict ctx, const formula_value * val)
+void exec_render_formula_value(exec_render_context * restrict ctx, const formula_value * val)
 {
-  enter;
-
   const chain *T;
   formula_value *sv;
   value *mapval;
@@ -238,45 +200,45 @@ xapi exec_render_formula_value(exec_render_context * restrict ctx, const formula
   if(val->type == FORMULA_VALUE_LIST)
   {
     chain_foreach(T, sv, chn, val->list_head) {
-      fatal(exec_render_formula_value, ctx, sv);
+      exec_render_formula_value(ctx, sv);
       if(system_error) {
-        goto XAPI_FINALIZE;
+        return;
       }
     }
   }
   else if(val->type == FORMULA_VALUE_SET)
   {
     rbtree_foreach(val->set, sv, rbn) {
-      fatal(exec_render_formula_value, ctx, sv);
+      exec_render_formula_value(ctx, sv);
       if(system_error) {
-        goto XAPI_FINALIZE;
+        return;
       }
     }
   }
   else if(val->type == FORMULA_VALUE_VARIABLE)
   {
     if(ctx->vars && (mapval = value_lookupw(ctx->vars, val->v.name, val->v.name_len))) {
-      fatal(exec_render_value, ctx, mapval);
+      exec_render_value(ctx, mapval);
     }
   }
   else if(val->type == FORMULA_VALUE_SYSVAR)
   {
     if(val->sv == FORMULA_SYSVAR_VARIANT)
     {
-      fatal(exec_render_sysvar_variant, ctx, ctx->bs);
+      exec_render_sysvar_variant(ctx, ctx->bs);
     }
     else if(val->sv == FORMULA_SYSVAR_SOURCE || val->sv == FORMULA_SYSVAR_SOURCES)
     {
-      fatal(exec_render_sysvar_sources, ctx, ctx->bs);
+      exec_render_sysvar_sources(ctx, ctx->bs);
     }
     else if(val->sv == FORMULA_SYSVAR_TARGET || val->sv == FORMULA_SYSVAR_TARGETS)
     {
-      fatal(exec_render_sysvar_targets, ctx, ctx->bs);
+      exec_render_sysvar_targets(ctx, ctx->bs);
     }
   }
   else if(val->type == FORMULA_VALUE_SELECT)
   {
-    fatal(selector_exec, val->op.selector, &ctx->selector_context, SELECTION_ITERATION_TYPE_ORDER);
+    selector_exec(val->op.selector, &ctx->selector_context, SELECTION_ITERATION_TYPE_ORDER);
   //  if(ctx->selector_context.err.l) {
   //    memcpy(ctx->err.s, ctx->selector_context.err.s, ctx->selector_context.err.l);
   //    ctx->err.l = ctx->selector_context.err.l;
@@ -298,7 +260,7 @@ xapi exec_render_formula_value(exec_render_context * restrict ctx, const formula
         ctx->builder_args.val.n = containerof(sn->v, module, vertex)->dir_node;
       }
 
-      fatal(exec_builder_add, ctx->builder, &ctx->builder_args);
+      exec_builder_add(ctx->builder, &ctx->builder_args);
     }
 
     ctx->builder_args = base_add_args;
@@ -316,7 +278,7 @@ xapi exec_render_formula_value(exec_render_context * restrict ctx, const formula
     for(x = 0; x < ctx->builder->args_len; x++)
     {
       ctx->builder_args.position = x;
-      fatal(exec_builder_add, ctx->builder, &ctx->builder_args);
+      exec_builder_add(ctx->builder, &ctx->builder_args);
     }
 
     ctx->builder_args = base_add_args;
@@ -324,36 +286,36 @@ xapi exec_render_formula_value(exec_render_context * restrict ctx, const formula
   else if(val->type == FORMULA_VALUE_PATH_SEARCH)
   {
     /* assumes string */
-    fatal(path_cache_search, &pe, MMS(val->op.operand->s));
+    path_cache_search(&pe, MMS(val->op.operand->s));
     if(pe->fd == -1)
     {
       fprintf(stderr, "wtf?\n");
-      goto XAPI_FINALLY;
+      return;
     }
 
     ctx->builder_args.val.pe = pe;
     ctx->builder_args.mode = BUILDER_APPEND;
     ctx->builder_args.render_val = BUILDER_PATH_CACHE_ENTRY;
-    fatal(exec_builder_add, ctx->builder, &ctx->builder_args);
+    exec_builder_add(ctx->builder, &ctx->builder_args);
   }
   else if(val->type == FORMULA_VALUE_SEQUENCE)
   {
     /* operations are always couched in a sequence operation */
     base_add_args = ctx->builder_args;
-    fatal(exec_builder_xreset, &ctx->operation_builder);
+    exec_builder_xreset(&ctx->operation_builder);
     ctx->builder = &ctx->operation_builder;
 
     ctx->builder_args.item = BUILDER_ARGS;
     chain_foreach(T, sv, chn, val->op.list_head) {
       ctx->builder_args.position = -1;
-      fatal(exec_render_formula_value, ctx, sv);
+      exec_render_formula_value(ctx, sv);
       if(system_error) {
-        goto XAPI_FINALIZE;
+        return;
       }
     }
 
     /* the output of the sequence is a list of strings */
-    fatal(exec_builder_build, ctx->builder, &sequence_output);
+    exec_builder_build(ctx->builder, &sequence_output);
 
     // restore
     ctx->builder = ctx->base_builder;
@@ -365,7 +327,7 @@ xapi exec_render_formula_value(exec_render_context * restrict ctx, const formula
     for(x = 0; x < sequence_output->args_size; x++)
     {
       ctx->builder_args.val.s = sequence_output->args[x];
-      fatal(exec_builder_add, ctx->builder, &ctx->builder_args);
+      exec_builder_add(ctx->builder, &ctx->builder_args);
     }
 
     ctx->builder_args = base_add_args;
@@ -375,12 +337,10 @@ xapi exec_render_formula_value(exec_render_context * restrict ctx, const formula
     ctx->builder_args.val.f = val;
     ctx->builder_args.mode = BUILDER_APPEND;
     ctx->builder_args.render_val = BUILDER_FORMULA_VALUE;
-    fatal(exec_builder_add, ctx->builder, &ctx->builder_args);
+    exec_builder_add(ctx->builder, &ctx->builder_args);
   }
   else
   {
     RUNTIME_ABORT();
   }
-
-  finally : coda;
 }

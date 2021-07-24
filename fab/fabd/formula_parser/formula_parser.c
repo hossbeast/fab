@@ -15,16 +15,12 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#include "xapi.h"
-#include "xapi/exit.h"
 
 /* flex and bison do not agree on these names */
 #define YYSTYPE FORMULA_YYSTYPE
 #define YYLTYPE yyu_location
 
 #include "formula_parser.internal.h"
-#include "logging.h"
-#include "FORMULA.errtab.h"
 #include "formula.tab.h"
 #include "formula.tokens.h"
 #include "formula.lex.h"
@@ -159,7 +155,7 @@ void formula_parser_extract(const char * restrict text, size_t text_len, bool * 
   *bacon_lenp = bacon_len;
 }
 
-xapi formula_parser_bacon_parse(
+int formula_parser_bacon_parse(
     formula_parser * restrict parser
   , char * const restrict vars_text
   , size_t vars_text_len
@@ -169,83 +165,67 @@ xapi formula_parser_bacon_parse(
   , formula_value ** restrict envs
 )
 {
-  enter;
+  int r;
 
   parser->file = 0;
   parser->args = 0;
   parser->envs = 0;
 
-  fatal(yyu_parse, &parser->yyu, vars_text, vars_text_len, fname, YYU_INPLACE, 0, 0);
+  r = yyu_parse(&parser->yyu, vars_text, vars_text_len, fname, YYU_INPLACE, 0, 0);
 
   *file = parser->file;
   *args = parser->args;
   *envs = parser->envs;
 
-  finally : coda;
+  return r;
 }
 
 //
 // public
 //
 
-xapi formula_parser_create(formula_parser ** const rv)
+void formula_parser_create(formula_parser ** const rv)
 {
-  enter;
-
   formula_parser * p = 0;
 
-  fatal(xmalloc, &p, sizeof(*p));
-  fatal(yyu_parser_init, &p->yyu, &vtable, FORMULA_SYNTAX);
+  xmalloc(&p, sizeof(*p));
+  yyu_parser_init(&p->yyu, &vtable);
 
-  fatal(yyu_parser_init_tokens, &p->yyu, formula_token_table, formula_TOKEN_TABLE_SIZE);
+  yyu_parser_init_tokens(&p->yyu, formula_token_table, formula_TOKEN_TABLE_SIZE);
 
-  fatal(yyu_parser_init_states
-    , &p->yyu
+  yyu_parser_init_states(
+      &p->yyu
     , formula_numstates
     , formula_statenumbers
     , formula_statenames
   );
 
-#if DEBUG || DEVEL || XUNIT
-  p->yyu.logs = L_FORMULA;
-#endif
-
-  fatal(selector_parser_create, &p->selector_parser);
+  selector_parser_create(&p->selector_parser);
 
   *rv = p;
   p = 0;
 
-finally:
-  fatal(formula_parser_xfree, p);
-coda;
+  formula_parser_xfree(p);
 }
 
-xapi formula_parser_xfree(formula_parser* const p)
+void formula_parser_xfree(formula_parser* const p)
 {
-  enter;
-
   if(p)
   {
-    fatal(selector_parser_xfree, p->selector_parser);
-    fatal(yyu_parser_xdestroy, &p->yyu);
+    selector_parser_xfree(p->selector_parser);
+    yyu_parser_xdestroy(&p->yyu);
   }
 
   wfree(p);
-
-  finally : coda;
 }
 
-xapi formula_parser_ixfree(formula_parser ** const p)
+void formula_parser_ixfree(formula_parser ** const p)
 {
-  enter;
-
-  fatal(formula_parser_xfree, *p);
+  formula_parser_xfree(*p);
   *p = 0;
-
-  finally : coda;
 }
 
-xapi formula_parser_parse(
+int formula_parser_parse(
     formula_parser * restrict parser
   , char * const restrict text
   , size_t len
@@ -253,24 +233,23 @@ xapi formula_parser_parse(
   , formula * restrict fml
 )
 {
-  enter;
-
   char * bacon = 0;
   size_t bacon_len = 0;
   bool shebang;
+  int r;
+
   formula_parser_extract(text, len, &shebang, &bacon, &bacon_len);
 
+  r = 0;
   if(bacon_len)
   {
-    fatal(formula_parser_bacon_parse, parser, bacon, bacon_len + 2, fname, &fml->file, &fml->args, &fml->envs);
+    r = formula_parser_bacon_parse(parser, bacon, bacon_len + 2, fname, &fml->file, &fml->args, &fml->envs);
   }
 
   if(!shebang && !fml->file)
   {
-    fail(FORMULA_NOPATH);
+    RUNTIME_ABORT();
   }
 
-finally:
-  xapi_infos("path", fname);
-coda;
+  return r;
 }

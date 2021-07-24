@@ -18,7 +18,6 @@
 #ifndef _WALKER_H
 #define _WALKER_H
 
-#include "xapi.h"
 #include "types.h"
 
 struct fsent;
@@ -36,7 +35,7 @@ struct configblob;
  * [parent]   - parent of base to which it is attached when created
  * abspath    - absolute path to a base directory
  */
-xapi walker_descend(
+void walker_descend(
     struct fsent ** restrict basep
   , struct fsent * restrict base
   , struct fsent * restrict parent
@@ -52,14 +51,14 @@ xapi walker_descend(
  *  base      - node to ascend from
  *  [walk_id] -
  */
-xapi walker_ascend(
+void walker_ascend(
     struct fsent * restrict base
   , uint16_t walk_id
   , struct graph_invalidation_context * restrict invalidation
 )
   __attribute__((nonnull(1, 3)));
 
-xapi walker_system_reconcile(struct graph_invalidation_context * restrict invalidation)
+void walker_system_reconcile(struct graph_invalidation_context * restrict invalidation)
   __attribute__((nonnull));
 
 /*
@@ -69,11 +68,10 @@ xapi walker_system_reconcile(struct graph_invalidation_context * restrict invali
  * config - root of the config tree
  * dry    - whether to perform a dry-run
  */
-xapi walker_system_reconfigure(struct configblob * restrict cfg, bool dry)
-  __attribute__((nonnull));
+int walker_system_reconfigure(struct configblob * restrict cfg, char * restrict err, uint16_t err_sz);
 
-xapi walker_setup(void);
-xapi walker_cleanup(void);
+void walker_setup(void);
+void walker_cleanup(void);
 
 uint16_t walker_begin(void);
 

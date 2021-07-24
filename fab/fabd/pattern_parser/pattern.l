@@ -18,7 +18,6 @@
 %{
   #include "yyutil/scanner.h"
 
-  #include "PATTERN.errtab.h"
   #include "pattern_parser.internal.h"
   #include "match_pattern.tab.h"
   #include "match_pattern.tokens.h"
@@ -43,79 +42,75 @@
 %%
 
  /* whitespace not recognized */
-<*>[\n]                                                 { lenter; LOCRESET; yyless(0); LEX('\n'); finally : lcoda; }
-<*>[\r\t ]                                              { lenter; LOCWRITE; yyless(0); LEX(yytext[0]); finally : lcoda; }
+<*>[\n]                                                 { LOCRESET; yyless(0); LEX('\n'); }
+<*>[\r\t ]                                              { LOCWRITE; yyless(0); LEX(yytext[0]); }
 
  /* tokens */
-<INITIAL>[*][*]                                         { lenter; LEX(STARSTAR); finally : lcoda; }
-<INITIAL>[/][/]                                         { lenter; LEX(SLASH2); yyless(1); finally : lcoda; }
-<INITIAL>[+(){}<>:*?,/~^D]                              { lenter; LEX(yytext[0]); finally : lcoda; }
-<INITIAL>[.][/]                                         { lenter; LEX(yytext[0]); yyless(1); finally : lcoda; }
+<INITIAL>[*][*]                                         { LEX(STARSTAR); }
+<INITIAL>[/][/]                                         { LEX(SLASH2); yyless(1); }
+<INITIAL>[+(){}<>:*?,/~^D]                              { LEX(yytext[0]); }
+<INITIAL>[.][/]                                         { LEX(yytext[0]); yyless(1); }
 
  /* integers */
-<INITIAL>[0-9]+                                         { lenter; LEXI("%"SCNuMAX); finally : lcoda; }
+<INITIAL>[0-9]+                                         { LEXI("%"SCNuMAX); }
 
  /* named tokens and unquoted strings */
-<INITIAL>[a-zA-Z0-9_][-a-zA-Z0-9_]+                     { lenter; LEXA(); finally : lcoda; }
-<INITIAL>[-a-zA-Z_.]+                                   { lenter; LEX(STR); finally : lcoda; }
+<INITIAL>[a-zA-Z0-9_][-a-zA-Z0-9_]+                     { LEXA(); }
+<INITIAL>[-a-zA-Z_.]+                                   { LEX(STR); }
 
  /* scanmodes, quoted strings */
-<INITIAL>[[]                                            { lenter; PUSHSTATE(bracketed); LEX(yytext[0]); finally : lcoda; }
-<bracketed>[\]]                                         { lenter; POPSTATE; LEX(yytext[0]); finally : lcoda; }
+<INITIAL>[[]                                            { PUSHSTATE(bracketed); LEX(yytext[0]); }
+<bracketed>[\]]                                         { POPSTATE; LEX(yytext[0]); }
 
-<INITIAL>["]                                            { lenter; PUSHSTATE(quoted); LEX(yytext[0]); finally : lcoda; }
-<quoted>["]                                             { lenter; POPSTATE; LEX(yytext[0]); finally : lcoda; }
+<INITIAL>["]                                            { PUSHSTATE(quoted); LEX(yytext[0]); }
+<quoted>["]                                             { POPSTATE; LEX(yytext[0]); }
 
  /* var refs */
-<INITIAL>[$]                                            { lenter; PUSHSTATE(varref); LEX(yytext[0]); finally : lcoda; }
-<varref>[{]                                             { lenter; PUSHSTATE(varref2); LEX(yytext[0]); finally : lcoda; }
-<varref>[?^D]                                           { lenter; POPSTATE; LEX(yytext[0]); finally : lcoda; }
-<varref>[a-zA-Z]+                                       { lenter; POPSTATE; LEX(STR); finally : lcoda; }
-<varref>[0-9]+                                          { lenter; POPSTATE; LEXI("%"SCNuMAX); finally : lcoda; }
-<varref2>[-+?]                                          { lenter; LEX(yytext[0]); finally : lcoda; }
-<varref2>[a-zA-Z]+                                      { lenter; LEX(STR); finally : lcoda; }
-<varref2>[}]                                            { lenter; POPSTATE; POPSTATE; LEX(yytext[0]); finally : lcoda; }
+<INITIAL>[$]                                            { PUSHSTATE(varref); LEX(yytext[0]); }
+<varref>[{]                                             { PUSHSTATE(varref2); LEX(yytext[0]); }
+<varref>[?^D]                                           { POPSTATE; LEX(yytext[0]); }
+<varref>[a-zA-Z]+                                       { POPSTATE; LEX(STR); }
+<varref>[0-9]+                                          { POPSTATE; LEXI("%"SCNuMAX); }
+<varref2>[-+?]                                          { LEX(yytext[0]); }
+<varref2>[a-zA-Z]+                                      { LEX(STR); }
+<varref2>[}]                                            { POPSTATE; POPSTATE; LEX(yytext[0]); }
 
  /* crefs to non ascii bytes */
-<quoted>\\[0abtnvfrs\\"]                                { lenter; LEXC(1); finally : lcoda; }
-<bracketed>\\[0abtnvfrs]                                { lenter; LEXC(1); finally : lcoda; }
+<quoted>\\[0abtnvfrs\\"]                                { LEXC(1); }
+<bracketed>\\[0abtnvfrs]                                { LEXC(1); }
 
  /* 1-char hexrefs to non-ascii bytes */
-<bracketed,quoted>(?i:\\x\{[0-9a-f]\})                  { lenter; LEXH(3); finally : lcoda; }
+<bracketed,quoted>(?i:\\x\{[0-9a-f]\})                  { LEXH(3); }
 
  /* 2-char hexrefs to non-ascii bytes */
-<bracketed,quoted>(?i:\\x[01][0-9a-f])                  { lenter; LEXH(2); finally : lcoda; }
-<bracketed,quoted>(?i:\\x\{[01][0-9a-f]\})              { lenter; LEXH(3); finally : lcoda; }
-<bracketed,quoted>(?i:\\x[7][f])                        { lenter; LEXH(2); finally : lcoda; }
-<bracketed,quoted>(?i:\\x\{[7][f]\})                    { lenter; LEXH(3); finally : lcoda; }
-<bracketed,quoted>(?i:\\x[89a-f][0-9a-f])               { lenter; LEXH(2); finally : lcoda; }
-<bracketed,quoted>(?i:\\x\{[89a-f][0-9a-f]\})           { lenter; LEXH(3); finally : lcoda; }
+<bracketed,quoted>(?i:\\x[01][0-9a-f])                  { LEXH(2); }
+<bracketed,quoted>(?i:\\x\{[01][0-9a-f]\})              { LEXH(3); }
+<bracketed,quoted>(?i:\\x[7][f])                        { LEXH(2); }
+<bracketed,quoted>(?i:\\x\{[7][f]\})                    { LEXH(3); }
+<bracketed,quoted>(?i:\\x[89a-f][0-9a-f])               { LEXH(2); }
+<bracketed,quoted>(?i:\\x\{[89a-f][0-9a-f]\})           { LEXH(3); }
 
  /* 2-char ascii hexrefs coerced to wref */
-<bracketed,quoted>(?i:\\x[0-9a-f]{2})                   { lenter; LEXH(2); finally : lcoda; }
-<bracketed,quoted>(?i:\\x\{[0-9a-f]{2}\})               { lenter; LEXH(3); finally : lcoda; }
+<bracketed,quoted>(?i:\\x[0-9a-f]{2})                   { LEXH(2); }
+<bracketed,quoted>(?i:\\x\{[0-9a-f]{2}\})               { LEXH(3); }
 
-<quoted>[^"\\\x00-\x1F\x7F-\xFF]+                       { lenter; LEX(STR); finally : lcoda; }
-<bracketed>[-^]                                         { lenter; LEX(yytext[0]); finally : lcoda; }
-<bracketed>[^-\\\x00-\x1F\x7F-\xFF]                     { lenter; LEX(CHAR); finally : lcoda; }
+<quoted>[^"\\\x00-\x1F\x7F-\xFF]+                       { LEX(STR); }
+<bracketed>[-^]                                         { LEX(yytext[0]); }
+<bracketed>[^-\\\x00-\x1F\x7F-\xFF]                     { LEX(CHAR); }
 
 <*>[\x00-\x1F\x7F-\xFF]                                 {
-                                                          lenter;
                                                           POPSTATES;
                                                           LOCWRITE;
-                                                          failf(PATTERN_ILLBYTE, "byte", "0x%02hhx", yytext[0]);
-                                                          finally : lcoda;
+                                                          yyu_errorf(YYUXTRA, "invalid byte 0x%02hhx", yytext[0]);
+                                                          return 0;
                                                         }
 <*>[\x20-\x7E]                                          {
-                                                          lenter;
                                                           POPSTATES;
                                                           LOCWRITE;
-                                                          failf(PATTERN_ILLBYTE, "character", "'%1$c'(0x%1$02hhx)", yytext[0]);
-                                                          finally : lcoda;
+                                                          yyu_errorf(YYUXTRA, "character '%1$c'(0x%1$02hhx)", yytext[0]);
+                                                          return 0;
                                                         }
 <<EOF>>                                                 {
-                                                          lenter;
                                                           POPSTATES;
-                                                          _yyu_V = 0;       /* return end-of-input */
-                                                          finally : lcoda;
+                                                          return 0;
                                                         }

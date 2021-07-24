@@ -18,9 +18,8 @@
 #ifndef _SERVER_THREAD_H
 #define _SERVER_THREAD_H
 
-#include "xapi.h"
 
 /* create the server thread */
-xapi server_thread_launch(void);
+void server_thread_launch(void);
 
 #endif

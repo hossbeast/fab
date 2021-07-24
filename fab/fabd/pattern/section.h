@@ -18,7 +18,6 @@
 #ifndef FABD_PATTERN_SECTION_H
 #define FABD_PATTERN_SECTION_H
 
-#include "xapi.h"
 #include "types.h"
 
 #include "section.h"
@@ -29,7 +28,7 @@ struct pattern_section;
 struct pattern_segments;
 struct yyu_location;
 
-xapi pattern_section_mk(
+void pattern_section_mk(
     struct pattern_section ** restrict rv
   , const struct yyu_location * restrict loc
   , enum pattern_nodeset nodeset
@@ -39,7 +38,7 @@ xapi pattern_section_mk(
 )
   __attribute__((nonnull(1, 2)));
 
-xapi pattern_section_say(const struct pattern_section * section, bool first, struct narrator * restrict N)
+void pattern_section_say(const struct pattern_section * section, bool first, struct narrator * restrict N)
   __attribute__((nonnull));
 
 int pattern_sections_cmp(const struct pattern_section * A, const struct pattern_section * B);

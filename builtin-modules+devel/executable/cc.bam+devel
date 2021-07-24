@@ -38,7 +38,7 @@ my @cmd = (
   , "-Wl,--start-group"
   , split(/ /, $ENV{"static-libs"})
   , "-Wl,--end-group"
-  , split(/ /, $ENV{"shared-libs"} || '')
+  , split(/ /, $ENV{"shared-libs"})
   , split(/ /, $ENV{lflags} || "")
 );
 

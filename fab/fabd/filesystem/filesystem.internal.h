@@ -41,7 +41,7 @@ typedef struct fstree {
 extern struct fstree fstree_root;
 extern struct fstree fstree_shadow;
 
-xapi fstree_say(struct narrator * restrict N)
+void fstree_say(struct narrator * restrict N)
   __attribute__((nonnull));
 
 const fstree * fstree_down(fstree * restrict fst, const char * restrict name, uint16_t namel)

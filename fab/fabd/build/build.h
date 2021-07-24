@@ -18,7 +18,6 @@
 #ifndef _FABD_BUILD_H
 #define _FABD_BUILD_H
 
-#include "xapi.h"
 #include "types.h"
 
 struct build_slot;
@@ -32,8 +31,8 @@ extern int build_slots_bypid_lock;
 extern bool build_stage_failure;
 extern int build_devnull_fd;
 
-xapi build_setup(void);
-xapi build_cleanup(void);
+void build_setup(void);
+void build_cleanup(void);
 
 /*
  * reapply configuration to the build subsystem
@@ -41,13 +40,12 @@ xapi build_cleanup(void);
  * config - root of the config tree
  * dry    - whether to perform a dry-run
  */
-xapi build_reconfigure(struct configblob * restrict cfg, bool dry)
-  __attribute__((nonnull));
+int build_reconfigure(struct configblob * restrict cfg, char * restrict err, uint16_t err_sz);
 
 /*
  * carry out the build
  */
-xapi build(struct rcu_thread *self)
+void build(struct rcu_thread *self)
   __attribute__((nonnull));
 
 #endif

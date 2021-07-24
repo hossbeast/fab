@@ -15,37 +15,33 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#include "xapi.h"
+#include <stdio.h>
+
 #include "types.h"
 
 #include "shadow.h"
 #include "filesystem.internal.h"
 #include "fsedge.h"
 #include "fsent.h"
-#include "logging.h"
 #include "module.h"
 
 fsent * g_shadow;
 fsent * g_shadow_module;
 fsent * g_shadow_modules;
 
-static xapi shadow_root_init()
+static void shadow_root_init()
 {
-  enter;
-
   fsent * n = 0;
 
-  fatal(fsent_create, &n, VERTEX_SHADOW_DIR, 0, MMS("(shadow)"));
+  fsent_create(&n, VERTEX_SHADOW_DIR, 0, MMS("(shadow)"));
 
   n->fst = &fstree_shadow;
   n->fs = n->fst->fs;
 
   g_shadow = n;
-
-  finally : coda;
 }
 
-static xapi shadow_link(
+static void shadow_link(
     fsent * restrict parent
   , module * restrict mod
   , const char * restrict name
@@ -56,15 +52,13 @@ static xapi shadow_link(
   , graph_invalidation_context * restrict invalidation
 )
 {
-  enter;
-
   fsent *n;
   moria_connect_context ctx;
   fsedge *fse;
   moria_edge *e;
   int r;
 
-  fatal(fsent_create, &n, VERTEX_SHADOW_LINK, 0, name, namel);
+  fsent_create(&n, VERTEX_SHADOW_LINK, 0, name, namel);
   n->vertex.ref = &ref->vertex;
 
   r = moria_preconnect(&ctx, &g_graph, &parent->vertex, &n->vertex, EDGE_FSTREE, &e);
@@ -92,15 +86,13 @@ static xapi shadow_link(
   else
   {
     RUNTIME_ASSERT(r == MORIA_NOEDGE);
-    fatal(fsedge_alloc, &fse, &g_graph);
-    fatal(graph_connect, &ctx, &parent->vertex, &n->vertex, &fse->edge, EDGE_FSTREE);
+    fsedge_alloc(&fse, &g_graph);
+    graph_connect(&ctx, &parent->vertex, &n->vertex, &fse->edge, EDGE_FSTREE);
     *nep = fse;
   }
-
-  finally : coda;
 }
 
-static xapi shadow_create(
+static void shadow_create(
     fsent * restrict parent
   , fsent ** restrict np
   , module * restrict mod
@@ -110,99 +102,78 @@ static xapi shadow_create(
   , graph_invalidation_context * restrict invalidation
 )
 {
-  enter;
-
   fsent * n;
 
-  fatal(fsent_create, &n, kind, 0, name, namel);
+  fsent_create(&n, kind, 0, name, namel);
 
   n->fst = &fstree_shadow;
   n->fs = n->fst->fs;
   n->mod = mod;
 
-  fatal(fsedge_connect, parent, n, invalidation);
+  fsedge_connect(parent, n, invalidation);
 
   if(np) {
     *np = n;
   }
-
-  finally : coda;
 }
 
 //
 // public
 //
 
-xapi shadow_setup()
+void shadow_setup()
 {
-  enter;
-
   graph_invalidation_context invalidation = { 0 };
 
-  fatal(shadow_root_init);
+  shadow_root_init();
 
-  fatal(graph_invalidation_begin, &invalidation);
-  fatal(shadow_create, g_shadow, &g_shadow_module, 0, MMS("module"), VERTEX_SHADOW_MODULE, &invalidation);
-  fatal(shadow_create, g_shadow, &g_shadow_modules, 0, MMS("modules"), VERTEX_SHADOW_MODULES, &invalidation);
+  graph_invalidation_begin(&invalidation);
+  shadow_create(g_shadow, &g_shadow_module, 0, MMS("module"), VERTEX_SHADOW_MODULE, &invalidation);
+  shadow_create(g_shadow, &g_shadow_modules, 0, MMS("modules"), VERTEX_SHADOW_MODULES, &invalidation);
 
-finally:
   graph_invalidation_end(&invalidation);
-coda;
 }
 
-xapi shadow_cleanup()
+void shadow_cleanup()
 {
-  enter;
-
-  finally : coda;
 }
 
-xapi shadow_module_init(struct module * restrict mod, graph_invalidation_context * restrict invalidation)
+void shadow_module_init(struct module * restrict mod, graph_invalidation_context * restrict invalidation)
 {
-  enter;
-
-  fatal(shadow_create, g_shadow_modules, &mod->shadow, mod, mod->id, 16, VERTEX_SHADOW_DIR, invalidation);
-  fatal(shadow_create, mod->shadow, &mod->shadow_imports, mod, MMS("imports"), VERTEX_SHADOW_DIR, invalidation);
-  fatal(shadow_create, mod->shadow, &mod->shadow_requires, mod, MMS("requires"), VERTEX_SHADOW_DIR, invalidation);
-  fatal(shadow_create, mod->shadow, &mod->shadow_uses, mod, MMS("uses"), VERTEX_SHADOW_DIR, invalidation);
-  fatal(shadow_create, mod->shadow, &mod->shadow_targets, mod, MMS("targets"), VERTEX_SHADOW_FILE, invalidation);
+  shadow_create(g_shadow_modules, &mod->shadow, mod, mod->id, 16, VERTEX_SHADOW_DIR, invalidation);
+  shadow_create(mod->shadow, &mod->shadow_imports, mod, MMS("imports"), VERTEX_SHADOW_DIR, invalidation);
+  shadow_create(mod->shadow, &mod->shadow_requires, mod, MMS("requires"), VERTEX_SHADOW_DIR, invalidation);
+  shadow_create(mod->shadow, &mod->shadow_uses, mod, MMS("uses"), VERTEX_SHADOW_DIR, invalidation);
+  shadow_create(mod->shadow, &mod->shadow_targets, mod, MMS("targets"), VERTEX_SHADOW_FILE, invalidation);
 
   /* //module/this/fs -> module directory fsent */
-  fatal(shadow_link, mod->shadow, mod, MMS("fs"), mod->dir_node, &mod->shadow_fs, 0, invalidation);
-
-  finally : coda;
+  shadow_link(mod->shadow, mod, MMS("fs"), mod->dir_node, &mod->shadow_fs, 0, invalidation);
 }
 
-xapi shadow_graft_requires(struct module * restrict mod, fsent * restrict ref, const char * restrict as, uint16_t asl, fsedge ** restrict nep, graph_invalidation_context * restrict invalidation)
+void shadow_graft_requires(struct module * restrict mod, fsent * restrict ref, const char * restrict as, uint16_t asl, fsedge ** restrict nep, graph_invalidation_context * restrict invalidation)
 {
-  enter;
-
   fsent *displaced = 0;
 
-  fatal(shadow_link, mod->shadow_requires, mod, as, asl, ref, nep, &displaced, invalidation);
+  shadow_link(mod->shadow_requires, mod, as, asl, ref, nep, &displaced, invalidation);
 
   if(displaced)
   {
-    logf(L_WARN, "require '%.*s' displaces earlier name", (int)asl, as);
+    printf("require '%.*s' displaces earlier name", (int)asl, as);
 
     /* the displaced vertex was a link; it is now orphaned and can be deleted */
     fsent_release(displaced);
   }
-
-  finally : coda;
 }
 
-xapi shadow_graft_imports(struct module * restrict mod, fsent * restrict ref, const char * restrict as, uint16_t asl, fsedge ** restrict nep, graph_invalidation_context * restrict invalidation)
+void shadow_graft_imports(struct module * restrict mod, fsent * restrict ref, const char * restrict as, uint16_t asl, fsedge ** restrict nep, graph_invalidation_context * restrict invalidation)
 {
-  enter;
-
   fsent *n, *displaced = 0;
 
-  fatal(shadow_link, mod->shadow_imports, mod, as, asl, ref, nep, &displaced, invalidation);
+  shadow_link(mod->shadow_imports, mod, as, asl, ref, nep, &displaced, invalidation);
 
   if(displaced)
   {
-    logf(L_WARN, "import '%.*s' displaces earlier name", (int)asl, as);
+    printf("import '%.*s' displaces earlier name", (int)asl, as);
 
     /* erase the referent */
     n = containerof(displaced->vertex.ref, fsent, vertex);
@@ -212,21 +183,17 @@ xapi shadow_graft_imports(struct module * restrict mod, fsent * restrict ref, co
     /* the displaced vertex was a link; it is now orphaned and can be deleted */
     fsent_release(displaced);
   }
-
-  finally : coda;
 }
 
-xapi shadow_graft_uses(struct module * restrict mod, fsent * restrict ref, const char * restrict as, uint16_t asl, fsedge ** restrict nep, graph_invalidation_context * restrict invalidation)
+void shadow_graft_uses(struct module * restrict mod, fsent * restrict ref, const char * restrict as, uint16_t asl, fsedge ** restrict nep, graph_invalidation_context * restrict invalidation)
 {
-  enter;
-
   fsent *n, *displaced = 0;
 
-  fatal(shadow_link, mod->shadow_uses, mod, as, asl, ref, nep, &displaced, invalidation);
+  shadow_link(mod->shadow_uses, mod, as, asl, ref, nep, &displaced, invalidation);
 
   if(displaced)
   {
-    logf(L_WARN, "uses '%.*s' displaces earlier name", (int)asl, as);
+    printf("uses '%.*s' displaces earlier name", (int)asl, as);
 
     /* erase the referent */
     n = containerof(displaced->vertex.ref, fsent, vertex);
@@ -236,6 +203,4 @@ xapi shadow_graft_uses(struct module * restrict mod, fsent * restrict ref, const
     /* the displaced vertex was a link; it is now orphaned and can be deleted */
     fsent_release(displaced);
   }
-
-  finally : coda;
 }

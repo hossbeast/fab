@@ -55,7 +55,7 @@ void formula_parser_extract(
 )
   __attribute__((nonnull));
 
-xapi formula_parser_bacon_parse(
+int formula_parser_bacon_parse(
     formula_parser * restrict parser
   , char * const restrict vars_text
   , size_t vars_text_len

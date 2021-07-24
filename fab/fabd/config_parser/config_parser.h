@@ -18,7 +18,6 @@
 #ifndef _FABD_CONFIG_PARSER_H
 #define _FABD_CONFIG_PARSER_H
 
-#include "xapi.h"
 #include "types.h"
 
 struct yyu_location;
@@ -31,7 +30,7 @@ typedef struct config_parser config_parser;
 // SUMMARY
 //  create a config parser
 //
-xapi config_parser_create(config_parser ** const restrict p)
+void config_parser_create(config_parser ** const restrict p)
   __attribute__((nonnull));
 
 /// config_parser_xfree
@@ -39,14 +38,14 @@ xapi config_parser_create(config_parser ** const restrict p)
 // SUMMARY
 //  free a config parser with free semantics
 //
-xapi config_parser_xfree(config_parser * restrict);
+void config_parser_xfree(config_parser * restrict);
 
 /// config_parser_ixfree
 //
 // SUMMARY
 //  free a config parser with iwfree semantics
 //
-xapi config_parser_ixfree(config_parser ** restrict)
+void config_parser_ixfree(config_parser ** restrict)
   __attribute__((nonnull));
 
 /// config_parse
@@ -65,7 +64,7 @@ xapi config_parser_ixfree(config_parser ** restrict)
 // REMARKS
 //  this parser uses YYU_INPLACE, so the buffer must have two terminating null bytes
 //
-xapi config_parser_parse(
+int config_parser_parse(
     config_parser * restrict parser
   , char * const restrict buf
   , size_t size

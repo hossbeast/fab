@@ -15,10 +15,8 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#include "xapi.h"
 #include "lorien/load.h"
 #include "yyutil/load.h"
-#include "logger/load.h"
 #include "value/load.h"
 
 #include "valyria/map.h"
@@ -32,7 +30,6 @@
 #include "config.internal.h"
 #include "request.h"
 #include "fsent.h"
-#include "logging.h"
 
 #include "yyutil/box.h"
 
@@ -49,36 +46,26 @@ typedef struct {
   bool logging_changed;
 } config_compare_test;
 
-static xapi config_compare_test_unit_setup(xunit_unit * unit)
+static void config_compare_test_unit_setup(xunit_unit * unit)
 {
-  enter;
-
-  fatal(yyutil_load);
-  fatal(value_load);
-  fatal(logging_finalize);
-  fatal(config_setup);
+  yyutil_load();
+  value_load();
+  logging_finalize();
+  config_setup();
 
   /* override first-reconfiguration logic */
   config_reconfigured = true;
-
-  finally : coda;
 }
 
-static xapi config_compare_test_unit_cleanup(xunit_unit * unit)
+static void config_compare_test_unit_cleanup(xunit_unit * unit)
 {
-  enter;
-
-  fatal(yyutil_unload);
-  fatal(value_unload);
-  fatal(config_cleanup);
-
-  finally : coda;
+  yyutil_unload();
+  value_unload();
+  config_cleanup();
 }
 
-static xapi config_compare_test_entry(xunit_test * _test)
+static void config_compare_test_entry(xunit_test * _test)
 {
-  enter;
-
   config_compare_test * test = containerof(_test, config_compare_test, xu);
 
   config_parser * parser = 0;
@@ -88,21 +75,21 @@ static xapi config_compare_test_entry(xunit_test * _test)
   char ** text = 0;
 
   // arrange
-  fatal(config_parser_create, &parser);
+  config_parser_create(&parser);
 
   // act - initial parse
   text = test->Atexts;
   while(*text)
   {
-    fatal(config_parser_parse, parser, *text, strlen(*text) + 2, 0, 0, &T);
+    config_parser_parse(parser, *text, strlen(*text) + 2, 0, 0, &T);
     if(!A)
     {
       A = T;
     }
     else
     {
-      fatal(config_merge, A, T);
-      fatal(config_xfree, T);
+      config_merge(A, T);
+      config_xfree(T);
     }
     T = 0;
     text++;
@@ -111,15 +98,15 @@ static xapi config_compare_test_entry(xunit_test * _test)
   text = test->Btexts;
   while(*text)
   {
-    fatal(config_parser_parse, parser, *text, strlen(*text) + 2, 0, 0, &T);
+    config_parser_parse(parser, *text, strlen(*text) + 2, 0, 0, &T);
     if(!B)
     {
       B = T;
     }
     else
     {
-      fatal(config_merge, B, T);
-      fatal(config_xfree, T);
+      config_merge(B, T);
+      config_xfree(T);
     }
     T = 0;
     text++;
@@ -131,10 +118,10 @@ static xapi config_compare_test_entry(xunit_test * _test)
   assert_eq_b(test->walker_changed, B->walker.changed);
 
 finally:
-  fatal(config_parser_xfree, parser);
-  fatal(config_xfree, A);
-  fatal(config_xfree, B);
-  fatal(config_xfree, T);
+  config_parser_xfree(parser);
+  config_xfree(A);
+  config_xfree(B);
+  config_xfree(T);
 coda;
 }
 

@@ -15,15 +15,11 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#include "xapi.h"
-#include "xapi/calltree.h"
-#include "xapi/trace.h"
+#include <errno.h>
+
 #include "fab/sigutil.h"
 #include "fab/ipc.h"
-#include "logger/config.h"
 #include "narrator.h"
-#include "xapi/SYS.errtab.h"
-#include "xlinux/KERNEL.errtab.h"
 #include "xlinux/xstdlib.h"
 #include "xlinux/xpthread.h"
 #include "xlinux/xfutex.h"
@@ -34,7 +30,6 @@
 #include "channel.h"
 #include "goals.h"
 #include "handler.h"
-#include "logging.h"
 #include "params.h"
 #include "request.internal.h"
 #include "request_parser.h"
@@ -43,39 +38,28 @@
 #include "system_state.h"
 
 #include "common/attrs.h"
+#include "zbuffer.h"
 
 struct futexlock handlers_lock;
 
-static xapi parse_request(handler_context * restrict ctx, fabipc_message * restrict msg, request * restrict req)
+static void parse_request(handler_context * restrict ctx, fabipc_message * restrict msg, request * restrict req)
 {
-  enter;
-
-  xapi exit;
+  int exit;
   char trace[4096];
   size_t tracesz;
 
-  if((exit = invoke(request_parser_parse, ctx->request_parser, msg->text, msg->size, "fab-request", req)))
+  if((exit = request_parser_parse(ctx->request_parser, msg->text, msg->size, "fab-request", req)))
   {
     channel_consume(ctx->chan, msg);
 
-#if DEBUG || DEVEL
-    tracesz = xapi_trace_full(trace, sizeof(trace), 0);
-#else
-    tracesz = xapi_trace_pithy(trace, sizeof(trace), 0);
-#endif
-    xapi_calltree_unwind();
+    tracesz = znloadw(trace, sizeof(trace), ctx->request_parser->yyu.error_str, ctx->request_parser->yyu.error_len);
 
     channel_responsew(ctx->chan, EINVAL, trace, tracesz);
-    goto XAPI_FINALLY;
   }
-
-  finally : coda;
 }
 
-static xapi handler_thread(handler_context * restrict ctx)
+static void handler_thread(handler_context * restrict ctx)
 {
-  enter;
-
   sigset_t sigs;
   siginfo_t siginfo;
   fabipc_message *client_msg = 0;
@@ -91,10 +75,6 @@ static xapi handler_thread(handler_context * restrict ctx)
 
   request_init(&req);
 
-#if DEBUG || DEVEL
-  logs(L_IPC, "starting");
-#endif
-
   sigemptyset(&sigs);
   sigaddset(&sigs, SIGUSR1);
   interval.tv_sec = 0;
@@ -105,14 +85,14 @@ static xapi handler_thread(handler_context * restrict ctx)
   chan->ipc.client_pulse = 0;
 
   sival.sival_int = chan->ipc.shmid;
-  fatal(sigutil_uxrt_tgsigqueueinfo, &r, ctx->client_pid, ctx->client_tid, SIGRTMIN, sival);
+  r = sigutil_uxrt_tgsigqueueinfo(ctx->client_pid, ctx->client_tid, SIGRTMIN, sival);
 
   chan->ipc.client_pid = ctx->client_pid;
   chan->ipc.client_tid = ctx->client_tid;
 
   if(chan->ipc.client_pid == 0) {
     dprintf(2, "channel not initialized\n");
-    fail(SYS_ABORT);
+    RUNTIME_ABORT();
   }
 
   iter = 1;
@@ -125,7 +105,7 @@ static xapi handler_thread(handler_context * restrict ctx)
 
     if(ctx->running)
     {
-      fatal(sigutil_timedwait, &r, &sigs, &siginfo, &interval);
+      sigutil_timedwait(&r, &sigs, &siginfo, &interval);
     }
     else if(cmd && !ctx->chan->error)
     {
@@ -135,11 +115,11 @@ static xapi handler_thread(handler_context * restrict ctx)
         if(cmd->type == COMMAND_AUTORUN) { run_thread_autorun = true; }
 
         ctx->running = true;
-        fatal(run_thread_launch, ctx, cmd->type);
+        run_thread_launch(ctx, cmd->type);
       }
       else
       {
-        fatal(handler_process_command, ctx, cmd);
+        handler_process_command(ctx, cmd);
       }
       cmd = llist_next(&req.commands, cmd, lln);
     }
@@ -151,7 +131,7 @@ static xapi handler_thread(handler_context * restrict ctx)
       if(ctx->invalidation.any && run_thread_autorun)
       {
         /* no build-command in this request, but some nodes were invalidated while processing it */
-        fatal(run_thread_launch, 0, COMMAND_AUTORUN);
+        run_thread_launch(0, COMMAND_AUTORUN);
       }
     }
     else if(!(client_msg = channel_acquire(ctx->chan)))
@@ -162,7 +142,7 @@ static xapi handler_thread(handler_context * restrict ctx)
 
       chan->ipc.client_ring.waiters = 1;
       smp_wmb();
-      fatal(uxfutex, &r, &chan->ipc.client_ring.waiters, FUTEX_WAIT, 1, &interval, 0, 0);
+      r = uxfutex(&chan->ipc.client_ring.waiters, FUTEX_WAIT, 1, &interval, 0, 0);
       if(r == EINTR || r == EAGAIN) {
         continue;
       }
@@ -189,78 +169,52 @@ static xapi handler_thread(handler_context * restrict ctx)
 
       RUNTIME_ASSERT(client_msg->type == FABIPC_MSG_REQUEST);
       request_destroy(&req);
-      fatal(parse_request, ctx, client_msg, &req);
+      parse_request(ctx, client_msg, &req);
       channel_consume(ctx->chan, client_msg);
 
       /* prepare to process the request */
-      fatal(handler_reset, ctx);
+      handler_reset(ctx);
       graph_invalidation_end(&ctx->invalidation);
-      fatal(graph_invalidation_begin, &ctx->invalidation);
+      graph_invalidation_begin(&ctx->invalidation);
       cmd = llist_first(&req.commands, typeof(*cmd), lln);
     }
   }
 
-finally:
   if(chan)
   {
     chan->ipc.server_exit = true;
     syscall(SYS_tgkill, chan->ipc.client_pid, chan->ipc.client_tid, SIGUSR1);
   }
 
-#if DEBUG || DEVEL
-  logs(L_IPC, "terminating");
-#endif
-
   rcu_unregister(&rcu_self);
-
   request_destroy(&req);
-coda;
 }
 
 static void * handler_thread_jump(void * arg)
 {
-  enter;
-
-  xapi R;
   handler_context *ctx;
   channel *chan = 0;
 
   ctx = arg;
   ctx->tid = tid = gettid();
-  logger_set_thread_name("handler");
-  logger_set_thread_categories(L_HANDLER);
 
-  fatal(channel_create, &chan, tid);
+  channel_create(&chan, tid);
   ctx->chan = chan;
 
   futexlock_acquire(&handlers_lock);
   rcu_list_push(&g_handlers, &ctx->stk);
   futexlock_release(&handlers_lock);
 
-  fatal(handler_thread, ctx);
-
-finally:
-  if(XAPI_UNWINDING)
-  {
-#if DEBUG || DEVEL
-    xapi_infos("thread", "handler");
-    xapi_infof("pid", "%ld", (long)g_params.pid);
-    xapi_infof("tid", "%"PRId32, tid);
-    fatal(logger_xtrace_full, L_ERROR, L_NONAMES, XAPI_TRACE_COLORIZE | XAPI_TRACE_NONEWLINE);
-#else
-    fatal(logger_xtrace_pithy, L_ERROR, L_NONAMES, XAPI_TRACE_COLORIZE | XAPI_TRACE_NONEWLINE);
-#endif
-  }
-conclude(&R);
+  handler_thread(ctx);
 
   futexlock_acquire(&handlers_lock);
   rcu_list_delete(&ctx->stk);
   futexlock_release(&handlers_lock);
 
-  if(R) {
-    g_params.shutdown = true;
-    g_params.handler_error = true;
-  }
+//  if(R) {
+//    g_params.shutdown = true;
+//    g_params.handler_error = true;
+//  }
 
   rcu_synchronize();
   channel_release(chan);
@@ -275,31 +229,22 @@ conclude(&R);
 // public
 //
 
-xapi handler_thread_launch(pid_t client_pid, pid_t client_tid)
+void handler_thread_launch(pid_t client_pid, pid_t client_tid)
 {
-  enter;
-
   pthread_t pthread_id;
   pthread_attr_t attr;
-  int rv;
   handler_context *ctx = 0;
 
-  fatal(handler_alloc, &ctx);
+  handler_alloc(&ctx);
 
   ctx->client_pid = client_pid;
   ctx->client_tid = client_tid;
 
-  fatal(xpthread_attr_init, &attr);
-  fatal(xpthread_attr_setdetachstate, &attr, PTHREAD_CREATE_DETACHED);
+  xpthread_attr_init(&attr);
+  xpthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
 
   atomic_inc(&g_params.thread_count);
-  if((rv = pthread_create(&pthread_id, &attr, handler_thread_jump, ctx)) != 0)
-  {
-    atomic_dec(&g_params.thread_count);
-    tfail(perrtab_KERNEL, rv);
-  }
+  xpthread_create(&pthread_id, &attr, handler_thread_jump, ctx);
 
-finally:
   pthread_attr_destroy(&attr);
-coda;
 }

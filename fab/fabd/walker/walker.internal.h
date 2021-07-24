@@ -18,7 +18,6 @@
 #ifndef _WALKER_INTERNAL_H
 #define _WALKER_INTERNAL_H
 
-#include "xapi.h"
 #include "types.h"
 
 #include "walker.h"
@@ -37,7 +36,7 @@ typedef struct walker_context {
   struct graph_invalidation_context * invalidation;
 } walker_context;
 
-xapi walker_visit(int method, struct ftwinfo * info, void * arg, int * stop)
+void walker_visit(int method, struct ftwinfo * info, void * arg, int * stop)
   __attribute__((nonnull(2)));
 
 #endif

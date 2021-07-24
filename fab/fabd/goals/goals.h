@@ -25,7 +25,6 @@ The goals describe the set of nodes which are to be brought up to date by buildi
 */
 
 #include "types.h"
-#include "xapi.h"
 
 struct handler_context;
 struct narrator;
@@ -34,7 +33,7 @@ struct selector;
 extern bool goals_reconcile;
 extern bool goals_build;
 
-xapi goals_set(
+void goals_set(
     uint64_t msg_id
   , bool reconcile
   , bool build
@@ -43,14 +42,14 @@ xapi goals_set(
   , struct selector * restrict target_transitive
 );
 
-xapi goals_kickoff(struct handler_context * restrict handler)
+void goals_kickoff(struct handler_context * restrict handler)
   __attribute__((nonnull));
 
-xapi goals_setup(void);
-xapi goals_cleanup(void);
-xapi goals_say(struct narrator * restrict N)
+void goals_setup(void);
+void goals_cleanup(void);
+void goals_say(struct narrator * restrict N)
   __attribute__((nonnull));
 
-xapi goals_create_buildplan(void);
+void goals_create_buildplan(void);
 
 #endif

@@ -15,6 +15,8 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
+#include <stdio.h>
+
 #include "common/attrs.h"
 #include "fab/client.h"
 #include "fab/ipc.h"
@@ -43,10 +45,8 @@ static void usage(command * restrict cmd)
 // build
 //
 
-static xapi connected(command * restrict cmd, fab_client * restrict client)
+static void connected(command * restrict cmd, fab_client * restrict client)
 {
-  enter;
-
   fabipc_message * msg;
   size_t z;
 
@@ -64,14 +64,10 @@ static xapi connected(command * restrict cmd, fab_client * restrict client)
   msg->size = z;
 
   client_post(client, msg);
-
-  finally : coda;
 }
 
-static xapi process(command * restrict cmd, fab_client * restrict client, fabipc_message * restrict msg)
+static void process(command * restrict cmd, fab_client * restrict client, fabipc_message * restrict msg)
 {
-  enter;
-
   fab_metadata md;
   char buf[128];
   narrator_fixed fixed;
@@ -81,7 +77,7 @@ static xapi process(command * restrict cmd, fab_client * restrict client, fabipc
 
   if(msg->type == FABIPC_MSG_RESPONSE) {
     g_params.shutdown = true;
-    goto XAPI_FINALLY;
+    return;
   }
 
   RUNTIME_ASSERT(msg->type == FABIPC_MSG_RESULT);
@@ -97,7 +93,7 @@ static xapi process(command * restrict cmd, fab_client * restrict client, fabipc
   printf(" %s : %.*s\n", "home-dir", (int)md.homedir_len, md.homedir);
   printf(" %s : %ld\n", "fabd-pid", md.fabd_pid);
 
-  fatal(interval_say, md.uptime / NSEC_PER_SEC, narrator_fixed_init(&fixed, buf, sizeof(buf)));
+  interval_say(md.uptime / NSEC_PER_SEC, narrator_fixed_init(&fixed, buf, sizeof(buf)));
   printf(" %s : \"%s\"\n", "uptime", buf);
 
   z = znload_attrs16(buf, sizeof(buf), bam_system_state_attrs, md.system_state);
@@ -107,8 +103,6 @@ static xapi process(command * restrict cmd, fab_client * restrict client, fabipc
   printf(" %s : %s\n", "autorun", md.autorun ? "true" : "false");
   printf(" %s :\n%.*s\n", "goals", (int)md.goals_len, md.goals);
   printf("}\n");
-
-  finally : coda;
 }
 
 //

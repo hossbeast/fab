@@ -18,8 +18,6 @@
 #ifndef _UI_THREAD_H
 #define _UI_THREAD_H
 
-#include "xapi.h"
-
-xapi ui_thread_launch(void);
+void ui_thread_launch(void);
 
 #endif

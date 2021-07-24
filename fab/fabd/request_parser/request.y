@@ -104,7 +104,7 @@ request
 allocate-command
   : %empty
   {
-    YFATAL(request_command_alloc, PARSER->request, &PARSER->command);
+    request_command_alloc(PARSER->request, &PARSER->command);
   }
   ;
 

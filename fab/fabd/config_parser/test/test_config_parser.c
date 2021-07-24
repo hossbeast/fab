@@ -15,10 +15,8 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#include "xapi.h"
 #include "lorien/load.h"
 #include "yyutil/load.h"
-#include "logger/load.h"
 #include "value/load.h"
 
 #include "valyria/map.h"
@@ -32,7 +30,6 @@
 #include "config.internal.h"
 #include "request.h"
 #include "fsent.h"
-#include "logging.h"
 
 #include "yyutil/box.h"
 
@@ -43,31 +40,21 @@ typedef struct {
   config * cfg;
 } config_parser_test;
 
-static xapi config_parser_test_unit_setup(xunit_unit * unit)
+static void config_parser_test_unit_setup(xunit_unit * unit)
 {
-  enter;
-
-  fatal(yyutil_load);
-  fatal(value_load);
-  fatal(logging_finalize);
-
-  finally : coda;
+  yyutil_load();
+  value_load();
+  logging_finalize();
 }
 
-static xapi config_parser_test_unit_cleanup(xunit_unit * unit)
+static void config_parser_test_unit_cleanup(xunit_unit * unit)
 {
-  enter;
-
-  fatal(yyutil_unload);
-  fatal(value_unload);
-
-  finally : coda;
+  yyutil_unload();
+  value_unload();
 }
 
-static xapi config_parser_test_entry(xunit_test * _test)
+static void config_parser_test_entry(xunit_test * _test)
 {
-  enter;
-
   config_parser_test * test = containerof(_test, config_parser_test, xu);
   char buf[1024];
 
@@ -78,33 +65,33 @@ static xapi config_parser_test_entry(xunit_test * _test)
   narrator_growing * N2 = 0;
 
   // arrange
-  fatal(config_parser_create, &parser);
+  config_parser_create(&parser);
 
   // act - initial parse
-  fatal(config_parser_parse, parser, test->text, strlen(test->text) + 2, 0, 0, &A);
+  config_parser_parse(parser, test->text, strlen(test->text) + 2, 0, 0, &A);
 
   // round-trip
-  fatal(narrator_growing_create, &N1);
-  fatal(config_say, A, &N1->base);
+  narrator_growing_create(&N1);
+  config_say(A, &N1->base);
 
   size_t len = N1->l;
-  fatal(narrator_xseek, &N1->base, 0, NARRATOR_SEEK_SET, 0);
-  fatal(narrator_xread, &N1->base, buf, len, 0);
+  narrator_xseek(&N1->base, 0, NARRATOR_SEEK_SET, 0);
+  narrator_xread(&N1->base, buf, len, 0);
   buf[len] = buf[len + 1] = 0;
-  fatal(config_parser_parse, parser, buf, len + 2, 0, 0, &B);
+  config_parser_parse(parser, buf, len + 2, 0, 0, &B);
 
-  fatal(narrator_growing_create, &N2);
-  fatal(config_say, B, &N2->base);
+  narrator_growing_create(&N2);
+  config_say(B, &N2->base);
 
   // roound trip
   assert_eq_w(N1->s, N1->l, N2->s, N2->l);
 
 finally:
-  fatal(config_parser_xfree, parser);
-  fatal(config_xfree, A);
-  fatal(config_xfree, B);
-  fatal(narrator_growing_free, N1);
-  fatal(narrator_growing_free, N2);
+  config_parser_xfree(parser);
+  config_xfree(A);
+  config_xfree(B);
+  narrator_growing_free(N1);
+  narrator_growing_free(N2);
 coda;
 }
 

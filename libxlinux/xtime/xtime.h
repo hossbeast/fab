@@ -37,9 +37,9 @@ void xclock_gettime(clockid_t clk_id, struct timespec * tp)
   __attribute__((nonnull));
 
 void xclock_nanosleep(clockid_t clock_id, int flags, const struct timespec * restrict request, struct timespec * restrict remain)
-  __attribute__((nonnull));
+  __attribute__((nonnull(3)));
 
 int uxclock_nanosleep(clockid_t clock_id, int flags, const struct timespec * restrict request, struct timespec * restrict remain)
-  __attribute__((nonnull));
+  __attribute__((nonnull(3)));
 
 #endif

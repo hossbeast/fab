@@ -15,7 +15,6 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#include "xapi.h"
 #include "valyria/load.h"
 #include "moria/load.h"
 #include "xlinux/xstdlib.h"
@@ -34,7 +33,6 @@
 #include "xunit/assert.h"
 #include "narrator.h"
 #include "narrator/growing.h"
-#include "logging.h"
 #include "rule.h"
 #include "fsent.h"
 #include "exec.h"
@@ -71,33 +69,23 @@ typedef struct exec_builder_test {
   char ** envs;
 } exec_builder_test;
 
-static xapi exec_builder_test_unit_setup(xunit_unit * unit)
+static void exec_builder_test_unit_setup(xunit_unit * unit)
 {
-  enter;
-
-  fatal(value_load);
-  fatal(logging_finalize);
-
-  finally : coda;
+  value_load();
+  logging_finalize();
 }
 
-static xapi exec_builder_test_unit_cleanup(xunit_unit * unit)
+static void exec_builder_test_unit_cleanup(xunit_unit * unit)
 {
-  enter;
-
-  fatal(value_unload);
-
-  finally : coda;
+  value_unload();
 }
 
 //
 // tests
 //
 
-static xapi exec_builder_test_entry(xunit_test * _test)
+static void exec_builder_test_entry(xunit_test * _test)
 {
-  enter;
-
   exec_builder_test * test = containerof(_test, exec_builder_test, xu);
   exec *e;
   value * val;
@@ -119,24 +107,24 @@ static xapi exec_builder_test_entry(xunit_test * _test)
   build_slot bs = { .bpe = &bpe };
   channel *chan;
 
-  fatal(value_parser_create, &parser);
-  fatal(formula_parser_create, &fml_parser);
-  fatal(exec_builder_xinit, &builder);
-  fatal(exec_render_context_xinit, &renderer);
-  fatal(xmalloc, &chan, sizeof(*chan));
+  value_parser_create(&parser);
+  formula_parser_create(&fml_parser);
+  exec_builder_xinit(&builder);
+  exec_render_context_xinit(&renderer);
+  xmalloc(&chan, sizeof(*chan));
 
   // arrange
   if(test->variant)
-    fatal(variant_get, test->variant, strlen(test->variant), &var);
+    variant_get(test->variant, strlen(test->variant), &var);
 
   // act
   if(test->vars)
   {
-    fatal(value_parser_parse, parser, test->vars, strlen(test->vars), "-test-", VALUE_TYPE_SET, &val);
-    fatal(var_denormalize, parser, var, val, &vars);
+    value_parser_parse(parser, test->vars, strlen(test->vars), "-test-", VALUE_TYPE_SET, &val);
+    var_denormalize(parser, var, val, &vars);
 
     exec_render_context_configure(&renderer, &builder, 0, vars, 0);
-    fatal(exec_render_env_vars, &renderer);
+    exec_render_env_vars(&renderer);
   }
 
   argsp = test->env_addf_args;
@@ -147,11 +135,11 @@ static xapi exec_builder_test_entry(xunit_test * _test)
       args = *argsp;
       nargs = sentinel(args->args);
       if(nargs == 0)
-        fatal(exec_builder_env_addf, &builder, args->name_fmt, args->val_fmt);
+        exec_builder_env_addf(&builder, args->name_fmt, args->val_fmt);
       if(nargs == 1)
-        fatal(exec_builder_env_addf, &builder, args->name_fmt, args->val_fmt, args->args[0]);
+        exec_builder_env_addf(&builder, args->name_fmt, args->val_fmt, args->args[0]);
       if(nargs == 2)
-        fatal(exec_builder_env_addf, &builder, args->name_fmt, args->val_fmt, args->args[0], args->args[1]);
+        exec_builder_env_addf(&builder, args->name_fmt, args->val_fmt, args->args[0], args->args[1]);
 
       argsp++;
     }
@@ -159,27 +147,27 @@ static xapi exec_builder_test_entry(xunit_test * _test)
 
   if(test->fml)
   {
-    fatal(formula_parser_bacon_parse, fml_parser, test->fml, strlen(test->fml) + 2, "-formula-", &fml_file, &fml_args, &fml_envs);
+    formula_parser_bacon_parse(fml_parser, test->fml, strlen(test->fml) + 2, "-formula-", &fml_file, &fml_args, &fml_envs);
 
     exec_render_context_configure(&renderer, &builder, &mod, vars, &bs);
 
     if(fml_file)
     {
-      fatal(exec_render_file, &renderer, fml_file);
+      exec_render_file(&renderer, fml_file);
     }
 
     if(fml_args)
     {
-      fatal(exec_render_args, &renderer, fml_args);
+      exec_render_args(&renderer, fml_args);
     }
 
     if(fml_envs)
     {
-      fatal(exec_render_envs, &renderer, fml_envs);
+      exec_render_envs(&renderer, fml_envs);
     }
   }
 
-  fatal(exec_builder_build, &builder, &e);
+  exec_builder_build(&builder, &e);
 
   assert_eq_s(test->file, e->path);
 
@@ -202,10 +190,10 @@ static xapi exec_builder_test_entry(xunit_test * _test)
   }
 
 finally:
-  fatal(value_parser_xfree, parser);
-  fatal(formula_parser_xfree, fml_parser);
-  fatal(exec_builder_xdestroy, &builder);
-  fatal(exec_render_context_xdestroy, &renderer);
+  value_parser_xfree(parser);
+  formula_parser_xfree(fml_parser);
+  exec_builder_xdestroy(&builder);
+  exec_render_context_xdestroy(&renderer);
   formula_value_free(fml_file);
   formula_value_free(fml_args);
   formula_value_free(fml_envs);

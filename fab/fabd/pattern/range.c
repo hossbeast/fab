@@ -29,27 +29,21 @@
 // static
 //
 
-static xapi say(const pattern_segment * restrict fn, narrator * restrict N)
+static void say(const pattern_segment * restrict fn, narrator * restrict N)
 {
-  enter;
-
   const pattern_range * n = &fn->range;
 
-  fatal(byte_say, n->start, N);
+  byte_say(n->start, N);
   xsayc('-');
-  fatal(byte_say, n->end, N);
-
-  finally : coda;
+  byte_say(n->end, N);
 }
 
 static void destroy(pattern_segment * restrict fn)
 {
 }
 
-static xapi match(const pattern_segment * restrict segment, pattern_match_context * restrict ctx)
+static void match(const pattern_segment * restrict segment, pattern_match_context * restrict ctx)
 {
-  enter;
-
   const pattern_range * range = &segment->range;
   const char * restrict name; // = ctx->node->name.name;
   uint16_t namel; // = ctx->node->name.namel;
@@ -61,14 +55,10 @@ static xapi match(const pattern_segment * restrict segment, pattern_match_contex
   {
     ctx->traversal->offset += 1;
   }
-
-  finally : coda;
 }
 
-static xapi search(const pattern_segment * restrict segment, pattern_search_context * restrict ctx)
+static void search(const pattern_segment * restrict segment, pattern_search_context * restrict ctx)
 {
-  enter;
-
   const pattern_range * range;
   const char * restrict name;
   uint16_t namel;
@@ -81,8 +71,6 @@ static xapi search(const pattern_segment * restrict segment, pattern_search_cont
   {
     ctx->traversal->offset += 1;
   }
-
-  finally : coda;
 }
 
 static int cmp(const pattern_segment * A, const pattern_segment *B)
@@ -111,14 +99,12 @@ static pattern_segment_vtable vtable = {
 // internal
 //
 
-xapi pattern_range_mk(pattern_segment ** restrict rv, const yyu_location * restrict loc, uint8_t start, uint8_t end)
+void pattern_range_mk(pattern_segment ** restrict rv, const yyu_location * restrict loc, uint8_t start, uint8_t end)
 {
-  enter;
-
   pattern_segment * n = 0;
 
-  fatal(xmalloc, &n, sizeof(*n));
-  fatal(pattern_segment_init, n, &vtable, loc);
+  xmalloc(&n, sizeof(*n));
+  pattern_segment_init(n, &vtable, loc);
 
   n->range.start = start;
   n->range.end = end;
@@ -126,6 +112,4 @@ xapi pattern_range_mk(pattern_segment ** restrict rv, const yyu_location * restr
   chain_init(n, chn);
 
   *rv = n;
-
-  finally : coda;
 }

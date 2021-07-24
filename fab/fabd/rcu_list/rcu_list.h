@@ -24,7 +24,6 @@
  * Traversal may only be used on threads which have called rcu_register.
  */
 
-#include "xapi.h"
 #include "types.h"
 
 #include "rcu.h"

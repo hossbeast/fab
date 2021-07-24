@@ -18,7 +18,6 @@
 #ifndef _ARGS_H
 #define _ARGS_H
 
-#include "xapi.h"
 #include "types.h"
 
 #include "fab/graph.h"
@@ -79,6 +78,6 @@ extern struct command *g_cmd;
 // PARAMETERS
 //  cmd - (returns) subcommand dispatch
 //
-xapi args_parse(void);
+void args_parse(int argc, char ** argv);
 
 #endif

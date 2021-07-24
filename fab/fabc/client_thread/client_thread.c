@@ -15,11 +15,13 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
+#include <inttypes.h>
+#include <signal.h>
+#include <errno.h>
+
 #include "xlinux/xpthread.h"
-#include "xlinux/KERNEL.errtab.h"
 #include "xlinux/xfutex.h"
 #include "xlinux/xsignal.h"
-#include "xapi/trace.h"
 #include "common/attrs.h"
 
 #include "fab/client.h"
@@ -29,7 +31,6 @@
 
 #include "client_thread.h"
 #include "display.h"
-#include "logging.h"
 #include "params.h"
 #include "threads.h"
 #include "args.h"
@@ -92,10 +93,8 @@ static void client_posted(fab_client * restrict client, fabipc_message * restric
 #endif
 }
 
-static xapi client_thread()
+static void client_thread()
 {
-  enter;
-
   fab_client * client = 0;
   fabipc_message *msg;
   int err;
@@ -106,18 +105,16 @@ static xapi client_thread()
   siginfo_t info;
   int channel_shmid;
 
-  logs(L_ERROR, "CLIENT THREAD");
-
   sigfillset(&sigs);
   sigdelset(&sigs, SIGUSR1);
-  fatal(xpthread_sigmask, SIG_SETMASK, &sigs, 0);
+  xpthread_sigmask(SIG_SETMASK, &sigs, 0);
 
   interval.tv_sec = 0;
   interval.tv_nsec = 500000000;   // 500 millis
 
-  fatal(fab_client_create, &client, ".", XQUOTE(FABIPCDIR));
-  fatal(fab_client_prepare, client);
-  fatal(fab_client_solicit, client);
+  fab_client_create(&client, ".", XQUOTE(FABIPCDIR));
+  fab_client_prepare(client);
+  fab_client_solicit(client);
 
   /* wait for the acknowledgement signal carrying the channel id */
   sigemptyset(&sigs);
@@ -125,20 +122,20 @@ static xapi client_thread()
 
   while(!g_params.shutdown)
   {
-    fatal(sigutil_timedwait, &err, &sigs, &info, &interval);
+    sigutil_timedwait(&err, &sigs, &info, &interval);
     if(err == 0) {
       break;
     } else if(err == EAGAIN) {
-      goto XAPI_FINALLY; // timeout expired
+      goto end; // timeout expired
     } else if(err == EINTR) {
       continue;
     }
 
-    tfail(perrtab_KERNEL, err);
+    RUNTIME_ABORT();
   }
 
   channel_shmid = info.si_value.sival_int;
-  fatal(fab_client_attach, client, channel_shmid);
+  fab_client_attach(client, channel_shmid);
 
   interval.tv_nsec = 125 * 1000 * 1000;   // 125 millis
   iter = 1;
@@ -147,7 +144,7 @@ static xapi client_thread()
   {
     client->shm->client_pulse++;
     if(redrive) {
-      fatal(g_display->redrive, client);
+      g_display->redrive(client);
       redrive = false;
       continue;
     }
@@ -159,7 +156,7 @@ static xapi client_thread()
 
       client->shm->server_ring.waiters = 1;
       smp_wmb();
-      fatal(uxfutex, &err, &client->shm->server_ring.waiters, FUTEX_WAIT, 1, &interval, 0, 0);
+      err = uxfutex(&client->shm->server_ring.waiters, FUTEX_WAIT, 1, &interval, 0, 0);
       if(err == EINTR || err == EAGAIN) {
         continue;
       }
@@ -177,44 +174,19 @@ static xapi client_thread()
     client_acquired(client, msg);
     RUNTIME_ASSERT(msg->type);
     if(msg->type == FABIPC_MSG_RESULT || msg->type == FABIPC_MSG_RESPONSE) {
-      fatal(g_display->rebind, client, msg);
+      g_display->rebind(client, msg);
     }
   }
 
-finally:
-#if DEBUG || DEVEL
-  logs(L_IPC, "terminating");
-#endif
-
-  if(client) {
-    fab_client_disconnect(client);
-  }
-  fatal(fab_client_xfree, client);
-coda;
+end:
+  fab_client_disconnect(client);
+  fab_client_xfree(client);
 }
 
 static void * client_thread_jump(void * arg)
 {
-  enter;
-
-  xapi R;
   tid = g_params.thread_client = gettid();
-  fatal(client_thread);
-
-finally:
-  if(XAPI_UNWINDING)
-  {
-#if DEBUG || DEVEL || XAPI
-    xapi_infos("name", "fabc/client");
-    xapi_infof("pgid", "%ld", (long)getpgid(0));
-    xapi_infof("pid", "%ld", (long)getpid());
-    xapi_infof("tid", "%ld", (long)gettid());
-    fatal(logger_xtrace_full, L_ERROR, L_NONAMES, XAPI_TRACE_COLORIZE | XAPI_TRACE_NONEWLINE);
-#else
-    fatal(logger_xtrace_pithy, L_ERROR, L_NONAMES, XAPI_TRACE_COLORIZE | XAPI_TRACE_NONEWLINE);
-#endif
-  }
-conclude(&R);
+  client_thread();
 
   __atomic_fetch_sub(&g_params.thread_count, 1, __ATOMIC_RELAXED);
   syscall(SYS_tgkill, g_params.pid, g_params.thread_main, SIGUSR1);
@@ -225,37 +197,24 @@ conclude(&R);
 // public
 //
 
-xapi client_thread_launch()
+void client_thread_launch()
 {
-  enter;
-
   pthread_t pthread_id;
   pthread_attr_t attr;
-  int rv;
 
-  fatal(xpthread_attr_init, &attr);
-  fatal(xpthread_attr_setdetachstate, &attr, PTHREAD_CREATE_DETACHED);
+  xpthread_attr_init(&attr);
+  xpthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
 
   g_params.thread_count++;
-  if((rv = pthread_create(&pthread_id, &attr, client_thread_jump, 0)) != 0)
-  {
-    g_params.thread_count--;
-    tfail(perrtab_KERNEL, rv);
-  }
+  xpthread_create(&pthread_id, &attr, client_thread_jump, 0);
 
-finally:
   pthread_attr_destroy(&attr);
-coda;
 }
 
-xapi client_thread_redrive(void)
+void client_thread_redrive(void)
 {
-  enter;
-
   redrive = true;
-  fatal(xtgkill, g_params.pid, g_params.thread_client, SIGUSR1);
-
-  finally : coda;
+  xtgkill(g_params.pid, g_params.thread_client, SIGUSR1);
 }
 
 void client_thread_post(fab_client * restrict client, fabipc_message * restrict msg)

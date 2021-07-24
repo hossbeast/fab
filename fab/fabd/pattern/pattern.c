@@ -22,7 +22,6 @@
 #include "narrator/fixed.h"
 #include "value/writer.h"
 #include "valyria/chain.h"
-#include "xapi.h"
 #include "xlinux/xstdlib.h"
 #include "xlinux/xstring.h"
 
@@ -119,21 +118,15 @@ static void __attribute__((constructor)) init()
 // internal
 //
 
-xapi pattern_segment_init(pattern_segment * restrict n, const pattern_segment_vtable * restrict vtab, const yyu_location * restrict loc)
+void pattern_segment_init(pattern_segment * restrict n, const pattern_segment_vtable * restrict vtab, const yyu_location * restrict loc)
 {
-  enter;
-
   n->vtab = vtab;
   n->type = vtab->type;
 	memcpy(&n->loc, loc, sizeof(n->loc));
-
-  finally : coda;
 }
 
-xapi pattern_segments_say(const pattern_segments * segment_list, bool only, narrator * restrict N)
+void pattern_segments_say(const pattern_segments * segment_list, bool only, narrator * restrict N)
 {
-  enter;
-
   const pattern_segments * segments;
   const chain *T;
 
@@ -144,67 +137,52 @@ xapi pattern_segments_say(const pattern_segments * segment_list, bool only, narr
       xsays("+");
     }
 
-    fatal(pattern_segment_chain_say, segments->segment_head, N);
+    pattern_segment_chain_say(segments->segment_head, N);
     only = false;
   }
-
-  finally : coda;
 }
 
-xapi pattern_segment_chain_say(const pattern_segment * head, narrator * restrict N)
+void pattern_segment_chain_say(const pattern_segment * head, narrator * restrict N)
 {
-  enter;
-
   const pattern_segment * segment;
   const chain *T;
 
   chain_foreach(T, segment, chn, head) {
-    fatal(segment->vtab->say, segment, N);
+    segment->vtab->say(segment, N);
   }
-
-  finally : coda;
 }
 
 //
 // public
 //
 
-xapi pattern_mk(
+void pattern_mk(
     pattern ** restrict rv
   , const struct yyu_location * restrict loc
   , pattern_section * restrict section_head
 )
 {
-  enter;
-
   pattern * p = 0;
 
-  fatal(xmalloc, &p, sizeof(*p));
+  xmalloc(&p, sizeof(*p));
   memcpy(&p->loc, loc, sizeof(p->loc));
 
   p->section_head = section_head;
   llist_init_node(&p->lln);
 
   *rv = p;
-  p = 0;
-
-finally:
-  pattern_free(p);
-coda;
 }
 
-xapi pattern_segments_mk(
+void pattern_segments_mk(
     pattern_segments ** restrict rv
   , const struct yyu_location * restrict loc
   , pattern_qualifier_type qualifier_type
   , pattern_segment * restrict segment_head
 )
 {
-  enter;
-
   pattern_segments * p = 0;
 
-  fatal(xmalloc, &p, sizeof(*p));
+  xmalloc(&p, sizeof(*p));
   memcpy(&p->loc, loc, sizeof(p->loc));
 
   p->qualifier_type = qualifier_type;
@@ -212,8 +190,6 @@ xapi pattern_segments_mk(
   chain_init(p, chn);
 
   *rv = p;
-
-  finally : coda;
 }
 
 void pattern_free(pattern * restrict pat)
@@ -267,19 +243,15 @@ void pattern_segment_free(pattern_segment * restrict segment)
   wfree(segment);
 }
 
-xapi pattern_say(const pattern * restrict pattern, narrator * restrict N)
+void pattern_say(const pattern * restrict pattern, narrator * restrict N)
 {
-  enter;
-
   pattern_section * section;
   const chain *T;
   int x = 0;
 
   chain_foreach(T, section, chn, pattern->section_head) {
-    fatal(pattern_section_say, section, x++ == 0, N);
+    pattern_section_say(section, x++ == 0, N);
   }
-
-  finally : coda;
 }
 
 int pattern_cmp(const pattern * A, const pattern * B)

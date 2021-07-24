@@ -18,7 +18,6 @@
 #include <sys/wait.h>
 #include <string.h>
 
-#include "xapi.h"
 #include "types.h"
 
 #include "xlinux/xpthread.h"
@@ -28,9 +27,8 @@
 #include "narrator.h"
 
 #include "sigutil.h"
-#include "FAB.errtab.h"
 #include "ipc.h"
-#include "logging.h"
+#include "probes.h"
 
 #include "macros.h"
 #include "zbuffer.h"
@@ -39,67 +37,20 @@
 
 bool APIDATA g_sigterm;
 
-#if DEBUG || DEVEL || XUNIT
-#if SIGUTIL_HANDLER_DEBUG
-static void print_signal()
-{
-  char buf[128];
-  size_t z = 0;
-
-  z += znloadf(buf + z, sizeof(buf) - z, "rx %s { signo %d", signame(info->si_signo), info->si_signo);
-
-  if(info->si_signo == SIGCHLD)
-  {
-    z += znloadf(buf + z, sizeof(buf) - z, " pid %ld", (long)info->si_pid);
-
-    if(WIFEXITED(info->si_status))
-      z += znloadf(buf + z, sizeof(buf) - z, " status %d", WEXITSTATUS(info->si_status));
-
-    if(WIFSIGNALED(info->si_status))
-    {
-      z += znloadf(buf + z, sizeof(buf) - z, " signal %d", WTERMSIG(info->si_status));
-      z += znloadf(buf + z, sizeof(buf) - z, " core %s", WCOREDUMP(info->si_status) ? "yes" : "no");
-    }
-  }
-  else if(info->si_signo < SIGRTMIN)
-  {
-    z += znloadf(buf + z, sizeof(buf) - z, " pid %ld code %d", (long)info->si_pid, info->si_code);
-  }
-  else
-  {
-    z += znloadf(buf + z, sizeof(buf) - z, " pid %ld code %d val %lld", (long)info->si_pid, info->si_code, (long long)info->si_value.sival_ptr);
-  }
-  z += znloadf(buf + z, sizeof(buf) - z, " }");
-
-  printf("SIGNAL HANDLER :::: pid[%5d]/tid[%5d] %s\n", getpid(), gettid(), buf);
-}
-#endif
-#endif
-
 static void term_handler(int signum, siginfo_t *info, void *ctx)
 {
   g_sigterm = true;
 
-#if DEBUG || DEVEL || XUNIT
-#if SIGUTIL_HANDLER_DEBUG
-  print_signal(signum, info, ctx);
-#endif
-#endif
+  sigrx_probe(info);
 }
 
 static void intr_handler(int signum, siginfo_t * info, void * ctx)
 {
-#if DEBUG || DEVEL || XUNIT
-#if SIGUTIL_HANDLER_DEBUG
-  print_signal(signum, info, ctx);
-#endif
-#endif
+  sigrx_probe(info);
 }
 
-xapi API sigutil_install_handlers()
+void API sigutil_install_handlers()
 {
-  enter;
-
   int x;
   struct sigaction intr_act;
   struct sigaction term_act;
@@ -117,9 +68,9 @@ xapi API sigutil_install_handlers()
   {
     if(x == SIGKILL || x == SIGSTOP || x == SIGABRT) { }
     else if(x == SIGINT || x == SIGTERM || x == SIGQUIT) {
-      fatal(xsigaction, x, &term_act, 0);
+      xsigaction(x, &term_act, 0);
     } else {
-      fatal(xsigaction, x, &intr_act, 0);
+      xsigaction(x, &intr_act, 0);
     }
   }
 
@@ -129,16 +80,12 @@ xapi API sigutil_install_handlers()
     if(x == SIGABRT) {
       continue;
     }
-    fatal(xsigaction, x, &intr_act, 0);
+    xsigaction(x, &intr_act, 0);
   }
-
-  finally : coda;
 }
 
-xapi API sigutil_wait(const sigset_t * sigs, siginfo_t * info)
+void API sigutil_wait(const sigset_t * sigs, siginfo_t * info)
 {
-  enter;
-
   siginfo_t linfo;
   int r;
 
@@ -148,7 +95,7 @@ xapi API sigutil_wait(const sigset_t * sigs, siginfo_t * info)
   // retry EINTR
   r = -1;
   while(r == -1) {
-    fatal(uxsigwaitinfo, &r, sigs, info);
+    r = uxsigwaitinfo(sigs, info);
   }
 
 /* sigwaitinfo does *not* cause the signal handler to be invoked */
@@ -156,158 +103,66 @@ xapi API sigutil_wait(const sigset_t * sigs, siginfo_t * info)
   if(info->si_signo == SIGCHLD)
   {
     // sigwaitinfo returns only part of the child status
-    fatal(xwaitpid, info->si_pid, &info->si_status, 0);
+    xwaitpid(info->si_pid, &info->si_status, 0);
   }
 
-  fatal(sigutil_log, info);
-
-  finally : coda;
+  sigrx_probe(info);
 }
 
-xapi API sigutil_timedwait(int * restrict err, const sigset_t * restrict sigs, siginfo_t * restrict info, const struct timespec * restrict timeout)
+void API sigutil_timedwait(int * restrict errp, const sigset_t * restrict sigs, siginfo_t * restrict info, const struct timespec * restrict timeout)
 {
-  enter;
+  int err;
 
-  fatal(uxsigtimedwait, err, sigs, info, timeout);
+  err = uxsigtimedwait(sigs, info, timeout);
 
-  if(*err == 0) {
-    fatal(sigutil_log, info);
+  if(err == 0) {
+    sigrx_probe(info);
   } else {
     memset(info, 0, sizeof(*info));
   }
 
-  finally : coda;
+  *errp = err;
 }
 
-xapi API sigutil_log(const siginfo_t * info)
+void API sigutil_exchange(int sig, pid_t pid, const sigset_t * sigs, siginfo_t * info)
 {
-  enter;
-
-#if DEBUG || DEVEL || XUNIT
-  narrator * N;
-  fatal(log_start, L_IPC, &N);
-  xsayf("rx %s { signo %d", signame(info->si_signo), info->si_signo);
-
-  if(info->si_signo == SIGCHLD)
-  {
-    xsayf(" pid %ld", (long)info->si_pid);
-
-    if(WIFEXITED(info->si_status))
-      xsayf(" status %d", WEXITSTATUS(info->si_status));
-
-    if(WIFSIGNALED(info->si_status))
-    {
-      xsayf(" signal %d", WTERMSIG(info->si_status));
-      xsayf(" core %s", WCOREDUMP(info->si_status) ? "yes" : "no");
-    }
-  }
-  else if(info->si_signo < SIGRTMIN)
-  {
-    xsayf(" pid %ld", (long)info->si_pid);
-  }
-  else
-  {
-    xsayf(" pid %ld value %lld", (long)info->si_pid, (long long)info->si_value.sival_ptr);
-  }
-  xsayf(" }");
-  fatal(log_finish);
-#endif
-
-  finally : coda;
-}
-
-xapi API sigutil_exchange(int sig, pid_t pid, const sigset_t * sigs, siginfo_t * info)
-{
-  enter;
-
   // signal target
-  fatal(xkill, pid, sig);
+  xkill(pid, sig);
 
   // receive a signal in sigs
-  fatal(sigutil_wait, sigs, info);
-
-  finally : coda;
+  sigutil_wait(sigs, info);
 }
 
-xapi API sigutil_assert(int expsig, pid_t exppid, const siginfo_t * actual)
+void API sigutil_kill(pid_t pid, int signo)
 {
-  enter;
-
-  if((exppid && (exppid != actual->si_pid)) || (expsig && (expsig != actual->si_signo)))
-  {
-    if(expsig)
-      xapi_info_pushs("expected signal", signame(expsig));
-    xapi_info_pushs("actual signal", signame(actual->si_signo));
-
-    if(exppid)
-      xapi_info_pushf("expected pid", "%lu", (long)exppid);
-    xapi_info_pushf("actual pid", "%lu", (long)actual->si_pid);
-
-    fail(FAB_BADIPC);
-  }
-
-  finally : coda;
+  sigtx_probe(signo, pid, 0);
+  xkill(pid, signo);
 }
 
-xapi API sigutil_kill(pid_t pid, int signo)
+int API sigutil_uxkill(pid_t pid, int signo)
 {
-  enter;
+  sigtx_probe(signo, pid, 0);
 
-#if DEBUG || DEVEL || XUNIT
-  logf(L_IPC, "tx %s { signo %d pid %ld }", signame(signo), signo, (long)pid);
-#endif
-
-  fatal(xkill, pid, signo);
-
-  finally : coda;
+  return uxkill(pid, signo);
 }
 
-xapi API sigutil_uxkill(int * restrict r, pid_t pid, int signo)
+void API sigutil_tgkill(pid_t pid, pid_t tid, int signo)
 {
-  enter;
+  sigtx_probe(signo, pid, tid);
 
-#if DEBUG || DEVEL || XUNIT
-  logf(L_IPC, "tx %s { signo %d pid %ld }", signame(signo), signo, (long)pid);
-#endif
-
-  fatal(uxkill, r, pid, signo);
-
-  finally : coda;
+  xtgkill(pid, tid, signo);
 }
 
-xapi API sigutil_tgkill(pid_t pid, pid_t tid, int signo)
+int API sigutil_uxtgkill(pid_t pid, pid_t tid, int signo)
 {
-  enter;
+  sigtx_probe(signo, pid, tid);
 
-#if DEBUG || DEVEL || XUNIT
-  logf(L_IPC, "tx %s { signo %d pid %ld tid %ld }", signame(signo), signo, (long)pid, (long)tid);
-#endif
-
-  fatal(xtgkill, pid, tid, signo);
-
-  finally : coda;
+  return uxtgkill(pid, tid, signo);
 }
 
-xapi API sigutil_uxtgkill(int * restrict r, pid_t pid, pid_t tid, int signo)
+int API sigutil_uxrt_sigqueueinfo(pid_t pid, int signo, union sigval value)
 {
-  enter;
-
-#if DEBUG || DEVEL || XUNIT
-  logf(L_IPC, "tx %s { signo %d pid %ld tid %ld }", signame(signo), signo, (long)pid, (long)tid);
-#endif
-
-  fatal(uxtgkill, r, pid, tid, signo);
-
-  finally : coda;
-}
-
-xapi API sigutil_uxrt_sigqueueinfo(int * restrict r, pid_t pid, int signo, union sigval value)
-{
-  enter;
-
-#if DEBUG || DEVEL || XUNIT
-  logf(L_IPC, "tx %s { signo %d pid %ld val %lld }", signame(signo), signo, (long)pid, (long long)value.sival_ptr);
-#endif
+  sigtx_probe(signo, pid, 0);
 
   siginfo_t info;
   memset(&info, 0, sizeof(info));
@@ -316,18 +171,12 @@ xapi API sigutil_uxrt_sigqueueinfo(int * restrict r, pid_t pid, int signo, union
   info.si_uid = getuid();
   info.si_value = value;
 
-  fatal(uxrt_sigqueueinfo, r, pid, signo, &info);
-
-  finally : coda;
+  return uxrt_sigqueueinfo(pid, signo, &info);
 }
 
-xapi API sigutil_uxrt_tgsigqueueinfo(int * restrict r, pid_t pid, pid_t tid, int signo, union sigval value)
+int API sigutil_uxrt_tgsigqueueinfo(pid_t pid, pid_t tid, int signo, union sigval value)
 {
-  enter;
-
-#if DEBUG || DEVEL || XUNIT
-  logf(L_IPC, "tx %s { signo %d pid %ld tid %ld val %lld }", signame(signo), signo, (long)pid, (long)tid, (long long)value.sival_ptr);
-#endif
+  sigtx_probe(signo, pid, tid);
 
   siginfo_t info;
   memset(&info, 0, sizeof(info));
@@ -336,7 +185,5 @@ xapi API sigutil_uxrt_tgsigqueueinfo(int * restrict r, pid_t pid, pid_t tid, int
   info.si_uid = getuid();
   info.si_value = value;
 
-  fatal(uxrt_tgsigqueueinfo, r, pid, tid, signo, &info);
-
-  finally : coda;
+  return uxrt_tgsigqueueinfo(pid, tid, signo, &info);
 }

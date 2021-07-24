@@ -48,8 +48,7 @@ void xshmctl(int shmid, int cmd, struct shmid_ds * const restrict buf);
 // SUMMARY
 //  xapi proxy for shmat
 //
-void * xshmat(int shmid, const void * restrict shmaddr, int shmflg)
-  __attribute__((nonnull));
+void * xshmat(int shmid, const void * restrict shmaddr, int shmflg);
 
 /// xshmdt
 //

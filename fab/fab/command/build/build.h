@@ -18,7 +18,6 @@
 #ifndef COMMAND_BUILD_H
 #define COMMAND_BUILD_H
 
-#include "xapi.h"
 #include "types.h"
 
 #include "command.h"
@@ -64,17 +63,17 @@ extern struct build_args {
 
 extern struct command build_command;
 
-xapi build_command_setup(void);
-xapi build_command_cleanup(void);
+void build_command_setup(void);
+void build_command_cleanup(void);
 
 void build_command_usage(struct command * restrict cmd);
 
-xapi build_command_collate_goals(struct narrator * restrict N, bool reconcile)
+void build_command_collate_goals(struct narrator * restrict N, bool reconcile)
   __attribute__((nonnull));
 
-xapi build_command_collate_invalidations(struct narrator * restrict N)
+void build_command_collate_invalidations(struct narrator * restrict N)
   __attribute__((nonnull));
 
-xapi build_command_process_event(struct fab_client * restrict client, struct fabipc_message * restrict msg);
+void build_command_process_event(struct fab_client * restrict client, struct fabipc_message * restrict msg);
 
 #endif

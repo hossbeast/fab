@@ -165,10 +165,8 @@ size_t fstree_znload(void * restrict dst, size_t sz)
 // public
 //
 
-xapi filesystem_setup()
+void filesystem_setup()
 {
-  enter;
-
   rbtree_init(&fstree_root.down);
   rbnode_init(&fstree_root.rbn);
   fstree_root.fs = &filesystem_root;
@@ -183,14 +181,10 @@ xapi filesystem_setup()
 
   llist_init_node(&fstree_freelist);
   llist_init_node(&filesystem_freelist);
-
-  finally : coda;
 }
 
-xapi filesystem_cleanup()
+void filesystem_cleanup()
 {
-  enter;
-
   fstree *fst;
   filesystem *fs;
   llist *lln;
@@ -204,14 +198,10 @@ xapi filesystem_cleanup()
   llist_foreach_safe(&filesystem_freelist, fs, lln, lln) {
     wfree(fs);
   }
-
-  finally : coda;
 }
 
-xapi filesystem_reconfigure(configblob * restrict cfg, bool dry)
+int filesystem_reconfigure(configblob * restrict cfg, char *err, uint16_t err_sz)
 {
-  enter;
-
   char path[512];
 
   fstree * fst = 0;
@@ -226,12 +216,13 @@ xapi filesystem_reconfigure(configblob * restrict cfg, bool dry)
   rbnode *rbn;
   struct fs_rbn_key rbn_key;
 
-  if(dry) {
-    goto XAPI_FINALIZE;
+  /* no error cases to check during dry run */
+  if(err != NULL) {
+    return 0;
   }
 
   if(!cfg->filesystems.changed) {
-    goto XAPI_FINALIZE;
+    return 0;
   }
 
   fstree_destroy();
@@ -265,7 +256,7 @@ xapi filesystem_reconfigure(configblob * restrict cfg, bool dry)
       {
         if((fst = llist_shift(&fstree_freelist, typeof(*fst), lln)) == 0)
         {
-          fatal(xmalloc, &fst, sizeof(*fst));
+          xmalloc(&fst, sizeof(*fst));
         }
 
         memcpy(fst->name, seg, end - seg);
@@ -289,7 +280,7 @@ xapi filesystem_reconfigure(configblob * restrict cfg, bool dry)
     {
       if((fst->fs = llist_shift(&filesystem_freelist, typeof(*fst->fs), lln)) == 0)
       {
-        fatal(xmalloc, &fst->fs, sizeof(*fst->fs));
+        xmalloc(&fst->fs, sizeof(*fst->fs));
       }
     }
 
@@ -303,7 +294,7 @@ xapi filesystem_reconfigure(configblob * restrict cfg, bool dry)
     filesystem_root.attrs = g_args.default_filesystem_invalidate;
   }
 
-  finally : coda;
+  return 0;
 }
 
 const fstree * fstree_down(fstree * restrict fst, const char * restrict name, uint16_t namel)

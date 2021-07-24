@@ -15,8 +15,9 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
+#include <errno.h>
+
 #include "types.h"
-#include "xapi.h"
 
 #include "moria/graph.h"
 #include "moria/vertex.h"
@@ -41,14 +42,12 @@ typedef struct lookup_context {
   const char * segment;
 } lookup_context;
 
-static xapi __attribute__((nonnull(1))) lookup_callback(
+static void __attribute__((nonnull(1))) lookup_callback(
     void * restrict _ctx
   , const char ** restrict label
   , uint16_t * restrict label_len
 )
 {
-  enter;
-
   lookup_context * ctx = _ctx;
   uint16_t seg_len;
 
@@ -88,8 +87,6 @@ static xapi __attribute__((nonnull(1))) lookup_callback(
   {
     ctx->segment = ctx->path + ctx->path_len;
   }
-
-  finally : coda;
 }
 
 static bool candidate(void * ctxp, const moria_vertex * restrict v)
@@ -157,7 +154,7 @@ static void fragment_lookup_error(
   msg->size = z;
 }
 
-static xapi pattern_lookup_fragment(
+static void pattern_lookup_fragment(
     const char * restrict frag
   , uint16_t fragl
   , const char * restrict fname
@@ -167,8 +164,6 @@ static xapi pattern_lookup_fragment(
   , channel * restrict chan
 )
 {
-  enter;
-
   int r;
   lookup_context ctx = { 0 };
   moria_vertex * vertices[2];
@@ -177,12 +172,12 @@ static xapi pattern_lookup_fragment(
   ctx.attrs = attrs;
   ctx.path = frag;
   ctx.path_len = fragl;
-  fatal(moria_graph_lookup, &g_graph, g_graph_ht, lookup_callback, candidate, &ctx, vertices, &r);
+  moria_graph_lookup(&g_graph, g_graph_ht, lookup_callback, candidate, &ctx, vertices, &r);
 
   if(r == 1)
   {
-    fatal(selection_add_vertex, nodes, vertices[0], 0);
-    goto XAPI_FINALIZE;
+    selection_add_vertex(nodes, vertices[0], 0);
+    return;
   }
 
   if(chan)
@@ -201,30 +196,24 @@ static xapi pattern_lookup_fragment(
       events_publish(chan, msg);
     }
   }
-
-  finally : coda;
 }
 
-xapi pattern_lookup(const pattern * restrict ref, uint32_t attrs, selection * restrict nodes, channel * restrict chan)
+void pattern_lookup(const pattern * restrict ref, uint32_t attrs, selection * restrict nodes, channel * restrict chan)
 {
-  enter;
-
   int x;
 
   pattern_render_result * rendered = 0;
   pattern_render_fragment * fragment;
 
   /* render the reference pattern to resolve classes and alternations */
-  fatal(pattern_render, ref, &rendered);
+  pattern_render(ref, &rendered);
 
   fragment = rendered->fragments;
   for(x = 0; x < rendered->size; x++)
   {
-    fatal(pattern_lookup_fragment, fragment->text, fragment->len, ref->fname, &ref->loc, attrs, nodes, chan);
+    pattern_lookup_fragment(fragment->text, fragment->len, ref->fname, &ref->loc, attrs, nodes, chan);
     fragment = pattern_render_fragment_next(fragment);
   }
 
-finally:
   wfree(rendered);
-coda;
 }

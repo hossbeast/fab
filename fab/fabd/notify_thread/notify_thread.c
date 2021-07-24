@@ -17,11 +17,8 @@
 
 #include <sys/syscall.h>
 
-#include "logger/config.h"
 #include "narrator.h"
 #include "valyria/map.h"
-#include "xapi/trace.h"
-#include "xlinux/KERNEL.errtab.h"
 #include "xlinux/xinotify.h"
 #include "xlinux/xpthread.h"
 #include "xlinux/xunistd.h"
@@ -29,7 +26,6 @@
 
 #include "notify_thread.h"
 #include "fsent.h"
-#include "logging.h"
 #include "params.h"
 #include "sweeper_thread.h"
 
@@ -49,10 +45,8 @@ static map *in_fsent_by_wd;
 /* inotify event buffer */
 static char evbuf[4096];
 
-static xapi notify_thread()
+static void notify_thread()
 {
-  enter;
-
   sigset_t sigs;
   fsent *n;
   moria_vertex *v;
@@ -67,10 +61,6 @@ static xapi notify_thread()
   // signals handled on this thread
   sigfillset(&sigs);
   sigdelset(&sigs, SIGUSR1);
-
-#if DEBUG || DEVEL
-  logs(L_IPC, "starting");
-#endif
 
   interval.tv_sec = 0;
   interval.tv_nsec = MSEC_AS_NSEC(100);
@@ -141,18 +131,18 @@ static xapi notify_thread()
         n->notify_state = NOTIFY_MONITOR;
       }
 
-      fatal(sweeper_thread_enqueue, n, ev->mask, label, label_len);
+      sweeper_thread_enqueue(n, ev->mask, label, label_len);
 
 next:
       evbuf_off += sizeof(*ev) + ev->len;
       continue;
     }
 
-    fatal(uxread, in_fd, evbuf, sizeof(evbuf), &r);
+    r = uxread(in_fd, evbuf, sizeof(evbuf));
     if(r == 0)
     {
       notify_thread_epoch++;
-      fatal(uxclock_nanosleep, 0, CLOCK_MONOTONIC, 0, &interval, 0);
+      uxclock_nanosleep(CLOCK_MONOTONIC, 0, &interval, 0);
     }
     else
     {
@@ -161,39 +151,14 @@ next:
     }
   }
 
-finally:
-#if DEBUG || DEVEL
-  logs(L_IPC, "terminating");
-#endif
-
-  fatal(ixclose, &in_fd);
-coda;
+  ixclose(&in_fd);
 }
 
 static void * notify_thread_jump(void * arg)
 {
-  enter;
-
-  xapi R;
-
   tid = g_params.thread_notify = gettid();
-  logger_set_thread_name("notify");
-  logger_set_thread_categories(L_NOTIFY);
-  fatal(notify_thread, arg);
 
-finally:
-  if(XAPI_UNWINDING)
-  {
-#if DEBUG || DEVEL || XAPI
-    xapi_infos("thread", "notify");
-    xapi_infof("pid", "%ld", (long)getpid());
-    xapi_infof("tid", "%ld", (long)gettid());
-    fatal(logger_xtrace_full, L_ERROR, L_NONAMES, XAPI_TRACE_COLORIZE | XAPI_TRACE_NONEWLINE);
-#else
-    fatal(logger_xtrace_pithy, L_ERROR, L_NONAMES, XAPI_TRACE_COLORIZE | XAPI_TRACE_NONEWLINE);
-#endif
-  }
-conclude(&R);
+  notify_thread(arg);
 
   atomic_dec(&g_params.thread_count);
   syscall(SYS_tgkill, g_params.pid, g_params.thread_monitor, SIGUSR1);
@@ -204,53 +169,34 @@ conclude(&R);
 // public
 //
 
-xapi notify_thread_setup()
+void notify_thread_setup()
 {
-  enter;
-
-  fatal(xinotify_init, &in_fd, IN_NONBLOCK);
-  fatal(map_create, &in_fsent_by_wd);
-
-  finally : coda;
+  in_fd = xinotify_init(IN_NONBLOCK);
+  map_create(&in_fsent_by_wd);
 }
 
-xapi notify_thread_cleanup()
+void notify_thread_cleanup()
 {
-  enter;
-
-  fatal(ixclose, &in_fd);
-  fatal(map_xfree, in_fsent_by_wd);
-
-  finally : coda;
+  ixclose(&in_fd);
+  map_xfree(in_fsent_by_wd);
 }
 
-xapi notify_thread_launch()
+void notify_thread_launch()
 {
-  enter;
-
   pthread_t pthread_id;
   pthread_attr_t attr;
-  int rv;
 
-  fatal(xpthread_attr_init, &attr);
-  fatal(xpthread_attr_setdetachstate, &attr, PTHREAD_CREATE_DETACHED);
+  xpthread_attr_init(&attr);
+  xpthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
 
   atomic_inc(&g_params.thread_count);
-  if((rv = pthread_create(&pthread_id, &attr, notify_thread_jump, 0)) != 0)
-  {
-    atomic_dec(&g_params.thread_count);
-    tfail(perrtab_KERNEL, rv);
-  }
+  xpthread_create(&pthread_id, &attr, notify_thread_jump, 0);
 
-finally:
   pthread_attr_destroy(&attr);
-coda;
 }
 
-xapi notify_thread_add_watch(fsent * n)
+void notify_thread_add_watch(fsent * n)
 {
-  enter;
-
   char space[512];
   uint32_t mask = 0;
   struct futexlock *lockp = 0;
@@ -267,34 +213,17 @@ xapi notify_thread_add_watch(fsent * n)
   mask |= IN_EXCL_UNLINK;   /* ignore events for files after they are unlinked */
 
   fsent_absolute_path_znload(space, sizeof(space), n);
-  fatal(xinotify_add_watch, &n->wd, in_fd, space, mask);
+  n->wd = xinotify_add_watch(in_fd, space, mask);
 
   lockp = futexlock_acquire(&in_lock);
-  fatal(map_put, in_fsent_by_wd, MM(n->wd), n, 0);
+  map_put(in_fsent_by_wd, MM(n->wd), n, 0);
   futexlock_release(&in_lock);
   lockp = 0;
 
-  if(log_would(L_NOTIFY))
-  {
-    narrator * N;
-    fatal(log_start, L_NOTIFY, &N);
-    xsayf("%8s ", "watch");
-    fatal(fsent_absolute_path_say, n, N);
-    fatal(log_finish);
-  }
-
-finally:
-  if(lockp) {
-    futexlock_release(lockp);
-  }
-coda;
+  futexlock_release(lockp);
 }
 
-xapi notify_thread_rm_watch(fsent * n)
+void notify_thread_rm_watch(fsent * n)
 {
-  enter;
-
   /* there should be code here */
-
-  finally : coda;
 }

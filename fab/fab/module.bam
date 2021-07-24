@@ -19,20 +19,20 @@ use cc          # this module contains C sources
 use flex
 use bison
 use executable  # this module builds an executable
-use xapi/errtab
+use void/errtab
 use git
 
 # declare variants
-variant xapi.{debug,devel,final,trace}
+variant void.{debug,devel,final,trace}
 
 rule fab.? -> //module/targets
 
 # make common objects available for #include and linking
 import fab/include
 import fab/asan
-import lib{common,descriptor,xapi,xlinux,logger,xunit,narrator,valyria,yyutil,value,fab,lorien}
+import lib{common,descriptor,void,xlinux,logger,xunit,narrator,valyria,yyutil,value,fab,lorien}
 
-variant xapi.{devel} : [
+variant void.{devel} : [
   rule fab.? <- asan/asan.$?.o
 ]
 
@@ -43,10 +43,10 @@ rule **/*.?.o -> fab.$? : executable/cc.bam
 rule */*.?.o <- errtab/MAIN.errtab.h
 
 # library dependencies
-variant xapi.pic.{debug,devel,final,trace} : [
+variant void.pic.{debug,devel,final,trace} : [
   rule //module/imports/*~libxunit/lib*.?.so -> fab.${?-pic}
 ]
 
-variant xapi.pic.devel : [
+variant void.pic.devel : [
   rule //module/imports/libxunit/lib*.?.so -> fab.${?-pic}
 ]

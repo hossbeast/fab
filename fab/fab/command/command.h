@@ -18,7 +18,6 @@
 #ifndef _COMMAND_H
 #define _COMMAND_H
 
-#include "xapi.h"
 #include "types.h"
 
 struct fab_client;
@@ -29,8 +28,8 @@ typedef struct command {
   char *name;
 
   void (*usage)(struct command *cmd);
-  xapi __attribute__((nonnull)) (*connected)(struct command *cmd, struct fab_client * restrict client);
-  xapi __attribute__((nonnull)) (*process)(
+  void __attribute__((nonnull)) (*connected)(struct command *cmd, struct fab_client * restrict client);
+  void __attribute__((nonnull)) (*process)(
       struct command *cmd
     , struct fab_client * restrict client
     , struct fabipc_message * restrict msg

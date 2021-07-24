@@ -19,13 +19,10 @@
 #include <string.h>
 #include <getopt.h>
 
-#include "xapi.h"
 #include "types.h"
 #include "xlinux/xstdlib.h"
 #include "xlinux/xstring.h"
-#include "logger/arguments.h"
 
-#include "xapi/SYS.errtab.h"
 #include "args.h"
 #include "common/parseint.h"
 #include "common/hash.h"
@@ -70,10 +67,8 @@ static void args_usage()
   exit(0);
 }
 
-static xapi args_parse()
+static void args_parse()
 {
-  enter;
-
   char *pwd = 0;
   int x;
   int longindex;
@@ -99,8 +94,8 @@ static xapi args_parse()
   ;
 
   g_args.default_filesystem_invalidate = FILESYSTEM_INVALIDATE_DEFAULT;
-  fatal(ixstrdup, &g_args.system_config_path, SYSTEM_CONFIG_PATH);
-  fatal(ixstrdup, &g_args.user_config_path, USER_CONFIG_PATH);
+  ixstrdup(&g_args.system_config_path, SYSTEM_CONFIG_PATH);
+  ixstrdup(&g_args.user_config_path, USER_CONFIG_PATH);
 
   // disable getopt error messages
   opterr = 0;
@@ -110,10 +105,10 @@ static xapi args_parse()
 #if DEVEL
     if(x == 0 && strcmp(longopts[longindex].name, "system-config-path") == 0) {
       iwfree(&g_args.system_config_path);
-      fatal(ixstrdup, &g_args.system_config_path, optarg);
+      ixstrdup(&g_args.system_config_path, optarg);
     } else if(x == 0 && strcmp(longopts[longindex].name, "user-config-path") == 0) {
       iwfree(&g_args.user_config_path);
-      fatal(ixstrdup, &g_args.user_config_path, optarg);
+      ixstrdup(&g_args.user_config_path, optarg);
     } else if(x == 0 && strcmp(longopts[longindex].name, "default-filesystem-invalidate") == 0) {
       if((g_args.default_filesystem_invalidate = attrs16_value_byname(invalidate_attrs, optarg)) == 0) {
         fail(SYS_BADARGS);
@@ -143,7 +138,7 @@ static xapi args_parse()
   }
 
   if(optind == g_argc) {
-    fatal(xrealpaths, &pwd, 0, getenv("PWD"));
+    xrealpaths(&pwd, 0, getenv("PWD"));
     g_args.hash = hash64(0, pwd, strlen(pwd));
   }
   if(optind < g_argc) {
@@ -160,26 +155,18 @@ finally:
 coda;
 }
 
-xapi args_setup()
+void args_setup()
 {
-  enter;
-
   char space[64];
 
-  fatal(args_parse);
+  args_parse();
 
   snprintf(space, sizeof(space), "%016"PRIx64, g_args.hash);
-  fatal(ixstrdup, &g_args.hash_str, space);
-
-  finally : coda;
+  ixstrdup(&g_args.hash_str, space);
 }
 
-xapi args_teardown()
+void args_teardown()
 {
-  enter;
-
   wfree(g_args.system_config_path);
   wfree(g_args.user_config_path);
-
-  finally : coda;
 }

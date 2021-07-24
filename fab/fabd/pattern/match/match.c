@@ -39,10 +39,8 @@
  * quals   - whether to evalate section qualifiers, if present
  * matches - (returns) whether the initial section matches
  */
-static xapi match_node(pattern_match_context * ctx, bool quals, bool * restrict matches)
+static void match_node(pattern_match_context * ctx, bool quals, bool * restrict matches)
 {
-  enter;
-
   struct match_section_traversal saved_section_traversal;
   struct match_segments_traversal traversal;
 
@@ -68,7 +66,7 @@ static xapi match_node(pattern_match_context * ctx, bool quals, bool * restrict 
 
     ctx->traversal = &traversal;
 
-    fatal(pattern_segments_match, ctx);
+    pattern_segments_match(ctx);
 
     *matches = traversal.u.match;
   }
@@ -87,7 +85,7 @@ static xapi match_node(pattern_match_context * ctx, bool quals, bool * restrict 
     {
       if(ctx->dirnode)
       {
-        fatal(pattern_section_match, ctx, ctx->dirnode);
+        pattern_section_match(ctx, ctx->dirnode);
       }
     }
     else
@@ -97,14 +95,10 @@ static xapi match_node(pattern_match_context * ctx, bool quals, bool * restrict 
   }
 
   ctx->section_traversal = saved_section_traversal;
-
-  finally : coda;
 }
 
-static xapi match_visit(moria_vertex * restrict v, void * _ctx, moria_traversal_mode mode, int distance, int * restrict result)
+static void match_visit(moria_vertex * restrict v, void * _ctx, moria_traversal_mode mode, int distance, int * restrict result)
 {
-  enter;
-
   pattern_match_context * ctx = _ctx;
   fsent * n;
   bool initial_match;
@@ -128,28 +122,25 @@ static xapi match_visit(moria_vertex * restrict v, void * _ctx, moria_traversal_
   ctx->label = n->vertex.label;
   ctx->label_len = n->vertex.label_len;
   ctx->dirnode = fsent_parent(n);
-  fatal(match_node, ctx, distance == 0, &initial_match);
+  match_node(ctx, distance == 0, &initial_match);
 
   /* for match patterns, discard non-matching paths */
   if(!initial_match) {
     goto prune;
   }
 
-  goto XAPI_FINALLY;
+  return;
+
 prune:
   *result = MORIA_TRAVERSE_PRUNE;
-
-  finally : coda;
 }
 
 //
 // internal
 //
 
-xapi pattern_segments_match(pattern_match_context * ctx)
+void pattern_segments_match(pattern_match_context * ctx)
 {
-  enter;
-
   struct match_segments_traversal saved_traversal;
   struct match_segments_traversal *traversal;
 
@@ -176,7 +167,7 @@ xapi pattern_segments_match(pattern_match_context * ctx)
       if((traversal->segment = chain_next(traversal->segment_head, &traversal->segment_cursor, chn)))
       {
         offset = traversal->offset;
-        fatal(traversal->segment->vtab->match, traversal->segment, ctx);
+        traversal->segment->vtab->match(traversal->segment, ctx);
 
         // matched something
         if(offset != traversal->offset) {
@@ -259,14 +250,10 @@ xapi pattern_segments_match(pattern_match_context * ctx)
   }
 
   memcpy(traversal, &saved_traversal, sizeof(*traversal) - sizeof(typeof(traversal->u)));
-
-  finally : coda;
 }
 
-xapi pattern_section_match(pattern_match_context * restrict ctx, const fsent * restrict dirnode)
+void pattern_section_match(pattern_match_context * restrict ctx, const fsent * restrict dirnode)
 {
-  enter;
-
   const pattern_section * section;
   uint16_t min_depth;
   uint16_t max_depth;
@@ -281,8 +268,8 @@ xapi pattern_section_match(pattern_match_context * restrict ctx, const fsent * r
     max_depth = 0;
   }
 
-  fatal(moria_traverse_vertices
-    , &g_graph
+  moria_traverse_vertices(
+      &g_graph
     , (void*)&dirnode->vertex
     , match_visit
     , state
@@ -296,16 +283,14 @@ xapi pattern_section_match(pattern_match_context * restrict ctx, const fsent * r
     , ctx
   );
 
-finally:
   moria_vertex_traversal_end(&g_graph, state);
-coda;
 }
 
 //
 // public
 //
 
-xapi pattern_match(
+void pattern_match(
     const pattern * restrict pattern
   , const struct fsent * restrict dirnode
   , const char * restrict label
@@ -313,8 +298,6 @@ xapi pattern_match(
   , bool * restrict matched
 )
 {
-  enter;
-
   pattern_match_context ctx = { };
   bool initial_match;
 
@@ -325,9 +308,7 @@ xapi pattern_match(
   ctx.label = label;
   ctx.label_len = label_len;
 
-  fatal(match_node, &ctx, true, &initial_match);
+  match_node(&ctx, true, &initial_match);
 
   *matched = ctx.matched;
-
-  finally : coda;
 }

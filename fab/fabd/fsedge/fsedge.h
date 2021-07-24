@@ -24,7 +24,6 @@ fsedge objects are edges in the graph which represent the filesystem tree
 
 */
 
-#include "xapi.h"
 #include "types.h"
 #include "valyria/llist.h"
 #include "moria.h"
@@ -42,15 +41,15 @@ typedef struct fsedge {
 } fsedge;
 
 /* release edges */
-xapi fsedge_cleanup(void);
+void fsedge_cleanup(void);
 
-xapi fsedge_alloc(fsedge ** restrict rv, struct moria_graph * restrict g)
+void fsedge_alloc(fsedge ** restrict rv, struct moria_graph * restrict g)
   __attribute__((nonnull));
 
 void fsedge_release(fsedge * restrict dep)
   __attribute__((nonnull));
 
-xapi fsedge_connect(
+void fsedge_connect(
     struct fsent * restrict A
   , struct fsent * restrict B
   , struct graph_invalidation_context * restrict invalidation
@@ -62,11 +61,11 @@ xapi fsedge_connect(
  *
  * fse - edge to begin with
  */
-xapi fsedge_disintegrate(fsedge * restrict fse, struct graph_invalidation_context * restrict invalidation)
+void fsedge_disintegrate(fsedge * restrict fse, struct graph_invalidation_context * restrict invalidation)
   __attribute__((nonnull(1)));
 
 /* disconnect a filesystem edge */
-xapi fsedge_disconnect(fsedge * restrict fse)
+void fsedge_disconnect(fsedge * restrict fse)
   __attribute__((nonnull));
 
 #endif

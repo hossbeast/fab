@@ -18,12 +18,8 @@
 #include <sys/syscall.h>
 #include <sys/wait.h>
 
-#include "xapi.h"
 #include "types.h"
 
-#include "logger/config.h"
-#include "xapi/trace.h"
-#include "xlinux/KERNEL.errtab.h"
 #include "xlinux/xpthread.h"
 #include "xlinux/xunistd.h"
 #include "xlinux/xstdlib.h"
@@ -53,7 +49,6 @@
 #include "notify_thread.h"
 #include "buildplan.h"
 #include "dependency.h"
-#include "logging.h"
 #include "exec.h"
 #include "exec_builder.h"
 #include "params.h"
@@ -126,30 +121,28 @@ static size_t insertion_sort(char ** restrict dst, size_t dst_len, char ** src, 
 /*
  * post-fork setup, exec
  */
-static xapi bsexec(build_slot * restrict bs)
+static void bsexec(build_slot * restrict bs)
 {
-  enter;
-
   int x;
   int fd = -1;
 
   // kill me if parent dies, prevent zombies
-  fatal(xprctl, PR_SET_PDEATHSIG, 9, 0, 0, 0);
+  xprctl(PR_SET_PDEATHSIG, 9, 0, 0, 0);
 
   // stdin
-  fatal(xdup2, build_devnull_fd, 0);
+  xdup2(build_devnull_fd, 0);
 
   // stdout
-  fatal(xdup2, bs->stdout_pipe[1], 1);
+  xdup2(bs->stdout_pipe[1], 1);
 
   // stderr
-  fatal(xdup2, bs->stderr_pipe[1], 2);
+  xdup2(bs->stderr_pipe[1], 2);
 
   // auxout
-  fatal(xdup2, bs->auxout_pipe[1], 1001);
+  xdup2(bs->auxout_pipe[1], 1001);
 
   // chdir to the module directory
-  fatal(xfchdir, bs->mod->dirnode_fd);
+  xfchdir(bs->mod->dirnode_fd);
 
   if(bs->file_fd != -1) {
     /*
@@ -162,7 +155,7 @@ static xapi bsexec(build_slot * restrict bs)
      * of which inherits the same open file description and seeks it to the end when reading the
      * program. Reopening a local copy of the file here solves both problems.
      */
-    fatal(xopenatf, &fd, O_RDONLY, 0, "/proc/self/fd/%d", bs->file_fd);
+    fd = xopenatf(O_RDONLY, 0, "/proc/self/fd/%d", bs->file_fd);
   }
 
   // close fds
@@ -178,38 +171,15 @@ static xapi bsexec(build_slot * restrict bs)
   /* signals */
 
   if(fd != -1) {
-    fatal(xfexecve, fd, bs->argv, bs->envp);
+    xfexecve(fd, bs->argv, bs->envp);
   } else {
-    fatal(xexecve, bs->file_path, bs->argv, bs->envp);
+    xexecve(bs->file_path, bs->argv, bs->envp);
   }
-
-  finally : coda;
-}
-
-static void bsexec_jump(build_slot * restrict bs)
-{
-  enter;
-
-  xapi R = 0;
-  fatal(bsexec, bs);
-
-finally:
-  if(XAPI_UNWINDING)
-  {
-    xapi_backtrace(2, 0);
-  }
-
-conclude(&R);
-  xapi_teardown();
-
-  exit(R);
 }
 
 /* publish the exec-forked event */
-static xapi build_slot_forked(build_slot * restrict bs)
+static void build_slot_forked(build_slot * restrict bs)
 {
-  enter;
-
   size_t z;
   channel *chan;
   fabipc_message *msg;
@@ -226,7 +196,7 @@ static xapi build_slot_forked(build_slot * restrict bs)
 
   /* struct fab_build_slot_info */
   if(!events_would(FABIPC_EVENT_FORMULA_EXEC_FORKED, &chan, &msg)) {
-    goto XAPI_FINALIZE;
+    return;
   }
 
   dst = msg->text;
@@ -333,21 +303,17 @@ static xapi build_slot_forked(build_slot * restrict bs)
 
   msg->id = bs->pid;
   events_publish(chan, msg);
-
-  finally : coda;
 }
 
 /* publish the exec-waited event */
-static xapi build_slot_waited(build_slot * restrict bs)
+static void build_slot_waited(build_slot * restrict bs)
 {
-  enter;
-
   channel *chan;
   fabipc_message *msg;
   uint16_t z;
 
   if(!events_would(FABIPC_EVENT_FORMULA_EXEC_WAITED, &chan, &msg)) {
-    goto XAPI_FINALIZE;
+    return;
   }
 
   /* struct fab_build_slot_results */
@@ -361,18 +327,14 @@ static xapi build_slot_waited(build_slot * restrict bs)
   msg->size = z;
   msg->id = bs->pid;
   events_publish(chan, msg);
-
-  finally : coda;
 }
 
 //
 // public
 //
 
-xapi build_slot_prep(build_slot * restrict bs, dependency * restrict dep, uint32_t stage_index)
+void build_slot_prep(build_slot * restrict bs, dependency * restrict dep, uint32_t stage_index)
 {
-  enter;
-
   fsent *n = 0;
   const moria_edge *e;
   int x;
@@ -448,14 +410,10 @@ xapi build_slot_prep(build_slot * restrict bs, dependency * restrict dep, uint32
       n->notify_state = NOTIFY_SUPPRESS;
     }
   }
-
-  finally : coda;
 }
 
-xapi build_slot_fork_and_exec(build_slot * restrict bs)
+void build_slot_fork_and_exec(build_slot * restrict bs)
 {
-  enter;
-
   module * mod;
   const formula * fml;
   const value * vars;
@@ -479,38 +437,38 @@ xapi build_slot_fork_and_exec(build_slot * restrict bs)
   vars = bs->vars;
   variant_exec = bs->exec;
 
-  fatal(exec_builder_xreset, &bs->exec_builder);
+  exec_builder_xreset(&bs->exec_builder);
   exec_render_context_configure(&bs->exec_builder_context, &bs->exec_builder, mod, vars, bs);
 
   // render file if any
   if(fml->file) {
-    fatal(exec_render_file, &bs->exec_builder_context, fml->file);
+    exec_render_file(&bs->exec_builder_context, fml->file);
     if(system_error) {
-      goto XAPI_FINALLY;
+      return;
     }
   }
 
   // render args if any
   if(fml->args) {
-    fatal(exec_render_args, &bs->exec_builder_context, fml->args);
+    exec_render_args(&bs->exec_builder_context, fml->args);
     if(system_error) {
-      goto XAPI_FINALLY;
+      return;
     }
   }
 
   // render envs if any
   if(fml->envs) {
-    fatal(exec_render_envs, &bs->exec_builder_context, fml->envs);
+    exec_render_envs(&bs->exec_builder_context, fml->envs);
     if(system_error) {
-      goto XAPI_FINALLY;
+      return;
     }
   }
 
   // render sysvars
-  fatal(exec_render_env_sysvars, &bs->exec_builder_context, bs);
+  exec_render_env_sysvars(&bs->exec_builder_context, bs);
 
   // render
-  fatal(exec_builder_build, &bs->exec_builder, &local_exec);
+  exec_builder_build(&bs->exec_builder, &local_exec);
 
   // path setup
   bs->file_pe = 0;
@@ -544,7 +502,7 @@ xapi build_slot_fork_and_exec(build_slot * restrict bs)
   args_len = 1;    // program name
   args_len += local_exec->args_size;
 
-  fatal(assure, &bs->argv_stor, sizeof(*bs->argv_stor), args_len + 1 /* sentinel */, &bs->argv_stor_a);
+  assure(&bs->argv_stor, sizeof(*bs->argv_stor), args_len + 1 /* sentinel */, &bs->argv_stor_a);
   bs->argv_stor[0] = (void*)filename;
   memcpy(&bs->argv_stor[1], local_exec->args, sizeof(*local_exec->args) * local_exec->args_size);
 
@@ -563,7 +521,7 @@ xapi build_slot_fork_and_exec(build_slot * restrict bs)
   envs_size += 1;  // PATH
   envs_size += 1;  // sentinel
 
-  fatal(assure, &bs->env_stor, sizeof(*bs->env_stor), envs_size, &bs->env_stor_a);
+  assure(&bs->env_stor, sizeof(*bs->env_stor), envs_size, &bs->env_stor_a);
 
   if(variant_exec)
   {
@@ -584,20 +542,16 @@ xapi build_slot_fork_and_exec(build_slot * restrict bs)
   bs->env_stor[envp_len] = 0;
   bs->envp = bs->env_stor;
 
-  fatal(xfork, &bs->pid);
+  bs->pid = xfork();
   if(bs->pid == 0) {
-    bsexec_jump(bs);
+    bsexec(bs);
   }
 
-  fatal(build_slot_forked, bs);
-
-  finally : coda;
+  build_slot_forked(bs);
 }
 
-xapi build_slot_read(build_slot * restrict bs, uint32_t stream)
+void build_slot_read(build_slot * restrict bs, uint32_t stream)
 {
-  enter;
-
   ssize_t bytes;
   int fd = 0;
   uint32_t * total = 0;
@@ -627,23 +581,19 @@ xapi build_slot_read(build_slot * restrict bs, uint32_t stream)
   if(events_would(event, &chan, &msg))
   {
     msg->id = bs->pid;
-    fatal(xread, fd, msg->text, sizeof(msg->text), &bytes);
+    bytes = xread(fd, msg->text, sizeof(msg->text));
     msg->size = bytes;
     events_publish(chan, msg);
   }
   else
   {
-    fatal(xsplice, &bytes, fd, 0, build_devnull_fd, 0, 0xffff, SPLICE_F_MOVE);
+    bytes = xsplice(fd, 0, build_devnull_fd, 0, 0xffff, SPLICE_F_MOVE);
   }
   *total += bytes;
-
-  finally : coda;
 }
 
-xapi build_slot_reap(build_slot * restrict bs, siginfo_t *info)
+void build_slot_reap(build_slot * restrict bs, siginfo_t *info)
 {
-  enter;
-
   int x;
   const dependency *bpe;
   fsent *n;
@@ -664,7 +614,7 @@ xapi build_slot_reap(build_slot * restrict bs, siginfo_t *info)
     n->notify_epoch = notify_thread_epoch;
     n->notify_state = NOTIFY_EXPIRING;
     if(success) {
-      fatal(fsent_ok, n);
+      fsent_ok(n);
     }
   }
   else
@@ -675,12 +625,10 @@ xapi build_slot_reap(build_slot * restrict bs, siginfo_t *info)
       n->notify_epoch = notify_thread_epoch;
       n->notify_state = NOTIFY_EXPIRING;
       if(success) {
-        fatal(fsent_ok, n);
+        fsent_ok(n);
       }
     }
   }
 
-  fatal(build_slot_waited, bs);
-
-  finally : coda;
+  build_slot_waited(bs);
 }

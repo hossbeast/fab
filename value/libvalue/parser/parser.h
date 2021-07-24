@@ -19,14 +19,21 @@
 #define _VALUE_PARSER_H
 
 #include "types.h"
+#include "yyutil/parser.h"
 
 #include "value.h"
 
 struct value;       // value.h
 struct yyu_location;
 
-struct value_parser;
-typedef struct value_parser value_parser;
+typedef struct value_parser {
+  yyu_parser value_yyu;
+  yyu_parser value_set_yyu;
+  yyu_parser value_list_yyu;
+
+  struct value_store * store; // value storage
+  struct value *       root;  // (returns) root of the parsed tree
+} value_parser;
 
 /// value_parser_create
 //

@@ -21,7 +21,6 @@
 #include <sys/types.h>
 #include <stdint.h>
 
-#include "xapi.h"
 
 #define STDOUT_SAVED_REAL  601
 #define STDERR_SAVED_REAL  602
@@ -57,12 +56,12 @@ extern struct g_params {
 // SUMMARY
 //  populates g_params
 //
-xapi params_setup(uint64_t hash);
+void params_setup(uint64_t hash);
 
 /// params_teardown
 //
 // free g_params
 //
-xapi params_cleanup(void);
+void params_cleanup(void);
 
 #endif

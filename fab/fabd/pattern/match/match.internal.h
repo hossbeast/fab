@@ -18,7 +18,6 @@
 #ifndef FABD_PATTERN_MATCH_INTERNAL_H
 #define FABD_PATTERN_MATCH_INTERNAL_H
 
-#include "xapi.h"
 #include "types.h"
 
 #include "match.h"
@@ -27,13 +26,13 @@ struct fsent;
 struct pattern_match_context;
 struct pattern_segments;
 
-xapi pattern_section_match(
+void pattern_section_match(
     struct pattern_match_context * restrict ctx
   , const struct fsent * restrict dirnode
 )
   __attribute__((nonnull));
 
-xapi pattern_segments_match(struct pattern_match_context * ctx)
+void pattern_segments_match(struct pattern_match_context * ctx)
   __attribute__((nonnull));
 
 typedef struct pattern_match_context {

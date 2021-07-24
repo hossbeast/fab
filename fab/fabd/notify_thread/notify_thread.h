@@ -18,7 +18,6 @@
 #ifndef _NOTIFY_THREAD_H
 #define _NOTIFY_THREAD_H
 
-#include "xapi.h"
 #include "types.h"
 
 struct fsent;
@@ -32,14 +31,14 @@ enum notify_state {
 /* incremented each time new events are available */
 extern uint16_t notify_thread_epoch;
 
-xapi notify_thread_setup(void);
-xapi notify_thread_cleanup(void);
-xapi notify_thread_launch(void);
+void notify_thread_setup(void);
+void notify_thread_cleanup(void);
+void notify_thread_launch(void);
 
-xapi notify_thread_add_watch(struct fsent * restrict n)
+void notify_thread_add_watch(struct fsent * restrict n)
   __attribute__((nonnull));
 
-xapi notify_thread_rm_watch(struct fsent * restrict n)
+void notify_thread_rm_watch(struct fsent * restrict n)
   __attribute__((nonnull));
 
 #endif

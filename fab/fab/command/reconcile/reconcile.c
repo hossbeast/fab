@@ -37,10 +37,8 @@ static void usage(command * restrict cmd)
 // build
 //
 
-static xapi connected(command * restrict cmd, fab_client * restrict client)
+static void connected(command * restrict cmd, fab_client * restrict client)
 {
-  enter;
-
   fabipc_message * msg;
   size_t z;
 
@@ -58,24 +56,18 @@ static xapi connected(command * restrict cmd, fab_client * restrict client)
   msg->size = z;
 
   client_post(client, msg);
-
-  finally : coda;
 }
 
-static xapi process(command * restrict cmd, fab_client * restrict client, fabipc_message * restrict msg)
+static void process(command * restrict cmd, fab_client * restrict client, fabipc_message * restrict msg)
 {
-  enter;
-
   if(msg->type == FABIPC_MSG_EVENTS && msg->evtype == FABIPC_EVENT_SYSTEM_STATE) {
-    goto XAPI_FINALLY;
+    return;
   }
 
   RUNTIME_ASSERT(msg->id == requestid);
   RUNTIME_ASSERT(msg->type == FABIPC_MSG_RESPONSE);
 
   g_params.shutdown = true;
-
-  finally : coda;
 }
 
 //

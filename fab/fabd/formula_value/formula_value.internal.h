@@ -18,7 +18,6 @@
 #ifndef FORMULA_VALUE_INTERNAL_H
 #define FORMULA_VALUE_INTERNAL_H
 
-#include "xapi.h"
 #include "types.h"
 
 #include "formula_value.h"
@@ -29,49 +28,49 @@ struct rbtree;
 
 /* create formula_value from the parser */
 
-xapi formula_value_posint_mk(
+void formula_value_posint_mk(
     const struct yyu_location * restrict loc
   , struct formula_value ** rv
   , uint64_t u
 )
   __attribute__((nonnull(1, 2)));
 
-xapi formula_value_posint_mk(
+void formula_value_posint_mk(
     const struct yyu_location * restrict loc
   , struct formula_value ** rv
   , uint64_t u
 )
   __attribute__((nonnull(1, 2)));
 
-xapi formula_value_negint_mk(
+void formula_value_negint_mk(
     const struct yyu_location * restrict loc
   , struct formula_value ** rv
   , int64_t i
 )
   __attribute__((nonnull(1, 2)));
 
-xapi formula_value_float_mk(
+void formula_value_float_mk(
     const struct yyu_location * restrict loc
   , struct formula_value ** rv
   , float fp
 )
   __attribute__((nonnull(1, 2)));
 
-xapi formula_value_boolean_mk(
+void formula_value_boolean_mk(
     const struct yyu_location * restrict loc
   , struct formula_value ** rv
   , bool b
 )
   __attribute__((nonnull(1, 2)));
 
-xapi formula_value_string_mk(
+void formula_value_string_mk(
     const struct yyu_location * restrict loc
   , struct formula_value ** rv
   , char * restrict s
 )
   __attribute__((nonnull));
 
-xapi formula_value_variable_mk(
+void formula_value_variable_mk(
     const struct yyu_location * restrict loc
   , struct formula_value ** rv
   , const char * restrict name
@@ -79,14 +78,14 @@ xapi formula_value_variable_mk(
 )
   __attribute__((nonnull));
 
-xapi formula_value_sysvar_mk(
+void formula_value_sysvar_mk(
     const struct yyu_location * restrict loc
   , struct formula_value ** rv
   , uint16_t token
 )
   __attribute__((nonnull));
 
-xapi formula_value_mapping_mk(
+void formula_value_mapping_mk(
     const struct yyu_location * restrict loc
   , struct formula_value ** rv
   , const char * name
@@ -95,49 +94,49 @@ xapi formula_value_mapping_mk(
 )
   __attribute__((nonnull));
 
-xapi formula_value_list_mk(
+void formula_value_list_mk(
     const struct yyu_location * restrict loc
   , struct formula_value ** restrict rv
   , struct formula_value * restrict list_head
 )
   __attribute__((nonnull));
 
-xapi formula_value_set_mk(
+void formula_value_set_mk(
     const struct yyu_location * restrict loc
   , struct formula_value ** restrict rv
   , struct rbtree * restrict rbt
 )
   __attribute__((nonnull));
 
-xapi formula_value_select_mk(
+void formula_value_select_mk(
     const struct yyu_location * restrict loc
   , struct formula_value ** rv
   , struct selector * restrict select
 )
   __attribute__((nonnull));
 
-xapi formula_value_property_mk(
+void formula_value_property_mk(
     const struct yyu_location * restrict loc
   , struct formula_value ** rv
   , fsent_property property
 )
   __attribute__((nonnull));
 
-xapi formula_value_prepend_mk(
+void formula_value_prepend_mk(
     const struct yyu_location * restrict loc
   , struct formula_value ** rv
   , struct formula_value * v
 )
   __attribute__((nonnull));
 
-xapi formula_value_path_search_mk(
+void formula_value_path_search_mk(
     const struct yyu_location * restrict loc
   , struct formula_value ** rv
   , struct formula_value * v
 )
   __attribute__((nonnull));
 
-xapi formula_value_sequence_mk(
+void formula_value_sequence_mk(
     const struct yyu_location * restrict loc
   , struct formula_value ** rv
   , struct formula_value * list_head

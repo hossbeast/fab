@@ -18,13 +18,11 @@
 #ifndef _CLIENT_THREAD_H
 #define _CLIENT_THREAD_H
 
-#include "xapi.h"
-
 struct fab_client;
 struct fabipc_message;
 
-xapi client_thread_launch(void);
-xapi client_thread_redrive(void);
+void client_thread_launch(void);
+void client_thread_redrive(void);
 
 void client_thread_post(struct fab_client * restrict client, struct fabipc_message * restrict msg)
   __attribute__((nonnull));

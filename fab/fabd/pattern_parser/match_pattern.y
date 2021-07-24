@@ -141,7 +141,7 @@ utterance
 pattern
   : pattern-sections-list
   {
-    YFATAL(pattern_mk, &$$, &@$, $1);
+    pattern_mk(&$$, &@$, $1);
   }
   ;
 
@@ -156,7 +156,7 @@ pattern-sections-list
 pattern-initial-section
   : '/' pattern-section
   {
-    YFATAL(pattern_section_mk, &$$, &@$, PATTERN_NODESET_ROOT, 0, 0, NULL);
+    pattern_section_mk(&$$, &@$, PATTERN_NODESET_ROOT, 0, 0, NULL);
     $$ = chain_splice_tail($$, $2, chn);
   }
   | pattern-section
@@ -165,11 +165,11 @@ pattern-initial-section
 pattern-section
   : pattern-dentry-list
   {
-    YFATAL(pattern_section_mk, &$$, &@$, 0, PATTERN_GRAPH_FS, PATTERN_AXIS_DOWN, $1);
+    pattern_section_mk(&$$, &@$, 0, PATTERN_GRAPH_FS, PATTERN_AXIS_DOWN, $1);
   }
   | STARSTAR pattern-qualifiers
   {
-    YFATAL(pattern_section_mk, &$$, &@$, 0, PATTERN_GRAPH_DIRS, PATTERN_AXIS_SELF_OR_BELOW, $2);
+    pattern_section_mk(&$$, &@$, 0, PATTERN_GRAPH_DIRS, PATTERN_AXIS_SELF_OR_BELOW, $2);
   }
   ;
 
@@ -184,7 +184,7 @@ pattern-dentry-list
 pattern-dentry
   : pattern-dentry-parts
   {
-    YFATAL(pattern_segments_mk, &$$, &@$, PATTERN_QUALIFIER_TYPE_AND, $1);
+    pattern_segments_mk(&$$, &@$, PATTERN_QUALIFIER_TYPE_AND, $1);
   }
   ;
 
@@ -223,11 +223,11 @@ pattern-qualifier-list
 pattern-qualifier
   : '+' pattern-qualifier-parts
   {
-    YFATAL(pattern_segments_mk, &$$, &@$, PATTERN_QUALIFIER_TYPE_AND, $2);
+    pattern_segments_mk(&$$, &@$, PATTERN_QUALIFIER_TYPE_AND, $2);
   }
   | '~' pattern-qualifier-parts
   {
-    YFATAL(pattern_segments_mk, &$$, &@$, PATTERN_QUALIFIER_TYPE_NOT, $2);
+    pattern_segments_mk(&$$, &@$, PATTERN_QUALIFIER_TYPE_NOT, $2);
   }
   ;
 
@@ -248,18 +248,18 @@ pattern-qualifier-part
 star
   : '*'
   {
-    YFATAL(pattern_star_mk, &$$, &@$);
+    pattern_star_mk(&$$, &@$);
   }
   ;
 
 class
   : '[' class-parts ']'
   {
-    YFATAL(pattern_class_mk, &$$, &@$, $2, false);
+    pattern_class_mk(&$$, &@$, $2, false);
   }
   | '[' '!' class-parts ']'
   {
-    YFATAL(pattern_class_mk, &$$, &@$, $3, true);
+    pattern_class_mk(&$$, &@$, $3, true);
   }
   ;
 
@@ -274,7 +274,7 @@ class-parts
 class-pattern
   : class-part
   {
-    YFATAL(pattern_segments_mk, &$$, &@$, PATTERN_QUALIFIER_TYPE_AND, $1);
+    pattern_segments_mk(&$$, &@$, PATTERN_QUALIFIER_TYPE_AND, $1);
   }
   ;
 
@@ -286,25 +286,25 @@ class-part
 class-range
   : CHAR '-' CHAR
   {
-    YFATAL(pattern_range_mk, &$$, &@$, @1.s[0], @3.s[0]);
+    pattern_range_mk(&$$, &@$, @1.s[0], @3.s[0]);
   }
   ;
 
 class-char
   : CHAR
   {
-    YFATAL(pattern_byte_mk, &$$, &@$, @1.s[0]);
+    pattern_byte_mk(&$$, &@$, @1.s[0]);
   }
   ;
 
 alternation
   : '{' alternation-parts-with-epsilon '}'
   {
-    YFATAL(pattern_alternation_mk, &$$, &@$, $2, true);
+    pattern_alternation_mk(&$$, &@$, $2, true);
   }
   | '{' alternation-parts-without-epsilon '}'
   {
-    YFATAL(pattern_alternation_mk, &$$, &@$, $2, false);
+    pattern_alternation_mk(&$$, &@$, $2, false);
   }
   ;
 
@@ -334,7 +334,7 @@ alternation-part-epsilon
 alternation-pattern
   : alternation-pattern-parts
   {
-    YFATAL(pattern_segments_mk, &$$, &@$, PATTERN_QUALIFIER_TYPE_AND, $1);
+    pattern_segments_mk(&$$, &@$, PATTERN_QUALIFIER_TYPE_AND, $1);
   }
   ;
 
@@ -392,11 +392,11 @@ unquoted-strpart
 word
   : word-tokens
   {
-    YFATAL(pattern_word_mk, &$$, &@$, @1.s, @1.l);
+    pattern_word_mk(&$$, &@$, @1.s, @1.l);
   }
   | uint16
   {
-    YFATAL(pattern_word_mk, &$$, &@$, @1.s, @1.l);
+    pattern_word_mk(&$$, &@$, @1.s, @1.l);
   }
   ;
 
@@ -408,11 +408,11 @@ word-tokens
 escape
   : CREF
   {
-    YFATAL(pattern_byte_mk, &$$, &@$, $1);
+    pattern_byte_mk(&$$, &@$, $1);
   }
   | HREF
   {
-    YFATAL(pattern_byte_mk, &$$, &@$, $1);
+    pattern_byte_mk(&$$, &@$, $1);
   }
   ;
 

@@ -15,7 +15,6 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#include "xapi.h"
 #include "valyria/load.h"
 #include "moria/load.h"
 #include "xlinux/xstdlib.h"
@@ -34,7 +33,6 @@
 #include "xunit/assert.h"
 #include "narrator.h"
 #include "narrator/growing.h"
-#include "logging.h"
 #include "rule.h"
 #include "fsent.h"
 #include "pattern.h"
@@ -55,36 +53,26 @@ typedef struct var_test {
   } **variants;
 } var_test;
 
-static xapi var_test_unit_setup(xunit_unit * unit)
+static void var_test_unit_setup(xunit_unit * unit)
 {
-  enter;
+  value_load();
+  logging_finalize();
 
-  fatal(value_load);
-  fatal(logging_finalize);
-
-  fatal(variant_setup);
-
-  finally : coda;
+  variant_setup();
 }
 
-static xapi var_test_unit_cleanup(xunit_unit * unit)
+static void var_test_unit_cleanup(xunit_unit * unit)
 {
-  enter;
-
-  fatal(value_unload);
-  fatal(variant_cleanup);
-
-  finally : coda;
+  value_unload();
+  variant_cleanup();
 }
 
 //
 // tests
 //
 
-static xapi var_test_entry(xunit_test * _test)
+static void var_test_entry(xunit_test * _test)
 {
-  enter;
-
   var_test * test = containerof(_test, var_test, xu);
   value * vars;
   value_parser * parser = 0;
@@ -94,18 +82,18 @@ static xapi var_test_entry(xunit_test * _test)
   value * mapping;
 
   // arrange
-  fatal(value_parser_create, &parser);
-  fatal(value_parser_parse, parser, test->text, strlen(test->text), "-test-", VALUE_TYPE_SET, &vars);
+  value_parser_create(&parser);
+  value_parser_parse(parser, test->text, strlen(test->text), "-test-", VALUE_TYPE_SET, &vars);
 
   typeof(*test->variants) *variants = test->variants;
   while(*variants)
   {
     var = 0;
     if((*variants)->name)
-      fatal(variant_get, (*variants)->name, strlen((*variants)->name), &var);
+      variant_get((*variants)->name, strlen((*variants)->name), &var);
 
     // act
-    fatal(var_denormalize, parser, var, vars, &bag);
+    var_denormalize(parser, var, vars, &bag);
 
     assert_eq_d(VALUE_TYPE_SET, bag->type);
 
@@ -120,7 +108,7 @@ static xapi var_test_entry(xunit_test * _test)
   }
 
 finally:
-  fatal(value_parser_xfree, parser);
+  value_parser_xfree(parser);
 coda;
 }
 

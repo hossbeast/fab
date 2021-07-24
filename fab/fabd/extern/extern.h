@@ -25,7 +25,6 @@ directory, and are used in resolution of import/use/require statements.
 
 */
 
-#include "xapi.h"
 #include "types.h"
 
 struct configblob;
@@ -34,7 +33,7 @@ struct graph_invalidation_context;
 /*
  * reload extern trees
  */
-xapi extern_system_reconcile(int walk_id, struct graph_invalidation_context * restrict invalidation)
+void extern_system_reconcile(int walk_id, struct graph_invalidation_context * restrict invalidation)
   __attribute__((nonnull));
 
 #endif

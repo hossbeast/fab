@@ -15,8 +15,6 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#include "xapi.h"
-#include "xapi/errtab.h"
 #include "xlinux/xstdlib.h"
 
 #include "lorien/load.h"
@@ -28,13 +26,9 @@
 #include "narrator.h"
 #include "narrator/growing.h"
 
-#include "logger.h"
-#include "logger/category.h"
 
 #include "pattern_parser.h"
 #include "pattern.h"
-#include "PATTERN.errtab.h"
-#include "logging.h"
 
 #include "macros.h"
 
@@ -45,40 +39,30 @@ typedef struct pattern_parser_test {
   char * expected;
 } pattern_parser_test;
 
-static xapi pattern_parser_unit_setup(xunit_unit * unit)
+static void pattern_parser_unit_setup(xunit_unit * unit)
 {
-  enter;
-
   // load libraries
-  fatal(lorien_load);
-  fatal(yyutil_load);
-  fatal(value_load);
+  lorien_load();
+  yyutil_load();
+  value_load();
 
   // logging
-  fatal(logging_finalize);
-
-  finally : coda;
+  logging_finalize();
 }
 
-static xapi pattern_parser_unit_cleanup(xunit_unit * unit)
+static void pattern_parser_unit_cleanup(xunit_unit * unit)
 {
-  enter;
-
-  fatal(lorien_unload);
-  fatal(yyutil_unload);
-  fatal(value_unload);
-
-  finally : coda;
+  lorien_unload();
+  yyutil_unload();
+  value_unload();
 }
 
 //
 // tests
 //
 
-static xapi pattern_parser_test_entry(xunit_test * _test)
+static void pattern_parser_test_entry(xunit_test * _test)
 {
-  enter;
-
   pattern * A = 0;
   pattern * B = 0;
   narrator_growing * N1 = 0;
@@ -93,23 +77,23 @@ static xapi pattern_parser_test_entry(xunit_test * _test)
 
   expected = test->expected ?: test->text;
 
-  fatal(narrator_growing_create, &N1);
-  fatal(narrator_growing_create, &N2);
-  fatal(pattern_parser_create, &parser);
+  narrator_growing_create(&N1);
+  narrator_growing_create(&N2);
+  pattern_parser_create(&parser);
 
   // round trip parse
-  fatal(generate_pattern_parse_partial, parser, test->text, strlen(test->text) + 2, "-test-", 0, &loc, &A);
+  generate_pattern_parse_partial(parser, test->text, strlen(test->text) + 2, "-test-", 0, &loc, &A);
   assert_eq_zu(strlen(test->text), loc.l);
-  fatal(pattern_say, A, &N1->base);
+  pattern_say(A, &N1->base);
 
   len = N1->l;
-  fatal(narrator_xseek, &N1->base, 0, NARRATOR_SEEK_SET, 0);
-  fatal(narrator_xread, &N1->base, buf, len, 0);
+  narrator_xseek(&N1->base, 0, NARRATOR_SEEK_SET, 0);
+  narrator_xread(&N1->base, buf, len, 0);
   buf[len] = buf[len + 1] = 0;
 
-  fatal(generate_pattern_parse_partial, parser, buf, len + 2, "-test-", 0, &loc, &B);
+  generate_pattern_parse_partial(parser, buf, len + 2, "-test-", 0, &loc, &B);
   assert_eq_zu(strlen(expected), loc.l);
-  fatal(pattern_say, B, &N2->base);
+  pattern_say(B, &N2->base);
 
   // round-trip
   assert_eq_w(N1->s, N1->l, N2->s, N2->l);
@@ -119,9 +103,9 @@ static xapi pattern_parser_test_entry(xunit_test * _test)
   assert_eq_w(expected, strlen(expected), actual, N1->l);
 
 finally:
-  fatal(pattern_parser_xfree, parser);
-  fatal(narrator_growing_free, N1);
-  fatal(narrator_growing_free, N2);
+  pattern_parser_xfree(parser);
+  narrator_growing_free(N1);
+  narrator_growing_free(N2);
   pattern_free(A);
   pattern_free(B);
 coda;
@@ -141,7 +125,7 @@ xunit_unit xunit = {
         text : (char[]) { "program.?\0" }
       }}
     , (pattern_parser_test[]) {{
-        text : (char[]) { "cflags.xapi.debug\0" }
+        text : (char[]) { "cflags.void.debug\0" }
       }}
     , (pattern_parser_test[]) {{
         text : (char[]) { "xunit\0" }

@@ -30,30 +30,20 @@ static llist fsedge_freelist = LLIST_INITIALIZER(fsedge_freelist);  // free
 // static
 //
 
-static xapi disintegrate_visitor(moria_edge * e, void * ctx, moria_traversal_mode mode, int distance, int * result)
+static void disintegrate_visitor(moria_edge * e, void * ctx, moria_traversal_mode mode, int distance, int * result)
 {
-  enter;
-
   llist *edges = ctx;
   llist_append(edges, e, lln);
-
-  finally : coda;
 }
 
-static xapi __attribute__((nonnull(1, 2))) node_invalidate_visitor_first(moria_vertex * v, void * arg, moria_traversal_mode mode, int distance, int * result)
+static void __attribute__((nonnull(1, 2))) node_invalidate_visitor_first(moria_vertex * v, void * arg, moria_traversal_mode mode, int distance, int * result)
 {
-  enter;
-
   *result = MORIA_TRAVERSE_PRUNE;
-  fatal(fsent_invalidate_visitor, v, arg, mode, distance, 0);
-
-  finally : coda;
+  fsent_invalidate_visitor(v, arg, mode, distance, 0);
 }
 
-static xapi linking(fsent *n, graph_invalidation_context * restrict invalidation)
+static void linking(fsent *n, graph_invalidation_context * restrict invalidation)
 {
-  enter;
-
   module *mod;
 
   mod = fsent_module_get(n);
@@ -89,18 +79,14 @@ static xapi linking(fsent *n, graph_invalidation_context * restrict invalidation
       , invalidation
     );
   }
-
-  finally : coda;
 }
 
 //
 // public
 //
 
-xapi fsedge_cleanup()
+void fsedge_cleanup()
 {
-  enter;
-
   llist *T;
   fsedge *fse;
 
@@ -111,27 +97,21 @@ xapi fsedge_cleanup()
   llist_foreach_safe(&fsedge_freelist, fse, edge.owner, T) {
     wfree(fse);
   }
-
-  finally : coda;
 }
 
-xapi fsedge_alloc(fsedge ** restrict rv, moria_graph * restrict g)
+void fsedge_alloc(fsedge ** restrict rv, moria_graph * restrict g)
 {
-  enter;
-
   fsedge *fse;
 
   if((fse = llist_shift(&fsedge_freelist, typeof(*fse), edge.owner)) == 0)
   {
-    fatal(xmalloc, &fse, sizeof(*fse));
+    xmalloc(&fse, sizeof(*fse));
   }
 
   moria_edge_init(&fse->edge, g);
 
   llist_append(&fsedge_list, fse, edge.owner);
   *rv = fse;
-
-  finally : coda;
 }
 
 void fsedge_release(fsedge * restrict fse)
@@ -140,14 +120,12 @@ void fsedge_release(fsedge * restrict fse)
   llist_append(&fsedge_freelist, fse, edge.owner);
 }
 
-xapi fsedge_connect(
+void fsedge_connect(
     fsent * restrict A
   , fsent * restrict B
   , graph_invalidation_context * restrict invalidation
 )
 {
-  enter;
-
   fsedge * e;
   vertex_shadowtype ash;
   vertex_shadowtype bsh;
@@ -165,8 +143,8 @@ xapi fsedge_connect(
     goto XAPI_FINALLY;
   }
   RUNTIME_ASSERT(r == MORIA_NOEDGE);
-  fatal(fsedge_alloc, &e, &g_graph);
-  fatal(graph_connect, &ctx, &A->vertex, &B->vertex, &e->edge, EDGE_FSTREE);
+  fsedge_alloc(&e, &g_graph);
+  graph_connect(&ctx, &A->vertex, &B->vertex, &e->edge, EDGE_FSTREE);
 
   ash = fsent_shadowtype_get(A);
   bsh = fsent_shadowtype_get(B);
@@ -192,7 +170,7 @@ xapi fsedge_connect(
     fsent_filetype_set(A, VERTEX_FILETYPE_DIR);
 
     if(fsent_kind_get(A) == VERTEX_DIR) {
-      fatal(fsent_lookup_index, A);
+      fsent_lookup_index(A);
     }
   }
 
@@ -201,37 +179,29 @@ xapi fsedge_connect(
     fsent_filetype_set(B, VERTEX_FILETYPE_REG);
   } else if(fsent_kind_get(B) == VERTEX_DIR) {
     /* for cases where it is known up front that an fsent is a directory (e.g. walker) */
-    fatal(fsent_lookup_index, B);
+    fsent_lookup_index(B);
   }
 
-  fatal(linking, B, invalidation);
-  fatal(fsent_dirnode_children_changed, A, invalidation);
-
-  finally : coda;
+  linking(B, invalidation);
+  fsent_dirnode_children_changed(A, invalidation);
 }
 
-xapi fsedge_disconnect(fsedge * restrict fse)
+void fsedge_disconnect(fsedge * restrict fse)
 {
-  enter;
-
   fsent *B;
 
   B = containerof(fse->edge.B, fsent, vertex);
   if(fsent_kind_get(B) == VERTEX_DIR)
   {
-    fatal(fsent_lookup_disindex, B);
+    fsent_lookup_disindex(B);
   }
 
-  fatal(graph_disconnect, &fse->edge);
+  graph_disconnect(&fse->edge);
   fsedge_release(fse);
-
-  finally : coda;
 }
 
-xapi fsedge_disintegrate(fsedge * restrict fse, graph_invalidation_context * restrict invalidation)
+void fsedge_disintegrate(fsedge * restrict fse, graph_invalidation_context * restrict invalidation)
 {
-  enter;
-
   llist edges = LLIST_INITIALIZER(edges);
   moria_edge *e;
 
@@ -250,8 +220,6 @@ xapi fsedge_disintegrate(fsedge * restrict fse, graph_invalidation_context * res
   );
 
   while((e = llist_shift(&edges, typeof(*e), lln))) {
-    fatal(graph_disintegrate, e, invalidation);
+    graph_disintegrate(e, invalidation);
   }
-
-  finally : coda;
 }

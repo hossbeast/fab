@@ -26,7 +26,6 @@ extern in config, and all the dependencies of various kinds among all these vert
 */
 
 #include "types.h"
-#include "xapi.h"
 #include "fab/fsent.h"
 #include "moria.h"
 #include "moria/vertex.h"
@@ -198,16 +197,16 @@ extern struct attrs32 * graph_vertex_state_attrs;
 extern struct moria_graph g_graph;      /* the graph */
 extern struct hashtable * g_graph_ht;   /* supports directory node lookup by label */
 
-xapi graph_setup(void);
-xapi graph_cleanup(void);
+void graph_setup(void);
+void graph_cleanup(void);
 
-xapi graph_edge_alloc(struct moria_edge ** ep)
+void graph_edge_alloc(struct moria_edge ** ep)
   __attribute__((nonnull));
 
 void graph_edge_release(struct moria_edge *)
   __attribute__((nonnull));
 
-xapi graph_edge_say(const struct moria_edge * restrict ne, struct narrator * restrict N)
+void graph_edge_say(const struct moria_edge * restrict ne, struct narrator * restrict N)
   __attribute__((nonnull));
 
 /* An invalidation can visit each vertex and edge at most once */
@@ -217,7 +216,7 @@ typedef struct graph_invalidation_context {
   bool any;
 } graph_invalidation_context;
 
-xapi graph_invalidation_begin(graph_invalidation_context * restrict context)
+void graph_invalidation_begin(graph_invalidation_context * restrict context)
   __attribute__((nonnull));
 
 void graph_invalidation_end(graph_invalidation_context * restrict context)
@@ -228,7 +227,7 @@ enum fab_fsent_type vertex_kind_remap(vertex_kind kind);
 enum fab_fsent_state vertex_state_remap(vertex_state state);
 
 /* create an edge in the graph */
-xapi graph_hyperconnect(
+void graph_hyperconnect(
     /* 1 */ struct moria_connect_context * restrict ctx
   , /* 2 */ struct moria_vertex ** restrict Alist
   , /* 3 */ uint16_t Alen
@@ -240,7 +239,7 @@ xapi graph_hyperconnect(
   __attribute__((nonnull(1, 6)));
 
 /* create an edge in the graph */
-xapi graph_connect(
+void graph_connect(
     struct moria_connect_context * restrict ctx
   , struct moria_vertex * restrict A
   , struct moria_vertex * restrict B
@@ -250,11 +249,11 @@ xapi graph_connect(
   __attribute__((nonnull));
 
 /* disconnect an edge in the graph */
-xapi graph_disconnect(struct moria_edge * restrict e)
+void graph_disconnect(struct moria_edge * restrict e)
   __attribute__((nonnull));
 
 /* disconnect an fsedge or dependency edge and cascade */
-xapi graph_disintegrate(struct moria_edge * restrict ne, struct graph_invalidation_context * restrict context)
+void graph_disintegrate(struct moria_edge * restrict ne, struct graph_invalidation_context * restrict context)
   __attribute__((nonnull(1)));
 
 #endif

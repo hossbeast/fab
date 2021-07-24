@@ -15,9 +15,7 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#include "xapi.h"
-#include "xapi/trace.h"
-#include "xapi/calltree.h"
+#include <errno.h>
 
 #include "xlinux/xstdlib.h"
 #include "xlinux/xunistd.h"
@@ -26,34 +24,33 @@
 #include "formula.h"
 #include "formula_parser.h"
 #include "formula_value.h"
-#include "logging.h"
 #include "fsent.h"
 #include "stats.h"
 #include "marshal.h"
 #include "channel.h"
 #include "system_state.h"
 #include "events.h"
+#include "formula_parser.internal.h"
 
 #include "common/snarf.h"
+#include "zbuffer.h"
 
 static llist formula_list = LLIST_INITIALIZER(formula_list);
 static llist formula_freelist = LLIST_INITIALIZER(formula_freelist);
 
 static formula_parser *parser;
 
-static xapi formula_parse(formula * restrict fml)
+static void formula_parse(formula * restrict fml)
 {
-  enter;
-
   char * text = 0;
   size_t text_len;
-  xapi exit;
+  int exit;
   channel *chan;
   fabipc_message *msg;
 
   // open the file, both to read its contents, and to exec later
-  fatal(ixclose, &fml->fd);
-  fatal(xopenats, &fml->fd, O_RDONLY, 0, fml->self_node_abspath);
+  ixclose(&fml->fd);
+  fml->fd = xopenats(O_RDONLY, 0, fml->self_node_abspath);
 
   formula_value_ifree(&fml->file);
   formula_value_ifree(&fml->envs);
@@ -62,28 +59,22 @@ static xapi formula_parse(formula * restrict fml)
   STATS_INC(fml->stats.parsed_try);
   STATS_INC(g_stats.formula_parsed_try);
 
-  fatal(fsnarf, &text, &text_len, fml->fd);
+  fsnarf(&text, &text_len, fml->fd);
 
   if(text_len)
   {
-    if((exit = invoke(formula_parser_parse, parser, text, text_len, fml->self_node_abspath, fml)))
+    if((exit = formula_parser_parse(parser, text, text_len, fml->self_node_abspath, fml)))
     {
       system_error = true;
       if(!events_would(FABIPC_EVENT_SYSTEM_STATE, &chan, &msg)) {
-        xapi_calltree_unwind();
-        goto XAPI_FINALLY;
+        goto end;
       }
 
       msg->code = EINVAL;
-#if DEBUG || DEVEL
-      msg->size = xapi_trace_full(msg->text, sizeof(msg->text), 0);
-#else
-      msg->size = xapi_trace_pithy(msg->text, sizeof(msg->text), 0);
-#endif
+      msg->size = znloadw(msg->text, sizeof(msg->text), parser->yyu.error_str, parser->yyu.error_len);
       events_publish(chan, msg);
 
-      xapi_calltree_unwind();
-      goto XAPI_FINALLY;
+      goto end;
     }
   }
 
@@ -92,31 +83,23 @@ static xapi formula_parse(formula * restrict fml)
 
   //logf(L_MODULE, "parsed formula @ %s via fd %d", fml->self_node_abspath, fml->fd);
 
-finally:
+end:
   wfree(text);
-  xapi_infos("path", fml->self_node_abspath);
-coda;
 }
 
-static xapi formula_dispose(formula * restrict fml)
+static void formula_dispose(formula * restrict fml)
 {
-  enter;
-
-  fatal(xclose, fml->fd);
+  xclose(fml->fd);
   formula_value_free(fml->file);
   formula_value_free(fml->envs);
   formula_value_free(fml->args);
 
   llist_delete_node(&fml->vertex.owner);
   llist_append(&formula_freelist, fml, vertex.owner);
-
-  finally : coda;
 }
 
-static xapi formula_xrelease(formula * restrict fml)
+static void formula_xrelease(formula * restrict fml)
 {
-  enter;
-
   moria_vertex __attribute__((unused)) *v;
 
   /* should have been fully excised from the graph previously */
@@ -125,65 +108,49 @@ static xapi formula_xrelease(formula * restrict fml)
   RUNTIME_ASSERT(rbtree_empty(&v->up));
   RUNTIME_ASSERT(rbtree_empty(&v->down));
 
-  fatal(formula_dispose, fml);
-
-  finally : coda;
+  formula_dispose(fml);
 }
 
 //
 // public
 //
 
-xapi formula_setup()
+void formula_setup()
 {
-  enter;
-
-  fatal(formula_parser_create, &parser);
-
-  finally : coda;
+  formula_parser_create(&parser);
 }
 
-xapi formula_cleanup()
+void formula_cleanup()
 {
-  enter;
-
   formula *fml;
   llist *T;
 
-  fatal(formula_parser_xfree, parser);
+  formula_parser_xfree(parser);
 
   llist_foreach_safe(&formula_list, fml, vertex.owner, T) {
-    fatal(formula_dispose, fml);
+    formula_dispose(fml);
   }
 
   llist_foreach_safe(&formula_freelist, fml, vertex.owner, T) {
     free(fml);
   }
-
-  finally : coda;
 }
 
-xapi formula_reconcile(formula * restrict fml)
+void formula_reconcile(formula * restrict fml)
 {
-  enter;
-
   if(!fsent_invalid_get(fml->self_node)) {
-    goto XAPI_FINALLY;
+    return;
   }
 
-  fatal(formula_parse, fml);
+  formula_parse(fml);
 
   if(!system_error) {
-    fatal(fsent_ok, fml->self_node);
+    fsent_ok(fml->self_node);
   }
-
-  finally : coda;
 }
 
-xapi formula_system_reconcile()
+void formula_system_reconcile()
 {
-  enter;
-
   formula *fml;
   llist *T;
   moria_edge *e;
@@ -203,7 +170,7 @@ xapi formula_system_reconcile()
   }
 
   llist_foreach_safe(&lln, e, lln, T) {
-    fatal(graph_disconnect, e);
+    graph_disconnect(e);
   }
 
   /* release orphaned formulas */
@@ -216,21 +183,17 @@ xapi formula_system_reconcile()
     RUNTIME_ASSERT(fsent_kind_get(fml->self_node) == VERTEX_FORMULA_FILE);
     fsent_kind_set(fml->self_node, VERTEX_FILE);
 
-    fatal(formula_xrelease, fml);
+    formula_xrelease(fml);
   }
-
-  finally : coda;
 }
 
-xapi formula_create(formula ** restrict fmlp, moria_graph * restrict g)
+void formula_create(formula ** restrict fmlp, moria_graph * restrict g)
 {
-  enter;
-
   formula *fml;
 
   if((fml = llist_shift(&formula_freelist, typeof(*fml), vertex.owner)) == 0)
   {
-    fatal(xmalloc, &fml, sizeof(*fml));
+    xmalloc(&fml, sizeof(*fml));
   }
 
   moria_vertex_init(&fml->vertex, g, VERTEX_FML);
@@ -239,14 +202,10 @@ xapi formula_create(formula ** restrict fmlp, moria_graph * restrict g)
   fml->fd = -1;
 
   *fmlp = fml;
-
-  finally : coda;
 }
 
-xapi formula_collate_stats(void *dst, size_t sz, formula *fml, bool reset, size_t *zp)
+void formula_collate_stats(void *dst, size_t sz, formula *fml, bool reset, size_t *zp)
 {
-  enter;
-
   size_t z;
   fab_formula_stats *stats;
   fab_formula_stats lstats;
@@ -283,6 +242,4 @@ xapi formula_collate_stats(void *dst, size_t sz, formula *fml, bool reset, size_
   }
 
   *zp += z;
-
-  finally : coda;
 }

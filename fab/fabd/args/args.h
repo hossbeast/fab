@@ -18,7 +18,6 @@
 #ifndef _ARGS_H
 #define _ARGS_H
 
-#include "xapi.h"
 #include "types.h"
 
 extern struct g_args_t {
@@ -33,7 +32,7 @@ extern struct g_args_t {
   char *hash_str;
 } g_args;
 
-xapi args_setup(void);
-xapi args_teardown(void);
+void args_setup(void);
+void args_teardown(void);
 
 #endif

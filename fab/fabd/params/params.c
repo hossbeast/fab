@@ -16,6 +16,8 @@
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
 #include <time.h>
+#include <stdio.h>
+#include <inttypes.h>
 
 #include "xlinux/xstdlib.h"
 #include "xlinux/xstring.h"
@@ -24,7 +26,6 @@
 #include "xlinux/xpwd.h"
 
 #include "params.h"
-#include "logging.h"
 
 #include "macros.h"
 
@@ -35,10 +36,8 @@ struct g_params g_params;
 // public
 //
 
-xapi params_setup(uint64_t hash)
+void params_setup(uint64_t hash)
 {
-  enter;
-
   char space[512];
   struct passwd *pwd;
   uid_t ruid;
@@ -66,27 +65,21 @@ xapi params_setup(uint64_t hash)
   RUNTIME_ASSERT(r == 0);
 
   snprintf(space, sizeof(space), "%s/%016"PRIx64, XQUOTE(FABIPCDIR), hash);
-  fatal(ixstrdup, &g_params.ipcdir, space);
+  ixstrdup(&g_params.ipcdir, space);
 
-  fatal(xrealpathf, &g_params.proj_dir, 0, "%s/%016"PRIx64"/projdir", XQUOTE(FABIPCDIR), hash);
-  fatal(xopens, &g_params.proj_dirfd, O_PATH | O_DIRECTORY, g_params.proj_dir);
+  g_params.proj_dir = xrealpathf(0, "%s/%016"PRIx64"/projdir", XQUOTE(FABIPCDIR), hash);
+  g_params.proj_dirfd = xopens(O_PATH | O_DIRECTORY, g_params.proj_dir);
 
   // get real user identity
-  fatal(xgetresuid, &ruid, &euid, &suid);
-  fatal(xgetpwuid, ruid, &pwd);
-  fatal(ixstrdup, &g_params.homedir, pwd->pw_dir);
-
-  finally : coda;
+  xgetresuid(&ruid, &euid, &suid);
+  pwd = xgetpwuid(ruid);
+  ixstrdup(&g_params.homedir, pwd->pw_dir);
 }
 
-xapi params_cleanup()
+void params_cleanup()
 {
-  enter;
-
   iwfree(&g_params.ipcdir);
   iwfree(&g_params.proj_dir);
-  fatal(ixclose, &g_params.proj_dirfd);
+  ixclose(&g_params.proj_dirfd);
   iwfree(&g_params.homedir);
-
-  finally : coda;
 }

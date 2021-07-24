@@ -18,7 +18,6 @@
 #ifndef PATTERN_RENDER_INTERNAL_H
 #define PATTERN_RENDER_INTERNAL_H
 
-#include "xapi.h"
 #include "types.h"
 
 #include "valyria/llist.h"
@@ -79,7 +78,7 @@ typedef struct pattern_render_context
 //  context - dynamic context
 //  walk    - by-directories-segment ffn walk
 //
-xapi pattern_segment_render(pattern_render_context * restrict context)
+void pattern_segment_render(pattern_render_context * restrict context)
   __attribute__((nonnull));
 
 #endif

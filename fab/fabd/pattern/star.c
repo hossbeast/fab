@@ -28,13 +28,9 @@
 // static
 //
 
-static xapi say(const pattern_segment * restrict n, narrator * restrict N)
+static void say(const pattern_segment * restrict n, narrator * restrict N)
 {
-  enter;
-
   xsayc('*');
-
-  finally : coda;
 }
 
 static void destroy(pattern_segment * restrict n)
@@ -42,10 +38,8 @@ static void destroy(pattern_segment * restrict n)
 
 }
 
-static xapi match(const pattern_segment * restrict segment, pattern_match_context * restrict ctx)
+static void match(const pattern_segment * restrict segment, pattern_match_context * restrict ctx)
 {
-  enter;
-
   uint16_t namel;
   uint16_t delta;
   uint16_t start;
@@ -60,21 +54,17 @@ static xapi match(const pattern_segment * restrict segment, pattern_match_contex
   {
     ctx->traversal->offset = start + delta;
 
-    fatal(pattern_segments_match, ctx);
+    pattern_segments_match(ctx);
     if(ctx->traversal->u.match) {
       break;
     }
 
     ctx->traversal = traversal;
   }
-
-  finally : coda;
 }
 
-static xapi search(const pattern_segment * restrict segment, pattern_search_context * restrict ctx)
+static void search(const pattern_segment * restrict segment, pattern_search_context * restrict ctx)
 {
-  enter;
-
   uint16_t namel;
   uint16_t delta;
   uint16_t start;
@@ -89,14 +79,12 @@ static xapi search(const pattern_segment * restrict segment, pattern_search_cont
   {
     ctx->traversal->offset = start + delta;
 
-    fatal(pattern_segments_search, ctx);
+    pattern_segments_search(ctx);
     if(ctx->matched)
       break;
 
     ctx->traversal = traversal;
   }
-
-  finally : coda;
 }
 
 static int cmp(const pattern_segment * A, const pattern_segment *B)
@@ -117,18 +105,14 @@ static pattern_segment_vtable vtable = {
 // public
 //
 
-xapi pattern_star_mk(pattern_segment ** restrict rv, const yyu_location * restrict loc)
+void pattern_star_mk(pattern_segment ** restrict rv, const yyu_location * restrict loc)
 {
-  enter;
-
   pattern_segment * n = 0;
 
-  fatal(xmalloc, &n, sizeof(*n));
-  fatal(pattern_segment_init, n, &vtable, loc);
+  xmalloc(&n, sizeof(*n));
+  pattern_segment_init(n, &vtable, loc);
 
   chain_init(n, chn);
 
   *rv = n;
-
-  finally : coda;
 }

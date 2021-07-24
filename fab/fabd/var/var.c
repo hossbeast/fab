@@ -15,7 +15,7 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#include "xapi.h"
+#include <errno.h>
 
 #include "common/snarf.h"
 #include "descriptor.h"
@@ -28,14 +28,11 @@
 #include "value/parser.h"
 #include "valyria/pstring.h"
 #include "valyria/set.h"
-#include "xapi/calltree.h"
-#include "xapi/trace.h"
 #include "xlinux/xstdlib.h"
 
 #include "var.h"
 #include "fsent.h"
 #include "reconcile.h"
-#include "logging.h"
 #include "marshal.h"
 #include "stats.h"
 #include "variant.h"
@@ -43,6 +40,8 @@
 #include "channel.h"
 #include "system_state.h"
 #include "events.h"
+
+#include "zbuffer.h"
 
 static llist var_list = LLIST_INITIALIZER(var_list);          // active
 static llist var_freelist = LLIST_INITIALIZER(var_freelist);  // free
@@ -52,14 +51,12 @@ static value_parser * parser;
 // static
 //
 
-static xapi var_parse(var * restrict vp)
+static void var_parse(var * restrict vp)
 {
-  enter;
-
   char * text = 0;
   size_t text_len;
   value * val;
-  xapi exit;
+  int exit;
   fabipc_message *msg;
   channel *chan;
 
@@ -68,28 +65,21 @@ static xapi var_parse(var * restrict vp)
   STATS_INC(vp->stats.parsed_try);
   STATS_INC(g_stats.var_parsed_try);
 
-  fatal(snarfs, &text, &text_len, vp->self_node_abspath);
+  snarfs(&text, &text_len, vp->self_node_abspath);
 
   if(text)
   {
-    if((exit = invoke(value_parser_parse, parser, text, text_len, vp->self_node_abspath, VALUE_TYPE_SET, &val)))
+    if((exit = value_parser_parse(parser, text, text_len, vp->self_node_abspath, VALUE_TYPE_SET, &val)))
     {
       system_error = true;
       if(!events_would(FABIPC_EVENT_SYSTEM_STATE, &chan, &msg)) {
-        xapi_calltree_unwind();
-        goto XAPI_FINALLY;
+        goto end;
       }
 
       msg->code = EINVAL;
-#if DEBUG || DEVEL
-      msg->size = xapi_trace_full(msg->text, sizeof(msg->text), 0);
-#else
-      msg->size = xapi_trace_pithy(msg->text, sizeof(msg->text), 0);
-#endif
+      msg->size = znloadw(msg->text, sizeof(msg->text), parser->yyu.error_str, parser->yyu.error_len);
       events_publish(chan, msg);
-
-      xapi_calltree_unwind();
-      goto XAPI_FINALLY;
+      goto end;
     }
 
     vp->val = val;
@@ -99,10 +89,9 @@ static xapi var_parse(var * restrict vp)
   STATS_INC(g_stats.var_parsed);
 
   //logf(L_MODULE, "parsed var @ %s", vp->self_node_abspath);
-finally:
+end:
   wfree(text);
-  xapi_infos("path", vp->self_node_abspath);
-coda;
+  void_infos("path", vp->self_node_abspath);
 }
 
 /*
@@ -111,10 +100,8 @@ coda;
  * N   narrator to write to
  * val name to render
  */
-static xapi __attribute__((nonnull)) get_mapping_key(narrator * restrict N, value * restrict val)
+static void __attribute__((nonnull)) get_mapping_key(narrator * restrict N, value * restrict val)
 {
-  enter;
-
   int x;
 
   RUNTIME_ASSERT(val->type & VALUE_TYPE_SCALAR);
@@ -129,17 +116,15 @@ static xapi __attribute__((nonnull)) get_mapping_key(narrator * restrict N, valu
         continue;
       }
 
-      fatal(narrator_xsayc, N, val->s->s[x]);
+      narrator_xsayc(N, val->s->s[x]);
     }
 
-    fatal(narrator_flush, N);
+    narrator_flush(N);
   }
   else
   {
-    fatal(value_say, val, N);
+    value_say(val, N);
   }
-
-  finally : coda;
 }
 
 static void var_dispose(var * restrict vp)
@@ -165,47 +150,37 @@ static void var_release(var * restrict vp)
 // public
 //
 
-xapi var_alloc(var ** restrict vp, moria_graph * restrict g)
+void var_alloc(var ** restrict vp, moria_graph * restrict g)
 {
-  enter;
-
   var *v;
 
   if((v = llist_shift(&var_freelist, typeof(*v), vertex.owner)) == 0)
   {
-    fatal(xmalloc, &v, sizeof(*v));
+    xmalloc(&v, sizeof(*v));
   }
 
   moria_vertex_init(&v->vertex, g, VERTEX_VAR);
 
   llist_append(&var_list, v, vertex.owner);
   *vp = v;
-
-  finally : coda;
 }
 
-xapi var_reconcile(var * restrict vp)
+void var_reconcile(var * restrict vp)
 {
-  enter;
-
   vp->reconciliation_id = reconciliation_id;
   if(!fsent_invalid_get(vp->self_node)) {
     goto XAPI_FINALLY;
   }
 
-  fatal(var_parse, vp);
+  var_parse(vp);
 
   if(!system_error) {
-    fatal(fsent_ok, vp->self_node);
+    fsent_ok(vp->self_node);
   }
-
-  finally : coda;
 }
 
-xapi var_system_reconcile()
+void var_system_reconcile()
 {
-  enter;
-
   var *v;
   llist *T;
 
@@ -216,27 +191,19 @@ xapi var_system_reconcile()
 
     var_release(v);
   }
-
-  finally : coda;
 }
 
-xapi var_setup()
+void var_setup()
 {
-  enter;
-
-  fatal(value_parser_create, &parser);
-
-  finally : coda;
+  value_parser_create(&parser);
 }
 
-xapi var_cleanup()
+void var_cleanup()
 {
-  enter;
-
   var *v;
   llist *T;
 
-  fatal(value_parser_xfree, parser);
+  value_parser_xfree(parser);
 
   llist_foreach_safe(&var_list, v, vertex.owner, T) {
     var_dispose(v);
@@ -245,14 +212,10 @@ xapi var_cleanup()
   llist_foreach_safe(&var_freelist, v, vertex.owner, T) {
     free(v);
   }
-
-  finally : coda;
 }
 
-xapi var_denormalize(value_parser * restrict parser, variant * restrict var, value * restrict valset, value ** restrict varsp)
+void var_denormalize(value_parser * restrict parser, variant * restrict var, value * restrict valset, value ** restrict varsp)
 {
-  enter;
-
   int x;
   narrator * Nkey = 0;
   narrator_fixed Nstor_key;
@@ -270,7 +233,7 @@ xapi var_denormalize(value_parser * restrict parser, variant * restrict var, val
 
   Nkey = narrator_fixed_init(&Nstor_key, keytext, sizeof(keytext));
 
-  fatal(value_set_mkv, parser, 0, 0, &vars, 0);
+  value_set_mkv(parser, 0, 0, &vars, 0);
 
   for(x = 0; x < valset->els->table_size; x++)
   {
@@ -280,8 +243,8 @@ xapi var_denormalize(value_parser * restrict parser, variant * restrict var, val
 
     RUNTIME_ASSERT(v->type == VALUE_TYPE_MAPPING);
 
-    fatal(narrator_xseek, Nkey, 0, NARRATOR_SEEK_SET, 0);
-    fatal(get_mapping_key, Nkey, v->key);
+    narrator_xseek(Nkey, 0, NARRATOR_SEEK_SET, 0);
+    get_mapping_key(Nkey, v->key);
 
     // as a side-effect, returns the name
     if(!variant_key_compatible(var, keytext, &name, &name_len))
@@ -294,20 +257,16 @@ xapi var_denormalize(value_parser * restrict parser, variant * restrict var, val
     ps.size = name_len;
 
     // merge this mapping in
-    fatal(value_merge, parser, &vars, v, 0);
+    value_merge(parser, &vars, v, 0);
 
     v->key = realkey;
   }
 
   *varsp = vars;
-
-  finally : coda;
 }
 
-xapi var_collate_stats(void *dst, size_t sz, var *vp, bool reset, size_t *zp)
+void var_collate_stats(void *dst, size_t sz, var *vp, bool reset, size_t *zp)
 {
-  enter;
-
   size_t z;
   fab_var_stats *stats;
   fab_var_stats lstats;
@@ -344,6 +303,4 @@ xapi var_collate_stats(void *dst, size_t sz, var *vp, bool reset, size_t *zp)
   }
 
   *zp += z;
-
-  finally : coda;
 }

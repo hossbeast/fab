@@ -15,8 +15,9 @@
  You should have received a copy of the GNU General Public License
  along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
+#include <stdio.h>
+
 #include "types.h"
-#include "xapi.h"
 
 #include "narrator.h"
 #include "valyria/llist.h"
@@ -25,7 +26,6 @@
 #include "rule_system.h"
 #include "dependency.h"
 #include "fsent.h"
-#include "logging.h"
 #include "module.h"
 #include "rule.h"
 #include "rule_module.h"
@@ -46,26 +46,19 @@ static int nohits_rbn_cmp(const rbnode * restrict a, const rbnode * restrict b)
 // public
 //
 
-xapi rule_system_setup()
+void rule_system_setup()
 {
-  enter;
-
   rule_system_reconciliation_id = 1;
   llist_init_node(&rma_list[0]);
   llist_init_node(&rma_list[1]);
-
-  finally : coda;
 }
 
-xapi rule_system_reconcile(rule_run_context * restrict ctx)
+void rule_system_reconcile(rule_run_context * restrict ctx)
 {
-  enter;
-
   rule_module_edge *rma;
   llist *head;
   dependency *ne;
   llist *T;
-  narrator * N;
   rbtree nohits;      // rmas with no matches during the reconciliation
   graph_invalidation_context invalidation = { };
 
@@ -78,7 +71,7 @@ xapi rule_system_reconcile(rule_run_context * restrict ctx)
   {
     rule_system_reconciliation_id++;
     graph_invalidation_end(&invalidation);
-    fatal(graph_invalidation_begin, &invalidation);
+    graph_invalidation_begin(&invalidation);
 
     /* flip the rma list so that invalidations queue up in the other slot */
     rma_list_index = !rma_list_index;
@@ -90,7 +83,7 @@ xapi rule_system_reconcile(rule_run_context * restrict ctx)
         ctx->mod = rma->mod;
         ctx->mod_owner = rma->mod_owner;
         ctx->rme = rma;
-        fatal(rule_run, rma->rule, ctx);
+        rule_run(rma->rule, ctx);
       }
       if(system_error) {
         rule_system_rma_enqueue(rma);
@@ -102,7 +95,7 @@ xapi rule_system_reconcile(rule_run_context * restrict ctx)
       llist_foreach_safe(&rma->dependencies, ne, dependencies_lln, T) {
         if(ne->reconciliation_id != rule_system_reconciliation_id) {
           RUNTIME_ASSERT(ne->edge.attrs & EDGE_DEPENDENCY);
-          fatal(graph_disintegrate, &ne->edge, &invalidation);
+          graph_disintegrate(&ne->edge, &invalidation);
           llist_delete(ne, dependencies_lln);
         }
       }
@@ -114,21 +107,18 @@ xapi rule_system_reconcile(rule_run_context * restrict ctx)
   }
 
   /* warn about rules which had no effect */
-  if(!system_error && log_would(L_WARN))
+  if(!system_error && 1)
   {
     rbtree_foreach(&nohits, rma, nohits_rbn) {
-      fatal(log_start, L_WARN, &N);
-      xsays("0 matches : ");
-      fatal(rule_say, rma->rule, N);
-      xsays(" @ module ");
-      fatal(fsent_absolute_path_say, rma->mod->dir_node, N);
-      fatal(log_finish);
+      printf("0 matches : ");
+      rule_say(rma->rule, g_narrator_stdout);
+      printf(" @ module ");
+      fsent_absolute_path_say(rma->mod->dir_node, g_narrator_stdout);
+      printf("\n");
     }
   }
 
-finally:
   graph_invalidation_end(&invalidation);
-coda;
 }
 
 void rule_system_rma_hit(rule_run_context * restrict ctx, rule_module_edge * restrict rma)

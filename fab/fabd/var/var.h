@@ -19,7 +19,6 @@
 #define FABD_VAR_H
 
 #include "types.h"
-#include "xapi.h"
 
 #include "moria.h"
 
@@ -45,16 +44,16 @@ typedef struct var {
   struct value *val;
 } var;
 
-xapi var_setup(void);
-xapi var_cleanup(void);
+void var_setup(void);
+void var_cleanup(void);
 
 /*
  * out - (returns) key -> value set
  */
-xapi var_denormalize(struct value_parser * restrict parser, struct variant * restrict var, struct value * restrict valset, struct value ** restrict out)
+void var_denormalize(struct value_parser * restrict parser, struct variant * restrict var, struct value * restrict valset, struct value ** restrict out)
   __attribute__((nonnull(1, 3, 4)));
 
-xapi var_system_reconcile(void);
+void var_system_reconcile(void);
 
 /*
  * Write a vars stats to a buffer
@@ -62,15 +61,15 @@ xapi var_system_reconcile(void);
  * reset - true to reset the stats while reading them
  * zp    - (returns) number of bytes written to dst
  */
-xapi var_collate_stats(void *dst, size_t sz, var *vp, bool reset, size_t *zp)
+void var_collate_stats(void *dst, size_t sz, var *vp, bool reset, size_t *zp)
   __attribute__((nonnull));
 
 /* allocate a new var in the invalid state */
-xapi var_alloc(var ** restrict vp, struct moria_graph * restrict g)
+void var_alloc(var ** restrict vp, struct moria_graph * restrict g)
   __attribute__((nonnull));
 
 /* reload the var if invalid */
-xapi var_reconcile(var * restrict vp)
+void var_reconcile(var * restrict vp)
   __attribute__((nonnull));
 
 #endif

@@ -15,6 +15,8 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
+#include <stdio.h>
+
 #include "sysvar.h"
 #include "build_slot.h"
 #include "dependency.h"
@@ -25,10 +27,8 @@
 // public
 //
 
-xapi sysvar_builder_variant(exec_builder * restrict builder, const build_slot * restrict bs)
+void sysvar_builder_variant(exec_builder * restrict builder, const build_slot * restrict bs)
 {
-  enter;
-
   int x;
   const fsent *n;
   const moria_edge * e;
@@ -68,16 +68,12 @@ xapi sysvar_builder_variant(exec_builder * restrict builder, const build_slot * 
     args.render_val = BUILDER_PROPERTY;
     args.val.prop = FSENT_PROPERTY_VARIANT;
     args.mode = BUILDER_APPEND;
-    fatal(exec_builder_add, builder, &args);
+    exec_builder_add(builder, &args);
   }
-
-  finally : coda;
 }
 
-xapi sysvar_builder_targets(exec_builder * restrict builder, const build_slot * restrict bs)
+void sysvar_builder_targets(exec_builder * restrict builder, const build_slot * restrict bs)
 {
-  enter;
-
   int x;
   char space[64];
   exec_builder_args args = { };
@@ -108,28 +104,24 @@ xapi sysvar_builder_targets(exec_builder * restrict builder, const build_slot * 
   {
     args.name = "bm_target";
     args.name_len = strlen("bm_target");
-    fatal(exec_builder_add, builder, &args);
+    exec_builder_add(builder, &args);
   }
   else
   {
-    fatal(exec_builder_env_addf, builder, "bm_targets_len", "%d", e->Alen);
+    exec_builder_env_addf(builder, "bm_targets_len", "%d", e->Alen);
 
     args.name = space;
     for(x = 0; x < e->Alen; x++)
     {
       args.val.n = containerof(e->Alist[x].v, fsent, vertex);
       args.name_len = snprintf(space, sizeof(space), "bm_target%d", x);
-      fatal(exec_builder_add, builder, &args);
+      exec_builder_add(builder, &args);
     }
   }
-
-  finally : coda;
 }
 
-xapi sysvar_builder_sources(exec_builder * restrict builder, const build_slot * restrict bs)
+void sysvar_builder_sources(exec_builder * restrict builder, const build_slot * restrict bs)
 {
-  enter;
-
   int x;
   char space[64];
   exec_builder_args args = { };
@@ -157,28 +149,24 @@ xapi sysvar_builder_sources(exec_builder * restrict builder, const build_slot * 
   {
     args.name = "bm_source";
     args.name_len = strlen("bm_source");
-    fatal(exec_builder_add, builder, &args);
+    exec_builder_add(builder, &args);
   }
   else
   {
-    fatal(exec_builder_env_addf, builder, "bm_sources_len", "%d", e->Blen);
+    exec_builder_env_addf(builder, "bm_sources_len", "%d", e->Blen);
     args.name = space;
     for(x = 0; x < e->Blen; x++)
     {
       args.val.n = containerof(e->Blist[x].v, fsent, vertex);
       args.name_len = snprintf(space, sizeof(space), "bm_source%d", x);
 
-      fatal(exec_builder_add, builder, &args);
+      exec_builder_add(builder, &args);
     }
   }
-
-  finally : coda;
 }
 
-xapi exec_render_sysvar_sources(exec_render_context * restrict ctx, const build_slot * restrict bs)
+void exec_render_sysvar_sources(exec_render_context * restrict ctx, const build_slot * restrict bs)
 {
-  enter;
-
   int x;
   const moria_edge * e;
 
@@ -201,24 +189,20 @@ xapi exec_render_sysvar_sources(exec_render_context * restrict ctx, const build_
 
   if(ctx->builder_args.val.n)
   {
-    fatal(exec_builder_add, ctx->builder, &ctx->builder_args);
+    exec_builder_add(ctx->builder, &ctx->builder_args);
   }
   else
   {
     for(x = 0; x < e->Blen; x++)
     {
       ctx->builder_args.val.n = containerof(e->Blist[x].v, fsent, vertex);
-      fatal(exec_builder_add, ctx->builder, &ctx->builder_args);
+      exec_builder_add(ctx->builder, &ctx->builder_args);
     }
   }
-
-  finally : coda;
 }
 
-xapi exec_render_sysvar_targets(exec_render_context * restrict ctx, const build_slot * restrict bs)
+void exec_render_sysvar_targets(exec_render_context * restrict ctx, const build_slot * restrict bs)
 {
-  enter;
-
   int x;
   const moria_edge * e;
 
@@ -240,24 +224,20 @@ xapi exec_render_sysvar_targets(exec_render_context * restrict ctx, const build_
 
   if(ctx->builder_args.val.n)
   {
-    fatal(exec_builder_add, ctx->builder, &ctx->builder_args);
+    exec_builder_add(ctx->builder, &ctx->builder_args);
   }
   else
   {
     for(x = 0; x < e->Alen; x++)
     {
       ctx->builder_args.val.n = containerof(e->Alist[x].v, fsent, vertex);
-      fatal(exec_builder_add, ctx->builder, &ctx->builder_args);
+      exec_builder_add(ctx->builder, &ctx->builder_args);
     }
   }
-
-  finally : coda;
 }
 
-xapi exec_render_sysvar_variant(exec_render_context * restrict ctx, const build_slot * restrict bs)
+void exec_render_sysvar_variant(exec_render_context * restrict ctx, const build_slot * restrict bs)
 {
-  enter;
-
   int x;
   const fsent *n;
   const moria_edge * e;
@@ -293,8 +273,6 @@ xapi exec_render_sysvar_variant(exec_render_context * restrict ctx, const build_
     ctx->builder_args.val.prop = FSENT_PROPERTY_VARIANT;
     ctx->builder_args.mode = BUILDER_APPEND;
 
-    fatal(exec_builder_add, ctx->builder, &ctx->builder_args);
+    exec_builder_add(ctx->builder, &ctx->builder_args);
   }
-
-  finally : coda;
 }

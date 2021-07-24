@@ -27,10 +27,8 @@
 // internal
 //
 
-xapi pattern_section_say(const pattern_section * restrict n, bool first, narrator * restrict N)
+void pattern_section_say(const pattern_section * restrict n, bool first, narrator * restrict N)
 {
-  enter;
-
   bool qualnot = n->qualifiers_head && n->qualifiers_head->qualifier_type == PATTERN_QUALIFIER_TYPE_NOT;
   bool only = false;
 
@@ -97,9 +95,7 @@ xapi pattern_section_say(const pattern_section * restrict n, bool first, narrato
   }
 
   if(n->qualifiers_head)
-    fatal(pattern_segments_say, n->qualifiers_head, only, N);
-
-  finally : coda;
+    pattern_segments_say(n->qualifiers_head, only, N);
 }
 
 void pattern_section_free(pattern_section * restrict n)
@@ -167,7 +163,7 @@ int pattern_sections_cmp(const pattern_section * A, const pattern_section * B)
 // public
 //
 
-xapi pattern_section_mk(
+void pattern_section_mk(
     pattern_section ** restrict rv
   , const yyu_location * restrict loc
   , pattern_nodeset nodeset
@@ -176,11 +172,9 @@ xapi pattern_section_mk(
   , pattern_segments * restrict qualifiers_head
 )
 {
-  enter;
-
   pattern_section * p;
 
-  fatal(xmalloc, &p, sizeof(*p));
+  xmalloc(&p, sizeof(*p));
 	memcpy(&p->loc, loc, sizeof(p->loc));
 
   p->nodeset = nodeset;
@@ -191,6 +185,4 @@ xapi pattern_section_mk(
   chain_init(p, chn);
 
   *rv = p;
-
-  finally : coda;
 }

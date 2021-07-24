@@ -19,7 +19,6 @@
 #define FABD_HANDLER_H
 
 #include "types.h"
-#include "xapi.h"
 
 #include "rcu_list.h"
 #include "selector.h"
@@ -66,21 +65,21 @@ typedef struct handler_context {
   };
 } handler_context;
 
-xapi handler_setup(void);
-xapi handler_cleanup(void);
-xapi handler_system_reload(struct handler_context * restrict ctx)
+void handler_setup(void);
+void handler_cleanup(void);
+void handler_system_reload(struct handler_context * restrict ctx)
   __attribute__((nonnull));
 
 /* create/release handlers */
 
-xapi handler_alloc(handler_context ** restrict rv)
+void handler_alloc(handler_context ** restrict rv)
   __attribute__((nonnull));
 
 void handler_release(handler_context * restrict ctx);
 void handler_reset(handler_context * restrict ctx);
 
 /* complete a request */
-xapi handler_process_command(struct handler_context * restrict ctx, struct command* restrict cmd)
+void handler_process_command(struct handler_context * restrict ctx, struct command* restrict cmd)
   __attribute__((nonnull));
 
 #endif

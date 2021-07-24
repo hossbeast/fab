@@ -15,10 +15,8 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#include "xapi.h"
 #include "lorien/load.h"
 #include "yyutil/load.h"
-#include "logger/load.h"
 #include "value/load.h"
 
 #include "valyria/dictionary.h"
@@ -30,7 +28,6 @@
 #include "filesystem.internal.h"
 #include "config_parser.h"
 #include "config.internal.h"
-#include "logging.h"
 
 typedef struct {
   XUNITTEST;
@@ -39,38 +36,28 @@ typedef struct {
   char * filesystems;
 } filesystem_test;
 
-static xapi filesystem_test_unit_setup(xunit_unit * unit)
+static void filesystem_test_unit_setup(xunit_unit * unit)
 {
-  enter;
-
   // load libraries
-  fatal(lorien_load);
-  fatal(yyutil_load);
-  fatal(value_load);
+  lorien_load();
+  yyutil_load();
+  value_load();
 
-  fatal(logging_finalize);
-  fatal(filesystem_setup);
-
-  finally : coda;
+  logging_finalize();
+  filesystem_setup();
 }
 
-static xapi filesystem_test_unit_cleanup(xunit_unit * unit)
+static void filesystem_test_unit_cleanup(xunit_unit * unit)
 {
-  enter;
+  lorien_unload();
+  yyutil_unload();
+  value_unload();
 
-  fatal(lorien_unload);
-  fatal(yyutil_unload);
-  fatal(value_unload);
-
-  fatal(filesystem_cleanup);
-
-  finally : coda;
+  filesystem_cleanup();
 }
 
-static xapi filesystem_test_entry(xunit_test * _test)
+static void filesystem_test_entry(xunit_test * _test)
 {
-  enter;
-
   filesystem_test * test = (filesystem_test *)_test;
 
   config_parser * parser = 0;
@@ -78,24 +65,24 @@ static xapi filesystem_test_entry(xunit_test * _test)
   char space[1024];
 
   // arrange
-  fatal(config_parser_create, &parser);
-  fatal(config_parser_parse, parser, test->config, strlen(test->config) + 2, 0, 0, &cfg);
+  config_parser_create(&parser);
+  config_parser_parse(parser, test->config, strlen(test->config) + 2, 0, 0, &cfg);
 
   cfg->filesystems.changed = true;
 
   // act
-  fatal(filesystem_cleanup);
-  fatal(filesystem_setup);
+  filesystem_cleanup();
+  filesystem_setup();
 
-  fatal(filesystem_reconfigure, cfg, true);
-  fatal(filesystem_reconfigure, cfg, false);
+  filesystem_reconfigure(cfg, true);
+  filesystem_reconfigure(cfg, false);
 
   fstree_znload(space, sizeof(space));
   assert_eq_s(test->filesystems, space);
 
 finally:
-  fatal(config_parser_xfree, parser);
-  fatal(config_xfree, cfg);
+  config_parser_xfree(parser);
+  config_xfree(cfg);
 coda;
 }
 

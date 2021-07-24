@@ -19,7 +19,6 @@
 #define FABD_CONFIG_H
 
 #include "types.h"
-#include "xapi.h"
 #include "fab/stats.h"
 
 #include "moria.h"
@@ -49,23 +48,23 @@ typedef struct config {
 } config;
 
 /* initializes the config module, does not apply any config files */
-xapi config_setup(void);
+void config_setup(void);
 
 /* free resources */
-xapi config_cleanup(void);
+void config_cleanup(void);
 
-xapi config_system_bootstrap(void);
+void config_system_bootstrap(void);
 
-xapi config_system_reconcile(
+void config_system_reconcile(
     bool * restrict work
   , struct graph_invalidation_context * restrict invalidation
 )
   __attribute__((nonnull));
 
-xapi config_active_say(struct narrator * restrict N)
+void config_active_say(struct narrator * restrict N)
   __attribute__((nonnull));
 
-xapi config_alloc(config ** restrict vp, struct moria_graph * restrict g)
+void config_alloc(config ** restrict vp, struct moria_graph * restrict g)
   __attribute__((nonnull));
 
 /*
@@ -74,7 +73,7 @@ xapi config_alloc(config ** restrict vp, struct moria_graph * restrict g)
  * reset - true to reset the stats while reading them
  * zp    - (returns) number of bytes written to dst
  */
-xapi config_collate_stats(void *dst, size_t sz, config *cfg, bool reset, size_t *zp)
+void config_collate_stats(void *dst, size_t sz, config *cfg, bool reset, size_t *zp)
   __attribute__((nonnull));
 
 #endif

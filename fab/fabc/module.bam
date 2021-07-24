@@ -17,32 +17,28 @@
 
 use cc          # this module contains C sources
 use executable  # this module builds an executable
-use xapi/errtab
 use git
 
 # declare variants
-variant xapi.{debug,devel,final,trace}
+variant pic.{debug,devel,final,trace}
 
 rule fabc.? -> //module/targets
 
 # make common objects available for #include and linking
 import fab/include
 import fab/asan
-import lib{common,xapi,xlinux,logger,narrator,fab,value,yyutil,valyria,lorien,descriptor}
+import lib{common,xlinux,narrator,fab,value,yyutil,valyria,lorien,descriptor}
 
-variant xapi.devel : [
+variant pic.devel : [
   rule fabc.? <- asan/asan.$?.o
 ]
 
 # invoke the compiler to build the executable
 rule **/*.?.o [*] -> fabc.$? : executable/cc.bam
 
-# intra module dependencies - generated files
-rule */*.?.o <- errtab/MAIN.errtab.h
-
 # library dependencies
-variant xapi.pic.{debug,devel,final,trace} : [
-  rule //module/imports/*/lib*.?.so -> fabc.${?-pic}
+variant pic.{debug,devel,final,trace} : [
+  rule //module/imports/*/lib*.?.so -> fabc.$?
 ]
 
 var : {

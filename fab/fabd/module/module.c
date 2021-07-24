@@ -17,9 +17,9 @@
 
 #include <string.h>
 #include <inttypes.h>
+#include <errno.h>
 
 #include "types.h"
-#include "xapi.h"
 
 #include "moria/edge.h"
 #include "value.h"
@@ -29,20 +29,16 @@
 #include "valyria/llist.h"
 #include "valyria/map.h"
 #include "valyria/set.h"
-#include "xapi/calltree.h"
-#include "xapi/trace.h"
 #include "xlinux/xfcntl.h"
 #include "xlinux/xstdlib.h"
 #include "lorien/path_normalize.h"
 
 #include "module.internal.h"
-#include "MODULE.errtab.h"
 #include "exec.h"
 #include "exec_builder.h"
 #include "exec_render.h"
 #include "fsedge.h"
 #include "fsent.h"
-#include "logging.h"
 #include "module_parser.h"
 #include "params.h"
 #include "pattern.h"
@@ -62,6 +58,7 @@
 #include "common/snarf.h"
 #include "common/hash.h"
 #include "marshal.h"
+#include "zbuffer.h"
 
 llist module_list = LLIST_INITIALIZER(module_list);                 // active modules
 static llist module_freelist = LLIST_INITIALIZER(module_freelist);  // freelist
@@ -78,23 +75,19 @@ uint16_t module_system_reconcile_epoch;
 // static
 //
 
-xapi module_edge_alloc(module_edge ** restrict mep)
+void module_edge_alloc(module_edge ** restrict mep)
 {
-  enter;
-
   module_edge *me;
 
   if((me = llist_shift(&module_freelist, typeof(*me), edge.owner)) == 0)
   {
-    fatal(xmalloc, &me, sizeof(*me));
+    xmalloc(&me, sizeof(*me));
   }
 
   moria_edge_init(&me->edge, &g_graph);
 
   llist_append(&module_edge_list, me, edge.owner);
   *mep = me;
-
-  finally : coda;
 }
 
 static void module_edge_release(module_edge * restrict me)
@@ -105,34 +98,28 @@ static void module_edge_release(module_edge * restrict me)
   llist_append(&module_edge_freelist, me, edge.owner);
 }
 
-static xapi module_edge_disconnect(module_edge * restrict me)
+static void module_edge_disconnect(module_edge * restrict me)
 {
-  enter;
-
-  fatal(graph_disconnect, &me->edge);
+  graph_disconnect(&me->edge);
   module_edge_release(me);
-
-  finally : coda;
 }
 
-xapi module_alloc(module ** restrict modp)
+void module_alloc(module ** restrict modp)
 {
-  enter;
-
   module * mod;
 
   if((mod = llist_shift(&module_freelist, typeof(*mod), vertex.owner)) == 0)
   {
-    fatal(xmalloc, &mod, sizeof(*mod));
-    fatal(map_create, &mod->variant_var);
-    fatal(map_createx, &mod->variant_envs, 0, (void*)exec_free, 0);
-    fatal(value_parser_create, &mod->value_parser);
+    xmalloc(&mod, sizeof(*mod));
+    map_create(&mod->variant_var);
+    map_createx(&mod->variant_envs, 0, (void*)exec_free);
+    value_parser_create(&mod->value_parser);
   }
   else
   {
-    fatal(map_recycle, mod->variant_var);
-    fatal(map_recycle, mod->variant_envs);
-    fatal(value_parser_recycle, mod->value_parser);
+    map_recycle(mod->variant_var);
+    map_recycle(mod->variant_envs);
+    value_parser_recycle(mod->value_parser);
   }
 
   moria_vertex_init(&mod->vertex, &g_graph, VERTEX_MODULE);
@@ -144,19 +131,15 @@ xapi module_alloc(module ** restrict modp)
   llist_append(&module_list, mod, vertex.owner);
 
   *modp = mod;
-
-  finally : coda;
 }
 
-static xapi __attribute__((nonnull(1, 3)))
+static void __attribute__((nonnull(1, 3)))
 build_block_variant_envs(
     module * restrict mod
   , statement_block * restrict block
   , value * restrict vars
 )
 {
-  enter;
-
   variant *v;
   value *bag = 0;
   value *bagg;
@@ -165,15 +148,15 @@ build_block_variant_envs(
 
   if(block == 0 || block->variants->size == 0)
   {
-    fatal(var_denormalize, mod->value_parser, 0, vars, &bag);
+    var_denormalize(mod->value_parser, 0, vars, &bag);
     mod->novariant_var = bag;
     bag = 0;
 
-    fatal(exec_builder_xreset, &local_exec_builder);
-    fatal(exec_render_context_xreset, &local_exec_render);
+    exec_builder_xreset(&local_exec_builder);
+    exec_render_context_xreset(&local_exec_render);
     exec_render_context_configure(&local_exec_render, &local_exec_builder, mod, mod->novariant_var, 0);
-    fatal(exec_render_env_vars, &local_exec_render);
-    fatal(exec_builder_build, &local_exec_builder, 0);
+    exec_render_env_vars(&local_exec_render);
+    exec_builder_build(&local_exec_builder, 0);
     exec_builder_take(&local_exec_builder, &e);
     mod->novariant_envs = e;
     e = 0;
@@ -190,24 +173,22 @@ build_block_variant_envs(
       continue;
     }
 
-    fatal(var_denormalize, mod->value_parser, v, vars, &bag);
+    var_denormalize(mod->value_parser, v, vars, &bag);
     bagg = bag;
-    fatal(map_put, mod->variant_var, MM(v), bag, 0);
+    map_put(mod->variant_var, MM(v), bag, 0);
     bag = 0;
 
-    fatal(exec_builder_xreset, &local_exec_builder);
-    fatal(exec_render_context_xreset, &local_exec_render);
+    exec_builder_xreset(&local_exec_builder);
+    exec_render_context_xreset(&local_exec_render);
     exec_render_context_configure(&local_exec_render, &local_exec_builder, mod, bagg, 0);
-    fatal(exec_render_env_vars, &local_exec_render);
-    fatal(exec_builder_build, &local_exec_builder, 0);
+    exec_render_env_vars(&local_exec_render);
+    exec_builder_build(&local_exec_builder, 0);
     exec_builder_take(&local_exec_builder, &e);
-    fatal(map_put, mod->variant_envs, MM(v), e, 0);
+    map_put(mod->variant_envs, MM(v), e, 0);
     e = 0;
   }
 
-finally:
   exec_free(e);
-coda;
 }
 
 struct associate_rules_context
@@ -224,25 +205,19 @@ struct associate_rules_context
  * block    - block of rules
  * variants - variants to use with the association - must be part of the owning module
  */
-static xapi block_rules_connect(module * mod_self, module * mod_used, statement_block * restrict block, set * restrict variants)
+static void block_rules_connect(module * mod_self, module * mod_used, statement_block * restrict block, set * restrict variants)
 {
-  enter;
-
   rule *r;
   rule_module_edge *rma;
 
   llist_foreach(&block->rules, r, lln) {
-    fatal(rule_module_connect, &rma, mod_self, mod_used, r, variants);
+    rule_module_connect(&rma, mod_self, mod_used, r, variants);
     rule_system_rma_enqueue(rma);
   }
-
-  finally : coda;
 }
 
-static xapi rule_remove(rule * restrict r)
+static void rule_remove(rule * restrict r)
 {
-  enter;
-
   moria_vertex *v;
   moria_edge *e;
   llist lln, *T;
@@ -257,49 +232,37 @@ static xapi rule_remove(rule * restrict r)
 
   /* note - upward edges, connecting to modules, are disconnected in module_rule_disassociate */
   llist_foreach_safe(&lln, e, lln, T) {
-    fatal(graph_disconnect, e);
+    graph_disconnect(e);
   }
 
   rule_release(r);
-
-  finally : coda;
 }
 
 /* adds the module to a list */
-static xapi module_vertex_visitor(moria_vertex * v, void * ctx, moria_traversal_mode mode, int distance, int * result)
+static void module_vertex_visitor(moria_vertex * v, void * ctx, moria_traversal_mode mode, int distance, int * result)
 {
-  enter;
-
   llist * mods = ctx;
   module * mod;
 
   mod = containerof(v, typeof(*mod), vertex);
 
   llist_append(mods, mod, lln);
-
-  finally : coda;
 }
 
 /* adds the edge to a list */
-static xapi module_edge_visitor(moria_edge * e, void * ctx, moria_traversal_mode mode, int distance, int * result)
+static void module_edge_visitor(moria_edge * e, void * ctx, moria_traversal_mode mode, int distance, int * result)
 {
-  enter;
-
   llist * edges = ctx;
   llist_append(edges, e, lln);
-
-  finally : coda;
 }
 
-static xapi module_parse(
+static void module_parse(
     module * restrict mod
   , module_parser * restrict parser
   , graph_invalidation_context * restrict invalidation
 )
 {
-  enter;
-
-  xapi exit;
+  int exit;
   char * text = 0;
   size_t text_len;
   fsent * mod_file_n;
@@ -319,30 +282,22 @@ static xapi module_parse(
     STATS_INC(g_stats.model_parsed_try);
   }
 
-  fatal(snarfats, &text, &text_len, g_params.proj_dirfd, mod_file_relpath);
+  snarfats(&text, &text_len, g_params.proj_dirfd, mod_file_relpath);
 
   if(!text)
   {
     mod_file_n->not_parsed = 0;
   }
-  else if((exit = invoke(module_parser_parse, parser, mod, invalidation, text, text_len + 2, mod_file_relpath)))
+  else if((exit = module_parser_parse(parser, mod, invalidation, text, text_len + 2, mod_file_relpath)))
   {
     system_error = true;
     if(!events_would(FABIPC_EVENT_SYSTEM_STATE, &chan, &msg)) {
-      xapi_calltree_unwind();
-      goto XAPI_FINALLY;
+      goto end;
     }
 
     msg->code = EINVAL;
-
-#if DEBUG || DEVEL
-    msg->size = xapi_trace_full(msg->text, sizeof(msg->text), 0);
-#else
-    msg->size = xapi_trace_pithy(msg->text, sizeof(msg->text), 0);
-#endif
+    msg->size = znloadw(msg->text, sizeof(msg->text), parser->yyu.error_str, parser->yyu.error_len);
     events_publish(chan, msg);
-
-    xapi_calltree_unwind();
 
     // release blocks which were parsed but which will not be used
     if(parser->unscoped_block) {
@@ -378,10 +333,8 @@ static xapi module_parse(
     }
   }
 
-finally:
+end:
   wfree(text);
-  xapi_infos("path", mod_file_relpath);
-coda;
 }
 
 struct module_scope_context {
@@ -392,10 +345,8 @@ struct module_scope_context {
 /*
  * load the module for this node, if it is a directory node with a module.bam file
  */
-static xapi module_bootstrap_visitor(moria_vertex * mod_dir_v, void * ctx, moria_traversal_mode mode, int distance, int * result)
+static void module_bootstrap_visitor(moria_vertex * mod_dir_v, void * ctx, moria_traversal_mode mode, int distance, int * result)
 {
-  enter;
-
   graph_invalidation_context * invalidation = ctx;
   fsent * mod_dir_n;
   fsent * mod_file_n;
@@ -404,22 +355,19 @@ static xapi module_bootstrap_visitor(moria_vertex * mod_dir_v, void * ctx, moria
   // no module.bam file present
   if((mod_file_v = moria_vertex_downw(mod_dir_v, MMS(fsent_name_module))) == 0) {
     if(distance == 0) {
-      fail(MODULE_NOMODULE);
+      fprintf(stderr, "no module?\n");
+      RUNTIME_ABORT();
     }
-    goto XAPI_FINALLY;
+    return;
   }
 
   mod_file_n = containerof(mod_file_v, typeof(*mod_file_n), vertex);
   mod_dir_n = containerof(mod_dir_v, typeof(*mod_dir_n), vertex);
-  fatal(module_bootstrap, mod_dir_n, mod_file_n, invalidation);
-
-  finally : coda;
+  module_bootstrap(mod_dir_n, mod_file_n, invalidation);
 }
 
-static xapi rebuild_variant_envs(module * restrict mod)
+static void rebuild_variant_envs(module * restrict mod)
 {
-  enter;
-
   int x;
   statement_block *block;
   moria_vertex *v;
@@ -430,15 +378,15 @@ static xapi rebuild_variant_envs(module * restrict mod)
   size_t ancestryz = 0;
   size_t ancestryl = 0;
 
-  fatal(map_recycle, mod->variant_var);
-  fatal(map_recycle, mod->variant_envs);
+  map_recycle(mod->variant_var);
+  map_recycle(mod->variant_envs);
   exec_ifree(&mod->novariant_envs);
 
   /* assemble list of ancestor nodes */
   v = &mod->dir_node->vertex;
   while(v)
   {
-    fatal(assure, &ancestry, sizeof(*ancestry), ancestryl + 1, &ancestryz);
+    assure(&ancestry, sizeof(*ancestry), ancestryl + 1, &ancestryz);
     ancestry[ancestryl++] = v;
     v = moria_vertex_up(v);
   }
@@ -449,43 +397,40 @@ static xapi rebuild_variant_envs(module * restrict mod)
     if((var_v = moria_vertex_downw(ancestry[x], MMS(fsent_name_var))))
     {
       var_n = containerof(var_v, fsent, vertex);
-      fatal(fsent_var_bootstrap, var_n);
+      fsent_var_bootstrap(var_n);
       if(system_error) {
-        goto XAPI_FINALLY;
+        goto end;
       }
 
-      fatal(value_merge, mod->value_parser, &vars, var_n->self_var->val, 0);
+      value_merge(mod->value_parser, &vars, var_n->self_var->val, 0);
     }
   }
 
   /* apply the var from module.bam if any */
-  fatal(value_merge, mod->value_parser, &vars, mod->var_value, mod->var_merge_overwrite ? VALUE_MERGE_SET : 0);
+  value_merge(mod->value_parser, &vars, mod->var_value, mod->var_merge_overwrite ? VALUE_MERGE_SET : 0);
 
   if(vars)
   {
     /* no-variant vars */
-    fatal(build_block_variant_envs, mod, 0, vars);
+    build_block_variant_envs(mod, 0, vars);
 
     /* top-level block, if it's not also a no-variant block */
     if(mod->unscoped_block && mod->unscoped_block->variants->size)
     {
-      fatal(build_block_variant_envs, mod, mod->unscoped_block, vars);
+      build_block_variant_envs(mod, mod->unscoped_block, vars);
     }
 
     llist_foreach(&mod->scoped_blocks, block, lln) {
-      fatal(build_block_variant_envs, mod, block, vars);
+      build_block_variant_envs(mod, block, vars);
     }
   }
 
-finally:
+end:
   wfree(ancestry);
-coda;
 }
 
-static xapi edge_modules_visitor(moria_edge * e, void * ctx, moria_traversal_mode mode, int distance, int * result)
+static void edge_modules_visitor(moria_edge * e, void * ctx, moria_traversal_mode mode, int distance, int * result)
 {
-  enter;
-
   llist *lln = ctx;
   module_edge *nem;
 
@@ -494,15 +439,11 @@ static xapi edge_modules_visitor(moria_edge * e, void * ctx, moria_traversal_mod
   if(nem->module_system_reconcile_epoch != module_system_reconcile_epoch) {
     llist_append_node(lln, &e->lln);
   }
-
-  finally : coda;
 }
 
 /* modules only, models are not rebuilt */
-static xapi module_rebuild(module * restrict mod, graph_invalidation_context * restrict invalidation)
+static void module_rebuild(module * restrict mod, graph_invalidation_context * restrict invalidation)
 {
-  enter;
-
   statement_block *block;
   llist list;
   module * mod_used;
@@ -514,8 +455,8 @@ static xapi module_rebuild(module * restrict mod, graph_invalidation_context * r
 
   /* remove any un-refreshed USES, REQUIRES, and IMPORTS edges */
   llist_init_node(&list);
-  fatal(moria_traverse_vertex_edges
-    , &g_graph
+  moria_traverse_vertex_edges(
+      &g_graph
     , &mod->vertex
     , edge_modules_visitor
     , 0
@@ -535,14 +476,14 @@ static xapi module_rebuild(module * restrict mod, graph_invalidation_context * r
     /* also removed related edges, e.g. //module/imports/foo */
     if(nem->edges[0])
     {
-      fatal(fsedge_disconnect, nem->edges[0]);
+      fsedge_disconnect(nem->edges[0]);
     }
     if(nem->edges[1])
     {
-      fatal(fsedge_disconnect, nem->edges[1]);
+      fsedge_disconnect(nem->edges[1]);
     }
 
-    fatal(moria_edge_disconnect, &g_graph, e);
+    moria_edge_disconnect(&g_graph, e);
   }
 
   /* visit this module and its USES transitively
@@ -550,8 +491,8 @@ static xapi module_rebuild(module * restrict mod, graph_invalidation_context * r
    * is underway, because it modifies the edge on the module directory node
    */
   llist_init_node(&list);
-  fatal(moria_traverse_vertices
-    , &g_graph
+  moria_traverse_vertices(
+      &g_graph
     , &mod->vertex
     , module_vertex_visitor
     , 0
@@ -566,22 +507,18 @@ static xapi module_rebuild(module * restrict mod, graph_invalidation_context * r
   llist_foreach(&list, mod_used, lln) {
     /* for rules in the unscoped block, use variants from the unscoped block of the module being loaded */
     if(mod_used->unscoped_block) {
-      fatal(block_rules_connect, mod, mod_used, mod_used->unscoped_block, mod->unscoped_block->variants);
+      block_rules_connect(mod, mod_used, mod_used->unscoped_block, mod->unscoped_block->variants);
     }
 
     /* however for scoped blocks, use variants from the block in the module which defines the rules */
     llist_foreach(&mod_used->scoped_blocks, block, lln) {
-      fatal(block_rules_connect, mod, mod_used, block, block->variants);
+      block_rules_connect(mod, mod_used, block, block->variants);
     }
   }
-
-  finally : coda;
 }
 
-static xapi module_rules_dismantle(module * restrict mod, module_parser * restrict parser, graph_invalidation_context * restrict invalidation)
+static void module_rules_dismantle(module * restrict mod, module_parser * restrict parser, graph_invalidation_context * restrict invalidation)
 {
-  enter;
-
   llist list;
   moria_edge *e;
   rule_module_edge *rma;
@@ -597,8 +534,8 @@ static xapi module_rules_dismantle(module * restrict mod, module_parser * restri
      * and for rules defined by models used by the module
      */
     llist_init_node(&list);
-    fatal(moria_traverse_vertex_edges
-      , &g_graph
+    moria_traverse_vertex_edges(
+        &g_graph
       , &mod->vertex
       , module_edge_visitor
       , 0
@@ -614,7 +551,7 @@ static xapi module_rules_dismantle(module * restrict mod, module_parser * restri
 
     llist_foreach_safe(&list, e, lln, cursor) {
       rma = containerof(e, typeof(*rma), edge);
-      fatal(rule_module_disconnect, rma, invalidation);
+      rule_module_disconnect(rma, invalidation);
     }
   }
   else
@@ -623,7 +560,7 @@ static xapi module_rules_dismantle(module * restrict mod, module_parser * restri
 
     /* disconnected rmas owned by this model */
     llist_foreach_safe(&mod->rmas_owner, rma, lln_rmas_owner, cursor) {
-      fatal(rule_module_disconnect, rma, invalidation);
+      rule_module_disconnect(rma, invalidation);
     }
   }
 
@@ -636,22 +573,18 @@ static xapi module_rules_dismantle(module * restrict mod, module_parser * restri
 
   llist_foreach(&list, block, lln) {
     llist_foreach(&block->rules, r, lln) {
-      fatal(rule_remove, r);
+      rule_remove(r);
     }
 
     llist_init_node(&block->rules);
   }
 
   llist_splice_head(&parser->statement_block_freelist, &list);
-
-  finally : coda;
 }
 
 /* remove a module from the graph */
-static xapi module_excise(module * restrict mod, graph_invalidation_context * restrict invalidation)
+static void module_excise(module * restrict mod, graph_invalidation_context * restrict invalidation)
 {
-  enter;
-
   llist list;
   moria_edge *e;
   fsent *mod_dir_n;
@@ -661,8 +594,8 @@ static xapi module_excise(module * restrict mod, graph_invalidation_context * re
 
   /* teardown relations to other modules */
   llist_init_node(&list);
-  fatal(moria_traverse_vertex_edges
-    , &g_graph
+  moria_traverse_vertex_edges(
+      &g_graph
     , v
     , module_edge_visitor
     , 0
@@ -673,8 +606,8 @@ static xapi module_excise(module * restrict mod, graph_invalidation_context * re
     , MORIA_TRAVERSE_UP | MORIA_TRAVERSE_POST | MORIA_TRAVERSE_DEPTH | MORIA_TRAVERSE_NOFOLLOW
     , &list
   );
-  fatal(moria_traverse_vertex_edges
-    , &g_graph
+  moria_traverse_vertex_edges(
+      &g_graph
     , v
     , module_edge_visitor
     , 0
@@ -685,8 +618,8 @@ static xapi module_excise(module * restrict mod, graph_invalidation_context * re
     , MORIA_TRAVERSE_UP | MORIA_TRAVERSE_POST | MORIA_TRAVERSE_DEPTH | MORIA_TRAVERSE_NOFOLLOW
     , &list
   );
-  fatal(moria_traverse_vertex_edges
-    , &g_graph
+  moria_traverse_vertex_edges(
+      &g_graph
     , v
     , module_edge_visitor
     , 0
@@ -699,13 +632,13 @@ static xapi module_excise(module * restrict mod, graph_invalidation_context * re
   );
   llist_foreach(&list, e, lln) {
     mod_dir_n = containerof(e->A, fsent, vertex);
-    fatal(fsent_invalidate, mod_dir_n, invalidation);
-    fatal(module_edge_disconnect, containerof(e, module_edge, edge));
+    fsent_invalidate(mod_dir_n, invalidation);
+    module_edge_disconnect(containerof(e, module_edge, edge));
   }
 
   llist_init_node(&list);
-  fatal(moria_traverse_vertex_edges
-    , &g_graph
+  moria_traverse_vertex_edges(
+      &g_graph
     , v
     , module_edge_visitor
     , 0
@@ -716,8 +649,8 @@ static xapi module_excise(module * restrict mod, graph_invalidation_context * re
     , MORIA_TRAVERSE_DOWN | MORIA_TRAVERSE_POST | MORIA_TRAVERSE_DEPTH | MORIA_TRAVERSE_NOFOLLOW
     , &list
   );
-  fatal(moria_traverse_vertex_edges
-    , &g_graph
+  moria_traverse_vertex_edges(
+      &g_graph
     , v
     , module_edge_visitor
     , 0
@@ -728,8 +661,8 @@ static xapi module_excise(module * restrict mod, graph_invalidation_context * re
     , MORIA_TRAVERSE_DOWN | MORIA_TRAVERSE_POST | MORIA_TRAVERSE_DEPTH | MORIA_TRAVERSE_NOFOLLOW
     , &list
   );
-  fatal(moria_traverse_vertex_edges
-    , &g_graph
+  moria_traverse_vertex_edges(
+      &g_graph
     , v
     , module_edge_visitor
     , 0
@@ -743,14 +676,14 @@ static xapi module_excise(module * restrict mod, graph_invalidation_context * re
 
   llist_foreach(&list, e, lln) {
     mod_dir_n = containerof(e->B, fsent, vertex);
-    fatal(fsent_invalidate, mod_dir_n, invalidation);
-    fatal(module_edge_disconnect, containerof(e, module_edge, edge));
+    fsent_invalidate(mod_dir_n, invalidation);
+    module_edge_disconnect(containerof(e, module_edge, edge));
   }
 
   /* edge between the module vertex and the module directory fsent */
   llist_init_node(&list);
-  fatal(moria_traverse_vertex_edges
-    , &g_graph
+  moria_traverse_vertex_edges(
+      &g_graph
     , v
     , module_edge_visitor
     , 0
@@ -762,38 +695,34 @@ static xapi module_excise(module * restrict mod, graph_invalidation_context * re
   );
 
   llist_foreach(&list, e, lln) {
-    fatal(graph_disconnect, e);
+    graph_disconnect(e);
     graph_edge_release(e);
   }
 
   /* teardown the modules shadow tree */
   e = moria_edge_between(&g_shadow_modules->vertex, &mod->shadow->vertex);
-  fatal(fsedge_disintegrate, containerof(e, fsedge, edge), invalidation);
+  fsedge_disintegrate(containerof(e, fsedge, edge), invalidation);
 
   /* arrange for directory nodes to be re-parented */
   fsent_kind_set(mod->dir_node, VERTEX_DIR);
   fsent_module_epoch++;
-
-  finally : coda;
 }
 
-static xapi module_reparse(
+static void module_reparse(
     module * restrict mod
   , module_parser * restrict parser
   , graph_invalidation_context * restrict invalidation
 )
 {
-  enter;
-
   /* re-parse the module.bam file */
-  fatal(module_parse, mod, parser, invalidation);
+  module_parse(mod, parser, invalidation);
 
   /* parse not successful */
   if(system_error) {
-    goto XAPI_FINALIZE;
+    return;
   }
 
-  fatal(module_rules_dismantle, mod, parser, invalidation);
+  module_rules_dismantle(mod, parser, invalidation);
 
   /* replace the guts with the results from parsing */
   mod->unscoped_block = parser->unscoped_block;
@@ -803,21 +732,17 @@ static xapi module_reparse(
   mod->var_merge_overwrite = parser->var_merge_overwrite;
 
   // rebuild variant envs from var.bams
-  fatal(rebuild_variant_envs, mod);
-
-  finally : coda;
+  rebuild_variant_envs(mod);
 }
 
-xapi module_initialize(fsent * restrict mod_dir_n, fsent * restrict mod_file_n, graph_invalidation_context * restrict invalidation)
+void module_initialize(fsent * restrict mod_dir_n, fsent * restrict mod_file_n, graph_invalidation_context * restrict invalidation)
 {
-  enter;
-
   module *mod = 0;
   moria_connect_context connect_ctx;
   int __attribute__((unused)) r;
   moria_edge *e;
 
-  fatal(module_alloc, &mod);
+  module_alloc(&mod);
 
   /* module paths needed during loading */
   mod->dir_node_abspath_len = fsent_absolute_path_znload(mod->dir_node_abspath, sizeof(mod->dir_node_abspath), mod_dir_n);
@@ -846,24 +771,21 @@ xapi module_initialize(fsent * restrict mod_dir_n, fsent * restrict mod_file_n, 
   /* connect the module vertex and the module directory fsent */
   r = moria_preconnect(&connect_ctx, &g_graph, &mod_dir_n->vertex, &mod->vertex, EDGE_MOD_DIR, 0);
   RUNTIME_ASSERT(r == MORIA_NOEDGE);
-  fatal(graph_edge_alloc, &e);
-  fatal(graph_connect, &connect_ctx, &mod_dir_n->vertex, &mod->vertex, e, EDGE_MOD_DIR);
-
-  finally : coda;
+  graph_edge_alloc(&e);
+  graph_connect(&connect_ctx, &mod_dir_n->vertex, &mod->vertex, e, EDGE_MOD_DIR);
 }
 
-xapi module_bootstrap(fsent * restrict mod_dir_n, fsent * restrict mod_file_n, graph_invalidation_context * restrict invalidation)
+void module_bootstrap(fsent * restrict mod_dir_n, fsent * restrict mod_file_n, graph_invalidation_context * restrict invalidation)
 {
-  enter;
-
   uint64_t u64;
   char id[32];
   module *mod;
 
-  if(!mod_dir_n->not_loaded)
-    goto XAPI_FINALLY;
+  if(!mod_dir_n->not_loaded) {
+    return;
+  }
 
-  fatal(module_initialize, mod_dir_n, mod_file_n, invalidation);
+  module_initialize(mod_dir_n, mod_file_n, invalidation);
   mod_dir_n->not_loaded = 0;
 
   // module-dir realpath hash
@@ -877,73 +799,57 @@ xapi module_bootstrap(fsent * restrict mod_dir_n, fsent * restrict mod_file_n, g
   mod->vertex.label_len = 16;
 
   // rdonly file descriptor to the module directory for formula execution
-  fatal(xopens, &mod->dirnode_fd, O_RDONLY, mod->dir_node_abspath);
+  mod->dirnode_fd = xopens(O_RDONLY, mod->dir_node_abspath);
 
   // build out the modules shadow node
-  fatal(shadow_module_init, mod, invalidation);
+  shadow_module_init(mod, invalidation);
 
   /* arrange to rebuild */
   fsent_invalid_set(mod->dir_node);
 
   /* arrange for directory nodes to be re-parented */
   fsent_module_epoch++;
-
-  finally : coda;
 }
 
-xapi statement_block_xinit(statement_block * restrict block)
+void statement_block_xinit(statement_block * restrict block)
 {
-  enter;
-
-  fatal(set_create, &block->variants);
+  set_create(&block->variants);
   llist_init_node(&block->rules);
-
-  finally : coda;
 }
 
-xapi statement_block_xdestroy(statement_block * restrict block)
+void statement_block_xdestroy(statement_block * restrict block)
 {
-  enter;
-
-  fatal(set_xfree, block->variants);
-
-  finally : coda;
+  set_xfree(block->variants);
 }
 
 //
 // internal
 //
 
-xapi module_block_variants(statement_block * restrict block, pattern * restrict lookup)
+void module_block_variants(statement_block * restrict block, pattern * restrict lookup)
 {
-  enter;
-
   pattern_render_result * rendered = 0;
   pattern_render_fragment * fragment;
   variant * variant;
   int x;
 
-  fatal(pattern_render, lookup, &rendered);
+  pattern_render(lookup, &rendered);
 
   fragment = rendered->fragments;
   for(x = 0; x < rendered->size; x++)
   {
-    fatal(variant_get, fragment->text, fragment->len, &variant);
-    fatal(set_put, block->variants, variant, 0);
+    variant_get(fragment->text, fragment->len, &variant);
+    set_put(block->variants, variant, 0);
 
     fragment = pattern_render_fragment_next(fragment);
   }
 
-finally:
   wfree(rendered);
   pattern_free(lookup);
-coda;
 }
 
-static xapi module_dispose(module * restrict mod, module_parser * restrict parser)
+static void module_dispose(module * restrict mod, module_parser * restrict parser)
 {
-  enter;
-
   /* return recovered statement blocks to the freelist */
   if(mod->unscoped_block) {
     llist_append(&parser->statement_block_freelist, mod->unscoped_block, lln);
@@ -952,20 +858,16 @@ static xapi module_dispose(module * restrict mod, module_parser * restrict parse
   llist_splice_head(&parser->statement_block_freelist, &mod->scoped_blocks);
 
   exec_free(mod->novariant_envs);
-  fatal(map_xfree, mod->variant_var);
-  fatal(map_xfree, mod->variant_envs);
-  fatal(value_parser_xfree, mod->value_parser);
+  map_xfree(mod->variant_var);
+  map_xfree(mod->variant_envs);
+  value_parser_xfree(mod->value_parser);
 
   llist_delete_node(&mod->vertex.owner);
   llist_append(&module_freelist, mod, vertex.owner);
-
-  finally : coda;
 }
 
-xapi module_xrelease(module * restrict mod, module_parser * restrict parser)
+void module_xrelease(module * restrict mod, module_parser * restrict parser)
 {
-  enter;
-
   moria_vertex __attribute__((unused)) *v;
 
   /* should be fully excised from the graph previously */
@@ -974,19 +876,15 @@ xapi module_xrelease(module * restrict mod, module_parser * restrict parser)
   RUNTIME_ASSERT(rbtree_empty(&v->up));
   RUNTIME_ASSERT(rbtree_empty(&v->down));
 
-  fatal(module_dispose, mod, parser);
-
-  finally : coda;
+  module_dispose(mod, parser);
 }
 
 //
 // public
 //
 
-xapi module_system_bootstrap()
+void module_system_bootstrap()
 {
-  enter;
-
   fsent * mod_file_n;
   graph_invalidation_context invalidation = { };
   moria_connect_context ctx;
@@ -994,40 +892,36 @@ xapi module_system_bootstrap()
   int __attribute__((unused)) r;
 
   /* bootstrap just the project module */
-  fatal(graph_invalidation_begin, &invalidation);
-  fatal(fsent_create, &mod_file_n, VERTEX_MODULE_FILE, VERTEX_OK, MMS(fsent_name_module));
+  graph_invalidation_begin(&invalidation);
+  fsent_create(&mod_file_n, VERTEX_MODULE_FILE, VERTEX_OK, MMS(fsent_name_module));
   fsent_protect_set(mod_file_n);
 
   r = moria_preconnect(&ctx, &g_graph, &g_project_root->vertex, &mod_file_n->vertex, EDGE_FSTREE, 0);
   RUNTIME_ASSERT(r == MORIA_NOEDGE);
-  fatal(fsedge_alloc, &fse, &g_graph);
-  fatal(graph_connect, &ctx, &g_project_root->vertex, &mod_file_n->vertex, &fse->edge, EDGE_FSTREE);
+  fsedge_alloc(&fse, &g_graph);
+  graph_connect(&ctx, &g_project_root->vertex, &mod_file_n->vertex, &fse->edge, EDGE_FSTREE);
 
-  fatal(module_bootstrap, g_project_root, mod_file_n, &invalidation);
+  module_bootstrap(g_project_root, mod_file_n, &invalidation);
 
   g_project_self = mod_file_n;
 
-finally:
   graph_invalidation_end(&invalidation);
-coda;
 }
 
-xapi module_system_reconcile()
+void module_system_reconcile()
 {
-  enter;
-
   module *mod;
   module_parser * parser = 0;
   llist *T;
   graph_invalidation_context invalidation = { };
   llist rebuild = LLIST_INITIALIZER(rebuild);
 
-  fatal(graph_invalidation_begin, &invalidation);
+  graph_invalidation_begin(&invalidation);
   module_system_reconcile_epoch++;
 
   /* bootstrap modules under the project module */
-  fatal(moria_traverse_vertices
-    , &g_graph
+  moria_traverse_vertices(
+      &g_graph
     , &g_project_root->vertex
     , module_bootstrap_visitor
     , 0
@@ -1042,7 +936,7 @@ xapi module_system_reconcile()
   );
 
   if((parser = llist_shift(&parsers, typeof(*parser), lln)) == 0) {
-    fatal(module_parser_create, &parser);
+    module_parser_create(&parser);
   }
 
   /* destroy modules whose module.bam file has been deleted */
@@ -1051,13 +945,13 @@ xapi module_system_reconcile()
       continue;
     }
 
-    fatal(module_rules_dismantle, mod, parser, &invalidation);
+    module_rules_dismantle(mod, parser, &invalidation);
 
     /* excise from the graph */
-    fatal(module_excise, mod, &invalidation);
+    module_excise(mod, &invalidation);
 
     /* delete, move to freelist */
-    fatal(module_xrelease, mod, parser);
+    module_xrelease(mod, parser);
   }
 
   /* reload modules which have been invalidated */
@@ -1067,16 +961,16 @@ xapi module_system_reconcile()
       continue;
     }
 
-    fatal(module_reparse, mod, parser, &invalidation);
+    module_reparse(mod, parser, &invalidation);
     if(system_error) {
-      goto XAPI_FINALIZE;
+      return;
     }
 
-    fatal(fsent_ok, mod->self_node);
+    fsent_ok(mod->self_node);
 
     /* models are parsed only */
     if(fsent_fsenttype_get(mod->self_node) == VERTEX_FSENTTYPE_MODEL) {
-      fatal(fsent_ok, mod->dir_node);
+      fsent_ok(mod->dir_node);
       continue;
     }
 
@@ -1085,51 +979,43 @@ xapi module_system_reconcile()
 
   /* before rebuilding a given module, all of its imports/uses/requires must have been parsed */
   while((mod = llist_shift(&rebuild, typeof(*mod), lln_reconcile))) {
-    fatal(module_rebuild, mod, &invalidation);
-    fatal(fsent_ok, mod->dir_node);
+    module_rebuild(mod, &invalidation);
+    fsent_ok(mod->dir_node);
   }
 
-finally:
   if(parser) {
     llist_append(&parsers, parser, lln);
   }
   graph_invalidation_end(&invalidation);
-coda;
 }
 
-xapi module_setup()
+void module_setup()
 {
-  enter;
-
   module_parser *parser;
 
-  fatal(exec_builder_xinit, &local_exec_builder);
-  fatal(exec_render_context_xinit, &local_exec_render);
+  exec_builder_xinit(&local_exec_builder);
+  exec_render_context_xinit(&local_exec_render);
 
-  fatal(module_parser_create, &parser);
+  module_parser_create(&parser);
   llist_append(&parsers, parser, lln);
 
-  //fatal(module_system_bootstrap);
-
-  finally : coda;
+  //module_system_bootstrap();
 }
 
-xapi module_cleanup()
+void module_cleanup()
 {
-  enter;
-
   module_parser *parser;
   module *mod;
   module_edge *me;
   llist *T;
 
-  fatal(exec_builder_xdestroy, &local_exec_builder);
-  fatal(exec_render_context_xdestroy, &local_exec_render);
+  exec_builder_xdestroy(&local_exec_builder);
+  exec_render_context_xdestroy(&local_exec_render);
 
   parser = llist_first(&parsers, typeof(*parser), lln);
 
   llist_foreach_safe(&module_list, mod, vertex.owner, T) {
-    fatal(module_dispose, mod, parser);
+    module_dispose(mod, parser);
   }
 
   llist_foreach_safe(&module_freelist, mod, vertex.owner, T) {
@@ -1145,16 +1031,12 @@ xapi module_cleanup()
   }
 
   llist_foreach_safe(&parsers, parser, lln, T) {
-    fatal(module_parser_xfree, parser);
+    module_parser_xfree(parser);
   }
-
-  finally : coda;
 }
 
-xapi module_collate_stats(void *dst, size_t sz, module *mod, bool reset, size_t *zp)
+void module_collate_stats(void *dst, size_t sz, module *mod, bool reset, size_t *zp)
 {
-  enter;
-
   size_t z;
   fab_module_stats *stats;
   fab_module_stats lstats;
@@ -1178,7 +1060,7 @@ xapi module_collate_stats(void *dst, size_t sz, module *mod, bool reset, size_t 
 
   /* uses */
   count = 0;
-  fatal(moria_traverse_vertex_edges, &g_graph, &mod->vertex, moria_edge_count, 0
+  moria_traverse_vertex_edges(&g_graph, &mod->vertex, moria_edge_count, 0
     , (moria_traversal_criteria[]) {{
           edge_travel : EDGE_USES
         , edge_visit : EDGE_USES
@@ -1191,7 +1073,7 @@ xapi module_collate_stats(void *dst, size_t sz, module *mod, bool reset, size_t 
   z += marshal_u32(dst + z, sz - z, count);
 
   count = 0;
-  fatal(moria_traverse_vertex_edges, &g_graph, &mod->vertex, moria_edge_count, 0
+  moria_traverse_vertex_edges(&g_graph, &mod->vertex, moria_edge_count, 0
     , (moria_traversal_criteria[]) {{
           edge_travel : EDGE_USES
         , edge_visit : EDGE_USES
@@ -1205,7 +1087,7 @@ xapi module_collate_stats(void *dst, size_t sz, module *mod, bool reset, size_t 
 
   /* imports */
   count = 0;
-  fatal(moria_traverse_vertex_edges, &g_graph, &mod->vertex, moria_edge_count, 0
+  moria_traverse_vertex_edges(&g_graph, &mod->vertex, moria_edge_count, 0
     , (moria_traversal_criteria[]) {{
           edge_travel : EDGE_IMPORTS
         , edge_visit : EDGE_IMPORTS
@@ -1218,7 +1100,7 @@ xapi module_collate_stats(void *dst, size_t sz, module *mod, bool reset, size_t 
   z += marshal_u32(dst + z, sz - z, count);
 
   count = 0;
-  fatal(moria_traverse_vertex_edges, &g_graph, &mod->vertex, moria_edge_count, 0
+  moria_traverse_vertex_edges(&g_graph, &mod->vertex, moria_edge_count, 0
     , (moria_traversal_criteria[]) {{
           edge_travel : EDGE_IMPORTS
         , edge_visit : EDGE_IMPORTS
@@ -1232,7 +1114,7 @@ xapi module_collate_stats(void *dst, size_t sz, module *mod, bool reset, size_t 
 
   /* requires */
   count = 0;
-  fatal(moria_traverse_vertex_edges, &g_graph, &mod->vertex, moria_edge_count, 0
+  moria_traverse_vertex_edges(&g_graph, &mod->vertex, moria_edge_count, 0
     , (moria_traversal_criteria[]) {{
           edge_travel : EDGE_REQUIRES
         , edge_visit : EDGE_REQUIRES
@@ -1245,7 +1127,7 @@ xapi module_collate_stats(void *dst, size_t sz, module *mod, bool reset, size_t 
   z += marshal_u32(dst + z, sz - z, count);
 
   count = 0;
-  fatal(moria_traverse_vertex_edges, &g_graph, &mod->vertex, moria_edge_count, 0
+  moria_traverse_vertex_edges(&g_graph, &mod->vertex, moria_edge_count, 0
     , (moria_traversal_criteria[]) {{
           edge_travel : EDGE_REQUIRES
         , edge_visit : EDGE_REQUIRES
@@ -1259,7 +1141,7 @@ xapi module_collate_stats(void *dst, size_t sz, module *mod, bool reset, size_t 
 
   /* module tree */
   count = 0;
-  fatal(moria_traverse_vertices, &g_graph, &mod->dir_node->vertex, moria_vertex_count_once, 0
+  moria_traverse_vertices(&g_graph, &mod->dir_node->vertex, moria_vertex_count_once, 0
     , (moria_traversal_criteria[]) {{
           edge_travel : EDGE_FSTREE
         , vertex_visit : VERTEX_MODULE_DIR
@@ -1272,7 +1154,7 @@ xapi module_collate_stats(void *dst, size_t sz, module *mod, bool reset, size_t 
   z += marshal_u32(dst + z, sz - z, count);
 
   count = 0;
-  fatal(moria_traverse_vertices, &g_graph, &mod->dir_node->vertex, moria_vertex_count_once, 0
+  moria_traverse_vertices(&g_graph, &mod->dir_node->vertex, moria_vertex_count_once, 0
     , (moria_traversal_criteria[]) {{
           edge_travel : EDGE_FSTREE
         , vertex_visit : VERTEX_MODULE_DIR
@@ -1299,7 +1181,7 @@ xapi module_collate_stats(void *dst, size_t sz, module *mod, bool reset, size_t 
 
   /* rules-effective */
   count = 0;
-  fatal(moria_traverse_vertex_edges, &g_graph, &mod->vertex, moria_edge_count, 0
+  moria_traverse_vertex_edges(&g_graph, &mod->vertex, moria_edge_count, 0
     , (moria_traversal_criteria[]) {{
           edge_travel : EDGE_MOD_RULE
         , edge_visit : EDGE_MOD_RULE
@@ -1332,14 +1214,10 @@ xapi module_collate_stats(void *dst, size_t sz, module *mod, bool reset, size_t 
   }
 
   *zp += z;
-
-  finally : coda;
 }
 
-xapi module_file_collate_stats(void *dst, size_t sz, fsent *mod_file, bool reset, size_t *zp)
+void module_file_collate_stats(void *dst, size_t sz, fsent *mod_file, bool reset, size_t *zp)
 {
-  enter;
-
   size_t z;
   fab_module_file_stats *stats;
   fab_module_file_stats lstats;
@@ -1376,14 +1254,10 @@ xapi module_file_collate_stats(void *dst, size_t sz, fsent *mod_file, bool reset
   }
 
   *zp += z;
-
-  finally : coda;
 }
 
-xapi module_resolve_require(module * restrict A, module * restrict B, graph_invalidation_context * restrict invalidation)
+void module_resolve_require(module * restrict A, module * restrict B, graph_invalidation_context * restrict invalidation)
 {
-  enter;
-
   fsedge *ne;
   moria_edge *e;
   module_edge *nem;
@@ -1392,13 +1266,13 @@ xapi module_resolve_require(module * restrict A, module * restrict B, graph_inva
   char path[512];
 
   // attach to //module/requires/
-  fatal(shadow_graft_requires, A, B->dir_node, B->dir_node->name.name, B->dir_node->name.namel, &ne, invalidation);
+  shadow_graft_requires(A, B->dir_node, B->dir_node->name.name, B->dir_node->name.namel, &ne, invalidation);
 
   r = moria_preconnect(&ctx, &g_graph, &A->vertex, &B->vertex, EDGE_REQUIRES, &e);
   if(r == MORIA_NOEDGE)
   {
-    fatal(module_edge_alloc, &nem);
-    fatal(graph_connect, &ctx, &A->vertex, &B->vertex, &nem->edge, EDGE_REQUIRES);
+    module_edge_alloc(&nem);
+    graph_connect(&ctx, &A->vertex, &B->vertex, &nem->edge, EDGE_REQUIRES);
     nem->edges[0] = ne;
   }
   else
@@ -1410,19 +1284,15 @@ xapi module_resolve_require(module * restrict A, module * restrict B, graph_inva
   /* refresh */
   nem->module_system_reconcile_epoch = module_system_reconcile_epoch;
 
-  if(log_would(L_MODULE))
+  if(1)
   {
     fsent_path_znload(path, sizeof(path), B->dir_node);
-    logf(L_MODULE, " %s : requires %s -> %s", A->dir_node->name.name, B->dir_node->name.name, path);
+    printf(" %s : requires %s -> %s\n", A->dir_node->name.name, B->dir_node->name.name, path);
   }
-
-  finally : coda;
 }
 
-xapi module_resolve_use(module * restrict A, module * restrict B, const char * restrict refname, uint16_t refname_len, bool scoped, graph_invalidation_context * restrict invalidation)
+void module_resolve_use(module * restrict A, module * restrict B, const char * restrict refname, uint16_t refname_len, bool scoped, graph_invalidation_context * restrict invalidation)
 {
-  enter;
-
   fsedge *ue;
   fsedge *se;
   module_edge *nem;
@@ -1436,14 +1306,14 @@ xapi module_resolve_use(module * restrict A, module * restrict B, const char * r
   if(scoped)
   {
     // attach to //module/uses/
-    fatal(shadow_graft_uses, A, B->dir_node, refname, refname_len, &ue, invalidation);
+    shadow_graft_uses(A, B->dir_node, refname, refname_len, &ue, invalidation);
   }
 
   r = moria_preconnect(&ctx, &g_graph, &A->vertex, &B->vertex, EDGE_USES, &e);
   if(r == MORIA_NOEDGE)
   {
-    fatal(module_edge_alloc, &nem);
-    fatal(graph_connect, &ctx, &A->vertex, &B->vertex, &nem->edge, EDGE_USES);
+    module_edge_alloc(&nem);
+    graph_connect(&ctx, &A->vertex, &B->vertex, &nem->edge, EDGE_USES);
     nem->edges[0] = se;
     nem->edges[0] = ue;
   }
@@ -1456,19 +1326,15 @@ xapi module_resolve_use(module * restrict A, module * restrict B, const char * r
   /* refresh */
   nem->module_system_reconcile_epoch = module_system_reconcile_epoch;
 
-  if(log_would(L_MODULE))
+  if(1)
   {
     fsent_path_znload(path, sizeof(path), B->dir_node);
-    logf(L_MODULE, " %s : uses %.*s -> %s", A->dir_node->name.name, (int)refname_len, refname, path);
+    printf(" %s : uses %.*s -> %s\n", A->dir_node->name.name, (int)refname_len, refname, path);
   }
-
-  finally : coda;
 }
 
-xapi module_resolve_import(module * restrict A, fsent * restrict B, const char * restrict refname, uint16_t refname_len, bool scoped, graph_invalidation_context * restrict invalidation)
+void module_resolve_import(module * restrict A, fsent * restrict B, const char * restrict refname, uint16_t refname_len, bool scoped, graph_invalidation_context * restrict invalidation)
 {
-  enter;
-
   char path[512];
   fsedge *ie;
   fsedge *se;
@@ -1482,14 +1348,14 @@ xapi module_resolve_import(module * restrict A, fsent * restrict B, const char *
   if(scoped)
   {
     // attach to //module/imports/
-    fatal(shadow_graft_imports, A, B, refname, refname_len, &ie, invalidation);
+    shadow_graft_imports(A, B, refname, refname_len, &ie, invalidation);
   }
 
   r = moria_preconnect(&ctx, &g_graph, &A->vertex, &B->vertex, EDGE_IMPORTS, &e);
   if(r == MORIA_NOEDGE)
   {
-    fatal(module_edge_alloc, &nem);
-    fatal(graph_connect, &ctx, &A->vertex, &B->vertex, &nem->edge, EDGE_IMPORTS);
+    module_edge_alloc(&nem);
+    graph_connect(&ctx, &A->vertex, &B->vertex, &nem->edge, EDGE_IMPORTS);
     nem->edges[0] = se;
     nem->edges[1] = ie;
   }
@@ -1502,35 +1368,31 @@ xapi module_resolve_import(module * restrict A, fsent * restrict B, const char *
   /* refresh */
   nem->module_system_reconcile_epoch = module_system_reconcile_epoch;
 
-  if(log_would(L_MODULE))
+  if(1)
   {
     fsent_path_znload(path, sizeof(path), B);
-    logf(L_MODULE, " %s : imports %.*s -> %s", A->dir_node->name.name, (int)refname_len, refname, path);
+    printf(" %s : imports %.*s -> %s\n", A->dir_node->name.name, (int)refname_len, refname, path);
   }
-
-  finally : coda;
 }
 
-xapi module_vars_say(module * restrict mod, struct narrator * restrict N)
+void module_vars_say(module * restrict mod, struct narrator * restrict N)
 {
-  enter;
-
   int x;
   const variant * const *var;
   value *val;
   value_writer writer = { };
 
   value_writer_init(&writer);
-  fatal(value_writer_open, &writer, N);
+  value_writer_open(&writer, N);
 
-  fatal(value_writer_push_set, &writer);
+  value_writer_push_set(&writer);
 
   if(mod->novariant_var)
   {
-    fatal(value_writer_push_mapping, &writer);
-    fatal(value_writer_string, &writer, "none");
-    fatal(value_writer_value, &writer, mod->novariant_var);
-    fatal(value_writer_pop_mapping, &writer);
+    value_writer_push_mapping(&writer);
+    value_writer_string(&writer, "none");
+    value_writer_value(&writer, mod->novariant_var);
+    value_writer_pop_mapping(&writer);
   }
 
   for(x = 0; x < mod->variant_var->table_size; x++)
@@ -1541,16 +1403,13 @@ xapi module_vars_say(module * restrict mod, struct narrator * restrict N)
 
     val = map_table_value(mod->variant_var, x);
 
-    fatal(value_writer_push_mapping, &writer);
-    fatal(value_writer_bytes, &writer, (*var)->norm, (*var)->norm_len);
-    fatal(value_writer_value, &writer, val);
-    fatal(value_writer_pop_mapping, &writer);
+    value_writer_push_mapping(&writer);
+    value_writer_bytes(&writer, (*var)->norm, (*var)->norm_len);
+    value_writer_value(&writer, val);
+    value_writer_pop_mapping(&writer);
   }
 
-  fatal(value_writer_pop_set, &writer);
-  fatal(value_writer_close, &writer);
-
-finally:
-  fatal(value_writer_destroy, &writer);
-coda;
+  value_writer_pop_set(&writer);
+  value_writer_close(&writer);
+  value_writer_destroy(&writer);
 }

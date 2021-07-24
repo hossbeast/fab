@@ -34,10 +34,8 @@ typedef struct stat_def {
 // public
 //
 
-static xapi collate_global(void *dst, size_t sz, fab_global_stats *stats, bool reset, size_t *zp)
+static void collate_global(void *dst, size_t sz, fab_global_stats *stats, bool reset, size_t *zp)
 {
-  enter;
-
   size_t z;
   fab_global_stats lstats;
   descriptor_field *field;
@@ -111,8 +109,6 @@ static xapi collate_global(void *dst, size_t sz, fab_global_stats *stats, bool r
   }
 
   *zp += z;
-
-  finally : coda;
 }
 
 static size_t collate_node(void *dst, size_t sz, fsent * restrict n, bool reset)
@@ -172,19 +168,13 @@ static size_t collate_node(void *dst, size_t sz, fsent * restrict n, bool reset)
   return z;
 }
 
-xapi stats_global_collate(void *dst, size_t sz, bool reset, size_t *zp)
+void stats_global_collate(void *dst, size_t sz, bool reset, size_t *zp)
 {
-  enter;
-
-  fatal(collate_global, dst, sz, &g_stats, reset, zp);
-
-  finally : coda;
+  collate_global(dst, sz, &g_stats, reset, zp);
 }
 
-xapi stats_node_collate(void *dst, size_t sz, fsent * restrict n, bool reset, size_t *zp)
+void stats_node_collate(void *dst, size_t sz, fsent * restrict n, bool reset, size_t *zp)
 {
-  enter;
-
   size_t z;
   vertex_kind kind;
 
@@ -194,26 +184,24 @@ xapi stats_node_collate(void *dst, size_t sz, fsent * restrict n, bool reset, si
   kind = fsent_kind_get(n);
   if(kind == VERTEX_MODULE_DIR)
   {
-    fatal(module_collate_stats, dst + z, sz - z, n->self_mod, reset, &z);
+    module_collate_stats(dst + z, sz - z, n->self_mod, reset, &z);
   }
   else if(kind == VERTEX_MODULE_FILE)
   {
-    fatal(module_file_collate_stats, dst + z, sz - z, n, reset, &z);
+    module_file_collate_stats(dst + z, sz - z, n, reset, &z);
   }
   else if(kind == VERTEX_FORMULA_FILE)
   {
-    fatal(formula_collate_stats, dst + z, sz - z, n->self_fml, reset, &z);
+    formula_collate_stats(dst + z, sz - z, n->self_fml, reset, &z);
   }
   else if(kind == VERTEX_VAR_FILE)
   {
-    fatal(var_collate_stats, dst + z, sz - z, n->self_var, reset, &z);
+    var_collate_stats(dst + z, sz - z, n->self_var, reset, &z);
   }
   else if(kind == VERTEX_CONFIG_FILE)
   {
-    fatal(config_collate_stats, dst + z, sz - z, n->self_config, reset, &z);
+    config_collate_stats(dst + z, sz - z, n->self_config, reset, &z);
   }
 
   *zp += z;
-
-  finally : coda;
 }

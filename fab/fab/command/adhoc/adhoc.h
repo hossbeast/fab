@@ -18,7 +18,6 @@
 #ifndef _ADHOC_COMMAND_H
 #define _ADHOC_COMMAND_H
 
-#include "xapi.h"
 #include "command.h"
 #include "args.h"
 

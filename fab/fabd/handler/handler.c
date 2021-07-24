@@ -50,29 +50,21 @@ rcu_list g_handlers = RCU_LIST_INITIALIZER(g_handlers);
 // handlers
 //
 
-static xapi handler_select(handler_context * restrict ctx, command * restrict cmd)
+static void handler_select(handler_context * restrict ctx, command * restrict cmd)
 {
-  enter;
-
   ctx->sel_ctx.bpe = 0;
   ctx->sel_ctx.mod = g_project_root->mod;
   ctx->sel_ctx.chan = ctx->chan;
 
-  fatal(selector_exec, cmd->selector, &ctx->sel_ctx, SELECTION_ITERATION_TYPE_ORDER);
+  selector_exec(cmd->selector, &ctx->sel_ctx, SELECTION_ITERATION_TYPE_ORDER);
 
   // return the active selection
   ctx->selection = ctx->sel_ctx.selection;
-
-  finally : coda;
 }
 
-static xapi handler_reset_selection(handler_context * restrict ctx, command * restrict cmd)
+static void handler_reset_selection(handler_context * restrict ctx, command * restrict cmd)
 {
-  enter;
-
   ctx->selection = 0;
-
-  finally : coda;
 }
 
 static fsent *selected_node(selected * restrict sn)
@@ -91,10 +83,8 @@ static fsent *selected_node(selected * restrict sn)
   return n;
 }
 
-static xapi handler_list(handler_context * restrict ctx, command * restrict cmd)
+static void handler_list(handler_context * restrict ctx, command * restrict cmd)
 {
-  enter;
-
   selected *sn;
   fsent *n;
   size_t z;
@@ -151,29 +141,21 @@ static xapi handler_list(handler_context * restrict ctx, command * restrict cmd)
     msg->size = z;
     channel_post(ctx->chan, msg);
   }
-
-  finally : coda;
 }
 
-static xapi handler_invalidate(handler_context * restrict ctx, command * restrict cmd)
+static void handler_invalidate(handler_context * restrict ctx, command * restrict cmd)
 {
-  enter;
-
   selected *sn;
   fsent *n;
 
   llist_foreach(&ctx->selection->list, sn, lln) {
     n = selected_node(sn);
-    fatal(fsent_invalidate, n, &ctx->invalidation);
+    fsent_invalidate(n, &ctx->invalidation);
   }
-
-  finally : coda;
 }
 
-static xapi handler_global_invalidate(handler_context * restrict ctx, command * restrict cmd)
+static void handler_global_invalidate(handler_context * restrict ctx, command * restrict cmd)
 {
-  enter;
-
   channel *chan;
   fabipc_message *msg;
 
@@ -183,14 +165,10 @@ static xapi handler_global_invalidate(handler_context * restrict ctx, command * 
   if(events_would(FABIPC_EVENT_GLOBAL_INVALIDATE, &chan, &msg)) {
     events_publish(chan, msg);
   }
-
-  finally : coda;
 }
 
-static xapi handler_describe(handler_context * restrict ctx, command * restrict cmd)
+static void handler_describe(handler_context * restrict ctx, command * restrict cmd)
 {
-  enter;
-
   selected *sn;
   fabipc_message *msg;
   fab_fsent_state state;
@@ -297,32 +275,24 @@ static xapi handler_describe(handler_context * restrict ctx, command * restrict 
     msg->size = z;
     channel_post(ctx->chan, msg);
   }
-
-  finally : coda;
 }
 
-static xapi handler_metadata(handler_context * restrict ctx, command * restrict cmd, bool reset)
+static void handler_metadata(handler_context * restrict ctx, command * restrict cmd, bool reset)
 {
-  enter;
-
   size_t z;
   fabipc_message *msg = 0;
 
   msg = channel_produce(ctx->chan);
   msg->type = FABIPC_MSG_RESULT;
 
-  fatal(metadata_collate, msg->text, sizeof(msg->text), &z);
+  metadata_collate(msg->text, sizeof(msg->text), &z);
 
   msg->size = z;
   channel_post(ctx->chan, msg);
-
-  finally : coda;
 }
 
-static xapi handler_global_stats(handler_context * restrict ctx, command * restrict cmd, bool reset)
+static void handler_global_stats(handler_context * restrict ctx, command * restrict cmd, bool reset)
 {
-  enter;
-
   fabipc_message *msg = 0;
   size_t z;
 
@@ -330,25 +300,21 @@ static xapi handler_global_stats(handler_context * restrict ctx, command * restr
   msg->type = FABIPC_MSG_RESULT;
 
   z = 0;
-  fatal(stats_global_collate, msg->text, sizeof(msg->text), reset, &z);
+  stats_global_collate(msg->text, sizeof(msg->text), reset, &z);
   msg->size = z;
 
   channel_post(ctx->chan, msg);
-
-  finally : coda;
 }
 
-static xapi handler_config_read(handler_context * restrict ctx, command * restrict cmd)
+static void handler_config_read(handler_context * restrict ctx, command * restrict cmd)
 {
-  enter;
-
   fabipc_message *msg;
   narrator_growing growing;
   narrator * N;
   int x;
 
   N = narrator_growing_init(&growing);
-  fatal(config_active_say, N);
+  config_active_say(N);
 
   x = 0;
   while(x < growing.l)
@@ -363,22 +329,18 @@ static xapi handler_config_read(handler_context * restrict ctx, command * restri
     x += msg->size;
   }
 
-finally:
-  fatal(narrator_growing_destroy, &growing);
-coda;
+  narrator_growing_destroy(&growing);
 }
 
-static xapi handler_vars_read(handler_context * restrict ctx, command * restrict cmd)
+static void handler_vars_read(handler_context * restrict ctx, command * restrict cmd)
 {
-  enter;
-
   fabipc_message *msg;
   narrator_growing growing;
   narrator * N;
   int x;
 
   N = narrator_growing_init(&growing);
-  fatal(module_vars_say, g_project_root->mod, N);
+  module_vars_say(g_project_root->mod, N);
 
   x = 0;
   while(x < growing.l)
@@ -393,15 +355,11 @@ static xapi handler_vars_read(handler_context * restrict ctx, command * restrict
     x += msg->size;
   }
 
-finally:
-  fatal(narrator_growing_destroy, &growing);
-coda;
+  narrator_growing_destroy(&growing);
 }
 
-static xapi handler_stats(handler_context * restrict ctx, command * restrict cmd, bool reset)
+static void handler_stats(handler_context * restrict ctx, command * restrict cmd, bool reset)
 {
-  enter;
-
   fabipc_message *msg;
   selected *sn;
   fsent *n;
@@ -414,19 +372,15 @@ static xapi handler_stats(handler_context * restrict ctx, command * restrict cmd
     msg->type = FABIPC_MSG_RESULT;
 
     z = 0;
-    fatal(stats_node_collate, msg->text, sizeof(msg->text), n, reset, &z);
+    stats_node_collate(msg->text, sizeof(msg->text), n, reset, &z);
     msg->size = z;
 
     channel_post(ctx->chan, msg);
   }
-
-  finally : coda;
 }
 
-static xapi handler_goals(handler_context * restrict ctx, command * restrict cmd)
+static void handler_goals(handler_context * restrict ctx, command * restrict cmd)
 {
-  enter;
-
   selector *direct = 0;
   selector *transitive = 0;
 
@@ -436,132 +390,113 @@ static xapi handler_goals(handler_context * restrict ctx, command * restrict cmd
   transitive = cmd->goals.target_transitive;
   cmd->goals.target_transitive = 0;
 
-  fatal(goals_set, ctx->chan->msgid, cmd->goals.reconcile, cmd->goals.build, cmd->goals.script, direct, transitive);
+  goals_set(ctx->chan->msgid, cmd->goals.reconcile, cmd->goals.build, cmd->goals.script, direct, transitive);
   direct = 0;
   transitive = 0;
 
-finally:
   selector_free(direct);
   selector_free(transitive);
-coda;
 }
 
-static xapi handler_destroy(handler_context * restrict ctx)
+static void handler_destroy(handler_context * restrict ctx)
 {
-  enter;
-
-  fatal(selector_context_xdestroy, &ctx->sel_ctx);
+  selector_context_xdestroy(&ctx->sel_ctx);
   graph_invalidation_end(&ctx->invalidation);
-  fatal(request_parser_xfree, ctx->request_parser);
-
-  finally : coda;
+  request_parser_xfree(ctx->request_parser);
 }
 
 //
 // public
 //
 
-xapi handler_process_command(handler_context * restrict ctx, command * restrict cmd)
+void handler_process_command(handler_context * restrict ctx, command * restrict cmd)
 {
-  enter;
-
   if(cmd->type == COMMAND_SELECT)
   {
-    fatal(handler_select, ctx, cmd);
+    handler_select(ctx, cmd);
   }
   else if(cmd->type == COMMAND_RESET_SELECTION)
   {
-    fatal(handler_reset_selection, ctx, cmd);
+    handler_reset_selection(ctx, cmd);
   }
   else if(cmd->type == COMMAND_LIST)
   {
-    fatal(handler_list, ctx, cmd);
+    handler_list(ctx, cmd);
   }
   else if(cmd->type == COMMAND_INVALIDATE)
   {
-    fatal(handler_invalidate, ctx, cmd);
+    handler_invalidate(ctx, cmd);
   }
   else if(cmd->type == COMMAND_GLOBAL_INVALIDATE)
   {
-    fatal(handler_global_invalidate, ctx, cmd);
+    handler_global_invalidate(ctx, cmd);
   }
   else if(cmd->type == COMMAND_DESCRIBE)
   {
-    fatal(handler_describe, ctx, cmd);
+    handler_describe(ctx, cmd);
   }
   else if(cmd->type == COMMAND_GOALS)
   {
-    fatal(handler_goals, ctx, cmd);
+    handler_goals(ctx, cmd);
   }
   else if(cmd->type == COMMAND_GLOBAL_STATS_READ)
   {
-    fatal(handler_global_stats, ctx, cmd, false);
+    handler_global_stats(ctx, cmd, false);
   }
   else if(cmd->type == COMMAND_GLOBAL_STATS_RESET)
   {
-    fatal(handler_global_stats, ctx, cmd, true);
+    handler_global_stats(ctx, cmd, true);
   }
   else if(cmd->type == COMMAND_STATS_READ)
   {
-    fatal(handler_stats, ctx, cmd, false);
+    handler_stats(ctx, cmd, false);
   }
   else if(cmd->type == COMMAND_STATS_RESET)
   {
-    fatal(handler_stats, ctx, cmd, true);
+    handler_stats(ctx, cmd, true);
   }
   else if(cmd->type == COMMAND_CONFIG_READ)
   {
-    fatal(handler_config_read, ctx, cmd);
+    handler_config_read(ctx, cmd);
   }
   else if(cmd->type == COMMAND_VARS_READ)
   {
-    fatal(handler_vars_read, ctx, cmd);
+    handler_vars_read(ctx, cmd);
   }
   else if(cmd->type == COMMAND_METADATA)
   {
-    fatal(handler_metadata, ctx, cmd, true);
+    handler_metadata(ctx, cmd, true);
   }
   else
   {
     RUNTIME_ABORT();
   }
-
-  finally : coda;
 }
 
-xapi handler_setup()
+void handler_setup()
 {
-  enter;
-
-  finally : coda;
 }
 
-xapi handler_cleanup()
+void handler_cleanup()
 {
-  enter;
-
   handler_context *ctx;
   llist *T;
 
   llist_foreach_safe(&context_freelist, ctx, lln, T) {
-    fatal(handler_destroy, ctx);
+    handler_destroy(ctx);
     wfree(ctx);
   }
-
-  finally : coda;
 }
 
-xapi handler_alloc(handler_context ** restrict rv)
+void handler_alloc(handler_context ** restrict rv)
 {
-  enter;
-
   handler_context * ctx;
 
   if((ctx = llist_shift(&context_freelist, typeof(*ctx), lln)) == 0)
   {
-    fatal(xmalloc, &ctx, sizeof(*ctx));
+    xmalloc(&ctx, sizeof(*ctx));
     llist_init_node(&ctx->lln);
-    fatal(request_parser_create, &ctx->request_parser);
+    request_parser_create(&ctx->request_parser);
   }
   else
   {
@@ -569,8 +504,6 @@ xapi handler_alloc(handler_context ** restrict rv)
   }
 
   *rv = ctx;
-
-  finally : coda;
 }
 
 void handler_release(handler_context * restrict ctx)

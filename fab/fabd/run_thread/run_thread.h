@@ -24,7 +24,6 @@ There is up to one run thread
 
 */
 
-#include "xapi.h"
 #include "request.internal.h"
 
 struct handler_context;
@@ -36,6 +35,6 @@ extern bool run_thread_autorun;
  *
  * [handler] - handler thread to notify if any
  */
-xapi run_thread_launch(struct handler_context * restrict owner, command_type cmd);
+void run_thread_launch(struct handler_context * restrict owner, command_type cmd);
 
 #endif

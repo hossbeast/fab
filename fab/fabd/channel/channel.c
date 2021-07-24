@@ -33,16 +33,15 @@
 // public
 //
 
-xapi channel_create(channel ** restrict chanp, pid_t thread_id)
+void channel_create(channel ** restrict chanp, pid_t thread_id)
 {
-  enter;
-
   channel *chan;
   int shmid = -1;
   void * shmaddr = 0;
 
-  fatal(xshmget, IPC_PRIVATE, FABIPC_SHMSIZE, IPC_CREAT | IPC_EXCL | SHMCHANNEL_MODE, &shmid);
-  fatal(xshmat, shmid, 0, 0, &shmaddr);
+  shmid = xshmget(IPC_PRIVATE, FABIPC_SHMSIZE, IPC_CREAT | IPC_EXCL | SHMCHANNEL_MODE);
+  shmaddr = xshmat(shmid, 0, 0);
+  xshmctl(shmid, IPC_RMID, 0);
 
   chan = shmaddr;
   chan->ipc.shmid = shmid;
@@ -50,12 +49,6 @@ xapi channel_create(channel ** restrict chanp, pid_t thread_id)
   chan->ipc.server_tid = thread_id;
   chan->ipc.server_pulse = thread_id;
   *chanp = chan;
-
-finally:
-  if(shmid != -1) {
-    fatal(xshmctl, shmid, IPC_RMID, 0);
-  }
-coda;
 }
 
 void channel_release(channel * restrict chan)
@@ -208,31 +201,23 @@ void channel_responsew(channel * restrict chan, int code, const char * restrict 
   channel_post(chan, msg);
 }
 
-xapi channel_setup()
+void channel_setup()
 {
-  enter;
-
-  finally : coda;
 }
 
-xapi channel_cleanup()
+void channel_cleanup()
 {
-  enter;
-
-  finally : coda;
 }
 
-xapi channel_reconfigure(configblob * restrict cfg, bool dry)
+void channel_reconfigure(configblob * restrict cfg, bool dry)
 {
-  enter;
+  if(dry) {
+    return;
+  }
 
-  if(dry)
-    goto XAPI_FINALIZE;
-
-  if(!(cfg->channels.attrs & CONFIG_CHANGED))
-    goto XAPI_FINALIZE;
+  if(!(cfg->channels.attrs & CONFIG_CHANGED)) {
+    return;
+  }
 
   /* there should be configuration on the max number of possible clients/channels */
-
-  finally : coda;
 }

@@ -18,7 +18,6 @@
 %{
   #include "yyutil/scanner.h"
 
-  #include "REQUEST.errtab.h"
   #include "request_parser.internal.h"
   #include "request.tab.h"
   #include "request.tokens.h"
@@ -35,8 +34,9 @@
   char * usr = parser->yyu.usrbuf + off;                                \
   size_t bufsz = parser->yyu.usrbufsize - off;                          \
   yyu_location subloc;                                                  \
-  fatal(selector_parser_parse_partial                                   \
-    , parser->selector_parser                                           \
+    int r;                                                                \
+  r = selector_parser_parse_partial(                                   \
+      parser->selector_parser                                           \
     , usr                                                               \
     , bufsz                                                             \
     , "selector"                                                        \
@@ -44,6 +44,9 @@
     , &subloc                                                           \
     , &yylval->selector                                                 \
   );                                                                    \
+    if(r != 0) {                                                          \
+      return r;                                                           \
+    }                                                                     \
   yyless(subloc.l);                                                     \
   LEXLOC(request_SELECTOR, &subloc);                                    \
 } while(0);
@@ -69,8 +72,8 @@ ILL   [\x00-\x08\x0B-\x1F\x7F-\xFF]
 
  /* multiline comments are nestable */
 <_select,_selector>[/][*]                               |
-<INITIAL,multilinecomment>[/][*]                        { lenter; LOCWRITE; PUSHSTATE(multilinecomment); finally : lcoda; }
-<multilinecomment>[*][/]                                { lenter; LOCWRITE; POPSTATE; finally : lcoda; }
+<INITIAL,multilinecomment>[/][*]                        { LOCWRITE; PUSHSTATE(multilinecomment); }
+<multilinecomment>[*][/]                                { LOCWRITE; POPSTATE; }
 <multilinecomment>[^*\x00-\x08\x0B-\x1F\x7F-\xFF\n*/]+  { LOCWRITE; }
 <multilinecomment>[*][^\x00-\x08\x0B-\x1F\x7F-\xFF\n/]  { LOCWRITE; }
 <multilinecomment>[/]                                   { LOCWRITE; }
@@ -83,36 +86,32 @@ ILL   [\x00-\x08\x0B-\x1F\x7F-\xFF]
 <INITIAL>[\r\t ]+                                       { LOCWRITE; }
 
  /* tokens */
-<INITIAL>[[\]{}:=]                                      { lenter; LEX(yytext[0]); finally : lcoda; }
+<INITIAL>[[\]{}:=]                                      { LEX(yytext[0]); }
 
  /* invoke selector sub-parser */
-<INITIAL>"select"                                       { lenter; PUSHSTATE(_select); LEX(SELECT); finally : lcoda; }
-<INITIAL>"target-direct"                                { lenter; PUSHSTATE(_select); LEX(TARGET_DIRECT); finally : lcoda; }
-<INITIAL>"target-transitive"                            { lenter; PUSHSTATE(_select); LEX(TARGET_TRANSITIVE); finally : lcoda; }
-<_select>":"                                            { lenter; PUSHSTATE(_selector); LEX(':'); finally : lcoda; }
+<INITIAL>"select"                                       { PUSHSTATE(_select); LEX(SELECT); }
+<INITIAL>"target-direct"                                { PUSHSTATE(_select); LEX(TARGET_DIRECT); }
+<INITIAL>"target-transitive"                            { PUSHSTATE(_select); LEX(TARGET_TRANSITIVE); }
+<_select>":"                                            { PUSHSTATE(_selector); LEX(':'); }
  /* consume whitespace in this parser */
-<_selector>[^\n\r\t ][\x00-\xff]+                       { lenter; PARSE_SELECTOR; POPSTATE; POPSTATE; finally : lcoda; }
+<_selector>[^\n\r\t ][\x00-\xff]+                       { PARSE_SELECTOR; POPSTATE; POPSTATE; }
 
  /* enumerated tokenrange */
-<INITIAL>[a-zA-Z0-9_][-a-zA-Z0-9_]*                     { lenter; LEXE(); finally : lcoda; }
+<INITIAL>[a-zA-Z0-9_][-a-zA-Z0-9_]*                     { LEXE(); }
 
 <*>[\x00-\x1F\x7F-\xFF]                                 {
-                                                          lenter;
                                                           POPSTATES;
                                                           LOCWRITE;
-                                                          failf(REQUEST_ILLBYTE, "byte", "0x%02hhx", yytext[0]);
-                                                          finally : lcoda;
+                                                          yyu_errorf(YYUXTRA, "invalid byte 0x%02hhx", yytext[0]);
+                                                          return 0;
                                                         }
 <*>[\x20-\x7E]                                          {
-                                                          lenter;
                                                           POPSTATES;
                                                           LOCWRITE;
-                                                          failf(REQUEST_ILLBYTE, "character", "'%1$c'(0x%1$02hhx)", yytext[0]);
-                                                          finally : lcoda;
+                                                          yyu_errorf(YYUXTRA, "character '%1$c'(0x%1$02hhx)", yytext[0]);
+                                                          return 0;
                                                         }
 <<EOF>>                                                 {
-                                                          lenter;
                                                           POPSTATES;
-                                                          _yyu_V = 0; /* return end-of-input */
-                                                          finally : lcoda;
+                                                          return 0;
                                                         }

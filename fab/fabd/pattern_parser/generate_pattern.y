@@ -150,7 +150,7 @@ utterance
 pattern
   : pattern-sections-list
   {
-    YFATAL(pattern_mk, &$$, &@$, $1);
+    pattern_mk(&$$, &@$, $1);
   }
   ;
 
@@ -166,11 +166,11 @@ pattern-initial-section
   /* resolves to the directory of the match fsent */
   : '$' '^' 'D'
   {
-    YFATAL(pattern_section_mk, &$$, &@$, PATTERN_NODESET_MATCHDIR, 0, 0, NULL);
+    pattern_section_mk(&$$, &@$, PATTERN_NODESET_MATCHDIR, 0, 0, NULL);
   }
   | SLASH2
   {
-    YFATAL(pattern_section_mk, &$$, &@$, PATTERN_NODESET_SHADOW, 0, 0, NULL);
+    pattern_section_mk(&$$, &@$, PATTERN_NODESET_SHADOW, 0, 0, NULL);
   }
   | pattern-section
   ;
@@ -183,21 +183,21 @@ pattern-section
 pattern-section-self
   : '.'
   {
-    YFATAL(pattern_section_mk, &$$, &@$, PATTERN_NODESET_SELF, PATTERN_GRAPH_FS, PATTERN_AXIS_DOWN, NULL);
+    pattern_section_mk(&$$, &@$, PATTERN_NODESET_SELF, PATTERN_GRAPH_FS, PATTERN_AXIS_DOWN, NULL);
   }
   ;
 
 pattern-section-fs-child
   : pattern-dentry
   {
-    YFATAL(pattern_section_mk, &$$, &@$, 0, PATTERN_GRAPH_FS, PATTERN_AXIS_DOWN, $1);
+    pattern_section_mk(&$$, &@$, 0, PATTERN_GRAPH_FS, PATTERN_AXIS_DOWN, $1);
   }
   ;
 
 pattern-dentry
   : pattern-dentry-parts
   {
-    YFATAL(pattern_segments_mk, &$$, &@$, 0, $1);
+    pattern_segments_mk(&$$, &@$, 0, $1);
   }
   ;
 
@@ -222,12 +222,12 @@ replacement
   /* resolves to a parenthesized matching group which is referenced by number */
   : '$' uint16
   {
-    YFATAL(pattern_replacement_mk, &$$, &@$, PATTERN_REPLACEMENT_TYPE_NUM, $2, NULL, 0, NULL, 0);
+    pattern_replacement_mk(&$$, &@$, PATTERN_REPLACEMENT_TYPE_NUM, $2, NULL, 0, NULL, 0);
   }
   /* resolves to a parenthesized matching group which is referenced by name */
   | '$' STR
   {
-    YFATAL(pattern_replacement_mk, &$$, &@$, PATTERN_REPLACEMENT_TYPE_NAME, 0, @2.s, @2.l, NULL, 0);
+    pattern_replacement_mk(&$$, &@$, PATTERN_REPLACEMENT_TYPE_NAME, 0, @2.s, @2.l, NULL, 0);
   }
   /* resolves to the variant of the match fsent */
   | variant-replacement
@@ -236,11 +236,11 @@ replacement
 variant-replacement
   : '$' '?'
   {
-    YFATAL(pattern_replacement_mk, &$$, &@$, PATTERN_REPLACEMENT_TYPE_VARIANT, 0, NULL, 0, NULL, 0);
+    pattern_replacement_mk(&$$, &@$, PATTERN_REPLACEMENT_TYPE_VARIANT, 0, NULL, 0, NULL, 0);
   }
   | '$' '{' variant-spec '}'
   {
-    YFATAL(pattern_replacement_mk, &$$, &@$, PATTERN_REPLACEMENT_TYPE_VARIANT, 0, NULL, 0, $3.s, $3.l);
+    pattern_replacement_mk(&$$, &@$, PATTERN_REPLACEMENT_TYPE_VARIANT, 0, NULL, 0, $3.s, $3.l);
   }
   ;
 
@@ -268,18 +268,18 @@ variant-spec
 variants
   : '?'
   {
-    YFATAL(pattern_variants_mk, &$$, &@$);
+    pattern_variants_mk(&$$, &@$);
   }
   ;
 
 class
   : '[' class-parts ']'
   {
-    YFATAL(pattern_class_mk, &$$, &@$, $2, false);
+    pattern_class_mk(&$$, &@$, $2, false);
   }
   | '[' '!' class-parts ']'
   {
-    YFATAL(pattern_class_mk, &$$, &@$, $3, true);
+    pattern_class_mk(&$$, &@$, $3, true);
   }
   ;
 
@@ -294,7 +294,7 @@ class-parts
 class-pattern
   : class-part
   {
-    YFATAL(pattern_segments_mk, &$$, &@$, 0, $1);
+    pattern_segments_mk(&$$, &@$, 0, $1);
   }
   ;
 
@@ -306,29 +306,29 @@ class-part
 class-range
   : CHAR '-' CHAR
   {
-    YFATAL(pattern_range_mk, &$$, &@$, @1.s[0], @3.s[0]);
+    pattern_range_mk(&$$, &@$, @1.s[0], @3.s[0]);
   }
   ;
 
 class-char
   : CHAR
   {
-    YFATAL(pattern_byte_mk, &$$, &@$, @1.s[0]);
+    pattern_byte_mk(&$$, &@$, @1.s[0]);
   }
   ;
 
 alternation
   : '{' alternation-parts '}'
   {
-    YFATAL(pattern_alternation_mk, &$$, &@$, $2, false);
+    pattern_alternation_mk(&$$, &@$, $2, false);
   }
   | '{' ',' alternation-parts '}'
   {
-    YFATAL(pattern_alternation_mk, &$$, &@$, $3, true);
+    pattern_alternation_mk(&$$, &@$, $3, true);
   }
   | '{' alternation-parts ',' '}'
   {
-    YFATAL(pattern_alternation_mk, &$$, &@$, $2, true);
+    pattern_alternation_mk(&$$, &@$, $2, true);
   }
   ;
 
@@ -343,7 +343,7 @@ alternation-parts
 alternation-pattern
   : alternation-pattern-parts
   {
-    YFATAL(pattern_segments_mk, &$$, &@$, 0, $1);
+    pattern_segments_mk(&$$, &@$, 0, $1);
   }
   ;
 
@@ -401,11 +401,11 @@ unquoted-strpart
 word
   : word-tokens
   {
-    YFATAL(pattern_word_mk, &$$, &@$, @1.s, @1.l);
+    pattern_word_mk(&$$, &@$, @1.s, @1.l);
   }
   | uint16
   {
-    YFATAL(pattern_word_mk, &$$, &@$, @1.s, @1.l);
+    pattern_word_mk(&$$, &@$, @1.s, @1.l);
   }
   ;
 
@@ -420,11 +420,11 @@ word-tokens
 escape
   : CREF
   {
-    YFATAL(pattern_byte_mk, &$$, &@$, $1);
+    pattern_byte_mk(&$$, &@$, $1);
   }
   | HREF
   {
-    YFATAL(pattern_byte_mk, &$$, &@$, $1);
+    pattern_byte_mk(&$$, &@$, $1);
   }
   ;
 

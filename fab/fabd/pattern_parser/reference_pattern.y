@@ -123,7 +123,7 @@ utterance
 pattern
   : pattern-sections-list
   {
-    YFATAL(pattern_mk, &$$, &@$, $1);
+    pattern_mk(&$$, &@$, $1);
   }
   ;
 
@@ -138,11 +138,11 @@ pattern-sections-list
 pattern-section
   : pattern-dentry-list
   {
-    YFATAL(pattern_section_mk, &$$, &@$, 0, PATTERN_GRAPH_FS, PATTERN_AXIS_DOWN, $1);
+    pattern_section_mk(&$$, &@$, 0, PATTERN_GRAPH_FS, PATTERN_AXIS_DOWN, $1);
   }
   | '.'
   {
-    YFATAL(pattern_section_mk, &$$, &@$, PATTERN_NODESET_SELF, PATTERN_GRAPH_FS, PATTERN_AXIS_DOWN, NULL);
+    pattern_section_mk(&$$, &@$, PATTERN_NODESET_SELF, PATTERN_GRAPH_FS, PATTERN_AXIS_DOWN, NULL);
   }
   ;
 
@@ -153,7 +153,7 @@ pattern-dentry-list
 pattern-dentry
   : pattern-dentry-parts
   {
-    YFATAL(pattern_segments_mk, &$$, &@$, PATTERN_QUALIFIER_TYPE_AND, $1);
+    pattern_segments_mk(&$$, &@$, PATTERN_QUALIFIER_TYPE_AND, $1);
   }
   ;
 
@@ -210,12 +210,12 @@ unquoted-strpart
 word
   : word-tokens
   {
-    YFATAL(pattern_word_mk, &$$, &@$, @1.s, @1.l);
+    pattern_word_mk(&$$, &@$, @1.s, @1.l);
   }
   | uint16
   {
 $1 = 0;
-    YFATAL(pattern_word_mk, &$$, &@$, @1.s, @1.l);
+    pattern_word_mk(&$$, &@$, @1.s, @1.l);
   }
   ;
 
@@ -228,11 +228,11 @@ word-tokens
 escape
   : CREF
   {
-    YFATAL(pattern_byte_mk, &$$, &@$, $1);
+    pattern_byte_mk(&$$, &@$, $1);
   }
   | HREF
   {
-    YFATAL(pattern_byte_mk, &$$, &@$, $1);
+    pattern_byte_mk(&$$, &@$, $1);
   }
   ;
 

@@ -18,7 +18,6 @@
 #ifndef FABD_PATH_CACHE_H
 #define FABD_PATH_CACHE_H
 
-#include "xapi.h"
 #include "types.h"
 
 struct configblob;
@@ -33,8 +32,8 @@ typedef struct path_cache_entry {
   char s[];                         // path fragment, or name
 } path_cache_entry;
 
-xapi path_cache_setup(void);
-xapi path_cache_cleanup(void);
+void path_cache_setup(void);
+void path_cache_cleanup(void);
 
 /*
  * reapply path cache configuration
@@ -42,18 +41,17 @@ xapi path_cache_cleanup(void);
  * config - effective config tree
  * dry    - whether to perform a dry-run
  */
-xapi path_cache_reconfigure(struct configblob * restrict cfg, bool dry)
-  __attribute__((nonnull));
+int path_cache_reconfigure(struct configblob * restrict cfg, char * restrict err, uint16_t err_sz);
 
 /*
  * get an entry from the path cache
  */
-xapi path_cache_search(const path_cache_entry ** restrict entry, const char * restrict file, uint16_t len)
+void path_cache_search(const path_cache_entry ** restrict entry, const char * restrict file, uint16_t len)
   __attribute__((nonnull));
 
 /*
  * reset the path cache
  */
-xapi path_cache_reset(void);
+void path_cache_reset(void);
 
 #endif

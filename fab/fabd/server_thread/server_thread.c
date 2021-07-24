@@ -18,33 +18,22 @@
 #include <unistd.h>
 #include <sys/syscall.h>
 
-#include "xapi.h"
 #include "fab/ipc.h"
 #include "fab/sigutil.h"
-#include "logger/config.h"
-#include "xapi/trace.h"
-#include "xlinux/KERNEL.errtab.h"
 #include "xlinux/xpthread.h"
 
 #include "server_thread.h"
 #include "handler_thread.h"
-#include "logging.h"
 #include "params.h"
 #include "channel.h"
 
 #include "atomics.h"
 #include "threads.h"
 
-static xapi server_thread()
+static void server_thread()
 {
-  enter;
-
   sigset_t sigs;
   siginfo_t siginfo;
-
-#if DEBUG || DEVEL
-  logs(L_IPC, "starting");
-#endif
 
   // signals handled on this thread
   sigemptyset(&sigs);
@@ -53,7 +42,7 @@ static xapi server_thread()
 
   while(!g_params.shutdown)
   {
-    fatal(sigutil_wait, &sigs, &siginfo);
+    sigutil_wait(&sigs, &siginfo);
     if(g_params.shutdown) {
       break;
     }
@@ -64,40 +53,15 @@ static xapi server_thread()
       continue;
     }
 
-    fatal(handler_thread_launch, siginfo.si_pid, (intptr_t)siginfo.si_value.sival_ptr);
+    handler_thread_launch(siginfo.si_pid, (intptr_t)siginfo.si_value.sival_ptr);
   }
-
-finally:
-#if DEBUG || DEVEL
-  logs(L_IPC, "terminating");
-#endif
-coda;
 }
 
 static void * server_thread_jump(void * arg)
 {
-  enter;
-
-  xapi R;
-
   tid = g_params.thread_server = gettid();
-  logger_set_thread_name("server");
-  logger_set_thread_categories(L_SERVER);
-  fatal(server_thread);
 
-finally:
-  if(XAPI_UNWINDING)
-  {
-#if DEBUG || DEVEL
-    xapi_infos("thread", "server");
-    xapi_infof("pid", "%ld", (long)getpid());
-    xapi_infof("tid", "%ld", (long)gettid());
-    fatal(logger_xtrace_full, L_ERROR, L_NONAMES, XAPI_TRACE_COLORIZE | XAPI_TRACE_NONEWLINE);
-#else
-    fatal(logger_xtrace_pithy, L_ERROR, L_NONAMES, XAPI_TRACE_COLORIZE | XAPI_TRACE_NONEWLINE);
-#endif
-  }
-conclude(&R);
+  server_thread();
 
   atomic_dec(&g_params.thread_count);
   syscall(SYS_tgkill, g_params.pid, g_params.thread_monitor, SIGUSR1);
@@ -108,25 +72,16 @@ conclude(&R);
 // public
 //
 
-xapi server_thread_launch()
+void server_thread_launch()
 {
-  enter;
-
   pthread_t pthread_id;
   pthread_attr_t attr;
-  int rv;
 
-  fatal(xpthread_attr_init, &attr);
-  fatal(xpthread_attr_setdetachstate, &attr, PTHREAD_CREATE_DETACHED);
+  xpthread_attr_init(&attr);
+  xpthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
 
   atomic_inc(&g_params.thread_count);
-  if((rv = pthread_create(&pthread_id, &attr, server_thread_jump, 0)) != 0)
-  {
-    atomic_dec(&g_params.thread_count);
-    tfail(perrtab_KERNEL, rv);
-  }
+  xpthread_create(&pthread_id, &attr, server_thread_jump, 0);
 
-finally:
   pthread_attr_destroy(&attr);
-coda;
 }

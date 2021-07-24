@@ -15,6 +15,8 @@
  You should have received a copy of the GNU General Public License
  along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
+#include <stdio.h>
+
 #include "value.h"
 #include "xlinux/xstdlib.h"
 
@@ -30,10 +32,8 @@
 // static
 //
 
-static xapi render_say(const char * restrict name, enum builder_render_function renderer, const union builder_render_function_args *args, narrator * restrict N)
+static void render_say(const char * restrict name, enum builder_render_function renderer, const union builder_render_function_args *args, narrator * restrict N)
 {
-  enter;
-
   if(renderer == BUILDER_PROPERTY)
   {
     xsayf("render-%s PROPERTY\n", name);
@@ -53,14 +53,14 @@ static xapi render_say(const char * restrict name, enum builder_render_function 
   {
     xsayf("render-%s FORMULA-VALUE\n", name);
     xsays(" formula-value ");
-    fatal(formula_value_say, args->f, N);
+    formula_value_say(args->f, N);
     xsays("\n");
   }
   else if(renderer == BUILDER_VALUE)
   {
     xsayf("render-%s VALUE\n", name);
     xsays(" value ");
-    fatal(value_say, args->v, N);
+    value_say(args->v, N);
     xsays("\n");
   }
   else if(renderer == BUILDER_FMT)
@@ -69,8 +69,6 @@ static xapi render_say(const char * restrict name, enum builder_render_function 
     xsayf(" fmt %s\n", args->fmt);
     xsayf(" va %p\n", args->va);
   }
-
-  finally : coda;
 }
 
 struct def_name_compare_context {
@@ -116,56 +114,50 @@ static int def_name_compare(const void * _ctx, const void * _item)
   return ctx->lc = env_def_cmp(ctx->name, ctx->textbase + *item);
 }
 
-static xapi __attribute__((nonnull)) dispatch_render_function(
+static void __attribute__((nonnull)) dispatch_render_function(
     enum builder_render_function func
   , const union builder_render_function_args * restrict args
   , narrator * restrict N
 )
 {
-  enter;
-
   const path_cache_entry *pe;
 
   if(func == BUILDER_PROPERTY)
   {
-    fatal(fsent_property_say, args->n, args->prop, &args->pctx, N);
+    fsent_property_say(args->n, args->prop, &args->pctx, N);
   }
   else if(func == BUILDER_STRING)
   {
-    fatal(narrator_xsays, N, args->s);
+    narrator_xsays(N, args->s);
   }
   else if(func == BUILDER_FORMULA_VALUE)
   {
-    fatal(formula_value_render, args->f, N);
+    formula_value_render(args->f, N);
   }
   else if(func == BUILDER_VALUE)
   {
-    fatal(value_render, args->v, N);
+    value_render(args->v, N);
   }
   else if(func == BUILDER_FMT)
   {
-    fatal(narrator_xsayvf, N, args->fmt, *args->va);
+    narrator_xsayvf(N, args->fmt, *args->va);
   }
 
   if(func != BUILDER_PATH_CACHE_ENTRY) {
-    goto XAPI_FINALLY;
+    return;
   }
 
   pe = args->pe;
   if(pe->dir) {
-    fatal(narrator_xsayw, N, pe->dir->s, pe->dir->len);
-    fatal(narrator_xsays, N, "/");
+    narrator_xsayw(N, pe->dir->s, pe->dir->len);
+    narrator_xsays(N, "/");
   }
 
-  fatal(narrator_xsayw, N, pe->s, pe->len);
-
-  finally : coda;
+  narrator_xsayw(N, pe->s, pe->len);
 }
 
-xapi exec_builder_add(exec_builder * restrict builder, const exec_builder_args *args)
+void exec_builder_add(exec_builder * restrict builder, const exec_builder_args *args)
 {
-  enter;
-
   uint32_t def;
   uint32_t *defp;
   char * textbase;
@@ -180,11 +172,11 @@ xapi exec_builder_add(exec_builder * restrict builder, const exec_builder_args *
   if(args->item == BUILDER_FILE && args->render_val == BUILDER_PATH_CACHE_ENTRY)
   {
     builder->file_pe = args->val.pe;
-    goto XAPI_FINALLY;
+    return;
   }
 
   // current narrator position
-  fatal(narrator_xseek, builder->Nexec, 0, NARRATOR_SEEK_CUR, &pos);
+  narrator_xseek(builder->Nexec, 0, NARRATOR_SEEK_CUR, &pos);
   start = pos;
 
   def = 0;
@@ -207,7 +199,7 @@ xapi exec_builder_add(exec_builder * restrict builder, const exec_builder_args *
     else
     {
       idx = builder->args_len++;
-      fatal(assure, &builder->args, sizeof(*builder->args), idx + 1, &builder->args_alloc);
+      assure(&builder->args, sizeof(*builder->args), idx + 1, &builder->args_alloc);
     }
 
     builder->args[idx] = start;
@@ -241,7 +233,7 @@ xapi exec_builder_add(exec_builder * restrict builder, const exec_builder_args *
       if(ctx.lc > 0)
         idx++;
 
-      fatal(assure, &builder->envs, sizeof(*builder->envs), builder->envs_len + 1, &builder->envs_alloc);
+      assure(&builder->envs, sizeof(*builder->envs), builder->envs_len + 1, &builder->envs_alloc);
       memmove(
           builder->envs + (idx + 1)
         , builder->envs + idx
@@ -258,17 +250,17 @@ xapi exec_builder_add(exec_builder * restrict builder, const exec_builder_args *
   {
     if(args->item == BUILDER_ENVS)
     {
-      fatal(narrator_xsayw, builder->Nexec, args->name, args->name_len);
-      fatal(narrator_xsays, builder->Nexec, "=");
+      narrator_xsayw(builder->Nexec, args->name, args->name_len);
+      narrator_xsays(builder->Nexec, "=");
     }
 
     // append the value from this definition
-    fatal(dispatch_render_function, args->render_val, &args->val, builder->Nexec);
+    dispatch_render_function(args->render_val, &args->val, builder->Nexec);
 
     if(def)
     {
       if(args->render_sep) {
-        fatal(dispatch_render_function, args->render_sep, &args->sep, builder->Nexec);
+        dispatch_render_function(args->render_sep, &args->sep, builder->Nexec);
       }
 
       // carry forward the existing definition
@@ -277,21 +269,21 @@ xapi exec_builder_add(exec_builder * restrict builder, const exec_builder_args *
       {
         eq = strchr(textbase + def, '=');
         len = strlen(eq + 1);
-        fatal(narrator_growing_allocate, &builder->Nexec_growing, len);
+        narrator_growing_allocate(&builder->Nexec_growing, len);
         textbase = builder->Nexec_growing.s;
         eq = strchr(textbase + def, '=');
-        fatal(narrator_xsayw, builder->Nexec, eq + 1, len);
+        narrator_xsayw(builder->Nexec, eq + 1, len);
       }
       else
       {
         len = strlen(textbase + def);
-        fatal(narrator_growing_allocate, &builder->Nexec_growing, len);
+        narrator_growing_allocate(&builder->Nexec_growing, len);
         textbase = builder->Nexec_growing.s;
-        fatal(narrator_xsayw, builder->Nexec, textbase + def, len);
+        narrator_xsayw(builder->Nexec, textbase + def, len);
       }
     }
 
-    fatal(narrator_xsayc, builder->Nexec, 0);
+    narrator_xsayc(builder->Nexec, 0);
   }
   else if(args->mode == BUILDER_APPEND)
   {
@@ -300,36 +292,32 @@ xapi exec_builder_add(exec_builder * restrict builder, const exec_builder_args *
       // carry forward the existing definition
       textbase = builder->Nexec_growing.s;
       len = strlen(textbase + def);
-      fatal(narrator_growing_allocate, &builder->Nexec_growing, len);
+      narrator_growing_allocate(&builder->Nexec_growing, len);
       textbase = builder->Nexec_growing.s;
-      fatal(narrator_xsayw, builder->Nexec, textbase + def, len);
+      narrator_xsayw(builder->Nexec, textbase + def, len);
     }
     else if(args->item == BUILDER_ENVS)
     {
-      fatal(narrator_xsayw, builder->Nexec, args->name, args->name_len);
-      fatal(narrator_xsays, builder->Nexec, "=");
+      narrator_xsayw(builder->Nexec, args->name, args->name_len);
+      narrator_xsays(builder->Nexec, "=");
     }
 
     if(def && args->render_sep) {
-      fatal(dispatch_render_function, args->render_sep, &args->sep, builder->Nexec);
+      dispatch_render_function(args->render_sep, &args->sep, builder->Nexec);
     }
 
     // append the value from this definition
-    fatal(dispatch_render_function, args->render_val, &args->val, builder->Nexec);
-    fatal(narrator_xsayc, builder->Nexec, 0);
+    dispatch_render_function(args->render_val, &args->val, builder->Nexec);
+    narrator_xsayc(builder->Nexec, 0);
   }
   else
   {
     RUNTIME_ABORT();
   }
-
-  finally : coda;
 }
 
-xapi exec_builder_env_addf(exec_builder * restrict builder, const char * restrict name_fmt, const char * restrict val_fmt, ...)
+void exec_builder_env_addf(exec_builder * restrict builder, const char * restrict name_fmt, const char * restrict val_fmt, ...)
 {
-  enter;
-
   va_list va;
   char name[64];
   size_t namel;
@@ -350,32 +338,26 @@ xapi exec_builder_env_addf(exec_builder * restrict builder, const char * restric
 
   args.render_sep = BUILDER_STRING;
   args.sep.s = " ";
-  fatal(exec_builder_add, builder, &args);
-
-  finally : coda;
+  exec_builder_add(builder, &args);
 }
 
 //
 // tracing
 //
 
-xapi exec_builder_args_say(const exec_builder * restrict builder, const exec_builder_args * restrict args, narrator * restrict N)
+void exec_builder_args_say(const exec_builder * restrict builder, const exec_builder_args * restrict args, narrator * restrict N)
   __attribute__((nonnull));
 
-xapi exec_builder_args_say(const exec_builder * restrict builder, const exec_builder_args * restrict args, narrator * restrict N)
+void exec_builder_args_say(const exec_builder * restrict builder, const exec_builder_args * restrict args, narrator * restrict N)
 {
-  enter;
-
   xsayf("builder %p\n", builder);
   xsayf("item %s\n", args->item == BUILDER_FILE ? "FILE" : args->item == BUILDER_ARGS ? "ARGS" : args->item == BUILDER_ENVS ? "ENVS" : "-wtf-");
   xsayf("position %d\n", args->position);
   xsayf("name %.*s\n", (int)args->name_len, args->name);
   xsayf("name-len %hu\n", args->name_len);
   xsayf("mode %d %s\n", args->mode, args->mode == BUILDER_PREPEND ? "PREPEND" : args->mode == BUILDER_APPEND ? "APPEND" : "-wtf-");
-  fatal(render_say, "value", args->render_val, &args->val, N);
-  fatal(render_say, "sep", args->render_sep, &args->sep, N);
-
-  finally : coda;
+  render_say("value", args->render_val, &args->val, N);
+  render_say("sep", args->render_sep, &args->sep, N);
 }
 
 //
@@ -416,52 +398,38 @@ void exec_ifree(exec ** restrict ep)
   *ep = 0;
 }
 
-xapi exec_builder_xinit(exec_builder * restrict builder)
+void exec_builder_xinit(exec_builder * restrict builder)
 {
-  enter;
-
   memset(builder, 0, sizeof(*builder));
 
   builder->Nexec = narrator_growing_init(&builder->Nexec_growing);
 
   // position immediately after the env struct
-  fatal(narrator_xseek, builder->Nexec, sizeof(exec), NARRATOR_SEEK_SET, 0);
-
-  finally : coda;
+  narrator_xseek(builder->Nexec, sizeof(exec), NARRATOR_SEEK_SET, 0);
 }
 
-xapi exec_builder_xreset(exec_builder * restrict builder)
+void exec_builder_xreset(exec_builder * restrict builder)
 {
-  enter;
-
   builder->file_pe = 0;
   builder->file = 0;
   builder->envs_len = 0;
   builder->args_len = 0;
 
   // position immediately after the env struct
-  fatal(narrator_xseek, builder->Nexec, sizeof(exec), NARRATOR_SEEK_SET, 0);
-
-  finally : coda;
+  narrator_xseek(builder->Nexec, sizeof(exec), NARRATOR_SEEK_SET, 0);
 }
 
-xapi exec_builder_xdestroy(exec_builder * restrict builder)
+void exec_builder_xdestroy(exec_builder * restrict builder)
 {
-  enter;
-
-  fatal(narrator_growing_destroy, &builder->Nexec_growing);
+  narrator_growing_destroy(&builder->Nexec_growing);
   wfree(builder->args);
   wfree(builder->args_stor);
   wfree(builder->envs);
   wfree(builder->envs_stor);
-
-  finally : coda;
 }
 
-xapi exec_builder_build(exec_builder * restrict builder, exec ** restrict envp)
+void exec_builder_build(exec_builder * restrict builder, exec ** restrict envp)
 {
-  enter;
-
   int x;
   char * textbase;
 
@@ -469,7 +437,7 @@ xapi exec_builder_build(exec_builder * restrict builder, exec ** restrict envp)
   if(textbase == 0)
   {
     /* nothing has been added to the builder */
-    fatal(narrator_growing_allocate, &builder->Nexec_growing, sizeof(exec));
+    narrator_growing_allocate(&builder->Nexec_growing, sizeof(exec));
     textbase = builder->Nexec_growing.s;
   }
 
@@ -488,7 +456,7 @@ xapi exec_builder_build(exec_builder * restrict builder, exec ** restrict envp)
   // args - space
   if(builder->args_stor_alloc < (builder->args_len + 1))
   {
-    fatal(xrealloc, &builder->args_stor, sizeof(*builder->args_stor), builder->args_len + 1, builder->args_stor_alloc);
+    xrealloc(&builder->args_stor, sizeof(*builder->args_stor), builder->args_len + 1, builder->args_stor_alloc);
     builder->args_stor_alloc = builder->args_len + 1;
   }
 
@@ -503,7 +471,7 @@ xapi exec_builder_build(exec_builder * restrict builder, exec ** restrict envp)
   // envs - space
   if(builder->envs_stor_alloc < (builder->envs_len + 1))
   {
-    fatal(xrealloc, &builder->envs_stor, sizeof(*builder->envs_stor), builder->envs_len + 1, builder->envs_stor_alloc);
+    xrealloc(&builder->envs_stor, sizeof(*builder->envs_stor), builder->envs_len + 1, builder->envs_stor_alloc);
     builder->envs_stor_alloc = builder->envs_len + 1;
   }
 
@@ -520,6 +488,4 @@ xapi exec_builder_build(exec_builder * restrict builder, exec ** restrict envp)
   {
     *envp = builder->exec;
   }
-
-  finally : coda;
 }

@@ -18,7 +18,6 @@
 #ifndef _FAB_CLIENT_H
 #define _FAB_CLIENT_H
 
-#include "xapi.h"
 #include "types.h"
 
 #include "macros.h"
@@ -59,7 +58,7 @@ typedef struct fab_client {
 //  projdir     - project directory path (contains fabfile), e.g. "."
 //  ipcdir      - base ipc dir
 //
-xapi fab_client_create(
+void fab_client_create(
     fab_client ** restrict client
   , const char * restrict projdir
   , const char * restrict ipcdir
@@ -71,24 +70,24 @@ xapi fab_client_create(
 // SUMMARY
 //  free a client
 //
-xapi fab_client_xfree(fab_client * restrict client);
-xapi fab_client_ixfree(fab_client ** restrict client)
+void fab_client_xfree(fab_client * restrict client);
+void fab_client_ixfree(fab_client ** restrict client)
   __attribute__((nonnull));
 
-xapi fab_client_prepare(fab_client * restrict client)
+void fab_client_prepare(fab_client * restrict client)
   __attribute__((nonnull));
 
-xapi fab_client_kill(fab_client * restrict client)
+void fab_client_kill(fab_client * restrict client)
   __attribute__((nonnull));
 
 /*
  * launch fabd if its not already running
  */
 
-xapi fab_client_solicit(fab_client * restrict client)
+void fab_client_solicit(fab_client * restrict client)
   __attribute__((nonnull));
 
-xapi fab_client_attach(fab_client * restrict client, int channel_id)
+void fab_client_attach(fab_client * restrict client, int channel_id)
   __attribute__((nonnull));
 
 

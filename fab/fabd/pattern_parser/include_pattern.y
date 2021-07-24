@@ -133,11 +133,11 @@ utterance
 pattern
   : pattern-sections-list
   {
-    YFATAL(pattern_mk, &$$, &@$, $1);
+    pattern_mk(&$$, &@$, $1);
   }
   | pattern-initial-section
   {
-    YFATAL(pattern_mk, &$$, &@$, $1);
+    pattern_mk(&$$, &@$, $1);
   }
   ;
 
@@ -156,7 +156,7 @@ pattern-initial-section
   /* include patterns must be absolute */
   : '/'
   {
-    YFATAL(pattern_section_mk, &$$, &@$, PATTERN_NODESET_ROOT, 0, 0, NULL);
+    pattern_section_mk(&$$, &@$, PATTERN_NODESET_ROOT, 0, 0, NULL);
   }
   ;
 
@@ -167,14 +167,14 @@ pattern-section
 pattern-section-fs-child
   : pattern-dentry
   {
-    YFATAL(pattern_section_mk, &$$, &@$, 0, PATTERN_GRAPH_FS, PATTERN_AXIS_DOWN, $1);
+    pattern_section_mk(&$$, &@$, 0, PATTERN_GRAPH_FS, PATTERN_AXIS_DOWN, $1);
   }
   ;
 
 pattern-dentry
   : pattern-dentry-parts
   {
-    YFATAL(pattern_segments_mk, &$$, &@$, PATTERN_QUALIFIER_TYPE_AND, $1);
+    pattern_segments_mk(&$$, &@$, PATTERN_QUALIFIER_TYPE_AND, $1);
   }
   ;
 
@@ -196,11 +196,11 @@ pattern-dentry-part
 class
   : '[' class-parts ']'
   {
-    YFATAL(pattern_class_mk, &$$, &@$, $2, false);
+    pattern_class_mk(&$$, &@$, $2, false);
   }
   | '[' '!' class-parts ']'
   {
-    YFATAL(pattern_class_mk, &$$, &@$, $3, true);
+    pattern_class_mk(&$$, &@$, $3, true);
   }
   ;
 
@@ -215,7 +215,7 @@ class-parts
 class-pattern
   : class-part
   {
-    YFATAL(pattern_segments_mk, &$$, &@$, 0, $1);
+    pattern_segments_mk(&$$, &@$, 0, $1);
   }
   ;
 
@@ -227,29 +227,29 @@ class-part
 class-range
   : CHAR '-' CHAR
   {
-    YFATAL(pattern_range_mk, &$$, &@$, @1.s[0], @3.s[0]);
+    pattern_range_mk(&$$, &@$, @1.s[0], @3.s[0]);
   }
   ;
 
 class-char
   : CHAR
   {
-    YFATAL(pattern_byte_mk, &$$, &@$, @1.s[0]);
+    pattern_byte_mk(&$$, &@$, @1.s[0]);
   }
   ;
 
 alternation
   : '{' alternation-parts '}'
   {
-    YFATAL(pattern_alternation_mk, &$$, &@$, $2, false);
+    pattern_alternation_mk(&$$, &@$, $2, false);
   }
   | '{' ',' alternation-parts '}'
   {
-    YFATAL(pattern_alternation_mk, &$$, &@$, $3, true);
+    pattern_alternation_mk(&$$, &@$, $3, true);
   }
   | '{' alternation-parts ',' '}'
   {
-    YFATAL(pattern_alternation_mk, &$$, &@$, $2, true);
+    pattern_alternation_mk(&$$, &@$, $2, true);
   }
   ;
 
@@ -264,7 +264,7 @@ alternation-parts
 alternation-pattern
   : alternation-pattern-parts
   {
-    YFATAL(pattern_segments_mk, &$$, &@$, 0, $1);
+    pattern_segments_mk(&$$, &@$, 0, $1);
   }
   ;
 
@@ -322,11 +322,11 @@ unquoted-strpart
 word
   : word-tokens
   {
-    YFATAL(pattern_word_mk, &$$, &@$, @1.s, @1.l);
+    pattern_word_mk(&$$, &@$, @1.s, @1.l);
   }
   | uint16
   {
-    YFATAL(pattern_word_mk, &$$, &@$, @1.s, @1.l);
+    pattern_word_mk(&$$, &@$, @1.s, @1.l);
   }
   ;
 
@@ -348,11 +348,11 @@ word-tokens
 escape
   : CREF
   {
-    YFATAL(pattern_byte_mk, &$$, &@$, $1);
+    pattern_byte_mk(&$$, &@$, $1);
   }
   | HREF
   {
-    YFATAL(pattern_byte_mk, &$$, &@$, $1);
+    pattern_byte_mk(&$$, &@$, $1);
   }
   ;
 

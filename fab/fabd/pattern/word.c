@@ -18,7 +18,6 @@
 #include <string.h>
 
 #include "types.h"
-#include "xapi.h"
 
 #include "narrator.h"
 #include "value/writer.h"
@@ -40,26 +39,18 @@
 // static
 //
 
-static xapi say(const pattern_segment * restrict fn, narrator * restrict N)
+static void say(const pattern_segment * restrict fn, narrator * restrict N)
 {
-  enter;
-
   const pattern_word * n = &fn->word;
   xsayw(n->text, n->len);
-
-  finally : coda;
 }
 
-static xapi render(const pattern_segment * restrict fn, pattern_render_context * restrict ctx)
+static void render(const pattern_segment * restrict fn, pattern_render_context * restrict ctx)
 {
-  enter;
-
   const pattern_word * n = &fn->word;
 
-  fatal(narrator_xsayw, ctx->narrator, n->text, n->len);
-  fatal(pattern_segment_render, ctx);
-
-  finally : coda;
+  narrator_xsayw(ctx->narrator, n->text, n->len);
+  pattern_segment_render(ctx);
 }
 
 static void destroy(pattern_segment * restrict fn)
@@ -68,10 +59,8 @@ static void destroy(pattern_segment * restrict fn)
   wfree(n->text);
 }
 
-static xapi match(const pattern_segment * restrict segment, pattern_match_context * restrict ctx)
+static void match(const pattern_segment * restrict segment, pattern_match_context * restrict ctx)
 {
-  enter;
-
   const pattern_word * word;
   const char * restrict name;
   uint16_t namel;
@@ -85,14 +74,10 @@ static xapi match(const pattern_segment * restrict segment, pattern_match_contex
   {
     ctx->traversal->offset += word->len;
   }
-
-  finally : coda;
 }
 
-static xapi search(const pattern_segment * restrict segment, pattern_search_context * restrict ctx)
+static void search(const pattern_segment * restrict segment, pattern_search_context * restrict ctx)
 {
-  enter;
-
   const pattern_word * word;
   const char * restrict name;
   uint16_t namel;
@@ -106,20 +91,14 @@ static xapi search(const pattern_segment * restrict segment, pattern_search_cont
   {
     ctx->traversal->offset += word->len;
   }
-
-  finally : coda;
 }
 
-static xapi generate(const pattern_segment * restrict segment, pattern_generate_context * restrict ctx)
+static void generate(const pattern_segment * restrict segment, pattern_generate_context * restrict ctx)
 {
-  enter;
-
   const pattern_word * word = &segment->word;
 
-  fatal(narrator_xsayw, ctx->section_narrator, word->text, word->len);
-  fatal(pattern_segment_generate, ctx);
-
-  finally : coda;
+  narrator_xsayw(ctx->section_narrator, word->text, word->len);
+  pattern_segment_generate(ctx);
 }
 
 static int cmp(const pattern_segment * A, const pattern_segment *B)
@@ -138,21 +117,17 @@ static pattern_segment_vtable vtable = {
   , cmp : cmp
 };
 
-xapi pattern_word_mk(pattern_segment ** restrict rv, const yyu_location * restrict loc, const char * restrict s, uint16_t len)
+void pattern_word_mk(pattern_segment ** restrict rv, const yyu_location * restrict loc, const char * restrict s, uint16_t len)
 {
-  enter;
-
   pattern_segment * n = 0;
 
-  fatal(xmalloc, &n, sizeof(*n));
-  fatal(pattern_segment_init, n, &vtable, loc);
+  xmalloc(&n, sizeof(*n));
+  pattern_segment_init(n, &vtable, loc);
 
   n->word.len = len;
-  fatal(ixstrndup, &n->word.text, s, len);
+  ixstrndup(&n->word.text, s, len);
 
   chain_init(n, chn);
 
   *rv = n;
-
-  finally : coda;
 }

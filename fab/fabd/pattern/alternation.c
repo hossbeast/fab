@@ -31,10 +31,8 @@
 // static
 //
 
-static xapi say(const pattern_segment * restrict fn, narrator * restrict N)
+static void say(const pattern_segment * restrict fn, narrator * restrict N)
 {
-  enter;
-
   const pattern_alternation * n = &fn->alternation;
   pattern_segments * segments;
   const chain *T;
@@ -48,7 +46,7 @@ static xapi say(const pattern_segment * restrict fn, narrator * restrict N)
       xsays(",");
     }
 
-    fatal(pattern_segment_chain_say, segments->segment_head, N);
+    pattern_segment_chain_say(segments->segment_head, N);
   }
 
   if(n->epsilon) {
@@ -56,8 +54,6 @@ static xapi say(const pattern_segment * restrict fn, narrator * restrict N)
   }
 
   xsayc('}');
-
-  finally : coda;
 }
 
 static void destroy(pattern_segment * restrict n)
@@ -72,10 +68,8 @@ static void destroy(pattern_segment * restrict n)
   }
 }
 
-static xapi match(const pattern_segment * restrict segment, pattern_match_context * restrict ctx)
+static void match(const pattern_segment * restrict segment, pattern_match_context * restrict ctx)
 {
-  enter;
-
   const pattern_alternation * alternation = &segment->alternation;
   struct match_segments_traversal traversal;
 
@@ -90,17 +84,13 @@ static xapi match(const pattern_segment * restrict segment, pattern_match_contex
 
   ctx->traversal = &traversal;
 
-  fatal(pattern_segments_match, ctx);
+  pattern_segments_match(ctx);
 
   ctx->traversal = traversal.u.prev;
-
-  finally : coda;
 }
 
-static xapi search(const pattern_segment * restrict segment, pattern_search_context * restrict ctx)
+static void search(const pattern_segment * restrict segment, pattern_search_context * restrict ctx)
 {
-  enter;
-
   const pattern_alternation * alternation = &segment->alternation;
   struct search_segments_traversal traversal;
 
@@ -115,17 +105,13 @@ static xapi search(const pattern_segment * restrict segment, pattern_search_cont
 
   ctx->traversal = &traversal;
 
-  fatal(pattern_segments_search, ctx);
+  pattern_segments_search(ctx);
 
   ctx->traversal = traversal.u.prev;
-
-  finally : coda;
 }
 
-static xapi generate(const pattern_segment * pat, pattern_generate_context * restrict ctx)
+static void generate(const pattern_segment * pat, pattern_generate_context * restrict ctx)
 {
-  enter;
-
   const pattern_alternation * alternation = &pat->alternation;
 
   const chain *T;
@@ -142,9 +128,9 @@ static xapi generate(const pattern_segment * pat, pattern_generate_context * res
 
   saved_context_node = ctx->node;
   saved_section_traversal = ctx->section_traversal;
-  fatal(narrator_xseek, ctx->section_narrator, 0, NARRATOR_SEEK_CUR, &saved_section_narrator_pos);
-  fatal(narrator_xseek, ctx->section_narrator, 0, NARRATOR_SEEK_SET, 0);
-  fatal(narrator_xread, ctx->section_narrator, saved_text, saved_section_narrator_pos, 0);
+  narrator_xseek(ctx->section_narrator, 0, NARRATOR_SEEK_CUR, &saved_section_narrator_pos);
+  narrator_xseek(ctx->section_narrator, 0, NARRATOR_SEEK_SET, 0);
+  narrator_xread(ctx->section_narrator, saved_text, saved_section_narrator_pos, 0);
 
   llist_append(&ctx->segment_traversal_stack, &alt_segment_traversal, lln);
 
@@ -152,27 +138,23 @@ static xapi generate(const pattern_segment * pat, pattern_generate_context * res
     alt_segment_traversal.head = alt_segments->segment_head;
     alt_segment_traversal.cursor = 0;
     ctx->segment_traversal = &alt_segment_traversal;
-    fatal(pattern_segment_generate, ctx);
+    pattern_segment_generate(ctx);
 
     ctx->node = saved_context_node;
     ctx->section_traversal = saved_section_traversal;
-    fatal(narrator_xseek, ctx->section_narrator, 0, NARRATOR_SEEK_SET, 0);
-    fatal(narrator_xsayw, ctx->section_narrator, saved_text, saved_section_narrator_pos);
+    narrator_xseek(ctx->section_narrator, 0, NARRATOR_SEEK_SET, 0);
+    narrator_xsayw(ctx->section_narrator, saved_text, saved_section_narrator_pos);
   }
 
   llist_delete(&alt_segment_traversal, lln);
   ctx->segment_traversal = llist_last(&ctx->segment_traversal_stack, typeof(*ctx->segment_traversal), lln);
 
   if(alternation->epsilon)
-    fatal(pattern_segment_generate, ctx);
-
-  finally : coda;
+    pattern_segment_generate(ctx);
 }
 
-static xapi render(const pattern_segment * restrict pat, pattern_render_context * restrict ctx)
+static void render(const pattern_segment * restrict pat, pattern_render_context * restrict ctx)
 {
-  enter;
-
   const pattern_alternation * alternation = &pat->alternation;
 
   const chain *T;
@@ -193,12 +175,12 @@ static xapi render(const pattern_segment * restrict pat, pattern_render_context 
   saved_section_traversal = ctx->section_traversal;
 
   // make a copy of the current section
-  fatal(narrator_xseek, ctx->narrator, 0, NARRATOR_SEEK_CUR, &start_pos);
+  narrator_xseek(ctx->narrator, 0, NARRATOR_SEEK_CUR, &start_pos);
   saved_text_pos = ctx->pos + sizeof(pattern_render_fragment);
   saved_text_len = MIN(sizeof(saved_text), start_pos - ctx->pos - sizeof(pattern_render_fragment));
-  fatal(narrator_xseek, ctx->narrator, saved_text_pos, NARRATOR_SEEK_SET, 0);
-  fatal(narrator_xread, ctx->narrator, saved_text, saved_text_len, 0);
-  fatal(narrator_xseek, ctx->narrator, start_pos, NARRATOR_SEEK_SET, 0);
+  narrator_xseek(ctx->narrator, saved_text_pos, NARRATOR_SEEK_SET, 0);
+  narrator_xread(ctx->narrator, saved_text, saved_text_len, 0);
+  narrator_xseek(ctx->narrator, start_pos, NARRATOR_SEEK_SET, 0);
 
   llist_append(&ctx->segment_traversal_stack, &alt_segment_traversal, lln);
 
@@ -207,13 +189,13 @@ static xapi render(const pattern_segment * restrict pat, pattern_render_context 
     if(!first)
     {
       // start a new item - save the current offset
-      fatal(narrator_xseek, ctx->narrator, 0, NARRATOR_SEEK_CUR, &ctx->pos);
+      narrator_xseek(ctx->narrator, 0, NARRATOR_SEEK_CUR, &ctx->pos);
 
       // save a place for this fragment length
-      fatal(narrator_xsayw, ctx->narrator, (uint16_t[]) { 0 }, sizeof(uint16_t));
+      narrator_xsayw(ctx->narrator, (uint16_t[]) { 0 }, sizeof(uint16_t));
 
       // replay preceeding text
-      fatal(narrator_xsayw, ctx->narrator, saved_text, saved_text_len);
+      narrator_xsayw(ctx->narrator, saved_text, saved_text_len);
     }
     first = false;
 
@@ -222,7 +204,7 @@ static xapi render(const pattern_segment * restrict pat, pattern_render_context 
     ctx->segment_traversal = &alt_segment_traversal;
 
     // render sub-segments
-    fatal(pattern_segment_render, ctx);
+    pattern_segment_render(ctx);
 
     // restore
     ctx->section_traversal = saved_section_traversal;
@@ -236,19 +218,17 @@ static xapi render(const pattern_segment * restrict pat, pattern_render_context 
     if(!first)
     {
       // start a new item - save the current offset
-      fatal(narrator_xseek, ctx->narrator, 0, NARRATOR_SEEK_CUR, &ctx->pos);
+      narrator_xseek(ctx->narrator, 0, NARRATOR_SEEK_CUR, &ctx->pos);
 
       // save a place for this fragment length
-      fatal(narrator_xsayw, ctx->narrator, (uint16_t[]) { 0 }, sizeof(uint16_t));
+      narrator_xsayw(ctx->narrator, (uint16_t[]) { 0 }, sizeof(uint16_t));
 
       // replay preceeding text
-      fatal(narrator_xsayw, ctx->narrator, saved_text, saved_text_len);
+      narrator_xsayw(ctx->narrator, saved_text, saved_text_len);
     }
 
-    fatal(pattern_segment_render, ctx);
+    pattern_segment_render(ctx);
   }
-
-  finally : coda;
 }
 
 static int cmp(const pattern_segment * A, const pattern_segment *B)
@@ -276,19 +256,17 @@ static pattern_segment_vtable vtable = {
 // public
 //
 
-xapi pattern_alternation_mk(
+void pattern_alternation_mk(
     pattern_segment ** restrict rv
   , const yyu_location * restrict loc
   , pattern_segments * restrict segments_head
   , bool epsilon
 )
 {
-  enter;
-
   pattern_segment * n;
 
-  fatal(xmalloc, &n, sizeof(*n));
-  fatal(pattern_segment_init, n, &vtable, loc);
+  xmalloc(&n, sizeof(*n));
+  pattern_segment_init(n, &vtable, loc);
 
   n->alternation.segments_head = segments_head;
   n->alternation.epsilon = epsilon;
@@ -296,6 +274,4 @@ xapi pattern_alternation_mk(
   chain_init(n, chn);
 
   *rv = n;
-
-  finally : coda;
 }
