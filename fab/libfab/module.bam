@@ -22,7 +22,7 @@ use xapi/errtab     # this module contains errtabs
 use descriptor
 
 # make common objects available for #inclusion and linking by files in this module
-import fab/include
+import fab-v0.7/include
 
 import lib{common,xapi,xlinux,narrator,logger,lorien,descriptor}
 
@@ -30,7 +30,7 @@ import lib{common,xapi,xlinux,narrator,logger,lorien,descriptor}
 variant xapi.pic.{debug,devel,final,trace}
 
 # pull in object files in the module, except those under integ
-rule **~test/*.?.o -> libfab.$?.{so,a}
+rule **/*.?.o -> libfab.$?.{so,a}
 
 # default build targets
 rule libfab.?.{so,a} -> //module/targets

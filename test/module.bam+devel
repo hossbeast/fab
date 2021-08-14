@@ -3,7 +3,7 @@ use xapi/errtab
 
 variant xapi.pic.{debug,devel,final,trace}
 
-import fab/include
+import fab-v0.7/include
 import libxapi
 
 rule **/*.?.o -> //module/targets

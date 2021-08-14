@@ -29,8 +29,8 @@ variant xapi.pic.devel
 rule fabd.? -> //module/targets
 
 # make common objects available for #include and linking
-import fab/include
-import fab/asan
+import fab-v0.7/include
+import fab-v0.7/asan
 import lib{common,descriptor,xapi,xlinux,valyria,value,logger,narrator,fab,lorien,moria,yyutil,xunit}
 
 rule */*.?.o <- //modules/libfab/fs/fab/stats.h

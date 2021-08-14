@@ -23,7 +23,7 @@ use xunit-tests         # this module contains xunit tests
 use xapi/errtab         # this module contains errtabs
 
 # make common objects available for #inclusion and linking by files in this module
-import fab/include
+import fab-v0.7/include
 import libcommon
 import lib{xapi,xlinux,narrator,valyria,logger,xunit,yyutil}
 

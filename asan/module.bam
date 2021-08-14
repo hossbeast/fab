@@ -19,7 +19,7 @@ use cc             # this module contains c sources
 
 import libxapi
 import libxlinux
-import fab/include
+import fab-v0.7/include
 
 # variants for the module
 variant xapi.{debug,devel,final}{,.pic}

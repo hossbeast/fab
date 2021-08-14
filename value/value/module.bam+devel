@@ -24,7 +24,7 @@ use vcs/git
 variant xapi.{debug,devel,final,trace}
 
 # make common objects available for #include and linking
-import fab/include
+import fab-v0.7/include
 import fab/asan
 import lib{common,xapi,xlinux,logger,xunit,narrator,valyria,yyutil,value}
 

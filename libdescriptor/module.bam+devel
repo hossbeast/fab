@@ -19,7 +19,7 @@ use cc              # this module contains c sources
 use library/shared  # this module builds a shared library
 use library/static
 
-import fab/include
+import fab-v0.7/include
 import libcommon
 import libxapi
 

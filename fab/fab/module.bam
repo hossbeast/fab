@@ -27,8 +27,8 @@ variant xapi.{debug,devel,final,trace}
 rule fab.? -> //module/targets
 
 # make common objects available for #include and linking
-import fab/include
-import fab/asan
+import fab-v0.7/include
+import fab-v0.7/asan
 import lib{common,descriptor,xapi,xlinux,logger,xunit,narrator,valyria,yyutil,value,fab,lorien}
 
 variant xapi.devel : [

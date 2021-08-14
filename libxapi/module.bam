@@ -20,7 +20,7 @@ use library/shared  # this module builds a library
 use library/static  # this module builds a library
 use xapi/errtab     # this module contains errtabs
 
-import fab/include
+import fab-v0.7/include
 
 # variants for the module
 variant xapi.pic.{debug,devel,final,trace}
