@@ -115,7 +115,8 @@ static inline struct futexlock *futexlock_acquire(struct futexlock * restrict lo
       break;
     }
 
-    syscall(SYS_futex, &lock->i32, FUTEX_WAIT, tid, 0, 0, 0);
+    zero = 0;
+    syscall(SYS_futex, &lock->i32, FUTEX_WAIT, zero, 0, 0, 0);
   }
   smp_mb();
 
