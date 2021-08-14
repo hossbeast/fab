@@ -97,12 +97,16 @@ void channel_post(channel * restrict chan, fabipc_message * restrict msg)
 
 #if 0
   uint32_t h;
+  uint32_t i;
   char buf[64];
   size_t z;
+  fabipc_page *page;
 
-  h = containerof(msg, fabipc_page, msg)->tail;
+  page = containerof(msg, fabipc_page, msg);
+  h = page->tail;
+  i = page - chan->ipc.server_ring.pages;
   z = znload_attrs32(buf, sizeof(buf), fabipc_msg_type_attrs, msg->type);
-  printf("tx tail %5u id 0x%016"PRIx64" code %8d type %.*s", h, msg->id, msg->code, (int)z, buf);
+  printf("tx tail %5u idx %5u id 0x%016"PRIx64" code %8d type %.*s", h, i, msg->id, msg->code, (int)z, buf);
   if(msg->type == FABIPC_MSG_EVENTS)
   {
     z = znload_attrs32(buf, sizeof(buf), fabipc_event_type_attrs, msg->evtype);
@@ -135,33 +139,6 @@ fabipc_message * channel_acquire(channel * restrict chan)
     , &chan->ipc.client_ring.tail
     , FABIPC_CLIENT_RINGSIZE - 1
   );
-
-#if 0
-  if(!msg) { return msg; }
-
-  uint32_t h;
-  char buf[64];
-  size_t z;
-
-  h = containerof(msg, fabipc_page, msg)->head;
-  z = znload_attrs32(buf, sizeof(buf), fabipc_msg_type_attrs, msg->type);
-  printf("rx head %5u id 0x%016"PRIx64" code %8d type %.*s", h, msg->id, msg->code, (int)z, buf);
-  if(msg->type == FABIPC_MSG_EVENTS)
-  {
-    z = znload_attrs32(buf, sizeof(buf), fabipc_event_type_attrs, msg->evtype);
-    printf(" attrs %.*s", (int)z, buf);
-  }
-  else if(msg->attrs)
-  {
-    printf(" attrs 0x%08x", msg->attrs);
-  }
-  printf(" size %hu\n", msg->size);
-  if(msg->type == FABIPC_MSG_REQUEST)
-  {
-    printf(msg->text, msg->size);
-    printf("\n");
-  }
-#endif
 
 #if DEBUG || DEVEL
   if (msg) {
