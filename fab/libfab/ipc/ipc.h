@@ -31,8 +31,8 @@
 struct attrs32;
 
 /* allocated size of the channel */
-#define FABIPC_SHMSIZE          (16 * 1024 * 1024)
-#define FABIPC_PAGESIZE         8096
+#define FABIPC_SHMSIZE          (32 * 1024 * 1024)
+#define FABIPC_PAGESIZE         16304
 #define FABIPC_CLIENT_RINGSIZE  1024
 #define FABIPC_SERVER_RINGSIZE  1024
 

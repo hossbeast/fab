@@ -19,6 +19,7 @@
 #include <unistd.h>
 #include <wait.h>
 
+#include "xlinux/KERNEL.errtab.h"
 #include "common/assure.h"
 #include "common/color.h"
 #include "common/hash.h"
@@ -46,6 +47,12 @@ struct build_args build_args = {
 static struct build_args *args = &build_args;
 
 typedef struct build_slot {
+  /* slots can be chained together for execs with very large lists of strings */
+  struct build_slot *next;
+
+  /* buffer which info members point into */
+  char info_buf[8192];
+
   fab_build_slot_info info;
   fab_build_slot_results results;
   uint32_t stdout_len;
@@ -106,8 +113,14 @@ static void build_slot_release(void *e)
 {
   build_slot **bsp = e;
   build_slot *bs = *bsp;
+  build_slot *next;
 
-  llist_append(&slots_freelist, bs, lln);
+  while(bs)
+  {
+    next = bs->next;
+    llist_append(&slots_freelist, bs, lln);
+    bs = next;
+  }
 }
 
 static xapi connected(command * restrict cmd, fab_client * restrict client)
@@ -207,13 +220,12 @@ static void slot_free(build_slot *bs)
   free(bs);
 }
 
-static xapi slot_print(build_slot *bs)
+static xapi slot_print(build_slot *bs_zero)
 {
   enter;
 
   narrator *N = g_narrator_stdout;
-  fab_build_slot_info *info = &bs->info;
-  fab_build_slot_results *results = &bs->results;
+  fab_build_slot_results *results;
   fab_build_string str;
   int exit;
   int sig;
@@ -225,9 +237,12 @@ static xapi slot_print(build_slot *bs)
   } color;
   uint16_t blen;
   int x;
+  int y;
   int lines;
   size_t z;
+  build_slot *bs;
 
+  results = &bs_zero->results;
   exit = 0;
   sig = 0;
   core = false;
@@ -257,85 +272,124 @@ static xapi slot_print(build_slot *bs)
   }
 
   /* first arg is the program name */
-  descriptor_type_unmarshal(&str, &descriptor_fab_build_string, info->arg_list, info->arg_list_size);
-  xsayf("%2d %.*s -> ", info->stage, (int)str.text_len, str.text);
-  z = 0;
-  for(x = 0; x < info->target_list_len; x++)
+  for(bs = bs_zero; bs; bs = bs->next)
   {
-    z += descriptor_type_unmarshal(&str, &descriptor_fab_build_string, info->target_list + z, info->target_list_size - z);
-    if(x) {
-      xsays(", ");
+    if(bs->info.arg_list_len == 0) {
+      continue;
     }
-    xsayw(str.text, str.text_len);
+
+    descriptor_type_unmarshal(&str, &descriptor_fab_build_string, bs->info.arg_list, bs->info.arg_list_size);
+    xsayf("%2d %.*s -> ", bs->info.stage, (int)str.text_len, str.text);
+    break;
+  }
+
+  y = 0;
+  for(bs = bs_zero; bs; bs = bs->next)
+  {
+    z = 0;
+    for(x = 0; x < bs->info.target_list_len; x++)
+    {
+      z += descriptor_type_unmarshal(&str, &descriptor_fab_build_string, bs->info.target_list + z, bs->info.target_list_size - z);
+      if(y) {
+        xsays(", ");
+      }
+      xsayw(str.text, str.text_len);
+      y++;
+    }
+    RUNTIME_ASSERT((z + 6) == bs->info.target_list_size);
   }
   xsays("\n");
-  RUNTIME_ASSERT((z + 6) == info->target_list_size);
 
   if((success && args->success.show_path) || (!success && args->error.show_path))
   {
-    xsayf(" path %.*s\n", (int)info->path_len, info->path);
+    xsayf(" path %.*s\n", (int)bs_zero->info.path_len, bs_zero->info.path);
   }
   if((success && args->success.show_command) || (!success && args->error.show_command))
   {
-    z = 0;
-    for(x = 0; x < info->arg_list_len; x++)
+    y = 0;
+    for(bs = bs_zero; bs; bs = bs->next)
     {
-      z += descriptor_type_unmarshal(&str, &descriptor_fab_build_string, info->arg_list + z, info->arg_list_size - z);
-      if(x) {
-        xsays(" ");
+      z = 0;
+      for(x = 0; x < bs->info.arg_list_len; x++)
+      {
+        z += descriptor_type_unmarshal(&str, &descriptor_fab_build_string, bs->info.arg_list + z, bs->info.arg_list_size - z);
+        if(y) {
+          xsays(" ");
+        }
+        xsayw(str.text, str.text_len);
+        y++;
       }
-      xsayw(str.text, str.text_len);
+      RUNTIME_ASSERT((z + 6) == bs->info.arg_list_size);
     }
     xsays("\n");
-    RUNTIME_ASSERT((z + 6) == info->arg_list_size);
   }
   if((success && args->success.show_environment) || (!success && args->error.show_environment))
   {
-    xsayf(" envp %2d\n", info->env_list_len);
-    z = 0;
-    for(x = 0; x < info->env_list_len; x++)
+    xsayf(" envp %2d\n", bs_zero->info.env_list_count);
+    y = 0;
+    for(bs = bs_zero; bs; bs = bs->next)
     {
-      z += descriptor_type_unmarshal(&str, &descriptor_fab_build_string, info->env_list + z, info->env_list_size - z);
-      xsayf("  [%2d] %.*s\n", x, (int)str.text_len, str.text);
+      z = 0;
+      for(x = 0; x < bs->info.env_list_len; x++)
+      {
+        z += descriptor_type_unmarshal(&str, &descriptor_fab_build_string, bs->info.env_list + z, bs->info.env_list_size - z);
+        xsayf("  [%2d] %.*s\n", y, (int)str.text_len, str.text);
+        y++;
+      }
+      RUNTIME_ASSERT((z + 6) == bs->info.env_list_size);
     }
-    RUNTIME_ASSERT((z + 6) == info->env_list_size);
   }
   if((success && args->success.show_arguments) || (!success && args->error.show_arguments))
   {
-    xsayf(" argv %2d\n", info->arg_list_len);
-    z = 0;
-    for(x = 0; x < info->arg_list_len; x++)
+    xsayf(" argv %2d\n", bs_zero->info.arg_list_count);
+    y = 0;
+    for(bs = bs_zero; bs; bs = bs->next)
     {
-      z += descriptor_type_unmarshal(&str, &descriptor_fab_build_string, info->arg_list + z, info->arg_list_size - z);
-      xsayf("  [%2d] %.*s\n", x, (int)str.text_len, str.text);
+      z = 0;
+      for(x = 0; x < bs->info.arg_list_len; x++)
+      {
+        z += descriptor_type_unmarshal(&str, &descriptor_fab_build_string, bs->info.arg_list + z, bs->info.arg_list_size - z);
+        xsayf("  [%2d] %.*s\n", y, (int)str.text_len, str.text);
+        y++;
+      }
+      RUNTIME_ASSERT((z + 6) == bs->info.arg_list_size);
     }
-    RUNTIME_ASSERT((z + 6) == info->arg_list_size);
   }
   if((success && args->success.show_cwd) || (!success && args->error.show_cwd))
   {
-    xsayf(" cwd %.*s\n", (int)info->pwd_len, info->pwd);
+    xsayf(" cwd %.*s\n", (int)bs_zero->info.pwd_len, bs_zero->info.pwd);
   }
   if((success && args->success.show_sources) || (!success && args->error.show_sources))
   {
-    xsayf(" sources %2d\n", info->source_list_len);
-    z = 0;
-    for(x = 0; x < info->source_list_len; x++)
+    xsayf(" sources %2d\n", bs_zero->info.source_list_count);
+    y = 0;
+    for(bs = bs_zero; bs; bs = bs->next)
     {
-      z += descriptor_type_unmarshal(&str, &descriptor_fab_build_string, info->source_list + z, info->source_list_size - z);
-      xsayf("  [%2d] %.*s\n", x, (int)str.text_len, str.text);
+      z = 0;
+      for(x = 0; x < bs->info.source_list_len; x++)
+      {
+        z += descriptor_type_unmarshal(&str, &descriptor_fab_build_string, bs->info.source_list + z, bs->info.source_list_size - z);
+        xsayf("  [%2d] %.*s\n", y, (int)str.text_len, str.text);
+        y++;
+      }
+      RUNTIME_ASSERT((z + 6) == bs->info.source_list_size);
     }
-    RUNTIME_ASSERT((z + 6) == info->source_list_size);
   }
   if((success && args->success.show_targets) || (!success && args->error.show_targets))
   {
-    xsayf(" targets %2d\n", info->target_list_len);
-    z = 0;
-    for(x = 0; x < info->target_list_len; x++)
+    xsayf(" targets %2d\n", bs_zero->info.target_list_count);
+    y = 0;
+    for(bs = bs_zero; bs; bs = bs->next)
     {
-      z += descriptor_type_unmarshal(&str, &descriptor_fab_build_string, info->target_list + z, info->target_list_size - z);
-      xsayf("  [%2d] %.*s\n", x, (int)str.text_len, str.text);
+      z = 0;
+      for(x = 0; x < bs->info.target_list_len; x++)
+      {
+        z += descriptor_type_unmarshal(&str, &descriptor_fab_build_string, bs->info.target_list + z, bs->info.target_list_size - z);
+        xsayf("  [%2d] %.*s\n", y, (int)str.text_len, str.text);
+        y++;
+      }
+      RUNTIME_ASSERT((z + 6) == bs->info.target_list_size);
     }
-    RUNTIME_ASSERT((z + 6) == info->target_list_size);
   }
   if((success && args->success.show_status) || (!success && args->error.show_status))
   {
@@ -347,7 +401,7 @@ static xapi slot_print(build_slot *bs)
 
   if((success && args->success.show_stdout) || (!success && args->error.show_stdout))
   {
-    blen = bs->stdout_len;
+    blen = bs_zero->stdout_len;
     if(args->success.show_stdout_limit_bytes > 0)
     {
       blen = MIN(blen, args->success.show_stdout_limit_bytes);
@@ -358,7 +412,7 @@ static xapi slot_print(build_slot *bs)
       lines = 0;
       for(x = 0; x < blen; x++)
       {
-        if(bs->stdout_text[x] == '\n')
+        if(bs_zero->stdout_text[x] == '\n')
         {
           if(lines++ > args->success.show_stdout_limit_lines)
             break;
@@ -383,14 +437,14 @@ static xapi slot_print(build_slot *bs)
       if(blen)
       {
         xsays("\n");
-        xsayw(bs->stdout_text, blen);
+        xsayw(bs_zero->stdout_text, blen);
         xsays("\n");
       }
     }
   }
   if((success && args->success.show_stderr) || (!success && args->error.show_stderr))
   {
-    blen = bs->stderr_len;
+    blen = bs_zero->stderr_len;
     if(args->success.show_stderr_limit_bytes > 0)
     {
       blen = MIN(blen, args->success.show_stderr_limit_bytes);
@@ -401,7 +455,7 @@ static xapi slot_print(build_slot *bs)
       lines = 0;
       for(x = 0; x < blen; x++)
       {
-        if(bs->stderr_text[x] == '\n')
+        if(bs_zero->stderr_text[x] == '\n')
         {
           if(lines++ > args->success.show_stderr_limit_lines)
             break;
@@ -426,14 +480,14 @@ static xapi slot_print(build_slot *bs)
       if(blen)
       {
         xsays("\n");
-        xsayw(bs->stderr_text, blen);
+        xsayw(bs_zero->stderr_text, blen);
         xsays("\n");
       }
     }
   }
   if((success && args->success.show_auxout) || (!success && args->error.show_auxout))
   {
-    blen = bs->auxout_len;
+    blen = bs_zero->auxout_len;
     if(args->success.show_auxout_limit_bytes > 0)
     {
       blen = MIN(blen, args->success.show_auxout_limit_bytes);
@@ -444,7 +498,7 @@ static xapi slot_print(build_slot *bs)
       lines = 0;
       for(x = 0; x < blen; x++)
       {
-        if(bs->auxout_text[x] == '\n')
+        if(bs_zero->auxout_text[x] == '\n')
         {
           if(lines++ > args->success.show_auxout_limit_lines)
             break;
@@ -469,7 +523,7 @@ static xapi slot_print(build_slot *bs)
       if(blen)
       {
         xsays("\n");
-        xsayw(bs->auxout_text, blen);
+        xsayw(bs_zero->auxout_text, blen);
         xsays("\n");
       }
     }
@@ -682,10 +736,26 @@ xapi build_command_process_event(fab_client * restrict client, fabipc_message * 
 
   if(msg->evtype == FABIPC_EVENT_FORMULA_EXEC_FORKED)
   {
-    fatal(slot_alloc, &bs, msg->id);
-    fatal(hashtable_put, build_slots_bypid, &bs);
+    pid = msg->id;
+    bsp = hashtable_search(build_slots_bypid, (void*)&pid, sizeof(pid), build_slot_key_hash, build_slot_key_cmp);
+    if(bsp) {
+      bs = *bsp;
 
-    z = descriptor_type_unmarshal(&bs->info, &descriptor_fab_build_slot_info, msg->text, msg->size);
+      while(bs->next) {
+        bs = bs->next;
+      }
+
+      fatal(slot_alloc, &bs->next, msg->id);
+      bs = bs->next;
+    } else {
+      fatal(slot_alloc, &bs, msg->id);
+      fatal(hashtable_put, build_slots_bypid, &bs);
+    }
+
+    RUNTIME_ASSERT(msg->size <= sizeof(bs->info_buf));
+    memcpy(bs->info_buf, msg->text, msg->size);
+
+    z = descriptor_type_unmarshal(&bs->info, &descriptor_fab_build_slot_info, bs->info_buf, msg->size);
     RUNTIME_ASSERT(z == msg->size);
   }
   else
@@ -693,7 +763,7 @@ xapi build_command_process_event(fab_client * restrict client, fabipc_message * 
     pid = msg->id;
     bsp = hashtable_search(build_slots_bypid, (void*)&pid, sizeof(pid), build_slot_key_hash, build_slot_key_cmp);
     if(!bsp) {
-      fprintf(stderr, "unknown pid %"PRIu32"\n", pid);
+      fprintf(stderr, "unknown pid %"PRIu32" 0x%016x head %5u\n", pid, pid, containerof(msg, fabipc_page, msg)->head);
       goto XAPI_FINALLY;
     }
     bs = *bsp;
