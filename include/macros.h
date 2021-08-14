@@ -171,18 +171,12 @@ static inline size_t roundup2(size_t x)
   ptr;                                 \
 })
 
-#if DEBUG || DEVEL || XUNIT
-#include <stdlib.h>
-#include <stdio.h>
 #define RUNTIME_ASSERT(x) do {                          \
   if (!(x)) {                                           \
     fprintf(stderr, "%s:%d failed runtime assert: %s\n", __FILE__, __LINE__, #x); \
     RUNTIME_ABORT();                                    \
   }                                                     \
 } while(0)
-#else
-#define RUNTIME_ASSERT(x)
-#endif
 
 static inline void _crash()
 {

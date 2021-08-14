@@ -17,6 +17,7 @@
 
 #include "ipc.h"
 #include "common/attrs.h"
+#include "times.h"
 
 attrs32 * APIDATA fabipc_msg_type_attrs = (attrs32[]) {{
 #undef DEF

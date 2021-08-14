@@ -40,20 +40,13 @@ exec { $cmd[0] } @cmd;
 __DATA__
 
 envs : {
-  xunit : {
-    path-search : xunit.devel.xapi
-  }
-
   objs : [
     select : [
       target
       traverse : {
         direction : down
-        graph : depends
+        relation : strong
         extension : so
-
-        # an .so is listed after all of its dependencies (transitive)
-        order : postorder
       }
     ]
     property : relpath

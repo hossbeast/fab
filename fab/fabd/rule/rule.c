@@ -1129,6 +1129,9 @@ xapi rule_run(rule * restrict rule, rule_run_context * restrict ctx)
   RUNTIME_ASSERT(rule->relation);
   STATS_INC(g_stats.rule_run);
 
+//fatal(rule_say, rule, g_narrator_stdout);
+//fatal(narrator_xsays, g_narrator_stdout, "\n");
+
   if(rule->formula)
   {
     fatal(fml_node_get, rule, ctx, &fml_node);

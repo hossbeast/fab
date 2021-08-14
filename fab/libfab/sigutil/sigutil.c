@@ -124,8 +124,11 @@ xapi API sigutil_install_handlers()
   // low signals
   for(x = 1; x < SIGSYS; x++)
   {
-    if(x == SIGKILL || x == SIGSTOP || x == SIGABRT) { }
-    else if(x == SIGINT || x == SIGTERM || x == SIGQUIT) {
+    if(x == SIGKILL || x == SIGSTOP) {
+
+    } else if(x == SIGABRT) {
+      fatal(xsignal, x, SIG_DFL);
+    } else if(x == SIGINT || x == SIGTERM || x == SIGQUIT) {
       fatal(xsigaction, x, &term_act, 0);
     } else {
       fatal(xsigaction, x, &intr_act, 0);

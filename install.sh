@@ -12,7 +12,7 @@ if [[ $UID != 0 || $EUID != 0 ]]; then
   exit 1
 fi
 
-v=final
+v=debug
 bindir=/usr/local/bin
 libdir=/usr/lib
 rundir=/var/run

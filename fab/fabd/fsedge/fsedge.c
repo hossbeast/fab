@@ -140,6 +140,8 @@ void fsedge_release(fsedge * restrict fse)
   llist_append(&fsedge_freelist, fse, edge.owner);
 }
 
+#include "narrator.h"
+
 xapi fsedge_connect(
     fsent * restrict A
   , fsent * restrict B
@@ -160,10 +162,15 @@ xapi fsedge_connect(
     A = containerof(A->vertex.ref, fsent, vertex);
   }
 
-  r = moria_preconnect(&ctx, &g_graph, &A->vertex, &B->vertex, EDGE_FSTREE, 0);
+moria_edge *eee;
+  r = moria_preconnect(&ctx, &g_graph, &A->vertex, &B->vertex, EDGE_FSTREE, &eee);
   if(r == MORIA_HASEDGE) {
     goto XAPI_FINALLY;
   }
+if(r != MORIA_NOEDGE)
+{
+  fatal(graph_edge_say, eee, g_narrator_stdout);
+}
   RUNTIME_ASSERT(r == MORIA_NOEDGE);
   fatal(fsedge_alloc, &e, &g_graph);
   fatal(graph_connect, &ctx, &A->vertex, &B->vertex, &e->edge, EDGE_FSTREE);

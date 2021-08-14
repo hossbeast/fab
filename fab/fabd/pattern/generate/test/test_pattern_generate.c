@@ -319,6 +319,7 @@ xunit_unit xunit = {
                   "1-MOD!dir 2-b!U|file"
                   " 1:fs:2"
         , nodes : "b"
+, xu_weight : 1
       }}
     , (pattern_generate_test[]) {{
           operations : "MOD"
