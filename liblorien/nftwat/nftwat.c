@@ -50,6 +50,7 @@ static xapi __attribute__((nonnull(1, 3, 5, 7, 9))) walk(
   struct stat stb;
   uint8_t type;
   struct dirent *entp;
+  int r;
 
   patho = *pathl;
 
@@ -86,10 +87,14 @@ static xapi __attribute__((nonnull(1, 3, 5, 7, 9))) walk(
       child.udata = 0;
 
       type = entp->d_type;
-      if(type == DT_UNKNOWN || type == DT_LNK)
+      if(type == DT_LNK)
       {
-        fatal(xfstatats, dirfd, 0, &stb, path);
-        type = (stb.st_mode & S_IFMT) >> 12;
+        /* follow non-dangling symlinks */
+        fatal(uxfstatats, &r, dirfd, 0, &stb, path);
+        if(r == 0)
+        {
+          type = (stb.st_mode & S_IFMT) >> 12;
+        }
       }
 
       if(type == DT_REG)
