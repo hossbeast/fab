@@ -118,6 +118,21 @@ static xapi connected(command * restrict cmd, fab_client * restrict client)
   narrator_fixed nstor;
   fabipc_message * msg;
 
+  if(args->targets_len)
+  {
+    args->success.show_path = true;
+    args->success.show_arguments = true;
+    args->success.show_command = true;
+    args->success.show_cwd = true;
+    args->success.show_sources = true;
+    args->success.show_targets = true;
+    args->success.show_environment = true;
+    args->success.show_status = true;
+    args->success.show_stdout = true;
+    args->success.show_stderr = true;
+    args->success.show_auxout = true;
+  }
+
   /* subscribe to relevant events */
   msg = fab_client_produce(client);
   msg->type = FABIPC_MSG_EVENTSUB;
