@@ -146,13 +146,13 @@ int API moria_preconnect_hyper(
   rbnode *rbn = 0;
   moria_edge *e;
 
-  if(Alen == 1 && Blen == 1) {
-    return moria_preconnect(ctx, g, Alist[0], Blist[0], attrs, ep);
-  }
-
   RUNTIME_ASSERT(!(attrs & MORIA_EDGE_IDENTITY));
   RUNTIME_ASSERT(attrs & MORIA_EDGE_HYPER);
   RUNTIME_ASSERT(Alen + Blen);
+
+  if(Alen == 1 && Blen == 1) {
+    return moria_preconnect(ctx, g, Alist[0], Blist[0], attrs & ~MORIA_EDGE_HYPER, ep);
+  }
 
   if(Alen)
     qsort(Alist, Alen, sizeof(*Alist), ptrcmp);
@@ -209,13 +209,13 @@ void API moria_connect_hyper(
 {
   int x;
 
-  if(Alen == 1 && Blen == 1) {
-    return moria_connect(ctx, g, e, Alist[0], Blist[0], attrs);
-  }
-
   RUNTIME_ASSERT(!(attrs & MORIA_EDGE_IDENTITY));
   RUNTIME_ASSERT(attrs & MORIA_EDGE_HYPER);
   RUNTIME_ASSERT(Alen + Blen);
+
+  if(Alen == 1 && Blen == 1) {
+    return moria_connect(ctx, g, e, Alist[0], Blist[0], attrs & ~MORIA_EDGE_HYPER);
+  }
 
   e->attrs = attrs;
 
