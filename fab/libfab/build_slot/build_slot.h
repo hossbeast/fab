@@ -40,27 +40,33 @@ typedef struct fab_build_slot_info {
   uint16_t pwd_len;
 
   /* struct fab_build_string */
+  uint16_t arg_list_count;    // total number of items in arg_list
   void *arg_list;
-  uint32_t arg_list_size;
-  uint16_t arg_list_len;
+  uint32_t arg_list_size;     // size of the arg_list blob in this message
+  uint16_t arg_list_len;      // items in arg_list in this message
 
   /* struct fab_build_string */
+  uint16_t env_list_count;
   void *env_list;
   uint32_t env_list_size;
   uint16_t env_list_len;
 
   /* struct fab_build_string */
+  uint16_t source_list_count;
   void *source_list;
   uint32_t source_list_size;
   uint16_t source_list_len;
 
   /* struct fab_build_string */
+  uint16_t target_list_count;
   void *target_list;
   uint32_t target_list_size;
   uint16_t target_list_len;
 } fab_build_slot_info;
 
 /* fab_build_slot_info strings */
+/* FABIPC_EVENT_FORMULA_EXEC_ARG */
+/* FABIPC_EVENT_FORMULA_EXEC_ENV */
 typedef struct fab_build_string {
   uint16_t text_len;
   const char *text;

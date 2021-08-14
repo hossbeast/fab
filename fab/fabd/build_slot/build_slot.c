@@ -216,123 +216,207 @@ static xapi build_slot_forked(build_slot * restrict bs)
   uint16_t len;
   uint32_t list_size;
   uint16_t list_size_off;
+  uint16_t list_len_off;
   uint16_t len_off;
   int x;
-  llist list;
-  moria_vertex *v;
   fsent *n;
   char *dst;
   size_t sz;
+
+  /* lists tracking */
+  uint16_t argv_count;
+  uint16_t argv_x;
+  uint16_t envp_count;
+  uint16_t envp_x;
+
+  llist sources;
+  uint16_t sources_count;
+  uint16_t sources_x;
+  moria_vertex *source;
+
+  llist targets;
+  uint16_t targets_count;
+  uint16_t targets_x;
+  moria_vertex *target;
 
   /* struct fab_build_slot_info */
   if(!events_would(FABIPC_EVENT_FORMULA_EXEC_FORKED, &chan, &msg)) {
     goto XAPI_FINALIZE;
   }
 
-  dst = msg->text;
-  sz = sizeof(msg->text);
-  z = 0;
-  z += marshal_u32(dst + z, sz - z, descriptor_fab_build_slot_info.id);
+  argv_count = sentinel(bs->argv);
+  argv_x = 0;
+  envp_count = sentinel(bs->envp);
+  envp_x = 0;
 
-  /* pid, stage */
-  z += marshal_u32(dst + z, sz - z, bs->pid);
-  z += marshal_u16(dst + z, sz - z, bs->stage);
+  llist_init_node(&sources);
+  dependency_sources(bs->bpe, &sources);
+  sources_count = llist_count(&sources);
+  sources_x = 0;
+  source = llist_first(&sources, typeof(*source), lln);
 
-  /* path */
-  if(bs->file_pe)
+  llist_init_node(&targets);
+  dependency_targets(bs->bpe, &targets);
+  targets_count = llist_count(&targets);
+  targets_x = 0;
+  target = llist_first(&targets, typeof(*target), lln);
+
+  while(1)
   {
-    len = bs->file_pe->dir->len + 1 + bs->file_pe->len;
+    dst = msg->text;
+    sz = sizeof(msg->text);
+    z = 0;
+    z += marshal_u32(dst + z, sz - z, descriptor_fab_build_slot_info.id);
+
+    /* pid, stage */
+    z += marshal_u32(dst + z, sz - z, bs->pid);
+    z += marshal_u16(dst + z, sz - z, bs->stage);
+
+    /* path */
+    if(bs->file_pe)
+    {
+      len = bs->file_pe->dir->len + 1 + bs->file_pe->len;
+      z += marshal_u16(dst + z, sz - z, len);
+      z += znloadw(dst + z, sz - z, bs->file_pe->dir->s, bs->file_pe->dir->len);
+      z += znloadc(dst + z, sz - z, '/');
+      z += znloadw(dst + z, sz - z, bs->file_pe->s, bs->file_pe->len);
+    }
+    else
+    {
+      len = strlen(bs->file_path);
+      z += marshal_u16(dst + z, sz - z, len);
+      z += znloadw(dst + z, sz - z, bs->file_path, len);
+    }
+
+    /* cwd */
+    len = bs->mod->dir_node_abspath_len;
     z += marshal_u16(dst + z, sz - z, len);
-    z += znloadw(dst + z, sz - z, bs->file_pe->dir->s, bs->file_pe->dir->len);
-    z += znloadc(dst + z, sz - z, '/');
-    z += znloadw(dst + z, sz - z, bs->file_pe->s, bs->file_pe->len);
+    z += znloadw(dst + z, sz - z, bs->mod->dir_node_abspath, len);
+
+    /* args */
+    z += marshal_u16(dst + z, sz - z, argv_count);          /* total items in argv */
+    z += align(z, 4);
+    list_size_off = z;
+    z += marshal_u32(dst + z, sz - z, 0);                   /* size of argv blob in this message */
+    z += align(z, 2);
+    list_len_off = z;
+    z += marshal_u16(dst + z, sz - z, 0);                   /* args items in this message */
+    x = 0;
+    for(; argv_x < argv_count; argv_x++)
+    {
+      len = strlen(bs->argv[argv_x]);
+      if((z + len + 256) > (sz - z)) {
+        break;
+      }
+
+      z += marshal_u32(dst + z, sz - z, descriptor_fab_build_string.id);
+      z += marshal_u16(dst + z, sz - z, len);
+      z += znloadw(dst + z, sz - z, bs->argv[argv_x], len);
+      x++;
+    }
+    list_size = z - list_size_off;
+    marshal_u32(dst + list_size_off, sz - list_size_off, list_size);
+    marshal_u16(dst + list_len_off, sz - list_len_off, x);
+
+    /* envs */
+    z += marshal_u16(dst + z, sz - z, envp_count);          /* total items in envp  */
+    z += align(z, 4);
+    list_size_off = z;
+    z += marshal_u32(dst + z, sz - z, 0);                   /* size of envs blob in this message */
+    z += align(z, 2);
+    list_len_off = z;
+    z += marshal_u16(dst + z, sz - z, 0);                   /* env items in in this message */
+    x = 0;
+    for(; envp_x < envp_count; envp_x++)
+    {
+      len = strlen(bs->envp[envp_x]);
+      if((z + len + 256) > (sz - z)) {
+        break;
+      }
+
+      z += marshal_u32(dst + z, sz - z, descriptor_fab_build_string.id);
+      z += marshal_u16(dst + z, sz - z, len);
+      z += znloadw(dst + z, sz - z, bs->envp[envp_x], len);
+      x++;
+    }
+    list_size = z - list_size_off;
+    marshal_u32(dst + list_size_off, sz - list_size_off, list_size);
+    marshal_u16(dst + list_len_off, sz - list_len_off, x);
+
+    /* sources */
+    z += marshal_u16(dst + z, sz - z, sources_count);   /* count */
+    z += align(z, 4);
+    list_size_off = z;
+    z += marshal_u32(dst + z, sz - z, 0);               /* size */
+    z += align(z, 2);
+    list_len_off = z;
+    z += marshal_u16(dst + z, sz - z, 0);               /* length */
+    x = 0;
+    while(source)
+    {
+      if((z + 512 + 256) > (sz - z)) {
+        break;
+      }
+
+      z += marshal_u32(dst + z, sz - z, descriptor_fab_build_string.id);
+      n = containerof(source, fsent, vertex);
+      len_off = z;
+      z += marshal_u16(dst + z, sz - z, 0);
+      len = fsent_path_znload(dst + z, sz - z, n);
+      marshal_u16(dst + len_off, sz - len_off, len);
+      z += len;
+
+      source = llist_next(&sources, source, lln);
+      x++;
+      sources_x++;
+    }
+    list_size = z - list_size_off;
+    marshal_u32(dst + list_size_off, sz - list_size_off, list_size);
+    marshal_u16(dst + list_len_off, sz - list_len_off, x);
+
+    /* targets */
+    z += marshal_u16(dst + z, sz - z, targets_count);/* count */
+    z += align(z, 4);
+    list_size_off = z;
+    z += marshal_u32(dst + z, sz - z, 0);            /* size */
+    z += align(z, 2);
+    list_len_off = z;
+    z += marshal_u16(dst + z, sz - z, 0);            /* length */
+    x = 0;
+    while(target)
+    {
+      if((z + 512 + 256) > (sz - z)) {
+        break;
+      }
+
+      z += marshal_u32(dst + z, sz - z, descriptor_fab_build_string.id);
+      n = containerof(target, fsent, vertex);
+      len_off = z;
+      z += marshal_u16(dst + z, sz - z, 0);
+      len = fsent_path_znload(dst + z, sz - z, n);
+      marshal_u16(dst + len_off, sz - len_off, len);
+      z += len;
+
+      target = llist_next(&targets, target, lln);
+      x++;
+      targets_x++;
+    }
+    list_size = z - list_size_off;
+    marshal_u32(dst + list_size_off, sz - list_size_off, list_size);
+    marshal_u16(dst + list_len_off, sz - list_len_off, x);
+
+    msg->size = z;
+    msg->id = bs->pid;
+    events_publish(chan, msg);
+
+    if(argv_x == argv_count && envp_x == envp_count && sources_x == sources_count && targets_x == targets_count) {
+      break;
+    }
+
+    if(!events_would(FABIPC_EVENT_FORMULA_EXEC_FORKED, &chan, &msg)) {
+      goto XAPI_FINALIZE;
+    }
   }
-  else
-  {
-    len = strlen(bs->file_path);
-    z += marshal_u16(dst + z, sz - z, len);
-    z += znloadw(dst + z, sz - z, bs->file_path, len);
-  }
-
-  /* cwd */
-  len = strlen(bs->mod->dir_node_abspath);
-  z += marshal_u16(dst + z, sz - z, len);
-  z += znloadw(dst + z, sz - z, bs->mod->dir_node_abspath, len);
-
-  /* args */
-  z += align(z, 4);
-  list_size_off = z;
-  z += marshal_u32(dst + z, sz - z, 0);
-  z += marshal_u16(dst + z, sz - z, sentinel(bs->argv));
-  for(x = 0; x < sentinel(bs->argv); x++)
-  {
-    z += marshal_u32(dst + z, sz - z, descriptor_fab_build_string.id);
-    len = strlen(bs->argv[x]);
-    z += marshal_u16(dst + z, sz - z, len);
-    z += znloadw(dst + z, sz - z, bs->argv[x], len);
-  }
-  list_size = z - list_size_off;
-  marshal_u32(dst + list_size_off, sz - list_size_off, list_size);
-
-  /* envs */
-  z += align(z, 4);
-  list_size_off = z;
-  z += marshal_u32(dst + z, sz - z, 0);                   /* size */
-  z += marshal_u16(dst + z, sz - z, sentinel(bs->envp));  /* length */
-  for(x = 0; x < sentinel(bs->envp); x++)
-  {
-    z += marshal_u32(dst + z, sz - z, descriptor_fab_build_string.id);
-    len = strlen(bs->envp[x]);
-    z += marshal_u16(dst + z, sz - z, len);
-    z += znloadw(dst + z, sz - z, bs->envp[x], len);
-  }
-  list_size = z - list_size_off;
-  marshal_u32(dst + list_size_off, sz - list_size_off, list_size);
-
-  /* sources */
-  llist_init_node(&list);
-  dependency_sources(bs->bpe, &list);
-  len = llist_count(&list);
-  z += align(z, 4);
-  list_size_off = z;
-  z += marshal_u32(dst + z, sz - z, 0);   /* size */
-  z += marshal_u16(dst + z, sz - z, len); /* length */
-  llist_foreach(&list, v, lln) {
-    z += marshal_u32(dst + z, sz - z, descriptor_fab_build_string.id);
-    n = containerof(v, fsent, vertex);
-    len_off = z;
-    z += marshal_u16(dst + z, sz - z, 0);
-    len = fsent_path_znload(dst + z, sz - z, n);
-    marshal_u16(dst + len_off, sz - len_off, len);
-    z += len;
-  }
-  list_size = z - list_size_off;
-  marshal_u32(dst + list_size_off, sz - list_size_off, list_size);
-
-  /* targets */
-  llist_init_node(&list);
-  dependency_targets(bs->bpe, &list);
-  len = llist_count(&list);
-  z += align(z, 4);
-  list_size_off = z;
-  z += marshal_u32(dst + z, sz - z, 0);
-  z += marshal_u16(dst + z, sz - z, len);
-  llist_foreach(&list, v, lln) {
-    z += marshal_u32(dst + z, sz - z, descriptor_fab_build_string.id);
-    n = containerof(v, fsent, vertex);
-    len_off = z;
-    z += marshal_u16(dst + z, sz - z, 0);
-    len = fsent_path_znload(dst + z, sz - z, n);
-    marshal_u16(dst + len_off, sz - len_off, len);
-    z += len;
-  }
-  list_size = z - list_size_off;
-  marshal_u32(dst + list_size_off, sz - list_size_off, list_size);
-
-  msg->size = z;
-
-  msg->id = bs->pid;
-  events_publish(chan, msg);
 
   finally : coda;
 }
@@ -461,7 +545,7 @@ xapi build_slot_fork_and_exec(build_slot * restrict bs)
   const value * vars;
   const exec * variant_exec = 0;
   exec * local_exec = 0;
-  size_t envp_len = 0;
+  size_t envp_count = 0;
   uint16_t new_env_len;
   size_t args_len;
   size_t envs_size;
@@ -475,6 +559,7 @@ xapi build_slot_fork_and_exec(build_slot * restrict bs)
   STATS_INC(g_stats.bsexec);
 
   mod = bs->mod;
+
   fml = bs->bpe->fml->self_fml;
   vars = bs->vars;
   variant_exec = bs->exec;
@@ -568,20 +653,20 @@ xapi build_slot_fork_and_exec(build_slot * restrict bs)
   if(variant_exec)
   {
     memcpy(bs->env_stor, variant_exec->envs, sizeof(*variant_exec->envs) * variant_exec->envs_size);
-    envp_len += variant_exec->envs_size;
+    envp_count += variant_exec->envs_size;
   }
 
-  new_env_len = insertion_sort(bs->env_stor, envp_len, local_exec->envs, local_exec->envs_size);
-  envp_len = new_env_len;
+  new_env_len = insertion_sort(bs->env_stor, envp_count, local_exec->envs, local_exec->envs_size);
+  envp_count = new_env_len;
 
   // $PATH if specified
   if(path_cache_env_path)
   {
-    new_env_len = insertion_sort(bs->env_stor, envp_len, &path_cache_env_path, 1);
-    envp_len = new_env_len;
+    new_env_len = insertion_sort(bs->env_stor, envp_count, &path_cache_env_path, 1);
+    envp_count = new_env_len;
   }
 
-  bs->env_stor[envp_len] = 0;
+  bs->env_stor[envp_count] = 0;
   bs->envp = bs->env_stor;
 
   fatal(xfork, &bs->pid);
