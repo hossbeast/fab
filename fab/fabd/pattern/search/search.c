@@ -90,13 +90,12 @@ static xapi search_visit(moria_vertex * restrict v, void * _ctx, moria_traversal
   ctx->traversal = &traversal;
 
   ctx->node = n;
-  //ctx->label = n->vertex.label;
-  //ctx->label_len = n->vertex.label_len;
   ctx->matched = false;
   fatal(pattern_segments_search, ctx);
 
-  if(!ctx->matched)
+  if(!ctx->matched) {
     goto restore;
+  }
 
   // match from next section
   ctx->section_traversal.section = chain_next(ctx->section_traversal.head, &ctx->section_traversal.cursor, chn);
@@ -105,6 +104,8 @@ static xapi search_visit(moria_vertex * restrict v, void * _ctx, moria_traversal
   {
     fatal(xmalloc, &m, sizeof(*m));
     m->node = n;
+
+    /* active index from variants segments in the preceding segments search */
     if(ctx->variant_index != -1) {
       m->variant = set_table_get(ctx->variants, ctx->variant_index);
     }
@@ -378,7 +379,6 @@ xapi pattern_search(
 
   ctx.section_traversal.head = pattern->section_head;
   ctx.section_traversal.section = chain_next(ctx.section_traversal.head, &ctx.section_traversal.cursor, chn);
-  ctx.segments_process = pattern_segments_search;
 
   /* search pattern begins at the module dirnode */
   fatal(pattern_section_search, &ctx, module->dir_node);
