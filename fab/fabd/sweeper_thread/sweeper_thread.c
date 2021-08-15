@@ -23,11 +23,13 @@
 #include "logger.h"
 #include "logger/config.h"
 #include "narrator.h"
+#include "narrator/fixed.h"
 #include "xapi/trace.h"
 #include "xlinux/KERNEL.errtab.h"
 #include "xlinux/xpthread.h"
 #include "xlinux/xstdlib.h"
 #include "xlinux/xtime.h"
+#include "value/writer.h"
 
 #include "sweeper_thread.h"
 #include "args.h"
@@ -46,6 +48,7 @@
 #include "atomics.h"
 #include "threads.h"
 #include "times.h"
+#include "inotify_mask.h"
 
 static llist event_queue = LLIST_INITIALIZER(event_queue);
 static llist child_event_freelist = LLIST_INITIALIZER(child_event_freelist);
@@ -62,70 +65,40 @@ static xapi process_event(sweeper_event * restrict ev, graph_invalidation_contex
   fsent *n;
   sweeper_child_event *cev = 0;
   size_t z;
-  narrator *N;
-  const char *event;
 
   if(ev->kind == SWEEPER_EVENT_SELF)
   {
     n = containerof(ev, fsent, pending);
   }
-  else if(ev->kind == SWEEPER_EVENT_CHILD)
+  else
   {
+    RUNTIME_ASSERT(ev->kind == SWEEPER_EVENT_CHILD);
     cev = containerof(ev, typeof(*cev), sweep_event);
     n = cev->parent;
   }
-  else
-  {
-    RUNTIME_ABORT();
-  }
 
-  if(log_would(L_FSEVENT))
+  if(ev->mask & (IN_DELETE | IN_DELETE_SELF | IN_MOVE_SELF | IN_MOVED_FROM))
   {
-    if((ev->mask & IN_DELETE) && ev->kind == SWEEPER_EVENT_CHILD)
-    {
+    if(ev->mask & (IN_CREATE | IN_MOVED_TO)) {
       /* entity created then subsequently deleted during the epoch - no-op */
+      goto XAPI_FINALLY;
+    }
+
+    if(ev->kind == SWEEPER_EVENT_SELF)
+    {
+      v = &n->vertex;
     }
     else
     {
-      if(ev->mask & IN_DELETE)
+      RUNTIME_ASSERT(ev->kind == SWEEPER_EVENT_CHILD);
+      v = &cev->parent->vertex;
+      if((v = moria_vertex_downw(v, cev->name, cev->name_len)) == 0)
       {
-        /* entity was deleted */
-        event = "DELETE";
-      }
-      else if(ev->kind == SWEEPER_EVENT_CHILD)
-      {
-        event = "CREATE";
-      }
-      else
-      {
-        event = "MODIFY";
-      }
-
-      if(log_would(L_FSEVENT))
-      {
-        fatal(log_start, L_FSEVENT, &N);
-        xsayf(" era %5"PRIu32" %9s ", event_era, event);
-        fatal(fsent_project_relative_path_say, n, N);
-        if(cev)
-        {
-          xsays("//");
-          xsayw(cev->name, cev->name_len);
-        }
-        fatal(log_finish);
+        /* delete event for an fsent which no longer exists */
+        goto XAPI_FINALLY;
       }
     }
-  }
 
-  if((ev->mask & IN_DELETE) && ev->kind == SWEEPER_EVENT_CHILD)
-  {
-    /* entity created then subsequently deleted during the epoch - no-op */
-  }
-  else if(ev->mask & IN_DELETE)
-  {
-    /* entity was deleted */
-    RUNTIME_ASSERT(ev->kind == SWEEPER_EVENT_SELF);
-
-    v = &n->vertex;
     ue = v->up_identity;
 
     /* deleted the root node ?? */
@@ -133,10 +106,8 @@ static xapi process_event(sweeper_event * restrict ev, graph_invalidation_contex
 
     fatal(graph_disintegrate, ue, invalidation);
   }
-  else if(ev->kind == SWEEPER_EVENT_CHILD)
+  else if(ev->mask & (IN_CREATE | IN_MOVED_TO) && ev->kind == SWEEPER_EVENT_CHILD)
   {
-    n = 0;
-
     /* entity was created */
     if(ev->mask & IN_ISDIR)
     {
@@ -326,6 +297,9 @@ xapi sweeper_thread_enqueue(fsent *n, uint32_t mask, const char * restrict name,
 
   if(name)
   {
+    /* event for an fsent in the watchd directory */
+    RUNTIME_ASSERT((mask & (IN_DELETE_SELF | IN_MOVE_SELF)) == 0);
+
     /* lookup the event record for this name, under this directory */
     key = (typeof(key)) {
         .name = name
@@ -364,12 +338,8 @@ xapi sweeper_thread_enqueue(fsent *n, uint32_t mask, const char * restrict name,
     }
   }
 
-  /* push to the end */
-  llist_delete(e, lln);
-  llist_append(&event_queue, e, lln);
-
-  /* coalesce events */
-  if(mask & IN_CREATE) {
+  /* ignore the delete if the entity was subsequently re-created during the epoch */
+  if((mask & (IN_CREATE | IN_MOVED_TO))) {
     e->mask &= ~(IN_DELETE | IN_MOVED_FROM);
   }
 
@@ -377,6 +347,10 @@ xapi sweeper_thread_enqueue(fsent *n, uint32_t mask, const char * restrict name,
 
   /* refresh timer */
   e->era = event_era;
+
+  /* push to the end */
+  llist_delete(e, lln);
+  llist_append(&event_queue, e, lln);
 
 finally:
   spinlock_release(&event_queue_lock);

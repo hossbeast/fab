@@ -19,6 +19,7 @@
 
 #include "logger/config.h"
 #include "narrator.h"
+#include "narrator/fixed.h"
 #include "valyria/map.h"
 #include "xapi/trace.h"
 #include "xlinux/KERNEL.errtab.h"
@@ -26,6 +27,7 @@
 #include "xlinux/xpthread.h"
 #include "xlinux/xunistd.h"
 #include "xlinux/xtime.h"
+#include "value/writer.h"
 
 #include "notify_thread.h"
 #include "fsent.h"
@@ -49,13 +51,16 @@ static map *in_fsent_by_wd;
 /* inotify event buffer */
 static char evbuf[4096];
 
+#include "zbuffer.h"
+#include "inotify_mask.h"
+
 static xapi notify_thread()
 {
   enter;
 
   sigset_t sigs;
   fsent *n;
-  moria_vertex *v;
+  moria_vertex *v, *c;
   const char *label = 0;
   uint16_t label_len = 0;
   uint16_t evbuf_off;
@@ -104,27 +109,24 @@ static xapi notify_thread()
       }
 
       v = &n->vertex;
+      c = 0;
 
       if(ev->mask & (IN_MOVE_SELF | IN_DELETE_SELF))
       {
         /* only applies to the directory itself */
         label = 0;
+        label_len = 0;
       }
       else
       {
         label = ev->name;
         label_len = strlen(ev->name);
-
-        if((v = moria_vertex_downw(v, label, label_len))) {
-          n = containerof(v, fsent, vertex);
+        if((c = moria_vertex_downw(v, label, label_len)))
+        {
+          n = containerof(c, fsent, vertex);
           label = 0;
+          label_len = 0;
         }
-      }
-
-      if(n->notify_state != NOTIFY_MONITOR)
-      {
-        /* should only ever be set for file nodes */
-        RUNTIME_ASSERT(label == 0);
       }
 
       if(n->notify_state == NOTIFY_SUPPRESS)
