@@ -115,7 +115,7 @@ static xapi handler_thread(handler_context * restrict ctx)
     fail(SYS_ABORT);
   }
 
-  iter = 1;
+  iter = 0;
   pulse = chan->ipc.client_pulse;
   rcu_register(&rcu_self);
   while(!g_params.shutdown)
@@ -160,15 +160,14 @@ static xapi handler_thread(handler_context * restrict ctx)
         break;
       }
 
-      chan->ipc.client_ring.waiters = 1;
-      smp_wmb();
+      atomic_store(&chan->ipc.client_ring.waiters, 1);
       fatal(uxfutex, &r, &chan->ipc.client_ring.waiters, FUTEX_WAIT, 1, &interval, 0, 0);
       if(r == EINTR || r == EAGAIN) {
         continue;
       }
 
       /* 5 seconds */
-      if(((iter++) % 25) == 0) {
+      if(((++iter) % 25) == 0) {
         if(pulse == chan->ipc.client_pulse) {
           break;
         }
@@ -177,6 +176,7 @@ static xapi handler_thread(handler_context * restrict ctx)
     }
     else
     {
+      iter = 0;
       ctx->chan->msgid = client_msg->id;
 
       /* message received */
@@ -266,7 +266,7 @@ conclude(&R);
   channel_release(chan);
   handler_release(ctx);
 
-  atomic_dec(&g_params.thread_count);
+  atomic_fetch_dec(&g_params.thread_count);
   syscall(SYS_tgkill, g_params.pid, g_params.thread_monitor, SIGUSR1);
   return 0;
 }
@@ -292,10 +292,10 @@ xapi handler_thread_launch(pid_t client_pid, pid_t client_tid)
   fatal(xpthread_attr_init, &attr);
   fatal(xpthread_attr_setdetachstate, &attr, PTHREAD_CREATE_DETACHED);
 
-  atomic_inc(&g_params.thread_count);
+  atomic_fetch_inc(&g_params.thread_count);
   if((rv = pthread_create(&pthread_id, &attr, handler_thread_jump, ctx)) != 0)
   {
-    atomic_dec(&g_params.thread_count);
+    atomic_fetch_dec(&g_params.thread_count);
     tfail(perrtab_KERNEL, rv);
   }
 

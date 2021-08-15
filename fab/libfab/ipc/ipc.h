@@ -33,8 +33,10 @@ struct attrs32;
 /* allocated size of the channel */
 #define FABIPC_SHMSIZE          (32 * 1024 * 1024)
 #define FABIPC_PAGESIZE         16304
-#define FABIPC_CLIENT_RINGSIZE  1024
-#define FABIPC_SERVER_RINGSIZE  1024
+#define FABIPC_RINGSIZE         1024
+
+/* max number of concurrent producers without stalling */
+#define FABIPC_PRODUCERS        16
 
 #define FABIPC_MSG_TYPE_OPT 0xff
 
@@ -63,9 +65,15 @@ extern struct attrs32 * fabipc_msg_type_attrs;
   int code;                                                 \
   uint32_t size;              /* size of the text field */  \
 
+enum fabipc_page_state {
+  FABIPC_PAGE_STATE_UNUSED,
+  FABIPC_PAGE_STATE_POSTED,
+  FABIPC_PAGE_STATE_ACQUIRED,
+};
+
 /* calculate the offset to text */
 struct _fabipc_page_layout {
-  int state;
+  enum fabipc_page_state state;
   uint32_t head;
   struct __attribute__((aligned(8))) {
     FABIPC_MESSAGE_FIELDS
@@ -81,7 +89,7 @@ typedef struct fabipc_message {
 typedef struct fabipc_page {
   union {
     struct {
-      int state;
+      enum fabipc_page_state state;
       union {
         uint32_t head;
         uint32_t tail;  // not needed - debug only
@@ -113,18 +121,20 @@ typedef struct fabipc_channel
 
   // messages client -> server
   struct __attribute__((aligned(8))) {
-    struct fabipc_page pages[FABIPC_CLIENT_RINGSIZE];
+    struct fabipc_page pages[FABIPC_RINGSIZE];
     uint32_t head;          // updated by server when message(s) consumed
     uint32_t tail;          // updated by client when message(s) posted
     int32_t __attribute__((aligned(4))) waiters;
+    uint32_t producers;     // active producers
   } client_ring;
 
   // messages server -> client
   struct __attribute__((aligned(8))) {
-    struct fabipc_page pages[FABIPC_SERVER_RINGSIZE];
+    struct fabipc_page pages[FABIPC_RINGSIZE];
     uint32_t head;          // updated by client when message(s) consumed
     uint32_t tail;          // updated by server when message(s) posted
     int32_t __attribute__((aligned(4))) waiters;
+    uint32_t producers;     // active producers
   } server_ring;
 } fabipc_channel;
 
@@ -136,26 +146,29 @@ STATIC_ASSERT(sizeof(fabipc_channel) <= FABIPC_SHMSIZE);
  *
  * pages      - pointer to the ring pages
  * ring_head  - pointer to ring head
- * local_tail - local tail counter
- * tail_used  - (returns) local tail value seen
- * mask       - mask based on ring size
+ * ring_tail  - pointer to ring tail
+ * producers  - pointer to ring producers
+ * waiters    - pointer to ring waiters
  */
 fabipc_message * fabipc_produce(
     fabipc_page * restrict pages
   , uint32_t * restrict ring_head
   , uint32_t * restrict ring_tail
-  , uint32_t tail_mask
+  , uint32_t * restrict producers
+  , int32_t * restrict waiters
 )
   __attribute__((nonnull));
 
 /*
  * Post previously produced messages to the ring.
  *
- * msg     - message to post
- * waiters - pointer to ring waiters
+ * msg        - message to post
+ * producers  - pointer to ring producers
+ * waiters    - pointer to ring waiters
  */
 void fabipc_post(
     fabipc_message * restrict msg
+  , uint32_t * restrict producers
   , int32_t * restrict waiters
 )
   __attribute__((nonnull));
@@ -166,13 +179,11 @@ void fabipc_post(
  * pages      - pointer to ring pages
  * ring_head  - pointer to ring head
  * ring_tail  - pointer to ring tail
- * mask       - mask based on ring size
  */
 fabipc_message * fabipc_acquire(
     fabipc_page * restrict pages
   , uint32_t * restrict ring_head
   , uint32_t * restrict ring_tail
-  , uint32_t mask
 )
   __attribute__((nonnull));
 
@@ -182,13 +193,13 @@ fabipc_message * fabipc_acquire(
  * pages      - pointer to ring pages
  * ring_head  - pointer to ring head
  * msg        - message to release
- * mask       - mask based on ring size
+ * waiters    - pointer to ring waiters
  */
 void fabipc_consume(
     fabipc_page * restrict pages
   , uint32_t * restrict ring_head
   , fabipc_message * restrict msg
-  , uint32_t mask
+  , int32_t * restrict waiters
 )
   __attribute__((nonnull));
 
@@ -198,13 +209,11 @@ void fabipc_consume(
  * pages      - pointer to ring pages
  * ring_head  - pointer to ring head
  * msg        - message at the end of the batch
- * mask       - mask based on ring size
  */
 void fabipc_release(
     fabipc_page * restrict pages
   , uint32_t * restrict ring_head
   , fabipc_message * restrict msg
-  , uint32_t mask
 )
   __attribute__((nonnull));
 

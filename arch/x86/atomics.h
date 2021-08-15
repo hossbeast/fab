@@ -18,28 +18,30 @@
 #ifndef _ATOMIC_H
 #define _ATOMIC_H
 
-/* intel syntax */
+/* returns the value previously held in *p */
+#define atomic_fetch_inc(p) ({                  \
+  __atomic_fetch_add(p, 1, __ATOMIC_SEQ_CST);   \
+})
 
-static inline void atomic_inc(int * v)
-{
-  asm("lock incl %0"
-      : "+m" (*v));
-}
+/* returns the value previously held in *p */
+#define atomic_fetch_dec(p) ({                  \
+  __atomic_fetch_sub(p, 1, __ATOMIC_SEQ_CST);   \
+})
 
-static inline void atomic_dec(int * v)
-{
-  asm("lock decl %0"
-      : "+m" (*v));
-}
+#define atomic_load(p) ({                       \
+  __atomic_load_n(p, __ATOMIC_SEQ_CST);         \
+})
 
-static inline bool atomic_cas_i32(int32_t *v, int32_t *old, int32_t *new)
-{
-  return __atomic_compare_exchange(v, old, new, 1, __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST);
-}
+#define atomic_store(p, v) ({                   \
+  __atomic_store_n(p, v, __ATOMIC_SEQ_CST);     \
+})
 
-static inline int atomic_cas_u32(uint32_t *v, uint32_t *old, uint32_t *new)
-{
-  return __atomic_compare_exchange(v, old, new, 1, __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST);
-}
+#define atomic_exchange(p, v) ({                \
+  __atomic_exchange_n(p, v, __ATOMIC_SEQ_CST);  \
+})
+
+#define atomic_cas(p, oldp, v) ({                                                      \
+  __atomic_compare_exchange_n(p, oldp, v, false, __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST);  \
+})
 
 #endif

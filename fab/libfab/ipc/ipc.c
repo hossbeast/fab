@@ -44,42 +44,66 @@ fabipc_message * API fabipc_produce(
     fabipc_page * restrict pages
   , uint32_t * restrict ring_head
   , uint32_t * restrict ring_tail
-  , uint32_t mask
+  , uint32_t * restrict producers
+  , int32_t * restrict waiters
 )
 {
   uint32_t tail;
+  uint32_t head;
   uint32_t index;
+  uint32_t delta;
+  uint32_t producer;
   struct fabipc_page *page;
 
-  tail = __atomic_fetch_add(ring_tail, 1, __ATOMIC_SEQ_CST);
+  /* wait until producer slot is available */
+  producer = atomic_fetch_inc(producers);
+  while(producer >= FABIPC_PRODUCERS)
+  {
+    atomic_fetch_dec(producers);
+    atomic_store(waiters, 1);
+    syscall(SYS_futex, waiters, FUTEX_WAIT, 1, 0, 0, 0);
+    producer = atomic_fetch_inc(producers);
+  }
 
-  // overflow check
-  RUNTIME_ASSERT((tail + 1) != *ring_head);
+  /* claim an index at the ring tail */
+  tail = atomic_fetch_inc(ring_tail);
+  while(1)
+  {
+    head = atomic_load(ring_head);
+    delta = (tail - head) & (FABIPC_RINGSIZE - 1);
+    if((delta & ~(FABIPC_PRODUCERS - 1)) != ((FABIPC_RINGSIZE - 1) & ~(FABIPC_PRODUCERS - 1))) {
+      /* not full */
+      break;
+    }
 
-  index = tail & mask;
+    /* claimed index not yet available - waiting for consumer (1) */
+    atomic_store(waiters, 1);
+    syscall(SYS_futex, waiters, FUTEX_WAIT, 1, 0, 0, 0);
+  }
+
+  index = tail & (FABIPC_RINGSIZE - 1);
   page = &pages[index];
-
   page->tail = tail;
+
+  RUNTIME_ASSERT(page->state == FABIPC_PAGE_STATE_UNUSED);
 
   return &page->msg;
 }
 
 void API fabipc_post(
     fabipc_message * restrict msg
+  , uint32_t * restrict producers
   , int32_t * restrict waiters
 )
 {
-  int32_t one = 1;
-  int32_t zero = 0;
   fabipc_page *page;
 
   page = containerof(msg, fabipc_page, msg);
-  page->state = 1;
-  smp_wmb();
+  page->state = FABIPC_PAGE_STATE_POSTED;
 
-  if(atomic_cas_i32(waiters, &one, &zero)) {
-    smp_wmb();
-    syscall(SYS_futex, FUTEX_WAKE, 1, 0, 0, 0);
+  atomic_fetch_dec(producers);
+  if(atomic_exchange(waiters, 0)) {
+    syscall(SYS_futex, waiters, FUTEX_WAKE, INT32_MAX, 0, 0, 0);
   }
 }
 
@@ -87,7 +111,6 @@ fabipc_message * API fabipc_acquire(
     fabipc_page * restrict pages
   , uint32_t * restrict ring_head
   , uint32_t * restrict ring_tail
-  , uint32_t mask
 )
 {
   uint32_t head;
@@ -97,15 +120,15 @@ fabipc_message * API fabipc_acquire(
 
   head = *ring_head;
   tail = *ring_tail;
-  smp_rmb();
+  smp_mb();
 
   while(head != tail)
   {
-    index = head & mask;
+    index = head & (FABIPC_RINGSIZE - 1);
     page = &pages[index];
 
-    if(page->state == 1) {
-      page->state = 2;
+    if(page->state == FABIPC_PAGE_STATE_POSTED) {
+      page->state = FABIPC_PAGE_STATE_ACQUIRED;
       page->head = head;
       return &page->msg;
     }
@@ -120,7 +143,7 @@ void API fabipc_consume(
     fabipc_page * restrict pages
   , uint32_t * restrict ring_head
   , fabipc_message * restrict msg
-  , uint32_t mask
+  , int32_t * restrict waiters
 )
 {
   fabipc_page *page;
@@ -128,37 +151,41 @@ void API fabipc_consume(
   uint32_t x;
   uint32_t index;
 
-  /* fast path with exactly one page oustanding */
+  /* fast path with exactly one acquired page */
   page = containerof(msg, fabipc_page, msg);
+  page->state = FABIPC_PAGE_STATE_UNUSED;
   head = page->head;
-  if(__atomic_compare_exchange_n(ring_head, &head, page->head + 1, false, __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST)) {
-    return;
+  if(atomic_cas(ring_head, &head, page->head + 1)) {
+    goto waken;
   }
 
-  /* check oustanding pages */
-  page->state = 2;
+  /* check whether posted pages up to this point have all been consumed */
   for(x = *ring_head; x != (page->head + 1); x++)
   {
-    index = x & mask;
+    index = x & (FABIPC_RINGSIZE - 1);
     page = &pages[index];
-    if(page->state != 2) {
-      return;
+    if(page->state != FABIPC_PAGE_STATE_UNUSED) {
+      goto waken;
     }
   }
 
-  /* all pages in [ ring_head, page->head ] are marked ; advance the ring head */
-  __atomic_store_n(ring_head, page->head, __ATOMIC_SEQ_CST);
+  /* all pages in [ ring_head, page->head ] are UNUSED ; advance the ring head */
+  atomic_store(ring_head, page->head);
+
+waken:
+  if(atomic_exchange(waiters, 0)) {
+    syscall(SYS_futex, waiters, FUTEX_WAKE, INT32_MAX, 0, 0, 0);
+  }
 }
 
 void API fabipc_release(
     fabipc_page * restrict pages
   , uint32_t * restrict ring_head
   , fabipc_message * restrict msg
-  , uint32_t mask
 )
 {
   fabipc_page *page;
 
   page = containerof(msg, fabipc_page, msg);
-  __atomic_store_n(ring_head, page->head, __ATOMIC_SEQ_CST);
+  atomic_store(ring_head, page->head);
 }

@@ -236,7 +236,7 @@ static xapi xmain()
 
   /* processing */
   interval.tv_nsec = 125 * 1000 * 1000;   // 125 millis
-  iter = 1;
+  iter = 0;
   pulse = client->shm->server_pulse;
   while(!g_sigterm && !g_params.shutdown)
   {
@@ -248,17 +248,15 @@ static xapi xmain()
         break;
       }
 
-      client->shm->server_ring.waiters = 1;
-      smp_wmb();
+      atomic_store(&client->shm->server_ring.waiters, 1);
       fatal(uxfutex, &err, &client->shm->server_ring.waiters, FUTEX_WAIT, 1, &interval, 0, 0);
       if(err == EINTR || err == EAGAIN) {
         continue;
       }
 
       /* 5 seconds */
-      if(((iter++) % 25) == 0) {
+      if(((++iter) % 25) == 0) {
         if(pulse == client->shm->server_pulse) {
-          /* watchdog timeout - unresponsive daemon */
           fail(FAB_NODAEMON);
           break;
         }
@@ -268,6 +266,7 @@ static xapi xmain()
       continue;
     }
 
+    iter = 0;
     RUNTIME_ASSERT(msg->type);
     client_acquired(client, msg);
     if((msg->type == FABIPC_MSG_RESPONSE && msg->id == eventsubid))

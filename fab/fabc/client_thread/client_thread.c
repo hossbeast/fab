@@ -141,7 +141,7 @@ static xapi client_thread()
   fatal(fab_client_attach, client, channel_shmid);
 
   interval.tv_nsec = 125 * 1000 * 1000;   // 125 millis
-  iter = 1;
+  iter = 0;
   pulse = client->shm->server_pulse;
   while(!g_params.shutdown)
   {
@@ -157,14 +157,13 @@ static xapi client_thread()
         break;
       }
 
-      client->shm->server_ring.waiters = 1;
-      smp_wmb();
+      atomic_store(&client->shm->server_ring.waiters, 1);
       fatal(uxfutex, &err, &client->shm->server_ring.waiters, FUTEX_WAIT, 1, &interval, 0, 0);
       if(err == EINTR || err == EAGAIN) {
         continue;
       }
 
-      if(((iter++) % 25) == 0) {
+      if(((++iter) % 25) == 0) {
         if(pulse == client->shm->server_pulse) {
           break;
         }
@@ -174,6 +173,7 @@ static xapi client_thread()
       continue;
     }
 
+    iter = 0;
     client_acquired(client, msg);
     RUNTIME_ASSERT(msg->type);
     if(msg->type == FABIPC_MSG_RESULT || msg->type == FABIPC_MSG_RESPONSE) {
