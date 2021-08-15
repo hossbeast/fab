@@ -61,7 +61,6 @@ xapi goals_create_buildplan()
   if(goals_target_direct_selector || goals_target_transitive_selector)
   {
     goals_selector_context.mod = g_project_root->mod;
-//    goals_selector_context.chan = bpctx->chan;
 
     if(goals_target_direct_selector)
     {

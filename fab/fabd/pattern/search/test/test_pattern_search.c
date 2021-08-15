@@ -676,12 +676,10 @@ xunit_unit xunit = {
     , (pattern_search_test[]) {{
           operations : ""
             " mod/abcd/efgh"
-//            " mod/jklm/xyzw"
         , module : "mod"
         , pattern : (char[]) { "*{lm,ab}*/[a-z][a-z][a-z][a-z]\0" }
         , matches : (char*[]) {
               "/mod/abcd/efgh"
-//            , "/mod/jklm/xyzw"
             , 0
           }
       }}
@@ -946,6 +944,23 @@ xunit_unit xunit = {
               "/mod/src/a"
             , "/mod/src/b/a"
             , "/mod/src/c/d/a"
+            , 0
+          }
+      }}
+
+    /* star+variants */
+    , (pattern_search_test[]) {{
+          operations : ""
+            " mod/x.debug.o"
+            " mod/x.debug.pic.o"
+            " mod/x.final.o"
+            " mod/x.trace.o"
+        , module : "mod"
+        , pattern : (char[]) { "*.?.o\0" }
+        , variants : (char*[]) { "debug.pic", "debug", 0 }
+        , matches : (char*[]) {
+              "/mod/x.debug.o ? debug"
+            , "/mod/x.debug.pic.o ? debug.pic"
             , 0
           }
       }}

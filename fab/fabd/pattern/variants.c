@@ -56,26 +56,32 @@ static xapi search(const pattern_segment * restrict segment, pattern_search_cont
   struct search_segments_traversal *traversal;
   const char *var;
   uint16_t var_len;
+  int16_t locked_variant_index;
+  uint16_t start;
 
 /*
 
 Different variants segments should never bind to different variant instances at the same time, e.g.
 
-a?b?c - with variants { x, y } - should produce these combinations
+a?b?c - with variants { x, y } - produces these combinations
 
-axbxc
-aybyc
+ axbxc
+ aybyc
 
-AND NOT
+AND NOT these
 
-axbyc
-aybxc
+ axbyc
+ aybxc
 
 */
 
   traversal = ctx->traversal;
   name = ctx->node->name.name;
   namel = ctx->node->name.namel;
+  start = ctx->traversal->offset;
+
+  /* if set, another variants segment is active and has selected this index */
+  locked_variant_index = ctx->variant_index;
 
   variant *v;
   for(x = 0; x < ctx->variants->table_size; x++)
@@ -83,30 +89,32 @@ aybxc
     if(!(v = set_table_get(ctx->variants, x))) {
       continue;
     }
-
-    if(ctx->variant_index != -1 && x != ctx->variant_index) {
+    if(locked_variant_index != -1 && x != locked_variant_index) {
       continue;
     }
 
     var = v->norm;
     var_len = v->norm_len;
 
-    if((namel - ctx->traversal->offset) < var_len) {
+    if((namel - start) < var_len) {
       continue;
     }
-    if(strncmp(name + ctx->traversal->offset, var, var_len)) {
+    if(strncmp(name + start, var, var_len)) {
       continue;
     }
 
     ctx->variant_index = x;
-    ctx->traversal->offset += var_len;
+    ctx->traversal->offset = start + var_len;
 
-    fatal(ctx->segments_process, ctx);
-    if(ctx->matched)
+    fatal(pattern_segments_search, ctx);
+    if(ctx->matched) {
       break;
+    }
 
     ctx->traversal = traversal;
   }
+  /* N.B. ctx->variant_index is restored in search_visit and not here so that the index can be
+   * recorded in the match */
 
   finally : coda;
 }

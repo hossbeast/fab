@@ -41,8 +41,6 @@ typedef struct pattern_search_context {
     const struct pattern_section * section;
     const struct pattern_section * head;
     const struct chain * cursor;
-//    int mindepth;
-//    int maxdepth;
     bool match;
   } section_traversal;
 
@@ -82,7 +80,6 @@ typedef struct pattern_search_context {
   void * dirnode_visit_ctx;
   const struct set * restrict variants;
   uint8_t variants_len;
-  xapi (*segments_process)(struct pattern_search_context * restrict);
 
   // state
   const struct fsent * node;
