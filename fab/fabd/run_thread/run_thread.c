@@ -144,7 +144,7 @@ conclude(&R);
   rcu_synchronize();
   handler_release(ctx);
 
-  atomic_dec(&g_params.thread_count);
+  atomic_fetch_dec(&g_params.thread_count);
   syscall(SYS_tgkill, g_params.pid, g_params.thread_monitor, SIGUSR1);
   return 0;
 }
@@ -179,10 +179,10 @@ xapi run_thread_launch(handler_context * restrict handler, command_type cmd)
   fatal(xpthread_attr_init, &attr);
   fatal(xpthread_attr_setdetachstate, &attr, PTHREAD_CREATE_DETACHED);
 
-  atomic_inc(&g_params.thread_count);
+  atomic_fetch_inc(&g_params.thread_count);
   if((rv = pthread_create(&pthread_id, &attr, run_thread_jump, ctx)) != 0)
   {
-    atomic_dec(&g_params.thread_count);
+    atomic_fetch_dec(&g_params.thread_count);
     trylock_release(&run_lock);
     tfail(perrtab_KERNEL, rv);
   }

@@ -290,7 +290,7 @@ finally:
   }
 conclude(&R);
 
-  atomic_dec(&g_params.thread_count);
+  atomic_fetch_dec(&g_params.thread_count);
   syscall(SYS_tgkill, g_params.pid, g_params.thread_monitor, SIGUSR1);
   return 0;
 }
@@ -394,10 +394,10 @@ xapi sweeper_thread_launch()
   fatal(xpthread_attr_init, &attr);
   fatal(xpthread_attr_setdetachstate, &attr, PTHREAD_CREATE_DETACHED);
 
-  atomic_inc(&g_params.thread_count);
+  atomic_fetch_inc(&g_params.thread_count);
   if((rv = pthread_create(&pthread_id, &attr, sweeper_thread_jump, 0)) != 0)
   {
-    atomic_dec(&g_params.thread_count);
+    atomic_fetch_dec(&g_params.thread_count);
     tfail(perrtab_KERNEL, rv);
   }
 

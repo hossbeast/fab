@@ -68,12 +68,15 @@ void channel_release(channel * restrict chan)
 fabipc_message * channel_produce(channel * restrict chan)
 {
   fabipc_message *msg;
+
   msg = fabipc_produce(
       chan->ipc.server_ring.pages
     , &chan->ipc.server_ring.head
     , &chan->ipc.server_ring.tail
-    , FABIPC_SERVER_RINGSIZE - 1
+    , &chan->ipc.server_ring.producers
+    , &chan->ipc.server_ring.waiters
   );
+  RUNTIME_ASSERT(msg);
 
   msg->id = chan->msgid;
 
@@ -124,7 +127,11 @@ void channel_post(channel * restrict chan, fabipc_message * restrict msg)
   printf("\n");
 #endif
 
-  fabipc_post(msg, &chan->ipc.server_ring.waiters);
+  fabipc_post(
+      msg
+    , &chan->ipc.server_ring.producers
+    , &chan->ipc.server_ring.waiters
+  );
 }
 
 /* RX : acquire -> consume */
@@ -137,7 +144,6 @@ fabipc_message * channel_acquire(channel * restrict chan)
       chan->ipc.client_ring.pages
     , &chan->ipc.client_ring.head
     , &chan->ipc.client_ring.tail
-    , FABIPC_CLIENT_RINGSIZE - 1
   );
 
 #if DEBUG || DEVEL
@@ -155,7 +161,7 @@ void channel_consume(channel * restrict chan, fabipc_message * restrict msg)
       chan->ipc.client_ring.pages
     , &chan->ipc.client_ring.head
     , msg
-    , FABIPC_CLIENT_RINGSIZE - 1
+    , &chan->ipc.client_ring.waiters
   );
 }
 

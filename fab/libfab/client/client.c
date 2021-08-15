@@ -346,7 +346,8 @@ fabipc_message * API fab_client_produce(fab_client * restrict client)
       client->shm->client_ring.pages
     , &client->shm->client_ring.head
     , &client->shm->client_ring.tail
-    , FABIPC_CLIENT_RINGSIZE - 1
+    , &client->shm->client_ring.producers
+    , &client->shm->client_ring.waiters
   );
 }
 
@@ -359,7 +360,11 @@ void API fab_client_post(fab_client * restrict client, fabipc_message * restrict
   }
 #endif
 
-  fabipc_post(msg, &client->shm->client_ring.waiters);
+  fabipc_post(
+      msg
+    , &client->shm->client_ring.producers
+    , &client->shm->client_ring.waiters
+  );
 }
 
 fabipc_message * API fab_client_acquire(fab_client * restrict client)
@@ -369,7 +374,6 @@ fabipc_message * API fab_client_acquire(fab_client * restrict client)
       client->shm->server_ring.pages
     , &client->shm->server_ring.head
     , &client->shm->server_ring.tail
-    , FABIPC_SERVER_RINGSIZE - 1
   );
 
   return msg;
@@ -381,7 +385,7 @@ void API fab_client_consume(fab_client * restrict client, fabipc_message * restr
       client->shm->server_ring.pages
     , &client->shm->server_ring.head
     , msg
-    , FABIPC_SERVER_RINGSIZE - 1
+    , &client->shm->server_ring.waiters
   );
 }
 
@@ -391,6 +395,5 @@ void API fab_client_release(fab_client * restrict client, fabipc_message * restr
       client->shm->server_ring.pages
     , &client->shm->server_ring.head
     , msg
-    , FABIPC_SERVER_RINGSIZE - 1
   );
 }
