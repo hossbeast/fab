@@ -88,6 +88,7 @@ static xapi handler_thread(handler_context * restrict ctx)
   rcu_thread rcu_self = { };
   command *cmd = 0;
   request req;
+  bool built;
 
   request_init(&req);
 
@@ -135,6 +136,7 @@ static xapi handler_thread(handler_context * restrict ctx)
         if(cmd->type == COMMAND_AUTORUN) { run_thread_autorun = true; }
 
         ctx->running = true;
+        built = true;
         fatal(run_thread_launch, ctx, cmd->type);
       }
       else
@@ -148,7 +150,7 @@ static xapi handler_thread(handler_context * restrict ctx)
       channel_response(ctx->chan, !!ctx->chan->error);
       client_msg = 0;
 
-      if(ctx->invalidation.any && run_thread_autorun)
+      if(ctx->invalidation.any && run_thread_autorun && !built)
       {
         /* no build-command in this request, but some nodes were invalidated while processing it */
         fatal(run_thread_launch, 0, COMMAND_AUTORUN);
@@ -197,6 +199,7 @@ static xapi handler_thread(handler_context * restrict ctx)
       graph_invalidation_end(&ctx->invalidation);
       fatal(graph_invalidation_begin, &ctx->invalidation);
       cmd = llist_first(&req.commands, typeof(*cmd), lln);
+      built = false;
     }
   }
 
