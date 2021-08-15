@@ -56,6 +56,10 @@ void events_publish(channel * first, fabipc_message * restrict firstmsg)
   handler_context *handler;
 
   rcu_list_foreach(&g_handlers, handler, stk) {
+    if(!handler->chan) {
+      continue;
+    }
+
     if(handler->chan == first) {
       continue;
     }
