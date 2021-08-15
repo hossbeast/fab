@@ -150,7 +150,7 @@ xapi buildplan_visitor_direct(moria_vertex * v, void * arg, moria_traversal_mode
   }
 
   /* shadow nodes can act as placeholders, but are never actually built */
-  if(!n->dep) { // && fsent_shadowtype_get(n)) {
+  if(!n->dep && fsent_shadowtype_get(n)) {
     goto XAPI_FINALIZE;
   }
 
