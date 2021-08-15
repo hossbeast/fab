@@ -368,6 +368,13 @@ xapi exec_render_formula_value(exec_render_context * restrict ctx, const formula
       fatal(exec_builder_add, ctx->builder, &ctx->builder_args);
     }
 
+    /* if the list is empty, add the key to the env anyway so that it will at least be defined */
+    if(sequence_output->args_size == 0)
+    {
+      ctx->builder_args.val.s = "";
+      fatal(exec_builder_add, ctx->builder, &ctx->builder_args);
+    }
+
     ctx->builder_args = base_add_args;
   }
   else if(val->type & VALUE_TYPE_SCALAR)
