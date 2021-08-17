@@ -487,31 +487,18 @@ rbnode * API rbtree_put_node(rbtree * restrict rb, rbnode * restrict n, rbtree_n
 {
   rbtree_search_context ctx;
 
-  if(rb->root == &rbleaf)
-  {
-    n->color = RB_BLACK;
-    n->left = &rbleaf;
-    n->right = &rbleaf;
-    n->parent = &rbleaf;
-    rb->root = n;
-#if RBTREE_HASH
-n->rbt = rb;
-rb->hash += (uint32_t)(uintptr_t)n;
-#endif
-#if RBTREE_SIZE
-    rb->size++;
-#endif
-    return 0;
+  if(rb->root == &rbleaf) {
+    goto insert;
   }
 
   memset(&ctx, 0, sizeof(ctx));
   node_search(rb, rb->root, &ctx, n, cmp);
 
-  if(ctx.lx == 0)
-  {
+  if(ctx.lx == 0) {
     return ctx.last;
   }
 
+insert:
   rbtree_insert_node(rb, &ctx, n);
   return 0;
 }
@@ -605,10 +592,10 @@ void API rbtree_delete_node(rbtree * restrict rb, rbnode * restrict n)
   }
 
 #if RBTREE_HASH
-rb->hash -= (uint32_t)(uintptr_t)n;
+  rb->hash -= (uint32_t)(uintptr_t)n;
 #endif
 #if RBTREE_SIZE
-rb->size--;
+  rb->size--;
 #endif
 #if RBTREE_TRACK
   n->deleted = 1;
