@@ -160,6 +160,7 @@ void rbtree_delete_node(rbtree * restrict rb, rbnode * restrict n)
 #else
 #define rbtree_delete(rb, item, member) ({    \
   rbtree_delete_node(rb, &(item)->member);    \
+  (item)->member.parent = 0;                  \
 })
 #endif
 
