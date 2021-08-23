@@ -28,26 +28,18 @@ use POSIX;
 
 die "cc not found" unless $ENV{cc};
 
-my @rpath;
-if($ENV{bm_variant} eq "devel.xapi" || $ENV{bm_variant} eq "trace.xapi")
-{
-  for my $req (split(/ /, $ENV{imports}))
-  {
-    push @rpath, '-Wl,-rpath,$ORIGIN' . "/$req";
-  }
-}
-
 # exec into the compiler
 my @cmd = (
     $ENV{cc}
   , split(/ /, $ENV{cflags})
   , (map { "-I$_" } split(/ /, $ENV{includes}))
   , "-o", $ENV{bm_target}
-  , @rpath
-  # object files
   , split(/ /, $ENV{objects})
+  , "-Wl,--start-group"
+  , split(/ /, $ENV{"static-libs"})
+  , "-Wl,--end-group"
+  , split(/ /, $ENV{"shared-libs"})
   , split(/ /, $ENV{lflags} || "")
-  , split(/ /, $ENV{libraries} || '')
 );
 
 exec { $cmd[0] } @cmd
@@ -105,7 +97,7 @@ envs : {
     property : relpath
   ]
 
-  libraries : [
+  shared-libs : [
     select : [
       target
       traverse : {
@@ -114,6 +106,20 @@ envs : {
         max-distance : 1
         min-distance : 1
         extension : so
+      }
+    ]
+    property : relpath
+  ]
+
+  static-libs : [
+    select : [
+      target
+      traverse : {
+        direction : down
+        graph : depends
+        max-distance : 1
+        min-distance : 1
+        extension : a
       }
     ]
     property : relpath
