@@ -63,6 +63,7 @@ extern struct build_args {
 } build_args;
 
 extern struct command build_command;
+extern bool build_was_failed_slot;
 
 xapi build_command_setup(void);
 xapi build_command_cleanup(void);

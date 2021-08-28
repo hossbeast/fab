@@ -392,6 +392,7 @@ conclude(&R);
 
   R |= xmain_exit;
   R |= waserror;
+  R |= build_was_failed_slot;
 
   return !!R;
 }
