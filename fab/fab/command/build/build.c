@@ -40,6 +40,7 @@
 
 static uint64_t requestid;
 static uint64_t eventsubid;
+bool build_was_failed_slot;
 
 struct build_args build_args = {
   mode : 't'
@@ -790,6 +791,9 @@ xapi build_command_process_event(fab_client * restrict client, fabipc_message * 
     {
       z = descriptor_type_unmarshal(&bs->results, &descriptor_fab_build_slot_results, msg->text, msg->size);
       RUNTIME_ASSERT(z == msg->size);
+
+      build_was_failed_slot |= bs->results.status != 0;
+      build_was_failed_slot |= bs->results.stderr_total > 0;
 
       fatal(slot_print, bs);
       hashtable_delete(build_slots_bypid, &bs);
