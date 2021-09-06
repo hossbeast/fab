@@ -375,10 +375,6 @@ xapi fsent_create(
   RUNTIME_ASSERT(label_len);
   RUNTIME_ASSERT((attrs & VERTEX_KIND_OPT) == 0);
 
-if(memncmp(label, label_len, MMS("libxlinux.debug.pic.xapi.so.lnklibxlinux.debug.pic.xapi.so.lnk")) == 0) {
-  abort();
-}
-
   if((n = llist_shift(&fsent_freelist, typeof(*n), vertex.owner)) == 0)
   {
     fatal(xmalloc, &n, sizeof(*n));
