@@ -135,7 +135,7 @@ static inline void futexlock_release(struct futexlock * restrict lock)
   __atomic_store_n(&lock->i32, 0, __ATOMIC_SEQ_CST);
 #endif
 
-  syscall(SYS_futex, &lock->i32, FUTEX_WAKE, 1, 0, 0, 0);
+  syscall(SYS_futex, &lock->i32, FUTEX_WAKE, INT32_MAX, 0, 0, 0);
 }
 
 #endif

@@ -119,7 +119,7 @@ void rcu_synchronize()
   __atomic_store_n(&state.quiescent, 0, __ATOMIC_SEQ_CST);    // quiescent = 0
   __atomic_fetch_add(&state.n, 1, __ATOMIC_SEQ_CST);          // n++
 
-  syscall(SYS_futex, &state.futex, FUTEX_WAIT, 1, 0, 0, 0);
+  syscall(SYS_futex, &state.futex, FUTEX_WAIT, INT32_MAX, 0, 0, 0);
 
   futexlock_release(&state.lock);
   STATS_INC(g_stats.rcu_synchronize_wait);
