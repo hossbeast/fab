@@ -100,7 +100,6 @@ xapi API sigutil_install_handlers()
 {
   enter;
 
-  int x;
   struct sigaction intr_act;
   struct sigaction term_act;
 
@@ -112,6 +111,16 @@ xapi API sigutil_install_handlers()
   term_act.sa_flags = SA_SIGINFO;
   term_act.sa_sigaction = term_handler;
 
+  fatal(xsigaction, SIGINT, &term_act, 0);
+  fatal(xsigaction, SIGTERM, &term_act, 0);
+  fatal(xsigaction, SIGQUIT, &term_act, 0);
+  fatal(xsigaction, SIGCHLD, &intr_act, 0);
+  fatal(xsigaction, SIGUSR1, &intr_act, 0);
+
+  /* SIGRTMIN - carries int-valued signal from the client */
+  fatal(xsigaction, SIGRTMIN, &intr_act, 0);
+
+#if 0
   // low signals
   for(x = 1; x < SIGSYS; x++)
   {
@@ -128,6 +137,7 @@ xapi API sigutil_install_handlers()
   {
     fatal(xsigaction, x, &intr_act, 0);
   }
+#endif
 
   finally : coda;
 }
