@@ -277,10 +277,6 @@ xapi exec_render_formula_value(exec_render_context * restrict ctx, const formula
   else if(val->type == FORMULA_VALUE_SELECT)
   {
     fatal(selector_exec, val->op.selector, &ctx->selector_context, SELECTION_ITERATION_TYPE_ORDER);
-  //  if(ctx->selector_context.err.l) {
-  //    memcpy(ctx->err.s, ctx->selector_context.err.s, ctx->selector_context.err.l);
-  //    ctx->err.l = ctx->selector_context.err.l;
-  //  }
   }
   else if(val->type == FORMULA_VALUE_PROPERTY)
   {
@@ -369,7 +365,7 @@ xapi exec_render_formula_value(exec_render_context * restrict ctx, const formula
     }
 
     /* if the list is empty, add the key to the env anyway so that it will at least be defined */
-    if(sequence_output->args_size == 0)
+    if(sequence_output->args_size == 0 && base_add_args.item == BUILDER_ENVS)
     {
       ctx->builder_args.val.s = "";
       fatal(exec_builder_add, ctx->builder, &ctx->builder_args);
