@@ -30,9 +30,12 @@ my $tokens_h = substr($ENV{bm_target0}, -2) eq ".h" ? $ENV{bm_target0} : $ENV{bm
 $tokens_c =~ m|/?([^./]+)[.]tokens[.]c$|;
 my $pfx = "$1";
 
-my %yytokentype;
-my @yytname;
-my @yytoknum;
+# bison around 3.8.2 stopped emitting yytoknum and started emitting yysymbolkind
+# only one or the other has to be present
+my %yytokentype;  # token name by token number
+my %yysymbolkind; # symbol number by token name
+my @yytname;      # token string by symbol number
+my @yytoknum;     # token number by symbol number
 
 # snarf bison datastructures
 open my $fh, "<$tab_h" or die $!;
@@ -48,11 +51,20 @@ while(my $line = <$fh>)
   {
     if($line =~ m/^\s*{\s*$/)
     {
-
     }
     elsif($line =~ m/^\s*([A-Z0-9_]+) = (-?[0-9]+),?/i)
     {
-      $yytokentype{$2} = $1;
+      # use specific names for bison implementation tokens
+      my $name = "$1";
+      my $token = int($2);
+
+      # these arent available from yytoknum so skip them for consistency
+      next if $name =~ /yyeof/i;
+      next if $name =~ /yyerror/i;
+      next if $name =~ /yyundef/i;
+      next if $name =~ /yyempty/i;
+
+      $yytokentype{$token} = $name;
     }
     else
     {
@@ -81,10 +93,6 @@ while(my $line = <$fh>)
       push @yytname, $1;
     }
   }
-  elsif($line =~ /static const char .const yytname/)
-  {
-    $mode = 'yytname';
-  }
   elsif($mode eq 'yytoknum')
   {
     while($line =~ m/[0-9]+/g)
@@ -92,15 +100,46 @@ while(my $line = <$fh>)
       push @yytoknum, int($&);
     }
   }
+  elsif($mode eq 'yysymbolkind')
+  {
+    if($line =~ m/^\s*{\s*$/)
+    {
+    }
+    elsif($line =~ m/^\s*YYSYMBOL_([A-Z0-9_]+) = (-?[0-9]+),?/i)
+    {
+      # use specific names for bison implementation tokens
+      my $name = "$1";
+      my $symbol = int($2);
+
+      # these arent available from yytoknum so skip them for consistency
+      next if $name =~ /yyeof/i;
+      next if $name =~ /yyerror/i;
+      next if $name =~ /yyundef/i;
+      next if $name =~ /yyempty/i;
+
+      $yysymbolkind{$name} = $symbol;
+    }
+    else
+    {
+      die "unexpected line";
+    }
+  }
+  elsif($line =~ /static const char .const yytname/)
+  {
+    $mode = 'yytname';
+  }
+  elsif($line =~ /^enum yysymbol_kind_t$/)
+  {
+    $mode = 'yysymbolkind';
+  }
   elsif($line =~ /static const yytype_int16 yytoknum/)
   {
     $mode = 'yytoknum';
   }
 }
 
-
-# build the token table
-my @tokens;
+# build the token table - from yytoknum, if available
+my %symbols;
 for(my $x = 0; $x < scalar(@yytoknum); $x++)
 {
   my $symbol = $x;
@@ -120,11 +159,25 @@ for(my $x = 0; $x < scalar(@yytoknum); $x++)
   $string =~ s/^\\"//;
   $string =~ s/\\"$//;
 
-  push @tokens, { name => $name, string => $string, string_len => length($string), token => $token, symbol => $symbol };
+  $symbols{$symbol} = { name => $name, string => $string, string_len => length($string), token => $token, symbol => $symbol };
 }
 
-@tokens = sort { $$a{string} cmp $$b{string} } @tokens;
-my $numtokens = scalar(@tokens);
+# build the token table
+while(my($token, $name) = each %yytokentype)
+{
+  my $symbol = $yysymbolkind{$name};
+  next unless $symbol;
+  next if exists $symbols{$symbol};
+
+  my $string = $yytname[$symbol];
+
+  $string =~ s/^\\"//;
+  $string =~ s/\\"$//;
+
+  $symbols{$symbol} = { name => $name, string => $string, string_len => length($string), token => $token, symbol => $symbol };
+}
+
+my @tokens = sort { $$a{string} cmp $$b{string} } values %symbols;
 
 #
 # c file
@@ -164,18 +217,12 @@ extern struct yyu_token * ${pfx}_token_table;
 enum ${pfx}_tokens {
 END
 
-while(my($k, $v) = each %yytokentype)
+for my $token (@tokens)
 {
-  print $fh ("  ${pfx}_${v} = ${k},\n");
+  print $fh ("  ${pfx}_$$token{name} = $$token{token},\n");
 }
 
 print $fh <<END;
 };
 #endif
 END
-
-#use Data::Dumper;
-#print Dumper \%yytokentype;
-#print Dumper \@yytname;
-#print Dumper \@yytoknum;
-#print Dumper \@tokens;
