@@ -98,7 +98,14 @@ static xapi xmain()
   umask(0);
   fatal(sigutil_install_handlers);
 
-  sigfillset(&sigs);
+  sigemptyset(&sigs);
+  sigaddset(&sigs, SIGINT);
+  sigaddset(&sigs, SIGTERM);
+  sigaddset(&sigs, SIGQUIT);
+  sigaddset(&sigs, SIGUSR1);
+  sigaddset(&sigs, SIGCHLD);
+  sigaddset(&sigs, SIGRTMIN);
+
   fatal(xpthread_sigmask, SIG_SETMASK, &sigs, 0);
 
   setvbuf(stdout, NULL, _IONBF, 0);

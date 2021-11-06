@@ -15,23 +15,23 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#include "asan.h"
-
+const char *__asan_default_options(void);
 const char *__asan_default_options() {
   return
       ":halt_on_error=1"
       ":abort_on_error=1"
       ":print_stacktrace=1"
+      ":disable_coredump=0"       // yes, produce coredumps
       ":report_objects=1"         // print leaked addresses
       ":fast_unwind_on_malloc=0"  // prevent crash-while-reporting-leaks in certain cases
-      ":detect_odr_violation=0"   // remove after changing xunit to not use dlopen
+      ":strict_string_checks=1"
+      ":detect_stack_use_after_return=1"
+      ":check_initialization_order=1"
+      ":strict_init_order=1"
     ;
 };
 
+const char *__ubsan_default_options(void);
 const char *__ubsan_default_options() {
-  return
-      ":halt_on_error=1"
-      ":abort_on_error=1"
-      ":print_stacktrace=1"
-    ;
+  return __asan_default_options();
 };

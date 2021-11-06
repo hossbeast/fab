@@ -21,6 +21,7 @@
 #include <string.h>
 #include <stddef.h>
 #include <stdint.h>
+#include <stdlib.h>
 
 #define QUOTE(x) #x
 #define XQUOTE(x) QUOTE(x)
@@ -183,14 +184,17 @@ static inline size_t roundup2(size_t x)
 #define RUNTIME_ASSERT(x)
 #endif
 
+static inline void _crash()
+{
 #if DEBUG || DEVEL || XUNIT
-#define RUNTIME_ABORT() do {  \
-  fprintf(stderr, "%s:%d aborting\n", __FILE__, __LINE__); \
-  abort();  \
-} while(0)
+  /* causes asan to backtrace */
+  *((volatile char*)0x42) = 0x42;
 #else
-#define RUNTIME_ABORT()
+  abort();
 #endif
+}
+
+#define RUNTIME_ABORT() do { _crash(); } while(0)
 
 #define ffsll(x)   __builtin_ffsll(x)
 #define clz_u32(x) __builtin_clz(x)
