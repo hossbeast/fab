@@ -91,6 +91,11 @@ static xapi notify_thread()
     {
       ev = (void*)evbuf + evbuf_off;
 
+      if(ev->mask & IN_Q_OVERFLOW) {
+        fprintf(stderr, "inotify overflow on fd %d\n", in_fd);
+        goto next;
+      }
+
       if(ev->mask & IN_IGNORED) {
         goto next;
       }

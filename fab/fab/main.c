@@ -22,7 +22,6 @@
 #include "narrator/load.h"
 #include "valyria/load.h"
 #include "xlinux/load.h"
-#include "value/load.h"
 
 #include "xapi/SYS.errtab.h"
 #include "xapi/calltree.h"
@@ -347,7 +346,6 @@ static xapi xmain_load(char ** envp)
   fatal(narrator_load);
   fatal(valyria_load);
   fatal(xlinux_load);
-  fatal(value_load);
 
   // load modules
   fatal(logging_setup, envp);
@@ -367,7 +365,6 @@ finally:
   fatal(narrator_unload);
   fatal(valyria_unload);
   fatal(xlinux_unload);
-  fatal(value_unload);
 coda;
 }
 

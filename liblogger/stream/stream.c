@@ -189,6 +189,8 @@ xapi stream_setup()
 
   fatal(list_create, &registered);
 
+printf("SETUP %p\n", registered);
+
   finally : coda;
 }
 
@@ -228,7 +230,7 @@ xapi streams_activate()
     }
   }
 
-  fatal(list_ixfree, &registered);
+  fatal(list_recycle, registered);
 
   finally : coda;
 }
@@ -614,6 +616,8 @@ xapi stream_expr_reset(stream *  restrict streamp)
 xapi API logger_stream_register(const logger_stream * restrict streams)
 {
   enter;
+
+printf("reg %p\n", registered);
 
   while(streams->type)
   {

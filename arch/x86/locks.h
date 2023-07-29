@@ -103,39 +103,42 @@ struct futexlock {
 
 static inline struct futexlock *futexlock_acquire(struct futexlock * restrict lock)
 {
-  int32_t zero;
+  int zero;
+  int prev;
 
-  RUNTIME_ASSERT(tid);
+  /* uncontended case */
+  zero = 0;
+  if((__atomic_compare_exchange_n(&lock->i32, &zero, 1, false, __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST))) {
+    return lock;
+  }
 
-  /* blocks until the futex can transition from zero -> tid */
   while(1)
   {
-    zero = 0;
-    if((__atomic_compare_exchange_n(&lock->i32, &zero, tid, false, __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST))) {
+    prev = __atomic_exchange_n(&lock->i32, 2, __ATOMIC_SEQ_CST);
+    if(prev == 0) {
       break;
     }
 
-    zero = 0;
-    syscall(SYS_futex, &lock->i32, FUTEX_WAIT, zero, 0, 0, 0);
+    syscall(SYS_futex, &lock->i32, FUTEX_WAIT, 2, 0, 0, 0);
   }
-  smp_mb();
 
   return lock;
 }
 
 static inline void futexlock_release(struct futexlock * restrict lock)
 {
-  RUNTIME_ASSERT(tid);
+  int32_t prev;
 
-#if DEBUG || DEVEL
-  int32_t old;
-  old = __atomic_exchange_n(&lock->i32, 0, __ATOMIC_SEQ_CST);
-  RUNTIME_ASSERT(old == tid);
-#else
+  prev = __atomic_fetch_sub(&lock->i32, 1, __ATOMIC_SEQ_CST);
+
+  if(prev == 1) {
+    return;
+  }
+
   __atomic_store_n(&lock->i32, 0, __ATOMIC_SEQ_CST);
-#endif
 
-  syscall(SYS_futex, &lock->i32, FUTEX_WAKE, INT32_MAX, 0, 0, 0);
+  /* wake one lock waiter */
+  syscall(SYS_futex, &lock->i32, FUTEX_WAKE, 1, 0, 0, 0);
 }
 
 #endif

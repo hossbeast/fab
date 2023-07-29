@@ -22,6 +22,7 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <stdlib.h>
+#include <stdio.h>
 
 #define QUOTE(x) #x
 #define XQUOTE(x) QUOTE(x)

@@ -21,7 +21,7 @@
 #include "types.h"
 #include "zbuffer.h"
 
-int APIDATA g_logger_default_stderr;
+//int APIDATA g_logger_default_stderr;
 
 char logger_process_name[32];
 __thread char logger_thread_name[32];

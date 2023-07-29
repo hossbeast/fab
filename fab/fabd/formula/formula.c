@@ -232,6 +232,10 @@ xapi formula_create(formula ** restrict fmlp, moria_graph * restrict g)
   {
     fatal(xmalloc, &fml, sizeof(*fml));
   }
+  else
+  {
+    memset(fml, 0, sizeof(*fml));
+  }
 
   moria_vertex_init(&fml->vertex, g, VERTEX_FML);
   llist_append(&formula_list, fml, vertex.owner);
