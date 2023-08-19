@@ -15,21 +15,13 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef _VALUE_LOAD_H
-#define _VALUE_LOAD_H
+#ifndef _BACON_LOAD_H
+#define _BACON_LOAD_H
 
-/// value_load
-//
-// SUMMARY
-//  initialize the library
-//
-void value_load(void);
+/* initialize the library */
+void bacon_load(void);
 
-/// value_unload
-//
-// SUMMARY
-//  release the library
-//
-void value_unload(void);
+/* release the library */
+void bacon_unload(void);
 
 #endif

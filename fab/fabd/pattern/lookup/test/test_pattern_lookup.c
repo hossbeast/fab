@@ -16,7 +16,7 @@
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
 #include "moria/load.h"
-#include "value/load.h"
+#include "bacon/load.h"
 #include "xlinux/xstdlib.h"
 
 #include "valyria/list.h"
@@ -70,7 +70,7 @@ static void node_lookup_test_unit_setup(xunit_unit * unit)
 
 static void node_lookup_test_unit_cleanup(xunit_unit * unit)
 {
-  value_unload();
+  bacon_unload();
 
   filesystem_cleanup();
   fsent_cleanup();

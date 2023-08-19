@@ -18,7 +18,7 @@
 #include "xlinux/xstdlib.h"
 
 #include "lorien/load.h"
-#include "value/load.h"
+#include "bacon/load.h"
 
 #include "xunit.h"
 #include "xunit/assert.h"
@@ -42,7 +42,7 @@ static void pattern_parser_unit_setup(xunit_unit * unit)
 {
   // load libraries
   lorien_load();
-  value_load();
+  bacon_load();
 
   // logging
 }
@@ -50,7 +50,7 @@ static void pattern_parser_unit_setup(xunit_unit * unit)
 static void pattern_parser_unit_cleanup(xunit_unit * unit)
 {
   lorien_unload();
-  value_unload();
+  bacon_unload();
 }
 
 //

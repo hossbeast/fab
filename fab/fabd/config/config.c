@@ -35,7 +35,7 @@ config keys that should *only* be legal in the global/user config files
 #include "valyria/map.h"
 #include "valyria/list.h"
 #include "valyria/llist.h"
-#include "value/writer.h"
+#include "bacon/writer.h"
 #include "fab/stats.h"
 #include "common/snarf.h"
 #include "common/hash.h"

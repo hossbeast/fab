@@ -21,7 +21,7 @@
 
 #include "fab/load.h"
 #include "narrator/load.h"
-#include "value/load.h"
+#include "bacon/load.h"
 
 #include "xlinux/xfutex.h"
 #include "xlinux/xpthread.h"
@@ -291,7 +291,7 @@ int main(int argc, char ** argv)
   // load libraries
   fab_load();
   narrator_load();
-  value_load();
+  bacon_load();
 
   // load modules
   params_setup();
@@ -308,7 +308,7 @@ int main(int argc, char ** argv)
   // libraries
   fab_unload();
   narrator_unload();
-  value_unload();
+  bacon_unload();
 
   return !!waserror && !!build_was_failed_slot;
 }

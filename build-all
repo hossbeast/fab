@@ -18,14 +18,14 @@ if [ $? == 0 ]; then
 fi
 set -e
 
-for x in libxlinux libcommon asan test libnarrator libdescriptor libvalyria libxunit libyyutil liblorien value/libvalue libmoria; do
+for x in libxlinux libcommon asan unit libnarrator libdescriptor libvalyria libxunit libyyutil liblorien libbacon libmoria; do
   pushd $x
   fab
   fab kill
   popd
 done
 
-for x in value/value fab/libfab fab/fab fab/fabd ; do
+for x in bacon fab/libfab fab/fab fab/fabd ; do
   pushd $x
   fab
   fab kill

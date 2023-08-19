@@ -16,7 +16,7 @@
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
 #include "lorien/load.h"
-#include "value/load.h"
+#include "bacon/load.h"
 
 #include "valyria/dictionary.h"
 
@@ -39,7 +39,7 @@ static void filesystem_test_unit_setup(xunit_unit * unit)
 {
   // load libraries
   lorien_load();
-  value_load();
+  bacon_load();
 
   filesystem_setup();
 }
@@ -47,7 +47,7 @@ static void filesystem_test_unit_setup(xunit_unit * unit)
 static void filesystem_test_unit_cleanup(xunit_unit * unit)
 {
   lorien_unload();
-  value_unload();
+  bacon_unload();
 
   filesystem_cleanup();
 }

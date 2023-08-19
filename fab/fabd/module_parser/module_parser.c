@@ -19,7 +19,7 @@
 #include "common/attrs.h"
 #include "moria/edge.h"
 #include "moria/operations.h"
-#include "value/parser.h"
+#include "bacon/parser.h"
 #include "valyria/set.h"
 #include "xlinux/xstdlib.h"
 

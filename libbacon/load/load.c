@@ -24,7 +24,7 @@
 
 static int handles;
 
-void API value_load()
+void API bacon_load()
 {
   if(handles++ == 0)
   {
@@ -37,7 +37,7 @@ void API value_load()
   }
 }
 
-void API value_unload()
+void API bacon_unload()
 {
   if(--handles == 0)
   {

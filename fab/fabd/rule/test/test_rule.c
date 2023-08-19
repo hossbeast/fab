@@ -17,7 +17,7 @@
 
 #include "moria/load.h"
 #include "xlinux/xstdlib.h"
-#include "value/load.h"
+#include "bacon/load.h"
 
 #include "valyria/list.h"
 #include "valyria/llist.h"
@@ -71,7 +71,7 @@ typedef struct rules_test {
 static void rules_test_unit_setup(xunit_unit * unit)
 {
   moria_load();
-  value_load();
+  bacon_load();
 
   module_setup();
   filesystem_setup();
@@ -90,7 +90,7 @@ static void rules_test_unit_cleanup(xunit_unit * unit)
   filesystem_cleanup();
 
   moria_unload();
-  value_unload();
+  bacon_unload();
 }
 
 //

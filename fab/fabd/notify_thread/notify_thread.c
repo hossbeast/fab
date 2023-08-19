@@ -24,7 +24,7 @@
 #include "xlinux/xpthread.h"
 #include "xlinux/xunistd.h"
 #include "xlinux/xtime.h"
-#include "value/writer.h"
+#include "bacon/writer.h"
 
 #include "notify_thread.h"
 #include "fsent.h"

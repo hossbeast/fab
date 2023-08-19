@@ -17,7 +17,7 @@
 
 #include "xlinux/xstdlib.h"
 
-#include "value/load.h"
+#include "bacon/load.h"
 
 #include "xunit.h"
 #include "xunit/assert.h"
@@ -25,7 +25,7 @@
 #include "narrator/growing.h"
 
 
-#include "value.h"
+#include "bacon.h"
 #include "assert.internal.h"
 #include "writer.internal.h"
 #include "store.internal.h"
@@ -44,12 +44,12 @@ typedef struct writer_test {
 static void value_writer_unit_setup(xunit_unit * unit)
 {
   // load libraries
-  value_load();
+  bacon_load();
 }
 
 static void value_writer_unit_cleanup(xunit_unit * unit)
 {
-  value_unload();
+  bacon_unload();
 }
 
 //

@@ -32,8 +32,8 @@
 #include "moria/edge.h"
 #include "narrator/growing.h"
 #include "narrator/fixed.h"
-#include "value.h"
-#include "value/writer.h"
+#include "bacon.h"
+#include "bacon/writer.h"
 
 #include "fab/sigutil.h"
 #include "fab/ipc.h"

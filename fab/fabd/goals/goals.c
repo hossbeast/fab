@@ -18,7 +18,7 @@
 #include "fab/events.h"
 #include "fab/ipc.h"
 #include "narrator.h"
-#include "value/writer.h"
+#include "bacon/writer.h"
 #include "valyria/llist.h"
 #include "valyria/set.h"
 

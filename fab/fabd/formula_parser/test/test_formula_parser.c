@@ -16,7 +16,7 @@
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
 #include "lorien/load.h"
-#include "value/load.h"
+#include "bacon/load.h"
 #include "xlinux/xstdlib.h"
 
 #include "valyria/list.h"
@@ -47,12 +47,12 @@ typedef struct {
 
 static void formula_parser_test_unit_setup(xunit_unit * unit)
 {
-  value_load();
+  bacon_load();
 }
 
 static void formula_parser_test_unit_cleanup(xunit_unit * unit)
 {
-  value_unload();
+  bacon_unload();
 }
 
 static void fml_say(narrator * restrict N, formula_value * restrict file, formula_value * restrict args, formula_value * restrict envs)

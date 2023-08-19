@@ -21,7 +21,7 @@
 #include "moria/traverse.h"
 #include "narrator.h"
 #include "narrator/fixed.h"
-#include "value/writer.h"
+#include "bacon/writer.h"
 #include "xlinux/xstdlib.h"
 
 #include "xunit/type.h"

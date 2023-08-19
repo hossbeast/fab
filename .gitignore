@@ -36,3 +36,4 @@ git-state.c
 git-state.h
 *.desc.c
 *.desc.h
+bacon/build/*/bacon

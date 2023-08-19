@@ -20,7 +20,7 @@
 #include "types.h"
 
 #include "narrator.h"
-#include "value/writer.h"
+#include "bacon/writer.h"
 #include "valyria/list.h"
 #include "xlinux/xstdlib.h"
 #include "xlinux/xstring.h"

@@ -16,7 +16,7 @@
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
 #include "lorien/load.h"
-#include "value/load.h"
+#include "bacon/load.h"
 #include "xlinux/xstdlib.h"
 
 #include "yyutil/grammar.h"
@@ -60,7 +60,7 @@ typedef struct {
 
 static void selector_exec_test_unit_setup(xunit_unit * unit)
 {
-  value_load();
+  bacon_load();
   graph_setup();
   filesystem_setup();
 
@@ -69,7 +69,7 @@ static void selector_exec_test_unit_setup(xunit_unit * unit)
 
 static void selector_exec_test_unit_cleanup(xunit_unit * unit)
 {
-  value_unload();
+  bacon_unload();
   graph_cleanup();
   filesystem_cleanup();
 }

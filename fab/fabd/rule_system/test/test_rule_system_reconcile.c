@@ -25,7 +25,7 @@
 #include "moria/graph.h"
 #include "moria/operations.h"
 #include "moria/parser.h"
-#include "value/load.h"
+#include "bacon/load.h"
 
 #include "xunit.h"
 #include "lookup.h"
@@ -70,7 +70,7 @@ typedef struct rule_system_reconcile_test {
 static void rule_system_reconcile_test_unit_setup(xunit_unit * unit)
 {
   moria_load();
-  value_load();
+  bacon_load();
   filesystem_setup();
 
   graph_setup();

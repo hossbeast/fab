@@ -21,8 +21,9 @@
 
 #include "common/snarf.h"
 #include "narrator.h"
-#include "value/merge.h"
-#include "value/parser.h"
+#include "bacon/load.h"
+#include "bacon/merge.h"
+#include "bacon/parser.h"
 #include "xlinux/xstdlib.h"
 
 #include "args.h"
@@ -42,7 +43,7 @@ int main(int argc, char ** argv, char ** envp)
 
   tid = syscall(SYS_gettid);
 
-  value_load();
+  bacon_load();
 
   // parse cmdline arguments
   args_parse(argc, argv);
@@ -85,5 +86,5 @@ int main(int argc, char ** argv, char ** envp)
   value_parser_xfree(parser);
 
   args_teardown();
-  value_unload();
+  bacon_unload();
 }

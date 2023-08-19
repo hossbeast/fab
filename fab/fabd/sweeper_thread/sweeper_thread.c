@@ -22,7 +22,7 @@
 #include "xlinux/xpthread.h"
 #include "xlinux/xstdlib.h"
 #include "xlinux/xtime.h"
-#include "value/writer.h"
+#include "bacon/writer.h"
 
 #include "sweeper_thread.h"
 #include "args.h"

@@ -16,7 +16,7 @@
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
 #include "lorien/load.h"
-#include "value/load.h"
+#include "bacon/load.h"
 #include "xlinux/xstdlib.h"
 
 #include "valyria/map.h"
@@ -48,14 +48,14 @@ typedef struct {
 
 static void module_parser_test_unit_setup(xunit_unit * unit)
 {
-  value_load();
+  bacon_load();
   variant_setup();
   graph_setup();
 }
 
 static void module_parser_test_unit_cleanup(xunit_unit * unit)
 {
-  value_unload();
+  bacon_unload();
   variant_cleanup();
   graph_cleanup();
 }

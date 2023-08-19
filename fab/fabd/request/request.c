@@ -19,7 +19,7 @@
 
 #include "common/attrs.h"
 #include "narrator.h"
-#include "value/writer.h"
+#include "bacon/writer.h"
 #include "xlinux/xstdlib.h"
 #include "valyria/llist.h"
 

@@ -20,7 +20,7 @@
 #include "moria/vertex.h"
 #include "narrator.h"
 #include "narrator/fixed.h"
-#include "value/writer.h"
+#include "bacon/writer.h"
 #include "valyria/chain.h"
 #include "xlinux/xstdlib.h"
 #include "xlinux/xstring.h"

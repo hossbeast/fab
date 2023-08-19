@@ -16,7 +16,7 @@
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
 #include "lorien/load.h"
-#include "value/load.h"
+#include "bacon/load.h"
 
 #include "valyria/map.h"
 
@@ -38,12 +38,12 @@ typedef struct {
 
 static void request_parser_test_unit_setup(xunit_unit * unit)
 {
-  value_load();
+  bacon_load();
 }
 
 static void request_parser_test_unit_cleanup(xunit_unit * unit)
 {
-  value_unload();
+  bacon_unload();
 }
 
 static void request_parser_test_entry(xunit_test * _test)

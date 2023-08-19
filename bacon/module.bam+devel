@@ -25,18 +25,18 @@ variant pic.{debug,devel,final,trace}
 # make common objects available for #include and linking
 import fab/include
 import fab/asan
-import lib{common,xlinux,narrator,valyria,yyutil,value}
+import lib{common,xlinux,narrator,valyria,yyutil,bacon}
 
 variant pic.{debug,devel} : [
-  rule value.? <- asan/asan.$?.o
+  rule bacon.? <- asan/asan.$?.o
 ]
 
 # invoke the compiler to build the executable
-rule **/*.?.o [*] -> value.$? : executable/cc.bam+devel
+rule **/*.?.o [*] -> bacon.$? : executable/cc.bam+devel
 
 # library dependencies
 variant pic.{debug,devel,final,trace} : [
-  rule //module/imports/*/lib*.?.a -> value.$?
+  rule //module/imports/*/lib*.?.a -> bacon.$?
 ]
 
-rule value.? -> //module/targets
+rule bacon.? -> //module/targets

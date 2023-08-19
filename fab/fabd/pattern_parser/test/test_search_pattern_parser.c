@@ -17,7 +17,7 @@
 
 #include "xlinux/xstdlib.h"
 
-#include "value/load.h"
+#include "bacon/load.h"
 
 #include "xunit.h"
 #include "xunit/assert.h"
@@ -43,12 +43,12 @@ typedef struct pattern_parser_test {
 
 static void pattern_parser_unit_setup(xunit_unit * unit)
 {
-  value_load();
+  bacon_load();
 }
 
 static void pattern_parser_unit_cleanup(xunit_unit * unit)
 {
-  value_unload();
+  bacon_unload();
 }
 
 //

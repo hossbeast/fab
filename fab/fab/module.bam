@@ -29,7 +29,7 @@ rule fab.? -> //module/targets
 # make common objects available for #include and linking
 import fab/include
 import fab/asan
-import lib{common,descriptor,xlinux,narrator,valyria,yyutil,value,fab,lorien}
+import lib{common,descriptor,xlinux,narrator,valyria,yyutil,bacon,fab,lorien}
 
 variant pic.{devel} : [
   rule fab.? <- asan/asan.$?.o

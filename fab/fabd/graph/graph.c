@@ -20,7 +20,7 @@
 #include "moria/graph.h"
 #include "moria/traverse.h"
 #include "narrator.h"
-#include "value/writer.h"
+#include "bacon/writer.h"
 #include "valyria/hashtable.h"
 #include "xlinux/xstdlib.h"
 

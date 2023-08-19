@@ -20,8 +20,8 @@
 #include "types.h"
 
 #include "xlinux/xstdlib.h"
-#include "value.h"
-#include "value/writer.h"
+#include "bacon.h"
+#include "bacon/writer.h"
 #include "yyutil/parser.h"
 #include "valyria/map.h"
 #include "valyria/list.h"

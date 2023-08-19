@@ -17,14 +17,14 @@
 
 #include "moria/load.h"
 #include "xlinux/xstdlib.h"
-#include "value/load.h"
+#include "bacon/load.h"
 
 #include "valyria/list.h"
 #include "valyria/llist.h"
 #include "valyria/map.h"
 #include "valyria/set.h"
-#include "value.h"
-#include "value/parser.h"
+#include "bacon.h"
+#include "bacon/parser.h"
 #include "moria/graph.h"
 #include "moria/operations.h"
 
@@ -70,12 +70,12 @@ typedef struct exec_builder_test {
 
 static void exec_builder_test_unit_setup(xunit_unit * unit)
 {
-  value_load();
+  bacon_load();
 }
 
 static void exec_builder_test_unit_cleanup(xunit_unit * unit)
 {
-  value_unload();
+  bacon_unload();
 }
 
 //

@@ -31,20 +31,20 @@ import lib{xlinux,narrator,valyria,yyutil,xunit}
 variant pic.{debug,devel,final,trace}
 
 # pull in object files in the module, except those under integ
-rule **~test/*.?.o -> libvalue.$?.a
+rule **~test/*.?.o -> libbacon.$?.a
 
 # default build targets
-rule libvalue.?.a -> //module/targets
+rule libbacon.?.a -> //module/targets
 
 # library dependencies
-rule //module/imports/*~libxunit/lib*.?.a -> //module/libdeps.$? # libvalue.$?.a
-rule //module/libdeps.? -> libvalue.$?.a
+rule //module/imports/*~libxunit/lib*.?.a -> //module/libdeps.$? # libbacon.$?.a
+rule //module/libdeps.? -> libbacon.$?.a
 
 # tests need the library
 variant pic.devel : [
-  rule **/test/test_*.?.xunit <- libvalue.$?.a
+  rule **/test/test_*.?.xunit <- libbacon.$?.a
   rule **/test/test_*.?.xunit <- //module/libdeps.$?
 
-  rule tests.xunit <- libvalue.?.a
+  rule tests.xunit <- libbacon.?.a
   rule tests.xunit <- //module/libdeps.?
 ]

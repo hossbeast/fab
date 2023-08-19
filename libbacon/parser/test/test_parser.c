@@ -17,7 +17,7 @@
 
 #include "xlinux/xstdlib.h"
 
-#include "value/load.h"
+#include "bacon/load.h"
 
 #include "xunit.h"
 #include "xunit/assert.h"
@@ -25,8 +25,7 @@
 #include "narrator/growing.h"
 
 
-#include "value.h"
-#include "value.h"
+#include "bacon.h"
 #include "assert.internal.h"
 #include "make.internal.h"
 #include "parser.internal.h"
@@ -46,12 +45,12 @@ typedef struct parser_test {
 static void test_parser_setup(xunit_unit * unit)
 {
   // load libraries
-  value_load();
+  bacon_load();
 }
 
 static void test_parser_cleanup(xunit_unit * unit)
 {
-  value_unload();
+  bacon_unload();
 }
 
 static void test_parser_entry(xunit_test * _test)

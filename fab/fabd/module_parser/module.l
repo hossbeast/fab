@@ -22,8 +22,8 @@
   #include "module.tab.h"
   #include "module.tokens.h"
 
-  #include "value.h"
-  #include "value/parser.h"
+  #include "bacon.h"
+  #include "bacon/parser.h"
 
   #include "pattern_parser.h"
 

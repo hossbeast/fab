@@ -17,9 +17,9 @@
 
 #include <string.h>
 
-#include "value.h"
-#include "value/assert.h"
-#include "value/load.h"
+#include "bacon.h"
+#include "bacon/assert.h"
+#include "bacon/load.h"
 #include "xunit.h"
 #include "xunit/assert.h"
 #include "narrator.h"
@@ -45,12 +45,12 @@ typedef struct merge_test {
 
 static void test_merge_setup(xunit_unit * unit)
 {
-  value_load();
+  bacon_load();
 }
 
 static void test_merge_cleanup(xunit_unit * unit)
 {
-  value_unload();
+  bacon_unload();
 }
 
 static void test_merge_entry(xunit_test * _test)

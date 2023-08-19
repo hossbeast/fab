@@ -23,7 +23,7 @@
 #include "lorien/load.h"
 #include "moria/load.h"
 #include "narrator/load.h"
-#include "value/load.h"
+#include "bacon/load.h"
 
 #include "xlinux/xstdlib.h"
 #include "xlinux/xfcntl.h"
@@ -113,7 +113,7 @@ int main(int argc, char ** argv)
   lorien_load();
   moria_load();
   narrator_load();
-  value_load();
+  bacon_load();
 
   args_setup(argc, argv);
   params_setup(g_args.hash);
@@ -203,7 +203,7 @@ int main(int argc, char ** argv)
   lorien_unload();
   moria_unload();
   narrator_unload();
-  value_unload();
+  bacon_unload();
 
   r |= g_params.handler_error;  // error on a handler thread
 

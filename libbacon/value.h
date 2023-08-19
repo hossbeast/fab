@@ -111,20 +111,6 @@ typedef struct value {
   };
 } value;
 
-/// value_load
-//
-// SUMMARY
-//  initialize the library
-//
-void value_load(void);
-
-/// value_unload
-//
-// SUMMARY
-//  release the library
-//
-void value_unload(void);
-
 /// value_znload
 //
 //
