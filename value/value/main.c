@@ -79,7 +79,7 @@ int main(int argc, char ** argv, char ** envp)
   }
 
   value_say(result, g_narrator_stdout);
-  narrator_xsays(g_narrator_stdout, "\n");
+  narrator_says(g_narrator_stdout, "\n");
 
   wfree(text);
   value_parser_xfree(parser);

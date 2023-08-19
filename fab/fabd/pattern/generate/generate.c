@@ -39,7 +39,7 @@ static void pattern_section_generate(pattern_generate_context * restrict ctx)
   const variant * var = 0;
   moria_vertex * v;
 
-  narrator_xreset(ctx->section_narrator);
+  narrator_reset(ctx->section_narrator);
 
   ctx->section_traversal.section = chain_next(ctx->section_traversal.head, &ctx->section_traversal.cursor, chn);
 

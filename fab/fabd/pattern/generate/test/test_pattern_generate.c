@@ -222,7 +222,7 @@ static void pattern_generate_test_entry(xunit_test * _test)
   );
 
   // ordered list of vertices and edges
-  narrator_xreset(&N->base);
+  narrator_reset(&N->base);
   graph_say(&N->base);
   graph = N->s;
   graph_len = N->l;
@@ -230,7 +230,7 @@ static void pattern_generate_test_entry(xunit_test * _test)
   assert_eq_w(test->graph, strlen(test->graph), graph, graph_len);
 
   // ordered list of nodes
-  narrator_xreset(&N->base);
+  narrator_reset(&N->base);
 
   set_elements(nodes_list, &node_list, &node_list_lens, &node_list_len);
   qsort(node_list, node_list_len, sizeof(*node_list), (void*)node_compare);
@@ -240,8 +240,8 @@ static void pattern_generate_test_entry(xunit_test * _test)
     fsent * n = node_list[x];
 
     if(x)
-      narrator_xsays(&N->base, " ");
-    narrator_xsays(&N->base, n->name.name);
+      narrator_says(&N->base, " ");
+    narrator_says(&N->base, n->name.name);
   }
   nodes = N->s;
   nodes_len = N->l;

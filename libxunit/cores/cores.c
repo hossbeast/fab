@@ -32,9 +32,9 @@ static inline void runf(narrator * restrict N, int * restrict status, const char
 
   fixed = containerof(N, typeof(*fixed), base);
 
-  narrator_xreset(N);
+  narrator_reset(N);
   va_start(va, fmt);
-  narrator_xsayvf(N, fmt, va);
+  narrator_sayvf(N, fmt, va);
   va_end(va);
   r = system(fixed->s);
   if(status) {

@@ -52,7 +52,7 @@ static void test_basic()
   narrator_multi_add(N, &N0->base);
   narrator_multi_add(N, &N1->base);
 
-  narrator_xsays(&N->base, "hello world");
+  narrator_says(&N->base, "hello world");
 
   validate(2, N0, N1);
 

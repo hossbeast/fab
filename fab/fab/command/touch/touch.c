@@ -47,22 +47,22 @@ static void request_write(narrator * restrict N)
   int x;
 
   if(g_args.invalidate) {
-    narrator_xsays(N, " global-invalidate");
+    narrator_says(N, " global-invalidate");
     return;
   }
 
-  narrator_xsays(N, ""
+  narrator_says(N, ""
 " select : ["
   );
 
   for(x = 0; x < args->targets_len; x++)
   {
-    narrator_xsayf(N, ""
+    narrator_sayf(N, ""
 " path : \"%.*s\"", (int)args->targets[x].len, args->targets[x].s
     );
   }
 
-  narrator_xsays(N, ""
+  narrator_says(N, ""
 " ] "
 " invalidate "
   );
@@ -93,7 +93,7 @@ static void connected(command * restrict cmd, fab_client * restrict client)
   request_write(request_narrator);
 
   // two terminating null bytes
-  narrator_xsayw(request_narrator, (char[]) { 0x00, 0x00 }, 2);
+  narrator_sayw(request_narrator, (char[]) { 0x00, 0x00 }, 2);
   msg->size = nstor.l;
   client_post(client, msg);
 }

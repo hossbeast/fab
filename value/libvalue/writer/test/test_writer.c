@@ -96,7 +96,7 @@ static void test_basic(xunit_test * _test)
 
   value_writer_pop_list(writer);
 
-  narrator_xsays(g_narrator_stdout, "\n");
+  narrator_says(g_narrator_stdout, "\n");
 
   value_writer_xfree(writer);
 }
@@ -119,7 +119,7 @@ static void test_set(xunit_test * _test)
   value_writer_mapping_string_float(writer, "foo", 42);
   value_writer_pop_set(writer);
 
-  narrator_xsays(g_narrator_stdout, "\n");
+  narrator_says(g_narrator_stdout, "\n");
 
   value_writer_xfree(writer);
 }
@@ -140,7 +140,7 @@ static void test_set_set_top(xunit_test * _test)
   value_writer_pop_mapping(writer);
   value_writer_mapping_string_float(writer, "foo", 42);
 
-  narrator_xsays(g_narrator_stdout, "\n");
+  narrator_says(g_narrator_stdout, "\n");
 
   value_writer_xfree(writer);
 }
@@ -165,7 +165,7 @@ static void test_set_embedded(xunit_test * _test)
     value_writer_pop_mapping(writer);
   value_writer_pop_set(writer);
 
-  narrator_xsays(g_narrator_stdout, "\n");
+  narrator_says(g_narrator_stdout, "\n");
 
   value_writer_xfree(writer);
 }
@@ -192,7 +192,7 @@ static void test_list(xunit_test * _test)
     value_writer_string(writer, "foo/bar");
   value_writer_pop_list(writer);
 
-  narrator_xsays(g_narrator_stdout, "\n");
+  narrator_says(g_narrator_stdout, "\n");
 
   value_writer_xfree(writer);
 }
@@ -217,7 +217,7 @@ static void test_list_list_top(xunit_test * _test)
   value_writer_bool(writer, true);
   value_writer_bool(writer, false);
 
-  narrator_xsays(g_narrator_stdout, "\n");
+  narrator_says(g_narrator_stdout, "\n");
 
   value_writer_xfree(writer);
 }

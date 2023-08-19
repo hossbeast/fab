@@ -545,56 +545,56 @@ void formula_value_render(const formula_value * restrict v, struct narrator * re
 
   if(v->type == FORMULA_VALUE_LIST)
   {
-    narrator_xsays(N, "[");
+    narrator_says(N, "[");
 
     chain_foreach(T, sv, chn, v->list_head) {
-      narrator_xsays(N, " ");
+      narrator_says(N, " ");
       formula_value_render(sv, N);
     }
 
     if(v->list_head)
-      narrator_xsays(N, " ");
+      narrator_says(N, " ");
 
-    narrator_xsays(N, "]");
+    narrator_says(N, "]");
   }
   else if(v->type == FORMULA_VALUE_SET)
   {
-    narrator_xsays(N, "{");
+    narrator_says(N, "{");
 
     rbtree_foreach(v->set, sv, rbn) {
-      narrator_xsays(N, " ");
+      narrator_says(N, " ");
       formula_value_render(sv, N);
     }
 
     if(!rbtree_empty(v->set))
-      narrator_xsays(N, " ");
+      narrator_says(N, " ");
 
-    narrator_xsays(N, "}");
+    narrator_says(N, "}");
   }
   else if(v->type == FORMULA_VALUE_MAPPING)
   {
-    narrator_xsayw(N, v->m.name, v->m.name_len);
-    narrator_xsays(N, " : ");
+    narrator_sayw(N, v->m.name, v->m.name_len);
+    narrator_says(N, " : ");
     formula_value_render(v->m.value, N);
   }
   else if(v->type == FORMULA_VALUE_STRING)
   {
-    narrator_xsays(N, v->s);
+    narrator_says(N, v->s);
   }
   else if(v->type == FORMULA_VALUE_FLOAT)
   {
-    narrator_xsayf(N, "%.2lf", v->f);
+    narrator_sayf(N, "%.2lf", v->f);
   }
   else if(v->type == FORMULA_VALUE_BOOLEAN)
   {
-    narrator_xsayf(N, "%s", v->b ? "true" : "false");
+    narrator_sayf(N, "%s", v->b ? "true" : "false");
   }
   else if(v->type == FORMULA_VALUE_POSINT)
   {
-    narrator_xsayf(N, "%"PRIu64, v->u);
+    narrator_sayf(N, "%"PRIu64, v->u);
   }
   else if(v->type == FORMULA_VALUE_NEGINT)
   {
-    narrator_xsayf(N, "%"PRId64, v->i);
+    narrator_sayf(N, "%"PRId64, v->i);
   }
 }

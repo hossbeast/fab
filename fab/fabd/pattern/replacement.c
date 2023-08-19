@@ -130,7 +130,7 @@ static void generate(const pattern_segment * restrict seg, pattern_generate_cont
         variant_get(space, len, (variant **)&v);
       }
 
-      narrator_xsays(ctx->section_narrator, v->norm);
+      narrator_says(ctx->section_narrator, v->norm);
     }
   }
   else if(n->replacement_type == PATTERN_REPLACEMENT_TYPE_NAME)
@@ -142,7 +142,7 @@ static void generate(const pattern_segment * restrict seg, pattern_generate_cont
   {
     if(ctx->match && ctx->match->group_max >= n->num)
     {
-        narrator_xsayw(ctx->section_narrator
+        narrator_sayw(ctx->section_narrator
           , ctx->match->groups[n->num].start
           , ctx->match->groups[n->num].len
         );

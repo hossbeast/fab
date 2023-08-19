@@ -128,9 +128,9 @@ static void generate(const pattern_segment * pat, pattern_generate_context * res
 
   saved_context_node = ctx->node;
   saved_section_traversal = ctx->section_traversal;
-  narrator_xseek(ctx->section_narrator, 0, NARRATOR_SEEK_CUR, &saved_section_narrator_pos);
-  narrator_xseek(ctx->section_narrator, 0, NARRATOR_SEEK_SET, 0);
-  narrator_xread(ctx->section_narrator, saved_text, saved_section_narrator_pos, 0);
+  narrator_seek(ctx->section_narrator, 0, NARRATOR_SEEK_CUR, &saved_section_narrator_pos);
+  narrator_seek(ctx->section_narrator, 0, NARRATOR_SEEK_SET, 0);
+  narrator_read(ctx->section_narrator, saved_text, saved_section_narrator_pos, 0);
 
   llist_append(&ctx->segment_traversal_stack, &alt_segment_traversal, lln);
 
@@ -142,8 +142,8 @@ static void generate(const pattern_segment * pat, pattern_generate_context * res
 
     ctx->node = saved_context_node;
     ctx->section_traversal = saved_section_traversal;
-    narrator_xseek(ctx->section_narrator, 0, NARRATOR_SEEK_SET, 0);
-    narrator_xsayw(ctx->section_narrator, saved_text, saved_section_narrator_pos);
+    narrator_seek(ctx->section_narrator, 0, NARRATOR_SEEK_SET, 0);
+    narrator_sayw(ctx->section_narrator, saved_text, saved_section_narrator_pos);
   }
 
   llist_delete(&alt_segment_traversal, lln);
@@ -176,12 +176,12 @@ static void render(const pattern_segment * restrict pat, pattern_render_context 
   saved_section_traversal = ctx->section_traversal;
 
   // make a copy of the current section
-  narrator_xseek(ctx->narrator, 0, NARRATOR_SEEK_CUR, &start_pos);
+  narrator_seek(ctx->narrator, 0, NARRATOR_SEEK_CUR, &start_pos);
   saved_text_pos = ctx->pos + sizeof(pattern_render_fragment);
   saved_text_len = MIN(sizeof(saved_text), start_pos - ctx->pos - sizeof(pattern_render_fragment));
-  narrator_xseek(ctx->narrator, saved_text_pos, NARRATOR_SEEK_SET, 0);
-  narrator_xread(ctx->narrator, saved_text, saved_text_len, 0);
-  narrator_xseek(ctx->narrator, start_pos, NARRATOR_SEEK_SET, 0);
+  narrator_seek(ctx->narrator, saved_text_pos, NARRATOR_SEEK_SET, 0);
+  narrator_read(ctx->narrator, saved_text, saved_text_len, 0);
+  narrator_seek(ctx->narrator, start_pos, NARRATOR_SEEK_SET, 0);
 
   llist_append(&ctx->segment_traversal_stack, &alt_segment_traversal, lln);
 
@@ -190,13 +190,13 @@ static void render(const pattern_segment * restrict pat, pattern_render_context 
     if(!first)
     {
       // start a new item - save the current offset
-      narrator_xseek(ctx->narrator, 0, NARRATOR_SEEK_CUR, &ctx->pos);
+      narrator_seek(ctx->narrator, 0, NARRATOR_SEEK_CUR, &ctx->pos);
 
       // save a place for this fragment length
-      narrator_xsayw(ctx->narrator, (uint16_t[]) { 0 }, sizeof(uint16_t));
+      narrator_sayw(ctx->narrator, (uint16_t[]) { 0 }, sizeof(uint16_t));
 
       // replay preceeding text
-      narrator_xsayw(ctx->narrator, saved_text, saved_text_len);
+      narrator_sayw(ctx->narrator, saved_text, saved_text_len);
     }
     first = false;
 
@@ -219,13 +219,13 @@ static void render(const pattern_segment * restrict pat, pattern_render_context 
     if(!first)
     {
       // start a new item - save the current offset
-      narrator_xseek(ctx->narrator, 0, NARRATOR_SEEK_CUR, &ctx->pos);
+      narrator_seek(ctx->narrator, 0, NARRATOR_SEEK_CUR, &ctx->pos);
 
       // save a place for this fragment length
-      narrator_xsayw(ctx->narrator, (uint16_t[]) { 0 }, sizeof(uint16_t));
+      narrator_sayw(ctx->narrator, (uint16_t[]) { 0 }, sizeof(uint16_t));
 
       // replay preceeding text
-      narrator_xsayw(ctx->narrator, saved_text, saved_text_len);
+      narrator_sayw(ctx->narrator, saved_text, saved_text_len);
     }
 
     pattern_segment_render(ctx);

@@ -127,9 +127,9 @@ static void generate(const pattern_segment * restrict seg, pattern_generate_cont
   saved_context_node = ctx->node;
   saved_section_traversal = ctx->section_traversal;
   saved_segment_traversal = ctx->segment_traversal;
-  narrator_xseek(ctx->section_narrator, 0, NARRATOR_SEEK_CUR, &saved_section_narrator_pos);
-  narrator_xseek(ctx->section_narrator, 0, NARRATOR_SEEK_SET, 0);
-  narrator_xread(ctx->section_narrator, saved_section_text, saved_section_narrator_pos, 0);
+  narrator_seek(ctx->section_narrator, 0, NARRATOR_SEEK_CUR, &saved_section_narrator_pos);
+  narrator_seek(ctx->section_narrator, 0, NARRATOR_SEEK_SET, 0);
+  narrator_read(ctx->section_narrator, saved_section_text, saved_section_narrator_pos, 0);
 
   for(x = 0; x < ctx->variants->table_size; x++)
   {
@@ -144,13 +144,13 @@ static void generate(const pattern_segment * restrict seg, pattern_generate_cont
     ctx->section_traversal.variant_index = x;
 
     ctx->segment_traversal = saved_segment_traversal;
-    narrator_xsayw(ctx->section_narrator, v->norm, v->norm_len);
+    narrator_sayw(ctx->section_narrator, v->norm, v->norm_len);
     pattern_segment_generate(ctx);
 
     ctx->node = saved_context_node;
     ctx->section_traversal = saved_section_traversal;
-    narrator_xseek(ctx->section_narrator, 0, NARRATOR_SEEK_SET, 0);
-    narrator_xsayw(ctx->section_narrator, saved_section_text, saved_section_narrator_pos);
+    narrator_seek(ctx->section_narrator, 0, NARRATOR_SEEK_SET, 0);
+    narrator_sayw(ctx->section_narrator, saved_section_text, saved_section_narrator_pos);
   }
 
   if(ctx->variants->size == 0)

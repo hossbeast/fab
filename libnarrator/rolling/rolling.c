@@ -195,12 +195,12 @@ void API narrator_rolling_free(narrator_rolling *n)
   if(n) {
     narrator_rolling_destroy(n);
   }
-  wfree(n);
+  free(n);
 }
 
 void API narrator_rolling_destroy(narrator_rolling * restrict n)
 {
-  wfree(n->directory);
-  wfree(n->name_base);
+  free(n->directory);
+  free(n->name_base);
   xclose(n->fd);
 }

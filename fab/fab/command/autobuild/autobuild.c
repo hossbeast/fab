@@ -95,16 +95,16 @@ static void connected(command * restrict cmd, fab_client * restrict client)
   /* re-configure goals */
   build_command_collate_goals(request_narrator, true);
 
-  narrator_xsayf(request_narrator, " reconcile ");
+  narrator_sayf(request_narrator, " reconcile ");
 
   /* invalidate targets */
   build_command_collate_invalidations(request_narrator);
 
   /* build the targets */
-  narrator_xsayf(request_narrator, " autorun");
+  narrator_sayf(request_narrator, " autorun");
 
   // two terminating null bytes
-  narrator_xsayw(request_narrator, (char[]) { 0x00, 0x00 }, 2);
+  narrator_sayw(request_narrator, (char[]) { 0x00, 0x00 }, 2);
   msg->size = nstor.l;
 
   client_post(client, msg);

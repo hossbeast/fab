@@ -116,7 +116,7 @@ static void __attribute__((nonnull)) get_mapping_key(narrator * restrict N, valu
         continue;
       }
 
-      narrator_xsayc(N, val->s->s[x]);
+      narrator_sayc(N, val->s->s[x]);
     }
 
     narrator_flush(N);
@@ -243,7 +243,7 @@ void var_denormalize(value_parser * restrict parser, variant * restrict var, val
 
     RUNTIME_ASSERT(v->type == VALUE_TYPE_MAPPING);
 
-    narrator_xseek(Nkey, 0, NARRATOR_SEEK_SET, 0);
+    narrator_seek(Nkey, 0, NARRATOR_SEEK_SET, 0);
     get_mapping_key(Nkey, v->key);
 
     // as a side-effect, returns the name

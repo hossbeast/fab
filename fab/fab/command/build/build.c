@@ -169,16 +169,16 @@ static void connected(command * restrict cmd, fab_client * restrict client)
   /* re-configure goals */
   build_command_collate_goals(request_narrator, false);
 
-  narrator_xsayf(request_narrator, " reconcile ");
+  narrator_sayf(request_narrator, " reconcile ");
 
   /* invalidate targets */
   build_command_collate_invalidations(request_narrator);
 
   /* build the targets */
-  narrator_xsayf(request_narrator, " run");
+  narrator_sayf(request_narrator, " run");
 
   // two terminating null bytes
-  narrator_xsayw(request_narrator, (char[]) { 0x00, 0x00 }, 2);
+  narrator_sayw(request_narrator, (char[]) { 0x00, 0x00 }, 2);
   msg->size = nstor.l;
 
   client_post(client, msg);
@@ -545,7 +545,7 @@ void build_command_collate_invalidations(narrator * restrict N)
   int x;
 
   if(g_args.invalidate) {
-    narrator_xsays(N, " global-invalidate");
+    narrator_says(N, " global-invalidate");
     return;
   }
 
@@ -559,7 +559,7 @@ void build_command_collate_invalidations(narrator * restrict N)
 
   if(x < args->targets_len)
   {
-    narrator_xsays(N, ""
+    narrator_says(N, ""
 " select : ["
     );
 
@@ -569,12 +569,12 @@ void build_command_collate_invalidations(narrator * restrict N)
       if(arg->mode != 't')
         continue;
 
-      narrator_xsayf(N, ""
+      narrator_sayf(N, ""
 " path : \"%.*s\"", (int)arg->sl, arg->s
       );
     }
 
-    narrator_xsays(N, ""
+    narrator_says(N, ""
 " ] "
 " invalidate "
     );
@@ -590,7 +590,7 @@ void build_command_collate_invalidations(narrator * restrict N)
 
   if(x < args->targets_len)
   {
-    narrator_xsays(N, ""
+    narrator_says(N, ""
 " select : ["
     );
 
@@ -600,12 +600,12 @@ void build_command_collate_invalidations(narrator * restrict N)
       if(arg->mode != 'x')
         continue;
 
-      narrator_xsayf(N, ""
+      narrator_sayf(N, ""
 " path : \"%.*s\"", (int)arg->sl, arg->s
       );
     }
 
-    narrator_xsays(N, ""
+    narrator_says(N, ""
 " ] "
 "invalidate "
     );
@@ -617,13 +617,13 @@ void build_command_collate_goals(narrator * restrict N, bool reconcile)
   int x;
   struct build_target *arg;
 
-  narrator_xsays(N, ""
+  narrator_says(N, ""
 " goals : { "
   );
 
   if(reconcile)
   {
-    narrator_xsays(N, "reconcile ");
+    narrator_says(N, "reconcile ");
   }
 
   /* transitive targets */
@@ -636,7 +636,7 @@ void build_command_collate_goals(narrator * restrict N, bool reconcile)
 
   if(x < args->targets_len)
   {
-    narrator_xsays(N, ""
+    narrator_says(N, ""
 " target-transitive : ["
     );
 
@@ -646,12 +646,12 @@ void build_command_collate_goals(narrator * restrict N, bool reconcile)
       if(arg->mode != 't')
         continue;
 
-      narrator_xsayf(N, ""
+      narrator_sayf(N, ""
 " path : \"%.*s\"", arg->sl, arg->s
       );
     }
 
-    narrator_xsays(N, ""
+    narrator_says(N, ""
 " ] "
     );
   }
@@ -666,7 +666,7 @@ void build_command_collate_goals(narrator * restrict N, bool reconcile)
 
   if(x < args->targets_len)
   {
-    narrator_xsays(N, ""
+    narrator_says(N, ""
 " target-direct: ["
     );
 
@@ -676,17 +676,17 @@ void build_command_collate_goals(narrator * restrict N, bool reconcile)
       if(arg->mode != 't')
         continue;
 
-      narrator_xsayf(N, ""
+      narrator_sayf(N, ""
 " path : \"%.*s\"", (int)arg->sl, arg->s
       );
     }
 
-    narrator_xsays(N, ""
+    narrator_says(N, ""
 " ] "
     );
   }
 
-  narrator_xsays(N, " build }");
+  narrator_says(N, " build }");
 }
 
 //

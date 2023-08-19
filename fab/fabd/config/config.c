@@ -703,14 +703,14 @@ void config_active_say(narrator * restrict N)
 {
   config *cfg;
 
-  narrator_xsays(N, "#\n");
-  narrator_xsays(N, "# active config files in ascending order of precedence\n");
-  narrator_xsays(N, "#\n");
+  narrator_says(N, "#\n");
+  narrator_says(N, "# active config files in ascending order of precedence\n");
+  narrator_says(N, "#\n");
   llist_foreach(&config_list, cfg, vertex.owner) {
-    narrator_xsayf(N, "#  %.*s\n", (int)cfg->self_node_abspath_len, cfg->self_node_abspath);
+    narrator_sayf(N, "#  %.*s\n", (int)cfg->self_node_abspath_len, cfg->self_node_abspath);
   }
-  narrator_xsays(N, "#\n");
-  narrator_xsays(N, "\n");
+  narrator_says(N, "#\n");
+  narrator_says(N, "\n");
 
   config_say(config_active, N);
 }

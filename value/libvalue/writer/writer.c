@@ -62,7 +62,7 @@ static void indent(value_writer * const restrict writer)
 {
   if(writer->mapping != 0 && (writer->mapping % 2) == 0)
   {
-    narrator_xsays(writer->N, " : ");
+    narrator_says(writer->N, " : ");
     writer->mapping -= 2;
   }
   else
@@ -73,9 +73,9 @@ static void indent(value_writer * const restrict writer)
     }
 
     if(writer->any)
-      narrator_xsayc(writer->N, '\n');
+      narrator_sayc(writer->N, '\n');
 
-    narrator_xsayf(writer->N, "%*s", writer->level * 2, "");
+    narrator_sayf(writer->N, "%*s", writer->level * 2, "");
   }
 
   writer->any = true;
@@ -89,17 +89,17 @@ static void write_bytes(value_writer * const restrict writer, const char * const
 
   if(should_quote(s, len))
   {
-    narrator_xsayc(writer->N, '"');
+    narrator_sayc(writer->N, '"');
     for(x = 0; x < len; x += sizeof(buf))
     {
       z = value_string_znloadw(buf, sizeof(buf), &s[x], MIN(sizeof(buf), len - x));
-      narrator_xsayw(writer->N, buf, z);
+      narrator_sayw(writer->N, buf, z);
     }
-    narrator_xsayc(writer->N, '"');
+    narrator_sayc(writer->N, '"');
   }
   else
   {
-    narrator_xsayw(writer->N, s, len);
+    narrator_sayw(writer->N, s, len);
   }
 }
 
@@ -107,13 +107,13 @@ static void pop(value_writer * restrict writer)
 {
   RUNTIME_ASSERT(writer->level != 0);
 
-  narrator_xsayc(writer->N, '\n');
+  narrator_sayc(writer->N, '\n');
   writer->level--;
 
-  narrator_xsayf(writer->N, "%*s", writer->level * 2, "");
+  narrator_sayf(writer->N, "%*s", writer->level * 2, "");
 
   if(writer->levels[writer->level])
-    narrator_xsayc(writer->N, writer->levels[writer->level]);
+    narrator_sayc(writer->N, writer->levels[writer->level]);
 }
 
 //
@@ -269,25 +269,25 @@ void API value_writer_value(value_writer * const restrict writer, const value * 
 void API value_writer_uint(value_writer * const restrict writer, uint64_t u)
 {
   indent(writer);
-  narrator_xsayf(writer->N, "%"PRIu64, u);
+  narrator_sayf(writer->N, "%"PRIu64, u);
 }
 
 void API value_writer_int(value_writer * const restrict writer, int64_t i)
 {
   indent(writer);
-  narrator_xsayf(writer->N, "%"PRId64, i);
+  narrator_sayf(writer->N, "%"PRId64, i);
 }
 
 void API value_writer_bool(value_writer * const restrict writer, bool b)
 {
   indent(writer);
-  narrator_xsayf(writer->N, "%s", b ? "true" : "false");
+  narrator_sayf(writer->N, "%s", b ? "true" : "false");
 }
 
 void API value_writer_float(value_writer * const restrict writer, double f)
 {
   indent(writer);
-  narrator_xsayf(writer->N, "%.2lf", f);
+  narrator_sayf(writer->N, "%.2lf", f);
 }
 
 void API value_writer_bytes(value_writer * const restrict writer, const char * const restrict s, size_t len)
@@ -311,8 +311,8 @@ void API value_writer_char(value_writer * const restrict writer, char c)
 void API value_writer_variable(value_writer * const restrict writer, const char * const restrict name, size_t len)
 {
   indent(writer);
-  narrator_xsayc(writer->N, '$');
-  narrator_xsayw(writer->N, name, len);
+  narrator_sayc(writer->N, '$');
+  narrator_sayw(writer->N, name, len);
 }
 
 //
@@ -324,7 +324,7 @@ void API value_writer_push_set(value_writer * restrict writer)
   RUNTIME_ASSERT(writer->level != (sizeof(writer->levels) / sizeof(writer->levels[0])));
 
   indent(writer);
-  narrator_xsayc(writer->N, '{');
+  narrator_sayc(writer->N, '{');
   writer->levels[writer->level++] = '}';
 }
 
@@ -342,7 +342,7 @@ void API value_writer_push_list(value_writer * restrict writer)
   RUNTIME_ASSERT(writer->level != (sizeof(writer->levels) / sizeof(writer->levels[0])));
 
   indent(writer);
-  narrator_xsayc(writer->N, '[');
+  narrator_sayc(writer->N, '[');
   writer->levels[writer->level++] = ']';
 }
 

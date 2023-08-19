@@ -81,8 +81,8 @@ static void pattern_parser_test_entry(xunit_test * _test)
   pattern_say(A, &N1->base);
 
   len = N1->l;
-  narrator_xseek(&N1->base, 0, NARRATOR_SEEK_SET, 0);
-  narrator_xread(&N1->base, buf, len, 0);
+  narrator_seek(&N1->base, 0, NARRATOR_SEEK_SET, 0);
+  narrator_read(&N1->base, buf, len, 0);
   buf[len] = buf[len + 1] = 0;
 
   search_pattern_parse_partial(parser, buf, len + 2, "-test-", 0, &loc, &B);

@@ -141,7 +141,7 @@ void dependency_say_sources(const dependency * restrict bpe, narrator * restrict
   llist_foreach(&list, v, lln) {
     n = containerof(v, fsent, vertex);
     if(x++) {
-      narrator_xsays(N, ", ");
+      narrator_says(N, ", ");
     }
     fsent_path_say(n, N);
   }
@@ -159,7 +159,7 @@ void dependency_say_targets(const dependency * restrict bpe, narrator * restrict
   llist_foreach(&list, v, lln) {
     n = containerof(v, fsent, vertex);
     if(x++) {
-      narrator_xsays(N, ", ");
+      narrator_says(N, ", ");
     }
     fsent_path_say(n, N);
   }

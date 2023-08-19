@@ -42,14 +42,14 @@ typedef struct narrator {
 } narrator;
 
 //
-// fatal-write to the active narration
+// write to the active narration
 //
 
-#define xsayvf(...) narrator_xsayvf(N, ##__VA_ARGS__)
-#define xsayf(...)  narrator_xsayf( N, ##__VA_ARGS__)
-#define xsays(...)  narrator_xsays( N, ##__VA_ARGS__)
-#define xsayw(...)  narrator_xsayw( N, ##__VA_ARGS__)
-#define xsayc(...)  narrator_xsayc( N, ##__VA_ARGS__)
+#define xsayvf(...) narrator_sayvf(N, ##__VA_ARGS__)
+#define xsayf(...)  narrator_sayf( N, ##__VA_ARGS__)
+#define xsays(...)  narrator_says( N, ##__VA_ARGS__)
+#define xsayw(...)  narrator_sayw( N, ##__VA_ARGS__)
+#define xsayc(...)  narrator_sayc( N, ##__VA_ARGS__)
 
 /// read-only singleton narrators that write to fixed file descriptors
 extern narrator * g_narrator_stdout;
@@ -58,51 +58,27 @@ extern narrator * g_narrator_stderr;
 /// read-only singleton nullity narrator that discards all output
 extern narrator * g_narrator_nullity;
 
-/// narrator_sayvf
-//
-// SUMMARY
-//  formatted write from va_list to the specified narrator
-//
-void narrator_xsayvf(narrator * const restrict n, const char * const restrict fmt, va_list va)
+/* formatted write from va_list to the specified narrator */
+void narrator_sayvf(narrator * const restrict n, const char * const restrict fmt, va_list va)
   __attribute__((nonnull));
 
-/// narrator_sayf
-//
-// SUMMARY
-//  formatted write to the specified narrator
-//
-void narrator_xsayf(narrator * const restrict n, const char * const restrict fmt, ...)
+/* formatted write to the specified narrator */
+void narrator_sayf(narrator * const restrict n, const char * const restrict fmt, ...)
   __attribute__((nonnull(1, 2)))
   __attribute__((format(printf, 2, 3)));
 
-/// narrator_sayw
-//
-// SUMMARY
-//  write to the specified narrator
-//
-void narrator_xsayw(narrator * const restrict n, const void * const restrict b, size_t l);
+/* write to the specified narrator */
+void narrator_sayw(narrator * const restrict n, const void * const restrict b, size_t l);
 
-/// narrator_says
-//
-// SUMMARY
-//  write to the specified narrator
-//
-void narrator_xsays(narrator * const restrict n, const char * const restrict s)
+/* write to the specified narrator */
+void narrator_says(narrator * const restrict n, const char * const restrict s)
   __attribute__((nonnull(1)));
 
-/// narrator_sayc
-//
-// SUMMARY
-//  write a byte to the specified narrator
-//
-void narrator_xsayc(narrator * const restrict n, int c)
+/* write a byte to the specified narrator */
+void narrator_sayc(narrator * const restrict n, int c)
   __attribute__((nonnull));
 
-/// narrator_flush
-//
-// SUMMARY
-//  flush
-//
+/* flush */
 void narrator_flush(narrator * const restrict n)
   __attribute__((nonnull));
 
@@ -117,43 +93,30 @@ NARRATOR_SEEK_TABLE(0)
 #undef NARRATOR_SEEK_DEF
 };
 
-/// narrator_seek
-//
-// SUMMARY
-//  reposition the narrator to offset according to whence
-//
-// PARAMETERS
-//  n      - narrator
-//  offset - byte offset
-//  whence - one of NARRATOR_SEEK_*, indicates how offset is interpreted
-//  [res]  - (returns) the resulting absolute offset
-//
-void narrator_xseek(narrator * const restrict n, off_t offset, int whence, off_t * restrict res)
+/*
+ * reposition the narrator to offset according to whence
+ *
+ *  n      - narrator
+ *  offset - byte offset
+ *  whence - one of NARRATOR_SEEK_*, indicates how offset is interpreted
+ *  [res]  - (returns) the resulting absolute offset
+ */
+void narrator_seek(narrator * const restrict n, off_t offset, int whence, off_t * restrict res)
   __attribute__((nonnull(1)));
 
-/// narrator_reset
-//
-// SUMMARY
-//  reposition the narrator such that subsequent writes start at the beginning
-//
-void narrator_xreset(narrator * const restrict n)
+/* reposition the narrator such that subsequent writes start at the beginning */
+void narrator_reset(narrator * const restrict n)
   __attribute__((nonnull));
 
-/// narrator_read
-//
-// SUMMARY
-//  read bytes from the underlying store
-//
-// PARAMETERS
-//  n     - narrator
-//  dst   - destination buffer
-//  count - number of bytes to read
-//  [r]   - (returns) number of bytes read
-//
-// REMARKS
-//  not supported for many narrator types
-//
-void narrator_xread(narrator * restrict n, void * dst, size_t count, size_t * restrict r)
+/*
+ * read bytes from the underlying store. not supported for many narrator types.
+ *
+ * n     - narrator
+ * dst   - destination buffer
+ * count - number of bytes to read
+ * [r]   - (returns) number of bytes read
+ */
+void narrator_read(narrator * restrict n, void * dst, size_t count, size_t * restrict r)
   __attribute__((nonnull(1, 2)));
 
 #endif

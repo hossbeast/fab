@@ -128,7 +128,7 @@ static void __attribute__((nonnull)) dispatch_render_function(
   }
   else if(func == BUILDER_STRING)
   {
-    narrator_xsays(N, args->s);
+    narrator_says(N, args->s);
   }
   else if(func == BUILDER_FORMULA_VALUE)
   {
@@ -140,7 +140,7 @@ static void __attribute__((nonnull)) dispatch_render_function(
   }
   else if(func == BUILDER_FMT)
   {
-    narrator_xsayvf(N, args->fmt, *args->va);
+    narrator_sayvf(N, args->fmt, *args->va);
   }
 
   if(func != BUILDER_PATH_CACHE_ENTRY) {
@@ -149,11 +149,11 @@ static void __attribute__((nonnull)) dispatch_render_function(
 
   pe = args->pe;
   if(pe->dir) {
-    narrator_xsayw(N, pe->dir->s, pe->dir->len);
-    narrator_xsays(N, "/");
+    narrator_sayw(N, pe->dir->s, pe->dir->len);
+    narrator_says(N, "/");
   }
 
-  narrator_xsayw(N, pe->s, pe->len);
+  narrator_sayw(N, pe->s, pe->len);
 }
 
 void exec_builder_add(exec_builder * restrict builder, const exec_builder_args *args)
@@ -176,7 +176,7 @@ void exec_builder_add(exec_builder * restrict builder, const exec_builder_args *
   }
 
   // current narrator position
-  narrator_xseek(builder->Nexec, 0, NARRATOR_SEEK_CUR, &pos);
+  narrator_seek(builder->Nexec, 0, NARRATOR_SEEK_CUR, &pos);
   start = pos;
 
   def = 0;
@@ -250,8 +250,8 @@ void exec_builder_add(exec_builder * restrict builder, const exec_builder_args *
   {
     if(args->item == BUILDER_ENVS)
     {
-      narrator_xsayw(builder->Nexec, args->name, args->name_len);
-      narrator_xsays(builder->Nexec, "=");
+      narrator_sayw(builder->Nexec, args->name, args->name_len);
+      narrator_says(builder->Nexec, "=");
     }
 
     // append the value from this definition
@@ -272,18 +272,18 @@ void exec_builder_add(exec_builder * restrict builder, const exec_builder_args *
         narrator_growing_allocate(&builder->Nexec_growing, len);
         textbase = builder->Nexec_growing.s;
         eq = strchr(textbase + def, '=');
-        narrator_xsayw(builder->Nexec, eq + 1, len);
+        narrator_sayw(builder->Nexec, eq + 1, len);
       }
       else
       {
         len = strlen(textbase + def);
         narrator_growing_allocate(&builder->Nexec_growing, len);
         textbase = builder->Nexec_growing.s;
-        narrator_xsayw(builder->Nexec, textbase + def, len);
+        narrator_sayw(builder->Nexec, textbase + def, len);
       }
     }
 
-    narrator_xsayc(builder->Nexec, 0);
+    narrator_sayc(builder->Nexec, 0);
   }
   else if(args->mode == BUILDER_APPEND)
   {
@@ -294,12 +294,12 @@ void exec_builder_add(exec_builder * restrict builder, const exec_builder_args *
       len = strlen(textbase + def);
       narrator_growing_allocate(&builder->Nexec_growing, len);
       textbase = builder->Nexec_growing.s;
-      narrator_xsayw(builder->Nexec, textbase + def, len);
+      narrator_sayw(builder->Nexec, textbase + def, len);
     }
     else if(args->item == BUILDER_ENVS)
     {
-      narrator_xsayw(builder->Nexec, args->name, args->name_len);
-      narrator_xsays(builder->Nexec, "=");
+      narrator_sayw(builder->Nexec, args->name, args->name_len);
+      narrator_says(builder->Nexec, "=");
     }
 
     if(def && args->render_sep) {
@@ -308,7 +308,7 @@ void exec_builder_add(exec_builder * restrict builder, const exec_builder_args *
 
     // append the value from this definition
     dispatch_render_function(args->render_val, &args->val, builder->Nexec);
-    narrator_xsayc(builder->Nexec, 0);
+    narrator_sayc(builder->Nexec, 0);
   }
   else
   {
@@ -405,7 +405,7 @@ void exec_builder_xinit(exec_builder * restrict builder)
   builder->Nexec = narrator_growing_init(&builder->Nexec_growing);
 
   // position immediately after the env struct
-  narrator_xseek(builder->Nexec, sizeof(exec), NARRATOR_SEEK_SET, 0);
+  narrator_seek(builder->Nexec, sizeof(exec), NARRATOR_SEEK_SET, 0);
 }
 
 void exec_builder_xreset(exec_builder * restrict builder)
@@ -416,7 +416,7 @@ void exec_builder_xreset(exec_builder * restrict builder)
   builder->args_len = 0;
 
   // position immediately after the env struct
-  narrator_xseek(builder->Nexec, sizeof(exec), NARRATOR_SEEK_SET, 0);
+  narrator_seek(builder->Nexec, sizeof(exec), NARRATOR_SEEK_SET, 0);
 }
 
 void exec_builder_xdestroy(exec_builder * restrict builder)

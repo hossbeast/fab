@@ -68,8 +68,8 @@ static void request_parser_test_entry(xunit_test * _test)
   request_say(&A, &N1->base);
 
   size_t len = N1->l;
-  narrator_xseek(&N1->base, 0, NARRATOR_SEEK_SET, 0);
-  narrator_xread(&N1->base, buf, len, 0);
+  narrator_seek(&N1->base, 0, NARRATOR_SEEK_SET, 0);
+  narrator_read(&N1->base, buf, len, 0);
   buf[len] = buf[len + 1] = 0;
   request_parser_parse(parser, buf, len + 2, 0, &B);
 

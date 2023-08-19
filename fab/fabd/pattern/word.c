@@ -49,7 +49,7 @@ static void render(const pattern_segment * restrict fn, pattern_render_context *
 {
   const pattern_word * n = &fn->word;
 
-  narrator_xsayw(ctx->narrator, n->text, n->len);
+  narrator_sayw(ctx->narrator, n->text, n->len);
   pattern_segment_render(ctx);
 }
 
@@ -97,7 +97,7 @@ static void generate(const pattern_segment * restrict segment, pattern_generate_
 {
   const pattern_word * word = &segment->word;
 
-  narrator_xsayw(ctx->section_narrator, word->text, word->len);
+  narrator_sayw(ctx->section_narrator, word->text, word->len);
   pattern_segment_generate(ctx);
 }
 

@@ -37,22 +37,22 @@ static void pattern_section_render(pattern_render_context * restrict ctx)
   if(!ctx->section_traversal.section)
   {
     // write a null terminator
-    narrator_xsayc(ctx->narrator, 0);
+    narrator_sayc(ctx->narrator, 0);
 
     // start pos - save
-    narrator_xseek(ctx->narrator, 0, NARRATOR_SEEK_CUR, &start);
+    narrator_seek(ctx->narrator, 0, NARRATOR_SEEK_CUR, &start);
     len = start - ctx->pos - sizeof(pattern_render_fragment) - 1;
 
     // two-byte alignment
     if((len & 1) == 0) {
-      narrator_xsayc(ctx->narrator, 0);
+      narrator_sayc(ctx->narrator, 0);
       start++;
     }
 
     // record the length
-    narrator_xseek(ctx->narrator, ctx->pos, NARRATOR_SEEK_SET, 0);
-    narrator_xsayw(ctx->narrator, &len, sizeof(len));
-    narrator_xseek(ctx->narrator, start, NARRATOR_SEEK_SET, 0);
+    narrator_seek(ctx->narrator, ctx->pos, NARRATOR_SEEK_SET, 0);
+    narrator_sayw(ctx->narrator, &len, sizeof(len));
+    narrator_seek(ctx->narrator, start, NARRATOR_SEEK_SET, 0);
 
     ctx->size++;
 
@@ -62,18 +62,18 @@ static void pattern_section_render(pattern_render_context * restrict ctx)
   else
   {
     if(ctx->section_traversal.section != ctx->section_traversal.head) {
-      narrator_xsayc(ctx->narrator, '/');
+      narrator_sayc(ctx->narrator, '/');
     }
 
     /* NODESET_SELF or '.' */
     if(ctx->section_traversal.section->nodeset == PATTERN_NODESET_SHADOW)
     {
-      narrator_xsays(ctx->narrator, "/");
+      narrator_says(ctx->narrator, "/");
       pattern_section_render(ctx);
     }
     else if(ctx->section_traversal.section->nodeset == PATTERN_NODESET_SELF)
     {
-      narrator_xsays(ctx->narrator, ".");
+      narrator_says(ctx->narrator, ".");
       pattern_section_render(ctx);
     }
     else
@@ -137,20 +137,20 @@ void pattern_render(const pattern * restrict pattern, pattern_render_result ** r
   narrator_growing_create(&ctx.narrator_growing);
 
   // save a place in the buffer for the number of path fragments
-  narrator_xsayw(ctx.narrator, (uint16_t[]) { 0 }, sizeof(uint16_t));
+  narrator_sayw(ctx.narrator, (uint16_t[]) { 0 }, sizeof(uint16_t));
 
   // save the current offset
-  narrator_xseek(ctx.narrator, 0, NARRATOR_SEEK_CUR, &ctx.pos);
+  narrator_seek(ctx.narrator, 0, NARRATOR_SEEK_CUR, &ctx.pos);
 
   // save a place in the buffer for the length of the first fragment
-  narrator_xsayw(ctx.narrator, (uint16_t[]) { 0 }, sizeof(uint16_t));
+  narrator_sayw(ctx.narrator, (uint16_t[]) { 0 }, sizeof(uint16_t));
 
   // render the entire pattern
   pattern_section_render(&ctx);
 
   // update the number of path fragments
-  narrator_xseek(ctx.narrator, 0, NARRATOR_SEEK_SET, 0);
-  narrator_xsayw(ctx.narrator, &ctx.size, sizeof(ctx.size));
+  narrator_seek(ctx.narrator, 0, NARRATOR_SEEK_SET, 0);
+  narrator_sayw(ctx.narrator, &ctx.size, sizeof(ctx.size));
 
   // ownership transfer
   narrator_growing_claim_buffer(ctx.narrator_growing, (void*)result, 0);

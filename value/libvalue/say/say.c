@@ -219,61 +219,61 @@ void API value_render(const value * const restrict v, narrator * const restrict 
 
   if(v->type == VALUE_TYPE_LIST)
   {
-    narrator_xsays(N, "[");
+    narrator_says(N, "[");
 
     for(x = 0; x < v->items->size; x++)
     {
-      narrator_xsays(N, " ");
+      narrator_says(N, " ");
       value_render(list_get(v->items, x), N);
     }
 
     if(v->items->size)
-      narrator_xsays(N, " ");
+      narrator_says(N, " ");
 
-    narrator_xsays(N, "]");
+    narrator_says(N, "]");
   }
   else if(v->type == VALUE_TYPE_SET)
   {
-    narrator_xsays(N, "{");
+    narrator_says(N, "{");
 
     for(x = 0; x < v->els->table_size; x++)
     {
       if(!(elp = set_table_get(v->els, x)))
         continue;
 
-      narrator_xsays(N, " ");
+      narrator_says(N, " ");
       value_render(elp, N);
     }
 
     if(v->els->size)
-      narrator_xsays(N, " ");
+      narrator_says(N, " ");
 
-    narrator_xsays(N, "}");
+    narrator_says(N, "}");
   }
   else if(v->type == VALUE_TYPE_MAPPING)
   {
     value_render(v->key, N);
-    narrator_xsays(N, " : ");
+    narrator_says(N, " : ");
     value_render(v->val, N);
   }
   else if(v->type == VALUE_TYPE_STRING)
   {
-    narrator_xsayw(N, v->s->s, v->s->size);
+    narrator_sayw(N, v->s->s, v->s->size);
   }
   else if(v->type == VALUE_TYPE_FLOAT)
   {
-    narrator_xsayf(N, "%.2lf", v->f);
+    narrator_sayf(N, "%.2lf", v->f);
   }
   else if(v->type == VALUE_TYPE_BOOLEAN)
   {
-    narrator_xsayf(N, "%s", v->b ? "true" : "false");
+    narrator_sayf(N, "%s", v->b ? "true" : "false");
   }
   else if(v->type == VALUE_TYPE_POSINT)
   {
-    narrator_xsayf(N, "%"PRIu64, v->u);
+    narrator_sayf(N, "%"PRIu64, v->u);
   }
   else if(v->type == VALUE_TYPE_NEGINT)
   {
-    narrator_xsayf(N, "%"PRId64, v->i);
+    narrator_sayf(N, "%"PRId64, v->i);
   }
 }

@@ -78,8 +78,8 @@ static void test_parser_entry(xunit_test * _test)
   if(val0)
   {
     size_t len = N0->l;
-    narrator_xseek(&N0->base, 0, NARRATOR_SEEK_SET, 0);
-    narrator_xread(&N0->base, buf, len, 0);
+    narrator_seek(&N0->base, 0, NARRATOR_SEEK_SET, 0);
+    narrator_read(&N0->base, buf, len, 0);
     buf[len] = 0;
     value_parser_parse(parser, buf, len, 0, 0, &val1);
   }

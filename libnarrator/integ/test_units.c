@@ -49,7 +49,7 @@ static void test_interval_say()
   int x;
   for(x = 0; x < sizeof(tests) / sizeof(tests[0]); x++)
   {
-    narrator_xreset(N);
+    narrator_reset(N);
 
     // act
     interval_say(tests[x].seconds, N);
@@ -81,7 +81,7 @@ static void test_bytesize_say()
   int x;
   for(x = 0; x < sizeof(tests) / sizeof(tests[0]); x++)
   {
-    narrator_xreset(N);
+    narrator_reset(N);
 
     // act
     bytesize_say(tests[x].bytes, N);
@@ -115,7 +115,7 @@ static void test_elapsed_say()
   int x;
   for(x = 0; x < sizeof(tests) / sizeof(tests[0]); x++)
   {
-    narrator_xreset(N);
+    narrator_reset(N);
 
     // act
     elapsed_say(&tests[x].start, &tests[x].end, N);

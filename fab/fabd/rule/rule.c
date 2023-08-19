@@ -193,9 +193,9 @@ static void __attribute__((nonnull)) fml_node_get(
       msg->code = EINVAL;
 
       N = narrator_fixed_init(&fixed, msg->text, sizeof(msg->text));
-      narrator_xsays(N, "unresolved formula ref ");
+      narrator_says(N, "unresolved formula ref ");
       pattern_say(rule->formula, N);
-      narrator_xsayf(N, " @ %s [%d,%d - %d,%d]"
+      narrator_sayf(N, " @ %s [%d,%d - %d,%d]"
         , rma->mod_owner->self_node_relpath
         , rule->formula->loc.f_lin + 1
         , rule->formula->loc.f_col + 1
@@ -354,21 +354,21 @@ static void __attribute__((nonnull(1, 3))) dependency_setup(
       msg->code = EINVAL;
 
       N = narrator_fixed_init(&fixed, msg->text, sizeof(msg->text));
-      narrator_xsays(N, "fsent ");
+      narrator_says(N, "fsent ");
       fsent_project_relative_path_say(n, N);
-      narrator_xsays(N, " already created by rule (setup)\n ");
+      narrator_says(N, " already created by rule (setup)\n ");
       rule_say(dep->rme->rule, g_narrator_stderr);
-      narrator_xsayf(N, " @ %s:%d\n"
+      narrator_sayf(N, " @ %s:%d\n"
         , dep->rme->mod_owner->self_node_relpath
         , dep->rme->rule->formula->loc.f_lin + 1
       );
-      narrator_xsayf(N, "  dep %p rme %p rule %p\n ", dep, dep->rme, dep->rme->rule);
+      narrator_sayf(N, "  dep %p rme %p rule %p\n ", dep, dep->rme, dep->rme->rule);
       rule_say(rme->rule, N);
-      narrator_xsayf(N, " @ %s:%d\n"
+      narrator_sayf(N, " @ %s:%d\n"
         , rme->mod_owner->self_node_relpath
         , rme->rule->formula->loc.f_lin + 1
       );
-      narrator_xsayf(N, "  dep %p rme %p rule %p ", dep, rme, rme->rule);
+      narrator_sayf(N, "  dep %p rme %p rule %p ", dep, rme, rme->rule);
       msg->size = fixed.l;
       events_publish(chan, msg);
     }
@@ -1120,7 +1120,7 @@ void rule_say(const rule * restrict r, narrator * restrict N)
 
   if(r->formula)
   {
-    narrator_xsays(N, " : ");
+    narrator_says(N, " : ");
     pattern_say(r->formula, N);
   }
 }
@@ -1152,7 +1152,7 @@ static void log_rule_edge(rule * restrict rule, dependency * restrict ne)
 
   log_start(L_RULE, &N);
   rule_say(rule, N);
-  narrator_xsays(N, " ");
+  narrator_says(N, " ");
   graph_edge_say(&ne->edge, N);
   log_finish();
 }

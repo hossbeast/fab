@@ -59,16 +59,16 @@ static void test_seek()
 
   xsays("H");
 
-  narrator_xseek(N, 2, NARRATOR_SEEK_SET, 0);
+  narrator_seek(N, 2, NARRATOR_SEEK_SET, 0);
   xsays("L");
 
-  narrator_xseek(N, 1, NARRATOR_SEEK_SET, 0);
+  narrator_seek(N, 1, NARRATOR_SEEK_SET, 0);
   xsays("E");
 
-  narrator_xseek(N, 4, NARRATOR_SEEK_SET, 0);
+  narrator_seek(N, 4, NARRATOR_SEEK_SET, 0);
   xsays("O");
 
-  narrator_xseek(N, 3, NARRATOR_SEEK_SET, 0);
+  narrator_seek(N, 3, NARRATOR_SEEK_SET, 0);
   xsays("L");
 
   assert_eq_s("HELLO", ng->s);

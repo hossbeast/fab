@@ -41,7 +41,7 @@ static __attribute__((nonnull)) void multi_sayvf(narrator* const restrict N, con
     va_copy(va2, va);
     vap = &va2;
 
-    narrator_xsayvf(n->v[x], fmt, *vap);
+    narrator_sayvf(n->v[x], fmt, *vap);
 
     va_end(*vap);
     vap = 0;
@@ -59,7 +59,7 @@ static __attribute__((nonnull)) void multi_sayw(narrator* const restrict N, cons
 
   for(x = 0; x < n->l; x++)
   {
-    narrator_xsayw(n->v[x], b, l);
+    narrator_sayw(n->v[x], b, l);
   }
 }
 
@@ -70,7 +70,7 @@ static __attribute__((nonnull)) void multi_seek(narrator* const restrict N, off_
 
   for(x = 0; x < n->l; x++)
   {
-    narrator_xseek(n->v[x], offset, whence, res);
+    narrator_seek(n->v[x], offset, whence, res);
   }
 }
 

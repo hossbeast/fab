@@ -63,14 +63,14 @@ static __attribute__((nonnull)) void record_seek(narrator* const restrict N, off
 {
   narrator_record *n = containerof(N, typeof(*n), base);
 
-  narrator_xseek(n->n, offset, whence, res);
+  narrator_seek(n->n, offset, whence, res);
 }
 
 static __attribute__((nonnull)) void record_read(narrator* restrict N, void * dst, size_t count, size_t * restrict r)
 {
   narrator_record *n = containerof(N, typeof(*n), base);
 
-  narrator_xread(n->n, dst, count, r);
+  narrator_read(n->n, dst, count, r);
 }
 
 static __attribute__((nonnull)) void record_flush(narrator* restrict N)
@@ -104,17 +104,17 @@ void API narrator_record_free(narrator_record * restrict n)
   if(n) {
     narrator_record_destroy(n);
   }
-  wfree(n);
+  free(n);
 }
 
 void API narrator_record_destroy(narrator_record * restrict n)
 {
-  wfree(n->s);
+  free(n->s);
 }
 
 void API narrator_record_flush(narrator_record * const restrict n)
 {
   // flush to the underlying narrator and reset
-  narrator_xsayw(n->n, n->s, n->l);
+  narrator_sayw(n->n, n->s, n->l);
   n->l = 0;
 }

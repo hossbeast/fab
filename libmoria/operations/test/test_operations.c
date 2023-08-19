@@ -70,7 +70,7 @@ static void operations_test_entry(xunit_test * _test)
   assert_eq_d(test->expected_status, status);
   if(test->expected)
   {
-    narrator_xreset(&N->base);
+    narrator_reset(&N->base);
     moria_graph_say(&g, (llist *[]) { &p->vertices }, 1, (llist *[]) { &p->edges }, 1, 0, 0, &N->base);
     graph = N->s;
     graph_len = N->l;
