@@ -303,7 +303,7 @@ static void graph_test_entry(xunit_test * _test)
   moria_graph_destroy(&g);
   list_xfree(operations);
   array_xfree(visitations);
-  wfree(keys);
+  free(keys);
   graph_parser_xfree(p);
 }
 

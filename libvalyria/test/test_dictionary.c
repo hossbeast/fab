@@ -91,8 +91,8 @@ static void validate(dictionary * dp)
     }
   }
 
-  wfree(keys);
-  wfree(values);
+  free(keys);
+  free(values);
 }
 
 static void validate_int_table_values(dictionary * restrict m)

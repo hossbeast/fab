@@ -44,17 +44,12 @@ void API xrealloc(void* target, size_t es, size_t ec, size_t oec)
   }
 }
 
-void API iwfree(void* target)
+void API ifree(void* target)
 {
   void** t = (void**)target;
 
-  wfree(*t);
+  free(*t);
   *t = 0;
-}
-
-void API wfree(void* target)
-{
-  free(target);
 }
 
 ssize_t API xreadlinks(const char * pathname, char * buf, size_t bufsiz)

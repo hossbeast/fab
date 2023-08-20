@@ -36,7 +36,7 @@ static void path_entry_free(void * arg)
     close(pe->fd);
   }
 
-  wfree(pe);
+  free(pe);
 }
 
 static uint32_t path_entry_hash(uint32_t h, const void * restrict _val, size_t sz)

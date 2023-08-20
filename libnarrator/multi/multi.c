@@ -64,7 +64,7 @@ static __attribute__((nonnull)) void multi_destroy(narrator* const restrict N)
 {
   narrator_multi *n = containerof(N, typeof(*n), base);
 
-  wfree(n->v);
+  free(n->v);
 }
 
 /* not implemented */
@@ -100,7 +100,7 @@ void API narrator_multi_free(narrator_multi * restrict n)
   if(n) {
     multi_destroy(&n->base);
   }
-  wfree(n);
+  free(n);
 }
 
 void API narrator_multi_add(narrator_multi * const restrict n, narrator * const restrict np)

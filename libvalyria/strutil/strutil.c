@@ -25,7 +25,7 @@ void API strloads(char ** restrict dst, const char * restrict s)
 
 void API strloadw(char ** restrict dst, const void * restrict buf, size_t bufl)
 {
-  wfree(*dst);
+  free(*dst);
   xmalloc(dst, bufl + 1);
   memcpy(*dst, buf, bufl);
   (*dst)[bufl] = 0;
@@ -49,7 +49,7 @@ void API strloadvf(char ** restrict dst, const char * restrict fmt, va_list va)
   int r = vsnprintf(0, 0, fmt, va2);
   va_end(va2);
 
-  wfree(*dst);
+  free(*dst);
   xmalloc(dst, r + 1);
   vsprintf(*dst, fmt, va);
 

@@ -86,7 +86,7 @@ void psfree(pstring * restrict ps);
 /// psifree
 //
 // SUMMARY
-//  free a pstring with iwfree semantics
+//  free a pstring with ifree semantics
 //
 // PARAMETERS
 //  p - pstring

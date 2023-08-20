@@ -463,7 +463,7 @@ void selector_free(selector * restrict sel)
     }
     else if(sel->type == SELECTOR_PATH)
     {
-      wfree(sel->path);
+      free(sel->path);
     }
     else if(sel->type == SELECTOR_TRAVERSE)
     {

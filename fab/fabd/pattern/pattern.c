@@ -191,8 +191,8 @@ void pattern_free(pattern * restrict pat)
     pattern_section_free(section);
   }
 
-  wfree(pat->fname);
-	wfree(pat);
+  free(pat->fname);
+	free(pat);
 }
 
 void pattern_segments_list_free(pattern_segments * restrict segments_list)
@@ -211,7 +211,7 @@ void pattern_segments_list_free(pattern_segments * restrict segments_list)
 void pattern_segments_free(pattern_segments * restrict segments)
 {
   pattern_segment_list_free(segments->segment_head);
-  wfree(segments);
+  free(segments);
 }
 
 void pattern_segment_list_free(pattern_segment * restrict segment_list)
@@ -227,7 +227,7 @@ void pattern_segment_list_free(pattern_segment * restrict segment_list)
 void pattern_segment_free(pattern_segment * restrict segment)
 {
   segment->vtab->destroy(segment);
-  wfree(segment);
+  free(segment);
 }
 
 void pattern_say(const pattern * restrict pattern, narrator * restrict N)

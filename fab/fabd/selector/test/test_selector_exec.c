@@ -141,7 +141,7 @@ static void selector_exec_test_entry(xunit_test * _test)
   fsent_cleanup();
   graph_parser_xfree(op_parser);
   graph_invalidation_end(&invalidation);
-  wfree(chan);
+  free(chan);
 }
 
 //

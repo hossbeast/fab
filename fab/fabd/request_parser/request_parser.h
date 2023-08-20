@@ -43,7 +43,7 @@ void request_parser_xfree(request_parser * restrict);
 /// request_parser_ixfree
 //
 // SUMMARY
-//  free a config parser with iwfree semantics
+//  free a config parser with ifree semantics
 //
 void request_parser_ixfree(request_parser ** restrict)
   __attribute__((nonnull));

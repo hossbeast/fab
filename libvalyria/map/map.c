@@ -41,7 +41,7 @@ static void destroy_entry(const hashtable_t * ht, void * _ent)
 {
   mapping * ent = _ent;
 
-  wfree(ent->k);
+  free(ent->k);
 }
 
 static void store_entry(const hashtable_t * ht, void * _dst, void * _src, bool found)
@@ -116,7 +116,7 @@ void API map_xfree(map * restrict mx)
   if(m)
     hashtable_xdestroy(&m->ht);
 
-  wfree(m);
+  free(m);
 }
 
 void API map_ixfree(map ** restrict m)

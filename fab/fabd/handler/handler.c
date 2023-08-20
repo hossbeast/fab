@@ -470,7 +470,7 @@ void handler_cleanup()
 
   llist_foreach_safe(&context_freelist, ctx, lln, T) {
     handler_destroy(ctx);
-    wfree(ctx);
+    free(ctx);
   }
 }
 

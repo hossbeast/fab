@@ -126,7 +126,7 @@ void pattern_parser_xfree(pattern_parser* const p)
     yyu_parser_xdestroy(&p->match_yyu);
   }
 
-  wfree(p);
+  free(p);
 }
 
 void pattern_parser_ixfree(pattern_parser ** const p)

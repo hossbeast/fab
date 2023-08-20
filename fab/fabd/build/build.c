@@ -334,12 +334,12 @@ void build_cleanup()
     xclose(build_slots[x].auxout_pipe[0]);
     xclose(build_slots[x].auxout_pipe[1]);
 
-    wfree(build_slots[x].argv_stor);
-    wfree(build_slots[x].env_stor);
+    free(build_slots[x].argv_stor);
+    free(build_slots[x].env_stor);
     exec_builder_xdestroy(&build_slots[x].exec_builder);
     exec_render_context_xdestroy(&build_slots[x].exec_builder_context);
   }
-  iwfree(&build_slots);
+  ifree(&build_slots);
 
   hashtable_ixfree(&build_slots_bypid);
 

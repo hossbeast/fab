@@ -180,7 +180,7 @@ static void exec_builder_test_entry(xunit_test * _test)
   formula_value_free(fml_file);
   formula_value_free(fml_args);
   formula_value_free(fml_envs);
-  wfree(chan);
+  free(chan);
 }
 
 //

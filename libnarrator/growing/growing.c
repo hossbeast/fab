@@ -121,7 +121,7 @@ void API narrator_growing_free(narrator_growing * restrict n)
   if(n) {
     narrator_growing_destroy(n);
   }
-  wfree(n);
+  free(n);
 }
 
 narrator * API narrator_growing_init_from(narrator_growing * restrict n, char * buf, size_t bufa)
@@ -142,7 +142,7 @@ narrator * API narrator_growing_init(narrator_growing * restrict n)
 
 void API narrator_growing_destroy(narrator_growing * restrict n)
 {
-  wfree(n->s);
+  free(n->s);
 }
 
 void API narrator_growing_claim_buffer(narrator_growing * const restrict n, void * bufp, size_t * allocp)

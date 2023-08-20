@@ -48,7 +48,7 @@ void xshmdt(const void * restrict shmaddr);
 /// ixshmdt
 //
 // SUMMARY
-//  idempotent xapi proxy for shmdt - iwfree semantics
+//  idempotent xapi proxy for shmdt - ifree semantics
 //
 // PARAMETERS
 //  shmaddr

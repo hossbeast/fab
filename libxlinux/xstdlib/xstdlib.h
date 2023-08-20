@@ -35,19 +35,12 @@ void xmalloc(void* target, size_t size)
 void xrealloc(void* target, size_t es, size_t ec, size_t oec)
   __attribute__((nonnull));
 
-/// wfree
+/// ifree
 //
 // SUMMARY
-//  xproxy for free
+//  does this: free(*target); *target = 0;
 //
-void wfree(void* target);
-
-/// iwfree
-//
-// SUMMARY
-//  does this: wfree(*target); *target = 0;
-//
-void iwfree(void* target)
+void ifree(void* target)
   __attribute__((nonnull));
 
 /// xreadlink

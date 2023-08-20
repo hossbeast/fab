@@ -226,7 +226,7 @@ void hashtable_grow(hashtable_t * restrict ht)
 
   ht->dirty_size = ht->size;
 
-  wfree(tab);
+  free(tab);
 }
 
 void hashtable_init(
@@ -279,7 +279,7 @@ void hashtable_xdestroy(hashtable_t * restrict ht)
       bucket_destroy(ht, b);
   }
 
-  wfree(ht->tab);
+  free(ht->tab);
 }
 
 void hashtable_store(hashtable_t * restrict ht, void * entry, ht_bucket ** bp)
@@ -353,7 +353,7 @@ void API hashtable_xfree(hashtable * restrict htx)
   if(ht)
     hashtable_xdestroy(ht);
 
-  wfree(ht);
+  free(ht);
 }
 
 void API hashtable_ixfree(hashtable ** restrict htx)

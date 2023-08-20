@@ -27,7 +27,7 @@ void selector_parser_xfree(selector_parser * const restrict);
 /// selector_parser_ifree
 //
 // SUMMARY
-//  free a config parser with iwfree semantics
+//  free a config parser with ifree semantics
 //
 void selector_parser_ixfree(selector_parser ** const restrict)
   __attribute__((nonnull));

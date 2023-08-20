@@ -75,7 +75,7 @@ static void validate_entries(hashtable * restrict ht, void * _entries)
       ufailf("item", "in set", "not found : %ht", entries[x]);
   }
 
-  wfree(items);
+  free(items);
 }
 
 static inline void construct(hashtable ** restrict ht, int ** entries, int start)

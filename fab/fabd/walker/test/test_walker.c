@@ -70,7 +70,7 @@ typedef struct {
 static void info_destroy(void * _info)
 {
   ftwinfo * info = _info;
-  wfree((void*)info->path);
+  free((void*)info->path);
 }
 
 static void walker_test_unit_setup(xunit_unit * unit)

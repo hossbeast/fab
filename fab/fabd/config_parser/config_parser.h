@@ -28,7 +28,7 @@ void config_parser_xfree(config_parser * restrict);
 /// config_parser_ixfree
 //
 // SUMMARY
-//  free a config parser with iwfree semantics
+//  free a config parser with ifree semantics
 //
 void config_parser_ixfree(config_parser ** restrict)
   __attribute__((nonnull));

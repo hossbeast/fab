@@ -25,7 +25,7 @@ static inline void insert(map * restrict m, const char * restrict key, int val)
   map_put(m, MMS(key), itemp, 0);
   itemp = 0;
 
-  wfree(itemp);
+  free(itemp);
 }
 
 static inline void contains(map * restrict m, const char * restrict key, int val)
@@ -108,13 +108,13 @@ static void validate_keyset(map * restrict m, char ** restrict keyset)
 
   map_keys(m, &keys, &keysl);
 
-  wfree(keys);
+  free(keys);
 }
 
 static void test_basic()
 {
   map * m = 0;
-  map_createx(&m, 0, wfree);
+  map_createx(&m, 0, free);
 
   char * keyset[] = {
       "1"
@@ -152,7 +152,7 @@ static void test_recycle()
   int y;
   int i;
 
-  map_createx(&m, 0, wfree);
+  map_createx(&m, 0, free);
 
   for(i = 0; i < 4; i++)
   {
@@ -184,7 +184,7 @@ static void test_recycle()
 static void test_delete()
 {
   map * m = 0;
-  map_createx(&m, 0, wfree);
+  map_createx(&m, 0, free);
 
   char * keyset[] = {
       "1"
@@ -252,7 +252,7 @@ static void test_delete()
 static void test_successive_mappings()
 {
   map * m = 0;
-  map_createx(&m, 0, wfree);
+  map_createx(&m, 0, free);
 
   insert(m, "1", 1);
   assert_eq_d(1, m->size);
@@ -275,8 +275,8 @@ static void test_equal()
 {
   map * A = 0;
   map * B = 0;
-  map_createx(&A, 0, wfree);
-  map_createx(&B, 0, wfree);
+  map_createx(&A, 0, free);
+  map_createx(&B, 0, free);
 
   assert_eq_b(true, map_equal(A, B));
 

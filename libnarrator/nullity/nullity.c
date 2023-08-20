@@ -82,5 +82,5 @@ void API narrator_nullity_create(narrator_nullity ** const restrict rv)
 void API narrator_nullity_free(narrator_nullity * restrict n)
 {
   nullity_destroy(&n->base);
-  wfree(n);
+  free(n);
 }

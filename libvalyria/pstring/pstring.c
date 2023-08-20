@@ -52,7 +52,7 @@ void API psinit(pstring * restrict ps)
 
 void API psdestroy(pstring * restrict ps)
 {
-  wfree(ps->s);
+  free(ps->s);
 }
 
 void API pscreatex(pstring ** const restrict rv, size_t capacity)
@@ -79,9 +79,9 @@ void API psfree(pstring * ps)
 {
   if(ps)
   {
-    wfree(ps->s);
+    free(ps->s);
   }
-  wfree(ps);
+  free(ps);
 }
 
 void API psifree(pstring ** ps)

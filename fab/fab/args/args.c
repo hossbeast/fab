@@ -152,12 +152,12 @@ static void parse_file(yyu_parser * restrict parser, const char * restrict paths
   usnarfs(&text, &text_len, path);
   parse(parser, text, text_len, path);
 
-  wfree(text);
+  free(text);
 }
 
 void args_cleanup()
 {
-  wfree(argvs);
+  free(argvs);
 }
 
 void args_parse(int argc, char ** argv)

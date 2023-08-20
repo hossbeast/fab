@@ -55,7 +55,7 @@ void graph_parser_xfree(graph_parser * const restrict);
 /// graph_parser_ixfree
 //
 // SUMMARY
-//  free a config parser with iwfree semantics
+//  free a config parser with ifree semantics
 //
 void graph_parser_ixfree(graph_parser ** const restrict)
   __attribute__((nonnull));

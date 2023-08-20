@@ -321,7 +321,7 @@ static void module_parse(
   }
 
 end:
-  wfree(text);
+  free(text);
 }
 
 struct module_scope_context {
@@ -413,7 +413,7 @@ static void rebuild_variant_envs(module * restrict mod)
   }
 
 end:
-  wfree(ancestry);
+  free(ancestry);
 }
 
 static void edge_modules_visitor(moria_edge * e, void * ctx, moria_traversal_mode mode, int distance, int * result)
@@ -831,7 +831,7 @@ void module_block_variants(statement_block * restrict block, pattern * restrict 
     fragment = pattern_render_fragment_next(fragment);
   }
 
-  wfree(rendered);
+  free(rendered);
   pattern_free(lookup);
 }
 
@@ -1006,7 +1006,7 @@ void module_cleanup()
   }
 
   llist_foreach_safe(&module_freelist, mod, vertex.owner, T) {
-    wfree(mod);
+    free(mod);
   }
 
   llist_foreach_safe(&module_edge_list, me, edge.owner, T) {
@@ -1014,7 +1014,7 @@ void module_cleanup()
   }
 
   llist_foreach_safe(&module_edge_freelist, me, edge.owner, T) {
-    wfree(me);
+    free(me);
   }
 
   llist_foreach_safe(&parsers, parser, lln, T) {

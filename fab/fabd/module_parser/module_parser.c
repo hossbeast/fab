@@ -236,11 +236,11 @@ void module_parser_xfree(module_parser* const p)
 
     llist_foreach_safe(&p->statement_block_freelist, block, lln, cursor) {
       statement_block_xdestroy(block);
-      wfree(block);
+      free(block);
     }
   }
 
-  wfree(p);
+  free(p);
 }
 
 void module_parser_ixfree(module_parser ** const p)

@@ -204,7 +204,7 @@ void API moria_graph_destroy(moria_graph * const restrict g)
   llist *T;
 
   llist_foreach_safe(&g->states, state, lln, T) {
-    wfree(state);
+    free(state);
   }
 }
 
@@ -213,7 +213,7 @@ void API moria_graph_xfree(moria_graph * const restrict g)
   if(g) {
     moria_graph_destroy(g);
   }
-  wfree(g);
+  free(g);
 }
 
 void API moria_graph_ixfree(moria_graph ** const restrict g)
@@ -342,8 +342,8 @@ void API moria_graph_say(
   }
 
   dictionary_xfree(vertex_id_map);
-  wfree(edges);
-  wfree(vertices);
+  free(edges);
+  free(vertices);
 }
 
 void API moria_graph_lookup_sentinel(void * restrict _context, const char ** restrict label, uint16_t * restrict label_len)

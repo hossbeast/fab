@@ -11,6 +11,7 @@
 #include <stdbool.h>
 #include <sys/types.h>
 #include <stdlib.h>
+#include <stdio.h>
 
 #define restrict __restrict
 
@@ -35,25 +36,24 @@ static inline size_t roundup(size_t x, size_t y)
   (type*)(__mptr - offsetof(type, member));      \
 })
 
+#define offsetofend(type, member) offsetof(type, member) + sizeof(((type*)(void*)0)->member)
+
 #define STATIC_ASSERT(x) _Static_assert(x, #x)
 
 #define RUNTIME_ASSERT(x) do {                          \
   if (!(x)) {                                           \
+    fprintf(stderr, "ASSERT %s:%d - %s\n", __FILE__, __LINE__, #x);  \
     RUNTIME_ABORT();                                    \
   }                                                     \
 } while(0)
 
-#define RUNTIME_ABORT() do { abort(); } while(0)
-
-#if 0
 #if DEBUG || DEVEL || XUNIT
-#define RUNTIME_ABORT() do {  \
-  fprintf(stderr, "%s:%d aborting\n", __FILE__, __LINE__); \
-  abort();  \
+/* this will cause asan to print a backtrace */
+#define RUNTIME_ABORT() do {           \
+  *((volatile char*)0x42) = 0x42;      \
 } while(0)
 #else
-#define RUNTIME_ABORT()
-#endif
+#define RUNTIME_ABORT() do { abort(); } while(0)
 #endif
 
 #if DEVEL

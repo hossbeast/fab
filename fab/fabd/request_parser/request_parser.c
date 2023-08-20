@@ -51,7 +51,7 @@ void request_parser_xfree(request_parser* const p)
     yyu_parser_xdestroy(&p->yyu);
   }
 
-  wfree(p);
+  free(p);
 }
 
 void request_parser_ixfree(request_parser ** const p)

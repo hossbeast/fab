@@ -192,9 +192,9 @@ static void slot_free(build_slot *bs)
 {
   if(bs)
   {
-    wfree(bs->stdout_text);
-    wfree(bs->stderr_text);
-    wfree(bs->auxout_text);
+    free(bs->stdout_text);
+    free(bs->stderr_text);
+    free(bs->auxout_text);
   }
 
   free(bs);

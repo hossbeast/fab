@@ -15,7 +15,7 @@ void formula_parser_create(formula_parser ** const restrict p)
 /* free a formula parser with free semantics */
 void formula_parser_xfree(formula_parser * restrict);
 
-/* free a formula parser with iwfree semantics */
+/* free a formula parser with ifree semantics */
 void formula_parser_ixfree(formula_parser ** restrict)
   __attribute__((nonnull));
 

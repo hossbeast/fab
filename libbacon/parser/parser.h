@@ -39,7 +39,7 @@ void value_parser_xfree(value_parser * const restrict);
 /// value_parser_ixfree
 //
 // SUMMARY
-//  free a config parser with iwfree semantics
+//  free a config parser with ifree semantics
 //
 void value_parser_ixfree(value_parser ** const restrict)
   __attribute__((nonnull));

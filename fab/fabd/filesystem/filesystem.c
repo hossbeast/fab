@@ -178,11 +178,11 @@ void filesystem_cleanup()
   fstree_destroy();
 
   llist_foreach_safe(&fstree_freelist, fst, lln, lln) {
-    wfree(fst);
+    free(fst);
   }
 
   llist_foreach_safe(&filesystem_freelist, fs, lln, lln) {
-    wfree(fs);
+    free(fs);
   }
 }
 

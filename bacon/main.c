@@ -68,7 +68,7 @@ int main(int argc, char ** argv, char ** envp)
   value_say(result, g_narrator_stdout);
   narrator_says(g_narrator_stdout, "\n");
 
-  wfree(text);
+  free(text);
   value_parser_xfree(parser);
 
   args_teardown();

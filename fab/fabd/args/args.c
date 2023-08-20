@@ -91,10 +91,10 @@ static void args_parse(int argc, char ** restrict argv)
   {
 #if DEVEL
     if(x == 0 && strcmp(longopts[longindex].name, "system-config-path") == 0) {
-      iwfree(&g_args.system_config_path);
+      ifree(&g_args.system_config_path);
       ixstrdup(&g_args.system_config_path, optarg);
     } else if(x == 0 && strcmp(longopts[longindex].name, "user-config-path") == 0) {
-      iwfree(&g_args.user_config_path);
+      ifree(&g_args.user_config_path);
       ixstrdup(&g_args.user_config_path, optarg);
     } else if(x == 0 && strcmp(longopts[longindex].name, "default-filesystem-invalidate") == 0) {
       if((g_args.default_filesystem_invalidate = attrs16_value_byname(invalidate_attrs, optarg)) == 0) {
@@ -157,6 +157,6 @@ void args_setup(int argc, char ** argv)
 
 void args_teardown()
 {
-  wfree(g_args.system_config_path);
-  wfree(g_args.user_config_path);
+  free(g_args.system_config_path);
+  free(g_args.user_config_path);
 }

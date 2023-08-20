@@ -233,8 +233,8 @@ static void pattern_generate_test_entry(xunit_test * _test)
   nodes_len = N->l;
   assert_eq_w(test->nodes, strlen(test->nodes), nodes, nodes_len);
 
-  wfree(node_list);
-  wfree(node_list_lens);
+  free(node_list);
+  free(node_list_lens);
   set_xfree(variants);
   pattern_free(pattern);
   fsent_cleanup();

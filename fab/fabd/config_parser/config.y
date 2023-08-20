@@ -133,7 +133,7 @@
 %type <b_int> invalidate-type
 %type <i> invalidate-type-enum
 
-%destructor { wfree($$.s); } <str>
+%destructor { free($$.s); } <str>
 %destructor { box_free(refas($$, bx)); } <b_bool>
 %destructor { box_free(refas($$, bx)); } <b_int>
 %destructor { box_free(refas($$, bx)); } <b_int16>
@@ -357,7 +357,7 @@ filesystems-mapping
   {
     map_put(PARSER->cfg->filesystems.entries, $1.s, $1.len, PARSER->fse, 0);
     PARSER->fse = 0;
-    wfree($1.s);
+    free($1.s);
     $1.s = 0;
   }
   ;

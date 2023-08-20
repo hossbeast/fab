@@ -33,7 +33,7 @@ static int search_node_cmp(const void * A, size_t Asz, const void *B, size_t Bsz
 
 static void search_node_free(void * m)
 {
-  wfree(m);
+  free(m);
 }
 
 static void search_visit(moria_vertex * restrict v, void * _ctx, moria_traversal_mode mode, int distance, int * restrict result)
@@ -114,7 +114,7 @@ restore:
   ctx->section_traversal = saved_section_traversal;
   ctx->variant_index = saved_variant_index;
 
-  wfree(m);
+  free(m);
 }
 
 //

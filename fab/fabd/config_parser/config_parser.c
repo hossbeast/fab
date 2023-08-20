@@ -51,11 +51,11 @@ void config_parser_xfree(config_parser* const p)
   {
     pattern_parser_xfree(p->pattern_parser);
 
-    wfree(p->fse);
+    free(p->fse);
     yyu_parser_xdestroy(&p->yyu);
   }
 
-  wfree(p);
+  free(p);
 }
 
 void config_parser_ixfree(config_parser ** const p)

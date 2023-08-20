@@ -20,7 +20,7 @@ typedef struct item
 
 static void destructor(void * value)
 {
-  wfree(value);
+  free(value);
 }
 
 static void set(multimap * restrict m, const char * restrict key, int val)
@@ -153,7 +153,7 @@ static void validate_lookup(multimap * restrict m, const char * restrict key, in
   for(i = 0; i < n; i++)
     assert_that(in_mapvals(values, valuesl, valset[i]));
 
-  wfree(tmp);
+  free(tmp);
 }
 
 static void validate_keyset(const multimap * restrict m, const char ** restrict keyset)

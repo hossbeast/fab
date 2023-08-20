@@ -100,5 +100,5 @@ void API narrator_fd_create(narrator_fd ** const restrict n, int fd)
 void API narrator_fd_free(narrator_fd * const restrict n)
 {
   fd_destroy(&n->base);
-  wfree(n);
+  free(n);
 }

@@ -158,7 +158,7 @@ void request_cleanup()
   llist *T;
 
   llist_foreach_safe(&command_freelist, cmd, lln, T) {
-    wfree(cmd);
+    free(cmd);
   }
 }
 

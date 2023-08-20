@@ -71,7 +71,7 @@ static void formula_parse(formula * restrict fml)
   //logf(L_MODULE, "parsed formula @ %s via fd %d", fml->self_node_abspath, fml->fd);
 
 end:
-  wfree(text);
+  free(text);
 }
 
 static void formula_dispose(formula * restrict fml)

@@ -137,7 +137,7 @@ static void test_put()
 
   rbtree_destroy(&rb, item_rbn_free);
   llist_foreach_safe(&freelist, i, lln, T) {
-    wfree(i);
+    free(i);
   }
 }
 
@@ -274,7 +274,7 @@ static void test_delete()
 
   rbtree_destroy(&rb, item_rbn_free);
   llist_foreach_safe(&freelist, i, lln, T) {
-    wfree(i);
+    free(i);
   }
 }
 

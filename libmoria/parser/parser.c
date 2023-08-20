@@ -115,11 +115,11 @@ void identifier_list_free(identifier_list * id)
         identifier_free(id->v[x]);
       }
 
-      wfree(id->v);
+      free(id->v);
     }
   }
 
-  wfree(id);
+  free(id);
 }
 
 void identifier_free(identifier * id)
@@ -127,7 +127,7 @@ void identifier_free(identifier * id)
   if(id)
     identifier_free(id->next);
 
-  wfree(id);
+  free(id);
 }
 
 void operation_vertex(graph_parser * restrict parser, identifier_list *A)
@@ -239,8 +239,8 @@ void operation_connect(
     parser->dispatch->hyperconnect(parser, Alist, A ? A->len : 0, Blist, B ? B->len : 0, attrs, 0);
   }
 
-  wfree(Alist);
-  wfree(Blist);
+  free(Alist);
+  free(Blist);
   identifier_list_free(A);
   identifier_list_free(B);
 }
@@ -296,8 +296,8 @@ void operation_disconnect(graph_parser * restrict parser, identifier_list * rest
 
   parser->dispatch->disconnect(parser, e);
 
-  wfree(Alist);
-  wfree(Blist);
+  free(Alist);
+  free(Blist);
   identifier_list_free(A);
   identifier_list_free(B);
 }
@@ -376,30 +376,30 @@ void API graph_parser_xfree(graph_parser* const p)
     yyu_parser_xdestroy(&p->operations_yyu);
 
     llist_foreach_safe(&p->vertices, v, owner, T) {
-      wfree((void*)v->label);
-      wfree(v);
+      free((void*)v->label);
+      free(v);
     }
     llist_foreach_safe(&p->vertex_freelist, v, owner, T) {
-      wfree((void*)v->label);
-      wfree(v);
+      free((void*)v->label);
+      free(v);
     }
     llist_foreach_safe(&p->edges, e, owner, T) {
       if((e->attrs & MORIA_EDGE_HYPER)) {
-        wfree(e->Alist);
-        wfree(e->Blist);
+        free(e->Alist);
+        free(e->Blist);
       }
-      wfree(e);
+      free(e);
     }
     llist_foreach_safe(&p->edge_freelist, e, owner, T) {
       if((e->attrs & MORIA_EDGE_HYPER)) {
-        wfree(e->Alist);
-        wfree(e->Blist);
+        free(e->Alist);
+        free(e->Blist);
       }
-      wfree(e);
+      free(e);
     }
   }
 
-  wfree(p);
+  free(p);
 }
 
 void API graph_parser_ixfree(graph_parser ** const p)

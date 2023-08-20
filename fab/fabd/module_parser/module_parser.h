@@ -71,7 +71,7 @@ void module_parser_xfree(module_parser * restrict);
 /// module_parser_ixfree
 //
 // SUMMARY
-//  free a module parser with iwfree semantics
+//  free a module parser with ifree semantics
 //
 void module_parser_ixfree(module_parser ** restrict)
   __attribute__((nonnull));

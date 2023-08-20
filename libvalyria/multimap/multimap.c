@@ -207,11 +207,11 @@ void multimap_rehash(multimap_t * restrict m)
   }
 
   for(i = 0; i < ksl; i++) {
-    wfree(ks[i]);
+    free(ks[i]);
   }
 
-  wfree(ks);
-  wfree(vs);
+  free(ks);
+  free(vs);
 }
 
 //
@@ -393,13 +393,13 @@ void API multimap_xfree(multimap * const restrict mx)
 
     int x;
     for(x = 0; x < m->table_size; x++)
-      wfree(m->tk[x]);
+      free(m->tk[x]);
 
-    wfree(m->tk);
-    wfree(m->tv);
+    free(m->tk);
+    free(m->tv);
   }
 
-  wfree(m);
+  free(m);
 }
 
 void API multimap_ixfree(multimap ** const restrict m)

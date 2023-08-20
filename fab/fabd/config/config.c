@@ -195,7 +195,7 @@ static void parse(config_parser * restrict parser, config * restrict cfgn, confi
   STATS_INC(g_stats.config_parsed);
 
 end:
-  wfree(text);
+  free(text);
 }
 
 static void reparse()
@@ -448,7 +448,7 @@ static void fse_free(void * _fse)
   {
     box_free(refas(fse->invalidate, bx));
   }
-  wfree(fse);
+  free(fse);
 }
 
 void config_create(configblob ** restrict rv)
@@ -489,7 +489,7 @@ void config_xfree(configblob * restrict cfg)
   pattern_list_free(&cfg->walker.exclude.list);
   pattern_list_free(&cfg->walker.include.list);
 
-  wfree(cfg);
+  free(cfg);
 }
 
 void config_ixfree(configblob ** restrict cfg)

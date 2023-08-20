@@ -18,8 +18,8 @@ static void dependency_release(dependency * restrict dep)
 {
   if(dep->edge.attrs & MORIA_EDGE_HYPER)
   {
-    wfree(dep->edge.Alist);
-    wfree(dep->edge.Blist);
+    free(dep->edge.Alist);
+    free(dep->edge.Blist);
   }
 
   llist_delete(dep, edge.owner);
@@ -61,7 +61,7 @@ void dependency_cleanup()
   }
 
   llist_foreach_safe(&dependency_freelist, dep, edge.owner, T) {
-    wfree(dep);
+    free(dep);
   }
 }
 

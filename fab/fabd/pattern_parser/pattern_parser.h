@@ -29,7 +29,7 @@ void pattern_parser_xfree(pattern_parser * restrict);
 /// pattern_parser_ixfree
 //
 // SUMMARY
-//  free a pattern parser with iwfree semantics
+//  free a pattern parser with ifree semantics
 //
 void pattern_parser_ixfree(pattern_parser ** restrict)
   __attribute__((nonnull));

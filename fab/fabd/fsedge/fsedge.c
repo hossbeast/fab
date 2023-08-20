@@ -81,7 +81,7 @@ void fsedge_cleanup()
   }
 
   llist_foreach_safe(&fsedge_freelist, fse, edge.owner, T) {
-    wfree(fse);
+    free(fse);
   }
 }
 

@@ -456,7 +456,7 @@ void formula_value_set_free(rbtree * restrict rbt)
     }
   }
 
-  wfree(rbt);
+  free(rbt);
 }
 
 void formula_value_free(formula_value * restrict v)
@@ -479,7 +479,7 @@ void formula_value_free(formula_value * restrict v)
   }
   else if(v->type == FORMULA_VALUE_STRING)
   {
-    wfree(v->s);
+    free(v->s);
   }
   else if(v->type == FORMULA_VALUE_MAPPING)
   {
@@ -504,7 +504,7 @@ void formula_value_free(formula_value * restrict v)
     }
   }
 
-  wfree(v);
+  free(v);
 }
 
 void formula_value_ifree(formula_value ** restrict v)

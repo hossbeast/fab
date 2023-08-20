@@ -103,7 +103,7 @@ void API list_xfree(list * const restrict lix)
   if(li)
     array_xdestroy(&li->ar);
 
-  wfree(li);
+  free(li);
 }
 
 void API list_ixfree(list ** const restrict li)

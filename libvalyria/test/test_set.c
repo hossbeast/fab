@@ -90,7 +90,7 @@ static void test_recycle()
   int y;
   int i;
 
-  set_createx(&s, 0, hash32, memncmp, wfree);
+  set_createx(&s, 0, hash32, memncmp, free);
 
   for(i = 0; i < 2; i++)
   {
@@ -120,7 +120,7 @@ static void test_recycle()
   }
 
   set_xfree(s);
-  wfree(str);
+  free(str);
 }
 
 static void test_delete()
@@ -188,8 +188,8 @@ static void test_splice()
   char space[64];
   int x;
 
-  set_createx(&A, 0, hash32, memncmp, wfree);
-  set_createx(&B, 0, hash32, memncmp, wfree);
+  set_createx(&A, 0, hash32, memncmp, free);
+  set_createx(&B, 0, hash32, memncmp, free);
 
   for(x = 0; x < 5000; x++)
   {
@@ -240,7 +240,7 @@ static void test_splice()
 
   set_xfree(A);
   set_xfree(B);
-  wfree(str);
+  free(str);
 }
 
 static void test_replicate()
@@ -251,7 +251,7 @@ static void test_replicate()
   char space[64];
   int x;
 
-  set_createx(&A, 0, hash32, memncmp, wfree);
+  set_createx(&A, 0, hash32, memncmp, free);
   set_createx(&B, 0, hash32, memncmp, 0);
 
   for(x = 0; x < 5000; x++)
@@ -303,7 +303,7 @@ static void test_replicate()
 
   set_xfree(A);
   set_xfree(B);
-  wfree(str);
+  free(str);
 }
 
 int main()

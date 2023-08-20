@@ -77,8 +77,8 @@ out:
 
 void API yyu_parser_xdestroy(yyu_parser * const parser)
 {
-  wfree(parser->last_lval);
-  wfree(parser->token_table_bytoken);
+  free(parser->last_lval);
+  free(parser->token_table_bytoken);
   if(parser->vtable) {
     parser->vtable->yylex_destroy(parser->scanner);
   }

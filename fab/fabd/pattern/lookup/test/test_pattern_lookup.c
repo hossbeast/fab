@@ -119,7 +119,7 @@ static void node_lookup_test_entry(xunit_test * _test)
   pattern_free(pat);
   graph_parser_xfree(op_parser);
   selection_xdestroy(&sel);
-  wfree(chan);
+  free(chan);
 }
 
 //

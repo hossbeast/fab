@@ -174,7 +174,7 @@ static void pattern_search_test_entry(xunit_test * _test)
   for(x = 0; x < sentinel(test->matches); x++)
     set_put(expected, MMS(test->matches[x]));
 
-  set_createx(&actual, 0, hash32, memncmp, wfree);
+  set_createx(&actual, 0, hash32, memncmp, free);
   for(x = 0; x < matches->table_size; x++)
   {
     pattern_search_node * m;
@@ -231,7 +231,7 @@ static void pattern_search_test_entry(xunit_test * _test)
   graph_parser_xfree(op_parser);
   set_xfree(expected);
   set_xfree(actual);
-  wfree(actual_match);
+  free(actual_match);
   graph_invalidation_end(&invalidation);
 }
 

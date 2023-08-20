@@ -182,5 +182,5 @@ void args_parse(int argc, char ** argv)
 
 void args_teardown()
 {
-  wfree(g_args.inputs);
+  free(g_args.inputs);
 }

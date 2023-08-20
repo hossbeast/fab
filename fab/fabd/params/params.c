@@ -63,8 +63,8 @@ void params_setup(uint64_t hash)
 
 void params_cleanup()
 {
-  iwfree(&g_params.ipcdir);
-  iwfree(&g_params.proj_dir);
+  ifree(&g_params.ipcdir);
+  ifree(&g_params.proj_dir);
   ixclose(&g_params.proj_dirfd);
-  iwfree(&g_params.homedir);
+  ifree(&g_params.homedir);
 }

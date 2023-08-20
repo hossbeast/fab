@@ -56,7 +56,7 @@ static void test_basic()
   item * itemp = 0;
   item * itemps[2];
 
-  list_createx(&listp, 0, 0, wfree);
+  list_createx(&listp, 0, 0, free);
 
   xmalloc(&itemp, sizeof(*itemp));
   itemp->x = 4;
@@ -100,7 +100,7 @@ static void test_basic()
   validate(listp);
 
   list_xfree(listp);
-  wfree(itemp);
+  free(itemp);
 }
 
 static void test_load()
@@ -140,7 +140,7 @@ static void test_insertion_sort()
   for(x = 0; x < sentinel(items); x++)
   {
     list_ixfree(&listp);
-    list_createx(&listp, 0, 0, wfree);
+    list_createx(&listp, 0, 0, free);
 
     int y;
     for(y = 0; y < sentinel(items[x]); y++)
@@ -161,7 +161,7 @@ static void test_insertion_sort()
   }
 
   list_xfree(listp);
-  wfree(itemp);
+  free(itemp);
 }
 
 static void test_search()
@@ -173,7 +173,7 @@ static void test_search()
   item * p;
   bool r;
 
-  list_createx(&listp, 0, 0, wfree);
+  list_createx(&listp, 0, 0, free);
   xmalloc(&itemp, sizeof(*itemp));
   itemp->x = 1;
   list_push(listp, itemp, sizeof(item));
@@ -230,7 +230,7 @@ static void test_search_range()
   bool r;
   item * p;
 
-  list_createx(&listp, 0, 0, wfree);
+  list_createx(&listp, 0, 0, free);
   xmalloc(&itemp, sizeof(*itemp));
   itemp->x = 1;
   list_push(listp, itemp, sizeof(item));
@@ -284,7 +284,7 @@ static void test_update()
   item * itemp = 0;
   item * itemps[3];
 
-  list_createx(&listp, 0, 0, wfree);
+  list_createx(&listp, 0, 0, free);
 
   xmalloc(&itemps[0], sizeof(**itemps));
   itemps[0]->x = 1;
@@ -312,7 +312,7 @@ static void test_update()
   assert_eq_d(3, listp->size);
 
   list_xfree(listp);
-  wfree(itemp);
+  free(itemp);
 }
 
 static void test_delete()
@@ -320,7 +320,7 @@ static void test_delete()
   list * listp = 0;
   item * itemps[4];
 
-  list_createx(&listp, 0, 0, wfree);
+  list_createx(&listp, 0, 0, free);
 
   xmalloc(&itemps[0], sizeof(**itemps));
   itemps[0]->x = 1;
@@ -399,10 +399,10 @@ static void test_splice()
 
   list_xfree(A);
   list_xfree(B);
-  wfree(i1);
-  wfree(i2);
-  wfree(i3);
-  wfree(i4);
+  free(i1);
+  free(i2);
+  free(i3);
+  free(i4);
 }
 
 static void test_replicate()
@@ -443,10 +443,10 @@ static void test_replicate()
 
   list_xfree(A);
   list_xfree(B);
-  wfree(i1);
-  wfree(i2);
-  wfree(i3);
-  wfree(i4);
+  free(i1);
+  free(i2);
+  free(i3);
+  free(i4);
 }
 
 int main()

@@ -61,7 +61,7 @@ void rule_module_cleanup(void)
   }
 
   llist_foreach_safe(&rme_freelist, rme, edge.owner, T) {
-    wfree(rme);
+    free(rme);
   }
 }
 

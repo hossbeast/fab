@@ -77,7 +77,7 @@ static void var_parse(var * restrict vp)
 
   //logf(L_MODULE, "parsed var @ %s", vp->self_node_abspath);
 end:
-  wfree(text);
+  free(text);
 }
 
 /*

@@ -965,7 +965,7 @@ void rule_cleanup(void)
   }
 
   llist_foreach_safe(&rule_freelist, r, vertex.owner, T) {
-    wfree(r);
+    free(r);
   }
 
   llist_foreach_safe(&rde_list, rde, edge.owner, T) {
@@ -973,7 +973,7 @@ void rule_cleanup(void)
   }
 
   llist_foreach_safe(&rde_freelist, rde, edge.owner, T) {
-    wfree(rde);
+    free(rde);
   }
 }
 
@@ -1126,9 +1126,9 @@ void rule_run_context_xdestroy(rule_run_context * restrict rule_ctx)
   graph_invalidation_end(&rule_ctx->invalidation);
   set_xfree(rule_ctx->match_nodes);
   set_xfree(rule_ctx->generate_nodes);
-  wfree(rule_ctx->Alist);
-  wfree(rule_ctx->Blist);
-  wfree(rule_ctx->Mlist);
+  free(rule_ctx->Alist);
+  free(rule_ctx->Blist);
+  free(rule_ctx->Mlist);
 }
 
 #if 0

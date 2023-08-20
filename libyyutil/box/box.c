@@ -37,7 +37,7 @@ void API box_int_mk(
   *rv = val;
   val = 0;
 
-  wfree(val);
+  free(val);
 }
 
 void API box_int8_mk(
@@ -55,7 +55,7 @@ void API box_int8_mk(
   *rv = val;
   val = 0;
 
-  wfree(val);
+  free(val);
 }
 
 void API box_int16_mk(
@@ -73,7 +73,7 @@ void API box_int16_mk(
   *rv = val;
   val = 0;
 
-  wfree(val);
+  free(val);
 }
 
 void API box_int32_mk(
@@ -91,7 +91,7 @@ void API box_int32_mk(
   *rv = val;
   val = 0;
 
-  wfree(val);
+  free(val);
 }
 
 void API box_int64_mk(
@@ -109,7 +109,7 @@ void API box_int64_mk(
   *rv = val;
   val = 0;
 
-  wfree(val);
+  free(val);
 }
 
 void API box_uint8_mk(
@@ -127,7 +127,7 @@ void API box_uint8_mk(
   *rv = val;
   val = 0;
 
-  wfree(val);
+  free(val);
 }
 
 void API box_uint16_mk(
@@ -145,7 +145,7 @@ void API box_uint16_mk(
   *rv = val;
   val = 0;
 
-  wfree(val);
+  free(val);
 }
 
 void API box_uint32_mk(
@@ -163,7 +163,7 @@ void API box_uint32_mk(
   *rv = val;
   val = 0;
 
-  wfree(val);
+  free(val);
 }
 
 void API box_uint64_mk(
@@ -181,7 +181,7 @@ void API box_uint64_mk(
   *rv = val;
   val = 0;
 
-  wfree(val);
+  free(val);
 }
 
 void API box_bool_mk(
@@ -199,7 +199,7 @@ void API box_bool_mk(
   *rv = val;
   val = 0;
 
-  wfree(val);
+  free(val);
 }
 
 void API box_string_mk(
@@ -219,7 +219,7 @@ void API box_string_mk(
   *rv = val;
   val = 0;
 
-  wfree(val);
+  free(val);
 }
 
 //
@@ -366,9 +366,9 @@ void API box_free(box * bx)
     if(bx->type == BOX_STRING)
     {
       box_string * b = containerof(bx, box_string, bx);
-      wfree(b->v);
+      free(b->v);
     }
   }
 
-  wfree(bx);
+  free(bx);
 }

@@ -79,7 +79,7 @@ static void test_init()
   assert_eq_s("hello world", buf);
 
   narrator_growing_destroy(&ng);
-  wfree(buf);
+  free(buf);
 }
 
 int main()

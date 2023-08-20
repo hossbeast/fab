@@ -152,7 +152,7 @@ void store_set(value_parser * const restrict parser, value ** rv)
 void API value_store_create(value_store ** const restrict stor)
 {
   xmalloc(stor, sizeof(**stor));
-  list_createx(&(*stor)->values, 0, 0, wfree);
+  list_createx(&(*stor)->values, 0, 0, free);
   list_createx(&(*stor)->lists, 0, 0, list_xfree);
   list_createx(&(*stor)->strings, 0, 0, psfree);
   list_createx(&(*stor)->sets, 0, 0, hashtable_xfree);
@@ -168,7 +168,7 @@ void API value_store_xfree(value_store * const restrict stor)
     list_xfree(stor->sets);
   }
 
-  wfree(stor);
+  free(stor);
 }
 
 void API value_store_ixfree(value_store ** const stor)

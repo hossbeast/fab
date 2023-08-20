@@ -91,7 +91,7 @@ void API value_parser_xfree(value_parser* const p)
     yyu_parser_xdestroy(&p->value_list_yyu);
   }
 
-  wfree(p);
+  free(p);
 }
 
 void API value_parser_ixfree(value_parser ** const p)

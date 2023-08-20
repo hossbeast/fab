@@ -201,7 +201,7 @@ void formula_parser_xfree(formula_parser* const p)
     yyu_parser_xdestroy(&p->yyu);
   }
 
-  wfree(p);
+  free(p);
 }
 
 void formula_parser_ixfree(formula_parser ** const p)

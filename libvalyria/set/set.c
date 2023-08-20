@@ -179,7 +179,7 @@ void API set_xfree(set * restrict sx)
   if(s)   // free-like semantics
     hashtable_xdestroy(&s->ht);
 
-  wfree(s);
+  free(s);
 }
 
 void API set_ixfree(set ** restrict sx)

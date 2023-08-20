@@ -408,7 +408,7 @@ void fsent_cleanup()
   }
 
   llist_foreach_safe(&fsent_freelist, n, vertex.owner, T) {
-    wfree(n);
+    free(n);
   }
 }
 

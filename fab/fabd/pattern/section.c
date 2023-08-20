@@ -87,7 +87,7 @@ void pattern_section_say(const pattern_section * restrict n, bool first, narrato
 void pattern_section_free(pattern_section * restrict n)
 {
   pattern_segments_list_free(n->qualifiers_head);
-	wfree(n);
+	free(n);
 }
 
 int pattern_section_cmp(const pattern_section * A, const pattern_section * B)

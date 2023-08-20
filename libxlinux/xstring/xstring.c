@@ -20,7 +20,7 @@ void API ixstrncat(char ** s1, const char * s2, int s2len)
   xmalloc(s1, s1len + s2len + 1);
   if(o)
     memcpy(*s1, o, s1len);
-  wfree(o);
+  free(o);
   memcpy((*s1) + s1len, s2, s2len);
 }
 
@@ -38,7 +38,7 @@ void API ixstrcat(char ** s1, const char * s2)
   if(o)
     memcpy(*s1, o, s1len);
 
-  wfree(o);
+  free(o);
   memcpy((*s1) + s1len, s2, s2len);
 }
 
@@ -58,7 +58,7 @@ void API ixstrcatf(char ** s, char * fmt, ...)
   if(o)
     memcpy(*s, o, len);
 
-  wfree(o);
+  free(o);
   va_start(va, fmt);
   vsprintf((*s) + len, fmt, va);
   va_end(va);
@@ -82,7 +82,7 @@ void API ixstrndup(char ** s1, const char * s2, const size_t l)
   }
   else
   {
-    wfree(*s1);
+    free(*s1);
     *s1 = 0;
 
     ixstrncat(s1, s2, l);
@@ -98,7 +98,7 @@ void API ixsprintf(char ** s, char * fmt, ...)
   req = vsnprintf(0, 0, fmt, va);
   va_end(va);
 
-  wfree(*s);
+  free(*s);
   xmalloc(s, req + 1);
 
   va_start(va, fmt);

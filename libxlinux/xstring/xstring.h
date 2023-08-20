@@ -38,7 +38,7 @@ void ixstrndup(char ** s1, const char * s2, const size_t l);
 
 /// ixsprintf
 //
-// - wfree(*s)
+// - free(*s)
 // - allocate(*s)
 // - sprintf(fmt, ...) -> *s
 //

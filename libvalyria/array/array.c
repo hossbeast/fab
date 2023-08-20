@@ -132,7 +132,7 @@ void array_init(
 void array_xdestroy(array_t * const restrict ar)
 {
   array_recycle(&ar->arx);
-  wfree(ar->v);
+  free(ar->v);
 }
 
 //
@@ -175,7 +175,7 @@ void API array_xfree(array * const restrict arx)
   if(ar)
     array_xdestroy(ar);
 
-  wfree(ar);
+  free(ar);
 }
 
 void API array_ixfree(array ** const restrict arx)

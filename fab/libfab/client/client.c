@@ -200,12 +200,12 @@ void API fab_client_xfree(fab_client * restrict client)
 {
   if(client)
   {
-    wfree(client->ipcdir);
-    wfree(client->projdir);
+    free(client->ipcdir);
+    free(client->projdir);
     xshmdt(client->shm);
     xclose(client->lockfd);
   }
-  wfree(client);
+  free(client);
 }
 
 void API fab_client_ixfree(fab_client ** restrict client)

@@ -32,7 +32,7 @@ static void destroy(pattern_segment * restrict n)
   pattern_group * group = &n->group;
 
   pattern_segments_list_free(group->segments_head);
-  wfree(group->name);
+  free(group->name);
 }
 
 static void search(const pattern_segment * restrict segment, pattern_search_context * restrict ctx)

@@ -40,7 +40,7 @@ static void delete_entry(const hashtable_t * ht, void * _ent)
 static void destroy_entry(const hashtable_t * ht, void * _ent)
 {
   entry * ent = _ent;
-  wfree(ent->k);
+  free(ent->k);
 }
 
 static void store_entry(const hashtable_t * ht, void * _dst, void * _src, bool found)
@@ -252,7 +252,7 @@ void API dictionary_xfree(dictionary* restrict dx)
   if(d)
     hashtable_xdestroy(&d->ht);
 
-  wfree(d);
+  free(d);
 }
 
 void API dictionary_ixfree(dictionary** restrict d)

@@ -354,7 +354,7 @@ static void xmain(int argc, char ** argv)
 
 end:
   // locals
-  wfree(test_vector);
+  free(test_vector);
 }
 
 int main(int argc, char ** argv)

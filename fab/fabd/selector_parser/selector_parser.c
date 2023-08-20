@@ -62,7 +62,7 @@ void selector_parser_xfree(selector_parser* const p)
     yyu_parser_xdestroy(&p->yyu);
   }
 
-  wfree(p);
+  free(p);
 }
 
 void selector_parser_ixfree(selector_parser ** const p)

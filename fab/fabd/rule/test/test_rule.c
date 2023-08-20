@@ -183,7 +183,7 @@ static void rules_test_entry(xunit_test * _test)
   graph_parser_xfree(op_parser);
   pattern_parser_xfree(parser);
   rule_run_context_xdestroy(&rule_ctx);
-  wfree(chan);
+  free(chan);
 }
 
 //

@@ -55,7 +55,7 @@ static void destroy(pattern_segment * restrict fn)
   pattern_replacement * n = &fn->replacement;
 
   if(n->replacement_type == PATTERN_REPLACEMENT_TYPE_NAME)
-    wfree(n->name);
+    free(n->name);
 }
 
 static void generate(const pattern_segment * restrict seg, pattern_generate_context * restrict ctx)

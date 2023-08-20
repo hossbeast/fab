@@ -201,5 +201,5 @@ void pattern_lookup(const pattern * restrict ref, uint32_t attrs, selection * re
     fragment = pattern_render_fragment_next(fragment);
   }
 
-  wfree(rendered);
+  free(rendered);
 }

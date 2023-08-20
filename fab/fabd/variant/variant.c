@@ -16,10 +16,10 @@ static map * variants_map;
 static void variant_free(variant * v)
 {
   if(v) {
-    wfree(v->tags);
+    free(v->tags);
   }
 
-  wfree(v);
+  free(v);
 }
 
 static int tag_compare(const void *A, const void *B)

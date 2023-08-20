@@ -42,7 +42,7 @@ static void render(const pattern_segment * restrict fn, pattern_render_context *
 static void destroy(pattern_segment * restrict fn)
 {
   pattern_word * n = &fn->word;
-  wfree(n->text);
+  free(n->text);
 }
 
 static void match(const pattern_segment * restrict segment, pattern_match_context * restrict ctx)

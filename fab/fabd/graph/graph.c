@@ -150,7 +150,7 @@ void graph_cleanup()
 
   llist_splice_head(&edge_freelist, &edge_list);
   llist_foreach_safe(&edge_freelist, e, owner, T) {
-    wfree(e);
+    free(e);
   }
 }
 

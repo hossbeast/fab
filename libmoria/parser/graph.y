@@ -114,9 +114,9 @@ edge
 
     graph_parser_hyperconnect(PARSER, A, $1.len, B, $5.len, $3, 0);
     if($1.len > 1)
-      wfree($1.v);
+      free($1.v);
     if($5.len > 1)
-      wfree($5.v);
+      free($5.v);
   }
   | edge_vertex_list ':' edge_vertex_list
   {
@@ -130,9 +130,9 @@ edge
 
     graph_parser_hyperconnect(PARSER, A, $1.len, B, $3.len, 0, 0);
     if($1.len > 1)
-      wfree(A);
+      free(A);
     if($3.len > 1)
-      wfree(B);
+      free(B);
   }
   ;
 

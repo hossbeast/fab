@@ -80,7 +80,7 @@ static void pattern_render_test_entry(xunit_test * _test)
   pattern_free(pattern);
   set_xfree(expected);
   set_xfree(actual);
-  wfree(result);
+  free(result);
 }
 
 //

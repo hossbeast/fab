@@ -38,6 +38,6 @@ void params_setup()
 void params_teardown()
 {
 #if DEVEL
-  iwfree(&g_params.exedir);
+  ifree(&g_params.exedir);
 #endif
 }

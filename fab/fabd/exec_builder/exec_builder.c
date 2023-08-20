@@ -370,10 +370,10 @@ void exec_free(exec * e)
 {
   if(e)
   {
-    wfree(e->args);
-    wfree(e->envs);
+    free(e->args);
+    free(e->envs);
   }
-  wfree(e);
+  free(e);
 }
 
 void exec_ifree(exec ** restrict ep)
@@ -408,10 +408,10 @@ void exec_builder_xreset(exec_builder * restrict builder)
 void exec_builder_xdestroy(exec_builder * restrict builder)
 {
   narrator_growing_destroy(&builder->Nexec_growing);
-  wfree(builder->args);
-  wfree(builder->args_stor);
-  wfree(builder->envs);
-  wfree(builder->envs_stor);
+  free(builder->args);
+  free(builder->args_stor);
+  free(builder->envs);
+  free(builder->envs_stor);
 }
 
 void exec_builder_build(exec_builder * restrict builder, exec ** restrict envp)

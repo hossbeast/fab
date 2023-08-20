@@ -135,7 +135,7 @@ void API value_writer_xfree(value_writer * restrict writer)
   {
     value_writer_close(writer);
   }
-  wfree(writer);
+  free(writer);
 }
 
 void API value_writer_ixfree(value_writer ** restrict writer)
