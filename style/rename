@@ -1,0 +1,96 @@
+#!/usr/bin/env perl
+#
+# SPDX-License-Identifier: GPL-3.0
+# Copyright (c) 2012-2023 Todd Freed <todd.freed@gmail.com>
+
+#
+# normalize header and footer of all kinds of source files
+#
+# usage
+#  ./style/normalize      # consider all files from cwd down
+#  ./style/normalize path path ...
+#
+
+use strict;
+use warnings;
+
+use Data::Dumper;
+
+my $LIM = 1000;   # rewrite at most this many files
+my $CNT = 0;
+
+sub usage {
+  print STDOUT <<TEXT;
+usage : $0              consider all files in $ENV{CWD}, recursive
+usage : path path ...   consider only the specified files
+
+TEXT
+}
+
+sub c_c {
+  my $path = shift;
+  print("$CNT of $LIM $path\n");
+
+  open FH, "<$path" or die "open($path) : $!";
+  my @lines;
+
+  # skip leading spdx / copyright / blank lines
+  my $head = 1;
+  while(<FH>) {
+    for my $expr (@ARGV) {
+      eval $expr;
+    }
+    push @lines, $_;
+  }
+  close FH;
+
+  open FH, ">style_rename_b" or die $!;
+  chmod 0644, \*FH;
+
+  for(my $x = 0; $x <= $#lines; $x++) {
+    print FH ($lines[$x]);
+  }
+  close FH;
+
+  # rewrite the file
+  qx|mv style_rename_b $path|;
+  system("git diff $path");
+}
+
+my %extmap = map { $_ => 1 } qw|c h l y|;
+sub visit {
+  my $path = shift;
+
+  # skip unhandled file types
+  return unless $path =~ /\.([+a-z]+)$/;
+  my $ext = "$1";
+  return if !$extmap{$ext};
+
+  # skip untracked files
+  system("git ls-files --error-unmatch $path 1>/dev/null 2>&1");
+  return if $? != 0;
+
+  c_c($path);
+
+  # honor file limit
+  exit 0 if ++$CNT == $LIM;
+}
+
+sub traverse {
+  my $dir = shift;
+  opendir(my $dh, $dir) or die $!;
+  while (readdir $dh) {
+    my $path = "$dir/$_";
+    next if -l $path;     # skip symlinks
+    next if $_ eq '.git'; # skip vcs
+    next if $_ eq '.';    # skip
+    next if $_ eq '..';   # skip
+    visit($path) if -f $path;
+    traverse($path) if -d $path;
+  }
+  closedir $dh;
+}
+
+print Dumper \@ARGV;
+
+traverse(".")

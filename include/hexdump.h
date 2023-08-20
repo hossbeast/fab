@@ -1,5 +1,7 @@
-#ifndef _HEXDUMP_H
-#define _HEXDUMP_H
+/* SPDX-License-Identifier: GPL-3.0 */
+/* Copyright (c) 2012-2023 Todd Freed <todd.freed@gmail.com> */
+
+#pragma once
 
 static inline void hexdump(const char *s, uint16_t len)
 {
@@ -47,5 +49,3 @@ static inline void hexdump(const char *s, uint16_t len)
 
   printf("\n");
 }
-
-#endif

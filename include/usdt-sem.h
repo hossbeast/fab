@@ -1,5 +1,7 @@
-#ifndef _PROBES_SEM_H
-#define _PROBES_SEM_H
+/* SPDX-License-Identifier: GPL-3.0 */
+/* Copyright (c) 2012-2023 Todd Freed <todd.freed@gmail.com> */
+
+#pragma once
 
 #define _SDT_HAS_SEMAPHORES
 #include <sys/sdt.h>
@@ -11,5 +13,3 @@
   __attribute__((section (".probes"))) __attribute__((visibility ("hidden")))
 
 #include "usdt.h"
-
-#endif

@@ -1,0 +1,413 @@
+#!/usr/bin/env perl
+#
+# SPDX-License-Identifier: GPL-3.0
+# Copyright (c) 2012-2023 Todd Freed <todd.freed@gmail.com>
+
+#
+# normalize header and footer of all kinds of source files
+#
+# usage
+#  ./style/normalize      # consider all files from cwd down
+#  ./style/normalize path path ...
+#
+
+use strict;
+use warnings;
+
+my $LIM = 1000;   # rewrite at most this many files
+my $CNT = 0;
+
+sub usage {
+  print STDOUT <<TEXT;
+usage : $0              consider all files in $ENV{CWD}, recursive
+usage : path path ...   consider only the specified files
+
+TEXT
+}
+
+sub bam_bam {
+  my $path = shift;
+  print("$CNT of $LIM $path\n");
+
+  open FH, "<$path" or die "open($path) : $!";
+  my @lines;
+
+  # skip leading spdx / copyright / blank lines
+  my $head = 1;
+  while(<FH>) {
+    if($head) {
+      if(/SPDX|Copyright..c..20|^$/) {
+        next;
+      } else {
+        $head = 0;
+      }
+    }
+    push @lines, $_;
+  }
+  close FH;
+
+  open FH, ">style_normalize_b" or die $!;
+  chmod 0644, \*FH;
+
+  # tim trailing blank lines
+  while($#lines >= 0) {
+    if($lines[$#lines] =~ /^$/) {
+      pop @lines;
+    } else {
+      last;
+    }
+  }
+
+  # supply proper spdx header
+  print FH <<'HEAD';
+/* SPDX-License-Identifier: GPL-3.0 */
+/* Copyright (c) 2012-2023 Todd Freed <todd.freed@gmail.com> */
+
+HEAD
+
+  # rewrite the file
+  for(my $x = 0; $x <= $#lines; $x++) {
+    print FH ($lines[$x]);
+  }
+  close FH;
+  qx|mv style_normalize_b $path|;
+  system("git diff $path");
+}
+
+sub perl_pm {
+  my $path = shift;
+  print("$CNT of $LIM $path\n");
+
+  open FH, "<$path" or die "open($path) : $!";
+  my @lines;
+
+  # skip leading spdx / copyright / comment / shebang / blank lines
+  my $head = 1;
+  while(<FH>) {
+    if($head) {
+      if(/SPDX|Copyright..c..20|^$|^#/) {
+        next;
+      } else {
+        $head = 0;
+      }
+    }
+    push @lines, $_;
+  }
+  close FH;
+
+  open FH, ">style_normalize_b" or die $!;
+
+  # tim trailing blank lines
+  while($#lines >= 0) {
+    if($lines[$#lines] =~ /^$/) {
+      pop @lines;
+    } else {
+      last;
+    }
+  }
+
+  # supply proper spdx header
+  print FH <<'HEAD';
+# SPDX-License-Identifier: GPL-3.0
+# Copyright (c) 2012-2023 Todd Freed <todd.freed@gmail.com>
+
+HEAD
+
+  # rewrite the file
+  for(my $x = 0; $x <= $#lines; $x++) {
+    print FH ($lines[$x]);
+  }
+  close FH;
+  qx|mv style_normalize_b $path|;
+  system("git diff $path");
+}
+
+sub perl_pl {
+  my ($path, $interp) = @_;
+  print("$CNT of $LIM $path\n");
+
+  open FH, "<$path" or die "open($path) : $!";
+
+  my @lines;
+
+  # skip leading spdx / copyright / comment / shebang / blank lines
+  my $state = 0;
+  while(<FH>) {
+    if($state == 0 && /SPDX|Copyright..c..20/) {
+      next;
+    } elsif($state == 0 && /^$/) {
+      next;
+    } elsif($state <= 1 && /^#/) {
+      $state = 1;
+      next;
+    }
+
+    $state = 2;
+    push @lines, $_;
+  }
+  close FH;
+
+  open FH, ">style_normalize_b" or die $!;
+  chmod 0755, \*FH;
+
+  # tim trailing blank lines
+  while($#lines >= 0) {
+    if($lines[$#lines] =~ /^$/) {
+      pop @lines;
+    } else {
+      last;
+    }
+  }
+
+  # supply proper shebang / spdx header
+  print FH <<"HEAD";
+#!/usr/bin/env $interp
+#
+# SPDX-License-Identifier: GPL-3.0
+# Copyright (c) 2012-2023 Todd Freed <todd.freed\@gmail.com>
+#
+
+HEAD
+
+  # rewrite the file
+  for(my $x = 0; $x <= $#lines; $x++) {
+    print FH ($lines[$x]);
+  }
+  close FH;
+  qx|mv style_normalize_b $path|;
+  system("git diff $path");
+}
+
+sub flex_l_bison_y {
+  my $path = shift;
+  print("$CNT of $LIM $path\n");
+
+  open FH, "<$path" or die "open($path) : $!";
+  my @lines;
+
+  # skip leading spdx / copyright / blank lines
+  my $head = 1;
+  while(<FH>) {
+    if($head) {
+      if(/SPDX|Copyright..c..20|^$/) {
+        next;
+      } else {
+        $head = 0;
+      }
+    }
+    push @lines, $_;
+  }
+  close FH;
+
+  open FH, ">style_normalize_b" or die $!;
+  chmod 0644, \*FH;
+
+  # tim trailing blank lines
+  while($#lines >= 0) {
+    if($lines[$#lines] =~ /^$/) {
+      pop @lines;
+    } else {
+      last;
+    }
+  }
+
+  # supply proper spdx header
+  print FH <<'HEAD';
+/* SPDX-License-Identifier: GPL-3.0 */
+/* Copyright (c) 2012-2023 Todd Freed <todd.freed@gmail.com> */
+
+HEAD
+
+  for(my $x = 0; $x <= $#lines; $x++) {
+    print FH ($lines[$x]);
+  }
+  close FH;
+
+  # rewrite the file
+  qx|mv style_normalize_b $path|;
+  system("git diff $path");
+}
+
+sub c_c {
+  my $path = shift;
+  print("$CNT of $LIM $path\n");
+
+  open FH, "<$path" or die "open($path) : $!";
+  my @lines;
+
+  # skip leading spdx / copyright / blank lines
+  my $head = 1;
+  while(<FH>) {
+    if($head) {
+      if(/SPDX|Copyright..c..20|^$/) {
+        next;
+      } else {
+        $head = 0;
+      }
+    }
+    push @lines, $_;
+  }
+  close FH;
+
+  open FH, ">style_normalize_b" or die $!;
+  chmod 0644, \*FH;
+
+  # tim trailing blank lines
+  while($#lines >= 0) {
+    if($lines[$#lines] =~ /^$/) {
+      pop @lines;
+    } else {
+      last;
+    }
+  }
+
+  # supply proper spdx header
+  print FH <<'HEAD';
+/* SPDX-License-Identifier: GPL-3.0 */
+/* Copyright (c) 2012-2023 Todd Freed <todd.freed@gmail.com> */
+
+HEAD
+
+  for(my $x = 0; $x <= $#lines; $x++) {
+    print FH ($lines[$x]);
+  }
+  close FH;
+
+  # rewrite the file
+  qx|mv style_normalize_b $path|;
+  system("git diff $path");
+}
+
+sub c_h {
+  my $path = shift;
+  print("$CNT of $LIM $path\n");
+
+  open FH, "<$path" or die "open($path) : $!";
+  my @lines;
+
+  # skip leading spdx / copyright / pragma / ifndef / define / blank lines
+  my $head = 1;
+  my $def = "\0";
+  while(<FH>) {
+    if($head) {
+      if(/SPDX|Copyright..c..20|^$|^#pragma once|^#ifndef ([_A-Z][_a-zA-Z0-9]+)|^#define $def/) {
+        $def = $1 if $1;
+        next;
+      } else {
+        $head = 0;
+      }
+    }
+    push @lines, $_;
+  }
+  close FH;
+
+  open FH, ">style_normalize_b" or die $!;
+  chmod 0644, \*FH;
+
+  # tim trailing endif / blank lines
+  while($#lines >= 0) {
+    if($lines[$#lines] =~ /^$/) {
+      pop @lines;
+    } elsif($def && $lines[$#lines] =~ /^#endif$/) {
+      pop @lines;
+    } else {
+      last;
+    }
+  }
+
+  # supply proper spdx / pragma header
+  print FH <<'HEAD';
+/* SPDX-License-Identifier: GPL-3.0 */
+/* Copyright (c) 2012-2023 Todd Freed <todd.freed@gmail.com> */
+
+#pragma once
+HEAD
+
+  if($#lines >= 0) {
+    print FH "\n";
+  }
+
+  for(my $x = 0; $x <= $#lines; $x++) {
+    print FH ($lines[$x]);
+  }
+  close FH;
+
+  # rewrite the file
+  qx|mv style_normalize_b $path|;
+  system("git diff $path");
+}
+
+my %extmap = map { $_ => 1 } qw|c h l y bam bam+devel bam.devel+devel pm sh|;
+sub visit {
+  my $path = shift;
+
+  # skip unhandled file types
+  return unless $path =~ /\.([+a-z]+)$/;
+  my $ext = "$1";
+  return if !$extmap{$ext};
+
+  # skip untracked files
+  system("git ls-files --error-unmatch $path 1>/dev/null 2>&1");
+  return if $? != 0;
+
+  if($ext eq "c") {
+    c_c($path);
+  } elsif($ext eq "h") {
+    c_h($path);
+  } elsif($ext eq "l" || $ext eq "y") {
+    flex_l_bison_y($path);
+  } elsif($ext eq "pm") {
+    perl_pm($path);
+  } elsif($ext eq "bam" || $ext eq "bam+devel" || $ext eq "bam.devel+devel" || $ext eq "sh") {
+    open FH, "<$path" or die $!;
+    my $pl = 0;
+    my $sh = 0;
+    $sh = 1 if $ext eq "sh";
+    for(my $x = 0; $x < 35; $x++) {
+      my $line = <FH>;
+      last unless $line;
+      if($line =~ /^#!.*perl/) {
+        $pl = 1;
+        last;
+      } elsif($line =~ /^use strict;$/) {
+        $pl = 1;
+        last;
+      }
+    }
+    close FH;
+
+    if($pl) {
+      perl_pl($path, "perl");
+    } elsif($sh) {
+      perl_pl($path, "bash");
+    } else {
+      bam_bam($path);
+    }
+  }
+
+  # honor file limit
+  exit 0 if ++$CNT == $LIM;
+}
+
+sub traverse {
+  my $dir = shift;
+  opendir(my $dh, $dir) or die $!;
+  while (readdir $dh) {
+    my $path = "$dir/$_";
+    next if -l $path;     # skip symlinks
+    next if $_ eq '.git'; # skip vcs
+    next if $_ eq '.';    # skip
+    next if $_ eq '..';   # skip
+    visit($path) if -f $path;
+    traverse($path) if -d $path;
+  }
+  closedir $dh;
+}
+
+if($#ARGV >= 0) {
+  for my $path (@ARGV) {
+    visit($path);
+  }
+} else {
+  traverse(".")
+}

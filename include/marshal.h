@@ -1,22 +1,7 @@
-/* Copyright (c) 2012-2020 Todd Freed <todd.freed@gmail.com>
+/* SPDX-License-Identifier: GPL-3.0 */
+/* Copyright (c) 2012-2023 Todd Freed <todd.freed@gmail.com> */
 
-   This file is part of fab.
-
-   fab is free software: you can redistribute it and/or modify
-   it under the terms of the GNU General Public License as published by
-   the Free Software Foundation, either version 3 of the License, or
-   (at your option) any later version.
-
-   fab is distributed in the hope that it will be useful,
-   but WITHOUT ANY WARRANTY; without even the implied warranty of
-   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-   GNU General Public License for more details.
-
-   You should have received a copy of the GNU General Public License
-   along with fab.  If not, see <http://www.gnu.org/licenses/>. */
-
-#ifndef _MARSHAL_H
-#define _MARSHAL_H
+#pragma once
 
 #include <stdio.h>
 #include <string.h>
@@ -88,5 +73,3 @@ static inline size_t unmarshal_u32(void * restrict src, size_t sz, uint32_t *xp)
   memcpy(xp, src + pad, sizeof(*xp));
   return pad + sizeof(*xp);
 }
-
-#endif

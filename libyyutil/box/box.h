@@ -1,22 +1,7 @@
-/* Copyright (c) 2012-2015 Todd Freed <todd.freed@gmail.com>
+/* SPDX-License-Identifier: GPL-3.0 */
+/* Copyright (c) 2012-2023 Todd Freed <todd.freed@gmail.com> */
 
-   This file is part of fab.
-
-   fab is free software: you can redistribute it and/or modify
-   it under the terms of the GNU General Public License as published by
-   the Free Software Foundation, either version 3 of the License, or
-   (at your option) any later version.
-
-   fab is distributed in the hope that it will be useful,
-   but WITHOUT ANY WARRANTY; without even the implied warranty of
-   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-   GNU General Public License for more details.
-
-   You should have received a copy of the GNU General Public License
-   along with fab.  If not, see <http://www.gnu.org/licenses/>. */
-
-#ifndef FABD_BOX_H
-#define FABD_BOX_H
+#pragma once
 
 /*
 
@@ -317,5 +302,3 @@ int box_uint8_cmp(const box_uint8 * a, const box_uint8 *b);
 int box_uint16_cmp(const box_uint16 * a, const box_uint16 *b);
 int box_uint32_cmp(const box_uint32 * a, const box_uint32 *b);
 int box_uint64_cmp(const box_uint64 * a, const box_uint64 *b);
-
-#endif

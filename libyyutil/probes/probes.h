@@ -1,5 +1,7 @@
-#ifndef _PROBES_H
-#define _PROBES_H
+/* SPDX-License-Identifier: GPL-3.0 */
+/* Copyright (c) 2012-2023 Todd Freed <todd.freed@gmail.com> */
+
+#pragma once
 
 struct yyu_parser;
 struct yyu_location;
@@ -18,5 +20,3 @@ void token_probe(
   , char * restrict text
   , size_t bytes
 );
-
-#endif

@@ -1,3 +1,6 @@
+/* SPDX-License-Identifier: GPL-3.0 */
+/* Copyright (c) 2012-2023 Todd Freed <todd.freed@gmail.com> */
+
 /* COPYRIGHT (C) 2012-2015 Todd Freed <todd.freed@gmail.com>
 
    This file is part of fab.
