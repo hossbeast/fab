@@ -26,8 +26,9 @@
 
 #include "zbuffer.h"
 
-static void __attribute__((nonnull(1, 3, 5, 7, 9))) walk(
+static void __attribute__((nonnull(1, 4, 6, 8, 10))) walk(
     void (*fn)(int method, ftwinfo * info, void * arg, int * stop)
+  , uint32_t flags
   , void * arg
   , DIR *** const restrict dds
   , size_t ddsz
@@ -54,12 +55,14 @@ static void __attribute__((nonnull(1, 3, 5, 7, 9))) walk(
   // pre-order callback for directories
   fn(FTWAT_PRE, dirinfo, arg, &stop);
 
-  if(stop)
+  if(stop) {
     goto end;
+  }
 
   // if theres no room, close the descriptor in an earlier activation/frame
-  if(dds[*ddsp])
+  if(dds[*ddsp]) {
     ixclosedir(dds[*ddsp]);
+  }
 
   dd = xopendirat(dirfd, path);
   ddso = *ddsp;
@@ -84,13 +87,17 @@ static void __attribute__((nonnull(1, 3, 5, 7, 9))) walk(
       child.udata = 0;
 
       type = entp->d_type;
-      if(type == DT_LNK)
+
+      if(type == DT_LNK && (flags & FTWAT_SYMLINKS) != 0)
       {
-        /* follow non-dangling symlinks */
-        r = uxfstatats(dirfd, 0, &stb, path);
-        if(r == 0)
+        if((flags & FTWAT_FOLLOW) != 0)
         {
-          type = (stb.st_mode & S_IFMT) >> 12;
+          /* follow non-dangling symlinks */
+          r = uxfstatats(dirfd, 0, &stb, path);
+          if(r == 0)
+          {
+            type = (stb.st_mode & S_IFMT) >> 12;
+          }
         }
       }
 
@@ -99,11 +106,17 @@ static void __attribute__((nonnull(1, 3, 5, 7, 9))) walk(
         child.type = FTWAT_F;
         fn(0, &child, arg, &stop);
       }
+      else if(type == DT_LNK && (flags & FTWAT_SYMLINKS) != 0)
+      {
+        child.type = FTWAT_LNK;
+        fn(0, &child, arg, &stop);
+      }
       else if(type == DT_DIR)
       {
         child.type = FTWAT_D;
         walk(
-          fn
+            fn
+          , flags
           , arg
           , dds
           , ddsz
@@ -152,6 +165,7 @@ void API nftwat(
   , const char * dirpath
   , void (*fn)(int method, ftwinfo * restrict info, void * arg, int * stop)
   , int nopenfd
+  , uint32_t flags
   , void * arg
 )
 {
@@ -181,7 +195,8 @@ void API nftwat(
   rootinfo.name_off = e - path;
 
   walk(
-    fn
+      fn
+    , flags
     , arg
     , dds
     , nopenfd
@@ -193,5 +208,5 @@ void API nftwat(
     , &rootinfo
   );
 
-  wfree(dds);
+  free(dds);
 }

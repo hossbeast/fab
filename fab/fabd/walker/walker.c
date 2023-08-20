@@ -355,7 +355,7 @@ void walker_descend(
   ctx.base = base;
 
   // filesystem traversal from the root
-  nftwat(AT_FDCWD, abspath, walker_visit, 64, &ctx);
+  nftwat(AT_FDCWD, abspath, walker_visit, 64, 0, &ctx);
 
   if(basep) {
     *basep = ctx.base;
