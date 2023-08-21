@@ -32,6 +32,7 @@ exports
 *.trace
 *.xapi
 *.xunit
+*.unit
 *.so.lnk
 git-state.c
 git-state.h

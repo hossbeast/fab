@@ -10,6 +10,7 @@
 
 #include "macros.h"
 #include "common/assure.h"
+#include "zbuffer.h"
 
 //
 // static
@@ -19,24 +20,21 @@ static void __attribute__((nonnull)) growing_sayvf(narrator * const restrict N, 
 {
   narrator_growing *n = containerof(N, typeof(*n), base);
   va_list va2;
-  va_copy(va2, va);
   int r;
-  size_t sz;
 
-  sz = 0;
-  if(n->a > n->l)
-    sz = n->a - n->l;
+  RUNTIME_ASSERT(n->a >= n->l);
 
   // attempt to perform the entire write to the buffer
-  r = vsnprintf(n->s + n->l, sz, fmt, va2);
-
+  va_copy(va2, va);
+  r = vsnprintf(n->s + n->l, n->a - n->l, fmt, va2);
   va_end(va2);
 
   // check whether output was truncated
-  if(r >= sz)
+  if(r >= (n->a - n->l))
   {
     assure(&n->s, sizeof(*n->s), n->l + r + 1, &n->a);
-    vsprintf(n->s + n->l, fmt, va);
+    r = vsnprintf(n->s + n->l, n->a - n->l, fmt, va);
+    va_end(va);
   }
 
   n->l += r;
@@ -58,14 +56,16 @@ static void __attribute__((nonnull(1))) growing_seek(narrator * restrict N, off_
 {
   narrator_growing *n = containerof(N, typeof(*n), base);
 
-  if(whence == NARRATOR_SEEK_SET)
+  if(whence == NARRATOR_SEEK_SET) {
     n->l = offset;
-  else if(whence == NARRATOR_SEEK_CUR)
+  } else if(whence == NARRATOR_SEEK_CUR) {
     n->l += offset;
+  }
 
   // for a growing narrator, the "end" is the greatest position ever written to
-  else if(whence == NARRATOR_SEEK_END)
+  else if(whence == NARRATOR_SEEK_END) {
     n->l = (n->m + offset);
+  }
 
   if(res)
   {
@@ -109,9 +109,7 @@ void API narrator_growing_create(narrator_growing ** const restrict rv)
   narrator_growing * n = 0;
 
   xmalloc(&n, sizeof(*n));
-
-  n->base.vtab = &growing_vtable;
-  xmalloc(&n->s, 1);
+  narrator_growing_init(n);
 
   *rv = n;
 }
@@ -126,18 +124,23 @@ void API narrator_growing_free(narrator_growing * restrict n)
 
 narrator * API narrator_growing_init_from(narrator_growing * restrict n, char * buf, size_t bufa)
 {
-  n->base.vtab = &growing_vtable;
+  narrator_growing_init(n);
+
   n->s = buf;
-  n->l = 0;
   n->a = bufa;
-  n->m = 0;
 
   return &n->base;
 }
 
 narrator * API narrator_growing_init(narrator_growing * restrict n)
 {
-  return narrator_growing_init_from(n, 0, 0);
+  n->base.vtab = &growing_vtable;
+  n->s = 0;
+  n->l = 0;
+  n->a = 0;
+  n->m = 0;
+
+  return &n->base;
 }
 
 void API narrator_growing_destroy(narrator_growing * restrict n)

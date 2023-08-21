@@ -10,7 +10,8 @@ import libxunit
 
 # make common objects available for #inclusion and linking by files in this module
 import fab/include
-import fab/test as fabtest
+import fab/unit as fabtest
+import fab/asan as asan
 import libcommon
 
 # variants for the module
@@ -38,7 +39,8 @@ rule //module/imports/*~libxunit/lib*.?.a -> libvalyria.$?.a
 variant pic.devel : [
   # build individual test executables
   rule test/test_(*).?.o -> $^D/test_$1.$? : ./cc-test.bam
-  rule test/test_(*).? <- fabtest/test_util.$?.o
+  rule test/test_(*).? <- fabtest/unit.$?.o
+  rule test/test_(*).? <- asan/asan.$?.o
   rule test/test_(*).? <- libxlinux/libxlinux.$?.a
   rule test/test_(*).? <- libcommon/libcommon.$?.a
   rule test/test_(*).? <- libvalyria.$?.a

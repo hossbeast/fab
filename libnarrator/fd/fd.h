@@ -21,6 +21,9 @@ typedef struct narrator_fd
 {
   narrator base;
   int fd;
+
+  /* errno if the writer experienced an error writing to the fd */
+  int err;
 } narrator_fd;
 
 extern struct narrator_vtable narrator_fd_vtable;
@@ -34,7 +37,12 @@ extern struct narrator_vtable narrator_fd_vtable;
 //  n  - (returns) narrator
 //  fd - file descriptor
 //
-void narrator_fd_create(narrator_fd ** const restrict n, int fd)
+void narrator_fd_create(narrator_fd ** restrict n, int fd)
   __attribute__((nonnull));
 
-void narrator_fd_free(narrator_fd * const restrict n);
+void narrator_fd_free(narrator_fd * restrict n);
+
+void narrator_fd_init(narrator_fd * restrict n, int fd)
+  __attribute__((nonnull));
+
+void narrator_fd_destroy(narrator_fd * restrict n);

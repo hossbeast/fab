@@ -38,6 +38,11 @@ void narrator_multi_create(narrator_multi ** const restrict n)
 
 void narrator_multi_free(narrator_multi * restrict n);
 
+void narrator_multi_init(narrator_multi * restrict n)
+  __attribute__((nonnull));
+
+void narrator_multi_destroy(narrator_multi * restrict n);
+
 /// narrator_multi_add
 //
 // SUMMARY

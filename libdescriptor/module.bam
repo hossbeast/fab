@@ -7,8 +7,6 @@ use library/static
 import fab/include
 import libcommon
 
-import fab/test as fabtest
-
 # variants for the module
 variant pic.{debug,devel,final,trace}
 

@@ -8,13 +8,13 @@ use strict;
 use warnings;
 $SIG{__WARN__} = sub { die @_ };
 
-die "cc not found in environment" unless $ENV{cc};
+die "cc not found in environment" unless $ENV{CC};
 
 # exec into the compiler
 my @cmd = (
-    $ENV{cc}
-  , split(/ /, $ENV{cflags})
-  , "-o", $ENV{bm_target}
+    $ENV{CC}
+  , split(/ /, $ENV{CFLAGS})
+  , "-o", $ENV{bm_target0}
   # object files
   , split(/ /, $ENV{objects})
   # library files
@@ -23,12 +23,13 @@ my @cmd = (
   , "-Wl,--end-group"
 );
 
+print(join(" ", @cmd) . "\n");
 exec { $cmd[0] } @cmd
 
 __DATA__
 
 envs : {
-  cc : {
+  CC : {
     path-search : cc
   }
 
@@ -38,8 +39,8 @@ envs : {
       traverse : {
         direction : down
         graph : depends
-        max-distance : 1
-        min-distance : 1
+        max-distance : 2
+        min-distance : 2
         extension : o
       }
     ]

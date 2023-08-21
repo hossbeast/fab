@@ -8,7 +8,7 @@
 #include "narrator/growing.h"
 #include "narrator/units.h"
 
-#include "test_util.h"
+#include "unit.h"
 
 static void test_interval_say()
 {

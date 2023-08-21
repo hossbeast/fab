@@ -20,6 +20,10 @@ struct narrator;
 void interval_say(time_t seconds, struct narrator * const restrict N)
   __attribute__((nonnull));
 
+/* describe an interval, specified in nanoseconds, with ms precision */
+void interval_say_ms(uint64_t ns, struct narrator * const restrict N)
+  __attribute__((nonnull));
+
 /// elapsed_say
 //
 // SUMMARY
@@ -44,4 +48,7 @@ void elapsed_say(const struct timespec * const restrict start, const struct time
 //  N     - narrator to write to
 //
 void bytesize_say(size_t bytes, struct narrator * const restrict N)
+  __attribute__((nonnull));
+
+void interval_say_ns(uint64_t ns, struct narrator * const restrict N)
   __attribute__((nonnull));

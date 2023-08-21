@@ -60,16 +60,21 @@ static __attribute__((nonnull)) void multi_seek(narrator* const restrict N, off_
   }
 }
 
-static __attribute__((nonnull)) void multi_destroy(narrator* const restrict N)
+static __attribute__((nonnull)) void multi_flush(narrator* const restrict N)
 {
+  int x;
   narrator_multi *n = containerof(N, typeof(*n), base);
 
-  free(n->v);
+  for(x = 0; x < n->l; x++)
+  {
+    narrator_flush(n->v[x]);
+  }
 }
+
+
 
 /* not implemented */
 #define multi_read 0
-#define multi_flush 0
 static struct narrator_vtable multi_vtable = NARRATOR_VTABLE(multi);
 
 //
@@ -80,25 +85,33 @@ static struct narrator_vtable multi_vtable = NARRATOR_VTABLE(multi);
 // api
 //
 
+void API narrator_multi_init(narrator_multi * restrict n)
+{
+  memset(n, 0, sizeof(*n));
+
+  n->base.vtab = &multi_vtable;
+  xmalloc(&n->v, sizeof(*n->v));
+}
+
+void API narrator_multi_destroy(narrator_multi * restrict n)
+{
+  free(n->v);
+}
+
 void API narrator_multi_create(narrator_multi ** const restrict rv)
 {
   narrator_multi * n = 0;
 
   xmalloc(&n, sizeof(*n));
-
-  n->base.vtab = &multi_vtable;
-  xmalloc(&n->v, sizeof(*n->v));
+  narrator_multi_init(n);
 
   *rv = n;
-  n = 0;
-
-  narrator_multi_free(n);
 }
 
 void API narrator_multi_free(narrator_multi * restrict n)
 {
   if(n) {
-    multi_destroy(&n->base);
+    narrator_multi_destroy(n);
   }
   free(n);
 }

@@ -7,7 +7,7 @@
 #include "narrator.h"
 #include "narrator/fixed.h"
 
-#include "test_util.h"
+#include "unit.h"
 
 static void say(narrator * const N)
 {

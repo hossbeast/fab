@@ -10,7 +10,7 @@ $SIG{__WARN__} = sub { die @_ };
 
 use POSIX;
 
-my @cmd = ($ENV{bm_source});
+my @cmd = ($ENV{bm_source0});
 
 # redirect stdout -> auxout
 POSIX::dup2(1001, 1);

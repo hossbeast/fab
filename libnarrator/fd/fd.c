@@ -1,6 +1,8 @@
 /* SPDX-License-Identifier: GPL-3.0 */
 /* Copyright (c) 2012-2023 Todd Freed <todd.freed@gmail.com> */
 
+#include <errno.h>
+
 #include "xlinux/xstdio.h"
 #include "xlinux/xunistd.h"
 #include "xlinux/xstdlib.h"
@@ -20,16 +22,34 @@ narrator * APIDATA g_narrator_stderr;
 
 static void __attribute__((nonnull)) fd_sayvf(narrator * const restrict N, const char * const restrict fmt, va_list va)
 {
+  int r;
   narrator_fd *n = containerof(N, typeof(*n), base);
 
-  xvdprintf(n->fd, fmt, va);
+  r = vdprintf(n->fd, fmt, va);
+  if (r < 0) {
+    n->err = r;
+  }
 }
 
 static void __attribute__((nonnull)) fd_sayw(narrator * const restrict N, const void * const restrict b, size_t l)
 {
   narrator_fd *n = containerof(N, typeof(*n), base);
+  size_t actual;
+  ssize_t cur;
 
-  axwrite(n->fd, b, l);
+  actual = 0;
+  while(l - actual)
+  {
+    cur = write(n->fd, b + actual, l - actual);
+    if(cur == -1) {
+      n->err = errno;
+      break;
+    }
+    if(cur == 0) {
+      break;
+    }
+    actual += cur;
+  }
 }
 
 static void __attribute__((nonnull)) fd_seek(narrator * const restrict N, off_t offset, int whence, off_t * restrict res)
@@ -50,11 +70,6 @@ static void __attribute__((nonnull(1, 2))) fd_read(narrator * restrict N, void *
 }
 
 static void __attribute__((nonnull)) fd_flush(narrator * const restrict N)
-{
-
-}
-
-static void __attribute__((nonnull)) fd_destroy(narrator * const restrict N)
 {
 
 }
@@ -86,19 +101,29 @@ void fd_cleanup()
 // api
 //
 
+void narrator_fd_init(narrator_fd * restrict n, int fd)
+{
+  n->base.vtab = &narrator_fd_vtable;
+  n->fd = fd;
+  n->err = 0;
+}
+
+void narrator_fd_destroy(narrator_fd * restrict n)
+{
+
+}
+
 void API narrator_fd_create(narrator_fd ** const restrict n, int fd)
 {
   narrator_fd *nfd;
 
   xmalloc(&nfd, sizeof(*nfd));
+  narrator_fd_init(nfd, fd);
 
-  nfd->base.vtab = &narrator_fd_vtable;
-  nfd->fd = fd;
   *n = nfd;
 }
 
 void API narrator_fd_free(narrator_fd * const restrict n)
 {
-  fd_destroy(&n->base);
   free(n);
 }

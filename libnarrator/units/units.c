@@ -101,6 +101,43 @@ void API interval_say(time_t seconds, narrator * const restrict N)
   compose(cfg, parts, N);
 }
 
+void interval_say_ns(uint64_t ns, struct narrator * const restrict N)
+{
+  double parts[6];
+
+  unit cfg[] = {
+      { label : " ns"     , scale : 1    , fmt : "%.0f" }
+    , { label : " us"     , scale : 1000 , fmt : "%.0f" }
+    , { label : " ms"     , scale : 1000 , fmt : "%.0f" }
+    , { label : " sec(s)" , scale : 1000 , fmt : "%.0f" }
+    , { label : " min(s)" , scale : 60   , fmt : "%.0f" }
+    , { }
+  };
+
+  memset(parts, 0, sizeof(*parts));
+  decompose(ns, cfg, parts);
+  compose(cfg, parts, N);
+}
+
+void interval_say_ms(uint64_t ns, struct narrator * const restrict N)
+{
+  double parts[6];
+
+  unit cfg[] = {
+      { label : " ms"     , scale : 1    , fmt : "%.0f" }
+    , { label : " sec(s)" , scale : 1000 , fmt : "%.0f" }
+    , { label : " min(s)" , scale : 60   , fmt : "%.0f" }
+    , { label : " hr(s)"  , scale : 60   , fmt : "%.0f" }
+    , { label : " day(s)" , scale : 24   , fmt : "%.0f" }
+    , { label : " yr(s)"  , scale : 365  , fmt : "%.0f" }
+    , { }
+  };
+
+  memset(parts, 0, sizeof(*parts));
+  decompose(ns, cfg, parts);
+  compose(cfg, parts, N);
+}
+
 void API bytesize_say(size_t bytes, narrator * const restrict N)
 {
   double parts[6];
