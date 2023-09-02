@@ -1,0 +1,57 @@
+#!/usr/bin/env perl
+
+#
+# This test exercises a formula-file with path-search, when the path-search fails
+#
+
+use strict;
+use warnings;
+$SIG{__WARN__} = sub { die @_ };
+
+use POSIX;
+use File::Basename;
+use Cwd;
+our $repodir;
+BEGIN { $repodir = dirname(Cwd::realpath("$0/..")) }
+use lib "$repodir/integ/lib";
+use util;
+use tree;
+use bam;
+
+init();
+my $testdir = setup(<<'TREE');
+|-- cores.c <<
+foo
+>>
+|-- module.bam+devel <<
+rule cores.c -> cores.o : cp.bam
+rule cores.o -> cores : cp.bam
+rule cores -> //targets
+>>
+|-- cp.bam << 0777
+file : {
+  path-search : cp # no config, so this doesnt resolve
+}
+args : [
+  $bm_source
+  $bm_target
+]
+>>
+TREE
+
+my $result = build(tolerant => 1);
+print("$$result{out}\n");
+print("$$result{err}\n");
+assert { $$result{exit} != 0 };
+assert { stats(undef, {
+    fml_exec => 1         # first stage failure, second stage not entered
+  , fml_exec_ok => 0
+})};
+assert { stats("cp.bam", "-S", {
+    type => 'formula'
+  , state => 'fresh'
+  , fml_exec => 1
+  , fml_exec_ok => 0
+})};
+
+teardown();

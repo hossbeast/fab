@@ -2,13 +2,25 @@
 
 use strict;
 use warnings;
+$SIG{__WARN__} = sub { die @_ };
+
+# backtrace on die
+use Carp qw(confess);
+$SIG{__DIE__} = 'confess';
 
 use POSIX;
-use Data::Dumper;
+use File::Basename;
+use Cwd;
+our $repodir;
+BEGIN { $repodir = dirname(Cwd::realpath("$0/..")) }
+use lib "$repodir/integ/lib";
+use bam;
+use util;
 
 my $RED = "\x1b\x5b\x33\x31\x6d";
 my $GREEN = "\x1b\x5b\x33\x32\x6d";
 my $NONE = "\x1b\x5b\x30\x3b\x30\x6d";
+my $CONCURRENCY = 20;   # dont have more tests than this in flight at once
 
 if(! -e "/run/fab-integ")
 {
@@ -16,6 +28,12 @@ if(! -e "/run/fab-integ")
   die("forgot?");
 }
 
+my $filter = qr/./;
+if($#ARGV >= 0) {
+  $filter = qr/$ARGV[0]/ or die;
+}
+
+my $total = 0;
 my $passed = 0;
 my $failed = 0;
 my @tests;
@@ -24,9 +42,22 @@ opendir(my $dh, ".") or die;
 while(readdir($dh))
 {
   next unless length($_) > 5 && substr($_, 0, 5) eq "test-";
+  next unless $_ =~ $filter;
 
-  push @tests, { path => "./$_", args => [ "stat" ] }; 
-  push @tests, { path => "./$_", args => [ "notify" ] }; 
+  for my $invalidate ("stat", "notify")
+  {
+    my ($dir, $hash, $ipc) = test_parameters($_ . "+$invalidate");
+    my $test = {
+        'index' => $#tests + 1,
+      , path => "./$_"
+      , args => [ $invalidate ]
+      , projdir => $dir
+      , projhash => $hash
+      , ipcdir => $ipc
+    }; 
+    push @tests, $test;
+    mkdirp($$test{ipcdir});
+  }
 }
 
 $SIG{CHLD} = sub {
@@ -35,12 +66,13 @@ $SIG{CHLD} = sub {
     my $test = $table{$pid};
     my $exit = $? >> 8;
     my $sig = $? & 127;
+    $$test{exit} = $exit;
 
     if($? == 0) {
-      printf("${GREEN}[%5s]${NONE} $$test{path} @{$$test{args}}\n", "PASS");
+      printf("${GREEN}[%5s]${NONE} %3d $$test{path} @{$$test{args}}\n", "PASS", $$test{'index'});
       $passed++;
     } else {
-      printf("${RED}[%5s]${NONE} $$test{path} @{$$test{args}}\n", "FAIL");
+      printf("${RED}[%5s]${NONE} %3d $$test{path} @{$$test{args}}\n", "FAIL", $$test{'index'});
       $failed++;
     }
   }
@@ -49,6 +81,11 @@ $SIG{CHLD} = sub {
 # launch all the tests
 for my $test (@tests)
 {
+  $total++;
+  while(($total - ($passed + $failed)) > $CONCURRENCY) {
+    select(undef, undef, undef, .025);
+  }
+
   if(($$test{pid} = fork()) == 0)
   {
     my @cmd = ($$test{path}, @{$$test{args}});
@@ -60,11 +97,9 @@ for my $test (@tests)
     POSIX::open("/dev/null", O_RDONLY);
 
     POSIX::close(1);
-    POSIX::open("/run/fab-integ/logs/$name.log", O_WRONLY | O_CREAT | O_TRUNC) or die $!;
+    POSIX::open("$$test{ipcdir}/run.log", O_WRONLY | O_CREAT | O_TRUNC) or die $!;
 
     POSIX::dup2(1, 2) or die $!;
-    POSIX::close(2);
-    POSIX::open("/run/fab-integ/logs/$name.log", O_WRONLY | O_CREAT | O_TRUNC);
 
     exec { $cmd[0] } @cmd;
   }
@@ -79,4 +114,17 @@ while(($passed + $failed) <= $#tests)
 
 printf("${GREEN}[%5s]${NONE} $passed\n", "PASS");
 printf("${RED}[%5s]${NONE} $failed\n", "FAIL") if $failed;
-exit($failed != 0);
+exit(0) if $failed == 0;
+
+print("\nsummary\n");
+for my $test (@tests)
+{
+  next unless $$test{exit};
+  printf("${RED}[%5s]${NONE} %3d $$test{path} @{$$test{args}}\n", "FAIL", $$test{'index'});
+  printf(" %12s : %s\n", "projdir", $$test{projdir});
+  printf(" %12s : %s\n", "ipcdir", $$test{ipcdir});
+  printf(" %12s : %s\n", "run.log", "$$test{ipcdir}/run.log");
+  printf(" %12s : %s (%s)\n", "fabd/stdout", "$$test{ipcdir}/fabd/stdout", (-s "$$test{ipcdir}/fabd/stdout" || 0));
+  printf(" %12s : %s (%s)\n", "fabd/stderr", "$$test{ipcdir}/fabd/stderr", (-s "$$test{ipcdir}/fabd/stderr" || 0));
+  system("grep -A 5 AddressSanitizer $$test{ipcdir}/fabd/stderr");
+}

@@ -14,8 +14,9 @@ use util;
 use tree;
 use bam;
 
-# module file with ambiguous reference
-my $testdir = setup(<<'TREE');
+# module file with ambiguous requires reference
+init();
+my $testdir = setup({ tolerant => 1 }, <<'TREE');
 |-- A
 |   `-- B
 |       `-- D
@@ -29,23 +30,21 @@ require D
 TREE
 
 # before
-assert_stats(undef, {
+assert { stats(undef, {
     modules => 3
   , system_state_ok => 0
-});
-assert_stats(".", {
+})};
+assert { stats(".", "-S", {
     reloaded => 0
   , modules_up => 0
   , modules_down => 2
-});
-assert_stats("module.bam+devel", {
-    parsed_try => 1
-  , parsed => 0
-});
-assert_stats("A/C/D", {
+  , parse => 1
+  , parse_ok => 1
+})};
+assert { stats("A/C/D", "-S", {
     modules_up => 1
   , modules_down => 0
-});
+})};
 
 # fix the ambiguity
 unlink("$testdir/A/B/D/module.bam+devel") or die $!;
@@ -53,21 +52,20 @@ rmdir("$testdir/A/B/D") or die $!;
 
 # after
 reconcile();
-assert_stats(undef, {
+assert { stats(undef, {
     modules => 2
   , system_state_ok => 1
-});
-assert_stats(".", {
+})};
+assert { stats(".", "-S", {
     reloaded => 1
   , modules_up => 0
   , modules_down => 1
-});
-assert_stats("module.bam+devel", {
-    parsed_try => 2
-  , parsed => 1
-});
-assert_stats("A/C/D", {
+  , parse => 1
+  , parse_ok => 1
+})};
+assert { stats("A/C/D", "-S", {
     reloaded => 1
   , modules_up => 1
   , modules_down => 0
-});
+})};
+teardown();

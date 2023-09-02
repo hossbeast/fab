@@ -1,0 +1,176 @@
+#!/usr/bin/env perl
+
+#
+# This test uses multiple var.bam files which are merged, and then asserts about the resulting
+# output of the vars and env subcommands
+#
+
+use strict;
+use warnings;
+$SIG{__WARN__} = sub { die @_ };
+
+use POSIX;
+use File::Basename;
+use Cwd;
+our $repodir;
+our $bam_basedir;
+BEGIN { $repodir = dirname(Cwd::realpath("$0/..")) }
+use lib "$repodir/integ/lib";
+use util;
+use tree;
+use bam;
+
+# build out the fstree under /tmp
+init(subdir => 'B');
+setup(<<'TREE');
+|-- var.bam+devel <<
+A : 1
+>>
+|-- B
+|   `-- module.bam+devel
+|   `-- var.bam+devel <<
+B : 1
+>>
+|-- system-config <<
+walker : {
+  special : {
+    var.bam+devel
+  }
+}
+>>
+TREE
+
+# before
+assert { stats(undef, {
+    modules => 1
+  , system_state_ok => 1
+})};
+assert { stats(".", "-S", {
+    type => 'module'
+  , state => "fresh"
+  , reloaded => 1
+  , parse => 1
+  , parse_ok => 1
+})};
+assert { stats("$bam_basedir/var.bam+devel", "-S", {
+    type => 'var'
+  , state => "fresh"
+  , parse => 1
+  , parse_ok => 1
+})};
+assert { stats("$bam_basedir/B/var.bam+devel", "-S", {
+    type => 'var'
+  , state => "fresh"
+  , parse => 1
+  , parse_ok => 1
+})};
+
+my $text;
+my $fh;
+
+$text = bam_vars();
+print("$text\n");
+assert { $text =~ /A/ };
+assert { $text =~ /B/ };
+assert { $text !~ /C/ };
+assert { $text !~ /D/ };
+
+$text = bam_env();
+print("$text\n");
+assert { $text =~ /A/ };
+assert { $text =~ /B/ };
+assert { $text !~ /C/ };
+assert { $text !~ /D/ };
+
+# modify the outer var file
+open $fh, ">", "$bam_basedir/var.bam+devel" or die $!;
+print $fh <<'TEXT';
+C : 1
+TEXT
+close $fh;
+
+reconcile();
+assert { stats(undef, {
+    modules => 1
+  , system_state_ok => 2
+})};
+assert { stats("$bam_basedir/var.bam+devel", "-S", {
+    type => 'var'
+  , state => "fresh"
+  , parse => 2
+  , parse_ok => 2
+})};
+assert { stats("$bam_basedir/B/var.bam+devel", "-S", {
+    type => 'var'
+  , state => "fresh"
+  , parse => 1
+  , parse_ok => 1
+})};
+assert { stats(".", "-S", {
+    type => 'module'
+  , state => "fresh"
+  , reloaded => 2  # invalidation of connected var file induces module reload
+  , parse => 1
+  , parse_ok => 1
+})};
+
+$text = bam_vars();
+print("$text\n");
+assert { $text !~ /A/ };
+assert { $text =~ /B/ };
+assert { $text =~ /C/ };
+assert { $text !~ /D/ };
+$text = bam_env();
+print("$text\n");
+assert { $text !~ /A/ };
+assert { $text =~ /B/ };
+assert { $text =~ /C/ };
+assert { $text !~ /D/ };
+
+# modify the inner var file
+open $fh, ">", "$bam_basedir/B/var.bam+devel" or die $!;
+print $fh <<'TEXT';
+D : 1
+TEXT
+close $fh;
+
+reconcile();
+assert { stats(undef, {
+    modules => 1
+  , system_state_ok => 3
+})};
+assert { stats("$bam_basedir/var.bam+devel", "-S", {
+    type => 'var'
+  , state => "fresh"
+  , parse => 2
+  , parse_ok => 2
+})};
+assert { stats("$bam_basedir/B/var.bam+devel", "-S", {
+    type => 'var'
+  , state => "fresh"
+  , parse => 2
+  , parse_ok => 2
+})};
+assert { stats(".", "-S", {
+    type => 'module'
+  , state => "fresh"
+  , reloaded => 3  # invalidation of connected var file induces module reload
+  , parse => 1
+  , parse_ok => 1
+})};
+
+$text = bam_vars();
+print("$text\n");
+assert { $text !~ /A/ };
+assert { $text !~ /B/ };
+assert { $text =~ /C/ };
+assert { $text =~ /D/ };
+
+$text = bam_env();
+print("$text\n");
+assert { $text !~ /A/ };
+assert { $text !~ /B/ };
+assert { $text =~ /C/ };
+assert { $text =~ /D/ };
+
+teardown();

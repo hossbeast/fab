@@ -1,0 +1,155 @@
+#!/usr/bin/env perl
+
+#
+# This test deletes a rules.bam file while it is being referenced by another module via a uses ref
+#
+
+use strict;
+use warnings;
+$SIG{__WARN__} = sub { die @_ };
+
+use POSIX;
+use File::Basename;
+use Cwd;
+our $bam_basedir;
+our $repodir;
+BEGIN { $repodir = dirname(Cwd::realpath("$0/..")) }
+use lib "$repodir/integ/lib";
+use util;
+use tree;
+use bam;
+
+# module file with ambiguous reference
+init(subdir => 'B');
+my $testdir = setup(<<TREE);
+|-- A
+|   `-- rules.bam+devel <<
+rule foo -> bar
+>>
+|   `-- foo
+|-- B
+|   `-- module.bam+devel <<
+use A
+>>
+|   `-- foo
+|-- system-config <<
+walker : {
+  include : {
+    $bam_basedir
+  }
+}
+>>
+TREE
+
+my $A_rules_id = hash64("$bam_basedir/A/rules.bam+devel");
+
+# before
+assert { stats(undef, {
+    modules => 1
+  , rules_files => 1
+  , system_state_ok => 1
+})};
+assert { stats(".", "-S", {
+    type => 'module'
+  , state => 'fresh'
+  , fresh => 1
+  , stale => 1
+  , reloaded => 1
+  , modules_up => 0
+  , modules_down => 0
+  , uses_down => 1      # one rules.bam reference
+  , rules => 0          # rules defined in module.bam
+  , parse => 1
+  , parse_ok => 1
+})};
+assert { stats(".", {
+    type => 'module-dir'
+  , rules => 1          # effective rules for this dir
+})};
+assert { stats("..", {
+    type => 'dir'
+})};
+assert { stats("../A", {
+    type => 'dir'
+})};
+assert { stats("../A/rules.bam+devel", "-S", {
+    type => "rules"
+  , state => 'fresh'
+  , parse => 1
+  , parse_ok => 1
+  , rules => 1
+  , uses_up => 1
+})};
+
+assert { ls("//module/rules/$A_rules_id", "$A_rules_id -> $bam_basedir/A/rules.bam+devel") };
+
+# delete the referent
+unlink("$testdir/A/rules.bam+devel") or die $!;
+
+reconcile(expect_error => 1); # B/module.bam+devel has unresolved use reference
+assert { stats(undef, {
+    modules => 1
+  , system_state_ok => 1
+})};
+assert { stats(".", "-S", {
+    state => 'stale'      # invalidated when the EDGE_USES edge was disconnected
+  , type => 'module'
+  , fresh => 1
+  , stale => 2
+  , reloaded => 1         # not reloaded
+  , modules_up => 0
+  , modules_down => 0
+  , uses_down => 0        # no rules.bam references
+  , rules => 0
+  , parse => 1
+  , parse_ok => 1
+})};
+assert { stats(".", {
+    type => 'module-dir'
+  , rules => 0            # no rules in effect
+})};
+assert { stats("..", {
+    type => 'dir'
+})};
+assert { stats("../A", {
+    type => 'dir'
+})};
+
+assert { enoent("//module/rules/$A_rules_id") };
+
+# delete the contents of the module file, removing the uses reference to A
+open my $fh, ">", "$bam_basedir/B/module.bam+devel" or die $!;
+close $fh;
+
+reconcile();
+assert { stats(undef, {
+    modules => 1
+  , system_state_ok => 2
+})};
+assert { stats(".", "-S", {
+    reloaded => 2         # now reloaded
+  , state => 'fresh'      # now fresh
+  , type => 'module'
+  , fresh => 2
+  , stale => 2
+  , modules_up => 0
+  , modules_down => 0
+  , uses_down => 0
+  , rules => 0
+  , parse => 2            # now re-parse_ok
+  , parse_ok => 2
+})};
+assert { stats(".", {
+    type => 'module-dir'
+  , rules => 0            # no rules in effect
+})};
+assert { stats("..", {
+    type => 'dir'
+})};
+assert { stats("../A", {
+    type => 'dir'
+})};
+
+assert { enoent("//module/rules/$A_rules_id") };
+
+teardown();

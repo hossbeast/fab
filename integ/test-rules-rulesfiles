@@ -1,0 +1,62 @@
+#!/usr/bin/env perl
+
+#
+# This test uses the rulesfiles directive in the module file in order to load an additional
+# rules file in the same directory
+#
+
+use strict;
+use warnings;
+$SIG{__WARN__} = sub { die @_ };
+
+use POSIX;
+use File::Basename;
+use Cwd;
+our $repodir;
+our $bam_basedir;
+BEGIN { $repodir = dirname(Cwd::realpath("$0/..")) }
+use lib "$repodir/integ/lib";
+use util;
+use tree;
+use bam;
+
+# build out the fstree under /tmp
+init();
+my $testdir = setup(<<TREE);
+|-- module.bam+devel <<
+rulesfiles myrules
+>>
+|-- myrules+devel <<
+rule a -> b
+>>
+TREE
+
+my $mod_id = hash64("$bam_basedir");
+my $rules_id = hash64("$bam_basedir/myrules+devel");
+
+print("$bam_basedir/myrules+devel -> $rules_id\n");
+
+# before
+assert { stats(undef, {
+    modules => 1
+  , system_state_ok => 1
+})};
+assert { stats(".", "-S", {
+    type => 'module'
+  , state => "fresh"
+  , reloaded => 1
+  , parse => 1
+  , parse_ok => 1
+})};
+assert { stats("myrules+devel", "-S", {
+    type => 'rules'
+  , state => "fresh"
+  , parse => 1
+  , parse_ok => 1
+})};
+
+my $result = bam_ls(["//modules/$mod_id/rules/$rules_id", "--no-follow"]);
+my $ref = $$result{out};
+assert { $ref eq "$rules_id -> $bam_basedir/myrules+devel" };
+
+teardown();

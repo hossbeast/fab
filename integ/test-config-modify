@@ -1,5 +1,9 @@
 #!/usr/bin/env perl
 
+#
+# This test exercises config.bam file changes
+#
+
 use strict;
 use warnings;
 $SIG{__WARN__} = sub { die @_ };
@@ -15,25 +19,27 @@ use tree;
 use bam;
 
 # config file with syntax error
+init();
 my $testdir = setup(<<'TREE');
 |-- module.bam+devel
 |-- config.bam+devel <<
-goats boats
 >>
 TREE
 
-# before
-assert_stats(undef, {
-    modules => 1
-  , system_state_ok => 0
-});
-assert_stats("config.bam+devel", {
-    parsed_try => 1
-  , parsed => 0
-  , state => 'stale'
-});
+# 1. empty config.bam file
+assert { stats(undef, {
+    system_state => 'ok'
+  , system_state_ok => 1
+  , config_files => 1
+})};
+assert { stats("config.bam+devel", "-S", {
+    type => 'config'
+  , state => 'fresh'
+  , parse => 1
+  , parse_ok => 1
+})};
 
-# config file syntax fixed
+# 2. config.bam file changed
 open my $fh, ">", "$testdir/config.bam+devel" or die $!;
 print $fh <<'TEXT';
 build : {
@@ -42,14 +48,75 @@ build : {
 TEXT
 close $fh;
 
-# after
 reconcile();
-assert_stats(undef, {
+assert { stats(undef, {
     modules => 1
-  , system_state_ok => 1
-});
-assert_stats("config.bam+devel", {
-    parsed_try => 2
-  , parsed => 1
-  , state => "fresh"
-});
+  , system_state_ok => 2
+  , config_files => 1
+})};
+assert { stats("config.bam+devel", "-S", {
+    type => 'config'
+  , state => 'fresh'
+  , parse => 2
+  , parse_ok => 2
+})};
+my $res = bam_config();
+assert { $$res{out} =~ /concurrency/ };
+
+# 3. config.bam file changed
+open $fh, ">", "$testdir/config.bam+devel" or die $!;
+print $fh <<'TEXT';
+filesystems : {
+  /foo/bar : {
+    mkdirs : false
+  }
+}
+TEXT
+close $fh;
+
+reconcile();
+assert { stats(undef, {
+    modules => 1
+  , system_state_ok => 3
+  , config_files => 1
+})};
+assert { stats("config.bam+devel", "-S", {
+    type => 'config'
+  , state => 'fresh'
+  , parse => 3
+  , parse_ok => 3
+})};
+$res = bam_config();
+assert { $$res{out} !~ /concurrency/ };
+assert { $$res{out} =~ /mkdirs : false/ };
+assert { $$res{out} !~ /mkdirs : true/ };
+
+# 4. config.bam file changed
+open $fh, ">", "$testdir/config.bam+devel" or die $!;
+print $fh <<'TEXT';
+filesystems : {
+  "/" : {
+    mkdirs : true
+  }
+}
+TEXT
+close $fh;
+
+reconcile();
+assert { stats(undef, {
+    modules => 1
+  , system_state_ok => 4
+  , config_files => 1
+})};
+assert { stats("config.bam+devel", "-S", {
+    type => 'config'
+  , state => 'fresh'
+  , parse => 4
+  , parse_ok => 4
+})};
+$res = bam_config();
+assert { $$res{out} !~ /concurrency/ };
+assert { $$res{out} !~ /mkdirs : false/ };
+assert { $$res{out} =~ /mkdirs : true/ };
+
+teardown();

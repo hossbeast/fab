@@ -1,0 +1,171 @@
+#!/usr/bin/env perl
+
+#
+# When they are outside of a mounted filesystem tree, config files are watched with file-level
+# inotify watches
+#
+
+use strict;
+use warnings;
+$SIG{__WARN__} = sub { die @_ };
+
+use POSIX;
+use File::Basename;
+use Cwd;
+our $repodir;
+our $bam_basedir;
+our $bam_invalidate;
+BEGIN { $repodir = dirname(Cwd::realpath("$0/..")) }
+use lib "$repodir/integ/lib";
+use util;
+use tree;
+use bam;
+
+# notify-specific stats assertions
+init(subdir => 'B');
+exit 0 if $bam_invalidate ne 'notify';
+
+setup(<<"TREE");
+|-- system-config
+|-- B
+|   `-- module.bam+devel
+TREE
+
+# 1. empty system-config file
+assert { stats(undef, {
+    system_state => 'ok'
+  , system_state_ok => 1
+  , config_files => 1
+# since the directory is outside the mounted trees, system-config is watched directly
+  , notify_index_count => 2
+})};
+assert { stats(".", {
+    type => 'module-dir'
+  , state => 'fresh'
+  , indexed_lookup => 1
+  , indexed_notify => 1
+})};
+assert { stats("../system-config", {
+    type => 'config-file'
+  , state => 'fresh'
+  , indexed_lookup => 0
+  , indexed_notify => 1
+})};
+assert { stats("../system-config", "-S", {
+    type => 'config'
+  , state => 'fresh'
+  , parse => 1
+  , parse_ok => 1
+})};
+
+# no user-config file but the node exists as uncreated
+assert { enoent("$bam_basedir/user-config") };
+assert { uncreated("$bam_basedir/user-config") };
+assert { stats("$bam_basedir/user-config", {
+    type => 'config-file'
+  , state => 'uncreated'
+  , indexed_lookup => 0
+  , indexed_notify => 0
+})};
+assert { stats("$bam_basedir/user-config", "-S", {
+    type => 'config'
+  , state => 'fresh'
+  , parse => 0
+  , parse_ok => 0
+})};
+
+# 2. system-config deleted
+unlink("$bam_basedir/system-config");
+
+reconcile();
+assert { stats(undef, {
+    system_state => 'ok'
+  , system_state_ok => 2
+  , config_files => 0
+  , notify_index_count => 1
+})};
+assert { stats("../system-config", {
+    type => 'config-file'
+  , state => 'uncreated'
+  , indexed_lookup => 0
+  , indexed_notify => 0
+})};
+assert { stats("../system-config", "-S", {
+    type => 'config'
+  , state => 'fresh'
+  , parse => 1
+  , parse_ok => 1
+})};
+
+# 3. system-config restored
+open my $fh, ">", "$bam_basedir/system-config" or die $!;
+print $fh <<'TEXT';
+TEXT
+close $fh;
+
+reconcile();
+assert { stats(undef, {
+    system_state => 'ok'
+  , system_state_ok => 3
+  , config_files => 1
+  , notify_index_count => 2
+})};
+assert { stats("../system-config", {
+    type => 'config-file'
+  , state => 'fresh'
+  , indexed_lookup => 0
+  , indexed_notify => 1
+})};
+assert { stats("../system-config", "-S", {
+    type => 'config'
+  , state => 'fresh'
+  , parse => 2
+  , parse_ok => 2
+})};
+
+# 4. system-config changed
+open $fh, ">", "$bam_basedir/system-config" or die $!;
+print $fh <<'TEXT';
+build : {
+  concurrency : 42
+}
+TEXT
+close $fh;
+
+reconcile();
+assert { stats(undef, {
+    system_state => 'ok'
+  , system_state_ok => 4
+  , config_files => 1
+  , notify_index_count => 2
+})};
+assert { stats("../system-config", {
+    type => 'config-file'
+  , state => 'fresh'
+  , indexed_lookup => 0
+  , indexed_notify => 1
+})};
+assert { stats("../system-config", "-S", {
+    type => 'config'
+  , state => 'fresh'
+  , parse => 3
+  , parse_ok => 3
+})};
+
+# no user-config file but the node exists as uncreated
+assert { enoent("$bam_basedir/user-config") };
+assert { uncreated("$bam_basedir/user-config") };
+assert { stats("$bam_basedir/user-config", {
+    type => 'config-file'
+  , state => 'uncreated'
+  , indexed_lookup => 0
+  , indexed_notify => 0
+})};
+assert { stats("$bam_basedir/user-config", "-S", {
+    type => 'config'
+  , state => 'fresh'
+  , parse => 0
+  , parse_ok => 0
+})};
+
+teardown();

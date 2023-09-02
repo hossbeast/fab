@@ -1,0 +1,70 @@
+#!/usr/bin/env perl
+
+#
+# This test verifies that transitive USES are applied
+#
+
+use strict;
+use warnings;
+$SIG{__WARN__} = sub { die @_ };
+
+use POSIX;
+use File::Basename;
+use Cwd;
+our $bam_basedir;
+our $repodir;
+BEGIN { $repodir = dirname(Cwd::realpath("$0/..")) }
+use lib "$repodir/integ/lib";
+use util;
+use tree;
+use bam;
+
+init(subdir => 'B');
+setup(<<TREE);
+|-- A
+|   `-- rules.bam+devel <<
+use C
+>>
+|-- B
+|   `-- foo
+|   `-- module.bam+devel <<
+use A
+>>
+|-- C
+|   `-- rules.bam+devel <<
+rule foo -> bar
+>>
+|-- system-config <<
+walker : {
+  include : {
+    $bam_basedir
+  }
+}
+>>
+TREE
+
+# before
+assert { stats(undef, {
+    modules => 1
+  , system_state_ok => 1
+})};
+assert { stats(".", "-S", {
+    type => 'module'
+  , state => 'fresh'
+  , reloaded => 1
+  , modules_up => 0
+  , modules_down => 0
+  , uses_down => 2    # A, and C
+  , parse => 1
+  , parse_ok => 1
+})};
+assert { stats(".", {
+    type => 'module-dir'
+  , rules => 1        # rule from C is applied
+})};
+assert { stats("../C/rules.bam+devel", {
+    type => 'rules-file'
+  , state => 'fresh'
+})};
+
+teardown();

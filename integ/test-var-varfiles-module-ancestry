@@ -1,0 +1,69 @@
+#!/usr/bin/env perl
+
+#
+# This test uses the varfiles directive in the module file in order to load additional
+# var files in the module base dir ancestry
+#
+
+use strict;
+use warnings;
+$SIG{__WARN__} = sub { die @_ };
+
+use POSIX;
+use File::Basename;
+use Cwd;
+our $repodir;
+our $bam_basedir;
+BEGIN { $repodir = dirname(Cwd::realpath("$0/..")) }
+use lib "$repodir/integ/lib";
+use util;
+use tree;
+use bam;
+
+# build out the fstree under /tmp
+init(subdir => 'B');
+my $testdir = setup(<<TREE);
+|-- B
+|   `-- module.bam+devel <<
+varfiles myvar
+>>
+|-- myvar+devel <<
+a : 42
+>>
+|-- system-config <<
+walker : {
+  special : {
+    myvar+devel
+  }
+}
+>>
+TREE
+
+my $mod_id = hash64("$bam_basedir/B");
+my $var_id = hash64("$bam_basedir/myvar+devel");
+
+# before
+assert { stats(undef, {
+    modules => 1
+  , system_state_ok => 1
+})};
+assert { stats(".", "-S", {
+    type => 'module'
+  , state => "fresh"
+  , reloaded => 1
+  , parse => 1
+  , parse_ok => 1
+})};
+assert { stats("$bam_basedir/myvar+devel", "-S", {
+    type => 'var'
+  , state => "fresh"
+  , parse => 1
+  , parse_ok => 1
+})};
+
+my $result = bam_ls(["//modules/$mod_id/var/$var_id", "--no-follow"]);
+my $ref = $$result{out};
+print("$ref\n");
+assert { $ref eq "$var_id -> $bam_basedir/myvar+devel" };
+
+teardown();

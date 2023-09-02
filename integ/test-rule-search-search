@@ -1,0 +1,75 @@
+#!/usr/bin/env perl
+
+#
+# This test has a one-to-one bind rule whose target is a file. Since only directories are indexed
+# for lookup, the lookup pattern must specify the file-type qualifier (.).
+#
+
+use strict;
+use warnings;
+$SIG{__WARN__} = sub { die @_ };
+
+use POSIX;
+use File::Basename;
+use Cwd;
+our $bam_basedir;
+our $bam_projdir;
+our $repodir;
+BEGIN { $repodir = dirname(Cwd::realpath("$0/..")) }
+use lib "$repodir/integ/lib";
+use util;
+use tree;
+use bam;
+
+init();
+setup(<<TREE);
+|-- foo
+|-- bar
+|-- module.bam+devel <<
+rule { id : 1 } search foo [*] -> [*] search bar
+>>
+|-- system-config <<
+filesystems : {
+  / : {
+    indexed : false
+  }
+  $bam_basedir : {
+    indexed : true
+  }
+}
+walker : {
+  include : {
+    $bam_basedir
+  }
+}
+>>
+TREE
+
+my $foo_A_id = hash64("$bam_basedir/A/foo");
+
+# before
+assert { stats(undef, {
+    modules => 1
+  , system_state_ok => 1
+  , fsent_index_del => 0
+  , rule_run => 1
+})};
+assert { stats(".", "-S", {
+    type => 'module'
+  , state => 'fresh'
+  , reloaded => 1
+  , parse => 1
+  , parse_ok => 1
+})};
+assert {
+  stats("//module/rma/1", {
+      rule_run => 1
+    , rule_run_ok => 1
+    , search_hits => 2
+    , generate_hits => 0
+    , formula_hits => 0
+    , target_hits => 0
+    , attachment_hits => 0
+})};
+
+teardown();

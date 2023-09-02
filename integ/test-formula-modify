@@ -15,56 +15,72 @@ use tree;
 use bam;
 
 # build out the fstree under /tmp
+init();
 my $testdir = setup(<<'TREE');
 |-- module.bam+devel <<
 rule -- boats : foo.bam
-rule boats -> //module/targets
+rule boats -> //targets
 >>
 |-- foo.bam << 0777
 #!/usr/bin/env perl
-open FH, ">", $ENV{bm_target} or die $!;
+open FH, ">", $ENV{bm_target0} or die $!;
 print FH "v1\n";
 close FH;
 >>
 TREE
 
 # before
-assert_stats(undef, {
+assert {
+  stats(undef, {
     modules => 1
   , system_state_ok => 1
-});
-assert_stats(".", {
-    reloaded => 1
+})};
+assert {
+  stats(".", "-S", {
+    type => "module"
+  , state => 'fresh'
+  , reloaded => 1
   , state => "fresh"
-});
-assert_stats("module.bam+devel", {
-    parsed_try => 1
-  , parsed => 1
-  , state => "fresh"
-});
-assert_stats("foo.bam", {
+  , parse => 1
+  , parse_ok => 1
+})};
+assert {
+  stats("foo.bam", "-S", {
     state => "fresh"
-  , parsed => 1
-  , parsed_try => 1
-});
-assert_stats("boats", {
-    state => "uncreated"
-});
+  , parse_ok => 1
+  , parse => 1
+})};
+assert {
+  stats("boats", {
+    type => 'file'
+  , state => "uncreated"
+  , stale => 0
+  , fresh => 0
+})};
 
 # build - creates the file
 build();
-assert_stats(undef, {
+assert {
+  stats(undef, {
     modules => 1
-  , system_state_ok => 2
-});
-assert_stats("foo.bam", {
-    state => "fresh"
-  , parsed => 1
-  , parsed_try => 1
-});
-assert_stats("boats", {
-    state => "fresh"
-});
+  , system_state_ok => 3      # once for formula-reconcile -> ok, once for build -> ok
+})};
+assert {
+  stats("foo.bam", "-S", {
+    type => 'formula'
+  , state => "fresh"
+  , parse => 1
+  , parse_ok => 1
+  , fresh => 1
+  , stale => 1
+})};
+assert {
+  stats("boats", {
+    type => 'file'
+  , state => "fresh"
+  , stale => 0
+  , fresh => 1                # freshened by the build outcome
+})};
 
 # boats - created by the v1 formula
 assert_file("$testdir/boats", "v1");
@@ -73,48 +89,64 @@ assert_file("$testdir/boats", "v1");
 open my $fh, ">", "$testdir/foo.bam" or die $!;
 print $fh <<'TEXT';
 #!/usr/bin/env perl
-open FH, ">", $ENV{bm_target} or die $!;
+open FH, ">", $ENV{bm_target0} or die $!;
 print FH "v2\n";
 close FH;
 TEXT
 close $fh;
 chmod 0777, "$testdir/foo.bam" or die $!;
-
 reconcile();
 
 # foo.bam node will have been re-created by running the rule, boats will have been invalidated
-assert_stats(undef, {
+assert {
+  stats(undef, {
     modules => 1
-  , system_state_ok => 3
-});
-assert_stats(".", {
-    reloaded => 2
+  , system_state_ok => 4
+})};
+assert {
+  stats(".", "-S", {
+    type => "module"
+  , state => 'fresh'
+  , reloaded => 1       # module not reloaded
+  , parse => 1
+  , parse_ok => 1
+})};
+assert {
+  stats("foo.bam", "-S", {
+    type => 'formula'
   , state => "fresh"
-});
-assert_stats("module.bam+devel", {
-    parsed_try => 2
-  , parsed => 2
-  , state => "fresh"
-});
-assert_stats("foo.bam", {
-    state => "fresh"
-  , parsed => 2
-  , parsed_try => 2
-});
-assert_stats("boats", {
-    state => "stale"
-});
+  , parse => 2
+  , parse_ok => 2
+  , fresh => 2          # re-loaded
+  , stale => 2
+})};
+assert {
+  stats("boats", {
+    type => 'file'
+  , state => "stale"    # invalidated by the rule attached to the fml
+  , stale => 1
+  , fresh => 1
+})};
 
 # build - re-create the file
 build();
-assert_stats("foo.bam", {
-    state => "fresh"
-  , parsed => 2
-  , parsed_try => 2
-});
-assert_stats("boats", {
-    state => "fresh"
-});
+assert {
+  stats("foo.bam", "-S", {
+    type => 'formula'
+  , state => "fresh"
+  , parse => 2
+  , parse_ok => 2
+  , fresh => 2          # re-loaded
+  , stale => 2
+})};
+assert {
+  stats("boats", {
+    type => 'file'
+  , state => "fresh"
+  , stale => 1
+  , fresh => 2          # freshened by the build outcome
+})};
 
 # boats - created by the v2 formula
 assert_file("$testdir/boats", "v2");
+teardown();

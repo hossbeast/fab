@@ -1,5 +1,10 @@
 #!/usr/bin/env perl
 
+#
+# This test has a rule which references a formula that does not yet exist. Then it creates the formula
+# file, reconciles, and verifies that the rules' formula reference has now resolved.
+#
+
 use strict;
 use warnings;
 $SIG{__WARN__} = sub { die @_ };
@@ -15,68 +20,68 @@ use tree;
 use bam;
 
 # build out the fstree under /tmp
-my $testdir = setup(<<'TREE');
+init();
+my $testdir = setup({ tolerant => 1 }, <<'TREE');
 |-- module.bam+devel <<
 # references a non-existent formula
 rule -- boats : foo.bam
-rule boats -> //module/targets
+rule boats -> //targets
 >>
 TREE
 
 # before
-assert_stats(undef, {
+assert {
+  stats(undef, {
     modules => 1
   , system_state_ok => 0
-});
-assert_stats(".", {
-    reloaded => 1
-  , state => "fresh"
-});
-assert_stats("module.bam+devel", {
-    parsed_try => 1
-  , parsed => 1
-  , state => "fresh"
-});
-assert_stats("foo.bam", {
-    parsed_try => 0
-  , parsed => 0
-  , state => "uncreated"
-});
+})};
+assert {
+  stats(".", "-S", {
+    type => "module"
+  , state => 'fresh'
+  , reloaded => 1
+  , parse => 1
+  , parse_ok => 1
+})};
 
 # appearance of the formula which is referenced by a rule
 open my $fh, ">>", "$testdir/foo.bam" or die $!;
 print $fh <<'TEXT';
 #!/usr/bin/env perl
-open FH, ">>", $ENV{bm_target} or die $!;
+open FH, ">>", $ENV{bm_target0} or die $!;
 print FH "hi\n";
 close FH;
 TEXT
 close $fh;
 chmod 0777, "$testdir/foo.bam" or die $!;
 
-# the module has *NOT* been reloaded
 reconcile();
-assert_stats(undef, {
+assert {
+  stats(undef, {
     modules => 1
   , system_state_ok => 1
-});
-assert_stats(".", {
-    reloaded => 1
+})};
+assert {
+  stats(".", "-S", {
+    type => "module"
+  , state => 'fresh'
+  , reloaded => 1         # module NOT reloaded
   , state => "fresh"
-});
-assert_stats("module.bam+devel", {
-    parsed_try => 1
-  , parsed => 1
+  , parse => 1
+  , parse_ok => 1
+})};
+assert {
+  stats("foo.bam", "-S", {
+    type => 'formula'
   , state => "fresh"
-});
-assert_stats("foo.bam", {
-    parsed_try => 1
-  , parsed => 1
-  , state => "fresh"
-});
+  , parse => 1
+  , parse_ok => 1
+})};
 
 # build - the file should be created
 build();
-assert_stats("boats", {
+assert {
+  stats("boats", {
     state => "fresh"
-});
+})};
+teardown();

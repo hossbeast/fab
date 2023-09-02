@@ -1,0 +1,70 @@
+#!/usr/bin/env perl
+
+#
+# This test verifies that when rule reconciliation does not complete, subsequent
+# reconciliation attempts continue to not succeed, since nothing has changed
+#
+
+use strict;
+use warnings;
+$SIG{__WARN__} = sub { die @_ };
+
+use POSIX;
+use File::Basename;
+use Cwd;
+our $repodir;
+our $bam_projhash;
+BEGIN { $repodir = dirname(Cwd::realpath("$0/..")) }
+use lib "$repodir/integ/lib";
+use util;
+use tree;
+use bam;
+
+#
+# phase 1
+#
+init();
+setup({ tolerant => 1 }, <<'TREE');
+|-- module.bam+devel <<
+rule foo
+>>
+TREE
+
+assert { stats(undef, {
+    modules => 1
+  , system_state_ok => 0
+})};
+assert { stats(".", "-S", {
+    type => 'module'
+  , state => 'stale'
+  , reloaded => 0
+  , rules => 0
+  , parse => 1
+  , parse_ok => 0
+})};
+
+my $md = bam_metadata();
+assert { $$md{"system-state"} ne "ok" };
+
+#
+# phase 2
+#
+reconcile(expect_error => 1);
+
+assert { stats(undef, {
+    modules => 1
+  , system_state_ok => 0
+})};
+assert { stats(".", "-S", {
+    type => 'module'
+  , state => 'stale'
+  , reloaded => 0
+  , rules => 0
+  , parse => 2
+  , parse_ok => 0
+})};
+
+$md = bam_metadata();
+assert { $$md{"system-state"} ne "ok" };
+
+teardown();

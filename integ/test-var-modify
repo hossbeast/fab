@@ -15,59 +15,64 @@ use tree;
 use bam;
 
 # build out the fstree under /tmp
+init();
 my $testdir = setup(<<'TREE');
 |-- module.bam+devel
 |-- var.bam+devel <<
-lflags.devel : [
+lflags : [
   -lasan -lubsan
 ]
 >>
 TREE
 
 # before
-assert_stats(undef, {
+assert { stats(undef, {
     modules => 1
   , system_state_ok => 1
-});
-assert_stats(".", {
-    reloaded => 1
+})};
+assert { stats(".", "-S", {
+    type => 'module'
   , state => "fresh"
-});
-assert_stats("module.bam+devel", {
-    parsed_try => 1
-  , parsed => 1
+  , reloaded => 1
+  , parse => 1
+  , parse_ok => 1
+})};
+assert { stats("var.bam+devel", "-S", {
+    parse => 1
+  , parse_ok => 1
   , state => "fresh"
-});
-assert_stats("var.bam+devel", {
-    parsed_try => 1
-  , parsed => 1
-  , state => "fresh"
-});
+})};
+
+print(bam_vars(), "\n");
 
 # modify the var file
 open my $fh, ">>", "$testdir/var.bam+devel" or die $!;
 print $fh <<'TEXT';
-lflags.devel : [ -lpcre ]
+lflags : [
+  -lpcre
+]
 TEXT
 close $fh;
 
-# after - var file change in same dir has invalidated the module
+# after - var file change in same dir causes the module to be reloaded
 reconcile();
-assert_stats(undef, {
+assert { stats(undef, {
     modules => 1
   , system_state_ok => 2
-});
-assert_stats(".", {
-    reloaded => 2
+})};
+assert { stats(".", "-S", {
+    type => 'module'
   , state => "fresh"
-});
-assert_stats("module.bam+devel", {
-    parsed_try => 2
-  , parsed => 2
+  , reloaded => 2
+  , parse => 1
+  , parse_ok => 1
+})};
+assert { stats("var.bam+devel", "-S", {
+    parse => 2
+  , parse_ok => 2
   , state => "fresh"
-});
-assert_stats("var.bam+devel", {
-    parsed_try => 2
-  , parsed => 2
-  , state => "fresh"
-});
+})};
+
+print(bam_vars(), "\n");
+
+teardown();

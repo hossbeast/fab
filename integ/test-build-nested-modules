@@ -1,0 +1,148 @@
+#!/usr/bin/env perl
+
+use strict;
+use warnings;
+$SIG{__WARN__} = sub { die @_ };
+
+use POSIX;
+use File::Basename;
+use Cwd;
+our $repodir;
+our $bam_projdir;
+BEGIN { $repodir = dirname(Cwd::realpath("$0/..")) }
+use lib "$repodir/integ/lib";
+use util;
+use tree;
+use bam;
+
+# build out the fstree under /tmp
+init(subdir => 'B');
+setup(<<'TREE');
+|-- system-config <<
+formula : {
+  path : {
+    dirs : {
+      /usr/bin
+    }
+  }
+}
+>>
+|-- B
+|   `-- cp.bam << 0777
+file : {
+  path-search : cp    # this needs the config to resolve
+}
+args : [
+  $bm_source0
+  $bm_target0
+]
+>>
+|   `-- rules.bam+devel <<
+rule { id : 1 } (*).c -> $^D/$1.o : cp.bam
+>>
+|   `-- module.bam+devel <<
+rule { id : 2 } {foo,bar}.o [*] -> cores : cp.bam
+rule { id : 3 } cores -> //targets
+>>
+|   `-- foo.c
+|   `-- bar.c
+|   `-- C
+|       `-- module.bam+devel <<
+rule { id : 4 } baz.o -> //targets
+>>
+|       `-- baz.c
+TREE
+
+assert { stats(undef, { modules => 2 })}; # B, B/C
+assert { stats(".", "-S", {
+    type => 'module'
+  , state => 'fresh'
+  , reloaded => 1
+  , modules_up => 0
+  , modules_down => 1
+  , parse => 1
+  , parse_ok => 1
+  , fresh => 1
+  , stale => 1
+  , rules => 2
+})};
+assert { stats(".", {
+    type => 'module-dir'
+  , rules => 3
+})};
+
+my $B_id = hash64("$bam_projdir");
+my $C_id = hash64("$bam_projdir/C");
+
+assert { stats("//modules/$B_id/rma/1", { rule_run_ok => 2 })}; # initial rule executions create fsents in the
+assert { stats("//modules/$B_id/rma/2", { rule_run_ok => 3 })}; # matched dirnode, which invalidate that node and
+assert { stats("//modules/$B_id/rma/3", { rule_run_ok => 2 })}; # cause the rules attached there to be run again
+assert { stats("//modules/$C_id/rma/4", { rule_run_ok => 2 })};
+
+# intermediate and final file were created
+build();
+
+assert { stats(undef, { modules => 2 })}; # B, B/C
+assert { stats(".", "-S", {
+    type => 'module'
+  , state => 'fresh'
+  , reloaded => 1
+  , modules_up => 0
+  , modules_down => 1
+  , parse => 1
+  , parse_ok => 1
+  , fresh => 1
+  , stale => 1
+  , rules => 2
+})};
+assert { stats(".", {
+    type => 'module-dir'
+  , rules => 3
+})};
+
+assert_file("$bam_projdir/foo.o");
+assert_file("$bam_projdir/bar.o");
+assert_file("$bam_projdir/cores");
+assert_file("$bam_projdir/C/baz.o");
+assert { stats("//modules/$B_id/rma/1", { rule_run_ok => 2 })}; # initial rule executions create fsents in the
+assert { stats("//modules/$B_id/rma/2", { rule_run_ok => 3 })}; # matched dirnode, which invalidate that node and
+assert { stats("//modules/$B_id/rma/3", { rule_run_ok => 2 })}; # cause the rules attached there to be run again
+assert { stats("//modules/$C_id/rma/4", { rule_run_ok => 2 })};
+
+# delete the intermediate files only
+unlink("$bam_projdir/foo.o") or die $!;
+unlink("$bam_projdir/bar.o") or die $!;
+unlink("$bam_projdir/C/baz.o") or die $!;
+reconcile();
+
+build();
+assert_file("$bam_projdir/foo.o");
+assert_file("$bam_projdir/bar.o");
+assert_file("$bam_projdir/cores");
+assert_file("$bam_projdir/C/baz.o");
+
+# delete the final files only
+unlink("$bam_projdir/cores") or die $!;
+unlink("$bam_projdir/C/baz.o") or die $!;
+reconcile();
+
+build();
+assert_file("$bam_projdir/foo.o");
+assert_file("$bam_projdir/bar.o");
+assert_file("$bam_projdir/cores");
+assert_file("$bam_projdir/C/baz.o");
+
+# delete both intermediate and final files
+unlink("$bam_projdir/foo.o") or die $!;
+unlink("$bam_projdir/bar.o") or die $!;
+unlink("$bam_projdir/cores") or die $!;
+unlink("$bam_projdir/C/baz.o") or die $!;
+reconcile();
+
+build();
+assert_file("$bam_projdir/foo.o");
+assert_file("$bam_projdir/bar.o");
+assert_file("$bam_projdir/cores");
+assert_file("$bam_projdir/C/baz.o");
+
+teardown();

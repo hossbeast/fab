@@ -1,0 +1,69 @@
+#!/usr/bin/env perl
+
+use strict;
+use warnings;
+$SIG{__WARN__} = sub { die @_ };
+
+use POSIX;
+use File::Basename;
+use Cwd;
+our $repodir;
+BEGIN { $repodir = dirname(Cwd::realpath("$0/..")) }
+use lib "$repodir/integ/lib";
+use util;
+use tree;
+use bam;
+
+# build out the fstree under /tmp
+init();
+my $testdir = setup(<<TREE);
+|-- module.bam+devel
+TREE
+
+# before
+assert { stats(undef, {
+    modules => 1
+  , system_state_ok => 1
+})};
+assert { stats(".", "-S", {
+    type => 'module'
+  , state => "fresh"
+  , reloaded => 1
+  , parse => 1
+  , parse_ok => 1
+})};
+
+open my $fh, ">>", "$testdir/varfile" or die $!;
+print $fh <<'TEXT';
+lflags : [
+  -lasan -lubsan
+]
+TEXT
+close $fh;
+symlink("varfile", "$testdir/var.bam+devel") or die;
+
+# after - appearance of var file in same dir has invalidated the module
+reconcile();
+assert { stats(undef, {
+    modules => 1
+  , system_state_ok => 2
+})};
+assert { stats(".", "-S", {
+    type => 'module'
+  , state => "fresh"
+  , reloaded => 2
+  , state => "fresh"
+  , parse => 1
+  , parse_ok => 1
+})};
+assert { stats("var.bam+devel", "-S", {
+    type => 'var'
+  , state => "fresh"
+  , parse => 1
+  , parse_ok => 1
+})};
+
+my $vars = bam_vars();
+print("$vars\n");
+
+teardown();

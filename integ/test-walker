@@ -1,0 +1,59 @@
+#!/usr/bin/env perl
+
+#
+# This test changes the walker configuration so that portions of the filesystem tree
+# which previously had been in use, are no longer in use.
+#
+
+use strict;
+use warnings;
+$SIG{__WARN__} = sub { die @_ };
+
+use POSIX;
+use File::Basename;
+use Cwd;
+our $repodir;
+our $bam_basedir;
+BEGIN { $repodir = dirname(Cwd::realpath("$0/..")) }
+use lib "$repodir/integ/lib";
+use util;
+use tree;
+use bam;
+
+init(subdir => 'B');
+setup(<<"TREE");
+|-- module.bam+devel
+|-- A
+|   `-- foo
+|       `-- bar
+|   `-- baz
+|       `-- qux
+|-- B
+|   `-- module.bam+devel <<
+>>
+|-- system-config <<
+walker : {
+  exclude : {
+    foo
+  }
+  include : {
+    $bam_basedir
+  }
+}
+>>
+TREE
+
+# before
+assert {
+  stats(undef, {
+    modules => 1
+})};
+assert { stats(".", "-S", {
+    type => 'module'
+  , state => 'fresh'
+  , reloaded => 1
+  , parse => 1
+  , parse_ok => 1
+})};
+
+teardown();

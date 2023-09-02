@@ -1,0 +1,82 @@
+#!/usr/bin/env perl
+
+#
+# This test exercises the case where a formula needs to use the targets' transitive
+# dependencies and those are instantiated by a separate rule from the one that assigns
+# the formula to the target(s)
+#
+
+use strict;
+use warnings;
+$SIG{__WARN__} = sub { die @_ };
+
+use POSIX;
+use File::Basename;
+use Cwd;
+our $repodir;
+BEGIN { $repodir = dirname(Cwd::realpath("$0/..")) }
+use lib "$repodir/integ/lib";
+use util;
+use tree;
+use bam;
+
+init();
+my $testdir = setup(<<'TREE');
+|-- 1 <<
+1
+>>
+|-- 2 <<
+2
+>>
+|-- module.bam+devel <<
+rule 1 -> 3
+rule 2 -> 3
+rule -- 3 : sum.bam
+rule -- 4 : mk4.bam
+rule {1,2,3,4} [*] -> 10 : sum.bam
+rule 10 -> //targets
+>>
+|-- mk4.bam << 0777
+#!/usr/bin/env perl
+open OFH, ">", $ENV{bm_target0} or die $!;
+print OFH "4\n";
+>>
+|-- sum.bam << 0777
+#!/usr/bin/env perl
+my $sum = 0;
+for(my $x = 0; $x <= $#ARGV; $x++) {
+  open IFH, "<", $ARGV[$x] or die $!;
+  while((my $c = readline(IFH))) {
+    chomp $c;
+    $sum += int($c);
+  }
+  close IFH;
+}
+open OFH, ">", $ENV{bm_target0} or die $!;
+print OFH "$sum\n";
+close OFH;
+
+__DATA__
+args : [
+  sequence : [
+    select : [
+      targets
+      traverse : {
+        direction : down
+        graph : depends
+        min-distance : 1
+      }
+    ]
+    property : relpath
+  ]
+]
+>>
+TREE
+
+build();
+
+assert { snarf("$testdir/3") eq "3" };
+assert { snarf("$testdir/4") eq "4" };
+assert { snarf("$testdir/10") eq "10" };
+
+teardown();

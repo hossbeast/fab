@@ -1,0 +1,76 @@
+#!/usr/bin/env perl
+
+#
+# This test references a formula with a bind rule
+#
+
+use strict;
+use warnings;
+$SIG{__WARN__} = sub { die @_ };
+
+use POSIX;
+use File::Basename;
+use Cwd;
+our $bam_basedir;
+our $repodir;
+BEGIN { $repodir = dirname(Cwd::realpath("$0/..")) }
+use lib "$repodir/integ/lib";
+use util;
+use tree;
+use bam;
+
+init(subdir => 'B');
+my $testdir = setup(<<TREE);
+|-- A
+|   `-- rules.bam+devel <<
+>>
+|   `-- cp.bam+devel << 0777
+#!/usr/bin/env perl
+open A, "<", \$ENV{bm_source0} or die \$!;
+open B, ">", \$ENV{bm_target0} or die \$!;
+while(<A>)
+{
+  print B "\$_";
+}
+>>
+|-- B
+|   `-- cores.c <<
+foo
+>>
+|   `-- module.bam+devel <<
+bind A => //A
+rule cores.c -> cores.o : //A/cp.bam+devel
+rule cores.o -> //targets
+>>
+|-- system-config <<
+walker : {
+  include : {
+    $bam_basedir
+  }
+}
+>>
+TREE
+
+# before
+assert { stats(undef, {
+    modules => 1
+  , system_state_ok => 1
+})};
+assert { stats(".", "-S", {
+    type => 'module'
+  , state => 'fresh'
+  , reloaded => 1
+  , modules_up => 0
+  , modules_down => 0
+  , parse => 1
+  , parse_ok => 1
+})};
+assert { stats(".", "-S", {
+    type => 'module'
+  , rules => 3        # rule from C is applied
+})};
+
+build();
+assert_file("$testdir/B/cores.c", "foo");
+assert_file("$testdir/B/cores.o", "foo");
+teardown();

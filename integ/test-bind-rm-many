@@ -1,0 +1,119 @@
+#!/usr/bin/env perl
+
+#
+# This test has a one-to-many bind rule whose target-set changes
+#
+
+use strict;
+use warnings;
+$SIG{__WARN__} = sub { die @_ };
+
+use POSIX;
+use File::Basename;
+use Cwd;
+our $bam_basedir;
+our $bam_projdir;
+our $repodir;
+BEGIN { $repodir = dirname(Cwd::realpath("$0/..")) }
+use lib "$repodir/integ/lib";
+use util;
+use tree;
+use bam;
+
+init(subdir => 'C');
+setup({tolerant => 1 }, <<TREE);
+|-- A
+|   `-- foo
+|       `-- bar
+|-- C
+|   `-- module.bam+devel <<
+bind { id : 1 } foo => [*] //foo
+>>
+|-- system-config <<
+filesystems : {
+  / : {
+    indexed : false
+  }
+  $bam_basedir : {
+    indexed : true
+  }
+}
+walker : {
+  include : {
+    $bam_basedir
+  }
+}
+>>
+TREE
+
+my $foo_A_id = hash64("$bam_basedir/A/foo");
+
+# 1. one target
+assert {
+  stats(undef, {
+    modules => 1
+  , system_state_ok => 1
+  , fsent_index_put => 4    # indexed operations
+  , fsent_index_del => 0
+  , fsent_index_count => 4  # indexed nodes
+  , rule_run => 1
+})};
+assert {
+  stats(".", "-S", {
+    type => 'module'
+  , state => 'fresh'
+  , reloaded => 1
+  , parse => 1
+  , parse_ok => 1
+})};
+assert {
+  stats("//module/rma/1", {
+      rule_run => 1
+    , rule_run_ok => 1        # bind rule was invalidated, and re-run
+    , search_hits => 0
+    , generate_hits => 0
+    , formula_hits => 0
+    , target_hits => 1
+    , attachment_hits => 1
+})};
+
+assert { ls("//foo", "foo - shadow-dir fresh", "--max-distance", "0") };
+assert { ls("//foo/$foo_A_id", "$foo_A_id -> $bam_basedir/A/foo") };
+
+# 2. no targets - error
+unlink("$bam_basedir/A/foo/bar");
+rmdir("$bam_basedir/A/foo");
+reconcile(tolerant => 1);
+
+assert {
+  stats(undef, {
+    modules => 1
+  , system_state_ok => 1
+  , fsent_index_put => 4    # index operations
+  , fsent_index_del => 1
+  , fsent_index_count => 3  # indexed nodes
+  , rule_run => 2
+})};
+assert {
+  stats(".", "-S", {
+    type => 'module'
+  , state => 'fresh'
+  , reloaded => 1
+  , parse => 1
+  , parse_ok => 1
+})};
+assert {
+  stats("//module/rma/1", {
+      rule_run => 2
+    , rule_run_ok => 1        # bind rule was invalidated, and re-run
+    , search_hits => 0
+    , generate_hits => 0
+    , formula_hits => 0
+    , target_hits => 0        # nomatch
+    , attachment_hits => 1
+})};
+
+assert { ls("//foo", "foo - shadow-dir fresh", "--max-distance", "0") };
+assert { enoent("//foo/$foo_A_id") };
+
+teardown();

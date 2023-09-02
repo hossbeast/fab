@@ -1,0 +1,89 @@
+#!/usr/bin/env perl
+
+#
+# This test deletes a directory with a file in it
+#
+
+use strict;
+use warnings;
+$SIG{__WARN__} = sub { die @_ };
+
+use POSIX;
+use File::Basename;
+use Cwd;
+our $repodir;
+our $bam_invalidate;
+our $bam_basedir;
+BEGIN { $repodir = dirname(Cwd::realpath("$0/..")) }
+use lib "$repodir/integ/lib";
+use util;
+use tree;
+use bam;
+
+init();
+setup(<<TREE);
+|-- A
+|   `-- foo
+|-- module.bam+devel
+TREE
+
+# /run/fab-integ/testdir
+# /run/fab-integ/testdir/A
+my $watched_dirs = 2;
+
+my $stats = bam_stats(undef);
+my $fsents_before = $$stats{fsents};
+
+assert {
+  stats(undef, {
+    modules => 1
+  , notify_index_count => ($bam_invalidate eq "notify") ? $watched_dirs : 0
+})};
+assert { stats("$bam_basedir", {
+    type => 'module-dir'
+  , state => 'fresh'
+  , indexed_lookup => 1
+  , indexed_notify => ($bam_invalidate eq "notify") ? 1 : 0
+})};
+assert { stats("$bam_basedir/A", {
+    type => 'dir'
+  , state => 'fresh'
+  , indexed_lookup => 1
+  , indexed_notify => ($bam_invalidate eq "notify") ? 1 : 0
+})};
+
+# state of the module file
+# state of the module directory
+assert {
+  stats($bam_basedir, "-S", {
+    type => 'module'
+  , state => 'fresh'
+  , fresh => 1
+  , stale => 1
+  , reloaded => 1
+})};
+
+# delete the subdirectory
+unlink("$bam_basedir/A/foo") or die $!;
+rmdir("$bam_basedir/A") or die $!;
+reconcile();
+
+$stats = bam_stats(undef);
+my $fsents_after = $$stats{fsents};
+assert { $fsents_after == $fsents_before - 2 };
+
+assert {
+  stats(undef, {
+    modules => 1
+                      # watch for A was removed
+  , notify_index_count => ($bam_invalidate eq "notify") ? ($watched_dirs - 1) : 0
+})};
+assert {
+  stats($bam_basedir, "-S", {
+    type => 'module'
+  , state => 'fresh'
+  , fresh => 1
+  , stale => 1
+  , reloaded => 1
+})};
+teardown();

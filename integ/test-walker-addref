@@ -1,0 +1,91 @@
+#!/usr/bin/env perl
+
+#
+# This test changes the walker configuration so that a new portion of the filesystem
+# tree becomes visible
+#
+
+use strict;
+use warnings;
+$SIG{__WARN__} = sub { die @_ };
+
+use POSIX;
+use File::Basename;
+use Cwd;
+our $repodir;
+our $bam_basedir;
+BEGIN { $repodir = dirname(Cwd::realpath("$0/..")) }
+use lib "$repodir/integ/lib";
+use util;
+use tree;
+use bam;
+
+init(subdir => 'B');
+setup(<<"TREE");
+|-- module.bam+devel
+|-- A
+|   `-- foo
+|       `-- bar
+|   `-- baz
+|       `-- qux
+|-- B
+|   `-- module.bam+devel <<
+>>
+|-- system-config <<
+walker : {
+  include : {
+    $bam_basedir/A/foo    # hides A/baz
+  }
+}
+>>
+TREE
+
+# before
+assert {
+  stats(undef, {
+    modules => 1
+})};
+assert {
+  stats(".", "-S", {
+      type => 'module'
+    , state => 'fresh'
+    , reloaded => 1
+    , parse => 1
+    , parse_ok => 1
+})};
+
+assert { eexists("$bam_basedir/A/foo/bar") };
+assert { eexists("$bam_basedir/A/foo") };
+assert { enoent("$bam_basedir/A/baz/qux") };
+assert { enoent("$bam_basedir/A/baz") };
+
+open FH, ">$bam_basedir/system-config" or die $!;
+print FH <<TREE;
+walker : {
+  include : {
+    $bam_basedir/A        # one level higher
+  }
+}
+TREE
+close FH;
+reconcile();
+
+# after
+assert {
+  stats(undef, {
+    modules => 1
+})};
+assert {
+  stats(".", "-S", {
+      type => 'module'
+    , state => 'fresh'
+    , reloaded => 1
+    , parse => 1
+    , parse_ok => 1
+})};
+assert { eexists("$bam_basedir/A/foo/bar") };
+assert { eexists("$bam_basedir/A/foo") };
+assert { eexists("$bam_basedir/A/baz/qux") };
+assert { eexists("$bam_basedir/A/baz") };
+
+teardown();

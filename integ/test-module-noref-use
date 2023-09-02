@@ -1,0 +1,85 @@
+#!/usr/bin/env perl
+
+#
+# This test has a module file with a use reference that initially does not resolve
+# The target rules.bam file is created, and then the reference resolves.
+#
+
+use strict;
+use warnings;
+$SIG{__WARN__} = sub { die @_ };
+
+use POSIX;
+use File::Basename;
+use Cwd;
+our $repodir;
+BEGIN { $repodir = dirname(Cwd::realpath("$0/..")) }
+use lib "$repodir/integ/lib";
+use util;
+use tree;
+use bam;
+
+# unresolved use ref
+init();
+my $testdir = setup({tolerant => 1}, <<'TREE');
+|-- A
+|   `-- B
+`-- module.bam+devel <<
+use A
+>>
+TREE
+
+# before - reconciliation did not complete
+assert { stats(undef, {
+    modules => 1
+  , rules_files => 0
+  , system_state_ok => 0
+})};
+# module was not reloaded
+assert { stats(".", "-S", {
+    type => "module"
+  , state => "stale"
+  , reloaded => 0
+  , modules_up => 0
+  , modules_down => 0
+# module file was parse_ok
+  , parse => 1
+  , parse_ok => 1
+})};
+assert { enoent("A/rules.bam+devel") };
+
+# create the referent
+open my $fh, ">>", "$testdir/A/rules.bam+devel" or die $!;
+close $fh;
+
+# after - reconciliation has completed
+reconcile();
+assert { stats(undef, {
+    modules => 1
+  , rules_files => 1
+  , system_state_ok => 1
+})};
+# module was reloaded
+assert { stats(".", "-S", {
+    type => "module"
+  , state => "fresh"
+  , reloaded => 1
+  , modules_up => 0
+  , modules_down => 0
+  , uses_down => 1
+# module file was reloaded (and not reparsed)
+  , parse => 1
+  , parse_ok => 1
+})};
+assert { stats("A/rules.bam+devel", "-S", {
+    parse => 1
+  , parse_ok => 1
+  , type => 'rules'
+  , state => "fresh"
+  , uses_up => 1
+})};
+assert { stats("A", {
+    type => 'dir'
+  , state => "fresh"
+})};
+teardown();

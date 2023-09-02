@@ -1,0 +1,84 @@
+#!/usr/bin/env perl
+
+#
+# This test verifies that transitive USES are applied correctly
+#
+
+use strict;
+use warnings;
+$SIG{__WARN__} = sub { die @_ };
+
+use POSIX;
+use File::Basename;
+use Cwd;
+our $bam_basedir;
+our $repodir;
+BEGIN { $repodir = dirname(Cwd::realpath("$0/..")) }
+use lib "$repodir/integ/lib";
+use util;
+use tree;
+use bam;
+
+init(subdir => 'A');
+setup(<<TREE);
+|-- A
+|   `-- module.bam+devel <<
+use B
+>>
+|-- B
+|   `-- rules.bam+devel <<
+use C
+>>
+|-- C
+|   `-- rules.bam+devel <<
+use D
+>>
+|-- D
+|   `-- rules.bam+devel <<
+rule foo -> bar
+>>
+|-- system-config <<
+walker : {
+  include : {
+    $bam_basedir
+  }
+}
+>>
+TREE
+
+# before
+assert { stats(undef, {
+    system_state => 'ok'
+  , system_state_ok => 1
+  , modules => 1
+})};
+assert { stats("$bam_basedir/A", "-S", {
+    type => 'module'
+  , state => 'fresh'
+  , stale => 1
+  , fresh => 1
+  , parse => 1
+  , parse_ok => 1
+  , reloaded => 1
+  , modules_up => 0
+  , modules_down => 0
+  , uses_down => 3    # B, C, D
+})};
+assert { stats(".", {
+    type => 'module-dir'
+  , rules => 1        # rule from D is active
+})};
+assert { stats("../D/rules.bam+devel", {
+    type => 'rules-file'
+  , state => 'fresh'
+})};
+
+my $B_id = hash64("$bam_basedir/B/rules.bam+devel");
+my $C_id = hash64("$bam_basedir/C/rules.bam+devel");
+my $D_id = hash64("$bam_basedir/D/rules.bam+devel");
+
+assert { ls("//module/rules/$B_id", "$B_id -> $bam_basedir/B/rules.bam+devel", "--max-distance", "0") };
+assert { ls("//module/rules/$C_id", "$C_id -> $bam_basedir/C/rules.bam+devel", "--max-distance", "0") };
+assert { ls("//module/rules/$D_id", "$D_id -> $bam_basedir/D/rules.bam+devel", "--max-distance", "0") };
+
+teardown();

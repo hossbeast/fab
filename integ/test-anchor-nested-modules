@@ -1,0 +1,124 @@
+#!/usr/bin/env perl
+
+#
+# anchor with nested modules
+#
+
+use strict;
+use warnings;
+$SIG{__WARN__} = sub { die @_ };
+
+use POSIX;
+use File::Basename;
+use Cwd;
+our $repodir;
+our $bam_basedir;
+our $bam_projdir;
+BEGIN { $repodir = dirname(Cwd::realpath("$0/..")) }
+use lib "$repodir/integ/lib";
+use util;
+use tree;
+use bam;
+
+init(subdir => 'B');
+setup(<<"TREE");
+|-- A
+|   `-- foo
+|   `-- rules.bam+devel <<
+rule foo -> bar : cp.bam
+rule bar -> //targets
+>>
+|   `-- cp.bam << 0777
+file : {
+  path-search : cp    # this needs the config to resolve
+}
+args : [
+  \$bm_source0
+  \$bm_target0
+]
+>>
+|   `-- C
+|       `-- foo
+|       `-- baz
+|       `-- module.bam+devel <<
+bind A => //A
+rule baz -> qux : //A/cp.bam
+rule qux -> //targets
+>>
+|-- B
+|   `-- module.bam+devel <<
+anchor ../A
+>>
+|-- system-config <<
+formula : {
+  path : {
+    dirs : {
+      /usr/bin
+    }
+  }
+}
+walker : {
+  exclude : {
+    foo
+  }
+  include : {
+    $bam_basedir
+  }
+}
+filesystems : {
+  "/" : {
+    mkdirs : true
+    indexed : true
+  }
+}
+>>
+TREE
+
+my $B_id = hash64("$bam_basedir/B");
+my $C_id = hash64("$bam_basedir/B/C");
+
+# C fs link points to the right node
+my $result = bam_ls(["//modules/$B_id/fs", "--no-follow"]);
+my $ref = $$result{out};
+assert { $ref eq "fs -> $bam_basedir/B" };
+
+# C ref link points to the right node
+$result = bam_ls(["//modules/$B_id/anchor", "--no-follow"]);
+$ref = $$result{out};
+assert { $ref eq "anchor -> $bam_basedir/A" };
+
+# D fs link points to the right node
+$result = bam_ls(["//modules/$C_id/fs", "--no-follow"]);
+$ref = $$result{out};
+assert { $ref eq "fs -> $bam_basedir/B/C" };
+
+# D ref link points to the right node
+$result = bam_ls(["//modules/$C_id/anchor", "--no-follow"]);
+$ref = $$result{out};
+assert { $ref eq "anchor -> $bam_basedir/A/C" };
+
+# before
+assert {
+  stats(undef, {
+    modules => 2          # module B, plus module B/C (anchored to A/C)
+  , mkdir => 1            # B/C
+})};
+assert {
+  stats(".", "-S", {
+    type => 'module'
+  , state => 'fresh'
+  , reloaded => 1
+  , state => 'fresh'
+  , parse => 1
+  , parse_ok => 1
+})};
+assert {
+  stats("./C", "-S", {
+    type => 'module'
+  , state => 'fresh'
+})};
+
+build();
+assert_file("$bam_projdir/bar");        # in module dir
+assert_file("$bam_projdir/C/qux");      # in nested module
+teardown();

@@ -8,16 +8,18 @@ use POSIX;
 use File::Basename;
 use Cwd;
 our $repodir;
+our $bam_projdir;
 BEGIN { $repodir = dirname(Cwd::realpath("$0/..")) }
 use lib "$repodir/integ/lib";
 use util;
 use tree;
 use bam;
 
-# build out the fstree under /tmp
-my $testdir = setup(<<'TREE');
-|-- module.bam+devel
-|-- var.bam+devel <<
+init(subdir => 'B');
+setup(<<'TREE');
+|-- B
+|   `-- module.bam+devel
+|   `-- var.bam+devel <<
 lflags.devel : [
   -lasan -lubsan
 ]
@@ -25,34 +27,38 @@ lflags.devel : [
 TREE
 
 # before
-assert_stats(undef, {
+assert { stats(undef, {
     modules => 1
   , system_state_ok => 1
-});
-assert_stats(".", {
-    reloaded => 1
+  , var_files => 1
+})};
+assert { stats(".", "-S", {
+    type => 'module'
   , state => "fresh"
-});
-assert_stats("module.bam+devel", {
-    parsed_try => 1
-  , parsed => 1
-  , state => "fresh"
-});
+  , fresh => 1
+  , stale => 1
+  , reloaded => 1
+  , parse => 1
+  , parse_ok => 1
+})};
 
-unlink("$testdir/var.bam+devel") or die $!;
+unlink("$bam_projdir/var.bam+devel") or die $!;
 reconcile();
 
 # after - disappearance of var file in same dir has invalidated the module
-assert_stats(undef, {
+assert { stats(undef, {
     modules => 1
   , system_state_ok => 2
-});
-assert_stats(".", {
-    reloaded => 2
+  , var_files => 0        # and deleted the var node
+})};
+assert { enoent("$bam_projdir/var.bam+devel") };
+assert { stats(".", "-S", {
+    type => 'module'
   , state => "fresh"
-});
-assert_stats("module.bam+devel", {
-    parsed_try => 2
-  , parsed => 2
-  , state => "fresh"
-});
+  , fresh => 2
+  , stale => 2
+  , reloaded => 2
+  , parse => 1
+  , parse_ok => 1
+})};
+teardown();

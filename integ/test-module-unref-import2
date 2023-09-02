@@ -1,0 +1,95 @@
+#!/usr/bin/env perl
+
+#
+# This test module vivifies an out-of-tree module via a uses reference. Then the reference
+# is removed ; and the referent is no longer a module
+#
+
+# import is no longer a thing
+exit;
+
+use strict;
+use warnings;
+$SIG{__WARN__} = sub { die @_ };
+
+use POSIX;
+use File::Basename;
+use Cwd;
+our $bam_basedir;
+our $repodir;
+BEGIN { $repodir = dirname(Cwd::realpath("$0/..")) }
+use lib "$repodir/integ/lib";
+use util;
+use tree;
+use bam;
+
+init(subdir => 'B');
+setup(<<TREE);
+|-- A
+|   `-- module.bam+devel <<
+rule foo -> bar
+>>
+|-- B
+|   `-- module.bam+devel <<
+import A
+>>
+|-- system-config <<
+walker : {
+  include : {
+    $bam_basedir
+  }
+}
+>>
+TREE
+
+# before
+assert_stats(undef, {
+    modules => 1          # the imported directory is not vivified
+  , system_state_ok => 1
+});
+assert_stats(".", "-S", {
+    state => 'fresh'
+  , reloaded => 1
+  , modules_up => 0
+  , modules_down => 0
+  , uses_up => 0
+  , uses_down => 0
+  , rules => 0
+  , parse => 1
+  , parse_ok => 1
+});
+assert_stats("..", {
+    type => 'dir'
+});
+assert_stats("../A", {
+    type => 'dir'
+});
+assert_stats("../A/module.bam+devel", {   # just a file, import does not bootstrap
+    state => 'fresh'
+  , type => 'file'
+});
+
+# delete Bs module file
+unlink "$bam_basedir/B/module.bam+devel" or die $!;
+
+# after
+reconcile();
+assert_stats(undef, {
+    modules => 0
+  , system_state_ok => 2
+});
+assert_stats(".", {
+    type => 'dir'
+});
+assert_stats("..", {
+    type => 'dir'
+});
+# out-of-tree module ; no longer referenced
+assert_stats("../A", {
+    type => 'dir'
+});
+assert_stats("../A/module.bam+devel", {   # just a file
+    state => 'fresh'
+  , type => 'file'
+});
+teardown();

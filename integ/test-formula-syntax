@@ -1,5 +1,10 @@
 #!/usr/bin/env perl
 
+#
+# This test has a formula with a syntax error, fixes the error, then checks that when the
+# system is reconciled, the module is reloaded
+#
+
 use strict;
 use warnings;
 $SIG{__WARN__} = sub { die @_ };
@@ -14,42 +19,45 @@ use util;
 use tree;
 use bam;
 
-print("a");
-
 # references non-existent formula
-my $testdir = setup(<<'TREE');
+init();
+my $testdir = setup({tolerant => 1 }, <<'TREE');
 |-- module.bam+devel <<
 rule -- boats : foo.bam
-rule boats -> //module/targets
+rule boats -> //targets
 >>
 |-- foo.bam << 0777
-# formula has a syntax error
+# this formula has a syntax error
 file : {
-  path-search goats : date
+  path-search : date  foooo
 }
 >>
 TREE
 
-print("b");
 # before - in spite of the invalid formula, the module has still loaded
-assert_stats(undef, {
+assert {
+  stats(undef, {
     modules => 1
   , system_state_ok => 0
-});
-assert_stats(".", {
-    reloaded => 1
-});
-assert_stats("module.bam+devel", {
-    parsed_try => 1
-  , parsed => 1
-});
-assert_stats("foo.bam", {
-    parsed_try => 1
-  , parsed => 0
+})};
+assert {
+  stats(".", "-S", {
+    type => "module"
+  , state => 'fresh'
+  , reloaded => 1
+})};
+assert {
+  stats("module.bam+devel", "-S", {
+    parse => 1
+  , parse_ok => 1
+})};
+assert {
+  stats("foo.bam", "-S", {
+    parse => 1
+  , parse_ok => 0
   , state => "stale"
-});
+})};
 
-print("c");
 # fix the formula
 open my $fh, ">", "$testdir/foo.bam" or die $!;
 print $fh <<'TEXT';
@@ -59,24 +67,29 @@ file : {
 TEXT
 close $fh;
 
-# after - appearance of the formula invalidates the module
 reconcile();
-print("d");
-assert_stats(undef, {
+assert {
+  stats(undef, {
     modules => 1
   , system_state_ok => 1
-});
-assert_stats(".", {
-    reloaded => 2
+})};
+assert {
+  stats(".", "-S", {
+    type => "module"
+  , state => 'fresh'
+  , reloaded => 1       # was not invalidated
   , state => "fresh"
-});
-assert_stats("module.bam+devel", {
-    parsed_try => 2
-  , parsed => 2
+})};
+assert {
+  stats("module.bam+devel", "-S", {
+    parse => 1
+  , parse_ok => 1
   , state => "fresh"
-});
-assert_stats("foo.bam", {
-    parsed_try => 2
-  , parsed => 1
+})};
+assert {
+  stats("foo.bam", "-S", {
+    parse => 2
+  , parse_ok => 1
   , state => "fresh"
-});
+})};
+teardown();

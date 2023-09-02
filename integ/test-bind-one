@@ -1,0 +1,105 @@
+#!/usr/bin/env perl
+
+#
+# This test exercises a changing one-to-one bind rule
+#
+
+use strict;
+use warnings;
+$SIG{__WARN__} = sub { die @_ };
+
+use POSIX;
+use File::Basename;
+use Cwd;
+our $repodir;
+our $bam_basedir;
+BEGIN { $repodir = dirname(Cwd::realpath("$0/..")) }
+use lib "$repodir/integ/lib";
+use util;
+use tree;
+use bam;
+
+init();
+setup(<<'TREE');
+|-- module.bam+devel <<
+bind B => //A
+>>
+|-- B
+|   |-- foo
+|-- C
+|   |-- foo
+TREE
+
+# 1. one target
+assert {
+  stats(undef, {
+    modules => 1
+  , system_state_ok => 1
+})};
+assert {
+  stats(".", "-S", {
+    type => 'module'
+  , state => 'fresh'
+  , reloaded => 1
+  , rules => 1
+  , parse => 1
+  , parse_ok => 1
+})};
+
+assert { ls("//A", "A -> $bam_basedir/B") };
+
+# 2. no targets - error case
+open my $fh, ">", "$bam_basedir/module.bam+devel" or die $!;
+print $fh <<'TEXT';
+bind D => //A
+TEXT
+close $fh;
+
+reconcile(tolerant => 1);
+assert {
+  stats(undef, {
+    modules => 1
+  , system_state_ok => 1
+  , system_state => 'rule-reconcile'
+  , system_error => 1
+})};
+assert {
+  stats(".", "-S", {
+    type => 'module'
+  , state => 'fresh'
+  , reloaded => 2
+  , rules => 1
+  , parse => 2
+  , parse_ok => 2
+})};
+
+# the attachment point is still created
+assert { eexists("//A") };
+
+# 3. one target - different target
+open $fh, ">", "$bam_basedir/module.bam+devel" or die $!;
+print $fh <<'TEXT';
+bind C => //A
+TEXT
+close $fh;
+
+reconcile();
+assert {
+  stats(undef, {
+    modules => 1
+  , system_state_ok => 2
+})};
+assert {
+  stats(".", "-S", {
+    type => 'module'
+  , state => 'fresh'
+  , rules => 1
+  , reloaded => 3
+  , parse => 3
+  , parse_ok => 3
+})};
+
+# bind target
+assert { ls("//A", "A -> $bam_basedir/C") };
+
+teardown();

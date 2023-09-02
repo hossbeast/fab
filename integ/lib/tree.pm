@@ -16,7 +16,7 @@ sub tree_parse
     $line =~ m/^[|` ]+/;
     my $indent = int(sprintf("%d", length($&) / 4)) + 1;
 
-    $line =~ /-- ([-_a-zA-Z0-9.+]+)( +<<)?( +[0-8]+)?$/ or die;
+    $line =~ /-- ([-_a-zA-Z0-9.+]+)( +<<)?( +[0-8]+)?$/ or die("wtf : $line");
     my $name = $1;
     my $contents = '';
     my $perms = 0644;
@@ -26,8 +26,9 @@ sub tree_parse
     }
     if($2)
     {
-      while(my $subline = shift(@lines))
+      while(@lines)
       {
+        $subline = shift @lines;
         last if $subline eq ">>";
         $contents .= "$subline\n";
       }
@@ -51,20 +52,14 @@ sub tree_parse
   return $root;
 }
 
-sub mkdirp
-{
-  my $path = shift;
-
-  return if mkdir($path);
-  die("mkdir($path) : $!") unless $!{EEXIST};
-}
-
 sub tree_make
 {
-  my ($base, $path) = @_;
+  my ($spec, $path) = @_;
+
+#print("tree-make path $path\n");
 
   my $file = 1;
-  for my $k (keys %$base)
+  for my $k (keys %$spec)
   {
     next if $k eq "__content";
     next if $k eq "__perms";
@@ -75,14 +70,14 @@ sub tree_make
   if($file)
   {
     open FH, ">$path" or die "open($path) : $!";
-    print FH $$base{__content};
+    print FH $$spec{__content};
     close FH;
-    chmod($$base{__perms}, $path) or die $!;
+    chmod($$spec{__perms}, $path) or die $!;
   }
   else
   {
     mkdirp($path);
-    while(my($k, $v) = each %$base)
+    while(my($k, $v) = each %$spec)
     {
       next if $k eq "__content";
       next if $k eq "__perms";
@@ -94,19 +89,20 @@ sub tree_make
 
 sub tree_build
 {
-  my ($name, $spec) = @_;
-
-  $name =~ s/[^a-zA-Z0-0]//g;
-  my $testdir = "/run/fab-integ/${name}-${bam_invalidate}";
+  my ($basedir, $spec) = @_;
 
   my $root = tree_parse($spec);
 
-  system("rm -rf $testdir/*") if -e $testdir;
-
+  system("rm -rf $basedir/*") if -e $basedir;
   mkdirp("/run/fab-integ");
-  tree_make($root, $testdir);
+  tree_make($root, $basedir);
+}
 
-  return $testdir;
+sub tree_setup
+{
+  my ($testdir, $spec) = @_;
+  my $root = tree_parse($spec);
+  tree_make($root, $testdir);
 }
 
 1

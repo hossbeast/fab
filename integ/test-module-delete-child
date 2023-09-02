@@ -1,0 +1,85 @@
+#!/usr/bin/env perl
+
+#
+# This test sets up two modules, one nested within the other, and deletes the
+# nested child module file
+#
+
+use strict;
+use warnings;
+$SIG{__WARN__} = sub { die @_ };
+
+use POSIX;
+use File::Basename;
+use Cwd;
+our $repodir;
+our $bam_basedir;
+BEGIN { $repodir = dirname(Cwd::realpath("$0/..")) }
+use lib "$repodir/integ/lib";
+use util;
+use tree;
+use bam;
+
+our $bam_invalidate;
+init();
+my $testdir = setup(<<TREE);
+|-- A
+|   `-- module.bam+devel
+|-- module.bam+devel
+TREE
+
+# /run/fab-integ/testdir
+# /run/fab-integ/testdir/A
+my $watched_dirs = 2;
+
+my $mod_id = hash64($bam_basedir);
+my $A_id = hash64("$bam_basedir/A");
+
+assert { stats(undef, {
+    modules => 2
+  , notify_index_count => ($bam_invalidate eq "notify") ? $watched_dirs : 0
+})};
+assert { stats(".", "-S", {
+    reloaded => 1
+  , modules_up => 0
+  , modules_down => 1
+  , fresh => 1
+  , stale => 1
+  , parse => 1
+  , parse_ok => 1
+})};
+assert { stats("A", "-S", {
+    reloaded => 1
+  , modules_up => 1
+  , modules_down => 0
+  , fresh => 1
+  , stale => 1
+  , parse => 1
+  , parse_ok => 1
+})};
+
+# delete the child module
+unlink("$testdir/A/module.bam+devel") or die $!;
+reconcile();
+
+assert { stats(undef, {
+    modules => 1    # child module was deleted
+  , notify_index_count => ($bam_invalidate eq "notify") ? $watched_dirs : 0  # A dirnode not deleted
+})};
+
+my $res = bam_ls(["//modules"]);
+print("\n$$res{out}\n\n");
+assert { index($$res{out}, $mod_id) > -1 };   # base module still exists
+assert { index($$res{out}, $A_id) == -1 };    # child module no longer exists
+
+assert { stats(".", "-S", {
+    reloaded => 1
+  , modules_up => 0
+  , modules_down => 0
+  , fresh => 1
+  , stale => 1
+# reloaded but not reparsed
+  , parse => 1
+  , parse_ok => 1
+})};
+teardown();

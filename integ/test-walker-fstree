@@ -1,0 +1,75 @@
+#!/usr/bin/env perl
+
+#
+# This test exercises various cases of fstree / dir association
+#
+
+use strict;
+use warnings;
+$SIG{__WARN__} = sub { die @_ };
+
+use POSIX;
+use File::Basename;
+use Cwd;
+our $repodir;
+our $bam_basedir;
+BEGIN { $repodir = dirname(Cwd::realpath("$0/..")) }
+use lib "$repodir/integ/lib";
+use util;
+use tree;
+use bam;
+
+init(subdir => 'B/C');
+setup(<<"TREE");
+|-- module.bam+devel
+|-- A
+|   `-- foo
+|-- B
+|   `-- C
+|       `-- module.bam+devel <<
+>>
+|-- system-config <<
+filesystems : {
+  "$bam_basedir" : {
+    invalidate : notify
+    mkdirs : true
+    indexed : true
+  }
+  / : {
+    invalidate : notify
+    mkdirs : true
+    indexed : false
+  }
+}
+walker : {
+  exclude : {
+    foo
+  }
+  include : {
+    $bam_basedir
+  }
+}
+>>
+TREE
+
+# before
+assert {
+  stats(undef, { modules => 1
+})};
+assert {
+  stats(".", "-S", {
+      type => 'module'
+    , state => 'fresh'
+    , reloaded => 1
+    , parse => 1
+    , parse_ok => 1
+})};
+
+my $res = bam_filesystem();
+print($$res{out} . "\n");
+
+$res = bam_describe(["$bam_basedir/A"]);
+print($$res{out} . "\n");
+assert { $$res{out} =~ /indexed-lookup : true/ };
+
+teardown();

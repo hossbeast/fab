@@ -1,0 +1,64 @@
+#!/usr/bin/env perl
+
+#
+# This test has rules with a syntax error, fixes the error, and reconciles
+#
+
+use strict;
+use warnings;
+$SIG{__WARN__} = sub { die @_ };
+
+use POSIX;
+use File::Basename;
+use Cwd;
+our $repodir;
+BEGIN { $repodir = dirname(Cwd::realpath("$0/..")) }
+use lib "$repodir/integ/lib";
+use util;
+use tree;
+use bam;
+
+# build out the fstree under /tmp
+init();
+my $testdir = setup({ tolerant => 1 }, <<'TREE');
+|-- module.bam+devel << 0777
+rule a -> b
+asdf    # syntax error
+>>
+|-- a
+TREE
+
+# before
+assert { stats(undef, {
+    modules => 1
+  , system_state_ok => 0
+})};
+assert { stats(".", "-S", {
+    reloaded => 0
+  , modules_up => 0
+  , modules_down => 0
+  , parse => 1
+  , parse_ok => 0
+})};
+
+# fix the rules
+open my $fh, ">", "$testdir/module.bam+devel" or die $!;
+print $fh "rule a -> b\n";
+close $fh;
+
+reconcile();
+
+# after
+assert { stats(undef, {
+    modules => 1
+  , system_state_ok => 1
+})};
+assert { stats(".", "-S", {
+    reloaded => 1
+  , modules_up => 0
+  , modules_down => 0
+  , parse => 2
+  , parse_ok => 1
+})};
+
+teardown();

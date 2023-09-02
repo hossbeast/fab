@@ -8,6 +8,7 @@ use POSIX;
 use File::Basename;
 use Cwd;
 our $repodir;
+our $bam_projhash;
 BEGIN { $repodir = dirname(Cwd::realpath("$0/..")) }
 use lib "$repodir/integ/lib";
 use util;
@@ -15,79 +16,115 @@ use tree;
 use bam;
 
 # build out the fstree under /tmp
+init();
 my $testdir = setup(<<'TREE');
 |-- module.bam+devel <<
-rule -- boats : foo.bam
-rule boats -> //module/targets
+rule { id : 1 } -- boats : foo.bam
+rule boats -> //targets
 >>
 |-- foo.bam << 0777
 #!/usr/bin/env perl
-open FH, ">>", $ENV{bm_target} or die $!;
+open FH, ">>", $ENV{bm_target0} or die $!;
 print FH "hi\n";
 close FH;
 >>
 TREE
 
 # before
-assert_stats(undef, {
+assert {
+  stats(undef, {
     modules => 1
+  , system_error => 0
   , system_state_ok => 1
-});
-assert_stats(".", {
-    reloaded => 1
+})};
+assert {
+  stats(".", "-S", {
+    type => "module"
+  , reloaded => 1
   , state => "fresh"
-});
-assert_stats("module.bam+devel", {
-    parsed_try => 1
-  , parsed => 1
+  , parse => 1
+  , parse_ok => 1
+})};
+assert {
+  stats("foo.bam", "-S", {
+    type => 'formula'
   , state => "fresh"
-});
-assert_stats("foo.bam", {
-    state => "fresh"
-  , parsed => 1
-  , parsed_try => 1
-});
-assert_stats("boats", {
-    state => "uncreated"
-});
+  , parse_ok => 1
+  , parse => 1
+})};
+assert {
+  stats("boats", {
+      state => "uncreated"
+    , stale => 0    # counting state transitions
+    , fresh => 0
+})};
+assert {
+  stats("//modules/$bam_projhash/rma/1", {
+    rule_run => 1
+  , rule_run_ok => 1
+})};
 
 # build - creates the file
 build();
-assert_stats(undef, {
+assert {
+  stats(undef, {
     modules => 1
-  , system_state_ok => 2
-});
-assert_stats("foo.bam", {
+  , system_error => 0
+  , system_state_ok => 3      # one for reconcile -> ok, one for build -> ok
+})};
+assert {
+  stats("foo.bam", "-S", {
     state => "fresh"
-  , parsed => 1
-  , parsed_try => 1
-});
-assert_stats("boats", {
-    state => "fresh"
-});
+  , parse_ok => 1
+  , parse => 1
+})};
+assert {
+  stats("boats", {
+      state => "fresh"
+    , stale => 0    # counting state transitions
+    , fresh => 1
+})};
+assert {
+  stats("//modules/$bam_projhash/rma/1", {
+    rule_run => 1
+  , rule_run_ok => 1
+})};
 
-# delete the formula file
+# delete the formula file - the rule fml ref is now unresolved
 unlink("$testdir/foo.bam") or die $!;
 reconcile(expect_error => 1);
 
-# foo.bam node will have been re-created by running the rule
-# boats node will have been invalidated by disconnecting the formula
-assert_stats(undef, {
+assert {
+  stats(undef, {
     modules => 1
-  , system_state_ok => 2
-});
-assert_stats(".", {
-    reloaded => 2
-  , state => "fresh"
-});
-assert_stats("module.bam+devel", {
-    parsed_try => 2
-  , parsed => 2
-  , state => "fresh"
-});
-assert_stats("foo.bam", {
-    state => "uncreated"
-});
-assert_stats("boats", {
-    state => "stale"
-});
+  , system_state_ok => 3
+  , system_error => 1
+  , system_state => 'rule-reconcile'
+})};
+
+# foo.bam was deleted during filesystem-reconcile, then re-created in the uncreated
+# state during rules-reconcile, since it is the target of the formula ref
+assert { uncreated("foo.bam") };
+assert {
+  stats(".", "-S", {
+    type => "module"
+  , state => "fresh"      # the module is not invalidated
+  , reloaded => 1
+  , parse => 1
+  , parse_ok => 1
+})};
+
+# boats is invalidated when the formula is disconnected
+# then, since it is now a primary file (no incoming edges), it is marked fresh
+assert {
+  stats("boats", {
+      state => "fresh"    # invalidated by disconnecting the formula
+    , stale => 1          # counting state transitions
+    , fresh => 2
+})};
+assert {
+  stats("//modules/$bam_projhash/rma/1", {
+    rule_run => 2
+  , rule_run_ok => 1
+})};
+teardown();

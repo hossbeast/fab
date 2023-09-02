@@ -97,6 +97,7 @@ sub awrite
   }
 }
 
+# call read and die on error
 sub xread
 {
   my $r = POSIX::read(@_);

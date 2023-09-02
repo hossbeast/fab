@@ -1,0 +1,131 @@
+#!/usr/bin/env perl
+
+#
+# This test checks whether bind rules in conditional blocks are applied correctly
+#
+
+use strict;
+use warnings;
+$SIG{__WARN__} = sub { die @_ };
+
+use POSIX;
+use File::Basename;
+use Cwd;
+our $repodir;
+our $bam_basedir;
+BEGIN { $repodir = dirname(Cwd::realpath("$0/..")) }
+use lib "$repodir/integ/lib";
+use util;
+use tree;
+use bam;
+
+# this conditional has a variable, and it evaluates to true
+init();
+my $testdir = setup(<<'TREE');
+|-- module.bam+devel <<
+{
+  if($a)
+  bind B => [*] //B
+}
+>>
+|-- var.bam+devel <<
+a : true
+>>
+|-- B
+|   |-- foo
+TREE
+
+my $B_id = hash64("$bam_basedir/B");
+
+assert {
+  stats(undef, {
+    modules => 1
+  , system_state_ok => 1
+})};
+assert {
+  stats(".", "-S", {
+    type => 'module'
+  , state => 'fresh'
+  , reloaded => 1
+  , rules => 1
+  , parse => 1
+  , parse_ok => 1
+})};
+assert {
+  stats("var.bam+devel", "-S", {
+    parse => 1
+  , parse_ok => 1
+  , state => 'fresh'
+})};
+
+# binding is present
+assert { ls("//B", "B - shadow-dir fresh", "--max-distance", 0) };
+assert { ls("//B/$B_id", "$B_id -> $bam_basedir/B") };
+
+# change the condition to false
+open my $fh, ">", "$testdir/var.bam+devel" or die $!;
+print $fh <<'TEXT';
+a : false
+TEXT
+close $fh;
+
+reconcile();
+assert {
+  stats(undef, {
+    modules => 1
+  , system_state_ok => 2
+})};
+assert {
+  stats(".", "-S", {
+    type => 'module'
+  , state => 'fresh'
+  , reloaded => 2
+  , rules => 1
+  , parse => 1
+  , parse_ok => 1
+})};
+assert {
+  stats("var.bam+devel", "-S", {
+    parse => 2
+  , parse_ok => 2
+  , state => 'fresh'
+})};
+
+# binding is absent
+assert { ls("//B", "B - shadow-dir fresh", "--max-distance", 0) };
+assert { enoent("//B/$B_id") };
+
+# change the condition back to true
+open my $fh, ">", "$testdir/var.bam+devel" or die $!;
+print $fh <<'TEXT';
+a : true
+TEXT
+close $fh;
+
+reconcile();
+assert {
+  stats(undef, {
+    modules => 1
+  , system_state_ok => 3
+})};
+assert {
+  stats(".", "-S", {
+    type => 'module'
+  , state => 'fresh'
+  , reloaded => 3
+  , rules => 1
+  , parse => 1
+  , parse_ok => 1
+})};
+assert {
+  stats("var.bam+devel", "-S", {
+    parse => 3
+  , parse_ok => 3
+  , state => 'fresh'
+})};
+
+# binding is absent
+assert { ls("//B", "B - shadow-dir fresh", "--max-distance", 0) };
+assert { ls("//B/$B_id", "$B_id -> $bam_basedir/B") };
+
+teardown();

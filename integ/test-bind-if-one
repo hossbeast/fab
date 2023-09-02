@@ -1,0 +1,143 @@
+#!/usr/bin/env perl
+
+#
+# This test checks whether bind rules in conditional blocks are applied correctly
+#
+
+use strict;
+use warnings;
+$SIG{__WARN__} = sub { die @_ };
+
+use POSIX;
+use File::Basename;
+use Cwd;
+our $repodir;
+our $bam_basedir;
+BEGIN { $repodir = dirname(Cwd::realpath("$0/..")) }
+use lib "$repodir/integ/lib";
+use util;
+use tree;
+use bam;
+
+# 1. conditional evaluation, true
+init();
+setup(<<'TREE');
+|-- module.bam+devel <<
+{
+  if($a)
+  bind B => //B
+}
+>>
+|-- var.bam+devel <<
+a : true
+>>
+|-- B
+|   |-- foo
+TREE
+
+assert {
+  stats(undef, {
+    modules => 1
+  , system_state_ok => 1
+})};
+assert {
+  stats("var.bam+devel", "-S", {
+    type => 'var'
+  , state => 'fresh'
+  , stale => 1
+  , fresh => 1
+  , parse => 1
+  , parse_ok => 1
+})};
+assert {
+  stats(".", "-S", {
+    type => 'module'
+  , state => 'fresh'
+  , stale => 1
+  , fresh => 1
+  , reloaded => 1
+  , rules => 1
+  , parse => 1
+  , parse_ok => 1
+})};
+
+# binding is present
+assert { ls("//B", "B -> $bam_basedir/B") };
+
+# 2. conditional evaluation, false
+open my $fh, ">", "$bam_basedir/var.bam+devel" or die $!;
+print $fh <<'TEXT';
+a : false
+TEXT
+close $fh;
+
+reconcile();
+assert {
+  stats(undef, {
+    system_state => 'ok'
+  , system_state_ok => 2
+  , modules => 1
+})};
+assert {
+  stats("var.bam+devel", "-S", {
+    type => 'var'
+  , state => 'fresh'
+  , stale => 2
+  , fresh => 2
+  , parse => 2
+  , parse_ok => 2
+})};
+assert {
+  stats(".", "-S", {
+    type => 'module'
+  , state => 'fresh'
+  , stale => 2
+  , fresh => 2
+  , parse => 1
+  , parse_ok => 1
+  , reloaded => 2
+  , rules => 1
+})};
+
+# binding is absent
+assert { enoent("//B") };
+
+# 3. conditional evaluation, true
+open $fh, ">", "$bam_basedir/var.bam+devel" or die $!;
+print $fh <<'TEXT';
+a : true
+TEXT
+close $fh;
+
+reconcile();
+assert {
+  stats(undef, {
+    system_state => 'ok'
+  , system_state_ok => 3
+  , modules => 1
+})};
+assert {
+  stats("var.bam+devel", "-S", {
+    type => 'var'
+  , state => 'fresh'
+  , stale => 3
+  , fresh => 3
+  , parse => 3
+  , parse_ok => 3
+})};
+assert {
+  stats(".", "-S", {
+    type => 'module'
+  , state => 'fresh'
+  , stale => 3
+  , fresh => 3
+  , parse => 1
+  , parse_ok => 1
+  , reloaded => 3
+  , rules => 1
+})};
+
+# binding is present
+assert { ls("//B", "B -> $bam_basedir/B") };
+
+teardown();

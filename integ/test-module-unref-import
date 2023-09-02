@@ -1,0 +1,127 @@
+#!/usr/bin/env perl
+
+#
+# This test module vivifies an out-of-tree module via a uses reference. Then the reference
+# is removed ; and the referent is no longer a module
+#
+
+# vivify via uses is no longer a thing
+exit;
+
+use strict;
+use warnings;
+$SIG{__WARN__} = sub { die @_ };
+
+use POSIX;
+use File::Basename;
+use Cwd;
+our $bam_basedir;
+our $repodir;
+BEGIN { $repodir = dirname(Cwd::realpath("$0/..")) }
+use lib "$repodir/integ/lib";
+use util;
+use tree;
+use bam;
+
+init(subdir => 'B');
+setup(<<TREE);
+|-- A
+|   `-- module.bam+devel <<
+rule foo -> bar
+>>
+|-- B
+|   `-- module.bam+devel <<
+import A
+>>
+|-- config.bam+devel <<
+walker : {
+  include : {
+    $bam_basedir
+  }
+}
+>>
+|-- system-config <<
+formula : {
+  path : {
+    dirs : {
+      /usr/bin
+    }
+  }
+}
+walker : {
+  exclude : {
+    foo
+  }
+  include : {
+    $bam_basedir
+  }
+}
+filesystems : {
+  "/" : {
+    mkdirs : true
+    indexed : true
+  }
+}
+>>
+TREE
+
+# before
+assert { stats(undef, {
+    modules => 1          # the imported directory is not vivified
+  , system_state_ok => 1
+})};
+assert { stats(".", "-S", {
+    state => 'fresh'
+  , reloaded => 1
+  , modules_up => 0
+  , modules_down => 0
+  , uses_up => 0
+  , uses_down => 0
+  , rules => 0
+  , parse => 1
+  , parse_ok => 1
+})};
+assert { stats("..", {
+    type => 'dir'
+})};
+assert { stats("../A", {
+    type => 'dir'
+})};
+assert { stats("../A/module.bam+devel", {   # just a file, import does not bootstrap
+    state => 'fresh'
+  , type => 'file'
+})};
+
+# delete the contents of the module file
+open my $fh, ">", "$bam_basedir/B/module.bam+devel" or die $!;
+close $fh;
+
+# after
+reconcile();
+assert { stats(undef, {
+    modules => 1
+  , system_state_ok => 2
+})};
+assert { stats(".", "-S", {
+    reloaded => 2
+  , state => 'fresh'
+  , modules_up => 0
+  , modules_down => 0
+  , uses_up => 0
+  , uses_down => 0
+  , rules => 0
+  , parse => 2
+  , parse_ok => 2
+})};
+assert { stats("..", {
+    type => 'dir'
+})};
+# out-of-tree module ; no longer referenced
+assert { stats("../A", {
+    type => 'dir'
+})};
+assert { stats("../A/module.bam+devel", {   # just a file
+    state => 'fresh'
+  , type => 'file'
+})};
+teardown();

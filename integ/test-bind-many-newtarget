@@ -1,0 +1,202 @@
+#!/usr/bin/env perl
+
+#
+# This test exercises a BIND_MANY rule whose target-set changes
+#
+
+use strict;
+use warnings;
+$SIG{__WARN__} = sub { die @_ };
+
+use POSIX;
+use File::Basename;
+use Cwd;
+our $bam_basedir;
+our $bam_projdir;
+our $repodir;
+BEGIN { $repodir = dirname(Cwd::realpath("$0/..")) }
+use lib "$repodir/integ/lib";
+use util;
+use tree;
+use bam;
+
+init(subdir => 'C');
+setup({tolerant => 1 }, <<TREE);
+|-- A
+|   `-- foo
+|       `-- bar
+|-- B
+|   `-- foot
+|       `-- bar
+|-- C
+|   `-- module.bam+devel <<
+bind { id : 1 } foo => [*] //foo
+>>
+|-- system-config <<
+filesystems : {
+  / : {
+    indexed : false
+  }
+  $bam_basedir : {
+    indexed : true
+  }
+}
+walker : {
+  include : {
+    $bam_basedir
+  }
+}
+>>
+TREE
+
+my $foo_A_id = hash64("$bam_basedir/A/foo");
+my $foo_B_id = hash64("$bam_basedir/B/foo");
+print("foo_A_id $foo_A_id\n");
+print("foo_B_id $foo_B_id\n");
+
+# 1. only A/foo
+assert {
+  stats(undef, {
+      modules => 1
+    , system_state_ok => 1
+    , fsent_index_put => 6    # indexed operations
+    , fsent_index_del => 0
+    , fsent_index_count => 6  # number of indexed names
+    , rule_run => 1
+})};
+assert {
+  stats(".", "-S", {
+      type => 'module'
+    , state => 'fresh'
+    , fresh => 1
+    , stale => 1
+    , reloaded => 1
+    , parse => 1
+    , parse_ok => 1
+})};
+assert {
+  stats("//module/rma/1", {
+      rule_run => 1
+    , rule_run_ok => 1
+    , target_hits => 1
+    , attachment_hits => 1
+    , search_hits => 0
+    , generate_hits => 0
+    , formula_hits => 0
+})};
+
+assert { ls("//foo/$foo_A_id", "$foo_A_id -> $bam_basedir/A/foo") };
+assert { enoent("//foo/$foo_B_id") };
+
+# 2. A and B both resolve - this is an error
+rename("$bam_basedir/B/foot", "$bam_basedir/B/foo");
+
+reconcile(expect_error => 1);
+assert {
+  stats(undef, {
+    system_state => 'rule-reconcile'
+  , system_state_ok => 1
+  , modules => 1
+  , fsent_index_put => 7    # index put operations
+  , fsent_index_del => 1    # index del operations
+  , fsent_index_count => 5  # number of indexed names
+  , rule_run => 2
+})};
+assert {
+  stats(".", "-S", {
+      type => 'module'
+    , state => 'fresh'
+    , fresh => 1
+    , stale => 1
+    , reloaded => 1
+    , parse => 1
+    , parse_ok => 1
+})};
+assert {
+  stats("//module/rma/1", {
+      rule_run => 2
+    , rule_run_ok => 1
+    , target_hits => 2
+    , attachment_hits => 1
+    , search_hits => 0
+    , generate_hits => 0
+    , formula_hits => 0
+})};
+
+# since reconciliation did not complete
+assert { enoent("//foo/$foo_A_id") };
+assert { enoent("//foo/$foo_B_id") };
+
+# 3. only B/foo
+rename("$bam_basedir/A/foo", "$bam_basedir/A/foot");
+
+reconcile();
+assert {
+  stats(undef, {
+    modules => 1
+  , system_state_ok => 2
+  , fsent_index_put => 8    # index operations
+  , fsent_index_del => 2
+  , fsent_index_count => 6  # number of indexed names
+  , rule_run => 3
+})};
+assert {
+  stats(".", "-S", {
+      type => 'module'
+    , state => 'fresh'
+    , reloaded => 1
+    , parse => 1
+    , parse_ok => 1
+})};
+assert {
+  stats("//module/rma/1", {
+      rule_run => 3
+    , rule_run_ok => 2
+    , target_hits => 1
+    , attachment_hits => 1
+    , search_hits => 0
+    , generate_hits => 0
+    , formula_hits => 0
+})};
+
+assert { enoent("//foo/$foo_A_id") };
+assert { ls("//foo/$foo_B_id", "$foo_B_id -> $bam_basedir/B/foo") };
+
+# 4. neither A/foo nor B/foo - this is also an error
+rename("$bam_basedir/B/foo", "$bam_basedir/B/foot");
+
+reconcile(expect_error => 1);
+assert {
+  stats(undef, {
+    modules => 1
+  , system_state_ok => 2
+  , fsent_index_put => 9    # index operations
+  , fsent_index_del => 3
+  , fsent_index_count => 5  # number of indexed names
+  , rule_run => 4
+})};
+assert {
+  stats(".", "-S", {
+      type => 'module'
+    , state => 'fresh'
+    , fresh => 1
+    , stale => 1
+    , reloaded => 1
+    , parse => 1
+    , parse_ok => 1
+})};
+assert {
+  stats("//module/rma/1", {
+      rule_run => 4
+    , rule_run_ok => 2
+    , target_hits => 0
+    , attachment_hits => 1
+    , search_hits => 0
+    , generate_hits => 0
+    , formula_hits => 0
+})};
+
+assert { enoent("//foo/$foo_A_id") };
+assert { enoent("//foo/$foo_B_id") };
+
+teardown();

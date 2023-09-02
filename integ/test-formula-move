@@ -15,110 +15,122 @@ use tree;
 use bam;
 
 # build out the fstree under /tmp
+init();
 my $testdir = setup(<<'TREE');
 |-- module.bam+devel <<
-rule -- boats : foo.bam
-rule boats -> //module/targets
+rule -- boats : ./foo.bam
+rule boats -> //targets
 >>
 |-- foo.bam << 0777
 #!/usr/bin/env perl
-open FH, ">", $ENV{bm_target} or die $!;
+open FH, ">", $ENV{bm_target0} or die $!;
 print FH "foo\n";
 close FH;
 >>
 |-- bar.bam << 0777
 #!/usr/bin/env perl
-open FH, ">", $ENV{bm_target} or die $!;
+open FH, ">", $ENV{bm_target0} or die $!;
 print FH "bar\n";
 close FH;
 >>
 TREE
 
 # before
-assert_stats(undef, {
+assert { stats(undef, {
     modules => 1
   , system_state_ok => 1
-});
-assert_stats(".", {
-    reloaded => 1
+})};
+assert { stats(".", "-S", {
+    type => "module"
+  , state => 'fresh'
+  , reloaded => 1
   , state => "fresh"
-});
-assert_stats("module.bam+devel", {
-    parsed_try => 1
-  , parsed => 1
+})};
+assert { stats("module.bam+devel", "-S", {
+    parse => 1
+  , parse_ok => 1
   , state => "fresh"
-  , type => "module-file"
-});
-assert_stats("foo.bam", {
-    state => "fresh"
-  , parsed => 1
-  , parsed_try => 1
-  , type => "formula-file"
-});
-assert_stats("bar.bam", {   # not yet referenced by any formula
+  , type => "module"
+})};
+assert { stats("foo.bam", "-S", {
+    type => "formula"
+  , state => "fresh"
+  , parse_ok => 1
+  , parse => 1
+})};
+assert { stats("bar.bam", {   # not yet referenced by any formula
     state => "fresh"
   , type => "file"
-});
-assert_stats("boats", {
+})};
+assert { stats("boats", {
     state => "uncreated"
-});
+})};
 
 # build - creates the file
 build();
-assert_stats("foo.bam", {
-    state => "fresh"
-  , parsed => 1
-  , parsed_try => 1
-});
-assert_stats("boats", {
-    state => "fresh"
-});
+assert { stats("foo.bam", "-S", {
+    type => "formula"
+  , state => "fresh"
+  , parse_ok => 1
+  , parse => 1
+})};
 
 # file was created by the foo formula
 assert_file("$testdir/boats", "foo");
+assert { stats("boats", {
+    type => "file"
+  , state => "fresh"
+  , fresh => 1
+  , stale => 0
+})};
 
-# reassign the file to the other formula
+# change the file to be created by some other formula
 open my $fh, ">", "$testdir/module.bam+devel" or die $!;
 print $fh <<TEXT;
-rule -- boats : bar.bam
-rule boats -> //module/targets
+rule -- boats : ./bar.bam
+rule boats -> //targets
 TEXT
 close $fh;
 
 reconcile();
 
-# new formula assigned - boats invalidated
-assert_stats("boats", {
-    state => "stale"
-});
+# boats was invalidated when the other formula was assigned
+assert { stats("boats", {
+    type => "file"
+  , state => "stale"
+})};
 
 # build - re-creates the file
 build();
 
-# foo.bam node will have been re-created by running the rule, boats will have been invalidated
-assert_stats(".", {
-    reloaded => 2
+assert { stats(".", "-S", {
+    type => "module"
+  , state => 'fresh'
+  , reloaded => 2
   , state => "fresh"
-});
-assert_stats("module.bam+devel", {
-    parsed_try => 2
-  , parsed => 2
+})};
+assert { stats("module.bam+devel", "-S", {
+    type => "module"
   , state => "fresh"
-  , type => "module-file"
-});
-assert_stats("foo.bam", {  # no longer referenced by any formula
+  , parse => 2
+  , parse_ok => 2
+})};
+assert { stats("foo.bam", {  # no longer referenced as a formula by any rule
     state => "fresh"
   , type => "file"
-});
-assert_stats("bar.bam", {
-    state => "fresh"
-  , parsed => 1
-  , parsed_try => 1
-  , type => "formula-file"
-});
-assert_stats("boats", {
-    state => "fresh"
-});
+})};
+assert { stats("bar.bam", "-S", {
+    type => "formula"
+  , state => "fresh"
+  , parse_ok => 1
+  , parse => 1
+})};
+assert { stats("boats", {
+    type => "file"
+  , state => "fresh"
+})};
 
 # file was created by the foo formula
 assert_file("$testdir/boats", "bar");
+
+teardown();

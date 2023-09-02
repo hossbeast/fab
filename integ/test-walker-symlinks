@@ -1,0 +1,81 @@
+#!/usr/bin/env perl
+
+#
+# This test has symlinks
+#
+
+use strict;
+use warnings;
+$SIG{__WARN__} = sub { die @_ };
+
+use POSIX;
+use File::Basename;
+use Cwd;
+our $repodir;
+our $bam_basedir;
+BEGIN { $repodir = dirname(Cwd::realpath("$0/..")) }
+use lib "$repodir/integ/lib";
+use util;
+use tree;
+use bam;
+
+init(subdir => 'B');
+my $testdir = setup(<<"TREE");
+|-- module.bam+devel
+|-- A
+|   `-- foo
+|       `-- bar
+|   `-- baz
+|       `-- qux
+|-- B
+|   `-- module.bam+devel <<
+>>
+|-- system-config <<
+walker : {
+  exclude : {
+    foo
+  }
+  include : {
+    $bam_basedir
+  }
+}
+filesystems : {
+  / : {
+    readlinks : false # true
+  }
+}
+>>
+TREE
+
+# before
+assert {
+  stats(undef, {
+    modules => 1
+})};
+assert {
+  stats(".", "-S", {
+    type => 'module'
+  , state => 'fresh'
+  , reloaded => 1
+  , parse => 1
+  , parse_ok => 1
+})};
+
+assert {
+  stats("$bam_basedir/A/baz/qux", {
+    state => "fresh"
+})};
+assert {
+  stats("$bam_basedir/A/baz", {
+    state => "fresh"
+})};
+
+print("$bam_basedir/A/baz/boats -> qux\n");
+symlink("qux", "$bam_basedir/A/baz/boats") or die;
+reconcile();
+assert {
+  stats("$bam_basedir/A/baz/boats", {
+    state => "fresh"
+})};
+
+teardown();

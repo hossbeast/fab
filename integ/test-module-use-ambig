@@ -1,0 +1,149 @@
+#!/usr/bin/env perl
+
+#
+#
+
+use strict;
+use warnings;
+$SIG{__WARN__} = sub { die @_ };
+
+use POSIX;
+use File::Basename;
+use Cwd;
+our $repodir;
+our $bam_basedir;
+BEGIN { $repodir = dirname(Cwd::realpath("$0/..")) }
+use lib "$repodir/integ/lib";
+use util;
+use tree;
+use bam;
+
+# unresolved use ref
+init(subdir => 'B');
+setup(<<TREE);
+|-- A
+    `-- rules.bam+devel <<
+rule foo -> bar
+>>
+|-- C
+    `-- foo
+|-- B
+    `-- module.bam+devel <<
+use A
+#bind A/"rules.bam+devel"+(.) => //A
+>>
+|-- system-config <<
+walker : {
+  include : {
+    $bam_basedir
+  }
+}
+>>
+TREE
+
+my $A_rules_id = hash64("$bam_basedir/A/rules.bam+devel");
+my $CA_rules_id = hash64("$bam_basedir/C/A/rules.bam+devel");
+
+# 1. A ref resolves
+assert { stats(undef, {
+    modules => 1
+  , rules_files => 1
+  , system_state_ok => 1
+})};
+assert { stats(".", "-S", {
+    type => "module"
+  , state => "fresh"
+  , fresh => 1
+  , stale => 1
+  , parse => 1
+  , parse_ok => 1
+  , reloaded => 1
+  , uses_down => 1
+  , modules_up => 0
+  , modules_down => 0
+})};
+assert { stats("$bam_basedir/A/rules.bam+devel", "-S", {
+    type => 'rules'
+  , state => "fresh"
+  , fresh => 1
+  , stale => 1
+  , parse => 1
+  , parse_ok => 1
+  , uses_up => 1
+})};
+
+assert { ls("//module/rules/$A_rules_id", "$A_rules_id -> $bam_basedir/A/rules.bam+devel") };
+
+exit;
+
+# create a second target for resolving A
+#  creating this invalidates B/module through the index-vertex A
+mkdirp("$bam_basedir/C/A");
+
+# 2. A ref is now ambiguous
+reconcile(expect_error => 1);
+assert { stats(undef, {
+    modules => 1
+  , rules_files => 1
+  , system_state_ok => 1
+})};
+# module reload attempted but unsuccessful
+assert { stats(".", "-S", {
+    type => "module"
+  , state => "stale"
+  , fresh => 1
+  , stale => 2
+  , modules_up => 0
+  , modules_down => 0
+  , uses_down => 1  # reference no longer in effect
+  , reloaded => 1
+  , parse => 1
+  , parse_ok => 1
+})};
+assert { stats("$bam_basedir/A/rules.bam+devel", "-S", {
+    type => 'rules'
+  , state => "fresh"
+  , fresh => 1
+  , stale => 1      # not invalidated by rma-rules disconnect event
+  , parse => 1
+  , parse_ok => 1
+  , uses_up => 0    # no longer referenced
+})};
+
+teardown();
+
+#
+## create first target for resolving A
+#open my $fh, ">>", "$bam_basedir/A/rules.bam+devel" or die $!;
+#close $fh;
+#
+## after - A has now resolved
+#reconcile();
+#assert { stats(undef, {
+#    modules => 1
+#  , rules_files => 1
+#  , system_state_ok => 2
+#})};
+## module was reloaded
+#assert { stats(".", "-S", {
+#    type => "module"
+#  , state => "fresh"
+#  , modules_up => 0
+#  , modules_down => 0
+#  , uses_down => 1
+## module file was reloaded (and not reparsed)
+#  , reloaded => 1
+#  , parse => 1
+#  , parse_ok => 1
+#})};
+#assert { stats("$bam_basedir/A/rules.bam+devel", "-S", {
+#    parse => 1
+#  , parse_ok => 1
+#  , type => 'rules'
+#  , state => "fresh"
+#  , uses_up => 1
+#})};
+#assert { stats("$bam_basedir/A", {
+#    type => 'dir'
+#  , state => "fresh"
+#})};
