@@ -24,6 +24,9 @@ my @cmd = (
   , grep { substr($_, -2) eq ".o" } split(/ /, $ENV{objects})
 );
 
+# no combination of arguments will cause ar to actually recreate the entire archive
+unlink($ENV{bm_target});
+
 # exec into the compiler
 exec { $cmd[0] } @cmd
 
