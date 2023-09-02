@@ -28,6 +28,7 @@ variant devel : [
 
 # default build targets
 rule libvalyria.?.a -> //module/targets
+rule //tests -> //module/targets
 
 # library dependencies
 rule //module/imports/*~libxunit/lib*.?.a -> libvalyria.$?.a

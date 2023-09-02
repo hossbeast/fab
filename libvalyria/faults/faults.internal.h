@@ -14,7 +14,6 @@ extern struct {
   struct {
     struct {
       char * key;
-      size_t len;
     } keys[FAULTS_MAX_ENTRIES];
     size_t len;
   } key_index_boundary;
@@ -22,7 +21,6 @@ extern struct {
   struct {
     struct {
       char * key;
-      size_t len;
       uint32_t hash;
     } keys[FAULTS_MAX_ENTRIES];
     size_t len;

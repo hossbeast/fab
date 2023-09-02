@@ -5,7 +5,7 @@
 
 #include "xlinux/xstdlib.h"
 
-#include "hashtable.internal.h"
+#include "hashtable.h"
 #include "faults.internal.h"
 
 #include "macros.h"
@@ -25,203 +25,127 @@
  */
 #define MAX_SATURATION    0.45f      /* for 100-sized table, reallocate at 45 keys */
 
-static uint32_t hash_entry(const hashtable_t * ht, void * ent)
+#define OCCUPIED 0x01   /* this bucket contains an entry */
+#define DELETED  0x02   /* this bucket has been deleted */
+
+static void bucket_delete(hashtable * restrict ht, hashtable_bucket * b)
 {
-  return ht->hash_fn(0, ent, ht->esz);
+  if(b->attr & DELETED) {
+    return;
+  }
+
+  b->attr |= DELETED;
+
+  if(!ht->delete_fn) {
+    return;
+  }
+
+  ht->delete_fn(b->p);
 }
 
-static int compare_entries(const hashtable_t * ht, void * A, void * B)
+static uint32_t hash_index(uint32_t h)
 {
-  return ht->cmp_fn(A, ht->esz, B, ht->esz);
-}
+  size_t x;
 
-static void delete_entry(const hashtable_t * ht, void * ent)
-{
-  if(ht->destroy_fn)
-    ht->destroy_fn(ent);
-}
-
-static void destroy_entry(const hashtable_t * ht, void * ent)
-{
-}
-
-static void store_entry(const hashtable_t * ht, void * dst, void * entry, bool found)
-{
-  if(found)
-    ht->ops->delete_entry(ht, entry);
-
-  memcpy(dst, entry, ht->esz);
-}
-
-static ht_operations ht_cbs = {
-    hash_entry : hash_entry
-  , compare_entries : compare_entries
-  , delete_entry : delete_entry
-  , destroy_entry : destroy_entry
-  , store_entry: store_entry
-};
-
-static void bucket_delete(hashtable_t * restrict ht, ht_bucket * b)
-{
-  ht->ops->delete_entry(ht, b->p);
-  b->attr |= HT_DELETED;
-}
-
-static void bucket_destroy(hashtable_t * restrict ht, ht_bucket * b)
-{
-  if((b->attr & HT_DELETED) == 0)
-    ht->ops->delete_entry(ht, b->p);
-
-  ht->ops->destroy_entry(ht, b->p);
-}
-
-static uint32_t hash_index(uint32_t h, uint32_t lm)
-{
   if(fault(HASH_INDEX))
   {
-    int x;
     for(x = 0; x < fault_state.hash_index.len; x++)
     {
       typeof(*fault_state.hash_index.hashes) faultentry = fault_state.hash_index.hashes[x];
-      if(h == faultentry.hash)
+      if(h == faultentry.hash) {
         return faultentry.index;
+      }
     }
   }
 
-  return h & lm;
+  return h;
 }
 
 #if CONFIG_DEVEL
-static uint32_t devel_hash_fn(uint32_t h, const void * const restrict v, size_t l)
+static uint32_t hash_entry(uint32_t h, const void * entry)
 {
+  int x;
+
   if(fault(KEY_HASH))
   {
-    int x;
     for(x = 0; x < fault_state.key_hash.len; x++)
     {
       typeof(*fault_state.key_hash.keys) faultentry = fault_state.key_hash.keys[x];
-      if(memncmp(v, l, faultentry.key, faultentry.len) == 0)
+      if(entry == faultentry.key) {
         return faultentry.hash;
+      }
     }
   }
 
-  return hash32(h, v, l);
+  return hash32(h, &entry, sizeof(entry));
+}
+#else
+static uint32_t hash_entry(uint32_t h, const void * entry)
+{
+  return hash32(h, &entry, sizeof(entry));
 }
 #endif
 
-//
-// internal
-//
-
-ht_bucket * hashtable_table_bucket(const hashtable_t * restrict ht, size_t x)
+static int cmp_entries(const void *A, const void *B)
 {
-  ht_bucket * b = hashtable_bucket_at(ht, ht->tab, x);
-  if(b->attr == HT_OCCUPIED)
-    return b;
-
-  return 0;
+  return INTCMP(A, B);
 }
 
-ht_bucket * hashtable_bucket_at(const hashtable_t * restrict ht, ht_bucket * restrict tab, size_t x)
+static hashtable_bucket * bucket_get(const hashtable * restrict ht, size_t x)
 {
-  return (ht_bucket*)(((char*)tab) + ((sizeof(*tab) + ht->essz) * x));
-}
+  hashtable_bucket * b;
 
-int hashtable_probe(const hashtable_t * const restrict ht, uint32_t h, void * ent, size_t ent_sz, hashtable_cmp cmp, size_t * restrict i)
-{
-  size_t li;
-  if(!i)
-    i = &li;
-
-  *i = hash_index(h, ht->lm);
-
-  size_t ij = 0;
-  size_t * ijp = &ij;
-
-  while(1)
-  {
-    ht_bucket * b = hashtable_bucket_at(ht, ht->tab, *i);
-    RUNTIME_ASSERT((b->attr & ~(HT_OCCUPIED | HT_DELETED)) == 0);
-    if(b->attr & HT_OCCUPIED)
-    {
-      if(b->attr & HT_DELETED)
-      {
-        if(ijp)
-          *ijp = *i;
-
-        ijp = 0;
-      }
-      else if(cmp && cmp(b->p, ent, ent_sz) == 0)
-      {
-        return 0;
-      }
-      else if(!cmp && ht->ops->compare_entries(ht, ent, b->p) == 0)
-      {
-        return 0;
-      }
-    }
-    else if(ijp == 0)
-    {
-      *i = ij;
-      return 1;
-    }
-    else
-    {
-      return -1;
-    }
-
-    (*i)++;
-    (*i) &= ht->lm;
+  b = &ht->tab[x & ht->lm];
+  if(!(b->attr == OCCUPIED)) {
+    return 0;
   }
+
+  return b;
 }
 
-void hashtable_grow(hashtable_t * restrict ht)
+/* reallocate the table to the next-larger power-of-two */
+static void rehash(hashtable * restrict ht)
 {
-  ht_bucket * tab = 0;
+  hashtable_bucket * tab = 0;
   size_t tabl = 0;
   int x;
-  ht_bucket *b;
-  ht_bucket *nb;
+  hashtable_bucket *b;
+  hashtable_bucket *nb;
   size_t j;
-
 
   // new table
   tab = ht->tab;
-  xmalloc(&ht->tab, (ht->table_size << 2) * (sizeof(*ht->tab) + ht->essz));
+  xmalloc(&ht->tab, (ht->table_size << 2) * sizeof(*ht->tab));
   tabl = ht->table_size;
 
-  ht->table_size <<= 2;
+  ht->table_size <<= 1;
   ht->overflow_size = (size_t)(ht->table_size * MAX_SATURATION);
   ht->lm = ht->table_size - 1;
 
   /* reseat occupied entries in the new allocation and discard deleted entries
-   * thus, after this operation, dirty size == size
-   */
+   * thus, after this operation, dirty size == size */
   for(x = 0; x < tabl; x++)
   {
-    b = hashtable_bucket_at(ht, tab, x);
-
-    if(!(b->attr & HT_OCCUPIED))
-      continue;
-
-    if(b->attr & HT_DELETED)
-    {
-      ht->ops->destroy_entry(ht, b->p);
+    b = &tab[x];
+    if(!(b->attr & OCCUPIED)) {
       continue;
     }
 
-    j = b->h & ht->lm;
-    nb = hashtable_bucket_at(ht, ht->tab, j);
-    while(nb->attr & HT_OCCUPIED)
+    if(b->attr & DELETED) {
+      continue;
+    }
+
+    j = b->hash;
+    nb = &ht->tab[j & ht->lm];
+    while(nb->attr & OCCUPIED)
     {
       j++;
-      j &= ht->lm;
-      nb = hashtable_bucket_at(ht, ht->tab, j);
+      nb = &ht->tab[j & ht->lm];
     }
 
-    nb->attr = HT_OCCUPIED;
-    nb->h = b->h;
-    memcpy(nb->p, b->p, ht->esz);
+    nb->attr = OCCUPIED;
+    nb->hash = b->hash;
+    nb->p = b->p; // memcpy(nb->p, b->p, ht->esz);
   }
 
   ht->dirty_size = ht->size;
@@ -229,321 +153,382 @@ void hashtable_grow(hashtable_t * restrict ht)
   free(tab);
 }
 
-void hashtable_init(
-    hashtable_t * restrict ht
-  , size_t esz
+/*
+ * search for an entry by linear probe
+ *
+ * ht    - hashtable
+ * h     - entry hash
+ * entry - pointer to the entry
+ * [i]   - (returns) table index
+ *
+ * returns
+ *   0 : found
+ *   1 : not found, and the first deleted slot in the probe sequence is returned in i
+ *  -1 : not found
+ */
+static int __attribute__((nonnull)) probe(const hashtable * restrict ht, hashtable_search_context * restrict ctx)
+{
+  size_t ij;
+  size_t *ijp;
+  hashtable_bucket *b;
+
+  ctx->index = hash_index(ctx->hash);
+  ij = 0;
+  ijp = &ij;
+
+  while(1)
+  {
+    b = &ht->tab[ctx->index & ht->lm];
+    RUNTIME_ASSERT((b->attr & ~(OCCUPIED | DELETED)) == 0);
+    if(b->attr & OCCUPIED)
+    {
+      if(b->attr & DELETED)
+      {
+        if(ijp) {
+          *ijp = ctx->index;
+        }
+
+        ijp = 0;
+      }
+      else if(ctx->cmp_fn(b->p, ctx->entry) == 0)
+      {
+        return 0;
+      }
+    }
+    else if(ijp == 0)
+    {
+      ctx->index = ij;
+      return 1;
+    }
+    else
+    {
+      return -1;
+    }
+
+    ctx->index++;
+  }
+}
+
+//
+// internal
+//
+
+void hashtable_initx(
+    hashtable * restrict ht
   , size_t capacity
-  , ht_operations * restrict ops
-  , uint32_t (*hash_fn)(uint32_t h, const void * entry, size_t sz)
-  , int (*cmp_fn)(const void * A, size_t Asz, const void * B, size_t Bsz)
+  , uint32_t (*hash_fn)(uint32_t h, const void * entry)
+  , int (*cmp_fn)(const void * A, const void * B)
+  , void (*delete_fn)(void * entry)
 )
 {
+  memset(ht, 0, sizeof(*ht));
+
   // compute initial table size for 100 keys @ given saturation
   ht->table_size = (capacity ?: DEFAULT_CAPACITY) * (1 / MAX_SATURATION);
 
   // round up to the next highest power of 2
   ht->table_size = roundup2(ht->table_size);
-
-  ht->overflow_size = (size_t)(ht->table_size * MAX_SATURATION);
   ht->lm = ht->table_size - 1;
 
-  ht->ops = ops;
-  ht->esz = esz;
-  ht->essz = roundup(ht->esz, sizeof(ht_bucket));
+  ht->overflow_size = (size_t)(ht->table_size * MAX_SATURATION);
 
-  xmalloc(&ht->tab, ht->table_size * (sizeof(*ht->tab) + ht->essz));
+  xmalloc(&ht->tab, ht->table_size * sizeof(*ht->tab));
 
-  // default hash fn
   if(hash_fn)
+  {
     ht->hash_fn = hash_fn;
+  }
   else
   {
-#if CONFIG_DEVEL
-    ht->hash_fn = devel_hash_fn;
-#else
-    ht->hash_fn = hash32;
-#endif
+    ht->hash_fn = hash_entry;
   }
 
-  // default cmp fn
-  ht->cmp_fn = cmp_fn ?: memncmp;
+  ht->cmp_fn = cmp_fn ?: cmp_entries;
+  ht->delete_fn = delete_fn;
 }
 
-void hashtable_xdestroy(hashtable_t * restrict ht)
+void hashtable_init(hashtable * restrict ht)
 {
-  int x;
-  for(x = 0; x < ht->table_size; x++)
-  {
-    ht_bucket * b = hashtable_bucket_at(ht, ht->tab, x);
-    if(b->attr & HT_OCCUPIED)
-      bucket_destroy(ht, b);
-  }
+  hashtable_initx(ht, 0, 0, 0, 0);
+}
 
+void hashtable_destroy(hashtable * restrict ht)
+{
+  hashtable_recycle(ht);
   free(ht->tab);
-}
-
-void hashtable_store(hashtable_t * restrict ht, void * entry, ht_bucket ** bp)
-{
-  ht_bucket *b;
-  size_t i;
-  uint32_t h;
-  int r;
-
-  h = ht->ops->hash_entry(ht, entry);
-  r = hashtable_probe(ht, h, entry, 0, 0, &i);
-  if(r == -1 && ht->dirty_size == ht->overflow_size)
-  {
-    hashtable_grow(ht);
-    hashtable_probe(ht, h, entry, 0, 0, &i);
-  }
-
-  b = hashtable_bucket_at(ht, ht->tab, i);
-  ht->ops->store_entry(ht, b->p, entry, r == 0);
-
-  // update accounting on new entry
-  if(r)
-  {
-    b->h = h;
-    if(b->attr == 0)
-      ht->dirty_size++;
-    b->attr = HT_OCCUPIED;
-    ht->size++;
-    ht->hash += h;
-  }
-
-  *bp = b;
 }
 
 //
 // api
 //
 
-void API hashtable_create(hashtable ** restrict ht, size_t esz)
+void API hashtable_create(hashtable ** restrict ht)
 {
-  hashtable_createx(ht, esz, 0, 0, 0, 0);
+  hashtable_createx(ht, 0, 0, 0, 0);
 }
 
 void API hashtable_createx(
-    hashtable ** restrict htx
-  , size_t esz
+    hashtable ** restrict htp
   , size_t capacity
-  , uint32_t (*hash_fn)(uint32_t h, const void * entry, size_t sz)
-  , int (*cmp_fn)(const void * A, size_t Asz, const void * B, size_t Bsz)
-  , void (*destroy_fn)(void * entry)
+  , uint32_t (*hash_fn)(uint32_t h, const void * entry)
+  , int (*cmp_fn)(const void * A, const void * B)
+  , void (*delete_fn)(void * entry)
 )
 {
-  hashtable_t * ht = 0;
+  hashtable * ht = 0;
 
   xmalloc(&ht, sizeof(*ht));
-  hashtable_init(ht, esz, capacity, &ht_cbs, hash_fn, cmp_fn);
+  hashtable_initx(ht, capacity, hash_fn, cmp_fn, delete_fn);
 
-  ht->destroy_fn = destroy_fn;
-
-  *htx = &ht->htx;
-  ht = 0;
-
-  if(ht)
-    hashtable_xfree(&ht->htx);
+  *htp = ht;
 }
 
-void API hashtable_xfree(hashtable * restrict htx)
+void API hashtable_free(hashtable * restrict ht)
 {
-  hashtable_t * ht = containerof(htx, hashtable_t, htx);
-
-  if(ht)
-    hashtable_xdestroy(ht);
+  if(ht) {
+    hashtable_destroy(ht);
+  }
 
   free(ht);
 }
 
-void API hashtable_ixfree(hashtable ** restrict htx)
+void API hashtable_ifree(hashtable ** restrict htp)
 {
-  hashtable_xfree(*htx);
-  *htx = 0;
+  hashtable_free(*htp);
+  *htp = 0;
 }
 
-void API hashtable_put(hashtable * restrict htx, void * entry)
+bool API hashtable_search(const hashtable * restrict ht, hashtable_search_context * restrict ctx)
 {
-  ht_bucket *b;
-  hashtable_t * ht = containerof(htx, hashtable_t, htx);
+  if(ctx->hash_fn == 0) {
+    ctx->hash_fn = ht->hash_fn;
+  }
+  if(ctx->cmp_fn == 0) {
+    ctx->cmp_fn = ht->cmp_fn;
+  }
 
-  hashtable_store(ht, entry, &b);
+  ctx->hash = ctx->hash_fn(0, ctx->entry);
+  ctx->probe_result = probe(ht, ctx);
+  return ctx->probe_result == 0;
 }
 
-void * API hashtable_get(const hashtable * restrict htx, void * entry)
+void * API hashtable_fetch(const hashtable * restrict ht, hashtable_search_context * restrict ctx)
 {
-  size_t i;
-  uint32_t h;
-  ht_bucket * b;
+  hashtable_bucket *b;
 
-  hashtable_t * ht = containerof(htx, hashtable_t, htx);
+  b = &ht->tab[ctx->index & ht->lm];
+  return b->p;
+}
 
-  h = ht->ops->hash_entry(ht, entry);
-  if(hashtable_probe(ht, h, entry, 0, 0, &i) == 0)
+void * API hashtable_set(hashtable * restrict ht, hashtable_search_context * restrict ctx)
+{
+  hashtable_bucket *b;
+
+  if(ctx->probe_result == -1 && ht->dirty_size == ht->overflow_size)
   {
-    b = hashtable_bucket_at(ht, ht->tab, i);
+    rehash(ht);
+    probe(ht, ctx);//ctx->hash, ctx->entry, &ctx->index);
+  }
+
+  b = &ht->tab[ctx->index & ht->lm];
+  if(ctx->probe_result == 0 && ht->delete_fn)
+  {
+    ht->delete_fn(b->p);
+  }
+  b->p = ctx->entry;
+
+  if(ctx->probe_result)
+  {
+    b->hash = ctx->hash;
+    if(b->attr == 0) {
+      ht->dirty_size++;
+    }
+    b->attr = OCCUPIED;
+    ht->size++;
+    ht->hash += ctx->hash;
+  }
+
+  return b->p;
+}
+
+void API hashtable_remove(hashtable * restrict ht, hashtable_search_context * restrict ctx)
+{
+  hashtable_bucket *b;
+
+  b = &ht->tab[ctx->index & ht->lm];
+  bucket_delete(ht, b);
+  ht->size--;
+  ht->hash -= b->hash;
+}
+
+bool API hashtable_contains(const hashtable * restrict ht, const void * entry)
+{
+  hashtable_search_context ctx;
+
+  ctx = (typeof(ctx)) {
+    entry : (void*)entry
+  };
+
+  return hashtable_search(ht, &ctx);
+}
+
+void * API hashtable_get(const hashtable * restrict ht, const void * entry)
+{
+  hashtable_search_context ctx;
+
+  ctx = (typeof(ctx)) {
+    entry : (void*)entry
+  };
+
+  if(hashtable_search(ht, &ctx)) {
+    return hashtable_fetch(ht, &ctx);
+  }
+  return 0;
+}
+
+void * API hashtable_put(hashtable * restrict ht, void * entry)
+{
+  hashtable_search_context ctx;
+
+  ctx = (typeof(ctx)) {
+    entry : entry
+  };
+  hashtable_search(ht, &ctx);
+  return hashtable_set(ht, &ctx);
+}
+
+bool API hashtable_delete(hashtable * restrict ht, void * entry)
+{
+  hashtable_search_context ctx;
+
+  ctx = (typeof(ctx)) {
+    entry : entry
+  };
+  if(!hashtable_search(ht, &ctx)) {
+    return false;
+  }
+
+  hashtable_remove(ht, &ctx);
+  return true;
+}
+
+void * API hashtable_table_entry(const hashtable * restrict ht, size_t x)
+{
+  hashtable_bucket *b;
+
+  if((b = bucket_get(ht, x))) {
     return b->p;
   }
 
   return 0;
 }
 
-void * API hashtable_search(const hashtable * restrict htx, void * key, size_t key_len, hashtable_hash hash, hashtable_cmp cmp)
+void API hashtable_splice(hashtable * dst, hashtable * src)
 {
-  size_t i;
-  uint32_t h;
-  ht_bucket * b;
+  hashtable_bucket * b;
+  size_t x;
 
-  hashtable_t * ht = containerof(htx, hashtable_t, htx);
-
-  h = hash(0, key, key_len);
-  if(hashtable_probe(ht, h, key, key_len, cmp, &i) == 0)
-  {
-    b = hashtable_bucket_at(ht, ht->tab, i);
-    return b->p;
-  }
-
-  return 0;
-}
-
-void API hashtable_delete(hashtable * restrict htx, void * restrict entry)
-{
-  size_t i;
-  uint32_t h;
-  ht_bucket * b;
-
-  hashtable_t * ht = containerof(htx, hashtable_t, htx);
-
-  h = ht->ops->hash_entry(ht, entry);
-  if(hashtable_probe(ht, h, entry, 0, 0, &i) == 0)
-  {
-    b = hashtable_bucket_at(ht, ht->tab, i);
-    bucket_delete(ht, b);
-    ht->size--;
-    ht->hash -= b->h;
-  }
-}
-
-void API hashtable_splice(hashtable * dstx, hashtable * srcx)
-{
-  ht_bucket * b;
-
-  hashtable_t * dst = containerof(dstx, hashtable_t, htx);
-  hashtable_t * src = containerof(srcx, hashtable_t, htx);
-
-  int x;
   for(x = 0; x < src->table_size; x++)
   {
-    if((b = hashtable_table_bucket(src, x)))
+    if((b = bucket_get(src, x)))
     {
-      hashtable_put(&dst->htx, b->p);
+      hashtable_put(dst, b->p);
 
       // ownership transfer
-      b->attr |= HT_DELETED;
+      b->attr |= DELETED;
     }
   }
   src->size = 0;
   src->hash = 0;
 }
 
-void API hashtable_replicate(hashtable * dstx, hashtable * srcx)
+void API hashtable_replicate(hashtable * dst, hashtable * src)
 {
-  ht_bucket * b;
+  hashtable_bucket * b;
+  size_t x;
 
-  hashtable_t * dst = containerof(dstx, hashtable_t, htx);
-  hashtable_t * src = containerof(srcx, hashtable_t, htx);
-
-  int x;
   for(x = 0; x < src->table_size; x++)
   {
-    if((b = hashtable_table_bucket(src, x)))
+    if((b = bucket_get(src, x)))
     {
-      hashtable_put(&dst->htx, b->p);
+      hashtable_put(dst, b->p);
     }
   }
 }
 
-bool API hashtable_equal(hashtable * const Ax, hashtable * const Bx)
+bool API hashtable_equal(hashtable * A, hashtable * B)
 {
-  ht_bucket * b;
-
-  hashtable_t * A = containerof(Ax, hashtable_t, htx);
-  hashtable_t * B = containerof(Bx, hashtable_t, htx);
-
-  if(A->size != B->size)
-    return false;
-
-  if(A->hash != B->hash)
-    return false;
-
+  hashtable_bucket * b;
   size_t x;
+  hashtable_search_context ctx;
+
+  if(A->size != B->size) {
+    return false;
+  }
+
+  if(A->hash != B->hash) {
+    return false;
+  }
+
+  ctx.hash_fn = B->hash_fn;
+  ctx.cmp_fn = B->cmp_fn;
+
   for(x = 0; x < A->table_size; x++)
   {
-    if((b = hashtable_table_bucket(A, x)))
-    {
-      if(hashtable_probe(B, b->h, b->p, 0, 0, 0) != 0)
-        return false;
+    if(!(b = bucket_get(A, x))) {
+      continue;
+    }
+
+    ctx.hash = b->hash;
+    ctx.entry = b->p;
+    if(probe(B, &ctx) != 0) {
+      return false;
     }
   }
 
   return true;
 }
 
-void API hashtable_recycle(hashtable * const restrict htx)
+void API hashtable_recycle(hashtable * restrict ht)
 {
-  hashtable_t * ht = containerof(htx, hashtable_t, htx);
+  hashtable_bucket *b;
+  size_t x;
 
-  if(ht->size != 0)
-  {
-    int x;
-    for(x = 0; x < ht->table_size; x++)
-    {
-      ht_bucket * b = hashtable_bucket_at(ht, ht->tab, x);
-      if(b->attr == HT_OCCUPIED)
-        bucket_delete(ht, b);
-    }
-
-    ht->size = 0;
-    ht->hash = 0;
+  if(ht->size == 0) {
+    return;
   }
+
+  for(x = 0; x < ht->table_size; x++)
+  {
+    b = &ht->tab[x];
+    if(b->attr == OCCUPIED) {
+      bucket_delete(ht, b);
+    }
+  }
+
+  ht->size = 0;
+  ht->hash = 0;
 }
 
-void API hashtable_entries(const hashtable * restrict htx, void * restrict _entries, size_t * restrict entriesl)
+void API hashtable_enumerate(hashtable * restrict ht, void * restrict _entries, size_t * restrict entriesl)
 {
+  void *** entries;
+  hashtable_bucket *b;
   size_t x;
   size_t i;
-  void *** entries = _entries;
 
-  const hashtable_t * ht = containerof(htx, hashtable_t, htx);
-
+  entries = _entries;
   xmalloc(entries, sizeof(**entries) * ht->size);
 
   i = 0;
   for(x = 0; x < ht->table_size; x++)
   {
-    void * ent;
-    if((ent = hashtable_table_entry(&ht->htx, x)))
-      (*entries)[i++] = ent;
+    if(!(b = bucket_get(ht, x))) {
+      continue;
+    }
+
+    (*entries)[i++] = b->p;
   }
-  (*entriesl) = ht->size;
-}
 
-void * API hashtable_table_entry(const hashtable * restrict htx, size_t x)
-{
-  const hashtable_t * ht = containerof(htx, hashtable_t, htx);
-
-  ht_bucket * b = hashtable_table_bucket(ht, x);
-  if(b)
-    return b->p;
-
-  return NULL;
-}
-
-void API hashtable_table_delete(hashtable * restrict htx, size_t x)
-{
-  hashtable_t * ht = containerof(htx, hashtable_t, htx);
-  ht_bucket * b = hashtable_table_bucket(ht, x);
-  bucket_delete(ht, b);
-  ht->size--;
-  ht->hash -= b->h;
+  *entriesl = i;
 }

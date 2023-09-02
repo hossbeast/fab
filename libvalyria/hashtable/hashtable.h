@@ -15,85 +15,140 @@ REMARKS
 
 #include "types.h"
 
+typedef struct hashtable_bucket {
+  uint32_t hash;
+  uint8_t attr;
+  union {
+    void *p;
+    uint32_t u32;
+    uint64_t u64;
+  };
+} hashtable_bucket;
+
 typedef struct hashtable {
-  size_t size;        // number of entries
-  size_t table_size;  // allocated table size
-  uint32_t hash;      // order invariant hash of entries
+  size_t size;
+  size_t table_size;
+  uint32_t hash;          // order invariant hash of entries
+
+  size_t dirty_size;
+  size_t lm;              // bitmask equal to table_size - 1
+  size_t overflow_size;   // size at which to rehash
+  hashtable_bucket * tab; // bucket table
+
+  // callbacks
+  uint32_t (*hash_fn)(uint32_t h, const void * entry);
+  int (*cmp_fn)(const void * A, const void * B);
+  void (*delete_fn)(void * entry);
 } hashtable;
 
-/// hashtable_create
-//
-// SUMMARY
-//  allocate a hashtable
-//
-// PARAMETERS
-//  ht            - (returns) newly allocated hashtable
-//  esz           - entry size > 0
-//  [capacity]    - initial capacity, the minimum number of entries which can be set without rehashing
-//  [destroy_entry]  - invoked with the entry just before freeing it
-//
-void hashtable_create(hashtable ** restrict ht, size_t esz)
-  __attribute__((nonnull(1)));
-
+/*
+ * allocate a hashtable
+ *
+ * ht          - (returns) newly allocated hashtable
+ * [capacity]  - initial capacity, the minimum number of entries which can be set without rehashing
+ * [delete_fn] - invoked with the entry just before freeing it
+ */
 void hashtable_createx(
     hashtable ** restrict ht
-  , size_t esz
   , size_t capacity
-  , uint32_t (*hash_entry)(uint32_t h, const void * entry, size_t sz)
-  , int (*cmp_entry)(const void * A, size_t Asz, const void * B, size_t Bsz)
-  , void (*destroy_entry)(void * entry)
+  , uint32_t (*hash_fn)(uint32_t h, const void * entry)
+  , int (*cmp_fn)(const void * A, const void * B)
+  , void (*delete_fn)(void * entry)
 )
   __attribute__((nonnull(1)));
 
-/// hashtable_xfree
-//
-// SUMMARY
-//  free a hashtable
-//
-void hashtable_xfree(hashtable * restrict ht);
+void hashtable_create(hashtable ** restrict ht)
+  __attribute__((nonnull(1)));
 
-void hashtable_ixfree(hashtable ** restrict ht)
+void hashtable_free(hashtable * restrict ht);
+void hashtable_ifree(hashtable ** restrict ht)
   __attribute__((nonnull));
 
-/// hashtable_put
-//
-// SUMMARY
-//  add an entry to the hashtable
-//
-// REMARKS
-//  destroys an existing entry, if any
-//
-// PARAMETERS
-//  hashtable - hashtable
-//  entry     - pointer to entry
-//
-void hashtable_put(hashtable * const restrict ht, void * restrict entry)
+void hashtable_init(hashtable * restrict ht)
+  __attribute__((nonnull(1)));
+
+void hashtable_initx(
+    hashtable * restrict ht
+  , size_t capacity
+  , uint32_t (*hash_fn)(uint32_t h, const void * entry)
+  , int (*cmp_fn)(const void * A, const void * B)
+  , void (*delete_fn)(void * entry)
+)
+  __attribute__((nonnull(1)));
+
+void hashtable_destroy(hashtable * restrict ht)
   __attribute__((nonnull));
 
-/// hashtable_get
-//
-// SUMMARY
-//  get an entry in the hashtable
-//
-// PARAMETERS
-//  ht    - hashtable
-//  entry - pointer to entry
-//
-// RETURNS
-//  pointer to entry, if any
-//
-void * hashtable_get(const hashtable * const restrict ht, void * restrict entry)
+typedef struct hashtable_search_context {
+  void *entry;
+  uint32_t hash;
+  int probe_result;
+  size_t index;
+  uint32_t (*hash_fn)(uint32_t h, const void * entry);
+  int (*cmp_fn)(const void * A, const void * B);
+} hashtable_search_context;
+
+/*
+ * search a hashtable for an entry
+ *
+ * returns a boolean value indicating whether the entry was found
+ */
+bool hashtable_search(const hashtable * restrict ht, hashtable_search_context * restrict ctx)
   __attribute__((nonnull));
 
-static inline bool __attribute__((nonnull)) hashtable_contains(const hashtable * const restrict ht, void * restrict entry)
-{
-  return hashtable_get(ht, entry) ? true : false;
-}
+/* put an entry in the hashtable after hashtable_search returns true */
+void * hashtable_set(hashtable * restrict ht, hashtable_search_context * restrict ctx)
+  __attribute__((nonnull));
 
-typedef uint32_t (*hashtable_hash)(uint32_t h, const void * key, size_t sz);
-typedef int (*hashtable_cmp)(const void * A, const void * key, size_t sz);
+/* get an entry in the hashtable after hashtable_search returns true */
+void * hashtable_fetch(const hashtable * restrict ht, hashtable_search_context * restrict ctx)
+  __attribute__((nonnull));
 
-void * hashtable_search(const hashtable * restrict ht, void * key, size_t key_len, hashtable_hash, hashtable_cmp cmp)
+/* delete an entry from the hashtable after hashtable_search returns true */
+void hashtable_remove(hashtable * restrict m, hashtable_search_context * restrict ctx)
+  __attribute__((nonnull));
+
+/*
+ * create/update an entry in the hashtable
+ *
+ * REMARKS
+ *  destroys an existing entry, if any
+ *
+ * PARAMETERS
+ *  ht    - hashtable
+ *  entry - pointer to entry
+ */
+void * hashtable_put(hashtable * restrict ht, void * restrict entry)
+  __attribute__((nonnull(1)));
+
+/*
+ * get an entry in the hashtable
+ *
+ * ht    - hashtable
+ * entry - pointer to entry
+ *
+ * RETURNS
+ *  pointer to entry, if any
+ */
+void * hashtable_get(const hashtable * restrict ht, const void * restrict entry)
+  __attribute__((nonnull(1)));
+
+bool API hashtable_contains(const hashtable * restrict ht, const void * restrict entry)
+  __attribute__((nonnull(1)));
+
+/* get the entry at the specified index, if any */
+void * API hashtable_table_entry(const hashtable * restrict ht, size_t x)
+  __attribute__((nonnull));
+
+/*
+ * remove an entry from the hashtable, if any
+ *
+ * m    - hashtable
+ * key  - pointer to key
+ *
+ * if hashtable_delete returns true, then the entry was both found and removed
+ */
+bool hashtable_delete(hashtable * restrict m, void * restrict entry)
   __attribute__((nonnull));
 
 /// hashtable_equal
@@ -101,14 +156,14 @@ void * hashtable_search(const hashtable * restrict ht, void * key, size_t key_le
 // SUMMARY
 //  determine whether two hashtables contain the same set of active entries
 //
-bool hashtable_equal(hashtable * const restrict A, hashtable * const restrict B)
+bool hashtable_equal(hashtable * restrict A, hashtable * restrict B)
   __attribute__((nonnull));
 
 /// hashtable_recycle
 //
 // disassociate all entries - internal structures remain allocated
 //
-void hashtable_recycle(hashtable * const restrict ht)
+void hashtable_recycle(hashtable * restrict ht)
   __attribute__((nonnull));
 
 /// hashtable_splice
@@ -127,38 +182,5 @@ void hashtable_splice(hashtable * dst, hashtable * src)
 void hashtable_replicate(hashtable * dst, hashtable * src)
   __attribute__((nonnull));
 
-/// hashtable_delete
-//
-// SUMMARY
-//  remove an entry from the hashtable, if any
-//
-// PARAMETERS
-//  m    - hashtable
-//  key  - pointer to key
-//
-void hashtable_delete(hashtable * restrict m, void * restrict entry)
-  __attribute__((nonnull));
-
-/// hashtable_entries
-//
-// SUMMARY
-//  returns a list of entries in the hashtable
-//
-// PARAMETERS
-//  m      - hashtable
-//  list   - (returns) list, to be freed by the caller
-//  listl  - (returns) size of list
-//
-void hashtable_entries(const hashtable * restrict m, void * restrict entries, size_t * entriesl)
-  __attribute__((nonnull));
-
-/// hashtable_table_entry
-//
-// SUMMARY
-//  get a pointer to the entry at the specified table index, if any
-//
-void * hashtable_table_entry(const hashtable * restrict ht, size_t x)
-  __attribute__((nonnull));
-
-void hashtable_table_delete(hashtable * restrict ht, size_t x)
+void API hashtable_enumerate(hashtable * restrict ht, void * restrict _entries, size_t * restrict entriesl)
   __attribute__((nonnull));

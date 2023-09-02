@@ -7,58 +7,56 @@
 #include "xlinux/xstdlib.h"
 
 #include "hashtable.h"
-#include "test_util.h"
+#include "unit.h"
 
 #include "macros.h"
 #include "common/hash.h"
 
-static inline void absent(hashtable * restrict ht, void * restrict entry)
+static uint32_t hash32_i32(uint32_t h, const void * entry)
 {
-  bool i = hashtable_contains(ht, entry);
-  assert_eq_b(false, i);
+  return hash32(h, entry, sizeof(int32_t));
 }
 
-static void validate_entries(hashtable * restrict ht, void * _entries)
+static int cmp_i32(const void *A, const void *B)
 {
-  int ** entries = _entries;
+  return INTCMP(*(int32_t *)A, *(int32_t *)B);
+}
 
-  const int ** items = 0;
-  size_t itemsl;
+static inline bool contains(hashtable * restrict ht, void * entry)
+{
+  hashtable_search_context ctx;
+  ctx = (typeof(ctx)) { entry : entry };
+  return hashtable_search(ht, &ctx);
+}
 
+static inline void absent(hashtable * restrict ht, void * entry)
+{
+  bool exists = contains(ht, entry);
+  assert_eq_b(false, exists);
+}
+
+static void validate_intlist(hashtable * restrict ht, int * entries, size_t entriesl)
+{
+  const int * item;
   int x;
   int i;
-
-  int entriesl = sentinel(entries);
 
   // items in the set are in the entries - direct table access
   for(x = 0; x < ht->table_size; x++)
   {
-    const int * item;
     if((item = hashtable_table_entry(ht, x)))
     {
       for(i = 0; i < entriesl; i++)
       {
-        if(*item == *entries[i])
+        if(*item == entries[i]) {
           break;
+        }
       }
 
-      if(i == entriesl)
-        ufailf("item", "in entries", "not found : %ht", item);
+      if(i == entriesl) {
+        ufailf("item", "in entrylist", "not found : %d", *item);
+      }
     }
-  }
-
-  // items in the set are in the entries - returned sequential list
-  hashtable_entries(ht, &items, &itemsl);
-  for(x = 0; x < itemsl; x++)
-  {
-    for(i = 0; i < entriesl; i++)
-    {
-      if(*items[x] == *entries[i])
-        break;
-    }
-
-    if(i == entriesl)
-      ufailf("item", "in entries", "not found : %ht", items[x]);
   }
 
   // items in the entries are in the set - table access
@@ -66,21 +64,20 @@ static void validate_entries(hashtable * restrict ht, void * _entries)
   {
     for(i = 0; i < ht->table_size; i++)
     {
-      const int * item;
-      if((item = hashtable_table_entry(ht, i)) && *item == *entries[x])
+      if((item = hashtable_table_entry(ht, i)) && *item == entries[x]) {
         break;
+      }
     }
 
-    if(i == ht->table_size)
-      ufailf("item", "in set", "not found : %ht", entries[x]);
+    if(i == ht->table_size) {
+      ufailf("entry", "in table", "not found : %d", entries[x]);
+    }
   }
-
-  free(items);
 }
 
 static inline void construct(hashtable ** restrict ht, int ** entries, int start)
 {
-  hashtable_create(ht, sizeof(int));
+  hashtable_create(ht);
 
   int len = sentinel(entries);
   int x = start;
@@ -90,62 +87,37 @@ static inline void construct(hashtable ** restrict ht, int ** entries, int start
   } while(x != start);
 }
 
-static void test_sizes()
-{
-  hashtable * ht = 0;
-
-  int x;
-  for(x = 1; x <= 17; x++)
-  {
-    hashtable_create(&ht, x);
-
-    int y;
-    for(y = 0; y < 10; y++)
-    {
-      char data[32];
-      sprintf(data, "%d-%d", x, y);
-      hashtable_put(ht, data);
-      assert_notnull(hashtable_get(ht, data));
-    }
-
-    hashtable_ixfree(&ht);
-  }
-
-  hashtable_xfree(ht);
-}
-
 static void test_basic()
 {
-  hashtable * ht = 0;
-  hashtable_create(&ht, sizeof(int));
+  hashtable ht;
+  hashtable_init(&ht);
 
-  int * entries[] = {
-      (int[]) { 1 }
-    , (int[]) { 200 }
-    , (int[]) { 3 }
-    , 0
+  int entries[] = {
+      1
+    , 200
+    , 3
   };
 
-  hashtable_put(ht, entries[0]);
-  hashtable_put(ht, entries[1]);
-  hashtable_put(ht, entries[2]);
+  hashtable_put(&ht, &entries[0]);
+  hashtable_put(&ht, &entries[1]);
+  hashtable_put(&ht, &entries[2]);
 
-  assert_eq_d(3, ht->size);
+  assert_eq_d(3, ht.size);
 
   // entries by lookup
-  assert_eq_d(*(int*)hashtable_get(ht, entries[0]), *entries[0]);
-  assert_eq_d(*(int*)hashtable_get(ht, entries[1]), *entries[1]);
-  assert_eq_d(*(int*)hashtable_get(ht, entries[2]), *entries[2]);
+  assert_eq_d(*(int*)hashtable_get(&ht, &entries[0]), entries[0]);
+  assert_eq_d(*(int*)hashtable_get(&ht, &entries[1]), entries[1]);
+  assert_eq_d(*(int*)hashtable_get(&ht, &entries[2]), entries[2]);
 
   // entries by contains
-  assert_eq_b(true, hashtable_contains(ht, entries[0]));
-  assert_eq_b(true, hashtable_contains(ht, entries[1]));
-  assert_eq_b(true, hashtable_contains(ht, entries[2]));
+  assert_eq_b(true, contains(&ht, &entries[0]));
+  assert_eq_b(true, contains(&ht, &entries[1]));
+  assert_eq_b(true, contains(&ht, &entries[2]));
 
   // entries by enumeration
-  validate_entries(ht, entries);
+  validate_intlist(&ht, entries, sizeof(entries) / sizeof(*entries));
 
-  hashtable_xfree(ht);
+  hashtable_destroy(&ht);
 }
 
 int X;
@@ -157,38 +129,42 @@ static void destroy(void * ent)
 static void test_put()
 {
   hashtable * ht = 0;
-  hashtable_createx(&ht, sizeof(int), 0, 0, 0, destroy);
+  int value;
+  int *v;
 
-  int value = 5;
+  hashtable_createx(&ht, 0, 0, 0, destroy);
+
+  value = 5;
   hashtable_put(ht, &value);
   assert_eq_d(0, X);
-  assert_eq_d(true, hashtable_contains(ht, &value));
+  assert_eq_d(true, contains(ht, &value));
   assert_eq_d(1, ht->size);
 
   // put destroys the existing value
   hashtable_put(ht, &value);
   assert_eq_d(1, X);
-  assert_eq_d(true, hashtable_contains(ht, &value));
+  assert_eq_d(true, contains(ht, &value));
   assert_eq_d(1, ht->size);
-  int * v = hashtable_get(ht, &value);
+  v = hashtable_get(ht, &value);
   assert_eq_d(5, *v);
 
-  hashtable_xfree(ht);
+  hashtable_free(ht);
 }
 
 static void test_delete()
 {
   hashtable * ht = 0;
-  hashtable_create(&ht, sizeof(int));
+  hashtable_createx(&ht, 0, hash32_i32, cmp_i32, 0);
+  size_t entries_len;
 
-  int * entries[] = {
-      (int[]){ 1 }
-    , (int[]){ 200 }
-    , (int[]){ 3 }
-    , (int[]){ 37 }
-    , (int[]){ 9000000 }
-    , 0
+  int entries[] = {
+      1
+    , 200
+    , 3
+    , 37
+    , 9000000
   };
+  entries_len = sizeof(entries) / sizeof(*entries);
 
   hashtable_put(ht, (int[]){ 1 });
   hashtable_put(ht, (int[]){ 200 });
@@ -197,37 +173,37 @@ static void test_delete()
   hashtable_put(ht, (int[]){ 9000000 });
 
   // successive deletion
-  hashtable_delete(ht, entries[4]);
+  hashtable_delete(ht, &entries[4]);
   assert_eq_d(4, ht->size);
-  absent(ht, entries[4]);
-  entries[4] = 0;
-  validate_entries(ht, entries);
+  absent(ht, &entries[4]);
+  entries_len--;
+  validate_intlist(ht, entries, entries_len);
 
-  hashtable_delete(ht, entries[3]);
+  hashtable_delete(ht, &entries[3]);
   assert_eq_d(3, ht->size);
-  absent(ht, entries[3]);
-  entries[3] = 0;
-  validate_entries(ht, entries);
+  absent(ht, &entries[3]);
+  entries_len--;
+  validate_intlist(ht, entries, entries_len);
 
-  hashtable_delete(ht, entries[2]);
+  hashtable_delete(ht, &entries[2]);
   assert_eq_d(2, ht->size);
-  absent(ht, entries[2]);
-  entries[2] = 0;
-  validate_entries(ht, entries);
+  absent(ht, &entries[2]);
+  entries_len--;
+  validate_intlist(ht, entries, entries_len);
 
-  hashtable_delete(ht, entries[1]);
+  hashtable_delete(ht, &entries[1]);
   assert_eq_d(1, ht->size);
-  absent(ht, entries[1]);
-  entries[1] = 0;
-  validate_entries(ht, entries);
+  absent(ht, &entries[1]);
+  entries_len--;
+  validate_intlist(ht, entries, entries_len);
 
-  hashtable_delete(ht, entries[0]);
+  hashtable_delete(ht, &entries[0]);
   assert_eq_d(0, ht->size);
-  absent(ht, entries[0]);
-  entries[0] = 0;
-  validate_entries(ht, entries);
+  absent(ht, &entries[0]);
+  entries_len--;
+  validate_intlist(ht, entries, entries_len);
 
-  hashtable_xfree(ht);
+  hashtable_free(ht);
 }
 
 static void test_load()
@@ -235,42 +211,48 @@ static void test_load()
   hashtable * ht = 0;
   int x;
 
-  hashtable_create(&ht, sizeof(int));
+  hashtable_create(&ht);
 
   for(x = 0; x < 1000; x++)
   {
     assert_eq_d(x, ht->size);
-    hashtable_put(ht, &x);
+    hashtable_put(ht, (void*)(intptr_t)x);
   }
 
   assert_eq_d(1000, ht->size);
 
   for(x = 0; x < 1000; x++)
-    assert_eq_b(true, hashtable_contains(ht, &x));
+  {
+    assert_eq_b(true, contains(ht, (void*)(intptr_t)x));
+  }
 
   for(x = 1000; x < 2000; x++)
   {
     assert_eq_d(x, ht->size);
-    hashtable_put(ht, &x);
+    hashtable_put(ht, (void*)(intptr_t)x);
   }
 
   assert_eq_d(2000, ht->size);
 
   for(x = 0; x < 2000; x++)
-    assert_eq_b(true, hashtable_contains(ht, &x));
+  {
+    assert_eq_b(true, contains(ht, (void*)(intptr_t)x));
+  }
 
   for(x = 2000; x < 3000; x++)
   {
     assert_eq_d(x, ht->size);
-    hashtable_put(ht, &x);
+    hashtable_put(ht, (void*)(intptr_t)x);
   }
 
   assert_eq_d(3000, ht->size);
 
   for(x = 0; x < 3000; x++)
-    assert_eq_b(true, hashtable_contains(ht, &x));
+  {
+    assert_eq_b(true, contains(ht, (void*)(intptr_t)x));
+  }
 
-  hashtable_xfree(ht);
+  hashtable_free(ht);
 }
 
 static void test_equality()
@@ -305,8 +287,8 @@ static void test_equality()
     assert_eq_b(true, hashtable_equal(A, B));
   }
 
-  hashtable_xfree(A);
-  hashtable_xfree(B);
+  hashtable_free(A);
+  hashtable_free(B);
 }
 
 static void test_order()
@@ -348,10 +330,10 @@ static void test_order()
     assert_eq_b(true, hashtable_equal(A, B));
   }
 
-  hashtable_xfree(A);
-  hashtable_xfree(B);
-  hashtable_xfree(C);
-  hashtable_xfree(D);
+  hashtable_free(A);
+  hashtable_free(B);
+  hashtable_free(C);
+  hashtable_free(D);
 }
 
 static void test_splice()
@@ -360,23 +342,23 @@ static void test_splice()
   hashtable * B = 0;
   int x;
 
-  hashtable_create(&A, sizeof(int));
-  hashtable_create(&B, sizeof(int));
+  hashtable_create(&A);
+  hashtable_create(&B);
 
   for(x = 0; x < 5000; x++)
-    hashtable_put(A, &x);
+    hashtable_put(A, (void*)(intptr_t)x);
 
   // lookup in A
   assert_eq_d(5000, A->size);
   for(x = 0; x < 5000; x++)
-    assert_eq_b(true, hashtable_contains(A, &x));
+    assert_eq_b(true, contains(A, (void*)(intptr_t)x));
 
-  assert_eq_b(false, hashtable_contains(A, (int[]) { 50000 }));
-  assert_eq_b(false, hashtable_contains(B, (int[]) { 50000 }));
+  assert_eq_b(false, contains(A, (void*)(intptr_t)50000));
+  assert_eq_b(false, contains(B, (void*)(intptr_t)50000));
 
-  hashtable_delete(A, (int[]) { 450 });
-  hashtable_delete(A, (int[]) { 451 });
-  hashtable_delete(A, (int[]) { 452 });
+  hashtable_delete(A, (void*)(intptr_t)450);
+  hashtable_delete(A, (void*)(intptr_t)451);
+  hashtable_delete(A, (void*)(intptr_t)452);
 
   assert_eq_d(4997, A->size);
 
@@ -392,15 +374,15 @@ static void test_splice()
     if(x == 450 || x == 451 || x == 452)
       continue;
 
-    assert_eq_b(false, hashtable_contains(A, &x));
-    assert_eq_b(true, hashtable_contains(B, &x));
+    assert_eq_b(false, contains(A, (void*)(intptr_t)x));
+    assert_eq_b(true, contains(B, (void*)(intptr_t)x));
   }
 
-  assert_eq_b(false, hashtable_contains(A, (int[]) { 50000 }));
-  assert_eq_b(false, hashtable_contains(B, (int[]) { 50000 }));
+  assert_eq_b(false, contains(A, (void*)(intptr_t)50000));
+  assert_eq_b(false, contains(B, (void*)(intptr_t)50000));
 
-  hashtable_xfree(A);
-  hashtable_xfree(B);
+  hashtable_free(A);
+  hashtable_free(B);
 }
 
 static void test_replicate()
@@ -409,23 +391,23 @@ static void test_replicate()
   hashtable * B = 0;
   int x;
 
-  hashtable_create(&A, sizeof(int));
-  hashtable_create(&B, sizeof(int));
+  hashtable_create(&A);
+  hashtable_create(&B);
 
   for(x = 0; x < 5000; x++)
-    hashtable_put(A, &x);
+    hashtable_put(A, (void*)(intptr_t)x);
 
   // lookup in A
   assert_eq_d(5000, A->size);
   for(x = 0; x < 5000; x++)
-    assert_eq_b(true, hashtable_contains(A, &x));
+    assert_eq_b(true, contains(A, (void*)(intptr_t)x));
 
-  assert_eq_b(false, hashtable_contains(A, (int[]) { 50000 }));
-  assert_eq_b(false, hashtable_contains(B, (int[]) { 50000 }));
+  assert_eq_b(false, contains(A, (void*)(intptr_t)50000));
+  assert_eq_b(false, contains(B, (void*)(intptr_t)50000));
 
-  hashtable_delete(A, (int[]) { 450 });
-  hashtable_delete(A, (int[]) { 451 });
-  hashtable_delete(A, (int[]) { 452 });
+  hashtable_delete(A, (void*)(intptr_t)450);
+  hashtable_delete(A, (void*)(intptr_t)451);
+  hashtable_delete(A, (void*)(intptr_t)452);
 
   assert_eq_d(4997, A->size);
 
@@ -441,20 +423,19 @@ static void test_replicate()
     if(x == 450 || x == 451 || x == 452)
       continue;
 
-    assert_eq_b(true, hashtable_contains(A, &x));
-    assert_eq_b(true, hashtable_contains(B, &x));
+    assert_eq_b(true, contains(A, (void*)(intptr_t)x));
+    assert_eq_b(true, contains(B, (void*)(intptr_t)x));
   }
 
-  assert_eq_b(false, hashtable_contains(A, (int[]) { 50000 }));
-  assert_eq_b(false, hashtable_contains(B, (int[]) { 50000 }));
+  assert_eq_b(false, contains(A, (void*)(intptr_t)50000));
+  assert_eq_b(false, contains(B, (void*)(intptr_t)50000));
 
-  hashtable_xfree(A);
-  hashtable_xfree(B);
+  hashtable_free(A);
+  hashtable_free(B);
 }
 
 int main()
 {
-  test_sizes();
   test_basic();
   test_put();
   test_load();

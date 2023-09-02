@@ -8,7 +8,7 @@
 #include "xlinux/xstdlib.h"
 
 #include "list.h"
-#include "test_util.h"
+#include "unit.h"
 
 typedef struct item
 {
@@ -56,21 +56,21 @@ static void test_basic()
   item * itemp = 0;
   item * itemps[2];
 
-  list_createx(&listp, 0, 0, free);
+  list_createx(&listp, 0, free);
 
   xmalloc(&itemp, sizeof(*itemp));
   itemp->x = 4;
-  list_push(listp, itemp, 0);
+  list_push(listp, itemp);
   itemp = 0;
 
   xmalloc(&itemp, sizeof(*itemp));
   itemp->x = 5;
-  list_push(listp, itemp, 0);
+  list_push(listp, itemp);
   itemp = 0;
 
   xmalloc(&itemp, sizeof(*itemp));
   itemp->x = 6;
-  list_push(listp, itemp, 0);
+  list_push(listp, itemp);
   itemp = 0;
 
   assert_eq_d(3, listp->size);
@@ -80,7 +80,7 @@ static void test_basic()
   itemps[0]->x = 1;
   xmalloc(&itemps[1], sizeof(**itemps));
   itemps[1]->x = 2;
-  list_unshift_range(listp, itemps, 0, 2);
+  list_unshift_range(listp, itemps, 2);
 
   assert_eq_d(5, listp->size);
   validate(listp);
@@ -93,189 +93,32 @@ static void test_basic()
 
   xmalloc(&itemp, sizeof(*itemp));
   itemp->x = 3;
-  list_insert(listp, 1, itemp, 0);
+  list_insert(listp, 1, itemp);
   itemp = 0;
 
   assert_eq_d(4, listp->size);
   validate(listp);
 
-  list_xfree(listp);
+  list_free(listp);
   free(itemp);
 }
 
 static void test_load()
 {
-  list * listp = 0;
-  list_create(&listp);
+  list li;
+  list_init(&li);
 
   int x;
   for(x = 0; x < 50; x++)
-    list_push(listp, (void*)0x42, 0);
+    list_push(&li, (void*)0x42);
 
   for(x = 0; x < 300; x++)
-    list_unshift(listp, (void*)0x42, 0);
+    list_unshift(&li, (void*)0x42);
 
   for(x = 0; x < 35; x++)
-    list_insert(listp, x, (void*)0x42, 0);
+    list_insert(&li, x, (void*)0x42);
 
-  list_xfree(listp);
-}
-
-static void test_insertion_sort()
-{
-  list * listp = 0;
-  item * itemp = 0;
-  size_t lx;
-  int lc;
-
-  int ** items = (int*[]) {
-      (int[]) { 4, 6, 7, 5, 0 }
-    , (int[]) { 9, 8, 7, 6, 5, 4, 3, 2, 0 }
-    , (int[]) { 8, 7, 4, 3, 2, 12, 15, 33, 0 }
-    , (int[]) { 1, 0 }
-    , 0
-  };
-
-  int x;
-  for(x = 0; x < sentinel(items); x++)
-  {
-    list_ixfree(&listp);
-    list_createx(&listp, 0, 0, free);
-
-    int y;
-    for(y = 0; y < sentinel(items[x]); y++)
-    {
-      xmalloc(&itemp, sizeof(*itemp));
-      itemp->x = items[x][y];
-
-      list_search(listp, itemp, sizeof(item), 0, 0, 0, &lx, &lc);
-      if(lc <= 0)
-        list_insert(listp, lx, itemp, sizeof(item));
-      else if(lc > 0)
-        list_insert(listp, lx + 1, itemp, sizeof(item));
-
-      itemp = 0;
-    }
-
-    validate(listp);
-  }
-
-  list_xfree(listp);
-  free(itemp);
-}
-
-static void test_search()
-{
-  list * listp = 0;
-  item * itemp = 0;
-  size_t lx;
-  int lc;
-  item * p;
-  bool r;
-
-  list_createx(&listp, 0, 0, free);
-  xmalloc(&itemp, sizeof(*itemp));
-  itemp->x = 1;
-  list_push(listp, itemp, sizeof(item));
-  xmalloc(&itemp, sizeof(*itemp));
-  itemp->x = 7;
-  list_push(listp, itemp, sizeof(item));
-  xmalloc(&itemp, sizeof(*itemp));
-  itemp->x = 32;
-  list_push(listp, itemp, sizeof(item));
-  xmalloc(&itemp, sizeof(*itemp));
-  itemp->x = 101;
-  list_push(listp, itemp, sizeof(item));
-
-  r = list_search(listp, (item[]) {{ x : 0 }}, sizeof(item), 0, &p, 0, 0, 0);
-  assert_eq_b(false, r);
-  assert_null(p);
-
-  list_search(listp, (item[]) {{ x : 1 }}, sizeof(item), 0, &p, 0, &lx, &lc);
-  assert_notnull(p);
-  assert_eq_d(1, p->x);
-  assert_eq_zu(0, lx);
-  assert_eq_d(0, lc);
-
-  list_search(listp, (item[]) {{ x : 7 }}, sizeof(item), 0, &p, 0, &lx, &lc);
-  assert_notnull(p);
-  assert_eq_d(7, p->x);
-  assert_eq_zu(1, lx);
-  assert_eq_d(0, lc);
-
-  list_search(listp, (item[]) {{ x : 32 }}, sizeof(item), 0, &p, 0, &lx, &lc);
-  assert_notnull(p);
-  assert_eq_d(32, p->x);
-  assert_eq_zu(2, lx);
-  assert_eq_d(0, lc);
-
-  list_search(listp, (item[]) {{ x : 101 }}, sizeof(item), 0, &p, 0, &lx, &lc);
-  assert_notnull(p);
-  assert_eq_d(101, p->x);
-  assert_eq_zu(3, lx);
-  assert_eq_d(0, lc);
-
-  list_search(listp, (item[]) {{ x : 102 }}, sizeof(item), 0, &p, 0, &lx, &lc);
-  assert_null(p);
-
-  list_xfree(listp);
-}
-
-static void test_search_range()
-{
-  list * listp = 0;
-  item * itemp = 0;
-  size_t lx;
-  int lc;
-  bool r;
-  item * p;
-
-  list_createx(&listp, 0, 0, free);
-  xmalloc(&itemp, sizeof(*itemp));
-  itemp->x = 1;
-  list_push(listp, itemp, sizeof(item));
-  xmalloc(&itemp, sizeof(*itemp));
-  itemp->x = 7;
-  list_push(listp, itemp, sizeof(item));
-  xmalloc(&itemp, sizeof(*itemp));
-  itemp->x = 32;
-  list_push(listp, itemp, sizeof(item));
-  xmalloc(&itemp, sizeof(*itemp));
-  itemp->x = 101;
-  list_push(listp, itemp, sizeof(item));
-
-  r = list_search_range(listp, 0, listp->size, (item[]) {{ x : 0 }}, sizeof(item), 0, &p, 0, 0, 0);
-  assert_eq_b(false, r);
-  assert_null(p);
-
-  r = list_search_range(listp, 1, 3, (item[]) {{ x : 1 }}, sizeof(item), 0, &p, 0, 0, 0);
-  assert_eq_b(false, r);
-  assert_null(p);
-
-  list_search_range(listp, 2, 2, (item[]) {{ x : 7 }}, sizeof(item), 0, &p, 0, 0, 0);
-  assert_null(p);
-
-  list_search_range(listp, 0, 4, (item[]) {{ x : 32 }}, sizeof(item), 0, &p, 0, &lx, 0);
-  assert_notnull(p);
-  assert_eq_d(32, p->x);
-  assert_eq_zu(2, lx);
-
-  list_search_range(listp, 1, 3, (item[]) {{ x : 32 }}, sizeof(item), 0, &p, 0, &lx, &lc);;
-  assert_notnull(p);
-  assert_eq_d(32, p->x);
-  assert_eq_zu(2, lx);
-  assert_eq_d(0, lc);
-
-  list_search_range(listp, 2, 2, (item[]) {{ x : 32 }}, sizeof(item), 0, &p, 0, &lx, &lc);
-  assert_notnull(p);
-  assert_eq_d(32, p->x);
-  assert_eq_zu(2, lx);
-  assert_eq_d(0, lc);
-
-  list_search_range(listp, 3, 1, (item[]) {{ x : 32 }}, sizeof(item), 0, &p, 0, 0, &lc);
-  assert_null(p);
-
-  list_xfree(listp);
+  list_destroy(&li);
 }
 
 static void test_update()
@@ -284,7 +127,7 @@ static void test_update()
   item * itemp = 0;
   item * itemps[3];
 
-  list_createx(&listp, 0, 0, free);
+  list_createx(&listp, 0, free);
 
   xmalloc(&itemps[0], sizeof(**itemps));
   itemps[0]->x = 1;
@@ -292,7 +135,7 @@ static void test_update()
   itemps[1]->x = 2;
   xmalloc(&itemps[2], sizeof(**itemps));
   itemps[2]->x = 3;
-  list_insert_range(listp, 0, itemps, 0, sizeof(itemps) / sizeof(itemps[0]));
+  list_insert_range(listp, 0, itemps, sizeof(itemps) / sizeof(itemps[0]));
 
   assert_eq_d(3, listp->size);
   validate(listp);
@@ -302,7 +145,7 @@ static void test_update()
   {
     xmalloc(&itemp, sizeof(*itemp));
     itemp->x = x + 3;
-    list_update(listp, x, itemp, 0);
+    list_put(listp, x, itemp);
     itemp = 0;
 
     assert_eq_d(3, listp->size);
@@ -311,7 +154,7 @@ static void test_update()
 
   assert_eq_d(3, listp->size);
 
-  list_xfree(listp);
+  list_free(listp);
   free(itemp);
 }
 
@@ -320,7 +163,7 @@ static void test_delete()
   list * listp = 0;
   item * itemps[4];
 
-  list_createx(&listp, 0, 0, free);
+  list_createx(&listp, 0, free);
 
   xmalloc(&itemps[0], sizeof(**itemps));
   itemps[0]->x = 1;
@@ -330,7 +173,7 @@ static void test_delete()
   itemps[2]->x = 3;
   xmalloc(&itemps[3], sizeof(**itemps));
   itemps[3]->x = 4;
-  list_push_range(listp, itemps, 0, sizeof(itemps) / sizeof(itemps[0]));
+  list_push_range(listp, itemps, sizeof(itemps) / sizeof(itemps[0]));
   validate_contents(listp, 4, 1, 2, 3, 4);
 
   list_delete(listp, 1);
@@ -350,7 +193,7 @@ static void test_delete()
   itemps[2]->x = 3;
   xmalloc(&itemps[3], sizeof(**itemps));
   itemps[3]->x = 4;
-  list_unshift_range(listp, itemps, 0, sizeof(itemps) / sizeof(itemps[0]));
+  list_unshift_range(listp, itemps, sizeof(itemps) / sizeof(itemps[0]));
   validate_contents(listp, 4, 1, 2, 3, 4);
 
   list_delete_range(listp, 1, 3);
@@ -358,7 +201,7 @@ static void test_delete()
   list_delete(listp, 0);
   validate_contents(listp, 0);
 
-  list_xfree(listp);
+  list_free(listp);
 }
 
 static void test_splice()
@@ -375,30 +218,30 @@ static void test_splice()
 
   xmalloc(&i1, sizeof(*i1));
   i1->x = 1;
-  list_push(A, i1, 0);
+  list_push(A, i1);
   validate_contents(A, 1, 1);
 
   xmalloc(&i2, sizeof(*i2));
   i2->x = 4;
-  list_push(A, i2, 0);
+  list_push(A, i2);
   validate_contents(A, 2, 1, 4);
 
   xmalloc(&i3, sizeof(*i3));
   i3->x = 2;
-  list_push(B, i3, 0);
+  list_push(B, i3);
   validate_contents(B, 1, 2);
 
   xmalloc(&i4, sizeof(*i4));
   i4->x = 3;
-  list_push(B, i4, 0);
+  list_push(B, i4);
   validate_contents(B, 2, 2, 3);
 
   list_splice(A, 0, B, 0, 2);
   validate_contents(A, 4, 2, 3, 1, 4);
   validate_contents(B, 0);
 
-  list_xfree(A);
-  list_xfree(B);
+  list_free(A);
+  list_free(B);
   free(i1);
   free(i2);
   free(i3);
@@ -419,30 +262,30 @@ static void test_replicate()
 
   xmalloc(&i1, sizeof(*i1));
   i1->x = 1;
-  list_push(A, i1, 0);
+  list_push(A, i1);
   validate_contents(A, 1, 1);
 
   xmalloc(&i2, sizeof(*i2));
   i2->x = 4;
-  list_push(A, i2, 0);
+  list_push(A, i2);
   validate_contents(A, 2, 1, 4);
 
   xmalloc(&i3, sizeof(*i3));
   i3->x = 2;
-  list_push(B, i3, 0);
+  list_push(B, i3);
   validate_contents(B, 1, 2);
 
   xmalloc(&i4, sizeof(*i4));
   i4->x = 3;
-  list_push(B, i4, 0);
+  list_push(B, i4);
   validate_contents(B, 2, 2, 3);
 
   list_replicate(A, 1, B, 0, 2);
   validate_contents(A, 4, 1, 2, 3, 4);
   validate_contents(B, 2, 2, 3);
 
-  list_xfree(A);
-  list_xfree(B);
+  list_free(A);
+  list_free(B);
   free(i1);
   free(i2);
   free(i3);
@@ -453,10 +296,7 @@ int main()
 {
   test_basic();
   test_load();
-  test_insertion_sort();
   test_update();
-  test_search();
-  test_search_range();
   test_delete();
   test_splice();
   test_replicate();

@@ -25,27 +25,26 @@ void API valyria_fault_activate(valyria_fault fault, ...)
 {
   va_list va;
   va_start(va, fault);
+  size_t x;
 
   faults[fault] = true;
 
   if(fault == VALYRIA_KEY_INDEX_BOUNDARY)
   {
-    size_t x = fault_state.key_index_boundary.len;
+    x = fault_state.key_index_boundary.len;
     fault_state.key_index_boundary.keys[x].key = va_arg(va, void*);
-    fault_state.key_index_boundary.keys[x].len = va_arg(va, size_t);
     fault_state.key_index_boundary.len++;
   }
   else if(fault == VALYRIA_KEY_HASH)
   {
-    size_t x = fault_state.key_hash.len;
+    x = fault_state.key_hash.len;
     fault_state.key_hash.keys[x].key = va_arg(va, void*);
-    fault_state.key_hash.keys[x].len = va_arg(va, size_t);
     fault_state.key_hash.keys[x].hash = va_arg(va, uint32_t);
     fault_state.key_hash.len++;
   }
   else if(fault == VALYRIA_HASH_INDEX)
   {
-    size_t x = fault_state.hash_index.len;
+    x = fault_state.hash_index.len;
     fault_state.hash_index.hashes[x].hash = va_arg(va, uint32_t);
     fault_state.hash_index.hashes[x].index = va_arg(va, size_t);
     fault_state.hash_index.len++;

@@ -3,9 +3,7 @@
 
 #pragma once
 
-/*
-
-*/
+/* red-black tree */
 
 #include "types.h"
 #include "llist.h"
@@ -53,47 +51,31 @@ typedef struct rbtree {
 #endif
 } rbtree;
 
-typedef int (*rbtree_node_cmp)(const rbnode * restrict a, const rbnode * restrict b)
-  __attribute__((nonnull));
 
-static inline int rbtree_node_cmp_node(const rbnode * restrict a, const rbnode * restrict b)
-{
-  return a > b ? 1 : a < b ? -1 : 0;
-}
-
-typedef int (*rbtree_key_cmp)(void * restrict key, const rbnode * restrict n)
-  __attribute__((nonnull));
-
-typedef void (*rbtree_free)(rbnode * restrict n);
-
-/// rbtree_create
-//
-// SUMMARY
-//  initialize an rbtree
-//
-// PARAMETERS
-//  list         - created list goes here
-//  [capacity]   - initial capacity
-//  [free_item]  - invoked on an element before releasing its storage
-//  [xfree_item] - invoked on an element before releasing its storage
-//
-// REMARKS
-//  free_item follows the free idiom
-//
+/* initialize an rbtree */
 void rbtree_init(rbtree * restrict rb)
   __attribute__((nonnull));
 
-void rbtree_destroy(rbtree * restrict rb, rbtree_free free_fn)
-  __attribute__((nonnull));
+/*
+ * destroy an rbtree
+ *
+ * [free_fn] - invoked on an element before releasing it
+ */
+void rbtree_destroy(rbtree * restrict rb, void (*free_fn)(rbnode *))
+  __attribute__((nonnull(1)));
 
-bool rbtree_empty(rbtree * restrict rb)
-  __attribute__((nonnull));
+static inline __attribute__((nonnull)) bool rbtree_empty(const rbtree * restrict rb)
+{
+  return rb->root == &rbleaf;
+}
 
 void rbnode_init(rbnode * restrict rbn)
   __attribute__((nonnull));
 
-bool rbnode_attached(rbnode * restrict rbn)
-  __attribute__((nonnull));
+static inline __attribute__((nonnull)) bool rbnode_attached(const rbnode * restrict rbn)
+{
+  return !!rbn->parent;
+}
 
 size_t rbtree_count(const rbtree * restrict rb)
   __attribute__((nonnull));
@@ -103,114 +85,84 @@ size_t rbtree_count(const rbtree * restrict rb)
  *
  * if the node already exists in the tree, returns the existing node, NULL otherwise
  */
-rbnode * rbtree_put_node(rbtree * restrict rb, rbnode * restrict n, rbtree_node_cmp cmp)
+rbnode * rbtree_put(
+    rbtree * restrict rb
+  , rbnode * restrict n
+  , __attribute__((nonnull)) int (*cmp)(const rbnode * restrict, const rbnode * restrict)
+)
   __attribute__((nonnull));
-
-#define rbtree_put(rb, item, member, cmp) ({  \
-  rbtree_put_node(rb, &(item)->member, cmp);  \
-})
 
 typedef struct rbtree_search_context {
   struct rbnode * last;
   int lx;
 } rbtree_search_context;
 
-void rbtree_insert_node(rbtree * restrict rb, rbtree_search_context * restrict ctx, rbnode * restrict n)
+void rbtree_insert(rbtree * restrict rb, rbtree_search_context * restrict ctx, rbnode * restrict n)
   __attribute__((nonnull));
 
 /*
  * replace one node with another
  *
- * @n - node to be replaced
- * @new - replacement node
+ * rb  - rbtree
+ * old - node to be replaced
+ * n   - replacement node
  */
-void rbtree_replace_node(rbnode * restrict n, rbnode * restrict new)
+void rbtree_replace(rbtree * restrict rb, rbnode * restrict old, rbnode * restrict n)
   __attribute__((nonnull));
 
-#define rbtree_replace(n, new, member) ({             \
-  rbtree_replace_node(&(n)->member, &(new)->member);  \
-})
-
-void rbtree_delete_node(rbtree * restrict rb, rbnode * restrict n)
+void rbtree_delete(rbtree * restrict rb, rbnode * restrict n)
   __attribute__((nonnull));
 
-#if CONFIG_DEBUG || CONFIG_DEVEL
-#define rbtree_delete(rb, item, member) ({    \
-  rbtree_delete_node(rb, &(item)->member);    \
-  (item)->member.color = 0;                   \
-  (item)->member.parent = 0;                  \
-  (item)->member.left = 0;                    \
-  (item)->member.right = 0;                   \
-})
-#else
-#define rbtree_delete(rb, item, member) ({    \
-  rbtree_delete_node(rb, &(item)->member);    \
-  (item)->member.parent = 0;                  \
-})
-#endif
-
-#if CONFIG_DEVEL
-void rbtree_print(rbtree * rb);
-void rbnode_print(rbnode * n);
-#endif
-
-rbnode * rbtree_search(const rbtree * restrict rb, rbtree_search_context *ctx, void *key, rbtree_key_cmp cmp)
+rbnode * rbtree_search(
+    const rbtree * restrict rb
+  , rbtree_search_context *ctx
+  , void * key
+  , __attribute__((nonnull)) int (*cmp)(void * restrict key, const rbnode * restrict n)
+)
   __attribute__((nonnull));
 
-rbnode * rbtree_lookup_node(const rbtree * restrict rb, void * key, rbtree_key_cmp cmp)
+rbnode * rbtree_lookup(
+    const rbtree * restrict rb
+  , void * key
+  , __attribute__((nonnull)) int (*cmp)(void * restrict key, const rbnode * restrict n)
+)
   __attribute__((nonnull));
 
-/*
- * lookup an item in the tree
- */
-#define rbtree_lookup(rb, key, member, cmp)                     \
-  ({                                                            \
-    rbnode * __n = rbtree_lookup_node(rb, &(key)->member, cmp); \
-    typeof(*key) *__i = 0;                                      \
-    if (__n) {                                                  \
-      __i = containerof(__n, typeof(*key), member);             \
-    }                                                           \
-    __i;                                                        \
-  })
+struct rbnode * rbtree_first_post(const rbtree * restrict rb)
+  __attribute__((nonnull));
 
-struct rbnode * rbtree_first_post_node(rbtree * restrict rb)
+static inline __attribute__((nonnull)) struct rbnode * rbtree_last_post(rbtree * restrict rb)
+{
+  return rb->root;
+}
+
+struct rbnode * rbtree_next_post(const rbnode * restrict n)
   __attribute__((nonnull));
-struct rbnode * rbtree_last_post_node(rbtree * restrict rb)
-  __attribute__((nonnull));
-struct rbnode * rbtree_next_post_node(rbnode * restrict n);
 
 #define rbtree_first(rb, type, member) ({              \
   rbnode * n;                                          \
-  n = rbtree_first_post_node(rb);              \
+  n = rbtree_first_post(rb);                           \
   n == &rbleaf ? NULL : containerof(n, type, member);  \
 })
 
 #define rbtree_next(item, member) ({                   \
   if(item) {                                           \
-    rbnode * n = rbtree_next_post_node(&(item)->member);        \
+    rbnode * n = rbtree_next_post(&(item)->member);        \
     item = (n == &rbleaf) ? NULL : containerof(n, typeof(*item), member);  \
   }                                                     \
   item;                                                 \
 })
 
-#define rbtree_is_last_node(rb, rbn) ({  \
-  rbn == rbtree_last_post_node(rb);      \
-})
-
-#define rbtree_is_last(rb, item, member) ({                                 \
-  item == containerof(rbtree_last_post_node(rb), typeof(*item), member);    \
-})
-
 #define rbtree_foreach_node(rb, rbn)      \
   for(                                    \
-    rbn = rbtree_first_post_node(rb);     \
+    rbn = rbtree_first_post(rb);          \
     rbn != &rbleaf;                       \
-    rbn = rbtree_next_post_node(rbn)      \
+    rbn = rbtree_next_post(rbn)      \
   )
 
 #define rbtree_foreach(rb, item, member)                                                \
   for(                                                                                  \
-    item = containerof(rbtree_first_post_node(rb), typeof(*item), member);              \
+    item = containerof(rbtree_first_post(rb), typeof(*item), member);                   \
     item != containerof(&rbleaf, typeof(*item), member);                                \
-    item = containerof(rbtree_next_post_node(&(item)->member), typeof(*item), member)   \
+    item = containerof(rbtree_next_post(&(item)->member), typeof(*item), member)   \
   )

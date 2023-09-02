@@ -5,56 +5,60 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "pstring.internal.h"
+#include "pstring.h"
 
-#include "test_util.h"
+#include "unit.h"
 
-static void validate(pstring * ps)
+static void validate(char ** ps, size_t *len, size_t *a)
 {
-  assert_gt_zu(ps->size, ps->a);
+  assert_gt_zu(*len, *a);
 }
 
-static void assert_contents(pstring * ps)
+static void assert_contents(char ** ps, size_t *len, size_t *a)
 {
-  validate(ps);
-  assert_eq_zu(10, ps->size);
+  validate(ps, len, a);
+  assert_eq_zu(10, *len);
 
-  assert_eq_s("1234567890", ps->s);
+  assert_eq_s("1234567890", *ps);
 }
 
 static void test_basic()
 {
-  pstring * ps = 0;
+  char *ps;
+  size_t len;
+  size_t a;
 
-  pscreate(&ps);
-  psloads(ps, "1234567890");
-  assert_contents(ps);
+  psinit(&ps, &len, &a);
+  psloads(&ps, &len, &a, "1234567890");
+  assert_contents(&ps, &len, &a);
 
-  psclear(ps);
-  psloadc(ps, '1');
-  pscatf(ps, "%s", "234567890");
-  assert_contents(ps);
+  psclear(&ps, &len, &a);
+  psloadc(&ps, &len, &a, '1');
+  pscatf(&ps, &len, &a, "%s", "234567890");
+  assert_contents(&ps, &len, &a);
 
-  psfree(ps);
+  psdestroy(&ps, &len, &a);
 }
 
 static void test_load()
 {
-  pstring * ps = 0;
-
-  pscreate(&ps);
-
+  char *ps;
+  size_t len;
+  size_t a;
   int x;
+
+  psinit(&ps, &len, &a);
+
   for(x = 0; x < 25; x++)
   {
-    pscats(ps, " "); validate(ps);
-    pscatc(ps, ' '); validate(ps);
-    pscatf(ps, "%s %s %s %s", "alpha", "beta", "delta", "gamma"); validate(ps);
-    pscatf(ps, "%s %s %s %s", "alpha", "beta", "delta", "gamma"); validate(ps);
-    pscatf(ps, "%s %s %s %s", "alpha", "beta", "delta", "gamma"); validate(ps);
+    pscats(&ps, &len, &a, " "); validate(&ps, &len, &a);
+    pscatc(&ps, &len, &a, ' '); validate(&ps, &len, &a);
+    pscatf(&ps, &len, &a, "%s %s %s %s", "alpha", "beta", "delta", "gamma"); validate(&ps, &len, &a);
+    pscatf(&ps, &len, &a, "%s %s %s %s", "alpha", "beta", "delta", "gamma"); validate(&ps, &len, &a);
+    pscatf(&ps, &len, &a, "%s %s %s %s", "alpha", "beta", "delta", "gamma"); validate(&ps, &len, &a);
   }
 
-  psfree(ps);
+  psdestroy(&ps, &len, &a);
 }
 
 int main()

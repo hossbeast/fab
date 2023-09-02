@@ -6,13 +6,13 @@
 
 #include "xlinux/xstdlib.h"
 
-#include "rbtree.internal.h"
+#include "rbtree.h"
 #include "llist.h"
 
 #include "macros.h"
-#include "zbuffer.h"
+#include "zcat.h"
 
-rbnode APIDATA rbleaf = { color : RB_BLACK, parent : &rbleaf };
+rbnode rbleaf = { color : RB_BLACK, parent : &rbleaf };
 
 //
 // static
@@ -24,8 +24,9 @@ static int black_height(rbnode * restrict n)
   int left;
   int right;
 
-  if(n == &rbleaf)
+  if(n == &rbleaf) {
     return 1;
+  }
 
   left = black_height(n->left);
   right = black_height(n->right);
@@ -43,22 +44,22 @@ static size_t rbnode_say_self(char * buf, size_t sz, rbnode * n, int level)
 
   if(n == &rbleaf || n == 0)
   {
-    return znloadf(buf + z, sz - z, "%*s%-16p [%s] LEAF", level * 2, "", n, "B");
+    return zcatf(buf + z, sz - z, "%*s%-16p [%s] LEAF", level * 2, "", n, "B");
   }
 
-  z += znloadf(buf + z, sz - z, "%*s%-16p [%s]", level * 2, "", n, n->color == RB_RED ? "R" : n->color == RB_BLACK ? "B" : "U");
-  z += znloadf(buf + z, sz - z, " parent %-16p", n->parent);
+  z += zcatf(buf + z, sz - z, "%*s%-16p [%s]", level * 2, "", n, n->color == RB_RED ? "R" : n->color == RB_BLACK ? "B" : "U");
+  z += zcatf(buf + z, sz - z, " parent %-16p", n->parent);
   if(n->left == &rbleaf)
-    z += znloadf(buf + z, sz - z, " left %-16s", " --- ");
+    z += zcatf(buf + z, sz - z, " left %-16s", " --- ");
   else
-    z += znloadf(buf + z, sz - z, " left %-16p", n->left);
+    z += zcatf(buf + z, sz - z, " left %-16p", n->left);
   if(n->right == &rbleaf)
-    z += znloadf(buf + z, sz - z, " right %-16s", " --- ");
+    z += zcatf(buf + z, sz - z, " right %-16s", " --- ");
   else
-    z += znloadf(buf + z, sz - z, " right %-16p", n->right);
-  z += znloadf(buf + z, sz - z, " <<-- %s", *(char**)(((char*)n) + 48));
+    z += zcatf(buf + z, sz - z, " right %-16p", n->right);
+  z += zcatf(buf + z, sz - z, " <<-- %s", *(char**)(((char*)n) + 48));
 
-  z += znloadf(buf + z, sz - z, " (%d)", black_height(n));
+  z += zcatf(buf + z, sz - z, " (%d)", black_height(n));
 
   return z;
 }
@@ -69,7 +70,7 @@ static size_t rbnode_say(char * buf, size_t sz, rbnode * n, int level)
   size_t z = 0;
 
   z += rbnode_say_self(buf + z, sz - z, n, level);
-  z += znloadf(buf + z, sz - z, "\n");
+  z += zcatf(buf + z, sz - z, "\n");
   if(n == &rbleaf || n == 0)
     return z;
 
@@ -78,9 +79,35 @@ static size_t rbnode_say(char * buf, size_t sz, rbnode * n, int level)
 
   return z;
 }
+
+void rbtree_print(rbtree * rb);
+void rbtree_print(rbtree * restrict rb)
+{
+  char buf[4096 << 1];
+  size_t z = 0;
+
+  z += rbnode_say(buf, sizeof(buf), rb->root, 0);
+  printf("%.*s\n", (int)z, buf);
+}
+
+void rbnode_print(rbnode * n);
+void rbnode_print(rbnode * restrict n)
+{
+  char buf[4096 << 1];
+  size_t z = 0;
+
+  z += rbnode_say_self(buf, sizeof(buf), n, 0);
+  printf("%.*s\n", (int)z, buf);
+}
 #endif
 
-static void node_search(const rbtree * restrict rb, rbnode * restrict base, rbtree_search_context * restrict ctx, const rbnode * restrict key, rbtree_node_cmp cmp)
+static void node_search(
+    const rbtree * restrict rb
+  , rbnode * restrict base
+  , rbtree_search_context * restrict ctx
+  , const rbnode * restrict key
+  , __attribute__((nonnull)) int (*cmp)(const rbnode * restrict, const rbnode * restrict)
+)
 {
   while(base != &rbleaf)
   {
@@ -102,7 +129,13 @@ static void node_search(const rbtree * restrict rb, rbnode * restrict base, rbtr
   }
 }
 
-static void key_search(const rbtree * restrict rb, rbnode * restrict base, rbtree_search_context * restrict ctx, void * key, rbtree_key_cmp cmp)
+static void key_search(
+    const rbtree * restrict rb
+  , rbnode * restrict base
+  , rbtree_search_context * restrict ctx
+  , void * key
+  , __attribute__((nonnull)) int (*cmp)(void * restrict key, const rbnode * restrict n)
+)
 {
   while(base != &rbleaf)
   {
@@ -124,7 +157,7 @@ static void key_search(const rbtree * restrict rb, rbnode * restrict base, rbtre
   }
 }
 
-static rbnode * leftmost(rbnode * restrict n)
+static rbnode * leftmost(const rbnode * restrict n)
 {
   while(1)
   {
@@ -133,15 +166,16 @@ static rbnode * leftmost(rbnode * restrict n)
     else if(n->right != &rbleaf)
       n = n->right;
     else
-      return n;
+      return (void*)n;
   }
 }
 
-static void destroy(rbtree * restrict tb, rbnode * restrict n, void (*rbn_free)(rbnode * restrict n));
-static void destroy(rbtree * restrict rb, rbnode * restrict n, void (*rbn_free)(rbnode * restrict n))
+static __attribute__((nonnull)) void destroy(rbtree * restrict tb, rbnode * restrict n, void (*rbn_free)(rbnode * restrict n));
+static __attribute__((nonnull)) void destroy(rbtree * restrict rb, rbnode * restrict n, void (*rbn_free)(rbnode * restrict n))
 {
-  if(n == &rbleaf)
+  if(n == &rbleaf) {
     return;
+  }
 
   destroy(rb, n->left, rbn_free);
   destroy(rb, n->right, rbn_free);
@@ -159,16 +193,19 @@ static void rotate_left(rbtree * restrict rb, rbnode * restrict n)
   nn->left = n;
   n->parent = nn;
 
-  if(n->right != &rbleaf)
+  if(n->right != &rbleaf) {
     n->right->parent = n;
+  }
 
-  if(p != &rbleaf && n == p->left)
+  if(p != &rbleaf && n == p->left) {
     p->left = nn;
-  else if(p != &rbleaf && n == p->right)
+  } else if(p != &rbleaf && n == p->right) {
     p->right = nn;
+  }
 
-  if((nn->parent = p) == &rbleaf)
+  if((nn->parent = p) == &rbleaf) {
     rb->root = nn;
+  }
 }
 
 static void rotate_right(rbtree * restrict rb, rbnode * restrict n)
@@ -183,16 +220,19 @@ static void rotate_right(rbtree * restrict rb, rbnode * restrict n)
   nn->right = n;
   n->parent = nn;
 
-  if(n->left != &rbleaf)
+  if(n->left != &rbleaf) {
     n->left->parent = n;
+  }
 
-  if(p != &rbleaf && n == p->left)
+  if(p != &rbleaf && n == p->left) {
     p->left = nn;
-  else if(p != &rbleaf && n == p->right)
+  } else if(p != &rbleaf && n == p->right) {
     p->right = nn;
+  }
 
-  if((nn->parent = p) == &rbleaf)
+  if((nn->parent = p) == &rbleaf) {
     rb->root = nn;
+  }
 }
 
 static void put_repair(rbtree * restrict rb, rbnode * restrict n);
@@ -209,15 +249,15 @@ static void put_repair(rbtree * restrict rb, rbnode * restrict n)
 
   // case 2
   p = n->parent;
-  if(p->color == RB_BLACK)
-  {
+  if(p->color == RB_BLACK) {
     return;
   }
 
   if((g = p->parent))
   {
-    if((u = g->left) == p)
+    if((u = g->left) == p) {
       u = g->right;
+    }
   }
 
   // case 3
@@ -260,20 +300,22 @@ static void put_repair(rbtree * restrict rb, rbnode * restrict n)
 
 static rbnode * minimum(rbnode * restrict n)
 {
-  while(n->left != &rbleaf)
+  while(n->left != &rbleaf) {
     n = n->left;
+  }
 
   return n;
 }
 
 static void transplant(rbtree * restrict rb, rbnode * restrict a, rbnode * restrict b)
 {
-  if(a->parent == &rbleaf)
+  if(a->parent == &rbleaf) {
     rb->root = b;
-  else if(a == a->parent->left)
+  } else if(a == a->parent->left) {
     a->parent->left = b;
-  else
+  } else {
     a->parent->right = b;
+  }
 
   b->parent = a->parent;
 }
@@ -356,45 +398,16 @@ static void delete_repair(rbtree * restrict rb, rbnode * restrict n)
 }
 
 //
-// internal
-//
-
-#if CONFIG_DEVEL
-void rbtree_print(rbtree * restrict rb)
-{
-  char buf[4096 << 1];
-  size_t z = 0;
-
-  z += rbnode_say(buf, sizeof(buf), rb->root, 0);
-  printf("%.*s\n", (int)z, buf);
-}
-
-void rbnode_print(rbnode * restrict n)
-{
-  char buf[4096 << 1];
-  size_t z = 0;
-
-  z += rbnode_say_self(buf, sizeof(buf), n, 0);
-  printf("%.*s\n", (int)z, buf);
-}
-#endif
-
-//
 // api
 //
 
-void API rbtree_init(rbtree * restrict rb)
+void rbtree_init(rbtree * restrict rb)
 {
   memset(rb, 0, sizeof(*rb));
   rb->root = &rbleaf;
 }
 
-bool API rbtree_empty(rbtree * restrict rb)
-{
-  return rb->root == &rbleaf;
-}
-
-size_t API rbtree_count(const rbtree * restrict rb)
+size_t rbtree_count(const rbtree * restrict rb)
 {
   size_t c = 0;
   rbnode *rbn;
@@ -406,22 +419,19 @@ size_t API rbtree_count(const rbtree * restrict rb)
   return c;
 }
 
-void API rbtree_destroy(rbtree * restrict rb, void (*rbn_free)(rbnode * restrict n))
+void rbtree_destroy(rbtree * restrict rb, void (*rbn_free)(rbnode * restrict n))
 {
-  destroy(rb, rb->root, rbn_free);
+  if(rbn_free) {
+    destroy(rb, rb->root, rbn_free);
+  }
 }
 
-void API rbnode_init(rbnode * restrict rbn)
+void rbnode_init(rbnode * restrict rbn)
 {
   memset(rbn, 0, sizeof(*rbn));
 }
 
-bool API rbnode_attached(rbnode * restrict rbn)
-{
-  return rbn->parent != NULL;
-}
-
-void API rbtree_insert_node(rbtree * restrict rb, rbtree_search_context * restrict ctx, rbnode * restrict n)
+void rbtree_insert(rbtree * restrict rb, rbtree_search_context * restrict ctx, rbnode * restrict n)
 {
   if(rb->root == &rbleaf)
   {
@@ -469,7 +479,11 @@ void API rbtree_insert_node(rbtree * restrict rb, rbtree_search_context * restri
 #endif
 }
 
-rbnode * API rbtree_put_node(rbtree * restrict rb, rbnode * restrict n, rbtree_node_cmp cmp)
+rbnode * rbtree_put(
+    rbtree * restrict rb
+  , rbnode * restrict n
+  , __attribute__((nonnull)) int (*cmp)(const rbnode * restrict, const rbnode * restrict)
+)
 {
   rbtree_search_context ctx;
 
@@ -485,14 +499,20 @@ rbnode * API rbtree_put_node(rbtree * restrict rb, rbnode * restrict n, rbtree_n
   }
 
 insert:
-  rbtree_insert_node(rb, &ctx, n);
+  rbtree_insert(rb, &ctx, n);
   return 0;
 }
 
-rbnode * API rbtree_search(const rbtree * restrict rb, rbtree_search_context *ctx, void *key, rbtree_key_cmp cmp)
+rbnode * rbtree_search(
+    const rbtree * restrict rb
+  , rbtree_search_context *ctx
+  , void *key
+  , __attribute__((nonnull)) int (*cmp)(void * restrict key, const rbnode * restrict n)
+)
 {
-  if(rb->root == &rbleaf)
+  if(rb->root == &rbleaf) {
     return 0;
+  }
 
   memset(ctx, 0, sizeof(*ctx));
   key_search(rb, rb->root, ctx, key, cmp);
@@ -503,32 +523,50 @@ rbnode * API rbtree_search(const rbtree * restrict rb, rbtree_search_context *ct
   return 0;
 }
 
-rbnode * API rbtree_lookup_node(const rbtree * restrict rb, void * key, rbtree_key_cmp cmp)
+rbnode * rbtree_lookup(
+    const rbtree * restrict rb
+  , void * key
+  , __attribute__((nonnull)) int (*cmp)(void * restrict key, const rbnode * restrict n)
+)
 {
   rbtree_search_context ctx;
   return rbtree_search(rb, &ctx, key, cmp);
 }
 
-void API rbtree_replace_node(rbnode * restrict n, rbnode * restrict new)
+void rbtree_replace(rbtree * restrict rb, rbnode * restrict old, rbnode * restrict n)
 {
   rbnode *p;
 
-  p = n->parent;
+  if(old == rb->root) {
+    rb->root = n;
+  }
 
-  *new = *n;
+  p = old->parent;
+  if(p == &rbleaf) {
+  } else if(old == p->left) {
+    p->left = n;
+  } else {
+    p->right = n;
+  }
+  if(old->left != &rbleaf) {
+    old->left->parent = n;
+  }
+  if(old->right != &rbleaf) {
+    old->right->parent = n;
+  }
 
-  if(n == p->left)
-    p->left = new;
-  else
-    p->right = new;
+  n->color = old->color;
+  n->parent = old->parent;
+  n->left = old->left;
+  n->right = old->right;
 
 #if RBTREE_HASH
-n->rbt->hash -= (uint32_t)(uintptr_t)n;
-n->rbt->hash += (uint32_t)(uintptr_t)new;
+old->rbt->hash -= (uint32_t)(uintptr_t)old;
+old->rbt->hash += (uint32_t)(uintptr_t)n;
 #endif
 }
 
-void API rbtree_delete_node(rbtree * restrict rb, rbnode * restrict n)
+void rbtree_delete(rbtree * restrict rb, rbnode * restrict n)
 {
   rbnode *m;
   rbnode *o;
@@ -577,6 +615,13 @@ void API rbtree_delete_node(rbtree * restrict rb, rbnode * restrict n)
     delete_repair(rb, o);
   }
 
+#if CONFIG_DEBUG || CONFIG_DEVEL
+  n->color = 0;
+  n->left = 0;
+  n->right = 0;
+#endif
+  n->parent = 0;
+
 #if RBTREE_HASH
   rb->hash -= (uint32_t)(uintptr_t)n;
 #endif
@@ -588,26 +633,24 @@ void API rbtree_delete_node(rbtree * restrict rb, rbnode * restrict n)
 #endif
 }
 
-rbnode * API rbtree_first_post_node(rbtree * restrict rb)
+rbnode * rbtree_first_post(const rbtree * restrict rb)
 {
-  if(rb->root == &rbleaf)
+  if(rb->root == &rbleaf) {
     return &rbleaf;
+  }
 
   return leftmost(rb->root);
 }
 
-rbnode * API rbtree_last_post_node(rbtree * restrict rb)
+rbnode * rbtree_next_post(const rbnode * restrict n)
 {
-  return rb->root;
-}
-
-rbnode * API rbtree_next_post_node(rbnode * restrict n)
-{
-  if(n->parent == &rbleaf)
+  if(n->parent == &rbleaf) {
     return &rbleaf;
+  }
 
-  if(n == n->parent->left && n->parent->right != &rbleaf)
+  if(n == n->parent->left && n->parent->right != &rbleaf) {
     return leftmost(n->parent->right);
+  }
 
   return n->parent;
 }

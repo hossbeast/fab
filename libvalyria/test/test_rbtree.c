@@ -10,7 +10,7 @@
 #include "llist.h"
 
 #include "rbtree.h"
-#include "test_util.h"
+#include "unit.h"
 
 struct item {
   llist lln;    // freelist
@@ -58,12 +58,12 @@ static void validate(rbtree * rb)
     assert_eq_p(&rbleaf, rb->root->parent);
 }
 
-static int item_rbn_key_cmp(void * _a, const rbnode * _b)
+static int item_rbn_key_cmp(void * _key, const rbnode * _b)
 {
-  struct item * a = containerof(_a, struct item, rbn);
+  const char *key = _key;
   struct item * b = containerof(_b, struct item, rbn);
 
-  return strcmp(a->label, b->label);
+  return strcmp(key, b->label);
 }
 
 static int item_rbn_node_cmp(const rbnode * _a, const rbnode * _b)
@@ -87,12 +87,12 @@ static void test_put()
   llist freelist;
   llist *T;
   struct item *i, *j;
-  struct item key;
   int x;
   int c;
   bool found;
+  rbnode *rbn;
 
-  llist_init_node(&freelist);
+  llist_init(&freelist);
   rbtree_init(&rb);
 
   char * labels[] = {
@@ -103,7 +103,7 @@ static void test_put()
   {
     xmalloc(&i, sizeof(struct item));
     i->label = labels[x];
-    found = rbtree_put(&rb, i, rbn, item_rbn_node_cmp);
+    found = rbtree_put(&rb, &i->rbn, item_rbn_node_cmp);
     assert_eq_b(false, found);
 
     // validate redblack properties
@@ -114,10 +114,10 @@ static void test_put()
     for(y = 0; y <= x; y++)
     {
       // verify reachability by lookup
-      key.label = labels[y];
-      i = rbtree_lookup(&rb, &key, rbn, item_rbn_key_cmp);
+      rbn = rbtree_lookup(&rb, labels[y], item_rbn_key_cmp);
+      assert_notnull(rbn);
+      i = containerof(rbn, typeof(*i), rbn);
 
-      assert_notnull(i);
       assert_eq_p(labels[y], i->label);
 
       // verify reachability by traversal
@@ -147,12 +147,12 @@ static void test_delete()
   llist freelist;
   llist *T;
   struct item *i, *j;
-  struct item key;
   int x;
   bool found;
   int c;
+  rbnode *rbn;
 
-  llist_init_node(&freelist);
+  llist_init(&freelist);
   rbtree_init(&rb);
 
   // traverse empty tree
@@ -170,18 +170,18 @@ static void test_delete()
   {
     xmalloc(&i, sizeof(struct item));
     i->label = labels[x];
-    found = rbtree_put(&rb, i, rbn, item_rbn_node_cmp);
+    found = rbtree_put(&rb, &i->rbn, item_rbn_node_cmp);
     assert_eq_b(false, found);
   }
 
   // delete in forward order
   for(x = 0; x < sizeof(labels) / sizeof(*labels); x++)
   {
-    key.label = labels[x];
-    i = rbtree_lookup(&rb, &key, rbn, item_rbn_key_cmp);
+    rbn = rbtree_lookup(&rb, labels[x], item_rbn_key_cmp);
+    i = containerof(rbn, typeof(*i), rbn);
 
-    rbtree_delete(&rb, i, rbn);
-    llist_append(&freelist, i, lln);
+    rbtree_delete(&rb, &i->rbn);
+    llist_append(&freelist, &i->lln);
 
     // validate redblack properties
     validate(&rb);
@@ -191,10 +191,10 @@ static void test_delete()
     for(y = x + 1; y < sizeof(labels) / sizeof(*labels); y++)
     {
       // verify reachability by lookup
-      key.label = labels[y];
-      i = rbtree_lookup(&rb, &key, rbn, item_rbn_key_cmp);
-
+      rbn = rbtree_lookup(&rb, labels[y], item_rbn_key_cmp);
       assert_notnull(i);
+      i = containerof(rbn, typeof(*i), rbn);
+
       assert_eq_p(labels[y], i->label);
 
       // verify reachability by traversal
@@ -223,18 +223,18 @@ static void test_delete()
   {
     xmalloc(&i, sizeof(struct item));
     i->label = labels[x];
-    found = rbtree_put(&rb, i, rbn, item_rbn_node_cmp);
+    found = rbtree_put(&rb, &i->rbn, item_rbn_node_cmp);
     assert_eq_b(false, found);
   }
 
   // delete in reverse order
   for(x = (sizeof(labels) / sizeof(*labels)) - 1; x >= 0; x--)
   {
-    key.label = labels[x];
-    i = rbtree_lookup(&rb, &key, rbn, item_rbn_key_cmp);
+    rbn = rbtree_lookup(&rb, labels[x], item_rbn_key_cmp);
+    i = containerof(rbn, typeof(*i), rbn);
 
-    rbtree_delete(&rb, i, rbn);
-    llist_append(&freelist, i, lln);
+    rbtree_delete(&rb, &i->rbn);
+    llist_append(&freelist, &i->lln);
 
     // validate redblack properties
     validate(&rb);
@@ -244,8 +244,8 @@ static void test_delete()
     for(y = 0; y < x; y++)
     {
       // verify reachability by lookup
-      key.label = labels[y];
-      i = rbtree_lookup(&rb, &key, rbn, item_rbn_key_cmp);
+      rbn = rbtree_lookup(&rb, labels[y], item_rbn_key_cmp);
+      i = containerof(rbn, typeof(*i), rbn);
 
       assert_notnull(i);
       assert_eq_p(labels[y], i->label);

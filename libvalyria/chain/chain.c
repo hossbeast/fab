@@ -6,7 +6,7 @@
 #define chain_foreach_node(node, T, head) \
   for(node = (head), T = NULL; T == NULL || node != (head); T = node, node = node->next)
 
-chain * API chain_init_node(chain * head)
+chain * API chain_init(chain * head)
 {
   head->next = head;
   head->prev = head;
@@ -14,7 +14,7 @@ chain * API chain_init_node(chain * head)
   return head;
 }
 
-chain * API chain_add_tail_node(chain * head, chain * node)
+chain * API chain_append(chain * head, chain * node)
 {
   node->prev = head;
   node->next = head->next;
@@ -24,7 +24,7 @@ chain * API chain_add_tail_node(chain * head, chain * node)
   return head;
 }
 
-chain * API chain_add_head_node(chain * head, chain * node)
+chain * API chain_prepend(chain * head, chain * node)
 {
   node->prev = head->prev;
   node->next = head;
@@ -34,7 +34,22 @@ chain * API chain_add_head_node(chain * head, chain * node)
   return head;
 }
 
-size_t API chain_count_node(const chain * head)
+chain * chain_pop_node(chain * restrict head)
+{
+  chain *prev;
+
+  prev = head->prev;
+
+  prev->next->prev = prev->prev;
+  prev->prev->next = prev->next;
+
+  prev->prev = prev;
+  prev->next = prev;
+
+  return prev;
+}
+
+size_t API chain_count(const chain * head)
 {
   size_t size = 0;
   const chain *node, *T;
@@ -46,7 +61,7 @@ size_t API chain_count_node(const chain * head)
   return size;
 }
 
-chain * API chain_splice_tail_node(chain * dst_head, chain * src_head)
+chain * API chain_splice(chain * dst_head, chain * src_head)
 {
 // src : D E F
 // dst : A B C
@@ -101,28 +116,33 @@ chain * API chain_prev_node(const chain * head, const chain * cursor[1])
   return (chain*)T;
 }
 
-bool API chain_has_next_node(const chain * head, const chain cursor[1])
+bool API chain_has_next(const chain * head, const chain cursor[1])
 {
-  if(cursor == NULL)
+  if(cursor == NULL) {
     return true;
+  }
 
   return cursor != head;
 }
 
 chain * API chain_next_safe_node(const chain * head, const chain * cursor[2])
 {
+  const chain *T;
+
   if(cursor[0] == NULL) {
     cursor[0] = head->next;
     cursor[1] = cursor[0]->next;
     return (void*)head;
   }
 
-  if(cursor[0] == head)
+  if(cursor[0] == head) {
     return NULL;
+  }
 
-  const chain * T = cursor[0];
+  T = cursor[0];
   cursor[0] = cursor[1];
-  if(cursor[1] != head)
+  if(cursor[1] != head) {
     cursor[1] = cursor[1]->next;
+  }
   return (chain*)T;
 }

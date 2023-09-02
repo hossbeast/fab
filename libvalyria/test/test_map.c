@@ -7,7 +7,7 @@
 #include "xlinux/xstdlib.h"
 
 #include "map.h"
-#include "test_util.h"
+#include "unit.h"
 
 #include "macros.h"
 
@@ -74,9 +74,6 @@ static void validate_keyset(map * restrict m, char ** restrict keyset)
   int x;
   int i;
 
-  char ** keys;
-  uint16_t keysl;
-
   // keys in the map are in the keyset
   for(x = 0; x < m->table_size; x++)
   {
@@ -105,10 +102,6 @@ static void validate_keyset(map * restrict m, char ** restrict keyset)
 
     assert_ne_d(m->table_size, i);
   }
-
-  map_keys(m, &keys, &keysl);
-
-  free(keys);
 }
 
 static void test_basic()
@@ -141,7 +134,7 @@ static void test_basic()
   validate_enumeration(m);
   validate_keyset(m, keyset);
 
-  map_xfree(m);
+  map_free(m);
 }
 
 static void test_recycle()
@@ -178,7 +171,7 @@ static void test_recycle()
     map_recycle(m);
   }
 
-  map_xfree(m);
+  map_free(m);
 }
 
 static void test_delete()
@@ -246,29 +239,29 @@ static void test_delete()
   keyset[0] = 0;
   validate_keyset(m, keyset);
 
-  map_xfree(m);
+  map_free(m);
 }
 
 static void test_successive_mappings()
 {
-  map * m = 0;
-  map_createx(&m, 0, free);
+  map m;
+  map_initx(&m, 0, free);
 
-  insert(m, "1", 1);
-  assert_eq_d(1, m->size);
+  insert(&m, "1", 1);
+  assert_eq_d(1, m.size);
 
   // new mapping with the same key should overwrite/free the previous mapping
-  insert(m, "1", 1);
-  assert_eq_d(1, m->size);
-  insert(m, "1", 1);
-  assert_eq_d(1, m->size);
+  insert(&m, "1", 1);
+  assert_eq_d(1, m.size);
+  insert(&m, "1", 1);
+  assert_eq_d(1, m.size);
 
   // successive deletion
-  map_delete(m, MMS("1"));
-  assert_eq_d(0, m->size);
-  absent(m, "1");
+  map_delete(&m, MMS("1"));
+  assert_eq_d(0, m.size);
+  absent(&m, "1");
 
-  map_xfree(m);
+  map_destroy(&m);
 }
 
 static void test_equal()
@@ -292,8 +285,116 @@ static void test_equal()
   map_recycle(A);
   assert_eq_b(true, map_equal(A, B));
 
-  map_xfree(A);
-  map_xfree(B);
+  map_free(A);
+  map_free(B);
+}
+
+static void test_load()
+{
+  map * m = 0;
+  int x;
+  char buf[32];
+
+  map_createx(&m, 0, free);
+
+  /* first 1000 */
+  for(x = 0; x < 1000; x++)
+  {
+    assert_eq_d(x, m->size);
+    snprintf(buf, sizeof(buf), "%d", x);
+    insert(m, buf, x);
+  }
+
+  assert_eq_d(1000, m->size);
+  for(x = 0; x < 1000; x++)
+  {
+    snprintf(buf, sizeof(buf), "%d", x);
+    contains(m, buf, x);
+  }
+
+  /* delete a few entries */
+  map_delete(m, MMS("42"));
+  map_delete(m, MMS("43"));
+  map_delete(m, MMS("44"));
+
+  /* second 1000 */
+  for(x = 1000; x < 2000; x++)
+  {
+    assert_eq_d(x - 3, m->size);
+    snprintf(buf, sizeof(buf), "%d", x);
+    insert(m, buf, x);
+  }
+
+  assert_eq_d(2000 - 3, m->size);
+  for(x = 0; x < 2000; x++)
+  {
+    snprintf(buf, sizeof(buf), "%d", x);
+    if(x == 42 || x == 43 || x == 44) {
+      absent(m, buf);
+    } else {
+      contains(m, buf, x);
+    }
+  }
+
+  /* delete a few entries */
+  map_delete(m, MMS("1042"));
+  map_delete(m, MMS("1043"));
+  map_delete(m, MMS("1044"));
+
+  /* third 1000 */
+  for(x = 2000; x < 3000; x++)
+  {
+    assert_eq_d(x - 6, m->size);
+    snprintf(buf, sizeof(buf), "%d", x);
+    insert(m, buf, x);
+  }
+
+  assert_eq_d(3000 - 6, m->size);
+  for(x = 0; x < 3000; x++)
+  {
+    snprintf(buf, sizeof(buf), "%d", x);
+    if(x == 42 || x == 43 || x == 44 || x == 1042 || x == 1043 || x == 1044) {
+      absent(m, buf);
+    } else {
+      contains(m, buf, x);
+    }
+  }
+
+  map_free(m);
+}
+
+static void test_store()
+{
+  map m;
+  map_init(&m);
+  map_search_context ctx;
+  char *v;
+
+  char * keyset[] = {
+      "1"
+    , "200"
+    , 0
+  };
+
+  /* keyset 1 */
+  ctx = (typeof(ctx)) { key : keyset[0], key_len : strlen(keyset[0]) };
+  assert_eq_b(false, map_search(&m, &ctx));
+  map_store(&m, &ctx, keyset[0], 0);
+
+  assert_eq_b(true, map_search(&m, &ctx));
+  v = map_get(&m, keyset[0], strlen(keyset[0]));
+  assert_eq_s(keyset[0], v);
+
+  /* keyset 2 */
+  ctx = (typeof(ctx)) { key : keyset[1], key_len : strlen(keyset[1]) };
+  assert_eq_b(false, map_search(&m, &ctx));
+  map_store(&m, &ctx, keyset[1], 1);
+
+  assert_eq_b(true, map_search(&m, &ctx));
+  v = map_get(&m, keyset[1], strlen(keyset[1]));
+  assert_eq_s(keyset[1], v);
+
+  map_destroy(&m);
 }
 
 int main()
@@ -303,6 +404,8 @@ int main()
   test_delete();
   test_equal();
   test_successive_mappings();
+  test_load();
+  test_store();
 
   summarize;
   return 0;

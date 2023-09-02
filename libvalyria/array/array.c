@@ -6,7 +6,7 @@
 
 #include "xlinux/xstdlib.h"
 
-#include "array.internal.h"
+#include "array.h"
 
 #include "common/grow.h"
 #include "common/assure.h"
@@ -21,63 +21,38 @@
 // static
 //
 
-static int compare_items(const struct array_t * ar, const void * a, const void * b, int (*cmp_fn)(const void *, size_t, const void *, size_t))
+static int compare_items(const struct array * ar, const void * a, const void * b, int (*cmp)(const void *, size_t, const void *, size_t))
 {
-  if(!cmp_fn)
-    cmp_fn = ar->cmp_fn;
-  return cmp_fn(a, ar->esz, b, ar->esz);
+  return cmp(a, ar->esz, b, ar->esz);
 }
 
-static void destroy_item(const struct array_t * ar, void * item)
-{
-  if(ar->destroy_fn)
-    ar->destroy_fn(item);
-}
-
-static void store_items(const struct array_t * ar, void * storage, void * _items, size_t len)
+static void store_items(const struct array * ar, void * storage, void * _items, size_t len)
 {
   void ** items = _items;
   size_t x;
 
-  if(ar->init_fn){
-    for(x = 0; x < len; x++)
-      ar->init_fn(storage + (x * ar->esz));
-  }
-
   // return pointers to items
-  for(x = 0; x < len; x++)
-  {
+  for(x = 0; x < len; x++) {
     items[x] = storage + (x * ar->esz);
-    if(ar->init_fn)
-      ar->init_fn(items[x]);
   }
 }
 
-static ar_operations ar_ops = {
-    compare_items : compare_items
-  , destroy_item : destroy_item
-  , store_items : store_items
-};
-
-static void array_grow(array_t * const restrict ar, size_t len)
+static void array_grow(array * const restrict ar, size_t len)
 {
   grow(&ar->v, ar->esz, len, ar->size, &ar->a);
 }
 
-static void array_assure(array_t * const restrict ar, size_t len)
+static void array_assure(array * const restrict ar, size_t len)
 {
   assure(&ar->v, ar->esz, len, &ar->a);
 }
 
-/// array_copy
-//
-// SUMMARY
-//  copy elements from one array to another
-//
-// REMARKS
-//  the arrays must be compatible, e.g. have the same element size and value_free operations
-//
-static void array_copy(array_t * const restrict dst, size_t dst_index, array_t * const restrict src, size_t src_index, size_t len)
+/*
+ * copy elements from one array to another
+ *
+ * the arrays must be compatible, e.g. have the same element size and destroy_fn operations
+ */
+static void array_copy(array * const restrict dst, size_t dst_index, array * const restrict src, size_t src_index, size_t len)
 {
   size_t elsz = dst->esz;
 
@@ -88,24 +63,21 @@ static void array_copy(array_t * const restrict dst, size_t dst_index, array_t *
   );
 }
 
-/// array_destroy_range
-//
-// SUMMARY
-//  free a range of elements in a array
-//
-// PARAMETERS
-//  ar    - pointer to array
-//  start - index of the first element
-//  len   - number of elements
-//
-void array_destroy_range(array_t * const restrict ar, size_t start, size_t len)
+/*
+ * free a range of elements in a array
+ *
+ * ar    - pointer to array
+ * start - index of the first element
+ * len   - number of elements
+ */
+static void array_destroy_range(array * const restrict ar, size_t start, size_t len)
 {
   size_t x;
 
-  if(ar->ops->destroy_item)
+  if(ar->destroy_fn)
   {
     for(x = 0; x < len; x++) {
-      ar->ops->destroy_item(ar, ar->v + ((start + x) * ar->esz));
+      ar->destroy_fn(ar->v + ((start + x) * ar->esz));
     }
   }
 }
@@ -115,23 +87,23 @@ void array_destroy_range(array_t * const restrict ar, size_t start, size_t len)
 //
 
 void array_init(
-    array_t * const restrict ar
+    array * const restrict ar
   , size_t esz
   , size_t capacity
-  , ar_operations * restrict ops
-  , int (*cmp_fn)(const void * A, size_t Asz, const void * B, size_t Bsz)
+  , void (*destroy_fn)(void *item)
 )
 {
-  ar->esz = esz;
-  ar->ops = ops;
-  ar->cmp_fn = cmp_fn ?: memncmp;
+  *ar = (typeof(*ar)) {
+    esz : esz,
+    destroy_fn : destroy_fn
+  };
 
   array_grow(ar, capacity ?: DEFAULT_CAPACITY);
 }
 
-void array_xdestroy(array_t * const restrict ar)
+void array_destroy(array * const restrict ar)
 {
-  array_recycle(&ar->arx);
+  array_recycle(ar);
   free(ar->v);
 }
 
@@ -143,75 +115,59 @@ void API array_createx(
     array ** const restrict arp
   , size_t esz
   , size_t capacity
-  , int (*cmp_fn)(const void * A, size_t Asz, const void * B, size_t Bsz)
-  , void * init_fn
-  , void * destroy_fn
+  , void (*destroy_fn)(void *)
 )
 {
-  array_t * ar = 0;
+  array * ar = 0;
+
   xmalloc(&ar, sizeof(*ar));
-  array_init(ar, esz, capacity, &ar_ops, cmp_fn);
+  array_init(ar, esz, capacity, destroy_fn);
 
-  ar->init_fn = init_fn;
-  ar->destroy_fn = destroy_fn;
-
-  *arp = &ar->arx;
-  ar = 0;
-
-  if(ar) {
-    array_xfree(&ar->arx);
-  }
+  *arp = ar;
 }
 
 void API array_create(array** const restrict ar, size_t esz)
 {
-  array_createx(ar, esz, 0, 0, 0, 0);
+  array_createx(ar, esz, 0, 0);
 }
 
-void API array_xfree(array * const restrict arx)
+void API array_xfree(array * const restrict ar)
 {
-  array_t * ar = containerof(arx, array_t, arx);
-
-  if(ar)
-    array_xdestroy(ar);
+  if(ar) {
+    array_destroy(ar);
+  }
 
   free(ar);
 }
 
-void API array_ixfree(array ** const restrict arx)
+void API array_ixfree(array ** const restrict ar)
 {
-  array_xfree(*arx);
-  *arx = 0;
+  array_xfree(*ar);
+  *ar = 0;
 }
 
-void API array_recycle(array * const restrict arx)
+void API array_recycle(array * const restrict ar)
 {
-  array_t * ar = containerof(arx, array_t, arx);
-
-  array_truncate(&ar->arx, ar->size);
-  ar->size = 0;
+  array_truncate(ar, 0);
 }
 
-void * API array_get(const array * const restrict arx, int x)
+void * API array_get(const array * const restrict ar, int x)
 {
-  array_t * ar = containerof(arx, array_t, arx);
   return ar->v + ((x) * ar->esz);
 }
 
-void API array_push(array * const arx, void * const item)
+void API array_push(array * const ar, void * const item)
 {
-  array_insert_range(arx, arx->size, item, 1);
+  array_insert_range(ar, ar->size, item, 1);
 }
 
-void API array_push_range(array * const arx, void * items, size_t len)
+void API array_push_range(array * const ar, void * items, size_t len)
 {
-  array_insert_range(arx, arx->size, items, len);
+  array_insert_range(ar, ar->size, items, len);
 }
 
-void API array_pop(array * const restrict arx)
+void API array_pop(array * const restrict ar)
 {
-  array_t * ar = containerof(arx, array_t, arx);
-
   if(ar->size)
   {
     array_destroy_range(ar, ar->size - 1, 1);
@@ -219,20 +175,18 @@ void API array_pop(array * const restrict arx)
   }
 }
 
-void API array_unshift(array * const arx, void * item)
+void API array_unshift(array * const ar, void * item)
 {
-  array_insert_range(arx, 0, item, 1);
+  array_insert_range(ar, 0, item, 1);
 }
 
-void API array_unshift_range(array * const arx, void * items, size_t len)
+void API array_unshift_range(array * const ar, void * items, size_t len)
 {
-  array_insert_range(arx, 0, items, len);
+  array_insert_range(ar, 0, items, len);
 }
 
-void API array_shift(array * const restrict arx)
+void API array_shift(array * const restrict ar)
 {
-  array_t * ar = containerof(arx, array_t, arx);
-
   if(ar->size)
   {
     array_destroy_range(ar, 0, 1);
@@ -247,15 +201,13 @@ void API array_shift(array * const restrict arx)
   }
 }
 
-void API array_insert(array * const arx, size_t index, void * item)
+void API array_insert(array * const ar, size_t index, void * item)
 {
-  array_insert_range(arx, index, item, 1);
+  array_insert_range(ar, index, item, 1);
 }
 
-void API array_insert_range(array * const arx, size_t index, void * items, size_t len)
+void API array_insert_range(array * const ar, size_t index, void * items, size_t len)
 {
-  array_t * ar = containerof(arx, array_t, arx);
-
   // allocate new space if necessary
   array_assure(ar, ar->size + len);
 
@@ -266,27 +218,23 @@ void API array_insert_range(array * const arx, size_t index, void * items, size_
     , (ar->size - index) * ar->esz
   );
 
-  ar->ops->store_items(ar, ar->v + (index * ar->esz), items, len);
+  store_items(ar, ar->v + (index * ar->esz), items, len);
   ar->size += len;
 }
 
-void API array_update(array * const arx, size_t index, void * item)
+void API array_update(array * const ar, size_t index, void * item)
 {
-  array_update_range(arx, index, item, 1);
+  array_update_range(ar, index, item, 1);
 }
 
-void API array_update_range(array * const arx, size_t index, void * items, size_t len)
+void API array_update_range(array * const ar, size_t index, void * items, size_t len)
 {
-  array_t * ar = containerof(arx, array_t, arx);
-
   array_destroy_range(ar, index, len);
-  ar->ops->store_items(ar, ar->v + (index * ar->esz), items, len);
+  store_items(ar, ar->v + (index * ar->esz), items, len);
 }
 
-void API array_delete(array * const restrict arx, size_t index)
+void API array_delete(array * const restrict ar, size_t index)
 {
-  array_t * ar = containerof(arx, array_t, arx);
-
   array_destroy_range(ar, index, 1);
 
   // overwrite
@@ -299,10 +247,8 @@ void API array_delete(array * const restrict arx, size_t index)
   ar->size--;
 }
 
-void API array_delete_range(array * const restrict arx, size_t index, size_t len)
+void API array_delete_range(array * const restrict ar, size_t index, size_t len)
 {
-  array_t * ar = containerof(arx, array_t, arx);
-
   array_destroy_range(ar, index, len);
 
   // overwrite
@@ -315,28 +261,13 @@ void API array_delete_range(array * const restrict arx, size_t index, size_t len
   ar->size -= len;
 }
 
-void API array_subarray(array * const restrict arx, size_t index, size_t len, array ** const restrict rv)
+void API array_splice(array * const restrict dst, size_t dst_index, array * const restrict src, size_t src_index, size_t len)
 {
-  array_t * ar = containerof(arx, array_t, arx);
-  array_t * dst;
-
-  if(!*rv)
-    array_createx(rv, ar->esz, len, ar->cmp_fn, ar->init_fn, ar->destroy_fn);
-  dst = containerof(*rv, array_t, arx);
-
-  array_recycle(&dst->arx);
-  array_replicate(&dst->arx, 0, &ar->arx, index, len);
-}
-
-void API array_splice(array * const restrict dstx, size_t dst_index, array * const restrict srcx, size_t src_index, size_t len)
-{
-  array_t * src = containerof(srcx, array_t, arx);
-  array_t * dst = containerof(dstx, array_t, arx);
-
-  if(len == -1)
+  if(len == -1) {
     len = src->size;
+  }
 
-  array_replicate(&dst->arx, dst_index, &src->arx, src_index, len);
+  array_replicate(dst, dst_index, src, src_index, len);
 
   // overwrite
   memmove(
@@ -347,11 +278,8 @@ void API array_splice(array * const restrict dstx, size_t dst_index, array * con
   src->size -= len;
 }
 
-void API array_replicate(array * const restrict dstx, size_t dst_index, array * const restrict srcx, size_t src_index, size_t len)
+void API array_replicate(array * const restrict dst, size_t dst_index, array * const restrict src, size_t src_index, size_t len)
 {
-  array_t * src = containerof(srcx, array_t, arx);
-  array_t * dst = containerof(dstx, array_t, arx);
-
   if(len == -1)
     len = src->size;
 
@@ -369,57 +297,59 @@ void API array_replicate(array * const restrict dstx, size_t dst_index, array * 
   dst->size += len;
 }
 
-void API array_truncate(array * const restrict arx, size_t len)
+void API array_truncate(array * const restrict ar, size_t len)
 {
-  array_t * ar = containerof(arx, array_t, arx);
+  if(len > ar->size) {
+    return;
+  }
 
-  array_destroy_range(ar, 0, len);
+  array_destroy_range(ar, len, ar->size - len);
   ar->size = len;
 }
 
-bool API array_equal(array * const restrict Ax, array * const restrict Bx, int (*cmp_fn)(const void * A, size_t Asz, const void * B, size_t Bsz))
+bool API array_equal(array * const restrict A, array * const restrict B, int (*cmp)(const void * A, size_t Asz, const void * B, size_t Bsz))
 {
-  array_t * A = containerof(Ax, array_t, arx);
-  array_t * B = containerof(Bx, array_t, arx);
-
-  if(A->size != B->size)
-    return false;
-
   int x;
+  void *a;
+  void *b;
+
+  if(A->size != B->size) {
+    return false;
+  }
+
   for(x = 0; x < A->size; x++)
   {
-    void * a = A->v + (x * A->esz);
-    void * b = B->v + (x * A->esz);
-    if(A->ops->compare_items(A, a, b, cmp_fn))
+    a = A->v + (x * A->esz);
+    b = B->v + (x * A->esz);
+    if(cmp(a, A->esz, b, B->esz)) {
       return false;
+    }
   }
 
   return true;
 }
 
 struct sort_ctx {
-  const array_t * ar;
-  int (*cmp_fn)(const void * A, size_t Asz, const void * B, size_t Bsz);
+  const array * ar;
+  int (*cmp)(const void * A, size_t Asz, const void * B, size_t Bsz);
 };
 
 static int sort_cmp(const void * A, const void * B, void * arg)
 {
   struct sort_ctx * ctx = arg;
-  return ctx->ar->ops->compare_items(ctx->ar, A, B, ctx->cmp_fn);
+  return compare_items(ctx->ar, A, B, ctx->cmp);
 }
 
-void API array_sort(const array * const restrict arx, int (*cmp_fn)(const void * A, size_t Asz, const void * B, size_t Bsz))
+void API array_sort(const array * const restrict ar, int (*cmp)(const void * A, size_t Asz, const void * B, size_t Bsz))
 {
-  array_t * ar = containerof(arx, array_t, arx);
-
-  struct sort_ctx ctx = { ar : ar, cmp_fn : cmp_fn ?: ar->cmp_fn };
+  struct sort_ctx ctx = { ar : ar, cmp : cmp };
   qsort_r(ar->v, ar->size, ar->esz, sort_cmp, &ctx);
 }
 
 struct context {
-  const array_t * ar;
+  const array * ar;
   const void * key;
-  int (*cmp_fn)(const void * A, size_t Asz, const void * B, size_t Bsz);
+  int (*cmp)(const void * A, size_t Asz, const void * B, size_t Bsz);
   int lc;
   const void * last_item;
 };
@@ -429,40 +359,38 @@ static int compare(const void * _ctx, const void * item)
   struct context * ctx = (typeof(ctx))_ctx;
 
   ctx->last_item = item;
-  return ctx->lc = ctx->ar->ops->compare_items(ctx->ar, ctx->key, item, ctx->cmp_fn);
+  return ctx->lc = compare_items(ctx->ar, ctx->key, item, ctx->cmp);
 };
 
 bool API array_search(
-    const array * const restrict arx
+    const array * const restrict ar
   , void * key
-  , int (*cmp_fn)(const void * A, size_t Asz, const void * B, size_t Bsz)
+  , int (*cmp)(const void * A, size_t Asz, const void * B, size_t Bsz)
   , void * item
   , size_t * restrict lx
   , int * restrict lc
 )
 {
-  array_t * ar = containerof(arx, array_t, arx);
-  return array_search_range(&ar->arx, 0, ar->size, key, cmp_fn, item, lx, lc);
+  return array_search_range(ar, 0, ar->size, key, cmp, item, lx, lc);
 }
 
 bool API array_search_range(
-    const array * const restrict arx
+    const array * const restrict ar
   , size_t index
   , size_t len
   , void * key
-  , int (*cmp_fn)(const void * A, size_t Asz, const void * B, size_t Bsz)
+  , int (*cmp)(const void * A, size_t Asz, const void * B, size_t Bsz)
   , void * item
   , size_t * restrict lx
   , int * restrict lc
 )
 {
-  array_t * ar = containerof(arx, array_t, arx);
-
-  struct context ctx = { ar : ar, cmp_fn : cmp_fn, key : key };
+  struct context ctx = { ar : ar, cmp : cmp, key : key };
   void * result = bsearch(&ctx, ar->v + (index * ar->esz), len, ar->esz, compare);
 
-  if(item)
+  if(item) {
     *(void**)item = result;
+  }
   if(lx)
   {
     if(ctx.last_item)
@@ -470,8 +398,9 @@ bool API array_search_range(
     else
       *lx = 0;
   }
-  if(lc)
+  if(lc) {
     *lc = ctx.lc;
+  }
 
   return !!result;
 }

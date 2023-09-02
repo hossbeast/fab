@@ -12,16 +12,44 @@ SUMMARY
  dynamically resizing unordered collection of key/value pairs
 
 REMARKS
- map stores values as references to objects - the set operation stores a reference
+ map stores references to values - the put operation stores a reference only
+ map stores copies of keys
 
 */
 
 #include "types.h"
 
+typedef struct map_entry {
+  void * key;        // key
+  uint16_t key_len;  // length
+  uint16_t key_a;    // allocated size
+
+  void * val;        // pointer to value
+  size_t val_len;    // value length
+  uint8_t attr;
+  uint32_t hash;
+} map_entry;
+
 typedef struct map {
   size_t size;
   size_t table_size;
+  uint32_t hash;
+
+  size_t dirty_size;
+  size_t lm;              // bitmask equal to table_size - 1
+  size_t overflow_size;   // size at which to rehash
+  map_entry * tab;        // bucket table
+
+  void (*delete_fn)(void * entry);
 } map;
+
+typedef struct map_search_context {
+  const void *key;
+  uint16_t key_len;
+  uint32_t hash;
+  int probe_result;
+  size_t index;
+} map_search_context;
 
 /// map_create
 //
@@ -29,34 +57,44 @@ typedef struct map {
 //  create an empty map
 //
 // PARAMETERS
-//  map           - (returns) newly allocated map
-//  [free_value]  - invoked with the value just before freeing it (keys may not be managed in this way)
-//  [xfree_value] - invoked with the value just before freeing it (keys may not be managed in this way)
-//  [capacity]    - initial capacity, the minimum number of entries which can be set without rehashing
+//  map         - (returns) newly allocated map
+//  [capacity]  - initial capacity, the minimum number of entries which can be set without rehashing
+//  [delete_fn] - invoked with the value just before freeing it (keys may not be managed in this way)
 //
+void map_createx(map ** restrict m, size_t capacity, void (*delete_fn)(void * value))
+  __attribute__((nonnull(1)));
+
 void map_create(map ** restrict m)
   __attribute__((nonnull));
 
-void map_createx(
-    map ** restrict m
-  , size_t capacity
-  , void (*free_value)(void * value)
-)
-  __attribute__((nonnull(1)));
-
-/// map_xfree
+/// map_free
 //
 // SUMMARY
 //  free a map
 //
-void map_xfree(map * restrict map);
+void map_free(map * restrict map);
 
-/// map_ixfree
+/// map_ifree
 //
 // SUMMARY
 //  free a map, zero its reference
 //
-void map_ixfree(map ** restrict map)
+void map_ifree(map ** restrict map)
+  __attribute__((nonnull));
+
+void map_initx(map * restrict m, size_t capacity, void (*delete_fn)(void * value))
+  __attribute__((nonnull(1)));
+
+void map_init(map * restrict m)
+  __attribute__((nonnull));
+
+void map_destroy(map * restrict m)
+  __attribute__((nonnull));
+
+bool map_search(const map * restrict m, map_search_context * restrict ctx)
+  __attribute__((nonnull));
+
+void map_store(map * restrict m, map_search_context * restrict ctx, void * val, size_t val_len)
   __attribute__((nonnull));
 
 /// map_put
@@ -166,7 +204,7 @@ void map_values(const map * restrict m, void * restrict values, size_t * restric
 //  m - map
 //  x - slot index
 //
-const void * map_table_key(const map * restrict m, size_t x)
+void * map_table_key(const map * restrict m, size_t x)
   __attribute__((nonnull));
 
 /// map_table_value
@@ -194,7 +232,7 @@ void * map_table_value(const map * restrict m, size_t x)
 //  [v]  - (returns) value
 //  [vl] - (returns) value length
 //
-bool map_table_mapping(const map * restrict m, size_t x, const void ** restrict k, uint16_t * restrict kl, void * v, size_t * restrict vl)
+bool map_table_mapping(const map * restrict m, size_t x, void ** restrict k, uint16_t * restrict kl, void * v, size_t * restrict vl)
   __attribute__((nonnull(1)));
 
 /// map_splice

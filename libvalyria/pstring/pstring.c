@@ -1,232 +1,140 @@
 /* SPDX-License-Identifier: GPL-3.0 */
 /* Copyright (c) 2012-2023 Todd Freed <todd.freed@gmail.com> */
 
-#include <stdlib.h>
 #include <string.h>
-#include <stdio.h>
-#include <stdarg.h>
 
 #include "xlinux/xstdlib.h"
-
-#include "pstring.internal.h"
-
 #include "common/assure.h"
-#include "macros.h"
+#include "pstring.h"
 
-/*
- * Default capacity
- */
-#define DEFAULT_CAPACITY 100
-
-//
-// static
-//
-
-/// psassure
-//
-// SUMMARY
-//  ensure allocation matches or exceeds a specified threshold
-//
-// PARAMETERS
-//  ps - pstring
-//  l  - required size
-//
-static void __attribute__((nonnull)) psassure(pstring * const restrict ps, size_t l)
+void psinitx(char ** restrict ps, size_t * restrict len, size_t * restrict a, size_t capacity)
 {
-  assure(&ps->s, sizeof(*ps->s), l, &ps->a);
+  *ps = 0;
+  *len = 0;
+  *a = 0;
+  assure(ps, 1, capacity, a);
 }
 
-//
-// api
-//
-
-void API psinitx(pstring * restrict ps, size_t capacity)
+void psinit(char ** restrict ps, size_t * restrict len, size_t * restrict a)
 {
-  psassure(ps, capacity ?: DEFAULT_CAPACITY);
+  psinitx(ps, len, a, 128);
 }
 
-void API psinit(pstring * restrict ps)
+void psdestroy(char ** restrict ps, size_t * restrict len, size_t * restrict a)
 {
-  psassure(ps, DEFAULT_CAPACITY);
-}
-
-void API psdestroy(pstring * restrict ps)
-{
-  free(ps->s);
-}
-
-void API pscreatex(pstring ** const restrict rv, size_t capacity)
-{
-  pstring * ps = 0;
-
-  xmalloc(&ps, sizeof(*ps));
-  psinitx(ps, capacity);
-
-  *rv = ps;
-}
-
-void API pscreate(pstring ** const restrict ps)
-{
-  pscreatex(ps, 0);
-}
-
-void API psclear(pstring * restrict ps)
-{
-  ps->size = 0;
-}
-
-void API psfree(pstring * ps)
-{
-  if(ps)
-  {
-    free(ps->s);
-  }
-  free(ps);
-}
-
-void API psifree(pstring ** ps)
-{
-  psfree(*ps);
+  free(*ps);
   *ps = 0;
 }
 
-int API pscmp(const pstring * const restrict A, const pstring * const restrict B)
+void psclear(char ** restrict ps, size_t * restrict len, size_t * restrict a)
 {
-  return memncmp(A->s, A->size, B->s, B->size);
+  *len = 0;
 }
 
-// mk
-
-void API psvmkf(pstring ** restrict ps, pstring * restrict e, const char * const restrict fmt, va_list va)
-{
-  psvcatf(*ps, fmt, va);
-}
-
-void API psmkf(pstring ** const restrict ps, pstring * restrict e, const char * const restrict fmt, ...)
-{
-  va_list va;
-  va_start(va, fmt);
-
-  psvmkf(ps, e, fmt, va);
-
-  va_end(va);
-}
-
-void API psmks(pstring ** restrict ps, pstring * restrict e, const char * const restrict s)
-{
-  psmkw(ps, e, s, strlen(s));
-}
-
-void API psmkw(pstring ** restrict ps, pstring * restrict e, const char * const restrict s, size_t l)
-{
-  pscatw(*ps, s, l);
-}
-
-void API psmkc(pstring ** restrict ps, pstring * restrict e, int c)
-{
-  pscatc(*ps, c);
-}
-
+//
 // load
+//
 
-void API psloadvf(pstring * restrict ps, const char * const restrict fmt, va_list va)
+void psloadvf(char ** restrict ps, size_t * restrict len, size_t * restrict a, const char * const restrict fmt, va_list va)
 {
   va_list va2;
+  int r;
+
   va_copy(va2, va);
 
   // attempt to perform the entire write to the buffer
-  int r = vsnprintf(ps->s, ps->a, fmt, va2);
+  r = vsnprintf(*ps, *a, fmt, va2);
   va_end(va2);
 
   // check whether output was truncated
-  if(r >= ps->a)
+  if(r >= *a)
   {
-    psassure(ps, r + 1);
-    vsprintf(ps->s, fmt, va);
+    assure(ps, 1, r + 1, a);
+    vsprintf(*ps, fmt, va);
   }
-  ps->size = r;
-
-  va_end(va);
+  *len = r;
 }
 
-void API psloadf(pstring * restrict ps, const char * const restrict fmt, ...)
+void psloadf(char ** restrict ps, size_t * restrict len, size_t * restrict a, const char * const restrict fmt, ...)
 {
   va_list va;
+
   va_start(va, fmt);
-
-  psloadvf(ps, fmt, va);
-
+  psloadvf(ps, len, a, fmt, va);
   va_end(va);
 }
 
-void API psloads(pstring * restrict ps, const char * const restrict s)
+void psloads(char ** restrict ps, size_t * restrict len, size_t * restrict a, const char * const restrict s)
 {
-  psloadw(ps, s, strlen(s));
+  psloadw(ps, len, a, s, strlen(s));
 }
 
-void API psloadw(pstring * restrict ps, const char * const restrict s, size_t l)
+void psloadw(char ** restrict ps, size_t * restrict len, size_t * restrict a, const char * const restrict s, size_t l)
 {
-  psassure(ps, l + 1);
-  memcpy(ps->s, s, l);
-  ps->s[l] = 0;
-  ps->size = l;
+  assure(ps, 1, l + 1, a);
+  memcpy(*ps, s, l);
+  (*ps)[l] = 0;
+  *len = l;
 }
 
-void API psloadc(pstring * restrict ps, int c)
+void psloadc(char ** restrict ps, size_t * restrict len, size_t * restrict a, int c)
 {
-  psassure(ps, 1 + 1);
-  ps->s[0] = c;
-  ps->s[1] = 0;
-  ps->size = 1;
+  assure(ps, 1, 2, a);
+  (*ps)[0] = c;
+  (*ps)[1] = 0;
+  *len = 1;
 }
 
+//
 // cat
+//
 
-void API psvcatf(pstring * restrict ps, const char * const restrict fmt, va_list va)
+void pscatvf(char ** restrict ps, size_t * restrict len, size_t * restrict a, const char * const restrict fmt, va_list va)
 {
   va_list va2;
+  int r;
+
   va_copy(va2, va);
 
   // attempt to perform the entire write to the buffer
-  int r = vsnprintf(ps->s + ps->size, ps->a - ps->size, fmt, va2);
+  r = vsnprintf(*ps + *len, *a - *len, fmt, va2);
   va_end(va2);
 
   // check whether output was truncated
-  if(r >= (ps->a - ps->size))
+  if(r >= (*a - *len))
   {
-    psassure(ps, ps->size + r + 1);
-    vsprintf(ps->s + ps->size, fmt, va);
+    assure(ps, 1, *len + r + 1, a);
+    vsprintf(*ps + *len, fmt, va);
   }
-  ps->size += r;
+  *len += r;
 }
 
-void API pscatf(pstring * restrict ps, const char * const restrict fmt, ...)
+void pscatf(char ** restrict ps, size_t * restrict len, size_t * restrict a, const char * const restrict fmt, ...)
 {
   va_list va;
+
   va_start(va, fmt);
-
-  psvcatf(ps, fmt, va);
-
+  pscatvf(ps, len, a, fmt, va);
   va_end(va);
 }
 
-void API pscats(pstring * restrict ps, const char * const restrict s)
+void pscats(char ** restrict ps, size_t * restrict len, size_t * restrict a, const char * const restrict s)
 {
-  pscatw(ps, s, strlen(s));
+  pscatw(ps, len, a, s, strlen(s));
 }
 
-void API pscatw(pstring * restrict ps, const char * const restrict s, size_t l)
+void pscatw(char ** restrict ps, size_t * restrict len, size_t * restrict a, const char * const restrict b, size_t l)
 {
-  psassure(ps, ps->size + l + 1);
-  memcpy(ps->s + ps->size, s, l);
-  ps->s[ps->size + l] = 0;
-  ps->size += l;
+  assure(ps, 1, *len + l + 1, a);
+  memcpy((*ps) + *len, b, l);
+  (*ps)[*len + l] = 0;
+  *len += l;
 }
 
-void API pscatc(pstring * restrict ps, int c)
+void pscatc(char ** restrict ps, size_t * restrict len, size_t * restrict a, int c)
 {
-  psassure(ps, ps->size + 1 + 1);
-  ps->s[ps->size] = c;
-  ps->s[ps->size + 1] = 0;
-  ps->size++;
+  assure(ps, 1, *len + 2, a);
+  (*ps)[*len] = c;
+  (*ps)[*len + 1] = 0;
+  (*len)++;
 }

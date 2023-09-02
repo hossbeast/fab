@@ -14,7 +14,6 @@ REMARKS
 */
 
 #include "types.h"
-
 #include "macros.h"
 
 typedef struct chain {
@@ -22,62 +21,41 @@ typedef struct chain {
   struct chain * prev;
 } chain;
 
-chain * chain_init_node(chain * head)
+chain * chain_init(chain * head)
   __attribute__((nonnull));
 
-#define chain_init(_head, _member)        \
-  containerof(                            \
-      chain_init_node(&(_head)->_member)  \
-    , typeof(*_head)                      \
-    , _member                             \
-  )
-
-size_t chain_count_node(const chain * head)
+size_t chain_count(const chain * head)
   __attribute__((nonnull));
 
-#define chain_count(_head, _member) chain_count_node(&(_head)->_member)
-
-/// chain_add
-//
-// add an item to a chain such that the new item will be last in an enumeration of the chain
-// starting from the specified head
-//
-// PARAMETERS
-//  head - list head
-//  node - item to add
-//
-chain * chain_add_tail_node(chain * dst, chain * node)
+/*
+ * add an item to a chain such that the new item will be last in an enumeration of the chain
+ * starting from the specified head
+ *
+ * head - list head
+ * node - item to add
+ */
+chain * chain_append(chain * dst, chain * node)
   __attribute__((nonnull));
 
-chain * chain_add_head_node(chain * dst, chain * node)
+#define chain_push(dst, node) chain_append(dst, node)
+
+/*
+ * add an item to a chain such that the new item will be first in an enumeration of the chain
+ * starting from the specified head
+ *
+ * head - list head
+ * node - item to add
+ */
+chain * chain_prepend(chain * dst, chain * node)
   __attribute__((nonnull));
 
-#define chain_add_head(_head, _node, _member)                    \
-  containerof(                                                   \
-      chain_add_head_node(&(_head)->_member, &(_node)->_member)  \
-    , typeof(*_head)                                             \
-    , _member                                                    \
-  )
+#define chain_unshift(dst, node) chain_prepend(dst, node)
 
-#define chain_add_tail(_head, _node, _member)                    \
-  containerof(                                                   \
-      chain_add_tail_node(&(_head)->_member, &(_node)->_member)  \
-    , typeof(*_head)                                             \
-    , _member                                                    \
-  )
-
-#define chain_add(_head, _node, _member) chain_add_head(_head, _node, _member)
-
-/* chain traversal */
-
-/// chain_next
 //
-// returns the next item in a cursor traversal
+// cursor-based chain traversal
 //
+
 chain * chain_next_node(const chain * head, const chain * cursor[1])
-  __attribute__((nonnull));
-
-chain * chain_prev_node(const chain * head, const chain * cursor[1])
   __attribute__((nonnull));
 
 #define chain_next(_head, _cursorp, _member) ({                 \
@@ -88,6 +66,13 @@ chain * chain_prev_node(const chain * head, const chain * cursor[1])
   }                                                             \
   __i;                                                          \
 })
+
+/* check whether any items remain in a cursor-based traversal */
+bool chain_has_next(const chain * head, const chain cursor[1])
+  __attribute__((nonnull(1)));
+
+chain * chain_prev_node(const chain * head, const chain * cursor[1])
+  __attribute__((nonnull));
 
 #define chain_prev(_head, _cursorp, _member) ({                 \
   typeof(*_head) *__i = NULL;                                   \
@@ -104,8 +89,6 @@ chain * chain_prev_node(const chain * head, const chain * cursor[1])
     _item != NULL;                                                    \
     _item = chain_next((_head), &(_cursor), _member)                  \
   )
-
-/* chain safe traversal */
 
 chain * chain_next_safe_node(const chain * head, const chain * cursor[2])
   __attribute__((nonnull));
@@ -126,26 +109,23 @@ chain * chain_next_safe_node(const chain * head, const chain * cursor[2])
     _item = chain_next_safe((_head), (_cursor), _member)                       \
   )
 
-/// chain_has_next
-//
-// returns a boolean value indicating whether any items remain in a cursor traversal
-//
-bool chain_has_next_node(const chain * head, const chain cursor[1])
-  __attribute__((nonnull(1)));
-
-#define chain_has_next(_head, _cursor, _member) chain_has_next_node(&(_head)->_member, _cursor)
-
-/// chain_splice
-//
-// merge two chains such that the items in the source chain will be last in an enumeration of the merged
-// chain which starts at the specified dst_head
-//
-chain * chain_splice_tail_node(chain * dst_head, chain * src_head)
+/*
+ * merge two chains such that the items in the source chain will be last in an enumeration of the merged
+ * chain which starts at the specified dst_head
+ */
+chain * chain_splice(chain * dst_head, chain * src_head)
   __attribute__((nonnull));
 
-#define chain_splice_tail(_dst_head, _src_head, _member)                   \
-  containerof(                                                             \
-      chain_splice_tail_node(&(_dst_head)->_member, &(_src_head)->_member) \
-    , typeof(*_dst_head)                                                   \
-    , _member                                                              \
-  )
+/* remove the last item in a chain, if any, and return it */
+chain * chain_pop_node(chain * restrict head)
+  __attribute__((nonnull));
+
+#define chain_pop(_head, _member) ({                  \
+  typeof(*_head) *__i = NULL;                         \
+  const chain *__T;                                   \
+  if(((_head)->_member.next != (&_head->_member))) {  \
+    __T = chain_pop_node(&_head->_member);            \
+    __i = containerof(__T, typeof(*_head), _member);  \
+  }                                                   \
+  __i;                                                \
+})

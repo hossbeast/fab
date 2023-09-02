@@ -16,27 +16,39 @@ REMARKS
 #include "types.h"
 
 typedef struct array {
-  size_t size;
+  size_t size;    // items in use
+  char *   v;     // storage
+  size_t   a;     // allocated size in items
+  size_t   esz;   // item size, for primary storage
+  void (*destroy_fn)(void *item);
 } array;
 
-/// array_create
-//
-// SUMMARY
-//  create an empty array
-//
-// PARAMETERS
-//  array       - created array goes here
-//  esz         - item size > 0
-//  [capacity]  - initial capacity
-//  [init]      - invoked on an item when its storage becomes used
-//  [xinit]     - invoked on an item when its storage becomes used
-//  [destroy]   - invoked on an item when its storage becomes unused
-//  [xdestroy]  - invoked on an item when its storage becomes unused
-//
-// REMARKS
-//  destroy_item follows the destroy idiom, not the free idiom, i.e. it should not free the pointer
-//  itself, as this memory is owned by the array
-//
+/* initialize an already allocated array */
+void array_init(
+    array * restrict ar
+  , size_t esz
+  , size_t capacity
+  , void (*destroy_fn)(void *item)
+)
+  __attribute__((nonnull(1)));
+
+void array_destroy(array * restrict ar)
+  __attribute__((nonnull));
+
+/*
+ * create an empty array
+ *
+ * array       - created array goes here
+ * esz         - item size > 0
+ * [capacity]  - initial capacity
+ * [init]      - invoked on an item when its storage becomes used
+ * [xinit]     - invoked on an item when its storage becomes used
+ * [destroy]   - invoked on an item when its storage becomes unused
+ * [xdestroy]  - invoked on an item when its storage becomes unused
+ *
+ * destroy follows the destroy idiom, not the free idiom, i.e. it should not free the pointer
+ * itself, as this memory is owned by the array
+ */
 void array_create(array ** const restrict ar, size_t esz)
   __attribute__((nonnull));
 
@@ -44,9 +56,7 @@ void array_createx(
     array ** const restrict ar
   , size_t esz
   , size_t capacity
-  , int (*cmp_fn)(const void * A, size_t Asz, const void * B, size_t Bsz)
-  , void * init_fn
-  , void * destroy_fn
+  , void (*destroy_fn)(void *)
 )
   __attribute__((nonnull(1)));
 
@@ -102,8 +112,6 @@ void array_truncate(array * const restrict ar, size_t len)
 void * array_get(const array * const restrict ar, int x)
   __attribute__((nonnull));
 
-
-
 /// array_push
 //
 // SUMMARY
@@ -138,7 +146,7 @@ void array_push_range(array * const restrict ar, void * items, size_t len)
 //  ar   - array
 //
 // REMARKS
-//  destroy_item is called before this function returns
+//  destroy is called before this function returns
 //
 void array_pop(array * const restrict ar)
   __attribute__((nonnull(1)));
@@ -180,7 +188,7 @@ void array_unshift_range(array * const restrict ar, void * items, size_t len)
 //  ar   - array
 //
 // REMARKS
-//  destroy_item is called before this function returns
+//  destroy is called before this function returns
 //
 void array_shift(array * const restrict ar)
   __attribute__((nonnull(1)));
@@ -264,20 +272,6 @@ void array_delete(array * const restrict ar, size_t index)
 void array_delete_range(array * const restrict ar, size_t index, size_t len)
   __attribute__((nonnull));
 
-/// array_subarray
-//
-// SUMMARY
-//  create subset of an array
-//
-// PARAMETERS
-//  array - array to copy from
-//  index - index at which to begin copying
-//  len   - number of elements to copy
-//  lc    - (returns) pointer to array, or reuses an existing array
-//
-void array_subarray(array * const restrict lip, size_t index, size_t len, array ** const restrict lc)
-  __attribute__((nonnull));
-
 /// array_splice
 //
 // SUMMARY
@@ -324,8 +318,8 @@ void array_replicate(array * const restrict dst, size_t dst_index, array * const
 //  B     - second array
 //  [cmp] - comparison function
 //
-bool array_equal(array * const restrict A, array * const restrict B, int (*cmp_fn)(const void * A, size_t Asz, const void * B, size_t Bsz))
-  __attribute__((nonnull(1, 2)));
+bool array_equal(array * const restrict A, array * const restrict B, int (*cmp)(const void * A, size_t Asz, const void * B, size_t Bsz))
+  __attribute__((nonnull));
 
 /// array_sort
 //
@@ -338,8 +332,8 @@ bool array_equal(array * const restrict A, array * const restrict B, int (*cmp_f
 // PARAMETERS
 //  ar - array
 //
-void array_sort(const array * const restrict ar, int (*cmp_fn)(const void * A, size_t Asz, const void * B, size_t Bsz))
-  __attribute__((nonnull(1)));
+void array_sort(const array * const restrict ar, int (*cmp)(const void * A, size_t Asz, const void * B, size_t Bsz))
+  __attribute__((nonnull));
 
 /// array_search
 //
@@ -362,21 +356,21 @@ void array_sort(const array * const restrict ar, int (*cmp_fn)(const void * A, s
 bool array_search(
     const array * const restrict ar
   , void * key
-  , int (*cmp_fn)(const void * A, size_t Asz, const void * B, size_t Bsz)
+  , int (*cmp)(const void * A, size_t Asz, const void * B, size_t Bsz)
   , void * item
   , size_t * restrict lx
   , int * restrict lc
 )
-  __attribute__((nonnull(1, 2)));
+  __attribute__((nonnull(1, 2, 3)));
 
 bool array_search_range(
     const array * const restrict ar
   , size_t index
   , size_t len
   , void * key
-  , int (*cmp_fn)(const void * A, size_t Asz, const void * B, size_t Bsz)
+  , int (*cmp)(const void * A, size_t Asz, const void * B, size_t Bsz)
   , void * item
   , size_t * restrict lx
   , int * restrict lc
 )
-  __attribute__((nonnull(1, 4)));
+  __attribute__((nonnull(1, 4, 5)));

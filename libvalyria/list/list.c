@@ -5,306 +5,295 @@
 #include <string.h>
 
 #include "xlinux/xstdlib.h"
+#include "common/assure.h"
 
-#include "list.internal.h"
+#include "list.h"
 
 #include "macros.h"
+
+/*
+ * Default capacity, the minimum number of entries which can be stored without reallocating
+ */
+#define DEFAULT_CAPACITY  10
 
 //
 // static
 //
 
-typedef struct container {
-  void ** items;
-  size_t * lens;
-} container;
-
-static int compare_items(const struct array_t * ar, const void * _a, const void * _b, int (*cmp_fn)(const void *, size_t, const void *, size_t))
+static void store(void ** storage, void ** items, size_t len)
 {
-  if(!cmp_fn)
-    cmp_fn = ar->cmp_fn;
+  int x;
 
-  const value * a = _a;
-  const value * b = _b;
-
-  return cmp_fn(a->p, a->l, b->p, b->l);
-}
-
-static void destroy_item(const struct array_t * ar, void * item)
-{
-  list_t * li = containerof(ar, list_t, ar);
-  value * val = item;
-
-  if(li->free_fn)
-    li->free_fn(val->p);
-}
-
-static void store_items(const struct array_t * ar, void * _storage, void * _container, size_t len)
-{
-  value * storage = _storage;
-  container * c = _container;
-
-  size_t x;
   for(x = 0; x < len; x++)
   {
-    storage[x].p = c->items[x];
-    if(c->lens)
-      storage[x].l = c->lens[x];
+    storage[x] = items[x];
   }
 }
 
-static ar_operations ar_ops = {
-    compare_items : compare_items
-  , destroy_item : destroy_item
-  , store_items : store_items
-};
+/*
+ * free a range of elements in a list
+ *
+ * li    - pointer to list
+ * start - index of the first element
+ * len   - number of elements
+ */
+static void list_free_range(list * const restrict li, size_t start, size_t len)
+{
+  size_t x;
+
+  if(!li->free_fn) {
+    return;
+  }
+
+  for(x = 0; x < len; x++) {
+    li->free_fn(li->v[start + x]);
+  }
+}
 
 //
 // api
 //
 
+void API list_initx(list * restrict li, size_t capacity, void (*free_fn)(void *))
+{
+  *li = (typeof(*li)) {
+    free_fn : free_fn
+  };
+
+  assure(&li->v, sizeof(*li->v), capacity ?: DEFAULT_CAPACITY, &li->a);
+}
+
+void API list_init(list * restrict li)
+{
+  list_initx(li, 0, 0);
+}
+
+void API list_destroy(list * restrict li)
+{
+  list_truncate(li, 0);
+  free(li->v);
+}
+
 void API list_createx(
-    list** const restrict rv
+    list ** restrict rv
   , size_t capacity
-  , int (*cmp_fn)(const void * A, size_t Asz, const void * B, size_t Bsz)
-  , void * free_fn
+  , void (*free_fn)(void *)
 )
 {
-  list_t * li = 0;
+  list * li = 0;
 
   xmalloc(&li, sizeof(*li));
-  array_init(
-    &li->ar
-    , sizeof(value)
-    , capacity
-    , &ar_ops
-    , cmp_fn
-  );
+  list_initx(li, capacity, free_fn);
 
-  li->free_fn = free_fn;
+  *rv = li;
+}
 
-  *rv = &li->lix;
-  li = 0;
+void API list_create(list ** restrict li)
+{
+  list_createx(li, 0, 0);
+}
 
-  if(li) {
-    list_xfree(&li->lix);
+void API list_free(list * restrict li)
+{
+  if(!li) {
+    return;
   }
-}
 
-void API list_create(list** const restrict li)
-{
-  list_createx(li, 0, 0, 0);
-}
-
-void API list_xfree(list * const restrict lix)
-{
-  list_t * li = containerof(lix, list_t, lix);
-
-  if(li)
-    array_xdestroy(&li->ar);
-
+  list_destroy(li);
   free(li);
 }
 
-void API list_ixfree(list ** const restrict li)
+void API list_ifree(list ** restrict li)
 {
-  list_xfree(*li);
+  list_free(*li);
   *li = 0;
 }
 
-void API list_recycle(list * const restrict lix)
+void API list_recycle(list * restrict li)
 {
-  list_t * li = containerof(lix, list_t, lix);
-  array_recycle(&li->arx);
+  list_truncate(li, 0);
 }
 
-void * API list_get(const list * const restrict lix, int x)
+void * API list_get(const list * restrict li, int x)
 {
-  list_t * li = containerof(lix, list_t, lix);
-  value * val = array_get(&li->arx, x);
-  if(val)
-    return val->p;
-
-  return 0;
+  return li->v[x];
 }
 
-bool list_get_item(const list * const restrict lix, int x, void * restrict item, size_t * restrict item_len)
+void API list_push(list * restrict li, void * item)
 {
-  list_t * li = containerof(lix, list_t, lix);
-  value * val = array_get(&li->arx, x);
-  if(val)
-  {
-    if(item)
-      *(void**)item = val->p;
-    if(item_len)
-      *item_len = val->l;
-    return true;
+  list_push_range(li, &item, 1);
+}
+
+void API list_push_range(list * restrict li, void * items, size_t len)
+{
+  list_insert_range(li, li->size, items, len);
+}
+
+void API list_pop(list * restrict li)
+{
+  if(li->size == 0) {
+    return;
   }
 
-  return false;
+  list_free_range(li, li->size - 1, 1);
+  li->size--;
 }
 
-void API list_push(list * const lix, void * item, size_t item_len)
+void API list_unshift(list * restrict li, void * el)
 {
-  list_push_range(lix, &item, &item_len, 1);
+  list_unshift_range(li, &el, 1);
 }
 
-void API list_push_range(list * const lix, void * items, size_t * restrict items_lens, size_t len)
+void API list_unshift_range(list * restrict li, void * items, size_t len)
 {
-  list_t * li = containerof(lix, list_t, lix);
-
-  container c = { items : items, lens : items_lens };
-  array_push_range(&li->arx, &c, len);
+  list_insert_range(li, 0, items, len);
 }
 
-void API list_pop(list * const restrict lix)
+void API list_shift(list * restrict li)
 {
-  list_t * li = containerof(lix, list_t, lix);
-  array_pop(&li->arx);
+  if(li->size == 0) {
+    return;
+  }
+
+  list_free_range(li, 0, 1);
+
+  memmove(
+      &li->v[0]
+    , &li->v[1]
+    , (li->size - 1) * sizeof(*li->v)
+  );
+
+  li->size--;
 }
 
-void API list_unshift(list * const lix, void * el, size_t item_len)
+void API list_insert(list * restrict li, size_t index, void * item)
 {
-  list_unshift_range(lix, &el, &item_len, 1);
+  list_insert_range(li, index, &item, 1);
 }
 
-void API list_unshift_range(list * const lix, void * items, size_t * restrict items_lens, size_t len)
+void API list_insert_range(list * restrict li, size_t index, void * items, size_t len)
 {
-  list_t * li = containerof(lix, list_t, lix);
+  // allocate new space if necessary
+  assure(&li->v, sizeof(*li->v), li->size + len, &li->a);
 
-  container c = { items : items, lens : items_lens };
-  array_unshift_range(&li->arx, &c, len);
+  // for an insertion, displace existing elements
+  memmove(
+      &li->v[index + len]
+    , &li->v[index]
+    , (li->size - index) * sizeof(*li->v)
+  );
+
+  store(&li->v[index], items, len);
+  li->size += len;
 }
 
-void API list_shift(list * const restrict lix)
+void API list_put(list * restrict li, size_t index, void * item)
 {
-  list_t * li = containerof(lix, list_t, lix);
-  array_shift(&li->arx);
+  list_put_range(li, index, &item, 1);
 }
 
-void API list_insert(list * const lix, size_t index, void * item, size_t item_len)
+void API list_put_range(list * restrict li, size_t index, void * items, size_t len)
 {
-  list_insert_range(lix, index, &item, &item_len, 1);
+  list_free_range(li, index, len);
+  store(&li->v[index], items, len);
 }
 
-void API list_insert_range(list * const lix, size_t index, void * items, size_t * restrict items_lens, size_t len)
+void API list_delete(list * restrict li, size_t index)
 {
-  list_t * li = containerof(lix, list_t, lix);
-
-  container c = { items : items, lens : items_lens };
-  array_insert_range(&li->arx, index, &c, len);
+  list_delete_range(li, index, 1);
 }
 
-void API list_update(list * const lix, size_t index, void * item, size_t item_len)
+void API list_delete_range(list * restrict li, size_t index, size_t len)
 {
-  list_update_range(lix, index, &item, &item_len, 1);
+  list_free_range(li, index, len);
+
+  // overwrite
+  memmove(
+      &li->v[index]
+    , &li->v[index + len]
+    , (li->size - index - len) * sizeof(*li->v)
+  );
+
+  li->size -= len;
 }
 
-void API list_update_range(list * const lix, size_t index, void * items, size_t * restrict items_lens, size_t len)
+void API list_splice(list * restrict dst, size_t dst_index, list * restrict src, size_t src_index, int len)
 {
-  list_t * li = containerof(lix, list_t, lix);
+  if(len == -1) {
+    len = src->size;
+  }
 
-  container c = { items : items, lens : items_lens };
-  array_update_range(&li->arx, index, &c, len);
+  list_replicate(dst, dst_index, src, src_index, len);
+
+  // overwrite
+  memmove(
+      &src->v[src_index]
+    , &src->v[src_index + len]
+    , (src->size - src_index - len) * sizeof(*src->v)
+  );
+  src->size -= len;
 }
 
-void API list_delete(list * const restrict lix, size_t index)
+void API list_replicate(list * restrict dst, size_t dst_index, list * restrict src, size_t src_index, int len)
 {
-  list_delete_range(lix, index, 1);
+  if(len == -1) {
+    len = src->size;
+  }
+
+  // allocate new space if necessary
+  assure(&dst->v, sizeof(*dst->v), dst->size + len, &dst->a);
+
+  // displace existing elements
+  memmove(
+      &dst->v[dst_index + len]
+    , &dst->v[dst_index]
+    , (dst->size - dst_index) * sizeof(*dst->v)
+  );
+
+  // copy new elements in
+  memcpy(
+      &dst->v[dst_index]
+    , &src->v[src_index]
+    , len * sizeof(*src->v)
+  );
+
+  dst->size += len;
 }
 
-void API list_delete_range(list * const restrict lix, size_t index, size_t len)
+void API list_truncate(list * restrict li, size_t len)
 {
-  list_t * li = containerof(lix, list_t, lix);
-  array_delete_range(&li->arx, index, len);
+  if(len > li->size) {
+    return;
+  }
+
+  list_free_range(li, len, li->size - len);
+  li->size = len;
 }
 
-void API list_sublist(list * const restrict lix, size_t index, size_t len, list ** const restrict rv)
+bool API list_equal(list * restrict A, list * restrict B, int (*cmp_fn)(const void * A, const void * B, void *))
 {
-  list_t * li = containerof(lix, list_t, lix);
-  list_t * dst = 0;
+  int x;
+  void *a;
+  void *b;
 
-  if(!*rv)
-    list_createx(rv, li->size, li->cmp_fn, li->free_fn);
-  dst = containerof(*rv, list_t, lix);
+  if(A->size != B->size) {
+    return false;
+  }
 
-  list_recycle(&dst->lix);
-  list_replicate(&dst->lix, 0, &li->lix, index, len);
+  for(x = 0; x < A->size; x++)
+  {
+    a = list_get(A, x);
+    b = list_get(B, x);
+
+    if(cmp_fn(a, b, 0)) {
+      return false;
+    }
+  }
+
+  return true;
 }
 
-void API list_splice(list * const restrict dstx, size_t dst_index, list * const restrict srcx, size_t src_index, int len)
+void API list_sort(list * restrict li, int (*cmp_fn)(const void *A, const void *B, void *))
 {
-  list_t * dst = containerof(dstx, list_t, lix);
-  list_t * src = containerof(srcx, list_t, lix);
-
-  array_splice(&dst->arx, dst_index, &src->arx, src_index, len);
-}
-
-void API list_replicate(list * const restrict dstx, size_t dst_index, list * const restrict srcx, size_t src_index, int len)
-{
-  list_t * dst = containerof(dstx, list_t, lix);
-  list_t * src = containerof(srcx, list_t, lix);
-
-  array_replicate(&dst->arx, dst_index, &src->arx, src_index, len);
-}
-
-void API list_truncate(list * const restrict lix, size_t len)
-{
-  list_t * li = containerof(lix, list_t, lix);
-  array_truncate(&li->arx, len);
-}
-
-bool API list_equal(list * const restrict Ax, list * const restrict Bx, int (*cmp_fn)(const void * A, size_t Asz, const void * B, size_t Bsz))
-{
-  list_t * A = containerof(Ax, list_t, lix);
-  list_t * B = containerof(Bx, list_t, lix);
-  return array_equal(&A->arx, &B->arx, cmp_fn);
-}
-
-void API list_sort(list * const restrict lix, int (*cmp_fn)(const void *A, size_t Asz, const void *B, size_t Bsz))
-{
-  list_t * li = containerof(lix, list_t, lix);
-  array_sort(&li->arx, cmp_fn);
-}
-
-bool API list_search(
-    const list * const restrict lix
-  , void * key_data
-  , size_t key_len
-  , int (*cmp_fn)(const void *A, size_t Asz, const void *B, size_t Bsz)
-  , void * item
-  , size_t * restrict item_len
-  , size_t * restrict lx
-  , int * restrict lc
-)
-{
-  return list_search_range(lix, 0, lix->size, key_data, key_len, cmp_fn, item, item_len, lx, lc);
-}
-
-bool API list_search_range(
-    const list * const restrict lix
-  , size_t index
-  , size_t len
-  , void * key_data
-  , size_t key_len
-  , int (*cmp_fn)(const void *A, size_t Asz, const void *B, size_t Bsz)
-  , void * item
-  , size_t * restrict item_len
-  , size_t * restrict lx
-  , int * restrict lc
-)
-{
-  list_t * li = containerof(lix, list_t, lix);
-
-  value key = { p : key_data, l : key_len };
-
-  value * result;
-  array_search_range(&li->arx, index, len, &key, cmp_fn, &result, lx, lc);
-
-  if(item)
-    *(void**)item = result ? result->p : 0;
-  if(item_len)
-    *item_len = result ? result->l : 0;
-
-  return !!result;
+  qsort_r(li->v, li->size, sizeof(*li->v), cmp_fn, li);
 }

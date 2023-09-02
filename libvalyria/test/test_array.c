@@ -5,8 +5,8 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-#include "array.internal.h"
-#include "test_util.h"
+#include "array.h"
+#include "unit.h"
 
 typedef struct item
 {
@@ -228,7 +228,7 @@ static void test_sort()
   array_unshift(ar, &itemp);
   itemp->x = 6;
 
-  array_sort(ar, 0);
+  array_sort(ar, memncmp);
   validate(ar);
 
   item * itemps[2];
@@ -236,7 +236,7 @@ static void test_sort()
   itemps[0]->x = 9;
   itemps[1]->x = 8;
 
-  array_sort(ar, 0);
+  array_sort(ar, memncmp);
   validate(ar);
 
   array_insert(ar, 0, &itemp);
@@ -246,7 +246,7 @@ static void test_sort()
   array_insert(ar, 2, &itemp);
   itemp->x = 3;
 
-  array_sort(ar, 0);
+  array_sort(ar, memncmp);
   validate(ar);
 
   array_xfree(ar);
@@ -268,36 +268,36 @@ static void test_search()
   itemps[2]->x = 32;
   itemps[3]->x = 101;
 
-  r = array_search(ar, (item[]) {{ x : 0 }}, 0, &p, 0, 0);
+  r = array_search(ar, (item[]) {{ x : 0 }}, memncmp, &p, 0, 0);
   assert_eq_b(false, r);
   assert_null(p);
 
-  r = array_search(ar, (item[]) {{ x : 1 }}, 0, &p, &lx, &lc);
+  r = array_search(ar, (item[]) {{ x : 1 }}, memncmp, &p, &lx, &lc);
   assert_eq_b(true, r);
   assert_notnull(p);
   assert_eq_d(1, p->x);
   assert_eq_zu(0, lx);
   assert_eq_d(0, lc);
 
-  array_search(ar, (item[]) {{ x : 7 }}, 0, &p, &lx, &lc);
+  array_search(ar, (item[]) {{ x : 7 }}, memncmp, &p, &lx, &lc);
   assert_notnull(p);
   assert_eq_d(7, p->x);
   assert_eq_zu(1, lx);
   assert_eq_d(0, lc);
 
-  array_search(ar, (item[]) {{ x : 32 }}, 0, &p, &lx, &lc);
+  array_search(ar, (item[]) {{ x : 32 }}, memncmp, &p, &lx, &lc);
   assert_notnull(p);
   assert_eq_d(32, p->x);
   assert_eq_zu(2, lx);
   assert_eq_d(0, lc);
 
-  array_search(ar, (item[]) {{ x : 101 }}, 0, &p, &lx, &lc);
+  array_search(ar, (item[]) {{ x : 101 }}, memncmp, &p, &lx, &lc);
   assert_notnull(p);
   assert_eq_d(101, p->x);
   assert_eq_zu(3, lx);
   assert_eq_d(0, lc);
 
-  r = array_search(ar, (item[]) {{ x : 102 }}, 0, &p, &lx, &lc);
+  r = array_search(ar, (item[]) {{ x : 102 }}, memncmp, &p, &lx, &lc);
   assert_eq_b(false, r);
   assert_null(p);
 
@@ -320,47 +320,75 @@ static void test_search_range()
   itemps[2]->x = 32;
   itemps[3]->x = 101;
 
-  r = array_search_range(ar, 0, ar->size, (item[]) {{ x : 0 }}, 0, &p, 0, 0);
+  r = array_search_range(ar, 0, ar->size, (item[]) {{ x : 0 }}, memncmp, &p, 0, 0);
   assert_eq_b(false, r);
   assert_null(p);
 
-  r = array_search_range(ar, 1, 3, (item[]) {{ x : 0 }}, 0, &p, 0, 0);
+  r = array_search_range(ar, 1, 3, (item[]) {{ x : 0 }}, memncmp, &p, 0, 0);
   assert_eq_b(false, r);
   assert_null(p);
 
-  r = array_search_range(ar, 2, 2, (item[]) {{ x : 7 }}, 0, &p, 0, 0);
+  r = array_search_range(ar, 2, 2, (item[]) {{ x : 7 }}, memncmp, &p, 0, 0);
   assert_eq_b(false, r);
   assert_null(p);
 
-  array_search_range(ar, 0, 4, (item[]) {{ x : 32 }}, 0, &p, &lx, 0);
+  array_search_range(ar, 0, 4, (item[]) {{ x : 32 }}, memncmp, &p, &lx, 0);
   assert_notnull(p);
   assert_eq_d(32, p->x);
   assert_eq_zu(2, lx);
 
-  array_search_range(ar, 1, 3, (item[]) {{ x : 32 }}, 0, &p, &lx, &lc);
-  assert_notnull(p);
-  assert_eq_d(32, p->x);
-  assert_eq_zu(2, lx);
-  assert_eq_d(0, lc);
-
-  array_search_range(ar, 2, 2, (item[]) {{ x : 32 }}, 0, &p, &lx, &lc);
+  array_search_range(ar, 1, 3, (item[]) {{ x : 32 }}, memncmp, &p, &lx, &lc);
   assert_notnull(p);
   assert_eq_d(32, p->x);
   assert_eq_zu(2, lx);
   assert_eq_d(0, lc);
 
-  r = array_search_range(ar, 3, 1, (item[]) {{ x : 32 }}, 0, &p, 0, 0);
+  array_search_range(ar, 2, 2, (item[]) {{ x : 32 }}, memncmp, &p, &lx, &lc);
+  assert_notnull(p);
+  assert_eq_d(32, p->x);
+  assert_eq_zu(2, lx);
+  assert_eq_d(0, lc);
+
+  r = array_search_range(ar, 3, 1, (item[]) {{ x : 32 }}, memncmp, &p, 0, 0);
   assert_eq_b(false, r);
   assert_null(p);
 
   array_xfree(ar);
 }
 
-#include <unistd.h>
+static void test_shift()
+{
+  array ar;
+  item * itemp = 0;
+
+  array_init(&ar, sizeof(item), 0, 0);
+
+  array_push(&ar, &itemp);
+  itemp->x = 1;
+  validate_contents(&ar, 1, 1);
+
+  array_push(&ar, &itemp);
+  itemp->x = 4;
+  validate_contents(&ar, 2, 1, 4);
+
+  array_push(&ar, &itemp);
+  itemp->x = 2;
+  validate_contents(&ar, 3, 1, 4, 2);
+
+  array_shift(&ar);
+  validate_contents(&ar, 2, 4, 2);
+
+  array_shift(&ar);
+  validate_contents(&ar, 1, 2);
+
+  array_shift(&ar);
+  validate_contents(&ar, 0);
+
+  array_destroy(&ar);
+}
 
 int main()
 {
-sleep(1);
   test_basic();
   test_update();
   test_delete();
@@ -369,6 +397,7 @@ sleep(1);
   test_sort();
   test_search();
   test_search_range();
+  test_shift();
 
   summarize;
   return 0;
