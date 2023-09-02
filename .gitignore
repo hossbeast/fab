@@ -13,6 +13,7 @@ exports
 *.final
 *.debug
 *.devel
+*.trace
 *.1.gz
 *.errorcode
 *.stacktrace
@@ -20,17 +21,6 @@ exports
 /common/*/test
 *.test
 /tags
-*.debug.xapi
-*.devel.xapi
-*.final.xapi
-*.trace.xapi
-*.debug.pic
-*.devel.pic
-*.final.pic
-*.trace.pic
-*.pic.trace
-*.trace
-*.xapi
 *.xunit
 *.unit
 *.so.lnk

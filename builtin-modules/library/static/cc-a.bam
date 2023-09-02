@@ -50,19 +50,4 @@ envs : {
     ]
     property : relpath
   ]
-
-  includes : [
-    select : [
-      module
-      union : [
-        # imported directories
-        traverse : {
-          direction : down
-          graph : imports
-        }
-      ]
-    ]
-
-    property : relpath
-  ]
 }

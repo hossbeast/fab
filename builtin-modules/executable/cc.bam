@@ -58,17 +58,6 @@ envs : {
     property : relpath
   ]
 
-  imports : [
-    select : [
-      module
-      traverse : {
-        direction : down
-        graph : imports
-      }
-    ]
-    property : relpath
-  ]
-
   objects : [
     select : [
       target
