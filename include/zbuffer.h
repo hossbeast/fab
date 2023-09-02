@@ -5,6 +5,7 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <stdarg.h>
 
 #include "types.h"
 #include "macros.h"
@@ -16,47 +17,49 @@
 *
 */
 
-/// znload
-//
-// SUMMARY
-//  like snprintf except the following idiom will not overflow
-//
-// z += znloadf(dst + z, sz - z, fmt, ...)
-//
-#define znloadf(dst, sz, fmt, ...) ({                         \
-  size_t __z = 0;                                             \
-  if(sz)                                                      \
-  {                                                           \
-    __z = MIN(sz - 1, snprintf(dst, sz, fmt, ##__VA_ARGS__)); \
-  }                                                           \
-  __z;                                                        \
-})
+/*
+ * like snprintf except the following idiom will not overflow
+ *
+ * z += znloadf(dst + z, sz - z, fmt, ...)
+ */
+static inline size_t
+  __attribute__((nonnull(1, 3)))
+  __attribute__((format(printf, 3, 4)))
+znloadf(void * restrict dst, size_t sz, const char * restrict fmt, ...)
+{
+  size_t z = 0;
+  va_list va;
 
-/// znloadvf
-//
-// SUMMARY
-//  like znloadf, except takes format string and va_list
-//
-#define znloadvf(dst, sz, fmt, va) ({                 \
-  size_t __z = 0;                                     \
-  if(sz)                                              \
-  {                                                   \
-    __z = MIN(sz - 1, vsnprintf(dst, sz, fmt, va));   \
-  }                                                   \
-  __z;                                                \
-})
+  if(sz) {
+    va_start(va, fmt);
+    z = MIN(sz - 1, vsnprintf(dst, sz, fmt, va));
+    va_end(va);
+  }
 
-/// znloadw
-//
-// SUMMARY
-//   like znloadf, except takes a pointer / length pair
-//
-// PARAMETERS
-//  dst - buffer to write to
-//  sz  - size of dst
-//  b   - pointer to bytes to write
-//  bz  - number of bytes to write
-//
+  return z;
+}
+
+
+/* like znloadf, except takes format string and va_list */
+static inline size_t znloadvf(void * restrict dst, size_t sz, const char * restrict fmt, va_list va)
+{
+  size_t z = 0;
+
+  if(sz) {
+    z = MIN(sz - 1, vsnprintf(dst, sz, fmt, va));
+  }
+
+  return z;
+}
+
+/*
+ * like znloadf, except takes a pointer / length pair
+ *
+ * dst - buffer to write to
+ * sz  - size of dst
+ * b   - pointer to bytes to write
+ * bz  - number of bytes to write
+ */
 static inline size_t znloadw(void * restrict dst, size_t sz, const void * b, size_t bz)
 {
   size_t z = 0;
