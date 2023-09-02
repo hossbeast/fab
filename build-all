@@ -1,0 +1,33 @@
+#!/usr/bin/env bash
+
+(
+  find . -type f \(              \
+       -name '*.o'               \
+    -o -name 'git-state.[ch]'    \
+    -o -name '*.tokens.[ch]'     \
+    -o -name '*.states.[ch]'     \
+    -o -name '*.tab.[ch]'        \
+    -o -name '*.lex.[ch]'        \
+  \) -print
+) | xargs rm
+
+set +e
+killall fabd
+if [ $? == 0 ]; then
+  sleep 1
+fi
+set -e
+
+for x in libxlinux libcommon asan test libnarrator libdescriptor libvalyria libxunit libyyutil liblorien value/libvalue libmoria; do
+  pushd $x
+  fab
+  fab kill
+  popd
+done
+
+for x in value/value fab/libfab fab/fab fab/fabd ; do
+  pushd $x
+  fab
+  fab kill
+  popd
+done

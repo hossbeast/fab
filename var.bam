@@ -18,6 +18,7 @@
 bisonflags   : "--warnings=error"
 cflags       : {
   -g -m64 -Wall -Werror -Wno-format-truncation -D_GNU_SOURCE -fno-builtin-log -Wmissing-prototypes "-fdiagnostics-color=always" -Wno-misleading-indentation -Wno-trigraphs
+  -Wno-dangling-pointer
   "-DFABIPCDIR=/var/run/fab"
 }
 cflags.debug : {
