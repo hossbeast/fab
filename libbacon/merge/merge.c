@@ -1,167 +1,153 @@
 /* SPDX-License-Identifier: GPL-3.0 */
 /* Copyright (c) 2012-2023 Todd Freed <todd.freed@gmail.com> */
 
-#include "valyria/list.h"
-#include "valyria/set.h"
+#include "valyria/hashtable.h"
 
 #include "value.h"
-#include "merge.internal.h"
+#include "merge.h"
 #include "clone.h"
 #include "make.h"
 #include "parser.h"
+#include "set.h"
 
 #include "macros.h"
 
-void API value_merge(value_parser * restrict parser, value ** restrict dstp, const value * restrict src, uint16_t attrs)
+#include "narrator.h"
+#include "common/attrs.h"
+
+void bacon_merge(bacon_parser * restrict parser, bacon_value ** restrict dstp, const bacon_value * restrict src)
 {
-  int x;
-  value *el;
-  value *dst;
-  value *c;
+  bacon_value *v;
+  bacon_value *dst;
+  bacon_value *c;
+  bacon_value *src_v;
+  rbtree_search_context ctx;
+  rbnode *rbn;
 
   dst = *dstp;
 
-  if(!src) { }
-  else if(!dst || (attrs & MERGE_OPT) == VALUE_MERGE_SET)
-  {
-    value_clone(parser, dstp, src);
+  if(!src) {
+  } else if(!dst) {
+    bacon_clone(parser, dstp, src);
   }
 
-  /* scalar / set promotion */
-  else if(dst->type == VALUE_TYPE_SET && (src->type & VALUE_TYPE_SCALAR))
+  /* scalar -> set promotion */
+  else if(dst->type == BACON_TYPE_SET && ((src->type & BACON_TYPE_CLASS) == BACON_TYPE_SCALAR))
   {
-    value_clone(parser, &c, src);
-    set_put(dst->els, c, 0);
+    bacon_clone(parser, &c, src);
+    bacon_set_mkv(parser, 0, *dstp, 0, c);
   }
-  else if(dst->type & VALUE_TYPE_SCALAR && (src->type == VALUE_TYPE_SET))
+  /* set -> scalar */
+  else if((dst->type & BACON_TYPE_CLASS) == BACON_TYPE_SCALAR && src->type == BACON_TYPE_SET)
   {
-    value_clone(parser, dstp, src);
-    set_put((*dstp)->els, dst, 0);
+    bacon_clone(parser, dstp, src);
+    bacon_set_mkv(parser, 0, *dstp, 0, dst);
   }
-
-  /* scalar / list promotion */
-  else if(dst->type == VALUE_TYPE_LIST && (src->type & VALUE_TYPE_SCALAR))
+  /* scalar -> list promotion */
+  else if(dst->type == BACON_TYPE_LIST && ((src->type & BACON_TYPE_CLASS) == BACON_TYPE_SCALAR))
   {
-    value_clone(parser, &c, src);
-    list_push(dst->items, c, 0);
+    bacon_clone(parser, &c, src);
+    bacon_list_mkv(parser, 0, *dstp, 0, c);
   }
-  else if(dst->type & VALUE_TYPE_SCALAR && (src->type == VALUE_TYPE_LIST))
+  /* list -> scalar */
+  else if((dst->type & BACON_TYPE_CLASS) == BACON_TYPE_SCALAR && src->type == BACON_TYPE_LIST)
   {
-    value_clone(parser, dstp, src);
-    list_push((*dstp)->items, dst, 0);
+    bacon_clone(parser, dstp, src);
+    bacon_list_mkv(parser, 0, *dstp, 0, dst);
   }
-
-  /* scalar / scalar : list vivification */
-  else if((dst->type & VALUE_TYPE_SCALAR) && (src->type & VALUE_TYPE_SCALAR))
+  /* scalar -> scalar : list vivification */
+  else if((dst->type & BACON_TYPE_CLASS) == BACON_TYPE_SCALAR && ((src->type & BACON_TYPE_CLASS) == BACON_TYPE_SCALAR))
   {
-    value_clone(parser, &c, src);
-    value_list_mkv(parser, 0, 0, dstp, c);
-    value_list_mkv(parser, 0, *dstp, dstp, dst);
+    bacon_clone(parser, &c, src);
+    bacon_list_mkv(parser, 0, 0, dstp, c);
+    bacon_list_mkv(parser, 0, *dstp, 0, dst);
   }
-
-  /* scalar / mapping promotion */
-  else if(dst->type == VALUE_TYPE_MAPPING && (src->type & VALUE_TYPE_SCALAR))
+  /* scalar -> mapping promotion */
+  else if(dst->type == BACON_TYPE_MAPPING && ((src->type & BACON_TYPE_CLASS) == BACON_TYPE_SCALAR))
   {
-    value_merge(parser, &dst->val, src, 0);
+    bacon_merge(parser, &dst->val, src);
   }
-  else if(dst->type & VALUE_TYPE_SCALAR && (src->type == VALUE_TYPE_MAPPING))
+  /* mapping -> scalar */
+  else if((dst->type & BACON_TYPE_CLASS) == BACON_TYPE_SCALAR && src->type == BACON_TYPE_MAPPING)
   {
-    value_clone(parser, dstp, src);
-    value_merge(parser, &(*dstp)->val, dst, 0);
+    bacon_clone(parser, dstp, src);
+    bacon_merge(parser, &(*dstp)->val, dst);
   }
-
   /* mapping -> mapping */
-  else if(dst->type == VALUE_TYPE_MAPPING && src->type == VALUE_TYPE_MAPPING)
+  else if(dst->type == BACON_TYPE_MAPPING && src->type == BACON_TYPE_MAPPING)
   {
-    value_merge(parser, &dst->val, src->val, src->attr);
+    bacon_merge(parser, &dst->val, src->val);
   }
-  else if(dst->type == VALUE_TYPE_MAPPING && src->type == VALUE_TYPE_LIST)
+  /* list -> mapping */
+  else if(dst->type == BACON_TYPE_MAPPING && src->type == BACON_TYPE_LIST)
   {
-    value_clone(parser, dstp, src);
-    list_push((*dstp)->items, dst, 0);
+    bacon_clone(parser, dstp, src);
+    bacon_list_mkv(parser, 0, *dstp, 0, dst);
   }
-  else if(dst->type == VALUE_TYPE_MAPPING && src->type == VALUE_TYPE_SET)
+  /* set -> mapping */
+  else if(dst->type == BACON_TYPE_MAPPING && src->type == BACON_TYPE_SET)
   {
-    value_clone(parser, dstp, src);
-    set_put((*dstp)->els, dst, 0);
+    bacon_clone(parser, dstp, src);
+    bacon_set_mkv(parser, 0, *dstp, 0, dst);
   }
-
   /* list -> list */
-  else if(dst->type == VALUE_TYPE_LIST && src->type == VALUE_TYPE_LIST)
+  else if(dst->type == BACON_TYPE_LIST && src->type == BACON_TYPE_LIST)
   {
-    value_clone(parser, dstp, src);
-    list_replicate((*dstp)->items, 0, dst->items, 0, dst->items->size);
+    llist_foreach(&src->list, v, lln) {
+      bacon_clone(parser, &c, v);
+      bacon_list_mkv(parser, 0, *dstp, 0, c);
+    }
   }
   /* set -> list */
-  else if(dst->type == VALUE_TYPE_LIST && src->type == VALUE_TYPE_SET)
+  else if(dst->type == BACON_TYPE_LIST && src->type == BACON_TYPE_SET)
   {
-    for(x = 0; x < src->els->table_size; x++)
-    {
-      if((el = set_table_get(src->els, x)) == 0)
-        continue;
-
-      value_clone(parser, &c, el);
-      list_push(dst->items, c, 0);
+    rbtree_foreach(&src->set, v, rbn) {
+      bacon_clone(parser, &c, v);
+      bacon_list_mkv(parser, 0, *dstp, 0, c);
     }
   }
   /* mapping -> list */
-  else if(dst->type == VALUE_TYPE_LIST && src->type == VALUE_TYPE_MAPPING)
+  else if(dst->type == BACON_TYPE_LIST && src->type == BACON_TYPE_MAPPING)
   {
-    value_clone(parser, &c, src);
-    list_push(dst->items, c, 0);
+    bacon_clone(parser, &c, src);
+    bacon_list_mkv(parser, 0, *dstp, 0, c);
   }
-
   /* set -> set */
-  else if(dst->type == VALUE_TYPE_SET && src->type == VALUE_TYPE_SET)
+  else if(dst->type == BACON_TYPE_SET && src->type == BACON_TYPE_SET)
   {
-    for(x = 0; x < src->els->table_size; x++)
-    {
-      value * src_el;
-      if((src_el = set_table_get(src->els, x)) == 0)
-        continue;
-
-      // mapping-equality is key only
-      value * old_el = 0;
-      if((el = set_get(dst->els, src_el, 0)))
-      {
-        old_el = el;
-        value_merge(parser, &el, src_el, 0);
+    rbtree_foreach(&src->set, src_v, rbn) {
+      if((rbn = rbtree_search(&dst->set, &ctx, src_v, bacon_set_key_cmp))) {
+        v = containerof(rbn, typeof(*v), rbn);
+        if((v->type & BACON_TYPE_CLASS) == BACON_TYPE_SCALAR) {
+          /* two identical scalars ; no-op */
+        } else {
+          bacon_merge(parser, &v, src_v);
+        }
+      } else {
+        bacon_clone(parser, &c, src_v);
+        bacon_set_mkv(parser, 0, dst, 0, c);
       }
-      else
-      {
-        value_clone(parser, &el, src_el);
-      }
-
-      if(el != old_el)
-        set_put(dst->els, el, 0);
     }
   }
   /* list -> set */
-  else if(dst->type == VALUE_TYPE_SET && src->type == VALUE_TYPE_LIST)
+  else if(dst->type == BACON_TYPE_SET && src->type == BACON_TYPE_LIST)
   {
-    for(x = 0; x < src->items->size; x++)
-    {
-      value_clone(parser, &c, list_get(src->items, x));
-      set_put(dst->els, c, 0);
+    llist_foreach(&src->list, v, lln) {
+      bacon_clone(parser, &c, v);
+      bacon_set_mkv(parser, 0, *dstp, 0, c);
     }
   }
   /* mapping -> set */
-  else if(dst->type == VALUE_TYPE_SET && src->type == VALUE_TYPE_MAPPING)
+  else if(dst->type == BACON_TYPE_SET && src->type == BACON_TYPE_MAPPING)
   {
     /* mapping-equality is key only */
-    value * old_el = 0;
-    if((el = set_get(dst->els, src, 0)))
-    {
-      old_el = el;
-      value_merge(parser, &el, src, src->attr);
+    if((rbn = rbtree_search(&dst->set, &ctx, (void*)src, bacon_set_key_cmp))) {
+      v = containerof(rbn, typeof(*v), rbn);
+      bacon_merge(parser, &v, src);
+    } else {
+      bacon_clone(parser, &v, src);
+      rbtree_insert(&dst->set, &ctx, &v->rbn);
     }
-    else
-    {
-      value_clone(parser, &el, src);
-    }
-
-    if(el != old_el)
-      set_put(dst->els, el, 0);
   }
   else
   {

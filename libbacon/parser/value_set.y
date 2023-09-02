@@ -8,17 +8,16 @@
   #include <string.h>
 
   #include "value.h"
-  #include "valyria/list.h"
   #include "valyria/pstring.h"
 
-  #include "make.internal.h"
-  #include "parser.internal.h"
+  #include "make.h"
+  #include "glue.h"
 
   #include "macros.h"
 }
 
 %code top {
-  #define PARSER containerof(parser, value_parser, value_set_yyu)
+  #define PARSER containerof(parser, bacon_parser, value_set_yyu)
   #define VALUE_SET_YYLTYPE yyu_location
 }
 
@@ -35,52 +34,58 @@
 
 %union {
   yyu_lval yyu;
-  value * val;
+  bacon_value * val;
 }
+
+
 
 /* terminals */
 %token            STR           "unquoted-string"
 %token <yyu.u8>   CREF          "character-reference"
+%token <yyu.u8>   HREF          "hex-escape"
 %token <yyu.b>    BOOL          "boolean"
 %token <yyu.f>    FLOAT         "float"
 %token <yyu.t>    VARIABLE      "variable"
-%token <yyu.umax> UINTMAX8
-%token <yyu.umax> UINTMAX16
-%token <yyu.umax> UINTMAX32
-%token <yyu.umax> UINTMAX64
-%token <yyu.umax> HEX8
-%token <yyu.umax> HEX16
-%token <yyu.umax> HEX32
-%token <yyu.umax> HEX64
-%token <yyu.imax> INTMIN8
-%token <yyu.imax> INTMIN16
-%token <yyu.imax> INTMIN32
-%token <yyu.imax> INTMIN64
-%token <yyu.imax> INTMAX8
-%token <yyu.imax> INTMAX16
-%token <yyu.imax> INTMAX32
-%token <yyu.imax> INTMAX64
+%token <yyu.i128> UINTMAX8
+%token <yyu.i128> UINTMAX16
+%token <yyu.i128> UINTMAX32
+%token <yyu.i128> UINTMAX64
+%token <yyu.i128> HEX8
+%token <yyu.i128> HEX16
+%token <yyu.i128> HEX32
+%token <yyu.i128> HEX64
+%token <yyu.i128> INTMIN8
+%token <yyu.i128> INTMIN16
+%token <yyu.i128> INTMIN32
+%token <yyu.i128> INTMIN64
+%token <yyu.i128> INTMAX8
+%token <yyu.i128> INTMAX16
+%token <yyu.i128> INTMAX32
+%token <yyu.i128> INTMAX64
+%type <yyu.i128> intlit
 
 %token '{' '}' '[' ']'
-
-%type <yyu.umax> posint_ugroup
-%type <yyu.imax> posint_igroup
-%type <yyu.imax> negint_igroup
+%token LOGAND  "&&"
+%token LOGOR   "||"
+%token SHL     "<<"
+%token SHR     ">>"
 
 /* nonterminals */
-%type <val> unquoted_strpart strpart strparts quoted_string unquoted_string
+%type <val> words quoted_string unquoted_string
 %type <val> value
 %type <val> aggregate
 %type <val> list items
 %type <val> set elements
 %type <val> scalar primitive
-%type <val> mapping boolean float posint negint string variable
+%type <val> mapping boolean float integer string
+
+%destructor { bacon_value_free(PARSER, $$); } <val>
 
 %%
 utterance
   : elements
   {
-    PARSER->root = $1;
+    PARSER->value = $1;
 
     if(PARSER->value_set_yyu.attrs & YYU_PARTIAL)
     {
@@ -88,6 +93,7 @@ utterance
       YYACCEPT;
     }
   }
+  | %empty
   ;
 
 value
@@ -108,20 +114,14 @@ aggregate
 primitive
   : boolean
   | float
-  | negint
-  | posint
+  | integer
   | string
-  | variable
   ;
 
 mapping
   : primitive ':' value
   {
-    value_mapping_mk(PARSER, &@$, &$$, $1, $3, VALUE_MERGE_ADD);
-  }
-  | primitive '=' value
-  {
-    value_mapping_mk(PARSER, &@$, &$$, $1, $3, VALUE_MERGE_SET);
+    bacon_mapping_mk(PARSER, &@$, &$$, $1, $3);
   }
   ;
 
@@ -132,18 +132,18 @@ list
   }
   | '[' ']'
   {
-    value_list_mkv(PARSER, &@$, 0, &$$, 0);
+    bacon_list_mkv(PARSER, &@$, 0, &$$, 0);
   }
   ;
 
 items
   : items value
   {
-    value_list_mkv(PARSER, &@$, $1, &$$, $2);
+    bacon_list_mkv(PARSER, &@$, $1, &$$, $2);
   }
   | value
   {
-    value_list_mkv(PARSER, &@$, 0, &$$, $1);
+    bacon_list_mkv(PARSER, &@$, 0, &$$, $1);
   }
   ;
 
@@ -154,18 +154,18 @@ set
   }
   | '{' '}'
   {
-    value_set_mkv(PARSER, &@$, 0, &$$, 0);
+    bacon_set_mkv(PARSER, &@$, 0, &$$, 0);
   }
   ;
 
 elements
   : elements value
   {
-    value_set_mkv(PARSER, &@$, $1, &$$, $2);
+    bacon_set_mkv(PARSER, &@$, $1, &$$, $2);
   }
   | value
   {
-    value_set_mkv(PARSER, &@$, 0, &$$, $1);
+    bacon_set_mkv(PARSER, &@$, 0, &$$, $1);
   }
   ;
 
@@ -175,11 +175,14 @@ string
   ;
 
 unquoted_string
-  : unquoted_strpart
+  : word-token
+  {
+    bacon_string_mkw(PARSER, &@$, 0, &$$, @1.s, @1.l);
+  }
   ;
 
 quoted_string
-  : '"' strparts '"'
+  : '"' words '"'
   {
     $$ = $2;
   }
@@ -189,49 +192,52 @@ quoted_string
   }
   ;
 
-strparts
-  : strparts strpart
+words
+  : words word-token
   {
-    value_string_mkv(PARSER, &@$, $1, &$$, $2);
+    bacon_string_mkw(PARSER, &@$, $1, &$$, @2.s, @2.l);
   }
-  | strpart
-  ;
-
-strpart
-  : unquoted_strpart
-  | CREF
+  | word-token
   {
-    value_string_mkc(PARSER, &@$, 0, &$$, $1);
+    bacon_string_mkw(PARSER, &@$, 0, &$$, @1.s, @1.l);
   }
   ;
 
-unquoted_strpart
+word-token
   : STR
-  {
-    value_string_mkw(PARSER, &@$, 0, &$$, @1.s, @1.l);
-  }
+  | CREF
+  | HREF
+  | '/'
+  | '-'
+  | '+'
+  | '='
+  | ','
   ;
 
 boolean
   : BOOL
   {
-    value_boolean_mk(PARSER, &@$, &$$, $1);
+    bacon_boolean_mk(PARSER, &@$, &$$, $1);
   }
   ;
 
-posint
-  : posint_ugroup
+integer
+  : intlit
   {
-    value_posint_mk(PARSER, &@$, &$$, $1);
-  }
-  | posint_igroup
-  {
-    value_posint_mk(PARSER, &@$, &$$, $1);
+    bacon_integer_mk(PARSER, &@$, &$$, $1);
   }
   ;
 
-posint_ugroup
-  : UINTMAX8
+intlit
+  : INTMIN8
+  | INTMIN16
+  | INTMIN32
+  | INTMIN64
+  | INTMAX8
+  | INTMAX16
+  | INTMAX32
+  | INTMAX64
+  | UINTMAX8
   | UINTMAX16
   | UINTMAX32
   | UINTMAX64
@@ -241,37 +247,9 @@ posint_ugroup
   | HEX64
   ;
 
-posint_igroup
-  : INTMAX8
-  | INTMAX16
-  | INTMAX32
-  | INTMAX64
-  ;
-
-negint
-  : negint_igroup
-  {
-    value_negint_mk(PARSER, &@$, &$$, $1);
-  }
-  ;
-
-negint_igroup
-  : INTMIN8
-  | INTMIN16
-  | INTMIN32
-  | INTMIN64
-  ;
-
 float
   : FLOAT
   {
-    value_float_mk(PARSER, &@$, &$$, $1);
-  }
-  ;
-
-variable
-  : VARIABLE
-  {
-    value_variable_mkw(PARSER, &@$, &$$, $1.s, $1.l);
+    bacon_float_mk(PARSER, &@$, &$$, $1);
   }
   ;

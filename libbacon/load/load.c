@@ -4,13 +4,12 @@
 #include "narrator/load.h"
 
 #include "value.h"
-#include "load.internal.h"
-#include "say.internal.h"
-#include "writer.internal.h"
+#include "load.h"
+#include "keywords.h"
 
 static int handles;
 
-void API bacon_load()
+void bacon_load()
 {
   if(handles++ == 0)
   {
@@ -18,18 +17,16 @@ void API bacon_load()
     narrator_load();
 
     // modules
-    say_setup();
-    writer_setup();
+    keywords_setup();
   }
 }
 
-void API bacon_unload()
+void bacon_unload()
 {
   if(--handles == 0)
   {
     // modules
-    say_cleanup();
-    writer_cleanup();
+    keywords_cleanup();
 
     // dependencies
     narrator_unload();

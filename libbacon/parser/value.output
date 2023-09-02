@@ -1,0 +1,1330 @@
+Terminals unused in grammar
+
+    "&&"
+    "||"
+    "<<"
+    ">>"
+
+
+State 38 conflicts: 4 shift/reduce
+
+
+Grammar
+
+    0 $accept: utterance $end
+
+    1 utterance: value
+    2          | ε
+
+    3 value: scalar
+    4      | aggregate
+
+    5 scalar: primitive
+    6       | mapping
+
+    7 aggregate: list
+    8          | set
+
+    9 primitive: boolean
+   10          | float
+   11          | integer
+   12          | string
+   13          | variable
+
+   14 mapping: primitive ':' value
+
+   15 list: '[' items ']'
+   16     | '[' ']'
+
+   17 items: items value
+   18      | value
+
+   19 set: '{' elements '}'
+   20    | '{' '}'
+
+   21 elements: elements value
+   22         | value
+
+   23 string: unquoted_string
+   24       | quoted_string
+
+   25 unquoted_string: words
+
+   26 quoted_string: '"' words '"'
+   27              | '"' '"'
+
+   28 words: words word-token
+   29      | word-token
+
+   30 word-token: "unquoted-string"
+   31           | "character-escape"
+   32           | "hex-escape"
+   33           | '/'
+
+   34 boolean: "boolean"
+
+   35 integer: intlit
+
+   36 intlit: INTMIN8
+   37       | INTMIN16
+   38       | INTMIN32
+   39       | INTMIN64
+   40       | INTMAX8
+   41       | INTMAX16
+   42       | INTMAX32
+   43       | INTMAX64
+   44       | UINTMAX8
+   45       | UINTMAX16
+   46       | UINTMAX32
+   47       | UINTMAX64
+   48       | HEX8
+   49       | HEX16
+   50       | HEX32
+   51       | HEX64
+
+   52 float: "float"
+
+   53 variable: "variable"
+
+
+Terminals, with rules where they appear
+
+    $end (0) 0
+    '"' (34) 26 27
+    '/' (47) 33
+    ':' (58) 14
+    '[' (91) 15 16
+    ']' (93) 15 16
+    '{' (123) 19 20
+    '}' (125) 19 20
+    error (256)
+    "unquoted-string" (258) 30
+    "character-escape" <yyu.u8> (259) 31
+    "hex-escape" <yyu.u8> (260) 32
+    "boolean" <yyu.b> (261) 34
+    "float" <yyu.f> (262) 52
+    "variable" <yyu.t> (263) 53
+    UINTMAX8 <yyu.i128> (264) 44
+    UINTMAX16 <yyu.i128> (265) 45
+    UINTMAX32 <yyu.i128> (266) 46
+    UINTMAX64 <yyu.i128> (267) 47
+    HEX8 <yyu.i128> (268) 48
+    HEX16 <yyu.i128> (269) 49
+    HEX32 <yyu.i128> (270) 50
+    HEX64 <yyu.i128> (271) 51
+    INTMIN8 <yyu.i128> (272) 36
+    INTMIN16 <yyu.i128> (273) 37
+    INTMIN32 <yyu.i128> (274) 38
+    INTMIN64 <yyu.i128> (275) 39
+    INTMAX8 <yyu.i128> (276) 40
+    INTMAX16 <yyu.i128> (277) 41
+    INTMAX32 <yyu.i128> (278) 42
+    INTMAX64 <yyu.i128> (279) 43
+    "&&" (280)
+    "||" (281)
+    "<<" (282)
+    ">>" (283)
+
+
+Nonterminals, with rules where they appear
+
+    $accept (36)
+        on left: 0
+    utterance (37)
+        on left: 1 2
+        on right: 0
+    value <val> (38)
+        on left: 3 4
+        on right: 1 14 17 18 21 22
+    scalar <val> (39)
+        on left: 5 6
+        on right: 3
+    aggregate <val> (40)
+        on left: 7 8
+        on right: 4
+    primitive <val> (41)
+        on left: 9 10 11 12 13
+        on right: 5 14
+    mapping <val> (42)
+        on left: 14
+        on right: 6
+    list <val> (43)
+        on left: 15 16
+        on right: 7
+    items <val> (44)
+        on left: 17 18
+        on right: 15 17
+    set <val> (45)
+        on left: 19 20
+        on right: 8
+    elements <val> (46)
+        on left: 21 22
+        on right: 19 21
+    string <val> (47)
+        on left: 23 24
+        on right: 12
+    unquoted_string <val> (48)
+        on left: 25
+        on right: 23
+    quoted_string <val> (49)
+        on left: 26 27
+        on right: 24
+    words <val> (50)
+        on left: 28 29
+        on right: 25 26 28
+    word-token (51)
+        on left: 30 31 32 33
+        on right: 28 29
+    boolean <val> (52)
+        on left: 34
+        on right: 9
+    integer <val> (53)
+        on left: 35
+        on right: 11
+    intlit <yyu.i128> (54)
+        on left: 36 37 38 39 40 41 42 43 44 45 46 47 48 49 50 51
+        on right: 35
+    float <val> (55)
+        on left: 52
+        on right: 10
+    variable <val> (56)
+        on left: 53
+        on right: 13
+
+
+State 0
+
+    0 $accept: • utterance $end
+    1 utterance: • value
+    2          | ε •  [$end]
+    3 value: • scalar
+    4      | • aggregate
+    5 scalar: • primitive
+    6       | • mapping
+    7 aggregate: • list
+    8          | • set
+    9 primitive: • boolean
+   10          | • float
+   11          | • integer
+   12          | • string
+   13          | • variable
+   14 mapping: • primitive ':' value
+   15 list: • '[' items ']'
+   16     | • '[' ']'
+   19 set: • '{' elements '}'
+   20    | • '{' '}'
+   23 string: • unquoted_string
+   24       | • quoted_string
+   25 unquoted_string: • words
+   26 quoted_string: • '"' words '"'
+   27              | • '"' '"'
+   28 words: • words word-token
+   29      | • word-token
+   30 word-token: • "unquoted-string"
+   31           | • "character-escape"
+   32           | • "hex-escape"
+   33           | • '/'
+   34 boolean: • "boolean"
+   35 integer: • intlit
+   36 intlit: • INTMIN8
+   37       | • INTMIN16
+   38       | • INTMIN32
+   39       | • INTMIN64
+   40       | • INTMAX8
+   41       | • INTMAX16
+   42       | • INTMAX32
+   43       | • INTMAX64
+   44       | • UINTMAX8
+   45       | • UINTMAX16
+   46       | • UINTMAX32
+   47       | • UINTMAX64
+   48       | • HEX8
+   49       | • HEX16
+   50       | • HEX32
+   51       | • HEX64
+   52 float: • "float"
+   53 variable: • "variable"
+
+    "unquoted-string"   shift, and go to state 1
+    "character-escape"  shift, and go to state 2
+    "hex-escape"        shift, and go to state 3
+    "boolean"           shift, and go to state 4
+    "float"             shift, and go to state 5
+    "variable"          shift, and go to state 6
+    UINTMAX8            shift, and go to state 7
+    UINTMAX16           shift, and go to state 8
+    UINTMAX32           shift, and go to state 9
+    UINTMAX64           shift, and go to state 10
+    HEX8                shift, and go to state 11
+    HEX16               shift, and go to state 12
+    HEX32               shift, and go to state 13
+    HEX64               shift, and go to state 14
+    INTMIN8             shift, and go to state 15
+    INTMIN16            shift, and go to state 16
+    INTMIN32            shift, and go to state 17
+    INTMIN64            shift, and go to state 18
+    INTMAX8             shift, and go to state 19
+    INTMAX16            shift, and go to state 20
+    INTMAX32            shift, and go to state 21
+    INTMAX64            shift, and go to state 22
+    '{'                 shift, and go to state 23
+    '['                 shift, and go to state 24
+    '"'                 shift, and go to state 25
+    '/'                 shift, and go to state 26
+
+    $default  reduce using rule 2 (utterance)
+
+    utterance        go to state 27
+    value            go to state 28
+    scalar           go to state 29
+    aggregate        go to state 30
+    primitive        go to state 31
+    mapping          go to state 32
+    list             go to state 33
+    set              go to state 34
+    string           go to state 35
+    unquoted_string  go to state 36
+    quoted_string    go to state 37
+    words            go to state 38
+    word-token       go to state 39
+    boolean          go to state 40
+    integer          go to state 41
+    intlit           go to state 42
+    float            go to state 43
+    variable         go to state 44
+
+
+State 1
+
+   30 word-token: "unquoted-string" •
+
+    $default  reduce using rule 30 (word-token)
+
+
+State 2
+
+   31 word-token: "character-escape" •
+
+    $default  reduce using rule 31 (word-token)
+
+
+State 3
+
+   32 word-token: "hex-escape" •
+
+    $default  reduce using rule 32 (word-token)
+
+
+State 4
+
+   34 boolean: "boolean" •
+
+    $default  reduce using rule 34 (boolean)
+
+
+State 5
+
+   52 float: "float" •
+
+    $default  reduce using rule 52 (float)
+
+
+State 6
+
+   53 variable: "variable" •
+
+    $default  reduce using rule 53 (variable)
+
+
+State 7
+
+   44 intlit: UINTMAX8 •
+
+    $default  reduce using rule 44 (intlit)
+
+
+State 8
+
+   45 intlit: UINTMAX16 •
+
+    $default  reduce using rule 45 (intlit)
+
+
+State 9
+
+   46 intlit: UINTMAX32 •
+
+    $default  reduce using rule 46 (intlit)
+
+
+State 10
+
+   47 intlit: UINTMAX64 •
+
+    $default  reduce using rule 47 (intlit)
+
+
+State 11
+
+   48 intlit: HEX8 •
+
+    $default  reduce using rule 48 (intlit)
+
+
+State 12
+
+   49 intlit: HEX16 •
+
+    $default  reduce using rule 49 (intlit)
+
+
+State 13
+
+   50 intlit: HEX32 •
+
+    $default  reduce using rule 50 (intlit)
+
+
+State 14
+
+   51 intlit: HEX64 •
+
+    $default  reduce using rule 51 (intlit)
+
+
+State 15
+
+   36 intlit: INTMIN8 •
+
+    $default  reduce using rule 36 (intlit)
+
+
+State 16
+
+   37 intlit: INTMIN16 •
+
+    $default  reduce using rule 37 (intlit)
+
+
+State 17
+
+   38 intlit: INTMIN32 •
+
+    $default  reduce using rule 38 (intlit)
+
+
+State 18
+
+   39 intlit: INTMIN64 •
+
+    $default  reduce using rule 39 (intlit)
+
+
+State 19
+
+   40 intlit: INTMAX8 •
+
+    $default  reduce using rule 40 (intlit)
+
+
+State 20
+
+   41 intlit: INTMAX16 •
+
+    $default  reduce using rule 41 (intlit)
+
+
+State 21
+
+   42 intlit: INTMAX32 •
+
+    $default  reduce using rule 42 (intlit)
+
+
+State 22
+
+   43 intlit: INTMAX64 •
+
+    $default  reduce using rule 43 (intlit)
+
+
+State 23
+
+    3 value: • scalar
+    4      | • aggregate
+    5 scalar: • primitive
+    6       | • mapping
+    7 aggregate: • list
+    8          | • set
+    9 primitive: • boolean
+   10          | • float
+   11          | • integer
+   12          | • string
+   13          | • variable
+   14 mapping: • primitive ':' value
+   15 list: • '[' items ']'
+   16     | • '[' ']'
+   19 set: • '{' elements '}'
+   19    | '{' • elements '}'
+   20    | • '{' '}'
+   20    | '{' • '}'
+   21 elements: • elements value
+   22         | • value
+   23 string: • unquoted_string
+   24       | • quoted_string
+   25 unquoted_string: • words
+   26 quoted_string: • '"' words '"'
+   27              | • '"' '"'
+   28 words: • words word-token
+   29      | • word-token
+   30 word-token: • "unquoted-string"
+   31           | • "character-escape"
+   32           | • "hex-escape"
+   33           | • '/'
+   34 boolean: • "boolean"
+   35 integer: • intlit
+   36 intlit: • INTMIN8
+   37       | • INTMIN16
+   38       | • INTMIN32
+   39       | • INTMIN64
+   40       | • INTMAX8
+   41       | • INTMAX16
+   42       | • INTMAX32
+   43       | • INTMAX64
+   44       | • UINTMAX8
+   45       | • UINTMAX16
+   46       | • UINTMAX32
+   47       | • UINTMAX64
+   48       | • HEX8
+   49       | • HEX16
+   50       | • HEX32
+   51       | • HEX64
+   52 float: • "float"
+   53 variable: • "variable"
+
+    "unquoted-string"   shift, and go to state 1
+    "character-escape"  shift, and go to state 2
+    "hex-escape"        shift, and go to state 3
+    "boolean"           shift, and go to state 4
+    "float"             shift, and go to state 5
+    "variable"          shift, and go to state 6
+    UINTMAX8            shift, and go to state 7
+    UINTMAX16           shift, and go to state 8
+    UINTMAX32           shift, and go to state 9
+    UINTMAX64           shift, and go to state 10
+    HEX8                shift, and go to state 11
+    HEX16               shift, and go to state 12
+    HEX32               shift, and go to state 13
+    HEX64               shift, and go to state 14
+    INTMIN8             shift, and go to state 15
+    INTMIN16            shift, and go to state 16
+    INTMIN32            shift, and go to state 17
+    INTMIN64            shift, and go to state 18
+    INTMAX8             shift, and go to state 19
+    INTMAX16            shift, and go to state 20
+    INTMAX32            shift, and go to state 21
+    INTMAX64            shift, and go to state 22
+    '{'                 shift, and go to state 23
+    '}'                 shift, and go to state 45
+    '['                 shift, and go to state 24
+    '"'                 shift, and go to state 25
+    '/'                 shift, and go to state 26
+
+    value            go to state 46
+    scalar           go to state 29
+    aggregate        go to state 30
+    primitive        go to state 31
+    mapping          go to state 32
+    list             go to state 33
+    set              go to state 34
+    elements         go to state 47
+    string           go to state 35
+    unquoted_string  go to state 36
+    quoted_string    go to state 37
+    words            go to state 38
+    word-token       go to state 39
+    boolean          go to state 40
+    integer          go to state 41
+    intlit           go to state 42
+    float            go to state 43
+    variable         go to state 44
+
+
+State 24
+
+    3 value: • scalar
+    4      | • aggregate
+    5 scalar: • primitive
+    6       | • mapping
+    7 aggregate: • list
+    8          | • set
+    9 primitive: • boolean
+   10          | • float
+   11          | • integer
+   12          | • string
+   13          | • variable
+   14 mapping: • primitive ':' value
+   15 list: • '[' items ']'
+   15     | '[' • items ']'
+   16     | • '[' ']'
+   16     | '[' • ']'
+   17 items: • items value
+   18      | • value
+   19 set: • '{' elements '}'
+   20    | • '{' '}'
+   23 string: • unquoted_string
+   24       | • quoted_string
+   25 unquoted_string: • words
+   26 quoted_string: • '"' words '"'
+   27              | • '"' '"'
+   28 words: • words word-token
+   29      | • word-token
+   30 word-token: • "unquoted-string"
+   31           | • "character-escape"
+   32           | • "hex-escape"
+   33           | • '/'
+   34 boolean: • "boolean"
+   35 integer: • intlit
+   36 intlit: • INTMIN8
+   37       | • INTMIN16
+   38       | • INTMIN32
+   39       | • INTMIN64
+   40       | • INTMAX8
+   41       | • INTMAX16
+   42       | • INTMAX32
+   43       | • INTMAX64
+   44       | • UINTMAX8
+   45       | • UINTMAX16
+   46       | • UINTMAX32
+   47       | • UINTMAX64
+   48       | • HEX8
+   49       | • HEX16
+   50       | • HEX32
+   51       | • HEX64
+   52 float: • "float"
+   53 variable: • "variable"
+
+    "unquoted-string"   shift, and go to state 1
+    "character-escape"  shift, and go to state 2
+    "hex-escape"        shift, and go to state 3
+    "boolean"           shift, and go to state 4
+    "float"             shift, and go to state 5
+    "variable"          shift, and go to state 6
+    UINTMAX8            shift, and go to state 7
+    UINTMAX16           shift, and go to state 8
+    UINTMAX32           shift, and go to state 9
+    UINTMAX64           shift, and go to state 10
+    HEX8                shift, and go to state 11
+    HEX16               shift, and go to state 12
+    HEX32               shift, and go to state 13
+    HEX64               shift, and go to state 14
+    INTMIN8             shift, and go to state 15
+    INTMIN16            shift, and go to state 16
+    INTMIN32            shift, and go to state 17
+    INTMIN64            shift, and go to state 18
+    INTMAX8             shift, and go to state 19
+    INTMAX16            shift, and go to state 20
+    INTMAX32            shift, and go to state 21
+    INTMAX64            shift, and go to state 22
+    '{'                 shift, and go to state 23
+    '['                 shift, and go to state 24
+    ']'                 shift, and go to state 48
+    '"'                 shift, and go to state 25
+    '/'                 shift, and go to state 26
+
+    value            go to state 49
+    scalar           go to state 29
+    aggregate        go to state 30
+    primitive        go to state 31
+    mapping          go to state 32
+    list             go to state 33
+    items            go to state 50
+    set              go to state 34
+    string           go to state 35
+    unquoted_string  go to state 36
+    quoted_string    go to state 37
+    words            go to state 38
+    word-token       go to state 39
+    boolean          go to state 40
+    integer          go to state 41
+    intlit           go to state 42
+    float            go to state 43
+    variable         go to state 44
+
+
+State 25
+
+   26 quoted_string: '"' • words '"'
+   27              | '"' • '"'
+   28 words: • words word-token
+   29      | • word-token
+   30 word-token: • "unquoted-string"
+   31           | • "character-escape"
+   32           | • "hex-escape"
+   33           | • '/'
+
+    "unquoted-string"   shift, and go to state 1
+    "character-escape"  shift, and go to state 2
+    "hex-escape"        shift, and go to state 3
+    '"'                 shift, and go to state 51
+    '/'                 shift, and go to state 26
+
+    words       go to state 52
+    word-token  go to state 39
+
+
+State 26
+
+   33 word-token: '/' •
+
+    $default  reduce using rule 33 (word-token)
+
+
+State 27
+
+    0 $accept: utterance • $end
+
+    $end  shift, and go to state 53
+
+
+State 28
+
+    1 utterance: value •
+
+    $default  reduce using rule 1 (utterance)
+
+
+State 29
+
+    3 value: scalar •
+
+    $default  reduce using rule 3 (value)
+
+
+State 30
+
+    4 value: aggregate •
+
+    $default  reduce using rule 4 (value)
+
+
+State 31
+
+    5 scalar: primitive •  [$end, "unquoted-string", "character-escape", "hex-escape", "boolean", "float", "variable", UINTMAX8, UINTMAX16, UINTMAX32, UINTMAX64, HEX8, HEX16, HEX32, HEX64, INTMIN8, INTMIN16, INTMIN32, INTMIN64, INTMAX8, INTMAX16, INTMAX32, INTMAX64, '{', '}', '[', ']', '"', '/']
+   14 mapping: primitive • ':' value
+
+    ':'  shift, and go to state 54
+
+    $default  reduce using rule 5 (scalar)
+
+
+State 32
+
+    6 scalar: mapping •
+
+    $default  reduce using rule 6 (scalar)
+
+
+State 33
+
+    7 aggregate: list •
+
+    $default  reduce using rule 7 (aggregate)
+
+
+State 34
+
+    8 aggregate: set •
+
+    $default  reduce using rule 8 (aggregate)
+
+
+State 35
+
+   12 primitive: string •
+
+    $default  reduce using rule 12 (primitive)
+
+
+State 36
+
+   23 string: unquoted_string •
+
+    $default  reduce using rule 23 (string)
+
+
+State 37
+
+   24 string: quoted_string •
+
+    $default  reduce using rule 24 (string)
+
+
+State 38
+
+   25 unquoted_string: words •  [$end, "unquoted-string", "character-escape", "hex-escape", "boolean", "float", "variable", UINTMAX8, UINTMAX16, UINTMAX32, UINTMAX64, HEX8, HEX16, HEX32, HEX64, INTMIN8, INTMIN16, INTMIN32, INTMIN64, INTMAX8, INTMAX16, INTMAX32, INTMAX64, '{', '}', '[', ']', ':', '"', '/']
+   28 words: words • word-token
+   30 word-token: • "unquoted-string"
+   31           | • "character-escape"
+   32           | • "hex-escape"
+   33           | • '/'
+
+    "unquoted-string"   shift, and go to state 1
+    "character-escape"  shift, and go to state 2
+    "hex-escape"        shift, and go to state 3
+    '/'                 shift, and go to state 26
+
+    "unquoted-string"   [reduce using rule 25 (unquoted_string)]
+    "character-escape"  [reduce using rule 25 (unquoted_string)]
+    "hex-escape"        [reduce using rule 25 (unquoted_string)]
+    '/'                 [reduce using rule 25 (unquoted_string)]
+    $default            reduce using rule 25 (unquoted_string)
+
+    word-token  go to state 55
+
+    shift/reduce conflict on token "unquoted-string":
+       25 unquoted_string: words •
+       30 word-token: • "unquoted-string"
+      Example: words • "unquoted-string"
+      Shift derivation
+        items
+        ↳ 18: value
+              ↳ 3: scalar
+                   ↳ 5: primitive
+                        ↳ 12: string
+                              ↳ 23: unquoted_string
+                                    ↳ 25: words
+                                          ↳ 28: words word-token
+                                                      ↳ 30: • "unquoted-string"
+      Reduce derivation
+        items
+        ↳ 17: items                                       value
+              ↳ 18: value                                 ↳ 3: scalar
+                    ↳ 3: scalar                                ↳ 5: primitive
+                         ↳ 5: primitive                             ↳ 12: string
+                              ↳ 12: string                                ↳ 23: unquoted_string
+                                    ↳ 23: unquoted_string                       ↳ 25: words
+                                          ↳ 25: words •                               ↳ 29: word-token
+                                                                                            ↳ 30: "unquoted-string"
+
+    shift/reduce conflict on token "character-escape":
+       25 unquoted_string: words •
+       31 word-token: • "character-escape"
+      Example: words • "character-escape"
+      Shift derivation
+        items
+        ↳ 18: value
+              ↳ 3: scalar
+                   ↳ 5: primitive
+                        ↳ 12: string
+                              ↳ 23: unquoted_string
+                                    ↳ 25: words
+                                          ↳ 28: words word-token
+                                                      ↳ 31: • "character-escape"
+      Reduce derivation
+        items
+        ↳ 17: items                                       value
+              ↳ 18: value                                 ↳ 3: scalar
+                    ↳ 3: scalar                                ↳ 5: primitive
+                         ↳ 5: primitive                             ↳ 12: string
+                              ↳ 12: string                                ↳ 23: unquoted_string
+                                    ↳ 23: unquoted_string                       ↳ 25: words
+                                          ↳ 25: words •                               ↳ 29: word-token
+                                                                                            ↳ 31: "character-escape"
+
+    shift/reduce conflict on token "hex-escape":
+       25 unquoted_string: words •
+       32 word-token: • "hex-escape"
+      Example: words • "hex-escape"
+      Shift derivation
+        items
+        ↳ 18: value
+              ↳ 3: scalar
+                   ↳ 5: primitive
+                        ↳ 12: string
+                              ↳ 23: unquoted_string
+                                    ↳ 25: words
+                                          ↳ 28: words word-token
+                                                      ↳ 32: • "hex-escape"
+      Reduce derivation
+        items
+        ↳ 17: items                                       value
+              ↳ 18: value                                 ↳ 3: scalar
+                    ↳ 3: scalar                                ↳ 5: primitive
+                         ↳ 5: primitive                             ↳ 12: string
+                              ↳ 12: string                                ↳ 23: unquoted_string
+                                    ↳ 23: unquoted_string                       ↳ 25: words
+                                          ↳ 25: words •                               ↳ 29: word-token
+                                                                                            ↳ 32: "hex-escape"
+
+    shift/reduce conflict on token '/':
+       25 unquoted_string: words •
+       33 word-token: • '/'
+      Example: words • '/'
+      Shift derivation
+        items
+        ↳ 18: value
+              ↳ 3: scalar
+                   ↳ 5: primitive
+                        ↳ 12: string
+                              ↳ 23: unquoted_string
+                                    ↳ 25: words
+                                          ↳ 28: words word-token
+                                                      ↳ 33: • '/'
+      Reduce derivation
+        items
+        ↳ 17: items                                       value
+              ↳ 18: value                                 ↳ 3: scalar
+                    ↳ 3: scalar                                ↳ 5: primitive
+                         ↳ 5: primitive                             ↳ 12: string
+                              ↳ 12: string                                ↳ 23: unquoted_string
+                                    ↳ 23: unquoted_string                       ↳ 25: words
+                                          ↳ 25: words •                               ↳ 29: word-token
+                                                                                            ↳ 33: '/'
+
+
+
+State 39
+
+   29 words: word-token •
+
+    $default  reduce using rule 29 (words)
+
+
+State 40
+
+    9 primitive: boolean •
+
+    $default  reduce using rule 9 (primitive)
+
+
+State 41
+
+   11 primitive: integer •
+
+    $default  reduce using rule 11 (primitive)
+
+
+State 42
+
+   35 integer: intlit •
+
+    $default  reduce using rule 35 (integer)
+
+
+State 43
+
+   10 primitive: float •
+
+    $default  reduce using rule 10 (primitive)
+
+
+State 44
+
+   13 primitive: variable •
+
+    $default  reduce using rule 13 (primitive)
+
+
+State 45
+
+   20 set: '{' '}' •
+
+    $default  reduce using rule 20 (set)
+
+
+State 46
+
+   22 elements: value •
+
+    $default  reduce using rule 22 (elements)
+
+
+State 47
+
+    3 value: • scalar
+    4      | • aggregate
+    5 scalar: • primitive
+    6       | • mapping
+    7 aggregate: • list
+    8          | • set
+    9 primitive: • boolean
+   10          | • float
+   11          | • integer
+   12          | • string
+   13          | • variable
+   14 mapping: • primitive ':' value
+   15 list: • '[' items ']'
+   16     | • '[' ']'
+   19 set: • '{' elements '}'
+   19    | '{' elements • '}'
+   20    | • '{' '}'
+   21 elements: elements • value
+   23 string: • unquoted_string
+   24       | • quoted_string
+   25 unquoted_string: • words
+   26 quoted_string: • '"' words '"'
+   27              | • '"' '"'
+   28 words: • words word-token
+   29      | • word-token
+   30 word-token: • "unquoted-string"
+   31           | • "character-escape"
+   32           | • "hex-escape"
+   33           | • '/'
+   34 boolean: • "boolean"
+   35 integer: • intlit
+   36 intlit: • INTMIN8
+   37       | • INTMIN16
+   38       | • INTMIN32
+   39       | • INTMIN64
+   40       | • INTMAX8
+   41       | • INTMAX16
+   42       | • INTMAX32
+   43       | • INTMAX64
+   44       | • UINTMAX8
+   45       | • UINTMAX16
+   46       | • UINTMAX32
+   47       | • UINTMAX64
+   48       | • HEX8
+   49       | • HEX16
+   50       | • HEX32
+   51       | • HEX64
+   52 float: • "float"
+   53 variable: • "variable"
+
+    "unquoted-string"   shift, and go to state 1
+    "character-escape"  shift, and go to state 2
+    "hex-escape"        shift, and go to state 3
+    "boolean"           shift, and go to state 4
+    "float"             shift, and go to state 5
+    "variable"          shift, and go to state 6
+    UINTMAX8            shift, and go to state 7
+    UINTMAX16           shift, and go to state 8
+    UINTMAX32           shift, and go to state 9
+    UINTMAX64           shift, and go to state 10
+    HEX8                shift, and go to state 11
+    HEX16               shift, and go to state 12
+    HEX32               shift, and go to state 13
+    HEX64               shift, and go to state 14
+    INTMIN8             shift, and go to state 15
+    INTMIN16            shift, and go to state 16
+    INTMIN32            shift, and go to state 17
+    INTMIN64            shift, and go to state 18
+    INTMAX8             shift, and go to state 19
+    INTMAX16            shift, and go to state 20
+    INTMAX32            shift, and go to state 21
+    INTMAX64            shift, and go to state 22
+    '{'                 shift, and go to state 23
+    '}'                 shift, and go to state 56
+    '['                 shift, and go to state 24
+    '"'                 shift, and go to state 25
+    '/'                 shift, and go to state 26
+
+    value            go to state 57
+    scalar           go to state 29
+    aggregate        go to state 30
+    primitive        go to state 31
+    mapping          go to state 32
+    list             go to state 33
+    set              go to state 34
+    string           go to state 35
+    unquoted_string  go to state 36
+    quoted_string    go to state 37
+    words            go to state 38
+    word-token       go to state 39
+    boolean          go to state 40
+    integer          go to state 41
+    intlit           go to state 42
+    float            go to state 43
+    variable         go to state 44
+
+
+State 48
+
+   16 list: '[' ']' •
+
+    $default  reduce using rule 16 (list)
+
+
+State 49
+
+   18 items: value •
+
+    $default  reduce using rule 18 (items)
+
+
+State 50
+
+    3 value: • scalar
+    4      | • aggregate
+    5 scalar: • primitive
+    6       | • mapping
+    7 aggregate: • list
+    8          | • set
+    9 primitive: • boolean
+   10          | • float
+   11          | • integer
+   12          | • string
+   13          | • variable
+   14 mapping: • primitive ':' value
+   15 list: • '[' items ']'
+   15     | '[' items • ']'
+   16     | • '[' ']'
+   17 items: items • value
+   19 set: • '{' elements '}'
+   20    | • '{' '}'
+   23 string: • unquoted_string
+   24       | • quoted_string
+   25 unquoted_string: • words
+   26 quoted_string: • '"' words '"'
+   27              | • '"' '"'
+   28 words: • words word-token
+   29      | • word-token
+   30 word-token: • "unquoted-string"
+   31           | • "character-escape"
+   32           | • "hex-escape"
+   33           | • '/'
+   34 boolean: • "boolean"
+   35 integer: • intlit
+   36 intlit: • INTMIN8
+   37       | • INTMIN16
+   38       | • INTMIN32
+   39       | • INTMIN64
+   40       | • INTMAX8
+   41       | • INTMAX16
+   42       | • INTMAX32
+   43       | • INTMAX64
+   44       | • UINTMAX8
+   45       | • UINTMAX16
+   46       | • UINTMAX32
+   47       | • UINTMAX64
+   48       | • HEX8
+   49       | • HEX16
+   50       | • HEX32
+   51       | • HEX64
+   52 float: • "float"
+   53 variable: • "variable"
+
+    "unquoted-string"   shift, and go to state 1
+    "character-escape"  shift, and go to state 2
+    "hex-escape"        shift, and go to state 3
+    "boolean"           shift, and go to state 4
+    "float"             shift, and go to state 5
+    "variable"          shift, and go to state 6
+    UINTMAX8            shift, and go to state 7
+    UINTMAX16           shift, and go to state 8
+    UINTMAX32           shift, and go to state 9
+    UINTMAX64           shift, and go to state 10
+    HEX8                shift, and go to state 11
+    HEX16               shift, and go to state 12
+    HEX32               shift, and go to state 13
+    HEX64               shift, and go to state 14
+    INTMIN8             shift, and go to state 15
+    INTMIN16            shift, and go to state 16
+    INTMIN32            shift, and go to state 17
+    INTMIN64            shift, and go to state 18
+    INTMAX8             shift, and go to state 19
+    INTMAX16            shift, and go to state 20
+    INTMAX32            shift, and go to state 21
+    INTMAX64            shift, and go to state 22
+    '{'                 shift, and go to state 23
+    '['                 shift, and go to state 24
+    ']'                 shift, and go to state 58
+    '"'                 shift, and go to state 25
+    '/'                 shift, and go to state 26
+
+    value            go to state 59
+    scalar           go to state 29
+    aggregate        go to state 30
+    primitive        go to state 31
+    mapping          go to state 32
+    list             go to state 33
+    set              go to state 34
+    string           go to state 35
+    unquoted_string  go to state 36
+    quoted_string    go to state 37
+    words            go to state 38
+    word-token       go to state 39
+    boolean          go to state 40
+    integer          go to state 41
+    intlit           go to state 42
+    float            go to state 43
+    variable         go to state 44
+
+
+State 51
+
+   27 quoted_string: '"' '"' •
+
+    $default  reduce using rule 27 (quoted_string)
+
+
+State 52
+
+   26 quoted_string: '"' words • '"'
+   28 words: words • word-token
+   30 word-token: • "unquoted-string"
+   31           | • "character-escape"
+   32           | • "hex-escape"
+   33           | • '/'
+
+    "unquoted-string"   shift, and go to state 1
+    "character-escape"  shift, and go to state 2
+    "hex-escape"        shift, and go to state 3
+    '"'                 shift, and go to state 60
+    '/'                 shift, and go to state 26
+
+    word-token  go to state 55
+
+
+State 53
+
+    0 $accept: utterance $end •
+
+    $default  accept
+
+
+State 54
+
+    3 value: • scalar
+    4      | • aggregate
+    5 scalar: • primitive
+    6       | • mapping
+    7 aggregate: • list
+    8          | • set
+    9 primitive: • boolean
+   10          | • float
+   11          | • integer
+   12          | • string
+   13          | • variable
+   14 mapping: • primitive ':' value
+   14        | primitive ':' • value
+   15 list: • '[' items ']'
+   16     | • '[' ']'
+   19 set: • '{' elements '}'
+   20    | • '{' '}'
+   23 string: • unquoted_string
+   24       | • quoted_string
+   25 unquoted_string: • words
+   26 quoted_string: • '"' words '"'
+   27              | • '"' '"'
+   28 words: • words word-token
+   29      | • word-token
+   30 word-token: • "unquoted-string"
+   31           | • "character-escape"
+   32           | • "hex-escape"
+   33           | • '/'
+   34 boolean: • "boolean"
+   35 integer: • intlit
+   36 intlit: • INTMIN8
+   37       | • INTMIN16
+   38       | • INTMIN32
+   39       | • INTMIN64
+   40       | • INTMAX8
+   41       | • INTMAX16
+   42       | • INTMAX32
+   43       | • INTMAX64
+   44       | • UINTMAX8
+   45       | • UINTMAX16
+   46       | • UINTMAX32
+   47       | • UINTMAX64
+   48       | • HEX8
+   49       | • HEX16
+   50       | • HEX32
+   51       | • HEX64
+   52 float: • "float"
+   53 variable: • "variable"
+
+    "unquoted-string"   shift, and go to state 1
+    "character-escape"  shift, and go to state 2
+    "hex-escape"        shift, and go to state 3
+    "boolean"           shift, and go to state 4
+    "float"             shift, and go to state 5
+    "variable"          shift, and go to state 6
+    UINTMAX8            shift, and go to state 7
+    UINTMAX16           shift, and go to state 8
+    UINTMAX32           shift, and go to state 9
+    UINTMAX64           shift, and go to state 10
+    HEX8                shift, and go to state 11
+    HEX16               shift, and go to state 12
+    HEX32               shift, and go to state 13
+    HEX64               shift, and go to state 14
+    INTMIN8             shift, and go to state 15
+    INTMIN16            shift, and go to state 16
+    INTMIN32            shift, and go to state 17
+    INTMIN64            shift, and go to state 18
+    INTMAX8             shift, and go to state 19
+    INTMAX16            shift, and go to state 20
+    INTMAX32            shift, and go to state 21
+    INTMAX64            shift, and go to state 22
+    '{'                 shift, and go to state 23
+    '['                 shift, and go to state 24
+    '"'                 shift, and go to state 25
+    '/'                 shift, and go to state 26
+
+    value            go to state 61
+    scalar           go to state 29
+    aggregate        go to state 30
+    primitive        go to state 31
+    mapping          go to state 32
+    list             go to state 33
+    set              go to state 34
+    string           go to state 35
+    unquoted_string  go to state 36
+    quoted_string    go to state 37
+    words            go to state 38
+    word-token       go to state 39
+    boolean          go to state 40
+    integer          go to state 41
+    intlit           go to state 42
+    float            go to state 43
+    variable         go to state 44
+
+
+State 55
+
+   28 words: words word-token •
+
+    $default  reduce using rule 28 (words)
+
+
+State 56
+
+   19 set: '{' elements '}' •
+
+    $default  reduce using rule 19 (set)
+
+
+State 57
+
+   21 elements: elements value •
+
+    $default  reduce using rule 21 (elements)
+
+
+State 58
+
+   15 list: '[' items ']' •
+
+    $default  reduce using rule 15 (list)
+
+
+State 59
+
+   17 items: items value •
+
+    $default  reduce using rule 17 (items)
+
+
+State 60
+
+   26 quoted_string: '"' words '"' •
+
+    $default  reduce using rule 26 (quoted_string)
+
+
+State 61
+
+   14 mapping: primitive ':' value •
+
+    $default  reduce using rule 14 (mapping)

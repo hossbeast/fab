@@ -4,7 +4,7 @@
 %{
   #include "yyutil/scanner.h"
 
-  #include "parser.internal.h"
+  #include "glue.h"
   #include "value.tab.h"
   #include "value.tokens.h"
 
@@ -34,17 +34,17 @@
     return yyu_lexify(parser, lval, lvalsz, lloc, text, end_line, end_col, bytes, token);
   }
 
-  #define LEXVAR()                    \
-    LEXIFY(lexify_variable            \
-      , yyextra                       \
-      , yylval                        \
-      , sizeof(yylval)                \
-      , yylloc                        \
-      , yytext                        \
-      , yyleng                        \
-      , yyuparser->loc.l_lin          \
-      , yyuparser->loc.l_col + yyleng \
-      , VARIABLE                      \
+  #define LEXVAR()                     \
+    LEXIFY(lexify_variable             \
+      , yyextra                        \
+      , yylval                         \
+      , sizeof(yylval)                 \
+      , yylloc                         \
+      , yytext                         \
+      , yyleng                         \
+      , yyuparser->loc.l_lin           \
+      , yyuparser->loc.l_col + yyleng  \
+      , VARIABLE                       \
     )
 %}
 
@@ -78,7 +78,11 @@ ILL   [\x00-\x08\x0B-\x1F\x7F-\xFF]
 <INITIAL>[\r\t ]+                                       { LOCWRITE; }
 
  /* tokens */
-<INITIAL>[[\]{}()+=:]                                   { return LEX(yytext[0]); }
+<INITIAL>"&&"                                           { return LEX(LOGAND); }
+<INITIAL>"||"                                           { return LEX(LOGOR); }
+<INITIAL>"<<"                                           { return LEX(SHL); }
+<INITIAL>">>"                                           { return LEX(SHR); }
+<INITIAL>[-![\]{}()+:=<>&|/%*^~]                        { return LEX(yytext[0]); }
 
  /* variables */
 <INITIAL>[$][a-zA-Z_][a-zA-Z0-9_]{0,62}                 { return LEXVAR(); }
@@ -95,14 +99,13 @@ ILL   [\x00-\x08\x0B-\x1F\x7F-\xFF]
 <INITIAL>[+-]?[0-9]+[.][0-9]+                           { return LEXF(); }
 
  /* strings */
-<INITIAL>[-a-zA-Z0-9_/.][-a-zA-Z0-9_/.]*                { return LEX(STR); }
+<INITIAL>[-a-zA-Z0-9_./+]+                              { return LEX(STR); }
 
  /* quoted strings */
 <INITIAL>["]                                            { PUSHSTATE(quoted); return LEX(yytext[0]); }
 <quoted>["]                                             { POPSTATE; return LEX(yytext[0]); }
 <quoted>\\[\\"abtnvfrs0]                                { return LEXC(1); }
 <quoted>\\x[0-9a-f]{2}                                  { return LEXH(2); }
-<quoted>\\x\{[0-9a-f]{1,2}\}                            { return LEXH(3); }
 <quoted>[^"\\\x00-\x1F\x7F-\xFF]+                       { return LEX(STR); }
 
 <*>[\x00-\x1F\x7F-\xFF]                                 {

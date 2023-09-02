@@ -5,8 +5,8 @@
 
 #include "xunit/assert.h"
 
-extern struct xunit_type * value_xunit_value;
+extern struct xunit_type * bacon_xunit_value;
 
-#define assert_eq_value(expected, actual)   _assertion(value_xunit_value, XU_EQ, QUOTE(actual), expected, actual)
-#define assert_null_value(actual)           _assertion(value_xunit_value, XU_NULL, QUOTE(actual), actual)
-#define assert_notnull_value(actual)        _assertion(value_xunit_value, XU_NOTNULL, QUOTE(actual), actual)
+#define assert_eq_value(expected, actual)   _assertion(bacon_xunit_value, XU_EQ, QUOTE(actual), expected, actual)
+#define assert_null_value(actual)           _assertion(bacon_xunit_value, XU_NULL, QUOTE(actual), actual)
+#define assert_notnull_value(actual)        _assertion(bacon_xunit_value, XU_NOTNULL, QUOTE(actual), actual)

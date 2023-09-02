@@ -1,146 +1,119 @@
 /* SPDX-License-Identifier: GPL-3.0 */
 /* Copyright (c) 2012-2023 Todd Freed <todd.freed@gmail.com> */
 
-#include "valyria/list.h"
 #include "valyria/pstring.h"
-#include "valyria/set.h"
+#include "valyria/hashtable.h"
+
+#include "common/hash.h"
+#include "common/attrs.h"
 
 #include "value.h"
-#include "common/hash.h"
+#include "set.h"
+
 #include "macros.h"
 
 //
 // api
 //
 
-int API value_cmp(value * const restrict A, value * const restrict B)
+static int cmp(const bacon_value * const restrict A, const bacon_value * const restrict B)
 {
   int d;
-  int x;
-  int r = 0;
+  bacon_value *a;
+  bacon_value *b;
+  rbnode *rbn;
 
   if(A == 0 || B == 0)
   {
-    r = (A == 0) - (B == 0);
+    return (A == 0) - (B == 0);
   }
-  else if((d = A->type - B->type))
+  if((d = INTCMP(A->type, B->type)))
   {
-    r = d;
+    return d;
   }
-  else if(A->type == VALUE_TYPE_STRING)
+  switch(A->type)
   {
-    r = pscmp(A->s, B->s);
-  }
-  else if(A->type == VALUE_TYPE_FLOAT)
-  {
-    r = INTCMP(A->f, B->f);
-  }
-  else if(A->type == VALUE_TYPE_POSINT)
-  {
-    r = INTCMP(A->u, B->u);
-  }
-  else if(A->type == VALUE_TYPE_NEGINT)
-  {
-    r = INTCMP(A->i, B->i);
-  }
-  else if(A->type == VALUE_TYPE_BOOLEAN)
-  {
-    r = A->b != B->b;
-  }
-  else if(A->type == VALUE_TYPE_VARIABLE)
-  {
-    if((r = INTCMP(A->v.len, B->v.len)))
-      r = memcmp(A->v.name, B->v.name, A->v.len);
-  }
-  else if(A->type == VALUE_TYPE_LIST)
-  {
-    if((d = A->items->size - B->items->size))
-    {
-      r = d;
-    }
-    else
-    {
-      for(x = 0; x < A->items->size; x++)
-      {
-        if((d = value_cmp(list_get(A->items, x), list_get(B->items, x))))
-        {
-          r = d;
-          break;
+    case BACON_TYPE_STRING:
+      return memncmp(A->s, A->len, B->s, B->len);
+    case BACON_TYPE_FLOAT:
+      return INTCMP(A->f, B->f);
+    case BACON_TYPE_INTEGER:
+      return INTCMP(A->i, B->i);
+    case BACON_TYPE_BOOLEAN:
+      return INTCMP(A->b, B->b);
+    case BACON_TYPE_VARIABLE:
+      return memncmp(A->s, A->len, B->s, B->len);
+    case BACON_TYPE_LIST:
+      a = llist_first(&A->list, typeof(*a), lln);
+      b = llist_first(&B->list, typeof(*b), lln);
+      while(a || b) {
+        if((d = bacon_value_cmp(a, b))) {
+          return d;
+        }
+        a = llist_next(&A->list, a, lln);
+        b = llist_next(&B->list, b, lln);
+      }
+      if(!!a ^ !!b) {
+        if(a) {
+          return 1;
+        } else {
+          return -1;
         }
       }
-    }
-  }
-  else if(A->type == VALUE_TYPE_SET)
-  {
-    r = !set_equal(A->els, B->els);
-  }
-  else if(A->type == VALUE_TYPE_MAPPING)
-  {
-    r = value_cmp(A->key, B->key);
+      break;
+    case BACON_TYPE_SET:
+      rbtree_foreach(&A->set, a, rbn) {
+        if((rbn = rbtree_lookup(&B->set, a, bacon_set_key_cmp)) == 0) {
+          return 1;
+        } else {
+          b = containerof(rbn, typeof(*b), rbn);
+          if((d = bacon_value_cmp(a, b))) {
+            if(d > 0) {
+              return 1;
+            } else if(d < 0) {
+              return -1;
+            }
+          }
+        }
+      }
+      rbtree_foreach(&B->set, b, rbn) {
+        if((rbn = rbtree_lookup(&A->set, b, bacon_set_key_cmp)) == 0) {
+          return -1;
+        } else {
+          a = containerof(rbn, typeof(*a), rbn);
+          if((d = bacon_value_cmp(a, b))) {
+            if(d > 0) {
+              return -1;
+            } else if(d < 0) {
+              return 1;
+            }
+          }
+        }
+      }
+      break;
+    case BACON_TYPE_MAPPING:
+      return bacon_value_cmp(A->key, B->key);
+    default:
+      RTA;
   }
 
-  return r;
+  return 0;
 }
 
-bool API value_equal(value * const restrict A, value * const restrict B)
+int bacon_value_cmp(const bacon_value * const restrict A, const bacon_value * const restrict B)
 {
-  if(A == 0 || B == 0)
+  return cmp(A, B);
+}
+
+bool bacon_value_equal(const bacon_value * const restrict A, const bacon_value * const restrict B)
+{
+  if(A == 0 || B == 0) {
     return !!A == !!B;
-
-  if(A->type != B->type)
+  } else if(A->type != B->type) {
     return false;
-
-  if(value_hash(0, A) != value_hash(0, B))
+  } else if(A->hash != B->hash) {
     return false;
-
-  return value_cmp(A, B) == 0;
-}
-
-uint32_t API value_hash(uint32_t h, value * const restrict val)
-{
-  uint32_t hash;
-  int x;
-
-  if(!val->hash)
-  {
-    hash = hash32(0, &val->type, sizeof(val->type));
-
-    if(val->type == VALUE_TYPE_LIST)
-    {
-      for(x = 0; x < val->items->size; x++)
-        hash = value_hash(hash, list_get(val->items, x));
-    }
-    else if(val->type == VALUE_TYPE_SET)
-    {
-      hash += val->els->hash;
-    }
-    else if(val->type == VALUE_TYPE_MAPPING)
-    {
-      hash += val->key->hash;
-    }
-    else if(val->type == VALUE_TYPE_STRING)
-    {
-      hash = hash32(hash, val->s->s, val->s->size);
-    }
-    else if(val->type == VALUE_TYPE_FLOAT)
-    {
-      hash = hash32(hash, &val->f, sizeof(val->f));
-    }
-    else if(val->type == VALUE_TYPE_BOOLEAN)
-    {
-      hash = hash32(hash, &val->b, sizeof(val->b));
-    }
-    else if(val->type == VALUE_TYPE_NEGINT)
-    {
-      hash = hash32(hash, &val->i, sizeof(val->i));
-    }
-    else if(val->type == VALUE_TYPE_POSINT)
-    {
-      hash = hash32(hash, &val->u, sizeof(val->u));
-    }
-
-    val->hash = hash;
   }
 
-  return h + val->hash;
+  return bacon_value_cmp(A, B) == 0;
 }

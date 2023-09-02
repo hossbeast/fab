@@ -11,10 +11,9 @@
 #include "narrator/growing.h"
 
 
-#include "bacon.h"
-#include "assert.internal.h"
-#include "writer.internal.h"
-#include "store.internal.h"
+#include "value.h"
+#include "assert.h"
+#include "writer.h"
 
 #include "macros.h"
 #include "common/attrs.h"
@@ -27,13 +26,13 @@ typedef struct writer_test {
 // public
 //
 
-static void value_writer_unit_setup(xunit_unit * unit)
+static void bacon_writer_unit_setup(xunit_unit * unit)
 {
   // load libraries
   bacon_load();
 }
 
-static void value_writer_unit_cleanup(xunit_unit * unit)
+static void bacon_writer_unit_cleanup(xunit_unit * unit)
 {
   bacon_unload();
 }
@@ -46,166 +45,177 @@ static void test_basic(xunit_test * _test)
 {
   writer_test * test = (typeof(test))_test;
 
-  value_writer * writer = 0;
-  value_writer_create(&writer);
+  bacon_writer * writer = 0;
+  bacon_writer_create(&writer);
 
-  value_writer_open(writer, g_narrator_stdout);
-  value_writer_push_list(writer);
-    value_writer_string(writer, "foo+88");
+  bacon_writer_open(writer, g_narrator_stdout);
+  bacon_writer_push_list(writer);
+    bacon_writer_string(writer, "foo+88");
 
-    value_writer_push_set(writer);
-    value_writer_bool(writer, true);
-    value_writer_bool(writer, false);
-    value_writer_pop_set(writer);
+    bacon_writer_push_set(writer);
+    bacon_writer_bool(writer, true);
+    bacon_writer_bool(writer, false);
+    bacon_writer_pop_set(writer);
 
-    value_writer_push_set(writer);
-    value_writer_bool(writer, false);
-    value_writer_bool(writer, true);
-    value_writer_pop_set(writer);
+    bacon_writer_push_set(writer);
+    bacon_writer_bool(writer, false);
+    bacon_writer_bool(writer, true);
+    bacon_writer_pop_set(writer);
 
-    value_writer_push_set(writer);
-      value_writer_bool(writer, false);
-      value_writer_string(writer, "not-escaped");
-      value_writer_string(writer, "noescape");
-    value_writer_pop_set(writer);
+    bacon_writer_push_set(writer);
+      bacon_writer_bool(writer, false);
+      bacon_writer_string(writer, "not-escaped");
+      bacon_writer_string(writer, "noescape");
+    bacon_writer_pop_set(writer);
 
-    value_writer_push_set(writer);
-      value_writer_push_mapping(writer);
-        value_writer_string(writer, "foo+103");
-        value_writer_push_set(writer);
-          value_writer_mapping_string_uint(writer, "foo+105", 0xabcdabcdabcdULL);
-          value_writer_mapping_string_int(writer, "foo+106", -1234512345123451234);
-          value_writer_mapping_string_bool(writer, "foo/107", true);
-        value_writer_pop_set(writer);
-      value_writer_pop_mapping(writer);
-    value_writer_pop_set(writer);
+    bacon_writer_push_set(writer);
+      bacon_writer_push_mapping(writer);
+        bacon_writer_string(writer, "foo+103");
+        bacon_writer_push_set(writer);
+          bacon_writer_mapping_string_uint(writer, "foo+105", 0xabcdabcdabcdULL);
+          bacon_writer_mapping_string_int(writer, "foo+106", -1234512345123451234);
+          bacon_writer_mapping_string_bool(writer, "foo/107", true);
+        bacon_writer_pop_set(writer);
+      bacon_writer_pop_mapping(writer);
+    bacon_writer_pop_set(writer);
 
-  value_writer_pop_list(writer);
+  bacon_writer_pop_list(writer);
 
   narrator_says(g_narrator_stdout, "\n");
 
-  value_writer_xfree(writer);
+  bacon_writer_free(writer);
+}
+
+static void test_string(xunit_test * _test)
+{
+  writer_test * test = (typeof(test))_test;
+
+  bacon_writer writer_stor;
+  bacon_writer *writer = &writer_stor;
+  bacon_writer_init(writer);
+  bacon_writer_open(writer, g_narrator_stdout);
+
+  bacon_writer_string(writer, "foo+88");
+
+  narrator_says(g_narrator_stdout, "\n");
+  bacon_writer_destroy(writer);
 }
 
 static void test_set(xunit_test * _test)
 {
   writer_test * test = (typeof(test))_test;
 
-//printf("\n++ %s\n", __FUNCTION__);
+  bacon_writer * writer = 0;
+  bacon_writer_create(&writer);
+  bacon_writer_open(writer, g_narrator_stdout);
 
-  value_writer * writer = 0;
-  value_writer_create(&writer);
-  value_writer_open(writer, g_narrator_stdout);
-
-  value_writer_push_set(writer);
-  value_writer_push_mapping(writer);
-  value_writer_string(writer, "path");
-  value_writer_string(writer, "foo/bar");
-  value_writer_pop_mapping(writer);
-  value_writer_mapping_string_float(writer, "foo", 42);
-  value_writer_pop_set(writer);
+  bacon_writer_push_set(writer);
+  bacon_writer_push_mapping(writer);
+  bacon_writer_string(writer, "path");
+  bacon_writer_string(writer, "foo/bar");
+  bacon_writer_pop_mapping(writer);
+  bacon_writer_mapping_string_float(writer, "foo", 42);
+  bacon_writer_pop_set(writer);
 
   narrator_says(g_narrator_stdout, "\n");
 
-  value_writer_xfree(writer);
+  bacon_writer_free(writer);
 }
 
 static void test_set_set_top(xunit_test * _test)
 {
   writer_test * test = (typeof(test))_test;
 
-//printf("\n++ %s\n", __FUNCTION__);
+  bacon_writer * writer = 0;
+  bacon_writer_create(&writer);
+  bacon_writer_open(writer, g_narrator_stdout);
 
-  value_writer * writer = 0;
-  value_writer_create(&writer);
-  value_writer_open(writer, g_narrator_stdout);
-
-  value_writer_push_mapping(writer);
-  value_writer_string(writer, "path");
-  value_writer_string(writer, "foo/bar");
-  value_writer_pop_mapping(writer);
-  value_writer_mapping_string_float(writer, "foo", 42);
+  bacon_writer_push_mapping(writer);
+  bacon_writer_string(writer, "path");
+  bacon_writer_string(writer, "foo/bar");
+  bacon_writer_pop_mapping(writer);
+  bacon_writer_mapping_string_float(writer, "foo", 42);
 
   narrator_says(g_narrator_stdout, "\n");
 
-  value_writer_xfree(writer);
+  bacon_writer_free(writer);
 }
 
 static void test_set_embedded(xunit_test * _test)
 {
   writer_test * test = (typeof(test))_test;
 
-  value_writer * writer = 0;
-  value_writer_create(&writer);
-  value_writer_open(writer, g_narrator_stdout);
+  bacon_writer * writer = 0;
+  bacon_writer_create(&writer);
+  bacon_writer_open(writer, g_narrator_stdout);
 
-  value_writer_push_set(writer);
-    value_writer_push_mapping(writer);
-      value_writer_string(writer, "container");
-      value_writer_push_set(writer);
-      value_writer_push_mapping(writer);
-        value_writer_string(writer, "path");
-        value_writer_string(writer, "foo/bar");
-      value_writer_pop_mapping(writer);
-      value_writer_pop_set(writer);
-    value_writer_pop_mapping(writer);
-  value_writer_pop_set(writer);
+  bacon_writer_push_set(writer);
+    bacon_writer_push_mapping(writer);
+      bacon_writer_string(writer, "container");
+      bacon_writer_push_set(writer);
+      bacon_writer_push_mapping(writer);
+        bacon_writer_string(writer, "path");
+        bacon_writer_string(writer, "foo/bar");
+      bacon_writer_pop_mapping(writer);
+      bacon_writer_pop_set(writer);
+    bacon_writer_pop_mapping(writer);
+  bacon_writer_pop_set(writer);
 
   narrator_says(g_narrator_stdout, "\n");
 
-  value_writer_xfree(writer);
+  bacon_writer_free(writer);
 }
 
 static void test_list(xunit_test * _test)
 {
   writer_test * test = (typeof(test))_test;
 
-  value_writer * writer = 0;
-  value_writer_create(&writer);
-  value_writer_open(writer, g_narrator_stdout);
+  bacon_writer * writer = 0;
+  bacon_writer_create(&writer);
+  bacon_writer_open(writer, g_narrator_stdout);
 
-  value_writer_push_list(writer);
-    value_writer_bool(writer, true);
-    value_writer_bool(writer, false);
-    value_writer_bool(writer, true);
+  bacon_writer_push_list(writer);
+    bacon_writer_bool(writer, true);
+    bacon_writer_bool(writer, false);
+    bacon_writer_bool(writer, true);
 
-    value_writer_mapping_string_float(writer, "foo", 42);
-    value_writer_push_mapping(writer);
-      value_writer_string(writer, "path");
-      value_writer_string(writer, "foo/bar");
-    value_writer_pop_mapping(writer);
-    value_writer_string(writer, "foo/bar");
-    value_writer_string(writer, "foo/bar");
-  value_writer_pop_list(writer);
+    bacon_writer_mapping_string_float(writer, "foo", 42);
+    bacon_writer_push_mapping(writer);
+      bacon_writer_string(writer, "path");
+      bacon_writer_string(writer, "foo/bar");
+    bacon_writer_pop_mapping(writer);
+    bacon_writer_string(writer, "foo/bar");
+    bacon_writer_string(writer, "foo/bar");
+  bacon_writer_pop_list(writer);
 
   narrator_says(g_narrator_stdout, "\n");
 
-  value_writer_xfree(writer);
+  bacon_writer_free(writer);
 }
 
 static void test_list_list_top(xunit_test * _test)
 {
   writer_test * test = (typeof(test))_test;
 
-  value_writer * writer = 0;
-  value_writer_create(&writer);
-  value_writer_open(writer, g_narrator_stdout);
+  bacon_writer * writer = 0;
+  bacon_writer_create(&writer);
+  bacon_writer_open(writer, g_narrator_stdout);
 
-  value_writer_bool(writer, true);
-  value_writer_bool(writer, false);
-  value_writer_bool(writer, true);
-  value_writer_mapping_string_float(writer, "foo", 42);
-  value_writer_push_mapping(writer);
-    value_writer_string(writer, "path");
-    value_writer_string(writer, "foo/bar");
-  value_writer_pop_mapping(writer);
+  bacon_writer_bool(writer, true);
+  bacon_writer_bool(writer, false);
+  bacon_writer_bool(writer, true);
+  bacon_writer_mapping_string_float(writer, "foo", 42);
+  bacon_writer_push_mapping(writer);
+    bacon_writer_string(writer, "path");
+    bacon_writer_string(writer, "foo/bar");
+  bacon_writer_pop_mapping(writer);
 
-  value_writer_bool(writer, true);
-  value_writer_bool(writer, false);
+  bacon_writer_bool(writer, true);
+  bacon_writer_bool(writer, false);
 
   narrator_says(g_narrator_stdout, "\n");
 
-  value_writer_xfree(writer);
+  bacon_writer_free(writer);
 }
 
 //
@@ -213,10 +223,11 @@ static void test_list_list_top(xunit_test * _test)
 //
 
 static xunit_unit xunit = {
-    xu_setup : value_writer_unit_setup
-  , xu_cleanup : value_writer_unit_cleanup
+    xu_setup : bacon_writer_unit_setup
+  , xu_cleanup : bacon_writer_unit_cleanup
   , xu_tests : (void*)(writer_test*[]) {
       (writer_test[]){{ xu_entry : test_basic }}
+    , (writer_test[]){{ xu_entry : test_string }}
     , (writer_test[]){{ xu_entry : test_set }}
     , (writer_test[]){{ xu_entry : test_set_set_top }}
     , (writer_test[]){{ xu_entry : test_set_embedded }}

@@ -5,14 +5,8 @@
 
 #include "narrator.h"
 
-#include "valyria/list.h"
-#include "valyria/pstring.h"
-#include "valyria/hashtable.h"
-
 #include "value.h"
-
-#include "value.h"
-#include "store.internal.h"
+#include "location.h"
 
 /* flex and bison do not agree on these names */
 #define YYSTYPE struct value_yystype
@@ -21,8 +15,9 @@
 /* the token enums shadow each other */
 #define VALUE_SET_YYTOKENTYPE
 #define VALUE_LIST_YYTOKENTYPE
+#define EXPR_YYTOKENTYPE
 
-#include "parser.internal.h"
+#include "glue.h"
 
 #include "value.lex.h"
 #include "value.states.h"
@@ -32,24 +27,25 @@
 #include "value_set.tokens.h"
 #include "value_list.tab.h"
 #include "value_list.tokens.h"
+#include "expr.tab.h"
+#include "expr.tokens.h"
 
 #include "common/attrs.h"
 
 static YYU_VTABLE(value_vtable, value, value);
 static YYU_VTABLE(value_set_vtable, value, value_set);
 static YYU_VTABLE(value_list_vtable, value, value_list);
+static YYU_VTABLE(expr_vtable, value, expr);
 
 //
 // public
 //
 
-void API value_parser_create(value_parser ** const rp)
+void bacon_parser_init(bacon_parser * p)
 {
-  value_parser *p = 0;
-
-  xmalloc(&p, sizeof(*p));
-
-  value_store_create(&p->store);
+  llist_init(&p->value_freelist);
+  llist_init(&p->expr_freelist);
+  llist_init(&p->location_freelist);
 
   // value
   yyu_parser_init(&p->value_yyu, &value_vtable);
@@ -78,51 +74,84 @@ void API value_parser_create(value_parser ** const rp)
     , value_statenames
   );
 
+  // expressions
+  yyu_parser_init(&p->expr_yyu, &expr_vtable);
+  yyu_parser_init_tokens(&p->expr_yyu, expr_token_table, expr_TOKEN_TABLE_SIZE);
+  yyu_parser_init_states(&p->expr_yyu
+    , value_numstates
+    , value_statenumbers
+    , value_statenames
+  );
+}
+
+void bacon_parser_alloc(bacon_parser ** const rp)
+{
+  bacon_parser *p = 0;
+
+  xmalloc(&p, sizeof(*p));
+  bacon_parser_init(p);
+
   *rp = p;
 }
 
-void API value_parser_xfree(value_parser* const p)
+void bacon_parser_destroy(bacon_parser* const parser)
 {
-  if(p)
-  {
-    value_store_xfree(p->store);
-    yyu_parser_xdestroy(&p->value_yyu);
-    yyu_parser_xdestroy(&p->value_set_yyu);
-    yyu_parser_xdestroy(&p->value_list_yyu);
+  bacon_value *v;
+  bacon_expr *e;
+  bacon_location *loc;
+  llist *T;
+
+  yyu_parser_xdestroy(&parser->value_yyu);
+  yyu_parser_xdestroy(&parser->value_set_yyu);
+  yyu_parser_xdestroy(&parser->value_list_yyu);
+  yyu_parser_xdestroy(&parser->expr_yyu);
+
+  llist_foreach_safe(&parser->value_freelist, v, lln, T) {
+    free(v);
   }
 
-  free(p);
+  llist_foreach_safe(&parser->expr_freelist, e, lln, T) {
+    free(e);
+  }
+
+  llist_foreach_safe(&parser->location_freelist, loc, lln, T) {
+    free(loc);
+  }
 }
 
-void API value_parser_ixfree(value_parser ** const p)
+void bacon_parser_free(bacon_parser* const parser)
 {
-  value_parser_xfree(*p);
-  *p = 0;
+  if(parser) {
+    bacon_parser_destroy(parser);
+  }
+
+  free(parser);
 }
 
-void API value_parser_recycle(value_parser * restrict p)
+void bacon_parser_ifree(bacon_parser ** const parser)
 {
-  value_store_recycle(p->store);
+  bacon_parser_free(*parser);
+  *parser = 0;
 }
 
-int value_parser_parse(
-    value_parser * restrict parser
+int bacon_parser_parse(
+    bacon_parser * restrict parser
   , char * const restrict text
   , size_t len
   , const char * restrict fname
-  , value_type initial_state
-  , value ** restrict root
+  , bacon_type initial_state
+  , bacon_value ** restrict root
 )
 {
   int r;
 
-  parser->root = 0;
+  parser->value = 0;
 
   switch(initial_state) {
-    case VALUE_TYPE_LIST:
+    case BACON_TYPE_LIST:
       parser->yyu = &parser->value_list_yyu;
       break;
-    case VALUE_TYPE_SET:
+    case BACON_TYPE_SET:
       parser->yyu = &parser->value_set_yyu;
       break;
     default:
@@ -130,42 +159,96 @@ int value_parser_parse(
   }
 
   r = yyu_parse(parser->yyu, text, len, fname, 0, 0, 0);
-
-  // ownership transfer
   if(root) {
-    *root = parser->root;
+    *root = parser->value;
   }
-
   return r;
 }
 
-int API value_parser_parse_partial(
-    value_parser * restrict parser
+int bacon_parser_parse_partial(
+    bacon_parser * restrict parser
   , char * const restrict text
   , size_t len
   , const char * restrict fname
   , yyu_location * init_loc
   , yyu_location * used_loc
-  , value_type initial_state
-  , value ** restrict root
+  , bacon_type initial_state
+  , bacon_value ** restrict root
 )
 {
   int r;
 
-  parser->root = 0;
+  parser->value = 0;
 
   if(initial_state == 0)
     parser->yyu = &parser->value_yyu;
-  else if(initial_state == VALUE_TYPE_LIST)
+  else if(initial_state == BACON_TYPE_LIST)
     parser->yyu = &parser->value_list_yyu;
-  else if(initial_state == VALUE_TYPE_SET)
+  else if(initial_state == BACON_TYPE_SET)
     parser->yyu = &parser->value_set_yyu;
 
   r = yyu_parse(parser->yyu, text, len, fname, YYU_PARTIAL | YYU_INPLACE, init_loc, used_loc);
-
-  // ownership transfer
-  if(root)
-    *root = parser->root;
+  if(root) {
+    *root = parser->value;
+  }
 
   return r;
+}
+
+int bacon_parser_expr_parse(
+    bacon_parser * restrict parser
+  , char * const restrict text
+  , size_t len
+  , const char * restrict fname
+  , bacon_expr ** restrict expr
+)
+{
+  int r;
+
+  parser->expr = 0;
+  parser->yyu = &parser->expr_yyu;
+
+  r = yyu_parse(parser->yyu, text, len, fname, 0, 0, 0);
+  if(expr) {
+    *expr = parser->expr;
+  }
+  return r;
+}
+
+int bacon_parser_expr_parse_partial(
+    bacon_parser * restrict parser
+  , char * const restrict text
+  , size_t len
+  , const char * restrict fname
+  , yyu_location * init_loc
+  , yyu_location * used_loc
+  , bacon_expr ** restrict expr
+)
+{
+  int r;
+
+  parser->expr = 0;
+  parser->yyu = &parser->expr_yyu;
+
+  r = yyu_parse(parser->yyu, text, len, fname, YYU_PARTIAL | YYU_INPLACE, init_loc, used_loc);
+  if(expr) {
+    *expr = parser->expr;
+  }
+
+  return r;
+}
+
+void bacon_parser_value_free(bacon_parser * const restrict parser, struct bacon_value * restrict v)
+{
+  bacon_value_free(parser, v);
+}
+
+void bacon_parser_expr_free(bacon_parser * const restrict parser, struct bacon_expr * restrict e)
+{
+  bacon_expr_free(parser, e);
+}
+
+void bacon_parser_location_free(bacon_parser * const restrict parser, struct bacon_location * restrict loc)
+{
+  bacon_location_free(parser, loc);
 }

@@ -1,127 +1,165 @@
 /* SPDX-License-Identifier: GPL-3.0 */
 /* Copyright (c) 2012-2023 Todd Freed <todd.freed@gmail.com> */
 
+#include <string.h>
+
 #include "valyria/pstring.h"
-#include "valyria/list.h"
-#include "valyria/set.h"
+#include "valyria/hashtable.h"
 
 #include "value.h"
 #include "clone.h"
-#include "store.internal.h"
-#include "parser.internal.h"
+#include "glue.h"
+#include "set.h"
 
 //
 // static
 //
 
-static void clone_set(value_parser * restrict parser, value ** restrict dst, const value * src)
+static bacon_value *clone_set(bacon_parser * restrict parser, const bacon_value * src)
 {
-  int x;
-  value * v;
-  value * c;
+  bacon_value * v;
+  bacon_value * c;
+  bacon_value *dst;
 
-  store_set(parser, dst);
+  dst = bacon_set_alloc(parser);
 
-  for(x = 0; x < src->els->table_size; x++)
-  {
-    if(!((v = set_table_get(src->els, x))))
-      continue;
-
-    value_clone(parser, &c, v);
-    set_put((*dst)->els, c, 0);
+  rbtree_foreach(&src->set, v, rbn) {
+    bacon_clone(parser, &c, v);
+    rbtree_put(&dst->set, &c->rbn, bacon_set_rbn_cmp);
   }
+
+  return dst;
 }
 
-static void clone_list(value_parser * restrict parser, value ** restrict dst, const value * src)
+static bacon_value *clone_list(bacon_parser * restrict parser, const bacon_value * src)
 {
-  int x;
-  value * c;
+  bacon_value *dst;
+  bacon_value *v;
+  bacon_value *c;
 
-  store_list(parser, dst);
+  dst = bacon_list_alloc(parser);
 
-  for(x = 0; x < src->items->size; x++)
-  {
-    value_clone(parser, &c, list_get(src->items, x));
-    list_push((*dst)->items, c, 0);
+  llist_foreach(&src->list, v, lln) {
+    bacon_clone(parser, &c, v);
+    llist_push(&dst->list, &c->lln);
   }
+
+  return dst;
 }
 
-static void clone_mapping(value_parser * restrict parser, value ** restrict dst, const value * src)
+static bacon_value *clone_mapping(bacon_parser * restrict parser, const bacon_value * src)
 {
-  value * c;
+  bacon_value *dst;
+  bacon_value * c;
 
-  store_mapping(parser, dst);
+  dst = bacon_mapping_alloc(parser);
 
-  value_clone(parser, &c, src->key);
-  (*dst)->key = c;
+  bacon_clone(parser, &c, src->key);
+  dst->key = c;
 
-  value_clone(parser, &c, src->val);
-  (*dst)->val = c;
+  bacon_clone(parser, &c, src->val);
+  dst->val = c;
+
+  return dst;
 }
 
-static void clone_string(value_parser * restrict parser, value ** restrict dst, const value * src)
+static bacon_value *clone_string(bacon_parser * restrict parser, const bacon_value * src)
 {
-  store_string(parser, dst);
-  pscats((*dst)->s, src->s->s);
+  bacon_value *dst;
+
+  dst = bacon_string_alloc(parser);
+  pscatw(&dst->s, &dst->len, &dst->sa, src->s, src->len);
+
+  return dst;
 }
 
-static void clone_float(value_parser * restrict parser, value ** restrict dst, const value * src)
+static bacon_value *clone_float(bacon_parser * restrict parser, const bacon_value * src)
 {
-  store_float(parser, dst);
-  (*dst)->f = src->f;
+  bacon_value *dst;
+
+  dst = bacon_float_alloc(parser);
+  dst->f = src->f;
+
+  return dst;
 }
 
-static void clone_bool(value_parser * restrict parser, value ** restrict dst, const value * src)
+static bacon_value *clone_bool(bacon_parser * restrict parser, const bacon_value * src)
 {
-  store_boolean(parser, dst);
-  (*dst)->b = src->b;
+  bacon_value *dst;
+
+  dst = bacon_boolean_alloc(parser);
+  dst->b = src->b;
+
+  return dst;
 }
 
-static void clone_posint(value_parser * restrict parser, value ** restrict dst, const value * src)
+static bacon_value *clone_integer(bacon_parser * restrict parser, const bacon_value * src)
 {
-  store_posint(parser, dst);
-  (*dst)->u = src->u;
+  bacon_value *dst;
+
+  dst = bacon_integer_alloc(parser);
+  dst->i = src->i;
+
+  return dst;
 }
 
-static void clone_negint(value_parser * restrict parser, value ** restrict dst, const value * src)
+static bacon_value *clone_variable(bacon_parser * restrict parser, const bacon_value * src)
 {
-  store_negint(parser, dst);
-  (*dst)->i = src->i;
-}
+  bacon_value *dst;
 
-static void clone_variable(value_parser * restrict parser, value ** restrict dst, const value * src)
-{
-  store_variable(parser, dst);
-  (*dst)->v = src->v;
+  dst = bacon_variable_alloc(parser);
+  pscatw(&dst->s, &dst->len, &dst->sa, src->s, src->len);
+
+  return dst;
 }
 
 //
 // api
 //
 
-void API value_clone(
-    value_parser * const restrict parser
-  , value ** restrict dst
-  , const value * restrict src
+bacon_value *bacon_clone(
+    bacon_parser * restrict parser
+  , bacon_value ** restrict dst
+  , const bacon_value * restrict src
 )
 {
-  if(src->type == VALUE_TYPE_SET)
-    clone_set(parser, dst, src);
-  else if(src->type == VALUE_TYPE_LIST)
-    clone_list(parser, dst, src);
-  else if(src->type == VALUE_TYPE_MAPPING)
-    clone_mapping(parser, dst, src);
+  bacon_value *v = 0;
 
-  else if(src->type == VALUE_TYPE_STRING)
-    clone_string(parser, dst, src);
-  else if(src->type == VALUE_TYPE_FLOAT)
-    clone_float(parser, dst, src);
-  else if(src->type == VALUE_TYPE_BOOLEAN)
-    clone_bool(parser, dst, src);
-  else if(src->type == VALUE_TYPE_POSINT)
-    clone_posint(parser, dst, src);
-  else if(src->type == VALUE_TYPE_NEGINT)
-    clone_negint(parser, dst, src);
-  else if(src->type == VALUE_TYPE_VARIABLE)
-    clone_variable(parser, dst, src);
+  switch(src->type)
+  {
+    case BACON_TYPE_SET:
+      v = clone_set(parser, src);
+      break;
+    case BACON_TYPE_LIST:
+      v = clone_list(parser, src);
+      break;
+    case BACON_TYPE_MAPPING:
+      v = clone_mapping(parser, src);
+      break;
+    case BACON_TYPE_STRING:
+      v = clone_string(parser, src);
+      break;
+    case BACON_TYPE_FLOAT:
+      v = clone_float(parser, src);
+      break;
+    case BACON_TYPE_BOOLEAN:
+      v = clone_bool(parser, src);
+      break;
+    case BACON_TYPE_INTEGER:
+      v = clone_integer(parser, src);
+      break;
+    case BACON_TYPE_VARIABLE:
+      v = clone_variable(parser, src);
+      break;
+    default:
+      RTA;
+  }
+
+  v->hash = src->hash;
+
+  if(dst) {
+    *dst = v;
+  }
+
+  return v;
 }

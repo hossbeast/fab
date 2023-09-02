@@ -3,23 +3,19 @@
 
 #include <string.h>
 
-#include "bacon.h"
+#include "value.h"
 #include "bacon/assert.h"
 #include "bacon/load.h"
 #include "xunit.h"
 #include "xunit/assert.h"
 #include "narrator.h"
 #include "narrator/growing.h"
-#include "valyria/list.h"
 #include "valyria/pstring.h"
-#include "valyria/set.h"
 
-#include "store.internal.h"
-#include "merge.internal.h"
-#include "make.internal.h"
-#include "parser.internal.h"
-#include "writer.internal.h"
-#include "say.internal.h"
+#include "glue.h"
+#include "merge.h"
+#include "make.h"
+#include "writer.h"
 
 typedef struct merge_test {
   XUNITTEST;
@@ -39,54 +35,67 @@ static void test_merge_cleanup(xunit_unit * unit)
   bacon_unload();
 }
 
+#include "common/attrs.h"
+
+static void show(rbnode *rbn, int lvl);
+static __attribute__((unused)) void show(rbnode *rbn, int lvl)
+{
+  bacon_value *v;
+
+  if(rbn == &rbleaf) {
+    return;
+  }
+
+  v = containerof(rbn, typeof(*v), rbn);
+  printf("%*s", lvl * 2, "");
+  printf("type : %12s hash : %08x %p ", attrs32_name_byvalue(&value_type_attrs, v->type), v->hash, v);
+  bacon_value_say_flat(v, g_narrator_stdout);
+  printf("\n");
+  show(rbn->left, lvl + 1);
+  show(rbn->right, lvl + 1);
+}
+
 static void test_merge_entry(xunit_test * _test)
 {
   merge_test * test = containerof(_test, merge_test, xu);
 
-  value_parser * parser = 0;
-  value * src = 0;
-  value * dst = 0;
+  bacon_parser parser;
+  bacon_value * src = 0;
+  bacon_value * dst = 0;
   narrator_growing * N0 = 0;
+  bacon_value * expected;
+  int r;
 
   narrator_growing_create(&N0);
 
-  value_parser_create(&parser);
+  bacon_parser_init(&parser);
+
+  // setup
+  if((r = bacon_parser_parse(&parser, MMS(test->exp), 0, 0, &expected))) {
+    dprintf(2, "%.*s\n", (int)parser.yyu->error_len, parser.yyu->error_str);
+  }
 
   // parse
-  value_parser_parse(parser, MMS(test->src), 0, 0, &src);
+  if((r = bacon_parser_parse(&parser, MMS(test->src), 0, 0, &src))) {
+    dprintf(2, "%.*s\n", (int)parser.yyu->error_len, parser.yyu->error_str);
+  }
 
   if(test->dst) {
-    value_parser_parse(parser, MMS(test->dst), 0, 0, &dst);
-  }
-
-  // merge
-  value_merge(parser, &dst, src, 0);
-
-  if(test->exp)
-  {
-    value_say(dst, &N0->base);
-
-    char norm[512];
-    int y = 0;
-    int x;
-    for (x = 0; x < N0->l; x++)
-    {
-      char c = N0->s[x];
-      if (c == '\n') { c = ' '; }
-      if (c == ' ')
-      {
-        if (y && norm[y - 1] == ' ') { continue; }
-      }
-
-      norm[y++] = c;
+    if((r = bacon_parser_parse(&parser, MMS(test->dst), 0, 0, &dst))) {
+      dprintf(2, "%.*s\n", (int)parser.yyu->error_len, parser.yyu->error_str);
     }
-    norm[y] = 0;
-
-    const char *actual = norm;
-    assert_eq_s(test->exp, actual);
   }
 
-  value_parser_xfree(parser);
+  // act
+  bacon_merge(&parser, &dst, src);
+
+  // assert
+  assert_eq_value(expected, dst);
+
+  bacon_value_free(&parser, src);
+  bacon_value_free(&parser, dst);
+  bacon_value_free(&parser, expected);
+  bacon_parser_destroy(&parser);
   narrator_growing_free(N0);
 }
 
@@ -123,9 +132,14 @@ static xunit_unit xunit = {
         , exp : "{ true : false 1 : 2 }"
       }}
     , (merge_test[]){{
-          dst : "{ }"
-        , src : "{ 1 : 2 }"
-        , exp : "{ 1 : 2 }"
+          dst : "{ 1 }"
+        , src : "{ 1 }"
+        , exp : "{ 1 }"
+      }}
+    , (merge_test[]){{
+          dst : "{ 42 true false }"
+        , src : "{ 42 true false }"
+        , exp : "{ 42 true false }"
       }}
     , (merge_test[]){{
           dst : "{ true : false }"
@@ -155,36 +169,24 @@ static xunit_unit xunit = {
         , exp : "x : [ 1 ]"
       }}
     , (merge_test[]){{
+          dst : "{ 1 }"
+        , src : "[ 1 ]"
+        , exp : "{ 1 }"
+      }}
+    , (merge_test[]){{
           dst : "[ 1 ]"
         , src : "{ 1 }"
         , exp : "[ 1 1 ]"
       }}
-
-    /* attrs */
     , (merge_test[]){{
           dst : "x : [ 1 ]"
         , src : "x : [ ]"
         , exp : "x : [ 1 ]"
       }}
     , (merge_test[]){{
-          dst : "x : [ 1 ]"
-        , src : "x = [ ]"
-        , exp : "x : [ ]"
-      }}
-    , (merge_test[]){{
           dst : "x : [ ]"
         , src : "x : [ 1 ]"
         , exp : "x : [ 1 ]"
-      }}
-    , (merge_test[]){{
-          dst : "x : [ ]"
-        , src : "x = [ 1 ]"
-        , exp : "x : [ 1 ]"
-      }}
-    , (merge_test[]){{
-          dst : "foo : { bar : { baz : 10 } }"
-        , src : "foo : { bar = { true : true } }"
-        , exp : "foo : { bar : { true : true } }"
       }}
 
     /* scalar/aggregate promotions */
@@ -209,24 +211,19 @@ static xunit_unit xunit = {
         , exp : "foo : [ A B ]"
       }}
 
-    /* error cases - differently typed aggregates */
+    /* differently typed aggregates are combined */
     , (merge_test[]){{
           dst : "foo : { bar : { baz : 10 } }"
         , src : "foo : { bar : [ 10 ] }"
         , exp : "foo : { bar : { baz : 10 10 } }"
       }}
-    , (merge_test[]){{
-          dst : "foo : { bar : { baz : 10 } }"
-        , src : "foo : { bar = [ 10 ] }"
-        , exp : "foo : { bar : [ 10 ] }"
-      }}
-    , (merge_test[]){{
-          dst : "foo : { bar : { baz : 10 } }"
-        , src : "foo : { bar = [ 10 ] }"
-        , exp : "foo : { bar : [ 10 ] }"
-      }}
 
     /* list vivification */
+    , (merge_test[]){{
+          dst : "1"
+        , src : "1"
+        , exp : "[ 1 1 ]"
+      }}
     , (merge_test[]){{
           dst : "B"
         , src : "A"

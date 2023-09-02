@@ -12,6 +12,7 @@ import fab/include
 import libcommon
 
 import lib{xlinux,narrator,valyria,yyutil,xunit}
+import asan
 
 # variants for the module
 variant {debug,devel,final,trace}
@@ -22,6 +23,8 @@ rule **~test/*.?.o -> libbacon.$?.a
 # default build targets
 rule libbacon.?.a -> //module/targets
 
+rule //tests/* -> //module/targets
+
 # library dependencies
 rule //module/imports/*~libxunit/lib*.?.a -> //module/libdeps.$? # libbacon.$?.a
 rule //module/libdeps.? -> libbacon.$?.a
@@ -30,7 +33,8 @@ rule //module/libdeps.? -> libbacon.$?.a
 variant devel : [
   rule **/test/test_*.?.xunit <- libbacon.$?.a
   rule **/test/test_*.?.xunit <- //module/libdeps.$?
+  rule **/test/test_*.?.xunit <- //module/imports/asan/asan.$?.o
 
-  rule tests.xunit <- libbacon.?.a
-  rule tests.xunit <- //module/libdeps.?
+#  rule tests.xunit <- libbacon.?.a
+#  rule tests.xunit <- //module/libdeps.?
 ]

@@ -1,0 +1,43 @@
+/* SPDX-License-Identifier: GPL-3.0 */
+/* Copyright (c) 2012-2023 Todd Freed <todd.freed@gmail.com> */
+
+#pragma once
+
+#include <inttypes.h>
+
+#include "bacon/writer.h"
+
+void bacon_builder_pop_set(bacon_writer ** restrict writerp);
+void bacon_builder_pop_mapping(bacon_writer ** restrict writerp);
+void bacon_builder_pop_list(bacon_writer ** restrict writerp);
+
+#define _CONCAT(x, y) __CONCAT(x, y)
+#define __CONCAT(x, y) x ## y
+
+#define SET \
+  __attribute__((cleanup(bacon_builder_pop_set))) bacon_writer *_CONCAT(__builder_set_, __LINE__) = builder_writer; \
+  bacon_writer_push_set(builder_writer);
+
+#define MAPPING \
+  __attribute__((cleanup(bacon_builder_pop_mapping))) bacon_writer *_CONCAT(__builder_mapping_, __LINE__) = builder_writer; \
+  bacon_writer_push_mapping(builder_writer);
+
+#define LIST \
+  __attribute__((cleanup(bacon_builder_pop_list))) bacon_writer *_CONCAT(__builder_list_, __LINE__) = builder_writer; \
+  bacon_writer_push_list(builder_writer);
+
+#define BYTES(x, y) bacon_writer_bytes(builder_writer, x, y);
+#define STRING(x) bacon_writer_string(builder_writer, x);
+#define LOADF(fmt, ...) bacon_writef(builder_writer, fmt, ##__VA_ARGS__);
+#define INT(x) bacon_writer_int(builder_writer, x);
+#define UINT(x) bacon_writer_uint(builder_writer, x);
+#define HEX32(x) bacon_writef(builder_writer, "%08"PRIx32, x);
+#define HEX64(x) bacon_writef(builder_writer, "%016"PRIx64, x);
+#define HEX256(x) bacon_writef(builder_writer, "%016"PRIx64"%016"PRIx64"%016"PRIx64"%016"PRIx64, x[0], x[1], x[2], x[3]);
+#define BOOL(x) bacon_writer_bool(builder_writer, x);
+#define HEX512(x) bacon_writef(builder_writer                                                           \
+  , "%016"PRIx64"%016"PRIx64"%016"PRIx64"%016"PRIx64"%016"PRIx64"%016"PRIx64"%016"PRIx64"%016"PRIx64    \
+  , x[0], x[1], x[2], x[3], x[4], x[5], x[6], x[7]                                                      \
+);
+#define FLOAT(x) LOADF("%.6lf", x);
+#define VARIABLEW(s, l) bacon_writer_variable(builder_writer, s, l);

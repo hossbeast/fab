@@ -4,91 +4,62 @@
 #pragma once
 
 #include "types.h"
+#include "expr.h"
 
-struct value;
-struct value_parser;
+struct bacon_value;
+struct bacon_parser;
 struct yyu_location;
+struct bacon_expr;
 
-/// value_posint_mk
-//
-// SUMMARY
-//  create a VALUE_TYPE_FLOAT value
-//
-// PARAMETERS
-//  parser - parser
-//  [loc] - location for the value
-//  rv    - (returns) value containing the float
-//  i     - posint value
-//
-void value_posint_mk(
-    struct value_parser * const restrict parser
+/* create a BACON_TYPE_INTEGER value
+ *
+ * parser - parser
+ * [loc]  - location for the value
+ * [rv]   - (returns) the value
+ * i      - integer
+ */
+struct bacon_value *bacon_integer_mk(
+    struct bacon_parser * const restrict parser
   , const struct yyu_location * const restrict loc
-  , struct value ** rv
-  , uint64_t u
+  , struct bacon_value ** rv
+  , int128_t i
 )
-  __attribute__((nonnull(1, 3)));
+  __attribute__((nonnull(1)));
 
-/// value_negint_mk
-//
-// SUMMARY
-//  create a VALUE_TYPE_FLOAT value
-//
-// PARAMETERS
-//  parser - parser
-//  [loc] - location for the value
-//  rv    - (returns) value containing the float
-//  i     - negint value
-//
-void value_negint_mk(
-    struct value_parser * const restrict parser
+/* create a BACON_TYPE_FLOAT value
+ *
+ * parser - parser
+ * [loc]  - location for the value
+ * [rv]   - (returns) value containing the float
+ * fp     - float value
+ */
+struct bacon_value * bacon_float_mk(
+    struct bacon_parser * const restrict parser
   , const struct yyu_location * const restrict loc
-  , struct value ** rv
-  , int64_t i
+  , struct bacon_value ** rv
+  , double fp
 )
-  __attribute__((nonnull(1, 3)));
+  __attribute__((nonnull(1)));
 
-/// value_float_mk
-//
-// SUMMARY
-//  create a VALUE_TYPE_FLOAT value
-//
-// PARAMETERS
-//  parser - parser
-//  [loc] - location for the value
-//  rv    - (returns) value containing the float
-//  fp    - float value
-//
-void value_float_mk(
-    struct value_parser * const restrict parser
+/* create a BACON_TYPE_BOOLEAN value
+ *
+ * parser - parser
+ * [loc] - location for the value
+ * rv    - (returns) value containing the boolean
+ * b     - boolean value
+ */
+struct bacon_value *bacon_boolean_mk(
+    struct bacon_parser * const restrict parser
   , const struct yyu_location * const restrict loc
-  , struct value ** rv
-  , const float fp
+  , struct bacon_value ** rv
+  , int b
 )
-  __attribute__((nonnull(1, 3)));
-
-/// value_boolean_mk
-//
-// SUMMARY
-//  create a VALUE_TYPE_BOOLEAN value
-//
-// PARAMETERS
-//  parser - parser
-//  [loc] - location for the value
-//  rv    - (returns) value containing the boolean
-//  b     - boolean value
-//
-void value_boolean_mk(
-    struct value_parser * const restrict parser
-  , const struct yyu_location * const restrict loc
-  , struct value ** rv
-  , const int b
-)
-  __attribute__((nonnull(1, 3)));
+  __attribute__((nonnull(1)));
 
 /// value_string_mk
 //
 // SUMMARY
-//  create or update a VALUE_TYPE_STRING value
+//  create or update a BACON_TYPE_STRING value
 //
 // PARAMETERS
 //  stor   - value storage
@@ -102,60 +73,79 @@ void value_boolean_mk(
 //  v - value
 //  c - character
 //
-void value_string_mks(
-    struct value_parser * const restrict parser
+struct bacon_value * bacon_string_mk(
+    struct bacon_parser * const restrict parser
   , const struct yyu_location * const restrict loc
-  , struct value * e
-  , struct value ** rv
+  , struct bacon_value * e
+  , struct bacon_value ** rv
+)
+  __attribute__((nonnull(1)));
+
+struct bacon_value * bacon_string_mks(
+    struct bacon_parser * const restrict parser
+  , const struct yyu_location * const restrict loc
+  , struct bacon_value * e
+  , struct bacon_value ** rv
   , const char * const restrict s
 )
-  __attribute__((nonnull(1, 4, 5)));
+  __attribute__((nonnull(1, 5)));
 
-void value_string_mkw(
-    struct value_parser * const restrict parser
+struct bacon_value * bacon_string_mkw(
+    struct bacon_parser * const restrict parser
   , const struct yyu_location * const restrict loc
-  , struct value * e
-  , struct value ** rv
+  , struct bacon_value * e
+  , struct bacon_value ** rv
   , const char * const restrict b
   , size_t l
 )
-  __attribute__((nonnull(1, 4, 5)));
+  __attribute__((nonnull(1, 5)));
 
-void value_string_mkc(
-    struct value_parser * const restrict parser
+struct bacon_value * bacon_string_mkc(
+    struct bacon_parser * const restrict parser
   , const struct yyu_location * const restrict loc
-  , struct value * e
-  , struct value ** rv
-  , const uint8_t c
+  , struct bacon_value * e
+  , struct bacon_value ** rv
+  , uint8_t c
 )
-  __attribute__((nonnull(1, 4)));
+  __attribute__((nonnull(1)));
 
-void value_string_mkv(
-    struct value_parser * const restrict parser
+struct bacon_value * bacon_string_mkv(
+    struct bacon_parser * const restrict parser
   , const struct yyu_location * const restrict loc
-  , struct value * e
-  , struct value ** rv
-  , struct value * v
+  , struct bacon_value * e
+  , struct bacon_value ** rv
+  , struct bacon_value * v      // freed by this function
 )
-  __attribute__((nonnull(1, 4, 5)));
+  __attribute__((nonnull(1, 5)));
+
+struct bacon_value * bacon_string_mkf(
+    struct bacon_parser * const restrict parser
+  , const struct yyu_location * const restrict loc
+  , struct bacon_value * e
+  , struct bacon_value ** rv
+  , const char * restrict fmt
+  , ...
+)
+  __attribute__((nonnull(1, 5)))
+  __attribute__((format(printf, 5, 6)));
 
 /// value_variable_mkw
 //
 //
 //
-void value_variable_mkw(
-    struct value_parser * const restrict parser
+struct bacon_value * bacon_variable_mkw(
+    struct bacon_parser * const restrict parser
   , const struct yyu_location * const restrict loc
-  , struct value ** rv
+  , struct bacon_value ** rv
   , const char * const restrict name
   , uint16_t len
 )
-  __attribute__((nonnull(1, 3, 4)));
+  __attribute__((nonnull(1, 4)));
 
 /// value_mapping_mk
 //
 // SUMMARY
-//  create or update a VALUE_TYPE_MAPPING value
+//  create or update a BACON_TYPE_MAPPING value
 //
 // PARAMETERS
 //  stor    - value storage
@@ -163,22 +153,17 @@ void value_variable_mkw(
 //  rv      - (returns) value containing the mapping
 //  key     - key
 //  val     - value
-//  [attr]  - attributes to apply to the mapping
 //
-void value_mapping_mk(
-    struct value_parser * const restrict parser
+struct bacon_value * bacon_mapping_mk(
+    struct bacon_parser * const restrict parser
   , const struct yyu_location * const restrict loc
-  , struct value ** rv
-  , struct value * k
-  , struct value * v
-  , uint16_t attr
+  , struct bacon_value ** rv
+  , struct bacon_value * k
+  , struct bacon_value * v
 )
-  __attribute__((nonnull(1, 3, 4, 5)));
+  __attribute__((nonnull(1, 4, 5)));
 
-/// value_list_mk
-//
-// SUMMARY
-//  create or update a VALUE_TYPE_LIST value
+//  create or update a BACON_TYPE_LIST value
 //
 // PARAMETERS
 //  parser - parser
@@ -190,19 +175,19 @@ void value_mapping_mk(
 // REMARKS
 //  list size is unchanged if el is null
 //
-void value_list_mkv(
-    struct value_parser * const restrict parser
+struct bacon_value * bacon_list_mkv(
+    struct bacon_parser * const restrict parser
   , const struct yyu_location * const restrict loc
-  , struct value * e
-  , struct value ** rv
-  , struct value * el
+  , struct bacon_value * e
+  , struct bacon_value ** rv
+  , struct bacon_value * el
 )
-  __attribute__((nonnull(1, 4)));
+  __attribute__((nonnull(1)));
 
 /// value_set_mk
 //
 // SUMMARY
-//  create or update a VALUE_TYPE_SET value
+//  create or update a BACON_TYPE_SET value
 //
 // PARAMETERS
 //  parser - parser
@@ -214,11 +199,28 @@ void value_list_mkv(
 // REMARKS
 //  set size is unchanged if el is null
 //
-void value_set_mkv(
-    struct value_parser * const restrict parser
+struct bacon_value * bacon_set_mkv(
+    struct bacon_parser * const restrict parser
   , const struct yyu_location * const restrict loc
-  , struct value * e
-  , struct value ** rv
-  , struct value * el
+  , struct bacon_value * e
+  , struct bacon_value ** rv
+  , struct bacon_value * el
 )
-  __attribute__((nonnull(1, 4)));
+  __attribute__((nonnull(1)));
+
+struct bacon_expr *bacon_expr_mk(
+    struct bacon_parser * const restrict parser
+  , const struct yyu_location * const restrict loc
+  , struct bacon_expr **rv
+  , bacon_operation op
+  , struct bacon_expr *lop
+  , struct bacon_expr *rop
+)
+  __attribute__((nonnull(1)));
+
+struct bacon_expr *bacon_expr_wrap(
+    struct bacon_parser * const restrict parser
+  , struct bacon_value *v
+  , struct bacon_expr **rv
+)
+  __attribute__((nonnull(1)));

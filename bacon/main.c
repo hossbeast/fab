@@ -4,12 +4,17 @@
 #include <string.h>
 #include <sys/syscall.h>
 #include <unistd.h>
+#include <errno.h>
+#include <sys/stat.h>
 
+#include "valyria/pstring.h"
 #include "common/snarf.h"
 #include "narrator.h"
 #include "bacon/load.h"
 #include "bacon/merge.h"
 #include "bacon/parser.h"
+#include "bacon/eval.h"
+#include "bacon/expr.h"
 #include "xlinux/xstdlib.h"
 
 #include "args.h"
@@ -18,14 +23,18 @@ __thread int32_t tid;
 
 int main(int argc, char ** argv, char ** envp)
 {
-  value_parser * parser = 0;
+  bacon_parser * parser = 0;
   char * text = 0;
-  size_t text_len;
-  value * result = 0;
+  size_t text_len = 0;
+  size_t text_alloc = 0;
   const char * fname;
   char * s;
   size_t sl;
   int x;
+  bacon_value * vars = 0;
+  bacon_value * val = 0;
+  bacon_expr * expr = 0;
+  struct stat stb;
 
   tid = syscall(SYS_gettid);
 
@@ -38,11 +47,32 @@ int main(int argc, char ** argv, char ** envp)
   // parse cmdline arguments
   args_parse(argc, argv);
 
-  value_parser_create(&parser);
+  bacon_parser_alloc(&parser);
+
+  /* consume stdin if pipe */
+  if(fstat(0, &stb) != 0) {
+    dprintf(2, "%s\n", strerror(errno));
+    exit(1);
+  }
+  switch(stb.st_mode & S_IFMT) {
+    case S_IFIFO:
+    case S_IFREG:
+    case S_IFSOCK:
+      fsnarf(&text, &text_len, 0);
+      if(bacon_parser_parse(parser, text, text_len, "-stdin-", BACON_TYPE_SET, &vars) != 0) {
+        dprintf(2, "b : %.*s\n", parser->yyu->error_len, parser->yyu->error_str);
+        exit(1);
+      }
+
+      bacon_value_say(vars, g_narrator_stdout);
+      narrator_says(g_narrator_stdout, "\n");
+  }
+  free(text);
+  text = 0;
 
   for(x = 0; x < g_args.inputsl; x++)
   {
-    if(g_args.inputs[x].type == INPUT_FILE)
+    if(g_args.inputs[x].input == IN_FILE)
     {
       snarfs(&text, &text_len, g_args.inputs[x].s);
       s = text;
@@ -51,29 +81,52 @@ int main(int argc, char ** argv, char ** envp)
     }
     else
     {
-      s = g_args.inputs[x].s;
-      sl = strlen(s);
+      sl = strlen(g_args.inputs[x].s);
+      psinitx(&text, &text_len, &text_alloc, sl + 1);
+      psloads(&text, &text_len, &text_alloc, g_args.inputs[x].s);
+      pscatc(&text, &text_len, &text_alloc, 0);
+      s = text;
       fname = "-argv-";
     }
 
-    value * val;
-    value_parser_parse(parser, s, sl, fname, g_args.inputs[x].container, &val);
+    if(g_args.inputs[x].oper == OP_MERGE)
+    {
+      if(bacon_parser_parse(parser, s, sl, fname, g_args.inputs[x].container, &val) != 0) {
+        dprintf(2, "bacon parse error : %.*s\n", parser->yyu->error_len, parser->yyu->error_str);
+        exit(1);
+      }
+      if(vars == 0) {
+        vars = val;
+      } else {
 
-    if(x == 0)
-    {
-      result = val;
+        bacon_merge(parser, &vars, val);
+        bacon_parser_value_free(parser, val);
+      }
+      val = 0;
+    } else if(g_args.inputs[x].oper == OP_EVAL) {
+      if(bacon_parser_expr_parse(parser, s, sl + 2, fname, &expr) != 0) {
+        dprintf(2, "expr parse error : %.*s\n", parser->yyu->error_len, parser->yyu->error_str);
+        exit(1);
+      }
+
+      bacon_eval(parser, expr, vars, &val);
+      bacon_parser_value_free(parser, vars);
+      vars = val;
+      val = 0;
     }
-    else
-    {
-      value_merge(parser, &result, val, 0);
-    }
+    free(text);
+    text = 0;
   }
 
-  value_say(result, g_narrator_stdout);
-  narrator_says(g_narrator_stdout, "\n");
+  if(vars) {
+    bacon_value_say(vars, g_narrator_stdout);
+    narrator_says(g_narrator_stdout, "\n");
+  }
 
-  free(text);
-  value_parser_xfree(parser);
+  bacon_parser_value_free(parser, val);
+  bacon_parser_value_free(parser, vars);
+  bacon_parser_expr_free(parser, expr);
+  bacon_parser_free(parser);
 
   args_teardown();
   bacon_unload();

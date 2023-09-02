@@ -5,17 +5,20 @@
 
 #include "types.h"
 
-enum value_type;
+enum bacon_type;
 
-typedef enum {
-  INPUT_FILE = 1,
-  INPUT_TEXT
-} input_type;
+enum {
+  IN_FILE = 1,
+  IN_TEXT = 2,
+  OP_MERGE = 4,
+  OP_EVAL = 8,
+};
 
 extern struct g_args_t {
   struct {
-    input_type type;
-    enum value_type container;
+    int input;
+    int oper;
+    enum bacon_type container;
     char * s;
   } * inputs;
   uint16_t inputsl;
