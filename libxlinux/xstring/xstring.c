@@ -6,7 +6,7 @@
 #include <stdarg.h>
 #include <string.h>
 
-#include "xstring/xstring.h"
+#include "xstring.h"
 #include "xstdlib.h"
 
 void API ixstrncat(char ** s1, const char * s2, int s2len)

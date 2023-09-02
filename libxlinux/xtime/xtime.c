@@ -6,7 +6,7 @@
 #include "types.h"
 #include "macros.h"
 
-#include "xtime/xtime.h"
+#include "xtime.h"
 
 void API xlocaltime_r(const time_t * timep, struct tm * result)
 {
@@ -32,4 +32,22 @@ int API uxclock_nanosleep(clockid_t clock_id, int flags, const struct timespec *
   RUNTIME_ASSERT(r == 0 || r == EINTR);
 
   return r;
+}
+
+void xtimer_create(clockid_t clockid, struct sigevent * restrict evp, timer_t * restrict timerid)
+{
+  int ret;
+
+  ret = timer_create(clockid, evp, timerid);
+
+  RUNTIME_ASSERT(ret == 0);
+}
+
+void xtimer_settime(timer_t timerid, int flags, const struct itimerspec * restrict value, struct itimerspec * restrict ovalue)
+{
+  int ret;
+
+  ret = timer_settime(timerid, flags, value, ovalue);
+
+  RUNTIME_ASSERT(ret == 0);
 }

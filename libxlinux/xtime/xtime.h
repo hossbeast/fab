@@ -26,3 +26,9 @@ void xclock_nanosleep(clockid_t clock_id, int flags, const struct timespec * res
 
 int uxclock_nanosleep(clockid_t clock_id, int flags, const struct timespec * restrict request, struct timespec * restrict remain)
   __attribute__((nonnull(3)));
+
+void xtimer_create(clockid_t clockid, struct sigevent * restrict evp, timer_t * restrict timerid)
+  __attribute__((nonnull));
+
+void xtimer_settime(timer_t timerid, int flags, const struct itimerspec * restrict value, struct itimerspec * restrict ovalue)
+  __attribute__((nonnull));

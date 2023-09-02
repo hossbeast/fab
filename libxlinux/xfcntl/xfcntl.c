@@ -6,8 +6,8 @@
 #include "types.h"
 #include "macros.h"
 
-#include "xfcntl/xfcntl.h"
-#include "common/fmt.h"
+#include "xfcntl.h"
+#include "fmt.h"
 
 int API xopens(int flags, const char * path)
 {

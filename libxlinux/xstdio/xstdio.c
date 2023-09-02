@@ -7,13 +7,18 @@
 
 #include "types.h"
 
-#include "xstdio/xstdio.h"
+#include "xstdio.h"
 
-#include "common/fmt.h"
+#include "fmt.h"
 
-void API xvdprintf(int fd, const char * const restrict fmt, va_list va)
+int API xvdprintf(int fd, const char * const restrict fmt, va_list va)
 {
-  RUNTIME_ASSERT(vdprintf(fd, fmt, va) >= 0);
+  int r;
+
+  r = vdprintf(fd, fmt, va);
+  RUNTIME_ASSERT(r != -1);
+
+  return r;
 }
 
 void API xrenames(const char * const restrict old, const char * const restrict new)

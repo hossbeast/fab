@@ -9,7 +9,6 @@
 #include "xlinux/xstring.h"
 #include "xlinux/xfcntl.h"
 #include "xlinux/xunistd.h"
-#include "xlinux/xpwd.h"
 
 #include "params.h"
 

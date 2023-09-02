@@ -7,7 +7,7 @@
 #include "types.h"
 #include "macros.h"
 
-#include "xfile/xfile.h"
+#include "xfile.h"
 
 void API xflock(int fd, int operation)
 {

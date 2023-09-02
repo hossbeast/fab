@@ -5,7 +5,9 @@
 
 #include "types.h"
 
-#include "xmman/xmman.h"
+#include "xmman.h"
+
+#include <string.h>
 
 void * API xmmap(void * addr, size_t length, int prot, int flags, int fd, off_t offset)
 {

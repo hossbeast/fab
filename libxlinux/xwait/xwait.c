@@ -7,7 +7,7 @@
 #include "types.h"
 #include "macros.h"
 
-#include "xwait/xwait.h"
+#include "xwait.h"
 
 void API xwait(int * restrict status)
 {

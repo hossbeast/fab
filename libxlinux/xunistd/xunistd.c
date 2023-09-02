@@ -8,8 +8,8 @@
 #include "types.h"
 #include "macros.h"
 
-#include "xunistd/xunistd.h"
-#include "common/fmt.h"
+#include "xunistd.h"
+#include "fmt.h"
 
 //
 // api
@@ -42,7 +42,7 @@ ssize_t API uxread(int fd, void * buf, size_t count)
 void API axread(int fd, void * restrict buf, size_t count)
 {
   size_t actual;
-  size_t cur;
+  ssize_t cur;
 
   actual = 0;
   while(count - actual)
@@ -56,13 +56,15 @@ void API axread(int fd, void * restrict buf, size_t count)
 void API axwrite(int fd, const void * buf, size_t count)
 {
   size_t actual;
-  size_t cur;
+  ssize_t cur;
 
   actual = 0;
   while(count - actual)
   {
     cur = write(fd, ((char*)buf) + actual, count - actual);
-    RUNTIME_ASSERT(cur > 0);
+    if(cur <= 0) {
+      break;
+    }
     actual += cur;
   }
 }
@@ -274,7 +276,9 @@ void API xtruncate(const char * path, off_t length)
 
 void API xftruncate(int fd, off_t length)
 {
-  RUNTIME_ASSERT(ftruncate(fd, length));
+  int r;
+  r = ftruncate(fd, length);
+  RUNTIME_ASSERT(r == 0);
 }
 
 void API xrmdir(const char * pathname)
@@ -296,23 +300,28 @@ void API xexecv(const char * path, char * const argv[])
 {
   execv(path, argv);
   RUNTIME_ABORT();
+  exit(1);
 }
 
 void API xexecve(const char * path, char * const argv[], char * const envp[])
 {
   execve(path, argv, envp);
   RUNTIME_ABORT();
+  exit(1);
 }
 
 void API xexecvp(const char * file, char * const argv[])
 {
   execvp(file, argv);
   RUNTIME_ABORT();
+  exit(1);
 }
 
 void API xfexecve(int fd, char * const argv[], char * const envp[])
 {
   fexecve(fd, argv, envp);
+  RUNTIME_ABORT();
+  exit(1);
 }
 
 void API xchdirs(const char * const restrict path)

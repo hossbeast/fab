@@ -22,3 +22,5 @@ int xinotify_init(int flags)
 //
 int xinotify_add_watch(int id, const char *path, uint32_t mask)
   __attribute__((nonnull));
+
+void xinotify_rm_watch(int id, int wd);

@@ -1,1 +1,0 @@
-../xresource/xresource.h

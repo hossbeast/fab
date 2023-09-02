@@ -3,8 +3,9 @@
 
 #pragma once
 
-#include <stdlib.h>
 #include <sys/types.h>
+#include <stdint.h>
+#include <stdlib.h>
 #include <stdarg.h>
 
 /// xmalloc
@@ -49,10 +50,13 @@ void ifree(void* target)
 //  proxy for readlink
 //
 // VARIANTS
-//  s/f/vf - different ways of providing pathname
+//  s/w/f/vf - different ways of providing pathname
 //
 ssize_t xreadlinks(const char * pathname, char * buf, size_t bufsiz)
   __attribute__((nonnull(1, 2)));
+
+ssize_t xreadlinkw(const char * pathname, uint16_t pathname_len, char * buf, size_t bufsiz)
+  __attribute__((nonnull(1, 3)));
 
 ssize_t xreadlinkf(const char * pathname_fmt, char * buf, size_t bufsiz, ...)
   __attribute__((nonnull(1, 2)));

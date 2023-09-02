@@ -6,10 +6,9 @@ use library/static  # this module builds a shared library
 
 # make common objects available for #inclusion and linking by files in this module
 import fab/include
-import libcommon
 
 # variants for the module
-variant pic.{debug,devel,final,trace}
+variant {debug,devel,final,trace,arm-linux-gnueabihf}
 
 # pull in object files in the module, except those under integ
 rule **~integ/*.?.o -> libxlinux.$?.a

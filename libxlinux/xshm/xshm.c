@@ -3,7 +3,7 @@
 
 #include <errno.h>
 
-#include "xshm/xshm.h"
+#include "xshm.h"
 
 int API uxshmget(key_t key, size_t size, int shmflg)
 {

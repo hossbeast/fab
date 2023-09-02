@@ -7,7 +7,7 @@
 
 #include "types.h"
 
-#include "xdlfcn/xdlfcn.h"
+#include "xdlfcn.h"
 
 void * API xdlopen(const char * restrict filename, int flag)
 {

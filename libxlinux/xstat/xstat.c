@@ -7,8 +7,8 @@
 #include "types.h"
 #include "macros.h"
 
-#include "xstat/xstat.h"
-#include "common/fmt.h"
+#include "xstat.h"
+#include "fmt.h"
 
 void API xfstatats(int dirfd, int flags, struct stat * restrict buf, const char * restrict path)
 {

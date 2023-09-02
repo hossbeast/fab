@@ -32,3 +32,12 @@ int API xinotify_add_watch(int id, const char *path, uint32_t mask)
 
   return r;
 }
+
+void xinotify_rm_watch(int id, int wd)
+{
+  int r;
+
+  r = inotify_rm_watch(id, wd);
+
+  RUNTIME_ASSERT(r == 0);
+}

@@ -15,7 +15,7 @@
 // PARAMETERS
 //  as for vdprintf
 //
-void xvdprintf(int fd, const char * const restrict fmt, va_list va)
+int xvdprintf(int fd, const char * const restrict fmt, va_list va)
   __attribute__((nonnull(2)));
 
 /// xrename

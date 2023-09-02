@@ -4,13 +4,15 @@
 #include <unistd.h>
 #include <errno.h>
 #include <string.h>
+#include <sys/syscall.h>
 
 #include "types.h"
 #include "macros.h"
 
-#include "xstdlib/xstdlib.h"
+#include "xstdlib.h"
 
-#include "common/fmt.h"
+#include "fmt.h"
+#include "zbuffer.h"
 
 //
 // api
@@ -18,7 +20,11 @@
 
 void API xmalloc(void* target, size_t size)
 {
-  RUNTIME_ASSERT(posix_memalign(target, sizeof(void*) * 2, size) == 0);
+  int r;
+
+  r = posix_memalign(target, sizeof(void*) * 2, size);
+  RUNTIME_ASSERT(r == 0);
+
   memset(*(void**)target, 0, size);
 }
 
@@ -34,7 +40,9 @@ void API xrealloc(void* target, size_t es, size_t ec, size_t oec)
   }
   else
   {
-    RUNTIME_ASSERT((mem = realloc(*t, es * ec)) != 0);
+    mem = realloc(*t, es * ec);
+
+    RUNTIME_ASSERT(mem != 0);
     *t = mem;
 
     if(((ssize_t)ec - (ssize_t)oec) > 0)
@@ -60,6 +68,17 @@ ssize_t API xreadlinks(const char * pathname, char * buf, size_t bufsiz)
   RUNTIME_ASSERT(r != -1);
 
   return r;
+}
+
+ssize_t xreadlinkw(const char * pathname, uint16_t pathname_len, char * buf, size_t bufsiz)
+{
+  char pathbuf[512];
+  int len;
+
+  len = znloadw(pathbuf, sizeof(pathbuf), pathname, pathname_len);
+  pathbuf[len] = 0;
+
+  return xreadlinks(pathbuf, buf, bufsiz);
 }
 
 ssize_t API xreadlinkf(const char * pathname_fmt, char * buf, size_t bufsiz, ...)

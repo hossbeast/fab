@@ -9,7 +9,7 @@
 
 #include "types.h"
 
-#include "xsignal/xsignal.h"
+#include "xsignal.h"
 #include "sigtable.h"
 
 void API xkill(pid_t pid, int sig)
