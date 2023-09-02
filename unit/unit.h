@@ -34,7 +34,7 @@ void ufails_info(const char * restrict value, const char * restrict exp, const c
 #define ufail()           \
   do {                    \
     assertions_failed++;  \
-    RUNTIME_ABORT();      \
+    RTA;      \
   } while(0)
 
 #define ufailf(value, expfmt, actfmt, ...)                \

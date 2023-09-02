@@ -298,7 +298,7 @@ void exec_builder_add(exec_builder * restrict builder, const exec_builder_args *
   }
   else
   {
-    RUNTIME_ABORT();
+    RTA;
   }
 }
 

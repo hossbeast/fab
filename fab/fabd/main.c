@@ -130,7 +130,7 @@ int main(int argc, char ** argv)
   }
   if(pid && pid != getpid()) {
     fprintf(stderr, "daemon still running pid %ld", (long)pid);
-    RUNTIME_ABORT();
+    RTA;
   }
 
   /* this normally happens in libfab/client right after fork */

@@ -455,7 +455,7 @@ void handler_process_command(handler_context * restrict ctx, command * restrict 
   }
   else
   {
-    RUNTIME_ABORT();
+    RTA;
   }
 }
 

@@ -141,5 +141,5 @@ void API xunit_assertion_evaluate(const xunit_type * const restrict type, uint8_
   }
 
   infos_trace();
-  RUNTIME_ABORT();
+  RTA;
 }

@@ -90,7 +90,7 @@ static void collate_global(void *dst, size_t sz, fab_global_stats *stats, bool r
     } else if(field->size == 1) {
       z += marshal_u16(dst + z, sz - z, stats->u8[field->offset / 1]);
     } else {
-      RUNTIME_ABORT();
+      RTA;
     }
   }
 
@@ -147,7 +147,7 @@ static size_t collate_node(void *dst, size_t sz, fsent * restrict n, bool reset)
     } else if(field->size == 1) {
       z += marshal_u8(dst + z, sz - z, stats->u8[field->offset / 1]);
     } else {
-      RUNTIME_ABORT();
+      RTA;
     }
   }
 

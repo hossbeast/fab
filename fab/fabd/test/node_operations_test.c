@@ -57,7 +57,7 @@ static void node_operations_connect(
   }
   else
   {
-    RUNTIME_ABORT();
+    RTA;
   }
 }
 
@@ -122,7 +122,7 @@ static void create_vertex(
     else
     {
       /* no such node at the top of the shadow hierarchy */
-      RUNTIME_ABORT();
+      RTA;
     }
 
     return;

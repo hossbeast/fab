@@ -3,16 +3,19 @@
 
 #pragma once
 
-static inline void hexdump(const char *s, uint16_t len)
+#include "types.h"
+
+static inline void hexdump(const void *p, uint16_t len)
 {
   int x;
   int y;
   int i;
+  const char *s = p;
 
   printf("0x%08x bytes (%u)", len, len);
   x = 0;
   y = 0;
-  while(1) // for(x = 0; x < len; x++)
+  while(1)
   {
     if((x == len) || (x && (x % 16) == 0)) {
       for(i = x - y; i < 16; i++) {

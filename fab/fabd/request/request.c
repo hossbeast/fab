@@ -143,7 +143,7 @@ static void request_writer_write(request * const restrict req, value_writer * co
         value_writer_string(writer, "reconcile");
         break;
       default:
-        RUNTIME_ABORT();
+        RTA;
     }
   }
 }

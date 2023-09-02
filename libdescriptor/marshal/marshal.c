@@ -72,6 +72,6 @@ size_t API descriptor_field_marshal(void *restrict dst, size_t sz, descriptor_fi
     return descriptor_marshal_list(dst, sz, field, object);
   }
 
-  RUNTIME_ABORT();
+  RTA;
   return 0;
 }

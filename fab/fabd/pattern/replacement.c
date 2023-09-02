@@ -122,7 +122,7 @@ static void generate(const pattern_segment * restrict seg, pattern_generate_cont
   else if(n->replacement_type == PATTERN_REPLACEMENT_TYPE_NAME)
   {
     /* not implemented */
-    RUNTIME_ABORT();
+    RTA;
   }
   else if(n->replacement_type == PATTERN_REPLACEMENT_TYPE_NUM)
   {
@@ -136,7 +136,7 @@ static void generate(const pattern_segment * restrict seg, pattern_generate_cont
   }
   else
   {
-    RUNTIME_ABORT();
+    RTA;
   }
 
   pattern_segment_generate(ctx);
@@ -196,7 +196,7 @@ void pattern_replacement_mk(
   }
   else
   {
-    RUNTIME_ABORT();
+    RTA;
   }
 
   chain_init(n, chn);

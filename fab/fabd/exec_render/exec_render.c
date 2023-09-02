@@ -330,6 +330,6 @@ void exec_render_formula_value(exec_render_context * restrict ctx, const formula
   }
   else
   {
-    RUNTIME_ABORT();
+    RTA;
   }
 }

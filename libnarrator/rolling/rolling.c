@@ -166,11 +166,11 @@ void API narrator_rolling_create(narrator_rolling ** const restrict n, const cha
 
   // no slash
   if(e == path_base)
-    RUNTIME_ABORT();
+    RTA;
 
   // trailing slash
   if((e - path_base) == path_base_len)
-    RUNTIME_ABORT();
+    RTA;
 
   ixstrndup(&rolling->directory, path_base, e - path_base);
   ixstrdup(&rolling->name_base, e + 1);

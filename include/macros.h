@@ -94,6 +94,9 @@ static inline int memncmp(const void * a, size_t alen, const void * b, size_t bl
   return 0;
 }
 
+#define memcmp_region(a, b, first, last)  \
+  memcmp(&(a)->first, &(b)->first, offsetofend(typeof(*(a)), last) - offsetof(typeof(*(a)), first))
+
 static inline size_t memncpy(void *dst, size_t dst_sz, const void *src, size_t n)
 {
   if(dst_sz < n) {
@@ -131,12 +134,6 @@ static inline size_t roundup2(size_t x)
 
 #define sizeof_member(s, m) sizeof(((s*)((void*)0))->m)
 
-#define fieldof(type, member)         \
-  typeof(((type*)0)->member) member;  \
-
-#define ALIGNEDOF(A, B, member)  \
-  STATIC_ASSERT(offsetof(A, member) == offsetof(B, member))
-
 #define die_expr(expr) \
   char (*__kaboom)[expr] = 1
 
@@ -146,14 +143,6 @@ static inline size_t roundup2(size_t x)
     ptr = &expr->as;          \
   }                           \
   ptr;                        \
-})
-
-#define refas2(expr, section, as) ({   \
-  typeof(expr->section->as) * ptr = 0; \
-  if(expr && expr->section) {          \
-    ptr = &expr->section->as;          \
-  }                                    \
-  ptr;                                 \
 })
 
 #define ffsll(x)   __builtin_ffsll(x)
@@ -173,8 +162,9 @@ static inline uint32_t alignp(const void *x, uint32_t pow2)
   uintptr_t xp = (uintptr_t)x;
   uintptr_t r = xp & (pow2 - 1);
 
-  if(!r)
+  if(!r) {
     return 0;
+  }
 
   return pow2 - r;
 }

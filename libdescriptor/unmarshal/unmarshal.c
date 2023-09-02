@@ -114,7 +114,7 @@ size_t API descriptor_type_unmarshal(void *restrict object, descriptor_type *res
     }
     else
     {
-      RUNTIME_ABORT();
+      RTA;
     }
   }
 

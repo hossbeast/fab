@@ -224,7 +224,7 @@ void formula_collate_stats(void *dst, size_t sz, formula *fml, bool reset, size_
     } else if(field->size == 1) {
       z += marshal_u16(dst + z, sz - z, stats->u8[field->offset / 1]);
     } else {
-      RUNTIME_ABORT();
+      RTA;
     }
   }
 

@@ -299,28 +299,28 @@ void API xsetsid()
 void API xexecv(const char * path, char * const argv[])
 {
   execv(path, argv);
-  RUNTIME_ABORT();
+  RTA;
   exit(1);
 }
 
 void API xexecve(const char * path, char * const argv[], char * const envp[])
 {
   execve(path, argv, envp);
-  RUNTIME_ABORT();
+  RTA;
   exit(1);
 }
 
 void API xexecvp(const char * file, char * const argv[])
 {
   execvp(file, argv);
-  RUNTIME_ABORT();
+  RTA;
   exit(1);
 }
 
 void API xfexecve(int fd, char * const argv[], char * const envp[])
 {
   fexecve(fd, argv, envp);
-  RUNTIME_ABORT();
+  RTA;
   exit(1);
 }
 

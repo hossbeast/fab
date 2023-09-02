@@ -25,7 +25,7 @@ DIR * API uxopendir(const char * name)
 
   if((dd = opendir(name)) == 0 && errno != ENOENT)
   {
-    RUNTIME_ABORT();
+    RTA;
   }
 
   return dd;
@@ -37,7 +37,7 @@ DIR * API xfdopendir(int fd)
 
   if((dd = fdopendir(fd)) == 0)
   {
-    RUNTIME_ABORT();
+    RTA;
   }
 
   return dd;
@@ -61,7 +61,7 @@ struct dirent * API xreaddir(DIR * dd)
   errno = 0;
   if((result = readdir(dd)) == 0 && errno != 0)
   {
-    RUNTIME_ABORT();
+    RTA;
   }
 
   return result;

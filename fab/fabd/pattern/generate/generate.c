@@ -33,7 +33,7 @@ static void pattern_section_generate(pattern_generate_context * restrict ctx)
   {
     if(ctx->node && (fsent_kind_get(ctx->node) == VERTEX_SHADOW_MODULE || fsent_kind_get(ctx->node) == VERTEX_SHADOW_MODULES))
     {
-      RUNTIME_ABORT();
+      RTA;
     }
 
     // apply the variant from the match, if it was used in the generate pattern

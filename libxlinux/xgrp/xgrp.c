@@ -20,7 +20,7 @@ void API uxgetgrgid_r(gid_t gid, struct group * grp, char * buf, size_t buflen, 
   }
   else
   {
-    RUNTIME_ABORT();
+    RTA;
   }
 }
 

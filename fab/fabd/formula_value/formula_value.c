@@ -181,7 +181,7 @@ static void writer_write(const formula_value * restrict val, value_writer * cons
   }
   else
   {
-    RUNTIME_ABORT();
+    RTA;
   }
 }
 

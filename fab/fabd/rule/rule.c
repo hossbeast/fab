@@ -1061,7 +1061,7 @@ void rule_run(rule * restrict rule, rule_run_context * restrict ctx)
       generate_many_to_many(rule, fml_node, ctx);
       break;
     default:
-      RUNTIME_ABORT();
+      RTA;
   }
 }
 

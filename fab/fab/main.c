@@ -164,7 +164,7 @@ static void xmain()
   if(g_args.no_launch && client->fabd_pid == 0)
   {
     fprintf(stderr, "fabd not running\n");
-    RUNTIME_ABORT();
+    RTA;
   }
 #endif
 
@@ -190,7 +190,7 @@ static void xmain()
       continue;
     }
 
-    RUNTIME_ABORT();
+    RTA;
   }
 
   channel_shmid = info.si_value.sival_int;

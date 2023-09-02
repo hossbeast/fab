@@ -25,7 +25,7 @@ static int reduce(yyu_parser * parser, uint16_t attrs)
     if(r == 2)
     {
       // memory exhaustion error from the parser
-      RUNTIME_ABORT();
+      RTA;
     }
   }
   else
@@ -199,13 +199,13 @@ int API yyu_parse(
   if(attrs & YYU_INPLACE)
   {
     if((state = parser->vtable->yy_scan_buffer(text, text_len, parser->scanner)) == 0) {
-      RUNTIME_ABORT();
+      RTA;
     }
   }
   else
   {
     if((state = parser->vtable->yy_scan_bytes(text, text_len, parser->scanner)) == 0) {
-      RUNTIME_ABORT();
+      RTA;
     }
   }
 

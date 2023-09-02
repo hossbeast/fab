@@ -233,7 +233,7 @@ int formula_parser_parse(
 
   if(r == 0 && !shebang && !fml->file)
   {
-    RUNTIME_ABORT();
+    RTA;
   }
 
   return r;

@@ -31,7 +31,7 @@ static void fn(int method, ftwinfo * restrict info, void *arg, int * stop)
         xrmdir(info->path);
       }
       break;
-    RUNTIME_ABORT();
+    RTA;
   }
 }
 

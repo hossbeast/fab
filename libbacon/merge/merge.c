@@ -165,6 +165,6 @@ void API value_merge(value_parser * restrict parser, value ** restrict dstp, con
   }
   else
   {
-    RUNTIME_ABORT();
+    RTA;
   }
 }

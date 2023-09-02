@@ -42,26 +42,18 @@ static inline size_t roundup(size_t x, size_t y)
 
 #define STATIC_ASSERT(x) _Static_assert(x, #x)
 
-#define RUNTIME_ASSERT(x) do {                          \
-  if (!(x)) {                                           \
-    fprintf(stderr, "ASSERT %s:%d - %s\n", __FILE__, __LINE__, #x);  \
-    RUNTIME_ABORT();                                    \
-  }                                                     \
-} while(0)
-
 #if CONFIG_DEBUG || CONFIG_DEVEL || XUNIT
 /* this will cause asan to print a backtrace */
-#define RUNTIME_ABORT() do {           \
+#define RTA do {           \
   *((volatile char*)0x42) = 0x42;      \
 } while(0)
 #else
-#define RUNTIME_ABORT() do { abort(); } while(0)
+#define RTA do { abort(); } while(0)
 #endif
 
-#if CONFIG_DEVEL
-#include <stdio.h>
-#include <unistd.h>
-#define tracef(fmt, ...) do { printf("[%5d/%-5d]%50s:%-5d "fmt"\n", getpid(), gettid(), __FUNCTION__, __LINE__, ##__VA_ARGS__); } while(0)
-#else
-#define tracef(fmt, ...)
-#endif
+#define RUNTIME_ASSERT(x) do {                          \
+  if (!(x)) {                                           \
+    fprintf(stderr, "ASSERT %s:%d - %s\n", __FILE__, __LINE__, #x);  \
+    RTA;                                    \
+  }                                                     \
+} while(0)

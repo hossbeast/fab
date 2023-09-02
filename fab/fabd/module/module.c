@@ -343,7 +343,7 @@ static void module_bootstrap_visitor(moria_vertex * mod_dir_v, void * ctx, moria
   if((mod_file_v = moria_vertex_downw(mod_dir_v, MMS(fsent_name_module))) == 0) {
     if(distance == 0) {
       fprintf(stderr, "no module?\n");
-      RUNTIME_ABORT();
+      RTA;
     }
     return;
   }
@@ -752,7 +752,7 @@ void module_initialize(fsent * restrict mod_dir_n, fsent * restrict mod_file_n, 
   }
   else
   {
-    RUNTIME_ABORT();
+    RTA;
   }
 
   /* connect the module vertex and the module directory fsent */
@@ -1196,7 +1196,7 @@ void module_collate_stats(void *dst, size_t sz, module *mod, bool reset, size_t 
     } else if(field->size == 1) {
       z += marshal_u16(dst + z, sz - z, stats->u8[field->offset / 1]);
     } else {
-      RUNTIME_ABORT();
+      RTA;
     }
   }
 
@@ -1236,7 +1236,7 @@ void module_file_collate_stats(void *dst, size_t sz, fsent *mod_file, bool reset
     } else if(field->size == 1) {
       z += marshal_u16(dst + z, sz - z, stats->u8[field->offset / 1]);
     } else {
-      RUNTIME_ABORT();
+      RTA;
     }
   }
 

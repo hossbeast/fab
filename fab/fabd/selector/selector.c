@@ -425,7 +425,7 @@ static void writer_write(selector * const restrict sel, value_writer * const res
   }
   else
   {
-    RUNTIME_ABORT();
+    RTA;
   }
 }
 
@@ -582,7 +582,7 @@ static int selector_cmp(selector * A, selector * B)
   }
   else
   {
-    RUNTIME_ABORT();
+    RTA;
   }
 
   return 0;

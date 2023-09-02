@@ -16,6 +16,6 @@ void API fmt_apply(char * const restrict dst, size_t dst_size, const char * cons
   rv = vsnprintf(dst, dst_size, fmt, va);
   if(rv < 0 || rv >= dst_size)
   {
-    RUNTIME_ABORT();
+    RTA;
   }
 }

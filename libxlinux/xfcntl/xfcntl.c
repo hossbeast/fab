@@ -37,7 +37,7 @@ int API xopenats(int flags, int dirfd, const char * path)
 
   if((fd = openat(dirfd, path, flags)) == -1)
   {
-    RUNTIME_ABORT();
+    RTA;
   }
 
   return fd;
@@ -92,7 +92,7 @@ int API uxopenats(int flags, int dirfd, const char * path)
   {
     if(errno != ENOENT && errno != EEXIST && errno != ENOTDIR)
     {
-      RUNTIME_ABORT();
+      RTA;
     }
   }
 
@@ -209,7 +209,7 @@ int API uxopenat_modes(int flags, mode_t mode, int dirfd, const char * path)
   {
     if(errno != ENOENT && errno != EEXIST)
     {
-      RUNTIME_ABORT();
+      RTA;
     }
   }
 

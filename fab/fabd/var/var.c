@@ -284,7 +284,7 @@ void var_collate_stats(void *dst, size_t sz, var *vp, bool reset, size_t *zp)
     } else if(field->size == 1) {
       z += marshal_u16(dst + z, sz - z, stats->u8[field->offset / 1]);
     } else {
-      RUNTIME_ABORT();
+      RTA;
     }
   }
 

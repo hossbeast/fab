@@ -248,7 +248,7 @@ void API fab_client_solicit(fab_client * restrict client)
   value.sival_ptr = (void*)(intptr_t)tid;
   r = sigutil_uxrt_sigqueueinfo(client->fabd_pid, SIGRTMIN, value);
   if(r) {
-    RUNTIME_ABORT(); // no such process
+    RTA; // no such process
   }
 }
 

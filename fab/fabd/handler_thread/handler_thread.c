@@ -79,7 +79,7 @@ static void handler_thread(handler_context * restrict ctx)
 
   if(chan->ipc.client_pid == 0) {
     dprintf(2, "channel not initialized\n");
-    RUNTIME_ABORT();
+    RTA;
   }
 
   iter = 0;
