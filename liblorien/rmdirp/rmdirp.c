@@ -2,7 +2,6 @@
 /* Copyright (c) 2012-2023 Todd Freed <todd.freed@gmail.com> */
 
 #include <fcntl.h>
-#include <ftw.h>
 
 #include "xlinux/xunistd.h"
 
@@ -31,7 +30,8 @@ static void fn(int method, ftwinfo * restrict info, void *arg, int * stop)
         xrmdir(info->path);
       }
       break;
-    RTA;
+    default:
+      RTA;
   }
 }
 

@@ -10,24 +10,28 @@
 #include "path_normalize.h"
 #include "macros.h"
 
-#define istrlen(a) a ? strlen(a) : 0
-
 typedef struct path_test {
   XUNITTEST;
 
-  char * input;
-  char * output;
+  char *input;
+  uint16_t input_len;
+  char *output;
 } path_test;
 
 static void path_test_entry(xunit_test * _test)
 {
-  path_test * test = containerof(_test, path_test, xu);
-
   char space[512];
+  path_test *test;
+  size_t len;
+  uint16_t input_len;
 
-  size_t len = path_normalize(space, sizeof(space), test->input);
+  test = containerof(_test, path_test, xu);
+  if((input_len = test->input_len) == 0) {
+    input_len = strlen(test->input);
+  }
+  len = path_normalize(space, sizeof(space), test->input, input_len);
 
-  assert_eq_w(test->output, istrlen(test->output), space, len);
+  assert_eq_w(test->output, strlen(test->output), space, len);
 }
 
 //
@@ -123,6 +127,13 @@ static xunit_unit xunit = {
       , (path_test[]){{
             input : "//"
           , output : "/"
+        }}
+
+      /* input not null-terminated */
+      , (path_test[]){{
+            input : "abcd"
+          , input_len : 3
+          , output : "./abc"
         }}
       , 0
     }

@@ -16,6 +16,9 @@ variant {debug,devel,final,trace}
 # build the library by default
 rule liblorien.?.a -> //module/targets
 
+# run the tests by default
+rule //xunit -> //module/targets
+
 # pull in object files in the module except those in test/
 rule **~test/*.?.o -> liblorien.$?.a
 

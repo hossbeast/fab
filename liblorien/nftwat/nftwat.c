@@ -10,7 +10,7 @@
 
 #include "nftwat.h"
 
-#include "zbuffer.h"
+#include "zcat.h"
 
 static void __attribute__((nonnull(1, 4, 6, 8, 10))) walk(
     void (*fn)(int method, ftwinfo * info, void * arg, int * stop)
@@ -65,9 +65,9 @@ static void __attribute__((nonnull(1, 4, 6, 8, 10))) walk(
   {
     if(strcmp(entp->d_name, ".") && strcmp(entp->d_name, ".."))
     {
-      *pathl += znloads(path + *pathl, pathz - *pathl, "/");
+      *pathl += zcats(path + *pathl, pathz - *pathl, "/");
       child.name_off = *pathl;
-      *pathl += znloads(path + *pathl, pathz - *pathl, entp->d_name);
+      *pathl += zcats(path + *pathl, pathz - *pathl, entp->d_name);
       path[*pathl] = 0;
       child.pathl = *pathl;
       child.udata = 0;
@@ -79,10 +79,12 @@ static void __attribute__((nonnull(1, 4, 6, 8, 10))) walk(
         if((flags & FTWAT_FOLLOW) != 0)
         {
           /* follow non-dangling symlinks */
-          r = uxfstatats(dirfd, 0, &stb, path);
-          if(r == 0)
-          {
+          //r = uxfstatats(dirfd, 0, &stb, path);
+          r = fstatat(dirfd, path, &stb, 0);
+          if(r == 0) {
             type = (stb.st_mode & S_IFMT) >> 12;
+          } else {
+            memset(&stb, 0, sizeof(stb));
           }
         }
       }
