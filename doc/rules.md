@@ -5,15 +5,12 @@ Rules create dependencies in the graph, and assign formulas to nodes.
 Rules are written in one of the following forms,
 
  match-pattern <-> generate-pattern
- match-pattern <-> generate-pattern : formula
- generate-pattern : formula
-
-Each rule is associated with one or more variants in the module. Rules declared at file-scope are
-associated with all variants in the module.
+ match-pattern <-> generate-pattern : reference-pattern
+ generate-pattern : reference-pattern
 
 ## Patterns
 
-There are two types of patterns,
+There are several types of patterns,
 
 1. Match-patterns
 
@@ -23,6 +20,7 @@ Match patterns support the following constructs
  **          - matches the current directory and its subdirectories recursively, within in the module
  ()          - parenthesized groups
  (?<name>)   - parenthesized named groups
+ $name       - variable reference
  +           - conjunction which matches if both the left and right sides match
  ~           - conjunction which matches if the left side matches and right side does not match
 
@@ -33,7 +31,7 @@ Generate patterns support the following constructs
  $n           - expands to a parenthesized group referenced by number
  $name        - expands to a parenthesized group referenced by name
  $^D          - expands to the filesystem directory of the node, if any
- $?           - expands to the variant
+ $name        - expands to the value assigned to a variable
  $X:(s/a/b/o) - regex search/replace
 
 All patterns permit the following constructs
@@ -42,7 +40,6 @@ All patterns permit the following constructs
  [ a - b ] - character class
  text      - literal text
  /         - directory separator
- ?         - variants associated with the rule
 
 (in the initial position only)
  //module:  - the module (not in the filesystem)
@@ -72,18 +69,3 @@ points upward.
 If the rule has a formula, then each evaluation of the generate pattern also yields a formula
 instance, which is to be executed (a single time) in order to update the nodes pointed to by the
 arrow.
-
-### Rules and Variants
-
-In general, a rule is evaluated only once.
-
- > the following has been superseded <
-
-In general, a rule is evaluated once for each variant it is associated with. However, the following
-caveats apply,
-
-1. If the match pattern contains the ? token, then match pattern is evaluated only once.
-2. If the match pattern does not contain the ? token, and the generate pattern does not contain the
-   $? token, the match pattern is evaluated only once.
-3. If the rule has no match pattern, and the generate pattern does not contain the $? token, the
-   generate pattern is evaluated only once.

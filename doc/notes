@@ -1,0 +1,22 @@
+Consider the following rule,
+
+ rule **/*.o -> exe
+
+If the LHS matches anything, exe is the target of some dependency and can become invalidated.
+
+But if the LHS has no matches, then no dependency exists with exe in its targets set, and hence
+exe cannot become invalidated (it is then considered a so-called primary file).
+
+There is some loss of information here.
+
+In this case, there should be a dependency hyperedge with zero incident vertices in the downward
+direction. Normally the generate-pattern is not executed at all, when the match pattern has no
+results.
+
+On the other hand, consider the following rule,
+
+ rule **/*.c -> $^D/$.o
+
+Here, if the LHS has no matches, then no dependency edges should be created.
+
+The lack of any reference to match context needs to be noticed when the generate pattern is parsed.

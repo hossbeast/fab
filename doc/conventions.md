@@ -1,4 +1,5 @@
 # project organization
+
 * the project is organized into units, one per directory
 * each unit may have its own unit tests, in the file test.c
 
@@ -20,7 +21,7 @@
 
 # data types
 
-## attr : options / modifiers / flags
+## attrs : options / modifiers / flags
 
 attributes / options
 * bit-range or variable that contains one or more option / modifiers regions
