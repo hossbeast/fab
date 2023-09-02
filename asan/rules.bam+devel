@@ -1,5 +1,6 @@
 /* SPDX-License-Identifier: GPL-3.0 */
 /* Copyright (c) 2012-2023 Todd Freed <todd.freed@gmail.com> */
 
-# statically linked object archives
-rule *.a -- : ./cc-a.bam+devel
+rule { id : abcd } **+(/) => [*] //module/include
+
+rule **/*.o -> //targets

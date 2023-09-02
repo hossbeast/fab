@@ -1,0 +1,12 @@
+/* SPDX-License-Identifier: GPL-3.0 */
+/* Copyright (c) 2012-2023 Todd Freed <todd.freed@gmail.com> */
+
+# top-level source directories only
+rule { search : anchor } .+(/) => [*] //module/include
+rule { search : anchor } *+(/) => [*] //module/include
+
+# pull in object files in the module, except those under integ/example
+rule { search : module } *~test~example/**/*.o -> libnarrator.a
+
+# default build targets
+rule { search : module } libnarrator.a -> //targets

@@ -3,4 +3,4 @@
 
 # object files from c source files
 #  each invocation yields one file from the right-hand-side
-rule **/(*).c -> $^D/$1.?.o : ./cc.bam+devel
+rule **/(*).c -> $^D/$1.o : ./cc.bam+devel

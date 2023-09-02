@@ -8,19 +8,15 @@ use strict;
 use warnings;
 $SIG{__WARN__} = sub { die @_ };
 
-use File::Basename;
-
-die "cc not found" unless $ENV{cc};
+die "CC not found" unless $ENV{CC};
 
 my @cmd = (
-    $ENV{cc}
-  , split(/ /, $ENV{cflags})
-  , "-o", $ENV{bm_target}
-  # object files in this module
-  , split(/ /, $ENV{objects})
+    $ENV{CC}
+  , split(/ /, $ENV{CFLAGS})
+  , "-o", $ENV{bm_target0}
   , '-lasan', '-lubsan', '-lbacktrace'
   , "-Wl,--start-group"
-  , split(/ /, $ENV{libraries})
+  , @ARGV
   , "-Wl,--end-group"
 );
 
@@ -31,34 +27,22 @@ exec { $cmd[0] } @cmd
 __DATA__
 
 envs : {
-  cc : {
+  CC : {
     path-search : cc
   }
-
-  # object files for the library
-  objects : [
-    select : [
-      target
-      traverse : {
-        direction : down
-        graph : depends
-        max-distance : 1
-        min-distance : 1
-        extension : o
-      }
-    ]
-    property : relpath
-  ]
-
-  libraries : [
-    select : [
-      target
-      traverse : {
-        direction : down
-        graph : depends
-        extension : a
-      }
-    ]
-    property : relpath
-  ]
 }
+
+args : [
+  sequence : [
+    select : [
+      target
+      traverse : {
+        direction : down
+        graph : depends
+        max-distance : 2
+        min-distance : 1
+      }
+    ]
+    property : relpath
+  ]
+]

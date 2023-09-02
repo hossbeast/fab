@@ -1,8 +1,47 @@
 /* SPDX-License-Identifier: GPL-3.0 */
 /* Copyright (c) 2012-2023 Todd Freed <todd.freed@gmail.com> */
 
+filesystems : {
+  / : {
+    invalidate : stat
+    mkdirs : false
+    indexed : false
+  }
+
+  /home/todd/fab : {
+    invalidate : notify
+    mkdirs : false
+    indexed : true
+  }
+
+  /home/todd/fab-build : {
+    invalidate : notify
+    mkdirs : true
+    indexed : true
+  }
+}
 walker : {
+  exclude : {
+    /home/todd/fab/builtin-modules
+    /usr/share/fab/modules
+    /home/todd/fab/**/build/final
+    /home/todd/fab/**/build/devel
+    /home/todd/fab/**/build/debug
+    /home/todd/fab/**/build/trace
+  }
   include : {
     /home/todd/fab
+    /home/todd/fab-build
+  }
+  special : {
+    var.bam.final+devel
+    var.bam.debug+devel
+    var.bam.trace+devel
+    var.bam.devel+devel
+
+    rules.bam.final+devel
+    rules.bam.debug+devel
+    rules.bam.trace+devel
+    rules.bam.devel+devel
   }
 }

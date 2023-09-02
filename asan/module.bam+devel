@@ -1,16 +1,2 @@
 /* SPDX-License-Identifier: GPL-3.0 */
 /* Copyright (c) 2012-2023 Todd Freed <todd.freed@gmail.com> */
-
-use cc             # this module contains c sources
-
-import libxlinux
-import fab/include
-
-# variants for the module
-variant {debug,devel}{,.pic}
-
-rule **/*.?.o -> //module/targets
-
-var : {
-  cflags.pic : [ -fPIC ]
-}

@@ -1,0 +1,24 @@
+/* SPDX-License-Identifier: GPL-3.0 */
+/* Copyright (c) 2012-2023 Todd Freed <todd.freed@gmail.com> */
+
+use git
+bind fab-build/asan                     => //fabasan
+bind "builtin-modules+devel"/executable => //executable
+
+# includes
+rule **+(/) => [*] //module/include
+
+# invoke the compiler to build the executable
+rule { search : module } **/*.o [*] -> bacon : //executable/cc.bam+devel
+
+# default targets
+rule { search : module } bacon -> //targets
+
+# dependencies
+rule //artifacts/*/$CONFIG_VARIANT/*.a -> bacon
+
+{
+  if($CONFIG_DEVEL)
+
+  rule //fabasan/devel/asan.o -> bacon
+}

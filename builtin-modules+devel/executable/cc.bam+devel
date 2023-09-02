@@ -12,20 +12,19 @@ use File::Basename;
 use Data::Dumper;
 use POSIX;
 
-die "cc not found" unless $ENV{cc};
+die "CC not found" unless $ENV{CC};
 
 # exec into the compiler
 my @cmd = (
-    $ENV{cc}
-  , split(/ /, $ENV{cflags})
+    $ENV{CC}
+  , split(/ /, $ENV{CFLAGS})
   , (map { "-I$_" } split(/ /, $ENV{includes}))
-  , "-o", $ENV{bm_target}
-  , split(/ /, $ENV{objects})
+  , "-o", $ENV{bm_target0}
   , "-Wl,--start-group"
-  , split(/ /, $ENV{"static-libs"})
+  , @ARGV
   , "-Wl,--end-group"
-  , split(/ /, $ENV{"shared-libs"})
-  , split(/ /, $ENV{lflags} || "")
+  , split(/ /, $ENV{LFLAGS0} || "")
+  , split(/ /, $ENV{LFLAGS1} || "")
 );
 
 print(join(" ", @cmd));
@@ -35,81 +34,36 @@ exec { $cmd[0] } @cmd
 __DATA__
 
 envs : {
-  cc : {
+  CC : {
     path-search : cc
   }
 
   includes : [
     select : [
-      module
-      union : [
-        # all directories in this module
-        traverse : {
-          direction : down
-          min-distance : 0
-          graph : dirtree
-        }
-
-        # plus imported directories
-        traverse : {
-          direction : down
-          graph : imports
-        }
-      ]
-    ]
-    property : relpath
-  ]
-
-  imports : [
-    select : [
-      module
-      traverse : {
-        direction : down
-        graph : imports
+      lookup : {
+        path : //module/include
       }
-    ]
-    property : relpath
-  ]
-
-  objects : [
-    select : [
-      target
       traverse : {
         direction : down
-        graph : depends
-        max-distance : 1
         min-distance : 1
-        extension : o
-      }
-    ]
-    property : relpath
-  ]
-
-  shared-libs : [
-    select : [
-      target
-      traverse : {
-        direction : down
-        graph : depends
         max-distance : 1
-        min-distance : 1
-        extension : so
-      }
-    ]
-    property : relpath
-  ]
-
-  static-libs : [
-    select : [
-      target
-      traverse : {
-        direction : down
-        graph : depends
-        max-distance : 1
-        min-distance : 1
-        extension : a
       }
     ]
     property : relpath
   ]
 }
+
+args : [
+  sequence : [
+    select : [
+      target
+      traverse : {
+        direction : down
+        graph : depends
+        max-distance : 2
+        min-distance : 2
+      }
+    ]
+    property : relpath
+  ]
+]

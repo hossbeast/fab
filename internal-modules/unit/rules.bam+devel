@@ -1,0 +1,14 @@
+/* SPDX-License-Identifier: GPL-3.0 */
+/* Copyright (c) 2012-2023 Todd Freed <todd.freed@gmail.com> */
+
+bind fab-build/asan => [*] //artifacts
+bind fab-build/unit => [*] //artifacts
+
+bind fab/unit => [*] //module/include
+
+# single-test executables
+rule { search : module } **/test/(test_*).o -> $^D/$1.unit : ./cc-test.bam+devel
+rule { search : module } search //artifacts/*/$CONFIG_VARIANT/*.{a,o} [*] -> [*] search **/test/test_*.unit 
+
+# single-test targets
+rule { search : module } **/test/(test_*).unit -> //$1 : ./run.bam+devel

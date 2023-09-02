@@ -13,6 +13,9 @@ use Data::Dumper;
 
 die "git not found" unless $ENV{git};
 
+my $srcdir = $ARGV[0];
+die $! unless -r $srcdir;
+
 #
 # runs a git command and returns the stdout as a single scalar
 #
@@ -30,6 +33,8 @@ sub git
 
     POSIX::close($rdout);
     POSIX::dup2($wrout, 1);
+
+    POSIX::chdir($srcdir);
 
     exec { $cmd[0] } @cmd;
   }
@@ -108,3 +113,12 @@ envs : {
     path-search : git
   }
 }
+
+args : [
+  sequence : [
+    select : [
+      anchor 
+    ]
+    property : relpath
+  ]
+]

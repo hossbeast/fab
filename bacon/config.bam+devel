@@ -1,0 +1,22 @@
+/* SPDX-License-Identifier: GPL-3.0 */
+/* Copyright (c) 2012-2023 Todd Freed <todd.freed@gmail.com> */
+
+walker : {
+  include : {
+    /home/todd/fab/libxlinux
+    /home/todd/fab/libcommon
+    /home/todd/fab/libbacon
+    /home/todd/fab/libdescriptor
+    /home/todd/fab/libvalyria
+    /home/todd/fab/libnarrator
+    /home/todd/fab/liblorien
+    /home/todd/fab/libmoria
+    /home/todd/fab/libyyutil
+    /home/todd/fab/include
+
+    /home/todd/fab/bacon
+  }
+  exclude : {
+    /home/todd/fab/bacon/build
+  }
+}

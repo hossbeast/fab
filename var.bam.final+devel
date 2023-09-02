@@ -1,0 +1,12 @@
+/* SPDX-License-Identifier: GPL-3.0 */
+/* Copyright (c) 2012-2019 Todd Freed <todd.freed@gmail.com> */
+
+CFLAGS : {
+  -O3 -Wno-array-bounds # -Warray-bounds is NOT COMPATIBLE with containerof
+  -DCONFIG_FINAL
+}
+LFLAGS1 : [
+  -static
+]
+CONFIG_FINAL : true
+CONFIG_VARIANT : final

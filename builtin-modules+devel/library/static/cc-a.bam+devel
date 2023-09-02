@@ -19,12 +19,15 @@ my @cmd = (
     $ENV{ar}
   , @arflags
   , "rcs"
-  , $ENV{bm_target}
+  , $ENV{bm_target0}
   # object files in this module
   , grep { substr($_, -2) eq ".o" } split(/ /, $ENV{objects})
 );
 
-# exec into the compiler
+# no combination of arguments will cause ar to actually recreate the entire archive
+unlink($ENV{bm_target0});
+
+print(join(" ", @cmd), "\n");
 exec { $cmd[0] } @cmd
 
 __DATA__
@@ -41,25 +44,25 @@ envs : {
       traverse : {
         direction : down
         graph : depends
-        max-distance : 1
-        min-distance : 0
+        max-distance : 2
+        min-distance : 2
       }
     ]
     property : relpath
   ]
 
   includes : [
+    # include directories matched by the include rule
     select : [
-      module
-      union : [
-        # imported directories
-        traverse : {
-          direction : down
-          graph : imports
-        }
-      ]
+      lookup : {
+        path : //module/include
+      }
+      traverse : {
+        direction : down
+        min-distance : 1
+        max-distance : 1
+      }
     ]
-
     property : relpath
   ]
 }
