@@ -27,16 +27,6 @@ static int reduce(yyu_parser * parser, uint16_t attrs)
       // memory exhaustion error from the parser
       RUNTIME_ABORT();
     }
-//    else if(XAPI_UNWINDING)
-//    {
-//      // propagate fail from within a lexer or parser rule
-//      fail(0);
-//    }
-//    else if(parser->gramerr)
-//    {
-//      // failure to reduce from the parser
-//      fails(parser->error_syntax, "message", parser->error_str);
-//    }
   }
   else
   {
@@ -46,6 +36,14 @@ static int reduce(yyu_parser * parser, uint16_t attrs)
   if(parser->scanerr || parser->gramerr)
   {
     r = 1;
+
+    if(parser->error_len) {
+      parser->error_len += znloads(
+          parser->error_str + parser->error_len
+        , sizeof(parser->error_str) - parser->error_len
+        , ", "
+      );
+    }
     parser->error_len += znloadf(
         parser->error_str + parser->error_len
       , sizeof(parser->error_str) - parser->error_len
@@ -55,6 +53,14 @@ static int reduce(yyu_parser * parser, uint16_t attrs)
       , parser->error_loc.l_lin + 1
       , parser->error_loc.l_col + 1
     );
+    if(parser->fname) {
+      parser->error_len += znloadf(
+          parser->error_str + parser->error_len
+        , sizeof(parser->error_str) - parser->error_len
+        , " %s"
+        , parser->fname
+      );
+    }
 
     if(parser->gramerr)
     {
@@ -87,8 +93,12 @@ void API yyu_parser_xdestroy(yyu_parser * const parser)
 void API yyu_parser_init(yyu_parser * const restrict parser, const yyu_vtable * const restrict vtable)
 {
   parser->vtable = vtable;
+  parser->last_lval = 0;
 
   RUNTIME_ASSERT(parser->vtable->yylex_init(&parser->scanner) == 0);
+
+  // make parser available to the lexer
+  parser->vtable->yyset_extra(parser, parser->scanner);
 }
 
 void API yyu_parser_init_tokens(yyu_parser * const restrict parser, const yyu_token * restrict token_table, uint16_t token_table_size)
@@ -99,24 +109,9 @@ void API yyu_parser_init_tokens(yyu_parser * const restrict parser, const yyu_to
   parser->token_table = token_table;
   parser->token_table_size = token_table_size;
 
-#if 0
-  logf(parser->logs | L_YYUTIL | L_PARSER, "numtokens %d", parser->token_table_size);
-  for(x = 0; x < token_table_size; x++)
-  {
-    logf(parser->logs | L_YYUTIL | L_PARSER, "%3d %3d %3d %-10s %s"
-      , x
-      , parser->token_table[x].token
-      , parser->token_table[x].symbol
-      , parser->token_table[x].name
-      , parser->token_table[x].string
-    );
-  }
-#endif
-
   // set of indexes sorted by token
   xmalloc(&parser->token_table_bytoken, sizeof(*parser->token_table_bytoken) * parser->token_table_size);
-  for(x = 0; x < token_table_size; x++)
-  {
+  for(x = 0; x < token_table_size; x++) {
     parser->token_table_bytoken[x] = &parser->token_table[x];
   }
   qsort(parser->token_table_bytoken, token_table_size, sizeof(*parser->token_table_bytoken), token_table_bytoken_cmp_items);
@@ -125,13 +120,7 @@ void API yyu_parser_init_tokens(yyu_parser * const restrict parser, const yyu_to
   memset(&parser->tokens, 0xff, sizeof(parser->tokens));
   for(x = 0; x < token_table_size; x++)
   {
-    if(strcmp(parser->token_table[x].name, "YYEOF") == 0)
-      parser->tokens.YYEOF = x;
-    else if(strcmp(parser->token_table[x].name, "YYERROR") == 0)
-      parser->tokens.YYERROR = x;
-    else if(strcmp(parser->token_table[x].name, "YYUNDEF") == 0)
-      parser->tokens.YYUNDEF = x;
-    else if(strcmp(parser->token_table[x].name, "STR") == 0)
+    if(strcmp(parser->token_table[x].name, "STR") == 0)
       parser->tokens.STR = x;
     else if(strcmp(parser->token_table[x].name, "CREF") == 0)
       parser->tokens.CREF = x;
@@ -174,10 +163,6 @@ void API yyu_parser_init_tokens(yyu_parser * const restrict parser, const yyu_to
     else if(strcmp(parser->token_table[x].name, "INTMAX64") == 0)
       parser->tokens.INTMAX64 = x;
   }
-
-  RUNTIME_ASSERT(parser->tokens.YYEOF);
-  RUNTIME_ASSERT(parser->tokens.YYERROR);
-  RUNTIME_ASSERT(parser->tokens.YYUNDEF);
 }
 
 void API yyu_parser_init_states(
@@ -203,13 +188,12 @@ int API yyu_parse(
 )
 {
   void * state = 0;
-  yyu_location lfinal_loc;
   char hold_char;
   size_t plen;
   int r = 0;
 
   // reset state for this parse
-  memset(&parser->scanerr, 0, offsetof(typeof(*parser), end_of_per_parse_state));
+  memset(parser, 0, offsetof(typeof(*parser), end_of_per_parse_state));
 
   // create state specific to this parse
   if(attrs & YYU_INPLACE)
@@ -229,14 +213,15 @@ int API yyu_parse(
   parser->usrbufsize = text_len;
   parser->fname = fname;
   parser->attrs = attrs;
-  parser->final_loc = final_loc ?: &lfinal_loc;
 
   if(init_loc) {
     parser->loc = *init_loc;
   }
-
-  // make parser available to the lexer
-  parser->vtable->yyset_extra(parser, parser->scanner);
+  if(final_loc) {
+    parser->final_loc = final_loc;
+  } else {
+    parser->final_loc = 0;
+  }
 
   // invoke the appropriate parser, raise errors as needed
   r = reduce(parser, attrs);

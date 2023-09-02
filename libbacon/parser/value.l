@@ -34,17 +34,17 @@
     return yyu_lexify(parser, lval, lvalsz, lloc, text, end_line, end_col, bytes, token);
   }
 
-  #define LEXVAR()                  \
-    LEXIFY(lexify_variable          \
-      , yyextra                     \
-      , yylval                      \
-      , sizeof(yylval)              \
-      , yylloc                      \
-      , yytext                      \
-      , yyleng                      \
-      , YYUXTRA->loc.l_lin          \
-      , YYUXTRA->loc.l_col + yyleng \
-      , VARIABLE                    \
+  #define LEXVAR()                    \
+    LEXIFY(lexify_variable            \
+      , yyextra                       \
+      , yylval                        \
+      , sizeof(yylval)                \
+      , yylloc                        \
+      , yytext                        \
+      , yyleng                        \
+      , yyuparser->loc.l_lin          \
+      , yyuparser->loc.l_col + yyleng \
+      , VARIABLE                      \
     )
 %}
 
@@ -108,13 +108,13 @@ ILL   [\x00-\x08\x0B-\x1F\x7F-\xFF]
 <*>[\x00-\x1F\x7F-\xFF]                                 {
                                                           POPSTATES;
                                                           LOCWRITE;
-                                                          yyu_errorf(YYUXTRA, "invalid byte 0x%02hhx", yytext[0]);
+                                                          yyu_errorf(yyuparser, "invalid byte 0x%02hhx", yytext[0]);
                                                           return 0;
                                                         }
 <*>[\x20-\x7E]                                          {
                                                           POPSTATES;
                                                           LOCWRITE;
-                                                          yyu_errorf(YYUXTRA, "character '%1$c'(0x%1$02hhx)", yytext[0]);
+                                                          yyu_errorf(yyuparser, "character '%1$c'(0x%1$02hhx)", yytext[0]);
                                                           return 0;
                                                         }
 <<EOF>>                                                 {

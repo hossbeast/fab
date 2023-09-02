@@ -8,7 +8,9 @@
 struct yyu_location;
 struct yyu_parser;
 
-#define YYUXTRA ((yyu_parser*)yyextra)
+#ifndef yyuparser
+#define yyuparser ((yyu_parser*)yyextra)
+#endif
 
 /// yyu_locwrite
 //
@@ -17,7 +19,7 @@ struct yyu_parser;
 //
 // PARAMETERS
 //  lloc     - yylloc
-//  xtra     - yyextra
+//  parser   - yyuparser
 //  text     - yytext
 //  end_line - extent of the current token
 //  end_col  - extent of the current token
@@ -25,7 +27,7 @@ struct yyu_parser;
 //
 void yyu_locwrite(
     struct yyu_location * const restrict lloc
-  , struct yyu_parser * const restrict xtra
+  , struct yyu_parser * const restrict parser
   , char * const restrict text
   , uint16_t end_line
   , uint16_t end_col
@@ -37,16 +39,12 @@ void yyu_locwrite(
 //
 // call yyu_locwrite with default parameters from a scanner rule - for a token that doesnt span lines
 //
-#define LOCWRITE yyu_locwrite(yylloc, yyextra, yytext, YYUXTRA->loc.l_lin, YYUXTRA->loc.l_col + yyleng, yyleng)
+#define LOCWRITE yyu_locwrite(yylloc, yyuparser, yytext, yyuparser->loc.l_lin, yyuparser->loc.l_col + yyleng, yyleng)
 
 /// yyu_locreset
 //
 // SUMMARY
 //  reset the location track (i.e. exactly one newline was just parsed)
-//
-// PARAMETERS
-//  lloc - yylloc
-//  xtra - yyextra
 //
 void yyu_locreset(struct yyu_location * const restrict lloc, struct yyu_parser * const restrict xtra, char * const restrict text)
   __attribute__((nonnull));
@@ -55,12 +53,12 @@ void yyu_locreset(struct yyu_location * const restrict lloc, struct yyu_parser *
 //
 // call yyu_locreset with default parameters from a scanner rule
 //
-#define LOCRESET yyu_locreset(yylloc, yyextra, yytext)
+#define LOCRESET yyu_locreset(yylloc, yyuparser, yytext)
 
 /// yyu_nstate
 //
 // SUMMARY
-//  retrieve the nth state from the top of the yyextra-maintained state stack
+//  retrieve the nth state from the top of the yyuparser-maintained state stack
 //   0 - current state
 //   1 - next state following POP
 //
@@ -71,7 +69,7 @@ int yyu_nstate(struct yyu_parser * const restrict xtra, int n)
 //
 // call yyu_nstate with default parameters from a scanner rule
 //
-#define NSTATE(n) yyu_nstate(yyextra, n)
+#define NSTATE(n) yyu_nstate(yyuparser, n)
 
 /// TOPSTATE
 //
@@ -82,16 +80,16 @@ int yyu_nstate(struct yyu_parser * const restrict xtra, int n)
 /// yyu_pushstate
 //
 // SUMMARY
-//  push a state onto the yyextra-maintained state stack and print an info message
+//  push a state onto the yyuparser-maintained state stack and print an info message
 //
 // PARAMETERS
-//  state - state
-//  xtra  - yyextra
+//  state  - state
+//  parser - yyparser
 //
 // REMARKS
 //  typically you need to call this with PUSHSTATE in order to to also affect the scanner state stack
 //
-void yyu_pushstate(int state, struct yyu_parser * const restrict xtra)
+void yyu_pushstate(int state, struct yyu_parser * const restrict parser)
   __attribute__((nonnull));
 
 /// PUSHSTATE
@@ -100,22 +98,22 @@ void yyu_pushstate(int state, struct yyu_parser * const restrict xtra)
 //
 #define PUSHSTATE(state)                       \
   do {                                         \
-    yyu_pushstate(state, yyextra);             \
-    yy_push_state(state, YYUXTRA->scanner);    \
+    yyu_pushstate(state, yyuparser);           \
+    yy_push_state(state, yyuparser->scanner);  \
   } while(0)
 
 /// yyu_popstate
 //
 // SUMMARY
-//  pop a state from the yyextra-maintained state stack and print an info message
+//  pop a state from the yyuparser-maintained state stack and print an info message
 //
 // PARAMETERS
-//  xtra - yyextra
+//  parser - yyuparser
 //
 // REMARKS
 //  typically you need to call this with POPSTATE in order to to also affect the scanner state stack
 //
-void yyu_popstate(struct yyu_parser * const restrict xtra)
+void yyu_popstate(struct yyu_parser * const restrict parser)
   __attribute__((nonnull));
 
 /// POPSTATE
@@ -124,13 +122,13 @@ void yyu_popstate(struct yyu_parser * const restrict xtra)
 //
 #define POPSTATE                          \
   do {                                    \
-    yy_pop_state(YYUXTRA->scanner);       \
-    yyu_popstate(yyextra);                \
+    yy_pop_state(yyuparser->scanner);     \
+    yyu_popstate(yyuparser);              \
   } while(0)
 
 #define POPSTATES                 \
   do {                            \
-    while(YYUXTRA->states_n) {    \
+    while(yyuparser->states_n) {  \
       POPSTATE;                   \
     }                             \
   } while(0)                      \
@@ -149,12 +147,12 @@ void yyu_errorf(struct yyu_parser * restrict parser, const char * restrict fmt, 
 //  process a just scanned token : print the token, assign its location and lexical value
 //
 // PARAMETERS
-//  lval  - yylval
-//  lvalsz - sizeof(yylval)
-//  lloc  - yylloc
-//  xtra  - yyextra
-//  text  - yytext
-//  token - token
+//  parser  - yyuparser
+//  lval    - yylval
+//  lvalsz  - sizeof(yylval)
+//  lloc    - yylloc
+//  text    - yytext
+//  token   - token
 //
 int yyu_lexify(
     struct yyu_parser * const restrict parser
@@ -169,30 +167,29 @@ int yyu_lexify(
 )
   __attribute__((nonnull));
 
-#define LEXIFY(f, ...) ({                  \
-    int r = f(__VA_ARGS__);                \
-    if(r < 0)                              \
-    {                                      \
-      POPSTATES;                           \
-      LOCWRITE;                            \
-      yyu_save_error_loc(yyextra, yylloc); \
-      r = 0; /* end-of-input */            \
-    }                                      \
-    r;                                     \
+#define LEXIFY(f, ...) ({                    \
+    int r = f(__VA_ARGS__);                  \
+    if(r < 0) {                              \
+      POPSTATES;                             \
+      LOCWRITE;                              \
+      yyu_save_error_loc(yyuparser, yylloc); \
+      r = 0; /* end-of-input */              \
+    }                                        \
+    r;                                       \
   })
 
 /* call yyu_lexify with default parameters from a scanner rule */
-#define LEX(token)                \
-  LEXIFY(yyu_lexify               \
-    , yyextra                     \
-    , yylval                      \
-    , sizeof(yylval)              \
-    , yylloc                      \
-    , yytext                      \
-    , YYUXTRA->loc.l_lin          \
-    , YYUXTRA->loc.l_col + yyleng \
-    , yyleng                      \
-    , token                       \
+#define LEX(token)                    \
+  LEXIFY(yyu_lexify                   \
+    , yyuparser                       \
+    , yylval                          \
+    , sizeof(yylval)                  \
+    , yylloc                          \
+    , yytext                          \
+    , yyuparser->loc.l_lin            \
+    , yyuparser->loc.l_col + yyleng   \
+    , yyleng                          \
+    , token                           \
   )
 
 int yyu_lexify_valtoken(
@@ -216,20 +213,20 @@ int yyu_lexify_valtoken(
  */
 #define LEXVTOK(token)            \
   LEXIFY(yyu_lexify_valtoken      \
-    , yyextra                     \
+    , yyuparser                     \
     , yylval                      \
     , sizeof(yylval)              \
     , yylloc                      \
     , yytext                      \
-    , YYUXTRA->loc.l_lin          \
-    , YYUXTRA->loc.l_col + yyleng \
+    , yyuparser->loc.l_lin          \
+    , yyuparser->loc.l_col + yyleng \
     , yyleng                      \
     , token                       \
   )
 
 #define LEXLOC(token, locp)       \
   LEXIFY(yyu_lexify               \
-    , yyextra                     \
+    , yyuparser                     \
     , yylval                      \
     , sizeof(yylval)              \
     , yylloc                      \
@@ -243,7 +240,7 @@ int yyu_lexify_valtoken(
 /* scan an attrs token, or a STR token */
 #define LEXA()                    \
   LEXIFY(yyu_lexify_attrs         \
-    , yyextra                     \
+    , yyuparser                   \
     , yylval                      \
     , sizeof(yylval)              \
     , yylloc                      \
@@ -281,7 +278,7 @@ int yyu_lexify_attrs(
 //
 #define LEXE()                \
   LEXIFY(yyu_lexify_enum      \
-    , yyextra                 \
+    , yyuparser                 \
     , yylval                  \
     , sizeof(yylval)          \
     , yylloc                  \
@@ -315,7 +312,7 @@ int yyu_lexify_enum(
 
 #define LEXI(fmt)             \
   LEXIFY(yyu_lexify_int       \
-    , yyextra                 \
+    , yyuparser                 \
     , yylval                  \
     , sizeof(yylval)          \
     , yylloc                  \
@@ -346,7 +343,7 @@ int yyu_lexify_int(
 //
 #define LEXC(off)             \
   LEXIFY(yyu_lexify_cref      \
-    , yyextra                 \
+    , yyuparser                 \
     , yylval                  \
     , sizeof(yylval)          \
     , yylloc                  \
@@ -377,7 +374,7 @@ int yyu_lexify_cref(
 //
 #define LEXH(off)             \
   LEXIFY(yyu_lexify_href      \
-    , yyextra                 \
+    , yyuparser                 \
     , yylval                  \
     , sizeof(yylval)          \
     , yylloc                  \
@@ -408,7 +405,7 @@ int yyu_lexify_href(
 //
 #define LEXB()                \
   LEXIFY(yyu_lexify_bool      \
-    , yyextra                 \
+    , yyuparser                 \
     , yylval                  \
     , sizeof(yylval)          \
     , yylloc                  \
@@ -437,7 +434,7 @@ int yyu_lexify_bool(
 //
 #define LEXF()                \
   LEXIFY(yyu_lexify_float     \
-    , yyextra                 \
+    , yyuparser                 \
     , yylval                  \
     , sizeof(yylval)          \
     , yylloc                  \

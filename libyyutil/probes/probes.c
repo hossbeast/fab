@@ -15,9 +15,15 @@
 #include "usdt-sem.h"
 #include "macros.h"
 
+#if 0
 PROBE_SEM(yyu, token) = 1;
 PROBE_SEM(yyu, pushstate) = 1;
 PROBE_SEM(yyu, popstate) = 1;
+#else
+PROBE_SEM(yyu, token) = 0;
+PROBE_SEM(yyu, pushstate) = 0;
+PROBE_SEM(yyu, popstate) = 0;
+#endif
 
 void token_probe(
     yyu_parser * const restrict xtra
@@ -97,8 +103,8 @@ void popstate_probe(const yyu_parser * restrict parser, int prev, int next)
   nstate = scanner_statename(parser, next);
 
   alen = snprintf(abuf, sizeof(abuf), "%s <- %s"
-    , pstate
     , nstate
+    , pstate
   );
 
   // input name

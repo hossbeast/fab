@@ -39,7 +39,9 @@ void API yyu_loc_initialize(struct yyu_parser * parser, struct yyu_location * ll
 
 void API yyu_loc_final(struct yyu_parser * parser, struct yyu_location * lloc)
 {
-  memcpy(parser->final_loc, lloc, sizeof(*lloc));
+  if(parser->final_loc) {
+    memcpy(parser->final_loc, lloc, sizeof(*lloc));
+  }
 }
 
 void API yyu_grammar_error(yyu_location * const restrict lloc, void * const restrict scanner, yyu_parser * const restrict parser, char const * err)
@@ -71,7 +73,18 @@ void API yyu_grammar_error(yyu_location * const restrict lloc, void * const rest
       err += 14;
     }
 
-    parser->error_len = znloadf(parser->error_str, sizeof(parser->error_str), "%s", err);
+    if(parser->error_len) {
+      parser->error_len += znloads(
+          parser->error_str + parser->error_len
+        , sizeof(parser->error_str) - parser->error_len
+        , ", "
+      );
+    }
+    parser->error_len += znloads(
+        parser->error_str + parser->error_len
+      , sizeof(parser->error_str) - parser->error_len
+      , err
+    );
   }
 
   // save the location
@@ -87,8 +100,9 @@ void API yyu_grammar_error(yyu_location * const restrict lloc, void * const rest
 
     // token value
     blen = 0;
-    if(parser->lvalstr)
+    if(parser->lvalstr) {
       blen = parser->lvalstr(parser, parser->last_token, parser->last_lval, bbuf, sizeof(bbuf));
+    }
 
     s = parser->tokenstring;
     sz = sizeof(parser->tokenstring);

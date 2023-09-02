@@ -4,7 +4,6 @@
 #pragma once
 
 #include "types.h"
-
 #include "grammar.h"
 
 struct attrs;
@@ -35,9 +34,6 @@ yyu_vtable name = {                                      \
 
 /* indexes of particular tokens */
 struct yyu_tokens {
-  uint16_t YYEOF;
-  uint16_t YYERROR;
-  uint16_t YYUNDEF;
   uint16_t STR;            // sequence of printable characters
   uint16_t CREF;           // character-escape of one byte in the printable range of 7-bit ascii
   uint16_t HREF;           // hex escape of one byte
@@ -94,7 +90,6 @@ typedef struct yyu_parser {
   yyu_location    last_loc;         //  location
   int             last_token;       //  token
   int             last_line;        //  line number in the scanner
-  size_t          last_lval_aloc;   //  allocated size
 
                                     // upon error
   yyu_location    error_loc;        //  location
@@ -103,15 +98,17 @@ typedef struct yyu_parser {
   char            tokenstring[256]; //  tokenstring (gramerr only)
   const char *    fname;            //  filename
 
+  yyu_location * final_loc;
+
 /* parser configuration */
   union {
-    uint64_t logs;                  // logging categories for this parser
+    const yyu_vtable * vtable;
     char end_of_per_parse_state;
   };
-  const yyu_vtable * vtable;
-  void * scanner;                     // flex scanner
-  void * last_lval;                   //  semantic value
-  yyu_location * final_loc;
+
+  void * scanner;                   // flex scanner
+  void * last_lval;                 // semantic value
+  size_t last_lval_aloc;            // allocated size
 
   /// lvalstr
   //
@@ -185,12 +182,12 @@ void yyu_parser_xdestroy(yyu_parser * const restrict parser)
  *  2 - YYU_PARTIAL is not in effect, but the entire text was not parsed
  */
 int yyu_parse(
-    yyu_parser * const restrict parser
-  , char * const restrict text
-  , size_t text_len
-  , const char * const restrict fname
-  , uint16_t attrs
-  , yyu_location * restrict init_loc
-  , yyu_location * restrict final_loc
+    /* 1 */ yyu_parser * const restrict parser
+  , /* 2 */ char * const restrict text
+  , /* 3 */ size_t text_len
+  , /* 4 */ const char * const restrict fname
+  , /* 5 */ uint16_t attrs
+  , /* 6 */ yyu_location * restrict init_loc
+  , /* 7 */ yyu_location * restrict final_loc
 )
   __attribute__((nonnull(1, 2)));

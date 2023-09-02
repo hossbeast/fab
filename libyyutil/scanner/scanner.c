@@ -14,6 +14,7 @@
 #include "parser.internal.h"
 
 #include "macros.h"
+#include "zbuffer.h"
 #include "probes.h"
 
 static int token_table_cmp_key(const void * _key, const void * _token)
@@ -151,7 +152,21 @@ void API yyu_errorf(yyu_parser * restrict parser, const char * restrict fmt, ...
 {
   va_list va;
   va_start(va, fmt);
-  parser->error_len = vsnprintf(parser->error_str, sizeof(parser->error_str), fmt, va);
+
+  if(parser->error_len) {
+    parser->error_len += znloads(
+        parser->error_str + parser->error_len
+      , sizeof(parser->error_str) - parser->error_len
+      , ", "
+    );
+  }
+  parser->error_len += znloadvf(
+      parser->error_str + parser->error_len
+    , sizeof(parser->error_str) - parser->error_len
+    , fmt
+    , va
+  );
+
   va_end(va);
 }
 
@@ -259,7 +274,7 @@ int API yyu_lexify_enum(
   }
   else
   {
-    token = parser->token_table[parser->tokens.YYUNDEF].token;
+    token = 0;
   }
 
   return yyu_lexify(parser, lval, lvalsz, lloc, text, parser->loc.l_lin, parser->loc.l_col + leng, leng, token);
@@ -276,16 +291,28 @@ int API yyu_lexify_int(
 )
 {
   yyu_lval* lval = (typeof(lval))_lval;
-
   int token = 0;
+  intmax_t s;
+
   if(strchr(fmt, 'd') || strchr(fmt, 'i'))
   {
     errno = 0;
     sscanf(text, fmt, &lval->imax);
 
     if(errno == ERANGE) {
+      yyu_errorf(parser, "integer out of range for %s %.*s", fmt, leng, text);
       return -ERANGE;
     }
+
+    /* non-portable hack to create valid 128-bit signed integers even though strings representing
+     * integers > INT64_MAX or < INT64_MIN are not yet supported */
+    s = lval->imax;
+    if(lval->imax < 0) {
+      memset(&lval->i128, -1, sizeof(lval->i128));
+    } else {
+      memset(&lval->i128, 0, sizeof(lval->i128));
+    }
+    lval->imax = s;
 
     if(lval->imax < INT32_MIN)
       token = parser->token_table[parser->tokens.INTMIN64].token;
@@ -312,10 +339,15 @@ int API yyu_lexify_int(
   }
   else if(strchr(fmt, 'u'))
   {
+    /* non-portable hack to create valid 128-bit signed integers even though strings representing
+     * integers > INT64_MAX or < INT64_MIN are not yet supported */
+    memset(&lval->i128, 0, sizeof(lval->i128));
+
     errno = 0;
     sscanf(text, fmt, &lval->umax);
 
     if(errno == ERANGE) {
+      yyu_errorf(parser, "integer out of range for %s %.*s", fmt, leng, text);
       return -ERANGE;
     }
 
@@ -342,6 +374,7 @@ int API yyu_lexify_int(
     sscanf(text, fmt, &lval->umax);
 
     if(errno == ERANGE) {
+      yyu_errorf(parser, "integer out of range for %s %.*s", fmt, leng, text);
       return -ERANGE;
     }
 

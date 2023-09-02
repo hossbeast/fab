@@ -30,6 +30,7 @@ typedef union yyu_lval {
   bool      b;
   char *    s;
   char      c;
+  int128_t  i128;
   uintmax_t umax;
   intmax_t  imax;
   uint8_t   u8;

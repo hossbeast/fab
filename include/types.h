@@ -14,6 +14,8 @@
 #include <stdio.h>
 
 #define restrict __restrict
+#define int128_t __int128
+#define uint128_t unsigned __int128
 
 static inline size_t roundup(size_t x, size_t y)
 {
