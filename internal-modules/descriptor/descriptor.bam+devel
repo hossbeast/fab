@@ -10,11 +10,18 @@ $SIG{__WARN__} = sub { die @_ };
 
 use Digest::MD5;
 use File::Basename;
-use Data::Dumper;
 use Fcntl qw|SEEK_SET|;
 
-my $src_h  = $ENV{bm_source};
-my $desc_c = $ENV{bm_target};
+my $src_h  = $ENV{bm_source0};
+my $desc_c; # target
+my $desc_h; # target
+if(substr($ENV{bm_target0}, -2) eq ".c") {
+  $desc_c = $ENV{bm_target0};
+  $desc_h = $ENV{bm_target1};
+} else {
+  $desc_c = $ENV{bm_target1};
+  $desc_h = $ENV{bm_target0};
+}
 my ($name, $directories, undef) = fileparse($src_h, ".h");
 
 # descriptor.h
