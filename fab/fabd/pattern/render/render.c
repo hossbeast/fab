@@ -2,6 +2,7 @@
 /* Copyright (c) 2012-2023 Todd Freed <todd.freed@gmail.com> */
 
 #include "narrator/growing.h"
+#include "bacon/value.h"
 
 #include "render.internal.h"
 #include "pattern.internal.h"
@@ -14,10 +15,19 @@ static void pattern_section_render(pattern_render_context * restrict ctx)
 {
   off_t start;
   uint16_t len;
-
   struct render_segment_traversal segment_traversal;
+  pattern_segments *segments;
 
-  ctx->section_traversal.section = chain_next(ctx->section_traversal.head, &ctx->section_traversal.cursor, chn);
+  if(!ctx->section_traversal.section) {
+    ctx->section_traversal.section = llist_first(ctx->section_traversal.head, typeof(*ctx->section_traversal.section), lln);
+  } else {
+    ctx->section_traversal.section = llist_next(ctx->section_traversal.head, ctx->section_traversal.section, lln);
+  }
+  if(ctx->flags & PATTERN_RENDER_LAST_SECTION_SKIP) {
+    if(ctx->section_traversal.section == llist_last(ctx->section_traversal.head, typeof(*ctx->section_traversal.section), lln)) {
+      ctx->section_traversal.section = 0;
+    }
+  }
 
   // end of an item
   if(!ctx->section_traversal.section)
@@ -47,30 +57,39 @@ static void pattern_section_render(pattern_render_context * restrict ctx)
   }
   else
   {
-    if(ctx->section_traversal.section != ctx->section_traversal.head) {
+    if(ctx->section_traversal.section != llist_first(ctx->section_traversal.head, pattern_section, lln)) {
       narrator_sayc(ctx->narrator, '/');
     }
 
-    /* NODESET_SELF or '.' */
+    /* AXIS SELF or '.' */
     if(ctx->section_traversal.section->nodeset == PATTERN_NODESET_SHADOW)
     {
       narrator_says(ctx->narrator, "/");
       pattern_section_render(ctx);
     }
-    else if(ctx->section_traversal.section->nodeset == PATTERN_NODESET_SELF)
+    else if(ctx->section_traversal.section->axis == PATTERN_AXIS_SELF)
     {
       narrator_says(ctx->narrator, ".");
+      pattern_section_render(ctx);
+    }
+    else if(ctx->section_traversal.section->axis == PATTERN_AXIS_UP)
+    {
+      narrator_says(ctx->narrator, "..");
       pattern_section_render(ctx);
     }
     else
     {
       memset(&segment_traversal, 0, sizeof(segment_traversal));
-      segment_traversal.head = ctx->section_traversal.section->qualifiers_head->segment_head;
-      llist_append(&ctx->segment_traversal_stack, &segment_traversal, lln);
+
+      segments = llist_first(&ctx->section_traversal.section->qualifiers, typeof(*segments), lln);
+      segment_traversal.head = &segments->list;
+
+      llist_append(&ctx->segment_traversal_stack, &segment_traversal.lln);
       ctx->segment_traversal = llist_last(&ctx->segment_traversal_stack, typeof(*ctx->segment_traversal), lln);
+
       pattern_segment_render(ctx);
 
-      llist_delete(&segment_traversal, lln);
+      llist_delete(&segment_traversal.lln);
     }
   }
 }
@@ -82,12 +101,20 @@ static void pattern_section_render(pattern_render_context * restrict ctx)
 void pattern_segment_render(pattern_render_context * restrict ctx)
 {
   struct render_segment_traversal *segment_traversal;
-  const chain * segchain;
+  const pattern_segment *segment;
+  bool end;
 
   segment_traversal = ctx->segment_traversal;
-  segchain = segment_traversal->cursor;
+  segment = segment_traversal->segment;
+  end = segment_traversal->end;
 
-  segment_traversal->segment = chain_next(segment_traversal->head, &segment_traversal->cursor, chn);
+  if(segment_traversal->end) {
+    segment_traversal->segment = 0;
+  } else if(!segment_traversal->segment) {
+    segment_traversal->segment = llist_first(segment_traversal->head, typeof(*segment_traversal->segment), lln);
+  } else {
+    segment_traversal->segment = llist_next(segment_traversal->head, segment_traversal->segment, lln);
+  }
 
   // continue with the current segment
   if(segment_traversal->segment)
@@ -95,11 +122,11 @@ void pattern_segment_render(pattern_render_context * restrict ctx)
     segment_traversal->segment->vtab->render(segment_traversal->segment, ctx);
     goto end;
   }
+  segment_traversal->end = true;
 
   // ascend to the outer segment traversal
   ctx->segment_traversal = llist_prev(&ctx->segment_traversal_stack, ctx->segment_traversal, lln);
-  if(ctx->segment_traversal)
-  {
+  if(ctx->segment_traversal) {
     pattern_segment_render(ctx);
     goto end;
   }
@@ -107,19 +134,29 @@ void pattern_segment_render(pattern_render_context * restrict ctx)
   pattern_section_render(ctx);
 
 end:
-  segment_traversal->cursor = segchain;
+  //segment_traversal->cursor = segchain;
+  segment_traversal->segment = segment;
+  segment_traversal->end = end;
 }
 
 //
 // public
 //
 
-void pattern_render(const pattern * restrict pattern, pattern_render_result ** result)
+void pattern_render(
+    const pattern * restrict ref
+  , const bacon_value * restrict vars
+  , pattern_render_result ** result
+  , uint32_t flags
+)
 {
-  pattern_render_context ctx = { 0 };
+  pattern_render_context ctx = (typeof(ctx)){
+      vars : vars
+    , flags : flags
+  };
 
-  ctx.section_traversal.head = pattern->section_head;
-  ctx.segment_traversal_stack = LLIST_INITIALIZER(ctx.segment_traversal_stack);
+  ctx.section_traversal.head = &ref->sections;
+  llist_init(&ctx.segment_traversal_stack);
   narrator_growing_create(&ctx.narrator_growing);
 
   // save a place in the buffer for the number of path fragments
@@ -130,6 +167,11 @@ void pattern_render(const pattern * restrict pattern, pattern_render_result ** r
 
   // save a place in the buffer for the length of the first fragment
   narrator_sayw(ctx.narrator, (uint16_t[]) { 0 }, sizeof(uint16_t));
+
+  if(flags & PATTERN_RENDER_LAST_SECTION_ONLY) {
+    ctx.section_traversal.section = llist_last(ctx.section_traversal.head, typeof(*ctx.section_traversal.section), lln);
+    ctx.section_traversal.section = llist_prev(ctx.section_traversal.head, ctx.section_traversal.section, lln);
+  }
 
   // render the entire pattern
   pattern_section_render(&ctx);

@@ -72,13 +72,21 @@ static void process(command * restrict cmd, fab_client * restrict client, fabipc
   }
 }
 
+static void attached(command * restrict cmd, fab_client * restrict client)
+{
+
+}
+
 //
 // public
 //
 
+static void disconnected(command * restrict cmd) { }
 struct command events_command = {
     name : "events"
+  , attached : attached
   , usage : usage
   , connected : connected
   , process : process
+  , disconnected : disconnected
 };

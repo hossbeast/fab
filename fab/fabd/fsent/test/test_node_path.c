@@ -4,11 +4,10 @@
 #include "moria/load.h"
 
 #include "valyria/list.h"
-#include "valyria/map.h"
 #include "moria/graph.h"
-#include "moria/operations.h"
 #include "moria/parser.h"
 #include "yyutil/parser.h"
+#include "bacon/load.h"
 
 #include "xunit.h"
 #include "xunit/assert.h"
@@ -34,7 +33,6 @@ typedef struct node_path_test {
   char * base;          // base
 
   char * project_relative_path; // expected project-relative path
-  char * module_relative_path;  // expected module-relative path
   char * absolute_path;         // expected absolute path
   char * relative_path;         // expected path relative to base
 } node_path_test;
@@ -42,6 +40,7 @@ typedef struct node_path_test {
 static void node_path_test_unit_setup(xunit_unit * unit)
 {
   moria_load();
+  bacon_load();
 
   filesystem_setup();
   module_setup();
@@ -51,6 +50,9 @@ static void node_path_test_unit_setup(xunit_unit * unit)
 
 static void node_path_test_unit_cleanup(xunit_unit * unit)
 {
+  bacon_unload();
+  moria_unload();
+
   filesystem_cleanup();
   module_cleanup();
   fsent_cleanup();
@@ -65,7 +67,7 @@ static void node_path_test_entry(xunit_test * _test)
 {
   node_path_test * test = (node_path_test *)_test;
   narrator_growing * N = 0;
-  graph_parser * parser = 0;
+  moria_parser * parser = 0;
   fsent * subject;
   fsent * project_node = 0;
   fsent * module_node = 0;
@@ -82,8 +84,8 @@ static void node_path_test_entry(xunit_test * _test)
   narrator_growing_create(&N);
 
   // setup initial graph
-  graph_parser_create(&parser, &g_graph, &fsent_list, node_operations_test_dispatch, graph_vertex_attrs, graph_edge_attrs);
-  graph_parser_operations_parse(parser, MMS(test->operations));
+  moria_parser_create(&parser, &g_graph, (llist *[]) { &fsent_list }, 1, node_operations_test_dispatch, graph_vertex_attrs, graph_edge_attrs);
+  moria_parser_operations_parse(parser, MMS(test->operations));
 
   resolve_fragment(MMS(test->node), &subject);
   if(test->project)
@@ -105,40 +107,33 @@ static void node_path_test_entry(xunit_test * _test)
     assert_notnull(base_node);
   }
 
-  g_project_root = project_node;
+  g_cwd = project_node;
   mod.dir_node = module_node;
 
   // act
   if(test->project_relative_path)
   {
-    pathl = fsent_project_relative_path_znload(actual, sizeof(actual), subject);
+    pathl = fsent_cwd_relative_path_cat(actual, sizeof(actual), subject);
     const char *project_relative = actual;
     assert_eq_w(test->project_relative_path, strlen(test->project_relative_path), project_relative, pathl);
   }
 
-  if(test->module_relative_path)
-  {
-    pathl = fsent_module_relative_path_znload(actual, sizeof(actual), subject);
-    const char *module_relative = actual;
-    assert_eq_w(test->module_relative_path, strlen(test->module_relative_path), module_relative, pathl);
-  }
-
   if(test->absolute_path)
   {
-    pathl = fsent_absolute_path_znload(actual, sizeof(actual), subject);
+    pathl = fsent_absolute_path_cat(actual, sizeof(actual), subject);
     const char *absolute = actual;
     assert_eq_w(test->absolute_path, strlen(test->absolute_path), absolute, pathl);
   }
 
   if(test->relative_path)
   {
-    pathl = fsent_relative_path_znload(actual, sizeof(actual), subject, base_node);
+    pathl = fsent_relative_path_cat(actual, sizeof(actual), subject, base_node);
     const char *relative = actual;
     assert_eq_w(test->relative_path, strlen(test->relative_path), relative, pathl);
   }
 
   narrator_growing_free(N);
-  graph_parser_xfree(parser);
+  moria_parser_free(parser);
 }
 
 //
@@ -158,7 +153,6 @@ static xunit_unit xunit = {
         , node : "D"
 
         , project_relative_path : "C/D"
-        , module_relative_path : "D"
         , absolute_path : "/B/C/D"
       }}
     /* file fsent */
@@ -169,7 +163,6 @@ static xunit_unit xunit = {
         , node : "E"
 
         , project_relative_path : "C/D/E"
-        , module_relative_path : "D/E"
         , absolute_path : "/B/C/D/E"
       }}
     /* node which does not belong to a module */
@@ -181,7 +174,6 @@ static xunit_unit xunit = {
         , node : "e"
 
         , project_relative_path : "../b/c/d/e"
-        , module_relative_path : "/b/c/d/e"
         , absolute_path : "/b/c/d/e"
       }}
     , (node_path_test[]) {{

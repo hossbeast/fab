@@ -32,3 +32,6 @@ void fabipc_lockfile_update(char * const restrict fmt, ...)
 void fabipc_lockfile_release(char * const restrict fmt, ...)
   __attribute__((nonnull(1)))
   __attribute__((format(printf, 1, 2)));
+
+void fabipc_lockfile_acquire(pid_t * pid, int * restrict fdp, const char * restrict path)
+  __attribute__((nonnull));

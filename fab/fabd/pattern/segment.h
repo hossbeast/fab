@@ -5,6 +5,10 @@
 
 union pattern_segment;
 struct pattern_segments;
+struct llist;
 
 int pattern_segments_cmp(const struct pattern_segments * A, const struct pattern_segments * B);
+int pattern_segments_list_cmp(const struct llist * restrict A, const struct llist * restrict B);
 int pattern_segment_cmp(const union pattern_segment * A, const union pattern_segment * B);
+void pattern_segment_list_describe(const struct llist * restrict list, struct bacon_writer * restrict builder_writer)
+  __attribute__((nonnull));

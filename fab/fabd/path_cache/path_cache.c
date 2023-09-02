@@ -1,25 +1,31 @@
 /* SPDX-License-Identifier: GPL-3.0 */
 /* Copyright (c) 2012-2023 Todd Freed <todd.freed@gmail.com> */
 
+#include <errno.h>
+
 #include "types.h"
 
 #include "xlinux/xstdlib.h"
 #include "xlinux/xunistd.h"
 #include "xlinux/xfcntl.h"
 #include "valyria/list.h"
-#include "valyria/set.h"
+#include "valyria/hashtable.h"
+#include "common/hash.h"
+#include "bacon/value.h"
+#include "bacon/location.h"
 
 #include "path_cache.h"
-#include "config.internal.h"
-#include "yyutil/box.h"
+#include "configuration.h"
+#include "channel.h"
+#include "system_state.h"
+#include "events.h"
 
-#include "common/hash.h"
-#include "zbuffer.h"
+#include "zcat.h"
 #include "macros.h"
 
 static list * path_dirs;            // effective
 static list * staging_path_dirs[2];
-static set * path_search_cache;
+static hashtable path_search_cache;
 static char env_path_buf[2048];
 char *path_cache_env_path;
 
@@ -39,21 +45,21 @@ static void path_entry_free(void * arg)
   free(pe);
 }
 
-static uint32_t path_entry_hash(uint32_t h, const void * restrict _val, size_t sz)
+static uint32_t path_entry_hash(uint32_t h, const void * val)
 {
-  path_cache_entry *pe = (void*)_val;
+  const path_cache_entry *pe = val;
   return hash32(h, pe->s, pe->len);
 }
 
-static int path_entry_cmp(const void * _A, size_t Az, const void *_B, size_t Bz)
+static int path_entry_cmp(const void * _A, const void *_B)
 {
-  path_cache_entry *sa = (void*)_A;
-  path_cache_entry *sb = (void*)_B;
+  const path_cache_entry *sa = _A;
+  const path_cache_entry *sb = _B;
 
   return memncmp(sa->s, sa->len, sb->s, sb->len);
 }
 
-static char * render_env_path(void)
+static char *render_env_path(void)
 {
   path_cache_entry *pe;
   size_t z;
@@ -65,14 +71,14 @@ static char * render_env_path(void)
   l = sizeof(env_path_buf);
   z = 0;
 
-  z += znloads(s + z, l - z, "PATH=");
+  z += zcats(s + z, l - z, "PATH=");
   for(x = 0; x < path_dirs->size; x++)
   {
     pe = list_get(path_dirs, x);
     if(x) {
-      z += znloadc(s + z, l - z, ':');
+      z += zcatc(s + z, l - z, ':');
     }
-    z += znloadw(s + z, l - z, pe->s, pe->len);
+    z += zcatw(s + z, l - z, pe->s, pe->len);
   }
   s[z] = 0;
 
@@ -97,15 +103,22 @@ static void path_entry_alloc(path_cache_entry ** pep, const char *s, uint16_t l,
   *pep = pe;
 }
 
-static uint32_t cache_key_hash(uint32_t h, const void * key, size_t sz)
+struct cache_key {
+  const char * file;
+  uint16_t file_len;
+};
+
+static uint32_t cache_key_hash(uint32_t h, const void * K)
 {
-  return hash32(h, key, sz);
+  const struct cache_key *key = K;
+  return hash32(h, key->file, key->file_len);
 }
 
-static int cache_key_cmp(const void * A, size_t Asz, const void * key, size_t sz)
+static int cache_key_cmp(const void * A, const void * K)
 {
   const path_cache_entry *pe = A;
-  return memncmp(pe->s, pe->len, key, sz);
+  const struct cache_key *key = K;
+  return memncmp(pe->s, pe->len, key->file, key->file_len);
 }
 
 //
@@ -114,32 +127,32 @@ static int cache_key_cmp(const void * A, size_t Asz, const void * key, size_t sz
 
 void path_cache_setup()
 {
-  list_createx(&staging_path_dirs[0], 0, 0, path_entry_free);
-  list_createx(&staging_path_dirs[1], 0, 0, path_entry_free);
-  set_createx(&path_search_cache, 0, path_entry_hash, path_entry_cmp, path_entry_free);
+  list_createx(&staging_path_dirs[0], 0, path_entry_free);
+  list_createx(&staging_path_dirs[1], 0, path_entry_free);
+  hashtable_initx(&path_search_cache, 0, path_entry_hash, path_entry_cmp, path_entry_free);
 }
 
 void path_cache_cleanup()
 {
-  list_xfree(staging_path_dirs[0]);
-  list_xfree(staging_path_dirs[1]);
-  set_xfree(path_search_cache);
+  list_free(staging_path_dirs[0]);
+  list_free(staging_path_dirs[1]);
+  hashtable_destroy(&path_search_cache);
 }
 
-int path_cache_reconfigure(configblob * restrict cfg, char * restrict err, uint16_t err_sz)
+void path_cache_reconfigure(configuration * restrict cfg, bool dryrun)
 {
-  int x;
   char *pathenv;
   char *s;
   char *e = 0;
-  box_string *ent;
+  configuration_formula_path_dirs_entry *ent;
   list * staging;
   int fd = -1;
   char T;
   path_cache_entry *pe = 0;
-  uint16_t z;
+  channel *chan;
+  fabipc_message *msg;
 
-  if(err)
+  if(dryrun)
   {
     staging = staging_path_dirs[0];
     if(path_dirs == staging) {
@@ -149,35 +162,36 @@ int path_cache_reconfigure(configblob * restrict cfg, char * restrict err, uint1
     list_recycle(staging);
 
     /* paths from config have precedence over paths from $PATH */
-    for(x = 0; x < cfg->formula.path.dirs.entries->table_size; x++)
-    {
-      if(!(ent = set_table_get(cfg->formula.path.dirs.entries, x)))
-        continue;
+    rbtree_foreach(&cfg->formula.path.dirs.set, ent, rbn) {
 
       /* open an fd on the directory */
-      fd = uxopenats(O_PATH | O_DIRECTORY, 0, ent->v);
+      fd = uxopenats(O_PATH | O_DIRECTORY, 0, ent->s);
 
       if(fd == -1)
       {
-        z = 0;
-        z += znloadf(err + z, err_sz - z, "path %.*s", (int)ent->l, ent->v);
-        z += znloadf(err + z, err_sz - z, " location [%d,%d - %d,%d]"
-          , ent->bx.loc.f_lin + 1
-          , ent->bx.loc.f_col + 1
-          , ent->bx.loc.l_lin + 1
-          , ent->bx.loc.l_col + 1
+        msg = system_error_event(&chan);
+        msg->code = ENOENT;
+        msg->size = 0;
+        msg->size += zcatf(msg->text + msg->size, sizeof(msg->text) - msg->size, "path %.*s", (int)ent->len, ent->s);
+        msg->size += zcatf(msg->text + msg->size, sizeof(msg->text) - msg->size, " location [%d,%d - %d,%d]"
+          , ent->v->loc->f_lin + 1
+          , ent->v->loc->f_col + 1
+          , ent->v->loc->l_lin + 1
+          , ent->v->loc->l_col + 1
         );
-        return z;
+        events_publish(chan, msg);
+
+        return;
       }
 
-      path_entry_alloc(&pe, ent->v, ent->l, fd, 0);
+      path_entry_alloc(&pe, ent->s, ent->len, fd, 0);
       fd = -1;
 
-      list_push(staging, pe, 0);
+      list_push(staging, pe);
       pe = 0;
     }
 
-    if(cfg->formula.path.copy_from_env && cfg->formula.path.copy_from_env->v && (pathenv = getenv("PATH")))
+    if(cfg->formula.path.copy_from_env.b && (pathenv = getenv("PATH")))
     {
       s = pathenv;
       while(1)
@@ -191,15 +205,17 @@ int path_cache_reconfigure(configblob * restrict cfg, char * restrict err, uint1
 
         if(fd == -1)
         {
-          z = 0;
-          z += znloadf(err + z, err_sz - z, "path %.*s", (int)(e - s), s);
-          return z;
+          msg = system_error_event(&chan);
+          msg->code = ENOENT;
+          msg->size = zcatf(msg->text + msg->size, sizeof(msg->text) - msg->size, "path %.*s", (int)(e - s), s);
+          events_publish(chan, msg);
+          return;
         }
 
         path_entry_alloc(&pe, s, e - s, fd, 0);
         fd = -1;
 
-        list_push(staging, pe, 0);
+        list_push(staging, pe);
         pe = 0;
 
         s = e;
@@ -209,7 +225,7 @@ int path_cache_reconfigure(configblob * restrict cfg, char * restrict err, uint1
       }
     }
   }
-  else if(cfg->formula.path.changed)
+  else // if(cfg->formula.path.changed)
   {
     if(path_dirs)
       list_recycle(path_dirs);
@@ -219,8 +235,7 @@ int path_cache_reconfigure(configblob * restrict cfg, char * restrict err, uint1
       path_dirs = staging_path_dirs[0];
 
     path_cache_env_path = 0;
-    if(path_dirs->size)
-    {
+    if(path_dirs->size) {
       path_cache_env_path = render_env_path();
     }
   }
@@ -228,22 +243,31 @@ int path_cache_reconfigure(configblob * restrict cfg, char * restrict err, uint1
   xclose(fd);
   path_entry_free(pe);
 
-  return 0;
+  return;
 }
 
 void path_cache_search(const path_cache_entry ** restrict pep, const char * restrict file, uint16_t file_len)
 {
   int x;
   path_cache_entry *pe = 0;
+  struct cache_key key;
   int fd = -1;
+  hashtable_search_context ctx;
 
-  if((pe = set_search(path_search_cache, (void*)file, file_len, cache_key_hash, cache_key_cmp)))
+  key.file = file;
+  key.file_len = file_len;
+  ctx = (typeof(ctx)) {
+    entry : &key,
+    hash_fn : cache_key_hash,
+    cmp_fn : cache_key_cmp
+  };
+  if(hashtable_search(&path_search_cache, &ctx))
   {
-    *pep = pe;
-    pe = 0;
+    *pep = hashtable_fetch(&path_search_cache, &ctx);
     goto end;
   }
 
+  /* check against active paths */
   for(x = 0; x < path_dirs->size; x++)
   {
     pe = list_get(path_dirs, x);
@@ -257,7 +281,8 @@ void path_cache_search(const path_cache_entry ** restrict pep, const char * rest
   path_entry_alloc(&pe, file, file_len, fd, pe);
   fd = -1;
 
-  set_put(path_search_cache, pe, 0);
+  ctx.entry = pe;
+  hashtable_set(&path_search_cache, &ctx);
 
   *pep = pe;
   pe = 0;
@@ -269,5 +294,5 @@ end:
 
 void path_cache_reset()
 {
-  set_recycle(path_search_cache);
+  hashtable_recycle(&path_search_cache);
 }

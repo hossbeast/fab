@@ -5,13 +5,12 @@
   #include "types.h"
 
   #include "moria/traverse.h"
-  #include "valyria/list.h"
   #include "valyria/llist.h"
   #include "valyria/pstring.h"
   #include "xlinux/xstdlib.h"
   #include "xlinux/xstring.h"
 
-  #include "selector_parser.internal.h"
+  #include "selector_parser.h"
   #include "selector.h"
   #include "fsent.h"
   #include "pattern.h"
@@ -19,6 +18,12 @@
   #include "macros.h"
 
   struct pattern;
+  struct yyu_location;
+  struct yyu_parser;
+
+  /* called from tab.o and lex.o */
+  static void selector_yyerror(struct yyu_location* loc, void * scanner, struct yyu_parser * pp, char const * err)
+    __attribute__((weakref("yyu_grammar_error")));
 }
 
 %code top {
@@ -47,14 +52,8 @@
   // enums
   selector_nodeset selector_nodeset;
   moria_traversal_direction traverse_direction;
-  moria_traversal_mode traverse_mode;
-  struct {
-    edge_type edge_travel;
-    edge_type edge_visit;
-    vertex_filetype vertex_travel;
-    vertex_filetype vertex_visit;
-    bool cross_module;
-  } graph_type;
+  moria_traversal_mode traverse_order;
+  bool traverse_cross_module;
 
   // result
   selector *  selector;
@@ -79,9 +78,8 @@
 %token <yyu.imax>  INTMAX64
 
 %type <selector_nodeset> selector-nodeset
-%type <graph_type> graph-type
 %type <traverse_direction> traverse-direction
-%type <traverse_mode> traverse-mode
+%type <traverse_order> traverse-order
 
  /* keywords */
 %token
@@ -90,7 +88,11 @@
   DOWN            "down"
   EXTENSION       "extension"
   EXHAUSTIVE      "exhaustive"
+  CROSS_MODULE    "cross-module"
+  NOFOLLOW        "nofollow"
+  HIDDEN          "hidden"
   FS              "fs"
+  FS_HIDDEN       "fs-hidden"
   DIRTREE         "dirtree"
   MODTREE         "modtree"
   FILE_TYPE       "file-type"
@@ -98,9 +100,10 @@
   MAX_DISTANCE    "max-distance"
   MIN_DISTANCE    "min-distance"
   MODULE          "module"
-  MODULES         "modules"
+  ANCHOR          "anchor"
   NONE            "none"
   PATTERN         "pattern"
+  LOOKUP          "lookup"
   PATH            "path"
   REG             "reg"
   GRAPH           "graph"
@@ -145,7 +148,7 @@ allocate-sequence-selector
   {
     selector * sel;
     selector_alloc(SELECTOR_SEQUENCE, &sel);
-    llist_prepend(&PARSER->selector_stack, sel, lln);
+    llist_prepend(&PARSER->selector_stack, &sel->lln);
   }
   ;
 
@@ -154,7 +157,7 @@ allocate-union-selector
   {
     selector * sel;
     selector_alloc(SELECTOR_UNION, &sel);
-    llist_prepend(&PARSER->selector_stack, sel, lln);
+    llist_prepend(&PARSER->selector_stack, &sel->lln);
   }
   ;
 
@@ -163,16 +166,16 @@ allocate-pattern-selector
   {
     selector * sel;
     selector_alloc(SELECTOR_PATTERN, &sel);
-    llist_prepend(&PARSER->selector_stack, sel, lln);
+    llist_prepend(&PARSER->selector_stack, &sel->lln);
   }
   ;
 
-allocate-path-selector
+allocate-lookup-selector
   : %empty
   {
     selector * sel;
-    selector_alloc(SELECTOR_PATH, &sel);
-    llist_prepend(&PARSER->selector_stack, sel, lln);
+    selector_alloc(SELECTOR_LOOKUP, &sel);
+    llist_prepend(&PARSER->selector_stack, &sel->lln);
   }
   ;
 
@@ -181,11 +184,13 @@ allocate-traverse-selector
   {
     selector * sel;
     selector_alloc(SELECTOR_TRAVERSE, &sel);
-    llist_prepend(&PARSER->selector_stack, sel, lln);
-    sel->criteria = SELECTOR_TRAVERSE_DEFAULT_CRITERIA;
+    llist_prepend(&PARSER->selector_stack, &sel->lln);
+    sel->criteria.min_depth = SELECTOR_TRAVERSE_DEFAULT_MIN_DEPTH;
+    sel->criteria.max_depth = SELECTOR_TRAVERSE_DEFAULT_MAX_DEPTH;
     sel->mode = SELECTOR_TRAVERSE_DEFAULT_MODE;
     sel->direction = SELECTOR_TRAVERSE_DEFAULT_DIRECTION;
     sel->cross_module = SELECTOR_TRAVERSE_DEFAULT_CROSS_MODULE;
+    selector_graph_fstree(&sel->criteria);
   }
   ;
 
@@ -194,7 +199,7 @@ allocate-nodeset-selector
   {
     selector * sel;
     selector_alloc(SELECTOR_NODESET, &sel);
-    llist_prepend(&PARSER->selector_stack, sel, lln);
+    llist_prepend(&PARSER->selector_stack, &sel->lln);
   }
   ;
 
@@ -205,7 +210,7 @@ selector-utterance
   {
     selector * sel = llist_shift(&PARSER->selector_stack, selector, lln);
     selector * Z = llist_first(&PARSER->selector_stack, selector, lln);
-    llist_append(&Z->head, sel, lln);
+    llist_append(&Z->head, &sel->lln);
   }
   /* default sequence selector */
   | allocate-sequence-selector '[' selectors ']'
@@ -216,13 +221,13 @@ selectors
   {
     selector * sel = llist_shift(&PARSER->selector_stack, selector, lln);
     selector * Z = llist_first(&PARSER->selector_stack, selector, lln);
-    llist_append(&Z->head, sel, lln);
+    llist_append(&Z->head, &sel->lln);
   }
   | selector
   {
     selector * sel = llist_shift(&PARSER->selector_stack, selector, lln);
     selector * Z = llist_first(&PARSER->selector_stack, selector, lln);
-    llist_append(&Z->head, sel, lln);
+    llist_append(&Z->head, &sel->lln);
   }
   ;
 
@@ -239,16 +244,16 @@ aggregate-selector
 operation-selector
   : nodeset-selector
   | pattern-selector
-  | path-selector
+  | lookup-selector
   | traverse-selector
   ;
 
 sequence-selector
-  : allocate-sequence-selector SEQUENCE join '[' selectors ']'
+  : allocate-sequence-selector SEQUENCE ':' '[' selectors ']'
   ;
 
 union-selector
-  : allocate-union-selector UNION join '[' selectors ']'
+  : allocate-union-selector UNION ':' '[' selectors ']'
   ;
 
 nodeset-selector
@@ -259,22 +264,39 @@ nodeset-selector
   ;
 
 pattern-selector
-  : allocate-pattern-selector PATTERN join lookup-pattern
+  : allocate-pattern-selector PATTERN ':' lookup-pattern
   {
     llist_first(&PARSER->selector_stack, selector, lln)->pattern = $4;
   }
   ;
 
-path-selector
-  : allocate-path-selector PATH join string
+lookup-selector
+  : allocate-lookup-selector LOOKUP ':' '{' lookup-settings '}'
+  ;
+
+lookup-settings
+  : lookup-settings lookup-setting
+  | lookup-setting
+  ;
+
+lookup-setting
+  : PATH ':' string
   {
-    llist_first(&PARSER->selector_stack, selector, lln)->path = $4;
-    llist_first(&PARSER->selector_stack, selector, lln)->path_len = strlen($4);
+    llist_first(&PARSER->selector_stack, selector, lln)->path = $3;
+    llist_first(&PARSER->selector_stack, selector, lln)->path_len = strlen($3);
+  }
+  | NOFOLLOW ':' BOOL
+  {
+    llist_first(&PARSER->selector_stack, selector, lln)->nofollow = $3;
+  }
+  | HIDDEN ':' BOOL
+  {
+    llist_first(&PARSER->selector_stack, selector, lln)->hidden = $3;
   }
   ;
 
 traverse-selector
-  : allocate-traverse-selector TRAVERSE join '{' traverse-settings '}'
+  : allocate-traverse-selector TRAVERSE ':' '{' traverse-settings '}'
   ;
 
 traverse-settings
@@ -284,50 +306,46 @@ traverse-settings
 
 traverse-setting
   /* control the traversal */
-  : GRAPH join graph-type
-  {
-    llist_first(&PARSER->selector_stack, selector, lln)->criteria.edge_travel = $3.edge_travel;
-    llist_first(&PARSER->selector_stack, selector, lln)->criteria.edge_visit = $3.edge_visit;
-    llist_first(&PARSER->selector_stack, selector, lln)->criteria.vertex_travel = $3.vertex_travel;
-    llist_first(&PARSER->selector_stack, selector, lln)->criteria.vertex_visit = $3.vertex_visit;
-    llist_first(&PARSER->selector_stack, selector, lln)->cross_module = $3.cross_module;
-  }
-  | DIRECTION join traverse-direction
+  : GRAPH ':' graph-type
+  | DIRECTION ':' traverse-direction
   {
     llist_first(&PARSER->selector_stack, selector, lln)->direction = $3;
   }
-  | MIN_DISTANCE join uint16
+  | MIN_DISTANCE ':' uint16
   {
     llist_first(&PARSER->selector_stack, selector, lln)->criteria.min_depth = $3;
   }
-  | MAX_DISTANCE join uint16
+  | MAX_DISTANCE ':' uint16
   {
     llist_first(&PARSER->selector_stack, selector, lln)->criteria.max_depth = $3;
   }
-  | EXHAUSTIVE join BOOL
+  | EXHAUSTIVE ':' BOOL
   {
     llist_first(&PARSER->selector_stack, selector, lln)->exhaustive = $3;
   }
-  | ORDER join traverse-mode
+  | CROSS_MODULE ':' BOOL
+  {
+    llist_first(&PARSER->selector_stack, selector, lln)->cross_module = $3;
+  }
+  | NOFOLLOW ':' BOOL
+  {
+    llist_first(&PARSER->selector_stack, selector, lln)->nofollow = $3;
+  }
+  | ORDER ':' traverse-order
   {
     llist_first(&PARSER->selector_stack, selector, lln)->mode = $3;
-  }
-  | EXTENSION join string
-  {
-    free(llist_first(&PARSER->selector_stack, selector, lln)->extension);
-    llist_first(&PARSER->selector_stack, selector, lln)->extension = $3;
-    llist_first(&PARSER->selector_stack, selector, lln)->extension_len = strlen($3);
   }
   ;
 
 graph-type
-  : FS        { $$ = (typeof($$)){ edge_travel : EDGE_FSTREE, cross_module : true }; }
-  | MODTREE   { $$ = (typeof($$)){ edge_travel : EDGE_FSTREE, vertex_visit : VERTEX_MODULE_DIR, cross_module : true }; }
-  | DIRTREE   { $$ = (typeof($$)){ edge_travel : EDGE_FSTREE, vertex_visit : VERTEX_FILETYPE_DIR }; }
-  | DEPENDS   { $$ = (typeof($$)){ edge_travel : EDGE_DEPENDS }; }
-  | IMPORTS   { $$ = (typeof($$)){ edge_travel : EDGE_IMPORTS }; }
-  | USES      { $$ = (typeof($$)){ edge_travel : EDGE_USES }; }
-  | REQUIRES  { $$ = (typeof($$)){ edge_travel : EDGE_REQUIRES }; }
+  : FS        { selector_graph_fstree(&llist_first(&PARSER->selector_stack, selector, lln)->criteria); }
+  | FS_HIDDEN { selector_graph_fstree_hidden(&llist_first(&PARSER->selector_stack, selector, lln)->criteria); }
+  | MODTREE   { selector_graph_modtree(&llist_first(&PARSER->selector_stack, selector, lln)->criteria); }
+  | DIRTREE   { selector_graph_dirtree(&llist_first(&PARSER->selector_stack, selector, lln)->criteria); }
+  | DEPENDS   { selector_graph_depends(&llist_first(&PARSER->selector_stack, selector, lln)->criteria); }
+  | IMPORTS   { selector_graph_imports(&llist_first(&PARSER->selector_stack, selector, lln)->criteria); }
+  | USES      { selector_graph_uses(&llist_first(&PARSER->selector_stack, selector, lln)->criteria); }
+  | REQUIRES  { selector_graph_requires(&llist_first(&PARSER->selector_stack, selector, lln)->criteria); }
   ;
 
 traverse-direction
@@ -335,7 +353,7 @@ traverse-direction
   | DOWN { $$ = MORIA_TRAVERSE_DOWN; }
   ;
 
-traverse-mode
+traverse-order
   : PREORDER  { $$ = MORIA_TRAVERSE_PRE; }
   | POSTORDER { $$ = MORIA_TRAVERSE_POST; }
 
@@ -345,14 +363,9 @@ selector-nodeset
   | TARGET  { $$ = SELECTOR_NODESET_TARGET; }
   | TARGETS { $$ = SELECTOR_NODESET_TARGETS; }
   | MODULE  { $$ = SELECTOR_NODESET_MODULE; }
-  | MODULES { $$ = SELECTOR_NODESET_MODULES; }
+  | ANCHOR  { $$ = SELECTOR_NODESET_ANCHOR; }
   | ALL     { $$ = SELECTOR_NODESET_ALL; }
   | NONE    { $$ = SELECTOR_NODESET_NONE; }
-  ;
-
-join
-  : ':'
-  | '='
   ;
 
 lookup-pattern
@@ -384,7 +397,7 @@ string
   ;
 
 unquoted-string
-  : strpart
+  : strparts
   ;
 
 quoted-string
@@ -422,5 +435,10 @@ strpart
   {
     $$ = 0;
     ixstrndup(&$$, (char*)&$1, 1);
+  }
+  | uint16
+  {
+    $$ = 0;
+    ixstrndup(&$$, @1.s, @1.l);
   }
   ;

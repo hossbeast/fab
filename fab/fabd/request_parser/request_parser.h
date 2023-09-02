@@ -33,19 +33,19 @@ typedef struct request_parser {
 void request_parser_create(request_parser ** const restrict p)
   __attribute__((nonnull));
 
-/// request_parser_xfree
+/// request_parser_free
 //
 // SUMMARY
 //  free a config parser with free semantics
 //
-void request_parser_xfree(request_parser * restrict);
+void request_parser_free(request_parser * restrict);
 
-/// request_parser_ixfree
+/// request_parser_ifree
 //
 // SUMMARY
 //  free a config parser with ifree semantics
 //
-void request_parser_ixfree(request_parser ** restrict)
+void request_parser_ifree(request_parser ** restrict)
   __attribute__((nonnull));
 
 /*

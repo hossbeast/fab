@@ -17,10 +17,12 @@ fsedge objects are edges in the graph which represent the filesystem tree
 
 struct fsent;
 struct graph_invalidation_context;
+struct entlist;
 
 // active list
 extern llist fsedge_list;
 
+/* EDGE_FSTREE */
 typedef struct fsedge {
   moria_edge edge;
 } fsedge;
@@ -28,15 +30,12 @@ typedef struct fsedge {
 /* release edges */
 void fsedge_cleanup(void);
 
-void fsedge_alloc(fsedge ** restrict rv, struct moria_graph * restrict g)
-  __attribute__((nonnull));
-
-void fsedge_release(fsedge * restrict dep)
+void fsedge_alloc(fsedge ** restrict rv)
   __attribute__((nonnull));
 
 void fsedge_connect(
-    struct fsent * restrict A
-  , struct fsent * restrict B
+    struct fsent * restrict B
+  , struct fsent * restrict A
   , struct graph_invalidation_context * restrict invalidation
 )
   __attribute__((nonnull));
@@ -49,6 +48,12 @@ void fsedge_connect(
 void fsedge_disintegrate(fsedge * restrict fse, struct graph_invalidation_context * restrict invalidation)
   __attribute__((nonnull(1)));
 
+void fsedge_disintegrate_bulk(struct entlist * restrict edges, struct graph_invalidation_context * restrict invalidation)
+  __attribute__((nonnull));
+
 /* disconnect a filesystem edge */
-void fsedge_disconnect(fsedge * restrict fse)
+void fsedge_disconnect(fsedge * restrict fse, struct graph_invalidation_context * restrict invalidation)
+  __attribute__((nonnull));
+
+void fsedge_release(fsedge * restrict fse)
   __attribute__((nonnull));

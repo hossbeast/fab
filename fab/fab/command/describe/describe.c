@@ -4,19 +4,23 @@
 #include "common/attrs.h"
 #include "fab/client.h"
 #include "fab/describe.h"
-#include "fab/fsent.h"
+#include "fab/vertex.h"
 #include "fab/ipc.h"
+#include "bacon/builder.h"
+#include "narrator.h"
+#include "narrator/fixed.h"
 
 #include "describe.h"
 #include "args.h"
 #include "command.h"
 #include "params.h"
 
-#include "zbuffer.h"
+#include "zcat.h"
 
 struct describe_args describe_args;
 static struct describe_args *args = &describe_args;
 static uint64_t requestid;
+static bool any;
 
 //
 // static
@@ -25,7 +29,6 @@ static uint64_t requestid;
 static void usage(command * restrict cmd)
 {
   printf(
-"\n"
 "describe [<path>...]\n"
   );
 }
@@ -33,44 +36,62 @@ static void usage(command * restrict cmd)
 static void connected(command * restrict cmd, fab_client * restrict client)
 {
   fabipc_message * msg;
-  size_t z;
+  bacon_writer writer, *builder_writer;
+  narrator *N;
+  narrator_fixed fixed;
   int x;
 
-  /* send the request */
   msg = fab_client_produce(client);
   msg->type = FABIPC_MSG_REQUEST;
   requestid = msg->id = ++client->msgid;
 
-  z = 0;
-  z += znloads(msg->text + z, sizeof(msg->text) - z, "[ ");
-  z += znloads(msg->text + z, sizeof(msg->text) - z, "select : [");
+  N = narrator_fixed_init(&fixed, msg->text, sizeof(msg->text));
+  bacon_writer_init(&writer);
+  builder_writer = bacon_writer_open(&writer, N);
 
-  for(x = 0; x < args->targets_len; x++)
-  {
-    z += znloadf(msg->text + z, sizeof(msg->text) - z, " path : \"%.*s\"", (int)args->targets[x].len, args->targets[x].s);
+  { LIST
+    if(g_args.context_module_id) {
+      MAPPING
+      STRING("context")
+      { SET
+        { MAPPING
+          STRING("module")
+          HEX(g_args.context_module_id)
+        }
+      }
+    }
+    { MAPPING
+      STRING("select")
+      { LIST
+        for(x = 0; x < args->targets_len; x++)
+        { MAPPING
+          STRING("lookup")
+          { SET
+            { MAPPING
+              STRING("path")
+              BYTES(args->targets[x].s, args->targets[x].len)
+            }
+          }
+        }
+      }
+    }
+    STRING("describe")
   }
 
-  z += znloads(msg->text + z, sizeof(msg->text) - z, " ] ");
-  z += znloads(msg->text + z, sizeof(msg->text) - z, "describe");
-  z += znloads(msg->text + z, sizeof(msg->text) - z, " ]");
+  bacon_writer_close(&writer);
+  bacon_writer_destroy(&writer);
+  narrator_sayc(N, 0);
+  narrator_sayc(N, 0);
 
-  // two terminating null bytes
-  z += znloadc(msg->text + z, sizeof(msg->text) - z, 0);
-  z += znloadc(msg->text + z, sizeof(msg->text) - z, 0);
-  msg->size = z;
-
+  msg->size = fixed.l;
   client_post(client, msg);
 }
 
 static void process(command * restrict cmd, fab_client * restrict client, fabipc_message * restrict msg)
 {
-  fab_describe_item node;
-  int x;
-  descriptor_field *member;
-  const char *str;
-  uint16_t len;
-
-  RUNTIME_ASSERT(msg->id == requestid);
+  if(msg->id != requestid) {
+    return;
+  }
 
   if(msg->type == FABIPC_MSG_RESPONSE) {
     g_params.shutdown = true;
@@ -78,25 +99,20 @@ static void process(command * restrict cmd, fab_client * restrict client, fabipc
   }
 
   RUNTIME_ASSERT(msg->type == FABIPC_MSG_RESULT);
+  write(1, msg->text, msg->size);
+  any = true;
+}
 
-  descriptor_type_unmarshal(&node, &descriptor_fab_describe_item, msg->text, msg->size);
-
-  printf("%.*s : {\n", (int)node.path_len, node.path);
-  printf(" %s : %s\n", "type", attrs16_name_byvalue(fab_fsent_type_attrs, node.type));
-  printf(" %s : %s\n", "state", attrs16_name_byvalue(fab_fsent_state_attrs, node.state));
-
-  for(x = 3; x < descriptor_fab_describe_item.members_len; x++)
-  {
-    member = descriptor_fab_describe_item.members[x];
-    str = node.s[member->offset / sizeof(str)];
-    len = node.u16[member->len_offset / sizeof(len)];
-    printf(" %.*s", (int)member->name_len, member->name);
-    if(len) {
-      printf(" : %.*s", (int)len, str);
-    }
+static void disconnected(command * restrict cmd)
+{
+  if(any) {
     printf("\n");
   }
-  printf("}\n");
+}
+
+static void attached(command * restrict cmd, fab_client * restrict client)
+{
+
 }
 
 //
@@ -105,6 +121,8 @@ static void process(command * restrict cmd, fab_client * restrict client, fabipc
 
 struct command describe_command = {
     usage : usage
+  , attached : attached
   , connected : connected
   , process : process
+  , disconnected : disconnected
 };

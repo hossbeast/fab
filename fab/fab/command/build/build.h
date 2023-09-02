@@ -4,10 +4,9 @@
 #pragma once
 
 #include "types.h"
-
 #include "command.h"
 
-struct narrator;
+struct bacon_writer;
 struct fab_client;
 struct fabipc_message;
 
@@ -54,10 +53,10 @@ void build_command_cleanup(void);
 
 void build_command_usage(struct command * restrict cmd);
 
-void build_command_collate_goals(struct narrator * restrict N, bool reconcile)
+void build_command_collate_goals(struct bacon_writer * restrict builder_writer, bool reconcile)
   __attribute__((nonnull));
 
-void build_command_collate_invalidations(struct narrator * restrict N)
+void build_command_collate_invalidations(struct bacon_writer * restrict builder_writer)
   __attribute__((nonnull));
 
 void build_command_process_event(struct fab_client * restrict client, struct fabipc_message * restrict msg);

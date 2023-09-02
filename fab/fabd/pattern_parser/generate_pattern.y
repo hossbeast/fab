@@ -5,18 +5,17 @@
   #include <string.h>
 
   #include "types.h"
-  #include "valyria/chain.h"
+  #include "valyria/llist.h"
 
   #include "pattern/alternation.h"
   #include "pattern/byte.h"
   #include "pattern/class.h"
   #include "pattern/group.h"
   #include "pattern/range.h"
-  #include "pattern/variants.h"
   #include "pattern/word.h"
-  #include "pattern/replacement.h"
-
+  #include "pattern/variable.h"
   #include "pattern/section.h"
+  #include "pattern/segments.h"
 
   #include "pattern_parser.internal.h"
   #include "pattern.internal.h"
@@ -55,16 +54,21 @@
   pattern_nodeset nodeset;
   pattern_graph graph;
   pattern_axis axis;
+  llist list;
 }
 
 /* tokens from pattern.l */
-%token '{' '}'
-%token '[' ']'
+%token '(' ')'      // groups
+%token '{' '}'      // alternations
+%token '[' ']'      // classes
 %token ':'
 %token '?'
 %token '~'
 %token '+'
 %token '$'
+%token '.'
+%token '@'
+%token '_'
 
 %token <yyu.umax>  UINTMAX8   100
 %token <yyu.umax>  UINTMAX16  101
@@ -76,44 +80,45 @@
 %token <yyu.u8>    CREF       105 "character-escape"
 %token <yyu.u8>    HREF       106 "hex-escape"
 %token             STARSTAR   107 "**"
-%token             SLASH2     108 "/"
-%token <yyu.u8>    CHAR       109
-%token MODULE                 110 "module"
-%token MODULES                111 "modules"
-%token SHADOW                 112 "shadow"
-%token UP                     113 "up"
-%token DOWN                   114 "down"
-%token SELF_OR_BELOW          115 "self-or-below"
-%token DIRS                   116 "dirs"
-%token REQUIRES               117 "requires"
-%token USES                   118 "uses"
+%token             DOT        108 "."
+%token             DOT2       109 ".."
+%token <yyu.u8>    CHAR       110
+%token MODULE                 111 "module"
+%token MODULES                112 "modules"
+%token SHADOW                 113 "shadow"
+%token UP                     114 "up"
+%token DOWN                   115 "down"
+%token SELF_OR_BELOW          116 "self-or-below"
+%token DIRS                   117 "dirs"
 
 %type <yyu.umax>   uint16
-%type <tag_text>   variant-spec
 
 /* nonterminals */
-%type <pattern> pattern
-%type <segments> pattern-dentry
+%type <list> alternation-pattern-parts
+%type <list> alternation-parts
+%type <list> quoted-strparts quoted-string-literal string-literal
+%type <list> pattern-sections-list
+%type <list> pattern-dentry-segment-list
+%type <list> class-segments-list
 
-%type <section> pattern-section pattern-sections-list
+%type <pattern> pattern
+
+%type <section> pattern-section pattern-section-self
+%type <section> pattern-initial-section
 %type <section> pattern-section-fs-child
-%type <section> pattern-initial-section pattern-section-self
+
+%type <segments> pattern-dentry-segments
+%type <segments> class-segments
+%type <segments> alternation-pattern
 
 %type <segment> escape
-%type <segments> class-pattern class-parts
-%type <segment> class class-part class-range class-char
+%type <segment> class class-segment class-range class-char
 %type <segment> word
-%type <segment> replacement variant-replacement
-%type <segment> variants
-%type <segment> quoted-string-literal quoted-strpart quoted-strparts
-%type <segment> unquoted-string-literal unquoted-strpart
-%type <segment> string-literal
-%type <segment> pattern-dentry-part pattern-dentry-parts
+%type <segment> variable
+%type <segment> quoted-strpart
+%type <segment> pattern-dentry-segment
 %type <segment> alternation
 %type <segment> alternation-pattern-part
-%type <segment> alternation-pattern-parts
-%type <segments> alternation-pattern
-%type <segments> alternation-parts
 
 %destructor { pattern_free($$); } <pattern>
 %destructor { pattern_section_free($$); } <section>
@@ -136,27 +141,35 @@ utterance
 pattern
   : pattern-sections-list
   {
-    pattern_mk(&$$, &@$, $1);
+    pattern_mk(&$$, &@$, &$1);
   }
   ;
 
 pattern-sections-list
   : pattern-sections-list '/' pattern-section
   {
-    $$ = chain_splice_tail($1, $3, chn);
+    $$ = $1;
+    llist_push(&$$, &$3->lln);
   }
   | pattern-initial-section
+  {
+    llist_init(&$$);
+    llist_push(&$$, &$1->lln);
+  }
   ;
 
 pattern-initial-section
-  /* resolves to the directory of the match fsent */
-  : '$' '^' 'D'
+  : '/'
   {
-    pattern_section_mk(&$$, &@$, PATTERN_NODESET_MATCHDIR, 0, 0, NULL);
+    pattern_section_mk(&$$, &@$, PATTERN_NODESET_SHADOW, 0, 0, NULL, false);
   }
-  | SLASH2
+  | '$' '^' 'A'
   {
-    pattern_section_mk(&$$, &@$, PATTERN_NODESET_SHADOW, 0, 0, NULL);
+    pattern_section_mk(&$$, &@$, PATTERN_NODESET_ANCHOR, 0, 0, NULL, false);
+  }
+  | '$' '^' 'D'
+  {
+    pattern_section_mk(&$$, &@$, PATTERN_NODESET_MODULE, 0, 0, NULL, false);
   }
   | pattern-section
   ;
@@ -167,124 +180,116 @@ pattern-section
   ;
 
 pattern-section-self
-  : '.'
+  : DOT
   {
-    pattern_section_mk(&$$, &@$, PATTERN_NODESET_SELF, PATTERN_GRAPH_FS, PATTERN_AXIS_DOWN, NULL);
+    pattern_section_mk(&$$, &@$, PATTERN_NODESET_SELF, 0, 0, NULL, false);
   }
   ;
 
 pattern-section-fs-child
-  : pattern-dentry
+  : pattern-dentry-segments
   {
-    pattern_section_mk(&$$, &@$, 0, PATTERN_GRAPH_FS, PATTERN_AXIS_DOWN, $1);
+    llist list;
+    llist_init(&list);
+    llist_push(&list, &$1->lln);
+    pattern_section_mk(&$$, &@$, 0, PATTERN_GRAPH_FS, PATTERN_AXIS_DOWN, &list, false);
   }
   ;
 
-pattern-dentry
-  : pattern-dentry-parts
+pattern-dentry-segments
+  : pattern-dentry-segment-list
   {
-    pattern_segments_mk(&$$, &@$, 0, $1);
+    pattern_segments_mk(&$$, &@$, 0, &$1);
   }
   ;
 
-pattern-dentry-parts
-  : pattern-dentry-parts pattern-dentry-part
+pattern-dentry-segment-list
+  : pattern-dentry-segment-list pattern-dentry-segment
   {
-    $$ = chain_add($1, $2, chn);
+    $$ = $1;
+    llist_push(&$$, &$2->lln);
   }
-  | pattern-dentry-part
+  | pattern-dentry-segment-list string-literal
+  {
+    $$ = $1;
+    llist_splice_tail(&$$, &$2);
+  }
+  | pattern-dentry-segment
+  {
+    llist_init(&$$);
+    llist_push(&$$, &$1->lln);
+  }
+  | string-literal
   ;
 
  /* may appear at any position in a pattern */
-pattern-dentry-part
+pattern-dentry-segment
   : alternation
   | class
-  | string-literal
-  | variants
-  | replacement
+  | variable
   ;
 
-replacement
-  /* resolves to a parenthesized matching group which is referenced by number */
+variable
+  /* numbered variables resolve to a parenthesized match group by index */
   : '$' uint16
   {
-    pattern_replacement_mk(&$$, &@$, PATTERN_REPLACEMENT_TYPE_NUM, $2, NULL, 0, NULL, 0);
+    pattern_variable_mk(&$$, &@$, PATTERN_VARIABLE_TYPE_NUM, $2, NULL, 0);
   }
-  /* resolves to a parenthesized matching group which is referenced by name */
-  | '$' STR
+  /* named variables resolve to a parenthesized match group by name, or to a variable in scope */
+  | '$' word-token
   {
-    pattern_replacement_mk(&$$, &@$, PATTERN_REPLACEMENT_TYPE_NAME, 0, @2.s, @2.l, NULL, 0);
+    pattern_variable_mk(&$$, &@$, PATTERN_VARIABLE_TYPE_NAME, 0, @2.s, @2.l);
   }
-  /* resolves to the variant of the match fsent */
-  | variant-replacement
-  ;
-
-variant-replacement
-  : '$' '?'
+  | '$' '{' uint16 '}'
   {
-    pattern_replacement_mk(&$$, &@$, PATTERN_REPLACEMENT_TYPE_VARIANT, 0, NULL, 0, NULL, 0);
+    pattern_variable_mk(&$$, &@$, PATTERN_VARIABLE_TYPE_NUM, $3, NULL, 0);
   }
-  | '$' '{' variant-spec '}'
+  | '$' '{' word-token '}'
   {
-    pattern_replacement_mk(&$$, &@$, PATTERN_REPLACEMENT_TYPE_VARIANT, 0, NULL, 0, $3.s, $3.l);
+    pattern_variable_mk(&$$, &@$, PATTERN_VARIABLE_TYPE_NAME, 0, @3.s, @3.l);
   }
-  ;
-
-variant-spec
-  : variant-spec '+' STR
+  /* module hash */
+  | '$' '^' 'H'
   {
-    $$.s[$$.l++] = (char)@3.l;       /* tag len */
-    $$.s[$$.l++] = '+';              /* operation */
-    memcpy($$.s + $$.l, @3.s, @3.l);
-    $$.l += @3.l;
-  }
-  | variant-spec '-' STR
-  {
-    $$.s[$$.l++] = (char)@3.l;
-    $$.s[$$.l++] = '-';
-    memcpy($$.s + $$.l, @3.s, @3.l);
-    $$.l += @3.l;
-  }
-  | '?'
-  {
-    $$.l = 0;
-  }
-  ;
-
-variants
-  : '?'
-  {
-    pattern_variants_mk(&$$, &@$);
+    pattern_variable_mk(&$$, &@$, PATTERN_VARIABLE_TYPE_AUTO_HASH, 0, 0, 0);
   }
   ;
 
 class
-  : '[' class-parts ']'
+  : '[' class-segments-list ']'
   {
-    pattern_class_mk(&$$, &@$, $2, false);
+    pattern_class_mk(&$$, &@$, &$2, false);
   }
-  | '[' '!' class-parts ']'
+  | '[' '!' class-segments-list ']'
   {
-    pattern_class_mk(&$$, &@$, $3, true);
-  }
-  ;
-
-class-parts
-  : class-parts class-pattern
-  {
-    $$ = chain_add($1, $2, chn);
-  }
-  | class-pattern
-  ;
-
-class-pattern
-  : class-part
-  {
-    pattern_segments_mk(&$$, &@$, 0, $1);
+    pattern_class_mk(&$$, &@$, &$3, true);
   }
   ;
 
-class-part
+class-segments-list
+  : class-segments-list class-segments
+  {
+    $$ = $1;
+    llist_push(&$$, &$2->lln);
+  }
+  | class-segments
+  {
+    llist_init(&$$);
+    llist_push(&$$, &$1->lln);
+  }
+  ;
+
+class-segments
+  : class-segment
+  {
+    llist list;
+    llist_init(&list);
+    llist_push(&list, &$1->lln);
+    pattern_segments_mk(&$$, &@$, 0, &list);
+  }
+  ;
+
+class-segment
   : class-range
   | class-char
   ;
@@ -306,54 +311,69 @@ class-char
 alternation
   : '{' alternation-parts '}'
   {
-    pattern_alternation_mk(&$$, &@$, $2, false);
+    pattern_alternation_mk(&$$, &@$, &$2, false);
   }
   | '{' ',' alternation-parts '}'
   {
-    pattern_alternation_mk(&$$, &@$, $3, true);
+    pattern_alternation_mk(&$$, &@$, &$3, true);
   }
   | '{' alternation-parts ',' '}'
   {
-    pattern_alternation_mk(&$$, &@$, $2, true);
+    pattern_alternation_mk(&$$, &@$, &$2, true);
   }
   ;
 
 alternation-parts
   : alternation-parts ',' alternation-pattern
   {
-    $$ = chain_add($1, $3, chn);
+    $$ = $1;
+    llist_push(&$$, &$3->lln);
   }
   | alternation-pattern
+  {
+    llist_init(&$$);
+    llist_push(&$$, &$1->lln);
+  }
   ;
 
 alternation-pattern
   : alternation-pattern-parts
   {
-    pattern_segments_mk(&$$, &@$, 0, $1);
+    pattern_segments_mk(&$$, &@$, 0, &$1);
   }
   ;
 
 alternation-pattern-parts
   : alternation-pattern-parts alternation-pattern-part
   {
-    $$ = chain_add($1, $2, chn);
+    $$ = $1;
+    llist_push(&$$, &$2->lln);
+  }
+  | alternation-pattern-parts string-literal
+  {
+    $$ = $1;
+    llist_splice_tail(&$$, &$2);
   }
   | alternation-pattern-part
+  {
+    llist_init(&$$);
+    llist_push(&$$, &$1->lln);
+  }
+  | string-literal
   ;
 
 alternation-pattern-part
   : alternation
   | class
-  | string-literal
   ;
 
 string-literal
-  : unquoted-string-literal
-  | quoted-string-literal
-  ;
-
-unquoted-string-literal
-  : unquoted-strpart
+  : quoted-string-literal
+  | word
+  {
+    llist_init(&$$);
+    llist_push(&$$, &$1->lln);
+  }
   ;
 
 quoted-string-literal
@@ -363,29 +383,30 @@ quoted-string-literal
   }
   | '"' '"'
   {
-    $$ = (void*)0;
+    llist_init(&$$);
   }
   ;
 
 quoted-strparts
   : quoted-strparts quoted-strpart
   {
-    $$ = chain_add($1, $2, chn);
+    $$ = $1;
+    llist_push(&$$, &$2->lln);
   }
   | quoted-strpart
+  {
+    llist_init(&$$);
+    llist_push(&$$, &$1->lln);
+  }
   ;
 
 quoted-strpart
-  : unquoted-strpart
+  : word
   | escape
   ;
 
-unquoted-strpart
-  : word
-  ;
-
 word
-  : word-tokens
+  : word-token
   {
     pattern_word_mk(&$$, &@$, @1.s, @1.l);
   }
@@ -395,12 +416,24 @@ word
   }
   ;
 
-word-tokens
+word-token
   : STR
   | MODULE
   | MODULES
+  | SHADOW
+  | UP
   | DOWN
+  | SELF_OR_BELOW
+  | DIRS
+  | 'A'
   | 'D'
+  | 'H'
+  | 'F'
+  | 'M'
+  | '@'
+  | '_'
+  | '+'
+  | '.'
   ;
 
 escape

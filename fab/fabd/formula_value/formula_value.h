@@ -12,7 +12,7 @@ the formula text
 
 #include "types.h"
 
-#include "valyria/chain.h"
+#include "valyria/llist.h"
 
 #include "formula.h"
 #include "fsent.h"
@@ -21,7 +21,7 @@ struct attrs32;
 struct formula_value;
 struct narrator;
 struct rbtree;
-struct value_writer;
+struct bacon_writer;
 
 #define FORMULA_VALUE_OPT 0xfff
 #define FORMULA_VALUE_TABLE                                                   \
@@ -35,8 +35,7 @@ struct value_writer;
   DEF(FORMULA_VALUE_BOOLEAN     , "bool"        , FORMULA_VALUE_OPT , 0x030)  \
   DEF(FORMULA_VALUE_POSINT      , "posint"      , FORMULA_VALUE_OPT , 0x040)  \
   DEF(FORMULA_VALUE_NEGINT      , "negint"      , FORMULA_VALUE_OPT , 0x050)  \
-  DEF(FORMULA_VALUE_VARIABLE    , "variable"    , FORMULA_VALUE_OPT , 0x060) /* value of variant var by name */  \
-  DEF(FORMULA_VALUE_SYSVAR      , "sysvar"      , FORMULA_VALUE_OPT , 0x070) /* implicit sysvar by name */ \
+  DEF(FORMULA_VALUE_VARIABLE    , "variable"    , FORMULA_VALUE_OPT , 0x060)  \
   /* operations */                                                            \
   DEF(FORMULA_VALUE_SELECT      , "select"      , FORMULA_VALUE_OPT , 0x100)  \
   DEF(FORMULA_VALUE_PROPERTY    , "property"    , FORMULA_VALUE_OPT , 0x200)  \
@@ -52,59 +51,40 @@ FORMULA_VALUE_TABLE
 
 extern struct attrs32 * formula_value_attrs;
 
-#define FORMULA_SYSVAR_OPT 0xf
-#define FORMULA_SYSVAR_TABLE                                              \
-  DEF(FORMULA_SYSVAR_TARGET   , "bm_target"   , FORMULA_SYSVAR_OPT, 0x1)  \
-  DEF(FORMULA_SYSVAR_TARGETS  , "bm_targets"  , FORMULA_SYSVAR_OPT, 0x2)  \
-  DEF(FORMULA_SYSVAR_SOURCE   , "bm_source"   , FORMULA_SYSVAR_OPT, 0x3)  \
-  DEF(FORMULA_SYSVAR_SOURCES  , "bm_sources"  , FORMULA_SYSVAR_OPT, 0x4)  \
-  DEF(FORMULA_SYSVAR_VARIANT  , "bm_variant"  , FORMULA_SYSVAR_OPT, 0x5)  \
-
-typedef enum formula_sysvar {
-#undef DEF
-#define DEF(x, s, r, y) x = UINT32_C(y),
-FORMULA_SYSVAR_TABLE
-} formula_sysvar;
-
-extern struct attrs32 * formula_sysvar_attrs;
-
 typedef struct formula_operation {
   formula_value_type type;
   union {
-    struct selector * selector;       // select
-    fsent_property property;          // property
+    struct selector *selector;        // select
     struct formula_value *operand;    // prepend, path-search
-    struct formula_value *list_head;  // sequence
+    llist list;                       // sequence
+    fsent_property property;          // property
   };
 } formula_operation;
 
 typedef struct formula_value {
   formula_value_type type;
 
-  union {
-    chain chn;      /* in list */
-    rbnode rbn;     /* in set */
-  };
-
-  llist lln;        /* used in cleanup */
+  rbnode rbn;     /* in set */
+  llist lln;      /* in list */
 
   union {
     /* scalars */
     bool b;
-    char *s;
     char c;
     uint64_t u;
     int64_t i;
     double f;
+    struct {
+      char *s;      // string
+      size_t len; // length
+      size_t sa;  // size
+    };
 
     /* variable */
     struct {
       char name[64];
       uint8_t name_len;
     } v;
-
-    /* sysvar */
-    enum formula_sysvar sv;
 
     /* mapping */
     struct {
@@ -115,8 +95,8 @@ typedef struct formula_value {
     } m;
 
     /* aggregates */
-    struct formula_value *list_head;
-    struct rbtree *set;
+    llist list;
+    rbtree set;
 
     /* operations */
     formula_operation op;
@@ -125,7 +105,6 @@ typedef struct formula_value {
 
 void formula_value_free(formula_value * restrict v);
 void formula_value_ifree(formula_value ** restrict v);
-void formula_value_set_free(struct rbtree * restrict rbt);
 
 void formula_value_render(const formula_value * restrict fv, struct narrator * restrict N)
   __attribute__((nonnull));

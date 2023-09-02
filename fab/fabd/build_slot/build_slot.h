@@ -6,6 +6,7 @@
 #include <signal.h>
 
 #include "types.h"
+#include "bacon/parser.h"
 
 #include "exec_builder.h"
 #include "exec_render.h"
@@ -13,8 +14,8 @@
 struct dependency;
 struct module;
 struct path_cache_entry;
-struct value;
-struct variant;
+struct bacon_value;
+struct bacon_parser;
 
 typedef struct build_slot {
   int32_t pid;
@@ -23,18 +24,13 @@ typedef struct build_slot {
   uint32_t stage_index;
 
   /* (not null) dependency edge with formula/sources/targets */
-  /* this edge has 1+ targets and 0+ sources */
-  struct dependency * bpe;
+  /* this edge has 1+ targets, 0+ sources, and one EDGE_FML_BPE */
+  struct buildplan_entity *bpe;
 
-  /* (not null) module the target nodes belong to, if all targets belong to the same module
-   * otherwise the project module */
-  struct module * mod;
+  const char *cwd;
+  uint16_t cwd_len;
 
-  /* variant of the target nodes, if all targets are in the same variant */
-  const struct variant * var;
-
-  const struct value * vars;      // vars for the variant
-  const struct exec * exec;       // pre-rendered env vars for the variant
+  struct bacon_value *sysvars;
 
   int file_fd;                      // descriptor of file to execute
   const char * file_path;           // or absolute path of file to execute
@@ -64,6 +60,7 @@ typedef struct build_slot {
   char ** env_stor;
   size_t env_stor_a;
 
+  bacon_parser sysvar_parser;
   exec_builder exec_builder;
   exec_render_context exec_builder_context;
 } build_slot;
@@ -77,8 +74,5 @@ void build_slot_read(struct build_slot * restrict bs, uint32_t stream)
 void build_slot_reap(struct build_slot * restrict bs, siginfo_t * info)
   __attribute__((nonnull));
 
-void build_slot_prep(struct build_slot * restrict bs, struct dependency * restrict bpe, uint32_t stage_index)
-  __attribute__((nonnull));
-
-void build_slot_fork_and_exec(struct build_slot * restrict bs)
+void build_slot_fork_and_exec(struct build_slot * restrict bs, struct buildplan_entity * restrict bpe, uint32_t stage_index)
   __attribute__((nonnull));

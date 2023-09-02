@@ -22,7 +22,10 @@ struct pattern_parser {
   yyu_parser match_yyu;
 
   // state
+  yyu_parser *yyu;
   uint16_t group_counter;
+  uint16_t capture_group_counter;
+  bool section_has_type_qualifiers;
 
   // (returns)
   pattern * pattern;

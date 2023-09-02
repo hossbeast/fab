@@ -5,17 +5,18 @@
   #include <string.h>
 
   #include "types.h"
-  #include "valyria/chain.h"
+  #include "valyria/llist.h"
 
   #include "pattern/alternation.h"
   #include "pattern/byte.h"
   #include "pattern/class.h"
   #include "pattern/group.h"
   #include "pattern/range.h"
-  #include "pattern/variants.h"
   #include "pattern/word.h"
   #include "pattern/star.h"
-
+  #include "pattern/variable.h"
+  #include "pattern/qualifier.h"
+  #include "pattern/segments.h"
   #include "pattern/section.h"
 
   #include "pattern_parser.internal.h"
@@ -48,16 +49,21 @@
   pattern_segment * segment;
   pattern_graph graph;
   pattern_axis axis;
+  llist list;
 }
 
 /* tokens from pattern.l */
-%token '{' '}'
-%token '[' ']'
+%token '(' ')'      // groups
+%token '{' '}'      // alternations
+%token '[' ']'      // classes
 %token ':'
 %token '?'
 %token '~'
 %token '+'
-%token '$'
+%token '$'          // variable
+%token '.'
+%token '@'
+%token '_'
 
 %token <yyu.umax>  UINTMAX8   100
 %token <yyu.umax>  UINTMAX16  101
@@ -69,47 +75,55 @@
 %token <yyu.u8>    CREF       105 "character-escape"
 %token <yyu.u8>    HREF       106 "hex-escape"
 %token             STARSTAR   107 "**"
-%token             SLASH2     108 "/"
-%token <yyu.u8>    CHAR       109
-%token MODULE                 110 "module"
-%token MODULES                111 "modules"
-%token SHADOW                 112 "shadow"
-%token UP                     113 "up"
-%token DOWN                   114 "down"
-%token SELF_OR_BELOW          115 "self-or-below"
-%token DIRS                   116 "dirs"
-%token REQUIRES               117 "requires"
-%token USES                   118 "uses"
+%token             DOT        108 "."
+%token             DOT2       109 ".."
+%token <yyu.u8>    CHAR       110
+%token MODULE                 111 "module"
+%token MODULES                112 "modules"
+%token SHADOW                 113 "shadow"
+%token UP                     114 "up"
+%token DOWN                   115 "down"
+%token SELF_OR_BELOW          116 "self-or-below"
+%token DIRS                   117 "dirs"
 
 %type <yyu.umax>   uint16
 
 /* nonterminals */
-%type <pattern> pattern
-%type <segments> pattern-qualifiers
-%type <segments> pattern-qualifier
-%type <segments> pattern-qualifier-list
-%type <segments> pattern-dentry pattern-dentry-list
+%type <list> alternation-parts-without-epsilon
+%type <list> alternation-parts-with-epsilon
+%type <list> alternation-pattern-parts
+%type <list> quoted-strparts quoted-string-literal unquoted-string-literal string-literal
+%type <list> pattern-sections-list
+%type <list> pattern-dentry-segments-list
+%type <list> pattern-dentry-segment-list
+%type <list> pattern-qualifier-list
+%type <list> pattern-qualifiers
+%type <list> pattern-qualifier-part-list pattern-qualifier-parts
+%type <list> class-segments-list
+%type <list> type-qualifier-list
 
-%type <section> pattern-section pattern-sections-list
+%type <pattern> pattern
+
+%type <section> pattern-section pattern-initial-section
+
+%type <segments> pattern-qualifier
+%type <segments> type-qualifier-segments
+%type <segments> alternation-pattern
+%type <segments> class-segments
+%type <segments> pattern-dentry-segments
 
 %type <segment> escape
-%type <segments> class-pattern class-parts
-%type <segment> class class-part class-range class-char
+%type <segment> class class-segment class-range class-char
 %type <segment> group
 %type <segment> word
-%type <segment> variants
 %type <segment> star
-%type <segment> quoted-string-literal quoted-strpart quoted-strparts
-%type <segment> unquoted-string-literal unquoted-strpart
-%type <segment> string-literal
-%type <segment> pattern-dentry-part pattern-dentry-parts
-%type <segment> pattern-qualifier-part pattern-qualifier-parts
+%type <segment> variable
+%type <segment> type-qualifier type-qualifiers
+%type <segment> quoted-strpart unquoted-strpart
+%type <segment> pattern-dentry-segment
+%type <segment> pattern-qualifier-part
 %type <segment> alternation
 %type <segment> alternation-pattern-part
-%type <segment> alternation-pattern-parts
-%type <segments> alternation-pattern
-%type <segments> alternation-parts-with-epsilon
-%type <segments> alternation-parts-without-epsilon
 
 %destructor { pattern_free($$); } <pattern>
 %destructor { pattern_section_free($$); } <section>
@@ -132,74 +146,131 @@ utterance
 pattern
   : pattern-sections-list
   {
-    pattern_mk(&$$, &@$, $1);
+    pattern_mk(&$$, &@$, &$1);
   }
   ;
 
 pattern-sections-list
   : pattern-sections-list '/' pattern-section
   {
-    $$ = chain_splice_tail($1, $3, chn);
+    $$ = $1;
+    llist_push(&$$, &$3->lln);
+    PARSER->section_has_type_qualifiers = false;
+  }
+  | pattern-initial-section
+  {
+    llist_init(&$$);
+    llist_push(&$$, &$1->lln);
+    PARSER->section_has_type_qualifiers = false;
+  }
+  ;
+
+pattern-initial-section
+  : '/'
+  {
+    pattern_section_mk(&$$, &@$, PATTERN_NODESET_SHADOW, 0, 0, NULL, PARSER->section_has_type_qualifiers);
+  }
+  | '$' '^' 'A'
+  {
+    pattern_section_mk(&$$, &@$, PATTERN_NODESET_ANCHOR, 0, 0, NULL, PARSER->section_has_type_qualifiers);
+  }
+  | '$' '^' 'D'
+  {
+    pattern_section_mk(&$$, &@$, PATTERN_NODESET_MODULE, 0, 0, NULL, PARSER->section_has_type_qualifiers);
   }
   | pattern-section
-  | SLASH2
-  {
-    pattern_section_mk(&$$, &@$, PATTERN_NODESET_SHADOW, 0, 0, NULL);
-  }
   ;
 
 pattern-section
-  : pattern-dentry-list
+  : pattern-dentry-segments-list
   {
-    pattern_section_mk(&$$, &@$, 0, PATTERN_GRAPH_FS, PATTERN_AXIS_DOWN, $1);
+    pattern_section_mk(&$$, &@$, 0, PATTERN_GRAPH_FS, PATTERN_AXIS_DOWN, &$1, PARSER->section_has_type_qualifiers);
   }
   | STARSTAR pattern-qualifiers
   {
-    pattern_section_mk(&$$, &@$, 0, PATTERN_GRAPH_DIRS, PATTERN_AXIS_SELF_OR_BELOW, $2);
+    pattern_section_mk(&$$, &@$, 0, PATTERN_GRAPH_DIRS, PATTERN_AXIS_SELF_OR_BELOW, &$2, PARSER->section_has_type_qualifiers);
   }
   ;
 
-pattern-dentry-list
-  : pattern-dentry pattern-qualifier-list
+pattern-dentry-segments-list
+  : pattern-dentry-segments pattern-qualifier-list
   {
-    $$ = chain_splice_tail($1, $2, chn);
+    $$ = $2;
+    llist_unshift(&$$, &$1->lln);
   }
-  | pattern-dentry
-  ;
-
-pattern-dentry
-  : pattern-dentry-parts
+  | pattern-dentry-segments
   {
-    pattern_segments_mk(&$$, &@$, PATTERN_QUALIFIER_TYPE_AND, $1);
+    llist_init(&$$);
+    llist_push(&$$, &$1->lln);
   }
   ;
 
-pattern-dentry-parts
-  : pattern-dentry-parts pattern-dentry-part
+pattern-dentry-segments
+  : pattern-dentry-segment-list
   {
-    $$ = chain_add($1, $2, chn);
+    pattern_segments_mk(&$$, &@$, PATTERN_QUALIFIER_TYPE_AND, &$1);
   }
-  | pattern-dentry-part
+  ;
+
+pattern-dentry-segment-list
+  : pattern-dentry-segment-list pattern-dentry-segment
+  {
+    $$ = $1;
+    llist_push(&$$, &$2->lln);
+  }
+  | pattern-dentry-segment-list string-literal
+  {
+    $$ = $1;
+    llist_splice_tail(&$$, &$2);
+  }
+  | pattern-dentry-segment
+  {
+    llist_init(&$$);
+    llist_push(&$$, &$1->lln);
+  }
+  | string-literal
   ;
 
  /* appears at any position in a pattern-dirnode section */
-pattern-dentry-part
+pattern-dentry-segment
   : alternation
   | class
   | group
   | star
-  | string-literal
-  | variants
+  | variable
+  ;
+
+variable
+  : '$' STR
+  {
+    pattern_variable_mk(&$$, &@$, PATTERN_VARIABLE_TYPE_NAME, 0, @2.s, @2.l);
+  }
+  | '$' uint16
+  {
+    pattern_variable_mk(&$$, &@$, PATTERN_VARIABLE_TYPE_NUM, $2, NULL, 0);
+  }
+  | '$' '{' uint16 '}'
+  {
+    pattern_variable_mk(&$$, &@$, PATTERN_VARIABLE_TYPE_NUM, $3, NULL, 0);
+  }
+  | '$' '{' word-token '}'
+  {
+    pattern_variable_mk(&$$, &@$, PATTERN_VARIABLE_TYPE_NAME, 0, @3.s, @3.l);
+  }
   ;
 
 group
-  : '(' pattern-dentry-list ')'
+  : '(' pattern-dentry-segments-list ')'
   {
-    pattern_group_mk(&$$, &@$, $2, NULL, 0, ++PARSER->group_counter);
+    pattern_group_mk(&$$, &@$, &$2, NULL, 0, ++PARSER->group_counter, ++PARSER->capture_group_counter);
   }
-  | '(' '?' '<' word-tokens '>'  pattern-dentry-list ')'
+  | '(' '?' ':' pattern-dentry-segments-list ')'
   {
-    pattern_group_mk(&$$, &@$, $6, @4.s, @4.l, ++PARSER->group_counter);
+    pattern_group_mk(&$$, &@$, &$4, NULL, 0, ++PARSER->group_counter, 0);
+  }
+  | '(' '?' '<' word-token '>'  pattern-dentry-segments-list ')'
+  {
+    pattern_group_mk(&$$, &@$, &$6, @4.s, @4.l, ++PARSER->group_counter, ++PARSER->capture_group_counter);
   }
   ;
 
@@ -207,48 +278,128 @@ pattern-qualifiers
   : pattern-qualifier-list
   | %empty
   {
-    $$ = NULL;
+    $$ = (typeof($$)){ };
   }
   ;
 
 pattern-qualifier-list
   : pattern-qualifier-list pattern-qualifier
   {
-    $$ = chain_add($1, $2, chn);
+    $$ = $1;
+    llist_push(&$$, &$2->lln);
   }
   | pattern-qualifier
+  {
+    llist_init(&$$);
+    llist_push(&$$, &$1->lln);
+  }
   ;
 
 pattern-qualifier
   : '+' pattern-qualifier-parts
   {
-    pattern_segments_mk(&$$, &@$, PATTERN_QUALIFIER_TYPE_AND, $2);
+    pattern_segments_mk(&$$, &@$, PATTERN_QUALIFIER_TYPE_AND, &$2);
   }
   | '~' pattern-qualifier-parts
   {
-    pattern_segments_mk(&$$, &@$, PATTERN_QUALIFIER_TYPE_NOT, $2);
+    pattern_segments_mk(&$$, &@$, PATTERN_QUALIFIER_TYPE_NOT, &$2);
   }
   ;
 
 pattern-qualifier-parts
-  : pattern-qualifier-parts pattern-qualifier-part
+  : pattern-qualifier-part-list
+  | type-qualifiers      // ( )
   {
-    $$ = chain_add($1, $2, chn);
+    llist_init(&$$);
+    llist_push(&$$, &$1->lln);
   }
-  | pattern-qualifier-part
   ;
 
-pattern-qualifier-part
-  : alternation
-  | class
-  | group
+pattern-qualifier-part-list
+  : pattern-qualifier-part-list pattern-qualifier-part
+  {
+    $$ = $1;
+    llist_push(&$$, &$2->lln);
+  }
+  | pattern-qualifier-part-list string-literal
+  {
+    $$ = $1;
+    llist_splice_tail(&$$, &$2);
+  }
+  | pattern-qualifier-part
+  {
+    llist_init(&$$);
+    llist_push(&$$, &$1->lln);
+  }
   | string-literal
   ;
 
-variants
-  : '?'
+pattern-qualifier-part
+  : alternation     // { }
+  | class           // [ ]
+  | variable
+  ;
+
+type-qualifiers
+  : '(' type-qualifier-segments ')'
   {
-    pattern_variants_mk(&$$, &@$);
+    llist list;
+    llist_init(&list);
+    llist_push(&list, &$2->lln);
+    pattern_group_mk(&$$, &@$, &list, NULL, 0, ++PARSER->group_counter, ++PARSER->capture_group_counter);
+    $$->group.has_type_qualifiers = true;
+    PARSER->section_has_type_qualifiers = true;
+  }
+  ;
+
+type-qualifier-segments
+  : type-qualifier-list
+  {
+    pattern_segments_mk(&$$, &@$, PATTERN_QUALIFIER_TYPE_AND, &$1);
+  }
+  ;
+
+type-qualifier-list
+  : type-qualifier-list type-qualifier
+  {
+    $$ = $1;
+    llist_push(&$$, &$2->lln);
+  }
+  | type-qualifier
+  {
+    llist_init(&$$);
+    llist_push(&$$, &$1->lln);
+  }
+  ;
+
+type-qualifier
+  : '/'
+  {
+    pattern_qualifier_mk(&$$, &@$, PATTERN_QUALIFIER_TYPE_DIR);
+  }
+  | 'F'
+  {
+    pattern_qualifier_mk(&$$, &@$, PATTERN_QUALIFIER_TYPE_DIR_NONEMPTY);
+  }
+  | '.'
+  {
+    pattern_qualifier_mk(&$$, &@$, PATTERN_QUALIFIER_TYPE_FILE);
+  }
+  | DOT
+  {
+    pattern_qualifier_mk(&$$, &@$, PATTERN_QUALIFIER_TYPE_FILE);
+  }
+  | '@'
+  {
+    pattern_qualifier_mk(&$$, &@$, PATTERN_QUALIFIER_TYPE_SYMLINK);
+  }
+  | '^' 'A'
+  {
+    pattern_qualifier_mk(&$$, &@$, PATTERN_QUALIFIER_TYPE_ANCHOR);
+  }
+  | '^' 'M'
+  {
+    pattern_qualifier_mk(&$$, &@$, PATTERN_QUALIFIER_TYPE_MODULE);
   }
   ;
 
@@ -260,32 +411,40 @@ star
   ;
 
 class
-  : '[' class-parts ']'
+  : '[' class-segments-list ']'
   {
-    pattern_class_mk(&$$, &@$, $2, false);
+    pattern_class_mk(&$$, &@$, &$2, false);
   }
-  | '[' '!' class-parts ']'
+  | '[' '!' class-segments-list ']'
   {
-    pattern_class_mk(&$$, &@$, $3, true);
-  }
-  ;
-
-class-parts
-  : class-parts class-pattern
-  {
-    $$ = chain_add($1, $2, chn);
-  }
-  | class-pattern
-  ;
-
-class-pattern
-  : class-part
-  {
-    pattern_segments_mk(&$$, &@$, PATTERN_QUALIFIER_TYPE_AND, $1);
+    pattern_class_mk(&$$, &@$, &$3, true);
   }
   ;
 
-class-part
+class-segments-list
+  : class-segments-list class-segments
+  {
+    $$ = $1;
+    llist_push(&$$, &$2->lln);
+  }
+  | class-segments
+  {
+    llist_init(&$$);
+    llist_push(&$$, &$1->lln);
+  }
+  ;
+
+class-segments
+  : class-segment
+  {
+    llist list;
+    llist_init(&list);
+    llist_push(&list, &$1->lln);
+    pattern_segments_mk(&$$, &@$, PATTERN_QUALIFIER_TYPE_AND, &list);
+  }
+  ;
+
+class-segment
   : class-range
   | class-char
   ;
@@ -307,20 +466,25 @@ class-char
 alternation
   : '{' alternation-parts-with-epsilon '}'
   {
-    pattern_alternation_mk(&$$, &@$, $2, true);
+    pattern_alternation_mk(&$$, &@$, &$2, true);
   }
   | '{' alternation-parts-without-epsilon '}'
   {
-    pattern_alternation_mk(&$$, &@$, $2, false);
+    pattern_alternation_mk(&$$, &@$, &$2, false);
   }
   ;
 
 alternation-parts-without-epsilon
   : alternation-parts-without-epsilon ',' alternation-pattern
   {
-    $$ = chain_add($1, $3, chn);
+    $$ = $1;
+    llist_push(&$$, &$3->lln);
   }
   | alternation-pattern
+  {
+    llist_init(&$$);
+    llist_push(&$$, &$1->lln);
+  }
   ;
 
 alternation-parts-with-epsilon
@@ -341,22 +505,34 @@ alternation-part-epsilon
 alternation-pattern
   : alternation-pattern-parts
   {
-    pattern_segments_mk(&$$, &@$, PATTERN_QUALIFIER_TYPE_AND, $1);
+    pattern_segments_mk(&$$, &@$, PATTERN_QUALIFIER_TYPE_AND, &$1);
   }
   ;
 
 alternation-pattern-parts
   : alternation-pattern-parts alternation-pattern-part
   {
-    $$ = chain_add($1, $2, chn);
+    $$ = $1;
+    llist_push(&$$, &$2->lln);
+  }
+  | alternation-pattern-parts string-literal
+  {
+    $$ = $1;
+    if($2.next) {
+      llist_splice_tail(&$$, &$2);
+    }
   }
   | alternation-pattern-part
+  {
+    llist_init(&$$);
+    llist_push(&$$, &$1->lln);
+  }
+  | string-literal
   ;
 
 alternation-pattern-part
   : alternation
   | class
-  | string-literal
   ;
 
 string-literal
@@ -366,6 +542,10 @@ string-literal
 
 unquoted-string-literal
   : unquoted-strpart
+  {
+    llist_init(&$$);
+    llist_push(&$$, &$1->lln);
+  }
   ;
 
 quoted-string-literal
@@ -375,16 +555,21 @@ quoted-string-literal
   }
   | '"' '"'
   {
-    $$ = (void*)0;
+    $$ = (typeof($$)){ };
   }
   ;
 
 quoted-strparts
   : quoted-strparts quoted-strpart
   {
-    $$ = chain_add($1, $2, chn);
+    $$ = $1;
+    llist_push(&$$, &$2->lln);
   }
   | quoted-strpart
+  {
+    llist_init(&$$);
+    llist_push(&$$, &$1->lln);
+  }
   ;
 
 quoted-strpart
@@ -397,7 +582,7 @@ unquoted-strpart
   ;
 
 word
-  : word-tokens
+  : word-token
   {
     pattern_word_mk(&$$, &@$, @1.s, @1.l);
   }
@@ -407,15 +592,23 @@ word
   }
   ;
 
-word-tokens
+word-token
   : STR
   | MODULE
   | MODULES
   | SHADOW
+  | UP
+  | DOWN
   | SELF_OR_BELOW
-  | REQUIRES
-  | USES
+  | DIRS
+  | DOT2
+  | 'A'
   | 'D'
+  | 'H'
+  | 'F'
+  | 'M'
+  | '@'
+  | '_'
   | '.'
   ;
 

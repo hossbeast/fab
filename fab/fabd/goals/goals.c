@@ -6,22 +6,22 @@
 #include "narrator.h"
 #include "bacon/writer.h"
 #include "valyria/llist.h"
-#include "valyria/set.h"
 
 #include "goals.h"
 #include "build.h"
 #include "buildplan.h"
 #include "fsent.h"
 #include "channel.h"
-#include "module.internal.h"
+#include "module.h"
 #include "selector.h"
 #include "channel.h"
 #include "handler.h"
 #include "path_cache.h"
+#include "shadow.h"
 
 #include "common/attrs.h"
 #include "events.h"
-#include "zbuffer.h"
+#include "zcat.h"
 
 bool goals_reconcile;
 bool goals_build;
@@ -36,14 +36,13 @@ static selector_context goals_selector_context;
 
 void goals_create_buildplan()
 {
-  module *mod;
-
   path_cache_reset();
   buildplan_reset();
 
   if(goals_target_direct_selector || goals_target_transitive_selector)
   {
-    goals_selector_context.mod = g_project_root->mod;
+    goals_selector_context.mod = fsent_module_get(g_cwd);
+    goals_selector_context.cwd = g_cwd;
 
     if(goals_target_direct_selector)
     {
@@ -57,53 +56,17 @@ void goals_create_buildplan()
       buildplan_select_transitive(&goals_selector_context.selection->list);
     }
   }
-  else if(!rbtree_empty(&g_project_root->mod->shadow_targets->vertex.down))
-  {
-    // select the targets of the project module
-    moria_traverse_vertices(
-        &g_graph
-      , &g_project_root->mod->shadow_targets->vertex
-      , buildplan_visitor_direct
-      , 0
-      , (moria_traversal_criteria[]) {{
-            edge_travel : EDGE_DEPENDS
-          , edge_visit : EDGE_DEPENDS
-          , vertex_visit : VERTEX_FILETYPE_REG
-          , min_depth : 1
-          , max_depth : UINT16_MAX
-        }}
-      , MORIA_TRAVERSE_DOWN | MORIA_TRAVERSE_PRE | MORIA_TRAVERSE_DEPTH | MORIA_TRAVERSE_EXHAUSTIVE
-      , 0
-    );
-  }
   else
   {
-    // otherwise select the targets of all modules
-    llist_foreach(&module_list, mod, vertex.owner) {
-      moria_traverse_vertices(
-          &g_graph
-        , &mod->shadow_targets->vertex
-        , buildplan_visitor_direct
-        , 0
-        , (moria_traversal_criteria[]) {{
-              edge_travel : EDGE_DEPENDS
-            , edge_visit : EDGE_DEPENDS
-            , vertex_visit : VERTEX_FILETYPE_REG
-            , min_depth : 1
-            , max_depth : UINT16_MAX
-          }}
-        , MORIA_TRAVERSE_DOWN | MORIA_TRAVERSE_PRE | MORIA_TRAVERSE_DEPTH | MORIA_TRAVERSE_EXHAUSTIVE
-        , 0
-      );
-    }
+    /* otherwise, the //targets node is the default */
+    buildplan_add_transitive(&g_shadow_targets->vertex);
   }
 
   if(buildplan_state == NOOP)
   {
     buildplan_finalize();
-    buildplan_report();
 
-    if(buildplan_selection.selected_entities->size != 0)
+    if(buildplan_selection.selected_entities.size != 0)
     {
       buildplan_state = READY;
     }
@@ -116,52 +79,53 @@ void goals_create_buildplan()
 
 void goals_setup()
 {
+  selector_context_init(&goals_selector_context);
 }
 
 void goals_cleanup()
 {
-  selector_context_xdestroy(&goals_selector_context);
+  selector_context_destroy(&goals_selector_context);
   selector_free(goals_target_direct_selector);
   selector_free(goals_target_transitive_selector);
 }
 
 void goals_say(narrator * restrict N)
 {
-  value_writer writer;
+  bacon_writer writer;
 
-  value_writer_init(&writer);
-  value_writer_open(&writer, N);
-  value_writer_push_set(&writer);
+  bacon_writer_init(&writer);
+  bacon_writer_open(&writer, N);
+  bacon_writer_push_set(&writer);
 
   if(goals_reconcile) {
-    value_writer_string(&writer, "reconcile");
+    bacon_writer_string(&writer, "reconcile");
   }
   if(goals_target_direct_selector) {
-    value_writer_push_mapping(&writer);
-    value_writer_string(&writer, "target-direct");
-    value_writer_push_list(&writer);
+    bacon_writer_push_mapping(&writer);
+    bacon_writer_string(&writer, "target-direct");
+    bacon_writer_push_list(&writer);
     selector_writer_write(goals_target_direct_selector, &writer);
-    value_writer_pop_list(&writer);
-    value_writer_pop_mapping(&writer);
+    bacon_writer_pop_list(&writer);
+    bacon_writer_pop_mapping(&writer);
   }
   if(goals_target_transitive_selector) {
-    value_writer_push_mapping(&writer);
-    value_writer_string(&writer, "target-transitive");
-    value_writer_push_list(&writer);
+    bacon_writer_push_mapping(&writer);
+    bacon_writer_string(&writer, "target-transitive");
+    bacon_writer_push_list(&writer);
     selector_writer_write(goals_target_transitive_selector, &writer);
-    value_writer_pop_list(&writer);
-    value_writer_pop_mapping(&writer);
+    bacon_writer_pop_list(&writer);
+    bacon_writer_pop_mapping(&writer);
   }
   if(goals_build) {
-    value_writer_string(&writer, "build");
+    bacon_writer_string(&writer, "build");
   }
   if(goals_script) {
-    value_writer_string(&writer, "script");
+    bacon_writer_string(&writer, "script");
   }
 
-  value_writer_pop_set(&writer);
-  value_writer_close(&writer);
-  value_writer_destroy(&writer);
+  bacon_writer_pop_set(&writer);
+  bacon_writer_close(&writer);
+  bacon_writer_destroy(&writer);
 }
 
 void goals_set(

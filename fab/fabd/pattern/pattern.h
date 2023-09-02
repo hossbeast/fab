@@ -6,45 +6,42 @@
 /*
 
 search pattern - find nodes, starting from a base node
- * left-to-right node matching
- * used in rules, leftmost pattern
- * does not support NODESET_SELF '.'
-
-match pattern - subset of search pattern
- * right-to-left node matching
- * used in walker.exclude config
+ * used in rules, lhs pattern
+ * left-to-right matching
 
 generate pattern - create nodes, starting from a base node
- * used in rules, middle (generate) pattern
-
-lookup pattern - find nodes, disambiguating via prefix
- * used in module.bam for use, import, and require references  PATTERN_LOOKUP_ONE - one matching node per frag
- * used in module.bam to specify variants                      render only
- * used in selector pattern for node lookup                    matches zero or more
+ * used in rules, rhs pattern
 
 reference pattern - subset of generate pattern
- * class/alternation not permitted
- * absolute paths not permitted
- * variable/variant/replacement not permitted
- * used in module.bam for formula-binding pattern
+ * used in rules, rightmost formula-binding pattern
 
 include pattern - subset of generate pattern
- * absolute paths required
- * shadow paths not permitted
- * variable/variant/replacement not permitted
  * used in walker.include config
+
+match pattern - check whether a directory node matches a pattern
+ * used in walker.exclude config
+ * right-to-left matching
+
+lookup pattern - lookup non-shadow directory nodes in the graph by label, disambiguating via prefix
+ * used in use, import, and require references                 PATTERN_LOOKUP_ONE - one matching node per frag
+ * selector type pattern uses lookup patterns
+
+render - render patterns are not a separate thing. pattern_render is part of the implementation
+of lookup patterns
 
 */
 
 #include "types.h"
 
-#include "valyria/chain.h"
 #include "valyria/llist.h"
+#include "valyria/llist.h"
+#include "valyria/rbtree.h"
 
 #include "yyutil/parser.h"
 
 struct attrs16;
 struct narrator;      // narrator.h
+struct bacon_writer;
 
 struct pattern_render_context;
 struct pattern_generate_context;
@@ -56,23 +53,22 @@ struct pattern_match_context;
 // PATTERN segment types
 #define PATTERN_SEGMENT_TYPE_TABLE                    \
   /* common scalars */                                \
-  ATTR_DEF(PATTERN_CHARACTER       , 0x0010)          \
-  ATTR_DEF(PATTERN_STEM            , 0x0011) /* % */  \
-  ATTR_DEF(PATTERN_VARIANTS        , 0x0012) /* ? */  \
-  ATTR_DEF(PATTERN_WORD            , 0x0013)          \
-  ATTR_DEF(PATTERN_STAR            , 0x0014)          \
+  DEF(PATTERN_CHARACTER       , 0x0010)               \
+  DEF(PATTERN_WORD            , 0x0013)               \
+  DEF(PATTERN_STAR            , 0x0014) /* *   */     \
   /* common aggregates */                             \
-  ATTR_DEF(PATTERN_ALTERNATION     , 0x0015)          \
-  ATTR_DEF(PATTERN_CLASS           , 0x0016)          \
-  ATTR_DEF(PATTERN_RANGE           , 0x0017)          \
+  DEF(PATTERN_ALTERNATION     , 0x0015) /* { } */     \
+  DEF(PATTERN_CLASS           , 0x0016)               \
+  DEF(PATTERN_RANGE           , 0x0017) /* [ ] */     \
+  DEF(PATTERN_VARIABLE        , 0x0018) /* $   */     \
   /* match-only scalars */                            \
-  ATTR_DEF(PATTERN_GROUP           , 0x0018)          \
-  /* generate scalars */                              \
-  ATTR_DEF(PATTERN_REPLACEMENT     , 0x0019)          \
+  DEF(PATTERN_GROUP           , 0x0019) /* ( ) */     \
+  /* scalar that matches on properties not label */   \
+  DEF(PATTERN_QUALIFIER       , 0x0020) /* ( ) */     \
 
 
-#undef ATTR_DEF
-#define ATTR_DEF(x, y) x = UINT16_C(y),
+#undef DEF
+#define DEF(x, y) x = UINT16_C(y),
 typedef enum pattern_segment_type {
 PATTERN_SEGMENT_TYPE_TABLE
 } pattern_segment_type;
@@ -83,11 +79,9 @@ extern struct attrs16 * pattern_segment_type_attrs;
 
 // graph
 #define PATTERN_GRAPH_OPT  0x000f
-#define PATTERN_GRAPH_TABLE                                     \
-  ATTR_NAME_DEF(PATTERN_GRAPH_FS      , "fs"          , 0x0001) \
-  ATTR_NAME_DEF(PATTERN_GRAPH_DIRS    , "directories" , 0x0002) \
-  ATTR_NAME_DEF(PATTERN_GRAPH_REQUIRES, "requires"    , 0x0004) \
-  ATTR_NAME_DEF(PATTERN_GRAPH_USES    , "uses"        , 0x0005) \
+#define PATTERN_GRAPH_TABLE                                   \
+  ATTR_NAME_DEF(PATTERN_GRAPH_FS      , "fs"        , 0x0001) \
+  ATTR_NAME_DEF(PATTERN_GRAPH_DIRS    , "dirs"      , 0x0002) \
 
 #undef ATTR_NAME_DEF
 #define ATTR_NAME_DEF(x, s, y) x = UINT16_C(y),
@@ -104,9 +98,10 @@ extern struct attrs16 * pattern_graph_attrs;
   ATTR_NAME_DEF(PATTERN_AXIS_UP               , "up"            , 0x0005) /* parent, .. : nodes up 1 level from current fsent */  \
   ATTR_NAME_DEF(PATTERN_AXIS_ABOVE            , "above"         , 0x0006) /* nodes above the current node, any level */           \
   ATTR_NAME_DEF(PATTERN_AXIS_SELF_OR_ABOVE    , "self-or-above" , 0x0007) /* current and nodes above, any level */                \
-  ATTR_NAME_DEF(PATTERN_AXIS_DOWN             , "down"          , 0x0008) /* child : nodes down 1 level from current fsent */     \
-  ATTR_NAME_DEF(PATTERN_AXIS_BELOW            , "below"         , 0x0009) /* nodes below the current node, any level */           \
-  ATTR_NAME_DEF(PATTERN_AXIS_SELF_OR_BELOW    , "self-or-below" , 0x000a) /* ** : current and directory nodes below, any level */ \
+  ATTR_NAME_DEF(PATTERN_AXIS_SELF             , "self"          , 0x0008) /* . : context fsent */                                 \
+  ATTR_NAME_DEF(PATTERN_AXIS_DOWN             , "down"          , 0x0009) /* child : nodes down 1 level from current fsent */     \
+  ATTR_NAME_DEF(PATTERN_AXIS_BELOW            , "below"         , 0x000a) /* nodes below the current node, any level */           \
+  ATTR_NAME_DEF(PATTERN_AXIS_SELF_OR_BELOW    , "self-or-below" , 0x000b) /* ** : current and directory nodes below, any level */ \
 
 #undef ATTR_NAME_DEF
 #define ATTR_NAME_DEF(x, s, y) x = UINT16_C(y),
@@ -117,12 +112,13 @@ PATTERN_AXIS_TABLE
 extern struct attrs16 * pattern_axis_attrs;
 
 #define PATTERN_NODESET_OPT 0x000f
-#define PATTERN_NODESET_TABLE                                                                                \
-  /* non-contextual */                                                                                       \
-  ATTR_NAME_DEF(PATTERN_NODESET_SELF     , "self"      , 0x0001) /* . : the current context fsent */         \
-  ATTR_NAME_DEF(PATTERN_NODESET_MATCHDIR , "match-dir" , 0x0002) /* $^D directory of the matched node  */    \
-  ATTR_NAME_DEF(PATTERN_NODESET_SHADOW   , "shadow"    , 0x0003) /* root of the shadow fs */                 \
-  ATTR_NAME_DEF(PATTERN_NODESET_ROOT     , "root"      , 0x0004) /* root of the actual fs */                 \
+#define PATTERN_NODESET_TABLE                                                                                  \
+  /* non-contextual */                                                                                         \
+  ATTR_NAME_DEF(PATTERN_NODESET_SELF         , "self"      , 0x0001) /* . : the current context fsent */       \
+  ATTR_NAME_DEF(PATTERN_NODESET_SHADOW       , "shadow"    , 0x0002) /* // : root of the shadow fs */          \
+  ATTR_NAME_DEF(PATTERN_NODESET_ROOT         , "root"      , 0x0003) /* / : root of the actual fs */           \
+  ATTR_NAME_DEF(PATTERN_NODESET_ANCHOR       , "anchor"    , 0x0004) /* $^A : context anchor dir */            \
+  ATTR_NAME_DEF(PATTERN_NODESET_MODULE       , "module"    , 0x0005) /* $^D : context module dir */            \
 
 #undef ATTR_NAME_DEF
 #define ATTR_NAME_DEF(x, s, y) x = UINT16_C(y),
@@ -132,55 +128,62 @@ PATTERN_NODESET_TABLE
 
 extern struct attrs16 * pattern_nodeset_attrs;
 
-#define PATTERN_QUALIFIER_TYPE_OPT 0x000f
-
 // qualifier
-#define PATTERN_QUALIFIER_TYPE_TABLE            \
-  ATTR_DEF(PATTERN_QUALIFIER_TYPE_AND , 0x0001) \
-  ATTR_DEF(PATTERN_QUALIFIER_TYPE_NOT , 0x0002) \
+#define PATTERN_QUALIFIER_TYPE_OPT 0x000f
+#define PATTERN_QUALIFIER_TYPE_TABLE                                                                           \
+  DEF(PATTERN_QUALIFIER_TYPE_AND           , 0x0001)    /* + matches when qualifiers are satisfied */          \
+  DEF(PATTERN_QUALIFIER_TYPE_NOT           , 0x0002)    /* ~ matches when qualifiers are not satisfied */      \
+  DEF(PATTERN_QUALIFIER_TYPE_DIR           , 0x0003)    /* (/) matches directories */                          \
+  DEF(PATTERN_QUALIFIER_TYPE_DIR_NONEMPTY  , 0x0004)    /* (F) matches non-empty directories */                \
+  DEF(PATTERN_QUALIFIER_TYPE_FILE          , 0x0005)    /* (.) matches plain files */                          \
+  DEF(PATTERN_QUALIFIER_TYPE_SYMLINK       , 0x0006)    /* (@) matches symlinks */                             \
+  DEF(PATTERN_QUALIFIER_TYPE_ANCHOR        , 0x0007)    /* (^A) matches the module anchor directory */         \
+  DEF(PATTERN_QUALIFIER_TYPE_MODULE        , 0x0008)    /* (^M) matches the module base directory */           \
 
-#undef ATTR_DEF
-#define ATTR_DEF(x, y) x = UINT16_C(y),
+#undef DEF
+#define DEF(x, y) x = UINT16_C(y),
 typedef enum pattern_qualifier_type {
 PATTERN_QUALIFIER_TYPE_TABLE
 } pattern_qualifier_type;
 
 extern struct attrs16 * pattern_qualifier_type_attrs;
 
-#define PATTERN_REPLACEMENT_TYPE_OPT 0x000f
+// variable
+#define PATTERN_VARIABLE_TYPE_OPT 0x000f
+#define PATTERN_VARIABLE_TYPE_TABLE                       \
+  DEF(PATTERN_VARIABLE_TYPE_NAME      , 0x0001)           \
+  DEF(PATTERN_VARIABLE_TYPE_NUM       , 0x0002)           \
+  DEF(PATTERN_VARIABLE_TYPE_AUTO_HASH , 0x0003) /* $^H */ \
 
-// replacement
-#define PATTERN_REPLACEMENT_TYPE_TABLE                 \
-  ATTR_DEF(PATTERN_REPLACEMENT_TYPE_NAME     , 0x0001) \
-  ATTR_DEF(PATTERN_REPLACEMENT_TYPE_NUM      , 0x0002) \
-  ATTR_DEF(PATTERN_REPLACEMENT_TYPE_VARIANT  , 0x0004) \
+#undef DEF
+#define DEF(x, y) x = UINT16_C(y),
+typedef enum pattern_variable_type {
+PATTERN_VARIABLE_TYPE_TABLE
+} pattern_variable_type;
 
+extern struct attrs16 * pattern_variable_type_attrs;
 
-#undef ATTR_DEF
-#define ATTR_DEF(x, y) x = UINT16_C(y),
-typedef enum pattern_replacement_type {
-PATTERN_REPLACEMENT_TYPE_TABLE
-} pattern_replacement_type;
-
-extern struct attrs16 * pattern_replacement_type_attrs;
+#define PATTERN_SEGMENT_SEARCH_RECURSIVE 0x01
 
 union pattern_segment;
 typedef struct pattern_segment_vtable {
   pattern_segment_type type;
+  uint8_t flags;
 
-  void __attribute__((nonnull)) (*say)(
+  void __attribute__((nonnull(1, 3))) (*say)(
       const union pattern_segment * restrict seg
+    , const union pattern_segment * restrict next
     , struct narrator * restrict N
+  );
+
+  void __attribute__((nonnull)) (*describe)(
+      const union pattern_segment * restrict seg
+    , struct bacon_writer * restrict builder_writer
   );
 
   void __attribute__((nonnull)) (*search)(
       const union pattern_segment * seg
     , struct pattern_search_context * ctx
-  );
-
-  void __attribute__((nonnull)) (*match)(
-      const union pattern_segment * seg
-    , struct pattern_match_context * ctx
   );
 
   void __attribute__((nonnull)) (*render)(
@@ -202,28 +205,32 @@ typedef struct pattern_segment_vtable {
 
 /* list of sections */
 typedef struct pattern {
-  yyu_location loc;           /* pattern location (cumulative) */
+  yyu_location loc;                       /* pattern location (cumulative) */
   char * fname;
-  struct pattern_section * section_head;
+  uint16_t groups_count;                  /* number of parenthesized groups */
+  uint16_t capture_groups_count;          /* number of parenthesized groups which are not non-capturing */
+  llist sections;     // struct pattern_section *section_head;
 
-  llist lln;
+  llist lln;    // in list
+  rbnode rbn;   // in set
 } pattern;
 
 /* list of segments */
 typedef struct pattern_segments {
   yyu_location loc;
-  chain chn;                  /* in list-of-segments list */
+  llist lln;                  /* in list-of-segments list */
   pattern_qualifier_type qualifier_type;
-  union pattern_segment * segment_head;
+  llist list;   // union pattern_segment *segment_head;
 } pattern_segments;
 
 typedef struct pattern_section {
   yyu_location loc;            /* node location (cumulative) */
-  chain chn;                   /* in section list */
-  pattern_nodeset nodeset;  // << GENERATE ONLY
+  llist lln;                   /* in section list */
+  pattern_nodeset nodeset;
   pattern_graph graph;
   pattern_axis axis;
-  pattern_segments * qualifiers_head;
+  llist qualifiers;
+  bool has_type_qualifiers;
 } pattern_section;
 
 /* segment types */
@@ -231,12 +238,12 @@ typedef struct pattern_section {
   pattern_segment_type type;                                      \
   const pattern_segment_vtable * vtab;                            \
   yyu_location loc;            /* node location (cumulative) */   \
-  chain chn;                   /* in segment list */              \
+  llist lln;                   /* in segment list */              \
 }
 
 typedef struct pattern_alternation {
   PATTERN_SEGMENT_BASE;
-  pattern_segments * segments_head; // no qualifiers
+  llist segments; // no qualifiers
   bool epsilon;
 } pattern_alternation;
 
@@ -247,7 +254,7 @@ typedef struct pattern_byte {
 
 typedef struct pattern_class {
   PATTERN_SEGMENT_BASE;
-  pattern_segments * segments_head; // no qualifiers
+  llist segments; // no qualifiers
   bool invert;
 } pattern_class;
 
@@ -265,35 +272,34 @@ typedef struct pattern_word {
 
 typedef struct pattern_group {
   PATTERN_SEGMENT_BASE;
-  pattern_segments * segments_head;  // qualifiers, trailing
-  uint16_t num;
+  llist segments; // qualifiers, trailing
+  uint16_t group_num;
+  uint16_t capture_group_num;
   char * name;
   uint8_t name_len;
+  bool has_type_qualifiers;
 } pattern_group;
 
 typedef struct pattern_star {
   PATTERN_SEGMENT_BASE;
 } pattern_star;
 
-typedef struct pattern_variants {
+typedef struct pattern_variable {
   PATTERN_SEGMENT_BASE;
-} pattern_variants;
-
-typedef struct pattern_replacement {
-  PATTERN_SEGMENT_BASE;
-  pattern_replacement_type replacement_type;
+  pattern_variable_type variable_type;
   union {
     uint16_t num;         // NUM
     struct {              // NAME
       char * name;
       uint8_t name_len;
     };
-    struct {
-      char text[64];    // VARIANT - null-separated tag specs
-      uint8_t len;
-    } tags;
   };
-} pattern_replacement;
+} pattern_variable;
+
+typedef struct pattern_qualifier {
+  PATTERN_SEGMENT_BASE;
+  pattern_qualifier_type qualifier_type;
+} pattern_qualifier;
 
 typedef union pattern_segment {
   PATTERN_SEGMENT_BASE;
@@ -303,15 +309,13 @@ typedef union pattern_segment {
   pattern_byte byte;
   pattern_class class;
   pattern_range range;
-  pattern_variants variants;
   pattern_word word;
+  pattern_variable variable;
+  pattern_qualifier qualifier;
 
   // match only
   pattern_group group;
   pattern_star star;
-
-  // generate only
-  pattern_replacement replacement;
 } pattern_segment;
 
 /*
@@ -319,15 +323,20 @@ typedef union pattern_segment {
  */
 void pattern_free(pattern * const restrict);
 
-void pattern_segments_list_free(pattern_segments * const restrict);
+void pattern_segments_list_free(llist * restrict list);
 void pattern_segments_free(pattern_segments * const restrict);
 
 void pattern_section_free(pattern_section * const restrict);
 
-void pattern_segment_list_free(pattern_segment * const restrict);
+void pattern_segment_list_free(llist * restrict list)
+  __attribute__((nonnull));
+
 void pattern_segment_free(pattern_segment * const restrict);
 
 void pattern_say(const pattern * restrict ffn, struct narrator * restrict N)
+  __attribute__((nonnull));
+
+void pattern_describe(const pattern * restrict ffn, struct bacon_writer * restrict builder_writer)
   __attribute__((nonnull));
 
 typedef struct pattern_search_group {
@@ -335,18 +344,13 @@ typedef struct pattern_search_group {
   uint16_t len;
 } pattern_search_group;
 
-/// pattern_segments_say
-//
-// SUMMARY
-//
-// PARAMETERS
-//  head  -
-//  item  -
-//  N     -
-//  sep   -
-//  first -
-//
-void pattern_segment_chain_say(const pattern_segment * restrict head, struct narrator * restrict N)
+void pattern_segment_list_say(const llist * restrict list, struct narrator * restrict N)
   __attribute__((nonnull));
 
 int pattern_cmp(const pattern * A, const pattern * B);
+
+void pattern_list_free(struct llist * restrict list)
+  __attribute__((nonnull));
+
+void pattern_show(const pattern * restrict pattern)
+  __attribute__((nonnull));

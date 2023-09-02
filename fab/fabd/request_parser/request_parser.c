@@ -13,8 +13,7 @@
 #include "request.tokens.h"
 #include "request.lex.h"
 #include "request.states.h"
-#include "selector_parser.internal.h"
-#include "config_parser.internal.h"
+#include "selector_parser.h"
 
 static YYU_VTABLE(vtable, request, request);
 
@@ -37,26 +36,24 @@ void request_parser_create(request_parser ** const rv)
   );
 
   selector_parser_create(&p->selector_parser);
-  config_parser_create(&p->config_parser);
 
   *rv = p;
 }
 
-void request_parser_xfree(request_parser* const p)
+void request_parser_free(request_parser* const p)
 {
   if(p)
   {
-    config_parser_xfree(p->config_parser);
-    selector_parser_xfree(p->selector_parser);
+    selector_parser_free(p->selector_parser);
     yyu_parser_xdestroy(&p->yyu);
   }
 
   free(p);
 }
 
-void request_parser_ixfree(request_parser ** const p)
+void request_parser_ifree(request_parser ** const p)
 {
-  request_parser_xfree(*p);
+  request_parser_free(*p);
   *p = 0;
 }
 

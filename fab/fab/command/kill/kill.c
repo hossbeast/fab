@@ -3,8 +3,11 @@
 
 #include <stdio.h>
 
+#include "fab/client.h"
+
 #include "kill.h"
 #include "command.h"
+#include "args.h"
 
 //
 // static
@@ -13,9 +16,19 @@
 static void usage(command * restrict cmd)
 {
   printf(
-"\n"
-"kill options\n"
+"kill options (none)\n"
   );
+}
+
+static void attached(command * restrict cmd, fab_client * restrict client)
+{
+}
+static void disconnected(command * restrict cmd)
+{
+}
+static void init(command * restrict cmd, uint32_t flags)
+{
+  g_args.kill = true;
 }
 
 //
@@ -24,4 +37,7 @@ static void usage(command * restrict cmd)
 
 struct command kill_command = {
     usage : usage
+  , init : init
+  , attached : attached
+  , disconnected : disconnected
 };

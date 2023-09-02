@@ -9,7 +9,7 @@ There is up to one run thread
 
 */
 
-#include "request.internal.h"
+#include "request.h"
 
 struct handler_context;
 

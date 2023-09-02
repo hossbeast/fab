@@ -12,8 +12,10 @@
 
 struct narrator;
 struct fsent;
-struct rule_module_edge;
+struct module_rule_edge;
 struct graph_invalidation_context;
+struct entlist;
+struct buildplan_entity;
 
 // active list
 extern llist dependency_list;
@@ -26,67 +28,50 @@ extern llist dependency_list;
 typedef struct dependency {
   moria_edge edge;
 
-  const struct rule_module_edge * rme;      // not null - rme which created this edge
-  llist dependencies_lln;                   // in rme->dependencies
-  uint32_t reconciliation_id;
-
-  /* dependency with an attached fml can be added to the buildplan */
-  const struct fsent *fml;
-  uint16_t id;              // build plan id
-  uint16_t depth;           // max depth
+  /* cached */
+  struct buildplan_entity *bpe;
 } dependency;
 
 /* release dependency edges */
 void dependency_cleanup(void);
 
-void dependency_alloc(dependency ** restrict rv, struct moria_graph * restrict g, uint16_t Alen, uint16_t Blen)
-  __attribute__((nonnull));
-
-/* get a list of the dependency sources */
-void dependency_sources(const dependency * restrict bpe, struct llist * restrict list)
-  __attribute__((nonnull));
-
-/* get a list of the dependency targets */
-void dependency_targets(const dependency * restrict bpe, struct llist * restrict list)
-  __attribute__((nonnull));
-
-void dependency_say_sources(const dependency * restrict bpe, struct narrator * restrict N)
-  __attribute__((nonnull));
-
-void dependency_say_targets(const dependency * restrict bpe, struct narrator * restrict N)
-  __attribute__((nonnull));
-
 /*
  * create a dependency edge between two nodes
  *
- * A - target
- * B - source
+ * B - source (down)
+ * A - target (up)
  */
 void dependency_connect(
-    struct fsent * restrict A
-  , struct fsent * restrict B
-  , enum edge_kind relation
-  , struct graph_invalidation_context * restrict invalidation
-  , struct dependency ** restrict e
+    struct moria_vertex * restrict B
+  , struct moria_vertex * restrict A
+  , enum edge_type relation
 )
   __attribute__((nonnull));
 
 /*
  * create a dependency edge between zero or more nodes
  *
- * Alist - targets
  * Blist - sources
+ * Alist - targets
  */
 void dependency_hyperconnect(
-    struct moria_vertex ** restrict Alist
-  , uint16_t Alen
-  , struct moria_vertex ** restrict B
+    struct moria_vertex ** restrict B
   , uint16_t Blen
-  , enum edge_kind relation
-  , struct graph_invalidation_context * restrict invalidation
-  , struct dependency ** restrict e
-)
-  __attribute__((nonnull(6, 7)));
+  , struct moria_vertex ** restrict Alist
+  , uint16_t Alen
+  , enum edge_type relation
+);
 
 void dependency_disconnect(dependency * restrict ne, struct graph_invalidation_context * restrict invalidation)
+  __attribute__((nonnull));
+
+void dependency_disconnecting(
+    dependency * restrict dep
+  , struct entlist * restrict edges
+  , struct entlist * restrict vertices
+  , struct graph_invalidation_context * restrict invalidation
+)
+  __attribute__((nonnull));
+
+void dependency_release(dependency * restrict dep)
   __attribute__((nonnull));

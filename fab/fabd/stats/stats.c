@@ -1,13 +1,31 @@
 /* SPDX-License-Identifier: GPL-3.0 */
 /* Copyright (c) 2012-2023 Todd Freed <todd.freed@gmail.com> */
 
+#include "moria/foreach.h"
+#include "fab/stats.desc.h"
+#include "valyria/map.h"
+
 #include "stats.h"
+#include "config.h"
 #include "config.h"
 #include "formula.h"
 #include "fsent.h"
+#include "vertex.h"
 #include "marshal.h"
 #include "module.h"
 #include "var.h"
+#include "rule_module_association.h"
+#include "block.h"
+#include "rule.h"
+#include "rules.h"
+#include "var.h"
+#include "system_state.h"
+#include "run_thread.h"
+#include "edge.h"
+#include "fsent_index.h"
+#include "notify_thread.h"
+
+#include "zcat.h"
 
 fab_global_stats g_stats;
 
@@ -20,174 +38,74 @@ typedef struct stat_def {
 // public
 //
 
-static void collate_global(void *dst, size_t sz, fab_global_stats *stats, bool reset, size_t *zp)
+static size_t block_rules(block *b)
 {
   size_t z;
-  fab_global_stats lstats;
-  descriptor_field *field;
-  module *mod;
-  statement_block *block;
-  int x;
-  uint32_t count;
-
-  if(reset)
-  {
-    memcpy(&lstats, &stats, sizeof(lstats));
-    memset(stats, 0, sizeof(*stats));
-    stats = &lstats;
-  }
+  block *blk;
 
   z = 0;
-  z += marshal_u32(dst + z, sz - z, descriptor_fab_global_stats.id);
+  z += llist_count(&b->rules);
 
-  /* rules */
-  count = 0;
-  llist_foreach(&module_list, mod, vertex.owner) {
-    if(mod->unscoped_block) {
-      count += llist_count(&mod->unscoped_block->rules);
-    }
-    llist_foreach(&mod->scoped_blocks, block, lln) {
-      count += llist_count(&block->rules);
-    }
-  }
-  z += marshal_u32(dst + z, sz - z, count);
-
-  /* rmas */
-  count = 0;
-  llist_foreach(&module_list, mod, vertex.owner) {
-    count += llist_count(&mod->rmas_owner);
-  }
-  z += marshal_u32(dst + z, sz - z, count);
-
-  /* models */
-  count = 0;
-  llist_foreach(&module_list, mod, vertex.owner) {
-    if(fsent_kind_get(mod->self_node) == VERTEX_MODEL_FILE) {
-      count++;
-    }
-  }
-  z += marshal_u32(dst + z, sz - z, count);
-
-  /* modules */
-  count = 0;
-  llist_foreach(&module_list, mod, vertex.owner) {
-    if(fsent_kind_get(mod->self_node) == VERTEX_MODULE_FILE) {
-      count++;
-    }
-  }
-  z += marshal_u32(dst + z, sz - z, count);
-
-  /* event counters */
-  for(x = 4; x < descriptor_fab_global_stats.members_len; x++)
-  {
-    field = descriptor_fab_global_stats.members[x];
-    if(field->size == 8) {
-      z += marshal_u64(dst + z, sz - z, stats->u64[field->offset / 8]);
-    } else if(field->size == 4) {
-      z += marshal_u32(dst + z, sz - z, stats->u32[field->offset / 4]);
-    } else if(field->size == 2) {
-      z += marshal_u16(dst + z, sz - z, stats->u16[field->offset / 2]);
-    } else if(field->size == 1) {
-      z += marshal_u16(dst + z, sz - z, stats->u8[field->offset / 1]);
-    } else {
-      RTA;
-    }
-  }
-
-  *zp += z;
-}
-
-static size_t collate_node(void *dst, size_t sz, fsent * restrict n, bool reset)
-{
-  size_t z;
-  fab_fsent_stats *stats;
-  fab_fsent_stats lstats;
-  descriptor_field *field;
-  int x;
-  uint16_t len;
-  size_t len_off;
-  uint32_t val;
-
-  stats = &n->stats;
-  if(reset)
-  {
-    memcpy(&lstats, stats, sizeof(lstats));
-    memset(stats, 0, sizeof(*stats));
-    stats = &lstats;
-  }
-
-  z = 0;
-  z += marshal_u32(dst + z, sz - z, descriptor_fab_fsent_stats.id);
-
-  /* abs path */
-  len_off = z;
-  z += marshal_u16(dst + z, sz - z, 0);
-  len = fsent_absolute_path_znload(dst + z, sz - z, n);
-  marshal_u16(dst + len_off, sz - len_off, len);
-  z += len;
-
-  /* kind */
-  val = vertex_kind_remap(fsent_kind_get(n));
-  z += marshal_u32(dst + z, sz - z, val);
-
-  /* state */
-  val = vertex_state_remap(fsent_state_get(n));
-  z += marshal_u32(dst + z, sz - z, val);
-
-  /* event counters */
-  for(x = 3; x < descriptor_fab_fsent_stats.members_len; x++)
-  {
-    field = descriptor_fab_fsent_stats.members[x];
-    if(field->size == 8) {
-      z += marshal_u64(dst + z, sz - z, stats->u64[field->offset / 8]);
-    } else if(field->size == 4) {
-      z += marshal_u32(dst + z, sz - z, stats->u32[field->offset / 4]);
-    } else if(field->size == 2) {
-      z += marshal_u16(dst + z, sz - z, stats->u16[field->offset / 2]);
-    } else if(field->size == 1) {
-      z += marshal_u8(dst + z, sz - z, stats->u8[field->offset / 1]);
-    } else {
-      RTA;
-    }
+  llist_foreach(&b->blocks, blk, lln) {
+    z += block_rules(blk);
   }
 
   return z;
 }
 
-void stats_global_collate(void *dst, size_t sz, bool reset, size_t *zp)
-{
-  collate_global(dst, sz, &g_stats, reset, zp);
-}
-
-void stats_node_collate(void *dst, size_t sz, fsent * restrict n, bool reset, size_t *zp)
+size_t stats_global_collate(void *dst, size_t sz, bool reset)
 {
   size_t z;
-  vertex_kind kind;
+  fab_global_stats *stats;
+  fab_global_stats tmp;
+  module *mod;
+  fsent *fse;
+  uint32_t count;
+  block *block;
+
+  memcpy(&tmp, &g_stats, sizeof(tmp));
+  if(reset) {
+    memset(&g_stats, 0, sizeof(g_stats));
+  }
+  stats = &tmp;
+
+  /* state */
+  stats->system_state = system_state;
+  stats->system_error = system_error;
+  stats->autorun = run_thread_autorun;
+
+  /* rules */
+  count = 0;
+  llist_foreach(&module_list, mod, vertex.owner) {
+    llist_foreach(&mod->blocks, block, lln) {
+      count += block_rules(block);
+    }
+  }
+  stats->rules = count;
+
+  /* special */
+  stats->modules = llist_count(&module_list);
+  stats->config_files = llist_count(&config_list);
+  stats->rules_files = llist_count(&rules_list);
+  stats->var_files = llist_count(&var_list);
+
+  /* fsents */
+  stats->fsents = llist_count(&fsent_list);
+
+  stats->fsent_index_count = fsent_index_count;
+  stats->notify_index_count = notify_thread_fsent_by_in_wd->size;
+
+  /* fsents_shadow */
+  count = 0;
+  llist_foreach(&fsent_list, fse, vertex.owner) {
+    if((fse->vertex.attrs & VERTEX_SHADOWTYPE_OPT)) {
+      count++;
+    }
+  }
+  stats->fsents_shadow = count;
 
   z = 0;
-  z += collate_node(dst + z, sz - z, n, reset);
+  z += descriptor_marshal_object(dst + z, sz - z, &descriptor_fab_global_stats, &stats->record, 0);
 
-  kind = fsent_kind_get(n);
-  if(kind == VERTEX_MODULE_DIR)
-  {
-    module_collate_stats(dst + z, sz - z, n->self_mod, reset, &z);
-  }
-  else if(kind == VERTEX_MODULE_FILE)
-  {
-    module_file_collate_stats(dst + z, sz - z, n, reset, &z);
-  }
-  else if(kind == VERTEX_FORMULA_FILE)
-  {
-    formula_collate_stats(dst + z, sz - z, n->self_fml, reset, &z);
-  }
-  else if(kind == VERTEX_VAR_FILE)
-  {
-    var_collate_stats(dst + z, sz - z, n->self_var, reset, &z);
-  }
-  else if(kind == VERTEX_CONFIG_FILE)
-  {
-    config_collate_stats(dst + z, sz - z, n->self_config, reset, &z);
-  }
-
-  *zp += z;
+  return z;
 }

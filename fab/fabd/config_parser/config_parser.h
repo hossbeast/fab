@@ -4,33 +4,38 @@
 #pragma once
 
 #include "types.h"
+#include "yyutil/parser.h"
 
 struct yyu_location;
-struct configblob;
-struct config_parser;
-typedef struct config_parser config_parser;
+struct configuration;
+struct pattern_parser;
+struct bacon_parser;
+struct bacon_value;
+struct pattern;
 
-/// config_parser_create
-//
-// SUMMARY
-//  create a config parser
-//
+typedef struct config_parser {
+  yyu_parser yyu;
+
+  // sub parsers
+  struct pattern_parser *pattern_parser;
+  struct bacon_parser *bacon_parser;
+
+  // under construction
+  struct configuration_filesystems_mapping *fm;
+
+  // (returns)
+  struct configuration *cfg; // parsed config
+} config_parser;
+
+/* create a config parser */
 void config_parser_create(config_parser ** const restrict p)
   __attribute__((nonnull));
 
-/// config_parser_xfree
-//
-// SUMMARY
-//  free a config parser with free semantics
-//
-void config_parser_xfree(config_parser * restrict);
+/* free a config parser with free semantics */
+void config_parser_free(config_parser * restrict);
 
-/// config_parser_ixfree
-//
-// SUMMARY
-//  free a config parser with ifree semantics
-//
-void config_parser_ixfree(config_parser ** restrict)
+/* free a config parser with ifree semantics */
+void config_parser_ifree(config_parser ** restrict)
   __attribute__((nonnull));
 
 /// config_parse
@@ -44,7 +49,7 @@ void config_parser_ixfree(config_parser ** restrict)
 //  size      - size of buffer
 //  [fname]   - filename, for error messages
 //  [used]    - (returns) number of bytes parsed
-//  [rv]      - (returns) parsed config object
+//  [rv]      - configuration object to parse onto
 //
 // REMARKS
 //  this parser uses YYU_INPLACE, so the buffer must have two terminating null bytes
@@ -55,6 +60,21 @@ int config_parser_parse(
   , size_t size
   , const char * restrict fname
   , struct yyu_location * restrict init_loc
-  , struct configblob ** restrict rv
+  , struct configuration * restrict cfg
 )
   __attribute__((nonnull(1, 2)));
+
+void config_parser_fm_alloc(config_parser * restrict parser, struct bacon_value * restrict key)
+  __attribute__((nonnull));
+
+void config_parser_wse_alloc(config_parser * restrict parser, struct bacon_value * restrict string)
+  __attribute__((nonnull));
+
+void config_parser_fpde_alloc(config_parser * restrict parser, struct bacon_value * restrict string)
+  __attribute__((nonnull));
+
+void config_parser_we_put(config_parser * restrict parser, struct pattern * restrict pat)
+  __attribute__((nonnull));
+
+void config_parser_wi_put(config_parser * restrict parser, struct pattern * restrict pat)
+  __attribute__((nonnull));

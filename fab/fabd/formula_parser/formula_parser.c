@@ -10,7 +10,7 @@
 #include "formula.tokens.h"
 #include "formula.lex.h"
 #include "formula.states.h"
-#include "selector_parser.internal.h"
+#include "selector_parser.h"
 
 /* marks the start of the embedded bacon block */
 static const char * marker = "__DATA__";
@@ -190,23 +190,23 @@ void formula_parser_create(formula_parser ** const rv)
   *rv = p;
   p = 0;
 
-  formula_parser_xfree(p);
+  formula_parser_free(p);
 }
 
-void formula_parser_xfree(formula_parser* const p)
+void formula_parser_free(formula_parser* const p)
 {
   if(p)
   {
-    selector_parser_xfree(p->selector_parser);
+    selector_parser_free(p->selector_parser);
     yyu_parser_xdestroy(&p->yyu);
   }
 
   free(p);
 }
 
-void formula_parser_ixfree(formula_parser ** const p)
+void formula_parser_ifree(formula_parser ** const p)
 {
-  formula_parser_xfree(*p);
+  formula_parser_free(*p);
   *p = 0;
 }
 
@@ -226,13 +226,11 @@ int formula_parser_parse(
   formula_parser_extract(text, len, &shebang, &bacon, &bacon_len);
 
   r = 0;
-  if(bacon_len)
-  {
+  if(bacon_len) {
     r = formula_parser_bacon_parse(parser, bacon, bacon_len + 2, fname, &fml->file, &fml->args, &fml->envs);
   }
 
-  if(r == 0 && !shebang && !fml->file)
-  {
+  if(r == 0 && !shebang && !fml->file) {
     RTA;
   }
 

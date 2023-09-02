@@ -5,7 +5,7 @@
 
 struct pattern;
 struct fsent;
-struct set;
+struct hashtable;
 struct module;
 struct llist;
 
@@ -14,20 +14,17 @@ struct llist;
  *
  * pattern    - match pattern
  * module     - module to begin matching at
- * modules    - all modules
- * [variants] - variants
  * matches    - (returns) matching nodes
  */
 void pattern_search(
     /* 1 */ const struct pattern * restrict pattern
   , /* 2 */ const struct module * restrict module
-  , /* 3 */ const struct llist * restrict modules
-  , /* 4 */ const struct set * restrict variants
-  , /* 5 */ struct set * restrict matches
-  , /* 6 */ void (*dirnode_visit)(void * ctx, struct fsent * dirnode)
-  , /* 7 */ void *dirnode_visit_ctx
+  , /* 3 */ struct fsent * restrict base
+  , /* 4 */ struct hashtable * restrict matches
+  , /* 5 */ void (*dirnode_visit)(void * ctx, struct fsent * dirnode)
+  , /* 6 */ void *dirnode_visit_ctx
 )
-  __attribute__((nonnull(1, 2, 3)));
+  __attribute__((nonnull(1, 2)));
 
-void pattern_search_matches_create(struct set ** matches)
+void pattern_search_matches_init(struct hashtable * matches)
   __attribute__((nonnull));

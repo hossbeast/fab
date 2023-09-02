@@ -3,21 +3,22 @@
 
 #include "xunit.h"
 #include "xunit/assert.h"
+#include "bacon/value.h"
+#include "bacon/parser.h"
 
 #include "xlinux/xstdlib.h"
 #include "moria/graph.h"
 #include "moria/vertex.h"
-#include "moria/operations.h"
 #include "valyria/list.h"
-#include "valyria/map.h"
-#include "valyria/set.h"
-#include "valyria/assert.h"
+#include "valyria/hashtable.h"
 #include "narrator.h"
 #include "narrator/growing.h"
 
 #include "render.internal.h"
 #include "pattern_parser.h"
+#include "pattern_parser.internal.h"
 #include "pattern.h"
+#include "strht.h"
 
 #include "common/hash.h"
 
@@ -26,6 +27,7 @@ typedef struct pattern_render_test {
 
   // context
   char * pattern;
+  char * vars;
 
   // results
   char ** paths;
@@ -40,47 +42,57 @@ static void pattern_render_test_entry(xunit_test * _test)
   pattern_render_test * test = (typeof(test))_test;
 
   pattern_parser * parser = 0;
-  pattern * pattern = 0;
+  pattern *pat;
   pattern_render_result * result = 0;
   pattern_render_fragment * fragment;
   yyu_location loc;
-  set * expected = 0;
-  set * actual = 0;
+  hashtable expected;
+  hashtable actual;
   uint16_t expected_size;
   int x;
+  bacon_value *vars;
+  bacon_parser * val_parser = 0;
 
-  set_createx(&expected, 0, hash32, memncmp, 0);
-  set_createx(&actual, 0, hash32, memncmp, 0);
+  hashtable_initx(&expected, 0, strht_hash, strht_cmp, 0);
+  hashtable_initx(&actual, 0, strht_hash, strht_cmp, 0);
   expected_size = sentinel(test->paths);
+
+  bacon_parser_alloc(&val_parser);
+  bacon_parser_parse(val_parser, MMS(test->vars), "-vars-", BACON_TYPE_SET, &vars);
 
   // parse the pattern
   pattern_parser_create(&parser);
-  lookup_pattern_parse_partial(parser, test->pattern, strlen(test->pattern) + 2, "-test-", 0, &loc, &pattern);
+  if(lookup_pattern_parse_partial(parser, test->pattern, strlen(test->pattern) + 2, "-test-", 0, &loc, &pat) != 0) {
+    tracef("%.*s", (int)parser->yyu->error_len, parser->yyu->error_str);
+    RTA;
+  }
   assert_eq_u32(strlen(test->pattern), loc.l);
 
   // act
-  pattern_render(pattern, &result);
+  pattern_render(pat, vars, &result, 0);
 
   // expected
   for(x = 0; x < expected_size; x++)
-    set_put(expected, MMS(test->paths[x]));
+    hashtable_put(&expected, test->paths[x]);
 
   // actual
   fragment = result->fragments;
   for(x = 0; x < result->size; x++)
   {
-    set_put(actual, fragment->text, fragment->len);
+    hashtable_put(&actual, fragment->text);
     fragment = pattern_render_fragment_next(fragment);
   }
 
-  assert_eq_set(expected, actual);
+  assert_eq_strht(&expected, &actual);
   assert_eq_d(expected_size, result->size); // no duplicates rendered
 
-  pattern_parser_xfree(parser);
-  pattern_free(pattern);
-  set_xfree(expected);
-  set_xfree(actual);
+  bacon_value_free(val_parser, vars);
+  pattern_parser_free(parser);
+  pattern_free(pat);
+  hashtable_destroy(&expected);
+  hashtable_destroy(&actual);
   free(result);
+  bacon_parser_free(val_parser);
 }
 
 //
@@ -90,9 +102,10 @@ static void pattern_render_test_entry(xunit_test * _test)
 static xunit_unit xunit = {
     xu_entry : pattern_render_test_entry
   , xu_tests : (pattern_render_test*[]) {
-    /* single word */
+      /* single word */
       (pattern_render_test[]) {{
           pattern : (char[]) { "bar\0" }
+        , vars : ""
         , paths : (char*[]) {
               "bar"
             , 0
@@ -100,6 +113,7 @@ static xunit_unit xunit = {
       }}
     , (pattern_render_test[]) {{
           pattern : (char[]) { "\"b\\x42r\"\0" }
+        , vars : ""
         , paths : (char*[]) {
               "bBr"
             , 0
@@ -109,6 +123,7 @@ static xunit_unit xunit = {
     /* alternations */
     , (pattern_render_test[]) {{
           pattern : (char[]) { "lib{void,xlinux,xunit,logger,narrator}\0" }
+        , vars : ""
         , paths : (char*[]) {
               "libvoid"
             , "libxlinux"
@@ -120,6 +135,7 @@ static xunit_unit xunit = {
       }}
     , (pattern_render_test[]) {{
           pattern : (char[]) { "{a}\0" }
+        , vars : ""
         , paths : (char*[]) {
               "a"
             , 0
@@ -127,6 +143,7 @@ static xunit_unit xunit = {
       }}
     , (pattern_render_test[]) {{
           pattern : (char[]) { "{a,}\0" }
+        , vars : ""
         , paths : (char*[]) {
               "a"
             , ""
@@ -135,6 +152,7 @@ static xunit_unit xunit = {
       }}
     , (pattern_render_test[]) {{
           pattern : (char[]) { "{,a}\0" }
+        , vars : ""
         , paths : (char*[]) {
               "a"
             , ""
@@ -143,6 +161,7 @@ static xunit_unit xunit = {
       }}
     , (pattern_render_test[]) {{
           pattern : (char[]) { "{{a}}\0" }
+        , vars : ""
         , paths : (char*[]) {
               "a"
             , 0
@@ -150,6 +169,7 @@ static xunit_unit xunit = {
       }}
     , (pattern_render_test[]) {{
           pattern : (char[]) { "{{{a}}}\0" }
+        , vars : ""
         , paths : (char*[]) {
               "a"
             , 0
@@ -157,6 +177,7 @@ static xunit_unit xunit = {
       }}
     , (pattern_render_test[]) {{
           pattern : (char[]) { "{{{a}}}b\0" }
+        , vars : ""
         , paths : (char*[]) {
               "ab"
             , 0
@@ -164,6 +185,7 @@ static xunit_unit xunit = {
       }}
     , (pattern_render_test[]) {{
           pattern : (char[]) { "{{{a}}b}\0" }
+        , vars : ""
         , paths : (char*[]) {
               "ab"
             , 0
@@ -171,6 +193,7 @@ static xunit_unit xunit = {
       }}
     , (pattern_render_test[]) {{
           pattern : (char[]) { "{{{a}b}}\0" }
+        , vars : ""
         , paths : (char*[]) {
               "ab"
             , 0
@@ -178,6 +201,7 @@ static xunit_unit xunit = {
       }}
     , (pattern_render_test[]) {{
           pattern : (char[]) { "ab{c,d}\0" }
+        , vars : ""
         , paths : (char*[]) {
               "abc"
             , "abd"
@@ -186,6 +210,7 @@ static xunit_unit xunit = {
       }}
     , (pattern_render_test[]) {{
           pattern : (char[]) { "ab{c,d}e\0" }
+        , vars : ""
         , paths : (char*[]) {
               "abce"
             , "abde"
@@ -194,6 +219,7 @@ static xunit_unit xunit = {
       }}
     , (pattern_render_test[]) {{
           pattern : (char[]) { "a{b{1,2}}\0" }
+        , vars : ""
         , paths : (char*[]) {
               "ab1"
             , "ab2"
@@ -202,6 +228,7 @@ static xunit_unit xunit = {
       }}
     , (pattern_render_test[]) {{
           pattern : (char[]) { "a{b{c,d}e}f\0" }
+        , vars : ""
         , paths : (char*[]) {
               "abcef"
             , "abdef"
@@ -210,6 +237,7 @@ static xunit_unit xunit = {
       }}
     , (pattern_render_test[]) {{
           pattern : (char[]) { "a{b{c,d}}ef\0" }
+        , vars : ""
         , paths : (char*[]) {
               "abcef"
             , "abdef"
@@ -218,6 +246,7 @@ static xunit_unit xunit = {
       }}
     , (pattern_render_test[]) {{
           pattern : (char[]) { "a{{b,c}d}ef\0" }
+        , vars : ""
         , paths : (char*[]) {
               "abdef"
             , "acdef"
@@ -226,6 +255,7 @@ static xunit_unit xunit = {
       }}
     , (pattern_render_test[]) {{
           pattern : (char[]) { "x{a,b}{c,d}\0" }
+        , vars : ""
         , paths : (char*[]) {
               "xac"
             , "xad"
@@ -236,6 +266,7 @@ static xunit_unit xunit = {
       }}
     , (pattern_render_test[]) {{
           pattern : (char[]) { "{a,b}{c,d}z\0" }
+        , vars : ""
         , paths : (char*[]) {
               "acz"
             , "adz"
@@ -246,6 +277,7 @@ static xunit_unit xunit = {
       }}
     , (pattern_render_test[]) {{
           pattern : (char[]) { "{a,b}y{c,d}\0" }
+        , vars : ""
         , paths : (char*[]) {
               "ayc"
             , "ayd"
@@ -256,6 +288,7 @@ static xunit_unit xunit = {
       }}
     , (pattern_render_test[]) {{
           pattern : (char[]) { "x{a,b}y{c,d}z\0" }
+        , vars : ""
         , paths : (char*[]) {
               "xaycz"
             , "xaydz"
@@ -266,6 +299,7 @@ static xunit_unit xunit = {
       }}
     , (pattern_render_test[]) {{
           pattern : (char[]) { "{a,b}{c,d}\0" }
+        , vars : ""
         , paths : (char*[]) {
               "ac"
             , "ad"
@@ -276,6 +310,7 @@ static xunit_unit xunit = {
       }}
     , (pattern_render_test[]) {{
           pattern : (char[]) { "{a{b,c}}\0" }
+        , vars : ""
         , paths : (char*[]) {
               "ab"
             , "ac"
@@ -284,6 +319,7 @@ static xunit_unit xunit = {
       }}
     , (pattern_render_test[]) {{
           pattern : (char[]) { "{foo,bar}.void.{debug,devel,final}\0" }
+        , vars : ""
         , paths : (char*[]) {
               "foo.void.debug"
             , "foo.void.devel"
@@ -295,9 +331,10 @@ static xunit_unit xunit = {
           }
       }}
 
-  /* classes */
+    /* classes */
     , (pattern_render_test[]) {{
           pattern : (char[]) { "[cd]\0" }
+        , vars : ""
         , paths : (char*[]) {
               "c"
             , "d"
@@ -306,6 +343,7 @@ static xunit_unit xunit = {
       }}
     , (pattern_render_test[]) {{
           pattern : (char[]) { "ab[cd]\0" }
+        , vars : ""
         , paths : (char*[]) {
               "abc"
             , "abd"
@@ -314,6 +352,7 @@ static xunit_unit xunit = {
       }}
     , (pattern_render_test[]) {{
           pattern : (char[]) { "[ab]cd\0" }
+        , vars : ""
         , paths : (char*[]) {
               "acd"
             , "bcd"
@@ -322,6 +361,7 @@ static xunit_unit xunit = {
       }}
     , (pattern_render_test[]) {{
           pattern : (char[]) { "ab[cd]ef\0" }
+        , vars : ""
         , paths : (char*[]) {
               "abcef"
             , "abdef"
@@ -330,6 +370,7 @@ static xunit_unit xunit = {
       }}
     , (pattern_render_test[]) {{
           pattern : (char[]) { "ab[c-f]\0" }
+        , vars : ""
         , paths : (char*[]) {
               "abc"
             , "abd"
@@ -340,6 +381,7 @@ static xunit_unit xunit = {
       }}
     , (pattern_render_test[]) {{
           pattern : (char[]) { "{[c-d]}\0" }
+        , vars : ""
         , paths : (char*[]) {
               "c"
             , "d"
@@ -347,18 +389,46 @@ static xunit_unit xunit = {
           }
       }}
 
-  /* directories */
+    /* variables */
+    , (pattern_render_test[]) {{
+          pattern : (char[]) { "$a\0" }
+        , vars : "a : b"
+        , paths : (char*[]) {
+              "b"
+            , 0
+          }
+      }}
+    , (pattern_render_test[]) {{
+          pattern : (char[]) { "a$a\0" }
+        , vars : "a : b"
+        , paths : (char*[]) {
+              "ab"
+            , 0
+          }
+      }}
+    , (pattern_render_test[]) {{
+          pattern : (char[]) { "${a}a\0" }
+        , vars : "a : b"
+        , paths : (char*[]) {
+              "ba"
+            , 0
+          }
+      }}
+
+    /* directories */
     , (pattern_render_test[]) {{
           pattern : (char[]) { "fab/common\0" }
+        , vars : ""
         , paths : (char*[]) {
               "fab/common"
             , 0
           }
       }}
 
-  /* NODESET_SELF */
+    /* NODESET_SELF */
     , (pattern_render_test[]) {{
           pattern : (char[]) { "./fab/common\0" }
+        , vars : ""
         , paths : (char*[]) {
               "./fab/common"
             , 0
@@ -366,15 +436,17 @@ static xunit_unit xunit = {
       }}
     , (pattern_render_test[]) {{
           pattern : (char[]) { ".\0" }
+        , vars : ""
         , paths : (char*[]) {
               "."
             , 0
           }
       }}
 
-  /* NODESET_SHADOW */
+    /* NODESET_SHADOW */
     , (pattern_render_test[]) {{
           pattern : (char[]) { "//foo/bar\0" }
+        , vars : ""
         , paths : (char*[]) {
               "//foo/bar"
             , 0
@@ -382,13 +454,13 @@ static xunit_unit xunit = {
       }}
     , (pattern_render_test[]) {{
           pattern : (char[]) { "//{foo,bar}\0" }
+        , vars : ""
         , paths : (char*[]) {
               "//foo"
             , "//bar"
             , 0
           }
       }}
-
     , NULL
   }
 };

@@ -7,15 +7,14 @@
 
 #include "reconcile.h"
 #include "params.h"
-#include "zbuffer.h"
+#include "zcat.h"
 
 static uint64_t requestid;
 
 static void usage(command * restrict cmd)
 {
   printf(
-"\n"
-"reconcile options\n"
+"reconcile options (none)\n"
   );
 }
 
@@ -34,11 +33,11 @@ static void connected(command * restrict cmd, fab_client * restrict client)
   requestid = msg->id = ++client->msgid;
 
   z = 0;
-  z += znloads(msg->text + z, sizeof(msg->text) - z, "reconcile");
+  z += zcats(msg->text + z, sizeof(msg->text) - z, "reconcile");
 
   // two terminating null bytes
-  z += znloadc(msg->text + z, sizeof(msg->text) - z, 0);
-  z += znloadc(msg->text + z, sizeof(msg->text) - z, 0);
+  z += zcatc(msg->text + z, sizeof(msg->text) - z, 0);
+  z += zcatc(msg->text + z, sizeof(msg->text) - z, 0);
   msg->size = z;
 
   client_post(client, msg);
@@ -56,13 +55,21 @@ static void process(command * restrict cmd, fab_client * restrict client, fabipc
   g_params.shutdown = true;
 }
 
+static void attached(command * restrict cmd, fab_client * restrict client)
+{
+
+}
+
 //
 // public
 //
 
+static void disconnected(command * restrict cmd) { }
 struct command reconcile_command = {
     name : "reconcile"
+  , attached : attached
   , usage : usage
   , connected : connected
   , process : process
+  , disconnected : disconnected
 };

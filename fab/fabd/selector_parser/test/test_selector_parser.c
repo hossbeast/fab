@@ -4,7 +4,6 @@
 #include "lorien/load.h"
 #include "bacon/load.h"
 
-#include "valyria/map.h"
 #include "yyutil/grammar.h"
 
 #include "xunit.h"
@@ -14,6 +13,7 @@
 
 #include "selector_parser.h"
 #include "selector.internal.h"
+#include "selector_parser.h"
 #include "request.h"
 #include "fsent.h"
 
@@ -37,7 +37,7 @@ static void selector_parser_test_unit_cleanup(xunit_unit * unit)
 static void selector_parser_test_entry(xunit_test * _test)
 {
   selector_parser_test * test = (typeof(test))_test;
-  char buf[512];
+  char buf[1024];
   size_t len;
   const char *expected;
 
@@ -52,7 +52,9 @@ static void selector_parser_test_entry(xunit_test * _test)
   selector_parser_create(&parser);
 
   // act - initial parse
-  selector_parser_parse_partial(parser, test->text, strlen(test->text) + 2, 0, 0, &loc, &A);
+  if(selector_parser_parse_partial(parser, test->text, strlen(test->text) + 2, 0, 0, &loc, &A) != 0) {
+    tracef("%.*s", (int)parser->yyu.error_len, parser->yyu.error_str);
+  }
   assert_eq_u32(strlen(test->text), loc.l);
 
   narrator_growing_create(&N1);
@@ -63,7 +65,9 @@ static void selector_parser_test_entry(xunit_test * _test)
   narrator_seek(&N1->base, 0, NARRATOR_SEEK_SET, 0);
   narrator_read(&N1->base, buf, len, 0);
   buf[len] = buf[len + 1] = 0;
-  selector_parser_parse_partial(parser, buf, len + 2, 0, 0, &loc, &B);
+  if(selector_parser_parse_partial(parser, buf, len + 2, 0, 0, &loc, &B) != 0) {
+    tracef("%.*s", (int)parser->yyu.error_len, parser->yyu.error_str);
+  }
   assert_eq_u32(len, loc.l);
 
   narrator_growing_create(&N2);
@@ -75,7 +79,7 @@ static void selector_parser_test_entry(xunit_test * _test)
   expected = test->expected ?: test->text;
   assert_eq_w(expected, strlen(expected), N1->s, N1->l);
 
-  selector_parser_xfree(parser);
+  selector_parser_free(parser);
   selector_free(A);
   selector_free(B);
   narrator_growing_free(N1);
@@ -109,8 +113,12 @@ static xunit_unit xunit = {
           }
         , expected : (char[]) {
             "traverse : {\n"
-              "  direction : up\n"
-              "  graph : fs\n"
+            "  direction : up\n"
+            "  order : preorder\n"
+            "  graph : fs\n"
+            "  exhaustive : false\n"
+            "  cross-module : false\n"
+            "  nofollow : false\n"
             "}\0\0"
           }
       }}
@@ -127,7 +135,11 @@ static xunit_unit xunit = {
              "sequence : [\n"
              "  traverse : {\n"
              "    direction : up\n"
+             "    order : preorder\n"
              "    graph : fs\n"
+             "    exhaustive : false\n"
+             "    cross-module : false\n"
+             "    nofollow : false\n"
              "  }\n"
              "  pattern : foo/bar/main.o\n"
              "]\0\0"
@@ -158,10 +170,15 @@ static xunit_unit xunit = {
              "  traverse : {\n"
              "    max-distance : 1\n"
              "    direction : down\n"
+             "    order : preorder\n"
              "    graph : depends\n"
+             "    exhaustive : false\n"
+             "    cross-module : false\n"
+             "    nofollow : false\n"
              "  }\n"
              "  pattern : foo/bar/main.o\n"
              "]\0\0\n"
+
       }}
     , (selector_parser_test[]) {{
           text : (char[]) {
@@ -190,25 +207,41 @@ static xunit_unit xunit = {
              "  traverse : {\n"
              "    max-distance : 2\n"
              "    direction : down\n"
+             "    order : preorder\n"
              "    graph : fs\n"
+             "    exhaustive : false\n"
+             "    cross-module : false\n"
+             "    nofollow : false\n"
              "  }\n"
              "  traverse : {\n"
              "    min-distance : 3\n"
              "    max-distance : 4\n"
              "    direction : down\n"
+             "    order : preorder\n"
              "    graph : fs\n"
+             "    exhaustive : false\n"
+             "    cross-module : false\n"
+             "    nofollow : false\n"
              "  }\n"
              "  traverse : {\n"
              "    min-distance : 5\n"
              "    max-distance : 6\n"
              "    direction : down\n"
+             "    order : preorder\n"
              "    graph : fs\n"
+             "    exhaustive : false\n"
+             "    cross-module : false\n"
+             "    nofollow : false\n"
              "  }\n"
              "  traverse : {\n"
              "    min-distance : 7\n"
              "    max-distance : 8\n"
              "    direction : down\n"
+             "    order : preorder\n"
              "    graph : fs\n"
+             "    exhaustive : false\n"
+             "    cross-module : false\n"
+             "    nofollow : false\n"
              "  }\n"
              "]\0\0\n"
           }

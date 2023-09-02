@@ -31,4 +31,6 @@ variant {debug,devel,final,trace} : [
 
 var : {
   lflags : [ -lpthread -lbacktrace ]
+#  lflags.final : [ -static ]
+#  lflags.trace : [ -static ]
 }

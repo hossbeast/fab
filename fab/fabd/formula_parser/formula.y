@@ -8,7 +8,6 @@
   #include "xlinux/xstring.h"
   #include "xlinux/xstdlib.h"
   #include "valyria/rbtree.h"
-  #include "valyria/chain.h"
 
   #include "formula_parser.internal.h"
   #include "formula.h"
@@ -22,17 +21,6 @@
   int formula_yylex(void *, void*, void*);
   #define PARSER containerof(parser, formula_parser, yyu)
   #define FORMULA_YYLTYPE yyu_location
-
-  #include "valyria/rbtree.h"
-  #include "xlinux/xstdlib.h"
-
-  static void rbt_create(rbtree ** restrict rbt)
-  {
-    xmalloc(rbt, sizeof(**rbt));
-    rbtree_init(*rbt);
-  }
-
-  void formula_value_set_free(struct rbtree * restrict);
 }
 
 %define api.pure
@@ -50,7 +38,7 @@
   yyu_lval yyu;
 
   formula_value * value;
-  rbtree * set;
+  //rbtree * set;
 
   // enums
   fsent_property node_property;
@@ -62,31 +50,31 @@
 /* tokens */
 %token '{' '}'
 %token '[' ']'
-%token ':' '='
+%token ':'
 
 /* terminals */
-%token            STR           "string"
-%token <yyu.u8>   CREF          "character-escape"
-%token <yyu.u8>   HREF          "hex-escape"
-%token <yyu.b>    BOOL          "boolean"
-%token <yyu.f>    FLOAT         "float"
-%token <yyu.t>    VARIABLE      "variable"
-%token <yyu.umax> UINTMAX8
-%token <yyu.umax> UINTMAX16
-%token <yyu.umax> UINTMAX32
-%token <yyu.umax> UINTMAX64
-%token <yyu.umax> HEX8
-%token <yyu.umax> HEX16
-%token <yyu.umax> HEX32
-%token <yyu.umax> HEX64
-%token <yyu.imax> INTMIN8
-%token <yyu.imax> INTMIN16
-%token <yyu.imax> INTMIN32
-%token <yyu.imax> INTMIN64
-%token <yyu.imax> INTMAX8
-%token <yyu.imax> INTMAX16
-%token <yyu.imax> INTMAX32
-%token <yyu.imax> INTMAX64
+%token            STR           300 "unquoted-string"
+%token <yyu.u8>   CREF          301 "character-escape"
+%token <yyu.u8>   HREF          302 "hex-escape"
+%token <yyu.b>    BOOL          303 "boolean"
+%token <yyu.f>    FLOAT         304 "float"
+%token <yyu.t>    VARIABLE      305 "variable"
+%token <yyu.umax> UINTMAX8      306
+%token <yyu.umax> UINTMAX16     307
+%token <yyu.umax> UINTMAX32     308
+%token <yyu.umax> UINTMAX64     309
+%token <yyu.umax> HEX8          310
+%token <yyu.umax> HEX16         311
+%token <yyu.umax> HEX32         312
+%token <yyu.umax> HEX64         313
+%token <yyu.imax> INTMIN8       314
+%token <yyu.imax> INTMIN16      315
+%token <yyu.imax> INTMIN32      316
+%token <yyu.imax> INTMIN64      317
+%token <yyu.imax> INTMAX8       318
+%token <yyu.imax> INTMAX16      319
+%token <yyu.imax> INTMAX32      320
+%token <yyu.imax> INTMAX64      321
 
 %type <yyu.umax> posint_ugroup
 %type <yyu.imax> posint_igroup
@@ -107,7 +95,6 @@
 %token
   ABSDIR        "absdir"
   ABSPATH       "abspath"
-  VARIANT       "variant"
   BASE          "base"
   EXT           "ext"
   FSROOT        "fsroot"
@@ -117,27 +104,18 @@
   SEQUENCE      "sequence"
   SUFFIX        "suffix"
 
-%token <yyu.u16>
-  BM_SOURCE     "bm_source"
-  BM_SOURCES    "bm_sources"
-  BM_TARGET     "bm_target"
-  BM_TARGETS    "bm_targets"
-  BM_VARIANT    "bm_variant"
-
 /* nonterminals */
-%type <yyu.u16> sysvar-token
-%type <yyu.s> string quoted-string unquoted-string strpart strparts
-%type <value> primitive boolean float negint posint variable sysvar
+%type <value> string quote_words quote_word quoted_string unquoted_string
+%type <value> primitive boolean float negint posint variable
 %type <value> operation-list operation-list-item operation sequence-operation path-search-operation
 %type <value> arg-values arg-value
 %type <value> env-var env-var-value
 %type <value> file-value
-%type <set> env-vars
+%type <value> env-vars
 %type <node_property> node-property
 
 %destructor { formula_value_free($$); } <value>
 %destructor { selector_free($$); } <selector>
-%destructor { formula_value_set_free($$); } <set>
 
 %%
 utterance
@@ -174,19 +152,18 @@ file-value
 args-section
   : ARGS ':' '[' arg-values ']'
   {
-    formula_value_list_mk(&@$, &PARSER->args, $4);
+    PARSER->args = $4;
   }
   ;
 
 arg-values
   : arg-values arg-value
   {
-    $$ = chain_add($1, $2, chn);
+    formula_value_list_mkv(&@$, $1, &$$, $2);
   }
   | arg-value
   {
-    $$ = $1;
-    chain_init_node(&$$->chn);
+    formula_value_list_mkv(&@$, 0, &$$, $1);
   }
   ;
 
@@ -198,20 +175,18 @@ arg-value
 envs-section
   : ENVS ':' '{' env-vars '}'
   {
-    formula_value_set_mk(&@$, &PARSER->envs, $4);
+    PARSER->envs = $4;
   }
   ;
 
 env-vars
   : env-vars env-var
   {
-    $$ = $1;
-    rbtree_put($$, $2, rbn, fmlval_rbn_cmp);
+    formula_value_set_mkv(&@$, $1, &$$, $2);
   }
   | env-var
   {
-    rbt_create(&$$);
-    rbtree_put($$, $1, rbn, fmlval_rbn_cmp);
+    formula_value_set_mkv(&@$, 0, &$$, $1);
   }
   ;
 
@@ -226,7 +201,7 @@ env-var-value
   : primitive
   | '[' operation-list ']'
   {
-    formula_value_sequence_mk(&@$, &$$, $2);
+    $$ = $2;
   }
   | '{' path-search-operation '}'
   {
@@ -240,22 +215,17 @@ primitive
   | negint
   | posint
   | variable
-  | sysvar
   | string
-  {
-    formula_value_string_mk(&@$, &$$, $1);
-  }
   ;
 
 operation-list
   : operation-list operation-list-item
   {
-    $$ = chain_add($1, $2, chn);
+    formula_value_sequence_mkv(&@$, $1, &$$, $2);
   }
   | operation-list-item
   {
-    $$ = $1;
-    chain_init_node(&$$->chn);
+    formula_value_sequence_mkv(&@$, 0, &$$, $1);
   }
   ;
 
@@ -267,7 +237,7 @@ operation-list-item
 sequence-operation
   : SEQUENCE ':' '[' operation-list ']'
   {
-    formula_value_sequence_mk(&@$, &$$, $4);
+    $$ = $4;
   }
   ;
 
@@ -303,20 +273,31 @@ node-property
   | RELPATH      { $$ = FSENT_PROPERTY_RELPATH; }
   | RELDIR       { $$ = FSENT_PROPERTY_RELDIR; }
   | FSROOT       { $$ = FSENT_PROPERTY_FSROOT; }
-  | VARIANT      { $$ = FSENT_PROPERTY_VARIANT; }
   ;
 
 string
-  : unquoted-string
-  | quoted-string
+  : unquoted_string
+  | quoted_string
   ;
 
-unquoted-string
-  : strpart
+unquoted_string
+  : word
+  {
+    formula_value_string_mkw(&@$, 0, &$$, @1.s, @1.l);
+  }
   ;
 
-quoted-string
-  : '"' strparts '"'
+word
+  : STR
+  | '/'
+  | '-'
+  | '+'
+  | '='
+  | ','
+  ;
+
+quoted_string
+  : '"' quote_words '"'
   {
     $$ = $2;
   }
@@ -326,30 +307,27 @@ quoted-string
   }
   ;
 
-strparts
-  : strparts strpart
+quote_words
+  : quote_words quote_word
   {
-    $$ = $1;
-    ixstrcat(&$$, $2);
+    formula_value_string_mkv(&@$, $1, &$$, $2);
+    formula_value_free($2);
   }
-  | strpart
+  | quote_word
   ;
 
-strpart
+quote_word
   : STR
   {
-    $$ = 0;
-    ixstrndup(&$$, @1.s, @1.l);
+    formula_value_string_mkw(&@$, 0, &$$, @1.s, @1.l);
   }
   | CREF
   {
-    $$ = 0;
-    ixstrndup(&$$, (char*)&$1, 1);
+    formula_value_string_mkc(&@$, 0, &$$, $1);
   }
   | HREF
   {
-    $$ = 0;
-    ixstrndup(&$$, (char*)&$1, 1);
+    formula_value_string_mkc(&@$, 0, &$$, $1);
   }
   ;
 
@@ -415,19 +393,4 @@ variable
   {
     formula_value_variable_mk(&@$, &$$, $1.s, $1.l);
   }
-  ;
-
-sysvar
-  : sysvar-token
-  {
-    formula_value_sysvar_mk(&@$, &$$, $1);
-  }
-  ;
-
-sysvar-token
-  : BM_TARGET
-  | BM_TARGETS
-  | BM_SOURCE
-  | BM_SOURCES
-  | BM_VARIANT
   ;

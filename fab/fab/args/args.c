@@ -3,13 +3,15 @@
 
 #include "common/assure.h"
 #include "common/snarf.h"
+#include "common/hash.h"
 #include "xlinux/xstdlib.h"
 #include "yyutil/parser.h"
 
 #include "args.h"
+#include "params.h"
 
 #include "macros.h"
-#include "zbuffer.h"
+#include "zcat.h"
 
 /* flex and bison do not agree on these names */
 #define YYSTYPE yyu_lval
@@ -59,23 +61,30 @@ static void usage(command * restrict cmd)
 "commands\n"
 " adhoc                 adhoc request\n"
 " autobuild             as build, but remain connected\n"
-" build       (default) bring targets up-to-date\n"
-" events                listen for and print events\n"
-" touch                 mark files as out-of-date\n"
-" stats                 print stats\n"
+" build       (default) carry out the build, mark files fresh\n"
+" config                print effective config\n"
 " describe              print node info\n"
-" tree                  print node trees\n"
-" ls                    print node listings\n"
+" env                   print effective env\n"
+" events                subscribe to and print events\n"
+" filesystem            show filesystem mount points\n"
+" fstree                show fstree attachment points\n"
+" kill                  terminate an extant fabd if any\n"
+" ls                    print directory node listings\n"
 " metadata              print metadata\n"
-" config                print effective configuration\n"
-" vars                  print effective vars\n"
 " reconcile             reload everything\n"
+" rules                 print effective rules\n"
+" stats                 print global, or per-node counters\n"
+" touch                 mark files stale\n"
+" trace                 wip\n"
+" tree                  print directory tree listings\n"
+" vars                  print effective vars\n"
 "\n"
 "global options\n"
 " --help | -h       print this message\n"
 " --version | -V    print version information\n"
 " -B                first, global invalidation\n"
 " -K                first, kill extant fabd if any\n"
+" -m path/to/module set the context module\n"
 #if CONFIG_DEVEL
 " --no-launch       only talk to an existing fabd\n"
 #endif
@@ -99,13 +108,19 @@ static void usage(command * restrict cmd)
   exit(0);
 }
 
-static void parse(yyu_parser * restrict parser, char * argvs, int argvsl, const char * restrict fname)
+static int parse(yyu_parser * restrict parser, char * argvs, int argvsl, const char * restrict fname)
 {
+  int r;
+
   if(argvsl == 0) {
-    return;
+    return 0;
   }
 
-  yyu_parse(parser, argvs, argvsl + 2, fname, YYU_INPLACE, 0, 0);
+  if((r = yyu_parse(parser, argvs, argvsl + 2, fname, YYU_INPLACE, 0, 0))) {
+    fprintf(stderr, "%.*s\n", parser->error_len, parser->error_str);
+  }
+
+  return r;
 }
 
 static void get_homedir(const char ** restrict homep)
@@ -113,7 +128,7 @@ static void get_homedir(const char ** restrict homep)
   *homep = getenv("HOME");
 }
 
-static void parse_file(yyu_parser * restrict parser, const char * restrict pathspec)
+static int parse_file(yyu_parser * restrict parser, const char * restrict pathspec)
 {
   char buf[512];
   size_t z;
@@ -122,15 +137,16 @@ static void parse_file(yyu_parser * restrict parser, const char * restrict paths
   size_t text_len = 0;
   const char *home;
   size_t len;
+  int r;
 
   len = strlen(pathspec);
   if(len >= 2 && memcmp(pathspec, "~/", 2) == 0)
   {
     get_homedir(&home);
     z = 0;
-    z += znloads(buf + z, sizeof(buf) - z, home);
-    z += znloads(buf + z, sizeof(buf) - z, "/");
-    z += znloads(buf + z, sizeof(buf) - z, pathspec + 2);
+    z += zcats(buf + z, sizeof(buf) - z, home);
+    z += zcats(buf + z, sizeof(buf) - z, "/");
+    z += zcats(buf + z, sizeof(buf) - z, pathspec + 2);
     buf[z] = 0;
     path = buf;
   }
@@ -138,9 +154,9 @@ static void parse_file(yyu_parser * restrict parser, const char * restrict paths
   {
     get_homedir(&home);
     z = 0;
-    z += znloads(buf + z, sizeof(buf) - z, home);
-    z += znloads(buf + z, sizeof(buf) - z, "/");
-    z += znloads(buf + z, sizeof(buf) - z, pathspec + 6);
+    z += zcats(buf + z, sizeof(buf) - z, home);
+    z += zcats(buf + z, sizeof(buf) - z, "/");
+    z += zcats(buf + z, sizeof(buf) - z, pathspec + 6);
     buf[z] = 0;
     path = buf;
   }
@@ -150,9 +166,9 @@ static void parse_file(yyu_parser * restrict parser, const char * restrict paths
   }
 
   usnarfs(&text, &text_len, path);
-  parse(parser, text, text_len, path);
-
+  r = parse(parser, text, text_len, path);
   free(text);
+  return r;
 }
 
 void args_cleanup()
@@ -165,15 +181,10 @@ void args_parse(int argc, char ** argv)
   yyu_parser yyu;
   size_t len;
   int x;
+  int r;
 
-  g_args.stats = &stats_args;
-  g_args.tree = &tree_args;
-  g_args.ls = &ls_args;
-  g_args.adhoc = &adhoc_args;
-  g_args.build = &build_args;
-  g_args.touch = &touch_args;
-  g_args.describe = &describe_args;
-  g_args.events = &events_args;
+  /* defaults */
+  g_cmd = &build_command;
 
   memset(&yyu, 0, sizeof(yyu));
   yyu_parser_init(&yyu, &args_vtable);
@@ -181,12 +192,11 @@ void args_parse(int argc, char ** argv)
   yyu_parser_init_states(&yyu, args_numstates, args_statenumbers, args_statenames);
 
   /* parse well-known config files */
-  parse_file(&yyu, SYSTEM_CONFIG_PATH);
-  parse_file(&yyu, USER_CONFIG_PATH);
-
-  /* build is the default */
-  if(argc <= 1) {
-    g_cmd = &build_command;
+  if(parse_file(&yyu, SYSTEM_CONFIG_PATH) != 0) {
+    exit(1);
+  }
+  if(parse_file(&yyu, USER_CONFIG_PATH) != 0) {
+    exit(1);
   }
 
   /* join arguments-list into a single space-delimited string */
@@ -199,18 +209,73 @@ void args_parse(int argc, char ** argv)
     argvsl += len + 1;
   }
 
-  parse(&yyu, argvs, argvsl, "-args-");
-
-  if(g_args.help)
+  if((r = parse(&yyu, argvs, argvsl, "-args-")))
+  {
+    exit(1);  // error printed earlier
+  }
+  else if(g_args.help)
   {
     usage(g_cmd);
   }
-  if(g_args.version)
+  else if(g_args.version)
   {
     version();
   }
 
   RUNTIME_ASSERT(g_cmd);
-
   yyu_parser_xdestroy(&yyu);
+
+  if((g_cmd->attrs & COMMAND_CONTEXT_MODULE)) {
+    if(!g_args.context_module_id) {
+      if(!g_args.no_context_module) {
+        args_set_module_abspath(g_params.cwd, g_params.cwd_len);
+      }
+    }
+  }
+}
+
+void args_set_module_path(const char * restrict path, uint16_t path_len)
+{
+  char inpath[512];
+  char abspath[512];
+  uint16_t abspath_len;
+
+  zcatw(inpath, sizeof(inpath), path, path_len);
+  if((realpath(inpath, abspath)) == 0) {
+    dprintf(2, "%s : %s\n", inpath, strerror(errno));
+    exit(1);
+  }
+  abspath_len = strlen(abspath);
+
+  args_set_module_abspath(abspath, abspath_len);
+  g_args.no_context_module = false;
+}
+
+void args_set_module_abspath(const char * restrict path, uint16_t path_len)
+{
+  uint64_t u64;
+
+  u64 = hash64(0, path, path_len);
+  g_args.context_module_id = u64;
+}
+
+void args_set_no_module()
+{
+  g_args.context_module_id = 0;
+  g_args.no_context_module = true;
+}
+
+void args_command_start(struct command * restrict cmd, uint32_t flags)
+{
+  g_cmd = cmd;
+  if(g_cmd->init) {
+    g_cmd->init(g_cmd, flags);
+  }
+}
+
+void args_command_finish()
+{
+  if(!g_cmd) {
+    args_command_start(&build_command, 0);
+  }
 }

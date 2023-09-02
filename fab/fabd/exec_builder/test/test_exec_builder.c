@@ -7,32 +7,28 @@
 
 #include "valyria/list.h"
 #include "valyria/llist.h"
-#include "valyria/map.h"
-#include "valyria/set.h"
-#include "bacon.h"
+#include "valyria/hashtable.h"
+#include "bacon/value.h"
 #include "bacon/parser.h"
 #include "moria/graph.h"
-#include "moria/operations.h"
-
 #include "xunit.h"
 #include "xunit/assert.h"
 #include "narrator.h"
-#include "narrator/growing.h"
 #include "rule.h"
 #include "fsent.h"
 #include "exec.h"
 #include "pattern.h"
 #include "pattern_parser.h"
-#include "module.internal.h"
+#include "module.h"
 #include "exec_builder.h"
 #include "exec_render.h"
-#include "variant.h"
 #include "formula_parser.internal.h"
 #include "formula_value.h"
 #include "var.h"
 #include "build_slot.h"
 #include "dependency.h"
 #include "channel.h"
+#include "buildplan_entity.h"
 
 typedef struct exec_builder_test {
   XUNITTEST;
@@ -40,7 +36,6 @@ typedef struct exec_builder_test {
   // inputs
   char * vars;          // value text
   char * fml;           // formula bacon text
-  char * variant;
 
   struct env_addf_args {
     const char * name_fmt;
@@ -72,8 +67,7 @@ static void exec_builder_test_entry(xunit_test * _test)
 {
   exec_builder_test * test = containerof(_test, exec_builder_test, xu);
   exec *e;
-  value * val;
-  value_parser * parser = 0;
+  bacon_parser * parser = 0;
   formula_parser * fml_parser = 0;
   int x;
   exec_builder builder;
@@ -84,30 +78,28 @@ static void exec_builder_test_entry(xunit_test * _test)
   formula_value * fml_file = 0;
   formula_value * fml_args = 0;
   formula_value * fml_envs = 0;
-  variant * var = 0;
-  value * vars = 0;
+  bacon_value * vars = 0;
   module mod = { 0 };
-  dependency bpe = { 0 };
+  buildplan_entity bpe = { 0 };
   build_slot bs = { .bpe = &bpe };
   channel *chan;
+  int r;
+  fsent cwd;
 
-  value_parser_create(&parser);
+  bacon_parser_alloc(&parser);
   formula_parser_create(&fml_parser);
-  exec_builder_xinit(&builder);
-  exec_render_context_xinit(&renderer);
+  exec_builder_init(&builder);
+  exec_render_context_init(&renderer);
   xmalloc(&chan, sizeof(*chan));
 
   // arrange
-  if(test->variant)
-    variant_get(test->variant, strlen(test->variant), &var);
 
   // act
   if(test->vars)
   {
-    value_parser_parse(parser, test->vars, strlen(test->vars), "-test-", VALUE_TYPE_SET, &val);
-    var_denormalize(parser, var, val, &vars);
-
-    exec_render_context_configure(&renderer, &builder, 0, vars, 0);
+    r = bacon_parser_parse(parser, test->vars, strlen(test->vars), "-test-", BACON_TYPE_SET, &vars);
+    assert_eq_d(0, r);
+    exec_render_context_configure(&renderer, &builder, &cwd, &mod, 0, vars, 0);
     exec_render_env_vars(&renderer);
   }
 
@@ -133,7 +125,7 @@ static void exec_builder_test_entry(xunit_test * _test)
   {
     formula_parser_bacon_parse(fml_parser, test->fml, strlen(test->fml) + 2, "-formula-", &fml_file, &fml_args, &fml_envs);
 
-    exec_render_context_configure(&renderer, &builder, &mod, vars, &bs);
+    exec_render_context_configure(&renderer, &builder, &cwd, &mod, 0, vars, &bs);
 
     if(fml_file)
     {
@@ -158,8 +150,7 @@ static void exec_builder_test_entry(xunit_test * _test)
   if(test->args)
   {
     assert_eq_d(sentinel(test->args), sentinel(e->args));
-    for(x = 0; x < sentinel(test->args); x++)
-    {
+    for(x = 0; x < sentinel(test->args); x++) {
       assert_eq_s(test->args[x], e->args[x]);
     }
   }
@@ -173,10 +164,11 @@ static void exec_builder_test_entry(xunit_test * _test)
     }
   }
 
-  value_parser_xfree(parser);
-  formula_parser_xfree(fml_parser);
-  exec_builder_xdestroy(&builder);
-  exec_render_context_xdestroy(&renderer);
+  bacon_value_free(parser, vars);
+  bacon_parser_free(parser);
+  formula_parser_free(fml_parser);
+  exec_builder_destroy(&builder);
+  exec_render_context_destroy(&renderer);
   formula_value_free(fml_file);
   formula_value_free(fml_args);
   formula_value_free(fml_envs);
@@ -194,7 +186,7 @@ static xunit_unit xunit = {
   , xu_tests : (exec_builder_test*[]) {
      /* vars */
       (exec_builder_test[]) {{
-          vars : " cc : gcc"
+          vars : "cc : gcc"
         , envs : (char*[]) {
               "cc=gcc"
             , NULL
@@ -203,7 +195,7 @@ static xunit_unit xunit = {
     , (exec_builder_test[]) {{
           vars : " cflags : 42.4"
         , envs : (char*[]) {
-              "cflags=42.40"
+              "cflags=42.400000"
             , NULL
           }
       }}
@@ -228,7 +220,7 @@ static xunit_unit xunit = {
           vars : " cc : [ goat boat ]"
                  " boats : { foo bar foo }"
         , envs : (char*[]) {
-              "boats=foo bar"
+              "boats=bar foo"
             , "cc=goat boat"
             , NULL
           }
@@ -391,7 +383,7 @@ static xunit_unit xunit = {
             , 0
           }
         , envs : (char*[]) {
-              "boats=foo bar"
+              "boats=bar foo"
             , "cc=goat boat"
             , "foo=1bar2 bar"
             , NULL
@@ -484,6 +476,16 @@ static xunit_unit xunit = {
         , fml : (char[]) { "args : [ a $cflags c 42 ]\0\0" }
         , args : (char*[]) {
               "a", "43", "42", "c", "42"
+            , NULL
+          }
+      }}
+    , (exec_builder_test[]) {{
+          vars : "cflags : {"
+                 "\"-DFABIPCDIR=/var/run/fab\""
+                 "}"
+        , fml : (char[]) { "args : [ $cflags ]\0\0" }
+        , args : (char*[]) {
+              "-DFABIPCDIR=/var/run/fab"
             , NULL
           }
       }}

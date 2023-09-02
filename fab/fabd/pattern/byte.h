@@ -16,5 +16,5 @@ void pattern_byte_mk(
 )
   __attribute__((nonnull));
 
-void byte_say(uint8_t code, struct narrator * restrict N)
+void byte_say_code(uint8_t code, struct narrator * restrict N)
   __attribute__((nonnull));

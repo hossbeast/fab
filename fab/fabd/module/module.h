@@ -13,116 +13,76 @@ filesystem
 #include "types.h"
 
 #include "valyria/llist.h"
+#include "valyria/hashtable.h"
 #include "moria.h"
 #include "fab/stats.h"
 
 #include "graph.h"
+#include "module_system.h"
 
 struct map;
 struct fsent;
-struct set;
-struct value;
+struct bacon_value;
 struct graph_invalidation_context;
 struct fsedge;
-struct module_parser;
+struct rules_parser;
 struct narrator;
+struct rule_run_context;
+struct exec;
+struct anchor;
+struct rules;
 
-extern uint16_t module_system_reconcile_epoch;
-extern llist module_list;    // loaded/active modules
+extern llist module_list;           // active modules
 
-typedef struct statement_block {
-  llist lln;
-  struct set * variants;     // struct variant *; variants in the block
-  llist rules;               // struct rule
-} statement_block;
-
-/* VERTEX_TYPE_MODULE */
+/* VERTEX_MODULE */
 typedef struct module {
   moria_vertex vertex;
 
-  llist lln_reconcile;    // in module_system_reconcile
-  llist rmas_owner;       // rmas for rules in this modules statement blocks
+  llist lln;                // adhoc
+  rules_container invalid;  // in rebuild lists
 
   /* runtime state */
-  fab_module_stats stats;
-
-  struct fsent * self_node;        // module.bam
-  struct fsent * dir_node;         // module directory node
-  int dirnode_fd;                 // open file descriptor to the module directory node
-
-  /* rules */
-  statement_block * unscoped_block;
-  llist scoped_blocks;
-
-  /* var : { } block in module.bam */
-  struct value * var_value;
-  bool var_merge_overwrite;
-  struct value * novariant_var;
-  struct exec * novariant_envs;
-
-  /* adhoc */
-  llist lln;
-
-  struct fsent * shadow;               // shadow dirnode //modules/id/
-  struct fsent * shadow_targets;       // shadow dirnode //modules/id/targets
+  fab_vertex_stats stats;
+  fab_module_stats mod_stats;
+  char id[40];                     // hash by which the module is accessed at //modules/id
+  uint16_t id_len;
+  char token[40];
+  uint16_t token_len;
+  bool in_tree;                    // whether dir_node is a descendant of projdir
+  bool anchor_disjoint;
+  llist blocks;                    // struct block
+  struct anchor *anchor;
+  struct bacon_value *vars;        // effective vars (result of merges)
+  struct exec *exec;               // pre-rendered into envs strings for exec
+  llist varfiles;                  // struct pattern
+  llist rulesfiles;                // struct pattern
 
   /* these exist for rules to match against */
-  struct fsedge * shadow_fs;           // shadow link    //modules/id/fs
-  struct fsent * shadow_imports;       // shadow dirnode //modules/id/imports/
+  struct fsent * shadow;               // shadow dirnode //modules/id/
   struct fsent * shadow_requires;      // shadow dirnode //modules/id/requires/
-  struct fsent * shadow_uses;          // shadow dirnode //modules/id/uses/
+  struct fsent * shadow_rules;         // shadow dirnode //modules/id/rules/
+  struct fsent * shadow_var;           // shadow dirnode //modules/id/var/
+  struct fsent * shadow_rma;           // shadow dirnode //modules/id/rma/
 
-  char id[16];                         // hash by which the module is accessed at //modules/id
-  char self_node_relpath[512];
-  uint16_t self_node_relpath_len;
+  /* self_node */
+  struct fsent * self_node;            // VERTEX_MODULE_FILE module.bam
+  char self_node_abspath[512];
+  uint16_t self_node_abspath_len;
 
+  /* dir_node */
+  struct fsent * dir_node;             // module base directory node
   char dir_node_abspath[512];
   uint16_t dir_node_abspath_len;
 
-  /*
-   * values in this module are owned by the value_parser : variant_var, novariant_var
-   */
-  struct value_parser *value_parser;
-  struct map * variant_var;       // map<struct variant*, value*>
-  struct map * variant_envs;      // map<struct variant*, exec*>
+  /* anchor_node */
+  struct fsent * anchor_node;          // module anchor directory node
+  char anchor_node_abspath[512];
+  uint16_t anchor_node_abspath_len;
+  int anchornode_fd;                   // readonly O_PATH | O_DIRECTORY file descriptor
 } module;
-
-/* EDGE_TYPE_MODULES - edge connecting two module vertices */
-typedef struct module_edge {
-  struct moria_edge edge;
-  uint16_t module_system_reconcile_epoch;
-
-  /* related edges, e.g. //module/requires, //module/uses */
-  struct fsedge *edges[2];
-} module_edge;
 
 void module_setup(void);
 void module_cleanup(void);
-
-void module_edge_alloc(module_edge ** restrict mep)
-  __attribute__((nonnull));
-
-/*
- * load the module in the project directory, and nested modules, recursively
- *
- * project_root - base node for the starting module
- * project_dir  - absolute path for the starting module directory
- */
-void module_system_bootstrap(void);//struct fsent * restrict root, const char * restrict absdir)
-
-/*
- * reload invalidated modules
- */
-void module_system_reconcile(void);
-
-/*
- * get the module for the specified path, if any
- *
- * path - normalized absolute path
- * mod  - (returns) owning module, if any
- */
-module * module_lookup(const char * const restrict path, size_t pathl)
-  __attribute__((nonnull));
 
 /*
  * Write a modules stats to a buffer
@@ -130,26 +90,80 @@ module * module_lookup(const char * const restrict path, size_t pathl)
  * reset - true to reset the stats while reading them
  * zp    - (returns) number of bytes written to dst
  */
-void module_collate_stats(void *dst, size_t sz, module *mod, bool reset, size_t *zp)
+size_t module_stats_collate(void *dst, size_t sz, bool reset, module * restrict mod)
   __attribute__((nonnull));
 
-void module_file_collate_stats(void *dst, size_t sz, struct fsent *modfile, bool reset, size_t *zp)
+size_t module_dir_stats_collate(void *dst, size_t sz, bool reset, struct fsent * restrict fse)
+  __attribute__((nonnull));
+
+size_t module_file_stats_collate(void *dst, size_t sz, bool reset, struct fsent * restrict fse)
   __attribute__((nonnull));
 
 void module_alloc(module ** restrict mod)
   __attribute__((nonnull));
 
-void module_xrelease(module * restrict mod, struct module_parser * restrict parser)
+void module_rebuild_enqueue(module * restrict mod)
   __attribute__((nonnull));
 
-void module_resolve_require(module * restrict A, module * restrict B, graph_invalidation_context * restrict invalidation)
+void module_dispose(module * restrict mod)
   __attribute__((nonnull));
 
-void module_resolve_use(module * restrict A, module * restrict B, const char * restrict refname, uint16_t refname_len, bool scoped, graph_invalidation_context * restrict invalidation)
+void module_release(module * restrict mod, struct graph_invalidation_context * restrict invalidation)
   __attribute__((nonnull));
 
-void module_resolve_import(module * restrict A, struct fsent * restrict B, const char * restrict refname, uint16_t refname_len, bool scoped, graph_invalidation_context * restrict invalidation)
+void module_reparse(module * restrict mod)
   __attribute__((nonnull));
 
-void module_vars_say(module * restrict mod, struct narrator * restrict N)
+void module_reload(module * restrict mod)
   __attribute__((nonnull));
+
+void module_excise(module * restrict mod, struct graph_invalidation_context * restrict invalidation)
+  __attribute__((nonnull));
+
+void module_disconnect_rules(module * restrict mod, struct graph_invalidation_context * restrict invalidation)
+  __attribute__((nonnull));
+
+/* create/refresh EDGE_RULES_MOD edges
+ *
+ * returns true if any such edges were newly created
+ */
+bool module_reimport(module * restrict mod, struct rule_run_context * restrict rule_run_ctx)
+  __attribute__((nonnull));
+
+void module_prune(module * restrict mod, struct graph_invalidation_context * restrict invalidation)
+  __attribute__((nonnull));
+
+void module_rebuild(module * restrict mod, struct rule_run_context * restrict rule_run_ctx)// struct graph_invalidation_context * restrict invalidation)
+  __attribute__((nonnull));
+
+void module_bootstrap(
+    struct fsent * mod_dir_n
+  , struct fsent * mod_anchor_n
+  , struct fsent * restrict mod_file_n
+  , struct graph_invalidation_context * restrict invalidation
+)
+  __attribute__((nonnull(1, 2, 4)));
+
+void module_bootstrap_visitor(moria_vertex * mod_dir_v, void * _ctx, moria_traversal_mode mode, int distance, struct moria_traverse_result * restrict)
+  __attribute__((nonnull(1)));
+
+void module_bootstrap_anchored_visitor(moria_vertex * mod_dir_v, void * _ctx, moria_traversal_mode mode, int distance, struct moria_traverse_result * restrict)
+  __attribute__((nonnull(1)));
+
+void module_initialize(struct fsent * mod_dir_n, struct fsent * mod_anchor_n, struct fsent * restrict mod_file_n)
+  __attribute__((nonnull(1, 2)));
+
+bool module_import_rules_file(
+    module * restrict A
+  , struct fsent * restrict rules_file_n
+  , struct graph_invalidation_context * restrict invalidation
+)
+  __attribute__((nonnull));
+
+void module_reload_blocks(
+    module * restrict mod
+  , struct rules * restrict rules
+  , llist * restrict blocks
+  , graph_invalidation_context * restrict invalidation
+)
+  __attribute__((nonnull(1, 3, 4)));

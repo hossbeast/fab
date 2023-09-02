@@ -17,21 +17,27 @@ struct fsent;
 struct formula_value;
 struct moria_graph;
 struct channel;
+struct rule_module_association;
+//struct meta_edge;
 
 /* VERTEX_TYPE_FML */
 typedef struct formula {
   moria_vertex vertex;
 
-  /* regarding the formula node itself */
+  /* runtime state */
+  char id[40];
+  uint16_t id_len;
+  char token[40];
+  uint16_t token_len;
+  fab_vertex_stats stats;
   int fd;
-  char self_node_abspath[512];
+  llist invalid_lln;
+
+  /* regarding the formula node itself */
+  char abspath[512];
   uint16_t abspath_len;
-
   struct fsent * self_node;
-  fab_formula_stats stats;
-
-  /* reference counting of dependency edges having this formula */
-  int32_t refs;
+  fab_formula_stats fml_stats;
 
   /* parsed from the embedded bacon block */
   bool shebang;
@@ -43,19 +49,25 @@ typedef struct formula {
 void formula_create(formula ** restrict fml, struct moria_graph * restrict g)
   __attribute__((nonnull));
 
-void formula_reconcile(formula * restrict fml)
+void formula_reparse(formula * restrict fml)
   __attribute__((nonnull));
 
-void formula_system_reconcile(void);
+void formula_system_reconcile(struct graph_invalidation_context * restrict invalidation)
+  __attribute__((nonnull));
 
 void formula_setup(void);
 void formula_cleanup(void);
+
+void formula_release(formula * restrict fml, struct graph_invalidation_context * restrict invalidation)
+  __attribute__((nonnull));
 
 /*
  * Write a formulas stats to a buffer
  *
  * reset - true to reset the stats while reading them
- * zp    - (returns) number of bytes written to dst
  */
-void formula_collate_stats(void *dst, size_t sz, formula *fml, bool reset, size_t *zp)
+size_t formula_stats_collate(void *dst, size_t sz, bool reset, formula * restrict fml)
+  __attribute__((nonnull));
+
+void formula_parse_enqueue(formula * restrict fml)
   __attribute__((nonnull));

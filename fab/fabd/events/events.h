@@ -14,6 +14,7 @@
 
 struct channel;
 struct fabipc_message;
+struct bacon_writer;
 
 /* mask of events for which any handler has subscribed */
 extern uint32_t events_mask;
@@ -21,8 +22,9 @@ extern uint32_t events_mask;
 /*
  * check whether any subscribers exist for the specified event type
  *
- * first - (returns) handler for the first subscriber
- * msg   - (returns) msg associated with the first channel
+ * first  - (returns) handler for the first subscriber
+ * msg    - (returns) msg associated with the first channel
+ * writer - (returns) writer open to msg
  *
  * returns true if any subscribers exist
  */
@@ -37,4 +39,4 @@ bool events_would(
  * publish an event - called after events_would
  */
 void events_publish(struct channel * first, struct fabipc_message * msg)
-  __attribute__((nonnull));
+  __attribute__((nonnull(2)));

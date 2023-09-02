@@ -5,14 +5,18 @@
 
 #include "common/attrs.h"
 #include "fab/client.h"
-#include "fab/fsent.h"
+#include "fab/vertex.h"
 #include "fab/ipc.h"
 #include "fab/stats.desc.h"
 #include "fab/stats.h"
+#include "bacon/builder.h"
+#include "narrator.h"
+#include "narrator/fixed.h"
 
 #include "stats.h"
 #include "params.h"
-#include "zbuffer.h"
+#include "zcat.h"
+#include "marshal.h"
 
 struct stats_args stats_args;
 static struct stats_args *args = &stats_args;
@@ -33,152 +37,235 @@ static void usage(command * restrict cmd)
 static void connected(command * restrict cmd, fab_client * restrict client)
 {
   fabipc_message * msg;
-  size_t z;
   int x;
+  bacon_writer writer, *builder_writer;
+  narrator *N;
+  narrator_fixed fixed;
 
   /* send the request */
   msg = fab_client_produce(client);
   msg->type = FABIPC_MSG_REQUEST;
   requestid = msg->id = ++client->msgid;
 
-  z = 0;
+  N = narrator_fixed_init(&fixed, msg->text, sizeof(msg->text));
+  bacon_writer_init(&writer);
+  builder_writer = bacon_writer_open(&writer, N);
+
   if(args->targets_len == 0)
   {
     if(args->reset) {
-      z += znloads(msg->text + z, sizeof(msg->text) - z, "global-stats-reset");
+      STRING("global-stats-reset")
     } else {
-      z += znloads(msg->text + z, sizeof(msg->text) - z, "global-stats-read");
+      STRING("global-stats-read")
     }
   }
   else
   {
-    z += znloads(msg->text + z, sizeof(msg->text) - z, "[ ");
-    z += znloads(msg->text + z, sizeof(msg->text) - z, "select : [");
-
-    for(x = 0; x < args->targets_len; x++)
-    {
-      z += znloadf(msg->text + z, sizeof(msg->text) - z, " path : \"%.*s\"", (int)args->targets[x].len, args->targets[x].s);
+    LIST
+    if(g_args.context_module_id) {
+      MAPPING
+      STRING("context")
+      { SET
+        { MAPPING
+          STRING("module")
+          HEX(g_args.context_module_id)
+        }
+      }
     }
-
-    z += znloads(msg->text + z, sizeof(msg->text) - z, " ] ");
-    if(args->reset) {
-      z += znloads(msg->text + z, sizeof(msg->text) - z, "stats-reset");
-    } else {
-      z += znloads(msg->text + z, sizeof(msg->text) - z, "stats-read");
+    { MAPPING
+      { STRING("select")
+        { LIST
+          for(x = 0; x < args->targets_len; x++)
+          {
+            { MAPPING
+              STRING("lookup")
+              { SET
+                { MAPPING
+                  STRING("path")
+                  BYTES(args->targets[x].s, args->targets[x].len)
+                }
+                { MAPPING
+                  STRING("hidden")
+                  BOOL(true)
+                }
+              }
+            }
+          }
+        }
+      }
     }
-    z += znloads(msg->text + z, sizeof(msg->text) - z, " ]");
+    { MAPPING
+      if(args->reset) {
+        STRING("stats-reset")
+      } else {
+        STRING("stats-read")
+      }
+      { SET
+        if(args->special_only) {
+          STRING("special-only")
+        }
+        if(args->no_special) {
+          STRING("no-special")
+        }
+      }
+    }
   }
 
-  // two terminating null bytes
-  z += znloadc(msg->text + z, sizeof(msg->text) - z, 0);
-  z += znloadc(msg->text + z, sizeof(msg->text) - z, 0);
-  msg->size = z;
+  bacon_writer_close(&writer);
+  bacon_writer_destroy(&writer);
+  narrator_sayc(N, 0);
+  narrator_sayc(N, 0);
 
+  msg->size = fixed.l;
   client_post(client, msg);
 }
 
-static void process_global(fabipc_message * restrict msg)
+static int show_handler_fn(
+    const descriptor_type * restrict type
+  , const descriptor_field * restrict member
+  , const void * restrict object
+  , struct descriptor_unmarshal_handler *handler
+)
 {
-  fab_global_stats stats;
+  const fab_stats_record *record;
+  const attrs16 *attrs = 0;
+  uint64_t u = 0;
+
+  record = object;
+  if(member == &descriptor_fab_global_stats_system_state) {
+    attrs = bam_system_state_attrs;
+  } else if(member == &descriptor_fab_vertex_stats_type) {
+    attrs = fab_vertex_type_attrs;
+  } else if(member == &descriptor_fab_vertex_stats_state) {
+    attrs = fab_vertex_state_attrs;
+  } else {
+    return 0;
+  }
+
+  switch(member->size) {
+    case 8:
+      u = record->u64[member->offset / 8];
+      break;
+    case 4:
+      u = record->u32[member->offset / 4];
+      break;
+    case 2:
+      u = record->u16[member->offset / 2];
+      break;
+    case 1:
+      u = record->u8[member->offset / 1];
+      break;
+  }
+
+  printf("%35.*s : %s\n", (int)member->name_len, member->name, attrs16_name_byvalue(attrs, u));
+  return 1;
+}
+
+static struct {
+  descriptor_unmarshal_handler unmarshal;
+} show_handler = {
+  .unmarshal.fn = show_handler_fn
+};
+
+static void show(descriptor_type * restrict descriptor, fab_stats_record * restrict record, descriptor_unmarshal_handler *handler)
+{
   descriptor_field *member;
-  int x;
   size_t z;
-  void *src;
-  size_t sz;
+  int x;
 
-  src = msg->text;
-  sz = msg->size;
-  z = 0;
-
-  z += descriptor_type_unmarshal(&stats, &descriptor_fab_global_stats, src + z, sz - z);
-  RUNTIME_ASSERT(z == msg->size);
-
-  for(x = 0; x < descriptor_fab_global_stats.members_len; x++)
+  for(x = 0; x < descriptor->members_len; x++)
   {
-    member = descriptor_fab_global_stats.members[x];
+    member = descriptor->members[x];
 
-    if(member->size == 8) {
-      printf("%30.*s : %"PRIu64"\n", (int)member->name_len, member->name, stats.u64[member->offset / 8]);
-    } else if(member->size == 4) {
-      printf("%30.*s : %"PRIu32"\n", (int)member->name_len, member->name, stats.u32[member->offset / 4]);
-    } else if(member->size == 2) {
-      printf("%30.*s : %"PRIu16"\n", (int)member->name_len, member->name, stats.u16[member->offset / 2]);
+    z = 0;
+    if(handler) {
+      z = handler->fn(descriptor, member, record, handler);
+    }
+    if(z != 0) {
+      continue;
+    }
+
+    if(member->code == DESCRIPTOR_STRING) {
+      printf("%35.*s : %.*s\n", (int)member->name_len, member->name, record->u16[member->len_offset / 2], record->s[member->offset / sizeof(void*)]);
+      continue;
+    }
+
+#define CASE2(x, y) ((x << 16) | y)
+    switch(CASE2(member->code, member->size)) {
+      case CASE2(DESCRIPTOR_UINT, 8):
+        printf("%35.*s : %"PRIu64"\n", (int)member->name_len, member->name, record->u64[member->offset / 8]);
+        break;
+      case CASE2(DESCRIPTOR_UINT, 4):
+        printf("%35.*s : %"PRIu32"\n", (int)member->name_len, member->name, record->u32[member->offset / 4]);
+        break;
+      case CASE2(DESCRIPTOR_UINT, 2):
+        printf("%35.*s : %"PRIu16"\n", (int)member->name_len, member->name, record->u16[member->offset / 2]);
+        break;
+      case CASE2(DESCRIPTOR_UINT, 1):
+        printf("%35.*s : %"PRIu8"\n", (int)member->name_len, member->name, record->u8[member->offset / 1]);
+        break;
+      default:
+        RTA;
     }
   }
 }
 
-static void process_node(fabipc_message * restrict msg)
+static void process_msg(fabipc_message * restrict msg)
 {
-  fab_fsent_stats node;
-  fab_module_stats mod;
-  descriptor_type *substats;
-  descriptor_field *member;
-  int x;
+  union {
+    char pad[512];
+    fab_stats_record record;
+  } stats;
+  descriptor_type *descriptor;
   size_t z;
   void *src = msg->text;
   size_t sz = msg->size;
+  uint32_t id;
 
   z = 0;
 
-  // base node stats
-  z += descriptor_type_unmarshal(&node, &descriptor_fab_fsent_stats, src + z, sz - z);
-
-  printf("%30s : %s\n", "path", node.path);
-  printf("%30s : %s\n", "type", attrs16_name_byvalue(fab_fsent_type_attrs, node.type));
-  printf("%30s : %s\n", "state", attrs16_name_byvalue(fab_fsent_state_attrs, node.state));
-  for(x = 3; x < descriptor_fab_fsent_stats.members_len; x++)
+  descriptor = &descriptor_fab_vertex_stats;
+  while(z < msg->size)
   {
-    member = descriptor_fab_fsent_stats.members[x];
-    if(member->size == 8) {
-      printf("%30.*s : %"PRIu64"\n", (int)member->name_len, member->name, node.u64[member->offset / 8]);
-    } else if(member->size == 4) {
-      printf("%30.*s : %"PRIu32"\n", (int)member->name_len, member->name, node.u32[member->offset / 4]);
-    } else if(member->size == 2) {
-      printf("%30.*s : %"PRIu16"\n", (int)member->name_len, member->name, node.u16[member->offset / 2]);
-    } else if(member->size == 1) {
-      printf("%30.*s : %"PRIu16"\n", (int)member->name_len, member->name, node.u8[member->offset / 1]);
+    /* peek at the id */
+    unmarshal_u32(src + z, sz - z, &id);
+
+    switch(id) {
+      /* global stats */
+      case DESCRIPTOR_ID_fab_global_stats:
+        descriptor = &descriptor_fab_global_stats;
+        break;
+      /* node stats */
+      case DESCRIPTOR_ID_fab_formula_stats:
+        descriptor = &descriptor_fab_formula_stats;
+        break;
+      case DESCRIPTOR_ID_fab_rule_stats:
+        descriptor = &descriptor_fab_rule_stats;
+        break;
+      case DESCRIPTOR_ID_fab_module_stats:
+        descriptor = &descriptor_fab_module_stats;
+        break;
+      case DESCRIPTOR_ID_fab_rules_stats:
+        descriptor = &descriptor_fab_rules_stats;
+        break;
+      case DESCRIPTOR_ID_fab_vertex_stats:
+        descriptor = &descriptor_fab_vertex_stats;
+        break;
+      case DESCRIPTOR_ID_fab_config_stats:
+        descriptor = &descriptor_fab_config_stats;
+        break;
+      case DESCRIPTOR_ID_fab_var_stats:
+        descriptor = &descriptor_fab_var_stats;
+        break;
+      case DESCRIPTOR_ID_fab_fsent_dir_stats:
+        descriptor = &descriptor_fab_fsent_dir_stats;
+        break;
+      default:
+        RTA;
     }
-  }
 
-  /* per node-type stats */
-  switch(node.type)
-  {
-    case FAB_FSENT_TYPE_MODULE_DIR:
-      substats = &descriptor_fab_module_stats;
-      break;
-    case FAB_FSENT_TYPE_MODULE_FILE:
-      substats = &descriptor_fab_module_file_stats;
-      break;
-    case FAB_FSENT_TYPE_FORMULA_FILE:
-      substats = &descriptor_fab_formula_stats;
-      break;
-    case FAB_FSENT_TYPE_VAR_FILE:
-      substats = &descriptor_fab_var_stats;
-      break;
-    case FAB_FSENT_TYPE_CONFIG_FILE:
-      substats = &descriptor_fab_config_stats;
-      break;
-    default:
-      substats = 0;
-  }
-
-  if(substats)
-  {
-    z += descriptor_type_unmarshal(&mod, substats, src + z, sz - z);
-
-    for(x = 0; x < substats->members_len; x++)
-    {
-      member = substats->members[x];
-      if(member->size == 8) {
-        printf("%30.*s : %"PRIu64"\n", (int)member->name_len, member->name, mod.u64[member->offset / 8]);
-      } else if(member->size == 4) {
-        printf("%30.*s : %"PRIu32"\n", (int)member->name_len, member->name, mod.u32[member->offset / 4]);
-      } else if(member->size == 2) {
-        printf("%30.*s : %"PRIu16"\n", (int)member->name_len, member->name, mod.u16[member->offset / 2]);
-      } else if(member->size == 1) {
-        printf("%30.*s : %"PRIu16"\n", (int)member->name_len, member->name, mod.u8[member->offset / 1]);
-      }
-    }
+    z += descriptor_type_unmarshal(&stats, descriptor, src + z, sz - z);
+    show(descriptor, &stats.record, &show_handler.unmarshal);
   }
 
   RUNTIME_ASSERT(z == msg->size);
@@ -194,20 +281,23 @@ static void process(command * restrict cmd, fab_client * restrict client, fabipc
   }
 
   RUNTIME_ASSERT(msg->type == FABIPC_MSG_RESULT);
+  process_msg(msg);
+}
 
-  if(args->targets_len == 0) {
-    process_global(msg);
-  } else {
-    process_node(msg);
-  }
+static void attached(command * restrict cmd, fab_client * restrict client)
+{
+
 }
 
 //
 // public
 //
 
+static void disconnected(command * restrict cmd) { }
 struct command stats_command = {
     usage : usage
+  , attached : attached
   , connected : connected
   , process : process
+  , disconnected : disconnected
 };

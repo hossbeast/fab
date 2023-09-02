@@ -7,7 +7,5 @@
 
 struct sweeper_event;
 
-extern unsigned short fsevent_semaphore;
-
-void fsevent_probe(const struct sweeper_event * restrict ev)
+void sweeper_thread_probe(const struct sweeper_event * restrict ev)
   __attribute__((nonnull));

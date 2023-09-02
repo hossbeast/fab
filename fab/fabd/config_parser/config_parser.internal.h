@@ -4,11 +4,10 @@
 #pragma once
 
 #include "yyutil/parser.h"
-
 #include "config_parser.h"
-#include "config.internal.h"
 
 struct pattern_parser;
+struct config;
 
 struct config_parser {
   yyu_parser yyu;
@@ -21,7 +20,7 @@ struct config_parser {
   struct config_logging_section * logging_section;
 
   // (returns)
-  configblob * cfg; // parsed config
+  struct config * cfg; // parsed config
 };
 
 /// config_yyerror

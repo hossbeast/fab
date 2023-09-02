@@ -2,28 +2,33 @@
 /* Copyright (c) 2012-2023 Todd Freed <todd.freed@gmail.com> */
 
 #include "common/hash.h"
-#include "valyria/set.h"
+#include "valyria/hashtable.h"
 #include "xlinux/xstdlib.h"
 #include "moria/traverse.h"
+#include "narrator.h"
 
 #include "search.internal.h"
 #include "pattern.internal.h"
 #include "fsent.h"
-#include "module.internal.h"
+#include "vertex.h"
+#include "module.h"
 #include "shadow.h"
+#include "rule.h"
+#include "section.h"
+#include "zcat.h"
 
 //
 // static
 //
 
-static uint32_t search_node_hash(uint32_t h, const void * el, size_t sz)
+static uint32_t search_node_hash(uint32_t h, const void * el)
 {
   const pattern_search_node * m = el;
 
   return hash32(h, &m->node, sizeof(m->node));
 }
 
-static int search_node_cmp(const void * A, size_t Asz, const void *B, size_t Bsz)
+static int search_node_cmp(const void * A, const void *B)
 {
   const pattern_search_node * mA = A;
   const pattern_search_node * mB = B;
@@ -31,245 +36,229 @@ static int search_node_cmp(const void * A, size_t Asz, const void *B, size_t Bsz
   return INTCMP(mA->node, mB->node);
 }
 
-static void search_node_free(void * m)
-{
-  free(m);
-}
-
-static void search_visit(moria_vertex * restrict v, void * _ctx, moria_traversal_mode mode, int distance, int * restrict result)
+static void search_visit(moria_vertex * restrict v, void * _ctx, moria_traversal_mode mode, int distance, moria_traverse_result * restrict result)
 {
   pattern_search_context * ctx = _ctx;
-  fsent * n = containerof(v, fsent, vertex);
-  pattern_search_node * m = 0;
+  fsent * n;
+  pattern_search_node * m;
+  bool section_has_type_qualifiers;
   int x;
 
   struct search_section_traversal saved_section_traversal;
-  uint16_t saved_variant_index;
   struct search_segments_traversal traversal;
 
   saved_section_traversal = ctx->section_traversal;
-  saved_variant_index = ctx->variant_index;
 
-  if(fsent_state_get(n) == VERTEX_UNLINKED)
-  {
-    *result = MORIA_TRAVERSE_PRUNE;
-    goto restore;
+  n = containerof(v, fsent, vertex);
+  if(vertex_state_get(&n->vertex) == VERTEX_UNLINKED) {
+    result->flags = MORIA_TRAVERSE_PRUNE;
+    goto end;
   }
 
-  if(ctx->section_traversal.section->graph == PATTERN_GRAPH_DIRS && fsent_filetype_get(n) != VERTEX_FILETYPE_DIR)
-  {
-    *result = MORIA_TRAVERSE_PRUNE;
-    goto restore;
+  /* starstar */
+  if(ctx->section_traversal.section->graph == PATTERN_GRAPH_DIRS && vertex_filetype_get(&n->vertex) != VERTEX_FILETYPE_DIR) {
+    result->flags = MORIA_TRAVERSE_PRUNE;
+    goto end;
   }
+  section_has_type_qualifiers = ctx->section_traversal.section->has_type_qualifiers;
 
-  saved_section_traversal = ctx->section_traversal;
-
+  /* outer segments */
   traversal = (typeof(traversal)) {
-      segments_head : ctx->section_traversal.section->qualifiers_head
+    segments_head : &ctx->section_traversal.section->qualifiers
   };
-  traversal.container.section = ctx->section_traversal.section;
-  if(traversal.segments_head)
-    traversal.segments = chain_next(traversal.segments_head, &traversal.segments_cursor, chn);
+  if(llist_empty(traversal.segments_head)) {
+    traversal.segments = 0;
+  } else {
+    traversal.segments = llist_first(traversal.segments_head, typeof(*traversal.segments), lln);
+    traversal.segment_head = &traversal.segments->list;
+  }
 
   ctx->traversal = &traversal;
-
   ctx->node = n;
   ctx->matched = false;
   pattern_segments_search(ctx);
-
   if(!ctx->matched) {
-    goto restore;
+    goto end;
   }
 
-  // match from next section
-  ctx->section_traversal.section = chain_next(ctx->section_traversal.head, &ctx->section_traversal.cursor, chn);
+  /* follow links */
+  while(v->attrs & MORIA_VERTEX_LINK) {
+    v = v->ref;
+  }
+  /* follow context-dependent nodes */
+  if(vertex_shadowtype_get(&n->vertex) == VERTEX_SHADOWTYPE_CONTEXT_MODULE) {
+    v = &ctx->mod->shadow->vertex;
+  }
+  n = containerof(v, fsent, vertex);
 
-  if(fsent_filetype_get(n) == VERTEX_FILETYPE_REG && !ctx->section_traversal.section)
+  if((ctx->section_traversal.section = llist_next(ctx->section_traversal.head, ctx->section_traversal.section, lln)))
   {
+    /* continue to the next section of the pattern */
+    pattern_section_search(ctx, n);
+  }
+  else if(vertex_filetype_get(&n->vertex) == VERTEX_FILETYPE_DIR && !section_has_type_qualifiers)
+  {
+    /* to match a directory, it is necessary to specify a directory qualifier */
+  }
+  else
+  {
+    /* capture the match */
     xmalloc(&m, sizeof(*m));
     m->node = n;
 
-    /* active index from variants segments in the preceding segments search */
-    if(ctx->variant_index != -1) {
-      m->variant = set_table_get(ctx->variants, ctx->variant_index);
-    }
     memcpy(m->groups, ctx->groups, sizeof(m->groups));
     m->group_max = ctx->group_max;
 
-    m->groups[0].start = ctx->node->name.name;
-    m->groups[0].len = ctx->node->name.namel;
+    m->groups[0].start = n->name.name;
+    m->groups[0].len = n->name.namel;
     for(x = 1; x <= ctx->group_max; x++) {
       m->groups[x] = ctx->groups[x];
     }
 
-    set_put(ctx->matches, m, 0);
-    m = 0;
-  }
-  else if(fsent_filetype_get(n) != VERTEX_FILETYPE_REG && ctx->section_traversal.section)
-  {
-    pattern_section_search(ctx, n);
+    hashtable_put(ctx->matches, m);
   }
 
-restore:
+end:
   ctx->section_traversal = saved_section_traversal;
-  ctx->variant_index = saved_variant_index;
-
-  free(m);
 }
 
 //
 // internal
 //
 
+/* check if these segments match the context node */
 void pattern_segments_search(pattern_search_context * ctx)
 {
   struct search_segments_traversal saved_traversal;
   struct search_segments_traversal *traversal;
 
-  bool end;
-  bool matches;
-  bool next;
-  bool abandon;
-
-  uint16_t saved_offset = 0;
-  uint16_t num;
-  uint16_t offset;
+  bool matched;
+  bool invert;
+  bool has_segments;
 
   traversal = ctx->traversal;
   saved_traversal = *traversal;
 
-  while(!ctx->matched)
+  has_segments = !!traversal->segments;
+  invert = traversal->segments && traversal->segments->qualifier_type == PATTERN_QUALIFIER_TYPE_NOT;
+
+  while(1)
   {
-    // next segment
-    if(traversal->segments_head)
-    {
-      if(!traversal->segment_cursor)
-        traversal->segment_head = traversal->segments->segment_head;
-
-      if((traversal->segment = chain_next(traversal->segment_head, &traversal->segment_cursor, chn)))
-      {
-        offset = traversal->offset;
-        traversal->segment->vtab->search(traversal->segment, ctx);
-
-        // matched something
-        if(offset != traversal->offset || ctx->matched) {
-          continue;
-        }
-      }
+    /* bind inner segment list to outer segment list */
+    if(!traversal->segment && traversal->segments) {
+      traversal->segment_head = &traversal->segments->list;
     }
 
-    end = traversal->segment == NULL;
-    matches = false;   // whether the node is matched by these segments
-    next = true;       // whether to continue to the next segments
-    abandon = false;   // whether to break out early
-
-    if(traversal->segments_head)
-    {
-      matches = traversal->offset == ctx->node->name.namel;
-      next = end;
-
-      if(traversal->container.segment && traversal->container.segment->type == PATTERN_ALTERNATION)
-      {
-        abandon = false;
-        if(!traversal->container.segment->alternation.epsilon)
-          abandon = !end && !chain_has_next(traversal->segments_head, traversal->segments_cursor, chn);
-        next = !end;
-      }
-      else if(traversal->container.segment && traversal->container.segment->type == PATTERN_CLASS)
-      {
-        abandon = !end && !chain_has_next(traversal->segments_head, traversal->segments_cursor, chn);
-        next = !end;
-      }
-      else  // group, section
-      {
-        abandon = !end;
-        if(traversal->segments->qualifier_type == PATTERN_QUALIFIER_TYPE_NOT)
-        {
-          matches = !end;
-          next = !end;
-          abandon = end;
-          traversal->offset = saved_offset;
-        }
-      }
-    }
-    else  // section with no qualifiers
-    {
-      matches = true;
+    if(traversal->segment_head && !traversal->segment) {
+      traversal->segment = llist_first(traversal->segment_head, typeof(*traversal->segment), lln);
+    } else if(traversal->segment_head) {
+      traversal->segment = llist_next(traversal->segment_head, traversal->segment, lln);
     }
 
-    // end of group
-    if(traversal->container.segment && traversal->container.segment->type == PATTERN_GROUP)
-    {
-      num = traversal->container.segment->group.num;
-      if(num < (sizeof(ctx->groups) / sizeof(*ctx->groups)))
-      {
-        ctx->groups[num].start = ctx->node->name.name + traversal->start;
-        ctx->groups[num].len = traversal->offset - traversal->start;
+    if(traversal->segment) {
+      traversal->segment->vtab->search(traversal->segment, ctx);
 
-        ctx->group_max = MAX(ctx->group_max, num);
+      if(traversal->segment->vtab->flags & PATTERN_SEGMENT_SEARCH_RECURSIVE) {
+        /* this segments' match calls this function recursively */
+        break;
       }
-    }
 
-    if(abandon) {
-      break;
-    }
-
-    // next alternation, class, or qualifier
-    if(next && traversal->segments_head)
-    {
-      traversal->segment = 0;
-      traversal->segment_head = 0;
-      traversal->segment_cursor = 0;
-      if((traversal->segments = chain_next(traversal->segments_head, &traversal->segments_cursor, chn)))
-      {
-        saved_offset = traversal->offset;
-        traversal->offset = traversal->start;
+      if(!traversal->unsatisfied) {
+        /* this segment did match */
         continue;
       }
     }
 
-    // ascend
+    /* whether the node is matched by this member of the inner segment list */
+    matched = !traversal->unsatisfied;
+
+    /* entire inner segment list was matched */
+    matched &= traversal->segment == NULL;
+
+    if(invert) {
+      matched = !matched;
+    }
+
+    if(!matched) {
+      break;
+    }
+
+    // end of group
+    if(!traversal->sealed) {
+      traversal->end = traversal->offset;
+      traversal->sealed = true;
+    }
+
+    // outer segments list : qualifiers list
+    if(traversal->segments_head && (traversal->segments = llist_next(traversal->segments_head, traversal->segments, lln))) {
+      traversal->segment = 0;
+      traversal->segment_head = 0;
+      traversal->unsatisfied = 0;
+      traversal->offset = traversal->start;
+
+      invert = traversal->segments->qualifier_type == PATTERN_QUALIFIER_TYPE_NOT;
+      has_segments = !!traversal->segments;
+      continue;
+    }
+
+    // ascend : class, group, alternation matched
     if((ctx->traversal = ctx->traversal->u.prev))
     {
       ctx->traversal->offset = traversal->offset;
+      ctx->traversal->offset = traversal->end;
+
+      ctx->traversal->unsatisfied = 0;
       memcpy(traversal, &saved_traversal, sizeof(*traversal) - sizeof(typeof(traversal->u)));
       traversal = ctx->traversal;
       saved_traversal = *traversal;
 
+      invert = traversal->segments && traversal->segments->qualifier_type == PATTERN_QUALIFIER_TYPE_NOT;
+      has_segments = !!traversal->segments;
       continue;
     }
 
-    if(matches) {
-      ctx->matched = true;
+    /* entire label was matched */
+    if(has_segments && !ctx->section_traversal.section->has_type_qualifiers) {
+      matched &= (traversal->offset == ctx->node->name.namel);
+    }
+    if(invert) {
+      matched = !matched;
     }
 
+    ctx->matched = matched;
     break;
   }
 
+  /* restore */
   memcpy(traversal, &saved_traversal, sizeof(*traversal) - sizeof(typeof(traversal->u)));
 }
 
 void pattern_section_search(pattern_search_context * restrict ctx, fsent * restrict dirnode)
 {
-  const pattern_section * section;
+  const pattern_section *section;
   uint16_t min_depth = 0;
   uint16_t max_depth = UINT16_MAX;
+  const module *mod;
 
-  moria_vertex_traversal_state *state = 0;
+  mod = fsent_module_get(dirnode);
 
-  if(ctx->dirnode_visit)
-  {
+  if(mod && mod != ctx->mod) {
+    /* directory is owned by some other module */
+    return;
+  }
+
+  if(ctx->dirnode_visit) {
     ctx->dirnode_visit(ctx->dirnode_visit_ctx, dirnode);
   }
 
   section = ctx->section_traversal.section;
 
-  if(section->nodeset == PATTERN_NODESET_SHADOW)
+  if(section->axis == PATTERN_AXIS_SELF)
   {
-    dirnode = g_shadow;
+    min_depth = 0;
+    max_depth = 0;
   }
-
-  if(section->axis == PATTERN_AXIS_DOWN)
+  else if(section->axis == PATTERN_AXIS_DOWN)
   {
     min_depth = 1;
     max_depth = 1;
@@ -280,74 +269,62 @@ void pattern_section_search(pattern_search_context * restrict ctx, fsent * restr
     max_depth = 0xffff;
   }
 
-  if(fsent_kind_get(dirnode) == VERTEX_SHADOW_MODULE)
-  {
-    dirnode = ctx->module->shadow;
-    RUNTIME_ASSERT(dirnode);
-  }
-
   moria_traverse_vertices(
       &g_graph
     , &dirnode->vertex
     , search_visit
-    , state
+    , 0
     , (moria_traversal_criteria[]) {{
-          edge_travel : EDGE_TYPE_FSTREE
-        , edge_visit : EDGE_TYPE_FSTREE
+          edge_travel : EDGE_KIND_FSTREE
+        , edge_visit : EDGE_KIND_FSTREE
         , min_depth : min_depth
         , max_depth : max_depth
       }}
-    , MORIA_TRAVERSE_DOWN | MORIA_TRAVERSE_PRE | MORIA_TRAVERSE_DEPTH
+    , MORIA_TRAVERSE_DOWN | MORIA_TRAVERSE_PRE | MORIA_TRAVERSE_DEPTH | MORIA_TRAVERSE_NOFOLLOW
     , ctx
   );
-
-  moria_vertex_traversal_end(&g_graph, state);
 }
 
 //
 // public
 //
 
-void pattern_search_matches_create(set ** matches)
+void pattern_search_matches_init(hashtable * matches)
 {
-  set_createx(matches, 0, search_node_hash, search_node_cmp, search_node_free);
+  hashtable_initx(matches, 0, search_node_hash, search_node_cmp, free);
 }
 
 void pattern_search(
     const pattern * restrict pattern
-  , const module * restrict module
-  , const llist * restrict modules
-  , const set * restrict variants
-  , set * restrict matches
+  , const module * restrict mod
+  , fsent * restrict base
+  , hashtable * restrict matches
   , void (*dirnode_visit)(void * ctx, struct fsent * dirnode)
   , void *dirnode_visit_ctx
 )
 {
   pattern_search_context ctx;
 
-  if(matches) {
-    set_recycle(matches);
-  }
-
   // setup the dynamic context
   ctx = (typeof(ctx)) {
     /* inputs */
-      variants : variants
-    , module : module
-    , modules : modules
+      mod : mod
     , dirnode_visit : dirnode_visit
     , dirnode_visit_ctx : dirnode_visit_ctx
-
-    /* state */
-    , variant_index : -1
 
     /* outputs */
     , matches : matches
   };
 
-  ctx.section_traversal.head = pattern->section_head;
-  ctx.section_traversal.section = chain_next(ctx.section_traversal.head, &ctx.section_traversal.cursor, chn);
+  ctx.section_traversal.head = &pattern->sections;
+  ctx.section_traversal.section = llist_first(ctx.section_traversal.head, typeof(*ctx.section_traversal.section), lln);
+
+  /* this can only appear as the initial section */
+  if(ctx.section_traversal.section->nodeset == PATTERN_NODESET_SHADOW) {
+    ctx.section_traversal.section = llist_next(ctx.section_traversal.head, ctx.section_traversal.section, lln);
+    base = g_shadow;
+  }
 
   /* search pattern begins at the module dirnode */
-  pattern_section_search(&ctx, module->dir_node);
+  pattern_section_search(&ctx, base);
 }

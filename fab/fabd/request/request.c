@@ -5,11 +5,11 @@
 
 #include "common/attrs.h"
 #include "narrator.h"
-#include "bacon/writer.h"
+#include "bacon/builder.h"
 #include "xlinux/xstdlib.h"
 #include "valyria/llist.h"
 
-#include "request.internal.h"
+#include "request.h"
 #include "selector.internal.h"
 
 attrs32 * command_type_attrs = (attrs32[]) {{
@@ -18,7 +18,7 @@ attrs32 * command_type_attrs = (attrs32[]) {{
     num : 0 COMMAND_TYPE_TABLE
   , members : (member32[]) {
 #undef DEF
-#define DEF(x, s, r) { name : s, value : x, range : UINT32_C(r) },
+#define DEF(x, s, y) { name : s, value : x, range : COMMAND_TYPE_OPT },
 COMMAND_TYPE_TABLE
   }
 }};
@@ -34,12 +34,24 @@ TRAVERSE_TYPE_TABLE
   }
 }};
 
+attrs32 * traverse_order_attrs = (attrs32[]) {{
+#undef TRAVERSE_ATTR_DEF
+#define TRAVERSE_ATTR_DEF(x, s, r, y) + 1
+    num : 0 TRAVERSE_ORDER_TABLE
+  , members : (member32[]) {
+#undef TRAVERSE_ATTR_DEF
+#define TRAVERSE_ATTR_DEF(x, s, r, y) { name : s, value : y, range : UINT32_C(r) },
+TRAVERSE_ORDER_TABLE
+  }
+}};
+
 static llist command_freelist = LLIST_INITIALIZER(command_freelist);
 
 static void __attribute__((constructor)) init()
 {
   attrs32_init(command_type_attrs);
   attrs32_init(traverse_type_attrs);
+  attrs32_init(traverse_order_attrs);
 }
 
 //
@@ -59,90 +71,85 @@ static void command_destroy(command * cmd)
   }
 }
 
-static void request_writer_write(request * const restrict req, value_writer * const restrict writer)
+static void request_writer_write(request * const restrict req, bacon_writer * const restrict builder_writer)
 {
   command *cmd;
 
   llist_foreach(&req->commands, cmd, lln) {
     switch(cmd->type)
     {
-      case COMMAND_RUN:
-        value_writer_string(writer, "run");
-        break;
-      case COMMAND_DESCRIBE:
-        value_writer_string(writer, "describe");
-        break;
-      case COMMAND_INVALIDATE:
-        value_writer_string(writer, "invalidate");
-        break;
-      case COMMAND_GLOBAL_INVALIDATE:
-        value_writer_string(writer, "global-invalidate");
-        break;
-      case COMMAND_CONFIG_READ:
-        value_writer_string(writer, "config-read");
-        break;
-      case COMMAND_LIST:
-        value_writer_string(writer, "list");
-        break;
-      case COMMAND_RESET_SELECTION:
-        value_writer_string(writer, "reset-selection");
-        break;
       case COMMAND_GLOBAL_STATS_READ:
-        value_writer_string(writer, "global-stats-read");
-        break;
       case COMMAND_GLOBAL_STATS_RESET:
-        value_writer_string(writer, "global-stats-reset");
-        break;
       case COMMAND_STATS_READ:
-        value_writer_string(writer, "stats-read");
-        break;
       case COMMAND_STATS_RESET:
-        value_writer_string(writer, "stats-reset");
+      case COMMAND_CONFIG_DESCRIBE:
+      case COMMAND_VARS_DESCRIBE:
+      case COMMAND_ENVS_DESCRIBE:
+      case COMMAND_RMA_DESCRIBE:
+      case COMMAND_RULES_DESCRIBE:
+      case COMMAND_FSTREE_DESCRIBE:
+      case COMMAND_FILESYSTEM_DESCRIBE:
+      case COMMAND_RESET_SELECTION:
+      case COMMAND_LIST:
+      case COMMAND_DESCRIBE:
+      case COMMAND_INVALIDATE:
+      case COMMAND_GLOBAL_INVALIDATE:
+      case COMMAND_AUTORUN:
+      case COMMAND_RUN:
+        STRING(attrs32_name_byvalue(command_type_attrs, cmd->type));
         break;
       case COMMAND_SELECT:
-        value_writer_push_mapping(writer);
-        value_writer_string(writer, "select");
-          value_writer_push_list(writer);
-          selector_writer_write(cmd->selector, writer);
-          value_writer_pop_list(writer);
-        value_writer_pop_mapping(writer);
+        { MAPPING
+          STRING("select");
+          { LIST
+            selector_writer_write(cmd->selector, builder_writer);
+          }
+        }
         break;
       case COMMAND_GOALS:
-        value_writer_push_mapping(writer);
-        value_writer_string(writer, "goals");
-          value_writer_push_set(writer);
-          if(cmd->goals.build)
-            value_writer_string(writer, "build");
-          if(cmd->goals.script)
-            value_writer_string(writer, "script");
-          if(cmd->goals.target_direct)
-          {
-            value_writer_push_mapping(writer);
-              value_writer_string(writer, "target-direct");
-              value_writer_push_list(writer);
-                selector_writer_write(cmd->goals.target_direct, writer);
-              value_writer_pop_list(writer);
-            value_writer_pop_mapping(writer);
+        { MAPPING
+          STRING("goals");
+          { SET
+            if(cmd->goals.build) {
+              STRING("build");
+            }
+            if(cmd->goals.script) {
+              STRING("script");
+            }
+            if(cmd->goals.target_direct) {
+              MAPPING
+              STRING("target-direct")
+              { LIST
+                selector_writer_write(cmd->goals.target_direct, builder_writer);
+              }
+            }
+            if(cmd->goals.target_transitive) {
+              MAPPING
+              STRING("target-transitive");
+              { LIST
+                selector_writer_write(cmd->goals.target_transitive, builder_writer);
+              }
+            }
           }
-          if(cmd->goals.target_transitive)
-          {
-            value_writer_push_mapping(writer);
-              value_writer_string(writer, "target-transitive");
-              value_writer_push_list(writer);
-                selector_writer_write(cmd->goals.target_transitive, writer);
-              value_writer_pop_list(writer);
-            value_writer_pop_mapping(writer);
-          }
-          value_writer_pop_set(writer);
-        value_writer_pop_mapping(writer);
+        }
         break;
       case COMMAND_METADATA:
-        value_writer_string(writer, "metadata");
+        STRING("metadata");
         break;
       case COMMAND_RECONCILE:
-        value_writer_string(writer, "reconcile");
+        STRING("reconcile");
         break;
-      default:
+      case COMMAND_CONTEXT:
+        { MAPPING
+          STRING("context");
+          { SET
+            { MAPPING
+              STRING("module")
+              HEX(cmd->context.module_id)
+            }
+          }
+        }
+        break;
         RTA;
     }
   }
@@ -165,7 +172,7 @@ void request_cleanup()
 void request_init(request * restrict req)
 {
   memset(req, 0, sizeof(*req));
-  llist_init_node(&req->commands);
+  llist_init(&req->commands);
 }
 
 void request_destroy(request * restrict req)
@@ -175,21 +182,21 @@ void request_destroy(request * restrict req)
 
   llist_foreach_safe(&req->commands, cmd, lln, T) {
     command_destroy(cmd);
-    llist_delete(cmd, lln);
-    llist_append(&command_freelist, cmd, lln);
+    llist_delete(&cmd->lln);
+    llist_append(&command_freelist, &cmd->lln);
   }
 }
 
 void request_say(request * restrict req, narrator * restrict N)
 {
-  value_writer * writer = 0;
-  value_writer_create(&writer);
-  value_writer_open(writer, N);
+  bacon_writer * writer = 0;
+  bacon_writer_create(&writer);
+  bacon_writer_open(writer, N);
 
   request_writer_write(req, writer);
 
-  value_writer_close(writer);
-  value_writer_xfree(writer);
+  bacon_writer_close(writer);
+  bacon_writer_free(writer);
 }
 
 void request_command_alloc(request * restrict req, command ** restrict cmdp)
@@ -202,7 +209,7 @@ void request_command_alloc(request * restrict req, command ** restrict cmdp)
     memset(cmd, 0, sizeof(*cmd));
   }
 
-  llist_append(&req->commands, cmd, lln);
+  llist_append(&req->commands, &cmd->lln);
 
   *cmdp = cmd;
 }

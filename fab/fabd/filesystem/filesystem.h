@@ -10,11 +10,14 @@
 #include "types.h"
 #include "valyria/llist.h"
 
-struct configblob;
+struct configuration;
 struct attrs16;
 struct fstree;
+struct fsent;
+struct bacon_writer;
 
 #define FILESYSTEM_INVALIDATE_DEFAULT INVALIDATE_STAT
+#define FILESYSTEM_INDEXED_DEFAULT true
 
 // filesystem attributes
 #define INVALIDATE_OPT 0xf
@@ -34,10 +37,10 @@ INVALIDATE_TYPE_TABLE
 extern struct attrs16 * invalidate_attrs;
 
 typedef struct filesystem {
-  union {
-    invalidate_type invalidate;
-    uint16_t attrs;
-  };
+  invalidate_type invalidate;
+  bool mkdirs;
+  bool readlinks;
+  bool indexed;
 
   struct fstree *fst; // filesystem attachment point
 
@@ -46,6 +49,8 @@ typedef struct filesystem {
 
 extern struct filesystem filesystem_root;
 extern struct filesystem filesystem_shadow;
+
+extern llist filesystem_reconcile_list;
 
 void filesystem_setup(void);
 void filesystem_cleanup(void);
@@ -57,7 +62,29 @@ void filesystem_cleanup(void);
  * config - root of the config tree
  * dry    - whether to perform a dry-run
  */
-int filesystem_reconfigure(struct configblob * restrict cfg, char * restrict err, uint16_t err_sz);
-
-size_t filesystem_absolute_path_znload(void * restrict dst, size_t sz, const filesystem * restrict fs)
+void filesystem_reconfigure(struct configuration * restrict cfg, bool dryrun)
   __attribute__((nonnull));
+
+size_t filesystem_absolute_path_cat(void * restrict dst, size_t sz, const filesystem * restrict fs)
+  __attribute__((nonnull));
+
+void filesystem_reconcile(void);
+
+void fsent_symlink_resolve(struct fsent *fse)
+  __attribute__((nonnull));
+
+void filesystem_mkdir_push(struct fsent * restrict fse)
+  __attribute__((nonnull));
+
+void filesystem_mkdir_unshift(struct fsent * restrict fse)
+  __attribute__((nonnull));
+
+void fstree_describe(struct bacon_writer * restrict writer)
+  __attribute__((nonnull));
+
+void fstree_show(void);
+
+void filesystem_describe(struct bacon_writer * restrict writer)
+  __attribute__((nonnull));
+
+void filesystem_show(void);

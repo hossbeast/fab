@@ -19,6 +19,9 @@
 #include "valyria/hashtable.h"
 #include "valyria/llist.h"
 #include "xlinux/xstdlib.h"
+#include "bacon/builder.h"
+#include "narrator.h"
+#include "narrator/fixed.h"
 
 #include "build.h"
 #include "args.h"
@@ -35,13 +38,14 @@ struct build_args build_args = {
 static struct build_args *args = &build_args;
 
 typedef struct build_slot {
+  fab_build_slot_info info;
+
   /* slots can be chained together for execs with very large lists of strings */
   struct build_slot *next;
 
   /* buffer which info members point into */
-  char info_buf[8192];
+  char info_buf[16384];
 
-  fab_build_slot_info info;
   fab_build_slot_results results;
   uint32_t stdout_len;
   uint32_t stderr_len;
@@ -62,6 +66,9 @@ typedef struct build_slot {
   size_t auxout_alloc;
 } build_slot;
 
+/* first so that build_slot_cmp works with just a pid */
+STATIC_ASSERT(offsetof(build_slot, info) == 0);
+
 static llist slots_freelist = LLIST_INITIALIZER(slots_freelist);
 static hashtable * build_slots_bypid;
 
@@ -69,44 +76,30 @@ static hashtable * build_slots_bypid;
 // static
 //
 
-static uint32_t build_slot_hash(uint32_t h, const void * e, size_t el)
+static uint32_t build_slot_hash(uint32_t h, const void * e)
 {
-  const build_slot * const * bsp = e;
+  const build_slot * bs = e;
 
-  return hash32(h, &(*bsp)->info.pid, sizeof((*bsp)->info.pid));
+  return hash32(h, &bs->info.pid, sizeof(bs->info.pid));
 }
 
-static int build_slot_cmp(const void * A, size_t Al, const void * B, size_t Bl)
+static int build_slot_cmp(const void * A, const void * B)
 {
-  const build_slot * const * Absp = A;
-  const build_slot * const * Bbsp = B;
+  const build_slot * Abs = A;
+  const build_slot * Bbs = B;
 
-  return INTCMP((*Absp)->info.pid, (*Bbsp)->info.pid);
-}
-
-static uint32_t build_slot_key_hash(uint32_t h, const void *key, size_t el)
-{
-  return hash32(h, key, el);
-}
-
-static int build_slot_key_cmp(const void * A, const void *key, size_t keysz)
-{
-  const build_slot * const * Absp = A;
-  const uint32_t * pidp = key;
-
-  return INTCMP((*Absp)->info.pid, *pidp);
+  return INTCMP(Abs->info.pid, Bbs->info.pid);
 }
 
 static void build_slot_release(void *e)
 {
-  build_slot **bsp = e;
-  build_slot *bs = *bsp;
+  build_slot *bs = e;
   build_slot *next;
 
   while(bs)
   {
     next = bs->next;
-    llist_append(&slots_freelist, bs, lln);
+    llist_append(&slots_freelist, &bs->lln);
     bs = next;
   }
 }
@@ -116,6 +109,7 @@ static void connected(command * restrict cmd, fab_client * restrict client)
   narrator * request_narrator;
   narrator_fixed nstor;
   fabipc_message * msg;
+  bacon_writer writer, *builder_writer;
 
   if(args->targets_len)
   {
@@ -151,22 +145,26 @@ static void connected(command * restrict cmd, fab_client * restrict client)
   requestid = msg->id = PID_AS_MSGID(getpid());
 
   request_narrator = narrator_fixed_init(&nstor, msg->text, 0xfff);
+  bacon_writer_init(&writer);
+  builder_writer = bacon_writer_open(&writer, request_narrator);
 
   /* re-configure goals */
-  build_command_collate_goals(request_narrator, false);
+  build_command_collate_goals(builder_writer, false);
 
-  narrator_sayf(request_narrator, " reconcile ");
+  STRING("reconcile")
 
   /* invalidate targets */
-  build_command_collate_invalidations(request_narrator);
+  build_command_collate_invalidations(builder_writer);
 
   /* build the targets */
-  narrator_sayf(request_narrator, " run");
+  STRING("run")
 
-  // two terminating null bytes
-  narrator_sayw(request_narrator, (char[]) { 0x00, 0x00 }, 2);
+  bacon_writer_close(&writer);
+  bacon_writer_destroy(&writer);
+  narrator_sayc(request_narrator, 0);
+  narrator_sayc(request_narrator, 0);
+
   msg->size = nstor.l;
-
   client_post(client, msg);
 }
 
@@ -280,6 +278,8 @@ static void slot_print(build_slot *bs_zero)
 
   if((success && args->success.show_path) || (!success && args->error.show_path))
   {
+    xsayf(" rule %.*s\n", (int)bs_zero->info.rule_id_len, bs_zero->info.rule_id);
+    xsayf(" formula %.*s\n", (int)bs_zero->info.formula_abspath_len, bs_zero->info.formula_abspath);
     xsayf(" path %.*s\n", (int)bs_zero->info.path_len, bs_zero->info.path);
   }
   if((success && args->success.show_command) || (!success && args->error.show_command))
@@ -518,20 +518,28 @@ static void process(command * restrict cmd, fab_client * restrict client, fabipc
       RUNTIME_ASSERT(msg->id == eventsubid);
     }
   }
-  else if(msg->type == FABIPC_MSG_EVENTS && msg->evtype == FABIPC_EVENT_SYSTEM_STATE) { }
+  else if(msg->type == FABIPC_MSG_EVENTS && msg->evtype == FABIPC_EVENT_SYSTEM_STATE)
+  {
+    /* printed in main */
+  }
   else if(msg->type == FABIPC_MSG_EVENTS)
   {
     build_command_process_event(client, msg);
   }
 }
 
-void build_command_collate_invalidations(narrator * restrict N)
+static void attached(command * restrict cmd, fab_client * restrict client)
+{
+
+}
+
+void build_command_collate_invalidations(bacon_writer * restrict builder_writer)
 {
   struct build_target *arg;
   int x;
 
   if(g_args.invalidate) {
-    narrator_says(N, " global-invalidate");
+    STRING("global-invalidate");
     return;
   }
 
@@ -539,140 +547,153 @@ void build_command_collate_invalidations(narrator * restrict N)
   for(x = 0; x < args->targets_len; x++)
   {
     arg = &args->targets[x];
-    if(arg->mode == 't')
+    if(arg->mode == 't') {
       break;
+    }
   }
 
   if(x < args->targets_len)
   {
-    narrator_says(N, ""
-" select : ["
-    );
-
-    for(x = 0; x < args->targets_len; x++)
-    {
-      arg = &args->targets[x];
-      if(arg->mode != 't')
-        continue;
-
-      narrator_sayf(N, ""
-" path : \"%.*s\"", (int)arg->sl, arg->s
-      );
+    { MAPPING
+      STRING("select")
+      { LIST
+        for(x = 0; x < args->targets_len; x++)
+        {
+          arg = &args->targets[x];
+          if(arg->mode != 't') {
+            continue;
+          }
+          { MAPPING
+            STRING("lookup")
+            { SET
+              { MAPPING
+                STRING("path")
+                BYTES(arg->s, (int)arg->sl)
+              }
+            }
+          }
+        }
+      }
     }
-
-    narrator_says(N, ""
-" ] "
-" invalidate "
-    );
+    STRING("invalidate")
   }
 
   /* direct targets */
   for(x = 0; x < args->targets_len; x++)
   {
     arg = &args->targets[x];
-    if(arg->mode == 'x')
+    if(arg->mode == 'x') {
       break;
+    }
   }
 
   if(x < args->targets_len)
   {
-    narrator_says(N, ""
-" select : ["
-    );
-
-    for(x = 0; x < args->targets_len; x++)
-    {
-      arg = &args->targets[x];
-      if(arg->mode != 'x')
-        continue;
-
-      narrator_sayf(N, ""
-" path : \"%.*s\"", (int)arg->sl, arg->s
-      );
+    { MAPPING
+      STRING("select")
+      { LIST
+        for(x = 0; x < args->targets_len; x++)
+        {
+          arg = &args->targets[x];
+          if(arg->mode != 'x') {
+            continue;
+          }
+          { MAPPING
+            STRING("lookup")
+            { SET
+              { MAPPING
+                STRING("path")
+                BYTES(arg->s, (int)arg->sl)
+              }
+            }
+          }
+        }
+      }
     }
-
-    narrator_says(N, ""
-" ] "
-"invalidate "
-    );
+    STRING("invalidate")
   }
 }
 
-void build_command_collate_goals(narrator * restrict N, bool reconcile)
+void build_command_collate_goals(bacon_writer * restrict builder_writer, bool reconcile)
 {
   int x;
   struct build_target *arg;
 
-  narrator_says(N, ""
-" goals : { "
-  );
+  MAPPING
+  STRING("goals")
+  { SET
+    if(reconcile) {
+      STRING("reconcile");
+    }
 
-  if(reconcile)
-  {
-    narrator_says(N, "reconcile ");
-  }
-
-  /* transitive targets */
-  for(x = 0; x < args->targets_len; x++)
-  {
-    arg = &args->targets[x];
-    if(arg->mode == 't')
-      break;
-  }
-
-  if(x < args->targets_len)
-  {
-    narrator_says(N, ""
-" target-transitive : ["
-    );
-
+    /* transitive targets */
     for(x = 0; x < args->targets_len; x++)
     {
       arg = &args->targets[x];
-      if(arg->mode != 't')
-        continue;
-
-      narrator_sayf(N, ""
-" path : \"%.*s\"", arg->sl, arg->s
-      );
+      if(arg->mode == 't') {
+        break;
+      }
     }
 
-    narrator_says(N, ""
-" ] "
-    );
-  }
+    if(x < args->targets_len)
+    {
+      MAPPING
+      STRING("target-transitive")
+      { LIST
+        for(x = 0; x < args->targets_len; x++)
+        {
+          arg = &args->targets[x];
+          if(arg->mode != 't') {
+            continue;
+          }
+          { MAPPING
+            STRING("lookup")
+            { SET
+              { MAPPING
+                STRING("path")
+                BYTES(arg->s, (int)arg->sl)
+              }
+            }
+          }
+        }
+      }
+    }
 
-  /* direct targets */
-  for(x = 0; x < args->targets_len; x++)
-  {
-    arg = &args->targets[x];
-    if(arg->mode == 'x')
-      break;
-  }
-
-  if(x < args->targets_len)
-  {
-    narrator_says(N, ""
-" target-direct: ["
-    );
-
+    /* direct targets */
     for(x = 0; x < args->targets_len; x++)
     {
       arg = &args->targets[x];
-      if(arg->mode != 't')
-        continue;
-
-      narrator_sayf(N, ""
-" path : \"%.*s\"", (int)arg->sl, arg->s
-      );
+      if(arg->mode == 'x') {
+        break;
+      }
     }
 
-    narrator_says(N, ""
-" ] "
-    );
-  }
+    if(x < args->targets_len)
+    {
+      MAPPING
+      STRING("target-direct")
+      { LIST
+        for(x = 0; x < args->targets_len; x++)
+        {
+          arg = &args->targets[x];
+          if(arg->mode != 't') {
+            continue;
+          }
+          { MAPPING
+            STRING("lookup")
+            { SET
+              { MAPPING
+                STRING("path")
+                BYTES(arg->s, (int)arg->sl)
+              }
+            }
+          }
+        }
+      }
+    }
 
-  narrator_says(N, " build }");
+    STRING("build")
+  }
 }
 
 //
@@ -692,17 +713,21 @@ void build_command_usage(command * restrict cmd)
 
 void build_command_process_event(fab_client * restrict client, fabipc_message * restrict msg)
 {
-  build_slot *bs, **bsp;
+  build_slot *bs;
   size_t __attribute__((unused)) z;
   uint32_t pid;
+  hashtable_search_context ctx = {};
+  fab_build_slot_info key;
+  bool r;
 
+  ctx.entry = &key;
+  pid = key.pid = msg->id;
+  r = hashtable_search(build_slots_bypid, &ctx);
   if(msg->evtype == FABIPC_EVENT_FORMULA_EXEC_FORKED)
   {
-    pid = msg->id;
-    bsp = hashtable_search(build_slots_bypid, (void*)&pid, sizeof(pid), build_slot_key_hash, build_slot_key_cmp);
-    if(bsp) {
-      bs = *bsp;
-
+    if(r)
+    {
+      bs = hashtable_fetch(build_slots_bypid, &ctx);
       while(bs->next) {
         bs = bs->next;
       }
@@ -711,7 +736,8 @@ void build_command_process_event(fab_client * restrict client, fabipc_message * 
       bs = bs->next;
     } else {
       slot_alloc(&bs, msg->id);
-      hashtable_put(build_slots_bypid, &bs);
+      ctx.entry = bs;
+      hashtable_set(build_slots_bypid, &ctx);
     }
 
     RUNTIME_ASSERT(msg->size <= sizeof(bs->info_buf));
@@ -722,13 +748,11 @@ void build_command_process_event(fab_client * restrict client, fabipc_message * 
   }
   else
   {
-    pid = msg->id;
-    bsp = hashtable_search(build_slots_bypid, (void*)&pid, sizeof(pid), build_slot_key_hash, build_slot_key_cmp);
-    if(!bsp) {
+    if(!r) {
       fprintf(stderr, "unknown pid %"PRIu32" 0x%016x head %5u\n", pid, pid, containerof(msg, fabipc_page, msg)->head);
       return;
     }
-    bs = *bsp;
+    bs = hashtable_fetch(build_slots_bypid, &ctx);
 
     if(msg->evtype == FABIPC_EVENT_FORMULA_EXEC_STDOUT)
     {
@@ -757,10 +781,12 @@ void build_command_process_event(fab_client * restrict client, fabipc_message * 
       build_was_failed_slot |= bs->results.stderr_total > 0;
 
       slot_print(bs);
-      hashtable_delete(build_slots_bypid, &bs);
+      hashtable_remove(build_slots_bypid, &ctx);
     }
   }
 }
+
+static void disconnected(command * restrict cmd) { }
 
 //
 // public
@@ -770,7 +796,6 @@ void build_command_setup()
 {
   hashtable_createx(
       &build_slots_bypid
-    , sizeof(build_slot*)
     , 256
     , build_slot_hash
     , build_slot_cmp
@@ -783,7 +808,7 @@ void build_command_cleanup()
   build_slot *bs;
   llist *lln;
 
-  hashtable_xfree(build_slots_bypid);
+  hashtable_free(build_slots_bypid);
 
   llist_foreach_safe(&slots_freelist, bs, lln, lln) {
     slot_free(bs);
@@ -792,7 +817,9 @@ void build_command_cleanup()
 
 command build_command = {
     name : "build"
+  , attached : attached
   , usage : build_command_usage
   , connected : connected
   , process : process
+  , disconnected : disconnected
 };

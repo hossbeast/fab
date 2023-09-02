@@ -6,23 +6,36 @@
 #include "xlinux/xstdlib.h"
 #include "xlinux/xunistd.h"
 #include "xlinux/xfcntl.h"
+#include "moria/foreach.h"
+#include "narrator/fixed.h"
+#include "bacon/builder.h"
 
 #include "formula.h"
 #include "formula_parser.h"
 #include "formula_value.h"
 #include "fsent.h"
+#include "vertex.h"
+#include "rule_module_association.h"
+#include "edge.h"
 #include "stats.h"
 #include "marshal.h"
 #include "channel.h"
 #include "system_state.h"
 #include "events.h"
 #include "formula_parser.internal.h"
+#include "selector_parser.h"
+#include "reconcile.h"
+#include "meta_edge.h"
+#include "special_edge.h"
+#include "entlist.h"
+#include "vertex/probes.h"
 
 #include "common/snarf.h"
-#include "zbuffer.h"
+#include "zcat.h"
 
-static llist formula_list = LLIST_INITIALIZER(formula_list);
-static llist formula_freelist = LLIST_INITIALIZER(formula_freelist);
+static llist formula_list = LLIST_INITIALIZER(formula_list);                  // active
+static llist formula_freelist = LLIST_INITIALIZER(formula_freelist);          // free
+static llist formula_invalid_list = LLIST_INITIALIZER(formula_invalid_list);  // invalidated
 
 static formula_parser *parser;
 
@@ -33,68 +46,88 @@ static void formula_parse(formula * restrict fml)
   int exit;
   channel *chan;
   fabipc_message *msg;
+  bacon_writer writer, *builder_writer;
+  narrator_fixed fixed;
 
   // open the file, both to read its contents, and to exec later
   ixclose(&fml->fd);
-  fml->fd = xopenats(O_RDONLY, 0, fml->self_node_abspath);
+  fml->fd = xopenats(O_RDONLY, 0, fml->abspath);
 
   formula_value_ifree(&fml->file);
   formula_value_ifree(&fml->envs);
   formula_value_ifree(&fml->args);
 
-  STATS_INC(fml->stats.parsed_try);
-  STATS_INC(g_stats.formula_parsed_try);
+  STATS_INC(fml->fml_stats.parse);
+  STATS_INC(g_stats.formula_parse);
 
   fsnarf(&text, &text_len, fml->fd);
 
   if(text_len)
   {
-    if((exit = formula_parser_parse(parser, text, text_len, fml->self_node_abspath, fml)))
+    if((exit = formula_parser_parse(parser, text, text_len, fml->abspath, fml)))
     {
-      system_error = true;
-      if(!events_would(FABIPC_EVENT_SYSTEM_STATE, &chan, &msg)) {
-        goto end;
+      msg = system_error_event(&chan);
+      narrator_fixed_init(&fixed, msg->text, sizeof(msg->text));
+      bacon_writer_init(&writer);
+      builder_writer = bacon_writer_open(&writer, &fixed.base);
+
+      { SET
+        if(parser->selector_parser->yyu.error_len) {
+          BYTES(parser->selector_parser->yyu.error_str, parser->selector_parser->yyu.error_len)
+        } else {
+          BYTES(parser->yyu.error_str, parser->yyu.error_len)
+        }
+        { MAPPING
+          STRING("location")
+          STRING(fml->abspath)
+        }
       }
+      bacon_writer_close(&writer);
 
       msg->code = EINVAL;
-      msg->size += znloadw(msg->text + msg->size, sizeof(msg->text) - msg->size, parser->yyu.error_str, parser->yyu.error_len);
-      msg->size += znloadf(msg->text + msg->size, sizeof(msg->text) - msg->size, " with path %s", fml->self_node_abspath);
+      msg->size = fixed.l;
       events_publish(chan, msg);
-
       goto end;
     }
   }
 
-  STATS_INC(fml->stats.parsed);
-  STATS_INC(g_stats.formula_parsed);
-
-  //logf(L_MODULE, "parsed formula @ %s via fd %d", fml->self_node_abspath, fml->fd);
+  STATS_INC(fml->fml_stats.parse_ok);
+  STATS_INC(g_stats.formula_parse_ok);
 
 end:
   free(text);
 }
 
-static void formula_dispose(formula * restrict fml)
+static void formula_destroy(formula * restrict fml)
 {
   xclose(fml->fd);
   formula_value_free(fml->file);
   formula_value_free(fml->envs);
   formula_value_free(fml->args);
-
-  llist_delete_node(&fml->vertex.owner);
-  llist_append(&formula_freelist, fml, vertex.owner);
 }
 
-static void formula_xrelease(formula * restrict fml)
+static void formula_dispose(formula * restrict fml)
 {
-  moria_vertex __attribute__((unused)) *v;
+  formula_destroy(fml);
 
-  /* should have been fully excised from the graph previously */
+  llist_delete(&fml->vertex.owner);
+  llist_append(&formula_freelist, &fml->vertex.owner);
+}
+
+void formula_release(formula * restrict fml, graph_invalidation_context * restrict invalidation)
+{
+  moria_vertex *v;
+
+  /* must have been fully excised from the graph previously */
   v = &fml->vertex;
   RUNTIME_ASSERT(v->up_identity == 0);
   RUNTIME_ASSERT(rbtree_empty(&v->up));
   RUNTIME_ASSERT(rbtree_empty(&v->down));
 
+  /* un-magick the file node */
+  vertex_type_set(&fml->self_node->vertex, VERTEX_FILE);
+
+  vertex_deleted_probe(v);
   formula_dispose(fml);
 }
 
@@ -112,7 +145,7 @@ void formula_cleanup()
   formula *fml;
   llist *T;
 
-  formula_parser_xfree(parser);
+  formula_parser_free(parser);
 
   llist_foreach_safe(&formula_list, fml, vertex.owner, T) {
     formula_dispose(fml);
@@ -123,110 +156,107 @@ void formula_cleanup()
   }
 }
 
-void formula_reconcile(formula * restrict fml)
+void formula_system_reconcile(graph_invalidation_context * restrict invalidation)
 {
-  if(!fsent_invalid_get(fml->self_node)) {
-    return;
+  moria_edge *edge;
+  entlist edges, vertices;
+  formula *fml;
+  moria_foreach_state st;
+  bool connected;
+  llist list, *T;
+
+  entlist_init(&edges);
+  entlist_init(&vertices);
+  llist_init(&list);
+
+  /* destroy invalidated formulas which are no longer connected to any rma */
+  llist_foreach_safe(&formula_invalid_list, fml, invalid_lln, T) {
+    connected = false;
+    moria_foreach_edge_up(&st, &fml->vertex, edge) {
+      switch(edge_type_get(edge)) {
+        case EDGE_FML_RMA:
+          connected = true;
+          break;
+        default:
+      }
+    }
+
+    if(connected) {
+      continue;
+    }
+
+    llist_delete(&fml->invalid_lln);
+    llist_push(&list, &fml->invalid_lln);
+
+    moria_foreach_edge(&st, &fml->vertex, edge) {
+      entlist_push(&edges, edge);
+    }
   }
 
-  formula_parse(fml);
+  graph_disintegrate_bulk(&edges, &vertices, invalidation);
+  entlist_destroy(&edges);
+  entlist_destroy(&vertices);
 
-  if(!system_error) {
-    fsent_ok(fml->self_node);
+  llist_foreach(&list, fml, invalid_lln) {
+    formula_release(fml, invalidation);
+  }
+
+  /* re-parse all remaining, invalidated formulas */
+  while((fml = llist_shift(&formula_invalid_list, typeof(*fml), invalid_lln))) {
+    formula_parse(fml);
+    if(system_error) {
+      llist_push(&formula_invalid_list, &fml->invalid_lln);
+      break;
+    }
+    vertex_mark_fresh(&fml->vertex);
+    vertex_mark_fresh(&fml->self_node->vertex);
   }
 }
 
-void formula_system_reconcile()
+void formula_parse_enqueue(formula * restrict fml)
 {
-  formula *fml;
-  llist *T;
-  moria_edge *e;
-  llist lln;
-
-  /* collect edges for orphaned formulas */
-  llist_init_node(&lln);
-  llist_foreach(&formula_list, fml, vertex.owner) {
-    if(fml->refs != 0) {
-      continue;
-    }
-
-    rbtree_foreach(&fml->vertex.up, e, rbn_up) {
-      RUNTIME_ASSERT(e->attrs == EDGE_RULE_FML);
-      llist_append(&lln, e, lln);
-    }
-  }
-
-  llist_foreach_safe(&lln, e, lln, T) {
-    graph_disconnect(e);
-  }
-
-  /* release orphaned formulas */
-  llist_foreach_safe(&formula_list, fml, vertex.owner, T) {
-    if(fml->refs != 0) {
-      continue;
-    }
-
-    /* un-bless the vertex */
-    RUNTIME_ASSERT(fsent_kind_get(fml->self_node) == VERTEX_FORMULA_FILE);
-    fsent_kind_set(fml->self_node, VERTEX_FILE);
-
-    formula_xrelease(fml);
-  }
+  llist_push(&formula_invalid_list, &fml->invalid_lln);
 }
 
 void formula_create(formula ** restrict fmlp, moria_graph * restrict g)
 {
   formula *fml;
 
-  if((fml = llist_shift(&formula_freelist, typeof(*fml), vertex.owner)) == 0)
-  {
+  if((fml = llist_shift(&formula_freelist, typeof(*fml), vertex.owner)) == 0) {
     xmalloc(&fml, sizeof(*fml));
+  } else {
+    memset(fml, 0, sizeof(*fml));
   }
 
-  moria_vertex_init(&fml->vertex, g, VERTEX_FML);
-  llist_append(&formula_list, fml, vertex.owner);
+  moria_vertex_init(&fml->vertex, g, VERTEX_FORMULA | VERTEX_OK);
+  llist_append(&formula_list, &fml->vertex.owner);
+  llist_init(&fml->invalid_lln);
 
   fml->fd = -1;
 
+  vertex_protect_set(&fml->vertex, true);
+  vertex_alloc_probe(&fml->vertex);
   *fmlp = fml;
 }
 
-void formula_collate_stats(void *dst, size_t sz, formula *fml, bool reset, size_t *zp)
+size_t formula_stats_collate(void *dst, size_t sz, bool reset, formula * restrict fml)
 {
   size_t z;
   fab_formula_stats *stats;
-  fab_formula_stats lstats;
-  descriptor_field *field;
-  int x;
+  fab_formula_stats tmp;
 
-  stats = &fml->stats;
-  if(reset)
-  {
-    memcpy(&lstats, &stats, sizeof(lstats));
-    memset(stats, 0, sizeof(*stats));
-    stats = &lstats;
-  }
-
+  /* stats for the formula vertex */
   z = 0;
-  z += marshal_u32(dst + z, sz - z, descriptor_fab_formula_stats.id);
+  z += vertex_stats_collate(dst + z, sz - z, reset, &fml->vertex);
 
-  /* event counters */
-  for(x = 0; x < descriptor_fab_formula_stats.members_len; x++)
-  {
-    field = descriptor_fab_formula_stats.members[x];
-
-    if(field->size == 8) {
-      z += marshal_u64(dst + z, sz - z, stats->u64[field->offset / 8]);
-    } else if(field->size == 4) {
-      z += marshal_u32(dst + z, sz - z, stats->u32[field->offset / 4]);
-    } else if(field->size == 2) {
-      z += marshal_u16(dst + z, sz - z, stats->u16[field->offset / 2]);
-    } else if(field->size == 1) {
-      z += marshal_u16(dst + z, sz - z, stats->u8[field->offset / 1]);
-    } else {
-      RTA;
-    }
+  /* stats for the formula */
+  memcpy(&tmp, &fml->fml_stats, sizeof(tmp));
+  if(reset) {
+    memset(&fml->fml_stats, 0, sizeof(fml->fml_stats));
   }
+  stats = &tmp;
 
-  *zp += z;
+  z += descriptor_marshal_object(dst + z, sz - z, &descriptor_fab_formula_stats, &stats->record, 0);
+
+  return z;
 }

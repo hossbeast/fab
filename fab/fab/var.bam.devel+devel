@@ -1,0 +1,3 @@
+LFLAGS0 : [
+  -lasan -lubsan -lbacktrace
+]

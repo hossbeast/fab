@@ -6,27 +6,32 @@
 #include "types.h"
 
 #include "narrator.h"
+#include "narrator/fixed.h"
 #include "valyria/llist.h"
 #include "valyria/rbtree.h"
+#include "bacon/builder.h"
+#include "moria/foreach.h"
 
 #include "rule_system.h"
 #include "dependency.h"
 #include "fsent.h"
 #include "module.h"
 #include "rule.h"
-#include "rule_module.h"
+#include "rule_module_association.h"
+#include "buildplan_entity.h"
 #include "channel.h"
+#include "edge.h"
+#include "vertex.h"
 #include "system_state.h"
+#include "events.h"
+#include "zcat.h"
+#include "meta_edge.h"
+#include "entlist.h"
 
 /* refresh state */
-uint32_t rule_system_reconciliation_id;
-static llist rma_list[2];
-static int rma_list_index;
-
-static int nohits_rbn_cmp(const rbnode * restrict a, const rbnode * restrict b)
-{
-  return INTCMP(a, b);
-}
+uint32_t rule_system_epoch;
+static llist work_queue[2];
+static int work_queue_index;
 
 //
 // public
@@ -34,103 +39,93 @@ static int nohits_rbn_cmp(const rbnode * restrict a, const rbnode * restrict b)
 
 void rule_system_setup()
 {
-  rule_system_reconciliation_id = 1;
-  llist_init_node(&rma_list[0]);
-  llist_init_node(&rma_list[1]);
+  llist_init(&work_queue[0]);
+  llist_init(&work_queue[1]);
+  rule_system_epoch = 1;
 }
 
 void rule_system_reconcile(rule_run_context * restrict ctx)
 {
-  rule_module_edge *rma;
+  rule_system_work *work;
+  rule_module_association *rma;
   llist *head;
-  dependency *ne;
-  llist *T;
-  rbtree nohits;      // rmas with no matches during the reconciliation
   graph_invalidation_context invalidation = { };
+  moria_foreach_state st;
+  moria_edge *edge;
+  meta_edge *meta;
+  entlist edges, vertices;
 
-  rbtree_init(&nohits);
-  ctx->nohits = &nohits;
+  entlist_init(&vertices);
+  entlist_init(&edges);
 
   /* run rules to quiescence */
-  head = &rma_list[rma_list_index];
+  head = &work_queue[work_queue_index];
   while(!llist_empty(head) && !system_error)
   {
-    rule_system_reconciliation_id++;
+    rule_system_epoch++;
     graph_invalidation_end(&invalidation);
     graph_invalidation_begin(&invalidation);
 
-    /* flip the rma list so that invalidations queue up in the other slot */
-    rma_list_index = !rma_list_index;
+    /* flip the rma edges so that invalidations queue up in the other slot */
+    work_queue_index = !work_queue_index;
+    llist_init(&work_queue[work_queue_index]);
 
     /* run all queued up rules - this can drive rule invalidations */
-    llist_foreach(head, rma, changed[!rma_list_index].lln) {
+    while((work = llist_shift(head, typeof(*work), changed[!work_queue_index].lln))) {
+      rma = containerof(work, typeof(*rma), work);
+      vertex_mark_fresh(&rma->vertex);
       if(!system_error) {
-        ctx->variants = rma->variants;
-        ctx->mod = rma->mod;
-        ctx->mod_owner = rma->mod_owner;
-        ctx->rme = rma;
+        ctx->rma = rma;
         rule_run(rma->rule, ctx);
       }
+
+      /* remove edges previously created by running this rma but which were not refreshed during this round */
+      /* this can also drive rule invalidations */
+      moria_foreach_edge(&st, &rma->vertex, edge) {
+        switch(edge_type_get(edge)) {
+          case EDGE_RMA_BPE:
+          case EDGE_INDEX_RMA:
+          case EDGE_RMA_TGT:
+            break;
+          default:
+            continue;
+        }
+        meta = containerof(edge, typeof(*meta), edge);
+        if(meta->epoch == rule_system_epoch) {
+          continue;
+        }
+        entlist_push(&edges, &meta->edge);
+      }
+      graph_disintegrate_bulk(&edges, &vertices, &invalidation);
+      entlist_destroy(&edges);
+      entlist_destroy(&vertices);
+
       if(system_error) {
-        rule_system_rma_enqueue(rma);
+        vertex_mark_stale(&rma->vertex);  // re-enqueue
         continue;
       }
-
-      /* blow away edges previously instantiated by this rma but which were not refreshed */
-      /* this can also drive rule invalidations */
-      llist_foreach_safe(&rma->dependencies, ne, dependencies_lln, T) {
-        if(ne->reconciliation_id != rule_system_reconciliation_id) {
-          RUNTIME_ASSERT(ne->edge.attrs & EDGE_DEPENDENCY);
-          graph_disintegrate(&ne->edge, &invalidation);
-          llist_delete(ne, dependencies_lln);
-        }
-      }
     }
 
-    llist_init_node(head);
-
-    head = &rma_list[rma_list_index];
-  }
-
-  /* warn about rules which had no effect */
-  if(!system_error && 1)
-  {
-    rbtree_foreach(&nohits, rma, nohits_rbn) {
-      printf("0 matches : ");
-      rule_say(rma->rule, g_narrator_stdout);
-      printf(" @ module ");
-      fsent_absolute_path_say(rma->mod->dir_node, g_narrator_stdout);
-      printf("\n");
-    }
+    head = &work_queue[work_queue_index];
   }
 
   graph_invalidation_end(&invalidation);
 }
 
-void rule_system_rma_hit(rule_run_context * restrict ctx, rule_module_edge * restrict rma)
+void rule_system_rma_hit(rule_run_context * restrict ctx, rule_module_association * restrict rma)
 {
-  if(!rbnode_attached(&rma->nohits_rbn)) {
-    return;
-  }
-
-  rbtree_delete(ctx->nohits, rma, nohits_rbn);
 }
 
-void rule_system_rma_nohit(rule_run_context * restrict ctx, rule_module_edge * restrict rma)
+void rule_system_rma_nohit(rule_run_context * restrict ctx, rule_module_association * restrict rma)
 {
-  if(rbnode_attached(&rma->nohits_rbn)) {
-    return;
-  }
-
-  rbtree_put(ctx->nohits, rma, nohits_rbn, nohits_rbn_cmp);
 }
 
-void rule_system_rma_enqueue(rule_module_edge * restrict rma)
+void rule_system_work_enqueue(rule_system_work * restrict work)
 {
-  if(rma->changed[rma_list_index].reconciliation_id == rule_system_reconciliation_id) {
+  if(work->changed[work_queue_index].epoch == rule_system_epoch) {
     return;
   }
 
-  llist_append(&rma_list[rma_list_index], rma, changed[rma_list_index].lln);
-  rma->changed[rma_list_index].reconciliation_id = rule_system_reconciliation_id;
+  llist_push(&work_queue[work_queue_index], &work->changed[work_queue_index].lln);
+  work->changed[work_queue_index].epoch = rule_system_epoch;
 }

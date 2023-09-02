@@ -6,6 +6,7 @@
 #include "types.h"
 
 struct pattern;
+struct bacon_value;
 
 typedef struct pattern_render_fragment {
   uint16_t len;     /* length of this fragment */
@@ -20,10 +21,21 @@ typedef struct pattern_render_result {
 } pattern_render_result;
 STATIC_ASSERT(sizeof(pattern_render_result) == 2);
 
-void pattern_render(const struct pattern * restrict pat, pattern_render_result ** result)
-  __attribute__((nonnull));
+#define PATTERN_RENDER_LAST_SECTION_SKIP 1
+#define PATTERN_RENDER_LAST_SECTION_ONLY 2
 
-static inline struct pattern_render_fragment * pattern_render_fragment_next(struct pattern_render_fragment * fragment)
+/*
+ * internal to the pattern subsystem, used to convert lookup patterns into a list of fragments
+ */
+void pattern_render(
+    const struct pattern * restrict pat
+  , const struct bacon_value * restrict vars
+  , pattern_render_result ** result
+  , uint32_t flags
+)
+  __attribute__((nonnull(1, 3)));
+
+static inline struct pattern_render_fragment * pattern_render_fragment_next(const struct pattern_render_fragment * fragment)
 {
   char * next;
 

@@ -3,6 +3,7 @@
 
 #include "fab/ipc.h"
 #include "fab/events.h"
+#include "bacon/writer.h"
 
 #include "events.h"
 #include "channel.h"
@@ -13,7 +14,11 @@
 #include "common/attrs.h"
 #include "params.h"
 
-bool events_would(fabipc_event_type type, channel * restrict * restrict first, fabipc_message ** restrict msg)
+bool events_would(
+    fabipc_event_type type
+  , channel * restrict * restrict first
+  , fabipc_message ** restrict msg
+)
 {
   handler_context *handler;
 
@@ -36,7 +41,7 @@ bool events_would(fabipc_event_type type, channel * restrict * restrict first, f
   return false;
 }
 
-void events_publish(channel * first, fabipc_message * restrict firstmsg)
+void events_publish(channel * restrict first, fabipc_message * restrict firstmsg)
 {
   fabipc_message *msg;
   handler_context *handler;
@@ -67,5 +72,16 @@ void events_publish(channel * first, fabipc_message * restrict firstmsg)
     channel_post(handler->chan, msg);
   }
 
-  channel_post(first, firstmsg);
+  if(first) {
+    channel_post(first, firstmsg);
+  }
+
+  msg = firstmsg;
+  if(msg->code != 0) {
+    printf("%5u %.*s\n", msg->code, (int)msg->size, msg->text);
+  }
+
+  if(!first) {
+    free(msg);
+  }
 }

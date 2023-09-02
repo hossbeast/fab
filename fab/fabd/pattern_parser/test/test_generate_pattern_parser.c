@@ -5,14 +5,15 @@
 
 #include "lorien/load.h"
 #include "bacon/load.h"
+#include "bacon/builder.h"
 
 #include "xunit.h"
 #include "xunit/assert.h"
 #include "narrator.h"
 #include "narrator/growing.h"
 
-
 #include "pattern_parser.h"
+#include "pattern_parser.internal.h"
 #include "pattern.h"
 
 #include "macros.h"
@@ -54,6 +55,7 @@ static void pattern_parser_test_entry(xunit_test * _test)
   size_t len;
   yyu_location loc;
   const char * expected;
+  const char * actual;
 
   pattern_parser_test *test = containerof(_test, pattern_parser_test, xu);
 
@@ -64,16 +66,21 @@ static void pattern_parser_test_entry(xunit_test * _test)
   pattern_parser_create(&parser);
 
   // round trip parse
-  generate_pattern_parse_partial(parser, test->text, strlen(test->text) + 2, "-test-", 0, &loc, &A);
+  if(generate_pattern_parse_partial(parser, test->text, strlen(test->text) + 2, "-test-", 0, &loc, &A) != 0) {
+    tracef("%.*s", (int)parser->generate_yyu.error_len, parser->generate_yyu.error_str);
+  }
   assert_eq_zu(strlen(test->text), loc.l);
-  pattern_say(A, &N1->base);
 
+  pattern_say(A, &N1->base);
   len = N1->l;
   narrator_seek(&N1->base, 0, NARRATOR_SEEK_SET, 0);
   narrator_read(&N1->base, buf, len, 0);
   buf[len] = buf[len + 1] = 0;
 
-  generate_pattern_parse_partial(parser, buf, len + 2, "-test-", 0, &loc, &B);
+  if(generate_pattern_parse_partial(parser, buf, len + 2, "-test-", 0, &loc, &B) != 0) {
+    tracef("%.*s", (int)parser->generate_yyu.error_len, parser->generate_yyu.error_str);
+  }
+
   assert_eq_zu(strlen(expected), loc.l);
   pattern_say(B, &N2->base);
 
@@ -81,10 +88,10 @@ static void pattern_parser_test_entry(xunit_test * _test)
   assert_eq_w(N1->s, N1->l, N2->s, N2->l);
 
   // matches expected
-  const char * actual = N1->s;
+  actual = N1->s;
   assert_eq_w(expected, strlen(expected), actual, N1->l);
 
-  pattern_parser_xfree(parser);
+  pattern_parser_free(parser);
   narrator_growing_free(N1);
   narrator_growing_free(N2);
   pattern_free(A);
@@ -102,7 +109,7 @@ static xunit_unit xunit = {
   , xu_tests : (pattern_parser_test*[]) {
     /* basic */
       (pattern_parser_test[]) {{
-        text : (char[]) { "program.?\0" }
+        text : (char[]) { "program.\0" }
       }}
     , (pattern_parser_test[]) {{
         text : (char[]) { "cflags.void.debug\0" }
@@ -183,31 +190,14 @@ static xunit_unit xunit = {
     , (pattern_parser_test[]) {{
         text : (char[]) { "A/[ABC0-9XY]/D\0" }
       }}
-    /* replacements */
+    /* variables */
     , (pattern_parser_test[]) {{
-        text : (char[]) { "A/$?/D\0" }
+          text : (char[]) { "A/$A/D\0" }
+        , expected : "A/$A/D"
       }}
     , (pattern_parser_test[]) {{
-          text : (char[]) { "A/${?}/D\0" }
-        , expected : "A/$?/D"
-      }}
-    , (pattern_parser_test[]) {{
-        text : (char[]) { "A/${?+foo}/D\0" }
-      }}
-    , (pattern_parser_test[]) {{
-        text : (char[]) { "A/${?-foo}/D\0" }
-      }}
-    , (pattern_parser_test[]) {{
-        text : (char[]) { "A/${?-foo+bar}/D\0" }
-      }}
-    , (pattern_parser_test[]) {{
-        text : (char[]) { "A/${?+foo-bar}/D\0" }
-      }}
-    , (pattern_parser_test[]) {{
-        text : (char[]) { "A/3.$7/D\0" }
-      }}
-    , (pattern_parser_test[]) {{
-        text : (char[]) { "A/$7.7/D\0" }
+          text : (char[]) { "A/${A}/D\0" }
+        , expected : "A/$A/D"
       }}
     , (pattern_parser_test[]) {{
         text : (char[]) { "A/$7/D\0" }
@@ -216,10 +206,20 @@ static xunit_unit xunit = {
         text : (char[]) { "A/$foo/D\0" }
       }}
     , (pattern_parser_test[]) {{
+        text : (char[]) { "a$^H\0" }
+      }}
+    , (pattern_parser_test[]) {{
+        text : (char[]) { ".$^H\0" }
+      }}
+    , (pattern_parser_test[]) {{
         text : (char[]) { "$^D\0" }
       }}
     , (pattern_parser_test[]) {{
-        text : (char[]) { "$^D/$1.?.o\0" }
+          text : (char[]) { "$1.o\0" }
+      }}
+    , (pattern_parser_test[]) {{
+          text : (char[]) { "${1}.o\0" }
+        , expected : "$1.o"
       }}
     , 0
   }

@@ -22,6 +22,9 @@ my @cmd = (
 
 print(join(" ", @cmd), "\n");
 
+# no combination of arguments will cause ar to actually recreate the entire archive
+unlink($ENV{bm_target});
+
 exec { $cmd[0] } @cmd
 
 __DATA__

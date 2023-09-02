@@ -1,0 +1,8 @@
+/* SPDX-License-Identifier: GPL-3.0 */
+/* Copyright (c) 2012-2023 Todd Freed <todd.freed@gmail.com> */
+
+walker : {
+  exclude : {
+    /home/todd/fab/fab/fabd/builddir
+  }
+}

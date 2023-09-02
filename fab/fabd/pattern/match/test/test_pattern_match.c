@@ -7,14 +7,13 @@
 #include "xlinux/xstdlib.h"
 #include "moria/graph.h"
 #include "moria/vertex.h"
-#include "moria/operations.h"
 #include "moria/parser.h"
 #include "valyria/list.h"
-#include "valyria/map.h"
-#include "valyria/set.h"
-#include "valyria/assert.h"
+#include "valyria/hashtable.h"
 #include "narrator.h"
 #include "narrator/growing.h"
+#include "bacon/load.h"
+#include "bacon/builder.h"
 
 #include "match.internal.h"
 #include "pattern_parser.h"
@@ -22,13 +21,12 @@
 #include "pattern.h"
 #include "fsent.h"
 #include "shadow.h"
-#include "module.internal.h"
-#include "variant.h"
+#include "module.h"
 #include "filesystem.h"
 #include "node_operations_test.h"
 
 #include "common/hash.h"
-#include "zbuffer.h"
+#include "zcat.h"
 
 typedef struct pattern_match_test {
   XUNITTEST;
@@ -47,21 +45,21 @@ typedef struct pattern_match_test {
 
 static void pattern_match_test_unit_setup(xunit_unit * unit)
 {
+  bacon_load();
   filesystem_setup();
 
   // arrange
   graph_setup();
   fsent_setup();
   shadow_setup();
-  variant_setup();
 }
 
 static void pattern_match_test_unit_cleanup(xunit_unit * unit)
 {
+  bacon_unload();
   filesystem_cleanup();
 
   fsent_cleanup();
-  variant_cleanup();
 }
 
 //
@@ -74,26 +72,28 @@ static void pattern_match_test_entry(xunit_test * _test)
 
   pattern_parser * parser = 0;
   pattern * pattern = 0;
-  graph_parser * op_parser = 0;
+  moria_parser * op_parser = 0;
   yyu_location loc;
   graph_invalidation_context invalidation = { 0 };
   bool matched;
+  fsent *fse;
   fsent *n = 0;
+  int r;
 
   // setup initial graph
-  graph_parser_create(&op_parser, &g_graph, &fsent_list, node_operations_test_dispatch, graph_vertex_attrs, graph_edge_attrs);
-  graph_parser_operations_parse(op_parser, MMS(test->operations));
-
-graph_say(g_narrator_stdout);
-printf("\n");
+  moria_parser_create(&op_parser, &g_graph, (llist *[]) { &fsent_list }, 1, node_operations_test_dispatch, graph_vertex_attrs, graph_edge_attrs);
+  r = moria_parser_operations_parse(op_parser, MMS(test->operations));
+  RUNTIME_ASSERT(r == 0);
 
   // parse the pattern
   pattern_parser_create(&parser);
   match_pattern_parse_partial(parser, test->pattern, strlen(test->pattern) + 2, "-test-", 0, &loc, &pattern);
   assert_eq_u32(strlen(test->pattern), loc.l);
 
-  llist_foreach(&fsent_list, n, vertex.owner) {
-    if(memncmp(n->vertex.label, n->vertex.label_len, test->node, strlen(test->node)) == 0) {
+  n = 0;
+  llist_foreach(&fsent_list, fse, vertex.owner) {
+    if(memncmp(fse->vertex.label, fse->vertex.label_len, test->node, strlen(test->node)) == 0) {
+      n = fse;
       break;
     }
   }
@@ -101,14 +101,14 @@ printf("\n");
   RUNTIME_ASSERT(n);
 
   // act
-  pattern_match(pattern, fsent_parent(n), n->vertex.label, n->vertex.label_len, &matched);
+  pattern_match(pattern, n, &matched);
 
   // assert
   assert_eq_b(test->expected, matched);
 
-  pattern_parser_xfree(parser);
+  pattern_parser_free(parser);
   pattern_free(pattern);
-  graph_parser_xfree(op_parser);
+  moria_parser_free(op_parser);
   graph_invalidation_end(&invalidation);
 }
 
@@ -562,9 +562,9 @@ static xunit_unit xunit = {
           operations : ""
             " mod/foo/qux"
             " mod/foo/bar/baz"
-        , pattern : (char[]) { "**/*\0" }   // starstar only matches directories
+        , pattern : (char[]) { "**/*\0" }   // starstar only matches directories - but this includes the root
         , node : "mod"
-        , expected : false
+        , expected : true
       }}
     , (pattern_match_test[]) {{
           operations : ""
@@ -583,9 +583,23 @@ static xunit_unit xunit = {
     , (pattern_match_test[]) {{
           operations : ""
             " mod/foo/bar/baz/qux"
-        , pattern : (char[]) { "**/**/*\0" }
+        , pattern : (char[]) { "**/*\0" }  // starstar matches zero or more directories away
         , node : "foo"
-        , expected : false
+        , expected : true
+      }}
+    , (pattern_match_test[]) {{
+          operations : ""
+            " mod/foo/bar/baz/qux"
+        , pattern : (char[]) { "**/**/*\0" }  // starstar matches zero or more directories away
+        , node : "foo"
+        , expected : true
+      }}
+    , (pattern_match_test[]) {{
+          operations : ""
+            " mod/foo/bar/baz/qux"
+        , pattern : (char[]) { "**/**/**/*\0" }  // starstar matches zero or more directories away
+        , node : "foo"
+        , expected : true
       }}
     , (pattern_match_test[]) {{
           operations : ""
@@ -649,7 +663,15 @@ static xunit_unit xunit = {
       }}
     , (pattern_match_test[]) {{
           operations : ""
-            " X/Y/bar/baz/A"
+            " X/Z/bar/baz/A"
+            " X/Z/bar/baz/qux/B"
+        , pattern : (char[]) { "Z/**+qux/[AB]\0" }
+        , node : "A"
+        , expected : false
+      }}
+    , (pattern_match_test[]) {{
+          operations : ""
+            " X/Z/bar/baz/A"
             " X/Z/bar/baz/qux/B"
         , pattern : (char[]) { "Z/**+qux/[AB]\0" }
         , node : "B"
@@ -670,6 +692,13 @@ static xunit_unit xunit = {
             " X"
         , pattern : (char[]) { "/X\0" }
         , node : "X"
+        , expected : true
+      }}
+    , (pattern_match_test[]) {{
+          operations : ""
+            " fab/\"builtin-modules+devel\""
+        , pattern : (char[]) { "fab/\"builtin-modules+devel\"\0" }
+        , node : "builtin-modules+devel"
         , expected : true
       }}
 

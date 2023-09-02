@@ -34,7 +34,6 @@ static bool waserror;
 
 static void client_acquired(fab_client * restrict client, fabipc_message * restrict msg)
 {
-#if CONFIG_DEBUG || CONFIG_DEVEL || 1
   uint32_t h;
   uint32_t i;
   char buf[64];
@@ -48,11 +47,11 @@ static void client_acquired(fab_client * restrict client, fabipc_message * restr
   page = containerof(msg, fabipc_page, msg);
   h = page->head;
   i = page - client->shm->server_ring.pages;
-  z = znload_attrs32(buf, sizeof(buf), fabipc_msg_type_attrs, msg->type);
+  z = attrs32_zcat(buf, sizeof(buf), fabipc_msg_type_attrs, msg->type);
   printf("rx head %5u idx %5u id 0x%016"PRIx64" code %8d type %.*s", h, i, msg->id, msg->code, (int)z, buf);
   if(msg->type == FABIPC_MSG_EVENTS)
   {
-    z = znload_attrs32(buf, sizeof(buf), fabipc_event_type_attrs, msg->evtype);
+    z = attrs32_zcat(buf, sizeof(buf), fabipc_event_type_attrs, msg->evtype);
     printf(" attrs %.*s", (int)z, buf);
   }
   else if(msg->attrs)
@@ -65,14 +64,12 @@ static void client_acquired(fab_client * restrict client, fabipc_message * restr
     printf(" %.*s", (int)msg->size, msg->text);
   }
   printf("\n");
-#endif
 }
 
 void client_post(struct fab_client * restrict client, fabipc_message * restrict msg)
 {
   fab_client_post(client, msg);
 
-#if CONFIG_DEBUG || CONFIG_DEVEL || 1
   uint32_t h;
   char buf[64];
   size_t z;
@@ -82,11 +79,11 @@ void client_post(struct fab_client * restrict client, fabipc_message * restrict 
   }
 
   h = containerof(msg, fabipc_page, msg)->tail;
-  z = znload_attrs32(buf, sizeof(buf), fabipc_msg_type_attrs, msg->type);
+  z = attrs32_zcat(buf, sizeof(buf), fabipc_msg_type_attrs, msg->type);
   printf("tx tail %5u id 0x%016"PRIx64" code %8d type %.*s", h, msg->id, msg->code, (int)z, buf);
   if(msg->type == FABIPC_MSG_EVENTS)
   {
-    z = znload_attrs32(buf, sizeof(buf), fabipc_event_type_attrs, msg->evtype);
+    z = attrs32_zcat(buf, sizeof(buf), fabipc_event_type_attrs, msg->evtype);
     printf(" attrs %.*s", (int)z, buf);
   }
   else if(msg->attrs)
@@ -96,7 +93,6 @@ void client_post(struct fab_client * restrict client, fabipc_message * restrict 
   printf(" size %hu ", msg->size);
   printf("%.*s", (int)msg->size, msg->text);
   printf("\n");
-#endif
 }
 
 static void xmain()
@@ -111,19 +107,16 @@ static void xmain()
   int iter;
   int channel_shmid;
   int x;
-  int r;
+  int r = 0;
 
   sigutil_install_handlers();
-  sigfillset(&sigs);
-  sigdelset(&sigs, SIGINT);
-  sigdelset(&sigs, SIGTERM);
-  sigdelset(&sigs, SIGQUIT);
-  sigdelset(&sigs, SIGUSR1);
+  sigemptyset(&sigs);
+  sigaddset(&sigs, SIGRTMIN);
   xpthread_sigmask(SIG_SETMASK, &sigs, 0);
 
 #if CONFIG_DEVEL
   static char space[512];
-  snprintf(space, sizeof(space), "%s/../fabd/fabd.devel.pic", g_params.exedir);
+  snprintf(space, sizeof(space), "%s/../fabd/fabd.devel", g_params.exedir);
   g_fab_client_fabd_path = space;
   if(g_args.system_config_path.s) {
     g_fab_client_system_config_path = strndup(g_args.system_config_path.s, g_args.system_config_path.len);
@@ -158,15 +151,19 @@ static void xmain()
       }
       usleep(200 * 1000);
     }
-    client->fabd_pid = 0;
   }
-#if CONFIG_DEVEL
   if(g_args.no_launch && client->fabd_pid == 0)
   {
     fprintf(stderr, "fabd not running\n");
-    RTA;
+    exit(1);
   }
-#endif
+  if(g_args.kill) {
+    if(client->fabd_pid != 0 && r == 0) {
+      fprintf(stderr, "fabd did not respond - SIGKILL\n");
+      uxkill(client->fabd_pid, SIGKILL);
+    }
+    client->fabd_pid = 0;
+  }
 
   if(g_cmd == &kill_command) {
     goto end;
@@ -195,6 +192,8 @@ static void xmain()
 
   channel_shmid = info.si_value.sival_int;
   fab_client_attach(client, channel_shmid);
+
+  g_cmd->attached(g_cmd, client);
 
   /* always-on subscriptions */
   msg = fab_client_produce(client);
@@ -269,6 +268,8 @@ static void xmain()
 end:
   fab_client_disconnect(client);
   fab_client_xfree(client);
+
+  g_cmd->disconnected(g_cmd);
 }
 
 int main(int argc, char ** argv)
@@ -301,5 +302,5 @@ int main(int argc, char ** argv)
   narrator_unload();
   bacon_unload();
 
-  return !!waserror && !!build_was_failed_slot;
+  return !!(waserror || build_was_failed_slot);
 }

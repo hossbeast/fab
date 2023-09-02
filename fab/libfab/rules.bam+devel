@@ -1,0 +1,28 @@
+/* SPDX-License-Identifier: GPL-3.0 */
+/* Copyright (c) 2012-2023 Todd Freed <todd.freed@gmail.com> */
+
+use descriptor
+
+bind descriptor => //descriptor
+
+rule **+(/) => [*] //module/include
+
+# pull in object files in the module, except those under integ
+rule { search : module } **~test/*.o -> libfab.a
+
+# default build targets
+rule libfab.a -> //targets
+
+# library dependencies
+rule //artifacts/*/$CONFIG_VARIANT/*.a -> libfab.a
+
+# descriptor .c and .h files are generated
+rule { search : anchor } build_slot/build_slot.h            -> [*] fab/build_slot.desc.[ch] : //descriptor/descriptor.bam+devel
+rule { search : anchor } metadata/metadata.h                -> [*] fab/metadata.desc.[ch] : //descriptor/descriptor.bam+devel
+rule { search : anchor } stats/stats.h                      -> [*] fab/stats.desc.[ch] : //descriptor/descriptor.bam+devel
+rule { search : anchor } list/list.h                        -> [*] fab/list.desc.[ch] : //descriptor/descriptor.bam+devel
+rule { search : anchor } describe/describe.h                -> [*] fab/describe.desc.[ch] : //descriptor/descriptor.bam+devel
+rule { search : anchor } config_describe/config_describe.h  -> [*] fab/config_describe.desc.[ch] : //descriptor/descriptor.bam+devel
+rule { search : anchor } rule_info/rule_info.h              -> [*] fab/rule_info.desc.[ch] : //descriptor/descriptor.bam+devel
+rule { search : anchor } rules_describe/rules_describe.h    -> [*] fab/rules_describe.desc.[ch] : //descriptor/descriptor.bam+devel
+rule { search : anchor } vars_describe/vars_describe.h      -> [*] fab/vars_describe.desc.[ch] : //descriptor/descriptor.bam+devel

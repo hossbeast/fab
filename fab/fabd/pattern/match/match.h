@@ -13,9 +13,10 @@ struct fsent;
  */
 void pattern_match(
     const struct pattern * restrict pat
-  , const struct fsent * restrict dirnode
-  , const char * restrict label
-  , uint16_t label_len
+  , const struct fsent * restrict node
+//  , const struct fsent * restrict dirnode
+//  , const char * restrict label
+//  , uint16_t label_len
   , bool * restrict matched
 )
   __attribute__((nonnull));

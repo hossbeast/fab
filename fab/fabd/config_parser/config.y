@@ -8,25 +8,37 @@
 
   #include "xlinux/xstring.h"
   #include "xlinux/xstdlib.h"
-  #include "valyria/map.h"
-  #include "valyria/set.h"
-  #include "valyria/list.h"
+  #include "valyria/hashtable.h"
+  #include "bacon/parser.h"
+  #include "bacon/make.h"
+  #include "lorien/path_normalize.h"
 
-  #include "config_parser.internal.h"
-  #include "config.internal.h"
+  #include "config_parser/glue.h"
+  #include "config_parser.h"
+  #include "config.h"
+  #include "configuration.h"
+  #include "filesystem.h"
   #include "build.h"
-  #include "yyutil/box.h"
   #include "macros.h"
   #include "pattern.h"
 
-  struct value;
   struct pattern;
+  struct bacon_value;
 }
 
 %code top {
   int config_yylex(void*, void*, void*);
   #define PARSER ((config_parser*)parser)
   #define CONFIG_YYLTYPE yyu_location
+
+  #include "config_parser.h"
+  #include "bacon/value.h"
+
+  static void replace(config_parser *parser, struct bacon_value ** dst, struct bacon_value *val)
+  {
+    bacon_value_free(parser->bacon_parser, *dst);
+    *dst = val;
+  }
 }
 
 %define api.pure
@@ -43,68 +55,54 @@
 %union {
   yyu_lval  yyu;
 
-  struct value * value;
-  struct pattern * pattern;
-
-  int       i;
-  struct {
-    char * s;
-    uint16_t len;
-  } str;
+  struct pattern *pattern;
+  struct bacon_value *val;
 
   // enums
-  invalidate_type invalidate_type_e;
-
-  struct box_bool * b_bool;
-  struct box_int * b_int;
-  struct box_int8 * b_int8;
-  struct box_int16 * b_int16;
-  struct box_uint8 * b_uint8;
-  struct box_uint16 * b_uint16;
-  struct box_string * b_string;
+  struct {
+    struct bacon_value *v;
+    invalidate_type e;
+  } invalidate_type;
 }
 
 /* tokens */
 %token '{' '}'
 %token '[' ']'
 %token ':'
-%token '='
-
-%token <value> VALUE
 
 /* terminals */
-%token             STR        "string"
-%token <yyu.u8>    CREF       "character-escape"
-%token <yyu.u8>    HREF       "hex-escape"
-%token <yyu.b>     BOOL       "boolean"
-%token <yyu.f>     FLOAT      "float"
-%token <yyu.umax>  UINTMAX8
-%token <yyu.umax>  UINTMAX16
-%token <yyu.umax>  UINTMAX32
-%token <yyu.umax>  UINTMAX64
-%token <yyu.imax>  INTMIN8
-%token <yyu.imax>  INTMIN16
-%token <yyu.imax>  INTMIN32
-%token <yyu.imax>  INTMIN64
-%token <yyu.imax>  INTMAX8
-%token <yyu.imax>  INTMAX16
-%token <yyu.imax>  INTMAX32
-%token <yyu.imax>  INTMAX64
+%token            STR           300 "unquoted-string"
+%token <yyu.u8>   CREF          301 "character-escape"
+%token <yyu.u8>   HREF          302 "hex-escape"
+%token <yyu.b>    BOOL          303 "boolean"
+%token <yyu.f>    FLOAT         304 "float"
+%token <yyu.t>    VARIABLE      305 "variable"
+%token <yyu.umax> UINTMAX8      306
+%token <yyu.umax> UINTMAX16     307
+%token <yyu.umax> UINTMAX32     308
+%token <yyu.umax> UINTMAX64     309
+%token <yyu.imax> HEX8          310
+%token <yyu.imax> HEX16         311
+%token <yyu.imax> HEX32         312
+%token <yyu.imax> HEX64         313
+%token <yyu.imax> INTMIN8       314
+%token <yyu.imax> INTMIN16      315
+%token <yyu.imax> INTMIN32      316
+%token <yyu.imax> INTMIN64      317
+%token <yyu.imax> INTMAX8       318
+%token <yyu.imax> INTMAX16      319
+%token <yyu.imax> INTMAX32      320
+%token <yyu.imax> INTMAX64      321
 
-%type <yyu.imax>  int16_igroup
-%type <yyu.umax>  int16_ugroup
+%type <yyu.umax>  uint16_igroup
+%type <yyu.umax>  uint16_ugroup
 
 %token
  BUILD                    "build"
- WORKERS                  "workers"
  CONCURRENCY              "concurrency"
- CONSOLE                  "console"
- ERROR                    "error"
- EXPRS                    "exprs"
  FILESYSTEMS              "filesystems"
  FORMULA                  "formula"
  INVALIDATE               "invalidate"
- LOGFILE                  "logfile"
  PATH                     "path"
  COPY_FROM_ENV            "copy-from-env"
  DIRS                     "dirs"
@@ -113,49 +111,37 @@
  NOTIFY                   "notify"
  ALWAYS                   "always"
  NEVER                    "never"
- LEADING                  "leading"
  WALKER                   "walker"
  EXCLUDE                  "exclude"
+ SPECIAL                  "special"
  INCLUDE                  "include"
+ MKDIRS                   "mkdirs"
+ READLINKS                "readlinks"
+ INDEXED                  "indexed"
 
 %token
  <pattern> INCLUDE_PATTERN  "include-pattern"
  <pattern> MATCH_PATTERN    "match-pattern"
 
-%type <pattern> match-pattern
-%type <pattern> include-pattern
-
 /* nonterminals */
-%type <str> string strpart strparts quoted_string unquoted_string
-%type <b_string> bstring
-%type <b_bool> bool
-%type <b_int16>  int16
-%type <b_int> invalidate-type
-%type <i> invalidate-type-enum
+%type <val> quote_words quote_word quoted_string unquoted_string
+%type <val> bool uint16 string
 
-%destructor { free($$.s); } <str>
-%destructor { box_free(refas($$, bx)); } <b_bool>
-%destructor { box_free(refas($$, bx)); } <b_int>
-%destructor { box_free(refas($$, bx)); } <b_int16>
-%destructor { box_free(refas($$, bx)); } <b_string>
+/* enums */
+%type <invalidate_type> invalidate-type
+
 %destructor { pattern_free($$); } <pattern>
+%destructor { bacon_value_free(PARSER->bacon_parser, $$); } <val>
 
 %%
 utterance
-  : allocate-config config
+  : config
   {
     if(PARSER->yyu.attrs & YYU_PARTIAL)
     {
-      yyu_loc_final(&PARSER->yyu, &@2);
+      yyu_loc_final(&PARSER->yyu, &@1);
       YYACCEPT;
     }
-  }
-  ;
-
-allocate-config
-  : %empty
-  {
-    config_create(&PARSER->cfg);
   }
   ;
 
@@ -172,41 +158,18 @@ sections
 
 section
   : build-section
-  | workers-section
   | filesystems-section
   | formula-section
   | walker-section
   ;
 
 build-section
-  : BUILD build-map
-  {
-    PARSER->cfg->build.merge_significant = true;
-  }
+  : BUILD ':' '{' build-mappings-epsilon '}'
   ;
 
-workers-section
-  : WORKERS workers-map
-  {
-    PARSER->cfg->workers.merge_significant = true;
-  }
-  ;
-
-build-map
-  : ':' '{' build-mapping-set-epsilon '}'
-  | '=' '{' build-mapping-set-epsilon '}'
-  {
-    PARSER->cfg->build.merge_overwrite = true;
-  }
-  ;
-
-build-mapping-set-epsilon
-  : build-mapping-set
-  | %empty
-  ;
-
-build-mapping-set
+build-mappings-epsilon
   : build-mappings
+  | %empty
   ;
 
 build-mappings
@@ -215,67 +178,21 @@ build-mappings
   ;
 
 build-mapping
-  : CONCURRENCY ':' int16
+  : CONCURRENCY ':' uint16
   {
-    PARSER->cfg->build.concurrency = $3;
-  }
-  ;
-
-workers-map
-  : ':' '{' workers-mapping-set-epsilon '}'
-  | '=' '{' workers-mapping-set-epsilon '}'
-  {
-    PARSER->cfg->workers.merge_overwrite = true;
-  }
-  ;
-
-workers-mapping-set-epsilon
-  : workers-mapping-set
-  | %empty
-  ;
-
-workers-mapping-set
-  : workers-mappings
-  ;
-
-workers-mappings
-  : workers-mappings workers-mapping
-  | workers-mapping
-  ;
-
-workers-mapping
-  : CONCURRENCY ':' int16
-  {
-    PARSER->cfg->workers.concurrency = $3;
+    replace(PARSER, &PARSER->cfg->build.concurrency.v, $3);
+    PARSER->cfg->build.concurrency.u16 = $3->i;
   }
   ;
 
 formula-section
-  : FORMULA formula-map
-  ;
-
-formula-map
-  : ':' '{' formula-mappings-epsilon '}'
-  | '=' '{' formula-mappings-epsilon '}'
-  {
-    PARSER->cfg->formula.merge_overwrite = true;
-  }
-  ;
-
-formula-mappings-epsilon
-  : formula-mappings
-  | %empty
-  {
-    PARSER->cfg->formula.merge_significant = true;
-  }
+  : FORMULA ':' '{' formula-mappings '}'
+  | FORMULA ':' '{' '}'
   ;
 
 formula-mappings
   : formula-mappings formula-mapping
   | formula-mapping
-  {
-    PARSER->cfg->formula.merge_significant = true;
-  }
   ;
 
 formula-mapping
@@ -284,59 +201,38 @@ formula-mapping
 
 formula-path
   : PATH ':' '{' formula-path-mappings '}'
-  | PATH '=' '{' formula-path-mappings '}'
-  {
-    PARSER->cfg->formula.path.merge_overwrite = true;
-  }
+  | PATH ':' '{' '}'
   ;
 
 formula-path-mappings
   : formula-path-mappings formula-path-mapping
   | formula-path-mapping
-  {
-    PARSER->cfg->formula.path.merge_significant = true;
-  }
   ;
 
 formula-path-mapping
   : COPY_FROM_ENV ':' bool
   {
-    PARSER->cfg->formula.path.copy_from_env = $3;
+    PARSER->cfg->formula.path.copy_from_env.v = $3;
+    PARSER->cfg->formula.path.copy_from_env.b = $3->b;
   }
   | DIRS ':' '{' formula-path-dirs '}'
-  | DIRS '=' '{' formula-path-dirs '}'
-  {
-    PARSER->cfg->formula.path.dirs.merge_overwrite = true;
-  }
+  | DIRS ':' '{' '}'
   ;
 
 formula-path-dirs
   : formula-path-dirs formula-path-dir
   | formula-path-dir
-  {
-    PARSER->cfg->formula.path.dirs.merge_significant = true;
-  }
   ;
 
 formula-path-dir
-  : bstring
+  : string
   {
-    if($1) {
-      set_put(PARSER->cfg->formula.path.dirs.entries, $1, 0);
-    }
+    config_parser_fpde_alloc(PARSER, $1);
   }
   ;
 
 filesystems-section
-  : FILESYSTEMS filesystems-map
-  ;
-
-filesystems-map
-  : ':' '{' filesystems-mappings-epsilon '}'
-  | '=' '{' filesystems-mappings-epsilon '}'
-  {
-    PARSER->cfg->filesystems.merge_overwrite = true;
-  }
+  : FILESYSTEMS ':' '{' filesystems-mappings-epsilon '}'
   ;
 
 filesystems-mappings-epsilon
@@ -347,72 +243,50 @@ filesystems-mappings-epsilon
 filesystems-mappings
   : filesystems-mappings filesystems-mapping
   | filesystems-mapping
-  {
-    PARSER->cfg->filesystems.merge_significant = true;
-  }
   ;
 
 filesystems-mapping
-  : string filesystems-entry-map
+  : string ':' '{' { config_parser_fm_alloc(PARSER, $1); } filesystems-entry-mappings '}'
   {
-    map_put(PARSER->cfg->filesystems.entries, $1.s, $1.len, PARSER->fse, 0);
-    PARSER->fse = 0;
-    free($1.s);
-    $1.s = 0;
-  }
-  ;
-
-filesystems-entry-map
-  : ':' '{' filesystems-entry-mappings-epsilon '}'
-  | '=' '{' filesystems-entry-mappings-epsilon '}'
-  {
-    PARSER->fse->merge_overwrite = true;
-  }
-  ;
-
-filesystems-entry-mappings-epsilon
-  : filesystems-entry-mappings
-  ;
-
-allocate-filesystems-entry
-  : %empty
-  {
-    xmalloc(&PARSER->fse, sizeof(*PARSER->fse));
+    PARSER->fm = 0;
+    bacon_value_free(PARSER->bacon_parser, $1);
   }
   ;
 
 filesystems-entry-mappings
   : filesystems-entry-mappings filesystems-entry-mapping
-  | allocate-filesystems-entry filesystems-entry-mapping
+  | filesystems-entry-mapping
   ;
 
 filesystems-entry-mapping
   : INVALIDATE ':' invalidate-type
   {
-    PARSER->fse->invalidate = $3;
+    replace(PARSER, &PARSER->fm->val.invalidate.v, $3.v);
+    PARSER->fm->val.invalidate.e = $3.e;
+  }
+  | MKDIRS ':' bool
+  {
+    replace(PARSER, &PARSER->fm->val.mkdirs.v, $3);
+    PARSER->fm->val.mkdirs.b = $3->b;
+  }
+  | READLINKS ':' bool
+  {
+    replace(PARSER, &PARSER->fm->val.readlinks.v, $3);
+    PARSER->fm->val.readlinks.b = $3->b;
+  }
+  | INDEXED ':' bool
+  {
+    replace(PARSER, &PARSER->fm->val.indexed.v, $3);
+    PARSER->fm->val.indexed.b = $3->b;
   }
   ;
 
 walker-section
-  : WALKER walker-section-settings
-  ;
-
-walker-section-settings
-  : ':' '{' walker-settings-epsilon '}'
-  | '=' '{' walker-settings-epsilon '}'
-  {
-    PARSER->cfg->walker.merge_overwrite = true;
-  }
+  : WALKER ':' '{' walker-settings-epsilon '}'
   ;
 
 walker-settings-epsilon
   : walker-settings
-  {
-    PARSER->cfg->walker.merge_significant = 0
-      || PARSER->cfg->walker.include.merge_significant
-      || PARSER->cfg->walker.exclude.merge_significant
-      ;
-  }
   | %empty
   ;
 
@@ -422,16 +296,9 @@ walker-settings
   ;
 
 walker-setting
-  : INCLUDE walker-include-entries
-  | EXCLUDE walker-exclude-entries
-  ;
-
-walker-exclude-entries
-  : ':' '{' walker-exclude-entry-list-epsilon '}'
-  | '=' '{' walker-exclude-entry-list-epsilon '}'
-  {
-    PARSER->cfg->walker.exclude.merge_overwrite = true;
-  }
+  : INCLUDE ':' '{' walker-include-entry-list-epsilon '}'
+  | EXCLUDE ':' '{' walker-exclude-entry-list-epsilon '}'
+  | SPECIAL ':' '{' walker-special-entry-list-epsilon '}'
   ;
 
 walker-exclude-entry-list-epsilon
@@ -442,23 +309,12 @@ walker-exclude-entry-list-epsilon
 walker-exclude-entry-list
   : walker-exclude-entry-list walker-exclude-entry
   | walker-exclude-entry
-  {
-    PARSER->cfg->walker.exclude.merge_significant = true;
-  }
   ;
 
 walker-exclude-entry
-  : match-pattern
+  : MATCH_PATTERN
   {
-    llist_append(&PARSER->cfg->walker.exclude.list, $1, lln);
-  }
-  ;
-
-walker-include-entries
-  : ':' '{' walker-include-entry-list-epsilon '}'
-  | '=' '{' walker-include-entry-list-epsilon '}'
-  {
-    PARSER->cfg->walker.include.merge_overwrite = true;
+    config_parser_we_put(PARSER, $1);
   }
   ;
 
@@ -470,95 +326,100 @@ walker-include-entry-list-epsilon
 walker-include-entry-list
   : walker-include-entry-list walker-include-entry
   | walker-include-entry
-  {
-    PARSER->cfg->walker.include.merge_significant = true;
-  }
   ;
 
 walker-include-entry
-  : include-pattern
+  : INCLUDE_PATTERN
   {
-    llist_append(&PARSER->cfg->walker.include.list, $1, lln);
+    config_parser_wi_put(PARSER, $1);
+  }
+  ;
+
+walker-special-entry-list-epsilon
+  : walker-special-entry-list
+  | %empty
+  ;
+
+walker-special-entry-list
+  : walker-special-entry-list walker-special-entry
+  | walker-special-entry
+  ;
+
+walker-special-entry
+  : string
+  {
+    config_parser_wse_alloc(PARSER, $1);
   }
   ;
 
 invalidate-type
-  : invalidate-type-enum
-  {
-    box_int_mk(&@$, &$$, $1);
-  }
-  ;
-
-invalidate-type-enum
   : STAT
   {
-    $$ = INVALIDATE_STAT;
+    bacon_string_mkw(PARSER->bacon_parser, &@$, 0, &$$.v, @1.s, @1.l);
+    $$.e = INVALIDATE_STAT;
   }
   | CONTENT
   {
-    $$ = INVALIDATE_CONTENT;
+    bacon_string_mkw(PARSER->bacon_parser, &@$, 0, &$$.v, @1.s, @1.l);
+    $$.e = INVALIDATE_CONTENT;
   }
   | NOTIFY
   {
-    $$ = INVALIDATE_NOTIFY;
+    bacon_string_mkw(PARSER->bacon_parser, &@$, 0, &$$.v, @1.s, @1.l);
+    $$.e = INVALIDATE_NOTIFY;
   }
   | ALWAYS
   {
-    $$ = INVALIDATE_ALWAYS;
+    bacon_string_mkw(PARSER->bacon_parser, &@$, 0, &$$.v, @1.s, @1.l);
+    $$.e = INVALIDATE_ALWAYS;
   }
   | NEVER
   {
-    $$ = INVALIDATE_NEVER;
+    bacon_string_mkw(PARSER->bacon_parser, &@$, 0, &$$.v, @1.s, @1.l);
+    $$.e = INVALIDATE_NEVER;
   }
   ;
 
 bool
   : BOOL
   {
-    box_bool_mk(&@$, &$$, $1);
+    bacon_boolean_mk(PARSER->bacon_parser, &@$, &$$, $1);
   }
   ;
 
-int16
-  : int16_igroup
+uint16
+  : uint16_igroup
   {
-    box_int16_mk(&@$, &$$, $1);
+    bacon_integer_mk(PARSER->bacon_parser, &@$, &$$, $1);
   }
-  | int16_ugroup
+  | uint16_ugroup
   {
-    box_int16_mk(&@$, &$$, $1);
+    bacon_integer_mk(PARSER->bacon_parser, &@$, &$$, $1);
   }
   ;
 
-int16_igroup
+uint16_igroup
   : INTMIN16
-  | INTMIN8
-  | INTMAX8
-  | INTMAX16
-  ;
-
-int16_ugroup
-  : UINTMAX8
-  ;
-
-bstring
-  : string
   {
-    if($1.len == 0) {
-      $$ = 0;
-    } else {
-      box_string_mk(&@$, &$$, $1.s, $1.len);
-    }
-    $1.s = 0;
+    $$ = $1;
+  }
+  | INTMIN8
+  {
+    $$ = $1;
+  }
+  | INTMAX8
+  {
+    $$ = $1;
+  }
+  | INTMAX16
+  {
+    $$ = $1;
   }
   ;
 
-include-pattern
-  : INCLUDE_PATTERN
-  ;
-
-match-pattern
-  : MATCH_PATTERN
+uint16_ugroup
+  : UINTMAX8
+  | UINTMAX16
   ;
 
 string
@@ -566,49 +427,54 @@ string
   | quoted_string
   ;
 
+/* must be a single token because strings can appear repeatedly together */
 unquoted_string
-  : strpart
+  : word
+  {
+    bacon_string_mkw(PARSER->bacon_parser, &@$, 0, &$$, @1.s, @1.l);
+  }
+  ;
+
+word
+  : STR
+  | '/'
+  | '-'
+  | '+'
+  | '='
+  | ','
   ;
 
 quoted_string
-  : '"' strparts '"'
+  : '"' quote_words '"'
   {
     $$ = $2;
   }
   | '"' '"'
   {
-    $$.s = 0;
-    $$.len = 0;
+    $$ = 0;
   }
   ;
 
-strparts
-  : strparts strpart
+quote_words
+  : quote_words quote_word
   {
-    $$ = $1;
-    ixstrcat(&$$.s, $2.s);
-    $$.len += $2.len;
+    bacon_string_mkv(PARSER->bacon_parser, &@$, $1, &$$, $2);
+    bacon_value_free(PARSER->bacon_parser, $2);
   }
-  | strpart
+  | quote_word
   ;
 
-strpart
+quote_word
   : STR
   {
-    $$ = (typeof($$)){};
-    ixstrndup(&$$.s, @1.s, @1.l);
-    $$.len = @1.l;
+    bacon_string_mkw(PARSER->bacon_parser, &@$, 0, &$$, @1.s, @1.l);
   }
   | CREF
   {
-    $$ = (typeof($$)){};
-    ixstrndup(&$$.s, (char*)&$1, 1);
-    $$.len = 1;
+    bacon_string_mkc(PARSER->bacon_parser, &@$, 0, &$$, $1);
   }
   | HREF
   {
-    $$ = (typeof($$)){};
-    ixstrndup(&$$.s, (char*)&$1, 1);
-    $$.len = 1;
+    bacon_string_mkc(PARSER->bacon_parser, &@$, 0, &$$, $1);
   }
   ;

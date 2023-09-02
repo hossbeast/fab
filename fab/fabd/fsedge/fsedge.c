@@ -1,13 +1,25 @@
 /* SPDX-License-Identifier: GPL-3.0 */
 /* Copyright (c) 2012-2023 Todd Freed <todd.freed@gmail.com> */
 
+#include <inttypes.h>
+
 #include "xlinux/xstdlib.h"
 #include "moria/edge.h"
 #include "moria/traverse.h"
+#include "moria/connect.h"
+#include "narrator.h"
+#include "common/hash.h"
 
 #include "fsedge.h"
 #include "fsent.h"
 #include "module.h"
+#include "vertex.h"
+#include "filesystem.h"
+#include "edge.h"
+#include "entlist.h"
+#include "fsent_index.h"
+
+#include "zcat.h"
 
 llist fsedge_list = LLIST_INITIALIZER(fsedge_list);                 // active
 static llist fsedge_freelist = LLIST_INITIALIZER(fsedge_freelist);  // free
@@ -16,55 +28,33 @@ static llist fsedge_freelist = LLIST_INITIALIZER(fsedge_freelist);  // free
 // static
 //
 
-static void disintegrate_visitor(moria_edge * e, void * ctx, moria_traversal_mode mode, int distance, int * result)
+static void fsedge_dispose(fsedge * restrict fse)
 {
-  llist *edges = ctx;
-  llist_append(edges, e, lln);
+  llist_delete(&fse->edge.owner);
+  llist_append(&fsedge_freelist, &fse->edge.owner);
 }
 
-static void __attribute__((nonnull(1, 2))) node_invalidate_visitor_first(moria_vertex * v, void * arg, moria_traversal_mode mode, int distance, int * result)
+void fsedge_release(fsedge * restrict fse)
 {
-  *result = MORIA_TRAVERSE_PRUNE;
-  fsent_invalidate_visitor(v, arg, mode, distance, 0);
-}
+  int x;
 
-static void linking(fsent *n, graph_invalidation_context * restrict invalidation)
-{
-  module *mod;
-
-  mod = fsent_module_get(n);
-
-  if(memncmp(n->name.name, n->name.namel, MMS(fsent_name_module)) == 0) {
-    if(mod) {
-      /* propagate new module.bam to the immediate parent module */
-      moria_traverse_vertices(
-          &g_graph
-        , &mod->dir_node->vertex
-        , node_invalidate_visitor_first
-        , 0
-        , (moria_traversal_criteria[]) {{
-              edge_travel : EDGE_FSTREE
-            , vertex_visit : VERTEX_MODULE_DIR
-          }}
-        , MORIA_TRAVERSE_UP | MORIA_TRAVERSE_PRE
-        , invalidation
-      );
+  /* this edge must have been previously excised from the graph */
+  if(fse->edge.attrs & MORIA_EDGE_HYPER)
+  {
+    for(x = 0; x < fse->edge.Alen; x++) {
+      RUNTIME_ASSERT(!rbnode_attached(&fse->edge.Alist[x].rbn));
     }
-  } else if(memncmp(n->name.name, n->name.namel, MMS(fsent_name_var)) == 0) {
-    /* propagate : var.bam -> this and descendant modules */
-    moria_traverse_vertices(
-        &g_graph
-      , &fsent_parent(n)->vertex
-      , fsent_invalidate_visitor
-      , 0
-      , (moria_traversal_criteria[]) {{
-            edge_travel : EDGE_FSTREE
-          , vertex_visit : VERTEX_MODULE_DIR
-        }}
-      , MORIA_TRAVERSE_DOWN | MORIA_TRAVERSE_PRE
-      , invalidation
-    );
+    for(x = 0; x < fse->edge.Blen; x++) {
+      RUNTIME_ASSERT(!rbnode_attached(&fse->edge.Blist[x].rbn));
+    }
   }
+  else
+  {
+    RUNTIME_ASSERT(!rbnode_attached(&fse->edge.rbn_up));
+    RUNTIME_ASSERT(!rbnode_attached(&fse->edge.rbn_down));
+  }
+
+  fsedge_dispose(fse);
 }
 
 //
@@ -77,7 +67,7 @@ void fsedge_cleanup()
   fsedge *fse;
 
   llist_foreach_safe(&fsedge_list, fse, edge.owner, T) {
-    fsedge_release(fse);
+    fsedge_dispose(fse);
   }
 
   llist_foreach_safe(&fsedge_freelist, fse, edge.owner, T) {
@@ -85,7 +75,7 @@ void fsedge_cleanup()
   }
 }
 
-void fsedge_alloc(fsedge ** restrict rv, moria_graph * restrict g)
+void fsedge_alloc(fsedge ** restrict rv)
 {
   fsedge *fse;
 
@@ -94,21 +84,36 @@ void fsedge_alloc(fsedge ** restrict rv, moria_graph * restrict g)
     xmalloc(&fse, sizeof(*fse));
   }
 
-  moria_edge_init(&fse->edge, g);
+  moria_edge_init(&fse->edge, &g_graph);
 
-  llist_append(&fsedge_list, fse, edge.owner);
+  llist_append(&fsedge_list, &fse->edge.owner);
   *rv = fse;
 }
 
-void fsedge_release(fsedge * restrict fse)
+static void invalidate_modules_by_ancestry(fsent * restrict fse, graph_invalidation_context * restrict invalidation)
 {
-  llist_delete(fse, edge.owner);
-  llist_append(&fsedge_freelist, fse, edge.owner);
+  module *mod;
+  fsent *p;
+
+  /* directory containing the named file*/
+  fse = fsent_parent(fse);
+
+  llist_foreach(&module_list, mod, vertex.owner) {
+    for(p = mod->dir_node; p != g_root; p = fsent_parent(p)) {
+      if(p == fse) {
+        break;
+      }
+    }
+
+    if(p == fse) {
+      vertex_invalidate(&mod->vertex, invalidation);
+    }
+  }
 }
 
 void fsedge_connect(
-    fsent * restrict A
-  , fsent * restrict B
+    fsent * restrict B
+  , fsent * restrict A
   , graph_invalidation_context * restrict invalidation
 )
 {
@@ -124,88 +129,107 @@ void fsedge_connect(
     A = containerof(A->vertex.ref, fsent, vertex);
   }
 
-  r = moria_preconnect(&ctx, &g_graph, &A->vertex, &B->vertex, EDGE_FSTREE, 0);
+  r = moria_preconnect(&ctx, &g_graph, &B->vertex, &A->vertex, EDGE_FSTREE, 0);
   if(r == MORIA_HASEDGE) {
     return;
   }
   RUNTIME_ASSERT(r == MORIA_NOEDGE);
-  fsedge_alloc(&e, &g_graph);
-  graph_connect(&ctx, &A->vertex, &B->vertex, &e->edge, EDGE_FSTREE);
+  fsedge_alloc(&e);
+  moria_connect(&ctx, &g_graph, &e->edge, &B->vertex, &A->vertex, EDGE_FSTREE);
 
-  ash = fsent_shadowtype_get(A);
-  bsh = fsent_shadowtype_get(B);
+  /* compute final identifiers */
+  fsent_compute_identifiers(B);
+
+  /* this is reassigned in fsent_reconcile */
+  B->fs = A->fs;
+
+  ash = vertex_shadowtype_get(&A->vertex);
+  bsh = vertex_shadowtype_get(&B->vertex);
 
   /* propagate shadowtype */
   if(ash && !bsh)
   {
-    fsent_shadowtype_set(B, VERTEX_SHADOWTYPE_FS);
+    vertex_shadowtype_set(&B->vertex, VERTEX_SHADOWTYPE_FS);
 
     /* shadow nodes can become invalid but they never actually exist */
-    fsent_state_set(B, VERTEX_OK);
+    vertex_state_set(&B->vertex, VERTEX_OK);
   }
   if(ash)
   {
     B->mod = A->mod;
   }
 
-  ft = fsent_filetype_get(A);
+  ft = vertex_filetype_get(&A->vertex);
   if(ft != VERTEX_FILETYPE_DIR) {
     /* for cases where its not known that an fsent is a directory until a child
      * is linked under it (pattern-generate) */
     RUNTIME_ASSERT(ft == 0 || ft == VERTEX_FILETYPE_REG);
-    fsent_filetype_set(A, VERTEX_FILETYPE_DIR);
-
-    if(fsent_kind_get(A) == VERTEX_DIR) {
-      fsent_lookup_index(A);
-    }
+    fsent_promote_dir(A);
   }
 
-  ft = fsent_filetype_get(B);
+  ft = vertex_filetype_get(&B->vertex);
   if(!ft) {
-    fsent_filetype_set(B, VERTEX_FILETYPE_REG);
-  } else if(fsent_kind_get(B) == VERTEX_DIR) {
+    vertex_filetype_set(&B->vertex, VERTEX_FILETYPE_REG);
+  } else if(vertex_type_get(&B->vertex) == VERTEX_DIR) {
     /* for cases where it is known up front that an fsent is a directory (e.g. walker) */
-    fsent_lookup_index(B);
+    fsent_promote_dir(B);
   }
 
-  linking(B, invalidation);
-  fsent_dirnode_children_changed(A, invalidation);
-}
+  /* invalidate the dirnode */
+  vertex_invalidate(&A->vertex, invalidation);
 
-void fsedge_disconnect(fsedge * restrict fse)
-{
-  fsent *B;
-
-  B = containerof(fse->edge.B, fsent, vertex);
-  if(fsent_kind_get(B) == VERTEX_DIR)
-  {
-    fsent_lookup_disindex(B);
+  /* for a newly created named file, invalidate modules which would find it upon reload */
+  if(vertex_type_get(&B->vertex) != VERTEX_FILE) {
+    return;
   }
 
-  graph_disconnect(&fse->edge);
-  fsedge_release(fse);
+  /*
+   * TODO this needs to also incorporate module varfiles
+   */
+  if(memncmp(B->vertex.label, B->vertex.label_len, MMS(fsent_name_var)) == 0) {
+    invalidate_modules_by_ancestry(B, invalidation);
+  }
 }
 
 void fsedge_disintegrate(fsedge * restrict fse, graph_invalidation_context * restrict invalidation)
 {
-  llist edges = LLIST_INITIALIZER(edges);
-  moria_edge *e;
+  entlist edges;
 
   // visit this edge and all edges below it, in reverse depth order
-  moria_traverse_edges(
-      &g_graph
-    , &fse->edge
-    , disintegrate_visitor
-    , 0
-    , (moria_traversal_criteria[]) {{
-          edge_travel: EDGE_TYPE_FSTREE
-        , edge_visit : EDGE_TYPE_FSTREE
-      }}
-    , MORIA_TRAVERSE_DOWN | MORIA_TRAVERSE_POST | MORIA_TRAVERSE_NOFOLLOW
-    , &edges
-  );
+  entlist_init(&edges);
+  entlist_push(&edges, &fse->edge);
 
-  while((e = llist_shift(&edges, typeof(*e), lln))) {
-    graph_disintegrate(e, invalidation);
+  fsedge_disintegrate_bulk(&edges, invalidation);
+
+  entlist_destroy(&edges);
+}
+
+void fsedge_disintegrate_bulk(entlist * restrict edges, graph_invalidation_context * restrict invalidation)
+{
+  entlist *eln;
+  moria_edge *e;
+  entlist vertices;
+  entlist subedges;
+
+  // visit this edge and all edges below it, in reverse depth order
+  entlist_init(&subedges);
+  entlist_foreach(edges, e, eln) {
+    moria_traverse_edges(
+        &g_graph
+      , e
+      , entlist_visitor_edge
+      , 0
+      , (moria_traversal_criteria[]) {{
+            edge_travel: EDGE_KIND_FSTREE
+          , edge_visit : EDGE_KIND_FSTREE
+        }}
+      , MORIA_TRAVERSE_DOWN | MORIA_TRAVERSE_POST | MORIA_TRAVERSE_NOFOLLOW
+      , &subedges
+    );
   }
+
+  entlist_init(&vertices);
+  graph_disintegrate_bulk(&subedges, &vertices, invalidation);
+  entlist_destroy(&vertices);
+  entlist_destroy(&subedges);
 }

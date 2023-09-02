@@ -10,13 +10,12 @@
 struct ftwinfo;
 struct fsent;
 struct graph_invalidation_context;
-struct llist;
+struct rbtree;
 
-extern struct llist * walker_exclude_list;
+extern struct rbtree * walker_exclude_list;
 
 typedef struct walker_context {
-  struct fsent * base;        // base of the tree
-  struct fsent * base_parent; // base attached here if/when created
+  struct fsent *base;        // traversal root node
   int walk_id;
   struct graph_invalidation_context * invalidation;
 } walker_context;

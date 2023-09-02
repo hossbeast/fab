@@ -9,14 +9,13 @@ access to the list of active clients.
 
 Readers are threads which traverse the active clients list (typically by calling events_publish)
  * the monitor thread
- * the beholder thread
  * the build thread
  * the bootstrap thread
  * the sweeper thread
- * handler threads
 
 Updaters are threads which call rcu_synchronize
  * handler threads
+ * run thread
 
 A thread may not be both a reader and an updater at the same time.
 */
@@ -66,10 +65,13 @@ void rcu_synchronize(void);
   ACCESS_ONCE(x) = (y);                               \
 } while(0)
 
+#if CONFIG_DEBUG || CONFIG_DEVEL
+extern __thread bool rcu_is_registered;
+#endif
+
 static inline bool rcu_registered_check()
 {
 #if CONFIG_DEBUG || CONFIG_DEVEL
-  extern __thread bool __attribute__((unused)) rcu_is_registered;
   RUNTIME_ASSERT(rcu_is_registered);
 #endif
 

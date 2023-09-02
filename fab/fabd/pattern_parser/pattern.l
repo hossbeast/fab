@@ -33,16 +33,15 @@
 
  /* tokens */
 <INITIAL>[*][*]                                         { return LEX(STARSTAR); }
-<INITIAL>[/][/]                                         { int r = LEX(SLASH2); yyless(1); return r; }
-<INITIAL>[+(){}<>:*?,/~^D]                              { return LEX(yytext[0]); }
-<INITIAL>[.][/]                                         { int r = LEX(yytext[0]); yyless(1); return r; }
+<INITIAL>[.][/]                                         { int r = LEX(DOT); yyless(1); return r; }
+<INITIAL>[.][.]                                         { return LEX(DOT2); }
+<INITIAL>[+(){}<>:*,/~^ADHFM?@.]                        { return LEX(yytext[0]); }
 
  /* integers */
 <INITIAL>[0-9]+                                         { return LEXI("%"SCNuMAX); }
 
  /* named tokens and unquoted strings */
-<INITIAL>[a-zA-Z0-9_][-a-zA-Z0-9_]+                     { return LEXA(); }
-<INITIAL>[-a-zA-Z_.]+                                   { return LEX(STR); }
+<INITIAL>[_a-zA-Z][-0-9_a-zA-Z]*                        { return LEXA(); }
 
  /* scanmodes, quoted strings */
 <INITIAL>[[]                                            { PUSHSTATE(bracketed); return LEX(yytext[0]); }
@@ -53,13 +52,12 @@
 
  /* var refs */
 <INITIAL>[$]                                            { PUSHSTATE(varref); return LEX(yytext[0]); }
-<varref>[{]                                             { PUSHSTATE(varref2); return LEX(yytext[0]); }
-<varref>[?^D]                                           { POPSTATE; return LEX(yytext[0]); }
-<varref>[a-zA-Z]+                                       { POPSTATE; return LEX(STR); }
+<varref>[ADH^}]                                         { POPSTATE; return LEX(yytext[0]); }
+<varref>[{]                                             { POPSTATE; PUSHSTATE(varref2); return LEX(yytext[0]); }
 <varref>[0-9]+                                          { POPSTATE; return LEXI("%"SCNuMAX); }
-<varref2>[-+?]                                          { return LEX(yytext[0]); }
-<varref2>[a-zA-Z]+                                      { return LEX(STR); }
-<varref2>[}]                                            { POPSTATE; POPSTATE; return LEX(yytext[0]); }
+<varref>[^ADH^{0-9-]                                    { POPSTATE; PUSHSTATE(varref2); yyless(0); }
+<varref2>[_a-zA-Z][_a-zA-Z0-9]*                         { POPSTATE; return LEX(STR); }
+<varref2>[0-9]+                                         { POPSTATE; return LEXI("%"SCNuMAX); }
 
  /* crefs to non ascii bytes */
 <quoted>\\[0abtnvfrs\\"]                                { return LEXC(1); }
@@ -87,13 +85,13 @@
 <*>[\x00-\x1F\x7F-\xFF]                                 {
                                                           POPSTATES;
                                                           LOCWRITE;
-                                                          yyu_errorf(yyuparser, "invalid byte 0x%02hhx", yytext[0]);
+                                                          yyu_errorf(yyuparser, yylloc, "invalid byte 0x%02hhx", yytext[0]);
                                                           return 0;
                                                         }
 <*>[\x20-\x7E]                                          {
                                                           POPSTATES;
                                                           LOCWRITE;
-                                                          yyu_errorf(yyuparser, "character '%1$c'(0x%1$02hhx)", yytext[0]);
+                                                          yyu_errorf(yyuparser, yylloc, "unexpected character '%1$c'(0x%1$02hhx)", yytext[0]);
                                                           return 0;
                                                         }
 <<EOF>>                                                 {

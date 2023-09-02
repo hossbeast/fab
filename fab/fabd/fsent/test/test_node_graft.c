@@ -4,10 +4,9 @@
 #include "moria/load.h"
 
 #include "valyria/list.h"
-#include "valyria/map.h"
 #include "moria/graph.h"
-#include "moria/operations.h"
 #include "moria/parser.h"
+#include "bacon/load.h"
 
 #include "xunit.h"
 #include "xunit/assert.h"
@@ -31,6 +30,7 @@ typedef struct node_graft_test {
 static void node_graft_test_unit_setup(xunit_unit * unit)
 {
   moria_load();
+  bacon_load();
 
   filesystem_setup();
   module_setup();
@@ -40,6 +40,9 @@ static void node_graft_test_unit_setup(xunit_unit * unit)
 
 static void node_graft_test_unit_cleanup(xunit_unit * unit)
 {
+  moria_unload();
+  bacon_unload();
+
   filesystem_cleanup();
   module_cleanup();
   fsent_cleanup();
@@ -55,16 +58,16 @@ static void node_graft_test_entry(xunit_test * _test)
   node_graft_test * test = (node_graft_test *)_test;
   const char * graph;
   narrator_growing * N = 0;
-  graph_parser * parser = 0;
+  moria_parser * parser = 0;
   fsent * node;
   graph_invalidation_context invalidation = { };
 
   narrator_growing_create(&N);
-  graph_parser_create(&parser, &g_graph, &fsent_list, node_operations_test_dispatch, graph_vertex_attrs, graph_edge_attrs);
+  moria_parser_create(&parser, &g_graph, (llist *[]) { &fsent_list }, 1, node_operations_test_dispatch, graph_vertex_attrs, graph_edge_attrs);
   graph_invalidation_begin(&invalidation);
 
   // arrange - setup initial graph
-  graph_parser_operations_parse(parser, MMS(test->operations));
+  moria_parser_operations_parse(parser, MMS(test->operations));
 
   // act
   fsent_graft(test->path, &node, &invalidation);
@@ -77,7 +80,7 @@ static void node_graft_test_entry(xunit_test * _test)
 
   narrator_growing_free(N);
   graph_invalidation_end(&invalidation);
-  graph_parser_xfree(parser);
+  moria_parser_free(parser);
 }
 
 //
@@ -92,9 +95,9 @@ static xunit_unit xunit = {
       (node_graft_test[]) {{
           operations : ""
         , path : "/a/b/c"
-/* graft always creates directories */
-        , graph : "1-(root)!dir 2-a!U|dir 3-b!U|dir 4-c!U|dir"
-                 " 1:fs:2 2:fs:3 3:fs:4"
+/* graft always creates protected directories */
+        , graph : "1-(root)!dir|protect 2-a!dir|protect 3-b!dir|protect 4-c!dir|protect"
+                 " 2:fs:1 3:fs:2 4:fs:3"
       }}
     , 0
   }

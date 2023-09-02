@@ -4,11 +4,10 @@
 #include "moria/load.h"
 
 #include "valyria/list.h"
-#include "valyria/map.h"
 #include "moria/graph.h"
-#include "moria/operations.h"
 #include "moria/parser.h"
 #include "yyutil/parser.h"
+#include "bacon/load.h"
 
 #include "xunit.h"
 #include "xunit/assert.h"
@@ -20,27 +19,31 @@
 #include "module.h"
 #include "node_operations_test.h"
 #include "config_parser.h"
-#include "config.internal.h"
+#include "config.h"
+#include "configuration.h"
 #include "lookup.h"
 
-typedef struct node_path_test {
+typedef struct node_filesystem_test {
   XUNITTEST;
 
   /* setup */
   char * config;        // filesystems config
   char * operations;    // create the graph
-  char * base;          // attached to root
 
   /* assert */
   struct node_check {
     char * name;          // node to check
-    uint32_t attrs;       // expected fs attrs
+    bool mkdirs;          // expected
+    bool readlinks;
+    bool indexed;
+    invalidate_type invalidate;
   } **nodes;
-} node_path_test;
+} node_filesystem_test;
 
-static void node_path_test_unit_setup(xunit_unit * unit)
+static void node_filesystem_test_unit_setup(xunit_unit * unit)
 {
   moria_load();
+  bacon_load();
 
   filesystem_setup();
   module_setup();
@@ -48,8 +51,10 @@ static void node_path_test_unit_setup(xunit_unit * unit)
   fsent_setup();
 }
 
-static void node_path_test_unit_cleanup(xunit_unit * unit)
+static void node_filesystem_test_unit_cleanup(xunit_unit * unit)
 {
+  moria_unload();
+  bacon_unload();
   filesystem_cleanup();
   module_cleanup();
   fsent_cleanup();
@@ -60,31 +65,32 @@ static void node_path_test_unit_cleanup(xunit_unit * unit)
 // tests
 //
 
-static void node_path_test_entry(xunit_test * _test)
+static void node_filesystem_test_entry(xunit_test * _test)
 {
-  node_path_test * test = (node_path_test *)_test;
-  graph_parser * ops_parser = 0;
+  node_filesystem_test * test = (node_filesystem_test *)_test;
+  moria_parser * ops_parser = 0;
   fsent * n;
   const filesystem *fs;
-  config_parser * parser = 0;
-  configblob * cfg = 0;
-  moria_vertex *v;
-  char err[256];
+  config_parser *parser = 0;
+  configuration *cfg;
+  graph_invalidation_context invalidation = {};
 
   // setup filesystems
   config_parser_create(&parser);
-  config_parser_parse(parser, test->config, strlen(test->config) + 2, 0, 0, &cfg);
+  configuration_alloc(&cfg);
+  config_parser_parse(parser, test->config, strlen(test->config) + 2, 0, 0, cfg);
 
   // act
-  cfg->filesystems.changed = true;
-  filesystem_reconfigure(cfg, err, sizeof(err));
-  filesystem_reconfigure(cfg, 0, 0);
+  filesystem_reconfigure(cfg, true);
+  filesystem_reconfigure(cfg, false);
 
   // setup initial graph
-  graph_parser_create(&ops_parser, &g_graph, &fsent_list, node_operations_test_dispatch, graph_vertex_attrs, graph_edge_attrs);
-  node_operations_test_dispatch->create_vertex(ops_parser, &v, VERTEX_DIR, 0, MMS(test->base));
-  node_operations_test_dispatch->connect(ops_parser, &g_root->vertex, v, EDGE_TYPE_FSTREE, 0);
-  graph_parser_operations_parse(ops_parser, MMS(test->operations));
+  moria_parser_create(&ops_parser, &g_graph, (llist *[]) { &fsent_list }, 1, node_operations_test_dispatch, graph_vertex_attrs, graph_edge_attrs);
+  moria_parser_operations_parse(ops_parser, MMS(test->operations));
+
+  graph_invalidation_begin(&invalidation);
+  fsent_fstree_refresh(&invalidation);
+  graph_invalidation_end(&invalidation);
 
   typeof(*test->nodes) *nodes = test->nodes;
   while(*nodes)
@@ -97,14 +103,14 @@ static void node_path_test_entry(xunit_test * _test)
 
     // assert
     assert_infos("node", (*nodes)->name);
-    assert_eq_u32((*nodes)->attrs, fs->attrs);
+    assert_eq_u32((*nodes)->invalidate, fs->invalidate);
     assert_info_unstage();
     nodes++;
   }
 
-  graph_parser_xfree(ops_parser);
-  config_parser_xfree(parser);
-  config_xfree(cfg);
+  moria_parser_free(ops_parser);
+  configuration_free(cfg, parser);
+  config_parser_free(parser);
 }
 
 //
@@ -112,12 +118,12 @@ static void node_path_test_entry(xunit_test * _test)
 //
 
 static xunit_unit xunit = {
-    xu_setup : node_path_test_unit_setup
-  , xu_cleanup : node_path_test_unit_cleanup
-  , xu_entry : node_path_test_entry
-  , xu_tests : (node_path_test*[]) {
+    xu_setup : node_filesystem_test_unit_setup
+  , xu_cleanup : node_filesystem_test_unit_cleanup
+  , xu_entry : node_filesystem_test_entry
+  , xu_tests : (node_filesystem_test*[]) {
      /* directory fsent */
-      (node_path_test[]) {{
+      (node_filesystem_test[]) {{
           config : (char[]) {
             "filesystems : {"
               "\"/A\"      : { invalidate : content } "
@@ -126,23 +132,22 @@ static xunit_unit xunit = {
             "}\0\0"
         , }
         , operations : "A/BB/C/D"
-        , base : "A"
         , nodes : (struct node_check*[]) {
               (struct node_check[]) {{
                   name : "A"
-                , attrs : INVALIDATE_CONTENT
+                , invalidate : INVALIDATE_CONTENT
               }}
             , (struct node_check[]) {{
                   name : "BB"
-                , attrs : INVALIDATE_CONTENT
+                , invalidate : INVALIDATE_CONTENT
               }}
             , (struct node_check[]) {{
                   name : "C"
-                , attrs : INVALIDATE_NOTIFY
+                , invalidate : INVALIDATE_NOTIFY
               }}
             , (struct node_check[]) {{
                   name : "D"
-                , attrs : INVALIDATE_NOTIFY
+                , invalidate : INVALIDATE_NOTIFY
               }}
             , 0
           }

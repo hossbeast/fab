@@ -17,7 +17,7 @@
 #include "probes.h"
 
 #include "macros.h"
-#include "zbuffer.h"
+#include "zcat.h"
 
 #define SIGUTIL_HANDLER_DEBUG 0
 

@@ -7,6 +7,9 @@
 #include "fab/ipc.h"
 #include "narrator.h"
 #include "narrator/fixed.h"
+#include "bacon/builder.h"
+#include "narrator.h"
+#include "narrator/fixed.h"
 
 #include "touch.h"
 #include "command.h"
@@ -28,59 +31,72 @@ static void usage(command * restrict cmd)
   );
 }
 
-static void request_write(narrator * restrict N)
-{
-  int x;
-
-  if(g_args.invalidate) {
-    narrator_says(N, " global-invalidate");
-    return;
-  }
-
-  narrator_says(N, ""
-" select : ["
-  );
-
-  for(x = 0; x < args->targets_len; x++)
-  {
-    narrator_sayf(N, ""
-" path : \"%.*s\"", (int)args->targets[x].len, args->targets[x].s
-    );
-  }
-
-  narrator_says(N, ""
-" ] "
-" invalidate "
-  );
-}
-
 //
 // build
 //
 
 static void connected(command * restrict cmd, fab_client * restrict client)
 {
-  narrator * request_narrator;
-  narrator_fixed nstor;
   fabipc_message * msg;
+  bacon_writer writer, *builder_writer;
+  narrator *N;
+  narrator_fixed fixed;
+  int x;
 
   /* if no targets specified, invalidate everything */
-  if(args->targets_len == 0)
-  {
+  if(args->targets_len == 0) {
     g_args.invalidate = true;
   }
 
-  /* send the request */
   msg = fab_client_produce(client);
   msg->type = FABIPC_MSG_REQUEST;
   requestid = msg->id = ++client->msgid;
 
-  request_narrator = narrator_fixed_init(&nstor, msg->text, sizeof(msg->text));
-  request_write(request_narrator);
+  N = narrator_fixed_init(&fixed, msg->text, sizeof(msg->text));
+  bacon_writer_init(&writer);
+  builder_writer = bacon_writer_open(&writer, N);
 
-  // two terminating null bytes
-  narrator_sayw(request_narrator, (char[]) { 0x00, 0x00 }, 2);
-  msg->size = nstor.l;
+  if(g_args.invalidate) {
+    STRING("global-invalidate")
+    goto end;
+  }
+
+  { LIST
+    if(g_args.context_module_id) {
+      MAPPING
+      STRING("context")
+      { SET
+        { MAPPING
+          STRING("module")
+          HEX(g_args.context_module_id)
+        }
+      }
+    }
+    { MAPPING
+      STRING("select")
+      { LIST
+        for(x = 0; x < args->targets_len; x++)
+        { MAPPING
+          STRING("lookup")
+          { SET
+            { MAPPING
+              STRING("path")
+              BYTES(args->targets[x].s, args->targets[x].len)
+            }
+          }
+        }
+      }
+    }
+    STRING("invalidate")
+  }
+
+end:
+  bacon_writer_close(&writer);
+  bacon_writer_destroy(&writer);
+  narrator_sayc(N, 0);
+  narrator_sayc(N, 0);
+
+  msg->size = fixed.l;
   client_post(client, msg);
 }
 
@@ -93,12 +109,20 @@ static void process(command * restrict cmd, fab_client * restrict client, fabipc
   }
 }
 
+static void attached(command * restrict cmd, fab_client * restrict client)
+{
+
+}
+
 //
 // public
 //
+static void disconnected(command * restrict cmd) { }
 
 struct command touch_command = {
     usage : usage
+  , attached : attached
   , connected : connected
   , process : process
+  , disconnected : disconnected
 };

@@ -19,13 +19,15 @@ shadow filesystem layout
 
 struct fsedge;
 struct fsent;
-struct graph_invalidation_context;
 struct module;
+enum vertex_kind;
+struct graph_invalidation_context;
 
 // globally scoped fsents
 extern struct fsent * g_shadow;                 /* root of the shadow fs */
 extern struct fsent * g_shadow_module;          /* the node at //module */
 extern struct fsent * g_shadow_modules;         /* the node at //modules */
+extern struct fsent * g_shadow_targets;         /* the node at //targets */
 
 /* module initialization */
 void shadow_setup(void);
@@ -33,22 +35,14 @@ void shadow_setup(void);
 /* module cleanup */
 void shadow_cleanup(void);
 
-/* attaach a module to the shadow fs */
-void shadow_module_init(
-    struct module * restrict mod
-  , struct graph_invalidation_context * restrict invalidation
-)
-  __attribute__((nonnull));
-
-void shadow_graft_imports(
+void shadow_graft_bind(
     struct module * restrict mod
   , struct fsent * restrict ref
-  , const char * restrict as
-  , uint16_t asl
-  , struct fsedge ** restrict ep
+  , struct fsent * restrict attachment
+  , struct fsent ** restrict target
   , struct graph_invalidation_context * restrict invalidation
 )
-  __attribute__((nonnull(1, 2, 3, 6)));
+  __attribute__((nonnull(1, 2, 3, 5)));
 
 void shadow_graft_requires(
     struct module * restrict mod
@@ -60,7 +54,7 @@ void shadow_graft_requires(
 )
   __attribute__((nonnull(1, 2, 3, 6)));
 
-void shadow_graft_uses(
+void shadow_graft_rules(
     struct module * restrict mod
   , struct fsent * restrict ref
   , const char * restrict as
@@ -69,3 +63,34 @@ void shadow_graft_uses(
   , struct graph_invalidation_context * restrict invalidation
 )
   __attribute__((nonnull(1, 2, 3, 6)));
+
+void shadow_graft_var(
+    struct module * restrict mod
+  , struct fsent * restrict ref
+  , const char * restrict as
+  , uint16_t asl
+  , struct fsedge ** restrict ep
+  , struct graph_invalidation_context * restrict invalidation
+)
+  __attribute__((nonnull(1, 2, 3, 6)));
+
+void shadow_create(
+    struct fsent * restrict parent
+  , struct fsent ** restrict np
+  , const char * restrict name
+  , uint16_t namel
+  , enum vertex_kind kind
+  , struct graph_invalidation_context * restrict invalidation
+)
+  __attribute__((nonnull(1, 3, 6)));
+
+void shadow_link(
+    /* 1 */ struct fsent * restrict parent
+  , /* 2 */ const char * restrict name
+  , /* 3 */ uint16_t namel
+  , /* 4 */ struct fsent * restrict ref
+  , /* 5 */ struct fsedge ** restrict ep
+  , /* 6 */ struct fsent ** restrict pref
+  , /* 7 */ struct graph_invalidation_context * restrict invalidation
+)
+  __attribute__((nonnull(1, 2, 4, 7)));

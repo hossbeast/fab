@@ -3,6 +3,8 @@
 
 #include "narrator.h"
 #include "xlinux/xstdlib.h"
+#include "common/attrs.h"
+#include "bacon/builder.h"
 
 #include "range.h"
 #include "byte.h"
@@ -15,35 +17,34 @@
 // static
 //
 
-static void say(const pattern_segment * restrict fn, narrator * restrict N)
+static void range_describe(const pattern_segment * restrict fn, bacon_writer * restrict builder_writer)
 {
-  const pattern_range * n = &fn->range;
+  const pattern_range *range = &fn->range;
 
-  byte_say(n->start, N);
-  xsayc('-');
-  byte_say(n->end, N);
-}
-
-static void destroy(pattern_segment * restrict fn)
-{
-}
-
-static void match(const pattern_segment * restrict segment, pattern_match_context * restrict ctx)
-{
-  const pattern_range * range = &segment->range;
-  const char * restrict name; // = ctx->node->name.name;
-  uint16_t namel; // = ctx->node->name.namel;
-
-  name = ctx->label;
-  namel = ctx->label_len;
-
-  if((namel > ctx->traversal->offset) && (name[ctx->traversal->offset] >= range->start && name[ctx->traversal->offset] <= range->end))
-  {
-    ctx->traversal->offset += 1;
+  { MAPPING
+    STRING("start")
+    LOADF("0x%02x", range->start)
+  }
+  { MAPPING
+    STRING("end")
+    LOADF("0x%02x", range->end)
   }
 }
 
-static void search(const pattern_segment * restrict segment, pattern_search_context * restrict ctx)
+static void range_say(const pattern_segment * restrict fn, const pattern_segment * restrict next, narrator * restrict N)
+{
+  const pattern_range * n = &fn->range;
+
+  byte_say_code(n->start, N);
+  xsayc('-');
+  byte_say_code(n->end, N);
+}
+
+static void range_destroy(pattern_segment * restrict fn)
+{
+}
+
+static void range_search(const pattern_segment * restrict segment, pattern_search_context * restrict ctx)
 {
   const pattern_range * range;
   const char * restrict name;
@@ -53,13 +54,14 @@ static void search(const pattern_segment * restrict segment, pattern_search_cont
   name = ctx->node->name.name;
   namel = ctx->node->name.namel;
 
-  if((namel > ctx->traversal->offset) && (name[ctx->traversal->offset] >= range->start && name[ctx->traversal->offset] <= range->end))
-  {
+  if((namel > ctx->traversal->offset) && (name[ctx->traversal->offset] >= range->start && name[ctx->traversal->offset] <= range->end)) {
     ctx->traversal->offset += 1;
+  } else {
+    ctx->traversal->unsatisfied = true;
   }
 }
 
-static int cmp(const pattern_segment * A, const pattern_segment *B)
+static int range_cmp(const pattern_segment * A, const pattern_segment *B)
 {
   int d;
 
@@ -72,14 +74,9 @@ static int cmp(const pattern_segment * A, const pattern_segment *B)
   return 0;
 }
 
-static pattern_segment_vtable vtable = {
-    type : PATTERN_RANGE
-  , say : say
-  , destroy : destroy
-  , search : search
-  , match : match
-  , cmp : cmp
-};
+#define range_generate 0
+#define range_render 0
+static pattern_segment_vtable vtable = PATTERN_SEGMENT_VTABLE(range, PATTERN_RANGE, 0);
 
 //
 // internal
@@ -94,8 +91,6 @@ void pattern_range_mk(pattern_segment ** restrict rv, const yyu_location * restr
 
   n->range.start = start;
   n->range.end = end;
-
-  chain_init(n, chn);
 
   *rv = n;
 }

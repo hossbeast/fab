@@ -41,7 +41,7 @@
 <INITIAL>(?i:0x[a-f0-9]+)                               { return LEXI("%"SCNxMAX); }
 
  /* tokens */
-<INITIAL>[-+bdghuvxtBK]                                 { return LEX(yytext[0]); }
+<INITIAL>[-+bdghuvxt]                                   { return LEX(yytext[0]); }
 
 <adhoc>[\x20-\x7E]+                                     { return LEX(STR); }
 
@@ -53,13 +53,13 @@
 <*>[\x00-\x1F\x7F-\xFF]                                 {
                                                           POPSTATES;
                                                           LOCWRITE;
-                                                          yyu_errorf(yyuparser, "invalid byte 0x%02hhx", yytext[0]);
+                                                          yyu_errorf(yyuparser, yylloc, "invalid byte 0x%02hhx", yytext[0]);
                                                           return 0;
                                                         }
 <*>[\x20-\x7E]                                          {
                                                           POPSTATES;
                                                           LOCWRITE;
-                                                          yyu_errorf(yyuparser, "character '%1$c'(0x%1$02hhx)", yytext[0]);
+                                                          yyu_errorf(yyuparser, yylloc, "character '%1$c'(0x%1$02hhx)", yytext[0]);
                                                           return 0;
                                                         }
 <<EOF>>                                                 {

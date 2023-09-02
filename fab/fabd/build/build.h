@@ -4,14 +4,14 @@
 #pragma once
 
 #include "types.h"
+#include "valyria/hashtable.h"
 
 struct build_slot;
-struct configblob;
-struct hashtable;
+struct configuration;
 struct rcu_thread;
 
 extern struct build_slot * build_slots;
-extern struct hashtable * build_slots_bypid;
+extern struct hashtable build_slots_bypid;
 extern int build_slots_bypid_lock;
 extern bool build_stage_failure;
 extern int build_devnull_fd;
@@ -25,7 +25,8 @@ void build_cleanup(void);
  * config - root of the config tree
  * dry    - whether to perform a dry-run
  */
-int build_reconfigure(struct configblob * restrict cfg, char * restrict err, uint16_t err_sz);
+void build_reconfigure(struct configuration * restrict cfg, bool dryrun)
+  __attribute__((nonnull));
 
 /*
  * carry out the build

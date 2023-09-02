@@ -116,6 +116,7 @@ fabipc_message * API fabipc_acquire(
     if(page->state == FABIPC_PAGE_STATE_POSTED) {
       page->state = FABIPC_PAGE_STATE_ACQUIRED;
       page->head = head;
+
       return &page->msg;
     }
 

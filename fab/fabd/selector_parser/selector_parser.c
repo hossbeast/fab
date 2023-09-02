@@ -9,13 +9,13 @@
 #define YYSTYPE SELECTOR_YYSTYPE
 #define YYLTYPE yyu_location
 
-#include "selector_parser.internal.h"
+#include "selector_parser.h"
 #include "selector.tab.h"
 #include "selector.tokens.h"
 #include "selector.lex.h"
 #include "selector.states.h"
 
-#include "pattern_parser.h"
+#include "pattern_parser.internal.h"
 
 static YYU_VTABLE(vtable, selector, selector);
 
@@ -40,22 +40,22 @@ void selector_parser_create(selector_parser ** rv)
 
   pattern_parser_create(&p->pattern_parser);
 
-  llist_init_node(&p->selector_stack);
+  llist_init(&p->selector_stack);
 
   *rv = p;
 }
 
-void selector_parser_xfree(selector_parser* const p)
+void selector_parser_free(selector_parser* const p)
 {
   selector * sel;
   llist *T;
 
   if(p)
   {
-    pattern_parser_xfree(p->pattern_parser);
+    pattern_parser_free(p->pattern_parser);
 
     llist_foreach_safe(&p->selector_stack, sel, lln, T) {
-      llist_delete(sel, lln);
+      llist_delete(&sel->lln);
       selector_free(sel);
     }
 
@@ -65,9 +65,9 @@ void selector_parser_xfree(selector_parser* const p)
   free(p);
 }
 
-void selector_parser_ixfree(selector_parser ** const p)
+void selector_parser_ifree(selector_parser ** const p)
 {
-  selector_parser_xfree(*p);
+  selector_parser_free(*p);
   *p = 0;
 }
 
@@ -85,14 +85,16 @@ int selector_parser_parse_partial(
   llist *T;
   int r;
 
-  llist_init_node(&parser->selector_stack);
+  parser->pattern_parser->yyu = 0;
+
+  llist_init(&parser->selector_stack);
   r = yyu_parse(&parser->yyu, buf, size, fname, YYU_PARTIAL | YYU_INPLACE, init_loc, used_loc);
   if(rv) {
     *rv = llist_shift(&parser->selector_stack, selector, lln);
   }
 
   llist_foreach_safe(&parser->selector_stack, sel, lln, T) {
-    llist_delete(sel, lln);
+    llist_delete(&sel->lln);
     selector_free(sel);
   }
 

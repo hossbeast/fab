@@ -12,16 +12,18 @@ extern descriptor_type descriptor_fab_metadata;
 
 struct attrs16;
 
-#define BAM_SYSTEM_STATE_TABLE                                                   \
-  DEF(BAM_SYSTEM_STATE_BOOTSTRAP                  , "bootstrap"             , 1) \
-  DEF(BAM_SYSTEM_STATE_CONFIG_SYSTEM_RECONCILE    , "config-reconcile"      , 2) \
-  DEF(BAM_SYSTEM_STATE_FILESYSTEM_RECONCILE       , "filesystem-reconcile"  , 3) \
-  DEF(BAM_SYSTEM_STATE_VAR_SYSTEM_RECONCILE       , "var-reconcile"         , 4) \
-  DEF(BAM_SYSTEM_STATE_FORMULA_SYSTEM_RECONCILE   , "formula-reconcile"     , 5) \
-  DEF(BAM_SYSTEM_STATE_MODULE_SYSTEM_RECONCILE    , "module-reconcile"      , 6) \
-  DEF(BAM_SYSTEM_STATE_RULE_SYSTEM_RECONCILE      , "rule-reconcile"        , 7) \
-  DEF(BAM_SYSTEM_STATE_BUILDING                   , "building"              , 8) \
-  DEF(BAM_SYSTEM_STATE_OK                         , "ok"                    , 9) \
+#define BAM_SYSTEM_STATE_TABLE                                                    \
+  DEF(BAM_SYSTEM_STATE_BOOTSTRAP                  , "bootstrap"             , 1)  \
+  DEF(BAM_SYSTEM_STATE_CONFIG_SYSTEM_RECONCILE    , "config-reconcile"      , 2)  \
+  DEF(BAM_SYSTEM_STATE_WALKER_RECONCILE           , "walker-reconcile"      , 3)  \
+  DEF(BAM_SYSTEM_STATE_VAR_SYSTEM_RECONCILE       , "var-reconcile"         , 4)  \
+  DEF(BAM_SYSTEM_STATE_MODULE_SYSTEM_RECONCILE    , "module-reconcile"      , 5)  \
+  DEF(BAM_SYSTEM_STATE_RULE_SYSTEM_RECONCILE      , "rule-reconcile"        , 6)  \
+  DEF(BAM_SYSTEM_STATE_BPE_SYSTEM_RECONCILE       , "bpe-reconcile"         , 7)  \
+  DEF(BAM_SYSTEM_STATE_FORMULA_SYSTEM_RECONCILE   , "formula-reconcile"     , 8)  \
+  DEF(BAM_SYSTEM_STATE_FILESYSTEM_RECONCILE       , "filesystem-reconcile"  , 9)  \
+  DEF(BAM_SYSTEM_STATE_BUILDING                   , "building"              , 10) \
+  DEF(BAM_SYSTEM_STATE_OK                         , "ok"                    , 11) \
 
 typedef enum bam_system_state {
 #undef DEF
@@ -41,11 +43,11 @@ typedef struct fab_metadata {
   const char *homedir;      // homedir of the real user
   uint16_t homedir_len;
 
-  const char *project_dir;  // absolute path of the project directory
-  uint16_t project_dir_len;
+  const char *cwd_path;     // absolute path of the working directory
+  uint16_t cwd_path_len;
 
-  const char *project_hash; // project hash
-  uint16_t project_hash_len;
+  const char *hash;         // hash over cwd
+  uint16_t hash_len;
 
   enum bam_system_state system_state;
   uint8_t system_error;

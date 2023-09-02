@@ -74,6 +74,13 @@ ILL   [\x00-\x08\x0B-\x1F\x7F-\xFF]
  /* tokens */
 <INITIAL>[[\]{}:=]                                      { return LEX(yytext[0]); }
 
+ /* integers */
+<INITIAL>[-][0-9]+                                      { return LEXI("%"SCNdMAX); }
+<INITIAL>[0-9]+                                         { return LEXI("%"SCNuMAX); }
+<INITIAL>(?i:0x[0-9a-f]+)                               { return LEXI("%"SCNxMAX); }
+<INITIAL>[0-9a-f]{8}                                    { return LEXI("%"SCNxMAX); }
+<INITIAL>[0-9a-f]{16}                                   { return LEXI("%"SCNxMAX); }
+
  /* invoke selector sub-parser */
 <INITIAL>"select"                                       { PUSHSTATE(_select); return LEX(SELECT); }
 <INITIAL>"target-direct"                                { PUSHSTATE(_select); return LEX(TARGET_DIRECT); }
@@ -83,18 +90,18 @@ ILL   [\x00-\x08\x0B-\x1F\x7F-\xFF]
 <_selector>[^\n\r\t ][\x00-\xff]+                       { int r = PARSE_SELECTOR; POPSTATE; POPSTATE; return r; }
 
  /* enumerated tokenrange */
-<INITIAL>[a-zA-Z0-9_][-a-zA-Z0-9_]*                     { return LEXE(); }
+<INITIAL>[a-zA-Z0-9_][-a-zA-Z0-9_]*                     { return LEXA(); }
 
 <*>[\x00-\x1F\x7F-\xFF]                                 {
                                                           POPSTATES;
                                                           LOCWRITE;
-                                                          yyu_errorf(yyuparser, "invalid byte 0x%02hhx", yytext[0]);
+                                                          yyu_errorf(yyuparser, yylloc, "invalid byte 0x%02hhx", yytext[0]);
                                                           return 0;
                                                         }
 <*>[\x20-\x7E]                                          {
                                                           POPSTATES;
                                                           LOCWRITE;
-                                                          yyu_errorf(yyuparser, "character '%1$c'(0x%1$02hhx)", yytext[0]);
+                                                          yyu_errorf(yyuparser, yylloc, "unexpected character '%1$c'(0x%1$02hhx)", yytext[0]);
                                                           return 0;
                                                         }
 <<EOF>>                                                 {

@@ -14,13 +14,15 @@
 #include "args.h"
 #include "fsedge.h"
 #include "fsent.h"
+#include "vertex.h"
+#include "vertex/probes.h"
 #include "goals.h"
 #include "graph.h"
 #include "run_thread.h"
 #include "params.h"
 #include "rcu.h"
 #include "walker.h"
-#include "zbuffer.h"
+#include "zcat.h"
 #include "probes.h"
 
 #include "locks.h"
@@ -42,6 +44,8 @@ static void process_event(sweeper_event * restrict ev, graph_invalidation_contex
   fsent *n;
   sweeper_child_event *cev;
   size_t z;
+
+  sweeper_thread_probe(ev);
 
   if(ev->kind == SWEEPER_EVENT_SELF)
   {
@@ -82,32 +86,33 @@ static void process_event(sweeper_event * restrict ev, graph_invalidation_contex
     /* deleted the root node ?? */
     RUNTIME_ASSERT(ue);
 
-    graph_disintegrate(ue, invalidation);
+    fsedge_disintegrate(containerof(ue, fsedge, edge), invalidation);
   }
   else if(ev->mask & (IN_CREATE | IN_MOVED_TO) && ev->kind == SWEEPER_EVENT_CHILD)
   {
     /* entity was created */
     if(ev->mask & IN_ISDIR)
     {
-      z = fsent_absolute_path_znload(path, sizeof(path), cev->parent);
-      z += znloadc(path + z, sizeof(path) - z, '/');
-      z += znloadw(path + z, sizeof(path) - z, cev->name, cev->name_len);
+      z = fsent_absolute_path_cat(path, sizeof(path), cev->parent);
+      z += zcatc(path + z, sizeof(path) - z, '/');
+      z += zcatw(path + z, sizeof(path) - z, cev->name, cev->name_len);
       path[z] = 0;
 
       /* traverse the directory (recursively) and attach at cev->parent */
-      walker_descend(0, 0, cev->parent, path, 0, invalidation);
+      walker_descend(cev->parent, path, 0, invalidation);
     }
     else
     {
-      fsent_create(&n, VERTEX_TYPE_FSENT, VERTEX_OK, cev->name, cev->name_len);
-      fsedge_connect(cev->parent, n, invalidation);
+      fsent_create(&n, VERTEX_KIND_FSENT, VERTEX_OK, cev->name, cev->name_len);
+      fsedge_connect(n, cev->parent, invalidation);
+      vertex_alloc_probe(&n->vertex);
     }
   }
   else
   {
     /* entity was modified */
-    fsent_exists_set(n);
-    fsent_invalidate(n, invalidation);
+    vertex_exists_set(&n->vertex, true);
+    vertex_invalidate(&n->vertex, invalidation);
   }
 }
 
@@ -128,13 +133,13 @@ static void sweep()
 
     process_event(ev, &invalidation);
 
-    llist_delete(ev, lln);
+    llist_delete(&ev->lln);
     if(ev->kind == SWEEPER_EVENT_SELF) {
       ev->era = 0;
     } else if(ev->kind == SWEEPER_EVENT_CHILD) {
-      llist_append(&child_event_freelist, ev, lln);
+      llist_append(&child_event_freelist, &ev->lln);
       ce = containerof(ev, sweeper_child_event, sweep_event);
-      rbtree_delete(&ce->parent->pending_child, ce, rbn);
+      rbtree_delete(&ce->parent->pending_child, &ce->rbn);
     }
   }
 
@@ -252,7 +257,7 @@ void sweeper_thread_enqueue(fsent *n, uint32_t mask, const char * restrict name,
       {
         xmalloc(&ce, sizeof(*ce));
         ce->sweep_event.kind = SWEEPER_EVENT_CHILD;
-        llist_init_node(&ce->sweep_event.lln);
+        llist_init(&ce->sweep_event.lln);
       }
       else
       {
@@ -263,7 +268,7 @@ void sweeper_thread_enqueue(fsent *n, uint32_t mask, const char * restrict name,
       ce->name_len = namel;
       ce->parent = n;
 
-      rbtree_insert_node(&n->pending_child, &search_ctx, &ce->rbn);
+      rbtree_insert(&n->pending_child, &search_ctx, &ce->rbn);
     }
     e = &ce->sweep_event;
   }
@@ -286,8 +291,8 @@ void sweeper_thread_enqueue(fsent *n, uint32_t mask, const char * restrict name,
   e->era = event_era;
 
   /* push to the end */
-  llist_delete(e, lln);
-  llist_append(&event_queue, e, lln);
+  llist_delete(&e->lln);
+  llist_append(&event_queue, &e->lln);
 
   spinlock_release(&event_queue_lock);
 }

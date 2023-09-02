@@ -4,15 +4,14 @@
 #include "lorien/load.h"
 #include "bacon/load.h"
 
-#include "valyria/dictionary.h"
-
 #include "xunit.h"
 #include "xunit/assert.h"
 #include "narrator.h"
 
 #include "filesystem.internal.h"
 #include "config_parser.h"
-#include "config.internal.h"
+#include "config.h"
+#include "configuration.h"
 
 typedef struct {
   XUNITTEST;
@@ -42,28 +41,27 @@ static void filesystem_test_entry(xunit_test * _test)
 {
   filesystem_test * test = (filesystem_test *)_test;
 
-  config_parser * parser = 0;
-  configblob * cfg = 0;
+  config_parser *parser = 0;
+  configuration *cfg = 0;
   char space[1024];
 
   // arrange
   config_parser_create(&parser);
-  config_parser_parse(parser, test->config, strlen(test->config) + 2, 0, 0, &cfg);
-
-  cfg->filesystems.changed = true;
+  configuration_alloc(&cfg);
+  config_parser_parse(parser, test->config, strlen(test->config) + 2, 0, 0, cfg);
 
   // act
   filesystem_cleanup();
   filesystem_setup();
 
-  filesystem_reconfigure(cfg, space, sizeof(space));
-  filesystem_reconfigure(cfg, 0, 0);
+  filesystem_reconfigure(cfg, true);
+  filesystem_reconfigure(cfg, false);
 
-  fstree_znload(space, sizeof(space));
+  fstree_cat(space, sizeof(space));
   assert_eq_s(test->filesystems, space);
 
-  config_parser_xfree(parser);
-  config_xfree(cfg);
+  configuration_free(cfg, parser);
+  config_parser_free(parser);
 }
 
 //

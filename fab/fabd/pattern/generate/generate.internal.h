@@ -9,14 +9,13 @@
 #include "types.h"
 
 struct chain;
-struct set;
 struct narrator;
 struct narrator_fixed;
 struct pattern_search_node;
 struct pattern_section;
-struct variant;
 struct graph_invalidation_context;
 struct moria_vertex;
+struct entlist;
 
 /// pattern_generate_context
 //
@@ -27,26 +26,20 @@ struct moria_vertex;
 //  node             - new nodes are created as children of this node
 //  segment_narrator - narrator where the current section is accumulated
 //  segment_base_pos - position in the narrator where the current section begins
-//  variant_pos      - offset in the name of the context node where the current variant begins
-//  variant_len      - length of the current variant
 //
-typedef struct pattern_generate_context
-{
+typedef struct pattern_generate_context {
   // section traversal
   struct section_traversal {
-    const struct pattern_section * section;
-    const struct pattern_section * head;
-    const struct chain * cursor;
-    int16_t variant_index;
-    const struct variant * variant_replacement;
+    const llist *head;
+    const struct pattern_section *section;
   } section_traversal;
 
   // segment traversal
   struct segment_traversal {
     llist lln;
-    const union pattern_segment * segment;
-    const union pattern_segment * head;
-    const struct chain * cursor;
+    const llist *head;
+    const union pattern_segment *segment;
+    bool end;
   } *segment_traversal;
 
   llist segment_traversal_stack;
@@ -65,10 +58,10 @@ typedef struct pattern_generate_context
   struct module * mod;
   struct moria_vertex * scope;
   const struct pattern_search_node * match;
-  const struct set * restrict variants;
+  uint32_t flags;
 
   // output context
-  struct set * nodes;
+  struct entlist *hits;
 } pattern_generate_context;
 
 /// pattern_segment_generate

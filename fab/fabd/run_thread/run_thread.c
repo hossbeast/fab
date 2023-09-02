@@ -18,7 +18,7 @@
 #include "system_state.h"
 #include "buildplan.h"
 #include "build.h"
-#include "request.internal.h"
+#include "request.h"
 
 bool run_thread_autorun;
 static handler_context * owner;

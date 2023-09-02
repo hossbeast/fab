@@ -82,7 +82,7 @@ static void pattern_parser_test_entry(xunit_test * _test)
   actual = N1->s;
   assert_eq_w(expected, strlen(expected), actual, N1->l);
 
-  pattern_parser_xfree(parser);
+  pattern_parser_free(parser);
   narrator_growing_free(N1);
   narrator_growing_free(N2);
   pattern_free(A);
@@ -100,9 +100,6 @@ static xunit_unit xunit = {
   , xu_tests : (pattern_parser_test*[]) {
   /* basic */
       (pattern_parser_test[]) {{
-        text : (char[]) { "program.?\0" }
-      }}
-    , (pattern_parser_test[]) {{
         text : (char[]) { "cflags.void.debug\0" }
       }}
     , (pattern_parser_test[]) {{
@@ -209,13 +206,13 @@ static xunit_unit xunit = {
         text : (char[]) { "(([ABC0-9XY])~baz)+baz\0" }
       }}
     , (pattern_parser_test[]) {{
-        text : (char[]) { "(a)+(b)~(c)\0" }
+        text : (char[]) { "(a)+b~c\0" }
       }}
     , (pattern_parser_test[]) {{
-        text : (char[]) { "([abc]~b)+(b)~(c)\0" }
+        text : (char[]) { "([abc]~b)+b~c\0" }
       }}
     , (pattern_parser_test[]) {{
-        text : (char[]) { "(([abc]~b)+b)+(b)~(c)\0" }
+        text : (char[]) { "(([abc]~b)+b)+b~c\0" }
       }}
   /* shadow fs */
     , (pattern_parser_test[]) {{
@@ -223,6 +220,66 @@ static xunit_unit xunit = {
       }}
     , (pattern_parser_test[]) {{
         text : (char[]) { "//shadow/boats\0" }
+      }}
+  /* qualifiers */
+    , (pattern_parser_test[]) {{
+        text : (char[]) { "abcd+(/)\0" }
+      }}
+    , (pattern_parser_test[]) {{
+        text : (char[]) { "abcd~(/F)\0" }
+      }}
+    , (pattern_parser_test[]) {{
+        text : (char[]) { "abcd~(.)\0" }
+      }}
+    , (pattern_parser_test[]) {{
+        text : (char[]) { "abcd+(.)\0" }
+      }}
+    , (pattern_parser_test[]) {{
+        text : (char[]) { "abcd+(@)~abcd~(.)\0" }
+      }}
+    , (pattern_parser_test[]) {{
+        text : (char[]) { "abcd+(@./)\0" }
+      }}
+  /* variables */
+    , (pattern_parser_test[]) {{
+        text : (char[]) { "$CONFIG_VARIANT\0" }
+      }}
+    , (pattern_parser_test[]) {{
+        text : (char[]) { "a$CONFIG_VARIANT\0" }
+      }}
+    , (pattern_parser_test[]) {{
+        text : (char[]) { "${CONFIG_VARIANT}\0" }
+      , expected : "$CONFIG_VARIANT"
+      }}
+    , (pattern_parser_test[]) {{
+        text : (char[]) { "a${CONFIG_VARIANT}\0" }
+      , expected : "a$CONFIG_VARIANT"
+      }}
+    , (pattern_parser_test[]) {{
+        text : (char[]) { "${CONFIG_VARIANT}a\0" }
+      }}
+    , (pattern_parser_test[]) {{
+        text : (char[]) { "a${CONFIG_VARIANT}a\0" }
+      }}
+    , (pattern_parser_test[]) {{
+        text : (char[]) { "$99\0" }
+      }}
+    , (pattern_parser_test[]) {{
+        text : (char[]) { "9$99\0" }
+      }}
+    , (pattern_parser_test[]) {{
+        text : (char[]) { "${99}\0" }
+      , expected : "$99"
+      }}
+    , (pattern_parser_test[]) {{
+        text : (char[]) { "9${99}\0" }
+      , expected : "9$99"
+      }}
+    , (pattern_parser_test[]) {{
+        text : (char[]) { "${99}9\0" }
+      }}
+    , (pattern_parser_test[]) {{
+        text : (char[]) { "9${99}9\0" }
       }}
     , 0
   }

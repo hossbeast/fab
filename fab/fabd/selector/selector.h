@@ -10,26 +10,22 @@
 
 #include "graph.h"
 #include "selection.h"
+#include "entlist.h"
 
 struct attrs32;
 struct channel;
-struct dependency;
+struct buildplan_entity;
 struct module;
 struct narrator;
 struct pattern;
-struct value_writer;
+struct bacon_writer;
+struct fsent;
 
 #define SELECTOR_TRAVERSE_DEFAULT_MODE          MORIA_TRAVERSE_PRE
 #define SELECTOR_TRAVERSE_DEFAULT_DIRECTION     MORIA_TRAVERSE_DOWN
 #define SELECTOR_TRAVERSE_DEFAULT_CROSS_MODULE  true
-#define SELECTOR_TRAVERSE_DEFAULT_CRITERIA (moria_traversal_criteria) {  \
-      vertex_travel : VERTEX_TYPE_FSENT                                  \
-    , vertex_visit : VERTEX_TYPE_FSENT                                   \
-    , edge_travel : EDGE_FSTREE                                          \
-    , edge_visit : 0                                                     \
-    , min_depth : 1               /* dont visit self */                  \
-    , max_depth : UINT16_MAX                                             \
-  }
+#define SELECTOR_TRAVERSE_DEFAULT_MIN_DEPTH     1
+#define SELECTOR_TRAVERSE_DEFAULT_MAX_DEPTH     UINT16_MAX
 
 #define SELECTOR_TYPE_OPT 0xf
 #define SELECTOR_TYPE_TABLE                                              \
@@ -39,7 +35,7 @@ struct value_writer;
   /* operations */                                                       \
   SELECTOR_DEF(SELECTOR_NODESET   , "nodeset"  , SELECTOR_TYPE_OPT, 0x4) \
   SELECTOR_DEF(SELECTOR_PATTERN   , "pattern"  , SELECTOR_TYPE_OPT, 0x5) \
-  SELECTOR_DEF(SELECTOR_PATH      , "path"     , SELECTOR_TYPE_OPT, 0x6) \
+  SELECTOR_DEF(SELECTOR_LOOKUP    , "lookup"   , SELECTOR_TYPE_OPT, 0x6) \
   SELECTOR_DEF(SELECTOR_TRAVERSE  , "traverse" , SELECTOR_TYPE_OPT, 0x7) \
 
 #define SELECTOR_NODESET_OPT 0xf
@@ -49,7 +45,7 @@ struct value_writer;
   SELECTOR_DEF(SELECTOR_NODESET_SOURCE  , "source"  , SELECTOR_NODESET_OPT, 0x3) \
   SELECTOR_DEF(SELECTOR_NODESET_SOURCES , "sources" , SELECTOR_NODESET_OPT, 0x4) \
   SELECTOR_DEF(SELECTOR_NODESET_MODULE  , "module"  , SELECTOR_NODESET_OPT, 0x5) \
-  SELECTOR_DEF(SELECTOR_NODESET_MODULES , "modules" , SELECTOR_NODESET_OPT, 0x6) \
+  SELECTOR_DEF(SELECTOR_NODESET_ANCHOR  , "anchor"  , SELECTOR_NODESET_OPT, 0x6) \
   SELECTOR_DEF(SELECTOR_NODESET_ALL     , "all"     , SELECTOR_NODESET_OPT, 0x7) \
   SELECTOR_DEF(SELECTOR_NODESET_NONE    , "none"    , SELECTOR_NODESET_OPT, 0x8) \
 
@@ -77,23 +73,22 @@ typedef struct selector {
     selector_nodeset nodeset;                     // SELECTOR_NODESET
     struct pattern * pattern;                     // SELECTOR_PATTERN
     struct {
-      char * path;                                // SELECTOR_PATH
+      char * path;                                // SELECTOR_LOOKUP
       uint16_t path_len;
     };
     struct {                                      // SELECTOR_TRAVERSE
       moria_traversal_direction direction;
       moria_traversal_mode mode;
       moria_traversal_criteria criteria;
-      bool exhaustive;
+      bool exhaustive;           // MORIA_TRAVERSE_EXHAUSTIVE
       bool cross_module;
-
-      /* filters */
-      char * extension;
-      uint16_t extension_len;
     };
 
     llist head;                                   // SELECTOR_AGGREGATE
   };
+
+  bool nofollow;             // MORIA_TRAVERSE_NOFOLLOW
+  bool hidden;
 
   llist lln;
 } selector;
@@ -107,19 +102,24 @@ void selector_alloc(selector_type type, selector ** restrict s)
 
 typedef struct selector_context {
   /* inputs */
-  struct dependency * bpe;      // set when run in the context of a build slot
-  struct module * mod;
+  struct buildplan_entity *bpe;      // set when run in the context of a build slot
+  const struct module *mod;
+  const struct fsent *cwd;
   selection_iteration_type iteration_type;
 
   // mutable
   selector * sel;
 
   // results
+  entlist lookup_hits;
   struct selection * selection; // the active selection
   struct channel * chan;
 } selector_context;
 
-void selector_context_xdestroy(selector_context *ctx)
+void selector_context_init(selector_context *ctx)
+  __attribute__((nonnull));
+
+void selector_context_destroy(selector_context *ctx)
   __attribute__((nonnull));
 
 /*
@@ -131,5 +131,29 @@ void selector_exec(selector * restrict s, selector_context * restrict ctx, selec
 void selector_say(selector * restrict s, struct narrator * const restrict N)
   __attribute__((nonnull));
 
-void selector_writer_write(selector * const restrict sel, struct value_writer * const restrict writer)
+void selector_writer_write(selector * const restrict sel, struct bacon_writer * const restrict writer)
+  __attribute__((nonnull));
+
+void selector_graph_fstree(moria_traversal_criteria *criteria)
+  __attribute__((nonnull));
+
+void selector_graph_fstree_hidden(moria_traversal_criteria *criteria)
+  __attribute__((nonnull));
+
+void selector_graph_modtree(moria_traversal_criteria *criteria)
+  __attribute__((nonnull));
+
+void selector_graph_dirtree(moria_traversal_criteria *criteria)
+  __attribute__((nonnull));
+
+void selector_graph_depends(moria_traversal_criteria *criteria)
+  __attribute__((nonnull));
+
+void selector_graph_imports(moria_traversal_criteria *criteria)
+  __attribute__((nonnull));
+
+void selector_graph_uses(moria_traversal_criteria *criteria)
+  __attribute__((nonnull));
+
+void selector_graph_requires(moria_traversal_criteria *criteria)
   __attribute__((nonnull));

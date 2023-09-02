@@ -23,20 +23,23 @@
 #include "build.h"
 #include "buildplan.h"
 #include "config.h"
-#include "config.internal.h"
+#include "configuration.h"
+#include "config_system.h"
 #include "filesystem.h"
 #include "formula.h"
 #include "path_cache.h"
 #include "rule_system.h"
 #include "module.h"
-#include "rule_module.h"
+#include "block.h"
+#include "rule_module_association.h"
+#include "module_edge.h"
 #include "monitor_thread.h"
 #include "fsent.h"
 #include "shadow.h"
 #include "notify_thread.h"
 #include "params.h"
 #include "args.h"
-#include "request.internal.h"
+#include "request.h"
 #include "server_thread.h"
 #include "dependency.h"
 #include "sweeper_thread.h"
@@ -45,12 +48,21 @@
 #include "channel.h"
 #include "handler.h"
 #include "var.h"
-#include "variant.h"
 #include "goals.h"
 #include "stats.h"
 #include "selection.h"
 #include "walker.h"
+#include "rules.h"
+#include "special_edge.h"
+#include "index_edge.h"
+#include "meta_edge.h"
+#include "rule_module_association.h"
+#include "buildplan_entity.h"
+#include "entlist.h"
+#include "fsedge.h"
 #include "backtracef.h"
+#include "rcu.h"
+#include "index_vertex.h"
 
 #include "common/parseint.h"
 #include "common/hash.h"
@@ -77,9 +89,6 @@ static void xmain()
 
   xpthread_sigmask(SIG_SETMASK, &sigs, 0);
 
-  setvbuf(stdout, NULL, _IONBF, 0);
-  setvbuf(stderr, NULL, _IONBF, 0);
-
   notify_thread_launch();
   server_thread_launch();
   sweeper_thread_launch();
@@ -88,14 +97,48 @@ static void xmain()
   monitor_thread();
 }
 
+/* normally, libfab/client obtains this lockfile before fork, and this process
+ * has inherited the lock */
+static void getlock(void)
+{
+  pid_t pid;
+  int lockfd = -1;
+  char path[512];
+
+  snprintf(path, sizeof(path), "%s/fabd/lock", g_params.ipcdir);
+  fabipc_lockfile_acquire(&pid, &lockfd, path);
+  if(!pid || pid == getpid()) {
+    xclose(lockfd);
+    /* fastpath lock-held check */
+    return;
+  }
+
+  fabipc_lockfile_obtain(&pid, &lockfd, "%s", path);
+  if(pid && pid != getpid()) {
+    fprintf(stderr, "daemon still running pid %ld\n", (long)pid);
+    exit(1);
+  }
+
+  /* this normally happens in libfab/client right after fork, but the lock
+   * was not inherited */
+  xchdirf("%s/fabd", g_params.ipcdir);
+  uxunlinks("exit");
+  uxunlinks("core");
+}
+
 int main(int argc, char ** argv)
 {
   int r;
+  int fd;
+  char buf[32];
+
+  setvbuf(stdout, NULL, _IONBF, 0);
+  setvbuf(stderr, NULL, _IONBF, 0);
 
   r = 0;
   tid = g_params.thread_monitor = gettid();
 
-#ifdef CONFIG_DEVEL
+#if CONFIG_DEVEL
   backtracef_setup();
 #endif
 
@@ -107,36 +150,17 @@ int main(int argc, char ** argv)
   bacon_load();
 
   args_setup(argc, argv);
-  params_setup(g_args.hash);
+  params_setup();
 
-#if CONFIG_DEVEL
-  /* this normally happens in libfab/client right before fork */
-  pid_t pid;
-  int lockfd = -1;
-  int x;
-  for(x = 0; x < 3; x++)
-  {
-    fabipc_lockfile_obtain(&pid, &lockfd, "%s/fabd/lock", g_params.ipcdir);
-    if(!pid || pid == getpid()) {
-      break;
-    }
+  printf("hash : %s\n", g_args.hash_str);
+  printf("pid : %d\n", g_params.pid);
+  printf("homedir : %.*s\n", (int)g_params.homedir_len, g_params.homedir);
+  printf("ipcdir : %.*s\n", (int)g_params.ipcdir_len, g_params.ipcdir);
 
-    if(!g_args.kill) {
-      break;
-    }
+  getlock();
 
-    uxkill(pid, SIGTERM);
-    sleep(1);
-  }
-  if(pid && pid != getpid()) {
-    fprintf(stderr, "daemon still running pid %ld", (long)pid);
-    RTA;
-  }
-
-  /* this normally happens in libfab/client right after fork */
-  xchdirf("%s/fabd", g_params.ipcdir);
-  uxunlinks("exit");
-  uxunlinks("core");
+#if CONFIG_DEBUG || CONFIG_DEVEL
+  rcu_is_registered = true;
 #endif
 
   // modules
@@ -151,16 +175,21 @@ int main(int argc, char ** argv)
   shadow_setup();
   module_setup();
   config_setup();
+  configuration_setup();
   notify_thread_setup();
   var_setup();
-  variant_setup();
   goals_setup();
   handler_setup();
   walker_setup();
+  rules_setup();
+  buildplan_entity_setup();
+  entlist_setup();
+  config_system_setup();
+  index_vertex_setup();
 
   /* comment */
+  xrealpathf(g_cwd_path, "%s/%016"PRIx64"/projdir", XQUOTE(FABIPCDIR), g_args.hash);
   fsent_system_bootstrap();
-  module_system_bootstrap();
   config_system_bootstrap();
 
   xmain();
@@ -168,19 +197,18 @@ int main(int argc, char ** argv)
   // modules
   buildplan_cleanup();
   config_cleanup();
+  config_system_cleanup();
+  configuration_cleanup();
   filesystem_cleanup();
   module_cleanup();
-  rule_module_cleanup();
   fsent_cleanup();
   shadow_cleanup();
   notify_thread_cleanup();
-  params_cleanup();
   sweeper_thread_cleanup();
   build_cleanup();
   path_cache_cleanup();
   formula_cleanup();
   var_cleanup();
-  variant_cleanup();
   goals_cleanup();
   handler_cleanup();
   selection_cleanup();
@@ -188,6 +216,15 @@ int main(int argc, char ** argv)
   walker_cleanup();
   request_cleanup();
   graph_cleanup();
+  block_cleanup();
+  module_module_cleanup();
+  rules_cleanup();
+  special_edge_cleanup();
+  index_edge_cleanup();
+  meta_edge_cleanup();
+  rule_module_association_cleanup();
+  entlist_cleanup();
+  index_vertex_cleanup();
 
   // libraries
   fab_unload();
@@ -197,6 +234,14 @@ int main(int argc, char ** argv)
   bacon_unload();
 
   r |= g_params.handler_error;  // error on a handler thread
+
+  /* best-effort attempt to save our exit status */
+  fd = uxopen_modef(O_CREAT | O_WRONLY, 0666, "%s/fabd/exit", g_params.ipcdir);
+  if(fd != -1) {
+    snprintf(buf, sizeof(buf), "%d\n", r);
+    write(fd, buf, strlen(buf));
+    close(fd);
+  }
 
   return r;
 }

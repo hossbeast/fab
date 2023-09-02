@@ -114,7 +114,7 @@ void pattern_parser_create(pattern_parser ** rv)
   *rv = p;
 }
 
-void pattern_parser_xfree(pattern_parser* const p)
+void pattern_parser_free(pattern_parser* const p)
 {
   if(p)
   {
@@ -129,10 +129,44 @@ void pattern_parser_xfree(pattern_parser* const p)
   free(p);
 }
 
-void pattern_parser_ixfree(pattern_parser ** const p)
+void pattern_parser_ifree(pattern_parser ** const p)
 {
-  pattern_parser_xfree(*p);
+  pattern_parser_free(*p);
   *p = 0;
+}
+
+static int parse_partial(
+    pattern_parser * restrict parser
+  , yyu_parser *yyu
+  , char * const restrict buf
+  , size_t size
+  , const char * restrict fname
+  , yyu_location * init_loc
+  , yyu_location * used_loc
+  , pattern ** restrict rv
+)
+{
+  int r;
+
+  parser->group_counter = 0;
+  parser->capture_group_counter = 0;
+  parser->yyu = yyu;
+
+  r = yyu_parse(parser->yyu, buf, size, fname, YYU_PARTIAL | YYU_INPLACE, init_loc, used_loc);
+  if(r) {
+  } else if(rv) {
+    if(fname && parser->pattern) {
+      ixstrdup(&parser->pattern->fname, fname);
+    }
+    parser->pattern->groups_count = parser->group_counter;
+    parser->pattern->capture_groups_count = parser->capture_group_counter;
+    *rv = parser->pattern;
+    parser->pattern = 0;
+  }
+
+  pattern_free(parser->pattern);
+
+  return r;
 }
 
 int search_pattern_parse_partial(
@@ -145,22 +179,7 @@ int search_pattern_parse_partial(
   , pattern ** restrict rv
 )
 {
-  int r;
-
-  r = parser->group_counter = 0;
-  yyu_parse(&parser->search_yyu, buf, size, fname, YYU_PARTIAL | YYU_INPLACE, init_loc, used_loc);
-  if(rv)
-  {
-    if(fname) {
-      ixstrdup(&parser->pattern->fname, fname);
-    }
-    *rv = parser->pattern;
-    parser->pattern = 0;
-  }
-
-  pattern_free(parser->pattern);
-
-  return r;
+  return parse_partial(parser, &parser->search_yyu, buf, size, fname, init_loc, used_loc, rv);
 }
 
 int generate_pattern_parse_partial(
@@ -173,21 +192,7 @@ int generate_pattern_parse_partial(
   , pattern ** restrict rv
 )
 {
-  int r;
-
-  r = yyu_parse(&parser->generate_yyu, buf, size, fname, YYU_PARTIAL | YYU_INPLACE, init_loc, used_loc);
-  if(rv)
-  {
-    if(fname) {
-      ixstrdup(&parser->pattern->fname, fname);
-    }
-    *rv = parser->pattern;
-    parser->pattern = 0;
-  }
-
-  pattern_free(parser->pattern);
-
-  return r;
+  return parse_partial(parser, &parser->generate_yyu, buf, size, fname, init_loc, used_loc, rv);
 }
 
 int reference_pattern_parse_partial(
@@ -200,21 +205,7 @@ int reference_pattern_parse_partial(
   , pattern ** restrict rv
 )
 {
-  int r;
-
-  r = yyu_parse(&parser->reference_yyu, buf, size, fname, YYU_PARTIAL | YYU_INPLACE, init_loc, used_loc);
-  if(rv)
-  {
-    if(fname) {
-      ixstrdup(&parser->pattern->fname, fname);
-    }
-    *rv = parser->pattern;
-    parser->pattern = 0;
-  }
-
-  pattern_free(parser->pattern);
-
-  return r;
+  return parse_partial(parser, &parser->reference_yyu, buf, size, fname, init_loc, used_loc, rv);
 }
 
 int lookup_pattern_parse_partial(
@@ -227,21 +218,7 @@ int lookup_pattern_parse_partial(
   , pattern ** restrict rv
 )
 {
-  int r;
-
-  r = yyu_parse(&parser->lookup_yyu, buf, size, fname, YYU_PARTIAL | YYU_INPLACE, init_loc, used_loc);
-  if(rv)
-  {
-    if(fname) {
-      ixstrdup(&parser->pattern->fname, fname);
-    }
-    *rv = parser->pattern;
-    parser->pattern = 0;
-  }
-
-  pattern_free(parser->pattern);
-
-  return r;
+  return parse_partial(parser, &parser->lookup_yyu, buf, size, fname, init_loc, used_loc, rv);
 }
 
 int include_pattern_parse_partial(
@@ -254,21 +231,7 @@ int include_pattern_parse_partial(
   , pattern ** restrict rv
 )
 {
-  int r;
-
-  r = yyu_parse(&parser->include_yyu, buf, size, fname, YYU_PARTIAL | YYU_INPLACE, init_loc, used_loc);
-  if(rv)
-  {
-    if(fname) {
-      ixstrdup(&parser->pattern->fname, fname);
-    }
-    *rv = parser->pattern;
-    parser->pattern = 0;
-  }
-
-  pattern_free(parser->pattern);
-
-  return r;
+  return parse_partial(parser, &parser->include_yyu, buf, size, fname, init_loc, used_loc, rv);
 }
 
 int match_pattern_parse_partial(
@@ -281,18 +244,35 @@ int match_pattern_parse_partial(
   , pattern ** restrict rv
 )
 {
+  return parse_partial(parser, &parser->match_yyu, buf, size, fname, init_loc, used_loc, rv);
+}
+
+int lookup_pattern_parse(
+    pattern_parser * restrict parser
+  , char * const restrict buf
+  , size_t size
+  , const char * restrict fname
+  , pattern ** restrict rv
+)
+{
   int r;
 
-  r = yyu_parse(&parser->match_yyu, buf, size, fname, YYU_PARTIAL | YYU_INPLACE, init_loc, used_loc);
-  if(rv)
-  {
-    if(fname) {
+  parser->group_counter = 0;
+  parser->capture_group_counter = 0;
+  parser->yyu = &parser->lookup_yyu;
+
+  if((r = yyu_parse(parser->yyu, buf, size, fname, YYU_INPLACE, 0, 0))) {
+  } else if(rv) {
+    if(fname && parser->pattern) {
       ixstrdup(&parser->pattern->fname, fname);
     }
+    parser->pattern->groups_count = parser->group_counter;
+    parser->pattern->capture_groups_count = parser->capture_group_counter;
     *rv = parser->pattern;
     parser->pattern = 0;
   }
 
   pattern_free(parser->pattern);
+
   return r;
 }

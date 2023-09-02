@@ -13,10 +13,10 @@ void formula_parser_create(formula_parser ** const restrict p)
   __attribute__((nonnull));
 
 /* free a formula parser with free semantics */
-void formula_parser_xfree(formula_parser * restrict);
+void formula_parser_free(formula_parser * restrict);
 
 /* free a formula parser with ifree semantics */
-void formula_parser_ixfree(formula_parser ** restrict)
+void formula_parser_ifree(formula_parser ** restrict)
   __attribute__((nonnull));
 
 int formula_parser_parse(

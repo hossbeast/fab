@@ -3,48 +3,59 @@
 
 #include "common/hash.h"
 #include "moria.h"
-#include "valyria/set.h"
+#include "valyria/hashtable.h"
 #include "xlinux/xstdlib.h"
 
 #include "selection.h"
 #include "dependency.h"
+#include "buildplan_entity.h"
 
 static llist selected_entity_freelist = LLIST_INITIALIZER(selected_entity_freelist);
 
-static uint32_t selected_entity_hash(uint32_t h, const void * restrict _val, size_t sz)
+static uint32_t selected_entity_hash(uint32_t h, const void * restrict _val)
 {
-  selected *sn = (void*)_val;
+  const selected *sn = _val;
   return hash32(h, &sn->p, sizeof(sn->p));
 }
 
-static int selected_entity_cmp(const void * _A, size_t Az, const void *_B, size_t Bz)
+static int selected_entity_cmp(const void * _A, const void *_B)
 {
-  selected *sa = (void*)_A;
-  selected *sb = (void*)_B;
+  const selected *sa = _A;
+  const selected *sb = _B;
 
   return INTCMP(sa->p, sb->p);
 }
 
-static void __attribute__((nonnull)) selection_add(selection * restrict sel, void *v, uint16_t distance)
+static void __attribute__((nonnull)) selection_add(selection * restrict sel, enum selected_type type, const void *v, uint16_t distance)
 {
   selected snk = { p : v };
   selected *sn = 0;
   size_t newa;
   int x;
+  hashtable_search_context ctx;
 
-  if((sn = set_get(sel->selected_entities, &snk, 0)) == 0)
+  ctx = (typeof(ctx)) {
+    entry : &snk
+  };
+  if(hashtable_search(&sel->selected_entities, &ctx))
+  {
+    sn = hashtable_fetch(&sel->selected_entities, &ctx);
+  }
+  else
   {
     if((sn = llist_shift(&selected_entity_freelist, typeof(*sn), lln)) == 0)
     {
       xmalloc(&sn, sizeof(*sn));
-      llist_init_node(&sn->lln);
+      llist_init(&sn->lln);
     }
+    sn->type = type;
     sn->p = v;
-    set_put(sel->selected_entities, sn, 0);
+    ctx.entry = sn;
+    hashtable_set(&sel->selected_entities, &ctx);//sn, 0);
 
     if(sel->iteration_type == SELECTION_ITERATION_TYPE_ORDER)
     {
-      llist_append(&sel->list, sn, lln);
+      llist_append(&sel->list, &sn->lln);
       sn->distance = distance;
     }
     else
@@ -70,14 +81,14 @@ static void __attribute__((nonnull)) selection_add(selection * restrict sel, voi
       xrealloc(&sel->ranks, sizeof(*sel->ranks), newa, sel->ranks_alloc);
       for(x = sel->ranks_alloc; x < newa; x++) {
         xmalloc(&sel->ranks[x], sizeof(*sel->ranks[x]));
-        llist_init_node(sel->ranks[x]);
+        llist_init(sel->ranks[x]);
       }
       sel->ranks_alloc = newa;
     }
     sel->ranks_len = MAX(sel->ranks_len, distance + 1);
-    llist_delete(sn, lln);
+    llist_delete(&sn->lln);
     sn->rank = distance;
-    llist_append(sel->ranks[sn->rank], sn, lln);
+    llist_append(sel->ranks[sn->rank], &sn->lln);
   }
 }
 
@@ -95,15 +106,15 @@ void selection_cleanup()
   }
 }
 
-void selection_xinit(selection * restrict sel)
+void selection_init(selection * restrict sel)
 {
   memset(sel, 0, sizeof(*sel));
-  set_createx(&sel->selected_entities, 100, selected_entity_hash, selected_entity_cmp, 0);
-  llist_init_node(&sel->list);
+  hashtable_initx(&sel->selected_entities, 100, selected_entity_hash, selected_entity_cmp, 0);
+  llist_init(&sel->list);
   sel->initialized = true;
 }
 
-void selection_xdestroy(selection * restrict sel)
+void selection_destroy(selection * restrict sel)
 {
   int x;
 
@@ -113,7 +124,7 @@ void selection_xdestroy(selection * restrict sel)
 
   selection_reset(sel, 0);
 
-  set_xfree(sel->selected_entities);
+  hashtable_destroy(&sel->selected_entities);
 
   for(x = 0; x < sel->ranks_alloc; x++) {
     free(sel->ranks[x]);
@@ -125,14 +136,14 @@ void selection_xdestroy(selection * restrict sel)
 void selection_create(selection ** restrict selp, selection_iteration_type iteration_type)
 {
   xmalloc(selp, sizeof(**selp));
-  selection_xinit(*selp);
+  selection_init(*selp);
   (*selp)->iteration_type = iteration_type;
 }
 
-void selection_xfree(selection * restrict sel)
+void selection_free(selection * restrict sel)
 {
   if(sel) {
-    selection_xdestroy(sel);
+    selection_destroy(sel);
   }
   free(sel);
 }
@@ -141,7 +152,7 @@ void selection_reset(selection * restrict sel, selection_iteration_type iteratio
 {
   int x;
 
-  set_recycle(sel->selected_entities);
+  hashtable_recycle(&sel->selected_entities);
 
   for(x = 0; x < sel->ranks_len; x++) {
     llist_splice_tail(&selected_entity_freelist, sel->ranks[x]);
@@ -187,36 +198,37 @@ void selection_finalize(selection * restrict sel)
   }
 }
 
-void selection_add_vertex(selection * restrict sel, moria_vertex * restrict v, uint16_t rank)
+void selection_add_vertex(selection * restrict sel, const moria_vertex * restrict v, uint16_t rank)
 {
-  selection_add(sel, v, rank);
+  selection_add(sel, SELECTED_VERTEX, v, rank);
 }
 
-void selection_add_dependency(selection * restrict sel, dependency * restrict bpe, uint16_t rank)
+void selection_add_bpe(selection * restrict sel, const buildplan_entity * restrict bpe, uint16_t rank)
 {
-  selection_add(sel, bpe, rank);
+  selection_add(sel, SELECTED_BPE, bpe, rank);
 }
 
 void selection_replicate(selection * restrict dst, selection * restrict src)
 {
-  selected snk;
-  selected *sn;
   selected *ssn;
+  selected *dsn;
+  hashtable_search_context ctx = { };
 
   llist_foreach(&src->list, ssn, lln) {
-    snk.p = ssn->p;
-    if((sn = set_get(dst->selected_entities, &snk, 0))) {
+    ctx.entry = ssn;
+    if(hashtable_search(&dst->selected_entities, &ctx)) {
       continue;
     }
 
-    if((sn = llist_shift(&selected_entity_freelist, typeof(*sn), lln)) == 0)
+    if((dsn = llist_shift(&selected_entity_freelist, typeof(*dsn), lln)) == 0)
     {
-      xmalloc(&sn, sizeof(*sn));
-      llist_init_node(&sn->lln);
+      xmalloc(&dsn, sizeof(*dsn));
+      llist_init(&dsn->lln);
     }
-/* this is wrong */
-    sn->p = ssn->p;
-    set_put(dst->selected_entities, sn, 0);
-    llist_append(&dst->list, sn, lln);
+    dsn->p = ssn->p;
+
+    ctx.entry = dsn;
+    hashtable_set(&dst->selected_entities, &ctx);
+    llist_append(&dst->list, &dsn->lln);
   }
 }

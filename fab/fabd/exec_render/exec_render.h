@@ -15,16 +15,20 @@ exec_render - write strings to an exec_builder
 #include "selector.h"
 #include "fsent.h"
 
+struct module;
 struct fsent;
 struct narrator;
 struct formula_value;
-struct value;
+struct bacon_value;
 struct build_slot;
 
 typedef struct exec_render_context {
   /* input */
-  const struct value * vars;
-  const struct build_slot * bs;
+  const struct bacon_value *vars0;
+  const struct bacon_value *vars;
+  const struct build_slot *bs;
+  const struct fsent *cwd;
+  const struct module *mod;
   selector_context selector_context;
 
   /* operation state */
@@ -35,23 +39,25 @@ typedef struct exec_render_context {
   exec_builder_args builder_args;
 } exec_render_context;
 
-void exec_render_context_xinit(exec_render_context * restrict ctx)
+void exec_render_context_init(exec_render_context * restrict ctx)
   __attribute__((nonnull));
 
-void exec_render_context_xreset(exec_render_context * restrict ctx)
+void exec_render_context_reset(exec_render_context * restrict ctx)
   __attribute__((nonnull));
 
-void exec_render_context_xdestroy(exec_render_context * restrict ctx)
+void exec_render_context_destroy(exec_render_context * restrict ctx)
   __attribute__((nonnull));
 
 void exec_render_context_configure(
     exec_render_context * restrict ctx
   , exec_builder * restrict builder
-  , struct module * restrict mod
-  , const struct value * restrict vars
+  , const struct fsent * restrict cwd
+  , const struct module * restrict mod
+  , const struct bacon_value * restrict vars    // used by exec_render_env_vars
+  , const struct bacon_value * restrict vars0   // not used by exec_render_env_vars
   , const struct build_slot * restrict bs
 )
-  __attribute__((nonnull(1, 2)));
+  __attribute__((nonnull(1, 2, 3)));
 
 /*
  * render a formula value to the file parameter of an exec builder
@@ -72,13 +78,7 @@ void exec_render_envs(exec_render_context * restrict ctx, const struct formula_v
   __attribute__((nonnull));
 
 /*
- *
- */
-void exec_render_env_sysvars(exec_render_context * restrict ctx, const struct build_slot * restrict bs)
-  __attribute__((nonnull));
-
-/*
- * build an env list from a VALUE_TYPE_SET
+ * build an env list from the ctx->vars BACON_TYPE_SET
  */
 void exec_render_env_vars(exec_render_context * restrict ctx)
   __attribute__((nonnull));
@@ -86,7 +86,7 @@ void exec_render_env_vars(exec_render_context * restrict ctx)
 /*
  * write environment variable value text
  */
-void exec_render_value(exec_render_context * restrict ctx, const struct value * restrict val)
+void exec_render_value(exec_render_context * restrict ctx, const struct bacon_value * restrict val)
   __attribute__((nonnull));
 
 void exec_render_formula_value(exec_render_context * restrict ctx, const struct formula_value * restrict val)

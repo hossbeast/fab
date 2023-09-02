@@ -7,6 +7,7 @@
 
 #include "xlinux/xstdlib.h"
 #include "xlinux/xstring.h"
+#include "xlinux/xunistd.h"
 
 #include "params.h"
 
@@ -19,6 +20,9 @@ struct g_params g_params;
 void params_setup()
 {
   g_params.pid = getpid();
+
+  xgetcwd(g_params.cwd, sizeof(g_params.cwd));
+  g_params.cwd_len = strlen(g_params.cwd);
 
 #if CONFIG_DEVEL
   char space[512];

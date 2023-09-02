@@ -18,16 +18,20 @@
   #include "autobuild.h"
   #include "build.h"
   #include "describe.h"
+  #include "fstree.h"
+  #include "filesystem.h"
   #include "events.h"
   #include "metadata.h"
   #include "config.h"
   #include "vars.h"
+  #include "envs.h"
+  #include "rules.h"
   #include "reconcile.h"
   #include "stats.h"
   #include "touch.h"
   #include "kill.h"
   #include "tree.h"
-  #include "ls.h"
+  #include "trace.h"
 }
 
 %code top {
@@ -79,6 +83,9 @@
  BUILD                          "build"
  DEPENDS                        "depends"
  FSTREE                         "fstree"
+ FSTREE_HIDDEN                  "fstree-hidden"
+ FILESYSTEM                     "filesystem"
+ RELATION                       "relation"
  DIRTREE                        "dirtree"
  MODTREE                        "modtree"
  IMPORTS                        "imports"
@@ -97,9 +104,14 @@
  METADATA                       "metadata"
  CONFIG                         "config"
  VARS                           "vars"
+ ENV                            "env"
+ ENVS                           "envs"
+ RULE                           "rule"
+ RULES                          "rules"
  RECONCILE                      "reconcile"
  TRUE                           "true"
  FALSE                          "false"
+ TRACE                          "trace"
 /* events */
  STALE                          "stale"
  FRESH                          "fresh"
@@ -124,6 +136,16 @@
  ldown                          "--down"
  lgraph                         "--graph"
  lpaths                         "--paths"
+ llabels                        "--labels"
+ lspecial_only                  "--special-only"
+ lno_special                    "--no-special"
+ lfollow                        "--follow"
+ lno_follow                     "--no-follow"
+ lno_color                      "--no-color"
+ lmodule                        "--module"
+ lno_module                     "--no-module"
+ lmax_distance                  "--max-distance"
+ lmin_distance                  "--min-distance"
 
  lon_success_show_path                "--on-success-show-path"
  lon_success_show_cwd                 "--on-success-show-cwd"
@@ -170,6 +192,7 @@
  sd   "-d"
  sg   "-g"
  sh   "-h"
+ sm   "-m"
  su   "-u"
  sv   "-v"
  svv  "-vv"
@@ -179,6 +202,8 @@
  sx   "-x"
  pt   "+t"
  px   "+x"
+ sS   "-S"
+ sL   "-L"
 
 /* these are devel only */
 %token
@@ -210,47 +235,50 @@ initial-arguments-list
 global-argument
   : help            { ARGS->help = true; }
   | version         { ARGS->version = true; }
-  | sv              { tracef(); ARGS->verbose++; }
+  | sv              { ARGS->verbose++; }
   | svv             { ARGS->verbose += 2; }
   | svvv            { ARGS->verbose += 3; }
   | sK              { ARGS->kill = true; }
   | sB              { ARGS->invalidate = true; }
+  | sm bead         { args_set_module_path($2.s, $2.len); }
+  | lmodule bead    { args_set_module_path($2.s, $2.len); }
+  | lno_module      { args_set_no_module(); }
   | lno_launch      { ARGS->no_launch = true; }
-
-  | lon_success_show_path bool                  { ARGS->build->success.show_path = $2; }
-  | lon_success_show_cwd bool                   { ARGS->build->success.show_cwd = $2; }
-  | lon_success_show_command bool               { ARGS->build->success.show_command = $2; }
-  | lon_success_show_arguments bool             { ARGS->build->success.show_arguments = $2; }
-  | lon_success_show_environment bool           { ARGS->build->success.show_environment = $2; }
-  | lon_success_show_sources bool               { ARGS->build->success.show_sources = $2; }
-  | lon_success_show_targets bool               { ARGS->build->success.show_targets = $2; }
-  | lon_success_show_status bool                { ARGS->build->success.show_status = $2; }
-  | lon_success_show_stdout bool                { ARGS->build->success.show_stdout = $2; }
-  | lon_success_show_stdout_limit_lines uint16  { ARGS->build->success.show_stdout_limit_lines = $2; }
-  | lon_success_show_stdout_limit_bytes uint16  { ARGS->build->success.show_stdout_limit_bytes = $2; }
-  | lon_success_show_stderr bool                { ARGS->build->success.show_stderr = $2; }
-  | lon_success_show_stderr_limit_lines uint16  { ARGS->build->success.show_stderr_limit_lines = $2; }
-  | lon_success_show_stderr_limit_bytes uint16  { ARGS->build->success.show_stderr_limit_bytes = $2; }
-  | lon_success_show_auxout bool                { ARGS->build->success.show_auxout = $2; }
-  | lon_success_show_auxout_limit_lines uint16  { ARGS->build->success.show_auxout_limit_lines = $2; }
-  | lon_success_show_auxout_limit_bytes uint16  { ARGS->build->success.show_auxout_limit_bytes = $2; }
-  | lon_error_show_path bool                    { ARGS->build->error.show_path = $2; }
-  | lon_error_show_cwd bool                     { ARGS->build->error.show_cwd = $2; }
-  | lon_error_show_command bool                 { ARGS->build->error.show_command = $2; }
-  | lon_error_show_arguments bool               { ARGS->build->error.show_arguments = $2; }
-  | lon_error_show_environment bool             { ARGS->build->error.show_environment = $2; }
-  | lon_error_show_sources bool                 { ARGS->build->error.show_sources = $2; }
-  | lon_error_show_targets bool                 { ARGS->build->error.show_targets = $2; }
-  | lon_error_show_status bool                  { ARGS->build->error.show_status = $2; }
-  | lon_error_show_stdout bool                  { ARGS->build->error.show_stdout = $2; }
-  | lon_error_show_stdout_limit_lines uint16    { ARGS->build->error.show_stdout_limit_lines = $2; }
-  | lon_error_show_stdout_limit_bytes uint16    { ARGS->build->error.show_stdout_limit_bytes = $2; }
-  | lon_error_show_stderr bool                  { ARGS->build->error.show_stderr = $2; }
-  | lon_error_show_stderr_limit_lines uint16    { ARGS->build->error.show_stderr_limit_lines = $2; }
-  | lon_error_show_stderr_limit_bytes uint16    { ARGS->build->error.show_stderr_limit_bytes = $2; }
-  | lon_error_show_auxout bool                  { ARGS->build->error.show_auxout = $2; }
-  | lon_error_show_auxout_limit_lines uint16    { ARGS->build->error.show_auxout_limit_lines = $2; }
-  | lon_error_show_auxout_limit_bytes uint16    { ARGS->build->error.show_auxout_limit_bytes = $2; }
+  | lno_color       { ARGS->no_color = true; }
+  | lon_success_show_path bool                  { build_args.success.show_path = $2; }
+  | lon_success_show_cwd bool                   { build_args.success.show_cwd = $2; }
+  | lon_success_show_command bool               { build_args.success.show_command = $2; }
+  | lon_success_show_arguments bool             { build_args.success.show_arguments = $2; }
+  | lon_success_show_environment bool           { build_args.success.show_environment = $2; }
+  | lon_success_show_sources bool               { build_args.success.show_sources = $2; }
+  | lon_success_show_targets bool               { build_args.success.show_targets = $2; }
+  | lon_success_show_status bool                { build_args.success.show_status = $2; }
+  | lon_success_show_stdout bool                { build_args.success.show_stdout = $2; }
+  | lon_success_show_stdout_limit_lines uint16  { build_args.success.show_stdout_limit_lines = $2; }
+  | lon_success_show_stdout_limit_bytes uint16  { build_args.success.show_stdout_limit_bytes = $2; }
+  | lon_success_show_stderr bool                { build_args.success.show_stderr = $2; }
+  | lon_success_show_stderr_limit_lines uint16  { build_args.success.show_stderr_limit_lines = $2; }
+  | lon_success_show_stderr_limit_bytes uint16  { build_args.success.show_stderr_limit_bytes = $2; }
+  | lon_success_show_auxout bool                { build_args.success.show_auxout = $2; }
+  | lon_success_show_auxout_limit_lines uint16  { build_args.success.show_auxout_limit_lines = $2; }
+  | lon_success_show_auxout_limit_bytes uint16  { build_args.success.show_auxout_limit_bytes = $2; }
+  | lon_error_show_path bool                    { build_args.error.show_path = $2; }
+  | lon_error_show_cwd bool                     { build_args.error.show_cwd = $2; }
+  | lon_error_show_command bool                 { build_args.error.show_command = $2; }
+  | lon_error_show_arguments bool               { build_args.error.show_arguments = $2; }
+  | lon_error_show_environment bool             { build_args.error.show_environment = $2; }
+  | lon_error_show_sources bool                 { build_args.error.show_sources = $2; }
+  | lon_error_show_targets bool                 { build_args.error.show_targets = $2; }
+  | lon_error_show_status bool                  { build_args.error.show_status = $2; }
+  | lon_error_show_stdout bool                  { build_args.error.show_stdout = $2; }
+  | lon_error_show_stdout_limit_lines uint16    { build_args.error.show_stdout_limit_lines = $2; }
+  | lon_error_show_stdout_limit_bytes uint16    { build_args.error.show_stdout_limit_bytes = $2; }
+  | lon_error_show_stderr bool                  { build_args.error.show_stderr = $2; }
+  | lon_error_show_stderr_limit_lines uint16    { build_args.error.show_stderr_limit_lines = $2; }
+  | lon_error_show_stderr_limit_bytes uint16    { build_args.error.show_stderr_limit_bytes = $2; }
+  | lon_error_show_auxout bool                  { build_args.error.show_auxout = $2; }
+  | lon_error_show_auxout_limit_lines uint16    { build_args.error.show_auxout_limit_lines = $2; }
+  | lon_error_show_auxout_limit_bytes uint16    { build_args.error.show_auxout_limit_bytes = $2; }
 
  /* devel only */
   | lsystem_config_path bead            { ARGS->system_config_path = $2; }
@@ -271,21 +299,28 @@ version
   ;
 
 command-arguments
-  : TREE      tree-arguments      { g_cmd = &tree_command; }
-  | LS        ls-arguments        { g_cmd = &ls_command; }
-  | BUILD     build-arguments     { g_cmd = &build_command; }
-  | AUTOBUILD build-arguments     { g_cmd = &autobuild_command; }
-  | TOUCH     touch-arguments     { g_cmd = &touch_command; }
-  | STATS     stats-arguments     { g_cmd = &stats_command; }
-  | ADHOC     adhoc-arguments     { g_cmd = &adhoc_command; }
-  | EVENTS    events-arguments    { g_cmd = &events_command; }
-  | DESCRIBE  describe-arguments  { g_cmd = &describe_command; }
-  | METADATA  metadata-arguments  { g_cmd = &metadata_command; }
-  | CONFIG    config-arguments    { g_cmd = &config_command; }
-  | VARS      vars-arguments      { g_cmd = &vars_command; }
-  | KILL      kill-arguments      { g_cmd = &kill_command; ARGS->kill = true; }
-  | RECONCILE reconcile-arguments { g_cmd = &reconcile_command; }
-  | %empty                        { g_cmd = &build_command; }
+  : TREE         { args_command_start(&tree_command, 0); }        tree-arguments         { args_command_finish(); }
+  | LS           { args_command_start(&tree_command, TREE_LS); }  tree-arguments         { args_command_finish(); }
+  | BUILD        { args_command_start(&build_command, 0); }       build-arguments        { args_command_finish(); }
+  | AUTOBUILD    { args_command_start(&autobuild_command, 0); }   build-arguments        { args_command_finish(); }
+  | TOUCH        { args_command_start(&touch_command, 0); }       touch-arguments        { args_command_finish(); }
+  | STATS        { args_command_start(&stats_command, 0); }       stats-arguments        { args_command_finish(); }
+  | ADHOC        { args_command_start(&adhoc_command, 0); }       adhoc-arguments        { args_command_finish(); }
+  | EVENTS       { args_command_start(&events_command, 0); }      events-arguments       { args_command_finish(); }
+  | DESCRIBE     { args_command_start(&describe_command, 0); }    describe-arguments     { args_command_finish(); }
+  | FSTREE       { args_command_start(&fstree_command, 0); }      fstree-arguments       { args_command_finish(); }
+  | FILESYSTEM   { args_command_start(&filesystem_command, 0); }  filesystem-arguments   { args_command_finish(); }
+  | METADATA     { args_command_start(&metadata_command, 0); }    metadata-arguments     { args_command_finish(); }
+  | CONFIG       { args_command_start(&config_command, 0); }      config-arguments       { args_command_finish(); }
+  | VARS         { args_command_start(&vars_command, 0); }        vars-arguments         { args_command_finish(); }
+  | ENV          { args_command_start(&envs_command, 0); }        envs-arguments         { args_command_finish(); }
+  | ENVS         { args_command_start(&envs_command, 0); }        envs-arguments         { args_command_finish(); }
+  | RULE         { args_command_start(&rule_command, 0); }        rule-arguments         { args_command_finish(); }
+  | RULES        { args_command_start(&rules_command, 0); }       rules-arguments        { args_command_finish(); }
+  | KILL         { args_command_start(&kill_command, 0); }        kill-arguments         { args_command_finish(); }
+  | RECONCILE    { args_command_start(&reconcile_command, 0); }   reconcile-arguments    { args_command_finish(); }
+  | TRACE        { args_command_start(&trace_command, 0); }       trace-arguments        { args_command_finish(); }
+  | %empty                                                                               { args_command_finish(); }
   ;
 
 tree-arguments
@@ -302,63 +337,47 @@ tree-argument
   : global-argument
   | graph graph-type
   {
-    ARGS->tree->graph = $2;
+    tree_args.graph = $2;
   }
   | up
   {
-    ARGS->tree->direction = "up";
-    ARGS->tree->both = false;
+    tree_args.direction = "up";
+    tree_args.both = false;
   }
   | down
   {
-    ARGS->tree->direction = "down";
-    ARGS->tree->both = false;
+    tree_args.direction = "down";
+    tree_args.both = false;
   }
   | both
   {
-    ARGS->tree->both = true;
+    tree_args.both = true;
   }
   | lpaths
   {
-    ARGS->tree->show_paths = true;
+    tree_args.show_paths = true;
+    tree_args.show_labels = false;
+  }
+  | llabels
+  {
+    tree_args.show_paths = false;
+    tree_args.show_labels = true;
   }
   | bead
   {
-    ARGS->tree->target = $1;
+    tree_args.target = $1;
   }
-  ;
-
-ls-arguments
-  : ls-argument-list
-  | %empty
-  ;
-
-ls-argument-list
-  : ls-argument-list ls-argument
-  | ls-argument
-  ;
-
-ls-argument
-  : global-argument
-  | graph graph-type
+  | lmin_distance uint16
   {
-    ARGS->ls->graph = $2;
+    tree_args.min_distance = $2;
   }
-  | up
+  | lmax_distance uint16
   {
-    ARGS->ls->direction = "up";
+    tree_args.max_distance = $2;
   }
-  | down
+  | lno_follow
   {
-    ARGS->ls->direction = "down";
-  }
-  | lpaths
-  {
-    ARGS->ls->show_paths = true;
-  }
-  | bead
-  {
-    ARGS->ls->target = $1;
+    tree_args.nofollow = true;
   }
   ;
 
@@ -377,29 +396,29 @@ build-argument
   | build-target
   | sx build-target
   {
-    ARGS->build->targets[ARGS->build->targets_len].mode = 'x';
+    build_args.targets[build_args.targets_len].mode = 'x';
   }
   | st build-target
   {
-    ARGS->build->targets[ARGS->build->targets_len].mode = 't';
+    build_args.targets[build_args.targets_len].mode = 't';
   }
   | px
   {
-    ARGS->build->mode = 'x';
+    build_args.mode = 'x';
   }
   | pt
   {
-    ARGS->build->mode = 't';
+    build_args.mode = 't';
   }
   ;
 
 build-target
   : bead
   {
-    ARGS->build->targets[ARGS->build->targets_len].s = @1.s;
-    ARGS->build->targets[ARGS->build->targets_len].sl = @1.l;
-    ARGS->build->targets[ARGS->build->targets_len].mode = ARGS->build->mode;
-    ARGS->build->targets_len++;
+    build_args.targets[build_args.targets_len].s = @1.s;
+    build_args.targets[build_args.targets_len].sl = @1.l;
+    build_args.targets[build_args.targets_len].mode = build_args.mode;
+    build_args.targets_len++;
   }
   ;
 
@@ -424,13 +443,15 @@ both
   ;
 
 graph-type
-  : FSTREE     { $$ = FAB_GRAPH_FSTREE; }
-  | DIRTREE    { $$ = FAB_GRAPH_DIRTREE; }
-  | MODTREE    { $$ = FAB_GRAPH_MODTREE; }
-  | DEPENDS    { $$ = FAB_GRAPH_DEPENDS; }
-  | IMPORTS    { $$ = FAB_GRAPH_MODULE_IMPORTS; }
-  | USES       { $$ = FAB_GRAPH_MODULE_USES; }
-  | REQUIRES   { $$ = FAB_GRAPH_MODULE_REQUIRES; }
+  : FSTREE        { $$ = FAB_GRAPH_FSTREE; }
+  | FSTREE_HIDDEN { $$ = FAB_GRAPH_FSTREE_HIDDEN; }
+  | DIRTREE       { $$ = FAB_GRAPH_DIRTREE; }
+  | MODTREE       { $$ = FAB_GRAPH_MODTREE; }
+  | DEPENDS       { $$ = FAB_GRAPH_DEPENDS; }
+  | IMPORTS       { $$ = FAB_GRAPH_MODULE_IMPORTS; }
+  | USES          { $$ = FAB_GRAPH_MODULE_USES; }
+  | REQUIRES      { $$ = FAB_GRAPH_MODULE_REQUIRES; }
+  | RELATION      { $$ = FAB_GRAPH_RELATION; }
   ;
 
 touch-arguments
@@ -440,7 +461,7 @@ touch-arguments
 
 touch-argument
   : global-argument
-  | bead { ARGS->touch->targets[ARGS->touch->targets_len++] = $1; }
+  | bead { touch_args.targets[touch_args.targets_len++] = $1; }
   ;
 
 kill-arguments
@@ -482,13 +503,25 @@ stats-argument-list
 
 stats-argument
   : global-argument
-  | bead { ARGS->stats->targets[ARGS->stats->targets_len++] = $1; }
+  | lspecial_only
+  {
+    stats_args.special_only = true;
+  }
+  | sS
+  {
+    stats_args.special_only = true;
+  }
+  | lno_special
+  {
+    stats_args.no_special = true;
+  }
+  | bead { stats_args.targets[stats_args.targets_len++] = $1; }
   ;
 
 adhoc-arguments
   : bead
   {
-    ARGS->adhoc->request = $1;
+    adhoc_args.request = $1;
   }
   ;
 
@@ -499,7 +532,35 @@ describe-arguments
 
 describe-argument
   : global-argument
-  | bead { ARGS->describe->targets[ARGS->describe->targets_len++] = $1; }
+  | bead { describe_args.targets[describe_args.targets_len++] = $1; }
+  ;
+
+fstree-arguments
+  : fstree-argument-list
+  | %empty
+  ;
+
+fstree-argument-list
+  : fstree-argument-list fstree-argument
+  | fstree-argument
+  ;
+
+fstree-argument
+  : global-argument
+  ;
+
+filesystem-arguments
+  : filesystem-argument-list
+  | %empty
+  ;
+
+filesystem-argument-list
+  : filesystem-argument-list filesystem-argument
+  | filesystem-argument
+  ;
+
+filesystem-argument
+  : global-argument
   ;
 
 config-arguments
@@ -530,6 +591,49 @@ vars-argument
   : global-argument
   ;
 
+envs-arguments
+  : envs-argument-list
+  | %empty
+  ;
+
+envs-argument-list
+  : envs-argument-list envs-argument
+  | envs-argument
+  ;
+
+envs-argument
+  : global-argument
+  ;
+
+rule-arguments
+  : rule-argument-list
+  | %empty
+  ;
+
+rule-argument-list
+  : rule-argument-list rule-argument
+  | rule-argument
+  ;
+
+rule-argument
+  : global-argument
+  | bead { rule_args.target = $1; }
+  ;
+
+rules-arguments
+  : rules-argument-list
+  | %empty
+  ;
+
+rules-argument-list
+  : rules-argument-list rules-argument
+  | rules-argument
+  ;
+
+rules-argument
+  : global-argument
+  ;
+
 metadata-arguments
   : metadata-argument-list
   | %empty
@@ -544,6 +648,25 @@ metadata-argument
   : global-argument
   ;
 
+trace-arguments
+  : trace-script-path trace-argument-list
+  | trace-script-path
+  ;
+
+trace-argument-list
+  : trace-argument-list trace-argument
+  | trace-argument
+  ;
+
+trace-argument
+  : global-argument
+  | trace-script-path
+  ;
+
+trace-script-path
+  : bead { trace_args.script_path = $1; }
+  ;
+
 events-arguments
   : events-argument-list
   | %empty;
@@ -555,19 +678,19 @@ events-argument-list
 
 events-argument
   : global-argument
-  | sa                { ARGS->events->event_mask = ~0; }
-  | STALE             { ARGS->events->event_mask |= FABIPC_EVENT_NODE_STALE; }
-  | FRESH             { ARGS->events->event_mask |= FABIPC_EVENT_NODE_FRESH; }
-  | CREATE            { ARGS->events->event_mask |= FABIPC_EVENT_NODE_CREATE; }
-  | DELETE            { ARGS->events->event_mask |= FABIPC_EVENT_NODE_DELETE; }
-  | GLOBAL_INVALIDATE { ARGS->events->event_mask |= FABIPC_EVENT_GLOBAL_INVALIDATE; }
-  | EXEC_FORKED       { ARGS->events->event_mask |= FABIPC_EVENT_FORMULA_EXEC_FORKED; }
-  | EXEC_WAITED       { ARGS->events->event_mask |= FABIPC_EVENT_FORMULA_EXEC_WAITED; }
-  | EXEC_STDOUT       { ARGS->events->event_mask |= FABIPC_EVENT_FORMULA_EXEC_STDOUT; }
-  | EXEC_STDERR       { ARGS->events->event_mask |= FABIPC_EVENT_FORMULA_EXEC_STDERR; }
-  | EXEC_AUXOUT       { ARGS->events->event_mask |= FABIPC_EVENT_FORMULA_EXEC_AUXOUT; }
-  | GOALS             { ARGS->events->event_mask |= FABIPC_EVENT_GOALS; }
-  | SYSTEM_STATE      { ARGS->events->event_mask |= FABIPC_EVENT_SYSTEM_STATE; }
+  | sa                { events_args.event_mask = ~0; }
+  | STALE             { events_args.event_mask |= FABIPC_EVENT_NODE_STALE; }
+  | FRESH             { events_args.event_mask |= FABIPC_EVENT_NODE_FRESH; }
+  | CREATE            { events_args.event_mask |= FABIPC_EVENT_NODE_CREATE; }
+  | DELETE            { events_args.event_mask |= FABIPC_EVENT_NODE_DELETE; }
+  | GLOBAL_INVALIDATE { events_args.event_mask |= FABIPC_EVENT_GLOBAL_INVALIDATE; }
+  | EXEC_FORKED       { events_args.event_mask |= FABIPC_EVENT_FORMULA_EXEC_FORKED; }
+  | EXEC_WAITED       { events_args.event_mask |= FABIPC_EVENT_FORMULA_EXEC_WAITED; }
+  | EXEC_STDOUT       { events_args.event_mask |= FABIPC_EVENT_FORMULA_EXEC_STDOUT; }
+  | EXEC_STDERR       { events_args.event_mask |= FABIPC_EVENT_FORMULA_EXEC_STDERR; }
+  | EXEC_AUXOUT       { events_args.event_mask |= FABIPC_EVENT_FORMULA_EXEC_AUXOUT; }
+  | GOALS             { events_args.event_mask |= FABIPC_EVENT_GOALS; }
+  | SYSTEM_STATE      { events_args.event_mask |= FABIPC_EVENT_SYSTEM_STATE; }
   ;
 
 bead
@@ -575,12 +698,14 @@ bead
   {
     $$ = (bead){ s : @1.s, len : @1.l };
   }
+  ;
 
 strtoken
   : STR
   | BUILD
   | DEPENDS
   | FSTREE
+  | RELATION
   | DIRTREE
   | MODTREE
   | IMPORTS
@@ -597,6 +722,7 @@ strtoken
   | STATS
   | DESCRIBE
   | METADATA
+  | TRACE
   | CONFIG
   | VARS
   | RECONCILE
@@ -614,6 +740,7 @@ strtoken
   | EXEC_AUXOUT
   | GOALS
   | SYSTEM_STATE
+  | uint16
   | '+'
   ;
 

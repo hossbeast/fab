@@ -20,11 +20,11 @@
 struct g_args_t g_args;
 
 #if CONFIG_DEVEL
-#define SYSTEM_CONFIG_PATH    "/etc/fabconfig+devel"
-#define USER_CONFIG_PATH      "$HOME/.fab/config+devel"
+#define SYSTEM_CONFIG_PATH    "/etc/config.bam+devel"
+#define USER_CONFIG_PATH      "$HOME/.bam/config.bam+devel"
 #else
-#define SYSTEM_CONFIG_PATH    "/etc/fabconfig"
-#define USER_CONFIG_PATH      "$HOME/.fab/config"
+#define SYSTEM_CONFIG_PATH    "/etc/config.bam"
+#define USER_CONFIG_PATH      "$HOME/.bam/config.bam"
 #endif
 
 #define DEFAULT_SWEEPER_PERIOD MSEC_AS_NSEC(250)
@@ -81,6 +81,7 @@ static void args_parse(int argc, char ** restrict argv)
   ;
 
   g_args.default_filesystem_invalidate = FILESYSTEM_INVALIDATE_DEFAULT;
+  g_args.default_filesystem_indexed = FILESYSTEM_INDEXED_DEFAULT;
   ixstrdup(&g_args.system_config_path, SYSTEM_CONFIG_PATH);
   ixstrdup(&g_args.user_config_path, USER_CONFIG_PATH);
 
@@ -106,8 +107,6 @@ static void args_parse(int argc, char ** restrict argv)
         fprintf(stderr, "invalid sweeper-period-nsec %s\n", optarg);
         exit(1);
       }
-    } else if(x == 'K') {
-      g_args.kill = true;
     }
 #endif
     if(x == 'h') {
@@ -159,4 +158,5 @@ void args_teardown()
 {
   free(g_args.system_config_path);
   free(g_args.user_config_path);
+  free(g_args.hash_str);
 }

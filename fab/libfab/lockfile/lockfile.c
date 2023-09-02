@@ -18,7 +18,7 @@
 // static
 //
 
-static void lockfile_obtain(pid_t * pid, int * restrict fdp, const char * restrict path)
+void fabipc_lockfile_acquire(pid_t * pid, int * restrict fdp, const char * restrict path)
 {
   ssize_t bytes;
   int fd;
@@ -63,13 +63,13 @@ void API fabipc_lockfile_obtain(pid_t * pid, int * restrict fd, char * const res
   for(x = 1; 1; x++)
   {
     xclose(*fd);
-    lockfile_obtain(pid, fd, path);
+    fabipc_lockfile_acquire(pid, fd, path);
 
-    if(*pid == 0)
+    if(*pid == 0) {
       break;    // lock obtained
+    }
 
-    if(*pid == -1)
-    {
+    if(*pid == -1) {
       // unable to determine lock holder from the pid file ; this can happen as a
       // result of a race reading/writing the pid file, or if the pid file is corrupted
       if((x % 3) == 0) {

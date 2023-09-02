@@ -8,37 +8,33 @@
 #include "moria.h"
 
 struct fsent;
-struct value;
-struct variant;
-struct value_parser;
+struct bacon_value;
 struct moria_graph;
+struct graph_invalidation_context;
 
 /* VERTEX_VAR */
 typedef struct var {
   moria_vertex vertex;
 
-  /* regarding the var fsent */
+  /* runtime state */
+  fab_vertex_stats stats;
+  struct bacon_value *val;
+  char id[40];
+  uint16_t id_len;
+  char token[40];
+  uint16_t token_len;
+
+  /* self_node */
+  struct fsent *self_node;    // VERTEX_VAR_FILE var.bam
+  fab_var_stats var_stats;
   char self_node_abspath[512];
   uint16_t self_node_abspath_len;
-
-  struct fsent *self_node;
-  fab_var_stats stats;
-  uint16_t reconciliation_id;
-
-  /* parsed from the file */
-  struct value *val;
 } var;
 
 void var_setup(void);
 void var_cleanup(void);
 
-/*
- * out - (returns) key -> value set
- */
-void var_denormalize(struct value_parser * restrict parser, struct variant * restrict var, struct value * restrict valset, struct value ** restrict out)
-  __attribute__((nonnull(1, 3, 4)));
-
-void var_system_reconcile(void);
+extern llist var_list;    // active
 
 /*
  * Write a vars stats to a buffer
@@ -46,13 +42,19 @@ void var_system_reconcile(void);
  * reset - true to reset the stats while reading them
  * zp    - (returns) number of bytes written to dst
  */
-void var_collate_stats(void *dst, size_t sz, var *vp, bool reset, size_t *zp)
+size_t var_stats_collate(void *dst, size_t sz, bool reset, struct var * restrict var)
   __attribute__((nonnull));
 
 /* allocate a new var in the invalid state */
 void var_alloc(var ** restrict vp, struct moria_graph * restrict g)
   __attribute__((nonnull));
 
-/* reload the var if invalid */
-void var_reconcile(var * restrict vp)
+/* parse the var if invalid */
+void var_reparse(var * restrict var)
+  __attribute__((nonnull));
+
+void var_release(var * restrict var, struct graph_invalidation_context * restrict invalidation)
+  __attribute__((nonnull));
+
+void var_system_reconcile(struct graph_invalidation_context * restrict invalidation)
   __attribute__((nonnull));

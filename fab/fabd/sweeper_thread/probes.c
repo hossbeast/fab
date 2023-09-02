@@ -13,11 +13,15 @@
 #include "fsent.h"
 
 #include "usdt-sem.h"
-#include "zbuffer.h"
+#include "zcat.h"
 
-PROBE_SEM(sweeper, event);
+#if 1
+PROBE_SEM(sweeper_thread, event) = 0;
+#else
+PROBE_SEM(sweeper_thread, event) = 1;
+#endif
 
-void fsevent_probe(const sweeper_event * restrict ev)
+void sweeper_thread_probe(const sweeper_event * restrict ev)
 {
   char buf[512];
   char *s;
@@ -27,7 +31,7 @@ void fsevent_probe(const sweeper_event * restrict ev)
   fsent *n = 0;
   sweeper_child_event *cev = 0;
 
-  if(!sweeper_event_semaphore) {
+  if(!sweeper_thread_event_semaphore) {
     return;
   }
 
@@ -60,13 +64,14 @@ void fsevent_probe(const sweeper_event * restrict ev)
     event = "MODIFY";
   }
 
-  z += znloadf(s + z, sz - z, " era %5"PRIu32" %9s ", ev->era, event);
-  z += fsent_project_relative_path_znload(s + z, sz - z, n);
+  z += zcatf(s + z, sz - z, " era %5"PRIu32" %9s ", ev->era, event);
+  z += fsent_cwd_relative_path_cat(s + z, sz - z, n);
   if(cev)
   {
-    z += znloads(s + z, sz - z, "//");
-    z += znloadw(s + z, sz - z, cev->name, cev->name_len);
+    z += zcats(s + z, sz - z, "//");
+    z += zcatw(s + z, sz - z, cev->name, cev->name_len);
   }
 
-  PROBE2(sweeper, event, buf, ev);
+  PROBE2(sweeper_thread, event, buf, ev);
+printf("%.*s\n", (int)z, buf);
 }

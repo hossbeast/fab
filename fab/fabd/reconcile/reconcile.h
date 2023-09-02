@@ -6,7 +6,7 @@
 #include "types.h"
 
 /* autoinc each time reconcile is run */
-extern uint16_t reconciliation_id;
+extern uint16_t reconciliation_epoch;
 
 /*
  * run global reconciliation

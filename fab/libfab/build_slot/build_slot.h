@@ -17,6 +17,12 @@ typedef struct fab_build_slot_info {
   int32_t pid;            // process id
   uint16_t stage;         // slots in the same stage can execute concurrently
 
+  /* rule info */
+  char *rule_id;
+  uint16_t rule_id_len;
+  char *formula_abspath;
+  uint16_t formula_abspath_len;
+
   /* exec params */
   char *path;             // absolute path of file to execute
   uint16_t path_len;

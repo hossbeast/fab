@@ -6,10 +6,8 @@
 
 #include "valyria/list.h"
 #include "valyria/llist.h"
-#include "valyria/map.h"
-#include "valyria/set.h"
+#include "valyria/hashtable.h"
 #include "moria/graph.h"
-#include "moria/operations.h"
 #include "moria/parser.h"
 #include "bacon/load.h"
 
@@ -23,14 +21,19 @@
 #include "pattern.h"
 #include "filesystem.h"
 #include "pattern_parser.h"
-#include "module.internal.h"
-#include "variant.h"
+#include "module.h"
 #include "node_operations_test.h"
-#include "rule_module.h"
+#include "rule_module_association.h"
 #include "rule_system.h"
-#include "module_parser.h"
+#include "rules_parser.h"
 #include "shadow.h"
 #include "system_state.h"
+#include "buildplan_entity.h"
+#include "vertex.h"
+#include "entlist.h"
+#include "fsedge.h"
+#include "dependency.h"
+#include "dir_rma.h"
 
 typedef struct rule_system_reconcile_test {
   XUNITTEST;
@@ -60,21 +63,22 @@ static void rule_system_reconcile_test_unit_setup(xunit_unit * unit)
   filesystem_setup();
 
   graph_setup();
-  variant_setup();
   fsent_setup();
   module_setup();
   rule_system_setup();
+  buildplan_entity_setup();
 
-/* suppress rcu-registration checks */
-extern __thread bool rcu_is_registered ; rcu_is_registered = true;
+  /* suppress rcu-registration checks */
+  extern __thread bool rcu_is_registered ; rcu_is_registered = true;
 }
 
 static void rule_system_reconcile_test_unit_cleanup(xunit_unit * unit)
 {
   graph_cleanup();
-  variant_cleanup();
   module_cleanup();
   filesystem_cleanup();
+  buildplan_entity_cleanup();
+  entlist_cleanup();
 
   moria_unload();
 }
@@ -89,69 +93,68 @@ static void rule_system_reconcile_test_entry(xunit_test * _test)
 
   narrator_growing * N = 0;
   pattern_parser * parser = 0;
-  graph_parser * op_parser = 0;
-  module_parser *mod_parser = 0;
+  moria_parser * op_parser = 0;
+  rules_parser *mod_parser = 0;
 
   yyu_location loc;
-  module *module;
+  module *mod;
   rule * rule;
   int x;
-  llist modules;
-  pattern * match_pat = 0;
+  pattern * search_pat = 0;
   pattern * generate_pat = 0;
-  rule_run_context rule_ctx = { 0 };
+  rule_run_context rule_ctx = { };
   const char * graph;
-  set *variants = 0;
+  rule_module_association rmas[8];
+  struct rule_bacon rb = { };
 
-  rule_run_context_xinit(&rule_ctx);
-
+  rule_run_context_init(&rule_ctx);
   pattern_parser_create(&parser);
-  module_parser_create(&mod_parser);
+  rules_parser_alloc(&mod_parser);
 
   narrator_growing_create(&N);
-  graph_parser_create(&op_parser, &g_graph, &fsent_list, node_operations_test_dispatch, graph_vertex_attrs, graph_edge_attrs);
-  llist_init_node(&modules);
-  module_alloc(&module);
-  rule_ctx.mod = module;
-  rule_ctx.modules = &modules;
-  set_create(&variants);
-  rule_ctx.variants = variants;
+  moria_parser_create(&op_parser, &g_graph, (llist *[]) { &fsent_list }, 1, node_operations_test_dispatch, graph_vertex_attrs, graph_edge_attrs);
 
   /* setup - build the initial graph */
-  graph_parser_operations_parse(op_parser, MMS(test->setup_operations));
+  moria_parser_operations_parse(op_parser, MMS(test->setup_operations));
 
-  resolve_fragment(MMS(test->module), &module->dir_node);
-  module->shadow_imports = module->dir_node;
+  module_alloc(&mod);
+  resolve_fragment(MMS(test->module), &mod->dir_node);
+  mod->anchor_node = mod->dir_node;
 
-  /* setup - run the rules */
+  /* setup - run each rule */
   for(x = 0; x < sentinel(test->rules); x++)
   {
     typeof(*test->rules) test_rule = test->rules[x];
 
     // parse the patterns for the rule
-    search_pattern_parse_partial(parser, test_rule->search_pattern, strlen(test_rule->search_pattern) + 2, "-test-", 0, &loc, &match_pat);
+    search_pattern_parse_partial(parser, test_rule->search_pattern, strlen(test_rule->search_pattern) + 2, "-test-", 0, &loc, &search_pat);
     assert_eq_u32(strlen(test_rule->search_pattern), loc.l);
 
     generate_pattern_parse_partial(parser, test_rule->generate_pattern, strlen(test_rule->generate_pattern) + 2, "-test-", 0, &loc, &generate_pat);
     assert_eq_u32(strlen(test_rule->generate_pattern), loc.l);
 
-    rule_mk(&rule, &g_graph, match_pat, generate_pat, 0, 0, 0);
-    match_pat = 0;
+    rule_mk(&rule, &g_graph, search_pat, generate_pat, 0, 0, 0, 0, &rb, 0, &loc);
+    search_pat = 0;
     generate_pat = 0;
 
     rule->dir = test_rule->dir;
     rule->card = test_rule->card;
-    rule->relation = test_rule->relation;
+    rule->graph = test_rule->relation;
 
-    rule_module_connect(&rule_ctx.rme, module, module, rule, variants);
+    /* when the generate pattern changes the set of child nodes in the directory
+     * which the match pattern visited, the rule is enqueued to be run again */
+    rule_module_association_init(&rmas[x]);
+    rmas[x].mod = mod;
+    rmas[x].rule = rule;
+    rule_ctx.rma = &rmas[x];
 
     rule_run(rule, &rule_ctx);
   }
 
   /* setup - perform specified mutations if any */
-  graph_parser_operations_parse(op_parser, MMS(test->operations));
+  moria_parser_operations_parse(op_parser, MMS(test->operations));
 
-  /* act - reconcile rules */
+  /* act - reconcile rules - run enqueued rules to quiescence */
   rule_system_reconcile(&rule_ctx);
   assert_eq_b(false, system_error);
 
@@ -160,15 +163,14 @@ static void rule_system_reconcile_test_entry(xunit_test * _test)
   graph = N->s;
   assert_eq_s(test->graph, graph);
 
-  set_xfree(variants);
-  module_parser_xfree(mod_parser);
-  pattern_free(match_pat);
+  rules_parser_free(mod_parser);
+  pattern_free(search_pat);
   pattern_free(generate_pat);
   fsent_cleanup();
   narrator_growing_free(N);
-  graph_parser_xfree(op_parser);
-  pattern_parser_xfree(parser);
-  rule_run_context_xdestroy(&rule_ctx);
+  moria_parser_free(op_parser);
+  pattern_parser_free(parser);
+  rule_run_context_destroy(&rule_ctx);
 }
 
 //
@@ -187,7 +189,7 @@ static xunit_unit xunit = {
         , module : "MOD"
         , rules : (struct test_rule*[]) {
             (struct test_rule[]) {{
-              // main.c -> $^D/main.o
+              // rule main.c -> $^D/main.o
                 search_pattern : (char[]) { "main.c\0" }
               , generate_pattern : (char[]) { "$^D/main.o\0" }
               , dir : RULE_LTR
@@ -197,19 +199,19 @@ static xunit_unit xunit = {
           , 0
         }
         , operations : ""
-        , graph :  "1-(root)!dir 2-MOD!dir 3-main.c!file 4-main.o!U|file"
-                  " 4:depends:3"
-                  " 1:fs:2"
-                  " 2:fs:3 2:fs:4"
+        , graph :  "1-(root)!dir|protect 2-MOD!dir 3-main.c!file 4-main.o!U|file 5-!bpe"
+                  " 5:bpe-tgt:4 3:src-bpe:5"
+                  " 2:fs:1 3:fs:2 4:fs:2"
       }}
-      /* unlinked primary file - deleted, and secondary file remains */
+
+      /* unlinked primary file - deleted, along with the secondary file */
     , (rule_system_reconcile_test[]) {{
           setup_operations : ""
           " MOD/main.c"
         , module : "MOD"
         , rules : (struct test_rule*[]) {
             (struct test_rule[]) {{
-              // main.c -> $^D/main.o
+              // rule main.c -> $^D/main.o
                 search_pattern : (char[]) { "main.c\0" }
               , generate_pattern : (char[]) { "$^D/main.o\0" }
               , dir : RULE_LTR
@@ -219,12 +221,16 @@ static xunit_unit xunit = {
           , 0
         }
         , operations : ""
-                  " =MOD:fs:main.c"
-        , graph :  "1-(root)!dir 2-MOD!dir"
-                  " 3-main.o!U|file"
-                  " 1:fs:2"
-                  " 2:fs:3"
+                  " =main.c:fs:MOD"
+        , graph :  "1-(root)!dir|protect 2-MOD!dir"
+                  " 2:fs:1"
+
+/*
+ * The rule is run again, doesn't match, and the rma-bpe edge is deleted, which cascades
+ * to the edges created by the bpe
+ */
       }}
+
       /* unlinked secondary file - marked unlinked, depends edge still in effect */
     , (rule_system_reconcile_test[]) {{
           setup_operations : ""
@@ -242,13 +248,14 @@ static xunit_unit xunit = {
           , 0
         }
         , operations : ""
-                  " =MOD:fs:main.o"
-        , graph :  "1-(root)!dir 2-MOD!dir"
+                  " =main.o:fs:MOD"
+        , graph :  "1-(root)!dir|protect 2-MOD!dir"
                   " 3-main.c!file 4-main.o!U|file"
-                  " 4:depends:3"
-                  " 1:fs:2"
-                  " 2:fs:3 2:fs:4"
+                  " 5-!bpe"
+                  " 5:bpe-tgt:4 3:src-bpe:5"
+                  " 2:fs:1 3:fs:2 4:fs:2"
       }}
+
       /* unlinked primary+secondary file - both are deleted along with their dependency */
     , (rule_system_reconcile_test[]) {{
           setup_operations : ""
@@ -266,10 +273,10 @@ static xunit_unit xunit = {
           , 0
         }
         , operations : ""
-                  " =MOD:fs:main.c"
-                  " =MOD:fs:main.o"
-        , graph :  "1-(root)!dir 2-MOD!dir"
-                  " 1:fs:2"
+                  " =main.c:fs:MOD"
+                  " =main.o:fs:MOD"
+        , graph :  "1-(root)!dir|protect 2-MOD!dir"
+                  " 2:fs:1"
       }}
 
       /* unlinked tree of primary files */
@@ -291,15 +298,21 @@ static xunit_unit xunit = {
           , 0
         }
         , operations : ""
+                  /* This refresh operation promotes these secondary files from UNCREATED -> OK
+                   * which is what happens when a formula is exected that generates them
+                   * hence they are not subsequently deleted when the rule that originally created
+                   * them no longer matches. */
                   " @args.o @main.o"
-                  " =src:fs:main.c"
-                  " =sub:fs:args.c"
-                  " =sub:fs:args.h"
-        , graph :  "1-(root)!dir 2-MOD!dir"
+                  /* Now the primary files which the secondary files have dependencies on are unlinked.
+                   * The secondary files would normally become invalid (I) when this happens, but since
+                   * they no longer have any dependency edge, the invalidation is ignored */
+                  " =main.c:fs:src"
+                  " =args.c:fs:sub"
+                  " =args.h:fs:sub"
+        , graph :  "1-(root)!dir|protect 2-MOD!dir"
                   " 3-src!dir 4-sub!dir"
-                  " 5-args.o!I|file 6-main.o!I|file"
-                  " 1:fs:2"
-                  " 2:fs:3 3:fs:4 3:fs:6 4:fs:5"
+                  " 5-args.o!file 6-main.o!file"
+                  " 2:fs:1 3:fs:2 4:fs:3 6:fs:3 5:fs:4"
       }}
 
       /* unlinked tree of all files */
@@ -320,15 +333,15 @@ static xunit_unit xunit = {
           , 0
         }
         , operations : ""
-                  " =MOD/src:fs:main.o"
-                  " =MOD/src:fs:main.c"
-                  " =MOD/src/sub:fs:args.c"
-                  " =MOD/src/sub:fs:args.h"
-                  " =MOD/src/sub:fs:args.o"
-                  " =MOD/src:fs:sub"
-                  " =MOD:fs:src"
-        , graph :  "1-(root)!dir 2-MOD!dir"
-                  " 1:fs:2"
+                  " =main.o:fs:MOD/src"
+                  " =main.c:fs:MOD/src"
+                  " =args.c:fs:MOD/src/sub"
+                  " =args.h:fs:MOD/src/sub"
+                  " =args.o:fs:MOD/src/sub"
+                  " =sub:fs:MOD/src"
+                  " =src:fs:MOD"
+        , graph :  "1-(root)!dir|protect 2-MOD!dir"
+                  " 2:fs:1"
       }}
 
       /* new primary files added - new secondary files which are not marked not-exists */
@@ -349,11 +362,12 @@ static xunit_unit xunit = {
         }
         , operations : ""
                   " MOD/src/sub/args.c"
-        , graph :  "1-(root)!dir 2-MOD!dir 3-src!dir 4-sub!dir"
+        , graph :  "1-(root)!dir|protect 2-MOD!dir 3-src!dir 4-sub!dir"
                   " 5-args.c!file 6-args.o!U|file 7-main.c!file 8-main.o!U|file"
-                  " 6:depends:5 8:depends:7"
-                  " 1:fs:2"
-                  " 2:fs:3 3:fs:4 3:fs:7 3:fs:8 4:fs:5 4:fs:6"
+                  " 9-!bpe 10-!bpe"
+                  " 10:bpe-tgt:6 9:bpe-tgt:8 7:src-bpe:9 5:src-bpe:10"
+                  " 2:fs:1"
+                  " 3:fs:2 4:fs:3 7:fs:3 8:fs:3 5:fs:4 6:fs:4"
       }}
 
       /* primary file introduced, transitive target edge created */
@@ -380,11 +394,11 @@ static xunit_unit xunit = {
         }
         , operations : ""
                   " MOD/args.c"
-        , graph :  "1-(root)!dir 2-MOD!dir"
+        , graph :  "1-(root)!dir|protect 2-MOD!dir"
                   " 3-args.c!file 4-args.o!U|file 5-exe!U|file 6-main.c!file 7-main.o!U|file"
-                  " 4:depends:3 5:depends:4 5:depends:7 7:depends:6"
-                  " 1:fs:2"
-                  " 2:fs:3 2:fs:4 2:fs:5 2:fs:6 2:fs:7"
+                  " 8-!bpe 9-!bpe 10-!bpe 11-!bpe"
+                  " 10:bpe-tgt:4 9:bpe-tgt:5 11:bpe-tgt:5 8:bpe-tgt:7 6:src-bpe:8 7:src-bpe:9 3:src-bpe:10 4:src-bpe:11"
+                  " 2:fs:1 3:fs:2 4:fs:2 5:fs:2 6:fs:2 7:fs:2"
       }}
 
       /* primary file introduced, transitive target edge created, consumers invalidated */
@@ -410,13 +424,18 @@ static xunit_unit xunit = {
           , 0
         }
         , operations : ""
+                  /* exe and main.o are invalid(I) rather than uncreated (U) because the exists bit
+                   * was set when those nodes were refreshed */
                   " @exe @main.o"
+                  /* This adds another file which is matched by the first rule, which creates a file
+                   * that is matched by the second rule. These attachments invalidate the nodes */
                   " MOD/args.c"
-        , graph :  "1-(root)!dir 2-MOD!dir"
-                  " 3-args.c!file 4-args.o!U|file 5-exe!file 6-main.c!file 7-main.o!file"
-                  " 4:depends:3 5:depends:4 5:depends:7 7:depends:6"
-                  " 1:fs:2"
-                  " 2:fs:3 2:fs:4 2:fs:5 2:fs:6 2:fs:7"
+        , graph :  "1-(root)!dir|protect 2-MOD!dir"
+                  " 3-args.c!file 4-args.o!U|file 5-exe!I|file 6-main.c!file 7-main.o!I|file"
+                  " 8-!bpe 9-!bpe 10-!bpe 11-!bpe"
+                  " 10:bpe-tgt:4 9:bpe-tgt:5 11:bpe-tgt:5 8:bpe-tgt:7 6:src-bpe:8 7:src-bpe:9 3:src-bpe:10 4:src-bpe:11"
+                  " 2:fs:1"
+                  " 3:fs:2 4:fs:2 5:fs:2 6:fs:2 7:fs:2"
       }}
 
       /* primary file unlinked, transitive target edge removed */
@@ -443,12 +462,13 @@ static xunit_unit xunit = {
           , 0
         }
         , operations : ""
-                  " =MOD:fs:args.c"
-        , graph :  "1-(root)!dir 2-MOD!dir"
+                  " =args.c:fs:MOD"
+        , graph :  "1-(root)!dir|protect 2-MOD!dir"
                   " 3-args.o!U|file 4-exe!U|file 5-main.c!file 6-main.o!U|file"
-                  " 4:depends:3 4:depends:6 6:depends:5"
-                  " 1:fs:2"
-                  " 2:fs:3 2:fs:4 2:fs:5 2:fs:6"
+                  " 7-!bpe 8-!bpe 9-!bpe"
+                  " 8:bpe-tgt:4 9:bpe-tgt:4 7:bpe-tgt:6 5:src-bpe:7 3:src-bpe:8 6:src-bpe:9"
+                  " 2:fs:1"
+                  " 3:fs:2 4:fs:2 5:fs:2 6:fs:2"
       }}
 
       /* transitive target unlinked, dependent edges unchanged */
@@ -475,12 +495,13 @@ static xunit_unit xunit = {
           , 0
         }
         , operations : ""
-                  " =MOD:fs:exe"
-        , graph :  "1-(root)!dir 2-MOD!dir"
+                  " =exe:fs:MOD"
+        , graph :  "1-(root)!dir|protect 2-MOD!dir"
                   " 3-args.c!file 4-args.o!U|file 5-exe!U|file 6-main.c!file 7-main.o!U|file"
-                  " 4:depends:3 5:depends:4 5:depends:7 7:depends:6"
-                  " 1:fs:2"
-                  " 2:fs:3 2:fs:4 2:fs:5 2:fs:6 2:fs:7"
+                  " 8-!bpe 9-!bpe 10-!bpe 11-!bpe"
+                  " 9:bpe-tgt:4 10:bpe-tgt:5 11:bpe-tgt:5 8:bpe-tgt:7 6:src-bpe:8 3:src-bpe:9 4:src-bpe:10 7:src-bpe:11"
+                  " 2:fs:1"
+                  " 3:fs:2 4:fs:2 5:fs:2 6:fs:2 7:fs:2"
       }}
 
       /* secondary file unlinked, transitive edges invalidated */
@@ -507,16 +528,18 @@ static xunit_unit xunit = {
         }
         , operations : ""
                   " @main.o"
-                  " =MOD:fs:main.o"
+                  " =main.o:fs:MOD"
         /* main.o is uncreated(U) because exe still depends on it */
-        , graph :  "1-(root)!dir 2-MOD!dir"
+        /* exe is uncreated(U) because it was never refreshed */
+        , graph :  "1-(root)!dir|protect 2-MOD!dir"
                   " 3-exe!U|file 4-main.c!file 5-main.o!U|file"
-                  " 3:depends:5 5:depends:4"
-                  " 1:fs:2"
-                  " 2:fs:3 2:fs:4 2:fs:5"
+                  " 6-!bpe 7-!bpe"
+                  " 7:bpe-tgt:3 6:bpe-tgt:5 4:src-bpe:6 5:src-bpe:7"
+                  " 2:fs:1"
+                  " 3:fs:2 4:fs:2 5:fs:2"
       }}
 
-      /* secondary file unlinked, transitive edges are invalidated */
+      /* intermediate file refreshed, then unlinked */
     , (rule_system_reconcile_test[]) {{
           setup_operations : ""
           " MOD/main.c"
@@ -540,13 +563,83 @@ static xunit_unit xunit = {
         }
         , operations : ""
                   " @exe @main.o"
-                  " =MOD:fs:main.o"
-        /* main.o is uncreated(U) because exe still depends on it */
-        , graph :  "1-(root)!dir 2-MOD!dir"
+                  " =main.o:fs:MOD"
+        /* main.o is uncreated(U) instead of deleted because exe still depends on it */
+        /* exe was marked invalid(I) - transitively - when main.c was unlinked */
+        , graph :  "1-(root)!dir|protect 2-MOD!dir"
                   " 3-exe!I|file 4-main.c!file 5-main.o!U|file"
-                  " 3:depends:5 5:depends:4"
-                  " 1:fs:2"
-                  " 2:fs:3 2:fs:4 2:fs:5"
+                  " 6-!bpe 7-!bpe"
+                  " 7:bpe-tgt:3 6:bpe-tgt:5 4:src-bpe:6 5:src-bpe:7"
+                  " 2:fs:1"
+                  " 3:fs:2 4:fs:2 5:fs:2"
+      }}
+
+      /* intermediate file refreshed, then primary file unlinked */
+    , (rule_system_reconcile_test[]) {{
+          setup_operations : ""
+          " MOD/main.c"
+        , module : "MOD"
+        , rules : (struct test_rule*[]) {
+            (struct test_rule[]) {{
+              // a/b -> $^D/c.o
+                search_pattern : (char[]) { "**/(*).c\0" }
+              , generate_pattern : (char[]) { "$^D/$1.o\0" }
+              , dir : RULE_LTR
+              , card : RULE_ONE_TO_ONE
+              , relation : EDGE_DEPENDS
+            }}
+          , (struct test_rule[]) {{
+                search_pattern : (char[]) { "**/*.o\0" }
+              , generate_pattern : (char[]) { "exe\0" }
+              , dir : RULE_LTR
+              , card : RULE_ONE_TO_ONE
+              , relation : EDGE_DEPENDS
+            }}
+          , 0
+        }
+        , operations : ""
+                  " @exe @main.o"               // VERTEX_OK
+                  " =main.c:fs:MOD"
+        /* main.o is OK because its a primary file because its not the target of any dependency */
+        /* exe was marked invalid(I) - transitively - when main.c was unlinked */
+        , graph :  "1-(root)!dir|protect 2-MOD!dir"
+                  " 3-exe!I|file 4-main.o!file"
+                  " 5-!bpe"
+                  " 5:bpe-tgt:3 4:src-bpe:5"
+                  " 2:fs:1 3:fs:2 4:fs:2"
+      }}
+
+      /* intermediate file refreshed, then primary and secondary file unlinked */
+    , (rule_system_reconcile_test[]) {{
+          setup_operations : ""
+          " MOD/main.c"
+        , module : "MOD"
+        , rules : (struct test_rule*[]) {
+            (struct test_rule[]) {{
+              // a/b -> $^D/c.o
+                search_pattern : (char[]) { "**/(*).c\0" }
+              , generate_pattern : (char[]) { "$^D/$1.o\0" }
+              , dir : RULE_LTR
+              , card : RULE_ONE_TO_ONE
+              , relation : EDGE_DEPENDS
+            }}
+          , (struct test_rule[]) {{
+                search_pattern : (char[]) { "**/*.o\0" }
+              , generate_pattern : (char[]) { "exe\0" }
+              , dir : RULE_LTR
+              , card : RULE_ONE_TO_ONE
+              , relation : EDGE_DEPENDS
+            }}
+          , 0
+        }
+        , operations : ""
+                  " @exe @main.o"               // VERTEX_OK
+                  " =main.c:fs:MOD"
+                  " =main.o:fs:MOD"
+        /* exe was marked invalid(I) - transitively - when main.c was unlinked */
+        , graph :  "1-(root)!dir|protect 2-MOD!dir"
+                  " 3-exe!file"
+                  " 2:fs:1 3:fs:2"
       }}
 
       /* unlinked many intermediate files */
@@ -575,16 +668,53 @@ static xunit_unit xunit = {
           , 0
         }
         , operations : ""
-                  " @exe @main.o @args.o"
-                  " =MOD:fs:main.c"
-                  " =MOD:fs:main.o"
-                  " =MOD:fs:args.c"
-                  " =MOD:fs:args.o"
-                  " =MOD:fs:args.h"
-        , graph :  "1-(root)!dir 2-MOD!dir"
-                  " 3-exe!I|file"
-                  " 1:fs:2"
-                  " 2:fs:3"
+                  " @exe @main.o @args.o"     // VERTEX_OK
+                  " =main.c:fs:MOD"
+        /* main.o is OK because it is just a primary file without the dependency */
+        /* exe is marked invalid(I) when the main.o edge is removed */
+        , graph :  "1-(root)!dir|protect 2-MOD!dir"
+                  " 3-args.c!file 4-args.h!file 5-args.o!file 6-exe!I|file 7-main.o!file"
+                  " 8-!bpe 9-!bpe 10-!bpe"
+                  " 8:bpe-tgt:5 9:bpe-tgt:6 10:bpe-tgt:6 3:src-bpe:8 7:src-bpe:9 5:src-bpe:10"
+                  " 2:fs:1 3:fs:2 4:fs:2 5:fs:2 6:fs:2 7:fs:2"
+      }}
+
+      /* unlinked many intermediate files */
+    , (rule_system_reconcile_test[]) {{
+          setup_operations : ""
+          " MOD/main.c"
+          " MOD/args.c"
+          " MOD/args.h"
+        , module : "MOD"
+        , rules : (struct test_rule*[]) {
+            (struct test_rule[]) {{
+              // a/b -> $^D/c.o
+                search_pattern : (char[]) { "**/(*).c\0" }
+              , generate_pattern : (char[]) { "$^D/$1.o\0" }
+              , dir : RULE_LTR
+              , card : RULE_ONE_TO_ONE
+              , relation : EDGE_DEPENDS
+            }}
+          , (struct test_rule[]) {{
+                search_pattern : (char[]) { "**/*.o\0" }
+              , generate_pattern : (char[]) { "exe\0" }
+              , dir : RULE_LTR
+              , card : RULE_ONE_TO_ONE
+              , relation : EDGE_DEPENDS
+            }}
+          , 0
+        }
+        , operations : ""
+                  " @exe @main.o @args.o"     // VERTEX_OK
+                  " =main.c:fs:MOD"
+                  " =main.o:fs:MOD"
+                  " =args.o:fs:MOD"
+                  " =args.c:fs:MOD"
+                  " =args.h:fs:MOD"
+        , graph :  "1-(root)!dir|protect 2-MOD!dir"
+                  " 3-exe!file"
+                  " 2:fs:1"
+                  " 3:fs:2"
       }}
     , 0
   }

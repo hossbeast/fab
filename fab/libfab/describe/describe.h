@@ -7,7 +7,7 @@
 #include <stdint.h>
 
 #include "descriptor.h"
-#include "fsent.h"
+#include "vertex.h"
 
 extern descriptor_type descriptor_fab_describe_item;
 
@@ -15,20 +15,27 @@ extern descriptor_type descriptor_fab_describe_item;
 typedef union fab_describe_item {
   struct {
     uint16_t distance;
-    enum fab_fsent_type type;
-    enum fab_fsent_state state;
+    enum fab_vertex_type type;
+    enum fab_vertex_state state;
 
+    /* node label */
     const char *label;
     uint16_t label_len;
 
+    /* node full path */
     const char *path;
     uint16_t path_len;
 
+    /* unique id for the node path */
+    const char *id;
+    uint16_t id_len;
+
+    /* unique id for the node path and node lifetime */
+    const char *token;
+    uint16_t token_len;
+
     const char *ref;
     uint16_t ref_len;
-
-    const char *variant;
-    uint16_t variant_len;
 
     const char *ext;
     uint16_t ext_len;

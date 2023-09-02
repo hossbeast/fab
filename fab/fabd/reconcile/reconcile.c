@@ -6,8 +6,7 @@
 
 #include "reconcile.h"
 #include "channel.h"
-#include "config.h"
-#include "extern.h"
+#include "config_system.h"
 #include "formula.h"
 #include "fsent.h"
 #include "handler.h"
@@ -15,13 +14,17 @@
 #include "params.h"
 #include "rule_system.h"
 #include "stats.h"
-#include "var.h"
 #include "walker.h"
 #include "system_state.h"
+#include "filesystem.h"
+#include "meta_edge.h"
+#include "buildplan_entity.h"
+#include "fsent_index.h"
+#include "var.h"
 
 #include "atomics.h"
 
-uint16_t reconciliation_id;
+uint16_t reconciliation_epoch;
 
 void reconcile()
 {
@@ -29,26 +32,16 @@ void reconcile()
   rule_run_context rule_ctx;
   bool work;
 
-  reconciliation_id++;
+  reconciliation_epoch++;
 
-  rule_run_context_xinit(&rule_ctx);
+  rule_run_context_init(&rule_ctx);
   graph_invalidation_begin(&invalidation);
 
   system_error = false;
-  if(system_state != BAM_SYSTEM_STATE_CONFIG_SYSTEM_RECONCILE)
-  {
-    system_state_change(BAM_SYSTEM_STATE_CONFIG_SYSTEM_RECONCILE);
-    config_system_reconcile(&work, &invalidation);
-    if(system_error) {
-      goto end;
-    }
-  }
-
-  do
-  {
+  do {
     /* walk filesystem trees (this can find config files in the ancestry of the project root)
      * it can also invalidate config files */
-    system_state_change(BAM_SYSTEM_STATE_FILESYSTEM_RECONCILE);
+    system_state_change(BAM_SYSTEM_STATE_WALKER_RECONCILE);
     walker_system_reconcile(&invalidation);
     if(system_error) {
       goto end;
@@ -63,16 +56,27 @@ void reconcile()
     }
   } while(work);
 
-  /* reload modules */
-  system_state_change(BAM_SYSTEM_STATE_MODULE_SYSTEM_RECONCILE);
-  module_system_reconcile();
+  /* prune filesystem trees no longer referenced */
+  /* refresh fst -> fse assignments */
+  /* refresh fsent_index */
+  /* create directories */
+  system_state_change(BAM_SYSTEM_STATE_FILESYSTEM_RECONCILE);
+  fsent_reconcile(&invalidation);
+  filesystem_reconcile();
   if(system_error) {
     goto end;
   }
 
-  /* cleanup var files not reloaded by any module */
+  /* rebuild modules */
+  system_state_change(BAM_SYSTEM_STATE_MODULE_SYSTEM_RECONCILE);
+  module_system_reconcile(&rule_ctx);
+  if(system_error) {
+    goto end;
+  }
+
+  /* cleanup un-referenced var files */
   system_state_change(BAM_SYSTEM_STATE_VAR_SYSTEM_RECONCILE);
-  var_system_reconcile();
+  var_system_reconcile(&invalidation);
   if(system_error) {
     goto end;
   }
@@ -84,17 +88,30 @@ void reconcile()
     goto end;
   }
 
-  /* cleanup formulas which are no longer referenced */
+  /* check for bpe conflicts */
+  system_state_change(BAM_SYSTEM_STATE_BPE_SYSTEM_RECONCILE);
+  bpe_system_reconcile(&invalidation);
+  if(system_error) {
+    goto end;
+  }
+
+  /* parse formula files */
   system_state_change(BAM_SYSTEM_STATE_FORMULA_SYSTEM_RECONCILE);
-  formula_system_reconcile();
+  formula_system_reconcile(&invalidation);
+  if(system_error) {
+    goto end;
+  }
+
+  /* create directories */
+  system_state_change(BAM_SYSTEM_STATE_FILESYSTEM_RECONCILE);
+  filesystem_reconcile();
   if(system_error) {
     goto end;
   }
 
   system_state_change(BAM_SYSTEM_STATE_OK);
-  STATS_INC(g_stats.system_state_ok);
 
 end:
   graph_invalidation_end(&invalidation);
-  rule_run_context_xdestroy(&rule_ctx);
+  rule_run_context_destroy(&rule_ctx);
 }

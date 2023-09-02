@@ -5,7 +5,7 @@
 
 #include "types.h"
 
-struct configblob;
+struct configuration;
 
 extern char *path_cache_env_path;   // $PATH, if specified in config
 
@@ -26,7 +26,8 @@ void path_cache_cleanup(void);
  * config - effective config tree
  * dry    - whether to perform a dry-run
  */
-int path_cache_reconfigure(struct configblob * restrict cfg, char * restrict err, uint16_t err_sz);
+void path_cache_reconfigure(struct configuration * restrict cfg, bool dryrun)
+  __attribute__((nonnull));
 
 /*
  * get an entry from the path cache

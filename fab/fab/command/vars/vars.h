@@ -3,6 +3,10 @@
 
 #pragma once
 
+#include "args.h"
 #include "command.h"
+
+extern struct vars_args {
+} vars_args;
 
 extern struct command vars_command;

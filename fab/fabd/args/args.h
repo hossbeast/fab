@@ -10,8 +10,10 @@ extern struct g_args_t {
   char *system_config_path;
   char *user_config_path;
   uint16_t default_filesystem_invalidate;
+  bool default_filesystem_mkdirs;
+  bool default_filesystem_readlinks;
+  bool default_filesystem_indexed;
   uint64_t sweeper_period_nsec;
-  bool kill;
 
   uint64_t hash;
   char *hash_str;

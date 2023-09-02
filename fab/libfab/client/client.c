@@ -32,7 +32,7 @@
 #include "common/hash.h"
 #include "common/attrs.h"
 
-#include "client.internal.h"
+#include "client.h"
 #include "ipc.h"
 #include "lockfile.h"
 #include "sigutil.h"
@@ -68,7 +68,8 @@ static void launch(fab_client * restrict client)
   int i;
 
   // canonical project directory symlink
-  uxsymlinkf("%s", "%s/projdir", client->projdir, client->ipcdir);
+  uxunlinkf("%s/projdir", client->ipcdir);
+  xsymlinkf("%s", "%s/projdir", client->projdir, client->ipcdir);
 
   // cleanup the directory
   uxunlinkf("%s/fabd/exit", client->ipcdir);
@@ -262,7 +263,6 @@ void API fab_client_attach(fab_client * restrict client, int channel_shmid)
   shmaddr = xshmat(channel_shmid, 0, 0);
 
   client->shm = shmaddr;
-
   client->shm->client_pulse++;
 
   /* at this point the lockfile, if any, is now held by fabd and no longer needed */
@@ -274,7 +274,7 @@ void API fab_client_disconnect(fab_client * restrict client)
   if(client->shm)
   {
     client->shm->client_exit = 1;
-    syscall(SYS_tgkill, client->shm->server_pid, client->shm->server_tid, SIGUSR1);
+    syscall(SYS_futex, &client->shm->client_ring.waiters, FUTEX_WAKE, INT32_MAX, 0, 0, 0);
   }
 }
 

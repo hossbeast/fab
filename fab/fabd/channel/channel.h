@@ -11,7 +11,7 @@
 
 #include "fab/ipc.h"
 
-struct configblob;
+struct config;
 struct fabipc_channel;
 
 typedef struct channel {
@@ -75,5 +75,5 @@ void channel_setup(void);
 
 void channel_cleanup(void);
 
-void channel_reconfigure(struct configblob * restrict cfg, bool dry)
+void channel_reconfigure(struct config * restrict cfg, bool dry)
   __attribute__((nonnull));

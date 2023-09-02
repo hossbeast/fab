@@ -15,12 +15,15 @@ die "ar not found in environment" unless $ENV{ar};
 my @cmd = (
     $ENV{ar}
   , "rcs"
-  , $ENV{bm_target}
+  , $ENV{bm_target0}
   # object files in this module
   , split(/ /, $ENV{objects})
 );
 
 print(join(" ", @cmd), "\n");
+
+# no combination of arguments will cause ar to actually recreate the entire archive
+unlink($ENV{bm_target0});
 
 exec { $cmd[0] } @cmd
 
@@ -38,8 +41,8 @@ envs : {
       traverse : {
         direction : down
         graph : depends
-        max-distance : 1
-        min-distance : 1
+        max-distance : 2
+        min-distance : 2
         extension : o
       }
     ]

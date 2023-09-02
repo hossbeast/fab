@@ -19,19 +19,19 @@ typedef struct pattern_parser pattern_parser;
 void pattern_parser_create(pattern_parser ** const restrict p)
   __attribute__((nonnull));
 
-/// pattern_parser_xfree
+/// pattern_parser_free
 //
 // SUMMARY
 //  free a pattern parser with free semantics
 //
-void pattern_parser_xfree(pattern_parser * restrict);
+void pattern_parser_free(pattern_parser * restrict);
 
-/// pattern_parser_ixfree
+/// pattern_parser_ifree
 //
 // SUMMARY
 //  free a pattern parser with ifree semantics
 //
-void pattern_parser_ixfree(pattern_parser ** restrict)
+void pattern_parser_ifree(pattern_parser ** restrict)
   __attribute__((nonnull));
 
 /*
@@ -107,6 +107,16 @@ int match_pattern_parse_partial(
   , const char * restrict fname
   , struct yyu_location * restrict init_loc
   , struct yyu_location * restrict used_loc
+  , struct pattern ** restrict rv
+)
+  __attribute__((nonnull(1, 2)));
+
+
+int lookup_pattern_parse(
+    pattern_parser * restrict parser
+  , char * const restrict buf
+  , size_t size
+  , const char * restrict fname
   , struct pattern ** restrict rv
 )
   __attribute__((nonnull(1, 2)));

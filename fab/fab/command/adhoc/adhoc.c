@@ -7,7 +7,7 @@
 
 #include "adhoc.h"
 
-#include "zbuffer.h"
+#include "zcat.h"
 #include "params.h"
 
 struct adhoc_args adhoc_args;
@@ -16,9 +16,7 @@ static uint64_t requestid;
 static void usage(command * restrict cmd)
 {
   printf(
-"\n"
 "adhoc [request]\n"
-"\n"
   );
 }
 
@@ -33,8 +31,8 @@ static void adhoc_connected(command * restrict cmd, fab_client * restrict client
   requestid = msg->id = ++client->msgid;
 
   z = 0;
-  z += znloadw(msg->text + z, sizeof(msg->text) - z, adhoc_args.request.s, adhoc_args.request.len);
-  z += znloadw(msg->text + z, sizeof(msg->text) - z, (char[]) { 0x00, 0x00 }, 2);
+  z += zcatw(msg->text + z, sizeof(msg->text) - z, adhoc_args.request.s, adhoc_args.request.len);
+  z += zcatw(msg->text + z, sizeof(msg->text) - z, (char[]) { 0x00, 0x00 }, 2);
   msg->size = z;
 
   client_post(client, msg);
@@ -58,8 +56,14 @@ static void adhoc_process(command * restrict cmd, fab_client * restrict client, 
   }
 }
 
+static void attached(command * restrict cmd, fab_client * restrict client)
+{
+
+}
+
 command adhoc_command = {
     name : "adhoc"
+  , attached : attached
   , usage : usage
   , connected : adhoc_connected
   , process : adhoc_process

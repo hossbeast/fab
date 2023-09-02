@@ -12,8 +12,9 @@ struct chain;
 struct fsent;
 struct module;
 struct pattern_section;
-struct set;
-struct variant;
+struct hashtable;
+
+struct rule;
 
 /// pattern_search_context
 //
@@ -22,32 +23,28 @@ struct variant;
 //
 typedef struct pattern_search_context {
   struct search_section_traversal {
-    const struct pattern_section * section;
-    const struct pattern_section * head;
-    const struct chain * cursor;
-    bool match;
+    const struct pattern_section *section;
+    const llist *head;
   } section_traversal;
 
   struct search_segments_traversal {
     struct {
-      const struct pattern_section * section;
-      const union pattern_segment * segment;
+      const struct pattern_section *section;
+      const union pattern_segment *segment;
     } container;
 
-    // segments traversal
-    const struct pattern_segments * segments;
-    const struct pattern_segments * segments_head;
-    const struct chain * segments_cursor;
+    // outer segments traversal (lists of qualifiers)
+    const llist *segments_head;
+    const struct pattern_segments *segments;
 
-    // within the current segments
-    const union pattern_segment * segment;
-    const union pattern_segment * segment_head;
-    const struct chain * segment_cursor;
+    // inner segment traversal (list of eg words)
+    const llist *segment_head;
+    const union pattern_segment *segment;
 
     // characters matched by the segments block
     uint16_t start;
     uint16_t offset;  // len is offset - start
-    bool match;
+    bool unsatisfied; // whether the segments matched
 
     // MUST be at the end b/c of how RESTORE works!
     struct {
@@ -55,33 +52,30 @@ typedef struct pattern_search_context {
       struct search_segments_traversal *child;
       struct search_segments_traversal *next;
     } u;
+
+    uint16_t end;
+    bool sealed;
   } *traversal;
 
   // input context
-  const struct module * restrict module;
-  const struct llist * modules;
+  const struct module * restrict mod;
   void (*dirnode_visit)(void *ctx, struct fsent *dirnode);
-  void * dirnode_visit_ctx;
-  const struct set * restrict variants;
-  uint8_t variants_len;
+  void *dirnode_visit_ctx;
 
   // state
-  const struct fsent * node;
+  const struct fsent *node;
   bool matched;
-
-  int16_t variant_index;
   pattern_search_group groups[16];
   uint16_t group_max;
 
   // output context
-  struct set * restrict matches;  // struct pattern_search
+  struct hashtable *matches;  // struct pattern_search
 } pattern_search_context;
 
 typedef struct pattern_search_node {
   struct fsent * node;
   pattern_search_group groups[16];
   uint16_t group_max;
-  const struct variant * variant;
 } pattern_search_node;
 
 void pattern_section_search(

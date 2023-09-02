@@ -4,56 +4,65 @@
 #include "types.h"
 
 #include "narrator.h"
-#include "moria/operations.h"
+#include "moria/lookup.h"
+#include "moria/dispatch.h"
 #include "moria/graph.h"
 #include "moria/vertex.h"
 #include "moria/edge.h"
 #include "moria/parser.h"
+#include "common/attrs.h"
 
 #include "node_operations_test.h"
 #include "fsent.h"
+#include "vertex.h"
 #include "shadow.h"
 #include "fsedge.h"
 #include "dependency.h"
 #include "filesystem.h"
 #include "graph.h"
 #include "selection.h"
-#include "lookup.h"
 #include "dependency.h"
 #include "graph.h"
+#include "buildplan_entity.h"
+#include "edge.h"
 
 /* used in unit tests */
 static graph_invalidation_context invalidation;
 
-static void node_operations_setup(graph_parser * restrict parser)
+static void node_operations_setup(moria_parser * restrict parser)
 {
   graph_invalidation_begin(&invalidation);
 }
 
-static void node_operations_cleanup(graph_parser * restrict parser)
+static void node_operations_cleanup(moria_parser * restrict parser)
 {
   graph_invalidation_end(&invalidation);
 }
 
 static void node_operations_connect(
-    graph_parser * const restrict parser
-  , moria_vertex * const restrict A
+    moria_parser * const restrict parser
   , moria_vertex * const restrict B
+  , moria_vertex * const restrict A
   , uint32_t attrs
   , moria_edge ** restrict e
 )
 {
-  fsent *An = containerof(A, fsent, vertex);
-  fsent *Bn = containerof(B, fsent, vertex);
-  dependency *dep;
+  fsent *An;
+  fsent *Bn;
 
-  if((attrs & EDGE_TYPE_OPT) == EDGE_TYPE_FSTREE)
-  {
-    fsedge_connect(An, Bn, &invalidation);
+  if(attrs == MORIA_EDGE_IDENTITY) {
+    attrs = EDGE_FSTREE;
   }
-  else if((attrs & EDGE_TYPE_OPT) == EDGE_TYPE_DEPENDS)
+
+  if((attrs & EDGE_TYPE_OPT) == EDGE_FSTREE)
   {
-    dependency_connect(An, Bn, attrs, &invalidation, &dep);
+    An = containerof(A, fsent, vertex);
+    Bn = containerof(B, fsent, vertex);
+    fsedge_connect(Bn, An, &invalidation);
+  }
+  else if((attrs & EDGE_DEPENDS))
+  {
+    dependency_connect(B, A, attrs);
   }
   else
   {
@@ -61,30 +70,47 @@ static void node_operations_connect(
   }
 }
 
-static void node_operations_refresh_vertex(graph_parser * restrict parser, moria_vertex * const restrict v)
+static void node_operations_hyperconnect(
+    moria_parser * restrict p
+  , moria_vertex ** restrict Blist
+  , uint16_t Blen
+  , moria_vertex ** restrict Alist
+  , uint16_t Alen
+  , uint32_t attrs
+  , moria_edge ** restrict er
+)
 {
-  fsent *n;
+  if(Alen == 1 && Blen == 1) {
+    attrs &= ~MORIA_EDGE_HYPER;
+    node_operations_connect(p, Blist[0], Alist[0], attrs, er);
+    return;
+  }
 
-  n = containerof(v, fsent, vertex);
-
-  fsent_ok(n);
+  RTA;
 }
 
-static void node_operations_invalidate_vertex(graph_parser * restrict parser, moria_vertex * const restrict v)
+static void node_operations_refresh_vertex(moria_parser * restrict parser, moria_vertex * const restrict v)
 {
-  fsent *n;
-
-  n = containerof(v, fsent, vertex);
-  fsent_invalidate(n, &invalidation);
+  vertex_mark_fresh(v);
 }
 
-static void node_operations_disconnect(graph_parser * restrict parser, moria_edge * restrict e)
+static void node_operations_invalidate_vertex(moria_parser * restrict parser, moria_vertex * const restrict v)
 {
-  graph_disintegrate(e, &invalidation);
+  vertex_invalidate(v, &invalidation);
+}
+
+static void node_operations_disconnect(moria_parser * restrict parser, moria_edge * restrict e)
+{
+  if(edge_type_get(e) == EDGE_FSTREE) {
+    /* walker.c */
+    fsedge_disintegrate(containerof(e, fsedge, edge), &invalidation);
+  } else {
+    graph_disintegrate(e, &invalidation);
+  }
 }
 
 static void create_vertex(
-    graph_parser * restrict parser
+    moria_parser * restrict parser
   , moria_vertex ** const restrict rv
   , uint32_t attrs
   , uint8_t opattrs
@@ -94,6 +120,7 @@ static void create_vertex(
 {
   fsent *n;
   fsent *b;
+  buildplan_entity *bpe;
   bool shadow = false;
   bool root = false;
 
@@ -128,22 +155,30 @@ static void create_vertex(
     return;
   }
 
-  fsent_create(&n, attrs, VERTEX_OK, label, label_len);
-  *rv = &n->vertex;
+  n = 0;
+  if(attrs == VERTEX_BPE) {
+    buildplan_entity_alloc(&bpe);
+    bpe->vertex.label = label;
+    bpe->vertex.label_len = label_len;
+    *rv = &bpe->vertex;
+  } else {
+    fsent_create(&n, attrs, VERTEX_OK, label, label_len);
+    *rv = &n->vertex;
+  }
 
   b = 0;
-  if(root && g_root)
+  if(n && root && g_root)
   {
     b = g_root;
   }
-  else if(shadow && g_shadow)
+  else if(n && shadow && g_shadow)
   {
     b = g_shadow;
   }
 
   if(b)
   {
-    node_operations_connect(parser, &b->vertex, &n->vertex, EDGE_TYPE_FSTREE, 0);
+    node_operations_connect(parser, &n->vertex, &b->vertex, EDGE_FSTREE, 0);
   }
 }
 
@@ -173,19 +208,21 @@ void graph_say_lists(narrator * restrict N, llist ** vertex_lists, uint16_t vert
 
 void graph_say(narrator * restrict N)
 {
-  llist *vertex_lists[1];
+  llist *vertex_lists[2];
   llist *edge_lists[2];
 
   vertex_lists[0] = &fsent_list;
+  vertex_lists[1] = &bpe_list;
   edge_lists[0] = &fsedge_list;
   edge_lists[1] = &dependency_list;
 
   graph_say_lists(N, vertex_lists, sizeof(vertex_lists) / sizeof(*vertex_lists), edge_lists, sizeof(edge_lists) / sizeof(*edge_lists));
 }
 
-moria_operations_dispatch * node_operations_test_dispatch = (moria_operations_dispatch[]) {{
+moria_operations_vtable * node_operations_test_dispatch = (moria_operations_vtable[]) {{
     .create_vertex = create_vertex
   , .connect = node_operations_connect
+  , .hyperconnect = node_operations_hyperconnect
   , .disconnect = node_operations_disconnect
   , .refresh_vertex = node_operations_refresh_vertex
   , .invalidate_vertex = node_operations_invalidate_vertex

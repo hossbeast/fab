@@ -5,23 +5,22 @@
 
 #include "lorien/load.h"
 #include "lorien/nftwat.h"
+#include "bacon/load.h"
 #include "moria/edge.h"
 #include "moria/graph.h"
 #include "moria/load.h"
 #include "moria/vertex.h"
-#include "moria/operations.h"
 #include "moria/parser.h"
 #include "narrator.h"
 #include "narrator/fixed.h"
 #include "narrator/growing.h"
-#include "valyria/array.h"
-#include "valyria/dictionary.h"
 #include "valyria/map.h"
 #include "valyria/list.h"
 #include "xlinux/xstdlib.h"
 #include "xlinux/xstring.h"
 #include "xunit.h"
 #include "xunit/assert.h"
+#include "common/hash.h"
 
 #include "walker.internal.h"
 #include "filesystem.h"
@@ -30,8 +29,9 @@
 #include "fsent.h"
 #include "fsedge.h"
 #include "node_operations_test.h"
+#include "entlist.h"
 
-static llist exclude_list;
+static rbtree exclude_list;
 
 typedef struct {
   XUNITTEST;
@@ -60,67 +60,87 @@ typedef struct
 
 typedef struct {
   walker_context base;
-  array * operations;
 } walker_test_context;
 
 //
 // tests
 //
 
+static uint32_t info_hash(uint32_t h, const void * _ent)
+{
+  const ftwinfo *ent = _ent;
+  return hash32(h, &ent->path[0], sizeof(ent->path[0]));
+}
+
+static int info_cmp(const void *_A, const void *_B)
+{
+  const ftwinfo *A, *B;
+  A = _A;
+  B = _B;
+  return INTCMP(A->path[0], B->path[0]);
+}
+
 static void info_destroy(void * _info)
 {
   ftwinfo * info = _info;
-  free((void*)info->path);
+
+  free(info->path);
+  free(info);
 }
 
 static void walker_test_unit_setup(xunit_unit * unit)
 {
   lorien_load();
   moria_load();
+  bacon_load();
 
   filesystem_setup();
   graph_setup();
   fsent_setup();
+  entlist_setup();
 
   /* suppress rcu-registration checks performed under devel build for events fired from the walker */
   extern __thread bool rcu_is_registered ; rcu_is_registered = true;
 
   walker_exclude_list = &exclude_list;
-  llist_init_node(walker_exclude_list);
+  rbtree_init(walker_exclude_list);
 }
 
 static void walker_test_unit_cleanup(xunit_unit * unit)
 {
   lorien_unload();
   moria_unload();
+  bacon_unload();
   graph_cleanup();
   filesystem_cleanup();
+  entlist_cleanup();
 }
 
 static void walker_test_entry(xunit_test * _test)
 {
   walker_test * test = (walker_test *)_test;
 
-  walker_test_context ctx = {};
-  dictionary * infos = 0;
+  walker_test_context ctx = { };
+  hashtable infos;
   map * nodes = 0;
-  graph_invalidation_context invalidation = { 0 };
-  graph_parser * op_parser = 0;
+  graph_invalidation_context invalidation = { };
+  moria_parser * op_parser = 0;
   narrator_growing * N = 0;
   int method;
   int stop;
   char * seq;
   const char * graph;
+  ftwinfo *A, *B, key;
+  hashtable_search_context sctx;
 
   narrator_growing_create(&N);
 
   // setup initial graph
-  graph_parser_create(&op_parser, &g_graph, &fsent_list, node_operations_test_dispatch, graph_vertex_attrs, graph_edge_attrs);
-  graph_parser_operations_parse(op_parser, MMS(test->operations));
+  moria_parser_create(&op_parser, &g_graph, (llist *[]) { &fsent_list }, 1, node_operations_test_dispatch, graph_vertex_attrs, graph_edge_attrs);
+  moria_parser_operations_parse(op_parser, MMS(test->operations));
 
   map_create(&nodes);
-  dictionary_createx(&infos, sizeof(ftwinfo), 0, info_destroy);
-  array_create(&ctx.operations, sizeof(walker_test_operation));
+  hashtable_initx(&infos, sizeof(ftwinfo), info_hash, info_cmp, info_destroy);
   graph_invalidation_begin(&invalidation);
 
   static int walk_ids;
@@ -141,15 +161,23 @@ static void walker_test_entry(xunit_test * _test)
       seq++;
     }
 
-    ftwinfo * A = dictionary_get(infos, MM(*seq));
+    key.path = seq;
+    A = hashtable_get(&infos, &key);
     seq++;
 
-    ftwinfo * B = 0;
-    if((B = dictionary_get(infos, MM(*seq))) == 0)
-    {
-      dictionary_store(infos, MM(*seq), &B);
-      B->pathl = 1;
+    B = 0;
+    key.path = seq;
+    sctx = (typeof(sctx)) {
+      entry : &key
+    };
+    if((hashtable_search(&infos, &sctx))) {
+      B = hashtable_fetch(&infos, &sctx);
+    } else {
+      xmalloc(&B, sizeof(*B));
+      sctx.entry = B;
       ixsprintf((void*)&B->path, "%c", *seq);
+      B->pathl = 1;
+      hashtable_set(&infos, &sctx);
     }
     seq++;
 
@@ -175,11 +203,10 @@ static void walker_test_entry(xunit_test * _test)
   assert_eq_s(test->graph, graph);
 
   fsent_cleanup();
-  map_xfree(nodes);
-  dictionary_xfree(infos);
-  array_xfree(ctx.operations);
+  map_free(nodes);
+  hashtable_destroy(&infos);
   graph_invalidation_end(&invalidation);
-  graph_parser_xfree(op_parser);
+  moria_parser_free(op_parser);
   narrator_growing_free(N);
 }
 
@@ -197,64 +224,66 @@ static xunit_unit xunit = {
           operations : "A/B"
         , base : "A"
         , sequence : "*0A AB 0A*"
-        , graph :  "1-(root)!dir 2-A!dir"
+        , graph :  "1-(root)!dir|protect 2-A!dir"
                   " 3-B!file"
-                  " 1:fs:2 2:fs:3"
+                  " 2:fs:1 3:fs:2"
       }}
     , (walker_test[]) {{
           operations : "A/B A/C"
         , base : "A"
         , sequence : "*0A AB AC 0A*"
-        , graph :  "1-(root)!dir 2-A!dir"
+        , graph :  "1-(root)!dir|protect 2-A!dir"
                   " 3-B!file 4-C!file"
-                  " 1:fs:2 2:fs:3 2:fs:4"
+                  " 2:fs:1 3:fs:2 4:fs:2"
       }}
     , (walker_test[]) {{
           operations : "A/B A/C B/D B/E C/F C/G"
         , base : "A"
         , sequence : "*0A *AB BD BE AB* *AC CF CG AC* 0A*"
-        , graph :  "1-(root)!dir 2-A!dir 3-B!dir 4-C!dir"
+        , graph :  "1-(root)!dir|protect 2-A!dir 3-B!dir 4-C!dir"
                   " 5-D!file 6-E!file 7-F!file 8-G!file"
-                  " 1:fs:2 2:fs:3 2:fs:4 3:fs:5 3:fs:6 4:fs:7 4:fs:8"
+                  " 2:fs:1 3:fs:2 4:fs:2 5:fs:3 6:fs:3 7:fs:4 8:fs:4"
       }}
+    /* note that directories newly created by walker are in the uncreated (U) state until filesystem
+     * reconcile has a chance to mkdir on them */
     , (walker_test[]) {{        // new leaves
           operations : "A/B"
         , base : "A"
         , sequence : "*0A *AB BD BE AB* *AC CF CG AC* 0A*"
-        , graph :  "1-(root)!dir 2-A!dir 3-B!dir 4-C!dir"
+        , graph :  "1-(root)!dir|protect 2-A!dir 3-B!dir 4-C!dir"
                   " 5-D!file 6-E!file 7-F!file 8-G!file"
-                  " 1:fs:2 2:fs:3 2:fs:4 3:fs:5 3:fs:6 4:fs:7 4:fs:8"
+                  " 2:fs:1 3:fs:2 4:fs:2 5:fs:3 6:fs:3 7:fs:4 8:fs:4"
       }}
     , (walker_test[]) {{
           operations : "A/B B/D B/E"
         , base : "A"
         , sequence : "*0A *AB BD BE AB* *AC CF CG AC* 0A*"
-        , graph :  "1-(root)!dir 2-A!dir 3-B!dir 4-C!dir"
+        , graph :  "1-(root)!dir|protect 2-A!dir 3-B!dir 4-C!dir"
                   " 5-D!file 6-E!file 7-F!file 8-G!file"
-                  " 1:fs:2 2:fs:3 2:fs:4 3:fs:5 3:fs:6 4:fs:7 4:fs:8"
+                  " 2:fs:1 3:fs:2 4:fs:2 5:fs:3 6:fs:3 7:fs:4 8:fs:4"
       }}
     , (walker_test[]) {{        // deleted leaves - A/C
           operations : "A/B A/C"
         , base : "A"
         , sequence : "*0A AB 0A*"
-        , graph :  "1-(root)!dir 2-A!dir"
+        , graph :  "1-(root)!dir|protect 2-A!dir"
                   " 3-B!file"
-                  " 1:fs:2 2:fs:3"
+                  " 2:fs:1 3:fs:2"
       }}
     , (walker_test[]) {{        // deleted leaves
           operations : "A/B A/C B/D B/E C/F C/G"
         , base : "A"
         , sequence : "*0A *AB AB* *AC AC* 0A*"
-        , graph :  "1-(root)!dir 2-A!dir 3-B!dir 4-C!dir"
-                  " 1:fs:2 2:fs:3 2:fs:4"
+        , graph :  "1-(root)!dir|protect 2-A!dir 3-B!dir 4-C!dir"
+                  " 2:fs:1 3:fs:2 4:fs:2"
       }}
     , (walker_test[]) {{        // deleted directory
           operations : "A/B A/C B/D B/E C/F C/G"
         , base : "A"
         , sequence : "*0A *AB BD BE AB* 0A*"
-        , graph :  "1-(root)!dir 2-A!dir 3-B!dir"
+        , graph :  "1-(root)!dir|protect 2-A!dir 3-B!dir"
                   " 4-D!file 5-E!file"
-                  " 1:fs:2 2:fs:3 3:fs:4 3:fs:5"
+                  " 2:fs:1 3:fs:2 4:fs:3 5:fs:3"
       }}
     , 0
   }

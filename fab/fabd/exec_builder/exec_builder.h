@@ -20,7 +20,7 @@ struct formula_value;
 struct fsent;
 struct narrator;
 struct path_cache_entry;
-struct value;
+struct bacon_value;
 
 /* intermediate state for building an exec */
 typedef struct exec_builder {
@@ -64,15 +64,15 @@ void exec_builder_take(exec_builder * restrict builder, struct exec ** restrict 
   __attribute__((nonnull));
 
 /* initialize an exec builder */
-void exec_builder_xinit(exec_builder * restrict builder)
+void exec_builder_init(exec_builder * restrict builder)
   __attribute__((nonnull));
 
 /* reset an exec builder */
-void exec_builder_xreset(exec_builder * restrict builder)
+void exec_builder_reset(exec_builder * restrict builder)
   __attribute__((nonnull));
 
 /* destroy an exec builder */
-void exec_builder_xdestroy(exec_builder * restrict builder)
+void exec_builder_destroy(exec_builder * restrict builder)
   __attribute__((nonnull));
 
 enum builder_add_mode {
@@ -98,7 +98,7 @@ enum builder_render_function {
 union builder_render_function_args {
   const char *s;
   const struct formula_value * f;
-  const struct value * v;
+  const struct bacon_value * v;
   const struct path_cache_entry *pe;
   struct {
     const struct fsent * n;
@@ -120,7 +120,7 @@ typedef struct exec_builder_args {
   const char * name;  // for a new envp, its name
   uint16_t name_len;
 
-  /* value */
+  /* bacon_value */
   enum builder_render_function render_val;
   union builder_render_function_args val;
 

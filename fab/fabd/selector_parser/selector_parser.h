@@ -5,9 +5,23 @@
 
 #include "types.h"
 
+#include "selector_parser.h"
+#include "valyria/llist.h"
+#include "yyutil/parser.h"
+
 struct yyu_location;
 struct selector;
-typedef struct selector_parser selector_parser;
+struct pattern_parser;
+
+typedef struct selector_parser {
+  yyu_parser yyu;
+
+  // stack of selectors under construction
+  llist selector_stack;
+
+  /* sub parsers */
+  struct pattern_parser * pattern_parser;
+} selector_parser;
 
 /// selector_parser_create
 //
@@ -22,14 +36,14 @@ void selector_parser_create(selector_parser ** const restrict p)
 // SUMMARY
 //  free a config parser with free semantics
 //
-void selector_parser_xfree(selector_parser * const restrict);
+void selector_parser_free(selector_parser * const restrict);
 
 /// selector_parser_ifree
 //
 // SUMMARY
 //  free a config parser with ifree semantics
 //
-void selector_parser_ixfree(selector_parser ** const restrict)
+void selector_parser_ifree(selector_parser ** const restrict)
   __attribute__((nonnull));
 
 /// selector_parse

@@ -3,6 +3,7 @@
 
 #include <sys/syscall.h>
 #include <sys/wait.h>
+#include <errno.h>
 
 #include "types.h"
 
@@ -12,13 +13,12 @@
 #include "xlinux/xfcntl.h"
 #include "xlinux/xprctl.h"
 #include "valyria/hashtable.h"
-#include "valyria/set.h"
 #include "valyria/map.h"
 #include "narrator.h"
 #include "moria/edge.h"
 #include "narrator/growing.h"
 #include "narrator/fixed.h"
-#include "bacon.h"
+#include "bacon/value.h"
 #include "bacon/writer.h"
 
 #include "fab/sigutil.h"
@@ -29,26 +29,31 @@
 
 #include "build_slot.h"
 #include "fsent.h"
+#include "vertex.h"
+#include "edge.h"
 #include "formula.h"
 #include "path_cache.h"
 #include "build.h"
 #include "notify_thread.h"
 #include "buildplan.h"
-#include "dependency.h"
+#include "buildplan_entity.h"
+#include "rule_module_association.h"
+#include "rule.h"
 #include "exec.h"
 #include "exec_builder.h"
 #include "params.h"
 #include "module.h"
-#include "variant.h"
 #include "stats.h"
 #include "formula_value.h"
 #include "events.h"
 #include "channel.h"
 #include "system_state.h"
+#include "entlist.h"
+#include "sysvar.h"
 
 #include "atomics.h"
 #include "common/assure.h"
-#include "zbuffer.h"
+#include "zcat.h"
 #include "marshal.h"
 #include "hexdump.h"
 
@@ -127,8 +132,8 @@ static void bsexec(build_slot * restrict bs)
   // auxout
   xdup2(bs->auxout_pipe[1], 1001);
 
-  // chdir to the module directory
-  xfchdir(bs->mod->dirnode_fd);
+  // owning modules directory
+  xchdirs(bs->cwd);
 
   if(bs->file_fd != -1) {
     /*
@@ -155,15 +160,21 @@ static void bsexec(build_slot * restrict bs)
   }
 
   /* signals */
-
   if(fd != -1) {
-    xfexecve(fd, bs->argv, bs->envp);
+    x = fexecve(fd, bs->argv, bs->envp);
   } else {
-    xexecve(bs->file_path, bs->argv, bs->envp);
+    x = execve(bs->file_path, bs->argv, bs->envp);
   }
+  if(x == 0) {
+    return;
+  }
+
+  dprintf(1, "%s\n", strerror(errno));
+  RTA;
+  exit(1);
 }
 
-/* publish the exec-forked event */
+/* publish exec-forked events for this slot */
 static void build_slot_forked(build_slot * restrict bs)
 {
   size_t z;
@@ -185,15 +196,17 @@ static void build_slot_forked(build_slot * restrict bs)
   uint16_t envp_count;
   uint16_t envp_x;
 
-  llist sources;
+  entlist sources;
   uint16_t sources_count;
   uint16_t sources_x;
   moria_vertex *source;
+  entlist *sources_eln;
 
-  llist targets;
+  entlist targets;
   uint16_t targets_count;
   uint16_t targets_x;
   moria_vertex *target;
+  entlist *targets_eln;
 
   /* struct fab_build_slot_info */
   if(!events_would(FABIPC_EVENT_FORMULA_EXEC_FORKED, &chan, &msg)) {
@@ -205,17 +218,15 @@ static void build_slot_forked(build_slot * restrict bs)
   envp_count = sentinel(bs->envp);
   envp_x = 0;
 
-  llist_init_node(&sources);
-  dependency_sources(bs->bpe, &sources);
-  sources_count = llist_count(&sources);
+  buildplan_entity_sources(bs->bpe, &sources);
+  sources_count = llist_count(&sources.lln);
+  sources_eln = llist_first(&sources.lln, typeof(*sources_eln), lln); // cursor
   sources_x = 0;
-  source = llist_first(&sources, typeof(*source), lln);
 
-  llist_init_node(&targets);
-  dependency_targets(bs->bpe, &targets);
-  targets_count = llist_count(&targets);
+  buildplan_entity_targets(bs->bpe, &targets);
+  targets_count = llist_count(&targets.lln);
+  targets_eln = llist_first(&targets.lln, typeof(*targets_eln), lln); // cursor
   targets_x = 0;
-  target = llist_first(&targets, typeof(*target), lln);
 
   while(1)
   {
@@ -228,26 +239,34 @@ static void build_slot_forked(build_slot * restrict bs)
     z += marshal_u32(dst + z, sz - z, bs->pid);
     z += marshal_u16(dst + z, sz - z, bs->stage);
 
+    /* rule */
+    z += marshal_u16(dst + z, sz - z, bs->bpe->rma->rule->id_len);
+    z += zcatw(dst + z, sz - z, bs->bpe->rma->rule->id, bs->bpe->rma->rule->id_len);
+
+    /* formula */
+    z += marshal_u16(dst + z, sz - z, bs->bpe->fml->abspath_len);
+    z += zcatw(dst + z, sz - z, bs->bpe->fml->abspath, bs->bpe->fml->abspath_len);
+
     /* path */
     if(bs->file_pe)
     {
       len = bs->file_pe->dir->len + 1 + bs->file_pe->len;
       z += marshal_u16(dst + z, sz - z, len);
-      z += znloadw(dst + z, sz - z, bs->file_pe->dir->s, bs->file_pe->dir->len);
-      z += znloadc(dst + z, sz - z, '/');
-      z += znloadw(dst + z, sz - z, bs->file_pe->s, bs->file_pe->len);
+      z += zcatw(dst + z, sz - z, bs->file_pe->dir->s, bs->file_pe->dir->len);
+      z += zcatc(dst + z, sz - z, '/');
+      z += zcatw(dst + z, sz - z, bs->file_pe->s, bs->file_pe->len);
     }
     else
     {
       len = strlen(bs->file_path);
       z += marshal_u16(dst + z, sz - z, len);
-      z += znloadw(dst + z, sz - z, bs->file_path, len);
+      z += zcatw(dst + z, sz - z, bs->file_path, len);
     }
 
     /* cwd */
-    len = bs->mod->dir_node_abspath_len;
+    len = bs->cwd_len;// bs->mod->dir_node_abspath_len;
     z += marshal_u16(dst + z, sz - z, len);
-    z += znloadw(dst + z, sz - z, bs->mod->dir_node_abspath, len);
+    z += zcatw(dst + z, sz - z, bs->cwd, len); //  bs->mod->dir_node_abspath, len);
 
     /* args */
     z += marshal_u16(dst + z, sz - z, argv_count);          /* total items in argv */
@@ -267,7 +286,7 @@ static void build_slot_forked(build_slot * restrict bs)
 
       z += marshal_u32(dst + z, sz - z, descriptor_fab_build_string.id);
       z += marshal_u16(dst + z, sz - z, len);
-      z += znloadw(dst + z, sz - z, bs->argv[argv_x], len);
+      z += zcatw(dst + z, sz - z, bs->argv[argv_x], len);
       x++;
     }
     list_size = z - list_size_off;
@@ -292,7 +311,7 @@ static void build_slot_forked(build_slot * restrict bs)
 
       z += marshal_u32(dst + z, sz - z, descriptor_fab_build_string.id);
       z += marshal_u16(dst + z, sz - z, len);
-      z += znloadw(dst + z, sz - z, bs->envp[envp_x], len);
+      z += zcatw(dst + z, sz - z, bs->envp[envp_x], len);
       x++;
     }
     list_size = z - list_size_off;
@@ -308,21 +327,21 @@ static void build_slot_forked(build_slot * restrict bs)
     list_len_off = z;
     z += marshal_u16(dst + z, sz - z, 0);               /* length */
     x = 0;
-    while(source)
-    {
+
+    for(; sources_eln; sources_eln = llist_next(&sources.lln, sources_eln, lln)) {
       if((z + 512 + 256) > (sz - z)) {
         break;
       }
 
+      source = sources_eln->p;
       z += marshal_u32(dst + z, sz - z, descriptor_fab_build_string.id);
       n = containerof(source, fsent, vertex);
       len_off = z;
       z += marshal_u16(dst + z, sz - z, 0);
-      len = fsent_path_znload(dst + z, sz - z, n);
+      len = fsent_path_cat(dst + z, sz - z, n);
       marshal_u16(dst + len_off, sz - len_off, len);
       z += len;
 
-      source = llist_next(&sources, source, lln);
       x++;
       sources_x++;
     }
@@ -339,21 +358,20 @@ static void build_slot_forked(build_slot * restrict bs)
     list_len_off = z;
     z += marshal_u16(dst + z, sz - z, 0);            /* length */
     x = 0;
-    while(target)
-    {
+    for(; targets_eln; targets_eln = llist_next(&targets.lln, targets_eln, lln)) {
       if((z + 512 + 256) > (sz - z)) {
         break;
       }
 
+      target = targets_eln->p;
       z += marshal_u32(dst + z, sz - z, descriptor_fab_build_string.id);
       n = containerof(target, fsent, vertex);
       len_off = z;
       z += marshal_u16(dst + z, sz - z, 0);
-      len = fsent_path_znload(dst + z, sz - z, n);
+      len = fsent_path_cat(dst + z, sz - z, n);
       marshal_u16(dst + len_off, sz - len_off, len);
       z += len;
 
-      target = llist_next(&targets, target, lln);
       x++;
       targets_x++;
     }
@@ -365,6 +383,10 @@ static void build_slot_forked(build_slot * restrict bs)
     msg->id = bs->pid;
     events_publish(chan, msg);
 
+    RUNTIME_ASSERT(argv_x <= argv_count);
+    RUNTIME_ASSERT(envp_x <= envp_count);
+    RUNTIME_ASSERT(sources_x <= sources_count);
+    RUNTIME_ASSERT(targets_x <= targets_count);
     if(argv_x == argv_count && envp_x == envp_count && sources_x == sources_count && targets_x == targets_count) {
       break;
     }
@@ -373,6 +395,9 @@ static void build_slot_forked(build_slot * restrict bs)
       return;
     }
   }
+
+  entlist_destroy(&sources);
+  entlist_destroy(&targets);
 }
 
 /* publish the exec-waited event */
@@ -403,113 +428,69 @@ static void build_slot_waited(build_slot * restrict bs)
 // public
 //
 
-void build_slot_prep(build_slot * restrict bs, dependency * restrict dep, uint32_t stage_index)
-{
-  fsent *n = 0;
-  const moria_edge *e;
-  int x;
-
-  RUNTIME_ASSERT(dep->fml);
-
-  bs->stage_index = stage_index;
-  bs->bpe = dep;
-
-  e = &dep->edge;
-  if(!(e->attrs & MORIA_EDGE_HYPER))
-  {
-    n = containerof(e->A, fsent, vertex); /* target */
-    bs->var = n->var;
-    bs->mod = fsent_module_get(n);
-  }
-  else
-  {
-    n = containerof(e->Alist[0].v, fsent, vertex);
-    bs->mod = fsent_module_get(n);
-    for(x = 0; x < e->Alen; x++)
-    {
-      n = containerof(e->Alist[x].v, fsent, vertex);
-      if(fsent_module_get(n) != bs->mod)
-      {
-        bs->mod = 0;
-        break;
-      }
-    }
-
-    n = containerof(e->Alist[0].v, fsent, vertex);
-    bs->var = n->var;
-    for(x = 0; x < e->Alen; x++)
-    {
-      n = containerof(e->Alist[x].v, fsent, vertex);
-      if(n->var != bs->var)
-      {
-        bs->var = 0;
-        break;
-      }
-    }
-  }
-
-  if(bs->mod == 0)
-  {
-    /* fallback to the project module for e.g. tasks under // */
-    bs->mod = g_project_root->mod;
-  }
-  if(bs->var)
-  {
-    bs->vars = map_get(bs->mod->variant_var, MM(bs->var));
-    bs->exec = map_get(bs->mod->variant_envs, MM(bs->var));
-  }
-  else
-  {
-    bs->vars = bs->mod->novariant_var;
-    bs->exec = bs->mod->novariant_envs;
-  }
-
-  /* mark targets for modification to suppress notify events
-   * until the next sweep epoch */
-  e = &dep->edge;
-  if(!(e->attrs & MORIA_EDGE_HYPER))
-  {
-    n = containerof(e->A, fsent, vertex);
-    n->notify_state = NOTIFY_SUPPRESS;
-  }
-  else
-  {
-    for(x = 0; x < e->Alen; x++)
-    {
-      n = containerof(e->Alist[x].v, fsent, vertex);
-      n->notify_state = NOTIFY_SUPPRESS;
-    }
-  }
-}
-
-void build_slot_fork_and_exec(build_slot * restrict bs)
+void build_slot_fork_and_exec(build_slot * restrict bs, buildplan_entity * restrict bpe, uint32_t stage_index)
 {
   module * mod;
   const formula * fml;
-  const value * vars;
-  const exec * variant_exec = 0;
-  exec * local_exec = 0;
+  struct exec * exec = 0;
   size_t envp_count = 0;
   uint16_t new_env_len;
   size_t args_len;
   size_t envs_size;
   const char *filename;
+  moria_vertex *v;
+  fsent *n;
+  entlist targets, *eln;
+  const bacon_value *vars;
+  const fsent *cwd;
 
-  RUNTIME_ASSERT(bs->bpe);
-  RUNTIME_ASSERT(bs->bpe->fml);
-  RUNTIME_ASSERT(bs->bpe->fml->self_fml);
-  RUNTIME_ASSERT(bs->mod);
+  RUNTIME_ASSERT(bpe->fml);
 
-  STATS_INC(g_stats.bsexec);
+  STATS_INC(g_stats.fml_exec);
+  STATS_INC(bpe->fml->fml_stats.fml_exec);
 
-  mod = bs->mod;
+  /* determine (optional) context module from targets */
+  mod = 0;
+  buildplan_entity_targets(bpe, &targets);
+  entlist_foreach(&targets, v, eln) {
+    n = containerof(v, typeof(*n), vertex);
+    if(mod && fsent_module_get(n) != mod) {
+      mod = 0;
+      break;
+    }
+    mod = fsent_module_get(n);
+  }
 
-  fml = bs->bpe->fml->self_fml;
-  vars = bs->vars;
-  variant_exec = bs->exec;
+  /* mark targets for modification to suppress notify events
+   * until the next sweep epoch */
+  entlist_foreach(&targets, n, eln) {
+    n->notify_state = NOTIFY_SUPPRESS;
+  }
+  entlist_destroy(&targets);
 
-  exec_builder_xreset(&bs->exec_builder);
-  exec_render_context_configure(&bs->exec_builder_context, &bs->exec_builder, mod, vars, bs);
+  bs->stage_index = stage_index;
+  bs->bpe = bpe;
+  if(mod) {
+    bs->cwd = mod->dir_node_abspath;
+    bs->cwd_len = mod->dir_node_abspath_len;
+    vars = mod->vars;
+    cwd = mod->dir_node;
+  } else {
+    bs->cwd = g_cwd_path;
+    bs->cwd_len = g_cwd_path_len;
+    vars = 0;
+    cwd = g_cwd;
+  }
+
+  fml = bs->bpe->fml;
+
+  // render sysvars
+  bacon_value_free(&bs->sysvar_parser, bs->sysvars);
+  bs->sysvars = 0;
+  sysvar_render(&bs->sysvars, &bs->sysvar_parser, bs->bpe, cwd);
+
+  exec_builder_reset(&bs->exec_builder);
+  exec_render_context_configure(&bs->exec_builder_context, &bs->exec_builder, cwd, mod, vars, bs->sysvars, bs);
 
   // render file if any
   if(fml->file) {
@@ -535,34 +516,35 @@ void build_slot_fork_and_exec(build_slot * restrict bs)
     }
   }
 
-  // render sysvars
-  exec_render_env_sysvars(&bs->exec_builder_context, bs);
+  // render env sysvars
+  exec_render_env_vars(&bs->exec_builder_context);
 
   // render
-  exec_builder_build(&bs->exec_builder, &local_exec);
+  exec_builder_build(&bs->exec_builder, &exec);
 
   // path setup
   bs->file_pe = 0;
   bs->file_path = 0;
   bs->file_fd = -1;
-  if(local_exec->file_pe)   // execute file given by path-cache entry
+  if(exec->file_pe)   // execute file given by path-cache entry
   {
-    bs->file_pe = local_exec->file_pe;
-    bs->file_fd = local_exec->file_pe->fd;
-    filename = local_exec->file_pe->filename;
+    RUNTIME_ASSERT(exec->file_pe->fd != -1);
+    bs->file_pe = exec->file_pe;
+    bs->file_fd = exec->file_pe->fd;
+    filename = exec->file_pe->filename;
   }
-  else if(local_exec->path) // execute file given by absolute path
+  else if(exec->path) // execute file given by absolute path
   {
-    bs->file_path = local_exec->path;
-    if((filename = strrchr(local_exec->path, '/')))
+    bs->file_path = exec->path;
+    if((filename = strrchr(exec->path, '/')))
       filename++;
     else
-      filename = local_exec->path;
+      filename = exec->path;
   }
-  else                      // execute formula file itself
+  else                // execute formula file itself
   {
     bs->file_fd = fml->fd;
-    bs->file_path = fml->self_node_abspath;
+    bs->file_path = fml->abspath;
     filename = fml->self_node->name.name;
   }
 
@@ -571,11 +553,11 @@ void build_slot_fork_and_exec(build_slot * restrict bs)
    */
 
   args_len = 1;    // program name
-  args_len += local_exec->args_size;
+  args_len += exec->args_size;
 
   assure(&bs->argv_stor, sizeof(*bs->argv_stor), args_len + 1 /* sentinel */, &bs->argv_stor_a);
   bs->argv_stor[0] = (void*)filename;
-  memcpy(&bs->argv_stor[1], local_exec->args, sizeof(*local_exec->args) * local_exec->args_size);
+  memcpy(&bs->argv_stor[1], exec->args, sizeof(*exec->args) * exec->args_size);
 
   bs->argv_stor[args_len] = 0;
   bs->argv = bs->argv_stor;
@@ -585,22 +567,24 @@ void build_slot_fork_and_exec(build_slot * restrict bs)
    */
 
   envs_size = 0;
-  if(variant_exec)
-    envs_size += variant_exec->envs_size;
-  envs_size += local_exec->envs_size;
+  if(mod && mod->exec) {
+    envs_size += mod->exec->envs_size;
+  }
+  envs_size += exec->envs_size;
 
   envs_size += 1;  // PATH
   envs_size += 1;  // sentinel
 
   assure(&bs->env_stor, sizeof(*bs->env_stor), envs_size, &bs->env_stor_a);
 
-  if(variant_exec)
+  /* pre-rendered envs from mod->vars */
+  if(mod && mod->exec)
   {
-    memcpy(bs->env_stor, variant_exec->envs, sizeof(*variant_exec->envs) * variant_exec->envs_size);
-    envp_count += variant_exec->envs_size;
+    memcpy(bs->env_stor, mod->exec->envs, sizeof(*mod->exec->envs) * mod->exec->envs_size);
+    envp_count += mod->exec->envs_size;
   }
 
-  new_env_len = insertion_sort(bs->env_stor, envp_count, local_exec->envs, local_exec->envs_size);
+  new_env_len = insertion_sort(bs->env_stor, envp_count, exec->envs, exec->envs_size);
   envp_count = new_env_len;
 
   // $PATH if specified
@@ -616,6 +600,7 @@ void build_slot_fork_and_exec(build_slot * restrict bs)
   bs->pid = xfork();
   if(bs->pid == 0) {
     bsexec(bs);
+    /* does not return */
   }
 
   build_slot_forked(bs);
@@ -665,40 +650,30 @@ void build_slot_read(build_slot * restrict bs, uint32_t stream)
 
 void build_slot_reap(build_slot * restrict bs, siginfo_t *info)
 {
-  int x;
-  const dependency *bpe;
   fsent *n;
-  const moria_edge *e;
   bool success;
+  entlist targets, *eln;
 
   bs->status = info->si_status;
   success = true;
-  if(bs->status != 0 || bs->stderr_total > 0)
+  if(bs->status != 0 || bs->stderr_total > 0) {
     success = false;
+  }
 
-  /* re-enable inotify monitoring for the dependency targets */
-  bpe = bs->bpe;
-  e = &bpe->edge;
-  if(!(e->attrs & MORIA_EDGE_HYPER))
-  {
-    n = containerof(e->A, fsent, vertex);
-    n->notify_epoch = notify_thread_epoch;
+  /* re-enable inotify monitoring for the buildplan_entity targets */
+  buildplan_entity_targets(bs->bpe, &targets);
+  entlist_foreach(&targets, n, eln) {
+    n->in_epoch = notify_thread_epoch;
     n->notify_state = NOTIFY_EXPIRING;
     if(success) {
-      fsent_ok(n);
+      vertex_mark_fresh(&n->vertex);
     }
   }
-  else
-  {
-    for(x = 0; x < e->Alen; x++)
-    {
-      n = containerof(e->Alist[x].v, fsent, vertex);
-      n->notify_epoch = notify_thread_epoch;
-      n->notify_state = NOTIFY_EXPIRING;
-      if(success) {
-        fsent_ok(n);
-      }
-    }
+  entlist_destroy(&targets);
+
+  if(success) {
+    STATS_INC(g_stats.fml_exec_ok);
+    STATS_INC(bs->bpe->fml->fml_stats.fml_exec_ok);
   }
 
   build_slot_waited(bs);

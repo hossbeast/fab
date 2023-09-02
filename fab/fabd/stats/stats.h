@@ -7,7 +7,7 @@
 
 #include "fab/stats.h"
 
-struct fsent;
+struct moria_vertex;
 
 extern fab_global_stats g_stats;
 
@@ -19,8 +19,17 @@ extern fab_global_stats g_stats;
   (x)--;                    \
 } while(0)
 
-void stats_global_collate(void *dst, size_t sz, bool reset, size_t *zp)
+size_t stats_global_collate(void *dst, size_t sz, bool reset)
   __attribute__((nonnull));
 
-void stats_node_collate(void *dst, size_t sz, struct fsent * restrict n, bool reset, size_t *zp)
+//size_t stats_vertex_fsent_collate(void *dst, size_t sz, bool reset, struct moria_vertex * restrict v)
+//  __attribute__((nonnull));
+
+size_t stats_collate_counters(
+    void * restrict dst
+  , size_t sz
+  , const descriptor_type * restrict desc
+  , fab_stats_record *record
+  , int off
+)
   __attribute__((nonnull));

@@ -5,13 +5,13 @@
 
 #include "common/attrs.h"
 #include "moria/traverse.h"
+#include "moria/foreach.h"
+#include "narrator/growing.h"
 #include "narrator.h"
 #include "narrator/fixed.h"
 #include "bacon/writer.h"
+#include "bacon/builder.h"
 #include "xlinux/xstdlib.h"
-
-#include "xunit/type.h"
-#include "xunit/info.h"
 
 #include "selector.internal.h"
 #include "dependency.h"
@@ -21,9 +21,13 @@
 #include "pattern.h"
 #include "request.h"
 #include "channel.h"
-#include "zbuffer.h"
+#include "zcat.h"
 #include "system_state.h"
+#include "vertex.h"
 #include "events.h"
+#include "buildplan_entity.h"
+#include "edge.h"
+#include "shadow.h"
 
 attrs32 * selector_type_attrs = (attrs32[]) {{
 #define SELECTOR_DEF(x, s, r, y) + 1
@@ -46,54 +50,66 @@ SELECTOR_NODESET_TABLE
   }
 }};
 
+static moria_traversal_criteria criteria_fstree;
+static moria_traversal_criteria criteria_fstree_hidden;
+static moria_traversal_criteria criteria_modtree;
+static moria_traversal_criteria criteria_dirtree;
+static moria_traversal_criteria criteria_depends;
+static moria_traversal_criteria criteria_imports;
+static moria_traversal_criteria criteria_uses;
+static moria_traversal_criteria criteria_requires;
+
 static void __attribute__((constructor)) init()
 {
   attrs32_init(selector_type_attrs);
   attrs32_init(selector_nodeset_attrs);
+
+  /* pre-configured traversals */
+  selector_graph_fstree(&criteria_fstree);
+  selector_graph_fstree_hidden(&criteria_fstree_hidden);
+  selector_graph_modtree(&criteria_modtree);
+  selector_graph_dirtree(&criteria_dirtree);
+  selector_graph_depends(&criteria_depends);
+  selector_graph_imports(&criteria_imports);
+  selector_graph_uses(&criteria_uses);
+  selector_graph_requires(&criteria_requires);
 }
 
-static void selector_visitor(moria_vertex * v, void * arg, moria_traversal_mode mode, int distance, int * result)
+static void selector_visitor(moria_vertex * v, void * arg, moria_traversal_mode mode, int distance, moria_traverse_result * restrict result)
 {
   selector_context * ctx = arg;
   selector * sel = ctx->sel;
   fsent *n;
+  module *mod;
 
-  if((v->attrs & VERTEX_TYPE_OPT) == VERTEX_TYPE_FSENT)
+  if(vertex_kind_get(v) == VERTEX_KIND_FSENT)
   {
     n = containerof(v, fsent, vertex);
 
-    /* terminate an upwards traversal at the root fsent */
-    if(n == g_root)
+    /* terminate an upwards traversal at the root(s) */
+    if(n == g_root || n == g_shadow)
     {
-      *result = MORIA_TRAVERSE_PRUNE;
-      return;
-    }
-
-    if(sel->criteria.edge_travel & EDGE_TYPE_FSTREE)
-    {
-      if(!sel->cross_module && fsent_module_get(n) != ctx->mod)
-      {
-        *result = MORIA_TRAVERSE_PRUNE;
-        return;
+      if(sel->direction == MORIA_TRAVERSE_UP) {
+        result->flags = MORIA_TRAVERSE_PRUNE;
       }
     }
-
-    if(sel->extension)
+    else if(sel->criteria.edge_travel & EDGE_KIND_FSTREE)
     {
-      if(n->name.extl < sel->extension_len)
+      mod = fsent_module_get(n);
+      if(!sel->cross_module && mod && ctx->mod && mod != ctx->mod)
       {
-        return;
-      }
-      else if(memcmp(n->name.ext + n->name.extl - sel->extension_len, sel->extension, sel->extension_len) != 0)
-      {
+        result->flags = MORIA_TRAVERSE_PRUNE;
         return;
       }
     }
   }
+  else if(vertex_kind_get(v) == VERTEX_KIND_BPE)
+  {
+    return;
+  }
   else
   {
-    RUNTIME_ASSERT((v->attrs & VERTEX_TYPE_OPT) == VERTEX_TYPE_MODULE);
-    RUNTIME_ASSERT(!sel->extension);
+    RUNTIME_ASSERT(vertex_special_get(v) == VERTEX_SPECIAL_MODULE);
   }
 
   selection_add_vertex(ctx->selection, v, distance);
@@ -108,25 +124,22 @@ static void enoent_error(channel * restrict chan, const char * restrict name, ui
     msg = channel_produce(chan);
     msg->code = ENOENT;
     msg->type = FABIPC_MSG_RESPONSE;
-    msg->size = znloadf(msg->text, sizeof(msg->text), "not found %.*s", (int)name_len, name);
+    msg->size = zcatf(msg->text, sizeof(msg->text), "not found %.*s", (int)name_len, name);
     channel_post(chan, msg);
   }
   else
   {
-    system_error = true;
-    if(events_would(FABIPC_EVENT_SYSTEM_STATE, &chan, &msg))
-    {
-      msg->code = ENOENT;
-      msg->size = znloadf(msg->text, sizeof(msg->text), "not found %.*s", (int)name_len, name);
-      events_publish(chan, msg);
-    }
+    msg = system_error_event(&chan);
+    msg->code = ENOENT;
+    msg->size = zcatf(msg->text, sizeof(msg->text), "not found %.*s", (int)name_len, name);
+    events_publish(chan, msg);
   }
 }
 
 static void selector_ctx_exec(selector_context * restrict ctx)
 {
   selector * sel;
-  moria_vertex_traversal_state * state = 0;
+  moria_vertex_traversal_state * state;
   selector *op;
   selection *in = 0;
   selection *out = 0;
@@ -134,11 +147,15 @@ static void selector_ctx_exec(selector_context * restrict ctx)
   int x;
   fsent * n;
   moria_vertex *v;
-  moria_edge * e;
   selected *sn;
   module *mod;
   const char *name;
   bool *errp;
+  uint32_t attrs;
+  struct bacon_value *vars;
+  moria_foreach_state st;
+  moria_edge *edge;
+  entlist *eln;
 
   if(ctx->chan) {
     errp = &ctx->chan->error;
@@ -192,88 +209,97 @@ static void selector_ctx_exec(selector_context * restrict ctx)
   {
     if(sel->nodeset == SELECTOR_NODESET_MODULE)
     {
-      selection_add_vertex(ctx->selection, &ctx->mod->vertex, 0);
+      if(ctx->mod)
+      {
+        selection_add_vertex(ctx->selection, &ctx->mod->vertex, 0);
+      }
+    }
+    else if(sel->nodeset == SELECTOR_NODESET_ANCHOR)
+    {
+      if(ctx->mod)
+      {
+        selection_add_vertex(ctx->selection, &ctx->mod->anchor_node->vertex, 0);
+      }
     }
     else if(!ctx->bpe)
     {
       name = attrs32_name_byvalue(selector_nodeset_attrs, SELECTOR_NODESET_OPT & sel->nodeset);
       enoent_error(ctx->chan, MMS(name));
     }
-    else if(sel->nodeset == SELECTOR_NODESET_TARGET)
+    else if(sel->nodeset == SELECTOR_NODESET_TARGET || sel->nodeset == SELECTOR_NODESET_TARGETS)
     {
-      e = &ctx->bpe->edge;
-      if(!(e->attrs & MORIA_EDGE_HYPER))
-      {
-        v = e->A;
-        selection_add_vertex(ctx->selection, v, 0);
-      }
-      else if(e->Alen)
-      {
-        v = e->Alist[0].v;
-        selection_add_vertex(ctx->selection, v, 0);
-      }
-    }
-    else if(sel->nodeset == SELECTOR_NODESET_TARGETS)
-    {
-      e = &ctx->bpe->edge;
-      if(!(e->attrs & MORIA_EDGE_HYPER))
-      {
-        v = e->A;
-        selection_add_vertex(ctx->selection, v, 0);
-      }
-      else
-      {
-        for(x = 0; x < e->Alen; x++)
+      moria_foreach_edge_up(&st, &ctx->bpe->vertex, edge) {
+        if(edge_type_get(edge) != EDGE_BPE_TGT) {
+          continue;
+        }
+
+        if(!(edge->attrs & MORIA_EDGE_HYPER))
         {
-          v = e->Alist[x].v;
-          selection_add_vertex(ctx->selection, v, 0);
+          selection_add_vertex(ctx->selection, edge->A, 0);
+        }
+        else
+        {
+          for(x = 0; x < edge->Alen; x++)
+          {
+            selection_add_vertex(ctx->selection, edge->Alist[x].v, 0);
+            if(sel->nodeset == SELECTOR_NODESET_TARGET) {
+              break;
+            }
+          }
+        }
+        if(sel->nodeset == SELECTOR_NODESET_TARGET) {
+          break;
         }
       }
     }
-    else if(sel->nodeset == SELECTOR_NODESET_SOURCE)
+    else if(sel->nodeset == SELECTOR_NODESET_SOURCE || sel->nodeset == SELECTOR_NODESET_SOURCES)
     {
-      e = &ctx->bpe->edge;
-      if(!(e->attrs & MORIA_EDGE_HYPER))
-      {
-        v = e->B;
-        selection_add_vertex(ctx->selection, v, 0);
-      }
-      else if(e->Blen)
-      {
-        v = e->Blist[0].v;
-        selection_add_vertex(ctx->selection, v, 0);
-      }
-    }
-    else if(sel->nodeset == SELECTOR_NODESET_SOURCES)
-    {
-      e = &ctx->bpe->edge;
-      if(!(e->attrs & MORIA_EDGE_HYPER))
-      {
-        v = e->B;
-        selection_add_vertex(ctx->selection, v, 0);
-      }
-      else
-      {
-        for(x = 0; x < e->Blen; x++)
+      moria_foreach_edge_down(&st, &ctx->bpe->vertex, edge) {
+        if(edge_type_get(edge) != EDGE_SRC_BPE) {
+          continue;
+        }
+        if(!(edge->attrs & MORIA_EDGE_HYPER))
         {
-          v = e->Blist[x].v;
-          selection_add_vertex(ctx->selection, v, 0);
+          selection_add_vertex(ctx->selection, edge->B, 0);
+        }
+        else
+        {
+          for(x = 0; x < edge->Blen; x++)
+          {
+            selection_add_vertex(ctx->selection, edge->Blist[x].v, 0);
+            if(sel->nodeset == SELECTOR_NODESET_SOURCE) {
+              break;
+            }
+          }
+        }
+        if(sel->nodeset == SELECTOR_NODESET_SOURCE) {
+          break;
         }
       }
     }
   }
   else if(sel->type == SELECTOR_PATTERN)
   {
-    pattern_lookup(sel->pattern, 0, ctx->selection, ctx->chan);
-  }
-  else if(sel->type == SELECTOR_PATH)
-  {
-    if((n = fsent_path_lookup(ctx->mod, sel->path, sel->path_len)))
-    {
-      selection_add_vertex(ctx->selection, &n->vertex, 0);
+    vars = 0;
+    if(ctx->mod) {
+      vars = ctx->mod->vars;
     }
-    else
-    {
+    entlist_destroy(&ctx->lookup_hits);
+    pattern_lookup(sel->pattern, vars, ctx->cwd, &ctx->lookup_hits);
+    entlist_foreach(&ctx->lookup_hits, v, eln) {
+      selection_add_vertex(ctx->selection, v, 0);
+    }
+  }
+  else if(sel->type == SELECTOR_LOOKUP)
+  {
+    n = fsent_path_lookup(ctx->cwd, ctx->mod, sel->path, sel->path_len, sel->nofollow);
+    if(n && !sel->hidden && !vertex_exists_get(&n->vertex)) {
+      n = 0;
+    }
+
+    if(n) {
+      selection_add_vertex(ctx->selection, &n->vertex, 0);
+    } else {
       enoent_error(ctx->chan, sel->path, sel->path_len);
     }
   }
@@ -288,21 +314,32 @@ static void selector_ctx_exec(selector_context * restrict ctx)
     llist_foreach(&in->list, sn, lln) {
       v = sn->v;
 
-      /* special handling for stuff */
-      if((v->attrs & VERTEX_TYPE_OPT) == VERTEX_TYPE_MODULE) {
+      /* sidestep from the module node, to the module directory node */
+      if(vertex_type_get(v) == VERTEX_MODULE) {
         if(!(sel->criteria.edge_travel & EDGE_MODULES)) {
           mod = containerof(v, module, vertex);
           v = &mod->dir_node->vertex;
         }
       }
 
-      /* special handling for stuff */
-      else if((v->attrs & VERTEX_TYPE_OPT) == VERTEX_TYPE_FSENT) {
+      /* sidestep from the fsent, to the owning module */
+      else if(vertex_special_get(v) != VERTEX_SPECIAL_MODULE) {
         if(sel->criteria.edge_travel & EDGE_MODULES) {
           mod = fsent_module_get(containerof(v, fsent, vertex));
           v = &mod->vertex;
         }
       }
+
+      attrs = 0;
+      if(sel->exhaustive) {
+        attrs |= MORIA_TRAVERSE_EXHAUSTIVE;
+      }
+      if(sel->nofollow) {
+        attrs |= MORIA_TRAVERSE_NOFOLLOW;
+      }
+//      if(sel->criteria.min_depth || sel->criteria.max_depth) {
+        attrs |= MORIA_TRAVERSE_DEPTH;
+//      }
 
       moria_traverse_vertices(
           &g_graph
@@ -311,20 +348,25 @@ static void selector_ctx_exec(selector_context * restrict ctx)
         , state
         /* selectors can only visit fsent nodes */
         , &sel->criteria
-        , sel->direction | sel->mode | sel->exhaustive | MORIA_TRAVERSE_DEPTH
+        , sel->direction | sel->mode | attrs
         , ctx
       );
     }
+
+    moria_vertex_traversal_end(&g_graph, state);
   }
 
   selection_finalize(ctx->selection);
-
-  moria_vertex_traversal_end(&g_graph, state);
-  selection_xfree(in);
-  selection_xfree(out);
+  selection_free(in);
+  selection_free(out);
 }
 
-static void writer_write(selector * const restrict sel, value_writer * const restrict writer, bool top)
+static int criteria_cmp(moria_traversal_criteria * restrict A, moria_traversal_criteria * restrict B)
+{
+  return memcmp_region(A, B, vertex_travel_mask, edge_visit);
+}
+
+static void writer_write(selector * const restrict sel, bacon_writer * const restrict builder_writer, bool top)
 {
   selector * next;
   const char *name;
@@ -332,100 +374,123 @@ static void writer_write(selector * const restrict sel, value_writer * const res
   narrator * N;
   narrator_fixed nstor;
 
-  if(sel->type == SELECTOR_SEQUENCE)
-  {
-    // sequence is the default top level aggregate for a selector
-    if(!top || llist_count(&sel->head) != 1)
-    {
-      value_writer_push_mapping(writer);
-      value_writer_string(writer, "sequence");
-      value_writer_push_list(writer);
-    }
-    llist_foreach(&sel->head, next, lln) {
-      writer_write(next, writer, false);
-    }
-    if(!top || llist_count(&sel->head) != 1)
-    {
-      value_writer_pop_list(writer);
-      value_writer_pop_mapping(writer);
-    }
-  }
-  else if(sel->type == SELECTOR_UNION)
-  {
-    value_writer_push_mapping(writer);
-    value_writer_string(writer, "union");
-    value_writer_push_list(writer);
-
-    llist_foreach(&sel->head, next, lln) {
-      writer_write(next, writer, false);
-    }
-
-    value_writer_pop_list(writer);
-    value_writer_pop_mapping(writer);
-  }
-  else if(sel->type == SELECTOR_TRAVERSE)
-  {
-    value_writer_push_mapping(writer);
-    value_writer_string(writer, "traverse");
-    value_writer_push_set(writer);
-
-    if(sel->criteria.min_depth != SELECTOR_TRAVERSE_DEFAULT_CRITERIA.min_depth) // TRAVERSE_MIN_DISTANCE_DEFAULT)
-      value_writer_mapping_string_uint(writer, "min-distance", sel->criteria.min_depth);
-
-    if(sel->criteria.max_depth != SELECTOR_TRAVERSE_DEFAULT_CRITERIA.max_depth) // TRAVERSE_MAX_DISTANCE_DEFAULT)
-      value_writer_mapping_string_uint(writer, "max-distance", sel->criteria.max_depth);
-
-    name = attrs32_name_byvalue(traverse_type_attrs, TRAVERSE_TYPE_OPT & sel->direction);
-    RUNTIME_ASSERT(name);
-    value_writer_mapping_string_string(writer, "direction", name);
-
-    RUNTIME_ASSERT(sel->criteria.edge_travel);
-    if(sel->criteria.edge_travel == EDGE_FSTREE)
-    {
-      if(sel->criteria.vertex_visit == VERTEX_MODULE_DIR)
+  switch(sel->type) {
+    case SELECTOR_SEQUENCE:
+      // sequence is the default top level aggregate for a selector
+      if(!top || llist_count(&sel->head) != 1)
       {
-        value_writer_mapping_string_string(writer, "graph", "modtree");
+        bacon_writer_push_mapping(builder_writer);
+        bacon_writer_string(builder_writer, "sequence");
+        bacon_writer_push_list(builder_writer);
       }
-      else if(sel->criteria.vertex_visit == VERTEX_FILETYPE_DIR)
+      llist_foreach(&sel->head, next, lln) {
+        writer_write(next, builder_writer, false);
+      }
+      if(!top || llist_count(&sel->head) != 1)
       {
-        value_writer_mapping_string_string(writer, "graph", "dirtree");
+        bacon_writer_pop_list(builder_writer);
+        bacon_writer_pop_mapping(builder_writer);
       }
-      else
-      {
-        name = attrs32_name_byvalue(graph_edge_attrs, EDGE_KIND_OPT & sel->criteria.edge_travel);
-        RUNTIME_ASSERT(name);
-        value_writer_mapping_string_string(writer, "graph", name);
+      break;
+    case SELECTOR_UNION:
+      { MAPPING
+        STRING("union")
+        { LIST
+          llist_foreach(&sel->head, next, lln) {
+            writer_write(next, builder_writer, false);
+          }
+        }
       }
-    }
-    else
-    {
-      name = attrs32_name_byvalue(graph_edge_attrs, EDGE_KIND_OPT & sel->criteria.edge_travel);
+      break;
+    case SELECTOR_TRAVERSE:
+      { MAPPING
+        STRING("traverse")
+        { SET
+          if(sel->criteria.min_depth != SELECTOR_TRAVERSE_DEFAULT_MIN_DEPTH) {
+            MAPPING
+            STRING("min-distance")
+            UINT(sel->criteria.min_depth)
+          }
+          if(sel->criteria.max_depth != SELECTOR_TRAVERSE_DEFAULT_MAX_DEPTH) {
+            MAPPING
+            STRING("max-distance")
+            UINT(sel->criteria.max_depth)
+          }
+          { MAPPING
+            STRING("direction")
+            STRING(attrs32_name_byvalue(traverse_type_attrs, TRAVERSE_TYPE_OPT & sel->direction))
+          }
+          { MAPPING
+            STRING("order")
+            STRING(attrs32_name_byvalue(traverse_order_attrs, TRAVERSE_ORDER_OPT & sel->mode))
+          }
+          { MAPPING
+            STRING("graph")
+            if(criteria_cmp(&sel->criteria, &criteria_fstree) == 0) {
+              STRING("fs")
+            } else if(criteria_cmp(&sel->criteria, &criteria_fstree_hidden) == 0) {
+              STRING("fs-hidden")
+            } else if(criteria_cmp(&sel->criteria, &criteria_modtree) == 0) {
+              STRING("modtree")
+            } else if(criteria_cmp(&sel->criteria, &criteria_dirtree) == 0) {
+              STRING("dirtree")
+            } else if(criteria_cmp(&sel->criteria, &criteria_depends) == 0) {
+              STRING("depends")
+            } else if(criteria_cmp(&sel->criteria, &criteria_imports) == 0) {
+              STRING("imports")
+            } else if(criteria_cmp(&sel->criteria, &criteria_uses) == 0) {
+              STRING("uses")
+            } else if(criteria_cmp(&sel->criteria, &criteria_requires) == 0) {
+              STRING("requires")
+            } else {
+              RTA;
+            }
+          }
+          { MAPPING
+            STRING("exhaustive")
+            BOOL(sel->exhaustive)
+          }
+          { MAPPING
+            STRING("cross-module")
+            BOOL(sel->exhaustive)
+          }
+          { MAPPING
+            STRING("nofollow")
+            BOOL(sel->exhaustive)
+          }
+        }
+      }
+      break;
+    case SELECTOR_PATTERN:
+      N = narrator_fixed_init(&nstor, space, sizeof(space));
+      pattern_say(sel->pattern, N);
+      { MAPPING
+        STRING("pattern")
+        BYTES(space, nstor.l)
+      }
+      break;
+    case SELECTOR_LOOKUP:
+      { MAPPING
+        STRING("lookup")
+        { SET
+          { MAPPING
+            STRING("path")
+            BYTES(sel->path, sel->path_len)
+          }
+          { MAPPING
+            STRING("nofollow")
+            BOOL(sel->nofollow)
+          }
+        }
+      }
+      break;
+    case SELECTOR_NODESET:
+      name = attrs32_name_byvalue(selector_nodeset_attrs, SELECTOR_NODESET_OPT & sel->nodeset);
       RUNTIME_ASSERT(name);
-      value_writer_mapping_string_string(writer, "graph", name);
-    }
-
-    value_writer_pop_set(writer);
-    value_writer_pop_mapping(writer);
-  }
-  else if(sel->type == SELECTOR_PATTERN)
-  {
-    N = narrator_fixed_init(&nstor, space, sizeof(space));
-    pattern_say(sel->pattern, N);
-    value_writer_mapping_string_bytes(writer, "pattern", space, nstor.l);
-  }
-  else if(sel->type == SELECTOR_PATH)
-  {
-    value_writer_mapping_string_bytes(writer, "path", sel->path, sel->path_len);
-  }
-  else if(sel->type == SELECTOR_NODESET)
-  {
-    name = attrs32_name_byvalue(selector_nodeset_attrs, SELECTOR_NODESET_OPT & sel->nodeset);
-    RUNTIME_ASSERT(name);
-    value_writer_string(writer, name);
-  }
-  else
-  {
-    RTA;
+      STRING(name);
+      break;
+    default:
+      RTA;
   }
 }
 
@@ -434,7 +499,7 @@ static void writer_write(selector * const restrict sel, value_writer * const res
 // internal
 //
 
-void selector_writer_write(selector * const restrict sel, value_writer * const restrict writer)
+void selector_writer_write(selector * const restrict sel, bacon_writer * const restrict writer)
 {
   writer_write(sel, writer, true);
 }
@@ -453,7 +518,7 @@ void selector_free(selector * restrict sel)
     if(sel->type == SELECTOR_SEQUENCE || sel->type == SELECTOR_UNION)
     {
       llist_foreach_safe(&sel->head, op, lln, T) {
-        llist_delete(op, lln);
+        llist_delete(&op->lln);
         selector_free(op);
       }
     }
@@ -461,13 +526,9 @@ void selector_free(selector * restrict sel)
     {
       pattern_free(sel->pattern);
     }
-    else if(sel->type == SELECTOR_PATH)
+    else if(sel->type == SELECTOR_LOOKUP)
     {
       free(sel->path);
-    }
-    else if(sel->type == SELECTOR_TRAVERSE)
-    {
-      free(sel->extension);
     }
   }
 
@@ -480,11 +541,11 @@ void selector_alloc(selector_type type, selector ** restrict rs)
 
   xmalloc(&s, sizeof(*s));
 
-  llist_init_node(&s->lln);
+  llist_init(&s->lln);
   s->type = type;
   if(type == SELECTOR_SEQUENCE || type == SELECTOR_UNION)
   {
-    llist_init_node(&s->head);
+    llist_init(&s->head);
   }
 
   *rs = s;
@@ -496,9 +557,15 @@ void selector_ifree(selector ** restrict s)
   *s = 0;
 }
 
-void selector_context_xdestroy(selector_context *ctx)
+void selector_context_init(selector_context *ctx)
 {
-  selection_xfree(ctx->selection);
+  entlist_init(&ctx->lookup_hits);
+}
+
+void selector_context_destroy(selector_context *ctx)
+{
+  selection_free(ctx->selection);
+  entlist_destroy(&ctx->lookup_hits);
 }
 
 void selector_exec(selector * restrict sel, selector_context * restrict ctx, selection_iteration_type iteration_type)
@@ -511,111 +578,115 @@ void selector_exec(selector * restrict sel, selector_context * restrict ctx, sel
   ctx->sel = sel;
   ctx->iteration_type = iteration_type;
 
-  RUNTIME_ASSERT(ctx->mod);
+  RUNTIME_ASSERT(ctx->cwd);
 
   selector_ctx_exec(ctx);
 }
 
 void selector_say(selector * const restrict sel, narrator * const restrict N)
 {
-  value_writer writer;
-  value_writer_init(&writer);
-  value_writer_open(&writer, N);
+  bacon_writer writer;
+  bacon_writer_init(&writer);
+  bacon_writer_open(&writer, N);
 
   selector_writer_write(sel, &writer);
 
-  value_writer_close(&writer);
-  value_writer_destroy(&writer);
+  bacon_writer_close(&writer);
+  bacon_writer_destroy(&writer);
 }
 
-#if CONFIG_DEVEL
-#ifndef CONFIG_TRACE
-static int selector_cmp(selector * A, selector * B)
+void selector_graph_fstree(moria_traversal_criteria *criteria)
 {
-  int d;
-
-  if(!A && !B)
-    return 0;
-
-  if(!A)
-    return -1;
-
-  if(!B)
-    return 1;
-
-  if((d = INTCMP(A->type, B->type)))
-    return d;
-
-  if(A->type == SELECTOR_PATTERN)
-  {
-    return pattern_cmp(A->pattern, B->pattern);
-  }
-  else if(A->type == SELECTOR_PATH)
-  {
-    return memncmp(A->path, A->path_len, B->path, B->path_len);
-  }
-  else if(A->type == SELECTOR_TRAVERSE)
-  {
-    return 0
-      ?: memcmp(&A->direction, &B->direction, sizeof(A->direction))
-      ?: memcmp(&A->criteria, &B->criteria, sizeof(A->criteria))
-      ;
-  }
-
-  else if(A->type == SELECTOR_NODESET)
-  {
-    return INTCMP(A->nodeset, B->nodeset);
-  }
-  else if(A->type == SELECTOR_SEQUENCE || A->type == SELECTOR_UNION)
-  {
-    selector * a = llist_first(&A->head, selector, lln);
-    selector * b = llist_first(&B->head, selector, lln);
-
-    while(a || b)
-    {
-      if((d = selector_cmp(a, b)))
-        return d;
-
-      a = llist_next(&A->head, a, lln);
-      b = llist_next(&B->head, b, lln);
-    }
-  }
-  else
-  {
-    RTA;
-  }
-
-  return 0;
+  criteria->vertex_travel_mask = VERTEX_KIND_OPT;
+  criteria->vertex_travel      = VERTEX_KIND_FSENT;
+  criteria->vertex_visit_mask  = VERTEX_KIND_OPT | VERTEX_EXISTS_BIT;
+  criteria->vertex_visit       = VERTEX_KIND_FSENT | VERTEX_EXISTS_BIT;
+  criteria->edge_travel_mask   = EDGE_TYPE_OPT;
+  criteria->edge_travel        = EDGE_FSTREE;
+  criteria->edge_visit_mask    = 0;
+  criteria->edge_visit         = 0;
 }
 
-static void selector_unpack(va_list va, xunit_arg * a)
+void selector_graph_fstree_hidden(moria_traversal_criteria *criteria)
 {
-  a->p = va_arg(va, void*);
+  criteria->vertex_travel_mask = VERTEX_KIND_OPT;
+  criteria->vertex_travel      = VERTEX_KIND_FSENT;
+  criteria->vertex_visit_mask  = VERTEX_KIND_OPT;
+  criteria->vertex_visit       = VERTEX_KIND_FSENT;
+  criteria->edge_travel_mask   = EDGE_TYPE_OPT;
+  criteria->edge_travel        = EDGE_FSTREE;
+  criteria->edge_visit_mask    = 0;
+  criteria->edge_visit         = 0;
 }
 
-static int selector_compare(xunit_arg * A, xunit_arg * B)
+void selector_graph_modtree(moria_traversal_criteria *criteria)
 {
-  return selector_cmp(A->p, B->p);
+  criteria->vertex_travel_mask = VERTEX_KIND_OPT;
+  criteria->vertex_travel      = VERTEX_KIND_FSENT;
+  criteria->vertex_visit_mask  = VERTEX_KIND_OPT;
+  criteria->vertex_visit       = VERTEX_KIND_FSENT | VERTEX_MODULE_DIR;
+  criteria->edge_travel_mask   = EDGE_TYPE_OPT;
+  criteria->edge_travel        = EDGE_FSTREE;
+  criteria->edge_visit_mask    = 0;
+  criteria->edge_visit         = 0;
 }
 
-static void selector_info_push(const char * const restrict name, xunit_arg * a)
+void selector_graph_dirtree(moria_traversal_criteria *criteria)
 {
-  selector * sel = a->p;
-
-  if(sel == 0)
-  {
-    xunit_info_pushs(name, "-none-");
-  }
-  else
-  {
-    xunit_info_pushs(name, "-not-none-");
-  }
+  criteria->vertex_travel_mask = VERTEX_KIND_OPT;
+  criteria->vertex_travel      = VERTEX_KIND_FSENT;
+  criteria->vertex_visit_mask  = VERTEX_KIND_OPT | VERTEX_FILETYPE_OPT;
+  criteria->vertex_visit       = VERTEX_KIND_FSENT | VERTEX_FILETYPE_DIR;
+  criteria->edge_travel_mask   = EDGE_TYPE_OPT;
+  criteria->edge_travel        = EDGE_FSTREE;
+  criteria->edge_visit_mask    = 0;
+  criteria->edge_visit         = 0;
 }
 
-xunit_type * xunit_selector = (xunit_type[]) {{
-    xu_unpack : selector_unpack
-  , xu_compare : selector_compare
-  , xu_info_push : selector_info_push
-}};
-#endif
-#endif
+void selector_graph_depends(moria_traversal_criteria *criteria)
+{
+  criteria->vertex_travel_mask = VERTEX_FSE_BPE;
+  criteria->vertex_travel      = VERTEX_FSE_BPE;
+  criteria->vertex_visit_mask  = VERTEX_KIND_OPT;
+  criteria->vertex_visit       = VERTEX_KIND_FSENT;
+  criteria->edge_travel_mask   = EDGE_DEPENDS;
+  criteria->edge_travel        = EDGE_DEPENDS;
+  criteria->edge_visit_mask    = 0;
+  criteria->edge_visit         = 0;
+}
+
+void selector_graph_imports(moria_traversal_criteria *criteria)
+{
+  criteria->vertex_travel_mask = 0;
+  criteria->vertex_travel      = 0;
+  criteria->vertex_visit_mask  = VERTEX_KIND_OPT;
+  criteria->vertex_visit       = VERTEX_KIND_FSENT;
+  criteria->edge_travel_mask   = EDGE_TYPE_OPT;
+  criteria->edge_travel        = -1;
+  criteria->edge_visit_mask    = 0;
+  criteria->edge_visit         = 0;
+}
+
+void selector_graph_uses(moria_traversal_criteria *criteria)
+{
+  criteria->vertex_travel_mask = VERTEX_KIND_OPT;
+  criteria->vertex_travel      = VERTEX_KIND_FSENT;
+  criteria->vertex_visit_mask  = VERTEX_KIND_OPT;
+  criteria->vertex_visit       = VERTEX_KIND_FSENT;
+  criteria->edge_travel_mask   = EDGE_TYPE_OPT;
+  criteria->edge_travel        = EDGE_RULES_MOD;
+  criteria->edge_visit_mask    = 0;
+  criteria->edge_visit         = 0;
+}
+
+void selector_graph_requires(moria_traversal_criteria *criteria)
+{
+  criteria->vertex_travel_mask = VERTEX_KIND_OPT;
+  criteria->vertex_travel      = VERTEX_KIND_FSENT;
+  criteria->vertex_visit_mask  = VERTEX_KIND_OPT;
+  criteria->vertex_visit       = VERTEX_KIND_FSENT;
+  criteria->edge_travel_mask   = EDGE_TYPE_OPT;
+  criteria->edge_travel        = EDGE_REQUIRES;
+  criteria->edge_visit_mask    = 0;
+  criteria->edge_visit         = 0;
+}

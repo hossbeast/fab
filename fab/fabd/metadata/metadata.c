@@ -9,6 +9,7 @@
 #include "narrator.h"
 #include "narrator/fixed.h"
 #include "params.h"
+#include "fsent.h"
 
 #include "metadata.h"
 #include "run_thread.h"
@@ -16,7 +17,7 @@
 #include "system_state.h"
 
 #include "marshal.h"
-#include "zbuffer.h"
+#include "zcat.h"
 
 void metadata_collate(void *dst, size_t sz, size_t * restrict zp)
 {
@@ -37,16 +38,16 @@ void metadata_collate(void *dst, size_t sz, size_t * restrict zp)
   z += marshal_u64(dst + z, sz - z, timespec_delta(&g_params.starttime, &now));
   /* ipcdir */
   z += marshal_u16(dst + z, sz - z, strlen(g_params.ipcdir));
-  z += znloads(dst + z, sz - z, g_params.ipcdir);
+  z += zcats(dst + z, sz - z, g_params.ipcdir);
   /* homedir */
   z += marshal_u16(dst + z, sz - z, strlen(g_params.homedir));
-  z += znloads(dst + z, sz - z, g_params.homedir);
-  /* project dir */
-  z += marshal_u16(dst + z, sz - z, strlen(g_params.proj_dir));
-  z += znloads(dst + z, sz - z, g_params.proj_dir);
+  z += zcats(dst + z, sz - z, g_params.homedir);
+  /* cwd */
+  z += marshal_u16(dst + z, sz - z, strlen(g_cwd_path));
+  z += zcatw(dst + z, sz - z, g_cwd_path, g_cwd_path_len);
   /* project hash */
   z += marshal_u16(dst + z, sz - z, strlen(g_args.hash_str));
-  z += znloads(dst + z, sz - z, g_args.hash_str);
+  z += zcats(dst + z, sz - z, g_args.hash_str);
   /* system state */
   z += marshal_int(dst + z, sz - z, &system_state, sizeof(system_state));
   /* system error */

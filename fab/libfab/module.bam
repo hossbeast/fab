@@ -28,3 +28,7 @@ rule metadata/metadata.h -> $^D/metadata.desc.c : descriptor/descriptor.bam
 rule stats/stats.h -> $^D/stats.desc.c : descriptor/descriptor.bam
 rule list/list.h -> $^D/list.desc.c : descriptor/descriptor.bam
 rule describe/describe.h -> $^D/describe.desc.c : descriptor/descriptor.bam
+rule rule_info/rule_info.h -> $^D/rule_info.desc.c : descriptor/descriptor.bam
+rule vars_describe/vars_describe.h -> $^D/vars_describe.desc.c : descriptor/descriptor.bam
+rule rules_describe/rules_describe.h -> $^D/rules_describe.desc.c : descriptor/descriptor.bam
+rule config_describe/config_describe.h -> $^D/config_describe.desc.c : descriptor/descriptor.bam

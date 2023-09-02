@@ -1,10 +1,16 @@
 /* SPDX-License-Identifier: GPL-3.0 */
 /* Copyright (c) 2012-2023 Todd Freed <todd.freed@gmail.com> */
 
-#include "value.h"
-#include "valyria/set.h"
+#include <errno.h>
+
+#include "bacon/value.h"
+#include "bacon/set.h"
+#include "valyria/hashtable.h"
 #include "valyria/pstring.h"
-#include "valyria/list.h"
+#include "common/attrs.h"
+#include "narrator/fixed.h"
+#include "bacon/writer.h"
+#include "bacon/builder.h"
 
 #include "exec_render.h"
 #include "exec.h"
@@ -15,26 +21,36 @@
 #include "sysvar.h"
 #include "channel.h"
 #include "system_state.h"
+#include "events.h"
+#include "dependency.h"
+#include "buildplan_entity.h"
+#include "vertex.h"
 
-#include "zbuffer.h"
+#include "zcat.h"
 
-void exec_render_context_xinit(struct exec_render_context * restrict ctx)
+void exec_render_context_init(struct exec_render_context * restrict ctx)
 {
   memset(ctx, 0, sizeof(*ctx));
-  exec_builder_xinit(&ctx->operation_builder);
+  exec_builder_init(&ctx->operation_builder);
+  selector_context_init(&ctx->selector_context);
 }
 
 void exec_render_context_configure(
     exec_render_context * restrict ctx
   , exec_builder * restrict builder
-  , module * restrict mod
-  , const value * restrict vars
+  , const fsent * restrict cwd
+  , const module * restrict mod
+  , const bacon_value * restrict vars0
+  , const bacon_value * restrict vars
   , const build_slot * restrict bs
 )
 {
   ctx->base_builder = ctx->builder = builder;
+  ctx->vars0 = vars0;
   ctx->vars = vars;
   ctx->bs = bs;
+  ctx->cwd = cwd;
+  ctx->mod = mod;
 
   ctx->selector_context.bpe = 0;
   if(bs) {
@@ -42,39 +58,29 @@ void exec_render_context_configure(
   }
 
   ctx->selector_context.mod = mod;
+  ctx->selector_context.cwd = cwd; // mod->dir_node;
 }
 
-void exec_render_context_xreset(exec_render_context * restrict ctx)
+void exec_render_context_reset(exec_render_context * restrict ctx)
 {
   memset(&ctx->builder_args, 0, sizeof(ctx->builder_args));
 }
 
-void exec_render_context_xdestroy(struct exec_render_context * restrict ctx)
+void exec_render_context_destroy(struct exec_render_context * restrict ctx)
 {
-  exec_builder_xdestroy(&ctx->operation_builder);
-  selector_context_xdestroy(&ctx->selector_context);
-}
-
-void exec_render_env_sysvars(exec_render_context * restrict ctx, const build_slot * restrict bs)
-{
-  exec_render_context_xreset(ctx);
-
-  /* targets variant */
-  sysvar_builder_variant(ctx->builder, bs);
-
-  /* targets paths */
-  sysvar_builder_targets(ctx->builder, bs);
-
-  /* sources paths */
-  sysvar_builder_sources(ctx->builder, bs);
+  exec_builder_destroy(&ctx->operation_builder);
+  selector_context_destroy(&ctx->selector_context);
 }
 
 void exec_render_env_vars(exec_render_context * restrict ctx)
 {
-  int x;
-  value * v;
+  bacon_value * v;
 
-  exec_render_context_xreset(ctx);
+  if(ctx->vars == 0) {
+    return;
+  }
+
+  exec_render_context_reset(ctx);
 
   ctx->builder_args.item = BUILDER_ENVS;
   ctx->builder_args.position = -1;
@@ -82,16 +88,15 @@ void exec_render_env_vars(exec_render_context * restrict ctx)
   ctx->builder_args.sep.s = " ";
   ctx->builder_args.mode = BUILDER_APPEND;
 
-  for(x = 0; x < ctx->vars->els->table_size; x++)
-  {
-    if((v = set_table_get(ctx->vars->els, x)) == 0)
+  rbtree_foreach(&ctx->vars->set, v, rbn) {
+    if(v->type != BACON_TYPE_MAPPING) {
       continue;
+    }
 
-    RUNTIME_ASSERT(v->type == VALUE_TYPE_MAPPING);
-    RUNTIME_ASSERT(v->key->type == VALUE_TYPE_STRING);
+    RUNTIME_ASSERT(v->key->type == BACON_TYPE_STRING);  // should be a coerce to string instead
 
-    ctx->builder_args.name = v->key->s->s;
-    ctx->builder_args.name_len = v->key->s->size;
+    ctx->builder_args.name = v->key->s;
+    ctx->builder_args.name_len = v->key->len;
     ctx->builder_args.mode = BUILDER_APPEND;
 
     exec_render_value(ctx, v->val);
@@ -100,7 +105,7 @@ void exec_render_env_vars(exec_render_context * restrict ctx)
 
 void exec_render_file(exec_render_context * restrict ctx, const formula_value * restrict file)
 {
-  exec_render_context_xreset(ctx);
+  exec_render_context_reset(ctx);
 
   ctx->builder_args.item = BUILDER_FILE;
   exec_render_formula_value(ctx, file);
@@ -110,7 +115,7 @@ void exec_render_args(exec_render_context * restrict ctx, const formula_value * 
 {
   RUNTIME_ASSERT(args->type == FORMULA_VALUE_LIST);
 
-  exec_render_context_xreset(ctx);
+  exec_render_context_reset(ctx);
 
   ctx->builder_args.item = BUILDER_ARGS;
   ctx->builder_args.position = -1;
@@ -123,7 +128,7 @@ void exec_render_envs(exec_render_context * restrict ctx, const formula_value * 
 
   RUNTIME_ASSERT(envs->type == FORMULA_VALUE_SET);
 
-  exec_render_context_xreset(ctx);
+  exec_render_context_reset(ctx);
 
   ctx->builder_args.item = BUILDER_ENVS;
   ctx->builder_args.position = -1;
@@ -131,7 +136,7 @@ void exec_render_envs(exec_render_context * restrict ctx, const formula_value * 
   ctx->builder_args.sep.s = " ";
   ctx->builder_args.mode = BUILDER_APPEND;
 
-  rbtree_foreach(envs->set, mapping, rbn) {
+  rbtree_foreach(&envs->set, mapping, rbn) {
     RUNTIME_ASSERT(mapping->type == FORMULA_VALUE_MAPPING);
 
     ctx->builder_args.name = mapping->m.name;
@@ -141,29 +146,23 @@ void exec_render_envs(exec_render_context * restrict ctx, const formula_value * 
   }
 }
 
-void exec_render_value(exec_render_context * restrict ctx, const value * restrict val)
+void exec_render_value(exec_render_context * restrict ctx, const bacon_value * restrict val)
 {
-  value *item;
-  int x;
+  bacon_value *item;
 
-  if(val->type == VALUE_TYPE_LIST)
+  if(val->type == BACON_TYPE_LIST)
   {
-    for(x = 0; x < val->items->size; x++)
-    {
-      exec_render_value(ctx, list_get(val->items, x));
-    }
-  }
-  else if(val->type == VALUE_TYPE_SET)
-  {
-    for(x = 0; x < val->els->table_size; x++)
-    {
-      if((item = set_table_get(val->els, x)) == 0)
-        continue;
-
+    llist_foreach(&val->list, item, lln) {
       exec_render_value(ctx, item);
     }
   }
-  else if(val->type & VALUE_TYPE_SCALAR)
+  else if(val->type == BACON_TYPE_SET)
+  {
+    rbtree_foreach(&val->set, item, rbn) {
+      exec_render_value(ctx, item);
+    }
+  }
+  else if((val->type & BACON_TYPE_CLASS) == BACON_TYPE_SCALAR)
   {
     ctx->builder_args.val.v = val;
     ctx->builder_args.render_val = BUILDER_VALUE;
@@ -174,18 +173,21 @@ void exec_render_value(exec_render_context * restrict ctx, const value * restric
 
 void exec_render_formula_value(exec_render_context * restrict ctx, const formula_value * val)
 {
-  const chain *T;
   formula_value *sv;
-  value *mapval;
+  bacon_value *mapval;
   int x;
   exec * sequence_output;
   exec_builder_args base_add_args;
   selected *sn;
   const path_cache_entry *pe;
+  fabipc_message *msg;
+  channel *chan;
+  narrator_fixed fixed;
+  bacon_writer writer, *builder_writer;
 
   if(val->type == FORMULA_VALUE_LIST)
   {
-    chain_foreach(T, sv, chn, val->list_head) {
+    llist_foreach(&val->list, sv, lln) {
       exec_render_formula_value(ctx, sv);
       if(system_error) {
         return;
@@ -194,7 +196,7 @@ void exec_render_formula_value(exec_render_context * restrict ctx, const formula
   }
   else if(val->type == FORMULA_VALUE_SET)
   {
-    rbtree_foreach(val->set, sv, rbn) {
+    rbtree_foreach(&val->set, sv, rbn) {
       exec_render_formula_value(ctx, sv);
       if(system_error) {
         return;
@@ -203,23 +205,10 @@ void exec_render_formula_value(exec_render_context * restrict ctx, const formula
   }
   else if(val->type == FORMULA_VALUE_VARIABLE)
   {
-    if(ctx->vars && (mapval = value_lookupw(ctx->vars, val->v.name, val->v.name_len))) {
+    if(ctx->vars0 && (mapval = bacon_set_lookupw(ctx->vars0, val->v.name, val->v.name_len))) {
       exec_render_value(ctx, mapval);
-    }
-  }
-  else if(val->type == FORMULA_VALUE_SYSVAR)
-  {
-    if(val->sv == FORMULA_SYSVAR_VARIANT)
-    {
-      exec_render_sysvar_variant(ctx, ctx->bs);
-    }
-    else if(val->sv == FORMULA_SYSVAR_SOURCE || val->sv == FORMULA_SYSVAR_SOURCES)
-    {
-      exec_render_sysvar_sources(ctx, ctx->bs);
-    }
-    else if(val->sv == FORMULA_SYSVAR_TARGET || val->sv == FORMULA_SYSVAR_TARGETS)
-    {
-      exec_render_sysvar_targets(ctx, ctx->bs);
+    } else if(ctx->vars && (mapval = bacon_set_lookupw(ctx->vars, val->v.name, val->v.name_len))) {
+      exec_render_value(ctx, mapval);
     }
   }
   else if(val->type == FORMULA_VALUE_SELECT)
@@ -233,12 +222,12 @@ void exec_render_formula_value(exec_render_context * restrict ctx, const formula
     ctx->builder_args.mode = BUILDER_APPEND;
     ctx->builder_args.render_val = BUILDER_PROPERTY;
     ctx->builder_args.val.prop = val->op.property;
-    ctx->builder_args.val.pctx.mod = ctx->bs->mod;
+    ctx->builder_args.val.pctx.cwd = ctx->cwd;
     llist_foreach(&ctx->selector_context.selection->list, sn, lln) {
-      if((sn->v->attrs & VERTEX_TYPE_OPT) == VERTEX_TYPE_FSENT) {
+      if(vertex_kind_get(sn->v) == VERTEX_KIND_FSENT) {
         ctx->builder_args.val.n = containerof(sn->v, fsent, vertex);
       } else {
-        RUNTIME_ASSERT((sn->v->attrs & VERTEX_TYPE_OPT) == VERTEX_TYPE_MODULE);
+        RUNTIME_ASSERT(vertex_special_get(sn->v) == VERTEX_SPECIAL_MODULE);
         ctx->builder_args.val.n = containerof(sn->v, module, vertex)->dir_node;
       }
 
@@ -271,7 +260,30 @@ void exec_render_formula_value(exec_render_context * restrict ctx, const formula
     path_cache_search(&pe, MMS(val->op.operand->s));
     if(pe->fd == -1)
     {
-      fprintf(stderr, "wtf?\n");
+      msg = system_error_event(&chan);
+      msg->code = ENOENT;
+      narrator_fixed_init(&fixed, msg->text, sizeof(msg->text));
+      bacon_writer_init(&writer);
+      builder_writer = bacon_writer_open(&writer, &fixed.base);
+
+      { MAPPING
+        STRING("cannot execute formula")
+        { SET
+          { MAPPING
+            STRING("path-search")
+            STRING(val->op.operand->s)
+          }
+          { MAPPING
+            STRING("dependency")
+            { SET
+              vertex_describe(&ctx->bs->bpe->vertex, builder_writer);
+            }
+          }
+        }
+      }
+      bacon_writer_close(builder_writer);
+      msg->size = fixed.l;
+      events_publish(chan, msg);
       return;
     }
 
@@ -284,11 +296,11 @@ void exec_render_formula_value(exec_render_context * restrict ctx, const formula
   {
     /* operations are always couched in a sequence operation */
     base_add_args = ctx->builder_args;
-    exec_builder_xreset(&ctx->operation_builder);
+    exec_builder_reset(&ctx->operation_builder);
     ctx->builder = &ctx->operation_builder;
 
     ctx->builder_args.item = BUILDER_ARGS;
-    chain_foreach(T, sv, chn, val->op.list_head) {
+    llist_foreach(&val->op.list, sv, lln) {
       ctx->builder_args.position = -1;
       exec_render_formula_value(ctx, sv);
       if(system_error) {
@@ -321,7 +333,7 @@ void exec_render_formula_value(exec_render_context * restrict ctx, const formula
 
     ctx->builder_args = base_add_args;
   }
-  else if(val->type & VALUE_TYPE_SCALAR)
+  else if((val->type & BACON_TYPE_CLASS) == BACON_TYPE_SCALAR)
   {
     ctx->builder_args.val.f = val;
     ctx->builder_args.mode = BUILDER_APPEND;

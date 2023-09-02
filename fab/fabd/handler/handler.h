@@ -17,6 +17,7 @@ struct request;
 struct request_parser;
 struct selection;
 struct command;
+struct module;
 
 extern rcu_list g_handlers; // list of active handlers
 
@@ -29,10 +30,16 @@ typedef struct handler_context {
     rcu_list stk;   // g_handlers
   };
 
+  /* scratch */
   selector_context sel_ctx;
-  struct selection * selection;
   struct graph_invalidation_context invalidation;
   struct request_parser * request_parser;
+  char *scratch;
+  size_t scratch_sz;
+
+  /* context */
+  struct module *mod;
+  struct selection *selection;
   bool running;
 
   pid_t tid;

@@ -2,17 +2,18 @@
 /* Copyright (c) 2012-2023 Todd Freed <todd.freed@gmail.com> */
 
 %code requires {
+  #include <inttypes.h>
   #include "types.h"
 
   #include "xlinux/xstdlib.h"
-  #include "valyria/array.h"
 
   #include "request_parser.internal.h"
-  #include "request.internal.h"
+  #include "request.h"
   #include "selector.h"
   #include "fsent.h"
 
   #include "macros.h"
+  #include "zcat.h"
 }
 
 %code top {
@@ -35,8 +36,8 @@
 %union {
   yyu_lval yyu;
 
-  struct selector * selector;
-  struct request * request;
+  struct selector *selector;
+  struct request *request;
 }
 
 /* tokens */
@@ -45,31 +46,59 @@
 %token ':'
 %token '='
 
+%token            STR           "string"
 %token <selector> SELECTOR
+%token <yyu.umax> UINTMAX8
+%token <yyu.umax> UINTMAX16
+%token <yyu.umax> UINTMAX32
+%token <yyu.umax> UINTMAX64
+%token <yyu.umax> HEX8
+%token <yyu.umax> HEX16
+%token <yyu.umax> HEX32
+%token <yyu.umax> HEX64
+%token <yyu.imax> INTMIN8
+%token <yyu.imax> INTMIN16
+%token <yyu.imax> INTMIN32
+%token <yyu.imax> INTMIN64
+%token <yyu.imax> INTMAX8
+%token <yyu.imax> INTMAX16
+%token <yyu.imax> INTMAX32
+%token <yyu.imax> INTMAX64
+
+%type <yyu.umax> uint
 
 %token
-  AUTORUN            "autorun"
-  BUILD              "build"
-  CONSOLE            "console"
-  CONFIG_READ        "config-read"
-  VARS_READ          "vars-read"
-  DESCRIBE           "describe"
-  INVALIDATE         "invalidate"
-  GLOBAL_INVALIDATE  "global-invalidate"
-  LIST               "list"
-  RESET_SELECTION    "reset-selection"
-  RUN                "run"
-  SCRIPT             "script"
-  SELECT             "select"
-  GLOBAL_STATS_READ  "global-stats-read"
-  GLOBAL_STATS_RESET "global-stats-reset"
-  STATS_READ         "stats-read"
-  STATS_RESET        "stats-reset"
-  METADATA           "metadata"
-  RECONCILE          "reconcile"
-  GOALS              "goals"
-  TARGET_DIRECT      "target-direct"
-  TARGET_TRANSITIVE  "target-transitive"
+  AUTORUN             "autorun"
+  BUILD               "build"
+  CONSOLE             "console"
+  CONFIG_DESCRIBE     "config-describe"
+  VARS_DESCRIBE       "vars-describe"
+  ENVS_DESCRIBE       "envs-describe"
+  RMA_DESCRIBE        "rma-describe"
+  RULES_DESCRIBE      "rules-describe"
+  FSTREE_DESCRIBE     "fstree-describe"
+  FILESYSTEM_DESCRIBE "filesystem-describe"
+  DESCRIBE            "describe"
+  INVALIDATE          "invalidate"
+  GLOBAL_INVALIDATE   "global-invalidate"
+  LIST                "list"
+  RESET_SELECTION     "reset-selection"
+  RUN                 "run"
+  SCRIPT              "script"
+  SELECT              "select"
+  GLOBAL_STATS_READ   "global-stats-read"
+  GLOBAL_STATS_RESET  "global-stats-reset"
+  STATS_READ          "stats-read"
+  STATS_RESET         "stats-reset"
+  METADATA            "metadata"
+  RECONCILE           "reconcile"
+  GOALS               "goals"
+  TARGET_DIRECT       "target-direct"
+  TARGET_TRANSITIVE   "target-transitive"
+  SPECIAL_ONLY        "special-only"
+  NO_SPECIAL          "no-special"
+  CONTEXT             "context"
+  MODULE              "module"
 
 %destructor { selector_free($$); } <selector>
 
@@ -110,15 +139,40 @@ command-branch
   | global-invalidate-cmd
   | stats-cmd
   | global-stats-cmd
+  | context-cmd
   | select-cmd
   | reset-selection-cmd
   | goals-cmd
   | metadata-cmd
-  | config-read-cmd
-  | vars-read-cmd
+  | config-describe-cmd
+  | vars-describe-cmd
+  | envs-describe-cmd
+  | rma-describe-cmd
+  | rules-describe-cmd
+  | fstree-describe-cmd
+  | filesystem-describe-cmd
   | run-cmd
   | autorun-cmd
   | reconcile-cmd
+  ;
+
+context-cmd
+  : CONTEXT ':' '{' context-list '}'
+  {
+    PARSER->command->type = COMMAND_CONTEXT;
+  }
+  ;
+
+context-list
+  : context-list context-mapping
+  | context-mapping
+  ;
+
+context-mapping
+  : MODULE ':' uint
+  {
+    PARSER->command->context.module_id = $3;
+  }
   ;
 
 select-cmd
@@ -157,17 +211,63 @@ list-cmd
   : LIST { PARSER->command->type = COMMAND_LIST; }
   ;
 
-config-read-cmd
-  : CONFIG_READ { PARSER->command->type = COMMAND_CONFIG_READ; }
+config-describe-cmd
+  : CONFIG_DESCRIBE { PARSER->command->type = COMMAND_CONFIG_DESCRIBE; }
   ;
 
-vars-read-cmd
-  : VARS_READ { PARSER->command->type = COMMAND_VARS_READ; }
+vars-describe-cmd
+  : VARS_DESCRIBE { PARSER->command->type = COMMAND_VARS_DESCRIBE; }
+  ;
+
+envs-describe-cmd
+  : ENVS_DESCRIBE { PARSER->command->type = COMMAND_ENVS_DESCRIBE; }
+  ;
+
+rma-describe-cmd
+  : RMA_DESCRIBE { PARSER->command->type = COMMAND_RMA_DESCRIBE; }
+  ;
+
+rules-describe-cmd
+  : RULES_DESCRIBE { PARSER->command->type = COMMAND_RULES_DESCRIBE; }
+  ;
+
+fstree-describe-cmd
+  : FSTREE_DESCRIBE { PARSER->command->type = COMMAND_FSTREE_DESCRIBE; }
+  ;
+
+filesystem-describe-cmd
+  : FILESYSTEM_DESCRIBE { PARSER->command->type = COMMAND_FILESYSTEM_DESCRIBE; }
   ;
 
 stats-cmd
+  : stats-cmd-type
+  | stats-cmd-type ':' '{' stats-args '}'
+  ;
+
+stats-cmd-type
   : STATS_READ { PARSER->command->type = COMMAND_STATS_READ; }
   | STATS_RESET { PARSER->command->type = COMMAND_STATS_RESET; }
+  ;
+
+stats-args
+  : stats-args-list
+  | %empty
+  ;
+
+stats-args-list
+  : stats-args-list stats-arg
+  | stats-arg
+  ;
+
+stats-arg
+  : SPECIAL_ONLY
+  {
+    PARSER->command->stats.special_only = true;
+  }
+  | NO_SPECIAL
+  {
+    PARSER->command->stats.no_special = true;
+  }
   ;
 
 global-stats-cmd
@@ -232,4 +332,19 @@ target-transitive-cmd
 
 reconcile-cmd
   : RECONCILE { PARSER->command->type = COMMAND_RECONCILE; }
+  ;
+
+uint
+  : UINTMAX8
+  | UINTMAX16
+  | UINTMAX32
+  | UINTMAX64
+  | INTMAX8   { $$ = $1; }
+  | INTMAX16  { $$ = $1; }
+  | INTMAX32  { $$ = $1; }
+  | INTMAX64  { $$ = $1; }
+  | HEX8
+  | HEX16
+  | HEX32
+  | HEX64
   ;

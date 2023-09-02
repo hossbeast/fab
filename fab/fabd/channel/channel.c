@@ -7,7 +7,7 @@
 #include "fab/ipc.h"
 
 #include "channel.h"
-#include "config.internal.h"
+#include "config.h"
 #include "params.h"
 
 /* ugo+rw  world read/write */
@@ -16,6 +16,7 @@
 #include <inttypes.h>
 #include "fab/events.h"
 #include "common/attrs.h"
+#include "channel/probes.h"
 
 //
 // public
@@ -73,46 +74,17 @@ void channel_post(channel * restrict chan, fabipc_message * restrict msg)
   }
 #endif
 
-  if(msg->type == FABIPC_MSG_RESPONSE && msg->code != 0)
-  {
+  if(msg->type == FABIPC_MSG_RESPONSE && msg->code != 0) {
     chan->error = true;
-    write(2, msg->text, msg->size);
   }
-
-#if 1
-  uint32_t h;
-  uint32_t i;
-  char buf[64];
-  size_t z;
-  fabipc_page *page;
-
-  page = containerof(msg, fabipc_page, msg);
-  h = page->tail;
-  i = page - chan->ipc.server_ring.pages;
-  z = znload_attrs32(buf, sizeof(buf), fabipc_msg_type_attrs, msg->type);
-  printf("tx tail %5u idx %5u id 0x%016"PRIx64" code %8d type %.*s", h, i, msg->id, msg->code, (int)z, buf);
-  if(msg->type == FABIPC_MSG_EVENTS)
-  {
-    z = znload_attrs32(buf, sizeof(buf), fabipc_event_type_attrs, msg->evtype);
-    printf(" attrs %.*s", (int)z, buf);
-  }
-  else if(msg->attrs)
-  {
-    printf(" attrs 0x%08x", msg->attrs);
-  }
-  printf(" size %hu", msg->size);
-  if(msg->type == FABIPC_MSG_RESPONSE || (msg->type == FABIPC_MSG_EVENTS && msg->evtype == FABIPC_EVENT_SYSTEM_STATE))
-  {
-    printf(" %.*s", (int)msg->size, msg->text);
-  }
-  printf("\n");
-#endif
 
   fabipc_post(
       msg
     , &chan->ipc.server_ring.producers
     , &chan->ipc.server_ring.waiters
   );
+
+  channel_tx_probe(chan, msg);
 }
 
 /* RX : acquire -> consume */
@@ -132,6 +104,10 @@ fabipc_message * channel_acquire(channel * restrict chan)
     RUNTIME_ASSERT(msg->type);
   }
 #endif
+
+  if(msg) {
+    channel_rx_probe(chan, msg);
+  }
 
   return msg;
 }
@@ -180,15 +156,8 @@ void channel_cleanup()
 {
 }
 
-void channel_reconfigure(configblob * restrict cfg, bool dry)
+void channel_reconfigure(config * restrict cfg, bool dry)
 {
-  if(dry) {
-    return;
-  }
-
-  if(!(cfg->channels.attrs & CONFIG_CHANGED)) {
-    return;
-  }
-
   /* there should be configuration on the max number of possible clients/channels */
+  return;
 }

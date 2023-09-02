@@ -48,12 +48,29 @@ void formula_value_boolean_mk(
 )
   __attribute__((nonnull(1, 2)));
 
-void formula_value_string_mk(
+void formula_value_string_mkc(
     const struct yyu_location * restrict loc
+  , struct formula_value * e
   , struct formula_value ** rv
-  , char * restrict s
+  , char c
+);
+
+void formula_value_string_mkv(
+    const struct yyu_location * restrict loc
+  , struct formula_value * e
+  , struct formula_value ** rv
+  , struct formula_value * s
 )
-  __attribute__((nonnull));
+  __attribute__((nonnull(4)));
+
+void formula_value_string_mkw(
+    const struct yyu_location * restrict loc
+  , struct formula_value * e
+  , struct formula_value ** rv
+  , const char * restrict s
+  , uint16_t l
+)
+  __attribute__((nonnull(4)));
 
 void formula_value_variable_mk(
     const struct yyu_location * restrict loc
@@ -79,19 +96,19 @@ void formula_value_mapping_mk(
 )
   __attribute__((nonnull));
 
-void formula_value_list_mk(
+void formula_value_list_mkv(
     const struct yyu_location * restrict loc
+  , struct formula_value * restrict e
   , struct formula_value ** restrict rv
-  , struct formula_value * restrict list_head
-)
-  __attribute__((nonnull));
+  , struct formula_value * restrict el
+);
 
-void formula_value_set_mk(
+void formula_value_set_mkv(
     const struct yyu_location * restrict loc
+  , struct formula_value * e
   , struct formula_value ** restrict rv
-  , struct rbtree * restrict rbt
-)
-  __attribute__((nonnull));
+  , struct formula_value * el
+);
 
 void formula_value_select_mk(
     const struct yyu_location * restrict loc
@@ -121,12 +138,12 @@ void formula_value_path_search_mk(
 )
   __attribute__((nonnull));
 
-void formula_value_sequence_mk(
+void formula_value_sequence_mkv(
     const struct yyu_location * restrict loc
+  , struct formula_value * e
   , struct formula_value ** rv
-  , struct formula_value * list_head
-)
-  __attribute__((nonnull));
+  , struct formula_value * el
+);
 
 int fmlval_rbn_cmp(const rbnode * restrict a, const rbnode * restrict b)
   __attribute__((nonnull));

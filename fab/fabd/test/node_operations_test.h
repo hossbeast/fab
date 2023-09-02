@@ -7,11 +7,8 @@ struct narrator;
 struct fsent;
 struct llist;
 
-/// node_operations_dispatch
-//
-// function pointers for moria/operations which operate on g_graph
-//
-extern struct moria_operations_dispatch * node_operations_test_dispatch;
+/* function pointers for moria/operations which operate on g_graph */
+extern struct moria_operations_vtable * node_operations_test_dispatch;
 
 void resolve_fragment(const char *frag, uint16_t fragl, struct fsent **entp)
   __attribute__((nonnull));

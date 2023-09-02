@@ -26,12 +26,13 @@
 
 #include "build.h"
 #include "buildplan.h"
-#include "config.internal.h"
+#include "configuration.h"
 #include "build_slot.h"
 #include "fsent.h"
 #include "params.h"
 #include "handler.h"
 #include "exec_builder.h"
+#include "buildplan_entity.h"
 #include "dependency.h"
 #include "system_state.h"
 #include "probes.h"
@@ -41,27 +42,23 @@
 #include "locks.h"
 #include "common/hash.h"
 #include "common/attrs.h"
-#include "yyutil/box.h"
 #include "events.h"
-#include "zbuffer.h"
+#include "zcat.h"
 #include "marshal.h"
 #include "rcu.h"
 #include "times.h"
-
-typedef struct build_thread_config {
-  int16_t concurrency;
-} build_thread_config;
+#include "stats.h"
+#include "vertex.h"
 
 // internal
 int build_devnull_fd = -1;
-build_slot * build_slots;
-hashtable * build_slots_bypid;
+build_slot *build_slots;
+hashtable build_slots_bypid;
 int build_slots_bypid_lock;
 bool build_stage_failure;
 
 // local
-static build_thread_config staging_cfg;
-static build_thread_config active_cfg;
+static int16_t concurrency;
 static int epfd = -1;
 static uint64_t stage_index_sum;
 static int64_t stage_index_sum_target;
@@ -77,28 +74,18 @@ static uint64_t sum_first(uint64_t n)
     return (n * (n + 1)) >> 1;
 }
 
-static uint32_t build_slot_hash(uint32_t h, const void * e, size_t el)
+static uint32_t build_slot_hash(uint32_t h, const void * e)
 {
-  const build_slot * const * bsp = e;
-  return (*bsp)->pid;
+  const build_slot *bs = e;
+  return bs->pid;
 }
 
-static int build_slot_cmp(const void * A, size_t Al, const void * B, size_t Bl)
+static int build_slot_cmp(const void * A, const void * B)
 {
-  const build_slot * const * Absp = A;
-  const build_slot * const * Bbsp = B;
+  const build_slot * Abs = A;
+  const build_slot * Bbs = B;
 
-  return INTCMP((*Absp)->pid, (*Bbsp)->pid);
-}
-
-static void configure(const configblob * restrict cfg, build_thread_config * restrict config)
-{
-  box_int16_setif(cfg->build.concurrency, &config->concurrency);
-
-  if(config->concurrency == 0)
-  {
-    config->concurrency = g_params.procs;
-  }
+  return INTCMP(Abs->pid, Bbs->pid);
 }
 
 void build(rcu_thread * restrict rcu_self)
@@ -107,14 +94,14 @@ void build(rcu_thread * restrict rcu_self)
   siginfo_t siginfo;
   int rv;
   uint32_t stage_index;
-  build_slot * bs;
-  dependency * bpe;
+  buildplan_entity * bpe;
   ptrdiff_t slot_index;
   uint32_t slot;
   uint32_t stream;
   struct epoll_event events[64];
   int x;
   selected *sn;
+  build_slot *bs, key;
 
   build_stage = 0;
   build_stage_failure = false;
@@ -142,12 +129,12 @@ void build(rcu_thread * restrict rcu_self)
     }
 
     /* build has failed, all slots have exited  */
-    if(build_stage_failure && build_slots_bypid->size == 0) {
+    if(build_stage_failure && build_slots_bypid.size == 0) {
       break;
     }
 
     // launch up to max concurrency
-    while(!g_params.shutdown && build_slots_bypid->size < active_cfg.concurrency)
+    while(!g_params.shutdown && build_slots_bypid.size < concurrency)
     {
       rcu_quiesce(rcu_self);
 
@@ -173,33 +160,49 @@ void build(rcu_thread * restrict rcu_self)
         break;
       }
 
+      if(sn->type == SELECTED_VERTEX)
+      {
+        /* this is a placeholder node without an attached formula ; it becomes fresh once the
+         * preceeding stages, which contain its dependencies, have completed */
+        vertex_mark_fresh(sn->v);
+        goto next;
+      }
+
       // locate an open slot
       while(build_slots[slot].pid) {
-        slot = (slot + 1) % active_cfg.concurrency;
+        slot = (slot + 1) % concurrency;
       }
 
       bs = &build_slots[slot];
       bpe = sn->bpe;
 
-      /* configure the build slot, mark targets as suppressing notify events */
-      build_slot_prep(bs, bpe, stage_index);
-
       /* launch the build slot */
       bs->stage = build_stage;
-      build_slot_fork_and_exec(bs);
+      build_slot_fork_and_exec(bs, bpe, stage_index);
+      if(system_error) {
+        build_stage_failure = true;
+        break;
+      }
 
-      hashtable_put(build_slots_bypid, &bs);
+      hashtable_put(&build_slots_bypid, bs);
 
       slot_index = bs - build_slots;
       build_fork_probe(build_stage, slot_index, bs);
 
       // cycle to the next slot
       stage_index++;
+
+    next:
       sn = llist_next(&buildplan_selection.list, sn, lln);
       if(!sn || sn->rank != build_stage)
       {
         stage_index_sum_target = sum_first(stage_index);
       }
+    }
+
+    /* shortcut in case zero slots were launched */
+    if(build_slots_bypid.size == 0) {
+      break;
     }
 
     // receive epoll events, or a signal
@@ -227,11 +230,10 @@ void build(rcu_thread * restrict rcu_self)
         break;
       }
 
-      build_slot * key = (build_slot[]) {{ pid : siginfo.si_pid }};
-      build_slot ** bsp = hashtable_get(build_slots_bypid, &key);
-      RUNTIME_ASSERT(bsp);
+      key = (typeof(key)){ pid : siginfo.si_pid };
+      bs = hashtable_get(&build_slots_bypid, &key);
+      RUNTIME_ASSERT(bs);
 
-      bs = *bsp;
       slot_index = bs - build_slots;
 
       build_slot_reap(bs, &siginfo);
@@ -242,7 +244,7 @@ void build(rcu_thread * restrict rcu_self)
       }
 
       // free up the slot
-      hashtable_delete(build_slots_bypid, &key);
+      hashtable_delete(&build_slots_bypid, &key);
 
       bs->pid = 0;
       bs->stdout_total = 0;
@@ -262,6 +264,7 @@ void build(rcu_thread * restrict rcu_self)
     }
   }
 
+  STATS_INC(g_stats.build_ok);
   system_state_change(BAM_SYSTEM_STATE_OK);
 }
 
@@ -283,15 +286,15 @@ void build_setup()
   epfd = xepoll_create();
 
   // setup pipes
-  xmalloc(&build_slots, sizeof(*build_slots) * active_cfg.concurrency);
-  for(x = 0; x < active_cfg.concurrency; x++)
+  xmalloc(&build_slots, sizeof(*build_slots) * concurrency);
+  for(x = 0; x < concurrency; x++)
   {
     xpipe(build_slots[x].stdout_pipe);
     xpipe(build_slots[x].stderr_pipe);
     xpipe(build_slots[x].auxout_pipe);
 
-    exec_builder_xinit(&build_slots[x].exec_builder);
-    exec_render_context_xinit(&build_slots[x].exec_builder_context);
+    exec_builder_init(&build_slots[x].exec_builder);
+    exec_render_context_init(&build_slots[x].exec_builder_context);
 
     data = (typeof(data)){ 0 };
     ev.events = EPOLLIN;
@@ -307,12 +310,13 @@ void build_setup()
     data.u32 = (x << 16) | 1001;
     ev.data = data;
     xepoll_ctl(epfd, EPOLL_CTL_ADD, build_slots[x].auxout_pipe[0], &ev);
+
+    bacon_parser_init(&build_slots[x].sysvar_parser);
   }
 
-  hashtable_createx(
+  hashtable_initx(
       &build_slots_bypid
-    , sizeof(build_slot*)
-    , active_cfg.concurrency
+    , concurrency
     , build_slot_hash
     , build_slot_cmp
     , 0
@@ -325,7 +329,7 @@ void build_cleanup()
 
   ixclose(&build_devnull_fd);
 
-  for(x = 0; x < active_cfg.concurrency; x++)
+  for(x = 0; x < concurrency; x++)
   {
     xclose(build_slots[x].stdout_pipe[0]);
     xclose(build_slots[x].stdout_pipe[1]);
@@ -336,32 +340,36 @@ void build_cleanup()
 
     free(build_slots[x].argv_stor);
     free(build_slots[x].env_stor);
-    exec_builder_xdestroy(&build_slots[x].exec_builder);
-    exec_render_context_xdestroy(&build_slots[x].exec_builder_context);
+    exec_builder_destroy(&build_slots[x].exec_builder);
+    exec_render_context_destroy(&build_slots[x].exec_builder_context);
+
+    bacon_value_free(&build_slots[x].sysvar_parser, build_slots[x].sysvars);
+    build_slots[x].sysvars = 0;
+    bacon_parser_destroy(&build_slots[x].sysvar_parser);
   }
   ifree(&build_slots);
 
-  hashtable_ixfree(&build_slots_bypid);
+  hashtable_destroy(&build_slots_bypid);
 
   ixclose(&epfd);
 }
 
-int build_reconfigure(configblob * restrict cfg, char * restrict err, uint16_t err_sz)
+void build_reconfigure(configuration * restrict cfg, bool dryrun)
 {
-  if(err)
-  {
-    configure(cfg, &staging_cfg);
-  }
-  else if(cfg->build.changed)
-  {
-    build_cleanup();
-
-    // apply new config
-    memcpy(&active_cfg, &staging_cfg, sizeof(active_cfg));
-
-    // relaunch
-    build_setup();
+  if(dryrun) {
+    return;
   }
 
-  return 0;
+  build_cleanup();
+
+  // apply new config
+  concurrency = cfg->build.concurrency.u16;
+  if(concurrency == 0) {
+    concurrency = g_params.procs;
+  }
+
+  // relaunch
+  build_setup();
+
+  return;
 }

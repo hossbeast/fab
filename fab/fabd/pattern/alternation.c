@@ -3,6 +3,8 @@
 
 #include "xlinux/xstdlib.h"
 #include "narrator.h"
+#include "common/attrs.h"
+#include "bacon/builder.h"
 
 #include "alternation.h"
 #include "fsent.h"
@@ -12,27 +14,42 @@
 #include "pattern.internal.h"
 #include "render.internal.h"
 #include "segment.h"
+#include "segments.h"
 
 //
 // static
 //
 
-static void say(const pattern_segment * restrict fn, narrator * restrict N)
+static void alternation_describe(const pattern_segment * restrict fn, bacon_writer * restrict builder_writer)
+{
+  const pattern_alternation *alternation = &fn->alternation;
+
+  { MAPPING
+    STRING("epsilon")
+    BOOL(alternation->epsilon)
+  }
+  if(!llist_empty(&alternation->segments)) {
+    MAPPING
+    STRING("segments")
+    pattern_segments_list_describe(&alternation->segments, builder_writer);
+  }
+}
+
+static void alternation_say(const pattern_segment * restrict fn, const pattern_segment * restrict next, narrator * restrict N)
 {
   const pattern_alternation * n = &fn->alternation;
   pattern_segments * segments;
-  const chain *T;
   int x;
 
   xsayc('{');
 
   x = 0;
-  chain_foreach(T, segments, chn, n->segments_head) {
+  llist_foreach(&n->segments, segments, lln) {
     if(x++) {
       xsays(",");
     }
 
-    pattern_segment_chain_say(segments->segment_head, N);
+    pattern_segment_list_say(&segments->list, N);
   }
 
   if(n->epsilon) {
@@ -42,67 +59,67 @@ static void say(const pattern_segment * restrict fn, narrator * restrict N)
   xsayc('}');
 }
 
-static void destroy(pattern_segment * restrict n)
+static void alternation_destroy(pattern_segment * restrict n)
 {
   pattern_segments * segments;
-  const chain *T[2];
+  llist *T;
 
   pattern_alternation * alternation = &n->alternation;
 
-  chain_foreach_safe(T, segments, chn, alternation->segments_head) {
+  llist_foreach_safe(&alternation->segments, segments, lln, T) {
     pattern_segments_free(segments);
   }
 }
 
-static void match(const pattern_segment * restrict segment, pattern_match_context * restrict ctx)
+static void alternation_search(const pattern_segment * restrict segment, pattern_search_context * restrict ctx)
 {
-  const pattern_alternation * alternation = &segment->alternation;
-  struct match_segments_traversal traversal;
-
-  traversal = (typeof(traversal)) {
-      segments_head : alternation->segments_head
-  };
-  traversal.container.segment = segment;
-  traversal.segments = chain_next(traversal.segments_head, &traversal.segments_cursor, chn);
-  traversal.start = traversal.offset = ctx->traversal->offset;
-
-  traversal.u.prev = ctx->traversal;
-
-  ctx->traversal = &traversal;
-
-  pattern_segments_match(ctx);
-
-  ctx->traversal = traversal.u.prev;
-}
-
-static void search(const pattern_segment * restrict segment, pattern_search_context * restrict ctx)
-{
-  const pattern_alternation * alternation = &segment->alternation;
+  const pattern_alternation *alternation;
   struct search_segments_traversal traversal;
 
-  traversal = (typeof(traversal)) {
-      segments_head : alternation->segments_head
-  };
-  traversal.container.segment = segment;
-  traversal.segments = chain_next(traversal.segments_head, &traversal.segments_cursor, chn);
-  traversal.start = traversal.offset = ctx->traversal->offset;
+  alternation = &segment->alternation;
 
+  memset(&traversal, 0, sizeof(traversal));
   traversal.u.prev = ctx->traversal;
+  traversal.start = traversal.u.prev->offset;
+  traversal.offset = traversal.u.prev->offset;
 
-  ctx->traversal = &traversal;
+  if(alternation->epsilon) {
+    ctx->traversal = &traversal;
+    pattern_segments_search(ctx);
+  }
 
-  pattern_segments_search(ctx);
+  /* inner segments : the alternations */
+  if(!(traversal.segments = llist_first(&alternation->segments, typeof(*traversal.segments), lln))) {
+    goto end;
+  }
 
+  while(!ctx->matched)
+  {
+    traversal.segment_head = &traversal.segments->list;
+    traversal.segment = 0;
+//    traversal.segment = llist_first(&traversal.segment_head, typeof(*traversal.segment), lln);//segments->segment_head;
+    traversal.unsatisfied = false;
+    traversal.sealed = false;
+
+    ctx->traversal = &traversal;
+    pattern_segments_search(ctx);
+
+    if(!(traversal.segments = llist_next(&alternation->segments, traversal.segments, lln))) {
+      break;
+    }
+  }
+
+end:
+  // pop
   ctx->traversal = traversal.u.prev;
 }
 
-static void generate(const pattern_segment * pat, pattern_generate_context * restrict ctx)
+static void alternation_generate(const pattern_segment * pat, pattern_generate_context * restrict ctx)
 {
   const pattern_alternation * alternation = &pat->alternation;
 
-  const chain *T;
-  const pattern_segments * alt_segments;
-  fsent * saved_context_node;
+  const pattern_segments *alt_segments;
+  fsent *saved_context_node;
   char saved_text[256];
   off_t saved_section_narrator_pos;
 
@@ -118,11 +135,12 @@ static void generate(const pattern_segment * pat, pattern_generate_context * res
   narrator_seek(ctx->section_narrator, 0, NARRATOR_SEEK_SET, 0);
   narrator_read(ctx->section_narrator, saved_text, saved_section_narrator_pos, 0);
 
-  llist_append(&ctx->segment_traversal_stack, &alt_segment_traversal, lln);
+  llist_append(&ctx->segment_traversal_stack, &alt_segment_traversal.lln);
 
-  chain_foreach(T, alt_segments, chn, alternation->segments_head) {
-    alt_segment_traversal.head = alt_segments->segment_head;
-    alt_segment_traversal.cursor = 0;
+  llist_foreach(&alternation->segments, alt_segments, lln) {
+    alt_segment_traversal.head = &alt_segments->list;
+    alt_segment_traversal.segment = 0;
+    alt_segment_traversal.end = 0;
     ctx->segment_traversal = &alt_segment_traversal;
     pattern_segment_generate(ctx);
 
@@ -132,7 +150,7 @@ static void generate(const pattern_segment * pat, pattern_generate_context * res
     narrator_sayw(ctx->section_narrator, saved_text, saved_section_narrator_pos);
   }
 
-  llist_delete(&alt_segment_traversal, lln);
+  llist_delete(&alt_segment_traversal.lln);
   ctx->segment_traversal = llist_last(&ctx->segment_traversal_stack, typeof(*ctx->segment_traversal), lln);
 
   if(alternation->epsilon) {
@@ -140,12 +158,11 @@ static void generate(const pattern_segment * pat, pattern_generate_context * res
   }
 }
 
-static void render(const pattern_segment * restrict pat, pattern_render_context * restrict ctx)
+static void alternation_render(const pattern_segment * restrict pat, pattern_render_context * restrict ctx)
 {
   const pattern_alternation * alternation = &pat->alternation;
 
-  const chain *T;
-  const pattern_segments * alt_segments;
+  const pattern_segments *alt_segments;
   off_t start_pos;
   bool first;
 
@@ -169,10 +186,12 @@ static void render(const pattern_segment * restrict pat, pattern_render_context 
   narrator_read(ctx->narrator, saved_text, saved_text_len, 0);
   narrator_seek(ctx->narrator, start_pos, NARRATOR_SEEK_SET, 0);
 
-  llist_append(&ctx->segment_traversal_stack, &alt_segment_traversal, lln);
+  memset(&alt_segment_traversal, 0, sizeof(alt_segment_traversal));
+  llist_init(&alt_segment_traversal.lln);
+  llist_append(&ctx->segment_traversal_stack, &alt_segment_traversal.lln);
 
   first = true;
-  chain_foreach(T, alt_segments, chn, alternation->segments_head) {
+  llist_foreach(&alternation->segments, alt_segments, lln) {
     if(!first)
     {
       // start a new item - save the current offset
@@ -186,8 +205,9 @@ static void render(const pattern_segment * restrict pat, pattern_render_context 
     }
     first = false;
 
-    alt_segment_traversal.head = alt_segments->segment_head;
-    alt_segment_traversal.cursor = 0;
+    alt_segment_traversal.head = &alt_segments->list;
+    alt_segment_traversal.segment = 0;
+    alt_segment_traversal.end = false;
     ctx->segment_traversal = &alt_segment_traversal;
 
     // render sub-segments
@@ -197,7 +217,7 @@ static void render(const pattern_segment * restrict pat, pattern_render_context 
     ctx->section_traversal = saved_section_traversal;
   }
 
-  llist_delete(&alt_segment_traversal, lln);
+  llist_delete(&alt_segment_traversal.lln);
   ctx->segment_traversal = llist_last(&ctx->segment_traversal_stack, typeof(*ctx->segment_traversal), lln);
 
   if(alternation->epsilon)
@@ -218,26 +238,17 @@ static void render(const pattern_segment * restrict pat, pattern_render_context 
   }
 }
 
-static int cmp(const pattern_segment * A, const pattern_segment *B)
+static int alternation_cmp(const pattern_segment * A, const pattern_segment *B)
 {
   int d;
 
   if((d = INTCMP(A->alternation.epsilon, B->alternation.epsilon)))
     return d;
 
-  return pattern_segments_cmp(A->alternation.segments_head, B->alternation.segments_head);
+  return pattern_segments_list_cmp(&A->alternation.segments, &B->alternation.segments);
 }
 
-static pattern_segment_vtable vtable = {
-    type : PATTERN_ALTERNATION
-  , say : say
-  , destroy : destroy
-  , search : search
-  , match : match
-  , generate : generate
-  , render : render
-  , cmp : cmp
-};
+static pattern_segment_vtable vtable = PATTERN_SEGMENT_VTABLE(alternation, PATTERN_ALTERNATION, PATTERN_SEGMENT_SEARCH_RECURSIVE);
 
 //
 // public
@@ -246,7 +257,7 @@ static pattern_segment_vtable vtable = {
 void pattern_alternation_mk(
     pattern_segment ** restrict rv
   , const yyu_location * restrict loc
-  , pattern_segments * restrict segments_head
+  , llist * restrict segments // pattern_segments * restrict segments_head
   , bool epsilon
 )
 {
@@ -255,10 +266,9 @@ void pattern_alternation_mk(
   xmalloc(&n, sizeof(*n));
   pattern_segment_init(n, &vtable, loc);
 
-  n->alternation.segments_head = segments_head;
+  llist_init(&n->alternation.segments);
+  llist_splice_head(&n->alternation.segments, segments);//  n->alternation.segments_head = segments_head;
   n->alternation.epsilon = epsilon;
-
-  chain_init(n, chn);
 
   *rv = n;
 }

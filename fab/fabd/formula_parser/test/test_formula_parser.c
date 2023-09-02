@@ -6,8 +6,7 @@
 #include "xlinux/xstdlib.h"
 
 #include "valyria/list.h"
-#include "valyria/map.h"
-#include "valyria/set.h"
+#include "valyria/hashtable.h"
 
 #include "xunit.h"
 #include "xunit/assert.h"
@@ -23,10 +22,11 @@ typedef struct {
   XUNITTEST;
 
   /* input */
-  char * text;
+  char *text;
+  int expected;
 
   /* output */
-  char * path;
+  char *path;
   formula_value ** args;
   formula_value ** envs;
 } formula_parser_test;
@@ -73,14 +73,21 @@ static void formula_parser_test_entry(xunit_test * _test)
   formula_value *path = 0;
   narrator_growing * N1 = 0;
   narrator_growing * N2 = 0;
-  char buf[512];
+  char buf[1024];
   size_t len;
+  int r;
 
   // arrange
   formula_parser_create(&parser);
 
   // act - initial parse
-  formula_parser_bacon_parse(parser, test->text, strlen(test->text) + 2, 0, &path, &args, &envs);
+  if((r = formula_parser_bacon_parse(parser, test->text, strlen(test->text) + 2, 0, &path, &args, &envs)) != 0) {
+    tracef("%.*s", (int)parser->yyu.error_len, parser->yyu.error_str);
+  }
+  assert_eq_d(test->expected, r);
+  if(r) {
+    goto end;
+  }
 
   // round-trip
   narrator_growing_create(&N1);
@@ -93,18 +100,22 @@ static void formula_parser_test_entry(xunit_test * _test)
   narrator_seek(&N1->base, 0, NARRATOR_SEEK_SET, 0);
   narrator_read(&N1->base, buf, len, 0);
   buf[len] = buf[len + 1] = 0;
-  formula_parser_bacon_parse(parser, buf, len + 2, 0, &path, &args, &envs);
+  if(formula_parser_bacon_parse(parser, buf, len + 2, 0, &path, &args, &envs) != 0) {
+    tracef("%.*s", (int)parser->yyu.error_len, parser->yyu.error_str);
+    RTA;
+  }
 
   // round-trip
   narrator_growing_create(&N2);
   fml_say(&N2->base, path, args, envs);
 
+end:
   narrator_growing_free(N1);
   narrator_growing_free(N2);
   formula_value_free(path);
   formula_value_free(args);
   formula_value_free(envs);
-  formula_parser_xfree(parser);
+  formula_parser_free(parser);
 }
 
 //
@@ -185,7 +196,6 @@ static xunit_unit xunit = {
                       " min-distance : 0"
                       " graph : dirtree"
                     " }"
-
                     " traverse : {"
                       " direction : down"
                       " graph : requires"
@@ -201,6 +211,21 @@ static xunit_unit xunit = {
             " ]"
             "\0\0"
           }
+      }}
+
+    /* on parse failure, there should be no leaks */
+    , (formula_parser_test[]) {{
+          text : (char[]) {
+            " args : ["
+              " sequence : ["
+                " foo"
+                " property : relpath"
+                " prepend : !!"
+              " ]"
+            " ]"
+            "\0\0"
+          }
+        , expected : 2
       }}
     , 0
   }

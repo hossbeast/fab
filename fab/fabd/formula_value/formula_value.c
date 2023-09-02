@@ -6,12 +6,12 @@
 #include "types.h"
 
 #include "xlinux/xstdlib.h"
-#include "bacon.h"
+#include "bacon/value.h"
 #include "bacon/writer.h"
+#include "bacon/builder.h"
 #include "yyutil/parser.h"
-#include "valyria/map.h"
-#include "valyria/list.h"
-#include "valyria/set.h"
+#include "valyria/hashtable.h"
+#include "valyria/pstring.h"
 
 #include "formula_value.internal.h"
 #include "formula.tokens.h"
@@ -40,148 +40,117 @@ FORMULA_VALUE_TABLE
   }
 }};
 
-attrs32 * formula_sysvar_attrs = (attrs32[]) {{
-#undef DEF
-#define DEF(x, s, r, y) + 1
-    num : 0
-      FORMULA_SYSVAR_TABLE
-  , members : (member32[]) {
-#undef DEF
-#define DEF(x, s, r, y) { name : s, value : UINT32_C(y), range : UINT32_C(r) },
-FORMULA_SYSVAR_TABLE
-  }
-}};
-
 static void __attribute__((constructor)) init()
 {
   attrs32_init(formula_value_attrs);
-  attrs32_init(formula_sysvar_attrs);
 }
 
 //
 // static
 //
 
-static void allocate(formula_value ** restrict v, formula_value_type type)
+static void allocate(formula_value ** restrict pv, formula_value_type type)
 {
-  xmalloc(v, sizeof(**v));
-  (*v)->type = type;
+  formula_value *v;
+
+  xmalloc(&v, sizeof(*v));
+  v->type = type;
+
+  llist_init(&v->lln);
+  rbnode_init(&v->rbn);
+
+  *pv = v;
 }
 
-static void writer_write(const formula_value * restrict val, value_writer * const restrict writer, bool top)
+static void writer_write(const formula_value * restrict val, bacon_writer * const restrict builder_writer, bool top)
 {
-  const chain *T;
   formula_value *sv;
-  const char *name;
 
-  if(val->type == FORMULA_VALUE_LIST)
-  {
-    value_writer_push_list(writer);
+  switch(val->type) {
+    case FORMULA_VALUE_LIST:
+      { LIST
+        llist_foreach(&val->list, sv, lln) {
+          writer_write(sv, builder_writer, false);
+        }
+      }
+      break;
+    case FORMULA_VALUE_SET:
+      { SET
+        rbtree_foreach(&val->set, sv, rbn) {
+          writer_write(sv, builder_writer, top);
+        }
+      }
+      break;
+    case FORMULA_VALUE_MAPPING:
+      { MAPPING
+        BYTES(val->m.name, val->m.name_len);
+        writer_write(val->m.value, builder_writer, top);
+      }
+      break;
+    case FORMULA_VALUE_STRING:
+      STRING(val->s);
+      break;
+    case FORMULA_VALUE_FLOAT:
+      FLOAT(val->f);
+      break;
+    case FORMULA_VALUE_BOOLEAN:
+      BOOL(val->b);
+      break;
+    case FORMULA_VALUE_POSINT:
+      UINT(val->u);
+      break;
+    case FORMULA_VALUE_NEGINT:
+      INT(val->i);
+      break;
+    case FORMULA_VALUE_VARIABLE:
+      VARIABLEW(val->v.name, val->v.name_len);
+      break;
+    case FORMULA_VALUE_SELECT:
+      { MAPPING
+        STRING("select");
+        { LIST
+          selector_writer_write(val->op.selector, builder_writer);
+        }
+      }
+      break;
+    case FORMULA_VALUE_PROPERTY:
+      { MAPPING
+        STRING("property");
+        STRING(attrs32_name_byvalue(fsent_property_attrs, FSENT_PROPERTY_OPT & val->op.property));
+      }
+      break;
+    case FORMULA_VALUE_PREPEND:
+      { MAPPING
+        STRING("prepend");
+        writer_write(val->op.operand, builder_writer, false);
+      }
+      break;
+    case FORMULA_VALUE_PATH_SEARCH:
+      { MAPPING
+        STRING("path-search");
+        writer_write(val->op.operand, builder_writer, false);
+      }
+      break;
+    case FORMULA_VALUE_SEQUENCE:
+      if(!top || llist_count(&val->op.list) != 1)
+      {
+        bacon_writer_push_mapping(builder_writer);
+        bacon_writer_string(builder_writer, "sequence");
+      }
 
-    chain_foreach(T, sv, chn, val->list_head) {
-      writer_write(sv, writer, false);
-    }
+      { LIST
+        llist_foreach(&val->op.list, sv, lln) {
+          writer_write(sv, builder_writer, false);
+        }
+      }
 
-    value_writer_pop_list(writer);
-  }
-  else if(val->type == FORMULA_VALUE_SET)
-  {
-    value_writer_push_set(writer);
-
-    rbtree_foreach(val->set, sv, rbn) {
-      writer_write(sv, writer, top);
-    }
-
-    value_writer_pop_set(writer);
-  }
-  else if(val->type == FORMULA_VALUE_MAPPING)
-  {
-    value_writer_push_mapping(writer);
-      value_writer_bytes(writer, val->m.name, val->m.name_len);
-      writer_write(val->m.value, writer, top);
-    value_writer_pop_mapping(writer);
-  }
-  else if(val->type == FORMULA_VALUE_STRING)
-  {
-    value_writer_string(writer, val->s);
-  }
-  else if(val->type == FORMULA_VALUE_FLOAT)
-  {
-    value_writer_float(writer, val->f);
-  }
-  else if(val->type == FORMULA_VALUE_BOOLEAN)
-  {
-    value_writer_bool(writer, val->b);
-  }
-  else if(val->type == FORMULA_VALUE_POSINT)
-  {
-    value_writer_uint(writer, val->u);
-  }
-  else if(val->type == FORMULA_VALUE_NEGINT)
-  {
-    value_writer_int(writer, val->i);
-  }
-  else if(val->type == FORMULA_VALUE_VARIABLE)
-  {
-    value_writer_variable(writer, val->v.name, val->v.name_len);
-  }
-  else if(val->type == FORMULA_VALUE_SYSVAR)
-  {
-    name = attrs32_name_byvalue(formula_sysvar_attrs, FORMULA_SYSVAR_OPT & val->sv);
-    value_writer_variable(writer, MMS(name));
-  }
-  else if(val->type == FORMULA_VALUE_SELECT)
-  {
-    value_writer_push_mapping(writer);
-      value_writer_string(writer, "select");
-      value_writer_push_list(writer);
-      selector_writer_write(val->op.selector, writer);
-      value_writer_pop_list(writer);
-    value_writer_pop_mapping(writer);
-  }
-  else if(val->type == FORMULA_VALUE_PROPERTY)
-  {
-    value_writer_push_mapping(writer);
-      value_writer_string(writer, "property");
-      value_writer_string(writer, attrs32_name_byvalue(fsent_property_attrs, FSENT_PROPERTY_OPT & val->op.property));
-    value_writer_pop_mapping(writer);
-  }
-  else if(val->type == FORMULA_VALUE_PREPEND)
-  {
-    value_writer_push_mapping(writer);
-      value_writer_string(writer, "prepend");
-      writer_write(val->op.operand, writer, false);
-    value_writer_pop_mapping(writer);
-  }
-  else if(val->type == FORMULA_VALUE_PATH_SEARCH)
-  {
-    value_writer_push_mapping(writer);
-      value_writer_string(writer, "path-search");
-      writer_write(val->op.operand, writer, false);
-    value_writer_pop_mapping(writer);
-  }
-  else if(val->type == FORMULA_VALUE_SEQUENCE)
-  {
-    if(!top || chain_count(val->op.list_head, chn) != 1)
-    {
-      value_writer_push_mapping(writer);
-      value_writer_string(writer, "sequence");
-    }
-    value_writer_push_list(writer);
-
-    chain_foreach(T, sv, chn, val->op.list_head) {
-      writer_write(sv, writer, false);
-    }
-
-    value_writer_pop_list(writer);
-    if(!top || chain_count(val->op.list_head, chn) != 1)
-    {
-      value_writer_pop_mapping(writer);
-    }
-  }
-  else
-  {
-    RTA;
+      if(!top || llist_count(&val->op.list) != 1)
+      {
+        bacon_writer_pop_mapping(builder_writer);
+      }
+      break;
+    default:
+      RTA;
   }
 }
 
@@ -191,14 +160,14 @@ static void writer_write(const formula_value * restrict val, value_writer * cons
 
 void formula_value_say(const formula_value * restrict fv, struct narrator * restrict N)
 {
-  value_writer writer;
+  bacon_writer writer;
 
-  value_writer_init(&writer);
-  value_writer_open(&writer, N);
+  bacon_writer_init(&writer);
+  bacon_writer_open(&writer, N);
   writer_write(fv, &writer, true);
-  value_writer_close(&writer);
+  bacon_writer_close(&writer);
 
-  value_writer_destroy(&writer);
+  bacon_writer_destroy(&writer);
 }
 
 //
@@ -261,18 +230,58 @@ void formula_value_boolean_mk(
   *rv = v;
 }
 
-void formula_value_string_mk(
-    const yyu_location * restrict loc
-  , formula_value ** rv
-  , char * restrict s
+void formula_value_string_mkc(
+    const struct yyu_location * restrict loc
+  , struct formula_value * e
+  , struct formula_value ** rv
+  , char c
 )
 {
-  formula_value *v;
+  if(!e) {
+    allocate(&e, FORMULA_VALUE_STRING);
+  }
 
-  allocate(&v, FORMULA_VALUE_STRING);
-  v->s = s;
+  pscatc(&e->s, &e->len, &e->sa, c);
 
-  *rv = v;
+  if(rv) {
+    *rv = e;
+  }
+}
+
+void formula_value_string_mkv(
+    const struct yyu_location * restrict loc
+  , struct formula_value * e
+  , struct formula_value ** rv
+  , struct formula_value * el
+)
+{
+  if(!e) {
+    allocate(&e, FORMULA_VALUE_STRING);
+  }
+
+  pscatw(&e->s, &e->len, &e->sa, el->s, el->len);
+
+  if(rv) {
+    *rv = e;
+  }
+}
+
+void formula_value_string_mkw(
+    const yyu_location * restrict loc
+  , formula_value * e
+  , formula_value ** rv
+  , const char * restrict s
+  , uint16_t l
+)
+{
+  if(!e) {
+    allocate(&e, FORMULA_VALUE_STRING);
+  }
+  pscatw(&e->s, &e->len, &e->sa, s, l);
+
+  if(rv) {
+    *rv = e;
+  }
 }
 
 void formula_value_variable_mk(
@@ -289,30 +298,6 @@ void formula_value_variable_mk(
   memcpy(v->v.name, name, len);
   v->v.name[len] = 0;
   v->v.name_len = len;
-
-  *rv = v;
-}
-
-void formula_value_sysvar_mk(
-    const yyu_location * restrict loc
-  , formula_value ** rv
-  , uint16_t token
-)
-{
-  formula_value *v;
-
-  allocate(&v, FORMULA_VALUE_SYSVAR);
-
-  if(token == formula_BM_SOURCE)
-    v->sv = FORMULA_SYSVAR_SOURCE;
-  else if(token == formula_BM_SOURCES)
-    v->sv = FORMULA_SYSVAR_SOURCES;
-  else if(token == formula_BM_TARGET)
-    v->sv = FORMULA_SYSVAR_TARGET;
-  else if(token == formula_BM_TARGETS)
-    v->sv = FORMULA_SYSVAR_TARGETS;
-  else if(token == formula_BM_VARIANT)
-    v->sv = FORMULA_SYSVAR_VARIANT;
 
   *rv = v;
 }
@@ -337,32 +322,50 @@ void formula_value_mapping_mk(
   *rv = v;
 }
 
-void formula_value_list_mk(
+void formula_value_list_mkv(
     const yyu_location * restrict loc
-  , formula_value ** restrict rv
-  , formula_value * restrict list_head
+  , formula_value * e
+  , formula_value ** rv
+  , formula_value * el
 )
 {
-  formula_value *v;
-
-  allocate(&v, FORMULA_VALUE_LIST);
-  v->list_head = list_head;
-
-  *rv = v;
+  if(!e) {
+    allocate(&e, FORMULA_VALUE_LIST);
+    llist_init(&e->list);
+  }
+  if(el) {
+    llist_push(&e->list, &el->lln);
+  }
+  if(rv) {
+    *rv = e;
+  }
 }
 
-void formula_value_set_mk(
+void formula_value_set_mkv(
     const yyu_location * restrict loc
-  , formula_value ** restrict rv
-  , rbtree * restrict rbt
+  , formula_value * e
+  , formula_value ** rv
+  , formula_value * el
 )
 {
-  formula_value *v;
+  rbnode *rbn;
+  formula_value *old;
 
-  allocate(&v, FORMULA_VALUE_SET);
-  v->set = rbt;
-
-  *rv = v;
+  if(!e) {
+    allocate(&e, FORMULA_VALUE_SET);
+    rbtree_init(&e->set);
+  }
+  if(el) {
+    if((rbn = rbtree_put(&e->set, &el->rbn, fmlval_rbn_cmp))) {
+      /* overwrite existing item */
+      old = containerof(rbn, typeof(*old), rbn);
+      rbtree_replace(&e->set, &old->rbn, &el->rbn);
+      formula_value_free(old);
+    }
+  }
+  if(rv) {
+    *rv = e;
+  }
 }
 
 void formula_value_property_mk(
@@ -421,87 +424,95 @@ void formula_value_path_search_mk(
   *rv = v;
 }
 
-void formula_value_sequence_mk(
+void formula_value_sequence_mkv(
     const yyu_location * restrict loc
-  , formula_value ** restrict rv
-  , formula_value * restrict list_head
+  , formula_value * e
+  , formula_value ** rv
+  , formula_value * el
 )
 {
-  formula_value *v;
-
-  allocate(&v, FORMULA_VALUE_SEQUENCE);
-  v->op.list_head = list_head;
-
-  *rv = v;
+  if(!e) {
+    allocate(&e, FORMULA_VALUE_SEQUENCE);
+    llist_init(&e->op.list);
+  }
+  if(el) {
+    llist_push(&e->op.list, &el->lln);
+  }
+  if(rv) {
+    *rv = e;
+  }
 }
 
 //
 // public
 //
 
-void formula_value_set_free(rbtree * restrict rbt)
+static void set_free(rbtree * restrict rbt)
 {
   formula_value *sv;
   llist list, *tmp;
 
-  if(rbt)
-  {
-    llist_init_node(&list);
-    rbtree_foreach(rbt, sv, rbn) {
-      llist_append(&list, sv, lln);
-    }
-
-    llist_foreach_safe(&list, sv, lln, tmp) {
-      formula_value_free(sv);
-    }
+  if(!rbt) {
+    return;
   }
 
-  free(rbt);
+  llist_init(&list);
+  rbtree_foreach(rbt, sv, rbn) {
+    llist_append(&list, &sv->lln);
+  }
+
+  llist_foreach_safe(&list, sv, lln, tmp) {
+    formula_value_free(sv);
+  }
 }
 
 void formula_value_free(formula_value * restrict v)
 {
-  const chain *T[2];
+  llist *T;
   formula_value *sv;
 
-  if(!v)
+  if(!v) {
     return;
+  }
 
-  if(v->type == FORMULA_VALUE_LIST)
+  switch(v->type)
   {
-    chain_foreach_safe(T, sv, chn, v->list_head) {
-      formula_value_free(sv);
-    }
-  }
-  else if(v->type == FORMULA_VALUE_SET)
-  {
-    formula_value_set_free(v->set);
-  }
-  else if(v->type == FORMULA_VALUE_STRING)
-  {
-    free(v->s);
-  }
-  else if(v->type == FORMULA_VALUE_MAPPING)
-  {
-    formula_value_free(v->m.value);
-  }
-  else if(v->type == FORMULA_VALUE_SELECT)
-  {
-    selector_free(v->op.selector);
-  }
-  else if(v->type == FORMULA_VALUE_PREPEND)
-  {
-    formula_value_free(v->op.operand);
-  }
-  else if(v->type == FORMULA_VALUE_PATH_SEARCH)
-  {
-    formula_value_free(v->op.operand);
-  }
-  else if(v->type == FORMULA_VALUE_SEQUENCE)
-  {
-    chain_foreach_safe(T, sv, chn, v->op.list_head) {
-      formula_value_free(sv);
-    }
+    case FORMULA_VALUE_LIST:
+      llist_foreach_safe(&v->list, sv, lln, T) {
+        formula_value_free(sv);
+      }
+      break;
+    case FORMULA_VALUE_SET:
+      set_free(&v->set);
+      break;
+    case FORMULA_VALUE_STRING:
+      free(v->s);
+      break;
+    case FORMULA_VALUE_MAPPING:
+      formula_value_free(v->m.value);
+      break;
+    case FORMULA_VALUE_SELECT:
+      selector_free(v->op.selector);
+      break;
+    case FORMULA_VALUE_PREPEND:
+      formula_value_free(v->op.operand);
+      break;
+    case FORMULA_VALUE_PATH_SEARCH:
+      formula_value_free(v->op.operand);
+      break;
+    case FORMULA_VALUE_SEQUENCE:
+      llist_foreach_safe(&v->op.list, sv, lln, T) {
+        formula_value_free(sv);
+      }
+      break;
+    case FORMULA_VALUE_FLOAT:
+    case FORMULA_VALUE_BOOLEAN:
+    case FORMULA_VALUE_POSINT:
+    case FORMULA_VALUE_NEGINT:
+    case FORMULA_VALUE_VARIABLE:
+    case FORMULA_VALUE_PROPERTY:
+      break;
+      RTA;
   }
 
   free(v);
@@ -526,20 +537,20 @@ int fmlval_rbn_cmp(const rbnode * restrict a, const rbnode * restrict b)
 
 void formula_value_render(const formula_value * restrict v, struct narrator * restrict N)
 {
-  const chain *T;
   formula_value * sv;
 
   if(v->type == FORMULA_VALUE_LIST)
   {
     narrator_says(N, "[");
 
-    chain_foreach(T, sv, chn, v->list_head) {
+    llist_foreach(&v->list, sv, lln) {
       narrator_says(N, " ");
       formula_value_render(sv, N);
     }
 
-    if(v->list_head)
+    if(llist_count(&v->list) != 0) {
       narrator_says(N, " ");
+    }
 
     narrator_says(N, "]");
   }
@@ -547,13 +558,14 @@ void formula_value_render(const formula_value * restrict v, struct narrator * re
   {
     narrator_says(N, "{");
 
-    rbtree_foreach(v->set, sv, rbn) {
+    rbtree_foreach(&v->set, sv, rbn) {
       narrator_says(N, " ");
       formula_value_render(sv, N);
     }
 
-    if(!rbtree_empty(v->set))
+    if(!rbtree_empty(&v->set)) {
       narrator_says(N, " ");
+    }
 
     narrator_says(N, "}");
   }

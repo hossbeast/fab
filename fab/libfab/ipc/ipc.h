@@ -35,6 +35,7 @@ typedef enum fabipc_msg_type {
 #undef DEF
 #define DEF(x, s, r, y) x = y,
 FABIPC_MSG_TYPE_TABLE
+#undef DEF
 } fabipc_msg_type;
 
 extern struct attrs32 * fabipc_msg_type_attrs;

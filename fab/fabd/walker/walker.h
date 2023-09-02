@@ -4,10 +4,21 @@
 #pragma once
 
 #include "types.h"
+#include "valyria/llist.h"
 
 struct fsent;
 struct graph_invalidation_context;
-struct configblob;
+struct configuration;
+
+typedef struct walker_entry {
+  struct fsent * n;
+  char abspath[512];
+  uint16_t abspathl;
+
+  llist lln;
+} walker_entry;
+
+extern llist walker_include_entry_list;
 
 /*
  * visit directory entries in a filesystem tree, creating graph nodes for each node as necessary
@@ -15,20 +26,18 @@ struct configblob;
  * either base is specified (if traversing an already-instantiated tree), or parent is specified
  * (node to which the tree is to be attached)
  *
- * [basep]    - (returns) base of tree rooted at abspath
  * [base]     - base of the tree rooted at abspath, if it already exists
  * [parent]   - parent of base to which it is attached when created
  * abspath    - absolute path to a base directory
  */
 void walker_descend(
-    struct fsent ** restrict basep
-  , struct fsent * restrict base
-  , struct fsent * restrict parent
+    struct fsent * restrict base
+//  , struct fsent * restrict parent
   , const char * restrict abspath
   , uint16_t walk_id
   , struct graph_invalidation_context * restrict invalidation
 )
-  __attribute__((nonnull(4, 6)));
+  __attribute__((nonnull));
 
 /*
  * traverse upwards in a filesystem tree from a base node, visiting only nodes relevant for modules
@@ -53,9 +62,13 @@ void walker_system_reconcile(struct graph_invalidation_context * restrict invali
  * config - root of the config tree
  * dry    - whether to perform a dry-run
  */
-int walker_system_reconfigure(struct configblob * restrict cfg, char * restrict err, uint16_t err_sz);
+void walker_system_reconfigure(struct configuration * restrict cfg, bool dryrun)
+  __attribute__((nonnull));
 
 void walker_setup(void);
 void walker_cleanup(void);
 
 uint16_t walker_begin(void);
+
+void walker_query(struct fsent * restrict n, char * restrict path, uint16_t path_len, struct graph_invalidation_context * restrict invalidation)
+  __attribute__((nonnull));

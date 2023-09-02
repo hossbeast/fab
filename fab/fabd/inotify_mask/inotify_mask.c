@@ -6,7 +6,7 @@
 #include "narrator.h"
 
 #include "inotify_mask.h"
-#include "zbuffer.h"
+#include "zcat.h"
 
 void inotify_mask_say(uint32_t m, struct narrator * N)
 {
@@ -42,7 +42,7 @@ void inotify_mask_say(uint32_t m, struct narrator * N)
   }
 }
 
-size_t inotify_mask_znload(char * restrict dst, size_t sz, uint32_t m)
+size_t inotify_mask_cat(char * restrict dst, size_t sz, uint32_t m)
 {
   size_t z = 0;
 
@@ -71,8 +71,8 @@ size_t inotify_mask_znload(char * restrict dst, size_t sz, uint32_t m)
     else														{ s = "unknown"						; b = ~0								; }
 
     if(said)
-      z += znloadc(dst + z, sz - z, '|');
-    z += znloads(dst + z, sz - z, s);
+      z += zcatc(dst + z, sz - z, '|');
+    z += zcats(dst + z, sz - z, s);
     said = 1;
     m &= ~b;
   }

@@ -6,10 +6,10 @@
 #include "types.h"
 
 #include "valyria/llist.h"
+#include "valyria/hashtable.h"
 
-struct dependency;
+struct buildplan_entity;
 struct moria_vertex;
-struct set;
 
 /*
  * A selection is a set of nodes grouped by rank. For two nodes X and Y, the rank of X denoted
@@ -17,11 +17,17 @@ struct set;
  * Yd is the depth at which Y was visited. A selection supports rank-based traversal.
  */
 
+enum selected_type {
+  SELECTED_VERTEX,
+  SELECTED_BPE,
+};
+
 typedef struct selected {
+  enum selected_type type;
   union {
-    void * p;
-    struct moria_vertex * v;
-    struct dependency * bpe;
+    const void *p;
+    struct moria_vertex *v;
+    struct buildplan_entity *bpe;
   };
   union {
     int32_t rank;
@@ -36,7 +42,7 @@ typedef enum selection_iteration_type {
 } selection_iteration_type;
 
 typedef struct selection {
-  struct set * selected_entities;
+  hashtable selected_entities;
 
   selection_iteration_type iteration_type;
   llist ** ranks;
@@ -54,18 +60,18 @@ void selection_cleanup(void);
 void selection_create(selection ** restrict selp, selection_iteration_type type)
   __attribute__((nonnull));
 
-void selection_xfree(selection * restrict sel);
+void selection_free(selection * restrict sel);
 
-void selection_xinit(selection * restrict selp)
+void selection_init(selection * restrict selp)
   __attribute__((nonnull));
 
-void selection_xdestroy(selection * restrict sel)
+void selection_destroy(selection * restrict sel)
   __attribute__((nonnull));
 
-void selection_add_vertex(selection * restrict sel, struct moria_vertex* restrict v, uint16_t distance)
+void selection_add_vertex(selection * restrict sel, const struct moria_vertex* restrict v, uint16_t distance)
   __attribute__((nonnull));
 
-void selection_add_dependency(selection * restrict sel, struct dependency * restrict bpe, uint16_t distance)
+void selection_add_bpe(selection * restrict sel, const struct buildplan_entity * restrict bpe, uint16_t distance)
   __attribute__((nonnull));
 
 void selection_finalize(selection * restrict sel)

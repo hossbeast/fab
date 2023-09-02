@@ -13,6 +13,7 @@ struct chain;
 struct narrator;
 struct narrator_growing;
 struct pattern_section;
+struct bacon_value;
 
 /// pattern_render_context
 //
@@ -24,31 +25,33 @@ struct pattern_section;
 //  narrator     - narrator where the current section is accumulated
 //  narrator_pos - position in the narrator where the current section begins
 //
-typedef struct pattern_render_context
-{
+typedef struct pattern_render_context {
   // section traversal
   struct render_section_traversal {
-    const struct pattern_section * section;
-    const struct pattern_section * head;
-    const struct chain * cursor;
+    const struct pattern_section *section;
+    const llist *head;
   } section_traversal;
 
   // segment traversal
   struct render_segment_traversal {
     llist lln;
-    const union pattern_segment * segment;
-    const union pattern_segment * head;
-    const struct chain * cursor;
+    const union pattern_segment *segment;
+    const llist *head;
+    bool end;
   } *segment_traversal;
 
   llist segment_traversal_stack;
 
   // state
   union {
-    struct narrator * narrator;
-    struct narrator_growing * narrator_growing;
+    struct narrator *narrator;
+    struct narrator_growing *narrator_growing;
   };
   off_t pos;
+
+  /* inputs */
+  const struct bacon_value *vars;
+  uint32_t flags;
 
   // results
   uint16_t size;

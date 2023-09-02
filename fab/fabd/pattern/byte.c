@@ -3,6 +3,8 @@
 
 #include "xlinux/xstdlib.h"
 #include "narrator.h"
+#include "common/attrs.h"
+#include "bacon/builder.h"
 
 #include "byte.h"
 #include "pattern.internal.h"
@@ -16,37 +18,30 @@
 // static
 //
 
-static void say(const pattern_segment * restrict n, narrator * restrict N)
+static void byte_describe(const pattern_segment * restrict fn, bacon_writer * restrict builder_writer)
 {
-  byte_say(n->byte.code, N);
-}
+  const pattern_byte *byte = &fn->byte;
 
-static void render(const pattern_segment * restrict fn, pattern_render_context * restrict ctx)
-{
-  const pattern_byte * n = &fn->byte;
-
-  byte_say(n->code, ctx->narrator);
-  pattern_segment_render(ctx);
-}
-
-static void match(const pattern_segment * restrict segment, pattern_match_context * restrict ctx)
-{
-  const pattern_byte * byte = &segment->byte;
-  const char * restrict name;
-  uint16_t namel;
-  uint16_t name_offset;
-
-  name = ctx->label;
-  namel = ctx->label_len;
-  name_offset = ctx->traversal->offset;
-
-  if((namel > name_offset) && (name[name_offset] == byte->code))
-  {
-    ctx->traversal->offset += 1;
+  { MAPPING
+    STRING("byte")
+    LOADF("0x%02hhx", byte->code)
   }
 }
 
-static void search(const pattern_segment * restrict segment, pattern_search_context * restrict ctx)
+static void byte_say(const pattern_segment * restrict n, const pattern_segment * restrict next, narrator * restrict N)
+{
+  byte_say_code(n->byte.code, N);
+}
+
+static void byte_render(const pattern_segment * restrict fn, pattern_render_context * restrict ctx)
+{
+  const pattern_byte * n = &fn->byte;
+
+  byte_say_code(n->code, ctx->narrator);
+  pattern_segment_render(ctx);
+}
+
+static void byte_search(const pattern_segment * restrict segment, pattern_search_context * restrict ctx)
 {
   const pattern_byte * byte = &segment->byte;
   const char * restrict name; // = ctx->node->name.name;
@@ -57,41 +52,33 @@ static void search(const pattern_segment * restrict segment, pattern_search_cont
   namel = ctx->node->name.namel;
   name_offset = ctx->traversal->offset;
 
-  if((namel > name_offset) && (name[name_offset] == byte->code))
-  {
+  if((namel > name_offset) && (name[name_offset] == byte->code)) {
     ctx->traversal->offset += 1;
+  } else {
+    ctx->traversal->unsatisfied = true;
   }
 }
 
-static void generate(const pattern_segment * restrict seg, pattern_generate_context * restrict context)
+static void byte_generate(const pattern_segment * restrict seg, pattern_generate_context * restrict context)
 {
 }
 
-static void destroy(pattern_segment * restrict fn)
+static void byte_destroy(pattern_segment * restrict fn)
 {
 }
 
-static int cmp(const pattern_segment * A, const pattern_segment *B)
+static int byte_cmp(const pattern_segment * A, const pattern_segment *B)
 {
   return INTCMP(A->byte.code, B->byte.code);
 }
 
-static pattern_segment_vtable vtable = {
-    type : PATTERN_CHARACTER
-  , say : say
-  , search : search
-  , match : match
-  , generate : generate
-  , destroy : destroy
-  , render : render
-  , cmp : cmp
-};
+static pattern_segment_vtable vtable = PATTERN_SEGMENT_VTABLE(byte, PATTERN_CHARACTER, 0);
 
 //
 // internal
 //
 
-void byte_say(uint8_t code, narrator * restrict N)
+void byte_say_code(uint8_t code, narrator * restrict N)
 {
   if(code < 0x20 || code > 0x7e)
     xsayf("\\x%02hhx", code);
@@ -107,7 +94,6 @@ void pattern_byte_mk(pattern_segment ** restrict fn, const yyu_location * restri
   pattern_segment_init(n, &vtable, loc);
 
   n->byte.code = code;
-  chain_init(n, chn);
 
   *fn = n;
 }

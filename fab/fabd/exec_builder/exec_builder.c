@@ -2,8 +2,9 @@
 /* Copyright (c) 2012-2023 Todd Freed <todd.freed@gmail.com> */
 
 #include <stdio.h>
+#include <inttypes.h>
 
-#include "value.h"
+#include "bacon/value.h"
 #include "xlinux/xstdlib.h"
 
 #include "exec_builder.h"
@@ -46,7 +47,7 @@ static void render_say(const char * restrict name, enum builder_render_function 
   {
     xsayf("render-%s VALUE\n", name);
     xsays(" value ");
-    value_say(args->v, N);
+    bacon_value_say(args->v, N);
     xsays("\n");
   }
   else if(renderer == BUILDER_FMT)
@@ -107,6 +108,7 @@ static void __attribute__((nonnull)) dispatch_render_function(
 )
 {
   const path_cache_entry *pe;
+  const bacon_value *v;
 
   if(func == BUILDER_PROPERTY)
   {
@@ -122,7 +124,12 @@ static void __attribute__((nonnull)) dispatch_render_function(
   }
   else if(func == BUILDER_VALUE)
   {
-    value_render(args->v, N);
+    v = args->v;
+    if(v->type == BACON_TYPE_STRING) {
+      narrator_sayw(N, v->s, v->len);
+    } else {
+      bacon_value_say_flat(args->v, N);
+    }
   }
   else if(func == BUILDER_FMT)
   {
@@ -384,17 +391,18 @@ void exec_ifree(exec ** restrict ep)
   *ep = 0;
 }
 
-void exec_builder_xinit(exec_builder * restrict builder)
+void exec_builder_init(exec_builder * restrict builder)
 {
   memset(builder, 0, sizeof(*builder));
 
   builder->Nexec = narrator_growing_init(&builder->Nexec_growing);
 
   // position immediately after the env struct
+  narrator_growing_allocate(&builder->Nexec_growing, sizeof(exec) + 2);
   narrator_seek(builder->Nexec, sizeof(exec), NARRATOR_SEEK_SET, 0);
 }
 
-void exec_builder_xreset(exec_builder * restrict builder)
+void exec_builder_reset(exec_builder * restrict builder)
 {
   builder->file_pe = 0;
   builder->file = 0;
@@ -405,7 +413,7 @@ void exec_builder_xreset(exec_builder * restrict builder)
   narrator_seek(builder->Nexec, sizeof(exec), NARRATOR_SEEK_SET, 0);
 }
 
-void exec_builder_xdestroy(exec_builder * restrict builder)
+void exec_builder_destroy(exec_builder * restrict builder)
 {
   narrator_growing_destroy(&builder->Nexec_growing);
   free(builder->args);
@@ -447,8 +455,9 @@ void exec_builder_build(exec_builder * restrict builder, exec ** restrict envp)
   }
 
   // args- pointers from offsets
-  for(x = 0; x < builder->args_len; x++)
+  for(x = 0; x < builder->args_len; x++) {
     builder->args_stor[x] = textbase + builder->args[x];
+  }
   builder->args_stor[x] = 0;
 
   builder->exec->args = builder->args_stor;
@@ -462,16 +471,16 @@ void exec_builder_build(exec_builder * restrict builder, exec ** restrict envp)
   }
 
   // envs - pointers from offsets
-  for(x = 0; x < builder->envs_len; x++)
+  for(x = 0; x < builder->envs_len; x++) {
     builder->envs_stor[x] = textbase + builder->envs[x];
+  }
   builder->envs_stor[x] = 0;
 
   builder->exec->envs = builder->envs_stor;
   builder->exec->envs_size = builder->envs_len;
 
   // return
-  if(envp)
-  {
+  if(envp) {
     *envp = builder->exec;
   }
 }

@@ -12,11 +12,17 @@
 #include "fsent.h"
 
 #include "usdt-sem.h"
-#include "zbuffer.h"
+#include "zcat.h"
 
-PROBE_SEM(build, stage);
-PROBE_SEM(build, fork);
-PROBE_SEM(build, wait);
+#if 1
+PROBE_SEM(build, stage) = 1;
+PROBE_SEM(build, fork) = 1;
+PROBE_SEM(build, wait) = 1;
+#else
+PROBE_SEM(build, stage) = 0;
+PROBE_SEM(build, fork) = 0;
+PROBE_SEM(build, wait) = 0;
+#endif
 
 void build_stage_probe(uint16_t stage)
 {
@@ -34,11 +40,12 @@ void build_stage_probe(uint16_t stage)
   z = 0;
 
   if(stage == 0) {
-    z += znloadf(s + z, sz - z, "stage begin %3d", stage);
+    z += zcatf(s + z, sz - z, "stage begin %3d", stage);
   } else {
-    z += znloadf(s + z, sz - z, "stage advance %3d -> %3d", stage - 1, stage);
+    z += zcatf(s + z, sz - z, "stage advance %3d -> %3d", stage - 1, stage);
   }
 
+printf("%.*s\n", (int)z, buf);
   PROBE1(build, stage, buf);
 }
 
@@ -57,8 +64,9 @@ void build_fork_probe(uint16_t stage, uint16_t slot_index, const struct build_sl
   sz = sizeof(buf);
   z = 0;
 
-  z += znloadf(s + z, sz - z, "%6s slot %3"PRIu32" stage %3d index %3d", "launch", (uint32_t)slot_index, stage, bs->stage_index);
+  z += zcatf(s + z, sz - z, "%6s slot %3"PRIu32" stage %3d index %3d pid %6u", "launch", (uint32_t)slot_index, stage, bs->stage_index, bs->pid);
 
+printf("%.*s\n", (int)z, buf);
   PROBE4(build, fork, buf, stage, slot_index, bs);
 }
 
@@ -77,14 +85,16 @@ void build_wait_probe(uint16_t stage, uint16_t slot_index, const struct build_sl
   sz = sizeof(buf);
   z = 0;
 
-  z += znloadf(s + z, sz - z, "%6s slot %3"PRIu32" stage %3d index %3d status %3d stderr-len %3d"
+  z += zcatf(s + z, sz - z, "%6s slot %3"PRIu32" stage %3d index %3d pid %6u status %3d stderr-len %3d"
     , "reap"
     , (uint32_t)slot_index
     , stage
     , bs->stage_index
+    , bs->pid
     , bs->status
     , bs->stderr_total
   );
 
+printf("%.*s\n", (int)z, buf);
   PROBE4(build, fork, buf, stage, slot_index, bs);
 }

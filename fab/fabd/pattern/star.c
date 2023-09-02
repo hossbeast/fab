@@ -3,6 +3,7 @@
 
 #include "narrator.h"
 #include "xlinux/xstdlib.h"
+#include "common/attrs.h"
 
 #include "star.h"
 #include "fsent.h"
@@ -14,42 +15,21 @@
 // static
 //
 
-static void say(const pattern_segment * restrict n, narrator * restrict N)
+static void star_describe(const pattern_segment * restrict n, struct bacon_writer * restrict builder_writer)
+{
+}
+
+static void star_say(const pattern_segment * restrict n, const pattern_segment * restrict next, narrator * restrict N)
 {
   xsayc('*');
 }
 
-static void destroy(pattern_segment * restrict n)
+static void star_destroy(pattern_segment * restrict n)
 {
 
 }
 
-static void match(const pattern_segment * restrict segment, pattern_match_context * restrict ctx)
-{
-  uint16_t namel;
-  uint16_t delta;
-  uint16_t start;
-  struct match_segments_traversal *traversal;
-
-  //namel = ctx->node->name.namel;
-  namel = ctx->label_len;
-  traversal = ctx->traversal;
-  start = ctx->traversal->offset;
-
-  for(delta = namel - start; delta >= 0 && delta != 0xffff; delta--)
-  {
-    ctx->traversal->offset = start + delta;
-
-    pattern_segments_match(ctx);
-    if(ctx->traversal->u.match) {
-      break;
-    }
-
-    ctx->traversal = traversal;
-  }
-}
-
-static void search(const pattern_segment * restrict segment, pattern_search_context * restrict ctx)
+static void star_search(const pattern_segment * restrict segment, pattern_search_context * restrict ctx)
 {
   uint16_t namel;
   uint16_t delta;
@@ -63,28 +43,24 @@ static void search(const pattern_segment * restrict segment, pattern_search_cont
   for(delta = namel - start; delta >= 0 && delta != 0xffff; delta--)
   {
     ctx->traversal->offset = start + delta;
+    traversal->sealed = false;
 
     pattern_segments_search(ctx);
-    if(ctx->matched)
-      break;
-
     ctx->traversal = traversal;
+    if(ctx->matched) {
+      break;
+    }
   }
 }
 
-static int cmp(const pattern_segment * A, const pattern_segment *B)
+static int star_cmp(const pattern_segment * A, const pattern_segment *B)
 {
   return 0;
 }
 
-static pattern_segment_vtable vtable = {
-    type : PATTERN_STAR
-  , say : say
-  , destroy : destroy
-  , search : search
-  , match : match
-  , cmp : cmp
-};
+#define star_generate 0
+#define star_render 0
+static pattern_segment_vtable vtable = PATTERN_SEGMENT_VTABLE(star, PATTERN_STAR, PATTERN_SEGMENT_SEARCH_RECURSIVE);
 
 //
 // public
@@ -96,8 +72,6 @@ void pattern_star_mk(pattern_segment ** restrict rv, const yyu_location * restri
 
   xmalloc(&n, sizeof(*n));
   pattern_segment_init(n, &vtable, loc);
-
-  chain_init(n, chn);
 
   *rv = n;
 }

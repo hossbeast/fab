@@ -1,264 +1,103 @@
 /* SPDX-License-Identifier: GPL-3.0 */
 /* Copyright (c) 2012-2023 Todd Freed <todd.freed@gmail.com> */
 
-#include <stdio.h>
+#include "bacon/value.h"
+#include "bacon/make.h"
+#include "bacon/parser.h"
 
 #include "sysvar.h"
 #include "build_slot.h"
-#include "dependency.h"
+#include "buildplan_entity.h"
 #include "exec_builder.h"
 #include "exec_render.h"
+#include "module.h"
+#include "buildplan_entity.h"
+#include "vertex.h"
+#include "entlist.h"
 
 //
 // public
 //
 
-void sysvar_builder_variant(exec_builder * restrict builder, const build_slot * restrict bs)
+static void render_targets(
+    bacon_value ** restrict vars
+  , bacon_parser * restrict parser
+  , const buildplan_entity * restrict bpe
+  , const fsent * restrict cwd
+)
 {
+  size_t count;
+  const fsent *fse;
+  entlist list;
+  entlist *eln;
+  bacon_value *key, *val, *mapping;
+  char path[512];
+  size_t z;
   int x;
-  const fsent *n;
-  const moria_edge * e;
-  exec_builder_args args = { };
 
-  e = &bs->bpe->edge;
-  RUNTIME_ASSERT(e);
+  buildplan_entity_targets(bpe, &list);
+  count = llist_count(&list.lln);
 
-  if(!(e->attrs & MORIA_EDGE_HYPER))
-  {
-    args.val.n = containerof(e->A, fsent, vertex);
-  }
-  else
-  {
-    if(e->Alen)
-    {
-      args.val.n = containerof(e->Alist[0].v, fsent, vertex);
-    }
-    for(x = 1; x < e->Alen; x++)
-    {
-      n = containerof(e->Alist[x].v, fsent, vertex);
-      if(n->var != args.val.n->var)
-      {
-        args.val.n = 0;
-        break;
-      }
-    }
+  bacon_string_mks(parser, 0, 0, &key, "bm_targets_len");
+  bacon_string_mkf(parser, 0, 0, &val, "%zu", count);
+  bacon_mapping_mk(parser, 0, &mapping, key, val);
+  bacon_set_mkv(parser, 0, *vars, vars, mapping);
+
+  x = 0;
+  entlist_foreach(&list, fse, eln) {
+    z = fsent_relative_path_cat(path, sizeof(path), fse, cwd);
+    bacon_string_mkf(parser, 0, 0, &key, "bm_target%d", x++);
+    bacon_string_mkw(parser, 0, 0, &val, path, z);
+    bacon_mapping_mk(parser, 0, &mapping, key, val);
+    bacon_set_mkv(parser, 0, *vars, vars, mapping);
   }
 
-  /* if there's only one target, or if all targets have the same variant */
-  if(args.val.n)
-  {
-    args.item = BUILDER_ENVS;
-    args.position = -1;
-    args.name = "bm_variant";
-    args.name_len = strlen("bm_variant");
-    args.render_val = BUILDER_PROPERTY;
-    args.val.prop = FSENT_PROPERTY_VARIANT;
-    args.mode = BUILDER_APPEND;
-    exec_builder_add(builder, &args);
-  }
+  entlist_destroy(&list);
 }
 
-void sysvar_builder_targets(exec_builder * restrict builder, const build_slot * restrict bs)
+static void render_sources(
+    bacon_value ** restrict vars
+  , bacon_parser * restrict parser
+  , const buildplan_entity * restrict bpe
+  , const fsent * restrict cwd
+)
 {
+  size_t count;
+  const fsent *fse;
+  entlist list;
+  entlist *eln;
+  bacon_value *key, *val, *mapping;
+  char path[512];
+  size_t z;
   int x;
-  char space[64];
-  exec_builder_args args = { };
-  const moria_edge * e;
 
-  e = &bs->bpe->edge;
+  buildplan_entity_sources(bpe, &list);
+  count = llist_count(&list.lln);
 
-  if(!(e->attrs & MORIA_EDGE_HYPER))
-  {
-    args.val.n = containerof(e->A, fsent, vertex);
+  bacon_string_mks(parser, 0, 0, &key, "bm_sources_len");
+  bacon_string_mkf(parser, 0, 0, &val, "%zu", count);
+  bacon_mapping_mk(parser, 0, &mapping, key, val);
+  bacon_set_mkv(parser, 0, *vars, vars, mapping);
+
+  x = 0;
+  entlist_foreach(&list, fse, eln) {
+    z = fsent_relative_path_cat(path, sizeof(path), fse, cwd);
+    bacon_string_mkf(parser, 0, 0, &key, "bm_source%d", x++);
+    bacon_string_mkw(parser, 0, 0, &val, path, z);
+    bacon_mapping_mk(parser, 0, &mapping, key, val);
+    bacon_set_mkv(parser, 0, *vars, vars, mapping);
   }
-  else if(e->Alen == 1)
-  {
-    args.val.n = containerof(e->Alist[0].v, fsent, vertex);
-  }
 
-  args.item = BUILDER_ENVS;
-  args.position = -1;
-  args.render_val = BUILDER_PROPERTY;
-  args.val.prop = FSENT_PROPERTY_RELPATH;
-  RUNTIME_ASSERT(bs->mod);
-  /* paths are relative to the module */
-  args.val.pctx.mod = bs->mod;
-
-  args.mode = BUILDER_APPEND;
-
-  if(args.val.n)
-  {
-    args.name = "bm_target";
-    args.name_len = strlen("bm_target");
-    exec_builder_add(builder, &args);
-  }
-  else
-  {
-    exec_builder_env_addf(builder, "bm_targets_len", "%d", e->Alen);
-
-    args.name = space;
-    for(x = 0; x < e->Alen; x++)
-    {
-      args.val.n = containerof(e->Alist[x].v, fsent, vertex);
-      args.name_len = snprintf(space, sizeof(space), "bm_target%d", x);
-      exec_builder_add(builder, &args);
-    }
-  }
+  entlist_destroy(&list);
 }
 
-void sysvar_builder_sources(exec_builder * restrict builder, const build_slot * restrict bs)
+void sysvar_render(
+    bacon_value ** restrict vars
+  , bacon_parser * restrict parser
+  , const buildplan_entity * restrict bpe
+  , const fsent * restrict cwd
+)
 {
-  int x;
-  char space[64];
-  exec_builder_args args = { };
-  const moria_edge * e;
-
-  e = &bs->bpe->edge;
-
-  if(!(e->attrs & MORIA_EDGE_HYPER))
-  {
-    args.val.n = containerof(e->B, fsent, vertex);
-  }
-  else if(e->Blen == 1)
-  {
-    args.val.n = containerof(e->Blist[0].v, fsent, vertex);
-  }
-
-  args.item = BUILDER_ENVS;
-  args.position = -1;
-  args.render_val = BUILDER_PROPERTY;
-  args.val.prop = FSENT_PROPERTY_RELPATH;
-  args.val.pctx.mod = bs->mod;
-  args.mode = BUILDER_APPEND;
-
-  if(args.val.n)
-  {
-    args.name = "bm_source";
-    args.name_len = strlen("bm_source");
-    exec_builder_add(builder, &args);
-  }
-  else
-  {
-    exec_builder_env_addf(builder, "bm_sources_len", "%d", e->Blen);
-    args.name = space;
-    for(x = 0; x < e->Blen; x++)
-    {
-      args.val.n = containerof(e->Blist[x].v, fsent, vertex);
-      args.name_len = snprintf(space, sizeof(space), "bm_source%d", x);
-
-      exec_builder_add(builder, &args);
-    }
-  }
-}
-
-void exec_render_sysvar_sources(exec_render_context * restrict ctx, const build_slot * restrict bs)
-{
-  int x;
-  const moria_edge * e;
-
-  e = &bs->bpe->edge;
-
-  ctx->builder_args.val.n = 0;
-  if(!(e->attrs & MORIA_EDGE_HYPER))
-  {
-    ctx->builder_args.val.n = containerof(e->B, fsent, vertex);
-  }
-  else if(e->Blen == 1)
-  {
-    ctx->builder_args.val.n = containerof(e->Blist[0].v, fsent, vertex);
-  }
-
-  ctx->builder_args.render_val = BUILDER_PROPERTY;
-  ctx->builder_args.val.prop = FSENT_PROPERTY_RELPATH;
-  ctx->builder_args.val.pctx.mod = bs->mod;
-  ctx->builder_args.mode = BUILDER_APPEND;
-
-  if(ctx->builder_args.val.n)
-  {
-    exec_builder_add(ctx->builder, &ctx->builder_args);
-  }
-  else
-  {
-    for(x = 0; x < e->Blen; x++)
-    {
-      ctx->builder_args.val.n = containerof(e->Blist[x].v, fsent, vertex);
-      exec_builder_add(ctx->builder, &ctx->builder_args);
-    }
-  }
-}
-
-void exec_render_sysvar_targets(exec_render_context * restrict ctx, const build_slot * restrict bs)
-{
-  int x;
-  const moria_edge * e;
-
-  e = &bs->bpe->edge;
-
-  ctx->builder_args.val.n = 0;
-  if(!(e->attrs & MORIA_EDGE_HYPER))
-  {
-    ctx->builder_args.val.n = containerof(e->A, fsent, vertex);
-  }
-  else if(e->Alen == 1)
-  {
-    ctx->builder_args.val.n = containerof(e->Alist[0].v, fsent, vertex);
-  }
-
-  ctx->builder_args.render_val = BUILDER_PROPERTY;
-  ctx->builder_args.val.prop = FSENT_PROPERTY_RELPATH;
-  ctx->builder_args.val.pctx.mod = bs->mod;
-
-  if(ctx->builder_args.val.n)
-  {
-    exec_builder_add(ctx->builder, &ctx->builder_args);
-  }
-  else
-  {
-    for(x = 0; x < e->Alen; x++)
-    {
-      ctx->builder_args.val.n = containerof(e->Alist[x].v, fsent, vertex);
-      exec_builder_add(ctx->builder, &ctx->builder_args);
-    }
-  }
-}
-
-void exec_render_sysvar_variant(exec_render_context * restrict ctx, const build_slot * restrict bs)
-{
-  int x;
-  const fsent *n;
-  const moria_edge * e;
-
-  e = &bs->bpe->edge;
-
-  ctx->builder_args.val.n = 0;
-  if(!(e->attrs & MORIA_EDGE_HYPER))
-  {
-    ctx->builder_args.val.n = containerof(e->A, fsent, vertex);
-  }
-  else
-  {
-    if(e->Alen)
-    {
-      ctx->builder_args.val.n = containerof(e->Alist[0].v, fsent, vertex);
-    }
-    for(x = 1; x < e->Alen; x++)
-    {
-      n = containerof(e->Alist[x].v, fsent, vertex);
-      if(n->var != ctx->builder_args.val.n->var)
-      {
-        ctx->builder_args.val.n = 0;
-        break;
-      }
-    }
-  }
-
-  /* if there's only one target, or if all targets have the same variant */
-  if(ctx->builder_args.val.n)
-  {
-    ctx->builder_args.render_val = BUILDER_PROPERTY;
-    ctx->builder_args.val.prop = FSENT_PROPERTY_VARIANT;
-    ctx->builder_args.mode = BUILDER_APPEND;
-
-    exec_builder_add(ctx->builder, &ctx->builder_args);
-  }
+  render_sources(vars, parser, bpe, cwd);
+  render_targets(vars, parser, bpe, cwd);
 }

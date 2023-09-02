@@ -9,9 +9,8 @@
   #include "pattern/byte.h"
   #include "pattern/range.h"
   #include "pattern/word.h"
-
   #include "pattern/section.h"
-
+  #include "pattern/segments.h"
   #include "pattern_parser.internal.h"
   #include "pattern.internal.h"
 
@@ -40,16 +39,21 @@
   pattern_segments * segments;
   pattern_section * section;
   pattern_segment * segment;
+  llist list;
 }
 
 /* tokens from pattern.l */
-%token '{' '}'
-%token '[' ']'
+%token '(' ')'      // groups
+%token '{' '}'      // alternations
+%token '[' ']'      // classes
 %token ':'
 %token '?'
 %token '~'
 %token '+'
 %token '$'
+%token '.'
+%token '@'
+%token '_'
 
 %token <yyu.umax>  UINTMAX8   100
 %token <yyu.umax>  UINTMAX16  101
@@ -61,32 +65,33 @@
 %token <yyu.u8>    CREF       105 "character-escape"
 %token <yyu.u8>    HREF       106 "hex-escape"
 %token             STARSTAR   107 "**"
-%token             SLASH2     108 "/"
-%token <yyu.u8>    CHAR       109
-%token MODULE                 110 "module"
-%token MODULES                111 "modules"
-%token SHADOW                 112 "shadow"
-%token UP                     113 "up"
-%token DOWN                   114 "down"
-%token SELF_OR_BELOW          115 "self-or-below"
-%token DIRS                   116 "dirs"
-%token REQUIRES               117 "requires"
-%token USES                   118 "uses"
+%token             DOT        108 "."
+%token             DOT2       109 ".."
+%token <yyu.u8>    CHAR       110
+%token MODULE                 111 "module"
+%token MODULES                112 "modules"
+%token SHADOW                 113 "shadow"
+%token UP                     114 "up"
+%token DOWN                   115 "down"
+%token SELF_OR_BELOW          116 "self-or-below"
+%token DIRS                   117 "dirs"
 
 %type <yyu.umax>   uint16
 
 /* nonterminals */
-%type <pattern> pattern
-%type <segments> pattern-dentry pattern-dentry-list
+%type <list> quoted-strparts quoted-string-literal string-literal
+%type <list> pattern-sections-list
+%type <list> pattern-dentry-segment-list
 
-%type <section> pattern-section pattern-sections-list
+%type <pattern> pattern
+
+%type <section> pattern-section pattern-initial-section
+
+%type <segments> pattern-dentry-segments
 
 %type <segment> escape
 %type <segment> word
-%type <segment> quoted-string-literal quoted-strpart quoted-strparts
-%type <segment> unquoted-string-literal unquoted-strpart
-%type <segment> string-literal
-%type <segment> pattern-dentry-part pattern-dentry-parts
+%type <segment> quoted-strpart
 
 %destructor { pattern_free($$); } <pattern>
 %destructor { pattern_section_free($$); } <section>
@@ -109,60 +114,68 @@ utterance
 pattern
   : pattern-sections-list
   {
-    pattern_mk(&$$, &@$, $1);
+    pattern_mk(&$$, &@$, &$1);
   }
   ;
 
 pattern-sections-list
   : pattern-sections-list '/' pattern-section
   {
-    $$ = chain_splice_tail($1, $3, chn);
+    $$ = $1;
+    llist_push(&$$, &$3->lln);
+  }
+  | pattern-initial-section
+  {
+    llist_init(&$$);
+    llist_push(&$$, &$1->lln);
+  }
+  ;
+
+pattern-initial-section
+  : '/'
+  {
+    pattern_section_mk(&$$, &@$, PATTERN_NODESET_SHADOW, 0, 0, NULL, false);
   }
   | pattern-section
   ;
 
 pattern-section
-  : pattern-dentry-list
+  : pattern-dentry-segments
   {
-    pattern_section_mk(&$$, &@$, 0, PATTERN_GRAPH_FS, PATTERN_AXIS_DOWN, $1);
+    llist list;
+    llist_init(&list);
+    llist_push(&list, &$1->lln);
+    pattern_section_mk(&$$, &@$, 0, PATTERN_GRAPH_FS, PATTERN_AXIS_DOWN, &list, false);
   }
-  | '.'
+  | DOT
   {
-    pattern_section_mk(&$$, &@$, PATTERN_NODESET_SELF, PATTERN_GRAPH_FS, PATTERN_AXIS_DOWN, NULL);
-  }
-  ;
-
-pattern-dentry-list
-  : pattern-dentry
-  ;
-
-pattern-dentry
-  : pattern-dentry-parts
-  {
-    pattern_segments_mk(&$$, &@$, PATTERN_QUALIFIER_TYPE_AND, $1);
+    pattern_section_mk(&$$, &@$, PATTERN_NODESET_SELF, 0, 0, NULL, false);
   }
   ;
 
-pattern-dentry-parts
-  : pattern-dentry-parts pattern-dentry-part
+pattern-dentry-segments
+  : pattern-dentry-segment-list
   {
-    $$ = chain_add($1, $2, chn);
+    pattern_segments_mk(&$$, &@$, PATTERN_QUALIFIER_TYPE_AND, &$1);
   }
-  | pattern-dentry-part
   ;
 
- /* appears at any position in a pattern-dirnode section */
-pattern-dentry-part
-  : string-literal
+pattern-dentry-segment-list
+  : pattern-dentry-segment-list string-literal
+  {
+    $$ = $1;
+    llist_splice_tail(&$$, &$2);
+  }
+  | string-literal
   ;
 
 string-literal
-  : unquoted-string-literal
-  | quoted-string-literal
-  ;
-
-unquoted-string-literal
-  : unquoted-strpart
+  : quoted-string-literal
+  | word
+  {
+    llist_init(&$$);
+    llist_push(&$$, &$1->lln);
+  }
   ;
 
 quoted-string-literal
@@ -172,25 +185,26 @@ quoted-string-literal
   }
   | '"' '"'
   {
-    $$ = (void*)0;
+    $$ = (typeof($$)){ };
   }
   ;
 
 quoted-strparts
   : quoted-strparts quoted-strpart
   {
-    $$ = chain_add($1, $2, chn);
+    $$ = $1;
+    llist_push(&$$, &$2->lln);
   }
   | quoted-strpart
+  {
+    llist_init(&$$);
+    llist_push(&$$, &$1->lln);
+  }
   ;
 
 quoted-strpart
-  : unquoted-strpart
-  | escape
-  ;
-
-unquoted-strpart
   : word
+  | escape
   ;
 
 word
@@ -200,15 +214,28 @@ word
   }
   | uint16
   {
-$1 = 0;
     pattern_word_mk(&$$, &@$, @1.s, @1.l);
   }
   ;
 
 word-tokens
   : STR
+  | MODULE
+  | MODULES
+  | SHADOW
+  | UP
+  | DOWN
+  | SELF_OR_BELOW
+  | DIRS
+  | 'A'
   | 'D'
+  | 'F'
+  | 'H'
+  | 'M'
+  | '@'
+  | '_'
   | '+'
+  | '.'
   ;
 
 escape

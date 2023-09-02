@@ -17,14 +17,16 @@
 #include "goals.h"
 #include "handler.h"
 #include "params.h"
-#include "request.internal.h"
+#include "request.h"
+#include "selector_parser.h"
 #include "request_parser.h"
+#include "pattern_parser.internal.h"
 #include "server_thread.h"
 #include "times.h"
 #include "system_state.h"
 
 #include "common/attrs.h"
-#include "zbuffer.h"
+#include "zcat.h"
 
 struct futexlock handlers_lock;
 
@@ -32,16 +34,24 @@ static void parse_request(handler_context * restrict ctx, fabipc_message * restr
 {
   int exit;
   char trace[4096];
-  size_t tracesz;
+  size_t size;
 
-  if((exit = request_parser_parse(ctx->request_parser, msg->text, msg->size, "fab-request", req)))
-  {
-    channel_consume(ctx->chan, msg);
-
-    tracesz = znloadw(trace, sizeof(trace), ctx->request_parser->yyu.error_str, ctx->request_parser->yyu.error_len);
-
-    channel_responsew(ctx->chan, EINVAL, trace, tracesz);
+  if((exit = request_parser_parse(ctx->request_parser, msg->text, msg->size, "fab-request", req)) == 0) {
+    return;
   }
+
+  channel_consume(ctx->chan, msg);
+
+  size = 0;
+  if(ctx->request_parser->selector_parser->pattern_parser->yyu && ctx->request_parser->selector_parser->pattern_parser->yyu->error_len) {
+    size += zcatw(trace, sizeof(trace), ctx->request_parser->selector_parser->pattern_parser->yyu->error_str, ctx->request_parser->selector_parser->pattern_parser->yyu->error_len);
+  } else if(ctx->request_parser->selector_parser->yyu.error_len) {
+    size += zcatw(trace, sizeof(trace), ctx->request_parser->selector_parser->yyu.error_str, ctx->request_parser->selector_parser->yyu.error_len);
+  } else {
+    size += zcatw(trace, sizeof(trace), ctx->request_parser->yyu.error_str, ctx->request_parser->yyu.error_len);
+  }
+
+  channel_responsew(ctx->chan, EINVAL, trace, size);
 }
 
 static void handler_thread(handler_context * restrict ctx)
@@ -171,8 +181,8 @@ static void handler_thread(handler_context * restrict ctx)
 
   if(chan)
   {
-    chan->ipc.server_exit = true;
-    syscall(SYS_tgkill, chan->ipc.client_pid, chan->ipc.client_tid, SIGUSR1);
+    chan->ipc.server_exit = 1;
+    syscall(SYS_futex, &chan->ipc.server_ring.waiters, FUTEX_WAKE, INT32_MAX, 0, 0, 0);
   }
 
   rcu_unregister(&rcu_self);
@@ -200,12 +210,8 @@ static void * handler_thread_jump(void * arg)
   rcu_list_delete(&ctx->stk);
   futexlock_release(&handlers_lock);
 
-//  if(R) {
-//    g_params.shutdown = true;
-//    g_params.handler_error = true;
-//  }
-
   rcu_synchronize();
+
   channel_release(chan);
   handler_release(ctx);
 

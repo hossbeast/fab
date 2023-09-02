@@ -12,8 +12,8 @@ struct filesystem;
 struct narrator;
 
 typedef struct fstree {
-  char name[255];
-  uint16_t namel;
+  char label[255];
+  uint16_t label_len;
 
   struct fstree * up;
   rbtree down;
@@ -29,9 +29,9 @@ extern struct fstree fstree_shadow;
 void fstree_say(struct narrator * restrict N)
   __attribute__((nonnull));
 
-const fstree * fstree_down(fstree * restrict fst, const char * restrict name, uint16_t namel)
+const fstree *fstree_down(fstree * restrict fst, const char * restrict label, uint16_t label_len)
   __attribute__((nonnull));
 
 /* trace */
-size_t fstree_znload(void * restrict dst, size_t sz)
+size_t fstree_cat(void * restrict dst, size_t sz)
   __attribute__((nonnull));

@@ -6,6 +6,8 @@
 #include "types.h"
 
 struct fsent;
+struct bacon_writer;
+struct map;
 
 enum notify_state {
   NOTIFY_MONITOR = 0,   // inotify can mark this node as stale
@@ -16,6 +18,8 @@ enum notify_state {
 /* incremented each time new events are available */
 extern uint16_t notify_thread_epoch;
 
+extern struct map *notify_thread_fsent_by_in_wd;
+
 void notify_thread_setup(void);
 void notify_thread_cleanup(void);
 void notify_thread_launch(void);
@@ -25,3 +29,8 @@ void notify_thread_add_watch(struct fsent * restrict n)
 
 void notify_thread_rm_watch(struct fsent * restrict n)
   __attribute__((nonnull));
+
+void notify_index_describe(struct bacon_writer * restrict builder_writer)
+  __attribute__((nonnull));
+
+void notify_index_show(void);

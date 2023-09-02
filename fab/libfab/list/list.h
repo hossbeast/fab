@@ -7,14 +7,14 @@
 #include <stdint.h>
 
 #include "descriptor.h"
-#include "fsent.h"
+#include "vertex.h"
 
 extern descriptor_type descriptor_fab_list_item;
 
 /* response from the list api */
 typedef struct fab_list_item {
-  enum fab_fsent_type type;
-  enum fab_fsent_state state;
+  enum fab_vertex_type type;
+  enum fab_vertex_state state;
 
   const char *label;
   uint16_t label_len;

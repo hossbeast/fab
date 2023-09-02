@@ -2,39 +2,35 @@
 /* Copyright (c) 2012-2023 Todd Freed <todd.freed@gmail.com> */
 
 #include <stdio.h>
+#include <inttypes.h>
 
 #include "types.h"
+#include "narrator.h"
+#include "common/attrs.h"
+#include "moria/connect.h"
 
 #include "shadow.h"
 #include "filesystem.internal.h"
 #include "fsedge.h"
 #include "fsent.h"
 #include "module.h"
+#include "vertex.h"
+#include "vertex/probes.h"
 
-fsent * g_shadow;
-fsent * g_shadow_module;
-fsent * g_shadow_modules;
+#include "zcat.h"
 
-static void shadow_root_init()
-{
-  fsent * n = 0;
+fsent *g_shadow;
+fsent *g_shadow_module;
+fsent *g_shadow_modules;
+fsent *g_shadow_targets;
 
-  fsent_create(&n, VERTEX_SHADOW_DIR, 0, MMS("(shadow)"));
-
-  n->fst = &fstree_shadow;
-  n->fs = n->fst->fs;
-
-  g_shadow = n;
-}
-
-static void shadow_link(
+void shadow_link(
     fsent * restrict parent
-  , module * restrict mod
   , const char * restrict name
   , uint16_t namel
   , fsent * restrict ref
-  , fsedge ** restrict nep
-  , fsent ** restrict displaced
+  , fsedge ** restrict ep
+  , fsent ** restrict pref
   , graph_invalidation_context * restrict invalidation
 )
 {
@@ -44,44 +40,50 @@ static void shadow_link(
   moria_edge *e;
   int r;
 
-  fsent_create(&n, VERTEX_SHADOW_LINK, 0, name, namel);
+  fsent_create(&n, VERTEX_SHADOW_LINK, VERTEX_OK, name, namel);
   n->vertex.ref = &ref->vertex;
+  n->vertex.attrs |= MORIA_VERTEX_LINK;
 
-  r = moria_preconnect(&ctx, &g_graph, &parent->vertex, &n->vertex, EDGE_FSTREE, &e);
+  if(pref) {
+    *pref = 0;
+  }
 
+  r = moria_preconnect(&ctx, &g_graph, &n->vertex, &parent->vertex, EDGE_FSTREE, &e);
   if(r == MORIA_EDGEDOWN)
   {
-    *nep = containerof(e, fsedge, edge);
+    RUNTIME_ASSERT((e->B->attrs & VERTEX_TYPE_OPT) == VERTEX_SHADOW_LINK);
 
-    /* existing edge with the same referent */
-    if(e->B->ref == &ref->vertex)
-    {
-      *displaced = 0;
-      fsent_release(n);
+    if(ep) {
+      *ep = containerof(e, typeof(**ep), edge);
     }
-    else
-    {
-      /* the edge is still in use, but no longer connected to this vertex */
-      *displaced = containerof(e->B, fsent, vertex);
-      e->B->up_identity = 0;
 
-      /* this is valid because the old/new B vertices have the same label */
-      e->B = &n->vertex;
+    /* existing edge with this label */
+    fsent_release(n);
+
+    /* overwrite the referent */
+    if(e->B->ref != &ref->vertex) {
+      if(pref) {
+        *pref = containerof(e->B->ref, fsent, vertex);
+      }
     }
+    e->B->ref = &ref->vertex;
   }
   else
   {
     RUNTIME_ASSERT(r == MORIA_NOEDGE);
-    fsedge_alloc(&fse, &g_graph);
-    graph_connect(&ctx, &parent->vertex, &n->vertex, &fse->edge, EDGE_FSTREE);
-    *nep = fse;
+    fsedge_alloc(&fse);
+    moria_connect(&ctx, &g_graph, &fse->edge, &n->vertex, &parent->vertex, EDGE_FSTREE);
+    if(ep) {
+      *ep = fse;
+    }
+
+    vertex_alloc_probe(&n->vertex);
   }
 }
 
-static void shadow_create(
+void shadow_create(
     fsent * restrict parent
   , fsent ** restrict np
-  , module * restrict mod
   , const char * restrict name
   , uint16_t namel
   , vertex_kind kind
@@ -90,13 +92,12 @@ static void shadow_create(
 {
   fsent * n;
 
-  fsent_create(&n, kind, 0, name, namel);
+  fsent_create(&n, kind, VERTEX_OK, name, namel);
 
   n->fst = &fstree_shadow;
   n->fs = n->fst->fs;
-  n->mod = mod;
 
-  fsedge_connect(parent, n, invalidation);
+  fsedge_connect(n, parent, invalidation);
 
   if(np) {
     *np = n;
@@ -109,82 +110,167 @@ static void shadow_create(
 
 void shadow_setup()
 {
-  graph_invalidation_context invalidation = { 0 };
+  moria_connect_context ctx;
+  fsedge *fse;
 
-  shadow_root_init();
+  /* shadow root */
+  fsent_create(&g_shadow, VERTEX_SHADOW_DIR, VERTEX_OK | VERTEX_PROTECT_BIT, MMS("(shadow)"));
+  g_shadow->fst = &fstree_shadow;
+  g_shadow->fs = fstree_shadow.fs;
+  g_shadow->path_hash = 0xbeef;
+  fsent_compute_identifiers(g_shadow);
+  vertex_alloc_probe(&g_shadow->vertex);
 
-  graph_invalidation_begin(&invalidation);
-  shadow_create(g_shadow, &g_shadow_module, 0, MMS("module"), VERTEX_SHADOW_MODULE, &invalidation);
-  shadow_create(g_shadow, &g_shadow_modules, 0, MMS("modules"), VERTEX_SHADOW_MODULES, &invalidation);
+  /* //module */
+  fsent_create(&g_shadow_module, VERTEX_CONTEXT_MODULE, VERTEX_OK | VERTEX_PROTECT_BIT, MMS("module"));
+  moria_preconnect(&ctx, &g_graph, &g_shadow_module->vertex, &g_shadow->vertex, EDGE_FSTREE, 0);
+  fsedge_alloc(&fse);
+  moria_connect(&ctx, &g_graph, &fse->edge, &g_shadow_module->vertex, &g_shadow->vertex, EDGE_FSTREE);
+  fsent_compute_identifiers(g_shadow_module);
+  vertex_alloc_probe(&g_shadow_module->vertex);
 
-  graph_invalidation_end(&invalidation);
+  /* //modules */
+  fsent_create(&g_shadow_modules, VERTEX_SHADOW_DIR, VERTEX_OK | VERTEX_PROTECT_BIT, MMS("modules"));
+  moria_preconnect(&ctx, &g_graph, &g_shadow_modules->vertex, &g_shadow->vertex, EDGE_FSTREE, 0);
+  fsedge_alloc(&fse);
+  moria_connect(&ctx, &g_graph, &fse->edge, &g_shadow_modules->vertex, &g_shadow->vertex, EDGE_FSTREE);
+  fsent_compute_identifiers(g_shadow_modules);
+  vertex_alloc_probe(&g_shadow_modules->vertex);
+
+  /* //targets */
+  fsent_create(&g_shadow_targets, VERTEX_SHADOW_FILE, VERTEX_OK | VERTEX_PROTECT_BIT, MMS("targets"));
+  moria_preconnect(&ctx, &g_graph, &g_shadow_targets->vertex, &g_shadow->vertex, EDGE_FSTREE, 0);
+  fsedge_alloc(&fse);
+  moria_connect(&ctx, &g_graph, &fse->edge, &g_shadow_targets->vertex, &g_shadow->vertex, EDGE_FSTREE);
+  fsent_compute_identifiers(g_shadow_targets);
+  vertex_alloc_probe(&g_shadow_targets->vertex);
+
+  /* the //module link is created in module_system_bootstrap */
 }
 
 void shadow_cleanup()
 {
 }
 
-void shadow_module_init(struct module * restrict mod, graph_invalidation_context * restrict invalidation)
-{
-  shadow_create(g_shadow_modules, &mod->shadow, mod, mod->id, 16, VERTEX_SHADOW_DIR, invalidation);
-  shadow_create(mod->shadow, &mod->shadow_imports, mod, MMS("imports"), VERTEX_SHADOW_DIR, invalidation);
-  shadow_create(mod->shadow, &mod->shadow_requires, mod, MMS("requires"), VERTEX_SHADOW_DIR, invalidation);
-  shadow_create(mod->shadow, &mod->shadow_uses, mod, MMS("uses"), VERTEX_SHADOW_DIR, invalidation);
-  shadow_create(mod->shadow, &mod->shadow_targets, mod, MMS("targets"), VERTEX_SHADOW_FILE, invalidation);
-
-  /* //module/this/fs -> module directory fsent */
-  shadow_link(mod->shadow, mod, MMS("fs"), mod->dir_node, &mod->shadow_fs, 0, invalidation);
-}
-
-void shadow_graft_requires(struct module * restrict mod, fsent * restrict ref, const char * restrict as, uint16_t asl, fsedge ** restrict nep, graph_invalidation_context * restrict invalidation)
+void shadow_graft_requires(
+    module * restrict mod
+  , fsent * restrict ref
+  , const char * restrict as
+  , uint16_t asl
+  , fsedge ** restrict nep
+  , graph_invalidation_context * restrict invalidation
+)
 {
   fsent *displaced = 0;
 
-  shadow_link(mod->shadow_requires, mod, as, asl, ref, nep, &displaced, invalidation);
+  shadow_link(mod->shadow_requires, as, asl, ref, nep, &displaced, invalidation);
 
   if(displaced)
   {
-    printf("require '%.*s' displaces earlier name", (int)asl, as);
+    printf("require '%.*s' displaces earlier referent\n", (int)asl, as);
 
     /* the displaced vertex was a link; it is now orphaned and can be deleted */
     fsent_release(displaced);
   }
 }
 
-void shadow_graft_imports(struct module * restrict mod, fsent * restrict ref, const char * restrict as, uint16_t asl, fsedge ** restrict nep, graph_invalidation_context * restrict invalidation)
+void shadow_graft_rules(
+    module * restrict mod
+  , fsent * restrict ref
+  , const char * restrict as
+  , uint16_t asl
+  , fsedge ** restrict nep
+  , graph_invalidation_context * restrict invalidation
+)
 {
   fsent *n, *displaced = 0;
 
-  shadow_link(mod->shadow_imports, mod, as, asl, ref, nep, &displaced, invalidation);
+  shadow_link(mod->shadow_rules, as, asl, ref, nep, &displaced, invalidation);
 
   if(displaced)
   {
-    printf("import '%.*s' displaces earlier name", (int)asl, as);
+    n = containerof(displaced->vertex.ref, fsent, vertex);
+
+    printf("rules '%.*s' displaces earlier referent\n", (int)asl, as);
+    fsent_absolute_path_say(n, g_narrator_stdout);
+    printf("\n");
+    fsent_absolute_path_say(ref, g_narrator_stdout);
+    printf("\n");
 
     /* erase the referent */
-    n = containerof(displaced->vertex.ref, fsent, vertex);
-    RUNTIME_ASSERT(n->import_scope_edge);
-    n->import_scope_edge = 0;
+    RUNTIME_ASSERT(n->shadow_rules_edge);
+    n->shadow_rules_edge = 0;
 
     /* the displaced vertex was a link; it is now orphaned and can be deleted */
     fsent_release(displaced);
   }
 }
 
-void shadow_graft_uses(struct module * restrict mod, fsent * restrict ref, const char * restrict as, uint16_t asl, fsedge ** restrict nep, graph_invalidation_context * restrict invalidation)
+void shadow_graft_var(
+    module * restrict mod
+  , fsent * restrict ref
+  , const char * restrict as
+  , uint16_t asl
+  , fsedge ** restrict nep
+  , graph_invalidation_context * restrict invalidation
+)
 {
   fsent *n, *displaced = 0;
 
-  shadow_link(mod->shadow_uses, mod, as, asl, ref, nep, &displaced, invalidation);
+  shadow_link(mod->shadow_var, as, asl, ref, nep, &displaced, invalidation);
 
   if(displaced)
   {
-    printf("uses '%.*s' displaces earlier name", (int)asl, as);
+    n = containerof(displaced->vertex.ref, fsent, vertex);
+
+    printf("var '%.*s' displaces earlier referent\n", (int)asl, as);
+    fsent_absolute_path_say(n, g_narrator_stdout);
+    printf("\n");
+    fsent_absolute_path_say(ref, g_narrator_stdout);
+    printf("\n");
 
     /* erase the referent */
+    RUNTIME_ASSERT(n->shadow_var_edge);
+    n->shadow_var_edge = 0;
+
+    /* the displaced vertex was a link; it is now orphaned and can be deleted */
+    fsent_release(displaced);
+  }
+}
+
+void shadow_graft_bind(
+    module * restrict mod
+  , fsent * restrict ref
+  , fsent * restrict attachment
+  , fsent ** restrict target
+  , graph_invalidation_context * restrict invalidation
+)
+{
+  fsent *n, *displaced = 0;
+  uint64_t u64;
+  char id[64];
+  uint16_t id_len;
+  fsedge *e;
+
+  u64 = fsent_abspath_hash(ref);
+  id_len = zcatf(id, sizeof(id), "%016"PRIx64, u64);
+
+  shadow_link(attachment, id, id_len, ref, &e, &displaced, invalidation);
+  *target = containerof(e->edge.B, fsent, vertex);
+
+  if(displaced)
+  {
+    /* erase the referent */
     n = containerof(displaced->vertex.ref, fsent, vertex);
-    RUNTIME_ASSERT(n->use_scope_edge);
-    n->use_scope_edge = 0;
+
+    printf("import '%.*s' displaces earlier referent\n", id_len, id);
+    fsent_absolute_path_say(n, g_narrator_stdout);
+    printf("\n");
+    fsent_absolute_path_say(ref, g_narrator_stdout);
+    printf("\n");
+
+    RUNTIME_ASSERT(n->shadow_imports_edge);
+    n->shadow_imports_edge = 0;
 
     /* the displaced vertex was a link; it is now orphaned and can be deleted */
     fsent_release(displaced);

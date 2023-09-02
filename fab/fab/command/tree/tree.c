@@ -6,11 +6,15 @@
 #include "fab/client.h"
 #include "fab/ipc.h"
 #include "fab/list.h"
+#include "fab/events.h"
+#include "bacon/builder.h"
+#include "narrator.h"
+#include "narrator/fixed.h"
 
 #include "tree.h"
 #include "command.h"
 #include "params.h"
-#include "zbuffer.h"
+#include "zcat.h"
 
 struct tree_args tree_args = {
     graph : FAB_GRAPH_FSTREE
@@ -28,8 +32,21 @@ static uint64_t requestid;
 static void usage(command * restrict cmd)
 {
   printf(
+"ls options\n"
+" -g <graph-type>           show this graph\n"
+" --down                    downwards from the subject node\n"
+" --up                      upwards from the subject node\n"
+" --labels        (default) show labels\n"
+" --paths                   show full paths\n"
 "\n"
-"tree options\n"
+"graph types\n"
+" fstree          (default) filesystem tree\n"
+" dirtree                   directories subset of filesystem tree\n"
+" modtree                   modules subset of filesystem tree\n"
+" depends                   dependency graph\n"
+" imports                   module imports graph\n"
+" uses                      module uses graph\n"
+" requires                  module requires graph\n"
   );
 }
 
@@ -40,13 +57,12 @@ static void usage(command * restrict cmd)
 static void post_request(fab_client * restrict client)
 {
   fabipc_message * msg;
-  size_t z;
-  char *dst;
-  size_t sz;
   bead target;
   const char *dir;
   const char *order;
-  const char *dist;
+  bacon_writer writer, *builder_writer;
+  narrator *N;
+  narrator_fixed fixed;
 
   target = args->target;
   if(target.len == 0) {
@@ -60,34 +76,86 @@ static void post_request(fab_client * restrict client)
     order = "postorder";
   }
 
-  dist = "0";
-  if(second) {
-    dist = "1";
-  }
-
   msg = fab_client_produce(client);
   msg->type = FABIPC_MSG_REQUEST;
   requestid = msg->id = ++client->msgid;
 
-  dst = msg->text;
-  sz = sizeof(msg->text);
-  z = 0;
-  z += znloads(dst + z, sz - z, " [");
-  z += znloads(dst + z, sz - z, "  select : [");
-  z += znloadf(dst + z, sz - z, "   path : \"%.*s\"", (int)target.len, target.s);
-  z += znloads(dst + z, sz - z, "   traverse : {");
-  z += znloadf(dst + z, sz - z, "    direction : %s", dir);
-  z += znloadf(dst + z, sz - z, "    order : %s", order);
-  z += znloadf(dst + z, sz - z, "    graph : %s", attrs16_name_byvalue(fab_graph_attrs, args->graph));
-  z += znloadf(dst + z, sz - z, "    min-distance : %s", dist);
-  z += znloads(dst + z, sz - z, "   }");
-  z += znloads(dst + z, sz - z, "  ]");
-  z += znloads(dst + z, sz - z, "  list");
-  z += znloads(dst + z, sz - z, " ]");
-  z += znloadc(dst + z, sz - z, 0);
-  z += znloadc(dst + z, sz - z, 0);
+  N = narrator_fixed_init(&fixed, msg->text, sizeof(msg->text));
+  bacon_writer_init(&writer);
+  builder_writer = bacon_writer_open(&writer, N);
 
-  msg->size = z;
+  { LIST
+    if(g_args.context_module_id) {
+      MAPPING
+      STRING("context")
+      { SET
+        { MAPPING
+          STRING("module")
+          HEX(g_args.context_module_id)
+        }
+      }
+    }
+    { MAPPING
+      STRING("select")
+      { LIST
+        { MAPPING
+          STRING("lookup")
+          { SET
+            { MAPPING
+              STRING("path")
+              BYTES(target.s, target.len)
+            }
+            { MAPPING
+              STRING("nofollow")
+              BOOL(args->nofollow)
+            }
+            if(args->graph == FAB_GRAPH_FSTREE_HIDDEN) {
+              MAPPING
+              STRING("hidden")
+              BOOL(true)
+            }
+          }
+        }
+        { MAPPING
+          STRING("traverse")
+          { SET
+            { MAPPING
+              STRING("nofollow")
+              BOOL(true)
+            }
+            { MAPPING
+              STRING("direction")
+              STRING(dir)
+            }
+            { MAPPING
+              STRING("order")
+              STRING(order)
+            }
+            { MAPPING
+              STRING("graph")
+              STRING(attrs16_name_byvalue(fab_graph_attrs, args->graph))
+            }
+            { MAPPING
+              STRING("min-distance")
+              UINT(args->min_distance)
+            }
+            { MAPPING
+              STRING("max-distance")
+              UINT(args->max_distance)
+            }
+          }
+        }
+      }
+    }
+    STRING("list")
+  }
+
+  bacon_writer_close(&writer);
+  bacon_writer_destroy(&writer);
+  narrator_sayc(N, 0);
+  narrator_sayc(N, 0);
+
+  msg->size = fixed.l;
   client_post(client, msg);
 }
 
@@ -103,9 +171,55 @@ static void connected(command * restrict cmd, fab_client * restrict client)
   post_request(client);
 }
 
-static void process(command * restrict cmd, fab_client * restrict client, fabipc_message * restrict msg)
+static void fsent_show(const fab_list_item * restrict fsent, bool show_paths)
 {
   int x;
+
+  for(x = 0; x < fsent->distance; x++) {
+    dprintf(1, "|-- ");
+  }
+
+#define CASE2(x, y) ((x << 16) | y)
+  switch(CASE2(g_args.no_color, fsent->type)) {
+    case CASE2(0, FAB_VERTEX_TYPE_DIR):
+    case CASE2(0, FAB_VERTEX_TYPE_SHADOW_DIR):
+      write(1, YELLOW);
+      break;
+    case CASE2(0, FAB_VERTEX_TYPE_SHADOW_LINK):
+      write(1, BOLD_RED);
+      break;
+    default:
+  }
+
+  if(show_paths) {
+    dprintf(1, "%.*s", fsent->path_len, fsent->path);
+  } else {
+    dprintf(1, "%.*s", fsent->label_len, fsent->label);
+  }
+
+  if(fsent->ref_len) {
+    dprintf(1, " -> %.*s", fsent->ref_len, fsent->ref);
+  } else {
+    dprintf(1, " - %s %s"
+      , attrs16_name_byvalue(fab_vertex_type_attrs, fsent->type)
+      , attrs16_name_byvalue(fab_vertex_state_attrs, fsent->state)
+    );
+  }
+
+  switch(CASE2(g_args.no_color, fsent->type)) {
+    case CASE2(0, FAB_VERTEX_TYPE_DIR):
+    case CASE2(0, FAB_VERTEX_TYPE_SHADOW_DIR):
+    case CASE2(0, FAB_VERTEX_TYPE_SHADOW_LINK):
+      write(1, NOCOLOR);
+      break;
+    default:
+  }
+
+  dprintf(1, "\n");
+}
+
+static void process(command * restrict cmd, fab_client * restrict client, fabipc_message * restrict msg)
+{
   size_t z;
   fab_list_item item;
 
@@ -122,6 +236,12 @@ static void process(command * restrict cmd, fab_client * restrict client, fabipc
     g_params.shutdown = true;
     return;
   }
+//  else if(msg->type == FABIPC_MSG_EVENTS && msg->evtype == FABIPC_EVENT_SYSTEM_STATE)
+//  {
+//    /* printed in main */
+////    printf("ZZ %.*s\n", (int)msg->size, msg->text);
+//    return;
+//  }
 
   RUNTIME_ASSERT(msg->type == FABIPC_MSG_RESULT);
 
@@ -129,45 +249,37 @@ static void process(command * restrict cmd, fab_client * restrict client, fabipc
   z += descriptor_type_unmarshal(&item, &descriptor_fab_list_item, msg->text, msg->size);
   RUNTIME_ASSERT(z == msg->size);
 
-  for(x = 0; x < item.distance; x++) {
-    dprintf(1, "|-- ");
-  }
+  fsent_show(&item, tree_args.show_paths);
+}
 
-  if(item.type == FAB_FSENT_TYPE_MODULE_DIR) {
-    write(1, YELLOW);
-  } else if(item.type == FAB_FSENT_TYPE_DIR) {
-    write(1, BLUE);
-  } else if(item.type == FAB_FSENT_TYPE_SHADOW_DIR) {
-    write(1, GREEN);
-  }
+static void attached(command * restrict cmd, fab_client * restrict client)
+{
 
-  if(tree_args.show_paths) {
-    dprintf(1, "%.*s", item.path_len, item.path);
-  } else {
-    dprintf(1, "%.*s", item.label_len, item.label);
-  }
+}
 
-  dprintf(1, " - %s %s"
-    , attrs16_name_byvalue(fab_fsent_type_attrs, item.type)
-    , attrs16_name_byvalue(fab_fsent_state_attrs, item.state)
-  );
-  if(item.ref_len) {
-    dprintf(1, " -> %.*s", item.ref_len, item.ref);
-  }
+static void init(command * restrict cmd, uint32_t flags)
+{
+  /* setup defaults */
+  tree_args.min_distance = 0;
+  tree_args.max_distance = UINT16_MAX;
 
-  if(item.type == FAB_FSENT_TYPE_DIR || item.type == FAB_FSENT_TYPE_MODULE_DIR || item.type == FAB_FSENT_TYPE_SHADOW_DIR) {
-    write(1, NOCOLOR);
+  if((flags & TREE_LS)) {
+    tree_args.min_distance = 0;
+    tree_args.max_distance = 1;
   }
-
-  dprintf(1, "\n");
 }
 
 //
 // public
 //
 
+static void disconnected(command * restrict cmd) { }
 struct command tree_command = {
     usage : usage
+  , init : init
+  , attrs : COMMAND_CONTEXT_MODULE
+  , attached : attached
   , connected : connected
   , process : process
+  , disconnected : disconnected
 };

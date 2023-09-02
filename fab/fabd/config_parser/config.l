@@ -4,7 +4,8 @@
 %{
   #include "yyutil/scanner.h"
 
-  #include "config_parser.internal.h"
+  #include "config_parser/glue.h"
+  #include "config_parser.h"
   #include "config.tab.h"
   #include "config.tokens.h"
 
@@ -72,6 +73,7 @@
 %x include_pattern
 %x exclude
 %x match_pattern
+%x anchor
 
 /* bytes that cannot appear in the input */
 ILL   [\x00-\x08\x0B-\x1F\x7F-\xFF]
@@ -94,7 +96,9 @@ ILL   [\x00-\x08\x0B-\x1F\x7F-\xFF]
 <*>[\r\t ]+                                             { LOCWRITE; }
 
  /* tokens */
-<INITIAL>[[\]{}:=]                                      { return LEX(yytext[0]); }
+<INITIAL>[-![\]{}()+:=<>&|/%*^~]                        { return LEX(yytext[0]); }
+
+ /* bools */
 <INITIAL>(?i:true|false)                                { return LEXB(); }
 
  /* sub-parsers */
@@ -111,32 +115,33 @@ ILL   [\x00-\x08\x0B-\x1F\x7F-\xFF]
 <match_pattern>[^\n\r\t ][\x00-\xff]+                   { int r = PARSE_MATCH_PATTERN; POPSTATE; return r; }
 
  /* integers */
-<INITIAL>[-][0-9]+                                      { return LEXI("%"SCNdMAX); }
 <INITIAL>[0-9]+                                         { return LEXI("%"SCNuMAX); }
+<INITIAL>[-][0-9]+                                      { return LEXI("%"SCNdMAX); }
 <INITIAL>(?i:0x[a-f0-9]+)                               { return LEXI("%"SCNxMAX); }
 
- /* enums and unquoted strings */
-<INITIAL>[a-zA-Z0-9_][-a-zA-Z0-9_]+                     { return LEXA(); }
-<INITIAL>[-a-zA-Z0-9_/]+                                { return LEX(STR); }
+ /* floats */
+<INITIAL>[+-]?[0-9]+[.][0-9]+                           { return LEXF(); }
+
+ /* strings */
+<INITIAL>[-a-zA-Z0-9_./+=]+                             { return LEXA(); }
 
  /* quoted strings */
 <INITIAL>["]                                            { PUSHSTATE(quoted); return LEX(yytext[0]); }
 <quoted>["]                                             { POPSTATE; return LEX(yytext[0]); }
 <quoted>\\[\\"abtnvfrs0]                                { return LEXC(1); }
 <quoted>\\x[0-9a-f]{2}                                  { return LEXH(2); }
-<quoted>\\x\{[0-9a-f]{1,2}\}                            { return LEXH(3); }
 <quoted>[^"\\\x00-\x1F\x7F-\xFF]+                       { return LEX(STR); }
 
 <*>[\x00-\x1F\x7F-\xFF]                                 {
                                                           POPSTATES;
                                                           LOCWRITE;
-                                                          yyu_errorf(yyuparser, "invalid byte 0x%02hhx", yytext[0]);
+                                                          yyu_errorf(yyuparser, yylloc, "invalid byte 0x%02hhx", yytext[0]);
                                                           return 0;
                                                         }
 <*>[\x20-\x7E]                                          {
                                                           POPSTATES;
                                                           LOCWRITE;
-                                                          yyu_errorf(yyuparser, "character '%1$c'(0x%1$02hhx)", yytext[0]);
+                                                          yyu_errorf(yyuparser, yylloc, "unexpected character '%1$c'(0x%1$02hhx)", yytext[0]);
                                                           return 0;
                                                         }
 <<EOF>>                                                 {

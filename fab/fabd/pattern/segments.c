@@ -1,0 +1,196 @@
+/* SPDX-License-Identifier: GPL-3.0 */
+/* Copyright (c) 2012-2023 Todd Freed <todd.freed@gmail.com> */
+
+#include <string.h>
+
+#include "moria/vertex.h"
+#include "narrator.h"
+#include "narrator/fixed.h"
+#include "bacon/writer.h"
+#include "bacon/builder.h"
+#include "bacon/value.h"
+#include "valyria/llist.h"
+#include "xlinux/xstdlib.h"
+#include "xlinux/xstring.h"
+
+#include "pattern.internal.h"
+#include "segments.h"
+#include "section.h"
+#include "segment.h"
+#include "module.h"
+#include "fsent.h"
+
+#include "common/attrs.h"
+#include "zcat.h"
+
+void pattern_segments_say(const pattern_segments * restrict segments, bool only, narrator * restrict N)
+{
+  if(segments->qualifier_type == PATTERN_QUALIFIER_TYPE_NOT) {
+    xsays("~");
+  } else if(segments->qualifier_type == PATTERN_QUALIFIER_TYPE_AND && !only) {
+    xsays("+");
+  }
+
+  pattern_segment_list_say(&segments->list, N);
+}
+
+void pattern_segments_list_say(const llist * segments_list, bool only, narrator * restrict N)
+{
+  const pattern_segments * segments;
+
+  llist_foreach(segments_list, segments, lln) {
+    pattern_segments_say(segments, only, N);
+    only = false;
+  }
+}
+
+size_t pattern_segments_cat(
+    void * restrict dst
+  , size_t dst_size
+  , const bacon_value * restrict vars
+  , const pattern_segments * restrict segments
+)
+{
+  narrator_fixed fixed;
+
+  narrator_fixed_init(&fixed, dst, dst_size);
+  pattern_segments_say(segments, true, &fixed.base);
+
+  return fixed.l;
+}
+
+size_t pattern_segments_list_cat(
+    void * restrict dst
+  , size_t dst_size
+  , const bacon_value * restrict vars
+  , const llist * restrict segments
+)
+{
+  narrator_fixed fixed;
+
+  narrator_fixed_init(&fixed, dst, dst_size);
+  pattern_segments_list_say(segments, true, &fixed.base);
+
+  return fixed.l;
+}
+
+void pattern_segments_list_describe(const llist * restrict segments_list, struct bacon_writer * restrict builder_writer)
+{
+  const pattern_segments *segments;
+
+  { LIST
+    llist_foreach(segments_list, segments, lln) {
+      { SET
+        { MAPPING
+          STRING("type")
+          STRING(attrs16_name_byvalue(pattern_qualifier_type_attrs, segments->qualifier_type))
+        }
+        { MAPPING
+          STRING("list")
+          pattern_segment_list_describe(&segments->list, builder_writer);
+        }
+      }
+    }
+  }
+}
+
+int pattern_segments_list_cmp(const llist * restrict A, const llist * restrict B)
+{
+  const pattern_segments * a;
+  const pattern_segments * b;
+  int d;
+
+  a = llist_first(A, typeof(*a), lln);
+  b = llist_first(B, typeof(*b), lln);
+  while(a || b)
+  {
+    if((d = pattern_segments_cmp(a, b)))
+      return d;
+
+    a = llist_next(A, a, lln);
+    b = llist_next(B, b, lln);
+  }
+
+  return 0;
+}
+
+int pattern_segments_cmp(const pattern_segments *A, const pattern_segments *B)
+{
+  const pattern_segment * a;
+  const pattern_segment * b;
+  int d;
+
+  if(!A)
+    return -1;
+
+  if(!B)
+    return 1;
+
+  if((d = INTCMP(A->qualifier_type, B->qualifier_type)))
+    return d;
+
+  a = llist_first(&A->list, typeof(*a), lln);
+  b = llist_first(&B->list, typeof(*b), lln);
+
+  while(a || b)
+  {
+    if(!a)
+      return -1;
+
+    if(!b)
+      return 1;
+
+    if((d = pattern_segment_cmp(a, b)))
+      return d;
+
+    a = llist_next(&A->list, a, lln);
+    b = llist_next(&B->list, b, lln);
+  }
+
+  return 0;
+}
+
+
+void pattern_segments_mk(
+    pattern_segments ** restrict rv
+  , const struct yyu_location * restrict loc
+  , pattern_qualifier_type qualifier_type
+  , llist * restrict list
+)
+{
+  pattern_segments *segments;
+
+  xmalloc(&segments, sizeof(*segments));
+  memcpy(&segments->loc, loc, sizeof(segments->loc));
+
+  segments->qualifier_type = qualifier_type;
+  llist_init(&segments->list);
+  llist_splice_head(&segments->list, list);
+  llist_init(&segments->lln);
+
+  *rv = segments;
+}
+
+void pattern_segments_list_free(llist * restrict list)
+{
+  pattern_segments * segments;
+  llist *T;
+
+  if(!list) {
+    return;
+  }
+
+  llist_foreach_safe(list, segments, lln, T) {
+    pattern_segments_free(segments);
+  }
+}
+
+void pattern_segments_free(pattern_segments * restrict segments)
+{
+  if(!segments) {
+    return;
+  }
+
+  pattern_segment_list_free(&segments->list);
+  free(segments);
+}

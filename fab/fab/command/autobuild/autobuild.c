@@ -9,6 +9,7 @@
 #include "fab/ipc.h"
 #include "narrator.h"
 #include "narrator/fixed.h"
+#include "bacon/builder.h"
 
 #include "autobuild.h"
 #include "build.h"
@@ -51,11 +52,17 @@ static void process(command * restrict cmd, fab_client * restrict client, fabipc
   }
 }
 
+static void attached(command * restrict cmd, fab_client * restrict client)
+{
+
+}
+
 static void connected(command * restrict cmd, fab_client * restrict client)
 {
   narrator * request_narrator;
   narrator_fixed nstor;
   fabipc_message * msg;
+  bacon_writer writer, *builder_writer;
 
   /* subscribe to relevant events */
   msg = fab_client_produce(client);
@@ -77,28 +84,36 @@ static void connected(command * restrict cmd, fab_client * restrict client)
   requestid = msg->id = PID_AS_MSGID(getpid());
 
   request_narrator = narrator_fixed_init(&nstor, msg->text, 0xfff);
+  bacon_writer_init(&writer);
+  builder_writer = bacon_writer_open(&writer, request_narrator);
 
   /* re-configure goals */
-  build_command_collate_goals(request_narrator, true);
+  build_command_collate_goals(builder_writer, false);
 
-  narrator_sayf(request_narrator, " reconcile ");
+  STRING("reconcile")
 
   /* invalidate targets */
-  build_command_collate_invalidations(request_narrator);
+  build_command_collate_invalidations(builder_writer);
 
   /* build the targets */
-  narrator_sayf(request_narrator, " autorun");
+  STRING("autorun")
 
-  // two terminating null bytes
-  narrator_sayw(request_narrator, (char[]) { 0x00, 0x00 }, 2);
+  bacon_writer_close(&writer);
+  bacon_writer_destroy(&writer);
+  narrator_sayc(request_narrator, 0);
+  narrator_sayc(request_narrator, 0);
+
   msg->size = nstor.l;
-
   client_post(client, msg);
 }
 
+static void disconnected(command * restrict cmd) { }
+
 struct command autobuild_command = {
     name : "autobuild"
+  , attached : attached
   , usage : build_command_usage
   , connected : connected
   , process : process
+  , disconnected : disconnected
 };

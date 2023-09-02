@@ -2,20 +2,25 @@
 /* Copyright (c) 2012-2023 Todd Freed <todd.freed@gmail.com> */
 
 #include <sys/syscall.h>
+#include <errno.h>
 
 #include "narrator.h"
 #include "narrator/fixed.h"
-#include "valyria/map.h"
 #include "xlinux/xinotify.h"
 #include "xlinux/xpthread.h"
 #include "xlinux/xunistd.h"
 #include "xlinux/xtime.h"
 #include "bacon/writer.h"
+#include "bacon/builder.h"
+#include "valyria/map.h"
 
 #include "notify_thread.h"
 #include "fsent.h"
 #include "params.h"
 #include "sweeper_thread.h"
+#include "stats.h"
+#include "vertex.h"
+#include "probes.h"
 
 #include "atomics.h"
 #include "threads.h"
@@ -23,12 +28,12 @@
 #include "locks.h"
 
 uint16_t notify_thread_epoch;
+map *notify_thread_fsent_by_in_wd;
 
 static int in_fd = -1;
 
 /* the map is protected by the lock */
 static struct futexlock in_lock;
-static map *in_fsent_by_wd;
 
 /* inotify event buffer */
 static char evbuf[4096];
@@ -69,17 +74,19 @@ static void notify_thread()
       }
 
       if(ev->name[0] == '.') {
-        /* ignore dotfiles for now */
+        /* just ignore dotfiles for now */
         goto next;
       }
 
       futexlock_acquire(&in_lock);
-      n = map_get(in_fsent_by_wd, MM(ev->wd));
+      n = map_get(notify_thread_fsent_by_in_wd, MM(ev->wd));
       futexlock_release(&in_lock);
 
       if(n == 0) {
         goto next;
       }
+
+      notify_thread_probe(ev, n);
 
       v = &n->vertex;
       c = 0;
@@ -108,7 +115,7 @@ static void notify_thread()
       }
       else if(n->notify_state == NOTIFY_EXPIRING)
       {
-        if(n->notify_epoch == notify_thread_epoch)
+        if(n->in_epoch == notify_thread_epoch)
         {
           goto next;
         }
@@ -157,13 +164,13 @@ static void * notify_thread_jump(void * arg)
 void notify_thread_setup()
 {
   in_fd = xinotify_init(IN_NONBLOCK);
-  map_create(&in_fsent_by_wd);
+  map_create(&notify_thread_fsent_by_in_wd);
 }
 
 void notify_thread_cleanup()
 {
   ixclose(&in_fd);
-  map_xfree(in_fsent_by_wd);
+  map_free(notify_thread_fsent_by_in_wd);
 }
 
 void notify_thread_launch()
@@ -185,7 +192,10 @@ void notify_thread_add_watch(fsent * n)
   char space[512];
   uint32_t mask = 0;
 
-  RUNTIME_ASSERT(n->wd == -1);
+  if(n->in_wd != -1) {
+    return;
+  }
+  STATS_INC(g_stats.notify_index_put);
 
   /* events for the directory itself */
   mask |= IN_DELETE_SELF | IN_MOVE_SELF;
@@ -193,18 +203,91 @@ void notify_thread_add_watch(fsent * n)
   /* events for files/directories in the directory */
   mask |= IN_CREATE | IN_DELETE | IN_MODIFY | IN_MOVED_FROM | IN_MOVED_TO;
 
-  mask |= IN_ONLYDIR;       /* ENOTDIR if the path is not a directory */
   mask |= IN_EXCL_UNLINK;   /* ignore events for files after they are unlinked */
 
-  fsent_absolute_path_znload(space, sizeof(space), n);
-  n->wd = xinotify_add_watch(in_fd, space, mask);
+  if(vertex_type_get(&n->vertex) == VERTEX_DIR) {
+    mask |= IN_ONLYDIR;     /* ENOTDIR if the path is not a directory */
+  }
+
+  fsent_absolute_path_cat(space, sizeof(space), n);
+  n->in_wd = inotify_add_watch(in_fd, space, mask);
+  if(n->in_wd < 0) {
+    n->in_wd = -1;
+    if(errno != ENOENT) {
+      dprintf(2, "inotify_add_watch(%s, 0x%x) failed : %s\n", space, mask, strerror(errno));
+      exit(1);
+    }
+    return;
+  }
 
   futexlock_acquire(&in_lock);
-  map_put(in_fsent_by_wd, MM(n->wd), n, 0);
+  map_put(notify_thread_fsent_by_in_wd, MM(n->in_wd), n, 0);
   futexlock_release(&in_lock);
 }
 
 void notify_thread_rm_watch(fsent * n)
 {
-  /* there should be code here */
+  int r;
+
+  if(n->in_wd == -1) {
+    return;
+  }
+  STATS_INC(g_stats.notify_index_del);
+
+  futexlock_acquire(&in_lock);
+  map_delete(notify_thread_fsent_by_in_wd, MM(n->in_wd));
+  futexlock_release(&in_lock);
+
+  r = inotify_rm_watch(in_fd, n->in_wd);
+  if(r != 0)
+  {
+    /* when the directory is deleted, the inotify watch is cleaned up automatically, and
+     * EINVAL is the result when attempting to remove it after the fact */
+    RUNTIME_ASSERT(errno == EINVAL);
+  }
+
+  /* watch counting */
+  n->in_wd = -1;
+}
+
+void notify_index_describe(struct bacon_writer * restrict builder_writer)
+{
+  fsent *fse;
+  int x;
+  int *key;
+  uint16_t key_len;
+  size_t val_len;
+
+  { SET
+    { MAPPING STRING("notify-index-count") UINT(notify_thread_fsent_by_in_wd->size) }
+    { MAPPING STRING("notify-index-put") UINT(g_stats.notify_index_put) }
+    { MAPPING STRING("notify-index-del") UINT(g_stats.notify_index_del) }
+
+    { LIST
+      for(x = 0; x < notify_thread_fsent_by_in_wd->table_size; x++) {
+        if(!map_table_mapping(notify_thread_fsent_by_in_wd, x, (void*)&key, &key_len, &fse, &val_len)) {
+          continue;
+        }
+
+        { MAPPING
+          UINT(*key);
+          vertex_identity_describe(&fse->vertex, builder_writer);
+        }
+      }
+    }
+  }
+}
+
+void notify_index_show()
+{
+  bacon_writer writer, *builder_writer;
+
+  bacon_writer_init(&writer);
+  builder_writer = bacon_writer_open(&writer, g_narrator_stdout);
+
+  notify_index_describe(builder_writer);
+
+  bacon_writer_close(&writer);
+  bacon_writer_destroy(&writer);
+  printf("\n");
 }

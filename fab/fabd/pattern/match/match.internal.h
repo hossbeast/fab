@@ -7,24 +7,26 @@
 
 #include "match.h"
 
+struct pattern_search_context;
 struct fsent;
 struct pattern_match_context;
 struct pattern_segments;
+struct pattern_section;
 
 void pattern_section_match(
-    struct pattern_match_context * restrict ctx
+    struct pattern_search_context * restrict ctx
+  , const struct pattern_section * restrict prev
   , const struct fsent * restrict dirnode
 )
-  __attribute__((nonnull));
+  __attribute__((nonnull(1, 3)));
 
-void pattern_segments_match(struct pattern_match_context * ctx)
+void pattern_segments_match(struct pattern_search_context * ctx)
   __attribute__((nonnull));
 
 typedef struct pattern_match_context {
   struct match_section_traversal {
     const struct pattern_section * section;
     const struct pattern_section * head;
-    const struct chain * cursor;
   } section_traversal;
 
   struct match_segments_traversal {
@@ -36,16 +38,17 @@ typedef struct pattern_match_context {
     // segments traversal
     const struct pattern_segments * segments;
     const struct pattern_segments * segments_head;
-    const struct chain * segments_cursor;
 
     // within the current segments
     const union pattern_segment * segment;
     const union pattern_segment * segment_head;
-    const struct chain * segment_cursor;
 
     // characters matched by the segments block
     uint16_t start;
     uint16_t offset;  // len is offset - start
+
+    bool qualifiers;  // whether any type qualifiers were checked
+    bool satisfied;   // result of type qualifier checks
 
     // MUST be at the end b/c of how RESTORE works!
     struct {
