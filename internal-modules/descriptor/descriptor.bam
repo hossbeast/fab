@@ -15,6 +15,7 @@ use Fcntl qw|SEEK_SET|;
 my $src_h  = $ENV{bm_source};
 my $desc_c = $ENV{bm_target};
 my ($name, $directories, undef) = fileparse($src_h, ".h");
+my $path;
 
 # descriptor.h
 my %field_codes = (
@@ -25,9 +26,8 @@ my %field_codes = (
 );
 
 # search for type_descriptor declarations in the header file
-my $path = $src_h;
 my %descriptors;
-open FH, $path or die "open($path) : $!";
+open FH, $src_h or die "open($src_h) : $!";
 while(<FH>)
 {
   if(/^extern descriptor_type descriptor_([a-zA-Z0-9_]+);$/)
@@ -49,7 +49,6 @@ for my $name (keys %descriptors)
   $type_pat .= '\b)';
 }
 $type_pat .= ')';
-print("REGEX $type_pat\n");
 $type_pat = qr/$type_pat/;
 
 my $type = undef;
@@ -88,9 +87,10 @@ while(<FH>)
     }
 
     my $field_code = $field_codes{$info};
-    die "cannot interpret field '$info' : $_" unless $field_code;
-
-    push @{$descriptors{$type}}, { name => $name, code => $field_code };
+    if($field_code)
+    {
+      push @{$descriptors{$type}}, { name => $name, code => $field_code };
+    }
   }
 
   # end-of-definition
@@ -171,11 +171,9 @@ END
 
 while(my($name, $def) = each %descriptors)
 {
-  my $id = sprintf("0x%08x", unpack("N", Digest::MD5::md5($name)));
-
   print FH <<"END";
 struct descriptor_type API descriptor_${name} = {
-    id : $id
+    id : DESCRIPTOR_ID_${name}
   , name : "$name"
   , name_len : @{[length($name)]}
   , members_len : @{[scalar(@$def)]}
@@ -260,7 +258,10 @@ END
 
 while(my($name, $def) = each %descriptors)
 {
+  my $id = sprintf("0x%08x", unpack("N", Digest::MD5::md5($name)));
+
   print FH <<"END";
+#define DESCRIPTOR_ID_${name} $id
 extern struct descriptor_type descriptor_${name};
 END
 

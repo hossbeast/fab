@@ -11,7 +11,7 @@
 
 /* marshal */
 
-static inline size_t marshal_int(void * restrict dst, size_t sz, void *x, uint8_t xsz)
+static inline size_t marshal_int(void * restrict dst, size_t sz, const void *x, uint8_t xsz)
 {
   uint32_t pad;
 
@@ -64,12 +64,24 @@ static inline size_t marshal_i64(void * restrict dst, size_t sz, int64_t x)
 
 /* unmarshal */
 
-static inline size_t unmarshal_u32(void * restrict src, size_t sz, uint32_t *xp)
+static inline size_t unmarshal_int(void * restrict src, size_t sz, void * restrict dst, uint8_t size)
 {
   uint32_t pad;
+  size_t z;
 
-  pad = alignp(src, sizeof(*xp));
+  z = 0;
+  pad = alignp(src, size);
+  RUNTIME_ASSERT((sz - z) >= pad);
+  z += pad;
 
-  memcpy(xp, src + pad, sizeof(*xp));
-  return pad + sizeof(*xp);
+  memcpy(dst, src + z, size);
+  RUNTIME_ASSERT((sz - z) >= size);
+  z += size;
+
+  return z;
+}
+
+static inline size_t unmarshal_u32(void * restrict src, size_t sz, uint32_t *xp)
+{
+  return unmarshal_int(src, sz, xp, sizeof(*xp));
 }

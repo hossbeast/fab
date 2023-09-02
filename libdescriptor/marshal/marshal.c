@@ -8,7 +8,7 @@
 // static
 //
 
-size_t descriptor_marshal_int(void *restrict dst, size_t sz, void * restrict xp, uint8_t xsz)
+size_t descriptor_marshal_int(void * restrict dst, size_t sz, const void * restrict xp, uint8_t xsz)
 {
   size_t z;
 
@@ -18,7 +18,7 @@ size_t descriptor_marshal_int(void *restrict dst, size_t sz, void * restrict xp,
   return z;
 }
 
-size_t descriptor_marshal_string(void *restrict dst, size_t sz, void * restrict s, uint16_t slen)
+size_t descriptor_marshal_string(void *restrict dst, size_t sz, const void * restrict s, uint16_t slen)
 {
   size_t z;
 
@@ -37,7 +37,7 @@ size_t descriptor_marshal_string(void *restrict dst, size_t sz, void * restrict 
   return z;
 }
 
-static size_t descriptor_marshal_list(void *restrict dst, size_t sz, descriptor_field * restrict field, void * restrict object)
+static size_t descriptor_marshal_list(void *restrict dst, size_t sz, const descriptor_field * restrict field, const void * restrict object)
 {
   /* list-blob
    *  (4) size of list-blob : 4 + 2 + n
@@ -53,9 +53,9 @@ static size_t descriptor_marshal_list(void *restrict dst, size_t sz, descriptor_
 // API
 //
 
-size_t API descriptor_field_marshal(void *restrict dst, size_t sz, descriptor_field * restrict field, void * restrict object)
+size_t descriptor_field_marshal(void * restrict dst, size_t sz, const descriptor_field * restrict field, const void * restrict object)
 {
-  union {
+  const union {
     uint8_t u8[0];
     uint16_t u16[0];
   } *lens = object;
@@ -74,4 +74,39 @@ size_t API descriptor_field_marshal(void *restrict dst, size_t sz, descriptor_fi
 
   RTA;
   return 0;
+}
+
+size_t descriptor_marshal_object(
+    void * restrict dst
+  , size_t sz
+  , const descriptor_type * restrict desc
+  , const void * restrict object
+  , descriptor_marshal_handlers *handlers
+)
+{
+  size_t x;
+  size_t z;
+  size_t r;
+  const descriptor_field *field;
+
+  z = 0;
+  z += marshal_u32(dst + z, sz - z, desc->id);
+
+  for(x = 0; x < desc->members_len; x++)
+  {
+    field = desc->members[x];
+
+    if(handlers) {
+      r = handlers->handler(dst + z, sz - z, field, object, handlers);
+    } else {
+      r = 0;
+    }
+    if(r == 0) {
+      /* default handling */
+      r = descriptor_field_marshal(dst + z, sz - z, field, object);
+    }
+    z += r;
+  }
+
+  return z;
 }

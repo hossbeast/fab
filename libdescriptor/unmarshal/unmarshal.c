@@ -5,27 +5,11 @@
 
 #include "descriptor.h"
 #include "macros.h"
+#include "marshal.h"
 
 //
 // static
 //
-
-static size_t field_unmarshal_int(void * restrict src, size_t sz, void * restrict dst, uint8_t size)
-{
-  uint32_t pad;
-  size_t z;
-
-  z = 0;
-  pad = alignp(src, size);
-  RUNTIME_ASSERT((sz - z) >= pad);
-  z += pad;
-
-  memcpy(dst, src + z, size);
-  RUNTIME_ASSERT((sz - z) >= size);
-  z += size;
-
-  return z;
-}
 
 static size_t field_unmarshal_string(void * restrict src, size_t sz, char ** textp, uint16_t *lenp)
 {
@@ -83,7 +67,7 @@ static size_t field_unmarshal_list(void * restrict src, size_t sz, void ** listp
 // API
 //
 
-size_t API descriptor_type_unmarshal(void *restrict object, descriptor_type *restrict desc, void *restrict src, size_t sz)
+size_t descriptor_type_unmarshal(void *restrict object, descriptor_type *restrict desc, void *restrict src, size_t sz)
 {
   uint32_t id;
   descriptor_field *field;
@@ -94,7 +78,7 @@ size_t API descriptor_type_unmarshal(void *restrict object, descriptor_type *res
   RUNTIME_ASSERT((sz - z) >= sizeof(id));
   z += alignp(src, sizeof(id));
 
-  z += field_unmarshal_int(src + z, sz - z, &id, sizeof(id));
+  z += unmarshal_int(src + z, sz - z, &id, sizeof(id));
   RUNTIME_ASSERT(id == desc->id);
 
   for(x = 0; x < desc->members_len; x++)
@@ -102,7 +86,7 @@ size_t API descriptor_type_unmarshal(void *restrict object, descriptor_type *res
     field = desc->members[x];
     if(field->code == 1 || field->code == 2)
     {
-      z += field_unmarshal_int(src + z, sz - z, object + field->offset, field->size);
+      z += unmarshal_int(src + z, sz - z, object + field->offset, field->size);
     }
     else if(field->code == 3)
     {
