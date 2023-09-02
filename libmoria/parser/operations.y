@@ -8,10 +8,10 @@
 
   #include "xlinux/xstring.h"
   #include "xlinux/xstdlib.h"
-  #include "valyria/dictionary.h"
   #include "valyria/list.h"
 
   #include "parser.internal.h"
+  #include "operations.h"
 
   #include "macros.h"
   #include "common/attrs.h"
@@ -19,7 +19,7 @@
 
 %code top {
   int operations_yylex(void *, void*, void*);
-  #define PARSER containerof(parser, graph_parser, operations_yyu)
+  #define PARSER containerof(parser, moria_parser, operations_yyu)
   #define OPERATIONS_YYLTYPE yyu_location
 }
 
@@ -36,14 +36,14 @@
 
 %union {
   yyu_lval yyu;
-
   uint32_t u32;
-  struct identifier * identifier;
-  struct identifier_list * identifier_list;
+  struct label *label;
+  struct identifier *identifier;
+  struct identifier_list *identifier_list;
   struct {
     uint32_t attrs;
-    identifier_list * A;
-    identifier_list * B;
+    identifier_list *B;
+    identifier_list *A;
   } edge_spec;
 }
 
@@ -69,13 +69,15 @@
 %token <yyu.umax> HEX32       112
 
 /* nonterminals */
+%type <label>
+ name
+ label
+
 %type <identifier>
  identifier
- label
- identifier-sequence
 
 %type <identifier_list>
- identifier-sequence-list
+ identifier-list
 
 %type <edge_spec>
  edge
@@ -88,6 +90,7 @@
 %destructor { identifier_list_free($$.A); identifier_list_free($$.B); } <edge_spec>
 %destructor { identifier_list_free($$); } <identifier_list>
 %destructor { identifier_free($$); } <identifier>
+%destructor { label_free($$); } <label>
 
 %%
 utterance
@@ -102,106 +105,111 @@ operations
 
 operation
  /* declare some vertices */
-  : identifier-sequence-list
+  : identifier-list
   {
-    operation_vertex(PARSER, $1);
+    operations_declare(PARSER, $1);
   }
 
-  /* refresh a vertex */
-  | '@' identifier-sequence-list
+  /* refresh some vertices */
+  | '@' identifier-list
   {
-    operation_refresh(PARSER, $2);
+    operations_refresh(PARSER, $2);
   }
 
-  /* invalidate a vertex */
-  | '~' identifier-sequence-list
+  /* invalidate some vertices */
+  | '~' identifier-list
   {
-    operation_invalidate(PARSER, $2);
+    operations_invalidate(PARSER, $2);
   }
 
   /* connect an edge */
   | '+' edge
   {
-    operation_connect(PARSER, $2.A, $2.B, $2.attrs);
+    operations_connect(PARSER, $2.B, $2.A, $2.attrs);
   }
 
   /* disconnect an edge */
   | '=' edge
   {
-    operation_disconnect(PARSER, $2.A, $2.B);
+    operations_disconnect(PARSER, $2.B, $2.A);
   }
   ;
 
 edge
-  : identifier-sequence-list ':' edge_attrs ':' identifier-sequence-list
+  : identifier-list ':' edge_attrs ':' identifier-list
   {
-    $$.A = $1;
-    $$.B = $5;
+    $$.B = $1;
+    $$.A = $5;
     $$.attrs = $3;
   }
-  | identifier-sequence-list ':' identifier-sequence-list
+  | identifier-list ':' identifier-list
   {
-    $$.A = $1;
-    $$.B = $3;
+    $$.B = $1;
+    $$.A = $3;
     $$.attrs = 0;
   }
   ;
 
-identifier-sequence-list
-  : identifier-sequence-list ',' identifier-sequence
+identifier-list
+  : identifier-list ',' identifier
   {
     $$ = $1;
-    xrealloc(&$$->v, sizeof(*$$->v), $$->len + 1, $$->len);
-    if($$->len == 1)
-      $$->v[0] = $$->v0;
-    $$->v[$$->len++] = $3;
-  }
-  | identifier-sequence
-  {
-    xmalloc(&$$, sizeof(*$$));
-    $$->v0 = $1;
-    $$->len = 1;
-  }
-  | '_'
-  {
-    $$ = 0;
-  }
-  ;
-
-identifier-sequence
-  : identifier-sequence '/' identifier
-  {
-    $$ = $3;
-    $$->next = $1;
-  }
-  | SLASH2 identifier
-  {
-    $$ = $2;
-    $$->opattrs = MORIA_OPATTRS_INIT_SLASH;
+    llist_push(&$$->identifiers, &$3->lln);
   }
   | identifier
   {
-    $$ = $1;
-    $$->opattrs = MORIA_OPATTRS_INIT;
+    $$ = identifier_list_alloc();
+    llist_push(&$$->identifiers, &$1->lln);
+  }
+  | '_'
+  {
+    $$ = identifier_list_alloc();
   }
   ;
 
 identifier
-  : label '!' vertex_attrs
+  : identifier '/' label
+  {
+    $$ = $1;
+    llist_push(&$$->labels, &$3->lln);
+  }
+  | SLASH2 label
+  {
+    $$ = identifier_alloc($2, MORIA_OPATTRS_INIT_SLASH);
+  }
+  | label
+  {
+    $$ = identifier_alloc($1, MORIA_OPATTRS_INIT);
+  }
+  ;
+
+label
+  : name '!' vertex_attrs
   {
     $$ = $1;
     $$->attrs = $3;
   }
-  | label
+  | name
   ;
 
-label
+name
   : STR
   {
-    xmalloc(&$$, sizeof(*$$) + @1.l + 1);
-    memcpy($$->label, @1.s, @1.l);
-    $$->label_len = @1.l;
+    $$ = label_alloc(@1.s, @1.l);
   }
+  | '"' words '"'
+  {
+    $$ = label_alloc(@2.s, @2.l);
+  }
+  ;
+
+words
+  : words word
+  | word
+  ;
+
+word
+  : STR
   ;
 
 vertex_attrs

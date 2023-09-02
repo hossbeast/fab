@@ -33,8 +33,13 @@ static void __attribute__((constructor)) init()
   attrs32_init(moria_traverse_attrs);
 }
 
-/* moria_traversible with zero-valued index and mask - passing to put/set/del is a no-op */
-static moria_traversible null_traversible;
+/* moria_entity with zero-valued index and mask - passing to put/set/del is a no-op */
+static moria_entity null_entity;
+
+enum traversal_entity {
+  TRAVERSAL_VERTICES,
+  TRAVERSAL_EDGES,
+};
 
 static void state_assure(traversal_state * restrict state, size_t index)
 {
@@ -63,23 +68,24 @@ static void state_assure(traversal_state * restrict state, size_t index)
   xmalloc(&next, sizeof(*state) + sizeof(*state->bits) * nelem);
   next->size = nelem;
   state->next = next;
-  llist_init_node(&next->lln);
+  llist_init(&next->lln);
 }
 
-static inline bool set(traversal_state * restrict state, uint8_t bit, const moria_traversible * restrict e)
+static inline bool set(traversal_state * restrict state, uint8_t bit, const moria_entity * restrict e)
 {
   size_t prev_size = 0;
 
   while(true)
   {
-    if(e->index < (prev_size + state->size))
+    if(e->index < (prev_size + state->size)) {
       return (state->bits[e->index - prev_size] & (e->mask << bit)) != 0;
+    }
     prev_size += state->size;
     state = state->next;
   }
 }
 
-static inline void put(traversal_state * restrict state, uint8_t bit, const moria_traversible * restrict e)
+static inline void put(traversal_state * restrict state, uint8_t bit, const moria_entity * restrict e)
 {
   size_t prev_size = 0;
 
@@ -95,7 +101,7 @@ static inline void put(traversal_state * restrict state, uint8_t bit, const mori
   }
 }
 
-static inline void del(traversal_state * restrict state, uint8_t bit, const moria_traversible * restrict e)
+static inline void del(traversal_state * restrict state, uint8_t bit, const moria_entity * restrict e)
 {
   size_t prev_size = 0;
 
@@ -126,86 +132,80 @@ static inline moria_vertex * follow(moria_vertex * v, uint32_t attrs)
 // static
 //
 
-static inline bool should(uint32_t attrs, uint32_t mask)
+static inline bool should(uint32_t attrs, uint32_t bits, uint32_t mask)
 {
-  if(!mask) {
+  if(!bits) {
     return true;
   }
+  if(!mask) {
+    mask = bits;
+  }
 
-  return (attrs & mask) == mask;
+  return (attrs & mask) == bits;
 }
 
 static void explore_edge(
-    /*  1 */ moria_edge * restrict e
-  , /*  2 */ void (* vertex_visitor)(moria_vertex * restrict, void *, moria_traversal_mode, int, int * restrict)
-  , /*  3 */ void (* edge_visitor)(moria_edge * restrict, void *, moria_traversal_mode, int, int * restrict)
-  , /*  4 */ const moria_traversal_criteria * restrict criteria
-  , /*  5 */ uint32_t attrs
-  , /*  6 */ void * ctx
-  , /*  7 */ traversal_state * state
-  , /*  8 */ int distance
-  , /*  9 */ moria_vertex * (* restrict vertex_stack)[32]
-  , /* 10 */ moria_edge * (* restrict edge_stack)[32]
-  , /* 11 */ size_t * restrict stackz
+    /* 1 */ moria_edge * restrict e
+  , /* 2 */ void (* vertex_visitor)(moria_vertex * restrict, void *, moria_traversal_mode, int, moria_traverse_result * restrict)
+  , /* 3 */ void (* edge_visitor)(moria_edge * restrict, void *, moria_traversal_mode, int, moria_traverse_result * restrict)
+  , /* 4 */ const moria_traversal_criteria * restrict criteria
+  , /* 5 */ uint32_t attrs
+  , /* 6 */ void * ctx
+  , /* 7 */ traversal_state * state
+  , /* 8 */ int distance
+  , /* 9 */ enum traversal_entity entity
 )
-  __attribute__((nonnull(1, 4, 11)));
+  __attribute__((nonnull(1, 4)));
 
 static void explore_vertex(
-    /*  1 */ moria_vertex * restrict v
-  , /*  2 */ void (* vertex_visitor)(moria_vertex * restrict, void *, moria_traversal_mode, int, int * restrict)
-  , /*  3 */ void (* edge_visitor)(moria_edge * restrict, void *, moria_traversal_mode, int, int * restrict)
-  , /*  4 */ const moria_traversal_criteria * restrict criteria
-  , /*  5 */ uint32_t attrs
-  , /*  6 */ void * ctx
-  , /*  7 */ traversal_state * state
-  , /*  8 */ int distance
-  , /*  9 */ moria_vertex * (* restrict vertex_stack)[32]
-  , /* 10 */ moria_edge * (* restrict edge_stack)[32]
-  , /* 11 */ size_t * restrict stackz
+    /* 1 */ moria_vertex * restrict v
+  , /* 2 */ void (* vertex_visitor)(moria_vertex * restrict, void *, moria_traversal_mode, int, moria_traverse_result * restrict)
+  , /* 3 */ void (* edge_visitor)(moria_edge * restrict, void *, moria_traversal_mode, int, moria_traverse_result * restrict)
+  , /* 4 */ const moria_traversal_criteria * restrict criteria
+  , /* 5 */ uint32_t attrs
+  , /* 6 */ void * ctx
+  , /* 7 */ traversal_state * state
+  , /* 8 */ int distance
+  , /* 9 */ enum traversal_entity entity
 )
-  __attribute__((nonnull(1, 4, 11)));
+  __attribute__((nonnull(1, 4)));
 
 static void explore_vertex(
     moria_vertex * restrict v
-  , void (* vertex_visitor)(moria_vertex * restrict, void *, moria_traversal_mode, int, int * restrict)
-  , void (* edge_visitor)(moria_edge * restrict, void *, moria_traversal_mode, int, int * restrict)
+  , void (* vertex_visitor)(moria_vertex * restrict, void *, moria_traversal_mode, int, moria_traverse_result * restrict)
+  , void (* edge_visitor)(moria_edge * restrict, void *, moria_traversal_mode, int, moria_traverse_result * restrict)
   , const moria_traversal_criteria * restrict criteria
   , uint32_t attrs
   , void * ctx
   , traversal_state * state
   , int distance
-  , moria_vertex * (* restrict vertex_stack)[32]
-  , moria_edge * (* restrict edge_stack)[32]
-  , size_t * restrict stackz
+  , enum traversal_entity traversal
 )
 {
   moria_edge * next_edge = 0;
   bool next_travel;
   bool visit;
   bool travel;
-  int result = 0;
   rbnode *rbn;
-  moria_traversible * ent;
+  moria_entity * ent;
   int next_distance;
   moria_edge * identity_edge = 0;
+  moria_traverse_result result;
 
-  if(vertex_stack)
+  if(traversal == TRAVERSAL_VERTICES)
   {
     ent = &v->ent;
     next_distance = distance + 1;
   }
   else
   {
-    ent = &null_traversible;
+    ent = &null_entity;
     next_distance = distance;
   }
 
   travel = true;
-  visit = should(v->attrs, criteria->vertex_visit);
-
-  if(moria_explore_vertex_semaphore) {
-    explore_vertex_probe(v, distance, travel, visit);
-  }
+  visit = should(v->attrs, criteria->vertex_visit, criteria->vertex_visit_mask);
+  explore_vertex_probe(v, distance, travel, visit);
 
   state_assure(state, ent->index);
 
@@ -226,10 +226,10 @@ static void explore_vertex(
         if(!(attrs & MORIA_TRAVERSE_EXHAUSTIVE)) {
           put(state, VISIT, ent);
         }
-        if(vertex_visitor)
-        {
+        if(vertex_visitor) {
+          memset(&result, 0, sizeof(result));
           vertex_visitor(v, ctx, MORIA_TRAVERSE_PRE, distance, &result);
-          if(result == MORIA_TRAVERSE_PRUNE) {
+          if(result.flags == MORIA_TRAVERSE_PRUNE) {
             travel = false;
           }
         }
@@ -245,12 +245,12 @@ static void explore_vertex(
 
     if((attrs & DIRECTION_OPT) == MORIA_TRAVERSE_UP)
     {
-      if((v->up_identity && should(v->up_identity->attrs, criteria->edge_travel)))
+      if((v->up_identity && should(v->up_identity->attrs, criteria->edge_travel, criteria->edge_travel_mask)))
       {
         identity_edge = v->up_identity;
       }
 
-      rbn = rbtree_first_post_node(&v->up);
+      rbn = rbtree_first_post(&v->up);
       if(rbn == &rbleaf)
       {
         next_edge = 0;
@@ -263,7 +263,7 @@ static void explore_vertex(
     }
     else if((attrs & DIRECTION_OPT) == MORIA_TRAVERSE_DOWN)
     {
-      rbn = rbtree_first_post_node(&v->down);
+      rbn = rbtree_first_post(&v->down);
       if(rbn == &rbleaf)
       {
         next_edge = 0;
@@ -276,7 +276,7 @@ static void explore_vertex(
     }
     while(next_edge)
     {
-      next_travel = should(next_edge->attrs, criteria->edge_travel);
+      next_travel = should(next_edge->attrs, criteria->edge_travel, criteria->edge_travel_mask);
       if(next_travel)
       {
         explore_edge(
@@ -288,14 +288,12 @@ static void explore_vertex(
           , ctx
           , state
           , next_distance
-          , vertex_stack
-          , edge_stack
-          , stackz
+          , traversal
         );
       }
       if((attrs & DIRECTION_OPT) == MORIA_TRAVERSE_UP)
       {
-        if((rbn = rbtree_next_post_node(rbn)) == &rbleaf)
+        if((rbn = rbtree_next_post(rbn)) == &rbleaf)
         {
           next_edge = 0;
         }
@@ -312,7 +310,7 @@ static void explore_vertex(
       {
         RUNTIME_ASSERT((attrs & DIRECTION_OPT) == MORIA_TRAVERSE_DOWN);
 
-        if((rbn = rbtree_next_post_node(rbn)) == &rbleaf)
+        if((rbn = rbtree_next_post(rbn)) == &rbleaf)
         {
           next_edge = 0;
         }
@@ -328,7 +326,7 @@ static void explore_vertex(
     }
     if(identity_edge)
     {
-      next_travel = should(identity_edge->attrs, criteria->edge_travel);
+      next_travel = should(identity_edge->attrs, criteria->edge_travel, criteria->edge_travel_mask);
       if(next_travel)
       {
         explore_edge(
@@ -340,9 +338,7 @@ static void explore_vertex(
           , ctx
           , state
           , next_distance
-          , vertex_stack
-          , edge_stack
-          , stackz
+          , traversal
         );
       }
     }
@@ -357,9 +353,10 @@ static void explore_vertex(
         if(!(attrs & MORIA_TRAVERSE_EXHAUSTIVE)) {
           put(state, VISIT, ent);
         }
-        if(vertex_visitor)
-        {
+        if(vertex_visitor) {
+          memset(&result, 0, sizeof(result));
           vertex_visitor(v, ctx, MORIA_TRAVERSE_POST, distance, &result);
+          RUNTIME_ASSERT(result.flags == 0);
         }
       }
     }
@@ -370,44 +367,39 @@ static void explore_vertex(
 
 static void explore_edge(
     moria_edge * restrict e
-  , void (* vertex_visitor)(moria_vertex * restrict, void *, moria_traversal_mode, int, int * restrict)
-  , void (* edge_visitor)(moria_edge * restrict, void *, moria_traversal_mode, int, int * restrict)
+  , void (* vertex_visitor)(moria_vertex * restrict, void *, moria_traversal_mode, int, moria_traverse_result * restrict)
+  , void (* edge_visitor)(moria_edge * restrict, void *, moria_traversal_mode, int, moria_traverse_result * restrict)
   , const moria_traversal_criteria * restrict criteria
   , uint32_t attrs
   , void * ctx
   , traversal_state * state
   , int distance
-  , moria_vertex * (* restrict vertex_stack)[32]
-  , moria_edge * (* restrict edge_stack)[32]
-  , size_t * restrict stackz
+  , enum traversal_entity traversal
 )
 {
   moria_vertex * next_vertex = 0;
   bool next_travel;
   bool travel;
   bool visit;
-  int result = 0;
+  moria_traverse_result result;
   uint16_t vertex_list_pos;
-  moria_traversible * ent;
+  moria_entity * ent;
   int next_distance;
 
-  if(edge_stack)
+  if(traversal == TRAVERSAL_EDGES)
   {
     ent = &e->ent;
     next_distance = distance + 1;
   }
   else
   {
-    ent = &null_traversible;
+    ent = &null_entity;
     next_distance = distance;
   }
 
   travel = true;
-  visit = should(e->attrs, criteria->edge_visit);
-
-  if(moria_explore_edge_semaphore) {
-    explore_edge_probe(e, distance, travel, visit);
-  }
+  visit = should(e->attrs, criteria->edge_visit, criteria->edge_visit_mask);
+  explore_edge_probe(e, distance, travel, visit);
 
   state_assure(state, ent->index);
 
@@ -428,11 +420,12 @@ static void explore_edge(
         if(!(attrs & MORIA_TRAVERSE_EXHAUSTIVE)) {
           put(state, VISIT, ent);
         }
-        if(edge_visitor)
-        {
+        if(edge_visitor) {
+          memset(&result, 0, sizeof(result));
           edge_visitor(e, ctx, MORIA_TRAVERSE_PRE, distance, &result);
-          if(result == MORIA_TRAVERSE_PRUNE)
+          if(result.flags == MORIA_TRAVERSE_PRUNE) {
             travel = false;
+          }
         }
       }
     }
@@ -444,8 +437,9 @@ static void explore_edge(
       put(state, TRAVEL, ent);
     }
 
-    if(e->attrs & MORIA_EDGE_HYPER)
+    if(e->attrs & MORIA_EDGE_HYPER) {
       vertex_list_pos = 0;
+    }
 
     if((attrs & DIRECTION_OPT) == MORIA_TRAVERSE_UP)
     {
@@ -478,7 +472,7 @@ static void explore_edge(
     while(next_vertex)
     {
       next_vertex = follow(next_vertex, attrs);
-      next_travel = should(next_vertex->attrs, criteria->vertex_travel);
+      next_travel = should(next_vertex->attrs, criteria->vertex_travel, criteria->vertex_travel_mask);
       if(next_travel)
       {
         explore_vertex(
@@ -490,9 +484,7 @@ static void explore_edge(
           , ctx
           , state
           , next_distance
-          , vertex_stack
-          , edge_stack
-          , stackz
+          , traversal
         );
       }
       next_vertex = 0;
@@ -522,9 +514,10 @@ static void explore_edge(
         if(!(attrs & MORIA_TRAVERSE_EXHAUSTIVE)) {
           put(state, VISIT, ent);
         }
-        if(edge_visitor)
-        {
+        if(edge_visitor) {
+          memset(&result, 0, sizeof(result));
           edge_visitor(e, ctx, MORIA_TRAVERSE_POST, distance, &result);
+          RUNTIME_ASSERT(result.flags == 0);
         }
       }
     }
@@ -562,7 +555,7 @@ static void traversal_begin(moria_graph * const restrict g, size_t max_index, tr
 
     xrealloc(&state, 1, size, osize);
 
-    llist_init_node(&state->lln);
+    llist_init(&state->lln);
     state->size = nelem;
 
   }
@@ -575,14 +568,14 @@ static void traversal_state_reclaim(moria_graph * restrict g, traversal_state * 
 {
   traversal_state *next, *T;
 
-  llist_append(&g->states, state, lln);
+  llist_append(&g->states, &state->lln);
 
   /* recover any extra states attached to this one from a previous traversal */
   next = state;
   while((T = next->next))
   {
     next->next = 0;
-    llist_append(&g->states, T, lln);
+    llist_append(&g->states, &T->lln);
     next = T;
   }
 }
@@ -594,20 +587,19 @@ static void traversal_state_reclaim(moria_graph * restrict g, traversal_state * 
 void API moria_traverse_vertices(
     moria_graph * const restrict g
   , moria_vertex * const restrict vx
-  , void (* visitor)(moria_vertex * restrict, void *, moria_traversal_mode, int, int * restrict)
+  , void (* visitor)(moria_vertex * restrict, void *, moria_traversal_mode, int, moria_traverse_result * restrict)
   , moria_vertex_traversal_state * state
   , const moria_traversal_criteria * restrict criteria
   , uint32_t attrs
   , void * ctx
 )
 {
-  moria_vertex * stack[32] = {};
-  size_t stackz = 0;
   moria_traversal_criteria local_criteria;
   moria_vertex_traversal_state * local_state = 0;
   bool travel;
 
   RUNTIME_ASSERT(attrs & (MORIA_TRAVERSE_PRE | MORIA_TRAVERSE_POST));
+  RUNTIME_ASSERT(!!(attrs & MORIA_TRAVERSE_PRE) ^ !!(attrs & MORIA_TRAVERSE_POST));
 
   moria_vertex * v = vx;
   v = follow(v, attrs);
@@ -624,7 +616,7 @@ void API moria_traverse_vertices(
     criteria = &local_criteria;
   }
 
-  travel = should(v->attrs, criteria->vertex_travel);
+  travel = should(v->attrs, criteria->vertex_travel, criteria->vertex_travel_mask);
   if(travel)
   {
     explore_vertex(
@@ -636,10 +628,12 @@ void API moria_traverse_vertices(
       , ctx
       , &state->st
       , 0         // distance
-      , &stack    // vertex stack
-      , 0
-      , &stackz
+      , TRAVERSAL_VERTICES
     );
+  }
+  else
+  {
+    explore_vertex_probe(v, 0, 0, 0);
   }
 
   moria_vertex_traversal_end(g, local_state);
@@ -648,19 +642,18 @@ void API moria_traverse_vertices(
 void API moria_traverse_vertex_edges(
     moria_graph * const restrict g
   , moria_vertex * const restrict vx
-  , void (* visitor)(moria_edge * restrict, void *, moria_traversal_mode, int, int * restrict)
+  , void (* visitor)(moria_edge * restrict, void *, moria_traversal_mode, int, moria_traverse_result * restrict)
   , moria_edge_traversal_state * state
   , const moria_traversal_criteria * restrict criteria
   , uint32_t attrs
   , void * ctx
 )
 {
-  moria_edge * stack[32] = {};
-  size_t stackz = 0;
   moria_traversal_criteria local_criteria;
   moria_edge_traversal_state * local_state = 0;
 
   RUNTIME_ASSERT(attrs & (MORIA_TRAVERSE_PRE | MORIA_TRAVERSE_POST));
+  RUNTIME_ASSERT(!!(attrs & MORIA_TRAVERSE_PRE) ^ !!(attrs & MORIA_TRAVERSE_POST));
 
   moria_vertex * v = vx;
   v = follow(v, attrs);
@@ -686,9 +679,7 @@ void API moria_traverse_vertex_edges(
     , ctx
     , &state->st
     , 0         // distance
-    , 0
-    , &stack    // edge stack
-    , &stackz
+    , TRAVERSAL_EDGES
   );
 
   moria_edge_traversal_end(g, local_state);
@@ -697,21 +688,20 @@ void API moria_traverse_vertex_edges(
 void API moria_traverse_edges(
     moria_graph * const restrict g
   , moria_edge * const restrict ex
-  , void (* visitor)(moria_edge * restrict, void *, moria_traversal_mode, int, int * restrict)
+  , void (* visitor)(moria_edge * restrict, void *, moria_traversal_mode, int, moria_traverse_result * restrict)
   , moria_edge_traversal_state * state
   , const moria_traversal_criteria * restrict criteria
   , uint32_t attrs
   , void * ctx
 )
 {
-  moria_edge * stack[32] = {};
-  size_t stackz = 0;
   moria_traversal_criteria local_criteria;
   moria_edge_traversal_state * local_state = 0;
   bool travel;
   moria_edge * e = ex;
 
   RUNTIME_ASSERT(attrs & (MORIA_TRAVERSE_PRE | MORIA_TRAVERSE_POST));
+  RUNTIME_ASSERT(!!(attrs & MORIA_TRAVERSE_PRE) ^ !!(attrs & MORIA_TRAVERSE_POST));
 
   if(state == 0)
   {
@@ -725,8 +715,7 @@ void API moria_traverse_edges(
     criteria = &local_criteria;
   }
 
-  travel = should(e->attrs, criteria->edge_travel);
-
+  travel = should(e->attrs, criteria->edge_travel, criteria->edge_travel_mask);
   if(travel)
   {
     explore_edge(
@@ -738,9 +727,7 @@ void API moria_traverse_edges(
       , ctx
       , &state->st
       , 0         // distance
-      , 0
-      , &stack
-      , &stackz
+      , TRAVERSAL_EDGES
     );
   }
 
@@ -750,20 +737,19 @@ void API moria_traverse_edges(
 void API moria_traverse_edge_vertices(
     moria_graph * const restrict g
   , moria_edge * const restrict ex
-  , void (* visitor)(moria_vertex * restrict, void *, moria_traversal_mode, int, int * restrict)
+  , void (* visitor)(moria_vertex * restrict, void *, moria_traversal_mode, int, moria_traverse_result * restrict)
   , moria_vertex_traversal_state * state
   , const moria_traversal_criteria * restrict criteria
   , uint32_t attrs
   , void * ctx
 )
 {
-  moria_vertex * stack[32] = {};
-  size_t stackz = 0;
   moria_traversal_criteria local_criteria;
   moria_vertex_traversal_state * local_state = 0;
   moria_edge * e = ex;
 
   RUNTIME_ASSERT(attrs & (MORIA_TRAVERSE_PRE | MORIA_TRAVERSE_POST));
+  RUNTIME_ASSERT(!!(attrs & MORIA_TRAVERSE_PRE) ^ !!(attrs & MORIA_TRAVERSE_POST));
 
   if(!state)
   {
@@ -786,9 +772,7 @@ void API moria_traverse_edge_vertices(
     , ctx
     , &state->st
     , 0         // distance
-    , &stack    // vertex stack
-    , 0
-    , &stackz
+    , TRAVERSAL_VERTICES
   );
 
   moria_vertex_traversal_end(g, local_state);
@@ -814,16 +798,18 @@ void API moria_edge_traversal_begin(moria_graph * const restrict g, moria_edge_t
 
 void API moria_vertex_traversal_end(moria_graph * const restrict g, moria_vertex_traversal_state * restrict state)
 {
-  if(!state)
+  if(!state) {
     return;
+  }
 
   traversal_state_reclaim(g, &state->st);
 }
 
 void API moria_edge_traversal_end(moria_graph * const restrict g, moria_edge_traversal_state * restrict state)
 {
-  if(!state)
+  if(!state) {
     return;
+  }
 
   traversal_state_reclaim(g, &state->st);
 }
@@ -842,32 +828,46 @@ bool API moria_traversal_edge_visited(const moria_graph * const restrict g, cons
   return set(&state->st, VISIT, &e->ent);
 }
 
-/* visitors */
+/* commonly used visitors */
 
-void API moria_vertex_count(struct moria_vertex * restrict v, void * ctx, moria_traversal_mode mode, int distance, int * restrict result)
+void API moria_vertex_count(struct moria_vertex * restrict v, void * ctx, moria_traversal_mode mode, int distance, moria_traverse_result * restrict result)
 {
   uint32_t *c = ctx;
   (*c)++;
 }
 
-void API moria_vertex_count_once(struct moria_vertex * restrict v, void * ctx, moria_traversal_mode mode, int distance, int * restrict result)
+void API moria_vertex_count_once(struct moria_vertex * restrict v, void * ctx, moria_traversal_mode mode, int distance, moria_traverse_result * restrict result)
 {
   uint32_t *c = ctx;
   (*c)++;
 
-  *result = MORIA_TRAVERSE_PRUNE;
+  result->flags = MORIA_TRAVERSE_PRUNE;
 }
 
-void API moria_edge_count(struct moria_edge * restrict v, void * ctx, moria_traversal_mode mode, int distance, int * restrict result)
+void API moria_edge_count(struct moria_edge * restrict v, void * ctx, moria_traversal_mode mode, int distance, moria_traverse_result * restrict result)
 {
   uint32_t *c = ctx;
   (*c)++;
 }
 
-void API moria_edge_count_once(struct moria_edge * restrict v, void * ctx, moria_traversal_mode mode, int distance, int * restrict result)
+void API moria_edge_count_once(struct moria_edge * restrict v, void * ctx, moria_traversal_mode mode, int distance, moria_traverse_result * restrict result)
 {
   uint32_t *c = ctx;
   (*c)++;
 
-  *result = MORIA_TRAVERSE_PRUNE;
+  result->flags = MORIA_TRAVERSE_PRUNE;
+}
+
+void API moria_vertex_first(moria_vertex * restrict v, void * ctx, moria_traversal_mode mode, int distance, moria_traverse_result * restrict result)
+{
+  moria_vertex **rv = ctx;
+  *rv = v;
+  result->flags = MORIA_TRAVERSE_PRUNE;
+}
+
+void API moria_vertex_edge_first(moria_edge * restrict v, void * ctx, moria_traversal_mode mode, int distance, moria_traverse_result * restrict result)
+{
+  moria_edge **rv = ctx;
+  *rv = v;
+  result->flags = MORIA_TRAVERSE_PRUNE;
 }

@@ -1,318 +1,268 @@
 /* SPDX-License-Identifier: GPL-3.0 */
 /* Copyright (c) 2012-2023 Todd Freed <todd.freed@gmail.com> */
 
-/* COPYRIGHT (C) 2012-2015 Todd Freed <todd.freed@gmail.com>
+#include "xlinux/xstdlib.h"
+#include "common/assure.h"
 
-   This file is part of fab.
-
-   fab is free software: you can redistribute it and/or modify
-   it under the terms of the GNU General Public License as published by
-   the Free Software Foundation, either version 3 of the License, or
-   (at your option) any later version.
-
-   fab is distributed in the hope that it will be useful,
-   but WITHOUT ANY WARRANTY; without even the implied warranty of
-   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-   GNU General Public License for more details.
-
-   You should have received a copy of the GNU General Public License
-   along with fab.  If not, see <http://www.gnu.org/licenses/>. */
-
-#include <stdlib.h>
-
-#include "operations.h"
-#include "edge.internal.h"
 #include "moria.h"
+#include "edge.h"
+#include "dispatch.h"
+#include "operations.h"
 
-int API moria_preconnect(
-    moria_connect_context * restrict ctx
-  , moria_graph * restrict g
-  , moria_vertex * restrict A
-  , moria_vertex * B
-  , uint32_t attrs
-  , moria_edge ** restrict ep
-)
+static moria_vertex *identifier_lookup(moria_parser * restrict parser, llist * restrict first, llist * restrict end) // identifier * restrict id)
 {
-  rbnode *rbn;
-  moria_edge *e = 0;
-  edge_key key;
-
-  RUNTIME_ASSERT(!(attrs & MORIA_EDGE_HYPER));
-
-  /* search by identity */
-  key = (typeof(key)) {
-      attrs : MORIA_EDGE_IDENTITY
-    , Blist : &B
-    , Blen : 1
-  };
-  if((rbn = rbtree_search(&A->down, &ctx->identity_search_context, &key, edge_cmp_key_down)))
-  {
-    e = containerof(rbn, moria_edge, rbn_down);
-    if(ep) {
-      *ep = e;
-    }
-
-    if(e->B == B && e->attrs == attrs) {
-      /* this identity edge already exists */
-      return MORIA_HASEDGE;
-    }
-    else if(e->B == B)
-    {
-      /* an identity edge to this vertex exists, but with different attrs */
-      return MORIA_EDGEATTRS;
-    }
-    else if(attrs & MORIA_EDGE_IDENTITY)
-    {
-      /* an identity edge exists to another vertex with the same label */
-      return MORIA_EDGEDOWN;
-    }
-  }
-
-  /* search by vertex */
-  key.attrs &= ~MORIA_EDGE_IDENTITY;
-  if((rbn = rbtree_search(&A->down, &ctx->vertex_search_context, &key, edge_cmp_key_down)))
-  {
-    e = containerof(rbn, moria_edge, rbn_down);
-    if(ep) {
-      *ep = e;
-    }
-
-    if(e->attrs == attrs) {
-      /* this non-identity edge already exists */
-      return MORIA_HASEDGE;
-    }
-
-    /* this non-identity edge to this vertex exists, but with different attrs */
-    return MORIA_EDGEATTRS;
-  }
-
-  /* check non-rbtree upwards identity edge */
-  if((attrs & MORIA_EDGE_IDENTITY) && B->up_identity && B->up_identity->A != A) {
-    /* upwards identity edge for B already exists, but with a different A vertex */
-    return MORIA_EDGEUP;
-  }
-
-  return MORIA_NOEDGE;
-}
-
-void API moria_connect(
-    moria_connect_context * restrict ctx
-  , moria_graph * const restrict g
-  , moria_edge * const restrict e
-  , moria_vertex * const restrict A
-  , moria_vertex * const restrict B
-  , uint32_t attrs
-)
-{
-  rbnode __attribute__((unused)) *r;
-
-  RUNTIME_ASSERT(!(attrs & MORIA_EDGE_HYPER));
-
-  e->attrs = attrs;
-  e->A = A;
-  e->B = B;
-
-  /* insert into B->up */
-  if(attrs & MORIA_EDGE_IDENTITY)
-  {
-    B->up_identity = e;
-  }
-  else
-  {
-    r = rbtree_put_node(&B->up, &e->rbn_up, edge_cmp_rbn_up);
-    RUNTIME_ASSERT(r == 0);
-  }
-
-  /* insert into A->down, reusing the previous search results in A->down */
-  if(attrs & MORIA_EDGE_IDENTITY)
-  {
-    rbtree_insert_node(&A->down, &ctx->identity_search_context, &e->rbn_down);
-  }
-  else
-  {
-    rbtree_insert_node(&A->down, &ctx->vertex_search_context, &e->rbn_down);
-  }
-}
-
-int API moria_preconnect_hyper(
-    moria_connect_context * restrict ctx
-  , moria_graph * const restrict g
-  , moria_vertex ** const restrict Alist
-  , uint16_t Alen
-  , moria_vertex ** const restrict Blist
-  , uint16_t Blen
-  , uint32_t attrs
-  , moria_edge ** const restrict ep
-)
-{
-  edge_key key;
-  rbnode *rbn = 0;
-  moria_edge *e;
-
-  RUNTIME_ASSERT(!(attrs & MORIA_EDGE_IDENTITY));
-  RUNTIME_ASSERT(attrs & MORIA_EDGE_HYPER);
-  RUNTIME_ASSERT(Alen + Blen);
-
-  if(Alen == 1 && Blen == 1) {
-    return moria_preconnect(ctx, g, Alist[0], Blist[0], attrs & ~MORIA_EDGE_HYPER, ep);
-  }
-
-  if(Alen)
-    qsort(Alist, Alen, sizeof(*Alist), ptrcmp);
-  if(Blen)
-    qsort(Blist, Blen, sizeof(*Blist), ptrcmp);
-
-  // search by vertex-set (non-identity)
-  key = (typeof(key)) {
-      attrs : MORIA_EDGE_HYPER
-    , Alist : Alist
-    , Alen : Alen
-    , Blist : Blist
-    , Blen : Blen
-  };
-  if(Alen)
-  {
-    if((rbn = rbtree_search(&Alist[0]->down, &ctx->vertex_search_context, &key, edge_cmp_key_down))) {
-      e = rbn->ud.p;
-    }
-  }
-  else
-  {
-    if((rbn = rbtree_search(&Blist[0]->up, &ctx->vertex_search_context, &key, edge_cmp_key_up))) {
-      e = rbn->ud.p;
-    }
-  }
-
-  if(rbn)
-  {
-    if(ep) {
-      *ep = e;
-    }
-    if(e->attrs == attrs) {
-      return MORIA_HASEDGE;
-    }
-
-    /* a hyperedge with these vertices already exists, but with different attrs */
-    return MORIA_EDGEATTRS;
-  }
-
-  return MORIA_NOEDGE;
-}
-
-void API moria_connect_hyper(
-    moria_connect_context * restrict ctx
-  , moria_graph * const restrict g
-  , moria_edge * const restrict e
-  , moria_vertex ** const restrict Alist
-  , uint16_t Alen
-  , moria_vertex ** const restrict Blist
-  , uint16_t Blen
-  , uint32_t attrs
-)
-{
+  moria_vertex *v;
+  moria_vertex *p;
+  moria_vertex *rv;
+  struct label *label;
+  llist *lln;
   int x;
 
-  RUNTIME_ASSERT(!(attrs & MORIA_EDGE_IDENTITY));
-  RUNTIME_ASSERT(attrs & MORIA_EDGE_HYPER);
-  RUNTIME_ASSERT(Alen + Blen);
+  rv = 0;
+  for(x = 0; x < parser->vertex_lists_len; x++) {
+    llist_foreach(parser->vertex_lists[x], v, owner) {
+      p = v;
+      for(lln = first; lln != end; lln = lln->prev) {
+        label = containerof(lln, typeof(*label), lln);
+        if(!p) {
+          break;
+        }
+        if(memncmp(p->label, p->label_len, label->s, label->len) != 0) {
+          break;
+        }
 
-  if(Alen == 1 && Blen == 1) {
-    return moria_connect(ctx, g, e, Alist[0], Blist[0], attrs & ~MORIA_EDGE_HYPER);
-  }
+        /* upwards to the parent */
+        if(p->up_identity) {
+          p = p->up_identity->A;
+        }
+      }
 
-  e->attrs = attrs;
+      if(lln != end) {
+        continue; // not all labels in the sequence matched
+      }
 
-  for(x = 0; x < Alen; x++)
-  {
-    e->Alist[x].v = Alist[x];
-    e->Alist[x].rbn.ud.p = e;
-  }
-  e->Alen = Alen;
-
-  for(x = 0; x < Blen; x++)
-  {
-    e->Blist[x].v = Blist[x];
-    e->Blist[x].rbn.ud.p = e;
-  }
-  e->Blen = Blen;
-
-  for(x = 0; x < Alen; x++)
-  {
-    if(x == 0) {
-      rbtree_insert_node(&Alist[x]->down, &ctx->vertex_search_context, &e->Alist[x].rbn);
-    } else {
-      rbtree_put_node(&Alist[x]->down, &e->Alist[x].rbn, edge_cmp_rbn_down);
+      if(rv) {
+        RTA;  // vertex names not unique
+      }
+      rv = v;
     }
   }
 
-  for(x = 0; x < Blen; x++)
-  {
-    if(x == 0 && !Alen) {
-      rbtree_insert_node(&Blist[x]->up, &ctx->vertex_search_context, &e->Blist[x].rbn);
-    } else {
-      rbtree_put_node(&Blist[x]->up, &e->Blist[x].rbn, edge_cmp_rbn_up);
-    }
+  return rv;
+}
+
+static moria_vertex *labels_resolve(moria_parser * restrict parser, llist * restrict first, llist * restrict end)
+{
+  moria_vertex *v;
+  moria_vertex *pv;
+  struct label *label;
+
+  if((v = identifier_lookup(parser, first, end))) {
+    return v;
+  }
+
+  /* create from the first label only */
+  label = containerof(first, typeof(*label), lln);
+  parser->dispatch->create_vertex(parser, &v, label->attrs, label->opattrs, label->s, label->len);
+
+  if(first->prev == end) {
+    return v;
+  }
+  pv = labels_resolve(parser, first->prev, end);
+  parser->dispatch->connect(parser, v, pv, MORIA_EDGE_IDENTITY, 0);
+
+  return v;
+}
+
+static moria_vertex *identifier_resolve(moria_parser * restrict parser, identifier * id)
+{
+  return labels_resolve(parser, id->labels.prev, &id->labels);
+}
+
+static void identifier_list_resolve(
+    moria_parser * restrict parser
+  , identifier_list * restrict ids
+  , moria_vertex *** restrict list
+  , size_t * restrict list_sz
+  , size_t * restrict list_len
+)
+{
+  struct identifier *identifier;
+  moria_vertex *v;
+
+  *list_len = 0;
+  llist_foreach(&ids->identifiers, identifier, lln) {
+    v = identifier_resolve(parser, identifier);
+    assure(list, sizeof(**list), (*list_len) + 1, list_sz);
+    (*list)[(*list_len)++] = v;
   }
 }
 
-void API moria_edge_disconnect(
-    moria_graph * const restrict g
-  , moria_edge * const restrict e
-)
+//
+// public
+//
+
+label *label_alloc(const char *s, uint16_t len)
 {
-  int x;
+  struct label *label;
 
-  if((e->attrs & MORIA_EDGE_HYPER))
-  {
-    for(x = 0; x < e->Alen; x++)
-    {
-      rbtree_delete(&e->Alist[x].v->down, &e->Alist[x], rbn);
-    }
+  xmalloc(&label, sizeof(*label));
+  label->s = s;
+  label->len = len;
+  llist_init(&label->lln);
 
-    for(x = 0; x < e->Blen; x++)
-    {
-      rbtree_delete(&e->Blist[x].v->up, &e->Blist[x], rbn);
-    }
-  }
-  else
-  {
-    rbtree_delete(&e->A->down, e, rbn_down);
-
-    if(e->attrs & MORIA_EDGE_IDENTITY)
-    {
-      e->B->up_identity = 0;
-    }
-    else
-    {
-      rbtree_delete(&e->B->up, e, rbn_up);
-    }
-  }
+  return label;
 }
 
-void API moria_disconnect(
-    moria_graph * const restrict g
-  , moria_vertex * const restrict A
-  , moria_vertex * const restrict B
+void label_free(struct label * restrict label)
+{
+  free(label);
+}
+
+identifier *identifier_alloc(struct label * restrict label, uint8_t opattrs)
+{
+  identifier *id;
+
+  xmalloc(&id, sizeof(*id));
+  label->opattrs = opattrs;
+  llist_init(&id->lln);
+
+  llist_init(&id->labels);
+  llist_push(&id->labels, &label->lln);
+
+  return id;
+}
+
+void identifier_free(struct identifier * identifier)
+{
+  struct label *label;
+
+  while((label = llist_shift(&identifier->labels, typeof(*label), lln))) {
+    label_free(label);
+  }
+
+  free(identifier);
+}
+
+identifier_list *identifier_list_alloc()
+{
+  identifier_list *ids;
+
+  xmalloc(&ids, sizeof(*ids));
+  llist_init(&ids->identifiers);
+
+  return ids;
+}
+
+void identifier_list_free(identifier_list *ids)
+{
+  struct identifier *identifier;
+
+  while((identifier = llist_shift(&ids->identifiers, typeof(*identifier), lln))) {
+    identifier_free(identifier);
+  }
+
+  free(ids);
+}
+
+//
+// operations
+//
+
+void operations_declare(moria_parser * restrict parser, identifier_list *list)
+{
+  struct identifier *identifier;
+
+  llist_foreach(&list->identifiers, identifier, lln) {
+    identifier_resolve(parser, identifier);
+  }
+
+  identifier_list_free(list);
+}
+
+void operations_refresh(moria_parser * restrict parser, identifier_list * restrict list)
+{
+  struct identifier *identifier;
+  moria_vertex *v;
+
+  llist_foreach(&list->identifiers, identifier, lln) {
+    v = identifier_resolve(parser, identifier);
+    parser->dispatch->refresh_vertex(parser, v);
+  }
+
+  identifier_list_free(list);
+}
+
+void operations_invalidate(moria_parser * restrict parser, identifier_list * restrict list)
+{
+  struct identifier *identifier;
+  moria_vertex *v;
+
+  llist_foreach(&list->identifiers, identifier, lln) {
+    v = identifier_resolve(parser, identifier);
+    parser->dispatch->invalidate_vertex(parser, v);
+  }
+
+  identifier_list_free(list);
+}
+
+void operations_connect(
+    moria_parser * restrict parser
+  , identifier_list * restrict B
+  , identifier_list * restrict A
+  , uint32_t attrs
 )
 {
+  moria_vertex **Blist;
+  size_t Blen;
+  size_t Bsz;
+  moria_vertex **Alist;
+  size_t Alen;
+  size_t Asz;
+
+  Blist = 0;
+  Blen = 0;
+  Bsz = 0;
+  identifier_list_resolve(parser, B, &Blist, &Bsz, &Blen);
+
+  Alist = 0;
+  Alen = 0;
+  Asz = 0;
+  identifier_list_resolve(parser, A, &Alist, &Asz, &Alen);
+
+  parser->dispatch->hyperconnect(parser, Blist, Blen, Alist, Alen, attrs | MORIA_EDGE_HYPER, 0);
+
+  free(Alist);
+  free(Blist);
+  identifier_list_free(B);
+  identifier_list_free(A);
+}
+
+void operations_disconnect(moria_parser * restrict parser, identifier_list * restrict B, identifier_list * restrict A)
+{
+  moria_vertex **Blist;
+  size_t Blen;
+  size_t Bsz;
+  moria_vertex **Alist;
+  size_t Alen;
+  size_t Asz;
   moria_edge *e;
 
-  if((e = moria_edge_between(A, B))) {
-    moria_edge_disconnect(g, e);
-  }
-}
+  Blist = 0;
+  Blen = 0;
+  Bsz = 0;
+  identifier_list_resolve(parser, B, &Blist, &Bsz, &Blen);
 
-void API moria_hyperdisconnect(
-    moria_graph * restrict g
-  , moria_vertex ** restrict Alist
-  , uint16_t Alen
-  , moria_vertex ** restrict Blist
-  , uint16_t Blen
-)
-{
-  moria_edge *e;
+  Alist = 0;
+  Alen = 0;
+  Asz = 0;
+  identifier_list_resolve(parser, A, &Alist, &Asz, &Alen);
 
-  if((e = moria_edge_of(Alist, Alen, Blist, Blen))) {
-    moria_edge_disconnect(g, e);
-  }
+  e = moria_edge_of(Blist, Blen, Alist, Alen);
+  parser->dispatch->disconnect(parser, e);
+
+  free(Blist);
+  free(Alist);
+  identifier_list_free(B);
+  identifier_list_free(A);
 }

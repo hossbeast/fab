@@ -7,22 +7,21 @@
 
   #include "xlinux/xstdlib.h"
   #include "xlinux/xstring.h"
-  #include "valyria/dictionary.h"
   #include "valyria/map.h"
 
   #include "parser.internal.h"
   #include "moria.h"
   #include "vertex.h"
-  #include "operations.h"
   #include "graph.internal.h"
+  #include "dispatch.h"
 
-  #include "zbuffer.h"
+  #include "zcat.h"
   #include "common/attrs.h"
 }
 
 %code top {
   int graph_yylex(void *, void*, void*);
-  #define PARSER containerof(parser, graph_parser, graph_yyu)
+  #define PARSER containerof(parser, moria_parser, graph_yyu)
   #define GRAPH_YYLTYPE yyu_location
 }
 
@@ -104,35 +103,43 @@ graph
 edge
   : edge_vertex_list ':' edge_attrs ':' edge_vertex_list
   {
-    struct moria_vertex ** A = $1.v;
-    if($1.len == 1)
-      A = &$1.v0;
+    struct moria_vertex ** B = $1.v;
+    if($1.len == 1) {
+      B = &$1.v0;
+    }
 
-    struct moria_vertex ** B = $5.v;
-    if($5.len == 1)
-      B = &$5.v0;
+    struct moria_vertex ** A = $5.v;
+    if($5.len == 1) {
+      A = &$5.v0;
+    }
 
-    graph_parser_hyperconnect(PARSER, A, $1.len, B, $5.len, $3, 0);
-    if($1.len > 1)
+    moria_parser_hyperconnect(PARSER, B, $1.len, A, $5.len, $3, 0);
+    if($1.len > 1) {
       free($1.v);
-    if($5.len > 1)
+    }
+    if($5.len > 1) {
       free($5.v);
+    }
   }
   | edge_vertex_list ':' edge_vertex_list
   {
-    struct moria_vertex ** A = $1.v;
-    if($1.len == 1)
-      A = &$1.v0;
+    struct moria_vertex ** B = $1.v;
+    if($1.len == 1) {
+      B = &$1.v0;
+    }
 
-    struct moria_vertex ** B = $3.v;
-    if($3.len == 1)
-      B = &$3.v0;
+    struct moria_vertex ** A = $3.v;
+    if($3.len == 1) {
+      A = &$3.v0;
+    }
 
-    graph_parser_hyperconnect(PARSER, A, $1.len, B, $3.len, 0, 0);
-    if($1.len > 1)
-      free(A);
-    if($3.len > 1)
+    moria_parser_hyperconnect(PARSER, B, $1.len, A, $3.len, 0, 0);
+    if($1.len > 1) {
       free(B);
+    }
+    if($3.len > 1) {
+      free(A);
+    }
   }
   ;
 
@@ -141,8 +148,9 @@ edge_vertex_list
   {
     $$ = $1;
     xrealloc(&$$.v, sizeof(*$$.v), $$.len + 1, $$.len);
-    if($$.len == 1)
+    if($$.len == 1) {
       $$.v[0] = $$.v0;
+    }
     $$.v[$$.len++] = $3;
   }
   | edge_vertex
@@ -162,7 +170,7 @@ edge_vertex_list
 edge_vertex
   : uint32
   {
-    $$ = map_get(PARSER->vertex_map, (void*)&$1, sizeof($1));
+    $$ = map_get(PARSER->vertex_by_id, (void*)&$1, sizeof($1));
   }
   | vertex
   ;
@@ -172,12 +180,12 @@ vertex
   {
     $$ = $3;
     $$->attrs = $5;
-    map_put(PARSER->vertex_map, (void*)&$1, sizeof($1), $$, 0);
+    map_put(PARSER->vertex_by_id, (void*)&$1, sizeof($1), $$, 0);
   }
   | uint32 '-' vertex_label
   {
     $$ = $3;
-    map_put(PARSER->vertex_map, (void*)&$1, sizeof($1), $$, 0);
+    map_put(PARSER->vertex_by_id, (void*)&$1, sizeof($1), $$, 0);
   }
   | vertex_label '!' vertex_attrs
   {
@@ -190,7 +198,7 @@ vertex
 vertex_label
   : STR
   {
-    graph_parser_create_vertex(PARSER, &$$, 0, 0, @1.s, @1.l);
+    moria_parser_create_vertex(PARSER, &$$, 0, 0, @1.s, @1.l);
   }
   ;
 

@@ -11,10 +11,15 @@
 
 #include "usdt-sem.h"
 #include "macros.h"
-#include "zbuffer.h"
+#include "zcat.h"
 
-PROBE_SEM(moria, explore_edge);
-PROBE_SEM(moria, explore_vertex);
+#if 1
+PROBE_SEM(moria, explore_edge) = 0;
+PROBE_SEM(moria, explore_vertex) = 0;
+#else
+PROBE_SEM(moria, explore_edge) = 1;
+PROBE_SEM(moria, explore_vertex) = 1;
+#endif
 
 void explore_edge_probe(moria_edge * restrict e, int distance, bool travel, bool visit)
 {
@@ -24,26 +29,31 @@ void explore_edge_probe(moria_edge * restrict e, int distance, bool travel, bool
   char *s;
   int x;
 
+  if(!moria_explore_edge_semaphore) {
+    return;
+  }
+
   s = buf;
   sz = sizeof(buf);
   z = 0;
 
   // in explore_edge
-  z += znloadf(s + z, sz - z, "[e] %p d %d t %d v %d 0x%08x %*s ", e, distance, travel, visit, e->attrs, distance, "");
+  z += zcatf(s + z, sz - z, "[e] %p d %d t %d v %d 0x%08x %*s ", e, distance, travel, visit, e->attrs, distance, "");
   if(e->attrs & MORIA_EDGE_HYPER) {
-    z += znloadf(s + z, sz - z, "{");
-    for(x = 0; x < e->Alen; x++) {
-      z += znloadf(s + z, sz - z, " %.*s", e->Alist[x].v->label_len, e->Alist[x].v->label);
-    }
-    z += znloadf(s + z, sz - z, "} -> {");
+    z += zcatf(s + z, sz - z, "{");
     for(x = 0; x < e->Blen; x++) {
-      z += znloadf(s + z, sz - z, " %.*s", e->Blist[x].v->label_len, e->Blist[x].v->label);
+      z += zcatf(s + z, sz - z, " %.*s", e->Blist[x].v->label_len, e->Blist[x].v->label);
     }
-    z += znloadf(s + z, sz - z, "}");
+    z += zcatf(s + z, sz - z, "} -> {");
+    for(x = 0; x < e->Alen; x++) {
+      z += zcatf(s + z, sz - z, " %.*s", e->Alist[x].v->label_len, e->Alist[x].v->label);
+    }
+    z += zcatf(s + z, sz - z, "}");
   } else {
-    z += znloadf(s + z, sz - z, "%.*s -> %.*s\n", e->A->label_len, e->A->label, e->B->label_len, e->B->label);
+    z += zcatf(s + z, sz - z, "%p %.*s -> %p %.*s", e->B, e->B->label_len, e->B->label, e->A, e->A->label_len, e->A->label);
   }
 
+printf("%.*s\n", (int)z, buf);
   PROBE1(moria, explore_edge, buf);
 }
 
@@ -55,11 +65,16 @@ void explore_vertex_probe(moria_vertex * restrict v, int distance, bool travel, 
   size_t sz;
   char *s;
 
+  if(!moria_explore_vertex_semaphore) {
+    return;
+  }
+
   s = buf;
   sz = sizeof(buf);
   z = 0;
 
-  z += znloadf(s + z, sz - z, "[v] %p d %d t %d v %d 0x%08x %*s %.*s\n", v, distance, travel, visit, v->attrs, distance, "", v->label_len, v->label);
+  z += zcatf(s + z, sz - z, "[v] %p d %d t %d v %d 0x%08x %*s %.*s", v, distance, travel, visit, v->attrs, distance, "", v->label_len, v->label);
 
+printf("%.*s\n", (int)z, buf);
   PROBE1(moria, explore_vertex, buf);
 }

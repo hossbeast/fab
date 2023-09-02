@@ -1,8 +1,6 @@
 /* SPDX-License-Identifier: GPL-3.0 */
 /* Copyright (c) 2012-2023 Todd Freed <todd.freed@gmail.com> */
 
-#include "xlinux/xstdlib.h"
-
 /* flex and bison do not agree on these names */
 #define YYSTYPE struct graph_yystype
 #define YYLTYPE yyu_location
@@ -10,8 +8,8 @@
 /* the token enums shadow each other exclude all but one set */
 #define OPERATIONS_YYTOKENTYPE
 
-#include "parser.internal.h"
-#include "moria.h"
+#include "xlinux/xstdlib.h"
+
 #include "graph.tab.h"
 #include "graph.tokens.h"
 #include "graph.lex.h"
@@ -21,301 +19,44 @@
 #include "operations.lex.h"
 #include "operations.states.h"
 
-#include "operations.h"
+#include "parser.h"
 #include "edge.h"
+#include "connect.h"
+#include "dispatch.h"
 
 static YYU_VTABLE(graph_vtable, graph, graph);
 static YYU_VTABLE(operations_vtable, operations, operations);
 
-//
-// private
-//
-
-static void identifier_lookup(graph_parser * restrict parser, identifier * id, moria_vertex ** restrict rv)
+llist *parser_llist_alloc(struct moria_parser * restrict parser)
 {
-  moria_vertex *v = 0;
-  identifier *idv;
-  moria_vertex *p;
+  llist *list;
 
-  *rv = 0;
-  llist_foreach(parser->vertex_list, v, owner) {
-    if(memncmp(v->label, v->label_len, id->label, id->label_len) != 0) {
-      continue;
-    }
-
-    p = v;
-    for(idv = id->next; idv; idv = idv->next)
-    {
-      if(!p->up_identity || !p->up_identity->A) {
-        break;
-      }
-      p = p->up_identity->A;
-
-      if(memncmp(p->label, p->label_len, idv->label, idv->label_len) != 0) {
-        break;
-      }
-    }
-    if(idv) {
-      continue;
-    }
-
-    if(*rv) {
-      RUNTIME_ABORT();
-    }
-    *rv = v;
-  }
-}
-
-static void identifier_resolve(
-    graph_parser * restrict parser
-  , identifier * id
-  , moria_vertex ** restrict rv
-)
-{
-  moria_vertex *v = 0;
-  moria_vertex *pv = 0;
-
-  v = 0;
-  identifier_lookup(parser, id, &v);
-  if(v)
-  {
-    *rv = v;
-    return;
+  if(!llist_empty(&parser->lists)) {
+    list = parser->lists.next;
+    llist_delete(list);
+  } else {
+    xmalloc(&list, sizeof(*list));
+    llist_init(list);
   }
 
-  if(id->next) {
-    identifier_resolve(parser, id->next, &pv);
-  }
-
-  parser->dispatch->create_vertex(parser, &v, id->attrs, id->opattrs, id->label, id->label_len);
-  if(pv) {
-    parser->dispatch->connect(parser, pv, v, MORIA_EDGE_IDENTITY, 0);
-  }
-  *rv = v;
-}
-
-//
-// public
-//
-
-void identifier_list_free(identifier_list * id)
-{
-  int x;
-
-  if(id)
-  {
-    if(id->len == 1)
-    {
-      identifier_free(id->v0);
-    }
-    else
-    {
-      for(x = 0; x < id->len; x++)
-      {
-        identifier_free(id->v[x]);
-      }
-
-      free(id->v);
-    }
-  }
-
-  free(id);
-}
-
-void identifier_free(identifier * id)
-{
-  if(id)
-    identifier_free(id->next);
-
-  free(id);
-}
-
-void operation_vertex(graph_parser * restrict parser, identifier_list *A)
-{
-  int y;
-  moria_vertex *v;
-
-  if(A->len == 1)
-  {
-    identifier_resolve(parser, A->v0, &v);
-  }
-  else
-  {
-    for(y = 0; y < A->len; y++) {
-      identifier_resolve(parser, A->v[y], &v);
-    }
-  }
-
-  identifier_list_free(A);
-}
-
-void operation_refresh(graph_parser * restrict parser, identifier_list * restrict A)
-{
-  moria_vertex *v = 0;
-  int y;
-
-  if(A->len == 1)
-    identifier_resolve(parser, A->v0, &v);
-  else
-  {
-    for(y = 0; y < A->len; y++)
-      identifier_resolve(parser, A->v[y], &v);
-  }
-
-  parser->dispatch->refresh_vertex(parser, v);
-
-  identifier_list_free(A);
-}
-
-void operation_invalidate(graph_parser * restrict parser, identifier_list * restrict A)
-{
-  moria_vertex *v = 0;
-  int y;
-
-  if(A->len == 1)
-    identifier_resolve(parser, A->v0, &v);
-  else
-  {
-    for(y = 0; y < A->len; y++)
-      identifier_resolve(parser, A->v[y], &v);
-  }
-
-  parser->dispatch->invalidate_vertex(parser, v);
-
-  identifier_list_free(A);
-}
-
-void operation_connect(
-    graph_parser * restrict parser
-  , identifier_list * restrict A
-  , identifier_list * restrict B
-  , uint32_t attrs
-)
-{
-  moria_vertex *a;
-  moria_vertex *b;
-  moria_vertex **Alist = 0;
-  moria_vertex **Blist = 0;
-  int y;
-
-  if(A && A->len == 1 && B && B->len == 1)
-  {
-    identifier_resolve(parser, A->v0, &a);
-    identifier_resolve(parser, B->v0, &b);
-
-    parser->dispatch->connect(parser, a, b, attrs, 0);
-  }
-  else
-  {
-    if(A && A->len > 0)
-    {
-      xrealloc(&Alist, sizeof(*Alist), A->len, 0);
-      if(A->len == 1)
-      {
-        identifier_resolve(parser, A->v0, &Alist[0]);
-      }
-      else
-      {
-        for(y = 0; y < A->len; y++)
-          identifier_resolve(parser, A->v[y], &Alist[y]);
-      }
-    }
-
-    if(B && B->len > 0)
-    {
-      xrealloc(&Blist, sizeof(*Blist), B->len, 0);
-      if(B->len == 1)
-      {
-        identifier_resolve(parser, B->v0, &Blist[0]);
-      }
-      else
-      {
-        for(y = 0; y < B->len; y++)
-          identifier_resolve(parser, B->v[y], &Blist[y]);
-      }
-    }
-
-    attrs |= MORIA_EDGE_HYPER;
-    parser->dispatch->hyperconnect(parser, Alist, A ? A->len : 0, Blist, B ? B->len : 0, attrs, 0);
-  }
-
-  free(Alist);
-  free(Blist);
-  identifier_list_free(A);
-  identifier_list_free(B);
-}
-
-void operation_disconnect(graph_parser * restrict parser, identifier_list * restrict A, identifier_list * restrict B)
-{
-  moria_vertex *a;
-  moria_vertex *b;
-  moria_vertex **Alist = 0;
-  moria_vertex **Blist = 0;
-  moria_edge *e;
-  int y;
-
-  if(A && A->len == 1 && B && B->len == 1)
-  {
-    identifier_lookup(parser, A->v0, &a);
-    identifier_lookup(parser, B->v0, &b);
-
-    e = moria_edge_between(a, b);
-  }
-  else
-  {
-    if(A->len > 0)
-    {
-      xrealloc(&Alist, sizeof(*Alist), A->len, 0);
-      if(A->len == 1)
-      {
-        identifier_lookup(parser, A->v0, &Alist[0]);
-      }
-      else
-      {
-        for(y = 0; y < A->len; y++)
-          identifier_lookup(parser, A->v[y], &Alist[y]);
-      }
-    }
-
-    if(B->len > 0)
-    {
-      xrealloc(&Blist, sizeof(*Blist), B->len, 0);
-      if(B->len == 1)
-      {
-        identifier_lookup(parser, B->v0, &Blist[0]);
-      }
-      else
-      {
-        for(y = 0; y < B->len; y++)
-          identifier_lookup(parser, B->v[y], &Blist[y]);
-      }
-    }
-
-    e = moria_edge_of(Alist, A->len, Blist, B->len);
-  }
-
-  parser->dispatch->disconnect(parser, e);
-
-  free(Alist);
-  free(Blist);
-  identifier_list_free(A);
-  identifier_list_free(B);
+  return list;
 }
 
 //
 // API
 //
 
-void API graph_parser_create(
-    graph_parser ** const parser
+void API moria_parser_create(
+    moria_parser ** const parser
   , moria_graph * restrict g
-  , llist * restrict vertex_list
-  , moria_operations_dispatch * restrict dispatch
+  , llist ** restrict vertex_lists
+  , uint16_t vertex_lists_len
+  , moria_operations_vtable * restrict dispatch
   , const attrs32 * restrict vertex_defs
   , const attrs32 * restrict edge_defs
 )
 {
-  graph_parser *p;
+  moria_parser *p;
 
   xmalloc(&p, sizeof(*p));
 
@@ -341,228 +82,96 @@ void API graph_parser_create(
 
   p->g = g;
   p->dispatch = dispatch;
-  map_create(&p->vertex_map);
-  if(vertex_list)
+  map_create(&p->vertex_by_id);
+  if(vertex_lists_len)
   {
-    p->vertex_list = vertex_list;
+    RUNTIME_ASSERT(vertex_lists_len <= (sizeof(p->vertex_lists) / sizeof(*p->vertex_lists)));
+    memcpy(p->vertex_lists, vertex_lists, sizeof(*p->vertex_lists) * vertex_lists_len);
+    p->vertex_lists_len = vertex_lists_len;
   }
   else
   {
-    p->vertex_list = &p->vertices;
+    p->vertex_lists[0] = &p->vertices;
+    p->vertex_lists_len = 1;
   }
   p->vertex_defs = vertex_defs;
   p->edge_defs = edge_defs;
-  llist_init_node(&p->vertices);
-  llist_init_node(&p->vertex_freelist);
-  llist_init_node(&p->edges);
-  llist_init_node(&p->edge_freelist);
+  llist_init(&p->vertices);
+  llist_init(&p->vertex_freelist);
+  llist_init(&p->edges);
+  llist_init(&p->edge_freelist);
+  llist_init(&p->lists);
 
   *parser = p;
-  p = 0;
-
-  graph_parser_xfree(p);
 }
 
-void API graph_parser_xfree(graph_parser* const p)
+void API moria_parser_free(moria_parser* const p)
 {
   moria_vertex* v;
   moria_edge* e;
   llist *T;
 
-  if(p)
-  {
-    map_xfree(p->vertex_map);
-    yyu_parser_xdestroy(&p->graph_yyu);
-    yyu_parser_xdestroy(&p->operations_yyu);
+  if(!p) {
+    return;
+  }
 
-    llist_foreach_safe(&p->vertices, v, owner, T) {
-      free((void*)v->label);
-      free(v);
+  map_free(p->vertex_by_id);
+  yyu_parser_xdestroy(&p->graph_yyu);
+  yyu_parser_xdestroy(&p->operations_yyu);
+
+  llist_foreach_safe(&p->vertices, v, owner, T) {
+    free((void*)v->label);
+    free(v);
+  }
+  llist_foreach_safe(&p->vertex_freelist, v, owner, T) {
+    free((void*)v->label);
+    free(v);
+  }
+  llist_foreach_safe(&p->edges, e, owner, T) {
+    if((e->attrs & MORIA_EDGE_HYPER)) {
+      free(e->Alist);
+      free(e->Blist);
     }
-    llist_foreach_safe(&p->vertex_freelist, v, owner, T) {
-      free((void*)v->label);
-      free(v);
+    free(e);
+  }
+  llist_foreach_safe(&p->edge_freelist, e, owner, T) {
+    if((e->attrs & MORIA_EDGE_HYPER)) {
+      free(e->Alist);
+      free(e->Blist);
     }
-    llist_foreach_safe(&p->edges, e, owner, T) {
-      if((e->attrs & MORIA_EDGE_HYPER)) {
-        free(e->Alist);
-        free(e->Blist);
-      }
-      free(e);
-    }
-    llist_foreach_safe(&p->edge_freelist, e, owner, T) {
-      if((e->attrs & MORIA_EDGE_HYPER)) {
-        free(e->Alist);
-        free(e->Blist);
-      }
-      free(e);
-    }
+    free(e);
   }
 
   free(p);
 }
 
-void API graph_parser_ixfree(graph_parser ** const p)
+void API moria_parser_ifree(moria_parser ** const p)
 {
-  graph_parser_xfree(*p);
+  moria_parser_free(*p);
   *p = 0;
 }
 
-int API graph_parser_parse(
-    graph_parser * restrict parser
+int API moria_parser_graph_parse(
+    moria_parser * restrict parser
   , char * const restrict text
   , size_t len
 )
 {
-  map_recycle(parser->vertex_map);
+  map_recycle(parser->vertex_by_id);
   return yyu_parse(&parser->graph_yyu, text, len, "-graph-", 0, 0, 0);
 }
 
-int API graph_parser_operations_parse(
-    graph_parser * restrict parser
+int API moria_parser_operations_parse(
+    moria_parser * restrict parser
   , char * const restrict text
   , size_t len
 )
 {
-  return yyu_parse(&parser->operations_yyu, text, len, "-ops-", 0, 0, 0);
-}
-
-void graph_parser_connect(
-    graph_parser * restrict p
-  , moria_vertex * restrict A
-  , moria_vertex * restrict B
-  , uint32_t attrs
-  , moria_edge ** restrict er
-)
-{
-  moria_connect_context ctx;
-  moria_edge *e;
   int r;
 
-  r = moria_preconnect(&ctx, p->g, A, B, attrs, &e);
-  if(r == MORIA_EDGEATTRS)
-  {
-    RUNTIME_ABORT(); // fail(MORIA_VERTEXEXISTS);
-  }
-  else if(r == MORIA_EDGEDOWN)
-  {
-    RUNTIME_ABORT(); // fail(MORIA_LABELEXISTS);
-  }
-  else if(r == MORIA_EDGEUP)
-  {
-    RUNTIME_ABORT(); // fail(MORIA_UPEXISTS);
-  }
-  else if(r == MORIA_NOEDGE)
-  {
-    graph_parser_create_edge(p, &e, 1, 1);
-    moria_connect(&ctx, p->g, e, A, B, attrs);
-  }
-  if(er) {
-    *er = e;
-  }
+  parser->dispatch->setup(parser);
+  r = yyu_parse(&parser->operations_yyu, text, len, "-ops-", 0, 0, 0);
+  parser->dispatch->cleanup(parser);
+
+  return r;
 }
-
-void graph_parser_hyperconnect(
-    graph_parser * restrict p
-  , moria_vertex ** restrict Alist
-  , uint16_t Alen
-  , moria_vertex ** restrict Blist
-  , uint16_t Blen
-  , uint32_t attrs
-  , moria_edge ** restrict er
-)
-{
-  moria_connect_context ctx;
-  moria_edge *e;
-  int r;
-
-  if(Alen == 1 && Blen == 1) {
-    graph_parser_connect(p, Alist[0], Blist[0], attrs, er);
-    return;
-  }
-
-  r = moria_preconnect_hyper(&ctx, p->g, Alist, Alen, Blist, Blen, attrs, &e);
-  if(r == MORIA_EDGEUP)
-  {
-    RUNTIME_ABORT(); // fail(MORIA_UPEXISTS);
-  }
-  else if(r == MORIA_EDGEATTRS)
-  {
-    RUNTIME_ABORT(); // fail(MORIA_VERTEXEXISTS);
-  }
-  else if(r == MORIA_NOEDGE)
-  {
-    graph_parser_create_edge(p, &e, Alen, Blen);
-    moria_connect_hyper(&ctx, p->g, e, Alist, Alen, Blist, Blen, attrs);
-  }
-  if(er) {
-    *er = e;
-  }
-}
-
-static void graph_parser_edge_disconnect(
-    graph_parser * restrict p
-  , moria_edge * restrict e
-)
-{
-  moria_edge_disconnect(p->g, e);
-
-  llist_delete(e, owner);
-  llist_append(&p->edge_freelist, e, owner);
-}
-
-void graph_parser_create_vertex(
-    graph_parser * restrict p
-  , moria_vertex ** const restrict rv
-  , uint32_t attrs
-  , uint8_t opattrs
-  , const char * const restrict label
-  , uint16_t label_len
-)
-{
-  moria_vertex *v;
-  char *s;
-
-  if((v = llist_shift(&p->vertex_freelist, typeof(*v), owner)) == 0) {
-    xmalloc(&v, sizeof(*v));
-  }
-
-  xmalloc(&s, label_len + 1);
-  memcpy(s, label, label_len);
-
-  moria_vertex_initw(v, p->g, attrs, s, label_len);
-  llist_append(&p->vertices, v, owner);
-
-  *rv = v;
-}
-
-void graph_parser_create_edge(
-    graph_parser * restrict p
-  , moria_edge ** const restrict er
-  , uint16_t Alen
-  , uint16_t Blen
-)
-{
-  moria_edge *e;
-
-  if((e = llist_shift(&p->edge_freelist, typeof(*e), owner)) == 0) {
-    xmalloc(&e, sizeof(*e));
-  }
-
-  if(Alen != 1 || Blen != 1)
-  {
-    xmalloc(&e->Alist, sizeof(*e->Alist) * Alen);
-    xmalloc(&e->Blist, sizeof(*e->Blist) * Blen);
-  }
-
-  moria_edge_init(e, p->g);
-  llist_append(&p->edges, e, owner);
-  *er = e;
-}
-
-moria_operations_dispatch * API graph_operations_dispatch = (moria_operations_dispatch[]) {{
-    .connect = graph_parser_connect
-  , .hyperconnect = graph_parser_hyperconnect
-  , .disconnect = graph_parser_edge_disconnect
-  , .create_vertex = graph_parser_create_vertex
-}};

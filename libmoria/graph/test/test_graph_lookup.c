@@ -6,17 +6,17 @@
 #include "narrator.h"
 #include "narrator/growing.h"
 #include "valyria/map.h"
-#include "valyria/multimap.h"
 #include "valyria/list.h"
-#include "valyria/hashtable.h"
 #include "xlinux/xstdlib.h"
 #include "moria/load.h"
 
 #include "moria.h"
 #include "graph.internal.h"
-#include "operations.h"
 #include "parser.internal.h"
 #include "vertex.h"
+#include "lookup.h"
+#include "connect.h"
+#include "dispatch.h"
 
 typedef struct graph_lookup_test
 {
@@ -43,58 +43,67 @@ static void graph_unit_cleanup(xunit_unit * unit)
   moria_unload();
 }
 
-static void graph_hashtable_index(hashtable * restrict mm, moria_vertex * restrict v)
+static void *index_objs[1024];
+static uint32_t index_objs_len;
+
+static void graph_index_lookup(moria_graph * restrict g, moria_vertex * restrict index, moria_vertex * restrict v)
 {
-  moria_vertex_entry *entry, key;
+  moria_vertex *base;
+  moria_edge *e;
+  int __attribute__((unused)) r;
+  moria_connect_context ctx;
 
-  key.label = v->label;
-  key.label_len = v->label_len;
-  entry = hashtable_search(mm, &key, sizeof(key), moria_vertex_entry_hash, moria_vertex_entry_key_cmp);
-
-  if(!entry)
-  {
-    /* entry will use this nodes label */
-    rbtree_init(&key.rbt);
-    hashtable_put(mm, &key);
-    entry = hashtable_get(mm, &key);
+  if(!(base = moria_vertex_downw(index, v->label, v->label_len))) {
+    xmalloc(&base, sizeof(*base));
+    index_objs[index_objs_len++] = base;
+    moria_vertex_init(base, g, 0);
+    base->label = v->label;
+    base->label_len = v->label_len;
+    r = moria_preconnect(&ctx, g, base, index, MORIA_EDGE_IDENTITY, 0);
+    RUNTIME_ASSERT(r == MORIA_NOEDGE);
+    xmalloc(&e, sizeof(*e));
+    index_objs[index_objs_len++] = e;
+    moria_connect(&ctx, g, e, base, index, MORIA_EDGE_IDENTITY);
   }
-  rbtree_put(&entry->rbt, v, rbn_lookup, (void*)ptrcmp);
+
+  r = moria_preconnect(&ctx, g, v, base, 0, 0);
+  RUNTIME_ASSERT(r == MORIA_NOEDGE);
+  xmalloc(&e, sizeof(*e));
+  index_objs[index_objs_len++] = e;
+  moria_connect(&ctx, g, e, v, base, 0);
 }
 
 static void graph_test_entry(xunit_test * _test)
 {
   moria_graph g;
-  hashtable *mm = 0;
-  graph_parser * p = 0;
+  moria_vertex *index;
+  moria_parser * p = 0;
   moria_vertex *v;
-  moria_vertex * actual[2];
+  const moria_vertex * actual[2];
   int r;
 
   graph_lookup_test * test = (void*)_test;
   moria_graph_init(&g);
 
   // arrange
-  hashtable_createx(
-      &mm
-    , sizeof(moria_vertex_entry)
-    , 0
-    , moria_vertex_entry_hash
-    , moria_vertex_entry_cmp
-    , 0
-  );
-  graph_parser_create(&p, &g, 0, graph_operations_dispatch, 0, 0);
+  moria_parser_create(&p, &g, 0, 0, moria_operations_dispatch, 0, 0);
   if(test->operations) {
-    graph_parser_operations_parse(p, MMS(test->operations));
+    moria_parser_operations_parse(p, MMS(test->operations));
   }
 
+  /* setup the index */
+  xmalloc(&index, sizeof(*index));
+  index_objs[index_objs_len++] = index;
+  moria_vertex_init(index, &g, 0);
+
   llist_foreach(&p->vertices, v, owner) {
-    graph_hashtable_index(mm, v);
+    graph_index_lookup(&g, index, v);
   }
 
   // act
   moria_graph_lookup(
       &g
-    , mm
+    , index
     , moria_graph_lookup_sentinel
     , 0
     , (moria_graph_lookup_sentinel_context[]) {{ labels : test->labels }}
@@ -117,8 +126,12 @@ static void graph_test_entry(xunit_test * _test)
   }
 
   moria_graph_destroy(&g);
-  graph_parser_xfree(p);
-  hashtable_xfree(mm);
+  moria_parser_free(p);
+
+  int x;
+  for(x = 0; x < index_objs_len; x++) {
+    free(index_objs[x]);
+  }
 }
 
 static xunit_unit xunit = {
@@ -140,7 +153,7 @@ static xunit_unit xunit = {
           , expected_label : "y"
         }}
       , (graph_lookup_test[]){{
-            operations     : " +x:0x40000000:y" // aka x/y
+            operations     : " +y:0x40000000:x" // aka x/y
                              " +y/A:y/B +y/B:y/C +y/C:y/D +y/C:y/E"
           , labels         : (char*[]) { "y", "x", 0 }
           , expected_label : "y"
@@ -158,7 +171,7 @@ static xunit_unit xunit = {
           , expected_label : "B"
         }}
       , (graph_lookup_test[]){{
-            operations     : " +x:0x40000000:y"
+            operations     : " +y:0x40000000:x"
                              " +y/A:y/B +y/B:y/C +y/C:y/D +y/C:y/E"
           , labels         : (char*[]) { "B", "y", "x", 0 }
           , expected_label : "B"

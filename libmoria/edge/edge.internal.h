@@ -12,10 +12,10 @@ struct moria_vertex;
 
 typedef struct edge_key {
   uint32_t attrs;
-  struct moria_vertex ** Alist;   // sorted in ptr order
-  uint16_t Alen;
   struct moria_vertex ** Blist;   // sorted in ptr order
   uint16_t Blen;
+  struct moria_vertex ** Alist;   // sorted in ptr order
+  uint16_t Alen;
 } edge_key;
 
 int edge_cmp_up(const struct moria_edge * restrict a, const struct moria_edge * restrict b)

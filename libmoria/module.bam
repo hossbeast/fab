@@ -9,6 +9,7 @@ use xunit               # this module contains xunit tests
 
 # make common objects available for #inclusion and linking by files in this module
 import fab/include
+import fab/asan
 import libcommon
 import lib{xlinux,narrator,valyria,xunit,yyutil}
 
@@ -29,10 +30,12 @@ rule //module/imports/*~libxunit/lib*.?.a -> //module/libdeps.$?
 rule //module/libdeps.? -> libmoria.$?.a
 
 # tests need libraries
-variant pic.devel : [
-  rule **/test/test_*.?.xunit <- libmoria.$?.a
-  rule **/test/test_*.?.xunit <- //module/libdeps.$?
+variant devel : [
+  rule **/test/test_*.?.xunit <- libmoria.?.a
+  rule **/test/test_*.?.xunit <- //module/libdeps.?
+  rule **/test/test_*.?.xunit <- asan/asan.?.o
 
   rule tests.xunit <- libmoria.?.a
-  rule tests.xunit <- //module/libdeps.$?
+  rule tests.xunit <- //module/libdeps.?
+  rule tests.xunit <- asan/asan.?.o
 ]

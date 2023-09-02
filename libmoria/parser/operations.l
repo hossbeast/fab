@@ -4,7 +4,6 @@
 %{
   #include "yyutil/scanner.h"
 
-  #include "operations.h"
   #include "operations.tab.h"
   #include "operations.tokens.h"
 
@@ -19,6 +18,7 @@
 %option stack
 
 %x multilinecomment
+%x quoted
 
 /* bytes that cannot appear in the input */
 ILL   [\x00-\x08\x0B-\x1F\x7F-\xFF]
@@ -50,6 +50,14 @@ ILL   [\x00-\x08\x0B-\x1F\x7F-\xFF]
 
  /* strings */
 <INITIAL>[-a-zA-Z0-9_.]+                                { return LEX(STR); }
+
+ /* quoted strings */
+<INITIAL>["]                                            { PUSHSTATE(quoted); return LEX(yytext[0]); }
+<quoted>["]                                             { POPSTATE; return LEX(yytext[0]); }
+<quoted>\\[\\"abtnvfrs0]                                { return LEXC(1); }
+<quoted>\\x[0-9a-f]{2}                                  { return LEXH(2); }
+<quoted>\\x\{[0-9a-f]{1,2}\}                            { return LEXH(3); }
+<quoted>[^"\\\x00-\x1F\x7F-\xFF]+                       { return LEX(STR); }
 
 <*>[\x00-\x1F\x7F-\xFF]                                 {
                                                           POPSTATES;

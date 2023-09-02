@@ -2,42 +2,53 @@
 /* Copyright (c) 2012-2023 Todd Freed <todd.freed@gmail.com> */
 
 #include <inttypes.h>
-
+#include <stdlib.h>
 
 #include "common/attrs.h"
-#include "common/hash.h"
 #include "narrator.h"
-#include "valyria/dictionary.h"
-#include "valyria/hashtable.h"
-#include "valyria/llist.h"
-#include "valyria/rbtree.h"
+#include "valyria/map.h"
 #include "xlinux/xstdlib.h"
 
 #include "graph.internal.h"
-#include "edge.internal.h"
 #include "moria.h"
 #include "traverse.internal.h"
-#include "vertex.h"
 
-#include "zbuffer.h"
 
 //
 // static
 //
 
+static uint32_t vertex_id_map_get(const map * restrict idmap, moria_vertex * restrict v)
+{
+  void *r;
+  uint32_t id;
+
+  r = map_get(idmap, (void*)&v, sizeof(v));
+  id = (uint32_t)(uintptr_t)r;
+
+  /* if this assert fires, it means there are vertices in the graph which were not
+   * passed to moria_graph_say in the vertex_lists parameter */
+  if(id == 0) {
+    printf("unknown vertex %p\n", v);
+    RTA;
+  }
+
+  return id;
+}
+
 struct edge_compare_context {
   moria_graph * g;
-  dictionary * vertex_id_map;
+  map * vertex_id_map;
 };
 
 static int edge_compare(const void * _X, const void * _Y, void * _ctx)
 {
-  dictionary * vertex_id_map = _ctx;
+  map * vertex_id_map = _ctx;
 
   const moria_edge * X = *(moria_edge **)_X;
   const moria_edge * Y = *(moria_edge **)_Y;
-  uint32_t * xid;
-  uint32_t * yid;
+  uint32_t xid;
+  uint32_t yid;
   int r;
   int x;
 
@@ -46,15 +57,17 @@ static int edge_compare(const void * _X, const void * _Y, void * _ctx)
 
   if(!(X->attrs & MORIA_EDGE_HYPER))
   {
-    xid = dictionary_get(vertex_id_map, (void*)&X->A, sizeof(void*));
-    yid = dictionary_get(vertex_id_map, (void*)&Y->A, sizeof(void*));
-    if((r = INTCMP(*xid, *yid)))
+    xid = vertex_id_map_get(vertex_id_map, X->A);
+    yid = vertex_id_map_get(vertex_id_map, Y->A);
+    if((r = INTCMP(xid, yid))) {
       return r;
+    }
 
-    xid = dictionary_get(vertex_id_map, (void*)&X->B, sizeof(void*));
-    yid = dictionary_get(vertex_id_map, (void*)&Y->B, sizeof(void*));
-    if((r = INTCMP(*xid, *yid)))
+    xid = vertex_id_map_get(vertex_id_map, X->B);
+    yid = vertex_id_map_get(vertex_id_map, Y->B);
+    if((r = INTCMP(xid, yid))) {
       return r;
+    }
 
     return 0;
   }
@@ -64,10 +77,11 @@ static int edge_compare(const void * _X, const void * _Y, void * _ctx)
 
   for(x = 0; x < X->Alen; x++)
   {
-    xid = dictionary_get(vertex_id_map, (void*)&X->Alist[x].v, sizeof(void*));
-    yid = dictionary_get(vertex_id_map, (void*)&Y->Alist[x].v, sizeof(void*));
-    if((r = INTCMP(*xid, *yid)))
+    xid = vertex_id_map_get(vertex_id_map, X->Alist[x].v);
+    yid = vertex_id_map_get(vertex_id_map, Y->Alist[x].v);
+    if((r = INTCMP(xid, yid))) {
       return r;
+    }
   }
 
   if((r = INTCMP(X->Blen, Y->Blen)))
@@ -75,16 +89,23 @@ static int edge_compare(const void * _X, const void * _Y, void * _ctx)
 
   for(x = 0; x < X->Blen; x++)
   {
-    xid = dictionary_get(vertex_id_map, (void*)&X->Blist[x].v, sizeof(void*));
-    yid = dictionary_get(vertex_id_map, (void*)&Y->Blist[x].v, sizeof(void*));
-    if((r = INTCMP(*xid, *yid)))
+    xid = vertex_id_map_get(vertex_id_map, X->Blist[x].v);
+    yid = vertex_id_map_get(vertex_id_map, Y->Blist[x].v);
+    if((r = INTCMP(xid, yid))) {
       return r;
+    }
   }
 
   return 0;
 }
 
-static void edges_sorted(llist ** restrict edge_lists, uint16_t edge_lists_len, dictionary * restrict vertex_id_map, moria_edge *** restrict edges, size_t * restrict count)
+static void edges_sorted(
+    llist ** restrict edge_lists
+  , uint16_t edge_lists_len
+  , map * restrict vertex_id_map
+  , moria_edge *** restrict edges
+  , size_t * restrict count
+)
 {
   moria_edge * e;
   int x;
@@ -105,6 +126,8 @@ static void edges_sorted(llist ** restrict edge_lists, uint16_t edge_lists_len, 
       (*edges)[y++] = e;
     }
   }
+
+  extern void qsort_r(void *base, size_t nmemb, size_t size, int (*compar)(const void *, const void *, void *), void *arg);
 
   qsort_r(*edges, *count, sizeof(**edges), edge_compare, vertex_id_map);
 }
@@ -131,8 +154,7 @@ static void vertices_sorted(llist ** restrict vertex_lists, uint16_t vertex_list
   int y;
 
   *count = 0;
-  for(x = 0; x < vertex_lists_len; x++)
-  {
+  for(x = 0; x < vertex_lists_len; x++) {
     *count += llist_count(vertex_lists[x]);
   }
 
@@ -189,13 +211,7 @@ void API moria_graph_init(moria_graph * const restrict g)
 
   g->vertex_mask = UINT64_C(1);
   g->edge_mask = UINT64_C(1);
-  llist_init_node(&g->states);
-}
-
-void API moria_graph_create(moria_graph ** const restrict g)
-{
-  xmalloc(g, sizeof(**g));
-  moria_graph_init(*g);
+  llist_init(&g->states);
 }
 
 void API moria_graph_destroy(moria_graph * const restrict g)
@@ -206,20 +222,6 @@ void API moria_graph_destroy(moria_graph * const restrict g)
   llist_foreach_safe(&g->states, state, lln, T) {
     free(state);
   }
-}
-
-void API moria_graph_xfree(moria_graph * const restrict g)
-{
-  if(g) {
-    moria_graph_destroy(g);
-  }
-  free(g);
-}
-
-void API moria_graph_ixfree(moria_graph ** const restrict g)
-{
-  moria_graph_xfree(*g);
-  *g = 0;
 }
 
 void API moria_graph_say(
@@ -233,10 +235,10 @@ void API moria_graph_say(
   , struct narrator * const restrict N
 )
 {
-  dictionary * vertex_id_map = 0;
+  map vertex_id_map;
   int x;
   int y;
-  uint32_t * id;
+  uint32_t id;
   moria_vertex ** vertices = 0;
   moria_edge ** edges = 0;
   moria_edge * e;
@@ -246,14 +248,13 @@ void API moria_graph_say(
   char label[64];
   size_t label_len;
 
-  dictionary_create(&vertex_id_map, sizeof(*id));
+  map_init(&vertex_id_map);
 
   vertices_sorted(vertex_lists, vertex_lists_len, &vertices, &vertices_count);
   for(x = 0; x < vertices_count; x++)
   {
     v = vertices[x];
-    dictionary_store(vertex_id_map, (void*)&v, sizeof(v), &id);
-    *id = x + 1;
+    map_put(&vertex_id_map, (void*)&v, sizeof(v), (void*)(uintptr_t)(x + 1), 0);
   }
 
   for(x = 0; x < vertices_count; x++)
@@ -262,11 +263,11 @@ void API moria_graph_say(
       xsays(" ");
 
     v = vertices[x];
-    id = dictionary_get(vertex_id_map, (void*)&v, sizeof(v));
+    id = vertex_id_map_get(&vertex_id_map, v);
 
-    xsayf("%"PRIu32"-%.*s", *id, v->label_len, v->label);
+    xsayf("%"PRIu32"-%.*s", id, v->label_len, v->label);
 
-    if(vertex_defs && (label_len = znload_attrs32(label, sizeof(label), vertex_defs, v->attrs)))
+    if(vertex_defs && (label_len = attrs32_zcat(label, sizeof(label), vertex_defs, v->attrs)))
     {
       xsayf("!%.*s", (int)label_len, label);
     }
@@ -276,45 +277,11 @@ void API moria_graph_say(
     }
   }
 
-  edges_sorted(edge_lists, edge_lists_len, vertex_id_map, &edges, &edges_count);
+  edges_sorted(edge_lists, edge_lists_len, &vertex_id_map, &edges, &edges_count);
   for(x = 0; x < edges_count; x++)
   {
     xsays(" ");
     e = edges[x];
-    if(e->attrs & MORIA_EDGE_HYPER)
-    {
-      if(e->Alen == 0)
-      {
-        xsays("_");
-      }
-      else
-      {
-        qsort(e->Alist, e->Alen, sizeof(*e->Alist), vertex_compare);
-        for(y = 0; y < e->Alen; y++)
-        {
-          if(y)
-            xsays(",");
-          id = dictionary_get(vertex_id_map, &e->Alist[y].v, sizeof(e->Alist[y].v));
-          xsayf("%"PRIu32, *id);
-        }
-      }
-    }
-    else
-    {
-      id = dictionary_get(vertex_id_map, (void*)&e->A, sizeof(e->A));
-      xsayf("%"PRIu32, *id);
-    }
-
-    if(edge_defs && (label_len = znload_attrs32(label, sizeof(label), edge_defs, e->attrs)))
-    {
-      xsayf(":%.*s", (int)label_len, label);
-    }
-    else if(e->attrs)
-    {
-      xsayf(":0x%"PRIx32, e->attrs);
-    }
-
-    xsays(":");
 
     if(e->attrs & MORIA_EDGE_HYPER)
     {
@@ -327,163 +294,57 @@ void API moria_graph_say(
         qsort(e->Blist, e->Blen, sizeof(*e->Blist), vertex_compare);
         for(y = 0; y < e->Blen; y++)
         {
-          if(y)
+          if(y) {
             xsays(",");
-          id = dictionary_get(vertex_id_map, &e->Blist[y].v, sizeof(e->Blist[y].v));
-          xsayf("%"PRIu32, *id);
+          }
+          id = vertex_id_map_get(&vertex_id_map, e->Blist[y].v);
+          xsayf("%"PRIu32, id);
         }
       }
     }
     else
     {
-      id = dictionary_get(vertex_id_map, (void*)&e->B, sizeof(e->B));
-      xsayf("%"PRIu32, *id);
+      id = vertex_id_map_get(&vertex_id_map, e->B);
+      xsayf("%"PRIu32, id);
+    }
+
+    if(edge_defs && (label_len = attrs32_zcat(label, sizeof(label), edge_defs, e->attrs)))
+    {
+      xsayf(":%.*s", (int)label_len, label);
+    }
+    else if(e->attrs)
+    {
+      xsayf(":0x%"PRIx32, e->attrs);
+    }
+    xsays(":");
+
+    if(e->attrs & MORIA_EDGE_HYPER)
+    {
+      if(e->Alen == 0)
+      {
+        xsays("_");
+      }
+      else
+      {
+        qsort(e->Alist, e->Alen, sizeof(*e->Alist), vertex_compare);
+        for(y = 0; y < e->Alen; y++)
+        {
+          if(y) {
+            xsays(",");
+          }
+          id = vertex_id_map_get(&vertex_id_map, e->Alist[y].v);
+          xsayf("%"PRIu32, id);
+        }
+      }
+    }
+    else
+    {
+      id = vertex_id_map_get(&vertex_id_map, e->A);
+      xsayf("%"PRIu32, id);
     }
   }
 
-  dictionary_xfree(vertex_id_map);
+  map_destroy(&vertex_id_map);
   free(edges);
   free(vertices);
-}
-
-void API moria_graph_lookup_sentinel(void * restrict _context, const char ** restrict label, uint16_t * restrict label_len)
-{
-  moria_graph_lookup_sentinel_context * context = _context;
-
-  if(label)
-  {
-    if((*label = context->labels[context->index]))
-    {
-      *label_len = strlen(*label);
-      context->index++;
-    }
-  }
-  else
-  {
-    // rewind
-    context->index = 0;
-  }
-}
-
-uint32_t API moria_vertex_entry_hash(uint32_t h, const void *p, size_t sz)
-{
-  const moria_vertex_entry *v = p;
-
-  return hash32(h, v->label, v->label_len);
-}
-
-int API moria_vertex_entry_cmp(const void *A, size_t Asz, const void *B, size_t Bsz)
-{
-  const moria_vertex_entry *a = A;
-  const moria_vertex_entry *b = B;
-
-  return memncmp(a->label, a->label_len, b->label, b->label_len);
-}
-
-int API moria_vertex_entry_key_cmp(const void *A, const void *K, size_t sz)
-{
-  const moria_vertex_entry *a = (void*)A;
-  const moria_vertex_entry *b = K;
-
-  return memncmp(a->label, a->label_len, b->label, b->label_len);
-}
-
-void API moria_graph_lookup(
-    moria_graph * restrict g
-  , const hashtable * restrict mm
-  , moria_graph_lookup_identifier_callback identifier_callback
-  , bool (*candidate_callback)(void * context, const struct moria_vertex * const restrict v)
-  , void * restrict context
-  , moria_vertex * restrict V[2]   // (returns) located vertices
-  , int * restrict r               // (returns) return code
-)
-{
-  const char * label;
-  uint16_t label_len;
-  moria_vertex_entry *entry, key;
-  moria_vertex *v, *p;
-  bool matched;
-
-  *r = 0;
-
-  // get the starting vertex label
-  identifier_callback(context, 0, 0);
-  identifier_callback(context, &label, &label_len);
-  if(!label) {
-    return;
-  }
-
-  // get the set of starting vertices having the initial label
-  key.label = label;
-  key.label_len = label_len;
-  if(!(entry = hashtable_search(mm, &key, sizeof(key), moria_vertex_entry_hash, moria_vertex_entry_key_cmp))) {
-    return;
-  }
-
-  rbtree_foreach(&entry->rbt, v, rbn_lookup) {
-    if(candidate_callback && !candidate_callback(context, v)) {
-      continue;
-    }
-
-    /* check whether the sequence of ancestors matches */
-    p = v;
-    while(1)
-    {
-      identifier_callback(context, &label, &label_len);
-      if(!label) {
-        break;
-      }
-
-      if((p = moria_vertex_up(p)) == NULL) {
-        break;
-      }
-
-      if(memncmp(label, label_len, ".", 1) == 0) {
-        continue;
-      }
-
-      if(memncmp(label, label_len, "..", 2) == 0) {
-        if((p = moria_vertex_up(p)) == NULL) {
-          break;
-        }
-        continue;
-      }
-
-      if(memncmp(label, label_len, p->label, p->label_len) != 0) {
-        break;
-      }
-    }
-
-    matched = !label;
-
-    // reset the cursor, discard the initial label
-    identifier_callback(context, 0, 0);
-    identifier_callback(context, &label, &label_len);
-
-    if(!matched) {
-      continue;
-    }
-
-    V[*r] = v;
-
-    /* identifier matched on multiple nodes */
-    if(((*r)++) == 2) {
-      break;
-    }
-  }
-}
-
-void API moria_graph_linear_search(llist * restrict vertex_list, const char * restrict label, uint16_t label_len, moria_vertex ** restrict rv)
-{
-  moria_vertex *v;
-
-  *rv = 0;
-  llist_foreach(vertex_list, v, owner) {
-    if(memncmp(v->label, v->label_len, label, label_len) == 0) {
-      if(*rv) {
-        RUNTIME_ABORT();
-      }
-      *rv = v;
-    }
-  }
 }

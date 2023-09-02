@@ -1,5 +1,9 @@
 # libmoria
 
-graph datastructure
+libmoria is a graph processing library.
 
-supports nested traversals
+Supports an embedded identity subgraph (e.g. like a filesystem).
+
+Supports many-to-many hyperedges.
+
+Supports nested traversal.

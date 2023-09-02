@@ -22,6 +22,7 @@ typedef enum moria_traversal_direction {
 #undef DEF
 #define DEF(x, r, y) x = UINT32_C(y),
 MORIA_TRAVERSAL_DIRECTION_TABLE
+#undef DEF
 } moria_traversal_direction;
 
 #define MORIA_TRAVERSAL_MODE_TABLE                                                               \
@@ -29,9 +30,9 @@ MORIA_TRAVERSAL_DIRECTION_TABLE
   DEF(MORIA_TRAVERSE_POST , MORIA_TRAVERSAL_MODE_OPT, 0x00000008) /* depth-first traversal */    \
 
 typedef enum moria_traversal_mode {
-#undef DEF
 #define DEF(x, r, y) x = UINT32_C(y),
 MORIA_TRAVERSAL_MODE_TABLE
+#undef DEF
 } moria_traversal_mode;
 
 extern struct attrs32 * moria_traverse_attrs;
@@ -49,9 +50,13 @@ extern struct attrs32 * moria_traverse_attrs;
 //  side of it, from the perspective of the traversal, are considered as candidates for visitation.
 //
 typedef struct moria_traversal_criteria {
+  uint32_t vertex_travel_mask;
   uint32_t vertex_travel;   // bitmask
+  uint32_t vertex_visit_mask;
   uint32_t vertex_visit;
+  uint32_t edge_travel_mask;
   uint32_t edge_travel;
+  uint32_t edge_visit_mask;
   uint32_t edge_visit;
   uint16_t min_depth;       // only if MORIA_TRAVERSE_DEPTH
   uint16_t max_depth;       // only if MORIA_TRAVERSE_DEPTH
@@ -62,6 +67,10 @@ typedef struct moria_vertex_traversal_state moria_vertex_traversal_state;
 
 struct moria_edge_traversal_state;
 typedef struct moria_edge_traversal_state moria_edge_traversal_state;
+
+typedef struct moria_traverse_result {
+  uint32_t flags;
+} moria_traverse_result;
 
 /// graph_traverse
 //
@@ -88,7 +97,7 @@ typedef struct moria_edge_traversal_state moria_edge_traversal_state;
 //
 // REMARKS
 //  An entity (a vertex, or an edge) is said to be traveled when it is considered as a candidate for
-//  being visited. An entity is said to be visited when the visitor callback is invoked with the
+//  being visited. An entity is said to be visited when the visitor callback is invoked with that
 //  entity as a parameter. When an entity is traveled, its neighbors are considered as candiates for
 //  being traveled.
 //
@@ -102,7 +111,7 @@ typedef struct moria_edge_traversal_state moria_edge_traversal_state;
 void moria_traverse_vertices(
     /* 1 */ struct moria_graph * restrict g
   , /* 2 */ struct moria_vertex * restrict v
-  , /* 3 */ void (* visitor)(struct moria_vertex * restrict, void * ctx, moria_traversal_mode mode, int distance, int * restrict)
+  , /* 3 */ void (* visitor)(struct moria_vertex * restrict, void * ctx, moria_traversal_mode mode, int distance, moria_traverse_result * restrict)
   , /* 4 */ moria_vertex_traversal_state * state
   , /* 5 */ const moria_traversal_criteria * restrict criteria
   , /* 6 */ uint32_t attrs
@@ -113,7 +122,7 @@ void moria_traverse_vertices(
 void moria_traverse_vertex_edges(
     /* 1 */ struct moria_graph * restrict g
   , /* 2 */ struct moria_vertex * restrict v
-  , /* 3 */ void (* visitor)(struct moria_edge * restrict, void * ctx, moria_traversal_mode mode, int distance, int * restrict)
+  , /* 3 */ void (* visitor)(struct moria_edge * restrict, void * ctx, moria_traversal_mode mode, int distance, moria_traverse_result * restrict)
   , /* 4 */ moria_edge_traversal_state * state
   , /* 5 */ const moria_traversal_criteria * restrict criteria
   , /* 6 */ uint32_t attrs
@@ -124,7 +133,7 @@ void moria_traverse_vertex_edges(
 void moria_traverse_edges(
     /* 1 */ struct moria_graph * restrict g
   , /* 2 */ struct moria_edge * restrict e
-  , /* 3 */ void (* visitor)(struct moria_edge * restrict, void * ctx, moria_traversal_mode mode, int distance, int * restrict)
+  , /* 3 */ void (* visitor)(struct moria_edge * restrict, void * ctx, moria_traversal_mode mode, int distance, moria_traverse_result * restrict)
   , /* 4 */ moria_edge_traversal_state * state
   , /* 5 */ const moria_traversal_criteria * restrict criteria
   , /* 6 */ uint32_t attrs
@@ -135,7 +144,7 @@ void moria_traverse_edges(
 void moria_traverse_edge_vertices(
     /* 1 */ struct moria_graph * restrict g
   , /* 2 */ struct moria_edge * restrict e
-  , /* 3 */ void (* visitor)(struct moria_vertex * restrict, void * ctx, moria_traversal_mode mode, int distance, int * restrict)
+  , /* 3 */ void (* visitor)(struct moria_vertex * restrict, void * ctx, moria_traversal_mode mode, int distance, moria_traverse_result * restrict)
   , /* 4 */ moria_vertex_traversal_state * state
   , /* 5 */ const moria_traversal_criteria * restrict criteria
   , /* 6 */ uint32_t attrs
@@ -151,7 +160,7 @@ void moria_vertex_count(
   , void * ctx
   , moria_traversal_mode mode
   , int distance
-  , int * restrict
+  , moria_traverse_result * restrict
 )
   __attribute__((nonnull(2)));
 
@@ -160,7 +169,7 @@ void moria_vertex_count_once(
   , void * ctx
   , moria_traversal_mode mode
   , int distance
-  , int * restrict
+  , moria_traverse_result * restrict
 )
   __attribute__((nonnull(2, 5)));
 
@@ -172,7 +181,7 @@ void moria_edge_count(
   , void * ctx
   , moria_traversal_mode mode
   , int distance
-  , int * restrict
+  , moria_traverse_result * restrict
 )
   __attribute__((nonnull(2)));
 
@@ -181,9 +190,30 @@ void moria_edge_count_once(
   , void * ctx
   , moria_traversal_mode mode
   , int distance
-  , int * restrict
+  , moria_traverse_result * restrict
 )
   __attribute__((nonnull(2, 5)));
+
+/*
+ * Callback to return the first vertex visited - ctx points to a moria_vertex*
+ */
+void moria_vertex_first(
+    struct moria_vertex * restrict v
+  , void * ctx
+  , moria_traversal_mode mode
+  , int distance
+  , moria_traverse_result * restrict
+)
+  __attribute__((nonnull(2)));
+
+void moria_vertex_edge_first(
+    struct moria_edge * restrict e
+  , void * ctx
+  , moria_traversal_mode mode
+  , int distance
+  , moria_traverse_result * restrict
+)
+  __attribute__((nonnull(2)));
 
 /*
  * Open a traversal. Two traversals with the same state will not visit the same entity more than once.
@@ -213,3 +243,24 @@ bool moria_traversal_edge_visited(
   , moria_edge_traversal_state * restrict state
 )
   __attribute__((nonnull));
+
+/*
+ *
+ */
+void moria_vertex_visitor_list(
+    struct moria_vertex * restrict v
+  , void * ctx
+  , moria_traversal_mode mode
+  , int distance
+  , moria_traverse_result * restrict
+)
+  __attribute__((nonnull(2)));
+
+void moria_edge_visitor_list(
+    struct moria_edge * restrict e
+  , void * ctx
+  , moria_traversal_mode mode
+  , int distance
+  , moria_traverse_result * restrict
+)
+  __attribute__((nonnull(2)));

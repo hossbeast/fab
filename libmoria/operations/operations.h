@@ -3,109 +3,80 @@
 
 #pragma once
 
-/*
-
-MODULE
- graph/operations
-
-SUMMARY
- mutating graph operations
-
-*/
-
 #include "types.h"
+#include "parser.h"
+#include "valyria/llist.h"
 
-#include "traverse.h"
-
-struct moria_graph;
-struct moria_vertex;
+struct attrs32;
 struct moria_edge;
-struct list;
-struct multimap;
+struct moria_graph;
+struct moria_operations_dispatch;
+struct moria_parser;
+struct moria_vertex;
 
-struct operations_parser;
-typedef struct operations_parser operations_parser;
+/* label in an identifier */
+typedef struct label {
+  llist lln;                  // in identifier->labels
+  uint32_t attrs;
+  uint8_t opattrs;
+  const char *s;
+  uint16_t len;
+} label;
 
-struct graph_parser;
+/* identifies a vertex by a sequence of labels in the identity tree */
+typedef struct identifier {
+  llist lln;                  // in identifier_list->identifiers
+  llist labels;
+} identifier;
 
-#define GRAPH_OPERATION_TABLE               \
-  DEF(GRAPH_OPERATION_VERTEX)       /*   */ \
-  DEF(GRAPH_OPERATION_CONNECT)      /* + */ \
-  DEF(GRAPH_OPERATION_DISCONNECT)   /* - */ \
-  DEF(GRAPH_OPERATION_REFRESH)      /* @ */ \
-  DEF(GRAPH_OPERATION_INVALIDATE)   /* ~ */ \
+/* list of identifiers */
+typedef struct identifier_list {
+  llist identifiers;          // identifier
+} identifier_list;
 
-typedef enum operation_type {
-  GRAPH_OPERATION_RANGE_BEFORE = 0,
+// label
+label *label_alloc(const char *, uint16_t len)
+  __attribute__((nonnull));
 
-#undef DEF
-#define DEF(x) x,
-GRAPH_OPERATION_TABLE
+void label_free(label * restrict label)
+  __attribute__((nonnull));
 
-  GRAPH_OPERATION_RANGE_AFTER
-} operation_type;
+// identifier
+identifier *identifier_alloc(struct label * restrict label, uint8_t opattrs)
+  __attribute__((nonnull));
 
-/// operation_type_name
-//
-// SUMMARY
-//  get the name of an operation as a string
-//
-const char * operation_type_name(operation_type type);
+void identifier_free(identifier *);
 
-typedef struct moria_operations_dispatch {
-  void (*connect)(
-      struct graph_parser * restrict parser
-    , struct moria_vertex * restrict A
-    , struct moria_vertex * restrict B
-    , uint32_t attrs
-    , struct moria_edge ** restrict e
-  )
-    __attribute__((nonnull(1, 2, 3)));
+// identifier list
+identifier_list *identifier_list_alloc(void);
+void identifier_list_free(identifier_list *list);
 
-  void (*hyperconnect)(
-      struct graph_parser * restrict parser
-    , struct moria_vertex ** restrict Alist
-    , uint16_t Alen
-    , struct moria_vertex ** restrict Blist
-    , uint16_t Blen
-    , uint32_t attrs
-    , struct moria_edge ** restrict e
-  )
-    __attribute__((nonnull(1)));
+/* create some vertices */
+void operations_declare(struct moria_parser * restrict parser, identifier_list *A)
+  __attribute__((nonnull));
 
-  void (*disconnect)(
-      struct graph_parser * restrict parser
-    , struct moria_edge * restrict e
-  )
-    __attribute__((nonnull));
+/* perform the refresh operation on some vertices */
+void operations_refresh(struct moria_parser * restrict parser, identifier_list * restrict A)
+  __attribute__((nonnull));
 
-  void (*create_vertex)(
-      struct graph_parser * restrict parser
-    , struct moria_vertex ** restrict v
-    , uint32_t attrs
-    , uint8_t opattrs
-    , const char * restrict label
-    , uint16_t label_len
-  )
-    __attribute__((nonnull));
+/* perform the invalidate operations on some vertices */
+void operations_invalidate(struct moria_parser * restrict parser, identifier_list * restrict A)
+  __attribute__((nonnull));
 
-  void (*invalidate_vertex)(
-      struct graph_parser * restrict parser
-    , struct moria_vertex * restrict v
-  )
-    __attribute__((nonnull));
+/* create an edge */
+void operations_connect(
+    struct moria_parser * restrict parser
+  , identifier_list * restrict B
+  , identifier_list * restrict A
+  , uint32_t attrs
+);
 
-  void (*refresh_vertex)(
-      struct graph_parser * restrict parser
-    , struct moria_vertex * restrict v
-  )
-    __attribute__((nonnull));
+/* remove an edge */
+void operations_disconnect(
+    struct moria_parser * restrict parser
+  , identifier_list * restrict B
+  , identifier_list * restrict A
+);
 
-  /* called at the start of operations_perform */
-  void (*setup)(struct graph_parser * restrict)
-    __attribute__((nonnull));
-
-  /* called at the end of operations_perform */
-  void (*cleanup)(struct graph_parser * restrict)
-    __attribute__((nonnull));
-} moria_operations_dispatch;
+llist *parser_llist_alloc(struct moria_parser * restrict parser)
+  __attribute__((nonnull));

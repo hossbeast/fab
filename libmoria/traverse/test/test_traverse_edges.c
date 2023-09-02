@@ -13,7 +13,6 @@
 
 #include "xunit.h"
 #include "xunit/assert.h"
-#include "valyria/multimap.h"
 #include "valyria/array.h"
 #include "valyria/list.h"
 #include "valyria/pstring.h"
@@ -23,11 +22,11 @@
 #include "graph.internal.h"
 #include "edge.internal.h"
 #include "vertex.h"
-#include "operations.h"
 #include "parser.internal.h"
+#include "dispatch.h"
 
 #include "macros.h"
-#include "zbuffer.h"
+#include "zcat.h"
 
 #define ATTR_WEAK   0x1
 #define ATTR_STRONG 0x2
@@ -61,7 +60,7 @@ static int visitcmp(const void * _A, size_t Asz, const void * _B, size_t Bsz)
 }
 
 static int visit_counter;
-static void edge_visit(moria_edge * const restrict e, void * arg, moria_traversal_mode mode, int distance, int * result)
+static void edge_visit(moria_edge * const restrict e, void * arg, moria_traversal_mode mode, int distance, moria_traverse_result * restrict result)
 {
   array * visitations = arg;
   visit * visitation;
@@ -74,25 +73,26 @@ static void edge_visit(moria_edge * const restrict e, void * arg, moria_traversa
   if(e->attrs & MORIA_EDGE_HYPER)
   {
     z = 0;
-    for(x = 0; x < e->Alen; x++)
-    {
-      if(x)
-        z += znloads(visitation->label + z, sizeof(visitation->label) - z, ",");
-      z += znloadf(visitation->label + z, sizeof(visitation->label) - z, "%s", e->Alist[x].v->label);
-    }
-
-    z += znloads(visitation->label + z, sizeof(visitation->label) - z, ":");
 
     for(x = 0; x < e->Blen; x++)
     {
       if(x)
-        z += znloads(visitation->label + z, sizeof(visitation->label) - z, ",");
-      z += znloadf(visitation->label + z, sizeof(visitation->label) - z, "%s", e->Blist[x].v->label);
+        z += zcats(visitation->label + z, sizeof(visitation->label) - z, ",");
+      z += zcatf(visitation->label + z, sizeof(visitation->label) - z, "%s", e->Blist[x].v->label);
+    }
+
+    z += zcats(visitation->label + z, sizeof(visitation->label) - z, ":");
+
+    for(x = 0; x < e->Alen; x++)
+    {
+      if(x)
+        z += zcats(visitation->label + z, sizeof(visitation->label) - z, ",");
+      z += zcatf(visitation->label + z, sizeof(visitation->label) - z, "%s", e->Alist[x].v->label);
     }
   }
   else
   {
-    snprintf(visitation->label, sizeof(visitation->label), "%s:%s", e->A->label, e->B->label);
+    snprintf(visitation->label, sizeof(visitation->label), "%s:%s", e->B->label, e->A->label);
   }
 }
 
@@ -111,33 +111,34 @@ static void graph_test_entry(xunit_test * _test)
   graph_test * test = containerof(_test, graph_test, xu);
 
   moria_graph g;
-  graph_parser * p = 0;
+  moria_parser * p = 0;
   list * operations = 0;
   array * visitations = 0;
   const char ** keys = 0;
   int x;
   moria_vertex * v;
   const char * spec;
-
-  array_create(&visitations, sizeof(visit));
-
-  moria_graph_init(&g);
-  graph_parser_create(&p, &g, 0, graph_operations_dispatch, 0, 0);
-  if(test->graph) {
-    graph_parser_parse(p, MMS(test->graph));
-  }
-
-  if(test->operations) {
-    graph_parser_operations_parse(p, MMS(test->operations));
-  }
-
-  // find the starting edge
   moria_vertex * fromA[4];
   size_t fromA_len = 0;
   moria_vertex * fromB[4];
   size_t fromB_len = 0;
   const char * froms = test->from;
   bool colon = false;
+  moria_edge * from;
+
+  array_create(&visitations, sizeof(visit));
+
+  moria_graph_init(&g);
+  moria_parser_create(&p, &g, 0, 0, moria_operations_dispatch, 0, 0);
+  if(test->graph) {
+    moria_parser_graph_parse(p, MMS(test->graph));
+  }
+
+  if(test->operations) {
+    moria_parser_operations_parse(p, MMS(test->operations));
+  }
+
+  // find the starting edge
   while(*froms)
   {
     if(*froms == ':')
@@ -149,7 +150,7 @@ static void graph_test_entry(xunit_test * _test)
       llist_foreach(&p->vertices, v, owner) {
         if(v->label[0] == *froms)
         {
-          if(!colon)
+          if(colon)
           {
             fromA[fromA_len++] = v;
           }
@@ -164,7 +165,7 @@ static void graph_test_entry(xunit_test * _test)
     froms++;
   }
 
-  moria_edge * from = moria_edge_of(fromA, fromA_len, fromB, fromB_len);
+  from = moria_edge_of(fromB, fromB_len, fromA, fromA_len);
   assert_notnull(from);
 
   // perform the traversal
@@ -301,13 +302,13 @@ static void graph_test_entry(xunit_test * _test)
   }
 
   moria_graph_destroy(&g);
-  list_xfree(operations);
+  list_free(operations);
   array_xfree(visitations);
   free(keys);
-  graph_parser_xfree(p);
+  moria_parser_free(p);
 }
 
-xunit_unit xunit = {
+static xunit_unit xunit = {
     .xu_setup = graph_unit_setup
   , .xu_cleanup = graph_unit_cleanup
   , .xu_entry = graph_test_entry
@@ -316,9 +317,9 @@ xunit_unit xunit = {
         (graph_test[]){{
             operations : "+A:B +B:C +C:D +D:E"
           , attrs      : MORIA_TRAVERSE_DOWN | MORIA_TRAVERSE_PRE
-          , from       : "B:C"
+          , from       : "C:D"
           , expected   : (char**[]) {
-                (char*[]) { "B:C C:D D:E", 0 }
+                (char*[]) { "A:B B:C C:D", 0 }
               , 0
             }
         }}
@@ -331,7 +332,7 @@ xunit_unit xunit = {
    E
 */
             operations : "+A:B,C +C:D +D:E"
-          , attrs      : MORIA_TRAVERSE_DOWN | MORIA_TRAVERSE_PRE
+          , attrs      : MORIA_TRAVERSE_UP | MORIA_TRAVERSE_PRE
           , from       : "A:B,C"
           , expected   : (char**[]) {
                 (char*[]) { "A:B,C C:D D:E", 0 }
@@ -341,7 +342,7 @@ xunit_unit xunit = {
         // downward, preorder, from another node
       , (graph_test[]){{
             operations : "+A:B +B:C +C:D +D:E"
-          , attrs      : MORIA_TRAVERSE_DOWN | MORIA_TRAVERSE_PRE
+          , attrs      : MORIA_TRAVERSE_UP | MORIA_TRAVERSE_PRE
           , from       : "B:C"
           , expected   : (char**[]) {
                 (char*[]) { "B:C C:D D:E", 0 }
@@ -351,7 +352,7 @@ xunit_unit xunit = {
         // downward, postorder
       , (graph_test[]){{
             operations : "+A:B +B:C +C:D +D:E"
-          , attrs      : MORIA_TRAVERSE_DOWN | MORIA_TRAVERSE_POST
+          , attrs      : MORIA_TRAVERSE_UP | MORIA_TRAVERSE_POST
           , from       : "A:B"
           , expected   : (char**[]) {
                 (char*[]) { "B:C C:D D:E", "A:B", 0 }
@@ -367,7 +368,7 @@ C D
   E
 */
             operations : "+A:B +B:C,D +D:E"
-          , attrs      : MORIA_TRAVERSE_DOWN | MORIA_TRAVERSE_POST
+          , attrs      : MORIA_TRAVERSE_UP| MORIA_TRAVERSE_POST
           , from       : "A:B"
           , expected   : (char**[]) {
                 (char*[]) { "B:C,D D:E", "A:B", 0 }
@@ -378,7 +379,7 @@ C D
         // downward, postorder, hyper-edges
       , (graph_test[]){{
             operations : "+A:B +B:C,D +C:E"
-          , attrs      : MORIA_TRAVERSE_DOWN | MORIA_TRAVERSE_POST
+          , attrs      : MORIA_TRAVERSE_UP | MORIA_TRAVERSE_POST
           , from       : "A:B"
           , expected   : (char**[]) {
                 (char*[]) { "C:E", "B:C,D A:B", 0 }
@@ -389,7 +390,7 @@ C D
         // upward, postorder, from another node
       , (graph_test[]){{
             operations : "+A:B +B:C +C:D +D:E"
-          , attrs      : MORIA_TRAVERSE_UP | MORIA_TRAVERSE_POST
+          , attrs      : MORIA_TRAVERSE_DOWN | MORIA_TRAVERSE_POST
           , from       : "C:D"
           , expected   : (char**[]) {
                (char*[]) { "A:B B:C", "C:D", 0 }
@@ -405,7 +406,7 @@ B C
    F
 */
             operations : "+A:B,C +C:D,E +E:F"
-          , attrs      : MORIA_TRAVERSE_UP | MORIA_TRAVERSE_POST
+          , attrs      : MORIA_TRAVERSE_DOWN | MORIA_TRAVERSE_POST
           , from       : "E:F"
           , expected   : (char**[]) {
                (char*[]) { "A:B,C", "C:D,E", "E:F", 0 }
@@ -416,7 +417,7 @@ B C
         // neither visit nor travel (stop) on weak edges, down
       , (graph_test[]){{
             operations : "+A:2:B +B:2:C +D:2:E +B:1:D"
-          , attrs      : MORIA_TRAVERSE_DOWN | MORIA_TRAVERSE_PRE
+          , attrs      : MORIA_TRAVERSE_UP | MORIA_TRAVERSE_PRE
           , from       : "A:B"
           , travel     : ATTR_STRONG
           , visit      : ATTR_STRONG
@@ -428,7 +429,7 @@ B C
         // neither visit nor travel (stop) on weak edges, up
       , (graph_test[]){{
             operations : "+A:2:B +B:2:C +D:2:E +B:1:D"
-          , attrs      : MORIA_TRAVERSE_UP | MORIA_TRAVERSE_PRE
+          , attrs      : MORIA_TRAVERSE_DOWN | MORIA_TRAVERSE_PRE
           , from       : "D:E"
           , travel     : ATTR_STRONG
           , visit      : ATTR_STRONG
@@ -444,7 +445,7 @@ B C
 A -> B -> C -> D -> E -> F -> G ==>> A
 */
             operations : "+A:B +B:C +C:D +D:E +E:F +F:G +G:A"
-          , attrs      : MORIA_TRAVERSE_DOWN | MORIA_TRAVERSE_PRE
+          , attrs      : MORIA_TRAVERSE_UP | MORIA_TRAVERSE_PRE
           , from       : "A:B"
           , expected   : (char**[]) {
               (char*[]) { "A:B", "B:C", "C:D", "D:E", "E:F", "F:G", "G:A", 0 }
@@ -454,7 +455,7 @@ A -> B -> C -> D -> E -> F -> G ==>> A
         // single-hop cycle
       , (graph_test[]){{
             operations : "+A:B +B:A"
-          , attrs      : MORIA_TRAVERSE_DOWN | MORIA_TRAVERSE_PRE
+          , attrs      : MORIA_TRAVERSE_UP | MORIA_TRAVERSE_PRE
           , from       : "A:B"
           , expected   : (char**[]) {
               (char*[]) { "A:B", "B:A", 0 }
@@ -471,7 +472,7 @@ C D
 
  */
             operations : "+A:B +B:C,D +D:E,A"
-          , attrs      : MORIA_TRAVERSE_DOWN | MORIA_TRAVERSE_PRE
+          , attrs      : MORIA_TRAVERSE_UP | MORIA_TRAVERSE_PRE
           , from       : "A:B"
           , expected   : (char**[]) {
               (char*[]) { "A:B", "B:C,D", "D:A,E", 0 }
@@ -482,3 +483,4 @@ C D
       , 0
   }
 };
+XUNIT_UNIT(xunit);

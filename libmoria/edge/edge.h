@@ -12,7 +12,7 @@ struct moria_vertex;
 /*
  * Get the non-hyper edge between the specified vertices
  */
-struct moria_edge * moria_edge_between(const struct moria_vertex * restrict A, const struct moria_vertex * restrict B)
+struct moria_edge * moria_edge_between(const struct moria_vertex * restrict B, const struct moria_vertex * restrict A)
   __attribute__((nonnull));
 
 /*

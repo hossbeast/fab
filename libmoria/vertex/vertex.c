@@ -26,7 +26,7 @@ static bool __attribute__((nonnull)) vertex_down(
     , Blen : 1
   };
 
-  if((rbn = rbtree_lookup_node(&v->down, &key, edge_cmp_key_down)))
+  if((rbn = rbtree_lookup(&v->down, &key, edge_cmp_key_down)))
   {
     *re = containerof(rbn, moria_edge, rbn_down);
     return true;
@@ -44,7 +44,6 @@ void API moria_vertex_init(moria_vertex * const restrict v, moria_graph * const 
   graph_vertex_init(g, v);
   rbtree_init(&v->up);
   rbtree_init(&v->down);
-  llist_init_node(&v->lln);
   v->attrs = attrs;
 }
 
@@ -65,8 +64,9 @@ moria_vertex * API moria_vertex_downs(const moria_vertex * restrict v, const cha
 {
   moria_edge * e;
 
-  if(vertex_down(v, label, strlen(label), &e))
+  if(vertex_down(v, label, strlen(label), &e)) {
     return e->B;
+  }
 
   return 0;
 }
@@ -75,8 +75,9 @@ moria_vertex * API moria_vertex_downw(const moria_vertex * restrict v, const cha
 {
   moria_edge * e;
 
-  if(vertex_down(v, label, label_len, &e))
+  if(vertex_down(v, label, label_len, &e)) {
     return e->B;
+  }
 
   return 0;
 }
@@ -85,8 +86,9 @@ moria_edge * API moria_vertex_edge_downs(const moria_vertex * restrict v, const 
 {
   moria_edge * e;
 
-  if(vertex_down(v, label, strlen(label), &e))
+  if(vertex_down(v, label, strlen(label), &e)) {
     return e;
+  }
 
   return 0;
 }
@@ -95,24 +97,27 @@ moria_edge * API moria_vertex_edge_downw(const moria_vertex * restrict v, const 
 {
   moria_edge * e;
 
-  if(vertex_down(v, label, label_len, &e))
+  if(vertex_down(v, label, label_len, &e)) {
     return e;
+  }
 
   return 0;
 }
 
 moria_vertex * API moria_vertex_up(const moria_vertex * restrict v)
 {
- if(v->up_identity)
+ if(v->up_identity) {
     return v->up_identity->A;
+  }
 
   return 0;
 }
 
 moria_edge * API moria_vertex_edge_up(const moria_vertex * restrict v)
 {
-  if(v->up_identity)
+  if(v->up_identity) {
     return v->up_identity;
+  }
 
   return 0;
 }

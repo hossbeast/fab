@@ -314,42 +314,41 @@ void API moria_edge_init(struct moria_edge * const restrict e, struct moria_grap
   graph_edge_init(g, e);
 }
 
-moria_edge * API moria_edge_between(const moria_vertex * restrict Ax, const moria_vertex * restrict Bx)
+moria_edge * API moria_edge_between(const moria_vertex * restrict B, const moria_vertex * restrict A)
 {
-  moria_vertex * A = (void*)Ax;
-  moria_vertex * B = (void*)Bx;
-
   rbnode * rbn;
   edge_key key;
 
   key = (typeof(key)) {
       attrs : MORIA_EDGE_IDENTITY
-    , Blist : (moria_vertex*[]) { B }
+    , Blist : (moria_vertex*[]) { (void*)B }
     , Blen : 1
   };
 
-  if((rbn = rbtree_lookup_node(&A->down, &key, edge_cmp_key_down)))
+  if((rbn = rbtree_lookup(&A->down, &key, edge_cmp_key_down))) {
     return containerof(rbn, moria_edge, rbn_down);
+  }
 
   key.attrs &= ~MORIA_EDGE_IDENTITY;
-  if((rbn = rbtree_lookup_node(&A->down, &key, edge_cmp_key_down)))
+  if((rbn = rbtree_lookup(&A->down, &key, edge_cmp_key_down))) {
     return containerof(rbn, moria_edge, rbn_down);
+  }
 
   return 0;
 }
 
 moria_edge * API moria_edge_of(
-    moria_vertex ** restrict Axlist
-  , uint16_t Axlen
-  , moria_vertex ** restrict Bxlist
+    moria_vertex ** restrict Bxlist
   , uint16_t Bxlen
+  , moria_vertex ** restrict Axlist
+  , uint16_t Axlen
 )
 {
   edge_key key;
   rbnode *rbn;
 
   if(Axlen == 1 && Bxlen == 1) {
-    return moria_edge_between(Axlist[0], Bxlist[0]);
+    return moria_edge_between(Bxlist[0], Axlist[0]);
   }
 
   qsort(Axlist, Axlen, sizeof(*Axlist), ptrcmp);
@@ -365,9 +364,9 @@ moria_edge * API moria_edge_of(
 
   // hyper lookup
   if(Axlen)
-    rbn = rbtree_lookup_node(&Axlist[0]->down, &key, edge_cmp_key_down);
+    rbn = rbtree_lookup(&Axlist[0]->down, &key, edge_cmp_key_down);
   else
-    rbn = rbtree_lookup_node(&Bxlist[0]->up, &key, edge_cmp_key_up);
+    rbn = rbtree_lookup(&Bxlist[0]->up, &key, edge_cmp_key_up);
 
   if(rbn)
     return rbn->ud.p;

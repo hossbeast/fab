@@ -6,16 +6,15 @@
 #include "narrator.h"
 #include "narrator/growing.h"
 #include "valyria/map.h"
-#include "valyria/multimap.h"
 #include "valyria/list.h"
 #include "xlinux/xstdlib.h"
 #include "moria/load.h"
 
 #include "moria.h"
 #include "graph.internal.h"
-#include "operations.h"
 #include "parser.internal.h"
 #include "vertex.h"
+#include "dispatch.h"
 
 typedef struct graph_test {
   XUNITTEST;
@@ -47,7 +46,7 @@ static void graph_unit_cleanup(xunit_unit * unit)
 static void graph_test_entry(xunit_test * _test)
 {
   moria_graph g;
-  graph_parser * p = 0;
+  moria_parser * p = 0;
   moria_vertex * from = 0;
   moria_vertex * v;
   int r;
@@ -55,14 +54,14 @@ static void graph_test_entry(xunit_test * _test)
   graph_test * test = containerof(_test, graph_test, xu);
 
   moria_graph_init(&g);
-  graph_parser_create(&p, &g, 0, graph_operations_dispatch, 0, 0);
+  moria_parser_create(&p, &g, 0, 0, moria_operations_dispatch, 0, 0);
 
   if(test->graph) {
-    graph_parser_parse(p, MMS(test->graph));
+    moria_parser_graph_parse(p, MMS(test->graph));
   }
 
   if(test->operations) {
-    r = graph_parser_operations_parse(p, MMS(test->operations));
+    r = moria_parser_operations_parse(p, MMS(test->operations));
     if(r == 1) {
       printf("%s\n", p->operations_yyu.error_str);
     }
@@ -98,7 +97,7 @@ static void graph_test_entry(xunit_test * _test)
   }
 
   moria_graph_destroy(&g);
-  graph_parser_xfree(p);
+  moria_parser_free(p);
 }
 
 static xunit_unit xunit = {
@@ -108,19 +107,19 @@ static xunit_unit xunit = {
   , .xu_tests = (void*)(graph_test*[]) {
       // find identity edges by label
         (graph_test[]){{
-            operations  : " +A:0x40000000:a +A:0x40000000:b +A:0x40000000:c"
+            operations  : " +a:0x40000000:A +b:0x40000000:A +c:0x40000000:A"
           , down_from   : "A"
           , down_label  : "a"
           , expected    : "a"
         }}
       , (graph_test[]){{
-            operations  : " +A:0x40000000:a +A:0x40000000:b +A:0x40000000:c"
+            operations  : " +a:0x40000000:A +b:0x40000000:A +c:0x40000000:A"
           , down_from   : "A"
           , down_label  : "b"
           , expected    : "b"
         }}
       , (graph_test[]){{
-            operations  : " +A:0x40000000:a +A:0x40000000:b +A:0x40000000:c"
+            operations  : " +a:0x40000000:A +b:0x40000000:A +c:0x40000000:A"
           , down_from   : "A"
           , down_label  : "c"
           , expected    : "c"
@@ -143,31 +142,31 @@ static xunit_unit xunit = {
         }}
       // not found - no such down_label
       , (graph_test[]){{
-            graph       : "A:0x40000000:B"
+            graph       : "B:0x40000000:A"
           , down_from   : "A"
           , down_label  : "C"
         }}
       , (graph_test[]){{
-            graph       : "A:0x40000000:B"
+            graph       : "B:0x40000000:A"
           , down_from   : "A"
           , down_label  : "C"
         }}
       , (graph_test[]){{
             graph       : " 1-A 2-B 3-C 4-D"
-                          " 1:0x40000000:2 1:0x40000000:3"
+                          " 2:0x40000000:1 3:0x40000000:1"
           , down_from   : "A"
           , down_label  : "D"
         }}
       , (graph_test[]){{
             graph       : " 1-A 2-B 3-C 4-D"
-                          " 1:0x40000000:2 1:0x40000000:3"
+                          " 2:0x40000000:1 3:0x40000000:1"
           , down_from   : "A"
           , down_label  : "D"
         }}
       // edges not unique by down_label - mixing identity and non identity edges
       , (graph_test[]){{
             graph          : " 1-A 4-a 5-b!0x42 6-c 9-b"
-                             " 1:0x40000000:4 1:0x40000000:5 1:0x40000000:6 1:0x1:9"
+                             " 4:0x40000000:1 5:0x40000000:1 6:0x40000000:1 1:0x1:9"
           , down_from      : "A"
           , down_label     : "b"
           , expected       : "b"
@@ -175,7 +174,7 @@ static xunit_unit xunit = {
         }}
       , (graph_test[]){{
             graph          : " 3-C 4-a 5-b 6-c!0x42 8-b 9-c"
-                             " 3:0x40000000:4 3:0x40000000:5 3:0x40000000:6 3:0x1:9"
+                             " 4:0x40000000:3 5:0x40000000:3 6:0x40000000:3 3:0x1:9"
           , down_from      : "C"
           , down_label     : "c"
           , expected       : "c"
@@ -184,7 +183,7 @@ static xunit_unit xunit = {
 
       , (graph_test[]){{
             graph          : " 1-A 2-B!0x7 3-B 4-B"
-                             " 1:0x40000000:2 1:3 1:4"
+                             " 2:0x40000000:1 1:3 1:4"
           , down_from      : "A"
           , down_label     : "B"
           , expected       : "B"
@@ -192,7 +191,7 @@ static xunit_unit xunit = {
         }}
       , (graph_test[]){{
             graph          : " 1-A 2-B 3-B!0x7 4-B"
-                             " 1:2 1:0x40000000:3 1:4"
+                             " 1:2 3:0x40000000:1 1:4"
           , down_from      : "A"
           , down_label     : "B"
           , expected       : "B"
@@ -200,7 +199,7 @@ static xunit_unit xunit = {
         }}
       , (graph_test[]){{
             graph          : " 1-A 2-B 3-B 4-B!0x7"
-                             " 1:2 1:3 1:0x40000000:4"
+                             " 1:2 1:3 4:0x40000000:1"
           , down_from      : "A"
           , down_label     : "B"
           , expected       : "B"

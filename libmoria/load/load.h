@@ -3,16 +3,8 @@
 
 #pragma once
 
-/// moria_load
-//
-// SUMMARY
-//  initialize the library
-//
+/* initialize the library */
 void moria_load(void);
 
-/// moria_unload
-//
-// SUMMARY
-//  release the library
-//
+/* release the library */
 void moria_unload(void);
