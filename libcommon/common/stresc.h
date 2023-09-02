@@ -1,1 +1,0 @@
-../stresc/stresc.h

@@ -57,7 +57,7 @@ uint32_t API strhash32(uint32_t h, const char * restrict s)
   return final32(h);
 }
 
-uint32_t API hash32(uint32_t h, const void * const restrict v, size_t l)
+uint32_t API hash32(uint32_t h, const void * restrict v, size_t l)
 {
   const char *s;
   size_t x;
