@@ -12,7 +12,7 @@ import libcommon
 variant pic.{debug,devel,final,trace}
 
 # pull in object files in the module, except those under integ
-rule *~integ/**/*.?.o -> libxlinux.$?.a
+rule **~integ/*.?.o -> libxlinux.$?.a
 
 # default build targets
 rule libxlinux.?.a -> //module/targets
@@ -21,7 +21,7 @@ rule libxlinux.?.a -> //module/targets
 rule //module/imports/*/lib*.?.a -> libxlinux.$?.a
 
 # generated signals table
-rule -- [*] sigtable/sigtable.{c,h} : ./sigtable.bam
+rule -- [*] sigtable.{c,h} : ./sigtable.bam
 
 var : {
   cflags : [ -ldl -lrt ]

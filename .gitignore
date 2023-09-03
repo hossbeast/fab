@@ -29,6 +29,7 @@ exports
 *.final.pic
 *.trace.pic
 *.pic.trace
+*.trace
 *.xapi
 *.xunit
 *.so.lnk
@@ -37,3 +38,5 @@ git-state.h
 *.desc.c
 *.desc.h
 bacon/build/*/bacon
+sigtable.c
+sigtable.h
