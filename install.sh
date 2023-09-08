@@ -19,6 +19,10 @@ rundir=/var/run
 sharedir=/usr/share
 etcdir=/etc
 
+set +e
+killall fab fab.devel fabd fabd.devel
+set -e
+
 set -x
 
 # filesystem

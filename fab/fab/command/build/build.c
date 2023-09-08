@@ -52,7 +52,7 @@ typedef struct build_slot {
   struct build_slot *next;
 
   /* buffer which info members point into */
-  char info_buf[8192];
+  char info_buf[16384];
 
   fab_build_slot_info info;
   fab_build_slot_results results;
