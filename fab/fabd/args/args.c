@@ -19,7 +19,7 @@
 
 struct g_args_t g_args;
 
-#if DEVEL
+#if CONFIG_DEVEL
 #define SYSTEM_CONFIG_PATH    "/etc/fabconfig+devel"
 #define USER_CONFIG_PATH      "$HOME/.fab/config+devel"
 #else
@@ -65,7 +65,7 @@ static void args_parse(int argc, char ** restrict argv)
   const struct option longopts[] = {
       { "help"     , no_argument , &help, 1 }
     , { "version"  , no_argument , &version, 1 }
-#if DEVEL
+#if CONFIG_DEVEL
     , { "system-config-path"            , required_argument, 0, 0 }
     , { "user-config-path"              , required_argument, 0, 0 }
     , { "default-filesystem-invalidate" , required_argument, 0, 0 }
@@ -75,7 +75,7 @@ static void args_parse(int argc, char ** restrict argv)
   };
 
   const char *switches = "hV"
-#if DEVEL
+#if CONFIG_DEVEL
     "K"
 #endif
   ;
@@ -89,7 +89,7 @@ static void args_parse(int argc, char ** restrict argv)
   optind = 0;
   while((x = getopt_long(argc, argv, switches, longopts, &longindex)) != -1)
   {
-#if DEVEL
+#if CONFIG_DEVEL
     if(x == 0 && strcmp(longopts[longindex].name, "system-config-path") == 0) {
       ifree(&g_args.system_config_path);
       ixstrdup(&g_args.system_config_path, optarg);

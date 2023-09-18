@@ -41,7 +41,7 @@
 #include "barriers.h"
 #include "atomics.h"
 
-#if DEVEL
+#if CONFIG_DEVEL
 const char * APIDATA g_fab_client_fabd_path;
 const char * APIDATA g_fab_client_system_config_path;
 const char * APIDATA g_fab_client_user_config_path;
@@ -88,10 +88,10 @@ static void launch(fab_client * restrict client)
     argv[i++] = "fabd";
     argv[i++] = client->hash;
 
-#if DEBUG || DEVEL
+#if CONFIG_DEBUG || CONFIG_DEVEL
     printf("execv(");
-#if TRACE || DEVEL
-#if TRACE
+#if CONFIG_TRACE || CONFIG_DEVEL
+#if CONFIG_TRACE
     argv[0] = "fabd.trace";
 #else
     argv[0] = "fabd.devel";
@@ -154,7 +154,7 @@ static void launch(fab_client * restrict client)
     // update the lockfile
     fabipc_lockfile_update("%s/fabd/lock", client->ipcdir);
 
-#if DEVEL
+#if CONFIG_DEVEL
     xexecv(g_fab_client_fabd_path, argv);
 #else
     xexecvp("fabd", argv);
@@ -291,7 +291,7 @@ fabipc_message * API fab_client_produce(fab_client * restrict client)
 
 void API fab_client_post(fab_client * restrict client, fabipc_message * restrict msg)
 {
-#if DEBUG || DEVEL
+#if CONFIG_DEBUG || CONFIG_DEVEL
   RUNTIME_ASSERT(msg->type);
   if(msg->type == FABIPC_MSG_EVENTS) {
     RUNTIME_ASSERT(msg->evtype);

@@ -13,13 +13,13 @@ cflags.xapi  : {
   -DXAPI -DXAPI_MODE_STACKTRACE
 }
 cflags.debug : {
-  -O0 -ggdb3 -DDEBUG
+  -O0 -ggdb3 -DCONFIG_DEBUG
 }
 cflags.devel : {
-  -O0 -ggdb3 -DDEVEL -Wno-frame-address -DFAULT_INJECTION "-fsanitize=address,undefined"
+  -O0 -ggdb3 -DCONFIG_DEVEL -Wno-frame-address -DFAULT_INJECTION "-fsanitize=address,undefined"
 }
 cflags.trace : {
-  -O3 -ggdb3 -DDEVEL -DTRACES -Wno-frame-address -fno-omit-frame-pointer -Wno-array-bounds
+  -O3 -ggdb3 -DCONFIG_DEVEL -DCONFIG_TRACES -Wno-frame-address -fno-omit-frame-pointer -Wno-array-bounds
 }
 cflags.final : {
   -O3 -Wno-array-bounds # -Warray-bounds is NOT COMPATIBLE with containerof

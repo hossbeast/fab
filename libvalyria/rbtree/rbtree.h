@@ -134,7 +134,7 @@ void rbtree_replace_node(rbnode * restrict n, rbnode * restrict new)
 void rbtree_delete_node(rbtree * restrict rb, rbnode * restrict n)
   __attribute__((nonnull));
 
-#if DEBUG || DEVEL
+#if CONFIG_DEBUG || CONFIG_DEVEL
 #define rbtree_delete(rb, item, member) ({    \
   rbtree_delete_node(rb, &(item)->member);    \
   (item)->member.color = 0;                   \
@@ -149,7 +149,7 @@ void rbtree_delete_node(rbtree * restrict rb, rbnode * restrict n)
 })
 #endif
 
-#if DEVEL
+#if CONFIG_DEVEL
 void rbtree_print(rbtree * rb);
 void rbnode_print(rbnode * n);
 #endif

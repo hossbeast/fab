@@ -104,7 +104,7 @@ int main(int argc, char ** argv)
   args_setup(argc, argv);
   params_setup(g_args.hash);
 
-#if DEVEL
+#if CONFIG_DEVEL
   /* this normally happens in libfab/client right before fork */
   pid_t pid;
   int lockfd = -1;

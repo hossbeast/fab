@@ -7,7 +7,7 @@
 
 #include "macros.h"
 
-#if DEVEL
+#if CONFIG_DEVEL
 /* null-terminated strings */
 extern const char *g_fab_client_fabd_path;
 extern const char *g_fab_client_system_config_path;

@@ -33,7 +33,7 @@ static bool waserror;
 
 static void client_acquired(fab_client * restrict client, fabipc_message * restrict msg)
 {
-#if DEBUG || DEVEL || 1
+#if CONFIG_DEBUG || CONFIG_DEVEL || 1
   uint32_t h;
   uint32_t i;
   char buf[64];
@@ -71,7 +71,7 @@ void client_post(struct fab_client * restrict client, fabipc_message * restrict 
 {
   fab_client_post(client, msg);
 
-#if DEBUG || DEVEL || 1
+#if CONFIG_DEBUG || CONFIG_DEVEL || 1
   uint32_t h;
   char buf[64];
   size_t z;
@@ -120,7 +120,7 @@ static void xmain()
   sigdelset(&sigs, SIGUSR1);
   xpthread_sigmask(SIG_SETMASK, &sigs, 0);
 
-#if DEVEL
+#if CONFIG_DEVEL
   static char space[512];
   snprintf(space, sizeof(space), "%s/../fabd/fabd.devel.pic", g_params.exedir);
   g_fab_client_fabd_path = space;
@@ -159,7 +159,7 @@ static void xmain()
     }
     client->fabd_pid = 0;
   }
-#if DEVEL
+#if CONFIG_DEVEL
   if(g_args.no_launch && client->fabd_pid == 0)
   {
     fprintf(stderr, "fabd not running\n");

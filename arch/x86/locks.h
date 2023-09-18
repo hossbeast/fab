@@ -112,7 +112,7 @@ static inline void futexlock_release(struct futexlock * restrict lock)
 {
   RUNTIME_ASSERT(tid);
 
-#if DEBUG || DEVEL
+#if CONFIG_DEBUG || CONFIG_DEVEL
   int32_t old;
   old = __atomic_exchange_n(&lock->i32, 0, __ATOMIC_SEQ_CST);
   RUNTIME_ASSERT(old == tid);

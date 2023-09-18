@@ -20,7 +20,7 @@
 #include "args.tab.h"
 #include "args.tokens.h"
 
-#if DEVEL
+#if CONFIG_DEVEL
 #define SYSTEM_CONFIG_PATH    "/etc/bam/client_config+devel"
 #define USER_CONFIG_PATH      "$HOME/.bam/client_config+devel"
 #else
@@ -76,7 +76,7 @@ static void usage(command * restrict cmd)
 " --version | -V    print version information\n"
 " -B                first, global invalidation\n"
 " -K                first, kill extant fabd if any\n"
-#if DEVEL
+#if CONFIG_DEVEL
 " --no-launch       only talk to an existing fabd\n"
 #endif
     , git_describe

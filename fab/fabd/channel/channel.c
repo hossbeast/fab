@@ -66,7 +66,7 @@ fabipc_message * channel_produce(channel * restrict chan)
 
 void channel_post(channel * restrict chan, fabipc_message * restrict msg)
 {
-#if DEBUG || DEVEL
+#if CONFIG_DEBUG || CONFIG_DEVEL
   RUNTIME_ASSERT(msg->type);
   if(msg->type == FABIPC_MSG_EVENTS) {
     RUNTIME_ASSERT(msg->evtype);
@@ -127,7 +127,7 @@ fabipc_message * channel_acquire(channel * restrict chan)
     , &chan->ipc.client_ring.tail
   );
 
-#if DEBUG || DEVEL
+#if CONFIG_DEBUG || CONFIG_DEVEL
   if (msg) {
     RUNTIME_ASSERT(msg->type);
   }

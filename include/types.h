@@ -47,7 +47,7 @@ static inline size_t roundup(size_t x, size_t y)
   }                                                     \
 } while(0)
 
-#if DEBUG || DEVEL || XUNIT
+#if CONFIG_DEBUG || CONFIG_DEVEL || XUNIT
 /* this will cause asan to print a backtrace */
 #define RUNTIME_ABORT() do {           \
   *((volatile char*)0x42) = 0x42;      \
@@ -56,7 +56,7 @@ static inline size_t roundup(size_t x, size_t y)
 #define RUNTIME_ABORT() do { abort(); } while(0)
 #endif
 
-#if DEVEL
+#if CONFIG_DEVEL
 #include <stdio.h>
 #include <unistd.h>
 #define tracef(fmt, ...) do { printf("[%5d/%-5d]%50s:%-5d "fmt"\n", getpid(), gettid(), __FUNCTION__, __LINE__, ##__VA_ARGS__); } while(0)

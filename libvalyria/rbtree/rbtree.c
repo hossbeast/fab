@@ -18,7 +18,7 @@ rbnode APIDATA rbleaf = { color : RB_BLACK, parent : &rbleaf };
 // static
 //
 
-#if DEVEL
+#if CONFIG_DEVEL
 static int black_height(rbnode * restrict n)
 {
   int left;
@@ -359,7 +359,7 @@ static void delete_repair(rbtree * restrict rb, rbnode * restrict n)
 // internal
 //
 
-#if DEVEL
+#if CONFIG_DEVEL
 void rbtree_print(rbtree * restrict rb)
 {
   char buf[4096 << 1];

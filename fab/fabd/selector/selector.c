@@ -528,8 +528,8 @@ void selector_say(selector * const restrict sel, narrator * const restrict N)
   value_writer_destroy(&writer);
 }
 
-#if DEVEL
-#ifndef TRACES
+#if CONFIG_DEVEL
+#ifndef CONFIG_TRACE
 static int selector_cmp(selector * A, selector * B)
 {
   int d;

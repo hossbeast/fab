@@ -20,7 +20,7 @@ void params_setup()
 {
   g_params.pid = getpid();
 
-#if DEVEL
+#if CONFIG_DEVEL
   char space[512];
   ssize_t r;
 
@@ -37,7 +37,7 @@ void params_setup()
 
 void params_teardown()
 {
-#if DEVEL
+#if CONFIG_DEVEL
   ifree(&g_params.exedir);
 #endif
 }

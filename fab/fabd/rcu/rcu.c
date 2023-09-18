@@ -22,7 +22,7 @@ static struct {
   pid_t tid;
 } state;
 
-#if DEBUG || DEVEL
+#if CONFIG_DEBUG || CONFIG_DEVEL
 __thread bool rcu_is_registered;
 #endif
 
@@ -68,7 +68,7 @@ void rcu_unregister(rcu_thread * restrict rcu)
 {
   quiesce(rcu, 1);
 
-#if DEBUG || DEVEL
+#if CONFIG_DEBUG || CONFIG_DEVEL
   rcu_is_registered = false;
 #endif
 }
@@ -83,7 +83,7 @@ void rcu_register(rcu_thread * restrict self)
   __atomic_load(&state.n, &self->n, __ATOMIC_SEQ_CST);    // self->n = state.n
   __atomic_add_fetch(&state.active, 1, __ATOMIC_SEQ_CST); // active++
 
-#if DEBUG || DEVEL
+#if CONFIG_DEBUG || CONFIG_DEVEL
   rcu_is_registered = true;
 #endif
 }

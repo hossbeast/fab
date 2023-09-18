@@ -91,7 +91,7 @@ static uint32_t hash_index(uint32_t h, uint32_t lm)
   return h & lm;
 }
 
-#if DEVEL
+#if CONFIG_DEVEL
 static uint32_t devel_hash_fn(uint32_t h, const void * const restrict v, size_t l)
 {
   if(fault(KEY_HASH))
@@ -258,7 +258,7 @@ void hashtable_init(
     ht->hash_fn = hash_fn;
   else
   {
-#if DEVEL
+#if CONFIG_DEVEL
     ht->hash_fn = devel_hash_fn;
 #else
     ht->hash_fn = hash32;

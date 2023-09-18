@@ -35,7 +35,7 @@
 #include "zbuffer.h"
 
 // special fsent names
-#if DEVEL
+#if CONFIG_DEVEL
 #define FSENT_NAME_MODULE "module.bam+devel"
 #define FSENT_NAME_MODEL  "model.bam+devel"
 #define FSENT_NAME_VAR    "var.bam+devel"

@@ -17,7 +17,7 @@ extern struct g_params
   pid_t    pid;            // pid of this process
   bool     shutdown;       // whether to terminate the main loop
 
-#if DEVEL
+#if CONFIG_DEVEL
   char *   exedir;         // path to the directory containing the executable
 #endif
 } g_params;
