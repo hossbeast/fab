@@ -134,12 +134,12 @@ void yyu_popstate(struct yyu_parser * const restrict parser)
   } while(0)                      \
 
 /* invoked by scanner rule to report invalid input before returning 0 to indicate end-of-input */
-void yyu_save_error_loc(struct yyu_parser * const restrict parser, struct yyu_location * const restrict lloc)
+void yyu_save_error_loc(struct yyu_parser * const restrict parser, const struct yyu_location * const restrict lloc)
   __attribute__((nonnull));
 
-void yyu_errorf(struct yyu_parser * restrict parser, const char * restrict fmt, ...)
+void yyu_errorf(struct yyu_parser * restrict parser, const struct yyu_location * restrict lloc, const char * restrict fmt, ...)
   __attribute__((nonnull))
-  __attribute__((format(printf, 2, 3)));
+  __attribute__((format(printf, 3, 4)));
 
 /// yyu_lexify
 //
@@ -211,22 +211,22 @@ int yyu_lexify_valtoken(
  *
  *  > %token <yyu.u16> footoken
  */
-#define LEXVTOK(token)            \
-  LEXIFY(yyu_lexify_valtoken      \
+#define LEXVTOK(token)              \
+  LEXIFY(yyu_lexify_valtoken        \
     , yyuparser                     \
-    , yylval                      \
-    , sizeof(yylval)              \
-    , yylloc                      \
-    , yytext                      \
+    , yylval                        \
+    , sizeof(yylval)                \
+    , yylloc                        \
+    , yytext                        \
     , yyuparser->loc.l_lin          \
     , yyuparser->loc.l_col + yyleng \
-    , yyleng                      \
-    , token                       \
+    , yyleng                        \
+    , token                         \
   )
 
 #define LEXLOC(token, locp)       \
   LEXIFY(yyu_lexify               \
-    , yyuparser                     \
+    , yyuparser                   \
     , yylval                      \
     , sizeof(yylval)              \
     , yylloc                      \
@@ -278,7 +278,7 @@ int yyu_lexify_attrs(
 //
 #define LEXE()                \
   LEXIFY(yyu_lexify_enum      \
-    , yyuparser                 \
+    , yyuparser               \
     , yylval                  \
     , sizeof(yylval)          \
     , yylloc                  \
@@ -312,7 +312,7 @@ int yyu_lexify_enum(
 
 #define LEXI(fmt)             \
   LEXIFY(yyu_lexify_int       \
-    , yyuparser                 \
+    , yyuparser               \
     , yylval                  \
     , sizeof(yylval)          \
     , yylloc                  \
@@ -343,7 +343,7 @@ int yyu_lexify_int(
 //
 #define LEXC(off)             \
   LEXIFY(yyu_lexify_cref      \
-    , yyuparser                 \
+    , yyuparser               \
     , yylval                  \
     , sizeof(yylval)          \
     , yylloc                  \
@@ -374,7 +374,7 @@ int yyu_lexify_cref(
 //
 #define LEXH(off)             \
   LEXIFY(yyu_lexify_href      \
-    , yyuparser                 \
+    , yyuparser               \
     , yylval                  \
     , sizeof(yylval)          \
     , yylloc                  \
@@ -405,7 +405,7 @@ int yyu_lexify_href(
 //
 #define LEXB()                \
   LEXIFY(yyu_lexify_bool      \
-    , yyuparser                 \
+    , yyuparser               \
     , yylval                  \
     , sizeof(yylval)          \
     , yylloc                  \
@@ -434,7 +434,7 @@ int yyu_lexify_bool(
 //
 #define LEXF()                \
   LEXIFY(yyu_lexify_float     \
-    , yyuparser                 \
+    , yyuparser               \
     , yylval                  \
     , sizeof(yylval)          \
     , yylloc                  \

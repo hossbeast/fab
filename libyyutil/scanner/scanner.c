@@ -148,10 +148,12 @@ int API yyu_nstate(yyu_parser * const xtra, int n)
   return (xtra->states_n > n) ? xtra->states[xtra->states_n - n - 1] : -1;
 }
 
-void API yyu_errorf(yyu_parser * restrict parser, const char * restrict fmt, ...)
+void API yyu_errorf(yyu_parser * restrict parser, const yyu_location * restrict lloc, const char * restrict fmt, ...)
 {
   va_list va;
   va_start(va, fmt);
+
+  yyu_save_error_loc(parser, lloc);
 
   if(parser->error_len) {
     parser->error_len += znloads(
@@ -170,7 +172,7 @@ void API yyu_errorf(yyu_parser * restrict parser, const char * restrict fmt, ...
   va_end(va);
 }
 
-void API yyu_save_error_loc(yyu_parser * const parser, yyu_location * const lloc)
+void API yyu_save_error_loc(yyu_parser * const parser, const yyu_location * const lloc)
 {
   parser->scanerr = 1;
 
@@ -300,7 +302,7 @@ int API yyu_lexify_int(
     sscanf(text, fmt, &lval->imax);
 
     if(errno == ERANGE) {
-      yyu_errorf(parser, "integer out of range for %s %.*s", fmt, leng, text);
+      yyu_errorf(parser, lloc, "integer out of range for %s %.*s", fmt, leng, text);
       return -ERANGE;
     }
 
@@ -347,7 +349,7 @@ int API yyu_lexify_int(
     sscanf(text, fmt, &lval->umax);
 
     if(errno == ERANGE) {
-      yyu_errorf(parser, "integer out of range for %s %.*s", fmt, leng, text);
+      yyu_errorf(parser, lloc, "integer out of range for %s %.*s", fmt, leng, text);
       return -ERANGE;
     }
 
@@ -374,7 +376,7 @@ int API yyu_lexify_int(
     sscanf(text, fmt, &lval->umax);
 
     if(errno == ERANGE) {
-      yyu_errorf(parser, "integer out of range for %s %.*s", fmt, leng, text);
+      yyu_errorf(parser, lloc, "integer out of range for %s %.*s", fmt, leng, text);
       return -ERANGE;
     }
 
