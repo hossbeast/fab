@@ -131,6 +131,14 @@ static void say_mappings(bacon_writer * restrict builder_writer)
   }
 }
 
+static void say_hex(bacon_writer * restrict builder_writer)
+{
+  { LIST
+    HEX(42)
+    HEX(0xdeadbeef)
+  }
+}
+
 static void bacon_writer_unit_setup(xunit_unit * unit)
 {
   bacon_load();
@@ -226,6 +234,11 @@ static xunit_unit xunit = {
             .say = say_set_mapping_val_empty
           , .singleline = true
           , .expected = "{ A : _ list : [ { hi } { hi } ] }"
+        }}
+      , (writer_test[]){{
+            .say = say_hex
+          , .singleline = true
+          , .expected = "[ 0x2a 0xdeadbeef ]"
         }}
     , 0
   }

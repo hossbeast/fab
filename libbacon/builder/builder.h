@@ -31,12 +31,11 @@ void bacon_builder_pop_list(bacon_writer ** restrict writerp);
 #define LOADF(fmt, ...) bacon_writef(builder_writer, fmt, ##__VA_ARGS__);
 #define INT(x) bacon_writer_int(builder_writer, x);
 #define UINT(x) bacon_writer_uint(builder_writer, x);
-#define HEX32(x) bacon_writef(builder_writer, "%08"PRIx32, x);
-#define HEX64(x) bacon_writef(builder_writer, "%016"PRIx64, x);
-#define HEX256(x) bacon_writef(builder_writer, "%016"PRIx64"%016"PRIx64"%016"PRIx64"%016"PRIx64, x[0], x[1], x[2], x[3]);
 #define BOOL(x) bacon_writer_bool(builder_writer, x);
+#define HEX(x) bacon_writer_hex(builder_writer, (uint64_t)x);
+#define HEX256(x) bacon_writef(builder_writer, "0x%016"PRIx64"%016"PRIx64"%016"PRIx64"%016"PRIx64, x[0], x[1], x[2], x[3]);
 #define HEX512(x) bacon_writef(builder_writer                                                           \
-  , "%016"PRIx64"%016"PRIx64"%016"PRIx64"%016"PRIx64"%016"PRIx64"%016"PRIx64"%016"PRIx64"%016"PRIx64    \
+  , "0x%016"PRIx64"%016"PRIx64"%016"PRIx64"%016"PRIx64"%016"PRIx64"%016"PRIx64"%016"PRIx64"%016"PRIx64  \
   , x[0], x[1], x[2], x[3], x[4], x[5], x[6], x[7]                                                      \
 );
 #define FLOAT(x) LOADF("%.6lf", x);

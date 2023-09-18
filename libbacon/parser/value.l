@@ -82,6 +82,7 @@ ILL   [\x00-\x08\x0B-\x1F\x7F-\xFF]
 <INITIAL>"||"                                           { return LEX(LOGOR); }
 <INITIAL>"<<"                                           { return LEX(SHL); }
 <INITIAL>">>"                                           { return LEX(SHR); }
+<INITIAL>"=="                                           { return LEX(EQ); }
 <INITIAL>[-![\]{}()+:=<>&|/%*^~]                        { return LEX(yytext[0]); }
 
  /* variables */
@@ -99,7 +100,7 @@ ILL   [\x00-\x08\x0B-\x1F\x7F-\xFF]
 <INITIAL>[+-]?[0-9]+[.][0-9]+                           { return LEXF(); }
 
  /* strings */
-<INITIAL>[-a-zA-Z0-9_./+]+                              { return LEX(STR); }
+<INITIAL>[-a-zA-Z0-9_./+=]+                             { return LEX(STR); }
 
  /* quoted strings */
 <INITIAL>["]                                            { PUSHSTATE(quoted); return LEX(yytext[0]); }
@@ -111,13 +112,13 @@ ILL   [\x00-\x08\x0B-\x1F\x7F-\xFF]
 <*>[\x00-\x1F\x7F-\xFF]                                 {
                                                           POPSTATES;
                                                           LOCWRITE;
-                                                          yyu_errorf(yyuparser, "invalid byte 0x%02hhx", yytext[0]);
+                                                          yyu_errorf(yyuparser, yylloc, "invalid byte 0x%02hhx", yytext[0]);
                                                           return 0;
                                                         }
 <*>[\x20-\x7E]                                          {
                                                           POPSTATES;
                                                           LOCWRITE;
-                                                          yyu_errorf(yyuparser, "character '%1$c'(0x%1$02hhx)", yytext[0]);
+                                                          yyu_errorf(yyuparser, yylloc, "character '%1$c'(0x%1$02hhx)", yytext[0]);
                                                           return 0;
                                                         }
 <<EOF>>                                                 {

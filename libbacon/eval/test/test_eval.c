@@ -49,7 +49,7 @@ static void test_eval_entry(xunit_test * _test)
 {
   eval_test * test = containerof(_test, eval_test, xu);
 
-  bacon_parser * parser = 0;
+  bacon_parser *parser;
   bacon_value *actual = 0;
   bacon_value *vars = 0;
   bacon_value *expected = 0;

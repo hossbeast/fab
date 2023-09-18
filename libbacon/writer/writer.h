@@ -76,6 +76,9 @@ void bacon_writer_int(bacon_writer * const restrict writer, int64_t u)
 void bacon_writer_uint(bacon_writer * const restrict writer, uint64_t u)
   __attribute__((nonnull));
 
+void bacon_writer_hex(bacon_writer * const restrict writer, uint64_t u)
+  __attribute__((nonnull));
+
 void bacon_writer_bool(bacon_writer * const restrict writer, bool b)
   __attribute__((nonnull));
 

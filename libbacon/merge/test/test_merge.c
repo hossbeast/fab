@@ -59,43 +59,43 @@ static void test_merge_entry(xunit_test * _test)
 {
   merge_test * test = containerof(_test, merge_test, xu);
 
-  bacon_parser parser;
-  bacon_value * src = 0;
-  bacon_value * dst = 0;
-  narrator_growing * N0 = 0;
-  bacon_value * expected;
+  bacon_parser *parser;
+  bacon_value *src = 0;
+  bacon_value *dst = 0;
+  narrator_growing *N0 = 0;
+  bacon_value *expected;
   int r;
 
   narrator_growing_create(&N0);
 
-  bacon_parser_init(&parser);
+  bacon_parser_alloc(&parser);
 
   // setup
-  if((r = bacon_parser_parse(&parser, MMS(test->exp), 0, 0, &expected))) {
-    dprintf(2, "%.*s\n", (int)parser.yyu->error_len, parser.yyu->error_str);
+  if((r = bacon_parser_parse(parser, MMS(test->exp), 0, 0, &expected))) {
+    dprintf(2, "%.*s\n", (int)parser->yyu->error_len, parser->yyu->error_str);
   }
 
   // parse
-  if((r = bacon_parser_parse(&parser, MMS(test->src), 0, 0, &src))) {
-    dprintf(2, "%.*s\n", (int)parser.yyu->error_len, parser.yyu->error_str);
+  if((r = bacon_parser_parse(parser, MMS(test->src), 0, 0, &src))) {
+    dprintf(2, "%.*s\n", (int)parser->yyu->error_len, parser->yyu->error_str);
   }
 
   if(test->dst) {
-    if((r = bacon_parser_parse(&parser, MMS(test->dst), 0, 0, &dst))) {
-      dprintf(2, "%.*s\n", (int)parser.yyu->error_len, parser.yyu->error_str);
+    if((r = bacon_parser_parse(parser, MMS(test->dst), 0, 0, &dst))) {
+      dprintf(2, "%.*s\n", (int)parser->yyu->error_len, parser->yyu->error_str);
     }
   }
 
   // act
-  bacon_merge(&parser, &dst, src);
+  bacon_merge(parser, &dst, src);
 
   // assert
   assert_eq_value(expected, dst);
 
-  bacon_value_free(&parser, src);
-  bacon_value_free(&parser, dst);
-  bacon_value_free(&parser, expected);
-  bacon_parser_destroy(&parser);
+  bacon_value_free(parser, src);
+  bacon_value_free(parser, dst);
+  bacon_value_free(parser, expected);
+  bacon_parser_free(parser);
   narrator_growing_free(N0);
 }
 

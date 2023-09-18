@@ -38,35 +38,38 @@
 }
 
 /* terminals */
-%token            STR           "unquoted-string"
-%token <yyu.u8>   CREF          "character-escape"
-%token <yyu.u8>   HREF          "hex-escape"
-%token <yyu.b>    BOOL          "boolean"
-%token <yyu.f>    FLOAT         "float"
-%token <yyu.t>    VARIABLE      "variable"
-%token <yyu.i128> UINTMAX8
-%token <yyu.i128> UINTMAX16
-%token <yyu.i128> UINTMAX32
-%token <yyu.i128> UINTMAX64
-%token <yyu.i128> HEX8
-%token <yyu.i128> HEX16
-%token <yyu.i128> HEX32
-%token <yyu.i128> HEX64
-%token <yyu.i128> INTMIN8
-%token <yyu.i128> INTMIN16
-%token <yyu.i128> INTMIN32
-%token <yyu.i128> INTMIN64
-%token <yyu.i128> INTMAX8
-%token <yyu.i128> INTMAX16
-%token <yyu.i128> INTMAX32
-%token <yyu.i128> INTMAX64
-%type <yyu.i128> intlit
+%token '{' '}'
+%token '[' ']'
+%token ':'
 
-%token '{' '}' '[' ']' ':'
-%token LOGAND  "&&"
-%token LOGOR   "||"
-%token SHL     "<<"
-%token SHR     ">>"
+%token            STR           300 "unquoted-string"
+%token <yyu.u8>   CREF          301 "character-escape"
+%token <yyu.u8>   HREF          302 "hex-escape"
+%token <yyu.b>    BOOL          303 "boolean"
+%token <yyu.f>    FLOAT         304 "float"
+%token <yyu.t>    VARIABLE      305 "variable"
+%token <yyu.i128> UINTMAX8      306
+%token <yyu.i128> UINTMAX16     307
+%token <yyu.i128> UINTMAX32     308
+%token <yyu.i128> UINTMAX64     309
+%token <yyu.i128> HEX8          310
+%token <yyu.i128> HEX16         311
+%token <yyu.i128> HEX32         312
+%token <yyu.i128> HEX64         313
+%token <yyu.i128> INTMIN8       314
+%token <yyu.i128> INTMIN16      315
+%token <yyu.i128> INTMIN32      316
+%token <yyu.i128> INTMIN64      317
+%token <yyu.i128> INTMAX8       318
+%token <yyu.i128> INTMAX16      319
+%token <yyu.i128> INTMAX32      320
+%token <yyu.i128> INTMAX64      321
+
+%token LOGAND                   322 "&&"
+%token LOGOR                    323 "||"
+%token SHL                      324 "<<"
+%token SHR                      325 ">>"
+%token EQ                       326 "=="
 
 /* nonterminals */
 %type <val> words quoted_string unquoted_string
@@ -76,6 +79,7 @@
 %type <val> set elements
 %type <val> scalar primitive
 %type <val> mapping boolean float integer string
+%type <yyu.i128> intlit
 
 %destructor { bacon_value_free(PARSER, $$); } <val>
 

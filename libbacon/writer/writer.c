@@ -29,17 +29,20 @@ static bool should_quote(const char * const restrict s, size_t len)
     return true;
   }
 
+  /* parity with the unquoted STR rule in parser/value.l */
   for(x = 0; x < len; x++)
   {
     if(s[x] >= 'a' && s[x] <= 'z')
       continue;
     if(s[x] >= 'A' && s[x] <= 'Z')
       continue;
+    if(s[x] == '.' || s[x] == '/' || s[x] == '_')
+      continue;
+    if(s[x] == '+' || s[x] == '-' || s[x] == '=')
+      continue;
+    if(x == 0)
+      break;
     if(s[x] >= '0' && s[x] <= '9')
-      continue;
-    if(s[x] == '_' || s[x] == '/' || s[x] == '.')
-      continue;
-    if(x > 0 && s[x] == '-')
       continue;
 
     break;
@@ -87,7 +90,6 @@ static void write_string(bacon_writer * const restrict writer, const char * cons
   if(should_quote(s, len))
   {
     narrator_sayc(writer->N, '"');
-
     for(x = 0; x < len; x += (sizeof(buf) / 4))
     {
       z = bacon_value_string_znloadw(buf, sizeof(buf), &s[x], MIN(sizeof(buf) / 4, len - x));
@@ -107,13 +109,36 @@ size_t bacon_value_string_znloadw(void * restrict dst, size_t sz, const void * r
   const char *src;
   int x;
 
+  /* parity with the unquoted STR rule in parser/value.l */
+
   src = b;
   for(x = 0; x < bz; x++)
   {
-    if(src[x] >= 0x20 && src[x] <= 0x7e && src[x] != '"')
+    if(src[x] >= 0x20 && src[x] <= 0x7e && src[x] != '"') {
       z += znloadc(dst + z, sz - z, src[x]);
-    else
+    } else if(src[x] == 0x7) {
+      z += znloads(dst + z, sz - z, "\\a");
+    } else if(src[x] == 0x8) {
+      z += znloads(dst + z, sz - z, "\\b");
+    } else if(src[x] == 0x9) {
+      z += znloads(dst + z, sz - z, "\\t");
+    } else if(src[x] == 0xa) {
+      z += znloads(dst + z, sz - z, "\\n");
+    } else if(src[x] == 0xb) {
+      z += znloads(dst + z, sz - z, "\\v");
+    } else if(src[x] == 0xc) {
+      z += znloads(dst + z, sz - z, "\\f");
+    } else if(src[x] == 0xd) {
+      z += znloads(dst + z, sz - z, "\\r");
+    } else if(src[x] == 0x20) {
+      z += znloads(dst + z, sz - z, "\\s");
+    } else if(src[x] == '\\') {
+      z += znloads(dst + z, sz - z, "\\\\");
+    } else if(src[x] == '"') {
+      z += znloads(dst + z, sz - z, "\\\"");
+    } else {
       z += znloadf(dst + z, sz - z, "\\x%02hhx", src[x]);
+    }
   }
 
   return z;
@@ -260,6 +285,12 @@ void bacon_writer_uint(bacon_writer * const restrict writer, uint64_t u)
   narrator_sayf(writer->N, "%"PRIu64, u);
 }
 
+void bacon_writer_hex(bacon_writer * const restrict writer, uint64_t u)
+{
+  indent(writer);
+  narrator_sayf(writer->N, "0x%"PRIx64, u);
+}
+
 void bacon_writer_int(bacon_writer * const restrict writer, int64_t i)
 {
   indent(writer);
@@ -275,7 +306,7 @@ void bacon_writer_bool(bacon_writer * const restrict writer, bool b)
 void bacon_writer_float(bacon_writer * const restrict writer, double f)
 {
   indent(writer);
-  narrator_sayf(writer->N, "%.6lf", f);
+  narrator_sayf(writer->N, "%.6f", f);
 }
 
 void bacon_writer_bytes(bacon_writer * const restrict writer, const char * const restrict s, size_t len)
