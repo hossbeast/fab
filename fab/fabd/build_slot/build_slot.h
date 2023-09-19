@@ -20,7 +20,6 @@
 
 #include <signal.h>
 
-#include "xapi.h"
 #include "types.h"
 
 #include "exec_builder.h"
@@ -87,16 +86,16 @@ typedef struct build_slot {
 /*
  * stream - stream to read by fd number, 1=stdout, 2=stderr, 1001=auxout
  */
-xapi build_slot_read(struct build_slot * restrict bs, uint32_t stream)
+void build_slot_read(struct build_slot * restrict bs, uint32_t stream)
   __attribute__((nonnull));
 
-xapi build_slot_reap(struct build_slot * restrict bs, siginfo_t * info)
+void build_slot_reap(struct build_slot * restrict bs, siginfo_t * info)
   __attribute__((nonnull));
 
-xapi build_slot_prep(struct build_slot * restrict bs, struct dependency * restrict bpe, uint32_t stage_index)
+void build_slot_prep(struct build_slot * restrict bs, struct dependency * restrict bpe, uint32_t stage_index)
   __attribute__((nonnull));
 
-xapi build_slot_fork_and_exec(struct build_slot * restrict bs)
+void build_slot_fork_and_exec(struct build_slot * restrict bs)
   __attribute__((nonnull));
 
 #endif

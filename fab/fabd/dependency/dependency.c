@@ -44,35 +44,29 @@ static void dependency_release(dependency * restrict dep)
 // public
 //
 
-xapi dependency_alloc(dependency ** restrict rv, moria_graph * restrict g, uint16_t Alen, uint16_t Blen)
+void dependency_alloc(dependency ** restrict rv, moria_graph * restrict g, uint16_t Alen, uint16_t Blen)
 {
-  enter;
-
   dependency *dep;
 
   if((dep = llist_shift(&dependency_freelist, typeof(*dep), edge.owner)) == 0)
   {
-    fatal(xmalloc, &dep, sizeof(*dep));
+    xmalloc(&dep, sizeof(*dep));
   }
 
   if(Alen != 1 || Blen != 1)
   {
-    fatal(xmalloc, &dep->edge.Alist, sizeof(*dep->edge.Alist) * Alen);
-    fatal(xmalloc, &dep->edge.Blist, sizeof(*dep->edge.Blist) * Blen);
+    xmalloc(&dep->edge.Alist, sizeof(*dep->edge.Alist) * Alen);
+    xmalloc(&dep->edge.Blist, sizeof(*dep->edge.Blist) * Blen);
   }
 
   moria_edge_init(&dep->edge, g);
 
   llist_append(&dependency_list, dep, edge.owner);
   *rv = dep;
-
-  finally : coda;
 }
 
-xapi dependency_cleanup()
+void dependency_cleanup()
 {
-  enter;
-
   llist *T;
   dependency *dep;
 
@@ -83,8 +77,6 @@ xapi dependency_cleanup()
   llist_foreach_safe(&dependency_freelist, dep, edge.owner, T) {
     wfree(dep);
   }
-
-  finally : coda;
 }
 
 void dependency_sources(const dependency * restrict bpe, llist * restrict list)
@@ -137,10 +129,8 @@ void dependency_targets(const dependency * restrict bpe, llist * restrict list)
   }
 }
 
-xapi dependency_say_sources(const dependency * restrict bpe, narrator * restrict N)
+void dependency_say_sources(const dependency * restrict bpe, narrator * restrict N)
 {
-  enter;
-
   llist list = LLIST_INITIALIZER(list);
   moria_vertex *v;
   fsent *n;
@@ -151,18 +141,14 @@ xapi dependency_say_sources(const dependency * restrict bpe, narrator * restrict
   llist_foreach(&list, v, lln) {
     n = containerof(v, fsent, vertex);
     if(x++) {
-      fatal(narrator_xsays, N, ", ");
+      narrator_xsays(N, ", ");
     }
-    fatal(fsent_path_say, n, N);
+    fsent_path_say(n, N);
   }
-
-  finally : coda;
 }
 
-xapi dependency_say_targets(const dependency * restrict bpe, narrator * restrict N)
+void dependency_say_targets(const dependency * restrict bpe, narrator * restrict N)
 {
-  enter;
-
   llist list = LLIST_INITIALIZER(list);
   moria_vertex *v;
   fsent *n;
@@ -173,15 +159,13 @@ xapi dependency_say_targets(const dependency * restrict bpe, narrator * restrict
   llist_foreach(&list, v, lln) {
     n = containerof(v, fsent, vertex);
     if(x++) {
-      fatal(narrator_xsays, N, ", ");
+      narrator_xsays(N, ", ");
     }
-    fatal(fsent_path_say, n, N);
+    fsent_path_say(n, N);
   }
-
-  finally : coda;
 }
 
-xapi dependency_connect(
+void dependency_connect(
     fsent * restrict A
   , fsent * restrict B
   , edge_kind relation
@@ -189,8 +173,6 @@ xapi dependency_connect(
   , dependency ** restrict nep
 )
 {
-  enter;
-
   RUNTIME_ASSERT(relation == EDGE_DEPENDS || relation == EDGE_CONDUIT);
 
   moria_edge *e;
@@ -201,30 +183,28 @@ xapi dependency_connect(
   /* vivify the targets */
   if(fsent_state_get(A) == VERTEX_UNLINKED) {
     fsent_state_set(A, VERTEX_UNCREATED);
-    fatal(fsent_dirnode_children_changed, fsent_parent(A), invalidation);
+    fsent_dirnode_children_changed(fsent_parent(A), invalidation);
   }
 
   r = moria_preconnect(&ctx, &g_graph, &A->vertex, &B->vertex, relation, &e);
   if(r == MORIA_HASEDGE)
   {
     *nep = containerof(e, dependency, edge);
-    goto XAPI_FINALLY;
+    return;
   }
   RUNTIME_ASSERT(r == MORIA_NOEDGE);
 
-  fatal(dependency_alloc, &ne, &g_graph, 1, 1);
-  fatal(graph_connect, &ctx, &A->vertex, &B->vertex, &ne->edge, relation);
+  dependency_alloc(&ne, &g_graph, 1, 1);
+  graph_connect(&ctx, &A->vertex, &B->vertex, &ne->edge, relation);
   *nep = ne;
 
   llist_init_node(&ne->dependencies_lln);
 
   /* invalidate the target */
-  fatal(fsent_invalidate, A, invalidation);
-
-  finally : coda;
+  fsent_invalidate(A, invalidation);
 }
 
-xapi dependency_hyperconnect(
+void dependency_hyperconnect(
     moria_vertex ** restrict Alist
   , uint16_t Alen
   , moria_vertex ** restrict Blist
@@ -234,8 +214,6 @@ xapi dependency_hyperconnect(
   , dependency ** restrict nep
 )
 {
-  enter;
-
   RUNTIME_ASSERT(relation == EDGE_DEPENDS || relation == EDGE_CONDUIT);
 
   int x;
@@ -251,7 +229,7 @@ xapi dependency_hyperconnect(
     A = containerof(Alist[x], fsent, vertex);
     if(fsent_state_get(A) == VERTEX_UNLINKED) {
       fsent_state_set(A, VERTEX_UNCREATED);
-      fatal(fsent_dirnode_children_changed, fsent_parent(A), invalidation);
+      fsent_dirnode_children_changed(fsent_parent(A), invalidation);
     }
   }
 
@@ -259,12 +237,12 @@ xapi dependency_hyperconnect(
   if(r == MORIA_HASEDGE)
   {
     *nep = containerof(e, dependency, edge);
-    goto XAPI_FINALLY;
+    return;
   }
   RUNTIME_ASSERT(r == MORIA_NOEDGE);
 
-  fatal(dependency_alloc, &ne, &g_graph, Alen, Blen);
-  fatal(graph_hyperconnect, &ctx, Alist, Alen, Blist, Blen, &ne->edge, relation | MORIA_EDGE_HYPER);
+  dependency_alloc(&ne, &g_graph, Alen, Blen);
+  graph_hyperconnect(&ctx, Alist, Alen, Blist, Blen, &ne->edge, relation | MORIA_EDGE_HYPER);
   *nep = ne;
 
   llist_init_node(&ne->dependencies_lln);
@@ -272,16 +250,12 @@ xapi dependency_hyperconnect(
   /* when the edge is created, invalidate the targets */
   for(x = 0; x < Alen; x++)
   {
-    fatal(fsent_invalidate, containerof(Alist[x], fsent, vertex), invalidation);
+    fsent_invalidate(containerof(Alist[x], fsent, vertex), invalidation);
   }
-
-  finally : coda;
 }
 
-xapi dependency_disconnect(dependency * restrict dep, graph_invalidation_context * restrict invalidation)
+void dependency_disconnect(dependency * restrict dep, graph_invalidation_context * restrict invalidation)
 {
-  enter;
-
   fsent *n;
   int x;
 
@@ -300,7 +274,7 @@ xapi dependency_disconnect(dependency * restrict dep, graph_invalidation_context
       n->dep = 0;
     }
 
-    fatal(fsent_invalidate, n, invalidation);
+    fsent_invalidate(n, invalidation);
   }
   else
   {
@@ -311,7 +285,7 @@ xapi dependency_disconnect(dependency * restrict dep, graph_invalidation_context
         n->dep = 0;
       }
 
-      fatal(fsent_invalidate, n, invalidation);
+      fsent_invalidate(n, invalidation);
     }
   }
 
@@ -324,8 +298,6 @@ xapi dependency_disconnect(dependency * restrict dep, graph_invalidation_context
   dep->rme = 0;
   dep->fml = 0;
 
-  fatal(graph_disconnect, &dep->edge);
+  graph_disconnect(&dep->edge);
   dependency_release(dep);
-
-  finally : coda;
 }

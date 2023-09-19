@@ -18,20 +18,18 @@
 #ifndef _LORIEN_LOAD_H
 #define _LORIEN_LOAD_H
 
-#include "xapi.h"
-
 /// lorien_load
 //
 // SUMMARY
 //  initialize the library
 //
-xapi lorien_load(void);
+void lorien_load(void);
 
 /// lorien_unload
 //
 // SUMMARY
 //  release the library
 //
-xapi lorien_unload(void);
+void lorien_unload(void);
 
 #endif

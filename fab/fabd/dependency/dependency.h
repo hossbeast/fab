@@ -18,7 +18,6 @@
 #ifndef FABD_DEPENDENCY_H
 #define FABD_DEPENDENCY_H
 
-#include "xapi.h"
 #include "types.h"
 
 #include "valyria/llist.h"
@@ -53,9 +52,9 @@ typedef struct dependency {
 } dependency;
 
 /* release dependency edges */
-xapi dependency_cleanup(void);
+void dependency_cleanup(void);
 
-xapi dependency_alloc(dependency ** restrict rv, struct moria_graph * restrict g, uint16_t Alen, uint16_t Blen)
+void dependency_alloc(dependency ** restrict rv, struct moria_graph * restrict g, uint16_t Alen, uint16_t Blen)
   __attribute__((nonnull));
 
 /* get a list of the dependency sources */
@@ -66,10 +65,10 @@ void dependency_sources(const dependency * restrict bpe, struct llist * restrict
 void dependency_targets(const dependency * restrict bpe, struct llist * restrict list)
   __attribute__((nonnull));
 
-xapi dependency_say_sources(const dependency * restrict bpe, struct narrator * restrict N)
+void dependency_say_sources(const dependency * restrict bpe, struct narrator * restrict N)
   __attribute__((nonnull));
 
-xapi dependency_say_targets(const dependency * restrict bpe, struct narrator * restrict N)
+void dependency_say_targets(const dependency * restrict bpe, struct narrator * restrict N)
   __attribute__((nonnull));
 
 /*
@@ -78,7 +77,7 @@ xapi dependency_say_targets(const dependency * restrict bpe, struct narrator * r
  * A - target
  * B - source
  */
-xapi dependency_connect(
+void dependency_connect(
     struct fsent * restrict A
   , struct fsent * restrict B
   , enum edge_kind relation
@@ -93,7 +92,7 @@ xapi dependency_connect(
  * Alist - targets
  * Blist - sources
  */
-xapi dependency_hyperconnect(
+void dependency_hyperconnect(
     struct moria_vertex ** restrict Alist
   , uint16_t Alen
   , struct moria_vertex ** restrict B
@@ -104,7 +103,7 @@ xapi dependency_hyperconnect(
 )
   __attribute__((nonnull(6, 7)));
 
-xapi dependency_disconnect(dependency * restrict ne, struct graph_invalidation_context * restrict invalidation)
+void dependency_disconnect(dependency * restrict ne, struct graph_invalidation_context * restrict invalidation)
   __attribute__((nonnull));
 
 #endif

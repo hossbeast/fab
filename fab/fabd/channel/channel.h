@@ -23,7 +23,6 @@
 */
 
 #include "types.h"
-#include "xapi.h"
 
 #include "fab/ipc.h"
 
@@ -56,7 +55,7 @@ STATIC_ASSERT(sizeof(channel) == FABIPC_SHMSIZE);
  * chanp     - (returns) the channel
  * thread_id - thread id for the handler of this channel
  */
-xapi channel_create(struct channel ** restrict chanp, pid_t thread_id)
+void channel_create(struct channel ** restrict chanp, pid_t thread_id)
   __attribute__((nonnull));
 
 void channel_release(struct channel * restrict chan)
@@ -87,11 +86,11 @@ void channel_responsew(channel * restrict ctx, int code, const char * restrict t
 
 /* module level */
 
-xapi channel_setup(void);
+void channel_setup(void);
 
-xapi channel_cleanup(void);
+void channel_cleanup(void);
 
-xapi channel_reconfigure(struct configblob * restrict cfg, bool dry)
+void channel_reconfigure(struct configblob * restrict cfg, bool dry)
   __attribute__((nonnull));
 
 #endif

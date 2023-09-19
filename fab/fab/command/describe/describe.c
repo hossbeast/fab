@@ -44,10 +44,8 @@ static void usage(command * restrict cmd)
   );
 }
 
-static xapi connected(command * restrict cmd, fab_client * restrict client)
+static void connected(command * restrict cmd, fab_client * restrict client)
 {
-  enter;
-
   fabipc_message * msg;
   size_t z;
   int x;
@@ -76,14 +74,10 @@ static xapi connected(command * restrict cmd, fab_client * restrict client)
   msg->size = z;
 
   client_post(client, msg);
-
-  finally : coda;
 }
 
-static xapi process(command * restrict cmd, fab_client * restrict client, fabipc_message * restrict msg)
+static void process(command * restrict cmd, fab_client * restrict client, fabipc_message * restrict msg)
 {
-  enter;
-
   fab_describe_item node;
   int x;
   descriptor_field *member;
@@ -94,7 +88,7 @@ static xapi process(command * restrict cmd, fab_client * restrict client, fabipc
 
   if(msg->type == FABIPC_MSG_RESPONSE) {
     g_params.shutdown = true;
-    goto XAPI_FINALLY;
+    return;
   }
 
   RUNTIME_ASSERT(msg->type == FABIPC_MSG_RESULT);
@@ -117,8 +111,6 @@ static xapi process(command * restrict cmd, fab_client * restrict client, fabipc
     printf("\n");
   }
   printf("}\n");
-
-  finally : coda;
 }
 
 //

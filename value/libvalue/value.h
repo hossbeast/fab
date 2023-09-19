@@ -18,7 +18,6 @@
 #ifndef _VALUE_H
 #define _VALUE_H
 
-#include "xapi.h"
 #include "types.h"
 
 struct list;          // libvalyria/list
@@ -117,14 +116,14 @@ typedef struct value {
 // SUMMARY
 //  initialize the library
 //
-xapi value_load(void);
+void value_load(void);
 
 /// value_unload
 //
 // SUMMARY
 //  release the library
 //
-xapi value_unload(void);
+void value_unload(void);
 
 /// value_znload
 //
@@ -151,13 +150,13 @@ size_t value_string_znloadw(void * restrict dst, size_t sz, const void * restric
 //  val - value
 //  N   - narrator to write to
 //
-xapi value_say(const value * const restrict val, struct narrator * const restrict N)
+void value_say(const value * const restrict val, struct narrator * const restrict N)
   __attribute__((nonnull(2)));
 
 /*
  * write a (single-line) representation of a value to a narrator
  */
-xapi value_render(const value * const restrict val, struct narrator * const restrict N)
+void value_render(const value * const restrict val, struct narrator * const restrict N)
   __attribute__((nonnull));
 
 /// value_cmp

@@ -19,7 +19,6 @@
 #define GRAPH_PARSER_H
 
 #include "types.h"
-#include "xapi.h"
 
 #include "yyutil/parser.h"
 #include "valyria/llist.h"
@@ -51,7 +50,7 @@ typedef struct graph_parser {
   llist edge_freelist;
 } graph_parser;
 
-xapi graph_parser_create(
+void graph_parser_create(
     graph_parser ** const restrict p
   , struct moria_graph * restrict g
   , llist * restrict vertex_list
@@ -66,14 +65,14 @@ xapi graph_parser_create(
 // SUMMARY
 //  free a config parser with free semantics
 //
-xapi graph_parser_xfree(graph_parser * const restrict);
+void graph_parser_xfree(graph_parser * const restrict);
 
 /// graph_parser_ixfree
 //
 // SUMMARY
 //  free a config parser with iwfree semantics
 //
-xapi graph_parser_ixfree(graph_parser ** const restrict)
+void graph_parser_ixfree(graph_parser ** const restrict)
   __attribute__((nonnull));
 
 /*
@@ -86,14 +85,14 @@ xapi graph_parser_ixfree(graph_parser ** const restrict)
  * text      - text to parse
  * len       - size of text
  */
-xapi graph_parser_parse(
+int graph_parser_parse(
     graph_parser * restrict parser
   , char * restrict text
   , size_t len
 )
   __attribute__((nonnull));
 
-xapi graph_parser_operations_parse(
+int graph_parser_operations_parse(
     graph_parser * restrict parser
   , char * restrict text
   , size_t len

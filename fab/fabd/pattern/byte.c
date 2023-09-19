@@ -30,31 +30,21 @@
 // static
 //
 
-static xapi say(const pattern_segment * restrict n, narrator * restrict N)
+static void say(const pattern_segment * restrict n, narrator * restrict N)
 {
-  enter;
-
-  fatal(byte_say, n->byte.code, N);
-
-  finally : coda;
+  byte_say(n->byte.code, N);
 }
 
-static xapi render(const pattern_segment * restrict fn, pattern_render_context * restrict ctx)
+static void render(const pattern_segment * restrict fn, pattern_render_context * restrict ctx)
 {
-  enter;
-
   const pattern_byte * n = &fn->byte;
 
-  fatal(byte_say, n->code, ctx->narrator);
-  fatal(pattern_segment_render, ctx);
-
-  finally : coda;
+  byte_say(n->code, ctx->narrator);
+  pattern_segment_render(ctx);
 }
 
-static xapi match(const pattern_segment * restrict segment, pattern_match_context * restrict ctx)
+static void match(const pattern_segment * restrict segment, pattern_match_context * restrict ctx)
 {
-  enter;
-
   const pattern_byte * byte = &segment->byte;
   const char * restrict name;
   uint16_t namel;
@@ -68,14 +58,10 @@ static xapi match(const pattern_segment * restrict segment, pattern_match_contex
   {
     ctx->traversal->offset += 1;
   }
-
-  finally : coda;
 }
 
-static xapi search(const pattern_segment * restrict segment, pattern_search_context * restrict ctx)
+static void search(const pattern_segment * restrict segment, pattern_search_context * restrict ctx)
 {
-  enter;
-
   const pattern_byte * byte = &segment->byte;
   const char * restrict name; // = ctx->node->name.name;
   uint16_t namel; // = ctx->node->name.namel;
@@ -89,20 +75,14 @@ static xapi search(const pattern_segment * restrict segment, pattern_search_cont
   {
     ctx->traversal->offset += 1;
   }
-
-  finally : coda;
 }
 
-static xapi generate(const pattern_segment * restrict seg, pattern_generate_context * restrict context)
+static void generate(const pattern_segment * restrict seg, pattern_generate_context * restrict context)
 {
-  enter;
-
-  finally : coda;
 }
 
 static void destroy(pattern_segment * restrict fn)
 {
-
 }
 
 static int cmp(const pattern_segment * A, const pattern_segment *B)
@@ -125,31 +105,23 @@ static pattern_segment_vtable vtable = {
 // internal
 //
 
-xapi byte_say(uint8_t code, narrator * restrict N)
+void byte_say(uint8_t code, narrator * restrict N)
 {
-  enter;
-
   if(code < 0x20 || code > 0x7e)
     xsayf("\\x%02hhx", code);
   else
     xsayc(code);
-
-  finally : coda;
 }
 
-xapi pattern_byte_mk(pattern_segment ** restrict fn, const yyu_location * restrict loc, uint8_t code)
+void pattern_byte_mk(pattern_segment ** restrict fn, const yyu_location * restrict loc, uint8_t code)
 {
-  enter;
-
   pattern_segment * n = 0;
 
-  fatal(xmalloc, &n, sizeof(*n));
-  fatal(pattern_segment_init, n, &vtable, loc);
+  xmalloc(&n, sizeof(*n));
+  pattern_segment_init(n, &vtable, loc);
 
   n->byte.code = code;
   chain_init(n, chn);
 
   *fn = n;
-
-  finally : coda;
 }

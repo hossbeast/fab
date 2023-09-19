@@ -18,20 +18,18 @@
 #ifndef _NARRATOR_LOAD_H
 #define _NARRATOR_LOAD_H
 
-#include "xapi.h"
-
 /// narrator_load
 //
 // SUMMARY
 //  initialize the library
 //
-xapi narrator_load(void);
+void narrator_load(void);
 
 /// narrator_unload
 //
 // SUMMARY
 //  release the library
 //
-xapi narrator_unload(void);
+void narrator_unload(void);
 
 #endif

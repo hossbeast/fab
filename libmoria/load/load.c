@@ -15,15 +15,12 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#include "xapi.h"
 
 #include "narrator/load.h"
-#include "valyria/load.h"
-#include "xlinux/load.h"
-#include "yyutil/load.h"
+
+#include "types.h"
 
 #include "load.h"
-#include "logging.internal.h"
 
 //
 // api
@@ -31,38 +28,18 @@
 
 static int handles;
 
-xapi API moria_load()
+void API moria_load()
 {
-  enter;
-
   if(handles++ == 0)
   {
-    // dependencies
-    fatal(xlinux_load);
-    fatal(narrator_load);
-    fatal(valyria_load);
-    fatal(yyutil_load);
-
-    // modules
-    fatal(logging_setup);
+    narrator_load();
   }
-
-  finally : coda;
 }
 
-xapi API moria_unload()
+void API moria_unload()
 {
-  enter;
-
   if(--handles == 0)
   {
-    // modules
-    // dependencies
-    fatal(xlinux_unload);
-    fatal(narrator_unload);
-    fatal(valyria_unload);
-    fatal(yyutil_unload);
+    narrator_unload();
   }
-
-  finally : coda;
 }

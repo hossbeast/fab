@@ -43,238 +43,158 @@ static int set_value_cmp(const void * _A, size_t Az, const void * _B, size_t Bz)
 // public
 //
 
-xapi store_string(value_parser * const restrict parser, value ** rv)
+void store_string(value_parser * const restrict parser, value ** rv)
 {
-  enter;
-
   value * val = 0;
   pstring * ps = 0;
 
-  fatal(xmalloc, &val, sizeof(*val));
-  fatal(pscreate, &ps);
+  xmalloc(&val, sizeof(*val));
+  pscreate(&ps);
 
   val->s = ps;
   val->type = VALUE_TYPE_STRING;
 
-  fatal(list_push, parser->store->strings, ps, 0);
-  ps = 0;
-
-  fatal(list_push, parser->store->values, val, 0);
+  list_push(parser->store->strings, ps, 0);
+  list_push(parser->store->values, val, 0);
   *rv = val;
-  val = 0;
-
-finally:
-  wfree(val);
-  psfree(ps);
-coda;
 }
 
-xapi store_float(value_parser * const restrict parser, value ** rv)
+void store_float(value_parser * const restrict parser, value ** rv)
 {
-  enter;
-
   value * val = 0;
 
-  fatal(xmalloc, &val, sizeof(*val));
+  xmalloc(&val, sizeof(*val));
   val->type = VALUE_TYPE_FLOAT;
 
-  fatal(list_push, parser->store->values, val, 0);
+  list_push(parser->store->values, val, 0);
   *rv = val;
-  val = 0;
-
-  finally : coda;
 }
 
-xapi store_boolean(value_parser * const restrict parser, value ** rv)
+void store_boolean(value_parser * const restrict parser, value ** rv)
 {
-  enter;
-
   value * val = 0;
 
-  fatal(xmalloc, &val, sizeof(*val));
+  xmalloc(&val, sizeof(*val));
   val->type = VALUE_TYPE_BOOLEAN;
 
-  fatal(list_push, parser->store->values, val, 0);
+  list_push(parser->store->values, val, 0);
   *rv = val;
-  val = 0;
-
-  finally : coda;
 }
 
-xapi store_posint(value_parser * const restrict parser, value ** rv)
+void store_posint(value_parser * const restrict parser, value ** rv)
 {
-  enter;
-
   value * val = 0;
 
-  fatal(xmalloc, &val, sizeof(*val));
+  xmalloc(&val, sizeof(*val));
   val->type = VALUE_TYPE_POSINT;
 
-  fatal(list_push, parser->store->values, val, 0);
+  list_push(parser->store->values, val, 0);
   *rv = val;
-  val = 0;
-
-  finally : coda;
 }
 
-xapi store_negint(value_parser * const restrict parser, value ** rv)
+void store_negint(value_parser * const restrict parser, value ** rv)
 {
-  enter;
-
   value * val = 0;
 
-  fatal(xmalloc, &val, sizeof(*val));
+  xmalloc(&val, sizeof(*val));
   val->type = VALUE_TYPE_NEGINT;
 
-  fatal(list_push, parser->store->values, val, 0);
+  list_push(parser->store->values, val, 0);
   *rv = val;
-  val = 0;
-
-finally:
-  wfree(val);
-coda;
 }
 
-xapi store_variable(value_parser * const restrict parser, value ** rv)
+void store_variable(value_parser * const restrict parser, value ** rv)
 {
-  enter;
-
   value * val = 0;
 
-  fatal(xmalloc, &val, sizeof(*val));
+  xmalloc(&val, sizeof(*val));
   val->type = VALUE_TYPE_VARIABLE;
 
-  fatal(list_push, parser->store->values, val, 0);
+  list_push(parser->store->values, val, 0);
   *rv = val;
-  val = 0;
-
-finally:
-  wfree(val);
-coda;
 }
 
-xapi store_mapping(value_parser * const restrict parser, value ** rv)
+void store_mapping(value_parser * const restrict parser, value ** rv)
 {
-  enter;
-
   value * val = 0;
 
-  fatal(xmalloc, &val, sizeof(*val));
+  xmalloc(&val, sizeof(*val));
   val->type = VALUE_TYPE_MAPPING;
 
-  fatal(list_push, parser->store->values, val, 0);
+  list_push(parser->store->values, val, 0);
   *rv = val;
-  val = 0;
-
-finally:
-  wfree(val);
-coda;
 }
 
-xapi store_list(value_parser * const restrict parser, value ** rv)
+void store_list(value_parser * const restrict parser, value ** rv)
 {
-  enter;
-
   value * val = 0;
   list * li = 0;
 
-  fatal(xmalloc, &val, sizeof(*val));
-  fatal(list_create, &li);
+  xmalloc(&val, sizeof(*val));
+  list_create(&li);
 
   val->items = li;
   val->type = VALUE_TYPE_LIST;
 
-  fatal(list_push, parser->store->lists, li, 0);
+  list_push(parser->store->lists, li, 0);
   li = 0;
 
-  fatal(list_push, parser->store->values, val, 0);
+  list_push(parser->store->values, val, 0);
   *rv = val;
-  val = 0;
-
-finally:
-  wfree(val);
-  fatal(list_xfree, li);
-coda;
 }
 
-xapi store_set(value_parser * const restrict parser, value ** rv)
+void store_set(value_parser * const restrict parser, value ** rv)
 {
-  enter;
-
   value * val = 0;
   set * s = 0;
 
-  fatal(xmalloc, &val, sizeof(*val));
-  fatal(set_createx, &s, 0, set_value_hash, set_value_cmp, 0, 0);
+  xmalloc(&val, sizeof(*val));
+  set_createx(&s, 0, set_value_hash, set_value_cmp, 0);
 
   val->els = s;
   val->type = VALUE_TYPE_SET;
 
-  fatal(list_push, parser->store->sets, s, 0);
-  s = 0;
-
-  fatal(list_push, parser->store->values, val, 0);
+  list_push(parser->store->sets, s, 0);
+  list_push(parser->store->values, val, 0);
   *rv = val;
-  val = 0;
-
-finally:
-  wfree(val);
-  fatal(set_xfree, s);
-coda;
 }
 
 //
 // api
 //
 
-xapi API value_store_create(value_store ** const restrict stor)
+void API value_store_create(value_store ** const restrict stor)
 {
-  enter;
-
-  fatal(xmalloc, stor, sizeof(**stor));
-  fatal(list_createx, &(*stor)->values, 0, 0, wfree, 0);
-  fatal(list_createx, &(*stor)->lists, 0, 0, 0, list_xfree);
-  fatal(list_createx, &(*stor)->strings, 0, 0, psfree, 0);
-  fatal(list_createx, &(*stor)->sets, 0, 0, 0, hashtable_xfree);
-
-  finally : coda;
+  xmalloc(stor, sizeof(**stor));
+  list_createx(&(*stor)->values, 0, 0, wfree);
+  list_createx(&(*stor)->lists, 0, 0, list_xfree);
+  list_createx(&(*stor)->strings, 0, 0, psfree);
+  list_createx(&(*stor)->sets, 0, 0, hashtable_xfree);
 }
 
-xapi API value_store_xfree(value_store * const restrict stor)
+void API value_store_xfree(value_store * const restrict stor)
 {
-  enter;
-
   if(stor)
   {
-    fatal(list_xfree, stor->values);
-    fatal(list_xfree, stor->lists);
-    fatal(list_xfree, stor->strings);
-    fatal(list_xfree, stor->sets);
+    list_xfree(stor->values);
+    list_xfree(stor->lists);
+    list_xfree(stor->strings);
+    list_xfree(stor->sets);
   }
 
   wfree(stor);
-
-  finally : coda;
 }
 
-xapi API value_store_ixfree(value_store ** const stor)
+void API value_store_ixfree(value_store ** const stor)
 {
-  enter;
-
-  fatal(value_store_xfree, *stor);
+  value_store_xfree(*stor);
   *stor = 0;
-
-  finally : coda;
 }
 
-xapi API value_store_recycle(value_store * const restrict stor)
+void API value_store_recycle(value_store * const restrict stor)
 {
-  enter;
-
-  fatal(list_recycle, stor->values);
-  fatal(list_recycle, stor->lists);
-  fatal(list_recycle, stor->strings);
-  fatal(list_recycle, stor->sets);
-
-  finally : coda;
+  list_recycle(stor->values);
+  list_recycle(stor->lists);
+  list_recycle(stor->strings);
+  list_recycle(stor->sets);
 }

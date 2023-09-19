@@ -22,7 +22,6 @@
  * configuration of how to reconcile fsent state with actual filesystem state
  */
 
-#include "xapi.h"
 #include "types.h"
 #include "valyria/llist.h"
 
@@ -63,8 +62,8 @@ typedef struct filesystem {
 extern struct filesystem filesystem_root;
 extern struct filesystem filesystem_shadow;
 
-xapi filesystem_setup(void);
-xapi filesystem_cleanup(void);
+void filesystem_setup(void);
+void filesystem_cleanup(void);
 
 /*
  * filesystem_reconfigure - rebuild the filesystem lookup structure from config
@@ -73,8 +72,7 @@ xapi filesystem_cleanup(void);
  * config - root of the config tree
  * dry    - whether to perform a dry-run
  */
-xapi filesystem_reconfigure(struct configblob * restrict cfg, bool dry)
-  __attribute__((nonnull));
+int filesystem_reconfigure(struct configblob * restrict cfg, char * restrict err, uint16_t err_sz);
 
 size_t filesystem_absolute_path_znload(void * restrict dst, size_t sz, const filesystem * restrict fs)
   __attribute__((nonnull));

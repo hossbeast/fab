@@ -16,8 +16,8 @@
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
 #include <unistd.h>
+#include <errno.h>
 
-#include "xapi.h"
 #include "types.h"
 
 #include "xlinux/xpthread.h"
@@ -26,32 +26,21 @@
 #include "valyria/llist.h"
 #include "fab/ipc.h"
 #include "fab/sigutil.h"
-#include "logger/config.h"
 
 #include "monitor_thread.h"
 #include "handler.h"
-#include "logging.h"
 #include "params.h"
 #include "threads.h"
 #include "rcu_list.h"
 
-xapi monitor_thread()
+void monitor_thread()
 {
-  enter;
-
   sigset_t sigs;
   siginfo_t info;
   handler_context * handler;
   struct timespec interval;
   int r;
   rcu_thread rcu_self = { };
-
-  logger_set_thread_name("monitor");
-  logger_set_thread_categories(L_MONITOR);
-
-#if DEBUG || DEVEL
-  logs(L_IPC, "starting");
-#endif
 
   // signals to be handled on this thread
   sigemptyset(&sigs);
@@ -66,7 +55,7 @@ xapi monitor_thread()
   while(g_params.thread_count)
   {
     rcu_quiesce(&rcu_self);
-    fatal(sigutil_timedwait, &r, &sigs, &info, &interval);
+    sigutil_timedwait(&r, &sigs, &info, &interval);
     if(r == EAGAIN) {
       continue;
     }
@@ -79,21 +68,15 @@ xapi monitor_thread()
       continue;
     }
 
-    fatal(uxtgkill, 0, g_params.pid, g_params.thread_server, SIGUSR1);
-    fatal(uxtgkill, 0, g_params.pid, g_params.thread_notify, SIGUSR1);
-    fatal(uxtgkill, 0, g_params.pid, g_params.thread_sweeper, SIGUSR1);
-    fatal(uxtgkill, 0, g_params.pid, g_params.thread_run, SIGUSR1);
+    uxtgkill(g_params.pid, g_params.thread_server, SIGUSR1);
+    uxtgkill(g_params.pid, g_params.thread_notify, SIGUSR1);
+    uxtgkill(g_params.pid, g_params.thread_sweeper, SIGUSR1);
+    uxtgkill(g_params.pid, g_params.thread_run, SIGUSR1);
 
     rcu_list_foreach(&g_handlers, handler, stk) {
-      fatal(uxtgkill, 0, g_params.pid, handler->tid, SIGUSR1);
+      uxtgkill(g_params.pid, handler->tid, SIGUSR1);
     }
   }
 
-finally:
-#if DEBUG || DEVEL
-  logs(L_IPC, "terminating");
-#endif
-
   rcu_unregister(&rcu_self);
-coda;
 }

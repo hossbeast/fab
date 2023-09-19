@@ -24,7 +24,6 @@ The buildplan represents a set of formulas to be executed in order to satisfy th
 
 */
 
-#include "xapi.h"
 #include "selection.h"
 
 #include "moria/traverse.h"
@@ -43,17 +42,17 @@ extern selection buildplan_selection;
 extern uint16_t buildplan_id;
 extern enum buildplan_state buildplan_state;
 
-xapi buildplan_create(void);
-xapi buildplan_setup(void);
-xapi buildplan_cleanup(void);
-xapi buildplan_reset(void);
-xapi buildplan_report(void);
+void buildplan_create(void);
+void buildplan_setup(void);
+void buildplan_cleanup(void);
+void buildplan_reset(void);
+void buildplan_report(void);
 
 /* add a dependency edge which has a formula to the current buildplan */
-xapi buildplan_add(struct dependency * restrict bpe, int distance)
+void buildplan_add(struct dependency * restrict bpe, int distance)
   __attribute__((nonnull));
 
-xapi buildplan_finalize(void)
+void buildplan_finalize(void)
   __attribute__((nonnull));
 
 /*
@@ -61,19 +60,19 @@ xapi buildplan_finalize(void)
  *
  * @distance - length of the path to this node from the target
  */
-xapi buildplan_visitor_direct(struct moria_vertex * v, void * arg, moria_traversal_mode mode, int distance, int * restrict result)
+void buildplan_visitor_direct(struct moria_vertex * v, void * arg, moria_traversal_mode mode, int distance, int * restrict result)
   __attribute__((nonnull(1)));
 
 /*
  * add each node in the selection to the plan, along with its dependencies, recursively
  */
-xapi buildplan_select_transitive(struct llist * restrict selection)
+void buildplan_select_transitive(struct llist * restrict selection)
   __attribute__((nonnull));
 
 /*
  * add exactly those nodes in the selection to the plan
  */
-xapi buildplan_select_direct(struct llist * restrict selection)
+void buildplan_select_direct(struct llist * restrict selection)
   __attribute__((nonnull));
 
 #endif

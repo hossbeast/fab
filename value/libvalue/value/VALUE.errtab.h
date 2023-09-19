@@ -1,1 +1,0 @@
-../errtab/VALUE.errtab.h

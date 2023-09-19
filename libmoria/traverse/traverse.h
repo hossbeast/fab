@@ -18,7 +18,6 @@
 #ifndef _MORIA_TRAVERSE_H
 #define _MORIA_TRAVERSE_H
 
-#include "xapi.h"
 #include "types.h"
 
 struct moria_edge;
@@ -115,10 +114,10 @@ typedef struct moria_edge_traversal_state moria_edge_traversal_state;
 //  Note that in general, the only guarantee about the order in which entities are visited is that,
 //  for a MORIA_TRAVERSE_POST traversal, a vertex is visited after its neighbors.
 //
-xapi moria_traverse_vertices(
+void moria_traverse_vertices(
     /* 1 */ struct moria_graph * restrict g
   , /* 2 */ struct moria_vertex * restrict v
-  , /* 3 */ xapi (* visitor)(struct moria_vertex * restrict, void * ctx, moria_traversal_mode mode, int distance, int * restrict)
+  , /* 3 */ void (* visitor)(struct moria_vertex * restrict, void * ctx, moria_traversal_mode mode, int distance, int * restrict)
   , /* 4 */ moria_vertex_traversal_state * state
   , /* 5 */ const moria_traversal_criteria * restrict criteria
   , /* 6 */ uint32_t attrs
@@ -126,10 +125,10 @@ xapi moria_traverse_vertices(
 )
   __attribute__((nonnull(1, 2)));
 
-xapi moria_traverse_vertex_edges(
+void moria_traverse_vertex_edges(
     /* 1 */ struct moria_graph * restrict g
   , /* 2 */ struct moria_vertex * restrict v
-  , /* 3 */ xapi (* visitor)(struct moria_edge * restrict, void * ctx, moria_traversal_mode mode, int distance, int * restrict)
+  , /* 3 */ void (* visitor)(struct moria_edge * restrict, void * ctx, moria_traversal_mode mode, int distance, int * restrict)
   , /* 4 */ moria_edge_traversal_state * state
   , /* 5 */ const moria_traversal_criteria * restrict criteria
   , /* 6 */ uint32_t attrs
@@ -137,10 +136,10 @@ xapi moria_traverse_vertex_edges(
 )
   __attribute__((nonnull(1, 2)));
 
-xapi moria_traverse_edges(
+void moria_traverse_edges(
     /* 1 */ struct moria_graph * restrict g
   , /* 2 */ struct moria_edge * restrict e
-  , /* 3 */ xapi (* visitor)(struct moria_edge * restrict, void * ctx, moria_traversal_mode mode, int distance, int * restrict)
+  , /* 3 */ void (* visitor)(struct moria_edge * restrict, void * ctx, moria_traversal_mode mode, int distance, int * restrict)
   , /* 4 */ moria_edge_traversal_state * state
   , /* 5 */ const moria_traversal_criteria * restrict criteria
   , /* 6 */ uint32_t attrs
@@ -148,10 +147,10 @@ xapi moria_traverse_edges(
 )
   __attribute__((nonnull(1, 2)));
 
-xapi moria_traverse_edge_vertices(
+void moria_traverse_edge_vertices(
     /* 1 */ struct moria_graph * restrict g
   , /* 2 */ struct moria_edge * restrict e
-  , /* 3 */ xapi (* visitor)(struct moria_vertex * restrict, void * ctx, moria_traversal_mode mode, int distance, int * restrict)
+  , /* 3 */ void (* visitor)(struct moria_vertex * restrict, void * ctx, moria_traversal_mode mode, int distance, int * restrict)
   , /* 4 */ moria_vertex_traversal_state * state
   , /* 5 */ const moria_traversal_criteria * restrict criteria
   , /* 6 */ uint32_t attrs
@@ -162,7 +161,7 @@ xapi moria_traverse_edge_vertices(
 /*
  * Callback to count vertices visited - ctx points to a uint32_t
  */
-xapi moria_vertex_count(
+void moria_vertex_count(
     struct moria_vertex * restrict v
   , void * ctx
   , moria_traversal_mode mode
@@ -171,7 +170,7 @@ xapi moria_vertex_count(
 )
   __attribute__((nonnull(2)));
 
-xapi moria_vertex_count_once(
+void moria_vertex_count_once(
     struct moria_vertex * restrict v
   , void * ctx
   , moria_traversal_mode mode
@@ -183,7 +182,7 @@ xapi moria_vertex_count_once(
 /*
  * Callback to count edges visited - ctx points to a uint32_t
  */
-xapi moria_edge_count(
+void moria_edge_count(
     struct moria_edge * restrict v
   , void * ctx
   , moria_traversal_mode mode
@@ -192,7 +191,7 @@ xapi moria_edge_count(
 )
   __attribute__((nonnull(2)));
 
-xapi moria_edge_count_once(
+void moria_edge_count_once(
     struct moria_edge * restrict v
   , void * ctx
   , moria_traversal_mode mode
@@ -204,10 +203,10 @@ xapi moria_edge_count_once(
 /*
  * Open a traversal. Two traversals with the same state will not visit the same entity more than once.
  */
-xapi moria_vertex_traversal_begin(struct moria_graph * restrict g, moria_vertex_traversal_state ** restrict state)
+void moria_vertex_traversal_begin(struct moria_graph * restrict g, moria_vertex_traversal_state ** restrict state)
   __attribute__((nonnull));
 
-xapi moria_edge_traversal_begin(struct moria_graph * restrict g, moria_edge_traversal_state ** restrict state)
+void moria_edge_traversal_begin(struct moria_graph * restrict g, moria_edge_traversal_state ** restrict state)
   __attribute__((nonnull));
 
 /*

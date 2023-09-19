@@ -50,7 +50,6 @@ typedef struct dictionary_t {
 
   // user callbacks
   void (*destroy_fn)(void * entry);
-  xapi (*xdestroy_fn)(void * entry);
 } dictionary_t;
 
 STATIC_ASSERT(offsetof(dictionary, size) == offsetof(dictionary_t, size));

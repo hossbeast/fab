@@ -15,20 +15,15 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#include "xapi.h"
-#include "xapi/errtab.h"
 #include "xlinux/xstdlib.h"
 
 #include "value/load.h"
-#include "yyutil/load.h"
 
 #include "xunit.h"
 #include "xunit/assert.h"
 #include "narrator.h"
 #include "narrator/growing.h"
 
-#include "logger.h"
-#include "logger/category.h"
 
 #include "value.h"
 #include "value.h"
@@ -48,30 +43,19 @@ typedef struct parser_test {
   char * expected;
 } parser_test;
 
-static xapi test_parser_setup(xunit_unit * unit)
+static void test_parser_setup(xunit_unit * unit)
 {
-  enter;
-
   // load libraries
-  fatal(value_load);
-  fatal(logger_finalize);
-
-  finally : coda;
+  value_load();
 }
 
-static xapi test_parser_cleanup(xunit_unit * unit)
+static void test_parser_cleanup(xunit_unit * unit)
 {
-  enter;
-
-  fatal(value_unload);
-
-  finally : coda;
+  value_unload();
 }
 
-static xapi test_parser_entry(xunit_test * _test)
+static void test_parser_entry(xunit_test * _test)
 {
-  enter;
-
   parser_test * test = containerof(_test, parser_test, xu);
 
   char buf[512];
@@ -81,25 +65,25 @@ static xapi test_parser_entry(xunit_test * _test)
   narrator_growing * N0 = 0;
   narrator_growing * N1 = 0;
 
-  fatal(narrator_growing_create, &N0);
-  fatal(narrator_growing_create, &N1);
+  narrator_growing_create(&N0);
+  narrator_growing_create(&N1);
 
-  fatal(value_parser_create, &parser);
+  value_parser_create(&parser);
 
   // parse
-  fatal(value_parser_parse, parser, MMS(test->text), 0, test->container, &val0);
-  fatal(value_say, val0, &N0->base);
+  value_parser_parse(parser, MMS(test->text), 0, test->container, &val0);
+  value_say(val0, &N0->base);
 
   // round-trip
   if(val0)
   {
     size_t len = N0->l;
-    fatal(narrator_xseek, &N0->base, 0, NARRATOR_SEEK_SET, 0);
-    fatal(narrator_xread, &N0->base, buf, len, 0);
+    narrator_xseek(&N0->base, 0, NARRATOR_SEEK_SET, 0);
+    narrator_xread(&N0->base, buf, len, 0);
     buf[len] = 0;
-    fatal(value_parser_parse, parser, buf, len, 0, 0, &val1);
+    value_parser_parse(parser, buf, len, 0, 0, &val1);
   }
-  fatal(value_say, val1, &N1->base);
+  value_say(val1, &N1->base);
 
   char norm[512];
   int y = 0;
@@ -121,18 +105,16 @@ static xapi test_parser_entry(xunit_test * _test)
   assert_eq_value(val0, val1);
   assert_eq_s(test->expected ?: test->text, actual);
 
-finally:
-  fatal(value_parser_xfree, parser);
-  fatal(narrator_growing_free, N0);
-  fatal(narrator_growing_free, N1);
-coda;
+  value_parser_xfree(parser);
+  narrator_growing_free(N0);
+  narrator_growing_free(N1);
 }
 
 //
 // manifest
 //
 
-xunit_unit xunit = {
+static xunit_unit xunit = {
     xu_setup : test_parser_setup
   , xu_entry : test_parser_entry
   , xu_cleanup : test_parser_cleanup
@@ -243,3 +225,4 @@ xunit_unit xunit = {
     , 0
   }
 };
+XUNIT_UNIT(xunit);

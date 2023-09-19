@@ -35,7 +35,6 @@ REMARKS
 #include <sys/types.h>
 #include <stdint.h>
 
-#include "xapi.h"
 #include "types.h"
 
 typedef struct multimap {
@@ -54,13 +53,12 @@ typedef struct multimap {
 //  [xfree_value] - invoked with the value just before freeing it (keys may not be managed in this way)
 //  [capacity]    - initial capacity, the minimum number of entries which can be set without rehashing
 //
-xapi multimap_create(multimap ** restrict m)
+void multimap_create(multimap ** restrict m)
   __attribute__((nonnull));
 
-xapi multimap_createx(
+void multimap_createx(
     multimap ** restrict m
   , void * free_value
-  , void * xfree_value
   , size_t capacity
 )
   __attribute__((nonnull(1)));
@@ -70,14 +68,14 @@ xapi multimap_createx(
 // SUMMARY
 //  free a multimap
 //
-xapi multimap_xfree(multimap * restrict map);
+void multimap_xfree(multimap * restrict map);
 
 /// multimap_ixfree
 //
 // SUMMARY
 //  free a map, zero its reference
 //
-xapi multimap_ixfree(multimap ** restrict map)
+void multimap_ixfree(multimap ** restrict map)
   __attribute__((nonnull));
 
 /// multimap_set
@@ -91,7 +89,7 @@ xapi multimap_ixfree(multimap ** restrict map)
 //  keyl    - key length
 //  [value] - pointer to value
 //
-xapi multimap_set(multimap * restrict m, const void * restrict key, size_t keyl, void * restrict value)
+void multimap_set(multimap * restrict m, const void * restrict key, size_t keyl, void * restrict value)
   __attribute__((nonnull(1, 2)));
 
 /// multimap_get
@@ -113,7 +111,7 @@ xapi multimap_set(multimap * restrict m, const void * restrict key, size_t keyl,
 // SUMMARY
 //  returns pointer to the stored value, or 0 if not found
 //
-xapi multimap_get(
+void multimap_get(
     /* 1 */ const multimap * restrict m
   , /* 2 */ const void * restrict key
   , /* 3 */ size_t keyl
@@ -128,7 +126,7 @@ xapi multimap_get(
 // SUMMARY
 //  disassociate all keys - internal structures in the multimap remain allocated
 //
-xapi multimap_recycle(multimap * restrict map)
+void multimap_recycle(multimap * restrict map)
   __attribute__((nonnull));
 
 /// multimap_delete
@@ -141,7 +139,7 @@ xapi multimap_recycle(multimap * restrict map)
 //  key  - pointer to key
 //  keyl - length of key
 //
-xapi multimap_delete(multimap * restrict m, const void * restrict key, size_t keyl)
+void multimap_delete(multimap * restrict m, const void * restrict key, size_t keyl)
   __attribute__((nonnull));
 
 /// multimap_keys
@@ -154,7 +152,7 @@ xapi multimap_delete(multimap * restrict m, const void * restrict key, size_t ke
 //  list   - (returns) list, to be freed by the caller
 //  listl  - (returns) size of list
 //
-xapi multimap_keys(const multimap * restrict m, const char *** restrict keys, size_t * restrict keysl)
+void multimap_keys(const multimap * restrict m, const char *** restrict keys, size_t * restrict keysl)
   __attribute__((nonnull));
 
 /// multimap_values
@@ -167,7 +165,7 @@ xapi multimap_keys(const multimap * restrict m, const char *** restrict keys, si
 //  list   - (returns) list, to be freed by the caller
 //  listl  - (returns) size of list
 //
-xapi multimap_values(const multimap * restrict m, void * restrict values, size_t * restrict valuesl)
+void multimap_values(const multimap * restrict m, void * restrict values, size_t * restrict valuesl)
   __attribute__((nonnull));
 
 /// multimap_table_key

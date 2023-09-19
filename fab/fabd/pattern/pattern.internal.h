@@ -18,7 +18,6 @@
 #ifndef PATTERN_INTERNAL_H
 #define PATTERN_INTERNAL_H
 
-#include "xapi.h"
 #include "types.h"
 
 #include "pattern.h"
@@ -31,17 +30,17 @@ struct narrator;
 struct pattern_section;
 union pattern_segment;
 
-xapi pattern_segment_init(union pattern_segment * restrict n, const pattern_segment_vtable * restrict vtab, const yyu_location * restrict loc)
+void pattern_segment_init(union pattern_segment * restrict n, const pattern_segment_vtable * restrict vtab, const yyu_location * restrict loc)
   __attribute__((nonnull));
 
-xapi pattern_mk(
+void pattern_mk(
     struct pattern ** restrict rv
   , const struct yyu_location * restrict loc
   , struct pattern_section * restrict sections
 )
   __attribute__((nonnull));
 
-xapi pattern_segments_mk(
+void pattern_segments_mk(
     struct pattern_segments ** restrict rv
   , const struct yyu_location * restrict loc
   , pattern_qualifier_type qualifier_type
@@ -49,10 +48,10 @@ xapi pattern_segments_mk(
 )
   __attribute__((nonnull));
 
-xapi pattern_attrs_say(uint16_t attrs, struct narrator * restrict N)
+void pattern_attrs_say(uint16_t attrs, struct narrator * restrict N)
   __attribute__((nonnull));
 
-xapi pattern_segments_say(const pattern_segments * segment_list, bool only, struct narrator * restrict N)
+void pattern_segments_say(const pattern_segments * segment_list, bool only, struct narrator * restrict N)
   __attribute__((nonnull));
 
 #endif

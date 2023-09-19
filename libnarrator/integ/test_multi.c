@@ -18,8 +18,6 @@
 #include <stdio.h>
 #include <stdarg.h>
 
-#include "xapi.h"
-#include "xapi/trace.h"
 
 #include "narrator.h"
 #include "narrator/multi.h"
@@ -27,10 +25,8 @@
 
 #include "test_util.h"
 
-static xapi validate(int count, ...)
+static void validate(int count, ...)
 {
-  enter;
-
   va_list va;
   va_start(va, count);
 
@@ -41,52 +37,34 @@ static xapi validate(int count, ...)
     assert_eq_s("hello world", n->s);
   }
 
-finally:
   va_end(va);
-  xapi_infof("narrator", "%d", x);
-coda;
 }
 
-static xapi test_basic()
+static void test_basic()
 {
-  enter;
-
   narrator_multi * N = 0;
   narrator_growing * N0 = 0;
   narrator_growing * N1 = 0;
-  fatal(narrator_multi_create, &N);
-  fatal(narrator_growing_create, &N0);
-  fatal(narrator_growing_create, &N1);
+  narrator_multi_create(&N);
+  narrator_growing_create(&N0);
+  narrator_growing_create(&N1);
 
-  fatal(narrator_multi_add, N, &N0->base);
-  fatal(narrator_multi_add, N, &N1->base);
+  narrator_multi_add(N, &N0->base);
+  narrator_multi_add(N, &N1->base);
 
-  fatal(narrator_xsays, &N->base, "hello world");
+  narrator_xsays(&N->base, "hello world");
 
-  fatal(validate, 2, N0, N1);
+  validate(2, N0, N1);
 
-finally:
-  fatal(narrator_multi_free, N);
-  fatal(narrator_growing_free, N0);
-  fatal(narrator_growing_free, N1);
-coda;
+  narrator_multi_free(N);
+  narrator_growing_free(N0);
+  narrator_growing_free(N1);
 }
 
 int main()
 {
-  enter;
+  test_basic();
 
-  xapi R = 0;
-  fatal(test_basic);
-
-finally:
   summarize;
-  if(XAPI_UNWINDING)
-  {
-    xapi_backtrace(2, 0);
-  }
-conclude(&R);
-
-  xapi_teardown();
-  return !!R;
+  return 0;
 }

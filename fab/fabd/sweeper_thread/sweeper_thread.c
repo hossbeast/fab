@@ -18,14 +18,7 @@
 #include <unistd.h>
 #include <sys/inotify.h>
 
-#include "xapi.h"
-
-#include "logger.h"
-#include "logger/config.h"
 #include "narrator.h"
-#include "narrator/fixed.h"
-#include "xapi/trace.h"
-#include "xlinux/KERNEL.errtab.h"
 #include "xlinux/xpthread.h"
 #include "xlinux/xstdlib.h"
 #include "xlinux/xtime.h"
@@ -38,11 +31,11 @@
 #include "goals.h"
 #include "graph.h"
 #include "run_thread.h"
-#include "logging.h"
 #include "params.h"
 #include "rcu.h"
 #include "walker.h"
 #include "zbuffer.h"
+#include "probes.h"
 
 #include "locks.h"
 #include "atomics.h"
@@ -55,20 +48,19 @@ static llist child_event_freelist = LLIST_INITIALIZER(child_event_freelist);
 static struct spinlock event_queue_lock;
 static uint32_t event_era;
 
-static xapi process_event(sweeper_event * restrict ev, graph_invalidation_context * restrict invalidation)
+static void process_event(sweeper_event * restrict ev, graph_invalidation_context * restrict invalidation)
 {
-  enter;
-
   char path[512];
   moria_vertex *v;
   moria_edge *ue;
   fsent *n;
-  sweeper_child_event *cev = 0;
+  sweeper_child_event *cev;
   size_t z;
 
   if(ev->kind == SWEEPER_EVENT_SELF)
   {
     n = containerof(ev, fsent, pending);
+    cev = 0;
   }
   else
   {
@@ -81,7 +73,7 @@ static xapi process_event(sweeper_event * restrict ev, graph_invalidation_contex
   {
     if(ev->mask & (IN_CREATE | IN_MOVED_TO)) {
       /* entity created then subsequently deleted during the epoch - no-op */
-      goto XAPI_FINALLY;
+      return;
     }
 
     if(ev->kind == SWEEPER_EVENT_SELF)
@@ -95,7 +87,7 @@ static xapi process_event(sweeper_event * restrict ev, graph_invalidation_contex
       if((v = moria_vertex_downw(v, cev->name, cev->name_len)) == 0)
       {
         /* delete event for an fsent which no longer exists */
-        goto XAPI_FINALLY;
+        return;
       }
     }
 
@@ -104,7 +96,7 @@ static xapi process_event(sweeper_event * restrict ev, graph_invalidation_contex
     /* deleted the root node ?? */
     RUNTIME_ASSERT(ue);
 
-    fatal(graph_disintegrate, ue, invalidation);
+    graph_disintegrate(ue, invalidation);
   }
   else if(ev->mask & (IN_CREATE | IN_MOVED_TO) && ev->kind == SWEEPER_EVENT_CHILD)
   {
@@ -117,34 +109,30 @@ static xapi process_event(sweeper_event * restrict ev, graph_invalidation_contex
       path[z] = 0;
 
       /* traverse the directory (recursively) and attach at cev->parent */
-      fatal(walker_descend, 0, 0, cev->parent, path, 0, invalidation);
+      walker_descend(0, 0, cev->parent, path, 0, invalidation);
     }
     else
     {
-      fatal(fsent_create, &n, VERTEX_TYPE_FSENT, VERTEX_OK, cev->name, cev->name_len);
-      fatal(fsedge_connect, cev->parent, n, invalidation);
+      fsent_create(&n, VERTEX_TYPE_FSENT, VERTEX_OK, cev->name, cev->name_len);
+      fsedge_connect(cev->parent, n, invalidation);
     }
   }
   else
   {
     /* entity was modified */
     fsent_exists_set(n);
-    fatal(fsent_invalidate, n, invalidation);
+    fsent_invalidate(n, invalidation);
   }
-
-  finally : coda;
 }
 
-static xapi sweep()
+static void sweep()
 {
-  enter;
-
   graph_invalidation_context invalidation = { };
   sweeper_event *ev;
   sweeper_child_event *ce;
   llist *cursor;
 
-  fatal(graph_invalidation_begin, &invalidation);
+  graph_invalidation_begin(&invalidation);
 
   llist_foreach_safe(&event_queue, ev, lln, cursor) {
     /* subsequent events have not yet expired */
@@ -152,7 +140,7 @@ static xapi sweep()
       break;
     }
 
-    fatal(process_event, ev, &invalidation);
+    process_event(ev, &invalidation);
 
     llist_delete(ev, lln);
     if(ev->kind == SWEEPER_EVENT_SELF) {
@@ -164,15 +152,11 @@ static xapi sweep()
     }
   }
 
-finally:
   graph_invalidation_end(&invalidation);
-coda;
 }
 
-static xapi sweeper_thread()
+static void sweeper_thread()
 {
-  enter;
-
   sigset_t sigs;
   struct timespec deadline;
   sigset_t orig;
@@ -184,13 +168,9 @@ static xapi sweeper_thread()
   sigfillset(&sigs);
   sigdelset(&sigs, SIGUSR1);
 
-#if DEBUG || DEVEL
-  logs(L_IPC, "starting");
-#endif
-
   period = g_args.sweeper_period_nsec;
 
-  fatal(xclock_gettime, CLOCK_MONOTONIC, &deadline);
+  xclock_gettime(CLOCK_MONOTONIC, &deadline);
   timespec_add(&deadline, period);
 
   rcu_register(&rcu_self);
@@ -202,19 +182,19 @@ static xapi sweeper_thread()
 
     if(!llist_empty(&event_queue))
     {
-      fatal(sweep);
+      sweep();
       if(llist_empty(&event_queue) && run_thread_autorun)
       {
-        fatal(run_thread_launch, 0, COMMAND_AUTORUN);
+        run_thread_launch(0, COMMAND_AUTORUN);
       }
     }
 
     spinlock_release(&event_queue_lock);
 
     /* sleep */
-    fatal(xpthread_sigmask, SIG_SETMASK, &sigs, &orig);
-    fatal(uxclock_nanosleep, &r, CLOCK_MONOTONIC, TIMER_ABSTIME, &deadline, 0);
-    fatal(xpthread_sigmask, SIG_SETMASK, &orig, 0);
+    xpthread_sigmask(SIG_SETMASK, &sigs, &orig);
+    r = uxclock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME, &deadline, 0);
+    xpthread_sigmask(SIG_SETMASK, &orig, 0);
 
     /* only advance the deadline if the sleep was not interrupted */
     if(r) {
@@ -224,42 +204,15 @@ static xapi sweeper_thread()
     timespec_add(&deadline, period);
   }
 
-finally:
   spinlock_release(&event_queue_lock);
-
-#if DEBUG || DEVEL
-  logs(L_IPC, "terminating");
-#endif
-
   rcu_unregister(&rcu_self);
-coda;
 }
 
 static void * sweeper_thread_jump(void * arg)
 {
-  enter;
-
-  xapi R;
-
   tid = g_params.thread_sweeper = gettid();
-  logger_set_thread_name("sweeper");
-  logger_set_thread_categories(L_SWEEPER);
 
-  fatal(sweeper_thread);
-
-finally:
-  if(XAPI_UNWINDING)
-  {
-#if DEBUG || DEVEL || XAPI
-    xapi_infos("thread", "sweeper");
-    xapi_infof("pid", "%ld", (long)getpid());
-    xapi_infof("tid", "%ld", (long)gettid());
-    fatal(logger_xtrace_full, L_ERROR, L_NONAMES, XAPI_TRACE_COLORIZE | XAPI_TRACE_NONEWLINE);
-#else
-    fatal(logger_xtrace_pithy, L_ERROR, L_NONAMES, XAPI_TRACE_COLORIZE | XAPI_TRACE_NONEWLINE);
-#endif
-  }
-conclude(&R);
+  sweeper_thread();
 
   atomic_fetch_dec(&g_params.thread_count);
   syscall(SYS_tgkill, g_params.pid, g_params.thread_monitor, SIGUSR1);
@@ -283,10 +236,8 @@ static int event_rbn_key_cmp(void * _key, const rbnode * _n)
 // public
 //
 
-xapi sweeper_thread_enqueue(fsent *n, uint32_t mask, const char * restrict name, uint16_t namel)
+void sweeper_thread_enqueue(fsent *n, uint32_t mask, const char * restrict name, uint16_t namel)
 {
-  enter;
-
   sweeper_event *e;
   sweeper_child_event *ce;
   rbnode *rbn;
@@ -313,7 +264,7 @@ xapi sweeper_thread_enqueue(fsent *n, uint32_t mask, const char * restrict name,
     {
       if((ce = llist_shift(&child_event_freelist, typeof(*ce), sweep_event.lln)) == 0)
       {
-        fatal(xmalloc, &ce, sizeof(*ce));
+        xmalloc(&ce, sizeof(*ce));
         ce->sweep_event.kind = SWEEPER_EVENT_CHILD;
         llist_init_node(&ce->sweep_event.lln);
       }
@@ -352,44 +303,29 @@ xapi sweeper_thread_enqueue(fsent *n, uint32_t mask, const char * restrict name,
   llist_delete(e, lln);
   llist_append(&event_queue, e, lln);
 
-finally:
   spinlock_release(&event_queue_lock);
-coda;
 }
 
-xapi sweeper_thread_launch()
+void sweeper_thread_launch()
 {
-  enter;
-
   pthread_t pthread_id;
   pthread_attr_t attr;
-  int rv;
 
-  fatal(xpthread_attr_init, &attr);
-  fatal(xpthread_attr_setdetachstate, &attr, PTHREAD_CREATE_DETACHED);
+  xpthread_attr_init(&attr);
+  xpthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
 
   atomic_fetch_inc(&g_params.thread_count);
-  if((rv = pthread_create(&pthread_id, &attr, sweeper_thread_jump, 0)) != 0)
-  {
-    atomic_fetch_dec(&g_params.thread_count);
-    tfail(perrtab_KERNEL, rv);
-  }
+  xpthread_create(&pthread_id, &attr, sweeper_thread_jump, 0);
 
-finally:
   pthread_attr_destroy(&attr);
-coda;
 }
 
-xapi sweeper_thread_cleanup()
+void sweeper_thread_cleanup()
 {
-  enter;
-
   sweeper_child_event *ce;
   llist *cursor;
 
   llist_foreach_safe(&child_event_freelist, ce, sweep_event.lln, cursor) {
     free(ce);
   }
-
-  finally : coda;
 }

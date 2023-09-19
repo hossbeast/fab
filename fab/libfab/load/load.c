@@ -15,17 +15,10 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#include "xapi.h"
-#include "logger/load.h"
+#include "types.h"
 #include "narrator/load.h"
-#include "xlinux/load.h"
-
-#include "logger.h"
-#include "narrator.h"
 
 #include "load.h"
-#include "FAB.errtab.h"
-#include "logging.internal.h"
 
 static int handles;
 
@@ -33,36 +26,18 @@ static int handles;
 // api
 //
 
-xapi API fab_load()
+void API fab_load()
 {
-  enter;
-
   if(handles++ == 0)
   {
-    // dependencies
-    fatal(xlinux_load);
-    fatal(logger_load);
-    fatal(narrator_load);
-
-    // modules
-    fatal(logging_setup);
+    narrator_load();
   }
-
-  finally : coda;
 }
 
-xapi API fab_unload()
+void API fab_unload()
 {
-  enter;
-
   if(--handles == 0)
   {
-    // modules
-    // dependencies
-    fatal(xlinux_unload);
-    fatal(logger_unload);
-    fatal(narrator_unload);
+    narrator_unload();
   }
-
-  finally : coda;
 }

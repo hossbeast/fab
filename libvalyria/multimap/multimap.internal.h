@@ -18,7 +18,6 @@
 #ifndef _VALYRIA_MULTIMAP_INTERNAL_H
 #define _VALYRIA_MULTIMAP_INTERNAL_H
 
-#include "xapi.h"
 #include "types.h"
 
 #include "multimap.h"
@@ -55,7 +54,6 @@ typedef struct multimap_t {
   size_t lm;                  // bitmask equal to table_size - 1
 
   void (*free_value)(void *);
-  xapi (*xfree_value)(void *);
 
   multimap_key ** tk;  // key table
   char * tv;           // value table
@@ -64,7 +62,7 @@ typedef struct multimap_t {
 STATIC_ASSERT(offsetof(multimap, size) == offsetof(multimap_t, size));
 STATIC_ASSERT(offsetof(multimap, table_size) == offsetof(multimap_t, table_size));
 
-xapi multimap_rehash(multimap_t * restrict m)
+void multimap_rehash(multimap_t * restrict m)
   __attribute__((nonnull));
 
 #endif

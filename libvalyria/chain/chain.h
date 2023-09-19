@@ -28,7 +28,6 @@ REMARKS
 
 */
 
-#include "xapi.h"
 #include "types.h"
 
 #include "macros.h"

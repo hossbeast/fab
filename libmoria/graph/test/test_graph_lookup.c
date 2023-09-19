@@ -15,7 +15,6 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#include "xapi.h"
 
 #include "xunit.h"
 #include "xunit/assert.h"
@@ -30,7 +29,6 @@
 
 #include "moria.h"
 #include "graph.internal.h"
-#include "logging.internal.h"
 #include "operations.h"
 #include "parser.internal.h"
 #include "vertex.h"
@@ -50,29 +48,18 @@ typedef struct graph_lookup_test
   uint32_t expected_attrs;
 } graph_lookup_test;
 
-static xapi graph_unit_setup(xunit_unit * unit)
+static void graph_unit_setup(xunit_unit * unit)
 {
-  enter;
-
-  fatal(moria_load);
-  fatal(logger_finalize);
-
-  finally : coda;
+  moria_load();
 }
 
-static xapi graph_unit_cleanup(xunit_unit * unit)
+static void graph_unit_cleanup(xunit_unit * unit)
 {
-  enter;
-
-  fatal(moria_unload);
-
-  finally : coda;
+  moria_unload();
 }
 
-static xapi graph_hashtable_index(hashtable * restrict mm, moria_vertex * restrict v)
+static void graph_hashtable_index(hashtable * restrict mm, moria_vertex * restrict v)
 {
-  enter;
-
   moria_vertex_entry *entry, key;
 
   key.label = v->label;
@@ -83,18 +70,14 @@ static xapi graph_hashtable_index(hashtable * restrict mm, moria_vertex * restri
   {
     /* entry will use this nodes label */
     rbtree_init(&key.rbt);
-    fatal(hashtable_put, mm, &key);
+    hashtable_put(mm, &key);
     entry = hashtable_get(mm, &key);
   }
   rbtree_put(&entry->rbt, v, rbn_lookup, (void*)ptrcmp);
-
-  finally : coda;
 }
 
-static xapi graph_test_entry(xunit_test * _test)
+static void graph_test_entry(xunit_test * _test)
 {
-  enter;
-
   moria_graph g;
   hashtable *mm = 0;
   graph_parser * p = 0;
@@ -106,26 +89,26 @@ static xapi graph_test_entry(xunit_test * _test)
   moria_graph_init(&g);
 
   // arrange
-  fatal(hashtable_createx, &mm
+  hashtable_createx(
+      &mm
     , sizeof(moria_vertex_entry)
     , 0
     , moria_vertex_entry_hash
     , moria_vertex_entry_cmp
     , 0
-    , 0
   );
-  fatal(graph_parser_create, &p, &g, 0, graph_operations_dispatch, 0, 0);
+  graph_parser_create(&p, &g, 0, graph_operations_dispatch, 0, 0);
   if(test->operations) {
-    fatal(graph_parser_operations_parse, p, MMS(test->operations));
+    graph_parser_operations_parse(p, MMS(test->operations));
   }
 
   llist_foreach(&p->vertices, v, owner) {
-    fatal(graph_hashtable_index, mm, v);
+    graph_hashtable_index(mm, v);
   }
 
   // act
-  fatal(moria_graph_lookup
-    , &g
+  moria_graph_lookup(
+      &g
     , mm
     , moria_graph_lookup_sentinel
     , 0
@@ -148,14 +131,12 @@ static xapi graph_test_entry(xunit_test * _test)
     assert_null(actual[0]);
   }
 
-finally:
   moria_graph_destroy(&g);
-  fatal(graph_parser_xfree, p);
-  fatal(hashtable_xfree, mm);
-coda;
+  graph_parser_xfree(p);
+  hashtable_xfree(mm);
 }
 
-xunit_unit xunit = {
+static xunit_unit xunit = {
     .xu_setup = graph_unit_setup
   , .xu_cleanup = graph_unit_cleanup
   , .xu_entry = graph_test_entry
@@ -200,3 +181,4 @@ xunit_unit xunit = {
       , 0
   }
 };
+XUNIT_UNIT(xunit);

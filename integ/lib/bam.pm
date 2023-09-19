@@ -34,7 +34,7 @@ sub setup
   my $spec = shift;
 
   $bam_invalidate = $ARGV[0] || die "missing required argument : invalidate";
-  $bam_fabpath = "$repodir/fab/fab/fab.devel.xapi";
+  $bam_fabpath = "$repodir/fab/fab/fab.devel.pic";
   $bam_testdir = tree_build(basename($0), $spec);
 
   bam_bootstrap();
@@ -66,6 +66,7 @@ sub build
 
 sub bam_bootstrap
 {
+print("x");
   run({ cwd => $bam_testdir, tolerate_error => 1 }
     , $bam_fabpath
     , "reconcile"
@@ -76,7 +77,9 @@ sub bam_bootstrap
     , "--sweeper-period-nsec", $bam_sweeper_period
   );
 
+print("y");
   print Dumper bam_metadata();
+print("z");
   print Dumper bam_tree();
 }
 

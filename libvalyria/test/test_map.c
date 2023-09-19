@@ -18,8 +18,6 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-#include "xapi.h"
-#include "xapi/trace.h"
 #include "xlinux/xstdlib.h"
 
 #include "map.h"
@@ -33,46 +31,32 @@ typedef struct item
   int x;
 } item;
 
-static inline xapi insert(map * restrict m, const char * restrict key, int val)
+static inline void insert(map * restrict m, const char * restrict key, int val)
 {
-  enter;
-
   item * itemp = 0;
-  fatal(xmalloc, &itemp, sizeof(*itemp));
+  xmalloc(&itemp, sizeof(*itemp));
   itemp->x = val;
-  fatal(map_put, m, MMS(key), itemp, 0);
+  map_put(m, MMS(key), itemp, 0);
   itemp = 0;
 
-finally:
   wfree(itemp);
-coda;
 }
 
-static inline xapi contains(map * restrict m, const char * restrict key, int val)
+static inline void contains(map * restrict m, const char * restrict key, int val)
 {
-  enter;
-
   item * i = map_get(m, MMS(key));
   assert_notnull(i);
   assert_eq_d(val, i->x);
-
-  finally : coda;
 }
 
-static inline xapi absent(map * restrict m, const char * restrict key)
+static inline void absent(map * restrict m, const char * restrict key)
 {
-  enter;
-
   item * i = map_get(m, MMS(key));
   assert_null(i);
-
-  finally : coda;
 }
 
-static xapi validate_enumeration(map * restrict m)
+static void validate_enumeration(map * restrict m)
 {
-  enter;
-
   int x;
   for(x = 0; x < m->table_size; x++)
   {
@@ -96,14 +80,10 @@ static xapi validate_enumeration(map * restrict m)
       }
     }
   }
-
-  finally : coda;
 }
 
-static xapi validate_keyset(map * restrict m, char ** restrict keyset)
+static void validate_keyset(map * restrict m, char ** restrict keyset)
 {
-  enter;
-
   int n = sentinel(keyset);
   int x;
   int i;
@@ -140,19 +120,15 @@ static xapi validate_keyset(map * restrict m, char ** restrict keyset)
     assert_ne_d(m->table_size, i);
   }
 
-  fatal(map_keys, m, &keys, &keysl);
+  map_keys(m, &keys, &keysl);
 
-finally:
   wfree(keys);
-coda;
 }
 
-static xapi test_basic()
+static void test_basic()
 {
-  enter;
-
   map * m = 0;
-  fatal(map_createx, &m, 0, wfree, 0);
+  map_createx(&m, 0, wfree);
 
   char * keyset[] = {
       "1"
@@ -162,39 +138,35 @@ static xapi test_basic()
     , 0
   };
 
-  fatal(insert, m, "1", 1);
-  fatal(insert, m, "200", 200);
-  fatal(insert, m, "3", 3);
-  fatal(insert, m, "", 42);
+  insert(m, "1", 1);
+  insert(m, "200", 200);
+  insert(m, "3", 3);
+  insert(m, "", 42);
 
   assert_eq_d(4, m->size);
 
   // entries by lookup
-  fatal(contains, m, "1", 1);
-  fatal(contains, m, "3", 3);
-  fatal(contains, m, "200", 200);
-  fatal(contains, m, "", 42);
+  contains(m, "1", 1);
+  contains(m, "3", 3);
+  contains(m, "200", 200);
+  contains(m, "", 42);
 
   // entries by enumeration
-  fatal(validate_enumeration, m);
-  fatal(validate_keyset, m, keyset);
+  validate_enumeration(m);
+  validate_keyset(m, keyset);
 
-finally:
-  fatal(map_xfree, m);
-coda;
+  map_xfree(m);
 }
 
-static xapi test_recycle()
+static void test_recycle()
 {
-  enter;
-
   char space[64];
   map * m = 0;
   int x;
   int y;
   int i;
 
-  fatal(map_createx, &m, 0, wfree, 0);
+  map_createx(&m, 0, wfree);
 
   for(i = 0; i < 4; i++)
   {
@@ -202,7 +174,7 @@ static xapi test_recycle()
     x = y;
     do {
       snprintf(space, sizeof(space), "%d", x);
-      fatal(insert, m, space, x);
+      insert(m, space, x);
       x = (x + 1) % 5000;
     } while(x != y);
 
@@ -212,25 +184,21 @@ static xapi test_recycle()
     for(x = 0; x < 5000; x++)
     {
       snprintf(space, sizeof(space), "%d", x);
-      fatal(contains, m, space, x);
+      contains(m, space, x);
     }
 
     // entries by enumeration
-    fatal(validate_enumeration, m);
-    fatal(map_recycle, m);
+    validate_enumeration(m);
+    map_recycle(m);
   }
 
-finally:
-  fatal(map_xfree, m);
-coda;
+  map_xfree(m);
 }
 
-static xapi test_delete()
+static void test_delete()
 {
-  enter;
-
   map * m = 0;
-  fatal(map_createx, &m, 0, wfree, 0);
+  map_createx(&m, 0, wfree);
 
   char * keyset[] = {
       "1"
@@ -242,143 +210,114 @@ static xapi test_delete()
     , 0
   };
 
-  fatal(insert, m, "1", 1);
-  fatal(insert, m, "200", 200);
-  fatal(insert, m, "3", 3);
-  fatal(insert, m, "37", 37);
-  fatal(insert, m, "9000000", 9000000);
-  fatal(insert, m, "", 42);
+  insert(m, "1", 1);
+  insert(m, "200", 200);
+  insert(m, "3", 3);
+  insert(m, "37", 37);
+  insert(m, "9000000", 9000000);
+  insert(m, "", 42);
 
   // successive deletion
-  fatal(map_delete, m, MMS(keyset[5]));
+  map_delete(m, MMS(keyset[5]));
   assert_eq_d(5, m->size);
-  fatal(absent, m, keyset[5]);
-  fatal(validate_enumeration, m);
+  absent(m, keyset[5]);
+  validate_enumeration(m);
   keyset[5] = 0;
-  fatal(validate_keyset, m, keyset);
+  validate_keyset(m, keyset);
 
-  fatal(map_delete, m, MMS(keyset[4]));
+  map_delete(m, MMS(keyset[4]));
   assert_eq_d(4, m->size);
-  fatal(absent, m, keyset[4]);
-  fatal(validate_enumeration, m);
+  absent(m, keyset[4]);
+  validate_enumeration(m);
   keyset[4] = 0;
-  fatal(validate_keyset, m, keyset);
+  validate_keyset(m, keyset);
 
-  fatal(map_delete, m, MMS(keyset[3]));
+  map_delete(m, MMS(keyset[3]));
   assert_eq_d(3, m->size);
-  fatal(absent, m, keyset[3]);
-  fatal(validate_enumeration, m);
+  absent(m, keyset[3]);
+  validate_enumeration(m);
   keyset[3] = 0;
-  fatal(validate_keyset, m, keyset);
+  validate_keyset(m, keyset);
 
-  fatal(map_delete, m, MMS(keyset[2]));
+  map_delete(m, MMS(keyset[2]));
   assert_eq_d(2, m->size);
-  fatal(absent, m, keyset[2]);
-  fatal(validate_enumeration, m);
+  absent(m, keyset[2]);
+  validate_enumeration(m);
   keyset[2] = 0;
-  fatal(validate_keyset, m, keyset);
+  validate_keyset(m, keyset);
 
-  fatal(map_delete, m, MMS(keyset[1]));
+  map_delete(m, MMS(keyset[1]));
   assert_eq_d(1, m->size);
-  fatal(absent, m, keyset[1]);
-  fatal(validate_enumeration, m);
+  absent(m, keyset[1]);
+  validate_enumeration(m);
   keyset[1] = 0;
-  fatal(validate_keyset, m, keyset);
+  validate_keyset(m, keyset);
 
-  fatal(map_delete, m, MMS(keyset[0]));
+  map_delete(m, MMS(keyset[0]));
   assert_eq_d(0, m->size);
-  fatal(absent, m, keyset[0]);
-  fatal(validate_enumeration, m);
+  absent(m, keyset[0]);
+  validate_enumeration(m);
   keyset[0] = 0;
-  fatal(validate_keyset, m, keyset);
+  validate_keyset(m, keyset);
 
-finally:
-  fatal(map_xfree, m);
-coda;
+  map_xfree(m);
 }
 
-static xapi test_successive_mappings()
+static void test_successive_mappings()
 {
-  enter;
-
   map * m = 0;
-  fatal(map_createx, &m, 0, wfree, 0);
+  map_createx(&m, 0, wfree);
 
-  fatal(insert, m, "1", 1);
+  insert(m, "1", 1);
   assert_eq_d(1, m->size);
 
   // new mapping with the same key should overwrite/free the previous mapping
-  fatal(insert, m, "1", 1);
+  insert(m, "1", 1);
   assert_eq_d(1, m->size);
-  fatal(insert, m, "1", 1);
+  insert(m, "1", 1);
   assert_eq_d(1, m->size);
 
   // successive deletion
-  fatal(map_delete, m, MMS("1"));
+  map_delete(m, MMS("1"));
   assert_eq_d(0, m->size);
-  fatal(absent, m, "1");
+  absent(m, "1");
 
-finally:
-  fatal(map_xfree, m);
-coda;
+  map_xfree(m);
 }
 
-static xapi test_equal()
+static void test_equal()
 {
-  enter;
-
   map * A = 0;
   map * B = 0;
-  fatal(map_createx, &A, 0, wfree, 0);
-  fatal(map_createx, &B, 0, wfree, 0);
+  map_createx(&A, 0, wfree);
+  map_createx(&B, 0, wfree);
 
   assert_eq_b(true, map_equal(A, B));
 
-  fatal(insert, A, "1", 1);
+  insert(A, "1", 1);
   assert_eq_b(false, map_equal(A, B));
 
-  fatal(insert, B, "1", 1);
+  insert(B, "1", 1);
   assert_eq_b(true, map_equal(A, B));
 
-  fatal(map_delete, B, "1", 1);
+  map_delete(B, "1", 1);
   assert_eq_b(false, map_equal(A, B));
 
-  fatal(map_recycle, A);
+  map_recycle(A);
   assert_eq_b(true, map_equal(A, B));
 
-finally:
-  fatal(map_xfree, A);
-  fatal(map_xfree, B);
-coda;
-}
-
-static xapi run_tests()
-{
-  enter;
-
-  fatal(test_basic);
-  fatal(test_recycle);
-  fatal(test_delete);
-  fatal(test_equal);
-  fatal(test_successive_mappings);
-
-  summarize;
-
-  finally : coda;
+  map_xfree(A);
+  map_xfree(B);
 }
 
 int main()
 {
-  enter;
+  test_basic();
+  test_recycle();
+  test_delete();
+  test_equal();
+  test_successive_mappings();
 
-  xapi R = 0;
-  fatal(run_tests);
-
-finally:
-  if(XAPI_UNWINDING)
-    xapi_backtrace(2, 0);
-conclude(&R);
-  xapi_teardown();
-
-  return !!R;
+  summarize;
+  return 0;
 }

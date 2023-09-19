@@ -15,7 +15,6 @@
  You should have received a copy of the GNU General Public License
  along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#include "xapi.h"
 
 #include "moria/edge.h"
 #include "moria/graph.h"
@@ -121,23 +120,19 @@ static void __attribute__((constructor)) init()
 // public
 //
 
-xapi graph_edge_alloc(moria_edge ** ep)
+void graph_edge_alloc(moria_edge ** ep)
 {
-  enter;
-
   moria_edge *e;
 
   if((e = llist_shift(&edge_freelist, typeof(*e), owner)) == 0)
   {
-    fatal(xmalloc, &e, sizeof(*e));
+    xmalloc(&e, sizeof(*e));
   }
 
   moria_edge_init(e, &g_graph);
   llist_append(&edge_list, e, owner);
 
   *ep = e;
-
-  finally : coda;
 }
 
 void graph_edge_release(struct moria_edge * restrict e)
@@ -148,45 +143,34 @@ void graph_edge_release(struct moria_edge * restrict e)
   llist_append(&edge_freelist, e, owner);
 }
 
-xapi graph_setup()
+void graph_setup()
 {
-  enter;
-
-  fatal(hashtable_createx,
+  hashtable_createx(
       &g_graph_ht
     , sizeof(moria_vertex_entry)
     , 100
     , moria_vertex_entry_hash
     , moria_vertex_entry_cmp
     , 0
-    , 0
   );
-
-  finally : coda;
 }
 
-xapi graph_cleanup()
+void graph_cleanup()
 {
-  enter;
-
   moria_edge *e;
   llist *T;
 
   moria_graph_destroy(&g_graph);
-  fatal(hashtable_xfree, g_graph_ht);
+  hashtable_xfree(g_graph_ht);
 
   llist_splice_head(&edge_freelist, &edge_list);
   llist_foreach_safe(&edge_freelist, e, owner, T) {
     wfree(e);
   }
-
-  finally : coda;
 }
 
-static xapi graph_vertex_write(value_writer * restrict writer, const moria_vertex * restrict v)
+static void graph_vertex_write(value_writer * restrict writer, const moria_vertex * restrict v)
 {
-  enter;
-
   const fsent *n;
   vertex_kind vk;
   size_t z;
@@ -216,15 +200,11 @@ static xapi graph_vertex_write(value_writer * restrict writer, const moria_verte
     z += znloadf(name + z, sizeof(name) - z, "(module %.*s : %s)", 16, mod->id, mod->dir_node_abspath);
   }
 
-  fatal(value_writer_bytes, writer, name, z);
-
-  finally : coda;
+  value_writer_bytes(writer, name, z);
 }
 
-xapi graph_edge_say(const moria_edge * restrict e, narrator * restrict N)
+void graph_edge_say(const moria_edge * restrict e, narrator * restrict N)
 {
-  enter;
-
   int x;
   dependency *ne = 0;
   value_writer writer;
@@ -232,7 +212,7 @@ xapi graph_edge_say(const moria_edge * restrict e, narrator * restrict N)
   size_t z;
 
   value_writer_init(&writer);
-  fatal(value_writer_open, &writer, N);
+  value_writer_open(&writer, N);
 
   if(e->attrs & EDGE_DEPENDENCY) {
     ne = containerof(e, typeof(*ne), edge);
@@ -240,78 +220,72 @@ xapi graph_edge_say(const moria_edge * restrict e, narrator * restrict N)
 
   if(!(e->attrs & MORIA_EDGE_HYPER) || e->Alen)
   {
-    fatal(value_writer_push_set, &writer);
-    fatal(value_writer_push_mapping, &writer);
-    fatal(value_writer_string, &writer, "up");
-    fatal(value_writer_push_set, &writer);
+    value_writer_push_set(&writer);
+    value_writer_push_mapping(&writer);
+    value_writer_string(&writer, "up");
+    value_writer_push_set(&writer);
     if(!(e->attrs & MORIA_EDGE_HYPER))
     {
-      fatal(graph_vertex_write, &writer, e->A);
+      graph_vertex_write(&writer, e->A);
     }
     else
     {
       for(x = 0; x < e->Alen; x++)
       {
-        fatal(graph_vertex_write, &writer, e->Alist[x].v);
+        graph_vertex_write(&writer, e->Alist[x].v);
       }
     }
-    fatal(value_writer_pop_set, &writer);
-    fatal(value_writer_pop_mapping, &writer);
+    value_writer_pop_set(&writer);
+    value_writer_pop_mapping(&writer);
   }
 
-  fatal(value_writer_push_mapping, &writer);
-  fatal(value_writer_string, &writer, "relation");
+  value_writer_push_mapping(&writer);
+  value_writer_string(&writer, "relation");
   z = znload_attrs32(buf, sizeof(buf), graph_edge_attrs, e->attrs);
-  fatal(value_writer_bytes, &writer, buf, z);
-  fatal(value_writer_pop_mapping, &writer);
+  value_writer_bytes(&writer, buf, z);
+  value_writer_pop_mapping(&writer);
 
   if(!(e->attrs & MORIA_EDGE_HYPER) || e->Blen)
   {
-    fatal(value_writer_push_mapping, &writer);
-    fatal(value_writer_string, &writer, "down");
-    fatal(value_writer_push_set, &writer);
+    value_writer_push_mapping(&writer);
+    value_writer_string(&writer, "down");
+    value_writer_push_set(&writer);
     if(!(e->attrs & MORIA_EDGE_HYPER))
     {
-      fatal(graph_vertex_write, &writer, e->B);
+      graph_vertex_write(&writer, e->B);
     }
     else
     {
       for(x = 0; x < e->Blen; x++)
       {
-        fatal(graph_vertex_write, &writer, e->Blist[x].v);
+        graph_vertex_write(&writer, e->Blist[x].v);
       }
     }
-    fatal(value_writer_pop_set, &writer);
-    fatal(value_writer_pop_mapping, &writer);
+    value_writer_pop_set(&writer);
+    value_writer_pop_mapping(&writer);
   }
 
   if(ne && ne->fml)
   {
-    fatal(value_writer_push_mapping, &writer);
-    fatal(value_writer_string, &writer, "fml");
-    fatal(graph_vertex_write, &writer, &ne->fml->vertex);
-    fatal(value_writer_pop_mapping, &writer);
+    value_writer_push_mapping(&writer);
+    value_writer_string(&writer, "fml");
+    graph_vertex_write(&writer, &ne->fml->vertex);
+    value_writer_pop_mapping(&writer);
   }
-  fatal(value_writer_mapping_string_bool, &writer, "hyper", e->attrs & MORIA_EDGE_HYPER);
+  value_writer_mapping_string_bool(&writer, "hyper", e->attrs & MORIA_EDGE_HYPER);
 
-  fatal(value_writer_pop_set, &writer);
-  fatal(value_writer_close, &writer);
-
-  finally : coda;
+  value_writer_pop_set(&writer);
+  value_writer_close(&writer);
 }
 
-xapi graph_invalidation_begin(graph_invalidation_context * restrict invalidation)
+void graph_invalidation_begin(graph_invalidation_context * restrict invalidation)
 {
-  enter;
-
   RUNTIME_ASSERT(invalidation->vertex_traversal == 0);
-  fatal(moria_vertex_traversal_begin, &g_graph, &invalidation->vertex_traversal);
+  moria_vertex_traversal_begin(&g_graph, &invalidation->vertex_traversal);
 
   RUNTIME_ASSERT(invalidation->edge_traversal == 0);
-  fatal(moria_edge_traversal_begin, &g_graph, &invalidation->edge_traversal);
+  moria_edge_traversal_begin(&g_graph, &invalidation->edge_traversal);
   invalidation->any = false;
-
-  finally : coda;
 }
 
 void graph_invalidation_end(graph_invalidation_context * restrict invalidation)
@@ -373,7 +347,7 @@ fab_fsent_state vertex_state_remap(vertex_state state)
   return 0;
 }
 
-xapi graph_hyperconnect(
+void graph_hyperconnect(
     moria_connect_context * restrict ctx
   , moria_vertex ** restrict Alist
   , uint16_t Alen
@@ -383,14 +357,10 @@ xapi graph_hyperconnect(
   , uint32_t attrs
 )
 {
-  enter;
-
   moria_connect_hyper(ctx, &g_graph, e, Alist, Alen, Blist, Blen, attrs);
-
-  finally : coda;
 }
 
-xapi graph_connect(
+void graph_connect(
     moria_connect_context * restrict ctx
   , moria_vertex * restrict A
   , moria_vertex * restrict B
@@ -398,26 +368,16 @@ xapi graph_connect(
   , uint32_t attrs
 )
 {
-  enter;
-
   moria_connect(ctx, &g_graph, e, A, B, attrs);
-
-  finally : coda;
 }
 
-xapi graph_disconnect(moria_edge * restrict e)
+void graph_disconnect(moria_edge * restrict e)
 {
-  enter;
-
-  fatal(moria_edge_disconnect, &g_graph, e);
-
-  finally : coda;
+  moria_edge_disconnect(&g_graph, e);
 }
 
-xapi graph_disintegrate(moria_edge * restrict e, graph_invalidation_context * restrict invalidation)
+void graph_disintegrate(moria_edge * restrict e, graph_invalidation_context * restrict invalidation)
 {
-  enter;
-
   moria_vertex *v;
   fsent *n, *Bn;
   int x;
@@ -477,9 +437,9 @@ xapi graph_disintegrate(moria_edge * restrict e, graph_invalidation_context * re
         }
 
         if(fsent_exists_get(Bn)) {
-          fatal(fsent_invalidate, Bn, invalidation);
-          fatal(fsent_dirnode_children_changed, containerof(e->A, fsent, vertex), invalidation);
-          fatal(fsent_unlink, Bn, invalidation);
+          fsent_invalidate(Bn, invalidation);
+          fsent_dirnode_children_changed(containerof(e->A, fsent, vertex), invalidation);
+          fsent_unlink(Bn, invalidation);
         }
 
         if(!rbtree_empty(&e->B->up)) {
@@ -489,12 +449,12 @@ xapi graph_disintegrate(moria_edge * restrict e, graph_invalidation_context * re
           continue;
         }
 
-        fatal(fsent_fstree_disconnecting, Bn, invalidation);
-        fatal(fsedge_disconnect, containerof(e, fsedge, edge));
+        fsent_fstree_disconnecting(Bn, invalidation);
+        fsedge_disconnect(containerof(e, fsedge, edge));
       }
       else
       {
-        fatal(dependency_disconnect, containerof(e, dependency, edge), invalidation);
+        dependency_disconnect(containerof(e, dependency, edge), invalidation);
       }
     }
 
@@ -527,6 +487,4 @@ xapi graph_disintegrate(moria_edge * restrict e, graph_invalidation_context * re
       fsent_release(containerof(v, fsent, vertex));
     }
   }
-
-  finally : coda;
 }

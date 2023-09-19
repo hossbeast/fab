@@ -19,26 +19,20 @@
 #include <string.h>
 #include <sys/syscall.h>
 
-#include "xapi.h"
 #include "xlinux/xpthread.h"
-#include "xlinux/KERNEL.errtab.h"
 #include "xlinux/xepoll.h"
 #include "xlinux/xunistd.h"
-#include "xapi/trace.h"
 
 #include "ui_thread.h"
 #include "xcurses.h"
-#include "logging.h"
 #include "params.h"
 #include "explorer.h"
 #include "display.h"
 #include "client_thread.h"
 #include "threads.h"
 
-static xapi ui_thread()
+static void ui_thread(void)
 {
-  enter;
-
   int r;
   ssize_t bytes;
   int key;
@@ -50,31 +44,29 @@ static xapi ui_thread()
   int epfd = -1;
   sigset_t sigs;
 
-  logs(L_ERROR, "UI THREAD");
-
   fdtermin = fdopen(TERMINAL_IN, "r+");
   fdtermout = fdopen(TERMINAL_OUT, "r+");
 
-  fatal(xepoll_create, &epfd);
+  epfd = xepoll_create();
   memset(&events[0], 0, sizeof(events[0]));
   events[0].events = EPOLLIN | EPOLLPRI | EPOLLERR;
-  fatal(xepoll_ctl, epfd, EPOLL_CTL_ADD, TERMINAL_IN, &events[0]);
+  xepoll_ctl(epfd, EPOLL_CTL_ADD, TERMINAL_IN, &events[0]);
   sigemptyset(&sigs);
 
   // curses initialization - before signal handlers setup
-  fatal(xinitscr, 0);
-  fatal(xnewterm, &scr, 0, fdtermout, fdtermin);
-  fatal(start_color);
+  xinitscr(0);
+  xnewterm(&scr, 0, fdtermout, fdtermin);
+  start_color();
   use_default_colors(); // somehow, this makes transparency work
-  fatal(noecho);          // dont display user input
-  fatal(nonl);            /* Disable conversion and detect newlines from input. */
+  noecho();          // dont display user input
+  nonl();            /* Disable conversion and detect newlines from input. */
   // in cbreak mode, ctrl+c generates SIGINT
-  fatal(cbreak);
-  fatal(keypad, stdscr, TRUE);
+  cbreak();
+  keypad(stdscr, TRUE);
   curs_set(0);            /* cursor visibility state */
   leaveok(stdscr, false); /* dont update cursor */
-  fatal(clear);
-  fatal(refresh);         /* mark stdscr as up-to-date so the implicit refresh of getch is suppressed */
+  clear();
+  refresh();         /* mark stdscr as up-to-date so the implicit refresh of getch is suppressed */
   timeout(-1);
 
   // setup colors
@@ -83,20 +75,20 @@ static xapi ui_thread()
   init_pair(3, COLOR_WHITE, -1);
 
   // starts out in the explorer
-  fatal(explorer_display_switch);
+  explorer_display_switch();
   client_thread_redrive();
 
   while(!g_params.shutdown)
   {
-    fatal(g_display->redraw);
+    g_display->redraw();
 
     // receive epoll events or signal
-    fatal(uxepoll_pwait, &r, epfd, events, 1, -1, &sigs);
+    r = uxepoll_pwait(epfd, events, 1, -1, &sigs);
     if(r < 1) {
       continue;
     }
 
-    fatal(xread, TERMINAL_IN, keys, sizeof(keys), (void*)&bytes);
+    bytes = xread(TERMINAL_IN, keys, sizeof(keys));
 
     if(bytes > 2 && keys[0] == 0x1b && keys[1] == 0x4f && keys[2] == 0x41) {
       key = KEY_UP;
@@ -126,39 +118,16 @@ static xapi ui_thread()
     }
   }
 
-finally:
-#if DEBUG || DEVEL
-  logs(L_IPC, "terminating");
-#endif
-
   /* restore the terminal */
   curs_set(1);
   endwin();
-coda;
 }
 
 static void * ui_thread_jump(void * arg)
 {
-  enter;
-
-  xapi R;
   tid = g_params.thread_ui = gettid();
-  fatal(ui_thread);
 
-finally:
-  if(XAPI_UNWINDING)
-  {
-#if DEBUG || DEVEL || XAPI
-    xapi_infos("name", "fabc/ui");
-    xapi_infof("pgid", "%ld", (long)getpgid(0));
-    xapi_infof("pid", "%ld", (long)getpid());
-    xapi_infof("tid", "%ld", (long)gettid());
-    fatal(logger_xtrace_full, L_ERROR, L_NONAMES, XAPI_TRACE_COLORIZE | XAPI_TRACE_NONEWLINE);
-#else
-    fatal(logger_xtrace_pithy, L_ERROR, L_NONAMES, XAPI_TRACE_COLORIZE | XAPI_TRACE_NONEWLINE);
-#endif
-  }
-conclude(&R);
+  ui_thread();
 
   __atomic_fetch_sub(&g_params.thread_count, 1, __ATOMIC_RELAXED);
   syscall(SYS_tgkill, g_params.pid, g_params.thread_main, SIGUSR1);
@@ -169,25 +138,16 @@ conclude(&R);
 // public
 //
 
-xapi ui_thread_launch()
+void ui_thread_launch()
 {
-  enter;
-
   pthread_t pthread_id;
   pthread_attr_t attr;
-  int rv;
 
-  fatal(xpthread_attr_init, &attr);
-  fatal(xpthread_attr_setdetachstate, &attr, PTHREAD_CREATE_DETACHED);
+  xpthread_attr_init(&attr);
+  xpthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
 
   g_params.thread_count++;
-  if((rv = pthread_create(&pthread_id, &attr, ui_thread_jump, 0)) != 0)
-  {
-    g_params.thread_count--;
-    tfail(perrtab_KERNEL, rv);
-  }
+  xpthread_create(&pthread_id, &attr, ui_thread_jump, 0);
 
-finally:
   pthread_attr_destroy(&attr);
-coda;
 }

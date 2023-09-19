@@ -15,7 +15,6 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#include "xapi.h"
 #include "types.h"
 
 #include "xlinux/xstdlib.h"
@@ -43,48 +42,36 @@ static int compare_entries(const hashtable_t * ht, void * _A, void * _B)
   return ht->cmp_fn(A->k, A->kl, B->k, B->kl);
 }
 
-static xapi delete_entry(const hashtable_t * ht, void * _ent)
+static void delete_entry(const hashtable_t * ht, void * _ent)
 {
-  enter;
-
   const map_t * m = containerof(ht, map_t, ht);
   mapping * ent = _ent;
 
   if(m->destroy_fn)
     m->destroy_fn(ent->v);
-  else if(m->xdestroy_fn)
-    fatal(m->xdestroy_fn, ent->v);
-
-  finally : coda;
 }
 
-static xapi destroy_entry(const hashtable_t * ht, void * _ent)
+static void destroy_entry(const hashtable_t * ht, void * _ent)
 {
-  enter;
-
   mapping * ent = _ent;
 
   wfree(ent->k);
-
-  finally : coda;
 }
 
-static xapi store_entry(const hashtable_t * ht, void * _dst, void * _src, bool found)
+static void store_entry(const hashtable_t * ht, void * _dst, void * _src, bool found)
 {
-  enter;
-
   mapping * dst = _dst;
   mapping * src = _src;
 
   if(found)
   {
-    fatal(delete_entry, ht, dst);
+    delete_entry(ht, dst);
   }
   else
   {
     if(dst->k == 0 || src->kl >= dst->ka)
     {
-      fatal(xrealloc, &dst->k, 1, src->kl + 1, dst->ka);
+      xrealloc(&dst->k, 1, src->kl + 1, dst->ka);
       dst->ka = src->kl + 1;
     }
     memcpy(dst->k, src->k, src->kl);
@@ -94,8 +81,6 @@ static xapi store_entry(const hashtable_t * ht, void * _dst, void * _src, bool f
 
   dst->v = src->v;
   dst->vl = src->vl;
-
-  finally : coda;
 }
 
 static ht_operations ht_ops = {
@@ -110,15 +95,13 @@ static ht_operations ht_ops = {
 // api
 //
 
-xapi API map_createx(map ** const restrict mx, size_t capacity, void (*free_value)(void*), xapi (*xfree_value)(void*))
+void API map_createx(map ** const restrict mx, size_t capacity, void (*free_value)(void*))
 {
-  enter;
-
   map_t * m = 0;
-  fatal(xmalloc, &m, sizeof(*m));
+  xmalloc(&m, sizeof(*m));
 
-  fatal(hashtable_init
-    , &m->ht
+  hashtable_init(
+    &m->ht
     , sizeof(mapping)
     , capacity
     , &ht_ops
@@ -127,66 +110,47 @@ xapi API map_createx(map ** const restrict mx, size_t capacity, void (*free_valu
   );
 
   m->destroy_fn = free_value;
-  m->xdestroy_fn = xfree_value;
 
   *mx = &m->mx;
   m = 0;
 
-finally:
   if(m)
-    fatal(map_xfree, &m->mx);
-coda;
+    map_xfree(&m->mx);
 }
 
-xapi API map_create(map ** restrict m)
+void API map_create(map ** restrict m)
 {
-  xproxy(map_createx, m, 0, 0, 0);
+  map_createx(m, 0, 0);
 }
 
-xapi API map_xfree(map * restrict mx)
+void API map_xfree(map * restrict mx)
 {
-  enter;
-
   map_t * m = containerof(mx, map_t, mx);
 
   if(m)
-    fatal(hashtable_xdestroy, &m->ht);
+    hashtable_xdestroy(&m->ht);
 
   wfree(m);
-
-  finally : coda;
 }
 
-xapi API map_ixfree(map ** restrict m)
+void API map_ixfree(map ** restrict m)
 {
-  enter;
-
-  fatal(map_xfree, *m);
+  map_xfree(*m);
   *m = 0;
-
-  finally : coda;
 }
 
-xapi API map_recycle(map * restrict mx)
+void API map_recycle(map * restrict mx)
 {
-  enter;
-
   map_t * m = containerof(mx, map_t, mx);
-  fatal(hashtable_recycle, &m->htx);
-
-  finally : coda;
+  hashtable_recycle(&m->htx);
 }
 
-xapi API map_put(map * restrict mx, const void * k, uint16_t kl, void * v, size_t vl)
+void API map_put(map * restrict mx, const void * k, uint16_t kl, void * v, size_t vl)
 {
-  enter;
-
   map_t * m = containerof(mx, map_t, mx);
 
   mapping ent = { k : (void*)k, kl : kl, v : v, vl : vl };
-  fatal(hashtable_put, &m->htx, &ent);
-
-  finally : coda;
+  hashtable_put(&m->htx, &ent);
 }
 
 void * API map_get(const map * restrict mx, const void * restrict k, uint16_t kl)
@@ -220,28 +184,20 @@ bool API map_get_mapping(const map * restrict mx, const void * restrict k, uint1
   return false;
 }
 
-xapi API map_splice(map * restrict dstx, map * restrict srcx)
+void API map_splice(map * restrict dstx, map * restrict srcx)
 {
-  enter;
-
   map_t * dst = containerof(dstx, map_t, mx);
   map_t * src = containerof(srcx, map_t, mx);
 
-  fatal(hashtable_splice, &dst->htx, &src->htx);
-
-  finally : coda;
+  hashtable_splice(&dst->htx, &src->htx);
 }
 
-xapi API map_replicate(map * restrict dstx, map * restrict srcx)
+void API map_replicate(map * restrict dstx, map * restrict srcx)
 {
-  enter;
-
   map_t * dst = containerof(dstx, map_t, mx);
   map_t * src = containerof(srcx, map_t, mx);
 
-  fatal(hashtable_replicate, &dst->htx, &src->htx);
-
-  finally : coda;
+  hashtable_replicate(&dst->htx, &src->htx);
 }
 
 bool API map_equal(map * restrict Ax, map * restrict Bx)
@@ -252,22 +208,16 @@ bool API map_equal(map * restrict Ax, map * restrict Bx)
   return hashtable_equal(&A->htx, &B->htx);
 }
 
-xapi API map_delete(map * restrict mx, const void * restrict k, uint16_t kl)
+void API map_delete(map * restrict mx, const void * restrict k, uint16_t kl)
 {
-  enter;
-
   map_t * m = containerof(mx, map_t, mx);
 
   mapping key = { k : (char*)k, kl : kl };
-  fatal(hashtable_delete, &m->htx, &key);
-
-  finally : coda;
+  hashtable_delete(&m->htx, &key);
 }
 
-xapi API map_keys(const map * restrict mx, void * restrict _keys, uint16_t * restrict keysl)
+void API map_keys(const map * restrict mx, void * restrict _keys, uint16_t * restrict keysl)
 {
-  enter;
-
   mapping * mg;
   size_t x;
   size_t i;
@@ -276,7 +226,7 @@ xapi API map_keys(const map * restrict mx, void * restrict _keys, uint16_t * res
 
   const map_t * m = containerof(mx, map_t, mx);
 
-  fatal(xmalloc, keys, sizeof(*keys) * m->size);
+  xmalloc(keys, sizeof(*keys) * m->size);
 
   i = 0;
   for(x = 0; x < m->table_size; x++)
@@ -285,14 +235,10 @@ xapi API map_keys(const map * restrict mx, void * restrict _keys, uint16_t * res
       (*keys)[i++] = mg->k;
   }
   (*keysl) = m->size;
-
-  finally : coda;
 }
 
-xapi API map_values(const map * restrict mx, void * restrict _values, size_t * restrict valuesl)
+void API map_values(const map * restrict mx, void * restrict _values, size_t * restrict valuesl)
 {
-  enter;
-
   mapping * mg;
   size_t x;
   size_t i;
@@ -300,7 +246,7 @@ xapi API map_values(const map * restrict mx, void * restrict _values, size_t * r
 
   const map_t * m = containerof(mx, map_t, mx);
 
-  fatal(xmalloc, values, sizeof(*values) * m->size);
+  xmalloc(values, sizeof(*values) * m->size);
 
   i = 0;
   for(x = 0; x < m->table_size; x++)
@@ -310,8 +256,6 @@ xapi API map_values(const map * restrict mx, void * restrict _values, size_t * r
   }
 
   (*valuesl) = m->size;
-
-  finally : coda;
 }
 
 const void * API map_table_key(const map * restrict mx, size_t x)

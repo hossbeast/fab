@@ -18,7 +18,6 @@
 #ifndef _FABD_SELECTOR_PARSER_H
 #define _FABD_SELECTOR_PARSER_H
 
-#include "xapi.h"
 #include "types.h"
 
 struct yyu_location;
@@ -30,7 +29,7 @@ typedef struct selector_parser selector_parser;
 // SUMMARY
 //  create a config parser
 //
-xapi selector_parser_create(selector_parser ** const restrict p)
+void selector_parser_create(selector_parser ** const restrict p)
   __attribute__((nonnull));
 
 /// selector_parser_free
@@ -38,14 +37,14 @@ xapi selector_parser_create(selector_parser ** const restrict p)
 // SUMMARY
 //  free a config parser with free semantics
 //
-xapi selector_parser_xfree(selector_parser * const restrict);
+void selector_parser_xfree(selector_parser * const restrict);
 
 /// selector_parser_ifree
 //
 // SUMMARY
 //  free a config parser with iwfree semantics
 //
-xapi selector_parser_ixfree(selector_parser ** const restrict)
+void selector_parser_ixfree(selector_parser ** const restrict)
   __attribute__((nonnull));
 
 /// selector_parse
@@ -67,7 +66,7 @@ xapi selector_parser_ixfree(selector_parser ** const restrict)
 // VARIANTS
 //  partial - permit partial
 //
-xapi selector_parser_parse_partial(
+int selector_parser_parse_partial(
     selector_parser * restrict parser
   , char * const restrict buf
   , size_t size

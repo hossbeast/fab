@@ -22,10 +22,8 @@
 #include "inotify_mask.h"
 #include "zbuffer.h"
 
-xapi inotify_mask_say(uint32_t m, struct narrator * N)
+void inotify_mask_say(uint32_t m, struct narrator * N)
 {
-  enter;
-
   int said = 0;
   while(m)
   {
@@ -56,8 +54,6 @@ xapi inotify_mask_say(uint32_t m, struct narrator * N)
     said = 1;
     m &= ~b;
   }
-
-  finally : coda;
 }
 
 size_t inotify_mask_znload(char * restrict dst, size_t sz, uint32_t m)

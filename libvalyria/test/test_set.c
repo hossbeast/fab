@@ -18,8 +18,6 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-#include "xapi.h"
-#include "xapi/trace.h"
 #include "xlinux/xstdlib.h"
 #include "xlinux/xstring.h"
 
@@ -30,10 +28,8 @@
 #include "common/assure.h"
 #include "common/hash.h"
 
-static xapi validate_elements(set * restrict s, char ** restrict elements)
+static void validate_elements(set * restrict s, char ** restrict elements)
 {
-  enter;
-
   int n = sentinel(elements);
   int x;
   int i;
@@ -71,17 +67,13 @@ static xapi validate_elements(set * restrict s, char ** restrict elements)
     // and is lookupable
     assert_eq_b(true, set_contains(s, MMS(elements[x])));
   }
-
-  finally : coda;
 }
 
-static xapi test_basic()
+static void test_basic()
 {
-  enter;
-
   set * s = 0;
 
-  fatal(set_create, &s);
+  set_create(&s);
 
   char * elementset[] = {
       "1"
@@ -91,23 +83,19 @@ static xapi test_basic()
     , 0
   };
 
-  fatal(set_put, s, MMS(elementset[0]));
-  fatal(set_put, s, MMS(elementset[1]));
-  fatal(set_put, s, MMS(elementset[2]));
-  fatal(set_put, s, MMS(elementset[3]));
+  set_put(s, MMS(elementset[0]));
+  set_put(s, MMS(elementset[1]));
+  set_put(s, MMS(elementset[2]));
+  set_put(s, MMS(elementset[3]));
 
   // assert
-  fatal(validate_elements, s, elementset);
+  validate_elements(s, elementset);
 
-finally:
-  fatal(set_xfree, s);
-coda;
+  set_xfree(s);
 }
 
-static xapi test_recycle()
+static void test_recycle()
 {
-  enter;
-
   set * s = 0;
   char * str = 0;
 
@@ -116,7 +104,7 @@ static xapi test_recycle()
   int y;
   int i;
 
-  fatal(set_createx, &s, 0, hash32, memncmp, wfree, 0);
+  set_createx(&s, 0, hash32, memncmp, wfree);
 
   for(i = 0; i < 2; i++)
   {
@@ -124,8 +112,8 @@ static xapi test_recycle()
     x = y;
     do {
       snprintf(space, sizeof(space), "%d", x);
-      fatal(ixstrdup, &str, space);
-      fatal(set_put, s, MMS(str));
+      ixstrdup(&str, space);
+      set_put(s, MMS(str));
       str = 0;
       x = (x + 1) % 5000;
     } while(x != y);
@@ -142,22 +130,18 @@ static xapi test_recycle()
     assert_eq_b(false, set_contains(s, MMS("foobar")));
     assert_eq_b(false, set_contains(s, MMS("09123")));
 
-    fatal(set_recycle, s);
+    set_recycle(s);
   }
 
-finally:
-  fatal(set_xfree, s);
+  set_xfree(s);
   wfree(str);
-coda;
 }
 
-static xapi test_delete()
+static void test_delete()
 {
-  enter;
-
   set * s = 0;
 
-  fatal(set_create, &s);
+  set_create(&s);
 
   char * elements[] = {
       "1"
@@ -169,67 +153,63 @@ static xapi test_delete()
     , 0
   };
 
-  fatal(set_put, s, MMS("1"));
-  fatal(set_put, s, MMS("200"));
-  fatal(set_put, s, MMS("3"));
-  fatal(set_put, s, MMS("37"));
-  fatal(set_put, s, MMS("9000000"));
-  fatal(set_put, s, MMS(""));
+  set_put(s, MMS("1"));
+  set_put(s, MMS("200"));
+  set_put(s, MMS("3"));
+  set_put(s, MMS("37"));
+  set_put(s, MMS("9000000"));
+  set_put(s, MMS(""));
 
   // successive deletion
-  fatal(set_delete, s, MMS(elements[5]));
+  set_delete(s, MMS(elements[5]));
   assert_eq_b(false, set_contains(s, MMS(elements[5])));
   elements[5] = 0;
-  fatal(validate_elements, s, elements);
+  validate_elements(s, elements);
 
-  fatal(set_delete, s, MMS(elements[4]));
+  set_delete(s, MMS(elements[4]));
   assert_eq_b(false, set_contains(s, MMS(elements[4])));
   elements[4] = 0;
-  fatal(validate_elements, s, elements);
+  validate_elements(s, elements);
 
-  fatal(set_delete, s, MMS(elements[3]));
+  set_delete(s, MMS(elements[3]));
   assert_eq_b(false, set_contains(s, MMS(elements[3])));
   elements[3] = 0;
-  fatal(validate_elements, s, elements);
+  validate_elements(s, elements);
 
-  fatal(set_delete, s, MMS(elements[2]));
+  set_delete(s, MMS(elements[2]));
   assert_eq_b(false, set_contains(s, MMS(elements[2])));
   elements[2] = 0;
-  fatal(validate_elements, s, elements);
+  validate_elements(s, elements);
 
-  fatal(set_delete, s, MMS(elements[1]));
+  set_delete(s, MMS(elements[1]));
   assert_eq_b(false, set_contains(s, MMS(elements[1])));
   elements[1] = 0;
-  fatal(validate_elements, s, elements);
+  validate_elements(s, elements);
 
-  fatal(set_delete, s, MMS(elements[0]));
+  set_delete(s, MMS(elements[0]));
   assert_eq_b(false, set_contains(s, MMS(elements[0])));
   elements[0] = 0;
-  fatal(validate_elements, s, elements);
+  validate_elements(s, elements);
 
-finally:
-  fatal(set_xfree, s);
-coda;
+  set_xfree(s);
 }
 
-static xapi test_splice()
+static void test_splice()
 {
-  enter;
-
   set * A = 0;
   set * B = 0;
   char * str = 0;
   char space[64];
   int x;
 
-  fatal(set_createx, &A, 0, hash32, memncmp, wfree, 0);
-  fatal(set_createx, &B, 0, hash32, memncmp, wfree, 0);
+  set_createx(&A, 0, hash32, memncmp, wfree);
+  set_createx(&B, 0, hash32, memncmp, wfree);
 
   for(x = 0; x < 5000; x++)
   {
     snprintf(space, sizeof(space), "%d", x);
-    fatal(ixstrdup, &str, space);
-    fatal(set_put, A, MMS(str));
+    ixstrdup(&str, space);
+    set_put(A, MMS(str));
     str = 0;
   }
 
@@ -246,12 +226,12 @@ static xapi test_splice()
   assert_eq_b(false, set_contains(B, MMS("foobar")));
   assert_eq_b(false, set_contains(B, MMS("09123")));
 
-  fatal(set_delete, A, MMS("1234"));
-  fatal(set_delete, A, MMS("1235"));
-  fatal(set_delete, A, MMS("1236"));
+  set_delete(A, MMS("1234"));
+  set_delete(A, MMS("1235"));
+  set_delete(A, MMS("1236"));
 
   // replicate A -> B
-  fatal(set_splice, B, A);
+  set_splice(B, A);
 
   assert_eq_d(0, A->size);
   assert_eq_d(4997, B->size);
@@ -272,31 +252,27 @@ static xapi test_splice()
   assert_eq_b(false, set_contains(B, MMS("foobar")));
   assert_eq_b(false, set_contains(B, MMS("09123")));
 
-finally:
-  fatal(set_xfree, A);
-  fatal(set_xfree, B);
+  set_xfree(A);
+  set_xfree(B);
   wfree(str);
-coda;
 }
 
-static xapi test_replicate()
+static void test_replicate()
 {
-  enter;
-
   set * A = 0;
   set * B = 0;
   char * str = 0;
   char space[64];
   int x;
 
-  fatal(set_createx, &A, 0, hash32, memncmp, wfree, 0);
-  fatal(set_createx, &B, 0, hash32, memncmp, 0, 0);
+  set_createx(&A, 0, hash32, memncmp, wfree);
+  set_createx(&B, 0, hash32, memncmp, 0);
 
   for(x = 0; x < 5000; x++)
   {
     snprintf(space, sizeof(space), "%d", x);
-    fatal(ixstrdup, &str, space);
-    fatal(set_put, A, MMS(str));
+    ixstrdup(&str, space);
+    set_put(A, MMS(str));
     str = 0;
   }
 
@@ -313,12 +289,12 @@ static xapi test_replicate()
   assert_eq_b(false, set_contains(B, MMS("foobar")));
   assert_eq_b(false, set_contains(B, MMS("09123")));
 
-  fatal(set_delete, A, MMS("1234"));
-  fatal(set_delete, A, MMS("1235"));
-  fatal(set_delete, A, MMS("1236"));
+  set_delete(A, MMS("1234"));
+  set_delete(A, MMS("1235"));
+  set_delete(A, MMS("1236"));
 
   // replicate A -> B
-  fatal(set_replicate, B, A);
+  set_replicate(B, A);
 
   assert_eq_d(4997, A->size);
   assert_eq_d(4997, B->size);
@@ -339,40 +315,20 @@ static xapi test_replicate()
   assert_eq_b(false, set_contains(B, MMS("foobar")));
   assert_eq_b(false, set_contains(B, MMS("09123")));
 
-finally:
-  fatal(set_xfree, A);
-  fatal(set_xfree, B);
+  set_xfree(A);
+  set_xfree(B);
   wfree(str);
-coda;
-}
-
-static xapi run_tests()
-{
-  enter;
-
-  fatal(test_basic);
-  fatal(test_recycle);
-  fatal(test_delete);
-  fatal(test_replicate);
-  fatal(test_splice);
-
-  summarize;
-
-  finally : coda;
 }
 
 int main()
 {
-  enter;
+  test_basic();
+  test_recycle();
+  test_delete();
+  test_replicate();
+  test_splice();
 
-  xapi R = 0;
-  fatal(run_tests);
+  summarize;
 
-finally:
-  if(XAPI_UNWINDING)
-    xapi_backtrace(2, 0);
-conclude(&R);
-  xapi_teardown();
-
-  return !!R;
+  return 0;
 }

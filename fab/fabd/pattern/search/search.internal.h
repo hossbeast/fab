@@ -18,7 +18,6 @@
 #ifndef FABD_PATTERN_SEARCH_INTERNAL_H
 #define FABD_PATTERN_SEARCH_INTERNAL_H
 
-#include "xapi.h"
 #include "types.h"
 
 #include "search.h"
@@ -76,7 +75,7 @@ typedef struct pattern_search_context {
   // input context
   const struct module * restrict module;
   const struct llist * modules;
-  xapi (*dirnode_visit)(void *ctx, struct fsent *dirnode);
+  void (*dirnode_visit)(void *ctx, struct fsent *dirnode);
   void * dirnode_visit_ctx;
   const struct set * restrict variants;
   uint8_t variants_len;
@@ -100,13 +99,13 @@ typedef struct pattern_search_node {
   const struct variant * variant;
 } pattern_search_node;
 
-xapi pattern_section_search(
+void pattern_section_search(
     struct pattern_search_context * restrict ctx
   , struct fsent * restrict dirnode
 )
   __attribute__((nonnull));
 
-xapi pattern_segment_search(
+void pattern_segment_search(
     struct pattern_search_context * restrict ctx
   , const union pattern_segment * restrict segment
   , const struct fsent * restrict node
@@ -115,7 +114,7 @@ xapi pattern_segment_search(
 )
   __attribute__((nonnull));
 
-xapi pattern_segments_search(struct pattern_search_context * ctx)
+void pattern_segments_search(struct pattern_search_context * ctx)
   __attribute__((nonnull));
 
 #endif

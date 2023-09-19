@@ -18,7 +18,6 @@
 #ifndef _FABD_PATTERN_PARSER_H
 #define _FABD_PATTERN_PARSER_H
 
-#include "xapi.h"
 #include "types.h"
 
 struct yyu_location;
@@ -32,7 +31,7 @@ typedef struct pattern_parser pattern_parser;
 // SUMMARY
 //  create a pattern parser
 //
-xapi pattern_parser_create(pattern_parser ** const restrict p)
+void pattern_parser_create(pattern_parser ** const restrict p)
   __attribute__((nonnull));
 
 /// pattern_parser_xfree
@@ -40,14 +39,14 @@ xapi pattern_parser_create(pattern_parser ** const restrict p)
 // SUMMARY
 //  free a pattern parser with free semantics
 //
-xapi pattern_parser_xfree(pattern_parser * restrict);
+void pattern_parser_xfree(pattern_parser * restrict);
 
 /// pattern_parser_ixfree
 //
 // SUMMARY
 //  free a pattern parser with iwfree semantics
 //
-xapi pattern_parser_ixfree(pattern_parser ** restrict)
+void pattern_parser_ixfree(pattern_parser ** restrict)
   __attribute__((nonnull));
 
 /*
@@ -61,7 +60,7 @@ xapi pattern_parser_ixfree(pattern_parser ** restrict)
  * [used_loc] - location delta from init_loc
  * [rv]       - (returns) parsed pattern object
  */
-xapi search_pattern_parse_partial(
+int search_pattern_parse_partial(
     pattern_parser * restrict parser
   , char * const restrict buf
   , size_t size
@@ -72,7 +71,7 @@ xapi search_pattern_parse_partial(
 )
   __attribute__((nonnull(1, 2)));
 
-xapi generate_pattern_parse_partial(
+int generate_pattern_parse_partial(
     pattern_parser * restrict parser
   , char * const restrict buf
   , size_t size
@@ -83,7 +82,7 @@ xapi generate_pattern_parse_partial(
 )
   __attribute__((nonnull(1, 2)));
 
-xapi reference_pattern_parse_partial(
+int reference_pattern_parse_partial(
     pattern_parser * restrict parser
   , char * const restrict buf
   , size_t size
@@ -94,7 +93,7 @@ xapi reference_pattern_parse_partial(
 )
   __attribute__((nonnull(1, 2)));
 
-xapi lookup_pattern_parse_partial(
+int lookup_pattern_parse_partial(
     pattern_parser * restrict parser
   , char * const restrict buf
   , size_t size
@@ -105,7 +104,7 @@ xapi lookup_pattern_parse_partial(
 )
   __attribute__((nonnull(1, 2)));
 
-xapi include_pattern_parse_partial(
+int include_pattern_parse_partial(
     pattern_parser * restrict parser
   , char * const restrict buf
   , size_t size
@@ -116,7 +115,7 @@ xapi include_pattern_parse_partial(
 )
   __attribute__((nonnull(1, 2)));
 
-xapi match_pattern_parse_partial(
+int match_pattern_parse_partial(
     pattern_parser * restrict parser
   , char * const restrict buf
   , size_t size

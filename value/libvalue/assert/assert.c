@@ -15,7 +15,7 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#include "xapi.h"
+#include <stdarg.h>
 
 #include "xunit/type.h"
 
@@ -38,16 +38,17 @@ static int value_compare(xunit_arg * A, xunit_arg * B)
 
 static void value_info_push(const char * const restrict name, xunit_arg * a)
 {
+  char buf[512];
+  size_t z;
+
   if(a->p == 0)
   {
-    xapi_info_pushs(name, "-none-");
+    xunit_info_pushs(name, "-none-");
   }
   else
   {
-    char buf[512];
-    size_t __attribute__((unused)) z = value_znload(buf, sizeof(buf), a->p);
-
-    xapi_info_pushw(name, buf, z);
+    z = value_znload(buf, sizeof(buf), a->p);
+    xunit_info_pushw(name, buf, z);
   }
 }
 

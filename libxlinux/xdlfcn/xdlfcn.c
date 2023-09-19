@@ -19,75 +19,59 @@
 #include <string.h>
 #include <errno.h>
 
+#include "types.h"
+
 #include "xdlfcn/xdlfcn.h"
-#include "errtab/KERNEL.errtab.h"
-#include "errtab/XLINUX.errtab.h"
 
-xapi API xdlopen(const char * filename, int flag, void ** dl)
+void * API xdlopen(const char * restrict filename, int flag)
 {
-enter;
+  void *r;
 
-dlerror();
-if(((*dl) = dlopen(filename, flag)) == 0)
-  fails(XLINUX_DLERROR, "error", dlerror());
+  dlerror();
+  r = dlopen(filename, flag);
+  RUNTIME_ASSERT(r != 0);
 
-finally :
-xapi_infof("path", "%s", filename);
-coda;
+  return r;
 }
 
-xapi API xdlclose(void * dl)
+void API xdlclose(void * dl)
 {
-enter;
+  const char *e;
 
-dlerror();
-dlclose(dl);
-char * e = dlerror();
-if(e)
-  fails(XLINUX_DLERROR, "error", e);
-
-finally : coda;
+  dlerror();
+  dlclose(dl);
+  e = dlerror();
+  RUNTIME_ASSERT(e == 0);
 }
 
-xapi API ixdlclose(void ** dl)
+void API ixdlclose(void ** dl)
 {
-enter;
-
-if(*dl)
-{
-  fatal(xdlclose, *dl);
+  xdlclose(*dl);
   *dl = 0;
 }
 
-finally : coda;
+void * API xdlsym(void * dl, const char * sym)
+{
+  void *r;
+  const char *e;
+
+  dlerror();
+  r = dlsym(dl, sym);
+  e = dlerror();
+  RUNTIME_ASSERT(e == 0);
+
+  return r;
 }
 
-xapi API xdlsym(void * dl, const char * sym, void ** psym)
+void * API uxdlsym(void * dl, const char * sym)
 {
-enter;
+  void *r;
+  const char *e;
 
-dlerror();
-(*psym) = dlsym(dl, sym);
-char * e = dlerror();
-if(e)
-  fails(XLINUX_DLERROR, "error", e);
+  dlerror();
+  r = dlsym(dl, sym);
+  e = dlerror();
+  RUNTIME_ASSERT(e == 0 || strstr(e, "undefined symbol") != 0);
 
-finally :
-xapi_infof("sym", "%s", sym);
-coda;
-}
-
-xapi API uxdlsym(void * dl, const char * sym, void ** psym)
-{
-enter;
-
-dlerror();
-(*psym) = dlsym(dl, sym);
-char * e = dlerror();
-if(e && strstr(e, "undefined symbol") == 0)
-  fails(XLINUX_DLERROR, "error", e);
-
-finally :
-xapi_infof("sym", "%s", sym);
-coda;
+  return r;
 }

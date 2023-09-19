@@ -18,10 +18,9 @@
 #ifndef FABD_METADATA_H
 #define FABD_METADATA_H
 
-#include "xapi.h"
 #include "types.h"
 
-xapi metadata_collate(void *dst, size_t sz, size_t * restrict z)
+void metadata_collate(void *dst, size_t sz, size_t * restrict z)
   __attribute__((nonnull));
 
 #endif

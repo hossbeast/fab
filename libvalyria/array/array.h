@@ -28,7 +28,6 @@ REMARKS
 
 */
 
-#include "xapi.h"
 #include "types.h"
 
 typedef struct array {
@@ -53,18 +52,16 @@ typedef struct array {
 //  destroy_item follows the destroy idiom, not the free idiom, i.e. it should not free the pointer
 //  itself, as this memory is owned by the array
 //
-xapi array_create(array ** const restrict ar, size_t esz)
+void array_create(array ** const restrict ar, size_t esz)
   __attribute__((nonnull));
 
-xapi array_createx(
+void array_createx(
     array ** const restrict ar
   , size_t esz
   , size_t capacity
   , int (*cmp_fn)(const void * A, size_t Asz, const void * B, size_t Bsz)
   , void * init_fn
-  , void * xinit_fn
   , void * destroy_fn
-  , void * xdestroy_fn
 )
   __attribute__((nonnull(1)));
 
@@ -73,14 +70,14 @@ xapi array_createx(
 // SUMMARY
 //  free an array
 //
-xapi array_xfree(array * const restrict ar);
+void array_xfree(array * const restrict ar);
 
 /// array_ifree
 //
 // SUMMARY
 //  free an array, zero its reference
 //
-xapi array_ixfree(array ** const restrict ar)
+void array_ixfree(array ** const restrict ar)
   __attribute__((nonnull));
 
 /// array_recycle
@@ -91,7 +88,7 @@ xapi array_ixfree(array ** const restrict ar)
 // REMARKS
 //  allocations remain intact
 //
-xapi array_recycle(array * const ar)
+void array_recycle(array * const ar)
   __attribute__((nonnull));
 
 /// array_truncate
@@ -102,7 +99,7 @@ xapi array_recycle(array * const ar)
 // PARAMETERS
 //  len - new size of the array, 0 <= len <= ar->l
 //
-xapi array_truncate(array * const restrict ar, size_t len)
+void array_truncate(array * const restrict ar, size_t len)
   __attribute__((nonnull));
 
 /// array_get
@@ -131,7 +128,7 @@ void * array_get(const array * const restrict ar, int x)
 //  ar - array
 //  el - (returns) pointer to item
 //
-xapi array_push(array * const restrict ar, void * const el)
+void array_push(array * const restrict ar, void * const el)
   __attribute__((nonnull(1)));
 
 /// array_push_range
@@ -144,7 +141,7 @@ xapi array_push(array * const restrict ar, void * const el)
 //  len - number of items
 //  el  - (returns) pointers to items
 //
-xapi array_push_range(array * const restrict ar, void * items, size_t len)
+void array_push_range(array * const restrict ar, void * items, size_t len)
   __attribute__((nonnull));
 
 /// array_pop
@@ -158,7 +155,7 @@ xapi array_push_range(array * const restrict ar, void * items, size_t len)
 // REMARKS
 //  destroy_item is called before this function returns
 //
-xapi array_pop(array * const restrict ar)
+void array_pop(array * const restrict ar)
   __attribute__((nonnull(1)));
 
 /// array_unshift
@@ -170,7 +167,7 @@ xapi array_pop(array * const restrict ar)
 //  ar - array
 //  el - (returns) pointer to item
 //
-xapi array_unshift(array * const restrict ar, void * el)
+void array_unshift(array * const restrict ar, void * el)
   __attribute__((nonnull));
 
 /// array_unshift_range
@@ -186,7 +183,7 @@ xapi array_unshift(array * const restrict ar, void * el)
 //  len - number of items
 //  el  - (returns) pointers to items
 //
-xapi array_unshift_range(array * const restrict ar, void * items, size_t len)
+void array_unshift_range(array * const restrict ar, void * items, size_t len)
   __attribute__((nonnull));
 
 /// array_shift
@@ -200,7 +197,7 @@ xapi array_unshift_range(array * const restrict ar, void * items, size_t len)
 // REMARKS
 //  destroy_item is called before this function returns
 //
-xapi array_shift(array * const restrict ar)
+void array_shift(array * const restrict ar)
   __attribute__((nonnull(1)));
 
 /// array_insert
@@ -213,7 +210,7 @@ xapi array_shift(array * const restrict ar)
 //  index - 0 <= index <= array_size(s)
 //  el    - (returns) pointer to item
 //
-xapi array_insert(array * const restrict ar, size_t index, void * el)
+void array_insert(array * const restrict ar, size_t index, void * el)
   __attribute__((nonnull));
 
 /// array_insert_range
@@ -227,7 +224,7 @@ xapi array_insert(array * const restrict ar, size_t index, void * el)
 //  len   - number of items to insert
 //  el    - (returns) pointers to items
 //
-xapi array_insert_range(array * const restrict ar, size_t index, void * items, size_t len)
+void array_insert_range(array * const restrict ar, size_t index, void * items, size_t len)
   __attribute__((nonnull));
 
 /// array_update
@@ -240,7 +237,7 @@ xapi array_insert_range(array * const restrict ar, size_t index, void * items, s
 //  index - 0 <= index <= array_size(s)
 //  el    - (returns) pointer to item
 //
-xapi array_update(array * const restrict ar, size_t index, void * el)
+void array_update(array * const restrict ar, size_t index, void * el)
   __attribute__((nonnull));
 
 /// array_update_range
@@ -254,7 +251,7 @@ xapi array_update(array * const restrict ar, size_t index, void * el)
 //  len   - number of items to update
 //  el    - (returns) pointers to items
 //
-xapi array_update_range(array * const restrict ar, size_t index, void * items, size_t len)
+void array_update_range(array * const restrict ar, size_t index, void * items, size_t len)
   __attribute__((nonnull));
 
 /// array_delete
@@ -266,7 +263,7 @@ xapi array_update_range(array * const restrict ar, size_t index, void * items, s
 //  ar    - array to delete from
 //  index - index of the item to delete
 //
-xapi array_delete(array * const restrict ar, size_t index)
+void array_delete(array * const restrict ar, size_t index)
   __attribute__((nonnull));
 
 /// array_delete_range
@@ -279,7 +276,7 @@ xapi array_delete(array * const restrict ar, size_t index)
 //  index - index of the first item to delete
 //  len   - number of items to delete
 //
-xapi array_delete_range(array * const restrict ar, size_t index, size_t len)
+void array_delete_range(array * const restrict ar, size_t index, size_t len)
   __attribute__((nonnull));
 
 /// array_subarray
@@ -293,7 +290,7 @@ xapi array_delete_range(array * const restrict ar, size_t index, size_t len)
 //  len   - number of elements to copy
 //  lc    - (returns) pointer to array, or reuses an existing array
 //
-xapi array_subarray(array * const restrict lip, size_t index, size_t len, array ** const restrict lc)
+void array_subarray(array * const restrict lip, size_t index, size_t len, array ** const restrict lc)
   __attribute__((nonnull));
 
 /// array_splice
@@ -311,7 +308,7 @@ xapi array_subarray(array * const restrict lip, size_t index, size_t len, array 
 //  src_index - 0 <= src_index <= src->l
 //  len       - number >= 0 of items to copy
 //
-xapi array_splice(array * const restrict dst, size_t dst_index, array * const restrict src, size_t src_index, size_t len)
+void array_splice(array * const restrict dst, size_t dst_index, array * const restrict src, size_t src_index, size_t len)
   __attribute__((nonnull));
 
 /// array_replicate
@@ -329,7 +326,7 @@ xapi array_splice(array * const restrict dst, size_t dst_index, array * const re
 //  src_index - 0 <= src_index <= src->l
 //  len       - number >= 0 of items to copy
 //
-xapi array_replicate(array * const restrict dst, size_t dst_index, array * const restrict src, size_t src_index, size_t len)
+void array_replicate(array * const restrict dst, size_t dst_index, array * const restrict src, size_t src_index, size_t len)
   __attribute__((nonnull));
 
 /// array_equal

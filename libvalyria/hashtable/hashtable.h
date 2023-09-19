@@ -28,7 +28,6 @@ REMARKS
 
 */
 
-#include "xapi.h"
 #include "types.h"
 
 typedef struct hashtable {
@@ -47,19 +46,17 @@ typedef struct hashtable {
 //  esz           - entry size > 0
 //  [capacity]    - initial capacity, the minimum number of entries which can be set without rehashing
 //  [destroy_entry]  - invoked with the entry just before freeing it
-//  [xdestroy_entry] - invoked with the entry just before freeing it
 //
-xapi hashtable_create(hashtable ** restrict ht, size_t esz)
+void hashtable_create(hashtable ** restrict ht, size_t esz)
   __attribute__((nonnull(1)));
 
-xapi hashtable_createx(
+void hashtable_createx(
     hashtable ** restrict ht
   , size_t esz
   , size_t capacity
   , uint32_t (*hash_entry)(uint32_t h, const void * entry, size_t sz)
   , int (*cmp_entry)(const void * A, size_t Asz, const void * B, size_t Bsz)
   , void (*destroy_entry)(void * entry)
-  , xapi (*xdestroy_entry)(void * entry)
 )
   __attribute__((nonnull(1)));
 
@@ -68,9 +65,9 @@ xapi hashtable_createx(
 // SUMMARY
 //  free a hashtable
 //
-xapi hashtable_xfree(hashtable * restrict ht);
+void hashtable_xfree(hashtable * restrict ht);
 
-xapi hashtable_ixfree(hashtable ** restrict ht)
+void hashtable_ixfree(hashtable ** restrict ht)
   __attribute__((nonnull));
 
 /// hashtable_put
@@ -85,7 +82,7 @@ xapi hashtable_ixfree(hashtable ** restrict ht)
 //  hashtable - hashtable
 //  entry     - pointer to entry
 //
-xapi hashtable_put(hashtable * const restrict ht, void * restrict entry)
+void hashtable_put(hashtable * const restrict ht, void * restrict entry)
   __attribute__((nonnull));
 
 /// hashtable_get
@@ -126,7 +123,7 @@ bool hashtable_equal(hashtable * const restrict A, hashtable * const restrict B)
 //
 // disassociate all entries - internal structures remain allocated
 //
-xapi hashtable_recycle(hashtable * const restrict ht)
+void hashtable_recycle(hashtable * const restrict ht)
   __attribute__((nonnull));
 
 /// hashtable_splice
@@ -134,7 +131,7 @@ xapi hashtable_recycle(hashtable * const restrict ht)
 // SUMMARY
 //  move entries from one hashtable to another
 //
-xapi hashtable_splice(hashtable * dst, hashtable * src)
+void hashtable_splice(hashtable * dst, hashtable * src)
   __attribute__((nonnull));
 
 /// hashtable_replicate
@@ -142,7 +139,7 @@ xapi hashtable_splice(hashtable * dst, hashtable * src)
 // SUMMARY
 //  copy entries from one hashtable to another
 //
-xapi hashtable_replicate(hashtable * dst, hashtable * src)
+void hashtable_replicate(hashtable * dst, hashtable * src)
   __attribute__((nonnull));
 
 /// hashtable_delete
@@ -154,7 +151,7 @@ xapi hashtable_replicate(hashtable * dst, hashtable * src)
 //  m    - hashtable
 //  key  - pointer to key
 //
-xapi hashtable_delete(hashtable * restrict m, void * restrict entry)
+void hashtable_delete(hashtable * restrict m, void * restrict entry)
   __attribute__((nonnull));
 
 /// hashtable_entries
@@ -167,7 +164,7 @@ xapi hashtable_delete(hashtable * restrict m, void * restrict entry)
 //  list   - (returns) list, to be freed by the caller
 //  listl  - (returns) size of list
 //
-xapi hashtable_entries(const hashtable * restrict m, void * restrict entries, size_t * entriesl)
+void hashtable_entries(const hashtable * restrict m, void * restrict entries, size_t * entriesl)
   __attribute__((nonnull));
 
 /// hashtable_table_entry
@@ -178,7 +175,7 @@ xapi hashtable_entries(const hashtable * restrict m, void * restrict entries, si
 void * hashtable_table_entry(const hashtable * restrict ht, size_t x)
   __attribute__((nonnull));
 
-xapi hashtable_table_delete(hashtable * restrict ht, size_t x)
+void hashtable_table_delete(hashtable * restrict ht, size_t x)
   __attribute__((nonnull));
 
 #endif

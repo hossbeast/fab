@@ -20,55 +20,33 @@
 
 #include <curses.h>
 
-#include "xapi.h"
 #include "types.h"
 
-#include "xapi/SYS.errtab.h"
-
-static inline xapi xinitscr(WINDOW ** winp)
+static inline void xinitscr(WINDOW ** winp)
 {
-  enter;
-
   WINDOW *win = 0;
 
-  if((win = initscr()) == 0) {
-    fail(SYS_ABORT);
-  }
+  RUNTIME_ASSERT((win = initscr()) != 0);
 
-finally:
   if(winp) {
     *winp = win;
   }
-coda;
 }
 
-static inline xapi xnewterm(SCREEN ** rv, const char *type, FILE *outfd, FILE *infd)
+static inline void xnewterm(SCREEN ** rv, const char *type, FILE *outfd, FILE *infd)
 {
-  enter;
-
-  if(((*rv) = newterm(type, outfd, infd)) == 0)
-  {
-    fail(SYS_ABORT);
-  }
-
-  finally : coda;
+  RUNTIME_ASSERT(((*rv) = newterm(type, outfd, infd)) != 0);
 }
 
-static inline xapi xnewwin(WINDOW ** winp, int height, int width, int y, int x)
+static inline void xnewwin(WINDOW ** winp, int height, int width, int y, int x)
 {
-  enter;
-
   WINDOW *win = 0;
 
-  if((win = newwin(height, width, y, x)) == 0) {
-    fail(SYS_ABORT);
-  }
+  RUNTIME_ASSERT((win = newwin(height, width, y, x)) != 0);
 
-finally:
   if(winp) {
     *winp = win;
   }
-coda;
 }
 
 #endif

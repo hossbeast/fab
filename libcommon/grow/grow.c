@@ -18,7 +18,7 @@
 #include "grow.h"
 #include "assure.h"
 
-xapi API grow(void * target, size_t es, size_t len, size_t ec, size_t * const restrict ac)
+void API grow(void * target, size_t es, size_t len, size_t ec, size_t * const restrict ac)
 {
-  xproxy(assure, target, es, ec + len, ac);
+  assure(target, es, ec + len, ac);
 }

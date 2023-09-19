@@ -18,7 +18,6 @@
 #ifndef _FABD_SELECTION_H
 #define _FABD_SELECTION_H
 
-#include "xapi.h"
 #include "types.h"
 
 #include "valyria/llist.h"
@@ -65,32 +64,32 @@ typedef struct selection {
   uint16_t numranks;    // ranks are numbered 0 - (numranks - 1)
 } selection;
 
-xapi selection_cleanup(void);
+void selection_cleanup(void);
 
-xapi selection_create(selection ** restrict selp, selection_iteration_type type)
+void selection_create(selection ** restrict selp, selection_iteration_type type)
   __attribute__((nonnull));
 
-xapi selection_xfree(selection * restrict sel);
+void selection_xfree(selection * restrict sel);
 
-xapi selection_xinit(selection * restrict selp)
+void selection_xinit(selection * restrict selp)
   __attribute__((nonnull));
 
-xapi selection_xdestroy(selection * restrict sel)
+void selection_xdestroy(selection * restrict sel)
   __attribute__((nonnull));
 
-xapi selection_add_vertex(selection * restrict sel, struct moria_vertex* restrict v, uint16_t distance)
+void selection_add_vertex(selection * restrict sel, struct moria_vertex* restrict v, uint16_t distance)
   __attribute__((nonnull));
 
-xapi selection_add_dependency(selection * restrict sel, struct dependency * restrict bpe, uint16_t distance)
+void selection_add_dependency(selection * restrict sel, struct dependency * restrict bpe, uint16_t distance)
   __attribute__((nonnull));
 
 void selection_finalize(selection * restrict sel)
   __attribute__((nonnull));
 
-xapi selection_reset(selection * restrict sel, selection_iteration_type type)
+void selection_reset(selection * restrict sel, selection_iteration_type type)
   __attribute__((nonnull));
 
-xapi selection_replicate(selection * restrict dst, selection * restrict src)
+void selection_replicate(selection * restrict dst, selection * restrict src)
   __attribute__((nonnull));
 
 #endif

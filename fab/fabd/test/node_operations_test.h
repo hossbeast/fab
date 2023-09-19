@@ -28,13 +28,13 @@ struct llist;
 //
 extern struct moria_operations_dispatch * node_operations_test_dispatch;
 
-xapi resolve_fragment(const char *frag, uint16_t fragl, struct fsent **entp)
+void resolve_fragment(const char *frag, uint16_t fragl, struct fsent **entp)
   __attribute__((nonnull));
 
-xapi graph_say(struct narrator * restrict N)
+void graph_say(struct narrator * restrict N)
   __attribute__((nonnull));
 
-xapi graph_say_lists(
+void graph_say_lists(
     struct narrator * restrict N
   , struct llist ** restrict vertex_lists
   , uint16_t vertex_lists_len

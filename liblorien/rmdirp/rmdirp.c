@@ -15,59 +15,45 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#include "xlinux/xftw.h"
+#include <fcntl.h>
+#include <ftw.h>
+
 #include "xlinux/xunistd.h"
 
 #include "rmdirp.h"
+#include "nftwat.h"
 
 #include "macros.h"
 
-struct context
+static void fn(int method, ftwinfo * restrict info, void *arg, int * stop)
 {
-  int rmself;
-};
+  int *rmself = arg;
 
-static xapi rmdirp_fn(const char * fpath, const struct stat * sb, int typeflag, struct FTW * ftwbuf, void * arg)
-{
-  enter;
-
-  struct context * ctx = arg;
-
-  if(typeflag == FTW_F || typeflag == FTW_SL)
-  {
-    fatal(xunlinks, fpath);
+  if(method == FTWAT_PRE) {
+    return;
   }
-  else if(typeflag == FTW_DP)
+
+  switch(info->type)
   {
-    if(ftwbuf->level > 0 || ctx->rmself)
-    {
-      fatal(xrmdir, fpath);
-    }
-  }
-  else
-  {
+    case FTWAT_F:
+    case FTWAT_LNK:
+      xunlinks(info->path);
+      break;
+    case FTWAT_D:
+      if(info->parent != 0 || *rmself)
+      {
+        xrmdir(info->path);
+      }
+      break;
     RUNTIME_ABORT();
   }
-
-finally:
-  xapi_infos("path", fpath);
-coda;
-};
-
-
+}
 
 //
 // api
 //
 
-xapi API rmdirp(const char * const dirpath, int rmself)
+void API rmdirp(const char * const dirpath, int rmself)
 {
-  enter;
-
-  struct context ctx = { 0 };
-  ctx.rmself = rmself;
-
-  fatal(xnftw, dirpath, rmdirp_fn, 32, FTW_DEPTH | FTW_PHYS, &ctx);
-
-  finally : coda;
+  nftwat(AT_FDCWD, dirpath, fn, 32, FTWAT_SYMLINKS, &rmself);
 }

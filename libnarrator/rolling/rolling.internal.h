@@ -20,7 +20,6 @@
 
 #include <fcntl.h>
 
-#include "xapi.h"
 #include "types.h"
 
 #include "rolling.h"

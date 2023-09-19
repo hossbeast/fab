@@ -18,8 +18,6 @@
 #ifndef _EXPLORER_H
 #define _EXPLORER_H
 
-#include "xapi.h"
-
-xapi explorer_display_switch(void);
+void explorer_display_switch(void);
 
 #endif

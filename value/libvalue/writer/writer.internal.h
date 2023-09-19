@@ -18,7 +18,6 @@
 #ifndef VALUE_WRITER_INTERNAL_H
 #define VALUE_WRITER_INTERNAL_H
 
-#include "xapi.h"
 #include "types.h"
 
 #include "writer.h"
@@ -28,13 +27,13 @@
 // SUMMARY
 //  initialize the writer module
 //
-xapi writer_setup(void);
+void writer_setup(void);
 
 /// writer_cleanup
 //
 // SUMMARY
 //  teardown the writer module
 //
-xapi writer_cleanup(void);
+void writer_cleanup(void);
 
 #endif

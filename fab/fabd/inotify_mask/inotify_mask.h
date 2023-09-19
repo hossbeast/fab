@@ -19,11 +19,10 @@
 #define _INOTIFY_MASK
 
 #include <stdint.h>
-#include "xapi.h"
 
 struct narrator;
 
-xapi inotify_mask_say(uint32_t mask, struct narrator * const restrict N)
+void inotify_mask_say(uint32_t mask, struct narrator * const restrict N)
   __attribute__((nonnull));
 
 size_t inotify_mask_znload(char * restrict dst, size_t sz, uint32_t mask)

@@ -15,8 +15,6 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#include "xapi.h"
-#include "valyria/load.h"
 #include "moria/load.h"
 
 #include "valyria/list.h"
@@ -30,7 +28,6 @@
 #include "xunit/assert.h"
 #include "narrator.h"
 #include "narrator/growing.h"
-#include "logging.h"
 #include "rule.h"
 #include "fsent.h"
 #include "filesystem.internal.h"
@@ -55,42 +52,30 @@ typedef struct node_path_test {
   } **nodes;
 } node_path_test;
 
-static xapi node_path_test_unit_setup(xunit_unit * unit)
+static void node_path_test_unit_setup(xunit_unit * unit)
 {
-  enter;
+  moria_load();
 
-  fatal(valyria_load);
-  fatal(moria_load);
-  fatal(logging_finalize);
-
-  fatal(filesystem_setup);
-  fatal(module_setup);
-  fatal(graph_setup);
-  fatal(fsent_setup);
-
-  finally : coda;
+  filesystem_setup();
+  module_setup();
+  graph_setup();
+  fsent_setup();
 }
 
-static xapi node_path_test_unit_cleanup(xunit_unit * unit)
+static void node_path_test_unit_cleanup(xunit_unit * unit)
 {
-  enter;
-
-  fatal(filesystem_cleanup);
-  fatal(module_cleanup);
-  fatal(fsent_cleanup);
-  fatal(graph_cleanup);
-
-  finally : coda;
+  filesystem_cleanup();
+  module_cleanup();
+  fsent_cleanup();
+  graph_cleanup();
 }
 
 //
 // tests
 //
 
-static xapi node_path_test_entry(xunit_test * _test)
+static void node_path_test_entry(xunit_test * _test)
 {
-  enter;
-
   node_path_test * test = (node_path_test *)_test;
   graph_parser * ops_parser = 0;
   fsent * n;
@@ -98,26 +83,27 @@ static xapi node_path_test_entry(xunit_test * _test)
   config_parser * parser = 0;
   configblob * cfg = 0;
   moria_vertex *v;
+  char err[256];
 
   // setup filesystems
-  fatal(config_parser_create, &parser);
-  fatal(config_parser_parse, parser, test->config, strlen(test->config) + 2, 0, 0, &cfg);
+  config_parser_create(&parser);
+  config_parser_parse(parser, test->config, strlen(test->config) + 2, 0, 0, &cfg);
 
   // act
   cfg->filesystems.changed = true;
-  fatal(filesystem_reconfigure, cfg, true);
-  fatal(filesystem_reconfigure, cfg, false);
+  filesystem_reconfigure(cfg, err, sizeof(err));
+  filesystem_reconfigure(cfg, 0, 0);
 
   // setup initial graph
-  fatal(graph_parser_create, &ops_parser, &g_graph, &fsent_list, node_operations_test_dispatch, graph_vertex_attrs, graph_edge_attrs);
-  fatal(node_operations_test_dispatch->create_vertex, ops_parser, &v, VERTEX_DIR, 0, MMS(test->base));
-  fatal(node_operations_test_dispatch->connect, ops_parser, &g_root->vertex, v, EDGE_TYPE_FSTREE, 0);
-  fatal(graph_parser_operations_parse, ops_parser, MMS(test->operations));
+  graph_parser_create(&ops_parser, &g_graph, &fsent_list, node_operations_test_dispatch, graph_vertex_attrs, graph_edge_attrs);
+  node_operations_test_dispatch->create_vertex(ops_parser, &v, VERTEX_DIR, 0, MMS(test->base));
+  node_operations_test_dispatch->connect(ops_parser, &g_root->vertex, v, EDGE_TYPE_FSTREE, 0);
+  graph_parser_operations_parse(ops_parser, MMS(test->operations));
 
   typeof(*test->nodes) *nodes = test->nodes;
   while(*nodes)
   {
-    fatal(resolve_fragment, MMS((*nodes)->name), &n);
+    resolve_fragment(MMS((*nodes)->name), &n);
     assert_notnull(n);
 
     // act
@@ -130,18 +116,16 @@ static xapi node_path_test_entry(xunit_test * _test)
     nodes++;
   }
 
-finally:
-  fatal(graph_parser_xfree, ops_parser);
-  fatal(config_parser_xfree, parser);
-  fatal(config_xfree, cfg);
-coda;
+  graph_parser_xfree(ops_parser);
+  config_parser_xfree(parser);
+  config_xfree(cfg);
 }
 
 //
 // manifest
 //
 
-xunit_unit xunit = {
+static xunit_unit xunit = {
     xu_setup : node_path_test_unit_setup
   , xu_cleanup : node_path_test_unit_cleanup
   , xu_entry : node_path_test_entry
@@ -180,3 +164,4 @@ xunit_unit xunit = {
     , 0
   }
 };
+XUNIT_UNIT(xunit);

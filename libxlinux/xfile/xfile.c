@@ -18,14 +18,12 @@
 #include <errno.h>
 #include <sys/file.h>
 
+#include "types.h"
+#include "macros.h"
+
 #include "xfile/xfile.h"
-#include "errtab/KERNEL.errtab.h"
 
-xapi API xflock(int fd, int operation)
+void API xflock(int fd, int operation)
 {
-  enter;
-
-  tfatalize(perrtab_KERNEL, errno, flock, fd, operation);
-
-  finally : coda;
+  RUNTIME_ASSERT(flock(fd, operation) == 0);
 }

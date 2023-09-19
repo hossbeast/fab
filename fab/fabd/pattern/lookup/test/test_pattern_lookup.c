@@ -15,8 +15,6 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#include "xapi.h"
-#include "valyria/load.h"
 #include "moria/load.h"
 #include "value/load.h"
 #include "xlinux/xstdlib.h"
@@ -27,13 +25,11 @@
 #include "moria/operations.h"
 #include "moria/parser.h"
 #include "yyutil/parser.h"
-#include "yyutil/load.h"
 
 #include "xunit.h"
 #include "xunit/assert.h"
 #include "narrator.h"
 #include "narrator/growing.h"
-#include "logging.h"
 #include "rule.h"
 #include "fsent.h"
 #include "pattern_parser.h"
@@ -62,44 +58,31 @@ typedef struct node_lookup_test
   char * abspath;
 } node_lookup_test;
 
-static xapi node_lookup_test_unit_setup(xunit_unit * unit)
+static void node_lookup_test_unit_setup(xunit_unit * unit)
 {
-  enter;
+  moria_load();
 
-  fatal(valyria_load);
-  fatal(moria_load);
-  fatal(logging_finalize);
-
-  fatal(filesystem_setup);
-  fatal(graph_setup);
-  fatal(fsent_setup);
-  fatal(shadow_setup);
-
-  finally : coda;
+  filesystem_setup();
+  graph_setup();
+  fsent_setup();
+  shadow_setup();
 }
 
-static xapi node_lookup_test_unit_cleanup(xunit_unit * unit)
+static void node_lookup_test_unit_cleanup(xunit_unit * unit)
 {
-  enter;
+  value_unload();
 
-  fatal(yyutil_unload);
-  fatal(value_unload);
-
-  fatal(filesystem_cleanup);
-  fatal(fsent_cleanup);
-  fatal(graph_cleanup);
-
-  finally : coda;
+  filesystem_cleanup();
+  fsent_cleanup();
+  graph_cleanup();
 }
 
 //
 // tests
 //
 
-static xapi node_lookup_test_entry(xunit_test * _test)
+static void node_lookup_test_entry(xunit_test * _test)
 {
-  enter;
-
   node_lookup_test * test = containerof(_test, node_lookup_test, xu);
   char abspath[128];
   pattern_parser * parser = 0;
@@ -111,34 +94,34 @@ static xapi node_lookup_test_entry(xunit_test * _test)
   module mod;
   channel *chan = 0;
 
-  fatal(selection_xinit, &sel);
-  fatal(pattern_parser_create, &parser);
-  fatal(xmalloc, &chan, sizeof(*chan));
+  selection_xinit(&sel);
+  pattern_parser_create(&parser);
+  xmalloc(&chan, sizeof(*chan));
 
   // setup initial graph
-  fatal(graph_parser_create, &op_parser, &g_graph, &fsent_list, node_operations_test_dispatch, graph_vertex_attrs, graph_edge_attrs);
-  fatal(graph_parser_operations_parse, op_parser, MMS(test->operations));
+  graph_parser_create(&op_parser, &g_graph, &fsent_list, node_operations_test_dispatch, graph_vertex_attrs, graph_edge_attrs);
+  graph_parser_operations_parse(op_parser, MMS(test->operations));
 
   memset(&mod, 0, sizeof(mod));
   if(test->module)
   {
-    fatal(resolve_fragment, MMS(test->module), &mod.dir_node);
+    resolve_fragment(MMS(test->module), &mod.dir_node);
   }
   if(test->module_shadow)
   {
-    fatal(resolve_fragment, MMS(test->module_shadow), &mod.shadow);
+    resolve_fragment(MMS(test->module_shadow), &mod.shadow);
     g_project_shadow = mod.shadow;
   }
 
-  fatal(lookup_pattern_parse_partial, parser, test->pattern, strlen(test->pattern) + 2, "-test-", 0, &loc, &pat);
+  lookup_pattern_parse_partial(parser, test->pattern, strlen(test->pattern) + 2, "-test-", 0, &loc, &pat);
   assert_eq_u32(strlen(test->pattern), loc.l);
 
   // act
-  fatal(pattern_lookup, pat, 0, &sel, chan);
+  pattern_lookup(pat, 0, &sel, chan);
   assert_eq_b(false, chan->error);
 
   // assert
-  fatal(selection_finalize, &sel);
+  selection_finalize(&sel);
   assert_eq_zu(1, llist_count(&sel.list));
 
   result = llist_first(&sel.list, selected, lln);
@@ -146,20 +129,18 @@ static xapi node_lookup_test_entry(xunit_test * _test)
   fsent_absolute_path_znload(abspath, sizeof(abspath), containerof(result->v, fsent, vertex));
   assert_eq_s(test->abspath, abspath);
 
-finally:
-  fatal(pattern_parser_xfree, parser);
+  pattern_parser_xfree(parser);
   pattern_free(pat);
-  fatal(graph_parser_xfree, op_parser);
-  fatal(selection_xdestroy, &sel);
+  graph_parser_xfree(op_parser);
+  selection_xdestroy(&sel);
   wfree(chan);
-coda;
 }
 
 //
 // manifest
 //
 
-xunit_unit xunit = {
+static xunit_unit xunit = {
     xu_setup : node_lookup_test_unit_setup
   , xu_cleanup : node_lookup_test_unit_cleanup
   , xu_entry : node_lookup_test_entry
@@ -216,3 +197,4 @@ xunit_unit xunit = {
     , 0
   }
 };
+XUNIT_UNIT(xunit);

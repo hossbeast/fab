@@ -27,36 +27,26 @@
 // static
 //
 
-static xapi __attribute__((nonnull)) fixed_sayvf(narrator* const restrict N, const char * const restrict fmt, va_list va)
+static void __attribute__((nonnull)) fixed_sayvf(narrator* const restrict N, const char * const restrict fmt, va_list va)
 {
-  enter;
-
   narrator_fixed *n = containerof(N, typeof(*n), base);
   size_t l;
 
   l = znloadvf(n->s + n->l, n->a - n->l, fmt, va);
   n->l += l;
   n->m = MAX(n->l, n->m);
-
-  finally : coda;
 }
 
-static xapi __attribute__((nonnull)) fixed_sayw(narrator* const restrict N, const void * const restrict b, size_t l)
+static void __attribute__((nonnull)) fixed_sayw(narrator* const restrict N, const void * const restrict b, size_t l)
 {
-  enter;
-
   narrator_fixed *n = containerof(N, typeof(*n), base);
 
   n->l += znloadw(n->s + n->l, n->a - n->l, b, l);
   n->m = MAX(n->l, n->m);
-
-  finally : coda;
 }
 
-static xapi __attribute__((nonnull(1))) fixed_seek(narrator * const restrict N, off_t offset, int whence, off_t *res)
+static void __attribute__((nonnull(1))) fixed_seek(narrator * const restrict N, off_t offset, int whence, off_t *res)
 {
-  enter;
-
   narrator_fixed *n = containerof(N, typeof(*n), base);
 
   if(whence == NARRATOR_SEEK_SET)
@@ -71,14 +61,10 @@ static xapi __attribute__((nonnull(1))) fixed_seek(narrator * const restrict N, 
   if(res) {
     *res = n->l;
   }
-
-  finally : coda;
 }
 
-static xapi __attribute__((nonnull(1, 2))) fixed_read(narrator * restrict N, void * dst, size_t count, size_t * restrict r)
+static void __attribute__((nonnull(1, 2))) fixed_read(narrator * restrict N, void * dst, size_t count, size_t * restrict r)
 {
-  enter;
-
   narrator_fixed *n = containerof(N, typeof(*n), base);
   size_t d;
 
@@ -88,19 +74,13 @@ static xapi __attribute__((nonnull(1, 2))) fixed_read(narrator * restrict N, voi
   if(r) {
     *r = d;
   }
-
-  finally : coda;
 }
 
-static xapi __attribute__((nonnull)) fixed_flush(narrator * restrict N)
+static void __attribute__((nonnull)) fixed_flush(narrator * restrict N)
 {
-  enter;
-
   narrator_fixed *n = containerof(N, typeof(*n), base);
 
   n->s[n->l] = 0;
-
-  finally : coda;
 }
 
 static struct narrator_vtable fixed_vtable = NARRATOR_VTABLE(fixed);
@@ -120,9 +100,7 @@ narrator * API narrator_fixed_init(narrator_fixed * restrict n, char * s, size_t
   return &n->base;
 }
 
-xapi API narrator_fixed_destroy(narrator_fixed * restrict n)
+void API narrator_fixed_destroy(narrator_fixed * restrict n)
 {
-  enter;
 
-  finally : coda;
 }

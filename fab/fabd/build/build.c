@@ -19,20 +19,16 @@
 #include <sys/ioctl.h>
 #include <sys/wait.h>
 
-#include "xapi.h"
 #include "types.h"
 
 #include "fab/ipc.h"
 #include "fab/events.h"
 #include "fab/sigutil.h"
-#include "logger/config.h"
 #include "narrator.h"
 #include "narrator/fixed.h"
 #include "valyria/hashtable.h"
 #include "valyria/pstring.h"
 #include "moria/edge.h"
-#include "xapi/trace.h"
-#include "xlinux/KERNEL.errtab.h"
 #include "xlinux/xfcntl.h"
 #include "xlinux/xpthread.h"
 #include "xlinux/xsignal.h"
@@ -43,17 +39,16 @@
 #include "fab/metadata.h"
 
 #include "build.h"
-#include "CONFIG.errtab.h"
 #include "buildplan.h"
 #include "config.internal.h"
 #include "build_slot.h"
-#include "logging.h"
 #include "fsent.h"
 #include "params.h"
 #include "handler.h"
 #include "exec_builder.h"
 #include "dependency.h"
 #include "system_state.h"
+#include "probes.h"
 
 #include "atomics.h"
 #include "macros.h"
@@ -120,10 +115,8 @@ static void configure(const configblob * restrict cfg, build_thread_config * res
   }
 }
 
-xapi build(rcu_thread * restrict rcu_self)
+void build(rcu_thread * restrict rcu_self)
 {
-  enter;
-
   sigset_t sigs;
   siginfo_t siginfo;
   int rv;
@@ -181,7 +174,7 @@ xapi build(rcu_thread * restrict rcu_self)
       if(sn == 0 && sn_first) {
         sn = sn_first;
         sn_first = 0;
-        logf(L_BUILDER, "stage begin %3d", 0);
+        build_stage_probe(0);
 
         system_state_change(BAM_SYSTEM_STATE_BUILDING);
       }
@@ -203,16 +196,16 @@ xapi build(rcu_thread * restrict rcu_self)
       bpe = sn->bpe;
 
       /* configure the build slot, mark targets as suppressing notify events */
-      fatal(build_slot_prep, bs, bpe, stage_index);
+      build_slot_prep(bs, bpe, stage_index);
 
       /* launch the build slot */
       bs->stage = build_stage;
-      fatal(build_slot_fork_and_exec, bs);
+      build_slot_fork_and_exec(bs);
 
-      fatal(hashtable_put, build_slots_bypid, &bs);
+      hashtable_put(build_slots_bypid, &bs);
 
       slot_index = bs - build_slots;
-      logf(L_BUILDER, "%6s slot %3"PRIu32" stage %3d index %3d", "launch", (uint32_t)slot_index, build_stage, bs->stage_index);
+      build_fork_probe(build_stage, slot_index, bs);
 
       // cycle to the next slot
       stage_index++;
@@ -224,7 +217,7 @@ xapi build(rcu_thread * restrict rcu_self)
     }
 
     // receive epoll events, or a signal
-    fatal(uxepoll_pwait, &rv, epfd, events, sizeof(events) / sizeof(*events), SEC_AS_MSEC(1), &sigs);
+    rv = uxepoll_pwait(epfd, events, sizeof(events) / sizeof(*events), SEC_AS_MSEC(1), &sigs);
 
     /* read slots */
     for(x = 0; x < rv; x++)
@@ -235,7 +228,7 @@ xapi build(rcu_thread * restrict rcu_self)
       stream = events[x].data.u32 & 0xFFFF;
 
       bs = &build_slots[slot];
-      fatal(build_slot_read, bs, stream);
+      build_slot_read(bs, stream);
     }
 
     /* reap children */
@@ -243,7 +236,7 @@ xapi build(rcu_thread * restrict rcu_self)
     {
       rcu_quiesce(rcu_self);
 
-      fatal(uxwaitid, P_ALL, 0, &siginfo, WEXITED | WNOHANG);
+      uxwaitid(P_ALL, 0, &siginfo, WEXITED | WNOHANG);
       if(siginfo.si_pid == 0) {
         break;
       }
@@ -255,15 +248,15 @@ xapi build(rcu_thread * restrict rcu_self)
       bs = *bsp;
       slot_index = bs - build_slots;
 
-      fatal(build_slot_reap, bs, &siginfo);
-      logf(L_BUILDER, "%6s slot %3"PRIu32" stage %3d index %3d status %3d stderr-len %3d", "reap", (uint32_t)slot_index, build_stage, bs->stage_index, bs->status, bs->stderr_total);
+      build_slot_reap(bs, &siginfo);
+      build_wait_probe(build_stage, slot_index, bs);
 
       if(bs->status || bs->stderr_total) {
         build_stage_failure = true;
       }
 
       // free up the slot
-      fatal(hashtable_delete, build_slots_bypid, &key);
+      hashtable_delete(build_slots_bypid, &key);
 
       bs->pid = 0;
       bs->stdout_total = 0;
@@ -274,7 +267,7 @@ xapi build(rcu_thread * restrict rcu_self)
       stage_index_sum += (bs->stage_index + 1);
       if(stage_index_sum == stage_index_sum_target)
       {
-        logf(L_BUILDER, "stage advance %3d -> %3d", build_stage, build_stage + 1);
+        build_stage_probe(build_stage + 1);
         build_stage++;
         stage_index = 0;
         stage_index_sum = 0;
@@ -284,118 +277,105 @@ xapi build(rcu_thread * restrict rcu_self)
   }
 
   system_state_change(BAM_SYSTEM_STATE_OK);
-
-  finally : coda;
 }
 
 //
 // public
 //
 
-xapi build_setup()
+void build_setup()
 {
-  enter;
-
   int x;
   union epoll_data data;
   struct epoll_event ev;
 
   epfd = -1;
 
-  fatal(xopens, &build_devnull_fd, O_RDWR, "/dev/null");
+  build_devnull_fd = xopens(O_RDWR, "/dev/null");
 
   // setup epoll
-  fatal(xepoll_create, &epfd);
+  epfd = xepoll_create();
 
   // setup pipes
-  fatal(xmalloc, &build_slots, sizeof(*build_slots) * active_cfg.concurrency);
+  xmalloc(&build_slots, sizeof(*build_slots) * active_cfg.concurrency);
   for(x = 0; x < active_cfg.concurrency; x++)
   {
-    fatal(xpipe, build_slots[x].stdout_pipe);
-    fatal(xpipe, build_slots[x].stderr_pipe);
-    fatal(xpipe, build_slots[x].auxout_pipe);
+    xpipe(build_slots[x].stdout_pipe);
+    xpipe(build_slots[x].stderr_pipe);
+    xpipe(build_slots[x].auxout_pipe);
 
-    fatal(exec_builder_xinit, &build_slots[x].exec_builder);
-    fatal(exec_render_context_xinit, &build_slots[x].exec_builder_context);
+    exec_builder_xinit(&build_slots[x].exec_builder);
+    exec_render_context_xinit(&build_slots[x].exec_builder_context);
 
     data = (typeof(data)){ 0 };
     ev.events = EPOLLIN;
 
     data.u32 = (x << 16) | 1;
     ev.data = data;
-    fatal(xepoll_ctl, epfd, EPOLL_CTL_ADD, build_slots[x].stdout_pipe[0], &ev);
+    xepoll_ctl(epfd, EPOLL_CTL_ADD, build_slots[x].stdout_pipe[0], &ev);
 
     data.u32 = (x << 16) | 2;
     ev.data = data;
-    fatal(xepoll_ctl, epfd, EPOLL_CTL_ADD, build_slots[x].stderr_pipe[0], &ev);
+    xepoll_ctl(epfd, EPOLL_CTL_ADD, build_slots[x].stderr_pipe[0], &ev);
 
     data.u32 = (x << 16) | 1001;
     ev.data = data;
-    fatal(xepoll_ctl, epfd, EPOLL_CTL_ADD, build_slots[x].auxout_pipe[0], &ev);
+    xepoll_ctl(epfd, EPOLL_CTL_ADD, build_slots[x].auxout_pipe[0], &ev);
   }
 
-  fatal(hashtable_createx
-    , &build_slots_bypid
+  hashtable_createx(
+      &build_slots_bypid
     , sizeof(build_slot*)
     , active_cfg.concurrency
     , build_slot_hash
     , build_slot_cmp
     , 0
-    , 0
   );
-
-  finally : coda;
 }
 
-xapi build_cleanup()
+void build_cleanup()
 {
-  enter;
-
   int x;
 
-  fatal(ixclose, &build_devnull_fd);
+  ixclose(&build_devnull_fd);
 
   for(x = 0; x < active_cfg.concurrency; x++)
   {
-    fatal(xclose, build_slots[x].stdout_pipe[0]);
-    fatal(xclose, build_slots[x].stdout_pipe[1]);
-    fatal(xclose, build_slots[x].stderr_pipe[0]);
-    fatal(xclose, build_slots[x].stderr_pipe[1]);
-    fatal(xclose, build_slots[x].auxout_pipe[0]);
-    fatal(xclose, build_slots[x].auxout_pipe[1]);
+    xclose(build_slots[x].stdout_pipe[0]);
+    xclose(build_slots[x].stdout_pipe[1]);
+    xclose(build_slots[x].stderr_pipe[0]);
+    xclose(build_slots[x].stderr_pipe[1]);
+    xclose(build_slots[x].auxout_pipe[0]);
+    xclose(build_slots[x].auxout_pipe[1]);
 
     wfree(build_slots[x].argv_stor);
     wfree(build_slots[x].env_stor);
-    fatal(exec_builder_xdestroy, &build_slots[x].exec_builder);
-    fatal(exec_render_context_xdestroy, &build_slots[x].exec_builder_context);
+    exec_builder_xdestroy(&build_slots[x].exec_builder);
+    exec_render_context_xdestroy(&build_slots[x].exec_builder_context);
   }
   iwfree(&build_slots);
 
-  fatal(hashtable_ixfree, &build_slots_bypid);
+  hashtable_ixfree(&build_slots_bypid);
 
-  fatal(ixclose, &epfd);
-
-  finally : coda;
+  ixclose(&epfd);
 }
 
-xapi build_reconfigure(configblob * restrict cfg, bool dry)
+int build_reconfigure(configblob * restrict cfg, char * restrict err, uint16_t err_sz)
 {
-  enter;
-
-  if(dry)
+  if(err)
   {
     configure(cfg, &staging_cfg);
   }
   else if(cfg->build.changed)
   {
-    fatal(build_cleanup);
+    build_cleanup();
 
     // apply new config
     memcpy(&active_cfg, &staging_cfg, sizeof(active_cfg));
 
     // relaunch
-    fatal(build_setup);
+    build_setup();
   }
 
-  finally : coda;
+  return 0;
 }

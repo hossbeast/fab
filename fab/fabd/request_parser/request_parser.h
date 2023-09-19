@@ -18,19 +18,34 @@
 #ifndef _FABD_REQUEST_PARSER_H
 #define _FABD_REQUEST_PARSER_H
 
-#include "xapi.h"
 #include "types.h"
+#include "yyutil/parser.h"
 
 struct request;
+struct selector_parser;
+struct config_parser;
+struct command;
 
-typedef struct request_parser request_parser;
+typedef struct request_parser {
+  yyu_parser yyu;
+
+  // sub-parsers
+  struct selector_parser * selector_parser;
+  struct config_parser * config_parser;
+
+  // under construction
+  struct command * command;
+
+  // (returns)
+  struct request * request;
+} request_parser;
 
 /// request_parser_create
 //
 // SUMMARY
 //  create a config parser
 //
-xapi request_parser_create(request_parser ** const restrict p)
+void request_parser_create(request_parser ** const restrict p)
   __attribute__((nonnull));
 
 /// request_parser_xfree
@@ -38,14 +53,14 @@ xapi request_parser_create(request_parser ** const restrict p)
 // SUMMARY
 //  free a config parser with free semantics
 //
-xapi request_parser_xfree(request_parser * restrict);
+void request_parser_xfree(request_parser * restrict);
 
 /// request_parser_ixfree
 //
 // SUMMARY
 //  free a config parser with iwfree semantics
 //
-xapi request_parser_ixfree(request_parser ** restrict)
+void request_parser_ixfree(request_parser ** restrict)
   __attribute__((nonnull));
 
 /*
@@ -56,7 +71,7 @@ xapi request_parser_ixfree(request_parser ** restrict)
  *  len       - size of text
  *  req       - request to return the result in
  */
-xapi request_parser_parse(
+int request_parser_parse(
     request_parser * restrict parser
   , char * const restrict buf
   , size_t len

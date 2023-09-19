@@ -26,7 +26,6 @@ exec_builder - build up the parameters to an exec call, namely
 */
 
 #include "types.h"
-#include "xapi.h"
 
 #include "narrator/growing.h"
 #include "fsent.h"
@@ -68,7 +67,7 @@ typedef struct exec_builder {
  *
  * [envp] - (returns) exec stored in the builder
  */
-xapi exec_builder_build(exec_builder * restrict builder, struct exec ** restrict envp)
+void exec_builder_build(exec_builder * restrict builder, struct exec ** restrict envp)
   __attribute__((nonnull(1)));
 
 /*
@@ -80,15 +79,15 @@ void exec_builder_take(exec_builder * restrict builder, struct exec ** restrict 
   __attribute__((nonnull));
 
 /* initialize an exec builder */
-xapi exec_builder_xinit(exec_builder * restrict builder)
+void exec_builder_xinit(exec_builder * restrict builder)
   __attribute__((nonnull));
 
 /* reset an exec builder */
-xapi exec_builder_xreset(exec_builder * restrict builder)
+void exec_builder_xreset(exec_builder * restrict builder)
   __attribute__((nonnull));
 
 /* destroy an exec builder */
-xapi exec_builder_xdestroy(exec_builder * restrict builder)
+void exec_builder_xdestroy(exec_builder * restrict builder)
   __attribute__((nonnull));
 
 enum builder_add_mode {
@@ -146,7 +145,7 @@ typedef struct exec_builder_args {
 } exec_builder_args;
 
 /* add an item to an exec builder */
-xapi exec_builder_add(exec_builder * restrict builder, const exec_builder_args *args)
+void exec_builder_add(exec_builder * restrict builder, const exec_builder_args *args)
   __attribute__((nonnull));
 
 /*
@@ -155,7 +154,7 @@ xapi exec_builder_add(exec_builder * restrict builder, const exec_builder_args *
  * name_fmt - format string for the envp name
  * val_fmt  - format string for the envp value
  */
-xapi exec_builder_env_addf(exec_builder * restrict builder, const char * restrict name_fmt, const char * restrict val_fmt, ...)
+void exec_builder_env_addf(exec_builder * restrict builder, const char * restrict name_fmt, const char * restrict val_fmt, ...)
   __attribute__((nonnull))
   __attribute__((format(printf, 3, 4)));
 

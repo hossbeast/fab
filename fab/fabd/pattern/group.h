@@ -18,14 +18,13 @@
 #ifndef FABD_PATTERN_GROUP_H
 #define FABD_PATTERN_GROUP_H
 
-#include "xapi.h"
 #include "types.h"
 
 struct yyu_location;
 union pattern_segment;
 struct pattern_segments;
 
-xapi pattern_group_mk(
+void pattern_group_mk(
     union pattern_segment ** restrict rv
   , const struct yyu_location * restrict loc
   , struct pattern_segments * restrict chain

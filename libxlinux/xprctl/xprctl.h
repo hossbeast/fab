@@ -20,8 +20,6 @@
 
 #include <sys/prctl.h>
 
-#include "xapi.h"
-
 /// xprctl
 //
 // SUMMARY
@@ -29,6 +27,6 @@
 //
 // PARAMETERS
 //
-xapi xprctl(int option, unsigned long arg2, unsigned long arg3, unsigned long arg4, unsigned long arg5);
+void xprctl(int option, unsigned long arg2, unsigned long arg3, unsigned long arg4, unsigned long arg5);
 
 #endif

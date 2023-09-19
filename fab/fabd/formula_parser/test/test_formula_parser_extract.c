@@ -15,7 +15,6 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#include "xapi.h"
 #include "xunit.h"
 #include "xunit/assert.h"
 
@@ -52,10 +51,8 @@ static void trim(char ** s, size_t * l)
 // tests
 //
 
-static xapi formula_parser_extract_test_entry(xunit_test * _test)
+static void formula_parser_extract_test_entry(xunit_test * _test)
 {
-  enter;
-
   char * bacon = 0;
   size_t bacon_len = 0;
   char * exp;
@@ -74,15 +71,13 @@ static xapi formula_parser_extract_test_entry(xunit_test * _test)
 
   assert_eq_w(test->bacon, strlen(test->bacon), bacon, bacon_len);
   assert_eq_b(test->shebang, shebang);
-
-  finally : coda;
 }
 
 //
 // manifest
 //
 
-xunit_unit xunit = {
+static xunit_unit xunit = {
     xu_entry : formula_parser_extract_test_entry
   , xu_tests : (formula_parser_extract_test*[]) {
       /* shebang */
@@ -196,3 +191,4 @@ xunit_unit xunit = {
     , 0
   }
 };
+XUNIT_UNIT(xunit);

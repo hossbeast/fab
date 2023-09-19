@@ -18,21 +18,20 @@
 #ifndef FABD_PATTERN_BYTE_H
 #define FABD_PATTERN_BYTE_H
 
-#include "xapi.h"
 #include "types.h"
 
 struct yyu_location;
 union pattern_segment;
 struct narrator;
 
-xapi pattern_byte_mk(
+void pattern_byte_mk(
     union pattern_segment ** restrict pat
   , const struct yyu_location * restrict loc
   , uint8_t code
 )
   __attribute__((nonnull));
 
-xapi byte_say(uint8_t code, struct narrator * restrict N)
+void byte_say(uint8_t code, struct narrator * restrict N)
   __attribute__((nonnull));
 
 #endif

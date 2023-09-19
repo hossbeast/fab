@@ -25,7 +25,6 @@ the formula text
 
 */
 
-#include "xapi.h"
 #include "types.h"
 
 #include "valyria/chain.h"
@@ -143,11 +142,11 @@ void formula_value_free(formula_value * restrict v);
 void formula_value_ifree(formula_value ** restrict v);
 void formula_value_set_free(struct rbtree * restrict rbt);
 
-xapi formula_value_render(const formula_value * restrict fv, struct narrator * restrict N)
+void formula_value_render(const formula_value * restrict fv, struct narrator * restrict N)
   __attribute__((nonnull));
 
 /* tracing */
-xapi formula_value_say(const formula_value * restrict fv, struct narrator * restrict N)
+void formula_value_say(const formula_value * restrict fv, struct narrator * restrict N)
   __attribute__((nonnull));
 
 #endif

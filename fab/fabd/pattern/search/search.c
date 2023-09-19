@@ -50,10 +50,8 @@ static void search_node_free(void * m)
   wfree(m);
 }
 
-static xapi search_visit(moria_vertex * restrict v, void * _ctx, moria_traversal_mode mode, int distance, int * restrict result)
+static void search_visit(moria_vertex * restrict v, void * _ctx, moria_traversal_mode mode, int distance, int * restrict result)
 {
-  enter;
-
   pattern_search_context * ctx = _ctx;
   fsent * n = containerof(v, fsent, vertex);
   pattern_search_node * m = 0;
@@ -91,7 +89,7 @@ static xapi search_visit(moria_vertex * restrict v, void * _ctx, moria_traversal
 
   ctx->node = n;
   ctx->matched = false;
-  fatal(pattern_segments_search, ctx);
+  pattern_segments_search(ctx);
 
   if(!ctx->matched) {
     goto restore;
@@ -102,7 +100,7 @@ static xapi search_visit(moria_vertex * restrict v, void * _ctx, moria_traversal
 
   if(fsent_filetype_get(n) == VERTEX_FILETYPE_REG && !ctx->section_traversal.section)
   {
-    fatal(xmalloc, &m, sizeof(*m));
+    xmalloc(&m, sizeof(*m));
     m->node = n;
 
     /* active index from variants segments in the preceding segments search */
@@ -118,31 +116,27 @@ static xapi search_visit(moria_vertex * restrict v, void * _ctx, moria_traversal
       m->groups[x] = ctx->groups[x];
     }
 
-    fatal(set_put, ctx->matches, m, 0);
+    set_put(ctx->matches, m, 0);
     m = 0;
   }
   else if(fsent_filetype_get(n) != VERTEX_FILETYPE_REG && ctx->section_traversal.section)
   {
-    fatal(pattern_section_search, ctx, n);
+    pattern_section_search(ctx, n);
   }
 
 restore:
   ctx->section_traversal = saved_section_traversal;
   ctx->variant_index = saved_variant_index;
 
-finally:
   wfree(m);
-coda;
 }
 
 //
 // internal
 //
 
-xapi pattern_segments_search(pattern_search_context * ctx)
+void pattern_segments_search(pattern_search_context * ctx)
 {
-  enter;
-
   struct search_segments_traversal saved_traversal;
   struct search_segments_traversal *traversal;
 
@@ -169,7 +163,7 @@ xapi pattern_segments_search(pattern_search_context * ctx)
       if((traversal->segment = chain_next(traversal->segment_head, &traversal->segment_cursor, chn)))
       {
         offset = traversal->offset;
-        fatal(traversal->segment->vtab->search, traversal->segment, ctx);
+        traversal->segment->vtab->search(traversal->segment, ctx);
 
         // matched something
         if(offset != traversal->offset || ctx->matched) {
@@ -267,14 +261,10 @@ xapi pattern_segments_search(pattern_search_context * ctx)
   }
 
   memcpy(traversal, &saved_traversal, sizeof(*traversal) - sizeof(typeof(traversal->u)));
-
-  finally : coda;
 }
 
-xapi pattern_section_search(pattern_search_context * restrict ctx, fsent * restrict dirnode)
+void pattern_section_search(pattern_search_context * restrict ctx, fsent * restrict dirnode)
 {
-  enter;
-
   const pattern_section * section;
   uint16_t min_depth = 0;
   uint16_t max_depth = UINT16_MAX;
@@ -283,7 +273,7 @@ xapi pattern_section_search(pattern_search_context * restrict ctx, fsent * restr
 
   if(ctx->dirnode_visit)
   {
-    fatal(ctx->dirnode_visit, ctx->dirnode_visit_ctx, dirnode);
+    ctx->dirnode_visit(ctx->dirnode_visit_ctx, dirnode);
   }
 
   section = ctx->section_traversal.section;
@@ -310,8 +300,8 @@ xapi pattern_section_search(pattern_search_context * restrict ctx, fsent * restr
     RUNTIME_ASSERT(dirnode);
   }
 
-  fatal(moria_traverse_vertices
-    , &g_graph
+  moria_traverse_vertices(
+      &g_graph
     , &dirnode->vertex
     , search_visit
     , state
@@ -325,40 +315,32 @@ xapi pattern_section_search(pattern_search_context * restrict ctx, fsent * restr
     , ctx
   );
 
-finally:
   moria_vertex_traversal_end(&g_graph, state);
-coda;
 }
 
 //
 // public
 //
 
-xapi pattern_search_matches_create(set ** matches)
+void pattern_search_matches_create(set ** matches)
 {
-  enter;
-
-  fatal(set_createx, matches, 0, search_node_hash, search_node_cmp, search_node_free, 0);
-
-  finally : coda;
+  set_createx(matches, 0, search_node_hash, search_node_cmp, search_node_free);
 }
 
-xapi pattern_search(
+void pattern_search(
     const pattern * restrict pattern
   , const module * restrict module
   , const llist * restrict modules
   , const set * restrict variants
   , set * restrict matches
-  , xapi (*dirnode_visit)(void * ctx, struct fsent * dirnode)
+  , void (*dirnode_visit)(void * ctx, struct fsent * dirnode)
   , void *dirnode_visit_ctx
 )
 {
-  enter;
-
   pattern_search_context ctx;
 
   if(matches) {
-    fatal(set_recycle, matches);
+    set_recycle(matches);
   }
 
   // setup the dynamic context
@@ -381,7 +363,5 @@ xapi pattern_search(
   ctx.section_traversal.section = chain_next(ctx.section_traversal.head, &ctx.section_traversal.cursor, chn);
 
   /* search pattern begins at the module dirnode */
-  fatal(pattern_section_search, &ctx, module->dir_node);
-
-  finally : coda;
+  pattern_section_search(&ctx, module->dir_node);
 }

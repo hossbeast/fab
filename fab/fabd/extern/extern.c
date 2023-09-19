@@ -15,7 +15,6 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#include "xapi.h"
 
 #include "lorien/path_normalize.h"
 #include "valyria/llist.h"
@@ -28,9 +27,6 @@
 #include "fsent.h"
 #include "walker.h"
 
-xapi extern_system_reconcile(int walk_id, struct graph_invalidation_context * restrict invalidation)
+void extern_system_reconcile(int walk_id, struct graph_invalidation_context * restrict invalidation)
 {
-  enter;
-
-  finally : coda;
 }

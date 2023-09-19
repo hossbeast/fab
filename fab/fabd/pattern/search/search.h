@@ -18,7 +18,6 @@
 #ifndef FABD_PATTERN_SEARCH_H
 #define FABD_PATTERN_SEARCH_H
 
-#include "xapi.h"
 
 struct pattern;
 struct fsent;
@@ -35,18 +34,18 @@ struct llist;
  * [variants] - variants
  * matches    - (returns) matching nodes
  */
-xapi pattern_search(
+void pattern_search(
     /* 1 */ const struct pattern * restrict pattern
   , /* 2 */ const struct module * restrict module
   , /* 3 */ const struct llist * restrict modules
   , /* 4 */ const struct set * restrict variants
   , /* 5 */ struct set * restrict matches
-  , /* 6 */ xapi (*dirnode_visit)(void * ctx, struct fsent * dirnode)
+  , /* 6 */ void (*dirnode_visit)(void * ctx, struct fsent * dirnode)
   , /* 7 */ void *dirnode_visit_ctx
 )
   __attribute__((nonnull(1, 2, 3)));
 
-xapi pattern_search_matches_create(struct set ** matches)
+void pattern_search_matches_create(struct set ** matches)
   __attribute__((nonnull));
 
 #endif

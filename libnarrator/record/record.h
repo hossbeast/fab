@@ -28,7 +28,6 @@ SUMMARY
 
 */
 
-#include "xapi.h"
 #include "types.h"
 #include "narrator.h"
 
@@ -53,12 +52,12 @@ extern struct narrator_vtable narrator_record_vtable;
 //  n  - (returns) narrator
 //  np - underlying narrator
 //
-xapi narrator_record_create(narrator_record ** const restrict n, narrator * const restrict np)
+void narrator_record_create(narrator_record ** const restrict n, narrator * const restrict np)
   __attribute__((nonnull(1)));
 
-xapi narrator_record_free(narrator_record * restrict n);
+void narrator_record_free(narrator_record * restrict n);
 
-xapi narrator_record_destroy(narrator_record * restrict n)
+void narrator_record_destroy(narrator_record * restrict n)
   __attribute__((nonnull));
 
 /// narrator_record_reset
@@ -77,7 +76,7 @@ void narrator_record_reset(narrator_record * const restrict n)
 // SUMMARY
 //  propagate to the underlying narrator with a single write
 //
-xapi narrator_record_flush(narrator_record * const restrict n)
+void narrator_record_flush(narrator_record * const restrict n)
   __attribute__((nonnull));
 
 #endif

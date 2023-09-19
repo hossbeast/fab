@@ -18,13 +18,12 @@
 #ifndef FABD_PATTERN_VARIANTS_H
 #define FABD_PATTERN_VARIANTS_H
 
-#include "xapi.h"
 #include "types.h"
 
 struct yyu_location;
 union pattern_segment;
 
-xapi pattern_variants_mk(union pattern_segment ** restrict rv, const struct yyu_location * restrict loc)
+void pattern_variants_mk(union pattern_segment ** restrict rv, const struct yyu_location * restrict loc)
   __attribute__((nonnull));
 
 #endif

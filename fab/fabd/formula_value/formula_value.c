@@ -18,7 +18,6 @@
 #include <inttypes.h>
 
 #include "types.h"
-#include "xapi.h"
 
 #include "xlinux/xstdlib.h"
 #include "value.h"
@@ -77,284 +76,246 @@ static void __attribute__((constructor)) init()
 // static
 //
 
-static xapi allocate(formula_value ** restrict v, formula_value_type type)
+static void allocate(formula_value ** restrict v, formula_value_type type)
 {
-  enter;
-
-  fatal(xmalloc, v, sizeof(**v));
+  xmalloc(v, sizeof(**v));
   (*v)->type = type;
-
-  finally : coda;
 }
 
-static xapi writer_write(const formula_value * restrict val, value_writer * const restrict writer, bool top)
+static void writer_write(const formula_value * restrict val, value_writer * const restrict writer, bool top)
 {
-  enter;
-
   const chain *T;
   formula_value *sv;
   const char *name;
 
   if(val->type == FORMULA_VALUE_LIST)
   {
-    fatal(value_writer_push_list, writer);
+    value_writer_push_list(writer);
 
     chain_foreach(T, sv, chn, val->list_head) {
-      fatal(writer_write, sv, writer, false);
+      writer_write(sv, writer, false);
     }
 
-    fatal(value_writer_pop_list, writer);
+    value_writer_pop_list(writer);
   }
   else if(val->type == FORMULA_VALUE_SET)
   {
-    fatal(value_writer_push_set, writer);
+    value_writer_push_set(writer);
 
     rbtree_foreach(val->set, sv, rbn) {
-      fatal(writer_write, sv, writer, top);
+      writer_write(sv, writer, top);
     }
 
-    fatal(value_writer_pop_set, writer);
+    value_writer_pop_set(writer);
   }
   else if(val->type == FORMULA_VALUE_MAPPING)
   {
-    fatal(value_writer_push_mapping, writer);
-      fatal(value_writer_bytes, writer, val->m.name, val->m.name_len);
-      fatal(writer_write, val->m.value, writer, top);
-    fatal(value_writer_pop_mapping, writer);
+    value_writer_push_mapping(writer);
+      value_writer_bytes(writer, val->m.name, val->m.name_len);
+      writer_write(val->m.value, writer, top);
+    value_writer_pop_mapping(writer);
   }
   else if(val->type == FORMULA_VALUE_STRING)
   {
-    fatal(value_writer_string, writer, val->s);
+    value_writer_string(writer, val->s);
   }
   else if(val->type == FORMULA_VALUE_FLOAT)
   {
-    fatal(value_writer_float, writer, val->f);
+    value_writer_float(writer, val->f);
   }
   else if(val->type == FORMULA_VALUE_BOOLEAN)
   {
-    fatal(value_writer_bool, writer, val->b);
+    value_writer_bool(writer, val->b);
   }
   else if(val->type == FORMULA_VALUE_POSINT)
   {
-    fatal(value_writer_uint, writer, val->u);
+    value_writer_uint(writer, val->u);
   }
   else if(val->type == FORMULA_VALUE_NEGINT)
   {
-    fatal(value_writer_int, writer, val->i);
+    value_writer_int(writer, val->i);
   }
   else if(val->type == FORMULA_VALUE_VARIABLE)
   {
-    fatal(value_writer_variable, writer, val->v.name, val->v.name_len);
+    value_writer_variable(writer, val->v.name, val->v.name_len);
   }
   else if(val->type == FORMULA_VALUE_SYSVAR)
   {
     name = attrs32_name_byvalue(formula_sysvar_attrs, FORMULA_SYSVAR_OPT & val->sv);
-    fatal(value_writer_variable, writer, MMS(name));
+    value_writer_variable(writer, MMS(name));
   }
   else if(val->type == FORMULA_VALUE_SELECT)
   {
-    fatal(value_writer_push_mapping, writer);
-      fatal(value_writer_string, writer, "select");
-      fatal(value_writer_push_list, writer);
-      fatal(selector_writer_write, val->op.selector, writer);
-      fatal(value_writer_pop_list, writer);
-    fatal(value_writer_pop_mapping, writer);
+    value_writer_push_mapping(writer);
+      value_writer_string(writer, "select");
+      value_writer_push_list(writer);
+      selector_writer_write(val->op.selector, writer);
+      value_writer_pop_list(writer);
+    value_writer_pop_mapping(writer);
   }
   else if(val->type == FORMULA_VALUE_PROPERTY)
   {
-    fatal(value_writer_push_mapping, writer);
-      fatal(value_writer_string, writer, "property");
-      fatal(value_writer_string, writer, attrs32_name_byvalue(fsent_property_attrs, FSENT_PROPERTY_OPT & val->op.property));
-    fatal(value_writer_pop_mapping, writer);
+    value_writer_push_mapping(writer);
+      value_writer_string(writer, "property");
+      value_writer_string(writer, attrs32_name_byvalue(fsent_property_attrs, FSENT_PROPERTY_OPT & val->op.property));
+    value_writer_pop_mapping(writer);
   }
   else if(val->type == FORMULA_VALUE_PREPEND)
   {
-    fatal(value_writer_push_mapping, writer);
-      fatal(value_writer_string, writer, "prepend");
-      fatal(writer_write, val->op.operand, writer, false);
-    fatal(value_writer_pop_mapping, writer);
+    value_writer_push_mapping(writer);
+      value_writer_string(writer, "prepend");
+      writer_write(val->op.operand, writer, false);
+    value_writer_pop_mapping(writer);
   }
   else if(val->type == FORMULA_VALUE_PATH_SEARCH)
   {
-    fatal(value_writer_push_mapping, writer);
-      fatal(value_writer_string, writer, "path-search");
-      fatal(writer_write, val->op.operand, writer, false);
-    fatal(value_writer_pop_mapping, writer);
+    value_writer_push_mapping(writer);
+      value_writer_string(writer, "path-search");
+      writer_write(val->op.operand, writer, false);
+    value_writer_pop_mapping(writer);
   }
   else if(val->type == FORMULA_VALUE_SEQUENCE)
   {
     if(!top || chain_count(val->op.list_head, chn) != 1)
     {
-      fatal(value_writer_push_mapping, writer);
-      fatal(value_writer_string, writer, "sequence");
+      value_writer_push_mapping(writer);
+      value_writer_string(writer, "sequence");
     }
-    fatal(value_writer_push_list, writer);
+    value_writer_push_list(writer);
 
     chain_foreach(T, sv, chn, val->op.list_head) {
-      fatal(writer_write, sv, writer, false);
+      writer_write(sv, writer, false);
     }
 
-    fatal(value_writer_pop_list, writer);
+    value_writer_pop_list(writer);
     if(!top || chain_count(val->op.list_head, chn) != 1)
     {
-      fatal(value_writer_pop_mapping, writer);
+      value_writer_pop_mapping(writer);
     }
   }
   else
   {
     RUNTIME_ABORT();
   }
-
-  finally : coda;
 }
 
 //
 // tracing
 //
 
-xapi formula_value_say(const formula_value * restrict fv, struct narrator * restrict N)
+void formula_value_say(const formula_value * restrict fv, struct narrator * restrict N)
 {
-  enter;
-
   value_writer writer;
 
   value_writer_init(&writer);
-  fatal(value_writer_open, &writer, N);
-  fatal(writer_write, fv, &writer, true);
-  fatal(value_writer_close, &writer);
+  value_writer_open(&writer, N);
+  writer_write(fv, &writer, true);
+  value_writer_close(&writer);
 
-finally:
-  fatal(value_writer_destroy, &writer);
-coda;
+  value_writer_destroy(&writer);
 }
 
 //
 // internal
 //
 
-xapi formula_value_posint_mk(
+void formula_value_posint_mk(
     const yyu_location * restrict loc
   , formula_value ** rv
   , uint64_t u
 )
 {
-  enter;
-
   formula_value *v;
 
-  fatal(allocate, &v, FORMULA_VALUE_POSINT);
+  allocate(&v, FORMULA_VALUE_POSINT);
   v->u = u;
 
   *rv = v;
-
-  finally : coda;
 }
 
-xapi formula_value_negint_mk(
+void formula_value_negint_mk(
     const yyu_location * restrict loc
   , formula_value ** rv
   , int64_t i
 )
 {
-  enter;
-
   formula_value *v;
 
-  fatal(allocate, &v, FORMULA_VALUE_NEGINT);
+  allocate(&v, FORMULA_VALUE_NEGINT);
   v->i = i;
 
   *rv = v;
-
-  finally : coda;
 }
 
-xapi formula_value_float_mk(
+void formula_value_float_mk(
     const yyu_location * restrict loc
   , formula_value ** rv
   , float fp
 )
 {
-  enter;
-
   formula_value *v;
 
-  fatal(allocate, &v, FORMULA_VALUE_FLOAT);
+  allocate(&v, FORMULA_VALUE_FLOAT);
   v->f = fp;
 
   *rv = v;
-
-  finally : coda;
 }
 
-xapi formula_value_boolean_mk(
+void formula_value_boolean_mk(
     const yyu_location * restrict loc
   , formula_value ** rv
   , bool b
 )
 {
-  enter;
-
   formula_value *v;
 
-  fatal(allocate, &v, FORMULA_VALUE_BOOLEAN);
+  allocate(&v, FORMULA_VALUE_BOOLEAN);
   v->b = b;
 
   *rv = v;
-
-  finally : coda;
 }
 
-xapi formula_value_string_mk(
+void formula_value_string_mk(
     const yyu_location * restrict loc
   , formula_value ** rv
   , char * restrict s
 )
 {
-  enter;
-
   formula_value *v;
 
-  fatal(allocate, &v, FORMULA_VALUE_STRING);
+  allocate(&v, FORMULA_VALUE_STRING);
   v->s = s;
 
   *rv = v;
-
-  finally : coda;
 }
 
-xapi formula_value_variable_mk(
+void formula_value_variable_mk(
     const yyu_location * restrict loc
   , formula_value ** rv
   , const char * restrict name
   , uint8_t len
 )
 {
-  enter;
-
   formula_value *v;
 
-  fatal(allocate, &v, FORMULA_VALUE_VARIABLE);
+  allocate(&v, FORMULA_VALUE_VARIABLE);
   len = MIN(len, sizeof(v->v.name) - 1);
   memcpy(v->v.name, name, len);
   v->v.name[len] = 0;
   v->v.name_len = len;
 
   *rv = v;
-
-  finally : coda;
 }
 
-xapi formula_value_sysvar_mk(
+void formula_value_sysvar_mk(
     const yyu_location * restrict loc
   , formula_value ** rv
   , uint16_t token
 )
 {
-  enter;
-
   formula_value *v;
 
-  fatal(allocate, &v, FORMULA_VALUE_SYSVAR);
+  allocate(&v, FORMULA_VALUE_SYSVAR);
 
   if(token == formula_BM_SOURCE)
     v->sv = FORMULA_SYSVAR_SOURCE;
@@ -368,11 +329,9 @@ xapi formula_value_sysvar_mk(
     v->sv = FORMULA_SYSVAR_VARIANT;
 
   *rv = v;
-
-  finally : coda;
 }
 
-xapi formula_value_mapping_mk(
+void formula_value_mapping_mk(
     const yyu_location * restrict loc
   , formula_value ** rv
   , const char * name
@@ -380,11 +339,9 @@ xapi formula_value_mapping_mk(
   , formula_value * restrict value
 )
 {
-  enter;
-
   formula_value *v;
 
-  fatal(allocate, &v, FORMULA_VALUE_MAPPING);
+  allocate(&v, FORMULA_VALUE_MAPPING);
   len = MIN(len, sizeof(v->m.name) - 1);
   memcpy(v->m.name, name, len);
   v->m.name[len] = 0;
@@ -392,134 +349,104 @@ xapi formula_value_mapping_mk(
   v->m.value = value;
 
   *rv = v;
-
-  finally : coda;
 }
 
-xapi formula_value_list_mk(
+void formula_value_list_mk(
     const yyu_location * restrict loc
   , formula_value ** restrict rv
   , formula_value * restrict list_head
 )
 {
-  enter;
-
   formula_value *v;
 
-  fatal(allocate, &v, FORMULA_VALUE_LIST);
+  allocate(&v, FORMULA_VALUE_LIST);
   v->list_head = list_head;
 
   *rv = v;
-
-  finally : coda;
 }
 
-xapi formula_value_set_mk(
+void formula_value_set_mk(
     const yyu_location * restrict loc
   , formula_value ** restrict rv
   , rbtree * restrict rbt
 )
 {
-  enter;
-
   formula_value *v;
 
-  fatal(allocate, &v, FORMULA_VALUE_SET);
+  allocate(&v, FORMULA_VALUE_SET);
   v->set = rbt;
 
   *rv = v;
-
-  finally : coda;
 }
 
-xapi formula_value_property_mk(
+void formula_value_property_mk(
     const yyu_location * restrict loc
   , formula_value ** rv
   , fsent_property property
 )
 {
-  enter;
-
   formula_value *v;
 
-  fatal(allocate, &v, FORMULA_VALUE_PROPERTY);
+  allocate(&v, FORMULA_VALUE_PROPERTY);
   v->op.property = property;
 
   *rv = v;
-
-  finally : coda;
 }
 
-xapi formula_value_select_mk(
+void formula_value_select_mk(
     const yyu_location * restrict loc
   , formula_value ** rv
   , selector * restrict select
 )
 {
-  enter;
-
   formula_value *v;
 
-  fatal(allocate, &v, FORMULA_VALUE_SELECT);
+  allocate(&v, FORMULA_VALUE_SELECT);
   v->op.selector = select;
 
   *rv = v;
-
-  finally : coda;
 }
 
-xapi formula_value_prepend_mk(
+void formula_value_prepend_mk(
     const yyu_location * restrict loc
   , formula_value ** rv
   , formula_value * restrict val
 )
 {
-  enter;
-
   formula_value *v;
 
-  fatal(allocate, &v, FORMULA_VALUE_PREPEND);
+  allocate(&v, FORMULA_VALUE_PREPEND);
   v->op.operand = val;
 
   *rv = v;
-
-  finally : coda;
 }
 
-xapi formula_value_path_search_mk(
+void formula_value_path_search_mk(
     const yyu_location * restrict loc
   , formula_value ** rv
   , formula_value * restrict val
 )
 {
-  enter;
-
   formula_value *v;
 
-  fatal(allocate, &v, FORMULA_VALUE_PATH_SEARCH);
+  allocate(&v, FORMULA_VALUE_PATH_SEARCH);
   v->op.operand = val;
 
   *rv = v;
-
-  finally : coda;
 }
 
-xapi formula_value_sequence_mk(
+void formula_value_sequence_mk(
     const yyu_location * restrict loc
   , formula_value ** restrict rv
   , formula_value * restrict list_head
 )
 {
-  enter;
-
   formula_value *v;
 
-  fatal(allocate, &v, FORMULA_VALUE_SEQUENCE);
+  allocate(&v, FORMULA_VALUE_SEQUENCE);
   v->op.list_head = list_head;
 
   *rv = v;
-
-  finally : coda;
 }
 
 //
@@ -611,67 +538,63 @@ int fmlval_rbn_cmp(const rbnode * restrict a, const rbnode * restrict b)
   return memncmp(A->m.name, A->m.name_len, B->m.name, B->m.name_len);
 }
 
-xapi formula_value_render(const formula_value * restrict v, struct narrator * restrict N)
+void formula_value_render(const formula_value * restrict v, struct narrator * restrict N)
 {
-  enter;
-
   const chain *T;
   formula_value * sv;
 
   if(v->type == FORMULA_VALUE_LIST)
   {
-    fatal(narrator_xsays, N, "[");
+    narrator_xsays(N, "[");
 
     chain_foreach(T, sv, chn, v->list_head) {
-      fatal(narrator_xsays, N, " ");
-      fatal(formula_value_render, sv, N);
+      narrator_xsays(N, " ");
+      formula_value_render(sv, N);
     }
 
     if(v->list_head)
-      fatal(narrator_xsays, N, " ");
+      narrator_xsays(N, " ");
 
-    fatal(narrator_xsays, N, "]");
+    narrator_xsays(N, "]");
   }
   else if(v->type == FORMULA_VALUE_SET)
   {
-    fatal(narrator_xsays, N, "{");
+    narrator_xsays(N, "{");
 
     rbtree_foreach(v->set, sv, rbn) {
-      fatal(narrator_xsays, N, " ");
-      fatal(formula_value_render, sv, N);
+      narrator_xsays(N, " ");
+      formula_value_render(sv, N);
     }
 
     if(!rbtree_empty(v->set))
-      fatal(narrator_xsays, N, " ");
+      narrator_xsays(N, " ");
 
-    fatal(narrator_xsays, N, "}");
+    narrator_xsays(N, "}");
   }
   else if(v->type == FORMULA_VALUE_MAPPING)
   {
-    fatal(narrator_xsayw, N, v->m.name, v->m.name_len);
-    fatal(narrator_xsays, N, " : ");
-    fatal(formula_value_render, v->m.value, N);
+    narrator_xsayw(N, v->m.name, v->m.name_len);
+    narrator_xsays(N, " : ");
+    formula_value_render(v->m.value, N);
   }
   else if(v->type == FORMULA_VALUE_STRING)
   {
-    fatal(narrator_xsays, N, v->s);
+    narrator_xsays(N, v->s);
   }
   else if(v->type == FORMULA_VALUE_FLOAT)
   {
-    fatal(narrator_xsayf, N, "%.2lf", v->f);
+    narrator_xsayf(N, "%.2lf", v->f);
   }
   else if(v->type == FORMULA_VALUE_BOOLEAN)
   {
-    fatal(narrator_xsayf, N, "%s", v->b ? "true" : "false");
+    narrator_xsayf(N, "%s", v->b ? "true" : "false");
   }
   else if(v->type == FORMULA_VALUE_POSINT)
   {
-    fatal(narrator_xsayf, N, "%"PRIu64, v->u);
+    narrator_xsayf(N, "%"PRIu64, v->u);
   }
   else if(v->type == FORMULA_VALUE_NEGINT)
   {
-    fatal(narrator_xsayf, N, "%"PRId64, v->i);
+    narrator_xsayf(N, "%"PRId64, v->i);
   }
-
-  finally : coda;
 }

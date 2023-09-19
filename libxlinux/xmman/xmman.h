@@ -20,21 +20,19 @@
 
 #include <sys/mman.h>
 
-#include "xapi.h"
-
 /// xmmap
 //
 // SUMMARY
 //  proxy for mmap
 //
-xapi xmmap(void * restrict addr, size_t length, int prot, int flags, int fd, off_t offset, void ** restrict r);
+void * xmmap(void * restrict addr, size_t length, int prot, int flags, int fd, off_t offset);
 
 /// xmunmap
 //
 // SUMMARY
 //  proxy for munmap
 //
-xapi xmunmap(void * addr, size_t length);
+void xmunmap(void * addr, size_t length);
 
 /// ixmunmap
 //
@@ -45,6 +43,6 @@ xapi xmunmap(void * addr, size_t length);
 //  [addr] - if not zero, munmap *addr
 //  length - size of mapping
 //
-xapi ixmunmap(void * addr, size_t length);
+void ixmunmap(void * addr, size_t length);
 
 #endif

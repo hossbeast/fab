@@ -18,28 +18,27 @@
 #ifndef SYSVAR_H
 #define SYSVAR_H
 
-#include "xapi.h"
 
 struct exec_builder;
 struct exec_render_context;
 struct build_slot;
 
-xapi sysvar_builder_variant(struct exec_builder * restrict builder, const struct build_slot * restrict bs)
+void sysvar_builder_variant(struct exec_builder * restrict builder, const struct build_slot * restrict bs)
   __attribute__((nonnull));
 
-xapi sysvar_builder_targets(struct exec_builder * restrict builder, const struct build_slot * restrict bs)
+void sysvar_builder_targets(struct exec_builder * restrict builder, const struct build_slot * restrict bs)
   __attribute__((nonnull));
 
-xapi sysvar_builder_sources(struct exec_builder * restrict builder, const struct build_slot * restrict bs)
+void sysvar_builder_sources(struct exec_builder * restrict builder, const struct build_slot * restrict bs)
   __attribute__((nonnull));
 
-xapi exec_render_sysvar_sources(struct exec_render_context * restrict ctx, const struct build_slot * restrict bs)
+void exec_render_sysvar_sources(struct exec_render_context * restrict ctx, const struct build_slot * restrict bs)
   __attribute__((nonnull));
 
-xapi exec_render_sysvar_targets(struct exec_render_context * restrict ctx, const struct build_slot * restrict bs)
+void exec_render_sysvar_targets(struct exec_render_context * restrict ctx, const struct build_slot * restrict bs)
   __attribute__((nonnull));
 
-xapi exec_render_sysvar_variant(struct exec_render_context * restrict ctx, const struct build_slot * restrict bs)
+void exec_render_sysvar_variant(struct exec_render_context * restrict ctx, const struct build_slot * restrict bs)
   __attribute__((nonnull));
 
 #endif

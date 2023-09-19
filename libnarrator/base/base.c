@@ -17,7 +17,6 @@
 
 #include <string.h>
 
-#include "xapi.h"
 #include "xlinux/xstdlib.h"
 
 #include "narrator.h"
@@ -27,92 +26,57 @@
 // api
 //
 
-xapi API narrator_xseek(narrator * const restrict n, off_t offset, int whence, off_t * restrict resp)
+void API narrator_xseek(narrator * const restrict n, off_t offset, int whence, off_t * restrict resp)
 {
-  enter;
-
-  fatal(n->vtab->seek, n, offset, whence, resp);
-
-  finally : coda;
+  n->vtab->seek(n, offset, whence, resp);
 }
 
-xapi API narrator_xreset(narrator * const restrict n)
+void API narrator_xreset(narrator * const restrict n)
 {
-  enter;
-
-  fatal(n->vtab->seek, n, 0, SEEK_SET, 0);
-
-  finally : coda;
+  n->vtab->seek(n, 0, SEEK_SET, 0);
 }
 
-xapi API narrator_xsayf(narrator * n, const char * const restrict fmt, ...)
+void API narrator_xsayf(narrator * n, const char * const restrict fmt, ...)
 {
-  enter;
-
   va_list va;
+
   va_start(va, fmt);
-
-  fatal(n->vtab->sayvf, n, fmt, va);
-
-finally:
+  n->vtab->sayvf(n, fmt, va);
   va_end(va);
-coda;
 }
 
-xapi API narrator_xsayc(narrator * const restrict n, int c)
+void API narrator_xsayc(narrator * const restrict n, int c)
 {
-  enter;
-
   char cc = c;
 
-  fatal(n->vtab->sayw, n, &cc, 1);
-
-  finally : coda;
+  n->vtab->sayw(n, &cc, 1);
 }
 
-xapi API narrator_xsayvf(narrator * const restrict n, const char * const restrict fmt, va_list va)
+void API narrator_xsayvf(narrator * const restrict n, const char * const restrict fmt, va_list va)
 {
-  enter;
-
-  fatal(n->vtab->sayvf, n, fmt, va);
-
-  finally : coda;
+  n->vtab->sayvf(n, fmt, va);
 }
 
-xapi API narrator_xsayw(narrator * const restrict n, const void * const restrict b, size_t l)
+void API narrator_xsayw(narrator * const restrict n, const void * const restrict b, size_t l)
 {
-  enter;
-
-  fatal(n->vtab->sayw, n, b, l);
-
-  finally : coda;
+  n->vtab->sayw(n, b, l);
 }
 
-xapi API narrator_xsays(narrator * const restrict n, const char * const restrict s)
+void API narrator_xsays(narrator * const restrict n, const char * const restrict s)
 {
-  enter;
-
-  if(s) {
-    fatal(n->vtab->sayw, n, s, strlen(s));
+  if(!s) {
+    return;
   }
 
-  finally : coda;
+  n->vtab->sayw(n, s, strlen(s));
 }
 
-xapi API narrator_xread(narrator * restrict n, void * dst, size_t count, size_t * restrict r)
+void API narrator_xread(narrator * restrict n, void * dst, size_t count, size_t * restrict r)
 {
-  enter;
-
-  fatal(n->vtab->read, n, dst, count, r);
-
-  finally : coda;
+  n->vtab->read(n, dst, count, r);
 }
 
-xapi API narrator_flush(narrator * restrict n)
+void API narrator_flush(narrator * restrict n)
 {
-  enter;
-
-  fatal(n->vtab->flush, n);
-
-  finally : coda;
+  n->vtab->flush(n);
 }

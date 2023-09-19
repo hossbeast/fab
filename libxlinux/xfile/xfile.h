@@ -18,8 +18,6 @@
 #ifndef _XLINUX_XFILE_H
 #define _XLINUX_XFILE_H
 
-#include "xapi.h"
-
 /// xflock
 //
 // SUMMARY
@@ -29,6 +27,6 @@
 //  fd        - pid
 //  operation - signal
 //
-xapi xflock(pid_t pid, int sig);
+void xflock(pid_t pid, int sig);
 
 #endif

@@ -18,7 +18,6 @@
 %{
   #include "yyutil/scanner.h"
 
-  #include "MODULE.errtab.h"
   #include "module_parser.internal.h"
   #include "module.tab.h"
   #include "module.tokens.h"
@@ -31,14 +30,15 @@
   #define YYSTYPE MODULE_YYSTYPE
   #define YYLTYPE yyu_location
 
-  #define PARSE_VALUE do {                                                \
+  #define PARSE_VALUE ({                                                  \
     module_parser * parser = containerof(yyextra, module_parser, yyu);    \
     size_t off = yytext - parser->yyu.yybuffer;                           \
     char * usr = parser->yyu.usrbuf + off;                                \
     size_t bufsz = parser->yyu.usrbufsize - off;                          \
     yyu_location subloc;                                                  \
-    fatal(value_parser_parse_partial                                      \
-      , parser->value_parser                                              \
+    int r;                                                                \
+    r = value_parser_parse_partial(                                       \
+        parser->value_parser                                              \
       , usr                                                               \
       , bufsz                                                             \
       , "var"                                                             \
@@ -47,18 +47,22 @@
       , 0                                                                 \
       , &yylval->value                                                    \
     );                                                                    \
-    yyless(subloc.l);                                                     \
-    LEXLOC(module_VALUE, &subloc);                                        \
-  } while(0);
+    if(r == 0) {                                                          \
+      yyless(subloc.l);                                                   \
+      r = LEXLOC(module_VALUE, &subloc);                                  \
+    }                                                                     \
+    r;                                                                    \
+  })
 
-  #define PARSE_SEARCH_PATTERN do {                                       \
+  #define PARSE_SEARCH_PATTERN ({                                         \
     module_parser * parser = containerof(yyextra, module_parser, yyu);    \
     size_t off = yytext - parser->yyu.yybuffer;                           \
     char * usr = parser->yyu.usrbuf + off;                                \
     size_t bufsz = parser->yyu.usrbufsize - off;                          \
     yyu_location subloc;                                                  \
-    fatal(search_pattern_parse_partial                                    \
-      , parser->pattern_parser                                            \
+    int r;                                                                \
+    r = search_pattern_parse_partial(                                     \
+        parser->pattern_parser                                            \
       , usr                                                               \
       , bufsz                                                             \
       , parser->yyu.fname                                                 \
@@ -66,18 +70,22 @@
       , &subloc                                                           \
       , &yylval->pattern                                                  \
     );                                                                    \
-    yyless(subloc.l);                                                     \
-    LEXLOC(module_MATCH_PATTERN, &subloc);                                \
-  } while(0);
+    if(r == 0) {                                                          \
+      yyless(subloc.l);                                                   \
+      r = LEXLOC(module_MATCH_PATTERN, &subloc);                          \
+    }                                                                     \
+    r;                                                                    \
+  })
 
-  #define PARSE_GENERATE_PATTERN do {                                     \
+  #define PARSE_GENERATE_PATTERN ({                                       \
     module_parser * parser = containerof(yyextra, module_parser, yyu);    \
     size_t off = yytext - parser->yyu.yybuffer;                           \
     char * usr = parser->yyu.usrbuf + off;                                \
     size_t bufsz = parser->yyu.usrbufsize - off;                          \
     yyu_location subloc;                                                  \
-    fatal(generate_pattern_parse_partial                                  \
-      , parser->pattern_parser                                            \
+    int r;                                                                \
+    r = generate_pattern_parse_partial(                                   \
+        parser->pattern_parser                                            \
       , usr                                                               \
       , bufsz                                                             \
       , parser->yyu.fname                                                 \
@@ -85,18 +93,22 @@
       , &subloc                                                           \
       , &yylval->pattern                                                  \
     );                                                                    \
-    yyless(subloc.l);                                                     \
-    LEXLOC(module_GENERATE_PATTERN, &subloc);                             \
-  } while(0);
+    if(r == 0) {                                                          \
+      yyless(subloc.l);                                                   \
+      r = LEXLOC(module_GENERATE_PATTERN, &subloc);                       \
+    }                                                                     \
+    r;                                                                    \
+  })
 
-  #define PARSE_REFERENCE_PATTERN do {                                    \
+  #define PARSE_REFERENCE_PATTERN ({                                      \
     module_parser * parser = containerof(yyextra, module_parser, yyu);    \
     size_t off = yytext - parser->yyu.yybuffer;                           \
     char * usr = parser->yyu.usrbuf + off;                                \
     size_t bufsz = parser->yyu.usrbufsize - off;                          \
     yyu_location subloc;                                                  \
-    fatal(reference_pattern_parse_partial                                 \
-      , parser->pattern_parser                                            \
+    int r;                                                                \
+    r = reference_pattern_parse_partial(                                  \
+        parser->pattern_parser                                            \
       , usr                                                               \
       , bufsz                                                             \
       , parser->yyu.fname                                                 \
@@ -104,18 +116,22 @@
       , &subloc                                                           \
       , &yylval->pattern                                                  \
     );                                                                    \
-    yyless(subloc.l);                                                     \
-    LEXLOC(module_REFERENCE_PATTERN, &subloc);                            \
-  } while(0);
+    if(r == 0) {                                                          \
+      yyless(subloc.l);                                                   \
+      r = LEXLOC(module_REFERENCE_PATTERN, &subloc);                      \
+    }                                                                     \
+    r;                                                                    \
+  })
 
-  #define PARSE_LOOKUP_PATTERN do {                                       \
+  #define PARSE_LOOKUP_PATTERN ({                                         \
     module_parser * parser = containerof(yyextra, module_parser, yyu);    \
     size_t off = yytext - parser->yyu.yybuffer;                           \
     char * usr = parser->yyu.usrbuf + off;                                \
     size_t bufsz = parser->yyu.usrbufsize - off;                          \
     yyu_location subloc;                                                  \
-    fatal(lookup_pattern_parse_partial                                    \
-      , parser->pattern_parser                                            \
+    int r;                                                                \
+    r = lookup_pattern_parse_partial(                                     \
+        parser->pattern_parser                                            \
       , usr                                                               \
       , bufsz                                                             \
       , parser->yyu.fname                                                 \
@@ -123,9 +139,12 @@
       , &subloc                                                           \
       , &yylval->pattern                                                  \
     );                                                                    \
-    yyless(subloc.l);                                                     \
-    LEXLOC(module_LOOKUP_PATTERN, &subloc);                               \
-  } while(0);
+    if(r == 0) {                                                          \
+      yyless(subloc.l);                                                   \
+      r = LEXLOC(module_LOOKUP_PATTERN, &subloc);                         \
+    }                                                                     \
+    r;                                                                    \
+  })
 %}
 
 %option noinput nounput noyywrap noyy_top_state
@@ -157,8 +176,8 @@ ILL   [\x00-\x08\x0B-\x1F\x7F-\xFF]
 <INITIAL>[#][^\x00-\x08\x0B-\x1F\x7F-\xFF\n]*           { LOCWRITE; }
 
  /* multiline comments are nestable */
-<INITIAL,multilinecomment>[/][*]                        { lenter; LOCWRITE; PUSHSTATE(multilinecomment); finally : lcoda; }
-<multilinecomment>[*][/]                                { lenter; LOCWRITE; POPSTATE; finally : lcoda; }
+<INITIAL,multilinecomment>[/][*]                        { LOCWRITE; PUSHSTATE(multilinecomment); }
+<multilinecomment>[*][/]                                { LOCWRITE; POPSTATE; }
 <multilinecomment>[^*\x00-\x08\x0B-\x1F\x7F-\xFF\n*/]+  { LOCWRITE; }
 <multilinecomment>[*][^\x00-\x08\x0B-\x1F\x7F-\xFF\n/]  { LOCWRITE; }
 <multilinecomment>[/]                                   { LOCWRITE; }
@@ -169,69 +188,65 @@ ILL   [\x00-\x08\x0B-\x1F\x7F-\xFF]
 <*>[\r\t ]                                              { LOCWRITE; }
 
  /* tokens */
-<INITIAL>[+[\]{}:=,]                                    { lenter; LEX(yytext[0]); finally : lcoda; }
+<INITIAL>[+[\]{}:=,]                                    { return LEX(yytext[0]); }
 
  /* sub-parsers */
-<INITIAL>"use"                                          { lenter; PUSHSTATE(parse_lookup); LEX(USE); finally : lcoda; }
-<INITIAL>"require"                                      { lenter; PUSHSTATE(parse_lookup); LEX(REQUIRE); finally : lcoda; }
-<INITIAL>"import"                                       { lenter; PUSHSTATE(parse_lookup); LEX(IMPORT); finally : lcoda; }
-<INITIAL>"variant"                                      { lenter; PUSHSTATE(parse_lookup); LEX(VARIANT); finally : lcoda; }
+<INITIAL>"use"                                          { PUSHSTATE(parse_lookup); return LEX(USE); }
+<INITIAL>"require"                                      { PUSHSTATE(parse_lookup); return LEX(REQUIRE); }
+<INITIAL>"import"                                       { PUSHSTATE(parse_lookup); return LEX(IMPORT); }
+<INITIAL>"variant"                                      { PUSHSTATE(parse_lookup); return LEX(VARIANT); }
 
  /* value sub-parser */
-<INITIAL>"var"                                          { lenter; PUSHSTATE(_var_stage); LEX(VAR); finally : lcoda; }
-<_var_stage>[:=]                                        { lenter; PUSHSTATE(_var); LEX(yytext[0]); finally : lcoda; }
-<_var>[^\n\r\t ][\x00-\xff]+                            { lenter; PARSE_VALUE; POPSTATE; POPSTATE; finally : lcoda; }
+<INITIAL>"var"                                          { PUSHSTATE(_var_stage); return LEX(VAR); }
+<_var_stage>[:=]                                        { PUSHSTATE(_var); return LEX(yytext[0]); }
+<_var>[^\n\r\t ][\x00-\xff]+                            { int r = PARSE_VALUE; POPSTATE; POPSTATE; return r; }
 
-<INITIAL>"rule"                                         { lenter; PUSHSTATE(rule_search); LEX(RULE); finally : lcoda; }
-<rule_search>"{ "                                       { lenter; PUSHSTATE(rule_bacon); LEX('{'); finally : lcoda; }
-<rule_search>"-- "                                      { lenter; POPSTATE; PUSHSTATE(generate); PUSHSTATE(rule_starbox); LEX(DASHES); finally : lcoda; }
-<rule_search>[\x00-\xff]                                { lenter; POPSTATE; yyless(0); PUSHSTATE(search); finally : lcoda; }
-<rule_connector>"["[*]"]"                               { lenter; LEX(STARBOX); finally : lcoda; }
-<rule_connector>"-- "                                   { lenter; POPSTATE; PUSHSTATE(rule_colon); LEX(DASHES); finally : lcoda; }
-<rule_connector>[\x00-\xff]                             { lenter; POPSTATE; yyless(0); PUSHSTATE(generate); PUSHSTATE(rule_starbox); PUSHSTATE(rule_arrow); PUSHSTATE(rule_starbox); finally : lcoda; }
-<rule_starbox>"["[*]"]"                                 { lenter; POPSTATE; LEX(STARBOX); finally : lcoda; }
-<rule_starbox>[\x00-\xff]                               { lenter; POPSTATE; yyless(0); finally : lcoda; }
-<rule_arrow>"<-"                                        { lenter; POPSTATE; LEX(LARROW); finally : lcoda; }
-<rule_arrow>"->"                                        { lenter; POPSTATE; LEX(RARROW); finally : lcoda; }
-<rule_search,rule_colon>":"                             { lenter; PUSHSTATE(reference); LEX(':'); finally : lcoda; }
-<rule_search,rule_colon>[\x00-\xff]                     { lenter; POPSTATE; yyless(0); finally : lcoda; }
-<rule_bacon>[:]                                         { lenter; LEX(yytext[0]); finally : lcoda; }
-<rule_bacon>[}]                                         { lenter; POPSTATE; LEX(yytext[0]); finally : lcoda; }
+<INITIAL>"rule"                                         { PUSHSTATE(rule_search); return LEX(RULE); }
+<rule_search>"{ "                                       { PUSHSTATE(rule_bacon); return LEX('{'); }
+<rule_search>"-- "                                      { POPSTATE; PUSHSTATE(generate); PUSHSTATE(rule_starbox); return LEX(DASHES); }
+<rule_search>[\x00-\xff]                                { POPSTATE; yyless(0); PUSHSTATE(search); }
+<rule_connector>"["[*]"]"                               { return LEX(STARBOX); }
+<rule_connector>"-- "                                   { POPSTATE; PUSHSTATE(rule_colon); return LEX(DASHES); }
+<rule_connector>[\x00-\xff]                             { POPSTATE; yyless(0); PUSHSTATE(generate); PUSHSTATE(rule_starbox); PUSHSTATE(rule_arrow); PUSHSTATE(rule_starbox); }
+<rule_starbox>"["[*]"]"                                 { POPSTATE; return LEX(STARBOX); }
+<rule_starbox>[\x00-\xff]                               { POPSTATE; yyless(0); }
+<rule_arrow>"<-"                                        { POPSTATE; return LEX(LARROW); }
+<rule_arrow>"->"                                        { POPSTATE; return LEX(RARROW); }
+<rule_search,rule_colon>":"                             { PUSHSTATE(reference); return LEX(':'); }
+<rule_search,rule_colon>[\x00-\xff]                     { POPSTATE; yyless(0); }
+<rule_bacon>[:]                                         { return LEX(yytext[0]); }
+<rule_bacon>[}]                                         { POPSTATE; return LEX(yytext[0]); }
 
  /* sub-parsers ; consume whitespace in this parser */
-<search>[^\n\r\t ][\x00-\xff]+                          { lenter; PARSE_SEARCH_PATTERN;    POPSTATE; PUSHSTATE(rule_connector); finally : lcoda; }
-<generate>[^\n\r\t ][\x00-\xff]+                        { lenter; PARSE_GENERATE_PATTERN;  POPSTATE; PUSHSTATE(rule_colon); finally : lcoda; }
-<reference>[^\n\r\t ][\x00-\xff]+                       { lenter; PARSE_REFERENCE_PATTERN; POPSTATE; finally : lcoda; }
-<parse_lookup>[^\n\r\t ][\x00-\xff]+                    { lenter; PARSE_LOOKUP_PATTERN;    POPSTATE; finally : lcoda; }
+<search>[^\n\r\t ][\x00-\xff]+                          { int r = PARSE_SEARCH_PATTERN;    POPSTATE; PUSHSTATE(rule_connector); return r; }
+<generate>[^\n\r\t ][\x00-\xff]+                        { int r = PARSE_GENERATE_PATTERN;  POPSTATE; PUSHSTATE(rule_colon); return r; }
+<reference>[^\n\r\t ][\x00-\xff]+                       { int r = PARSE_REFERENCE_PATTERN; POPSTATE; return r; }
+<parse_lookup>[^\n\r\t ][\x00-\xff]+                    { int r = PARSE_LOOKUP_PATTERN;    POPSTATE; return r; }
 
  /* enums and unquoted strings */
-<INITIAL,rule_bacon>[a-zA-Z]+                           { lenter; LEXA(); finally : lcoda; }
+<INITIAL,rule_bacon>[a-zA-Z]+                           { return LEXA(); }
 
  /* quoted strings */
-<INITIAL>["]                                            { lenter; PUSHSTATE(quoted); LEX(yytext[0]); finally : lcoda; }
-<quoted>["]                                             { lenter; POPSTATE; LEX(yytext[0]); finally : lcoda; }
-<quoted>\\[\\"abtnvfrs0]                                { lenter; LEXC(1); finally : lcoda; }
-<quoted>\\x[0-9a-f]{2}                                  { lenter; LEXH(2); finally : lcoda; }
-<quoted>\\x\{[0-9a-f]{1,2}\}                            { lenter; LEXH(3); finally : lcoda; }
-<quoted>[^"\\\x00-\x1F\x7F-\xFF]+                       { lenter; LEX(STR); finally : lcoda; }
+<INITIAL>["]                                            { PUSHSTATE(quoted); return LEX(yytext[0]); }
+<quoted>["]                                             { POPSTATE; return LEX(yytext[0]); }
+<quoted>\\[\\"abtnvfrs0]                                { return LEXC(1); }
+<quoted>\\x[0-9a-f]{2}                                  { return LEXH(2); }
+<quoted>\\x\{[0-9a-f]{1,2}\}                            { return LEXH(3); }
+<quoted>[^"\\\x00-\x1F\x7F-\xFF]+                       { return LEX(STR); }
 
 <*>[\x00-\x1F\x7F-\xFF]                                 {
-                                                          lenter;
-                                                          DROPSTATES;
+                                                          POPSTATES;
                                                           LOCWRITE;
-                                                          failf(MODULE_ILLBYTE, "byte", "0x%02hhx", yytext[0]);
-                                                          finally : lcoda;
+                                                          yyu_errorf(YYUXTRA, "invalid byte 0x%02hhx", yytext[0]);
+                                                          return 0;
                                                         }
 <*>[\x20-\x7E]                                          {
-                                                          lenter;
-                                                          DROPSTATES;
+                                                          POPSTATES;
                                                           LOCWRITE;
-                                                          failf(MODULE_ILLBYTE, "character", "'%1$c'(0x%1$02hhx)", yytext[0]);
-                                                          finally : lcoda;
+                                                          yyu_errorf(YYUXTRA, "character '%1$c'(0x%1$02hhx)", yytext[0]);
+                                                          return 0;
                                                         }
 <<EOF>>                                                 {
-                                                          lenter;
                                                           POPSTATES;
-                                                          _yyu_V = 0;       /* return end-of-input */
-                                                          finally : lcoda;
+                                                          return 0;
                                                         }

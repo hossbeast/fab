@@ -1,0 +1,11 @@
+#!/usr/bin/env bpftrace
+
+#include <sys/types.h>
+#include <string.h>
+
+usdt:*:fsent:deleted
+{
+//  $fsent = (struct fsent *)arg1;
+
+  printf("pid %d %s\n", pid, str(arg0));
+}

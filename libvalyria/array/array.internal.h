@@ -26,7 +26,6 @@ MODULE
 */
 
 #include "types.h"
-#include "xapi.h"
 
 #include "array.h"
 #include "macros.h"
@@ -50,7 +49,7 @@ typedef struct ar_operations {
   //  ht    - array
   //  item - item
   //
-  xapi (*destroy_item)(const struct array_t * ht, void * item);
+  void (*destroy_item)(const struct array_t * ht, void * item);
 
   /// store_item
   //
@@ -62,7 +61,7 @@ typedef struct ar_operations {
   //  dst   - pointer to storage within a bucket of size ht->esz
   //  item - pointer to the item to store
   //
-  xapi (*store_items)(const struct array_t * ht, void * dst, void * items, size_t len);
+  void (*store_items)(const struct array_t * ht, void * dst, void * items, size_t len);
 } ar_operations;
 
 typedef struct array_t {
@@ -83,9 +82,8 @@ typedef struct array_t {
   // user operations
   int (*cmp_fn)(const void * A, size_t Asz, const void * B, size_t Bsz);
   void (*init_fn)(void * item);
-  xapi (*xinit_fn)(void * item);
+  void (*xinit_fn)(void * item);
   void (*destroy_fn)(void * item);
-  xapi (*xdestroy_fn)(void * item);
 } array_t;
 
 STATIC_ASSERT(offsetof(array, size) == offsetof(array_t, size));
@@ -95,7 +93,7 @@ STATIC_ASSERT(offsetof(array, size) == offsetof(array_t, size));
 // SUMMARY
 //  initialize an already allocated array
 //
-xapi array_init(
+void array_init(
     array_t * restrict ar
   , size_t esz
   , size_t capacity
@@ -109,7 +107,7 @@ xapi array_init(
 // SUMMARY
 //
 //
-xapi array_xdestroy(array_t * restrict ar)
+void array_xdestroy(array_t * restrict ar)
   __attribute__((nonnull));
 
 /// array_put
@@ -123,7 +121,7 @@ xapi array_xdestroy(array_t * restrict ar)
 //  len   - number of elements to add
 //  [rv]  - (returns) pointers to elements
 //
-xapi array_put(array * const restrict li, size_t index, size_t len, void * restrict rv)
+void array_put(array * const restrict li, size_t index, size_t len, void * restrict rv)
   __attribute__((nonnull(1)));
 
 /// array_destroy_range
@@ -136,7 +134,7 @@ xapi array_put(array * const restrict li, size_t index, size_t len, void * restr
 //  start - index of the first element
 //  len   - number of elements
 //
-xapi array_destroy_range(array_t * const restrict ar, size_t start, size_t len)
+void array_destroy_range(array_t * const restrict ar, size_t start, size_t len)
   __attribute__((nonnull(1)));
 
 /// array_store

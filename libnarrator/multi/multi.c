@@ -28,68 +28,57 @@
 // static
 //
 
-static __attribute__((nonnull)) xapi multi_sayvf(narrator* const restrict N, const char * const restrict fmt, va_list va)
+static __attribute__((nonnull)) void multi_sayvf(narrator* const restrict N, const char * const restrict fmt, va_list va)
 {
-  enter;
-
   narrator_multi *n = containerof(N, typeof(*n), base);
 
   va_list va2;
   va_list * vap = 0;
-
   int x;
+
   for(x = 0; x < n->l; x++)
   {
     va_copy(va2, va);
     vap = &va2;
 
-    fatal(narrator_xsayvf, n->v[x], fmt, *vap);
+    narrator_xsayvf(n->v[x], fmt, *vap);
 
     va_end(*vap);
     vap = 0;
   }
 
-finally:
-  if(vap)
+  if(vap) {
     va_end(*vap);
-coda;
+  }
 }
 
-static __attribute__((nonnull)) xapi multi_sayw(narrator* const restrict N, const void * const restrict b, size_t l)
+static __attribute__((nonnull)) void multi_sayw(narrator* const restrict N, const void * const restrict b, size_t l)
 {
-  enter;
+  narrator_multi *n = containerof(N, typeof(*n), base);
+  int x;
 
+  for(x = 0; x < n->l; x++)
+  {
+    narrator_xsayw(n->v[x], b, l);
+  }
+}
+
+static __attribute__((nonnull)) void multi_seek(narrator* const restrict N, off_t offset, int whence, off_t * restrict res)
+{
+  int x;
   narrator_multi *n = containerof(N, typeof(*n), base);
 
-  int x;
   for(x = 0; x < n->l; x++)
-    fatal(narrator_xsayw, n->v[x], b, l);
-
-  finally : coda;
+  {
+    narrator_xseek(n->v[x], offset, whence, res);
+  }
 }
 
-static __attribute__((nonnull)) xapi multi_seek(narrator* const restrict N, off_t offset, int whence, off_t * restrict res)
+static __attribute__((nonnull)) void multi_destroy(narrator* const restrict N)
 {
-  enter;
-
-  narrator_multi *n = containerof(N, typeof(*n), base);
-
-  int x;
-  for(x = 0; x < n->l; x++)
-    fatal(narrator_xseek, n->v[x], offset, whence, res);
-
-  finally : coda;
-}
-
-static __attribute__((nonnull)) xapi multi_destroy(narrator* const restrict N)
-{
-  enter;
-
   narrator_multi *n = containerof(N, typeof(*n), base);
 
   wfree(n->v);
-
-  finally : coda;
 }
 
 /* not implemented */
@@ -105,42 +94,31 @@ static struct narrator_vtable multi_vtable = NARRATOR_VTABLE(multi);
 // api
 //
 
-xapi API narrator_multi_create(narrator_multi ** const restrict rv)
+void API narrator_multi_create(narrator_multi ** const restrict rv)
 {
-  enter;
-
   narrator_multi * n = 0;
-  fatal(xmalloc, &n, sizeof(*n));
+
+  xmalloc(&n, sizeof(*n));
 
   n->base.vtab = &multi_vtable;
-  fatal(xmalloc, &n->v, sizeof(*n->v));
+  xmalloc(&n->v, sizeof(*n->v));
 
   *rv = n;
   n = 0;
 
-finally:
-  fatal(narrator_multi_free, n);
-coda;
+  narrator_multi_free(n);
 }
 
-xapi API narrator_multi_free(narrator_multi * restrict n)
+void API narrator_multi_free(narrator_multi * restrict n)
 {
-  enter;
-
   if(n) {
-    fatal(multi_destroy, &n->base);
+    multi_destroy(&n->base);
   }
   wfree(n);
-
-  finally : coda;
 }
 
-xapi API narrator_multi_add(narrator_multi * const restrict n, narrator * const restrict np)
+void API narrator_multi_add(narrator_multi * const restrict n, narrator * const restrict np)
 {
-  enter;
-
-  fatal(assure, &n->v, sizeof(*n->v), n->l + 1, &n->a);
+  assure(&n->v, sizeof(*n->v), n->l + 1, &n->a);
   n->v[n->l++] = np;
-
-  finally : coda;
 }

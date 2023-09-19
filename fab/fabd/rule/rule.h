@@ -28,7 +28,6 @@ A rule is connected to each module for which it is run with an EDGE_MOD_RULE edg
 
 */
 
-#include "xapi.h"
 #include "types.h"
 
 #include "valyria/llist.h"
@@ -131,19 +130,19 @@ typedef struct rule_run_context {
   struct channel *chan;
 } rule_run_context;
 
-xapi rule_run_context_xinit(rule_run_context * rule_ctx)
+void rule_run_context_xinit(rule_run_context * rule_ctx)
   __attribute__((nonnull));
 
-xapi rule_run_context_xdestroy(rule_run_context * rule_ctx)
+void rule_run_context_xdestroy(rule_run_context * rule_ctx)
   __attribute__((nonnull));
 
 /*
  * Run a rule to add nodes and edges to the graph.
  */
-xapi rule_run(rule * restrict rule, rule_run_context * restrict ctx)
+void rule_run(rule * restrict rule, rule_run_context * restrict ctx)
   __attribute__((nonnull));
 
-xapi rule_mk(
+void rule_mk(
     rule ** restrict rulep
   , struct moria_graph * restrict g
   , struct pattern * match
@@ -157,7 +156,7 @@ xapi rule_mk(
 void rule_release(rule * restrict)
   __attribute__((nonnull));
 
-xapi rule_say(const rule * restrict r, struct narrator * restrict N)
+void rule_say(const rule * restrict r, struct narrator * restrict N)
   __attribute__((nonnull));
 
 /* release rules */

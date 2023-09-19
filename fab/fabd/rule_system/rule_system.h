@@ -19,7 +19,6 @@
 #define FABD_RULE_SYSTEM_H
 
 #include "types.h"
-#include "xapi.h"
 
 struct rule_module_edge;
 struct rule_run_context;
@@ -27,14 +26,14 @@ struct rule_run_context;
 /* auto-inc reconciliation round */
 extern uint32_t rule_system_reconciliation_id;
 
-xapi rule_system_setup(void);
+void rule_system_setup(void);
 
 /*
  * run invalidated rules to quiescence
  *
  * reconciled - (returns) false if any rules could not be run
  */
-xapi rule_system_reconcile(struct rule_run_context * restrict ctx)
+void rule_system_reconcile(struct rule_run_context * restrict ctx)
   __attribute__((nonnull));
 
 /*

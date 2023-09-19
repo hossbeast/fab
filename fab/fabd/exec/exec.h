@@ -25,7 +25,6 @@ exec - parameters needed to call exec
 */
 
 #include "types.h"
-#include "xapi.h"
 
 #include "narrator/growing.h"
 

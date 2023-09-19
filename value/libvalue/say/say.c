@@ -144,26 +144,18 @@ static size_t __attribute__((nonnull)) znload_value(void * restrict dst, size_t 
 // public
 //
 
-xapi say_setup()
+void say_setup()
 {
-  enter;
-
-  fatal(set_create, &keywords);
+  set_create(&keywords);
 
   // keywords
-  fatal(set_put, keywords, MMS("true"));
-  fatal(set_put, keywords, MMS("false"));
-
-  finally : coda;
+  set_put(keywords, MMS("true"));
+  set_put(keywords, MMS("false"));
 }
 
-xapi say_cleanup()
+void say_cleanup()
 {
-  enter;
-
-  fatal(set_xfree, keywords);
-
-  finally : coda;
+  set_xfree(keywords);
 }
 
 //
@@ -175,10 +167,8 @@ size_t API value_znload(void * restrict dst, size_t sz, const value * const rest
   return znload_value(dst, sz, val, 0);
 }
 
-xapi API value_say(const value * const restrict val, narrator * const restrict N)
+void API value_say(const value * const restrict val, narrator * const restrict N)
 {
-  enter;
-
   value_writer lwriter;
   value_writer * writer = 0;
 
@@ -190,14 +180,12 @@ xapi API value_say(const value * const restrict val, narrator * const restrict N
   {
     value_writer_init(&lwriter);
     writer = &lwriter;
-    fatal(value_writer_open, writer, N);
-    fatal(value_writer_value, writer, val);
-    fatal(value_writer_close, writer);
+    value_writer_open(writer, N);
+    value_writer_value(writer, val);
+    value_writer_close(writer);
   }
 
-finally:
-  fatal(value_writer_destroy, writer);
-coda;
+  value_writer_destroy(writer);
 }
 
 value * API value_lookupw(const value * restrict set, const char * restrict key, uint16_t key_len)
@@ -224,72 +212,68 @@ value * API value_lookupw(const value * restrict set, const char * restrict key,
   return 0;
 }
 
-xapi API value_render(const value * const restrict v, narrator * const restrict N)
+void API value_render(const value * const restrict v, narrator * const restrict N)
 {
-  enter;
-
   int x;
   value * elp;
 
   if(v->type == VALUE_TYPE_LIST)
   {
-    fatal(narrator_xsays, N, "[");
+    narrator_xsays(N, "[");
 
     for(x = 0; x < v->items->size; x++)
     {
-      fatal(narrator_xsays, N, " ");
-      fatal(value_render, list_get(v->items, x), N);
+      narrator_xsays(N, " ");
+      value_render(list_get(v->items, x), N);
     }
 
     if(v->items->size)
-      fatal(narrator_xsays, N, " ");
+      narrator_xsays(N, " ");
 
-    fatal(narrator_xsays, N, "]");
+    narrator_xsays(N, "]");
   }
   else if(v->type == VALUE_TYPE_SET)
   {
-    fatal(narrator_xsays, N, "{");
+    narrator_xsays(N, "{");
 
     for(x = 0; x < v->els->table_size; x++)
     {
       if(!(elp = set_table_get(v->els, x)))
         continue;
 
-      fatal(narrator_xsays, N, " ");
-      fatal(value_render, elp, N);
+      narrator_xsays(N, " ");
+      value_render(elp, N);
     }
 
     if(v->els->size)
-      fatal(narrator_xsays, N, " ");
+      narrator_xsays(N, " ");
 
-    fatal(narrator_xsays, N, "}");
+    narrator_xsays(N, "}");
   }
   else if(v->type == VALUE_TYPE_MAPPING)
   {
-    fatal(value_render, v->key, N);
-    fatal(narrator_xsays, N, " : ");
-    fatal(value_render, v->val, N);
+    value_render(v->key, N);
+    narrator_xsays(N, " : ");
+    value_render(v->val, N);
   }
   else if(v->type == VALUE_TYPE_STRING)
   {
-    fatal(narrator_xsayw, N, v->s->s, v->s->size);
+    narrator_xsayw(N, v->s->s, v->s->size);
   }
   else if(v->type == VALUE_TYPE_FLOAT)
   {
-    fatal(narrator_xsayf, N, "%.2lf", v->f);
+    narrator_xsayf(N, "%.2lf", v->f);
   }
   else if(v->type == VALUE_TYPE_BOOLEAN)
   {
-    fatal(narrator_xsayf, N, "%s", v->b ? "true" : "false");
+    narrator_xsayf(N, "%s", v->b ? "true" : "false");
   }
   else if(v->type == VALUE_TYPE_POSINT)
   {
-    fatal(narrator_xsayf, N, "%"PRIu64, v->u);
+    narrator_xsayf(N, "%"PRIu64, v->u);
   }
   else if(v->type == VALUE_TYPE_NEGINT)
   {
-    fatal(narrator_xsayf, N, "%"PRId64, v->i);
+    narrator_xsayf(N, "%"PRId64, v->i);
   }
-
-  finally : coda;
 }

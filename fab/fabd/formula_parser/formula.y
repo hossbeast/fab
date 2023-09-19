@@ -37,18 +37,13 @@
   #define PARSER containerof(parser, formula_parser, yyu)
   #define FORMULA_YYLTYPE yyu_location
 
-  #include "xapi.h"
   #include "valyria/rbtree.h"
   #include "xlinux/xstdlib.h"
 
-  static xapi rbt_create(rbtree ** restrict rbt)
+  static void rbt_create(rbtree ** restrict rbt)
   {
-    enter;
-
-    fatal(xmalloc, rbt, sizeof(**rbt));
+    xmalloc(rbt, sizeof(**rbt));
     rbtree_init(*rbt);
-
-    finally : coda;
   }
 
   void formula_value_set_free(struct rbtree * restrict);
@@ -193,7 +188,7 @@ file-value
 args-section
   : ARGS ':' '[' arg-values ']'
   {
-    YFATAL(formula_value_list_mk, &@$, &PARSER->args, $4);
+    formula_value_list_mk(&@$, &PARSER->args, $4);
   }
   ;
 
@@ -217,7 +212,7 @@ arg-value
 envs-section
   : ENVS ':' '{' env-vars '}'
   {
-    YFATAL(formula_value_set_mk, &@$, &PARSER->envs, $4);
+    formula_value_set_mk(&@$, &PARSER->envs, $4);
   }
   ;
 
@@ -229,7 +224,7 @@ env-vars
   }
   | env-var
   {
-    YFATAL(rbt_create, &$$);
+    rbt_create(&$$);
     rbtree_put($$, $1, rbn, fmlval_rbn_cmp);
   }
   ;
@@ -237,7 +232,7 @@ env-vars
 env-var
   : STR ':' env-var-value
   {
-    YFATAL(formula_value_mapping_mk, &@$, &$$, @1.s, @1.l, $3);
+    formula_value_mapping_mk(&@$, &$$, @1.s, @1.l, $3);
   }
   ;
 
@@ -245,7 +240,7 @@ env-var-value
   : primitive
   | '[' operation-list ']'
   {
-    YFATAL(formula_value_sequence_mk, &@$, &$$, $2);
+    formula_value_sequence_mk(&@$, &$$, $2);
   }
   | '{' path-search-operation '}'
   {
@@ -262,7 +257,7 @@ primitive
   | sysvar
   | string
   {
-    YFATAL(formula_value_string_mk, &@$, &$$, $1);
+    formula_value_string_mk(&@$, &$$, $1);
   }
   ;
 
@@ -286,29 +281,29 @@ operation-list-item
 sequence-operation
   : SEQUENCE ':' '[' operation-list ']'
   {
-    YFATAL(formula_value_sequence_mk, &@$, &$$, $4);
+    formula_value_sequence_mk(&@$, &$$, $4);
   }
   ;
 
 operation
   : SELECT ':' SELECTOR
   {
-    YFATAL(formula_value_select_mk, &@$, &$$, $3);
+    formula_value_select_mk(&@$, &$$, $3);
   }
   | PROPERTY ':' node-property
   {
-    YFATAL(formula_value_property_mk, &@$, &$$, $3);
+    formula_value_property_mk(&@$, &$$, $3);
   }
   | PREPEND ':' primitive
   {
-    YFATAL(formula_value_prepend_mk, &@$, &$$, $3);
+    formula_value_prepend_mk(&@$, &$$, $3);
   }
   ;
 
 path-search-operation
   : PATH_SEARCH ':' primitive
   {
-    YFATAL(formula_value_path_search_mk, &@$, &$$, $3);
+    formula_value_path_search_mk(&@$, &$$, $3);
   }
   ;
 
@@ -349,7 +344,7 @@ strparts
   : strparts strpart
   {
     $$ = $1;
-    YFATAL(ixstrcat, &$$, $2);
+    ixstrcat(&$$, $2);
   }
   | strpart
   ;
@@ -358,35 +353,35 @@ strpart
   : STR
   {
     $$ = 0;
-    YFATAL(ixstrndup, &$$, @1.s, @1.l);
+    ixstrndup(&$$, @1.s, @1.l);
   }
   | CREF
   {
     $$ = 0;
-    YFATAL(ixstrndup, &$$, (char*)&$1, 1);
+    ixstrndup(&$$, (char*)&$1, 1);
   }
   | HREF
   {
     $$ = 0;
-    YFATAL(ixstrndup, &$$, (char*)&$1, 1);
+    ixstrndup(&$$, (char*)&$1, 1);
   }
   ;
 
 boolean
   : BOOL
   {
-    YFATAL(formula_value_boolean_mk, &@$, &$$, $1);
+    formula_value_boolean_mk(&@$, &$$, $1);
   }
   ;
 
 posint
   : posint_ugroup
   {
-    YFATAL(formula_value_posint_mk, &@$, &$$, $1);
+    formula_value_posint_mk(&@$, &$$, $1);
   }
   | posint_igroup
   {
-    YFATAL(formula_value_posint_mk, &@$, &$$, $1);
+    formula_value_posint_mk(&@$, &$$, $1);
   }
   ;
 
@@ -411,7 +406,7 @@ posint_igroup
 negint
   : negint_igroup
   {
-    YFATAL(formula_value_negint_mk, &@$, &$$, $1);
+    formula_value_negint_mk(&@$, &$$, $1);
   }
   ;
 
@@ -425,21 +420,21 @@ negint_igroup
 float
   : FLOAT
   {
-    YFATAL(formula_value_float_mk, &@$, &$$, $1);
+    formula_value_float_mk(&@$, &$$, $1);
   }
   ;
 
 variable
   : VARIABLE
   {
-    YFATAL(formula_value_variable_mk, &@$, &$$, $1.s, $1.l);
+    formula_value_variable_mk(&@$, &$$, $1.s, $1.l);
   }
   ;
 
 sysvar
   : sysvar-token
   {
-    YFATAL(formula_value_sysvar_mk, &@$, &$$, $1);
+    formula_value_sysvar_mk(&@$, &$$, $1);
   }
   ;
 

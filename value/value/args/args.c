@@ -17,104 +17,58 @@
 
 #include <string.h>
 #include <getopt.h>
+#include <stdio.h>
 
-#include "xapi.h"
-#include "errtab/MAIN.errtab.h"
 #include "xlinux/xstdlib.h"
-#include "logger.h"
-#include "logger/arguments.h"
 #include "value.h"
-#include "logger/expr.h"
 
 #include "args.h"
-#include "logging.h"
 
 #include "macros.h"
 #include "common/assure.h"
 
+#include "git-state.h"
+
 struct g_args_t g_args;
 static size_t inputs_alloc;
 
-static xapi usage(int valid, int version, int help, int logs)
+static void args_version()
 {
-  enter;
+  printf("fab %s\n\n%s\n", git_describe, git_metadata);
 
-  printf(
-"value : read/write/merge configuration text\n"
-);
-if(version)
-{
-  printf(" fab-" XQUOTE(FABVERSIONS)
-#if DEVEL
-  "+DEVEL"
-#elif DEBUG
-  "+DEBUG"
-#endif
-    " @ " XQUOTE(BUILDSTAMP)
-    "\n"
-  );
+  exit(0);
 }
-if(help)
+
+static void args_usage()
 {
   printf(
+"value : read/write/merge bacon text %s\n"
 "\n"
 "usage : value [ [ option ] [ logexpr ] [ /path/to/configuration ] ] ...\n"
+" --help | -h      print this message\n"
+" --version | -V   print version information\n"
+" --nofork         don't fork before each test\n"
 "\n"
-" --help    : this message\n"
-" --version : version information\n"
-" --logs    : logger configuration\n"
-"\n"
-"----------------- [ options ] --------------------------------------------------------------------\n"
-"\n"
-" --nofork  : don't fork before each test\n"
-"\n"
+"build optimally      https://github.com/hossbeast/fab\n"
+    , git_describe
   );
+
+  exit(0);
 }
 
-if(logs)
+static void process_nonoption(input_type type, value_type container, char * const restrict s)
 {
-printf(
-"\n"
-"----------------- [ logs ] -----------------------------------------------------------------------\n"
-"\n"
-);
-
-  fatal(logger_expr_push, 0, "+LOGGER");
-  fatal(logger_categories_report);
-  fatal(logger_expr_pop, 0);
-}
-
-printf(
-"\n"
-"For more information visit http://fabutil.org\n"
-"\n"
-);
-
-exit(!valid);
-
-  finally : coda;
-}
-
-static xapi process_nonoption(input_type type, value_type container, char * const restrict s)
-{
-  enter;
-
-  fatal(assure, &g_args.inputs, sizeof(*g_args.inputs), g_args.inputsl, &inputs_alloc);
+  assure(&g_args.inputs, sizeof(*g_args.inputs), g_args.inputsl, &inputs_alloc);
   g_args.inputs[g_args.inputsl].s = s;
   g_args.inputs[g_args.inputsl].type = type;
   g_args.inputs[g_args.inputsl].container = container;
   g_args.inputsl++;
-
-  finally : coda;
 }
 
-xapi args_parse()
+void args_parse(int argc, char ** argv)
 {
-  enter;
-
   int help = 0;
   int version = 0;
-  int logs = 0;
   input_type input = INPUT_TEXT;
   value_type container = 0;
 
@@ -127,12 +81,6 @@ xapi args_parse()
     , { "version"                     , no_argument       , &version, 1 }
     , { "vers"                        , no_argument       , &version, 1 }
     , { "vrs"                         , no_argument       , &version, 1 }
-    , { "log"                         , no_argument       , &logs, 1 }
-    , { "logs"                        , no_argument       , &logs, 1 }
-    , { "logcat"                      , no_argument       , &logs, 1 }
-    , { "logcats"                     , no_argument       , &logs, 1 }
-    , { "logexpr"                     , no_argument       , &logs, 1 }
-    , { "logexprs"                    , no_argument       , &logs, 1 }
     , { }
   };
 
@@ -141,7 +89,7 @@ xapi args_parse()
     "-"
 
     // no-argument switches
-    "h"
+    "hV"
 
     // with-argument switches
     "f:t:s:l:"
@@ -150,7 +98,7 @@ xapi args_parse()
   int x;
   int indexptr;
   opterr = 0;
-  while(indexptr = 0, (x = getopt_long(g_argc, &g_argv[0], switches, longopts, &indexptr)) != -1)
+  while(indexptr = 0, (x = getopt_long(argc, &argv[0], switches, longopts, &indexptr)) != -1)
   {
     if(x == 0)
     {
@@ -158,30 +106,40 @@ xapi args_parse()
     }
     else if(x == 'f')
     {
-      fatal(process_nonoption, INPUT_FILE, container, optarg);
+      process_nonoption(INPUT_FILE, container, optarg);
     }
     else if(x == 't')
     {
-      fatal(process_nonoption, INPUT_TEXT, container, optarg);
+      process_nonoption(INPUT_TEXT, container, optarg);
     }
     else if(x == 's')
     {
-      fatal(process_nonoption, input, VALUE_TYPE_SET, optarg);
+      process_nonoption(input, VALUE_TYPE_SET, optarg);
     }
     else if(x == 'l')
     {
-      fatal(process_nonoption, input, VALUE_TYPE_LIST, optarg);
+      process_nonoption(input, VALUE_TYPE_LIST, optarg);
+    }
+    else if(x == 'h')
+    {
+      help = 1;
+    }
+    else if(x == 'V')
+    {
+      version = 1;
     }
     else if(x == '?')
     {
       // unrecognized argv element
       if(optopt)
       {
-        failf(MAIN_NXSWITCH, "switch", "-%c", optopt);
+        fprintf(stderr, "unknown switch -%c\n", optopt);
+        exit(1);
       }
       else
       {
-        failf(MAIN_BADARGS, "argument", "%s", g_argv[optind-1]);
+        fprintf(stderr, "unknown argument -%s\n", argv[optind-1]);
+        exit(1);
       }
     }
     else if(optarg[0] == '+')
@@ -204,51 +162,36 @@ xapi args_parse()
       }
       else
       {
-        failf(MAIN_BADARGS, "unknown argument", "%s", optarg);
+        fprintf(stderr, "unknown argument %s", optarg);
+        exit(1);
       }
     }
     else
     {
       // non-option argv elements
-      fatal(process_nonoption, input, container, optarg);
+      process_nonoption(input, container, optarg);
     }
   }
 
-  for(; optind < g_argc; optind++)
+  for(; optind < argc; optind++)
   {
     // options following --
-    fatal(process_nonoption, input, container, g_argv[optind]);
+    process_nonoption(input, container, argv[optind]);
   }
 
   if(g_args.inputsl == 0)
   {
-    fatal(process_nonoption, INPUT_FILE, container, "/dev/stdin");
+    process_nonoption(INPUT_FILE, container, "/dev/stdin");
   }
 
-  if(help || version || logs)
+  if(help)
   {
-    fatal(usage, 1, 1, help, logs);
+    args_usage();
   }
-
-  finally : coda;
-}
-
-xapi args_summarize()
-{
-  enter;
-
-  int x;
-
-  logs(L_ARGS, "--------------------------------------------------------------------------------");
-
-  if(g_args.inputsl == 0)
-    logf(L_ARGS, " %s (  %c  ) input(s)", " ", ' ');
-  for(x = 0; x < g_args.inputsl; x++)
-    logf(L_ARGS, " %s (  %c  ) input(s) %16s %s", "*", ' ', "", g_args.inputs[x].s);
-
-  logs(L_ARGS, "--------------------------------------------------------------------------------");
-
-  finally : coda;
+  if(version)
+  {
+    args_version();
+  }
 }
 
 void args_teardown()

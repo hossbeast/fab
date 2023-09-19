@@ -19,9 +19,6 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-#include "xapi.h"
-#include "xapi/trace.h"
-
 #include "array.internal.h"
 #include "test_util.h"
 
@@ -31,10 +28,8 @@ typedef struct item
   int x;
 } item;
 
-static xapi validate(array * ar)
+static void validate(array * ar)
 {
-  enter;
-
   int x;
 
   for(x = 1; x < ar->size; x++)
@@ -44,14 +39,10 @@ static xapi validate(array * ar)
 
     assert_ge_d(A->x, B->x);
   }
-
-  finally : coda;
 }
 
-static xapi validate_contents(array * ar, size_t num, ...)
+static void validate_contents(array * ar, size_t num, ...)
 {
-  enter;
-
   va_list va;
   va_start(va, num);
 
@@ -64,247 +55,219 @@ static xapi validate_contents(array * ar, size_t num, ...)
     assert_eq_d(el, ((item*)array_get(ar, x))->x);
   }
 
-finally:
   va_end(va);
-coda;
 }
 
-static xapi test_basic()
+static void test_basic()
 {
-  enter;
-
   array * ar = 0;
-  fatal(array_create, &ar, sizeof(item));
+  array_create(&ar, sizeof(item));
 
   item * itemp = 0;
-  fatal(array_unshift, ar, &itemp);
+  array_unshift(ar, &itemp);
   itemp->x = 6;
-  fatal(array_unshift, ar, &itemp);
+  array_unshift(ar, &itemp);
   itemp->x = 5;
-  fatal(array_unshift, ar, &itemp);
+  array_unshift(ar, &itemp);
   itemp->x = 4;
 
-  fatal(validate, ar);
+  validate(ar);
 
   item * itemps[2];
-  fatal(array_insert_range, ar, 3, itemps, 2);
+  array_insert_range(ar, 3, itemps, 2);
   itemps[0]->x = 7;
   itemps[1]->x = 8;
 
-  fatal(validate, ar);
+  validate(ar);
 
-  fatal(array_insert, ar, 0, &itemp);
+  array_insert(ar, 0, &itemp);
   itemp->x = 1;
-  fatal(array_insert, ar, 1, &itemp);
+  array_insert(ar, 1, &itemp);
   itemp->x = 2;
-  fatal(array_insert, ar, 2, &itemp);
+  array_insert(ar, 2, &itemp);
   itemp->x = 3;
 
-  fatal(validate, ar);
+  validate(ar);
 
-finally:
-  fatal(array_xfree, ar);
-coda;
+  array_xfree(ar);
 }
 
-static xapi test_update()
+static void test_update()
 {
-  enter;
-
   array * ar = 0;
-  fatal(array_create, &ar, sizeof(item));
+  array_create(&ar, sizeof(item));
 
   item * itemps[3];
-  fatal(array_push_range, ar, itemps, sizeof(itemps) / sizeof(itemps[0]));
+  array_push_range(ar, itemps, sizeof(itemps) / sizeof(itemps[0]));
   itemps[0]->x = 1;
   itemps[1]->x = 2;
   itemps[2]->x = 3;
 
-  fatal(validate, ar);
+  validate(ar);
 
   item * itemp;
-  fatal(array_update, ar, 2, &itemp);
+  array_update(ar, 2, &itemp);
   itemp->x = 3;
-  fatal(array_update, ar, 0, &itemp);
+  array_update(ar, 0, &itemp);
   itemp->x = 1;
-  fatal(array_update, ar, 1, &itemp);
+  array_update(ar, 1, &itemp);
   itemp->x = 2;
 
-  fatal(validate, ar);
+  validate(ar);
 
-  fatal(array_update_range, ar, 0, itemps, sizeof(itemps) / sizeof(itemps[0]));
+  array_update_range(ar, 0, itemps, sizeof(itemps) / sizeof(itemps[0]));
   itemps[0]->x = 10;
   itemps[1]->x = 20;
   itemps[2]->x = 30;
 
-  fatal(validate, ar);
+  validate(ar);
 
-finally:
-  fatal(array_xfree, ar);
-coda;
+  array_xfree(ar);
 }
 
-static xapi test_delete()
+static void test_delete()
 {
-  enter;
-
   array * ar = 0;
   item * itemps[4];
 
-  fatal(array_create, &ar, sizeof(item));
+  array_create(&ar, sizeof(item));
 
-  fatal(array_push_range, ar, itemps, sizeof(itemps) / sizeof(itemps[0]));
+  array_push_range(ar, itemps, sizeof(itemps) / sizeof(itemps[0]));
   itemps[0]->x = 1;
   itemps[1]->x = 2;
   itemps[2]->x = 3;
   itemps[3]->x = 4;
-  fatal(validate_contents, ar, 4, 1, 2, 3, 4);
+  validate_contents(ar, 4, 1, 2, 3, 4);
 
-  fatal(array_delete, ar, 1);
-  fatal(validate_contents, ar, 3, 1, 3, 4);
-  fatal(array_delete, ar, 2);
-  fatal(validate_contents, ar, 2, 1, 3);
-  fatal(array_delete, ar, 0);
-  fatal(validate_contents, ar, 1, 3);
-  fatal(array_delete, ar, 0);
-  fatal(validate_contents, ar, 0);
+  array_delete(ar, 1);
+  validate_contents(ar, 3, 1, 3, 4);
+  array_delete(ar, 2);
+  validate_contents(ar, 2, 1, 3);
+  array_delete(ar, 0);
+  validate_contents(ar, 1, 3);
+  array_delete(ar, 0);
+  validate_contents(ar, 0);
 
-  fatal(array_unshift_range, ar, itemps, sizeof(itemps) / sizeof(itemps[0]));
+  array_unshift_range(ar, itemps, sizeof(itemps) / sizeof(itemps[0]));
   itemps[0]->x = 1;
   itemps[1]->x = 2;
   itemps[2]->x = 3;
   itemps[3]->x = 4;
-  fatal(validate_contents, ar, 4, 1, 2, 3, 4);
+  validate_contents(ar, 4, 1, 2, 3, 4);
 
-  fatal(array_delete_range, ar, 1, 3);
-  fatal(validate_contents, ar, 1, 1);
-  fatal(array_delete, ar, 0);
-  fatal(validate_contents, ar, 0);
+  array_delete_range(ar, 1, 3);
+  validate_contents(ar, 1, 1);
+  array_delete(ar, 0);
+  validate_contents(ar, 0);
 
-finally:
-  fatal(array_xfree, ar);
-coda;
+  array_xfree(ar);
 }
 
-static xapi test_splice()
+static void test_splice()
 {
-  enter;
-
   array * A = 0;
   array * B = 0;
   item * itemp = 0;
 
-  fatal(array_create, &A, sizeof(item));
-  fatal(array_create, &B, sizeof(item));
+  array_create(&A, sizeof(item));
+  array_create(&B, sizeof(item));
 
-  fatal(array_push, A, &itemp);
+  array_push(A, &itemp);
   itemp->x = 1;
-  fatal(validate_contents, A, 1, 1);
+  validate_contents(A, 1, 1);
 
-  fatal(array_push, A, &itemp);
+  array_push(A, &itemp);
   itemp->x = 4;
-  fatal(validate_contents, A, 2, 1, 4);
+  validate_contents(A, 2, 1, 4);
 
-  fatal(array_push, B, &itemp);
+  array_push(B, &itemp);
   itemp->x = 2;
-  fatal(validate_contents, B, 1, 2);
+  validate_contents(B, 1, 2);
 
-  fatal(array_push, B, &itemp);
+  array_push(B, &itemp);
   itemp->x = 3;
-  fatal(validate_contents, B, 2, 2, 3);
+  validate_contents(B, 2, 2, 3);
 
-  fatal(array_splice, A, 0, B, 0, 2);
-  fatal(validate_contents, A, 4, 2, 3, 1, 4);
-  fatal(validate_contents, B, 0);
+  array_splice(A, 0, B, 0, 2);
+  validate_contents(A, 4, 2, 3, 1, 4);
+  validate_contents(B, 0);
 
-finally:
-  fatal(array_xfree, A);
-  fatal(array_xfree, B);
-coda;
+  array_xfree(A);
+  array_xfree(B);
 }
 
-static xapi test_replicate()
+static void test_replicate()
 {
-  enter;
-
   array * A = 0;
   array * B = 0;
   item * itemp = 0;
 
-  fatal(array_create, &A, sizeof(item));
-  fatal(array_create, &B, sizeof(item));
+  array_create(&A, sizeof(item));
+  array_create(&B, sizeof(item));
 
-  fatal(array_push, A, &itemp);
+  array_push(A, &itemp);
   itemp->x = 1;
-  fatal(validate_contents, A, 1, 1);
+  validate_contents(A, 1, 1);
 
-  fatal(array_push, A, &itemp);
+  array_push(A, &itemp);
   itemp->x = 4;
-  fatal(validate_contents, A, 2, 1, 4);
+  validate_contents(A, 2, 1, 4);
 
-  fatal(array_push, B, &itemp);
+  array_push(B, &itemp);
   itemp->x = 2;
-  fatal(validate_contents, B, 1, 2);
+  validate_contents(B, 1, 2);
 
-  fatal(array_push, B, &itemp);
+  array_push(B, &itemp);
   itemp->x = 3;
-  fatal(validate_contents, B, 2, 2, 3);
+  validate_contents(B, 2, 2, 3);
 
-  fatal(array_replicate, A, 1, B, 0, 2);
-  fatal(validate_contents, A, 4, 1, 2, 3, 4);
-  fatal(validate_contents, B, 2, 2, 3);
+  array_replicate(A, 1, B, 0, 2);
+  validate_contents(A, 4, 1, 2, 3, 4);
+  validate_contents(B, 2, 2, 3);
 
-finally:
-  fatal(array_xfree, A);
-  fatal(array_xfree, B);
-coda;
+  array_xfree(A);
+  array_xfree(B);
 }
 
-static xapi test_sort()
+static void test_sort()
 {
-  enter;
-
   array * ar = 0;
-  fatal(array_create, &ar, sizeof(item));
+  array_create(&ar, sizeof(item));
 
   item * itemp = 0;
-  fatal(array_unshift, ar, &itemp);
+  array_unshift(ar, &itemp);
   itemp->x = 4;
-  fatal(array_unshift, ar, &itemp);
+  array_unshift(ar, &itemp);
   itemp->x = 5;
-  fatal(array_unshift, ar, &itemp);
+  array_unshift(ar, &itemp);
   itemp->x = 6;
 
   array_sort(ar, 0);
-  fatal(validate, ar);
+  validate(ar);
 
   item * itemps[2];
-  fatal(array_insert_range, ar, 3, itemps, 2);
+  array_insert_range(ar, 3, itemps, 2);
   itemps[0]->x = 9;
   itemps[1]->x = 8;
 
   array_sort(ar, 0);
-  fatal(validate, ar);
+  validate(ar);
 
-  fatal(array_insert, ar, 0, &itemp);
+  array_insert(ar, 0, &itemp);
   itemp->x = 10;
-  fatal(array_insert, ar, 1, &itemp);
+  array_insert(ar, 1, &itemp);
   itemp->x = 20;
-  fatal(array_insert, ar, 2, &itemp);
+  array_insert(ar, 2, &itemp);
   itemp->x = 3;
 
   array_sort(ar, 0);
-  fatal(validate, ar);
+  validate(ar);
 
-finally:
-  fatal(array_xfree, ar);
-coda;
+  array_xfree(ar);
 }
 
-static xapi test_search()
+static void test_search()
 {
-  enter;
-
   array * ar = 0;
   item * itemps[4];
   item * p;
@@ -312,8 +275,8 @@ static xapi test_search()
   size_t lx;
   int lc;
 
-  fatal(array_create, &ar, sizeof(item));
-  fatal(array_push_range, ar, itemps, sizeof(itemps) / sizeof(itemps[0]));
+  array_create(&ar, sizeof(item));
+  array_push_range(ar, itemps, sizeof(itemps) / sizeof(itemps[0]));
   itemps[0]->x = 1;
   itemps[1]->x = 7;
   itemps[2]->x = 32;
@@ -352,15 +315,11 @@ static xapi test_search()
   assert_eq_b(false, r);
   assert_null(p);
 
-finally:
-  fatal(array_xfree, ar);
-coda;
+  array_xfree(ar);
 }
 
-static xapi test_search_range()
+static void test_search_range()
 {
-  enter;
-
   array * ar = 0;
   item * itemps[4];
   item * p;
@@ -368,8 +327,8 @@ static xapi test_search_range()
   size_t lx;
   int lc;
 
-  fatal(array_create, &ar, sizeof(item));
-  fatal(array_push_range, ar, itemps, sizeof(itemps) / sizeof(itemps[0]));
+  array_create(&ar, sizeof(item));
+  array_push_range(ar, itemps, sizeof(itemps) / sizeof(itemps[0]));
   itemps[0]->x = 1;
   itemps[1]->x = 7;
   itemps[2]->x = 32;
@@ -408,40 +367,23 @@ static xapi test_search_range()
   assert_eq_b(false, r);
   assert_null(p);
 
-finally:
-  fatal(array_xfree, ar);
-coda;
+  array_xfree(ar);
 }
 
-static xapi run_tests()
-{
-  enter;
-
-  fatal(test_basic);
-  fatal(test_update);
-  fatal(test_delete);
-  fatal(test_splice);
-  fatal(test_replicate);
-  fatal(test_sort);
-  fatal(test_search);
-  fatal(test_search_range);
-  summarize;
-
-  finally : coda;
-}
+#include <unistd.h>
 
 int main()
 {
-  enter;
+sleep(1);
+  test_basic();
+  test_update();
+  test_delete();
+  test_splice();
+  test_replicate();
+  test_sort();
+  test_search();
+  test_search_range();
 
-  xapi R = 0;
-  fatal(run_tests);
-
-finally:
-  if(XAPI_UNWINDING)
-    xapi_backtrace(2, 0);
-conclude(&R);
-  xapi_teardown();
-
-  return !!R;
+  summarize;
+  return 0;
 }

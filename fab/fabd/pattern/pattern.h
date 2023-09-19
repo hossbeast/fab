@@ -51,7 +51,6 @@ include pattern - subset of generate pattern
 
 */
 
-#include "xapi.h"
 #include "types.h"
 
 #include "valyria/chain.h"
@@ -184,27 +183,27 @@ union pattern_segment;
 typedef struct pattern_segment_vtable {
   pattern_segment_type type;
 
-  xapi __attribute__((nonnull)) (*say)(
+  void __attribute__((nonnull)) (*say)(
       const union pattern_segment * restrict seg
     , struct narrator * restrict N
   );
 
-  xapi __attribute__((nonnull)) (*search)(
+  void __attribute__((nonnull)) (*search)(
       const union pattern_segment * seg
     , struct pattern_search_context * ctx
   );
 
-  xapi __attribute__((nonnull)) (*match)(
+  void __attribute__((nonnull)) (*match)(
       const union pattern_segment * seg
     , struct pattern_match_context * ctx
   );
 
-  xapi __attribute__((nonnull)) (*render)(
+  void __attribute__((nonnull)) (*render)(
       const union pattern_segment * restrict seg
     , struct pattern_render_context * restrict ctx
   );
 
-  xapi __attribute__((nonnull)) (*generate)(
+  void __attribute__((nonnull)) (*generate)(
       const union pattern_segment * restrict seg
     , struct pattern_generate_context * restrict ctx
   );
@@ -343,7 +342,7 @@ void pattern_section_free(pattern_section * const restrict);
 void pattern_segment_list_free(pattern_segment * const restrict);
 void pattern_segment_free(pattern_segment * const restrict);
 
-xapi pattern_say(const pattern * restrict ffn, struct narrator * restrict N)
+void pattern_say(const pattern * restrict ffn, struct narrator * restrict N)
   __attribute__((nonnull));
 
 typedef struct pattern_search_group {
@@ -362,7 +361,7 @@ typedef struct pattern_search_group {
 //  sep   -
 //  first -
 //
-xapi pattern_segment_chain_say(const pattern_segment * restrict head, struct narrator * restrict N)
+void pattern_segment_chain_say(const pattern_segment * restrict head, struct narrator * restrict N)
   __attribute__((nonnull));
 
 int pattern_cmp(const pattern * A, const pattern * B);

@@ -18,7 +18,6 @@
 #ifndef _FABD_SELECTOR_H
 #define _FABD_SELECTOR_H
 
-#include "xapi.h"
 #include "types.h"
 
 #include "moria/traverse.h"
@@ -118,7 +117,7 @@ void selector_free(selector * restrict s);
 void selector_ifree(selector ** restrict s)
   __attribute__((nonnull));
 
-xapi selector_alloc(selector_type type, selector ** restrict s)
+void selector_alloc(selector_type type, selector ** restrict s)
   __attribute__((nonnull));
 
 typedef struct selector_context {
@@ -135,19 +134,19 @@ typedef struct selector_context {
   struct channel * chan;
 } selector_context;
 
-xapi selector_context_xdestroy(selector_context *ctx)
+void selector_context_xdestroy(selector_context *ctx)
   __attribute__((nonnull));
 
 /*
  * execute a selector against the graph
  */
-xapi selector_exec(selector * restrict s, selector_context * restrict ctx, selection_iteration_type iteration_type)
+void selector_exec(selector * restrict s, selector_context * restrict ctx, selection_iteration_type iteration_type)
   __attribute__((nonnull));
 
-xapi selector_say(selector * restrict s, struct narrator * const restrict N)
+void selector_say(selector * restrict s, struct narrator * const restrict N)
   __attribute__((nonnull));
 
-xapi selector_writer_write(selector * const restrict sel, struct value_writer * const restrict writer)
+void selector_writer_write(selector * const restrict sel, struct value_writer * const restrict writer)
   __attribute__((nonnull));
 
 #endif

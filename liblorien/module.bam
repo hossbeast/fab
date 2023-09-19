@@ -16,27 +16,32 @@
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
 use cc                # this module contains c sources
-use library/shared    # this module builds a library
-use xunit-tests       # this module contains xunit tests
+use library/static    # this module builds a library
+use xunit             # this module contains xunit tests
 
 # make common objects available for #inclusion and linking by files in this module
 import fab/include
 import libcommon
-import lib{xapi,xlinux,narrator,valyria,logger,xunit}
+import lib{xlinux,narrator,valyria,xunit}
 
 # variants for the module
-variant xapi.pic.{debug,devel,final,trace}
+variant pic.{debug,devel,final,trace}
+
+# build the library by default
+rule liblorien.?.a -> //module/targets
 
 # pull in object files in the module except those in test/
-rule **~test/*.?.o -> liblorien.$?.so
-
-# default build targets
-rule liblorien.?.so -> //module/targets
+rule **~test/*.?.o -> liblorien.$?.a
 
 # library dependencies
-rule //module/imports/*~libxunit/lib*.?.so -> liblorien.$?.so
+rule //module/imports/*~libxunit/lib*.?.a -> //module/libdeps.$?
+rule //module/libdeps.? -> liblorien.$?.a
 
 # tests need the library
-variant xapi.pic.devel : [
-  rule **/test/test_*.?.so <- liblorien.$?.so
+variant pic.devel : [
+  rule **/test/test_*.?.xunit <- liblorien.$?.a
+  rule **/test/test_*.?.xunit <- //module/libdeps.$?
+
+  rule tests.xunit <- liblorien.?.a
+  rule tests.xunit <- //module/libdeps.?
 ]

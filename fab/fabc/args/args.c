@@ -15,16 +15,14 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
+#include <stdio.h>
 #include <getopt.h>
 
-#include "xapi.h"
-#include "logger/arguments.h"
 #include "narrator.h"
 #include "xlinux/xstdlib.h"
 #include "xlinux/xstring.h"
 
 #include "args.h"
-#include "MAIN.errtab.h"
 
 #include "macros.h"
 #include "git-state.h"
@@ -60,10 +58,8 @@ void args_usage()
   exit(0);
 }
 
-xapi args_parse()
+void args_parse(int argc, char ** argv)
 {
-  enter;
-
   int help = 0;
   int version = 0;
   int x;
@@ -83,7 +79,7 @@ xapi args_parse()
   ;
 
   opterr = 0;
-  while(indexptr = 0, (x = getopt_long(g_argc, &g_argv[0], p, longopts, &indexptr)) != -1)
+  while(indexptr = 0, (x = getopt_long(argc, argv, p, longopts, &indexptr)) != -1)
   {
     if(x == 0)
     {
@@ -108,26 +104,28 @@ xapi args_parse()
       // unrecognized argv element
       if(optopt)
       {
-        failf(MAIN_BADARGS, "switch", "-%c", optopt);
+        fprintf(stderr, "switch -%c", optopt);
+        exit(1);
       }
       else
       {
-        failf(MAIN_BADARGS, "argument", "%s", g_argv[optind-1]);
+        fprintf(stderr, "argument %s", argv[optind-1]);
+        exit(1);
       }
     }
     else
     {
       // non-option argv elements
       free(g_args.path);
-      fatal(ixstrdup, &g_args.path, optarg);
+      ixstrdup(&g_args.path, optarg);
     }
   }
 
-  for(; optind < g_argc; optind++)
+  for(; optind < argc; optind++)
   {
     // options following --
     free(g_args.path);
-    fatal(ixstrdup, &g_args.path, g_argv[optind]);
+    ixstrdup(&g_args.path, argv[optind]);
   }
 
   if(help)
@@ -138,6 +136,4 @@ xapi args_parse()
   {
     args_version();
   }
-
-  finally : coda;
 }

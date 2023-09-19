@@ -15,33 +15,23 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#include "xapi.h"
-
 #include "area.h"
 #include "xcurses.h"
 
-static xapi region_init(region * restrict reg, int yext, int xext, int y, int x)
+static void region_init(region * restrict reg, int yext, int xext, int y, int x)
 {
-  enter;
-
-  fatal(xnewwin, &reg->w, yext, xext, y, x);
+  xnewwin(&reg->w, yext, xext, y, x);
   reg->yext = yext;
   reg->xext = xext;
   reg->y = y;
   reg->x = x;
-
-  finally : coda;
 }
 
-xapi area_init(area * restrict a, int yext, int xext, int y, int x)
+void area_init(area * restrict a, int yext, int xext, int y, int x)
 {
-  enter;
-
-  fatal(region_init, &a->body, yext - 2, xext - 2, y + 1, x + 1);
-  fatal(region_init, &a->footer, 1, xext - 2, y + yext - 2, x + 1);
-  fatal(region_init, &a->border, yext, xext, y, x);
-
-  finally : coda;
+  region_init(&a->body, yext - 2, xext - 2, y + 1, x + 1);
+  region_init(&a->footer, 1, xext - 2, y + yext - 2, x + 1);
+  region_init(&a->border, yext, xext, y, x);
 }
 
 void region_print_rightjust(region *reg, const char * restrict fmt, ...)

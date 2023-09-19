@@ -19,7 +19,6 @@
 #define FABD_CONFIG_INTERNAL_H
 
 #include "types.h"
-#include "xapi.h"
 
 #include "valyria/llist.h"
 
@@ -121,30 +120,30 @@ typedef struct configblob {
 //  [val]  - throw config object
 //  [path] - path from the root of the config tree
 //
-xapi config_throw(struct box * restrict val)
+void config_throw(struct box * restrict val)
   __attribute__((nonnull));
 
-xapi config_create(configblob ** restrict cfg)
+void config_create(configblob ** restrict cfg)
   __attribute__((nonnull));
 
-xapi config_say(configblob * restrict cfg, struct narrator * restrict N)
+void config_say(configblob * restrict cfg, struct narrator * restrict N)
   __attribute__((nonnull));
 
 /* free a config struct with free semantics */
-xapi config_xfree(configblob * restrict cfg);
+void config_xfree(configblob * restrict cfg);
 
 /* free a config struct with ifree semantics */
-xapi config_ixfree(configblob ** restrict cfg)
+void config_ixfree(configblob ** restrict cfg)
   __attribute__((nonnull));
 
 /* mark sections of a new config struct as different from those of another config struct */
 bool config_compare(configblob * restrict new, configblob * restrict old)
   __attribute__((nonnull));
 
-xapi config_writer_write(configblob * const restrict cfg, struct value_writer * const restrict writer)
+void config_writer_write(configblob * const restrict cfg, struct value_writer * const restrict writer)
   __attribute__((nonnull));
 
-xapi config_merge(configblob * restrict dst, configblob * restrict src)
+void config_merge(configblob * restrict dst, configblob * restrict src)
   __attribute__((nonnull));
 
 #endif

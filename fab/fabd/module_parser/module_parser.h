@@ -18,7 +18,6 @@
 #ifndef _FABD_MODULE_PARSER_H
 #define _FABD_MODULE_PARSER_H
 
-#include "xapi.h"
 #include "types.h"
 
 #include "yyutil/parser.h"
@@ -54,9 +53,9 @@ typedef struct module_parser {
   // sub parsers
   struct value_parser * value_parser; // the value parser is owned by the module
   struct pattern_parser * pattern_parser;
-  xapi (*use_resolve)(struct module_parser * restrict parser, struct pattern * restrict ref, bool scoped, char * restrict name, uint16_t namel);
-  xapi (*require_resolve)(struct module_parser * restrict parser, struct pattern * restrict ref);
-  xapi (*import_resolve)(struct module_parser * restrict parser, struct pattern * restrict ref, bool scoped, char * restrict name, uint16_t namel);
+  void (*use_resolve)(struct module_parser * restrict parser, struct pattern * restrict ref, bool scoped, char * restrict name, uint16_t namel);
+  void (*require_resolve)(struct module_parser * restrict parser, struct pattern * restrict ref);
+  void (*import_resolve)(struct module_parser * restrict parser, struct pattern * restrict ref, bool scoped, char * restrict name, uint16_t namel);
 
   // under construction
   statement_block *block;
@@ -74,7 +73,7 @@ typedef struct module_parser {
 // SUMMARY
 //  create a module parser
 //
-xapi module_parser_create(module_parser ** const restrict p)
+void module_parser_create(module_parser ** const restrict p)
   __attribute__((nonnull));
 
 /// module_parser_xfree
@@ -82,14 +81,14 @@ xapi module_parser_create(module_parser ** const restrict p)
 // SUMMARY
 //  free a module parser with free semantics
 //
-xapi module_parser_xfree(module_parser * restrict);
+void module_parser_xfree(module_parser * restrict);
 
 /// module_parser_ixfree
 //
 // SUMMARY
 //  free a module parser with iwfree semantics
 //
-xapi module_parser_ixfree(module_parser ** restrict)
+void module_parser_ixfree(module_parser ** restrict)
   __attribute__((nonnull));
 
 /// module_parse
@@ -104,7 +103,7 @@ xapi module_parser_ixfree(module_parser ** restrict)
 //  size         - size of buffer
 //  [fname]      - filename, for error messages
 //
-xapi module_parser_parse(
+int module_parser_parse(
     module_parser * restrict parser
   , struct module * restrict mod
   , struct graph_invalidation_context * restrict invalidation
@@ -114,7 +113,7 @@ xapi module_parser_parse(
 )
   __attribute__((nonnull));
 
-xapi module_parser_block_alloc(module_parser * restrict parser, statement_block ** restrict blockp)
+void module_parser_block_alloc(module_parser * restrict parser, statement_block ** restrict blockp)
   __attribute__((nonnull));
 
 #endif

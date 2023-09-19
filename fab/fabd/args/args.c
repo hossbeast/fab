@@ -15,17 +15,15 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
+#include <stdio.h>
 #include <inttypes.h>
 #include <string.h>
 #include <getopt.h>
 
-#include "xapi.h"
 #include "types.h"
 #include "xlinux/xstdlib.h"
 #include "xlinux/xstring.h"
-#include "logger/arguments.h"
 
-#include "xapi/SYS.errtab.h"
 #include "args.h"
 #include "common/parseint.h"
 #include "common/hash.h"
@@ -70,10 +68,8 @@ static void args_usage()
   exit(0);
 }
 
-static xapi args_parse()
+static void args_parse(int argc, char ** restrict argv)
 {
-  enter;
-
   char *pwd = 0;
   int x;
   int longindex;
@@ -99,28 +95,30 @@ static xapi args_parse()
   ;
 
   g_args.default_filesystem_invalidate = FILESYSTEM_INVALIDATE_DEFAULT;
-  fatal(ixstrdup, &g_args.system_config_path, SYSTEM_CONFIG_PATH);
-  fatal(ixstrdup, &g_args.user_config_path, USER_CONFIG_PATH);
+  ixstrdup(&g_args.system_config_path, SYSTEM_CONFIG_PATH);
+  ixstrdup(&g_args.user_config_path, USER_CONFIG_PATH);
 
   // disable getopt error messages
   opterr = 0;
   optind = 0;
-  while((x = getopt_long(g_argc, g_argv, switches, longopts, &longindex)) != -1)
+  while((x = getopt_long(argc, argv, switches, longopts, &longindex)) != -1)
   {
 #if DEVEL
     if(x == 0 && strcmp(longopts[longindex].name, "system-config-path") == 0) {
       iwfree(&g_args.system_config_path);
-      fatal(ixstrdup, &g_args.system_config_path, optarg);
+      ixstrdup(&g_args.system_config_path, optarg);
     } else if(x == 0 && strcmp(longopts[longindex].name, "user-config-path") == 0) {
       iwfree(&g_args.user_config_path);
-      fatal(ixstrdup, &g_args.user_config_path, optarg);
+      ixstrdup(&g_args.user_config_path, optarg);
     } else if(x == 0 && strcmp(longopts[longindex].name, "default-filesystem-invalidate") == 0) {
       if((g_args.default_filesystem_invalidate = attrs16_value_byname(invalidate_attrs, optarg)) == 0) {
-        fail(SYS_BADARGS);
+        fprintf(stderr, "invalid filesystem-invalidate %s\n", optarg);
+        exit(1);
       }
     } else if(x == 0 && strcmp(longopts[longindex].name, "sweeper-period-nsec") == 0) {
       if(parseuint(optarg, SCNu64, 1, UINT64_MAX, 1, 20, &g_args.sweeper_period_nsec, 0) != 0) {
-        fail(SYS_BADARGS);
+        fprintf(stderr, "invalid sweeper-period-nsec %s\n", optarg);
+        exit(1);
       }
     } else if(x == 'K') {
       g_args.kill = true;
@@ -142,44 +140,37 @@ static xapi args_parse()
     args_version();
   }
 
-  if(optind == g_argc) {
-    fatal(xrealpaths, &pwd, 0, getenv("PWD"));
+  if(optind == argc) {
+    pwd = xrealpaths(0, getenv("PWD"));
     g_args.hash = hash64(0, pwd, strlen(pwd));
   }
-  if(optind < g_argc) {
-    if(parseuint(g_argv[optind++], SCNx64, 1, UINT64_MAX, 1, UINT8_MAX, &g_args.hash, 0) != 0) {
-      fail(SYS_BADARGS);
+  if(optind < argc) {
+    if(parseuint(argv[optind], SCNx64, 1, UINT64_MAX, 1, UINT8_MAX, &g_args.hash, 0) != 0) {
+      fprintf(stderr, "invalid hash %s\n", argv[optind]);
+      exit(1);
     }
+    optind++;
   }
-  if(optind < g_argc) {
-    fails(SYS_BADARGS, "unknown arg", g_argv[optind]);
+  if(optind < argc) {
+    fprintf(stderr, "unexpected argument %s\n", argv[optind]);
+    exit(1);
   }
 
-finally:
   free(pwd);
-coda;
 }
 
-xapi args_setup()
+void args_setup(int argc, char ** argv)
 {
-  enter;
-
   char space[64];
 
-  fatal(args_parse);
+  args_parse(argc, argv);
 
   snprintf(space, sizeof(space), "%016"PRIx64, g_args.hash);
-  fatal(ixstrdup, &g_args.hash_str, space);
-
-  finally : coda;
+  ixstrdup(&g_args.hash_str, space);
 }
 
-xapi args_teardown()
+void args_teardown()
 {
-  enter;
-
   wfree(g_args.system_config_path);
   wfree(g_args.user_config_path);
-
-  finally : coda;
 }

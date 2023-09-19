@@ -15,10 +15,7 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#include "xapi.h"
 #include "lorien/load.h"
-#include "yyutil/load.h"
-#include "logger/load.h"
 #include "value/load.h"
 
 #include "valyria/map.h"
@@ -32,7 +29,6 @@
 #include "config.internal.h"
 #include "request.h"
 #include "fsent.h"
-#include "logging.h"
 
 #include "yyutil/box.h"
 
@@ -43,33 +39,20 @@ typedef struct {
   char * expected;
 } config_merge_test;
 
-static xapi config_merge_test_unit_setup(xunit_unit * unit)
+static void config_merge_test_unit_setup(xunit_unit * unit)
 {
-  enter;
-
-  fatal(yyutil_load);
-  fatal(value_load);
-  fatal(logging_finalize);
-  fatal(config_setup);
-
-  finally : coda;
+  value_load();
+  config_setup();
 }
 
-static xapi config_merge_test_unit_cleanup(xunit_unit * unit)
+static void config_merge_test_unit_cleanup(xunit_unit * unit)
 {
-  enter;
-
-  fatal(yyutil_unload);
-  fatal(value_unload);
-  fatal(config_cleanup);
-
-  finally : coda;
+  value_unload();
+  config_cleanup();
 }
 
-static xapi config_merge_test_entry(xunit_test * _test)
+static void config_merge_test_entry(xunit_test * _test)
 {
-  enter;
-
   config_merge_test * test = containerof(_test, config_merge_test, xu);
 
   config_parser * parser = 0;
@@ -81,49 +64,47 @@ static xapi config_merge_test_entry(xunit_test * _test)
   char ** text = 0;
 
   // arrange
-  fatal(config_parser_create, &parser);
-  fatal(narrator_growing_create, &N1);
-  fatal(narrator_growing_create, &N2);
+  config_parser_create(&parser);
+  narrator_growing_create(&N1);
+  narrator_growing_create(&N2);
 
   // act - initial parse
   text = test->texts;
   while(*text)
   {
-    fatal(config_parser_parse, parser, *text, strlen(*text) + 2, 0, 0, &T);
+    config_parser_parse(parser, *text, strlen(*text) + 2, 0, 0, &T);
     if(!A)
     {
       A = T;
     }
     else
     {
-      fatal(config_merge, A, T);
-      fatal(config_xfree, T);
+      config_merge(A, T);
+      config_xfree(T);
     }
     T = 0;
     text++;
   }
 
-  fatal(config_parser_parse, parser, test->expected, strlen(test->expected) + 2, 0, 0, &B);
+  config_parser_parse(parser, test->expected, strlen(test->expected) + 2, 0, 0, &B);
 
-  fatal(config_say, A, &N1->base);
-  fatal(config_say, B, &N2->base);
+  config_say(A, &N1->base);
+  config_say(B, &N2->base);
   assert_eq_w(N2->s, N2->l, N1->s, N1->l);
 
-finally:
-  fatal(config_parser_xfree, parser);
-  fatal(config_xfree, A);
-  fatal(config_xfree, B);
-  fatal(config_xfree, T);
-  fatal(narrator_growing_free, N1);
-  fatal(narrator_growing_free, N2);
-coda;
+  config_parser_xfree(parser);
+  config_xfree(A);
+  config_xfree(B);
+  config_xfree(T);
+  narrator_growing_free(N1);
+  narrator_growing_free(N2);
 }
 
 //
 // manifest
 //
 
-xunit_unit xunit = {
+static xunit_unit xunit = {
     xu_setup : config_merge_test_unit_setup
   , xu_cleanup : config_merge_test_unit_cleanup
   , xu_entry : config_merge_test_entry
@@ -235,6 +216,7 @@ xunit_unit xunit = {
                 " /home/todd/my/goats"
                 "}}\0\0"
           }
+, xu_weight : 1
       }}
     , (config_merge_test[]) {{
           texts : (char*[]) {
@@ -306,3 +288,4 @@ xunit_unit xunit = {
     , 0
   }
 };
+XUNIT_UNIT(xunit);

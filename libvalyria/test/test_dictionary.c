@@ -18,8 +18,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "xapi.h"
-#include "xapi/trace.h"
 #include "xlinux/xstdlib.h"
 
 #include "dictionary.internal.h"
@@ -34,10 +32,8 @@ typedef struct item
   int x;
 } item;
 
-static xapi validate(dictionary * dp)
+static void validate(dictionary * dp)
 {
-  enter;
-
   const char ** keys = 0;
   uint16_t keysl = 0;
   item ** values = 0;
@@ -55,7 +51,7 @@ static xapi validate(dictionary * dp)
   assert_eq_d(3, itemp->x);
 
   // lists of keys
-  fatal(dictionary_keys, dp, &keys, &keysl);
+  dictionary_keys(dp, &keys, &keysl);
 
   assert_eq_zu(3, keysl);
 
@@ -67,7 +63,7 @@ static xapi validate(dictionary * dp)
   assert_eq_s("two", keys[2]);
 
   // list of values
-  fatal(dictionary_values, dp, &values, &valuesl);
+  dictionary_values(dp, &values, &valuesl);
 
   assert_eq_zu(3, valuesl);
 
@@ -109,16 +105,12 @@ static xapi validate(dictionary * dp)
     }
   }
 
-finally:
   wfree(keys);
   wfree(values);
-coda;
 }
 
-static xapi validate_int_table_values(dictionary * restrict m)
+static void validate_int_table_values(dictionary * restrict m)
 {
-  enter;
-
   int x;
   for(x = 0; x < m->table_size; x++)
   {
@@ -134,15 +126,11 @@ static xapi validate_int_table_values(dictionary * restrict m)
       assert_eq_d(keyval, *val);
     }
   }
-
-  finally : coda;
 }
 
 
-static xapi test_sizes()
+static void test_sizes()
 {
-  enter;
-
   dictionary * dp = 0;
 
   char data[] = "abcd efgh ijkl mnop";
@@ -150,57 +138,51 @@ static xapi test_sizes()
   int x;
   for(x = 1; x <= 17; x++)
   {
-    fatal(dictionary_create, &dp, x);
+    dictionary_create(&dp, x);
 
     int y;
     for(y = 0; y < 10; y++)
     {
       char key[32];
       sprintf(key, "%d", y);
-      fatal(dictionary_put, dp, MMS(key), data);
+      dictionary_put(dp, MMS(key), data);
       char * ddp = dictionary_get(dp, MMS(key));
       assert_notnull(ddp);
     }
 
-    fatal(dictionary_ixfree, &dp);
+    dictionary_ixfree(&dp);
   }
 
-finally:
-  fatal(dictionary_xfree, dp);
-coda;
+  dictionary_xfree(dp);
 }
 
-static xapi test_basic()
+static void test_basic()
 {
-  enter;
-
   dictionary * dp = 0;
-  fatal(dictionary_create, &dp, sizeof(item));
+  dictionary_create(&dp, sizeof(item));
 
   item i = { x : 1 };
-  fatal(dictionary_put, dp, MMS("one"), &i);
+  dictionary_put(dp, MMS("one"), &i);
   assert_eq_d(0, i.a);
   assert_eq_d(1, i.x);
   assert_eq_d(1, dp->size);
 
   item * itemp = 0;
-  fatal(dictionary_store, dp, MMS("two"), &itemp);
+  dictionary_store(dp, MMS("two"), &itemp);
   itemp->x = 2;
   assert_eq_d(0, itemp->a);
   assert_eq_d(2, itemp->x);
   assert_eq_d(2, dp->size);
 
-  fatal(dictionary_store, dp, MMS("three"), &itemp);
+  dictionary_store(dp, MMS("three"), &itemp);
   itemp->x = 3;
   assert_eq_d(0, itemp->a);
   assert_eq_d(3, itemp->x);
   assert_eq_d(3, dp->size);
 
-  fatal(validate, dp);
+  validate(dp);
 
-finally:
-  fatal(dictionary_xfree, dp);
-coda;
+  dictionary_xfree(dp);
 }
 
 static void destroy(void *val)
@@ -209,44 +191,38 @@ static void destroy(void *val)
   i->x++;
 }
 
-static xapi test_store()
+static void test_store()
 {
-  enter;
-
   dictionary * dp = 0;
   item i;
   item * itemp;
 
-  fatal(dictionary_createx, &dp, sizeof(item), 0, destroy, 0);
+  dictionary_createx(&dp, sizeof(item), 0, destroy);
 
   i = (typeof(i)){ x : 1 };
-  fatal(dictionary_put, dp, MMS("one"), &i);
+  dictionary_put(dp, MMS("one"), &i);
   assert_eq_d(0, i.a);
   assert_eq_d(1, i.x);
   assert_eq_d(1, dp->size);
 
   // store is idempotent
-  fatal(dictionary_store, dp, MMS("one"), &itemp);
+  dictionary_store(dp, MMS("one"), &itemp);
   assert_eq_d(0, itemp->a);
   assert_eq_d(1, itemp->x);
   assert_eq_d(1, dp->size);
 
   // put destroys the existing value
-  fatal(dictionary_put, dp, MMS("one"), &i);
+  dictionary_put(dp, MMS("one"), &i);
   itemp = dictionary_get(dp, MMS("one"));
   assert_eq_d(0, itemp->a);
   assert_eq_d(1, itemp->x);
   assert_eq_d(1, dp->size);
 
-finally:
-  fatal(dictionary_xfree, dp);
-coda;
+  dictionary_xfree(dp);
 }
 
-static xapi test_load()
+static void test_load()
 {
-  enter;
-
   char space[64];
   dictionary * m = 0;
   int * val;
@@ -254,7 +230,7 @@ static xapi test_load()
   int y;
   int i;
 
-  fatal(dictionary_create, &m, sizeof(int));
+  dictionary_create(&m, sizeof(int));
 
   for(i = 0; i < 2; i++)
   {
@@ -262,7 +238,7 @@ static xapi test_load()
     x = y;
     do {
       snprintf(space, sizeof(space), "%d", x);
-      fatal(dictionary_put, m, space, strlen(space), &x);
+      dictionary_put(m, space, strlen(space), &x);
       x = (x + 1) % 5000;
     } while(x != y);
 
@@ -277,27 +253,23 @@ static xapi test_load()
     }
 
     // entries by enumeration
-    fatal(validate_int_table_values, m);
-    fatal(dictionary_recycle, m);
+    validate_int_table_values(m);
+    dictionary_recycle(m);
   }
 
-finally:
-  fatal(dictionary_xfree, m);
-coda;
+  dictionary_xfree(m);
 }
 
-static xapi test_rehash()
+static void test_rehash()
 {
-  enter;
-
   dictionary * dp = 0;
-  fatal(dictionary_createx, &dp, sizeof(item), 2, 0, 0);
+  dictionary_createx(&dp, sizeof(item), 2, 0);
 
   int x;
   for(x = 0; x <= 35; x++)
   {
     item * itemp = 0;
-    fatal(dictionary_store, dp, MM(x), &itemp);
+    dictionary_store(dp, MM(x), &itemp);
     itemp->x = x;
 
     if(x == 7 || x == 35)
@@ -306,7 +278,7 @@ static xapi test_rehash()
       {
         int i;
         for(i = 0; i < 7; i++)
-          fatal(dictionary_delete, dp, MM(i));
+          dictionary_delete(dp, MM(i));
       }
 
       if(x >= 7)
@@ -327,15 +299,11 @@ static xapi test_rehash()
     }
   }
 
-finally:
-  fatal(dictionary_xfree, dp);
-coda;
+  dictionary_xfree(dp);
 }
 
-static xapi test_align()
+static void test_align()
 {
-  enter;
-
   struct container {
     void * p;       // 8 byte alignment
     char pad[20];
@@ -343,44 +311,40 @@ static xapi test_align()
   };
 
   dictionary * dp = 0;
-  fatal(dictionary_create, &dp, sizeof(struct container));
+  dictionary_create(&dp, sizeof(struct container));
 
   valyria_faults_reset();
   valyria_fault_activate(VALYRIA_KEY_HASH, MMS("foo^bar"), 0xdead);
   valyria_fault_activate(VALYRIA_HASH_INDEX, 0xdead, 203);  // odd index
 
   struct container * itemp = 0;
-  fatal(dictionary_store, dp, MMS("foo^bar"), &itemp);
+  dictionary_store(dp, MMS("foo^bar"), &itemp);
   itemp->x = 42;
 
-finally:
-  fatal(dictionary_xfree, dp);
-coda;
+  dictionary_xfree(dp);
 }
 
-static xapi test_replicate()
+static void test_replicate()
 {
-  enter;
-
   dictionary * dp = 0;
   dictionary * dp2 = 0;
-  fatal(dictionary_create, &dp, sizeof(item));
-  fatal(dictionary_create, &dp2, sizeof(item));
+  dictionary_create(&dp, sizeof(item));
+  dictionary_create(&dp2, sizeof(item));
 
   item i = { x : 1 };
-  fatal(dictionary_put, dp, MMS("one"), &i);
+  dictionary_put(dp, MMS("one"), &i);
 
   item * itemp = 0;
-  fatal(dictionary_store, dp, MMS("two"), &itemp);
+  dictionary_store(dp, MMS("two"), &itemp);
   itemp->x = 2;
 
-  fatal(dictionary_store, dp, MMS("three"), &itemp);
+  dictionary_store(dp, MMS("three"), &itemp);
   itemp->x = 3;
 
-  fatal(dictionary_replicate, dp2, dp);
+  dictionary_replicate(dp2, dp);
 
   assert_eq_d(3, dp->size);
-  fatal(validate, dp);
+  validate(dp);
 
   itemp = dictionary_get(dp, MMS("one"));
   assert_eq_d(1, itemp->x);
@@ -391,7 +355,7 @@ static xapi test_replicate()
 
   // the replicant
   assert_eq_d(3, dp2->size);
-  fatal(validate, dp2);
+  validate(dp2);
 
   itemp = dictionary_get(dp2, MMS("one"));
   assert_eq_d(1, itemp->x);
@@ -400,38 +364,34 @@ static xapi test_replicate()
   itemp = dictionary_get(dp2, MMS("three"));
   assert_eq_d(3, itemp->x);
 
-finally:
-  fatal(dictionary_xfree, dp);
-  fatal(dictionary_xfree, dp2);
-coda;
+  dictionary_xfree(dp);
+  dictionary_xfree(dp2);
 }
 
-static xapi test_splice()
+static void test_splice()
 {
-  enter;
-
   dictionary * dp = 0;
   dictionary * dp2 = 0;
-  fatal(dictionary_create, &dp, sizeof(item));
-  fatal(dictionary_create, &dp2, sizeof(item));
+  dictionary_create(&dp, sizeof(item));
+  dictionary_create(&dp2, sizeof(item));
 
   item i = { x : 1 };
-  fatal(dictionary_put, dp, MMS("one"), &i);
+  dictionary_put(dp, MMS("one"), &i);
 
   item * itemp = 0;
-  fatal(dictionary_store, dp, MMS("two"), &itemp);
+  dictionary_store(dp, MMS("two"), &itemp);
   itemp->x = 2;
 
-  fatal(dictionary_store, dp, MMS("three"), &itemp);
+  dictionary_store(dp, MMS("three"), &itemp);
   itemp->x = 3;
 
-  fatal(dictionary_splice, dp2, dp);
+  dictionary_splice(dp2, dp);
 
   assert_eq_d(0, dp->size);
 
   // the replicant
   assert_eq_d(3, dp2->size);
-  fatal(validate, dp2);
+  validate(dp2);
 
   itemp = dictionary_get(dp2, MMS("one"));
   assert_eq_d(1, itemp->x);
@@ -440,42 +400,21 @@ static xapi test_splice()
   itemp = dictionary_get(dp2, MMS("three"));
   assert_eq_d(3, itemp->x);
 
-finally:
-  fatal(dictionary_xfree, dp);
-  fatal(dictionary_xfree, dp2);
-coda;
-}
-
-static xapi run_tests()
-{
-  enter;
-
-  fatal(test_sizes);
-  fatal(test_basic);
-  fatal(test_store);
-  fatal(test_load);
-  fatal(test_rehash);
-  fatal(test_align);
-  fatal(test_replicate);
-  fatal(test_splice);
-
-  summarize;
-
-  finally : coda;
+  dictionary_xfree(dp);
+  dictionary_xfree(dp2);
 }
 
 int main()
 {
-  enter;
+  test_sizes();
+  test_basic();
+  test_store();
+  test_load();
+  test_rehash();
+  test_align();
+  test_replicate();
+  test_splice();
 
-  xapi R = 0;
-  fatal(run_tests);
-
-finally:
-  if(XAPI_UNWINDING)
-    xapi_backtrace(2, 0);
-conclude(&R);
-  xapi_teardown();
-
-  return !!R;
+  summarize;
+  return 0;
 }

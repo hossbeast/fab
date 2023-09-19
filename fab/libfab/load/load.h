@@ -18,20 +18,18 @@
 #ifndef _FAB_LOAD_H
 #define _FAB_LOAD_H
 
-#include "xapi.h"
-
 /// fab_load
 //
 // SUMMARY
 //  initialize the library
 //
-xapi fab_load(void);
+void fab_load(void);
 
 /// fab_unload
 //
 // SUMMARY
 //  release the library
 //
-xapi fab_unload(void);
+void fab_unload(void);
 
 #endif

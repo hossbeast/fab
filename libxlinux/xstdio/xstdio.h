@@ -20,7 +20,6 @@
 
 #include <stdarg.h>
 
-#include "xapi.h"
 #include "types.h"
 
 /// xvdprintf
@@ -31,24 +30,24 @@
 // PARAMETERS
 //  as for vdprintf
 //
-xapi xvdprintf(int fd, const char * const restrict fmt, va_list va)
+void xvdprintf(int fd, const char * const restrict fmt, va_list va)
   __attribute__((nonnull(2)));
 
 /// xrename
 //
 // SUMMARY
-//  xapi proxy for rename
+//  void proxy for rename
 //
 // VARIANTS
 //  s/f/vf - different ways to pass path
 //
-xapi xrenames(const char * const restrict old, const char * const restrict new)
+void xrenames(const char * const restrict old, const char * const restrict new)
   __attribute__((nonnull));
 
-xapi xrenamef(const char * const restrict oldfmt, const char * const restrict newfmt, ...)
+void xrenamef(const char * const restrict oldfmt, const char * const restrict newfmt, ...)
   __attribute__((nonnull(1, 2)));
 
-xapi xrenamevf(const char * const restrict oldfmt, const char * const restrict newfmt, va_list va)
+void xrenamevf(const char * const restrict oldfmt, const char * const restrict newfmt, va_list va)
   __attribute__((nonnull(1, 2)));
 
 /// uxrename
@@ -57,13 +56,13 @@ xapi xrenamevf(const char * const restrict oldfmt, const char * const restrict n
 //  proxy for rename that only fails when errno not in { ENOENT, ENOTDIR }
 //
 
-xapi uxrenames(const char * const restrict old, const char * const restrict new)
+void uxrenames(const char * const restrict old, const char * const restrict new)
   __attribute__((nonnull));
 
-xapi uxrenamef(const char * const restrict oldfmt, const char * const restrict newfmt, ...)
+void uxrenamef(const char * const restrict oldfmt, const char * const restrict newfmt, ...)
   __attribute__((nonnull(1, 2)));
 
-xapi uxrenamevf(const char * const restrict oldfmt, const char * const restrict newfmt, va_list va)
+void uxrenamevf(const char * const restrict oldfmt, const char * const restrict newfmt, va_list va)
   __attribute__((nonnull(1, 2)));
 
 #endif

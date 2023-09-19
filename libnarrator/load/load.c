@@ -15,10 +15,6 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#include "xapi.h"
-
-#include "xlinux/load.h"
-
 #include "load.h"
 #include "fd.internal.h"
 #include "nullity.internal.h"
@@ -29,36 +25,20 @@ static int handles;
 // api
 //
 
-xapi API narrator_load()
+void API narrator_load()
 {
-  enter;
-
   if(handles++ == 0)
   {
-    // dependencies
-    fatal(xlinux_load);
-
-    // modules
-    fatal(nullity_setup);
-    fatal(fd_setup);
+    nullity_setup();
+    fd_setup();
   }
-
-  finally : coda;
 }
 
-xapi API narrator_unload()
+void API narrator_unload()
 {
-  enter;
-
   if(--handles == 0)
   {
-    // modules
-    fatal(nullity_cleanup);
-    fatal(fd_cleanup);
-
-    // dependencies
-    fatal(xlinux_unload);
+    nullity_cleanup();
+    fd_cleanup();
   }
-
-  finally : coda;
 }

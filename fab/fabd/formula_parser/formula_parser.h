@@ -18,24 +18,23 @@
 #ifndef _FABD_FORMULA_PARSER_H
 #define _FABD_FORMULA_PARSER_H
 
-#include "xapi.h"
 #include "types.h"
 
 struct formula;
 
 typedef struct formula_parser formula_parser;
 
-xapi formula_parser_create(formula_parser ** const restrict p)
+void formula_parser_create(formula_parser ** const restrict p)
   __attribute__((nonnull));
 
 /* free a formula parser with free semantics */
-xapi formula_parser_xfree(formula_parser * restrict);
+void formula_parser_xfree(formula_parser * restrict);
 
 /* free a formula parser with iwfree semantics */
-xapi formula_parser_ixfree(formula_parser ** restrict)
+void formula_parser_ixfree(formula_parser ** restrict)
   __attribute__((nonnull));
 
-xapi formula_parser_parse(
+int formula_parser_parse(
     formula_parser * restrict parser
   , char * const restrict buf
   , size_t len

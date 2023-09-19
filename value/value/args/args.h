@@ -18,7 +18,6 @@
 #ifndef _ARGS_H
 #define _ARGS_H
 
-#include "xapi.h"
 #include "types.h"
 
 enum value_type;
@@ -37,8 +36,7 @@ extern struct g_args_t {
   uint16_t inputsl;
 } g_args;
 
-xapi args_parse(void);
-xapi args_summarize(void);
+void args_parse(int argc, char ** argv);
 void args_teardown(void);
 
 #endif

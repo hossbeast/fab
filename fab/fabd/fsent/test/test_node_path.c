@@ -15,8 +15,6 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#include "xapi.h"
-#include "valyria/load.h"
 #include "moria/load.h"
 
 #include "valyria/list.h"
@@ -30,7 +28,6 @@
 #include "xunit/assert.h"
 #include "narrator.h"
 #include "narrator/growing.h"
-#include "logging.h"
 #include "rule.h"
 #include "fsent.h"
 #include "filesystem.internal.h"
@@ -56,42 +53,30 @@ typedef struct node_path_test {
   char * relative_path;         // expected path relative to base
 } node_path_test;
 
-static xapi node_path_test_unit_setup(xunit_unit * unit)
+static void node_path_test_unit_setup(xunit_unit * unit)
 {
-  enter;
+  moria_load();
 
-  fatal(valyria_load);
-  fatal(moria_load);
-  fatal(logging_finalize);
-
-  fatal(filesystem_setup);
-  fatal(module_setup);
-  fatal(graph_setup);
-  fatal(fsent_setup);
-
-  finally : coda;
+  filesystem_setup();
+  module_setup();
+  graph_setup();
+  fsent_setup();
 }
 
-static xapi node_path_test_unit_cleanup(xunit_unit * unit)
+static void node_path_test_unit_cleanup(xunit_unit * unit)
 {
-  enter;
-
-  fatal(filesystem_cleanup);
-  fatal(module_cleanup);
-  fatal(fsent_cleanup);
-  fatal(graph_cleanup);
-
-  finally : coda;
+  filesystem_cleanup();
+  module_cleanup();
+  fsent_cleanup();
+  graph_cleanup();
 }
 
 //
 // tests
 //
 
-static xapi node_path_test_entry(xunit_test * _test)
+static void node_path_test_entry(xunit_test * _test)
 {
-  enter;
-
   node_path_test * test = (node_path_test *)_test;
   narrator_growing * N = 0;
   graph_parser * parser = 0;
@@ -105,24 +90,24 @@ static xapi node_path_test_entry(xunit_test * _test)
 
   if(test->shadow)
   {
-    fatal(shadow_setup);
+    shadow_setup();
   }
 
-  fatal(narrator_growing_create, &N);
+  narrator_growing_create(&N);
 
   // setup initial graph
-  fatal(graph_parser_create, &parser, &g_graph, &fsent_list, node_operations_test_dispatch, graph_vertex_attrs, graph_edge_attrs);
-  fatal(graph_parser_operations_parse, parser, MMS(test->operations));
+  graph_parser_create(&parser, &g_graph, &fsent_list, node_operations_test_dispatch, graph_vertex_attrs, graph_edge_attrs);
+  graph_parser_operations_parse(parser, MMS(test->operations));
 
-  fatal(resolve_fragment, MMS(test->node), &subject);
+  resolve_fragment(MMS(test->node), &subject);
   if(test->project)
   {
-    fatal(resolve_fragment, MMS(test->project), &project_node);
+    resolve_fragment(MMS(test->project), &project_node);
     assert_notnull(project_node);
   }
   if(test->module)
   {
-    fatal(resolve_fragment, MMS(test->module), &module_node);
+    resolve_fragment(MMS(test->module), &module_node);
     assert_notnull(module_node);
 
     subject->mod = &mod;
@@ -130,7 +115,7 @@ static xapi node_path_test_entry(xunit_test * _test)
   }
   if(test->base)
   {
-    fatal(resolve_fragment, MMS(test->base), &base_node);
+    resolve_fragment(MMS(test->base), &base_node);
     assert_notnull(base_node);
   }
 
@@ -166,17 +151,15 @@ static xapi node_path_test_entry(xunit_test * _test)
     assert_eq_w(test->relative_path, strlen(test->relative_path), relative, pathl);
   }
 
-finally:
-  fatal(narrator_growing_free, N);
-  fatal(graph_parser_xfree, parser);
-coda;
+  narrator_growing_free(N);
+  graph_parser_xfree(parser);
 }
 
 //
 // manifest
 //
 
-xunit_unit xunit = {
+static xunit_unit xunit = {
     xu_setup : node_path_test_unit_setup
   , xu_cleanup : node_path_test_unit_cleanup
   , xu_entry : node_path_test_entry
@@ -309,3 +292,4 @@ xunit_unit xunit = {
     , 0
   }
 };
+XUNIT_UNIT(xunit);

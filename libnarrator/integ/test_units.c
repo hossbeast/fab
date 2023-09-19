@@ -17,8 +17,6 @@
 
 #include <stdio.h>
 
-#include "xapi.h"
-#include "xapi/trace.h"
 
 #include "narrator.h"
 #include "narrator/growing.h"
@@ -26,14 +24,12 @@
 
 #include "test_util.h"
 
-static xapi test_interval_say()
+static void test_interval_say()
 {
-  enter;
-
   // arrange
   narrator * N;
   narrator_growing *ng = 0;
-  fatal(narrator_growing_create, &ng);
+  narrator_growing_create(&ng);
   N = &ng->base;
 
   struct {
@@ -53,28 +49,24 @@ static xapi test_interval_say()
   int x;
   for(x = 0; x < sizeof(tests) / sizeof(tests[0]); x++)
   {
-    fatal(narrator_xreset, N);
+    narrator_xreset(N);
 
     // act
-    fatal(interval_say, tests[x].seconds, N);
+    interval_say(tests[x].seconds, N);
 
     // assert
     assert_eq_s(tests[x].expected, ng->s);
   }
 
-finally:
-  fatal(narrator_growing_free, ng);
-coda;
+  narrator_growing_free(ng);
 }
 
-static xapi test_bytesize_say()
+static void test_bytesize_say()
 {
-  enter;
-
   // arrange
   narrator * N;
   narrator_growing *ng = 0;
-  fatal(narrator_growing_create, &ng);
+  narrator_growing_create(&ng);
   N = &ng->base;
 
   struct {
@@ -89,28 +81,24 @@ static xapi test_bytesize_say()
   int x;
   for(x = 0; x < sizeof(tests) / sizeof(tests[0]); x++)
   {
-    fatal(narrator_xreset, N);
+    narrator_xreset(N);
 
     // act
-    fatal(bytesize_say, tests[x].bytes, N);
+    bytesize_say(tests[x].bytes, N);
 
     // assert
     assert_eq_s(tests[x].expected, ng->s);
   }
 
-finally:
-  fatal(narrator_growing_free, ng);
-coda;
+  narrator_growing_free(ng);
 }
 
-static xapi test_elapsed_say()
+static void test_elapsed_say()
 {
-  enter;
-
   // arrange
   narrator *N;
   narrator_growing *ng = 0;
-  fatal(narrator_growing_create, &ng);
+  narrator_growing_create(&ng);
   N = &ng->base;
 
   struct {
@@ -127,37 +115,25 @@ static xapi test_elapsed_say()
   int x;
   for(x = 0; x < sizeof(tests) / sizeof(tests[0]); x++)
   {
-    fatal(narrator_xreset, N);
+    narrator_xreset(N);
 
     // act
-    fatal(elapsed_say, &tests[x].start, &tests[x].end, N);
+    elapsed_say(&tests[x].start, &tests[x].end, N);
 
     // assert
     assert_eq_s(tests[x].expected, ng->s);
   }
 
-finally:
-  fatal(narrator_growing_free, ng);
-coda;
+  narrator_growing_free(ng);
 }
 
 int main()
 {
-  enter;
+  test_interval_say();
+  test_bytesize_say();
+  test_elapsed_say();
 
-  xapi R = 0;
-  fatal(test_interval_say);
-  fatal(test_bytesize_say);
-  fatal(test_elapsed_say);
-
-finally:
   summarize;
-  if(XAPI_UNWINDING)
-  {
-    xapi_backtrace(2, 0);
-  }
-conclude(&R);
 
-  xapi_teardown();
-  return !!R;
+  return 0;
 }

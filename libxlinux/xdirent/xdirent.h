@@ -22,14 +22,12 @@
 #include <dirent.h>
 #include <errno.h>
 
-#include "xapi.h"
-
 /// xopendir
 //
 // SUMMARY
 //  proxy for opendir
 //
-xapi xopendir(const char * name, DIR ** dd)
+DIR * xopendir(const char * name)
   __attribute__((nonnull));
 
 /// uxopendir
@@ -37,7 +35,7 @@ xapi xopendir(const char * name, DIR ** dd)
 // SUMMARY
 //  proxy for opendir that fails only when errno != ENOENT
 //
-xapi uxopendir(const char * name, DIR ** dd)
+DIR *uxopendir(const char * name)
   __attribute__((nonnull));
 
 /// xopendirat
@@ -45,7 +43,7 @@ xapi uxopendir(const char * name, DIR ** dd)
 // SUMMARY
 //  like opendir, but relative to an O_PATH file descriptor (man 2 openat)
 //
-xapi xopendirat(DIR ** dd, int dirfd, const char * const restrict path)
+DIR *xopendirat(int dirfd, const char * const restrict path)
   __attribute__((nonnull));
 
 /// xfdopendir
@@ -53,7 +51,7 @@ xapi xopendirat(DIR ** dd, int dirfd, const char * const restrict path)
 // SUMMARY
 //  proxy for fdopendir
 //
-xapi xfdopendir(int fd, DIR ** dd)
+DIR *xfdopendir(int fd)
   __attribute__((nonnull));
 
 /// xreaddir
@@ -61,23 +59,24 @@ xapi xfdopendir(int fd, DIR ** dd)
 // SUMMARY
 //  proxy for readdir
 //
-xapi xreaddir(DIR * dirp, struct dirent ** result);
+struct dirent *xreaddir(DIR *dd)
+  __attribute__((nonnull));
 
 /// xclosedir
 //
 // SUMMARY
 //  proxy for closedir
 //
-xapi xclosedir(DIR * dd);
+void xclosedir(DIR * dd);
 
-xapi ixclosedir(DIR ** dd)
+void ixclosedir(DIR ** dd)
   __attribute__((nonnull));
 
 /// xtelldir
 //
 // xapi proxy for telldir
 //
-xapi xtelldir(long * loc, DIR * dirp)
+long xtelldir(DIR * dirp)
   __attribute__((nonnull));
 
 #endif

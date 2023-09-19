@@ -23,15 +23,15 @@
 struct narrator;
 
 typedef struct narrator_vtable {
-  xapi (*sayvf)(struct narrator * const restrict n, const char * const restrict fmt, va_list va)
+  void (*sayvf)(struct narrator * const restrict n, const char * const restrict fmt, va_list va)
     __attribute__((nonnull));
-  xapi (*sayw)(struct narrator * const restrict n, const void * const restrict b, size_t l)
+  void (*sayw)(struct narrator * const restrict n, const void * const restrict b, size_t l)
     __attribute__((nonnull));
-  xapi (*seek)(struct narrator * const restrict n, off_t offset, int whence, off_t * restrict res)
+  void (*seek)(struct narrator * const restrict n, off_t offset, int whence, off_t * restrict res)
     __attribute__((nonnull(1)));
-  xapi (*read)(struct narrator * restrict n, void * dst, size_t count, size_t * restrict r)
+  void (*read)(struct narrator * restrict n, void * dst, size_t count, size_t * restrict r)
     __attribute__((nonnull(1, 2)));
-  xapi (*flush)(struct narrator * restrict n)
+  void (*flush)(struct narrator * restrict n)
     __attribute__((nonnull));
 } narrator_vtable;
 

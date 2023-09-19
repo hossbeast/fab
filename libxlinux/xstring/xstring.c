@@ -21,32 +21,25 @@
 #include <string.h>
 
 #include "xstring/xstring.h"
-#include "errtab/KERNEL.errtab.h"
 #include "xstdlib.h"
 
-xapi API ixstrncat(char ** s1, const char * s2, int s2len)
+void API ixstrncat(char ** s1, const char * s2, int s2len)
 {
-  enter;
-
   char * o = *s1;
   int s1len = 0;
   if(*s1)
     s1len = strlen(*s1);
   s2len = s2len ?: strlen(s2);
 
-  fatal(xmalloc, s1, s1len + s2len + 1);
+  xmalloc(s1, s1len + s2len + 1);
   if(o)
     memcpy(*s1, o, s1len);
   wfree(o);
   memcpy((*s1) + s1len, s2, s2len);
-
-  finally : coda;
 }
 
-xapi API ixstrcat(char ** s1, const char * s2)
+void API ixstrcat(char ** s1, const char * s2)
 {
-  enter;
-
   char * o = *s1;
   int s1len = 0;
   if(o)
@@ -54,21 +47,17 @@ xapi API ixstrcat(char ** s1, const char * s2)
 
   int s2len = strlen(s2);
 
-  fatal(xmalloc, s1, s1len + s2len + 1);
+  xmalloc(s1, s1len + s2len + 1);
 
   if(o)
     memcpy(*s1, o, s1len);
 
   wfree(o);
   memcpy((*s1) + s1len, s2, s2len);
-
-  finally : coda;
 }
 
-xapi API ixstrcatf(char ** s, char * fmt, ...)
+void API ixstrcatf(char ** s, char * fmt, ...)
 {
-  enter;
-
   va_list va;
 
   va_start(va, fmt);
@@ -79,7 +68,7 @@ xapi API ixstrcatf(char ** s, char * fmt, ...)
   int len = 0;
   if(o)
     len = strlen(o);
-  fatal(xmalloc, s, len + req + 1);
+  xmalloc(s, len + req + 1);
   if(o)
     memcpy(*s, o, len);
 
@@ -87,19 +76,15 @@ xapi API ixstrcatf(char ** s, char * fmt, ...)
   va_start(va, fmt);
   vsprintf((*s) + len, fmt, va);
   va_end(va);
-
-  finally : coda;
 }
 
-xapi API ixstrdup(char ** s1, const char * s2)
+void API ixstrdup(char ** s1, const char * s2)
 {
-  xproxy(ixstrndup, s1, s2, strlen(s2));
+  return ixstrndup(s1, s2, strlen(s2));
 }
 
-xapi API ixstrndup(char ** s1, const char * s2, const size_t l)
+void API ixstrndup(char ** s1, const char * s2, const size_t l)
 {
-  enter;
-
   int s1len = 0 ;
   int s2len = l ?: strlen(s2);
   if(*s1)
@@ -114,27 +99,23 @@ xapi API ixstrndup(char ** s1, const char * s2, const size_t l)
     wfree(*s1);
     *s1 = 0;
 
-    fatal(ixstrncat, s1, s2, l);
+    ixstrncat(s1, s2, l);
   }
-
-  finally : coda;
 }
 
-xapi API ixsprintf(char ** s, char * fmt, ...)
+void API ixsprintf(char ** s, char * fmt, ...)
 {
-  enter;
-
   va_list va;
+  int req;
+
   va_start(va, fmt);
-  int req = vsnprintf(0, 0, fmt, va);
+  req = vsnprintf(0, 0, fmt, va);
   va_end(va);
 
   wfree(*s);
-  fatal(xmalloc, s, req + 1);
+  xmalloc(s, req + 1);
 
   va_start(va, fmt);
   vsprintf((*s), fmt, va);
   va_end(va);
-
-  finally : coda;
 }

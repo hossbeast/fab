@@ -35,7 +35,7 @@ typedef struct area {
   region footer;        /* 1px row at the bottom */
 } area;
 
-xapi area_init(area * restrict a, int yext, int xext, int y, int x)
+void area_init(area * restrict a, int yext, int xext, int y, int x)
   __attribute__((nonnull));
 
 void region_print_rightjust(region *reg, const char * restrict fmt, ...)

@@ -18,14 +18,13 @@
 #ifndef FABD_PATTERN_ALTERNATION_H
 #define FABD_PATTERN_ALTERNATION_H
 
-#include "xapi.h"
 #include "types.h"
 
 struct yyu_location;
 union pattern_segment;
 struct pattern_segments;
 
-xapi pattern_alternation_mk(
+void pattern_alternation_mk(
     union pattern_segment ** restrict rv
   , const struct yyu_location * restrict loc
   , struct pattern_segments * restrict segments

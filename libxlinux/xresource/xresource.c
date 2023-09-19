@@ -19,14 +19,11 @@
 #include <sys/time.h>
 #include <sys/resource.h>
 
+#include "types.h"
+
 #include "xresource.h"
-#include "errtab/KERNEL.errtab.h"
 
-xapi API xsetrlimit(int resource, const struct rlimit * restrict rlim)
+void API xsetrlimit(int resource, const struct rlimit * restrict rlim)
 {
-  enter;
-
-  tfatalize(perrtab_KERNEL, errno, setrlimit, resource, rlim);
-
-  finally : coda;
+  RUNTIME_ASSERT(setrlimit(resource, rlim) == 0);
 }

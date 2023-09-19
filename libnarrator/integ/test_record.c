@@ -18,54 +18,35 @@
 #include <stdio.h>
 #include <stdarg.h>
 
-#include "xapi.h"
-#include "xapi/trace.h"
-
 #include "narrator.h"
 #include "narrator/record.h"
 #include "narrator/growing.h"
 
 #include "test_util.h"
 
-static xapi test_fatal()
+static void test_fatal()
 {
-  enter;
-
   narrator * N;
   narrator_growing * ng = 0;
   narrator_record *nr = 0;
-  fatal(narrator_growing_create, &ng);
-  fatal(narrator_record_create, &nr, &ng->base);
+
+  narrator_growing_create(&ng);
+  narrator_record_create(&nr, &ng->base);
   N = &nr->base;
 
   xsays("hello");
   xsayc(' ');
   xsays("world");
-  fatal(narrator_record_flush, nr);
+  narrator_record_flush(nr);
 
   assert_eq_s("hello world", ng->s);
 
-finally:
-  fatal(narrator_record_free, nr);
-  fatal(narrator_growing_free, ng);
-coda;
+  narrator_record_free(nr);
+  narrator_growing_free(ng);
 }
 
 int main()
 {
-  enter;
-
-  xapi R = 0;
-  fatal(test_fatal);
-
-finally:
+  test_fatal();
   summarize;
-  if(XAPI_UNWINDING)
-  {
-    xapi_backtrace(2, 0);
-  }
-conclude(&R);
-
-  xapi_teardown();
-  return !!R;
 }

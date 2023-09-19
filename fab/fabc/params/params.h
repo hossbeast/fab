@@ -21,8 +21,6 @@
 #include <sys/types.h>
 #include <stdint.h>
 
-#include "xapi.h"
-
 #define TERMINAL_IN  100
 #define TERMINAL_OUT 101
 
@@ -47,7 +45,7 @@ extern struct g_params
 // SUMMARY
 //  parses command-line options, populating g_params.
 //
-xapi params_setup(void);
+void params_setup(void);
 
 /// params_teardown
 //

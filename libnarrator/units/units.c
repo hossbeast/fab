@@ -15,7 +15,6 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#include "xapi.h"
 #include "narrator.h"
 #include "units.h"
 
@@ -69,10 +68,8 @@ static void __attribute__((nonnull)) decompose(double base, unit * cfg, double *
 //
 // SUMMARY
 //
-static xapi __attribute__((nonnull)) compose(unit * cfg, double * parts, narrator * const restrict N)
+static void __attribute__((nonnull)) compose(unit * cfg, double * parts, narrator * const restrict N)
 {
-  enter;
-
   size_t components = sentinel(cfg);
 
   int first = 1;
@@ -94,18 +91,14 @@ static xapi __attribute__((nonnull)) compose(unit * cfg, double * parts, narrato
       }
     }
   }
-
-  finally : coda;
 }
 
 //
 // api
 //
 
-xapi API interval_say(time_t seconds, narrator * const restrict N)
+void API interval_say(time_t seconds, narrator * const restrict N)
 {
-  enter;
-
   double parts[6];
 
   unit cfg[] = {
@@ -119,15 +112,11 @@ xapi API interval_say(time_t seconds, narrator * const restrict N)
 
   memset(parts, 0, sizeof(*parts));
   decompose(seconds, cfg, parts);
-  fatal(compose, cfg, parts, N);
-
-  finally : coda;
+  compose(cfg, parts, N);
 }
 
-xapi API bytesize_say(size_t bytes, narrator * const restrict N)
+void API bytesize_say(size_t bytes, narrator * const restrict N)
 {
-  enter;
-
   double parts[6];
 
   unit cfg[] = {
@@ -140,15 +129,11 @@ xapi API bytesize_say(size_t bytes, narrator * const restrict N)
 
   memset(parts, 0, sizeof(*parts));
   decompose(bytes, cfg, parts);
-  fatal(compose, cfg, parts, N);
-
-  finally : coda;
+  compose(cfg, parts, N);
 }
 
-xapi API elapsed_say(const struct timespec * const restrict start, const struct timespec * const restrict end, narrator * const restrict N)
+void API elapsed_say(const struct timespec * const restrict start, const struct timespec * const restrict end, narrator * const restrict N)
 {
-  enter;
-
   double parts[6];
   double nsec;
 
@@ -177,7 +162,5 @@ xapi API elapsed_say(const struct timespec * const restrict start, const struct 
 
   memset(parts, 0, sizeof(*parts));
   decompose(nsec, cfg, parts);
-  fatal(compose, cfg, parts, N);
-
-  finally : coda;
+  compose(cfg, parts, N);
 }

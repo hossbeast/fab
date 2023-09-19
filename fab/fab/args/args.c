@@ -17,12 +17,10 @@
 
 #include "common/assure.h"
 #include "common/snarf.h"
-#include "logger/arguments.h"
 #include "xlinux/xstdlib.h"
 #include "yyutil/parser.h"
 
 #include "args.h"
-#include "errtab/MAIN.errtab.h"
 
 #include "macros.h"
 #include "zbuffer.h"
@@ -49,6 +47,10 @@
 static YYU_VTABLE(args_vtable, args, args);
 typeof(g_args) g_args;
 typeof(g_cmd) g_cmd;
+
+static char *argvs;
+static size_t argvsa;
+static size_t argvsl;
 
 //
 // public
@@ -111,40 +113,34 @@ static void usage(command * restrict cmd)
   exit(0);
 }
 
-static xapi parse(yyu_parser * restrict parser, char * argvs, int argvsl, const char * restrict fname)
+static void parse(yyu_parser * restrict parser, char * argvs, int argvsl, const char * restrict fname)
 {
-  enter;
+  if(argvsl == 0) {
+    return;
+  }
 
-  fatal(yyu_parse, parser, argvs, argvsl + 2, fname, YYU_INPLACE, 0, 0);
-
-  finally : coda;
+  yyu_parse(parser, argvs, argvsl + 2, fname, YYU_INPLACE, 0, 0);
 }
 
-static xapi get_homedir(const char ** restrict homep)
+static void get_homedir(const char ** restrict homep)
 {
-  enter;
-
   *homep = getenv("HOME");
-
-  finally : coda;
 }
 
-static xapi parse_file(yyu_parser * restrict parser, const char * restrict pathspec)
+static void parse_file(yyu_parser * restrict parser, const char * restrict pathspec)
 {
-  enter;
-
   char buf[512];
   size_t z;
   const char * path = 0;
   char *text = 0;
-  size_t text_len;
+  size_t text_len = 0;
   const char *home;
   size_t len;
 
   len = strlen(pathspec);
   if(len >= 2 && memcmp(pathspec, "~/", 2) == 0)
   {
-    fatal(get_homedir, &home);
+    get_homedir(&home);
     z = 0;
     z += znloads(buf + z, sizeof(buf) - z, home);
     z += znloads(buf + z, sizeof(buf) - z, "/");
@@ -154,7 +150,7 @@ static xapi parse_file(yyu_parser * restrict parser, const char * restrict paths
   }
   else if(len >= 6 && memcmp(pathspec, "$HOME/", 6) == 0)
   {
-    fatal(get_homedir, &home);
+    get_homedir(&home);
     z = 0;
     z += znloads(buf + z, sizeof(buf) - z, home);
     z += znloads(buf + z, sizeof(buf) - z, "/");
@@ -167,24 +163,22 @@ static xapi parse_file(yyu_parser * restrict parser, const char * restrict paths
     path = pathspec;
   }
 
-  fatal(usnarfs, &text, &text_len, path);
-  if(text)
-  {
-    fatal(parse, parser, text, text_len, path);
-  }
+  usnarfs(&text, &text_len, path);
+  parse(parser, text, text_len, path);
 
-finally:
   wfree(text);
-coda;
 }
 
-xapi args_parse()
+void args_cleanup()
 {
-  enter;
+  wfree(argvs);
+}
 
+void args_parse(int argc, char ** argv)
+{
   yyu_parser yyu;
-  char *argvs;
-  int argvsl;
+  size_t len;
+  int x;
 
   g_args.stats = &stats_args;
   g_args.tree = &tree_args;
@@ -196,24 +190,30 @@ xapi args_parse()
   g_args.events = &events_args;
 
   memset(&yyu, 0, sizeof(yyu));
-  fatal(yyu_parser_init, &yyu, &args_vtable, 0);
-  fatal(yyu_parser_init_tokens, &yyu, args_token_table, args_TOKEN_TABLE_SIZE);
-  fatal(yyu_parser_init_states, &yyu, args_numstates, args_statenumbers, args_statenames);
+  yyu_parser_init(&yyu, &args_vtable);
+  yyu_parser_init_tokens(&yyu, args_token_table, args_TOKEN_TABLE_SIZE);
+  yyu_parser_init_states(&yyu, args_numstates, args_statenumbers, args_statenames);
 
   /* parse well-known config files */
-  fatal(parse_file, &yyu, SYSTEM_CONFIG_PATH);
-  fatal(parse_file, &yyu, USER_CONFIG_PATH);
+  parse_file(&yyu, SYSTEM_CONFIG_PATH);
+  parse_file(&yyu, USER_CONFIG_PATH);
 
-  /* skate past the program name */
-  if((argvs = strchr(g_argvs, ' ')) == 0) {
+  /* build is the default */
+  if(argc <= 1) {
     g_cmd = &build_command;
-    goto XAPI_FINALIZE;
   }
 
-  argvsl = g_argvsl - (argvs - g_argvs);
+  /* join arguments-list into a single space-delimited string */
+  for(x = 1; x < argc; x++)
+  {
+    len = strlen(argv[x]);
+    assure(&argvs, 1, argvsl + len + 3, &argvsa);
+    memcpy(argvs + argvsl, argv[x], len);
+    memcpy(argvs + argvsl + len, " ", 1);
+    argvsl += len + 1;
+  }
 
-  /* parse cmd-line args */
-  fatal(parse, &yyu, argvs, argvsl, "-args-");
+  parse(&yyu, argvs, argvsl, "-args-");
 
   if(g_args.help)
   {
@@ -224,11 +224,7 @@ xapi args_parse()
     version();
   }
 
-  if(!g_cmd) {
-    fail(MAIN_NOCOMMAND);
-  }
+  RUNTIME_ASSERT(g_cmd);
 
-finally:
-  fatal(yyu_parser_xdestroy, &yyu);
-coda;
+  yyu_parser_xdestroy(&yyu);
 }

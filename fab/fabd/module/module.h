@@ -25,7 +25,6 @@ filesystem
 
 */
 
-#include "xapi.h"
 #include "types.h"
 
 #include "valyria/llist.h"
@@ -112,10 +111,10 @@ typedef struct module_edge {
   struct fsedge *edges[2];
 } module_edge;
 
-xapi module_setup(void);
-xapi module_cleanup(void);
+void module_setup(void);
+void module_cleanup(void);
 
-xapi module_edge_alloc(module_edge ** restrict mep)
+void module_edge_alloc(module_edge ** restrict mep)
   __attribute__((nonnull));
 
 /*
@@ -124,12 +123,12 @@ xapi module_edge_alloc(module_edge ** restrict mep)
  * project_root - base node for the starting module
  * project_dir  - absolute path for the starting module directory
  */
-xapi module_system_bootstrap(void);//struct fsent * restrict root, const char * restrict absdir)
+void module_system_bootstrap(void);//struct fsent * restrict root, const char * restrict absdir)
 
 /*
  * reload invalidated modules
  */
-xapi module_system_reconcile(void);
+void module_system_reconcile(void);
 
 /*
  * get the module for the specified path, if any
@@ -146,28 +145,28 @@ module * module_lookup(const char * const restrict path, size_t pathl)
  * reset - true to reset the stats while reading them
  * zp    - (returns) number of bytes written to dst
  */
-xapi module_collate_stats(void *dst, size_t sz, module *mod, bool reset, size_t *zp)
+void module_collate_stats(void *dst, size_t sz, module *mod, bool reset, size_t *zp)
   __attribute__((nonnull));
 
-xapi module_file_collate_stats(void *dst, size_t sz, struct fsent *modfile, bool reset, size_t *zp)
+void module_file_collate_stats(void *dst, size_t sz, struct fsent *modfile, bool reset, size_t *zp)
   __attribute__((nonnull));
 
-xapi module_alloc(module ** restrict mod)
+void module_alloc(module ** restrict mod)
   __attribute__((nonnull));
 
-xapi module_xrelease(module * restrict mod, struct module_parser * restrict parser)
+void module_xrelease(module * restrict mod, struct module_parser * restrict parser)
   __attribute__((nonnull));
 
-xapi module_resolve_require(module * restrict A, module * restrict B, graph_invalidation_context * restrict invalidation)
+void module_resolve_require(module * restrict A, module * restrict B, graph_invalidation_context * restrict invalidation)
   __attribute__((nonnull));
 
-xapi module_resolve_use(module * restrict A, module * restrict B, const char * restrict refname, uint16_t refname_len, bool scoped, graph_invalidation_context * restrict invalidation)
+void module_resolve_use(module * restrict A, module * restrict B, const char * restrict refname, uint16_t refname_len, bool scoped, graph_invalidation_context * restrict invalidation)
   __attribute__((nonnull));
 
-xapi module_resolve_import(module * restrict A, struct fsent * restrict B, const char * restrict refname, uint16_t refname_len, bool scoped, graph_invalidation_context * restrict invalidation)
+void module_resolve_import(module * restrict A, struct fsent * restrict B, const char * restrict refname, uint16_t refname_len, bool scoped, graph_invalidation_context * restrict invalidation)
   __attribute__((nonnull));
 
-xapi module_vars_say(module * restrict mod, struct narrator * restrict N)
+void module_vars_say(module * restrict mod, struct narrator * restrict N)
   __attribute__((nonnull));
 
 #endif

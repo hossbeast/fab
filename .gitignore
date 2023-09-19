@@ -23,7 +23,14 @@ exports
 *.debug.xapi
 *.devel.xapi
 *.final.xapi
+*.trace.xapi
+*.debug.pic
+*.devel.pic
+*.final.pic
+*.trace.pic
+*.pic.trace
 *.xapi
+*.xunit
 *.so.lnk
 git-state.c
 git-state.h

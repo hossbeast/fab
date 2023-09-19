@@ -15,12 +15,10 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#include "xapi.h"
 #include "xunit.h"
 #include "xunit/assert.h"
 
 #include "xlinux/xstdlib.h"
-#include "yyutil/load.h"
 #include "moria/graph.h"
 #include "moria/vertex.h"
 #include "moria/operations.h"
@@ -34,7 +32,6 @@
 #include "render.internal.h"
 #include "pattern_parser.h"
 #include "pattern.h"
-#include "logging.h"
 
 #include "common/hash.h"
 
@@ -48,33 +45,12 @@ typedef struct pattern_render_test {
   char ** paths;
 } pattern_render_test;
 
-static xapi pattern_render_test_unit_setup(xunit_unit * unit)
-{
-  enter;
-
-  fatal(yyutil_load);
-  fatal(logging_finalize);
-
-  finally : coda;
-}
-
-static xapi pattern_render_test_unit_cleanup(xunit_unit * unit)
-{
-  enter;
-
-  fatal(yyutil_load);
-
-  finally : coda;
-}
-
 //
 // tests
 //
 
-static xapi pattern_render_test_entry(xunit_test * _test)
+static void pattern_render_test_entry(xunit_test * _test)
 {
-  enter;
-
   pattern_render_test * test = (typeof(test))_test;
 
   pattern_parser * parser = 0;
@@ -87,51 +63,46 @@ static xapi pattern_render_test_entry(xunit_test * _test)
   uint16_t expected_size;
   int x;
 
-  fatal(set_createx, &expected, 0, hash32, memncmp, 0, 0);
-  fatal(set_createx, &actual, 0, hash32, memncmp, 0, 0);
+  set_createx(&expected, 0, hash32, memncmp, 0);
+  set_createx(&actual, 0, hash32, memncmp, 0);
   expected_size = sentinel(test->paths);
 
   // parse the pattern
-  fatal(pattern_parser_create, &parser);
-  fatal(lookup_pattern_parse_partial, parser, test->pattern, strlen(test->pattern) + 2, "-test-", 0, &loc, &pattern);
+  pattern_parser_create(&parser);
+  lookup_pattern_parse_partial(parser, test->pattern, strlen(test->pattern) + 2, "-test-", 0, &loc, &pattern);
   assert_eq_u32(strlen(test->pattern), loc.l);
 
   // act
-  fatal(pattern_render, pattern, &result);
+  pattern_render(pattern, &result);
 
   // expected
   for(x = 0; x < expected_size; x++)
-    fatal(set_put, expected, MMS(test->paths[x]));
+    set_put(expected, MMS(test->paths[x]));
 
   // actual
   fragment = result->fragments;
   for(x = 0; x < result->size; x++)
   {
-    fatal(set_put, actual, fragment->text, fragment->len);
+    set_put(actual, fragment->text, fragment->len);
     fragment = pattern_render_fragment_next(fragment);
   }
 
   assert_eq_set(expected, actual);
   assert_eq_d(expected_size, result->size); // no duplicates rendered
 
-
-finally:
-  fatal(pattern_parser_xfree, parser);
+  pattern_parser_xfree(parser);
   pattern_free(pattern);
-  fatal(set_xfree, expected);
-  fatal(set_xfree, actual);
+  set_xfree(expected);
+  set_xfree(actual);
   wfree(result);
-coda;
 }
 
 //
 // manifest
 //
 
-xunit_unit xunit = {
-    xu_setup : pattern_render_test_unit_setup
-  , xu_cleanup : pattern_render_test_unit_cleanup
-  , xu_entry : pattern_render_test_entry
+static xunit_unit xunit = {
+    xu_entry : pattern_render_test_entry
   , xu_tests : (pattern_render_test*[]) {
     /* single word */
       (pattern_render_test[]) {{
@@ -151,9 +122,9 @@ xunit_unit xunit = {
 
     /* alternations */
     , (pattern_render_test[]) {{
-          pattern : (char[]) { "lib{xapi,xlinux,xunit,logger,narrator}\0" }
+          pattern : (char[]) { "lib{void,xlinux,xunit,logger,narrator}\0" }
         , paths : (char*[]) {
-              "libxapi"
+              "libvoid"
             , "libxlinux"
             , "libxunit"
             , "liblogger"
@@ -326,14 +297,14 @@ xunit_unit xunit = {
           }
       }}
     , (pattern_render_test[]) {{
-          pattern : (char[]) { "{foo,bar}.xapi.{debug,devel,final}\0" }
+          pattern : (char[]) { "{foo,bar}.void.{debug,devel,final}\0" }
         , paths : (char*[]) {
-              "foo.xapi.debug"
-            , "foo.xapi.devel"
-            , "foo.xapi.final"
-            , "bar.xapi.debug"
-            , "bar.xapi.devel"
-            , "bar.xapi.final"
+              "foo.void.debug"
+            , "foo.void.devel"
+            , "foo.void.final"
+            , "bar.void.debug"
+            , "bar.void.devel"
+            , "bar.void.final"
             , 0
           }
       }}
@@ -435,3 +406,4 @@ xunit_unit xunit = {
     , NULL
   }
 };
+XUNIT_UNIT(xunit);

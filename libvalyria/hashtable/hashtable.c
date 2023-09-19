@@ -15,7 +15,6 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#include "xapi.h"
 #include "types.h"
 
 #include "xlinux/xstdlib.h"
@@ -50,35 +49,22 @@ static int compare_entries(const hashtable_t * ht, void * A, void * B)
   return ht->cmp_fn(A, ht->esz, B, ht->esz);
 }
 
-static xapi delete_entry(const hashtable_t * ht, void * ent)
+static void delete_entry(const hashtable_t * ht, void * ent)
 {
-  enter;
-
   if(ht->destroy_fn)
     ht->destroy_fn(ent);
-  else if(ht->xdestroy_fn)
-    fatal(ht->xdestroy_fn, ent);
-
-  finally : coda;
 }
 
-static xapi destroy_entry(const hashtable_t * ht, void * ent)
+static void destroy_entry(const hashtable_t * ht, void * ent)
 {
-  enter;
-
-  finally : coda;
 }
 
-static xapi store_entry(const hashtable_t * ht, void * dst, void * entry, bool found)
+static void store_entry(const hashtable_t * ht, void * dst, void * entry, bool found)
 {
-  enter;
-
   if(found)
-    fatal(ht->ops->delete_entry, ht, entry);
+    ht->ops->delete_entry(ht, entry);
 
   memcpy(dst, entry, ht->esz);
-
-  finally : coda;
 }
 
 static ht_operations ht_cbs = {
@@ -89,26 +75,18 @@ static ht_operations ht_cbs = {
   , store_entry: store_entry
 };
 
-static xapi bucket_delete(hashtable_t * restrict ht, ht_bucket * b)
+static void bucket_delete(hashtable_t * restrict ht, ht_bucket * b)
 {
-  enter;
-
-  fatal(ht->ops->delete_entry, ht, b->p);
+  ht->ops->delete_entry(ht, b->p);
   b->attr |= HT_DELETED;
-
-  finally : coda;
 }
 
-static xapi bucket_destroy(hashtable_t * restrict ht, ht_bucket * b)
+static void bucket_destroy(hashtable_t * restrict ht, ht_bucket * b)
 {
-  enter;
-
   if((b->attr & HT_DELETED) == 0)
-    fatal(ht->ops->delete_entry, ht, b->p);
+    ht->ops->delete_entry(ht, b->p);
 
-  fatal(ht->ops->destroy_entry, ht, b->p);
-
-  finally : coda;
+  ht->ops->destroy_entry(ht, b->p);
 }
 
 static uint32_t hash_index(uint32_t h, uint32_t lm)
@@ -211,10 +189,8 @@ int hashtable_probe(const hashtable_t * const restrict ht, uint32_t h, void * en
   }
 }
 
-xapi hashtable_grow(hashtable_t * restrict ht)
+void hashtable_grow(hashtable_t * restrict ht)
 {
-  enter;
-
   ht_bucket * tab = 0;
   size_t tabl = 0;
   int x;
@@ -225,7 +201,7 @@ xapi hashtable_grow(hashtable_t * restrict ht)
 
   // new table
   tab = ht->tab;
-  fatal(xmalloc, &ht->tab, (ht->table_size << 2) * (sizeof(*ht->tab) + ht->essz));
+  xmalloc(&ht->tab, (ht->table_size << 2) * (sizeof(*ht->tab) + ht->essz));
   tabl = ht->table_size;
 
   ht->table_size <<= 2;
@@ -244,7 +220,7 @@ xapi hashtable_grow(hashtable_t * restrict ht)
 
     if(b->attr & HT_DELETED)
     {
-      fatal(ht->ops->destroy_entry, ht, b->p);
+      ht->ops->destroy_entry(ht, b->p);
       continue;
     }
 
@@ -264,12 +240,10 @@ xapi hashtable_grow(hashtable_t * restrict ht)
 
   ht->dirty_size = ht->size;
 
-finally:
   wfree(tab);
-coda;
 }
 
-xapi hashtable_init(
+void hashtable_init(
     hashtable_t * restrict ht
   , size_t esz
   , size_t capacity
@@ -278,8 +252,6 @@ xapi hashtable_init(
   , int (*cmp_fn)(const void * A, size_t Asz, const void * B, size_t Bsz)
 )
 {
-  enter;
-
   // compute initial table size for 100 keys @ given saturation
   ht->table_size = (capacity ?: DEFAULT_CAPACITY) * (1 / MAX_SATURATION);
 
@@ -293,7 +265,7 @@ xapi hashtable_init(
   ht->esz = esz;
   ht->essz = roundup(ht->esz, sizeof(ht_bucket));
 
-  fatal(xmalloc, &ht->tab, ht->table_size * (sizeof(*ht->tab) + ht->essz));
+  xmalloc(&ht->tab, ht->table_size * (sizeof(*ht->tab) + ht->essz));
 
   // default hash fn
   if(hash_fn)
@@ -309,31 +281,23 @@ xapi hashtable_init(
 
   // default cmp fn
   ht->cmp_fn = cmp_fn ?: memncmp;
-
-  finally : coda;
 }
 
-xapi hashtable_xdestroy(hashtable_t * restrict ht)
+void hashtable_xdestroy(hashtable_t * restrict ht)
 {
-  enter;
-
   int x;
   for(x = 0; x < ht->table_size; x++)
   {
     ht_bucket * b = hashtable_bucket_at(ht, ht->tab, x);
     if(b->attr & HT_OCCUPIED)
-      fatal(bucket_destroy, ht, b);
+      bucket_destroy(ht, b);
   }
 
   wfree(ht->tab);
-
-  finally : coda;
 }
 
-xapi hashtable_store(hashtable_t * restrict ht, void * entry, ht_bucket ** bp)
+void hashtable_store(hashtable_t * restrict ht, void * entry, ht_bucket ** bp)
 {
-  enter;
-
   ht_bucket *b;
   size_t i;
   uint32_t h;
@@ -343,12 +307,12 @@ xapi hashtable_store(hashtable_t * restrict ht, void * entry, ht_bucket ** bp)
   r = hashtable_probe(ht, h, entry, 0, 0, &i);
   if(r == -1 && ht->dirty_size == ht->overflow_size)
   {
-    fatal(hashtable_grow, ht);
+    hashtable_grow(ht);
     hashtable_probe(ht, h, entry, 0, 0, &i);
   }
 
   b = hashtable_bucket_at(ht, ht->tab, i);
-  fatal(ht->ops->store_entry, ht, b->p, entry, r == 0);
+  ht->ops->store_entry(ht, b->p, entry, r == 0);
 
   // update accounting on new entry
   if(r)
@@ -362,86 +326,62 @@ xapi hashtable_store(hashtable_t * restrict ht, void * entry, ht_bucket ** bp)
   }
 
   *bp = b;
-
-  finally : coda;
 }
 
 //
 // api
 //
 
-xapi API hashtable_create(hashtable ** restrict ht, size_t esz)
+void API hashtable_create(hashtable ** restrict ht, size_t esz)
 {
-  enter;
-
-  fatal(hashtable_createx, ht, esz, 0, 0, 0, 0, 0);
-
-  finally : coda;
+  hashtable_createx(ht, esz, 0, 0, 0, 0);
 }
 
-xapi API hashtable_createx(
+void API hashtable_createx(
     hashtable ** restrict htx
   , size_t esz
   , size_t capacity
   , uint32_t (*hash_fn)(uint32_t h, const void * entry, size_t sz)
   , int (*cmp_fn)(const void * A, size_t Asz, const void * B, size_t Bsz)
   , void (*destroy_fn)(void * entry)
-  , xapi (*xdestroy_fn)(void * entry)
 )
 {
-  enter;
-
   hashtable_t * ht = 0;
 
-  fatal(xmalloc, &ht, sizeof(*ht));
-  fatal(hashtable_init, ht, esz, capacity, &ht_cbs, hash_fn, cmp_fn);
+  xmalloc(&ht, sizeof(*ht));
+  hashtable_init(ht, esz, capacity, &ht_cbs, hash_fn, cmp_fn);
 
   ht->destroy_fn = destroy_fn;
-  ht->xdestroy_fn = xdestroy_fn;
 
   *htx = &ht->htx;
   ht = 0;
 
-finally:
   if(ht)
-    fatal(hashtable_xfree, &ht->htx);
-coda;
+    hashtable_xfree(&ht->htx);
 }
 
-xapi API hashtable_xfree(hashtable * restrict htx)
+void API hashtable_xfree(hashtable * restrict htx)
 {
-  enter;
-
   hashtable_t * ht = containerof(htx, hashtable_t, htx);
 
   if(ht)
-    fatal(hashtable_xdestroy, ht);
+    hashtable_xdestroy(ht);
 
   wfree(ht);
-
-  finally : coda;
 }
 
-xapi API hashtable_ixfree(hashtable ** restrict htx)
+void API hashtable_ixfree(hashtable ** restrict htx)
 {
-  enter;
-
-  fatal(hashtable_xfree, *htx);
+  hashtable_xfree(*htx);
   *htx = 0;
-
-  finally : coda;
 }
 
-xapi API hashtable_put(hashtable * restrict htx, void * entry)
+void API hashtable_put(hashtable * restrict htx, void * entry)
 {
-  enter;
-
   ht_bucket *b;
   hashtable_t * ht = containerof(htx, hashtable_t, htx);
 
-  fatal(hashtable_store, ht, entry, &b);
-
-  finally : coda;
+  hashtable_store(ht, entry, &b);
 }
 
 void * API hashtable_get(const hashtable * restrict htx, void * entry)
@@ -480,10 +420,8 @@ void * API hashtable_search(const hashtable * restrict htx, void * key, size_t k
   return 0;
 }
 
-xapi API hashtable_delete(hashtable * restrict htx, void * restrict entry)
+void API hashtable_delete(hashtable * restrict htx, void * restrict entry)
 {
-  enter;
-
   size_t i;
   uint32_t h;
   ht_bucket * b;
@@ -494,18 +432,14 @@ xapi API hashtable_delete(hashtable * restrict htx, void * restrict entry)
   if(hashtable_probe(ht, h, entry, 0, 0, &i) == 0)
   {
     b = hashtable_bucket_at(ht, ht->tab, i);
-    fatal(bucket_delete, ht, b);
+    bucket_delete(ht, b);
     ht->size--;
     ht->hash -= b->h;
   }
-
-  finally : coda;
 }
 
-xapi API hashtable_splice(hashtable * dstx, hashtable * srcx)
+void API hashtable_splice(hashtable * dstx, hashtable * srcx)
 {
-  enter;
-
   ht_bucket * b;
 
   hashtable_t * dst = containerof(dstx, hashtable_t, htx);
@@ -516,7 +450,7 @@ xapi API hashtable_splice(hashtable * dstx, hashtable * srcx)
   {
     if((b = hashtable_table_bucket(src, x)))
     {
-      fatal(hashtable_put, &dst->htx, b->p);
+      hashtable_put(&dst->htx, b->p);
 
       // ownership transfer
       b->attr |= HT_DELETED;
@@ -524,14 +458,10 @@ xapi API hashtable_splice(hashtable * dstx, hashtable * srcx)
   }
   src->size = 0;
   src->hash = 0;
-
-  finally : coda;
 }
 
-xapi API hashtable_replicate(hashtable * dstx, hashtable * srcx)
+void API hashtable_replicate(hashtable * dstx, hashtable * srcx)
 {
-  enter;
-
   ht_bucket * b;
 
   hashtable_t * dst = containerof(dstx, hashtable_t, htx);
@@ -542,11 +472,9 @@ xapi API hashtable_replicate(hashtable * dstx, hashtable * srcx)
   {
     if((b = hashtable_table_bucket(src, x)))
     {
-      fatal(hashtable_put, &dst->htx, b->p);
+      hashtable_put(&dst->htx, b->p);
     }
   }
-
-  finally : coda;
 }
 
 bool API hashtable_equal(hashtable * const Ax, hashtable * const Bx)
@@ -575,10 +503,8 @@ bool API hashtable_equal(hashtable * const Ax, hashtable * const Bx)
   return true;
 }
 
-xapi API hashtable_recycle(hashtable * const restrict htx)
+void API hashtable_recycle(hashtable * const restrict htx)
 {
-  enter;
-
   hashtable_t * ht = containerof(htx, hashtable_t, htx);
 
   if(ht->size != 0)
@@ -588,27 +514,23 @@ xapi API hashtable_recycle(hashtable * const restrict htx)
     {
       ht_bucket * b = hashtable_bucket_at(ht, ht->tab, x);
       if(b->attr == HT_OCCUPIED)
-        fatal(bucket_delete, ht, b);
+        bucket_delete(ht, b);
     }
 
     ht->size = 0;
     ht->hash = 0;
   }
-
-  finally : coda;
 }
 
-xapi API hashtable_entries(const hashtable * restrict htx, void * restrict _entries, size_t * restrict entriesl)
+void API hashtable_entries(const hashtable * restrict htx, void * restrict _entries, size_t * restrict entriesl)
 {
-  enter;
-
   size_t x;
   size_t i;
   void *** entries = _entries;
 
   const hashtable_t * ht = containerof(htx, hashtable_t, htx);
 
-  fatal(xmalloc, entries, sizeof(**entries) * ht->size);
+  xmalloc(entries, sizeof(**entries) * ht->size);
 
   i = 0;
   for(x = 0; x < ht->table_size; x++)
@@ -618,8 +540,6 @@ xapi API hashtable_entries(const hashtable * restrict htx, void * restrict _entr
       (*entries)[i++] = ent;
   }
   (*entriesl) = ht->size;
-
-  finally : coda;
 }
 
 void * API hashtable_table_entry(const hashtable * restrict htx, size_t x)
@@ -633,15 +553,11 @@ void * API hashtable_table_entry(const hashtable * restrict htx, size_t x)
   return NULL;
 }
 
-xapi API hashtable_table_delete(hashtable * restrict htx, size_t x)
+void API hashtable_table_delete(hashtable * restrict htx, size_t x)
 {
-  enter;
-
   hashtable_t * ht = containerof(htx, hashtable_t, htx);
   ht_bucket * b = hashtable_table_bucket(ht, x);
-  fatal(bucket_delete, ht, b);
+  bucket_delete(ht, b);
   ht->size--;
   ht->hash -= b->h;
-
-  finally : coda;
 }

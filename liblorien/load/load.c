@@ -15,10 +15,8 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#include "xapi.h"
-#include "xlinux/load.h"
-#include "logger/load.h"
-#include "valyria/load.h"
+#include "types.h"
+
 #include "narrator/load.h"
 
 #include "load.internal.h"
@@ -29,34 +27,18 @@
 
 static int handles;
 
-xapi API lorien_load()
+void API lorien_load()
 {
-  enter;
-
   if(handles++ == 0)
   {
-    // dependencies
-    fatal(xlinux_load);
-    fatal(logger_load);
-    fatal(valyria_load);
-    fatal(narrator_load);
+    narrator_load();
   }
-
-  finally : coda;
 }
 
-xapi API lorien_unload()
+void API lorien_unload()
 {
-  enter;
-
   if(--handles == 0)
   {
-    // dependencies
-    fatal(xlinux_unload);
-    fatal(logger_unload);
-    fatal(valyria_unload);
-    fatal(narrator_unload);
+    narrator_unload();
   }
-
-  finally : coda;
 }

@@ -20,7 +20,6 @@
 
 #include <stdarg.h>
 
-#include "xapi.h"
 
 /// symlinkp
 //
@@ -34,13 +33,13 @@
 // VARIANTS
 //  s/f/vf - different ways of providing parameters
 //
-xapi symlinkps(const char * const restrict target, const char * const restrict linkpath)
+void symlinkps(const char * const restrict target, const char * const restrict linkpath)
   __attribute__((nonnull));
 
-xapi symlinkpf(const char * const restrict target_fmt, const char * const restrict linkpath_fmt, ...)
+void symlinkpf(const char * const restrict target_fmt, const char * const restrict linkpath_fmt, ...)
   __attribute__((nonnull));
 
-xapi symlinkpvf(const char * const restrict target_fmt, const char * const restrict linkpath_fmt, va_list va)
+void symlinkpvf(const char * const restrict target_fmt, const char * const restrict linkpath_fmt, va_list va)
   __attribute__((nonnull));
 
 #endif

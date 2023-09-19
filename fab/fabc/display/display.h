@@ -18,7 +18,6 @@
 #ifndef _DISPLAY_H
 #define _DISPLAY_H
 
-#include "xapi.h"
 #include "types.h"
 
 struct fabipc_message;
@@ -33,16 +32,16 @@ enum {
 
 typedef struct display {
   /* ui thread */
-  xapi (*setup)(void);
+  void (*setup)(void);
 
   /* client thread */
-  xapi (*redrive)(struct fab_client * restrict client);
+  void (*redrive)(struct fab_client * restrict client);
 
   /* client thread - process a RESULT message */
-  xapi (*rebind)(struct fab_client * restrict client, struct fabipc_message * restrict msg);
+  void (*rebind)(struct fab_client * restrict client, struct fabipc_message * restrict msg);
 
   /* ui thread */
-  xapi (*redraw)(void);
+  void (*redraw)(void);
 
   /* ui thread */
   int (*keypress)(int key);
@@ -50,7 +49,7 @@ typedef struct display {
 
 extern struct display * g_display;
 
-xapi display_switch(display * restrict dis)
+void display_switch(display * restrict dis)
   __attribute__((nonnull));
 
 #endif

@@ -45,91 +45,75 @@ static void __attribute__((nonnull)) location_copy(value_location * const restri
 // api
 //
 
-xapi API value_float_mk(
+void API value_float_mk(
     value_parser * const restrict parser
   , const yyu_location * const restrict loc
   , struct value ** rv
   , float fp
 )
 {
-  enter;
-
   value * e = 0;
-  fatal(store_float, parser, &e);
+  store_float(parser, &e);
 
   if(loc)
     location_copy(&e->loc, loc);
 
   e->f = fp;
   *rv = e;
-
-  finally : coda;
 }
 
-xapi API value_posint_mk(
+void API value_posint_mk(
     value_parser * const restrict parser
   , const yyu_location * const restrict loc
   , struct value ** rv
   , uint64_t u
 )
 {
-  enter;
-
   value * e = 0;
-  fatal(store_posint, parser, &e);
+  store_posint(parser, &e);
 
   if(loc)
     location_copy(&e->loc, loc);
 
   e->u = u;
   *rv = e;
-
-  finally : coda;
 }
 
-xapi API value_negint_mk(
+void API value_negint_mk(
     value_parser * const restrict parser
   , const yyu_location * const restrict loc
   , struct value ** rv
   , int64_t i
 )
 {
-  enter;
-
   value * e = 0;
-  fatal(store_negint, parser, &e);
+  store_negint(parser, &e);
 
   if(loc)
     location_copy(&e->loc, loc);
 
   e->i = i;
   *rv = e;
-
-  finally : coda;
 }
 
-xapi API value_boolean_mk(
+void API value_boolean_mk(
     value_parser * const restrict parser
   , const yyu_location * const restrict loc
   , struct value ** rv
   , const int b
 )
 {
-  enter;
-
   value * e = 0;
-  fatal(store_boolean, parser, &e);
+  store_boolean(parser, &e);
 
   if(loc)
     location_copy(&e->loc, loc);
 
   e->b = b;
   *rv = e;
-
-  finally : coda;
 }
 
-xapi API value_string_mks(
+void API value_string_mks(
     value_parser * const restrict parser
   , const yyu_location * const restrict loc
   , struct value * e
@@ -137,21 +121,17 @@ xapi API value_string_mks(
   , const char * const restrict s
 )
 {
-  enter;
-
   if(!e)
-    fatal(store_string, parser, &e);
+    store_string(parser, &e);
   if(loc)
     location_copy(&e->loc, loc);
 
-  fatal(pscats, e->s, s);
+  pscats(e->s, s);
 
   *rv = e;
-
-  finally : coda;
 }
 
-xapi API value_string_mkw(
+void API value_string_mkw(
     value_parser * const restrict parser
   , const yyu_location * const restrict loc
   , struct value * e
@@ -160,21 +140,17 @@ xapi API value_string_mkw(
   , size_t l
 )
 {
-  enter;
-
   if(!e)
-    fatal(store_string, parser, &e);
+    store_string(parser, &e);
   if(loc)
     location_copy(&e->loc, loc);
 
-  fatal(pscatw, e->s, b, l);
+  pscatw(e->s, b, l);
 
   *rv = e;
-
-  finally : coda;
 }
 
-xapi API value_string_mkc(
+void API value_string_mkc(
     value_parser * const restrict parser
   , const yyu_location * const restrict loc
   , struct value * e
@@ -182,21 +158,17 @@ xapi API value_string_mkc(
   , const uint8_t c
 )
 {
-  enter;
-
   if(!e)
-    fatal(store_string, parser, &e);
+    store_string(parser, &e);
   if(loc)
     location_copy(&e->loc, loc);
 
-  fatal(pscatc, e->s, c);
+  pscatc(e->s, c);
 
   *rv = e;
-
-  finally : coda;
 }
 
-xapi API value_string_mkv(
+void API value_string_mkv(
     value_parser * const restrict parser
   , const yyu_location * const restrict loc
   , struct value * e
@@ -204,21 +176,17 @@ xapi API value_string_mkv(
   , struct value * v
 )
 {
-  enter;
-
   if(!e)
-    fatal(store_string, parser, &e);
+    store_string(parser, &e);
   if(loc)
     location_copy(&e->loc, loc);
 
-  fatal(pscatw, e->s, v->s->s, v->s->size);
+  pscatw(e->s, v->s->s, v->s->size);
 
   *rv = e;
-
-  finally : coda;
 }
 
-xapi API value_mapping_mk(
+void API value_mapping_mk(
     value_parser * const restrict parser
   , const yyu_location * const restrict loc
   , struct value ** rv
@@ -227,11 +195,9 @@ xapi API value_mapping_mk(
   , uint16_t attr
 )
 {
-  enter;
-
   value * e = 0;
 
-  fatal(store_mapping, parser, &e);
+  store_mapping(parser, &e);
   if(loc)
     location_copy(&e->loc, loc);
 
@@ -240,11 +206,9 @@ xapi API value_mapping_mk(
   e->attr = attr;
 
   *rv = e;
-
-  finally : coda;
 }
 
-xapi API value_list_mkv(
+void API value_list_mkv(
     value_parser * const restrict parser
   , const yyu_location * const restrict loc
   , struct value * e
@@ -252,22 +216,18 @@ xapi API value_list_mkv(
   , struct value * el
 )
 {
-  enter;
-
   if(!e)
-    fatal(store_list, parser, &e);
+    store_list(parser, &e);
   if(loc)
     location_copy(&e->loc, loc);
 
   if(el)
-    fatal(list_push, e->items, el, 0);
+    list_push(e->items, el, 0);
 
   *rv = e;
-
-  finally : coda;
 }
 
-xapi API value_set_mkv(
+void API value_set_mkv(
     value_parser * const restrict parser
   , const yyu_location * const restrict loc
   , struct value * e
@@ -275,22 +235,18 @@ xapi API value_set_mkv(
   , struct value * el
 )
 {
-  enter;
-
   if(!e)
-    fatal(store_set, parser, &e);
+    store_set(parser, &e);
   if(loc)
     location_copy(&e->loc, loc);
 
   if(el)
-    fatal(set_put, e->els, el, 0);
+    set_put(e->els, el, 0);
 
   *rv = e;
-
-  finally : coda;
 }
 
-xapi API value_variable_mkw(
+void API value_variable_mkw(
     value_parser * const restrict parser
   , const yyu_location * const restrict loc
   , struct value ** rv
@@ -298,11 +254,9 @@ xapi API value_variable_mkw(
   , uint16_t len
 )
 {
-  enter;
-
   value *e = 0;
 
-  fatal(store_variable, parser, &e);
+  store_variable(parser, &e);
 
   if(loc)
     location_copy(&e->loc, loc);
@@ -313,6 +267,4 @@ xapi API value_variable_mkw(
   e->v.len = len;
 
   *rv = e;
-
-  finally : coda;
 }

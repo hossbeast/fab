@@ -15,7 +15,6 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#include "xapi.h"
 
 #include "narrator.h"
 #include "xlinux/xstdlib.h"
@@ -25,8 +24,6 @@
 #define YYLTYPE yyu_location
 
 #include "request_parser.internal.h"
-#include "logging.h"
-#include "REQUEST.errtab.h"
 #include "request.tab.h"
 #include "request.tokens.h"
 #include "request.lex.h"
@@ -40,64 +37,45 @@ static YYU_VTABLE(vtable, request, request);
 // public
 //
 
-xapi request_parser_create(request_parser ** const rv)
+void request_parser_create(request_parser ** const rv)
 {
-  enter;
-
   request_parser * p = 0;
 
-  fatal(xmalloc, &p, sizeof(*p));
-  fatal(yyu_parser_init, &p->yyu, &vtable, REQUEST_SYNTAX);
-  fatal(yyu_parser_init_tokens, &p->yyu, request_token_table, request_TOKEN_TABLE_SIZE);
-  fatal(yyu_parser_init_states
-    , &p->yyu
+  xmalloc(&p, sizeof(*p));
+  yyu_parser_init(&p->yyu, &vtable);
+  yyu_parser_init_tokens(&p->yyu, request_token_table, request_TOKEN_TABLE_SIZE);
+  yyu_parser_init_states(
+      &p->yyu
     , request_numstates
     , request_statenumbers
     , request_statenames
   );
 
-#if DEBUG || DEVEL || XUNIT
-  p->yyu.logs = L_REQUEST;
-#endif
-
-  fatal(selector_parser_create, &p->selector_parser);
-  fatal(config_parser_create, &p->config_parser);
+  selector_parser_create(&p->selector_parser);
+  config_parser_create(&p->config_parser);
 
   *rv = p;
-  p = 0;
-
-finally:
-  fatal(request_parser_xfree, p);
-coda;
 }
 
-xapi request_parser_xfree(request_parser* const p)
+void request_parser_xfree(request_parser* const p)
 {
-  enter;
-
   if(p)
   {
-    fatal(config_parser_xfree, p->config_parser);
-    fatal(selector_parser_xfree, p->selector_parser);
-    fatal(yyu_parser_xdestroy, &p->yyu);
+    config_parser_xfree(p->config_parser);
+    selector_parser_xfree(p->selector_parser);
+    yyu_parser_xdestroy(&p->yyu);
   }
 
   wfree(p);
-
-  finally : coda;
 }
 
-xapi request_parser_ixfree(request_parser ** const p)
+void request_parser_ixfree(request_parser ** const p)
 {
-  enter;
-
-  fatal(request_parser_xfree, *p);
+  request_parser_xfree(*p);
   *p = 0;
-
-  finally : coda;
 }
 
-xapi request_parser_parse(
+int request_parser_parse(
     request_parser * restrict parser
   , char * const restrict buf
   , size_t size
@@ -105,8 +83,6 @@ xapi request_parser_parse(
   , request * restrict req
 )
 {
-  enter;
-
   /* request must end with two null bytes */
   RUNTIME_ASSERT(size > 2);
   RUNTIME_ASSERT(buf[size - 1] == 0);
@@ -114,7 +90,5 @@ xapi request_parser_parse(
 
   request_init(parser->request = req);
 
-  fatal(yyu_parse, &parser->yyu, buf, size, fname, YYU_INPLACE, 0, 0);
-
-  finally : coda;
+  return yyu_parse(&parser->yyu, buf, size, fname, YYU_INPLACE, 0, 0);
 }

@@ -16,8 +16,9 @@
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
 #include <string.h>
-
-#include "xapi/SYS.errtab.h"
+#include <errno.h>
+#include <stdio.h>
+#include <inttypes.h>
 
 #include "parseint.h"
 
@@ -180,32 +181,4 @@ int API parseuint(const char* const s, char* f, uintmax_t lo, uintmax_t hi, uint
     *rn = tn;
 
   return 0;
-}
-
-xapi API xparseint(const char* const s, char* f, intmax_t lo, intmax_t hi, uint8_t min, uint8_t max, void* r, int* rn)
-{
-  enter;
-
-  if(parseint(s, f, lo, hi, min, max, r, rn)) {
-    fail(SYS_INVALID);
-  }
-
-finally:
-  xapi_infos("string", s);
-  xapi_infos("format", f);
-coda;
-}
-
-xapi API xparseuint(const char* const s, char* f, uintmax_t lo, uintmax_t hi, uint8_t min, uint8_t max, void* r, int* rn)
-{
-  enter;
-
-  if(parseuint(s, f, lo, hi, min, max, r, rn)) {
-    fail(SYS_INVALID);
-  }
-
-finally:
-  xapi_infos("string", s);
-  xapi_infos("format", f);
-coda;
 }

@@ -224,7 +224,7 @@ initial-arguments-list
 global-argument
   : help            { ARGS->help = true; }
   | version         { ARGS->version = true; }
-  | sv              { ARGS->verbose++; }
+  | sv              { tracef(); ARGS->verbose++; }
   | svv             { ARGS->verbose += 2; }
   | svvv            { ARGS->verbose += 3; }
   | sK              { ARGS->kill = true; }

@@ -18,7 +18,6 @@
 #ifndef PATTERN_LOOKUP_H
 #define PATTERN_LOOKUP_H
 
-#include "xapi.h"
 #include "types.h"
 
 struct pattern;
@@ -37,7 +36,7 @@ struct channel;
  * attrs  - bitwise combo of PATTERN_LOOKUP_*
  * nodes  - found nodes added here
  */
-xapi pattern_lookup(
+void pattern_lookup(
     const struct pattern * restrict ref
   , uint32_t attrs
   , struct selection * restrict nodes

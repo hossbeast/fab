@@ -18,7 +18,6 @@
 #ifndef _YYUTIL_GRAMMAR_H
 #define _YYUTIL_GRAMMAR_H
 
-#include "xapi.h"
 #include "types.h"
 
 struct yy_buffer_state;
@@ -37,9 +36,9 @@ typedef struct yyu_location {
   uint16_t l_lin;  // line where the location ends
   uint16_t l_col;  // column where the location ends
 
-  char *  s;      // pointer to start of location
-  char *  e;      // pointer to end of location
-  size_t  l;      // length of location, equal to e - s
+  char *  s;       // pointer to start of location
+  char *  e;       // pointer to end of location
+  size_t  l;       // length of location, equal to e - s
 } yyu_location;
 
 typedef union yyu_lval {
@@ -87,27 +86,6 @@ void yyu_loc_final(struct yyu_parser * parser, struct yyu_location * lloc);
   yyu_location * lloc = _lloc;                   \
 } while(0)
 #undef YYU_LOC_INITIALIZE
-
-/// YYU_YFATAL
-//
-// fatal for use within grammar rules - invokes YYABORT
-//
-// NOTE
-//  requires that you have these lines in your .y file
-//  %parse-param { void* scanner }
-//  %parse-param { void* parm }
-//
-#define YFATAL(x, ...)                \
-do {                                  \
-  enter_nochecks;                     \
-  xapi _yyu_R = 0;                    \
-  fatal(x, ##__VA_ARGS__);            \
-  finally : conclude(&_yyu_R);        \
-  if(_yyu_R)                          \
-  {                                   \
-    YYABORT;                          \
-  }                                   \
-} while(0)
 
 /// yyu_grammar_error
 //

@@ -35,7 +35,7 @@ typedef struct pattern_render_result {
 } pattern_render_result;
 STATIC_ASSERT(sizeof(pattern_render_result) == 2);
 
-xapi pattern_render(const struct pattern * restrict pat, pattern_render_result ** result)
+void pattern_render(const struct pattern * restrict pat, pattern_render_result ** result)
   __attribute__((nonnull));
 
 static inline struct pattern_render_fragment * pattern_render_fragment_next(struct pattern_render_fragment * fragment)

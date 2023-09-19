@@ -25,7 +25,6 @@ There is one handler thread per client
 */
 
 #include "types.h"
-#include "xapi.h"
 #include "locks.h"
 
 extern struct futexlock handlers_lock;
@@ -36,7 +35,7 @@ extern struct futexlock handlers_lock;
  * client_pid - pid of the client, if any
  * client_tid - thread id of the client, if any
  */
-xapi handler_thread_launch(pid_t client_pid, pid_t client_tid)
+void handler_thread_launch(pid_t client_pid, pid_t client_tid)
   __attribute__((nonnull));
 
 #endif

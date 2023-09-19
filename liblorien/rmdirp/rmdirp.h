@@ -20,8 +20,6 @@
 
 #include <stdarg.h>
 
-#include "xapi.h"
-
 /// rmdirp
 //
 // SUMMARY
@@ -34,7 +32,7 @@
 //  rmself  - if true, delete directory itself as well
 //  errcode - error code to raise if unexpected files are encountered
 //
-xapi rmdirp(const char * const restrict dirpath, int rmself)
+void rmdirp(const char * const restrict dirpath, int rmself)
   __attribute__((nonnull));
 
 #endif

@@ -18,8 +18,7 @@
 #ifndef _MONITOR_THREAD_H
 #define _MONITOR_THREAD_H
 
-#include "xapi.h"
 
-xapi monitor_thread(void);
+void monitor_thread(void);
 
 #endif

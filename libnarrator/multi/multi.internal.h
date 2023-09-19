@@ -20,7 +20,6 @@
 
 #include <stdarg.h>
 
-#include "xapi.h"
 #include "types.h"
 
 #include "multi.h"

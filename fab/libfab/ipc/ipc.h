@@ -22,7 +22,6 @@
 #include <sys/syscall.h>
 #include <linux/futex.h>
 
-#include "xapi.h"
 #include "types.h"
 #include "macros.h"
 #include "barriers.h"

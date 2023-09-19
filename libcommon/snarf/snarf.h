@@ -21,7 +21,6 @@
 #include <stdarg.h>
 
 #include "types.h"
-#include "xapi.h"
 
 /// snarf
 //
@@ -39,47 +38,47 @@
 //
 //  u* - only fails when errno != ENOENT
 //
-xapi snarfs(char ** const restrict dst, size_t * const restrict dstl, const char * const restrict path)
+void snarfs(char ** const restrict dst, size_t * const restrict dstl, const char * const restrict path)
   __attribute__((nonnull(1, 3)));
 
-xapi snarff(char ** const restrict dst, size_t * const restrict dstl, const char * const restrict path_fmt, ...)
+void snarff(char ** const restrict dst, size_t * const restrict dstl, const char * const restrict path_fmt, ...)
   __attribute__((nonnull(1, 3)))
   __attribute__((format(printf, 3, 4)));
 
-xapi snarfvf(char ** const restrict dst, size_t * const restrict dstl, const char * const restrict path_fmt, va_list va)
+void snarfvf(char ** const restrict dst, size_t * const restrict dstl, const char * const restrict path_fmt, va_list va)
   __attribute__((nonnull(1, 3)));
 
-xapi snarfats(char ** const restrict dst, size_t * const restrict dstl, int dirfd, const char * const restrict path)
+void snarfats(char ** const restrict dst, size_t * const restrict dstl, int dirfd, const char * const restrict path)
   __attribute__((nonnull(1, 4)));
 
-xapi snarfatf(char ** const restrict dst, size_t * const restrict dstl, int dirfd, const char * const restrict path_fmt, ...)
+void snarfatf(char ** const restrict dst, size_t * const restrict dstl, int dirfd, const char * const restrict path_fmt, ...)
   __attribute__((nonnull(1, 4)))
   __attribute__((format(printf, 4, 5)));
 
-xapi snarfatvf(char ** const restrict dst, size_t * const restrict dstl, int dirfd, const char * const restrict path_fmt, va_list va)
+void snarfatvf(char ** const restrict dst, size_t * const restrict dstl, int dirfd, const char * const restrict path_fmt, va_list va)
   __attribute__((nonnull(1, 4)));
 
-xapi usnarfs(char ** const restrict dst, size_t * const restrict dstl, const char * const restrict path)
+void usnarfs(char ** const restrict dst, size_t * const restrict dstl, const char * const restrict path)
   __attribute__((nonnull(1, 3)));
 
-xapi usnarff(char ** const restrict dst, size_t * const restrict dstl, const char * const restrict path_fmt, ...)
+void usnarff(char ** const restrict dst, size_t * const restrict dstl, const char * const restrict path_fmt, ...)
   __attribute__((nonnull(1, 3)))
   __attribute__((format(printf, 3, 4)));
 
-xapi usnarfvf(char ** const restrict dst, size_t * const restrict dstl, const char * const restrict path_fmt, va_list va)
+void usnarfvf(char ** const restrict dst, size_t * const restrict dstl, const char * const restrict path_fmt, va_list va)
   __attribute__((nonnull(1, 3)));
 
-xapi usnarfats(char ** const restrict dst, size_t * const restrict dstl, int dirfd, const char * const restrict path)
+void usnarfats(char ** const restrict dst, size_t * const restrict dstl, int dirfd, const char * const restrict path)
   __attribute__((nonnull(1, 4)));
 
-xapi usnarfatf(char ** const restrict dst, size_t * const restrict dstl, int dirfd, const char * const restrict path_fmt, ...)
+void usnarfatf(char ** const restrict dst, size_t * const restrict dstl, int dirfd, const char * const restrict path_fmt, ...)
   __attribute__((nonnull(1, 4)))
   __attribute__((format(printf, 4, 5)));
 
-xapi usnarfatvf(char ** const restrict dst, size_t * const restrict dstl, int dirfd, const char * const restrict path_fmt, va_list va)
+void usnarfatvf(char ** const restrict dst, size_t * const restrict dstl, int dirfd, const char * const restrict path_fmt, va_list va)
   __attribute__((nonnull(1, 4)));
 
-xapi fsnarf(char ** const restrict dst, size_t * const restrict dstl, int fd)
+void fsnarf(char ** const restrict dst, size_t * const restrict dstl, int fd)
   __attribute__((nonnull));
 
 #endif

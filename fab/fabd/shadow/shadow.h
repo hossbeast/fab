@@ -43,19 +43,19 @@ extern struct fsent * g_shadow_module;          /* the node at //module */
 extern struct fsent * g_shadow_modules;         /* the node at //modules */
 
 /* module initialization */
-xapi shadow_setup(void);
+void shadow_setup(void);
 
 /* module cleanup */
-xapi shadow_cleanup(void);
+void shadow_cleanup(void);
 
 /* attaach a module to the shadow fs */
-xapi shadow_module_init(
+void shadow_module_init(
     struct module * restrict mod
   , struct graph_invalidation_context * restrict invalidation
 )
   __attribute__((nonnull));
 
-xapi shadow_graft_imports(
+void shadow_graft_imports(
     struct module * restrict mod
   , struct fsent * restrict ref
   , const char * restrict as
@@ -65,7 +65,7 @@ xapi shadow_graft_imports(
 )
   __attribute__((nonnull(1, 2, 3, 6)));
 
-xapi shadow_graft_requires(
+void shadow_graft_requires(
     struct module * restrict mod
   , struct fsent * restrict ref
   , const char * restrict as
@@ -75,7 +75,7 @@ xapi shadow_graft_requires(
 )
   __attribute__((nonnull(1, 2, 3, 6)));
 
-xapi shadow_graft_uses(
+void shadow_graft_uses(
     struct module * restrict mod
   , struct fsent * restrict ref
   , const char * restrict as

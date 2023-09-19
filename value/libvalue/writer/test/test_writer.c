@@ -15,20 +15,15 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#include "xapi.h"
-#include "xapi/errtab.h"
 #include "xlinux/xstdlib.h"
 
 #include "value/load.h"
-#include "yyutil/load.h"
 
 #include "xunit.h"
 #include "xunit/assert.h"
 #include "narrator.h"
 #include "narrator/growing.h"
 
-#include "logger.h"
-#include "logger/category.h"
 
 #include "value.h"
 #include "assert.internal.h"
@@ -46,225 +41,192 @@ typedef struct writer_test {
 // public
 //
 
-static xapi value_writer_unit_setup(xunit_unit * unit)
+static void value_writer_unit_setup(xunit_unit * unit)
 {
-  enter;
-
   // load libraries
-  fatal(value_load);
-  fatal(logger_finalize);
-
-  finally : coda;
+  value_load();
 }
 
-static xapi value_writer_unit_cleanup(xunit_unit * unit)
+static void value_writer_unit_cleanup(xunit_unit * unit)
 {
-  enter;
-
-  fatal(value_unload);
-
-  finally : coda;
+  value_unload();
 }
 
 //
 // tests
 //
 
-static xapi test_basic(xunit_test * _test)
+static void test_basic(xunit_test * _test)
 {
-  enter;
-
   writer_test * test = (typeof(test))_test;
 
   value_writer * writer = 0;
-  fatal(value_writer_create, &writer);
+  value_writer_create(&writer);
 
-  fatal(value_writer_open, writer, g_narrator_stdout);
-  fatal(value_writer_push_list, writer);
-    fatal(value_writer_string, writer, "foo+88");
+  value_writer_open(writer, g_narrator_stdout);
+  value_writer_push_list(writer);
+    value_writer_string(writer, "foo+88");
 
-    fatal(value_writer_push_set, writer);
-    fatal(value_writer_bool, writer, true);
-    fatal(value_writer_bool, writer, false);
-    fatal(value_writer_pop_set, writer);
+    value_writer_push_set(writer);
+    value_writer_bool(writer, true);
+    value_writer_bool(writer, false);
+    value_writer_pop_set(writer);
 
-    fatal(value_writer_push_set, writer);
-    fatal(value_writer_bool, writer, false);
-    fatal(value_writer_bool, writer, true);
-    fatal(value_writer_pop_set, writer);
+    value_writer_push_set(writer);
+    value_writer_bool(writer, false);
+    value_writer_bool(writer, true);
+    value_writer_pop_set(writer);
 
-    fatal(value_writer_push_set, writer);
-      fatal(value_writer_bool, writer, false);
-      fatal(value_writer_string, writer, "not-escaped");
-      fatal(value_writer_string, writer, "noescape");
-    fatal(value_writer_pop_set, writer);
+    value_writer_push_set(writer);
+      value_writer_bool(writer, false);
+      value_writer_string(writer, "not-escaped");
+      value_writer_string(writer, "noescape");
+    value_writer_pop_set(writer);
 
-    fatal(value_writer_push_set, writer);
-      fatal(value_writer_push_mapping, writer);
-        fatal(value_writer_string, writer, "foo+103");
-        fatal(value_writer_push_set, writer);
-          fatal(value_writer_mapping_string_uint, writer, "foo+105", 0xabcdabcdabcdULL);
-          fatal(value_writer_mapping_string_int, writer, "foo+106", -1234512345123451234);
-          fatal(value_writer_mapping_string_bool, writer, "foo/107", true);
-        fatal(value_writer_pop_set, writer);
-      fatal(value_writer_pop_mapping, writer);
-    fatal(value_writer_pop_set, writer);
+    value_writer_push_set(writer);
+      value_writer_push_mapping(writer);
+        value_writer_string(writer, "foo+103");
+        value_writer_push_set(writer);
+          value_writer_mapping_string_uint(writer, "foo+105", 0xabcdabcdabcdULL);
+          value_writer_mapping_string_int(writer, "foo+106", -1234512345123451234);
+          value_writer_mapping_string_bool(writer, "foo/107", true);
+        value_writer_pop_set(writer);
+      value_writer_pop_mapping(writer);
+    value_writer_pop_set(writer);
 
-  fatal(value_writer_pop_list, writer);
+  value_writer_pop_list(writer);
 
-  fatal(narrator_xsays, g_narrator_stdout, "\n");
+  narrator_xsays(g_narrator_stdout, "\n");
 
-finally:
-  fatal(value_writer_xfree, writer);
-coda;
+  value_writer_xfree(writer);
 }
 
-static xapi test_set(xunit_test * _test)
+static void test_set(xunit_test * _test)
 {
-  enter;
-
   writer_test * test = (typeof(test))_test;
 
 //printf("\n++ %s\n", __FUNCTION__);
 
   value_writer * writer = 0;
-  fatal(value_writer_create, &writer);
-  fatal(value_writer_open, writer, g_narrator_stdout);
+  value_writer_create(&writer);
+  value_writer_open(writer, g_narrator_stdout);
 
-  fatal(value_writer_push_set, writer);
-  fatal(value_writer_push_mapping, writer);
-  fatal(value_writer_string, writer, "path");
-  fatal(value_writer_string, writer, "foo/bar");
-  fatal(value_writer_pop_mapping, writer);
-  fatal(value_writer_mapping_string_float, writer, "foo", 42);
-  fatal(value_writer_pop_set, writer);
+  value_writer_push_set(writer);
+  value_writer_push_mapping(writer);
+  value_writer_string(writer, "path");
+  value_writer_string(writer, "foo/bar");
+  value_writer_pop_mapping(writer);
+  value_writer_mapping_string_float(writer, "foo", 42);
+  value_writer_pop_set(writer);
 
-  fatal(narrator_xsays, g_narrator_stdout, "\n");
+  narrator_xsays(g_narrator_stdout, "\n");
 
-finally:
-  fatal(value_writer_xfree, writer);
-coda;
+  value_writer_xfree(writer);
 }
 
-static xapi test_set_set_top(xunit_test * _test)
+static void test_set_set_top(xunit_test * _test)
 {
-  enter;
-
   writer_test * test = (typeof(test))_test;
 
 //printf("\n++ %s\n", __FUNCTION__);
 
   value_writer * writer = 0;
-  fatal(value_writer_create, &writer);
-  fatal(value_writer_open, writer, g_narrator_stdout);
+  value_writer_create(&writer);
+  value_writer_open(writer, g_narrator_stdout);
 
-  fatal(value_writer_push_mapping, writer);
-  fatal(value_writer_string, writer, "path");
-  fatal(value_writer_string, writer, "foo/bar");
-  fatal(value_writer_pop_mapping, writer);
-  fatal(value_writer_mapping_string_float, writer, "foo", 42);
+  value_writer_push_mapping(writer);
+  value_writer_string(writer, "path");
+  value_writer_string(writer, "foo/bar");
+  value_writer_pop_mapping(writer);
+  value_writer_mapping_string_float(writer, "foo", 42);
 
-  fatal(narrator_xsays, g_narrator_stdout, "\n");
+  narrator_xsays(g_narrator_stdout, "\n");
 
-finally:
-  fatal(value_writer_xfree, writer);
-coda;
+  value_writer_xfree(writer);
 }
 
-static xapi test_set_embedded(xunit_test * _test)
+static void test_set_embedded(xunit_test * _test)
 {
-  enter;
-
   writer_test * test = (typeof(test))_test;
 
   value_writer * writer = 0;
-  fatal(value_writer_create, &writer);
-  fatal(value_writer_open, writer, g_narrator_stdout);
+  value_writer_create(&writer);
+  value_writer_open(writer, g_narrator_stdout);
 
-  fatal(value_writer_push_set, writer);
-    fatal(value_writer_push_mapping, writer);
-      fatal(value_writer_string, writer, "container");
-      fatal(value_writer_push_set, writer);
-      fatal(value_writer_push_mapping, writer);
-        fatal(value_writer_string, writer, "path");
-        fatal(value_writer_string, writer, "foo/bar");
-      fatal(value_writer_pop_mapping, writer);
-      fatal(value_writer_pop_set, writer);
-    fatal(value_writer_pop_mapping, writer);
-  fatal(value_writer_pop_set, writer);
+  value_writer_push_set(writer);
+    value_writer_push_mapping(writer);
+      value_writer_string(writer, "container");
+      value_writer_push_set(writer);
+      value_writer_push_mapping(writer);
+        value_writer_string(writer, "path");
+        value_writer_string(writer, "foo/bar");
+      value_writer_pop_mapping(writer);
+      value_writer_pop_set(writer);
+    value_writer_pop_mapping(writer);
+  value_writer_pop_set(writer);
 
-  fatal(narrator_xsays, g_narrator_stdout, "\n");
+  narrator_xsays(g_narrator_stdout, "\n");
 
-finally:
-  fatal(value_writer_xfree, writer);
-coda;
+  value_writer_xfree(writer);
 }
 
-static xapi test_list(xunit_test * _test)
+static void test_list(xunit_test * _test)
 {
-  enter;
-
   writer_test * test = (typeof(test))_test;
 
   value_writer * writer = 0;
-  fatal(value_writer_create, &writer);
-  fatal(value_writer_open, writer, g_narrator_stdout);
+  value_writer_create(&writer);
+  value_writer_open(writer, g_narrator_stdout);
 
-  fatal(value_writer_push_list, writer);
-    fatal(value_writer_bool, writer, true);
-    fatal(value_writer_bool, writer, false);
-    fatal(value_writer_bool, writer, true);
+  value_writer_push_list(writer);
+    value_writer_bool(writer, true);
+    value_writer_bool(writer, false);
+    value_writer_bool(writer, true);
 
-    fatal(value_writer_mapping_string_float, writer, "foo", 42);
-    fatal(value_writer_push_mapping, writer);
-      fatal(value_writer_string, writer, "path");
-      fatal(value_writer_string, writer, "foo/bar");
-    fatal(value_writer_pop_mapping, writer);
-    fatal(value_writer_string, writer, "foo/bar");
-    fatal(value_writer_string, writer, "foo/bar");
-  fatal(value_writer_pop_list, writer);
+    value_writer_mapping_string_float(writer, "foo", 42);
+    value_writer_push_mapping(writer);
+      value_writer_string(writer, "path");
+      value_writer_string(writer, "foo/bar");
+    value_writer_pop_mapping(writer);
+    value_writer_string(writer, "foo/bar");
+    value_writer_string(writer, "foo/bar");
+  value_writer_pop_list(writer);
 
-  fatal(narrator_xsays, g_narrator_stdout, "\n");
+  narrator_xsays(g_narrator_stdout, "\n");
 
-finally:
-  fatal(value_writer_xfree, writer);
-coda;
+  value_writer_xfree(writer);
 }
 
-static xapi test_list_list_top(xunit_test * _test)
+static void test_list_list_top(xunit_test * _test)
 {
-  enter;
-
   writer_test * test = (typeof(test))_test;
 
   value_writer * writer = 0;
-  fatal(value_writer_create, &writer);
-  fatal(value_writer_open, writer, g_narrator_stdout);
+  value_writer_create(&writer);
+  value_writer_open(writer, g_narrator_stdout);
 
-  fatal(value_writer_bool, writer, true);
-  fatal(value_writer_bool, writer, false);
-  fatal(value_writer_bool, writer, true);
-  fatal(value_writer_mapping_string_float, writer, "foo", 42);
-  fatal(value_writer_push_mapping, writer);
-    fatal(value_writer_string, writer, "path");
-    fatal(value_writer_string, writer, "foo/bar");
-  fatal(value_writer_pop_mapping, writer);
+  value_writer_bool(writer, true);
+  value_writer_bool(writer, false);
+  value_writer_bool(writer, true);
+  value_writer_mapping_string_float(writer, "foo", 42);
+  value_writer_push_mapping(writer);
+    value_writer_string(writer, "path");
+    value_writer_string(writer, "foo/bar");
+  value_writer_pop_mapping(writer);
 
-  fatal(value_writer_bool, writer, true);
-  fatal(value_writer_bool, writer, false);
+  value_writer_bool(writer, true);
+  value_writer_bool(writer, false);
 
-  fatal(narrator_xsays, g_narrator_stdout, "\n");
+  narrator_xsays(g_narrator_stdout, "\n");
 
-finally:
-  fatal(value_writer_xfree, writer);
-coda;
+  value_writer_xfree(writer);
 }
 
 //
 // manifest
 //
 
-xunit_unit xunit = {
+static xunit_unit xunit = {
     xu_setup : value_writer_unit_setup
   , xu_cleanup : value_writer_unit_cleanup
   , xu_tests : (void*)(writer_test*[]) {
@@ -277,3 +239,4 @@ xunit_unit xunit = {
     , 0
   }
 };
+XUNIT_UNIT(xunit);

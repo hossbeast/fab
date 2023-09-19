@@ -18,7 +18,6 @@
 #ifndef _SWEEPER_THREAD_H
 #define _SWEEPER_THREAD_H
 
-#include "xapi.h"
 #include "valyria/llist.h"
 #include "valyria/rbtree.h"
 
@@ -42,10 +41,10 @@ typedef struct sweeper_child_event {
   uint8_t name_len;
 } sweeper_child_event;
 
-xapi sweeper_thread_cleanup(void);
-xapi sweeper_thread_launch(void);
+void sweeper_thread_cleanup(void);
+void sweeper_thread_launch(void);
 
-xapi sweeper_thread_enqueue(struct fsent *n, uint32_t m, const char * restrict name, uint16_t namel)
+void sweeper_thread_enqueue(struct fsent *n, uint32_t m, const char * restrict name, uint16_t namel)
   __attribute__((nonnull(1)));
 
 #endif

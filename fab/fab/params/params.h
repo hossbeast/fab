@@ -18,7 +18,6 @@
 #ifndef _PARAMS_H
 #define _PARAMS_H
 
-#include "xapi.h"
 #include "types.h"
 
 /* bottom 32 bits of the pid shifted into the top 32 bits */
@@ -43,7 +42,7 @@ extern struct g_params
 // SUMMARY
 //  parses command-line options, populating g_params
 //
-xapi params_setup(void);
+void params_setup(void);
 
 /// params_teardown
 //

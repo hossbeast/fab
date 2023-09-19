@@ -18,7 +18,6 @@
 #ifndef FABD_PATTERN_SEGMENT_H
 #define FABD_PATTERN_SEGMENT_H
 
-#include "xapi.h"
 
 union pattern_segment;
 struct pattern_segments;

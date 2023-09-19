@@ -18,30 +18,35 @@
 use cc                  # this module contains C sources
 use flex
 use bison
-use library/shared      # this module builds a library
-use xunit-tests         # this module contains xunit tests
+use library/static      # this module builds a library
+use xunit               # this module contains xunit tests
 
 # make common objects available for #inclusion and linking by files in this module
 import fab/include
 import libcommon
-import lib{xapi,xlinux,narrator,valyria,logger,xunit,yyutil}
+import lib{xlinux,narrator,valyria,xunit,yyutil}
 
 # declare variants in the module
-variant xapi.pic.{devel,debug,final,trace}
+variant pic.{devel,debug,final,trace}
 
-# default target for this module
-rule libmoria.?.so -> //module/targets
+# build the library by default
+rule libmoria.?.a -> //module/targets
+
+# run the tests by default
+rule //xunit -> //module/targets
 
 # pull in object files in the module, ignoring ./test
-rule **~test/*.?.o -> libmoria.$?.so
-
-# intra module dependencies - generated files
-rule */*.?.o <- errtab/MORIA.errtab.h
+rule **~test/*.?.o -> libmoria.$?.a
 
 # library dependencies
-rule //module/imports/*~libxunit/lib*.?.so -> libmoria.$?.so
+rule //module/imports/*~libxunit/lib*.?.a -> //module/libdeps.$?
+rule //module/libdeps.? -> libmoria.$?.a
 
-# tests need the library
-variant xapi.pic.devel : [
-  rule **/test/test_*.?.so <- libmoria.$?.so
+# tests need libraries
+variant pic.devel : [
+  rule **/test/test_*.?.xunit <- libmoria.$?.a
+  rule **/test/test_*.?.xunit <- //module/libdeps.$?
+
+  rule tests.xunit <- libmoria.?.a
+  rule tests.xunit <- //module/libdeps.?
 ]

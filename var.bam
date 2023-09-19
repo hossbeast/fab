@@ -20,12 +20,6 @@ cflags       : {
   -g -m64 -Wall -Werror -Wno-format-truncation -D_GNU_SOURCE -fno-builtin-log -Wmissing-prototypes "-fdiagnostics-color=always" -Wno-misleading-indentation -Wno-trigraphs
   "-DFABIPCDIR=/var/run/fab"
 }
-cflags.eapi  : {
-  -DEAPI -DXAPI_MODE_ERRORCODE
-}
-cflags.xapi  : {
-  -DXAPI -DXAPI_MODE_STACKTRACE
-}
 cflags.debug : {
   -O0 -ggdb3 -DDEBUG
 }

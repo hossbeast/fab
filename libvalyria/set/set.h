@@ -28,7 +28,6 @@ REMARKS
 
 */
 
-#include "xapi.h"
 #include "types.h"
 
 #include "hashtable.h"
@@ -61,16 +60,15 @@ typedef int (*set_key_cmp)(const void * A, size_t Asz, const void * key, size_t 
 //  refer to the same object - that is, if the element pointer and lengths are
 //  equal
 //
-xapi set_create(set ** restrict s)
+void set_create(set ** restrict s)
   __attribute__((nonnull));
 
-xapi set_createx(
+void set_createx(
     set ** restrict s
   , size_t capacity
   , uint32_t (*hash_element)(uint32_t h, const void * element, size_t sz)
   , int (*cmp_elements)(const void * A, size_t Asz, const void * B, size_t Bsz)
   , void (*destroy_element)(void * element)
-  , xapi (*xdestroy_element)(void * element)
 )
   __attribute__((nonnull(1)));
 
@@ -79,14 +77,14 @@ xapi set_createx(
 // SUMMARY
 //  free a set
 //
-xapi set_xfree(set * restrict s);
+void set_xfree(set * restrict s);
 
 /// set_ixfree
 //
 // SUMMARY
 //  free a set, zero its reference
 //
-xapi set_ixfree(set ** restrict s)
+void set_ixfree(set ** restrict s)
   __attribute__((nonnull));
 
 /// set_put
@@ -102,14 +100,14 @@ xapi set_ixfree(set ** restrict s)
 //  element  - pointer to element
 //  elementl - element length
 //
-xapi set_put(set * s, void * element, size_t element_len)
+void set_put(set * s, void * element, size_t element_len)
   __attribute__((nonnull));
 
 /// set_store
 //
 // (idempotent) put an element in the set, get or create
 //
-xapi set_store(set * s, void * element, size_t element_len, void ** restrict elementp)
+void set_store(set * s, void * element, size_t element_len, void ** restrict elementp)
   __attribute__((nonnull));
 
 /// set_contains
@@ -149,7 +147,7 @@ bool set_equal(set * const A, set * const B)
 //
 // disassociate all elements - internal structures in the set remain allocated
 //
-xapi set_recycle(set * restrict s)
+void set_recycle(set * restrict s)
   __attribute__((nonnull));
 
 /// set_splice
@@ -157,7 +155,7 @@ xapi set_recycle(set * restrict s)
 // SUMMARY
 //  move elements from one set to another
 //
-xapi set_splice(set * restrict dst, set * restrict src)
+void set_splice(set * restrict dst, set * restrict src)
   __attribute__((nonnull));
 
 /// set_replicate
@@ -165,7 +163,7 @@ xapi set_splice(set * restrict dst, set * restrict src)
 // SUMMARY
 //  copy elements from one set to another
 //
-xapi set_replicate(set * restrict dst, set * restrict src)
+void set_replicate(set * restrict dst, set * restrict src)
   __attribute__((nonnull));
 
 /// set_delete
@@ -178,7 +176,7 @@ xapi set_replicate(set * restrict dst, set * restrict src)
 //  element  - pointer to element
 //  elementl - length of element
 //
-xapi set_delete(set * restrict s, const void * key, size_t key_len)
+void set_delete(set * restrict s, const void * key, size_t key_len)
   __attribute__((nonnull));
 
 /// set_elements
@@ -192,7 +190,7 @@ xapi set_delete(set * restrict s, const void * key, size_t key_len)
 //  elsls - (returns) element sizes
 //  elsl  - (returns) size of returned lists
 //
-xapi set_elements(const set * restrict s, void * restrict els, size_t ** restrict elsls, size_t * restrict elsl)
+void set_elements(const set * restrict s, void * restrict els, size_t ** restrict elsls, size_t * restrict elsl)
   __attribute__((nonnull));
 
 /// set_table_element
@@ -215,7 +213,7 @@ bool set_table_element(const set * restrict s, size_t x, void * element, size_t 
 void * set_table_get(const set * restrict s, size_t x)
   __attribute__((nonnull));
 
-xapi set_table_delete(set * restrict s, size_t x)
+void set_table_delete(set * restrict s, size_t x)
   __attribute__((nonnull));
 
 #endif

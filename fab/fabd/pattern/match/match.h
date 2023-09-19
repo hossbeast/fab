@@ -18,7 +18,6 @@
 #ifndef _PATTERN_MATCH_H
 #define _PATTERN_MATCH_H
 
-#include "xapi.h"
 #include "types.h"
 
 struct pattern;
@@ -27,7 +26,7 @@ struct fsent;
 /*
  * Determine whether an fsent matches a match pattern
  */
-xapi pattern_match(
+void pattern_match(
     const struct pattern * restrict pat
   , const struct fsent * restrict dirnode
   , const char * restrict label

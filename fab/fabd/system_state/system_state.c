@@ -15,12 +15,8 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-//#include "xapi.h"
 //
 //#include "fab/sigutil.h"
-//#include "logger/config.h"
-//#include "xapi/trace.h"
-//#include "xlinux/KERNEL.errtab.h"
 //#include "xlinux/xpthread.h"
 //
 #include "fab/metadata.h"
@@ -33,7 +29,6 @@
 //#include "formula.h"
 //#include "fsent.h"
 //#include "handler.h"
-//#include "logging.h"
 //#include "module.h"
 //#include "params.h"
 //#include "rule_system.h"

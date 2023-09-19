@@ -19,44 +19,32 @@
 
 #include "symlinkp.h"
 
-xapi API symlinkps(const char * const restrict target, const char * const restrict linkpath)
+void API symlinkps(const char * const restrict target, const char * const restrict linkpath)
 {
-  enter;
-
-  fatal(uxunlinks, linkpath);
-  fatal(xsymlinks, target, linkpath);
-
-  finally : coda;
+  uxunlinks(linkpath);
+  xsymlinks(target, linkpath);
 }
 
-xapi API symlinkpf(const char * const restrict target_fmt, const char * const restrict linkpath_fmt, ...)
+void API symlinkpf(const char * const restrict target_fmt, const char * const restrict linkpath_fmt, ...)
 {
-  enter;
-
   va_list va;
   va_start(va, linkpath_fmt);
 
-  fatal(symlinkpvf, target_fmt, linkpath_fmt, va);
+  symlinkpvf(target_fmt, linkpath_fmt, va);
 
-finally:
   va_end(va);
-coda;
 }
 
-xapi API symlinkpvf(const char * const restrict target_fmt, const char * const restrict linkpath_fmt, va_list va)
+void API symlinkpvf(const char * const restrict target_fmt, const char * const restrict linkpath_fmt, va_list va)
 {
-  enter;
-
   va_list va2;
   va_copy(va2, va);
 
   // discard
   va_arg(va2, char*);
 
-  fatal(uxunlinkvf, linkpath_fmt, va2);
-  fatal(uxsymlinkvf, target_fmt, linkpath_fmt, va);
+  uxunlinkvf(linkpath_fmt, va2);
+  uxsymlinkvf(target_fmt, linkpath_fmt, va);
 
-finally:
   va_end(va2);
-coda;
 }

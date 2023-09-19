@@ -15,11 +15,12 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
+#include <stdio.h>
+
 #include <inttypes.h>
 #include <unistd.h>
 #include <wait.h>
 
-#include "xlinux/KERNEL.errtab.h"
 #include "common/assure.h"
 #include "common/color.h"
 #include "common/hash.h"
@@ -124,10 +125,8 @@ static void build_slot_release(void *e)
   }
 }
 
-static xapi connected(command * restrict cmd, fab_client * restrict client)
+static void connected(command * restrict cmd, fab_client * restrict client)
 {
-  enter;
-
   narrator * request_narrator;
   narrator_fixed nstor;
   fabipc_message * msg;
@@ -168,34 +167,30 @@ static xapi connected(command * restrict cmd, fab_client * restrict client)
   request_narrator = narrator_fixed_init(&nstor, msg->text, 0xfff);
 
   /* re-configure goals */
-  fatal(build_command_collate_goals, request_narrator, false);
+  build_command_collate_goals(request_narrator, false);
 
-  fatal(narrator_xsayf, request_narrator, " reconcile ");
+  narrator_xsayf(request_narrator, " reconcile ");
 
   /* invalidate targets */
-  fatal(build_command_collate_invalidations, request_narrator);
+  build_command_collate_invalidations(request_narrator);
 
   /* build the targets */
-  fatal(narrator_xsayf, request_narrator, " run");
+  narrator_xsayf(request_narrator, " run");
 
   // two terminating null bytes
-  fatal(narrator_xsayw, request_narrator, (char[]) { 0x00, 0x00 }, 2);
+  narrator_xsayw(request_narrator, (char[]) { 0x00, 0x00 }, 2);
   msg->size = nstor.l;
 
   client_post(client, msg);
-
-  finally : coda;
 }
 
-static xapi slot_alloc(build_slot ** slotp, uint32_t pid)
+static void slot_alloc(build_slot ** slotp, uint32_t pid)
 {
-  enter;
-
   build_slot *bs;
 
   if((bs = llist_shift(&slots_freelist, typeof(*bs), lln)) == 0)
   {
-    fatal(xmalloc, &bs, sizeof(*bs));
+    xmalloc(&bs, sizeof(*bs));
   }
   else
   {
@@ -205,8 +200,6 @@ static xapi slot_alloc(build_slot ** slotp, uint32_t pid)
   bs->info.pid = pid;
 
   *slotp = bs;
-
-  finally : coda;
 }
 
 static void slot_free(build_slot *bs)
@@ -221,10 +214,8 @@ static void slot_free(build_slot *bs)
   free(bs);
 }
 
-static xapi slot_print(build_slot *bs_zero)
+static void slot_print(build_slot *bs_zero)
 {
-  enter;
-
   narrator *N = g_narrator_stdout;
   fab_build_slot_results *results;
   fab_build_string str;
@@ -529,14 +520,10 @@ static xapi slot_print(build_slot *bs_zero)
       }
     }
   }
-
-  finally : coda;
 }
 
-static xapi process(command * restrict cmd, fab_client * restrict client, fabipc_message * restrict msg)
+static void process(command * restrict cmd, fab_client * restrict client, fabipc_message * restrict msg)
 {
-  enter;
-
   if(msg->type == FABIPC_MSG_RESPONSE)
   {
     if(msg->id == requestid) {
@@ -548,22 +535,18 @@ static xapi process(command * restrict cmd, fab_client * restrict client, fabipc
   else if(msg->type == FABIPC_MSG_EVENTS && msg->evtype == FABIPC_EVENT_SYSTEM_STATE) { }
   else if(msg->type == FABIPC_MSG_EVENTS)
   {
-    fatal(build_command_process_event, client, msg);
+    build_command_process_event(client, msg);
   }
-
-  finally : coda;
 }
 
-xapi build_command_collate_invalidations(narrator * restrict N)
+void build_command_collate_invalidations(narrator * restrict N)
 {
-  enter;
-
   struct build_target *arg;
   int x;
 
   if(g_args.invalidate) {
-    fatal(narrator_xsays, N, " global-invalidate");
-    goto XAPI_FINALLY;
+    narrator_xsays(N, " global-invalidate");
+    return;
   }
 
   /* transitive targets */
@@ -576,7 +559,7 @@ xapi build_command_collate_invalidations(narrator * restrict N)
 
   if(x < args->targets_len)
   {
-    fatal(narrator_xsays, N, ""
+    narrator_xsays(N, ""
 " select : ["
     );
 
@@ -586,12 +569,12 @@ xapi build_command_collate_invalidations(narrator * restrict N)
       if(arg->mode != 't')
         continue;
 
-      fatal(narrator_xsayf, N, ""
+      narrator_xsayf(N, ""
 " path : \"%.*s\"", (int)arg->sl, arg->s
       );
     }
 
-    fatal(narrator_xsays, N, ""
+    narrator_xsays(N, ""
 " ] "
 " invalidate "
     );
@@ -607,7 +590,7 @@ xapi build_command_collate_invalidations(narrator * restrict N)
 
   if(x < args->targets_len)
   {
-    fatal(narrator_xsays, N, ""
+    narrator_xsays(N, ""
 " select : ["
     );
 
@@ -617,34 +600,30 @@ xapi build_command_collate_invalidations(narrator * restrict N)
       if(arg->mode != 'x')
         continue;
 
-      fatal(narrator_xsayf, N, ""
+      narrator_xsayf(N, ""
 " path : \"%.*s\"", (int)arg->sl, arg->s
       );
     }
 
-    fatal(narrator_xsays, N, ""
+    narrator_xsays(N, ""
 " ] "
 "invalidate "
     );
   }
-
-  finally : coda;
 }
 
-xapi build_command_collate_goals(narrator * restrict N, bool reconcile)
+void build_command_collate_goals(narrator * restrict N, bool reconcile)
 {
-  enter;
-
   int x;
   struct build_target *arg;
 
-  fatal(narrator_xsays, N, ""
+  narrator_xsays(N, ""
 " goals : { "
   );
 
   if(reconcile)
   {
-    fatal(narrator_xsays, N, "reconcile ");
+    narrator_xsays(N, "reconcile ");
   }
 
   /* transitive targets */
@@ -657,7 +636,7 @@ xapi build_command_collate_goals(narrator * restrict N, bool reconcile)
 
   if(x < args->targets_len)
   {
-    fatal(narrator_xsays, N, ""
+    narrator_xsays(N, ""
 " target-transitive : ["
     );
 
@@ -667,12 +646,12 @@ xapi build_command_collate_goals(narrator * restrict N, bool reconcile)
       if(arg->mode != 't')
         continue;
 
-      fatal(narrator_xsayf, N, ""
+      narrator_xsayf(N, ""
 " path : \"%.*s\"", arg->sl, arg->s
       );
     }
 
-    fatal(narrator_xsays, N, ""
+    narrator_xsays(N, ""
 " ] "
     );
   }
@@ -687,7 +666,7 @@ xapi build_command_collate_goals(narrator * restrict N, bool reconcile)
 
   if(x < args->targets_len)
   {
-    fatal(narrator_xsays, N, ""
+    narrator_xsays(N, ""
 " target-direct: ["
     );
 
@@ -697,19 +676,17 @@ xapi build_command_collate_goals(narrator * restrict N, bool reconcile)
       if(arg->mode != 't')
         continue;
 
-      fatal(narrator_xsayf, N, ""
+      narrator_xsayf(N, ""
 " path : \"%.*s\"", (int)arg->sl, arg->s
       );
     }
 
-    fatal(narrator_xsays, N, ""
+    narrator_xsays(N, ""
 " ] "
     );
   }
 
-  fatal(narrator_xsays, N, " build }");
-
-  finally : coda;
+  narrator_xsays(N, " build }");
 }
 
 //
@@ -727,10 +704,8 @@ void build_command_usage(command * restrict cmd)
   );
 }
 
-xapi build_command_process_event(fab_client * restrict client, fabipc_message * restrict msg)
+void build_command_process_event(fab_client * restrict client, fabipc_message * restrict msg)
 {
-  enter;
-
   build_slot *bs, **bsp;
   size_t __attribute__((unused)) z;
   uint32_t pid;
@@ -746,11 +721,11 @@ xapi build_command_process_event(fab_client * restrict client, fabipc_message * 
         bs = bs->next;
       }
 
-      fatal(slot_alloc, &bs->next, msg->id);
+      slot_alloc(&bs->next, msg->id);
       bs = bs->next;
     } else {
-      fatal(slot_alloc, &bs, msg->id);
-      fatal(hashtable_put, build_slots_bypid, &bs);
+      slot_alloc(&bs, msg->id);
+      hashtable_put(build_slots_bypid, &bs);
     }
 
     RUNTIME_ASSERT(msg->size <= sizeof(bs->info_buf));
@@ -765,25 +740,25 @@ xapi build_command_process_event(fab_client * restrict client, fabipc_message * 
     bsp = hashtable_search(build_slots_bypid, (void*)&pid, sizeof(pid), build_slot_key_hash, build_slot_key_cmp);
     if(!bsp) {
       fprintf(stderr, "unknown pid %"PRIu32" 0x%016x head %5u\n", pid, pid, containerof(msg, fabipc_page, msg)->head);
-      goto XAPI_FINALLY;
+      return;
     }
     bs = *bsp;
 
     if(msg->evtype == FABIPC_EVENT_FORMULA_EXEC_STDOUT)
     {
-      fatal(assure, &bs->stdout_text, 1, bs->stdout_len + msg->size, &bs->stdout_alloc);
+      assure(&bs->stdout_text, 1, bs->stdout_len + msg->size, &bs->stdout_alloc);
       memcpy(bs->stdout_text + bs->stdout_len, msg->text, msg->size);
       bs->stdout_len += msg->size;
     }
     else if(msg->evtype == FABIPC_EVENT_FORMULA_EXEC_STDERR)
     {
-      fatal(assure, &bs->stderr_text, 1, bs->stderr_len + msg->size, &bs->stderr_alloc);
+      assure(&bs->stderr_text, 1, bs->stderr_len + msg->size, &bs->stderr_alloc);
       memcpy(bs->stderr_text + bs->stderr_len, msg->text, msg->size);
       bs->stderr_len += msg->size;
     }
     else if(msg->evtype == FABIPC_EVENT_FORMULA_EXEC_AUXOUT)
     {
-      fatal(assure, &bs->auxout_text, 1, bs->auxout_len + msg->size, &bs->auxout_alloc);
+      assure(&bs->auxout_text, 1, bs->auxout_len + msg->size, &bs->auxout_alloc);
       memcpy(bs->auxout_text + bs->auxout_len, msg->text, msg->size);
       bs->auxout_len += msg->size;
     }
@@ -795,49 +770,38 @@ xapi build_command_process_event(fab_client * restrict client, fabipc_message * 
       build_was_failed_slot |= bs->results.status != 0;
       build_was_failed_slot |= bs->results.stderr_total > 0;
 
-      fatal(slot_print, bs);
+      slot_print(bs);
       hashtable_delete(build_slots_bypid, &bs);
     }
   }
-
-  finally : coda;
 }
 
 //
 // public
 //
 
-xapi build_command_setup()
+void build_command_setup()
 {
-  enter;
-
-  fatal(hashtable_createx
-    , &build_slots_bypid
+  hashtable_createx(
+      &build_slots_bypid
     , sizeof(build_slot*)
     , 256
     , build_slot_hash
     , build_slot_cmp
     , build_slot_release
-    , 0
   );
-
-  finally : coda;
 }
 
-xapi build_command_cleanup()
+void build_command_cleanup()
 {
-  enter;
-
   build_slot *bs;
   llist *lln;
 
-  fatal(hashtable_xfree, build_slots_bypid);
+  hashtable_xfree(build_slots_bypid);
 
   llist_foreach_safe(&slots_freelist, bs, lln, lln) {
     slot_free(bs);
   }
-
-  finally : coda;
 }
 
 command build_command = {

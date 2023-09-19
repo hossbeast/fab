@@ -169,7 +169,7 @@ utterance
 allocate-config
   : %empty
   {
-    YFATAL(config_create, &PARSER->cfg);
+    config_create(&PARSER->cfg);
   }
   ;
 
@@ -336,7 +336,7 @@ formula-path-dir
   : bstring
   {
     if($1) {
-      YFATAL(set_put, PARSER->cfg->formula.path.dirs.entries, $1, 0);
+      set_put(PARSER->cfg->formula.path.dirs.entries, $1, 0);
     }
   }
   ;
@@ -369,7 +369,7 @@ filesystems-mappings
 filesystems-mapping
   : string filesystems-entry-map
   {
-    YFATAL(map_put, PARSER->cfg->filesystems.entries, $1.s, $1.len, PARSER->fse, 0);
+    map_put(PARSER->cfg->filesystems.entries, $1.s, $1.len, PARSER->fse, 0);
     PARSER->fse = 0;
     wfree($1.s);
     $1.s = 0;
@@ -391,7 +391,7 @@ filesystems-entry-mappings-epsilon
 allocate-filesystems-entry
   : %empty
   {
-    YFATAL(xmalloc, &PARSER->fse, sizeof(*PARSER->fse));
+    xmalloc(&PARSER->fse, sizeof(*PARSER->fse));
   }
   ;
 
@@ -499,7 +499,7 @@ walker-include-entry
 invalidate-type
   : invalidate-type-enum
   {
-    YFATAL(box_int_mk, &@$, &$$, $1);
+    box_int_mk(&@$, &$$, $1);
   }
   ;
 
@@ -529,18 +529,18 @@ invalidate-type-enum
 bool
   : BOOL
   {
-    YFATAL(box_bool_mk, &@$, &$$, $1);
+    box_bool_mk(&@$, &$$, $1);
   }
   ;
 
 int16
   : int16_igroup
   {
-    YFATAL(box_int16_mk, &@$, &$$, $1);
+    box_int16_mk(&@$, &$$, $1);
   }
   | int16_ugroup
   {
-    YFATAL(box_int16_mk, &@$, &$$, $1);
+    box_int16_mk(&@$, &$$, $1);
   }
   ;
 
@@ -561,7 +561,7 @@ bstring
     if($1.len == 0) {
       $$ = 0;
     } else {
-      YFATAL(box_string_mk, &@$, &$$, $1.s, $1.len);
+      box_string_mk(&@$, &$$, $1.s, $1.len);
     }
     $1.s = 0;
   }
@@ -600,7 +600,7 @@ strparts
   : strparts strpart
   {
     $$ = $1;
-    YFATAL(ixstrcat, &$$.s, $2.s);
+    ixstrcat(&$$.s, $2.s);
     $$.len += $2.len;
   }
   | strpart
@@ -610,19 +610,19 @@ strpart
   : STR
   {
     $$ = (typeof($$)){};
-    YFATAL(ixstrndup, &$$.s, @1.s, @1.l);
+    ixstrndup(&$$.s, @1.s, @1.l);
     $$.len = @1.l;
   }
   | CREF
   {
     $$ = (typeof($$)){};
-    YFATAL(ixstrndup, &$$.s, (char*)&$1, 1);
+    ixstrndup(&$$.s, (char*)&$1, 1);
     $$.len = 1;
   }
   | HREF
   {
     $$ = (typeof($$)){};
-    YFATAL(ixstrndup, &$$.s, (char*)&$1, 1);
+    ixstrndup(&$$.s, (char*)&$1, 1);
     $$.len = 1;
   }
   ;

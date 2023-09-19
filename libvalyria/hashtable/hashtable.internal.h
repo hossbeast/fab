@@ -55,7 +55,7 @@ typedef struct ht_operations {
   //  ht    - hashtable
   //  entry - entry
   //
-  xapi (*delete_entry)(const struct hashtable_t * ht, void * entry);
+  void (*delete_entry)(const struct hashtable_t * ht, void * entry);
 
   /// destroy_entry
   //
@@ -66,7 +66,7 @@ typedef struct ht_operations {
   //  ht    - hashtable
   //  entry - entry
   //
-  xapi (*destroy_entry)(const struct hashtable_t * ht, void * entry);
+  void (*destroy_entry)(const struct hashtable_t * ht, void * entry);
 
   /// store_entry
   //
@@ -79,7 +79,7 @@ typedef struct ht_operations {
   //  entry - pointer to the entry to store
   //  found - true if dst is a matching entry
   //
-  xapi (*store_entry)(const struct hashtable_t * ht, void * dst, void * entry, bool empty);
+  void (*store_entry)(const struct hashtable_t * ht, void * dst, void * entry, bool empty);
 } ht_operations;
 
 typedef struct ht_bucket
@@ -113,7 +113,6 @@ typedef struct hashtable_t {
   uint32_t (*hash_fn)(uint32_t h, const void * entry, size_t sz);
   int (*cmp_fn)(const void * A, size_t Asz, const void * B, size_t Bsz);
   void (*destroy_fn)(void * entry);
-  xapi (*xdestroy_fn)(void * entry);
 } hashtable_t;
 
 STATIC_ASSERT(offsetof(hashtable, size) == offsetof(hashtable_t, size));
@@ -125,7 +124,7 @@ STATIC_ASSERT(offsetof(hashtable, hash) == offsetof(hashtable_t, hash));
 // SUMMARY
 //  initialize an already allocated hashtable
 //
-xapi hashtable_init(
+void hashtable_init(
     hashtable_t * restrict ht
   , size_t esz
   , size_t capacity
@@ -140,7 +139,7 @@ xapi hashtable_init(
 // SUMMARY
 //
 //
-xapi hashtable_xdestroy(hashtable_t * restrict ht)
+void hashtable_xdestroy(hashtable_t * restrict ht)
   __attribute__((nonnull));
 
 /// hashtable_grow
@@ -148,7 +147,7 @@ xapi hashtable_xdestroy(hashtable_t * restrict ht)
 // SUMMARY
 //  reallocate the hashtable at the next-larger power-of-two
 //
-xapi hashtable_grow(hashtable_t * restrict ht)
+void hashtable_grow(hashtable_t * restrict ht)
   __attribute__((nonnull));
 
 /// hashtable_probe
@@ -191,7 +190,7 @@ ht_bucket * hashtable_table_bucket(const hashtable_t * restrict ht, size_t x)
 // SUMMARY
 //
 //
-xapi hashtable_store(hashtable_t * restrict ht, void * entry, ht_bucket ** bp)
+void hashtable_store(hashtable_t * restrict ht, void * entry, ht_bucket ** bp)
   __attribute__((nonnull));
 
 #endif

@@ -21,13 +21,16 @@
 #include <dirent.h>
 #include <stdint.h>
 
-#include "xapi.h"
 #include "types.h"
 
 #define FTWAT_F       1  // regular file
-#define FTWAT_D       2  // a directory
-#define FTWAT_PRE     3  // breadth-first
-#define FTWAT_POST    4  // depth-first
+#define FTWAT_LNK     2  // regular file
+#define FTWAT_D       3  // a directory
+#define FTWAT_PRE     4  // breadth-first
+#define FTWAT_POST    5  // depth-first
+
+#define FTWAT_SYMLINKS  1 // visit symlinks
+#define FTWAT_FOLLOW    2 // follow symlinks
 
 typedef struct ftwinfo
 {
@@ -69,11 +72,12 @@ typedef struct ftwinfo
 //  man 2 ftw
 //  man 2 openat
 //
-xapi nftwat(
+void nftwat(
     int dirfd
   , const char * dirpath
-  , xapi (*fn)(int method, ftwinfo * restrict info, void * udata, int * stop)
+  , void (*fn)(int method, ftwinfo * restrict info, void * udata, int * stop)
   , int nopenfd
+  , uint32_t flags
   , void * udata
 )
   __attribute__((nonnull(2, 3)));

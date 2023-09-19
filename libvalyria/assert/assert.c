@@ -15,11 +15,8 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#if DEVEL
-
 #include <stdarg.h>
 
-#include "xapi.h"
 #include "types.h"
 
 #include "xunit/type.h"
@@ -48,7 +45,7 @@ static void set_info_push(const char * const restrict name, xunit_arg * a)
 {
   if(a->p == 0)
   {
-    xapi_info_pushs(name, "(null)");
+    xunit_info_pushs(name, "(null)");
     return;
   }
 
@@ -75,7 +72,7 @@ static void set_info_push(const char * const restrict name, xunit_arg * a)
 
   bufz += znloads(buf + bufz, bufsz - bufz, "}");
 
-  xapi_info_pushw(name, buf, bufz);
+  xunit_info_pushw(name, buf, bufz);
 }
 
 //
@@ -87,5 +84,3 @@ xunit_type * APIDATA valyria_xunit_set = (xunit_type[]) {{
   , xu_compare : set_compare
   , xu_info_push : set_info_push
 }};
-
-#endif

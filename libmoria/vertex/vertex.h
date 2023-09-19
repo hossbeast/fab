@@ -19,7 +19,6 @@
 #define _MORIA_VERTEX_H
 
 #include "types.h"
-#include "xapi.h"
 
 struct moria_graph;
 struct moria_vertex;

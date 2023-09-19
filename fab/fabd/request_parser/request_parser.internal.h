@@ -18,27 +18,7 @@
 #ifndef _FABD_REQUEST_PARSER_INTERNAL_H
 #define _FABD_REQUEST_PARSER_INTERNAL_H
 
-#include "yyutil/parser.h"
 #include "request_parser.h"
-
-struct selector_parser;
-struct config_parser;
-struct command;
-struct request;
-
-typedef struct request_parser {
-  yyu_parser yyu;
-
-  // sub-parsers
-  struct selector_parser * selector_parser;
-  struct config_parser * config_parser;
-
-  // under construction
-  struct command * command;
-
-  // (returns)
-  struct request * request;
-} request_parser;
 
 /// request_yyerror
 //

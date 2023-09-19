@@ -31,7 +31,6 @@ REMARKS
 
 */
 
-#include "xapi.h"
 #include "types.h"
 
 typedef struct map {
@@ -50,14 +49,13 @@ typedef struct map {
 //  [xfree_value] - invoked with the value just before freeing it (keys may not be managed in this way)
 //  [capacity]    - initial capacity, the minimum number of entries which can be set without rehashing
 //
-xapi map_create(map ** restrict m)
+void map_create(map ** restrict m)
   __attribute__((nonnull));
 
-xapi map_createx(
+void map_createx(
     map ** restrict m
   , size_t capacity
   , void (*free_value)(void * value)
-  , xapi (*xfree_value)(void * value)
 )
   __attribute__((nonnull(1)));
 
@@ -66,14 +64,14 @@ xapi map_createx(
 // SUMMARY
 //  free a map
 //
-xapi map_xfree(map * restrict map);
+void map_xfree(map * restrict map);
 
 /// map_ixfree
 //
 // SUMMARY
 //  free a map, zero its reference
 //
-xapi map_ixfree(map ** restrict map)
+void map_ixfree(map ** restrict map)
   __attribute__((nonnull));
 
 /// map_put
@@ -88,7 +86,7 @@ xapi map_ixfree(map ** restrict map)
 //  [value]     - pointer to value
 //  [value_len] - value length
 //
-xapi map_put(map * restrict m, const void * restrict key, uint16_t keyl, void * value, size_t value_len)
+void map_put(map * restrict m, const void * restrict key, uint16_t keyl, void * value, size_t value_len)
   __attribute__((nonnull(1, 2)));
 
 /// map_get
@@ -132,7 +130,7 @@ bool map_equal(map * const restrict A, map * const restrict B)
 //
 // disassociate all keys - internal structures in the map remain allocated
 //
-xapi map_recycle(map * restrict map)
+void map_recycle(map * restrict map)
   __attribute__((nonnull));
 
 /// map_delete
@@ -145,7 +143,7 @@ xapi map_recycle(map * restrict map)
 //  key  - pointer to key
 //  keyl - length of key
 //
-xapi map_delete(map * restrict m, const void * restrict key, uint16_t keyl)
+void map_delete(map * restrict m, const void * restrict key, uint16_t keyl)
   __attribute__((nonnull));
 
 /// map_keys
@@ -158,7 +156,7 @@ xapi map_delete(map * restrict m, const void * restrict key, uint16_t keyl)
 //  list   - (returns) list, to be freed by the caller
 //  listl  - (returns) size of list
 //
-xapi map_keys(const map * restrict m, void * restrict keys, uint16_t * restrict keysl)
+void map_keys(const map * restrict m, void * restrict keys, uint16_t * restrict keysl)
   __attribute__((nonnull));
 
 /// map_values
@@ -171,7 +169,7 @@ xapi map_keys(const map * restrict m, void * restrict keys, uint16_t * restrict 
 //  list   - (returns) list, to be freed by the caller
 //  listl  - (returns) size of list
 //
-xapi map_values(const map * restrict m, void * restrict values, size_t * restrict valuesl)
+void map_values(const map * restrict m, void * restrict values, size_t * restrict valuesl)
   __attribute__((nonnull));
 
 /// map_table_key
@@ -219,7 +217,7 @@ bool map_table_mapping(const map * restrict m, size_t x, const void ** restrict 
 // SUMMARY
 //  copy elements from one map to another
 //
-xapi map_splice(map * restrict dst, map * restrict src)
+void map_splice(map * restrict dst, map * restrict src)
   __attribute__((nonnull));
 
 /// map_replicate
@@ -227,7 +225,7 @@ xapi map_splice(map * restrict dst, map * restrict src)
 // SUMMARY
 //  copy elements from one map to another
 //
-xapi map_replicate(map * restrict dst, map * restrict src)
+void map_replicate(map * restrict dst, map * restrict src)
   __attribute__((nonnull));
 
 #endif

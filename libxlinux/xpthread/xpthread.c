@@ -17,60 +17,31 @@
 
 #include <pthread.h>
 
+#include "types.h"
+
 #include "xpthread.h"
-#include "KERNEL.errtab.h"
 
-xapi API xpthread_attr_init(pthread_attr_t * attr)
+void API xpthread_attr_init(pthread_attr_t * attr)
 {
-  enter;
-
-  int rv;
-  if((rv = pthread_attr_init(attr)) != 0)
-    tfail(perrtab_KERNEL, rv);
-
-  finally : coda;
+  RUNTIME_ASSERT(pthread_attr_init(attr) == 0);
 }
 
-xapi API xpthread_attr_destroy(pthread_attr_t * attr)
+void API xpthread_attr_destroy(pthread_attr_t * attr)
 {
-  enter;
-
-  int rv;
-  if((rv = pthread_attr_destroy(attr)) != 0)
-    tfail(perrtab_KERNEL, rv);
-
-  finally : coda;
+  RUNTIME_ASSERT(pthread_attr_destroy(attr) == 0);
 }
 
-xapi API xpthread_create(pthread_t * thread, const pthread_attr_t * attr, void *(*start_routine)(void *), void * arg)
+void API xpthread_create(pthread_t * thread, const pthread_attr_t * attr, void *(*start_routine)(void *), void * arg)
 {
-  enter;
-
-  int rv;
-  if((rv = pthread_create(thread, attr, start_routine, arg)) != 0)
-    tfail(perrtab_KERNEL, rv);
-
-  finally : coda;
+  RUNTIME_ASSERT(pthread_create(thread, attr, start_routine, arg) == 0);
 }
 
-xapi API xpthread_sigmask(int how, const sigset_t * set, sigset_t * oldset)
+void API xpthread_sigmask(int how, const sigset_t * set, sigset_t * oldset)
 {
-  enter;
-
-  int rv;
-  if((rv = pthread_sigmask(how, set, oldset)) != 0)
-    tfail(perrtab_KERNEL, rv);
-
-  finally : coda;
+  RUNTIME_ASSERT(pthread_sigmask(how, set, oldset) == 0);
 }
 
-xapi API xpthread_attr_setdetachstate(pthread_attr_t * attr, int detachstate)
+void API xpthread_attr_setdetachstate(pthread_attr_t * attr, int detachstate)
 {
-  enter;
-
-  int rv;
-  if((rv = pthread_attr_setdetachstate(attr, detachstate)) != 0)
-    tfail(perrtab_KERNEL, rv);
-
-  finally : coda;
+  RUNTIME_ASSERT(pthread_attr_setdetachstate(attr, detachstate) == 0);
 }

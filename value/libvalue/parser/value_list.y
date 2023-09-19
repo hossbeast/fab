@@ -131,11 +131,11 @@ primitive
 mapping
   : primitive ':' value
   {
-    YFATAL(value_mapping_mk, PARSER, &@$, &$$, $1, $3, VALUE_MERGE_ADD);
+    value_mapping_mk(PARSER, &@$, &$$, $1, $3, VALUE_MERGE_ADD);
   }
   | primitive '=' value
   {
-    YFATAL(value_mapping_mk, PARSER, &@$, &$$, $1, $3, VALUE_MERGE_SET);
+    value_mapping_mk(PARSER, &@$, &$$, $1, $3, VALUE_MERGE_SET);
   }
   ;
 
@@ -146,18 +146,18 @@ list
   }
   | '[' ']'
   {
-    YFATAL(value_list_mkv, PARSER, &@$, 0, &$$, 0);
+    value_list_mkv(PARSER, &@$, 0, &$$, 0);
   }
   ;
 
 items
   : items value
   {
-    YFATAL(value_list_mkv, PARSER, &@$, $1, &$$, $2);
+    value_list_mkv(PARSER, &@$, $1, &$$, $2);
   }
   | value
   {
-    YFATAL(value_list_mkv, PARSER, &@$, 0, &$$, $1);
+    value_list_mkv(PARSER, &@$, 0, &$$, $1);
   }
   ;
 
@@ -168,18 +168,18 @@ set
   }
   | '{' '}'
   {
-    YFATAL(value_set_mkv, PARSER, &@$, 0, &$$, 0);
+    value_set_mkv(PARSER, &@$, 0, &$$, 0);
   }
   ;
 
 elements
   : elements value
   {
-    YFATAL(value_set_mkv, PARSER, &@$, $1, &$$, $2);
+    value_set_mkv(PARSER, &@$, $1, &$$, $2);
   }
   | value
   {
-    YFATAL(value_set_mkv, PARSER, &@$, 0, &$$, $1);
+    value_set_mkv(PARSER, &@$, 0, &$$, $1);
   }
   ;
 
@@ -206,7 +206,7 @@ quoted_string
 strparts
   : strparts strpart
   {
-    YFATAL(value_string_mkv, PARSER, &@$, $1, &$$, $2);
+    value_string_mkv(PARSER, &@$, $1, &$$, $2);
   }
   | strpart
   ;
@@ -215,32 +215,32 @@ strpart
   : unquoted_strpart
   | CREF
   {
-    YFATAL(value_string_mkc, PARSER, &@$, 0, &$$, $1);
+    value_string_mkc(PARSER, &@$, 0, &$$, $1);
   }
   ;
 
 unquoted_strpart
   : STR
   {
-    YFATAL(value_string_mkw, PARSER, &@$, 0, &$$, @1.s, @1.l);
+    value_string_mkw(PARSER, &@$, 0, &$$, @1.s, @1.l);
   }
   ;
 
 boolean
   : BOOL
   {
-    YFATAL(value_boolean_mk, PARSER, &@$, &$$, $1);
+    value_boolean_mk(PARSER, &@$, &$$, $1);
   }
   ;
 
 posint
   : posint_ugroup
   {
-    YFATAL(value_posint_mk, PARSER, &@$, &$$, $1);
+    value_posint_mk(PARSER, &@$, &$$, $1);
   }
   | posint_igroup
   {
-    YFATAL(value_posint_mk, PARSER, &@$, &$$, $1);
+    value_posint_mk(PARSER, &@$, &$$, $1);
   }
   ;
 
@@ -265,7 +265,7 @@ posint_igroup
 negint
   : negint_igroup
   {
-    YFATAL(value_negint_mk, PARSER, &@$, &$$, $1);
+    value_negint_mk(PARSER, &@$, &$$, $1);
   }
   ;
 
@@ -279,13 +279,13 @@ negint_igroup
 float
   : FLOAT
   {
-    YFATAL(value_float_mk, PARSER, &@$, &$$, $1);
+    value_float_mk(PARSER, &@$, &$$, $1);
   }
   ;
 
 variable
   : VARIABLE
   {
-    YFATAL(value_variable_mkw, PARSER, &@$, &$$, $1.s, $1.l);
+    value_variable_mkw(PARSER, &@$, &$$, $1.s, $1.l);
   }
   ;

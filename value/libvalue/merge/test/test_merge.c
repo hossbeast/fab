@@ -17,11 +17,6 @@
 
 #include <string.h>
 
-#include "xapi.h"
-#include "xapi/errtab.h"
-#include "xapi/calltree.h"
-#include "xapi/trace.h"
-#include "xapi/SYS.errtab.h"
 #include "value.h"
 #include "value/assert.h"
 #include "value/load.h"
@@ -32,11 +27,9 @@
 #include "valyria/list.h"
 #include "valyria/pstring.h"
 #include "valyria/set.h"
-#include "logger.h"
 
 #include "store.internal.h"
 #include "merge.internal.h"
-#include "VALUE.errtab.h"
 #include "make.internal.h"
 #include "parser.internal.h"
 #include "writer.internal.h"
@@ -48,60 +41,44 @@ typedef struct merge_test {
   char * dst;
   char * src;
   char * exp; // expected
-  xapi expected_exit;
 } merge_test;
 
-static xapi test_merge_setup(xunit_unit * unit)
+static void test_merge_setup(xunit_unit * unit)
 {
-  enter;
-
-  fatal(value_load);
-  fatal(logger_finalize);
-
-  finally : coda;
+  value_load();
 }
 
-static xapi test_merge_cleanup(xunit_unit * unit)
+static void test_merge_cleanup(xunit_unit * unit)
 {
-  enter;
-
-  fatal(value_unload);
-
-  finally : coda;
+  value_unload();
 }
 
-static xapi test_merge_entry(xunit_test * _test)
+static void test_merge_entry(xunit_test * _test)
 {
-  enter;
-
   merge_test * test = containerof(_test, merge_test, xu);
 
   value_parser * parser = 0;
   value * src = 0;
   value * dst = 0;
   narrator_growing * N0 = 0;
-  xapi exit;
 
-  fatal(narrator_growing_create, &N0);
+  narrator_growing_create(&N0);
 
-  fatal(value_parser_create, &parser);
+  value_parser_create(&parser);
 
   // parse
-  fatal(value_parser_parse, parser, MMS(test->src), 0, 0, &src);
+  value_parser_parse(parser, MMS(test->src), 0, 0, &src);
 
-  if(test->dst)
-    fatal(value_parser_parse, parser, MMS(test->dst), 0, 0, &dst);
+  if(test->dst) {
+    value_parser_parse(parser, MMS(test->dst), 0, 0, &dst);
+  }
 
   // merge
-  exit = invoke(value_merge, parser, &dst, src, 0);
-  if(exit != test->expected_exit)
-    fail(exit ?: SYS_ABORT);
-
-  xapi_calltree_unwind();
+  value_merge(parser, &dst, src, 0);
 
   if(test->exp)
   {
-    fatal(value_say, dst, &N0->base);
+    value_say(dst, &N0->base);
 
     char norm[512];
     int y = 0;
@@ -123,17 +100,15 @@ static xapi test_merge_entry(xunit_test * _test)
     assert_eq_s(test->exp, actual);
   }
 
-finally:
-  fatal(value_parser_xfree, parser);
-  fatal(narrator_growing_free, N0);
-coda;
+  value_parser_xfree(parser);
+  narrator_growing_free(N0);
 }
 
 //
 // public
 //
 
-xunit_unit xunit = {
+static xunit_unit xunit = {
     xu_setup : test_merge_setup
   , xu_cleanup : test_merge_cleanup
   , xu_entry : test_merge_entry
@@ -312,3 +287,4 @@ xunit_unit xunit = {
     , 0
   }
 };
+XUNIT_UNIT(xunit);

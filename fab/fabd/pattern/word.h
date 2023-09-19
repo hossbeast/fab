@@ -18,13 +18,12 @@
 #ifndef FABD_PATTERN_WORD_H
 #define FABD_PATTERN_WORD_H
 
-#include "xapi.h"
 #include "types.h"
 
 struct yyu_location;
 union pattern_segment;
 
-xapi pattern_word_mk(
+void pattern_word_mk(
     union pattern_segment ** restrict rv
   , const struct yyu_location * restrict loc
   , const char * restrict name

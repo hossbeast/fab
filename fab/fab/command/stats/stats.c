@@ -44,10 +44,8 @@ static void usage(command * restrict cmd)
 // build
 //
 
-static xapi connected(command * restrict cmd, fab_client * restrict client)
+static void connected(command * restrict cmd, fab_client * restrict client)
 {
-  enter;
-
   fabipc_message * msg;
   size_t z;
   int x;
@@ -91,14 +89,10 @@ static xapi connected(command * restrict cmd, fab_client * restrict client)
   msg->size = z;
 
   client_post(client, msg);
-
-  finally : coda;
 }
 
-static xapi process_global(fabipc_message * restrict msg)
+static void process_global(fabipc_message * restrict msg)
 {
-  enter;
-
   fab_global_stats stats;
   descriptor_field *member;
   int x;
@@ -125,14 +119,10 @@ static xapi process_global(fabipc_message * restrict msg)
       printf("%30.*s : %"PRIu16"\n", (int)member->name_len, member->name, stats.u16[member->offset / 2]);
     }
   }
-
-  finally : coda;
 }
 
-static xapi process_node(fabipc_message * restrict msg)
+static void process_node(fabipc_message * restrict msg)
 {
-  enter;
-
   fab_fsent_stats node;
   fab_module_stats mod;
   descriptor_type *substats;
@@ -206,30 +196,24 @@ static xapi process_node(fabipc_message * restrict msg)
   }
 
   RUNTIME_ASSERT(z == msg->size);
-
-  finally : coda;
 }
 
-static xapi process(command * restrict cmd, fab_client * restrict client, fabipc_message * restrict msg)
+static void process(command * restrict cmd, fab_client * restrict client, fabipc_message * restrict msg)
 {
-  enter;
-
   RUNTIME_ASSERT(msg->id == requestid);
 
   if(msg->type == FABIPC_MSG_RESPONSE) {
     g_params.shutdown = true;
-    goto XAPI_FINALLY;
+    return;
   }
 
   RUNTIME_ASSERT(msg->type == FABIPC_MSG_RESULT);
 
   if(args->targets_len == 0) {
-    fatal(process_global, msg);
+    process_global(msg);
   } else {
-    fatal(process_node, msg);
+    process_node(msg);
   }
-
-  finally : coda;
 }
 
 //

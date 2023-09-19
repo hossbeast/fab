@@ -17,15 +17,13 @@
 
 #include <errno.h>
 
-#include "xapi.h"
 #include "types.h"
+#include "macros.h"
 
 #include "xfutex.h"
-#include "KERNEL.errtab.h"
 
-xapi API uxfutex(
-    int * restrict err
-  , int32_t * restrict futex_wordp
+int API uxfutex(
+    int32_t * restrict futex_wordp
   , int futex_op
   , int32_t val
   , const struct timespec * restrict timeout
@@ -33,21 +31,17 @@ xapi API uxfutex(
   , int32_t val3
 )
 {
-  enter;
-
   int r;
 
   if((r = syscall(SYS_futex, futex_wordp, futex_op, val, timeout, uaddr2, val3)) == -1)
   {
-    if(errno != EAGAIN && errno != ETIMEDOUT && errno != EINTR) {
-      tfail(perrtab_KERNEL, errno);
-    }
-    *err = errno;
+    r = errno;
+    RUNTIME_ASSERT(r == EAGAIN || r == ETIMEDOUT || r == EINTR);
   }
   else
   {
-    *err = 0;
+    r = 0;
   }
 
-  finally : coda;
+  return r;
 }

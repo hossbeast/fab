@@ -19,7 +19,6 @@
 #define FABD_RULE_MODULE_H
 
 #include "types.h"
-#include "xapi.h"
 
 #include "valyria/llist.h"
 #include "moria.h"
@@ -56,7 +55,7 @@ typedef struct rule_module_edge {
  * rule       - rule to associate
  * [variants] - variants for rule execution
  */
-xapi rule_module_connect(
+void rule_module_connect(
     rule_module_edge ** restrict rma
   , struct module * mod
   , struct module * mod_owner
@@ -68,15 +67,15 @@ xapi rule_module_connect(
 /*
  *
  */
-xapi rule_module_disconnect(
+void rule_module_disconnect(
     rule_module_edge * restrict rma
   , struct graph_invalidation_context * restrict invalidation
 )
   __attribute__((nonnull));
 
-xapi rule_module_edge_alloc(rule_module_edge ** restrict rmep)
+void rule_module_edge_alloc(rule_module_edge ** restrict rmep)
   __attribute__((nonnull));
 
-xapi rule_module_cleanup(void);
+void rule_module_cleanup(void);
 
 #endif

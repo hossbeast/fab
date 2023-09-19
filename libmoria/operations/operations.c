@@ -252,13 +252,11 @@ void API moria_connect_hyper(
   }
 }
 
-xapi API moria_edge_disconnect(
+void API moria_edge_disconnect(
     moria_graph * const restrict g
   , moria_edge * const restrict e
 )
 {
-  enter;
-
   int x;
 
   if((e->attrs & MORIA_EDGE_HYPER))
@@ -286,28 +284,22 @@ xapi API moria_edge_disconnect(
       rbtree_delete(&e->B->up, e, rbn_up);
     }
   }
-
-  finally : coda;
 }
 
-xapi API moria_disconnect(
+void API moria_disconnect(
     moria_graph * const restrict g
   , moria_vertex * const restrict A
   , moria_vertex * const restrict B
 )
 {
-  enter;
-
   moria_edge *e;
 
   if((e = moria_edge_between(A, B))) {
-    fatal(moria_edge_disconnect, g, e);
+    moria_edge_disconnect(g, e);
   }
-
-  finally : coda;
 }
 
-xapi API moria_hyperdisconnect(
+void API moria_hyperdisconnect(
     moria_graph * restrict g
   , moria_vertex ** restrict Alist
   , uint16_t Alen
@@ -315,13 +307,9 @@ xapi API moria_hyperdisconnect(
   , uint16_t Blen
 )
 {
-  enter;
-
   moria_edge *e;
 
   if((e = moria_edge_of(Alist, Alen, Blist, Blen))) {
-    fatal(moria_edge_disconnect, g, e);
+    moria_edge_disconnect(g, e);
   }
-
-  finally : coda;
 }

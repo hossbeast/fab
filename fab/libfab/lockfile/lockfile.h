@@ -18,7 +18,6 @@
 #ifndef _FAB_LOCKFILE_H
 #define _FAB_LOCKFILE_H
 
-#include "xapi.h"
 #include "types.h"
 
 /*
@@ -27,7 +26,7 @@
  * pid  - (returns) zero if the lock was obtained, otherwise pid of lock holder
  * fmt  - printf-style format string for the path to the lockfile
  */
-xapi fabipc_lockfile_obtain(pid_t * restrict pid, int * restrict fd, char * const restrict fmt, ...)
+void fabipc_lockfile_obtain(pid_t * restrict pid, int * restrict fd, char * const restrict fmt, ...)
   __attribute__((nonnull(1, 2, 3)))
   __attribute__((format(printf, 3, 4)));
 
@@ -36,7 +35,7 @@ xapi fabipc_lockfile_obtain(pid_t * restrict pid, int * restrict fd, char * cons
  *
  * fmt - printf-style format string for the path to the lockfile
  */
-xapi fabipc_lockfile_update(char * const restrict fmt, ...)
+void fabipc_lockfile_update(char * const restrict fmt, ...)
   __attribute__((nonnull(1)))
   __attribute__((format(printf, 1, 2)));
 
@@ -45,7 +44,7 @@ xapi fabipc_lockfile_update(char * const restrict fmt, ...)
  *
  * fmt - printf-style format string for the path to the lockfile
  */
-xapi fabipc_lockfile_release(char * const restrict fmt, ...)
+void fabipc_lockfile_release(char * const restrict fmt, ...)
   __attribute__((nonnull(1)))
   __attribute__((format(printf, 1, 2)));
 

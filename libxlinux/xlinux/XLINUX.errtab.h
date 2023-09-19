@@ -1,1 +1,0 @@
-../errtab/XLINUX.errtab.h

@@ -83,8 +83,10 @@ void rcu_synchronize(void);
 
 static inline bool rcu_registered_check()
 {
+#if DEBUG || DEVEL
   extern __thread bool __attribute__((unused)) rcu_is_registered;
   RUNTIME_ASSERT(rcu_is_registered);
+#endif
 
   return true;
 }

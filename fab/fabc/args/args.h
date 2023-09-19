@@ -18,8 +18,6 @@
 #ifndef _ARGS_H
 #define _ARGS_H
 
-#include "xapi.h"
-
 extern struct g_args {
   char * path;    /* initial node path */
 #if DEVEL
@@ -28,7 +26,7 @@ extern struct g_args {
 } g_args;
 
 /* parse command-line arguments */
-xapi args_parse(void);
+void args_parse(int argc, char ** argv);
 
 /* print usage statement */
 void args_usage(void);

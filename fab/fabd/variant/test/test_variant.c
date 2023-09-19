@@ -15,8 +15,6 @@
    You should have received a copy of the GNU General Public License
    along with fab.  If not, see <http://www.gnu.org/licenses/>. */
 
-#include "xapi.h"
-#include "valyria/load.h"
 #include "moria/load.h"
 #include "xlinux/xstdlib.h"
 
@@ -31,7 +29,6 @@
 #include "xunit/assert.h"
 #include "narrator.h"
 #include "narrator/growing.h"
-#include "logging.h"
 #include "rule.h"
 #include "fsent.h"
 #include "pattern.h"
@@ -50,55 +47,40 @@ typedef struct variant_test {
   char ** tags;
 } variant_test;
 
-static xapi variant_test_unit_setup(xunit_unit * unit)
+static void variant_test_unit_setup(xunit_unit * unit)
 {
-  enter;
 
-  fatal(valyria_load);
-  fatal(logging_finalize);
-
-  fatal(variant_setup);
-
-  finally : coda;
+  variant_setup();
 }
 
-static xapi variant_test_unit_cleanup(xunit_unit * unit)
+static void variant_test_unit_cleanup(xunit_unit * unit)
 {
-  enter;
-
-  fatal(valyria_unload);
-  fatal(variant_cleanup);
-
-  finally : coda;
+  variant_cleanup();
 }
 
 //
 // tests
 //
 
-static xapi variant_test_entry(xunit_test * _test)
+static void variant_test_entry(xunit_test * _test)
 {
-  enter;
-
   variant_test * test = containerof(_test, variant_test, xu);
   variant *v;
   int x;
 
-  fatal(variant_get, test->text, strlen(test->text), &v);
+  variant_get(test->text, strlen(test->text), &v);
 
   assert_eq_w(test->norm, strlen(test->norm), v->norm, v->norm_len);
   assert_eq_zu(sentinel(test->tags), v->tags_len);
   for(x = 0; x < v->tags_len; x++)
     assert_eq_w(test->tags[x], strlen(test->tags[x]), v->tags[x].text, v->tags[x].len);
-
-  finally : coda;
 }
 
 //
 // manifest
 //
 
-xunit_unit xunit = {
+static xunit_unit xunit = {
     xu_setup : variant_test_unit_setup
   , xu_cleanup : variant_test_unit_cleanup
   , xu_entry : variant_test_entry
@@ -148,3 +130,4 @@ xunit_unit xunit = {
     , 0
   }
 };
+XUNIT_UNIT(xunit);

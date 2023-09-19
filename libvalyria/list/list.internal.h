@@ -47,7 +47,6 @@ typedef struct list_t {
 
   int (*cmp_fn)(const void * A, size_t Asz, const void * B, size_t Bsz);
   void (*free_fn)(void * item);
-  xapi (*xfree_fn)(void * item);
 } list_t;
 
 STATIC_ASSERT(offsetof(list, size) == offsetof(list_t, size));
