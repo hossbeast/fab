@@ -23,6 +23,7 @@
 extern struct
 {
   bool fork;
+  bool await;
 } xunit_args;
 
 void args_parse(int argc, char ** argv);

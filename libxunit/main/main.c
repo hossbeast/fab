@@ -88,6 +88,14 @@ static void xmain(int argc, char ** argv)
   // parse cmdline arguments
   args_parse(argc, argv);
 
+  if(xunit_args.await) {
+    memset(&act, 0, sizeof(act));
+    act.sa_sigaction = sighandler;
+    xsigaction(SIGHUP, &act, 0);
+    sigemptyset(&sigs);
+    sigsuspend(&sigs);
+  }
+
   // enable coredumps
   setrlimit(RLIMIT_CORE, (struct rlimit[]) {{ .rlim_cur = RLIM_INFINITY, .rlim_max = RLIM_INFINITY }});
 

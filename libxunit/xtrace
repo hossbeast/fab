@@ -1,0 +1,134 @@
+#!/usr/bin/env perl
+
+#
+# Use this script along with xunit --await in order to attach with bpftrace
+# and enable usdt probes before any tests are run
+#
+
+use strict;
+use warnings;
+use POSIX;
+
+my %pids;
+
+for (qx|ps ax -o pid,cmd|)
+{
+  next unless /^\s*([0-9]+)\s*(.*)$/;
+  my $pid = int($1);
+  my $cmd = $2;
+  next if index($cmd, "--await") == -1;
+
+  if(keys %pids)
+  {
+    print STDERR "ERROR found\n";
+    printf STDERR " %5d : %s\n", (keys %pids)[0], (values %pids)[0];
+    printf STDERR " %5d : %s\n", $pid, $cmd;
+    exit(1);
+  }
+
+  $pids{$pid} = $cmd;
+}
+
+unless(keys %pids)
+{
+  print STDERR "ERROR not found --await\n";
+  exit(1);
+}
+
+my $pid = (keys %pids)[0];
+my $path = (map { chomp ; $_ } qx|readlink /proc/$pid/exe|)[0];
+
+print("using $pid -- " . (values %pids)[0] . " -- $path\n");
+
+my @cmd = (
+    "/usr/bin/bpftrace"
+  , "-p", $pid
+);
+
+push @cmd, @ARGV;
+print(join(" ", @cmd) . "\n");
+
+my %status_by_pid;
+$SIG{CHLD} = sub {
+  local ($!, $?);
+  while((my $pid = waitpid(-1, WNOHANG)) > 0) {
+    my $exit = $? >> 8;
+    my $sig = $? & 127;
+    $status_by_pid{$pid} = $?;
+  }
+};
+
+sub xread
+{
+  my $r = POSIX::read(@_);
+  if(not defined $r)
+  {
+    die("read($_[0]) : $!") unless $!{EINTR};
+    $r = 0;
+  }
+
+  int($r)
+}
+
+my ($out_rd_fd, $out_wr_fd) = POSIX::pipe() or die $!;
+my ($err_rd_fd, $err_wr_fd) = POSIX::pipe() or die $!;
+
+my $child = fork();
+if($child == 0)
+{
+  POSIX::close(0);
+  POSIX::close($out_rd_fd);
+  POSIX::dup2($out_wr_fd, 1) or die $!;
+  POSIX::close($err_rd_fd);
+  POSIX::dup2($err_wr_fd, 2) or die $!;
+
+  exec { $cmd[0] } @cmd;
+}
+
+my $in = '';
+vec($in, $out_rd_fd, 1) = 1;
+vec($in, $err_rd_fd, 1) = 1;
+
+my $attached = 0;
+
+my $out = '';
+my $err = '';
+while(1)
+{
+  my $n = select(my $rout = $in, undef, my $eout = $in, 0.125);
+  last if ($n == 0 && exists $status_by_pid{$child});
+  next unless ($n > 0);
+
+  my $data;
+  my $or = 0;
+  my $er = 0;
+  if(vec($rout, $out_rd_fd, 1))
+  {
+    $or = xread($out_rd_fd, $data, 0xffff);
+    $out .= $data if $or;
+    if($or)
+    {
+      POSIX::write(1, $data, length($data));
+    }
+  }
+
+  if(vec($rout, $err_rd_fd, 1))
+  {
+    $er = xread($err_rd_fd, $data, 0xffff);
+    $err .= $data if $er;
+    if($er)
+    {
+      POSIX::write(2, $data, length($data));
+    }
+  }
+
+  if(!$attached && $out =~ /Attaching \d+ probes/m)
+  {
+    $attached = 1;
+    print("ATTACHED\n");
+    select(undef, undef, undef, 0.25);
+    kill(1, $pid);
+  }
+
+  last if($or == 0 && $er == 0 && exists $status_by_pid{$child});
+}

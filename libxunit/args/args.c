@@ -51,6 +51,7 @@ static void args_usage()
 "\n"
 "options\n"
 " --nofork  : don't fork before each test\n"
+" --await   : wait for sigusr1 before running any tests\n"
 "\n"
 "build optimally      https://github.com/hossbeast/fab\n"
     , git_describe
@@ -64,6 +65,7 @@ void args_parse(int argc, char ** argv)
   int help = 0;
   int version = 0;
   int fork = 1;
+  int await = 0;
   int x;
   int indexptr;
 
@@ -79,6 +81,8 @@ void args_parse(int argc, char ** argv)
     , { "fork"                        , no_argument       , &fork, 1 }
     , { "nofork"                      , no_argument       , &fork, 0 }
     , { "no-fork"                     , no_argument       , &fork, 0 }
+    , { "await"                       , no_argument       , &await, 1 }
+    , { "no-await"                    , no_argument       , &await, 0 }
     , { }
   };
 
@@ -125,6 +129,7 @@ void args_parse(int argc, char ** argv)
   }
 
   xunit_args.fork = fork;
+  xunit_args.await = await;
 
   if(help)
   {
