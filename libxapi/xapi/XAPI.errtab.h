@@ -1,1 +1,0 @@
-../errtab/XAPI.errtab.h
