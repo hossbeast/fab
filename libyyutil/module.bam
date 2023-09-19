@@ -10,7 +10,7 @@ import libcommon
 import lib{xlinux,narrator,valyria}
 
 # variants for the module
-variant pic.{debug,devel,final,trace}
+variant {debug,devel,final,trace}
 
 # pull in object files in the module, except those under integ
 rule *~integ/**/*.?.o -> libyyutil.$?.a

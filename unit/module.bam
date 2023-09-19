@@ -3,7 +3,7 @@
 
 use cc
 
-variant pic.{debug,devel,final,trace}
+variant {debug,devel,final,trace}
 
 import fab/include
 

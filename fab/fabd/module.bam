@@ -13,7 +13,7 @@ import fab/include
 import fab/asan
 import lib{common,descriptor,xlinux,valyria,value,narrator,fab,lorien,moria,yyutil,xunit}
 
-variant pic.{debug,devel,final,trace}
+variant {debug,devel,final,trace}
 
 # invoke the compiler to build the executable
 rule **~test/*.?.o [*] -> fabd.$? : executable/cc.bam
@@ -40,7 +40,7 @@ var : {
 # tests
 #
 
-variant pic.devel : [
+variant devel : [
   # all the code into the blob
   rule **~test/(*~main).?.o -> test/blob.?.a : ./cc-blob.bam
 

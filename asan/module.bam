@@ -7,10 +7,10 @@ import libxlinux
 import fab/include
 
 # variants for the module
-variant {debug,devel}{,.pic}
+variant {debug,devel}
 
 rule **/*.?.o -> //module/targets
 
 var : {
-  cflags.pic : [ -fPIC ]
+  cflags: [ -fPIC ]
 }

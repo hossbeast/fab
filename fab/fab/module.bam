@@ -8,7 +8,7 @@ use executable  # this module builds an executable
 use git
 
 # declare variants
-variant pic.{debug,devel,final,trace}
+variant {debug,devel,final,trace}
 
 rule fab.? -> //module/targets
 
@@ -17,7 +17,7 @@ import fab/include
 import fab/asan
 import lib{common,descriptor,xlinux,narrator,valyria,yyutil,bacon,fab,lorien}
 
-variant pic.{devel} : [
+variant {devel} : [
   rule fab.? <- asan/asan.$?.o
 ]
 
@@ -25,7 +25,7 @@ variant pic.{devel} : [
 rule **/*.?.o -> fab.$? : executable/cc.bam
 
 # library dependencies
-variant pic.{debug,devel,final,trace} : [
+variant {debug,devel,final,trace} : [
   rule //module/imports/*/lib*.?.a -> fab.$?
 ]
 

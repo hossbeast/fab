@@ -8,7 +8,7 @@ import libxlinux
 import fab/include
 
 # variants for the module
-variant pic.{debug,devel,final,trace}
+variant {debug,devel,final,trace}
 
 # build the archive
 rule libcommon.?.a -> //module/targets
@@ -16,7 +16,3 @@ rule */*.?.o -> libcommon.$?.a
 
 # direct library dependencies
 rule //module/imports/*/lib*.?.a -> libcommon.$?.a
-
-var : {
-  cflags.pic : [ -fPIC ]
-}

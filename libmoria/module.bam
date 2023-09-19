@@ -13,7 +13,7 @@ import libcommon
 import lib{xlinux,narrator,valyria,xunit,yyutil}
 
 # declare variants in the module
-variant pic.{devel,debug,final,trace}
+variant {devel,debug,final,trace}
 
 # build the library by default
 rule libmoria.?.a -> //module/targets

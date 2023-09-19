@@ -1,20 +1,21 @@
 /* SPDX-License-Identifier: GPL-3.0 */
 /* Copyright (c) 2012-2023 Todd Freed <todd.freed@gmail.com> */
 
-variant pic.devel : [
+variant devel : [
   # per-test executables
   rule **/test/(test_*.?).o -> $^D/$1.xunit : ./cc-test.bam
+  rule **/test/(test_*.?.xunit) <- //module/imports/libxunit/libxunit.?.a
+
+  # per-test targets
+  rule **/test/(test_*).?.xunit -> //tests/$1 : ./run.bam
 
   # omnibus test executable
   rule **/test/test_*.?.o [*] -> tests.xunit : ./cc-test.bam
-
-  # pull in libxunit
-  rule **/test/(test_*.?.xunit) <- //module/imports/libxunit/libxunit.?.a
   rule tests.xunit <- //module/imports/libxunit/libxunit.?.a
 
-  # global target to run the omnibus executable
-  rule tests.xunit -> //xunit : ./run.bam
+  # omnibus test target
+  rule tests.xunit -> //module/xunit : ./run.bam
 
-  # global per-test targets
-  rule **/test/(test_*).?.xunit -> //$1 : ./run.bam
+  # global xunit target
+  rule //module/xunit -> //xunit
 ]

@@ -6,14 +6,14 @@ use executable   # this module builds an executable
 use git
 
 # declare variants
-variant pic.{debug,devel,final,trace}
+variant {debug,devel,final,trace}
 
 # make common objects available for #include and linking
 import fab/include
 import fab/asan
 import lib{common,xlinux,narrator,valyria,yyutil,bacon}
 
-variant pic.{debug,devel} : [
+variant {debug,devel} : [
   rule bacon.? <- asan/asan.$?.o
 ]
 
@@ -21,7 +21,7 @@ variant pic.{debug,devel} : [
 rule **/*.?.o [*] -> bacon.$? : executable/cc.bam
 
 # library dependencies
-variant pic.{debug,devel,final,trace} : [
+variant {debug,devel,final,trace} : [
   rule //module/imports/*/lib*.?.a -> bacon.$?
 ]
 

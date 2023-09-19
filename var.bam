@@ -19,9 +19,6 @@ cflags.trace : {
 cflags.final : {
   -O3 -Wno-array-bounds # -Warray-bounds is NOT COMPATIBLE with containerof
 }
-cflags.pic : {
-  -fPIC
-}
 lflags.devel : [
   -lasan -lubsan
 ]

@@ -15,14 +15,14 @@ import fab/asan as asan
 import libcommon
 
 # variants for the module
-variant pic.{debug,devel,final,trace}
+variant {debug,devel,final,trace}
 
 # pull in object files in the module, except those under test/assert
-variant pic.{debug,final,trace} : [
+variant {debug,final,trace} : [
   rule *~test~assert~faults/**/*.?.o -> libvalyria.$?.a
 ]
 
-variant pic.devel : [
+variant devel : [
   rule *~test/**/*.?.o -> libvalyria.$?.a
 ]
 
@@ -36,7 +36,7 @@ rule //module/imports/*~libxunit/lib*.?.a -> libvalyria.$?.a
 # tests
 #
 
-variant pic.devel : [
+variant devel : [
   # build individual test executables
   rule test/test_(*).?.o -> $^D/test_$1.$? : ./cc-test.bam
   rule test/test_(*).? <- fabtest/unit.$?.o
