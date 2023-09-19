@@ -1,3 +1,37 @@
+v0.8.0 - December 2023
+
+config
+ * config.bam files in the ancestry of the module are now applied
+ * config is now strictly cumulative
+
+vars
+ * var.bam files in the ancestry of the module are now applied
+ * vars are now strictly cumulative
+
+rules
+ * rules.bam files in the ancestry of the module are now applied
+ * new bind rule type
+ * new search/search rule type
+ * conditional blocks are now supported, expressions resolve against the module vars
+
+anchor
+ * a module may now specify an anchor directory -- rules are also run in the anchor dir by default.
+   in this way, out-of-tree builds are now well supported.
+
+patterns
+ * type qualifiers have been added, e.g. foo(/) to limit matches to directories named foo
+
+filesystem
+ * mkdirs config option, if enabled, will cause fabd to create missing directories
+ * indexed config option, controls whether dirents are indexed for lookup by name
+
+fab client
+ * new commants: envs, filesystem, fstree, rules
+ * stats -S: show stats from special files only
+ * config: now shows file and location next to each value
+
+fab commander has been removed
+
 v0.7.0 - July 2021
 
 formula features
