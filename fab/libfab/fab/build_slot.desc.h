@@ -1,1 +1,0 @@
-../build_slot/build_slot.desc.h
