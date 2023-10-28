@@ -9,7 +9,7 @@
 #include "scanner.internal.h"
 
 #include "macros.h"
-#include "zbuffer.h"
+#include "zcat.h"
 
 //
 // static
@@ -38,13 +38,13 @@ static int reduce(yyu_parser * parser, uint16_t attrs)
     r = 1;
 
     if(parser->error_len) {
-      parser->error_len += znloads(
+      parser->error_len += zcats(
           parser->error_str + parser->error_len
         , sizeof(parser->error_str) - parser->error_len
         , ", "
       );
     }
-    parser->error_len += znloadf(
+    parser->error_len += zcatf(
         parser->error_str + parser->error_len
       , sizeof(parser->error_str) - parser->error_len
       , " location [%d,%d - %d,%d]"
@@ -54,7 +54,7 @@ static int reduce(yyu_parser * parser, uint16_t attrs)
       , parser->error_loc.l_col + 1
     );
     if(parser->fname) {
-      parser->error_len += znloadf(
+      parser->error_len += zcatf(
           parser->error_str + parser->error_len
         , sizeof(parser->error_str) - parser->error_len
         , " %s"
@@ -64,7 +64,7 @@ static int reduce(yyu_parser * parser, uint16_t attrs)
 
     if(parser->gramerr)
     {
-      parser->error_len += znloadf(
+      parser->error_len += zcatf(
           parser->error_str + parser->error_len
         , sizeof(parser->error_str) - parser->error_len
         , " token %s"

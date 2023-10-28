@@ -85,7 +85,7 @@ void token_probe(
     , token
   );
 
-//printf("%s\n", buf);
+printf("%s\n", buf);
   PROBE2(yyu, token, xtra, buf);
 }
 
@@ -130,7 +130,7 @@ void popstate_probe(const yyu_parser * restrict parser, int prev, int next)
     , ""
   );
 
-//printf("%s\n", buf);
+printf("%s\n", buf);
   PROBE2(yyu, popstate, parser, buf);
 }
 
@@ -175,6 +175,6 @@ void pushstate_probe(const yyu_parser * const parser, int prev, int next)
     , ""
   );
 
-//printf("%s\n", buf);
+printf("%s\n", buf);
   PROBE2(yyu, pushstate, parser, buf);
 }

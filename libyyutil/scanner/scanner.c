@@ -14,7 +14,7 @@
 #include "parser.internal.h"
 
 #include "macros.h"
-#include "zbuffer.h"
+#include "zcat.h"
 #include "probes.h"
 
 static int token_table_cmp_key(const void * _key, const void * _token)
@@ -158,13 +158,13 @@ void API yyu_errorf(yyu_parser * restrict parser, const yyu_location * restrict 
   yyu_save_error_loc(parser, lloc);
 
   if(parser->error_len) {
-    parser->error_len += znloads(
+    parser->error_len += zcats(
         parser->error_str + parser->error_len
       , sizeof(parser->error_str) - parser->error_len
       , ", "
     );
   }
-  parser->error_len += znloadvf(
+  parser->error_len += zcatvf(
       parser->error_str + parser->error_len
     , sizeof(parser->error_str) - parser->error_len
     , fmt

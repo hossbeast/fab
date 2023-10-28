@@ -7,7 +7,7 @@
 #include "grammar.internal.h"
 
 #include "common/stresc.h"
-#include "zbuffer.h"
+#include "zcat.h"
 #include "macros.h"
 
 //
@@ -75,13 +75,13 @@ void API yyu_grammar_error(yyu_location * const restrict lloc, void * const rest
     }
 
     if(parser->error_len) {
-      parser->error_len += znloads(
+      parser->error_len += zcats(
           parser->error_str + parser->error_len
         , sizeof(parser->error_str) - parser->error_len
         , ", "
       );
     }
-    parser->error_len += znloads(
+    parser->error_len += zcats(
         parser->error_str + parser->error_len
       , sizeof(parser->error_str) - parser->error_len
       , err
@@ -115,25 +115,25 @@ void API yyu_grammar_error(yyu_location * const restrict lloc, void * const rest
     if(tokname)
     {
       zt = z;
-      z += znloads(s + z, sz - z, tokname);
+      z += zcats(s + z, sz - z, tokname);
     }
 
     // escaped string from which the token was scanned
     if(alen)
     {
       if(zt != z)
-        z += znloads(s + z, sz - z, " ");
+        z += zcats(s + z, sz - z, " ");
       zt = z;
-      z += znloadf(s + z, sz - z, "(%.*s)", (int)alen, abuf);
+      z += zcatf(s + z, sz - z, "(%.*s)", (int)alen, abuf);
     }
 
     // representation of the semantic value for the token
     if(blen)
     {
       if(zt != z)
-        z += znloads(s + z, sz - z, " ");
+        z += zcats(s + z, sz - z, " ");
       zt = z;
-      z += znloadf(s + z, sz - z, "(%.*s)", (int)blen, bbuf);
+      z += zcatf(s + z, sz - z, "(%.*s)", (int)blen, bbuf);
     }
   }
 }
