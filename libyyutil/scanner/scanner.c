@@ -76,6 +76,7 @@ void API yyu_locreset(yyu_location * const lloc, yyu_parser * const xtra, char *
   }
 
   // assign location for current token
+  lloc->fname = xtra->fname;
   lloc->f_col = xtra->loc.f_col;
   lloc->l_col = xtra->loc.l_col - 1;
   lloc->f_lin = xtra->loc.f_lin;
@@ -115,6 +116,7 @@ void API yyu_locwrite(
 
   // assign location to the current token
   *lloc = xtra->loc;
+  lloc->fname = xtra->fname;
 }
 
 void API yyu_pushstate(int next, yyu_parser * const parser)

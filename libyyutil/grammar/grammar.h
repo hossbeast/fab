@@ -16,14 +16,15 @@ struct yyu_location;
 // lines and columns are inclusive and zero based
 //
 typedef struct yyu_location {
-  uint16_t f_lin;  // line where the location begins
-  uint16_t f_col;  // column where the location begins
-  uint16_t l_lin;  // line where the location ends
-  uint16_t l_col;  // column where the location ends
+  const char *fname;  // filename
+  uint16_t f_lin;     // line where the location begins
+  uint16_t f_col;     // column where the location begins
+  uint16_t l_lin;     // line where the location ends
+  uint16_t l_col;     // column where the location ends
 
-  char *  s;       // pointer to start of location
-  char *  e;       // pointer to end of location
-  size_t  l;       // length of location, equal to e - s
+  char *  s;          // pointer to start of location
+  char *  e;          // pointer to end of location
+  size_t  l;          // length of location, equal to e - s
 } yyu_location;
 
 typedef union yyu_lval {

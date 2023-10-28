@@ -18,6 +18,7 @@ void API yyu_aggregate_location(yyu_location * loc, yyu_location * A, yyu_locati
 {
   if(A)
   {
+    loc->fname = A->fname;
     loc->f_col = A->f_col;
     loc->f_lin = A->f_lin;
     loc->l_col = B->l_col;

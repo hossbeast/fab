@@ -157,25 +157,11 @@ void yyu_parser_xdestroy(yyu_parser * const restrict parser)
 #define YYU_PARTIAL 1  // stop parsing after recognizing an utterance
 #define YYU_INPLACE 2  // parse the buffer without making a copy ; it ends with two null bytes
 
-/// yyu_parse
-//
-// SUMMARY
-//
-//
-// PARAMETERS
-//  parser      -
-//  text        -
-//  text_len    -
-//  fname       -
-//  attrs       -
-//  [init_loc]  -
-//  [final_loc] - (returns)
-//
-
 /*
  * parse some text
  *
- *  attrs - bitwise combo of YYU_*
+ * attrs - bitwise combo of YYU_*
+ * fname  - filename for parsed locations
  *
  * returns zero on success, or
  *  1 - scanner, parser, or grammar error
