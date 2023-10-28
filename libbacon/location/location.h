@@ -10,9 +10,7 @@ struct bacon_parser;
 
 typedef struct bacon_location {
   llist lln;
-
   const char * fname;
-
   int f_lin;
   int f_col;
   int l_lin;
@@ -23,7 +21,7 @@ typedef struct bacon_location {
   size_t l;
 } bacon_location;
 
-struct bacon_location * bacon_location_alloc(struct bacon_parser * restrict parser)
+struct bacon_location *bacon_location_alloc(struct bacon_parser * restrict parser)
   __attribute__((nonnull));
 
 void bacon_location_clone(

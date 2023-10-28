@@ -31,7 +31,7 @@ void bacon_builder_pop_list(bacon_writer ** restrict writerp);
 #define LOADF(fmt, ...) bacon_writef(builder_writer, fmt, ##__VA_ARGS__);
 #define INT(x) bacon_writer_int(builder_writer, x);
 #define UINT(x) bacon_writer_uint(builder_writer, x);
-#define BOOL(x) bacon_writer_bool(builder_writer, x);
+#define BOOL(x) bacon_writer_bool(builder_writer, !!(x));
 #define HEX(x) bacon_writer_hex(builder_writer, (uint64_t)x);
 #define HEX256(x) bacon_writef(builder_writer, "0x%016"PRIx64"%016"PRIx64"%016"PRIx64"%016"PRIx64, x[0], x[1], x[2], x[3]);
 #define HEX512(x) bacon_writef(builder_writer                                                           \
@@ -40,3 +40,6 @@ void bacon_builder_pop_list(bacon_writer ** restrict writerp);
 );
 #define FLOAT(x) LOADF("%.6lf", x);
 #define VARIABLEW(s, l) bacon_writer_variable(builder_writer, s, l);
+
+#define COMMENTF(fmt, ...) bacon_writer_commentf(builder_writer, fmt, ##__VA_ARGS__);
+#define COMMENTS(s) bacon_writer_comments(builder_writer, s);

@@ -19,8 +19,11 @@ bacon_location * bacon_location_alloc(bacon_parser * restrict parser)
 
   if(!(loc = llist_shift(&parser->location_freelist, typeof(*loc), lln))) {
     xmalloc(&loc, sizeof(*loc));
-    llist_init(&loc->lln);
+  } else {
+    memset(loc, 0, sizeof(*loc));
   }
+
+  llist_init(&loc->lln);
 
   return loc;
 }
@@ -39,6 +42,7 @@ void bacon_location_clone(
     loc = bacon_location_alloc(parser);
   }
 
+  loc->fname = src->fname;
   loc->f_lin = src->f_lin;
   loc->f_col = src->f_col;
   loc->l_lin = src->l_lin;

@@ -34,6 +34,14 @@ static void say_set_single(bacon_writer * restrict builder_writer)
   }
 }
 
+static void say_set_single_comments(bacon_writer * restrict builder_writer)
+{
+  { SET             COMMENTS("set")
+    STRING("hi")    COMMENTS("hi")
+    STRING("there") COMMENTS("there")
+  }
+}
+
 static void say_set_multi(bacon_writer * restrict builder_writer)
 {
   { SET
@@ -42,6 +50,16 @@ static void say_set_multi(bacon_writer * restrict builder_writer)
       STRING("there")
     }
   }
+}
+
+static void say_set_multi_comments(bacon_writer * restrict builder_writer)
+{
+  { SET               COMMENTS("set-1")
+    { SET             COMMENTS("set-2")
+      STRING("hi")    COMMENTS("hi")
+      STRING("there") COMMENTS("there")
+    }                 COMMENTS("set-2")
+  }                   COMMENTS("set-1")
 }
 
 static void say_list_set_mapping(bacon_writer * restrict builder_writer)
@@ -60,6 +78,18 @@ static void say_list_set_mapping(bacon_writer * restrict builder_writer)
       }
     }
   }
+}
+
+static void say_list_set_mapping_comments(bacon_writer * restrict builder_writer)
+{
+  { LIST                  COMMENTS("list")
+    { SET                 COMMENTS("set")
+      { MAPPING
+        STRING("hi")
+        INT(42)           COMMENTS("hi 42")
+      }
+    }                     COMMENTS("end-set")
+  }                       COMMENTF("%s", "end-list")
 }
 
 static void say_set_mapping_list_set(bacon_writer * restrict builder_writer)
@@ -186,6 +216,14 @@ static xunit_unit xunit = {
   , xu_entry : test_builder_entry
   , xu_tests : (void*)(writer_test*[]) {
         (writer_test[]){{
+            .say = say_set_single_comments
+          , .expected = ""
+              "{                                                            # set\n"
+              "  hi                                                         # hi\n"
+              "  there                                                      # there\n"
+              "}"
+        }}
+      , (writer_test[]){{
             .say = say_set_single
           , .singleline = true
           , .expected = "{ hi there }"
@@ -199,6 +237,16 @@ static xunit_unit xunit = {
             .say = say_set_multi
           , .singleline = true
           , .expected = "{ { hi there } }"
+        }}
+      , (writer_test[]){{
+            .say = say_set_multi_comments
+          , .expected =""
+              "{                                                            # set-1\n"
+              "  {                                                          # set-2\n"
+              "    hi                                                       # hi\n"
+              "    there                                                    # there\n"
+              "  }                                                          # set-2\n"
+              "}                                                            # set-1"
         }}
       , (writer_test[]){{
             .say = say_set_multi
@@ -219,6 +267,15 @@ static xunit_unit xunit = {
             .say = say_list_set_mapping
           , .singleline = true
           , .expected = "[ { hi : there } { hi : there } ]"
+        }}
+      , (writer_test[]){{
+            .say = say_list_set_mapping_comments
+          , .expected = ""
+              "[                                                            # list\n"
+              "  {                                                          # set\n"
+              "    hi : 42                                                  # hi 42\n"
+              "  }                                                          # end-set\n"
+              "]                                                            # end-list"
         }}
       , (writer_test[]){{
             .say = say_set_mapping_list_set

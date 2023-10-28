@@ -4,7 +4,6 @@
 #pragma once
 
 #include "types.h"
-//#include "bacon/bacon_narrator.h"
 
 struct narrator;
 struct bacon_value;
@@ -13,12 +12,13 @@ struct bacon_value;
 
 typedef struct bacon_writer {
   struct narrator * N;
-//  bacon_narrator bn;
   bool singleline;
 
   bool any;         // whether anything has been written
   int mapping;      // true while a map entry is being written across calls
   int string;       // true while a string entry is being written across calls;
+
+  off_t nl_off;
 
   uint8_t level;
   char levels[VALUE_WRITER_MAX_DEPTH];
@@ -167,11 +167,28 @@ void bacon_writer_mapping_string_bytes(bacon_writer * const restrict writer, con
   __attribute__((nonnull));
 
 /* write value-string escaped text */
-size_t bacon_value_string_znloadw(void * restrict dst, size_t sz, const void * restrict b, size_t bz)
+size_t bacon_value_string_zcatw(void * restrict dst, size_t sz, const void * restrict b, size_t bz)
   __attribute__((nonnull));
 
-#define bacon_value_string_znloads(dst, sz, s) bacon_value_string_znloadw(dst, sz, s, strlen(s))
-#define bacon_value_string_znloadc(dst, sz, c) bacon_value_string_znloadw(dst, sz, (char[]) { c }, 1)
+#define bacon_value_string_zcats(dst, sz, s) bacon_value_string_zcatw(dst, sz, s, strlen(s))
+#define bacon_value_string_zcatc(dst, sz, c) bacon_value_string_zcatw(dst, sz, (char[]) { c }, 1)
 
-size_t bacon_value_string_znloadvf(void * restrict dst, size_t sz, const char * restrict fmt, va_list va)
+size_t bacon_value_string_zcatvf(void * restrict dst, size_t sz, const char * restrict fmt, va_list va)
   __attribute__((nonnull));
+
+//
+// comments
+//
+
+void bacon_writer_commentf(bacon_writer * const restrict writer, const char *fmt, ...)
+  __attribute__((nonnull(1, 2)))
+  __attribute__((format(printf, 2, 3)));
+
+void bacon_writer_commentvf(bacon_writer * const restrict writer, const char *fmt, va_list va)
+  __attribute__((nonnull));
+
+void bacon_writer_comments(bacon_writer * const restrict writer, const char *s)
+  __attribute__((nonnull));
+
+void bacon_writer_commentw(bacon_writer * const restrict writer, const char *b, size_t bz)
+  __attribute__((nonnull(1)));

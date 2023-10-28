@@ -93,6 +93,10 @@ static int cmp(const bacon_value * const restrict A, const bacon_value * const r
       break;
     case BACON_TYPE_MAPPING:
       return bacon_value_cmp(A->key, B->key);
+      if((d = bacon_value_cmp(A->key, B->key)) != 0) {
+        return d;
+      }
+      return bacon_value_cmp(A->val, B->val);
     default:
       RTA;
   }

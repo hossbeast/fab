@@ -35,26 +35,6 @@ static void test_merge_cleanup(xunit_unit * unit)
   bacon_unload();
 }
 
-#include "common/attrs.h"
-
-static void show(rbnode *rbn, int lvl);
-static __attribute__((unused)) void show(rbnode *rbn, int lvl)
-{
-  bacon_value *v;
-
-  if(rbn == &rbleaf) {
-    return;
-  }
-
-  v = containerof(rbn, typeof(*v), rbn);
-  printf("%*s", lvl * 2, "");
-  printf("type : %12s hash : %08x %p ", attrs32_name_byvalue(&value_type_attrs, v->type), v->hash, v);
-  bacon_value_say_flat(v, g_narrator_stdout);
-  printf("\n");
-  show(rbn->left, lvl + 1);
-  show(rbn->right, lvl + 1);
-}
-
 static void test_merge_entry(xunit_test * _test)
 {
   merge_test * test = containerof(_test, merge_test, xu);
@@ -130,6 +110,7 @@ static xunit_unit xunit = {
           dst : "{ true : false }"
         , src : "{ 1 : 2 }"
         , exp : "{ true : false 1 : 2 }"
+, xu_weight : 1
       }}
     , (merge_test[]){{
           dst : "{ 1 }"

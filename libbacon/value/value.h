@@ -38,7 +38,7 @@ BACON_TYPE_TABLE
 #undef DEF
 } bacon_type;
 
-extern struct attrs32 value_type_attrs;
+extern struct attrs32 bacon_value_type_attrs;
 
 typedef struct bacon_value {
   bacon_type type;

@@ -14,7 +14,7 @@
 
 #include "common/attrs.h"
 
-attrs32 value_type_attrs = (attrs32){
+attrs32 bacon_value_type_attrs = (attrs32){
 #undef DEF
 #define DEF(x, y) + 1
     num : 0 BACON_TYPE_TABLE
@@ -27,7 +27,7 @@ BACON_TYPE_TABLE
 
 static void __attribute__((constructor)) init()
 {
-  attrs32_init(&value_type_attrs);
+  attrs32_init(&bacon_value_type_attrs);
 }
 
 static bacon_value * value_alloc(llist * restrict freelist, bacon_type type)
@@ -36,11 +36,11 @@ static bacon_value * value_alloc(llist * restrict freelist, bacon_type type)
 
   if((v = llist_shift(freelist, typeof(*v), lln)) == 0) {
     xmalloc(&v, sizeof(*v));
-    llist_init(&v->lln);
-    rbnode_init(&v->rbn);
   } else {
-    v->loc = 0;
+    memset(v, 0, sizeof(*v));
   }
+  llist_init(&v->lln);
+  rbnode_init(&v->rbn);
 
   v->type = type;
 

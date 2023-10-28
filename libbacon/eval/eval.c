@@ -24,24 +24,6 @@
 #define CASE2(x, y) x | (y << 8)
 #define CASE3(x, y, z) x | (y << 8) | (z << 16)
 
-static void __attribute__((unused)) say_operands(const bacon_value * restrict loper, const bacon_value * restrict roper)
-{
-  if(loper) {
-    printf("loper %p type : %12s hash : %08x ", loper, attrs32_name_byvalue(&value_type_attrs, loper->type), loper->hash);
-  } else {
-    printf("loper %p type : %12s hash : %08x ", NULL, "", 0);
-  }
-  bacon_value_say(loper, g_narrator_stdout);
-  printf("\n");
-  if(roper) {
-    printf("roper %p type : %12s hash : %08x ", roper, attrs32_name_byvalue(&value_type_attrs, roper->type), roper->hash);
-  } else {
-    printf("roper %p type : %12s hash : %08x ", NULL, "", 0);
-  }
-  bacon_value_say(roper, g_narrator_stdout);
-  printf("\n");
-}
-
 static int eval(
     struct bacon_parser * restrict parser
   , bacon_expr * restrict expr

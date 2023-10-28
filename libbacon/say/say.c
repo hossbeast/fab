@@ -10,7 +10,7 @@
 
 #include "value.h"
 #include "writer.h"
-#include "zbuffer.h"
+#include "zcat.h"
 #include "keywords.h"
 
 #include "macros.h"
