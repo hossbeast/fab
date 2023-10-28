@@ -26,3 +26,7 @@ variant {debug,devel,final,trace} : [
 ]
 
 rule bacon.? -> //module/targets
+
+var : {
+  lflags : [ -lpthread -lbacktrace -lubsan -lasan ]
+}

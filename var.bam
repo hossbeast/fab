@@ -6,6 +6,7 @@ cflags       : {
   -g -m64 -Wall -Werror -Wno-format-truncation -D_GNU_SOURCE -fno-builtin-log -Wmissing-prototypes "-fdiagnostics-color=always" -Wno-misleading-indentation -Wno-trigraphs
   -Wno-dangling-pointer
   "-DFABIPCDIR=/var/run/fab"
+  -include/home/todd/fab/include/backtracef.h
 }
 cflags.debug : {
   -O0 -ggdb3 -DCONFIG_DEBUG
@@ -20,5 +21,5 @@ cflags.final : {
   -O3 -Wno-array-bounds # -Warray-bounds is NOT COMPATIBLE with containerof
 }
 lflags.devel : [
-  -lasan -lubsan
+  -lasan -lubsan -lbacktrace
 ]

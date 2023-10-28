@@ -24,6 +24,7 @@ my @cmd = (
   , @rpath
   # object files
   , split(/ /, $ENV{objects})
+  , '-lasan', '-lubsan', '-lbacktrace'
   # library files
   , "-Wl,--start-group"
   , split(/ /, $ENV{libraries})

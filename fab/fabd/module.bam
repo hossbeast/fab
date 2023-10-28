@@ -33,7 +33,7 @@ variant pic.devel : [
 ]
 
 var : {
-  lflags : [ -lrt -lpthread ]
+  lflags : [ -lrt -lpthread -lbacktrace ]
 }
 
 #

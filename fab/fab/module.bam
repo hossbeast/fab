@@ -30,5 +30,5 @@ variant {debug,devel,final,trace} : [
 ]
 
 var : {
-  lflags : [ -lncurses -lpthread ]
+  lflags : [ -lpthread -lbacktrace ]
 }

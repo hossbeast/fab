@@ -18,7 +18,7 @@ my @cmd = (
   , "-o", $ENV{bm_target}
   # object files in this module
   , split(/ /, $ENV{objects})
-  , '-lasan', '-lubsan'
+  , '-lasan', '-lubsan', '-lbacktrace'
   , "-Wl,--start-group"
   , split(/ /, $ENV{'static-libs'})
   , "-Wl,--end-group"

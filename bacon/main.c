@@ -29,6 +29,10 @@ int main(int argc, char ** argv, char ** envp)
 
   tid = syscall(SYS_gettid);
 
+#ifdef CONFIG_DEVEL
+  backtracef_setup();
+#endif
+
   bacon_load();
 
   // parse cmdline arguments

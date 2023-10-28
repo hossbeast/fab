@@ -24,6 +24,7 @@
 #include "command.h"
 #include "kill.h"
 #include "params.h"
+#include "backtracef.h"
 
 #include "barriers.h"
 
@@ -273,6 +274,10 @@ end:
 int main(int argc, char ** argv)
 {
   tid = syscall(SYS_gettid);
+
+#ifdef CONFIG_DEVEL
+  backtracef_setup();
+#endif
 
   // load libraries
   fab_load();

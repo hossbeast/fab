@@ -50,6 +50,7 @@
 #include "stats.h"
 #include "selection.h"
 #include "walker.h"
+#include "backtracef.h"
 
 #include "common/parseint.h"
 #include "common/hash.h"
@@ -93,6 +94,10 @@ int main(int argc, char ** argv)
 
   r = 0;
   tid = g_params.thread_monitor = gettid();
+
+#ifdef CONFIG_DEVEL
+  backtracef_setup();
+#endif
 
   // libraries
   fab_load();
