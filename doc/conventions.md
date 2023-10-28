@@ -38,11 +38,18 @@ modifiers / flags
 
 # describing objects
 
-using libnarrator
-
 ```
-xapi transform_canon_say(const transform * trans, narrator * const restrict _narrator) notnull(2)
-xapi bits_say(const uint64_t bits, narrator * const restrict _narrator) notnull(2)
+// multi-line description as a bacon set
+void vertex_describe(const vertex *, bacon_writer *);
+
+// describe to a narrator
+void vertex_say(const vertex *, narrator *);
+
+// describe to stdout
+void vertex_show(const vertex *);
+
+// describe to a buffer
+size_t vertex_cat(void *, size_t, const vertex *);
 ```
 
 # module lifecycle management

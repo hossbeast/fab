@@ -12,7 +12,7 @@
 #include "xstdlib.h"
 
 #include "fmt.h"
-#include "zbuffer.h"
+#include "zcat.h"
 
 //
 // api
@@ -75,7 +75,7 @@ ssize_t xreadlinkw(const char * pathname, uint16_t pathname_len, char * buf, siz
   char pathbuf[512];
   int len;
 
-  len = znloadw(pathbuf, sizeof(pathbuf), pathname, pathname_len);
+  len = zcatw(pathbuf, sizeof(pathbuf), pathname, pathname_len);
   pathbuf[len] = 0;
 
   return xreadlinks(pathbuf, buf, bufsiz);
