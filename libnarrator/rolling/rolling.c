@@ -101,7 +101,7 @@ static void __attribute__((nonnull)) scan(narrator_rolling * const restrict n)
   }
 }
 
-static void rolling_sayvf(narrator * const restrict N, const char * const restrict fmt, va_list va)
+static int rolling_sayvf(narrator * const restrict N, const char * const restrict fmt, va_list va)
 {
   narrator_rolling *n = containerof(N, typeof(*n), base);
 
@@ -112,10 +112,10 @@ static void rolling_sayvf(narrator * const restrict N, const char * const restri
   if(n->fd == -1 || n->written > n->threshold)
     rollover(n, 0);
 
-  xvdprintf(n->fd, fmt, va);
+  return xvdprintf(n->fd, fmt, va);
 }
 
-static void rolling_sayw(narrator * const restrict N, const void * const restrict b, size_t l)
+static int rolling_sayw(narrator * const restrict N, const void * const restrict b, size_t l)
 {
   narrator_rolling *n = containerof(N, typeof(*n), base);
 
@@ -128,6 +128,8 @@ static void rolling_sayw(narrator * const restrict N, const void * const restric
 
   axwrite(n->fd, b, l);
   n->written += l;
+
+  return l;
 }
 
 static void rolling_flush(narrator * restrict N)

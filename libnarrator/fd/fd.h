@@ -21,6 +21,7 @@ typedef struct narrator_fd
 {
   narrator base;
   int fd;
+  int off;
 
   /* errno if the writer experienced an error writing to the fd */
   int err;

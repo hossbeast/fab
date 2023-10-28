@@ -7,28 +7,32 @@
 #include "vtable.h"
 
 #include "macros.h"
-#include "zbuffer.h"
+#include "zcat.h"
 
 //
 // static
 //
 
-static void __attribute__((nonnull)) fixed_sayvf(narrator* const restrict N, const char * const restrict fmt, va_list va)
+static int __attribute__((nonnull)) fixed_sayvf(narrator* const restrict N, const char * const restrict fmt, va_list va)
 {
   narrator_fixed *n = containerof(N, typeof(*n), base);
   size_t l;
 
-  l = znloadvf(n->s + n->l, n->a - n->l, fmt, va);
+  l = zcatvf(n->s + n->l, n->a - n->l, fmt, va);
   n->l += l;
   n->m = MAX(n->l, n->m);
+
+  return l;
 }
 
-static void __attribute__((nonnull)) fixed_sayw(narrator* const restrict N, const void * const restrict b, size_t l)
+static int __attribute__((nonnull)) fixed_sayw(narrator* const restrict N, const void * const restrict b, size_t l)
 {
   narrator_fixed *n = containerof(N, typeof(*n), base);
 
-  n->l += znloadw(n->s + n->l, n->a - n->l, b, l);
+  n->l += zcatw(n->s + n->l, n->a - n->l, b, l);
   n->m = MAX(n->l, n->m);
+
+  return l;
 }
 
 static void __attribute__((nonnull(1))) fixed_seek(narrator * const restrict N, off_t offset, int whence, off_t *res)

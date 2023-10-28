@@ -10,13 +10,13 @@
 
 #include "macros.h"
 #include "common/assure.h"
-#include "zbuffer.h"
+#include "zcat.h"
 
 //
 // static
 //
 
-static void __attribute__((nonnull)) growing_sayvf(narrator * const restrict N, const char * const restrict fmt, va_list va)
+static int __attribute__((nonnull)) growing_sayvf(narrator * const restrict N, const char * const restrict fmt, va_list va)
 {
   narrator_growing *n = containerof(N, typeof(*n), base);
   va_list va2;
@@ -39,9 +39,11 @@ static void __attribute__((nonnull)) growing_sayvf(narrator * const restrict N, 
 
   n->l += r;
   n->m = MAX(n->l, n->m);
+
+  return r;
 }
 
-static void __attribute__((nonnull)) growing_sayw(narrator * const restrict N, const void * const restrict b, size_t l)
+static int __attribute__((nonnull)) growing_sayw(narrator * const restrict N, const void * const restrict b, size_t l)
 {
   narrator_growing *n = containerof(N, typeof(*n), base);
 
@@ -50,6 +52,8 @@ static void __attribute__((nonnull)) growing_sayw(narrator * const restrict N, c
 
   n->l += l;
   n->m = MAX(n->l, n->m);
+
+  return l;
 }
 
 static void __attribute__((nonnull(1))) growing_seek(narrator * restrict N, off_t offset, int whence, off_t * restrict res)

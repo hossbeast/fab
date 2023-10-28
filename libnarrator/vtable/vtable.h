@@ -8,9 +8,9 @@
 struct narrator;
 
 typedef struct narrator_vtable {
-  void (*sayvf)(struct narrator * const restrict n, const char * const restrict fmt, va_list va)
+  int (*sayvf)(struct narrator * const restrict n, const char * const restrict fmt, va_list va)
     __attribute__((nonnull));
-  void (*sayw)(struct narrator * const restrict n, const void * const restrict b, size_t l)
+  int (*sayw)(struct narrator * const restrict n, const void * const restrict b, size_t l)
     __attribute__((nonnull));
   void (*seek)(struct narrator * const restrict n, off_t offset, int whence, off_t * restrict res)
     __attribute__((nonnull(1)));

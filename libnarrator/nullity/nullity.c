@@ -14,14 +14,14 @@ narrator * APIDATA g_narrator_nullity = 0;
 // static
 //
 
-static void __attribute__((nonnull)) nullity_sayvf(narrator * const restrict N, const char * const restrict fmt, va_list va)
+static int __attribute__((nonnull)) nullity_sayvf(narrator * const restrict N, const char * const restrict fmt, va_list va)
 {
-
+  return 0;
 }
 
-static void __attribute__((nonnull)) nullity_sayw(narrator * const restrict N, const void * const restrict b, size_t l)
+static int __attribute__((nonnull)) nullity_sayw(narrator * const restrict N, const void * const restrict b, size_t l)
 {
-
+  return 0;
 }
 
 static void __attribute__((nonnull)) nullity_seek(narrator * const restrict N, off_t offset, int whence, off_t * restrict res)

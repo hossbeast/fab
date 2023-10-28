@@ -14,7 +14,7 @@
 // static
 //
 
-static __attribute__((nonnull)) void multi_sayvf(narrator* const restrict N, const char * const restrict fmt, va_list va)
+static int __attribute__((nonnull)) multi_sayvf(narrator* const restrict N, const char * const restrict fmt, va_list va)
 {
   narrator_multi *n = containerof(N, typeof(*n), base);
 
@@ -36,9 +36,11 @@ static __attribute__((nonnull)) void multi_sayvf(narrator* const restrict N, con
   if(vap) {
     va_end(*vap);
   }
+
+  return 0;
 }
 
-static __attribute__((nonnull)) void multi_sayw(narrator* const restrict N, const void * const restrict b, size_t l)
+static int __attribute__((nonnull)) multi_sayw(narrator* const restrict N, const void * const restrict b, size_t l)
 {
   narrator_multi *n = containerof(N, typeof(*n), base);
   int x;
@@ -47,6 +49,8 @@ static __attribute__((nonnull)) void multi_sayw(narrator* const restrict N, cons
   {
     narrator_sayw(n->v[x], b, l);
   }
+
+  return 0;
 }
 
 static __attribute__((nonnull)) void multi_seek(narrator* const restrict N, off_t offset, int whence, off_t * restrict res)

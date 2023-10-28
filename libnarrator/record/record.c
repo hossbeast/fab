@@ -15,7 +15,7 @@
 // static
 //
 
-static __attribute__((nonnull)) void record_sayvf(narrator* const restrict N, const char * const restrict fmt, va_list va)
+static int __attribute__((nonnull)) record_sayvf(narrator* const restrict N, const char * const restrict fmt, va_list va)
 {
   narrator_record *n = containerof(N, typeof(*n), base);
 
@@ -33,9 +33,11 @@ static __attribute__((nonnull)) void record_sayvf(narrator* const restrict N, co
     vsprintf(n->s + n->l, fmt, va);
   }
   n->l += r;
+
+  return r;
 }
 
-static __attribute__((nonnull)) void record_sayw(narrator* const restrict N, const void * const restrict b, size_t l)
+static int __attribute__((nonnull)) record_sayw(narrator* const restrict N, const void * const restrict b, size_t l)
 {
   narrator_record *n = containerof(N, typeof(*n), base);
 
@@ -43,6 +45,8 @@ static __attribute__((nonnull)) void record_sayw(narrator* const restrict N, con
   memcpy(n->s + n->l, b, l);
   n->s[n->l + l] = 0;
   n->l += l;
+
+  return l;
 }
 
 static __attribute__((nonnull)) void record_seek(narrator* const restrict N, off_t offset, int whence, off_t * restrict res)

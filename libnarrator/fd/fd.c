@@ -20,7 +20,7 @@ narrator * APIDATA g_narrator_stderr;
 // static
 //
 
-static void __attribute__((nonnull)) fd_sayvf(narrator * const restrict N, const char * const restrict fmt, va_list va)
+static int __attribute__((nonnull)) fd_sayvf(narrator * const restrict N, const char * const restrict fmt, va_list va)
 {
   int r;
   narrator_fd *n = containerof(N, typeof(*n), base);
@@ -29,9 +29,11 @@ static void __attribute__((nonnull)) fd_sayvf(narrator * const restrict N, const
   if (r < 0) {
     n->err = r;
   }
+
+  return r;
 }
 
-static void __attribute__((nonnull)) fd_sayw(narrator * const restrict N, const void * const restrict b, size_t l)
+static int __attribute__((nonnull)) fd_sayw(narrator * const restrict N, const void * const restrict b, size_t l)
 {
   narrator_fd *n = containerof(N, typeof(*n), base);
   size_t actual;
@@ -50,6 +52,8 @@ static void __attribute__((nonnull)) fd_sayw(narrator * const restrict N, const 
     }
     actual += cur;
   }
+
+  return actual;
 }
 
 static void __attribute__((nonnull)) fd_seek(narrator * const restrict N, off_t offset, int whence, off_t * restrict res)
