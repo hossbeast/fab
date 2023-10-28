@@ -11,7 +11,7 @@
 #include "info.h"
 #include "type.internal.h"
 
-#include "zbuffer.h"
+#include "zcat.h"
 
 static int printable(const char * s, size_t l)
 {
@@ -159,9 +159,9 @@ static void buffer_info_push(const char * const restrict name, xunit_arg * a)
     bufz = sizeof(space);
 
     bufo = 0;
-    bufo = znloads(buf + bufo, bufz - bufo, "0x");
+    bufo = zcats(buf + bufo, bufz - bufo, "0x");
     for(x = 0; x < a->l; x++) {
-      bufo += znloadf(buf + bufo, bufz - bufo, "%02hhx", ((char*)a->p)[x]);
+      bufo += zcatf(buf + bufo, bufz - bufo, "%02hhx", ((char*)a->p)[x]);
     }
 
     xunit_info_pushs(name, space);

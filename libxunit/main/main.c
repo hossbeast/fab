@@ -19,10 +19,11 @@
 #include "xlinux/xunistd.h"
 #include "xlinux/xmman.h"
 #include "xlinux/xsignal.h"
-#include "xunit/assert.h"
 #include "narrator.h"
 #include "narrator/units.h"
 #include "common/color.h"
+
+#include "assert.h"
 
 #include "args.h"
 #include "unit.h"
@@ -30,7 +31,7 @@
 #include "common/assure.h"
 #include "macros.h"
 
-__thread int32_t tid;
+__attribute__((weak)) __thread int32_t tid;
 
 static inline double pct(double a, double b)
 {
@@ -161,25 +162,6 @@ static void xmain(int argc, char ** argv)
           xunit->xu_setup(xunit);
 
         entry(*test);
-#if 0
-        if((results->status = entry(*test)))
-        {
-          // add identifying info
-          if(name)
-            xapi_frame_info_pushs("name", name);
-          xapi_frame_info_pushf("test", "%d in [%d,%zu]", (*test)->xu_index, 0, tests_len);
-
-          // propagate non-unit-testing errors
-          if(XAPI_ERRVAL != XUNIT_FAIL)
-            fail(0);
-
-          // for unit-testing errors, log the failure and continue
-          xapi_trace_full(trace, sizeof(trace), XAPI_TRACE_COLORIZE | XAPI_TRACE_NONEWLINE);
-          xapi_calltree_unwind();
-          logs(L_FAIL, trace);
-        }
-#endif
-
         results->assertions_passed = xunit_assertions_passed;
         results->assertions_failed = xunit_assertions_failed;
 

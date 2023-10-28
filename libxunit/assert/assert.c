@@ -11,7 +11,7 @@
 #include "type.internal.h"
 #include "info.internal.h"
 
-#include "zbuffer.h"
+#include "zcat.h"
 
 uint32_t API xunit_assertions_passed;
 uint32_t API xunit_assertions_failed;
