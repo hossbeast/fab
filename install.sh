@@ -43,6 +43,8 @@ cp bacon/bacon.$variant       $bindir/bacon
 # builtin modules
 rm -rf $sharedir/fab/modules/
 cp -dR builtin-modules $sharedir/fab/modules/
+chmod 0755 $sharedir/fab/modules/**/*.bam
+chmod 0644 $sharedir/fab/modules/**/rules.bam
 
 # default config files
 cp etc/config.bam         $etcdir/config.bam

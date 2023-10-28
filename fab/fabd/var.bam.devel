@@ -1,0 +1,4 @@
+LFLAGS0 : [
+  -lasan -lubsan -lbacktrace
+]
+CONFIG_XUNIT : true

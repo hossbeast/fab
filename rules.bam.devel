@@ -1,0 +1,18 @@
+/* SPDX-License-Identifier: GPL-3.0 */
+/* Copyright (c) 2012-2019 Todd Freed <todd.freed@gmail.com> */
+
+{
+  if($CONFIG_XUNIT)
+
+  use internal-modules/xunit
+
+  rule //test_* -> //targets
+}
+
+{
+  if(!$CONFIG_XUNIT)
+
+  use internal-modules/unit
+
+  rule //test_* -> //targets
+}

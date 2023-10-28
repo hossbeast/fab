@@ -1,0 +1,13 @@
+/* SPDX-License-Identifier: GPL-3.0 */
+/* Copyright (c) 2012-2023 Todd Freed <todd.freed@gmail.com> */
+
+use flex
+use bison
+
+rule **+(/) => [*] //module/include
+
+# build the library by default
+rule libmoria.a -> //targets
+
+# pull in object files in the module, ignoring ./test
+rule { search : module } **~test/*.o -> libmoria.a

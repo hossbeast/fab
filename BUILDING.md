@@ -40,7 +40,7 @@ special : {
 }
 ```
 
-## make
+## configure -> make
 
-It's expected that package maintainers will run configure/make to build bam for distribution. This
-uses the included makefiles.
+It's expected that package maintainers will run configure and make to build bam for distribution.
+This uses the included makefiles.

@@ -1,0 +1,14 @@
+/* SPDX-License-Identifier: GPL-3.0 */
+/* Copyright (c) 2012-2023 Todd Freed <todd.freed@gmail.com> */
+
+rule { search : anchor } .+(/) => [*] //module/include
+rule { search : anchor search : module } *~xlinux+(/) => [*] //module/include
+
+# pull in object files in the module, except those under integ
+rule { search : module } *~integ~build/**/*.o -> libxlinux.a
+
+# default build targets
+rule { search : module } libxlinux.a -> //targets
+
+# generated signals table
+rule -- [*] sigtable/sigtable.{c,h} : ./sigtable.bam

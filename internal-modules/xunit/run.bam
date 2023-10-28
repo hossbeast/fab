@@ -17,7 +17,7 @@ POSIX::dup2(1001, 1);
 POSIX::dup2(1001, 2);
 
 my @cmd = (
-  "./" . $ENV{"bm_source"}
+  "./" . $ENV{"bm_source0"}
 );
 
 exec { $cmd[0] } @cmd;

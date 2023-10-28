@@ -1,0 +1,52 @@
+#!/usr/bin/env bash
+#
+# SPDX-License-Identifier: GPL-3.0
+# Copyright (c) 2012-2023 Todd Freed <todd.freed@gmail.com>
+#
+
+usage() {
+  echo "usage: $0 /path/to/build-dir" 1>&2
+  exit 1
+}
+
+if [ $# -ne 1 ]; then
+  usage
+fi
+
+SRCDIR=$(dirname $(realpath $0))
+BUILDDIR=$1
+if [ -e $BUILDDIR ] && [ ! -d $BUILDDIR ]; then
+  echo "$BUILDDIR not usable" 1>&2
+  exit 1
+fi
+
+set -e
+
+echo SRCDIR   $SRCDIR
+echo BUILDDIR $BUILDDIR
+
+setup() {
+  echo $1 $2
+  mkdir -p $BUILDDIR/$1/$2
+
+  rm -f $BUILDDIR/$1/$2/module.bam
+  cat 1>$BUILDDIR/$1/$2/module.bam <<HERE
+/* SPDX-License-Identifier: GPL-3.0 */
+/* Copyright (c) 2012-2023 Todd Freed <todd.freed@gmail.com> */
+
+anchor $SRCDIR/$1
+varfiles var.bam.$2
+rulesfiles rules.bam.$2
+HERE
+}
+
+# setup the build directory
+mkdir -p $BUILDDIR
+ln -vs $SRCDIR/config.bam       $BUILDDIR/
+
+# setup the build directories
+for x in libxlinux libcommon asan unit libnarrator libdescriptor libvalyria libxunit libyyutil liblorien libbacon libmoria bacon fab/libfab fab/fab fab/fabd; do
+  for v in debug devel final trace; do
+    setup $x $v
+  done
+done

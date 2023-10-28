@@ -1,0 +1,18 @@
+/* SPDX-License-Identifier: GPL-3.0 */
+/* Copyright (c) 2012-2023 Todd Freed <todd.freed@gmail.com> */
+
+use flex
+use bison
+
+rule **+(/) => [*] //module/include
+
+# pull in non-test object files in the module
+rule { search : module } **~test~assert/*.o -> libbacon.a
+
+# default build targets
+rule libbacon.a -> //targets
+
+{
+  if($CONFIG_DEVEL)
+  rule { search : module } assert/*.o -> libbacon.a 
+}

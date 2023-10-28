@@ -10,14 +10,7 @@
 *.errtab.c
 **/errtab/*.errtab.h
 exports
-*.final
-*.debug
-*.devel
-*.trace
 *.1.gz
-*.errorcode
-*.stacktrace
-*.stacktrace_checks
 /common/*/test
 *.test
 /tags
@@ -29,5 +22,11 @@ git-state.h
 *.desc.c
 *.desc.h
 bacon/build/*/bacon
+fab/fab/build/*/fab
+fab/fabd/build/*/fabd
 sigtable.c
 sigtable.h
+**/test/test_*.debug
+**/test/test_*.devel
+**/test/test_*.final
+**/test/test_*.trace

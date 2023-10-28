@@ -1,0 +1,11 @@
+/* SPDX-License-Identifier: GPL-3.0 */
+/* Copyright (c) 2012-2019 Todd Freed <todd.freed@gmail.com> */
+
+CONFIG_TRACE : true
+CONFIG_VARIANT : trace
+CFLAGS : {
+  -O3 -ggdb3 -Wno-frame-address -fno-omit-frame-pointer -Wno-array-bounds
+}
+LFLAGS1 : [
+  -static
+]

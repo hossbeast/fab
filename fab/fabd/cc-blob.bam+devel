@@ -43,7 +43,6 @@ envs : {
         graph : depends
         max-distance : 2
         min-distance : 2
-        extension : o
       }
     ]
     property : relpath

@@ -4,8 +4,31 @@
 # Copyright (c) 2012-2023 Todd Freed <todd.freed@gmail.com>
 #
 
+#
+# installs binaries/libraries built by fab-v0.8
+#
+
+usage() {
+  echo "usage: $0 /path/to/build-dir" 1>&2
+  exit 1
+}
+
+if [ $# -ne 1 ]; then
+  usage
+fi
+
+SRCDIR=$(dirname $(realpath $0))
+BUILDDIR=$1
+if [ ! -d $BUILDDIR ]; then
+  usage
+fi
+
+echo SRCDIR   $SRCDIR
+echo BUILDDIR $BUILDDIR
+
+# cleanup previous builds
 (
-  find . -type f \(              \
+  find . $BUILDDIR -type f \(    \
        -name '*.o'               \
     -o -name 'git-state.[ch]'    \
     -o -name '*.tokens.[ch]'     \
@@ -23,15 +46,22 @@ if [ $? == 0 ]; then
 fi
 set -e
 
-for x in libxlinux libcommon asan unit libnarrator libdescriptor libvalyria libxunit libyyutil liblorien libbacon libmoria; do
-  pushd $x
+for x in libxlinux libcommon asan unit libnarrator libdescriptor libvalyria libxunit libyyutil liblorien libbacon libmoria ; do
+  pushd $BUILDDIR/$x
   fab
   fab kill
   popd
 done
 
-for x in bacon fab/libfab fab/fab fab/fabd ; do
-  pushd $x
+for x in bacon fab/libfab fab/fab ; do
+  pushd $BUILDDIR/$x
+  fab
+  fab kill
+  popd
+done
+
+for x in fab/fabd ; do
+  pushd $BUILDDIR/$x
   fab
   fab kill
   popd

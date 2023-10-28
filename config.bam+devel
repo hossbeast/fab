@@ -20,6 +20,7 @@ filesystems : {
     indexed : true
   }
 }
+
 walker : {
   exclude : {
     /home/todd/fab/builtin-modules
