@@ -54,7 +54,7 @@ void usnarfvf(char ** const restrict dst, size_t * const restrict dstl, const ch
   __attribute__((nonnull(1, 3)));
 
 void usnarfats(char ** const restrict dst, size_t * const restrict dstl, int dirfd, const char * const restrict path)
-  __attribute__((nonnull(1, 4)));
+  __attribute__((nonnull(1, 2, 4)));
 
 void usnarfatf(char ** const restrict dst, size_t * const restrict dstl, int dirfd, const char * const restrict path_fmt, ...)
   __attribute__((nonnull(1, 4)))

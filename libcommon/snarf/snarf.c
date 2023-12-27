@@ -21,7 +21,7 @@ static void snarf(int fd, char ** const restrict dst, size_t * restrict dstlp)
     {
       newa = dsta ?: 128;
       newa += newa * 2 + newa / 2;
-      xrealloc(dst, sizeof(**dst), newa + 2 /* YYU_INPLACE */, dsta);
+      xrealloc(dst, sizeof(**dst), newa + 2 /* facilitate YYU_INPLACE */, dsta);
       dsta = newa;
     }
 
@@ -109,7 +109,9 @@ void API usnarfats(char ** const restrict dst, size_t * const restrict dstlp, in
   int fd;
 
   fd = uxopenats(O_RDONLY, dirfd, path);
-  if(fd != -1) {
+  if(fd == -1) {
+    *dstlp = 0;
+  } else {
     snarf(fd, dst, dstlp);
   }
 
@@ -136,6 +138,5 @@ void API usnarfatvf(char ** const restrict dst, size_t * const restrict dstlp, i
 
 void API fsnarf(char ** const restrict dst, size_t * const restrict dstlp, int fd)
 {
-  xlseek(fd, 0, SEEK_SET);
   snarf(fd, dst, dstlp);
 }
