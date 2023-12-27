@@ -7,7 +7,7 @@
 
 #include "macros.h"
 #include "hash.h"
-#include "zbuffer.h"
+#include "zcat.h"
 
 //
 // static 16
@@ -111,7 +111,7 @@ const char * API attrs16_name_byvalue(const attrs16 * restrict e, uint16_t attrs
   return 0;
 }
 
-size_t API znload_attrs16(void * restrict dst, size_t sz, const attrs16 * restrict e, uint16_t attrs)
+size_t API attrs16_zcat(void * restrict dst, size_t sz, const attrs16 * restrict e, uint16_t attrs)
 {
   uint16_t erange;
   uint16_t evalue;
@@ -130,10 +130,10 @@ size_t API znload_attrs16(void * restrict dst, size_t sz, const attrs16 * restri
     if((erange & attrs) == evalue)
     {
       if(z) {
-        z += znloadf(dst + z, sz - z, "|");
+        z += zcatf(dst + z, sz - z, "|");
       }
 
-      z += znloadf(dst + z, sz - z, "%.*s", e->members[x].namel, e->members[x].name);
+      z += zcatf(dst + z, sz - z, "%.*s", e->members[x].namel, e->members[x].name);
       bits |= e->members[x].range;
     }
   }
@@ -141,9 +141,9 @@ size_t API znload_attrs16(void * restrict dst, size_t sz, const attrs16 * restri
   if((rem = (attrs & ~bits)))
   {
     if(z) {
-      z += znloadf(dst + z, sz - z, "|");
+      z += zcatf(dst + z, sz - z, "|");
     }
-    z += znloadf(dst + z, sz - z, "0x%x", rem);
+    z += zcatf(dst + z, sz - z, "0x%x", rem);
   }
 
   return z;
@@ -181,13 +181,14 @@ const char * API attrs32_name_byvalue(const attrs32 * restrict e, uint32_t attrs
 {
   const member32 * member;
 
-  if((member = attrs32_member_byvalue(e, attrs)))
+  if((member = attrs32_member_byvalue(e, attrs))) {
     return member->name;
+  }
 
   return 0;
 }
 
-size_t API znload_attrs32(void * restrict dst, size_t sz, const attrs32 * restrict e, uint32_t attrs)
+size_t API attrs32_zcat(void * restrict dst, size_t sz, const attrs32 * restrict e, uint32_t attrs)
 {
   uint32_t erange;
   uint32_t evalue;
@@ -197,6 +198,7 @@ size_t API znload_attrs32(void * restrict dst, size_t sz, const attrs32 * restri
   int x;
 
   z = 0;
+
   for(x = 0; x < e->num; x++)
   {
     erange = e->members[x].range;
@@ -205,10 +207,10 @@ size_t API znload_attrs32(void * restrict dst, size_t sz, const attrs32 * restri
     if((erange & attrs) == evalue)
     {
       if(z) {
-        z += znloadf(dst + z, sz - z, "|");
+        z += zcatf(dst + z, sz - z, "|");
       }
 
-      z += znloadf(dst + z, sz - z, "%.*s", e->members[x].namel, e->members[x].name);
+      z += zcatf(dst + z, sz - z, "%.*s", e->members[x].namel, e->members[x].name);
       bits |= e->members[x].range;
     }
   }
@@ -216,9 +218,9 @@ size_t API znload_attrs32(void * restrict dst, size_t sz, const attrs32 * restri
   if((rem = (attrs & ~bits)))
   {
     if(z) {
-      z += znloadf(dst + z, sz - z, "|");
+      z += zcatf(dst + z, sz - z, "|");
     }
-    z += znloadf(dst + z, sz - z, "0x%x", rem);
+    z += zcatf(dst + z, sz - z, "0x%x", rem);
   }
 
   return z;

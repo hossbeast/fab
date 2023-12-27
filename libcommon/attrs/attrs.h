@@ -69,7 +69,7 @@ const char * attrs16_name_byvalue(const attrs16 * restrict e, uint16_t attrs)
 /*
  *
  */
-size_t znload_attrs16(void * restrict dst, size_t sz, const attrs16 * restrict e, uint16_t attrs)
+size_t attrs16_zcat(void * restrict dst, size_t sz, const attrs16 * restrict e, uint16_t attrs)
   __attribute__((nonnull));
 
 
@@ -94,5 +94,5 @@ const char * attrs32_name_byvalue(const attrs32 * restrict e, uint32_t attrs)
 /*
  *
  */
-size_t znload_attrs32(void * restrict dst, size_t sz, const attrs32 * restrict e, uint32_t attrs)
+size_t attrs32_zcat(void * restrict dst, size_t sz, const attrs32 * restrict e, uint32_t attrs)
   __attribute__((nonnull));
