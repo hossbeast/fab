@@ -103,7 +103,7 @@ static inline void vertex_shadowtype_set(moria_vertex * restrict v, enum vertex_
 void vertex_state_set(moria_vertex * restrict v, vertex_state state)
   __attribute__((nonnull));
 
-enum fab_vertex_state vertex_fab_vertex_state_get(moria_vertex * restrict v)
+enum bam_vertex_state vertex_bam_vertex_state_get(moria_vertex * restrict v)
   __attribute__((nonnull));
 
 static inline vertex_state vertex_state_get(const moria_vertex * restrict v)

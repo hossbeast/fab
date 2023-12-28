@@ -6,7 +6,7 @@
 #include "types.h"
 
 #include "valyria/llist.h"
-#include "fab/stats.h"
+#include "bam/stats.h"
 #include "moria.h"
 #include "rule_system.h"
 
@@ -27,8 +27,8 @@ typedef struct rule_module_association {
   moria_vertex vertex;
 
   struct fsedge *shadow;       // shadow dirnode //modules/id/rules/id
-  fab_vertex_stats vertex_stats;
-  fab_rule_stats stats;
+  bam_vertex_stats vertex_stats;
+  bam_rule_stats stats;
   char id[40];                 // hash over rule-id + module-id
   uint16_t id_len;
   char token[40];

@@ -4,7 +4,7 @@
 #pragma once
 
 #include "types.h"
-#include "fab/stats.h"
+#include "bam/stats.h"
 
 struct graph_invalidation_context;
 

@@ -3,10 +3,10 @@
 
 #include "common/attrs.h"
 #include "common/color.h"
-#include "fab/client.h"
-#include "fab/ipc.h"
-#include "fab/list.h"
-#include "fab/events.h"
+#include "bam/client.h"
+#include "bam/ipc.h"
+#include "bam/list.h"
+#include "bam/events.h"
 #include "bacon/builder.h"
 #include "narrator.h"
 #include "narrator/fixed.h"
@@ -17,7 +17,7 @@
 #include "zcat.h"
 
 struct tree_args tree_args = {
-    graph : FAB_GRAPH_FSTREE
+    graph : BAM_GRAPH_FSTREE
   , direction : "down"
 };
 static struct tree_args *args = &tree_args;
@@ -54,9 +54,9 @@ static void usage(command * restrict cmd)
 // build
 //
 
-static void post_request(fab_client * restrict client)
+static void post_request(bam_client * restrict client)
 {
-  fabipc_message * msg;
+  bamipc_message * msg;
   bead target;
   const char *dir;
   const char *order;
@@ -76,8 +76,8 @@ static void post_request(fab_client * restrict client)
     order = "postorder";
   }
 
-  msg = fab_client_produce(client);
-  msg->type = FABIPC_MSG_REQUEST;
+  msg = bam_client_produce(client);
+  msg->type = BAMIPC_MSG_REQUEST;
   requestid = msg->id = ++client->msgid;
 
   N = narrator_fixed_init(&fixed, msg->text, sizeof(msg->text));
@@ -109,7 +109,7 @@ static void post_request(fab_client * restrict client)
               STRING("nofollow")
               BOOL(args->nofollow)
             }
-            if(args->graph == FAB_GRAPH_FSTREE_HIDDEN) {
+            if(args->graph == BAM_GRAPH_FSTREE_HIDDEN) {
               MAPPING
               STRING("hidden")
               BOOL(true)
@@ -133,7 +133,7 @@ static void post_request(fab_client * restrict client)
             }
             { MAPPING
               STRING("graph")
-              STRING(attrs16_name_byvalue(fab_graph_attrs, args->graph))
+              STRING(attrs16_name_byvalue(bam_graph_attrs, args->graph))
             }
             { MAPPING
               STRING("min-distance")
@@ -159,7 +159,7 @@ static void post_request(fab_client * restrict client)
   client_post(client, msg);
 }
 
-static void connected(command * restrict cmd, fab_client * restrict client)
+static void connected(command * restrict cmd, bam_client * restrict client)
 {
   upwards = false;
   if(args->both) {
@@ -171,7 +171,7 @@ static void connected(command * restrict cmd, fab_client * restrict client)
   post_request(client);
 }
 
-static void fsent_show(const fab_list_item * restrict fsent, bool show_paths)
+static void fsent_show(const bam_list_item * restrict fsent, bool show_paths)
 {
   int x;
 
@@ -181,11 +181,11 @@ static void fsent_show(const fab_list_item * restrict fsent, bool show_paths)
 
 #define CASE2(x, y) ((x << 16) | y)
   switch(CASE2(g_args.no_color, fsent->type)) {
-    case CASE2(0, FAB_VERTEX_TYPE_DIR):
-    case CASE2(0, FAB_VERTEX_TYPE_SHADOW_DIR):
+    case CASE2(0, BAM_VERTEX_TYPE_DIR):
+    case CASE2(0, BAM_VERTEX_TYPE_SHADOW_DIR):
       write(1, YELLOW);
       break;
-    case CASE2(0, FAB_VERTEX_TYPE_SHADOW_LINK):
+    case CASE2(0, BAM_VERTEX_TYPE_SHADOW_LINK):
       write(1, BOLD_RED);
       break;
     default:
@@ -201,15 +201,15 @@ static void fsent_show(const fab_list_item * restrict fsent, bool show_paths)
     dprintf(1, " -> %.*s", fsent->ref_len, fsent->ref);
   } else {
     dprintf(1, " - %s %s"
-      , attrs16_name_byvalue(fab_vertex_type_attrs, fsent->type)
-      , attrs16_name_byvalue(fab_vertex_state_attrs, fsent->state)
+      , attrs16_name_byvalue(bam_vertex_type_attrs, fsent->type)
+      , attrs16_name_byvalue(bam_vertex_state_attrs, fsent->state)
     );
   }
 
   switch(CASE2(g_args.no_color, fsent->type)) {
-    case CASE2(0, FAB_VERTEX_TYPE_DIR):
-    case CASE2(0, FAB_VERTEX_TYPE_SHADOW_DIR):
-    case CASE2(0, FAB_VERTEX_TYPE_SHADOW_LINK):
+    case CASE2(0, BAM_VERTEX_TYPE_DIR):
+    case CASE2(0, BAM_VERTEX_TYPE_SHADOW_DIR):
+    case CASE2(0, BAM_VERTEX_TYPE_SHADOW_LINK):
       write(1, NOCOLOR);
       break;
     default:
@@ -218,41 +218,41 @@ static void fsent_show(const fab_list_item * restrict fsent, bool show_paths)
   dprintf(1, "\n");
 }
 
-static void process(command * restrict cmd, fab_client * restrict client, fabipc_message * restrict msg)
+static void process(command * restrict cmd, bam_client * restrict client, bamipc_message * restrict msg)
 {
   size_t z;
-  fab_list_item item;
+  bam_list_item item;
 
   RUNTIME_ASSERT(msg->id == requestid);
 
-  if(msg->type == FABIPC_MSG_RESPONSE && args->both && !second) {
+  if(msg->type == BAMIPC_MSG_RESPONSE && args->both && !second) {
     upwards = false;
     second = true;
     post_request(client);
     return;
   }
 
-  if(msg->type == FABIPC_MSG_RESPONSE) {
+  if(msg->type == BAMIPC_MSG_RESPONSE) {
     g_params.shutdown = true;
     return;
   }
-//  else if(msg->type == FABIPC_MSG_EVENTS && msg->evtype == FABIPC_EVENT_SYSTEM_STATE)
+//  else if(msg->type == BAMIPC_MSG_EVENTS && msg->evtype == BAMIPC_EVENT_SYSTEM_STATE)
 //  {
 //    /* printed in main */
 ////    printf("ZZ %.*s\n", (int)msg->size, msg->text);
 //    return;
 //  }
 
-  RUNTIME_ASSERT(msg->type == FABIPC_MSG_RESULT);
+  RUNTIME_ASSERT(msg->type == BAMIPC_MSG_RESULT);
 
   z = 0;
-  z += descriptor_type_unmarshal(&item, &descriptor_fab_list_item, msg->text, msg->size);
+  z += descriptor_type_unmarshal(&item, &descriptor_bam_list_item, msg->text, msg->size);
   RUNTIME_ASSERT(z == msg->size);
 
   fsent_show(&item, tree_args.show_paths);
 }
 
-static void attached(command * restrict cmd, fab_client * restrict client)
+static void attached(command * restrict cmd, bam_client * restrict client)
 {
 
 }

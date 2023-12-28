@@ -5,11 +5,11 @@
 
 #include "types.h"
 
-#include "fab/stats.h"
+#include "bam/stats.h"
 
 struct moria_vertex;
 
-extern fab_global_stats g_stats;
+extern bam_global_stats g_stats;
 
 #define STATS_INC(x) do {   \
   (x)++;                    \
@@ -29,7 +29,7 @@ size_t stats_collate_counters(
     void * restrict dst
   , size_t sz
   , const descriptor_type * restrict desc
-  , fab_stats_record *record
+  , bam_stats_record *record
   , int off
 )
   __attribute__((nonnull));

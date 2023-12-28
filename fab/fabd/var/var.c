@@ -6,7 +6,7 @@
 
 #include "common/snarf.h"
 #include "descriptor.h"
-#include "fab/stats.h"
+#include "bam/stats.h"
 #include "narrator.h"
 #include "narrator/fixed.h"
 #include "bacon/value.h"
@@ -51,7 +51,7 @@ static void var_parse(var * restrict vp)
   size_t text_len;
   bacon_value * val;
   int exit;
-  fabipc_message *msg;
+  bamipc_message *msg;
   channel *chan;
 
   vp->val = 0;
@@ -192,8 +192,8 @@ void var_cleanup()
 size_t var_stats_collate(void *dst, size_t sz, bool reset, struct var * restrict var)
 {
   size_t z;
-  fab_var_stats *stats;
-  fab_var_stats tmp;
+  bam_var_stats *stats;
+  bam_var_stats tmp;
 
   /* stats for the var vertex */
   z = 0;
@@ -206,7 +206,7 @@ size_t var_stats_collate(void *dst, size_t sz, bool reset, struct var * restrict
   }
   stats = &tmp;
 
-  z += descriptor_marshal_object(dst + z, sz - z, &descriptor_fab_var_stats, &stats->record, 0);
+  z += descriptor_marshal_object(dst + z, sz - z, &descriptor_bam_var_stats, &stats->record, 0);
 
   return z;
 }

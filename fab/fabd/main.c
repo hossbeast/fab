@@ -5,7 +5,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-#include "fab/load.h"
+#include "bam/load.h"
 #include "lorien/load.h"
 #include "moria/load.h"
 #include "narrator/load.h"
@@ -16,9 +16,9 @@
 #include "xlinux/xunistd.h"
 #include "xlinux/xpthread.h"
 #include "xlinux/xsignal.h"
-#include "fab/ipc.h"
-#include "fab/sigutil.h"
-#include "fab/lockfile.h"
+#include "bam/ipc.h"
+#include "bam/sigutil.h"
+#include "bam/lockfile.h"
 
 #include "build.h"
 #include "buildplan.h"
@@ -105,15 +105,15 @@ static void getlock(void)
   int lockfd = -1;
   char path[512];
 
-  snprintf(path, sizeof(path), "%s/fabd/lock", g_params.ipcdir);
-  fabipc_lockfile_acquire(&pid, &lockfd, path);
+  snprintf(path, sizeof(path), "%s/bamd/lock", g_params.ipcdir);
+  bamipc_lockfile_acquire(&pid, &lockfd, path);
   if(!pid || pid == getpid()) {
     xclose(lockfd);
     /* fastpath lock-held check */
     return;
   }
 
-  fabipc_lockfile_obtain(&pid, &lockfd, "%s", path);
+  bamipc_lockfile_obtain(&pid, &lockfd, "%s", path);
   if(pid && pid != getpid()) {
     fprintf(stderr, "daemon still running pid %ld\n", (long)pid);
     exit(1);
@@ -121,7 +121,7 @@ static void getlock(void)
 
   /* this normally happens in libfab/client right after fork, but the lock
    * was not inherited */
-  xchdirf("%s/fabd", g_params.ipcdir);
+  xchdirf("%s/bamd", g_params.ipcdir);
   uxunlinks("exit");
   uxunlinks("core");
 }
@@ -143,7 +143,7 @@ int main(int argc, char ** argv)
 #endif
 
   // libraries
-  fab_load();
+  bam_load();
   lorien_load();
   moria_load();
   narrator_load();
@@ -188,7 +188,7 @@ int main(int argc, char ** argv)
   index_vertex_setup();
 
   /* comment */
-  xrealpathf(g_cwd_path, "%s/%016"PRIx64"/projdir", XQUOTE(FABIPCDIR), g_args.hash);
+  xrealpathf(g_cwd_path, "%s/%016"PRIx64"/projdir", XQUOTE(BAMIPCDIR), g_args.hash);
   fsent_system_bootstrap();
   config_system_bootstrap();
 
@@ -227,7 +227,7 @@ int main(int argc, char ** argv)
   index_vertex_cleanup();
 
   // libraries
-  fab_unload();
+  bam_unload();
   lorien_unload();
   moria_unload();
   narrator_unload();
@@ -236,7 +236,7 @@ int main(int argc, char ** argv)
   r |= g_params.handler_error;  // error on a handler thread
 
   /* best-effort attempt to save our exit status */
-  fd = uxopen_modef(O_CREAT | O_WRONLY, 0666, "%s/fabd/exit", g_params.ipcdir);
+  fd = uxopen_modef(O_CREAT | O_WRONLY, 0666, "%s/bamd/exit", g_params.ipcdir);
   if(fd != -1) {
     snprintf(buf, sizeof(buf), "%d\n", r);
     write(fd, buf, strlen(buf));

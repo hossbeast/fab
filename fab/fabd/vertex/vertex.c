@@ -7,8 +7,8 @@
 #include "moria/vertex.h"
 #include "narrator.h"
 #include "narrator/fixed.h"
-#include "fab/vertex.h"
-#include "fab/stats.desc.h"
+#include "bam/vertex.h"
+#include "bam/stats.desc.h"
 #include "xlinux/xstdlib.h"
 #include "common/attrs.h"
 #include "bacon/builder.h"
@@ -78,13 +78,13 @@ bool vertex_mark_stale(moria_vertex * v)
 {
   uint16_t z;
   channel *chan;
-  fabipc_message *msg;
+  bamipc_message *msg;
   fsent *fse = 0;
   module *mod;
   rules *rules;
   struct var *var;
   struct config *config;
-  fab_vertex_stats *vertex_stats = 0;
+  bam_vertex_stats *vertex_stats = 0;
   formula *fml;
   rule_module_association *rma;
 //  bind_module_association *bma;
@@ -180,7 +180,7 @@ bool vertex_mark_stale(moria_vertex * v)
   STATS_INC(vertex_stats->stale);
   STATS_INC(g_stats.vertex_stale);
 
-  if(events_would(FABIPC_EVENT_NODE_STALE, &chan, &msg))
+  if(events_would(BAMIPC_EVENT_NODE_STALE, &chan, &msg))
   {
     z = vertex_path_load(msg->text, sizeof(msg->text), v);
     msg->size = z;
@@ -221,9 +221,9 @@ bool vertex_mark_fresh(moria_vertex * restrict v)
 {
   uint16_t z;
   channel *chan;
-  fabipc_message *msg;
+  bamipc_message *msg;
   fsent *fse = 0;
-  fab_vertex_stats *vertex_stats = 0;
+  bam_vertex_stats *vertex_stats = 0;
   module *mod;
   rules *rules;
   struct var *var;
@@ -289,7 +289,7 @@ bool vertex_mark_fresh(moria_vertex * restrict v)
   STATS_INC(vertex_stats->fresh);
   STATS_INC(g_stats.vertex_fresh);
 
-  if(events_would(FABIPC_EVENT_NODE_FRESH, &chan, &msg))
+  if(events_would(BAMIPC_EVENT_NODE_FRESH, &chan, &msg))
   {
     z = vertex_path_load(msg->text, sizeof(msg->text), v);
     msg->size = z;
@@ -335,25 +335,25 @@ void vertex_invalid_set(moria_vertex * restrict v)
   vertex_attrs_set(v, attrs);
 }
 
-enum fab_vertex_state vertex_fab_vertex_state_get(moria_vertex * restrict v)
+enum bam_vertex_state vertex_bam_vertex_state_get(moria_vertex * restrict v)
 {
   switch(vertex_state_get(v)) {
     case VERTEX_UNCREATED:
-      return FAB_VERTEX_STATE_UNCREATED;
+      return BAM_VERTEX_STATE_UNCREATED;
     case VERTEX_UNLINKED:
-      return FAB_VERTEX_STATE_UNLINKED;
+      return BAM_VERTEX_STATE_UNLINKED;
     default:
   }
 
   if(vertex_invalid_get(v)) {
-    return FAB_VERTEX_STATE_STALE;
+    return BAM_VERTEX_STATE_STALE;
   }
 
   switch(vertex_state_get(v)) {
     case VERTEX_OK:
-      return FAB_VERTEX_STATE_FRESH;
+      return BAM_VERTEX_STATE_FRESH;
     case VERTEX_INVALID:
-      return FAB_VERTEX_STATE_STALE;
+      return BAM_VERTEX_STATE_STALE;
     default:
   }
 
@@ -578,19 +578,19 @@ static size_t handler(
   handlers = containerof(ctx, typeof(*handlers), handlers);
 
   z = 0;
-  if(field == &descriptor_fab_vertex_stats_path) {
+  if(field == &descriptor_bam_vertex_stats_path) {
     len_off = z;
     z += marshal_u16(dst + z, sz - z, 0);
     len = vertex_path_load(dst + z, sz - z, handlers->v);
     marshal_u16(dst + len_off, sz - len_off, len);
     z += len;
-  } else if(field == &descriptor_fab_vertex_stats_id) {
+  } else if(field == &descriptor_bam_vertex_stats_id) {
     len_off = z;
     z += marshal_u16(dst + z, sz - z, 0);
     len = vertex_id_load(dst + z, sz - z, handlers->v);
     marshal_u16(dst + len_off, sz - len_off, len);
     z += len;
-  } else if(field == &descriptor_fab_vertex_stats_token) {
+  } else if(field == &descriptor_bam_vertex_stats_token) {
     len_off = z;
     z += marshal_u16(dst + z, sz - z, 0);
     len = vertex_token_load(dst + z, sz - z, handlers->v);
@@ -605,8 +605,8 @@ size_t vertex_stats_collate(void *dst, size_t sz, bool reset, moria_vertex * res
 {
   size_t z;
   fsent *fse;
-  fab_vertex_stats *stats = 0;
-  fab_vertex_stats tmp;
+  bam_vertex_stats *stats = 0;
+  bam_vertex_stats tmp;
   struct rule *rule;
   struct module *module;
   struct formula *formula;
@@ -657,7 +657,7 @@ size_t vertex_stats_collate(void *dst, size_t sz, bool reset, moria_vertex * res
   stats = &tmp;
 
   stats->type = vertex_type_remap(vertex_type_get(v));
-  stats->state = vertex_fab_vertex_state_get(v);
+  stats->state = vertex_bam_vertex_state_get(v);
 
   stats->indexed_notify = 0;
   if(fse && fse->in_wd != -1) {
@@ -673,7 +673,7 @@ size_t vertex_stats_collate(void *dst, size_t sz, bool reset, moria_vertex * res
   ctx.handlers.handler = handler;
 
   z = 0;
-  z += descriptor_marshal_object(dst + z, sz - z, &descriptor_fab_vertex_stats, &stats->record, &ctx.handlers);
+  z += descriptor_marshal_object(dst + z, sz - z, &descriptor_bam_vertex_stats, &stats->record, &ctx.handlers);
 
   return z;
 }

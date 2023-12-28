@@ -10,8 +10,8 @@
 #include "xlinux/xsignal.h"
 #include "xlinux/xunistd.h"
 #include "valyria/llist.h"
-#include "fab/ipc.h"
-#include "fab/sigutil.h"
+#include "bam/ipc.h"
+#include "bam/sigutil.h"
 
 #include "monitor_thread.h"
 #include "handler.h"

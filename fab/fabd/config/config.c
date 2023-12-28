@@ -13,7 +13,7 @@
 #include "valyria/llist.h"
 #include "bacon/writer.h"
 #include "bacon/builder.h"
-#include "fab/stats.h"
+#include "bam/stats.h"
 #include "common/snarf.h"
 #include "common/hash.h"
 #include "common/attrs.h"
@@ -59,7 +59,7 @@ void config_parse(config * restrict cfg, config_parser * restrict parser, config
   char *text = 0;
   size_t text_len;
   int exit;
-  fabipc_message *msg;
+  bamipc_message *msg;
   channel *chan;
 
   STATS_INC(cfg->config_stats.parse);
@@ -171,8 +171,8 @@ void config_alloc(config ** restrict vp)
 size_t config_stats_collate(void *dst, size_t sz, bool reset, config * restrict config)
 {
   size_t z;
-  fab_config_stats *stats;
-  fab_config_stats tmp;
+  bam_config_stats *stats;
+  bam_config_stats tmp;
 
   /* stats for the config vertex */
   z = 0;
@@ -185,7 +185,7 @@ size_t config_stats_collate(void *dst, size_t sz, bool reset, config * restrict 
   }
   stats = &tmp;
 
-  z += descriptor_marshal_object(dst + z, sz - z, &descriptor_fab_config_stats, &stats->record, 0);
+  z += descriptor_marshal_object(dst + z, sz - z, &descriptor_bam_config_stats, &stats->record, 0);
 
   return z;
 }

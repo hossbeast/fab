@@ -3,16 +3,16 @@
 
 #include "types.h"
 
-#include "fab/ipc.h"
-#include "fab/client.h"
-#include "fab/describe.h"
-#include "fab/describe.desc.h"
-#include "fab/rule_info.desc.h"
-#include "fab/rule_info.h"
-#include "fab/stats.h"
-#include "fab/stats.desc.h"
-#include "fab/rules_describe.h"
-#include "fab/rules_describe.desc.h"
+#include "bam/ipc.h"
+#include "bam/client.h"
+#include "bam/describe.h"
+#include "bam/describe.desc.h"
+#include "bam/rule_info.desc.h"
+#include "bam/rule_info.h"
+#include "bam/stats.h"
+#include "bam/stats.desc.h"
+#include "bam/rules_describe.h"
+#include "bam/rules_describe.desc.h"
 #include "bacon/builder.h"
 #include "narrator.h"
 #include "narrator/fixed.h"
@@ -27,7 +27,7 @@ struct rule_args rule_args;
 
 /* state */
 static bam_rules_describe_result describe_result, *result;
-static fab_rule_stats rule_stats[64];
+static bam_rule_stats rule_stats[64];
 static uint16_t rule_stats_len;
 static bam_rule_info rule_info[64];
 static uint16_t rule_info_len;
@@ -44,15 +44,15 @@ static void rule_usage(command * restrict cmd)
   );
 }
 
-static void rule_connected(command * restrict cmd, fab_client * restrict client)
+static void rule_connected(command * restrict cmd, bam_client * restrict client)
 {
-  fabipc_message * msg;
+  bamipc_message * msg;
   bacon_writer writer, *builder_writer;
   narrator *N;
   narrator_fixed fixed;
 
-  msg = fab_client_produce(client);
-  msg->type = FABIPC_MSG_REQUEST;
+  msg = bam_client_produce(client);
+  msg->type = BAMIPC_MSG_REQUEST;
   requestid = msg->id = ++client->msgid;
 
   N = narrator_fixed_init(&fixed, msg->text, sizeof(msg->text));
@@ -98,23 +98,23 @@ static void rule_connected(command * restrict cmd, fab_client * restrict client)
   client_post(client, msg);
 }
 
-static void rule_process(command * restrict cmd, fab_client * restrict client, fabipc_message * restrict msg)
+static void rule_process(command * restrict cmd, bam_client * restrict client, bamipc_message * restrict msg)
 {
   if(msg->id != requestid) {
     return;
   }
 
-  if(msg->type == FABIPC_MSG_RESPONSE) {
+  if(msg->type == BAMIPC_MSG_RESPONSE) {
     g_params.shutdown = true;
     return;
   }
 
-  RUNTIME_ASSERT(msg->type == FABIPC_MSG_RESULT);
+  RUNTIME_ASSERT(msg->type == BAMIPC_MSG_RESULT);
   write(1, msg->text, msg->size);
   any = true;
 }
 
-static void rule_attached(command * restrict cmd, fab_client * restrict client)
+static void rule_attached(command * restrict cmd, bam_client * restrict client)
 {
 
 }
@@ -138,15 +138,15 @@ static void rules_usage(command * restrict cmd)
   );
 }
 
-static void rules_connected(command * restrict cmd, fab_client * restrict client)
+static void rules_connected(command * restrict cmd, bam_client * restrict client)
 {
-  fabipc_message * msg;
+  bamipc_message * msg;
   bacon_writer writer, *builder_writer;
   narrator *N;
   narrator_fixed fixed;
 
-  msg = fab_client_produce(client);
-  msg->type = FABIPC_MSG_REQUEST;
+  msg = bam_client_produce(client);
+  msg->type = BAMIPC_MSG_REQUEST;
   requestid = msg->id = ++client->msgid;
 
   N = narrator_fixed_init(&fixed, msg->text, sizeof(msg->text));
@@ -178,9 +178,9 @@ static void rules_connected(command * restrict cmd, fab_client * restrict client
   client_post(client, msg);
 }
 
-static void rules_process(command * restrict cmd, fab_client * restrict client, fabipc_message * restrict msg)
+static void rules_process(command * restrict cmd, bam_client * restrict client, bamipc_message * restrict msg)
 {
-  fab_rule_stats *stats;
+  bam_rule_stats *stats;
   bam_rule_info *info;
   bam_rules_describe_string string;
   size_t z;
@@ -190,20 +190,20 @@ static void rules_process(command * restrict cmd, fab_client * restrict client, 
     return;
   }
 
-  if(msg->type == FABIPC_MSG_RESPONSE) {
+  if(msg->type == BAMIPC_MSG_RESPONSE) {
     g_params.shutdown = true;
     goto end;
   }
 
-  RUNTIME_ASSERT(msg->type == FABIPC_MSG_RESULT);
+  RUNTIME_ASSERT(msg->type == BAMIPC_MSG_RESULT);
 
   switch(msg->attrs) {
     case DESCRIPTOR_ID_bam_rules_describe_result:
       descriptor_type_unmarshal(&describe_result, &descriptor_bam_rules_describe_result, msg->text, msg->size);
       result = &describe_result;
       break;
-    case DESCRIPTOR_ID_fab_rule_stats:
-      descriptor_type_unmarshal(&rule_stats[rule_stats_len++], &descriptor_fab_rule_stats, msg->text, msg->size);
+    case DESCRIPTOR_ID_bam_rule_stats:
+      descriptor_type_unmarshal(&rule_stats[rule_stats_len++], &descriptor_bam_rule_stats, msg->text, msg->size);
       break;
     case DESCRIPTOR_ID_bam_rule_info:
       descriptor_type_unmarshal(&rule_info[rule_info_len++], &descriptor_bam_rule_info, msg->text, msg->size);
@@ -249,7 +249,7 @@ end:
   }
 }
 
-static void rules_attached(command * restrict cmd, fab_client * restrict client)
+static void rules_attached(command * restrict cmd, bam_client * restrict client)
 {
 }
 

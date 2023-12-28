@@ -57,7 +57,7 @@ sub c_c {
   system("git diff $path");
 }
 
-my %extmap = map { $_ => 1 } qw|c h l y|;
+my %extmap = map { $_ => 1 } qw|c h l y bam bam+devel|;
 sub visit {
   my $path = shift;
 

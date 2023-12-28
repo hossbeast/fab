@@ -5,7 +5,7 @@
 
 #include "valyria/llist.h"
 #include "moria.h"
-#include "fab/stats.h"
+#include "bam/stats.h"
 
 #include "filesystem.h"
 
@@ -27,7 +27,7 @@ extern llist config_list;
 typedef struct config {
   moria_vertex vertex;
 
-  fab_vertex_stats stats;
+  bam_vertex_stats stats;
   struct bacon_value *val;
   char id[40];
   uint16_t id_len;
@@ -36,7 +36,7 @@ typedef struct config {
 
   /* regarding the corresponding VERTEX_CONFIG_FILE */
   struct fsent *self_node;
-  fab_config_stats config_stats;
+  bam_config_stats config_stats;
   char self_node_abspath[512];
   uint16_t self_node_abspath_len;
 

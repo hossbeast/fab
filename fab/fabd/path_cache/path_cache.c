@@ -150,7 +150,7 @@ void path_cache_reconfigure(configuration * restrict cfg, bool dryrun)
   char T;
   path_cache_entry *pe = 0;
   channel *chan;
-  fabipc_message *msg;
+  bamipc_message *msg;
 
   if(dryrun)
   {

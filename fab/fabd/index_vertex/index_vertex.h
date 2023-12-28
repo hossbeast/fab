@@ -4,7 +4,7 @@
 #pragma once
 
 #include "moria.h"
-#include "fab/stats.h"
+#include "bam/stats.h"
 #include "fsname.h"
 
 struct index_edge;
@@ -23,7 +23,7 @@ typedef struct index_vertex {
   char token[40];
   uint16_t token_len;
 
-  fab_vertex_stats stats;
+  bam_vertex_stats stats;
 
   /* number of downwards edges */
   uint32_t down;

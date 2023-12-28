@@ -6,10 +6,10 @@
 #include "narrator.h"
 #include "narrator/fixed.h"
 
-#include "fab/ipc.h"
-#include "fab/client.h"
-#include "fab/config_describe.h"
-#include "fab/config_describe.desc.h"
+#include "bam/ipc.h"
+#include "bam/client.h"
+#include "bam/config_describe.h"
+#include "bam/config_describe.desc.h"
 
 #include "config.h"
 #include "params.h"
@@ -17,7 +17,7 @@
 
 static uint64_t requestid;
 static bam_config_describe_result result;
-static fabipc_message *texts[64];
+static bamipc_message *texts[64];
 static uint16_t texts_len;
 
 //
@@ -35,15 +35,15 @@ static void usage(command * restrict cmd)
 // build
 //
 
-static void connected(command * restrict cmd, fab_client * restrict client)
+static void connected(command * restrict cmd, bam_client * restrict client)
 {
-  fabipc_message * msg;
+  bamipc_message * msg;
   bacon_writer writer, *builder_writer;
   narrator *N;
   narrator_fixed fixed;
 
-  msg = fab_client_produce(client);
-  msg->type = FABIPC_MSG_REQUEST;
+  msg = bam_client_produce(client);
+  msg->type = BAMIPC_MSG_REQUEST;
   requestid = msg->id = ++client->msgid;
 
   N = narrator_fixed_init(&fixed, msg->text, sizeof(msg->text));
@@ -63,7 +63,7 @@ static void connected(command * restrict cmd, fab_client * restrict client)
   client_post(client, msg);
 }
 
-static void process(command * restrict cmd, fab_client * restrict client, fabipc_message * restrict msg)
+static void process(command * restrict cmd, bam_client * restrict client, bamipc_message * restrict msg)
 {
   int x;
   bam_config_describe_string string;
@@ -73,12 +73,12 @@ static void process(command * restrict cmd, fab_client * restrict client, fabipc
     return;
   }
 
-  if(msg->type == FABIPC_MSG_RESPONSE) {
+  if(msg->type == BAMIPC_MSG_RESPONSE) {
     g_params.shutdown = true;
     goto end;
   }
 
-  RUNTIME_ASSERT(msg->type == FABIPC_MSG_RESULT);
+  RUNTIME_ASSERT(msg->type == BAMIPC_MSG_RESULT);
 
   switch(msg->attrs) {
     case DESCRIPTOR_ID_bam_config_describe_result:
@@ -115,7 +115,7 @@ end:
   write(1, "\n", 1);
 }
 
-static void attached(command * restrict cmd, fab_client * restrict client)
+static void attached(command * restrict cmd, bam_client * restrict client)
 {
 
 }

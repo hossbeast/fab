@@ -4,8 +4,8 @@
 #include <unistd.h>
 #include <sys/syscall.h>
 
-#include "fab/ipc.h"
-#include "fab/sigutil.h"
+#include "bam/ipc.h"
+#include "bam/sigutil.h"
 #include "xlinux/xpthread.h"
 
 #include "server_thread.h"

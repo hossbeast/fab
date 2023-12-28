@@ -3,7 +3,7 @@
 
 #include <stdio.h>
 
-#include "fab/client.h"
+#include "bam/client.h"
 
 #include "kill.h"
 #include "command.h"
@@ -20,7 +20,7 @@ static void usage(command * restrict cmd)
   );
 }
 
-static void attached(command * restrict cmd, fab_client * restrict client)
+static void attached(command * restrict cmd, bam_client * restrict client)
 {
 }
 static void disconnected(command * restrict cmd)

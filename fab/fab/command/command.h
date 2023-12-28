@@ -5,8 +5,8 @@
 
 #include "types.h"
 
-struct fab_client;
-struct fabipc_message;
+struct bam_client;
+struct bamipc_message;
 struct narrator;
 
 #define COMMAND_OPT               0xffff
@@ -26,15 +26,15 @@ typedef struct command {
   uint32_t attrs;
   void (*usage)(struct command *cmd);
   void __attribute__((nonnull)) (*init)(struct command *cmd, uint32_t flags);
-  void __attribute__((nonnull)) (*attached)(struct command *cmd, struct fab_client * restrict client);
-  void __attribute__((nonnull)) (*connected)(struct command *cmd, struct fab_client * restrict client);
+  void __attribute__((nonnull)) (*attached)(struct command *cmd, struct bam_client * restrict client);
+  void __attribute__((nonnull)) (*connected)(struct command *cmd, struct bam_client * restrict client);
   void __attribute__((nonnull)) (*process)(
       struct command *cmd
-    , struct fab_client * restrict client
-    , struct fabipc_message * restrict msg
+    , struct bam_client * restrict client
+    , struct bamipc_message * restrict msg
   );
   void __attribute__((nonnull)) (*disconnected)(struct command *cmd);
 } command;
 
-void client_post(struct fab_client * restrict client, struct fabipc_message * restrict msg)
+void client_post(struct bam_client * restrict client, struct bamipc_message * restrict msg)
   __attribute__((nonnull));

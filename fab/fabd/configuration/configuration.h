@@ -7,7 +7,7 @@
 #include "valyria/rbtree.h"
 
 #include "types.h"
-#include "fab/stats.h"
+#include "bam/stats.h"
 #include "filesystem.h"
 
 struct bacon_value;

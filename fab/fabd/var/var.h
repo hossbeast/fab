@@ -17,7 +17,7 @@ typedef struct var {
   moria_vertex vertex;
 
   /* runtime state */
-  fab_vertex_stats stats;
+  bam_vertex_stats stats;
   struct bacon_value *val;
   char id[40];
   uint16_t id_len;
@@ -26,7 +26,7 @@ typedef struct var {
 
   /* self_node */
   struct fsent *self_node;    // VERTEX_VAR_FILE var.bam
-  fab_var_stats var_stats;
+  bam_var_stats var_stats;
   char self_node_abspath[512];
   uint16_t self_node_abspath_len;
 } var;

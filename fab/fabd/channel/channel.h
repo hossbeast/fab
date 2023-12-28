@@ -9,15 +9,15 @@
 
 #include "types.h"
 
-#include "fab/ipc.h"
+#include "bam/ipc.h"
 
 struct config;
-struct fabipc_channel;
+struct bamipc_channel;
 
 typedef struct channel {
   union {
     struct {
-      struct fabipc_channel ipc;
+      struct bamipc_channel ipc;
 
       /* subscribed events */
       uint32_t event_mask;
@@ -29,11 +29,11 @@ typedef struct channel {
       uint64_t msgid;
     };
 
-    char pad[FABIPC_SHMSIZE];
+    char pad[BAMIPC_SHMSIZE];
   };
 } channel;
 
-STATIC_ASSERT(sizeof(channel) == FABIPC_SHMSIZE);
+STATIC_ASSERT(sizeof(channel) == BAMIPC_SHMSIZE);
 
 /* allocate an ipc channel
  *
@@ -48,16 +48,16 @@ void channel_release(struct channel * restrict chan)
 
 /* send/receive messages over the channel */
 
-struct fabipc_message * channel_produce(channel * restrict ctx)
+struct bamipc_message * channel_produce(channel * restrict ctx)
   __attribute__((nonnull));
 
-void channel_post(channel * restrict ctx, struct fabipc_message * restrict msg)
+void channel_post(channel * restrict ctx, struct bamipc_message * restrict msg)
   __attribute__((nonnull));
 
-struct fabipc_message * channel_acquire(channel * restrict ctx)
+struct bamipc_message * channel_acquire(channel * restrict ctx)
   __attribute__((nonnull));
 
-void channel_consume(channel * restrict ctx, struct fabipc_message * restrict msg)
+void channel_consume(channel * restrict ctx, struct bamipc_message * restrict msg)
   __attribute__((nonnull));
 
 void channel_response(channel * restrict ctx, int code)

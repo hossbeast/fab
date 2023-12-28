@@ -4,7 +4,7 @@
 #include <stdio.h>
 
 #include "xlinux/xshm.h"
-#include "fab/ipc.h"
+#include "bam/ipc.h"
 
 #include "channel.h"
 #include "config.h"
@@ -14,7 +14,7 @@
 #define SHMCHANNEL_MODE 0666
 
 #include <inttypes.h>
-#include "fab/events.h"
+#include "bam/events.h"
 #include "common/attrs.h"
 #include "channel/probes.h"
 
@@ -28,7 +28,7 @@ void channel_create(channel ** restrict chanp, pid_t thread_id)
   int shmid = -1;
   void * shmaddr = 0;
 
-  shmid = xshmget(IPC_PRIVATE, FABIPC_SHMSIZE, IPC_CREAT | IPC_EXCL | SHMCHANNEL_MODE);
+  shmid = xshmget(IPC_PRIVATE, BAMIPC_SHMSIZE, IPC_CREAT | IPC_EXCL | SHMCHANNEL_MODE);
   shmaddr = xshmat(shmid, 0, 0);
   xshmctl(shmid, IPC_RMID, 0);
 
@@ -47,11 +47,11 @@ void channel_release(channel * restrict chan)
 
 /* TX : produce -> post */
 
-fabipc_message * channel_produce(channel * restrict chan)
+bamipc_message * channel_produce(channel * restrict chan)
 {
-  fabipc_message *msg;
+  bamipc_message *msg;
 
-  msg = fabipc_produce(
+  msg = bamipc_produce(
       chan->ipc.server_ring.pages
     , &chan->ipc.server_ring.head
     , &chan->ipc.server_ring.tail
@@ -65,20 +65,20 @@ fabipc_message * channel_produce(channel * restrict chan)
   return msg;
 }
 
-void channel_post(channel * restrict chan, fabipc_message * restrict msg)
+void channel_post(channel * restrict chan, bamipc_message * restrict msg)
 {
 #if CONFIG_DEBUG || CONFIG_DEVEL
   RUNTIME_ASSERT(msg->type);
-  if(msg->type == FABIPC_MSG_EVENTS) {
+  if(msg->type == BAMIPC_MSG_EVENTS) {
     RUNTIME_ASSERT(msg->evtype);
   }
 #endif
 
-  if(msg->type == FABIPC_MSG_RESPONSE && msg->code != 0) {
+  if(msg->type == BAMIPC_MSG_RESPONSE && msg->code != 0) {
     chan->error = true;
   }
 
-  fabipc_post(
+  bamipc_post(
       msg
     , &chan->ipc.server_ring.producers
     , &chan->ipc.server_ring.waiters
@@ -89,11 +89,11 @@ void channel_post(channel * restrict chan, fabipc_message * restrict msg)
 
 /* RX : acquire -> consume */
 
-fabipc_message * channel_acquire(channel * restrict chan)
+bamipc_message * channel_acquire(channel * restrict chan)
 {
-  fabipc_message *msg;
+  bamipc_message *msg;
 
-  msg = fabipc_acquire(
+  msg = bamipc_acquire(
       chan->ipc.client_ring.pages
     , &chan->ipc.client_ring.head
     , &chan->ipc.client_ring.tail
@@ -112,9 +112,9 @@ fabipc_message * channel_acquire(channel * restrict chan)
   return msg;
 }
 
-void channel_consume(channel * restrict chan, fabipc_message * restrict msg)
+void channel_consume(channel * restrict chan, bamipc_message * restrict msg)
 {
-  fabipc_consume(
+  bamipc_consume(
       chan->ipc.client_ring.pages
     , &chan->ipc.client_ring.head
     , msg
@@ -134,12 +134,12 @@ void channel_responses(channel * restrict chan, int code, const char * restrict 
 
 void channel_responsew(channel * restrict chan, int code, const char * restrict text, uint16_t text_len)
 {
-  fabipc_message *msg;
+  bamipc_message *msg;
 
   msg = channel_produce(chan);
   msg->id = chan->msgid;
   msg->size = text_len;
-  msg->type = FABIPC_MSG_RESPONSE;
+  msg->type = BAMIPC_MSG_RESPONSE;
   msg->code = code;
   if(text_len) {
     memcpy(msg->text, text, text_len);

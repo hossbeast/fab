@@ -1,8 +1,8 @@
 /* SPDX-License-Identifier: GPL-3.0 */
 /* Copyright (c) 2012-2023 Todd Freed <todd.freed@gmail.com> */
 
-#include "fab/ipc.h"
-#include "fab/events.h"
+#include "bam/ipc.h"
+#include "bam/events.h"
 #include "bacon/writer.h"
 
 #include "events.h"
@@ -15,9 +15,9 @@
 #include "params.h"
 
 bool events_would(
-    fabipc_event_type type
+    bamipc_event_type type
   , channel * restrict * restrict first
-  , fabipc_message ** restrict msg
+  , bamipc_message ** restrict msg
 )
 {
   handler_context *handler;
@@ -33,7 +33,7 @@ bool events_would(
 
     *first = handler->chan;
     *msg = channel_produce(handler->chan);
-    (*msg)->type = FABIPC_MSG_EVENTS;
+    (*msg)->type = BAMIPC_MSG_EVENTS;
     (*msg)->evtype = type;
     return true;
   }
@@ -41,9 +41,9 @@ bool events_would(
   return false;
 }
 
-void events_publish(channel * restrict first, fabipc_message * restrict firstmsg)
+void events_publish(channel * restrict first, bamipc_message * restrict firstmsg)
 {
-  fabipc_message *msg;
+  bamipc_message *msg;
   handler_context *handler;
 
   rcu_list_foreach(&g_handlers, handler, stk) {
@@ -60,7 +60,7 @@ void events_publish(channel * restrict first, fabipc_message * restrict firstmsg
     }
 
     msg = channel_produce(handler->chan);
-    msg->type = FABIPC_MSG_EVENTS;
+    msg->type = BAMIPC_MSG_EVENTS;
     msg->evtype = firstmsg->evtype;
     msg->size = firstmsg->size;
     msg->id = firstmsg->id;

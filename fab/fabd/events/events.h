@@ -10,10 +10,10 @@
  */
 
 #include "types.h"
-#include "fab/events.h"
+#include "bam/events.h"
 
 struct channel;
-struct fabipc_message;
+struct bamipc_message;
 struct bacon_writer;
 
 /* mask of events for which any handler has subscribed */
@@ -29,14 +29,14 @@ extern uint32_t events_mask;
  * returns true if any subscribers exist
  */
 bool events_would(
-    fabipc_event_type type
+    bamipc_event_type type
   , struct channel * restrict * restrict first
-  , struct fabipc_message ** restrict msg
+  , struct bamipc_message ** restrict msg
 )
   __attribute__((nonnull));
 
 /*
  * publish an event - called after events_would
  */
-void events_publish(struct channel * first, struct fabipc_message * msg)
+void events_publish(struct channel * first, struct bamipc_message * msg)
   __attribute__((nonnull(2)));

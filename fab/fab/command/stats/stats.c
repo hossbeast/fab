@@ -4,11 +4,11 @@
 #include <inttypes.h>
 
 #include "common/attrs.h"
-#include "fab/client.h"
-#include "fab/vertex.h"
-#include "fab/ipc.h"
-#include "fab/stats.desc.h"
-#include "fab/stats.h"
+#include "bam/client.h"
+#include "bam/vertex.h"
+#include "bam/ipc.h"
+#include "bam/stats.desc.h"
+#include "bam/stats.h"
 #include "bacon/builder.h"
 #include "narrator.h"
 #include "narrator/fixed.h"
@@ -34,17 +34,17 @@ static void usage(command * restrict cmd)
 // build
 //
 
-static void connected(command * restrict cmd, fab_client * restrict client)
+static void connected(command * restrict cmd, bam_client * restrict client)
 {
-  fabipc_message * msg;
+  bamipc_message * msg;
   int x;
   bacon_writer writer, *builder_writer;
   narrator *N;
   narrator_fixed fixed;
 
   /* send the request */
-  msg = fab_client_produce(client);
-  msg->type = FABIPC_MSG_REQUEST;
+  msg = bam_client_produce(client);
+  msg->type = BAMIPC_MSG_REQUEST;
   requestid = msg->id = ++client->msgid;
 
   N = narrator_fixed_init(&fixed, msg->text, sizeof(msg->text));
@@ -127,17 +127,17 @@ static int show_handler_fn(
   , struct descriptor_unmarshal_handler *handler
 )
 {
-  const fab_stats_record *record;
+  const bam_stats_record *record;
   const attrs16 *attrs = 0;
   uint64_t u = 0;
 
   record = object;
-  if(member == &descriptor_fab_global_stats_system_state) {
+  if(member == &descriptor_bam_global_stats_system_state) {
     attrs = bam_system_state_attrs;
-  } else if(member == &descriptor_fab_vertex_stats_type) {
-    attrs = fab_vertex_type_attrs;
-  } else if(member == &descriptor_fab_vertex_stats_state) {
-    attrs = fab_vertex_state_attrs;
+  } else if(member == &descriptor_bam_vertex_stats_type) {
+    attrs = bam_vertex_type_attrs;
+  } else if(member == &descriptor_bam_vertex_stats_state) {
+    attrs = bam_vertex_state_attrs;
   } else {
     return 0;
   }
@@ -167,7 +167,7 @@ static struct {
   .unmarshal.fn = show_handler_fn
 };
 
-static void show(descriptor_type * restrict descriptor, fab_stats_record * restrict record, descriptor_unmarshal_handler *handler)
+static void show(descriptor_type * restrict descriptor, bam_stats_record * restrict record, descriptor_unmarshal_handler *handler)
 {
   descriptor_field *member;
   size_t z;
@@ -210,11 +210,11 @@ static void show(descriptor_type * restrict descriptor, fab_stats_record * restr
   }
 }
 
-static void process_msg(fabipc_message * restrict msg)
+static void process_msg(bamipc_message * restrict msg)
 {
   union {
     char pad[512];
-    fab_stats_record record;
+    bam_stats_record record;
   } stats;
   descriptor_type *descriptor;
   size_t z;
@@ -224,7 +224,7 @@ static void process_msg(fabipc_message * restrict msg)
 
   z = 0;
 
-  descriptor = &descriptor_fab_vertex_stats;
+  descriptor = &descriptor_bam_vertex_stats;
   while(z < msg->size)
   {
     /* peek at the id */
@@ -232,33 +232,33 @@ static void process_msg(fabipc_message * restrict msg)
 
     switch(id) {
       /* global stats */
-      case DESCRIPTOR_ID_fab_global_stats:
-        descriptor = &descriptor_fab_global_stats;
+      case DESCRIPTOR_ID_bam_global_stats:
+        descriptor = &descriptor_bam_global_stats;
         break;
       /* node stats */
-      case DESCRIPTOR_ID_fab_formula_stats:
-        descriptor = &descriptor_fab_formula_stats;
+      case DESCRIPTOR_ID_bam_formula_stats:
+        descriptor = &descriptor_bam_formula_stats;
         break;
-      case DESCRIPTOR_ID_fab_rule_stats:
-        descriptor = &descriptor_fab_rule_stats;
+      case DESCRIPTOR_ID_bam_rule_stats:
+        descriptor = &descriptor_bam_rule_stats;
         break;
-      case DESCRIPTOR_ID_fab_module_stats:
-        descriptor = &descriptor_fab_module_stats;
+      case DESCRIPTOR_ID_bam_module_stats:
+        descriptor = &descriptor_bam_module_stats;
         break;
-      case DESCRIPTOR_ID_fab_rules_stats:
-        descriptor = &descriptor_fab_rules_stats;
+      case DESCRIPTOR_ID_bam_rules_stats:
+        descriptor = &descriptor_bam_rules_stats;
         break;
-      case DESCRIPTOR_ID_fab_vertex_stats:
-        descriptor = &descriptor_fab_vertex_stats;
+      case DESCRIPTOR_ID_bam_vertex_stats:
+        descriptor = &descriptor_bam_vertex_stats;
         break;
-      case DESCRIPTOR_ID_fab_config_stats:
-        descriptor = &descriptor_fab_config_stats;
+      case DESCRIPTOR_ID_bam_config_stats:
+        descriptor = &descriptor_bam_config_stats;
         break;
-      case DESCRIPTOR_ID_fab_var_stats:
-        descriptor = &descriptor_fab_var_stats;
+      case DESCRIPTOR_ID_bam_var_stats:
+        descriptor = &descriptor_bam_var_stats;
         break;
-      case DESCRIPTOR_ID_fab_fsent_dir_stats:
-        descriptor = &descriptor_fab_fsent_dir_stats;
+      case DESCRIPTOR_ID_bam_fsent_dir_stats:
+        descriptor = &descriptor_bam_fsent_dir_stats;
         break;
       default:
         RTA;
@@ -271,20 +271,20 @@ static void process_msg(fabipc_message * restrict msg)
   RUNTIME_ASSERT(z == msg->size);
 }
 
-static void process(command * restrict cmd, fab_client * restrict client, fabipc_message * restrict msg)
+static void process(command * restrict cmd, bam_client * restrict client, bamipc_message * restrict msg)
 {
   RUNTIME_ASSERT(msg->id == requestid);
 
-  if(msg->type == FABIPC_MSG_RESPONSE) {
+  if(msg->type == BAMIPC_MSG_RESPONSE) {
     g_params.shutdown = true;
     return;
   }
 
-  RUNTIME_ASSERT(msg->type == FABIPC_MSG_RESULT);
+  RUNTIME_ASSERT(msg->type == BAMIPC_MSG_RESULT);
   process_msg(msg);
 }
 
-static void attached(command * restrict cmd, fab_client * restrict client)
+static void attached(command * restrict cmd, bam_client * restrict client)
 {
 
 }

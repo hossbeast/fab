@@ -3,8 +3,8 @@
 
 #include "types.h"
 
-#include "fab/ipc.h"
-#include "fab/client.h"
+#include "bam/ipc.h"
+#include "bam/client.h"
 #include "xlinux/xunistd.h"
 
 #include "trace.h"
@@ -25,12 +25,12 @@ static void usage(command * restrict cmd)
   );
 }
 
-static void attached(command * restrict cmd, fab_client * restrict client)
+static void attached(command * restrict cmd, bam_client * restrict client)
 {
   char *args[5];
   char pid[16];
 
-  snprintf(pid, sizeof(pid), "%d", client->fabd_pid);
+  snprintf(pid, sizeof(pid), "%d", client->bamd_pid);
 
   args[0] = "/usr/bin/sudo";
   args[1] = (void*)trace_args.script_path.s;

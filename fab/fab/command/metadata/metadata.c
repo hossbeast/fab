@@ -4,10 +4,10 @@
 #include <stdio.h>
 
 #include "common/attrs.h"
-#include "fab/client.h"
-#include "fab/ipc.h"
-#include "fab/metadata.desc.h"
-#include "fab/metadata.h"
+#include "bam/client.h"
+#include "bam/ipc.h"
+#include "bam/metadata.desc.h"
+#include "bam/metadata.h"
 #include "narrator.h"
 #include "narrator/fixed.h"
 #include "narrator/units.h"
@@ -30,14 +30,14 @@ static void usage(command * restrict cmd)
 // build
 //
 
-static void connected(command * restrict cmd, fab_client * restrict client)
+static void connected(command * restrict cmd, bam_client * restrict client)
 {
-  fabipc_message * msg;
+  bamipc_message * msg;
   size_t z;
 
   /* send the request */
-  msg = fab_client_produce(client);
-  msg->type = FABIPC_MSG_REQUEST;
+  msg = bam_client_produce(client);
+  msg->type = BAMIPC_MSG_REQUEST;
   requestid = msg->id = ++client->msgid;
 
   z = 0;
@@ -51,24 +51,24 @@ static void connected(command * restrict cmd, fab_client * restrict client)
   client_post(client, msg);
 }
 
-static void process(command * restrict cmd, fab_client * restrict client, fabipc_message * restrict msg)
+static void process(command * restrict cmd, bam_client * restrict client, bamipc_message * restrict msg)
 {
-  fab_metadata md;
+  bam_metadata md;
   char buf[128];
   narrator_fixed fixed;
   size_t z;
 
   RUNTIME_ASSERT(msg->id == requestid);
 
-  if(msg->type == FABIPC_MSG_RESPONSE) {
+  if(msg->type == BAMIPC_MSG_RESPONSE) {
     g_params.shutdown = true;
     return;
   }
 
-  RUNTIME_ASSERT(msg->type == FABIPC_MSG_RESULT);
+  RUNTIME_ASSERT(msg->type == BAMIPC_MSG_RESULT);
 
   z = 0;
-  z += descriptor_type_unmarshal(&md, &descriptor_fab_metadata, msg->text, msg->size);
+  z += descriptor_type_unmarshal(&md, &descriptor_bam_metadata, msg->text, msg->size);
   RUNTIME_ASSERT(z == msg->size);
 
   printf("%.*s : {\n", (int)md.cwd_path_len, md.cwd_path);
@@ -76,7 +76,7 @@ static void process(command * restrict cmd, fab_client * restrict client, fabipc
   printf(" %s : %.*s\n", "cwd-path", (int)md.cwd_path_len, md.cwd_path);
   printf(" %s : %.*s\n", "ipc-dir", (int)md.ipcdir_len, md.ipcdir);
   printf(" %s : %.*s\n", "home-dir", (int)md.homedir_len, md.homedir);
-  printf(" %s : %ld\n", "fabd-pid", md.fabd_pid);
+  printf(" %s : %ld\n", "fabd-pid", md.bamd_pid);
 
   interval_say(md.uptime / NSEC_PER_SEC, narrator_fixed_init(&fixed, buf, sizeof(buf)));
   printf(" %s : \"%s\"\n", "uptime", buf);
@@ -90,7 +90,7 @@ static void process(command * restrict cmd, fab_client * restrict client, fabipc
   printf("}\n");
 }
 
-static void attached(command * restrict cmd, fab_client * restrict client)
+static void attached(command * restrict cmd, bam_client * restrict client)
 {
 
 }

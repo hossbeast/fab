@@ -180,7 +180,7 @@ void exec_render_formula_value(exec_render_context * restrict ctx, const formula
   exec_builder_args base_add_args;
   selected *sn;
   const path_cache_entry *pe;
-  fabipc_message *msg;
+  bamipc_message *msg;
   channel *chan;
   narrator_fixed fixed;
   bacon_writer writer, *builder_writer;

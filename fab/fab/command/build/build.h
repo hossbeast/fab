@@ -7,8 +7,8 @@
 #include "command.h"
 
 struct bacon_writer;
-struct fab_client;
-struct fabipc_message;
+struct bam_client;
+struct bamipc_message;
 
 extern struct build_args {
   char mode;
@@ -59,4 +59,4 @@ void build_command_collate_goals(struct bacon_writer * restrict builder_writer, 
 void build_command_collate_invalidations(struct bacon_writer * restrict builder_writer)
   __attribute__((nonnull));
 
-void build_command_process_event(struct fab_client * restrict client, struct fabipc_message * restrict msg);
+void build_command_process_event(struct bam_client * restrict client, struct bamipc_message * restrict msg);

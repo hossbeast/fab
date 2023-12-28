@@ -1,8 +1,8 @@
 /* SPDX-License-Identifier: GPL-3.0 */
 /* Copyright (c) 2012-2023 Todd Freed <todd.freed@gmail.com> */
 
-#include "fab/events.h"
-#include "fab/ipc.h"
+#include "bam/events.h"
+#include "bam/ipc.h"
 #include "narrator.h"
 #include "bacon/writer.h"
 #include "valyria/llist.h"
@@ -137,7 +137,7 @@ void goals_set(
   , selector * restrict target_transitive
 )
 {
-  fabipc_message *msg;
+  bamipc_message *msg;
   channel *chan;
 
   goals_reconcile = reconcile;
@@ -148,7 +148,7 @@ void goals_set(
   selector_ifree(&goals_target_transitive_selector);
   goals_target_transitive_selector = target_transitive;
 
-  if(events_would(FABIPC_EVENT_GOALS, &chan, &msg)) {
+  if(events_would(BAMIPC_EVENT_GOALS, &chan, &msg)) {
     msg->id = msg_id;
     events_publish(chan, msg);
   }

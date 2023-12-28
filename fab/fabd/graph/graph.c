@@ -11,7 +11,7 @@
 #include "bacon/builder.h"
 #include "moria/foreach.h"
 #include "xlinux/xstdlib.h"
-#include "fab/vertex.h"
+#include "bam/vertex.h"
 
 #include "graph.h"
 #include "dependency.h"
@@ -112,46 +112,46 @@ void graph_invalidation_end(graph_invalidation_context * restrict invalidation)
   invalidation->edge_traversal = 0;
 }
 
-fab_vertex_type vertex_type_remap(vertex_type type)
+bam_vertex_type vertex_type_remap(vertex_type type)
 {
    switch(type) {
     case VERTEX_DIR:
-      return FAB_VERTEX_TYPE_DIR;
+      return BAM_VERTEX_TYPE_DIR;
     case VERTEX_CONTEXT_MODULE:
     case VERTEX_MODULE_DIR:
-      return FAB_VERTEX_TYPE_MODULE_DIR;
+      return BAM_VERTEX_TYPE_MODULE_DIR;
     case VERTEX_FILE:
-      return FAB_VERTEX_TYPE_FILE;
+      return BAM_VERTEX_TYPE_FILE;
     case VERTEX_MODULE_FILE:
-      return FAB_VERTEX_TYPE_MODULE_FILE;
+      return BAM_VERTEX_TYPE_MODULE_FILE;
     case VERTEX_RULES_FILE:
-      return FAB_VERTEX_TYPE_RULES_FILE;
+      return BAM_VERTEX_TYPE_RULES_FILE;
     case VERTEX_FORMULA_FILE:
-      return FAB_VERTEX_TYPE_FORMULA_FILE;
+      return BAM_VERTEX_TYPE_FORMULA_FILE;
     case VERTEX_VAR_FILE:
-      return FAB_VERTEX_TYPE_VAR_FILE;
+      return BAM_VERTEX_TYPE_VAR_FILE;
     case VERTEX_CONFIG_FILE:
-      return FAB_VERTEX_TYPE_CONFIG_FILE;
+      return BAM_VERTEX_TYPE_CONFIG_FILE;
     case VERTEX_SHADOW_DIR:
-      return FAB_VERTEX_TYPE_SHADOW_DIR;
+      return BAM_VERTEX_TYPE_SHADOW_DIR;
     case VERTEX_SHADOW_FILE:
-      return FAB_VERTEX_TYPE_SHADOW_FILE;
+      return BAM_VERTEX_TYPE_SHADOW_FILE;
     case VERTEX_SHADOW_LINK:
-      return FAB_VERTEX_TYPE_SHADOW_LINK;
+      return BAM_VERTEX_TYPE_SHADOW_LINK;
     case VERTEX_SHADOW_MODULE:
-      return FAB_VERTEX_TYPE_SHADOW_MODULE;
+      return BAM_VERTEX_TYPE_SHADOW_MODULE;
     case VERTEX_SHADOW_RULE:
-      return FAB_VERTEX_TYPE_SHADOW_RULE;
+      return BAM_VERTEX_TYPE_SHADOW_RULE;
     case VERTEX_MODULE:
-      return FAB_VERTEX_TYPE_MODULE;
+      return BAM_VERTEX_TYPE_MODULE;
     case VERTEX_FORMULA:
-      return FAB_VERTEX_TYPE_FORMULA;
+      return BAM_VERTEX_TYPE_FORMULA;
     case VERTEX_VAR:
-      return FAB_VERTEX_TYPE_VAR;
+      return BAM_VERTEX_TYPE_VAR;
     case VERTEX_CONFIG:
-      return FAB_VERTEX_TYPE_CONFIG;
+      return BAM_VERTEX_TYPE_CONFIG;
     case VERTEX_RULES:
-      return FAB_VERTEX_TYPE_RULES;
+      return BAM_VERTEX_TYPE_RULES;
     default:
       RTA;
   }

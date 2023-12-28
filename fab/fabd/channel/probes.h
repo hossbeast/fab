@@ -4,10 +4,10 @@
 #pragma once
 
 struct channel;
-struct fabipc_message;
+struct bamipc_message;
 
-void channel_rx_probe(const struct channel * restrict chan, struct fabipc_message * restrict msg)
+void channel_rx_probe(const struct channel * restrict chan, struct bamipc_message * restrict msg)
   __attribute__((nonnull));
 
-void channel_tx_probe(const struct channel * restrict chan, struct fabipc_message * restrict msg)
+void channel_tx_probe(const struct channel * restrict chan, struct bamipc_message * restrict msg)
   __attribute__((nonnull));

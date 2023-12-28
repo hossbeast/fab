@@ -1,9 +1,9 @@
 /* SPDX-License-Identifier: GPL-3.0 */
 /* Copyright (c) 2012-2023 Todd Freed <todd.freed@gmail.com> */
 
-#include "fab/ipc.h"
-#include "fab/client.h"
-#include "fab/events.h"
+#include "bam/ipc.h"
+#include "bam/client.h"
+#include "bam/events.h"
 
 #include "reconcile.h"
 #include "params.h"
@@ -22,14 +22,14 @@ static void usage(command * restrict cmd)
 // build
 //
 
-static void connected(command * restrict cmd, fab_client * restrict client)
+static void connected(command * restrict cmd, bam_client * restrict client)
 {
-  fabipc_message * msg;
+  bamipc_message * msg;
   size_t z;
 
   /* send the request */
-  msg = fab_client_produce(client);
-  msg->type = FABIPC_MSG_REQUEST;
+  msg = bam_client_produce(client);
+  msg->type = BAMIPC_MSG_REQUEST;
   requestid = msg->id = ++client->msgid;
 
   z = 0;
@@ -43,19 +43,19 @@ static void connected(command * restrict cmd, fab_client * restrict client)
   client_post(client, msg);
 }
 
-static void process(command * restrict cmd, fab_client * restrict client, fabipc_message * restrict msg)
+static void process(command * restrict cmd, bam_client * restrict client, bamipc_message * restrict msg)
 {
-  if(msg->type == FABIPC_MSG_EVENTS && msg->evtype == FABIPC_EVENT_SYSTEM_STATE) {
+  if(msg->type == BAMIPC_MSG_EVENTS && msg->evtype == BAMIPC_EVENT_SYSTEM_STATE) {
     return;
   }
 
   RUNTIME_ASSERT(msg->id == requestid);
-  RUNTIME_ASSERT(msg->type == FABIPC_MSG_RESPONSE);
+  RUNTIME_ASSERT(msg->type == BAMIPC_MSG_RESPONSE);
 
   g_params.shutdown = true;
 }
 
-static void attached(command * restrict cmd, fab_client * restrict client)
+static void attached(command * restrict cmd, bam_client * restrict client)
 {
 
 }

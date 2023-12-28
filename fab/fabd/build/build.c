@@ -7,9 +7,9 @@
 
 #include "types.h"
 
-#include "fab/ipc.h"
-#include "fab/events.h"
-#include "fab/sigutil.h"
+#include "bam/ipc.h"
+#include "bam/events.h"
+#include "bam/sigutil.h"
 #include "narrator.h"
 #include "narrator/fixed.h"
 #include "valyria/hashtable.h"
@@ -22,7 +22,7 @@
 #include "xlinux/xepoll.h"
 #include "xlinux/xwait.h"
 #include "xlinux/xunistd.h"
-#include "fab/metadata.h"
+#include "bam/metadata.h"
 
 #include "build.h"
 #include "buildplan.h"

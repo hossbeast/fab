@@ -132,7 +132,7 @@ void import_resolve_targets(import * restrict import, module * restrict mod, rul
   moria_vertex *target;
   const char *target_file_name;
   channel *chan;
-  fabipc_message *msg;
+  bamipc_message *msg;
   narrator_fixed fixed;
   bacon_writer writer, *builder_writer;
   const yyu_location *loc;

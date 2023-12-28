@@ -80,7 +80,7 @@ typedef struct command {
   llist lln;
 
   union {
-    uint32_t attrs;       // bitwise combo of FAB_REQUEST_*
+    uint32_t attrs;       // bitwise combo of BAM_REQUEST_*
     struct {
       command_type type:8;
     };

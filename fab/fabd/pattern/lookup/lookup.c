@@ -115,7 +115,7 @@ static void fragment_lookup_error(
   narrator_fixed fixed;
   bacon_writer writer, *builder_writer;
   channel * restrict chan;
-  fabipc_message *msg;
+  bamipc_message *msg;
 
   msg = system_error_event(&chan);
   narrator_fixed_init(&fixed, msg->text, sizeof(msg->text));

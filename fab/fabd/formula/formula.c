@@ -45,7 +45,7 @@ static void formula_parse(formula * restrict fml)
   size_t text_len;
   int exit;
   channel *chan;
-  fabipc_message *msg;
+  bamipc_message *msg;
   bacon_writer writer, *builder_writer;
   narrator_fixed fixed;
 
@@ -242,8 +242,8 @@ void formula_create(formula ** restrict fmlp, moria_graph * restrict g)
 size_t formula_stats_collate(void *dst, size_t sz, bool reset, formula * restrict fml)
 {
   size_t z;
-  fab_formula_stats *stats;
-  fab_formula_stats tmp;
+  bam_formula_stats *stats;
+  bam_formula_stats tmp;
 
   /* stats for the formula vertex */
   z = 0;
@@ -256,7 +256,7 @@ size_t formula_stats_collate(void *dst, size_t sz, bool reset, formula * restric
   }
   stats = &tmp;
 
-  z += descriptor_marshal_object(dst + z, sz - z, &descriptor_fab_formula_stats, &stats->record, 0);
+  z += descriptor_marshal_object(dst + z, sz - z, &descriptor_bam_formula_stats, &stats->record, 0);
 
   return z;
 }

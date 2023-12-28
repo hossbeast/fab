@@ -7,8 +7,8 @@
   #include "yyutil/parser.h"
   #include "yyutil/grammar.h"
   #include "common/attrs.h"
-  #include "fab/graph.h"
-  #include "fab/events.h"
+  #include "bam/graph.h"
+  #include "bam/events.h"
 
   #include "args.h"
   #include "args/parser.h"
@@ -53,7 +53,7 @@
 
 %union {
   yyu_lval yyu;
-  fab_graph graph_type;
+  bam_graph graph_type;
   bead bead;
 }
 
@@ -443,15 +443,15 @@ both
   ;
 
 graph-type
-  : FSTREE        { $$ = FAB_GRAPH_FSTREE; }
-  | FSTREE_HIDDEN { $$ = FAB_GRAPH_FSTREE_HIDDEN; }
-  | DIRTREE       { $$ = FAB_GRAPH_DIRTREE; }
-  | MODTREE       { $$ = FAB_GRAPH_MODTREE; }
-  | DEPENDS       { $$ = FAB_GRAPH_DEPENDS; }
-  | IMPORTS       { $$ = FAB_GRAPH_MODULE_IMPORTS; }
-  | USES          { $$ = FAB_GRAPH_MODULE_USES; }
-  | REQUIRES      { $$ = FAB_GRAPH_MODULE_REQUIRES; }
-  | RELATION      { $$ = FAB_GRAPH_RELATION; }
+  : FSTREE        { $$ = BAM_GRAPH_FSTREE; }
+  | FSTREE_HIDDEN { $$ = BAM_GRAPH_FSTREE_HIDDEN; }
+  | DIRTREE       { $$ = BAM_GRAPH_DIRTREE; }
+  | MODTREE       { $$ = BAM_GRAPH_MODTREE; }
+  | DEPENDS       { $$ = BAM_GRAPH_DEPENDS; }
+  | IMPORTS       { $$ = BAM_GRAPH_MODULE_IMPORTS; }
+  | USES          { $$ = BAM_GRAPH_MODULE_USES; }
+  | REQUIRES      { $$ = BAM_GRAPH_MODULE_REQUIRES; }
+  | RELATION      { $$ = BAM_GRAPH_RELATION; }
   ;
 
 touch-arguments
@@ -679,18 +679,18 @@ events-argument-list
 events-argument
   : global-argument
   | sa                { events_args.event_mask = ~0; }
-  | STALE             { events_args.event_mask |= FABIPC_EVENT_NODE_STALE; }
-  | FRESH             { events_args.event_mask |= FABIPC_EVENT_NODE_FRESH; }
-  | CREATE            { events_args.event_mask |= FABIPC_EVENT_NODE_CREATE; }
-  | DELETE            { events_args.event_mask |= FABIPC_EVENT_NODE_DELETE; }
-  | GLOBAL_INVALIDATE { events_args.event_mask |= FABIPC_EVENT_GLOBAL_INVALIDATE; }
-  | EXEC_FORKED       { events_args.event_mask |= FABIPC_EVENT_FORMULA_EXEC_FORKED; }
-  | EXEC_WAITED       { events_args.event_mask |= FABIPC_EVENT_FORMULA_EXEC_WAITED; }
-  | EXEC_STDOUT       { events_args.event_mask |= FABIPC_EVENT_FORMULA_EXEC_STDOUT; }
-  | EXEC_STDERR       { events_args.event_mask |= FABIPC_EVENT_FORMULA_EXEC_STDERR; }
-  | EXEC_AUXOUT       { events_args.event_mask |= FABIPC_EVENT_FORMULA_EXEC_AUXOUT; }
-  | GOALS             { events_args.event_mask |= FABIPC_EVENT_GOALS; }
-  | SYSTEM_STATE      { events_args.event_mask |= FABIPC_EVENT_SYSTEM_STATE; }
+  | STALE             { events_args.event_mask |= BAMIPC_EVENT_NODE_STALE; }
+  | FRESH             { events_args.event_mask |= BAMIPC_EVENT_NODE_FRESH; }
+  | CREATE            { events_args.event_mask |= BAMIPC_EVENT_NODE_CREATE; }
+  | DELETE            { events_args.event_mask |= BAMIPC_EVENT_NODE_DELETE; }
+  | GLOBAL_INVALIDATE { events_args.event_mask |= BAMIPC_EVENT_GLOBAL_INVALIDATE; }
+  | EXEC_FORKED       { events_args.event_mask |= BAMIPC_EVENT_FORMULA_EXEC_FORKED; }
+  | EXEC_WAITED       { events_args.event_mask |= BAMIPC_EVENT_FORMULA_EXEC_WAITED; }
+  | EXEC_STDOUT       { events_args.event_mask |= BAMIPC_EVENT_FORMULA_EXEC_STDOUT; }
+  | EXEC_STDERR       { events_args.event_mask |= BAMIPC_EVENT_FORMULA_EXEC_STDERR; }
+  | EXEC_AUXOUT       { events_args.event_mask |= BAMIPC_EVENT_FORMULA_EXEC_AUXOUT; }
+  | GOALS             { events_args.event_mask |= BAMIPC_EVENT_GOALS; }
+  | SYSTEM_STATE      { events_args.event_mask |= BAMIPC_EVENT_SYSTEM_STATE; }
   ;
 
 bead

@@ -3,13 +3,13 @@
 
 #include "common/attrs.h"
 #include "moria/foreach.h"
-#include "fab/describe.desc.h"
-#include "fab/ipc.h"
-#include "fab/list.desc.h"
-#include "fab/config_describe.desc.h"
-#include "fab/vars_describe.desc.h"
-#include "fab/rules_describe.desc.h"
-#include "fab/rule_info.h"
+#include "bam/describe.desc.h"
+#include "bam/ipc.h"
+#include "bam/list.desc.h"
+#include "bam/config_describe.desc.h"
+#include "bam/vars_describe.desc.h"
+#include "bam/rules_describe.desc.h"
+#include "bam/rule_info.h"
 #include "narrator.h"
 #include "narrator/growing.h"
 #include "narrator/fixed.h"
@@ -17,7 +17,7 @@
 #include "xlinux/xstdlib.h"
 #include "bacon/value.h"
 #include "bacon/builder.h"
-#include "fab/vertex.h"
+#include "bam/vertex.h"
 #include "common/hash.h"
 
 #include "handler.h"
@@ -63,14 +63,14 @@ static void handler_cmd_context(handler_context * restrict ctx, command * restri
 {
   moria_vertex *v;
   fsent *fse;
-  fabipc_message *msg;
+  bamipc_message *msg;
   char module_id[64];
 
   snprintf(module_id, sizeof(module_id), "%016"PRIx64, cmd->context.module_id);
   if((v = moria_vertex_downs(&g_shadow_modules->vertex, module_id)) == 0) {
     msg = channel_produce(ctx->chan);
     msg->code = -1;
-    msg->type = FABIPC_MSG_RESPONSE;
+    msg->type = BAMIPC_MSG_RESPONSE;
     msg->size = zcatf(msg->text, sizeof(msg->text), "module not found %s", module_id);
     channel_post(ctx->chan, msg);
     return;
@@ -104,9 +104,9 @@ static void handler_list(handler_context * restrict ctx, command * restrict cmd)
   moria_vertex *v;
   fsent *n;
   size_t z;
-  fabipc_message *msg;
-  fab_vertex_state state;
-  fab_vertex_type type;
+  bamipc_message *msg;
+  bam_vertex_state state;
+  bam_vertex_type type;
   char *dst;
   size_t sz;
   uint16_t len;
@@ -115,20 +115,20 @@ static void handler_list(handler_context * restrict ctx, command * restrict cmd)
   llist_foreach(&ctx->selection->list, sn, lln) {
     v = sn->v;
     msg = channel_produce(ctx->chan);
-    msg->type = FABIPC_MSG_RESULT;
+    msg->type = BAMIPC_MSG_RESULT;
 
     dst = msg->text;
     sz = sizeof(msg->text);
 
     z = 0;
-    z += marshal_u32(dst + z, sz - z, descriptor_fab_list_item.id);
+    z += marshal_u32(dst + z, sz - z, descriptor_bam_list_item.id);
 
     /* type */
     type = vertex_type_remap(vertex_type_get(v));
     z += marshal_int(dst + z, sz - z, &type, sizeof(type));
 
     /* state */
-    state = vertex_fab_vertex_state_get(v);
+    state = vertex_bam_vertex_state_get(v);
     z += marshal_int(dst + z, sz - z, &state, sizeof(state));
 
     /* label */
@@ -187,20 +187,20 @@ static void handler_invalidate(handler_context * restrict ctx, command * restric
 static void handler_global_invalidate(handler_context * restrict ctx, command * restrict cmd)
 {
   channel *chan;
-  fabipc_message *msg;
+  bamipc_message *msg;
 
   fsent_valid_epoch++;
   ctx->invalidation.any = true;
 
-  if(events_would(FABIPC_EVENT_GLOBAL_INVALIDATE, &chan, &msg)) {
+  if(events_would(BAMIPC_EVENT_GLOBAL_INVALIDATE, &chan, &msg)) {
     events_publish(chan, msg);
   }
 }
 
 static void describe_fsent(fsent * restrict fse, uint16_t distance, bacon_writer *builder_writer)
 {
-  fab_vertex_state state;
-  fab_vertex_type type;
+  bam_vertex_state state;
+  bam_vertex_type type;
   const filesystem *fs;
   char buf[512];
   size_t sz;
@@ -227,12 +227,12 @@ static void describe_fsent(fsent * restrict fse, uint16_t distance, bacon_writer
       { MAPPING
         STRING("type")
         type = vertex_type_remap(vertex_type_get(&fse->vertex));
-        STRING(attrs16_name_byvalue(fab_vertex_type_attrs, type));
+        STRING(attrs16_name_byvalue(bam_vertex_type_attrs, type));
       }
       { MAPPING
         STRING("state")
-        state = vertex_fab_vertex_state_get(&fse->vertex);
-        STRING(attrs16_name_byvalue(fab_vertex_state_attrs, state));
+        state = vertex_bam_vertex_state_get(&fse->vertex);
+        STRING(attrs16_name_byvalue(bam_vertex_state_attrs, state));
       }
       { MAPPING
         STRING("fsroot")
@@ -265,14 +265,14 @@ static void describe_fsent(fsent * restrict fse, uint16_t distance, bacon_writer
 
 static void handler_describe(handler_context * restrict ctx, command * restrict cmd)
 {
-  fabipc_message *msg;
+  bamipc_message *msg;
   selected *sn;
   fsent *fse;
   bacon_writer writer, *builder_writer;
   narrator_fixed fixed;
 
   msg = channel_produce(ctx->chan);
-  msg->type = FABIPC_MSG_RESULT;
+  msg->type = BAMIPC_MSG_RESULT;
 
   narrator_fixed_init(&fixed, msg->text, sizeof(msg->text));
   bacon_writer_init(&writer);
@@ -296,12 +296,12 @@ static void handler_describe(handler_context * restrict ctx, command * restrict 
 
 static void handler_fstree_describe(handler_context * restrict ctx, command * restrict cmd)
 {
-  fabipc_message *msg;
+  bamipc_message *msg;
   bacon_writer writer, *builder_writer;
   narrator_fixed fixed;
 
   msg = channel_produce(ctx->chan);
-  msg->type = FABIPC_MSG_RESULT;
+  msg->type = BAMIPC_MSG_RESULT;
 
   narrator_fixed_init(&fixed, msg->text, sizeof(msg->text));
   bacon_writer_init(&writer);
@@ -316,12 +316,12 @@ static void handler_fstree_describe(handler_context * restrict ctx, command * re
 
 static void handler_filesystem_describe(handler_context * restrict ctx, command * restrict cmd)
 {
-  fabipc_message *msg;
+  bamipc_message *msg;
   bacon_writer writer, *builder_writer;
   narrator_fixed fixed;
 
   msg = channel_produce(ctx->chan);
-  msg->type = FABIPC_MSG_RESULT;
+  msg->type = BAMIPC_MSG_RESULT;
 
   narrator_fixed_init(&fixed, msg->text, sizeof(msg->text));
   bacon_writer_init(&writer);
@@ -337,10 +337,10 @@ static void handler_filesystem_describe(handler_context * restrict ctx, command 
 static void handler_metadata(handler_context * restrict ctx, command * restrict cmd, bool reset)
 {
   size_t z;
-  fabipc_message *msg = 0;
+  bamipc_message *msg = 0;
 
   msg = channel_produce(ctx->chan);
-  msg->type = FABIPC_MSG_RESULT;
+  msg->type = BAMIPC_MSG_RESULT;
 
   metadata_collate(msg->text, sizeof(msg->text), &z);
 
@@ -350,10 +350,10 @@ static void handler_metadata(handler_context * restrict ctx, command * restrict 
 
 static void handler_global_stats(handler_context * restrict ctx, command * restrict cmd, bool reset)
 {
-  fabipc_message *msg = 0;
+  bamipc_message *msg = 0;
 
   msg = channel_produce(ctx->chan);
-  msg->type = FABIPC_MSG_RESULT;
+  msg->type = BAMIPC_MSG_RESULT;
 
   msg->size = stats_global_collate(msg->text, sizeof(msg->text), reset);
 
@@ -362,7 +362,7 @@ static void handler_global_stats(handler_context * restrict ctx, command * restr
 
 static void handler_config_describe(handler_context * restrict ctx, command * restrict cmd)
 {
-  fabipc_message *msg;
+  bamipc_message *msg;
   narrator_growing growing;
   narrator * N;
   int x;
@@ -375,7 +375,7 @@ static void handler_config_describe(handler_context * restrict ctx, command * re
   size_t sz;
 
   msg = channel_produce(ctx->chan);
-  msg->type = FABIPC_MSG_RESULT;
+  msg->type = BAMIPC_MSG_RESULT;
   msg->attrs = descriptor_bam_config_describe_result.id;
   dst = msg->text;
   sz = sizeof(msg->text);
@@ -414,7 +414,7 @@ static void handler_config_describe(handler_context * restrict ctx, command * re
   while(x < growing.l)
   {
     msg = channel_produce(ctx->chan);
-    msg->type = FABIPC_MSG_RESULT;
+    msg->type = BAMIPC_MSG_RESULT;
 
     msg->size = MIN(growing.l - x, sizeof(msg->text));
     memcpy(msg->text, growing.s + x, msg->size);
@@ -428,7 +428,7 @@ static void handler_config_describe(handler_context * restrict ctx, command * re
 
 static void handler_vars_describe(handler_context * restrict ctx, command * restrict cmd)
 {
-  fabipc_message *msg;
+  bamipc_message *msg;
   module *mod;
   narrator_growing growing;
   narrator * N;
@@ -451,7 +451,7 @@ static void handler_vars_describe(handler_context * restrict ctx, command * rest
   N = narrator_growing_init(&growing);
 
   msg = channel_produce(ctx->chan);
-  msg->type = FABIPC_MSG_RESULT;
+  msg->type = BAMIPC_MSG_RESULT;
   msg->attrs = descriptor_bam_vars_describe_result.id;
   dst = msg->text;
   sz = sizeof(msg->text);
@@ -508,7 +508,7 @@ static void handler_vars_describe(handler_context * restrict ctx, command * rest
   while(x < growing.l)
   {
     msg = channel_produce(ctx->chan);
-    msg->type = FABIPC_MSG_RESULT;
+    msg->type = BAMIPC_MSG_RESULT;
     msg->attrs = 0;
     msg->size = MIN(growing.l - x, sizeof(msg->text));
     memcpy(msg->text, growing.s + x, msg->size);
@@ -521,7 +521,7 @@ static void handler_vars_describe(handler_context * restrict ctx, command * rest
 
 static void handler_envs_describe(handler_context * restrict ctx, command * restrict cmd)
 {
-  fabipc_message *msg;
+  bamipc_message *msg;
   module *mod;
   int x;
 
@@ -534,7 +534,7 @@ static void handler_envs_describe(handler_context * restrict ctx, command * rest
 
   for(x = 0; x < mod->exec->envs_size; x++) {
     msg = channel_produce(ctx->chan);
-    msg->type = FABIPC_MSG_RESULT;
+    msg->type = BAMIPC_MSG_RESULT;
     msg->size = MIN(strlen(mod->exec->envs[x]), sizeof(msg->text));
     memcpy(msg->text, mod->exec->envs[x], msg->size);
     channel_post(ctx->chan, msg);
@@ -543,7 +543,7 @@ static void handler_envs_describe(handler_context * restrict ctx, command * rest
 
 static void handler_rma_describe(handler_context * restrict ctx, command * restrict cmd)
 {
-  fabipc_message *msg;
+  bamipc_message *msg;
   narrator_growing growing;
   bacon_writer writer, *builder_writer;
   rule_module_association *rma;
@@ -620,7 +620,7 @@ static void handler_rma_describe(handler_context * restrict ctx, command * restr
     for(off = 0; off < growing.l;)
     {
       msg = channel_produce(ctx->chan);
-      msg->type = FABIPC_MSG_RESULT;
+      msg->type = BAMIPC_MSG_RESULT;
       msg->size = MIN(sizeof(msg->text), growing.l - off);
       memcpy(msg->text, growing.s + off, msg->size);
       channel_post(ctx->chan, msg);
@@ -633,7 +633,7 @@ static void handler_rma_describe(handler_context * restrict ctx, command * restr
 
 static void handler_rules_describe(handler_context * restrict ctx, command * restrict cmd)
 {
-  fabipc_message *msg;
+  bamipc_message *msg;
   narrator_fixed fixed;
   narrator * N;
   rule_module_association *rma;
@@ -658,7 +658,7 @@ static void handler_rules_describe(handler_context * restrict ctx, command * res
   }
 
   msg = channel_produce(ctx->chan);
-  msg->type = FABIPC_MSG_RESULT;
+  msg->type = BAMIPC_MSG_RESULT;
   msg->attrs = descriptor_bam_rules_describe_result.id;
   dst = msg->text;
   sz = sizeof(msg->text);
@@ -724,14 +724,14 @@ static void handler_rules_describe(handler_context * restrict ctx, command * res
 
     /* rule stats */
     msg = channel_produce(ctx->chan);
-    msg->type = FABIPC_MSG_RESULT;
-    msg->attrs = descriptor_fab_rule_stats.id;
+    msg->type = BAMIPC_MSG_RESULT;
+    msg->attrs = descriptor_bam_rule_stats.id;
     msg->size = rule_module_association_stats_collate(msg->text, sizeof(msg->text), false, rma);
     channel_post(ctx->chan, msg);
 
     /* rule info */
     msg = channel_produce(ctx->chan);
-    msg->type = FABIPC_MSG_RESULT;
+    msg->type = BAMIPC_MSG_RESULT;
     msg->attrs = descriptor_bam_rule_info.id;
     dst = msg->text;
     sz = sizeof(msg->text);
@@ -777,7 +777,7 @@ static void handler_rules_describe(handler_context * restrict ctx, command * res
 
 static void handler_stats(handler_context * restrict ctx, command * restrict cmd, bool reset)
 {
-  fabipc_message *msg;
+  bamipc_message *msg;
   selected *sn;
   moria_vertex *v;
   fsent *fse = 0;
@@ -849,7 +849,7 @@ static void handler_stats(handler_context * restrict ctx, command * restrict cmd
     }
 
     msg = channel_produce(ctx->chan);
-    msg->type = FABIPC_MSG_RESULT;
+    msg->type = BAMIPC_MSG_RESULT;
     if(v) {
       switch(vertex_type_get(v)) {
         case VERTEX_SHADOW_DIR:

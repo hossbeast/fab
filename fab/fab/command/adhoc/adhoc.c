@@ -1,9 +1,9 @@
 /* SPDX-License-Identifier: GPL-3.0 */
 /* Copyright (c) 2012-2023 Todd Freed <todd.freed@gmail.com> */
 
-#include "fab/client.h"
-#include "fab/events.h"
-#include "fab/ipc.h"
+#include "bam/client.h"
+#include "bam/events.h"
+#include "bam/ipc.h"
 
 #include "adhoc.h"
 
@@ -20,14 +20,14 @@ static void usage(command * restrict cmd)
   );
 }
 
-static void adhoc_connected(command * restrict cmd, fab_client * restrict client)
+static void adhoc_connected(command * restrict cmd, bam_client * restrict client)
 {
-  fabipc_message * msg;
+  bamipc_message * msg;
   size_t z;
 
   /* send the request */
-  msg = fab_client_produce(client);
-  msg->type = FABIPC_MSG_REQUEST;
+  msg = bam_client_produce(client);
+  msg->type = BAMIPC_MSG_REQUEST;
   requestid = msg->id = ++client->msgid;
 
   z = 0;
@@ -38,11 +38,11 @@ static void adhoc_connected(command * restrict cmd, fab_client * restrict client
   client_post(client, msg);
 }
 
-static void adhoc_process(command * restrict cmd, fab_client * restrict client, fabipc_message * restrict msg)
+static void adhoc_process(command * restrict cmd, bam_client * restrict client, bamipc_message * restrict msg)
 {
   RUNTIME_ASSERT(msg->id == requestid);
 
-  if(msg->type == FABIPC_MSG_RESPONSE) {
+  if(msg->type == BAMIPC_MSG_RESPONSE) {
     if(msg->code != 0) {
       fprintf(stderr, "response code %d msg %.*s\n", msg->code, msg->size, msg->text);
     }
@@ -50,13 +50,13 @@ static void adhoc_process(command * restrict cmd, fab_client * restrict client, 
     return;
   }
 
-  if(msg->type == FABIPC_MSG_RESULT) {
+  if(msg->type == BAMIPC_MSG_RESULT) {
     write(1, msg->text, msg->size);
     write(1, "\n", 1);
   }
 }
 
-static void attached(command * restrict cmd, fab_client * restrict client)
+static void attached(command * restrict cmd, bam_client * restrict client)
 {
 
 }

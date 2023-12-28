@@ -510,7 +510,7 @@ void bpe_release(buildplan_entity * restrict bpe, graph_invalidation_context * r
 static buildplan_entity *bpe_target_check(fsent * restrict fse) // moria_vertex * restrict v)
 {
   channel *chan;
-  fabipc_message *msg;
+  bamipc_message *msg;
   narrator_fixed fixed;
   bacon_writer writer, *builder_writer;
   moria_edge *edge;

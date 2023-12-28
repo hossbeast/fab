@@ -24,7 +24,7 @@
 #include "xlinux/xunistd.h"
 #include "xlinux/xstdlib.h"
 #include "xlinux/xstat.h"
-#include "fab/vertex.h"
+#include "bam/vertex.h"
 #include "narrator/fixed.h"
 
 #include "module.h"
@@ -430,7 +430,7 @@ static void module_parse(module * restrict mod)
   int exit;
   char * text = 0;
   size_t text_len;
-  fabipc_message *msg;
+  bamipc_message *msg;
   channel *chan;
 
   STATS_INC(mod->mod_stats.parse);
@@ -1050,8 +1050,8 @@ void module_cleanup()
 
 size_t module_stats_collate(void *dst, size_t sz, bool reset, module *mod)
 {
-  fab_module_stats *stats;
-  fab_module_stats tmp;
+  bam_module_stats *stats;
+  bam_module_stats tmp;
   uint32_t count;
   size_t z;
 
@@ -1138,7 +1138,7 @@ size_t module_stats_collate(void *dst, size_t sz, bool reset, module *mod)
   /* rules in the module.bam file */
   stats->rules = blocks_count_rules(&mod->blocks);
 
-  z += descriptor_marshal_object(dst + z, sz - z, &descriptor_fab_module_stats, &stats->record, 0);
+  z += descriptor_marshal_object(dst + z, sz - z, &descriptor_bam_module_stats, &stats->record, 0);
 
   return z;
 }

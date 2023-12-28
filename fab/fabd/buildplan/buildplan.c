@@ -46,7 +46,7 @@ static void buildplan_visitor_direct(
 {
   fsent *fse;
   channel *chan;
-  fabipc_message *msg;
+  bamipc_message *msg;
   bacon_writer writer, *builder_writer;
   narrator_fixed fixed;
   traverse_context *ctx;

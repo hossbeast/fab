@@ -3,8 +3,8 @@
 
 #include <errno.h>
 
-#include "fab/sigutil.h"
-#include "fab/ipc.h"
+#include "bam/sigutil.h"
+#include "bam/ipc.h"
 #include "narrator.h"
 #include "xlinux/xstdlib.h"
 #include "xlinux/xpthread.h"
@@ -30,7 +30,7 @@
 
 struct futexlock handlers_lock;
 
-static void parse_request(handler_context * restrict ctx, fabipc_message * restrict msg, request * restrict req)
+static void parse_request(handler_context * restrict ctx, bamipc_message * restrict msg, request * restrict req)
 {
   int exit;
   char trace[4096];
@@ -58,7 +58,7 @@ static void handler_thread(handler_context * restrict ctx)
 {
   sigset_t sigs;
   siginfo_t siginfo;
-  fabipc_message *client_msg = 0;
+  bamipc_message *client_msg = 0;
   union sigval sival;
   channel *chan = 0;
   struct timespec interval;
@@ -158,14 +158,14 @@ static void handler_thread(handler_context * restrict ctx)
       ctx->chan->msgid = client_msg->id;
 
       /* message received */
-      if(client_msg->type == FABIPC_MSG_EVENTSUB)
+      if(client_msg->type == BAMIPC_MSG_EVENTSUB)
       {
         ctx->chan->event_mask |= client_msg->attrs;
         channel_consume(ctx->chan, client_msg);
         continue;
       }
 
-      RUNTIME_ASSERT(client_msg->type == FABIPC_MSG_REQUEST);
+      RUNTIME_ASSERT(client_msg->type == BAMIPC_MSG_REQUEST);
       request_destroy(&req);
       parse_request(ctx, client_msg, &req);
       channel_consume(ctx->chan, client_msg);

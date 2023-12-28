@@ -5,7 +5,7 @@
 #include <inttypes.h>
 #include <errno.h>
 
-#include "fab/load.h"
+#include "bam/load.h"
 #include "narrator/load.h"
 #include "bacon/load.h"
 
@@ -14,10 +14,10 @@
 #include "xlinux/xsignal.h"
 
 #include "common/attrs.h"
-#include "fab/client.h"
-#include "fab/events.h"
-#include "fab/ipc.h"
-#include "fab/sigutil.h"
+#include "bam/client.h"
+#include "bam/events.h"
+#include "bam/ipc.h"
+#include "bam/sigutil.h"
 
 #include "args.h"
 #include "build.h"
@@ -32,26 +32,26 @@ __thread int32_t tid;
 static uint64_t eventsubid;
 static bool waserror;
 
-static void client_acquired(fab_client * restrict client, fabipc_message * restrict msg)
+static void client_acquired(bam_client * restrict client, bamipc_message * restrict msg)
 {
   uint32_t h;
   uint32_t i;
   char buf[64];
   size_t z;
-  struct fabipc_page *page;
+  struct bamipc_page *page;
 
   if(g_args.verbose < 2) {
     return;
   }
 
-  page = containerof(msg, fabipc_page, msg);
+  page = containerof(msg, bamipc_page, msg);
   h = page->head;
   i = page - client->shm->server_ring.pages;
-  z = attrs32_zcat(buf, sizeof(buf), fabipc_msg_type_attrs, msg->type);
+  z = attrs32_zcat(buf, sizeof(buf), bamipc_msg_type_attrs, msg->type);
   printf("rx head %5u idx %5u id 0x%016"PRIx64" code %8d type %.*s", h, i, msg->id, msg->code, (int)z, buf);
-  if(msg->type == FABIPC_MSG_EVENTS)
+  if(msg->type == BAMIPC_MSG_EVENTS)
   {
-    z = attrs32_zcat(buf, sizeof(buf), fabipc_event_type_attrs, msg->evtype);
+    z = attrs32_zcat(buf, sizeof(buf), bamipc_event_type_attrs, msg->evtype);
     printf(" attrs %.*s", (int)z, buf);
   }
   else if(msg->attrs)
@@ -59,16 +59,16 @@ static void client_acquired(fab_client * restrict client, fabipc_message * restr
     printf(" attrs 0x%08x", msg->attrs);
   }
   printf(" size %hu", msg->size);
-  if(msg->type == FABIPC_MSG_RESPONSE || (msg->type == FABIPC_MSG_EVENTS && msg->evtype == FABIPC_EVENT_SYSTEM_STATE))
+  if(msg->type == BAMIPC_MSG_RESPONSE || (msg->type == BAMIPC_MSG_EVENTS && msg->evtype == BAMIPC_EVENT_SYSTEM_STATE))
   {
     printf(" %.*s", (int)msg->size, msg->text);
   }
   printf("\n");
 }
 
-void client_post(struct fab_client * restrict client, fabipc_message * restrict msg)
+void client_post(struct bam_client * restrict client, bamipc_message * restrict msg)
 {
-  fab_client_post(client, msg);
+  bam_client_post(client, msg);
 
   uint32_t h;
   char buf[64];
@@ -78,12 +78,12 @@ void client_post(struct fab_client * restrict client, fabipc_message * restrict 
     return;
   }
 
-  h = containerof(msg, fabipc_page, msg)->tail;
-  z = attrs32_zcat(buf, sizeof(buf), fabipc_msg_type_attrs, msg->type);
+  h = containerof(msg, bamipc_page, msg)->tail;
+  z = attrs32_zcat(buf, sizeof(buf), bamipc_msg_type_attrs, msg->type);
   printf("tx tail %5u id 0x%016"PRIx64" code %8d type %.*s", h, msg->id, msg->code, (int)z, buf);
-  if(msg->type == FABIPC_MSG_EVENTS)
+  if(msg->type == BAMIPC_MSG_EVENTS)
   {
-    z = attrs32_zcat(buf, sizeof(buf), fabipc_event_type_attrs, msg->evtype);
+    z = attrs32_zcat(buf, sizeof(buf), bamipc_event_type_attrs, msg->evtype);
     printf(" attrs %.*s", (int)z, buf);
   }
   else if(msg->attrs)
@@ -99,8 +99,8 @@ static void xmain()
 {
   sigset_t sigs;
   siginfo_t info;
-  fab_client * client = 0;
-  fabipc_message * msg = 0;
+  bam_client * client = 0;
+  bamipc_message * msg = 0;
   struct timespec interval;
   int err;
   uint16_t pulse;
@@ -116,60 +116,60 @@ static void xmain()
 
 #if CONFIG_DEVEL
   static char space[512];
-  snprintf(space, sizeof(space), "%s/../fabd/fabd.devel", g_params.exedir);
-  g_fab_client_fabd_path = space;
+  snprintf(space, sizeof(space), "%s", "/home/todd/fab-build/fab/fabd/devel/fabd");
+  g_bam_client_bamd_path = space;
   if(g_args.system_config_path.s) {
-    g_fab_client_system_config_path = strndup(g_args.system_config_path.s, g_args.system_config_path.len);
+    g_bam_client_system_config_path = strndup(g_args.system_config_path.s, g_args.system_config_path.len);
   }
   if(g_args.user_config_path.s) {
-    g_fab_client_user_config_path = strndup(g_args.user_config_path.s, g_args.user_config_path.len);
+    g_bam_client_user_config_path = strndup(g_args.user_config_path.s, g_args.user_config_path.len);
   }
   if(g_args.default_filesystem_invalidate.s) {
-    g_fab_client_default_filesystem_invalidate = strndup(g_args.default_filesystem_invalidate.s, g_args.default_filesystem_invalidate.len);
+    g_bam_client_default_filesystem_invalidate = strndup(g_args.default_filesystem_invalidate.s, g_args.default_filesystem_invalidate.len);
   }
   if(g_args.sweeper_period_nsec.s) {
-    g_fab_client_sweeper_period_nsec = strndup(g_args.sweeper_period_nsec.s, g_args.sweeper_period_nsec.len);
+    g_bam_client_sweeper_period_nsec = strndup(g_args.sweeper_period_nsec.s, g_args.sweeper_period_nsec.len);
   }
 #endif
 
   interval.tv_sec = 0;
   interval.tv_nsec = 500000000;   // 500 millis
 
-  fab_client_create(&client, ".", XQUOTE(FABIPCDIR));
-  fab_client_prepare(client);
+  bam_client_create(&client, ".", XQUOTE(BAMIPCDIR));
+  bam_client_prepare(client);
 
-  /* kill an existing fabd - waiting at most 3s */
-  if(g_args.kill && client->fabd_pid != 0)
+  /* kill an existing bamd - waiting at most 3s */
+  if(g_args.kill && client->bamd_pid != 0)
   {
-    fab_client_kill(client);
+    bam_client_kill(client);
 
     for(x = 0; x < (5 * 3); x++)
     {
-      r = uxkill(client->fabd_pid, 0);
+      r = uxkill(client->bamd_pid, 0);
       if(r) {
         break;
       }
       usleep(200 * 1000);
     }
   }
-  if(g_args.no_launch && client->fabd_pid == 0)
+  if(g_args.no_launch && client->bamd_pid == 0)
   {
-    fprintf(stderr, "fabd not running\n");
+    fprintf(stderr, "bamd not running\n");
     exit(1);
   }
   if(g_args.kill) {
-    if(client->fabd_pid != 0 && r == 0) {
-      fprintf(stderr, "fabd did not respond - SIGKILL\n");
-      uxkill(client->fabd_pid, SIGKILL);
+    if(client->bamd_pid != 0 && r == 0) {
+      fprintf(stderr, "bamd did not respond - SIGKILL\n");
+      uxkill(client->bamd_pid, SIGKILL);
     }
-    client->fabd_pid = 0;
+    client->bamd_pid = 0;
   }
 
   if(g_cmd == &kill_command) {
     goto end;
   }
 
-  fab_client_solicit(client);
+  bam_client_solicit(client);
 
   /* wait for the acknowledgement signal carrying the channel id */
   sigemptyset(&sigs);
@@ -191,16 +191,16 @@ static void xmain()
   }
 
   channel_shmid = info.si_value.sival_int;
-  fab_client_attach(client, channel_shmid);
+  bam_client_attach(client, channel_shmid);
 
   g_cmd->attached(g_cmd, client);
 
   /* always-on subscriptions */
-  msg = fab_client_produce(client);
-  msg->type = FABIPC_MSG_EVENTSUB;
+  msg = bam_client_produce(client);
+  msg->type = BAMIPC_MSG_EVENTSUB;
   eventsubid = msg->id = ++client->msgid;
   msg->attrs = 0
-    | FABIPC_EVENT_SYSTEM_STATE
+    | BAMIPC_EVENT_SYSTEM_STATE
     ;
   client_post(client, msg);
 
@@ -214,7 +214,7 @@ static void xmain()
   while(!g_sigterm && !g_params.shutdown)
   {
     client->shm->client_pulse++;
-    if(!(msg = fab_client_acquire(client))) {
+    if(!(msg = bam_client_acquire(client))) {
       if(client->shm->server_exit) {
         /* normally the daemon will send a response message with nonzero code on error */
         fprintf(stderr, "daemon exited unexpectedly\n");
@@ -243,31 +243,31 @@ static void xmain()
     iter = 0;
     RUNTIME_ASSERT(msg->type);
     client_acquired(client, msg);
-    if((msg->type == FABIPC_MSG_RESPONSE && msg->id == eventsubid))
+    if((msg->type == BAMIPC_MSG_RESPONSE && msg->id == eventsubid))
     {
       RUNTIME_ASSERT(msg->code == 0);
-      fab_client_consume(client, msg);
+      bam_client_consume(client, msg);
       continue;
     }
-    if((msg->type == FABIPC_MSG_RESULT || msg->type == FABIPC_MSG_RESPONSE) && msg->code != 0)
+    if((msg->type == BAMIPC_MSG_RESULT || msg->type == BAMIPC_MSG_RESPONSE) && msg->code != 0)
     {
       write(2, msg->text, msg->size);
       write(2, "\n", 1);
       waserror = true;
     }
-    else if((msg->type == FABIPC_MSG_EVENTS && msg->evtype == FABIPC_EVENT_SYSTEM_STATE && msg->code != 0))
+    else if((msg->type == BAMIPC_MSG_EVENTS && msg->evtype == BAMIPC_EVENT_SYSTEM_STATE && msg->code != 0))
     {
       write(2, msg->text, msg->size);
       write(2, "\n", 1);
       waserror = true;
     }
     g_cmd->process(g_cmd, client, msg);
-    fab_client_consume(client, msg);
+    bam_client_consume(client, msg);
   }
 
 end:
-  fab_client_disconnect(client);
-  fab_client_xfree(client);
+  bam_client_disconnect(client);
+  bam_client_xfree(client);
 
   g_cmd->disconnected(g_cmd);
 }
@@ -281,7 +281,7 @@ int main(int argc, char ** argv)
 #endif
 
   // load libraries
-  fab_load();
+  bam_load();
   narrator_load();
   bacon_load();
 
@@ -298,7 +298,7 @@ int main(int argc, char ** argv)
   args_cleanup();
 
   // libraries
-  fab_unload();
+  bam_unload();
   narrator_unload();
   bacon_unload();
 

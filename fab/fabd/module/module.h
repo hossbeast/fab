@@ -15,7 +15,7 @@ filesystem
 #include "valyria/llist.h"
 #include "valyria/hashtable.h"
 #include "moria.h"
-#include "fab/stats.h"
+#include "bam/stats.h"
 
 #include "graph.h"
 #include "module_system.h"
@@ -42,8 +42,8 @@ typedef struct module {
   rules_container invalid;  // in rebuild lists
 
   /* runtime state */
-  fab_vertex_stats stats;
-  fab_module_stats mod_stats;
+  bam_vertex_stats stats;
+  bam_module_stats mod_stats;
   char id[40];                     // hash by which the module is accessed at //modules/id
   uint16_t id_len;
   char token[40];

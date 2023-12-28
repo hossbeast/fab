@@ -5,7 +5,7 @@
 
 #include "types.h"
 
-#include "fab/graph.h"
+#include "bam/graph.h"
 
 struct command;
 

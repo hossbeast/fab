@@ -3,8 +3,8 @@
 
 #include <stdio.h>
 
-#include "fab/client.h"
-#include "fab/ipc.h"
+#include "bam/client.h"
+#include "bam/ipc.h"
 #include "narrator.h"
 #include "narrator/fixed.h"
 #include "bacon/builder.h"
@@ -35,9 +35,9 @@ static void usage(command * restrict cmd)
 // build
 //
 
-static void connected(command * restrict cmd, fab_client * restrict client)
+static void connected(command * restrict cmd, bam_client * restrict client)
 {
-  fabipc_message * msg;
+  bamipc_message * msg;
   bacon_writer writer, *builder_writer;
   narrator *N;
   narrator_fixed fixed;
@@ -48,8 +48,8 @@ static void connected(command * restrict cmd, fab_client * restrict client)
     g_args.invalidate = true;
   }
 
-  msg = fab_client_produce(client);
-  msg->type = FABIPC_MSG_REQUEST;
+  msg = bam_client_produce(client);
+  msg->type = BAMIPC_MSG_REQUEST;
   requestid = msg->id = ++client->msgid;
 
   N = narrator_fixed_init(&fixed, msg->text, sizeof(msg->text));
@@ -100,16 +100,16 @@ end:
   client_post(client, msg);
 }
 
-static void process(command * restrict cmd, fab_client * restrict client, fabipc_message * restrict msg)
+static void process(command * restrict cmd, bam_client * restrict client, bamipc_message * restrict msg)
 {
   RUNTIME_ASSERT(msg->id == requestid);
 
-  if(msg->type == FABIPC_MSG_RESPONSE) {
+  if(msg->type == BAMIPC_MSG_RESPONSE) {
     g_params.shutdown = true;
   }
 }
 
-static void attached(command * restrict cmd, fab_client * restrict client)
+static void attached(command * restrict cmd, bam_client * restrict client)
 {
 
 }

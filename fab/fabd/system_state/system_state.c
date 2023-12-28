@@ -2,9 +2,9 @@
 /* Copyright (c) 2012-2023 Todd Freed <todd.freed@gmail.com> */
 
 #include "xlinux/xstdlib.h"
-#include "fab/metadata.h"
-#include "fab/ipc.h"
-#include "fab/events.h"
+#include "bam/metadata.h"
+#include "bam/ipc.h"
+#include "bam/events.h"
 #include "channel.h"
 #include "common/attrs.h"
 
@@ -19,7 +19,7 @@ bool system_error;
 void system_state_change(bam_system_state state)
 {
   channel *chan;
-  fabipc_message *msg;
+  bamipc_message *msg;
 
   if(state == system_state) {
     return;
@@ -66,7 +66,7 @@ void system_state_change(bam_system_state state)
     , attrs16_name_byvalue(bam_system_state_attrs, state)
   );
 
-  if(!events_would(FABIPC_EVENT_SYSTEM_STATE, &chan, &msg)) {
+  if(!events_would(BAMIPC_EVENT_SYSTEM_STATE, &chan, &msg)) {
     goto end;
   }
 
@@ -80,12 +80,12 @@ end:
   system_state = state;
 }
 
-fabipc_message *system_error_event(channel * restrict * restrict first)
+bamipc_message *system_error_event(channel * restrict * restrict first)
 {
-  fabipc_message *msg;
+  bamipc_message *msg;
 
   system_error = true;
-  if(events_would(FABIPC_EVENT_SYSTEM_STATE, first, &msg)) {
+  if(events_would(BAMIPC_EVENT_SYSTEM_STATE, first, &msg)) {
     return msg;
   }
 

@@ -45,7 +45,7 @@ void params_setup()
   r = clock_gettime(CLOCK_MONOTONIC, &g_params.starttime);
   RUNTIME_ASSERT(r == 0);
 
-  g_params.ipcdir_len = snprintf(g_params.ipcdir, sizeof(g_params.ipcdir), "%s/%016"PRIx64, XQUOTE(FABIPCDIR), g_args.hash);
+  g_params.ipcdir_len = snprintf(g_params.ipcdir, sizeof(g_params.ipcdir), "%s/%016"PRIx64, XQUOTE(BAMIPCDIR), g_args.hash);
 
   g_params.homedir_len = 0;
   if((homeenv = getenv("HOME"))) {

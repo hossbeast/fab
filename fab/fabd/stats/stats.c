@@ -2,7 +2,7 @@
 /* Copyright (c) 2012-2023 Todd Freed <todd.freed@gmail.com> */
 
 #include "moria/foreach.h"
-#include "fab/stats.desc.h"
+#include "bam/stats.desc.h"
 #include "valyria/map.h"
 
 #include "stats.h"
@@ -27,7 +27,7 @@
 
 #include "zcat.h"
 
-fab_global_stats g_stats;
+bam_global_stats g_stats;
 
 typedef struct stat_def {
   uint32_t offset;
@@ -56,8 +56,8 @@ static size_t block_rules(block *b)
 size_t stats_global_collate(void *dst, size_t sz, bool reset)
 {
   size_t z;
-  fab_global_stats *stats;
-  fab_global_stats tmp;
+  bam_global_stats *stats;
+  bam_global_stats tmp;
   module *mod;
   fsent *fse;
   uint32_t count;
@@ -105,7 +105,7 @@ size_t stats_global_collate(void *dst, size_t sz, bool reset)
   stats->fsents_shadow = count;
 
   z = 0;
-  z += descriptor_marshal_object(dst + z, sz - z, &descriptor_fab_global_stats, &stats->record, 0);
+  z += descriptor_marshal_object(dst + z, sz - z, &descriptor_bam_global_stats, &stats->record, 0);
 
   return z;
 }

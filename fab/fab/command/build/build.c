@@ -10,10 +10,10 @@
 #include "common/assure.h"
 #include "common/color.h"
 #include "common/hash.h"
-#include "fab/build_slot.h"
-#include "fab/client.h"
-#include "fab/events.h"
-#include "fab/ipc.h"
+#include "bam/build_slot.h"
+#include "bam/client.h"
+#include "bam/events.h"
+#include "bam/ipc.h"
 #include "narrator.h"
 #include "narrator/fixed.h"
 #include "valyria/hashtable.h"
@@ -38,7 +38,7 @@ struct build_args build_args = {
 static struct build_args *args = &build_args;
 
 typedef struct build_slot {
-  fab_build_slot_info info;
+  bam_build_slot_info info;
 
   /* slots can be chained together for execs with very large lists of strings */
   struct build_slot *next;
@@ -46,7 +46,7 @@ typedef struct build_slot {
   /* buffer which info members point into */
   char info_buf[16384];
 
-  fab_build_slot_results results;
+  bam_build_slot_results results;
   uint32_t stdout_len;
   uint32_t stderr_len;
   uint32_t auxout_len;
@@ -104,11 +104,11 @@ static void build_slot_release(void *e)
   }
 }
 
-static void connected(command * restrict cmd, fab_client * restrict client)
+static void connected(command * restrict cmd, bam_client * restrict client)
 {
   narrator * request_narrator;
   narrator_fixed nstor;
-  fabipc_message * msg;
+  bamipc_message * msg;
   bacon_writer writer, *builder_writer;
 
   if(args->targets_len)
@@ -127,21 +127,21 @@ static void connected(command * restrict cmd, fab_client * restrict client)
   }
 
   /* subscribe to relevant events */
-  msg = fab_client_produce(client);
-  msg->type = FABIPC_MSG_EVENTSUB;
+  msg = bam_client_produce(client);
+  msg->type = BAMIPC_MSG_EVENTSUB;
   eventsubid = msg->id = ++client->msgid;
   msg->attrs = 0
-    | FABIPC_EVENT_FORMULA_EXEC_FORKED
-    | FABIPC_EVENT_FORMULA_EXEC_STDOUT
-    | FABIPC_EVENT_FORMULA_EXEC_STDERR
-    | FABIPC_EVENT_FORMULA_EXEC_AUXOUT
-    | FABIPC_EVENT_FORMULA_EXEC_WAITED
+    | BAMIPC_EVENT_FORMULA_EXEC_FORKED
+    | BAMIPC_EVENT_FORMULA_EXEC_STDOUT
+    | BAMIPC_EVENT_FORMULA_EXEC_STDERR
+    | BAMIPC_EVENT_FORMULA_EXEC_AUXOUT
+    | BAMIPC_EVENT_FORMULA_EXEC_WAITED
     ;
   client_post(client, msg);
 
   /* send the request */
-  msg = fab_client_produce(client);
-  msg->type = FABIPC_MSG_REQUEST;
+  msg = bam_client_produce(client);
+  msg->type = BAMIPC_MSG_REQUEST;
   requestid = msg->id = PID_AS_MSGID(getpid());
 
   request_narrator = narrator_fixed_init(&nstor, msg->text, 0xfff);
@@ -201,8 +201,8 @@ static void slot_free(build_slot *bs)
 static void slot_print(build_slot *bs_zero)
 {
   narrator *N = g_narrator_stdout;
-  fab_build_slot_results *results;
-  fab_build_string str;
+  bam_build_slot_results *results;
+  bam_build_string str;
   int exit;
   int sig;
   bool core;
@@ -254,7 +254,7 @@ static void slot_print(build_slot *bs_zero)
       continue;
     }
 
-    descriptor_type_unmarshal(&str, &descriptor_fab_build_string, bs->info.arg_list, bs->info.arg_list_size);
+    descriptor_type_unmarshal(&str, &descriptor_bam_build_string, bs->info.arg_list, bs->info.arg_list_size);
     xsayf("%2d %.*s -> ", bs->info.stage, (int)str.text_len, str.text);
     break;
   }
@@ -265,7 +265,7 @@ static void slot_print(build_slot *bs_zero)
     z = 0;
     for(x = 0; x < bs->info.target_list_len; x++)
     {
-      z += descriptor_type_unmarshal(&str, &descriptor_fab_build_string, bs->info.target_list + z, bs->info.target_list_size - z);
+      z += descriptor_type_unmarshal(&str, &descriptor_bam_build_string, bs->info.target_list + z, bs->info.target_list_size - z);
       if(y) {
         xsays(", ");
       }
@@ -290,7 +290,7 @@ static void slot_print(build_slot *bs_zero)
       z = 0;
       for(x = 0; x < bs->info.arg_list_len; x++)
       {
-        z += descriptor_type_unmarshal(&str, &descriptor_fab_build_string, bs->info.arg_list + z, bs->info.arg_list_size - z);
+        z += descriptor_type_unmarshal(&str, &descriptor_bam_build_string, bs->info.arg_list + z, bs->info.arg_list_size - z);
         if(y) {
           xsays(" ");
         }
@@ -310,7 +310,7 @@ static void slot_print(build_slot *bs_zero)
       z = 0;
       for(x = 0; x < bs->info.env_list_len; x++)
       {
-        z += descriptor_type_unmarshal(&str, &descriptor_fab_build_string, bs->info.env_list + z, bs->info.env_list_size - z);
+        z += descriptor_type_unmarshal(&str, &descriptor_bam_build_string, bs->info.env_list + z, bs->info.env_list_size - z);
         xsayf("  [%2d] %.*s\n", y, (int)str.text_len, str.text);
         y++;
       }
@@ -326,7 +326,7 @@ static void slot_print(build_slot *bs_zero)
       z = 0;
       for(x = 0; x < bs->info.arg_list_len; x++)
       {
-        z += descriptor_type_unmarshal(&str, &descriptor_fab_build_string, bs->info.arg_list + z, bs->info.arg_list_size - z);
+        z += descriptor_type_unmarshal(&str, &descriptor_bam_build_string, bs->info.arg_list + z, bs->info.arg_list_size - z);
         xsayf("  [%2d] %.*s\n", y, (int)str.text_len, str.text);
         y++;
       }
@@ -346,7 +346,7 @@ static void slot_print(build_slot *bs_zero)
       z = 0;
       for(x = 0; x < bs->info.source_list_len; x++)
       {
-        z += descriptor_type_unmarshal(&str, &descriptor_fab_build_string, bs->info.source_list + z, bs->info.source_list_size - z);
+        z += descriptor_type_unmarshal(&str, &descriptor_bam_build_string, bs->info.source_list + z, bs->info.source_list_size - z);
         xsayf("  [%2d] %.*s\n", y, (int)str.text_len, str.text);
         y++;
       }
@@ -362,7 +362,7 @@ static void slot_print(build_slot *bs_zero)
       z = 0;
       for(x = 0; x < bs->info.target_list_len; x++)
       {
-        z += descriptor_type_unmarshal(&str, &descriptor_fab_build_string, bs->info.target_list + z, bs->info.target_list_size - z);
+        z += descriptor_type_unmarshal(&str, &descriptor_bam_build_string, bs->info.target_list + z, bs->info.target_list_size - z);
         xsayf("  [%2d] %.*s\n", y, (int)str.text_len, str.text);
         y++;
       }
@@ -508,9 +508,9 @@ static void slot_print(build_slot *bs_zero)
   }
 }
 
-static void process(command * restrict cmd, fab_client * restrict client, fabipc_message * restrict msg)
+static void process(command * restrict cmd, bam_client * restrict client, bamipc_message * restrict msg)
 {
-  if(msg->type == FABIPC_MSG_RESPONSE)
+  if(msg->type == BAMIPC_MSG_RESPONSE)
   {
     if(msg->id == requestid) {
       g_params.shutdown = true;
@@ -518,17 +518,17 @@ static void process(command * restrict cmd, fab_client * restrict client, fabipc
       RUNTIME_ASSERT(msg->id == eventsubid);
     }
   }
-  else if(msg->type == FABIPC_MSG_EVENTS && msg->evtype == FABIPC_EVENT_SYSTEM_STATE)
+  else if(msg->type == BAMIPC_MSG_EVENTS && msg->evtype == BAMIPC_EVENT_SYSTEM_STATE)
   {
     /* printed in main */
   }
-  else if(msg->type == FABIPC_MSG_EVENTS)
+  else if(msg->type == BAMIPC_MSG_EVENTS)
   {
     build_command_process_event(client, msg);
   }
 }
 
-static void attached(command * restrict cmd, fab_client * restrict client)
+static void attached(command * restrict cmd, bam_client * restrict client)
 {
 
 }
@@ -711,19 +711,19 @@ void build_command_usage(command * restrict cmd)
   );
 }
 
-void build_command_process_event(fab_client * restrict client, fabipc_message * restrict msg)
+void build_command_process_event(bam_client * restrict client, bamipc_message * restrict msg)
 {
   build_slot *bs;
   size_t __attribute__((unused)) z;
   uint32_t pid;
   hashtable_search_context ctx = {};
-  fab_build_slot_info key;
+  bam_build_slot_info key;
   bool r;
 
   ctx.entry = &key;
   pid = key.pid = msg->id;
   r = hashtable_search(build_slots_bypid, &ctx);
-  if(msg->evtype == FABIPC_EVENT_FORMULA_EXEC_FORKED)
+  if(msg->evtype == BAMIPC_EVENT_FORMULA_EXEC_FORKED)
   {
     if(r)
     {
@@ -743,38 +743,38 @@ void build_command_process_event(fab_client * restrict client, fabipc_message * 
     RUNTIME_ASSERT(msg->size <= sizeof(bs->info_buf));
     memcpy(bs->info_buf, msg->text, msg->size);
 
-    z = descriptor_type_unmarshal(&bs->info, &descriptor_fab_build_slot_info, bs->info_buf, msg->size);
+    z = descriptor_type_unmarshal(&bs->info, &descriptor_bam_build_slot_info, bs->info_buf, msg->size);
     RUNTIME_ASSERT(z == msg->size);
   }
   else
   {
     if(!r) {
-      fprintf(stderr, "unknown pid %"PRIu32" 0x%016x head %5u\n", pid, pid, containerof(msg, fabipc_page, msg)->head);
+      fprintf(stderr, "unknown pid %"PRIu32" 0x%016x head %5u\n", pid, pid, containerof(msg, bamipc_page, msg)->head);
       return;
     }
     bs = hashtable_fetch(build_slots_bypid, &ctx);
 
-    if(msg->evtype == FABIPC_EVENT_FORMULA_EXEC_STDOUT)
+    if(msg->evtype == BAMIPC_EVENT_FORMULA_EXEC_STDOUT)
     {
       assure(&bs->stdout_text, 1, bs->stdout_len + msg->size, &bs->stdout_alloc);
       memcpy(bs->stdout_text + bs->stdout_len, msg->text, msg->size);
       bs->stdout_len += msg->size;
     }
-    else if(msg->evtype == FABIPC_EVENT_FORMULA_EXEC_STDERR)
+    else if(msg->evtype == BAMIPC_EVENT_FORMULA_EXEC_STDERR)
     {
       assure(&bs->stderr_text, 1, bs->stderr_len + msg->size, &bs->stderr_alloc);
       memcpy(bs->stderr_text + bs->stderr_len, msg->text, msg->size);
       bs->stderr_len += msg->size;
     }
-    else if(msg->evtype == FABIPC_EVENT_FORMULA_EXEC_AUXOUT)
+    else if(msg->evtype == BAMIPC_EVENT_FORMULA_EXEC_AUXOUT)
     {
       assure(&bs->auxout_text, 1, bs->auxout_len + msg->size, &bs->auxout_alloc);
       memcpy(bs->auxout_text + bs->auxout_len, msg->text, msg->size);
       bs->auxout_len += msg->size;
     }
-    else if(msg->evtype == FABIPC_EVENT_FORMULA_EXEC_WAITED)
+    else if(msg->evtype == BAMIPC_EVENT_FORMULA_EXEC_WAITED)
     {
-      z = descriptor_type_unmarshal(&bs->results, &descriptor_fab_build_slot_results, msg->text, msg->size);
+      z = descriptor_type_unmarshal(&bs->results, &descriptor_bam_build_slot_results, msg->text, msg->size);
       RUNTIME_ASSERT(z == msg->size);
 
       build_was_failed_slot |= bs->results.status != 0;

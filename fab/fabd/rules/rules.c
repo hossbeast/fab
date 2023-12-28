@@ -6,7 +6,7 @@
 
 #include "bacon/parser.h"
 #include "xlinux/xstdlib.h"
-#include "fab/ipc.h"
+#include "bam/ipc.h"
 #include "common/snarf.h"
 #include "common/hash.h"
 #include "moria/foreach.h"
@@ -114,7 +114,7 @@ static void rules_parse(rules * restrict rules)
   int exit;
   char * text = 0;
   size_t text_len;
-  fabipc_message *msg;
+  bamipc_message *msg;
   channel *chan;
 
   STATS_INC(rules->rules_stats.parse);
@@ -303,8 +303,8 @@ static uint32_t block_count_rules(block * restrict block)
 size_t rules_stats_collate(void *dst, size_t sz, bool reset, struct rules * restrict rules)
 {
   size_t z;
-  fab_rules_stats *stats;
-  fab_rules_stats tmp;
+  bam_rules_stats *stats;
+  bam_rules_stats tmp;
   uint32_t count;
   block *block;
 
@@ -338,7 +338,7 @@ size_t rules_stats_collate(void *dst, size_t sz, bool reset, struct rules * rest
   }
   stats->rules = count;
 
-  z += descriptor_marshal_object(dst + z, sz - z, &descriptor_fab_rules_stats, &stats->record, 0);
+  z += descriptor_marshal_object(dst + z, sz - z, &descriptor_bam_rules_stats, &stats->record, 0);
 
   return z;
 }

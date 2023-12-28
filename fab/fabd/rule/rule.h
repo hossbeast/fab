@@ -15,12 +15,12 @@ A rule is connected to each module for which it is run with an EDGE_MOD_RULE edg
 
 #include "types.h"
 
-#include "fab/stats.h"
+#include "bam/stats.h"
 #include "valyria/llist.h"
 #include "valyria/hashtable.h"
 #include "moria.h"
 #include "yyutil/grammar.h"
-#include "fab/stats.h"
+#include "bam/stats.h"
 
 #include "graph.h"
 #include "entlist.h"
@@ -101,7 +101,7 @@ typedef struct rule {
   bool module_search;
 
   yyu_location loc;
-  fab_vertex_stats stats;
+  bam_vertex_stats stats;
   char id[40];
   uint16_t id_len;
   char token[40];
@@ -114,7 +114,7 @@ typedef struct rule_run_context {
   struct rule_module_association *rma;
   struct bind_module_association *bma;
 
-//  fab_rule_stats stats;
+//  bam_rule_stats stats;
 
   /* scratch space */
   struct hashtable search_hits;     // search pattern results

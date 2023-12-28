@@ -193,8 +193,8 @@ void rma_mod_set(rule_module_association * restrict rma, module * restrict mod, 
 size_t rule_module_association_stats_collate(void *dst, size_t sz, bool reset, rule_module_association *rma)
 {
   size_t z;
-  fab_rule_stats *stats;
-  fab_rule_stats tmp;
+  bam_rule_stats *stats;
+  bam_rule_stats tmp;
   uint32_t count;
 
   memcpy(&tmp, &rma->stats, sizeof(tmp));
@@ -216,7 +216,7 @@ size_t rule_module_association_stats_collate(void *dst, size_t sz, bool reset, r
   stats->dependencies = count;
 
   z = 0;
-  z += descriptor_marshal_object(dst + z, sz - z, &descriptor_fab_rule_stats, &stats->record, 0);
+  z += descriptor_marshal_object(dst + z, sz - z, &descriptor_bam_rule_stats, &stats->record, 0);
 
   return z;
 }

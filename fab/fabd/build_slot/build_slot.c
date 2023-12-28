@@ -21,11 +21,11 @@
 #include "bacon/value.h"
 #include "bacon/writer.h"
 
-#include "fab/sigutil.h"
-#include "fab/ipc.h"
-#include "fab/events.h"
-#include "fab/build_slot.h"
-#include "fab/build_slot.desc.h"
+#include "bam/sigutil.h"
+#include "bam/ipc.h"
+#include "bam/events.h"
+#include "bam/build_slot.h"
+#include "bam/build_slot.desc.h"
 
 #include "build_slot.h"
 #include "fsent.h"
@@ -179,7 +179,7 @@ static void build_slot_forked(build_slot * restrict bs)
 {
   size_t z;
   channel *chan;
-  fabipc_message *msg;
+  bamipc_message *msg;
   uint16_t len;
   uint32_t list_size;
   uint16_t list_size_off;
@@ -209,7 +209,7 @@ static void build_slot_forked(build_slot * restrict bs)
   entlist *targets_eln;
 
   /* struct fab_build_slot_info */
-  if(!events_would(FABIPC_EVENT_FORMULA_EXEC_FORKED, &chan, &msg)) {
+  if(!events_would(BAMIPC_EVENT_FORMULA_EXEC_FORKED, &chan, &msg)) {
     return;
   }
 
@@ -233,7 +233,7 @@ static void build_slot_forked(build_slot * restrict bs)
     dst = msg->text;
     sz = sizeof(msg->text);
     z = 0;
-    z += marshal_u32(dst + z, sz - z, descriptor_fab_build_slot_info.id);
+    z += marshal_u32(dst + z, sz - z, descriptor_bam_build_slot_info.id);
 
     /* pid, stage */
     z += marshal_u32(dst + z, sz - z, bs->pid);
@@ -284,7 +284,7 @@ static void build_slot_forked(build_slot * restrict bs)
         break;
       }
 
-      z += marshal_u32(dst + z, sz - z, descriptor_fab_build_string.id);
+      z += marshal_u32(dst + z, sz - z, descriptor_bam_build_string.id);
       z += marshal_u16(dst + z, sz - z, len);
       z += zcatw(dst + z, sz - z, bs->argv[argv_x], len);
       x++;
@@ -309,7 +309,7 @@ static void build_slot_forked(build_slot * restrict bs)
         break;
       }
 
-      z += marshal_u32(dst + z, sz - z, descriptor_fab_build_string.id);
+      z += marshal_u32(dst + z, sz - z, descriptor_bam_build_string.id);
       z += marshal_u16(dst + z, sz - z, len);
       z += zcatw(dst + z, sz - z, bs->envp[envp_x], len);
       x++;
@@ -334,7 +334,7 @@ static void build_slot_forked(build_slot * restrict bs)
       }
 
       source = sources_eln->p;
-      z += marshal_u32(dst + z, sz - z, descriptor_fab_build_string.id);
+      z += marshal_u32(dst + z, sz - z, descriptor_bam_build_string.id);
       n = containerof(source, fsent, vertex);
       len_off = z;
       z += marshal_u16(dst + z, sz - z, 0);
@@ -364,7 +364,7 @@ static void build_slot_forked(build_slot * restrict bs)
       }
 
       target = targets_eln->p;
-      z += marshal_u32(dst + z, sz - z, descriptor_fab_build_string.id);
+      z += marshal_u32(dst + z, sz - z, descriptor_bam_build_string.id);
       n = containerof(target, fsent, vertex);
       len_off = z;
       z += marshal_u16(dst + z, sz - z, 0);
@@ -391,7 +391,7 @@ static void build_slot_forked(build_slot * restrict bs)
       break;
     }
 
-    if(!events_would(FABIPC_EVENT_FORMULA_EXEC_FORKED, &chan, &msg)) {
+    if(!events_would(BAMIPC_EVENT_FORMULA_EXEC_FORKED, &chan, &msg)) {
       return;
     }
   }
@@ -404,16 +404,16 @@ static void build_slot_forked(build_slot * restrict bs)
 static void build_slot_waited(build_slot * restrict bs)
 {
   channel *chan;
-  fabipc_message *msg;
+  bamipc_message *msg;
   uint16_t z;
 
-  if(!events_would(FABIPC_EVENT_FORMULA_EXEC_WAITED, &chan, &msg)) {
+  if(!events_would(BAMIPC_EVENT_FORMULA_EXEC_WAITED, &chan, &msg)) {
     return;
   }
 
   /* struct fab_build_slot_results */
   z = 0;
-  z += marshal_u32(msg->text + z, sizeof(msg->text) - z, descriptor_fab_build_slot_results.id);
+  z += marshal_u32(msg->text + z, sizeof(msg->text) - z, descriptor_bam_build_slot_results.id);
   z += marshal_i32(msg->text + z, sizeof(msg->text) - z, bs->status);
   z += marshal_u32(msg->text + z, sizeof(msg->text) - z, bs->stdout_total);
   z += marshal_u32(msg->text + z, sizeof(msg->text) - z, bs->stderr_total);
@@ -611,27 +611,27 @@ void build_slot_read(build_slot * restrict bs, uint32_t stream)
   ssize_t bytes;
   int fd = 0;
   uint32_t * total = 0;
-  fabipc_event_type event = 0;
+  bamipc_event_type event = 0;
   channel *chan;
-  fabipc_message *msg;
+  bamipc_message *msg;
 
   if(stream == 1)
   {
     fd = bs->stdout_pipe[0];
     total = &bs->stdout_total;
-    event = FABIPC_EVENT_FORMULA_EXEC_STDOUT;
+    event = BAMIPC_EVENT_FORMULA_EXEC_STDOUT;
   }
   else if(stream == 2)
   {
     fd = bs->stderr_pipe[0];
     total = &bs->stderr_total;
-    event = FABIPC_EVENT_FORMULA_EXEC_STDERR;
+    event = BAMIPC_EVENT_FORMULA_EXEC_STDERR;
   }
   else if(stream == 1001)
   {
     fd = bs->auxout_pipe[0];
     total = &bs->auxout_total;
-    event = FABIPC_EVENT_FORMULA_EXEC_AUXOUT;
+    event = BAMIPC_EVENT_FORMULA_EXEC_AUXOUT;
   }
 
   if(events_would(event, &chan, &msg))

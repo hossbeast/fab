@@ -22,7 +22,7 @@ config keys that should *only* be legal in the global/user config files
 #include "valyria/llist.h"
 #include "bacon/writer.h"
 #include "bacon/builder.h"
-#include "fab/stats.h"
+#include "bam/stats.h"
 #include "common/snarf.h"
 #include "common/hash.h"
 #include "common/attrs.h"

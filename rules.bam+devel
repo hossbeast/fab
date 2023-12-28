@@ -35,3 +35,7 @@ bind fab-build/libmoria      => [*] //artifacts
 
 bind fab/libyyutil/include   => [*] //module/include
 bind fab-build/libyyutil     => [*] //artifacts
+
+bind fab/fab/libbam/include   => [*] //module/include
+bind fab-build/fab/libbam     => [*] //artifacts
+bind fab-build/fab/libbam/$CONFIG_VARIANT     => [*] //module/include

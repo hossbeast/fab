@@ -24,8 +24,8 @@ struct bacon_writer;
 struct moria_traverse_result;
 struct llist;
 struct entlist;
-enum fab_vertex_type;
-enum fab_vertex_state;
+enum bam_vertex_type;
+enum bam_vertex_state;
 
 /* edge attrs ranges */
 #define EDGE_KIND_OPT           0x40000ff0 /* 01000000 00000000 00001111 11110000 */
@@ -240,8 +240,8 @@ void graph_invalidation_end(graph_invalidation_context * restrict context)
   __attribute__((nonnull));
 
 /* map an internal vertex_type to an external fab_fsent_type */
-enum fab_vertex_type vertex_type_remap(vertex_type type);
-enum fab_vertex_state vertex_state_remap(vertex_state state);
+enum bam_vertex_type vertex_type_remap(vertex_type type);
+enum bam_vertex_state vertex_state_remap(vertex_state state);
 
 /* disconnect an fsedge or dependency edge and cascade */
 void graph_disintegrate(struct moria_edge * restrict ne, struct graph_invalidation_context * restrict context)

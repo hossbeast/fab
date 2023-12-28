@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: GPL-3.0 */
 /* Copyright (c) 2012-2023 Todd Freed <todd.freed@gmail.com> */
 
-#include "fab/sigutil.h"
+#include "bam/sigutil.h"
 #include "xlinux/xpthread.h"
 
 #include "reconcile.h"

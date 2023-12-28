@@ -9,7 +9,7 @@
 
 #include "moria.h"
 #include "valyria/llist.h"
-#include "fab/stats.h"
+#include "bam/stats.h"
 
 #include "graph.h"
 
@@ -29,7 +29,7 @@ typedef struct formula {
   uint16_t id_len;
   char token[40];
   uint16_t token_len;
-  fab_vertex_stats stats;
+  bam_vertex_stats stats;
   int fd;
   llist invalid_lln;
 
@@ -37,7 +37,7 @@ typedef struct formula {
   char abspath[512];
   uint16_t abspath_len;
   struct fsent * self_node;
-  fab_formula_stats fml_stats;
+  bam_formula_stats fml_stats;
 
   /* parsed from the embedded bacon block */
   bool shebang;

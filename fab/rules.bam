@@ -2,6 +2,6 @@
 /* Copyright (c) 2012-2023 Todd Freed <todd.freed@gmail.com> */
 
 # libraries
-bind fab/fab/libfab/include   => [*] //module/include
-bind fab-build/fab/libfab     => [*] //artifacts
-bind fab-build/fab/libfab/$CONFIG_VARIANT     => [*] //module/include
+bind fab/fab/libbam/include   => [*] //module/include
+bind fab-build/fab/libbam     => [*] //artifacts
+bind fab-build/fab/libbam/$CONFIG_VARIANT     => [*] //module/include

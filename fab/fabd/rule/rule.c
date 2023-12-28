@@ -15,7 +15,7 @@
 #include "valyria/hashtable.h"
 #include "xlinux/xstdlib.h"
 #include "bacon/builder.h"
-#include "fab/stats.h"
+#include "bam/stats.h"
 
 #include "rule.h"
 #include "dependency.h"
@@ -102,7 +102,7 @@ static formula *formula_resolve(rule * restrict rule, rule_run_context * restric
   fsent *fml_n;
   formula *fml;
   channel *chan;
-  fabipc_message *msg;
+  bamipc_message *msg;
   narrator_fixed fixed;
   bacon_writer writer, *builder_writer;
   meta_edge *me;

@@ -117,13 +117,13 @@ static void selector_visitor(moria_vertex * v, void * arg, moria_traversal_mode 
 
 static void enoent_error(channel * restrict chan, const char * restrict name, uint16_t name_len)
 {
-  fabipc_message *msg;
+  bamipc_message *msg;
 
   if(chan)
   {
     msg = channel_produce(chan);
     msg->code = ENOENT;
-    msg->type = FABIPC_MSG_RESPONSE;
+    msg->type = BAMIPC_MSG_RESPONSE;
     msg->size = zcatf(msg->text, sizeof(msg->text), "not found %.*s", (int)name_len, name);
     channel_post(chan, msg);
   }

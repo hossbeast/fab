@@ -4,7 +4,7 @@
 #include <unistd.h>
 #include <stdio.h>
 
-#include "fab/sigutil.h"
+#include "bam/sigutil.h"
 #include "xlinux/xpthread.h"
 #include "atomics.h"
 

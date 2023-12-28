@@ -4,7 +4,7 @@
 #include <time.h>
 
 #include "args.h"
-#include "fab/metadata.h"
+#include "bam/metadata.h"
 #include "goals.h"
 #include "narrator.h"
 #include "narrator/fixed.h"
@@ -30,7 +30,7 @@ void metadata_collate(void *dst, size_t sz, size_t * restrict zp)
   clock_gettime(CLOCK_MONOTONIC, &now);
 
   z = 0;
-  z += marshal_u32(dst + z, sz - z, descriptor_fab_metadata.id);
+  z += marshal_u32(dst + z, sz - z, descriptor_bam_metadata.id);
 
   /* pid */
   z += marshal_i64(dst + z, sz - z, g_params.pid);

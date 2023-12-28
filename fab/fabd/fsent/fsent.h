@@ -16,7 +16,7 @@ unlinked fsents are not matched by rules. uncreated fsents are matched by rules.
 
 #include "valyria/llist.h"
 #include "valyria/rbtree.h"
-#include "fab/stats.h"
+#include "bam/stats.h"
 
 #include "graph.h"
 #include "sweeper_thread.h"
@@ -136,8 +136,8 @@ typedef struct fsent {
     };
   };
 
-  fab_vertex_stats stats;
-  fab_fsent_dir_stats dirstats;
+  bam_vertex_stats stats;
+  bam_fsent_dir_stats dirstats;
 
   int in_wd;                      // inotify watch descriptor
   uint32_t in_epoch;              // notify thread epoch

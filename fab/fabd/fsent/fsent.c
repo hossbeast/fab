@@ -4,8 +4,8 @@
 #include <errno.h>
 #include <inttypes.h>
 
-#include "fab/ipc.h"
-#include "fab/stats.desc.h"
+#include "bam/ipc.h"
+#include "bam/stats.desc.h"
 #include "moria/graph.h"
 #include "moria/traverse.h"
 #include "moria/edge.h"
@@ -20,7 +20,7 @@
 #include "xlinux/xstdlib.h"
 #include "xlinux/xfcntl.h"
 #include "xlinux/xunistd.h"
-#include "fab/vertex.h"
+#include "bam/vertex.h"
 
 #include "fsent.h"
 #include "vertex.h"
@@ -837,7 +837,7 @@ uint64_t fsent_abspath_hash(const fsent * restrict fse)
 
 void fsent_unlink(fsent *n, entlist * restrict edges, graph_invalidation_context * restrict invalidation)
 {
-  fabipc_message *msg;
+  bamipc_message *msg;
   uint16_t z;
   channel *chan;
   moria_vertex *v;
@@ -904,7 +904,7 @@ void fsent_unlink(fsent *n, entlist * restrict edges, graph_invalidation_context
 
   vertex_unlinked_probe(&n->vertex);
 
-  if(events_would(FABIPC_EVENT_NODE_DELETE, &chan, &msg))
+  if(events_would(BAMIPC_EVENT_NODE_DELETE, &chan, &msg))
   {
     z = vertex_path_load(msg->text, sizeof(msg->text), &n->vertex);
     msg->size = z;
@@ -966,8 +966,8 @@ fsent *fsent_translate(fsent * fse, const fsent *origin, const fsent *target, gr
 size_t fsent_dir_stats_collate(void *dst, size_t sz, bool reset, fsent * restrict n)
 {
   size_t z;
-  fab_fsent_dir_stats *stats;
-  fab_fsent_dir_stats tmp;
+  bam_fsent_dir_stats *stats;
+  bam_fsent_dir_stats tmp;
   moria_foreach_state st;
   moria_edge *edge;
 
@@ -988,7 +988,7 @@ size_t fsent_dir_stats_collate(void *dst, size_t sz, bool reset, fsent * restric
     }
   }
 
-  z += descriptor_marshal_object(dst + z, sz - z, &descriptor_fab_fsent_dir_stats, &stats->record, 0);
+  z += descriptor_marshal_object(dst + z, sz - z, &descriptor_bam_fsent_dir_stats, &stats->record, 0);
 
   return z;
 }

@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include "fab/graph.h"
+#include "bam/graph.h"
 
 #include "command.h"
 #include "args.h"
@@ -13,7 +13,7 @@
 extern struct tree_args {
   bead target;            // identifies the node to start the tree from
   bool nofollow;          // on target lookup
-  fab_graph graph;
+  bam_graph graph;
   const char *direction;  // up | down
   bool both;              // both up and down
   bool show_labels;

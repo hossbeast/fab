@@ -12,7 +12,7 @@
 #include "locks.h"
 
 struct channel;
-struct fabipc_message;
+struct bamipc_message;
 struct request;
 struct request_parser;
 struct selection;
@@ -51,7 +51,7 @@ typedef struct handler_context {
     char channel_state;
 
     struct {
-      /* fabipc channel for the client */
+      /* bamipc channel for the client */
       struct channel * chan;
     };
   };

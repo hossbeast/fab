@@ -387,7 +387,7 @@ static void vertex_dir_mkdir(fsent *fse)
   const filesystem *fs;
   char path[512];
   channel *chan;
-  fabipc_message *msg;
+  bamipc_message *msg;
   const char *errstr;
 
   if(vertex_state_get(&fse->vertex) == VERTEX_OK) {
@@ -430,7 +430,7 @@ NOTE : this is not being used yet
   char target[512];
   int r;
   channel *chan;
-  fabipc_message *msg;
+  bamipc_message *msg;
   narrator_fixed fixed;
   bacon_writer writer, *builder_writer;
   int error;
