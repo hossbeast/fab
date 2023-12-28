@@ -46,7 +46,7 @@ static size_t argvsl;
 
 static void version()
 {
-  printf("fab %s\n\n%s\n", git_describe, git_metadata);
+  printf("bam %s\n\n%s\n", git_describe, git_metadata);
 
   exit(0);
 }
@@ -54,9 +54,9 @@ static void version()
 static void usage(command * restrict cmd)
 {
   printf(
-"fab %s\n"
+"bam %s\n"
 "\n"
-"usage: fab [command | option]..\n"
+"usage: bam [command | option]..\n"
 "\n"
 "commands\n"
 " adhoc                 adhoc request\n"
@@ -68,7 +68,7 @@ static void usage(command * restrict cmd)
 " events                subscribe to and print events\n"
 " filesystem            show filesystem mount points\n"
 " fstree                show fstree attachment points\n"
-" kill                  terminate an extant fabd if any\n"
+" kill                  terminate an extant bamd if any\n"
 " ls                    print directory node listings\n"
 " metadata              print metadata\n"
 " reconcile             reload everything\n"
@@ -83,10 +83,10 @@ static void usage(command * restrict cmd)
 " --help | -h       print this message\n"
 " --version | -V    print version information\n"
 " -B                first, global invalidation\n"
-" -K                first, kill extant fabd if any\n"
+" -K                first, kill extant bamd if any\n"
 " -m path/to/module set the context module\n"
 #if CONFIG_DEVEL
-" --no-launch       only talk to an existing fabd\n"
+" --no-launch       only talk to an existing bamd\n"
 #endif
     , git_describe
   );

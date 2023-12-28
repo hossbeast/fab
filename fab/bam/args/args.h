@@ -24,7 +24,7 @@ typedef struct bead {
 } bead;
 
 extern struct {
-  /* passthrough to fabd */
+  /* passthrough to bamd */
   bead system_config_path;
   bead user_config_path;
   bead project_config_path;

@@ -29,6 +29,8 @@ setup() {
   echo $1 $2
   mkdir -p $BUILDDIR/$1/$2
 
+  ln -fs module.bam $BUILDDIR/$1/$2/module.bam+devel
+
   rm -f $BUILDDIR/$1/$2/module.bam
   cat 1>$BUILDDIR/$1/$2/module.bam <<HERE
 /* SPDX-License-Identifier: GPL-3.0 */
@@ -42,10 +44,11 @@ HERE
 
 # setup the build directory
 mkdir -p $BUILDDIR
-ln -fs $SRCDIR/config.bam $BUILDDIR/
+ln -fs $SRCDIR/config.bam       $BUILDDIR/
+ln -fs $SRCDIR/config.bam+devel $BUILDDIR/
 
 # setup the build directories
-for x in libxlinux libcommon asan unit libnarrator libdescriptor libvalyria libxunit libyyutil liblorien libbacon libmoria bacon fab/libbam fab/fab fab/fabd; do
+for x in libxlinux libcommon asan unit libnarrator libdescriptor libvalyria libxunit libyyutil liblorien libbacon libmoria bacon fab/libbam fab/bam fab/fabd; do
   for v in debug devel final trace; do
     setup $x $v
   done

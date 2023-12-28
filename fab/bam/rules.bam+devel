@@ -12,14 +12,14 @@ bind "builtin-modules+devel"/executable => //executable
 rule **+(/) => [*] //module/include
 
 # default targets
-rule { search : module } fab -> //targets
+rule { search : module } bam -> //targets
 
-rule { search : module } **/*.o [*] -> fab : //executable/cc.bam+devel
+rule { search : module } **/*.o [*] -> bam : //executable/cc.bam+devel
 
 # dependencies
-rule //artifacts/*/$CONFIG_VARIANT/*.a -> fab
+rule //artifacts/*/$CONFIG_VARIANT/*.a -> bam
 {
   if($CONFIG_DEVEL)
 
-  rule //fabasan/devel/asan.o -> fab
+  rule //fabasan/devel/asan.o -> bam
 }
