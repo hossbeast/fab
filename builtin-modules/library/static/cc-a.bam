@@ -54,28 +54,14 @@ envs : {
   includes : [
     # include directories matched by the include rule
     select : [
-      union : [
-        sequence : [
-          lookup : {
-            path : //module/include
-          }
-          traverse : {
-            direction : down
-            graph : relation
-            min-distance : 1
-            max-distance : 1
-          }
-        ]
-        sequence : [
-          module
-          traverse : {
-            direction : down
-            graph : imports
-            min-distance : 0
-            max-distance : 1
-          }
-        ]
-      ]
+      lookup : {
+        path : //module/include
+      }
+      traverse : {
+        direction : down
+        min-distance : 1
+        max-distance : 1
+      }
     ]
     property : relpath
   ]

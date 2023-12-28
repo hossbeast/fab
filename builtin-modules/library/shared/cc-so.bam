@@ -64,35 +64,17 @@ envs : {
   ]
 
   includes : [
-    # include directories matched by the include rule 
-    sequence : [
-      select : [
-        lookup : {
-          path : //module/include
-        }
-
-        traverse : {
-          direction : down
-          graph : relation
-          min-distance : 1
-          max-distance : 1
-        }
-      ]
-      property : relpath
+    # include directories matched by the include rule
+    select : [
+      lookup : {
+        path : //module/include
+      }
+      traverse : {
+        direction : down
+        min-distance : 1
+        max-distance : 1
+      }
     ]
-
-    # include imported directories
-    sequence : [
-      select : [
-        module
-        traverse : {
-          direction : down
-          graph : imports
-          min-distance : 0
-          max-distance : 1
-        }
-      ]
-      property : relpath
-    ]
+    property : relpath
   ]
 }
