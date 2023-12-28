@@ -10,7 +10,7 @@ $SIG{__WARN__} = sub { die @_ };
 
 use File::Basename;
 
-die "cc not found" unless $ENV{cc};
+die "CC not found" unless $ENV{CC};
 
 my $name = basename($ENV{bm_target});
 my $dot = index($name, ".");
@@ -24,8 +24,8 @@ if($ENV{bm_variant} eq "devel.pic.xapi" || $ENV{bm_variant} eq "pic.trace.xapi")
 }
 
 my @cmd = (
-    $ENV{cc}
-  , split(/ /, $ENV{cflags})
+    $ENV{CC}
+  , split(/ /, $ENV{CFLAGS})
   , "-shared"
   # linker script
   , "-Wl,--version-script=$lnk"
@@ -45,7 +45,7 @@ exec { $cmd[0] } @cmd
 __DATA__
 
 envs : {
-  cc : {
+  CC : {
     path-search : cc
   }
 
@@ -64,17 +64,35 @@ envs : {
   ]
 
   includes : [
-    select : [
-      module
-      union : [
-        # imported directories
+    # include directories matched by the include rule 
+    sequence : [
+      select : [
+        lookup : {
+          path : //module/include
+        }
+
+        traverse : {
+          direction : down
+          graph : relation
+          min-distance : 1
+          max-distance : 1
+        }
+      ]
+      property : relpath
+    ]
+
+    # include imported directories
+    sequence : [
+      select : [
+        module
         traverse : {
           direction : down
           graph : imports
+          min-distance : 0
+          max-distance : 1
         }
       ]
+      property : relpath
     ]
-
-    property : relpath
   ]
 }

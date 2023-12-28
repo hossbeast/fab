@@ -8,11 +8,12 @@ use strict;
 use warnings;
 $SIG{__WARN__} = sub { die @_ };
 
-my $lexh = $ENV{bm_source};
+my $lexh = $ENV{bm_source0};
 my $states_c = substr($ENV{bm_target0}, -2) eq ".c" ? $ENV{bm_target0} : $ENV{bm_target1};
 my $states_h = substr($ENV{bm_target0}, -2) eq ".h" ? $ENV{bm_target0} : $ENV{bm_target1};
 
 $states_c =~ m|(?:[^/]*/)?([^.]+)|;
+$states_c =~ m|([^./]+)(?:[^/]+)$|;
 my $pfx = "$1";
 
 my %yystates;

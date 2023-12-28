@@ -192,6 +192,7 @@ END
 #
 
 close $fh;
+
 open $fh, ">$tokens_h" or die $!;
 print $fh <<END;
 #ifndef ${pfx}_TOKENS_H

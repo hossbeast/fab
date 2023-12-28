@@ -5,6 +5,14 @@
 filesystems : {
   / : {
     invalidate : notify
+    mkdirs : false
+    indexed : false
+  }
+
+  /usr/share/fab/modules : {
+    invalidate : stat
+    mkdirs : false
+    indexed : true
   }
 }
 

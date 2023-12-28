@@ -16,7 +16,7 @@ my @cmd = (
     $ENV{bison}
   , "-o", $cfile
   , "-d"
-  , $ENV{bm_source}
+  , $ENV{bm_source0}
 );
 
 exec { $cmd[0] } @cmd;

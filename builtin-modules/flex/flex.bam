@@ -10,7 +10,7 @@ $SIG{__WARN__} = sub { die @_ };
 
 die "flex not found" unless $ENV{flex};
 
-my $name = "$ENV{bm_source}";
+my $name = "$ENV{bm_source0}";
 $name =~ s/^.*\///;
 $name =~ s/\.[^.]+$//;
 
@@ -21,7 +21,7 @@ my @cmd = (
     $ENV{flex}
   , "-o", $cfile
   , "--header-file=$hfile"
-  , $ENV{bm_source}
+  , $ENV{bm_source0}
 );
 
 print(join(" ", @cmd) . "\n");
