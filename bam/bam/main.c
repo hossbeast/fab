@@ -232,6 +232,7 @@ static void xmain()
         if(pulse == client->shm->server_pulse) {
           /* watchdog timeout - unresponsive daemon */
           fprintf(stderr, "daemon unresponsive\n");
+          waserror = true;
           break;
         }
         pulse = client->shm->server_pulse;
