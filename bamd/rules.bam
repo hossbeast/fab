@@ -5,7 +5,7 @@ use git
 use flex
 use bison
 
-bind bam-build/asan   => //fabasan
+bind bam-build/asan   => //asan-bits
 bind executable       => //executable
 
 # default targets
@@ -25,7 +25,7 @@ rule git-state.h -> args/args.o
 {
   if ($CONFIG_DEVEL)
 
-  rule //fabasan/devel/asan.o -> bamd
+  rule //asan-bits/devel/asan.o -> bamd
 
   # all the code into the blob
   rule { search : module } **~test/(?:*~main~git-state).o [*] -> test/blob.a : ./cc-blob.bam
