@@ -22,9 +22,9 @@ my $GREEN = "\x1b\x5b\x33\x32\x6d";
 my $NONE = "\x1b\x5b\x30\x3b\x30\x6d";
 my $CONCURRENCY = 20;   # dont have more tests than this in flight at once
 
-if(! -e "/run/fab-integ")
+if(! -e "/run/bam-integ")
 {
-  print("sudo mkdir -p /run/fab-integ/logs && sudo chmod -R ugoa+rwx /run/fab-integ\n");
+  print("sudo mkdir -p /run/bam-integ/logs && sudo chmod -R ugoa+rwx /run/bam-integ\n");
   die("forgot?");
 }
 
@@ -124,7 +124,7 @@ for my $test (@tests)
   printf(" %12s : %s\n", "projdir", $$test{projdir});
   printf(" %12s : %s\n", "ipcdir", $$test{ipcdir});
   printf(" %12s : %s\n", "run.log", "$$test{ipcdir}/run.log");
-  printf(" %12s : %s (%s)\n", "fabd/stdout", "$$test{ipcdir}/fabd/stdout", (-s "$$test{ipcdir}/fabd/stdout" || 0));
-  printf(" %12s : %s (%s)\n", "fabd/stderr", "$$test{ipcdir}/fabd/stderr", (-s "$$test{ipcdir}/fabd/stderr" || 0));
-  system("grep -A 5 AddressSanitizer $$test{ipcdir}/fabd/stderr");
+  printf(" %12s : %s (%s)\n", "bamd/stdout", "$$test{ipcdir}/bamd/stdout", (-s "$$test{ipcdir}/bamd/stdout" || 0));
+  printf(" %12s : %s (%s)\n", "bamd/stderr", "$$test{ipcdir}/bamd/stderr", (-s "$$test{ipcdir}/bamd/stderr" || 0));
+  system("grep -A 5 AddressSanitizer $$test{ipcdir}/bamd/stderr");
 }

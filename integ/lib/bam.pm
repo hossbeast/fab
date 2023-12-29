@@ -10,15 +10,16 @@ use warnings;
 use bigint qw|hex|;
 
 our $repodir;
-our $bam_fabpath;
+our $builddir = '/home/todd/bam-build';
+our $bam_bampath;
 our $bam_name;          # test-module-unref-use+stat
-our $bam_basedir;       # /run/fab-integ/testformulamanyref+stat
+our $bam_basedir;       # /run/bam-integ/testformulamanyref+stat
 our $bam_basehash;      # 35f92367872d6ecc              (base)
-our $bam_baseipc;       # /var/run/fab/35f92367872d6ecc
-our $bam_projdir;       # /run/fab-integ/testformulamanyref+stat/B
+our $bam_baseipc;       # /var/run/bam/35f92367872d6ecc
+our $bam_projdir;       # /run/bam-integ/testformulamanyref+stat/B
 our $bam_projhash;      # d5c90b82ddcd99bb              (proj)
-our $bam_projipc;       # /var/run/fab/d5c90b82ddcd99bb
-our $bam_ipcdir;        # /var/run/fab/d5c90b82ddcd99bb (proj)
+our $bam_projipc;       # /var/run/bam/d5c90b82ddcd99bb
+our $bam_ipcdir;        # /var/run/bam/d5c90b82ddcd99bb (proj)
 our $bam_invalidate;
 our $bam_sweeper_period = 250 * 1000 * 1000;
 
@@ -49,9 +50,9 @@ sub test_parameters
   $name = basename($name);
   $name =~ s/[^a-zA-Z0-9+]//g;
 
-  my $dir = "/run/fab-integ/$name";
+  my $dir = "/run/bam-integ/$name";
   my $hash = hash64($dir);
-  my $ipc = "/var/run/fab/$hash";
+  my $ipc = "/var/run/bam/$hash";
 
   return $dir, $hash, $ipc;
 }
@@ -60,7 +61,7 @@ sub init
 {
   my %params = @_;
 
-  $bam_fabpath = "$repodir/fab/fab/fab.devel";
+  $bam_bampath = "$builddir/bam/devel/bam";
   $bam_invalidate = $ARGV[0] || "stat";
   $bam_name = basename($0) . "+$bam_invalidate";
   ($bam_basedir, $bam_basehash, $bam_baseipc) = test_parameters($bam_name);
@@ -70,7 +71,7 @@ sub init
     $bam_projdir = $bam_basedir;
   }
   $bam_projhash = hash64($bam_projdir);
-  $bam_projipc = "/var/run/fab/$bam_projhash";
+  $bam_projipc = "/var/run/bam/$bam_projhash";
 
   $bam_ipcdir = $bam_projipc;
 
@@ -109,14 +110,14 @@ sub setup
 sub teardown
 {
   run({ cwd => $bam_projdir }
-    , $bam_fabpath
+    , $bam_bampath
     , "--no-launch"
     , "kill"
   );
 
   # snarf the best-effort exit status file
   my $exit = -1;
-  if(open my $fh, "<", "$bam_ipcdir/fabd/exit")
+  if(open my $fh, "<", "$bam_ipcdir/bamd/exit")
   {
     my $line = <$fh>;
     chomp $line;
@@ -125,7 +126,7 @@ sub teardown
   }
 
   my $err = '';
-  if(open my $fh, "<", "$bam_ipcdir/fabd/stderr")
+  if(open my $fh, "<", "$bam_ipcdir/bamd/stderr")
   {
     $err = do { local $/ = undef; <$fh> };
     chomp $err;
@@ -136,8 +137,8 @@ sub teardown
   # must not have written anything to its stderr file
   return if $exit == 0 && length($err) == 0;
 
-  print("> $bam_ipcdir/fabd/exit\n$exit\n");
-  print("> $bam_ipcdir/fabd/stderr\n$err\n");
+  print("> $bam_ipcdir/bamd/exit\n$exit\n");
+  print("> $bam_ipcdir/bamd/stderr\n$err\n");
   die;
 }
 
@@ -165,7 +166,7 @@ sub build
 
 sub bam_bootstrap
 {
-  run({ @_, cwd => $bam_projdir }, $bam_fabpath
+  run({ @_, cwd => $bam_projdir }, $bam_bampath
     , "reconcile"
     , "-K"
     , "--system-config-path", "$bam_basedir/system-config"
@@ -181,7 +182,7 @@ sub bam_bootstrap
 sub bam_reconcile
 {
   run({ @_, cwd => $bam_projdir }
-    , $bam_fabpath
+    , $bam_bampath
     , "--no-launch"
     , "reconcile"
   );
@@ -202,7 +203,7 @@ sub bam_stats
   push @args, $name if $name;
 
   my $result = run({ cwd => $bam_projdir }
-    , $bam_fabpath
+    , $bam_bampath
     , @args
   );
   my $text = $$result{out};
@@ -233,7 +234,7 @@ sub bam_metadata
   my %metadata;
 
   my $result = run({ @_, cwd => $bam_projdir }
-    , $bam_fabpath
+    , $bam_bampath
     , "--no-launch"
     , "metadata"
   );
@@ -253,7 +254,7 @@ sub bam_filesystem
   my $arglist = shift;
 
   run({ @_, cwd => $bam_projdir, @_ }
-    , $bam_fabpath
+    , $bam_bampath
     , "--no-launch"
     , "filesystem"
     , @$arglist
@@ -265,7 +266,7 @@ sub bam_describe
   my $arglist = shift;
 
   run({ @_, cwd => $bam_projdir, @_ }
-    , $bam_fabpath
+    , $bam_bampath
     , "--no-launch"
     , "describe"
     , @$arglist
@@ -277,7 +278,7 @@ sub bam_ls
   my $arglist = shift;
 
   run({ cwd => $bam_projdir, @_ }
-    , $bam_fabpath
+    , $bam_bampath
     , "--no-launch"
     , "--no-color"
     , "ls"
@@ -290,7 +291,7 @@ sub bam_tree
   my $arglist = shift;
 
   run({ @_, cwd => $bam_projdir, @_ }
-    , $bam_fabpath
+    , $bam_bampath
     , "--no-launch"
     , "--no-color"
     , "tree"
@@ -301,7 +302,7 @@ sub bam_tree
 sub bam_modtree
 {
   run({ @_, cwd => $bam_projdir }
-    , $bam_fabpath
+    , $bam_bampath
     , "--no-launch"
     , "tree"
     , "-g"
@@ -312,7 +313,7 @@ sub bam_modtree
 sub bam_build
 {
   run({ @_, cwd => $bam_projdir }
-    , $bam_fabpath
+    , $bam_bampath
     , "--no-launch"
     , "build"
   );
@@ -321,7 +322,7 @@ sub bam_build
 sub bam_vars
 {
   my $res = run({ @_, cwd => $bam_projdir }
-    , $bam_fabpath
+    , $bam_bampath
     , "--no-launch"
     , "vars"
   );
@@ -340,7 +341,7 @@ sub bam_vars
 sub bam_env
 {
   my $res = run({ @_, cwd => $bam_projdir }
-    , $bam_fabpath
+    , $bam_bampath
     , "--no-launch"
     , "env"
   );
@@ -359,7 +360,7 @@ sub bam_env
 sub bam_config
 {
   run({ @_, cwd => $bam_projdir }
-    , $bam_fabpath
+    , $bam_bampath
     , "--no-launch"
     , "config"
   );

@@ -28,8 +28,8 @@ my $testdir = setup(<<TREE);
 |-- module.bam+devel
 TREE
 
-# /run/fab-integ/testdir
-# /run/fab-integ/testdir/A
+# /run/bam-integ/testdir
+# /run/bam-integ/testdir/A
 my $watched_dirs = 2;
 
 my $mod_id = hash64($bam_basedir);
