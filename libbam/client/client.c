@@ -114,9 +114,8 @@ static void launch(bam_client * restrict client)
       argv[i++] = "--sweeper-period-nsec";
       argv[i++] = (char*)g_bam_client_sweeper_period_nsec;
     }
-    argv[i] = (void*)0;
-
 #endif
+    argv[i] = (void*)0;
 #if CONFIG_DEVEL || CONFIG_DEBUG
 #if CONFIG_DEVEL
     printf("execv(%s", g_bam_client_bamd_path);
@@ -124,7 +123,6 @@ static void launch(bam_client * restrict client)
     printf("execvp(%s", "bamd");
 #endif
 #endif
-    argv[i] = (void*)0;
 #if CONFIG_DEBUG || CONFIG_DEVEL
     int x;
     for(x = 0; x < i; x++) {
