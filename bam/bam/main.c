@@ -116,7 +116,7 @@ static void xmain()
 
 #if CONFIG_DEVEL
   static char space[512];
-  snprintf(space, sizeof(space), "%s", "/home/todd/fab-build/bam/bamd/devel/bamd");
+  snprintf(space, sizeof(space), "%s", "/home/todd/bam-build/bam/bamd/devel/bamd");
   g_bam_client_bamd_path = space;
   if(g_args.system_config_path.s) {
     g_bam_client_system_config_path = strndup(g_args.system_config_path.s, g_args.system_config_path.len);

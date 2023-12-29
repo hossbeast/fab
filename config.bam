@@ -14,7 +14,7 @@ filesystems : {
     indexed : true
   }
 
-  /home/todd/fab-build : {
+  /home/todd/bam-build : {
     invalidate : notify
     mkdirs : true
     indexed : true
@@ -32,7 +32,7 @@ walker : {
   }
   include : {
     /home/todd/fab
-    /home/todd/fab-build
+    /home/todd/bam-build
   }
   special : {
     var.bam.final

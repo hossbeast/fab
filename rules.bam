@@ -10,28 +10,28 @@ bind fab/include             => [*] //module/include
 
 # libraries
 bind fab/libxlinux/include   => [*] //module/include
-bind fab-build/libxlinux     => [*] //artifacts
+bind bam-build/libxlinux     => [*] //artifacts
 
 bind fab/libcommon/include   => [*] //module/include
-bind fab-build/libcommon     => [*] //artifacts
+bind bam-build/libcommon     => [*] //artifacts
 
 bind fab/libdescriptor/include => [*] //module/include
-bind fab-build/libdescriptor => [*] //artifacts
+bind bam-build/libdescriptor => [*] //artifacts
 
 bind fab/libvalyria/include  => [*] //module/include
-bind fab-build/libvalyria    => [*] //artifacts
+bind bam-build/libvalyria    => [*] //artifacts
 
 bind fab/libnarrator/include => [*] //module/include
-bind fab-build/libnarrator   => [*] //artifacts
+bind bam-build/libnarrator   => [*] //artifacts
 
 bind fab/libbacon/include    => [*] //module/include
-bind fab-build/libbacon      => [*] //artifacts
+bind bam-build/libbacon      => [*] //artifacts
 
 bind fab/liblorien/include   => [*] //module/include
-bind fab-build/liblorien     => [*] //artifacts
+bind bam-build/liblorien     => [*] //artifacts
 
 bind fab/libmoria/include    => [*] //module/include
-bind fab-build/libmoria      => [*] //artifacts
+bind bam-build/libmoria      => [*] //artifacts
 
 bind fab/libyyutil/include   => [*] //module/include
-bind fab-build/libyyutil     => [*] //artifacts
+bind bam-build/libyyutil     => [*] //artifacts

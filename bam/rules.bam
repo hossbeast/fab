@@ -3,5 +3,5 @@
 
 # libraries
 bind fab/bam/libbam/include   => [*] //module/include
-bind fab-build/bam/libbam     => [*] //artifacts
-bind fab-build/bam/libbam/$CONFIG_VARIANT     => [*] //module/include
+bind bam-build/bam/libbam     => [*] //artifacts
+bind bam-build/bam/libbam/$CONFIG_VARIANT     => [*] //module/include

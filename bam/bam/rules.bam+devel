@@ -5,7 +5,7 @@ use git
 use flex
 use bison
 
-bind fab-build/asan                     => //fabasan
+bind bam-build/asan                     => //fabasan
 bind "builtin-modules+devel"/executable => //executable
 
 # includes
