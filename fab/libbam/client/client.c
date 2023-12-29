@@ -85,7 +85,7 @@ static void launch(bam_client * restrict client)
   {
     // prepare the command
     i = 0;
-    argv[i++] = "fabd";
+    argv[i++] = "bamd";
     argv[i++] = client->hash;
 
 #if CONFIG_DEVEL
@@ -121,7 +121,7 @@ static void launch(bam_client * restrict client)
 #if CONFIG_DEVEL
     printf("execv(%s", g_bam_client_bamd_path);
 #elif CONFIG_DEBUG
-    printf("execvp(%s", "fabd");
+    printf("execvp(%s", "bamd");
 #endif
 #endif
     argv[i] = (void*)0;
@@ -155,7 +155,7 @@ static void launch(bam_client * restrict client)
 #if CONFIG_DEVEL
     xexecv(g_bam_client_bamd_path, argv);
 #else
-    xexecvp("fabd", argv);
+    xexecvp("bamd", argv);
 #endif
 
     exit(1);

@@ -8,7 +8,7 @@
 
 struct graph_invalidation_context;
 enum moria_traversal_mode;
-enum fab_fsent_state;
+enum bam_fsent_state;
 
 extern uint64_t vertex_token_counter;
 

@@ -208,7 +208,7 @@ static void build_slot_forked(build_slot * restrict bs)
   moria_vertex *target;
   entlist *targets_eln;
 
-  /* struct fab_build_slot_info */
+  /* struct bam_build_slot_info */
   if(!events_would(BAMIPC_EVENT_FORMULA_EXEC_FORKED, &chan, &msg)) {
     return;
   }
@@ -411,7 +411,7 @@ static void build_slot_waited(build_slot * restrict bs)
     return;
   }
 
-  /* struct fab_build_slot_results */
+  /* struct bam_build_slot_results */
   z = 0;
   z += marshal_u32(msg->text + z, sizeof(msg->text) - z, descriptor_bam_build_slot_results.id);
   z += marshal_i32(msg->text + z, sizeof(msg->text) - z, bs->status);

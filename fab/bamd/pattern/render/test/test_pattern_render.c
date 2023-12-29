@@ -417,10 +417,10 @@ static xunit_unit xunit = {
 
     /* directories */
     , (pattern_render_test[]) {{
-          pattern : (char[]) { "fab/common\0" }
+          pattern : (char[]) { "bam/common\0" }
         , vars : ""
         , paths : (char*[]) {
-              "fab/common"
+              "bam/common"
             , 0
           }
       }}

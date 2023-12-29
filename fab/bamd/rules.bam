@@ -9,23 +9,23 @@ bind fab-build/asan   => //fabasan
 bind executable       => //executable
 
 # default targets
-rule fabd -> //targets
+rule bamd -> //targets
 
 # includes
 rule **+(/) => [*] //module/include
 
 # invoke the compiler to build the executable
-rule { search : module } **~test/(?:*~xunit-)*.o [*] -> fabd : //executable/cc.bam
+rule { search : module } **~test/(?:*~xunit-)*.o [*] -> bamd : //executable/cc.bam
 
 # dependencies
-rule { search : module } //artifacts/*/$CONFIG_VARIANT/(*~libxunit).a -> fabd
+rule { search : module } //artifacts/*/$CONFIG_VARIANT/(*~libxunit).a -> bamd
 
 rule git-state.h -> args/args.o
 
 {
   if ($CONFIG_DEVEL)
 
-  rule //fabasan/devel/asan.o -> fabd
+  rule //fabasan/devel/asan.o -> bamd
 
   # all the code into the blob
   rule { search : module } **~test/(?:*~main~git-state).o [*] -> test/blob.a : ./cc-blob.bam
