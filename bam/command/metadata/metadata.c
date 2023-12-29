@@ -76,7 +76,7 @@ static void process(command * restrict cmd, bam_client * restrict client, bamipc
   printf(" %s : %.*s\n", "cwd-path", (int)md.cwd_path_len, md.cwd_path);
   printf(" %s : %.*s\n", "ipc-dir", (int)md.ipcdir_len, md.ipcdir);
   printf(" %s : %.*s\n", "home-dir", (int)md.homedir_len, md.homedir);
-  printf(" %s : %ld\n", "fabd-pid", md.bamd_pid);
+  printf(" %s : %ld\n", "bamd pid", md.bamd_pid);
 
   interval_say(md.uptime / NSEC_PER_SEC, narrator_fixed_init(&fixed, buf, sizeof(buf)));
   printf(" %s : \"%s\"\n", "uptime", buf);

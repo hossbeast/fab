@@ -102,7 +102,7 @@ static void usage(command * restrict cmd)
 " "SYSTEM_CONFIG_PATH"\n"
 " "USER_CONFIG_PATH"\n"
 "\n"
-"build optimally      https://github.com/hossbeast/fab\n"
+"build optimally      https://git.sr.ht/~hossbeast/bam\n"
   );
 
   exit(0);

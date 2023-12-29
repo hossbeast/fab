@@ -39,7 +39,7 @@ static void args_usage()
 " --nofork  : don't fork before each test\n"
 " --await   : wait for sigusr1 before running any tests\n"
 "\n"
-"build optimally      https://github.com/hossbeast/fab\n"
+"build optimally      https://git.sr.ht/~hossbeast/bam\n"
     , git_describe
   );
 

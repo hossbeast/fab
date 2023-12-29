@@ -20,7 +20,7 @@ static size_t inputs_alloc;
 
 static void args_version()
 {
-  printf("fab %s\n\n%s\n", git_describe, git_metadata);
+  printf("bacon - bam configuration object notation %s\n\n%s\n", git_describe, git_metadata);
 
   exit(0);
 }
@@ -28,14 +28,15 @@ static void args_version()
 static void args_usage()
 {
   printf(
-"value : read/write/merge bacon text %s\n"
+"bacon - bam configuration object notation %s\n"
 "\n"
-"usage : value [ [ option ] [ logexpr ] [ /path/to/configuration ] ] ...\n"
+"usage : bacon [option | path]..\n"
+"\n"
+"global options\n"
 " --help | -h      print this message\n"
 " --version | -V   print version information\n"
-" --nofork         don't fork before each test\n"
 "\n"
-"build optimally      https://github.com/hossbeast/fab\n"
+"build optimally      https://git.sr.ht/~hossbeast/bam\n"
     , git_describe
   );
 
@@ -82,8 +83,6 @@ void args_parse(int argc, char ** argv)
     // with-argument switches
     "f:t:s:l:e:m:"
   ;
-
-//  process_nonoption(IN_FILE, OP_MERGE, container, "/dev/stdin");
 
   int x;
   int indexptr;
@@ -184,12 +183,6 @@ void args_parse(int argc, char ** argv)
     // options following --
     process_nonoption(input, oper, container, argv[optind]);
   }
-
-  /* default behavior */
-//  if(g_args.inputsl == 0)
-//  {
-//    process_nonoption(IN_FILE, OP_MERGE, container, "/dev/stdin");
-//  }
 
   if(help)
   {

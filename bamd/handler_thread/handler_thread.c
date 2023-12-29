@@ -36,7 +36,7 @@ static void parse_request(handler_context * restrict ctx, bamipc_message * restr
   char trace[4096];
   size_t size;
 
-  if((exit = request_parser_parse(ctx->request_parser, msg->text, msg->size, "fab-request", req)) == 0) {
+  if((exit = request_parser_parse(ctx->request_parser, msg->text, msg->size, "request", req)) == 0) {
     return;
   }
 

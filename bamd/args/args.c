@@ -31,7 +31,7 @@ struct g_args_t g_args;
 
 static void args_version()
 {
-  printf("fabd - fab daemon %s\n\n%s\n", git_describe, git_metadata);
+  printf("bamd - bam daemon %s\n\n%s\n", git_describe, git_metadata);
 
   exit(0);
 }
@@ -39,15 +39,15 @@ static void args_version()
 static void args_usage()
 {
   printf(
-"fabd - fab daemon %s\n"
+"bamd - bam daemon %s\n"
 "\n"
-"usage: fabd [option] <hash>\n"
+"usage: bamd [option] <hash>\n"
 "\n"
 "options\n"
 " --help | -h       print this message\n"
 " --version | -V    print version information\n"
 "\n"
-"build optimally      https://github.com/hossbeast/fab\n"
+"build optimally      https://git.sr.ht/~hossbeast/bam\n"
     , git_describe
   );
 
