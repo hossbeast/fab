@@ -34,8 +34,11 @@ sub c_c {
   open FH, "<$path" or die "open($path) : $!";
   my @lines;
 
-  # skip leading spdx / copyright / blank lines
-  my $head = 1;
+  # get file mode bits
+  my (undef, undef, $mode) = stat(FH);
+  $mode &= 07777;
+
+  # read linewise and evaluate expressions
   while(<FH>) {
     for my $expr (@ARGV) {
       eval $expr;
@@ -44,8 +47,9 @@ sub c_c {
   }
   close FH;
 
+  # preserve file mode bits
   open FH, ">style_rename_b" or die $!;
-  chmod 0644, \*FH;
+  chmod $mode, \*FH;
 
   for(my $x = 0; $x <= $#lines; $x++) {
     print FH ($lines[$x]);
