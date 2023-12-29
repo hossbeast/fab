@@ -241,8 +241,9 @@ void args_set_module_path(const char * restrict path, uint16_t path_len)
   uint16_t abspath_len;
 
   zcatw(inpath, sizeof(inpath), path, path_len);
+  inpath[path_len] = 0;
   if((realpath(inpath, abspath)) == 0) {
-    dprintf(2, "%s : %s\n", inpath, strerror(errno));
+    dprintf(2, "realpath(%s) : %s\n", inpath, strerror(errno));
     exit(1);
   }
   abspath_len = strlen(abspath);
