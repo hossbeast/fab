@@ -24,7 +24,7 @@ filesystems : {
 walker : {
   exclude : {
     /home/todd/bam/builtin-modules
-    /usr/share/fab/modules
+    /usr/share/bam/modules
   }
   include : {
     /home/todd/bam

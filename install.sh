@@ -5,7 +5,7 @@
 #
 
 #
-# installs binaries/libraries built by fab-v0.8
+# install bam and related executables
 #
 
 # requires root
@@ -21,7 +21,7 @@ rundir=/var/run
 sharedir=/usr/share
 etcdir=/etc
 
-killall fab fab.devel fabd fabd.devel
+killall bam bamd
 if [[ $? == 0 ]]; then
   sleep 1
 fi
@@ -30,21 +30,21 @@ set -e
 set -x
 
 # filesystem
-mkdir -p       $rundir/fab/
-chmod 777 -R   $rundir/fab/
-mkdir -p       $sharedir/fab/modules/
+mkdir -p       $rundir/bam/
+chmod 777 -R   $rundir/bam/
+mkdir -p       $sharedir/bam/modules/
 mkdir -p       $etcdir/bam/
 
 # executables
-cp fab/fab/fab.$variant       $bindir/fab
-cp fab/fabd/fabd.$variant     $bindir/fabd
-cp bacon/bacon.$variant       $bindir/bacon
+cp ~/bam-build/bam/$variant/bam       $bindir/bam
+cp ~/bam-build/bamd/$variant/bamd     $bindir/bamd
+cp ~/bam-build/bacon/$variant/bacon   $bindir/bacon
 
 # builtin modules
-rm -rf $sharedir/fab/modules/
-cp -dR builtin-modules $sharedir/fab/modules/
-chmod 0755 $sharedir/fab/modules/**/*.bam
-chmod 0644 $sharedir/fab/modules/**/rules.bam
+rm -rf $sharedir/bam/modules/
+cp -dR builtin-modules $sharedir/bam/modules/
+chmod 0755 $sharedir/bam/modules/**/*.bam
+chmod 0644 $sharedir/bam/modules/**/rules.bam
 
 # default config files
 cp etc/config.bam         $etcdir/config.bam

@@ -9,7 +9,7 @@ filesystems : {
     indexed : false
   }
 
-  /usr/share/fab/modules : {
+  /usr/share/bam/modules : {
     invalidate : stat
     mkdirs : false
     indexed : true
@@ -39,7 +39,7 @@ walker : {
 
   # use builtin modules
   include : {
-    /usr/share/fab/modules
+    /usr/share/bam/modules
   }
 
   # except skip this stuff
