@@ -53,7 +53,7 @@ for x in libxlinux libcommon asan unit libnarrator libdescriptor libvalyria libx
   popd
 done
 
-for x in bacon libbam bam/bam ; do
+for x in bacon libbam bam ; do
   pushd $BUILDDIR/$x
   fab
   fab kill
