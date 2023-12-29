@@ -97,7 +97,7 @@ static void xmain()
   monitor_thread();
 }
 
-/* normally, libfab/client obtains this lockfile before fork, and this process
+/* normally, libbam/client obtains this lockfile before fork, and this process
  * has inherited the lock */
 static void getlock(void)
 {
@@ -119,7 +119,7 @@ static void getlock(void)
     exit(1);
   }
 
-  /* this normally happens in libfab/client right after fork, but the lock
+  /* this normally happens in libbam/client right after fork, but the lock
    * was not inherited */
   xchdirf("%s/bamd", g_params.ipcdir);
   uxunlinks("exit");

@@ -60,7 +60,7 @@ for x in bacon bam/libbam bam/bam ; do
   popd
 done
 
-for x in bam/bamd ; do
+for x in bamd ; do
   pushd $BUILDDIR/$x
   fab
   fab kill

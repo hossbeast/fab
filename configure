@@ -48,7 +48,7 @@ ln -fs $SRCDIR/config.bam       $BUILDDIR/
 ln -fs $SRCDIR/config.bam+devel $BUILDDIR/
 
 # setup the build directories
-for x in libxlinux libcommon asan unit libnarrator libdescriptor libvalyria libxunit libyyutil liblorien libbacon libmoria bacon bam/libbam bam/bam bam/bamd; do
+for x in libxlinux libcommon asan unit libnarrator libdescriptor libvalyria libxunit libyyutil liblorien libbacon libmoria bacon bam/libbam bam/bam bamd; do
   for v in debug devel final trace; do
     setup $x $v
   done

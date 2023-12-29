@@ -1,7 +1,0 @@
-/* SPDX-License-Identifier: GPL-3.0 */
-/* Copyright (c) 2012-2023 Todd Freed <todd.freed@gmail.com> */
-
-# libraries
-bind fab/bam/libbam/include   => [*] //module/include
-bind bam-build/bam/libbam     => [*] //artifacts
-bind bam-build/bam/libbam/$CONFIG_VARIANT     => [*] //module/include

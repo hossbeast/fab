@@ -126,7 +126,7 @@ typedef struct fsent {
       union {
         struct formula * self_fml;          // VERTEX_FORMULA_FILE     e.g. cc.bam
         struct var * self_var;              // on VERTEX_VAR_FILE, the VERTEX_VAR
-        struct config *self_config;         // VERTEX_CONFIG_FILE      e.g. config.bam (or /etc/fabconfig)
+        struct config *self_config;         // VERTEX_CONFIG_FILE      e.g. config.bam
         struct rules *self_rules;           // VERTEX_RULES_FILE
                                             // VERTEX_SHADOW_MODULE
         struct module * self_mod;           // VERTEX_MODULE_FILE      module.bam
