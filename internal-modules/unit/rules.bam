@@ -4,7 +4,7 @@
 bind bam-build/asan => [*] //artifacts
 bind bam-build/unit => [*] //artifacts
 
-bind fab/unit => [*] //module/include
+bind bam/unit => [*] //module/include
 
 # single-test executables
 rule { search : module } **/test/(test_*).o -> $^D/$1.unit : ./cc-test.bam

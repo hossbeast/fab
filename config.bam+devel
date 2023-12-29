@@ -8,7 +8,7 @@ filesystems : {
     indexed : false
   }
 
-  /home/todd/fab : {
+  /home/todd/bam : {
     invalidate : notify
     mkdirs : false
     indexed : true
@@ -23,15 +23,11 @@ filesystems : {
 
 walker : {
   exclude : {
-    /home/todd/fab/builtin-modules
+    /home/todd/bam/builtin-modules
     /usr/share/fab/modules
-    /home/todd/fab/**/build/final
-    /home/todd/fab/**/build/devel
-    /home/todd/fab/**/build/debug
-    /home/todd/fab/**/build/trace
   }
   include : {
-    /home/todd/fab
+    /home/todd/bam
     /home/todd/bam-build
   }
   special : {

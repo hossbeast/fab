@@ -5,7 +5,7 @@ bisonflags   : "--warnings=error"
 CFLAGS       : {
   -g -m64 -Wall -Werror -Wno-format-truncation -D_GNU_SOURCE -fno-builtin-log -Wmissing-prototypes "-fdiagnostics-color=always" -Wno-misleading-indentation -Wno-trigraphs
   "-DBAMIPCDIR=/var/run/bam"
-  -include/home/todd/fab/include/tracef.h
-  -include/home/todd/fab/include/hexdump.h
-  -include/home/todd/fab/include/backtracef.h
+  -include/home/todd/bam/include/tracef.h
+  -include/home/todd/bam/include/hexdump.h
+  -include/home/todd/bam/include/backtracef.h
 }

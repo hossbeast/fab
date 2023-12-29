@@ -6,36 +6,36 @@ use library/static
 use executable
 
 # global includes
-bind fab/include             => [*] //module/include
+bind bam/include             => [*] //module/include
 
 # libraries
-bind fab/libxlinux/include   => [*] //module/include
+bind bam/libxlinux/include   => [*] //module/include
 bind bam-build/libxlinux     => [*] //artifacts
 
-bind fab/libcommon/include   => [*] //module/include
+bind bam/libcommon/include   => [*] //module/include
 bind bam-build/libcommon     => [*] //artifacts
 
-bind fab/libdescriptor/include => [*] //module/include
+bind bam/libdescriptor/include => [*] //module/include
 bind bam-build/libdescriptor => [*] //artifacts
 
-bind fab/libvalyria/include  => [*] //module/include
+bind bam/libvalyria/include  => [*] //module/include
 bind bam-build/libvalyria    => [*] //artifacts
 
-bind fab/libnarrator/include => [*] //module/include
+bind bam/libnarrator/include => [*] //module/include
 bind bam-build/libnarrator   => [*] //artifacts
 
-bind fab/libbacon/include    => [*] //module/include
+bind bam/libbacon/include    => [*] //module/include
 bind bam-build/libbacon      => [*] //artifacts
 
-bind fab/liblorien/include   => [*] //module/include
+bind bam/liblorien/include   => [*] //module/include
 bind bam-build/liblorien     => [*] //artifacts
 
-bind fab/libmoria/include    => [*] //module/include
+bind bam/libmoria/include    => [*] //module/include
 bind bam-build/libmoria      => [*] //artifacts
 
-bind fab/libyyutil/include   => [*] //module/include
+bind bam/libyyutil/include   => [*] //module/include
 bind bam-build/libyyutil     => [*] //artifacts
 
-bind fab/libbam/include               => [*] //module/include
+bind bam/libbam/include               => [*] //module/include
 bind bam-build/libbam/$CONFIG_VARIANT => [*] //module/include
 bind bam-build/libbam                 => [*] //artifacts
