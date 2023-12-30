@@ -1,0 +1,83 @@
+# SPDX-License-Identifier: GPL-3.0
+# Copyright (c) 2021 Todd Freed <todd.freed@gmail.com>. All rights reserved.
+
+# no builtin rules
+.SUFFIXES:
+
+# make, dont delete stuff!
+.SECONDARY:
+
+.PHONY: clean
+
+CFLAGS += -DFINAL
+CFLAGS += -D_GNU_SOURCE
+CFLAGS += -O3
+CFLAGS += -Wall
+CFLAGS += -Werror
+CFLAGS += -Wmissing-prototypes
+CFLAGS += -Wno-array-bounds
+CFLAGS += -Wno-format-truncation
+CFLAGS += -Wno-misleading-indentation
+CFLAGS += -Wno-trigraphs
+CFLAGS += -fdiagnostics-color=always
+CFLAGS += -fno-builtin-log
+CFLAGS += -g
+CFLAGS += -m64
+CFLAGS += -fPIC
+CFLAGS += -I$(SRC_PATH)/include
+CFLAGS += -I$(SRC_PATH)/libbacon/include
+CFLAGS += -I$(SRC_PATH)/libbam/include
+CFLAGS += -I$(SRC_PATH)/libcommon/include
+CFLAGS += -I$(SRC_PATH)/libdescriptor/include
+CFLAGS += -I$(SRC_PATH)/liblorien/include
+CFLAGS += -I$(SRC_PATH)/libmoria/include
+CFLAGS += -I$(SRC_PATH)/libnarrator/include
+CFLAGS += -I$(SRC_PATH)/libvalyria/include
+CFLAGS += -I$(SRC_PATH)/libyyutil/include
+CFLAGS += -I$(SRC_PATH)/libxlinux/include
+
+LFLAGS += -Wl,--build-id=sha1
+LFLAGS += -lpthread -lrt
+
+BISONFLAGS += --warnings=error
+
+%.o : %.c
+	$(CC) -o $@ -c $(CFLAGS) $<
+
+%.lex.h %.lex.c : %.l
+	flex=`command -v flex` bm_source0=$< bm_target0=$(dir $@)$(notdir $(basename $@)).c bm_target1=$(dir $@)$(notdir $(basename $@)).h $(ROOT_PATH)/builtin-modules/flex/flex.bam
+
+%.states.h %.states.c : %.lex.h
+	bm_source0=$< bm_target0=$(dir $@)$(notdir $(basename $@)).c bm_target1=$(dir $@)$(notdir $(basename $@)).h $(ROOT_PATH)/builtin-modules/flex/states.bam
+
+%.tab.h %.tab.c : %.y
+	bison=`command -v bison` bm_source0=$< bm_target0=$(dir $@)$(notdir $(basename $@)).c bm_target1=$(dir $@)$(notdir $(basename $@)).h $(ROOT_PATH)/builtin-modules/bison/bison.bam
+
+%.tokens.h %.tokens.c : %.tab.c %.tab.h
+	bm_source0=$(dir $<)$(notdir $(basename $<)).c bm_source1=$(dir $<)$(notdir $(basename $<)).h bm_target0=$(dir $@)$(notdir $(basename $@)).c bm_target1=$(dir $@)$(notdir $(basename $@)).h $(ROOT_PATH)/builtin-modules/bison/tokens.bam
+
+git-state.c git-state.h :
+	bm_target0=$(dir $@)$(notdir $(basename $@)).c bm_target1=$(dir $@)$(notdir $(basename $@)).h	git=`command -v git` $(ROOT_PATH)/builtin-modules/git/git-state.bam $(SRC_PATH)
+
+%.desc.h %.desc.c : %.h
+	bm_source0=$< bm_target0=$(dir $@)$(notdir $(basename $@)).c bm_target1=$(dir $@)$(notdir $(basename $@)).h $(ROOT_PATH)/internal-modules/descriptor/descriptor.bam
+
+%.a:
+	rm -f $@ ; /usr/bin/ar rcs $@ $^
+
+%.exe:
+	/usr/bin/cc $(CFLAGS) -o $@ $(LFLAGS) -Wl,--start-group $^ -Wl,--end-group $(LDFLAGS)
+
+clean:
+	(                               \
+		find . -type f \(             \
+			   -name '*.o'              \
+			-o -name '*.a'              \
+			-o -name '*.exe'            \
+			-o -name '*.lex.[ch]'       \
+			-o -name '*.tab.[ch]'       \
+			-o -name '*.states.[ch]'    \
+			-o -name '*.tokens.[ch]'    \
+			-o -name 'sigtable.[ch]'    \
+		  \) -print                   \
+	) | xargs /bin/rm -f
