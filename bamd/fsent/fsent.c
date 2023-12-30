@@ -85,7 +85,7 @@ static llist fsent_prunelist = LLIST_INITIALIZER(fsent_prunelist);  // fsent pru
 
 fsent * g_root;
 fsent * g_cwd;
-char g_cwd_path[512];
+char g_cwd_path[PATH_MAX];
 uint16_t g_cwd_path_len;
 int g_cwd_dirfd;
 
@@ -306,7 +306,7 @@ size_t fsent_relative_path_cat_bacon(void * restrict dst, size_t sz, const fsent
 
 void fsent_relative_path_say(const fsent * n, const fsent * base, narrator * restrict N)
 {
-  char path[512];
+  char path[PATH_MAX];
   size_t pathl;
 
   pathl = fsent_relative_path_cat(path, sizeof(path), n, base);
@@ -619,7 +619,7 @@ size_t fsent_property_cat(void * dst, size_t sz, const fsent * restrict n, fsent
 
 void fsent_cwd_relative_path_say(const fsent * restrict n, narrator * restrict N)
 {
-  char path[512];
+  char path[PATH_MAX];
   size_t pathl;
 
   pathl = fsent_cwd_relative_path_cat(path, sizeof(path), n);
@@ -628,7 +628,7 @@ void fsent_cwd_relative_path_say(const fsent * restrict n, narrator * restrict N
 
 void fsent_cwd_relative_path_describe(const fsent * restrict n, bacon_writer * restrict writer)
 {
-  char path[512];
+  char path[PATH_MAX];
   size_t pathl;
 
   pathl = fsent_cwd_relative_path_cat(path, sizeof(path), n);
@@ -637,7 +637,7 @@ void fsent_cwd_relative_path_describe(const fsent * restrict n, bacon_writer * r
 
 void fsent_absolute_path_say(const fsent * restrict n, narrator * restrict N)
 {
-  char path[512];
+  char path[PATH_MAX];
   size_t pathl;
 
   pathl = fsent_absolute_path_cat(path, sizeof(path), n);
@@ -646,7 +646,7 @@ void fsent_absolute_path_say(const fsent * restrict n, narrator * restrict N)
 
 void fsent_absolute_path_describe(const fsent * restrict n, bacon_writer * restrict writer)
 {
-  char path[512];
+  char path[PATH_MAX];
   size_t pathl;
 
   pathl = fsent_absolute_path_cat(path, sizeof(path), n);
@@ -655,7 +655,7 @@ void fsent_absolute_path_describe(const fsent * restrict n, bacon_writer * restr
 
 void fsent_path_say(fsent * restrict n, struct narrator * restrict N)
 {
-  char path[512];
+  char path[PATH_MAX];
   size_t pathl;
 
   pathl = fsent_path_cat(path, sizeof(path), n);
@@ -664,7 +664,7 @@ void fsent_path_say(fsent * restrict n, struct narrator * restrict N)
 
 void fsent_property_say(const fsent * restrict n, fsent_property property, const fsent_property_context * restrict ctx, narrator * restrict N)
 {
-  char space[512];
+  char space[PATH_MAX];
   size_t sz;
 
   sz = fsent_property_cat(space, sizeof(space), n, property, ctx);
@@ -824,7 +824,7 @@ void fsent_config_bootstrap(fsent * restrict fse, graph_invalidation_context * r
 
 uint64_t fsent_abspath_hash(const fsent * restrict fse)
 {
-  char path[512];
+  char path[PATH_MAX];
   size_t path_len;
   uint64_t u64;
 

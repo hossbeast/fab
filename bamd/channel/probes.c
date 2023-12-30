@@ -38,7 +38,7 @@ void channel_tx_probe(const channel * restrict chan, bamipc_message * restrict m
   bamipc_page *page;
   narrator *N;
   narrator_fixed fixed;
-  char text[512];
+  char text[PATH_MAX];
 
   if(!channel_tx_semaphore) {
     return;

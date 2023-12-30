@@ -202,7 +202,7 @@ static void describe_fsent(fsent * restrict fse, uint16_t distance, bacon_writer
   bam_vertex_state state;
   bam_vertex_type type;
   const filesystem *fs;
-  char buf[512];
+  char buf[PATH_MAX];
   size_t sz;
 
   fs = fsent_filesystem_get(fse);

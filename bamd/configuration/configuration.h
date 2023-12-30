@@ -45,7 +45,7 @@ typedef struct configuration_filesystems_mapping {
     struct bacon_value *v;
 
     /* normalized */
-    char path[512];
+    char path[PATH_MAX];
     uint16_t path_len;
   } key;
 

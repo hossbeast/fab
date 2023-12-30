@@ -51,7 +51,7 @@ void bamipc_lockfile_acquire(pid_t * pid, int * restrict fdp, const char * restr
 
 void API bamipc_lockfile_obtain(pid_t * pid, int * restrict fd, char * const restrict fmt, ...)
 {
-  char path[512];
+  char path[PATH_MAX];
   int x;
   va_list va;
   int r;

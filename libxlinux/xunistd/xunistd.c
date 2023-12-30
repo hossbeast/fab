@@ -127,8 +127,8 @@ void API xsymlinkf(const char * restrict target_fmt, const char * restrict linkp
 
 void API xsymlinkvf(const char * restrict target_fmt, const char * restrict linkpath_fmt, va_list va)
 {
-  char target[512];
-  char linkpath[512];
+  char target[PATH_MAX];
+  char linkpath[PATH_MAX];
 
   fmt_apply(target, sizeof(target), target_fmt, va);
   fmt_apply(linkpath, sizeof(linkpath), linkpath_fmt, va);
@@ -160,8 +160,8 @@ int API uxsymlinkf(const char * restrict target_fmt, const char * restrict linkp
 
 int API uxsymlinkvf(const char * restrict target_fmt, const char * restrict linkpath_fmt, va_list va)
 {
-  char target[512];
-  char linkpath[512];
+  char target[PATH_MAX];
+  char linkpath[PATH_MAX];
 
   fmt_apply(target, sizeof(target), target_fmt, va);
   fmt_apply(linkpath, sizeof(linkpath), linkpath_fmt, va);
@@ -176,7 +176,7 @@ void API xunlinks(const char * paths)
 
 void API xunlinkvf(const char * fmt, va_list va)
 {
-  char space[512];
+  char space[PATH_MAX];
 
   fmt_apply(space, sizeof(space), fmt, va);
   xunlinks(space);
@@ -213,7 +213,7 @@ int API uxunlinkf(const char * const restrict fmt, ...)
 
 int API uxunlinkvf(const char * const restrict fmt, va_list va)
 {
-  char space[512];
+  char space[PATH_MAX];
 
   fmt_apply(space, sizeof(space), fmt, va);
   return uxunlinks(space);
@@ -340,7 +340,7 @@ void API xchdirf(const char * const restrict fmt, ...)
 
 void API xchdirvf(const char * const restrict fmt, va_list va)
 {
-  char space[512];
+  char space[PATH_MAX];
 
   fmt_apply(space, sizeof(space), fmt, va);
   xchdirs(space);

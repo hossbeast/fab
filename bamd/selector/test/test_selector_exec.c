@@ -82,7 +82,7 @@ static void selector_exec_test_entry(xunit_test * _test)
   selector * sel = 0;
   moria_parser * op_parser = 0;
   list * actual_list = 0;
-  char actual[512];
+  char actual[PATH_MAX];
   selector_context ctx = { 0 };
   int x;
   selected *sn;

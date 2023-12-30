@@ -32,7 +32,7 @@ PROBE_SEM(vertex, deleted) = 1;
 
 void vertex_alloc_probe(const moria_vertex * restrict v)
 {
-  char buf[512];
+  char buf[PATH_MAX];
   char *s;
   size_t sz;
   size_t z;
@@ -81,7 +81,7 @@ printf("%.*s\n", (int)z, buf);
 
 void vertex_unlinked_probe(const moria_vertex * restrict v)
 {
-  char buf[512];
+  char buf[PATH_MAX];
   char *s;
   size_t sz;
   size_t z;
@@ -104,7 +104,7 @@ printf("%.*s\n", (int)z, buf);
 
 void vertex_deleted_probe(const moria_vertex * restrict v)
 {
-  char buf[512];
+  char buf[PATH_MAX];
   char *s;
   size_t sz;
   size_t z;

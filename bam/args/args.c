@@ -130,7 +130,7 @@ static void get_homedir(const char ** restrict homep)
 
 static int parse_file(yyu_parser * restrict parser, const char * restrict pathspec)
 {
-  char buf[512];
+  char buf[PATH_MAX];
   size_t z;
   const char * path = 0;
   char *text = 0;
@@ -236,8 +236,8 @@ void args_parse(int argc, char ** argv)
 
 void args_set_module_path(const char * restrict path, uint16_t path_len)
 {
-  char inpath[512];
-  char abspath[512];
+  char inpath[PATH_MAX];
+  char abspath[PATH_MAX];
   uint16_t abspath_len;
 
   zcatw(inpath, sizeof(inpath), path, path_len);

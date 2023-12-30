@@ -12,6 +12,7 @@
 #include <sys/types.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <linux/limits.h>
 
 #define restrict __restrict
 #define int128_t __int128

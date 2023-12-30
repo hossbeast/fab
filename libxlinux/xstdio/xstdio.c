@@ -37,8 +37,8 @@ void API xrenamef(const char * const restrict oldfmt, const char * const restric
 
 void API xrenamevf(const char * const restrict oldfmt, const char * const restrict newfmt, va_list va)
 {
-  char old[512];
-  char new[512];
+  char old[PATH_MAX];
+  char new[PATH_MAX];
 
   fmt_apply(old, sizeof(old), oldfmt, va);
   fmt_apply(new, sizeof(new), newfmt, va);
@@ -65,8 +65,8 @@ void API uxrenamef(const char * const restrict oldfmt, const char * const restri
 
 void API uxrenamevf(const char * const restrict oldfmt, const char * const restrict newfmt, va_list va)
 {
-  char old[512];
-  char new[512];
+  char old[PATH_MAX];
+  char new[PATH_MAX];
 
   fmt_apply(old, sizeof(old), oldfmt, va);
   fmt_apply(new, sizeof(new), newfmt, va);

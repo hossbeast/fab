@@ -49,7 +49,7 @@ extern const char *fsent_name_config;
 // globally scoped fsents
 extern struct fsent * g_root;            // directory node at /
 extern struct fsent * g_cwd;             // directory node at the working directory
-extern char g_cwd_path[512];
+extern char g_cwd_path[PATH_MAX];
 extern uint16_t g_cwd_path_len;
 extern int g_cwd_dirfd;
 

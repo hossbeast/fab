@@ -57,7 +57,7 @@ int API xopenatf(int flags, int dirfd, const char * path_fmt, ...)
 
 int API xopenatvf(int flags, int dirfd, const char * path_fmt, va_list va)
 {
-  char path[512];
+  char path[PATH_MAX];
   fmt_apply(path, sizeof(path), path_fmt, va);
   return xopenats(flags, dirfd, path);
 }
@@ -114,7 +114,7 @@ int API uxopenatf(int flags, int dirfd, const char * path_fmt, ...)
 int API uxopenatvf(int flags, int dirfd, const char * path_fmt, va_list va)
 {
   int fd;
-  char path[512];
+  char path[PATH_MAX];
 
   fmt_apply(path, sizeof(path), path_fmt, va);
   fd = uxopenats(flags, dirfd, path);
@@ -170,7 +170,7 @@ int API xopenat_modef(int flags, mode_t mode, int dirfd, const char * path_fmt, 
 int API xopenat_modevf(int flags, mode_t mode, int dirfd, const char * path_fmt, va_list va)
 {
   int fd;
-  char path[512];
+  char path[PATH_MAX];
 
   fmt_apply(path, sizeof(path), path_fmt, va);
   fd = xopenat_modes(flags, mode, dirfd, path);
@@ -231,7 +231,7 @@ int API uxopenat_modef(int flags, mode_t mode, int dirfd, const char * path_fmt,
 int API uxopenat_modevf(int flags, mode_t mode, int dirfd, const char * path_fmt, va_list va)
 {
   int fd;
-  char path[512];
+  char path[PATH_MAX];
 
   fmt_apply(path, sizeof(path), path_fmt, va);
   fd = uxopenat_modes(flags, mode, dirfd, path);

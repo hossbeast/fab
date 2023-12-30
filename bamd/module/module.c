@@ -235,7 +235,7 @@ static bool bind_var(module * restrict A, fsent * restrict var_file_n, graph_inv
   uint64_t u64;
   char id[32];
   uint16_t id_len;
-  char path[512];
+  char path[PATH_MAX];
   uint16_t len;
   bool res;
 

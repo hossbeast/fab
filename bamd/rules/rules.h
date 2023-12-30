@@ -40,7 +40,7 @@ typedef struct rules {
   bam_vertex_stats stats;          // stats for rules vertex itself
   bam_rules_stats rules_stats;     // stats for rules.bam
   struct fsent * self_node;        // rules.bam
-  char self_node_abspath[512];
+  char self_node_abspath[PATH_MAX];
   uint16_t self_node_abspath_len;
 } rules;
 

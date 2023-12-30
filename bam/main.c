@@ -116,7 +116,7 @@ static void xmain()
   xpthread_sigmask(SIG_SETMASK, &sigs, 0);
 
 #if CONFIG_DEVEL
-  static char space[512];
+  static char space[PATH_MAX];
   snprintf(space, sizeof(space), "%s", "/home/todd/bam-build/bamd/devel/bamd");
   g_bam_client_bamd_path = space;
   if(g_args.system_config_path.s) {

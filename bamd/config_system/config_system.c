@@ -65,8 +65,8 @@ configuration *configuration_active;
 
 static void bootstrap_global_config(fsent ** restrict np, const char * restrict pathspec, graph_invalidation_context *invalidation)
 {
-  char text[512];
-  char path[512];
+  char text[PATH_MAX];
+  char path[PATH_MAX];
   size_t len, z = 0;
   const char *src;
   fsent *fse;

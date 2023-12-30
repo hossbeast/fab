@@ -20,9 +20,9 @@ extern struct g_params {
 
   long            procs;            // detected number of processors (0 means unknown)
 
-  char            ipcdir[512];
+  char            ipcdir[PATH_MAX];
   uint16_t        ipcdir_len;
-  char            homedir[512];     // ENV{HOME}
+  char            homedir[PATH_MAX];     // ENV{HOME}
   uint16_t        homedir_len;
 
   int             shutdown;         // whether shutdown has been initiated

@@ -740,7 +740,7 @@ void vertex_describe(const moria_vertex * restrict v, bacon_writer * restrict bu
   buildplan_entity *bpe;
   config *config;
   char buf[128];
-  char path[512];
+  char path[PATH_MAX];
   entlist list, *eln;
   narrator_fixed fixed;
 

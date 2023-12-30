@@ -159,7 +159,7 @@ void API nftwat(
 {
   DIR *** dds = 0;
   size_t ddsp = 0;
-  char path[512];
+  char path[PATH_MAX];
   size_t pathl = 0;
   const char *e;
 

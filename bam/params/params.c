@@ -25,7 +25,7 @@ void params_setup()
   g_params.cwd_len = strlen(g_params.cwd);
 
 #if CONFIG_DEVEL
-  char space[512];
+  char space[PATH_MAX];
   ssize_t r;
 
   // exedir is the canonical path to directory containing the executing binary

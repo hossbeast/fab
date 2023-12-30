@@ -26,7 +26,7 @@ PROBE_SEM(build, wait) = 0;
 
 void build_stage_probe(uint16_t stage)
 {
-  char buf[512];
+  char buf[PATH_MAX];
   char *s;
   size_t sz;
   size_t z;
@@ -51,7 +51,7 @@ printf("%.*s\n", (int)z, buf);
 
 void build_fork_probe(uint16_t stage, uint16_t slot_index, const struct build_slot * restrict bs)
 {
-  char buf[512];
+  char buf[PATH_MAX];
   char *s;
   size_t sz;
   size_t z;
@@ -72,7 +72,7 @@ printf("%.*s\n", (int)z, buf);
 
 void build_wait_probe(uint16_t stage, uint16_t slot_index, const struct build_slot * restrict bs)
 {
-  char buf[512];
+  char buf[PATH_MAX];
   char *s;
   size_t sz;
   size_t z;

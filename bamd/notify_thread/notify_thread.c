@@ -190,7 +190,7 @@ void notify_thread_launch()
 
 void notify_thread_add_watch(fsent * n)
 {
-  char space[512];
+  char space[PATH_MAX];
   uint32_t mask = 0;
 
   if(n->in_wd != -1) {

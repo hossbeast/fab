@@ -31,7 +31,7 @@ static void render_targets(
   entlist list;
   entlist *eln;
   bacon_value *key, *val, *mapping;
-  char path[512];
+  char path[PATH_MAX];
   size_t z;
   int x;
 
@@ -67,7 +67,7 @@ static void render_sources(
   entlist list;
   entlist *eln;
   bacon_value *key, *val, *mapping;
-  char path[512];
+  char path[PATH_MAX];
   size_t z;
   int x;
 

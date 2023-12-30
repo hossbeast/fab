@@ -46,7 +46,7 @@ static void test_parser_entry(xunit_test * _test)
 {
   parser_test * test = containerof(_test, parser_test, xu);
 
-  char buf[512];
+  char buf[PATH_MAX];
   bacon_parser * parser = 0;
   bacon_value * val0 = 0;
   bacon_value * val1 = 0;

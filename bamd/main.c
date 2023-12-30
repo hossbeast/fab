@@ -105,7 +105,7 @@ static void getlock(void)
 {
   pid_t pid;
   int lockfd = -1;
-  char path[512];
+  char path[PATH_MAX];
 
   snprintf(path, sizeof(path), "%s/bamd/lock", g_params.ipcdir);
   bamipc_lockfile_acquire(&pid, &lockfd, path);

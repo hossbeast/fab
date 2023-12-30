@@ -422,7 +422,7 @@ static void ascend_special_query(
 
 void walker_ascend(fsent * restrict dirn, uint16_t walk_id, graph_invalidation_context * restrict invalidation)
 {
-  char abspath[512];
+  char abspath[PATH_MAX];
   uint16_t abspath_len;
   moria_vertex *dirv;
   walker_context ctx = { };
@@ -548,7 +548,7 @@ static void filesystem_describe_node(bacon_writer * restrict builder_writer, con
   const struct moria_edge *edge;
   moria_foreach_state st;
   const fsent *child;
-  char path[512];
+  char path[PATH_MAX];
   size_t len;
 
   len = fsent_absolute_path_cat(path, sizeof(path), fse);

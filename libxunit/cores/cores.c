@@ -70,7 +70,7 @@ static void systemd_lz4_core(narrator * restrict N, pid_t pid, bool * ready)
 
 void print_core_backtrace(pid_t pid)
 {
-  char buf[512];
+  char buf[PATH_MAX];
   bool ready = false;
   narrator_fixed fixed;
 

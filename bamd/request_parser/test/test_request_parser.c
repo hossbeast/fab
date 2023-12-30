@@ -34,7 +34,7 @@ static void request_parser_test_unit_cleanup(xunit_unit * unit)
 static void request_parser_test_entry(xunit_test * _test)
 {
   request_parser_test * test = (typeof(test))_test;
-  char buf[512];
+  char buf[PATH_MAX];
   request_parser * parser = 0;
   request A = {};
   request B = {};

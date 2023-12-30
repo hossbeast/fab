@@ -66,17 +66,17 @@ typedef struct module {
 
   /* self_node */
   struct fsent * self_node;            // VERTEX_MODULE_FILE module.bam
-  char self_node_abspath[512];
+  char self_node_abspath[PATH_MAX];
   uint16_t self_node_abspath_len;
 
   /* dir_node */
   struct fsent * dir_node;             // module base directory node
-  char dir_node_abspath[512];
+  char dir_node_abspath[PATH_MAX];
   uint16_t dir_node_abspath_len;
 
   /* anchor_node */
   struct fsent * anchor_node;          // module anchor directory node
-  char anchor_node_abspath[512];
+  char anchor_node_abspath[PATH_MAX];
   uint16_t anchor_node_abspath_len;
   int anchornode_fd;                   // readonly O_PATH | O_DIRECTORY file descriptor
 } module;

@@ -27,7 +27,7 @@ typedef struct var {
   /* self_node */
   struct fsent *self_node;    // VERTEX_VAR_FILE var.bam
   bam_var_stats var_stats;
-  char self_node_abspath[512];
+  char self_node_abspath[PATH_MAX];
   uint16_t self_node_abspath_len;
 } var;
 

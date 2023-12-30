@@ -168,7 +168,7 @@ static void launch(bam_client * restrict client)
 
 void API bam_client_create(bam_client ** restrict clientp, const char * restrict projdir, const char * restrict ipcdir_base)
 {
-  char space[512];
+  char space[PATH_MAX];
   size_t len;
   uint64_t u64;
   bam_client *client;

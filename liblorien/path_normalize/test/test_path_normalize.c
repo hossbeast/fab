@@ -20,7 +20,7 @@ typedef struct path_test {
 
 static void path_test_entry(xunit_test * _test)
 {
-  char space[512];
+  char space[PATH_MAX];
   path_test *test;
   size_t len;
   uint16_t input_len;

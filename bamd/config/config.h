@@ -37,7 +37,7 @@ typedef struct config {
   /* regarding the corresponding VERTEX_CONFIG_FILE */
   struct fsent *self_node;
   bam_config_stats config_stats;
-  char self_node_abspath[512];
+  char self_node_abspath[PATH_MAX];
   uint16_t self_node_abspath_len;
 
   /* parsed from the file */

@@ -24,7 +24,7 @@ PROBE_SEM(notify_thread, event) = 1;
 
 void notify_thread_probe(const struct inotify_event * restrict ev, const fsent * restrict fse)
 {
-  char buf[512];
+  char buf[PATH_MAX];
   char *s;
   size_t sz;
   size_t z;

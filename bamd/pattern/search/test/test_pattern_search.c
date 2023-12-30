@@ -83,7 +83,7 @@ static void pattern_search_test_entry(xunit_test * _test)
   hashtable actual;
   int x;
   int y;
-  char path[512];
+  char path[PATH_MAX];
   char * actual_match = 0;
   yyu_location loc;
   graph_invalidation_context invalidation = { 0 };

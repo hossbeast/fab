@@ -23,7 +23,7 @@ PROBE_SEM(sweeper_thread, event) = 1;
 
 void sweeper_thread_probe(const sweeper_event * restrict ev)
 {
-  char buf[512];
+  char buf[PATH_MAX];
   char *s;
   size_t sz;
   size_t z;

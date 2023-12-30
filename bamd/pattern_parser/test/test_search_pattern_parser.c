@@ -48,7 +48,7 @@ static void pattern_parser_test_entry(xunit_test * _test)
   narrator_growing * N1 = 0;
   narrator_growing * N2 = 0;
   pattern_parser * parser = 0;
-  char buf[512];
+  char buf[PATH_MAX];
   size_t len;
   yyu_location loc;
   const char *expected, *actual;

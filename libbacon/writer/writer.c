@@ -85,7 +85,7 @@ static void indent(bacon_writer * const restrict writer)
 static void write_string(bacon_writer * const restrict writer, const char * const restrict s, size_t len)
 {
   int x;
-  char buf[512];
+  char buf[1024];
   size_t z;
 
   if(should_quote(s, len))
@@ -350,7 +350,7 @@ void bacon_writer_string(bacon_writer * restrict writer, const char * restrict s
 
 void bacon_writef(bacon_writer * restrict writer, const char * restrict fmt, ...)
 {
-  char buf[512];
+  char buf[1024];
   va_list va;
   size_t z;
 

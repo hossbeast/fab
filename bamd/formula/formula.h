@@ -34,7 +34,7 @@ typedef struct formula {
   llist invalid_lln;
 
   /* regarding the formula node itself */
-  char abspath[512];
+  char abspath[PATH_MAX];
   uint16_t abspath_len;
   struct fsent * self_node;
   bam_formula_stats fml_stats;

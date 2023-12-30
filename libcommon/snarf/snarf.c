@@ -77,7 +77,7 @@ void API snarfatf(char ** const restrict dst, size_t * const restrict dstlp, int
 
 void API snarfatvf(char ** const restrict dst, size_t * const restrict dstlp, int dirfd, const char * const restrict path_fmt, va_list va)
 {
-  char path[512];
+  char path[PATH_MAX];
 
   fmt_apply(path, sizeof(path), path_fmt, va);
   snarfats(dst, dstlp, dirfd, path);
@@ -129,7 +129,7 @@ void API usnarfatf(char ** const restrict dst, size_t * const restrict dstlp, in
 
 void API usnarfatvf(char ** const restrict dst, size_t * const restrict dstlp, int dirfd, const char * const restrict path_fmt, va_list va)
 {
-  char path[512];
+  char path[PATH_MAX];
 
   fmt_apply(path, sizeof(path), path_fmt, va);
   usnarfats(dst, dstlp, dirfd, path);

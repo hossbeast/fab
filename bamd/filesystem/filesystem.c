@@ -385,7 +385,7 @@ size_t filesystem_absolute_path_cat(void * restrict dst, size_t sz, const filesy
 static void vertex_dir_mkdir(fsent *fse)
 {
   const filesystem *fs;
-  char path[512];
+  char path[PATH_MAX];
   channel *chan;
   bamipc_message *msg;
   const char *errstr;
@@ -426,8 +426,8 @@ NOTE : this is not being used yet
  */
 
   const filesystem *fs;
-  char path[512];
-  char target[512];
+  char path[PATH_MAX];
+  char target[PATH_MAX];
   int r;
   channel *chan;
   bamipc_message *msg;
@@ -658,7 +658,7 @@ static void fstree_describe_fstree(
 
 void fstree_describe(bacon_writer * restrict writer)
 {
-  char path[512];
+  char path[1024];
   fstree_describe_fstree(writer, &fstree_root, path, sizeof(path), 0);
 }
 

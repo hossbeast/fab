@@ -39,7 +39,7 @@ static uint32_t event_era;
 
 static void process_event(sweeper_event * restrict ev, graph_invalidation_context * restrict invalidation)
 {
-  char path[512];
+  char path[PATH_MAX];
   moria_vertex *v;
   moria_edge *ue;
   fsent *n;

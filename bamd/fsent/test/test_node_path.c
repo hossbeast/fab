@@ -72,7 +72,7 @@ static void node_path_test_entry(xunit_test * _test)
   fsent * project_node = 0;
   fsent * module_node = 0;
   fsent * base_node = 0;
-  char actual[512];
+  char actual[PATH_MAX];
   module mod;
   size_t pathl;
 

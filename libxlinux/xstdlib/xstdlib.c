@@ -72,7 +72,7 @@ ssize_t API xreadlinks(const char * pathname, char * buf, size_t bufsiz)
 
 ssize_t xreadlinkw(const char * pathname, uint16_t pathname_len, char * buf, size_t bufsiz)
 {
-  char pathbuf[512];
+  char pathbuf[PATH_MAX];
   int len;
 
   len = zcatw(pathbuf, sizeof(pathbuf), pathname, pathname_len);
@@ -95,7 +95,7 @@ ssize_t API xreadlinkf(const char * pathname_fmt, char * buf, size_t bufsiz, ...
 
 ssize_t API xreadlinkvf(const char * pathname_fmt, char * buf, size_t bufsiz, va_list va)
 {
-  char pathname[512];
+  char pathname[PATH_MAX];
 
   fmt_apply(pathname, sizeof(pathname), pathname_fmt, va);
   return xreadlinks(pathname, buf, bufsiz);
@@ -125,7 +125,7 @@ char * API xrealpathf(char * restrict resolved_path, const char * restrict path_
 
 char * API xrealpathvf(char * restrict resolved_path, const char * restrict path_fmt, va_list va)
 {
-  char pathname[512];
+  char pathname[PATH_MAX];
 
   fmt_apply(pathname, sizeof(pathname), path_fmt, va);
   return xrealpaths(resolved_path, pathname);

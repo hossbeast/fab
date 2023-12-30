@@ -26,7 +26,7 @@ void API xfstatatf(int dirfd, int flags, struct stat * restrict buf, const char 
 
 void API xfstatatvf(int dirfd, int flags, struct stat * restrict buf, const char * restrict path_fmt, va_list va)
 {
-  char path[512];
+  char path[PATH_MAX];
 
   fmt_apply(path, sizeof(path), path_fmt, va);
   xfstatats(dirfd, flags, buf, path);
@@ -60,7 +60,7 @@ int API uxfstatatf(int dirfd, int flags, struct stat * restrict buf, const char 
 
 int API uxfstatatvf(int dirfd, int flags, struct stat * restrict buf, const char * restrict path_fmt, va_list va)
 {
-  char path[512];
+  char path[PATH_MAX];
 
   fmt_apply(path, sizeof(path), path_fmt, va);
   return uxfstatats(dirfd, flags, buf, path);
@@ -106,7 +106,7 @@ void API xmkdirf(mode_t mode, const char * path_fmt, ...)
 
 void API xmkdirvf(mode_t mode, const char * path_fmt, va_list va)
 {
-  char path[512];
+  char path[PATH_MAX];
 
   fmt_apply(path, sizeof(path), path_fmt, va);
   xmkdirs(mode, path);
@@ -136,7 +136,7 @@ int API uxmkdirf(mode_t mode, const char * path_fmt, ...)
 
 int API uxmkdirvf(mode_t mode, const char * path_fmt, va_list va)
 {
-  char path[512];
+  char path[PATH_MAX];
 
   fmt_apply(path, sizeof(path), path_fmt, va);
   return uxmkdirs(mode, path);

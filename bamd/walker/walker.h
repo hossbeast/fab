@@ -12,7 +12,7 @@ struct configuration;
 
 typedef struct walker_entry {
   struct fsent * n;
-  char abspath[512];
+  char abspath[PATH_MAX];
   uint16_t abspathl;
 
   llist lln;
