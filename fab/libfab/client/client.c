@@ -125,6 +125,9 @@ static void launch(fab_client * restrict client)
       argv[i++] = (char*)g_fab_client_sweeper_period_nsec;
     }
 #endif
+#endif
+    argv[i] = (void*)0;
+#if CONFIG_DEBUG || CONFIG_DEVEL
     int x;
     for(x = 0; x < i; x++)
     {
@@ -133,8 +136,6 @@ static void launch(fab_client * restrict client)
     }
     printf(")");
 #endif
-
-    argv[i] = (void*)0;
 
     // reopen standard file descriptors
     xclose(0);
