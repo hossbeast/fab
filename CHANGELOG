@@ -1,3 +1,22 @@
+v0.8.1 - January 2024
+
+mass rename across the project from fab -> bam
+
+build
+ * added a configure/make based build for package distribution
+ * there is now a distribution of bam on the aur which uses this
+
+tests
+ * the integ tests now use the user run dir instead of the system run dir
+
+bam
+ * new buildplan command
+ * bam will now kill any competing bamd processes before starting bamd
+ * moved the ipc dir to users run directory
+
+bamd
+ * bamd will no longer run indefinitely. the timeout is configurable.
+
 v0.8.0 - December 2023
 
 config
