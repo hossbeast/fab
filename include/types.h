@@ -42,14 +42,12 @@ static inline size_t roundup(size_t x, size_t y)
 
 #define STATIC_ASSERT(x) _Static_assert(x, #x)
 
-#if CONFIG_DEBUG || CONFIG_DEVEL || XUNIT
-/* this will cause asan to print a backtrace */
-#define RTA do {           \
-  *((volatile char*)0x42) = 0x42;      \
+/* this will cause asan to print a backtrace
+ * it also doesnt mess with errno */
+#define RTA do {                        \
+  *((volatile char*)0x42) = 0x42;       \
+  __builtin_unreachable();              \
 } while(0)
-#else
-#define RTA do { abort(); } while(0)
-#endif
 
 #define RUNTIME_ASSERT(x) do {                          \
   if (!(x)) {                                           \
