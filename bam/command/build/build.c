@@ -244,7 +244,7 @@ static void slot_print(build_slot *bs_zero)
     color = (typeof(color)){ RED };
 
   if(color.len) {
-    write(1, color.b, color.len);
+    (void)!write(1, color.b, color.len);
   }
 
   /* first arg is the program name */
@@ -374,7 +374,7 @@ static void slot_print(build_slot *bs_zero)
     xsayf(" status %d exit %d signal %d core %s\n", results->status, exit, sig, core ? "true" : "false");
   }
   if(color.len) {
-    write(1, NOCOLOR);
+    (void)!write(1, NOCOLOR);
   }
 
   if((success && args->success.show_stdout) || (!success && args->error.show_stdout))
@@ -405,11 +405,11 @@ static void slot_print(build_slot *bs_zero)
       if((results->stdout_total > blen) || !success)
       {
         if(color.len) {
-          write(1, color.b, color.len);
+          (void)!write(1, color.b, color.len);
         }
         xsayf(" stdout - showing %"PRIu16" of %"PRIu32" bytes\n", blen, results->stdout_total);
         if(color.len) {
-          write(1, NOCOLOR);
+          (void)!write(1, NOCOLOR);
         }
       }
       if(blen)
@@ -448,11 +448,11 @@ static void slot_print(build_slot *bs_zero)
       if((results->stderr_total > blen) || !success)
       {
         if(color.len) {
-          write(1, color.b, color.len);
+          (void)!write(1, color.b, color.len);
         }
         xsayf(" stderr - showing %"PRIu16" of %"PRIu32" bytes\n", blen, results->stderr_total);
         if(color.len) {
-          write(1, NOCOLOR);
+          (void)!write(1, NOCOLOR);
         }
       }
       if(blen)
@@ -491,11 +491,11 @@ static void slot_print(build_slot *bs_zero)
       if((results->auxout_total > blen) || !success)
       {
         if(color.len) {
-          write(1, color.b, color.len);
+          (void)!write(1, color.b, color.len);
         }
         xsayf(" auxout - showing %"PRIu16" of %"PRIu32" bytes\n", blen, results->auxout_total);
         if(color.len) {
-          write(1, NOCOLOR);
+          (void)!write(1, NOCOLOR);
         }
       }
       if(blen)

@@ -109,10 +109,10 @@ end:
   }
 
   for(x = 0; x < texts_len; x++) {
-    write(1, texts[x]->text, texts[x]->size);
+    (void)!write(1, texts[x]->text, texts[x]->size);
   }
 
-  write(1, "\n", 1);
+  (void)!write(1, "\n", 1);
 }
 
 static void attached(command * restrict cmd, bam_client * restrict client)

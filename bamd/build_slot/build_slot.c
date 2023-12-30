@@ -86,7 +86,7 @@ static size_t insertion_sort(char ** restrict dst, size_t dst_len, char ** src, 
   for(x = 0; x < src_len; x++)
   {
     ctx.def = src[x];
-    bsearch(&ctx, dst, dst_len, sizeof(*dst), insertion_sort_cmp);
+    (void)!bsearch(&ctx, dst, dst_len, sizeof(*dst), insertion_sort_cmp);
     idx = ctx.lx;
     if(ctx.lc)
     {

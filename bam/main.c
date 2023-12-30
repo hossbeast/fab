@@ -253,14 +253,14 @@ static void xmain()
     }
     if((msg->type == BAMIPC_MSG_RESULT || msg->type == BAMIPC_MSG_RESPONSE) && msg->code != 0)
     {
-      write(2, msg->text, msg->size);
-      write(2, "\n", 1);
+      (void)!write(2, msg->text, msg->size);
+      (void)!write(2, "\n", 1);
       waserror = true;
     }
     else if((msg->type == BAMIPC_MSG_EVENTS && msg->evtype == BAMIPC_EVENT_SYSTEM_STATE && msg->code != 0))
     {
-      write(2, msg->text, msg->size);
-      write(2, "\n", 1);
+      (void)!write(2, msg->text, msg->size);
+      (void)!write(2, "\n", 1);
       waserror = true;
     }
     g_cmd->process(g_cmd, client, msg);

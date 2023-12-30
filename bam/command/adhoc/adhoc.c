@@ -51,8 +51,8 @@ static void adhoc_process(command * restrict cmd, bam_client * restrict client, 
   }
 
   if(msg->type == BAMIPC_MSG_RESULT) {
-    write(1, msg->text, msg->size);
-    write(1, "\n", 1);
+    (void)!write(1, msg->text, msg->size);
+    (void)!write(1, "\n", 1);
   }
 }
 

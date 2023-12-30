@@ -242,7 +242,7 @@ int main(int argc, char ** argv)
   fd = uxopen_modef(O_CREAT | O_WRONLY, 0666, "%s/bamd/exit", g_params.ipcdir);
   if(fd != -1) {
     snprintf(buf, sizeof(buf), "%d\n", r);
-    write(fd, buf, strlen(buf));
+    (void)!write(fd, buf, strlen(buf));
     close(fd);
   }
 

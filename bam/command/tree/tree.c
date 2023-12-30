@@ -183,10 +183,10 @@ static void fsent_show(const bam_list_item * restrict fsent, bool show_paths)
   switch(CASE2(g_args.no_color, fsent->type)) {
     case CASE2(0, BAM_VERTEX_TYPE_DIR):
     case CASE2(0, BAM_VERTEX_TYPE_SHADOW_DIR):
-      write(1, YELLOW);
+      (void)!write(1, YELLOW);
       break;
     case CASE2(0, BAM_VERTEX_TYPE_SHADOW_LINK):
-      write(1, BOLD_RED);
+      (void)!write(1, BOLD_RED);
       break;
     default:
   }
@@ -210,7 +210,7 @@ static void fsent_show(const bam_list_item * restrict fsent, bool show_paths)
     case CASE2(0, BAM_VERTEX_TYPE_DIR):
     case CASE2(0, BAM_VERTEX_TYPE_SHADOW_DIR):
     case CASE2(0, BAM_VERTEX_TYPE_SHADOW_LINK):
-      write(1, NOCOLOR);
+      (void)!write(1, NOCOLOR);
       break;
     default:
   }

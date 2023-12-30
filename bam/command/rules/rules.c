@@ -110,7 +110,7 @@ static void rule_process(command * restrict cmd, bam_client * restrict client, b
   }
 
   RUNTIME_ASSERT(msg->type == BAMIPC_MSG_RESULT);
-  write(1, msg->text, msg->size);
+  (void)!write(1, msg->text, msg->size);
   any = true;
 }
 
