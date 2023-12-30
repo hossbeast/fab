@@ -4,6 +4,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <errno.h>
 
 #include "bam/load.h"
 #include "lorien/load.h"
@@ -70,6 +71,7 @@
 #include "locks.h"
 
 __thread int32_t tid;
+__thread int *errnop;
 
 static void xmain()
 {
@@ -137,6 +139,7 @@ int main(int argc, char ** argv)
 
   r = 0;
   tid = g_params.thread_monitor = gettid();
+  errnop = &errno;
 
 #if CONFIG_DEVEL
   backtracef_setup();

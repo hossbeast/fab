@@ -3,6 +3,7 @@
 
 #include <unistd.h>
 #include <sys/inotify.h>
+#include <errno.h>
 
 #include "narrator.h"
 #include "xlinux/xpthread.h"
@@ -202,6 +203,7 @@ static void sweeper_thread()
 static void * sweeper_thread_jump(void * arg)
 {
   tid = g_params.thread_sweeper = gettid();
+  errnop = &errno;
 
   sweeper_thread();
 

@@ -20,6 +20,7 @@
 #include "args.h"
 
 __thread int32_t tid;
+__thread int *errnop;
 
 int main(int argc, char ** argv, char ** envp)
 {
@@ -37,6 +38,7 @@ int main(int argc, char ** argv, char ** envp)
   struct stat stb;
 
   tid = syscall(SYS_gettid);
+  errnop = &errno;
 
 #ifdef CONFIG_DEVEL
   backtracef_setup();

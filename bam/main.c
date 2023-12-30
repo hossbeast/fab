@@ -29,6 +29,7 @@
 #include "barriers.h"
 
 __thread int32_t tid;
+__thread int *errnop;
 static uint64_t eventsubid;
 static bool waserror;
 
@@ -276,6 +277,7 @@ end:
 int main(int argc, char ** argv)
 {
   tid = syscall(SYS_gettid);
+  errnop = &errno;
 
 #ifdef CONFIG_DEVEL
   backtracef_setup();

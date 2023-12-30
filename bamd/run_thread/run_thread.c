@@ -3,6 +3,7 @@
 
 #include <unistd.h>
 #include <stdio.h>
+#include <errno.h>
 
 #include "bam/sigutil.h"
 #include "xlinux/xpthread.h"
@@ -77,6 +78,7 @@ static void * run_thread_jump(void * arg)
 
   ctx = arg;
   g_params.thread_run = ctx->tid = tid = gettid();
+  errnop = &errno;
 
   futexlock_acquire(&handlers_lock);
   rcu_list_push(&g_handlers, &ctx->stk);

@@ -6,3 +6,4 @@
 #include "types.h"
 
 extern __thread int32_t tid;    // linux thread id
+extern __thread int *errnop;

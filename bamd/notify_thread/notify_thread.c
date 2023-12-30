@@ -149,6 +149,7 @@ next:
 static void * notify_thread_jump(void * arg)
 {
   tid = g_params.thread_notify = gettid();
+  errnop = &errno;
 
   notify_thread(arg);
 

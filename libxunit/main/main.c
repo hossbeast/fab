@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: GPL-3.0 */
 /* Copyright (c) 2012-2023 Todd Freed <todd.freed@gmail.com> */
 
+#include <errno.h>
 #include <sys/syscall.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -32,6 +33,7 @@
 #include "macros.h"
 
 __attribute__((weak)) __thread int32_t tid;
+__attribute__((weak)) __thread int *errnop;
 
 static inline double pct(double a, double b)
 {
@@ -152,6 +154,7 @@ static void xmain(int argc, char ** argv)
         pid = xfork();
         if(pid == 0) {
           tid = syscall(SYS_gettid);
+          errnop = &errno;
         }
       }
 

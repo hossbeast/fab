@@ -3,6 +3,7 @@
 
 #include <unistd.h>
 #include <sys/syscall.h>
+#include <errno.h>
 
 #include "bam/ipc.h"
 #include "bam/sigutil.h"
@@ -46,6 +47,7 @@ static void server_thread()
 static void * server_thread_jump(void * arg)
 {
   tid = g_params.thread_server = gettid();
+  errnop = &errno;
 
   server_thread();
 

@@ -196,6 +196,7 @@ static void * handler_thread_jump(void * arg)
 
   ctx = arg;
   ctx->tid = tid = gettid();
+  errnop = &errno;
 
   channel_create(&chan, tid);
   ctx->chan = chan;
