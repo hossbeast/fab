@@ -83,6 +83,10 @@ static void connected(command * restrict cmd, bam_client * restrict client)
               STRING("path")
               BYTES(args->targets[x].s, args->targets[x].len)
             }
+            { MAPPING
+              STRING("hidden")
+              BOOL(true)
+            }
           }
         }
       }

@@ -570,6 +570,10 @@ void build_command_collate_invalidations(bacon_writer * restrict builder_writer)
                 STRING("path")
                 BYTES(arg->s, (int)arg->sl)
               }
+              { MAPPING
+                STRING("hidden")
+                BOOL(true)
+              }
             }
           }
         }
@@ -604,6 +608,10 @@ void build_command_collate_invalidations(bacon_writer * restrict builder_writer)
               { MAPPING
                 STRING("path")
                 BYTES(arg->s, (int)arg->sl)
+              }
+              { MAPPING
+                STRING("hidden")
+                BOOL(true)
               }
             }
           }
@@ -653,6 +661,10 @@ void build_command_collate_goals(bacon_writer * restrict builder_writer, bool re
                 STRING("path")
                 BYTES(arg->s, (int)arg->sl)
               }
+              { MAPPING
+                STRING("hidden")
+                BOOL(true)
+              }
             }
           }
         }
@@ -685,6 +697,10 @@ void build_command_collate_goals(bacon_writer * restrict builder_writer, bool re
               { MAPPING
                 STRING("path")
                 BYTES(arg->s, (int)arg->sl)
+              }
+              { MAPPING
+                STRING("hidden")
+                BOOL(true)
               }
             }
           }

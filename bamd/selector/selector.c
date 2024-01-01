@@ -337,9 +337,7 @@ static void selector_ctx_exec(selector_context * restrict ctx)
       if(sel->nofollow) {
         attrs |= MORIA_TRAVERSE_NOFOLLOW;
       }
-//      if(sel->criteria.min_depth || sel->criteria.max_depth) {
         attrs |= MORIA_TRAVERSE_DEPTH;
-//      }
 
       moria_traverse_vertices(
           &g_graph
@@ -480,6 +478,10 @@ static void writer_write(selector * const restrict sel, bacon_writer * const res
           { MAPPING
             STRING("nofollow")
             BOOL(sel->nofollow)
+          }
+          { MAPPING
+            STRING("hidden")
+            BOOL(sel->hidden)
           }
         }
       }
