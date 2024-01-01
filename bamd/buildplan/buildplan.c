@@ -161,7 +161,7 @@ return;
   }
 }
 
-void buildplan_add_transitive(moria_vertex * restrict v)
+void buildplan_add_transitive(moria_vertex * restrict v, moria_vertex_traversal_state * restrict state)
 {
   traverse_context ctx;
 
@@ -169,7 +169,7 @@ void buildplan_add_transitive(moria_vertex * restrict v)
       &g_graph
     , v
     , buildplan_visitor_direct
-    , 0
+    , state
     , (moria_traversal_criteria[]) {{
           edge_travel : EDGE_DEPENDS
         , vertex_visit_mask : VERTEX_KIND_OPT
@@ -183,10 +183,13 @@ void buildplan_add_transitive(moria_vertex * restrict v)
 void buildplan_select_transitive(llist * restrict selection)
 {
   selected *sn;
+  moria_vertex_traversal_state *state;
 
+  moria_vertex_traversal_begin(&g_graph, &state);
   llist_foreach(selection, sn, lln) {
-    buildplan_add_transitive(sn->v);
+    buildplan_add_transitive(sn->v, state);
   }
+  moria_vertex_traversal_end(&g_graph, state);
 }
 
 void buildplan_select_direct(llist * restrict selection)

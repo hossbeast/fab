@@ -18,6 +18,7 @@
 #include "handler.h"
 #include "path_cache.h"
 #include "shadow.h"
+#include "vertex.h"
 
 #include "common/attrs.h"
 #include "events.h"
@@ -38,9 +39,11 @@ void goals_create_buildplan()
 {
   path_cache_reset();
   buildplan_reset();
+  fsent *fse;
+  moria_vertex_traversal_state *state;
 
-  if(goals_target_direct_selector || goals_target_transitive_selector)
-  {
+  /* targets selector, if any */
+  if(goals_target_direct_selector || goals_target_transitive_selector) {
     goals_selector_context.mod = fsent_module_get(g_cwd);
     goals_selector_context.cwd = g_cwd;
 
@@ -55,11 +58,23 @@ void goals_create_buildplan()
       selector_exec(goals_target_transitive_selector, &goals_selector_context, SELECTION_ITERATION_TYPE_ORDER);
       buildplan_select_transitive(&goals_selector_context.selection->list);
     }
-  }
-  else
-  {
-    /* otherwise, the //targets node is the default */
-    buildplan_add_transitive(&g_shadow_targets->vertex);
+  /* //targets, if used */
+  } else if(!rbtree_empty(&g_shadow_targets->vertex.down)) {
+    buildplan_add_transitive(&g_shadow_targets->vertex, 0);
+  /* otherwise, build everything (slow to compute) */
+  } else {
+    moria_vertex_traversal_begin(&g_graph, &state);
+    llist_foreach(&fsent_list, fse, vertex.owner) {
+      switch(vertex_type_get(&fse->vertex)) {
+        case VERTEX_FILE:
+          break;
+        default:
+          continue;
+      }
+
+      buildplan_add_transitive(&fse->vertex, state);
+    }
+    moria_vertex_traversal_end(&g_graph, state);
   }
 
   if(buildplan_state == NOOP)

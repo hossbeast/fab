@@ -1487,8 +1487,6 @@ void rule_run_context_init(rule_run_context * restrict ctx)
   entlist_init(&ctx->target_hits);
   entlist_init(&ctx->target_index_hits);
 
-//  ctx->modules = &module_list;
-
   assure(&ctx->Alist, sizeof(*ctx->Alist), 1, &ctx->Alist_alloc);
   assure(&ctx->Blist, sizeof(*ctx->Blist), 1, &ctx->Blist_alloc);
 }

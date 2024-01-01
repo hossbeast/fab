@@ -16,6 +16,7 @@ The buildplan represents a set of formulas to be executed in order to satisfy th
 struct dependency;
 struct moria_vertex;
 struct llist;
+struct moria_vertex_traversal_state;
 
 enum buildplan_state {
     NOOP          // nothing to do
@@ -55,5 +56,5 @@ void buildplan_select_direct(struct llist * restrict selection)
 /*
  * Add a node to the plan along with its transitive dependencies
  */
-void buildplan_add_transitive(struct moria_vertex * restrict v)
-  __attribute__((nonnull));
+void buildplan_add_transitive(struct moria_vertex * restrict v, struct moria_vertex_traversal_state * restrict state)
+  __attribute__((nonnull(1)));
