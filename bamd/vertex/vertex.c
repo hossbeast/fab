@@ -87,8 +87,6 @@ bool vertex_mark_stale(moria_vertex * v)
   bam_vertex_stats *vertex_stats = 0;
   formula *fml;
   rule_module_association *rma;
-//  bind_module_association *bma;
-  index_vertex *index;
 
   if(vertex_invalid_get(v)) {
     return false;
@@ -107,6 +105,8 @@ bool vertex_mark_stale(moria_vertex * v)
       return false;
     case VERTEX_BPE:
       return false;
+    case VERTEX_INDEX:
+      return false;
     /* directories are not invalidated */
     case VERTEX_DIR:
     case VERTEX_MODULE_DIR:
@@ -121,7 +121,6 @@ bool vertex_mark_stale(moria_vertex * v)
       vertex_stats = &fse->stats;
       break;
     case VERTEX_RULES_FILE:
-      //fse->self_rules->invalid.exists = true;
       fse->self_rules->invalid.reparse = true;
       vertex_stats = &fse->stats;
       break;
@@ -141,7 +140,6 @@ bool vertex_mark_stale(moria_vertex * v)
       vertex_stats = &mod->stats;
       break;
     case VERTEX_CONFIG_FILE:
-//      config_system_invalidate();
     case VERTEX_FORMULA_FILE:
     case VERTEX_SHADOW_FILE:
     case VERTEX_VAR_FILE:
@@ -166,10 +164,6 @@ bool vertex_mark_stale(moria_vertex * v)
       rma = containerof(v, typeof(*rma), vertex);
       vertex_stats = &rma->vertex_stats;
       rule_system_work_enqueue(&rma->work);
-      break;
-    case VERTEX_INDEX:
-      index = containerof(v, typeof(*index), vertex);
-      vertex_stats = &index->stats;
       break;
     default:
       vertex_show(v);
