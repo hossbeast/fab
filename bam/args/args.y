@@ -17,6 +17,7 @@
   #include "adhoc.h"
   #include "autobuild.h"
   #include "build.h"
+  #include "buildplan.h"
   #include "describe.h"
   #include "fstree.h"
   #include "filesystem.h"
@@ -81,6 +82,7 @@
 /* words */
 %token
  BUILD                          "build"
+ BUILDPLAN                      "buildplan"
  DEPENDS                        "depends"
  FSTREE                         "fstree"
  FSTREE_HIDDEN                  "fstree-hidden"
@@ -303,6 +305,7 @@ command-arguments
   | LS           { args_command_start(&tree_command, TREE_LS); }  tree-arguments         { args_command_finish(); }
   | BUILD        { args_command_start(&build_command, 0); }       build-arguments        { args_command_finish(); }
   | AUTOBUILD    { args_command_start(&autobuild_command, 0); }   build-arguments        { args_command_finish(); }
+  | BUILDPLAN    { args_command_start(&buildplan_command, 0); }   buildplan-arguments    { args_command_finish(); }
   | TOUCH        { args_command_start(&touch_command, 0); }       touch-arguments        { args_command_finish(); }
   | STATS        { args_command_start(&stats_command, 0); }       stats-arguments        { args_command_finish(); }
   | ADHOC        { args_command_start(&adhoc_command, 0); }       adhoc-arguments        { args_command_finish(); }
@@ -462,6 +465,20 @@ touch-arguments
 touch-argument
   : global-argument
   | bead { touch_args.targets[touch_args.targets_len++] = $1; }
+  ;
+
+buildplan-arguments
+  : buildplan-argument-list
+  | %empty
+  ;
+
+buildplan-argument-list
+  : buildplan-argument-list buildplan-argument
+  | buildplan-argument
+  ;
+
+buildplan-argument
+  : global-argument
   ;
 
 kill-arguments

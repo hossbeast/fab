@@ -16,6 +16,7 @@ CFLAGS += -I$(SRC_PATH)/bam/command
 CFLAGS += -I$(SRC_PATH)/bam/command/adhoc
 CFLAGS += -I$(SRC_PATH)/bam/command/autobuild
 CFLAGS += -I$(SRC_PATH)/bam/command/build
+CFLAGS += -I$(SRC_PATH)/bam/command/buildplan
 CFLAGS += -I$(SRC_PATH)/bam/command/config
 CFLAGS += -I$(SRC_PATH)/bam/command/describe
 CFLAGS += -I$(SRC_PATH)/bam/command/envs
@@ -44,6 +45,7 @@ bam.exe: args/args.tokens.o
 bam.exe: command/adhoc/adhoc.o
 bam.exe: command/autobuild/autobuild.o
 bam.exe: command/build/build.o
+bam.exe: command/buildplan/buildplan.o
 bam.exe: command/command.o
 bam.exe: command/config/config.o
 bam.exe: command/describe/describe.o

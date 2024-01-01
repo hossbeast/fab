@@ -46,6 +46,7 @@
 #include "rules.h"
 #include "fsent.h"
 #include "shadow.h"
+#include "buildplan.h"
 
 #include "marshal.h"
 #include "zcat.h"
@@ -308,6 +309,26 @@ static void handler_fstree_describe(handler_context * restrict ctx, command * re
   builder_writer = bacon_writer_open(&writer, &fixed.base);
 
   fstree_describe(builder_writer);
+
+  bacon_writer_destroy(&writer);
+  msg->size = fixed.l;
+  channel_post(ctx->chan, msg);
+}
+
+static void handler_buildplan_describe(handler_context * restrict ctx, command * restrict cmd)
+{
+  bamipc_message *msg;
+  bacon_writer writer, *builder_writer;
+  narrator_fixed fixed;
+
+  msg = channel_produce(ctx->chan);
+  msg->type = BAMIPC_MSG_RESULT;
+
+  narrator_fixed_init(&fixed, msg->text, sizeof(msg->text));
+  bacon_writer_init(&writer);
+  builder_writer = bacon_writer_open(&writer, &fixed.base);
+
+  buildplan_describe(builder_writer);
 
   bacon_writer_destroy(&writer);
   msg->size = fixed.l;
@@ -959,6 +980,9 @@ void handler_process_command(handler_context * restrict ctx, command * restrict 
       break;
     case COMMAND_FSTREE_DESCRIBE:
       handler_fstree_describe(ctx, cmd);
+      break;
+    case COMMAND_BUILDPLAN_DESCRIBE:
+      handler_buildplan_describe(ctx, cmd);
       break;
     case COMMAND_FILESYSTEM_DESCRIBE:
       handler_filesystem_describe(ctx, cmd);

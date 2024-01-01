@@ -143,12 +143,10 @@ void buildplan_report()
 return;
 
   llist_foreach(&buildplan_selection.list, sn, lln) {
-    printf(" %-3d ", sn->rank);
+    printf("%-3d ", sn->rank);
     switch(sn->type) {
       case SELECTED_BPE:
         bpe = sn->bpe;
-        printf("bpe %p %s", bpe, bpe->fml->self_node->name.name);
-        printf(" -> ");
         buildplan_entity_say_targets(bpe, g_narrator_stdout);
         break;
       case SELECTED_VERTEX:
@@ -198,5 +196,49 @@ void buildplan_select_direct(llist * restrict selection)
 
   llist_foreach(selection, sn, lln) {
     buildplan_visitor_direct((void*)sn->v, 0, 0, 0, 0);
+  }
+}
+
+void buildplan_describe(bacon_writer * restrict builder_writer)
+{
+  selected *sn;
+  const buildplan_entity *bpe;
+  char buf[512];
+  char *dst;
+  size_t sz;
+  size_t z;
+  int64_t rank;
+
+  rank = INT64_MAX;
+  llist_foreach(&buildplan_selection.list, sn, lln) {
+    /* new list on rank change */
+    if(sn->rank != rank) {
+      if(rank != INT64_MAX) {
+        bacon_writer_pop_list(builder_writer);
+      }
+      bacon_writer_push_list(builder_writer);
+      rank = sn->rank;
+    }
+
+    dst = buf;
+    sz = sizeof(buf);
+    z = 0;
+    z += zcatf(dst + z, sz - z, "%-3d ", sn->rank);
+    switch(sn->type) {
+      case SELECTED_BPE:
+        bpe = sn->bpe;
+        z += zcatf(dst + z, sz - z, "%s -> ", bpe->fml->self_node->name.name);
+        z += buildplan_entity_targets_cat(dst + z, sz - z, bpe);
+        break;
+      case SELECTED_VERTEX:
+        z += fsent_absolute_path_cat(dst + z, sz - z, containerof(sn->v, fsent, vertex));
+        break;
+        RTA;
+    }
+    BYTES(buf, z);
+  }
+
+  if(rank != INT64_MAX) {
+    bacon_writer_pop_list(builder_writer);
   }
 }

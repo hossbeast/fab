@@ -62,9 +62,10 @@ TRAVERSE_ORDER_TABLE
   DEF(COMMAND_GOALS               , "goals"              , 0x13) /* set the goal targets */                          \
   DEF(COMMAND_RECONCILE           , "reconcile"          , 0x14) /* reload everything */                             \
   DEF(COMMAND_CONTEXT             , "context"            , 0x15) /* context for interpreting subsequent commands */  \
+  DEF(COMMAND_BUILDPLAN_DESCRIBE  , "buildplan-describe" , 0x16) /* read effective buildplan */                      \
   /* needs reconcile */                                                                                              \
-  DEF(COMMAND_RUN                 , "run"                , 0x16) /* pursue goals */                                  \
-  DEF(COMMAND_AUTORUN             , "autorun"            , 0x17) /* pursue goals */                                  \
+  DEF(COMMAND_RUN                 , "run"                , 0x17) /* pursue goals */                                  \
+  DEF(COMMAND_AUTORUN             , "autorun"            , 0x18) /* pursue goals */                                  \
 
 typedef enum command_type {
 #undef DEF

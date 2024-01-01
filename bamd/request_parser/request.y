@@ -77,6 +77,7 @@
   RMA_DESCRIBE        "rma-describe"
   RULES_DESCRIBE      "rules-describe"
   FSTREE_DESCRIBE     "fstree-describe"
+  BUILDPLAN_DESCRIBE  "buildplan-describe"
   FILESYSTEM_DESCRIBE "filesystem-describe"
   DESCRIBE            "describe"
   INVALIDATE          "invalidate"
@@ -150,6 +151,7 @@ command-branch
   | rma-describe-cmd
   | rules-describe-cmd
   | fstree-describe-cmd
+  | buildplan-describe-cmd
   | filesystem-describe-cmd
   | run-cmd
   | autorun-cmd
@@ -233,6 +235,10 @@ rules-describe-cmd
 
 fstree-describe-cmd
   : FSTREE_DESCRIBE { PARSER->command->type = COMMAND_FSTREE_DESCRIBE; }
+  ;
+
+buildplan-describe-cmd
+  : BUILDPLAN_DESCRIBE { PARSER->command->type = COMMAND_BUILDPLAN_DESCRIBE; }
   ;
 
 filesystem-describe-cmd

@@ -88,6 +88,7 @@ static void request_writer_write(request * const restrict req, bacon_writer * co
       case COMMAND_RMA_DESCRIBE:
       case COMMAND_RULES_DESCRIBE:
       case COMMAND_FSTREE_DESCRIBE:
+      case COMMAND_BUILDPLAN_DESCRIBE:
       case COMMAND_FILESYSTEM_DESCRIBE:
       case COMMAND_RESET_SELECTION:
       case COMMAND_LIST:

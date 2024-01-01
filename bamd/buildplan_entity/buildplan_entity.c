@@ -473,6 +473,29 @@ void buildplan_entity_say_targets(const buildplan_entity * restrict bpe, narrato
   entlist_destroy(&list);
 }
 
+size_t buildplan_entity_targets_cat(void * restrict dst, size_t sz, const buildplan_entity * restrict bpe)
+{
+  fsent *n;
+  int x;
+  entlist list;
+  entlist *eln;
+  size_t z;
+
+  buildplan_entity_targets(bpe, &list);
+  x = 0;
+  z = 0;
+  entlist_foreach(&list, n, eln) {
+    if(x++) {
+      z += zcats(dst + z, sz - z, ", ");
+    }
+    z += fsent_path_cat(dst + z, sz - z, n);
+  }
+
+  entlist_destroy(&list);
+
+  return z;
+}
+
 static void bpe_excise(buildplan_entity * restrict bpe, graph_invalidation_context * restrict invalidation)
 {
   moria_foreach_state st;

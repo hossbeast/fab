@@ -1,0 +1,11 @@
+/* SPDX-License-Identifier: GPL-3.0 */
+/* Copyright (c) 2012-2023 Todd Freed <todd.freed@gmail.com> */
+
+#pragma once
+
+#include "command.h"
+
+extern struct buildplan_args {
+} buildplan_args;
+
+extern struct command buildplan_command;

@@ -104,6 +104,9 @@ void buildplan_entity_say_sources(const buildplan_entity * restrict bpe, struct 
 void buildplan_entity_say_targets(const buildplan_entity * restrict bpe, struct narrator * restrict N)
   __attribute__((nonnull));
 
+size_t buildplan_entity_targets_cat(void * restrict dst, size_t sz, const buildplan_entity * restrict bpe)
+  __attribute__((nonnull));
+
 void bpe_system_reconcile(struct graph_invalidation_context * restrict ctx)
   __attribute__((nonnull));
 
