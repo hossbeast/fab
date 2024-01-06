@@ -93,7 +93,7 @@ static void buildplan_visitor_direct(
           STRING("trail")
           { LIST
             for(x = 0; x <= stack_index; x++) {
-              vertex_describe(ctx->stack[x], builder_writer);
+              vertex_identity_describe(ctx->stack[x], builder_writer);
             }
           }
         }
