@@ -384,7 +384,6 @@ void fsent_system_bootstrap()
 
   graph_invalidation_begin(&invalidation);
 
-  g_base_path_len = strlen(g_base_path);
   fsent_graft(g_base_path, &g_base, &invalidation);
   g_base_dirfd = xopens(O_PATH | O_DIRECTORY, g_base_path);
 

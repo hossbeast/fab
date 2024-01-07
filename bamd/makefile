@@ -54,6 +54,7 @@ CFLAGS += -I$(SRC_PATH)/bamd/module_edge
 CFLAGS += -I$(SRC_PATH)/bamd/module_system
 CFLAGS += -I$(SRC_PATH)/bamd/monitor_thread
 CFLAGS += -I$(SRC_PATH)/bamd/notify_thread
+CFLAGS += -I$(SRC_PATH)/bamd/timeout_thread
 CFLAGS += -I$(SRC_PATH)/bamd/params
 CFLAGS += -I$(SRC_PATH)/bamd/path_cache
 CFLAGS += -I$(SRC_PATH)/bamd/pattern
@@ -139,6 +140,7 @@ bamd.exe: goals/goals.o
 bamd.exe: graph/graph.o
 bamd.exe: handler/handler.o
 bamd.exe: handler_thread/handler_thread.o
+bamd.exe: timeout_thread/timeout_thread.o
 bamd.exe: import/import.o
 bamd.exe: index_edge/index_edge.o
 bamd.exe: index_vertex/index_vertex.o

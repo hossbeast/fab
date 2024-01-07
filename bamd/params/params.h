@@ -14,6 +14,7 @@ extern struct g_params {
   pid_t           thread_notify;    // thread id of the notify thread
   pid_t           thread_sweeper;   // thread id of the sweeper thread
   pid_t           thread_run;       // thread id of the run thread
+  pid_t           thread_timeout;   // thread id of the timeout thread
   int             thread_count;     // number of extant threads, other than the monitor/main thread
 
   struct timespec starttime;

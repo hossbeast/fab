@@ -176,6 +176,9 @@ static void handler_thread(handler_context * restrict ctx)
       graph_invalidation_begin(&ctx->invalidation);
       cmd = llist_first(&req.commands, typeof(*cmd), lln);
       built = false;
+
+      /* request received ; reset the timeout thread */
+      syscall(SYS_tgkill, g_params.pid, g_params.thread_timeout, SIGUSR1);
     }
   }
 

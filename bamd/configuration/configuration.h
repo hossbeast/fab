@@ -107,6 +107,13 @@ typedef struct configuration {
       } dirs;
     } path;
   } formula;
+
+  struct {
+    struct {
+      struct bacon_value *v;
+      int64_t i64;            // seconds
+    } interval;
+  } timeout;
 } configuration;
 
 extern struct configuration *configuration_active;

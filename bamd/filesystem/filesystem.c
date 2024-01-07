@@ -248,9 +248,6 @@ void filesystem_reconfigure(configuration * restrict cfg, bool dryrun)
   if(dryrun) {
     return;
   }
-  //if(!cfg->filesystems.changed) {
-  //  return 0;
-  //}
 
   fstree_root_destroy();
 

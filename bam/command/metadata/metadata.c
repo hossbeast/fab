@@ -81,6 +81,9 @@ static void process(command * restrict cmd, bam_client * restrict client, bamipc
   interval_say(md.uptime / NSEC_PER_SEC, narrator_fixed_init(&fixed, buf, sizeof(buf)));
   printf(" %s : \"%s\"\n", "uptime", buf);
 
+  interval_say(md.timeout / NSEC_PER_SEC, narrator_fixed_init(&fixed, buf, sizeof(buf)));
+  printf(" %s : \"%s\"\n", "timeout", buf);
+
   z = attrs16_zcat(buf, sizeof(buf), bam_system_state_attrs, md.system_state);
   printf(" %s : %.*s\n", "system-state", (int)z, buf);
   printf(" %s : %s\n", "system-error", md.system_error ? "yes" : "no");

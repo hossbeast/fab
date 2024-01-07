@@ -35,7 +35,7 @@ void monitor_thread()
   sigaddset(&sigs, SIGQUIT);
   sigaddset(&sigs, SIGUSR1);
   interval.tv_sec = 0;
-  interval.tv_nsec = 125000000;
+  interval.tv_nsec = 125000000;   // 125ms
 
   rcu_register(&rcu_self);
   while(g_params.thread_count)
@@ -58,6 +58,7 @@ void monitor_thread()
     uxtgkill(g_params.pid, g_params.thread_notify, SIGUSR1);
     uxtgkill(g_params.pid, g_params.thread_sweeper, SIGUSR1);
     uxtgkill(g_params.pid, g_params.thread_run, SIGUSR1);
+    uxtgkill(g_params.pid, g_params.thread_timeout, SIGUSR1);
 
     rcu_list_foreach(&g_handlers, handler, stk) {
       uxtgkill(g_params.pid, handler->tid, SIGUSR1);

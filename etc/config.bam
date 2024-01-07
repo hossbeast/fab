@@ -30,6 +30,7 @@ formula : {
   }
 }
 
+# filesystem
 walker : {
   special : {
     var.bam
@@ -46,4 +47,8 @@ walker : {
   exclude : {
     .git
   }
+}
+
+timeout : {
+  interval : 600  # exit after 10 minutes of inactivity
 }

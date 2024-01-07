@@ -184,7 +184,6 @@ void configuration_describe(const configuration * restrict cfg, bacon_writer * c
       }
     }
   }
-
   if(!rbtree_empty(&cfg->walker.include.set) || !rbtree_empty(&cfg->walker.exclude.set) || !rbtree_empty(&cfg->walker.special.set))
   {
     MAPPING
@@ -244,7 +243,6 @@ void configuration_describe(const configuration * restrict cfg, bacon_writer * c
       }
     }
   }
-
   if(!rbtree_empty(&cfg->filesystems.set))
   {
     MAPPING
@@ -308,7 +306,6 @@ void configuration_describe(const configuration * restrict cfg, bacon_writer * c
       }
     }
   }
-
   if(cfg->formula.path.copy_from_env.v || !rbtree_empty(&cfg->formula.path.dirs.set))
   {
     MAPPING
@@ -348,6 +345,17 @@ void configuration_describe(const configuration * restrict cfg, bacon_writer * c
             }
           }
         }
+      }
+    }
+  }
+  if(cfg->timeout.interval.v)
+  {
+    MAPPING
+    STRING("timeout")
+    { SET
+      { MAPPING
+        STRING("interval")
+        UINT(cfg->timeout.interval.v->i)
       }
     }
   }

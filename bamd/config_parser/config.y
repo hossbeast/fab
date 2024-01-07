@@ -94,8 +94,8 @@
 %token <yyu.imax> INTMAX32      320
 %token <yyu.imax> INTMAX64      321
 
-%type <yyu.umax>  uint16_igroup
-%type <yyu.umax>  uint16_ugroup
+%type <yyu.imax>  uint16_igroup int64_igroup
+%type <yyu.umax>  uint16_ugroup int64_ugroup
 
 %token
  BUILD                    "build"
@@ -118,6 +118,8 @@
  MKDIRS                   "mkdirs"
  READLINKS                "readlinks"
  INDEXED                  "indexed"
+ TIMEOUT                  "timeout"
+ INTERVAL                 "interval"
 
 %token
  <pattern> INCLUDE_PATTERN  "include-pattern"
@@ -125,7 +127,7 @@
 
 /* nonterminals */
 %type <val> quote_words quote_word quoted_string unquoted_string
-%type <val> bool uint16 string
+%type <val> bool uint16 int64 string
 
 /* enums */
 %type <invalidate_type> invalidate-type
@@ -161,6 +163,7 @@ section
   | filesystems-section
   | formula-section
   | walker-section
+  | timeout-section
   ;
 
 build-section
@@ -281,6 +284,28 @@ filesystems-entry-mapping
   }
   ;
 
+timeout-section
+  : TIMEOUT ':' '{' timeout-settings-epsilon '}'
+  ;
+
+timeout-settings-epsilon
+  : timeout-settings
+  | %empty
+  ;
+
+timeout-settings
+  : timeout-settings timeout-setting
+  | timeout-setting
+  ;
+
+timeout-setting
+  : INTERVAL ':' int64
+  {
+    replace(PARSER, &PARSER->cfg->timeout.interval.v, $3);
+    PARSER->cfg->timeout.interval.i64 = $3->i;
+  }
+  ;
+
 walker-section
   : WALKER ':' '{' walker-settings-epsilon '}'
   ;
@@ -387,6 +412,18 @@ bool
   }
   ;
 
+int64
+  : uint16
+  | int64_igroup
+  {
+    bacon_integer_mk(PARSER->bacon_parser, &@$, &$$, $1);
+  }
+  | int64_ugroup
+  {
+    bacon_integer_mk(PARSER->bacon_parser, &@$, &$$, $1);
+  }
+  ;
+
 uint16
   : uint16_igroup
   {
@@ -399,27 +436,26 @@ uint16
   ;
 
 uint16_igroup
-  : INTMIN16
-  {
-    $$ = $1;
-  }
-  | INTMIN8
-  {
-    $$ = $1;
-  }
-  | INTMAX8
-  {
-    $$ = $1;
-  }
-  | INTMAX16
-  {
-    $$ = $1;
-  }
+  : INTMIN8  { $$ = $1; }
+  | INTMAX8  { $$ = $1; }
+  | INTMIN16 { $$ = $1; }
+  | INTMAX16 { $$ = $1; }
   ;
 
 uint16_ugroup
   : UINTMAX8
   | UINTMAX16
+  ;
+
+int64_igroup
+  : INTMIN32 { $$ = $1; }
+  | INTMAX32 { $$ = $1; }
+  | INTMIN64 { $$ = $1; }
+  | INTMAX64 { $$ = $1; }
+  ;
+
+int64_ugroup
+  : UINTMAX32
   ;
 
 string

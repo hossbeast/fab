@@ -35,6 +35,7 @@
 #include "rule_module_association.h"
 #include "module_edge.h"
 #include "monitor_thread.h"
+#include "timeout_thread.h"
 #include "fsent.h"
 #include "shadow.h"
 #include "notify_thread.h"
@@ -95,6 +96,7 @@ static void xmain()
   notify_thread_launch();
   server_thread_launch();
   sweeper_thread_launch();
+  timeout_thread_launch();
 
   // become the monitor thread
   monitor_thread();

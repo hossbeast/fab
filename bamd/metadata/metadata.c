@@ -15,6 +15,7 @@
 #include "run_thread.h"
 #include "times.h"
 #include "system_state.h"
+#include "timeout_thread.h"
 
 #include "marshal.h"
 #include "zcat.h"
@@ -34,8 +35,13 @@ void metadata_collate(void *dst, size_t sz, size_t * restrict zp)
 
   /* pid */
   z += marshal_i64(dst + z, sz - z, g_params.pid);
+
   /* uptime */
   z += marshal_u64(dst + z, sz - z, timespec_delta(&g_params.starttime, &now));
+
+  /* remaining time until timeout */
+  z += marshal_u64(dst + z, sz - z, timespec_delta(&now, &timeout_thread_deadline));
+
   /* ipcdir */
   z += marshal_u16(dst + z, sz - z, strlen(g_params.ipcdir));
   z += zcats(dst + z, sz - z, g_params.ipcdir);

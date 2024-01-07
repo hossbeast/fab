@@ -50,6 +50,7 @@ config keys that should *only* be legal in the global/user config files
 #include "config_system.h"
 #include "special_edge.h"
 #include "fsedge.h"
+#include "timeout_thread.h"
 
 #include "macros.h"
 #include "marshal.h"
@@ -254,6 +255,10 @@ void config_system_reconcile(bool * restrict work, graph_invalidation_context * 
   if(system_error) {
     goto err;
   }
+  timeout_thread_reconfigure(configuration_next, true);
+  if(system_error) {
+    goto err;
+  }
 
   /* flip */
   configuration_free(configuration_active, parser);
@@ -266,6 +271,7 @@ void config_system_reconcile(bool * restrict work, graph_invalidation_context * 
   walker_system_reconfigure(configuration_active, false);
   build_reconfigure(configuration_active, false);
   path_cache_reconfigure(configuration_active, false);
+  timeout_thread_reconfigure(configuration_active, false);
 
   llist_foreach(&config_list, cfg, vertex.owner) {
     vertex_mark_fresh(&cfg->vertex);

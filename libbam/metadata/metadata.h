@@ -36,6 +36,7 @@ extern struct attrs16 * bam_system_state_attrs;
 typedef struct bam_metadata {
   int64_t bamd_pid;
   uint64_t uptime;          // uptime
+  uint64_t timeout;         // remaining until timeout
 
   const char *ipcdir;       // ipc dir
   uint16_t ipcdir_len;
