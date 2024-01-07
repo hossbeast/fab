@@ -27,8 +27,6 @@ struct g_args_t g_args;
 #define USER_CONFIG_PATH      "$HOME/.bam/config.bam"
 #endif
 
-#define DEFAULT_SWEEPER_PERIOD MSEC_AS_NSEC(250)
-
 static void args_version()
 {
   printf("bamd - bam daemon %s\n\n%s\n", git_describe, git_metadata);
@@ -42,6 +40,10 @@ static void args_usage()
 "bamd - bam daemon %s\n"
 "\n"
 "usage: bamd [option] <hash>\n"
+"\n"
+"bam daemon for directory indicated by <hash>\n"
+"hash is computed from cwd if not specified\n"
+"bamd is normally started on demand by the bam client\n"
 "\n"
 "options\n"
 " --help | -h       print this message\n"
@@ -74,11 +76,7 @@ static void args_parse(int argc, char ** restrict argv)
     , { }
   };
 
-  const char *switches = "hV"
-#if CONFIG_DEVEL
-    "K"
-#endif
-  ;
+  const char *switches = "hV";
 
   g_args.default_filesystem_invalidate = FILESYSTEM_INVALIDATE_DEFAULT;
   g_args.default_filesystem_indexed = FILESYSTEM_INDEXED_DEFAULT;
