@@ -80,13 +80,13 @@ static void usage(command * restrict cmd)
 " vars                  print effective vars\n"
 "\n"
 "global options\n"
-" --help | -h       print this message\n"
-" --version | -V    print version information\n"
-" -B                first, global invalidation\n"
-" -K                first, kill extant bamd if any\n"
-" -m path/to/module set the context module\n"
+" --help | -h           print this message\n"
+" --version | -V        print version information\n"
+" -B                    first, global invalidation\n"
+" -K                    first, kill extant bamd if any\n"
+" -m path/to/module     set the context module\n"
 #if CONFIG_DEVEL
-" --no-launch       only talk to an existing bamd\n"
+" --no-launch           only talk to an existing bamd\n"
 #endif
     , git_describe
   );
@@ -102,7 +102,11 @@ static void usage(command * restrict cmd)
 " "SYSTEM_CONFIG_PATH"\n"
 " "USER_CONFIG_PATH"\n"
 "\n"
-"build optimally      https://git.sr.ht/~hossbeast/bam\n"
+"environment variables\n"
+" BAM_IPC_DIR           the ipc dir\n"
+" XDG_RUNTIME_DIR       else, $XDG_RUNTIME_DIR/bam is the ipc dir\n"
+"\n"
+"build optimally        https://git.sr.ht/~hossbeast/bam\n"
   );
 
   exit(0);
@@ -123,11 +127,6 @@ static int parse(yyu_parser * restrict parser, char * argvs, int argvsl, const c
   return r;
 }
 
-static void get_homedir(const char ** restrict homep)
-{
-  *homep = getenv("HOME");
-}
-
 static int parse_file(yyu_parser * restrict parser, const char * restrict pathspec)
 {
   char buf[PATH_MAX];
@@ -142,7 +141,7 @@ static int parse_file(yyu_parser * restrict parser, const char * restrict pathsp
   len = strlen(pathspec);
   if(len >= 2 && memcmp(pathspec, "~/", 2) == 0)
   {
-    get_homedir(&home);
+    home = getenv("HOME");
     z = 0;
     z += zcats(buf + z, sizeof(buf) - z, home);
     z += zcats(buf + z, sizeof(buf) - z, "/");
@@ -152,7 +151,7 @@ static int parse_file(yyu_parser * restrict parser, const char * restrict pathsp
   }
   else if(len >= 6 && memcmp(pathspec, "$HOME/", 6) == 0)
   {
-    get_homedir(&home);
+    home = getenv("HOME");
     z = 0;
     z += zcats(buf + z, sizeof(buf) - z, home);
     z += zcats(buf + z, sizeof(buf) - z, "/");

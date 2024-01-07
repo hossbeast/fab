@@ -10,6 +10,7 @@
 #include "xlinux/xunistd.h"
 
 #include "params.h"
+#include "zcat.h"
 
 struct g_params g_params;
 
@@ -19,10 +20,23 @@ struct g_params g_params;
 
 void params_setup()
 {
+  const char *ipc;
+
   g_params.pid = getpid();
 
+  // current working directory
   xgetcwd(g_params.cwd, sizeof(g_params.cwd));
   g_params.cwd_len = strlen(g_params.cwd);
+
+  // ipc directory
+  if((ipc = getenv("BAM_IPC_DIR"))) {
+    g_params.ipcdir_len = zcats(g_params.ipcdir, sizeof(g_params.ipcdir), ipc);
+  } else if((ipc = getenv("XDG_RUNTIME_DIR"))) {
+    g_params.ipcdir_len = zcatf(g_params.ipcdir, sizeof(g_params.ipcdir), "%s/bam", ipc);
+  } else {
+    dprintf(2, "neither $BAM_IPC_DIR nor $XDG_RUNTIME_DIR is set!\n");
+    exit(1);
+  }
 
 #if CONFIG_DEVEL
   char space[PATH_MAX];

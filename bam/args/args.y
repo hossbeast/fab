@@ -211,7 +211,6 @@
 %token
  lsystem_config_path            "--system-config-path"
  luser_config_path              "--user-config-path"
- lproject_config_path           "--project-config-path"
  ldefault_filesystem_invalidate "--default-filesystem-invalidate"
  lsweeper_period_nsec           "--sweeper-period-nsec"
 
@@ -285,7 +284,6 @@ global-argument
  /* devel only */
   | lsystem_config_path bead            { ARGS->system_config_path = $2; }
   | luser_config_path bead              { ARGS->user_config_path = $2; }
-  | lproject_config_path bead           { ARGS->project_config_path = $2; }
   | ldefault_filesystem_invalidate bead { ARGS->default_filesystem_invalidate = $2; }
   | lsweeper_period_nsec uint64         { ARGS->sweeper_period_nsec = (bead) { @2.s, @2.l }; }
   ;

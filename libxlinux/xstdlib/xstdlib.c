@@ -111,6 +111,17 @@ char * API xrealpaths(char * restrict resolved_path, const char * restrict path)
   return r;
 }
 
+char * API xrealpathw(char * restrict resolved_path, const char * restrict path, uint16_t path_len)
+{
+  char pathname[PATH_MAX];
+  size_t z;
+
+  z = zcatw(pathname, sizeof(pathname), path, path_len);
+  pathname[z] = 0;
+
+  return xrealpaths(resolved_path, pathname);
+}
+
 char * API xrealpathf(char * restrict resolved_path, const char * restrict path_fmt, ...)
 {
   char * r;

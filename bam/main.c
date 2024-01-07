@@ -136,7 +136,7 @@ static void xmain()
   interval.tv_sec = 0;
   interval.tv_nsec = 500000000;   // 500 millis
 
-  bam_client_create(&client, ".", XQUOTE(BAMIPCDIR));
+  client = bam_client_create(".", 1, g_params.ipcdir, g_params.ipcdir_len);
   bam_client_prepare(client);
 
   /* kill an existing bamd - waiting at most 3s */
@@ -269,7 +269,7 @@ static void xmain()
 
 end:
   bam_client_disconnect(client);
-  bam_client_xfree(client);
+  bam_client_free(client);
 
   g_cmd->disconnected(g_cmd);
 }

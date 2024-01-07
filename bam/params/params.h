@@ -16,6 +16,10 @@ extern struct g_params
 {
   pid_t    pid;            // pid of this process
   bool     shutdown;       // whether to terminate the main loop
+
+  char     ipcdir[PATH_MAX];
+  uint16_t ipcdir_len;
+
   char     cwd[PATH_MAX];  // working directory
   uint16_t cwd_len;
 

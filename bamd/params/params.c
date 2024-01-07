@@ -26,6 +26,7 @@ void params_setup()
 {
   int __attribute__((unused)) r;
   const char *homeenv;
+  const char *ipc;
 
   g_params.pid = getpid();
 
@@ -45,7 +46,15 @@ void params_setup()
   r = clock_gettime(CLOCK_MONOTONIC, &g_params.starttime);
   RUNTIME_ASSERT(r == 0);
 
-  g_params.ipcdir_len = snprintf(g_params.ipcdir, sizeof(g_params.ipcdir), "%s/%016"PRIx64, XQUOTE(BAMIPCDIR), g_args.hash);
+  // ipc directory
+  if((ipc = getenv("BAM_IPC_DIR"))) {
+    g_params.ipcdir_len = zcatf(g_params.ipcdir, sizeof(g_params.ipcdir), "%s/%016"PRIx64, ipc, g_args.hash);
+  } else if((ipc = getenv("XDG_RUNTIME_DIR"))) {
+    g_params.ipcdir_len = zcatf(g_params.ipcdir, sizeof(g_params.ipcdir), "%s/bam/%016"PRIx64, ipc, g_args.hash);
+  } else {
+    dprintf(2, "neither $BAM_IPC_DIR nor $XDG_RUNTIME_DIR is set, exiting\n");
+    exit(1);
+  }
 
   g_params.homedir_len = 0;
   if((homeenv = getenv("HOME"))) {

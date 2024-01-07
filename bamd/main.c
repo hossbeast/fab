@@ -153,11 +153,14 @@ int main(int argc, char ** argv)
 
   args_setup(argc, argv);
   params_setup();
+  xrealpathf(g_base_path, "%.*s/basedir", (int)g_params.ipcdir_len, g_params.ipcdir);
+  g_base_path_len = strlen(g_base_path);
 
   dprintf(1, "hash : %s\n", g_args.hash_str);
   dprintf(1, "pid : %d\n", g_params.pid);
   dprintf(1, "homedir : %.*s\n", (int)g_params.homedir_len, g_params.homedir);
   dprintf(1, "ipcdir : %.*s\n", (int)g_params.ipcdir_len, g_params.ipcdir);
+  dprintf(1, "basedir : %.*s\n", (int)g_base_path_len, g_base_path);
 
   getlock();
 
@@ -190,7 +193,6 @@ int main(int argc, char ** argv)
   index_vertex_setup();
 
   /* comment */
-  xrealpathf(g_base_path, "%s/%016"PRIx64"/projdir", XQUOTE(BAMIPCDIR), g_args.hash);
   fsent_system_bootstrap();
   config_system_bootstrap();
 

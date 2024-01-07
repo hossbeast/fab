@@ -64,12 +64,11 @@ ssize_t xreadlinkf(const char * pathname_fmt, char * buf, size_t bufsiz, ...)
 ssize_t xreadlinkvf(const char * pathname_fmt, char * buf, size_t bufsiz, va_list va)
   __attribute__((nonnull(1, 2)));
 
-/// xrealpath
-//
-// SUMMARY
-//  proxy for realpath
-//
+/* realpath wrapper */
 char * xrealpaths(char * restrict resolved_path, const char * restrict path)
+  __attribute__((nonnull(2)));
+
+char * xrealpathw(char * restrict resolved_path, const char * restrict path, uint16_t len)
   __attribute__((nonnull(2)));
 
 char * xrealpathf(char * restrict resolved_path, const char * restrict path_fmt, ...)

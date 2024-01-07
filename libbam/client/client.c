@@ -44,7 +44,6 @@
 const char * APIDATA g_bam_client_bamd_path;
 const char * APIDATA g_bam_client_system_config_path;
 const char * APIDATA g_bam_client_user_config_path;
-const char * APIDATA g_bam_client_project_config_path;
 const char * APIDATA g_bam_client_default_filesystem_invalidate;
 const char * APIDATA g_bam_client_sweeper_period_nsec;
 #endif
@@ -67,8 +66,8 @@ static void launch(bam_client * restrict client)
   int i;
 
   // canonical project directory symlink
-  uxunlinkf("%s/projdir", client->ipcdir);
-  xsymlinkf("%s", "%s/projdir", client->projdir, client->ipcdir);
+  uxunlinkf("%s/basedir", client->ipcdir);
+  xsymlinkf("%s", "%s/basedir", client->basedir, client->ipcdir);
 
   // cleanup the directory
   uxunlinkf("%s/bamd/exit", client->ipcdir);
@@ -98,11 +97,6 @@ static void launch(bam_client * restrict client)
     {
       argv[i++] = "--user-config-path";
       argv[i++] = (char*)g_bam_client_user_config_path;
-    }
-    if(g_bam_client_project_config_path)
-    {
-      argv[i++] = "--project-config-path";
-      argv[i++] = (char*)g_bam_client_project_config_path;
     }
     if(g_bam_client_default_filesystem_invalidate)
     {
@@ -166,7 +160,7 @@ static void launch(bam_client * restrict client)
 // public
 //
 
-void API bam_client_create(bam_client ** restrict clientp, const char * restrict projdir, const char * restrict ipcdir_base)
+bam_client *bam_client_create(const char * restrict basedir, uint16_t basedir_len, const char * restrict ipcdir, uint16_t ipcdir_len)
 {
   char space[PATH_MAX];
   size_t len;
@@ -176,37 +170,38 @@ void API bam_client_create(bam_client ** restrict clientp, const char * restrict
   xmalloc(&client, sizeof(*client));
 
   // canonicalized project path
-  client->projdir = xrealpaths(0, projdir);
+  client->basedir = xrealpathw(0, basedir, basedir_len);
 
   // project path hash
-  u64 = hash64(0, client->projdir, strlen(client->projdir));
+  u64 = hash64(0, client->basedir, strlen(client->basedir));
   snprintf(client->hash, sizeof(client->hash), "%016"PRIx64, u64);
 
   // ipc dir for the project
-  len = snprintf(space, sizeof(space), "%s/%s", ipcdir_base, client->hash);
+  len = snprintf(space, sizeof(space), "%.*s/%s", (int)ipcdir_len, ipcdir, client->hash);
   xmalloc(&client->ipcdir, len + 1);
   memcpy(client->ipcdir, space, len);
 
   client->msgid = 2;
   client->lockfd = -1;
-  *clientp = client;
+
+  return client;
 }
 
-void API bam_client_xfree(bam_client * restrict client)
+void API bam_client_free(bam_client * restrict client)
 {
   if(client)
   {
     free(client->ipcdir);
-    free(client->projdir);
+    free(client->basedir);
     xshmdt(client->shm);
     xclose(client->lockfd);
   }
   free(client);
 }
 
-void API bam_client_ixfree(bam_client ** restrict client)
+void API bam_client_ifree(bam_client ** restrict client)
 {
-  bam_client_xfree(*client);
+  bam_client_free(*client);
   *client = 0;
 }
 

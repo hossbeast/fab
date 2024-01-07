@@ -21,10 +21,10 @@ struct bamipc_message;
 
 typedef struct bam_client {
   int       lockfd;
-  char *    projdir;    // canonicalized
+  char *    basedir;      // canonicalized
   char *    ipcdir;
   char      hash[16 + 1];
-  pid_t     bamd_pid;   // bamd process group id
+  pid_t     bamd_pid;     // bamd process group id
   int32_t   futex;
 
   /* autoinc */
@@ -33,30 +33,26 @@ typedef struct bam_client {
   struct bamipc_channel *shm;
 } bam_client;
 
-/// bam_client_create
-//
-// SUMMARY
-//  create a bam client
-//
-// PARAMETERS
-//  client      - (returns) client instance
-//  projdir     - project directory path (contains bamfile), e.g. "."
-//  ipcdir      - base ipc dir
-//
-void bam_client_create(
-    bam_client ** restrict client
-  , const char * restrict projdir
+/*
+ * create a bam client
+ *
+ * client   - (returns) client instance
+ * basedir  - base directory path (contains module.bam)
+ * ipcdir   - base ipc dir
+ */
+bam_client *bam_client_create(
+    const char * restrict basedir
+  , uint16_t base_len
   , const char * restrict ipcdir
+  , uint16_t ipcdir_len
 )
-  __attribute__((nonnull(1, 2, 3)));
+  __attribute__((nonnull));
 
-/// bam_client_xfree
-//
-// SUMMARY
-//  free a client
-//
-void bam_client_xfree(bam_client * restrict client);
-void bam_client_ixfree(bam_client ** restrict client)
+/* free bam client */
+void bam_client_free(bam_client * restrict client);
+
+/* free bam client, zero its reference */
+void bam_client_ifree(bam_client ** restrict client)
   __attribute__((nonnull));
 
 void bam_client_prepare(bam_client * restrict client)
@@ -75,10 +71,8 @@ void bam_client_solicit(bam_client * restrict client)
 void bam_client_attach(bam_client * restrict client, int channel_id)
   __attribute__((nonnull));
 
-
 void bam_client_disconnect(bam_client * restrict client)
   __attribute__((nonnull));
-
 
 struct bamipc_message * bam_client_produce(bam_client * restrict client)
   __attribute__((nonnull));

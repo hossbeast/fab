@@ -27,7 +27,6 @@ extern struct {
   /* passthrough to bamd */
   bead system_config_path;
   bead user_config_path;
-  bead project_config_path;
   bead default_filesystem_invalidate;
   bead sweeper_period_nsec;
   bool no_launch;
