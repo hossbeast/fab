@@ -15,13 +15,10 @@ enum {
 };
 
 extern struct g_args_t {
-  struct {
-    int input;
-    int oper;
-    enum bacon_type container;
-    char * s;
-  } * inputs;
-  uint16_t inputsl;
+  int input;
+  int oper;
+  enum bacon_type container;
+  const char *arg;
 } g_args;
 
 void args_parse(int argc, char ** argv);

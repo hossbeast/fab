@@ -16,25 +16,32 @@
 #include "git-state.h"
 
 struct g_args_t g_args;
-static size_t inputs_alloc;
 
 static void args_version()
 {
-  printf("bacon - bam configuration object notation %s\n\n%s\n", git_describe, git_metadata);
+  dprintf(1, "bacon - bam configuration object notation %s\n\n%s\n", git_describe, git_metadata);
 
   exit(0);
 }
 
 static void args_usage()
 {
-  printf(
+  dprintf(1,
 "bacon - bam configuration object notation %s\n"
 "\n"
-"usage : bacon [option | path]..\n"
+"usage : bacon [options] [argument..]\n"
+"\n"
+"read bacon on stdin, possibly apply an operation, print bacon on stdout\n"
 "\n"
 "global options\n"
-" --help | -h      print this message\n"
-" --version | -V   print version information\n"
+" --help | -h          print this message, exit\n"
+" --version | -V       print version information, exit\n"
+" -t         (default) argument is literal text\n"
+" -f                   argument is path to a file\n"
+" -s         (default) parse scalars in set context\n"
+" -l                   parse scalars in list context\n"
+" -m         (default) argument is bacon text to be merged onto stdin\n"
+" -e                   argument is an expression to eval against stdin\n"
 "\n"
 "build optimally      https://git.sr.ht/~hossbeast/bam\n"
     , git_describe
@@ -43,33 +50,23 @@ static void args_usage()
   exit(0);
 }
 
-static void process_nonoption(int input, int oper, bacon_type container, char * const restrict s)
+static void process_nonoption(const char * const restrict s)
 {
-  assure(&g_args.inputs, sizeof(*g_args.inputs), g_args.inputsl, &inputs_alloc);
-  g_args.inputs[g_args.inputsl].s = s;
-  g_args.inputs[g_args.inputsl].input = input;
-  g_args.inputs[g_args.inputsl].oper = oper;
-  g_args.inputs[g_args.inputsl].container = container;
-  g_args.inputsl++;
+  if(g_args.arg) {
+    dprintf(2, "unexpected extra arg : %s\n", s);
+    exit(1);
+  }
+  g_args.arg = s;
 }
 
 void args_parse(int argc, char ** argv)
 {
   int help = 0;
   int version = 0;
-  int input = IN_TEXT;
-  int oper = OP_MERGE;
-  bacon_type container = BACON_TYPE_SET;
 
   struct option longopts[] = {
       { "help"      , no_argument , &help, 1 }
-    , { "args"      , no_argument , &help, 1 }
-    , { "params"    , no_argument , &help, 1 }
-    , { "options"   , no_argument , &help, 1 }
-    , { "opts"      , no_argument , &help, 1 }
     , { "version"   , no_argument , &version, 1 }
-    , { "vers"      , no_argument , &version, 1 }
-    , { "vrs"       , no_argument , &version, 1 }
     , { }
   };
 
@@ -78,10 +75,7 @@ void args_parse(int argc, char ** argv)
     "-"
 
     // no-argument switches
-    "hV"
-
-    // with-argument switches
-    "f:t:s:l:e:m:"
+    "hVftslem"
   ;
 
   int x;
@@ -95,27 +89,27 @@ void args_parse(int argc, char ** argv)
     }
     else if(x == 'f')
     {
-      process_nonoption(IN_FILE, oper, container, optarg);
+      g_args.input = IN_FILE;
     }
     else if(x == 't')
     {
-      process_nonoption(IN_TEXT, oper, container, optarg);
+      g_args.input = IN_TEXT;
     }
     else if(x == 'e')
     {
-      process_nonoption(input, OP_EVAL, container, optarg);
+      g_args.oper = OP_EVAL;
     }
     else if(x == 'm')
     {
-      process_nonoption(input, OP_MERGE, container, optarg);
+      g_args.oper = OP_MERGE;
     }
     else if(x == 's')
     {
-      process_nonoption(input, oper, BACON_TYPE_SET, optarg);
+      g_args.container = BACON_TYPE_SET;
     }
     else if(x == 'l')
     {
-      process_nonoption(input, oper, BACON_TYPE_LIST, optarg);
+      g_args.container = BACON_TYPE_LIST;
     }
     else if(x == 'h')
     {
@@ -130,58 +124,26 @@ void args_parse(int argc, char ** argv)
       // unrecognized argv element
       if(optopt)
       {
-        fprintf(stderr, "unknown switch -%c\n", optopt);
+        dprintf(2, "unknown switch -%c\n", optopt);
         exit(1);
       }
       else
       {
-        fprintf(stderr, "unknown argument -%s\n", argv[optind-1]);
+        dprintf(2, "unknown argument -%s\n", argv[optind-1]);
         exit(1);
       }
     }
-    else if(optarg[0] == '+')
-    {
-      if(strcmp(optarg + 1, "f") == 0)
-      {
-        input = IN_FILE;
-      }
-      else if(strcmp(optarg + 1, "t") == 0)
-      {
-        input = IN_TEXT;
-      }
-      else if(strcmp(optarg + 1, "e") == 0)
-      {
-        oper = OP_EVAL;
-      }
-      else if(strcmp(optarg + 1, "m") == 0)
-      {
-        oper = OP_MERGE;
-      }
-      else if(strcmp(optarg + 1, "l") == 0)
-      {
-        container = BACON_TYPE_LIST;
-      }
-      else if(strcmp(optarg + 1, "s") == 0)
-      {
-        container = BACON_TYPE_SET;
-      }
-      else
-      {
-        fprintf(stderr, "unknown argument %s", optarg);
-        exit(1);
-      }
-    }
-    else
+    else if(optarg[0] == '+');
     {
       // non-option argv elements
-      process_nonoption(input, oper, container, optarg);
+      process_nonoption(optarg);
     }
   }
 
   for(; optind < argc; optind++)
   {
     // options following --
-    process_nonoption(input, oper, container, argv[optind]);
+    process_nonoption(argv[optind]);
   }
 
   if(help)
@@ -196,5 +158,4 @@ void args_parse(int argc, char ** argv)
 
 void args_teardown()
 {
-  free(g_args.inputs);
 }
