@@ -19,5 +19,7 @@ extern struct g_args_t {
   char *hash_str;
 } g_args;
 
+extern char *g_argv_base_dir_space;
+
 void args_setup(int argc, char ** argv);
 void args_teardown(void);

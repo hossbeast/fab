@@ -18,6 +18,7 @@
 #include "git-state.h"
 
 struct g_args_t g_args;
+char *g_argv_base_dir_space;
 
 #if CONFIG_DEVEL
 #define SYSTEM_CONFIG_PATH    "/etc/config.bam+devel"
@@ -63,6 +64,7 @@ static void args_parse(int argc, char ** restrict argv)
   int longindex;
   int version = 0;
   int help = 0;
+  int len;
 
   const struct option longopts[] = {
       { "help"     , no_argument , &help, 1 }
@@ -127,12 +129,26 @@ static void args_parse(int argc, char ** restrict argv)
     pwd = xrealpaths(0, getenv("PWD"));
     g_args.hash = hash64(0, pwd, strlen(pwd));
   }
+  /* optional first argument - hash */
   if(optind < argc) {
     if(parseuint(argv[optind], SCNx64, 1, UINT64_MAX, 1, UINT8_MAX, &g_args.hash, 0) != 0) {
       fprintf(stderr, "invalid hash %s\n", argv[optind]);
       exit(1);
     }
     optind++;
+  }
+  /* optional second argument - space for displaying basedir */
+  if(optind < argc) {
+    len = strlen(argv[optind]);
+    for(x = 0; x < len; x++) {
+      if(argv[optind][x] != 'x') {
+        break;
+      }
+    }
+    if(x == 100) {
+      g_argv_base_dir_space = argv[optind];
+      optind++;
+    }
   }
   if(optind < argc) {
     fprintf(stderr, "unexpected argument %s\n", argv[optind]);

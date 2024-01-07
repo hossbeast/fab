@@ -86,6 +86,7 @@ static void launch(bam_client * restrict client)
     i = 0;
     argv[i++] = "bamd";
     argv[i++] = client->hash;
+    argv[i++] = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
 
 #if CONFIG_DEVEL
     if(g_bam_client_system_config_path)

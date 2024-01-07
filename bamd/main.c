@@ -69,6 +69,7 @@
 #include "common/hash.h"
 
 #include "locks.h"
+#include "zcat.h"
 
 __thread int32_t tid;
 __thread int *errnop;
@@ -161,6 +162,12 @@ int main(int argc, char ** argv)
   dprintf(1, "homedir : %.*s\n", (int)g_params.homedir_len, g_params.homedir);
   dprintf(1, "ipcdir : %.*s\n", (int)g_params.ipcdir_len, g_params.ipcdir);
   dprintf(1, "basedir : %.*s\n", (int)g_base_path_len, g_base_path);
+
+  /* for convenience, display the path in argv */
+  if(g_argv_base_dir_space) {
+    memset(g_argv_base_dir_space, 0, 100);
+    zcatf(g_argv_base_dir_space, 100, "[%.*s]", g_base_path_len, g_base_path);
+  }
 
   getlock();
 
