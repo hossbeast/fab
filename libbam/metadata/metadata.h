@@ -43,10 +43,10 @@ typedef struct bam_metadata {
   const char *homedir;      // homedir of the real user
   uint16_t homedir_len;
 
-  const char *cwd_path;     // absolute path of the working directory
-  uint16_t cwd_path_len;
+  const char *base_path;    // absolute path of the working directory
+  uint16_t base_path_len;
 
-  const char *hash;         // hash over cwd
+  const char *hash;         // hash over base
   uint16_t hash_len;
 
   enum bam_system_state system_state;

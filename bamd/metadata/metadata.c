@@ -42,9 +42,9 @@ void metadata_collate(void *dst, size_t sz, size_t * restrict zp)
   /* homedir */
   z += marshal_u16(dst + z, sz - z, strlen(g_params.homedir));
   z += zcats(dst + z, sz - z, g_params.homedir);
-  /* cwd */
-  z += marshal_u16(dst + z, sz - z, strlen(g_cwd_path));
-  z += zcatw(dst + z, sz - z, g_cwd_path, g_cwd_path_len);
+  /* base */
+  z += marshal_u16(dst + z, sz - z, strlen(g_base_path));
+  z += zcatw(dst + z, sz - z, g_base_path, g_base_path_len);
   /* project hash */
   z += marshal_u16(dst + z, sz - z, strlen(g_args.hash_str));
   z += zcats(dst + z, sz - z, g_args.hash_str);

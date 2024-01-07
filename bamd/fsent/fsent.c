@@ -83,11 +83,11 @@ llist fsent_list = LLIST_INITIALIZER(fsent_list);                   // active fs
 static llist fsent_freelist = LLIST_INITIALIZER(fsent_freelist);    // free fsents
 static llist fsent_prunelist = LLIST_INITIALIZER(fsent_prunelist);  // fsent prune candidates
 
-fsent * g_root;
-fsent * g_cwd;
-char g_cwd_path[PATH_MAX];
-uint16_t g_cwd_path_len;
-int g_cwd_dirfd;
+fsent *g_root;
+fsent *g_base;
+char g_base_path[PATH_MAX];
+uint16_t g_base_path_len;
+int g_base_dirfd;
 
 attrs32 * fsent_property_attrs = (attrs32[]) {{
 #undef DEF
@@ -377,16 +377,16 @@ void fsent_setup()
   fsent_module_epoch = 1;
 }
 
-/* create g_cwd and attach it to the root */
+/* create g_base and attach it to the root */
 void fsent_system_bootstrap()
 {
   graph_invalidation_context invalidation = { 0 };
 
   graph_invalidation_begin(&invalidation);
 
-  g_cwd_path_len = strlen(g_cwd_path);
-  fsent_graft(g_cwd_path, &g_cwd, &invalidation);
-  g_cwd_dirfd = xopens(O_PATH | O_DIRECTORY, g_cwd_path);
+  g_base_path_len = strlen(g_base_path);
+  fsent_graft(g_base_path, &g_base, &invalidation);
+  g_base_dirfd = xopens(O_PATH | O_DIRECTORY, g_base_path);
 
   graph_invalidation_end(&invalidation);
 }
@@ -535,19 +535,19 @@ size_t fsent_path_cat(void * restrict dst, size_t sz, const fsent * restrict n)
   }
   else
   {
-    return fsent_cwd_relative_path_cat(dst, sz, n);
+    return fsent_base_relative_path_cat(dst, sz, n);
   }
 }
 
-size_t fsent_cwd_relative_path_cat(void * restrict dst, size_t sz, const fsent * restrict n)
+size_t fsent_base_relative_path_cat(void * restrict dst, size_t sz, const fsent * restrict n)
 {
-  if(g_cwd == 0)
+  if(g_base == 0)
   {
     /* project not yet initialized */
     return fsent_absolute_path_cat(dst, sz, n);
   }
 
-  return fsent_relative_path_cat(dst, sz, n, g_cwd);
+  return fsent_relative_path_cat(dst, sz, n, g_base);
 }
 
 size_t fsent_property_cat(void * dst, size_t sz, const fsent * restrict n, fsent_property property, const fsent_property_context * restrict ctx)
@@ -617,21 +617,21 @@ size_t fsent_property_cat(void * dst, size_t sz, const fsent * restrict n, fsent
   return z;
 }
 
-void fsent_cwd_relative_path_say(const fsent * restrict n, narrator * restrict N)
+void fsent_base_relative_path_say(const fsent * restrict n, narrator * restrict N)
 {
   char path[PATH_MAX];
   size_t pathl;
 
-  pathl = fsent_cwd_relative_path_cat(path, sizeof(path), n);
+  pathl = fsent_base_relative_path_cat(path, sizeof(path), n);
   xsayw(path, pathl);
 }
 
-void fsent_cwd_relative_path_describe(const fsent * restrict n, bacon_writer * restrict writer)
+void fsent_base_relative_path_describe(const fsent * restrict n, bacon_writer * restrict writer)
 {
   char path[PATH_MAX];
   size_t pathl;
 
-  pathl = fsent_cwd_relative_path_cat(path, sizeof(path), n);
+  pathl = fsent_base_relative_path_cat(path, sizeof(path), n);
   bacon_writer_bytes(writer, path, pathl);
 }
 
@@ -1021,7 +1021,7 @@ bool fsent_is_mounted(const fsent * restrict n)
   const walker_entry *entry;
 
   for(p = n; p; p = fsent_parent(p)) {
-    if(p == g_cwd) {
+    if(p == g_base) {
       return true;
     }
 
@@ -1053,7 +1053,7 @@ static bool fsent_account_check(const fsent * restrict p)
   }
 
   /* if n is in the ancestry of one of the mount points */
-  if(fsent_is_descendant_of(n, g_cwd)) {
+  if(fsent_is_descendant_of(n, g_base)) {
     return true;
   }
   if(fsent_is_descendant_of(n, system_config_node)) {
@@ -1164,7 +1164,7 @@ void fsent_reconcile(graph_invalidation_context * restrict invalidation)
 
   /* mark mounted trees */
   fsent_account_epoch++;
-  g_cwd->account_epoch = fsent_account_epoch;
+  g_base->account_epoch = fsent_account_epoch;
   entry = llist_first(&walker_include_entry_list, typeof(*entry), lln);
   while(entry) {
     entry->n->account_epoch = fsent_account_epoch;

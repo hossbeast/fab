@@ -567,8 +567,8 @@ void module_bootstrap(
   /* lazy re-module directory nodes */
   fsent_module_epoch++;
 
-  /* module is in-tree if g_cwd is in its ancestry */
-  mod->in_tree = fsent_is_self_or_descendant(g_cwd, mod->dir_node);
+  /* module is in-tree if g_base is in its ancestry */
+  mod->in_tree = fsent_is_self_or_descendant(g_base, mod->dir_node);
 
   module_anchor_set(mod, mod_anchor_n, invalidation);
 }

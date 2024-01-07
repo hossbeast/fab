@@ -27,12 +27,10 @@ typedef struct node_path_test {
 
   char * operations;    // create the graph
   bool shadow;
-  char * project;       // project node
   char * module;        // module node
   char * node;          // node
   char * base;          // base
 
-  char * project_relative_path; // expected project-relative path
   char * absolute_path;         // expected absolute path
   char * relative_path;         // expected path relative to base
 } node_path_test;
@@ -68,10 +66,9 @@ static void node_path_test_entry(xunit_test * _test)
   node_path_test * test = (node_path_test *)_test;
   narrator_growing * N = 0;
   moria_parser * parser = 0;
-  fsent * subject;
-  fsent * project_node = 0;
-  fsent * module_node = 0;
-  fsent * base_node = 0;
+  fsent *subject;
+  fsent *module_node = 0;
+  fsent *base_node = 0;
   char actual[PATH_MAX];
   module mod;
   size_t pathl;
@@ -88,11 +85,6 @@ static void node_path_test_entry(xunit_test * _test)
   moria_parser_operations_parse(parser, MMS(test->operations));
 
   resolve_fragment(MMS(test->node), &subject);
-  if(test->project)
-  {
-    resolve_fragment(MMS(test->project), &project_node);
-    assert_notnull(project_node);
-  }
   if(test->module)
   {
     resolve_fragment(MMS(test->module), &module_node);
@@ -107,17 +99,10 @@ static void node_path_test_entry(xunit_test * _test)
     assert_notnull(base_node);
   }
 
-  g_cwd = project_node;
+  g_base = base_node;
   mod.dir_node = module_node;
 
   // act
-  if(test->project_relative_path)
-  {
-    pathl = fsent_cwd_relative_path_cat(actual, sizeof(actual), subject);
-    const char *project_relative = actual;
-    assert_eq_w(test->project_relative_path, strlen(test->project_relative_path), project_relative, pathl);
-  }
-
   if(test->absolute_path)
   {
     pathl = fsent_absolute_path_cat(actual, sizeof(actual), subject);
@@ -148,21 +133,21 @@ static xunit_unit xunit = {
      /* directory fsent */
       (node_path_test[]) {{
           operations : "B/C/D/E"
-        , project : "B"
+        , base : "B"
         , module : "C"
         , node : "D"
 
-        , project_relative_path : "C/D"
+        , relative_path : "C/D"
         , absolute_path : "/B/C/D"
       }}
     /* file fsent */
     , (node_path_test[]) {{
           operations : "B/C/D/E"
-        , project : "B"
+        , base : "B"
         , module : "C"
         , node : "E"
 
-        , project_relative_path : "C/D/E"
+        , relative_path : "C/D/E"
         , absolute_path : "/B/C/D/E"
       }}
     /* node which does not belong to a module */
@@ -170,10 +155,10 @@ static xunit_unit xunit = {
           operations :
             " B/C/D/E"
             " b/c/d/e"
-        , project : "B"
+        , base : "B"
         , node : "e"
 
-        , project_relative_path : "../b/c/d/e"
+        , relative_path : "../b/c/d/e"
         , absolute_path : "/b/c/d/e"
       }}
     , (node_path_test[]) {{

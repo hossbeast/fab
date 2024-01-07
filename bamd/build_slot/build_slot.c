@@ -476,10 +476,10 @@ void build_slot_fork_and_exec(build_slot * restrict bs, buildplan_entity * restr
     vars = mod->vars;
     cwd = mod->dir_node;
   } else {
-    bs->cwd = g_cwd_path;
-    bs->cwd_len = g_cwd_path_len;
+    bs->cwd = g_base_path;
+    bs->cwd_len = g_base_path_len;
     vars = 0;
-    cwd = g_cwd;
+    cwd = g_base;
   }
 
   fml = bs->bpe->fml;

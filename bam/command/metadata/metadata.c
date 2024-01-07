@@ -71,9 +71,9 @@ static void process(command * restrict cmd, bam_client * restrict client, bamipc
   z += descriptor_type_unmarshal(&md, &descriptor_bam_metadata, msg->text, msg->size);
   RUNTIME_ASSERT(z == msg->size);
 
-  printf("%.*s : {\n", (int)md.cwd_path_len, md.cwd_path);
+  printf("%.*s : {\n", (int)md.base_path_len, md.base_path);
   printf(" %s : %.*s\n", "hash", (int)md.hash_len, md.hash);
-  printf(" %s : %.*s\n", "cwd-path", (int)md.cwd_path_len, md.cwd_path);
+  printf(" %s : %.*s\n", "base-path", (int)md.base_path_len, md.base_path);
   printf(" %s : %.*s\n", "ipc-dir", (int)md.ipcdir_len, md.ipcdir);
   printf(" %s : %.*s\n", "home-dir", (int)md.homedir_len, md.homedir);
   printf(" %s : %ld\n", "bamd pid", md.bamd_pid);

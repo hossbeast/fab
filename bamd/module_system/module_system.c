@@ -79,7 +79,7 @@ void module_system_reconcile(rule_run_context * restrict rule_run_ctx)
   /* bootstrap modules under cwd */
   moria_traverse_vertices(
       &g_graph
-    , &g_cwd->vertex
+    , &g_base->vertex
     , module_bootstrap_visitor
     , 0
     , (moria_traversal_criteria[]) {{

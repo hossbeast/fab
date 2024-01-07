@@ -48,10 +48,10 @@ extern const char *fsent_name_config;
 
 // globally scoped fsents
 extern struct fsent * g_root;            // directory node at /
-extern struct fsent * g_cwd;             // directory node at the working directory
-extern char g_cwd_path[PATH_MAX];
-extern uint16_t g_cwd_path_len;
-extern int g_cwd_dirfd;
+extern struct fsent * g_base;             // directory node at the base directory
+extern char g_base_path[PATH_MAX];
+extern uint16_t g_base_path_len;
+extern int g_base_dirfd;
 
 // fsent lookup by inotify watch descriptor
 extern struct map * g_fsent_by_wd;
@@ -263,10 +263,10 @@ size_t fsent_relative_path_cat_bacon(void * restrict dst, size_t dst_size, const
 /*
  * write the cwd-relative path to the fsent to a buffer
  */
-size_t fsent_cwd_relative_path_cat(void * restrict dst, size_t sz, const fsent * restrict n)
+size_t fsent_base_relative_path_cat(void * restrict dst, size_t sz, const fsent * restrict n)
   __attribute__((nonnull));
 
-void fsent_cwd_relative_path_describe(const fsent * restrict n, struct bacon_writer * restrict writer)
+void fsent_base_relative_path_describe(const fsent * restrict n, struct bacon_writer * restrict writer)
   __attribute__((nonnull));
 
 /*
@@ -287,7 +287,7 @@ size_t fsent_path_cat(void * restrict dst, size_t sz, const fsent * restrict n)
 /*
  * write the project-relative path to a fsent to a narrator
  */
-void fsent_cwd_relative_path_say(const fsent * restrict n, struct narrator * restrict N)
+void fsent_base_relative_path_say(const fsent * restrict n, struct narrator * restrict N)
   __attribute__((nonnull));
 
 /*

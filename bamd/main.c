@@ -117,12 +117,11 @@ static void getlock(void)
 
   bamipc_lockfile_obtain(&pid, &lockfd, "%s", path);
   if(pid && pid != getpid()) {
-    fprintf(stderr, "daemon still running pid %ld\n", (long)pid);
+    dprintf(2, "daemon still running pid %ld\n", (long)pid);
     exit(1);
   }
 
-  /* this normally happens in libbam/client right after fork, but the lock
-   * was not inherited */
+  /* this normally happens in libbam/client right after fork */
   xchdirf("%s/bamd", g_params.ipcdir);
   uxunlinks("exit");
   uxunlinks("core");
@@ -155,10 +154,10 @@ int main(int argc, char ** argv)
   args_setup(argc, argv);
   params_setup();
 
-  printf("hash : %s\n", g_args.hash_str);
-  printf("pid : %d\n", g_params.pid);
-  printf("homedir : %.*s\n", (int)g_params.homedir_len, g_params.homedir);
-  printf("ipcdir : %.*s\n", (int)g_params.ipcdir_len, g_params.ipcdir);
+  dprintf(1, "hash : %s\n", g_args.hash_str);
+  dprintf(1, "pid : %d\n", g_params.pid);
+  dprintf(1, "homedir : %.*s\n", (int)g_params.homedir_len, g_params.homedir);
+  dprintf(1, "ipcdir : %.*s\n", (int)g_params.ipcdir_len, g_params.ipcdir);
 
   getlock();
 
@@ -191,7 +190,7 @@ int main(int argc, char ** argv)
   index_vertex_setup();
 
   /* comment */
-  xrealpathf(g_cwd_path, "%s/%016"PRIx64"/projdir", XQUOTE(BAMIPCDIR), g_args.hash);
+  xrealpathf(g_base_path, "%s/%016"PRIx64"/projdir", XQUOTE(BAMIPCDIR), g_args.hash);
   fsent_system_bootstrap();
   config_system_bootstrap();
 

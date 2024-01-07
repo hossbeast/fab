@@ -92,7 +92,7 @@ static void bootstrap_global_config(fsent ** restrict np, const char * restrict 
   }
   else if(pathspec[0] != '/')
   {
-    z += zcats(text + z, sizeof(text) - z, g_cwd_path);
+    z += zcats(text + z, sizeof(text) - z, g_base_path);
     z += zcats(text + z, sizeof(text) - z, "/");
     z += zcats(text + z, sizeof(text) - z, pathspec);
     text[z] = 0;
@@ -157,7 +157,7 @@ void config_system_reconcile(bool * restrict work, graph_invalidation_context * 
   configuration *configuration_next;
 
   /* bootstrap any config files in the ancestry of cwd - this can set invalidated */
-  dirv = &g_cwd->vertex;
+  dirv = &g_base->vertex;
   while(dirv)
   {
     if((v = moria_vertex_downw(dirv, MMS(fsent_name_config))))
@@ -183,7 +183,7 @@ void config_system_reconcile(bool * restrict work, graph_invalidation_context * 
   llist_splice_head(&unused, &config_list);
 
   /* apply config files in the ancestry of cwd */
-  dirv = &g_cwd->vertex;
+  dirv = &g_base->vertex;
   while(dirv)
   {
     if((v = moria_vertex_downw(dirv, MMS(fsent_name_config))))

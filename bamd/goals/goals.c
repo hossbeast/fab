@@ -44,8 +44,8 @@ void goals_create_buildplan()
 
   /* targets selector, if any */
   if(goals_target_direct_selector || goals_target_transitive_selector) {
-    goals_selector_context.mod = fsent_module_get(g_cwd);
-    goals_selector_context.cwd = g_cwd;
+    goals_selector_context.mod = fsent_module_get(g_base);
+    goals_selector_context.cwd = g_base;
 
     if(goals_target_direct_selector)
     {

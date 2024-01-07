@@ -65,7 +65,7 @@ void sweeper_thread_probe(const sweeper_event * restrict ev)
   }
 
   z += zcatf(s + z, sz - z, " era %5"PRIu32" %9s ", ev->era, event);
-  z += fsent_cwd_relative_path_cat(s + z, sz - z, n);
+  z += fsent_base_relative_path_cat(s + z, sz - z, n);
   if(cev)
   {
     z += zcats(s + z, sz - z, "//");

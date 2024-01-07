@@ -85,7 +85,7 @@ static void handler_select(handler_context * restrict ctx, command * restrict cm
 {
   ctx->sel_ctx.bpe = 0;
   ctx->sel_ctx.mod = ctx->mod;
-  ctx->sel_ctx.cwd = g_cwd;
+  ctx->sel_ctx.cwd = g_base;
   ctx->sel_ctx.chan = ctx->chan;
 
   selector_exec(cmd->selector, &ctx->sel_ctx, SELECTION_ITERATION_TYPE_ORDER);

@@ -63,7 +63,7 @@ static void stathash(fsent * restrict n, char * restrict path, uint16_t path_len
 
   c = path[path_len];
   path[path_len] = 0;
-  r = uxfstatats(g_cwd_dirfd, 0, &stb, path);
+  r = uxfstatats(g_base_dirfd, 0, &stb, path);
   if(r == 0)
   {
     /* accumulate specific fields we care about - surely this can be optimized alot */
@@ -94,7 +94,7 @@ static void contenthash(fsent * restrict n, char * restrict path, uint16_t path_
 
   c = path[path_len];
   path[path_len] = 0;
-  fd = xopenats(O_RDONLY, g_cwd_dirfd, path);
+  fd = xopenats(O_RDONLY, g_base_dirfd, path);
   if(fd != -1)
   {
     end = xlseek(fd, 0, SEEK_END);
@@ -465,8 +465,8 @@ void walker_system_reconcile(graph_invalidation_context * restrict invalidation)
   walk_id = ++walk_ids;
 
   /* up and down from cwd */
-  walker_descend(g_cwd, g_cwd_path, walk_id, invalidation);
-  walker_ascend(fsent_parent(g_cwd), walk_id, invalidation);
+  walker_descend(g_base, g_base_path, walk_id, invalidation);
+  walker_ascend(fsent_parent(g_base), walk_id, invalidation);
 
   /* global config nodes */
   walker_query(system_config_node, system_config_node->self_config->self_node_abspath, system_config_node->self_config->self_node_abspath_len, invalidation);
@@ -554,7 +554,7 @@ static void filesystem_describe_node(bacon_writer * restrict builder_writer, con
   len = fsent_absolute_path_cat(path, sizeof(path), fse);
 
   /* base case */
-  if(fse == g_cwd) {
+  if(fse == g_base) {
     goto ent;
   }
   if(fse == system_config_node) {
