@@ -44,14 +44,7 @@ void xrealloc(void* target, size_t es, size_t ec, size_t oec)
 void ifree(void* target)
   __attribute__((nonnull));
 
-/// xreadlink
-//
-// SUMMARY
-//  proxy for readlink
-//
-// VARIANTS
-//  s/w/f/vf - different ways of providing pathname
-//
+/* readlink wrappers */
 ssize_t xreadlinks(const char * pathname, char * buf, size_t bufsiz)
   __attribute__((nonnull(1, 2)));
 
@@ -63,6 +56,37 @@ ssize_t xreadlinkf(const char * pathname_fmt, char * buf, size_t bufsiz, ...)
 
 ssize_t xreadlinkvf(const char * pathname_fmt, char * buf, size_t bufsiz, va_list va)
   __attribute__((nonnull(1, 2)));
+
+ssize_t uxreadlinkw(const char * pathname, uint16_t pathname_len, char * buf, size_t bufsiz)
+  __attribute__((nonnull(1, 3)));
+
+ssize_t uxreadlinkf(const char * pathname_fmt, char * buf, size_t bufsiz, ...)
+  __attribute__((nonnull(1, 2)));
+
+ssize_t uxreadlinkvf(const char * pathname_fmt, char * buf, size_t bufsiz, va_list va)
+  __attribute__((nonnull(1, 2)));
+
+/* readlinkat wrappers */
+ssize_t xreadlinkats(int dfd, const char * pathname, char * buf, size_t bufsiz)
+  __attribute__((nonnull(2, 3)));
+
+ssize_t xreadlinkatw(int dfd, const char * pathname, uint16_t pathname_len, char * buf, size_t bufsiz)
+  __attribute__((nonnull(2, 4)));
+
+ssize_t xreadlinkatf(int dfd, const char * pathname_fmt, char * buf, size_t bufsiz, ...)
+  __attribute__((nonnull(2, 3)));
+
+ssize_t xreadlinkatvf(int dfd, const char * pathname_fmt, char * buf, size_t bufsiz, va_list va)
+  __attribute__((nonnull(2, 3)));
+
+ssize_t uxreadlinkatw(int dfd, const char * pathname, uint16_t pathname_len, char * buf, size_t bufsiz)
+  __attribute__((nonnull(2, 4)));
+
+ssize_t uxreadlinkatf(int dfd, const char * pathname_fmt, char * buf, size_t bufsiz, ...)
+  __attribute__((nonnull(2, 3)));
+
+ssize_t uxreadlinkatvf(int dfd, const char * pathname_fmt, char * buf, size_t bufsiz, va_list va)
+  __attribute__((nonnull(2, 3)));
 
 /* realpath wrapper */
 char * xrealpaths(char * restrict resolved_path, const char * restrict path)

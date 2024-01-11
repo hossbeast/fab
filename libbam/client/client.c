@@ -29,6 +29,7 @@
 #include "lorien/mkdirp.h"
 #include "lorien/symlinkp.h"
 #include "common/hash.h"
+#include "common/parseint.h"
 #include "common/attrs.h"
 
 #include "client.h"
@@ -39,6 +40,7 @@
 #include "macros.h"
 #include "barriers.h"
 #include "atomics.h"
+#include "zcat.h"
 
 #if CONFIG_DEVEL
 const char * APIDATA g_bam_client_bamd_path;
@@ -58,14 +60,111 @@ const char * APIDATA g_bam_client_sweeper_period_nsec;
 // static
 //
 
-static void launch(bam_client * restrict client)
+int64_t lockfile_read(int fd);
+
+//
+// public
+//
+
+void bam_client_init(
+    bam_client * restrict client
+  , const char * restrict basedir
+  , uint16_t basedir_len
+  , const char * restrict ipcdir
+  , uint16_t ipcdir_len
+)
+{
+  char space[PATH_MAX];
+  size_t len;
+
+  memset(client, 0, sizeof(*client));
+
+  // canonicalized project path
+  client->basedir = xrealpathw(0, basedir, basedir_len);
+  client->basedir_len = strlen(client->basedir);
+
+  // project path hash
+  client->hash = hash64(0, client->basedir, client->basedir_len);
+  snprintf(client->hash_str, sizeof(client->hash_str), "%016"PRIx64, client->hash);
+
+  /* base ipc dir */
+  xmalloc(&client->ipcdir_base, ipcdir_len + 1);
+  memcpy(client->ipcdir_base, ipcdir, ipcdir_len);
+  client->ipcdir_base_len = ipcdir_len;
+
+  // ipc dir for the project
+  len = snprintf(space, sizeof(space), "%.*s/%s", (int)ipcdir_len, ipcdir, client->hash_str);
+  xmalloc(&client->ipcdir, len + 1);
+  memcpy(client->ipcdir, space, len);
+  client->ipcdir_len = len;
+
+  client->msgid = 2;
+  client->lockfd = -1;
+  client->bamd_pid = -1;
+}
+
+void bam_client_destroy(bam_client * restrict client)
+{
+  free(client->ipcdir_base);
+  free(client->ipcdir);
+  free(client->basedir);
+  xshmdt(client->shm);
+  xclose(client->lockfd);
+}
+
+void bam_client_lockfile_query(bam_client * restrict client)
+{
+  char path[PATH_MAX];
+  char *buf;
+  size_t sz;
+  size_t z;
+
+  if(client->lockfd != -1) {
+    return;
+  }
+
+  buf = path;
+  sz = sizeof(path);
+  z = 0;
+
+  z += zcatf(buf + z, sz - z, "%s/bamd", client->ipcdir);
+  buf[z] = 0;
+  mkdirpf(IPCDIR_MODE_DIR, "%s", path);
+
+  z += zcats(buf + z, sz - z, "/lock");
+  buf[z] = 0;
+  bamipc_lockfile_acquire(&client->bamd_pid, &client->lockfd, path);//"%s/bamd/lock", client->ipcdir);
+}
+
+void bam_client_lockfile_validate(bam_client * restrict client)
+{
+  char path[PATH_MAX];
+  char *buf;
+  size_t sz;
+  size_t z;
+
+  buf = path;
+  sz = sizeof(path);
+  z = 0;
+
+  z += zcatf(buf + z, sz - z, "%s/bamd/lock", client->ipcdir);
+  buf[z] = 0;
+  bamipc_lockfile_validate(&client->bamd_pid, &client->lockfd, path);
+}
+
+void bam_client_launch(bam_client * restrict client)
 {
   sigset_t sigs;
   sigset_t oset;
   char *argv[16];
   int i;
+  int x;
 
-  // canonical project directory symlink
+  /* lock must have been obtained previously */
+  RUNTIME_ASSERT(client->bamd_pid == -1);
+  RUNTIME_ASSERT(client->lockfd != -1);
+
+  /* prepare the ipc dir */
   uxunlinkf("%s/basedir", client->ipcdir);
   xsymlinkf("%s", "%s/basedir", client->basedir, client->ipcdir);
 
@@ -79,13 +178,14 @@ static void launch(bam_client * restrict client)
   sigfillset(&sigs);
   xpthread_sigmask(SIG_SETMASK, &sigs, &oset);
 
-  client->bamd_pid = xfork();
-  if(client->bamd_pid == 0)
+  if((client->bamd_pid = xfork()) == 0)
   {
     // prepare the command
     i = 0;
     argv[i++] = "bamd";
-    argv[i++] = client->hash;
+    argv[i++] = client->hash_str;
+
+    /* its a hack, but this is a simple way to give bamd a visible place to record the base path */
     argv[i++] = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
 
 #if CONFIG_DEVEL
@@ -119,7 +219,6 @@ static void launch(bam_client * restrict client)
 #endif
 #endif
 #if CONFIG_DEBUG || CONFIG_DEVEL
-    int x;
     for(x = 0; x < i; x++) {
       printf(",%s", argv[x]);
     }
@@ -136,6 +235,18 @@ static void launch(bam_client * restrict client)
     xclose(2);
     xopen_modef(O_WRONLY | O_CREAT | O_EXCL, IPCDIR_MODE_DATA, "%s/bamd/stderr", client->ipcdir);
 
+    /* place the lockfd in a known location */
+    close(250);
+    xdup2(client->lockfd, 250);
+
+    /* close all other file descriptors */
+    for(x = 3; x < 512; x++) {
+      if(x == 250) {
+        continue;
+      }
+      close(x);
+    }
+
     // core file goes in cwd
     xchdirf("%s/bamd", client->ipcdir);
 
@@ -143,7 +254,7 @@ static void launch(bam_client * restrict client)
     xsetsid();
 
     // update the lockfile
-    bamipc_lockfile_update("%s/bamd/lock", client->ipcdir);
+    bamipc_lockfile_update(250);
 
 #if CONFIG_DEVEL
     xexecv(g_bam_client_bamd_path, argv);
@@ -155,98 +266,29 @@ static void launch(bam_client * restrict client)
   }
 
   xpthread_sigmask(SIG_SETMASK, &oset, 0);
-}
-
-//
-// public
-//
-
-bam_client *bam_client_create(const char * restrict basedir, uint16_t basedir_len, const char * restrict ipcdir, uint16_t ipcdir_len)
-{
-  char space[PATH_MAX];
-  size_t len;
-  uint64_t u64;
-  bam_client *client;
-
-  xmalloc(&client, sizeof(*client));
-
-  // canonicalized project path
-  client->basedir = xrealpathw(0, basedir, basedir_len);
-
-  // project path hash
-  u64 = hash64(0, client->basedir, strlen(client->basedir));
-  snprintf(client->hash, sizeof(client->hash), "%016"PRIx64, u64);
-
-  // ipc dir for the project
-  len = snprintf(space, sizeof(space), "%.*s/%s", (int)ipcdir_len, ipcdir, client->hash);
-  xmalloc(&client->ipcdir, len + 1);
-  memcpy(client->ipcdir, space, len);
-
-  client->msgid = 2;
-  client->lockfd = -1;
-
-  return client;
-}
-
-void API bam_client_free(bam_client * restrict client)
-{
-  if(client)
-  {
-    free(client->ipcdir);
-    free(client->basedir);
-    xshmdt(client->shm);
-    xclose(client->lockfd);
-  }
-  free(client);
-}
-
-void API bam_client_ifree(bam_client ** restrict client)
-{
-  bam_client_free(*client);
-  *client = 0;
-}
-
-void API bam_client_prepare(bam_client * restrict client)
-{
-  mkdirpf(IPCDIR_MODE_DIR, "%s/bamd", client->ipcdir);
-  bamipc_lockfile_obtain(&client->bamd_pid, &client->lockfd, "%s/bamd/lock", client->ipcdir);
-}
-
-void API bam_client_kill(bam_client * restrict client)
-{
-  uxkill(client->bamd_pid, SIGTERM);
-
-  /* force re-loading the bamd pid in solicit */
   ixclose(&client->lockfd);
 }
 
-void API bam_client_solicit(bam_client * restrict client)
+int bam_client_solicit(bam_client * restrict client)
 {
   int r;
   union sigval value;
-  pid_t tid;
+  int64_t tid;
 
-  if(client->lockfd == -1) {
-    bamipc_lockfile_obtain(&client->bamd_pid, &client->lockfd, "%s/bamd/lock", client->ipcdir);
-  }
-
-  // lock obtained, server not running - launch the server
-  if(client->bamd_pid == 0) {
-    launch(client);
-  }
+  /* must have been loaded previously */
+  RUNTIME_ASSERT(client->bamd_pid != -1);
 
   // send tid via signal to initialize the channel
   tid = gettid();
   value.sival_ptr = (void*)(intptr_t)tid;
   r = sigutil_uxrt_sigqueueinfo(client->bamd_pid, SIGRTMIN, value);
-  if(r) {
-    RTA; // no such process
-  }
+
+  return r;
 }
 
 void API bam_client_attach(bam_client * restrict client, int channel_shmid)
 {
-  void * shmaddr = 0;
+  void *shmaddr = 0;
 
   /* channel shmid is the value of the signal */
 
@@ -262,11 +304,11 @@ void API bam_client_attach(bam_client * restrict client, int channel_shmid)
 
 void API bam_client_disconnect(bam_client * restrict client)
 {
-  if(client->shm)
-  {
-    client->shm->client_exit = 1;
-    syscall(SYS_futex, &client->shm->client_ring.waiters, FUTEX_WAKE, INT32_MAX, 0, 0, 0);
+  if(!client->shm) {
+    return;
   }
+  client->shm->client_exit = 1;
+  syscall(SYS_futex, &client->shm->client_ring.waiters, FUTEX_WAKE, INT32_MAX, 0, 0, 0);
 }
 
 bamipc_message * API bam_client_produce(bam_client * restrict client)

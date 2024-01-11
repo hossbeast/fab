@@ -141,7 +141,8 @@ int uxunlinks(const char * const restrict pathname)
   __attribute__((nonnull));
 
 int uxunlinkf(const char * const restrict fmt, ...)
-  __attribute__((nonnull(1)));
+  __attribute__((nonnull(1)))
+  __attribute__((format(printf, 1, 2)));
 
 int uxunlinkvf(const char * const restrict fmt, va_list va)
   __attribute__((nonnull));
@@ -311,12 +312,14 @@ void xfchdir(int fd);
 //
 pid_t gettid(void);
 
-/// xpipe
-//
-// SUMMARY
-//  xapi proxy for pipe
-//
+/* pipe */
+
 void xpipe(int filedes[2])
   __attribute__((nonnull));
 
+/* access */
+
 int API uxeuidaccesss(const char * restrict path, int mode);
+
+/* pidfd */
+int uxpidfd_open(pid_t pid, unsigned int flags);

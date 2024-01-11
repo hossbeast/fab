@@ -378,3 +378,14 @@ int API uxeuidaccesss(const char * restrict path, int mode)
 
   return r;
 }
+
+int uxpidfd_open(pid_t pid, unsigned int flags)
+{
+  int fd;
+
+  if((fd = syscall(SYS_pidfd_open, pid, flags)) == -1) {
+    RUNTIME_ASSERT(errno == ESRCH);
+  }
+
+  return fd;
+}

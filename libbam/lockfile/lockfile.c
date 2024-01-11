@@ -2,14 +2,19 @@
 /* Copyright (c) 2012-2023 Todd Freed <todd.freed@gmail.com> */
 
 #include <stdarg.h>
+#include <inttypes.h>
+#include <dirent.h>
 
 #include "xlinux/xfcntl.h"
 #include "xlinux/xunistd.h"
 #include "xlinux/xsignal.h"
+#include "xlinux/xdirent.h"
+#include "xlinux/xstdlib.h"
 
 #include "lockfile.h"
 
 #include "common/fmt.h"
+#include "common/parseint.h"
 
 /* ugo+rw world read/write */
 #define LOCKFILE_MODE 0666
@@ -18,96 +23,119 @@
 // static
 //
 
-void bamipc_lockfile_acquire(pid_t * pid, int * restrict fdp, const char * restrict path)
+int64_t lockfile_read(int fd);
+int64_t lockfile_read(int fd)
 {
-  ssize_t bytes;
-  int fd;
-
-  // initialize the return value
-  *pid = -1;
-
-  // create the pidfile
-  fd = uxopen_modes(O_CREAT | O_WRONLY | O_EXCL, LOCKFILE_MODE, path);
-  if(fd == -1)
-  {
-    fd = xopens(O_RDONLY, path);
-    bytes = xread(fd, pid, sizeof(*pid));
-    if(bytes != sizeof(*pid)) {
-      *pid = -1;
-    }
-  }
-  else
-  {
-    axwrite(fd, (pid_t[]) { getpid() }, sizeof(pid_t));
-    *pid = 0;
-  }
-
-  *fdp = fd;
-}
-
-//
-// api
-//
-
-void API bamipc_lockfile_obtain(pid_t * pid, int * restrict fd, char * const restrict fmt, ...)
-{
-  char path[PATH_MAX];
-  int x;
-  va_list va;
+  char buf[64];
+  size_t len;
+  int64_t i64;
   int r;
 
-  va_start(va, fmt);
-  fmt_apply(path, sizeof(path), fmt, va);
-  va_end(va);
-
-  for(x = 1; 1; x++)
-  {
-    xclose(*fd);
-    bamipc_lockfile_acquire(pid, fd, path);
-
-    if(*pid == 0) {
-      break;    // lock obtained
+  len = 0;
+  while(len < 32) {
+    r = read(fd, buf + len, 32);
+    if(r <= 0) {
+      break;
     }
+    len += r;
+  }
 
-    if(*pid == -1) {
-      // unable to determine lock holder from the pid file ; this can happen as a
-      // result of a race reading/writing the pid file, or if the pid file is corrupted
-      if((x % 3) == 0) {
-        xunlinks(path);
-      }
+  if(len == 0) {
+    return -1;
+  }
 
+  buf[len] = 0;
+  if(parseint(buf, SCNd64, 1, INT64_MAX, len - 1 /* permits trailing newline */, len, &i64, 0) == 0) {
+    return i64;
+  }
+  return -1;
+}
+
+void bamipc_lockfile_acquire(int64_t * restrict pid, int * restrict fd, const char * const restrict path)
+{
+  int lfd;
+
+  *pid = -1;
+  *fd = uxopen_modes(O_CREAT | O_WRONLY | O_EXCL, LOCKFILE_MODE, path);
+  if(*fd != -1) {
+    return;
+  }
+  if((lfd = uxopens(O_RDONLY, path)) != -1) {
+    *pid = lockfile_read(lfd);
+    close(lfd);
+  }
+}
+
+void bamipc_lockfile_validate(int64_t * restrict pid, int * restrict fd, const char * const restrict path)
+{
+  if(*fd == -1 && *pid == -1) {
+    /* bad lockfile */
+    uxunlinks(path);
+  } else if(*pid != -1 && uxkill(*pid, 0) != 0) {
+    /* stale lockfile */
+    uxunlinks(path);
+  } else {
+    return;
+  }
+
+  /* reload */
+  ixclose(fd);
+  *pid = -1;
+  bamipc_lockfile_acquire(pid, fd, path);
+}
+
+void bamipc_lockfile_update(int fd)
+{
+  char buf[32];
+  int len;
+
+  len = snprintf(buf, sizeof(buf), "%"PRId64"\n", (int64_t)getpid());
+  xlseek(fd, 0, SEEK_SET);
+  axwrite(fd, buf, len);
+  (void)!!ftruncate(fd, len);
+}
+
+DIR *bamipc_lockfile_scan_start(const char * restrict ipcdir_base)
+{
+  return xopendirat(AT_FDCWD, ipcdir_base);
+}
+
+void bamipc_lockfile_scan_stop(DIR * restrict dd)
+{
+  xclosedir(dd);
+}
+
+int64_t bamipc_lockfile_scan_scan(DIR * restrict dd, uint64_t * restrict hash, char *path, size_t path_sz, size_t *path_len)
+{
+  struct dirent *entp;
+  int dfd;
+  int fd;
+  int64_t pid;
+
+  dfd = dirfd(dd);
+
+  while((entp = xreaddir(dd))) {
+    if(strcmp(entp->d_name, ".") == 0 || strcmp(entp->d_name, "..") == 0) {
       continue;
     }
 
-    r = 0;
-    r = uxkill(*pid, 0);
-    if(r == 0) {
-      break;    // lock holder still running
+    if(parseuint(entp->d_name, SCNx64, 0, UINT64_MAX, 16, 16, hash, 0) != 0) {
+      continue; /* malformed directory name ? */
     }
 
-    // lock holder is not running ; forcibly release the lock
-    xunlinks(path);
+    *path_len = uxreadlinkatf(dfd, "%016"PRIx64"/basedir", path, path_sz, *hash);
+    if(*path_len < 0) {
+      continue; /* no basedir ? */
+    }
+
+    if((fd = uxopenatf(O_RDONLY, dfd, "%016"PRIx64"/bamd/lock", *hash)) == -1) {
+      continue;
+    }
+
+    pid = lockfile_read(fd);
+    close(fd);
+    return pid;
   }
-}
 
-void API bamipc_lockfile_update(char * const restrict fmt, ...)
-{
-  int fd = -1;
-  va_list va;
-  va_start(va, fmt);
-  va_end(va);
-
-  // write our pid to the lockfile
-  fd = xopenvf(O_WRONLY, fmt, va);
-  axwrite(fd, (pid_t[]) { getpid() }, sizeof(pid_t));
-
-  ixclose(&fd);
-}
-
-void API bamipc_lockfile_release(char * const restrict fmt, ...)
-{
-  va_list va;
-  va_start(va, fmt);
-  xunlinkvf(fmt, va);
-  va_end(va);
+  return 0;
 }

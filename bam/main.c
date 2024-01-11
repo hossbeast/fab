@@ -4,6 +4,9 @@
 #include <stdio.h>
 #include <inttypes.h>
 #include <errno.h>
+#include <dirent.h>
+
+#include "valyria/llist.h"
 
 #include "bam/load.h"
 #include "narrator/load.h"
@@ -12,12 +15,15 @@
 #include "xlinux/xfutex.h"
 #include "xlinux/xpthread.h"
 #include "xlinux/xsignal.h"
+#include "xlinux/xunistd.h"
+#include "xlinux/xepoll.h"
 
 #include "common/attrs.h"
 #include "bam/client.h"
 #include "bam/events.h"
 #include "bam/ipc.h"
 #include "bam/sigutil.h"
+#include "bam/lockfile.h"
 
 #include "args.h"
 #include "build.h"
@@ -27,6 +33,7 @@
 #include "backtracef.h"
 
 #include "barriers.h"
+#include "times.h"
 
 __thread int32_t tid;
 __thread int *errnop;
@@ -96,19 +103,187 @@ void client_post(struct bam_client * restrict client, bamipc_message * restrict 
   printf("\n");
 }
 
+struct proc {
+  llist lln;
+  int pfd;
+  int64_t pid;
+  uint64_t hash;
+};
+
+static int proc_list_wait(int epfd, llist * restrict list, llist * restrict freelist)
+{
+  struct epoll_event evs[16];
+  int evs_len;
+  int x;
+  struct proc *proc;
+  int r;
+
+  r = 0;
+  evs_len = uxepoll_wait(epfd, evs, ARRAY_LEN(evs), SEC_AS_MSEC(3));
+  for(x = 0; x < evs_len; x++) {
+    proc = evs[x].data.ptr;
+    xclose(proc->pfd);
+    llist_delete(&proc->lln);
+    llist_push(freelist, &proc->lln);
+  }
+  if(evs_len == 0) {
+    /* no one exited within the timeout */
+    dprintf(2, "process(es) unresponsive\n");
+    llist_foreach(list, proc, lln) {
+      dprintf(2, " pid %ld hash %016"PRIx64"\n", proc->pid, proc->hash);
+    }
+    r = 1;
+  }
+
+  return r;
+}
+
+static void proc_list_add(int epfd, llist * restrict list, struct proc * restrict proc)
+{
+  struct epoll_event ev;
+
+  memset(&ev, 0, sizeof(ev));
+  ev.events = EPOLLIN | EPOLLONESHOT;
+  ev.data.ptr = proc;
+  xepoll_ctl(epfd, EPOLL_CTL_ADD, proc->pfd, &ev);
+
+  llist_push(list, &proc->lln);
+}
+
+/* kill any bamd instances for a different basedir where,
+ *  their basedir starts with our basedir (we subsume this dir) or
+ *  our basedir starts with their basedir (they subsume our dir) */
+static int lockfiles_kill_competing(bam_client * restrict client, int epfd, llist * restrict procs_list, llist * restrict procs_freelist)
+{
+  DIR *dd;
+  uint64_t hash;
+  int64_t pid;
+  int pfd;
+  char basedir[PATH_MAX];
+  size_t basedir_len;
+  int rv;
+
+  struct proc *proc;
+
+  /* locate any bamds for conflicting basedirs */
+  dd = bamipc_lockfile_scan_start(client->ipcdir_base);
+  rv = 0;
+  pid = -1;
+  while(!llist_empty(procs_list) || pid != 0)
+  {
+    /* wait on any killed processes */
+    if(!llist_empty(procs_list)) {
+      if(proc_list_wait(epfd, procs_list, procs_freelist) != 0) {
+        rv = 1;
+        break;
+      }
+    }
+
+    while(1)
+    {
+      if(llist_empty(procs_freelist)) {
+        break;
+      }
+      if((pid = bamipc_lockfile_scan_scan(dd, &hash, basedir, sizeof(basedir), &basedir_len)) == 0) {
+        break;
+      }
+      if(memcmp(basedir, client->basedir, MIN(basedir_len, client->basedir_len)) != 0) {
+        continue; /* disjoint from basedir */
+      } else if(basedir_len == client->basedir_len) {
+        continue; /* same as basedir */
+      } else if(pid == -1) {
+        uxunlinkf("%s/%016"PRIx64"/bamd/lock", client->ipcdir_base, hash);
+        continue; /* bad lockfile */
+      }
+
+      if((pfd = uxpidfd_open(pid, 0)) == -1) {
+        /* stale lockfile */
+        uxunlinkf("%s/%016"PRIx64"/bamd/lock", client->ipcdir_base, hash);
+        continue;
+      }
+
+      proc = llist_shift(procs_freelist, typeof(*proc), lln);
+      proc->pfd = pfd;
+      proc->pid = pid;
+      proc->hash = hash;
+      proc_list_add(epfd, procs_list, proc);
+      uxkill(pid, SIGTERM); /* ask nicely */
+    }
+  }
+  bamipc_lockfile_scan_stop(dd);
+
+  llist_foreach(procs_list, proc, lln) {
+    xclose(proc->pfd);
+  }
+
+  return rv;
+}
+
+static int connect(bam_client * restrict client)
+{
+  int channel_shmid;
+  sigset_t sigs;
+  siginfo_t info;
+  int err;
+  struct timespec interval;
+
+  /* connect to bamd */
+  if(bam_client_solicit(client) != 0) {
+    dprintf(2, "bamd %"PRId64" not found\n", client->bamd_pid);
+    return 1;
+  }
+
+  /* wait for the acknowledgement signal carrying the channel id */
+  sigemptyset(&sigs);
+  sigaddset(&sigs, SIGRTMIN);
+
+  /* 500 millis */
+  interval.tv_sec = 0;
+  interval.tv_nsec = 500000000;
+
+  while(!g_sigterm && !g_params.shutdown)
+  {
+    sigutil_timedwait(&err, &sigs, &info, &interval);
+    if(err == 0) {                  // signal received
+      break;
+    } else if(err == EINTR) {       // interrupted by signal
+      continue;
+    }
+
+    dprintf(2, "bamd %"PRId64" did not respond\n", client->bamd_pid);
+    return 1;
+  }
+
+  channel_shmid = info.si_value.sival_int;
+  bam_client_attach(client, channel_shmid);
+
+  return 0;
+}
+
 static void xmain()
 {
   sigset_t sigs;
-  siginfo_t info;
-  bam_client * client = 0;
+  bam_client client_s, *client = 0;
   bamipc_message * msg = 0;
-  struct timespec interval;
-  int err;
   uint16_t pulse;
   int iter;
-  int channel_shmid;
-  int x;
   int r = 0;
+  struct timespec interval;
+  int x;
+
+  struct proc procs[16], *proc;
+  llist procs_list;
+  llist procs_freelist;
+
+  llist_init(&procs_list);
+  llist_init(&procs_freelist);
+  for(x = 0; x < ARRAY_LEN(procs); x++) {
+    llist_push(&procs_freelist, &procs[x].lln);
+  }
+
+  int epfd;
+  int pfd;
+  epfd = xepoll_create();
 
   sigutil_install_handlers();
   sigemptyset(&sigs);
@@ -133,70 +308,65 @@ static void xmain()
   }
 #endif
 
-  interval.tv_sec = 0;
-  interval.tv_nsec = 500000000;   // 500 millis
+  client = &client_s;
+  bam_client_init(client, ".", 1, g_params.ipcdir, g_params.ipcdir_len);
 
-  client = bam_client_create(".", 1, g_params.ipcdir, g_params.ipcdir_len);
-  bam_client_prepare(client);
+  /* open the lockfile */
+  bam_client_lockfile_query(client);
+  bam_client_lockfile_validate(client);
 
-  /* kill an existing bamd - waiting at most 3s */
-  if(g_args.kill && client->bamd_pid != 0)
-  {
-    bam_client_kill(client);
-
-    for(x = 0; x < (5 * 3); x++)
-    {
-      r = uxkill(client->bamd_pid, 0);
-      if(r) {
-        break;
+  /* kill an existing bamd if --kill */
+  if(client->bamd_pid != -1 && g_args.kill) {
+    if((pfd = uxpidfd_open(client->bamd_pid, 0)) == -1) {
+      /* it exited after all */
+    } else {
+      proc = llist_shift(&procs_freelist, typeof(*proc), lln);
+      proc->pfd = pfd;
+      proc->pid = client->bamd_pid;
+      proc->hash = client->hash;
+      proc_list_add(epfd, &procs_list, proc);
+      uxkill(proc->pid, SIGTERM); /* ask nicely */
+      if(proc_list_wait(epfd, &procs_list, &procs_freelist) != 0) {
+        goto err;
       }
-      usleep(200 * 1000);
     }
-  }
-  if(g_args.no_launch && client->bamd_pid == 0)
-  {
-    fprintf(stderr, "bamd not running\n");
-    exit(1);
-  }
-  if(g_args.kill) {
-    if(client->bamd_pid != 0 && r == 0) {
-      fprintf(stderr, "bamd did not respond - SIGKILL\n");
-      uxkill(client->bamd_pid, SIGKILL);
-    }
-    client->bamd_pid = 0;
+
+    /* re-load the lockfile */
+    ixclose(&client->lockfd);
+    client->bamd_pid = -1;
+    bam_client_lockfile_query(client);
   }
 
   if(g_cmd == &kill_command) {
     goto end;
   }
 
-  bam_client_solicit(client);
-
-  /* wait for the acknowledgement signal carrying the channel id */
-  sigemptyset(&sigs);
-  sigaddset(&sigs, SIGRTMIN);
-
-  while(!g_sigterm && !g_params.shutdown)
-  {
-    sigutil_timedwait(&err, &sigs, &info, &interval);
-    if(err == 0) {                  // signal received
-      break;
-    } else if(err == EAGAIN) {      // timeout expired
-      fprintf(stderr, "TIMEOUT EXPIRED\n");
-      goto end;
-    } else if(err == EINTR) {       // interrupted by signal
-      continue;
-    }
-
-    RTA;
+  /* stop here if --no-launch */
+  if(client->bamd_pid == -1 && g_args.no_launch) {
+    dprintf(2, "bamd not found\n");
+    goto err;
   }
 
-  channel_shmid = info.si_value.sival_int;
-  bam_client_attach(client, channel_shmid);
+  /* launch a new bamd if needed */
+  if(client->bamd_pid == -1) {
+    if(client->lockfd == -1) {
+      dprintf(2, "unable to obtain lockfile %s/bamd/lock\n", client->ipcdir);
+      goto err;
+    }
+
+    if(lockfiles_kill_competing(client, epfd, &procs_list, &procs_freelist) != 0) {
+      goto err;
+    }
+    bam_client_launch(client);
+  }
+
+  if(connect(client) != 0) {
+    goto err;
+  }
 
   g_cmd->attached(g_cmd, client);
 
-  /* always-on subscriptions */
+  /* always-on event subscriptions */
   msg = bam_client_produce(client);
   msg->type = BAMIPC_MSG_EVENTSUB;
   eventsubid = msg->id = ++client->msgid;
@@ -208,8 +378,9 @@ static void xmain()
   /* event subscription and send the request */
   g_cmd->connected(g_cmd, client);
 
-  /* processing */
-  interval.tv_nsec = 125 * 1000 * 1000;   // 125 millis
+  /* 125 millis */
+  interval.tv_sec = 0;
+  interval.tv_nsec = 125 * 1000 * 1000;
   iter = 0;
   pulse = client->shm->server_pulse;
   while(!g_sigterm && !g_params.shutdown)
@@ -218,13 +389,13 @@ static void xmain()
     if(!(msg = bam_client_acquire(client))) {
       if(client->shm->server_exit) {
         /* normally the daemon will send a response message with nonzero code on error */
-        fprintf(stderr, "daemon exited unexpectedly\n");
+        dprintf(2, "bamd %"PRId64" exited\n", client->bamd_pid);
         break;
       }
 
       atomic_store(&client->shm->server_ring.waiters, 1);
-      err = uxfutex(&client->shm->server_ring.waiters, FUTEX_WAIT, 1, &interval, 0, 0);
-      if(err == EINTR || err == EAGAIN) {
+      r = uxfutex(&client->shm->server_ring.waiters, FUTEX_WAIT, 1, &interval, 0, 0);
+      if(r == EINTR || r == EAGAIN) {
         continue;
       }
 
@@ -232,7 +403,7 @@ static void xmain()
       if(((++iter) % 25) == 0) {
         if(pulse == client->shm->server_pulse) {
           /* watchdog timeout - unresponsive daemon */
-          fprintf(stderr, "daemon unresponsive\n");
+          dprintf(2, "bamd %"PRId64" unresponsive\n", client->bamd_pid);
           waserror = true;
           break;
         }
@@ -267,11 +438,16 @@ static void xmain()
     bam_client_consume(client, msg);
   }
 
+  g_cmd->disconnected(g_cmd);
+
+  goto end;
+err:
+  waserror = true;
 end:
   bam_client_disconnect(client);
-  bam_client_free(client);
+  bam_client_destroy(client);
 
-  g_cmd->disconnected(g_cmd);
+  xclose(epfd);
 }
 
 int main(int argc, char ** argv)

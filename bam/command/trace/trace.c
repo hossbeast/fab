@@ -1,6 +1,8 @@
 /* SPDX-License-Identifier: GPL-3.0 */
 /* Copyright (c) 2012-2023 Todd Freed <todd.freed@gmail.com> */
 
+#include <inttypes.h>
+
 #include "types.h"
 
 #include "bam/ipc.h"
@@ -30,7 +32,7 @@ static void attached(command * restrict cmd, bam_client * restrict client)
   char *args[5];
   char pid[16];
 
-  snprintf(pid, sizeof(pid), "%d", client->bamd_pid);
+  snprintf(pid, sizeof(pid), "%"PRId64, client->bamd_pid);
 
   args[0] = "/usr/bin/sudo";
   args[1] = (void*)trace_args.script_path.s;

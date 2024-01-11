@@ -103,31 +103,33 @@ static void xmain()
 }
 
 /* normally, libbam/client obtains this lockfile before fork, and this process
- * has inherited the lock */
+ * has inherited the lock via fd 250 */
 static void getlock(void)
 {
-  pid_t pid;
+  int64_t pid;
   int lockfd = -1;
   char path[PATH_MAX];
+  int status;
 
-  snprintf(path, sizeof(path), "%s/bamd/lock", g_params.ipcdir);
-  bamipc_lockfile_acquire(&pid, &lockfd, path);
-  if(!pid || pid == getpid()) {
-    xclose(lockfd);
-    /* fastpath lock-held check */
+  if((status = fcntl(250, F_GETFL)) == -1) {
+    RUNTIME_ASSERT(errno == EBADF);
+  } else {
+    /* assuming here that the client opened fd 250 correctly */
     return;
   }
 
-  bamipc_lockfile_obtain(&pid, &lockfd, "%s", path);
-  if(pid && pid != getpid()) {
-    dprintf(2, "daemon still running pid %ld\n", (long)pid);
+  snprintf(path, sizeof(path), "%s/bamd/lock", g_params.ipcdir);
+  bamipc_lockfile_acquire(&pid, &lockfd, path);
+  bamipc_lockfile_validate(&pid, &lockfd, path);
+  if(lockfd == -1) {
+    dprintf(2, "unable to obtain lockfile %s, recorded pid %ld\n", path, (long)pid);
     exit(1);
   }
 
-  /* this normally happens in libbam/client right after fork */
-  xchdirf("%s/bamd", g_params.ipcdir);
-  uxunlinks("exit");
-  uxunlinks("core");
+  /* move to known location, write the pid */
+  xdup2(lockfd, 250);
+  xclose(lockfd);
+  bamipc_lockfile_update(250);
 }
 
 int main(int argc, char ** argv)
@@ -139,7 +141,6 @@ int main(int argc, char ** argv)
   setvbuf(stdout, NULL, _IONBF, 0);
   setvbuf(stderr, NULL, _IONBF, 0);
 
-  r = 0;
   tid = g_params.thread_monitor = gettid();
   errnop = &errno;
 
@@ -165,13 +166,18 @@ int main(int argc, char ** argv)
   dprintf(1, "ipcdir : %.*s\n", (int)g_params.ipcdir_len, g_params.ipcdir);
   dprintf(1, "basedir : %.*s\n", (int)g_base_path_len, g_base_path);
 
-  /* for convenience, display the path in argv */
+  /* for convenience, display basedir in argv */
   if(g_argv_base_dir_space) {
     memset(g_argv_base_dir_space, 0, 100);
     zcatf(g_argv_base_dir_space, 100, "[%.*s]", g_base_path_len, g_base_path);
   }
 
   getlock();
+
+  /* this normally happens in libbam/client right after fork */
+  xchdirf("%s/bamd", g_params.ipcdir);
+  uxunlinks("exit");
+  uxunlinks("core");
 
 #if CONFIG_DEBUG || CONFIG_DEVEL
   rcu_is_registered = true;
@@ -246,15 +252,19 @@ int main(int argc, char ** argv)
   narrator_unload();
   bacon_unload();
 
-  r |= g_params.handler_error;  // error on a handler thread
+  r = 0;
+  r |= g_params.handler_error; /* error on another thread */
 
   /* best-effort attempt to save our exit status */
-  fd = uxopen_modef(O_CREAT | O_WRONLY, 0666, "%s/bamd/exit", g_params.ipcdir);
+  fd = uxopen_modes(O_CREAT | O_WRONLY, 0666, "exit");
   if(fd != -1) {
     snprintf(buf, sizeof(buf), "%d\n", r);
     (void)!write(fd, buf, strlen(buf));
     close(fd);
   }
+
+  /* best-effort attempt to cleanup the lockfile */
+  uxunlinks("lock");
 
   return r;
 }
