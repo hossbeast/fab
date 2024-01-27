@@ -22,11 +22,7 @@ my $GREEN = "\x1b\x5b\x33\x32\x6d";
 my $NONE = "\x1b\x5b\x30\x3b\x30\x6d";
 my $CONCURRENCY = 20;   # dont have more tests than this in flight at once
 
-if(! -e "/run/bam-integ")
-{
-  print("sudo mkdir -p /run/bam-integ/logs && sudo chmod -R ugoa+rwx /run/bam-integ\n");
-  die("forgot?");
-}
+permissions_check();
 
 my $filter = qr/./;
 if($#ARGV >= 0) {

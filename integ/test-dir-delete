@@ -27,8 +27,8 @@ setup(<<TREE);
 |-- module.bam+devel
 TREE
 
-# /run/bam-integ/testdir
-# /run/bam-integ/testdir/A
+# /run/user/1000/bam-integ/testdir
+# /run/user/1000/bam-integ/testdir/A
 my $watched_dirs = 2;
 
 my $stats = bam_stats(undef);

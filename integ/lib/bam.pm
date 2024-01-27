@@ -11,15 +11,17 @@ use bigint qw|hex|;
 
 our $repodir;
 our $builddir = '/home/todd/bam-build';
+our $bam_rundir = $ENV{XDG_RUNTIME_DIR} . "/bam";              # /run/user/1000/bam
+our $bam_integ_rundir = $ENV{XDG_RUNTIME_DIR} . "/bam-integ";  # /run/user/1000/bam-integ
 our $bam_bampath;
 our $bam_name;          # test-module-unref-use+stat
-our $bam_basedir;       # /run/bam-integ/testformulamanyref+stat
-our $bam_basehash;      # 35f92367872d6ecc              (base)
-our $bam_baseipc;       # /var/run/bam/35f92367872d6ecc
-our $bam_projdir;       # /run/bam-integ/testformulamanyref+stat/B
-our $bam_projhash;      # d5c90b82ddcd99bb              (proj)
-our $bam_projipc;       # /var/run/bam/d5c90b82ddcd99bb
-our $bam_ipcdir;        # /var/run/bam/d5c90b82ddcd99bb (proj)
+our $bam_basedir;       # /run/user/1000/bam-integ/testformulamanyref+stat
+our $bam_basehash;      # 35f92367872d6ecc                      (base)
+our $bam_baseipc;       # /run/user/1000/bam/35f92367872d6ecc
+our $bam_projdir;       # /run/user/1000/bam-integ/testformulamanyref+stat/B
+our $bam_projhash;      # d5c90b82ddcd99bb                      (proj)
+our $bam_projipc;       # /run/user/1000/bam/d5c90b82ddcd99bb
+our $bam_ipcdir;        # /run/user/1000/bam/d5c90b82ddcd99bb   (proj)
 our $bam_invalidate;
 our $bam_sweeper_period = 250 * 1000 * 1000;
 
@@ -50,16 +52,27 @@ sub test_parameters
   $name = basename($name);
   $name =~ s/[^a-zA-Z0-9+]//g;
 
-  my $dir = "/run/bam-integ/$name";
+  my $dir = "$bam_integ_rundir/$name";
   my $hash = hash64($dir);
-  my $ipc = "/var/run/bam/$hash";
+  my $ipc = "$bam_rundir/$hash";
 
   return $dir, $hash, $ipc;
+}
+
+sub permissions_check
+{
+  return if(-e "$bam_integ_rundir/logs");
+
+  print STDERR ("mkdir -p $bam_integ_rundir/logs\n");
+  print STDERR ("forgot?\n");
+  exit(1);
 }
 
 sub init
 {
   my %params = @_;
+
+  permissions_check();
 
   $bam_bampath = "$builddir/bam/devel/bam";
   $bam_invalidate = $ARGV[0] || "stat";
@@ -71,7 +84,7 @@ sub init
     $bam_projdir = $bam_basedir;
   }
   $bam_projhash = hash64($bam_projdir);
-  $bam_projipc = "/var/run/bam/$bam_projhash";
+  $bam_projipc = "$bam_rundir/$bam_projhash";
 
   $bam_ipcdir = $bam_projipc;
 

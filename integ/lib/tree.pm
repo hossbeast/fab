@@ -94,7 +94,7 @@ sub tree_build
   my $root = tree_parse($spec);
 
   system("rm -rf $basedir/*") if -e $basedir;
-  mkdirp("/run/bam-integ");
+  mkdirp($basedir);
   tree_make($root, $basedir);
 }
 
