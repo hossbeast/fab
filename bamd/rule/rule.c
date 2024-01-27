@@ -378,6 +378,7 @@ static void __attribute__((nonnull)) search_zero_to_one(
 
     vivify_targets(sctx.Alist, sctx.Alen, &ctx->invalidation);
     sctx.rma = ctx->rma;
+    sctx.fml = ctx->fml;
     if((bpe = bpe_search(ctx, &sctx))) {
       continue;
     }
@@ -406,6 +407,7 @@ static void __attribute__((nonnull)) generate_zero_to_one(rule * restrict rule, 
 
     vivify_targets(sctx.Alist, sctx.Alen, &ctx->invalidation);
     sctx.rma = ctx->rma;
+    sctx.fml = ctx->fml;
     if((bpe = bpe_search(ctx, &sctx))) {
       continue;
     }
@@ -448,6 +450,7 @@ static void __attribute__((nonnull)) search_zero_to_many(rule * restrict rule, r
 
   vivify_targets(sctx.Alist, sctx.Alen, &ctx->invalidation);
   sctx.rma = ctx->rma;
+  sctx.fml = ctx->fml;
   if((bpe = bpe_search(ctx, &sctx))) {
     return;
   }
@@ -484,6 +487,7 @@ static void __attribute__((nonnull)) generate_zero_to_many(rule * restrict rule,
 
   vivify_targets(sctx.Alist, sctx.Alen, &ctx->invalidation);
   sctx.rma = ctx->rma;
+  sctx.fml = ctx->fml;
   if((bpe = bpe_search(ctx, &sctx))) {
     return;
   }
@@ -532,6 +536,7 @@ static void __attribute__((nonnull)) search_one_to_one(rule * restrict rule, rul
 
       vivify_targets(sctx.Alist, sctx.Alen, &ctx->invalidation);
       sctx.rma = ctx->rma;
+      sctx.fml = ctx->fml;
       if((bpe = bpe_search(ctx, &sctx))) {
         continue;
       }
@@ -573,6 +578,7 @@ static void __attribute__((nonnull)) generate_one_to_one(rule * restrict rule, r
 
       vivify_targets(sctx.Alist, sctx.Alen, &ctx->invalidation);
       sctx.rma = ctx->rma;
+      sctx.fml = ctx->fml;
       if((bpe = bpe_search(ctx, &sctx))) {
         continue;
       }
@@ -621,6 +627,7 @@ static void __attribute__((nonnull)) search_one_to_many(rule * restrict rule, ru
 
     vivify_targets(sctx.Alist, sctx.Alen, &ctx->invalidation);
     sctx.rma = ctx->rma;
+    sctx.fml = ctx->fml;
     if((bpe = bpe_search(ctx, &sctx))) {
       continue;
     }
@@ -668,6 +675,7 @@ static void __attribute__((nonnull)) generate_one_to_many(rule * restrict rule, 
 
     vivify_targets(sctx.Alist, sctx.Alen, &ctx->invalidation);
     sctx.rma = ctx->rma;
+    sctx.fml = ctx->fml;
     if((bpe = bpe_search(ctx, &sctx))) {
       return;
     }
@@ -718,6 +726,7 @@ static void __attribute__((nonnull)) search_many_to_one(rule * restrict rule, ru
       vivify_targets(sctx.Alist, sctx.Alen, &ctx->invalidation);
       /* check for an existing bpe */
       sctx.rma = ctx->rma;
+      sctx.fml = ctx->fml;
       if((bpe = bpe_search(ctx, &sctx))) {
         goto next;
       }
@@ -767,6 +776,7 @@ static void __attribute__((nonnull)) generate_many_to_one(rule * restrict rule, 
 
     vivify_targets(sctx.Alist, sctx.Alen, &ctx->invalidation);
     sctx.rma = ctx->rma;
+    sctx.fml = ctx->fml;
     if((bpe = bpe_search(ctx, &sctx))) {
       continue;
     }
@@ -821,6 +831,7 @@ static void __attribute__((nonnull)) search_many_to_many(rule * restrict rule, r
 
     vivify_targets(sctx.Alist, sctx.Alen, &ctx->invalidation);
     sctx.rma = ctx->rma;
+    sctx.fml = ctx->fml;
     if((bpe = bpe_search(ctx, &sctx))) {
       goto next;
     }
@@ -878,6 +889,7 @@ static void __attribute__((nonnull)) generate_many_to_many(rule * restrict rule,
 
     vivify_targets(sctx.Alist, sctx.Alen, &ctx->invalidation);
     sctx.rma = ctx->rma;
+    sctx.fml = ctx->fml;
     if((bpe = bpe_search(ctx, &sctx))) {
       goto next;
     }
@@ -1190,6 +1202,7 @@ static void search_search_run(struct rule * restrict rule, rule_run_context * re
   sctx.Alen = Asz;
 
   sctx.rma = ctx->rma;
+  sctx.fml = ctx->fml;
   if((bpe = bpe_search(ctx, &sctx))) {
     return;
   }

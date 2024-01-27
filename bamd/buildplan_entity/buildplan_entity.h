@@ -52,7 +52,7 @@ struct buildplan_entity_search_context {
   uint16_t Blen;
   struct moria_vertex **Alist;
   uint16_t Alen;
-  struct moria_vertex *fml;
+  struct formula *fml;
 };
 
 buildplan_entity *buildplan_entity_cache_search(struct buildplan_entity_search_context * restrict ctx)

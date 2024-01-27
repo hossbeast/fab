@@ -224,7 +224,6 @@ bool vertex_mark_fresh(moria_vertex * restrict v)
   struct config *config;
   formula *fml;
   rule_module_association *rma;
-//  bind_module_association *bma;
 
   /* fsent nodes are subject to the fsent_valid_epoch */
   if(vertex_kind_get(v) == VERTEX_KIND_FSENT) {
@@ -725,7 +724,6 @@ void vertex_describe(const moria_vertex * restrict v, bacon_writer * restrict bu
 {
   module *mod;
   rule_module_association *rma;
-//  bind_module_association *bma;
   fsent *fse;
   struct rule *rule;
   struct rules *rules;

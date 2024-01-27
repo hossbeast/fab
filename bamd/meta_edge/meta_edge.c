@@ -152,7 +152,6 @@ void meta_disconnecting(
   formula *fml;
   module *mod;
   rule_module_association *rma;
-//  bind_module_association *bma;
   fsent *tgt;
 
   /* update cached fields */
@@ -161,24 +160,12 @@ void meta_disconnecting(
       rma = containerof(me->edge.B, typeof(*rma), vertex);
       rma->rules = 0;
       vertex_invalidate(me->edge.B, invalidation);
-//      vertex_invalidate(me->edge.A, invalidation);
       break;
-//    case EDGE_BMA_RULES:
-//      bma = containerof(me->edge.B, typeof(*bma), vertex);
-//      bma->rules = 0;
-//      vertex_invalidate(me->edge.B, invalidation);
-//      vertex_invalidate(me->edge.A, invalidation);
-//      break;
     case EDGE_RMA_MOD:
       rma = containerof(me->edge.B, typeof(*rma), vertex);
       mod = containerof(me->edge.A, typeof(*mod), vertex);
       rma_mod_set(rma, 0, invalidation);
       break;
-//    case EDGE_BMA_MOD:
-//      bma = containerof(me->edge.B, typeof(*bma), vertex);
-//      mod = containerof(me->edge.A, typeof(*mod), vertex);
-//      bma_mod_set(bma, 0, invalidation);
-//      break;
     case EDGE_RULE_RMA:
       rma = containerof(me->edge.A, typeof(*rma), vertex);
       rma->rule = 0;
@@ -200,8 +187,9 @@ void meta_disconnecting(
 
       vertex_state_set(&bpe->vertex, VERTEX_UNLINKED);
 
-      /* also consider the dependency edges */
+      /* also consider incident EDGE_SRC_BPE edges */
       buildplan_entity_source_edges(bpe, edges);
+      /* also consider incident EDGE_BPE_TGT edges */
       buildplan_entity_target_edges(bpe, edges);
       break;
     case EDGE_RMA_TGT:

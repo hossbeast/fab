@@ -123,7 +123,7 @@ static int search_key_cmp(const void *A, const void *K)
   }
 
   /* fml */
-  if((r = INTCMP(bpe->rma, ctx->rma))) {
+  if((r = INTCMP(bpe->fml, ctx->fml))) {
     return r;
   }
 
@@ -530,7 +530,7 @@ void bpe_release(buildplan_entity * restrict bpe, graph_invalidation_context * r
   buildplan_entity_dispose(bpe);
 }
 
-static buildplan_entity *bpe_target_check(fsent * restrict fse) // moria_vertex * restrict v)
+static buildplan_entity *bpe_target_check(fsent * restrict fse)
 {
   channel *chan;
   bamipc_message *msg;
@@ -624,7 +624,7 @@ void bpe_system_reconcile(graph_invalidation_context * restrict invalidation)
     bpe = bpe_target_check(fse);
     if(system_error) {
       llist_push(&bpe_reconcile_list, &fse->bpe_reconcile_lln);
-      return; // goto end;
+      return;
     }
 
     if(fse->bpe != bpe) {
