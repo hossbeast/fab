@@ -60,6 +60,10 @@ void rule_run_probe(const rule_run_context * restrict ctx, const buildplan_entit
   { MAPPING
     STRING(__FUNCTION__)
     { SET
+      { MAPPING
+        STRING("epoch")
+        UINT(rule_system_epoch)
+      }
       vertex_describe(&ctx->rma->vertex, builder_writer);
 
       if(bpe) {
