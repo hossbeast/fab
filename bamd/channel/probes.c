@@ -16,13 +16,8 @@
 
 #include "usdt-sem.h"
 
-#if 1
 PROBE_SEM(channel, rx) = 0;
 PROBE_SEM(channel, tx) = 0;
-#else
-PROBE_SEM(channel, rx) = 1;
-PROBE_SEM(channel, tx) = 1;
-#endif
 
 void channel_rx_probe(const channel * restrict chan, bamipc_message * restrict msg)
 {

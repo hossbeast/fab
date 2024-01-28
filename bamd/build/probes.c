@@ -14,15 +14,9 @@
 #include "usdt-sem.h"
 #include "zcat.h"
 
-#if 1
 PROBE_SEM(build, stage) = 1;
 PROBE_SEM(build, fork) = 1;
 PROBE_SEM(build, wait) = 1;
-#else
-PROBE_SEM(build, stage) = 0;
-PROBE_SEM(build, fork) = 0;
-PROBE_SEM(build, wait) = 0;
-#endif
 
 void build_stage_probe(uint16_t stage)
 {

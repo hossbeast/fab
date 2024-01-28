@@ -8,6 +8,7 @@ INVOCATION="$0 $@"
 ROOT_PATH=$(dirname $(realpath $0))
 SRC_PATH=$ROOT_PATH
 BUILD_PATH=$(realpath .)
+CONFIG_PROBES=y
 
 usage() {
   echo "usage: $0 [option].."
@@ -46,6 +47,7 @@ echo
 define ROOT_PATH
 define SRC_PATH
 define BUILD_PATH
+define CONFIG_PROBES
 
 exec 1>&1000
 cat $CONFIG_MAK

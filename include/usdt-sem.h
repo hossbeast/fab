@@ -3,8 +3,10 @@
 
 #pragma once
 
+#if CONFIG_PROBES
 #define _SDT_HAS_SEMAPHORES
 #include <sys/sdt.h>
+#endif
 
 #define PROBE_SEM(provider, probe)                                            \
   __extension__ /* dont warn on gcc extensions */                             \

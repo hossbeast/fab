@@ -16,11 +16,7 @@
 #include "usdt-sem.h"
 #include "zcat.h"
 
-#if 1
 PROBE_SEM(notify_thread, event) = 0;
-#else
-PROBE_SEM(notify_thread, event) = 1;
-#endif
 
 void notify_thread_probe(const struct inotify_event * restrict ev, const fsent * restrict fse)
 {

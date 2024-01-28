@@ -11,13 +11,8 @@
 #include "macros.h"
 #include "zcat.h"
 
-#if 1
 PROBE_SEM(sigutil, sigrx) = 0;
 PROBE_SEM(sigutil, sigtx) = 0;
-#else
-PROBE_SEM(sigutil, sigrx) = 1;
-PROBE_SEM(sigutil, sigtx) = 1;
-#endif
 
 void sigrx_probe(const siginfo_t * info)
 {

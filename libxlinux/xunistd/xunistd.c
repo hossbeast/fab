@@ -16,7 +16,7 @@
 # define pidfd_syscall_num SYS_pidfd_open
 #else
 # define pidfd_syscall_num 434
-#else
+#endif
 
 //
 // api

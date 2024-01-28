@@ -15,15 +15,9 @@
 #include "usdt-sem.h"
 #include "macros.h"
 
-#if 0
-PROBE_SEM(yyu, token) = 1;
-PROBE_SEM(yyu, pushstate) = 1;
-PROBE_SEM(yyu, popstate) = 1;
-#else
 PROBE_SEM(yyu, token) = 0;
 PROBE_SEM(yyu, pushstate) = 0;
 PROBE_SEM(yyu, popstate) = 0;
-#endif
 
 void token_probe(
     yyu_parser * const restrict xtra

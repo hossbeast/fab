@@ -26,17 +26,10 @@
 #include "usdt-sem.h"
 #include "zcat.h"
 
-#if 1
 PROBE_SEM(rule, run) = 0;
 PROBE_SEM(rule, connect) = 0;
 PROBE_SEM(bind, attach) = 0;
 PROBE_SEM(bind, connect) = 0;
-#else
-PROBE_SEM(rule, run) = 1;
-PROBE_SEM(rule, connect) = 1;
-PROBE_SEM(bind, attach) = 1;
-PROBE_SEM(bind, connect) = 1;
-#endif
 
 void rule_run_probe(const rule_run_context * restrict ctx, const buildplan_entity * restrict bpe, bool b)
 {

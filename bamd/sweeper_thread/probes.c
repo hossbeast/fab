@@ -15,11 +15,7 @@
 #include "usdt-sem.h"
 #include "zcat.h"
 
-#if 1
 PROBE_SEM(sweeper_thread, event) = 0;
-#else
-PROBE_SEM(sweeper_thread, event) = 1;
-#endif
 
 void sweeper_thread_probe(const sweeper_event * restrict ev)
 {

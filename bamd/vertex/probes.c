@@ -18,17 +18,10 @@
 #include "usdt-sem.h"
 #include "zcat.h"
 
-#if 1
 PROBE_SEM(vertex, alloc) = 0;
 PROBE_SEM(vertex, state) = 0;
 PROBE_SEM(vertex, unlinked) = 0;
 PROBE_SEM(vertex, deleted) = 0;
-#else
-PROBE_SEM(vertex, alloc) = 1;
-PROBE_SEM(vertex, state) = 1;
-PROBE_SEM(vertex, unlinked) = 1;
-PROBE_SEM(vertex, deleted) = 1;
-#endif
 
 void vertex_alloc_probe(const moria_vertex * restrict v)
 {

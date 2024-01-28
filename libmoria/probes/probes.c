@@ -13,13 +13,8 @@
 #include "macros.h"
 #include "zcat.h"
 
-#if 1
 PROBE_SEM(moria, explore_edge) = 0;
 PROBE_SEM(moria, explore_vertex) = 0;
-#else
-PROBE_SEM(moria, explore_edge) = 1;
-PROBE_SEM(moria, explore_vertex) = 1;
-#endif
 
 void explore_edge_probe(moria_edge * restrict e, int distance, bool travel, bool visit)
 {
