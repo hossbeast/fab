@@ -62,7 +62,6 @@
 #include "buildplan_entity.h"
 #include "entlist.h"
 #include "fsedge.h"
-#include "backtracef.h"
 #include "rcu.h"
 #include "index_vertex.h"
 
@@ -71,6 +70,10 @@
 
 #include "locks.h"
 #include "zcat.h"
+
+#if CONFIG_DEVEL
+#include "backtracef.h"
+#endif
 
 __thread int32_t tid;
 __thread int *errnop;

@@ -30,10 +30,13 @@
 #include "command.h"
 #include "kill.h"
 #include "params.h"
-#include "backtracef.h"
 
 #include "barriers.h"
 #include "times.h"
+
+#if CONFIG_DEVEL
+#include "backtracef.h"
+#endif
 
 __thread int32_t tid;
 __thread int *errnop;
