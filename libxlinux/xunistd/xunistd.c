@@ -11,6 +11,13 @@
 #include "xunistd.h"
 #include "fmt.h"
 
+/* pidfd_open was added in linux 5.3 but your libc might not have exported the syscall num */
+#ifdef SYS_pidfd_open
+# define pidfd_syscall_num SYS_pidfd_open
+#else
+# define pidfd_syscall_num 434
+#else
+
 //
 // api
 //
@@ -383,7 +390,7 @@ int uxpidfd_open(pid_t pid, unsigned int flags)
 {
   int fd;
 
-  if((fd = syscall(SYS_pidfd_open, pid, flags)) == -1) {
+  if((fd = syscall(pidfd_syscall_num, pid, flags)) == -1) {
     RUNTIME_ASSERT(errno == ESRCH);
   }
 
