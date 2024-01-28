@@ -22,7 +22,7 @@ typedef struct yyu_vtable {
 
 #define YYU_VTABLE(name, lex_prefix, tab_prefix)         \
 yyu_vtable name = {                                      \
-    yy_scan_bytes : lex_prefix ## _yy_scan_bytes         \
+    yy_scan_bytes : (void*)lex_prefix ## _yy_scan_bytes  \
   , yy_scan_buffer : lex_prefix ## _yy_scan_buffer       \
   , yy_delete_buffer : lex_prefix ## _yy_delete_buffer   \
   , yylex_destroy : lex_prefix ## _yylex_destroy         \

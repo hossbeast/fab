@@ -118,7 +118,7 @@ while(my $line = <$fh>)
   {
     $mode = 'yysymbolkind';
   }
-  elsif($line =~ /static const yytype_int16 yytoknum/)
+  elsif($line =~ /static const yytype_(int|uint)(16|32) yytoknum/)
   {
     $mode = 'yytoknum';
   }
