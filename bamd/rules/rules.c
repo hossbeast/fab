@@ -257,6 +257,7 @@ void rules_excise(rules * restrict rules, graph_invalidation_context * restrict 
         rma = containerof(edge->B, typeof(*rma), vertex);
         entlist_push(&edges, rma);
       default:
+        break;
     }
   }
   entlist_foreach(&edges, rma, eln) {

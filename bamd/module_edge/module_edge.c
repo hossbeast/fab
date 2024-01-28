@@ -87,6 +87,7 @@ bool module_edge_connect(module * restrict A, moria_vertex * restrict B, edge_ty
       RUNTIME_ASSERT(vertex_type_get(B) == VERTEX_VAR);
       break;
     default:
+      break;
   }
 
   r = moria_preconnect(&ctx, &g_graph, B, &A->vertex, type, &e);

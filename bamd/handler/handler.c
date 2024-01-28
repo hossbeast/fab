@@ -166,6 +166,7 @@ static void handler_list(handler_context * restrict ctx, command * restrict cmd)
         marshal_u16(dst + off, sz - off, len);
         break;
       default:
+        break;
     }
 
     /* distance */
@@ -860,6 +861,7 @@ static void handler_stats(handler_context * restrict ctx, command * restrict cmd
         special = &fse->self_rules->vertex;
         break;
       default:
+        break;
     }
 
     if(cmd->stats.special_only && vertex_kind_get(v) != VERTEX_KIND_SPECIAL) {

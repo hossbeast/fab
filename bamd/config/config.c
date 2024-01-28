@@ -108,6 +108,7 @@ void config_release(config * restrict cfg, graph_invalidation_context * restrict
         entlist_push(&edges, edge);
         break;
       default:
+        break;
     }
   }
 

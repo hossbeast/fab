@@ -109,6 +109,7 @@ void var_release(var * restrict var, graph_invalidation_context * restrict inval
         entlist_push(&edges, edge);
         break;
       default:
+        break;
     }
   }
 
@@ -230,6 +231,7 @@ void var_system_reconcile(graph_invalidation_context * restrict invalidation)
     }
 
     var_release(var, invalidation);
-    next:
+  next:
+    var = 0;
   }
 }

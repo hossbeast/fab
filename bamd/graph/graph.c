@@ -426,6 +426,7 @@ void graph_disintegrate_bulk(entlist * restrict edges, entlist * restrict vertic
             entlist_push(edges, e);
             any = true;
           default:
+            break;
         }
       }
       if(any) {

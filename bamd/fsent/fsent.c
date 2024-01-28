@@ -279,6 +279,7 @@ static void refresh_module(fsent * restrict n)
     case VERTEX_MODULE_DIR:
       return;
     default:
+      break;
   }
 
   /* the root node does not refresh */
@@ -878,6 +879,7 @@ void fsent_unlink(fsent *n, entlist * restrict edges, graph_invalidation_context
      * the rule which created them is run and fails to match the file since it is now
      * VERTEX_UNLINKED */
       default:
+        break;
     }
   }
 

@@ -160,6 +160,7 @@ static void poke(fsent * restrict n, char * restrict path, uint16_t path_len, gr
       return;
     case INVALIDATE_STAT:
     case INVALIDATE_CONTENT:
+      break;
   }
 
   content_hash = 0;

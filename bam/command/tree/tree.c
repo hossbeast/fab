@@ -189,6 +189,7 @@ static void fsent_show(const bam_list_item * restrict fsent, bool show_paths)
       (void)!write(1, BOLD_RED);
       break;
     default:
+      break;
   }
 
   if(show_paths) {
@@ -213,6 +214,7 @@ static void fsent_show(const bam_list_item * restrict fsent, bool show_paths)
       (void)!write(1, NOCOLOR);
       break;
     default:
+      break;
   }
 
   dprintf(1, "\n");

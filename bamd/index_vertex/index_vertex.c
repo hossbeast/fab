@@ -65,6 +65,7 @@ void index_vertex_release(index_vertex * restrict n, graph_invalidation_context 
         entlist_push(&edges, edge);
         break;
       default:
+        break;
     }
   }
 

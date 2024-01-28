@@ -34,6 +34,7 @@ static int coerce_boolean(bacon_parser * restrict parser, const bacon_value * sr
       bacon_boolean_mk(parser, 0, valp, llist_attached(&src->list));
       return 0;
     default:
+      break;
   }
 
   return -EINVAL;
@@ -59,6 +60,7 @@ static int coerce_string(bacon_parser * restrict parser, const bacon_value * src
       }
       return 0;
     default:
+      break;
   }
 
   return -EINVAL;
@@ -80,6 +82,7 @@ static int coerce_float(bacon_parser * restrict parser, const bacon_value * src,
       bacon_float_mk(parser, 0, valp, src->i);
       return 0;
     default:
+      break;
   }
 
   return -EINVAL;
@@ -96,6 +99,7 @@ int bacon_value_coerce(bacon_parser * restrict parser, const bacon_value * src, 
     case BACON_TYPE_FLOAT:
       return coerce_float(parser, src, valp);
     default:
+      break;
   }
 
   return -EINVAL;

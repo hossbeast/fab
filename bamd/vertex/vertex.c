@@ -336,6 +336,7 @@ enum bam_vertex_state vertex_bam_vertex_state_get(moria_vertex * restrict v)
     case VERTEX_UNLINKED:
       return BAM_VERTEX_STATE_UNLINKED;
     default:
+      break;
   }
 
   if(vertex_invalid_get(v)) {
@@ -348,6 +349,7 @@ enum bam_vertex_state vertex_bam_vertex_state_get(moria_vertex * restrict v)
     case VERTEX_INVALID:
       return BAM_VERTEX_STATE_STALE;
     default:
+      break;
   }
 
   vertex_show(v);

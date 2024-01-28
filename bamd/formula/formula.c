@@ -178,6 +178,7 @@ void formula_system_reconcile(graph_invalidation_context * restrict invalidation
           connected = true;
           break;
         default:
+          break;
       }
     }
 
