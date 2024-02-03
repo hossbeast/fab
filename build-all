@@ -5,7 +5,7 @@
 #
 
 #
-# installs binaries/libraries built by fab-v0.8
+# installs binaries/libraries built by bam-v0.8.1
 #
 
 usage() {
@@ -40,7 +40,7 @@ echo BUILDDIR $BUILDDIR
 ) | xargs rm
 
 set +e
-killall fabd
+killall bamd
 if [ $? == 0 ]; then
   sleep 1
 fi
@@ -48,21 +48,21 @@ set -e
 
 for x in libxlinux libcommon asan unit libnarrator libdescriptor libvalyria libxunit libyyutil liblorien libbacon libmoria ; do
   pushd $BUILDDIR/$x
-  fab
-  fab kill
+  bam
+  bam kill
   popd
 done
 
 for x in bacon libbam bam ; do
   pushd $BUILDDIR/$x
-  fab
-  fab kill
+  bam
+  bam kill
   popd
 done
 
 for x in bamd ; do
   pushd $BUILDDIR/$x
-  fab
-  fab kill
+  bam
+  bam kill
   popd
 done
