@@ -50,9 +50,9 @@ static inline size_t roundup(size_t x, size_t y)
   __builtin_unreachable();              \
 } while(0)
 
-#define RUNTIME_ASSERT(x) do {                          \
-  if (!(x)) {                                           \
+#define RUNTIME_ASSERT(x) do {                                       \
+  if (!(x)) {                                                        \
     fprintf(stderr, "ASSERT %s:%d - %s\n", __FILE__, __LINE__, #x);  \
-    RTA;                                    \
-  }                                                     \
+    RTA;                                                             \
+  }                                                                  \
 } while(0)

@@ -8,6 +8,7 @@
 #include "bam/ipc.h"
 #include "bam/sigutil.h"
 #include "xlinux/xpthread.h"
+#include "xlinux/xunistd.h"
 
 #include "server_thread.h"
 #include "handler_thread.h"

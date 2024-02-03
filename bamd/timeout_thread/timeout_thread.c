@@ -7,6 +7,7 @@
 #include <inttypes.h>
 
 #include "xlinux/xpthread.h"
+#include "xlinux/xunistd.h"
 #include "xlinux/xsignal.h"
 #include "xlinux/xtime.h"
 #include "bam/ipc.h"
@@ -23,6 +24,8 @@
 #include "atomics.h"
 #include "times.h"
 #include "zcat.h"
+#include "types.h"
+#include "threads.h"
 
 /* 10 minutes : default timeout when unspecified */
 #define TIMEOUT_PERIOD_DEFAULT MIN_AS_NSEC(10)

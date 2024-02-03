@@ -7,9 +7,11 @@
 #include "bam/ipc.h"
 #include "narrator.h"
 #include "xlinux/xstdlib.h"
+#include "xlinux/xunistd.h"
 #include "xlinux/xpthread.h"
 #include "xlinux/xfutex.h"
 #include "xlinux/xtime.h"
+#include "common/attrs.h"
 
 #include "handler_thread.h"
 #include "run_thread.h"
@@ -25,8 +27,8 @@
 #include "times.h"
 #include "system_state.h"
 
-#include "common/attrs.h"
 #include "zcat.h"
+#include "threads.h"
 
 struct futexlock handlers_lock;
 
@@ -93,6 +95,7 @@ static void handler_thread(handler_context * restrict ctx)
   }
 
   iter = 0;
+  built = false;
   pulse = chan->ipc.client_pulse;
   rcu_register(&rcu_self);
   while(!g_params.shutdown)

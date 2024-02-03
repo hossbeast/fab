@@ -9,6 +9,7 @@
 #include "xlinux/xpthread.h"
 #include "xlinux/xstdlib.h"
 #include "xlinux/xtime.h"
+#include "xlinux/xunistd.h"
 #include "bacon/writer.h"
 
 #include "sweeper_thread.h"

@@ -3,6 +3,8 @@
 
 #pragma once
 
+#include "types.h"
+
 struct moria_vertex;
 struct moria_edge;
 struct rbnode;

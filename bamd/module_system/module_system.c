@@ -255,6 +255,7 @@ end:
 
     rules_release(rules, invalidation);
   next:
+    rules = 0;
   }
 
   graph_invalidation_end(invalidation);

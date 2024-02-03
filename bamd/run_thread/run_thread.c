@@ -7,6 +7,7 @@
 
 #include "bam/sigutil.h"
 #include "xlinux/xpthread.h"
+#include "xlinux/xunistd.h"
 #include "atomics.h"
 
 #include "run_thread.h"
@@ -20,6 +21,8 @@
 #include "buildplan.h"
 #include "build.h"
 #include "request.h"
+
+#include "threads.h"
 
 bool run_thread_autorun;
 static handler_context * owner;
