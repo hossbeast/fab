@@ -9,7 +9,6 @@ use warnings;
 $SIG{__WARN__} = sub { die @_ };
 
 use File::Basename;
-use Data::Dumper;
 use POSIX;
 
 die "CC not found" unless $ENV{CC};
@@ -17,7 +16,7 @@ die "CC not found" unless $ENV{CC};
 # exec into the compiler
 my @cmd = (
     $ENV{CC}
-  , split(/ /, $ENV{CFLAGS})
+  , split(/ /, $ENV{CFLAGS} || '')
   , (map { "-I$_" } @ARGV)    # other arguments are include paths
   , $ENV{bm_source0}
   , "-c"

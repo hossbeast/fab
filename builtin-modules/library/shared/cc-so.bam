@@ -17,15 +17,9 @@ my $dot = index($name, ".");
 my $soname = substr($name, 0, $dot) . ".so";
 my $lnk = $ENV{bm_target} . ".lnk";
 
-# devel soname
-if($ENV{bm_variant} eq "devel.pic.xapi" || $ENV{bm_variant} eq "pic.trace.xapi")
-{
-  $soname = $name;
-}
-
 my @cmd = (
     $ENV{CC}
-  , split(/ /, $ENV{CFLAGS})
+  , split(/ /, $ENV{CFLAGS} || '')
   , "-shared"
   # linker script
   , "-Wl,--version-script=$lnk"
@@ -36,9 +30,6 @@ my @cmd = (
   # object files in this module
   , grep { substr($_, -2) eq ".o" } split(/ /, $ENV{objects})
 );
-
-use Data::Dumper;
-print Dumper \@cmd;
 
 exec { $cmd[0] } @cmd
 

@@ -17,7 +17,7 @@ die "CC not found" unless $ENV{CC};
 # exec into the compiler
 my @cmd = (
     $ENV{CC}
-  , split(/ /, $ENV{CFLAGS})
+  , split(/ /, $ENV{CFLAGS} || '')
   , (map { "-I$_" } split(/ /, $ENV{includes}))
   , "-o", $ENV{bm_target0}
   , "-Wl,--start-group"
