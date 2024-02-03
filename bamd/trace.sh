@@ -1,4 +1,9 @@
 #!/usr/bin/env bash
+#
+# SPDX-License-Identifier: GPL-3.0
+# Copyright (c) 2012-2023 Todd Freed <todd.freed@gmail.com>
+#
+
 
 pid=$(pidof fabd.trace)
 fab_dir="/home/todd/fab"
