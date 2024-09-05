@@ -143,6 +143,7 @@ narrator * API narrator_growing_init(narrator_growing * restrict n)
   n->l = 0;
   n->a = 0;
   n->m = 0;
+  n->base.off = 0;
 
   return &n->base;
 }

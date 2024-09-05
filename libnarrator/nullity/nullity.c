@@ -75,6 +75,7 @@ void API narrator_nullity_create(narrator_nullity ** const restrict rv)
 
   xmalloc(&n, sizeof(*n));
   n->base.vtab = &nullity_vtable;
+  n->base.off = 0;
 
   *rv = n;
 }

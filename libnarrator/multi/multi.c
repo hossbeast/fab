@@ -95,6 +95,8 @@ void API narrator_multi_init(narrator_multi * restrict n)
 
   n->base.vtab = &multi_vtable;
   xmalloc(&n->v, sizeof(*n->v));
+
+  n->base.off = 0;
 }
 
 void API narrator_multi_destroy(narrator_multi * restrict n)

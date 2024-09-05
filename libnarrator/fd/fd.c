@@ -110,6 +110,7 @@ void narrator_fd_init(narrator_fd * restrict n, int fd)
   n->base.vtab = &narrator_fd_vtable;
   n->fd = fd;
   n->err = 0;
+  n->base.off = 0;
 }
 
 void narrator_fd_destroy(narrator_fd * restrict n)

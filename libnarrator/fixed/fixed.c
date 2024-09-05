@@ -86,6 +86,7 @@ narrator * API narrator_fixed_init(narrator_fixed * restrict n, char * s, size_t
   n->l = 0;
   n->a = a;
   n->m = 0;
+  n->base.off = 0;
 
   return &n->base;
 }

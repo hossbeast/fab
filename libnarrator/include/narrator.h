@@ -24,6 +24,7 @@ struct narrator_vtable;
 
 typedef struct narrator {
   const struct narrator_vtable *vtab;
+  off_t off;        // cumulative bytes written
 } narrator;
 
 //
@@ -37,11 +38,11 @@ typedef struct narrator {
 #define xsayc(...)  narrator_sayc( N, ##__VA_ARGS__)
 
 /// read-only singleton narrators that write to fixed file descriptors
-extern narrator * g_narrator_stdout;
-extern narrator * g_narrator_stderr;
+extern narrator *g_narrator_stdout;
+extern narrator *g_narrator_stderr;
 
 /// read-only singleton nullity narrator that discards all output
-extern narrator * g_narrator_nullity;
+extern narrator *g_narrator_nullity;
 
 /* formatted write from va_list to the specified narrator */
 int narrator_sayvf(narrator * const restrict n, const char * const restrict fmt, va_list va)

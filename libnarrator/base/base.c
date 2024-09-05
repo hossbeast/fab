@@ -20,6 +20,7 @@ void API narrator_seek(narrator * const restrict n, off_t offset, int whence, of
 void API narrator_reset(narrator * const restrict n)
 {
   n->vtab->seek(n, 0, SEEK_SET, 0);
+  n->off = 0;
 }
 
 int API narrator_sayf(narrator * n, const char * const restrict fmt, ...)
@@ -31,33 +32,54 @@ int API narrator_sayf(narrator * n, const char * const restrict fmt, ...)
   r = n->vtab->sayvf(n, fmt, va);
   va_end(va);
 
+  n->off += r;
+
   return r;
 }
 
 int API narrator_sayc(narrator * const restrict n, int c)
 {
   char cc = c;
+  int r;
 
-  return n->vtab->sayw(n, &cc, 1);
+  r = n->vtab->sayw(n, &cc, 1);
+  n->off += r;
+
+  return r;
 }
 
 int API narrator_sayvf(narrator * const restrict n, const char * const restrict fmt, va_list va)
 {
-  return n->vtab->sayvf(n, fmt, va);
+  int r;
+
+  r = n->vtab->sayvf(n, fmt, va);
+  n->off += r;
+
+  return r;
 }
 
 int API narrator_sayw(narrator * const restrict n, const void * const restrict b, size_t l)
 {
-  return n->vtab->sayw(n, b, l);
+  int r;
+
+  r = n->vtab->sayw(n, b, l);
+  n->off += r;
+
+  return r;
 }
 
 int API narrator_says(narrator * const restrict n, const char * const restrict s)
 {
+  int r;
+
   if(!s) {
     return 0;
   }
 
-  return n->vtab->sayw(n, s, strlen(s));
+  r = n->vtab->sayw(n, s, strlen(s));
+  n->off += r;
+
+  return r;
 }
 
 void API narrator_read(narrator * restrict n, void * dst, size_t count, size_t * restrict r)
