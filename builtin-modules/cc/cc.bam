@@ -16,14 +16,12 @@ die "CC not found" unless $ENV{CC};
 # exec into the compiler
 my @cmd = (
     $ENV{CC}
-  , split(/ /, $ENV{CFLAGS} || '')
+  , split(/ /, $ENV{CFLAGS})
   , (map { "-I$_" } @ARGV)    # other arguments are include paths
   , $ENV{bm_source0}
   , "-c"
   , "-o", $ENV{bm_target0}
 );
-
-print(join(" ", @cmd));
 
 exec { $cmd[0] } @cmd
 

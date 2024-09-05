@@ -19,7 +19,7 @@ my $lnk = $ENV{bm_target} . ".lnk";
 
 my @cmd = (
     $ENV{CC}
-  , split(/ /, $ENV{CFLAGS} || '')
+  , split(/ /, $ENV{CFLAGS})
   , "-shared"
   # linker script
   , "-Wl,--version-script=$lnk"

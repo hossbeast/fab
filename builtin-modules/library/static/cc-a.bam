@@ -25,6 +25,7 @@ my @cmd = (
 );
 
 # no combination of arguments will cause ar to actually recreate the entire archive
+# note that ar actually creates a tempfile then copies from there to the target file
 unlink($ENV{bm_target0});
 
 print(join(" ", @cmd), "\n");

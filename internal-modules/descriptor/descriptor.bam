@@ -22,7 +22,8 @@ if(substr($ENV{bm_target0}, -2) eq ".c") {
   $desc_c = $ENV{bm_target1};
   $desc_h = $ENV{bm_target0};
 }
-my ($name, $directories, undef) = fileparse($src_h, ".h");
+my ($src_h_name, $directories) = fileparse($src_h, ".h");
+my ($desc_h_name) = fileparse($desc_h, ".desc.h");
 my $path;
 
 # descriptor.h
@@ -170,8 +171,8 @@ print FH <<"END";
    script and distribute that work under terms of your choice. */
 
 #include "descriptor.h"
-#include "$src_h"
-#include "$name.desc.h"
+#include "$src_h_name.h"
+#include "$desc_h_name.desc.h"
 #include "macros.h"
 
 END
@@ -255,8 +256,8 @@ print FH <<"END";
    definition file. You may create a larger work that contains part or all of the build
    script and distribute that work under terms of your choice. */
 
-#ifndef DESCRIPTOR_${name}_H
-#define DESCRIPTOR_${name}_H
+#ifndef DESCRIPTOR_${desc_h_name}_H
+#define DESCRIPTOR_${desc_h_name}_H
 
 #include "descriptor.h"
 
