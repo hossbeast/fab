@@ -16,8 +16,8 @@
 
 #include "timeout_thread.h"
 #include "params.h"
-#include "configuration.h"
-#include "system_state.h"
+#include "config.h"
+#include "system.h"
 #include "channel.h"
 #include "events.h"
 
@@ -109,17 +109,17 @@ void timeout_thread_launch()
   pthread_attr_destroy(&attr);
 }
 
-void timeout_thread_reconfigure(struct configuration * restrict cfg, bool dryrun)
+void timeout_thread_reconfigure(struct config * restrict cfg, bool dryrun)
 {
-  channel *chan;
-  bamipc_message *msg;
+  events_context ectx;
+  event_bacon *msg;
   bacon_value *val;
 
   val = cfg->timeout.interval.v;
 
   if(dryrun) {
     if(cfg->timeout.interval.i64 > TIMEOUT_PERIOD_MAX) {
-      msg = system_error_event(&chan);
+      msg = system_error_event(&ectx);
       msg->code = EINVAL;
       msg->size = 0;
       msg->size += zcatf(msg->text + msg->size, sizeof(msg->text) - msg->size, "interval %"PRIi64, cfg->timeout.interval.i64);
@@ -129,7 +129,7 @@ void timeout_thread_reconfigure(struct configuration * restrict cfg, bool dryrun
         , val->loc->l_lin + 1
         , val->loc->l_col + 1
       );
-      events_publish(chan, msg);
+      events_publish(&ectx);
     }
     return;
   }

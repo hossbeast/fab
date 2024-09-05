@@ -68,6 +68,6 @@ void sweeper_thread_probe(const sweeper_event * restrict ev)
     z += zcatw(s + z, sz - z, cev->name, cev->name_len);
   }
 
-  PROBE2(sweeper_thread, event, buf, ev);
 printf("%.*s\n", (int)z, buf);
+  PROBE2(sweeper_thread, event, buf, ev);
 }

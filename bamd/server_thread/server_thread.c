@@ -36,8 +36,7 @@ static void server_thread()
     }
 
     /* signal from monitor thread */
-    if(siginfo.si_signo == SIGUSR1)
-    {
+    if(siginfo.si_signo == SIGUSR1) {
       continue;
     }
 

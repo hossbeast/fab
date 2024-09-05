@@ -189,7 +189,8 @@ void dependency_disconnecting(
   }
 
   /* update cached fields */
-  entlist_foreach(&list, A, eln) {
+  entlist_foreach(&list, A, eln)
+  {
     moria_foreach_edge_down(&st, &A->vertex, e) {
       if(edge_type_get(e) != EDGE_BPE_TGT) {
         continue;
@@ -199,25 +200,11 @@ void dependency_disconnecting(
       }
     }
     if(st.next == 0) {
-      // no other bpe-tgt edge is present
-      A->is_target = false;
-      /* primary files are never invalid */
-      switch(vertex_state_get(&A->vertex)) {
-        case VERTEX_UNCREATED:
-        case VERTEX_UNLINKED:
-          break;
-        default:
-          vertex_mark_fresh(&A->vertex);
+      if(A->bpe != dep->bpe) {
+        continue;
       }
+      A->bpe = 0;
     }
-
-    if(A->bpe != dep->bpe) {
-      continue;
-    }
-    A->bpe = 0;
-
-    /* invalidate targets when the bpe becomes unset */
-    vertex_invalidate(&A->vertex, invalidation);
   }
 
   entlist_destroy(&list);

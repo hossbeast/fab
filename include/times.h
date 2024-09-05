@@ -21,7 +21,7 @@
 #define SEC_AS_NSEC(x)  (NSEC_PER_SEC * (x))
 #define MIN_AS_NSEC(x)  (NSEC_PER_MIN * (x))
 
-static inline uint64_t timespec_delta(struct timespec * restrict start, struct timespec * restrict end)
+static inline uint64_t timespec_delta(const struct timespec * restrict start, const struct timespec * restrict end)
 {
   uint64_t val;
 

@@ -23,8 +23,8 @@
 
 #include "build.h"
 #include "buildplan.h"
+#include "configset.h"
 #include "config.h"
-#include "configuration.h"
 #include "config_system.h"
 #include "filesystem.h"
 #include "formula.h"
@@ -49,21 +49,29 @@
 #include "reconcile.h"
 #include "channel.h"
 #include "handler.h"
-#include "var.h"
+#include "varset.h"
 #include "goals.h"
 #include "stats.h"
 #include "selection.h"
 #include "walker.h"
-#include "rules.h"
+#include "ruleset.h"
 #include "special_edge.h"
-#include "index_edge.h"
+#include "fsindex_edge.h"
+#include "dir_rma_edge.h"
 #include "meta_edge.h"
 #include "rule_module_association.h"
 #include "buildplan_entity.h"
 #include "entlist.h"
 #include "fsedge.h"
 #include "rcu.h"
-#include "index_vertex.h"
+#include "fsname.h"
+#include "plugin.h"
+#include "events.h"
+#include "fstree.h"
+#include "fsindex.h"
+#include "filesystem.h"
+#include "system.h"
+#include "notify.h"
 
 #include "common/parseint.h"
 #include "common/hash.h"
@@ -160,19 +168,20 @@ int main(int argc, char ** argv)
 
   args_setup(argc, argv);
   params_setup();
-  xrealpathf(g_base_path, "%.*s/basedir", (int)g_params.ipcdir_len, g_params.ipcdir);
-  g_base_path_len = strlen(g_base_path);
+  xrealpathf(g_base_dir, "%.*s/basedir", (int)g_params.ipcdir_len, g_params.ipcdir);
+  g_base_dir_len = strlen(g_base_dir);
+  g_base_dirfd = xopens(O_PATH | O_DIRECTORY, g_base_dir);
 
   dprintf(1, "hash : %s\n", g_args.hash_str);
   dprintf(1, "pid : %d\n", g_params.pid);
   dprintf(1, "homedir : %.*s\n", (int)g_params.homedir_len, g_params.homedir);
   dprintf(1, "ipcdir : %.*s\n", (int)g_params.ipcdir_len, g_params.ipcdir);
-  dprintf(1, "basedir : %.*s\n", (int)g_base_path_len, g_base_path);
+  dprintf(1, "basedir : %.*s\n", (int)g_base_dir_len, g_base_dir);
 
   /* for convenience, display basedir in argv */
   if(g_argv_base_dir_space) {
     memset(g_argv_base_dir_space, 0, 100);
-    zcatf(g_argv_base_dir_space, 100, "[%.*s]", g_base_path_len, g_base_path);
+    zcatf(g_argv_base_dir_space, 100, "[%.*s]", g_base_dir_len, g_base_dir);
   }
 
   getlock();
@@ -191,37 +200,39 @@ int main(int argc, char ** argv)
   path_cache_setup();
   formula_setup();
   buildplan_setup();
-  filesystem_setup();
   graph_setup();
   rule_system_setup();
-  fsent_setup();
+  fsent_root_setup();
+  fsent_base_setup();
+  fsindex_setup();
+  notify_setup();
+  filesystem_setup();
+  system_setup();
+  fsname_setup();
   shadow_setup();
+  fstree_setup();
   module_setup();
+  configset_setup();
   config_setup();
-  configuration_setup();
   notify_thread_setup();
-  var_setup();
+  varset_setup();
   goals_setup();
   handler_setup();
   walker_setup();
-  rules_setup();
+  ruleset_setup();
   buildplan_entity_setup();
   entlist_setup();
   config_system_setup();
-  index_vertex_setup();
-
-  /* comment */
-  fsent_system_bootstrap();
-  config_system_bootstrap();
+  events_setup();
+  system_setup();
 
   xmain();
 
   // modules
   buildplan_cleanup();
-  config_cleanup();
+  configset_cleanup();
   config_system_cleanup();
-  configuration_cleanup();
-  filesystem_cleanup();
+  config_cleanup();
   module_cleanup();
   fsent_cleanup();
   shadow_cleanup();
@@ -230,7 +241,8 @@ int main(int argc, char ** argv)
   build_cleanup();
   path_cache_cleanup();
   formula_cleanup();
-  var_cleanup();
+  varset_cleanup();
+  fstree_cleanup();
   goals_cleanup();
   handler_cleanup();
   selection_cleanup();
@@ -240,13 +252,18 @@ int main(int argc, char ** argv)
   graph_cleanup();
   block_cleanup();
   module_module_cleanup();
-  rules_cleanup();
+  ruleset_cleanup();
   special_edge_cleanup();
-  index_edge_cleanup();
+  fsindex_edge_cleanup();
+  dir_rma_cleanup();
   meta_edge_cleanup();
   rule_module_association_cleanup();
+  fsname_cleanup();
+  plugin_cleanup();
+  events_cleanup();
+  fsindex_cleanup();
+  notify_cleanup();
   entlist_cleanup();
-  index_vertex_cleanup();
 
   // libraries
   bam_unload();

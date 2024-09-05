@@ -29,8 +29,3 @@ void notify_thread_add_watch(struct fsent * restrict n)
 
 void notify_thread_rm_watch(struct fsent * restrict n)
   __attribute__((nonnull));
-
-void notify_index_describe(struct bacon_writer * restrict builder_writer)
-  __attribute__((nonnull));
-
-void notify_index_show(void);

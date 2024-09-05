@@ -11,7 +11,6 @@
 #include "bacon/builder.h"
 #include "moria/foreach.h"
 #include "xlinux/xstdlib.h"
-#include "bam/vertex.h"
 
 #include "graph.h"
 #include "dependency.h"
@@ -22,18 +21,18 @@
 #include "formula.h"
 #include "rule.h"
 #include "rule_module_association.h"
-#include "index_edge.h"
-#include "index_vertex.h"
-#include "rules.h"
-#include "var.h"
-#include "dir_rma.h"
+#include "fsindex_edge.h"
+#include "fsname.h"
+#include "ruleset.h"
+#include "varset.h"
+#include "dir_rma_edge.h"
 #include "module_edge.h"
 #include "edge.h"
 #include "special_edge.h"
 #include "meta_edge.h"
 #include "entlist.h"
 #include "buildplan_entity.h"
-#include "config.h"
+#include "configset.h"
 #include "config_system.h"
 
 #include "zcat.h"
@@ -44,25 +43,55 @@ STATIC_ASSERT(EDGE_FSTREE & MORIA_EDGE_IDENTITY);
 
 moria_graph g_graph = MORIA_GRAPH_INITIALIZER(g_graph);
 
-attrs32 * graph_vertex_attrs = (attrs32[]) {{
+attrs32 *graph_vertex_attrs = (attrs32[]) {{
+    num : 0
 #undef DEF
 #define DEF(x, s, r, y) + 1
-    num : 0
       VERTEX_TYPE_TABLE
-      VERTEX_STATE_TABLE
       + 1
+#undef DEF
+#define DEF(x, s, n, r, y) + 1
+      VERTEX_STATE_TABLE
       + 1
   , members : (member32[]) {
 #undef DEF
 #define DEF(x, s, r, y) { name : s, value : y, range : r },
 VERTEX_TYPE_TABLE
+#undef DEF
+#define DEF(x, s, n, r, y) { name : s, value : y, range : r },
 VERTEX_STATE_TABLE
     { name : "protect", value : VERTEX_PROTECT_BIT, range : VERTEX_PROTECT_BIT },
     { name : "shield", value : VERTEX_SHIELD_BIT, range : VERTEX_SHIELD_BIT },
   }
 }};
 
-attrs32 * graph_edge_attrs = (attrs32[]) {{
+attrs32 *graph_vertex_type_attrs = (attrs32[]) {{
+#undef DEF
+#define DEF(x, s, r, y) + 1
+    num : 0
+      VERTEX_TYPE_TABLE
+      + 1
+  , members : (member32[]) {
+#undef DEF
+#define DEF(x, s, r, y) { name : s, value : y, range : r },
+VERTEX_TYPE_TABLE
+  }
+}};
+
+attrs32 *graph_vertex_state_attrs = (attrs32[]) {{
+#undef DEF
+#define DEF(x, s, n, r, y) + 1
+    num : 0
+      VERTEX_STATE_TABLE
+      + 1
+  , members : (member32[]) {
+#undef DEF
+#define DEF(x, s, n, r, y) { name : n, value : y, range : r },
+VERTEX_STATE_TABLE
+  }
+}};
+
+attrs32 *graph_edge_attrs = (attrs32[]) {{
 #undef DEF
 #define DEF(x, s, r, y) + 1
     num : 0
@@ -78,6 +107,58 @@ static void __attribute__((constructor)) init()
 {
   attrs32_init(graph_edge_attrs);
   attrs32_init(graph_vertex_attrs);
+}
+
+static void vertex_release(moria_vertex * restrict v, graph_invalidation_context * restrict invalidation)
+{
+  switch(vertex_type_get(v)) {
+    case VERTEX_CONFIGSET_FILE:
+    case VERTEX_CONTEXT_MODULE:
+    case VERTEX_DIR:
+    case VERTEX_FILE:
+    case VERTEX_FORMULA_FILE:
+    case VERTEX_MODULE_DIR:
+    case VERTEX_MODULE_FILE:
+    case VERTEX_RULESET_FILE:
+    case VERTEX_SHADOW_DIR:
+    case VERTEX_SHADOW_FILE:
+    case VERTEX_SHADOW_LINK:
+    case VERTEX_SYMLINK:
+    case VERTEX_VARSET_FILE:
+      fsent_release(containerof(v, fsent, vertex));
+      break;
+    case VERTEX_BPE:
+      bpe_release(containerof(v, buildplan_entity, vertex), invalidation);
+      break;
+    default:
+      RTA;
+  }
+}
+
+static void gather_vertices(moria_edge * restrict e, entlist * restrict vertices)
+{
+  int x;
+
+  /*
+   * save the incident vertices in bottom-up order. The order matters because when a directory
+   * node is considered, its downward edges must have already been deleted, if they are going to
+   * be deleted here, so that it will be recognized as empty
+   */
+  if(!(e->attrs & MORIA_EDGE_HYPER))
+  {
+    entlist_push(vertices, e->A);
+    entlist_push(vertices, e->B);
+  }
+  else
+  {
+    for(x = 0; x < e->Alen; x++) {
+      entlist_push(vertices, e->Alist[x].v);
+    }
+
+    for(x = 0; x < e->Blen; x++) {
+      entlist_push(vertices, e->Blist[x].v);
+    }
+  }
 }
 
 //
@@ -121,8 +202,8 @@ static void edge_release(
 {
   /* disconnecting */
   switch(edge_type_get(e)) {
-    case EDGE_VAR_MOD:
-    case EDGE_RULES_MOD:
+    case EDGE_VARSET_MOD:
+    case EDGE_RULESET_MOD:
     case EDGE_REQUIRES:
       module_edge_disconnecting(containerof(e, module_edge, edge), edges, vertices, invalidation);
       break;
@@ -131,24 +212,21 @@ static void edge_release(
     case EDGE_RMA_BPE:
     case EDGE_RMA_TGT:
     case EDGE_RMA_MOD:
-    case EDGE_RMA_RULES:
+    case EDGE_RMA_RULESET:
       meta_disconnecting(containerof(e, meta_edge, edge), edges, vertices, invalidation);
       break;
     case EDGE_BPE_TGT:
     case EDGE_SRC_BPE:
       dependency_disconnecting(containerof(e, dependency, edge), edges, vertices, invalidation);
       break;
-    case EDGE_CONFIG_SPECIAL:
-      config_system_invalidate();
-    case EDGE_RULES_SPECIAL:
-    case EDGE_MODULE_SPECIAL:
-    case EDGE_VAR_SPECIAL:
-    case EDGE_FML_SPECIAL:
+    case EDGE_SPECIAL:
+    case EDGE_DIR_MOD:
       special_disconnecting(containerof(e, special_edge, edge), invalidation);
       break;
     case EDGE_DIR_RMA:
-    case EDGE_INDEX_RMA:
-    case EDGE_INDEX_DIR:
+    case EDGE_FSNAME_RMA:
+    case EDGE_DIR_FSNAME:
+    case EDGE_FSNAME_FSINDEX:
     case EDGE_FSTREE:
       break;
     default:
@@ -160,19 +238,16 @@ static void edge_release(
 
   /* release the edge */
   switch(edge_type_get(e)) {
-    case EDGE_INDEX_RMA:
+    case EDGE_FSNAME_RMA:
     case EDGE_DIR_RMA:
       dir_rma_edge_release(containerof(e, dir_rma_edge, edge));
       break;
-    case EDGE_RULES_SPECIAL:
-    case EDGE_MODULE_SPECIAL:
-    case EDGE_VAR_SPECIAL:
-    case EDGE_CONFIG_SPECIAL:
-    case EDGE_FML_SPECIAL:
+    case EDGE_SPECIAL:
+    case EDGE_DIR_MOD:
       special_edge_release(containerof(e, special_edge, edge));
       break;
-    case EDGE_VAR_MOD:
-    case EDGE_RULES_MOD:
+    case EDGE_VARSET_MOD:
+    case EDGE_RULESET_MOD:
     case EDGE_REQUIRES:
       module_edge_release(containerof(e, module_edge, edge));
       break;
@@ -181,7 +256,7 @@ static void edge_release(
     case EDGE_RMA_BPE:
     case EDGE_RMA_TGT:
     case EDGE_RMA_MOD:
-    case EDGE_RMA_RULES:
+    case EDGE_RMA_RULESET:
       meta_edge_release(containerof(e, meta_edge, edge));
       break;
     case EDGE_FSTREE:
@@ -191,68 +266,12 @@ static void edge_release(
     case EDGE_SRC_BPE:
       dependency_release(containerof(e, dependency, edge));
       break;
-    case EDGE_INDEX_DIR:
-      index_edge_release(containerof(e, index_edge, edge));
+    case EDGE_DIR_FSNAME:
+    case EDGE_FSNAME_FSINDEX:
+      fsindex_edge_release(containerof(e, fsindex_edge, edge));
       break;
     default:
       RTA;
-  }
-}
-
-static void vertex_release(moria_vertex * restrict v, graph_invalidation_context * restrict invalidation)
-{
-  switch(vertex_type_get(v)) {
-    case VERTEX_CONFIG_FILE:
-    case VERTEX_CONTEXT_MODULE:
-    case VERTEX_DIR:
-    case VERTEX_FILE:
-    case VERTEX_FORMULA_FILE:
-    case VERTEX_MODULE_DIR:
-    case VERTEX_MODULE_FILE:
-    case VERTEX_RULES_FILE:
-    case VERTEX_SHADOW_DIR:
-    case VERTEX_SHADOW_FILE:
-    case VERTEX_SHADOW_LINK:
-    case VERTEX_SHADOW_MODULE:
-    case VERTEX_SHADOW_RULE:
-    case VERTEX_SYMLINK:
-    case VERTEX_VAR_FILE:
-      fsent_release(containerof(v, fsent, vertex));
-      break;
-    case VERTEX_INDEX:
-      index_vertex_release(containerof(v, index_vertex, vertex), invalidation);
-      break;
-    case VERTEX_BPE:
-      bpe_release(containerof(v, buildplan_entity, vertex), invalidation);
-      break;
-    default:
-      RTA;
-  }
-}
-
-static void gather_vertices(moria_edge * restrict e, entlist * restrict vertices)
-{
-  int x;
-
-  /*
-   * save the incident vertices in bottom-up order. The order matters because when a directory
-   * node is considered, its downward edges must have already been deleted, if they are going to
-   * be deleted here, so that it will be recognized as empty
-   */
-  if(!(e->attrs & MORIA_EDGE_HYPER))
-  {
-    entlist_push(vertices, e->A);
-    entlist_push(vertices, e->B);
-  }
-  else
-  {
-    for(x = 0; x < e->Alen; x++) {
-      entlist_push(vertices, e->Alist[x].v);
-    }
-
-    for(x = 0; x < e->Blen; x++) {
-      entlist_push(vertices, e->Blist[x].v);
-    }
   }
 }
 
@@ -272,62 +291,54 @@ void graph_disintegrate_bulk(entlist * restrict edges, entlist * restrict vertic
       entlist_free(eln);
 
       switch(edge_type_get(e)) {
-        case EDGE_CONFIG_SPECIAL:
-          /* special edges deleted in subsystem reconciliation */
-          break;
         case EDGE_FML_RMA:
           /* this is handled in bpe_system_reconcile */
           break;
-        case EDGE_VAR_MOD:
-        case EDGE_RULES_MOD:
+        case EDGE_VARSET_MOD:
+        case EDGE_RULESET_MOD:
         case EDGE_REQUIRES:
         case EDGE_RMA_MOD:
-        case EDGE_RMA_RULES:
+        case EDGE_RMA_RULESET:
           /* modules are deleted during system reconciliation */
           break;
-        case EDGE_INDEX_DIR:
+        case EDGE_DIR_FSNAME:
+        case EDGE_FSNAME_FSINDEX:
           break;
-        case EDGE_RULES_SPECIAL:
-        case EDGE_MODULE_SPECIAL:
-        case EDGE_VAR_SPECIAL:
-        case EDGE_FML_SPECIAL:
+        case EDGE_SPECIAL:
+        case EDGE_DIR_MOD:
         case EDGE_RULE_RMA:
         case EDGE_RMA_BPE:
         case EDGE_RMA_TGT:
         case EDGE_BPE_TGT:
         case EDGE_SRC_BPE:
         case EDGE_DIR_RMA:
-        case EDGE_INDEX_RMA:
+        case EDGE_FSNAME_RMA:
         case EDGE_FSTREE:
           /* greedily proceed to all incident vertices */
           gather_vertices(e, vertices);
           break;
         default:
-          edge_show(e);
           RTA;
       }
 
       switch(edge_type_get(e)) {
-        case EDGE_CONFIG_SPECIAL:
-          continue;
-        case EDGE_RULES_SPECIAL:
-        case EDGE_MODULE_SPECIAL:
-        case EDGE_VAR_SPECIAL:
-        case EDGE_FML_SPECIAL:
-        case EDGE_VAR_MOD:
-        case EDGE_RULES_MOD:
+        case EDGE_SPECIAL:
+        case EDGE_DIR_MOD:
+        case EDGE_VARSET_MOD:
+        case EDGE_RULESET_MOD:
         case EDGE_REQUIRES:
         case EDGE_FML_RMA:
         case EDGE_RULE_RMA:
         case EDGE_RMA_BPE:
         case EDGE_RMA_TGT:
         case EDGE_RMA_MOD:
-        case EDGE_RMA_RULES:
+        case EDGE_RMA_RULESET:
         case EDGE_BPE_TGT:
         case EDGE_SRC_BPE:
         case EDGE_DIR_RMA:
-        case EDGE_INDEX_RMA:
-        case EDGE_INDEX_DIR:
+        case EDGE_FSNAME_RMA:
+        case EDGE_DIR_FSNAME:
+        case EDGE_FSNAME_FSINDEX:
           break;
         case EDGE_FSTREE:
           Bn = containerof(e->B, fsent, vertex);
@@ -346,13 +357,8 @@ void graph_disintegrate_bulk(entlist * restrict edges, entlist * restrict vertic
             continue;
           }
 
-          /* special case for config-file nodes */
-          if(e->B->attrs & VERTEX_SHIELD_BIT) {
-            continue;
-          }
           break;
         default:
-          edge_show(e);
           RTA;
       }
 
@@ -365,16 +371,13 @@ void graph_disintegrate_bulk(entlist * restrict edges, entlist * restrict vertic
 
       /* opportunistic delete */
       any = false;
-      moria_foreach_edge(&st, v, e) {
+      moria_foreach_edge_down(&st, v, e) {
         switch(edge_type_get(e)) {
           case EDGE_FML_RMA:
-          case EDGE_RULES_SPECIAL:
-          case EDGE_MODULE_SPECIAL:
-          case EDGE_VAR_SPECIAL:
-          case EDGE_CONFIG_SPECIAL:
-          case EDGE_FML_SPECIAL:
-          case EDGE_VAR_MOD:
-          case EDGE_RULES_MOD:
+          case EDGE_SPECIAL:
+          case EDGE_DIR_MOD:
+          case EDGE_VARSET_MOD:
+          case EDGE_RULESET_MOD:
           case EDGE_REQUIRES:
             entlist_push(edges, e);
             any = true;

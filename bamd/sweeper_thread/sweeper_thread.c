@@ -201,7 +201,7 @@ static void sweeper_thread()
   rcu_unregister(&rcu_self);
 }
 
-static void * sweeper_thread_jump(void * arg)
+static void *sweeper_thread_jump(void * arg)
 {
   tid = g_params.thread_sweeper = gettid();
   errnop = &errno;

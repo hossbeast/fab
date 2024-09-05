@@ -21,6 +21,8 @@
 #include "stats.h"
 #include "vertex.h"
 #include "probes.h"
+#include "filesystem.h"
+#include "notify.h"
 
 #include "atomics.h"
 #include "threads.h"
@@ -193,10 +195,7 @@ void notify_thread_add_watch(fsent * n)
   char space[PATH_MAX];
   uint32_t mask = 0;
 
-  if(n->in_wd != -1) {
-    return;
-  }
-  STATS_INC(g_stats.notify_index_put);
+  notify_stats.put++;
 
   /* events for the directory itself */
   mask |= IN_DELETE_SELF | IN_MOVE_SELF;
@@ -204,7 +203,8 @@ void notify_thread_add_watch(fsent * n)
   /* events for files/directories in the directory */
   mask |= IN_CREATE | IN_DELETE | IN_MODIFY | IN_MOVED_FROM | IN_MOVED_TO;
 
-  mask |= IN_EXCL_UNLINK;   /* ignore events for files after they are unlinked */
+  /* ignore events for files after they are unlinked */
+  mask |= IN_EXCL_UNLINK;
 
   if(vertex_type_get(&n->vertex) == VERTEX_DIR) {
     mask |= IN_ONLYDIR;     /* ENOTDIR if the path is not a directory */
@@ -230,10 +230,7 @@ void notify_thread_rm_watch(fsent * n)
 {
   int r;
 
-  if(n->in_wd == -1) {
-    return;
-  }
-  STATS_INC(g_stats.notify_index_del);
+  notify_stats.del++;
 
   futexlock_acquire(&in_lock);
   map_delete(notify_thread_fsent_by_in_wd, MM(n->in_wd));
@@ -249,46 +246,4 @@ void notify_thread_rm_watch(fsent * n)
 
   /* watch counting */
   n->in_wd = -1;
-}
-
-void notify_index_describe(struct bacon_writer * restrict builder_writer)
-{
-  fsent *fse;
-  int x;
-  int *key;
-  uint16_t key_len;
-  size_t val_len;
-
-  { SET
-    { MAPPING STRING("notify-index-count") UINT(notify_thread_fsent_by_in_wd->size) }
-    { MAPPING STRING("notify-index-put") UINT(g_stats.notify_index_put) }
-    { MAPPING STRING("notify-index-del") UINT(g_stats.notify_index_del) }
-
-    { LIST
-      for(x = 0; x < notify_thread_fsent_by_in_wd->table_size; x++) {
-        if(!map_table_mapping(notify_thread_fsent_by_in_wd, x, (void*)&key, &key_len, &fse, &val_len)) {
-          continue;
-        }
-
-        { MAPPING
-          UINT(*key);
-          vertex_identity_describe(&fse->vertex, builder_writer);
-        }
-      }
-    }
-  }
-}
-
-void notify_index_show()
-{
-  bacon_writer writer, *builder_writer;
-
-  bacon_writer_init(&writer);
-  builder_writer = bacon_writer_open(&writer, g_narrator_stdout);
-
-  notify_index_describe(builder_writer);
-
-  bacon_writer_close(&writer);
-  bacon_writer_destroy(&writer);
-  printf("\n");
 }
