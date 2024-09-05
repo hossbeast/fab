@@ -3,7 +3,7 @@
 
 use git
 bind bam-build/asan         => //asan-bits
-bind modules/executable     => //executable
+bind executable             => //executable
 
 # includes
 rule **+(/) => [*] //module/include

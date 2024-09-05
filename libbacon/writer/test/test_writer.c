@@ -124,9 +124,9 @@ static void test_set(xunit_test * _test)
 
 static void test_set_comments(xunit_test * _test)
 {
-  writer_test * test = (typeof(test))_test;
+  writer_test *test = (typeof(test))_test;
 
-  bacon_writer * writer = 0;
+  bacon_writer *writer = 0;
   bacon_writer_create(&writer);
   bacon_writer_open(writer, g_narrator_stdout);
 
@@ -279,7 +279,7 @@ static xunit_unit xunit = {
       (writer_test[]){{ xu_entry : test_basic }}
     , (writer_test[]){{ xu_entry : test_string }}
     , (writer_test[]){{ xu_entry : test_set }}
-    , (writer_test[]){{ xu_entry : test_set_comments, xu_weight : 1 }}
+    , (writer_test[]){{ xu_entry : test_set_comments }}
     , (writer_test[]){{ xu_entry : test_set_set_top }}
     , (writer_test[]){{ xu_entry : test_set_embedded }}
     , (writer_test[]){{ xu_entry : test_list }}

@@ -110,7 +110,6 @@ static xunit_unit xunit = {
           dst : "{ true : false }"
         , src : "{ 1 : 2 }"
         , exp : "{ true : false 1 : 2 }"
-, xu_weight : 1
       }}
     , (merge_test[]){{
           dst : "{ 1 }"

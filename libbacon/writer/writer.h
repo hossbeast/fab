@@ -18,7 +18,7 @@ typedef struct bacon_writer {
   int mapping;      // true while a map entry is being written across calls
   int string;       // true while a string entry is being written across calls;
 
-  off_t nl_off;
+  off_t nl_off;     // offset of the most recent newline
 
   uint8_t level;
   char levels[VALUE_WRITER_MAX_DEPTH];
@@ -192,3 +192,10 @@ void bacon_writer_comments(bacon_writer * const restrict writer, const char *s)
 
 void bacon_writer_commentw(bacon_writer * const restrict writer, const char *b, size_t bz)
   __attribute__((nonnull(1)));
+
+//
+// fixed-length
+//
+
+void bacon_writer_hex64(bacon_writer * const restrict writer, uint64_t u)
+  __attribute__((nonnull));

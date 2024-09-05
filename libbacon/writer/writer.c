@@ -55,7 +55,7 @@ static void indent(bacon_writer * const restrict writer)
 {
   if(writer->mapping != 0 && (writer->mapping % 2) == 0)
   {
-    writer->nl_off += narrator_says(writer->N, " : ");
+    narrator_says(writer->N, " : ");
     writer->mapping -= 2;
   }
   else
@@ -67,15 +67,15 @@ static void indent(bacon_writer * const restrict writer)
 
     if(writer->any) {
       if(writer->singleline) {
-        writer->nl_off += narrator_sayc(writer->N, ' ');
+        narrator_sayc(writer->N, ' ');
       } else {
         narrator_sayc(writer->N, '\n');
-        writer->nl_off = 0;
+        writer->nl_off = writer->N->off;
       }
     }
 
     if(!writer->singleline) {
-      writer->nl_off += narrator_sayf(writer->N, "%*s", writer->level * 2, "");
+      narrator_sayf(writer->N, "%*s", writer->level * 2, "");
     }
   }
 
@@ -90,17 +90,17 @@ static void write_string(bacon_writer * const restrict writer, const char * cons
 
   if(should_quote(s, len))
   {
-    writer->nl_off += narrator_sayc(writer->N, '"');
+    narrator_sayc(writer->N, '"');
     for(x = 0; x < len; x += (sizeof(buf) / 4))
     {
       z = bacon_value_string_zcatw(buf, sizeof(buf), &s[x], MIN(sizeof(buf) / 4, len - x));
-      writer->nl_off += narrator_sayw(writer->N, buf, z);
+      narrator_sayw(writer->N, buf, z);
     }
-    writer->nl_off += narrator_sayc(writer->N, '"');
+    narrator_sayc(writer->N, '"');
   }
   else
   {
-    writer->nl_off += narrator_sayw(writer->N, s, len);
+    narrator_sayw(writer->N, s, len);
   }
 }
 
@@ -155,19 +155,19 @@ static void pop(bacon_writer * restrict writer)
   RUNTIME_ASSERT(writer->level != 0);
 
   if(writer->singleline) {
-    writer->nl_off += narrator_sayc(writer->N, ' ');
+    narrator_sayc(writer->N, ' ');
   } else {
     narrator_sayc(writer->N, '\n');
-    writer->nl_off = 0;
+    writer->nl_off = writer->N->off;
   }
   writer->level--;
 
   if(!writer->singleline) {
-    writer->nl_off += narrator_sayf(writer->N, "%*s", writer->level * 2, "");
+    narrator_sayf(writer->N, "%*s", writer->level * 2, "");
   }
 
   if(writer->levels[writer->level]) {
-    writer->nl_off += narrator_sayc(writer->N, writer->levels[writer->level]);
+    narrator_sayc(writer->N, writer->levels[writer->level]);
   }
 }
 
@@ -284,31 +284,37 @@ void bacon_writer_value(bacon_writer * const restrict writer, const bacon_value 
 void bacon_writer_uint(bacon_writer * const restrict writer, uint64_t u)
 {
   indent(writer);
-  writer->nl_off += narrator_sayf(writer->N, "%"PRIu64, u);
+  narrator_sayf(writer->N, "%"PRIu64, u);
 }
 
 void bacon_writer_hex(bacon_writer * const restrict writer, uint64_t u)
 {
   indent(writer);
-  writer->nl_off += narrator_sayf(writer->N, "0x%"PRIx64, u);
+  narrator_sayf(writer->N, "0x%"PRIx64, u);
+}
+
+void bacon_writer_hex64(bacon_writer * const restrict writer, uint64_t u)
+{
+  indent(writer);
+  narrator_sayf(writer->N, "0x%016"PRIx64, u);
 }
 
 void bacon_writer_int(bacon_writer * const restrict writer, int64_t i)
 {
   indent(writer);
-  writer->nl_off += narrator_sayf(writer->N, "%"PRId64, i);
+  narrator_sayf(writer->N, "%"PRId64, i);
 }
 
 void bacon_writer_bool(bacon_writer * const restrict writer, bool b)
 {
   indent(writer);
-  writer->nl_off += narrator_sayf(writer->N, "%s", b ? "true" : "false");
+  narrator_sayf(writer->N, "%s", b ? "true" : "false");
 }
 
 void bacon_writer_float(bacon_writer * const restrict writer, double f)
 {
   indent(writer);
-  writer->nl_off += narrator_sayf(writer->N, "%.6f", f);
+  narrator_sayf(writer->N, "%.6f", f);
 }
 
 void bacon_writer_bytes(bacon_writer * const restrict writer, const char * const restrict s, size_t len)
@@ -319,7 +325,7 @@ void bacon_writer_bytes(bacon_writer * const restrict writer, const char * const
 
   if(writer->string)
   {
-    writer->nl_off += narrator_sayw(writer->N, s, len);
+    narrator_sayw(writer->N, s, len);
   }
   else
   {
@@ -339,7 +345,7 @@ void bacon_writer_string(bacon_writer * restrict writer, const char * restrict s
 
   if(writer->string)
   {
-    writer->nl_off += narrator_sayw(writer->N, s, len);
+    narrator_sayw(writer->N, s, len);
   }
   else
   {
@@ -369,8 +375,8 @@ void bacon_writer_char(bacon_writer * const restrict writer, char c)
 void bacon_writer_variable(bacon_writer * const restrict writer, const char * const restrict name, size_t len)
 {
   indent(writer);
-  writer->nl_off += narrator_sayc(writer->N, '$');
-  writer->nl_off += narrator_sayw(writer->N, name, len);
+  narrator_sayc(writer->N, '$');
+  narrator_sayw(writer->N, name, len);
 }
 
 //
@@ -383,12 +389,12 @@ void bacon_writer_push_string(bacon_writer * restrict writer)
 
   writer->string = 1;
   indent(writer);
-  writer->nl_off += narrator_sayc(writer->N, '"');
+  narrator_sayc(writer->N, '"');
 }
 
 void bacon_writer_pop_string(bacon_writer * restrict writer)
 {
-  writer->nl_off += narrator_sayc(writer->N, '"');
+  narrator_sayc(writer->N, '"');
   writer->string = 0;
 }
 
@@ -414,7 +420,7 @@ void bacon_writer_push_set(bacon_writer * restrict writer)
   RUNTIME_ASSERT(writer->level != (sizeof(writer->levels) / sizeof(writer->levels[0])));
 
   indent(writer);
-  writer->nl_off += narrator_sayc(writer->N, '{');
+  narrator_sayc(writer->N, '{');
   writer->levels[writer->level++] = '}';
 }
 
@@ -432,7 +438,7 @@ void bacon_writer_push_list(bacon_writer * restrict writer)
   RUNTIME_ASSERT(writer->level != (sizeof(writer->levels) / sizeof(writer->levels[0])));
 
   indent(writer);
-  writer->nl_off += narrator_sayc(writer->N, '[');
+  narrator_sayc(writer->N, '[');
   writer->levels[writer->level++] = ']';
 }
 
@@ -510,12 +516,15 @@ void bacon_writer_mapping_string_float(bacon_writer * const restrict writer, con
 
 static void comment_spacing(bacon_writer * const restrict writer)
 {
-  int x;
+  int x = 0;
+  int32_t delta;
 
-  if(writer->nl_off > 60) {
+  delta = writer->N->off - writer->nl_off;
+
+  if(delta > 60) {
     x = 0;
-  } else {
-    x = 60 - writer->nl_off;
+  } else if (delta >= 0) {
+    x = 60 - delta;
   }
 
   narrator_sayf(writer->N, "%*s # ", x, "");
