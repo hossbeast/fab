@@ -1,8 +1,8 @@
 #!/usr/bin/env perl
 
 #
-# This test uses the varfiles directive in the module file in order to load an additional
-# var file in the same directory
+# This test uses the rulesfiles directive in the module file in order to load an additional
+# rules file in the same directory
 #
 
 use strict;
@@ -16,6 +16,7 @@ our $repodir;
 our $bam_basedir;
 BEGIN { $repodir = dirname(Cwd::realpath("$0/..")) }
 use lib "$repodir/integ/lib";
+use lib "$repodir/libbacon/perl";
 use util;
 use tree;
 use bam;
@@ -24,15 +25,15 @@ use bam;
 init();
 my $testdir = setup(<<TREE);
 |-- module.bam+devel <<
-varfiles myvar
+rulesets myrules
 >>
-|-- myvar+devel <<
-a : 42
+|-- myrules+devel <<
+rule a -> b
 >>
 TREE
 
 my $mod_id = hash64("$bam_basedir");
-my $var_id = hash64("$bam_basedir/myvar+devel");
+my $rules_id = hash64("$bam_basedir/myrules+devel");
 
 # before
 assert { stats(undef, {
@@ -46,15 +47,13 @@ assert { stats(".", "-S", {
   , parse => 1
   , parse_ok => 1
 })};
-assert { stats("myvar+devel", "-S", {
-    type => 'var'
+assert { stats("myrules+devel", "-S", {
+    type => 'ruleset'
   , state => "fresh"
   , parse => 1
   , parse_ok => 1
 })};
 
-my $result = bam_ls(["//modules/$mod_id/var/$var_id", "--no-follow"]);
-my $ref = $$result{out};
-assert { $ref eq "$var_id -> $bam_basedir/myvar+devel" };
+assert { ls("//modules/$mod_id/rulesets/$rules_id", "$rules_id -> //rulesets/$rules_id") };
 
 teardown();

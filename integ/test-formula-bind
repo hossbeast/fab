@@ -15,6 +15,7 @@ our $bam_basedir;
 our $repodir;
 BEGIN { $repodir = dirname(Cwd::realpath("$0/..")) }
 use lib "$repodir/integ/lib";
+use lib "$repodir/libbacon/perl";
 use util;
 use tree;
 use bam;
@@ -43,9 +44,11 @@ rule cores.c -> cores.o : //A/cp.bam+devel
 rule cores.o -> //targets
 >>
 |-- system-config <<
-walker : {
-  include : {
-    $bam_basedir
+filesystem : {
+  fstrees : {
+    $bam_basedir : {
+      mount : true
+    }
   }
 }
 >>

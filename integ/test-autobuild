@@ -1,0 +1,89 @@
+#!/usr/bin/env perl
+
+#
+# This test sets up a build with multiple dependent stages, then runs the build in each case
+# of having deleted some, or all of the resulting files
+#
+
+use strict;
+use warnings;
+$SIG{__WARN__} = sub { die @_ };
+
+use POSIX;
+use File::Basename;
+use Cwd;
+our $repodir;
+BEGIN { $repodir = dirname(Cwd::realpath("$0/..")) }
+use lib "$repodir/integ/lib";
+use lib "$repodir/libbacon/perl";
+use util;
+use tree;
+use bam;
+
+# build out the fstree under /tmp
+init();
+my $testdir = setup(<<'TREE');
+|-- cores.c <<
+foo
+>>
+|-- module.bam+devel <<
+rule cores.c -> cores.o : cp.bam
+rule cores.o -> cores : cp.bam
+rule cores -> //targets
+>>
+|-- cp.bam << 0777
+#!/usr/bin/env perl
+open A, "<", $ENV{bm_source0} or die $!;
+open B, ">", $ENV{bm_target0} or die $!;
+while(<A>)
+{
+  print B "$_";
+}
+>>
+TREE
+
+assert { stats("cores.c", {
+    type => 'file'
+  , state => 'fresh'
+  , stale => 0
+  , fresh => 1
+})};
+assert { stats("cores.o", {
+    type => 'file'
+  , state => 'uncreated'
+  , stale => 0
+  , fresh => 0
+})};
+assert { stats("cores", {
+    type => 'file'
+  , state => 'uncreated'
+  , stale => 0
+  , fresh => 0
+})};
+
+build();
+
+# intermediate and final file were created
+assert_file("$testdir/cores.o", "foo");
+assert_file("$testdir/cores", "foo");
+
+assert { stats("cores.c", {
+    type => 'file'
+  , state => 'fresh'
+  , stale => 0
+  , fresh => 1
+})};
+assert { stats("cores.o", {
+    type => 'file'
+  , state => 'fresh'
+  , stale => 0
+  , fresh => 1
+})};
+assert { stats("cores", {
+    type => 'file'
+  , state => 'fresh'
+  , stale => 0
+  , fresh => 1
+})};
+
+teardown();

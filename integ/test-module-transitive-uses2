@@ -15,6 +15,7 @@ our $bam_basedir;
 our $repodir;
 BEGIN { $repodir = dirname(Cwd::realpath("$0/..")) }
 use lib "$repodir/integ/lib";
+use lib "$repodir/libbacon/perl";
 use util;
 use tree;
 use bam;
@@ -38,18 +39,20 @@ use D
 rule foo -> bar
 >>
 |-- system-config <<
-walker : {
-  include : {
-    $bam_basedir
+filesystem : {
+  fstrees : {
+    $bam_basedir : { mount : true }
   }
 }
 >>
 TREE
 
 # before
+assert { info({
+    "system-state" => 'ok'
+})};
 assert { stats(undef, {
-    system_state => 'ok'
-  , system_state_ok => 1
+    system_state_ok => 1
   , modules => 1
 })};
 assert { stats("$bam_basedir/A", "-S", {
@@ -69,7 +72,7 @@ assert { stats(".", {
   , rules => 1        # rule from D is active
 })};
 assert { stats("../D/rules.bam+devel", {
-    type => 'rules-file'
+    type => 'ruleset-file'
   , state => 'fresh'
 })};
 
@@ -77,8 +80,8 @@ my $B_id = hash64("$bam_basedir/B/rules.bam+devel");
 my $C_id = hash64("$bam_basedir/C/rules.bam+devel");
 my $D_id = hash64("$bam_basedir/D/rules.bam+devel");
 
-assert { ls("//module/rules/$B_id", "$B_id -> $bam_basedir/B/rules.bam+devel", "--max-distance", "0") };
-assert { ls("//module/rules/$C_id", "$C_id -> $bam_basedir/C/rules.bam+devel", "--max-distance", "0") };
-assert { ls("//module/rules/$D_id", "$D_id -> $bam_basedir/D/rules.bam+devel", "--max-distance", "0") };
+assert { ls("//module/rulesets/$B_id", "$B_id -> //rulesets/$B_id", "--max-distance", "0") };
+assert { ls("//module/rulesets/$C_id", "$C_id -> //rulesets/$C_id", "--max-distance", "0") };
+assert { ls("//module/rulesets/$D_id", "$D_id -> //rulesets/$D_id", "--max-distance", "0") };
 
 teardown();

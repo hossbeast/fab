@@ -16,6 +16,7 @@ our $bam_projdir;
 our $repodir;
 BEGIN { $repodir = dirname(Cwd::realpath("$0/..")) }
 use lib "$repodir/integ/lib";
+use lib "$repodir/libbacon/perl";
 use util;
 use tree;
 use bam;
@@ -30,20 +31,18 @@ setup({tolerant => 1 }, <<TREE);
 |       `-- bar
 |-- C
 |   `-- module.bam+devel <<
-bind { id : 1 } foo => [*] //foo
+bind { name : 1 } foo => [*] //foo
 >>
 |-- system-config <<
-filesystems : {
-  / : {
-    indexed : false
-  }
-  $bam_basedir : {
-    indexed : true
-  }
-}
-walker : {
-  include : {
-    $bam_basedir
+filesystem : {
+  fstrees : {
+    / : {
+      index : false
+    }
+    $bam_basedir : {
+      index : true
+      mount : true
+    }
   }
 }
 >>
@@ -54,15 +53,22 @@ my $foo_B_id = hash64("$bam_basedir/B/foo");
 
 # 1. ambiguous target between A/foo and B/foo - error
 assert {
+  info({
+    "system-state" => 'rule-reconcile'
+})};
+assert {
+  stats("//fsindex", {
+      put => 6  # number of indexed directory nodes
+    , del => 0
+    , count => 5
+})};
+assert {
   stats(undef, {
       modules => 1          # the imported directory is not vivified
-    , system_state => 'rule-reconcile'
     , system_error => 1
     , system_state_ok => 0
-    , fsent_index_put => 6  # number of indexed directory nodes
-    , fsent_index_del => 0
-    , fsent_index_count => 5
     , rule_run => 1
+    , rule_run_ok => 0
 })};
 assert {
   stats(".", "-S", {
@@ -73,7 +79,7 @@ assert {
     , parse_ok => 1
 })};
 assert {
-  stats("//module/rma/1", {
+  stats("//module/rmas-by/name/1", {
       rule_run => 1
     , rule_run_ok => 0        # bind rule was invalidated, and re-run
     , search_hits => 0
@@ -92,12 +98,15 @@ rename("$bam_basedir/B/foo", "$bam_basedir/B/baz");
 reconcile();
 
 assert {
+  stats("//fsindex", {
+      put => 7  # number of indexed directory nodes
+    , del => 1  # redundant "foo" deleted
+    , count => 6# baz is now indexed
+})};
+assert {
   stats(undef, {
       modules => 1
     , system_state_ok => 1
-    , fsent_index_put => 7  # number of indexed directory nodes
-    , fsent_index_del => 1  # redundant "foo" deleted
-    , fsent_index_count => 6# baz is now indexed
     , rule_run => 2
 })};
 assert {
@@ -109,7 +118,7 @@ assert {
     , parse_ok => 1
 })};
 assert {
-  stats("//module/rma/1", {
+  stats("//module/rmas-by/name/1", {
       rule_run => 2
     , rule_run_ok => 1        # bind rule was invalidated, and re-run
     , target_hits => 1        # nomatch

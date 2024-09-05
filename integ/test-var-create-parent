@@ -8,14 +8,16 @@ use POSIX;
 use File::Basename;
 use Cwd;
 our $repodir;
+our $bam_basedir;
 BEGIN { $repodir = dirname(Cwd::realpath("$0/..")) }
+use lib "$repodir/libbacon/perl";
 use lib "$repodir/integ/lib";
 use util;
 use tree;
 use bam;
 
 init();
-my $testdir = setup(<<'TREE');
+setup(<<'TREE');
 |-- A
 |   `-- B
 |       `-- module.bam+devel
@@ -42,7 +44,7 @@ assert { stats("A/B", "-S", {
   , parse_ok => 1
 })};
 
-open my $fh, ">>", "$testdir/A/B/var.bam+devel" or die $!;
+open my $fh, ">>", "$bam_basedir/A/B/var.bam+devel" or die $!;
 print $fh <<'TEXT';
 lflags.devel : foo
 TEXT
@@ -69,14 +71,14 @@ assert { stats("A/B", "-S", {
   , parse_ok => 1
 })};
 assert { stats("A/B/var.bam+devel", "-S", {
-    type => 'var'
+    type => 'varset'
   , state => "fresh"
   , parse => 1
   , parse_ok => 1
 })};
 
 # create varfile in parent dir
-open $fh, ">>", "$testdir/A/var.bam+devel" or die $!;
+open $fh, ">>", "$bam_basedir/A/var.bam+devel" or die $!;
 print $fh <<'TEXT';
 lflags.devel : bar
 TEXT
@@ -115,7 +117,7 @@ assert { stats("A/var.bam+devel", "-S", {
 })};
 
 # create varfile in grand-parent dir
-open $fh, ">>", "$testdir/var.bam+devel" or die $!;
+open $fh, ">>", "$bam_basedir/var.bam+devel" or die $!;
 print $fh <<'TEXT';
 lflags.devel : baz
 TEXT

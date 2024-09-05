@@ -15,6 +15,7 @@ our $bam_basedir;
 our $repodir;
 BEGIN { $repodir = dirname(Cwd::realpath("$0/..")) }
 use lib "$repodir/integ/lib";
+use lib "$repodir/libbacon/perl";
 use util;
 use tree;
 use bam;
@@ -35,9 +36,9 @@ use A
 rule foo -> bar
 >>
 |-- system-config <<
-walker : {
-  include : {
-    $bam_basedir
+filesystem : {
+  fstrees : {
+    $bam_basedir : { mount : true }
   }
 }
 >>
@@ -63,7 +64,7 @@ assert { stats(".", {
   , rules => 1        # rule from C is applied
 })};
 assert { stats("../C/rules.bam+devel", {
-    type => 'rules-file'
+    type => 'ruleset-file'
   , state => 'fresh'
 })};
 

@@ -15,11 +15,12 @@ use Cwd;
 our $repodir;
 BEGIN { $repodir = dirname(Cwd::realpath("$0/..")) }
 use lib "$repodir/integ/lib";
+use lib "$repodir/libbacon/perl";
 use util;
 use tree;
 use bam;
 
-# build out the fstree under /tmp
+# build out the fstree
 init();
 my $testdir = setup({ tolerant => 1 }, <<'TREE');
 |-- module.bam+devel <<
@@ -66,7 +67,6 @@ assert {
     type => "module"
   , state => 'fresh'
   , reloaded => 1         # module NOT reloaded
-  , state => "fresh"
   , parse => 1
   , parse_ok => 1
 })};
@@ -77,11 +77,18 @@ assert {
   , parse => 1
   , parse_ok => 1
 })};
+assert { enoent("boats") };
 
 # build - the file should be created
 build();
 assert {
-  stats("boats", {
-    state => "fresh"
+  stats("foo.bam", "-S", {
+    type => 'formula'
+  , state => "fresh"
+  , parse => 1
+  , parse_ok => 1
+  , fml_exec => 1
+  , fml_exec_ok => 1
 })};
+assert { eexists("boats") };
 teardown();

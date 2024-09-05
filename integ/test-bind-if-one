@@ -15,6 +15,7 @@ our $repodir;
 our $bam_basedir;
 BEGIN { $repodir = dirname(Cwd::realpath("$0/..")) }
 use lib "$repodir/integ/lib";
+use lib "$repodir/libbacon/perl";
 use util;
 use tree;
 use bam;
@@ -42,7 +43,7 @@ assert {
 })};
 assert {
   stats("var.bam+devel", "-S", {
-    type => 'var'
+    type => "varset"
   , state => 'fresh'
   , stale => 1
   , fresh => 1
@@ -72,15 +73,17 @@ TEXT
 close $fh;
 
 reconcile();
+assert { info({
+    "system-state" => 'ok'
+})};
 assert {
   stats(undef, {
-    system_state => 'ok'
-  , system_state_ok => 2
+    system_state_ok => 2
   , modules => 1
 })};
 assert {
   stats("var.bam+devel", "-S", {
-    type => 'var'
+    type => "varset"
   , state => 'fresh'
   , stale => 2
   , fresh => 2
@@ -110,15 +113,17 @@ TEXT
 close $fh;
 
 reconcile();
+assert { info({
+    "system-state" => 'ok'
+})};
 assert {
   stats(undef, {
-    system_state => 'ok'
-  , system_state_ok => 3
+    system_state_ok => 3
   , modules => 1
 })};
 assert {
   stats("var.bam+devel", "-S", {
-    type => 'var'
+    type => "varset"
   , state => 'fresh'
   , stale => 3
   , fresh => 3

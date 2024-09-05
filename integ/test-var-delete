@@ -11,6 +11,7 @@ our $repodir;
 our $bam_projdir;
 BEGIN { $repodir = dirname(Cwd::realpath("$0/..")) }
 use lib "$repodir/integ/lib";
+use lib "$repodir/libbacon/perl";
 use util;
 use tree;
 use bam;
@@ -30,7 +31,7 @@ TREE
 assert { stats(undef, {
     modules => 1
   , system_state_ok => 1
-  , var_files => 1
+  , varset_files => 1
 })};
 assert { stats(".", "-S", {
     type => 'module'
@@ -49,7 +50,7 @@ reconcile();
 assert { stats(undef, {
     modules => 1
   , system_state_ok => 2
-  , var_files => 0        # and deleted the var node
+  , varset_files => 0        # and deleted the var node
 })};
 assert { enoent("$bam_projdir/var.bam+devel") };
 assert { stats(".", "-S", {

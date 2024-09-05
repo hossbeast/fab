@@ -17,6 +17,7 @@ our $bam_projdir;
 our $repodir;
 BEGIN { $repodir = dirname(Cwd::realpath("$0/..")) }
 use lib "$repodir/integ/lib";
+use lib "$repodir/libbacon/perl";
 use util;
 use tree;
 use bam;
@@ -25,7 +26,7 @@ init(subdir => 'B');
 setup(<<TREE);
 |-- A
 |   `-- rules.bam+devel <<
-rule { id : foo } foo -> bar
+rule { name : foo } foo -> bar
 >>
 |-- B
 |   `-- foo
@@ -37,9 +38,9 @@ use A
 bind A => //A
 >>
 |-- system-config <<
-walker : {
-  include : {
-    $bam_basedir
+filesystem : {
+  fstrees : {
+    $bam_basedir : { mount : true }
   }
 }
 >>
@@ -50,10 +51,8 @@ my $B_id = hash64("$bam_projdir");
 # before
 assert { stats(undef, {
     modules => 2
-  , rules_files => 1
+  , ruleset_files => 1
   , system_state_ok => 1
-  , rule_run => 3
-  , rule_run_ok => 3
 })};
 assert { stats(".", "-S", {     # B
     type => 'module'
@@ -70,12 +69,12 @@ assert { stats(".", {     # B
     type => 'module-dir'
   , rules => 1
 })};
-assert { stats("//modules/$B_id/rma/foo", {
+assert { stats("//modules/$B_id/rmas-by/name/foo", {
     rule_run => 2               # this rule is run twice because it instantiates a new file in the matched directory
   , rule_run_ok => 2
 })};
 assert { stats("../A/rules.bam+devel", "-S", {
-    type => 'rules'
+    type => 'ruleset'
   , state => 'fresh'
   , parse => 1
   , parse_ok => 1
@@ -105,9 +104,8 @@ close $fh;
 reconcile();
 assert { stats(undef, {
     modules => 2
-  , rules_files => 0
+  , ruleset_files => 0
   , system_state_ok => 2
-  , rule_run => 3
 })};
 assert { stats(".", "-S", {     # B
     type => 'module'

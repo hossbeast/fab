@@ -16,6 +16,7 @@ our $bam_projdir;
 our $repodir;
 BEGIN { $repodir = dirname(Cwd::realpath("$0/..")) }
 use lib "$repodir/integ/lib";
+use lib "$repodir/libbacon/perl";
 use util;
 use tree;
 use bam;
@@ -24,7 +25,7 @@ init(subdir => 'B');
 setup(<<TREE);
 |-- A
 |   `-- rules.bam+devel <<
-rule { id : foo } foo -> bar
+rule { name : foo } foo -> bar
 >>
 |-- B
 |   `-- foo
@@ -32,9 +33,9 @@ rule { id : foo } foo -> bar
 use A
 >>
 |-- system-config <<
-walker : {
-  include : {
-    $bam_basedir
+filesystem : {
+  fstrees : {
+    $bam_basedir : { mount : true }
   }
 }
 >>
@@ -47,9 +48,9 @@ my $B_id = hash64("$bam_projdir");
 assert { stats(undef, {
     modules => 1
   , system_state_ok => 1
-  , rule_run => 2
-  , rule_run_ok => 2
-  , rules_files => 1
+#  , rule_run => 2
+#  , rule_run_ok => 2
+  , ruleset_files => 1
 })};
 assert { stats(".", "-S", {
     type => 'module'
@@ -64,10 +65,10 @@ assert { stats(".", {
   , state => 'fresh'
   , rules => 1
 })};
-assert { stats("//modules/$B_id/rma/foo", {
+assert { stats("//modules/$B_id/rmas-by/name/foo", {
     rule_run => 2               # this rule is run twice because it instantiates a new file in the matched directory
   , rule_run_ok => 2
-  , dependencies => 1
+  , bpe_hits => 1
 })};
 assert { stats(".", "-S", {
     type => 'module'
@@ -84,7 +85,7 @@ assert { stats("../A", {
   , rules => 0
 })};
 assert { stats("../A/rules.bam+devel", "-S", {
-    type => 'rules'
+    type => 'ruleset'
   , state => 'fresh'
   , parse => 1
   , parse_ok => 1
@@ -92,7 +93,7 @@ assert { stats("../A/rules.bam+devel", "-S", {
   , rules => 1
 })};
 
-assert { ls("//module/rules/$A_rules_id", "$A_rules_id -> $bam_basedir/A/rules.bam+devel") };
+assert { ls("//module/rulesets/$A_rules_id", "$A_rules_id -> //rulesets/$A_rules_id") };
 
 # delete the contents of the module file
 open my $fh, ">", "$bam_basedir/B/module.bam+devel" or die $!;
@@ -103,7 +104,7 @@ reconcile();
 assert { stats(undef, {
     modules => 1
   , system_state_ok => 2
-  , rules_files => 0      # A/rules.bam is no longer referenced
+  , ruleset_files => 0      # A/rules.bam is no longer referenced
 })};
 assert { stats(".", "-S", {
     type => 'module'

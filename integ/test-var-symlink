@@ -10,6 +10,7 @@ use Cwd;
 our $repodir;
 BEGIN { $repodir = dirname(Cwd::realpath("$0/..")) }
 use lib "$repodir/integ/lib";
+use lib "$repodir/libbacon/perl";
 use util;
 use tree;
 use bam;
@@ -57,13 +58,13 @@ assert { stats(".", "-S", {
   , parse_ok => 1
 })};
 assert { stats("var.bam+devel", "-S", {
-    type => 'var'
+    type => 'varset'
   , state => "fresh"
   , parse => 1
   , parse_ok => 1
 })};
 
-my $vars = bam_vars();
+my $vars = bam_module_vars();
 print("$vars\n");
 
 teardown();

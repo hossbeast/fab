@@ -16,6 +16,7 @@ our $repodir;
 our $bam_basedir;
 BEGIN { $repodir = dirname(Cwd::realpath("$0/..")) }
 use lib "$repodir/integ/lib";
+use lib "$repodir/libbacon/perl";
 use util;
 use tree;
 use bam;
@@ -37,7 +38,9 @@ my $A_id = hash64("$bam_basedir/A");
 
 assert { stats(undef, {
     modules => 2
-  , notify_index_count => ($bam_invalidate eq "notify") ? $watched_dirs : 0
+})};
+assert { stats("//notify", {
+    count => ($bam_invalidate eq "notify") ? $watched_dirs : 0
 })};
 assert { stats(".", "-S", {
     reloaded => 1
@@ -64,7 +67,9 @@ reconcile();
 
 assert { stats(undef, {
     modules => 1    # child module was deleted
-  , notify_index_count => ($bam_invalidate eq "notify") ? $watched_dirs : 0  # A dirnode not deleted
+})};
+assert { stats("//notify", {
+    count => ($bam_invalidate eq "notify") ? $watched_dirs : 0  # A dirnode not deleted
 })};
 
 my $res = bam_ls(["//modules"]);

@@ -16,6 +16,7 @@ our $repodir;
 our $bam_basedir;
 BEGIN { $repodir = dirname(Cwd::realpath("$0/..")) }
 use lib "$repodir/integ/lib";
+use lib "$repodir/libbacon/perl";
 use util;
 use tree;
 use bam;
@@ -32,9 +33,11 @@ setup(<<"TREE");
 |   `-- module.bam+devel <<
 >>
 |-- system-config <<
-walker : {
-  include : {
-    $bam_basedir/A/foo    # hides A/baz
+filesystem : {
+  fstrees : {
+    $bam_basedir/A/foo : {   # hides A/baz
+      mount : true
+    }
   }
 }
 >>
@@ -61,9 +64,11 @@ assert { enoent("$bam_basedir/A/baz") };
 
 open FH, ">$bam_basedir/system-config" or die $!;
 print FH <<TREE;
-walker : {
-  include : {
-    $bam_basedir/A        # one level higher
+filesystem : {
+  fstrees : {
+    $bam_basedir/A : {        # one level higher
+      mount : true
+    }
   }
 }
 TREE

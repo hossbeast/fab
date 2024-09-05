@@ -16,12 +16,13 @@ our $bam_basedir;
 our $bam_projdir;
 BEGIN { $repodir = dirname(Cwd::realpath("$0/..")) }
 use lib "$repodir/integ/lib";
+use lib "$repodir/libbacon/perl";
 use util;
 use tree;
 use bam;
 
 init(subdir => 'B');
-my $testdir = setup(<<"TREE");
+setup(<<"TREE");
 |-- A
 |   `-- foo
 |   `-- rules.bam+devel <<
@@ -50,17 +51,19 @@ formula : {
     }
   }
 }
-walker : {
+filesystem : {
   exclude : {
     foo
   }
-  include : {
-    $bam_basedir
-  }
-}
-filesystems : {
-  "/" : {
-    mkdirs : true
+  fstrees : {
+    $bam_basedir : {
+      mount : true
+      mkdir : true
+    }
+    $bam_basedir/B : {
+      mount : true
+      mkdir : true
+    }
   }
 }
 >>
@@ -68,10 +71,10 @@ TREE
 
 my $B_id = hash64("$bam_projdir");
 
-# fs link points to the right node
-my $result = bam_ls(["//modules/$B_id/fs", "--no-follow"]);
+# base link points to the right node
+my $result = bam_ls(["//modules/$B_id/base", "--no-follow"]);
 my $ref = $$result{out};
-assert { $ref eq "fs -> $bam_basedir/B" };
+assert { $ref eq "base -> $bam_basedir/B" };
 
 # anchor link points to the right node
 $result = bam_ls(["//modules/$B_id/anchor", "--no-follow"]);
@@ -82,15 +85,36 @@ assert { $ref eq "anchor -> $bam_basedir/A" };
 assert {
   stats(undef, {
     modules => 1
-  , mkdir => 1            # B/boats
 })};
 assert {
-  stats(".", "-S", {
+  stats("//filesystem", {
+    mkdir => 1
+})};
+assert {
+  stats("$bam_basedir/B", "-S", {
     type => 'module'
   , state => 'fresh'
   , reloaded => 1
   , parse => 1
   , parse_ok => 1
+})};
+assert {
+  stats("$bam_basedir/B", {
+    type => 'module-dir'
+  , state => 'fresh'
+  , mkdir => 0
+})};
+assert {
+  stats("$bam_basedir/B/boats", {
+    type => 'dir'
+  , state => 'fresh'
+  , mkdir => 1
+})};
+assert {
+  stats("$bam_basedir/A", {
+    type => 'dir'
+  , state => 'fresh'
+  , mkdir => 0
 })};
 
 build();

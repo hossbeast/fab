@@ -17,11 +17,11 @@ our $repodir;
 our $bam_projdir;
 BEGIN { $repodir = dirname(Cwd::realpath("$0/..")) }
 use lib "$repodir/integ/lib";
+use lib "$repodir/libbacon/perl";
 use util;
 use tree;
 use bam;
 
-# build out the fstree under /tmp
 init();
 my $testdir = setup(<<'TREE');
 |-- system-config <<
@@ -43,28 +43,28 @@ args : [
 ]
 >>
 |-- rules.bam.devel+devel <<
-rule { id : 1 } //module/fs/x -> $^D/y : cp.bam
-rule //module/fs/y -> //targets
+rule { name : 1 } //module/base/x -> $^D/y : cp.bam
+rule //module/base/y -> //targets
 >>
 |-- B
 |   `-- module.bam+devel <<
-rulesfiles rules.bam.devel
+rulesets rules.bam.devel
 >>
 |   `-- x <<
 Bx
 >>
 |-- C
 |   `-- module.bam+devel <<
-rulesfiles rules.bam.devel
+rulesets rules.bam.devel
 >>
 |   `-- x <<
 Cx
 >>
 TREE
 
-assert { stats(undef, { modules => 2 })}; # B, C
+assert { stats(undef, "--no-module", { modules => 2 })}; # B, C
 assert {
-  stats("B", "-S", "--no-module", {
+  stats("B", "-S", "-S", "--no-module", {
       type => 'module'
     , state => 'fresh'
     , reloaded => 1
@@ -79,9 +79,9 @@ assert {
 assert { stats("B", "--no-module", {
     type => 'module-dir'
   , state => 'fresh'
-  , rules => 2      # rules attached to the module
+  , rules => 2        # rules attached to the directory
 })};
-assert { stats("C", "-S", "--no-module", {
+assert { stats("C", "-S", "-S", "--no-module", {
     type => 'module'
   , state => 'fresh'
   , reloaded => 1

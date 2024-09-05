@@ -19,6 +19,7 @@ our $bam_basedir;
 our $repodir;
 BEGIN { $repodir = dirname(Cwd::realpath("$0/..")) }
 use lib "$repodir/integ/lib";
+use lib "$repodir/libbacon/perl";
 use util;
 use tree;
 use bam;
@@ -34,8 +35,8 @@ rule foo -> bar
 import A
 >>
 |-- system-config <<
-walker : {
-  include : {
+filesystem : {
+  fstrees : {
     $bam_basedir
   }
 }

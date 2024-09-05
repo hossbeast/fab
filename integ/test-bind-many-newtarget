@@ -16,6 +16,7 @@ our $bam_projdir;
 our $repodir;
 BEGIN { $repodir = dirname(Cwd::realpath("$0/..")) }
 use lib "$repodir/integ/lib";
+use lib "$repodir/libbacon/perl";
 use util;
 use tree;
 use bam;
@@ -30,20 +31,18 @@ setup({tolerant => 1 }, <<TREE);
 |       `-- bar
 |-- C
 |   `-- module.bam+devel <<
-bind { id : 1 } foo => [*] //foo
+bind { name : 1 } foo => [*] //foo
 >>
 |-- system-config <<
-filesystems : {
-  / : {
-    indexed : false
-  }
-  $bam_basedir : {
-    indexed : true
-  }
-}
-walker : {
-  include : {
-    $bam_basedir
+filesystem : {
+  fstrees : {
+    / : {
+      index : false
+    }
+    $bam_basedir : {
+      index : true
+      mount : true
+    }
   }
 }
 >>
@@ -59,10 +58,14 @@ assert {
   stats(undef, {
       modules => 1
     , system_state_ok => 1
-    , fsent_index_put => 6    # indexed operations
-    , fsent_index_del => 0
-    , fsent_index_count => 6  # number of indexed names
     , rule_run => 1
+    , rule_run_ok => 1
+})};
+assert {
+  stats("//fsindex", {
+      put => 6    # indexed operations
+    , del => 0
+    , count => 6  # number of indexed names
 })};
 assert {
   stats(".", "-S", {
@@ -75,7 +78,7 @@ assert {
     , parse_ok => 1
 })};
 assert {
-  stats("//module/rma/1", {
+  stats("//module/rmas-by/name/1", {
       rule_run => 1
     , rule_run_ok => 1
     , target_hits => 1
@@ -93,14 +96,21 @@ rename("$bam_basedir/B/foot", "$bam_basedir/B/foo");
 
 reconcile(expect_error => 1);
 assert {
+  stats("//fsindex", {
+    put => 7    # index put operations
+  , del => 1    # index del operations
+  , count => 5  # number of indexed names
+})};
+assert {
+  info({
+    "system-state" => 'rule-reconcile'
+})};
+assert {
   stats(undef, {
-    system_state => 'rule-reconcile'
-  , system_state_ok => 1
+    system_state_ok => 1
   , modules => 1
-  , fsent_index_put => 7    # index put operations
-  , fsent_index_del => 1    # index del operations
-  , fsent_index_count => 5  # number of indexed names
   , rule_run => 2
+  , rule_run_ok => 1
 })};
 assert {
   stats(".", "-S", {
@@ -113,8 +123,9 @@ assert {
     , parse_ok => 1
 })};
 assert {
-  stats("//module/rma/1", {
+  stats("//module/rmas-by/name/1", {
       rule_run => 2
+    , rule_run => 2
     , rule_run_ok => 1
     , target_hits => 2
     , attachment_hits => 1
@@ -132,13 +143,17 @@ rename("$bam_basedir/A/foo", "$bam_basedir/A/foot");
 
 reconcile();
 assert {
+  stats("//fsindex", {
+    put => 8    # index put operations
+  , del => 2    # index del operations
+  , count => 6  # number of indexed names
+})};
+assert {
   stats(undef, {
     modules => 1
   , system_state_ok => 2
-  , fsent_index_put => 8    # index operations
-  , fsent_index_del => 2
-  , fsent_index_count => 6  # number of indexed names
   , rule_run => 3
+  , rule_run_ok => 2
 })};
 assert {
   stats(".", "-S", {
@@ -149,7 +164,7 @@ assert {
     , parse_ok => 1
 })};
 assert {
-  stats("//module/rma/1", {
+  stats("//module/rmas-by/name/1", {
       rule_run => 3
     , rule_run_ok => 2
     , target_hits => 1
@@ -167,13 +182,17 @@ rename("$bam_basedir/B/foo", "$bam_basedir/B/foot");
 
 reconcile(expect_error => 1);
 assert {
+  stats("//fsindex", {
+    put => 9
+  , del => 3
+  , count => 5
+})};
+assert {
   stats(undef, {
     modules => 1
   , system_state_ok => 2
-  , fsent_index_put => 9    # index operations
-  , fsent_index_del => 3
-  , fsent_index_count => 5  # number of indexed names
   , rule_run => 4
+  , rule_run_ok => 2
 })};
 assert {
   stats(".", "-S", {
@@ -186,7 +205,7 @@ assert {
     , parse_ok => 1
 })};
 assert {
-  stats("//module/rma/1", {
+  stats("//module/rmas-by/name/1", {
       rule_run => 4
     , rule_run_ok => 2
     , target_hits => 0

@@ -1,0 +1,214 @@
+#!/usr/bin/env perl
+
+#
+# plugin sends an invalid request before becoming ready
+#
+
+use strict;
+use warnings;
+$SIG{__WARN__} = sub { die @_ };
+
+use POSIX;
+use File::Basename;
+use Cwd;
+our $repodir;
+our $bam_basedir;
+our $bam_projdir;
+BEGIN { $repodir = dirname(Cwd::realpath("$0/..")) }
+use lib "$repodir/integ/lib";
+use lib "$repodir/libbacon/perl";
+use util;
+use tree;
+use bam;
+
+init();
+setup(<<TREE);
+|-- module.bam+devel <<
+rule cores.c -> cores.o : cp.bam
+rule cores.o -> cores : cp.bam
+rule cores -> //targets
+>>
+|-- cores.h <<
+foo
+>>
+|-- cores.c <<
+foo
+>>
+|-- cp.bam << 0777
+#!/usr/bin/env perl
+open A, "<", \$ENV{bm_source0} or die \$!;
+open B, ">", \$ENV{bm_target0} or die \$!;
+while(<A>)
+{
+  print B "\$_";
+}
+>>
+|-- system-config <<
+plugins : {
+  path : {
+    dirs : {
+      $repodir/builtin-plugins
+    }
+  }
+  [
+    {
+      path : invalidate-global
+      args : [ --suffix .h ]
+    }
+  ]
+}
+filesystem : {
+  fstrees : {
+    $bam_basedir : {
+      mount : true
+    }
+    $repodir/builtin-plugins : {
+      mount : true
+    }
+  }
+}
+>>
+TREE
+
+assert {
+  info(undef, {
+    "system-state" => 'ok'
+})};
+assert { stats(undef, {
+    system_state_ok => 1
+  , system_state_plugin_reconcile => 1
+})};
+assert { stats("cores.c", {
+    type => 'file'
+  , state => 'fresh'
+  , stale => 0
+  , fresh => 1
+})};
+assert { stats("cores.h", {
+    type => 'file'
+  , state => 'fresh'
+  , stale => 0
+  , fresh => 1
+})};
+assert { stats("cores.o", {
+    type => 'file'
+  , state => 'uncreated'
+  , stale => 0
+  , fresh => 0
+})};
+assert { stats("cores", {
+    type => 'file'
+  , state => 'uncreated'
+  , stale => 0
+  , fresh => 0
+})};
+assert { stats("$repodir/builtin-plugins/invalidate-global", "-S", {
+    type => 'plugin'
+  , state => 'fresh'
+  , stale => 1
+  , fresh => 1
+  , parse => 0
+  , parse_ok => 0
+  , fork => 1
+  , crashed => 0
+  , reap => 0
+  , tx_messages => 0
+  , rx_messages => 3  # eventsub, plugin-ready, plugin-ready
+  , ready => 1
+})};
+
+build();
+
+# intermediate and final file were created
+assert_file("$bam_basedir/cores.o", "foo");
+assert_file("$bam_basedir/cores", "foo");
+
+assert { info(undef, {
+  "system-state" => 'ok'
+})};
+assert { stats("cores.c", {
+    type => 'file'
+  , state => 'fresh'
+  , stale => 0
+  , fresh => 1
+})};
+assert { stats("cores.h", {
+    type => 'file'
+  , state => 'fresh'
+  , stale => 0
+  , fresh => 1
+})};
+assert { stats("cores.o", {
+    type => 'file'
+  , state => 'fresh'
+  , stale => 0
+  , fresh => 1
+})};
+assert { stats("cores", {
+    type => 'file'
+  , state => 'fresh'
+  , stale => 0
+  , fresh => 1
+})};
+assert { stats("$repodir/builtin-plugins/invalidate-global", "-S", {
+    type => 'plugin'
+  , state => 'fresh'
+  , stale => 1
+  , fresh => 1
+  , parse => 0
+  , parse_ok => 0
+  , fork => 1
+  , crashed => 0
+  , reap => 0
+  , tx_messages => 0
+  , rx_messages => 4  # eventsub, plugin-ready, plugin-ready, plugin-ready
+  , ready => 1
+})};
+
+# direct invalidation by api
+bam_touch("$bam_basedir/cores.h");
+reconcile();
+
+assert { info(undef, {
+  "system-state" => 'ok'
+})};
+assert { stats("cores.c", {
+    type => 'file'
+  , state => 'fresh'  # primary files refresh automatically on reconcile
+  , stale => 1
+  , fresh => 2
+})};
+assert { stats("cores.h", {
+    type => 'file'
+  , state => 'fresh'  # primary files refresh automatically on reconcile
+  , stale => 1
+  , fresh => 2
+})};
+assert { stats("cores.o", {
+    type => 'file'
+  , state => 'stale'
+  , stale => 1
+  , fresh => 1
+})};
+assert { stats("cores", {
+    type => 'file'
+  , state => 'stale'
+  , stale => 1
+  , fresh => 1
+})};
+assert { stats("$repodir/builtin-plugins/invalidate-global", "-S", {
+    type => 'plugin'
+  , state => 'fresh'
+  , stale => 1
+  , fresh => 1
+  , parse => 0
+  , parse_ok => 0
+  , fork => 1
+  , crashed => 0
+  , reap => 0
+  , tx_messages => 1 # node-stale
+  , rx_messages => 7 # eventsub, plugin-ready, plugin-ready, invalidate-primary, plugin-ready
+  , ready => 1
+})};
+
+teardown();

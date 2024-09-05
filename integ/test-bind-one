@@ -15,6 +15,7 @@ our $repodir;
 our $bam_basedir;
 BEGIN { $repodir = dirname(Cwd::realpath("$0/..")) }
 use lib "$repodir/integ/lib";
+use lib "$repodir/libbacon/perl";
 use util;
 use tree;
 use bam;
@@ -57,10 +58,13 @@ close $fh;
 
 reconcile(tolerant => 1);
 assert {
+  info({
+    "system-state" => 'rule-reconcile'
+})};
+assert {
   stats(undef, {
     modules => 1
   , system_state_ok => 1
-  , system_state => 'rule-reconcile'
   , system_error => 1
 })};
 assert {

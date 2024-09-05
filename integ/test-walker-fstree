@@ -15,6 +15,7 @@ our $repodir;
 our $bam_basedir;
 BEGIN { $repodir = dirname(Cwd::realpath("$0/..")) }
 use lib "$repodir/integ/lib";
+use lib "$repodir/libbacon/perl";
 use util;
 use tree;
 use bam;
@@ -29,24 +30,22 @@ setup(<<"TREE");
 |       `-- module.bam+devel <<
 >>
 |-- system-config <<
-filesystems : {
-  "$bam_basedir" : {
-    invalidate : notify
-    mkdirs : true
-    indexed : true
+filesystem : {
+  fstrees : {
+    $bam_basedir : {
+      invalidation : notify
+      mkdir : true
+      index : true
+      mount : true
+    }
+    / : {
+      invalidation : notify
+      mkdir : true
+      index : false
+    }
   }
-  / : {
-    invalidate : notify
-    mkdirs : true
-    indexed : false
-  }
-}
-walker : {
   exclude : {
     foo
-  }
-  include : {
-    $bam_basedir
   }
 }
 >>
@@ -65,11 +64,7 @@ assert {
     , parse_ok => 1
 })};
 
-my $res = bam_filesystem();
-print($$res{out} . "\n");
-
-$res = bam_describe(["$bam_basedir/A"]);
-print($$res{out} . "\n");
-assert { $$res{out} =~ /indexed-lookup : true/ };
+my $res = bam_describe(["$bam_basedir/A"]);
+assert { $$res{out} =~ /indexed.lookup : 1/ };
 
 teardown();

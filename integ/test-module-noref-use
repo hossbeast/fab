@@ -15,6 +15,7 @@ use Cwd;
 our $repodir;
 BEGIN { $repodir = dirname(Cwd::realpath("$0/..")) }
 use lib "$repodir/integ/lib";
+use lib "$repodir/libbacon/perl";
 use util;
 use tree;
 use bam;
@@ -32,7 +33,7 @@ TREE
 # before - reconciliation did not complete
 assert { stats(undef, {
     modules => 1
-  , rules_files => 0
+  , ruleset_files => 0
   , system_state_ok => 0
 })};
 # module was not reloaded
@@ -56,7 +57,7 @@ close $fh;
 reconcile();
 assert { stats(undef, {
     modules => 1
-  , rules_files => 1
+  , ruleset_files => 1
   , system_state_ok => 1
 })};
 # module was reloaded
@@ -74,7 +75,7 @@ assert { stats(".", "-S", {
 assert { stats("A/rules.bam+devel", "-S", {
     parse => 1
   , parse_ok => 1
-  , type => 'rules'
+  , type => 'ruleset'
   , state => "fresh"
   , uses_up => 1
 })};

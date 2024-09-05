@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: GPL-3.0
 # Copyright (c) 2012-2023 Todd Freed <todd.freed@gmail.com>
 
+use bacon;
 use xlinux;
 use Data::Dumper;
 
@@ -60,13 +61,57 @@ sub equal
   return $a eq $b;
 }
 
+sub info
+{
+  my $items = pop;
+  my $result;
+  my $msg;
+  my $info = {};
+  $result = bam_info();
+  # info returns mappings only -- parse in set context
+  $msg = bacon_parse("{" . $$result{out} . "}");
+
+  while(my($k, $v) = each %$msg) {
+    $$info{$k} = $v unless defined $$info{$k};
+  }
+
+  my $mismatch = 0;
+  for my $k (keys %$items)
+  {
+    my $v = $$items{$k};
+    if(!equal($$info{$k}, $v))
+    {
+      $mismatch = 1;
+      last;
+    }
+  }
+
+  return 1 unless $mismatch;
+
+  my %pkeys;
+  map { $pkeys{$_} = 1 } keys %$items;
+  map { $pkeys{$_} = 1 } keys %$info;
+  my @keys = sort keys %pkeys;
+
+  print("info " . ($entity || '-system-') . " >> \n");
+  for my $k (@keys)
+  {
+    my $v = $$info{$k};
+    printf("%35s : %-12s", $k, $v);
+    if(exists($$items{$k}))
+    {
+      my $eq = equal($$items{$k}, $$info{$k});# ($$items{$k} || '') eq ($$info{$k} || '');
+      printf("%s %s", ($eq ? "==" : "<>"), $$items{$k});
+    }
+    print("\n");
+  }
+
+  return 0;
+}
+
 sub stats
 {
-  my $entity = shift;
-  my $items = pop;
-  my @args = @_;
-
-  my $stats = bam_stats($entity, @args);
+  my $stats = bam_stats(@_);
 
   my $mismatch = 0;
   for my $k (keys %$items)
@@ -146,7 +191,7 @@ sub uncreated
 {
   my $name = shift;
 
-  my $result = bam_ls([$name, "--no-follow", "--graph", "fstree-hidden"]);
+  my $result = bam_ls([$name, "--no-follow", "--graph", "fs", "--hidden"]);
   if($$result{out} !~ /uncreated/) {
     goto err;
   }
@@ -166,7 +211,7 @@ sub unlinked
 {
   my $name = shift;
 
-  my $result = bam_ls([$name, "--no-follow", "--graph", "fstree-hidden"]);
+  my $result = bam_ls([$name, "--no-follow", "--graph", "fs", "--hidden"]);
   if($$result{out} !~ /unlinked/) {
     goto err;
   }
@@ -190,7 +235,6 @@ sub ls
 
   unshift(@args, $path);
   unshift(@args, "--no-follow");
-#  unshift(@args, "--no-module");
 
   my $result = bam_tree(\@args);
   return 1 if $$result{out} eq $expected;
@@ -219,12 +263,7 @@ sub get_node_identifiers
   }
   my $id = "$1";
 
-  if($$result{out} !~ m|^\s+token : (?:")?([^"\n]+)(?:")?$|m) {
-    goto err;
-  }
-  my $token = "$1";
-
-  return $id, $token;
+  return $id;
 
 err:
   print STDERR ("exit : $$result{exit}\n");
@@ -351,12 +390,14 @@ sub run
       }
     }
 
+    #
     # once the child process has exited (which closes its fds), and pipes are drained
     #
     # https://man7.org/linux/man-pages/man7/pipe.7.html
     #  If all file descriptors referring to the write end of a pipe have
     #  been closed, then an attempt to read(2) from the pipe will see
     #  end-of-file (read(2) will return 0).
+    #
     last if($or == 0 && $er == 0 && exists $status_by_pid{$pid});
   }
 

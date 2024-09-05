@@ -1,0 +1,86 @@
+#!/usr/bin/env perl
+
+#
+# if a plugin crashes before it signals readiness, reconcile times out and gives an error
+#
+
+use strict;
+use warnings;
+$SIG{__WARN__} = sub { die @_ };
+
+use POSIX;
+use File::Basename;
+use Cwd;
+our $repodir;
+our $bam_basedir;
+our $bam_projdir;
+BEGIN { $repodir = dirname(Cwd::realpath("$0/..")) }
+use lib "$repodir/integ/lib";
+use lib "$repodir/libbacon/perl";
+use util;
+use tree;
+use bam;
+
+init();
+setup({ tolerant => 1 }, <<TREE);
+|-- foo <<
+foo
+>>
+|-- module.bam+devel <<
+>>
+|-- plugin << 0755
+#!/usr/bin/env perl
+use POSIX;
+
+# signal ready
+my \$s = <<MSG;
+plugin-ready
+
+MSG
+POSIX::write(1001, \$s, length(\$s));
+
+# then exit
+exit(0);
+TEXT
+>>
+|-- config.bam+devel <<
+plugins : {
+  path : {
+    dirs : {
+      $bam_basedir
+    }
+  }
+  [
+    {
+      path : plugin
+    }
+  ]
+}
+>>
+TREE
+
+assert {
+  info(undef, {
+    "system-state" => 'ok'
+})};
+assert {
+  stats(undef, {
+      system_state_ok => 1
+    , system_state_plugin_reconcile => 1
+})};
+assert { stats("$bam_basedir/plugin", "-S", {
+    type => 'plugin'
+  , state => 'stale'
+  , stale => 2
+  , fresh => 1
+  , parse => 0
+  , parse_ok => 0
+  , fork => 1
+  , crashed => 0
+  , reap => 1
+  , tx_messages => 0
+  , rx_messages => 1
+  , ready => 1
+})};
+
+teardown();

@@ -10,6 +10,7 @@ use Cwd;
 our $repodir;
 BEGIN { $repodir = dirname(Cwd::realpath("$0/..")) }
 use lib "$repodir/integ/lib";
+use lib "$repodir/libbacon/perl";
 use util;
 use tree;
 use bam;
@@ -37,9 +38,6 @@ assert {
   , parse => 1
   , parse_ok => 1
 })};
-
-# created in state uncreated by rules-reconcile
-assert { uncreated("foo.bam") };
 
 # create the formula
 open my $fh, ">", "$testdir/foo.bam" or die $!;

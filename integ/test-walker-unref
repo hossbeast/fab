@@ -19,6 +19,7 @@ our $repodir;
 our $bam_basedir;
 BEGIN { $repodir = dirname(Cwd::realpath("$0/..")) }
 use lib "$repodir/integ/lib";
+use lib "$repodir/libbacon/perl";
 use util;
 use tree;
 use bam;
@@ -35,9 +36,11 @@ setup(<<"TREE");
 |   `-- module.bam+devel <<
 >>
 |-- system-config <<
-walker : {
-  include : {
-    $bam_basedir/A/foo
+filesystem : {
+  fstrees : {
+    $bam_basedir/A/foo : { # only this subtree is visible
+      mount : true
+    }
   }
 }
 >>
@@ -56,16 +59,18 @@ assert {
     , parse_ok => 1
 })};
 
-assert { eexists("$bam_basedir/A/foo/bar") };
 assert { eexists("$bam_basedir/A/foo") };
-assert { enoent("$bam_basedir/A/baz/qux") };
+assert { eexists("$bam_basedir/A/foo/bar") };
 assert { enoent("$bam_basedir/A/baz") };
+assert { enoent("$bam_basedir/A/baz/qux") };
 
 open FH, ">$bam_basedir/system-config" or die $!;
 print FH <<TREE;
-walker : {
-  include : {
-    $bam_basedir/A/baz
+filesystem : {
+  fstrees : {
+    $bam_basedir/A/baz : { # now only this subtree is visible
+      mount : true
+    }
   }
 }
 TREE
@@ -81,9 +86,9 @@ assert { stats(".", "-S", {
   , parse => 1
   , parse_ok => 1
 })};
-assert { enoent("$bam_basedir/A/foo/bar") };
 assert { enoent("$bam_basedir/A/foo") };
-assert { eexists("$bam_basedir/A/baz/qux") };
+assert { enoent("$bam_basedir/A/foo/bar") };
 assert { eexists("$bam_basedir/A/baz") };
+assert { eexists("$bam_basedir/A/baz/qux") };
 
 teardown();

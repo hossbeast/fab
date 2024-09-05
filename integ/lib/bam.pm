@@ -23,7 +23,7 @@ our $bam_projhash;      # d5c90b82ddcd99bb                      (proj)
 our $bam_projipc;       # /run/user/1000/bam/d5c90b82ddcd99bb
 our $bam_ipcdir;        # /run/user/1000/bam/d5c90b82ddcd99bb   (proj)
 our $bam_invalidate;
-our $bam_sweeper_period = 250 * 1000 * 1000;
+our $bam_sweeper_period = 250 * 1000 * 1000;  # 250 ms
 
 my $ff64 = hex("0xffffffffffffffff");
 
@@ -91,6 +91,8 @@ sub init
   printf("%10s %s %s\n", "base", $bam_basehash, $bam_basedir);
   printf("%10s %s %s\n", "proj", $bam_projhash, $bam_projdir);
   printf("%10s %s %s\n", "ipcdir", $bam_projhash, $bam_ipcdir);
+  printf("%10s %s %s/bamd/stdout\n", "out", $bam_projhash, $bam_ipcdir);
+  printf("%10s %s %s/bamd/stderr\n", "err", $bam_projhash, $bam_ipcdir);
 }
 
 sub setup
@@ -184,7 +186,7 @@ sub bam_bootstrap
     , "-K"
     , "--system-config-path", "$bam_basedir/system-config"
     , "--user-config-path", "$bam_basedir/user-config"
-    , "--default-filesystem-invalidate", $bam_invalidate
+    , "--default-filesystem-invalidation", $bam_invalidate
     , "--sweeper-period-nsec", $bam_sweeper_period
   );
 
@@ -201,17 +203,12 @@ sub bam_reconcile
   );
 }
 
-sub bam_stats
+sub bam_touch
 {
   my $name = shift;
   my @args = @_;
 
-  # fetch stats
-  my %stats;
-  unless(grep { $_ eq "-S" } @args) {
-    unshift @args, "--no-special";
-  }
-  unshift @args, "--no-launch", "stats";
+  unshift @args, "--no-launch", "touch";
   unshift @args, "-m", ".";
   push @args, $name if $name;
 
@@ -219,26 +216,52 @@ sub bam_stats
     , $bam_bampath
     , @args
   );
-  my $text = $$result{out};
-  for my $line (split(/\n/, $text))
-  {
-    chomp $line;
-    my $k;
-    my $v;
-    if($line =~ /^ *([-_a-z0-9]+) : ([0-9]+)$/) {
-      $k = $1;
-      $v = int($2);
-    } elsif ($line =~ /^ *([-_a-z0-9]+) : ([-_a-zA-Z0-9\/+.]+)$/) {
-      $k = $1;
-      $v = $2;
-    } else {
-      next;
-    }
-    die "duplicate key $k" if exists($stats{$k});
-    $stats{$k} = $v;
+}
+
+sub bam_invalidate_primary
+{
+  my $name = shift;
+  my @args = @_;
+
+  unshift @args, "--no-launch", "adhoc", "invalidate-primary";
+  unshift @args, "-m", ".";
+  push @args, $name if $name;
+
+  my $result = run({ cwd => $bam_projdir }
+    , $bam_bampath
+    , @args
+  );
+}
+
+sub bam_stats
+{
+  my $items = pop;
+  my @args = @_;
+  my $entity = undef;
+  if($#args >= 0) {
+    $entity = $args[0];
   }
 
-  \%stats;
+  # special case for no target ; fetch global stats
+  my $result;
+  my $msg;
+  my $stats = {};
+  if (!$entity) {
+    unshift @args, "//system", "--no-module";
+  }
+  $result = bam_describe(\@args);
+  # there can be multiple values - parse in set context
+  $msg = bacon_parse("{" . $$result{out} . "}");
+
+  for my $rec (values %$msg) {
+    while(my($k, $v) = each %{$$rec{stats}}) {
+      $$stats{$k} = $v unless defined $$stats{$k};
+    }
+    $$stats{type} = $$rec{type} unless defined $$stats{type};
+    $$stats{state} = $$rec{state} unless defined $$stats{state};
+  }
+
+  return $stats;
 }
 
 sub bam_metadata
@@ -262,14 +285,26 @@ sub bam_metadata
   \%metadata;
 }
 
-sub bam_filesystem
+sub bam_fstrees
 {
   my $arglist = shift;
 
   run({ @_, cwd => $bam_projdir, @_ }
     , $bam_bampath
     , "--no-launch"
-    , "filesystem"
+    , "fstrees"
+    , @$arglist
+  );
+}
+
+sub bam_info
+{
+  my $arglist = shift;
+
+  run({ @_, cwd => $bam_projdir, @_ }
+    , $bam_bampath
+    , "--no-launch"
+    , "info"
     , @$arglist
   );
 }
@@ -332,11 +367,12 @@ sub bam_build
   );
 }
 
-sub bam_vars
+sub bam_module_vars
 {
   my $res = run({ @_, cwd => $bam_projdir }
     , $bam_bampath
     , "--no-launch"
+    , "module"
     , "vars"
   );
 
@@ -351,12 +387,13 @@ sub bam_vars
   join("\n", @lines);
 }
 
-sub bam_env
+sub bam_module_envs
 {
   my $res = run({ @_, cwd => $bam_projdir }
     , $bam_bampath
     , "--no-launch"
-    , "env"
+    , "module"
+    , "envs"
   );
 
   my $text = $$res{out};

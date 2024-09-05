@@ -16,6 +16,7 @@ our $repodir;
 our $bam_projhash;
 BEGIN { $repodir = dirname(Cwd::realpath("$0/..")) }
 use lib "$repodir/integ/lib";
+use lib "$repodir/libbacon/perl";
 use util;
 use tree;
 use bam;
@@ -43,8 +44,9 @@ assert { stats(".", "-S", {
   , parse_ok => 0
 })};
 
-my $md = bam_metadata();
-assert { $$md{"system-state"} ne "ok" };
+my $result = bam_info();
+my $msg = bacon_parse("{" . $$result{out} . "}");
+assert { $$msg{"system-state"} ne "ok" };
 
 #
 # phase 2
@@ -64,7 +66,8 @@ assert { stats(".", "-S", {
   , parse_ok => 0
 })};
 
-$md = bam_metadata();
-assert { $$md{"system-state"} ne "ok" };
+$result = bam_info();
+$msg = bacon_parse("{" . $$result{out} . "}");
+assert { $$msg{"system-state"} ne "ok" };
 
 teardown();

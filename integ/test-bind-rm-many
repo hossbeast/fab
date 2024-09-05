@@ -16,6 +16,7 @@ our $bam_projdir;
 our $repodir;
 BEGIN { $repodir = dirname(Cwd::realpath("$0/..")) }
 use lib "$repodir/integ/lib";
+use lib "$repodir/libbacon/perl";
 use util;
 use tree;
 use bam;
@@ -27,20 +28,18 @@ setup({tolerant => 1 }, <<TREE);
 |       `-- bar
 |-- C
 |   `-- module.bam+devel <<
-bind { id : 1 } foo => [*] //foo
+bind { name : 1 } foo => [*] //foo
 >>
 |-- system-config <<
-filesystems : {
-  / : {
-    indexed : false
-  }
-  $bam_basedir : {
-    indexed : true
-  }
-}
-walker : {
-  include : {
-    $bam_basedir
+filesystem : {
+  fstrees : {
+    / : {
+      index : false
+    }
+    $bam_basedir : {
+      index : true
+      mount : true
+    }
   }
 }
 >>
@@ -53,10 +52,13 @@ assert {
   stats(undef, {
     modules => 1
   , system_state_ok => 1
-  , fsent_index_put => 4    # indexed operations
-  , fsent_index_del => 0
-  , fsent_index_count => 4  # indexed nodes
   , rule_run => 1
+})};
+assert {
+  stats("//fsindex", {
+      put => 4
+    , del => 0
+    , count => 4
 })};
 assert {
   stats(".", "-S", {
@@ -67,7 +69,7 @@ assert {
   , parse_ok => 1
 })};
 assert {
-  stats("//module/rma/1", {
+  stats("//module/rmas-by/name/1", {
       rule_run => 1
     , rule_run_ok => 1        # bind rule was invalidated, and re-run
     , search_hits => 0
@@ -89,10 +91,13 @@ assert {
   stats(undef, {
     modules => 1
   , system_state_ok => 1
-  , fsent_index_put => 4    # index operations
-  , fsent_index_del => 1
-  , fsent_index_count => 3  # indexed nodes
   , rule_run => 2
+})};
+assert {
+  stats("//fsindex", {
+      put => 4
+    , del => 1
+    , count => 3
 })};
 assert {
   stats(".", "-S", {
@@ -103,7 +108,7 @@ assert {
   , parse_ok => 1
 })};
 assert {
-  stats("//module/rma/1", {
+  stats("//module/rmas-by/name/1", {
       rule_run => 2
     , rule_run_ok => 1        # bind rule was invalidated, and re-run
     , search_hits => 0

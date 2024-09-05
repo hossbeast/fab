@@ -15,6 +15,7 @@ our $repodir;
 our $bam_basedir;
 BEGIN { $repodir = dirname(Cwd::realpath("$0/..")) }
 use lib "$repodir/integ/lib";
+use lib "$repodir/libbacon/perl";
 use util;
 use tree;
 use bam;
@@ -27,7 +28,7 @@ build : {
 }
 >>
 |-- system-config <<
-walker : {
+filesystem : {
   special : {
     config.bam+devel
   }
@@ -39,33 +40,35 @@ TREE
 
 # 1. non-empty config.bam file
 assert { stats(undef, {
-    system_state => 'ok'
-  , system_state_ok => 1
+    system_state_ok => 1
   , modules => 1
-  , config_files => 2
+  , configset_files => 2
+})};
+assert { info({
+    "system-state" => 'ok'
 })};
 assert { stats("$bam_basedir/config.bam+devel", {
-    type => 'config-file'
+    type => 'configset-file'
   , state => 'fresh'
-  , indexed_lookup => 0
 })};
 assert { stats("$bam_basedir/config.bam+devel", "-S", {
-    type => 'config'
+    type => "configset"
   , state => 'fresh'
   , parse => 1
   , parse_ok => 1
 })};
-my ($node_id_1, $node_token_1) = get_node_identifiers("$bam_basedir/config.bam+devel");
-print("id >> $node_id_1 << token >> $node_token_1 <<\n");
+my $node_id_1 = get_node_identifiers("$bam_basedir/config.bam+devel");
 
 # 2. config.bam file deleted
 unlink("$bam_basedir/config.bam+devel") or die $!;
 
 reconcile();
+assert { info({
+  "system-state" => 'ok'
+})};
 assert { stats(undef, {
-    system_state => 'ok'
-  , system_state_ok => 2
-  , config_files => 1
+    system_state_ok => 2
+  , configset_files => 1
 })};
 assert { enoent("$bam_basedir/config.bam+devel") };
 
@@ -76,27 +79,26 @@ TEXT
 close $fh;
 
 reconcile();
+assert { info({
+  "system-state" => 'ok'
+})};
 assert { stats(undef, {
-    system_state => 'ok'
-  , system_state_ok => 3
-  , config_files => 2
+    system_state_ok => 3
+  , configset_files => 2
 })};
 assert { stats("$bam_basedir/config.bam+devel", {
-    type => 'config-file'
+    type => 'configset-file'
   , state => 'fresh'
-  , indexed_lookup => 0
 })};
 assert { stats("$bam_basedir/config.bam+devel", "-S", {
-    type => 'config'
+    type => "configset"
   , state => 'fresh'
   , parse => 1
   , parse_ok => 1
 })};
-my ($node_id_2, $node_token_2) = get_node_identifiers("$bam_basedir/config.bam+devel");
-print("id >> $node_id_2 << token >> $node_token_2 <<\n");
+my $node_id_2 = get_node_identifiers("$bam_basedir/config.bam+devel");
 
 assert { $node_id_1 eq $node_id_2 };          # id is stable across delete/create
-assert { $node_token_1 ne $node_token_2 };    # token changes across delete/create
 
 # 3. config.bam file changed
 open $fh, ">", "$bam_basedir/config.bam+devel" or die $!;
@@ -108,18 +110,19 @@ TEXT
 close $fh;
 
 reconcile();
+assert { info({
+  "system-state" => 'ok'
+})};
 assert { stats(undef, {
-    system_state => 'ok'
-  , system_state_ok => 4
-  , config_files => 2
+    system_state_ok => 4
+  , configset_files => 2
 })};
 assert { stats("$bam_basedir/config.bam+devel", {
-    type => 'config-file'
+    type => 'configset-file'
   , state => 'fresh'
-  , indexed_lookup => 0
 })};
 assert { stats("$bam_basedir/config.bam+devel", "-S", {
-    type => 'config'
+    type => "configset"
   , state => 'fresh'
   , parse => 2
   , parse_ok => 2

@@ -1,0 +1,116 @@
+#!/usr/bin/env perl
+
+#
+# plugin sends an invalid request before becoming ready
+#
+
+use strict;
+use warnings;
+$SIG{__WARN__} = sub { die @_ };
+
+use POSIX;
+use File::Basename;
+use Cwd;
+our $repodir;
+our $bam_basedir;
+our $bam_projdir;
+BEGIN { $repodir = dirname(Cwd::realpath("$0/..")) }
+use lib "$repodir/integ/lib";
+use lib "$repodir/libbacon/perl";
+use util;
+use tree;
+use bam;
+
+init();
+setup({ tolerant => 1 }, <<TREE);
+|-- module.bam+devel <<
+>>
+|-- plugin << 0755
+#!/usr/bin/env perl
+use POSIX;
+POSIX::write(1001, "garbage\n\n", 9);
+>>
+|-- config.bam+devel <<
+plugins : {
+  path : {
+    dirs : {
+      $bam_basedir
+    }
+  }
+  [
+    {
+      path : plugin
+    }
+  ]
+}
+>>
+TREE
+
+assert {
+  info(undef, {
+    "system-state" => 'plugin-reconcile'
+})};
+assert {
+  stats(undef, {
+      system_state_ok => 0
+    , system_state_plugin_reconcile => 1
+})};
+assert { stats("$bam_basedir/plugin", "-S", {
+    type => 'plugin'
+  , state => 'stale'
+  , stale => 1
+  , fresh => 0
+  , parse => 0
+  , parse_ok => 0
+  , fork => 1
+  , crashed => 0
+  , reap => 1
+  , tx_messages => 0
+  , rx_messages => 0
+  , ready => 0
+})};
+
+# fix the plugin
+open my $fh, ">", "$bam_basedir/plugin" or die $!;
+print $fh <<'TEXT';
+#!/usr/bin/env perl
+use POSIX;
+
+my $s = <<MSG;
+plugin-ready
+
+MSG
+POSIX::write(1001, $s, length($s));
+
+while(1) { }
+TEXT
+close $fh;
+
+# after
+reconcile();
+
+assert {
+  info(undef, {
+    "system-state" => 'ok'
+})};
+assert {
+  stats(undef, {
+      system_state_ok => 1
+    , system_state_plugin_reconcile => 2
+})};
+assert { stats("$bam_basedir/plugin", "-S", {
+    type => 'plugin'
+  , state => 'fresh'
+  , stale => 1
+  , fresh => 1
+  , parse => 0
+  , parse_ok => 0
+  , fork => 2
+  , crashed => 0
+  , reap => 1
+  , tx_messages => 0
+  , rx_messages => 1
+  , ready => 1
+})};
+
+teardown();

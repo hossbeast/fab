@@ -10,6 +10,7 @@ use Cwd;
 our $repodir;
 BEGIN { $repodir = dirname(Cwd::realpath("$0/..")) }
 use lib "$repodir/integ/lib";
+use lib "$repodir/libbacon/perl";
 use util;
 use tree;
 use bam;
@@ -33,7 +34,7 @@ assert { stats(undef, {
 })};
 assert {
   stats("config.bam+devel", "-S", "--no-module", {
-      type => 'config'
+      type => "configset"
     , state => 'stale'
     , parse => 1
     , parse_ok => 0
@@ -45,7 +46,7 @@ assert { stats(undef, {
   , system_state_ok => 0
 })};
 assert { stats("config.bam+devel", "-S", "--no-module", {
-    type => 'config'
+    type => "configset"
   , state => 'stale'
   , parse => 2
   , parse_ok => 0
@@ -57,7 +58,7 @@ assert { stats(undef, {
   , system_state_ok => 0
 })};
 assert { stats("config.bam+devel", "-S", "--no-module", {
-    type => 'config'
+    type => "configset"
   , state => 'stale'
   , parse => 3
   , parse_ok => 0
@@ -79,7 +80,7 @@ assert { stats(undef, {
   , system_state_ok => 1
 })};
 assert { stats("config.bam+devel", "-S", {
-    type => 'config'
+    type => "configset"
   , state => "fresh"
   , parse => 4
   , parse_ok => 1

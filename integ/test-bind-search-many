@@ -17,6 +17,7 @@ our $bam_projdir;
 our $repodir;
 BEGIN { $repodir = dirname(Cwd::realpath("$0/..")) }
 use lib "$repodir/integ/lib";
+use lib "$repodir/libbacon/perl";
 use util;
 use tree;
 use bam;
@@ -25,22 +26,17 @@ init(subdir => 'B');
 setup(<<TREE);
 |-- B
 |   `-- module.bam+devel <<
-rule { id : beef } */foo+(.) => [*] //foo
+rule { name : beef } */foo+(.) => [*] //foo
 >>
 |   `-- A
 |      `-- foo
 |-- system-config <<
-filesystems : {
-  / : {
-    indexed : false
-  }
-  $bam_basedir : {
-    indexed : true
-  }
-}
-walker : {
-  include : {
-    $bam_basedir
+filesystem : {
+  fstrees : {
+    $bam_basedir : {
+      index : true
+      mount : true
+    }
   }
 }
 >>
@@ -52,10 +48,11 @@ my $B_A_foo_id = hash64("$bam_basedir/B/A/foo");
 assert { stats(undef, {
     modules => 1
   , system_state_ok => 1
-  , fsent_index_put => 3  # number of indexed directory nodes
-  , fsent_index_del => 0
-  , fsent_index_count => 3
   , rule_run => 1
+})};
+assert {
+  stats("//fsindex", {
+      del => 0
 })};
 assert { stats(".", "-S", {
     type => 'module'
@@ -65,7 +62,7 @@ assert { stats(".", "-S", {
   , parse_ok => 1
 })};
 assert {
-  stats("//module/rma/beef", {
+  stats("//module/rmas-by/name/beef", {
       rule_run => 1
     , rule_run_ok => 1
     , search_hits => 0

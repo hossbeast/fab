@@ -15,6 +15,7 @@ our $repodir;
 our $bam_basedir;
 BEGIN { $repodir = dirname(Cwd::realpath("$0/..")) }
 use lib "$repodir/integ/lib";
+use lib "$repodir/libbacon/perl";
 use util;
 use tree;
 use bam;
@@ -31,17 +32,17 @@ my $testdir = setup(<<"TREE");
 |   `-- module.bam+devel <<
 >>
 |-- system-config <<
-walker : {
+filesystem : {
   exclude : {
     foo
   }
-  include : {
-    $bam_basedir
-  }
-}
-filesystems : {
-  / : {
-    readlinks : false # true
+  fstrees : {
+    $bam_basedir : {
+      mount : true
+    }
+    / : {
+      readlink : false # true
+    }
   }
 }
 >>
@@ -70,7 +71,6 @@ assert {
     state => "fresh"
 })};
 
-print("$bam_basedir/A/baz/boats -> qux\n");
 symlink("qux", "$bam_basedir/A/baz/boats") or die;
 reconcile();
 assert {

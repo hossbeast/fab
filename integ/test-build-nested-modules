@@ -1,5 +1,9 @@
 #!/usr/bin/env perl
 
+#
+#
+#
+
 use strict;
 use warnings;
 $SIG{__WARN__} = sub { die @_ };
@@ -11,6 +15,7 @@ our $repodir;
 our $bam_projdir;
 BEGIN { $repodir = dirname(Cwd::realpath("$0/..")) }
 use lib "$repodir/integ/lib";
+use lib "$repodir/libbacon/perl";
 use util;
 use tree;
 use bam;
@@ -38,23 +43,23 @@ args : [
 ]
 >>
 |   `-- rules.bam+devel <<
-rule { id : 1 } (*).c -> $^D/$1.o : cp.bam
+rule { name : 1 } (*).c -> $^D/$1.o : cp.bam
 >>
 |   `-- module.bam+devel <<
-rule { id : 2 } {foo,bar}.o [*] -> cores : cp.bam
-rule { id : 3 } cores -> //targets
+rule { name : 2 } {foo,bar}.o [*] -> cores : cp.bam
+rule { name : 3 } cores -> //targets
 >>
 |   `-- foo.c
 |   `-- bar.c
 |   `-- C
 |       `-- module.bam+devel <<
-rule { id : 4 } baz.o -> //targets
+rule { name : 4 } baz.o -> //targets
 >>
 |       `-- baz.c
 TREE
 
-assert { stats(undef, { modules => 2 })}; # B, B/C
-assert { stats(".", "-S", {
+assert { stats({ modules => 2 })}; # B, B/C
+assert { stats(".", "-S", "-S", {
     type => 'module'
   , state => 'fresh'
   , reloaded => 1
@@ -74,16 +79,16 @@ assert { stats(".", {
 my $B_id = hash64("$bam_projdir");
 my $C_id = hash64("$bam_projdir/C");
 
-assert { stats("//modules/$B_id/rma/1", { rule_run_ok => 2 })}; # initial rule executions create fsents in the
-assert { stats("//modules/$B_id/rma/2", { rule_run_ok => 3 })}; # matched dirnode, which invalidate that node and
-assert { stats("//modules/$B_id/rma/3", { rule_run_ok => 2 })}; # cause the rules attached there to be run again
-assert { stats("//modules/$C_id/rma/4", { rule_run_ok => 2 })};
+assert { stats("//modules/$B_id/rmas-by/name/1", { rule_run_ok => 2 })}; # initial rule executions create fsents in the
+assert { stats("//modules/$B_id/rmas-by/name/2", { rule_run_ok => 3 })}; # matched dirnode, which invalidate that node and
+assert { stats("//modules/$B_id/rmas-by/name/3", { rule_run_ok => 2 })}; # cause the rules attached there to be run again
+assert { stats("//modules/$C_id/rmas-by/name/4", { rule_run_ok => 2 })};
 
 # intermediate and final file were created
 build();
 
 assert { stats(undef, { modules => 2 })}; # B, B/C
-assert { stats(".", "-S", {
+assert { stats(".", "-S", "-S", {
     type => 'module'
   , state => 'fresh'
   , reloaded => 1
@@ -104,10 +109,10 @@ assert_file("$bam_projdir/foo.o");
 assert_file("$bam_projdir/bar.o");
 assert_file("$bam_projdir/cores");
 assert_file("$bam_projdir/C/baz.o");
-assert { stats("//modules/$B_id/rma/1", { rule_run_ok => 2 })}; # initial rule executions create fsents in the
-assert { stats("//modules/$B_id/rma/2", { rule_run_ok => 3 })}; # matched dirnode, which invalidate that node and
-assert { stats("//modules/$B_id/rma/3", { rule_run_ok => 2 })}; # cause the rules attached there to be run again
-assert { stats("//modules/$C_id/rma/4", { rule_run_ok => 2 })};
+assert { stats("//modules/$B_id/rmas-by/name/1", { rule_run_ok => 2 })}; # initial rule executions create fsents in the
+assert { stats("//modules/$B_id/rmas-by/name/2", { rule_run_ok => 3 })}; # matched dirnode, which invalidate that node and
+assert { stats("//modules/$B_id/rmas-by/name/3", { rule_run_ok => 2 })}; # cause the rules attached there to be run again
+assert { stats("//modules/$C_id/rmas-by/name/4", { rule_run_ok => 2 })};
 
 # delete the intermediate files only
 unlink("$bam_projdir/foo.o") or die $!;

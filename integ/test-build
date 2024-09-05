@@ -15,6 +15,7 @@ use Cwd;
 our $repodir;
 BEGIN { $repodir = dirname(Cwd::realpath("$0/..")) }
 use lib "$repodir/integ/lib";
+use lib "$repodir/libbacon/perl";
 use util;
 use tree;
 use bam;
@@ -41,10 +42,48 @@ while(<A>)
 >>
 TREE
 
+assert { stats("cores.c", {
+    type => 'file'
+  , state => 'fresh'
+  , stale => 0
+  , fresh => 1
+})};
+assert { stats("cores.o", {
+    type => 'file'
+  , state => 'uncreated'
+  , stale => 0
+  , fresh => 0
+})};
+assert { stats("cores", {
+    type => 'file'
+  , state => 'uncreated'
+  , stale => 0
+  , fresh => 0
+})};
+
 build();
 
 # intermediate and final file were created
 assert_file("$testdir/cores.o", "foo");
 assert_file("$testdir/cores", "foo");
+
+assert { stats("cores.c", {
+    type => 'file'
+  , state => 'fresh'
+  , stale => 0
+  , fresh => 1
+})};
+assert { stats("cores.o", {
+    type => 'file'
+  , state => 'fresh'
+  , stale => 0
+  , fresh => 1
+})};
+assert { stats("cores", {
+    type => 'file'
+  , state => 'fresh'
+  , stale => 0
+  , fresh => 1
+})};
 
 teardown();

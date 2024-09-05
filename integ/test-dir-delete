@@ -16,6 +16,7 @@ our $bam_invalidate;
 our $bam_basedir;
 BEGIN { $repodir = dirname(Cwd::realpath("$0/..")) }
 use lib "$repodir/integ/lib";
+use lib "$repodir/libbacon/perl";
 use util;
 use tree;
 use bam;
@@ -25,6 +26,16 @@ setup(<<TREE);
 |-- A
 |   `-- foo
 |-- module.bam+devel
+|-- config.bam+devel <<
+filesystem : {
+  fstrees : {
+    $bam_basedir : {
+      mount : true
+      index : false
+    }
+  }
+}
+>>
 TREE
 
 # /run/user/1000/bam-integ/testdir
@@ -70,7 +81,9 @@ reconcile();
 
 $stats = bam_stats(undef);
 my $fsents_after = $$stats{fsents};
-assert { $fsents_after == $fsents_before - 2 };
+
+# directory, file
+assert { $fsents_after == ($fsents_before - 2) };
 
 assert {
   stats(undef, {

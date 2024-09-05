@@ -15,6 +15,7 @@ our $repodir;
 our $bam_projhash;
 BEGIN { $repodir = dirname(Cwd::realpath("$0/..")) }
 use lib "$repodir/integ/lib";
+use lib "$repodir/libbacon/perl";
 use util;
 use tree;
 use bam;
@@ -58,7 +59,7 @@ assert { stats("module.bam+devel", "-S", {
   , fresh => 1
 })};
 assert { stats("var.bam+devel", "-S", {
-    type => 'var'
+    type => "varset"
   , state => 'fresh'
   , parse => 1
   , parse_ok => 1
@@ -97,7 +98,7 @@ assert { stats("module.bam+devel", "-S", {
   , fresh => 2
 })};
 assert { stats("var.bam+devel", "-S", {
-    type => 'var'
+    type => "varset"
   , state => 'fresh'
   , parse => 2
   , parse_ok => 2

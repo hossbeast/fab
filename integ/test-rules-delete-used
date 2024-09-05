@@ -15,13 +15,14 @@ our $bam_basedir;
 our $repodir;
 BEGIN { $repodir = dirname(Cwd::realpath("$0/..")) }
 use lib "$repodir/integ/lib";
+use lib "$repodir/libbacon/perl";
 use util;
 use tree;
 use bam;
 
 # module file with ambiguous reference
 init(subdir => 'B');
-my $testdir = setup(<<TREE);
+setup(<<TREE);
 |-- A
 |   `-- rules.bam+devel <<
 rule foo -> bar
@@ -33,9 +34,11 @@ use A
 >>
 |   `-- foo
 |-- system-config <<
-walker : {
-  include : {
-    $bam_basedir
+filesystem : {
+  fstrees : {
+    $bam_basedir : {
+      mount : true
+    }
   }
 }
 >>
@@ -46,7 +49,7 @@ my $A_rules_id = hash64("$bam_basedir/A/rules.bam+devel");
 # before
 assert { stats(undef, {
     modules => 1
-  , rules_files => 1
+  , ruleset_files => 1
   , system_state_ok => 1
 })};
 assert { stats(".", "-S", {
@@ -73,7 +76,7 @@ assert { stats("../A", {
     type => 'dir'
 })};
 assert { stats("../A/rules.bam+devel", "-S", {
-    type => "rules"
+    type => "ruleset"
   , state => 'fresh'
   , parse => 1
   , parse_ok => 1
@@ -81,10 +84,10 @@ assert { stats("../A/rules.bam+devel", "-S", {
   , uses_up => 1
 })};
 
-assert { ls("//module/rules/$A_rules_id", "$A_rules_id -> $bam_basedir/A/rules.bam+devel") };
+assert { ls("//module/rulesets/$A_rules_id", "$A_rules_id -> //rulesets/$A_rules_id") };
 
 # delete the referent
-unlink("$testdir/A/rules.bam+devel") or die $!;
+unlink("$bam_basedir/A/rules.bam+devel") or die $!;
 
 reconcile(expect_error => 1); # B/module.bam+devel has unresolved use reference
 assert { stats(undef, {

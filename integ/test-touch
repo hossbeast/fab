@@ -1,0 +1,82 @@
+#!/usr/bin/env perl
+
+#
+# invalidate a file
+#
+
+use strict;
+use warnings;
+$SIG{__WARN__} = sub { die @_ };
+
+use POSIX;
+use File::Basename;
+use Cwd;
+our $repodir;
+BEGIN { $repodir = dirname(Cwd::realpath("$0/..")) }
+use lib "$repodir/integ/lib";
+use lib "$repodir/libbacon/perl";
+use util;
+use tree;
+use bam;
+
+init();
+my $testdir = setup(<<'TREE');
+|-- foo <<
+foo
+>>
+|-- module.bam+devel <<
+>>
+TREE
+
+assert { stats("foo", {
+    type => 'file'
+  , state => 'fresh'
+  , stale => 0
+  , fresh => 1
+})};
+
+# underlying file modified
+open my $fh, ">", "$testdir/foo" or die $!;
+print $fh <<'TEXT';
+bar
+TEXT
+close $fh;
+
+assert { stats("foo", {
+    type => 'file'
+  , state => 'fresh'
+  , stale => 0
+  , fresh => 1
+})};
+
+# at reconcile time, the modification is noticed and the invalidation is processed
+reconcile();
+
+assert { stats("foo", {
+    type => 'file'
+  , state => 'fresh'
+  , stale => 1
+  , fresh => 2
+})};
+
+# direct invalidation by api
+bam_touch("foo");
+
+assert { stats("foo", {
+    type => 'file'
+  , state => 'stale'
+  , stale => 2
+  , fresh => 2
+})};
+
+# fresh again on reconcile
+reconcile();
+
+assert { stats("foo", {
+    type => 'file'
+  , state => 'fresh'
+  , stale => 2
+  , fresh => 3
+})};
+
+teardown();

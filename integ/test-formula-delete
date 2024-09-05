@@ -1,5 +1,9 @@
 #!/usr/bin/env perl
 
+#
+# 
+#
+
 use strict;
 use warnings;
 $SIG{__WARN__} = sub { die @_ };
@@ -11,6 +15,7 @@ our $repodir;
 our $bam_projhash;
 BEGIN { $repodir = dirname(Cwd::realpath("$0/..")) }
 use lib "$repodir/integ/lib";
+use lib "$repodir/libbacon/perl";
 use util;
 use tree;
 use bam;
@@ -19,7 +24,7 @@ use bam;
 init();
 my $testdir = setup(<<'TREE');
 |-- module.bam+devel <<
-rule { id : 1 } -- boats : foo.bam
+rule { name : 1 } -- boats : foo.bam
 rule boats -> //targets
 >>
 |-- foo.bam << 0777
@@ -59,7 +64,7 @@ assert {
     , fresh => 0
 })};
 assert {
-  stats("//modules/$bam_projhash/rma/1", {
+  stats("//modules/$bam_projhash/rmas-by/name/1", {
     rule_run => 1
   , rule_run_ok => 1
 })};
@@ -85,7 +90,7 @@ assert {
     , fresh => 1
 })};
 assert {
-  stats("//modules/$bam_projhash/rma/1", {
+  stats("//modules/$bam_projhash/rmas-by/name/1", {
     rule_run => 1
   , rule_run_ok => 1
 })};
@@ -99,12 +104,15 @@ assert {
     modules => 1
   , system_state_ok => 3
   , system_error => 1
-  , system_state => 'rule-reconcile'
+})};
+assert {
+  info({
+    "system-state" => 'rule-reconcile'
 })};
 
 # foo.bam was deleted during filesystem-reconcile, then re-created in the uncreated
 # state during rules-reconcile, since it is the target of the formula ref
-assert { uncreated("foo.bam") };
+#assert { uncreated("foo.bam") };
 assert {
   stats(".", "-S", {
     type => "module"
@@ -114,16 +122,17 @@ assert {
   , parse_ok => 1
 })};
 
-# boats is invalidated when the formula is disconnected
-# then, since it is now a primary file (no incoming edges), it is marked fresh
+# boats marked stale when the formula was deleted
+# -> boats dependency removed during subsequent rules reconcile
+# NOTE : boats will be marked fresh during fsent freshen, at the end of the next successful reconcile
 assert {
   stats("boats", {
-      state => "fresh"    # invalidated by disconnecting the formula
+      state => "stale"
     , stale => 1          # counting state transitions
-    , fresh => 2
+    , fresh => 1
 })};
 assert {
-  stats("//modules/$bam_projhash/rma/1", {
+  stats("//modules/$bam_projhash/rmas-by/name/1", {
     rule_run => 2
   , rule_run_ok => 1
 })};

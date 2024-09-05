@@ -16,6 +16,7 @@ our $bam_basedir;
 our $bam_projdir;
 BEGIN { $repodir = dirname(Cwd::realpath("$0/..")) }
 use lib "$repodir/integ/lib";
+use lib "$repodir/libbacon/perl";
 use util;
 use tree;
 use bam;
@@ -57,18 +58,18 @@ formula : {
     }
   }
 }
-walker : {
+filesystem : {
   exclude : {
     foo
   }
-  include : {
-    $bam_basedir
-  }
-}
-filesystems : {
-  "/" : {
-    mkdirs : true
-    indexed : true
+  fstrees : {
+    $bam_basedir : {
+      mount : true
+    }
+    $bam_basedir/B : {
+      mkdir : true
+      index : true
+    }
   }
 }
 >>
@@ -78,9 +79,9 @@ my $B_id = hash64("$bam_basedir/B");
 my $C_id = hash64("$bam_basedir/B/C");
 
 # C fs link points to the right node
-my $result = bam_ls(["//modules/$B_id/fs", "--no-follow"]);
+my $result = bam_ls(["//modules/$B_id/base", "--no-follow"]);
 my $ref = $$result{out};
-assert { $ref eq "fs -> $bam_basedir/B" };
+assert { $ref eq "base -> $bam_basedir/B" };
 
 # C ref link points to the right node
 $result = bam_ls(["//modules/$B_id/anchor", "--no-follow"]);
@@ -88,9 +89,9 @@ $ref = $$result{out};
 assert { $ref eq "anchor -> $bam_basedir/A" };
 
 # D fs link points to the right node
-$result = bam_ls(["//modules/$C_id/fs", "--no-follow"]);
+$result = bam_ls(["//modules/$C_id/base", "--no-follow"]);
 $ref = $$result{out};
-assert { $ref eq "fs -> $bam_basedir/B/C" };
+assert { $ref eq "base -> $bam_basedir/B/C" };
 
 # D ref link points to the right node
 $result = bam_ls(["//modules/$C_id/anchor", "--no-follow"]);
@@ -101,7 +102,10 @@ assert { $ref eq "anchor -> $bam_basedir/A/C" };
 assert {
   stats(undef, {
     modules => 2          # module B, plus module B/C (anchored to A/C)
-  , mkdir => 1            # B/C
+})};
+assert {
+  stats("//filesystem", {
+    mkdir => 1            # B/C
 })};
 assert {
   stats(".", "-S", {

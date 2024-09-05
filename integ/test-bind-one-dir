@@ -16,6 +16,7 @@ our $bam_projdir;
 our $repodir;
 BEGIN { $repodir = dirname(Cwd::realpath("$0/..")) }
 use lib "$repodir/integ/lib";
+use lib "$repodir/libbacon/perl";
 use util;
 use tree;
 use bam;
@@ -27,20 +28,18 @@ setup(<<TREE);
 |       `-- bar
 |-- B
 |   `-- module.bam+devel <<
-bind { id : 1 } A/foo => //foo
+bind { name : 1 } A/foo => //foo
 >>
 |-- system-config <<
-filesystems : {
-  / : {
-    indexed : false
-  }
-  $bam_basedir : {
-    indexed : true
-  }
-}
-walker : {
-  include : {
-    $bam_basedir
+filesystem : {
+  fstrees : {
+    / : {
+      index : false
+    }
+    $bam_basedir : {
+      index : true
+      mount : true
+    }
   }
 }
 >>
@@ -52,10 +51,13 @@ my $foo_A_id = hash64("$bam_basedir/A/foo");
 assert { stats(undef, {
     modules => 1          # the imported directory is not vivified
   , system_state_ok => 1
-  , fsent_index_put => 4  # number of indexed directory nodes
-  , fsent_index_del => 0
-  , fsent_index_count => 4
   , rule_run => 1
+})};
+assert {
+  stats("//fsindex", {
+      put => 4
+    , del => 0
+    , count => 4
 })};
 assert { stats(".", "-S", {
     type => 'module'
@@ -65,7 +67,7 @@ assert { stats(".", "-S", {
   , parse_ok => 1
 })};
 assert {
-  stats("//module/rma/1", {
+  stats("//module/rmas-by/name/1", {
       rule_run => 1
     , rule_run_ok => 1
     , search_hits => 0

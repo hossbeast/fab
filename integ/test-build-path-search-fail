@@ -14,6 +14,7 @@ use Cwd;
 our $repodir;
 BEGIN { $repodir = dirname(Cwd::realpath("$0/..")) }
 use lib "$repodir/integ/lib";
+use lib "$repodir/libbacon/perl";
 use util;
 use tree;
 use bam;
@@ -40,14 +41,12 @@ args : [
 TREE
 
 my $result = build(tolerant => 1);
-print("$$result{out}\n");
-print("$$result{err}\n");
 assert { $$result{exit} != 0 };
-assert { stats(undef, {
+assert { stats("//build", {
     fml_exec => 1         # first stage failure, second stage not entered
   , fml_exec_ok => 0
 })};
-assert { stats("cp.bam", "-S", {
+assert { stats("cp.bam", "-S", "-S", {
     type => 'formula'
   , state => 'fresh'
   , fml_exec => 1
