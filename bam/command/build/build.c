@@ -24,8 +24,10 @@
 #include "narrator/fixed.h"
 
 #include "build.h"
+#include "params.h"
 #include "args.h"
 #include "command.h"
+#include "info.h"
 #include "params.h"
 
 static uint64_t requestid;
@@ -131,11 +133,12 @@ static void connected(command * restrict cmd, bam_client * restrict client)
   msg->type = BAMIPC_MSG_EVENTSUB;
   eventsubid = msg->id = ++client->msgid;
   msg->attrs = 0
-    | BAMIPC_EVENT_FORMULA_EXEC_FORKED
-    | BAMIPC_EVENT_FORMULA_EXEC_STDOUT
-    | BAMIPC_EVENT_FORMULA_EXEC_STDERR
-    | BAMIPC_EVENT_FORMULA_EXEC_AUXOUT
-    | BAMIPC_EVENT_FORMULA_EXEC_WAITED
+    | BAMIPC_EVENT_FORMULA_FORK_BIN
+    | BAMIPC_EVENT_FORMULA_WAIT_BIN
+    | BAMIPC_EVENT_FORMULA_STDOUT_BIN
+    | BAMIPC_EVENT_FORMULA_STDERR_BIN
+    | BAMIPC_EVENT_FORMULA_AUXOUT_BIN
+    | BAMIPC_EVENT_SYSTEM_STATE_CHANGE
     ;
   client_post(client, msg);
 
@@ -148,10 +151,13 @@ static void connected(command * restrict cmd, bam_client * restrict client)
   bacon_writer_init(&writer);
   builder_writer = bacon_writer_open(&writer, request_narrator);
 
-  /* re-configure goals */
-  build_command_collate_goals(builder_writer, false);
+  { MAPPING
+    STRING("autorun")
+    BOOL(false)
+  }
 
-  STRING("reconcile")
+  /* re-configure goals */
+  build_command_collate_goals(MMS("bam-build"), builder_writer);
 
   /* invalidate targets */
   build_command_collate_invalidations(builder_writer);
@@ -518,7 +524,7 @@ static void process(command * restrict cmd, bam_client * restrict client, bamipc
       RUNTIME_ASSERT(msg->id == eventsubid);
     }
   }
-  else if(msg->type == BAMIPC_MSG_EVENTS && msg->evtype == BAMIPC_EVENT_SYSTEM_STATE)
+  else if(msg->type == BAMIPC_MSG_EVENTS && msg->evtype == BAMIPC_EVENT_SYSTEM_STATE_CHANGE)
   {
     /* printed in main */
   }
@@ -537,11 +543,6 @@ void build_command_collate_invalidations(bacon_writer * restrict builder_writer)
 {
   struct build_target *arg;
   int x;
-
-  if(g_args.invalidate) {
-    STRING("global-invalidate");
-    return;
-  }
 
   /* transitive targets */
   for(x = 0; x < args->targets_len; x++)
@@ -622,7 +623,7 @@ void build_command_collate_invalidations(bacon_writer * restrict builder_writer)
   }
 }
 
-void build_command_collate_goals(bacon_writer * restrict builder_writer, bool reconcile)
+void build_command_collate_goals(const char * restrict label, uint16_t label_len, bacon_writer * restrict builder_writer)
 {
   int x;
   struct build_target *arg;
@@ -630,9 +631,16 @@ void build_command_collate_goals(bacon_writer * restrict builder_writer, bool re
   MAPPING
   STRING("goals")
   { SET
-    if(reconcile) {
-      STRING("reconcile");
+    { MAPPING
+      STRING("token")
+      HEX(g_params.pid)
     }
+    { MAPPING
+      STRING("label")
+      BYTES(label, label_len)
+    }
+
+    STRING("reconcile");
 
     /* transitive targets */
     for(x = 0; x < args->targets_len; x++)
@@ -720,10 +728,10 @@ void build_command_usage(command * restrict cmd)
 {
   printf(
 "build options\n"
-" -t                  transitive build targets\n"
-" +t        (default) subsequent non-options are -t <arg>\n"
-" -x                  direct build targets\n"
-" +x                  subsequent non-options are -t <arg>\n"
+" -t                    transitive build targets\n"
+" +t          (default) subsequent non-options are -t <arg>\n"
+" -x                    direct build targets\n"
+" +x                    subsequent non-options are -t <arg>\n"
   );
 }
 
@@ -739,7 +747,7 @@ void build_command_process_event(bam_client * restrict client, bamipc_message * 
   ctx.entry = &key;
   pid = key.pid = msg->id;
   r = hashtable_search(build_slots_bypid, &ctx);
-  if(msg->evtype == BAMIPC_EVENT_FORMULA_EXEC_FORKED)
+  if(msg->evtype == BAMIPC_EVENT_FORMULA_FORK_BIN)
   {
     if(r)
     {
@@ -770,25 +778,25 @@ void build_command_process_event(bam_client * restrict client, bamipc_message * 
     }
     bs = hashtable_fetch(build_slots_bypid, &ctx);
 
-    if(msg->evtype == BAMIPC_EVENT_FORMULA_EXEC_STDOUT)
+    if(msg->evtype == BAMIPC_EVENT_FORMULA_STDOUT_BIN)
     {
       assure(&bs->stdout_text, 1, bs->stdout_len + msg->size, &bs->stdout_alloc);
       memcpy(bs->stdout_text + bs->stdout_len, msg->text, msg->size);
       bs->stdout_len += msg->size;
     }
-    else if(msg->evtype == BAMIPC_EVENT_FORMULA_EXEC_STDERR)
+    else if(msg->evtype == BAMIPC_EVENT_FORMULA_STDERR_BIN)
     {
       assure(&bs->stderr_text, 1, bs->stderr_len + msg->size, &bs->stderr_alloc);
       memcpy(bs->stderr_text + bs->stderr_len, msg->text, msg->size);
       bs->stderr_len += msg->size;
     }
-    else if(msg->evtype == BAMIPC_EVENT_FORMULA_EXEC_AUXOUT)
+    else if(msg->evtype == BAMIPC_EVENT_FORMULA_AUXOUT_BIN)
     {
       assure(&bs->auxout_text, 1, bs->auxout_len + msg->size, &bs->auxout_alloc);
       memcpy(bs->auxout_text + bs->auxout_len, msg->text, msg->size);
       bs->auxout_len += msg->size;
     }
-    else if(msg->evtype == BAMIPC_EVENT_FORMULA_EXEC_WAITED)
+    else if(msg->evtype == BAMIPC_EVENT_FORMULA_WAIT_BIN)
     {
       z = descriptor_type_unmarshal(&bs->results, &descriptor_bam_build_slot_results, msg->text, msg->size);
       RUNTIME_ASSERT(z == msg->size);

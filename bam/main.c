@@ -30,6 +30,8 @@
 #include "command.h"
 #include "kill.h"
 #include "params.h"
+#include "info.h"
+#include "params.h"
 
 #include "barriers.h"
 #include "times.h"
@@ -41,7 +43,6 @@
 __thread int32_t tid;
 __thread int *errnop;
 static uint64_t eventsubid;
-static bool waserror;
 
 static void client_acquired(bam_client * restrict client, bamipc_message * restrict msg)
 {
@@ -62,7 +63,7 @@ static void client_acquired(bam_client * restrict client, bamipc_message * restr
   printf("rx head %5u idx %5u id 0x%016"PRIx64" code %8d type %.*s", h, i, msg->id, msg->code, (int)z, buf);
   if(msg->type == BAMIPC_MSG_EVENTS)
   {
-    z = attrs32_zcat(buf, sizeof(buf), bamipc_event_type_attrs, msg->evtype);
+    z = attrs32_zcat(buf, sizeof(buf), &bamipc_event_type_attrs, msg->evtype);
     printf(" attrs %.*s", (int)z, buf);
   }
   else if(msg->attrs)
@@ -70,9 +71,17 @@ static void client_acquired(bam_client * restrict client, bamipc_message * restr
     printf(" attrs 0x%08x", msg->attrs);
   }
   printf(" size %hu", msg->size);
-  if(msg->type == BAMIPC_MSG_RESPONSE || (msg->type == BAMIPC_MSG_EVENTS && msg->evtype == BAMIPC_EVENT_SYSTEM_STATE))
-  {
+  if(g_args.verbose >= 3) {
     printf(" %.*s", (int)msg->size, msg->text);
+  }
+  if(msg->type == BAMIPC_MSG_RESPONSE || msg->type == BAMIPC_MSG_EVENTS)
+  {
+    switch(msg->evtype) {
+      case BAMIPC_EVENT_GOALS_SET:
+      case BAMIPC_EVENT_SYSTEM_STATE_CHANGE:
+        printf(" %.*s", (int)msg->size, msg->text);
+      break;
+    }
   }
   printf("\n");
 }
@@ -94,7 +103,7 @@ void client_post(struct bam_client * restrict client, bamipc_message * restrict 
   printf("tx tail %5u id 0x%016"PRIx64" code %8d type %.*s", h, msg->id, msg->code, (int)z, buf);
   if(msg->type == BAMIPC_MSG_EVENTS)
   {
-    z = attrs32_zcat(buf, sizeof(buf), bamipc_event_type_attrs, msg->evtype);
+    z = attrs32_zcat(buf, sizeof(buf), &bamipc_event_type_attrs, msg->evtype);
     printf(" attrs %.*s", (int)z, buf);
   }
   else if(msg->attrs)
@@ -246,7 +255,7 @@ static int connect(bam_client * restrict client)
 
   while(!g_sigterm && !g_params.shutdown)
   {
-    sigutil_timedwait(&err, &sigs, &info, &interval);
+    err = sigutil_timedwait(&sigs, &info, &interval);
     if(err == 0) {                  // signal received
       break;
     } else if(err == EINTR) {       // interrupted by signal
@@ -303,8 +312,8 @@ static void xmain()
   if(g_args.user_config_path.s) {
     g_bam_client_user_config_path = strndup(g_args.user_config_path.s, g_args.user_config_path.len);
   }
-  if(g_args.default_filesystem_invalidate.s) {
-    g_bam_client_default_filesystem_invalidate = strndup(g_args.default_filesystem_invalidate.s, g_args.default_filesystem_invalidate.len);
+  if(g_args.default_filesystem_invalidation.s) {
+    g_bam_client_default_filesystem_invalidation = strndup(g_args.default_filesystem_invalidation.s, g_args.default_filesystem_invalidation.len);
   }
   if(g_args.sweeper_period_nsec.s) {
     g_bam_client_sweeper_period_nsec = strndup(g_args.sweeper_period_nsec.s, g_args.sweeper_period_nsec.len);
@@ -340,7 +349,7 @@ static void xmain()
     bam_client_lockfile_query(client);
   }
 
-  if(g_cmd == &kill_command) {
+  if(g_cmd->name && strcmp(g_cmd->name, "kill") == 0) {
     goto end;
   }
 
@@ -367,14 +376,16 @@ static void xmain()
     goto err;
   }
 
-  g_cmd->attached(g_cmd, client);
+  if(g_cmd->attached) {
+    g_cmd->attached(g_cmd, client);
+  }
 
   /* always-on event subscriptions */
   msg = bam_client_produce(client);
   msg->type = BAMIPC_MSG_EVENTSUB;
   eventsubid = msg->id = ++client->msgid;
   msg->attrs = 0
-    | BAMIPC_EVENT_SYSTEM_STATE
+    | BAMIPC_EVENT_SYSTEM_STATE_CHANGE
     ;
   client_post(client, msg);
 
@@ -407,7 +418,7 @@ static void xmain()
         if(pulse == client->shm->server_pulse) {
           /* watchdog timeout - unresponsive daemon */
           dprintf(2, "bamd %"PRId64" unresponsive\n", client->bamd_pid);
-          waserror = true;
+          g_params.waserror = true;
           break;
         }
         pulse = client->shm->server_pulse;
@@ -419,7 +430,7 @@ static void xmain()
     iter = 0;
     RUNTIME_ASSERT(msg->type);
     client_acquired(client, msg);
-    if((msg->type == BAMIPC_MSG_RESPONSE && msg->id == eventsubid))
+    if(msg->type == BAMIPC_MSG_RESPONSE && msg->id == eventsubid)
     {
       RUNTIME_ASSERT(msg->code == 0);
       bam_client_consume(client, msg);
@@ -427,25 +438,35 @@ static void xmain()
     }
     if((msg->type == BAMIPC_MSG_RESULT || msg->type == BAMIPC_MSG_RESPONSE) && msg->code != 0)
     {
-      (void)!write(2, msg->text, msg->size);
-      (void)!write(2, "\n", 1);
-      waserror = true;
+      /* suppress errors for message ids in this list */
+      for(x = 0; x < message_no_error_list_len; x++) {
+        if(message_no_error_list[x] == msg->id) {
+          break;
+        }
+      }
+      if(x >= message_no_error_list_len) {
+        (void)!write(2, msg->text, msg->size);
+        (void)!write(2, "\n", 1);
+        g_params.waserror = true;
+      }
     }
-    else if((msg->type == BAMIPC_MSG_EVENTS && msg->evtype == BAMIPC_EVENT_SYSTEM_STATE && msg->code != 0))
+    else if((msg->type == BAMIPC_MSG_EVENTS && msg->evtype == BAMIPC_EVENT_SYSTEM_STATE_CHANGE && msg->code != 0))
     {
       (void)!write(2, msg->text, msg->size);
       (void)!write(2, "\n", 1);
-      waserror = true;
+      g_params.waserror = true;
     }
     g_cmd->process(g_cmd, client, msg);
     bam_client_consume(client, msg);
   }
 
-  g_cmd->disconnected(g_cmd);
+  if(g_cmd->disconnected) {
+    g_cmd->disconnected(g_cmd);
+  }
 
   goto end;
 err:
-  waserror = true;
+  g_params.waserror = true;
 end:
   bam_client_disconnect(client);
   bam_client_destroy(client);
@@ -484,5 +505,5 @@ int main(int argc, char ** argv)
   narrator_unload();
   bacon_unload();
 
-  return !!(waserror || build_was_failed_slot);
+  return !!(g_params.waserror || build_was_failed_slot);
 }

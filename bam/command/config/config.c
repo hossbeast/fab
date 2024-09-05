@@ -1,28 +1,22 @@
 /* SPDX-License-Identifier: GPL-3.0 */
 /* Copyright (c) 2012-2023 Todd Freed <todd.freed@gmail.com> */
 
-#include "types.h"
+#include "bam/ipc.h"
+#include "bam/client.h"
+#include "bam/config_tell.h"
+#include "bam/config_tell.desc.h"
 #include "bacon/builder.h"
 #include "narrator.h"
 #include "narrator/fixed.h"
 
-#include "bam/ipc.h"
-#include "bam/client.h"
-#include "bam/config_describe.h"
-#include "bam/config_describe.desc.h"
-
+#include "types.h"
 #include "config.h"
 #include "params.h"
-#include "zcat.h"
 
 static uint64_t requestid;
-static bam_config_describe_result result;
+static bam_config_tell_result result;
 static bamipc_message *texts[64];
 static uint16_t texts_len;
-
-//
-// static
-//
 
 static void usage(command * restrict cmd)
 {
@@ -30,10 +24,6 @@ static void usage(command * restrict cmd)
 "config options (none)\n"
   );
 }
-
-//
-// build
-//
 
 static void connected(command * restrict cmd, bam_client * restrict client)
 {
@@ -51,7 +41,21 @@ static void connected(command * restrict cmd, bam_client * restrict client)
   builder_writer = bacon_writer_open(&writer, N);
 
   { LIST
-    STRING("config-describe")
+    { MAPPING
+      STRING("select")
+      { LIST
+        MAPPING
+        STRING("lookup")
+        { SET
+          { MAPPING
+            STRING("path")
+            LOADF("//config")
+          }
+        }
+      }
+    }
+
+    STRING("tell")
   }
 
   bacon_writer_close(&writer);
@@ -66,7 +70,7 @@ static void connected(command * restrict cmd, bam_client * restrict client)
 static void process(command * restrict cmd, bam_client * restrict client, bamipc_message * restrict msg)
 {
   int x;
-  bam_config_describe_string string;
+  bam_config_tell_item item;
   size_t z;
 
   if(msg->id != requestid) {
@@ -81,8 +85,8 @@ static void process(command * restrict cmd, bam_client * restrict client, bamipc
   RUNTIME_ASSERT(msg->type == BAMIPC_MSG_RESULT);
 
   switch(msg->attrs) {
-    case DESCRIPTOR_ID_bam_config_describe_result:
-      descriptor_type_unmarshal(&result, &descriptor_bam_config_describe_result, msg->text, msg->size);
+    case DESCRIPTOR_ID_bam_config_tell_result:
+      descriptor_type_unmarshal(&result, &descriptor_bam_config_tell_result, msg->text, msg->size);
       break;
     case 0:
       texts[texts_len++] = msg;
@@ -93,13 +97,13 @@ static void process(command * restrict cmd, bam_client * restrict client, bamipc
   return;
 
 end:
-  printf("# config files %u\n", result.file_list_len);
   printf("#\n");
+  printf("# config files %u\n", result.file_list_len);
 
   z = 0;
   for(x = 0; x < result.file_list_len; x++) {
-    z += descriptor_type_unmarshal(&string, &descriptor_bam_config_describe_string, result.file_list + z, result.file_list_size - z);
-    printf("# %.*s\n", string.text_len, string.text);
+    z += descriptor_type_unmarshal(&item, &descriptor_bam_config_tell_item, result.file_list + z, result.file_list_size - z);
+    printf("#  %.*s %.*s\n", item.id_len, item.id, item.abspath_len, item.abspath);
   }
   RUNTIME_ASSERT((z + 6) == result.file_list_size);
   printf("#\n");
@@ -115,22 +119,13 @@ end:
   (void)!write(1, "\n", 1);
 }
 
-static void attached(command * restrict cmd, bam_client * restrict client)
-{
-
-}
-
 //
 // public
 //
 
-static void disconnected(command * restrict cmd) { }
-
-struct command config_command = {
+typeof(config_command) config_command = {
     name : "config"
-  , attached : attached
   , usage : usage
   , connected : connected
   , process : process
-  , disconnected : disconnected
 };

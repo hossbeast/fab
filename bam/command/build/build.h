@@ -53,7 +53,7 @@ void build_command_cleanup(void);
 
 void build_command_usage(struct command * restrict cmd);
 
-void build_command_collate_goals(struct bacon_writer * restrict builder_writer, bool reconcile)
+void build_command_collate_goals(const char * restrict label, uint16_t label_len, struct bacon_writer * restrict builder_writer)
   __attribute__((nonnull));
 
 void build_command_collate_invalidations(struct bacon_writer * restrict builder_writer)

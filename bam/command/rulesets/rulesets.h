@@ -3,10 +3,8 @@
 
 #pragma once
 
-#include "command.h"
+#include "special.h"
 #include "args.h"
 
-extern struct filesystem_args {
-} filesystem_args;
-
-extern struct command filesystem_command;
+extern struct command ruleset_command;
+extern struct command rulesets_command;

@@ -5,8 +5,6 @@
 
 #include "types.h"
 
-#include "bam/graph.h"
-
 struct command;
 
 struct build_args;
@@ -27,23 +25,21 @@ extern struct {
   /* passthrough to bamd */
   bead system_config_path;
   bead user_config_path;
-  bead default_filesystem_invalidate;
+  bead default_filesystem_invalidation;
   bead sweeper_period_nsec;
   bool no_launch;
 
-  bool invalidate;        // trigger global invalidation
   bool kill;              // kill extant daemon if any
   bool help;
   bool version;
   int verbose;            // show request/response, and daemon stdout/stderr
   bool no_color;          // disable terminal color escapes
 
-  uint64_t context_module_id;
+  char context_module_id[40];
+  uint16_t context_module_id_len;
   bool context_module;
   bool no_context_module;
 } g_args;
-
-extern struct command *g_cmd;
 
 /// args_parse
 //
@@ -65,10 +61,6 @@ void args_cleanup(void);
 void args_command_start(struct command * restrict cmd, uint32_t flags)
   __attribute__((nonnull));
 
-void args_command_finish(void);
-
-//void args_clear_module_path(void);
 void args_set_module_path(const char * restrict path, uint16_t len);
 void args_set_module_abspath(const char * restrict path, uint16_t len);
 void args_set_no_module(void);
-//void args_set_module_id(uint64_t id);//const char * restrict id, uint16_t len);

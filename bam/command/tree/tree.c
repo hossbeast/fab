@@ -14,11 +14,15 @@
 #include "tree.h"
 #include "command.h"
 #include "params.h"
+#include "info.h"
+#include "params.h"
 #include "zcat.h"
 
 struct tree_args tree_args = {
-    graph : BAM_GRAPH_FSTREE
+    graph : "fs"
+  , graph_len : 2
   , direction : "down"
+  , direction_len : 4
 };
 static struct tree_args *args = &tree_args;
 static bool upwards;
@@ -40,7 +44,7 @@ static void usage(command * restrict cmd)
 " --paths                   show full paths\n"
 "\n"
 "graph types\n"
-" fstree          (default) filesystem tree\n"
+" fs              (default) filesystem tree\n"
 " dirtree                   directories subset of filesystem tree\n"
 " modtree                   modules subset of filesystem tree\n"
 " depends                   dependency graph\n"
@@ -85,13 +89,13 @@ static void post_request(bam_client * restrict client)
   builder_writer = bacon_writer_open(&writer, N);
 
   { LIST
-    if(g_args.context_module_id) {
+    if(g_args.context_module_id_len) {
       MAPPING
       STRING("context")
       { SET
         { MAPPING
           STRING("module")
-          HEX(g_args.context_module_id)
+          BYTES(g_args.context_module_id, g_args.context_module_id_len)
         }
       }
     }
@@ -109,10 +113,9 @@ static void post_request(bam_client * restrict client)
               STRING("nofollow")
               BOOL(args->nofollow)
             }
-            if(args->graph == BAM_GRAPH_FSTREE_HIDDEN) {
-              MAPPING
+            { MAPPING
               STRING("hidden")
-              BOOL(true)
+              BOOL(args->hidden)
             }
           }
         }
@@ -133,7 +136,12 @@ static void post_request(bam_client * restrict client)
             }
             { MAPPING
               STRING("graph")
-              STRING(attrs16_name_byvalue(bam_graph_attrs, args->graph))
+              BYTES(args->graph, args->graph_len)
+            }
+            if(args->visit) {
+              MAPPING
+              STRING("visit")
+              BYTES(args->visit, args->visit_len)
             }
             { MAPPING
               STRING("min-distance")
@@ -147,7 +155,7 @@ static void post_request(bam_client * restrict client)
         }
       }
     }
-    STRING("list")
+    STRING("tree-list")
   }
 
   bacon_writer_close(&writer);
@@ -164,7 +172,7 @@ static void connected(command * restrict cmd, bam_client * restrict client)
   upwards = false;
   if(args->both) {
     upwards = true;
-  } else if(strcmp(args->direction, "up") == 0) {
+  } else if(memncmp(args->direction, args->direction_len, MMS("up")) == 0) {
     upwards = true;
   }
 
@@ -179,17 +187,12 @@ static void fsent_show(const bam_list_item * restrict fsent, bool show_paths)
     dprintf(1, "|-- ");
   }
 
-#define CASE2(x, y) ((x << 16) | y)
-  switch(CASE2(g_args.no_color, fsent->type)) {
-    case CASE2(0, BAM_VERTEX_TYPE_DIR):
-    case CASE2(0, BAM_VERTEX_TYPE_SHADOW_DIR):
-      (void)!write(1, YELLOW);
-      break;
-    case CASE2(0, BAM_VERTEX_TYPE_SHADOW_LINK):
-      (void)!write(1, BOLD_RED);
-      break;
-    default:
-      break;
+  if(g_args.no_color == 0 && memncmp(fsent->type, fsent->type_len, MMS("dir")) == 0) {
+    (void)!write(1, YELLOW);
+  } else if(g_args.no_color == 0 && memncmp(fsent->type, fsent->type_len, MMS("shadow-dir")) == 0) {
+    (void)!write(1, YELLOW);
+  } else if(g_args.no_color == 0 && memncmp(fsent->type, fsent->type_len, MMS("shadow-link")) == 0) {
+    (void)!write(1, BOLD_RED);
   }
 
   if(show_paths) {
@@ -201,20 +204,18 @@ static void fsent_show(const bam_list_item * restrict fsent, bool show_paths)
   if(fsent->ref_len) {
     dprintf(1, " -> %.*s", fsent->ref_len, fsent->ref);
   } else {
-    dprintf(1, " - %s %s"
-      , attrs16_name_byvalue(bam_vertex_type_attrs, fsent->type)
-      , attrs16_name_byvalue(bam_vertex_state_attrs, fsent->state)
+    dprintf(1, " - %.*s %.*s"
+      , (int)fsent->type_len, fsent->type
+      , (int)fsent->state_len, fsent->state
     );
   }
 
-  switch(CASE2(g_args.no_color, fsent->type)) {
-    case CASE2(0, BAM_VERTEX_TYPE_DIR):
-    case CASE2(0, BAM_VERTEX_TYPE_SHADOW_DIR):
-    case CASE2(0, BAM_VERTEX_TYPE_SHADOW_LINK):
-      (void)!write(1, NOCOLOR);
-      break;
-    default:
-      break;
+  if(g_args.no_color == 0 && memncmp(fsent->type, fsent->type_len, MMS("dir")) == 0) {
+    (void)!write(1, NOCOLOR);
+  } else if(g_args.no_color == 0 && memncmp(fsent->type, fsent->type_len, MMS("shadow-dir")) == 0) {
+    (void)!write(1, NOCOLOR);
+  } else if(g_args.no_color == 0 && memncmp(fsent->type, fsent->type_len, MMS("shadow-link")) == 0) {
+    (void)!write(1, NOCOLOR);
   }
 
   dprintf(1, "\n");
@@ -226,6 +227,9 @@ static void process(command * restrict cmd, bam_client * restrict client, bamipc
   bam_list_item item;
 
   RUNTIME_ASSERT(msg->id == requestid);
+  if(msg->code != 0) {
+    goto end;
+  }
 
   if(msg->type == BAMIPC_MSG_RESPONSE && args->both && !second) {
     upwards = false;
@@ -235,15 +239,8 @@ static void process(command * restrict cmd, bam_client * restrict client, bamipc
   }
 
   if(msg->type == BAMIPC_MSG_RESPONSE) {
-    g_params.shutdown = true;
-    return;
+    goto end;
   }
-//  else if(msg->type == BAMIPC_MSG_EVENTS && msg->evtype == BAMIPC_EVENT_SYSTEM_STATE)
-//  {
-//    /* printed in main */
-////    printf("ZZ %.*s\n", (int)msg->size, msg->text);
-//    return;
-//  }
 
   RUNTIME_ASSERT(msg->type == BAMIPC_MSG_RESULT);
 
@@ -252,6 +249,10 @@ static void process(command * restrict cmd, bam_client * restrict client, bamipc
   RUNTIME_ASSERT(z == msg->size);
 
   fsent_show(&item, tree_args.show_paths);
+  return;
+
+end:
+  g_params.shutdown = true;
 }
 
 static void attached(command * restrict cmd, bam_client * restrict client)
@@ -259,7 +260,7 @@ static void attached(command * restrict cmd, bam_client * restrict client)
 
 }
 
-static void init(command * restrict cmd, uint32_t flags)
+void tree_init(uint32_t flags)
 {
   /* setup defaults */
   tree_args.min_distance = 0;
@@ -275,13 +276,9 @@ static void init(command * restrict cmd, uint32_t flags)
 // public
 //
 
-static void disconnected(command * restrict cmd) { }
 struct command tree_command = {
     usage : usage
-  , init : init
-  , attrs : COMMAND_CONTEXT_MODULE
   , attached : attached
   , connected : connected
   , process : process
-  , disconnected : disconnected
 };

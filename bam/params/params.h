@@ -16,15 +16,18 @@ extern struct g_params
 {
   pid_t    pid;            // pid of this process
   bool     shutdown;       // whether to terminate the main loop
+  bool     waserror;
 
   char     ipcdir[PATH_MAX];
   uint16_t ipcdir_len;
 
   char     cwd[PATH_MAX];  // working directory
   uint16_t cwd_len;
+  char     cwd_hash[40];
+  uint16_t cwd_hash_len;
 
 #if CONFIG_DEVEL
-  char *   exedir;         // path to the directory containing the executable
+  char    *exedir;         // path to the directory containing the executable
 #endif
 } g_params;
 
@@ -40,3 +43,6 @@ void params_setup(void);
 // free g_params
 //
 void params_teardown(void);
+
+size_t params_path_hash(char *dst, size_t dst_size, const char * restrict path, uint16_t path_len)
+  __attribute__((nonnull));

@@ -59,16 +59,16 @@ static void connected(command * restrict cmd, bam_client * restrict client)
 static void process(command * restrict cmd, bam_client * restrict client, bamipc_message * restrict msg)
 {
   switch(msg->evtype) {
-    case BAMIPC_EVENT_FORMULA_EXEC_FORKED:
-    case BAMIPC_EVENT_FORMULA_EXEC_WAITED:
-    case BAMIPC_EVENT_FORMULA_EXEC_STDOUT:
-    case BAMIPC_EVENT_FORMULA_EXEC_STDERR:
-    case BAMIPC_EVENT_FORMULA_EXEC_AUXOUT:
+    case BAMIPC_EVENT_FORMULA_FORK_BIN:
+    case BAMIPC_EVENT_FORMULA_WAIT_BIN:
+    case BAMIPC_EVENT_FORMULA_STDOUT_BIN:
+    case BAMIPC_EVENT_FORMULA_STDERR_BIN:
+    case BAMIPC_EVENT_FORMULA_AUXOUT_BIN:
       /* these events carry a build_slot object */
-      printf("0x%-16"PRIx64" %s\n", msg->id, attrs32_name_byvalue(bamipc_event_type_attrs, msg->evtype));
+      printf("0x%-16"PRIx64" %s\n", msg->id, attrs32_name_byvalue(&bamipc_event_type_attrs, msg->evtype));
       break;
     default:
-      printf("0x%-16"PRIx64" %s %.*s\n", msg->id, attrs32_name_byvalue(bamipc_event_type_attrs, msg->evtype), msg->size, msg->text);
+      printf("0x%-16"PRIx64" %s %.*s\n", msg->id, attrs32_name_byvalue(&bamipc_event_type_attrs, msg->evtype), msg->size, msg->text);
   }
 }
 

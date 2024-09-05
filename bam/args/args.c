@@ -8,6 +8,7 @@
 #include "yyutil/parser.h"
 
 #include "args.h"
+#include "info.h"
 #include "params.h"
 
 #include "macros.h"
@@ -34,7 +35,6 @@
 
 static YYU_VTABLE(args_vtable, args, args);
 typeof(g_args) g_args;
-typeof(g_cmd) g_cmd;
 
 static char *argvs;
 static size_t argvsa;
@@ -58,51 +58,67 @@ static void usage(command * restrict cmd)
 "\n"
 "usage: bam [command | option]..\n"
 "\n"
+    , git_describe
+  );
+
+  if(cmd && cmd->usage) {
+    cmd->usage(cmd);
+    printf("\n");
+  }
+
+  printf(
 "commands\n"
 " adhoc                 adhoc request\n"
 " autobuild             as build, but remain connected\n"
 " build       (default) carry out the build, mark files fresh\n"
 " buildplan             show the stage sequence for the last build\n"
-" config                print effective config\n"
-" describe              print node info\n"
-" env                   print effective env\n"
+" config                show effective config\n"
+" configset(s)          list configsets\n"
+" describe              show node info\n"
 " events                subscribe to and print events\n"
-" filesystem            show filesystem mount points\n"
-" fstree                show fstree attachment points\n"
-" kill                  terminate an extant bamd if any\n"
+" formula(s)            list formulas\n"
+" fstree(s)             list fstrees\n"
+" goals                 show goals\n"
+" info                  show metadata\n"
+" kill                  kill bamd if its running\n"
 " ls                    print directory node listings\n"
-" metadata              print metadata\n"
+" module(s)             list modules\n"
+" plugin(s)             list plugins\n"
 " reconcile             reload everything\n"
-" rules                 print effective rules\n"
-" stats                 print global, or per-node counters\n"
-" touch                 mark files stale\n"
+" rma(s)                list rmas\n"
+" rule(s)               list rules\n"
+" ruleset(s)            list modules\n"
+" stats                 show global, or per-node counters\n"
+" touch                 invalidate nodes\n"
 " tree                  print directory tree listings\n"
-" vars                  print effective vars\n"
+" varset(s)             list varsets\n"
 "\n"
 "global options\n"
 " --help | -h           print this message\n"
 " --version | -V        print version information\n"
+" -v                    print more stuff\n"
 " -B                    first, global invalidation\n"
-" -K                    first, kill extant bamd if any\n"
+" -K                    first, kill bamd if its running\n"
 " -m path/to/module     set the context module\n"
+" --no-module           unset the context module\n"
+" --no-color            disable terminal colorization\n"
 #if CONFIG_DEVEL
-" --no-launch           only talk to an existing bamd\n"
+" --no-launch           require bamd to already be running\n"
 #endif
-    , git_describe
   );
-
-  if(cmd) {
-    printf("\n");
-    cmd->usage(cmd);
-  }
 
   printf(
 "\n"
-"config files\n"
+"client config files\n"
 " "SYSTEM_CONFIG_PATH"\n"
 " "USER_CONFIG_PATH"\n"
 "\n"
-"environment variables\n"
+"\n"
+"daemon config files\n"
+" /etc/config.bam\n"
+" $HOME/.bam/config.bam\n"
+"\n"
+"client environment variables\n"
 " BAM_IPC_DIR           the ipc dir\n"
 " XDG_RUNTIME_DIR       else, $XDG_RUNTIME_DIR/bam is the ipc dir\n"
 "\n"
@@ -183,7 +199,7 @@ void args_parse(int argc, char ** argv)
   int r;
 
   /* defaults */
-  g_cmd = &build_command;
+  command_set(&build_command);
 
   memset(&yyu, 0, sizeof(yyu));
   yyu_parser_init(&yyu, &args_vtable);
@@ -208,74 +224,32 @@ void args_parse(int argc, char ** argv)
     argvsl += len + 1;
   }
 
-  if((r = parse(&yyu, argvs, argvsl, "-args-")))
-  {
+  r = parse(&yyu, argvs, argvsl, "-args-");
+  yyu_parser_xdestroy(&yyu);
+
+  if(r != 0) {
     exit(1);  // error printed earlier
-  }
-  else if(g_args.help)
-  {
+  } else if(g_args.help) {
     usage(g_cmd);
-  }
-  else if(g_args.version)
-  {
+  } else if(g_args.version) {
     version();
   }
 
   RUNTIME_ASSERT(g_cmd);
-  yyu_parser_xdestroy(&yyu);
 
-  if((g_cmd->attrs & COMMAND_CONTEXT_MODULE)) {
-    if(!g_args.context_module_id) {
-      if(!g_args.no_context_module) {
-        args_set_module_abspath(g_params.cwd, g_params.cwd_len);
-      }
-    }
+  if(!g_args.no_context_module) {
+    g_args.context_module_id_len = zcatw(g_args.context_module_id, sizeof(g_args.context_module_id), g_params.cwd_hash, g_params.cwd_hash_len);
   }
 }
 
 void args_set_module_path(const char * restrict path, uint16_t path_len)
 {
-  char inpath[PATH_MAX];
-  char abspath[PATH_MAX];
-  uint16_t abspath_len;
-
-  zcatw(inpath, sizeof(inpath), path, path_len);
-  inpath[path_len] = 0;
-  if((realpath(inpath, abspath)) == 0) {
-    dprintf(2, "realpath(%s) : %s\n", inpath, strerror(errno));
-    exit(1);
-  }
-  abspath_len = strlen(abspath);
-
-  args_set_module_abspath(abspath, abspath_len);
+  g_args.context_module_id_len = params_path_hash(g_args.context_module_id, sizeof(g_args.context_module_id), path, path_len);
   g_args.no_context_module = false;
-}
-
-void args_set_module_abspath(const char * restrict path, uint16_t path_len)
-{
-  uint64_t u64;
-
-  u64 = hash64(0, path, path_len);
-  g_args.context_module_id = u64;
 }
 
 void args_set_no_module()
 {
-  g_args.context_module_id = 0;
+  g_args.context_module_id_len = 0;
   g_args.no_context_module = true;
-}
-
-void args_command_start(struct command * restrict cmd, uint32_t flags)
-{
-  g_cmd = cmd;
-  if(g_cmd->init) {
-    g_cmd->init(g_cmd, flags);
-  }
-}
-
-void args_command_finish()
-{
-  if(!g_cmd) {
-    args_command_start(&build_command, 0);
-  }
 }

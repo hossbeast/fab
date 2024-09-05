@@ -4,14 +4,11 @@
 #pragma once
 
 #include "command.h"
-#include "args.h"
+#include "modules.h"
 
-extern struct rule_args {
-  bead target;
-} rule_args;
+/* rules commands */
+extern command rule_command;
+extern command rules_command;
 
-extern struct rules_args {
-} rules_args;
-
-extern struct command rule_command;
-extern struct command rules_command;
+/* module rules subcommand */
+extern command module_rules_command;

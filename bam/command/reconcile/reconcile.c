@@ -6,6 +6,7 @@
 #include "bam/events.h"
 
 #include "reconcile.h"
+#include "info.h"
 #include "params.h"
 #include "zcat.h"
 
@@ -45,7 +46,7 @@ static void connected(command * restrict cmd, bam_client * restrict client)
 
 static void process(command * restrict cmd, bam_client * restrict client, bamipc_message * restrict msg)
 {
-  if(msg->type == BAMIPC_MSG_EVENTS && msg->evtype == BAMIPC_EVENT_SYSTEM_STATE) {
+  if(msg->type == BAMIPC_MSG_EVENTS && msg->evtype == BAMIPC_EVENT_SYSTEM_STATE_CHANGE) {
     return;
   }
 

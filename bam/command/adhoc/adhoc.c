@@ -8,6 +8,7 @@
 #include "adhoc.h"
 
 #include "zcat.h"
+#include "info.h"
 #include "params.h"
 
 struct adhoc_args adhoc_args;
@@ -20,7 +21,7 @@ static void usage(command * restrict cmd)
   );
 }
 
-static void adhoc_connected(command * restrict cmd, bam_client * restrict client)
+static void connected(command * restrict cmd, bam_client * restrict client)
 {
   bamipc_message * msg;
   size_t z;
@@ -38,7 +39,7 @@ static void adhoc_connected(command * restrict cmd, bam_client * restrict client
   client_post(client, msg);
 }
 
-static void adhoc_process(command * restrict cmd, bam_client * restrict client, bamipc_message * restrict msg)
+static void process(command * restrict cmd, bam_client * restrict client, bamipc_message * restrict msg)
 {
   RUNTIME_ASSERT(msg->id == requestid);
 
@@ -63,8 +64,8 @@ static void attached(command * restrict cmd, bam_client * restrict client)
 
 command adhoc_command = {
     name : "adhoc"
-  , attached : attached
   , usage : usage
-  , connected : adhoc_connected
-  , process : adhoc_process
+  , attached : attached
+  , connected : connected
+  , process : process
 };

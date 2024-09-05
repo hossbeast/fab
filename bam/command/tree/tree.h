@@ -3,8 +3,6 @@
 
 #pragma once
 
-#include "bam/graph.h"
-
 #include "command.h"
 #include "args.h"
 
@@ -13,8 +11,13 @@
 extern struct tree_args {
   bead target;            // identifies the node to start the tree from
   bool nofollow;          // on target lookup
-  bam_graph graph;
+  bool hidden;
+  const char *graph;
+  uint16_t graph_len;
+  const char *visit;
+  uint16_t visit_len;
   const char *direction;  // up | down
+  uint16_t direction_len;
   bool both;              // both up and down
   bool show_labels;
   bool show_paths;
@@ -23,3 +26,5 @@ extern struct tree_args {
 } tree_args;
 
 extern struct command tree_command;
+
+void tree_init(uint32_t flags);

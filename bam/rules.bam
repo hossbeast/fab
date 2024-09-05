@@ -5,8 +5,8 @@ use git
 use flex
 use bison
 
-bind bam-build/asan               => //asan-bits
-bind modules/executable           => //executable
+bind bam-build/asan       => //asan-bits
+bind executable           => //executable
 
 # includes
 rule **+(/) => [*] //module/include

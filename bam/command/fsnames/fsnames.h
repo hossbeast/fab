@@ -3,10 +3,8 @@
 
 #pragma once
 
-#include "command.h"
+#include "special.h"
 #include "args.h"
 
-extern struct fstree_args {
-} fstree_args;
-
-extern struct command fstree_command;
+extern struct command fsname_command;
+extern struct command fsnames_command;

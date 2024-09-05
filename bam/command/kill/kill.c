@@ -20,24 +20,16 @@ static void usage(command * restrict cmd)
   );
 }
 
-static void attached(command * restrict cmd, bam_client * restrict client)
-{
-}
-static void disconnected(command * restrict cmd)
-{
-}
-static void init(command * restrict cmd, uint32_t flags)
-{
-  g_args.kill = true;
-}
-
 //
 // public
 //
 
-struct command kill_command = {
-    usage : usage
-  , init : init
-  , attached : attached
-  , disconnected : disconnected
+typeof(kill_command) kill_command = {
+    name : "kill"
+  , usage : usage
 };
+
+void kill_init()
+{
+  g_args.kill = true;
+}

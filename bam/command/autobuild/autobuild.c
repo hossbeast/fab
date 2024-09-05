@@ -10,10 +10,13 @@
 #include "narrator.h"
 #include "narrator/fixed.h"
 #include "bacon/builder.h"
+#include "common/parseint.h"
 
 #include "autobuild.h"
 #include "build.h"
 
+#include "info.h"
+#include "params.h"
 #include "params.h"
 
 static uint64_t requestid;
@@ -21,7 +24,10 @@ static uint64_t eventsubid;
 
 static void process(command * restrict cmd, bam_client * restrict client, bamipc_message * restrict msg)
 {
-  uint32_t pid;
+  const char *pid_str;
+  int64_t pid;
+  const char *token_str;
+  uint64_t token = 0;
 
   if(msg->type == BAMIPC_MSG_RESPONSE)
   {
@@ -35,16 +41,38 @@ static void process(command * restrict cmd, bam_client * restrict client, bamipc
 
   RUNTIME_ASSERT(msg->type == BAMIPC_MSG_EVENTS);
 
-  if(msg->evtype == BAMIPC_EVENT_SYSTEM_STATE) { }
-  else if(msg->evtype == BAMIPC_EVENT_GOALS)
+  if(msg->evtype == BAMIPC_EVENT_SYSTEM_STATE_CHANGE)
   {
-    RUNTIME_ASSERT((msg->id & UINT32_MAX) == 1);
-    pid = PID_FROM_MSGID(msg->id);
-    if(pid != g_params.pid)
-    {
-      printf("goals reassigned by %"PRIu32"\n", pid);
-      g_params.shutdown = true;
+
+  }
+  else if(msg->evtype == BAMIPC_EVENT_GOALS_SET)
+  {
+    if((token_str = strstr(msg->text, "token : 0x")) == 0) {
+      goto reassigned;
     }
+    if(parseuint(token_str + strlen("token : 0x"), PRIx64, 0, UINT64_MAX, 1, 20, &token, 0) != 0) {
+      goto reassigned;
+    }
+
+    if((pid_str = strstr(msg->text, "pid : ")) == 0) {
+      goto reassigned;
+    }
+    if(parseint(pid_str + strlen("pid : "), PRId64, 1, INT64_MAX, 1, 20, &pid, 0) != 0) {
+      goto reassigned;
+    }
+
+    if(token == g_params.pid) {
+      printf("goals set with matching token %"PRIx64"\n", token);
+      return;
+    }
+
+reassigned:
+    printf("goals reassigned by %"PRId64" with token %"PRIx64"\n", pid, token);
+    g_params.shutdown = true;
+  }
+  else if(msg->evtype == BAMIPC_EVENT_AUTORUN_SET)
+  {
+    // gratuitous autorun-set event
   }
   else
   {
@@ -59,9 +87,9 @@ static void attached(command * restrict cmd, bam_client * restrict client)
 
 static void connected(command * restrict cmd, bam_client * restrict client)
 {
-  narrator * request_narrator;
-  narrator_fixed nstor;
-  bamipc_message * msg;
+  narrator *request_narrator;
+  narrator_fixed fixed;
+  bamipc_message *msg;
   bacon_writer writer, *builder_writer;
 
   /* subscribe to relevant events */
@@ -69,41 +97,45 @@ static void connected(command * restrict cmd, bam_client * restrict client)
   msg->type = BAMIPC_MSG_EVENTSUB;
   eventsubid = msg->id = ++client->msgid;
   msg->attrs = 0
-    | BAMIPC_EVENT_FORMULA_EXEC_FORKED
-    | BAMIPC_EVENT_FORMULA_EXEC_STDOUT
-    | BAMIPC_EVENT_FORMULA_EXEC_STDERR
-    | BAMIPC_EVENT_FORMULA_EXEC_AUXOUT
-    | BAMIPC_EVENT_FORMULA_EXEC_WAITED
-    | BAMIPC_EVENT_GOALS
+    | BAMIPC_EVENT_FORMULA_FORK_BIN
+    | BAMIPC_EVENT_FORMULA_WAIT_BIN
+    | BAMIPC_EVENT_FORMULA_STDOUT_BIN
+    | BAMIPC_EVENT_FORMULA_STDERR_BIN
+    | BAMIPC_EVENT_FORMULA_AUXOUT_BIN
+    | BAMIPC_EVENT_GOALS_SET
+    | BAMIPC_EVENT_AUTORUN_SET
+    | BAMIPC_EVENT_SYSTEM_STATE_CHANGE
     ;
   client_post(client, msg);
 
   /* send the request */
   msg = bam_client_produce(client);
   msg->type = BAMIPC_MSG_REQUEST;
-  requestid = msg->id = PID_AS_MSGID(getpid());
+  requestid = msg->id = ++client->msgid;
 
-  request_narrator = narrator_fixed_init(&nstor, msg->text, 0xfff);
+  request_narrator = narrator_fixed_init(&fixed, msg->text, 0xfff);
   bacon_writer_init(&writer);
   builder_writer = bacon_writer_open(&writer, request_narrator);
 
-  /* re-configure goals */
-  build_command_collate_goals(builder_writer, false);
+  { MAPPING
+    STRING("autorun")
+    BOOL(true)
+  }
 
-  STRING("reconcile")
+  /* re-configure goals */
+  build_command_collate_goals(MMS("bam-autobuild"), builder_writer);
 
   /* invalidate targets */
   build_command_collate_invalidations(builder_writer);
 
-  /* build the targets */
-  STRING("autorun")
+  /* having set the goals, autorun will trigger */
 
   bacon_writer_close(&writer);
   bacon_writer_destroy(&writer);
   narrator_sayc(request_narrator, 0);
   narrator_sayc(request_narrator, 0);
 
-  msg->size = nstor.l;
+  msg->size = fixed.l;
   client_post(client, msg);
 }
 

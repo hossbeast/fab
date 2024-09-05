@@ -13,6 +13,7 @@
 
 #include "touch.h"
 #include "command.h"
+#include "info.h"
 #include "params.h"
 
 static uint64_t requestid;
@@ -43,11 +44,6 @@ static void connected(command * restrict cmd, bam_client * restrict client)
   narrator_fixed fixed;
   int x;
 
-  /* if no targets specified, invalidate everything */
-  if(args->targets_len == 0) {
-    g_args.invalidate = true;
-  }
-
   msg = bam_client_produce(client);
   msg->type = BAMIPC_MSG_REQUEST;
   requestid = msg->id = ++client->msgid;
@@ -56,19 +52,20 @@ static void connected(command * restrict cmd, bam_client * restrict client)
   bacon_writer_init(&writer);
   builder_writer = bacon_writer_open(&writer, N);
 
-  if(g_args.invalidate) {
-    STRING("global-invalidate")
+  /* if no targets specified, invalidate everything */
+  if(args->targets_len == 0) {
+    STRING("invalidate-primary")
     goto end;
   }
 
   { LIST
-    if(g_args.context_module_id) {
+    if(g_args.context_module_id_len) {
       MAPPING
       STRING("context")
       { SET
         { MAPPING
           STRING("module")
-          HEX(g_args.context_module_id)
+          BYTES(g_args.context_module_id, g_args.context_module_id_len)
         }
       }
     }

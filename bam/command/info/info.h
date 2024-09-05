@@ -3,7 +3,6 @@
 
 #pragma once
 
-#include "command.h"
+#include "describe.h"
 
-struct command;
-extern struct command metadata_command;
+extern struct command info_command;

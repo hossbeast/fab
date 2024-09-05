@@ -3,7 +3,6 @@
 
 #include "common/attrs.h"
 #include "bam/client.h"
-#include "bam/vertex.h"
 #include "bam/ipc.h"
 #include "bacon/builder.h"
 #include "narrator.h"
@@ -12,6 +11,7 @@
 #include "buildplan.h"
 #include "args.h"
 #include "command.h"
+#include "info.h"
 #include "params.h"
 
 #include "zcat.h"
@@ -47,7 +47,21 @@ static void connected(command * restrict cmd, bam_client * restrict client)
   builder_writer = bacon_writer_open(&writer, N);
 
   { LIST
-    STRING("buildplan-describe")
+    { MAPPING
+      STRING("select")
+      { LIST
+        MAPPING
+        STRING("lookup")
+        { SET
+          { MAPPING
+            STRING("path")
+            LOADF("//buildplan")
+          }
+        }
+      }
+    }
+
+    STRING("tell")
   }
 
   bacon_writer_close(&writer);
@@ -72,6 +86,7 @@ static void process(command * restrict cmd, bam_client * restrict client, bamipc
 
   RUNTIME_ASSERT(msg->type == BAMIPC_MSG_RESULT);
   (void)!write(1, msg->text, msg->size);
+  (void)!write(1, "\n", 1);
   any = true;
 }
 
@@ -82,18 +97,12 @@ static void disconnected(command * restrict cmd)
   }
 }
 
-static void attached(command * restrict cmd, bam_client * restrict client)
-{
-
-}
-
 //
 // public
 //
 
 struct command buildplan_command = {
     usage : usage
-  , attached : attached
   , connected : connected
   , process : process
   , disconnected : disconnected

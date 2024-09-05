@@ -9,17 +9,16 @@
 #include "bacon/builder.h"
 #include "narrator.h"
 #include "narrator/fixed.h"
-#include "bam/vars_describe.h"
-#include "bam/vars_describe.desc.h"
-#include "bam/describe.h"
+#include "bam/vars_tell.h"
+#include "bam/vars_tell.desc.h"
 
+#include "modules.h"
 #include "vars.h"
+#include "info.h"
 #include "params.h"
 #include "zcat.h"
 
-static uint64_t requestid;
-struct vars_args vars_args;
-static bam_vars_describe_result result;
+static bam_vars_tell_result result;
 static bamipc_message *texts[64];
 static uint16_t texts_len;
 
@@ -35,87 +34,96 @@ static void usage(command * restrict cmd)
   );
 }
 
-static void connected(command * restrict cmd, bam_client * restrict client)
+static void vars_command_tell(struct command * restrict cmd, bacon_writer * restrict builder_writer)
 {
-  bamipc_message * msg;
-  bacon_writer writer, *builder_writer;
-  narrator *N;
-  narrator_fixed fixed;
-
-  msg = bam_client_produce(client);
-  msg->type = BAMIPC_MSG_REQUEST;
-  requestid = msg->id = ++client->msgid;
-
-  N = narrator_fixed_init(&fixed, msg->text, sizeof(msg->text));
-  bacon_writer_init(&writer);
-  builder_writer = bacon_writer_open(&writer, N);
-
-  /* required for this subcommand */
-  RUNTIME_ASSERT(g_args.context_module_id);
-
-  {
-    LIST
+  { LIST
     { MAPPING
-      STRING("context")
-      { SET
+      STRING("select")
+      { LIST
         { MAPPING
-          STRING("module")
-          HEX(g_args.context_module_id)
+          STRING("lookup")
+          { SET
+            { MAPPING
+              STRING("path")
+              LOADF("//modules/%.*s/vars", cmd->module_id_len, cmd->module_id)
+            }
+          }
         }
       }
     }
-    STRING("vars-describe")
+
+    STRING("tell")
+  }
+}
+
+static void connected(command * restrict cmd, bam_client * restrict client)
+{
+  if(cmd->target_len == 0) {
+    cmd->identify_id_1 = command_post(cmd, client, module_command_identify_dot);
+  } else if(memmem(cmd->target, cmd->target_len, MMS("/")) != 0) {
+    cmd->identify_id_1 = command_post(cmd, client, module_command_identify_target);
+  } else {
+    cmd->identify_id_0 = command_post(cmd, client, module_command_identify_id);
+    cmd->identify_id_1 = command_post(cmd, client, module_command_identify_target);
   }
 
-  bacon_writer_close(&writer);
-  bacon_writer_destroy(&writer);
-
-  narrator_sayc(N, 0);
-  narrator_sayc(N, 0);
-
-  msg->size = fixed.l;
-  client_post(client, msg);
+  message_no_error_list[0] = cmd->identify_id_0;
+  message_no_error_list[1] = cmd->identify_id_1;
+  message_no_error_list_len = 2;
 }
 
 static void process(command * restrict cmd, bam_client * restrict client, bamipc_message * restrict msg)
 {
-  int x;
-  bam_vars_describe_string string;
+  bam_vars_tell_item item;
   size_t z;
+  int x;
 
-  if(msg->id != requestid) {
-    return;
-  }
-
-  if(msg->type == BAMIPC_MSG_RESPONSE) {
+  if(msg->id == cmd->identify_id_0 && msg->type == BAMIPC_MSG_RESULT) {
+    if(msg->code == 0 && msg->size > 10) {
+      cmd->module_id_len = command_identify_result_parse(msg, cmd->module_id, sizeof(cmd->module_id));
+    }
+  } else if(msg->id == cmd->identify_id_1 && msg->type == BAMIPC_MSG_RESULT) {
+    if(msg->code == 0 && msg->size > 10) {
+      cmd->module_id_len = command_identify_result_parse(msg, cmd->module_id, sizeof(cmd->module_id));
+    }
+  } else if(msg->id == cmd->identify_id_0 && msg->type == BAMIPC_MSG_RESPONSE) {
+  } else if(msg->id == cmd->identify_id_1 && msg->type == BAMIPC_MSG_RESPONSE) {
+    if(cmd->module_id_len == 0) {
+      /* lookup failure */
+      dprintf(2, "module not found %.*s\n", (int)cmd->target_len, cmd->target);
+      g_params.waserror = true;
+      g_params.shutdown = true;
+    } else {
+      cmd->tell_id = command_post(cmd, client, vars_command_tell);
+    }
+  } else if(msg->id == cmd->tell_id && msg->type == BAMIPC_MSG_RESPONSE) {
     g_params.shutdown = true;
-    goto end;
-  }
-
-  RUNTIME_ASSERT(msg->type == BAMIPC_MSG_RESULT);
-
-  if(msg->attrs == descriptor_bam_vars_describe_result.id) {
-    descriptor_type_unmarshal(&result, &descriptor_bam_vars_describe_result, msg->text, msg->size);
-  } else if(msg->attrs == 0) {
-    texts[texts_len++] = msg;
+    goto show;
+  } else if(msg->id == cmd->tell_id && msg->type == BAMIPC_MSG_RESULT) {
+    if(msg->attrs == descriptor_bam_vars_tell_result.id) {
+      descriptor_type_unmarshal(&result, &descriptor_bam_vars_tell_result, msg->text, msg->size);
+    } else if(msg->attrs == 0) {
+      texts[texts_len++] = msg;
+    } else {
+      RTA;
+    }
   } else {
     RTA;
   }
   return;
 
-end:
-  printf("# %-11s %.*s\n", "directory", result.dir_abspath_len, result.dir_abspath);
-  printf("# %-11s %.*s id %.*s\n", "module", result.mod_id_len, result.mod_id, result.mod_abspath_len, result.mod_abspath);
+show:
+  printf("#\n");
+  printf("# %s\n", "module");
+  printf("#  %.*s %.*s\n", result.module_id_len, result.module_id, result.module_abspath_len, result.module_abspath);
   printf("#\n");
   printf("# var files %u\n", result.file_list_len);
-  printf("#\n");
 
   z = 0;
   for(x = 0; x < result.file_list_len; x++) {
-    z += descriptor_type_unmarshal(&string, &descriptor_bam_vars_describe_string, result.file_list + z, result.file_list_size - z);
-    printf("# %.*s\n", string.text_len, string.text);
+    z += descriptor_type_unmarshal(&item, &descriptor_bam_vars_tell_item, result.file_list + z, result.file_list_size - z);
+    printf("#  %.*s %.*s\n", item.id_len, item.id, item.abspath_len, item.abspath);
   }
-  RUNTIME_ASSERT((z + 6) == result.file_list_size);
   printf("#\n");
 
   if(texts_len) {
@@ -129,21 +137,13 @@ end:
   (void)!write(1, "\n", 1);
 }
 
-static void attached(command * restrict cmd, bam_client * restrict client)
-{
-}
-
 //
 // public
 //
 
-static void disconnected(command * restrict cmd) { }
-struct command vars_command = {
+typeof(vars_command) vars_command = {
     name : "vars"
-  , attrs : COMMAND_CONTEXT_MODULE
-  , attached : attached
   , usage : usage
   , connected : connected
   , process : process
-  , disconnected : disconnected
 };

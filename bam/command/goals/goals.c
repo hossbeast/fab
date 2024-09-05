@@ -1,24 +1,19 @@
 /* SPDX-License-Identifier: GPL-3.0 */
 /* Copyright (c) 2012-2023 Todd Freed <todd.freed@gmail.com> */
 
-#include "common/attrs.h"
-#include "bam/client.h"
-#include "bam/vertex.h"
-#include "bam/ipc.h"
+#include "types.h"
 #include "bacon/builder.h"
 #include "narrator.h"
 #include "narrator/fixed.h"
 
-#include "fstree.h"
-#include "args.h"
-#include "command.h"
+#include "bam/ipc.h"
+#include "bam/client.h"
+
+#include "goals.h"
+#include "info.h"
 #include "params.h"
 
-#include "zcat.h"
-
-struct fstree_args fstree_args;
 static uint64_t requestid;
-static bool any;
 
 //
 // static
@@ -27,7 +22,7 @@ static bool any;
 static void usage(command * restrict cmd)
 {
   printf(
-"fstree options (none)\n"
+"goals options (none)\n"
   );
 }
 
@@ -47,7 +42,21 @@ static void connected(command * restrict cmd, bam_client * restrict client)
   builder_writer = bacon_writer_open(&writer, N);
 
   { LIST
-    STRING("fstree-describe")
+    { MAPPING
+      STRING("select")
+      { LIST
+        { MAPPING
+          STRING("lookup")
+          { SET
+            { MAPPING
+              STRING("path")
+              STRING("//goals")
+            }
+          }
+        }
+      }
+    }
+    STRING("describe")
   }
 
   bacon_writer_close(&writer);
@@ -72,28 +81,20 @@ static void process(command * restrict cmd, bam_client * restrict client, bamipc
 
   RUNTIME_ASSERT(msg->type == BAMIPC_MSG_RESULT);
   (void)!write(1, msg->text, msg->size);
-  any = true;
+  (void)!write(1, "\n", 1);
 }
 
-static void disconnected(command * restrict cmd)
-{
-  if(any) {
-    printf("\n");
-  }
-}
-
-static void attached(command * restrict cmd, bam_client * restrict client)
-{
-
-}
+static void attached(command * restrict cmd, bam_client * restrict client) {}
+static void disconnected(command * restrict cmd) {}
 
 //
 // public
 //
 
-struct command fstree_command = {
-    usage : usage
+struct command goals_command = {
+    name : "goals"
   , attached : attached
+  , usage : usage
   , connected : connected
   , process : process
   , disconnected : disconnected

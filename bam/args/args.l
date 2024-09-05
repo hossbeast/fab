@@ -38,7 +38,8 @@
  /* integers */
 <INITIAL>[-][0-9]+                                      { return LEXI("%"SCNdMAX); }
 <INITIAL>[0-9]+                                         { return LEXI("%"SCNuMAX); }
-<INITIAL>(?i:0x[a-f0-9]+)                               { return LEXI("%"SCNxMAX); }
+<INITIAL>(?i:0x[a-f0-9]+)                               { return LEXI("%"SCNxMAX); }  /* unambiguous */
+<INITIAL>(?i:[a-f0-9]{16})                              { return LEXI("%"SCNxMAX); }  /* ambiguous but useful */
 
  /* tokens */
 <INITIAL>[-+bdghuvxt]                                   { return LEX(yytext[0]); }

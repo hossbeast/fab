@@ -3,10 +3,18 @@
 
 #pragma once
 
-#include "args.h"
 #include "command.h"
+#include "modules.h"
 
-extern struct vars_args {
-} vars_args;
+/* module vars subcommand */
+extern struct {
+  command cmd;
 
-extern struct command vars_command;
+  char module_id[40];
+  uint16_t module_id_len;
+
+  uint64_t module_identify_id;
+  uint64_t tell_id;
+}g;
+
+extern command vars_command;

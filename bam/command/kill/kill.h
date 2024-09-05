@@ -5,4 +5,6 @@
 
 #include "command.h"
 
-extern struct command kill_command;
+extern command kill_command;
+
+void kill_init(void);

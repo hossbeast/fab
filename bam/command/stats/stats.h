@@ -6,12 +6,18 @@
 #include "command.h"
 #include "args.h"
 
-extern struct stats_args {
+typedef struct {
+  command cmd;
+
   bead targets[64];
   uint16_t targets_len;
-  bool reset;
-  bool special_only;
-  bool no_special;
-} stats_args;
 
-extern struct command stats_command;
+  bool reset;
+  int special;
+
+  uint64_t requestid;
+  bool any;
+  bool context_module;
+} b;
+
+extern command stats_command;

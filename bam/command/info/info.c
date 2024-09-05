@@ -1,33 +1,22 @@
 /* SPDX-License-Identifier: GPL-3.0 */
 /* Copyright (c) 2012-2023 Todd Freed <todd.freed@gmail.com> */
 
-#include "common/attrs.h"
-#include "bam/client.h"
-#include "bam/vertex.h"
+#include "info.h"
 #include "bam/ipc.h"
+#include "bam/client.h"
 #include "bacon/builder.h"
 #include "narrator.h"
 #include "narrator/fixed.h"
 
-#include "filesystem.h"
-#include "args.h"
-#include "command.h"
 #include "params.h"
 
-#include "zcat.h"
-
-struct filesystem_args filesystem_args;
 static uint64_t requestid;
 static bool any;
-
-//
-// static
-//
 
 static void usage(command * restrict cmd)
 {
   printf(
-"filesystem options (none)\n"
+"info options (none)\n"
   );
 }
 
@@ -47,7 +36,20 @@ static void connected(command * restrict cmd, bam_client * restrict client)
   builder_writer = bacon_writer_open(&writer, N);
 
   { LIST
-    STRING("filesystem-describe")
+    { MAPPING
+      STRING("select")
+      { LIST
+        MAPPING
+        STRING("lookup")
+        { SET
+          { MAPPING STRING("path")
+            LOADF("//system")
+          }
+        }
+      }
+    }
+
+    STRING("tell")
   }
 
   bacon_writer_close(&writer);
@@ -81,19 +83,13 @@ static void disconnected(command * restrict cmd)
     printf("\n");
   }
 }
-
-static void attached(command * restrict cmd, bam_client * restrict client)
-{
-
-}
-
 //
 // public
 //
 
-struct command filesystem_command = {
-    usage : usage
-  , attached : attached
+typeof(info_command) info_command = {
+    name : "info"
+  , usage : usage
   , connected : connected
   , process : process
   , disconnected : disconnected
