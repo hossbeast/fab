@@ -12,7 +12,7 @@
 extern const char *g_bam_client_bamd_path;
 extern const char *g_bam_client_system_config_path;
 extern const char *g_bam_client_user_config_path;
-extern const char *g_bam_client_default_filesystem_invalidate;
+extern const char *g_bam_client_default_filesystem_invalidation;
 extern const char *g_bam_client_sweeper_period_nsec;
 #endif
 

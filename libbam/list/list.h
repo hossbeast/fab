@@ -7,14 +7,16 @@
 #include <stdint.h>
 
 #include "descriptor.h"
-#include "vertex.h"
 
 extern descriptor_type descriptor_bam_list_item;
 
 /* response from the list api */
 typedef struct bam_list_item {
-  enum bam_vertex_type type;
-  enum bam_vertex_state state;
+  const char *type;
+  uint16_t type_len;
+
+  const char *state;
+  uint16_t state_len;
 
   const char *label;
   uint16_t label_len;

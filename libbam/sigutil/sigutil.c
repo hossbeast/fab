@@ -63,8 +63,9 @@ void API sigutil_wait(const sigset_t * sigs, siginfo_t * info)
   siginfo_t linfo;
   int r;
 
-  if(!info)
+  if(!info) {
     info = &linfo;
+  }
 
   // retry EINTR
   r = -1;
@@ -83,7 +84,7 @@ void API sigutil_wait(const sigset_t * sigs, siginfo_t * info)
   sigrx_probe(info);
 }
 
-void API sigutil_timedwait(int * restrict errp, const sigset_t * restrict sigs, siginfo_t * restrict info, const struct timespec * restrict timeout)
+int API sigutil_timedwait(const sigset_t * restrict sigs, siginfo_t * restrict info, const struct timespec * restrict timeout)
 {
   int err;
 
@@ -95,7 +96,7 @@ void API sigutil_timedwait(int * restrict errp, const sigset_t * restrict sigs, 
     memset(info, 0, sizeof(*info));
   }
 
-  *errp = err;
+  return err;
 }
 
 void API sigutil_exchange(int sig, pid_t pid, const sigset_t * sigs, siginfo_t * info)

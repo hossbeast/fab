@@ -17,11 +17,7 @@ rule //artifacts/*/$CONFIG_VARIANT/*.a -> libbam.a
 
 # descriptor .c and .h files are generated
 rule { search : anchor } build_slot/build_slot.h            -> [*] bam/build_slot.desc.[ch] : //descriptor/descriptor.bam
-rule { search : anchor } metadata/metadata.h                -> [*] bam/metadata.desc.[ch] : //descriptor/descriptor.bam
-rule { search : anchor } stats/stats.h                      -> [*] bam/stats.desc.[ch] : //descriptor/descriptor.bam
+rule { search : anchor } config_tell/config_tell.h          -> [*] bam/config_tell.desc.[ch] : //descriptor/descriptor.bam
+rule { search : anchor } envs_tell/envs_tell.h              -> [*] bam/envs_tell.desc.[ch] : //descriptor/descriptor.bam
 rule { search : anchor } list/list.h                        -> [*] bam/list.desc.[ch] : //descriptor/descriptor.bam
-rule { search : anchor } describe/describe.h                -> [*] bam/describe.desc.[ch] : //descriptor/descriptor.bam
-rule { search : anchor } config_describe/config_describe.h  -> [*] bam/config_describe.desc.[ch] : //descriptor/descriptor.bam
-rule { search : anchor } rule_info/rule_info.h              -> [*] bam/rule_info.desc.[ch] : //descriptor/descriptor.bam
-rule { search : anchor } rules_describe/rules_describe.h    -> [*] bam/rules_describe.desc.[ch] : //descriptor/descriptor.bam
-rule { search : anchor } vars_describe/vars_describe.h      -> [*] bam/vars_describe.desc.[ch] : //descriptor/descriptor.bam
+rule { search : anchor } vars_tell/vars_tell.h              -> [*] bam/vars_tell.desc.[ch] : //descriptor/descriptor.bam

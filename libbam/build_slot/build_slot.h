@@ -66,6 +66,7 @@ typedef struct bam_build_string {
 /* BAMIPC_EVENT_FORMULA_EXEC_WAITED */
 typedef struct bam_build_slot_results {
   int32_t status;         // process exit status
+  uint64_t runtime;       // time between fork and wait, nanoseconds
   uint32_t stdout_total;
   uint32_t stderr_total;
   uint32_t auxout_total;

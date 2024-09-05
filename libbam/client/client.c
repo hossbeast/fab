@@ -46,7 +46,7 @@
 const char * APIDATA g_bam_client_bamd_path;
 const char * APIDATA g_bam_client_system_config_path;
 const char * APIDATA g_bam_client_user_config_path;
-const char * APIDATA g_bam_client_default_filesystem_invalidate;
+const char * APIDATA g_bam_client_default_filesystem_invalidation;
 const char * APIDATA g_bam_client_sweeper_period_nsec;
 #endif
 
@@ -199,10 +199,10 @@ void bam_client_launch(bam_client * restrict client)
       argv[i++] = "--user-config-path";
       argv[i++] = (char*)g_bam_client_user_config_path;
     }
-    if(g_bam_client_default_filesystem_invalidate)
+    if(g_bam_client_default_filesystem_invalidation)
     {
-      argv[i++] = "--default-filesystem-invalidate";
-      argv[i++] = (char*)g_bam_client_default_filesystem_invalidate;
+      argv[i++] = "--default-filesystem-invalidation";
+      argv[i++] = (char*)g_bam_client_default_filesystem_invalidation;
     }
     if(g_bam_client_sweeper_period_nsec)
     {

@@ -11,29 +11,28 @@ extern bool g_sigterm;
 
 void sigutil_install_handlers(void);
 
-/// sigutil_wait
-//
-// SUMMARY
-//  block until receipt of one of a set of signals
-//
-// PARAMETERS
-//  sigs   - set of signals
-//  [info] - returns information about the signal received
-//
+/* sigutil_wait
+ *
+ * block until receipt of one of a set of signals
+ *
+ * sigs   - set of signals
+ * [info] - returns information about the signal received
+ */
 void sigutil_wait(const sigset_t * restrict sigs, siginfo_t * restrict info)
   __attribute__((nonnull(1)));
 
-/// sigutil_timedwait
-//
-// SUMMARY
-//  block until receipt of one of a set of signals
-//
-// PARAMETERS
-//  err   - (returns) zero on sucess (one of the signals in sigs caught), errno otherwise (one of EINTR, EAGAIN)
-//  sigs  - set of signals
-//  info  - returns information about the signal received
-//
-void sigutil_timedwait(int * restrict err, const sigset_t * restrict sigs, siginfo_t * restrict info, const struct timespec * restrict timeout)
+/* sigutil_timedwait
+ *
+ * block until receipt of one of a set of signals
+ *
+ * sigs  - set of signals
+ * info  - returns information about the signal received
+ * timeout - max time to wait
+ *
+ * returns
+ *  zero on sucess (one of the signals in sigs caught), errno otherwise (one of EINTR, EAGAIN)
+ */
+int sigutil_timedwait(const sigset_t * restrict sigs, siginfo_t * restrict info, const struct timespec * restrict timeout)
   __attribute__((nonnull));
 
 /// sigutil_exchange

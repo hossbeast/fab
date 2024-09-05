@@ -41,13 +41,14 @@ BAMIPC_MSG_TYPE_TABLE
 extern struct attrs32 * bamipc_msg_type_attrs;
 
 #define BAMIPC_MESSAGE_FIELDS                               \
+  char _pad16[16];  /* application reserved space */        \
   bamipc_msg_type type;                                     \
+  int32_t code;                                             \
   uint64_t id;                                              \
   union {                                                   \
     uint32_t attrs;                                         \
     uint32_t evtype;                                        \
   };                                                        \
-  int code;                                                 \
   uint32_t size;              /* size of the text field */  \
 
 enum bamipc_page_state {
