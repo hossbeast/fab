@@ -7,6 +7,7 @@
 #include "traverse.internal.h"
 #include "attr.h"
 #include "moria.h"
+#include "vertex.h"
 #include "probes.h"
 
 #define GUARD  0
@@ -117,12 +118,10 @@ static inline void del(traversal_state * restrict state, uint8_t bit, const mori
   }
 }
 
-static inline moria_vertex * follow(moria_vertex * v, uint32_t attrs)
+static inline moria_vertex *follow(moria_vertex * v, uint32_t attrs)
 {
   if((attrs & MORIA_TRAVERSE_NOFOLLOW) != MORIA_TRAVERSE_NOFOLLOW) {
-    while(v->attrs & MORIA_VERTEX_LINK) {
-      v = v->ref;
-    }
+    v = moria_vertex_follow(v);
   }
 
   return v;

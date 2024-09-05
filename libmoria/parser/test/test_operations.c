@@ -56,7 +56,7 @@ static void operations_test_entry(xunit_test * _test)
   if(test->expected)
   {
     narrator_reset(&N->base);
-    moria_graph_say(&g, (llist *[]) { &p->vertices }, 1, (llist *[]) { &p->edges }, 1, 0, 0, &N->base);
+    moria_graph_say(&g, (llist *[]) { &p->vertices }, 1, (llist *[]) { &p->edges }, 1, 0, 0, 0, 0, 0, &N->base);
     graph = N->s;
     graph_len = N->l;
     assert_eq_w(test->expected, strlen(test->expected), graph, graph_len);

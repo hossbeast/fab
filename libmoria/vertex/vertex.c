@@ -156,3 +156,12 @@ moria_vertex * API moria_vertex_descends(const moria_vertex * restrict vx, const
 {
   return moria_vertex_descendw(vx, path, strlen(path));
 }
+
+struct moria_vertex *moria_vertex_follow(const struct moria_vertex * restrict v)
+{
+  while(v && v->attrs & MORIA_VERTEX_LINK) {
+    v = v->ref;
+  }
+
+  return (moria_vertex *)v;
+}

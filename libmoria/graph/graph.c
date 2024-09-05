@@ -12,6 +12,7 @@
 #include "graph.internal.h"
 #include "moria.h"
 #include "traverse.internal.h"
+#include "membership.h"
 
 
 //
@@ -103,6 +104,9 @@ static void edges_sorted(
     llist ** restrict edge_lists
   , uint16_t edge_lists_len
   , map * restrict vertex_id_map
+  , const uint32_t * restrict mask_list
+  , const uint32_t * restrict bits_list
+  , uint16_t mask_list_len
   , moria_edge *** restrict edges
   , size_t * restrict count
 )
@@ -112,9 +116,13 @@ static void edges_sorted(
   int y;
 
   *count = 0;
-  for(x = 0; x < edge_lists_len; x++)
-  {
-    *count += llist_count(edge_lists[x]);
+  for(x = 0; x < edge_lists_len; x++) {
+    llist_foreach(edge_lists[x], e, owner) {
+      if(!membership_edge(e, mask_list, bits_list, mask_list_len)) {
+        continue;
+      }
+      *count += 1;
+    }
   }
 
   xmalloc(edges, (*count) * sizeof(*edges));
@@ -123,11 +131,12 @@ static void edges_sorted(
   for(x = 0; x < edge_lists_len; x++)
   {
     llist_foreach(edge_lists[x], e, owner) {
+      if(!membership_edge(e, mask_list, bits_list, mask_list_len)) {
+        continue;
+      }
       (*edges)[y++] = e;
     }
   }
-
-  extern void qsort_r(void *base, size_t nmemb, size_t size, int (*compar)(const void *, const void *, void *), void *arg);
 
   qsort_r(*edges, *count, sizeof(**edges), edge_compare, vertex_id_map);
 }
@@ -147,7 +156,15 @@ static int vertex_compare(const void * _A, const void * _B)
   return memncmp(A->label, A->label_len, B->label, B->label_len);
 }
 
-static void vertices_sorted(llist ** restrict vertex_lists, uint16_t vertex_lists_len, moria_vertex *** restrict vertices, size_t * restrict count)
+static void vertices_sorted(
+    llist ** restrict vertex_lists
+  , uint16_t vertex_lists_len
+  , const uint32_t * restrict mask_list
+  , const uint32_t * restrict bits_list
+  , uint16_t mask_list_len
+  , moria_vertex *** restrict vertices
+  , size_t * restrict count
+)
 {
   moria_vertex * v;
   int x;
@@ -155,7 +172,12 @@ static void vertices_sorted(llist ** restrict vertex_lists, uint16_t vertex_list
 
   *count = 0;
   for(x = 0; x < vertex_lists_len; x++) {
-    *count += llist_count(vertex_lists[x]);
+    llist_foreach(vertex_lists[x], v, owner) {
+      if(!membership_vertex(v, mask_list, bits_list, mask_list_len)) {
+        continue;
+      }
+      *count += 1;
+    }
   }
 
   xmalloc(vertices, sizeof(*vertices) * (*count));
@@ -164,6 +186,9 @@ static void vertices_sorted(llist ** restrict vertex_lists, uint16_t vertex_list
   for(x = 0; x < vertex_lists_len; x++)
   {
     llist_foreach(vertex_lists[x], v, owner) {
+      if(!membership_vertex(v, mask_list, bits_list, mask_list_len)) {
+        continue;
+      }
       (*vertices)[y++] = v;
     }
   }
@@ -232,7 +257,10 @@ void API moria_graph_say(
   , uint16_t edge_lists_len
   , const attrs32 * vertex_defs
   , const attrs32 * edge_defs
-  , struct narrator * const restrict N
+  , const uint32_t * restrict mask_list
+  , const uint32_t * restrict bits_list
+  , uint16_t mask_list_len
+  , narrator * const restrict N
 )
 {
   map vertex_id_map;
@@ -250,21 +278,29 @@ void API moria_graph_say(
 
   map_init(&vertex_id_map);
 
-  vertices_sorted(vertex_lists, vertex_lists_len, &vertices, &vertices_count);
+  vertices_sorted(vertex_lists, vertex_lists_len, mask_list, bits_list, mask_list_len, &vertices, &vertices_count);
   for(x = 0; x < vertices_count; x++)
   {
     v = vertices[x];
+    if(!membership_vertex(v, mask_list, bits_list, mask_list_len)) {
+      continue;
+    }
+
     map_put(&vertex_id_map, (void*)&v, sizeof(v), (void*)(uintptr_t)(x + 1), 0);
   }
 
   for(x = 0; x < vertices_count; x++)
   {
-    if(x)
-      xsays(" ");
-
     v = vertices[x];
-    id = vertex_id_map_get(&vertex_id_map, v);
+    if(!membership_vertex(v, mask_list, bits_list, mask_list_len)) {
+      continue;
+    }
 
+    if(x) {
+      xsays(" ");
+    }
+
+    id = vertex_id_map_get(&vertex_id_map, v);
     xsayf("%"PRIu32"-%.*s", id, v->label_len, v->label);
 
     if(vertex_defs && (label_len = attrs32_zcat(label, sizeof(label), vertex_defs, v->attrs)))
@@ -277,11 +313,15 @@ void API moria_graph_say(
     }
   }
 
-  edges_sorted(edge_lists, edge_lists_len, &vertex_id_map, &edges, &edges_count);
+  edges_sorted(edge_lists, edge_lists_len, &vertex_id_map, mask_list, bits_list, mask_list_len, &edges, &edges_count);
   for(x = 0; x < edges_count; x++)
   {
     xsays(" ");
     e = edges[x];
+
+    if(!membership_edge(e, mask_list, bits_list, mask_list_len)) {
+      continue;
+    }
 
     if(e->attrs & MORIA_EDGE_HYPER)
     {

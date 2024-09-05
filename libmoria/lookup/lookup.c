@@ -19,6 +19,7 @@
 #include "traverse.internal.h"
 #include "vertex.h"
 #include "lookup.h"
+#include "membership.h"
 
 #include "zcat.h"
 
@@ -141,6 +142,9 @@ void API moria_graph_linear_search(
     llist * restrict vertex_list
   , const char * restrict label
   , uint16_t label_len
+  , const uint32_t *mask_list
+  , const uint32_t *bits_list
+  , uint16_t mask_list_len
   , moria_vertex ** restrict rv
 )
 {
@@ -148,6 +152,9 @@ void API moria_graph_linear_search(
 
   *rv = 0;
   llist_foreach(vertex_list, v, owner) {
+    if(!membership_vertex(v, mask_list, bits_list, mask_list_len)) {
+      continue;
+    }
     if(memncmp(v->label, v->label_len, label, label_len) == 0) {
       if(*rv) {
         RTA;

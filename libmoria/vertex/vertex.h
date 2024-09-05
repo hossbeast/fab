@@ -64,3 +64,10 @@ struct moria_vertex * moria_vertex_descends(const struct moria_vertex * restrict
 
 struct moria_vertex * moria_vertex_descendw(const struct moria_vertex * restrict v, const char * restrict path, uint16_t path_len)
   __attribute__((nonnull));
+
+/*
+ * Resolve VERTEX_LINK references until a non-link is found.
+ *
+ * v - starting vertex
+ */
+struct moria_vertex *moria_vertex_follow(const struct moria_vertex * restrict v);

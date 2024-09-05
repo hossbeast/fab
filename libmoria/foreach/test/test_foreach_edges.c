@@ -143,7 +143,7 @@ static void graph_test_entry(xunit_test * _test)
   }
 
   // find the starting vertex
-  moria_graph_linear_search(&p->vertices, test->from, strlen(test->from), &v);
+  moria_graph_linear_search(&p->vertices, test->from, strlen(test->from), 0, 0, 0, &v);
   assert_notnull(v);
 
   // act

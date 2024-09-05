@@ -41,13 +41,16 @@ void moria_graph_destroy(struct moria_graph * const restrict g)
  * N   - narrator
  */
 void moria_graph_say(
-  /* 1 */   struct moria_graph * const restrict g
-  /* 2 */ , struct llist ** restrict vertex_lists
-  /* 3 */ , uint16_t vertex_lists_len
-  /* 4 */ , struct llist ** restrict edge_lists
-  /* 5 */ , uint16_t edge_lists_len
-  /* 6 */ , const struct attrs32 * vertex_defs
-  /* 7 */ , const struct attrs32 * edge_defs
-  /* 8 */ , struct narrator * const restrict N
+  /*  1 */   struct moria_graph * const restrict g
+  /*  2 */ , struct llist ** restrict vertex_lists
+  /*  3 */ , uint16_t vertex_lists_len
+  /*  4 */ , struct llist ** restrict edge_lists
+  /*  5 */ , uint16_t edge_lists_len
+  /*  6 */ , const struct attrs32 * vertex_defs
+  /*  7 */ , const struct attrs32 * edge_defs
+  /*  8 */ , const uint32_t *mask_list
+  /*  9 */ , const uint32_t *bits_list
+  /* 10 */ , uint16_t mask_list_len
+  /* 11 */ , struct narrator * const restrict N
 )
-  __attribute__((nonnull(1, 2, 4, 8)));
+  __attribute__((nonnull(1, 2, 4, 11)));

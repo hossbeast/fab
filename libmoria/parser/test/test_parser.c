@@ -68,7 +68,7 @@ static void moria_parser_test_entry(xunit_test * _test)
   if(test->expected)
   {
     narrator_growing_create(&N1);
-    moria_graph_say(&g, (llist *[]) { &p->vertices }, 1, (llist *[]) { &p->edges }, 1, 0, 0, &N1->base);
+    moria_graph_say(&g, (llist *[]) { &p->vertices }, 1, (llist *[]) { &p->edges }, 1, 0, 0, 0, 0, 0, &N1->base);
     actual = N1->s;
     actual_len = N1->l;
     assert_eq_w(test->expected, strlen(test->expected), actual, actual_len);
