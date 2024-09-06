@@ -59,7 +59,7 @@ BISONFLAGS += --warnings=error
 git-state.c git-state.h :
 	bm_target0=$(dir $@)$(notdir $(basename $@)).c bm_target1=$(dir $@)$(notdir $(basename $@)).h	git=`command -v git` $(ROOT_PATH)/builtin-modules/git/git-state.bam $(SRC_PATH)
 
-%.desc.h %.desc.c : %.h
+%.desc.h %.desc.c :
 	bm_source0=$< bm_target0=$(dir $@)$(notdir $(basename $@)).c bm_target1=$(dir $@)$(notdir $(basename $@)).h $(ROOT_PATH)/internal-modules/descriptor/descriptor.bam
 
 %.a:

@@ -21,6 +21,7 @@ CFLAGS += -I$(SRC_PATH)/libmoria/parser
 CFLAGS += -I$(SRC_PATH)/libmoria/probes
 CFLAGS += -I$(SRC_PATH)/libmoria/traverse
 CFLAGS += -I$(SRC_PATH)/libmoria/vertex
+CFLAGS += -I$(SRC_PATH)/libmoria/membership
 CFLAGS += -I$(BUILD_PATH)/libmoria/parser
 
 libmoria.a: connect/connect.o
@@ -35,3 +36,4 @@ libmoria.a: parser/parser.o
 libmoria.a: probes/probes.o
 libmoria.a: traverse/traverse.o
 libmoria.a: vertex/vertex.o
+libmoria.a: membership/membership.o

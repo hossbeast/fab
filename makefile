@@ -36,3 +36,4 @@ install:
 	install -m644 -t "${INSTALLDIR}/${SHAREDIR}/licenses/bam" "${SRC_PATH}/LICENSE"
 	install -m755 -d "${INSTALLDIR}/${SHAREDIR}/bam/modules"
 	cp -dR "${SRC_PATH}/builtin-modules" "${INSTALLDIR}/${SHAREDIR}/bam/modules"
+	cp -dR "${SRC_PATH}/builtin-plugins" "${INSTALLDIR}/${SHAREDIR}/bam/plugins"

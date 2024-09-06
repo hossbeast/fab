@@ -15,7 +15,9 @@ CONFIG_VARIANT=final
 # install-time directories
 INSTALLDIR=/
 BINDIR=/usr/bin
+RUNDIR=/var/run
 SHAREDIR=/usr/share
+ETCDIR=/etc
 
 usage() {
   echo "usage: $0 [option].."
@@ -59,7 +61,9 @@ define CONFIG_FINAL
 define CONFIG_VARIANT
 define INSTALLDIR
 define BINDIR
+define RUNDIR
 define SHAREDIR
+define ETCDIR
 
 exec 1>&1000
 cat $CONFIG_MAK
@@ -83,6 +87,9 @@ ln -fs $SRC_PATH/makefile.common $BUILD_PATH/
 for x in libxlinux libcommon asan unit libnarrator libdescriptor libvalyria libxunit libyyutil liblorien libbacon libmoria bacon libbam bam bamd; do
   setup $x
 done
+
+# generated files
+mkdir -p $BUILD_PATH/libbam/bam
 
 # build generated files
 make -C $BUILD_PATH/libxlinux \
@@ -112,15 +119,11 @@ make -C $BUILD_PATH/libmoria \
 make -C $BUILD_PATH/bacon \
  git-state.c
 make -C $BUILD_PATH/libbam \
- bam/metadata.desc.c \
- bam/list.desc.h \
- bam/stats.desc.h \
- bam/rules_describe.desc.h \
- bam/vars_describe.desc.c \
- bam/rule_info.desc.h \
- bam/describe.desc.h \
  bam/build_slot.desc.h \
- bam/config_describe.desc.h
+ bam/config_tell.desc.h \
+ bam/envs_tell.desc.h \
+ bam/list.desc.h \
+ bam/vars_tell.desc.h
 make -C $BUILD_PATH/bam \
  args/args.tab.c \
  args/args.lex.c \
@@ -129,33 +132,34 @@ make -C $BUILD_PATH/bam \
  args/args.tokens.c \
  args/args.states.c
 make -C $BUILD_PATH/bamd \
- selector_parser/selector.lex.c \
- selector_parser/selector.tab.c \
- formula_parser/formula.lex.c \
+ configset_parser/configset.tab.c \
  formula_parser/formula.tab.c \
- config_parser/config.lex.c \
- config_parser/config.tab.c \
- request_parser/request.lex.c \
- request_parser/request.tab.c \
- rules_parser/rules.lex.c \
- rules_parser/rules.tab.c \
- pattern_parser/pattern.lex.c \
  pattern_parser/generate_pattern.tab.c \
- pattern_parser/reference_pattern.tab.c \
  pattern_parser/include_pattern.tab.c \
- pattern_parser/match_pattern.tab.c \
  pattern_parser/lookup_pattern.tab.c \
+ pattern_parser/match_pattern.tab.c \
+ pattern_parser/reference_pattern.tab.c \
  pattern_parser/search_pattern.tab.c \
+ request_parser/request.tab.c \
+ ruleset_parser/ruleset.tab.c \
+ selector_parser/selector.tab.c \
  git-state.c
 make -C $BUILD_PATH/bamd \
- selector_parser/selector.tokens.c \
+ configset_parser/configset.tokens.c \
  formula_parser/formula.tokens.c \
- config_parser/config.tokens.c \
- request_parser/request.tokens.c \
- rules_parser/rules.tokens.c \
  pattern_parser/generate_pattern.tokens.c \
- pattern_parser/reference_pattern.tokens.c \
  pattern_parser/include_pattern.tokens.c \
- pattern_parser/match_pattern.tokens.c \
  pattern_parser/lookup_pattern.tokens.c \
- pattern_parser/search_pattern.tokens.c
+ pattern_parser/match_pattern.tokens.c \
+ pattern_parser/reference_pattern.tokens.c \
+ pattern_parser/search_pattern.tokens.c \
+ request_parser/request.tokens.c \
+ ruleset_parser/ruleset.tokens.c \
+ selector_parser/selector.tokens.c
+make -C $BUILD_PATH/bamd \
+ configset_parser/configset.states.c \
+ formula_parser/formula.states.c \
+ pattern_parser/pattern.states.c \
+ request_parser/request.states.c \
+ ruleset_parser/ruleset.states.c \
+ selector_parser/selector.states.c

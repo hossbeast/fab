@@ -1,0 +1,55 @@
+#!/usr/bin/env bash
+#
+# SPDX-License-Identifier: GPL-3.0
+# Copyright (c) 2012-2023 Todd Freed <todd.freed@gmail.com>
+#
+
+#
+# install bam and related executables
+#
+
+# requires root
+if [[ $UID != 0 || $EUID != 0 ]]; then
+  echo "run as root!" 1>&2
+  exit 1
+fi
+
+ROOT_PATH=$(dirname $(realpath $0))
+SRC_PATH=$ROOT_PATH
+BUILD_PATH=$(realpath .)
+
+source config.mak
+
+killall bam bamd
+if [[ $? == 0 ]]; then
+  sleep 1
+fi
+
+set -e
+set -x
+
+# filesystem
+mkdir -p       $RUNDIR/bam/
+chmod 777 -R   $RUNDIR/bam/
+mkdir -p       $SHAREDIR/bam/modules/
+mkdir -p       $ETCDIR/bam/
+
+# executables
+cp $BUILD_PATH/bam/bam       $BINDIR/bam
+cp $BUILD_PATH/bamd/bamd     $BINDIR/bamd
+cp $BUILD_PATH/bacon/bacon   $BINDIR/bacon
+
+# builtin modules
+rm -rf $SHAREDIR/bam/modules/
+cp -dR $SRC_PATH/builtin-modules $SHAREDIR/bam/modules/
+chmod 0755 $SHAREDIR/bam/modules/**/*.bam
+chmod 0644 $SHAREDIR/bam/modules/**/rules.bam
+
+# builtin plugins
+rm -rf $SHAREDIR/bam/plugins/
+cp -dR $SRC_PATH/builtin-plugins $SHAREDIR/bam/plugins/
+chmod 0755 $SHAREDIR/bam/plugins/*
+
+# default config files
+cp $SRC_PATH/etc/config.bam         $ETCDIR/config.bam
+cp $SRC_PATH/etc/bam/client_config  $ETCDIR/bam/client_config
