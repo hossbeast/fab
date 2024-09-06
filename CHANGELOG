@@ -1,4 +1,25 @@
-v0.8.1 - January 2024
+v0.8.2 - September 2024
+
+New plugins system, and the first two plugins. See the builtin-plugins directory.
+
+Most requests now return a bacon-valued result. In most cases you now need to parse the bacon text.
+
+The special-purpose describe commands have been removed. Instead, there are named nodes in the
+shadow fs that represent different aspects of the runtime state. This state can be retrieved with
+the describe command on these nodes, whose result is bacon text, or in some cases, the tell command,
+whose result is a binary blob that has a descriptor in libbam.
+
+The format of describe results across object types have been standardized, and relationships between
+objects are now included in these results. Every object is addressable by its id, so this provides a
+nice mechanism to iteratively browse through the graph.
+
+New naming for special files, configset, varset, ruleset
+
+filesystem
+ * config sections filesystems and walker have been replaced by the filesystem section and the
+   fstrees subsection
+
+v0.8.1 - February 2024
 
 mass rename across the project from fab -> bam
 
@@ -45,7 +66,7 @@ filesystem
  * indexed config option, controls whether dirents are indexed for lookup by name
 
 fab client
- * new commants: envs, filesystem, fstree, rules
+ * new commands: envs, filesystem, fstree, rules
  * stats -S: show stats from special files only
  * config: now shows file and location next to each value
 
