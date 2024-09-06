@@ -5,16 +5,16 @@ use git
 use flex
 use bison
 
-bind bam-build/asan                     => //asan-bits
-bind "builtin-modules+devel"/executable => //executable
+bind bam-build/asan       => //asan-bits
+bind executable           => //executable
 
 # includes
 rule **+(/) => [*] //module/include
 
 # default targets
-rule { search : module } bam -> //targets
+rule $^D/bam -> //targets
 
-rule { search : module } **/*.o [*] -> bam : //executable/cc.bam+devel
+rule $^D/**/*.o [*] -> bam : //executable/cc.bam+devel
 
 # dependencies
 rule //artifacts/*/$CONFIG_VARIANT/*.a -> bam

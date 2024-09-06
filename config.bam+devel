@@ -1,34 +1,30 @@
 /* SPDX-License-Identifier: GPL-3.0 */
 /* Copyright (c) 2012-2023 Todd Freed <todd.freed@gmail.com> */
 
-filesystems : {
-  / : {
-    invalidate : stat
-    mkdirs : false
-    indexed : false
+filesystem : {
+  fstrees : {
+    / : {
+      invalidation : stat
+      mkdir : false
+      index : false
+    }
+    /home/todd/bam : {
+      invalidation : notify
+      mkdir : false
+      index : true
+      mount : true
+    }
+    /home/todd/bam-build : {
+      invalidation : notify
+      mkdir : true
+      index : true
+      mount : true
+    }
   }
-
-  /home/todd/bam : {
-    invalidate : notify
-    mkdirs : false
-    indexed : true
-  }
-
-  /home/todd/bam-build : {
-    invalidate : notify
-    mkdirs : true
-    indexed : true
-  }
-}
-
-walker : {
   exclude : {
     /home/todd/bam/builtin-modules
+    /home/todd/bam/builtin-plugins
     /usr/share/bam/modules
-  }
-  include : {
-    /home/todd/bam
-    /home/todd/bam-build
   }
   special : {
     var.bam.final+devel
@@ -41,4 +37,23 @@ walker : {
     rules.bam.trace+devel
     rules.bam.devel+devel
   }
+}
+
+plugins : {
+  path : {
+    dirs : {
+      /home/todd/bam/builtin-plugins+devel
+    }
+  }
+  [
+    {
+      path : autobuild-focus
+    }
+    {
+      path : invalidate-global
+      args : [
+        --suffix=h
+      ]
+    }
+  ]
 }

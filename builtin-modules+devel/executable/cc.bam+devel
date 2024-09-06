@@ -8,8 +8,6 @@ use strict;
 use warnings;
 $SIG{__WARN__} = sub { die @_ };
 
-use File::Basename;
-use Data::Dumper;
 use POSIX;
 
 die "CC not found" unless $ENV{CC};
@@ -28,7 +26,6 @@ my @cmd = (
 );
 
 print(join(" ", @cmd));
-
 exec { $cmd[0] } @cmd
 
 __DATA__

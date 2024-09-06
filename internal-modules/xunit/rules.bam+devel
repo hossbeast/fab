@@ -13,4 +13,4 @@ rule search //artifacts/*/$CONFIG_VARIANT/*.{a,o} [*] -> [*] search **/test/test
 # omnibus test executable
 rule { search : module } **/test/test_*.o [*] -> tests.xunit : ./cc-test.bam+devel
 rule { search : module } tests.xunit -> //xunit : ./run.bam+devel
-rule search //artifacts/*/$CONFIG_VARIANT/*.{a,o} [*] -> [*] search tests.xunit
+search //artifacts/*/$CONFIG_VARIANT/*.{a,o} [*] -> [*] search tests.xunit

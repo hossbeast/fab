@@ -31,6 +31,7 @@ system { $cmd[0] } @cmd;
 open my $fh, ">>", $hfile or die "open($hfile) : $!";
 print $fh <<END;
 char ${name}_yyget_hold_char(yyscan_t yyscanner);
+void ${name}_yyreset_start_stack(yyscan_t yyscanner);
 END
 
 # append to .c

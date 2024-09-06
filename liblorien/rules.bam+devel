@@ -8,4 +8,4 @@ rule **+(/) => [*] //module/include
 rule liblorien.a -> //targets
 
 # pull in object files in the module except those in test/
-rule { search : module } **~test/*.o -> liblorien.a
+rule $^D/**~test/*.o -> liblorien.a
