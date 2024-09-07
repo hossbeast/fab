@@ -15,17 +15,19 @@
 
 #include "monitor_thread.h"
 #include "handler.h"
+#include "plugin_thread.h"
 #include "params.h"
 #include "threads.h"
 #include "rcu_list.h"
+#include "times.h"
 
 void monitor_thread()
 {
   sigset_t sigs;
   siginfo_t info;
-  handler_context * handler;
+  handler_context *handler;
+  plugin_thread *plugin;
   struct timespec interval;
-  int r;
   rcu_thread rcu_self = { };
 
   // signals to be handled on this thread
@@ -35,14 +37,13 @@ void monitor_thread()
   sigaddset(&sigs, SIGQUIT);
   sigaddset(&sigs, SIGUSR1);
   interval.tv_sec = 0;
-  interval.tv_nsec = 125000000;   // 125ms
+  interval.tv_nsec = MSEC_AS_NSEC(125);
 
   rcu_register(&rcu_self);
   while(g_params.thread_count)
   {
     rcu_quiesce(&rcu_self);
-    sigutil_timedwait(&r, &sigs, &info, &interval);
-    if(r == EAGAIN) {
+    if(sigutil_timedwait(&sigs, &info, &interval) == EAGAIN) {
       continue;
     }
 
@@ -60,8 +61,14 @@ void monitor_thread()
     uxtgkill(g_params.pid, g_params.thread_run, SIGUSR1);
     uxtgkill(g_params.pid, g_params.thread_timeout, SIGUSR1);
 
+    /* client threads */
     rcu_list_foreach(&g_handlers, handler, stk) {
       uxtgkill(g_params.pid, handler->tid, SIGUSR1);
+    }
+
+    /* plugin threads */
+    rcu_list_foreach(&plugin_thread_list, plugin, stk) {
+      uxtgkill(g_params.pid, plugin->tid, SIGUSR1);
     }
   }
 

@@ -21,6 +21,7 @@
 #include "buildplan_entity.h"
 #include "fsent_index.h"
 #include "var.h"
+#include "plugin_system.h"
 
 #include "atomics.h"
 
@@ -109,7 +110,14 @@ void reconcile()
     goto end;
   }
 
-  system_state_change(BAM_SYSTEM_STATE_OK);
+  /* resolve plugin config entries */
+  /* parse plugin files */
+  /* re-launch plugins */
+  system_state_change(SYSTEM_STATE_PLUGIN_SYSTEM_RECONCILE);
+  plugin_system_reconcile(&invalidation);
+  if(system_error) {
+    goto end;
+  }
 
 end:
   graph_invalidation_end(&invalidation);

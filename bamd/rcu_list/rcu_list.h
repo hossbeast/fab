@@ -10,7 +10,6 @@
  */
 
 #include "types.h"
-
 #include "rcu.h"
 
 typedef struct rcu_list {
@@ -20,6 +19,12 @@ typedef struct rcu_list {
 
 #define RCU_LIST_INITIALIZER(name) (rcu_list) { next : &(name), prev : &(name) }
 #define RCU_LIST_DELETED (void*)0x42
+
+static inline void rcu_list_init(rcu_list * restrict list)
+{
+  list->next = list;
+  list->prev = list;
+}
 
 /*
  * add an item to the end of an rcu list
