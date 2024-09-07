@@ -1,0 +1,45 @@
+#!/usr/bin/env perl
+
+use strict;
+use warnings;
+
+BEGIN { push @INC, '/home/todd/bam/libbacon/perl' }
+
+use bacon;
+use Data::Dumper;
+
+my $text = <<DOC;
+waited : {
+  pid : 1263265
+  status : 0
+  stdout-total : 0
+  stderr-total : 0
+  auxout-total : 0
+}
+DOC
+
+$text = <<DOC;
+forked : {
+  pid : 1349736
+  stage : 1
+  formula : /home/todd/bam/builtin-modules+devel/cc/cc.bam+devel
+  path : /home/todd/bam/builtin-modules+devel/cc/cc.bam+devel
+  sources : [
+    "../../../bam/libxlinux/xshm/xshm.c"
+  ]
+  targets : [
+    "xshm/xshm.o"
+  ]
+}
+DOC
+
+$text = <<DOC;
+goals-change : {
+  pid : 3475065
+  token : 0x350679
+  build
+}
+DOC
+
+my $msg = bacon_parse($text);
+print Dumper $text, $msg;
