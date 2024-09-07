@@ -7,6 +7,7 @@ use bison
 
 bind bam-build/asan   => //asan-bits
 bind executable       => //executable
+bind descriptor       => //descriptor
 
 # default targets
 rule bamd -> //targets
@@ -21,6 +22,26 @@ rule { search : module } **~test/(?:*~xunit-)*.o [*] -> bamd : //executable/cc.b
 rule { search : module } //artifacts/*/$CONFIG_VARIANT/(*~libxunit).a -> bamd
 
 rule git-state.h -> args/args.o
+
+# descriptors
+rule { search : anchor } build/build.h -> [*] build/build_stats.desc.[ch] : //descriptor/descriptor.bam
+rule { search : anchor } buildplan/buildplan.h -> [*] buildplan/buildplan_stats.desc.[ch] : //descriptor/descriptor.bam
+rule { search : anchor } buildplan_entity/buildplan_entity.h -> [*] buildplan_entity/stats_bpe.desc.[ch] : //descriptor/descriptor.bam
+rule { search : anchor } configset/configset.h -> [*] configset/stats_configset.desc.[ch] : //descriptor/descriptor.bam
+rule { search : anchor } filesystem/filesystem.h -> [*] filesystem/filesystem_stats.desc.[ch] : //descriptor/descriptor.bam
+rule { search : anchor } formula/formula.h -> [*] formula/stats_formula.desc.[ch] : //descriptor/descriptor.bam
+rule { search : anchor } fstree/fstree.h -> [*] fstree/stats_fstree.desc.[ch] : //descriptor/descriptor.bam
+rule { search : anchor } fsindex/fsindex.h -> [*] fsindex/fsindex_stats.desc.[ch] : //descriptor/descriptor.bam
+rule { search : anchor } module/module.h -> [*] module/stats_module.desc.[ch] : //descriptor/descriptor.bam
+rule { search : anchor } notify/notify.h -> [*] notify/notify_stats.desc.[ch] : //descriptor/descriptor.bam
+rule { search : anchor } plugin/plugin.h -> [*] plugin/stats_plugin.desc.[ch] : //descriptor/descriptor.bam
+rule { search : anchor } rule/rule.h -> [*] rule/stats_rule.desc.[ch] : //descriptor/descriptor.bam
+rule { search : anchor } rule_module_association/rule_module_association.h -> [*] rule_module_association/stats_rma.desc.[ch] : //descriptor/descriptor.bam
+rule { search : anchor } ruleset/ruleset.h -> [*] ruleset/stats_ruleset.desc.[ch] : //descriptor/descriptor.bam
+rule { search : anchor } stats/stats_fsent_dir.h -> [*] build/stats_fsent_dir.desc.[ch] : //descriptor/descriptor.bam
+rule { search : anchor } system/system.h -> [*] system/system_stats.desc.[ch] : //descriptor/descriptor.bam
+rule { search : anchor } varset/varset.h -> [*] varset/stats_varset.desc.[ch] : //descriptor/descriptor.bam
+rule { search : anchor } vertex/vertex.h -> [*] vertex/stats_vertex.desc.[ch] : //descriptor/descriptor.bam
 
 {
   if ($CONFIG_DEVEL)

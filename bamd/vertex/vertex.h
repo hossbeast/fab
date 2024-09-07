@@ -12,6 +12,20 @@ enum bam_fsent_state;
 
 extern uint64_t vertex_token_counter;
 
+typedef union stats_vertex {
+  struct {
+    /* event counters */
+    uint32_t stale;         /* node marked as stale */
+    uint32_t fresh;         /* node marked as fresh */
+
+    uint8_t indexed_notify; /* whether this node is indexed for lookup by notify descriptor */
+  };
+
+  stats_record record;
+} stats_vertex;
+
+extern descriptor_type descriptor_stats_vertex;
+
 /* invalidate a vertex and its transitive consumers (upwards) */
 void vertex_invalidate(moria_vertex * restrict n, struct graph_invalidation_context * restrict)
   __attribute__((nonnull));

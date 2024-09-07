@@ -5,31 +5,24 @@
 
 #include "types.h"
 
-#include "bam/stats.h"
+struct descriptor_type;
+struct bacon_writer;
+struct handler_context;
+struct command;
 
-struct moria_vertex;
+typedef union stats_record {
+  uint8_t u8[0];
+  uint16_t u16[0];
+  uint32_t u32[0];
+  uint64_t u64[0];
+} stats_record;
 
-extern bam_global_stats g_stats;
-
-#define STATS_INC(x) do {   \
-  (x)++;                    \
-} while(0)
-
-#define STATS_DEC(x) do {   \
-  (x)--;                    \
-} while(0)
-
-size_t stats_global_collate(void *dst, size_t sz, bool reset)
+void stats_build(
+    const union stats_record * restrict record
+  , const struct descriptor_type * restrict descriptor
+  , struct bacon_writer * restrict builder_writer
+)
   __attribute__((nonnull));
 
-//size_t stats_vertex_fsent_collate(void *dst, size_t sz, bool reset, struct moria_vertex * restrict v)
-//  __attribute__((nonnull));
-
-size_t stats_collate_counters(
-    void * restrict dst
-  , size_t sz
-  , const descriptor_type * restrict desc
-  , bam_stats_record *record
-  , int off
-)
+void stats_handler(struct handler_context * restrict ctx, struct command * restrict cmd, bool reset)
   __attribute__((nonnull));

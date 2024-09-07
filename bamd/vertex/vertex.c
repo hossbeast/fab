@@ -557,122 +557,6 @@ struct collate_node_handlers {
   const moria_vertex *v;
 };
 
-static size_t handler(
-    void * restrict dst
-  , size_t sz
-  , const descriptor_field * restrict field
-  , const void * restrict object
-  , struct descriptor_marshal_handlers *ctx
-)
-{
-  size_t z;
-  struct collate_node_handlers *handlers;
-  uint16_t len;
-  size_t len_off;
-
-  handlers = containerof(ctx, typeof(*handlers), handlers);
-
-  z = 0;
-  if(field == &descriptor_bam_vertex_stats_path) {
-    len_off = z;
-    z += marshal_u16(dst + z, sz - z, 0);
-    len = vertex_path_load(dst + z, sz - z, handlers->v);
-    marshal_u16(dst + len_off, sz - len_off, len);
-    z += len;
-  } else if(field == &descriptor_bam_vertex_stats_id) {
-    len_off = z;
-    z += marshal_u16(dst + z, sz - z, 0);
-    len = vertex_id_load(dst + z, sz - z, handlers->v);
-    marshal_u16(dst + len_off, sz - len_off, len);
-    z += len;
-  } else if(field == &descriptor_bam_vertex_stats_token) {
-    len_off = z;
-    z += marshal_u16(dst + z, sz - z, 0);
-    len = vertex_token_load(dst + z, sz - z, handlers->v);
-    marshal_u16(dst + len_off, sz - len_off, len);
-    z += len;
-  }
-
-  return z;
-}
-
-size_t vertex_stats_collate(void *dst, size_t sz, bool reset, moria_vertex * restrict v)
-{
-  size_t z;
-  fsent *fse;
-  bam_vertex_stats *stats = 0;
-  bam_vertex_stats tmp;
-  struct rule *rule;
-  struct module *module;
-  struct formula *formula;
-  struct var *var;
-  struct config *config;
-  struct rules *rules;
-  struct collate_node_handlers ctx;
-
-  if(vertex_kind_get(v) == VERTEX_KIND_FSENT) {
-    fse = containerof(v, typeof(*fse), vertex);
-    stats = &fse->stats;
-  } else {
-    fse = 0;
-    switch(vertex_type_get(v)) {
-      case VERTEX_RULE:
-        rule = containerof(v, typeof(*rule), vertex);
-        stats = &rule->stats;
-        break;
-      case VERTEX_MODULE:
-        module = containerof(v, typeof(*module), vertex);
-        stats = &module->stats;
-        break;
-      case VERTEX_FORMULA:
-        formula = containerof(v, typeof(*formula), vertex);
-        stats = &formula->stats;
-        break;
-      case VERTEX_VAR:
-        var = containerof(v, typeof(*var), vertex);
-        stats = &var->stats;
-        break;
-      case VERTEX_CONFIG:
-        config = containerof(v, typeof(*config), vertex);
-        stats = &config->stats;
-        break;
-      case VERTEX_RULES:
-        rules = containerof(v, typeof(*rules), vertex);
-        stats = &rules->stats;
-        break;
-      default:
-        RTA;
-    }
-  }
-
-  memcpy(&tmp, stats, sizeof(tmp));
-  if(reset) {
-    memset(stats, 0, sizeof(*stats));
-  }
-  stats = &tmp;
-
-  stats->type = vertex_type_remap(vertex_type_get(v));
-  stats->state = vertex_bam_vertex_state_get(v);
-
-  stats->indexed_notify = 0;
-  if(fse && fse->in_wd != -1) {
-    stats->indexed_notify = 1;
-  }
-
-  stats->indexed_lookup = 0;
-  if(fse && fse->ie) {
-    stats->indexed_lookup = 1;
-  }
-
-  ctx.v = v;
-  ctx.handlers.handler = handler;
-
-  z = 0;
-  z += descriptor_marshal_object(dst + z, sz - z, &descriptor_bam_vertex_stats, &stats->record, &ctx.handlers);
-
-  return z;
-}
-
 void vertex_state_set(moria_vertex * restrict v, vertex_state state)
 {
   uint32_t attrs;
@@ -1175,4 +1059,81 @@ uint64_t vertex_compute_hash(moria_vertex * restrict v, uint64_t u64)
   RUNTIME_ASSERT(u64);
 
   return hash64(u64, v->label, v->label_len);
+}
+
+void vertex_stats_build(moria_vertex * restrict v, bool reset, bacon_writer * restrict builder_writer)
+{
+  switch(vertex_type_get(v)) {
+    /* fsents */
+    case VERTEX_DIR:
+    case VERTEX_FILE:
+    case VERTEX_SHADOW_FILE:
+    case VERTEX_SHADOW_DIR:
+    case VERTEX_SYMLINK:
+    case VERTEX_SHADOW_LINK:
+      return fsent_stats_build(containerof(v, fsent, vertex), reset, builder_writer);
+
+    /* other vertices */
+    case VERTEX_FSNAME:
+      return fsname_stats_build(containerof(v, fsname, vertex), reset, builder_writer);
+    case VERTEX_FSTREE:
+      return fstree_stats_build(containerof(v, fstree, vertex), reset, builder_writer);
+    case VERTEX_RMA:
+      return rma_stats_build(containerof(v, typeof(rule_module_association), vertex), reset, builder_writer);
+    case VERTEX_BPE:
+      return bpe_stats_build(containerof(v, typeof(buildplan_entity), vertex), reset, builder_writer);
+    case VERTEX_RULE:
+      return rule_stats_build(containerof(v, typeof(rule), vertex), reset, builder_writer);
+    case VERTEX_RULESET:
+      return ruleset_stats_build(containerof(v, typeof(ruleset), vertex), reset, builder_writer);
+    case VERTEX_RULESET_FILE:
+      return ruleset_file_stats_build(containerof(v, fsent, vertex), reset, builder_writer);
+    case VERTEX_FORMULA:
+      return formula_stats_build(containerof(v, typeof(formula), vertex), reset, builder_writer);
+    case VERTEX_FORMULA_FILE:
+      return formula_file_stats_build(containerof(v, fsent, vertex), reset, builder_writer);
+    case VERTEX_MODULE:
+      return module_stats_build(containerof(v, typeof(module), vertex), reset, builder_writer);
+    case VERTEX_MODULE_DIR:
+      return module_dir_stats_build(containerof(v, typeof(fsent), vertex), reset, builder_writer);
+    case VERTEX_MODULE_FILE:
+      return module_file_stats_build(containerof(v, fsent, vertex), reset, builder_writer);
+    case VERTEX_CONFIGSET:
+      return configset_stats_build(containerof(v, configset, vertex), reset, builder_writer);
+    case VERTEX_CONFIGSET_FILE:
+      return configset_file_stats_build(containerof(v, fsent, vertex), reset, builder_writer);
+    case VERTEX_VARSET:
+      return varset_stats_build(containerof(v, varset, vertex), reset, builder_writer);
+    case VERTEX_VARSET_FILE:
+      return varset_file_stats_build(containerof(v, fsent, vertex), reset, builder_writer);
+    case VERTEX_PLUGIN:
+      return plugin_stats_build(containerof(v, plugin, vertex), reset, builder_writer);
+    case VERTEX_PLUGIN_FILE:
+      return plugin_file_stats_build(containerof(v, fsent, vertex), reset, builder_writer);
+
+    /* globals */
+    case VERTEX_CONFIG:
+      return config_vertex_stats_build(reset, builder_writer);
+    case VERTEX_GOALS:
+      return goals_stats_build(reset, builder_writer);
+    case VERTEX_FSINDEX:
+      return fsindex_stats_build(reset, builder_writer);
+    case VERTEX_NOTIFY:
+      return notify_stats_build(reset, builder_writer);
+    case VERTEX_BUILD:
+      return build_stats_build(reset, builder_writer);
+    case VERTEX_BUILDPLAN:
+      return buildplan_stats_build(reset, builder_writer);
+    case VERTEX_PATH_CACHE:
+      return path_cache_stats_build(reset, builder_writer);
+    case VERTEX_SYSTEM:
+      return system_stats_build(reset, builder_writer);
+    case VERTEX_FILESYSTEM:
+      return filesystem_stats_build(reset, builder_writer);
+
+    case VERTEX_MODULE_VARS:
+    case VERTEX_MODULE_ENVS:
+    case VERTEX_CONTEXT_MODULE:
+      break;
+  }
 }

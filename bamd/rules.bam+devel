@@ -22,6 +22,8 @@ rule { search : module } //artifacts/*/$CONFIG_VARIANT/(*~libxunit).a -> bamd
 
 rule git-state.h -> args/args.o
 
+rule { search : anchor } stats/stats.h                      -> [*] bam/stats.desc.[ch] : //descriptor/descriptor.bam+devel
+
 {
   if ($CONFIG_DEVEL)
 

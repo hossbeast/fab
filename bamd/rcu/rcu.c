@@ -7,6 +7,7 @@
 
 #include "rcu.h"
 #include "stats.h"
+#include "system.h"
 
 #include "locks.h"
 
@@ -36,7 +37,7 @@ static void quiesce(rcu_thread * restrict self, uint16_t deactivate)
 
   if(self->n == n) {
     __atomic_sub_fetch(&state.active, deactivate, __ATOMIC_SEQ_CST);
-    STATS_INC(g_stats.rcu_quiesce_nograce);
+    system_stats.rcu_quiesce_nograce++;
     return;
   }
 
@@ -50,14 +51,14 @@ static void quiesce(rcu_thread * restrict self, uint16_t deactivate)
 
   // not the last one through the gate
   if(quiescent != (target - 1)) {
-    STATS_INC(g_stats.rcu_quiesce_notlast);
+    system_stats.rcu_quiesce_notlast++;
     return;
   }
 
   /* wake waiters if any */
   __atomic_store_n(&state.futex, 0, __ATOMIC_SEQ_CST);
   syscall(SYS_futex, &state.futex, FUTEX_WAKE, INT32_MAX, 0, 0, 0);
-  STATS_INC(g_stats.rcu_quiesce_wake);
+  system_stats.rcu_quiesce_wake++;
 }
 
 //
@@ -96,7 +97,7 @@ void rcu_synchronize()
 
   if((active = __atomic_load_n(&state.active, __ATOMIC_SEQ_CST)) == 0) {
     futexlock_release(&state.lock);
-    STATS_INC(g_stats.rcu_synchronize_nobody);
+    system_stats.rcu_synchronize_nobody++;
     return;
   }
 
@@ -109,5 +110,5 @@ void rcu_synchronize()
   syscall(SYS_futex, &state.futex, FUTEX_WAIT, INT32_MAX, 0, 0, 0);
 
   futexlock_release(&state.lock);
-  STATS_INC(g_stats.rcu_synchronize_wait);
+  system_stats.rcu_synchronize_wait++;
 }

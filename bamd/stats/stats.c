@@ -1,111 +1,75 @@
 /* SPDX-License-Identifier: GPL-3.0 */
 /* Copyright (c) 2012-2023 Todd Freed <todd.freed@gmail.com> */
 
-#include "moria/foreach.h"
-#include "bam/stats.desc.h"
-#include "valyria/map.h"
+#include "descriptor.h"
+#include "bacon/builder.h"
+#include "bam/ipc.h"
+#include "narrator/fixed.h"
 
 #include "stats.h"
-#include "config.h"
-#include "config.h"
-#include "formula.h"
-#include "fsent.h"
-#include "vertex.h"
-#include "marshal.h"
-#include "module.h"
-#include "var.h"
-#include "rule_module_association.h"
-#include "block.h"
-#include "rule.h"
-#include "rules.h"
-#include "var.h"
-#include "system_state.h"
-#include "run_thread.h"
-#include "edge.h"
-#include "fsent_index.h"
-#include "notify_thread.h"
-
-#include "zcat.h"
-
-bam_global_stats g_stats;
-
-typedef struct stat_def {
-  uint32_t offset;
-  uint8_t size;
-} stat_def;
+#include "handler.h"
+#include "request.h"
+#include "channel.h"
 
 //
 // public
 //
 
-static size_t block_rules(block *b)
+void stats_build(
+    const stats_record * restrict record
+  , const descriptor_type * restrict descriptor
+  , bacon_writer * restrict builder_writer
+)
 {
-  size_t z;
-  block *blk;
+  const descriptor_field *member;
+  int x;
 
-  z = 0;
-  z += llist_count(&b->rules);
-
-  llist_foreach(&b->blocks, blk, lln) {
-    z += block_rules(blk);
+  for(x = 0; x < descriptor->members_len; x++)
+  {
+    member = descriptor->members[x];
+    if(member->code != DESCRIPTOR_UINT) {
+      continue;
+    }
+    { MAPPING
+      BYTES(member->name, member->name_len)
+      switch(member->size) {
+        case 8:
+          UINT(record->u64[member->offset / 8]);
+          break;
+        case 4:
+          UINT(record->u32[member->offset / 4]);
+          break;
+        case 2:
+          UINT(record->u16[member->offset / 2]);
+          break;
+        case 1:
+          UINT(record->u8[member->offset / 1]);
+          break;
+        default:
+      }
+    }
   }
-
-  return z;
 }
 
-size_t stats_global_collate(void *dst, size_t sz, bool reset)
+void stats_handler(handler_context * restrict ctx, command * restrict cmd, bool reset)
 {
-  size_t z;
-  bam_global_stats *stats;
-  bam_global_stats tmp;
-  module *mod;
-  fsent *fse;
-  uint32_t count;
-  block *block;
+  bamipc_message *msg;
+  selected *sn;
+  bacon_writer writer, *builder_writer;
+  narrator_fixed fixed;
 
-  memcpy(&tmp, &g_stats, sizeof(tmp));
-  if(reset) {
-    memset(&g_stats, 0, sizeof(g_stats));
+  llist_foreach(&ctx->selection->list, sn, lln) {
+    msg = channel_produce(ctx->chan);
+    msg->type = BAMIPC_MSG_RESULT;
+
+    narrator_fixed_init(&fixed, msg->text, sizeof(msg->text));
+    bacon_writer_init(&writer);
+    builder_writer = bacon_writer_open(&writer, &fixed.base);
+
+    vertex_stats_build(sn->v, reset, builder_writer);
+
+    bacon_writer_destroy(&writer);
+    msg->size = fixed.l;
+    channel_post(ctx->chan, msg);
   }
-  stats = &tmp;
-
-  /* state */
-  stats->system_state = system_state;
-  stats->system_error = system_error;
-  stats->autorun = run_thread_autorun;
-
-  /* rules */
-  count = 0;
-  llist_foreach(&module_list, mod, vertex.owner) {
-    llist_foreach(&mod->blocks, block, lln) {
-      count += block_rules(block);
-    }
-  }
-  stats->rules = count;
-
-  /* special */
-  stats->modules = llist_count(&module_list);
-  stats->config_files = llist_count(&config_list);
-  stats->rules_files = llist_count(&rules_list);
-  stats->var_files = llist_count(&var_list);
-
-  /* fsents */
-  stats->fsents = llist_count(&fsent_list);
-
-  stats->fsent_index_count = fsent_index_count;
-  stats->notify_index_count = notify_thread_fsent_by_in_wd->size;
-
-  /* fsents_shadow */
-  count = 0;
-  llist_foreach(&fsent_list, fse, vertex.owner) {
-    if((fse->vertex.attrs & VERTEX_SHADOWTYPE_OPT)) {
-      count++;
-    }
-  }
-  stats->fsents_shadow = count;
-
-  z = 0;
-  z += descriptor_marshal_object(dst + z, sz - z, &descriptor_bam_global_stats, &stats->record, 0);
-
-  return z;
 }
