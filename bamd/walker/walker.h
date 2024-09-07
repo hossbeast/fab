@@ -8,17 +8,7 @@
 
 struct fsent;
 struct graph_invalidation_context;
-struct configuration;
-
-typedef struct walker_entry {
-  struct fsent * n;
-  char abspath[PATH_MAX];
-  uint16_t abspathl;
-
-  llist lln;
-} walker_entry;
-
-extern llist walker_include_entry_list;
+struct config;
 
 /*
  * visit directory entries in a filesystem tree, creating graph nodes for each node as necessary
@@ -32,7 +22,6 @@ extern llist walker_include_entry_list;
  */
 void walker_descend(
     struct fsent * restrict base
-//  , struct fsent * restrict parent
   , const char * restrict abspath
   , uint16_t walk_id
   , struct graph_invalidation_context * restrict invalidation
@@ -56,13 +45,13 @@ void walker_system_reconcile(struct graph_invalidation_context * restrict invali
   __attribute__((nonnull));
 
 /*
- * reapply configuration to the extern module
+ * reapply config to the extern module
  *
  * ctx    - reconfiguration context
  * config - root of the config tree
  * dry    - whether to perform a dry-run
  */
-void walker_system_reconfigure(struct configuration * restrict cfg, bool dryrun)
+void walker_system_reconfigure(struct config * restrict cfg, bool dryrun)
   __attribute__((nonnull));
 
 void walker_setup(void);
@@ -72,3 +61,6 @@ uint16_t walker_begin(void);
 
 void walker_query(struct fsent * restrict n, char * restrict path, uint16_t path_len, struct graph_invalidation_context * restrict invalidation)
   __attribute__((nonnull));
+
+void walker_poke(struct fsent * restrict n, char * restrict path, uint16_t path_len, struct graph_invalidation_context * restrict invalidation)
+  __attribute__((nonnull(1, 4)));

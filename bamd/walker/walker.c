@@ -23,26 +23,36 @@
 #include "edge.h"
 #include "params.h"
 #include "stats.h"
+#include "configset.h"
 #include "config.h"
-#include "configuration.h"
 #include "pattern.h"
 #include "generate.h"
 #include "match.h"
 #include "reconcile.h"
 #include "entlist.h"
-#include "system_state.h"
+#include "system.h"
 #include "channel.h"
 #include "events.h"
 #include "entlist.h"
+#include "config_system.h"
+#include "notify.h"
 
 #include "zcat.h"
+
+typedef struct walker_entry {
+  struct fsent *n;
+  char abspath[PATH_MAX];
+  uint16_t abspathl;
+
+  llist lln;
+} walker_entry;
 
 llist walker_include_entry_list = LLIST_INITIALIZER(walker_include_entry_list);   // active list
 static llist include_entry_freelist = LLIST_INITIALIZER(include_entry_freelist);  // freelist
 
 /* exclude pattern list */
-rbtree * walker_exclude_list;
-rbtree * walker_special_list;
+rbtree *walker_exclude_list;
+rbtree *walker_special_list;
 
 static uint16_t walk_ids;
 static entlist generate_hits;
@@ -56,8 +66,11 @@ static void stathash(fsent * restrict n, char * restrict path, uint16_t path_len
   struct stat stb;
   int r;
   char c;
+  fstree * fst;
 
-  STATS_INC(g_stats.stathash);
+  fst = vertex_fstree_get(&n->vertex);
+  filesystem_stats.stathash++;
+  fst->fstree_stats.stathash++;
 
   *hash += 0xbeef;
 
@@ -87,8 +100,11 @@ static void contenthash(fsent * restrict n, char * restrict path, uint16_t path_
   off_t end = 0;
   void *buf = MAP_FAILED;
   char c;
+  fstree * fst;
 
-  STATS_INC(g_stats.contenthash);
+  fst = vertex_fstree_get(&n->vertex);
+  filesystem_stats.contenthash++;
+  fst->fstree_stats.contenthash++;
 
   *hash += 0xface;
 
@@ -110,95 +126,71 @@ static void contenthash(fsent * restrict n, char * restrict path, uint16_t path_
   path[path_len] = c;
 }
 
-static void poke(fsent * restrict n, char * restrict path, uint16_t path_len, graph_invalidation_context * restrict invalidation)
+void walker_poke(fsent * restrict n, char * restrict path, uint16_t path_len, graph_invalidation_context * restrict invalidation)
 {
-  uint32_t content_hash;
-  const filesystem *fs;
-  moria_vertex *v;
-  moria_edge *e;
-  moria_foreach_state st;
-  vertex_state prev;
+  uint32_t prev;
+  const fstree *fst;
+  char stor[PATH_MAX];
 
-  v = &n->vertex;
-  fs = fsent_filesystem_get(n);
-
-  prev = vertex_state_get(&n->vertex);
+  fst = vertex_fstree_get(&n->vertex);
   vertex_exists_set(&n->vertex, true);
 
-  /* special case for the transition from UNCREATED -> OK for watched files */
-  if(prev == VERTEX_UNCREATED) {
-    if(fs->invalidate == INVALIDATE_NOTIFY) {
-      goto invalidate;
-    }
-  }
-
-  /* skip nodes that are already invalid */
-  if(vertex_invalid_get(&n->vertex)) {
-    return;
-  }
-
-  /* skip non-leaf nodes */
-  moria_foreach_edge_down(&st, v, e) {
-    switch(edge_type_get(e)) {
-      case EDGE_RULES_SPECIAL:
-      case EDGE_MODULE_SPECIAL:
-      case EDGE_VAR_SPECIAL:
-      case EDGE_CONFIG_SPECIAL:
-      case EDGE_FML_SPECIAL:
-        continue;
-      default:
-        return;
-    }
-  }
-
   /* honor filesystem setting */
-  switch(fs->invalidate) {
-    case INVALIDATE_ALWAYS:
-      goto invalidate;
-    case INVALIDATE_NEVER:
-    case INVALIDATE_NOTIFY:
+  switch(fst->invalidation) {
+    case INVALIDATION_NOTIFY:
+      if(n->hash == 0) {
+        n->hash = 1;
+        vertex_mark_fresh(&n->vertex);
+      }
       return;
-    case INVALIDATE_STAT:
-    case INVALIDATE_CONTENT:
-      break;
+    case INVALIDATION_NEVER:
+      vertex_mark_fresh(&n->vertex);
+      return;
+    case INVALIDATION_ALWAYS:
+      vertex_invalidate(&n->vertex, invalidation);
+      return;
+    case INVALIDATION_STAT:
+    case INVALIDATION_CONTENT:
+      if((n->vertex.attrs & VERTEX_INVALID_BIT) && n->hash != 0) {
+        return;
+      }
+      if(!path) {
+        path_len = fsent_absolute_path_cat(stor, sizeof(stor), n);
+        path = stor;
+      }
   }
 
-  content_hash = 0;
-  if(fs->invalidate == INVALIDATE_STAT)
-  {
-    stathash(n, path, path_len, &content_hash);
-  }
-  else if(fs->invalidate == INVALIDATE_CONTENT)
-  {
-    contenthash(n, path, path_len, &content_hash);
+  prev = n->hash;
+  n->hash = 0xbeef;
+  if(fst->invalidation == INVALIDATION_STAT) {
+    stathash(n, path, path_len, &n->hash);
+  } else if(fst->invalidation == INVALIDATION_CONTENT) {
+    contenthash(n, path, path_len, &n->hash);
   }
 
-  if(content_hash != n->content_hash)
-  {
-    n->content_hash = content_hash;
-    goto invalidate;
+  if(prev == 0) {
+    vertex_mark_fresh(&n->vertex);
+  } else if(n->hash != prev) {
+    vertex_invalidate(&n->vertex, invalidation);
   }
-  return;
-
-invalidate:
-  vertex_invalidate(&n->vertex, invalidation);
 }
 
 /*
  * reconcile an fsent against the file system ; generally this is handled by walker_descend, so this
- * is for fsents which potentially lie outside of those descended trees
+ * is for fsents which potentially lie outside of the descended fstrees
  */
 void walker_query(fsent * restrict n, char * restrict path, uint16_t path_len, graph_invalidation_context * restrict invalidation)
 {
-  const filesystem *fs;
+  const fstree *fst;
   const fsent *parent;
 
   if(!(parent = fsent_parent(n))) {
     RTA;
     return;
   }
-  if(fsent_is_mounted(parent)) {
-    return; /* already being handled thru the directory */
+  fst = parent->fst;
+  if(fst->mount) {
+    return; /* already being handled via traversal */
   }
 
   if(uxeuidaccesss(path, F_OK) != 0) {
@@ -206,15 +198,15 @@ void walker_query(fsent * restrict n, char * restrict path, uint16_t path_len, g
     return;
   }
 
-  poke(n, path, path_len, invalidation);
+  walker_poke(n, path, path_len, invalidation);
 
-  fs = fsent_filesystem_get(n);
-  if(fs->invalidate != INVALIDATE_NOTIFY) {
-    notify_thread_rm_watch(n);
+  if(fst->invalidation != INVALIDATION_NOTIFY) {
+    notify_rm_watch(n);
     return;
   }
 
-  notify_thread_add_watch(n);
+  /* when the file is outside of a mounted fstree, it can be watched directly */
+  notify_add_watch(n);
 }
 
 static void include_entry_list_append(fsent * n)
@@ -255,7 +247,7 @@ static bool exclude_list_evaluate(fsent * restrict n)
 void walker_visit(int method, ftwinfo * info, void * arg, int * stop)
 {
   walker_context * ctx = arg;
-  const filesystem * fs = 0;
+  const fstree *fst = 0;
   moria_vertex * lv;
   fsent * n = 0;
   fsent * parent;
@@ -264,7 +256,7 @@ void walker_visit(int method, ftwinfo * info, void * arg, int * stop)
   fsent * Bn;
   moria_foreach_state st;
   entlist edges;
-  vertex_state state;
+  uint32_t attrs;
 
   if(!info->parent)
   {
@@ -293,12 +285,15 @@ void walker_visit(int method, ftwinfo * info, void * arg, int * stop)
     else
     {
       filetype = 0;
-      state = VERTEX_OK;
+      attrs = VERTEX_UNCREATED;
       if(info->type == FTWAT_D) {
         filetype = VERTEX_FILETYPE_DIR;
-        state = VERTEX_OK;
+        /* Issue with UNCREATED here is that this directory is *known* to exist -- uncreated would mean
+         * that, fs permitting, mkdir will be called on this directory, which will fail */
+        attrs = VERTEX_OK;
       }
-      fsent_create(&n, filetype, state, info->path + info->name_off, info->pathl - info->name_off);
+
+      fsent_create(&n, filetype, attrs, info->path + info->name_off, info->pathl - info->name_off);
       fsedge_connect(n, parent, ctx->invalidation);
       vertex_alloc_probe(&n->vertex);
     }
@@ -324,20 +319,20 @@ void walker_visit(int method, ftwinfo * info, void * arg, int * stop)
     n->descend_walk_id = ctx->walk_id;
   }
 
-  fs = fsent_filesystem_get(n);
+  fst = vertex_fstree_get(&n->vertex);
   if(info->type == FTWAT_D && method == FTWAT_PRE)
   {
     // stop the traversal on a leaf inotify dir which has already been explored
-    if(fs->invalidate == INVALIDATE_NOTIFY)
+    if(fst->invalidation == INVALIDATION_NOTIFY)
     {
       /* important that the watch happens in the PREORDER step */
-      notify_thread_add_watch(n);
+      notify_add_watch(n);
     }
   }
 
   if(info->type == FTWAT_D && method == FTWAT_POST)
   {
-    if(fs->invalidate != INVALIDATE_NOTIFY)
+    if(fst->invalidation != INVALIDATION_NOTIFY)
     {
       /* disintegrate edges which were not visited during this walk */
       entlist_init(&edges);
@@ -360,7 +355,7 @@ void walker_visit(int method, ftwinfo * info, void * arg, int * stop)
   }
   else if(info->type == FTWAT_F)
   {
-    poke(n, info->path, info->pathl, ctx->invalidation);
+    walker_poke(n, info->path, info->pathl, ctx->invalidation);
   }
 }
 
@@ -388,11 +383,11 @@ void walker_descend(
   nftwat(AT_FDCWD, abspath, walker_visit, 64, FTWAT_SYMLINKS | FTWAT_FOLLOW, &ctx);
 }
 
-static void ascend_special_query(
+static void special_query(
     fsent * restrict dirn
   , const char * restrict name
   , uint16_t name_len
-  , walker_context * restrict ctx
+  , graph_invalidation_context * restrict invalidation
   , char * restrict path
   , size_t path_size
   , uint16_t path_len
@@ -413,12 +408,23 @@ static void ascend_special_query(
     fse = containerof(lv, fsent, vertex);
   } else if(uxeuidaccesss(path, F_OK) == 0) {
     fsent_create(&fse, VERTEX_FILETYPE_REG, VERTEX_OK, name, name_len);
-    fsedge_connect(fse, dirn, ctx->invalidation);
+    fsedge_connect(fse, dirn, invalidation);
   } else {
     return;
   }
 
-  walker_query(fse, path, z, ctx->invalidation);
+  walker_query(fse, path, z, invalidation);
+  return;
+}
+
+static void config_query(fsent * restrict dirn, const char *name, uint16_t name_len, graph_invalidation_context * restrict invalidation)
+{
+  char abspath[PATH_MAX];
+  uint16_t abspath_len;
+
+  /* create or delete as needed */
+  abspath_len = fsent_absolute_path_cat(abspath, sizeof(abspath), dirn);
+  special_query(dirn, name, name_len, invalidation, abspath, sizeof(abspath), abspath_len);
 }
 
 void walker_ascend(fsent * restrict dirn, uint16_t walk_id, graph_invalidation_context * restrict invalidation)
@@ -426,14 +432,11 @@ void walker_ascend(fsent * restrict dirn, uint16_t walk_id, graph_invalidation_c
   char abspath[PATH_MAX];
   uint16_t abspath_len;
   moria_vertex *dirv;
-  walker_context ctx = { };
-  configuration_walker_special_entry *wse;
+  config_special_entry *wse;
 
   if(walk_id != walk_ids) {
     walk_id = ++walk_ids;
   }
-
-  ctx.invalidation = invalidation;
 
   abspath_len = fsent_absolute_path_cat(abspath, sizeof(abspath), dirn);
   dirv = &dirn->vertex;
@@ -445,12 +448,15 @@ void walker_ascend(fsent * restrict dirn, uint16_t walk_id, graph_invalidation_c
       break;
     }
 
-    /* check for special files */
+    /* look for special files */
     if(walker_special_list) {
       rbtree_foreach(walker_special_list, wse, rbn) {
-        ascend_special_query(dirn, wse->s, wse->len, &ctx, abspath, sizeof(abspath), abspath_len);
+        special_query(dirn, wse->s, wse->len, invalidation, abspath, sizeof(abspath), abspath_len);
       }
     }
+
+    /* query for special files from a previous special list */
+
     dirn->ascend_walk_id = walk_id;
     abspath_len -= (dirv->label_len + 1);
     dirv = moria_vertex_up(dirv);
@@ -459,33 +465,29 @@ void walker_ascend(fsent * restrict dirn, uint16_t walk_id, graph_invalidation_c
 
 void walker_system_reconcile(graph_invalidation_context * restrict invalidation)
 {
-  walker_entry *e;
-  fsent *n;
   uint16_t walk_id;
+  fstree *fst;
 
   walk_id = ++walk_ids;
 
-  /* up and down from cwd */
-  walker_descend(g_base, g_base_path, walk_id, invalidation);
-  walker_ascend(fsent_parent(g_base), walk_id, invalidation);
+  /* refresh all fstrees */
+  llist_foreach(&fstree_list, fst, vertex.owner) {
+    walker_ascend(fst->base, walk_id, invalidation);
+    if(fst->mount) {
+      walker_descend(fst->base, fst->base_path, walk_id, invalidation);
+    }
+  }
 
   /* global config nodes */
-  walker_query(system_config_node, system_config_node->self_config->self_node_abspath, system_config_node->self_config->self_node_abspath_len, invalidation);
-  walker_query(user_config_node, user_config_node->self_config->self_node_abspath, user_config_node->self_config->self_node_abspath_len, invalidation);
-
-  /* other configured trees */
-  llist_foreach(&walker_include_entry_list, e, lln) {
-    n = e->n;
-    walker_descend(n, e->abspath, walk_id, invalidation);
-    walker_ascend(fsent_parent(n), walk_id, invalidation);
-  }
+  config_query(system_config_dirnode, system_config_name, system_config_name_len, invalidation);
+  config_query(user_config_dirnode, user_config_name, user_config_name_len, invalidation);
 }
 
-void walker_system_reconfigure(configuration * restrict cfg, bool dryrun)
+void walker_system_reconfigure(config * restrict cfg, bool dryrun)
 {
   graph_invalidation_context invalidation = { };
   fsent *n;
-  pattern *pat;
+  config_fstree_mapping *fse;
   walker_entry *e;
   entlist *eln;
 
@@ -494,8 +496,8 @@ void walker_system_reconfigure(configuration * restrict cfg, bool dryrun)
   }
 
   /* store the exclude list for later evaluation */
-  walker_exclude_list = &cfg->walker.exclude.set;
-  walker_special_list = &cfg->walker.special.set;
+  walker_exclude_list = &cfg->filesystem.exclude.set;
+  walker_special_list = &cfg->filesystem.special.set;
 
   /* process the include list up-front */
   graph_invalidation_begin(&invalidation);
@@ -511,11 +513,24 @@ void walker_system_reconfigure(configuration * restrict cfg, bool dryrun)
    * the dir nodes are in the uncreated state
    * pattern_generate will leave the final node as an fsent instead of a dir */
   entlist_destroy(&generate_hits);
-  rbtree_foreach(&cfg->walker.include.set, pat, rbn) {
-    pattern_generate(pat, 0, 0, &invalidation, 0, &generate_hits, 0);
+  rbtree_foreach(&cfg->filesystem.fstrees.set, fse, rbn) {
+    pattern_generate(fse->key.v, 0, 0, &invalidation, 0, &generate_hits, 0);
   }
 
   entlist_foreach(&generate_hits, n, eln) {
+    /* skip descendants of base */
+    if(fsent_is_self_or_descendant(g_base, n)) {
+      continue;
+    }
+    /* skip ancestors of config */
+    if(fsent_is_self_or_descendant(n, system_config_dirnode)) {
+      continue;
+    }
+    /* skip ancestors of config */
+    if(fsent_is_self_or_descendant(n, user_config_dirnode)) {
+      continue;
+    }
+
     /* exclude-match takes precedence over include */
     if(exclude_list_evaluate(n)) {
       continue;
@@ -541,70 +556,4 @@ void walker_cleanup()
 uint16_t walker_begin()
 {
   return ++walk_ids;
-}
-
-static void filesystem_describe_node(bacon_writer * restrict builder_writer, const fsent * restrict fse)
-{
-  const walker_entry *entry;
-  const struct moria_edge *edge;
-  moria_foreach_state st;
-  const fsent *child;
-  char path[PATH_MAX];
-  size_t len;
-
-  len = fsent_absolute_path_cat(path, sizeof(path), fse);
-
-  /* base case */
-  if(fse == g_base) {
-    goto ent;
-  }
-  if(fse == system_config_node) {
-    goto ent;
-  }
-  if(fse == user_config_node) {
-    goto ent;
-  }
-  llist_foreach(&walker_include_entry_list, entry, lln) {
-    if(fse == entry->n) {
-      goto ent;
-    }
-  }
-  goto dir;
-ent:
-  BYTES(path, len)
-  return;
-
-dir:
-  { MAPPING
-    BYTES(path, len)
-    { LIST
-      moria_foreach_edge_down(&st, &fse->vertex, edge) {
-        if(edge_type_get(edge) != EDGE_FSTREE) {
-          continue;
-        }
-
-        child = containerof(edge->B, typeof(*child), vertex);
-        filesystem_describe_node(builder_writer, child);
-      }
-    }
-  }
-}
-
-void filesystem_describe(bacon_writer * restrict writer)
-{
-  filesystem_describe_node(writer, g_root);
-}
-
-void filesystem_show()
-{
-  bacon_writer writer, *builder_writer;
-
-  bacon_writer_init(&writer);
-  builder_writer = bacon_writer_open(&writer, g_narrator_stdout);
-
-  filesystem_describe(builder_writer);
-
-  bacon_writer_close(&writer);
-  bacon_writer_destroy(&writer);
-  printf("\n");
 }

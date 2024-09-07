@@ -23,13 +23,15 @@
 #include "common/hash.h"
 
 #include "walker.internal.h"
-#include "filesystem.h"
+#include "fstree.h"
 #include "lookup.h"
 #include "module.h"
 #include "fsent.h"
 #include "fsedge.h"
 #include "node_operations_test.h"
 #include "entlist.h"
+#include "args.h"
+#include "shadow.h"
 
 static rbtree exclude_list;
 
@@ -94,9 +96,11 @@ static void walker_test_unit_setup(xunit_unit * unit)
   moria_load();
   bacon_load();
 
-  filesystem_setup();
+  args_init();
+  fsent_root_setup();
+  shadow_setup();
+
   graph_setup();
-  fsent_setup();
   entlist_setup();
 
   /* suppress rcu-registration checks performed under devel build for events fired from the walker */
@@ -112,7 +116,7 @@ static void walker_test_unit_cleanup(xunit_unit * unit)
   moria_unload();
   bacon_unload();
   graph_cleanup();
-  filesystem_cleanup();
+  fstree_cleanup();
   entlist_cleanup();
 }
 
@@ -244,8 +248,6 @@ static xunit_unit xunit = {
                   " 5-D!file 6-E!file 7-F!file 8-G!file"
                   " 2:fs:1 3:fs:2 4:fs:2 5:fs:3 6:fs:3 7:fs:4 8:fs:4"
       }}
-    /* note that directories newly created by walker are in the uncreated (U) state until filesystem
-     * reconcile has a chance to mkdir on them */
     , (walker_test[]) {{        // new leaves
           operations : "A/B"
         , base : "A"
