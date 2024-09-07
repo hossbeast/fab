@@ -4,79 +4,181 @@
 #pragma once
 
 #include "valyria/llist.h"
-#include "moria.h"
-#include "bam/stats.h"
+#include "valyria/rbtree.h"
 
-#include "filesystem.h"
+#include "types.h"
+#include "fstree.h"
 
+struct bacon_value;
 struct bacon_writer;
 struct narrator;
-struct bacon_value;
-struct configuration;
-struct config_parser;
+struct fsent;
+struct config;
 struct graph_invalidation_context;
+struct configset_parser;
+struct moria_vertex;
+struct channel;
+struct pattern;
 
-/* global VERTEX_CONFIG_FILE | VERTEX_PROTECT_BIT nodes */
-extern struct fsent *system_config_node;
-extern struct fsent *user_config_node;
+/* fstree properties */
+typedef struct config_fstree_value {
+  struct {
+    struct bacon_value *v;
+    invalidation_type e;
+  } invalidation;
+  struct {
+    struct bacon_value *v;
+    bool b;
+  } mkdir;
+  struct {
+    struct bacon_value *v;
+    bool b;
+  } readlink;
+  struct {
+    struct bacon_value *v;
+    bool b;
+  } index;
+  struct {
+    struct bacon_value *v;
+    bool b;
+  } mount;
+} config_fstree_value;
 
-/* active config list */
-extern llist config_list;
+/* fstree entry */
+typedef struct config_fstree_mapping {
+  llist lln;
+  rbnode rbn;
 
-/* VERTEX_CONFIG */
+  struct {
+    struct pattern *v;
+  } key;
+
+  config_fstree_value val;
+} config_fstree_mapping;
+
+typedef struct config_special_entry {
+  llist lln;
+  rbnode rbn;
+  struct bacon_value *v;
+  char *s;
+  uint16_t len;
+} config_special_entry;
+
+typedef struct config_formula_path_dirs_entry {
+  llist lln;
+  rbnode rbn;
+  struct bacon_value *v;
+  char *s;
+  uint16_t len;
+} config_formula_path_dirs_entry;
+
+typedef struct config_plugin_path_dirs_entry {
+  llist lln;
+  rbnode rbn;
+  struct bacon_value *v;
+  char *s;
+  uint16_t len;
+} config_plugin_path_dirs_entry;
+
+typedef struct config_plugin_entry {
+  llist lln;
+
+  struct {
+    struct bacon_value *v;
+    char *s;
+    uint16_t len;
+  } path;
+
+  struct {
+    struct bacon_value *list;
+  } args;
+} config_plugin_entry;
+
 typedef struct config {
-  moria_vertex vertex;
+  llist owner;
 
-  bam_vertex_stats stats;
-  struct bacon_value *val;
-  char id[40];
-  uint16_t id_len;
-  char token[40];
-  uint16_t token_len;
+  struct {
+    struct {
+      struct bacon_value *v;
+      uint16_t u16;
+    } concurrency;
+  } build;
 
-  /* regarding the corresponding VERTEX_CONFIG_FILE */
-  struct fsent *self_node;
-  bam_config_stats config_stats;
-  char self_node_abspath[PATH_MAX];
-  uint16_t self_node_abspath_len;
+  struct config_filesystem {
+    struct {
+      rbtree set;     // config_fstree_mapping
+    } fstrees;
 
-  /* parsed from the file */
-//  struct config *cfg;
+    struct {
+      rbtree set;     // struct pattern
+    } exclude;
+
+    struct {
+      rbtree set;     // config_special_entry
+    } special;
+  } filesystem;
+
+  struct {
+    struct {
+      struct {
+        struct bacon_value *v;
+        bool b;
+      } copy_from_env;
+      struct {
+        rbtree set;           // config_formula_path_dirs_entry
+      } dirs;
+    } path;
+  } formula;
+
+  struct {
+    struct {
+      struct bacon_value *v;
+      int64_t i64;            // seconds
+    } interval;
+  } timeout;
+
+  struct {
+    struct {
+      struct {
+        rbtree set;           // config_plugin_path_dirs_entry
+      } dirs;
+    } path;
+
+    llist list;               // config_plugin_entry
+  } plugins;
 } config;
 
-void config_parse(config * restrict, struct config_parser * restrict parser, struct configuration * restrict)
+extern struct config *config_active;
+extern struct moria_vertex *g_config;
+
+void config_alloc(config ** restrict rv)
   __attribute__((nonnull));
 
-void config_create(config ** restrict cfg)
+void config_free(config * restrict cfg, struct configset_parser * restrict parser);
+
+void config_ifree(config ** restrict cfg, struct configset_parser * restrict parser)
   __attribute__((nonnull));
 
-/* free a config struct with free semantics */
-void config_release(config * restrict cfg, struct graph_invalidation_context * restrict invalidation);
-
-/* mark sections of a new config struct as different from those of another config struct */
-bool config_compare(config * restrict new, config * restrict old)
+void config_say(const config * restrict cfg, struct narrator * restrict N)
   __attribute__((nonnull));
 
-void config_merge(config * restrict dst, config * restrict src)
+void config_describe(const config * restrict cfg, struct bacon_writer * const restrict builder_writer)
   __attribute__((nonnull));
 
-void config_describe(config * const restrict cfg, struct bacon_writer * const restrict writer)
+void config_show(const config * restrict cfg)
   __attribute__((nonnull));
 
-void config_say(config * restrict cfg, struct narrator * restrict N)
-  __attribute__((nonnull));
+void config_compare(const config * restrict prev, config * restrict next)
+  __attribute__((nonnull(2)));
 
 void config_setup(void);
 void config_cleanup(void);
 
-void config_alloc(config ** restrict cfg)
+void config_vertex_describe(struct bacon_writer * restrict builder_writer)
   __attribute__((nonnull));
 
-/*
- * Write a config stats to a buffer
- *
- * reset - true to reset the stats while reading them
- * zp    - (returns) number of bytes written to dst
- */
-size_t config_stats_collate(void *dst, size_t sz, bool reset, config * restrict cfg)
+void config_vertex_tell(struct channel * restrict chan)
+  __attribute__((nonnull));
+
+void config_vertex_stats_build(bool reset, struct bacon_writer * restrict builder_writer)
   __attribute__((nonnull));

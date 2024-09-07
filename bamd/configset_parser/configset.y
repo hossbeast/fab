@@ -13,10 +13,10 @@
   #include "bacon/make.h"
   #include "lorien/path_normalize.h"
 
-  #include "config_parser/glue.h"
-  #include "config_parser.h"
+  #include "configset_parser/glue.h"
+  #include "configset_parser.h"
+  #include "configset.h"
   #include "config.h"
-  #include "configuration.h"
   #include "filesystem.h"
   #include "build.h"
   #include "macros.h"
@@ -27,14 +27,14 @@
 }
 
 %code top {
-  int config_yylex(void*, void*, void*);
-  #define PARSER ((config_parser*)parser)
-  #define CONFIG_YYLTYPE yyu_location
+  int configset_yylex(void*, void*, void*);
+  #define PARSER ((configset_parser*)parser)
+  #define CONFIGSET_YYLTYPE yyu_location
 
-  #include "config_parser.h"
+  #include "configset_parser.h"
   #include "bacon/value.h"
 
-  static void replace(config_parser *parser, struct bacon_value ** dst, struct bacon_value *val)
+  static void replace(configset_parser *parser, struct bacon_value ** dst, struct bacon_value *val)
   {
     bacon_value_free(parser->bacon_parser, *dst);
     *dst = val;
@@ -44,7 +44,7 @@
 %define api.pure
 %define parse.error verbose
 %locations
-%define api.prefix {config_yy}
+%define api.prefix {configset_yy}
 %parse-param { void* scanner }
 %parse-param { void* parser }
 %lex-param { void* scanner }
@@ -57,12 +57,13 @@
 
   struct pattern *pattern;
   struct bacon_value *val;
+  struct pattern *pattern_owned;
 
   // enums
   struct {
     struct bacon_value *v;
-    invalidate_type e;
-  } invalidate_type;
+    invalidation_type e;
+  } invalidation_type;
 }
 
 /* tokens */
@@ -100,9 +101,9 @@
 %token
  BUILD                    "build"
  CONCURRENCY              "concurrency"
- FILESYSTEMS              "filesystems"
+ FILESYSTEM               "filesystem"
  FORMULA                  "formula"
- INVALIDATE               "invalidate"
+ INVALIDATION             "invalidation"
  PATH                     "path"
  COPY_FROM_ENV            "copy-from-env"
  DIRS                     "dirs"
@@ -111,15 +112,19 @@
  NOTIFY                   "notify"
  ALWAYS                   "always"
  NEVER                    "never"
- WALKER                   "walker"
+ FSTREES                  "fstrees"
  EXCLUDE                  "exclude"
  SPECIAL                  "special"
  INCLUDE                  "include"
- MKDIRS                   "mkdirs"
- READLINKS                "readlinks"
- INDEXED                  "indexed"
+ MKDIR                    "mkdir"
+ READLINK                 "readlink"
+ INDEX                    "index"
+ MOUNT                    "mount"
  TIMEOUT                  "timeout"
  INTERVAL                 "interval"
+ PLUGINS                  "plugins"
+ ARGS                     "args"
+ ENVS                     "envs"
 
 %token
  <pattern> INCLUDE_PATTERN  "include-pattern"
@@ -130,7 +135,9 @@
 %type <val> bool uint16 int64 string
 
 /* enums */
-%type <invalidate_type> invalidate-type
+%type <invalidation_type> invalidation-type
+
+%type <pattern_owned> fstree-entry-key
 
 %destructor { pattern_free($$); } <pattern>
 %destructor { bacon_value_free(PARSER->bacon_parser, $$); } <val>
@@ -160,10 +167,10 @@ sections
 
 section
   : build-section
-  | filesystems-section
+  | filesystem-section
   | formula-section
-  | walker-section
   | timeout-section
+  | plugins-section
   ;
 
 build-section
@@ -230,57 +237,94 @@ formula-path-dirs
 formula-path-dir
   : string
   {
-    config_parser_fpde_alloc(PARSER, $1);
+    configset_parser_fpde_alloc(PARSER, $1);
   }
   ;
 
-filesystems-section
-  : FILESYSTEMS ':' '{' filesystems-mappings-epsilon '}'
+filesystem-section
+  : FILESYSTEM ':' '{' filesystem-mappings '}'
   ;
 
-filesystems-mappings-epsilon
-  : filesystems-mappings
+filesystem-mappings
+  : filesystem-mappings-list
   | %empty
   ;
 
-filesystems-mappings
-  : filesystems-mappings filesystems-mapping
-  | filesystems-mapping
+filesystem-mappings-list
+  : filesystem-mappings-list filesystem-mapping
+  | filesystem-mapping
   ;
 
-filesystems-mapping
-  : string ':' '{' { config_parser_fm_alloc(PARSER, $1); } filesystems-entry-mappings '}'
+filesystem-mapping
+  : FSTREES ':' '{' fstree-entries '}'
+  | SPECIAL ':' '{' special-entries '}'
+  | EXCLUDE ':' '{' exclude-entries '}'
+  ;
+
+fstree-entries
+  : fstree-entry-list
+  | %empty
+  ;
+
+fstree-entry-list
+  : fstree-entry-list fstree-entry
+  | fstree-entry
+  ;
+
+fstree-entry-key
+  : INCLUDE_PATTERN
   {
-    PARSER->fm = 0;
-    bacon_value_free(PARSER->bacon_parser, $1);
+    $$ = $1;
   }
   ;
 
-filesystems-entry-mappings
-  : filesystems-entry-mappings filesystems-entry-mapping
-  | filesystems-entry-mapping
+fstree-entry
+  : fstree-entry-key { configset_parser_fsm_alloc(PARSER, $1); } fstree-entry-value
+  {
+    PARSER->fsm = 0;
+  }
   ;
 
-filesystems-entry-mapping
-  : INVALIDATE ':' invalidate-type
+fstree-entry-value
+  : ':' '{' fstree-entry-mappings '}'
+  | %empty
+  ;
+
+fstree-entry-mappings
+  : fstree-entry-mapping-list
+  | %empty
+  ;
+
+fstree-entry-mapping-list
+  : fstree-entry-mapping-list fstree-entry-mapping
+  | fstree-entry-mapping
+  ;
+
+fstree-entry-mapping
+  : INVALIDATION ':' invalidation-type
   {
-    replace(PARSER, &PARSER->fm->val.invalidate.v, $3.v);
-    PARSER->fm->val.invalidate.e = $3.e;
+    replace(PARSER, &PARSER->fsm->val.invalidation.v, $3.v);
+    PARSER->fsm->val.invalidation.e = $3.e;
   }
-  | MKDIRS ':' bool
+  | MKDIR ':' bool
   {
-    replace(PARSER, &PARSER->fm->val.mkdirs.v, $3);
-    PARSER->fm->val.mkdirs.b = $3->b;
+    replace(PARSER, &PARSER->fsm->val.mkdir.v, $3);
+    PARSER->fsm->val.mkdir.b = $3->b;
   }
-  | READLINKS ':' bool
+  | READLINK ':' bool
   {
-    replace(PARSER, &PARSER->fm->val.readlinks.v, $3);
-    PARSER->fm->val.readlinks.b = $3->b;
+    replace(PARSER, &PARSER->fsm->val.readlink.v, $3);
+    PARSER->fsm->val.readlink.b = $3->b;
   }
-  | INDEXED ':' bool
+  | INDEX ':' bool
   {
-    replace(PARSER, &PARSER->fm->val.indexed.v, $3);
-    PARSER->fm->val.indexed.b = $3->b;
+    replace(PARSER, &PARSER->fsm->val.index.v, $3);
+    PARSER->fsm->val.index.b = $3->b;
+  }
+  | MOUNT ':' bool
+  {
+    replace(PARSER, &PARSER->fsm->val.mount.v, $3);
+    PARSER->fsm->val.mount.b = $3->b;
   }
   ;
 
@@ -306,102 +350,153 @@ timeout-setting
   }
   ;
 
-walker-section
-  : WALKER ':' '{' walker-settings-epsilon '}'
+plugins-section
+  : PLUGINS ':' '{' plugin-sections-list '}'
   ;
 
-walker-settings-epsilon
-  : walker-settings
+plugin-sections-list
+  : plugin-sections
   | %empty
   ;
 
-walker-settings
-  : walker-settings walker-setting
-  | walker-setting
+plugin-sections
+  : plugin-sections plugin-section
+  | plugin-section
   ;
 
-walker-setting
-  : INCLUDE ':' '{' walker-include-entry-list-epsilon '}'
-  | EXCLUDE ':' '{' walker-exclude-entry-list-epsilon '}'
-  | SPECIAL ':' '{' walker-special-entry-list-epsilon '}'
+plugin-section
+  : plugin-path-section
+  | plugin-list-section
   ;
 
-walker-exclude-entry-list-epsilon
-  : walker-exclude-entry-list
-  | %empty
+plugin-path-section
+  : PATH ':' '{' plugin-path-settings '}'
   ;
 
-walker-exclude-entry-list
-  : walker-exclude-entry-list walker-exclude-entry
-  | walker-exclude-entry
+plugin-path-settings
+  : DIRS ':' '{' plugin-path-dirs '}'
   ;
 
-walker-exclude-entry
-  : MATCH_PATTERN
-  {
-    config_parser_we_put(PARSER, $1);
-  }
+plugin-path-dirs
+  : plugin-path-dirs plugin-path-dir
+  | plugin-path-dir
   ;
 
-walker-include-entry-list-epsilon
-  : walker-include-entry-list
-  | %empty
-  ;
-
-walker-include-entry-list
-  : walker-include-entry-list walker-include-entry
-  | walker-include-entry
-  ;
-
-walker-include-entry
-  : INCLUDE_PATTERN
-  {
-    config_parser_wi_put(PARSER, $1);
-  }
-  ;
-
-walker-special-entry-list-epsilon
-  : walker-special-entry-list
-  | %empty
-  ;
-
-walker-special-entry-list
-  : walker-special-entry-list walker-special-entry
-  | walker-special-entry
-  ;
-
-walker-special-entry
+plugin-path-dir
   : string
   {
-    config_parser_wse_alloc(PARSER, $1);
+    configset_parser_ppde_alloc(PARSER, $1);
   }
   ;
 
-invalidate-type
+plugin-list-section
+  : '[' plugin-entry-list ']'
+  ;
+
+plugin-entry-list
+  : %empty
+  | plugin-entries
+  ;
+
+plugin-entries
+  : plugin-entries plugin-entry
+  | plugin-entry
+  ;
+
+plugin-entry
+  : '{' { PARSER->pe = configset_parser_plugin_alloc(PARSER); } plugin-entry-mappings '}'
+  {
+    configset_parser_plugin_put(PARSER, PARSER->pe);
+    PARSER->pe = 0;
+  }
+  ;
+
+plugin-entry-mappings
+  : plugin-entry-mappings plugin-entry-mapping
+  | plugin-entry-mapping
+  ;
+
+plugin-entry-mapping
+  : PATH ':' string
+  {
+    replace(PARSER, &PARSER->pe->path.v, $3);
+    PARSER->pe->path.s = $3->s;
+    PARSER->pe->path.len = $3->len;
+  }
+  | ARGS ':' '[' plugin-entry-args ']'
+  ;
+
+plugin-entry-args
+  : plugin-entry-args plugin-entry-arg
+  | plugin-entry-arg
+  ;
+
+plugin-entry-arg
+  : string
+  {
+    configset_parser_plugin_arg_put(PARSER, $1);
+  }
+  ;
+
+exclude-entries
+  : exclude-entry-list
+  | %empty
+  ;
+
+exclude-entry-list
+  : exclude-entry-list exclude-entry
+  | exclude-entry
+  ;
+
+exclude-entry
+  : MATCH_PATTERN
+  {
+    configset_parser_we_put(PARSER, $1);
+  }
+  ;
+
+special-entries
+  : special-entry-list
+  | %empty
+  ;
+
+special-entry-list
+  : special-entry-list special-entry
+  | special-entry
+  ;
+
+special-entry
+  : string
+  {
+    configset_parser_wse_alloc(PARSER, $1);
+  }
+  ;
+
+invalidation-type
   : STAT
   {
     bacon_string_mkw(PARSER->bacon_parser, &@$, 0, &$$.v, @1.s, @1.l);
-    $$.e = INVALIDATE_STAT;
+    $$.e = INVALIDATION_STAT;
   }
   | CONTENT
   {
     bacon_string_mkw(PARSER->bacon_parser, &@$, 0, &$$.v, @1.s, @1.l);
-    $$.e = INVALIDATE_CONTENT;
+    $$.e = INVALIDATION_CONTENT;
   }
   | NOTIFY
   {
     bacon_string_mkw(PARSER->bacon_parser, &@$, 0, &$$.v, @1.s, @1.l);
-    $$.e = INVALIDATE_NOTIFY;
+    $$.e = INVALIDATION_NOTIFY;
   }
   | ALWAYS
   {
     bacon_string_mkw(PARSER->bacon_parser, &@$, 0, &$$.v, @1.s, @1.l);
-    $$.e = INVALIDATE_ALWAYS;
+    $$.e = INVALIDATION_ALWAYS;
   }
   | NEVER
   {
     bacon_string_mkw(PARSER->bacon_parser, &@$, 0, &$$.v, @1.s, @1.l);
-    $$.e = INVALIDATE_NEVER;
+    $$.e = INVALIDATION_NEVER;
   }
   ;
 

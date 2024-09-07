@@ -10,10 +10,10 @@
 #include "narrator.h"
 #include "narrator/growing.h"
 
-#include "config_parser/glue.h"
-#include "config_parser.h"
+#include "configset_parser/glue.h"
+#include "configset_parser.h"
+#include "configset.h"
 #include "config.h"
-#include "configuration.h"
 #include "request.h"
 #include "fsent.h"
 
@@ -23,25 +23,25 @@ typedef struct {
   char ** texts;
   char *expected;
   config * cfg;
-} config_parser_test;
+} configset_parser_test;
 
-static void config_parser_test_unit_setup(xunit_unit * unit)
+static void configset_parser_test_unit_setup(xunit_unit * unit)
 {
   bacon_load();
 }
 
-static void config_parser_test_unit_cleanup(xunit_unit * unit)
+static void configset_parser_test_unit_cleanup(xunit_unit * unit)
 {
   bacon_unload();
 }
 
-static void config_parser_test_entry(xunit_test * _test)
+static void configset_parser_test_entry(xunit_test * _test)
 {
-  config_parser_test * test = containerof(_test, config_parser_test, xu);
+  configset_parser_test * test = containerof(_test, configset_parser_test, xu);
 
-  config_parser * parser = 0;
-  configuration *cfg = 0;
-  configuration *B = 0;
+  configset_parser * parser = 0;
+  config *cfg = 0;
+  config *B = 0;
   narrator_growing * N1 = 0;
   size_t len;
   char **text;
@@ -49,28 +49,28 @@ static void config_parser_test_entry(xunit_test * _test)
   const char **name;
 
   // arrange
-  config_parser_create(&parser);
+  configset_parser_create(&parser);
   narrator_growing_create(&N1);
 
   /* parse all the texts */
-  configuration_alloc(&cfg);
+  config_alloc(&cfg);
   name = names;
   for(text = test->texts; *text; text++, name++) {
-    if(config_parser_parse(parser, *text, strlen(*text) + 2, *name, 0, cfg) != 0) {
+    if(configset_parser_parse(parser, *text, strlen(*text) + 2, *name, 0, cfg) != 0) {
       tracef("%.*s", (int)parser->yyu.error_len, parser->yyu.error_str);
       RTA;
     }
 
     // round-trip parse-ability at each step
     narrator_reset(&N1->base);
-    configuration_say(cfg, &N1->base);
+    config_say(cfg, &N1->base);
 
     if((len = N1->l)) {
-      configuration_free(B, parser);
-      configuration_alloc(&B);
+      config_free(B, parser);
+      config_alloc(&B);
       N1->s[N1->l + 0] = 0;
       N1->s[N1->l + 1] = 0;
-      if(config_parser_parse(parser, N1->s, N1->l + 2, *name, 0, B) != 0) {
+      if(configset_parser_parse(parser, N1->s, N1->l + 2, *name, 0, B) != 0) {
         tracef("%.*s", (int)parser->yyu.error_len, parser->yyu.error_str);
         RTA;
       }
@@ -79,12 +79,12 @@ static void config_parser_test_entry(xunit_test * _test)
 
   narrator_reset(&N1->base);
 
-  configuration_say(cfg, &N1->base);
+  config_say(cfg, &N1->base);
   assert_eq_w(test->expected, strlen(test->expected), N1->s, N1->l);
 
-  configuration_free(cfg, parser);
-  configuration_free(B, parser);
-  config_parser_free(parser);
+  config_free(cfg, parser);
+  config_free(B, parser);
+  configset_parser_free(parser);
   narrator_growing_free(N1);
 }
 
@@ -93,11 +93,11 @@ static void config_parser_test_entry(xunit_test * _test)
 //
 
 static xunit_unit xunit = {
-    xu_setup : config_parser_test_unit_setup
-  , xu_cleanup : config_parser_test_unit_cleanup
-  , xu_entry : config_parser_test_entry
-  , xu_tests : (config_parser_test*[]) {
-      (config_parser_test[]) {{
+    xu_setup : configset_parser_test_unit_setup
+  , xu_cleanup : configset_parser_test_unit_cleanup
+  , xu_entry : configset_parser_test_entry
+  , xu_tests : (configset_parser_test*[]) {
+      (configset_parser_test[]) {{
           texts : (char*[]) {
             (char[]) {
               "\0\0"
@@ -106,7 +106,7 @@ static xunit_unit xunit = {
         }
         , expected : ""
       }}
-    , (config_parser_test[]) {{
+    , (configset_parser_test[]) {{
           texts : (char*[]) {
             (char[]) {
               "build : {"
@@ -121,7 +121,7 @@ static xunit_unit xunit = {
               "  concurrency : 0                                            # @ (first) [1,25 1,26]\n"
               "}"
       }}
-    , (config_parser_test[]) {{
+    , (configset_parser_test[]) {{
           texts : (char*[]) {
             (char[]) {
               "build : {"
@@ -142,7 +142,7 @@ static xunit_unit xunit = {
               "  concurrency : 0                                            # @ (second) [1,25 1,26]\n"
               "}"
       }}
-    , (config_parser_test[]) {{
+    , (configset_parser_test[]) {{
           texts : (char*[]) {
             (char[]) {
               "build : {"
@@ -157,11 +157,11 @@ static xunit_unit xunit = {
               "  concurrency : 42                                           # @ (first) [1,25 1,27]\n"
               "}"
       }}
-    , (config_parser_test[]) {{
+    , (configset_parser_test[]) {{
           texts : (char*[]) {
             (char[]) {
-              "walker : {"
-              "  include : {"
+              "filesystem : {"
+              "  fstrees : {"
               "    /usr/lib/fab/builtin"
               "    /home/todd/my"
               " }"
@@ -170,26 +170,26 @@ static xunit_unit xunit = {
           , 0
         }
         , expected : ""
-              "walker : {\n"
-              "  include : {\n"
-              "    /home/todd/my                                            # @ (first) [1,52 1,65]\n"
-              "    /usr/lib/fab/builtin                                     # @ (first) [1,28 1,48]\n"
+              "filesystem : {\n"
+              "  fstrees : {\n"
+              "    /home/todd/my                                            # @ (first) [1,56 1,69]\n"
+              "    /usr/lib/fab/builtin                                     # @ (first) [1,32 1,52]\n"
               "  }\n"
               "}"
           , 0
       }}
-    , (config_parser_test[]) {{
+    , (configset_parser_test[]) {{
           texts : (char*[]) {
             (char[]) {
-              "walker : {"
-              "  include : {"
+              "filesystem : {"
+              "  fstrees : {"
               "    /usr/lib/fab/builtin"
               "    /home/todd/my"
               " }"
               "}\0\0"
             }
           , (char[]) {
-              "walker : {"
+              "filesystem : {"
               "  exclude : {"
               "    build"
               " }"
@@ -198,21 +198,21 @@ static xunit_unit xunit = {
           , 0
         }
         , expected : ""
-            "walker : {\n"
-            "  include : {\n"
-            "    /home/todd/my                                            # @ (first) [1,52 1,65]\n"
-            "    /usr/lib/fab/builtin                                     # @ (first) [1,28 1,48]\n"
+            "filesystem : {\n"
+            "  fstrees : {\n"
+            "    /home/todd/my                                            # @ (first) [1,56 1,69]\n"
+            "    /usr/lib/fab/builtin                                     # @ (first) [1,32 1,52]\n"
             "  }\n"
             "  exclude : {\n"
-            "    build                                                    # @ (second) [1,28 1,33]\n"
+            "    build                                                    # @ (second) [1,32 1,37]\n"
             "  }\n"
             "}"
           , 0
       }}
-    , (config_parser_test[]) {{
+    , (configset_parser_test[]) {{
           texts : (char*[]) {
             (char[]) {
-              "walker : {"
+              "filesystem : {"
               "  exclude : {"
               "    .git"
               " }"
@@ -221,30 +221,30 @@ static xunit_unit xunit = {
           , 0
         }
         , expected : ""
-              "walker : {\n"
+              "filesystem : {\n"
               "  exclude : {\n"
-              "    .git                                                     # @ (first) [1,28 1,32]\n"
+              "    .git                                                     # @ (first) [1,32 1,36]\n"
               "  }\n"
               "}"
       }}
-    , (config_parser_test[]) {{
+    , (configset_parser_test[]) {{
           texts : (char*[]) {
             (char[]) {
-              "walker : {"
+              "filesystem : {"
               "  exclude : {"
               "    .git"
               " }"
               "}\0\0"
             }
           , (char[]) {
-              "walker : {"
+              "filesystem : {"
               "  exclude : {"
               "    .svn"
               " }"
               "}\0\0"
             }
           , (char[]) {
-              "walker : {"
+              "filesystem : {"
               "  exclude : {"
               "    .hg"
               " }"
@@ -253,32 +253,32 @@ static xunit_unit xunit = {
           , 0
         }
         , expected : ""
-              "walker : {\n"
+              "filesystem : {\n"
               "  exclude : {\n"
-              "    .git                                                     # @ (first) [1,28 1,32]\n"
-              "    .svn                                                     # @ (second) [1,28 1,32]\n"
-              "    .hg                                                      # @ (third) [1,28 1,31]\n"
+              "    .git                                                     # @ (first) [1,32 1,36]\n"
+              "    .svn                                                     # @ (second) [1,32 1,36]\n"
+              "    .hg                                                      # @ (third) [1,32 1,35]\n"
               "  }\n"
               "}"
       }}
-    , (config_parser_test[]) {{
+    , (configset_parser_test[]) {{
           texts : (char*[]) {
             (char[]) {
-              "walker : {"
+              "filesystem : {"
               "  exclude : {"
               "    .git"
               " }"
               "}\0\0"
             }
           , (char[]) {
-              "walker : {"
+              "filesystem : {"
               "  exclude : {"
               "    .svn"
               " }"
               "}\0\0"
             }
           , (char[]) {
-              "walker : {"
+              "filesystem : {"
               "  exclude : {"
               "    .git"
               "    .svn"
@@ -289,18 +289,18 @@ static xunit_unit xunit = {
           , 0
         }
         , expected : ""
-              "walker : {\n"
+              "filesystem : {\n"
               "  exclude : {\n"
-              "    .git                                                     # @ (third) [1,28 1,32]\n"
-              "    .svn                                                     # @ (third) [1,36 1,40]\n"
-              "    .hg                                                      # @ (third) [1,44 1,47]\n"
+              "    .git                                                     # @ (third) [1,32 1,36]\n"
+              "    .svn                                                     # @ (third) [1,40 1,44]\n"
+              "    .hg                                                      # @ (third) [1,48 1,51]\n"
               "  }\n"
               "}"
       }}
-    , (config_parser_test[]) {{
+    , (configset_parser_test[]) {{
           texts : (char*[]) {
             (char[]) {
-              "walker : {"
+              "filesystem : {"
               "  special : {"
               "    var.bam.debug"
               "    var.bam.devel"
@@ -312,49 +312,55 @@ static xunit_unit xunit = {
           , 0
         }
         , expected : ""
-              "walker : {\n"
+              "filesystem : {\n"
               "  special : {\n"
-              "    var.bam.debug                                            # @ (first) [1,28 1,41]\n"
-              "    var.bam.trace                                            # @ (first) [1,79 1,92]\n"
-              "    var.bam.final                                            # @ (first) [1,62 1,75]\n"
-              "    var.bam.devel                                            # @ (first) [1,45 1,58]\n"
+              "    var.bam.debug                                            # @ (first) [1,32 1,45]\n"
+              "    var.bam.trace                                            # @ (first) [1,83 1,96]\n"
+              "    var.bam.final                                            # @ (first) [1,66 1,79]\n"
+              "    var.bam.devel                                            # @ (first) [1,49 1,62]\n"
               "  }\n"
               "}"
       }}
-   , (config_parser_test[]) {{
+   , (configset_parser_test[]) {{
           texts : (char*[]) {
             (char[]) {
-              "filesystems : {"
-              "  \"/\" : {"
-              "    invalidate : notify"
-              "  }"
-              "  /home : {"
-              "    invalidate : stat"
+              "filesystem : {"
+              "  fstrees : {"
+              "    / : {"
+              "      invalidation : notify"
+              "    }"
+              "    /home : {"
+              "      invalidation : stat"
+              "    }"
               "  }"
               "}\0\0"
             }
           , 0
         }
       , expected : ""
-              "filesystems : {\n"
-              "  /home : {\n"
-              "    invalidate : stat                                        # @ (first) [1,79 1,83]\n"
-              "  }\n"
-              "  / : {\n"
-              "    invalidate : notify                                      # @ (first) [1,42 1,48]\n"
+              "filesystem : {\n"
+              "  fstrees : {\n"
+              "    /home : {\n"
+              "      invalidation : stat                                    # @ (first) [1,103 1,107]\n"
+              "    }\n"
+              "    / : {\n"
+              "      invalidation : notify                                  # @ (first) [1,58 1,64]\n"
+              "    }\n"
               "  }\n"
               "}"
       }}
-    , (config_parser_test[]) {{
+    , (configset_parser_test[]) {{
           texts : (char*[]) {
             (char[]) {
-              "filesystems : {"
-              "  \"/\" : {"
-              "    invalidate : notify"
-              "    readlinks : true"
-              "  }"
-              "  /home : {"
-              "    invalidate : stat"
+              "filesystem : {"
+              "  fstrees : {"
+              "    / : {"
+              "      invalidation : notify"
+              "      readlink : true"
+              "    }"
+              "    /home : {"
+              "      invalidation : stat"
+              "    }"
               "  }"
               "}"
               "build : {"
@@ -366,32 +372,38 @@ static xunit_unit xunit = {
         }
         , expected : ""
             "build : {\n"
-            "  concurrency : 0                                            # @ (first) [1,132 1,133]\n"
+            "  concurrency : 0                                            # @ (first) [1,162 1,163]\n"
             "}\n"
-            "filesystems : {\n"
-            "  /home : {\n"
-            "    invalidate : stat                                        # @ (first) [1,99 1,103]\n"
-            "  }\n"
-            "  / : {\n"
-            "    invalidate : notify                                      # @ (first) [1,42 1,48]\n"
-            "    readlinks : true                                         # @ (first) [1,64 1,68]\n"
+            "filesystem : {\n"
+            "  fstrees : {\n"
+            "    /home : {\n"
+            "      invalidation : stat                                    # @ (first) [1,124 1,128]\n"
+            "    }\n"
+            "    / : {\n"
+            "      invalidation : notify                                  # @ (first) [1,58 1,64]\n"
+            "      readlink : true                                        # @ (first) [1,81 1,85]\n"
+            "    }\n"
             "  }\n"
             "}"
       }}
-    , (config_parser_test[]) {{
+    , (configset_parser_test[]) {{
           texts : (char*[]) {
             (char[]) {
-              "filesystems : {"
-              "  / : {"
-              "    invalidate : notify"
+              "filesystem : {"
+              "  fstrees : {"
+              "    / : {"
+              "      invalidation : notify"
+              "    }"
               "  }"
               "}"
               "\0\0"
             }
           , (char[]) {
-              "filesystems : {"
-              "  / : {"
-              "    invalidate : notify"
+              "filesystem : {"
+              "  fstrees : {"
+              "    / : {"
+              "      invalidation : notify"
+              "    }"
               "  }"
               "}"
               "\0\0"
@@ -399,13 +411,15 @@ static xunit_unit xunit = {
           , 0
         }
         , expected : ""
-              "filesystems : {\n"
-              "  / : {\n"
-              "    invalidate : notify                                      # @ (second) [1,40 1,46]\n"
-              "  }\n"
-              "}"
+            "filesystem : {\n"
+            "  fstrees : {\n"
+            "    / : {\n"
+            "      invalidation : notify                                  # @ (second) [1,58 1,64]\n"
+            "    }\n"
+            "  }\n"
+            "}"
       }}
-    , (config_parser_test[]) {{
+    , (configset_parser_test[]) {{
           texts : (char*[]) {
             (char[]) {
               "formula : {"
@@ -428,7 +442,7 @@ static xunit_unit xunit = {
               "  }\n"
               "}"
       }}
-    , (config_parser_test[]) {{
+    , (configset_parser_test[]) {{
           texts : (char*[]) {
             (char[]) {
               "formula : {"
@@ -443,7 +457,7 @@ static xunit_unit xunit = {
         }
         , expected : ""
       }}
-    , (config_parser_test[]) {{
+    , (configset_parser_test[]) {{
           texts : (char*[]) {
             (char[]) {
               "formula : {"
@@ -456,7 +470,7 @@ static xunit_unit xunit = {
         }
         , expected : ""
       }}
-    , (config_parser_test[]) {{
+    , (configset_parser_test[]) {{
           texts : (char*[]) {
             (char[]) {
               "formula : {"
@@ -467,7 +481,7 @@ static xunit_unit xunit = {
         }
         , expected : ""
       }}
-    , (config_parser_test[]) {{
+    , (configset_parser_test[]) {{
           texts : (char*[]) {
             (char[]) {
               "formula : {"
@@ -486,7 +500,7 @@ static xunit_unit xunit = {
               "  }\n"
               "}"
       }}
-    , (config_parser_test[]) {{
+    , (configset_parser_test[]) {{
           texts : (char*[]) {
             (char[]) {
               "build : {"

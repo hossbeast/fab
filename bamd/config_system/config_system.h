@@ -4,11 +4,21 @@
 #pragma once
 
 #include "types.h"
-#include "bam/stats.h"
 
+struct fsent;
 struct graph_invalidation_context;
 
-extern bool config_system_reconfigured;
+extern struct fsent *user_config_dirnode;
+extern char user_config_dir[PATH_MAX];
+extern uint16_t user_config_dir_len;
+extern char user_config_name[256];
+extern uint16_t user_config_name_len;
+
+extern struct fsent *system_config_dirnode;
+extern char system_config_dir[PATH_MAX];
+extern uint16_t system_config_dir_len;
+extern char system_config_name[256];
+extern uint16_t system_config_name_len;
 
 /* initializes the config module, does not apply any config files */
 void config_system_setup(void);

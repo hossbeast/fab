@@ -6,7 +6,7 @@
 struct yyu_location;
 struct yyu_parser;
 
-/// config_yyerror
+/// configset_yyerror
 //
 // SUMMARY
 //  flag the parse as failed (by setting pp->r = 0)
@@ -16,5 +16,5 @@ struct yyu_parser;
 // DETAILS
 //  called from tab.o and lex.o
 //
-static void config_yyerror(struct yyu_location * loc, void * scanner, struct yyu_parser * pp, char const * err)
+static void configset_yyerror(struct yyu_location * loc, void * scanner, struct yyu_parser * pp, char const * err)
   __attribute__((weakref("yyu_grammar_error")));

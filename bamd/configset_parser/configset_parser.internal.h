@@ -4,12 +4,12 @@
 #pragma once
 
 #include "yyutil/parser.h"
-#include "config_parser.h"
+#include "configset_parser.h"
 
 struct pattern_parser;
 struct config;
 
-struct config_parser {
+struct configset_parser {
   yyu_parser yyu;
 
   // sub parsers
