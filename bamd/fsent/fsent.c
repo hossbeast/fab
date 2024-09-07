@@ -5,7 +5,6 @@
 #include <inttypes.h>
 
 #include "bam/ipc.h"
-#include "bam/stats.desc.h"
 #include "moria/graph.h"
 #include "moria/traverse.h"
 #include "moria/edge.h"
@@ -15,20 +14,20 @@
 #include "narrator/fixed.h"
 #include "bacon/value.h"
 #include "bacon/writer.h"
+#include "bacon/builder.h"
 #include "valyria/hashtable.h"
 #include "common/hash.h"
 #include "xlinux/xstdlib.h"
 #include "xlinux/xfcntl.h"
 #include "xlinux/xunistd.h"
-#include "bam/vertex.h"
 
 #include "fsent.h"
 #include "vertex.h"
-#include "configuration.h"
 #include "config.h"
+#include "configset.h"
 #include "dependency.h"
 #include "events.h"
-#include "filesystem.internal.h"
+#include "fstree.h"
 #include "formula.h"
 #include "fsedge.h"
 #include "channel.h"
@@ -36,14 +35,14 @@
 #include "params.h"
 #include "rule_module_association.h"
 #include "rule_system.h"
-#include "dir_rma.h"
+#include "dir_rma_edge.h"
 #include "rule.h"
 #include "shadow.h"
 #include "stats.h"
-#include "var.h"
+#include "varset.h"
 #include "channel.h"
 #include "vertex/probes.h"
-#include "rules.h"
+#include "ruleset.h"
 #include "lookup.h"
 #include "selection.h"
 #include "special_edge.h"
@@ -51,7 +50,12 @@
 #include "meta_edge.h"
 #include "entlist.h"
 #include "walker.h"
-#include "fsent_index.h"
+#include "fsindex.h"
+#include "plugin.h"
+#include "buildplan_entity.h"
+#include "config_system.h"
+#include "fsindex_edge.h"
+#include "notify.h"
 
 #include "common/attrs.h"
 #include "zcat.h"
@@ -75,18 +79,19 @@ const char *fsent_name_rules = FSENT_NAME_RULES;
 const char *fsent_name_var = FSENT_NAME_VAR;
 const char *fsent_name_config = FSENT_NAME_CONFIG;
 
-uint16_t fsent_valid_epoch;
-uint16_t fsent_module_epoch;
+uint16_t fsent_module_epoch = 1;
+uint16_t fsent_fstree_epoch;
 uint16_t fsent_account_epoch;
 
-llist fsent_list = LLIST_INITIALIZER(fsent_list);                   // active fsents
-static llist fsent_freelist = LLIST_INITIALIZER(fsent_freelist);    // free fsents
-static llist fsent_prunelist = LLIST_INITIALIZER(fsent_prunelist);  // fsent prune candidates
+llist fsent_list = LLIST_INITIALIZER(fsent_list);                       // active fsents
+static llist fsent_freelist = LLIST_INITIALIZER(fsent_freelist);        // free fsents
+static llist fsent_prunelist = LLIST_INITIALIZER(fsent_prunelist);      // fsent prune candidates
+static llist fsent_freshenlist = LLIST_INITIALIZER(fsent_freshenlist);  // fsent freshen candidates
 
 fsent *g_root;
 fsent *g_base;
-char g_base_path[PATH_MAX];
-uint16_t g_base_path_len;
+char g_base_dir[PATH_MAX] = "/base";
+uint16_t g_base_dir_len;
 int g_base_dirfd;
 
 attrs32 * fsent_property_attrs = (attrs32[]) {{
@@ -131,44 +136,27 @@ static void fsent_alloc(
     memset(n, 0, sizeof(*n));
   }
 
-  fsname_init(&n->name, label, label_len);
-  moria_vertex_initw(&n->vertex, &g_graph, attrs | kind | VERTEX_KIND_FSENT | VERTEX_FSE_BPE, n->name.name, n->name.namel);
+  fsent_name_init(&n->name, label, label_len);
+  moria_vertex_initw(&n->vertex, &g_graph, attrs | kind | VERTEX_KIND_FSENT, n->name.name, n->name.namel);
 
   n->in_epoch = -1;
   n->in_wd = -1;
   n->mod = 0;
-  n->valid_epoch = fsent_valid_epoch;
-  n->life_token = atomic_fetch_inc(&vertex_token_counter);
 
-  /* temp */
   n->fst = &fstree_root;
-  n->fs = n->fst->fs;
 
   llist_init(&n->pending.lln);
   n->pending.kind = SWEEPER_EVENT_SELF;
   rbtree_init(&n->pending_child);
   llist_init(&n->fs_reconcile_lln);
   llist_init(&n->prune_lln);
+  llist_init(&n->freshen_lln);
+  llist_init(&n->notify_watched_files_lln);
   llist_init(&n->bpe_reconcile_lln);
 
   llist_append(&fsent_list, &n->vertex.owner);
 
   *np = n;
-}
-
-/* create the root fsent (g_root) */
-static void root_init()
-{
-  fsent * n = 0;
-
-  fsent_alloc(&n, VERTEX_DIR, VERTEX_PROTECT_BIT | VERTEX_EXISTS_BIT, MMS("(root)"));
-
-  n->fst = &fstree_root;
-  n->fs = n->fst->fs;
-  n->path_hash = 0xface;
-  fsent_compute_identifiers(n);
-
-  g_root = n;
 }
 
 static size_t relative_path_cat(void * restrict dst, size_t sz, const fsent * subject, const fsent * base, size_t (*zcatw_fn)(void * restrict, size_t, const void * restrict, size_t))
@@ -204,8 +192,9 @@ static size_t relative_path_cat(void * restrict dst, size_t sz, const fsent * su
   }
 
   /* base is directly up from subject */
-  if(n == subject)
+  if(n == subject) {
     goto end;
+  }
 
   /* path from subject up -> base */
   n = subject;
@@ -250,45 +239,15 @@ end:
   {
     n = ns[x];
 
-    if(z)
+    if(z) {
       z += zcatw_fn(dst + z, sz - z, "/", 1);
+    }
     z += zcatw_fn(dst + z, sz - z, n->name.name, n->name.namel);
   }
 
   ((char*)dst)[z] = 0;
 
   return z;
-}
-
-static void refresh_module(fsent * restrict n)
-{
-  fsent *parent;
-
-  if(vertex_type_get(&n->vertex) == VERTEX_SHADOW_MODULE) {
-    return;
-  }
-
-  if(n->module_epoch == fsent_module_epoch) {
-    return;
-  }
-
-  n->module_epoch = fsent_module_epoch;
-
-  /* module directory has the module cached in the dirnode */
-  switch(vertex_type_get(&n->vertex)) {
-    case VERTEX_MODULE_DIR:
-      return;
-    default:
-      break;
-  }
-
-  /* the root node does not refresh */
-  if((parent = fsent_parent(n)) == 0) {
-    return;
-  }
-
-  refresh_module(parent);
-  n->mod = parent->mod;
 }
 
 //
@@ -340,7 +299,6 @@ void fsent_compute_identifiers(fsent * restrict fse)
   }
 
   fse->id_len = zcatf(fse->id, sizeof(fse->id), "%016"PRIx64, fse->path_hash);
-  fse->token_len = zcatf(fse->token, sizeof(fse->token), "%016"PRIx64, hash64(fse->path_hash, MM(fse->life_token)));
 }
 
 void fsent_release(fsent * restrict n)
@@ -353,12 +311,11 @@ void fsent_release(fsent * restrict n)
   RUNTIME_ASSERT(rbtree_empty(&v->up));
   RUNTIME_ASSERT(rbtree_empty(&v->down));
 
-  //if(vertex_filetype_get(v) == VERTEX_FILETYPE_DIR && vertex_shadowtype_get(v) == 0 && n->wd != -1) {
-  //  notify_thread_rm_watch(n);
-  //}
-  notify_thread_rm_watch(n);
+  notify_rm_watch(n);
   llist_delete(&n->fs_reconcile_lln);
   llist_delete(&n->prune_lln);
+  llist_delete(&n->freshen_lln);
+  llist_delete(&n->notify_watched_files_lln);
   llist_delete(&n->bpe_reconcile_lln);
 
   vertex_deleted_probe(&n->vertex);
@@ -369,26 +326,23 @@ void fsent_release(fsent * restrict n)
 // public
 //
 
-void fsent_setup()
+/* create the root fsent (g_root) */
+void fsent_root_setup()
 {
-  // setup basic nodes
-  root_init();
+  fsent * n = 0;
 
-  fsent_valid_epoch = 1;
-  fsent_module_epoch = 1;
+  fsent_alloc(&n, VERTEX_DIR, VERTEX_PROTECT_BIT | VERTEX_EXISTS_BIT, MMS("(root)"));
+
+  n->fst = &fstree_root;
+  n->path_hash = 0xface;
+  fsent_compute_identifiers(n);
+
+  g_root = n;
 }
 
-/* create g_base and attach it to the root */
-void fsent_system_bootstrap()
+void fsent_base_setup()
 {
-  graph_invalidation_context invalidation = { 0 };
-
-  graph_invalidation_begin(&invalidation);
-
-  fsent_graft(g_base_path, &g_base, &invalidation);
-  g_base_dirfd = xopens(O_PATH | O_DIRECTORY, g_base_path);
-
-  graph_invalidation_end(&invalidation);
+  fsent_graft(g_base_dir, &g_base);
 }
 
 void fsent_cleanup()
@@ -405,12 +359,12 @@ void fsent_cleanup()
   }
 }
 
-void fsent_reconfigure(configuration * restrict cfg, bool dryrun)
+void fsent_reconfigure(config * restrict cfg, bool dryrun)
 {
   return;
 }
 
-void fsent_graft(const char * restrict base, fsent ** restrict rn, graph_invalidation_context * restrict invalidation)
+void fsent_graft(const char * restrict base, fsent ** restrict rn)
 {
   fsent * parent;
   fsent * child = 0;
@@ -460,47 +414,12 @@ void fsent_graft(const char * restrict base, fsent ** restrict rn, graph_invalid
   *rn = child;
 }
 
-const struct filesystem *fsent_filesystem_get(fsent * restrict n)
-{
-  enum vertex_filetype filetype;
-
-  filetype = vertex_filetype_get(&n->vertex);
-  if(filetype != VERTEX_FILETYPE_DIR) {
-    n = fsent_parent(n);
-  }
-
-  RUNTIME_ASSERT(n->fs);
-  return n->fs;
-}
-
-struct module *fsent_module_get(const fsent * restrict n)
-{
-  enum vertex_filetype filetype;
-  const moria_vertex *v;
-
-  v = &n->vertex;
-  while(vertex_type_get(v) == VERTEX_SHADOW_LINK) {
-    v = v->ref;
-    if(!vertex_exists_get(v)) {
-      return 0; // dangling link
-    }
-  }
-  n = containerof(v, typeof(*n), vertex);
-
-  filetype = vertex_filetype_get(&n->vertex);
-  if(filetype != VERTEX_FILETYPE_DIR) {
-    n = fsent_parent(n);
-  }
-
-  refresh_module((fsent*)n);
-
-  return n->mod;
-}
-
 size_t fsent_absolute_path_cat(void * restrict dst, size_t sz, const fsent * restrict n)
 {
-  size_t z = 0;
   const fsent *base;
+  size_t z = 0;
+
+  RUNTIME_ASSERT(vertex_kind_get(&n->vertex) == VERTEX_KIND_FSENT);
 
   if(n == g_root)
   {
@@ -512,7 +431,7 @@ size_t fsent_absolute_path_cat(void * restrict dst, size_t sz, const fsent * res
     z += zcats(dst, sz, "//");
     return z;
   }
-  else if(vertex_shadowtype_get(&n->vertex))
+  else if(vertex_shadow_get(&n->vertex))
   {
     z += zcats(dst, sz, "//");
     base = g_shadow;
@@ -522,14 +441,14 @@ size_t fsent_absolute_path_cat(void * restrict dst, size_t sz, const fsent * res
     z += zcats(dst, sz, "/");
     base = g_root;
   }
-  z += fsent_relative_path_cat(dst + z, sz - z, n, base);
 
+  z += fsent_relative_path_cat(dst + z, sz - z, n, base);
   return z;
 }
 
 size_t fsent_path_cat(void * restrict dst, size_t sz, const fsent * restrict n)
 {
-  if(vertex_shadowtype_get(&n->vertex))
+  if(vertex_shadow_get(&n->vertex))
   {
     return fsent_absolute_path_cat(dst, sz, n);
   }
@@ -552,7 +471,6 @@ size_t fsent_base_relative_path_cat(void * restrict dst, size_t sz, const fsent 
 
 size_t fsent_property_cat(void * dst, size_t sz, const fsent * restrict n, fsent_property property, const fsent_property_context * restrict ctx)
 {
-  const filesystem *fs;
   uint32_t attrs;
   size_t z;
 
@@ -571,7 +489,7 @@ size_t fsent_property_cat(void * dst, size_t sz, const fsent * restrict n, fsent
       n = fsent_parent(n);
     }
 
-    if(property == FSENT_PROPERTY_ABSDIR || vertex_shadowtype_get(&n->vertex))
+    if(property == FSENT_PROPERTY_ABSDIR || vertex_shadow_get(&n->vertex))
     {
       z += fsent_absolute_path_cat(dst + z, sz - z, n);
     }
@@ -582,7 +500,7 @@ size_t fsent_property_cat(void * dst, size_t sz, const fsent * restrict n, fsent
   }
   else if(property == FSENT_PROPERTY_ABSPATH || property == FSENT_PROPERTY_RELPATH)
   {
-    if(property == FSENT_PROPERTY_ABSPATH || vertex_shadowtype_get(&n->vertex))
+    if(property == FSENT_PROPERTY_ABSPATH || vertex_shadow_get(&n->vertex))
     {
       z += fsent_absolute_path_cat(dst + z, sz - z, n);
     }
@@ -590,16 +508,6 @@ size_t fsent_property_cat(void * dst, size_t sz, const fsent * restrict n, fsent
     {
       z += fsent_relative_path_cat(dst + z, sz - z, n, ctx->cwd);
     }
-  }
-  else if(property == FSENT_PROPERTY_FSROOT)
-  {
-    fs = fsent_filesystem_get((fsent*)n);
-    z += filesystem_absolute_path_cat(dst + z, sz - z, fs);
-  }
-  else if(property == FSENT_PROPERTY_INVALIDATION)
-  {
-    fs = fsent_filesystem_get((fsent*)n);
-    z += attrs16_zcat(dst + z, sz - z, invalidate_attrs, fs->invalidate);
   }
   else if(property == FSENT_PROPERTY_STATE)
   {
@@ -681,6 +589,7 @@ fsent *fsent_path_lookup(
 {
   uint16_t label_len;
   const moria_vertex *v;
+  const moria_vertex *next;
 
   if(path_len >= 2 && memcmp(path, "//", 2) == 0) {
     v = &g_shadow->vertex;
@@ -701,32 +610,41 @@ fsent *fsent_path_lookup(
       label_len++;
     }
 
-    if(memncmp(path, label_len, ".", 1) == 0)
+    if(memncmp(path, label_len, ".", 1) != 0)
     {
-
-    }
-    else if(memncmp(path, label_len, "..", 2) == 0)
-    {
-      if((v = moria_vertex_up(v)) == 0) {
-        break;
-      }
-    }
-    else
-    {
-      if((v = moria_vertex_downw(v, path, label_len)) == 0) {
-        break;
-      }
-
-      while(!nofollow && vertex_type_get(v) == VERTEX_SHADOW_LINK) {
-        v = v->ref;
-      }
-      if(vertex_shadowtype_get(v) == VERTEX_SHADOWTYPE_CONTEXT_MODULE) {
-        if(mod) {
-          v = &mod->shadow->vertex;
-        } else {
-          v = 0;
+      if(memncmp(path, label_len, "..", 2) == 0)
+      {
+        if((v = moria_vertex_up(v)) == 0) {
+          break;
         }
       }
+      else
+      {
+        if((v = moria_vertex_downw(v, path, label_len)) == 0) {
+          break;
+        }
+      }
+
+      next = v;
+      do {
+        v = next;
+        switch(vertex_type_get(v)) {
+          case VERTEX_CONTEXT_MODULE:
+            if(mod) {
+              next = &mod->shadow->vertex;
+            }
+            break;
+          case VERTEX_SHADOW_LINK:
+            /* this particular link is always followed */
+            if(vertex_type_get(v->ref) == VERTEX_CONTEXT_MODULE) {
+              next = v->ref;
+            } else if(!nofollow) {
+              next = v->ref;
+            }
+          default:
+            break;
+        }
+      } while(next != v);
     }
 
     if(path[label_len] == '/') {
@@ -748,12 +666,10 @@ void fsent_formula_bootstrap(fsent * restrict fse, graph_invalidation_context * 
 {
   formula *fml;
   uint64_t u64;
-  uint64_t token;
 
   if(vertex_type_get(&fse->vertex) == VERTEX_FORMULA_FILE) {
     return;
   }
-  vertex_type_set(&fse->vertex, VERTEX_FORMULA_FILE);
 
   formula_create(&fml, &g_graph);
   fsent_absolute_path_cat(fml->abspath, sizeof(fml->abspath), fse);
@@ -762,64 +678,100 @@ void fsent_formula_bootstrap(fsent * restrict fse, graph_invalidation_context * 
   // realpath hash
   u64 = hash64(0, fml->abspath, fml->abspath_len);
   fml->id_len = zcatf(fml->id, sizeof(fml->id), "%016"PRIx64, u64);
-  token = atomic_fetch_inc(&vertex_token_counter);
-  fml->token_len = zcatf(fml->token, sizeof(fml->token), "%016"PRIx64, hash64(u64, MM(token)));
+  fml->vertex.label = fml->id;
+  fml->vertex.label_len = fml->id_len;
 
   fml->self_node = fse;
   fse->self_fml = fml;
-  special_connect(&fse->vertex, &fml->vertex, EDGE_FML_SPECIAL, invalidation);
+  special_connect(&fse->vertex, &fml->vertex, invalidation);
+
+  /* shadow link to the special node itself */
+  shadow_link(g_shadow_formulas, fml->id, fml->id_len, &fml->vertex, &fml->link);
+  vertex_type_set(&fse->vertex, VERTEX_FORMULA_FILE);
 }
 
-void fsent_var_bootstrap(fsent * restrict fse, graph_invalidation_context * restrict invalidation)
+void fsent_varset_bootstrap(fsent * restrict fse, graph_invalidation_context * restrict invalidation)
 {
-  struct var *var;
+  struct varset *var;
   uint64_t u64;
-  uint64_t token;
 
-  if(vertex_type_get(&fse->vertex) == VERTEX_VAR_FILE) {
+  if(vertex_type_get(&fse->vertex) == VERTEX_VARSET_FILE) {
     return;
   }
-  vertex_type_set(&fse->vertex, VERTEX_VAR_FILE);
 
-  var_alloc(&var, &g_graph);
+  varset_alloc(&var, &g_graph);
   fsent_absolute_path_cat(var->self_node_abspath, sizeof(var->self_node_abspath), fse);
   var->self_node_abspath_len = strlen(var->self_node_abspath);
 
   // realpath hash
   u64 = hash64(0, var->self_node_abspath, var->self_node_abspath_len);
   var->id_len = zcatf(var->id, sizeof(var->id), "%016"PRIx64, u64);
-  token = atomic_fetch_inc(&vertex_token_counter);
-  var->token_len = zcatf(var->token, sizeof(var->token), "%016"PRIx64, hash64(u64, MM(token)));
+  var->vertex.label = var->id;
+  var->vertex.label_len = var->id_len;
 
   fse->self_var = var;
   var->self_node = fse;
-  special_connect(&fse->vertex, &var->vertex, EDGE_VAR_SPECIAL, invalidation);
+  special_connect(&fse->vertex, &var->vertex, invalidation);
+
+  /* shadow link to the special node itself */
+  shadow_link(g_shadow_varsets, var->id, var->id_len, &var->vertex, &var->link);
+  vertex_type_set(&fse->vertex, VERTEX_VARSET_FILE);
 }
 
-void fsent_config_bootstrap(fsent * restrict fse, graph_invalidation_context * restrict invalidation)
+void fsent_configset_bootstrap(fsent * restrict fse, graph_invalidation_context * restrict invalidation)
 {
-  config *cfg;
+  configset *cfg;
   uint64_t u64;
-  uint64_t token;
 
-  if(vertex_type_get(&fse->vertex) == VERTEX_CONFIG_FILE) {
+  if(vertex_type_get(&fse->vertex) == VERTEX_CONFIGSET_FILE) {
     return;
   }
-  vertex_type_set(&fse->vertex, VERTEX_CONFIG_FILE);
 
-  config_alloc(&cfg);
+  configset_alloc(&cfg);
   fsent_absolute_path_cat(cfg->self_node_abspath, sizeof(cfg->self_node_abspath), fse);
   cfg->self_node_abspath_len = strlen(cfg->self_node_abspath);
 
   // realpath hash
   u64 = hash64(0, cfg->self_node_abspath, cfg->self_node_abspath_len);
   cfg->id_len = zcatf(cfg->id, sizeof(cfg->id), "%016"PRIx64, u64);
-  token = atomic_fetch_inc(&vertex_token_counter);
-  cfg->token_len = zcatf(cfg->token, sizeof(cfg->token), "%016"PRIx64, hash64(u64, MM(token)));
+  cfg->vertex.label = cfg->id;
+  cfg->vertex.label_len = cfg->id_len;
 
-  fse->self_config = cfg;
+  fse->self_configset = cfg;
   cfg->self_node = fse;
-  special_connect(&fse->vertex, &cfg->vertex, EDGE_CONFIG_SPECIAL, invalidation);
+  special_connect(&fse->vertex, &cfg->vertex, invalidation);
+
+  /* shadow link to the special node itself */
+  shadow_link(g_shadow_configsets, cfg->id, cfg->id_len, &cfg->vertex, &cfg->link);
+  vertex_type_set(&fse->vertex, VERTEX_CONFIGSET_FILE);
+}
+
+void fsent_plugin_bootstrap(fsent * restrict fse, graph_invalidation_context * restrict invalidation)
+{
+  struct plugin *plugin;
+  uint64_t u64;
+
+  if(vertex_type_get(&fse->vertex) == VERTEX_PLUGIN_FILE) {
+    return;
+  }
+
+  plugin_alloc(&plugin);
+  fsent_absolute_path_cat(plugin->self_node_abspath, sizeof(plugin->self_node_abspath), fse);
+  plugin->self_node_abspath_len = strlen(plugin->self_node_abspath);
+
+  // realpath hash
+  u64 = hash64(0, plugin->self_node_abspath, plugin->self_node_abspath_len);
+  plugin->id_len = zcatf(plugin->id, sizeof(plugin->id), "%016"PRIx64, u64);
+  plugin->vertex.label = plugin->id;
+  plugin->vertex.label_len = plugin->id_len;
+
+  fse->self_plugin = plugin;
+  plugin->self_node = fse;
+  special_connect(&fse->vertex, &plugin->vertex, invalidation);
+
+  /* shadow link to the special node itself */
+  shadow_link(g_shadow_plugins, plugin->id, plugin->id_len, &plugin->vertex, &plugin->link);
+  vertex_type_set(&fse->vertex, VERTEX_PLUGIN_FILE);
 }
 
 uint64_t fsent_abspath_hash(const fsent * restrict fse)
@@ -837,15 +789,15 @@ uint64_t fsent_abspath_hash(const fsent * restrict fse)
 
 void fsent_unlink(fsent *n, entlist * restrict edges, graph_invalidation_context * restrict invalidation)
 {
-  bamipc_message *msg;
+  event_bacon *msg;
   uint16_t z;
-  channel *chan;
   moria_vertex *v;
   moria_edge *edge;
   moria_foreach_state st;
   fsent *p;
+  events_context ectx;
 
-  fsent_index_del(n, invalidation);
+  fsindex_del(n, invalidation);
   llist_delete(&n->fs_reconcile_lln);
 
   v = &n->vertex;
@@ -868,11 +820,7 @@ void fsent_unlink(fsent *n, entlist * restrict edges, graph_invalidation_context
    * from actually being deleted, as opposed to be marked as not exists */
   moria_foreach_edge_up(&st, v, edge) {
     switch(edge_type_get(edge)) {
-      case EDGE_MODULE_SPECIAL:
-      case EDGE_RULES_SPECIAL:
-      case EDGE_VAR_SPECIAL:
-      case EDGE_CONFIG_SPECIAL:
-      case EDGE_FML_SPECIAL:
+      case EDGE_SPECIAL:
       case EDGE_DIR_RMA:
         entlist_push(edges, edge);
     /* NOTE dependency edges are preserved here. Those will be reaped the next time
@@ -883,34 +831,14 @@ void fsent_unlink(fsent *n, entlist * restrict edges, graph_invalidation_context
     }
   }
 
-  /* also remove related edges, e.g. //module/{imports,uses} */
-  if(n->shadow_imports_edge) {
-    entlist_push(edges, n->shadow_imports_edge);
-  }
-  if(n->shadow_uses_edge) {
-    entlist_push(edges, n->shadow_uses_edge);
-  }
-  if(n->shadow_rules_edge) {
-    entlist_push(edges, n->shadow_rules_edge);
-  }
-  if(n->shadow_var_edge) {
-    entlist_push(edges, n->shadow_var_edge);
-  }
-
-  if(v->attrs & VERTEX_SHIELD_BIT) {
-    vertex_state_set(v, VERTEX_UNCREATED);
-  } else {
-    vertex_state_set(v, VERTEX_UNLINKED);
-  }
-
+  vertex_state_set(v, VERTEX_UNLINKED);
   vertex_unlinked_probe(&n->vertex);
 
-  if(events_would(BAMIPC_EVENT_NODE_DELETE, &chan, &msg))
-  {
-    z = vertex_path_load(msg->text, sizeof(msg->text), &n->vertex);
+  if((msg = events_bacon_would(&ectx, BAMIPC_EVENT_NODE_DELETE))) {
+    z = vertex_path_cat(msg->text, sizeof(msg->text), &n->vertex);
     msg->size = z;
     msg->id = 0;
-    events_publish(chan, msg);
+    events_publish(&ectx);
   }
 }
 
@@ -964,36 +892,6 @@ fsent *fsent_translate(fsent * fse, const fsent *origin, const fsent *target, gr
   return containerof(v, fsent, vertex);
 }
 
-size_t fsent_dir_stats_collate(void *dst, size_t sz, bool reset, fsent * restrict n)
-{
-  size_t z;
-  bam_fsent_dir_stats *stats;
-  bam_fsent_dir_stats tmp;
-  moria_foreach_state st;
-  moria_edge *edge;
-
-  /* base fsent stats */
-  z = 0;
-  z += vertex_stats_collate(dst + z, sz - z, reset, &n->vertex);
-
-  /* dirnode specific stats */
-  memcpy(&tmp, &n->dirstats, sizeof(tmp));
-  if(reset) {
-    memset(&n->dirstats, 0, sizeof(n->dirstats));
-  }
-  stats = &tmp;
-
-  moria_foreach_edge_up(&st, &n->vertex, edge) {
-    if(edge_type_get(edge) == EDGE_DIR_RMA) {
-      stats->rules++;
-    }
-  }
-
-  z += descriptor_marshal_object(dst + z, sz - z, &descriptor_bam_fsent_dir_stats, &stats->record, 0);
-
-  return z;
-}
-
 bool fsent_is_descendant_of(const fsent * restrict ancestor, const fsent * restrict n)
 {
   const fsent *p;
@@ -1016,69 +914,51 @@ bool fsent_is_self_or_descendant(const fsent * restrict ancestor, const fsent * 
   return fsent_is_descendant_of(ancestor, n);
 }
 
-bool fsent_is_mounted(const fsent * restrict n)
+static bool fsent_possibly_primary(const fsent * restrict fse)
 {
-  const fsent *p;
-  const walker_entry *entry;
-
-  for(p = n; p; p = fsent_parent(p)) {
-    if(p == g_base) {
+  switch(vertex_type_get(&fse->vertex)) {
+    case VERTEX_FILE:
+    case VERTEX_SHADOW_FILE:
       return true;
-    }
+    default:
+      return false;
+  }
+}
 
-    llist_foreach(&walker_include_entry_list, entry, lln) {
-      if(p == entry->n) {
-        return true;
-      }
+bool fsent_is_primary(const fsent * restrict fse)
+{
+  moria_foreach_state st;
+  moria_edge *edge;
+
+  if(!fsent_possibly_primary(fse)) {
+    return false;
+  }
+
+  moria_foreach_edge_down(&st, &fse->vertex, edge) {
+    switch(edge_type_get(edge)) {
+      case EDGE_BPE_TGT:
+        return false;
+      default:
     }
   }
 
-  return false;
+  return true;
+}
+
+void fsent_freshen_candidate(fsent * restrict fse)
+{
+  if(!fsent_is_primary(fse)) {
+    return;
+  }
+
+  llist_delete(&fse->freshen_lln);
+  llist_push(&fsent_freshenlist, &fse->freshen_lln);
 }
 
 void fsent_prune_candidate(fsent * restrict fse)
 {
   llist_delete(&fse->prune_lln);
   llist_push(&fsent_prunelist, &fse->prune_lln);
-}
-
-/* returns true if the node is in a referenced subtree */
-static bool fsent_account_check(const fsent * restrict p)
-{
-  const fsent *n;
-  const walker_entry *entry;
-
-  n = p;
-  if(vertex_type_get(&n->vertex) != VERTEX_DIR) {
-    n = fsent_parent(n);
-  }
-
-  /* if n is in the ancestry of one of the mount points */
-  if(fsent_is_descendant_of(n, g_base)) {
-    return true;
-  }
-  if(fsent_is_descendant_of(n, system_config_node)) {
-    return true;
-  }
-  if(fsent_is_descendant_of(n, user_config_node)) {
-    return true;
-  }
-  llist_foreach(&walker_include_entry_list, entry, lln) {
-    if(fsent_is_descendant_of(n, entry->n)) {
-      return true;
-    }
-  }
-
-  /* if n lies within one of the mount points */
-  while(n) {
-    if(n->account_epoch == fsent_account_epoch) {
-      return true;
-    }
-
-    n = fsent_parent(n);
-  }
-
-  return false;
 }
 
 /* preorder */
@@ -1091,53 +971,49 @@ static void refresh_fstree_visitor(
 )
 {
   fsent *parent;
-  fsent *n;
+  fsent *fse;
+  const fstree *fst;
   graph_invalidation_context * restrict invalidation;
 
-  n = containerof(v, typeof(*n), vertex);
+  fse = containerof(v, typeof(*fse), vertex);
   invalidation = arg;
 
-  /* the root node does not refresh */
-  if((parent = fsent_parent(n)) == 0) {
-    return;
-  }
+  parent = fsent_parent(fse);
 
-  STATS_INC(g_stats.fstree_refresh);
-
-  n->fst = 0;
-  n->fs = 0;
-  if(parent->fst) {
-    if((n->fst = fstree_down((struct fstree *)parent->fst, n->name.name, n->name.namel))) {
-      n->fs = n->fst->fs;
-    }
+  /* this is effective for all nodes under the root to receive the updated fst assignment
+   * because, on cleanup, fstrees reset base->fst to point at fstree_root */
+  if(fse->fst == &fstree_root) {
+    fse->fst = parent->fst;
   }
+  fst = fse->fst;
 
-  if(!n->fs) {
-    n->fs = parent->fs;
-  }
+  filesystem_stats.fstree_refresh++;
 
   /* filesystem indexed transitions */
-  if(n->fs->indexed && !n->ie) {
-    fsent_index_put(n, invalidation);
-  } else if(!n->fs->indexed && n->ie) {
-    fsent_index_del(n, invalidation);
+  if(fst->index && !fse->ie) {
+    fsindex_put(fse, invalidation);
+  } else if(!fst->index && fse->ie) {
+    fsindex_del(fse, invalidation);
   }
 
   /* filesystem notify transitions */
-  if(n->fs->invalidate == INVALIDATE_NOTIFY) {
-    if(fsent_is_mounted(n)) {
-      notify_thread_add_watch(n);
+  if(fst->invalidation == INVALIDATION_NOTIFY) {
+    if(fst->mount) {
+      notify_add_watch(fse);
     }
-  } else if(n->fs->invalidate != INVALIDATE_NOTIFY) {
-    notify_thread_rm_watch(n);
+  } else if(fst->invalidation != INVALIDATION_NOTIFY) {
+    notify_rm_watch(fse);
   }
 }
 
 void fsent_fstree_refresh(graph_invalidation_context * restrict invalidation)
 {
-  /* preorder traversal of directories from the root
+  fsent *fse;
+  const fstree *fst;
+  llist *lln;
+
+  /* preorder traversal of all directories from the root
    *  fse -> fst assignments
-   *  fse -> module assignments
    */
   moria_traverse_vertices(
       &g_graph
@@ -1149,54 +1025,154 @@ void fsent_fstree_refresh(graph_invalidation_context * restrict invalidation)
         , edge_visit : EDGE_FSTREE
         , vertex_travel : VERTEX_FILETYPE_DIR
         , vertex_visit : VERTEX_FILETYPE_DIR
+        , min_depth : 1
+        , max_depth : UINT16_MAX
       }}
-    , MORIA_TRAVERSE_DOWN | MORIA_TRAVERSE_PRE
+    , MORIA_TRAVERSE_DOWN | MORIA_TRAVERSE_PRE | MORIA_TRAVERSE_DEPTH
     , invalidation
   );
+
+  /* directly watched files are also re-considered */
+  llist_foreach_safe(&notify_watched_files, fse, notify_watched_files_lln, lln) {
+    fst = fsent_parent(fse)->fst;
+
+    if(fst->invalidation == INVALIDATION_NOTIFY && !fst->mount) {
+      continue;
+    }
+
+    /* this file either no longer needs to be watched, or it is being watched via its directory */
+    notify_rm_watch(fse);
+  }
 }
 
-void fsent_reconcile(graph_invalidation_context * restrict invalidation)
+uint32_t fsent_invalidate_primary(graph_invalidation_context * restrict invalidation)
+{
+  fsent *fse;
+  uint32_t count;
+
+  count = 0;
+  llist_foreach(&fsent_list, fse, vertex.owner) {
+    if(vertex_invalid_get(&fse->vertex)) {
+      continue;
+    }
+    if(!fsent_is_primary(fse)) {
+      continue;
+    }
+
+    count++;
+    vertex_invalidate(&fse->vertex, invalidation);
+  }
+
+  return count;
+}
+
+void fsent_freshen_reconcile()
+{
+  fsent *fse;
+  llist *head, *ent;
+
+  head = &fsent_freshenlist;
+
+  for(ent = head->next; ent != head; ent = ent->next) {
+    fse = containerof(ent, typeof(*fse), freshen_lln);
+
+    if(!fsent_is_primary(fse)) {
+      continue;
+    }
+
+    vertex_mark_fresh(&fse->vertex);
+  }
+
+  while(llist_shift(&fsent_freshenlist, typeof(*fse), freshen_lln));
+}
+
+void fsent_fstree_reconcile(graph_invalidation_context * restrict invalidation)
 {
   fsent *fse;
   fsent *parent;
-  walker_entry *entry;
   moria_edge *edge;
   entlist list;
 
-  /* mark mounted trees */
-  fsent_account_epoch++;
-  g_base->account_epoch = fsent_account_epoch;
-  entry = llist_first(&walker_include_entry_list, typeof(*entry), lln);
-  while(entry) {
-    entry->n->account_epoch = fsent_account_epoch;
-    entry = llist_next(&walker_include_entry_list, entry, lln);
-  }
+  /* propagate fstree assignments */
+  fsent_fstree_refresh(invalidation);
 
-  /* list of unrefeferenced subtrees */
+  /* enumerate unmounted subtrees */
   entlist_init(&list);
   while((fse = llist_shift(&fsent_prunelist, typeof(*fse), prune_lln))) {
     if(vertex_type_get(&fse->vertex) != VERTEX_DIR) {
       continue;
     }
-    if(fsent_account_check(fse)) {
-      continue;
-    }
 
-    /* traverse upwards to the root of the unreferenced subtree */
-    do {
+    /* gather upwards edges to disintegrate until reaching a dirent that
+     * is either an fstree base or within a mounted fstree */
+    while(1)
+    {
+      /* in the descendants of this mounted fstree ? */
+      if(fse->fst->mount && fsent_is_descendant_of(fse->fst->base, fse)) {
+        break;
+      }
+
+      /* in the ancestry of any fstree ? */
+      if(fstree_in_ancestry(fse)) {
+        break;
+      }
+
       parent = fsent_parent(fse);
       edge = moria_edge_between(&fse->vertex, &parent->vertex);
-
       entlist_push(&list, edge);
       fse = parent;
-    } while(!fsent_account_check(fse));
+    }
   }
 
-  /* disintegrate */
+  /* disintegrate unmounted subtrees */
   fsedge_disintegrate_bulk(&list, invalidation);
   entlist_destroy(&list);
+}
 
-  fsent_fstree_refresh(invalidation);
+/* preorder */
+static void refresh_modules_visitor(
+    moria_vertex *v
+  , void *arg
+  , moria_traversal_mode mode
+  , int distance
+  , moria_traverse_result * restrict result
+)
+{
+  fsent *parent;
+  fsent *fse;
+
+  fse = containerof(v, typeof(*fse), vertex);
+
+  /* the root node does not refresh */
+  if((parent = fsent_parent(fse)) == 0) {
+    return;
+  }
+
+  /* propagate fse->mod */
+  if(vertex_type_get(&fse->vertex) == VERTEX_DIR) {
+    fse->mod = parent->mod;
+  }
+}
+
+void fsent_modules_reconcile()
+{
+  /* preorder traversal of directories from the root
+   *  fse -> mod assignments
+   */
+  moria_traverse_vertices(
+      &g_graph
+    , &g_root->vertex
+    , refresh_modules_visitor
+    , 0
+    , (moria_traversal_criteria[]) {{
+          edge_travel: EDGE_FSTREE
+        , edge_visit : EDGE_FSTREE
+        , vertex_travel : VERTEX_FILETYPE_DIR
+        , vertex_visit : VERTEX_FILETYPE_DIR
+      }}
+    , MORIA_TRAVERSE_DOWN | MORIA_TRAVERSE_PRE
+    , 0
+  );
 }
 
 void fsent_promote_dir(fsent * restrict fse)
@@ -1215,4 +1191,138 @@ void fsent_promote_dir(fsent * restrict fse)
   }
 
   filesystem_mkdir_push(fse);
+}
+
+static void fsent_stats_collate(fsent * restrict fse, bool reset)
+{
+  moria_foreach_state st;
+  moria_edge *edge;
+  stats_fsent_dir *dirstats;
+
+  if(reset) {
+    memset(&fse->stats, 0, sizeof(fse->stats));
+    memset(&fse->dirstats, 0, sizeof(fse->dirstats));
+  }
+
+  fse->stats.indexed_notify = fse->in_wd != -1;
+
+  if(vertex_filetype_get(&fse->vertex) != VERTEX_FILETYPE_DIR) {
+    return;
+  }
+
+  dirstats = &fse->dirstats;
+  dirstats->indexed_lookup = fse->ie != NULL;
+  dirstats->rules = 0;
+  moria_foreach_edge(&st, &fse->vertex, edge) {
+    if(edge_type_get(edge) == EDGE_DIR_RMA) {
+      dirstats->rules++;
+    }
+  }
+}
+
+void fsent_stats_build(fsent * restrict fse, bool reset, struct bacon_writer * restrict builder_writer)
+{
+  fsent_stats_collate(fse, reset);
+
+  stats_build(&fse->stats.record, &descriptor_stats_vertex, builder_writer);
+
+  if(vertex_filetype_get(&fse->vertex) == VERTEX_FILETYPE_DIR) {
+    stats_build(&fse->dirstats.record, &descriptor_stats_fsent_dir, builder_writer);
+  }
+}
+
+void fsent_mappings(const fsent * restrict fse, bacon_writer * restrict builder_writer)
+{
+  moria_foreach_state st;
+  moria_edge *e;
+  bool b;
+
+  vertex_mappings(&fse->vertex, builder_writer);
+
+  if(vertex_filetype_get(&fse->vertex) == VERTEX_FILETYPE_DIR) {
+    MAPPING STRING("fstree")
+    vertex_path_describe(&vertex_fstree_get(&fse->vertex)->vertex, builder_writer);
+    if (fse->ie) {
+      { MAPPING STRING("index")
+        vertex_path_describe(fse->ie->edge.A, builder_writer);
+      }
+    }
+  }
+
+  /* bpe sources */
+  b = false;
+  moria_foreach_edge(&st, &fse->vertex, e) {
+    switch(edge_type_get(e)) {
+      case EDGE_SRC_BPE:
+        b = true;
+        break;
+      default:
+    }
+    break;
+  }
+  if(b) {
+    { MAPPING STRING("bpe-src")
+      { SET
+        moria_foreach_edge(&st, &fse->vertex, e) {
+          switch(edge_type_get(e)) {
+            case EDGE_SRC_BPE:
+              if((e->attrs & MORIA_EDGE_HYPER)) {
+                vertex_path_describe(e->Alist[0].v, builder_writer);
+              } else {
+                vertex_path_describe(e->A, builder_writer);
+              }
+              break;
+            default:
+          }
+        }
+      }
+    }
+  }
+
+  /* bpe targets */
+  b = false;
+  moria_foreach_edge(&st, &fse->vertex, e) {
+    switch(edge_type_get(e)) {
+      case EDGE_BPE_TGT:
+        b = true;
+        break;
+      default:
+        continue;
+    }
+    break;
+  }
+  if(b) {
+    { MAPPING STRING("bpe-tgt")
+      { SET
+        moria_foreach_edge(&st, &fse->vertex, e) {
+          switch(edge_type_get(e)) {
+            case EDGE_BPE_TGT:
+              if((e->attrs & MORIA_EDGE_HYPER)) {
+                vertex_path_describe(e->Blist[0].v, builder_writer);
+              } else {
+                vertex_path_describe(e->B, builder_writer);
+              }
+              break;
+            default:
+              continue;
+          }
+        }
+      }
+    }
+  }
+}
+
+void fsent_describe(fsent * restrict fse, bacon_writer * restrict builder_writer)
+{
+  { MAPPING
+    vertex_path_describe(&fse->vertex, builder_writer);
+    { SET
+      fsent_mappings(fse, builder_writer);
+      { MAPPING STRING("stats")
+        { SET
+          fsent_stats_build(fse, false, builder_writer);
+        }
+      }
+    }
+  }
 }

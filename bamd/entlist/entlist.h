@@ -28,6 +28,13 @@ void entlist_push(entlist * restrict list, const void * restrict p)
 void entlist_unshift(entlist * restrict list, const void * restrict p)
   __attribute__((nonnull));
 
+#define entlist_foreach_node(head, node)                        \
+  for(                                                          \
+    node = containerof((head)->lln.next, typeof(*node), lln);   \
+    node != head;                                               \
+    node = containerof(node->lln.next, typeof(*node), lln)      \
+  )
+
 #define entlist_foreach(head, item, node)                       \
   for(                                                          \
     node = containerof((head)->lln.next, typeof(*node), lln);   \

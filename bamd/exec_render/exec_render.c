@@ -20,7 +20,7 @@
 #include "module.h"
 #include "sysvar.h"
 #include "channel.h"
-#include "system_state.h"
+#include "system.h"
 #include "events.h"
 #include "dependency.h"
 #include "buildplan_entity.h"
@@ -180,8 +180,8 @@ void exec_render_formula_value(exec_render_context * restrict ctx, const formula
   exec_builder_args base_add_args;
   selected *sn;
   const path_cache_entry *pe;
-  bamipc_message *msg;
-  channel *chan;
+  event_bacon *msg;
+  events_context ectx;
   narrator_fixed fixed;
   bacon_writer writer, *builder_writer;
 
@@ -213,7 +213,8 @@ void exec_render_formula_value(exec_render_context * restrict ctx, const formula
   }
   else if(val->type == FORMULA_VALUE_SELECT)
   {
-    selector_exec(val->op.selector, &ctx->selector_context, SELECTION_ITERATION_TYPE_ORDER);
+    ctx->selector_context.iteration_type = SELECTION_ITERATION_TYPE_ORDER;
+    selector_exec(val->op.selector, &ctx->selector_context);
   }
   else if(val->type == FORMULA_VALUE_PROPERTY)
   {
@@ -260,7 +261,7 @@ void exec_render_formula_value(exec_render_context * restrict ctx, const formula
     path_cache_search(&pe, MMS(val->op.operand->s));
     if(pe->fd == -1)
     {
-      msg = system_error_event(&chan);
+      msg = system_error_event(&ectx);
       msg->code = ENOENT;
       narrator_fixed_init(&fixed, msg->text, sizeof(msg->text));
       bacon_writer_init(&writer);
@@ -283,7 +284,7 @@ void exec_render_formula_value(exec_render_context * restrict ctx, const formula
       }
       bacon_writer_close(builder_writer);
       msg->size = fixed.l;
-      events_publish(chan, msg);
+      events_publish(&ectx);
       return;
     }
 

@@ -7,7 +7,7 @@
 #include "xunit.h"
 #include "xunit/assert.h"
 
-#include "fsname.h"
+#include "fsent_name.h"
 #include "macros.h"
 
 #define istrlen(a) a ? strlen(a) : 0
@@ -26,8 +26,8 @@ static void path_test_entry(xunit_test * _test)
 {
   path_test * test = containerof(_test, path_test, xu);
 
-  fsname p;
-  fsname_init(&p, MMS(test->input));
+  fsent_name p;
+  fsent_name_init(&p, MMS(test->input));
 
   assert_eq_w(test->name, istrlen(test->name), p.name, p.namel);
   assert_eq_w(test->ext, istrlen(test->ext), p.ext, p.extl);

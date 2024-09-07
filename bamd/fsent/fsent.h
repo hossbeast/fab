@@ -16,28 +16,28 @@ unlinked fsents are not matched by rules. uncreated fsents are matched by rules.
 
 #include "valyria/llist.h"
 #include "valyria/rbtree.h"
-#include "bam/stats.h"
 
 #include "graph.h"
 #include "sweeper_thread.h"
 #include "notify_thread.h"
-#include "fsname.h"
+#include "fsent_name.h"
 #include "module.h"
+#include "stats_fsent_dir.h"
 
 struct attrs32;
-struct configuration;
+struct bacon_writer;
 struct buildplan_entity;
+struct config;
+struct configset;
 struct filesystem;
 struct formula;
 struct fsedge;
 struct fstree;
 struct graph_invalidation_context;
-struct map;
 struct narrator;
-struct var;
-struct bacon_writer;
+struct plugin;
 struct rule_module_association;
-struct bind_module_association;
+struct varset;
 
 enum moria_traversal_mode;
 
@@ -47,38 +47,26 @@ extern const char *fsent_name_var;
 extern const char *fsent_name_config;
 
 // globally scoped fsents
-extern struct fsent * g_root;            // directory node at /
-extern struct fsent * g_base;             // directory node at the base directory
-extern char g_base_path[PATH_MAX];
-extern uint16_t g_base_path_len;
+extern struct fsent *g_root;            // directory node at /
+extern struct fsent *g_base;            // directory node at the base directory
+extern char g_base_dir[PATH_MAX];
+extern uint16_t g_base_dir_len;
 extern int g_base_dirfd;
-
-// fsent lookup by inotify watch descriptor
-extern struct map * g_fsent_by_wd;
 
 // active list
 extern llist fsent_list;
 
-extern uint16_t fsent_valid_epoch;        // when this changes, all fsents are invalid
-extern uint16_t fsent_module_epoch;       // when this changes, all fsent <-> module mappings are invalid
+extern uint16_t fsent_module_epoch;       // when this changes, fsent <-> module mappings are discarded
+extern uint16_t fsent_fstree_epoch;       // when this changes, fsent <-> fstree mappings are discarded
 
 // VERTEX_TYPE_FSENT
 typedef struct fsent {
   moria_vertex vertex;
 
-  struct fsname name;               // node name (not the full path)
+  struct fsent_name name;           // node name (not the full path)
+  uint64_t path_hash;               // hash over the full path to this node
   char id[40];
   uint16_t id_len;
-  char token[40];
-  uint16_t token_len;
-
-  uint64_t path_hash;               // hash over the full path to this node
-  uint64_t life_token;              // increases on recycle
-
-  /* cached */
-  /* if set, then */
-  /*  exists : bpe -> EDGE_BPE_TGT -> fsent (this) */
-  bool is_target;
 
   /* if set, then */
   /*  exists : bpe -> EDGE_BPE_TGT -> fsent (this) */
@@ -86,23 +74,28 @@ typedef struct fsent {
   struct buildplan_entity *bpe;
 
   /* if set, then */
-  /*  exists : fsent (this) -> EDGE_INDEX -> index_vertex */
-  struct index_edge *ie;
+  /*  exists : fsent (this) -> EDGE_DIR_FSINDEX -> fsname */
+  struct fsindex_edge *ie;
 
-  /* related edges */
-  struct fsedge *shadow_imports_edge;   // e.g. //module/imports/*
-  struct fsedge *shadow_uses_edge;      // e.g. //module/uses/*
-  struct fsedge *shadow_rules_edge;     // e.g. //module/uses/*
-  struct fsedge *shadow_var_edge;       // e.g. //module/var/*
-
-  /* directory : candidate for cleanup */
+  /* fsent reconcile
+   *  dir : cleanup no-longer-referenced subtrees */
   llist prune_lln;
 
-  /* dir : mkdirs
-   * symlink : readlink */
+  /* fsent reconcile
+   *  reg : freshen invalidated primary nodes */
+  llist freshen_lln;
+
+  /* filesystem reconcile
+   *  dir : mkdirs
+   *  symlink : readlink */
   llist fs_reconcile_lln;
 
+  /* buildplan reconcile
+   *  check for targets conflict */
   llist bpe_reconcile_lln;
+
+  /* fsent_fstree_reconcile */
+  llist notify_watched_files_lln;
 
   union {
     struct {                        // VERTEX_FILETYPE_DIR
@@ -110,9 +103,8 @@ typedef struct fsent {
       struct module *mod;           // module the directory belongs to (nearest ancestor)
       uint16_t module_epoch;
 
-      const struct filesystem *fs;  // not null
-      const struct fstree *fst;     // not null if the fs is rooted at this node
-      uint16_t fs_epoch;
+      struct fstree *fst;           // not null
+      uint16_t fstree_epoch;
       uint16_t account_epoch;
 
       /* notify-thread */
@@ -121,27 +113,24 @@ typedef struct fsent {
 
     struct {                        // VERTEX_FILETYPE_REG
       uint16_t bp_plan_id;
-      uint32_t content_hash;             // INVALIDATE_STAT | INVALIDATE_CONTENT
+      uint32_t hash;                // INVALIDATE_STAT | INVALIDATE_CONTENT
 
       union {
         struct formula * self_fml;          // VERTEX_FORMULA_FILE     e.g. cc.bam
-        struct var * self_var;              // on VERTEX_VAR_FILE, the VERTEX_VAR
-        struct config *self_config;         // VERTEX_CONFIG_FILE      e.g. config.bam
-        struct rules *self_rules;           // VERTEX_RULES_FILE
-                                            // VERTEX_SHADOW_MODULE
-        struct module * self_mod;           // VERTEX_MODULE_FILE      module.bam
-        struct rule_module_association *self_rma;  // VERTEX_SHADOW_RULE
-        struct bind_module_association *self_bma;  // VERTEX_SHADOW_BIND
+        struct varset * self_var;           // on VERTEX_VARSET_FILE, the VERTEX_VARSET
+        struct configset *self_configset;   // VERTEX_CONFIGSET_FILE      e.g. config.bam
+        struct plugin *self_plugin;         // VERTEX_PLUGIN_FILE
+        struct ruleset *self_rules;         // VERTEX_RULESET_FILE
+        struct module *self_mod;            // VERTEX_MODULE_FILE      module.bam
       };
     };
   };
 
-  bam_vertex_stats stats;
-  bam_fsent_dir_stats dirstats;
+  stats_vertex stats;
+  stats_fsent_dir dirstats;
 
   int in_wd;                      // inotify watch descriptor
   uint32_t in_epoch;              // notify thread epoch
-  uint16_t valid_epoch;           // fsent epoch
   uint16_t ascend_walk_id;        // walker
   uint16_t descend_walk_id;       // walker
   sweeper_event pending;          // sweeper-thread
@@ -161,10 +150,9 @@ typedef struct fsent {
   DEF(FSENT_PROPERTY_RELPATH      , "relpath"      , FSENT_PROPERTY_OPT, 0x7000) \
   DEF(FSENT_PROPERTY_RELDIR       , "reldir"       , FSENT_PROPERTY_OPT, 0x8000) \
   /* other derived properties */                                                 \
-  DEF(FSENT_PROPERTY_FSROOT       , "fsroot"       , FSENT_PROPERTY_OPT, 0x9000) \
-  DEF(FSENT_PROPERTY_INVALIDATION , "invalidation" , FSENT_PROPERTY_OPT, 0xa000) \
   DEF(FSENT_PROPERTY_STATE        , "state"        , FSENT_PROPERTY_OPT, 0xc000) \
   DEF(FSENT_PROPERTY_TYPE         , "type"         , FSENT_PROPERTY_OPT, 0xd000) \
+
 
 typedef enum fsent_property {
 #undef DEF
@@ -172,18 +160,20 @@ typedef enum fsent_property {
 FSENT_PROPERTY_TABLE
 } fsent_property;
 
-extern struct attrs32 * fsent_property_attrs;
+extern struct attrs32 *fsent_property_attrs;
 
 typedef struct fsent_property_context {
   const struct fsent *cwd;
 } fsent_property_context;
 
-void fsent_setup(void);
-void fsent_system_bootstrap(void);
+void fsent_root_setup(void);
+void fsent_base_setup(void);
 void fsent_cleanup(void);
 
-/* apply configuration changes */
-void fsent_reconfigure(struct configuration * restrict cfg, bool dryrun)
+uint32_t fsent_invalidate_primary(struct graph_invalidation_context * restrict invalidation);
+
+/* apply config changes */
+void fsent_reconfigure(struct config * restrict cfg, bool dryrun)
   __attribute__((nonnull));
 
 void fsent_create(
@@ -201,13 +191,7 @@ void fsent_compute_identifiers(fsent * restrict fse)
 void fsent_release(fsent * restrict n)
   __attribute__((nonnull));
 
-struct module * fsent_module_get(const fsent * restrict n)
-  __attribute__((nonnull));
-
-const struct filesystem * fsent_filesystem_get(fsent * restrict n)
-  __attribute__((nonnull));
-
-static inline fsent * fsent_parent(const fsent * restrict n)
+static inline fsent *fsent_parent(const fsent * restrict n)
 {
   const moria_vertex *v = &n->vertex;
 
@@ -224,11 +208,7 @@ static inline fsent * fsent_parent(const fsent * restrict n)
  * base - absolute path from the root to the desired fsent
  * rn   - (returns) fsent rooted at path base
  */
-void fsent_graft(
-    const char * restrict base
-  , fsent ** restrict rn
-  , struct graph_invalidation_context * restrict invalidation
-)
+void fsent_graft(const char * restrict base, fsent ** restrict rn)
   __attribute__((nonnull));
 
 void fsent_property_say(
@@ -329,16 +309,20 @@ void fsent_formula_bootstrap(fsent * restrict n, struct graph_invalidation_conte
   __attribute__((nonnull));
 
 /*
- * mark an fsent as VERTEX_VAR_FILE and reconcile its var
+ * mark an fsent as VERTEX_VARSET_FILE and reconcile its var
  */
-void fsent_var_bootstrap(fsent * restrict n, struct graph_invalidation_context * restrict invalidation)
+void fsent_varset_bootstrap(fsent * restrict n, struct graph_invalidation_context * restrict invalidation)
   __attribute__((nonnull));
 
 /*
- * mark an fsent as VERTEX_CONFIG_FILE and reconcile its config blob
+ * mark an fsent as VERTEX_CONFIGSET_FILE and reconcile its config blob
  */
-void fsent_config_bootstrap(fsent * restrict n, struct graph_invalidation_context * restrict invalidation)
+void fsent_configset_bootstrap(fsent * restrict n, struct graph_invalidation_context * restrict invalidation)
   __attribute__((nonnull));
+
+void fsent_plugin_bootstrap(fsent * restrict n, struct graph_invalidation_context * restrict invalidation)
+  __attribute__((nonnull));
+
 
 /*
  * the delete event is fired when the node becomes unlinked though it may actually be released later
@@ -349,10 +333,13 @@ void fsent_unlink(fsent *n, struct entlist * restrict edges, graph_invalidation_
 fsent *fsent_translate(fsent * fse, const fsent *origin, const fsent *target, struct graph_invalidation_context * restrict invalidation)
   __attribute__((nonnull));
 
-size_t fsent_dir_stats_collate(void *dst, size_t sz, bool reset, fsent * restrict n)
+void fsent_freshen_reconcile(void);
+void fsent_modules_reconcile(void);
+
+void fsent_fstree_reconcile(struct graph_invalidation_context * restrict invalidation)
   __attribute__((nonnull));
 
-void fsent_reconcile(struct graph_invalidation_context * restrict invalidation)
+void fsent_freshen_candidate(fsent * restrict fse)
   __attribute__((nonnull));
 
 void fsent_prune_candidate(fsent * restrict fse)
@@ -366,15 +353,23 @@ bool fsent_is_descendant_of(const fsent * restrict ancestor, const fsent * restr
 bool fsent_is_self_or_descendant(const fsent * restrict ancestor, const fsent * restrict n)
   __attribute__((nonnull));
 
-/* returns true if n lies within one of the mount points */
-bool fsent_is_mounted(const fsent * restrict n)
+uint64_t fsent_abspath_hash(const fsent * restrict fse)
   __attribute__((nonnull));
 
-uint64_t fsent_abspath_hash(const fsent * restrict fse)
+bool fsent_is_primary(const fsent * restrict fse)
   __attribute__((nonnull));
 
 void fsent_fstree_refresh(struct graph_invalidation_context * restrict invalidation)
   __attribute__((nonnull));
 
 void fsent_promote_dir(fsent * restrict fse)
+  __attribute__((nonnull));
+
+void fsent_describe(fsent * restrict fse, struct bacon_writer * restrict builder_writer)
+  __attribute__((nonnull));
+
+void fsent_mappings(const fsent * restrict fse, struct bacon_writer * restrict builder_writer)
+  __attribute__((nonnull));
+
+void fsent_stats_build(fsent * restrict, bool reset, struct bacon_writer * restrict)
   __attribute__((nonnull));

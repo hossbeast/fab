@@ -15,7 +15,7 @@
 #include "narrator/growing.h"
 #include "rule.h"
 #include "fsent.h"
-#include "filesystem.internal.h"
+#include "fstree.h"
 #include "module.h"
 #include "node_operations_test.h"
 #include "lookup.h"
@@ -26,7 +26,6 @@ typedef struct node_path_test {
   XUNITTEST;
 
   char * operations;    // create the graph
-  bool shadow;
   char * module;        // module node
   char * node;          // node
   char * base;          // base
@@ -40,10 +39,12 @@ static void node_path_test_unit_setup(xunit_unit * unit)
   moria_load();
   bacon_load();
 
-  filesystem_setup();
+  fsent_root_setup();
+  shadow_setup();
+  fstree_setup();
   module_setup();
   graph_setup();
-  fsent_setup();
+  fsent_root_setup();
 }
 
 static void node_path_test_unit_cleanup(xunit_unit * unit)
@@ -51,7 +52,7 @@ static void node_path_test_unit_cleanup(xunit_unit * unit)
   bacon_unload();
   moria_unload();
 
-  filesystem_cleanup();
+  fstree_cleanup();
   module_cleanup();
   fsent_cleanup();
   graph_cleanup();
@@ -72,11 +73,8 @@ static void node_path_test_entry(xunit_test * _test)
   char actual[PATH_MAX];
   module mod;
   size_t pathl;
-
-  if(test->shadow)
-  {
-    shadow_setup();
-  }
+  const char *absolute;
+  const char *relative;
 
   narrator_growing_create(&N);
 
@@ -106,14 +104,14 @@ static void node_path_test_entry(xunit_test * _test)
   if(test->absolute_path)
   {
     pathl = fsent_absolute_path_cat(actual, sizeof(actual), subject);
-    const char *absolute = actual;
+    absolute = actual;
     assert_eq_w(test->absolute_path, strlen(test->absolute_path), absolute, pathl);
   }
 
   if(test->relative_path)
   {
     pathl = fsent_relative_path_cat(actual, sizeof(actual), subject, base_node);
-    const char *relative = actual;
+    relative = actual;
     assert_eq_w(test->relative_path, strlen(test->relative_path), relative, pathl);
   }
 
@@ -242,15 +240,6 @@ static xunit_unit xunit = {
         , base : "x"
         , node : "C"
         , relative_path : "../b/C"
-      }}
-
-    /* under the shadow fs */
-    , (node_path_test[]) {{
-          operations :
-            " //modules/foo"
-        , shadow : true
-        , node : "foo"
-        , absolute_path : "//modules/foo"
       }}
     , 0
   }

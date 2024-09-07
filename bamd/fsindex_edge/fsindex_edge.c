@@ -7,7 +7,7 @@
 #include "bacon/builder.h"
 #include "narrator.h"
 
-#include "index_edge.h"
+#include "fsindex_edge.h"
 #include "fsent.h"
 #include "vertex.h"
 #include "stats.h"
@@ -16,15 +16,15 @@
 llist index_edge_list = LLIST_INITIALIZER(index_edge_list);                 // active
 static llist index_edge_freelist = LLIST_INITIALIZER(index_edge_freelist);  // free
 
-static void index_edge_dispose(index_edge * restrict se)
+static void fsindex_edge_dispose(fsindex_edge * restrict se)
 {
   llist_delete(&se->edge.owner);
   llist_append(&index_edge_freelist, &se->edge.owner);
 }
 
-void index_edge_alloc(index_edge ** restrict mep)
+fsindex_edge *fsindex_edge_alloc()
 {
-  index_edge *se;
+  fsindex_edge *se;
 
   if((se = llist_shift(&index_edge_freelist, typeof(*se), edge.owner)) == 0) {
     xmalloc(&se, sizeof(*se));
@@ -33,31 +33,31 @@ void index_edge_alloc(index_edge ** restrict mep)
   }
 
   moria_edge_init(&se->edge, &g_graph);
-
   llist_append(&index_edge_list, &se->edge.owner);
-  *mep = se;
+
+  return se;
 }
 
-void index_edge_release(index_edge * restrict se)
+void fsindex_edge_release(fsindex_edge * restrict se)
 {
   /* this edge must have been previously excised from the graph */
   RUNTIME_ASSERT(!rbnode_attached(&se->edge.rbn_up));
   RUNTIME_ASSERT(!rbnode_attached(&se->edge.rbn_down));
 
-  index_edge_dispose(se);
+  fsindex_edge_dispose(se);
 }
 
-void index_edge_setup(void)
+void fsindex_edge_setup(void)
 {
 }
 
-void index_edge_cleanup(void)
+void fsindex_edge_cleanup(void)
 {
-  index_edge *se;
+  fsindex_edge *se;
   llist *T;
 
   llist_foreach_safe(&index_edge_list, se, edge.owner, T) {
-    index_edge_dispose(se);
+    fsindex_edge_dispose(se);
   }
 
   llist_foreach_safe(&index_edge_freelist, se, edge.owner, T) {

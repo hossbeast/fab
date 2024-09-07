@@ -14,9 +14,11 @@
 #include "narrator/growing.h"
 #include "rule.h"
 #include "fsent.h"
-#include "filesystem.internal.h"
+#include "fstree.h"
 #include "module.h"
 #include "node_operations_test.h"
+#include "args.h"
+#include "shadow.h"
 
 typedef struct node_graft_test {
   XUNITTEST;
@@ -32,10 +34,12 @@ static void node_graft_test_unit_setup(xunit_unit * unit)
   moria_load();
   bacon_load();
 
-  filesystem_setup();
+  args_init();
+  fsent_root_setup();
+  shadow_setup();
+  fstree_setup();
   module_setup();
   graph_setup();
-  fsent_setup();
 }
 
 static void node_graft_test_unit_cleanup(xunit_unit * unit)
@@ -43,7 +47,8 @@ static void node_graft_test_unit_cleanup(xunit_unit * unit)
   moria_unload();
   bacon_unload();
 
-  filesystem_cleanup();
+  shadow_cleanup();
+  fstree_cleanup();
   module_cleanup();
   fsent_cleanup();
   graph_cleanup();
@@ -60,17 +65,15 @@ static void node_graft_test_entry(xunit_test * _test)
   narrator_growing * N = 0;
   moria_parser * parser = 0;
   fsent * node;
-  graph_invalidation_context invalidation = { };
 
   narrator_growing_create(&N);
   moria_parser_create(&parser, &g_graph, (llist *[]) { &fsent_list }, 1, node_operations_test_dispatch, graph_vertex_attrs, graph_edge_attrs);
-  graph_invalidation_begin(&invalidation);
 
   // arrange - setup initial graph
   moria_parser_operations_parse(parser, MMS(test->operations));
 
   // act
-  fsent_graft(test->path, &node, &invalidation);
+  fsent_graft(test->path, &node);
   assert_notnull(node);
 
   // assert
@@ -79,7 +82,6 @@ static void node_graft_test_entry(xunit_test * _test)
   assert_eq_s(test->graph, graph);
 
   narrator_growing_free(N);
-  graph_invalidation_end(&invalidation);
   moria_parser_free(parser);
 }
 
@@ -103,3 +105,6 @@ static xunit_unit xunit = {
   }
 };
 XUNIT_UNIT(xunit);
+
+//1-(root)!dir|protect 2-a!dir|protect 3-b!dir|protect 4-c!dir|protect                    2:fs:1 3:fs:2 4:fs:3
+//1-(root)!dir|protect 2-a!dir|protect 3-b!dir|protect 4-base!dir|protect 5-c!dir|protect 2:fs:1 4:fs:1 3:fs:2 5:fs:3
