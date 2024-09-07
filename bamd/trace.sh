@@ -4,7 +4,6 @@
 # Copyright (c) 2012-2023 Todd Freed <todd.freed@gmail.com>
 #
 
-
 pid=$(pidof fabd.trace)
 fab_dir="/home/todd/fab"
 fabd_dir="${fab_dir}/fab/fabd"

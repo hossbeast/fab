@@ -1,7 +1,6 @@
 /* SPDX-License-Identifier: GPL-3.0 */
 /* Copyright (c) 2012-2023 Todd Freed <todd.freed@gmail.com> */
 
-
 /* flex and bison do not agree on these names */
 #define YYSTYPE struct graph_yystype
 #define YYLTYPE yyu_location

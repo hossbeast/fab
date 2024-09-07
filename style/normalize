@@ -49,7 +49,16 @@ sub bam_bam {
   open FH, ">style_normalize_b" or die $!;
   chmod 0644, \*FH;
 
-  # tim trailing blank lines
+  # trim leading blank lines
+  while($#lines >= 0) {
+    if($lines[0] =~ /^$/) {
+      shift @lines;
+    } else {
+      last;
+    }
+  }
+
+  # trim trailing blank lines
   while($#lines >= 0) {
     if($lines[$#lines] =~ /^$/) {
       pop @lines;
@@ -97,7 +106,7 @@ sub perl_pm {
 
   open FH, ">style_normalize_b" or die $!;
 
-  # tim trailing blank lines
+  # trim trailing blank lines
   while($#lines >= 0) {
     if($lines[$#lines] =~ /^$/) {
       pop @lines;
@@ -133,13 +142,14 @@ sub perl_pl {
   # skip leading spdx / copyright / comment / shebang / blank lines
   my $state = 0;
   while(<FH>) {
-    if($state == 0 && /SPDX|Copyright..c..20/) {
+    if($state < 1 && /SPDX|Copyright/) {
       next;
-    } elsif($state == 0 && /^$/) {
+    } elsif($state < 1 && /^#/) {
       next;
-    } elsif($state <= 1 && /^#/) {
+    } elsif($state < 2 && /^\s*$/) {
       $state = 1;
       next;
+    } elsif($state < 2) {
     }
 
     $state = 2;
@@ -150,7 +160,7 @@ sub perl_pl {
   open FH, ">style_normalize_b" or die $!;
   chmod 0755, \*FH;
 
-  # tim trailing blank lines
+  # trim trailing blank lines
   while($#lines >= 0) {
     if($lines[$#lines] =~ /^$/) {
       pop @lines;
@@ -202,7 +212,7 @@ sub flex_l_bison_y {
   open FH, ">style_normalize_b" or die $!;
   chmod 0644, \*FH;
 
-  # tim trailing blank lines
+  # trim trailing blank lines
   while($#lines >= 0) {
     if($lines[$#lines] =~ /^$/) {
       pop @lines;
@@ -252,7 +262,7 @@ sub c_c {
   open FH, ">style_normalize_b" or die $!;
   chmod 0644, \*FH;
 
-  # tim trailing blank lines
+  # trim trailing blank lines
   while($#lines >= 0) {
     if($lines[$#lines] =~ /^$/) {
       pop @lines;
@@ -304,11 +314,9 @@ sub c_h {
   open FH, ">style_normalize_b" or die $!;
   chmod 0644, \*FH;
 
-  # tim trailing endif / blank lines
+  # trim trailing blank lines
   while($#lines >= 0) {
     if($lines[$#lines] =~ /^$/) {
-      pop @lines;
-    } elsif($def && $lines[$#lines] =~ /^#endif$/) {
       pop @lines;
     } else {
       last;
@@ -406,7 +414,11 @@ sub traverse {
 
 if($#ARGV >= 0) {
   for my $path (@ARGV) {
-    visit($path);
+    if(-d $path) {
+      traverse($path)
+    } else {
+      visit($path)
+    }
   }
 } else {
   traverse(".")
