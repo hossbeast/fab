@@ -8,6 +8,7 @@
 #include "common/assure.h"
 #include "common/attrs.h"
 #include "common/hash.h"
+#include "moria/connect.h"
 #include "moria/edge.h"
 #include "moria/foreach.h"
 #include "narrator.h"
@@ -15,7 +16,6 @@
 #include "valyria/hashtable.h"
 #include "xlinux/xstdlib.h"
 #include "bacon/builder.h"
-#include "bam/stats.h"
 
 #include "rule.h"
 #include "dependency.h"
@@ -28,22 +28,22 @@
 #include "module.h"
 #include "rule_module_association.h"
 #include "rule_system.h"
-#include "dir_rma.h"
+#include "dir_rma_edge.h"
 #include "stats.h"
 #include "probes.h"
 #include "channel.h"
 #include "events.h"
-#include "system_state.h"
+#include "system.h"
 #include "lookup.h"
 #include "selection.h"
-#include "rules.h"
+#include "ruleset.h"
 #include "reconcile.h"
 #include "buildplan_entity.h"
 #include "meta_edge.h"
 #include "entlist.h"
 #include "shadow.h"
 #include "fsedge.h"
-#include "index_vertex.h"
+#include "fsname.h"
 
 #include "macros.h"
 
@@ -83,26 +83,12 @@ static void __attribute__((constructor)) init()
   attrs16_init(rule_cardinality_attrs);
 }
 
-static void connector_say(const rule * restrict r, narrator * restrict N)
-{
-  if(r->card == RULE_MANY_TO_ONE || r->card == RULE_MANY_TO_MANY)
-    xsays("[*] ");
-
-  if(r->dir == RULE_LTR)
-    xsays("->");
-  else if(r->dir == RULE_RTL)
-    xsays("<-");
-
-  if(r->card == RULE_ONE_TO_MANY || r->card == RULE_MANY_TO_MANY)
-    xsays(" [*]");
-}
-
 static formula *formula_resolve(rule * restrict rule, rule_run_context * restrict ctx)
 {
   fsent *fml_n;
   formula *fml;
-  channel *chan;
-  bamipc_message *msg;
+  events_context ectx;
+  event_bacon *msg;
   narrator_fixed fixed;
   bacon_writer writer, *builder_writer;
   meta_edge *me;
@@ -117,7 +103,7 @@ static formula *formula_resolve(rule * restrict rule, rule_run_context * restric
     , &ctx->generate_hits
     , 0
   );
-  ctx->rma->stats.formula_hits = llist_count(&ctx->generate_hits.lln);
+  ctx->rma->rma_stats.formula_hits = llist_count(&ctx->generate_hits.lln);
 
   RUNTIME_ASSERT(llist_count(&ctx->generate_hits.lln) <= 1);
   fml_n = entlist_first(&ctx->generate_hits)->p;
@@ -125,7 +111,7 @@ static formula *formula_resolve(rule * restrict rule, rule_run_context * restric
   /* formula attachment did not resolve, or resolved to an uncreated fsent, possibly one that
    * was vivified by running the generate formula */
   if(!fml_n || !vertex_exists_get(&fml_n->vertex)) {
-    msg = system_error_event(&chan);
+    msg = system_error_event(&ectx);
     narrator_fixed_init(&fixed, msg->text, sizeof(msg->text));
     bacon_writer_init(&writer);
     builder_writer = bacon_writer_open(&writer, &fixed.base);
@@ -140,7 +126,7 @@ static formula *formula_resolve(rule * restrict rule, rule_run_context * restric
 
     msg->size = fixed.l;
     msg->code = EINVAL;
-    events_publish(chan, msg);
+    events_publish(&ectx);
     return 0;
   }
 
@@ -162,10 +148,9 @@ static void bpe_create(
 {
   buildplan_entity *bpe;
   meta_edge *me;
-  fsent *A;
-  entlist list, *eln;
+  entlist list;
 
-  buildplan_entity_create_hyper(sctx->Blist, sctx->Blen, sctx->Alist, sctx->Alen, ctx->fml, ctx->rma, &bpe);
+  bpe = buildplan_entity_create_hyper(sctx->Blist, sctx->Blen, sctx->Alist, sctx->Alen, ctx->fml, ctx->rma);
 
   /* rma -> bpe meta-edge */
   meta_connect(&ctx->rma->vertex, &bpe->vertex, EDGE_RMA_BPE, &ctx->invalidation, &me);
@@ -176,16 +161,6 @@ static void bpe_create(
 
   /* an fsent with an incoming EDGE_BPE_TGT can become invalidated */
   buildplan_entity_targets(bpe, &list);
-  entlist_foreach(&list, A, eln) {
-    if(!A->is_target) {
-      A->is_target = true;
-      vertex_invalidate(&A->vertex, &ctx->invalidation);
-    }
-
-    if(!bpe->fml) {
-      continue;
-    }
-  }
 
   entlist_destroy(&list);
 
@@ -201,28 +176,15 @@ static void run_search_tracking(rule * restrict rule, rule_run_context * restric
 {
   hashtable_recycle(&ctx->search_hits);
 
-  if(ctx->rma->mod->dir_node == ctx->rma->mod->anchor_node || rule->anchor_search) {
-    pattern_search(
-        rule->search
-      , ctx->rma->mod
-      , ctx->rma->mod->anchor_node
-      , &ctx->search_hits
-      , dir_rma_connect_visit
-      , ctx->rma
-    );
-  }
-  if(ctx->rma->mod->dir_node != ctx->rma->mod->anchor_node && rule->module_search) {
-    pattern_search(
-        rule->search
-      , ctx->rma->mod
-      , ctx->rma->mod->dir_node
-      , &ctx->search_hits
-      , dir_rma_connect_visit
-      , ctx->rma
-    );
-  }
+  pattern_search(
+      rule->search
+    , ctx->rma->mod
+    , &ctx->search_hits
+    , dir_rma_connect_visit
+    , ctx->rma
+  );
 
-  ctx->rma->stats.search_hits += ctx->search_hits.size;
+  ctx->rma->rma_stats.search_hits += ctx->search_hits.size;
   if(ctx->search_hits.size) {
     rule_system_rma_hit(ctx, ctx->rma);
   } else {
@@ -243,7 +205,7 @@ static void run_generate_tracking(rule * restrict rule, rule_run_context * restr
     , 0
   );
 
-  ctx->rma->stats.generate_hits += llist_count(&ctx->generate_hits.lln);
+  ctx->rma->rma_stats.generate_hits += llist_count(&ctx->generate_hits.lln);
   if(llist_count(&ctx->generate_hits.lln)) {
     rule_system_rma_hit(ctx, ctx->rma);
   } else {
@@ -264,7 +226,7 @@ static void run_generate(rule_run_context * restrict ctx, pattern_search_node * 
     , 0
   );
 
-  ctx->rma->stats.generate_hits += llist_count(&ctx->generate_hits.lln);
+  ctx->rma->rma_stats.generate_hits += llist_count(&ctx->generate_hits.lln);
 }
 
 static int pattern_search_compare(const void *a, const void *b)
@@ -904,22 +866,30 @@ static void __attribute__((nonnull)) generate_many_to_many(rule * restrict rule,
 // public
 //
 
-static void rule_destroy(rule * restrict r)
+void rule_dispose(struct rule * restrict rule)
 {
-  pattern_free(r->search);
-  pattern_free(r->generate);
-  pattern_free(r->formula);
-  pattern_free(r->target);
-  pattern_free(r->attachment);
-  pattern_free(r->search_rhs);
-}
+  pattern_free(rule->search);
+  pattern_free(rule->generate);
+  pattern_free(rule->formula);
+  pattern_free(rule->target);
+  pattern_free(rule->attachment);
+  pattern_free(rule->search_rhs);
 
-void rule_dispose(rule * restrict r)
-{
-  rule_destroy(r);
+  if(rule->links[0]) {
+    if(rule->link_refmarks[0] == rule->links[0]->refmark) {
+      moria_edge_disconnect(&g_graph, &rule->links[0]->edge);
+      fsedge_release(rule->links[0]);
+    }
+  }
+  if(rule->links[1]) {
+    if(rule->link_refmarks[1] == rule->links[1]->refmark) {
+      moria_edge_disconnect(&g_graph, &rule->links[1]->edge);
+      fsedge_release(rule->links[1]);
+    }
+  }
 
-  llist_delete(&r->vertex.owner);
-  llist_append(&rule_freelist, &r->vertex.owner);
+  llist_delete(&rule->vertex.owner);
+  llist_append(&rule_freelist, &rule->vertex.owner);
 }
 
 void rule_release(rule * restrict r)
@@ -949,25 +919,14 @@ void rule_cleanup(void)
   }
 }
 
-static size_t loc_hash(char * restrict dst, size_t dst_size, const yyu_location * restrict loc)
-{
-  uint64_t h;
-
-  h = 0;
-  h = hash64(h, loc->fname, strlen(loc->fname));
-  h = hash64(h, loc, sizeof(*loc));
-
-  return zcatf(dst, dst_size, "%016lx", h);
-}
-
 int rule_validate(const rule * restrict rule, char * restrict error, size_t error_sz)
 {
   /* only those invalid cases which absolutely cannot be detected by the parser
    * should be considered here */
   if(rule->card == RULE_MANY_TO_ONE) {
-    if(rule->search && rule->search->capture_groups_count > 42) {
+    if(rule->search && rule->search->capture_groups_count > 0) {
       return zcatf(
-          error, error_sz, "many-to-one rules search pattern cannot have capturing groups @ %s [%d,%d - %d,%d]"
+          error, error_sz, "search pattern in many-to-one rules cannot have capturing groups @ %s [%d,%d - %d,%d]"
         , rule->loc.fname
         , rule->loc.f_lin + 1
         , rule->loc.f_col + 1
@@ -980,25 +939,23 @@ int rule_validate(const rule * restrict rule, char * restrict error, size_t erro
   return 0;
 }
 
-void rule_mk(
-    rule ** restrict rulep
-  , moria_graph * restrict g
-  , pattern * search
-  , pattern * generate
-  , pattern * formula
-  , pattern * target
-  , pattern * attachment
-  , pattern * search2
+rule *rule_mk(
+    moria_graph * restrict g
+  , module * restrict mod
+  , ruleset * restrict rules
+  , pattern * restrict search
+  , pattern * restrict generate
+  , pattern * restrict formula
+  , pattern * restrict target
+  , pattern * restrict attachment
+  , pattern * restrict search2
   , const rule_bacon * restrict bacon
   , uint32_t attrs
   , const yyu_location * restrict loc
 )
 {
-  rule * r;
-  bool anchor_search;
-  bool module_search;
-  uint64_t token;
-  uint64_t hash;
+  uint64_t h;
+  rule *r;
 
   if((r = llist_shift(&rule_freelist, typeof(*r), vertex.owner)) == 0) {
     xmalloc(&r, sizeof(*r));
@@ -1006,6 +963,9 @@ void rule_mk(
 
   moria_vertex_init(&r->vertex, g, VERTEX_RULE | VERTEX_OK);
   llist_append(&rule_list, &r->vertex.owner);
+
+  r->mod = mod;
+  r->rules = rules;
 
   r->search = search;
   r->generate = generate;
@@ -1015,34 +975,36 @@ void rule_mk(
   r->search_rhs = search2;
   r->dir = attrs & RULE_DIRECTION_OPT;
   r->card = attrs & RULE_CARDINALITY_OPT;
-  if((r->graph = bacon->graph) == 0) {
-    r->graph = EDGE_DEPENDS;
-  }
   if(loc) {
     memcpy(&r->loc, loc, sizeof(r->loc));
   } else {
     memset(&r->loc, 0, sizeof(r->loc));
   }
-  anchor_search = bacon->anchor_search;
-  module_search = bacon->module_search;
-  if(!anchor_search && !module_search) {
-    anchor_search = true;
-    module_search = true;
-  }
-  r->anchor_search = anchor_search;
-  r->module_search = module_search;
 
-  if(bacon->id_len) {
-    r->id_len = zcatw(r->id, sizeof(r->id), bacon->id, bacon->id_len);
+  /* id */
+  h = 0;
+  if(r->mod) {
+    h = hash64(h, r->mod->id, r->mod->id_len);
+  } else if(r->rules) {
+    h = hash64(h, r->rules->id, r->rules->id_len);
+  }
+  h = hash64(h, &loc->f_lin, sizeof(loc->f_lin));
+  r->id_len = zcatf(r->id, sizeof(r->id), "%016"PRIx64, h);
+
+  /* name */
+  r->name_len = zcatw(r->name, sizeof(r->name), bacon->name, bacon->name_len);
+
+  shadow_link(g_shadow_rules, r->id, r->id_len, &r->vertex, &r->links[0]);
+  r->link_refmarks[0] = r->links[0]->refmark;
+
+  if(r->name_len) {
+    shadow_link(g_shadow_rules_byname, r->name, r->name_len, &r->vertex, &r->links[1]);
+    r->link_refmarks[1] = r->links[1]->refmark;
   } else {
-    r->id_len = loc_hash(r->id, sizeof(r->id), loc);
+    r->links[1] = 0;
   }
 
-  hash = hash64(0, r->id, r->id_len);
-  token = atomic_fetch_inc(&vertex_token_counter);
-  r->token_len = zcatf(r->token, sizeof(r->token), "%016"PRIx64, hash64(hash, MM(token)));
-
-  *rulep = r;
+  return r;
 }
 
 static fsent *resolve_attachment(rule * restrict bind, rule_run_context * restrict ctx)
@@ -1050,6 +1012,7 @@ static fsent *resolve_attachment(rule * restrict bind, rule_run_context * restri
   fsent *attachment;
 
   entlist_destroy(&ctx->generate_hits);
+
   pattern_generate(
       bind->attachment
     , ctx->rma->mod
@@ -1057,7 +1020,7 @@ static fsent *resolve_attachment(rule * restrict bind, rule_run_context * restri
     , &ctx->invalidation
     , 0 /* match */
     , &ctx->generate_hits
-    , PATTERN_GENERATE_NOFOLLOW //VERTEX_DIR
+    , PATTERN_GENERATE_NOFOLLOW
   );
 
   RUNTIME_ASSERT(llist_count(&ctx->generate_hits.lln) <= 1);
@@ -1118,7 +1081,7 @@ static void bind_one_to_many(struct rule * restrict bind, fsent *attachment, rul
       target = containerof(v, typeof(*target), vertex);
 
       // link @ //module/uses/$name
-      shadow_graft_bind(ctx->rma->mod, target, attachment, &location, &ctx->invalidation);
+      shadow_graft_bind(ctx->rma->mod, target, attachment, &location);
 
       meta_connect(&ctx->rma->vertex, &location->vertex, EDGE_RMA_TGT, &ctx->invalidation, &me);
       me->epoch = rule_system_epoch;
@@ -1137,7 +1100,7 @@ static void bind_one_to_many(struct rule * restrict bind, fsent *attachment, rul
 
       target = match->node;
       // link @ //module/uses/$name
-      shadow_graft_bind(ctx->rma->mod, target, attachment, &location, &ctx->invalidation);
+      shadow_graft_bind(ctx->rma->mod, target, attachment, &location);
 
       meta_connect(&ctx->rma->vertex, &location->vertex, EDGE_RMA_TGT, &ctx->invalidation, &me);
       me->epoch = rule_system_epoch;
@@ -1178,12 +1141,11 @@ static void search_search_run(struct rule * restrict rule, rule_run_context * re
   pattern_search(
       rule->search_rhs
     , ctx->rma->mod
-    , ctx->rma->mod->dir_node
     , &ctx->search_rhs_hits
     , dir_rma_connect_visit
     , ctx->rma
   );
-  ctx->rma->stats.search_hits += ctx->search_rhs_hits.size;
+  ctx->rma->rma_stats.search_hits += ctx->search_rhs_hits.size;
 
   assure(&ctx->Alist, sizeof(*ctx->Alist), ctx->search_rhs_hits.size, &ctx->Alist_alloc);
   Asz = 0;
@@ -1211,7 +1173,7 @@ static void search_search_run(struct rule * restrict rule, rule_run_context * re
 
 static void bind_run(struct rule * restrict bind, rule_run_context * restrict ctx)
 {
-  index_vertex *index;
+  fsname *index;
   entlist *eln;
   meta_edge *me;
   fsent *attachment;
@@ -1221,23 +1183,24 @@ static void bind_run(struct rule * restrict bind, rule_run_context * restrict ct
 
   /* attachment */
   if((attachment = resolve_attachment(bind, ctx)) == 0) {
-    ctx->rma->stats.attachment_hits = 0;
+    ctx->rma->rma_stats.attachment_hits = 0;
     return;
   }
-  RUNTIME_ASSERT(vertex_shadowtype_get(&attachment->vertex));
-  ctx->rma->stats.attachment_hits = 1;
+  RUNTIME_ASSERT(vertex_state_get(&attachment->vertex) != VERTEX_UNLINKED);
+  RUNTIME_ASSERT(vertex_shadow_get(&attachment->vertex));
+  ctx->rma->rma_stats.attachment_hits = 1;
 
   if(bind->target) {
     /* resolve targets pattern */
     pattern_lookup_indexed(bind->target, ctx->rma->mod->vars, &ctx->target_index_hits, &ctx->target_hits);
-    ctx->rma->stats.target_hits = llist_count(&ctx->target_hits.lln);
+    ctx->rma->rma_stats.target_hits = llist_count(&ctx->target_hits.lln);
     if(system_error) {
       goto end;
     }
 
-    /* take an edge on each index_vertex visited during targets resolution */
+    /* take an edge on each fsname visited during targets resolution */
     entlist_foreach(&ctx->target_index_hits, index, eln) {
-      meta_connect(&index->vertex, &ctx->rma->vertex, EDGE_INDEX_RMA, &ctx->invalidation, &me);
+      meta_connect(&index->vertex, &ctx->rma->vertex, EDGE_FSNAME_RMA, &ctx->invalidation, &me);
       me->epoch = rule_system_epoch;
     }
     bind_connect_probe(bind, ctx->rma->mod, &ctx->target_index_hits);
@@ -1262,19 +1225,19 @@ end:
 
 void rule_run(rule * restrict rule, rule_run_context * restrict ctx)
 {
-  RUNTIME_ASSERT(rule->graph);
-  STATS_INC(g_stats.rule_run);
-  STATS_INC(ctx->rma->stats.rule_run);
+  system_stats.rule_run++;
+  ctx->rma->rma_stats.rule_run++;
+  ctx->rma->rule->rule_stats.rule_run++;
 
   graph_invalidation_begin(&ctx->invalidation);
 
   /* stats are only posted on success */
-  ctx->rma->stats.target_hits = 0;
-  ctx->rma->stats.attachment_hits = 0;
-  ctx->rma->stats.search_hits = 0;
-  ctx->rma->stats.generate_hits = 0;
-  ctx->rma->stats.formula_hits = 0;
-  ctx->rma->stats.dependencies = 0;
+  ctx->rma->rma_stats.target_hits = 0;
+  ctx->rma->rma_stats.attachment_hits = 0;
+  ctx->rma->rma_stats.search_hits = 0;
+  ctx->rma->rma_stats.generate_hits = 0;
+  ctx->rma->rma_stats.formula_hits = 0;
+  ctx->rma->rma_stats.bpe_hits = 0;
 
   ctx->fml = 0;
   if(rule->formula) {
@@ -1325,7 +1288,7 @@ void rule_run(rule * restrict rule, rule_run_context * restrict ctx)
     case RULE_BIND_MANY:
       bind_run(rule, ctx);
       break;
-    case RULE_SEARCH_SEARCH:
+    case RULE_SEARCH_SEARCH | RULE_LTR:
       search_search_run(rule, ctx);
       break;
     default:
@@ -1334,8 +1297,9 @@ void rule_run(rule * restrict rule, rule_run_context * restrict ctx)
 
 end:
   if(!system_error) {
-    STATS_INC(g_stats.rule_run_ok);
-    ctx->rma->stats.rule_run_ok++;
+    system_stats.rule_run_ok++;
+    ctx->rma->rma_stats.rule_run_ok++;
+    ctx->rma->rule->rule_stats.rule_run_ok++;
   }
 
   graph_invalidation_end(&ctx->invalidation);
@@ -1343,136 +1307,101 @@ end:
 
 void rule_say(const rule * restrict r, narrator * restrict N)
 {
-  if(r->target) {
-    xsayf("bind { id : %.*s } ", r->id_len, r->id);
-    pattern_say(r->target, N);
-    xsays(" -> ");
+  /* bind rules */
+  if(r->card == RULE_BIND_ONE || r->card == RULE_BIND_MANY) {
+    if(r->name_len) {
+      xsayf("bind { name : %.*s } ", r->name_len, r->name);
+    } else {
+      xsays("bind ");
+    }
+    if(r->target) {
+      pattern_say(r->target, N);
+    } else if(r->search) {
+      pattern_say(r->search, N);
+    }
+    switch(r->card) {
+      case RULE_BIND_ONE:
+        xsays(" => ");
+        break;
+      case RULE_BIND_MANY:
+        xsays(" => [*] ");
+        break;
+      default:
+        RTA;
+    }
     pattern_say(r->attachment, N);
     return;
   }
+
+  if(r->name_len) {
+    xsayf("rule { name : %.*s } ", r->name_len, r->name);
+  }
+
+  /* search/search rules */
   if(r->card == RULE_SEARCH_SEARCH) {
-    xsayf("rule { id : %.*s } ", r->id_len, r->id);
     xsays("search ");
+  } else if(!r->name_len) {
+    xsays("rule ");
+  }
+
+  if(r->search) {
     pattern_say(r->search, N);
-    xsays("[*] -> [*] ");
+  }
+
+#define CASE2(x, y) ((x << 16) | (y << 8))
+  switch(CASE2(r->card, r->dir)) {
+    case CASE2(RULE_ONE_TO_ONE, RULE_LTR):
+      xsays(" -> ");
+      break;
+    case CASE2(RULE_ONE_TO_ONE, RULE_RTL):
+      xsays(" <- ");
+      break;
+    case CASE2(RULE_MANY_TO_ONE, RULE_RTL):
+      xsays(" <- [*] ");
+      break;
+    case CASE2(RULE_ONE_TO_MANY, RULE_LTR):
+      xsays(" -> [*] ");
+      break;
+    case CASE2(RULE_ONE_TO_MANY, RULE_RTL):
+      xsays(" [*] <- ");
+      break;
+    case CASE2(RULE_MANY_TO_ONE, RULE_LTR):
+      xsays(" [*] -> ");
+      break;
+    case CASE2(RULE_ZERO_TO_ONE, RULE_LTR):
+      xsays("-- ");
+      break;
+    case CASE2(RULE_ZERO_TO_ONE, RULE_RTL):
+      xsays(" --");
+      break;
+    case CASE2(RULE_ZERO_TO_MANY, RULE_LTR):
+      xsays("-- [*] ");
+      break;
+    case CASE2(RULE_ZERO_TO_MANY, RULE_RTL):
+      xsays(" [*] --");
+      break;
+    case CASE2(RULE_MANY_TO_MANY, RULE_LTR):
+    case CASE2(RULE_SEARCH_SEARCH, RULE_LTR):
+      xsays(" [*] -> [*] ");
+      break;
+    case CASE2(RULE_MANY_TO_MANY, RULE_RTL):
+    case CASE2(RULE_SEARCH_SEARCH, RULE_RTL):
+      xsays("[*] <- [*]");
+      break;
+    default:
+      RTA;
+  }
+
+  if(r->card == RULE_SEARCH_SEARCH) {
     xsays("search ");
     pattern_say(r->search_rhs, N);
-  }
-
-  xsayf("rule { id : %.*s } ", r->id_len, r->id);
-
-  if(r->search)
-  {
-    pattern_say(r->search, N);
-    xsays(" ");
-  }
-  else if(r->card == RULE_ZERO_TO_MANY)
-  {
-    xsays("-- [*] ");
-  }
-  else
-  {
-    xsays("-- ");
-  }
-
-  connector_say(r, N);
-
-  if(r->generate)
-  {
-    xsays(" ");
+  } else if(r->generate) {
     pattern_say(r->generate, N);
   }
-  else if(r->card == RULE_ZERO_TO_MANY)
-  {
-    xsays(" [*] --");
-  }
-  else
-  {
-    xsays(" --");
-  }
 
-  if(r->formula)
-  {
+  if(r->formula) {
     narrator_says(N, " : ");
     pattern_say(r->formula, N);
-  }
-}
-
-void rule_describe(const rule * restrict rule, struct bacon_writer * restrict builder_writer)
-{
-  char buf[512];
-  narrator_fixed fixed;
-
-  { MAPPING
-    STRING(rule->id)
-    { SET
-      { MAPPING
-        STRING("location")
-        LOADF("%s [%d,%d - %d,%d]", rule->loc.fname, rule->loc.f_lin + 1, rule->loc.f_col + 1, rule->loc.l_lin + 1, rule->loc.l_col + 1);
-      }
-      { MAPPING
-        STRING("graph")
-        STRING(attrs32_name_byvalue(graph_edge_attrs, rule->graph))
-      }
-      { MAPPING
-        STRING("dir")
-        STRING(attrs16_name_byvalue(rule_direction_attrs, rule->dir))
-      }
-      { MAPPING
-        STRING("cardinality")
-        STRING(attrs16_name_byvalue(rule_cardinality_attrs, rule->card))
-      }
-      { MAPPING
-        STRING("anchor-search")
-        BOOL(rule->anchor_search)
-      }
-      { MAPPING
-        STRING("module-search")
-        BOOL(rule->module_search)
-      }
-      if(rule->target) {
-        MAPPING
-        STRING("target")
-        narrator_fixed_init(&fixed, buf, sizeof(buf));
-        pattern_say(rule->target, &fixed.base);
-        BYTES(buf, fixed.l);
-      }
-      if(rule->attachment) {
-        MAPPING
-        STRING("attachment")
-        narrator_fixed_init(&fixed, buf, sizeof(buf));
-        pattern_say(rule->attachment, &fixed.base);
-        BYTES(buf, fixed.l);
-      }
-      if(rule->search) {
-        MAPPING
-        STRING("search")
-        narrator_fixed_init(&fixed, buf, sizeof(buf));
-        pattern_say(rule->search, &fixed.base);
-        BYTES(buf, fixed.l);
-      }
-      if(rule->generate) {
-        MAPPING
-        STRING("generate")
-        narrator_fixed_init(&fixed, buf, sizeof(buf));
-        pattern_say(rule->generate, &fixed.base);
-        BYTES(buf, fixed.l);
-      }
-      if(rule->search_rhs) {
-        MAPPING
-        STRING("search-rhs")
-        narrator_fixed_init(&fixed, buf, sizeof(buf));
-        pattern_say(rule->search_rhs, &fixed.base);
-        BYTES(buf, fixed.l);
-      }
-      if(rule->formula) {
-        MAPPING
-        STRING("formula")
-        narrator_fixed_init(&fixed, buf, sizeof(buf));
-        pattern_say(rule->formula, &fixed.base);
-        BYTES(buf, fixed.l);
-      }
-    }
   }
 }
 
@@ -1515,4 +1444,84 @@ void rule_run_context_destroy(rule_run_context * restrict ctx)
   free(ctx->Alist);
   free(ctx->Blist);
   free(ctx->Mlist);
+}
+
+void rule_stats_build(struct rule * restrict rule, bool reset, bacon_writer * restrict builder_writer)
+{
+  stats_build(&rule->stats.record, &descriptor_stats_vertex, builder_writer);
+  stats_build(&rule->rule_stats.record, &descriptor_stats_rule, builder_writer);
+}
+
+void rule_describe(const struct rule * restrict rule, struct bacon_writer * restrict builder_writer)
+{
+  rule_module_association *rma;
+  entlist list, *eln;
+  moria_vertex *v;
+
+  { MAPPING
+    bacon_writer_push_string(builder_writer);
+    vertex_path_say(&rule->vertex, builder_writer->N);
+    bacon_writer_pop_string(builder_writer);
+
+    { SET
+      { MAPPING STRING("attrs")
+        attrs32_describe(rule->vertex.attrs, graph_vertex_attrs, builder_writer);
+      }
+      { MAPPING STRING("id")
+        BYTES(rule->id, rule->id_len)
+      }
+      if(rule->name_len) {
+        MAPPING STRING("name")
+        BYTES(rule->name, rule->name_len)
+      }
+      if(rule->mod) {
+        MAPPING STRING("module")
+        vertex_path_describe(&rule->mod->vertex, builder_writer);
+      }
+      if(rule->rules) {
+        MAPPING STRING("ruleset")
+        vertex_path_describe(&rule->rules->vertex, builder_writer);
+      }
+      { MAPPING STRING("location")
+        LOADF("%s [%d,%d - %d,%d]", rule->loc.fname, rule->loc.f_lin + 1, rule->loc.f_col + 1, rule->loc.l_lin + 1, rule->loc.l_col + 1);
+      }
+      { MAPPING
+        STRING("dir")
+        STRING(attrs16_name_byvalue(rule_direction_attrs, rule->dir))
+      }
+      { MAPPING
+        STRING("cardinality")
+        STRING(attrs16_name_byvalue(rule_cardinality_attrs, rule->card))
+      }
+      { MAPPING STRING("text")
+        bacon_writer_push_string(builder_writer);
+        rule_say(rule, builder_writer->N);
+        bacon_writer_pop_string(builder_writer);
+      }
+      if(edges_gather_up(&rule->vertex, EDGE_RULE_RMA, &list)) {
+        MAPPING STRING("rmas")
+        { SET
+          entlist_foreach(&list, v, eln) {
+            rma = containerof(v, typeof(*rma), vertex);
+            LOADF("//rmas/%.*s", rma->id_len, rma->id);
+          }
+        }
+        entlist_destroy(&list);
+      }
+    }
+  }
+}
+
+void rule_identity_say(const struct rule * restrict rule, narrator * restrict N)
+{
+  attrs32_say(rule->vertex.attrs, graph_vertex_attrs, N);
+  narrator_sayf(N, " id %.*s", rule->id_len, rule->id);
+  narrator_sayf(N, " %s [%d,%d - %d,%d]", rule->loc.fname, rule->loc.f_lin + 1, rule->loc.f_col + 1, rule->loc.l_lin + 1, rule->loc.l_col + 1);
+  narrator_says(N, " ");
+  rule_say(rule, N);
+}
+
+size_t rule_path_cat(void * restrict dst, size_t sz, const rule * restrict rule)
+{
+  return zcatf(dst, sz, "//rules/%.*s", rule->id_len, rule->id);
 }

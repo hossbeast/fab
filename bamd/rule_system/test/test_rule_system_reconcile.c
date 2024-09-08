@@ -19,21 +19,21 @@
 #include "rule.h"
 #include "fsent.h"
 #include "pattern.h"
-#include "filesystem.h"
+#include "fstree.h"
 #include "pattern_parser.h"
 #include "module.h"
 #include "node_operations_test.h"
 #include "rule_module_association.h"
 #include "rule_system.h"
-#include "rules_parser.h"
+#include "ruleset_parser.h"
 #include "shadow.h"
-#include "system_state.h"
+#include "system.h"
 #include "buildplan_entity.h"
 #include "vertex.h"
 #include "entlist.h"
 #include "fsedge.h"
 #include "dependency.h"
-#include "dir_rma.h"
+#include "dir_rma_edge.h"
 
 typedef struct rule_system_reconcile_test {
   XUNITTEST;
@@ -47,7 +47,6 @@ typedef struct rule_system_reconcile_test {
     char * generate_pattern;
     rule_direction dir;
     rule_cardinality card;
-    edge_type relation;
   } **rules;
 
   char * operations;        // graph mutations to perform
@@ -60,10 +59,11 @@ static void rule_system_reconcile_test_unit_setup(xunit_unit * unit)
 {
   moria_load();
   bacon_load();
-  filesystem_setup();
 
   graph_setup();
-  fsent_setup();
+  fsent_root_setup();
+  shadow_setup();
+  fstree_setup();
   module_setup();
   rule_system_setup();
   buildplan_entity_setup();
@@ -76,9 +76,10 @@ static void rule_system_reconcile_test_unit_cleanup(xunit_unit * unit)
 {
   graph_cleanup();
   module_cleanup();
-  filesystem_cleanup();
+  fstree_cleanup();
   buildplan_entity_cleanup();
   entlist_cleanup();
+  shadow_cleanup();
 
   moria_unload();
 }
@@ -94,7 +95,7 @@ static void rule_system_reconcile_test_entry(xunit_test * _test)
   narrator_growing * N = 0;
   pattern_parser * parser = 0;
   moria_parser * op_parser = 0;
-  rules_parser *mod_parser = 0;
+  ruleset_parser *mod_parser = 0;
 
   yyu_location loc;
   module *mod;
@@ -109,7 +110,7 @@ static void rule_system_reconcile_test_entry(xunit_test * _test)
 
   rule_run_context_init(&rule_ctx);
   pattern_parser_create(&parser);
-  rules_parser_alloc(&mod_parser);
+  ruleset_parser_alloc(&mod_parser);
 
   narrator_growing_create(&N);
   moria_parser_create(&op_parser, &g_graph, (llist *[]) { &fsent_list }, 1, node_operations_test_dispatch, graph_vertex_attrs, graph_edge_attrs);
@@ -133,13 +134,12 @@ static void rule_system_reconcile_test_entry(xunit_test * _test)
     generate_pattern_parse_partial(parser, test_rule->generate_pattern, strlen(test_rule->generate_pattern) + 2, "-test-", 0, &loc, &generate_pat);
     assert_eq_u32(strlen(test_rule->generate_pattern), loc.l);
 
-    rule_mk(&rule, &g_graph, search_pat, generate_pat, 0, 0, 0, 0, &rb, 0, &loc);
+    rule = rule_mk(&g_graph, 0, 0, search_pat, generate_pat, 0, 0, 0, 0, &rb, 0, &loc);
     search_pat = 0;
     generate_pat = 0;
 
     rule->dir = test_rule->dir;
     rule->card = test_rule->card;
-    rule->graph = test_rule->relation;
 
     /* when the generate pattern changes the set of child nodes in the directory
      * which the match pattern visited, the rule is enqueued to be run again */
@@ -163,7 +163,7 @@ static void rule_system_reconcile_test_entry(xunit_test * _test)
   graph = N->s;
   assert_eq_s(test->graph, graph);
 
-  rules_parser_free(mod_parser);
+  ruleset_parser_free(mod_parser);
   pattern_free(search_pat);
   pattern_free(generate_pat);
   fsent_cleanup();
@@ -194,7 +194,6 @@ static xunit_unit xunit = {
               , generate_pattern : (char[]) { "$^D/main.o\0" }
               , dir : RULE_LTR
               , card : RULE_ONE_TO_ONE
-              , relation : EDGE_DEPENDS
             }}
           , 0
         }
@@ -216,7 +215,6 @@ static xunit_unit xunit = {
               , generate_pattern : (char[]) { "$^D/main.o\0" }
               , dir : RULE_LTR
               , card : RULE_ONE_TO_ONE
-              , relation : EDGE_DEPENDS
             }}
           , 0
         }
@@ -243,7 +241,6 @@ static xunit_unit xunit = {
               , generate_pattern : (char[]) { "$^D/main.o\0" }
               , dir : RULE_LTR
               , card : RULE_ONE_TO_ONE
-              , relation : EDGE_DEPENDS
             }}
           , 0
         }
@@ -268,7 +265,6 @@ static xunit_unit xunit = {
               , generate_pattern : (char[]) { "$^D/main.o\0" }
               , dir : RULE_LTR
               , card : RULE_ONE_TO_ONE
-              , relation : EDGE_DEPENDS
             }}
           , 0
         }
@@ -293,25 +289,23 @@ static xunit_unit xunit = {
               , generate_pattern : (char[]) { "$^D/$1.o\0" }
               , dir : RULE_LTR
               , card : RULE_ONE_TO_ONE
-              , relation : EDGE_DEPENDS
             }}
           , 0
         }
         , operations : ""
                   /* This refresh operation promotes these secondary files from UNCREATED -> OK
-                   * which is what happens when a formula is exected that generates them
+                   * which is what happens when a formula is executed that generates them
                    * hence they are not subsequently deleted when the rule that originally created
                    * them no longer matches. */
                   " @args.o @main.o"
                   /* Now the primary files which the secondary files have dependencies on are unlinked.
-                   * The secondary files would normally become invalid (I) when this happens, but since
-                   * they no longer have any dependency edge, the invalidation is ignored */
+                   * which causes them to become invalidated (I) */
                   " =main.c:fs:src"
                   " =args.c:fs:sub"
                   " =args.h:fs:sub"
         , graph :  "1-(root)!dir|protect 2-MOD!dir"
                   " 3-src!dir 4-sub!dir"
-                  " 5-args.o!file 6-main.o!file"
+                  " 5-args.o!I|file 6-main.o!I|file"
                   " 2:fs:1 3:fs:2 4:fs:3 6:fs:3 5:fs:4"
       }}
 
@@ -328,7 +322,6 @@ static xunit_unit xunit = {
               , generate_pattern : (char[]) { "$^D/$1.o\0" }
               , dir : RULE_LTR
               , card : RULE_ONE_TO_ONE
-              , relation : EDGE_DEPENDS
             }}
           , 0
         }
@@ -356,7 +349,6 @@ static xunit_unit xunit = {
               , generate_pattern : (char[]) { "$^D/$1.o\0" }
               , dir : RULE_LTR
               , card : RULE_ONE_TO_ONE
-              , relation : EDGE_DEPENDS
             }}
           , 0
         }
@@ -381,14 +373,12 @@ static xunit_unit xunit = {
                 , generate_pattern : (char[]) { "$^D/$1.o\0" }
                 , dir : RULE_LTR
                 , card : RULE_ONE_TO_ONE
-                , relation : EDGE_DEPENDS
               }}
             , (struct test_rule[]) {{
                   search_pattern : (char[]) { "**/*.o\0" }
                 , generate_pattern : (char[]) { "exe\0" }
                 , dir : RULE_LTR
                 , card : RULE_ONE_TO_ONE
-                , relation : EDGE_DEPENDS
               }}
           , 0
         }
@@ -412,14 +402,12 @@ static xunit_unit xunit = {
                 , generate_pattern : (char[]) { "$^D/$1.o\0" }
                 , dir : RULE_LTR
                 , card : RULE_ONE_TO_ONE
-                , relation : EDGE_DEPENDS
               }}
             , (struct test_rule[]) {{
                   search_pattern : (char[]) { "**/*.o\0" }
                 , generate_pattern : (char[]) { "exe\0" }
                 , dir : RULE_LTR
                 , card : RULE_ONE_TO_ONE
-                , relation : EDGE_DEPENDS
               }}
           , 0
         }
@@ -450,14 +438,12 @@ static xunit_unit xunit = {
                 , generate_pattern : (char[]) { "$^D/$1.o\0" }
                 , dir : RULE_LTR
                 , card : RULE_ONE_TO_ONE
-                , relation : EDGE_DEPENDS
               }}
             , (struct test_rule[]) {{
                   search_pattern : (char[]) { "**/*.o\0" }
                 , generate_pattern : (char[]) { "exe\0" }
                 , dir : RULE_LTR
                 , card : RULE_ONE_TO_ONE
-                , relation : EDGE_DEPENDS
               }}
           , 0
         }
@@ -483,14 +469,12 @@ static xunit_unit xunit = {
                 , generate_pattern : (char[]) { "$^D/$1.o\0" }
                 , dir : RULE_LTR
                 , card : RULE_ONE_TO_ONE
-                , relation : EDGE_DEPENDS
               }}
             , (struct test_rule[]) {{
                   search_pattern : (char[]) { "**/*.o\0" }
                 , generate_pattern : (char[]) { "exe\0" }
                 , dir : RULE_LTR
                 , card : RULE_ONE_TO_ONE
-                , relation : EDGE_DEPENDS
               }}
           , 0
         }
@@ -502,6 +486,7 @@ static xunit_unit xunit = {
                   " 9:bpe-tgt:4 10:bpe-tgt:5 11:bpe-tgt:5 8:bpe-tgt:7 6:src-bpe:8 3:src-bpe:9 4:src-bpe:10 7:src-bpe:11"
                   " 2:fs:1"
                   " 3:fs:2 4:fs:2 5:fs:2 6:fs:2 7:fs:2"
+
       }}
 
       /* secondary file unlinked, transitive edges invalidated */
@@ -515,14 +500,12 @@ static xunit_unit xunit = {
                 , generate_pattern : (char[]) { "$^D/$1.o\0" }
                 , dir : RULE_LTR
                 , card : RULE_ONE_TO_ONE
-                , relation : EDGE_DEPENDS
               }}
             , (struct test_rule[]) {{
                   search_pattern : (char[]) { "**/*.o\0" }
                 , generate_pattern : (char[]) { "exe\0" }
                 , dir : RULE_LTR
                 , card : RULE_ONE_TO_ONE
-                , relation : EDGE_DEPENDS
               }}
           , 0
         }
@@ -550,14 +533,12 @@ static xunit_unit xunit = {
                 , generate_pattern : (char[]) { "$^D/$1.o\0" }
                 , dir : RULE_LTR
                 , card : RULE_ONE_TO_ONE
-                , relation : EDGE_DEPENDS
               }}
             , (struct test_rule[]) {{
                   search_pattern : (char[]) { "**/*.o\0" }
                 , generate_pattern : (char[]) { "exe\0" }
                 , dir : RULE_LTR
                 , card : RULE_ONE_TO_ONE
-                , relation : EDGE_DEPENDS
               }}
           , 0
         }
@@ -586,24 +567,23 @@ static xunit_unit xunit = {
               , generate_pattern : (char[]) { "$^D/$1.o\0" }
               , dir : RULE_LTR
               , card : RULE_ONE_TO_ONE
-              , relation : EDGE_DEPENDS
             }}
           , (struct test_rule[]) {{
                 search_pattern : (char[]) { "**/*.o\0" }
               , generate_pattern : (char[]) { "exe\0" }
               , dir : RULE_LTR
               , card : RULE_ONE_TO_ONE
-              , relation : EDGE_DEPENDS
             }}
           , 0
         }
+
         , operations : ""
                   " @exe @main.o"               // VERTEX_OK
                   " =main.c:fs:MOD"
-        /* main.o is OK because its a primary file because its not the target of any dependency */
+        /* main.o is marked invalid(I) when main.c was unlinked */
         /* exe was marked invalid(I) - transitively - when main.c was unlinked */
         , graph :  "1-(root)!dir|protect 2-MOD!dir"
-                  " 3-exe!I|file 4-main.o!file"
+                  " 3-exe!I|file 4-main.o!I|file"
                   " 5-!bpe"
                   " 5:bpe-tgt:3 4:src-bpe:5"
                   " 2:fs:1 3:fs:2 4:fs:2"
@@ -621,14 +601,12 @@ static xunit_unit xunit = {
               , generate_pattern : (char[]) { "$^D/$1.o\0" }
               , dir : RULE_LTR
               , card : RULE_ONE_TO_ONE
-              , relation : EDGE_DEPENDS
             }}
           , (struct test_rule[]) {{
                 search_pattern : (char[]) { "**/*.o\0" }
               , generate_pattern : (char[]) { "exe\0" }
               , dir : RULE_LTR
               , card : RULE_ONE_TO_ONE
-              , relation : EDGE_DEPENDS
             }}
           , 0
         }
@@ -638,7 +616,7 @@ static xunit_unit xunit = {
                   " =main.o:fs:MOD"
         /* exe was marked invalid(I) - transitively - when main.c was unlinked */
         , graph :  "1-(root)!dir|protect 2-MOD!dir"
-                  " 3-exe!file"
+                  " 3-exe!I|file"
                   " 2:fs:1 3:fs:2"
       }}
 
@@ -656,26 +634,24 @@ static xunit_unit xunit = {
               , generate_pattern : (char[]) { "$^D/$1.o\0" }
               , dir : RULE_LTR
               , card : RULE_ONE_TO_ONE
-              , relation : EDGE_DEPENDS
             }}
           , (struct test_rule[]) {{
                 search_pattern : (char[]) { "**/*.o\0" }
               , generate_pattern : (char[]) { "exe\0" }
               , dir : RULE_LTR
               , card : RULE_ONE_TO_ONE
-              , relation : EDGE_DEPENDS
             }}
           , 0
         }
         , operations : ""
                   " @exe @main.o @args.o"     // VERTEX_OK
                   " =main.c:fs:MOD"
-        /* main.o is OK because it is just a primary file without the dependency */
+        /* main.o is marked invalid(I) when main.c is unlinked */
         /* exe is marked invalid(I) when the main.o edge is removed */
         , graph :  "1-(root)!dir|protect 2-MOD!dir"
-                  " 3-args.c!file 4-args.h!file 5-args.o!file 6-exe!I|file 7-main.o!file"
+                  " 3-args.c!file 4-args.h!file 5-args.o!file 6-exe!I|file 7-main.o!I|file"
                   " 8-!bpe 9-!bpe 10-!bpe"
-                  " 8:bpe-tgt:5 9:bpe-tgt:6 10:bpe-tgt:6 3:src-bpe:8 7:src-bpe:9 5:src-bpe:10"
+                  " 8:bpe-tgt:5 9:bpe-tgt:6 10:bpe-tgt:6 3:src-bpe:8 5:src-bpe:9 7:src-bpe:10"
                   " 2:fs:1 3:fs:2 4:fs:2 5:fs:2 6:fs:2 7:fs:2"
       }}
 
@@ -693,14 +669,12 @@ static xunit_unit xunit = {
               , generate_pattern : (char[]) { "$^D/$1.o\0" }
               , dir : RULE_LTR
               , card : RULE_ONE_TO_ONE
-              , relation : EDGE_DEPENDS
             }}
           , (struct test_rule[]) {{
                 search_pattern : (char[]) { "**/*.o\0" }
               , generate_pattern : (char[]) { "exe\0" }
               , dir : RULE_LTR
               , card : RULE_ONE_TO_ONE
-              , relation : EDGE_DEPENDS
             }}
           , 0
         }
@@ -712,7 +686,7 @@ static xunit_unit xunit = {
                   " =args.c:fs:MOD"
                   " =args.h:fs:MOD"
         , graph :  "1-(root)!dir|protect 2-MOD!dir"
-                  " 3-exe!file"
+                  " 3-exe!I|file"
                   " 2:fs:1"
                   " 3:fs:2"
       }}

@@ -17,7 +17,7 @@
 #include "fsent.h"
 #include "dependency.h"
 #include "pattern.h"
-#include "index_vertex.h"
+#include "fsname.h"
 #include "module.h"
 #include "rule_module_association.h"
 #include "buildplan_entity.h"
@@ -197,7 +197,7 @@ void bind_connect_probe(
   bacon_writer writer;
   bacon_writer *builder_writer;
   const yyu_location *loc;
-  index_vertex *index;
+  fsname *index;
   entlist *eln;
 
   if(!bind_attach_semaphore) {

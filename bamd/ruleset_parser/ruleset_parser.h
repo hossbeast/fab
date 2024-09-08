@@ -13,23 +13,20 @@
 #include "rule.h"
 #include "entlist.h"
 
-struct channel;
-struct graph;
 struct pattern;
 struct pattern_parser;
-struct rule_run_context;
-struct selection;
 struct bacon_parser;
-struct yyu_location;
 struct block;
 struct anchor;
 
-typedef struct rules_parser {
+typedef struct rulesset_parser {
   yyu_parser yyu;
   llist lln;        // freelist
 
   // state
   struct moria_graph *g;
+  struct module *mod;
+  struct ruleset *rules;
   entlist lookup_hits;
   const char *relpath;
   uint16_t relpath_len;
@@ -45,12 +42,12 @@ typedef struct rules_parser {
   // (returns)
   struct block *block;  // top of the stack
   struct anchor *anchor;
-  llist varfiles;       // struct pattern
-  llist rulesfiles;     // struct pattern
-} rules_parser;
+  llist varsets;        // struct pattern
+  llist rulesets;       // struct pattern
+} ruleset_parser;
 
 /* create a rules parser */
-void rules_parser_alloc(rules_parser ** const restrict p)
+void ruleset_parser_alloc(ruleset_parser ** const restrict p)
   __attribute__((nonnull));
 
 /// rules_parser_free
@@ -58,14 +55,14 @@ void rules_parser_alloc(rules_parser ** const restrict p)
 // SUMMARY
 //  free a rules parser with free semantics
 //
-void rules_parser_free(rules_parser * restrict);
+void ruleset_parser_free(ruleset_parser * restrict);
 
 /// rules_parser_ifree
 //
 // SUMMARY
 //  free a rules parser with ifree semantics
 //
-void rules_parser_ifree(rules_parser ** restrict)
+void ruleset_parser_ifree(ruleset_parser ** restrict)
   __attribute__((nonnull));
 
 /// module_parse
@@ -79,8 +76,8 @@ void rules_parser_ifree(rules_parser ** restrict)
 //  size         - size of buffer
 //  relpath      - project-relative path to the file being parsed
 //
-int rules_parser_parse(
-    rules_parser * restrict parser
+int ruleset_parser_parse(
+    ruleset_parser * restrict parser
   , char * const restrict buf
   , size_t size
   , const char * restrict relpath

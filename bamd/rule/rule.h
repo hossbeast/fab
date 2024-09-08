@@ -15,15 +15,14 @@ A rule is connected to each module for which it is run with an EDGE_MOD_RULE edg
 
 #include "types.h"
 
-#include "bam/stats.h"
 #include "valyria/llist.h"
 #include "valyria/hashtable.h"
 #include "moria.h"
 #include "yyutil/grammar.h"
-#include "bam/stats.h"
 
 #include "graph.h"
 #include "entlist.h"
+#include "vertex.h"
 
 struct attrs16;
 struct module;
@@ -34,7 +33,7 @@ struct yyu_location;
 struct fsent;
 struct bacon_value;
 struct rule_module_association;
-struct bind_module_association;
+struct ruleset;
 
 extern llist rule_list;     // active
 
@@ -77,9 +76,33 @@ RULE_CARDINALITY_TABLE
 
 extern struct attrs16 * rule_cardinality_attrs;
 
+typedef union stats_rule {
+  struct {
+      uint16_t rule_run;      /* rule is run */
+      uint16_t rule_run_ok;   /* rule is run successfully */
+  };
+
+  stats_record record;
+} stats_rule;
+
+extern descriptor_type descriptor_stats_rule;
+
 // VERTEX_TYPE_RULE
 typedef struct rule {
   moria_vertex vertex;
+  llist lln;                // in block->rules
+
+  stats_vertex stats;
+  stats_rule rule_stats;
+  char id[40];
+  uint16_t id_len;
+  yyu_location loc;
+
+  char name[64];             // optional name
+  uint16_t name_len;
+
+  struct module *mod;       // nullable ; module -> module.bam
+  struct ruleset *rules;    // nullable ; ruleset -> rules.bam
 
   /* rule search -> generate : formula */
   struct pattern *search;
@@ -93,28 +116,15 @@ typedef struct rule {
   /* search -> search */
   struct pattern *search_rhs;
 
-  edge_type graph;
-  bool bind;
+  struct fsedge *links[2];
+  uint32_t link_refmarks[2];
+
   rule_direction dir;
   rule_cardinality card;
-  bool anchor_search;
-  bool module_search;
-
-  yyu_location loc;
-  bam_vertex_stats stats;
-  char id[40];
-  uint16_t id_len;
-  char token[40];
-  uint16_t token_len;
-
-  llist lln;                // in module statement_block->rules
 } rule;
 
 typedef struct rule_run_context {
   struct rule_module_association *rma;
-  struct bind_module_association *bma;
-
-//  bam_rule_stats stats;
 
   /* scratch space */
   struct hashtable search_hits;     // search pattern results
@@ -151,16 +161,14 @@ void rule_run(rule * restrict rule, rule_run_context * restrict ctx)
   __attribute__((nonnull));
 
 typedef struct rule_bacon {
-  edge_kind graph;
-  char id[32];
-  uint16_t id_len;
-  bool anchor_search;
-  bool module_search;
+  char name[64];
+  uint16_t name_len;
 } rule_bacon;
 
-void rule_mk(
-    rule ** restrict rulep
-  , struct moria_graph * restrict g
+rule *rule_mk(
+    struct moria_graph * restrict g
+  , struct module * restrict mod
+  , struct ruleset * restrict rules
   , struct pattern * restrict search
   , struct pattern * restrict generate
   , struct pattern * restrict formula
@@ -171,7 +179,7 @@ void rule_mk(
   , uint32_t attrs
   , const struct yyu_location * restrict loc
 )
-  __attribute__((nonnull(1, 2)));
+  __attribute__((nonnull(1)));
 
 /* destroy a rule and return it to the freelist. The rule must have previously been
  * excised from the graph */
@@ -191,8 +199,17 @@ void rule_show(const rule * restrict r)
 /* release rules */
 void rule_cleanup(void);
 
+int rule_validate(const rule * restrict rule, char * restrict error, size_t error_sz)
+  __attribute__((nonnull));
+
 void rule_describe(const rule * restrict r, struct bacon_writer * restrict builder_writer)
   __attribute__((nonnull));
 
-int rule_validate(const rule * restrict rule, char * restrict error, size_t error_sz)
+void rule_identity_say(const rule * restrict r, struct narrator * restrict N)
+  __attribute__((nonnull));
+
+size_t rule_path_cat(void * restrict dst, size_t sz, const struct rule * restrict rule)
+  __attribute__((nonnull));
+
+void rule_stats_build(rule * restrict, bool reset, struct bacon_writer * restrict)
   __attribute__((nonnull));

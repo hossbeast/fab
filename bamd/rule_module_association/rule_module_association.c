@@ -11,6 +11,7 @@
 #include "moria/vertex.h"
 #include "narrator.h"
 #include "common/hash.h"
+#include "bacon/builder.h"
 
 #include "rule_module_association.h"
 #include "buildplan_entity.h"
@@ -20,11 +21,12 @@
 #include "fsent.h"
 #include "fsedge.h"
 #include "shadow.h"
-#include "rules.h"
+#include "ruleset.h"
 #include "vertex.h"
 #include "edge.h"
 #include "meta_edge.h"
 #include "entlist.h"
+#include "edge.h"
 
 #include "zcat.h"
 #include "atomics.h"
@@ -43,7 +45,6 @@ void rule_module_association_init(rule_module_association * restrict rma)
   moria_vertex_init(&rma->vertex, &g_graph, VERTEX_RMA | VERTEX_OK);
   llist_init(&rma->work.changed[0].lln);
   llist_init(&rma->work.changed[1].lln);
-//  rma->work.mark = VERTEX_RMA;
 }
 
 void rule_module_association_alloc(rule_module_association ** restrict rmap)
@@ -90,6 +91,7 @@ void rule_module_association_release(rule_module_association * restrict rma, gra
   moria_edge *edge;
   moria_foreach_state st;
   entlist edges, vertices;
+  int x;
 
   /* proactive edge disconnect */
   entlist_init(&vertices);
@@ -103,8 +105,8 @@ void rule_module_association_release(rule_module_association * restrict rma, gra
       case EDGE_RULE_RMA:
       case EDGE_FML_RMA:
       case EDGE_DIR_RMA:
-      case EDGE_INDEX_RMA:
-      case EDGE_RMA_RULES:
+      case EDGE_FSNAME_RMA:
+      case EDGE_RMA_RULESET:
       case EDGE_RMA_MOD:
       case EDGE_RMA_TGT:
         entlist_push(&edges, edge);
@@ -112,6 +114,12 @@ void rule_module_association_release(rule_module_association * restrict rma, gra
       default:
         edge_show(edge);
         RTA;
+    }
+  }
+
+  for(x = 0; x < ARRAY_LEN(rma->links); x++) {
+    if(rma->links[x]) {
+      entlist_push(&edges, &rma->links[x]->edge);
     }
   }
 
@@ -136,22 +144,25 @@ void rule_module_association_release(rule_module_association * restrict rma, gra
 }
 
 void rule_module_association_create(
-    rule * restrict rule
+    struct rule * restrict rule
   , module * mod
-  , rules * restrict rules
+  , ruleset * restrict rules
   , graph_invalidation_context * restrict invalidation
 )
 {
   rule_module_association *rma = 0;
   meta_edge *me;
   uint64_t u64;
-  uint64_t token;
 
   rule_module_association_alloc(&rma);
+
+  rma->rule = rule;
+  rma->mod = mod;
+
   meta_connect(&rule->vertex, &rma->vertex, EDGE_RULE_RMA, invalidation, &me);
   meta_connect(&rma->vertex, &mod->vertex, EDGE_RMA_MOD, invalidation, &me);
   if(rules) {
-    meta_connect(&rma->vertex, &rules->vertex, EDGE_RMA_RULES, invalidation, &me);
+    meta_connect(&rma->vertex, &rules->vertex, EDGE_RMA_RULESET, invalidation, &me);
   }
 
   /* context node for running the rma */
@@ -162,46 +173,32 @@ void rule_module_association_create(
   }
 
   u64 = 0;
+  u64 += 0x7788eeaf;
   u64 = hash64(u64, rule->id, rule->id_len);
+  u64 += 0xaa339aff;
   u64 = hash64(u64, mod->id, mod->id_len);
   rma->id_len = zcatf(rma->id, sizeof(rma->id), "%016"PRIx64, u64);
-  token = atomic_fetch_inc(&vertex_token_counter);
-  rma->token_len = zcatf(rma->token, sizeof(rma->token), "%016"PRIx64, hash64(u64, MM(token)));
 
   vertex_invalidate(&rma->vertex, invalidation);
+
+  /* shadow refs */
+  memset(rma->links, 0, sizeof(rma->links));
+  shadow_link(g_shadow_rmas, rma->id, rma->id_len, &rma->vertex, &rma->links[0]);
+  if(rule->name_len) {
+    shadow_link(g_shadow_rmas_byname, rule->name, rule->name_len, &rma->vertex, &rma->links[1]);
+  }
+
+  shadow_link(mod->shadow_rmas, rule->id, rule->id_len, &rma->vertex, &rma->links[2]);
+  shadow_link(mod->shadow_rules, rule->id, rule->id_len, &rule->vertex, &rma->links[3]);
+  if(rule->name_len) {
+    shadow_link(mod->shadow_rmas_byname, rule->name, rule->name_len, &rma->vertex, &rma->links[4]);
+    shadow_link(mod->shadow_rules_byname, rule->name, rule->name_len, &rule->vertex, &rma->links[5]);
+  }
 }
 
-void rma_mod_set(rule_module_association * restrict rma, module * restrict mod, graph_invalidation_context * restrict invalidation)
+static void rma_stats_collate(rule_module_association *rma)
 {
-  fsent *shadow;
-  moria_edge *edge;
-
-  if(mod)
-  {
-    shadow_create(mod->shadow_rma, &shadow, rma->rule->id, rma->rule->id_len, VERTEX_SHADOW_RULE, invalidation);
-    shadow->self_rma = rma;
-    edge = moria_edge_between(&shadow->vertex, &fsent_parent(shadow)->vertex);
-    rma->shadow = containerof(edge, fsedge, edge);
-  }
-  else if(rma->shadow)
-  {
-    graph_disintegrate(&rma->shadow->edge, invalidation);
-  }
-  rma->mod = mod;
-}
-
-size_t rule_module_association_stats_collate(void *dst, size_t sz, bool reset, rule_module_association *rma)
-{
-  size_t z;
-  bam_rule_stats *stats;
-  bam_rule_stats tmp;
   uint32_t count;
-
-  memcpy(&tmp, &rma->stats, sizeof(tmp));
-  if(reset) {
-    memset(&rma->stats, 0, sizeof(rma->stats));
-  }
-  stats = &tmp;
 
   /* dependencies */
   count = 0;
@@ -213,10 +210,137 @@ size_t rule_module_association_stats_collate(void *dst, size_t sz, bool reset, r
     , MORIA_TRAVERSE_UP | MORIA_TRAVERSE_PRE | MORIA_TRAVERSE_DEPTH
     , &count
   );
-  stats->dependencies = count;
+  rma->rma_stats.bpe_hits = count;
+}
 
-  z = 0;
-  z += descriptor_marshal_object(dst + z, sz - z, &descriptor_bam_rule_stats, &stats->record, 0);
+void rma_stats_build(rule_module_association * restrict rma, bool reset, bacon_writer * restrict builder_writer)
+{
+  rma_stats_collate(rma);
 
-  return z;
+  stats_build(&rma->stats.record, &descriptor_stats_vertex, builder_writer);
+  stats_build(&rma->rma_stats.record, &descriptor_stats_rma, builder_writer);
+
+  if(reset) {
+    memset(&rma->stats, 0, sizeof(rma->stats));
+    memset(&rma->rma_stats, 0, sizeof(rma->rma_stats));
+  }
+}
+
+void rma_describe(const rule_module_association * restrict rma, struct bacon_writer * restrict builder_writer)
+{
+  moria_foreach_state st;
+  moria_edge *e;
+  entlist list, *eln;
+
+  { MAPPING
+    vertex_path_describe(&rma->vertex, builder_writer);
+    { SET
+      vertex_mappings(&rma->vertex, builder_writer);
+      moria_foreach_edge_down(&st, &rma->vertex, e) {
+        switch(edge_type_get(e)) {
+          case EDGE_RULE_RMA:
+            break;
+          default:
+            continue;
+        }
+        { MAPPING
+          STRING("rule")
+          vertex_path_describe(e->B, builder_writer);
+          break;
+        }
+      }
+      moria_foreach_edge_up(&st, &rma->vertex, e) {
+        switch(edge_type_get(e)) {
+          case EDGE_RMA_MOD:
+            break;
+          default:
+            continue;
+        }
+        { MAPPING
+          STRING("module")
+          vertex_path_describe(e->A, builder_writer);
+          break;
+        }
+      }
+      moria_foreach_edge_up(&st, &rma->vertex, e) {
+        switch(edge_type_get(e)) {
+          case EDGE_RMA_RULESET:
+            break;
+          default:
+            continue;
+        }
+        { MAPPING
+          STRING("ruleset")
+          vertex_path_describe(e->A, builder_writer);
+          break;
+        }
+      }
+      moria_foreach_edge_down(&st, &rma->vertex, e) {
+        switch(edge_type_get(e)) {
+          case EDGE_FML_RMA:
+            break;
+          default:
+            continue;
+        }
+        { MAPPING
+          STRING("formula")
+          vertex_path_describe(e->B, builder_writer);
+          break;
+        }
+      }
+      if(edges_gather_down(&rma->vertex, EDGE_DIR_RMA, &list)) {
+        MAPPING STRING("dirs")
+        { SET
+          entlist_foreach(&list, e, eln) {
+            vertex_path_describe(e->B, builder_writer);
+          }
+        }
+        entlist_destroy(&list);
+      }
+
+      /* bindings are created by lookup/attachment rules */
+      if(edges_gather_up(&rma->vertex, EDGE_RMA_TGT, &list)) {
+        MAPPING STRING("bindings")
+        { SET
+          entlist_foreach(&list, e, eln) {
+            vertex_path_describe(e->A, builder_writer);
+          }
+        }
+        entlist_destroy(&list);
+      }
+
+      /* bpes are created by search/generate rules */
+      if(edges_gather_up(&rma->vertex, EDGE_RMA_BPE, &list)) {
+        MAPPING STRING("bpes")
+        { SET
+          entlist_foreach(&list, e, eln) {
+            vertex_path_describe(e->A, builder_writer);
+          }
+        }
+        entlist_destroy(&list);
+      }
+      { MAPPING STRING("stats")
+        { SET
+          rma_stats_build((struct rule_module_association *)rma, false, builder_writer);
+        }
+      }
+    }
+  }
+}
+
+size_t rma_path_cat(void * restrict dst, size_t sz, const rule_module_association * restrict rma)
+{
+  return zcatf(dst, sz, "//rmas/%.*s", rma->id_len, rma->id);
+}
+
+void rma_identity_say(const struct rule_module_association * restrict rma, narrator * restrict N)
+{
+  attrs32_say(rma->vertex.attrs, graph_vertex_attrs, N);
+  narrator_sayf(N, " id %.*s", rma->id_len, rma->id);
+  if(rma->rule->name_len) {
+    narrator_sayf(N, " name %.*s", rma->rule->name_len, rma->rule->name);
+  }
+  narrator_sayf(N, " %s [%d,%d - %d,%d]", rma->rule->loc.fname, rma->rule->loc.f_lin + 1, rma->rule->loc.f_col + 1, rma->rule->loc.l_lin + 1, rma->rule->loc.l_col + 1);
+  narrator_says(N, " ");
+  rule_say(rma->rule, N);
 }

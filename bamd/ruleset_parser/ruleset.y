@@ -15,7 +15,7 @@
   #include "rule.h"
   #include "import.h"
   #include "anchor.h"
-  #include "rules_parser.h"
+  #include "ruleset_parser.h"
   #include "module.h"
   #include "pattern.h"
   #include "block.h"
@@ -27,20 +27,20 @@
 }
 
 %code top {
-  int rules_yylex(void*, void*, void*);
-  #define PARSER ((rules_parser*)parser)
-  #define RULES_YYLTYPE yyu_location
+  int ruleset_yylex(void*, void*, void*);
+  #define PARSER ((ruleset_parser*)parser)
+  #define RULESET_YYLTYPE yyu_location
 
   struct yyu_location;
   struct yyu_parser;
-  static void rules_yyerror(struct yyu_location* loc, void * scanner, struct yyu_parser * pp, char const * err)
+  static void ruleset_yyerror(struct yyu_location* loc, void * scanner, struct yyu_parser * pp, char const * err)
     __attribute__((weakref("yyu_grammar_error")));
 }
 
 %define api.pure
 %define parse.error verbose
 %locations
-%define api.prefix {rules_yy}
+%define api.prefix {ruleset_yy}
 %parse-param { void* scanner }
 %parse-param { void* parser }
 %lex-param { void* scanner }
@@ -97,23 +97,21 @@
 
 %token
  AS         "as"
- GRAPH      "graph"
  DEPENDS    "depends"
  FS         "fs"
  RULE       "rule"
  DASHES     "--"
  STARBOX    "[*]"
  IF         "if"
- ID         "id"
+ NAME       "name"
  USE        "use"
  BIND       "bind"
  REQUIRE    "require"
- IMPORT     "import"
  ANCHOR     "anchor"
  SEARCH     "search"
- MODULE     "module"
- VARFILES   "varfiles"
- RULESFILES "rulesfiles"
+ GENERATE   "generate"
+ VARSETS    "varsets"
+ RULESETS   "rulesets"
 
 %token
  <pattern> SEARCH_PATTERN
@@ -122,6 +120,9 @@
  <pattern> LOOKUP_PATTERN
  <pattern> MATCH_PATTERN
 
+%type
+ <pattern> generate-pattern
+
 %token
  LOGAND  "&&"
  LOGOR   "||"
@@ -129,13 +130,12 @@
  SHR     ">>"
 
 %type <yyu.t> string quoted-string unquoted-string strpart strparts
-%type <rule> rule
+%type <rule> rule rule-form
 %type <rule> bind
 %type <import> import
 %type <anchor> anchor
 %type <expr> if-statement
 %type <yyu.u16> connector bind-connector
-%type <graph_type> graph-type
 
 %destructor { pattern_free($$); } <pattern>
 
@@ -176,8 +176,8 @@ declaration-list
 
 declaration
   : anchor
-  | varfiles
-  | rulesfiles
+  | varsets
+  | rulesets
   ;
 
 anchor
@@ -188,17 +188,17 @@ anchor
   }
   ;
 
-varfiles
-  : VARFILES LOOKUP_PATTERN
+varsets
+  : VARSETS LOOKUP_PATTERN
   {
-    llist_append(&PARSER->varfiles, &$2->lln);
+    llist_append(&PARSER->varsets, &$2->lln);
   }
   ;
 
-rulesfiles
-  : RULESFILES LOOKUP_PATTERN
+rulesets
+  : RULESETS LOOKUP_PATTERN
   {
-    llist_append(&PARSER->rulesfiles, &$2->lln);
+    llist_append(&PARSER->rulesets, &$2->lln);
   }
   ;
 
@@ -270,10 +270,10 @@ import
   }
 
 bind
-  /* bind */
+  /* bind target => attachment */
   : BIND bind-bacon LOOKUP_PATTERN bind-connector REFERENCE_PATTERN
   {
-    rule_mk(&$$, PARSER->g, 0, 0, 0, $3, $5, 0, &PARSER->bacon, $4, &@$);
+    $$ = rule_mk(PARSER->g, PARSER->mod, PARSER->rules, 0, 0, 0, $3, $5, 0, &PARSER->bacon, $4, &@$);
   }
   ;
 
@@ -303,9 +303,9 @@ bind-bacon-mappings
   ;
 
 bind-bacon-mapping
-  : ID ':' strtok-list
+  : NAME ':' strtok-list
   {
-    PARSER->bacon.id_len = memncpy(PARSER->bacon.id, sizeof(PARSER->bacon.id), @3.s, @3.l);
+    PARSER->bacon.name_len = memncpy(PARSER->bacon.name, sizeof(PARSER->bacon.name), @3.s, @3.l);
   }
   ;
 
@@ -328,62 +328,81 @@ close-block
   }
   ;
 
-expr
-  : %empty
-  {
-
-  }
-  ;
-
 rule-init
   : %empty { memset(&PARSER->bacon, 0, sizeof(PARSER->bacon)); }
+  ;
 
 rule-start
-  : RULE rule-init rule-bacon
+  : RULE rule-bacon
+  ;
+
+search-start
+  : RULE rule-bacon
+  | RULE rule-bacon SEARCH
+  | SEARCH rule-bacon
+  ;
+
+generate-pattern
+  : GENERATE GENERATE_PATTERN
+  {
+    $$ = $2;
+  }
+  | GENERATE_PATTERN
   ;
 
 rule
-  /* (search) antecedent(s), (generate) consequent(s) : (reference) formula */
-  : rule-start SEARCH_PATTERN connector GENERATE_PATTERN ':' REFERENCE_PATTERN
+  : rule-init rule-form
   {
-    rule_mk(&$$, PARSER->g, $2, $4, $6, 0, 0, 0, &PARSER->bacon, $3, &@$);
+    $$ = $2;
   }
-  | rule-start SEARCH_PATTERN connector GENERATE_PATTERN
+  ;
+
+rule-form
+  /* (search) antecedent(s), (generate) consequent(s) : (reference) formula */
+  : search-start SEARCH_PATTERN connector generate-pattern ':' REFERENCE_PATTERN
   {
-    rule_mk(&$$, PARSER->g, $2, $4, NULL, 0, 0, 0, &PARSER->bacon, $3, &@$);
+    $$ = rule_mk(PARSER->g, PARSER->mod, PARSER->rules, $2, $4, $6, 0, 0, 0, &PARSER->bacon, $3, &@$);
+  }
+  | search-start SEARCH_PATTERN connector generate-pattern
+  {
+    $$ = rule_mk(PARSER->g, PARSER->mod, PARSER->rules, $2, $4, 0, 0, 0, 0, &PARSER->bacon, $3, &@$);
   }
 
   /* bind */
-  | rule-start SEARCH_PATTERN '=' '>' STARBOX GENERATE_PATTERN
+  | search-start SEARCH_PATTERN '=' '>' STARBOX generate-pattern
   {
-    rule_mk(&$$, PARSER->g, $2, NULL, NULL, NULL, $6, 0, &PARSER->bacon, RULE_BIND_MANY, &@$);
+    $$ = rule_mk(PARSER->g, PARSER->mod, PARSER->rules, $2, 0, 0, 0, $6, 0, &PARSER->bacon, RULE_BIND_MANY, &@$);
   }
 
   /* search / search */
-  | rule-start SEARCH SEARCH_PATTERN STARBOX '-' '>' STARBOX SEARCH SEARCH_PATTERN
+  | search-start SEARCH_PATTERN STARBOX '-' '>' STARBOX SEARCH SEARCH_PATTERN
   {
-    rule_mk(&$$, PARSER->g, $3, NULL, NULL, NULL, NULL, $9, &PARSER->bacon, RULE_SEARCH_SEARCH, &@$);
+    $$ = rule_mk(PARSER->g, PARSER->mod, PARSER->rules, $2, 0, 0, 0, 0, $8, &PARSER->bacon, RULE_SEARCH_SEARCH | RULE_LTR, &@$);
+  }
+  | search-start SEARCH_PATTERN STARBOX '<' '0' STARBOX SEARCH SEARCH_PATTERN
+  {
+    $$ = rule_mk(PARSER->g, PARSER->mod, PARSER->rules, $2, 0, 0, 0, 0, $8, &PARSER->bacon, RULE_SEARCH_SEARCH | RULE_RTL, &@$);
   }
 
   /* search -- */
-  | rule-start SEARCH_PATTERN DASHES ':' REFERENCE_PATTERN
+  | search-start SEARCH_PATTERN DASHES ':' REFERENCE_PATTERN
   {
-    rule_mk(&$$, PARSER->g, $2, NULL, $5, 0, 0, 0, &PARSER->bacon, RULE_ZERO_TO_ONE | RULE_RTL, &@$);
+    $$ = rule_mk(PARSER->g, PARSER->mod, PARSER->rules, $2, 0, $5, 0, 0, 0, &PARSER->bacon, RULE_ZERO_TO_ONE | RULE_RTL, &@$);
   }
   /* search [*] -- */
-  | rule-start SEARCH_PATTERN STARBOX DASHES ':' REFERENCE_PATTERN
+  | search-start SEARCH_PATTERN STARBOX DASHES ':' REFERENCE_PATTERN
   {
-    rule_mk(&$$, PARSER->g, $2, NULL, $6, 0, 0, 0, &PARSER->bacon, RULE_ZERO_TO_MANY | RULE_RTL, &@$);
+    $$ = rule_mk(PARSER->g, PARSER->mod, PARSER->rules, $2, 0, $6, 0, 0, 0, &PARSER->bacon, RULE_ZERO_TO_MANY | RULE_RTL, &@$);
   }
   /* -- generate */
-  | rule-start DASHES GENERATE_PATTERN ':' REFERENCE_PATTERN
+  | rule-start DASHES generate-pattern ':' REFERENCE_PATTERN
   {
-    rule_mk(&$$, PARSER->g, NULL, $3, $5, 0, 0, 0, &PARSER->bacon, RULE_ZERO_TO_ONE | RULE_LTR, &@$);
+    $$ = rule_mk(PARSER->g, PARSER->mod, PARSER->rules, 0, $3, $5, 0, 0, 0, &PARSER->bacon, RULE_ZERO_TO_ONE | RULE_LTR, &@$);
   }
   /* -- [*] generate */
-  | rule-start DASHES STARBOX GENERATE_PATTERN ':' REFERENCE_PATTERN
+  | rule-start DASHES STARBOX generate-pattern ':' REFERENCE_PATTERN
   {
-    rule_mk(&$$, PARSER->g, NULL, $4, $6, 0, 0, 0, &PARSER->bacon, RULE_ZERO_TO_MANY | RULE_LTR, &@$);
+    $$ = rule_mk(PARSER->g, PARSER->mod, PARSER->rules, 0, $4, $6, 0, 0, 0, &PARSER->bacon, RULE_ZERO_TO_MANY | RULE_LTR, &@$);
   }
   ;
 
@@ -398,27 +417,10 @@ rule-bacon-mappings
   ;
 
 rule-bacon-mapping
-  : GRAPH ':' graph-type
+  : NAME ':' strtok-list
   {
-    PARSER->bacon.graph = $3;
+    PARSER->bacon.name_len = memncpy(PARSER->bacon.name, sizeof(PARSER->bacon.name), @3.s, @3.l);
   }
-  | ID ':' strtok-list
-  {
-    PARSER->bacon.id_len = memncpy(PARSER->bacon.id, sizeof(PARSER->bacon.id), @3.s, @3.l);
-  }
-  | SEARCH ':' ANCHOR
-  {
-    PARSER->bacon.anchor_search = true;
-  }
-  | SEARCH ':' MODULE
-  {
-    PARSER->bacon.module_search = true;
-  }
-  ;
-
-graph-type
-  : DEPENDS   { $$ = EDGE_DEPENDS; }
-  | FS        { $$ = EDGE_FSTREE; }
   ;
 
 connector

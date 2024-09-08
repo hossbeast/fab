@@ -7,7 +7,6 @@
 #include "graph.h"
 
 struct rule_module_association;
-struct bind_module_association;
 struct rule_run_context;
 
 /* auto-inc reconciliation round */
@@ -16,7 +15,6 @@ extern uint32_t rule_system_epoch;
 void rule_system_setup(void);
 
 typedef struct rule_system_work {
-//  vertex_type mark;
   struct {
     llist lln;                  // rule_system rma_list
     uint32_t epoch;

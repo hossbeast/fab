@@ -22,7 +22,7 @@
 #include "channel.h"
 #include "edge.h"
 #include "vertex.h"
-#include "system_state.h"
+#include "system.h"
 #include "events.h"
 #include "zcat.h"
 #include "meta_edge.h"
@@ -84,7 +84,7 @@ void rule_system_reconcile(rule_run_context * restrict ctx)
       moria_foreach_edge(&st, &rma->vertex, edge) {
         switch(edge_type_get(edge)) {
           case EDGE_RMA_BPE:
-          case EDGE_INDEX_RMA:
+          case EDGE_FSNAME_RMA:
           case EDGE_RMA_TGT:
             break;
           default:

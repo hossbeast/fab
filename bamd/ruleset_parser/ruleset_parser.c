@@ -10,14 +10,14 @@
 #include "narrator.h"
 
 /* flex and bison do not agree on these names */
-#define YYSTYPE RULES_YYSTYPE
+#define YYSTYPE RULESET_YYSTYPE
 #define YYLTYPE yyu_location
 
-#include "rules_parser.h"
-#include "rules.tab.h"
-#include "rules.tokens.h"
-#include "rules.lex.h"
-#include "rules.states.h"
+#include "ruleset_parser.h"
+#include "ruleset.tab.h"
+#include "ruleset.tokens.h"
+#include "ruleset.lex.h"
+#include "ruleset.states.h"
 
 #include "channel.h"
 #include "fsedge.h"
@@ -31,29 +31,25 @@
 #include "anchor.h"
 #include "pattern_parser.internal.h"
 
-static YYU_VTABLE(vtable, rules, rules);
-
-//
-// static
-//
+static YYU_VTABLE(vtable, ruleset, ruleset);
 
 //
 // public
 //
 
-void rules_parser_alloc(rules_parser ** rv)
+void ruleset_parser_alloc(ruleset_parser ** rv)
 {
-  rules_parser * p = 0;
+  ruleset_parser * p = 0;
 
   xmalloc(&p, sizeof(*p));
 
   yyu_parser_init(&p->yyu, &vtable);
-  yyu_parser_init_tokens(&p->yyu, rules_token_table, rules_TOKEN_TABLE_SIZE);
+  yyu_parser_init_tokens(&p->yyu, ruleset_token_table, ruleset_TOKEN_TABLE_SIZE);
   yyu_parser_init_states(
       &p->yyu
-    , rules_numstates
-    , rules_statenumbers
-    , rules_statenames
+    , ruleset_numstates
+    , ruleset_statenumbers
+    , ruleset_statenames
   );
 
   pattern_parser_create(&p->pattern_parser);
@@ -63,16 +59,16 @@ void rules_parser_alloc(rules_parser ** rv)
   bacon_parser_alloc(&p->bacon_parser);
 
   llist_init(&p->blocks);
-  llist_init(&p->varfiles);
-  llist_init(&p->rulesfiles);
+  llist_init(&p->varsets);
+  llist_init(&p->rulesets);
 
   *rv = p;
   p = 0;
 
-  rules_parser_free(p);
+  ruleset_parser_free(p);
 }
 
-void rules_parser_free(rules_parser* const parser)
+void ruleset_parser_free(ruleset_parser* const parser)
 {
   if(!parser) {
     return;
@@ -83,17 +79,17 @@ void rules_parser_free(rules_parser* const parser)
   entlist_destroy(&parser->lookup_hits);
 
   block_release_bulk(parser->bacon_parser, &parser->blocks);
-  pattern_list_free(&parser->varfiles);
-  pattern_list_free(&parser->rulesfiles);
+  pattern_list_free(&parser->varsets);
+  pattern_list_free(&parser->rulesets);
   anchor_release(parser->anchor);
 
   bacon_parser_free(parser->bacon_parser);
   free(parser);
 }
 
-void rules_parser_ifree(rules_parser ** const p)
+void ruleset_parser_ifree(ruleset_parser ** const p)
 {
-  rules_parser_free(*p);
+  ruleset_parser_free(*p);
   *p = 0;
 }
 
@@ -118,8 +114,8 @@ static int block_validate(block *b, char * restrict error_str, size_t error_str_
   return 0;
 }
 
-int rules_parser_parse(
-    rules_parser * restrict parser
+int ruleset_parser_parse(
+    ruleset_parser * restrict parser
   , char * const restrict buf
   , size_t size
   , const char * relpath
@@ -130,15 +126,12 @@ int rules_parser_parse(
   block *block;
 
   parser->yyu.fname = relpath;
-
-  //parser->relpath = relpath;
-  //parser->relpath_len = relpath_len;
   parser->bacon_parser->yyu = NULL;
   parser->pattern_parser->yyu = NULL;
 
   block_release_bulk(parser->bacon_parser, &parser->blocks);
-  pattern_list_free(&parser->varfiles);
-  pattern_list_free(&parser->rulesfiles);
+  pattern_list_free(&parser->varsets);
+  pattern_list_free(&parser->rulesets);
 
   anchor_release(parser->anchor);
   parser->anchor = 0;

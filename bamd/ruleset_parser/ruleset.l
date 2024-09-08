@@ -4,20 +4,20 @@
 %{
   #include "yyutil/scanner.h"
 
-  #include "rules_parser.h"
-  #include "rules.tab.h"
-  #include "rules.tokens.h"
+  #include "ruleset_parser.h"
+  #include "ruleset.tab.h"
+  #include "ruleset.tokens.h"
 
   #include "bacon/value.h"
   #include "bacon/parser.h"
 
   #include "pattern_parser.h"
 
-  #define YYSTYPE RULES_YYSTYPE
+  #define YYSTYPE RULESET_YYSTYPE
   #define YYLTYPE yyu_location
 
   #define PARSE_SEARCH_PATTERN ({                                         \
-    rules_parser * parser = containerof(yyextra, rules_parser, yyu);      \
+    ruleset_parser * parser = containerof(yyextra, ruleset_parser, yyu);  \
     size_t off = yytext - parser->yyu.yybuffer;                           \
     char * usr = parser->yyu.usrbuf + off;                                \
     size_t bufsz = parser->yyu.usrbufsize - off;                          \
@@ -34,13 +34,13 @@
     );                                                                    \
     if(r == 0) {                                                          \
       yyless(subloc.l);                                                   \
-      r = LEXLOC(rules_SEARCH_PATTERN, &subloc);                          \
+      r = LEXLOC(ruleset_SEARCH_PATTERN, &subloc);                        \
     }                                                                     \
     r;                                                                    \
   })
 
   #define PARSE_GENERATE_PATTERN ({                                       \
-    rules_parser * parser = containerof(yyextra, rules_parser, yyu);      \
+    ruleset_parser * parser = containerof(yyextra, ruleset_parser, yyu);  \
     size_t off = yytext - parser->yyu.yybuffer;                           \
     char * usr = parser->yyu.usrbuf + off;                                \
     size_t bufsz = parser->yyu.usrbufsize - off;                          \
@@ -57,13 +57,13 @@
     );                                                                    \
     if(r == 0) {                                                          \
       yyless(subloc.l);                                                   \
-      r = LEXLOC(rules_GENERATE_PATTERN, &subloc);                        \
+      r = LEXLOC(ruleset_GENERATE_PATTERN, &subloc);                      \
     }                                                                     \
     r;                                                                    \
   })
 
   #define PARSE_REFERENCE_PATTERN ({                                      \
-    rules_parser * parser = containerof(yyextra, rules_parser, yyu);      \
+    ruleset_parser * parser = containerof(yyextra, ruleset_parser, yyu);  \
     size_t off = yytext - parser->yyu.yybuffer;                           \
     char * usr = parser->yyu.usrbuf + off;                                \
     size_t bufsz = parser->yyu.usrbufsize - off;                          \
@@ -80,13 +80,13 @@
     );                                                                    \
     if(r == 0) {                                                          \
       yyless(subloc.l);                                                   \
-      r = LEXLOC(rules_REFERENCE_PATTERN, &subloc);                       \
+      r = LEXLOC(ruleset_REFERENCE_PATTERN, &subloc);                     \
     }                                                                     \
     r;                                                                    \
   })
 
   #define PARSE_LOOKUP_PATTERN ({                                         \
-    rules_parser * parser = containerof(yyextra, rules_parser, yyu);      \
+    ruleset_parser * parser = containerof(yyextra, ruleset_parser, yyu);  \
     size_t off = yytext - parser->yyu.yybuffer;                           \
     char * usr = parser->yyu.usrbuf + off;                                \
     size_t bufsz = parser->yyu.usrbufsize - off;                          \
@@ -103,7 +103,7 @@
     );                                                                    \
     if(r == 0) {                                                          \
       yyless(subloc.l);                                                   \
-      r = LEXLOC(rules_LOOKUP_PATTERN, &subloc);                          \
+      r = LEXLOC(ruleset_LOOKUP_PATTERN, &subloc);                        \
     }                                                                     \
     r;                                                                    \
   })
@@ -112,7 +112,7 @@
 %option noinput nounput noyywrap noyy_top_state
 %option reentrant
 %option bison-bridge bison-locations
-%option prefix="rules_yy"
+%option prefix="ruleset_yy"
 %option stack
 
 %x multilinecomment
@@ -125,7 +125,7 @@
 %x include_pattern
 %x exclude
 %x match_pattern
-%x rule
+%x rule_pre
 %x rule_bacon
 %x rule_lhs
 %x rule_rhs
@@ -133,7 +133,7 @@
 %x rule_colon
 %x rule_arrow
 %x rule_starbox
-%x rule_connector
+%x rule_mid
 %x bind_bacon
 %x bind_lookup
 %x bind_arrow
@@ -159,13 +159,12 @@
  /* tokens */
 <INITIAL>[+[\]{}():=,$!]                                { return LEX(yytext[0]); }
 
- /* sub-parsers */
+ /* keywords */
 <INITIAL>"use"                                          { PUSHSTATE(lookup); return LEX(USE); }
 <INITIAL>"require"                                      { PUSHSTATE(lookup); return LEX(REQUIRE); }
-<INITIAL>"import"                                       { PUSHSTATE(lookup); return LEX(IMPORT); }
 <INITIAL>"anchor"                                       { PUSHSTATE(lookup); return LEX(ANCHOR); }
-<INITIAL>"varfiles"                                     { PUSHSTATE(lookup); return LEX(VARFILES); }
-<INITIAL>"rulesfiles"                                   { PUSHSTATE(lookup); return LEX(RULESFILES); }
+<INITIAL>"varsets"                                      { PUSHSTATE(lookup); return LEX(VARSETS); }
+<INITIAL>"rulesets"                                     { PUSHSTATE(lookup); return LEX(RULESETS); }
 
 <INITIAL>"bind"                                         { PUSHSTATE(bind_lookup); return LEX(BIND); }
 <bind_lookup>"{ "                                       { PUSHSTATE(bind_bacon); return LEX('{'); }
@@ -177,21 +176,23 @@
 <rule_starbox>"["[*]"]"                                 { POPSTATE; return LEX(STARBOX); }
 <rule_starbox>[\x00-\xff]                               { POPSTATE; yyless(0); }
 
-<INITIAL>"rule"                                         { PUSHSTATE(rule); return LEX(RULE); }
-<rule>"{ "                                              { POPSTATE; PUSHSTATE(rule_lhs); PUSHSTATE(rule_bacon); return LEX('{'); }
-<rule>[\x00-\xff]                                       { POPSTATE; PUSHSTATE(rule_lhs); yyless(0); }
+<INITIAL>"rule"                                         { PUSHSTATE(rule_lhs); PUSHSTATE(rule_pre); return LEX(RULE); }
+<INITIAL>"search"                                       { PUSHSTATE(rule_mid); PUSHSTATE(search); return LEX(SEARCH); }
+<rule_pre>"{ "                                          { POPSTATE; PUSHSTATE(rule_bacon); return LEX('{'); }
+<rule_pre>[\x00-\xff]                                   { POPSTATE; yyless(0); }
 <rule_bacon>[:]                                         { return LEX(yytext[0]); }
 <rule_bacon>[}]                                         { POPSTATE; return LEX(yytext[0]); }
-<rule_lhs>"search"                                      { POPSTATE; PUSHSTATE(rule_connector); PUSHSTATE(search); return LEX(SEARCH); }
-<rule_lhs>"-- "                                         { POPSTATE; PUSHSTATE(rule_connector); return LEX(DASHES); }
-<rule_lhs>[\x00-\xff]                                   { POPSTATE; PUSHSTATE(rule_connector); PUSHSTATE(search); yyless(0); }
-<rule_connector>"["[*]"]"                               { return LEX(STARBOX); }
-<rule_connector>[<>=-]                                  { return LEX(yytext[0]); }
-<rule_connector>"-- "                                   { POPSTATE; PUSHSTATE(rule_colon); return LEX(DASHES); }
-<rule_connector>[\x00-\xff]                             { POPSTATE; PUSHSTATE(rule_rhs); yyless(0); }
+<rule_lhs>"search"                                      { POPSTATE; PUSHSTATE(rule_mid); PUSHSTATE(search); return LEX(SEARCH); }
+<rule_lhs>"-- "                                         { POPSTATE; PUSHSTATE(rule_mid); return LEX(DASHES); }
+<rule_lhs>[\x00-\xff]                                   { POPSTATE; PUSHSTATE(rule_mid); PUSHSTATE(search); yyless(0); }
+<rule_mid>"["[*]"]"                                     { return LEX(STARBOX); }
+<rule_mid>[<>=-]                                        { return LEX(yytext[0]); }
+<rule_mid>"-- "                                         { POPSTATE; PUSHSTATE(rule_colon); return LEX(DASHES); }
+<rule_mid>[\x00-\xff]                                   { POPSTATE; PUSHSTATE(rule_rhs); yyless(0); }
 <rule_search,rule_colon>":"                             { PUSHSTATE(reference); return LEX(':'); }
 <rule_search,rule_colon>[\x00-\xff]                     { POPSTATE; yyless(0); }
 <rule_rhs>"search"                                      { POPSTATE; PUSHSTATE(search); return LEX(SEARCH); }
+<rule_rhs>"generate"                                    { POPSTATE; PUSHSTATE(rule_colon); PUSHSTATE(generate); return LEX(GENERATE); }
 <rule_rhs>[\x00-\xff]                                   { POPSTATE; PUSHSTATE(rule_colon); PUSHSTATE(generate); yyless(0); }
 
  /* sub-parsers ; consume whitespace in this parser */
