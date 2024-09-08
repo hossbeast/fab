@@ -45,6 +45,7 @@
 %option stack
 
 %x multilinecomment
+%x quoted
 %x _select _selector
 
 /* bytes that cannot appear in the input */
@@ -73,6 +74,7 @@ ILL   [\x00-\x08\x0B-\x1F\x7F-\xFF]
 
  /* tokens */
 <INITIAL>[[\]{}:=]                                      { return LEX(yytext[0]); }
+<INITIAL>(?i:true|false)                                { return LEXB(); }
 
  /* integers */
 <INITIAL>[-][0-9]+                                      { return LEXI("%"SCNdMAX); }
@@ -89,8 +91,15 @@ ILL   [\x00-\x08\x0B-\x1F\x7F-\xFF]
  /* consume whitespace in this parser */
 <_selector>[^\n\r\t ][\x00-\xff]+                       { int r = PARSE_SELECTOR; POPSTATE; POPSTATE; return r; }
 
- /* enumerated tokenrange */
-<INITIAL>[a-zA-Z0-9_][-a-zA-Z0-9_]*                     { return LEXA(); }
+ /* enums and unquoted strings */
+<INITIAL>[a-zA-Z0-9_/.+][-a-zA-Z0-9_/.+]*               { return LEXA(); }
+<INITIAL>[-a-zA-Z0-9_/.}]+                              { return LEX(STR); }
+
+ /* quoted strings -- no escapes */
+<INITIAL>["]                                            { PUSHSTATE(quoted); return LEX(yytext[0]); }
+<quoted>["]                                             { POPSTATE; return LEX(yytext[0]); }
+<quoted>[^"\\\x00-\x1F\x7F-\xFF]+                       { return LEX(STR); }
+
 
 <*>[\x00-\x1F\x7F-\xFF]                                 {
                                                           POPSTATES;

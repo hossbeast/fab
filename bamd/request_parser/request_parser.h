@@ -8,21 +8,21 @@
 
 struct request;
 struct selector_parser;
-struct config_parser;
+struct configset_parser;
 struct command;
 
 typedef struct request_parser {
   yyu_parser yyu;
 
   // sub-parsers
-  struct selector_parser * selector_parser;
-  struct config_parser * config_parser;
+  struct selector_parser *selector_parser;
+  struct configset_parser *configset_parser;
 
   // under construction
-  struct command * command;
+  struct command *command;
 
   // (returns)
-  struct request * request;
+  struct request *request;
 } request_parser;
 
 /// request_parser_create

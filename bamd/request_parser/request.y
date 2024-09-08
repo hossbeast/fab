@@ -6,6 +6,7 @@
   #include "types.h"
 
   #include "xlinux/xstdlib.h"
+  #include "bam/events.h"
 
   #include "request_parser.internal.h"
   #include "request.h"
@@ -38,24 +39,17 @@
 
   struct selector *selector;
   struct request *request;
+  bamipc_event_type eventtype;
 }
 
-/* tokens */
-%token '{' '}'
-%token '[' ']'
-%token ':'
-%token '='
-
-%token            STR           "string"
-%token <selector> SELECTOR
+%token            STR        "string"
+%token <yyu.u8>   CREF       "character-escape"
+%token <yyu.u8>   HREF       "hex-escape"
+%token <yyu.b>    BOOL       "boolean"
 %token <yyu.umax> UINTMAX8
 %token <yyu.umax> UINTMAX16
 %token <yyu.umax> UINTMAX32
 %token <yyu.umax> UINTMAX64
-%token <yyu.umax> HEX8
-%token <yyu.umax> HEX16
-%token <yyu.umax> HEX32
-%token <yyu.umax> HEX64
 %token <yyu.imax> INTMIN8
 %token <yyu.imax> INTMIN16
 %token <yyu.imax> INTMIN32
@@ -64,44 +58,64 @@
 %token <yyu.imax> INTMAX16
 %token <yyu.imax> INTMAX32
 %token <yyu.imax> INTMAX64
+%token <yyu.umax> HEX8
+%token <yyu.umax> HEX16
+%token <yyu.umax> HEX32
+%token <yyu.umax> HEX64
 
-%type <yyu.umax> uint
+%token <selector> SELECTOR
 
-%token
-  AUTORUN             "autorun"
-  BUILD               "build"
-  CONSOLE             "console"
-  CONFIG_DESCRIBE     "config-describe"
-  VARS_DESCRIBE       "vars-describe"
-  ENVS_DESCRIBE       "envs-describe"
-  RMA_DESCRIBE        "rma-describe"
-  RULES_DESCRIBE      "rules-describe"
-  FSTREE_DESCRIBE     "fstree-describe"
-  BUILDPLAN_DESCRIBE  "buildplan-describe"
-  FILESYSTEM_DESCRIBE "filesystem-describe"
-  DESCRIBE            "describe"
-  INVALIDATE          "invalidate"
-  GLOBAL_INVALIDATE   "global-invalidate"
-  LIST                "list"
-  RESET_SELECTION     "reset-selection"
-  RUN                 "run"
-  SCRIPT              "script"
-  SELECT              "select"
-  GLOBAL_STATS_READ   "global-stats-read"
-  GLOBAL_STATS_RESET  "global-stats-reset"
-  STATS_READ          "stats-read"
-  STATS_RESET         "stats-reset"
-  METADATA            "metadata"
-  RECONCILE           "reconcile"
-  GOALS               "goals"
-  TARGET_DIRECT       "target-direct"
-  TARGET_TRANSITIVE   "target-transitive"
-  SPECIAL_ONLY        "special-only"
-  NO_SPECIAL          "no-special"
-  CONTEXT             "context"
-  MODULE              "module"
+%type <yyu.umax> uint hex64
+%type <eventtype> eventname
+%type <yyu.t> string quoted-string unquoted-string
 
 %destructor { selector_free($$); } <selector>
+
+%token
+  AUTORUN                 "autorun"
+  BUILD                   "build"
+  CONSOLE                 "console"
+  DESCRIBE                "describe"
+  IDENTIFY                "identify"
+  LIST                    "list"
+  TELL                    "tell"
+  INVALIDATE              "invalidate"
+  INVALIDATE_PRIMARY      "invalidate-primary"
+  TREE_LIST               "tree-list"
+  RESET_SELECTION         "reset-selection"
+  RUN                     "run"
+  SELECT                  "select"
+  GLOBAL_STATS_READ       "global-stats-read"
+  GLOBAL_STATS_RESET      "global-stats-reset"
+  STATS_READ              "stats-read"
+  STATS_RESET             "stats-reset"
+  RECONCILE               "reconcile"
+  GOALS                   "goals"
+  TARGET_DIRECT           "target-direct"
+  TARGET_TRANSITIVE       "target-transitive"
+  SPECIAL_ONLY            "special-only"
+  NO_SPECIAL              "no-special"
+  NO_STATS                "no-stats"
+  CONTEXT                 "context"
+  MODULE                  "module"
+  TOKEN                   "token"
+  ID                      "id"
+  PID                     "pid"
+  LABEL                   "label"
+  PLUGIN_READY            "plugin-ready"
+  EVENTSUB                "eventsub"
+  NODE_STALE              "node-stale"
+  NODE_FRESH              "node-fresh"
+  NODE_CREATE             "node-create"
+  NODE_DELETE             "node-delete"
+  GLOBAL_INVALIDATION     "global-invalidation"
+  GOALS_SET               "goals-set"
+  AUTORUN_SET             "autorun-set"
+  SYSTEM_STATE_CHANGE     "system-state-change"
+  FORMULA_FORK            "formula-fork"
+  FORMULA_WAIT            "formula-wait"
+  BUILD_START             "build-start"
+  BUILD_END               "build-end"
 
 %%
 utterance
@@ -117,45 +131,45 @@ request
   : allocate-request commands
   ;
 
-allocate-command
-  : %empty
-  {
-    request_command_alloc(PARSER->request, &PARSER->command);
-  }
-  ;
-
 commands
   : commands command
   | command
   ;
 
+allocate-command
+  : %empty
+  {
+    PARSER->command = request_command_alloc(PARSER->request);
+  }
+  ;
+
 command
   : allocate-command command-branch
+  {
+    llist_push(&PARSER->request->commands, &PARSER->command->lln);
+    PARSER->command = 0;
+  }
   ;
 
 command-branch
   : describe-cmd
+  | identify-cmd
   | list-cmd
+  | tell-cmd
+  | tree-list-cmd
   | invalidate-cmd
-  | global-invalidate-cmd
+  | invalidate-primary-cmd
   | stats-cmd
   | global-stats-cmd
   | context-cmd
   | select-cmd
   | reset-selection-cmd
   | goals-cmd
-  | metadata-cmd
-  | config-describe-cmd
-  | vars-describe-cmd
-  | envs-describe-cmd
-  | rma-describe-cmd
-  | rules-describe-cmd
-  | fstree-describe-cmd
-  | buildplan-describe-cmd
-  | filesystem-describe-cmd
   | run-cmd
   | autorun-cmd
   | reconcile-cmd
+  | eventsub-cmd
+  | plugin-ready-cmd
   ;
 
 context-cmd
@@ -171,9 +185,14 @@ context-list
   ;
 
 context-mapping
-  : MODULE ':' uint
+  : MODULE ':' string
   {
-    PARSER->command->context.module_id = $3;
+    PARSER->command->context.module_id_len = zcatw(
+        PARSER->command->context.module_id
+      , sizeof(PARSER->command->context.module_id)
+      , $3.s
+      , $3.l
+    );
   }
   ;
 
@@ -190,7 +209,11 @@ run-cmd
   ;
 
 autorun-cmd
-  : AUTORUN { PARSER->command->type = COMMAND_AUTORUN; }
+  : AUTORUN ':' BOOL
+  {
+    PARSER->command->type = COMMAND_AUTORUN;
+    PARSER->command->autorun.enabled = $3;
+  }
   ;
 
 reset-selection-cmd
@@ -198,56 +221,69 @@ reset-selection-cmd
   ;
 
 describe-cmd
-  : DESCRIBE { PARSER->command->type = COMMAND_DESCRIBE; }
+  : DESCRIBE { PARSER->command->type = COMMAND_DESCRIBE; } describe-args-set-epsilon
   ;
 
-invalidate-cmd
-  : INVALIDATE { PARSER->command->type = COMMAND_INVALIDATE ; }
+describe-args-set-epsilon
+  : describe-args-set
+  | %empty
   ;
 
-global-invalidate-cmd
-  : GLOBAL_INVALIDATE { PARSER->command->type = COMMAND_GLOBAL_INVALIDATE ; }
+describe-args-set
+  : ':' '{' describe-args '}'
+  ;
+
+describe-args
+  : describe-arg-list
+  | %empty
+  ;
+
+describe-arg-list
+  : describe-arg-list describe-arg
+  | describe-arg
+  ;
+
+describe-arg
+  : SPECIAL_ONLY
+  {
+    PARSER->command->describe.special_only = true;
+  }
+  | NO_SPECIAL
+  {
+    PARSER->command->describe.no_special = true;
+  }
+  | NO_STATS
+  {
+    PARSER->command->describe.no_stats = true;
+  }
+  ;
+
+identify-cmd
+  : IDENTIFY { PARSER->command->type = COMMAND_IDENTIFY; }
   ;
 
 list-cmd
   : LIST { PARSER->command->type = COMMAND_LIST; }
   ;
 
-config-describe-cmd
-  : CONFIG_DESCRIBE { PARSER->command->type = COMMAND_CONFIG_DESCRIBE; }
+tell-cmd
+  : TELL { PARSER->command->type = COMMAND_TELL; }
   ;
 
-vars-describe-cmd
-  : VARS_DESCRIBE { PARSER->command->type = COMMAND_VARS_DESCRIBE; }
+invalidate-cmd
+  : INVALIDATE { PARSER->command->type = COMMAND_INVALIDATE; }
   ;
 
-envs-describe-cmd
-  : ENVS_DESCRIBE { PARSER->command->type = COMMAND_ENVS_DESCRIBE; }
+invalidate-primary-cmd
+  : INVALIDATE_PRIMARY { PARSER->command->type = COMMAND_INVALIDATE_PRIMARY; }
   ;
 
-rma-describe-cmd
-  : RMA_DESCRIBE { PARSER->command->type = COMMAND_RMA_DESCRIBE; }
-  ;
-
-rules-describe-cmd
-  : RULES_DESCRIBE { PARSER->command->type = COMMAND_RULES_DESCRIBE; }
-  ;
-
-fstree-describe-cmd
-  : FSTREE_DESCRIBE { PARSER->command->type = COMMAND_FSTREE_DESCRIBE; }
-  ;
-
-buildplan-describe-cmd
-  : BUILDPLAN_DESCRIBE { PARSER->command->type = COMMAND_BUILDPLAN_DESCRIBE; }
-  ;
-
-filesystem-describe-cmd
-  : FILESYSTEM_DESCRIBE { PARSER->command->type = COMMAND_FILESYSTEM_DESCRIBE; }
+tree-list-cmd
+  : TREE_LIST { PARSER->command->type = COMMAND_TREE_LIST; }
   ;
 
 stats-cmd
-  : stats-cmd-type
-  | stats-cmd-type ':' '{' stats-args '}'
+  : stats-cmd-type stats-args-set-epsilon
   ;
 
 stats-cmd-type
@@ -255,13 +291,22 @@ stats-cmd-type
   | STATS_RESET { PARSER->command->type = COMMAND_STATS_RESET; }
   ;
 
-stats-args
-  : stats-args-list
+stats-args-set-epsilon
+  : stats-args-set
   | %empty
   ;
 
-stats-args-list
-  : stats-args-list stats-arg
+stats-args-set
+  : ':' '{' stats-args '}'
+  ;
+
+stats-args
+  : stats-arg-list
+  | %empty
+  ;
+
+stats-arg-list
+  : stats-arg-list stats-arg
   | stats-arg
   ;
 
@@ -281,10 +326,6 @@ global-stats-cmd
   | GLOBAL_STATS_RESET { PARSER->command->type = COMMAND_GLOBAL_STATS_RESET; }
   ;
 
-metadata-cmd
-  : METADATA { PARSER->command->type = COMMAND_METADATA; }
-  ;
-
 goals-cmd
   : GOALS ':' '{' goals-cmd-list '}'
   {
@@ -298,28 +339,76 @@ goals-cmd-list
   ;
 
 goals-subcmd
-  : reconcile-cmd
-  {
-    PARSER->command->goals.reconcile = true;
-  }
-  | build-cmd
-  | script-cmd
+  : RECONCILE             { PARSER->command->goals.reconcile = true; }
+  | BUILD                 { PARSER->command->goals.build = true; }
+  | PID ':' uint
+  | ID ':' uint
+  | goals-token-cmd
+  | goals-label-cmd
   | target-direct-cmd
   | target-transitive-cmd
   ;
 
-build-cmd
-  : BUILD
+goals-label-cmd
+  : LABEL ':' STR
   {
-    PARSER->command->goals.build = true;
+    memcpy(PARSER->command->goals.label, @3.s, @3.l);
+    PARSER->command->goals.label_len = @3.l;
   }
   ;
 
-script-cmd
-  : SCRIPT
+goals-token-cmd
+  : TOKEN ':' hex64
   {
-    PARSER->command->goals.script = true;
+    PARSER->command->goals.token = $3;
   }
+  ;
+
+plugin-ready-cmd
+  : PLUGIN_READY
+  {
+    PARSER->command->type = COMMAND_PLUGIN_READY;
+  }
+  ;
+
+eventsub-cmd
+  : EVENTSUB ':' '[' eventsubs ']'
+  {
+    PARSER->command->type = COMMAND_EVENTSUB;
+  }
+  ;
+
+eventsubs
+  : eventsub-list
+  | %empty
+  ;
+
+eventsub-list
+  : eventsub-list eventsub
+  | eventsub
+  ;
+
+eventsub
+  : eventname
+  {
+    PARSER->command->mask |= $1;
+  }
+  ;
+
+eventname
+  /* events which have a small bacon payload */
+  : NODE_STALE            { $$ = BAMIPC_EVENT_NODE_STALE; }
+  | NODE_FRESH            { $$ = BAMIPC_EVENT_NODE_FRESH; }
+  | NODE_CREATE           { $$ = BAMIPC_EVENT_NODE_CREATE; }
+  | NODE_DELETE           { $$ = BAMIPC_EVENT_NODE_DELETE; }
+  | GLOBAL_INVALIDATION   { $$ = BAMIPC_EVENT_GLOBAL_INVALIDATION; }
+  | GOALS_SET             { $$ = BAMIPC_EVENT_GOALS_SET; }
+  | AUTORUN_SET           { $$ = BAMIPC_EVENT_AUTORUN_SET; }
+  | SYSTEM_STATE_CHANGE   { $$ = BAMIPC_EVENT_SYSTEM_STATE_CHANGE; }
+  | FORMULA_FORK          { $$ = BAMIPC_EVENT_FORMULA_FORK; }
+  | FORMULA_WAIT          { $$ = BAMIPC_EVENT_FORMULA_WAIT; }
+  | BUILD_START           { $$ = BAMIPC_EVENT_BUILD_START; }
+  | BUILD_END             { $$ = BAMIPC_EVENT_BUILD_END; }
   ;
 
 target-direct-cmd
@@ -349,8 +438,38 @@ uint
   | INTMAX16  { $$ = $1; }
   | INTMAX32  { $$ = $1; }
   | INTMAX64  { $$ = $1; }
-  | HEX8
+  | hex64
+  ;
+
+hex64
+  : HEX8
   | HEX16
   | HEX32
   | HEX64
+  ;
+
+string
+  : unquoted-string
+  | quoted-string
+  ;
+
+unquoted-string
+  : strpart
+  {
+    $$.s = @1.s;
+    $$.l = @1.l;
+  }
+  ;
+
+quoted-string
+  : '"' strpart '"'
+  {
+    $$.s = @2.s;
+    $$.l = @2.l;
+  }
+  ;
+
+strpart
+  : STR
+  | uint
   ;

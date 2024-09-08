@@ -42,11 +42,13 @@ void request_parser_create(request_parser ** const rv)
 
 void request_parser_free(request_parser* const p)
 {
-  if(p)
-  {
-    selector_parser_free(p->selector_parser);
-    yyu_parser_xdestroy(&p->yyu);
+  if(!p) {
+    return;
   }
+
+  request_command_free(p->command);
+  selector_parser_free(p->selector_parser);
+  yyu_parser_xdestroy(&p->yyu);
 
   free(p);
 }
@@ -66,7 +68,7 @@ int request_parser_parse(
 )
 {
   /* request must end with two null bytes */
-  RUNTIME_ASSERT(size > 2);
+  RUNTIME_ASSERT(size >= 2);
   RUNTIME_ASSERT(buf[size - 1] == 0);
   RUNTIME_ASSERT(buf[size - 2] == 0);
 

@@ -8,6 +8,7 @@
 #include "bacon/builder.h"
 #include "xlinux/xstdlib.h"
 #include "valyria/llist.h"
+#include "bam/events.h"
 
 #include "request.h"
 #include "selector.internal.h"
@@ -71,88 +72,96 @@ static void command_destroy(command * cmd)
   }
 }
 
+static void command_writer_write(command * const restrict cmd, bacon_writer * const restrict builder_writer)
+{
+  int x;
+
+  switch(cmd->type)
+  {
+    case COMMAND_GLOBAL_STATS_READ:
+    case COMMAND_GLOBAL_STATS_RESET:
+    case COMMAND_STATS_READ:
+    case COMMAND_STATS_RESET:
+    case COMMAND_RESET_SELECTION:
+    case COMMAND_TREE_LIST:
+    case COMMAND_DESCRIBE:
+    case COMMAND_IDENTIFY:
+    case COMMAND_TELL:
+    case COMMAND_LIST:
+    case COMMAND_INVALIDATE:
+    case COMMAND_INVALIDATE_PRIMARY:
+    case COMMAND_PLUGIN_READY:
+    case COMMAND_AUTORUN:
+    case COMMAND_RUN:
+      STRING(attrs32_name_byvalue(command_type_attrs, cmd->type));
+      break;
+    case COMMAND_SELECT:
+      { MAPPING
+        STRING("select");
+        { LIST
+          selector_writer_write(cmd->selector, builder_writer);
+        }
+      }
+      break;
+    case COMMAND_GOALS:
+      { MAPPING
+        STRING("goals");
+        { SET
+          if(cmd->goals.build) {
+            STRING("build");
+          }
+          if(cmd->goals.target_direct) {
+            MAPPING
+            STRING("target-direct")
+            { LIST
+              selector_writer_write(cmd->goals.target_direct, builder_writer);
+            }
+          }
+          if(cmd->goals.target_transitive) {
+            MAPPING
+            STRING("target-transitive");
+            { LIST
+              selector_writer_write(cmd->goals.target_transitive, builder_writer);
+            }
+          }
+        }
+      }
+      break;
+    case COMMAND_EVENTSUB:
+      { MAPPING
+        STRING("eventsub")
+        { LIST
+          for(x = 0; x < bamipc_event_type_attrs.num; x++) {
+            if((cmd->mask & bamipc_event_type_attrs.members[x].range) == bamipc_event_type_attrs.members[x].value) {
+              BYTES(bamipc_event_type_attrs.members[x].name, bamipc_event_type_attrs.members[x].namel)
+            }
+          }
+        }
+      }
+    case COMMAND_RECONCILE:
+      STRING("reconcile");
+      break;
+    case COMMAND_CONTEXT:
+      { MAPPING
+        STRING("context");
+        { SET
+          { MAPPING
+            STRING("module")
+            BYTES(cmd->context.module_id, cmd->context.module_id_len)
+          }
+        }
+      }
+      break;
+      RTA;
+  }
+}
+
 static void request_writer_write(request * const restrict req, bacon_writer * const restrict builder_writer)
 {
   command *cmd;
 
   llist_foreach(&req->commands, cmd, lln) {
-    switch(cmd->type)
-    {
-      case COMMAND_GLOBAL_STATS_READ:
-      case COMMAND_GLOBAL_STATS_RESET:
-      case COMMAND_STATS_READ:
-      case COMMAND_STATS_RESET:
-      case COMMAND_CONFIG_DESCRIBE:
-      case COMMAND_VARS_DESCRIBE:
-      case COMMAND_ENVS_DESCRIBE:
-      case COMMAND_RMA_DESCRIBE:
-      case COMMAND_RULES_DESCRIBE:
-      case COMMAND_FSTREE_DESCRIBE:
-      case COMMAND_BUILDPLAN_DESCRIBE:
-      case COMMAND_FILESYSTEM_DESCRIBE:
-      case COMMAND_RESET_SELECTION:
-      case COMMAND_LIST:
-      case COMMAND_DESCRIBE:
-      case COMMAND_INVALIDATE:
-      case COMMAND_GLOBAL_INVALIDATE:
-      case COMMAND_AUTORUN:
-      case COMMAND_RUN:
-        STRING(attrs32_name_byvalue(command_type_attrs, cmd->type));
-        break;
-      case COMMAND_SELECT:
-        { MAPPING
-          STRING("select");
-          { LIST
-            selector_writer_write(cmd->selector, builder_writer);
-          }
-        }
-        break;
-      case COMMAND_GOALS:
-        { MAPPING
-          STRING("goals");
-          { SET
-            if(cmd->goals.build) {
-              STRING("build");
-            }
-            if(cmd->goals.script) {
-              STRING("script");
-            }
-            if(cmd->goals.target_direct) {
-              MAPPING
-              STRING("target-direct")
-              { LIST
-                selector_writer_write(cmd->goals.target_direct, builder_writer);
-              }
-            }
-            if(cmd->goals.target_transitive) {
-              MAPPING
-              STRING("target-transitive");
-              { LIST
-                selector_writer_write(cmd->goals.target_transitive, builder_writer);
-              }
-            }
-          }
-        }
-        break;
-      case COMMAND_METADATA:
-        STRING("metadata");
-        break;
-      case COMMAND_RECONCILE:
-        STRING("reconcile");
-        break;
-      case COMMAND_CONTEXT:
-        { MAPPING
-          STRING("context");
-          { SET
-            { MAPPING
-              STRING("module")
-              HEX(cmd->context.module_id)
-            }
-          }
-        }
-        break;
-        RTA;
-    }
+    command_writer_write(cmd, builder_writer);
   }
 }
 
@@ -182,9 +191,7 @@ void request_destroy(request * restrict req)
   llist *T;
 
   llist_foreach_safe(&req->commands, cmd, lln, T) {
-    command_destroy(cmd);
-    llist_delete(&cmd->lln);
-    llist_append(&command_freelist, &cmd->lln);
+    request_command_free(cmd);
   }
 }
 
@@ -200,7 +207,32 @@ void request_say(request * restrict req, narrator * restrict N)
   bacon_writer_free(writer);
 }
 
-void request_command_alloc(request * restrict req, command ** restrict cmdp)
+void command_say(command * restrict cmd, narrator * restrict N)
+{
+  bacon_writer * writer = 0;
+  bacon_writer_create(&writer);
+  bacon_writer_open(writer, N);
+
+  command_writer_write(cmd, writer);
+
+  bacon_writer_close(writer);
+  bacon_writer_free(writer);
+}
+
+void command_show(command * restrict cmd)
+{
+  bacon_writer * writer = 0;
+  bacon_writer_create(&writer);
+  bacon_writer_open(writer, g_narrator_stdout);
+
+  command_writer_write(cmd, writer);
+
+  bacon_writer_close(writer);
+  bacon_writer_free(writer);
+  printf("\n");
+}
+
+command *request_command_alloc(request * restrict req)
 {
   command *cmd;
 
@@ -210,7 +242,15 @@ void request_command_alloc(request * restrict req, command ** restrict cmdp)
     memset(cmd, 0, sizeof(*cmd));
   }
 
-  llist_append(&req->commands, &cmd->lln);
+  return cmd;
+}
 
-  *cmdp = cmd;
+void request_command_free(command *cmd)
+{
+  if(!cmd) {
+    return;
+  }
+
+  command_destroy(cmd);
+  llist_append(&command_freelist, &cmd->lln);
 }

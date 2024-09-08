@@ -117,7 +117,6 @@ static xunit_unit xunit = {
           text : (char[]) {
             "goals : {"
             " build"
-            " script"
             " target-direct : [ module ]"
             "}\0\0"
           }
@@ -132,10 +131,10 @@ static xunit_unit xunit = {
     , (request_parser_test[]) {{
           text : (char[]) {
             "["
-              "context : {"
-                "module : 0x0aab0455ef80cdb1"
-              "}"
-              "rules-describe"
+            " context : {"
+            "   module : 0x0aab0455ef80cdb1"
+            " }"
+            " describe"
             "]\0\0"
           }
       }}
