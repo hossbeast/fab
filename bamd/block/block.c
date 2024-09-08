@@ -40,9 +40,6 @@ static void block_dispose(bacon_parser * restrict parser, block * restrict block
   llist_foreach_safe(&block->rules, rule, lln, T) {
     rule_dispose(rule);
   }
-//  llist_foreach_safe(&block->binds, bind, lln, T) {
-//    bind_dispose(bind);
-//  }
   llist_foreach_safe(&block->imports, import, lln, T) {
     import_dispose(import);
   }
@@ -116,46 +113,6 @@ void block_dispose_bulk(bacon_parser * restrict parser, llist * restrict list)
   }
 }
 
-void block_dump(block * restrict b)
-{
-  int x;
-  block *sb;
-  rule *rule;
-
-size_t rc = llist_count(&b->rules);
-size_t cc = llist_count(&b->blocks);
-  printf(" block %p -- rules %2zu blocks %2zu\n", b, rc, cc);
-
-  x = 0;
-  llist_foreach(&b->blocks, sb, lln) {
-    printf("  %2u ", x);
-    block_dump(sb);
-    x++;
-  }
-
-  x = 0;
-  llist_foreach(&b->rules, rule, lln) {
-    printf("  %2u ", x);
-    rule_say(rule, g_narrator_stdout);
-    printf("\n");
-    x++;
-  }
-}
-
-void blocks_dump(llist * restrict list)
-{
-  int x;
-  block *b;
-
-  x = 0;
-  printf("stack %p has %zu blocks\n", list, llist_count(list));
-  llist_foreach(list, b, lln) {
-    printf(" %2u ", x);
-    block_dump(b);
-    x++;
-  }
-}
-
 void block_cleanup(void)
 {
   block * block;
@@ -181,5 +138,19 @@ void block_gather_rule_edges(entlist * restrict list, block * restrict block)
       RUNTIME_ASSERT(edge_type_get(edge)== EDGE_RULE_RMA);
       entlist_push(list, edge);
     }
+  }
+}
+
+void block_show(block * restrict block)
+{
+  rule *rule;
+  struct block *sb;
+
+  llist_foreach(&block->blocks, sb, lln) {
+    block_show(sb);
+  }
+
+  llist_foreach(&block->rules, rule, lln) {
+    rule_show(rule);
   }
 }

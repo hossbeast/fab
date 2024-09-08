@@ -18,13 +18,13 @@
 #include "fsent.h"
 #include "channel.h"
 #include "lookup.h"
-#include "system_state.h"
+#include "system.h"
 #include "entlist.h"
 #include "selection.h"
 #include "events.h"
 #include "generate.h"
 #include "vertex.h"
-#include "index_vertex.h"
+#include "fsname.h"
 #include "meta_edge.h"
 #include "rule_system.h"
 
@@ -130,13 +130,13 @@ void import_resolve_targets(import * restrict import, module * restrict mod, rul
   moria_vertex *v;
   moria_vertex *target;
   const char *target_file_name;
-  channel *chan;
-  bamipc_message *msg;
+  events_context ectx;
+  event_bacon *msg;
   narrator_fixed fixed;
   bacon_writer writer, *builder_writer;
   const yyu_location *loc;
   entlist list, *eln;
-  index_vertex *index;
+  fsname *index;
   meta_edge *me;
 
   /* lookup the import target node */
@@ -146,9 +146,9 @@ void import_resolve_targets(import * restrict import, module * restrict mod, rul
     return;
   }
 
-  /* take an edge index_vertex nodes visited during targets resolution */
+  /* take an edge fsname nodes visited during targets resolution */
   entlist_foreach(&ctx->target_index_hits, index, eln) {
-    meta_connect(&index->vertex, &mod->vertex, EDGE_INDEX_MOD, &ctx->invalidation, &me);
+    meta_connect(&index->vertex, &mod->vertex, EDGE_FSNAME_MOD, &ctx->invalidation, &me);
     me->epoch = rule_system_epoch;
   }
 
@@ -174,7 +174,7 @@ void import_resolve_targets(import * restrict import, module * restrict mod, rul
   entlist_foreach(&list, v, eln) {
     if(!(target = moria_vertex_downw(v, MMS(target_file_name)))) {
       /* directory found, but no module file is present */
-      msg = system_error_event(&chan);
+      msg = system_error_event(&ectx);
       narrator_fixed_init(&fixed, msg->text, sizeof(msg->text));
       bacon_writer_init(&writer);
       builder_writer = bacon_writer_open(&writer, &fixed.base);
@@ -205,7 +205,7 @@ void import_resolve_targets(import * restrict import, module * restrict mod, rul
 
       msg->size = fixed.l;
       msg->code = EINVAL;
-      events_publish(chan, msg);
+      events_publish(&ectx);
       break;
     }
     entlist_push(&ctx->target_hits, target);

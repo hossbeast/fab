@@ -24,7 +24,6 @@
 #include "xlinux/xunistd.h"
 #include "xlinux/xstdlib.h"
 #include "xlinux/xstat.h"
-#include "bam/vertex.h"
 #include "narrator/fixed.h"
 
 #include "module.h"
@@ -34,7 +33,7 @@
 #include "fsedge.h"
 #include "fsent.h"
 #include "vertex.h"
-#include "rules_parser.h"
+#include "ruleset_parser.h"
 #include "pattern_parser.internal.h"
 #include "params.h"
 #include "pattern.h"
@@ -45,18 +44,20 @@
 #include "rule_module_association.h"
 #include "filesystem.h"
 #include "module_edge.h"
-#include "dir_rma.h"
+#include "dir_rma_edge.h"
 #include "rule_system.h"
 #include "shadow.h"
 #include "stats.h"
-#include "var.h"
+#include "varset.h"
+#include "module_vars.h"
+#include "module_envs.h"
 #include "channel.h"
-#include "system_state.h"
+#include "system.h"
 #include "events.h"
 #include "block.h"
 #include "import.h"
 #include "rule/probes.h"
-#include "rules.h"
+#include "ruleset.h"
 #include "anchor.h"
 #include "reconcile.h"
 #include "special_edge.h"
@@ -70,6 +71,8 @@
 #include "marshal.h"
 #include "zcat.h"
 
+moria_vertex *g_module = (moria_vertex[]) {{ }};
+
 llist module_rebuild_list = LLIST_INITIALIZER(module_rebuild_list);
 
 llist module_list = LLIST_INITIALIZER(module_list);                 // active modules
@@ -77,7 +80,7 @@ static llist module_freelist = LLIST_INITIALIZER(module_freelist);  // freelist
 
 static exec_builder local_exec_builder;
 static exec_render_context local_exec_render;
-static rules_parser *parser;
+static ruleset_parser *parser;
 
 //
 // static
@@ -227,31 +230,22 @@ static fsent *anchor_process(module * restrict mod, anchor * restrict anchor)
 /*
  * Setup a var bind between modules A -> var.bam file B
  */
-static bool bind_var(module * restrict A, fsent * restrict var_file_n, graph_invalidation_context * restrict invalidation)
+static bool bind_varset(module * restrict A, fsent * restrict var_file_n, graph_invalidation_context * restrict invalidation)
 {
   fsedge *ue;
   module_edge *mme;
-  var *var;
-  uint64_t u64;
-  char id[32];
-  uint16_t id_len;
-  char path[PATH_MAX];
-  uint16_t len;
+  varset *var;
   bool res;
 
   ue = 0;
 
-  fsent_var_bootstrap(var_file_n, invalidation);
+  fsent_varset_bootstrap(var_file_n, invalidation);
   var = var_file_n->self_var;
 
-  len = fsent_absolute_path_cat(path, sizeof(path), var_file_n);
-  u64 = hash64(0, path, len);
-  id_len = snprintf(id, sizeof(id), "%016"PRIx64, u64);
+  // link @ //module/varsets/id -> varset
+  shadow_link(A->shadow_varsets, var->id, var->id_len, &var->vertex, &ue);
 
-  // link @ //module/uses/$name -> var.bam
-  shadow_graft_var(A, var_file_n, id, id_len, &ue, invalidation);
-
-  res = module_edge_connect(A, &var->vertex, EDGE_VAR_MOD, &mme);
+  res = module_edge_connect(A, &var->vertex, EDGE_VARSET_MOD, &mme);
   mme->related = ue;
 
   return res;
@@ -282,18 +276,18 @@ bool module_import_rules_file(
 {
   fsedge *ue;
   module_edge *mme;
-  rules *rules;
+  ruleset *rules;
   bool new;
 
   ue = 0;
 
-  rules_bootstrap(rules_file_n, invalidation);
+  ruleset_bootstrap(rules_file_n, invalidation);
   rules = rules_file_n->self_rules;
 
-  // link @ //module/rules/$name -> rules.bam
-  shadow_graft_rules(A, rules_file_n, rules->id, rules->id_len, &ue, invalidation);
+  // link @ //module/rules/id -> ruleset
+  shadow_link(A->shadow_rulesets, rules->id, rules->id_len, &rules->vertex, &ue);
 
-  new = module_edge_connect(A, &rules->vertex, EDGE_RULES_MOD, &mme);
+  new = module_edge_connect(A, &rules->vertex, EDGE_RULESET_MOD, &mme);
   mme->related = ue;
 
   return new;
@@ -307,7 +301,6 @@ static void require_module(
   , fsent * mod_dir_n
   , const char * restrict name
   , uint16_t name_len
-  , graph_invalidation_context * restrict invalidation
 )
 {
   fsedge *ue;
@@ -318,7 +311,7 @@ static void require_module(
 
   // link @ //module/uses/$name
   ue = 0;
-  shadow_graft_requires(A, B->dir_node, name, name_len, &ue, invalidation);
+  shadow_graft_requires(A, B->dir_node, name, name_len, &ue);
 
   module_edge_connect(A, &B->vertex, EDGE_REQUIRES, &mme);
   mme->related = ue;
@@ -362,7 +355,7 @@ static bool import_process(
         new |= module_import_rules_file(mod, target, &ctx->invalidation);
         break;
       case IMPORT_TYPE_REQUIRES:
-        require_module(mod, target, name, name_len, &ctx->invalidation);
+        require_module(mod, target, name, name_len);
         break;
       default:
         RTA;
@@ -430,17 +423,18 @@ static void module_parse(module * restrict mod)
   int exit;
   char * text = 0;
   size_t text_len;
-  bamipc_message *msg;
-  channel *chan;
+  event_bacon *msg;
+  events_context ectx;
 
-  STATS_INC(mod->mod_stats.parse);
-  STATS_INC(g_stats.module_parse);
+  mod->module_stats.parse++;
 
   snarfs(&text, &text_len, mod->self_node_abspath);
 
-  if(text && (exit = rules_parser_parse(parser, text, text_len + 2, mod->self_node_abspath, mod->self_node_abspath_len)))
+  parser->mod = mod;
+  parser->rules = 0;
+  if(text && (exit = ruleset_parser_parse(parser, text, text_len + 2, mod->self_node_abspath, mod->self_node_abspath_len)))
   {
-    msg = system_error_event(&chan);
+    msg = system_error_event(&ectx);
     msg->code = EINVAL;
     if(parser->bacon_parser->yyu && parser->bacon_parser->yyu->error_len) {
       msg->size += zcatw(msg->text + msg->size, sizeof(msg->text) - msg->size, parser->bacon_parser->yyu->error_str, parser->bacon_parser->yyu->error_len);
@@ -449,12 +443,11 @@ static void module_parse(module * restrict mod)
     } else {
       msg->size += zcatw(msg->text + msg->size, sizeof(msg->text) - msg->size, parser->yyu.error_str, parser->yyu.error_len);
     }
-    events_publish(chan, msg);
+    events_publish(&ectx);
   }
   else
   {
-    STATS_INC(mod->mod_stats.parse_ok);
-    STATS_INC(g_stats.module_parse_ok);
+    mod->module_stats.parse_ok++;
   }
 
   free(text);
@@ -504,7 +497,7 @@ static void module_anchor_set(module *mod, fsent * mod_anchor_n, graph_invalidat
 
   mod->anchor_node = mod_anchor_n;
   mod->anchor_node_abspath_len = fsent_absolute_path_cat(mod->anchor_node_abspath, sizeof(mod->anchor_node_abspath), mod->anchor_node);
-  shadow_link(mod->shadow, MMS("anchor"), mod->anchor_node, 0, 0, invalidation);
+  shadow_link(mod->shadow, MMS("anchor"), &mod->anchor_node->vertex, 0);
 
   mod->anchor_disjoint = true;
   for(fse = mod->dir_node; fse != g_root; fse = fsent_parent(fse)) {
@@ -523,8 +516,9 @@ void module_bootstrap(
 )
 {
   uint64_t u64;
-  uint64_t token;
   module *mod;
+  module_vars *vars;
+  module_envs *envs;
 
   /* already bootstrapped */
   if(vertex_type_get(&mod_dir_n->vertex) == VERTEX_MODULE_DIR) {
@@ -534,33 +528,52 @@ void module_bootstrap(
   module_initialize(mod_dir_n, mod_anchor_n, mod_file_n);
   mod = mod_dir_n->mod;
 
-  special_connect(&mod_file_n->vertex, &mod->vertex, EDGE_MODULE_SPECIAL, invalidation);
-
   // module-dir realpath hash
   u64 = hash64(0, mod->dir_node_abspath, mod->dir_node_abspath_len);
   mod->id_len = zcatf(mod->id, sizeof(mod->id), "%016"PRIx64, u64);
-  token = atomic_fetch_inc(&vertex_token_counter);
-  mod->token_len = zcatf(mod->token, sizeof(mod->token), "%016"PRIx64, hash64(u64, MM(token)));
 
   mod->vertex.label = mod->id;
   mod->vertex.label_len = mod->id_len;
 
   // build out the modules shadow node
-  shadow_create(g_shadow_modules, &mod->shadow, mod->id, 16, VERTEX_SHADOW_MODULE, invalidation);
+  shadow_create(g_shadow_modules, &mod->shadow, mod->id, mod->id_len, VERTEX_SHADOW_DIR, invalidation);
+
+  /* links */
+  shadow_link(mod->shadow, MMS("base"), &mod->dir_node->vertex, 0);
+  shadow_link(mod->shadow, MMS("self"), &mod->self_node->vertex, 0);
+
+  /* edge lists */
   shadow_create(mod->shadow, &mod->shadow_requires, MMS("requires"), VERTEX_SHADOW_DIR, invalidation);
+  shadow_create(mod->shadow, &mod->shadow_rulesets, MMS("rulesets"), VERTEX_SHADOW_DIR, invalidation);
+  shadow_create(mod->shadow, &mod->shadow_varsets, MMS("varsets"), VERTEX_SHADOW_DIR, invalidation);
   shadow_create(mod->shadow, &mod->shadow_rules, MMS("rules"), VERTEX_SHADOW_DIR, invalidation);
-  shadow_create(mod->shadow, &mod->shadow_var, MMS("var"), VERTEX_SHADOW_DIR, invalidation);
-  shadow_create(mod->shadow, &mod->shadow_rma, MMS("rma"), VERTEX_SHADOW_DIR, invalidation);
-  shadow_link(mod->shadow, MMS("fs"), mod->dir_node, 0, 0, invalidation);
+  shadow_create(mod->shadow, &mod->shadow_rules_by, MMS("rules-by"), VERTEX_SHADOW_DIR, invalidation);
+  shadow_create(mod->shadow_rules_by, &mod->shadow_rules_byname, MMS("name"), VERTEX_SHADOW_DIR, invalidation);
+  shadow_create(mod->shadow, &mod->shadow_rmas, MMS("rmas"), VERTEX_SHADOW_DIR, invalidation);
+  shadow_create(mod->shadow, &mod->shadow_rmas_by, MMS("rmas-by"), VERTEX_SHADOW_DIR, invalidation);
+  shadow_create(mod->shadow_rmas_by, &mod->shadow_rmas_byname, MMS("name"), VERTEX_SHADOW_DIR, invalidation);
+
+  /* effective views */
+  vars = module_vars_create(mod);
+  shadow_link(mod->shadow, MMS("vars"), &vars->vertex, 0);
+  envs = module_envs_create(mod);
+  shadow_link(mod->shadow, MMS("envs"), &envs->vertex, 0);
 
   mod->shadow->self_mod = mod;
   mod->shadow->mod = mod;
 
+  /* specials */
+  special_connect(&mod_file_n->vertex, &mod->vertex, invalidation);
+  special_connect_type(&mod_dir_n->vertex, &mod->vertex, EDGE_DIR_MOD, invalidation);
+  special_connect_type(&mod->shadow->vertex, &mod->vertex, EDGE_DIR_MOD, invalidation);
+
   vertex_alloc_probe(&mod->shadow->vertex);
   vertex_alloc_probe(&mod->shadow_requires->vertex);
-  vertex_alloc_probe(&mod->shadow_rules->vertex);
-  vertex_alloc_probe(&mod->shadow_var->vertex);
-  vertex_alloc_probe(&mod->shadow_rma->vertex);
+  vertex_alloc_probe(&mod->shadow_rulesets->vertex);
+  vertex_alloc_probe(&mod->shadow_varsets->vertex);
+  vertex_alloc_probe(&mod->shadow_rmas->vertex);
+  vertex_alloc_probe(&mod->shadow_vars->vertex);
+  vertex_alloc_probe(&mod->shadow_envs->vertex);
 
   mod->invalid.reparse = true;
 
@@ -577,7 +590,7 @@ void module_rebuild(module * restrict mod, rule_run_context * restrict ctx)
 {
   moria_foreach_state st;
   moria_edge *edge;
-  struct var *var;
+  struct varset *var;
   moria_vertex *base;
   moria_vertex *v;
   module_edge *mme;
@@ -634,7 +647,7 @@ void module_rebuild(module * restrict mod, rule_run_context * restrict ctx)
 
   /* bootstrap and connect to each of those var.bam files */
   entlist_foreach(&list, v, eln) {
-    bind_var(mod, containerof(v, fsent, vertex), &ctx->invalidation);
+    bind_varset(mod, containerof(v, fsent, vertex), &ctx->invalidation);
   }
   entlist_destroy(&list);
 
@@ -663,7 +676,7 @@ void module_rebuild(module * restrict mod, rule_run_context * restrict ctx)
   mod->vars = 0;
 
   moria_foreach_edge_down(&st, &mod->vertex, edge) {
-    if(edge_type_get(edge) != EDGE_VAR_MOD) {
+    if(edge_type_get(edge) != EDGE_VARSET_MOD) {
       continue;
     }
 
@@ -674,7 +687,7 @@ void module_rebuild(module * restrict mod, rule_run_context * restrict ctx)
     }
 
     var = containerof(edge->B, typeof(*var), vertex);
-    var_reparse(var);
+    varset_reparse(var);
     bacon_merge(parser->bacon_parser, &mod->vars, var->val);
   }
 
@@ -697,24 +710,10 @@ void module_rebuild(module * restrict mod, rule_run_context * restrict ctx)
   }
 }
 
-static uint32_t blocks_count_rules(llist * restrict list)
-{
-  struct block *sb;
-  uint32_t c;
-
-  c = 0;
-  llist_foreach(list, sb, lln) {
-    c += llist_count(&sb->rules);
-    c += blocks_count_rules(&sb->blocks);
-  }
-
-  return c;
-}
-
 bool module_reimport(module * restrict mod, rule_run_context * restrict ctx)
 {
   struct block *block;
-  struct rules *rules;
+  struct ruleset *rules;
   moria_foreach_state st;
   moria_edge *edge;
   bool new;
@@ -722,7 +721,7 @@ bool module_reimport(module * restrict mod, rule_run_context * restrict ctx)
   /* transitive imports */
   new = false;
   moria_foreach_edge_down(&st, &mod->vertex, edge) {
-    if(edge_type_get(edge) != EDGE_RULES_MOD) {
+    if(edge_type_get(edge) != EDGE_RULESET_MOD) {
       continue;
     }
     rules = containerof(edge->B, typeof(*rules), vertex);
@@ -745,9 +744,9 @@ void module_prune(module * restrict mod, graph_invalidation_context * restrict i
   entlist_init(&edges);
   moria_foreach_edge_down(&st, &mod->vertex, edge) {
     switch(edge_type_get(edge)) {
-      case EDGE_RULES_MOD:
+      case EDGE_RULESET_MOD:
       case EDGE_REQUIRES:
-      case EDGE_VAR_MOD:
+      case EDGE_VARSET_MOD:
         break;
       default:
         continue;
@@ -789,11 +788,12 @@ void module_disconnect_rules(module * restrict mod, graph_invalidation_context *
         rma = containerof(edge->B, typeof(*rma), vertex);
         entlist_push(&list, rma);
         break;
-      case EDGE_RULES_MOD:
+      case EDGE_RULESET_MOD:
       case EDGE_REQUIRES:
-      case EDGE_VAR_MOD:
-      case EDGE_MODULE_SPECIAL:
-      case EDGE_INDEX_MOD:
+      case EDGE_VARSET_MOD:
+      case EDGE_DIR_MOD:
+      case EDGE_SPECIAL:
+      case EDGE_FSNAME_MOD:
         break;
       default:
         edge_show(edge);
@@ -823,7 +823,7 @@ void module_excise(module * restrict mod, graph_invalidation_context * restrict 
     entlist_push(&edges, edge);
   }
   moria_foreach_edge_down(&st, &mod->vertex, edge) {
-    if(!(edge->attrs & EDGE_MODULES) && edge_type_get(edge) != EDGE_MODULE_SPECIAL) {
+    if(!(edge->attrs & EDGE_MODULES) && edge_kind_get(edge) != EDGE_KIND_SPECIAL) {
       continue;
     }
 
@@ -861,10 +861,10 @@ void module_reparse(module * restrict mod)
   parser->anchor = 0;
 
   pattern_list_free(&mod->varfiles);
-  llist_splice_head(&mod->varfiles, &parser->varfiles);
+  llist_splice_head(&mod->varfiles, &parser->varsets);
 
   pattern_list_free(&mod->rulesfiles);
-  llist_splice_head(&mod->rulesfiles, &parser->rulesfiles);
+  llist_splice_head(&mod->rulesfiles, &parser->rulesets);
 }
 
 /*
@@ -874,7 +874,7 @@ void module_reparse(module * restrict mod)
  */
 static void block_reload(
     module * mod
-  , struct rules * restrict rules
+  , struct ruleset * restrict rules
   , struct block * restrict block
   , graph_invalidation_context * restrict invalidation
 )
@@ -901,15 +901,14 @@ static void block_reload(
 void module_reload(module * restrict mod)
 {
   block *block;
-  rules *rules;
+  ruleset *rules;
   moria_foreach_state st;
   moria_edge *edge;
   fsent *fse;
   graph_invalidation_context invalidation = { };
   entlist list, *eln;
 
-  STATS_INC(mod->mod_stats.reloaded);
-  STATS_INC(g_stats.module_reloaded);
+  mod->module_stats.reloaded++;
 
   graph_invalidation_begin(&invalidation);
 
@@ -923,7 +922,7 @@ void module_reload(module * restrict mod)
    * of edges first */
   entlist_init(&list);
   moria_foreach_edge_down(&st, &mod->vertex, edge) {
-    if(edge_type_get(edge) != EDGE_RULES_MOD) {
+    if(edge_type_get(edge) != EDGE_RULESET_MOD) {
       continue;
     }
 
@@ -950,7 +949,6 @@ void module_reload(module * restrict mod)
 
 void module_rebuild_enqueue(module * restrict mod)
 {
-//  mod->invalid.exists = true;
   mod->invalid.disconnect = true;
 /*
   this is set when the rules file node is invalidated -- other events can cause
@@ -1026,7 +1024,8 @@ void module_setup()
   exec_builder_init(&local_exec_builder);
   exec_render_context_init(&local_exec_render);
 
-  rules_parser_alloc(&parser);
+  ruleset_parser_alloc(&parser);
+  moria_vertex_initw(g_module, &g_graph, VERTEX_CONTEXT_MODULE | VERTEX_OK, MMS("(module)"));
 }
 
 void module_cleanup()
@@ -1045,33 +1044,42 @@ void module_cleanup()
     free(mod);
   }
 
-  rules_parser_free(parser);
+  ruleset_parser_free(parser);
 }
 
-size_t module_stats_collate(void *dst, size_t sz, bool reset, module *mod)
+static uint32_t blocks_count_rules(llist * restrict list)
 {
-  bam_module_stats *stats;
-  bam_module_stats tmp;
-  uint32_t count;
-  size_t z;
+  struct block *sb;
+  uint32_t c;
 
-  /* module vertex stats */
-  z = 0;
-  z += vertex_stats_collate(dst + z, sz - z, reset, &mod->vertex);
+  c = 0;
+  llist_foreach(list, sb, lln) {
+    c += llist_count(&sb->rules);
+    c += blocks_count_rules(&sb->blocks);
+  }
+
+  return c;
+}
+
+/*
+ * Update module stats
+ *
+ * reset - true to reset the stats while reading them
+ */
+static void module_stats_collate(module *mod)
+{
+  stats_module *stats;
+  uint32_t count;
 
   /* module vertex specific stats */
-  memcpy(&tmp, &mod->mod_stats, sizeof(tmp));
-  if(reset) {
-    memset(&mod->mod_stats, 0, sizeof(mod->stats));
-  }
-  stats = &tmp;
+  stats = &mod->module_stats;
 
   /* uses */
   count = 0;
   moria_traverse_vertex_edges(&g_graph, &mod->vertex, moria_edge_count, 0
     , (moria_traversal_criteria[]) {{
-          edge_travel : EDGE_RULES_MOD
-        , edge_visit : EDGE_RULES_MOD
+          edge_travel : EDGE_RULESET_MOD
+        , edge_visit : EDGE_RULESET_MOD
         , min_depth : 0
         , max_depth : 0
       }}
@@ -1137,8 +1145,153 @@ size_t module_stats_collate(void *dst, size_t sz, bool reset, module *mod)
 
   /* rules in the module.bam file */
   stats->rules = blocks_count_rules(&mod->blocks);
+}
 
-  z += descriptor_marshal_object(dst + z, sz - z, &descriptor_bam_module_stats, &stats->record, 0);
+void module_stats_build(module * restrict mod, bool reset, bacon_writer * restrict builder_writer)
+{
+  module_stats_collate(mod);
 
-  return z;
+  stats_build(&mod->stats.record, &descriptor_stats_vertex, builder_writer);
+  stats_build(&mod->module_stats.record, &descriptor_stats_module, builder_writer);
+
+  if(reset) {
+    memset(&mod->stats, 0, sizeof(mod->stats));
+    memset(&mod->module_stats, 0, sizeof(mod->stats));
+  }
+}
+
+void module_describe(const module * restrict mod, struct bacon_writer * restrict builder_writer)
+{
+  moria_edge *e;
+  entlist list, *eln;
+
+  { MAPPING
+    vertex_path_describe(&mod->vertex, builder_writer);
+    { SET
+      {
+        vertex_mappings(&mod->vertex, builder_writer);
+
+        { MAPPING STRING("base")
+          BYTES(mod->dir_node_abspath, mod->dir_node_abspath_len)
+        }
+        { MAPPING STRING("anchor")
+          BYTES(mod->anchor_node_abspath, mod->anchor_node_abspath_len)
+        }
+        { MAPPING STRING("self")
+          BYTES(mod->self_node_abspath, mod->self_node_abspath_len)
+        }
+        if(edges_gather_down(&mod->vertex, EDGE_RULESET_MOD, &list)) {
+          MAPPING STRING("rulesets")
+          { SET
+            entlist_foreach(&list, e, eln) {
+              vertex_path_describe(e->B, builder_writer);
+            }
+          }
+          entlist_destroy(&list);
+        }
+        if(edges_gather_down(&mod->vertex, EDGE_VARSET_MOD, &list)) {
+          MAPPING STRING("varsets")
+          { SET
+            entlist_foreach(&list, e, eln) {
+              vertex_path_describe(e->B, builder_writer);
+            }
+          }
+          entlist_destroy(&list);
+        }
+        if(edges_gather_down(&mod->vertex, EDGE_RMA_MOD, &list)) {
+          MAPPING STRING("rmas")
+          { SET
+            entlist_foreach(&list, e, eln) {
+              vertex_path_describe(e->B, builder_writer);
+            }
+          }
+          entlist_destroy(&list);
+        }
+        if(edges_gather_down(&mod->vertex, EDGE_FSNAME_MOD, &list)) {
+          MAPPING STRING("fsnames")
+          { SET
+            entlist_foreach(&list, e, eln) {
+              vertex_path_describe(e->B, builder_writer);
+            }
+          }
+          entlist_destroy(&list);
+        }
+      }
+      { MAPPING
+        STRING("stats")
+        { SET
+          module_stats_build((module *)mod, false, builder_writer);
+        }
+      }
+    }
+  }
+}
+
+void module_dir_stats_build(fsent * restrict fse, bool reset, bacon_writer * restrict builder_writer)
+{
+  fsent_stats_build(fse, reset, builder_writer);
+}
+
+void module_dir_describe(const fsent * restrict fse, struct bacon_writer * restrict builder_writer)
+{
+  { MAPPING
+    vertex_path_describe(&fse->vertex, builder_writer);
+    { SET
+      fsent_mappings(fse, builder_writer);
+      { MAPPING STRING("module")
+        LOADF("//module/%.*s",  fse->self_mod->id_len, fse->self_mod->id)
+      }
+      { MAPPING STRING("stats")
+        { SET
+          module_dir_stats_build((fsent *)fse, false, builder_writer);
+        }
+      }
+    }
+  }
+}
+
+void module_file_stats_build(fsent * restrict fse, bool reset, bacon_writer * restrict builder_writer)
+{
+  fsent_stats_build(fse, reset, builder_writer);
+}
+
+void module_file_describe(const fsent * restrict fse, struct bacon_writer * restrict builder_writer)
+{
+  { MAPPING
+    vertex_path_describe(&fse->vertex, builder_writer);
+    { SET
+      fsent_mappings(fse, builder_writer);
+      { MAPPING STRING("module")
+        vertex_path_describe(&fse->self_mod->vertex, builder_writer);
+      }
+      { MAPPING STRING("stats")
+        { SET
+          module_file_stats_build((fsent *)fse, false, builder_writer);
+        }
+      }
+    }
+  }
+}
+
+size_t module_path_cat(void * restrict dst, size_t sz, const module * restrict module)
+{
+  return zcatf(dst, sz, "//modules/%.*s", module->id_len, module->id);
+}
+
+void module_identity_say(const struct module * restrict module, struct narrator * restrict N)
+{
+  attrs32_say(module->vertex.attrs, graph_vertex_attrs, N);
+  narrator_sayf(N, " id %.*s base %s", module->id_len, module->id, module->dir_node_abspath);
+}
+
+void module_file_identity_say(const struct fsent * restrict fse, struct narrator * restrict N)
+{
+  attrs32_say(fse->vertex.attrs, graph_vertex_attrs, N);
+  narrator_sayf(N, " id %.*s path %s", fse->self_mod->id_len, fse->self_mod->id, fse->self_mod->self_node_abspath);
+}
+
+void module_dir_identity_say(const struct fsent * restrict fse, struct narrator * restrict N)
+{
+  attrs32_say(fse->vertex.attrs, graph_vertex_attrs, N);
+  narrator_sayf(N, " id %.*s base %s", fse->self_mod->id_len, fse->self_mod->id, fse->self_mod->dir_node_abspath);
 }

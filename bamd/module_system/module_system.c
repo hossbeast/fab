@@ -28,7 +28,7 @@
 #include "exec_render.h"
 #include "fsedge.h"
 #include "fsent.h"
-#include "rules_parser.h"
+#include "ruleset_parser.h"
 #include "params.h"
 #include "pattern.h"
 #include "lookup.h"
@@ -37,17 +37,17 @@
 #include "rule.h"
 #include "rule_module_association.h"
 #include "module_edge.h"
-#include "dir_rma.h"
+#include "dir_rma_edge.h"
 #include "rule_system.h"
 #include "shadow.h"
 #include "stats.h"
 #include "channel.h"
-#include "system_state.h"
+#include "system.h"
 #include "events.h"
 #include "block.h"
 #include "rule/probes.h"
-#include "rules.h"
-#include "config.h"
+#include "ruleset.h"
+#include "configset.h"
 #include "vertex.h"
 #include "edge.h"
 #include "fsent.h"
@@ -61,12 +61,11 @@
 void module_system_reconcile(rule_run_context * restrict rule_run_ctx)
 {
   module *mod = 0;
-  rules *rules = 0;
+  ruleset *rules = 0;
   rules_container *con;
   llist *T;
   graph_invalidation_context *invalidation;
   uint32_t count;
-//  bool b;
   moria_foreach_state st;
   moria_edge *edge;
   llist reload_list = LLIST_INITIALIZER(reload_list);
@@ -99,7 +98,7 @@ void module_system_reconcile(rule_run_context * restrict rule_run_ctx)
         mod = containerof(con, typeof(*mod), invalid);
         rules = 0;
         break;
-      case VERTEX_RULES:
+      case VERTEX_RULESET:
         mod = 0;
         rules = containerof(con, typeof(*rules), invalid);
         break;
@@ -110,7 +109,7 @@ void module_system_reconcile(rule_run_context * restrict rule_run_ctx)
     if(mod && !vertex_exists_get(&mod->self_node->vertex)) {
       module_release(mod, invalidation);
     } else if(rules && !vertex_exists_get(&rules->self_node->vertex)) {
-      rules_release(rules, invalidation);
+      ruleset_release(rules, invalidation);
     }
   }
 
@@ -121,7 +120,7 @@ void module_system_reconcile(rule_run_context * restrict rule_run_ctx)
         mod = containerof(con, typeof(*mod), invalid);
         rules = 0;
         break;
-      case VERTEX_RULES:
+      case VERTEX_RULESET:
         mod = 0;
         rules = containerof(con, typeof(*rules), invalid);
         break;
@@ -134,7 +133,7 @@ void module_system_reconcile(rule_run_context * restrict rule_run_ctx)
       if(mod) {
         module_disconnect_rules(mod, invalidation);
       } else {
-        rules_disconnect(rules, invalidation);
+        ruleset_disconnect(rules, invalidation);
       }
       if(system_error) {
         goto end;
@@ -145,7 +144,7 @@ void module_system_reconcile(rule_run_context * restrict rule_run_ctx)
       if(mod) {
         module_reparse(mod);
       } else {
-        rules_reparse(rules);
+        ruleset_reparse(rules);
       }
       if(system_error) {
         goto end;
@@ -198,7 +197,7 @@ void module_system_reconcile(rule_run_context * restrict rule_run_ctx)
         mod = containerof(con, typeof(*mod), invalid);
         rules = 0;
         break;
-      case VERTEX_RULES:
+      case VERTEX_RULESET:
         mod = 0;
         rules = containerof(con, typeof(*rules), invalid);
         break;
@@ -242,18 +241,18 @@ end:
   }
 
   /* destroy rules file that are no longer referenced */
-  llist_foreach_safe(&rules_list, rules, vertex.owner, T) {
+  llist_foreach_safe(&ruleset_list, rules, vertex.owner, T) {
     moria_foreach_edge_up(&st, &rules->vertex, edge) {
       switch(edge_type_get(edge)) {
         /* special edges dont count as a reference */
-        case EDGE_RULES_SPECIAL:
+        case EDGE_SPECIAL:
           break;
         default:
           goto next;
       }
     }
 
-    rules_release(rules, invalidation);
+    ruleset_release(rules, invalidation);
   next:
     rules = 0;
   }

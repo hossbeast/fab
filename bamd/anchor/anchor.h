@@ -12,7 +12,6 @@ struct pattern;
 
 typedef struct anchor {
   llist owner;
-//  llist lln;    /* adhoc */
 
   /* anchor lookup */
   struct pattern * lookup;

@@ -197,7 +197,7 @@ void ruleset_bootstrap(fsent * restrict rules_file_n, graph_invalidation_context
   // module-dir realpath hash
   rules = rules_file_n->self_rules;
 
-  special_connect(&rules_file_n->vertex, &rules->vertex, /* EDGE_RULES_SPECIAL, */ invalidation);
+  special_connect(&rules_file_n->vertex, &rules->vertex, invalidation);
 
   rules->invalid.reparse = true;
   ruleset_rebuild_enqueue(rules);
@@ -272,7 +272,7 @@ void ruleset_excise(ruleset * restrict rules, graph_invalidation_context * restr
   moria_foreach_edge(&st, &rules->vertex, edge) {
     switch(edge_type_get(edge)) {
       case EDGE_RMA_RULESET:
-      case EDGE_SPECIAL: // EDGE_RULES_SPECIAL:
+      case EDGE_SPECIAL:
       case EDGE_RULESET_MOD:
         entlist_push(&edges, edge);
         break;

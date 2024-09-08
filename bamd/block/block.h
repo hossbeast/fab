@@ -40,16 +40,10 @@ void block_release(struct bacon_parser * restrict parser, block * restrict block
 void block_dispose_bulk(struct bacon_parser * restrict parser, llist * restrict list)
   __attribute__((nonnull));
 
-void block_dump(block * restrict b)
-  __attribute__((nonnull));
-
-void block_dump_bulk(llist * restrict list)
-  __attribute__((nonnull));
-
 void block_cleanup(void);
 
-void blocks_dump(llist * restrict list)
+void block_gather_rule_edges(struct entlist * restrict list, block * restrict block)
   __attribute__((nonnull));
 
-void block_gather_rule_edges(struct entlist * restrict list, block * restrict block)
+void block_show(block * restrict block)
   __attribute__((nonnull));
