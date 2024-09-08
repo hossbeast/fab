@@ -22,7 +22,7 @@
 #include "request.h"
 #include "fsent.h"
 #include "node_operations_test.h"
-#include "filesystem.internal.h"
+#include "fstree.h"
 #include "lookup.h"
 #include "selection.h"
 #include "dependency.h"
@@ -30,7 +30,11 @@
 #include "channel.h"
 #include "buildplan_entity.h"
 #include "args.h"
-#include "index_vertex.h"
+#include "fsindex.h"
+#include "fsname.h"
+#include "shadow.h"
+#include "notify.h"
+#include "events.h"
 
 #include "zcat.h"
 
@@ -47,13 +51,19 @@ typedef struct {
 
 static void selector_exec_test_unit_setup(xunit_unit * unit)
 {
-  g_args.default_filesystem_indexed = true;
   fsent_name_module = "module.bam";
 
   bacon_load();
+
+  args_init();
+  fsent_root_setup();
+  shadow_setup();
+  fstree_setup();
+  notify_setup();
+  events_setup();
+
   graph_setup();
-  filesystem_setup();
-  index_vertex_setup();
+  fsindex_setup();
 
   extern __thread bool rcu_is_registered ; rcu_is_registered = true;
 }
@@ -62,8 +72,11 @@ static void selector_exec_test_unit_cleanup(xunit_unit * unit)
 {
   bacon_unload();
   graph_cleanup();
-  filesystem_cleanup();
-  index_vertex_cleanup();
+  fstree_cleanup();
+  fsname_cleanup();
+  fsindex_cleanup();
+  shadow_cleanup();
+  events_cleanup();
 }
 
 static int cmp(const void *_A, const void *_B, void *_ctx)
@@ -96,7 +109,7 @@ static void selector_exec_test_entry(xunit_test * _test)
   char * c;
 
   // arrange
-  fsent_setup();
+  fsent_root_setup();
   list_create(&actual_list);
   graph_invalidation_begin(&invalidation);
   xmalloc(&chan, sizeof(*chan));
@@ -132,7 +145,8 @@ static void selector_exec_test_entry(xunit_test * _test)
   ctx.bpe = bpe;
   ctx.chan = chan;
   ctx.cwd = mod.dir_node;
-  selector_exec(sel, &ctx, SELECTION_ITERATION_TYPE_ORDER);
+  ctx.iteration_type = SELECTION_ITERATION_TYPE_ORDER;
+  selector_exec(sel, &ctx);
   assert_eq_b(false, chan->error);
 
   llist_foreach(&ctx.selection->list, sn, lln) {
@@ -410,7 +424,8 @@ static xunit_unit xunit = {
              " }"
              " traverse : {"
               " direction : down"
-              " graph : dirtree"
+              " graph : fs"
+              " visit : directory"
              " }"
             " ]"
             "]"
@@ -434,7 +449,8 @@ static xunit_unit xunit = {
              " }"
              " traverse : {"
               " direction : down"
-              " graph : dirtree"
+              " graph : fs"
+              " visit : directory"
              " }"
             " ]"
             "]"

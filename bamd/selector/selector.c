@@ -22,12 +22,13 @@
 #include "request.h"
 #include "channel.h"
 #include "zcat.h"
-#include "system_state.h"
+#include "system.h"
 #include "vertex.h"
 #include "events.h"
 #include "buildplan_entity.h"
 #include "edge.h"
 #include "shadow.h"
+#include "fstree.h"
 
 attrs32 * selector_type_attrs = (attrs32[]) {{
 #define SELECTOR_DEF(x, s, r, y) + 1
@@ -50,14 +51,22 @@ SELECTOR_NODESET_TABLE
   }
 }};
 
-static moria_traversal_criteria criteria_fstree;
-static moria_traversal_criteria criteria_fstree_hidden;
-static moria_traversal_criteria criteria_modtree;
-static moria_traversal_criteria criteria_dirtree;
-static moria_traversal_criteria criteria_depends;
-static moria_traversal_criteria criteria_imports;
-static moria_traversal_criteria criteria_uses;
-static moria_traversal_criteria criteria_requires;
+static struct selector_traverse criteria_fs;
+static struct selector_traverse criteria_depends;
+static struct selector_traverse criteria_special;
+static struct selector_traverse criteria_uses;
+static struct selector_traverse criteria_requires;
+
+static struct selector_traverse visit_module;
+static struct selector_traverse visit_rules;
+static struct selector_traverse visit_formula;
+static struct selector_traverse visit_var;
+static struct selector_traverse visit_config;
+static struct selector_traverse visit_plugin;
+static struct selector_traverse visit_directory;
+static struct selector_traverse visit_module_dir;
+static struct selector_traverse visit_rule;
+static struct selector_traverse visit_fs;
 
 static void __attribute__((constructor)) init()
 {
@@ -65,14 +74,23 @@ static void __attribute__((constructor)) init()
   attrs32_init(selector_nodeset_attrs);
 
   /* pre-configured traversals */
-  selector_graph_fstree(&criteria_fstree);
-  selector_graph_fstree_hidden(&criteria_fstree_hidden);
-  selector_graph_modtree(&criteria_modtree);
-  selector_graph_dirtree(&criteria_dirtree);
+  selector_graph_fs(&criteria_fs);
   selector_graph_depends(&criteria_depends);
-  selector_graph_imports(&criteria_imports);
+  selector_graph_special(&criteria_special);
   selector_graph_uses(&criteria_uses);
   selector_graph_requires(&criteria_requires);
+
+  /* pre-configured visits */
+  selector_visit_special_module(&visit_module);
+  selector_visit_special_formula(&visit_formula);
+  selector_visit_special_plugin(&visit_plugin);
+  selector_visit_special_ruleset(&visit_rules);
+  selector_visit_special_varset(&visit_var);
+  selector_visit_special_configset(&visit_config);
+  selector_visit_directory(&visit_directory);
+  selector_visit_module_dir(&visit_module_dir);
+  selector_visit_rule(&visit_rule);
+  selector_visit_fs(&visit_fs);
 }
 
 static void selector_visitor(moria_vertex * v, void * arg, moria_traversal_mode mode, int distance, moria_traverse_result * restrict result)
@@ -89,51 +107,51 @@ static void selector_visitor(moria_vertex * v, void * arg, moria_traversal_mode 
     /* terminate an upwards traversal at the root(s) */
     if(n == g_root || n == g_shadow)
     {
-      if(sel->direction == MORIA_TRAVERSE_UP) {
+      if(sel->traverse.direction == MORIA_TRAVERSE_UP) {
         result->flags = MORIA_TRAVERSE_PRUNE;
       }
     }
-    else if(sel->criteria.edge_travel & EDGE_KIND_FSTREE)
+    else if(sel->traverse.criteria.edge_travel & EDGE_KIND_FSTREE)
     {
-      mod = fsent_module_get(n);
-      if(!sel->cross_module && mod && ctx->mod && mod != ctx->mod)
+      mod = vertex_module_get(v);
+      if(!sel->traverse.cross_module && mod && ctx->mod && mod != ctx->mod)
       {
         result->flags = MORIA_TRAVERSE_PRUNE;
         return;
       }
     }
   }
-  else if(vertex_kind_get(v) == VERTEX_KIND_BPE)
-  {
-    return;
-  }
-  else
-  {
-    RUNTIME_ASSERT(vertex_special_get(v) == VERTEX_SPECIAL_MODULE);
-  }
 
   selection_add_vertex(ctx->selection, v, distance);
 }
 
-static void enoent_error(channel * restrict chan, const char * restrict name, uint16_t name_len)
+static void
+__attribute__((nonnull(2)))
+__attribute__((format(printf, 2, 3)))
+selector_error(channel * restrict chan, const char * restrict fmt, ...)
 {
   bamipc_message *msg;
+  event_bacon *pb;
+  events_context ectx;
+  va_list va;
 
+  va_start(va, fmt);
   if(chan)
   {
     msg = channel_produce(chan);
     msg->code = ENOENT;
-    msg->type = BAMIPC_MSG_RESPONSE;
-    msg->size = zcatf(msg->text, sizeof(msg->text), "not found %.*s", (int)name_len, name);
+    msg->type = BAMIPC_MSG_RESULT;
+    msg->size = vsnprintf(msg->text, sizeof(msg->text), fmt, va);
     channel_post(chan, msg);
   }
   else
   {
-    msg = system_error_event(&chan);
-    msg->code = ENOENT;
-    msg->size = zcatf(msg->text, sizeof(msg->text), "not found %.*s", (int)name_len, name);
-    events_publish(chan, msg);
+    pb = system_error_event(&ectx);
+    pb->code = ENOENT;
+    pb->size = vsnprintf(pb->text, sizeof(pb->text), fmt, va);
+    events_publish(&ectx);
   }
+  va_end(va);
 }
 
 static void selector_ctx_exec(selector_context * restrict ctx)
@@ -145,10 +163,11 @@ static void selector_ctx_exec(selector_context * restrict ctx)
   selection *out = 0;
   selection * T;
   int x;
-  fsent * n;
+  fsent *n;
   moria_vertex *v;
   selected *sn;
   module *mod;
+  const fstree *fst;
   const char *name;
   bool *errp;
   uint32_t attrs;
@@ -156,6 +175,7 @@ static void selector_ctx_exec(selector_context * restrict ctx)
   moria_foreach_state st;
   moria_edge *edge;
   entlist *eln;
+  moria_traversal_criteria criteria;
 
   if(ctx->chan) {
     errp = &ctx->chan->error;
@@ -224,7 +244,7 @@ static void selector_ctx_exec(selector_context * restrict ctx)
     else if(!ctx->bpe)
     {
       name = attrs32_name_byvalue(selector_nodeset_attrs, SELECTOR_NODESET_OPT & sel->nodeset);
-      enoent_error(ctx->chan, MMS(name));
+      selector_error(ctx->chan, "not found %s", name);
     }
     else if(sel->nodeset == SELECTOR_NODESET_TARGET || sel->nodeset == SELECTOR_NODESET_TARGETS)
     {
@@ -292,15 +312,48 @@ static void selector_ctx_exec(selector_context * restrict ctx)
   }
   else if(sel->type == SELECTOR_LOOKUP)
   {
-    n = fsent_path_lookup(ctx->cwd, ctx->mod, sel->path, sel->path_len, sel->nofollow);
-    if(n && !sel->hidden && !vertex_exists_get(&n->vertex)) {
+    n = fsent_path_lookup(ctx->cwd, ctx->mod, sel->lookup.path, sel->lookup.path_len, sel->lookup.nofollow);
+    if(n && !sel->lookup.hidden && !vertex_exists_get(&n->vertex)) {
       n = 0;
     }
 
     if(n) {
       selection_add_vertex(ctx->selection, &n->vertex, 0);
     } else {
-      enoent_error(ctx->chan, sel->path, sel->path_len);
+      selector_error(ctx->chan, "not found %.*s", sel->lookup.path_len, sel->lookup.path);
+    }
+  }
+  else if(sel->type == SELECTOR_MODULE_OF)
+  {
+    in = ctx->selection;
+    selection_create(&ctx->selection, ctx->iteration_type);
+
+    llist_foreach(&in->list, sn, lln) {
+      v = sn->v;
+      if(vertex_type_get(v) == VERTEX_CONTEXT_MODULE) {
+        mod = (module *)ctx->mod;
+      } else {
+        mod = vertex_module_get(v);
+      }
+      if(mod) {
+        selection_add_vertex(ctx->selection, &mod->vertex, 0);
+      } else {
+        selector_error(ctx->chan, "module not found for %.*s", v->label_len, v->label);
+      }
+    }
+  }
+  else if(sel->type == SELECTOR_FSTREE_OF)
+  {
+    in = ctx->selection;
+    selection_create(&ctx->selection, ctx->iteration_type);
+
+    llist_foreach(&in->list, sn, lln) {
+      v = sn->v;
+      if((fst = vertex_fstree_get(v))) {
+        selection_add_vertex(ctx->selection, &fst->vertex, 0);
+      } else {
+        selector_error(ctx->chan, "fstree not found for %.*s", v->label_len, v->label);
+      }
     }
   }
   else if(sel->type == SELECTOR_TRAVERSE)
@@ -315,29 +368,37 @@ static void selector_ctx_exec(selector_context * restrict ctx)
       v = sn->v;
 
       /* sidestep from the module node, to the module directory node */
-      if(vertex_type_get(v) == VERTEX_MODULE) {
-        if(!(sel->criteria.edge_travel & EDGE_MODULES)) {
+      if(vertex_type_get(v) == VERTEX_MODULE)
+      {
+        if(!(sel->traverse.criteria.edge_travel & EDGE_MODULES)) {
           mod = containerof(v, module, vertex);
           v = &mod->dir_node->vertex;
         }
       }
-
       /* sidestep from the fsent, to the owning module */
-      else if(vertex_special_get(v) != VERTEX_SPECIAL_MODULE) {
-        if(sel->criteria.edge_travel & EDGE_MODULES) {
-          mod = fsent_module_get(containerof(v, fsent, vertex));
+      else if(vertex_type_get(v) != VERTEX_MODULE)
+      {
+        if(sel->traverse.criteria.edge_travel & EDGE_MODULES) {
+          mod = vertex_module_get(v);
           v = &mod->vertex;
         }
       }
 
+      memcpy(&criteria, &sel->traverse.criteria, sizeof(criteria));
+
       attrs = 0;
-      if(sel->exhaustive) {
+      if(sel->traverse.exhaustive) {
         attrs |= MORIA_TRAVERSE_EXHAUSTIVE;
       }
-      if(sel->nofollow) {
+      if(sel->traverse.nofollow) {
         attrs |= MORIA_TRAVERSE_NOFOLLOW;
       }
-        attrs |= MORIA_TRAVERSE_DEPTH;
+      if(sel->traverse.hidden) {
+        criteria.vertex_visit_mask &= ~VERTEX_EXISTS_BIT;
+        criteria.vertex_visit &= ~VERTEX_EXISTS_BIT;
+      }
+      criteria.vertex_visit_mask |= sel->traverse.visit_mask;
+      criteria.vertex_visit |= sel->traverse.visit_bits;
 
       moria_traverse_vertices(
           &g_graph
@@ -345,8 +406,8 @@ static void selector_ctx_exec(selector_context * restrict ctx)
         , selector_visitor
         , state
         /* selectors can only visit fsent nodes */
-        , &sel->criteria
-        , sel->direction | sel->mode | attrs
+        , &criteria
+        , sel->traverse.direction | sel->traverse.mode | MORIA_TRAVERSE_DEPTH | attrs
         , ctx
       );
     }
@@ -359,9 +420,17 @@ static void selector_ctx_exec(selector_context * restrict ctx)
   selection_free(out);
 }
 
-static int criteria_cmp(moria_traversal_criteria * restrict A, moria_traversal_criteria * restrict B)
+static int traverse_criteria_cmp(struct selector_traverse * restrict A, struct selector_traverse * restrict B)
 {
-  return memcmp_region(A, B, vertex_travel_mask, edge_visit);
+  return memcmp_region(&A->criteria, &B->criteria, vertex_travel_mask, edge_visit);
+}
+
+static int traverse_visit_cmp(struct selector_traverse * restrict A, struct selector_traverse * restrict B)
+{
+  return 0
+    ?: INTCMP(A->visit_mask, B->visit_mask)
+    ?: INTCMP(A->visit_bits, B->visit_bits)
+    ;
 }
 
 static void writer_write(selector * const restrict sel, bacon_writer * const restrict builder_writer, bool top)
@@ -404,57 +473,82 @@ static void writer_write(selector * const restrict sel, bacon_writer * const res
       { MAPPING
         STRING("traverse")
         { SET
-          if(sel->criteria.min_depth != SELECTOR_TRAVERSE_DEFAULT_MIN_DEPTH) {
+          if(sel->traverse.criteria.min_depth != SELECTOR_TRAVERSE_DEFAULT_MIN_DEPTH) {
             MAPPING
             STRING("min-distance")
-            UINT(sel->criteria.min_depth)
+            UINT(sel->traverse.criteria.min_depth)
           }
-          if(sel->criteria.max_depth != SELECTOR_TRAVERSE_DEFAULT_MAX_DEPTH) {
+          if(sel->traverse.criteria.max_depth != SELECTOR_TRAVERSE_DEFAULT_MAX_DEPTH) {
             MAPPING
             STRING("max-distance")
-            UINT(sel->criteria.max_depth)
+            UINT(sel->traverse.criteria.max_depth)
           }
           { MAPPING
             STRING("direction")
-            STRING(attrs32_name_byvalue(traverse_type_attrs, TRAVERSE_TYPE_OPT & sel->direction))
+            STRING(attrs32_name_byvalue(traverse_type_attrs, TRAVERSE_TYPE_OPT & sel->traverse.direction))
           }
           { MAPPING
             STRING("order")
-            STRING(attrs32_name_byvalue(traverse_order_attrs, TRAVERSE_ORDER_OPT & sel->mode))
+            STRING(attrs32_name_byvalue(traverse_order_attrs, TRAVERSE_ORDER_OPT & sel->traverse.mode))
           }
           { MAPPING
             STRING("graph")
-            if(criteria_cmp(&sel->criteria, &criteria_fstree) == 0) {
+            if(traverse_criteria_cmp(&sel->traverse, &criteria_fs) == 0) {
               STRING("fs")
-            } else if(criteria_cmp(&sel->criteria, &criteria_fstree_hidden) == 0) {
-              STRING("fs-hidden")
-            } else if(criteria_cmp(&sel->criteria, &criteria_modtree) == 0) {
-              STRING("modtree")
-            } else if(criteria_cmp(&sel->criteria, &criteria_dirtree) == 0) {
-              STRING("dirtree")
-            } else if(criteria_cmp(&sel->criteria, &criteria_depends) == 0) {
+            } else if(traverse_criteria_cmp(&sel->traverse, &criteria_special) == 0) {
+              STRING("special")
+            } else if(traverse_criteria_cmp(&sel->traverse, &criteria_depends) == 0) {
               STRING("depends")
-            } else if(criteria_cmp(&sel->criteria, &criteria_imports) == 0) {
-              STRING("imports")
-            } else if(criteria_cmp(&sel->criteria, &criteria_uses) == 0) {
+            } else if(traverse_criteria_cmp(&sel->traverse, &criteria_uses) == 0) {
               STRING("uses")
-            } else if(criteria_cmp(&sel->criteria, &criteria_requires) == 0) {
+            } else if(traverse_criteria_cmp(&sel->traverse, &criteria_requires) == 0) {
               STRING("requires")
+            } else {
+              RTA;
+            }
+          }
+          if(sel->traverse.visit_mask) {
+            MAPPING
+            STRING("visit")
+            if(traverse_visit_cmp(&sel->traverse, &visit_module) == 0) {
+              STRING("module")
+            } else if(traverse_visit_cmp(&sel->traverse, &visit_rules) == 0) {
+              STRING("rules")
+            } else if(traverse_visit_cmp(&sel->traverse, &visit_formula) == 0) {
+              STRING("formula")
+            } else if(traverse_visit_cmp(&sel->traverse, &visit_var) == 0) {
+              STRING("var")
+            } else if(traverse_visit_cmp(&sel->traverse, &visit_config) == 0) {
+              STRING("config")
+            } else if(traverse_visit_cmp(&sel->traverse, &visit_plugin) == 0) {
+              STRING("plugin")
+            } else if(traverse_visit_cmp(&sel->traverse, &visit_directory) == 0) {
+              STRING("directory")
+            } else if(traverse_visit_cmp(&sel->traverse, &visit_module_dir) == 0) {
+              STRING("module-dir")
+            } else if(traverse_visit_cmp(&sel->traverse, &visit_rule) == 0) {
+              STRING("rule")
+            } else if(traverse_visit_cmp(&sel->traverse, &visit_fs) == 0) {
+              STRING("fs")
             } else {
               RTA;
             }
           }
           { MAPPING
             STRING("exhaustive")
-            BOOL(sel->exhaustive)
+            BOOL(sel->traverse.exhaustive)
           }
           { MAPPING
             STRING("cross-module")
-            BOOL(sel->exhaustive)
+            BOOL(sel->traverse.cross_module)
+          }
+          { MAPPING
+            STRING("hidden")
+            BOOL(sel->traverse.hidden)
           }
           { MAPPING
             STRING("nofollow")
-            BOOL(sel->exhaustive)
+            BOOL(sel->traverse.nofollow)
           }
         }
       }
@@ -473,18 +567,24 @@ static void writer_write(selector * const restrict sel, bacon_writer * const res
         { SET
           { MAPPING
             STRING("path")
-            BYTES(sel->path, sel->path_len)
+            BYTES(sel->lookup.path, sel->lookup.path_len)
           }
           { MAPPING
             STRING("nofollow")
-            BOOL(sel->nofollow)
+            BOOL(sel->lookup.nofollow)
           }
           { MAPPING
             STRING("hidden")
-            BOOL(sel->hidden)
+            BOOL(sel->lookup.hidden)
           }
         }
       }
+      break;
+    case SELECTOR_MODULE_OF:
+      STRING("module-of")
+      break;
+    case SELECTOR_FSTREE_OF:
+      STRING("fstree-of")
       break;
     case SELECTOR_NODESET:
       name = attrs32_name_byvalue(selector_nodeset_attrs, SELECTOR_NODESET_OPT & sel->nodeset);
@@ -530,7 +630,7 @@ void selector_free(selector * restrict sel)
     }
     else if(sel->type == SELECTOR_LOOKUP)
     {
-      free(sel->path);
+      free(sel->lookup.path);
     }
   }
 
@@ -570,15 +670,14 @@ void selector_context_destroy(selector_context *ctx)
   entlist_destroy(&ctx->lookup_hits);
 }
 
-void selector_exec(selector * restrict sel, selector_context * restrict ctx, selection_iteration_type iteration_type)
+void selector_exec(selector * restrict sel, selector_context * restrict ctx)
 {
   if(!ctx->selection)
-    selection_create(&ctx->selection, iteration_type);
+    selection_create(&ctx->selection, ctx->iteration_type);
   else
-    selection_reset(ctx->selection, iteration_type);
+    selection_reset(ctx->selection, ctx->iteration_type);
 
   ctx->sel = sel;
-  ctx->iteration_type = iteration_type;
 
   RUNTIME_ASSERT(ctx->cwd);
 
@@ -597,98 +696,134 @@ void selector_say(selector * const restrict sel, narrator * const restrict N)
   bacon_writer_destroy(&writer);
 }
 
-void selector_graph_fstree(moria_traversal_criteria *criteria)
+void selector_graph_fs(struct selector_traverse *traverse)
 {
-  criteria->vertex_travel_mask = VERTEX_KIND_OPT;
-  criteria->vertex_travel      = VERTEX_KIND_FSENT;
-  criteria->vertex_visit_mask  = VERTEX_KIND_OPT | VERTEX_EXISTS_BIT;
-  criteria->vertex_visit       = VERTEX_KIND_FSENT | VERTEX_EXISTS_BIT;
-  criteria->edge_travel_mask   = EDGE_TYPE_OPT;
-  criteria->edge_travel        = EDGE_FSTREE;
-  criteria->edge_visit_mask    = 0;
-  criteria->edge_visit         = 0;
+  traverse->criteria.vertex_travel_mask = 0;
+  traverse->criteria.vertex_travel      = 0;
+  traverse->criteria.vertex_visit_mask  = VERTEX_EXISTS_BIT;
+  traverse->criteria.vertex_visit       = VERTEX_EXISTS_BIT;
+  traverse->criteria.edge_travel_mask   = EDGE_TYPE_OPT;
+  traverse->criteria.edge_travel        = EDGE_FSTREE;
+  traverse->criteria.edge_visit_mask    = 0;
+  traverse->criteria.edge_visit         = 0;
 }
 
-void selector_graph_fstree_hidden(moria_traversal_criteria *criteria)
+void selector_graph_depends(struct selector_traverse *traverse)
 {
-  criteria->vertex_travel_mask = VERTEX_KIND_OPT;
-  criteria->vertex_travel      = VERTEX_KIND_FSENT;
-  criteria->vertex_visit_mask  = VERTEX_KIND_OPT;
-  criteria->vertex_visit       = VERTEX_KIND_FSENT;
-  criteria->edge_travel_mask   = EDGE_TYPE_OPT;
-  criteria->edge_travel        = EDGE_FSTREE;
-  criteria->edge_visit_mask    = 0;
-  criteria->edge_visit         = 0;
+  traverse->criteria.vertex_travel_mask = 0;
+  traverse->criteria.vertex_travel      = 0;
+  traverse->criteria.vertex_visit_mask  = VERTEX_KIND_OPT;
+  traverse->criteria.vertex_visit       = VERTEX_KIND_FSENT;
+  traverse->criteria.edge_travel_mask   = EDGE_DEPENDS;
+  traverse->criteria.edge_travel        = EDGE_DEPENDS;
+  traverse->criteria.edge_visit_mask    = 0;
+  traverse->criteria.edge_visit         = 0;
 }
 
-void selector_graph_modtree(moria_traversal_criteria *criteria)
+void selector_graph_special(struct selector_traverse *traverse)
 {
-  criteria->vertex_travel_mask = VERTEX_KIND_OPT;
-  criteria->vertex_travel      = VERTEX_KIND_FSENT;
-  criteria->vertex_visit_mask  = VERTEX_KIND_OPT;
-  criteria->vertex_visit       = VERTEX_KIND_FSENT | VERTEX_MODULE_DIR;
-  criteria->edge_travel_mask   = EDGE_TYPE_OPT;
-  criteria->edge_travel        = EDGE_FSTREE;
-  criteria->edge_visit_mask    = 0;
-  criteria->edge_visit         = 0;
+  traverse->criteria.vertex_travel_mask = 0;
+  traverse->criteria.vertex_travel      = 0;
+  traverse->criteria.vertex_visit_mask  = 0;
+  traverse->criteria.vertex_visit       = 0;
+  traverse->criteria.edge_travel_mask   = EDGE_KIND_OPT;
+  traverse->criteria.edge_travel        = EDGE_KIND_SPECIAL;
+  traverse->criteria.edge_visit_mask    = 0;
+  traverse->criteria.edge_visit         = 0;
 }
 
-void selector_graph_dirtree(moria_traversal_criteria *criteria)
+void selector_graph_uses(struct selector_traverse *traverse)
 {
-  criteria->vertex_travel_mask = VERTEX_KIND_OPT;
-  criteria->vertex_travel      = VERTEX_KIND_FSENT;
-  criteria->vertex_visit_mask  = VERTEX_KIND_OPT | VERTEX_FILETYPE_OPT;
-  criteria->vertex_visit       = VERTEX_KIND_FSENT | VERTEX_FILETYPE_DIR;
-  criteria->edge_travel_mask   = EDGE_TYPE_OPT;
-  criteria->edge_travel        = EDGE_FSTREE;
-  criteria->edge_visit_mask    = 0;
-  criteria->edge_visit         = 0;
+  traverse->criteria.vertex_travel_mask = VERTEX_KIND_OPT;
+  traverse->criteria.vertex_travel      = VERTEX_KIND_FSENT;
+  traverse->criteria.vertex_visit_mask  = VERTEX_KIND_OPT;
+  traverse->criteria.vertex_visit       = VERTEX_KIND_FSENT;
+  traverse->criteria.edge_travel_mask   = EDGE_TYPE_OPT;
+  traverse->criteria.edge_travel        = EDGE_RULESET_MOD;
+  traverse->criteria.edge_visit_mask    = 0;
+  traverse->criteria.edge_visit         = 0;
 }
 
-void selector_graph_depends(moria_traversal_criteria *criteria)
+void selector_graph_requires(struct selector_traverse *traverse)
 {
-  criteria->vertex_travel_mask = VERTEX_FSE_BPE;
-  criteria->vertex_travel      = VERTEX_FSE_BPE;
-  criteria->vertex_visit_mask  = VERTEX_KIND_OPT;
-  criteria->vertex_visit       = VERTEX_KIND_FSENT;
-  criteria->edge_travel_mask   = EDGE_DEPENDS;
-  criteria->edge_travel        = EDGE_DEPENDS;
-  criteria->edge_visit_mask    = 0;
-  criteria->edge_visit         = 0;
+  traverse->criteria.vertex_travel_mask = VERTEX_KIND_OPT;
+  traverse->criteria.vertex_travel      = VERTEX_KIND_FSENT;
+  traverse->criteria.vertex_visit_mask  = VERTEX_KIND_OPT;
+  traverse->criteria.vertex_visit       = VERTEX_KIND_FSENT;
+  traverse->criteria.edge_travel_mask   = EDGE_TYPE_OPT;
+  traverse->criteria.edge_travel        = EDGE_REQUIRES;
+  traverse->criteria.edge_visit_mask    = 0;
+  traverse->criteria.edge_visit         = 0;
 }
 
-void selector_graph_imports(moria_traversal_criteria *criteria)
+void selector_visit_special_module(struct selector_traverse * const restrict traverse)
 {
-  criteria->vertex_travel_mask = 0;
-  criteria->vertex_travel      = 0;
-  criteria->vertex_visit_mask  = VERTEX_KIND_OPT;
-  criteria->vertex_visit       = VERTEX_KIND_FSENT;
-  criteria->edge_travel_mask   = EDGE_TYPE_OPT;
-  criteria->edge_travel        = -1;
-  criteria->edge_visit_mask    = 0;
-  criteria->edge_visit         = 0;
+  traverse->visit_mask = VERTEX_SPECIAL_OPT;
+  traverse->visit_bits = VERTEX_SPECIAL_MODULE;
 }
 
-void selector_graph_uses(moria_traversal_criteria *criteria)
+void selector_visit_special_ruleset(struct selector_traverse * const restrict traverse)
 {
-  criteria->vertex_travel_mask = VERTEX_KIND_OPT;
-  criteria->vertex_travel      = VERTEX_KIND_FSENT;
-  criteria->vertex_visit_mask  = VERTEX_KIND_OPT;
-  criteria->vertex_visit       = VERTEX_KIND_FSENT;
-  criteria->edge_travel_mask   = EDGE_TYPE_OPT;
-  criteria->edge_travel        = EDGE_RULES_MOD;
-  criteria->edge_visit_mask    = 0;
-  criteria->edge_visit         = 0;
+  traverse->visit_mask = VERTEX_SPECIAL_OPT;
+  traverse->visit_bits = VERTEX_SPECIAL_RULESET;
 }
 
-void selector_graph_requires(moria_traversal_criteria *criteria)
+void selector_visit_special_formula(struct selector_traverse * const restrict traverse)
 {
-  criteria->vertex_travel_mask = VERTEX_KIND_OPT;
-  criteria->vertex_travel      = VERTEX_KIND_FSENT;
-  criteria->vertex_visit_mask  = VERTEX_KIND_OPT;
-  criteria->vertex_visit       = VERTEX_KIND_FSENT;
-  criteria->edge_travel_mask   = EDGE_TYPE_OPT;
-  criteria->edge_travel        = EDGE_REQUIRES;
-  criteria->edge_visit_mask    = 0;
-  criteria->edge_visit         = 0;
+  traverse->visit_mask = VERTEX_SPECIAL_OPT;
+  traverse->visit_bits = VERTEX_SPECIAL_FORMULA;
+}
+
+void selector_visit_special_varset(struct selector_traverse * const restrict traverse)
+{
+  traverse->visit_mask = VERTEX_SPECIAL_OPT;
+  traverse->visit_bits = VERTEX_SPECIAL_VARSET;
+}
+
+void selector_visit_special_configset(struct selector_traverse * const restrict traverse)
+{
+  traverse->visit_mask = VERTEX_SPECIAL_OPT;
+  traverse->visit_bits = VERTEX_SPECIAL_CONFIGSET;
+}
+
+void selector_visit_special_plugin(struct selector_traverse * const restrict traverse)
+{
+  traverse->visit_mask = VERTEX_SPECIAL_OPT;
+  traverse->visit_bits = VERTEX_SPECIAL_PLUGIN;
+}
+
+void selector_visit_module_dir(struct selector_traverse * const restrict traverse)
+{
+  traverse->visit_mask = VERTEX_TYPE_OPT;
+  traverse->visit_bits = VERTEX_MODULE_DIR;
+}
+
+void selector_visit_directory(struct selector_traverse * const restrict traverse)
+{
+  traverse->visit_mask = VERTEX_FILETYPE_OPT;
+  traverse->visit_bits = VERTEX_FILETYPE_DIR;
+}
+
+void selector_visit_rule(struct selector_traverse * const restrict traverse)
+{
+  traverse->visit_mask = VERTEX_TYPE_OPT;
+  traverse->visit_bits = VERTEX_RULE;
+}
+
+void selector_visit_fs(struct selector_traverse * const restrict traverse)
+{
+  traverse->visit_mask = VERTEX_TYPE_OPT;
+  traverse->visit_bits = VERTEX_FSTREE;
+}
+
+void selector_visit_rma(struct selector_traverse * const restrict traverse)
+{
+  traverse->visit_mask = VERTEX_TYPE_OPT;
+  traverse->visit_bits = VERTEX_RMA;
+}
+
+void selector_visit_bpe(struct selector_traverse * const restrict traverse)
+{
+  traverse->visit_mask = VERTEX_TYPE_OPT;
+  traverse->visit_bits = VERTEX_BPE;
 }

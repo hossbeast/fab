@@ -76,6 +76,10 @@
 %token <yyu.imax>  INTMAX16
 %token <yyu.imax>  INTMAX32
 %token <yyu.imax>  INTMAX64
+%token <yyu.umax>  HEX8
+%token <yyu.umax>  HEX16
+%token <yyu.umax>  HEX32
+%token <yyu.umax>  HEX64
 
 %type <selector_nodeset> selector-nodeset
 %type <traverse_direction> traverse-direction
@@ -86,30 +90,35 @@
   ALL             "all"
   DIRECTION       "direction"
   DOWN            "down"
-  EXTENSION       "extension"
   EXHAUSTIVE      "exhaustive"
   CROSS_MODULE    "cross-module"
   NOFOLLOW        "nofollow"
   HIDDEN          "hidden"
   FS              "fs"
-  FS_HIDDEN       "fs-hidden"
-  DIRTREE         "dirtree"
-  MODTREE         "modtree"
-  FILE_TYPE       "file-type"
-  IMPORTS         "imports"
   MAX_DISTANCE    "max-distance"
   MIN_DISTANCE    "min-distance"
   MODULE          "module"
+  MODULE_DIR      "module-dir"
   ANCHOR          "anchor"
   NONE            "none"
   PATTERN         "pattern"
   LOOKUP          "lookup"
   PATH            "path"
-  REG             "reg"
   GRAPH           "graph"
+  VISIT           "visit"
+  RULE            "rule"
+  RMA             "rma"
+  BPE             "bpe"
+  RULESET         "ruleset"
+  FORMULA         "formula"
+  VARSET          "varset"
+  CONFIGSET       "configset"
+  PLUGIN          "plugin"
+  DIRECTORY       "directory"
   REQUIRES        "requires"
   SEQUENCE        "sequence"
   DEPENDS         "depends"
+  SPECIAL         "special"
   USES            "uses"
   SOURCE          "source"
   SOURCES         "sources"
@@ -121,6 +130,8 @@
   ORDER           "order"
   PREORDER        "preorder"
   POSTORDER       "postorder"
+  MODULE_OF       "module-of"
+  FSTREE_OF       "fstree-of"
 
 %token <pattern> LOOKUP_PATTERN "lookup-pattern"
 %type <pattern> lookup-pattern
@@ -179,18 +190,38 @@ allocate-lookup-selector
   }
   ;
 
+allocate-fstree-of-selector
+  : %empty
+  {
+    selector * sel;
+    selector_alloc(SELECTOR_FSTREE_OF, &sel);
+    llist_prepend(&PARSER->selector_stack, &sel->lln);
+  }
+  ;
+
+allocate-module-of-selector
+  : %empty
+  {
+    selector * sel;
+    selector_alloc(SELECTOR_MODULE_OF, &sel);
+    llist_prepend(&PARSER->selector_stack, &sel->lln);
+  }
+  ;
+
 allocate-traverse-selector
   : %empty
   {
     selector * sel;
     selector_alloc(SELECTOR_TRAVERSE, &sel);
     llist_prepend(&PARSER->selector_stack, &sel->lln);
-    sel->criteria.min_depth = SELECTOR_TRAVERSE_DEFAULT_MIN_DEPTH;
-    sel->criteria.max_depth = SELECTOR_TRAVERSE_DEFAULT_MAX_DEPTH;
-    sel->mode = SELECTOR_TRAVERSE_DEFAULT_MODE;
-    sel->direction = SELECTOR_TRAVERSE_DEFAULT_DIRECTION;
-    sel->cross_module = SELECTOR_TRAVERSE_DEFAULT_CROSS_MODULE;
-    selector_graph_fstree(&sel->criteria);
+    sel->traverse.criteria.min_depth = SELECTOR_TRAVERSE_DEFAULT_MIN_DEPTH;
+    sel->traverse.criteria.max_depth = SELECTOR_TRAVERSE_DEFAULT_MAX_DEPTH;
+    sel->traverse.mode = SELECTOR_TRAVERSE_DEFAULT_MODE;
+    sel->traverse.direction = SELECTOR_TRAVERSE_DEFAULT_DIRECTION;
+    sel->traverse.cross_module = SELECTOR_TRAVERSE_DEFAULT_CROSS_MODULE;
+    sel->traverse.hidden = SELECTOR_TRAVERSE_DEFAULT_HIDDEN;
+    sel->traverse.nofollow = SELECTOR_TRAVERSE_DEFAULT_NOFOLLOW;
+    selector_graph_fs(&sel->traverse);
   }
   ;
 
@@ -246,6 +277,8 @@ operation-selector
   | pattern-selector
   | lookup-selector
   | traverse-selector
+  | module-of-selector
+  | fstree-of-selector
   ;
 
 sequence-selector
@@ -270,6 +303,14 @@ pattern-selector
   }
   ;
 
+module-of-selector
+  : allocate-module-of-selector MODULE_OF
+  ;
+
+fstree-of-selector
+  : allocate-fstree-of-selector FSTREE_OF
+  ;
+
 lookup-selector
   : allocate-lookup-selector LOOKUP ':' '{' lookup-settings '}'
   ;
@@ -282,16 +323,16 @@ lookup-settings
 lookup-setting
   : PATH ':' string
   {
-    llist_first(&PARSER->selector_stack, selector, lln)->path = $3;
-    llist_first(&PARSER->selector_stack, selector, lln)->path_len = strlen($3);
+    llist_first(&PARSER->selector_stack, selector, lln)->lookup.path = $3;
+    llist_first(&PARSER->selector_stack, selector, lln)->lookup.path_len = strlen($3);
   }
   | NOFOLLOW ':' BOOL
   {
-    llist_first(&PARSER->selector_stack, selector, lln)->nofollow = $3;
+    llist_first(&PARSER->selector_stack, selector, lln)->lookup.nofollow = $3;
   }
   | HIDDEN ':' BOOL
   {
-    llist_first(&PARSER->selector_stack, selector, lln)->hidden = $3;
+    llist_first(&PARSER->selector_stack, selector, lln)->lookup.hidden = $3;
   }
   ;
 
@@ -307,45 +348,62 @@ traverse-settings
 traverse-setting
   /* control the traversal */
   : GRAPH ':' graph-type
+  | VISIT ':' visit-type
+  | ORDER ':' traverse-order
+  {
+    llist_first(&PARSER->selector_stack, selector, lln)->traverse.mode = $3;
+  }
   | DIRECTION ':' traverse-direction
   {
-    llist_first(&PARSER->selector_stack, selector, lln)->direction = $3;
+    llist_first(&PARSER->selector_stack, selector, lln)->traverse.direction = $3;
   }
   | MIN_DISTANCE ':' uint16
   {
-    llist_first(&PARSER->selector_stack, selector, lln)->criteria.min_depth = $3;
+    llist_first(&PARSER->selector_stack, selector, lln)->traverse.criteria.min_depth = $3;
   }
   | MAX_DISTANCE ':' uint16
   {
-    llist_first(&PARSER->selector_stack, selector, lln)->criteria.max_depth = $3;
+    llist_first(&PARSER->selector_stack, selector, lln)->traverse.criteria.max_depth = $3;
   }
   | EXHAUSTIVE ':' BOOL
   {
-    llist_first(&PARSER->selector_stack, selector, lln)->exhaustive = $3;
+    llist_first(&PARSER->selector_stack, selector, lln)->traverse.exhaustive = $3;
+  }
+  | HIDDEN ':' BOOL
+  {
+    llist_first(&PARSER->selector_stack, selector, lln)->traverse.hidden = $3;
   }
   | CROSS_MODULE ':' BOOL
   {
-    llist_first(&PARSER->selector_stack, selector, lln)->cross_module = $3;
+    llist_first(&PARSER->selector_stack, selector, lln)->traverse.cross_module = $3;
   }
   | NOFOLLOW ':' BOOL
   {
-    llist_first(&PARSER->selector_stack, selector, lln)->nofollow = $3;
-  }
-  | ORDER ':' traverse-order
-  {
-    llist_first(&PARSER->selector_stack, selector, lln)->mode = $3;
+    llist_first(&PARSER->selector_stack, selector, lln)->traverse.nofollow = $3;
   }
   ;
 
 graph-type
-  : FS        { selector_graph_fstree(&llist_first(&PARSER->selector_stack, selector, lln)->criteria); }
-  | FS_HIDDEN { selector_graph_fstree_hidden(&llist_first(&PARSER->selector_stack, selector, lln)->criteria); }
-  | MODTREE   { selector_graph_modtree(&llist_first(&PARSER->selector_stack, selector, lln)->criteria); }
-  | DIRTREE   { selector_graph_dirtree(&llist_first(&PARSER->selector_stack, selector, lln)->criteria); }
-  | DEPENDS   { selector_graph_depends(&llist_first(&PARSER->selector_stack, selector, lln)->criteria); }
-  | IMPORTS   { selector_graph_imports(&llist_first(&PARSER->selector_stack, selector, lln)->criteria); }
-  | USES      { selector_graph_uses(&llist_first(&PARSER->selector_stack, selector, lln)->criteria); }
-  | REQUIRES  { selector_graph_requires(&llist_first(&PARSER->selector_stack, selector, lln)->criteria); }
+  : FS        { selector_graph_fs(&llist_first(&PARSER->selector_stack, selector, lln)->traverse); }
+  | DEPENDS   { selector_graph_depends(&llist_first(&PARSER->selector_stack, selector, lln)->traverse); }
+  | SPECIAL   { selector_graph_special(&llist_first(&PARSER->selector_stack, selector, lln)->traverse); }
+  | USES      { selector_graph_uses(&llist_first(&PARSER->selector_stack, selector, lln)->traverse); }
+  | REQUIRES  { selector_graph_requires(&llist_first(&PARSER->selector_stack, selector, lln)->traverse); }
+  ;
+
+visit-type
+  : MODULE     { selector_visit_special_module(&llist_first(&PARSER->selector_stack, selector, lln)->traverse); }
+  | FORMULA    { selector_visit_special_formula(&llist_first(&PARSER->selector_stack, selector, lln)->traverse); }
+  | RULESET    { selector_visit_special_ruleset(&llist_first(&PARSER->selector_stack, selector, lln)->traverse); }
+  | CONFIGSET  { selector_visit_special_configset(&llist_first(&PARSER->selector_stack, selector, lln)->traverse); }
+  | VARSET     { selector_visit_special_varset(&llist_first(&PARSER->selector_stack, selector, lln)->traverse); }
+  | PLUGIN     { selector_visit_special_plugin(&llist_first(&PARSER->selector_stack, selector, lln)->traverse); }
+  | DIRECTORY  { selector_visit_directory(&llist_first(&PARSER->selector_stack, selector, lln)->traverse); }
+  | MODULE_DIR { selector_visit_module_dir(&llist_first(&PARSER->selector_stack, selector, lln)->traverse); }
+  | RULE       { selector_visit_rule(&llist_first(&PARSER->selector_stack, selector, lln)->traverse); }
+  | FS         { selector_visit_fs(&llist_first(&PARSER->selector_stack, selector, lln)->traverse); }
+  | RMA        { selector_visit_rma(&llist_first(&PARSER->selector_stack, selector, lln)->traverse); }
+  | BPE        { selector_visit_bpe(&llist_first(&PARSER->selector_stack, selector, lln)->traverse); }
   ;
 
 traverse-direction

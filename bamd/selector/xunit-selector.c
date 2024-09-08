@@ -22,7 +22,7 @@
 #include "request.h"
 #include "channel.h"
 #include "zcat.h"
-#include "system_state.h"
+#include "system.h"
 #include "events.h"
 
 
@@ -49,15 +49,15 @@ static int selector_cmp(selector * A, selector * B)
   else if(A->type == SELECTOR_LOOKUP)
   {
     return 0
-      ?: memncmp(A->path, A->path_len, B->path, B->path_len)
-      ?: INTCMP(A->nofollow, B->nofollow)
+      ?: memncmp(A->lookup.path, A->lookup.path_len, B->lookup.path, B->lookup.path_len)
+      ?: INTCMP(A->lookup.nofollow, B->lookup.nofollow)
       ;
   }
   else if(A->type == SELECTOR_TRAVERSE)
   {
     return 0
-      ?: memcmp(&A->direction, &B->direction, sizeof(A->direction))
-      ?: memcmp(&A->criteria, &B->criteria, sizeof(A->criteria))
+      ?: memcmp(&A->traverse.direction, &B->traverse.direction, sizeof(A->traverse.direction))
+      ?: memcmp(&A->traverse.criteria, &B->traverse.criteria, sizeof(A->traverse.criteria))
       ;
   }
 
