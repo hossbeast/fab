@@ -8,8 +8,9 @@
 #include "valyria/llist.h"
 #include "valyria/hashtable.h"
 #include "moria.h"
+#include "descriptor.h"
+#include "stats.h"
 
-#include "fsname.h"
 #include "graph.h"
 
 struct narrator;
@@ -18,9 +19,21 @@ struct graph_invalidation_context;
 struct entlist;
 struct rule_run_context;
 struct formula;
+struct bacon_writer;
 
 // active list
 extern llist bpe_list;
+
+typedef union stats_bpe {
+  struct {
+    uint16_t build;
+    uint16_t build_ok;
+  };
+
+  stats_record record;
+} stats_bpe;
+
+extern descriptor_type descriptor_stats_bpe;
 
 /*
  * VERTEX_BPE - association between sources (down) and targets (up), and optionally fml (down)
@@ -31,8 +44,7 @@ typedef struct buildplan_entity {
   uint64_t hash;
   char id[40];
   uint16_t id_len;
-  char token[40];
-  uint16_t token_len;
+  stats_bpe bpe_stats;
 
   /* cached */
   struct rule_module_association *rma;  // (down) (not-null) rma which created this edge
@@ -73,16 +85,15 @@ void buildplan_entity_alloc(buildplan_entity ** restrict rv)
  * Blist - sources
  * Alist - targets
  */
-void buildplan_entity_create_hyper(
+buildplan_entity *buildplan_entity_create_hyper(
     /* 1 */ struct moria_vertex ** restrict Blist
   , /* 2 */ uint16_t Blen
   , /* 3 */ struct moria_vertex ** restrict Alist
   , /* 4 */ uint16_t Alen
   , /* 5 */ struct formula * restrict fml
   , /* 6 */ struct rule_module_association * restrict rma
-  , /* 7 */ buildplan_entity ** restrict bpep
 )
-  __attribute__((nonnull(6, 7)));
+  __attribute__((nonnull(6)));
 
 void buildplan_entity_source_edges(const buildplan_entity * restrict bpe, struct entlist * restrict list)
   __attribute__((nonnull));
@@ -111,4 +122,16 @@ void bpe_system_reconcile(struct graph_invalidation_context * restrict ctx)
   __attribute__((nonnull));
 
 void buildplan_entity_validate_enqueue(buildplan_entity * restrict bpe)
+  __attribute__((nonnull));
+
+void bpe_describe(const buildplan_entity * restrict bpe, struct bacon_writer * restrict builder_writer)
+  __attribute__((nonnull));
+
+void bpe_identity_say(const buildplan_entity * restrict bpe, struct narrator * restrict N)
+  __attribute__((nonnull));
+
+size_t bpe_path_cat(void * restrict dst, size_t sz, const buildplan_entity * restrict bpe)
+  __attribute__((nonnull));
+
+void bpe_stats_build(buildplan_entity * restrict, bool reset, struct bacon_writer * restrict)
   __attribute__((nonnull));

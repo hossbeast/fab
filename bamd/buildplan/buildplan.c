@@ -8,6 +8,8 @@
 #include "bacon/writer.h"
 #include "bacon/builder.h"
 #include "narrator/fixed.h"
+#include "moria/vertex.h"
+#include "common/hash.h"
 
 #include "buildplan.h"
 #include "dependency.h"
@@ -19,16 +21,21 @@
 #include "zcat.h"
 #include "common/attrs.h"
 #include "events.h"
-#include "system_state.h"
+#include "system.h"
 #include "rule_module_association.h"
 
 selection buildplan_selection;
 uint16_t buildplan_id;
 enum buildplan_state buildplan_state;
 
+union stats_buildplan buildplan_stats;
+moria_vertex *g_buildplan = (moria_vertex[]) {{ }};
+char g_buildplan_id[40];
+uint16_t g_buildplan_id_len;
+
 typedef struct traverse_context {
   moria_vertex *stack[32];
-  uint16_t stack_len;
+  int32_t stack_depth;
 } traverse_context;
 
 /*
@@ -36,36 +43,21 @@ typedef struct traverse_context {
  *
  * @distance - length of the path to this node from the target
  */
-static void buildplan_visitor_direct(
-    moria_vertex * v
-  , void * arg
-  , moria_traversal_mode mode
-  , int distance
-  , moria_traverse_result * restrict result
-)
+static void buildplan_add(moria_vertex *v, int distance, traverse_context *ctx)
 {
   fsent *fse;
-  channel *chan;
-  bamipc_message *msg;
+  events_context ectx;
+  event_bacon *msg;
   bacon_writer writer, *builder_writer;
   narrator_fixed fixed;
-  traverse_context *ctx;
-  uint16_t stack_index;
   int x;
-
-  /* tracking the path by which this node was visited */
-  ctx = arg;
-  stack_index = distance / 2;
-  if(stack_index < ARRAY_LEN(ctx->stack)) {
-    ctx->stack[stack_index] = v;
-  }
 
   if(!vertex_invalid_get(v)) {
     return;
   }
   fse = containerof(v, fsent, vertex);
 
-  if(!fse->bpe && vertex_shadowtype_get(v)) {
+  if(!fse->bpe && vertex_shadow_get(v)) {
     /* special case ; shadow nodes can act as placeholders, even with no attached formula */
     selection_add_vertex(&buildplan_selection, &fse->vertex, distance);
     return;
@@ -82,7 +74,7 @@ static void buildplan_visitor_direct(
     }
     fse->bp_plan_id = buildplan_id;
 
-    msg = system_error_event(&chan);
+    msg = system_error_event(&ectx);
     narrator_fixed_init(&fixed, msg->text, sizeof(msg->text));
     bacon_writer_init(&writer);
     builder_writer = bacon_writer_open(&writer, &fixed.base);
@@ -92,8 +84,12 @@ static void buildplan_visitor_direct(
         { MAPPING
           STRING("trail")
           { LIST
-            for(x = 0; x <= stack_index; x++) {
-              vertex_identity_describe(ctx->stack[x], builder_writer);
+            if(ctx && ctx->stack_depth >= 0) {
+              for(x = 0; x <= ctx->stack_depth; x++) {
+                vertex_identity_describe(ctx->stack[x], builder_writer);
+              }
+            } else {
+              vertex_identity_describe(&fse->vertex, builder_writer);
             }
           }
         }
@@ -102,17 +98,48 @@ static void buildplan_visitor_direct(
     bacon_writer_close(builder_writer);
     msg->size = fixed.l;
     msg->code = -1;
-    events_publish(chan, msg);
+    events_publish(&ectx);
     return;
   }
 
   selection_add_bpe(&buildplan_selection, fse->bpe, distance);
 }
 
+/*
+ * Add a node to the plan
+ *
+ * @distance - length of the path to this node from the target
+ */
+static void buildplan_visitor_direct(
+    moria_vertex *v
+  , void *arg
+  , moria_traversal_mode mode
+  , int distance
+  , moria_traverse_result * restrict result
+)
+{
+  traverse_context *ctx;
+
+  ctx = arg;
+
+  /* tracking the path by which this node was visited */
+  ctx->stack_depth = distance / 2;
+  if(ctx->stack_depth < ARRAY_LEN(ctx->stack)) {
+    ctx->stack[ctx->stack_depth] = v;
+  } else {
+    ctx->stack_depth = -1;
+  }
+
+  buildplan_add(v, distance, ctx);
+}
+
 void buildplan_setup()
 {
   selection_init(&buildplan_selection);
   buildplan_id = 1;
+
+  moria_vertex_initw(g_buildplan, &g_graph, VERTEX_BUILDPLAN | VERTEX_OK, MMS("(buildplan)"));
+  g_buildplan_id_len = zcatf(g_buildplan_id, sizeof(g_buildplan_id), "%016"PRIx64, hash64(0x2345, MMS("(buildplan)")));
 }
 
 void buildplan_cleanup()
@@ -130,17 +157,15 @@ void buildplan_reset()
 void buildplan_finalize()
 {
   selection_finalize(&buildplan_selection);
-  buildplan_report();
+  buildplan_show();
 }
 
-void buildplan_report()
+void buildplan_show()
 {
   selected *sn;
   const buildplan_entity *bpe;
 
   printf("%3zu executions in %2hu stages\n", buildplan_selection.selected_entities.size, buildplan_selection.numranks);
-
-return;
 
   llist_foreach(&buildplan_selection.list, sn, lln) {
     printf("%-3d ", sn->rank);
@@ -195,34 +220,48 @@ void buildplan_select_direct(llist * restrict selection)
   selected *sn;
 
   llist_foreach(selection, sn, lln) {
-    buildplan_visitor_direct((void*)sn->v, 0, 0, 0, 0);
+    buildplan_add(sn->v, 0, 0);
   }
 }
 
-void buildplan_describe(bacon_writer * restrict builder_writer)
+void buildplan_stats_build(bool reset, bacon_writer * restrict builder_writer)
 {
+  stats_build(&buildplan_stats.record, &descriptor_stats_buildplan, builder_writer);
+}
+
+void buildplan_describe(struct bacon_writer * restrict builder_writer)
+{
+  { MAPPING
+    vertex_path_describe(g_buildplan, builder_writer);
+    { SET
+      vertex_mappings(g_buildplan, builder_writer);
+      { MAPPING
+        STRING("stats")
+        { SET
+          buildplan_stats_build(false, builder_writer);
+        }
+      }
+    }
+  }
+}
+
+void buildplan_tell(struct channel * restrict channel)
+{
+  bamipc_message *msg;
   selected *sn;
   const buildplan_entity *bpe;
-  char buf[512];
   char *dst;
   size_t sz;
   size_t z;
-  int64_t rank;
 
-  rank = INT64_MAX;
   llist_foreach(&buildplan_selection.list, sn, lln) {
-    /* new list on rank change */
-    if(sn->rank != rank) {
-      if(rank != INT64_MAX) {
-        bacon_writer_pop_list(builder_writer);
-      }
-      bacon_writer_push_list(builder_writer);
-      rank = sn->rank;
-    }
-
-    dst = buf;
-    sz = sizeof(buf);
+    msg = channel_produce(channel);
+    msg->type = BAMIPC_MSG_RESULT;
+    msg->attrs = 0;
+    dst = msg->text;
+    sz = sizeof(msg->text);
     z = 0;
+
     z += zcatf(dst + z, sz - z, "%-3d ", sn->rank);
     switch(sn->type) {
       case SELECTED_BPE:
@@ -235,10 +274,12 @@ void buildplan_describe(bacon_writer * restrict builder_writer)
         break;
         RTA;
     }
-    BYTES(buf, z);
+    msg->size = z;
+    channel_post(channel, msg);
   }
+}
 
-  if(rank != INT64_MAX) {
-    bacon_writer_pop_list(builder_writer);
-  }
+size_t buildplan_id_cat(char *dst, size_t sz)
+{
+  return zcatw(dst, sz, g_buildplan_id, g_buildplan_id_len);
 }

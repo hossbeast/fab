@@ -3,18 +3,15 @@
 
 #pragma once
 
-//struct exec_builder;
-//struct exec_render_context;
-//struct build_slot;
 struct fsent;
-struct buildplan_entity;
+struct build_slot;
 struct bacon_parser;
 struct bacon_value;
 
 void sysvar_render(
     struct bacon_value ** restrict vars
   , struct bacon_parser * restrict parser
-  , const struct buildplan_entity * restrict bpe
-  , const struct fsent * restrict mod
+  , const struct build_slot * restrict bs
+  , const struct fsent * restrict base
 )
   __attribute__((nonnull(1, 2, 3)));

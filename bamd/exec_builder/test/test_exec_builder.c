@@ -24,7 +24,7 @@
 #include "exec_render.h"
 #include "formula_parser.internal.h"
 #include "formula_value.h"
-#include "var.h"
+#include "varset.h"
 #include "build_slot.h"
 #include "dependency.h"
 #include "channel.h"

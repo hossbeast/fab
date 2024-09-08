@@ -22,6 +22,8 @@ typedef struct build_slot {
   int32_t status;                 // process exit status
   uint16_t stage;
   uint32_t stage_index;
+  struct timespec forked_time;  // time when forked, monotonic clock
+  struct timespec waited_time;  // time when waited, monotonic clock
 
   /* (not null) dependency edge with formula/sources/targets */
   /* this edge has 1+ targets, 0+ sources, and one EDGE_FML_BPE */
@@ -61,8 +63,8 @@ typedef struct build_slot {
   size_t env_stor_a;
 
   bacon_parser sysvar_parser;
-  exec_builder exec_builder;
-  exec_render_context exec_builder_context;
+  struct exec_builder exec_builder;
+  struct exec_render_context exec_builder_context;
 } build_slot;
 
 /*
@@ -71,7 +73,7 @@ typedef struct build_slot {
 void build_slot_read(struct build_slot * restrict bs, uint32_t stream)
   __attribute__((nonnull));
 
-void build_slot_reap(struct build_slot * restrict bs, siginfo_t * info)
+void build_slot_reap(struct build_slot * restrict bs)
   __attribute__((nonnull));
 
 void build_slot_fork_and_exec(struct build_slot * restrict bs, struct buildplan_entity * restrict bpe, uint32_t stage_index)

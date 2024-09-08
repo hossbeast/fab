@@ -3,6 +3,7 @@
 
 #include "xlinux/xstdlib.h"
 
+#include "moria/edge.h"
 #include "moria/vertex.h"
 #include "moria/foreach.h"
 #include "narrator.h"
@@ -21,8 +22,9 @@
 #include "entlist.h"
 #include "rule.h"
 #include "channel.h"
-#include "system_state.h"
+#include "system.h"
 #include "events.h"
+#include "shadow.h"
 
 #include "zcat.h"
 
@@ -326,18 +328,16 @@ void buildplan_entity_validate_enqueue(buildplan_entity * restrict bpe)
   entlist_destroy(&list);
 }
 
-void buildplan_entity_create_hyper(
+buildplan_entity *buildplan_entity_create_hyper(
     moria_vertex ** restrict Blist
   , uint16_t Blen
   , moria_vertex ** restrict Alist
   , uint16_t Alen
   , formula * restrict fml
   , rule_module_association * restrict rma
-  , buildplan_entity ** restrict bpep
 )
 {
   buildplan_entity *bpe;
-  uint64_t token;
 
   buildplan_entity_alloc(&bpe);
   dependency_hyperconnect(Blist, Blen, (moria_vertex *[]) { &bpe->vertex }, 1, EDGE_SRC_BPE);
@@ -349,10 +349,10 @@ void buildplan_entity_create_hyper(
 
   bpe->hash = bpe_hash(0, bpe);
   bpe->id_len = zcatf(bpe->id, sizeof(bpe->id), "%016"PRIx64, bpe->hash);
-  token = atomic_fetch_inc(&vertex_token_counter);
-  bpe->token_len = zcatf(bpe->token, sizeof(bpe->token), "%016"PRIx64, hash64(bpe->hash, MM(token)));
 
-  *bpep = bpe;
+  shadow_link(g_shadow_bpes, bpe->id, bpe->id_len, &bpe->vertex, 0);
+
+  return bpe;
 }
 
 void buildplan_entity_source_edges(const buildplan_entity * restrict bpe, entlist * restrict list)
@@ -504,10 +504,12 @@ static void bpe_excise(buildplan_entity * restrict bpe, graph_invalidation_conte
 
   /* collect edges for orphaned formulas */
   entlist_init(&edges);
-  moria_foreach_edge_up(&st, &bpe->vertex, edge) {
+  moria_foreach_edge(&st, &bpe->vertex, edge) {
     entlist_push(&edges, edge);
   }
-  moria_foreach_edge_down(&st, &bpe->vertex, edge) {
+
+  /* shadow refs */
+  if((edge = moria_edge_between(&bpe->vertex, &g_shadow_bpes->vertex))) {
     entlist_push(&edges, edge);
   }
 
@@ -532,8 +534,8 @@ void bpe_release(buildplan_entity * restrict bpe, graph_invalidation_context * r
 
 static buildplan_entity *bpe_target_check(fsent * restrict fse)
 {
-  channel *chan;
-  bamipc_message *msg;
+  events_context ctx;
+  event_bacon *pb;
   narrator_fixed fixed;
   bacon_writer writer, *builder_writer;
   moria_edge *edge;
@@ -587,12 +589,11 @@ static buildplan_entity *bpe_target_check(fsent * restrict fse)
    * this fsent is the target of two or more buildable bpes
    */
 
-  msg = system_error_event(&chan);
-
-  narrator_fixed_init(&fixed, msg->text, sizeof(msg->text));
+  pb = system_error_event(&ctx);
+  narrator_fixed_init(&fixed, pb->text, sizeof(pb->text));
   bacon_writer_init(&writer);
-  builder_writer = bacon_writer_open(&writer, &fixed.base);
 
+  builder_writer = bacon_writer_open(&writer, &fixed.base);
   { MAPPING
     STRING("file is buildable through two dependency paths")
     { LIST
@@ -609,9 +610,10 @@ static buildplan_entity *bpe_target_check(fsent * restrict fse)
     }
   }
   bacon_writer_close(builder_writer);
-  msg->size = fixed.l;
-  msg->code = -1;
-  events_publish(chan, msg);
+
+  pb->size = fixed.l;
+  pb->code = -1;
+  events_publish(&ctx);
   return 0;
 }
 
@@ -632,4 +634,75 @@ void bpe_system_reconcile(graph_invalidation_context * restrict invalidation)
       vertex_invalidate(&fse->vertex, invalidation);
     }
   }
+}
+
+void bpe_stats_build(buildplan_entity * restrict bpe, bool reset, bacon_writer * restrict builder_writer)
+{
+  stats_build(&bpe->bpe_stats.record, &descriptor_stats_bpe, builder_writer);
+}
+
+void bpe_describe(const buildplan_entity * restrict bpe, bacon_writer * restrict builder_writer)
+{
+  moria_foreach_state st;
+  moria_edge *e;
+  entlist list, *eln;
+  const fsent *fse;
+
+  { MAPPING
+    bacon_writer_push_string(builder_writer);
+    vertex_path_say(&bpe->vertex, builder_writer->N);
+    bacon_writer_pop_string(builder_writer);
+    { SET
+      { MAPPING STRING("attrs")
+        attrs32_describe(bpe->vertex.attrs, graph_vertex_attrs, builder_writer);
+      }
+      { MAPPING STRING("id")
+        BYTES(bpe->id, bpe->id_len)
+      }
+      moria_foreach_edge_down(&st, &bpe->vertex, e) {
+        switch(edge_type_get(e)) {
+          case EDGE_RMA_BPE:
+            { MAPPING STRING("rma")
+              vertex_path_describe(e->B, builder_writer);
+            }
+          default:
+        }
+      }
+      { MAPPING STRING("sources")
+        { LIST
+          buildplan_entity_sources(bpe, &list);
+          entlist_foreach(&list, fse, eln) {
+            vertex_identity_describe(&fse->vertex, builder_writer);
+          }
+          entlist_destroy(&list);
+        }
+      }
+      { MAPPING STRING("targets")
+        { LIST
+          buildplan_entity_targets(bpe, &list);
+          entlist_foreach(&list, fse, eln) {
+            vertex_identity_describe(&fse->vertex, builder_writer);
+          }
+          entlist_destroy(&list);
+        }
+      }
+      { MAPPING
+        STRING("stats")
+        { SET
+          bpe_stats_build((buildplan_entity *)bpe, false, builder_writer);
+        }
+      }
+    }
+  }
+}
+
+void bpe_identity_say(const buildplan_entity * restrict bpe, struct narrator * restrict N)
+{
+  attrs32_say(bpe->vertex.attrs, graph_vertex_attrs, N);
+  narrator_sayf(N, " id %s", bpe->id);
+}
+
+size_t bpe_path_cat(void * restrict dst, size_t sz, const buildplan_entity * restrict bpe)
+{
+  return zcatf(dst, sz, "//bpes/%.*s", bpe->id_len, bpe->id);
 }

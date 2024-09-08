@@ -12,6 +12,7 @@
 #include "xlinux/xstdlib.h"
 #include "xlinux/xfcntl.h"
 #include "xlinux/xprctl.h"
+#include "xlinux/xtime.h"
 #include "valyria/hashtable.h"
 #include "valyria/map.h"
 #include "narrator.h"
@@ -20,6 +21,7 @@
 #include "narrator/fixed.h"
 #include "bacon/value.h"
 #include "bacon/writer.h"
+#include "bacon/builder.h"
 
 #include "bam/sigutil.h"
 #include "bam/ipc.h"
@@ -47,15 +49,17 @@
 #include "formula_value.h"
 #include "events.h"
 #include "channel.h"
-#include "system_state.h"
+#include "system.h"
 #include "entlist.h"
 #include "sysvar.h"
+#include "walker.h"
 
 #include "atomics.h"
 #include "common/assure.h"
 #include "zcat.h"
 #include "marshal.h"
 #include "hexdump.h"
+#include "times.h"
 
 struct insertion_sort_ctx {
   char ** base;
@@ -112,7 +116,7 @@ static size_t insertion_sort(char ** restrict dst, size_t dst_len, char ** src, 
 /*
  * post-fork setup, exec
  */
-static void bsexec(build_slot * restrict bs)
+static void __attribute__((noreturn)) bsexec(build_slot * restrict bs)
 {
   int x;
   int fd = -1;
@@ -120,13 +124,9 @@ static void bsexec(build_slot * restrict bs)
   // kill me if parent dies, prevent zombies
   xprctl(PR_SET_PDEATHSIG, 9, 0, 0, 0);
 
-  // stdin
+  /* std file descriptors */
   xdup2(build_devnull_fd, 0);
-
-  // stdout
   xdup2(bs->stdout_pipe[1], 1);
-
-  // stderr
   xdup2(bs->stderr_pipe[1], 2);
 
   // auxout
@@ -149,7 +149,7 @@ static void bsexec(build_slot * restrict bs)
     fd = xopenatf(O_RDONLY, 0, "/proc/self/fd/%d", bs->file_fd);
   }
 
-  // close fds
+  /* fds */
   for(x = 0; x < 1024; x++)
   {
     if(x == 0 || x == 1 || x == 2 || x == 1001 || x == fd) {
@@ -159,26 +159,25 @@ static void bsexec(build_slot * restrict bs)
     close(x);
   }
 
-  /* signals */
+  /* signals ? */
+
   if(fd != -1) {
-    x = fexecve(fd, bs->argv, bs->envp);
+    fexecve(fd, bs->argv, bs->envp);
   } else {
-    x = execve(bs->file_path, bs->argv, bs->envp);
-  }
-  if(x == 0) {
-    return;
+    execve(bs->file_path, bs->argv, bs->envp);
   }
 
+  /* unreachable */
   dprintf(1, "%s\n", strerror(errno));
   RTA;
   exit(1);
 }
 
 /* publish exec-forked events for this slot */
-static void build_slot_forked(build_slot * restrict bs)
+static void build_slot_forked_binary(build_slot * restrict bs)
 {
   size_t z;
-  channel *chan;
+  events_context ectx;
   bamipc_message *msg;
   uint16_t len;
   uint32_t list_size;
@@ -209,7 +208,7 @@ static void build_slot_forked(build_slot * restrict bs)
   entlist *targets_eln;
 
   /* struct bam_build_slot_info */
-  if(!events_would(BAMIPC_EVENT_FORMULA_EXEC_FORKED, &chan, &msg)) {
+  if(!(msg = events_binary_would(&ectx, BAMIPC_EVENT_FORMULA_FORK_BIN))) {
     return;
   }
 
@@ -264,9 +263,9 @@ static void build_slot_forked(build_slot * restrict bs)
     }
 
     /* cwd */
-    len = bs->cwd_len;// bs->mod->dir_node_abspath_len;
+    len = bs->cwd_len;
     z += marshal_u16(dst + z, sz - z, len);
-    z += zcatw(dst + z, sz - z, bs->cwd, len); //  bs->mod->dir_node_abspath, len);
+    z += zcatw(dst + z, sz - z, bs->cwd, len);
 
     /* args */
     z += marshal_u16(dst + z, sz - z, argv_count);          /* total items in argv */
@@ -381,7 +380,7 @@ static void build_slot_forked(build_slot * restrict bs)
 
     msg->size = z;
     msg->id = bs->pid;
-    events_publish(chan, msg);
+    events_publish(&ectx);
 
     RUNTIME_ASSERT(argv_x <= argv_count);
     RUNTIME_ASSERT(envp_x <= envp_count);
@@ -391,7 +390,7 @@ static void build_slot_forked(build_slot * restrict bs)
       break;
     }
 
-    if(!events_would(BAMIPC_EVENT_FORMULA_EXEC_FORKED, &chan, &msg)) {
+    if(!(msg = events_binary_would(&ectx, BAMIPC_EVENT_FORMULA_FORK_BIN))) {
       return;
     }
   }
@@ -400,14 +399,107 @@ static void build_slot_forked(build_slot * restrict bs)
   entlist_destroy(&targets);
 }
 
-/* publish the exec-waited event */
-static void build_slot_waited(build_slot * restrict bs)
+static void build_slot_forked_bacon(build_slot * restrict bs)
 {
-  channel *chan;
+  events_context ectx;
+  event_bacon *msg;
+  fsent *n;
+
+  bacon_writer writer, *builder_writer;
+  narrator_fixed fixed;
+
+  /* lists tracking */
+  entlist sources;
+  moria_vertex *source;
+  entlist *sources_eln;
+
+  entlist targets;
+  moria_vertex *target;
+  entlist *targets_eln;
+
+  if(!(msg = events_bacon_would(&ectx, BAMIPC_EVENT_FORMULA_FORK))) {
+    return;
+  }
+
+  narrator_fixed_init(&fixed, msg->text, sizeof(msg->text));
+  bacon_writer_init(&writer);
+  builder_writer = bacon_writer_open(&writer, &fixed.base);
+
+  buildplan_entity_sources(bs->bpe, &sources);
+  sources_eln = llist_first(&sources.lln, typeof(*sources_eln), lln); // cursor
+
+  buildplan_entity_targets(bs->bpe, &targets);
+  targets_eln = llist_first(&targets.lln, typeof(*targets_eln), lln); // cursor
+
+  { MAPPING
+    STRING("forked")
+    { SET
+      { MAPPING STRING("pid") UINT(bs->pid) }
+      { MAPPING STRING("stage") UINT(bs->stage) }
+      { MAPPING STRING("formula") BYTES(bs->bpe->fml->abspath, bs->bpe->fml->abspath_len) }
+      { MAPPING STRING("path")
+        if(bs->file_pe)
+        {
+          bacon_writer_push_string(builder_writer);
+          BYTES(bs->file_pe->dir->s, bs->file_pe->dir->len)
+          STRING("/")
+          BYTES(bs->file_pe->s, bs->file_pe->len)
+          bacon_writer_pop_string(builder_writer);
+        }
+        else
+        {
+          STRING(bs->file_path)
+        }
+      }
+      { MAPPING
+        STRING("sources")
+        { LIST
+          for(; sources_eln; sources_eln = llist_next(&sources.lln, sources_eln, lln)) {
+            source = sources_eln->p;
+            n = containerof(source, fsent, vertex);
+            bacon_writer_push_string(builder_writer);
+            fsent_path_say(n, builder_writer->N);
+            bacon_writer_pop_string(builder_writer);
+          }
+        }
+      }
+      { MAPPING
+        STRING("targets")
+        { LIST
+          for(; targets_eln; targets_eln = llist_next(&targets.lln, targets_eln, lln)) {
+            target = targets_eln->p;
+            n = containerof(target, fsent, vertex);
+            bacon_writer_push_string(builder_writer);
+            fsent_path_say(n, builder_writer->N);
+            bacon_writer_pop_string(builder_writer);
+          }
+        }
+      }
+    }
+  }
+
+  msg->id = 0;
+  msg->size = fixed.l;
+  events_publish(&ectx);
+
+  entlist_destroy(&sources);
+  entlist_destroy(&targets);
+}
+
+/* publish exec-forked events for this slot */
+static void build_slot_forked(build_slot * restrict bs)
+{
+  build_slot_forked_binary(bs);
+  build_slot_forked_bacon(bs);
+}
+
+static void build_slot_waited_binary(build_slot * restrict bs)
+{
+  events_context ectx;
   bamipc_message *msg;
   uint16_t z;
 
-  if(!events_would(BAMIPC_EVENT_FORMULA_EXEC_WAITED, &chan, &msg)) {
+  if(!(msg = events_binary_would(&ectx, BAMIPC_EVENT_FORMULA_WAIT_BIN))) {
     return;
   }
 
@@ -415,14 +507,55 @@ static void build_slot_waited(build_slot * restrict bs)
   z = 0;
   z += marshal_u32(msg->text + z, sizeof(msg->text) - z, descriptor_bam_build_slot_results.id);
   z += marshal_i32(msg->text + z, sizeof(msg->text) - z, bs->status);
+  z += marshal_u64(msg->text + z, sizeof(msg->text) - z, timespec_delta(&bs->forked_time, &bs->waited_time));
   z += marshal_u32(msg->text + z, sizeof(msg->text) - z, bs->stdout_total);
   z += marshal_u32(msg->text + z, sizeof(msg->text) - z, bs->stderr_total);
   z += marshal_u32(msg->text + z, sizeof(msg->text) - z, bs->auxout_total);
 
   msg->size = z;
   msg->id = bs->pid;
-  events_publish(chan, msg);
+  events_publish(&ectx);
 }
+
+static void build_slot_waited_bacon(build_slot * restrict bs)
+{
+  bacon_writer writer, *builder_writer;
+  narrator_fixed fixed;
+  event_bacon *msg;
+  events_context ectx;
+
+  if(!(msg = events_bacon_would(&ectx, BAMIPC_EVENT_FORMULA_WAIT))) {
+    return;
+  }
+
+  narrator_fixed_init(&fixed, msg->text, sizeof(msg->text));
+  bacon_writer_init(&writer);
+  builder_writer = bacon_writer_open(&writer, &fixed.base);
+
+  { MAPPING
+    STRING("waited")
+    { SET
+      { MAPPING STRING("pid") UINT(bs->pid) }
+      { MAPPING STRING("status") UINT(bs->status) }
+      { MAPPING STRING("runtime") UINT(timespec_delta(&bs->forked_time, &bs->waited_time)) }
+      { MAPPING STRING("stdout-total") UINT(bs->stdout_total) }
+      { MAPPING STRING("stderr-total") UINT(bs->stderr_total) }
+      { MAPPING STRING("auxout-total") UINT(bs->auxout_total) }
+    }
+  }
+
+  msg->id = 0;
+  msg->size = fixed.l;
+  events_publish(&ectx);
+}
+
+/* publish exec-waited event(s) */
+static void build_slot_waited(build_slot * restrict bs)
+{
+  build_slot_waited_binary(bs);
+  build_slot_waited_bacon(bs);
+}
+
 
 //
 // public
@@ -432,7 +565,7 @@ void build_slot_fork_and_exec(build_slot * restrict bs, buildplan_entity * restr
 {
   module * mod;
   const formula * fml;
-  struct exec * exec = 0;
+  struct exec *exec = 0;
   size_t envp_count = 0;
   uint16_t new_env_len;
   size_t args_len;
@@ -446,19 +579,22 @@ void build_slot_fork_and_exec(build_slot * restrict bs, buildplan_entity * restr
 
   RUNTIME_ASSERT(bpe->fml);
 
-  STATS_INC(g_stats.fml_exec);
-  STATS_INC(bpe->fml->fml_stats.fml_exec);
+  build_stats.fml_exec++;
+  bpe->bpe_stats.build++;
+  bpe->fml->formula_stats.fml_exec++;
+
+  xclock_gettime(CLOCK_MONOTONIC_COARSE, &bs->forked_time);
 
   /* determine (optional) context module from targets */
   mod = 0;
   buildplan_entity_targets(bpe, &targets);
   entlist_foreach(&targets, v, eln) {
     n = containerof(v, typeof(*n), vertex);
-    if(mod && fsent_module_get(n) != mod) {
+    if(mod && vertex_module_get(&n->vertex) != mod) {
       mod = 0;
       break;
     }
-    mod = fsent_module_get(n);
+    mod = vertex_module_get(&n->vertex);
   }
 
   /* mark targets for modification to suppress notify events
@@ -476,23 +612,23 @@ void build_slot_fork_and_exec(build_slot * restrict bs, buildplan_entity * restr
     vars = mod->vars;
     cwd = mod->dir_node;
   } else {
-    bs->cwd = g_base_path;
-    bs->cwd_len = g_base_path_len;
+    bs->cwd = g_base_dir;
+    bs->cwd_len = g_base_dir_len;
     vars = 0;
     cwd = g_base;
   }
 
   fml = bs->bpe->fml;
 
-  // render sysvars
+  // append sysvars
   bacon_value_free(&bs->sysvar_parser, bs->sysvars);
   bs->sysvars = 0;
-  sysvar_render(&bs->sysvars, &bs->sysvar_parser, bs->bpe, cwd);
+  sysvar_render(&bs->sysvars, &bs->sysvar_parser, bs, cwd);
 
   exec_builder_reset(&bs->exec_builder);
   exec_render_context_configure(&bs->exec_builder_context, &bs->exec_builder, cwd, mod, vars, bs->sysvars, bs);
 
-  // render file if any
+  // render file from formula, if any
   if(fml->file) {
     exec_render_file(&bs->exec_builder_context, fml->file);
     if(system_error) {
@@ -500,7 +636,7 @@ void build_slot_fork_and_exec(build_slot * restrict bs, buildplan_entity * restr
     }
   }
 
-  // render args if any
+  // append args from formula, if any
   if(fml->args) {
     exec_render_args(&bs->exec_builder_context, fml->args);
     if(system_error) {
@@ -508,7 +644,7 @@ void build_slot_fork_and_exec(build_slot * restrict bs, buildplan_entity * restr
     }
   }
 
-  // render envs if any
+  // append envs from formula, if any
   if(fml->envs) {
     exec_render_envs(&bs->exec_builder_context, fml->envs);
     if(system_error) {
@@ -516,10 +652,10 @@ void build_slot_fork_and_exec(build_slot * restrict bs, buildplan_entity * restr
     }
   }
 
-  // render env sysvars
+  // append envs from module, if any
   exec_render_env_vars(&bs->exec_builder_context);
 
-  // render
+  // finalize all the strings
   exec_builder_build(&bs->exec_builder, &exec);
 
   // path setup
@@ -536,10 +672,11 @@ void build_slot_fork_and_exec(build_slot * restrict bs, buildplan_entity * restr
   else if(exec->path) // execute file given by absolute path
   {
     bs->file_path = exec->path;
-    if((filename = strrchr(exec->path, '/')))
+    if((filename = strrchr(exec->path, '/'))) {
       filename++;
-    else
+    } else {
       filename = exec->path;
+    }
   }
   else                // execute formula file itself
   {
@@ -612,68 +749,76 @@ void build_slot_read(build_slot * restrict bs, uint32_t stream)
   int fd = 0;
   uint32_t * total = 0;
   bamipc_event_type event = 0;
-  channel *chan;
+  events_context ectx;
   bamipc_message *msg;
 
   if(stream == 1)
   {
     fd = bs->stdout_pipe[0];
     total = &bs->stdout_total;
-    event = BAMIPC_EVENT_FORMULA_EXEC_STDOUT;
+    event = BAMIPC_EVENT_FORMULA_STDOUT_BIN;
   }
   else if(stream == 2)
   {
     fd = bs->stderr_pipe[0];
     total = &bs->stderr_total;
-    event = BAMIPC_EVENT_FORMULA_EXEC_STDERR;
+    event = BAMIPC_EVENT_FORMULA_STDERR_BIN;
   }
   else if(stream == 1001)
   {
     fd = bs->auxout_pipe[0];
     total = &bs->auxout_total;
-    event = BAMIPC_EVENT_FORMULA_EXEC_AUXOUT;
+    event = BAMIPC_EVENT_FORMULA_AUXOUT_BIN;
   }
 
-  if(events_would(event, &chan, &msg))
+  if((msg = events_binary_would(&ectx, event)))
   {
     msg->id = bs->pid;
     bytes = xread(fd, msg->text, sizeof(msg->text));
     msg->size = bytes;
-    events_publish(chan, msg);
+    events_publish(&ectx);
   }
   else
   {
-    bytes = xsplice(fd, 0, build_devnull_fd, 0, 0xffff, SPLICE_F_MOVE);
+    bytes = xsplice(fd, 0, build_devnull_fd, 0, 0xffff, SPLICE_F_MOVE | SPLICE_F_NONBLOCK);
   }
   *total += bytes;
 }
 
-void build_slot_reap(build_slot * restrict bs, siginfo_t *info)
+void build_slot_reap(build_slot * restrict bs)
 {
   fsent *n;
   bool success;
   entlist targets, *eln;
+  graph_invalidation_context invalidation = { };
 
-  bs->status = info->si_status;
+  xclock_gettime(CLOCK_MONOTONIC_COARSE, &bs->waited_time);
+
   success = true;
   if(bs->status != 0 || bs->stderr_total > 0) {
     success = false;
   }
 
-  /* re-enable inotify monitoring for the buildplan_entity targets */
+  graph_invalidation_begin(&invalidation);
+
+  /* the targets of this slot should now be updated */
   buildplan_entity_targets(bs->bpe, &targets);
   entlist_foreach(&targets, n, eln) {
     n->in_epoch = notify_thread_epoch;
     n->notify_state = NOTIFY_EXPIRING;
     if(success) {
-      vertex_mark_fresh(&n->vertex);
+      n->hash = 0;
+      walker_poke(n, 0, 0, &invalidation);
     }
   }
   entlist_destroy(&targets);
 
+  graph_invalidation_end(&invalidation);
+
   if(success) {
-    STATS_INC(g_stats.fml_exec_ok);
-    STATS_INC(bs->bpe->fml->fml_stats.fml_exec_ok);
+    build_stats.fml_exec_ok++;
+    bs->bpe->bpe_stats.build_ok++;
+    bs->bpe->fml->formula_stats.fml_exec_ok++;
   }
 
   build_slot_waited(bs);

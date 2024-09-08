@@ -21,3 +21,7 @@ extern bool run_thread_autorun;
  * [handler] - handler thread to notify if any
  */
 void run_thread_launch(struct handler_context * restrict owner, command_type cmd);
+
+void run_thread_autorun_set(bool autorun);
+
+void autorun_set_event(void);

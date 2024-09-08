@@ -183,16 +183,16 @@ void exec_builder_add(exec_builder * restrict builder, const exec_builder_args *
   }
   else if(args->item == BUILDER_ARGS)
   {
-    // check for an existing definition
-    if(args->position > -1)
-    {
-      def = builder->args[args->position];
-      idx = args->position;
-    }
-    else
+    if(args->position == -1)
     {
       idx = builder->args_len++;
       assure(&builder->args, sizeof(*builder->args), idx + 1, &builder->args_alloc);
+    }
+    else
+    {
+      /* check for an existing definition */
+      idx = args->position;
+      def = builder->args[idx];
     }
 
     builder->args[idx] = start;
@@ -215,8 +215,9 @@ void exec_builder_add(exec_builder * restrict builder, const exec_builder_args *
       ctx.base = builder->envs;
       ctx.name = args->name;
       defp = bsearch(&ctx, builder->envs, builder->envs_len, sizeof(*builder->envs), def_name_compare);
-      if(defp)
+      if(defp) {
         def = *defp;
+      }
     }
 
     // displacement if no existing definition

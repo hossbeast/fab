@@ -24,5 +24,8 @@ void xwait(int * restrict status)
 void xwaitpid(pid_t pid, int * restrict status, int options)
   __attribute__((nonnull(2)));
 
+void xwaitid(idtype_t idtype, id_t id, siginfo_t * restrict infop, int options)
+  __attribute__((nonnull));
+
 void uxwaitid(idtype_t idtype, id_t id, siginfo_t * restrict infop, int options)
   __attribute__((nonnull));
