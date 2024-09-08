@@ -22,7 +22,7 @@
 #include "fsent.h"
 #include "shadow.h"
 #include "module.h"
-#include "filesystem.h"
+#include "fstree.h"
 #include "node_operations_test.h"
 
 #include "common/hash.h"
@@ -46,19 +46,16 @@ typedef struct pattern_match_test {
 static void pattern_match_test_unit_setup(xunit_unit * unit)
 {
   bacon_load();
-  filesystem_setup();
-
-  // arrange
-  graph_setup();
-  fsent_setup();
+  fsent_root_setup();
   shadow_setup();
+  fstree_setup();
+  graph_setup();
 }
 
 static void pattern_match_test_unit_cleanup(xunit_unit * unit)
 {
   bacon_unload();
-  filesystem_cleanup();
-
+  fstree_cleanup();
   fsent_cleanup();
 }
 

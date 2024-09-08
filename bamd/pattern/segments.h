@@ -8,6 +8,7 @@
 struct llist;
 struct bacon_value;
 struct bacon_writer;
+struct pattern_segments;
 enum pattern_qualifier_type;
 
 size_t pattern_segments_list_cat(
@@ -30,7 +31,7 @@ void pattern_segments_mk(
     struct pattern_segments ** restrict rv
   , const struct yyu_location * restrict loc
   , enum pattern_qualifier_type qualifier_type
-  , struct llist * restrict segments // , union pattern_segment * restrict segments
+  , struct llist * restrict segments
 )
   __attribute__((nonnull));
 
@@ -47,9 +48,6 @@ void pattern_segments_list_say(
   , struct narrator * restrict N
 )
   __attribute__((nonnull));
-
-//void pattern_segments_say_tree(const struct llist * restrict segments_list, int level, struct narrator * restrict N)
-//  __attribute__((nonnull));
 
 void pattern_segments_list_describe(
     const struct llist * restrict segments_list

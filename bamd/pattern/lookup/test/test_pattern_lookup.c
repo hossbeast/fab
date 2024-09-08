@@ -23,13 +23,17 @@
 #include "pattern.h"
 #include "shadow.h"
 #include "node_operations_test.h"
-#include "filesystem.internal.h"
+#include "fstree.h"
 #include "lookup.h"
 #include "module.h"
 #include "selection.h"
 #include "args.h"
 #include "zcat.h"
-#include "index_vertex.h"
+#include "fsindex.h"
+#include "fsname.h"
+#include "events.h"
+#include "fstree.h"
+#include "notify.h"
 
 typedef struct node_lookup_test
 {
@@ -52,13 +56,17 @@ static void node_lookup_test_unit_setup(xunit_unit * unit)
   moria_load();
   bacon_load();
 
-  g_args.default_filesystem_indexed = true;
+  g_args.default_filesystem_index = true;
 
-  filesystem_setup();
-  graph_setup();
-  fsent_setup();
+  args_init();
+  fsent_root_setup();
   shadow_setup();
-  index_vertex_setup();
+  fstree_setup();
+  notify_setup();
+
+  graph_setup();
+  fsindex_setup();
+  events_setup();
 
   /* suppress rcu-registration checks */
   extern __thread bool rcu_is_registered ; rcu_is_registered = true;
@@ -69,10 +77,11 @@ static void node_lookup_test_unit_cleanup(xunit_unit * unit)
   moria_unload();
   bacon_unload();
 
-  filesystem_cleanup();
   fsent_cleanup();
   graph_cleanup();
-  index_vertex_cleanup();
+  fsname_cleanup();
+  fsindex_cleanup();
+  fstree_cleanup();
 }
 
 //

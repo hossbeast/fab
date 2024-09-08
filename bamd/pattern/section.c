@@ -13,7 +13,7 @@
 #include "section.h"
 #include "pattern.internal.h"
 #include "segment.h"
-#include "system_state.h"
+#include "system.h"
 #include "events.h"
 #include "channel.h"
 #include "segments.h"
@@ -167,7 +167,7 @@ void pattern_section_say(const pattern_section * restrict n, bool first, narrato
   {
     xsays("$^D");
   }
-  else if(n->graph == PATTERN_GRAPH_FS && n->nodeset == PATTERN_NODESET_SELF && llist_empty(&n->qualifiers))
+  else if(n->nodeset == PATTERN_NODESET_SELF)
   {
     xsays(".");
   }
@@ -181,11 +181,11 @@ void pattern_section_say(const pattern_section * restrict n, bool first, narrato
   }
   else if(n->nodeset == PATTERN_NODESET_ROOT)
   {
+
   }
   else if(n->nodeset)
   {
-    xsays("//");
-    xsays(attrs16_name_byvalue(pattern_nodeset_attrs, PATTERN_NODESET_OPT & n->nodeset));
+    RTA;
   }
   else if(n->graph == PATTERN_GRAPH_FS && n->axis == PATTERN_AXIS_DOWN)
   {

@@ -28,6 +28,8 @@
 #include "filesystem.h"
 #include "node_operations_test.h"
 #include "strht.h"
+#include "fstree.h"
+#include "args.h"
 
 #include "common/hash.h"
 #include "zcat.h"
@@ -36,30 +38,33 @@ typedef struct pattern_search_test {
   XUNITTEST;
 
   // setup
-  char * operations;
-  char * vars;
+  char *operations;
+  char *vars;
 
   // context
-  char * pattern;
-  char * module;        // name for module node
+  char *pattern;
+  char *base;        // module base dir
+  char *anchor;      // module anchor dir
 
   // results
-  char ** matches;      // space separated, 1, 2, etc
+  char **matches;      // space separated, 1, 2, etc
 } pattern_search_test;
 
 static void pattern_search_test_unit_setup(xunit_unit * unit)
 {
   bacon_load();
-  graph_setup();
-  filesystem_setup();
-  fsent_setup();
+
+  args_init();
+  fsent_root_setup();
   shadow_setup();
+  fstree_setup();
+  graph_setup();
 }
 
 static void pattern_search_test_unit_cleanup(xunit_unit * unit)
 {
   bacon_unload();
-  filesystem_cleanup();
+  fstree_cleanup();
   fsent_cleanup();
   shadow_cleanup();
 }
@@ -90,17 +95,23 @@ static void pattern_search_test_entry(xunit_test * _test)
   size_t pz;
   size_t sz;
   size_t z;
-  bacon_value *vars;
+  bacon_value *vars = 0;
 
   // prepare the graph
   moria_parser_create(&op_parser, &g_graph, (llist *[]) { &fsent_list }, 1, node_operations_test_dispatch, graph_vertex_attrs, graph_edge_attrs);
   moria_parser_operations_parse(op_parser, MMS(test->operations));
 
   // prepare the module
-  resolve_fragment(MMS(test->module), &mods[0].dir_node);
+  resolve_fragment(MMS(test->base), &mods[0].dir_node);
+  mods[0].anchor_node = mods[0].dir_node;
+  if(test->anchor) {
+    resolve_fragment(MMS(test->anchor), &mods[0].anchor_node);
+  }
   mod = &mods[0];
   bacon_parser_alloc(&val_parser);
-  bacon_parser_parse(val_parser, MMS(test->vars), "-vars-", BACON_TYPE_SET, &vars);
+  if(test->vars) {
+    bacon_parser_parse(val_parser, MMS(test->vars), "-vars-", BACON_TYPE_SET, &vars);
+  }
   mod->vars = vars;
 
   // parse the pattern
@@ -112,7 +123,7 @@ static void pattern_search_test_entry(xunit_test * _test)
 
   // act
   pattern_search_matches_init(&matches);
-  pattern_search(pattern, mod, mod->dir_node, &matches, 0, 0);
+  pattern_search(pattern, mod, &matches, 0, 0);
 
   // assert
   hashtable_initx(&expected, 0, strht_hash, strht_cmp, 0);
@@ -190,7 +201,7 @@ static xunit_unit xunit = {
       (pattern_search_test[]) {{
           operations : "dir/bar"
         , vars : ""
-        , module : "dir"
+        , base : "dir"
         , pattern : (char[]) { "bar\0" }
         , matches : (char*[]) {
               "/dir/bar"
@@ -203,7 +214,7 @@ static xunit_unit xunit = {
           operations : ""
             " mod/foo"
         , vars : ""
-        , module : "mod"
+        , base : "mod"
         , pattern : (char[]) { "foo.a\0" }
         , matches : (char*[]) {
               0
@@ -213,7 +224,7 @@ static xunit_unit xunit = {
           operations : ""
             " mod/foo.a"
         , vars : ""
-        , module : "mod"
+        , base : "mod"
         , pattern : (char[]) { "foo\0" }
         , matches : (char*[]) {
               0
@@ -224,7 +235,7 @@ static xunit_unit xunit = {
             " mod/foo.a"
             " mod/foo.b"
         , vars : ""
-        , module : "mod"
+        , base : "mod"
         , pattern : (char[]) { "foo.b\0" }
         , matches : (char*[]) {
               "/mod/foo.b"
@@ -236,7 +247,7 @@ static xunit_unit xunit = {
             " mod/foo.b"
             " mod/foo.b.bar"
         , vars : ""
-        , module : "mod"
+        , base : "mod"
         , pattern : (char[]) { "foo.b.bar\0" }
         , matches : (char*[]) {
               "/mod/foo.b.bar"
@@ -246,7 +257,7 @@ static xunit_unit xunit = {
     , (pattern_search_test[]) {{
           operations : "A.B/C/D"
         , vars : ""
-        , module : "A.B"
+        , base : "A.B"
         , pattern : (char[]) { "C/D\0" }
         , matches : (char*[]) {
               "/A.B/C/D"
@@ -258,7 +269,7 @@ static xunit_unit xunit = {
     , (pattern_search_test[]) {{
           operations : "dir/foo/bar"
         , vars : ""
-        , module : "dir"
+        , base : "dir"
         , pattern : (char[]) { "foo/bar\0" }
         , matches : (char*[]) {
               "/dir/foo/bar"
@@ -268,7 +279,7 @@ static xunit_unit xunit = {
     , (pattern_search_test[]) {{
           operations : "mod/A/B"
         , vars : ""
-        , module : "A"
+        , base : "A"
         , pattern : (char[]) { "main.o\0" }
         , matches : (char*[]) { 0 }
       }}
@@ -282,7 +293,7 @@ static xunit_unit xunit = {
             " mod/foo/abcd/qux/a"
             " mod/foo/abcd/qux/b"
         , vars : ""
-        , module : "mod"
+        , base : "mod"
         , pattern : (char[]) { "foo/abcd/oof/b\0" }
         , matches : (char*[]) {
               "/mod/foo/abcd/oof/b"
@@ -294,7 +305,7 @@ static xunit_unit xunit = {
     , (pattern_search_test[]) {{
           operations : "mod/BCD"
         , vars : ""
-        , module : "mod"
+        , base : "mod"
         , pattern : (char[]) { "B\"C\"D\0" }
         , matches : (char*[]) {
               "/mod/BCD"
@@ -306,7 +317,7 @@ static xunit_unit xunit = {
     , (pattern_search_test[]) {{
           operations :
             " mod/ab"
-        , module : "mod"
+        , base : "mod"
         , vars : ""
         , pattern : (char[]) { "{ab}\0" }
         , matches : (char*[]) {
@@ -319,7 +330,7 @@ static xunit_unit xunit = {
             " mod/A"
             " mod/B"
         , vars : ""
-        , module : "mod"
+        , base : "mod"
         , pattern : (char[]) { "{A,B}\0" }
         , matches : (char*[]) {
               "/mod/A"
@@ -332,7 +343,7 @@ static xunit_unit xunit = {
             " mod/A"
             " mod/C"
         , vars : ""
-        , module : "mod"
+        , base : "mod"
         , pattern : (char[]) { "{A,B}\0" }
         , matches : (char*[]) {
               "/mod/A"
@@ -342,7 +353,7 @@ static xunit_unit xunit = {
     , (pattern_search_test[]) {{
           operations :
             " mod/ab"
-        , module : "mod"
+        , base : "mod"
         , vars : ""
         , pattern : (char[]) { "{a,ab}\0" }
         , matches : (char*[]) {
@@ -353,7 +364,7 @@ static xunit_unit xunit = {
     , (pattern_search_test[]) {{
           operations :
             " mod/ab"
-        , module : "mod"
+        , base : "mod"
         , vars : ""
         , pattern : (char[]) { "{ab,a}\0" }
         , matches : (char*[]) {
@@ -364,7 +375,7 @@ static xunit_unit xunit = {
     , (pattern_search_test[]) {{
           operations :
             " mod/ab"
-        , module : "mod"
+        , base : "mod"
         , vars : ""
         , pattern : (char[]) { "{a,ab,b}\0" }
         , matches : (char*[]) {
@@ -376,7 +387,7 @@ static xunit_unit xunit = {
           operations : ""
             " mod/AC"
         , vars : ""
-        , module : "mod"
+        , base : "mod"
         , pattern : (char[]) { "{A,B}{C,D}\0" }
         , matches : (char*[]) {
               "/mod/AC"
@@ -387,7 +398,7 @@ static xunit_unit xunit = {
           operations : ""
             " mod/A"
         , vars : ""
-        , module : "mod"
+        , base : "mod"
         , pattern : (char[]) { "{A}B\0" }
         , matches : (char*[]) {
               0
@@ -397,7 +408,7 @@ static xunit_unit xunit = {
           operations : ""
             " mod/AB"
         , vars : ""
-        , module : "mod"
+        , base : "mod"
         , pattern : (char[]) { "{A}B\0" }
         , matches : (char*[]) {
               "/mod/AB"
@@ -408,7 +419,7 @@ static xunit_unit xunit = {
           operations : ""
             " mod/AB"
         , vars : ""
-        , module : "mod"
+        , base : "mod"
         , pattern : (char[]) { "{A}{B}\0" }
         , matches : (char*[]) {
               "/mod/AB"
@@ -419,7 +430,7 @@ static xunit_unit xunit = {
           operations : ""
             " mod/A"
         , vars : ""
-        , module : "mod"
+        , base : "mod"
         , pattern : (char[]) { "{A}{B}\0" }
         , matches : (char*[]) {
               0
@@ -429,7 +440,7 @@ static xunit_unit xunit = {
           operations : ""
             " mod/AC"
         , vars : ""
-        , module : "mod"
+        , base : "mod"
         , pattern : (char[]) { "{A,B,C}{E,F}\0" }
         , matches : (char*[]) {
               0
@@ -441,7 +452,7 @@ static xunit_unit xunit = {
             " mod/B"
             " mod/C"
         , vars : ""
-        , module : "mod"
+        , base : "mod"
         , pattern : (char[]) { "{A,{B}}\0" }
         , matches : (char*[]) {
               "/mod/A"
@@ -453,7 +464,7 @@ static xunit_unit xunit = {
           operations : ""
             " mod/A/BCD/E"
         , vars : ""
-        , module : "mod"
+        , base : "mod"
         , pattern : (char[]) { "A/B{X,C,Y}D/E\0" }
         , matches : (char*[]) {
               "/mod/A/BCD/E"
@@ -470,7 +481,7 @@ static xunit_unit xunit = {
             " mod/A/BC"
             " mod/BCD/E"
         , vars : ""
-        , module : "mod"
+        , base : "mod"
         , pattern : (char[]) { "A/B{X,C,Y}D/E\0" }
         , matches : (char*[]) {
               "/mod/A/BCD/E"
@@ -483,7 +494,7 @@ static xunit_unit xunit = {
           operations : ""
             " mod/A/BCD/E"
         , vars : ""
-        , module : "mod"
+        , base : "mod"
         , pattern : (char[]) { "A/B{{X,C},Y}D/E\0" }
         , matches : (char*[]) {
               "/mod/A/BCD/E"
@@ -497,7 +508,7 @@ static xunit_unit xunit = {
             " mod/A/BCD/e"
             " mod/A/aBCD/E"
         , vars : ""
-        , module : "mod"
+        , base : "mod"
         , pattern : (char[]) { "A/B{{X,C},Y}D/E\0" }
         , matches : (char*[]) {
               "/mod/A/BCD/E"
@@ -509,7 +520,7 @@ static xunit_unit xunit = {
           operations : ""
             " mod/A/BCD/E"
         , vars : ""
-        , module : "mod"
+        , base : "mod"
         , pattern : (char[]) { "A/B{X,{C,Y}}D/E\0" }
         , matches : (char*[]) {
               "/mod/A/BCD/E"
@@ -521,7 +532,7 @@ static xunit_unit xunit = {
             " mod/A/E"
             " mod/X/E"
         , vars : ""
-        , module : "mod"
+        , base : "mod"
         , pattern : (char[]) { "{A.B,X}/E\0" }
         , matches : (char*[]) {
               "/mod/X/E"
@@ -533,7 +544,7 @@ static xunit_unit xunit = {
             " mod/A/E"
             " mod/X/E"
         , vars : ""
-        , module : "mod"
+        , base : "mod"
         , pattern : (char[]) { "{A.B,{X}}/E\0" }
         , matches : (char*[]) {
               "/mod/X/E"
@@ -544,7 +555,7 @@ static xunit_unit xunit = {
           operations : ""
             " mod/A/E"
         , vars : ""
-        , module : "mod"
+        , base : "mod"
         , pattern : (char[]) { "{A.B,X}/E\0" }
         , matches : (char*[]) {
               0
@@ -554,7 +565,7 @@ static xunit_unit xunit = {
           operations : ""
             " mod/A/E"
         , vars : ""
-        , module : "mod"
+        , base : "mod"
         , pattern : (char[]) { "{{A.B,X}}/E\0" }
         , matches : (char*[]) {
               0
@@ -566,7 +577,7 @@ static xunit_unit xunit = {
           operations : ""
             " mod/AB/E"
         , vars : ""
-        , module : "mod"
+        , base : "mod"
         , pattern : (char[]) { "AB{,X}/E\0" }
         , matches : (char*[]) {
               "/mod/AB/E"
@@ -578,7 +589,7 @@ static xunit_unit xunit = {
     , (pattern_search_test[]) {{
           operations : "mod/A"
         , vars : ""
-        , module : "mod"
+        , base : "mod"
         , pattern : (char[]) { "[ABC]\0" }
         , matches : (char*[]) { "/mod/A", 0 }
       }}
@@ -587,7 +598,7 @@ static xunit_unit xunit = {
             " mod/A"
             " mod/b"
         , vars : ""
-        , module : "mod"
+        , base : "mod"
         , pattern : (char[]) { "[A-Za-z]\0" }
         , matches : (char*[]) {
               "/mod/A"
@@ -600,7 +611,7 @@ static xunit_unit xunit = {
             " mod/A"
             " mod/B"
         , vars : ""
-        , module : "mod"
+        , base : "mod"
         , pattern : (char[]) { "[A-Z]\0" }
         , matches : (char*[]) {
               "/mod/A"
@@ -613,7 +624,7 @@ static xunit_unit xunit = {
             " mod/A"
             " mod/Bb"
         , vars : ""
-        , module : "mod"
+        , base : "mod"
         , pattern : (char[]) { "[A-Z][a-z]\0" }
         , matches : (char*[]) {
               "/mod/Bb"
@@ -625,7 +636,7 @@ static xunit_unit xunit = {
             " mod/A"
             " mod/bB"
         , vars : ""
-        , module : "mod"
+        , base : "mod"
         , pattern : (char[]) { "[a-z][A-Z]\0" }
         , matches : (char*[]) {
               "/mod/bB"
@@ -638,7 +649,7 @@ static xunit_unit xunit = {
           operations : ""
             " mod/abcd"
         , vars : ""
-        , module : "mod"
+        , base : "mod"
         , pattern : (char[]) { "*\0" }
         , matches : (char*[]) {
               "/mod/abcd"
@@ -649,7 +660,7 @@ static xunit_unit xunit = {
           operations : ""
             " mod/abcd"
         , vars : ""
-        , module : "mod"
+        , base : "mod"
         , pattern : (char[]) { "ab*\0" }
         , matches : (char*[]) {
               "/mod/abcd"
@@ -660,7 +671,7 @@ static xunit_unit xunit = {
           operations : ""
             " mod/abcd"
         , vars : ""
-        , module : "mod"
+        , base : "mod"
         , pattern : (char[]) { "*cd\0" }
         , matches : (char*[]) {
               "/mod/abcd"
@@ -671,7 +682,7 @@ static xunit_unit xunit = {
           operations : ""
             " mod/abcd"
         , vars : ""
-        , module : "mod"
+        , base : "mod"
         , pattern : (char[]) { "a*d\0" }
         , matches : (char*[]) {
               "/mod/abcd"
@@ -682,7 +693,7 @@ static xunit_unit xunit = {
           operations : ""
             " mod/abcd"
         , vars : ""
-        , module : "mod"
+        , base : "mod"
         , pattern : (char[]) { "ab*cd\0" }
         , matches : (char*[]) {
               "/mod/abcd"
@@ -693,7 +704,7 @@ static xunit_unit xunit = {
           operations : ""
             " mod/abcd"
         , vars : ""
-        , module : "mod"
+        , base : "mod"
         , pattern : (char[]) { "a*c*\0" }
         , matches : (char*[]) {
               "/mod/abcd"
@@ -704,7 +715,7 @@ static xunit_unit xunit = {
           operations : ""
             " mod/abcd"
         , vars : ""
-        , module : "mod"
+        , base : "mod"
         , pattern : (char[]) { "*c*\0" }
         , matches : (char*[]) {
               "/mod/abcd"
@@ -718,7 +729,7 @@ static xunit_unit xunit = {
             " mod/bcd/e"
             " mod/bd/e"
         , vars : ""
-        , module : "mod"
+        , base : "mod"
         , pattern : (char[]) { "*{d,cd}/e\0" }
         , matches : (char*[]) {
               "/mod/bcd/e"
@@ -730,7 +741,7 @@ static xunit_unit xunit = {
           operations : ""
             " mod/abcd"
         , vars : ""
-        , module : "mod"
+        , base : "mod"
         , pattern : (char[]) { "*{lm,ab}*\0" }
         , matches : (char*[]) {
               "/mod/abcd"
@@ -741,7 +752,7 @@ static xunit_unit xunit = {
           operations : ""
             " mod/abcd/efgh"
         , vars : ""
-        , module : "mod"
+        , base : "mod"
         , pattern : (char[]) { "*{lm,ab}*/[a-z][a-z][a-z][a-z]\0" }
         , matches : (char*[]) {
               "/mod/abcd/efgh"
@@ -755,7 +766,7 @@ static xunit_unit xunit = {
             " mod/abcd/x/abcd"
             " mod/xyzw/x/abcd"
         , vars : ""
-        , module : "mod"
+        , base : "mod"
         , pattern : (char[]) { "*/*/abcd\0" }
         , matches : (char*[]) {
               "/mod/abcd/x/abcd"
@@ -771,7 +782,7 @@ static xunit_unit xunit = {
             " mod/foo/bar/qux"
             " mod/foo/bar/baz/qux"
         , vars : ""
-        , module : "mod"
+        , base : "mod"
         , pattern : (char[]) { "**\0" } // starstar only matches directories
         , matches : (char*[]) {
               0
@@ -783,7 +794,7 @@ static xunit_unit xunit = {
             " mod/foo/bar/qux"
             " mod/foo/bar/baz/qux"
         , vars : ""
-        , module : "mod"
+        , base : "mod"
         , pattern : (char[]) { "**+(/)\0" } // can match directories with qualifiers
         , matches : (char*[]) {
               "/mod"
@@ -799,7 +810,7 @@ static xunit_unit xunit = {
             " mod/foo/bar/qux"
             " mod/foo/bar/baz/qux"
         , vars : ""
-        , module : "mod"
+        , base : "mod"
         , pattern : (char[]) { "**/*\0" }
         , matches : (char*[]) {
               "/mod/foo/qux"
@@ -814,7 +825,7 @@ static xunit_unit xunit = {
             " mod/foo/bar/qux"
             " mod/foo/bar/baz/qux"
         , vars : ""
-        , module : "mod"
+        , base : "mod"
         , pattern : (char[]) { "**/**\0" }  // only matches directories
         , matches : (char*[]) {
               0
@@ -826,7 +837,7 @@ static xunit_unit xunit = {
             " mod/foo/bar/qux"
             " mod/foo/bar/baz/qux"
         , vars : ""
-        , module : "mod"
+        , base : "mod"
         , pattern : (char[]) { "**/**/*\0" }
         , matches : (char*[]) {
               "/mod/foo/qux"
@@ -841,7 +852,7 @@ static xunit_unit xunit = {
             " mod/foo/bar/qux"
             " mod/foo/bar/baz/qux"
         , vars : ""
-        , module : "mod"
+        , base : "mod"
         , pattern : (char[]) { "**/qux\0" }
         , matches : (char*[]) {
               "/mod/foo/qux"
@@ -857,7 +868,7 @@ static xunit_unit xunit = {
             " mod/foo/bar/C"
             " mod/foo/bar/baz/D"
         , vars : ""
-        , module : "mod"
+        , base : "mod"
         , pattern : (char[]) { "**/*\0" }
         , matches : (char*[]) {
               "/mod/A"
@@ -874,7 +885,7 @@ static xunit_unit xunit = {
             " mod/foo/bar/C"
             " mod/foo/bar/baz/D"
         , vars : ""
-        , module : "mod"
+        , base : "mod"
         , pattern : (char[]) { "**/**/*\0" }
         , matches : (char*[]) {
               "/mod/A"
@@ -892,7 +903,7 @@ static xunit_unit xunit = {
             " mod/foo/bar/qux"
             " mod/foo/bar/baz/qux"
         , vars : ""
-        , module : "mod"
+        , base : "mod"
         , pattern : (char[]) { "**~baz/qux\0" }
         , matches : (char*[]) {
               "/mod/foo/qux"
@@ -907,7 +918,7 @@ static xunit_unit xunit = {
             " mod/bar"
             " mod/baz"
         , vars : ""
-        , module : "mod"
+        , base : "mod"
         , pattern : (char[]) { "*~baz\0" }
         , matches : (char*[]) {
               "/mod/bar"
@@ -919,7 +930,7 @@ static xunit_unit xunit = {
             " mod/bar"
             " mod/baz"
         , vars : ""
-        , module : "mod"
+        , base : "mod"
         , pattern : (char[]) { "*+baz\0" }
         , matches : (char*[]) {
               "/mod/baz"
@@ -935,7 +946,7 @@ static xunit_unit xunit = {
             " mod/src/b/a"
             " mod/src/c/d/a"
         , vars : ""
-        , module : "mod"
+        , base : "mod"
         , pattern : (char[]) { "*~integ/**/a\0" }
         , matches : (char*[]) {
               "/mod/src/a"
@@ -952,7 +963,7 @@ static xunit_unit xunit = {
             " mod/bar"
             " mod/baz"
         , vars : ""
-        , module : "mod"
+        , base : "mod"
         , pattern : (char[]) { "*~bar\0" }
         , matches : (char*[]) {
               "/mod/foo"
@@ -966,7 +977,7 @@ static xunit_unit xunit = {
             " mod/bar"
             " mod/baz"
         , vars : ""
-        , module : "mod"
+        , base : "mod"
         , pattern : (char[]) { "*~bar~baz\0" }
         , matches : (char*[]) {
               "/mod/foo"
@@ -979,7 +990,7 @@ static xunit_unit xunit = {
             " mod/bar"
             " mod/baz"
         , vars : ""
-        , module : "mod"
+        , base : "mod"
         , pattern : (char[]) { "*~baz~bar\0" }
         , matches : (char*[]) {
                "/mod/foo"
@@ -992,7 +1003,7 @@ static xunit_unit xunit = {
           operations : ""
             " mod/bar"
         , vars : ""
-        , module : "mod"
+        , base : "mod"
         , pattern : (char[]) { "ba([rz])\0" }
         , matches : (char*[]) {
               "/mod/bar 1 r"
@@ -1004,7 +1015,7 @@ static xunit_unit xunit = {
             " mod/bar"
             " mod/baz"
         , vars : ""
-        , module : "mod"
+        , base : "mod"
         , pattern : (char[]) { "ba({r,z})\0" }
         , matches : (char*[]) {
               "/mod/bar 1 r"
@@ -1017,7 +1028,7 @@ static xunit_unit xunit = {
             " mod/bar"
             " mod/baz"
         , vars : ""
-        , module : "mod"
+        , base : "mod"
         , pattern : (char[]) { "*ba(r)\0" }
         , matches : (char*[]) {
               "/mod/bar 1 r"
@@ -1028,7 +1039,7 @@ static xunit_unit xunit = {
           operations : ""
             " mods/mod/foo/bar"
         , vars : ""
-        , module : "mod"
+        , base : "mod"
         , pattern : (char[]) { "(f)oo/ba(r)\0" }
         , matches : (char*[]) {
               "/mods/mod/foo/bar 1 f 2 r"
@@ -1041,7 +1052,7 @@ static xunit_unit xunit = {
             " mods/mod/foo/B"
             " mods/mod/foo/bar/C"
         , vars : ""
-        , module : "mod"
+        , base : "mod"
         , pattern : (char[]) { "**/(*)\0" }
         , matches : (char*[]) {
               "/mods/mod/A 1 A"
@@ -1054,7 +1065,7 @@ static xunit_unit xunit = {
           operations : ""
             " mods/mod/abc"
         , vars : ""
-        , module : "mod"
+        , base : "mod"
         , pattern : (char[]) { "(*)bc\0" }
         , matches : (char*[]) {
               "/mods/mod/abc 1 a"
@@ -1069,7 +1080,7 @@ static xunit_unit xunit = {
             " mod/carf"
             " mod/carff"
         , vars : ""
-        , module : "mod"
+        , base : "mod"
         , pattern : (char[]) { "c((ar))f\0" }
         , matches : (char*[]) {
               "/mod/carf 1 ar 2 ar"
@@ -1084,7 +1095,7 @@ static xunit_unit xunit = {
             " mod/carf"
             " mod/carff"
         , vars : ""
-        , module : "mod"
+        , base : "mod"
         , pattern : (char[]) { "c(((ar)))f\0" }
         , matches : (char*[]) {
               "/mod/carf 1 ar 2 ar 3 ar"
@@ -1098,7 +1109,7 @@ static xunit_unit xunit = {
             " mod/barf"
             " mod/barb"
         , vars : ""
-        , module : "mod"
+        , base : "mod"
         , pattern : (char[]) { "(([bc]ar)+bar)f\0" }
         , matches : (char*[]) {
               "/mod/barf 1 bar 2 bar"
@@ -1111,7 +1122,7 @@ static xunit_unit xunit = {
             " mod/carb"
             " mod/carf"
         , vars : ""
-        , module : "mod"
+        , base : "mod"
         , pattern : (char[]) { "([bc]ar~bar)f\0" }
         , matches : (char*[]) {
               "/mod/carf 1 car"
@@ -1123,7 +1134,7 @@ static xunit_unit xunit = {
             " mod/barf"
             " mod/carf"
         , vars : ""
-        , module : "mod"
+        , base : "mod"
         , pattern : (char[]) { "(*~b)arf\0" }
         , matches : (char*[]) {
               "/mod/carf 1 c"
@@ -1136,7 +1147,7 @@ static xunit_unit xunit = {
           operations :
             " mod/scar"
             " mod/carf"
-        , module : "mod"
+        , base : "mod"
         , vars : ""
         , pattern : (char[]) { ".\0" }  // nodeset-self, but directories arent matched without qualifiers
         , matches : (char*[]) {
@@ -1151,7 +1162,7 @@ static xunit_unit xunit = {
             " mod/carb"
             " mod/carf"
         , vars : "v : carb"
-        , module : "mod"
+        , base : "mod"
         , pattern : (char[]) { "$v\0" }
         , matches : (char*[]) {
               "/mod/carb"
@@ -1164,7 +1175,7 @@ static xunit_unit xunit = {
             " mod/carb"
             " mod/carf"
         , vars : "v : car"
-        , module : "mod"
+        , base : "mod"
         , pattern : (char[]) { "${v}b\0" }
         , matches : (char*[]) {
               "/mod/carb"
@@ -1176,7 +1187,7 @@ static xunit_unit xunit = {
             " mod/a/car/b"
             " mod/a/bar/c"
         , vars : "v : car"
-        , module : "mod"
+        , base : "mod"
         , pattern : (char[]) { "a/$v/b\0" }
         , matches : (char*[]) {
               "/mod/a/car/b"
@@ -1189,7 +1200,7 @@ static xunit_unit xunit = {
             " mod/carb"
             " mod/carf"
         , vars : "v : car"
-        , module : "mod"
+        , base : "mod"
         , pattern : (char[]) { "s${v}\0" }
         , matches : (char*[]) {
               "/mod/scar"
@@ -1203,7 +1214,7 @@ static xunit_unit xunit = {
             " mod/scar"
             " mod/carf"
         , vars : ""
-        , module : "mod"
+        , base : "mod"
         , pattern : (char[]) { "scar+(.)\0" }  // regular-file positive test
         , matches : (char*[]) {
               "/mod/scar"
@@ -1215,7 +1226,7 @@ static xunit_unit xunit = {
             " mod/scar/bar"
             " mod/carf"
         , vars : ""
-        , module : "mod"
+        , base : "mod"
         , pattern : (char[]) { "scar+(.)\0" }  // regular-file negative test
         , matches : (char*[]) {
               0
@@ -1226,7 +1237,7 @@ static xunit_unit xunit = {
             " mod/scar"
             " mod/carf"
         , vars : ""
-        , module : "mod"
+        , base : "mod"
         , pattern : (char[]) { "scar+(/)\0" }  // directory negative test
         , matches : (char*[]) {
             0
@@ -1236,11 +1247,105 @@ static xunit_unit xunit = {
           operations :
             " mod/scar/foo"
             " mod/carf/bar"
-        , module : "mod"
+        , base : "mod"
         , vars : ""
         , pattern : (char[]) { "scar+(/)\0" }  // directory positive test
         , matches : (char*[]) {
               "/mod/scar"
+            , 0
+          }
+      }}
+
+    /* different initial sections */
+    , (pattern_search_test[]) {{
+          operations :
+            " mod/foo/bar"
+        , base : "mod"
+        , pattern : (char[]) { "//\0" }        // just the shadow node
+        , matches : (char*[]) {
+              "//"
+            , 0
+          }
+      }}
+    , (pattern_search_test[]) {{
+          operations :
+            " mod/foo/bar"
+        , base : "mod"
+        , pattern : (char[]) { "//a\0" }        // shadow node, no match
+        , matches : (char*[]) {
+              0
+          }
+      }}
+    , (pattern_search_test[]) {{
+          operations :
+            " mod/foo/bar"
+        , base : "mod"
+        , pattern : (char[]) { "/\0" }         // just the root node
+        , matches : (char*[]) {
+              "/"
+            , 0
+          }
+      }}
+    , (pattern_search_test[]) {{
+          operations :
+            " mod/foo/bar"
+        , base : "mod"
+        , pattern : (char[]) { "/a\0" }         // root node, no match
+        , matches : (char*[]) {
+              0
+          }
+      }}
+    , (pattern_search_test[]) {{
+          operations :
+            " mod/foo/bar"
+        , base : "mod"
+        , pattern : (char[]) { "/mod+(/)\0" }   // root node, match
+        , matches : (char*[]) {
+              "/mod"
+            , 0
+          }
+      }}
+    , (pattern_search_test[]) {{
+          operations :
+            " mod/foo/bar"
+        , base : "mod"
+        , pattern : (char[]) { "$^D\0" }        // just the module base dir
+        , matches : (char*[]) {
+              "/mod"
+            , 0
+          }
+      }}
+    , (pattern_search_test[]) {{
+          operations :
+            " mod/foo/bar"
+        , base : "mod"
+        , pattern : (char[]) { "$^D/foo/bar\0" }    // off the module base dir
+        , matches : (char*[]) {
+              "/mod/foo/bar"
+            , 0
+          }
+      }}
+    , (pattern_search_test[]) {{
+          operations :
+            " base/foo/bar"
+            " anchor/baz/qux"
+        , base : "base"
+        , anchor : "anchor"
+        , pattern : (char[]) { "$^A\0" }        // just the module anchor dir
+        , matches : (char*[]) {
+              "/anchor"
+            , 0
+          }
+      }}
+    , (pattern_search_test[]) {{
+          operations :
+            " base/foo/bar"
+            " anchor/baz/qux"
+        , base : "base"
+        , anchor : "anchor"
+        , pattern : (char[]) { "$^A/baz/qux\0" } // off the anchor dir
+        , matches : (char*[]) {
+              "/anchor/baz/qux"
             , 0
           }
       }}

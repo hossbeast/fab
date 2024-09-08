@@ -14,13 +14,12 @@ struct pattern_section;
 struct llist;
 struct entlist;
 
-void pattern_lookup_relative(
+struct moria_vertex *pattern_lookup_relative(
     const struct pattern * restrict ref
   , const struct bacon_value * restrict vars
   , const struct fsent * restrict base
-  , struct entlist * restrict nodes
 )
-  __attribute__((nonnull(1, 3, 4)));
+  __attribute__((nonnull(1, 3)));
 
 void pattern_lookup_indexed(
     const struct pattern * restrict ref
@@ -29,8 +28,6 @@ void pattern_lookup_indexed(
   , struct entlist * restrict hits
 )
   __attribute__((nonnull(1, 4)));
-
-//#define PATTERN_LOOKUP_MODULE  0x01 /* only match directories which have a module file */
 
 /*
  * Render a lookup pattern, and lookup a node for up each fragment. The lookup must yield exactly

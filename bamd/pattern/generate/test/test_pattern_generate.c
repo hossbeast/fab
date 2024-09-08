@@ -27,7 +27,7 @@
 #include "shadow.h"
 #include "module.h"
 #include "node_operations_test.h"
-#include "filesystem.h"
+#include "fstree.h"
 #include "args.h"
 #include "entlist.h"
 
@@ -55,15 +55,18 @@ static void pattern_test_unit_setup(xunit_unit * unit)
 {
   bacon_load();
   graph_setup();
-  filesystem_setup();
-  fsent_setup();
+
+  args_init();
+  fsent_root_setup();
+  shadow_setup();
+  fstree_setup();
 }
 
 static void pattern_test_unit_cleanup(xunit_unit * unit)
 {
   bacon_unload();
   graph_cleanup();
-  filesystem_cleanup();
+  fstree_cleanup();
 }
 
 static int node_compare(const void * _A, const void * _B)
@@ -175,8 +178,6 @@ static void pattern_generate_test_entry(xunit_test * _test)
     tracef("%.*s", (int)parser->yyu->error_len, parser->yyu->error_str);
   }
   assert_eq_u32(strlen(test->pattern), loc.l);
-
-pattern_show(pattern);
 
   // act
   entlist_init(&hits);

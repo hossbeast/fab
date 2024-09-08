@@ -79,12 +79,6 @@ static void pattern_section_generate(pattern_generate_context * restrict ctx)
   }
   else
   {
-    if(ctx->node && vertex_type_get(&ctx->node->vertex) == VERTEX_SHADOW_MODULE)
-    {
-      ctx->node = ctx->mod->shadow;
-      RUNTIME_ASSERT(ctx->node);
-    }
-
     memset(&segment_traversal, 0, sizeof(segment_traversal));
 
     segments = llist_first(&ctx->section_traversal.section->qualifiers, typeof(*segments), lln);
@@ -148,9 +142,15 @@ void pattern_segment_generate(pattern_generate_context * restrict ctx)
   }
 
   next_context_vertex = 0;
-  if(!ctx->node)
-  {
+  if(!ctx->node) {
     ctx->node = ctx->base;
+  }
+
+  /* generating onto //module is always redirected */
+  if(ctx->node->vertex.attrs & MORIA_VERTEX_LINK) {
+    if(ctx->node->vertex.ref == g_module) {
+      ctx->node = ctx->mod->shadow;
+    }
   }
 
   if(!next_context_vertex)
@@ -161,6 +161,7 @@ void pattern_segment_generate(pattern_generate_context * restrict ctx)
       , section_len
     );
   }
+
   if(next_context_vertex)
   {
     if(!(ctx->flags & PATTERN_GENERATE_NOFOLLOW)) {
@@ -168,7 +169,7 @@ void pattern_segment_generate(pattern_generate_context * restrict ctx)
         next_context_vertex = next_context_vertex->ref;
       }
     }
-    if(vertex_shadowtype_get(next_context_vertex) == VERTEX_SHADOWTYPE_CONTEXT_MODULE) {
+    if(vertex_type_get(next_context_vertex) == VERTEX_CONTEXT_MODULE) {
       next_context_vertex = &ctx->mod->shadow->vertex;
     }
   }

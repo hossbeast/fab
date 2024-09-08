@@ -23,11 +23,12 @@
 #include "selection.h"
 #include "channel.h"
 #include "events.h"
-#include "system_state.h"
+#include "system.h"
 #include "pattern/section.h"
 #include "shadow.h"
 #include "qualifier.h"
-#include "index_vertex.h"
+#include "fsindex.h"
+#include "fsname.h"
 #include "entlist.h"
 
 typedef struct lookup_context {
@@ -89,7 +90,7 @@ static void __attribute__((nonnull(1))) lookup_callback(
 static void index_lookup_callback(void *_ctx, const char * restrict label, uint16_t label_len, moria_vertex * restrict v)
 {
   entlist *hits;
-  index_vertex *index;
+  fsname *index;
   lookup_context *ctx;
 
   ctx = _ctx;
@@ -100,7 +101,7 @@ static void index_lookup_callback(void *_ctx, const char * restrict label, uint1
   if(v) {
     index = containerof(v, typeof(*index), vertex); /* hit */
   } else {
-    index = index_vertex_create(label, label_len);  /* miss */
+    index = fsindex_miss(label, label_len);  /* miss */
   }
   entlist_push(hits, index);
 }
@@ -114,10 +115,10 @@ static void fragment_lookup_error(
 {
   narrator_fixed fixed;
   bacon_writer writer, *builder_writer;
-  channel * restrict chan;
-  bamipc_message *msg;
+  events_context ectx;
+  event_bacon *msg;
 
-  msg = system_error_event(&chan);
+  msg = system_error_event(&ectx);
   narrator_fixed_init(&fixed, msg->text, sizeof(msg->text));
   bacon_writer_init(&writer);
   builder_writer = bacon_writer_open(&writer, &fixed.base);
@@ -160,14 +161,13 @@ static void fragment_lookup_error(
 
   msg->code = EINVAL;
   msg->size = fixed.l;
-  events_publish(chan, msg);
+  events_publish(&ectx);
 }
 
-void pattern_lookup_relative(
+moria_vertex *pattern_lookup_relative(
     const pattern * restrict ref
   , const bacon_value * restrict vars
   , const fsent *base
-  , entlist * restrict hits
 )
 {
   const pattern_section *section;
@@ -206,9 +206,7 @@ void pattern_lookup_relative(
     }
   }
 
-  if(v) {
-    entlist_push(hits, v);
-  }
+  return (moria_vertex *)v;
 }
 
 static bool type_qualifiers_evaluate(const pattern_segments * restrict segments, const moria_vertex * restrict v)
@@ -287,7 +285,7 @@ void pattern_lookup_indexed(
     ctx.path_len = frag->len;
 
     /* indexed lookup on the final section, then prefix traversal leftwards */
-    moria_graph_lookup(&g_graph, &g_index->vertex, lookup_callback, index_lookup_callback, &ctx, vertices, &r);
+    moria_graph_lookup(&g_graph, g_fsindex, lookup_callback, index_lookup_callback, &ctx, vertices, &r);
     if(r != 1) {
       goto next;
     }
@@ -340,12 +338,15 @@ void pattern_lookup(
 )
 {
   pattern_section *section;
+  moria_vertex *v;
 
   entlist_destroy(hits);
   section = llist_first(&ref->sections, typeof(*section), lln);
   if(section->nodeset || section->axis != PATTERN_AXIS_DOWN)
   {
-    pattern_lookup_relative(ref, vars, base, hits);
+    if((v = pattern_lookup_relative(ref, vars, base))) {
+      entlist_push(hits, v);
+    }
   }
   else
   {

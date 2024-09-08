@@ -97,7 +97,6 @@ static void alternation_search(const pattern_segment * restrict segment, pattern
   {
     traversal.segment_head = &traversal.segments->list;
     traversal.segment = 0;
-//    traversal.segment = llist_first(&traversal.segment_head, typeof(*traversal.segment), lln);//segments->segment_head;
     traversal.unsatisfied = false;
     traversal.sealed = false;
 
@@ -257,7 +256,7 @@ static pattern_segment_vtable vtable = PATTERN_SEGMENT_VTABLE(alternation, PATTE
 void pattern_alternation_mk(
     pattern_segment ** restrict rv
   , const yyu_location * restrict loc
-  , llist * restrict segments // pattern_segments * restrict segments_head
+  , llist * restrict segments
   , bool epsilon
 )
 {
@@ -267,7 +266,7 @@ void pattern_alternation_mk(
   pattern_segment_init(n, &vtable, loc);
 
   llist_init(&n->alternation.segments);
-  llist_splice_head(&n->alternation.segments, segments);//  n->alternation.segments_head = segments_head;
+  llist_splice_head(&n->alternation.segments, segments);
   n->alternation.epsilon = epsilon;
 
   *rv = n;

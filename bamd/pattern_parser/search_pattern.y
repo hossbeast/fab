@@ -93,7 +93,7 @@
 %type <list> alternation-parts-with-epsilon
 %type <list> alternation-pattern-parts
 %type <list> quoted-strparts quoted-string-literal unquoted-string-literal string-literal
-%type <list> pattern-sections-list
+%type <list> pattern-absolute-sections-list pattern-relative-sections-list pattern-named-sections-list
 %type <list> pattern-dentry-segments-list
 %type <list> pattern-dentry-segment-list
 %type <list> pattern-qualifier-list
@@ -104,7 +104,7 @@
 
 %type <pattern> pattern
 
-%type <section> pattern-section pattern-initial-section
+%type <section> pattern-section pattern-absolute-initial-section pattern-named-section
 
 %type <segments> pattern-qualifier
 %type <segments> type-qualifier-segments
@@ -144,20 +144,35 @@ utterance
   ;
 
 pattern
-  : pattern-sections-list
+  : pattern-relative-sections-list
   {
     pattern_mk(&$$, &@$, &$1);
   }
+  | pattern-named-sections-list
+  {
+    pattern_mk(&$$, &@$, &$1);
+  }
+  | pattern-absolute-sections-list
+  {
+    pattern_mk(&$$, &@$, &$1);
+  }
+  | pattern-absolute-initial-section
+  {
+    llist list;
+    llist_init(&list);
+    llist_push(&list, &$1->lln);
+    pattern_mk(&$$, &@$, &list);
+  }
   ;
 
-pattern-sections-list
-  : pattern-sections-list '/' pattern-section
+pattern-relative-sections-list
+  : pattern-relative-sections-list '/' pattern-section
   {
     $$ = $1;
     llist_push(&$$, &$3->lln);
     PARSER->section_has_type_qualifiers = false;
   }
-  | pattern-initial-section
+  | pattern-section
   {
     llist_init(&$$);
     llist_push(&$$, &$1->lln);
@@ -165,12 +180,50 @@ pattern-sections-list
   }
   ;
 
-pattern-initial-section
+pattern-absolute-sections-list
+  : pattern-absolute-sections-list '/' pattern-section
+  {
+    $$ = $1;
+    llist_push(&$$, &$3->lln);
+    PARSER->section_has_type_qualifiers = false;
+  }
+  | pattern-absolute-initial-section pattern-section
+  {
+    llist_init(&$$);
+    llist_push(&$$, &$1->lln);
+    llist_push(&$$, &$2->lln);
+    PARSER->section_has_type_qualifiers = false;
+  }
+  ;
+
+pattern-named-sections-list
+  : pattern-named-sections-list '/' pattern-section
+  {
+    $$ = $1;
+    llist_push(&$$, &$3->lln);
+    PARSER->section_has_type_qualifiers = false;
+  }
+  | pattern-named-section
+  {
+    llist_init(&$$);
+    llist_push(&$$, &$1->lln);
+    PARSER->section_has_type_qualifiers = false;
+  }
+  ;
+
+pattern-absolute-initial-section
   : '/'
+  {
+    pattern_section_mk(&$$, &@$, PATTERN_NODESET_ROOT, 0, 0, NULL, PARSER->section_has_type_qualifiers);
+  }
+  | '/' '/'
   {
     pattern_section_mk(&$$, &@$, PATTERN_NODESET_SHADOW, 0, 0, NULL, PARSER->section_has_type_qualifiers);
   }
-  | '$' '^' 'A'
+  ;
+
+pattern-named-section
+  : '$' '^' 'A'
   {
     pattern_section_mk(&$$, &@$, PATTERN_NODESET_ANCHOR, 0, 0, NULL, PARSER->section_has_type_qualifiers);
   }
@@ -178,7 +231,6 @@ pattern-initial-section
   {
     pattern_section_mk(&$$, &@$, PATTERN_NODESET_MODULE, 0, 0, NULL, PARSER->section_has_type_qualifiers);
   }
-  | pattern-section
   ;
 
 pattern-section
@@ -392,14 +444,6 @@ type-qualifier
   | '@'
   {
     pattern_qualifier_mk(&$$, &@$, PATTERN_QUALIFIER_TYPE_SYMLINK);
-  }
-  | '^' 'A'
-  {
-    pattern_qualifier_mk(&$$, &@$, PATTERN_QUALIFIER_TYPE_ANCHOR);
-  }
-  | '^' 'M'
-  {
-    pattern_qualifier_mk(&$$, &@$, PATTERN_QUALIFIER_TYPE_MODULE);
   }
   ;
 

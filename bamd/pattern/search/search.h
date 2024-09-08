@@ -19,10 +19,9 @@ struct llist;
 void pattern_search(
     /* 1 */ const struct pattern * restrict pattern
   , /* 2 */ const struct module * restrict module
-  , /* 3 */ struct fsent * restrict base
-  , /* 4 */ struct hashtable * restrict matches
-  , /* 5 */ void (*dirnode_visit)(void * ctx, struct fsent * dirnode)
-  , /* 6 */ void *dirnode_visit_ctx
+  , /* 3 */ struct hashtable * restrict matches
+  , /* 4 */ void (*dirnode_visit)(void * ctx, struct fsent * dirnode)
+  , /* 5 */ void *dirnode_visit_ctx
 )
   __attribute__((nonnull(1, 2)));
 

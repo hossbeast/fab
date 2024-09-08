@@ -33,34 +33,34 @@ PATTERN_SEGMENT_TYPE_TABLE
 }};
 
 attrs16 * pattern_graph_attrs = (attrs16[]){{
-#undef ATTR_NAME_DEF
-#define ATTR_NAME_DEF(x, s, y) + 1
+#undef DEF
+#define DEF(x, s, y) + 1
     num : 0 PATTERN_GRAPH_TABLE
   , members : (member16[]) {
-#undef ATTR_NAME_DEF
-#define ATTR_NAME_DEF(x, s, y) { name : s, value : UINT16_C(y), range : PATTERN_GRAPH_OPT },
+#undef DEF
+#define DEF(x, s, y) { name : s, value : UINT16_C(y), range : PATTERN_GRAPH_OPT },
 PATTERN_GRAPH_TABLE
   }
 }};
 
 attrs16 * pattern_nodeset_attrs = (attrs16[]){{
-#undef ATTR_NAME_DEF
-#define ATTR_NAME_DEF(x, s, y) + 1
+#undef DEF
+#define DEF(x, s, y) + 1
     num : 0 PATTERN_NODESET_TABLE
   , members : (member16[]) {
-#undef ATTR_NAME_DEF
-#define ATTR_NAME_DEF(x, s, y) { name : s, value : UINT16_C(y), range : PATTERN_NODESET_OPT },
+#undef DEF
+#define DEF(x, s, y) { name : s, value : UINT16_C(y), range : PATTERN_NODESET_OPT },
 PATTERN_NODESET_TABLE
   }
 }};
 
 attrs16 * pattern_axis_attrs = (attrs16[]){{
-#undef ATTR_NAME_DEF
-#define ATTR_NAME_DEF(x, s, y) + 1
+#undef DEF
+#define DEF(x, s, y) + 1
     num : 0 PATTERN_AXIS_TABLE
   , members : (member16[]) {
-#undef ATTR_NAME_DEF
-#define ATTR_NAME_DEF(x, s, y) { name : s, value : UINT16_C(y), range : PATTERN_AXIS_OPT },
+#undef DEF
+#define DEF(x, s, y) { name : s, value : UINT16_C(y), range : PATTERN_AXIS_OPT },
 PATTERN_AXIS_TABLE
   }
 }};
@@ -147,8 +147,15 @@ void pattern_free(pattern * restrict pat)
 
 void pattern_say(const pattern * restrict pattern, narrator * restrict N)
 {
-  pattern_section * section;
+  pattern_section *section;
   int x = 0;
+
+  /* special case */
+  if((section = llist_first(&pattern->sections, typeof(*section), lln))) {
+    if(llist_count(&pattern->sections) == 1 && section->nodeset == PATTERN_NODESET_ROOT) {
+      xsayc('/');
+    }
+  }
 
   llist_foreach(&pattern->sections, section, lln) {
     pattern_section_say(section, x++ == 0, N);

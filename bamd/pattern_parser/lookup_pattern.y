@@ -479,14 +479,6 @@ type-qualifier
   {
     pattern_qualifier_mk(&$$, &@$, PATTERN_QUALIFIER_TYPE_SYMLINK);
   }
-  | '^' 'A'
-  {
-    pattern_qualifier_mk(&$$, &@$, PATTERN_QUALIFIER_TYPE_ANCHOR);
-  }
-  | '^' 'M'
-  {
-    pattern_qualifier_mk(&$$, &@$, PATTERN_QUALIFIER_TYPE_MODULE);
-  }
   ;
 
 string-literal

@@ -14,9 +14,14 @@ generate pattern - create nodes, starting from a base node
 
 reference pattern - subset of generate pattern
  * used in rules, rightmost formula-binding pattern
+ * no alternations
+ * relative and absolute paths
 
 include pattern - subset of generate pattern
- * used in walker.include config
+ * used in filesystem.fstree config
+ * no alternations
+ * no variables
+ * absolute paths only
 
 match pattern - check whether a directory node matches a pattern
  * used in walker.exclude config
@@ -25,9 +30,7 @@ match pattern - check whether a directory node matches a pattern
 lookup pattern - lookup non-shadow directory nodes in the graph by label, disambiguating via prefix
  * used in use, import, and require references                 PATTERN_LOOKUP_ONE - one matching node per frag
  * selector type pattern uses lookup patterns
-
-render - render patterns are not a separate thing. pattern_render is part of the implementation
-of lookup patterns
+ * pattern_render is part of the implementation
 
 */
 
@@ -79,12 +82,12 @@ extern struct attrs16 * pattern_segment_type_attrs;
 
 // graph
 #define PATTERN_GRAPH_OPT  0x000f
-#define PATTERN_GRAPH_TABLE                                   \
-  ATTR_NAME_DEF(PATTERN_GRAPH_FS      , "fs"        , 0x0001) \
-  ATTR_NAME_DEF(PATTERN_GRAPH_DIRS    , "dirs"      , 0x0002) \
+#define PATTERN_GRAPH_TABLE                         \
+  DEF(PATTERN_GRAPH_FS      , "fs"        , 0x0001) \
+  DEF(PATTERN_GRAPH_DIRS    , "dirs"      , 0x0002) \
 
-#undef ATTR_NAME_DEF
-#define ATTR_NAME_DEF(x, s, y) x = UINT16_C(y),
+#undef DEF
+#define DEF(x, s, y) x = UINT16_C(y),
 typedef enum pattern_graph {
 PATTERN_GRAPH_TABLE
 } pattern_graph;
@@ -93,18 +96,18 @@ extern struct attrs16 * pattern_graph_attrs;
 
 // axis
 #define PATTERN_AXIS_OPT  0x000f
-#define PATTERN_AXIS_TABLE                                                                                                        \
-  /* contextual */                                                                                                                \
-  ATTR_NAME_DEF(PATTERN_AXIS_UP               , "up"            , 0x0005) /* parent, .. : nodes up 1 level from current fsent */  \
-  ATTR_NAME_DEF(PATTERN_AXIS_ABOVE            , "above"         , 0x0006) /* nodes above the current node, any level */           \
-  ATTR_NAME_DEF(PATTERN_AXIS_SELF_OR_ABOVE    , "self-or-above" , 0x0007) /* current and nodes above, any level */                \
-  ATTR_NAME_DEF(PATTERN_AXIS_SELF             , "self"          , 0x0008) /* . : context fsent */                                 \
-  ATTR_NAME_DEF(PATTERN_AXIS_DOWN             , "down"          , 0x0009) /* child : nodes down 1 level from current fsent */     \
-  ATTR_NAME_DEF(PATTERN_AXIS_BELOW            , "below"         , 0x000a) /* nodes below the current node, any level */           \
-  ATTR_NAME_DEF(PATTERN_AXIS_SELF_OR_BELOW    , "self-or-below" , 0x000b) /* ** : current and directory nodes below, any level */ \
+#define PATTERN_AXIS_TABLE                                                                                              \
+  /* contextual */                                                                                                      \
+  DEF(PATTERN_AXIS_UP               , "up"            , 0x0005) /* parent, .. : nodes up 1 level from current fsent */  \
+  DEF(PATTERN_AXIS_ABOVE            , "above"         , 0x0006) /* nodes above the current node, any level */           \
+  DEF(PATTERN_AXIS_SELF_OR_ABOVE    , "self-or-above" , 0x0007) /* current and nodes above, any level */                \
+  DEF(PATTERN_AXIS_SELF             , "self"          , 0x0008) /* . : context fsent */                                 \
+  DEF(PATTERN_AXIS_DOWN             , "down"          , 0x0009) /* child : nodes down 1 level from current fsent */     \
+  DEF(PATTERN_AXIS_BELOW            , "below"         , 0x000a) /* nodes below the current node, any level */           \
+  DEF(PATTERN_AXIS_SELF_OR_BELOW    , "self-or-below" , 0x000b) /* ** : current and directory nodes below, any level */ \
 
-#undef ATTR_NAME_DEF
-#define ATTR_NAME_DEF(x, s, y) x = UINT16_C(y),
+#undef DEF
+#define DEF(x, s, y) x = UINT16_C(y),
 typedef enum pattern_axis {
 PATTERN_AXIS_TABLE
 } pattern_axis;
@@ -112,16 +115,17 @@ PATTERN_AXIS_TABLE
 extern struct attrs16 * pattern_axis_attrs;
 
 #define PATTERN_NODESET_OPT 0x000f
-#define PATTERN_NODESET_TABLE                                                                                  \
-  /* non-contextual */                                                                                         \
-  ATTR_NAME_DEF(PATTERN_NODESET_SELF         , "self"      , 0x0001) /* . : the current context fsent */       \
-  ATTR_NAME_DEF(PATTERN_NODESET_SHADOW       , "shadow"    , 0x0002) /* // : root of the shadow fs */          \
-  ATTR_NAME_DEF(PATTERN_NODESET_ROOT         , "root"      , 0x0003) /* / : root of the actual fs */           \
-  ATTR_NAME_DEF(PATTERN_NODESET_ANCHOR       , "anchor"    , 0x0004) /* $^A : context anchor dir */            \
-  ATTR_NAME_DEF(PATTERN_NODESET_MODULE       , "module"    , 0x0005) /* $^D : context module dir */            \
+#define PATTERN_NODESET_TABLE                                                                        \
+  /* non-contextual */                                                                               \
+  DEF(PATTERN_NODESET_SELF         , "self"      , 0x0001) /* . : the current context fsent */       \
+  DEF(PATTERN_NODESET_SHADOW       , "shadow"    , 0x0002) /* // : root of the shadow fs */          \
+  DEF(PATTERN_NODESET_ROOT         , "root"      , 0x0003) /* / : root of the actual fs */           \
+  DEF(PATTERN_NODESET_ANCHOR       , "anchor"    , 0x0004) /* $^A : context anchor dir */            \
+  DEF(PATTERN_NODESET_MODULE       , "module"    , 0x0005) /* $^D : context module dir */            \
 
-#undef ATTR_NAME_DEF
-#define ATTR_NAME_DEF(x, s, y) x = UINT16_C(y),
+
+#undef DEF
+#define DEF(x, s, y) x = UINT16_C(y),
 typedef enum pattern_nodeset {
 PATTERN_NODESET_TABLE
 } pattern_nodeset;
@@ -137,8 +141,6 @@ extern struct attrs16 * pattern_nodeset_attrs;
   DEF(PATTERN_QUALIFIER_TYPE_DIR_NONEMPTY  , 0x0004)    /* (F) matches non-empty directories */                \
   DEF(PATTERN_QUALIFIER_TYPE_FILE          , 0x0005)    /* (.) matches plain files */                          \
   DEF(PATTERN_QUALIFIER_TYPE_SYMLINK       , 0x0006)    /* (@) matches symlinks */                             \
-  DEF(PATTERN_QUALIFIER_TYPE_ANCHOR        , 0x0007)    /* (^A) matches the module anchor directory */         \
-  DEF(PATTERN_QUALIFIER_TYPE_MODULE        , 0x0008)    /* (^M) matches the module base directory */           \
 
 #undef DEF
 #define DEF(x, y) x = UINT16_C(y),

@@ -36,13 +36,37 @@ static int search_node_cmp(const void * A, const void *B)
   return INTCMP(mA->node, mB->node);
 }
 
-static void search_visit(moria_vertex * restrict v, void * _ctx, moria_traversal_mode mode, int distance, moria_traverse_result * restrict result)
+static void matched(pattern_search_context * restrict ctx, fsent * restrict fse)
 {
-  pattern_search_context * ctx = _ctx;
-  fsent * n;
-  pattern_search_node * m;
-  bool section_has_type_qualifiers;
+  pattern_search_node *m;
   int x;
+
+  xmalloc(&m, sizeof(*m));
+  m->node = fse;
+
+  memcpy(m->groups, ctx->groups, sizeof(m->groups));
+  m->group_max = ctx->group_max;
+
+  m->groups[0].start = fse->name.name;
+  m->groups[0].len = fse->name.namel;
+  for(x = 1; x <= ctx->group_max; x++) {
+    m->groups[x] = ctx->groups[x];
+  }
+
+  hashtable_put(ctx->matches, m);
+}
+
+static void search_visit(
+    moria_vertex * restrict v
+  , void * restrict _ctx
+  , moria_traversal_mode mode
+  , int distance
+  , moria_traverse_result * restrict result
+)
+{
+  pattern_search_context * restrict ctx = _ctx;
+  fsent * n;
+  bool section_has_type_qualifiers;
 
   struct search_section_traversal saved_section_traversal;
   struct search_segments_traversal traversal;
@@ -86,7 +110,8 @@ static void search_visit(moria_vertex * restrict v, void * _ctx, moria_traversal
     v = v->ref;
   }
   /* follow context-dependent nodes */
-  if(vertex_shadowtype_get(&n->vertex) == VERTEX_SHADOWTYPE_CONTEXT_MODULE) {
+  n = containerof(v, fsent, vertex);
+  if(vertex_type_get(&n->vertex) == VERTEX_CONTEXT_MODULE) {
     v = &ctx->mod->shadow->vertex;
   }
   n = containerof(v, fsent, vertex);
@@ -102,20 +127,7 @@ static void search_visit(moria_vertex * restrict v, void * _ctx, moria_traversal
   }
   else
   {
-    /* capture the match */
-    xmalloc(&m, sizeof(*m));
-    m->node = n;
-
-    memcpy(m->groups, ctx->groups, sizeof(m->groups));
-    m->group_max = ctx->group_max;
-
-    m->groups[0].start = n->name.name;
-    m->groups[0].len = n->name.namel;
-    for(x = 1; x <= ctx->group_max; x++) {
-      m->groups[x] = ctx->groups[x];
-    }
-
-    hashtable_put(ctx->matches, m);
+    matched(ctx, n);
   }
 
 end:
@@ -233,22 +245,24 @@ void pattern_segments_search(pattern_search_context * ctx)
   memcpy(traversal, &saved_traversal, sizeof(*traversal) - sizeof(typeof(traversal->u)));
 }
 
-void pattern_section_search(pattern_search_context * restrict ctx, fsent * restrict dirnode)
+void pattern_section_search(pattern_search_context * restrict ctx, fsent * restrict fse)
 {
   const pattern_section *section;
   uint16_t min_depth = 0;
   uint16_t max_depth = UINT16_MAX;
   const module *mod;
 
-  mod = fsent_module_get(dirnode);
+  mod = vertex_module_get(&fse->vertex);
 
   if(mod && mod != ctx->mod) {
-    /* directory is owned by some other module */
+    /* this directory is owned by some other module */
     return;
   }
 
-  if(ctx->dirnode_visit) {
-    ctx->dirnode_visit(ctx->dirnode_visit_ctx, dirnode);
+  if(vertex_filetype_get(&fse->vertex) == VERTEX_FILETYPE_DIR) {
+    if(ctx->dirnode_visit) {
+      ctx->dirnode_visit(ctx->dirnode_visit_ctx, fse);
+    }
   }
 
   section = ctx->section_traversal.section;
@@ -271,7 +285,7 @@ void pattern_section_search(pattern_search_context * restrict ctx, fsent * restr
 
   moria_traverse_vertices(
       &g_graph
-    , &dirnode->vertex
+    , &fse->vertex
     , search_visit
     , 0
     , (moria_traversal_criteria[]) {{
@@ -297,13 +311,14 @@ void pattern_search_matches_init(hashtable * matches)
 void pattern_search(
     const pattern * restrict pattern
   , const module * restrict mod
-  , fsent * restrict base
   , hashtable * restrict matches
   , void (*dirnode_visit)(void * ctx, struct fsent * dirnode)
   , void *dirnode_visit_ctx
 )
 {
   pattern_search_context ctx;
+  fsent *base = 0;
+  moria_vertex *v;
 
   // setup the dynamic context
   ctx = (typeof(ctx)) {
@@ -319,12 +334,46 @@ void pattern_search(
   ctx.section_traversal.head = &pattern->sections;
   ctx.section_traversal.section = llist_first(ctx.section_traversal.head, typeof(*ctx.section_traversal.section), lln);
 
-  /* this can only appear as the initial section */
-  if(ctx.section_traversal.section->nodeset == PATTERN_NODESET_SHADOW) {
-    ctx.section_traversal.section = llist_next(ctx.section_traversal.head, ctx.section_traversal.section, lln);
-    base = g_shadow;
+  /* these can only appear as the initial section */
+  if(ctx.section_traversal.section->nodeset) {
+    switch(ctx.section_traversal.section->nodeset) {
+      case PATTERN_NODESET_ROOT:
+        base = g_root;
+        break;
+      case PATTERN_NODESET_SHADOW:
+        base = g_shadow;
+        break;
+      case PATTERN_NODESET_ANCHOR:
+        base = mod->anchor_node;
+        break;
+      case PATTERN_NODESET_MODULE:
+        base = mod->dir_node;
+        break;
+      case PATTERN_NODESET_SELF:
+        RTA;
+    }
+    if((ctx.section_traversal.section = llist_next(ctx.section_traversal.head, ctx.section_traversal.section, lln)) == 0) {
+      matched(&ctx, base);
+      return;
+    }
+
+    /* follow links */
+    v = &base->vertex;
+    while(v->attrs & MORIA_VERTEX_LINK) {
+      v = v->ref;
+    }
+    /* follow context-dependent nodes */
+    base = containerof(v, fsent, vertex);
+    if(vertex_type_get(&base->vertex) == VERTEX_CONTEXT_MODULE) {
+      v = &mod->shadow->vertex;
+    }
+    base = containerof(v, fsent, vertex);
+
+    pattern_section_search(&ctx, base);
+    return;
   }
 
-  /* search pattern begins at the module dirnode */
-  pattern_section_search(&ctx, base);
+  /* otherwise the default is to search from both the base and anchor nodes */
+  pattern_section_search(&ctx, mod->dir_node);
+  pattern_section_search(&ctx, mod->anchor_node);
 }

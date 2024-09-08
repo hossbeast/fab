@@ -35,7 +35,7 @@
 <INITIAL>[*][*]                                         { return LEX(STARSTAR); }
 <INITIAL>[.][/]                                         { int r = LEX(DOT); yyless(1); return r; }
 <INITIAL>[.][.]                                         { return LEX(DOT2); }
-<INITIAL>[+(){}<>:*,/~^ADHFM?@.]                        { return LEX(yytext[0]); }
+<INITIAL>[+(){}<>:*,/~^ADHF?@.]                         { return LEX(yytext[0]); }
 
  /* integers */
 <INITIAL>[0-9]+                                         { return LEXI("%"SCNuMAX); }

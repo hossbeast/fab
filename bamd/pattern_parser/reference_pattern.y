@@ -7,7 +7,6 @@
   #include "types.h"
 
   #include "pattern/byte.h"
-  #include "pattern/range.h"
   #include "pattern/word.h"
   #include "pattern/section.h"
   #include "pattern/segments.h"
@@ -131,6 +130,7 @@ pattern-sections-list
   }
   ;
 
+/* reference patterns can be absolute or relative */
 pattern-initial-section
   : '/'
   {

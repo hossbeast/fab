@@ -39,12 +39,6 @@ static void qualifier_say(const pattern_segment * restrict fn, const pattern_seg
     case PATTERN_QUALIFIER_TYPE_SYMLINK:
       xsayc('@');
       break;
-    case PATTERN_QUALIFIER_TYPE_ANCHOR:
-      xsays("^A");
-      break;
-    case PATTERN_QUALIFIER_TYPE_MODULE:
-      xsays("^M");
-      break;
     default:
       RTA;
   }
