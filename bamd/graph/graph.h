@@ -239,10 +239,6 @@ void graph_invalidation_begin(graph_invalidation_context * restrict context)
 void graph_invalidation_end(graph_invalidation_context * restrict context)
   __attribute__((nonnull));
 
-/* map an internal vertex_type to an external bam_fsent_type */
-enum bam_vertex_type vertex_type_remap(vertex_type type);
-enum bam_vertex_state vertex_state_remap(vertex_state state);
-
 /* disconnect an fsedge or dependency edge and cascade */
 void graph_disintegrate(struct moria_edge * restrict ne, struct graph_invalidation_context * restrict context)
   __attribute__((nonnull(1)));

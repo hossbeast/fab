@@ -7,7 +7,7 @@
 #include "bam/ipc.h"
 
 #include "channel.h"
-#include "config.h"
+#include "configset.h"
 #include "params.h"
 
 /* ugo+rw  world read/write */
@@ -17,6 +17,7 @@
 #include "bam/events.h"
 #include "common/attrs.h"
 #include "channel/probes.h"
+#include "config.h"
 
 //
 // public

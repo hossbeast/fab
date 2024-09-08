@@ -19,9 +19,6 @@ typedef struct channel {
     struct {
       struct bamipc_channel ipc;
 
-      /* subscribed events */
-      uint32_t event_mask;
-
       /* whether a response with nonzero code has been txd on this channel */
       bool error;
 

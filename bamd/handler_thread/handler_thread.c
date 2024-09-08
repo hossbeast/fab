@@ -25,12 +25,17 @@
 #include "pattern_parser.internal.h"
 #include "server_thread.h"
 #include "times.h"
-#include "system_state.h"
+#include "system.h"
 
 #include "zcat.h"
 #include "threads.h"
 
 struct futexlock handlers_lock;
+
+typedef struct handler_params {
+  pid_t client_pid;
+  pid_t client_tid;
+} handler_params;
 
 static void parse_request(handler_context * restrict ctx, bamipc_message * restrict msg, request * restrict req)
 {
@@ -84,15 +89,7 @@ static void handler_thread(handler_context * restrict ctx)
   chan->ipc.client_pulse = 0;
 
   sival.sival_int = chan->ipc.shmid;
-  r = sigutil_uxrt_tgsigqueueinfo(ctx->client_pid, ctx->client_tid, SIGRTMIN, sival);
-
-  chan->ipc.client_pid = ctx->client_pid;
-  chan->ipc.client_tid = ctx->client_tid;
-
-  if(chan->ipc.client_pid == 0) {
-    dprintf(2, "channel not initialized\n");
-    RTA;
-  }
+  r = sigutil_uxrt_tgsigqueueinfo(chan->ipc.client_pid, chan->ipc.client_tid, SIGRTMIN, sival);
 
   iter = 0;
   built = false;
@@ -105,15 +102,33 @@ static void handler_thread(handler_context * restrict ctx)
 
     if(ctx->running)
     {
-      sigutil_timedwait(&r, &sigs, &siginfo, &interval);
+      r = sigutil_timedwait(&sigs, &siginfo, &interval);
     }
     else if(cmd && !ctx->chan->error)
     {
-      if(cmd->type == COMMAND_RECONCILE || cmd->type == COMMAND_RUN || cmd->type == COMMAND_AUTORUN)
+      if(cmd->type == COMMAND_GOALS)
       {
-        if(cmd->type == COMMAND_RUN) { run_thread_autorun = false; }
-        if(cmd->type == COMMAND_AUTORUN) { run_thread_autorun = true; }
+        /* invalidates //goals which triggers autorun */
+        goals_set(
+            chan->ipc.client_pid
+          , cmd->goals.token
+          , cmd->goals.label
+          , cmd->goals.label_len
+          , cmd->goals.reconcile
+          , cmd->goals.build
+          , cmd->goals.target_direct
+          , cmd->goals.target_transitive
+        );
 
+        /* goals takes ownership of the selectors */
+        cmd->goals.target_direct = 0;
+        cmd->goals.target_transitive = 0;
+
+        /* invalidates //goals which triggers autorun */
+        ctx->invalidated_any = true;
+      }
+      else if(cmd->type == COMMAND_RECONCILE || cmd->type == COMMAND_RUN)
+      {
         ctx->running = true;
         built = true;
         run_thread_launch(ctx, cmd->type);
@@ -129,7 +144,7 @@ static void handler_thread(handler_context * restrict ctx)
       channel_response(ctx->chan, !!ctx->chan->error);
       client_msg = 0;
 
-      if(ctx->invalidation.any && run_thread_autorun && !built)
+      if(ctx->invalidated_any && run_thread_autorun && !built)
       {
         /* no build-command in this request, but some nodes were invalidated while processing it */
         run_thread_launch(0, COMMAND_AUTORUN);
@@ -163,7 +178,7 @@ static void handler_thread(handler_context * restrict ctx)
       /* message received */
       if(client_msg->type == BAMIPC_MSG_EVENTSUB)
       {
-        ctx->chan->event_mask |= client_msg->attrs;
+        ctx->event_mask = client_msg->attrs;
         channel_consume(ctx->chan, client_msg);
         continue;
       }
@@ -175,8 +190,6 @@ static void handler_thread(handler_context * restrict ctx)
 
       /* prepare to process the request */
       handler_reset(ctx);
-      graph_invalidation_end(&ctx->invalidation);
-      graph_invalidation_begin(&ctx->invalidation);
       cmd = llist_first(&req.commands, typeof(*cmd), lln);
       built = false;
 
@@ -195,32 +208,39 @@ static void handler_thread(handler_context * restrict ctx)
   request_destroy(&req);
 }
 
-static void * handler_thread_jump(void * arg)
+static void *handler_thread_jump(void * arg)
 {
-  handler_context *ctx;
+  handler_params *params;
+  handler_context *handler;
   channel *chan = 0;
 
-  ctx = arg;
-  ctx->tid = tid = gettid();
+  params = arg;
   errnop = &errno;
+  tid = gettid();
+
+  handler_alloc(&handler);
+  handler->tid = gettid();
 
   channel_create(&chan, tid);
-  ctx->chan = chan;
+  chan->ipc.client_pid = params->client_pid;
+  chan->ipc.client_tid = params->client_tid;
+  handler->chan = chan;
+  free(params);
 
   futexlock_acquire(&handlers_lock);
-  rcu_list_push(&g_handlers, &ctx->stk);
+  rcu_list_push(&g_handlers, &handler->stk);
   futexlock_release(&handlers_lock);
 
-  handler_thread(ctx);
+  handler_thread(handler);
 
   futexlock_acquire(&handlers_lock);
-  rcu_list_delete(&ctx->stk);
+  rcu_list_delete(&handler->stk);
   futexlock_release(&handlers_lock);
 
   rcu_synchronize();
 
   channel_release(chan);
-  handler_release(ctx);
+  handler_release(handler);
 
   atomic_fetch_dec(&g_params.thread_count);
   syscall(SYS_tgkill, g_params.pid, g_params.thread_monitor, SIGUSR1);
@@ -235,18 +255,17 @@ void handler_thread_launch(pid_t client_pid, pid_t client_tid)
 {
   pthread_t pthread_id;
   pthread_attr_t attr;
-  handler_context *ctx = 0;
+  handler_params *params;
 
-  handler_alloc(&ctx);
-
-  ctx->client_pid = client_pid;
-  ctx->client_tid = client_tid;
+  xmalloc(&params, sizeof(*params));
+  params->client_pid = client_pid;
+  params->client_tid = client_tid;
 
   xpthread_attr_init(&attr);
   xpthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
 
   atomic_fetch_inc(&g_params.thread_count);
-  xpthread_create(&pthread_id, &attr, handler_thread_jump, ctx);
+  xpthread_create(&pthread_id, &attr, handler_thread_jump, params);
 
   pthread_attr_destroy(&attr);
 }

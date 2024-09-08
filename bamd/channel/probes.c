@@ -47,7 +47,7 @@ void channel_tx_probe(const channel * restrict chan, bamipc_message * restrict m
   narrator_sayf(N, "tx tail %5u idx %5u id 0x%016"PRIx64" code %8d type %.*s", h, i, msg->id, msg->code, (int)z, buf);
   if(msg->type == BAMIPC_MSG_EVENTS)
   {
-    z = attrs32_zcat(buf, sizeof(buf), bamipc_event_type_attrs, msg->evtype);
+    z = attrs32_zcat(buf, sizeof(buf), &bamipc_event_type_attrs, msg->evtype);
     narrator_sayf(N, " attrs %.*s", (int)z, buf);
   }
   else if(msg->attrs)
@@ -55,7 +55,7 @@ void channel_tx_probe(const channel * restrict chan, bamipc_message * restrict m
     narrator_sayf(N, " attrs 0x%08x", msg->attrs);
   }
   narrator_sayf(N, " size %hu", msg->size);
-  if(msg->type == BAMIPC_MSG_RESPONSE || (msg->type == BAMIPC_MSG_EVENTS && msg->evtype == BAMIPC_EVENT_SYSTEM_STATE))
+  if(msg->type == BAMIPC_MSG_RESPONSE || (msg->type == BAMIPC_MSG_EVENTS && msg->evtype == BAMIPC_EVENT_SYSTEM_STATE_CHANGE))
   {
     narrator_sayf(N, " %.*s", (int)msg->size, msg->text);
   }
