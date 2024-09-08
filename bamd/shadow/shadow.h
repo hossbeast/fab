@@ -24,10 +24,33 @@ enum vertex_kind;
 struct graph_invalidation_context;
 
 // globally scoped fsents
-extern struct fsent * g_shadow;                 /* root of the shadow fs */
-extern struct fsent * g_shadow_module;          /* the node at //module */
-extern struct fsent * g_shadow_modules;         /* the node at //modules */
-extern struct fsent * g_shadow_targets;         /* the node at //targets */
+extern struct fsent *g_shadow;                 /* shadow fs root */
+
+/* lists of specials */
+extern struct fsent *g_shadow_modules;         /* //modules */
+extern struct fsent *g_shadow_rulesets;        /* //rulesets */
+extern struct fsent *g_shadow_formulas;        /* //formulas */
+extern struct fsent *g_shadow_varsets;         /* //varsets */
+extern struct fsent *g_shadow_configsets;      /* //configsets */
+extern struct fsent *g_shadow_plugins;         /* //plugins */
+extern struct fsent *g_shadow_fstrees;         /* //fstrees */
+extern struct fsent *g_shadow_fsnames;         /* //fsnames */
+extern struct fsent *g_shadow_fsnames_by;      /* //fsnames-by */
+extern struct fsent *g_shadow_fsnames_byname;  /* //fsnames-by/name */
+
+/* rules */
+extern struct fsent *g_shadow_rules;           /* //rules */
+extern struct fsent *g_shadow_rules_by;        /* //rules-by/ */
+extern struct fsent *g_shadow_rules_byname;    /* //rules-by/name/ */
+extern struct fsent *g_shadow_rmas;            /* //rmas */
+extern struct fsent *g_shadow_rmas_by;         /* //rmas-by */
+extern struct fsent *g_shadow_rmas_byname;     /* //rmas-by/name/ */
+
+/* other node lists */
+extern struct fsent *g_shadow_bpes;            /* //bpes */
+
+/* magic files */
+extern struct fsent *g_shadow_targets;         /* //targets */
 
 /* module initialization */
 void shadow_setup(void);
@@ -40,9 +63,8 @@ void shadow_graft_bind(
   , struct fsent * restrict ref
   , struct fsent * restrict attachment
   , struct fsent ** restrict target
-  , struct graph_invalidation_context * restrict invalidation
 )
-  __attribute__((nonnull(1, 2, 3, 5)));
+  __attribute__((nonnull(1, 2, 3)));
 
 void shadow_graft_requires(
     struct module * restrict mod
@@ -50,29 +72,8 @@ void shadow_graft_requires(
   , const char * restrict as
   , uint16_t asl
   , struct fsedge ** restrict ep
-  , struct graph_invalidation_context * restrict invalidation
 )
-  __attribute__((nonnull(1, 2, 3, 6)));
-
-void shadow_graft_rules(
-    struct module * restrict mod
-  , struct fsent * restrict ref
-  , const char * restrict as
-  , uint16_t asl
-  , struct fsedge ** restrict ep
-  , struct graph_invalidation_context * restrict invalidation
-)
-  __attribute__((nonnull(1, 2, 3, 6)));
-
-void shadow_graft_var(
-    struct module * restrict mod
-  , struct fsent * restrict ref
-  , const char * restrict as
-  , uint16_t asl
-  , struct fsedge ** restrict ep
-  , struct graph_invalidation_context * restrict invalidation
-)
-  __attribute__((nonnull(1, 2, 3, 6)));
+  __attribute__((nonnull(1, 2, 3)));
 
 void shadow_create(
     struct fsent * restrict parent
@@ -88,9 +89,7 @@ void shadow_link(
     /* 1 */ struct fsent * restrict parent
   , /* 2 */ const char * restrict name
   , /* 3 */ uint16_t namel
-  , /* 4 */ struct fsent * restrict ref
+  , /* 4 */ struct moria_vertex * restrict ref
   , /* 5 */ struct fsedge ** restrict ep
-  , /* 6 */ struct fsent ** restrict pref
-  , /* 7 */ struct graph_invalidation_context * restrict invalidation
 )
-  __attribute__((nonnull(1, 2, 4, 7)));
+  __attribute__((nonnull(1, 2, 4)));

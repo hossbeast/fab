@@ -8,7 +8,6 @@
 #include "valyria/llist.h"
 #include "valyria/hashtable.h"
 #include "moria.h"
-#include "bam/stats.h"
 
 #include "graph.h"
 

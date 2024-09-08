@@ -22,7 +22,7 @@ meta-edge types
  EDGE_FML_BPE
  EDGE_RMA_BPE
  EDGE_BMA_TGT
- EDGE_INDEX_BMA
+ EDGE_FSINDEX_BMA
 */
 
 typedef struct meta_edge {
@@ -31,12 +31,11 @@ typedef struct meta_edge {
 
   /* cached */
   struct rule_module_association *rma;
-  struct bind_module_association *bma;
   struct formula *fml;
   struct buildplan_entity *bpe;
   struct module *mod;
   struct fsent *tgt;
-  struct index_vertex *index;
+  struct fsname *index;
 } meta_edge;
 
 void meta_edge_cleanup(void);

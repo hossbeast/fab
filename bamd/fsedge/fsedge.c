@@ -17,7 +17,7 @@
 #include "filesystem.h"
 #include "edge.h"
 #include "entlist.h"
-#include "fsent_index.h"
+#include "fsindex.h"
 
 #include "zcat.h"
 
@@ -118,16 +118,15 @@ void fsedge_connect(
 )
 {
   fsedge * e;
-  vertex_shadowtype ash;
-  vertex_shadowtype bsh;
+  bool ash;
+  bool bsh;
   vertex_filetype ft;
   moria_connect_context ctx;
   int r;
 
-  /* if the parent is a link, traverse to the referent */
-  while(A->vertex.attrs & MORIA_VERTEX_LINK) {
-    A = containerof(A->vertex.ref, fsent, vertex);
-  }
+  /* links should have been resolved in the caller */
+  RUNTIME_ASSERT(!(A->vertex.attrs & MORIA_VERTEX_LINK));
+  RUNTIME_ASSERT(vertex_type_get(&A->vertex) != VERTEX_CONTEXT_MODULE);
 
   r = moria_preconnect(&ctx, &g_graph, &B->vertex, &A->vertex, EDGE_FSTREE, 0);
   if(r == MORIA_HASEDGE) {
@@ -141,15 +140,15 @@ void fsedge_connect(
   fsent_compute_identifiers(B);
 
   /* this is reassigned in fsent_reconcile */
-  B->fs = A->fs;
+  B->fst = A->fst;
 
-  ash = vertex_shadowtype_get(&A->vertex);
-  bsh = vertex_shadowtype_get(&B->vertex);
+  ash = vertex_shadow_get(&A->vertex);
+  bsh = vertex_shadow_get(&B->vertex);
 
   /* propagate shadowtype */
   if(ash && !bsh)
   {
-    vertex_shadowtype_set(&B->vertex, VERTEX_SHADOWTYPE_FS);
+    vertex_shadow_set(&B->vertex, true);
 
     /* shadow nodes can become invalid but they never actually exist */
     vertex_state_set(&B->vertex, VERTEX_OK);

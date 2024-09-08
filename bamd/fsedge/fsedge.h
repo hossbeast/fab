@@ -25,6 +25,7 @@ extern llist fsedge_list;
 /* EDGE_FSTREE */
 typedef struct fsedge {
   moria_edge edge;
+  uint32_t refmark;
 } fsedge;
 
 /* release edges */
@@ -49,10 +50,6 @@ void fsedge_disintegrate(fsedge * restrict fse, struct graph_invalidation_contex
   __attribute__((nonnull(1)));
 
 void fsedge_disintegrate_bulk(struct entlist * restrict edges, struct graph_invalidation_context * restrict invalidation)
-  __attribute__((nonnull));
-
-/* disconnect a filesystem edge */
-void fsedge_disconnect(fsedge * restrict fse, struct graph_invalidation_context * restrict invalidation)
   __attribute__((nonnull));
 
 void fsedge_release(fsedge * restrict fse)

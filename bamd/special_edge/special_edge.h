@@ -11,7 +11,7 @@ struct entlist;
 enum edge_type;
 
 /*
- * A special edge connects an fsent vertex B -> a special vertex A
+ * A special edge connects an fsent vertex B -> special vertex A
  */
 typedef struct special_edge {
   struct moria_edge edge;
@@ -19,8 +19,6 @@ typedef struct special_edge {
 
 void special_edge_cleanup(void);
 
-//void special_disconnect(special_edge * restrict me, struct graph_invalidation_context * restrict invalidation)
-//  __attribute__((nonnull));
 void special_disconnecting(
     special_edge * restrict me
   , struct graph_invalidation_context * restrict invalidation
@@ -28,6 +26,13 @@ void special_disconnecting(
   __attribute__((nonnull));
 
 void special_connect(
+    struct moria_vertex * restrict B
+  , struct moria_vertex * restrict A
+  , struct graph_invalidation_context * restrict invaliation
+)
+  __attribute__((nonnull));
+
+void special_connect_type(
     struct moria_vertex * restrict B
   , struct moria_vertex * restrict A
   , enum edge_type type

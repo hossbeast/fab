@@ -77,14 +77,14 @@ bool module_edge_connect(module * restrict A, moria_vertex * restrict B, edge_ty
   bool b;
 
   switch(type) {
-    case EDGE_RULES_MOD:
-      RUNTIME_ASSERT(vertex_type_get(B) == VERTEX_RULES);
+    case EDGE_RULESET_MOD:
+      RUNTIME_ASSERT(vertex_type_get(B) == VERTEX_RULESET);
       break;
     case EDGE_REQUIRES:
       RUNTIME_ASSERT(vertex_type_get(B) == VERTEX_MODULE);
       break;
-    case EDGE_VAR_MOD:
-      RUNTIME_ASSERT(vertex_type_get(B) == VERTEX_VAR);
+    case EDGE_VARSET_MOD:
+      RUNTIME_ASSERT(vertex_type_get(B) == VERTEX_VARSET);
       break;
     default:
       break;
@@ -119,8 +119,8 @@ void module_edge_disconnecting(
 {
   /* invalidate the module */
   switch(edge_type_get(&mme->edge)) {
-    case EDGE_RULES_MOD:
-    case EDGE_VAR_MOD:
+    case EDGE_RULESET_MOD:
+    case EDGE_VARSET_MOD:
       vertex_invalidate(mme->edge.A, invalidation);
     case EDGE_REQUIRES:
       break;

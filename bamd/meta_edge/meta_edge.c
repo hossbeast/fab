@@ -18,7 +18,7 @@
 #include "buildplan_entity.h"
 #include "formula.h"
 #include "rule.h"
-#include "rules.h"
+#include "ruleset.h"
 #include "entlist.h"
 #include "rule_system.h"
 
@@ -76,9 +76,8 @@ bool meta_connect(
   buildplan_entity *bpe;
   fsent *tgt;
   formula *fml;
-  module *mod;
   struct rule *rule;
-  struct rules *rules;
+  struct ruleset *rules;
 
   r = moria_preconnect(&ctx, &g_graph, B, A, type, &e);
   if(r == MORIA_HASEDGE) {
@@ -91,16 +90,11 @@ bool meta_connect(
 
   /* update cached fields */
   switch(type) {
-    case EDGE_RMA_RULES:
+    case EDGE_RMA_RULESET:
       rma = containerof(B, typeof(*rma), vertex);
       rules = containerof(A, typeof(*rules), vertex);
       me->rma = rma;
       rma->rules = rules;
-      break;
-    case EDGE_RMA_MOD:
-      rma = containerof(B, typeof(*rma), vertex);
-      mod = containerof(A, typeof(*mod), vertex);
-      rma_mod_set(rma, mod, invalidation);
       break;
     case EDGE_RULE_RMA:
       rule = containerof(B, typeof(*rule), vertex);
@@ -130,8 +124,9 @@ bool meta_connect(
       me->rma = rma;
       me->tgt = tgt;
       break;
-    case EDGE_INDEX_RMA:
-    case EDGE_INDEX_MOD:
+    case EDGE_RMA_MOD:
+    case EDGE_FSNAME_RMA:
+    case EDGE_FSNAME_MOD:
       break;
     default:
       RTA;
@@ -150,21 +145,15 @@ void meta_disconnecting(
 {
   buildplan_entity *bpe;
   formula *fml;
-  module *mod;
   rule_module_association *rma;
   fsent *tgt;
 
   /* update cached fields */
   switch(edge_type_get(&me->edge)) {
-    case EDGE_RMA_RULES:
+    case EDGE_RMA_RULESET:
       rma = containerof(me->edge.B, typeof(*rma), vertex);
       rma->rules = 0;
       vertex_invalidate(me->edge.B, invalidation);
-      break;
-    case EDGE_RMA_MOD:
-      rma = containerof(me->edge.B, typeof(*rma), vertex);
-      mod = containerof(me->edge.A, typeof(*mod), vertex);
-      rma_mod_set(rma, 0, invalidation);
       break;
     case EDGE_RULE_RMA:
       rma = containerof(me->edge.A, typeof(*rma), vertex);
@@ -196,8 +185,9 @@ void meta_disconnecting(
       tgt = containerof(me->edge.A, typeof(*tgt), vertex);
       /* also release the target */
       entlist_push(edges, moria_edge_between(&tgt->vertex, &fsent_parent(tgt)->vertex));
-    case EDGE_INDEX_RMA:
-    case EDGE_INDEX_MOD:
+    case EDGE_RMA_MOD:
+    case EDGE_FSNAME_RMA:
+    case EDGE_FSNAME_MOD:
       break;
     default:
       RTA;

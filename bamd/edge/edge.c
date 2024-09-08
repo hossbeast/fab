@@ -5,23 +5,11 @@
 #include "common/attrs.h"
 #include "moria.h"
 #include "narrator.h"
+#include "moria/foreach.h"
 
 #include "edge.h"
 #include "vertex.h"
-
-static void attrs32_describe(uint32_t attrs, const attrs32 * restrict list, bacon_writer * restrict builder_writer)
-{
-  char buf[128];
-  char *s;
-  size_t z;
-  size_t sz;
-
-  s = buf;
-  sz = sizeof(buf);
-  z = 0;
-  z += attrs32_zcat(s + z, sz - z, list, attrs);
-  BYTES(buf, z);
-}
+#include "entlist.h"
 
 void edge_describe_up(const moria_edge * restrict e, bacon_writer * restrict builder_writer)
 {
@@ -85,39 +73,43 @@ void edge_describe(const moria_edge * restrict e, bacon_writer * restrict builde
 {
   int x;
 
-  { SET
+  { MAPPING
     HEX(e)
-    { MAPPING
-      STRING("up")
-      if(!(e->attrs & MORIA_EDGE_HYPER))
-      {
-        vertex_describe(e->A, builder_writer);
-      }
-      else
-      {
-        LIST
-        for(x = 0; x < e->Alen; x++)
-        {
-          vertex_describe(e->Alist[x].v, builder_writer);
+    { SET
+      { MAPPING
+        STRING("up")
+        { SET
+          if(!(e->attrs & MORIA_EDGE_HYPER))
+          {
+            vertex_describe(e->A, builder_writer);
+          }
+          else
+          {
+            for(x = 0; x < e->Alen; x++)
+            {
+              vertex_describe(e->Alist[x].v, builder_writer);
+            }
+          }
         }
       }
-    }
-    { MAPPING
-      STRING("attrs")
-      attrs32_describe(e->attrs, graph_edge_attrs, builder_writer);
-    }
-    { MAPPING
-      STRING("down")
-      if(!(e->attrs & MORIA_EDGE_HYPER))
-      {
-        vertex_describe(e->B, builder_writer);
+      { MAPPING
+        STRING("attrs")
+        attrs32_describe(e->attrs, graph_edge_attrs, builder_writer);
       }
-      else
-      {
-        LIST
-        for(x = 0; x < e->Blen; x++)
-        {
-          vertex_describe(e->Blist[x].v, builder_writer);
+      { MAPPING
+        STRING("down")
+        { SET
+          if(!(e->attrs & MORIA_EDGE_HYPER))
+          {
+            vertex_describe(e->B, builder_writer);
+          }
+          else
+          {
+            for(x = 0; x < e->Blen; x++)
+            {
+              vertex_describe(e->Blist[x].v, builder_writer);
+            }
+          }
         }
       }
     }
@@ -197,4 +189,52 @@ void edge_identity_show(const moria_edge * restrict e)
 {
   edge_identity_say(e, g_narrator_stdout);
   printf("\n");
+}
+
+bool edges_gather_down(const struct moria_vertex * restrict v, edge_type type, struct entlist * restrict list)
+{
+  moria_foreach_state st;
+  moria_edge *e;
+  bool b;
+
+  entlist_init(list);
+
+  b = false;
+  moria_foreach_edge_down(&st, v, e) {
+    if(edge_type_get(e) == type) {
+      entlist_push(list, e);
+      b = true;
+    }
+  }
+
+  return b;
+}
+
+bool edges_gather_up(const struct moria_vertex * restrict v, edge_type type, struct entlist * restrict list)
+{
+  moria_foreach_state st;
+  moria_edge *e;
+  bool b;
+
+  entlist_init(list);
+
+  b = false;
+  moria_foreach_edge_up(&st, v, e) {
+    if(edge_type_get(e) == type) {
+      entlist_push(list, e);
+      b = true;
+    }
+  }
+
+  return b;
+}
+
+bool edges_gather(const struct moria_vertex * restrict v, edge_type type, struct entlist * restrict list)
+{
+  bool b = false;
+
+  b |= edges_gather_down(v, type, list);
+  b |= edges_gather_up(v, type, list);
+
+  return b;
 }

@@ -16,6 +16,7 @@
 #include "edge.h"
 #include "entlist.h"
 #include "formula.h"
+#include "config_system.h"
 
 static llist special_edge_list = LLIST_INITIALIZER(special_edge_list);          // active list
 static llist special_edge_freelist = LLIST_INITIALIZER(special_edge_freelist);  // freelist
@@ -55,7 +56,7 @@ void special_edge_release(special_edge * restrict se)
   special_edge_dispose(se);
 }
 
-void special_connect(
+void special_connect_type(
     moria_vertex * restrict B
   , moria_vertex * restrict A
   , edge_type type
@@ -70,7 +71,7 @@ void special_connect(
   RUNTIME_ASSERT(vertex_kind_get(A) == VERTEX_KIND_SPECIAL);
   RUNTIME_ASSERT(vertex_special_get(A));
   RUNTIME_ASSERT(vertex_kind_get(B) == VERTEX_KIND_FSENT);
-  RUNTIME_ASSERT(vertex_filetype_get(B) == VERTEX_FILETYPE_REG);
+  RUNTIME_ASSERT((type & EDGE_KIND_OPT) == EDGE_KIND_SPECIAL);
 
   r = moria_preconnect(&ctx, &g_graph, B, A, type, &e);
   if(r == MORIA_HASEDGE) {
@@ -81,6 +82,15 @@ void special_connect(
   moria_connect(&ctx, &g_graph, &se->edge, B, A, type);
 
   vertex_invalidate(se->edge.A, invalidation);
+}
+
+void special_connect(
+    moria_vertex * restrict B
+  , moria_vertex * restrict A
+  , graph_invalidation_context * restrict invalidation
+)
+{
+  special_connect_type(B, A, EDGE_SPECIAL, invalidation);
 }
 
 void special_edge_cleanup()
@@ -103,6 +113,10 @@ void special_disconnecting(
   , graph_invalidation_context * restrict invalidation
 )
 {
+  if(vertex_type_get(se->edge.B) == VERTEX_CONFIGSET) {
+    config_system_invalidate();
+  }
+
   vertex_invalidate(se->edge.A, invalidation);
   vertex_state_set(se->edge.A, VERTEX_UNLINKED);
 }

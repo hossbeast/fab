@@ -50,3 +50,12 @@ void edge_identity_show(const struct moria_edge * restrict ne)
 
 void edge_show(const struct moria_edge * restrict ne)
   __attribute__((nonnull));
+
+bool edges_gather_down(const struct moria_vertex * restrict v, edge_type type, struct entlist * restrict list)
+  __attribute__((nonnull));
+
+bool edges_gather_up(const struct moria_vertex * restrict v, edge_type type, struct entlist * restrict list)
+  __attribute__((nonnull));
+
+bool edges_gather(const struct moria_vertex * restrict v, edge_type type, struct entlist * restrict list)
+  __attribute__((nonnull));

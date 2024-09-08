@@ -30,15 +30,12 @@ typedef struct dir_rma_edge {
   struct rule_module_association *rma;  // (up) A the rule -> module association
 } dir_rma_edge;
 
-/* idempotent create EDGE_DIR_RMA hyperedge */
+/* idempotent create EDGE_DIR_RMA */
 void dir_rma_connect(struct fsent * restrict dir, struct rule_module_association * restrict rma)
   __attribute__((nonnull));
 
 void dir_rma_connect_visit(void * restrict _rule, struct fsent * restrict dir)
   __attribute__((nonnull));
-
-//void dir_rma_disconnect(dir_rma_edge * restrict rma)
-//  __attribute__((nonnull));
 
 void dir_rma_cleanup(void);
 

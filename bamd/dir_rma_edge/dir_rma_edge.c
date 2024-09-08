@@ -8,7 +8,7 @@
 #include "moria/connect.h"
 #include "narrator.h"
 
-#include "dir_rma.h"
+#include "dir_rma_edge.h"
 #include "rule.h"
 #include "graph.h"
 #include "fsent.h"
@@ -91,6 +91,8 @@ void dir_rma_connect(fsent * restrict dir, rule_module_association *rma)
   dir_rma_edge *drm = 0;
   moria_connect_context ctx;
   int r;
+
+  RUNTIME_ASSERT(vertex_filetype_get(&dir->vertex) == VERTEX_FILETYPE_DIR);
 
   r = moria_preconnect(&ctx, &g_graph, &dir->vertex, &rma->vertex, EDGE_DIR_RMA, &e);
   if(r == MORIA_HASEDGE) {
