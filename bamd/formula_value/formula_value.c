@@ -24,7 +24,6 @@
 #include "module.h"
 #include "selection.h"
 #include "formula.h"
-#include "path_cache.h"
 
 #include "common/attrs.h"
 

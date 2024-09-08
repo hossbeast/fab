@@ -20,7 +20,7 @@
 #include "stats.h"
 #include "marshal.h"
 #include "channel.h"
-#include "system_state.h"
+#include "system.h"
 #include "events.h"
 #include "formula_parser.internal.h"
 #include "selector_parser.h"
@@ -33,7 +33,7 @@
 #include "common/snarf.h"
 #include "zcat.h"
 
-static llist formula_list = LLIST_INITIALIZER(formula_list);                  // active
+llist formula_list = LLIST_INITIALIZER(formula_list);                         // active
 static llist formula_freelist = LLIST_INITIALIZER(formula_freelist);          // free
 static llist formula_invalid_list = LLIST_INITIALIZER(formula_invalid_list);  // invalidated
 
@@ -44,8 +44,8 @@ static void formula_parse(formula * restrict fml)
   char * text = 0;
   size_t text_len;
   int exit;
-  channel *chan;
-  bamipc_message *msg;
+  events_context ectx;
+  event_bacon *msg;
   bacon_writer writer, *builder_writer;
   narrator_fixed fixed;
 
@@ -57,8 +57,8 @@ static void formula_parse(formula * restrict fml)
   formula_value_ifree(&fml->envs);
   formula_value_ifree(&fml->args);
 
-  STATS_INC(fml->fml_stats.parse);
-  STATS_INC(g_stats.formula_parse);
+  fml->formula_stats.parse++;
+  system_stats.formula_parse++;
 
   fsnarf(&text, &text_len, fml->fd);
 
@@ -66,7 +66,7 @@ static void formula_parse(formula * restrict fml)
   {
     if((exit = formula_parser_parse(parser, text, text_len, fml->abspath, fml)))
     {
-      msg = system_error_event(&chan);
+      msg = system_error_event(&ectx);
       narrator_fixed_init(&fixed, msg->text, sizeof(msg->text));
       bacon_writer_init(&writer);
       builder_writer = bacon_writer_open(&writer, &fixed.base);
@@ -86,13 +86,13 @@ static void formula_parse(formula * restrict fml)
 
       msg->code = EINVAL;
       msg->size = fixed.l;
-      events_publish(chan, msg);
+      events_publish(&ectx);
       goto end;
     }
   }
 
-  STATS_INC(fml->fml_stats.parse_ok);
-  STATS_INC(g_stats.formula_parse_ok);
+  fml->formula_stats.parse_ok++;
+  system_stats.formula_parse_ok++;
 
 end:
   free(text);
@@ -214,7 +214,7 @@ void formula_system_reconcile(graph_invalidation_context * restrict invalidation
   }
 }
 
-void formula_parse_enqueue(formula * restrict fml)
+void formula_invalidated(formula * restrict fml)
 {
   llist_push(&formula_invalid_list, &fml->invalid_lln);
 }
@@ -240,24 +240,85 @@ void formula_create(formula ** restrict fmlp, moria_graph * restrict g)
   *fmlp = fml;
 }
 
-size_t formula_stats_collate(void *dst, size_t sz, bool reset, formula * restrict fml)
+void formula_stats_build(formula * restrict fml, bool reset, bacon_writer * restrict builder_writer)
 {
-  size_t z;
-  bam_formula_stats *stats;
-  bam_formula_stats tmp;
+  stats_build(&fml->stats.record, &descriptor_stats_vertex, builder_writer);
+  stats_build(&fml->formula_stats.record, &descriptor_stats_formula, builder_writer);
 
-  /* stats for the formula vertex */
-  z = 0;
-  z += vertex_stats_collate(dst + z, sz - z, reset, &fml->vertex);
-
-  /* stats for the formula */
-  memcpy(&tmp, &fml->fml_stats, sizeof(tmp));
   if(reset) {
-    memset(&fml->fml_stats, 0, sizeof(fml->fml_stats));
+    memset(&fml->stats, 0, sizeof(fml->stats));
+    memset(&fml->formula_stats, 0, sizeof(fml->formula_stats));
   }
-  stats = &tmp;
+}
 
-  z += descriptor_marshal_object(dst + z, sz - z, &descriptor_bam_formula_stats, &stats->record, 0);
+void formula_describe(const formula * restrict formula, bacon_writer * restrict builder_writer)
+{
+  moria_foreach_state st;
+  moria_edge *e;
 
-  return z;
+  { MAPPING
+    vertex_path_describe(&formula->vertex, builder_writer);
+    { SET
+      vertex_mappings(&formula->vertex, builder_writer);
+      { MAPPING STRING("self")
+        BYTES(formula->abspath, formula->abspath_len)
+      }
+      { MAPPING STRING("rmas")
+        { LIST
+          moria_foreach_edge_up(&st, &formula->vertex, e) {
+            switch(edge_type_get(e)) {
+              case EDGE_FML_RMA:
+                vertex_path_describe(e->A, builder_writer);
+              default:
+            }
+          }
+        }
+      }
+      { MAPPING STRING("stats")
+        { SET
+          formula_stats_build((struct formula *)formula, false, builder_writer);
+        }
+      }
+    }
+  }
+}
+
+void formula_file_stats_build(fsent * restrict fse, bool reset, bacon_writer * restrict builder_writer)
+{
+  fsent_stats_build(fse, reset, builder_writer);
+}
+
+void formula_file_describe(const fsent * restrict fse, struct bacon_writer * restrict builder_writer)
+{
+  { MAPPING
+    vertex_path_describe(&fse->vertex, builder_writer);
+    { SET
+      fsent_mappings(fse, builder_writer);
+      { MAPPING STRING("formula")
+        vertex_path_describe(&fse->self_fml->vertex, builder_writer);
+      }
+      { MAPPING STRING("stats")
+        { SET
+          formula_file_stats_build((struct fsent *)fse, false, builder_writer);
+        }
+      }
+    }
+  }
+}
+
+size_t formula_path_cat(void * restrict dst, size_t sz, const formula * restrict formula)
+{
+  return zcatf(dst, sz, "//formulas/%.*s", formula->id_len, formula->id);
+}
+
+void formula_identity_say(const struct formula * restrict formula, struct narrator * restrict N)
+{
+  attrs32_say(formula->vertex.attrs, graph_vertex_attrs, N);
+  narrator_sayf(N, " id %.*s path %s", formula->id_len, formula->id, formula->abspath);
+}
+
+void formula_file_identity_say(const struct fsent * restrict fse, struct narrator * restrict N)
+{
+  attrs32_say(fse->vertex.attrs, graph_vertex_attrs, N);
+  narrator_sayf(N, " id %.*s path %s", fse->self_fml->id_len, fse->self_fml->id, fse->self_fml->abspath);
 }

@@ -97,7 +97,6 @@
   ABSPATH       "abspath"
   BASE          "base"
   EXT           "ext"
-  FSROOT        "fsroot"
   NAME          "name"
   RELDIR        "reldir"
   RELPATH       "relpath"
@@ -272,7 +271,6 @@ node-property
   | ABSDIR       { $$ = FSENT_PROPERTY_ABSDIR; }
   | RELPATH      { $$ = FSENT_PROPERTY_RELPATH; }
   | RELDIR       { $$ = FSENT_PROPERTY_RELDIR; }
-  | FSROOT       { $$ = FSENT_PROPERTY_FSROOT; }
   ;
 
 string

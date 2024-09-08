@@ -81,9 +81,7 @@ static void formula_parser_test_entry(xunit_test * _test)
   formula_parser_create(&parser);
 
   // act - initial parse
-  if((r = formula_parser_bacon_parse(parser, test->text, strlen(test->text) + 2, 0, &path, &args, &envs)) != 0) {
-    tracef("%.*s", (int)parser->yyu.error_len, parser->yyu.error_str);
-  }
+  r = formula_parser_bacon_parse(parser, test->text, strlen(test->text) + 2, 0, &path, &args, &envs);
   assert_eq_d(test->expected, r);
   if(r) {
     goto end;
@@ -194,7 +192,8 @@ static xunit_unit xunit = {
                     " traverse : {"
                       " direction : down"
                       " min-distance : 0"
-                      " graph : dirtree"
+                      " graph : fs"
+                      " visit : directory"
                     " }"
                     " traverse : {"
                       " direction : down"
