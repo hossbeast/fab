@@ -71,10 +71,6 @@ const char * scanner_statename(const yyu_parser * restrict parser, int state)
 
 void API yyu_locreset(yyu_location * const lloc, yyu_parser * const xtra, char * const text)
 {
-  if(!xtra->yybuffer) {
-    xtra->yybuffer = text;
-  }
-
   // assign location for current token
   lloc->fname = xtra->fname;
   lloc->f_col = xtra->loc.f_col;
@@ -101,10 +97,6 @@ void API yyu_locwrite(
   , size_t bytes
 )
 {
-  if(!xtra->yybuffer) {
-    xtra->yybuffer = text;
-  }
-
   // update running location track
   xtra->loc.f_lin = xtra->loc.l_lin;
   xtra->loc.f_col = xtra->loc.l_col;

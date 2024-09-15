@@ -18,18 +18,22 @@ typedef struct yyu_vtable {
   void (*yyset_extra)(void * parser, void * scanner);
   int (*yyparse)(void * scanner, void * parser);
   char (*yyget_hold_char)(void * scanner);
+  char *(*yyget_text)(void *scanner);
+  void (*yyreset_start_stack)(void *scanner);
 } yyu_vtable;
 
-#define YYU_VTABLE(name, lex_prefix, tab_prefix)         \
-yyu_vtable name = {                                      \
-    yy_scan_bytes : (void*)lex_prefix ## _yy_scan_bytes  \
-  , yy_scan_buffer : lex_prefix ## _yy_scan_buffer       \
-  , yy_delete_buffer : lex_prefix ## _yy_delete_buffer   \
-  , yylex_destroy : lex_prefix ## _yylex_destroy         \
-  , yylex_init : lex_prefix ## _yylex_init               \
-  , yyset_extra : lex_prefix ## _yyset_extra             \
-  , yyget_hold_char : lex_prefix ## _yyget_hold_char     \
-  , yyparse : tab_prefix ## _yyparse                     \
+#define YYU_VTABLE(name, lex_prefix, tab_prefix)              \
+yyu_vtable name = {                                           \
+    yy_scan_bytes : (void*)lex_prefix ## _yy_scan_bytes       \
+  , yy_scan_buffer : lex_prefix ## _yy_scan_buffer            \
+  , yy_delete_buffer : lex_prefix ## _yy_delete_buffer        \
+  , yylex_destroy : lex_prefix ## _yylex_destroy              \
+  , yylex_init : lex_prefix ## _yylex_init                    \
+  , yyset_extra : lex_prefix ## _yyset_extra                  \
+  , yyget_hold_char : lex_prefix ## _yyget_hold_char          \
+  , yyparse : tab_prefix ## _yyparse                          \
+  , yyget_text : lex_prefix ## _yyget_text                    \
+  , yyreset_start_stack : lex_prefix ## _yyreset_start_stack  \
 }
 
 /* indexes of particular tokens */

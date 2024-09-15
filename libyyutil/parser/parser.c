@@ -223,6 +223,9 @@ int API yyu_parse(
     parser->final_loc = 0;
   }
 
+  // stash yytext
+  parser->yybuffer = parser->vtable->yyget_text(parser->scanner);
+
   // invoke the appropriate parser, raise errors as needed
   r = reduce(parser, attrs);
 
@@ -256,6 +259,7 @@ int API yyu_parse(
   }
 
   parser->vtable->yy_delete_buffer(state, parser->scanner);
+  parser->vtable->yyreset_start_stack(parser->scanner);
 
   return r;
 }
