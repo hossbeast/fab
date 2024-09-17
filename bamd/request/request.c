@@ -188,9 +188,8 @@ void request_init(request * restrict req)
 void request_destroy(request * restrict req)
 {
   command *cmd;
-  llist *T;
 
-  llist_foreach_safe(&req->commands, cmd, lln, T) {
+  while((cmd = llist_shift(&req->commands, typeof(*cmd), lln))) {
     request_command_free(cmd);
   }
 }
@@ -252,5 +251,5 @@ void request_command_free(command *cmd)
   }
 
   command_destroy(cmd);
-  llist_append(&command_freelist, &cmd->lln);
+  llist_push(&command_freelist, &cmd->lln);
 }
