@@ -135,26 +135,6 @@ static void create_vertex(
     root = true;
   }
 
-  // named shadow node lookup
-  if(shadow && g_shadow)
-  {
-    if(memncmp(label, label_len, MMS("module")) == 0)
-    {
-      *rv = &g_shadow_module->vertex;
-    }
-    else if(memncmp(label, label_len, MMS("modules")) == 0)
-    {
-      *rv = &g_shadow_modules->vertex;
-    }
-    else
-    {
-      /* no such node at the top of the shadow hierarchy */
-      RTA;
-    }
-
-    return;
-  }
-
   n = 0;
   if(attrs == VERTEX_BPE) {
     buildplan_entity_alloc(&bpe);
@@ -184,9 +164,12 @@ static void create_vertex(
 
 void resolve_fragment(const char *frag, uint16_t fragl, fsent **entp)
 {
+  /* skip shadow nodes */
+  uint32_t masks[] = { VERTEX_SHADOW_BIT };
+  uint32_t bits[] = { 0 };
   moria_vertex *v;
 
-  moria_graph_linear_search(&fsent_list, frag, fragl, &v);
+  moria_graph_linear_search(&fsent_list, frag, fragl, masks, bits, sizeof(masks) / sizeof(*masks), &v);
   RUNTIME_ASSERT(v);
 
   *entp = containerof(v, fsent, vertex);
@@ -194,6 +177,10 @@ void resolve_fragment(const char *frag, uint16_t fragl, fsent **entp)
 
 void graph_say_lists(narrator * restrict N, llist ** vertex_lists, uint16_t vertex_lists_len, llist ** edge_lists, uint16_t edge_lists_len)
 {
+  /* skip shadow nodes */
+  uint32_t masks[] = { VERTEX_SHADOW_BIT };
+  uint32_t bits[] = { 0 };
+
   moria_graph_say(
       &g_graph
     , vertex_lists
@@ -202,6 +189,9 @@ void graph_say_lists(narrator * restrict N, llist ** vertex_lists, uint16_t vert
     , edge_lists_len
     , graph_vertex_attrs
     , graph_edge_attrs
+    , masks
+    , bits
+    , sizeof(masks) / sizeof(*masks)
     , N
   );
 }
