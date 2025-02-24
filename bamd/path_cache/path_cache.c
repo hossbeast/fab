@@ -13,21 +13,27 @@
 #include "common/hash.h"
 #include "bacon/value.h"
 #include "bacon/location.h"
+#include "bacon/builder.h"
+#include "narrator.h"
+#include "moria.h"
+#include "moria/vertex.h"
 
 #include "path_cache.h"
-#include "configuration.h"
+#include "config.h"
 #include "channel.h"
-#include "system_state.h"
+#include "system.h"
 #include "events.h"
 
 #include "zcat.h"
 #include "macros.h"
+#include "graph.h"
 
 static list * path_dirs;            // effective
 static list * staging_path_dirs[2];
 static hashtable path_search_cache;
 static char env_path_buf[2048];
 char *path_cache_env_path;
+moria_vertex *g_path_cache = (moria_vertex[]) {{ }};
 
 //
 // static
@@ -130,6 +136,7 @@ void path_cache_setup()
   list_createx(&staging_path_dirs[0], 0, path_entry_free);
   list_createx(&staging_path_dirs[1], 0, path_entry_free);
   hashtable_initx(&path_search_cache, 0, path_entry_hash, path_entry_cmp, path_entry_free);
+  moria_vertex_initw(g_path_cache, &g_graph, VERTEX_PATH_CACHE | VERTEX_OK, MMS("(path-cache)"));
 }
 
 void path_cache_cleanup()
@@ -139,18 +146,18 @@ void path_cache_cleanup()
   hashtable_destroy(&path_search_cache);
 }
 
-void path_cache_reconfigure(configuration * restrict cfg, bool dryrun)
+void path_cache_reconfigure(config * restrict cfg, bool dryrun)
 {
   char *pathenv;
   char *s;
   char *e = 0;
-  configuration_formula_path_dirs_entry *ent;
+  config_formula_path_dirs_entry *ent;
   list * staging;
   int fd = -1;
   char T;
   path_cache_entry *pe = 0;
-  channel *chan;
-  bamipc_message *msg;
+  events_context ectx;
+  event_bacon *msg;
 
   if(dryrun)
   {
@@ -169,7 +176,7 @@ void path_cache_reconfigure(configuration * restrict cfg, bool dryrun)
 
       if(fd == -1)
       {
-        msg = system_error_event(&chan);
+        msg = system_error_event(&ectx);
         msg->code = ENOENT;
         msg->size = 0;
         msg->size += zcatf(msg->text + msg->size, sizeof(msg->text) - msg->size, "path %.*s", (int)ent->len, ent->s);
@@ -179,7 +186,7 @@ void path_cache_reconfigure(configuration * restrict cfg, bool dryrun)
           , ent->v->loc->l_lin + 1
           , ent->v->loc->l_col + 1
         );
-        events_publish(chan, msg);
+        events_publish(&ectx);
 
         return;
       }
@@ -205,10 +212,10 @@ void path_cache_reconfigure(configuration * restrict cfg, bool dryrun)
 
         if(fd == -1)
         {
-          msg = system_error_event(&chan);
+          msg = system_error_event(&ectx);
           msg->code = ENOENT;
           msg->size = zcatf(msg->text + msg->size, sizeof(msg->text) - msg->size, "path %.*s", (int)(e - s), s);
-          events_publish(chan, msg);
+          events_publish(&ectx);
           return;
         }
 
@@ -225,7 +232,7 @@ void path_cache_reconfigure(configuration * restrict cfg, bool dryrun)
       }
     }
   }
-  else // if(cfg->formula.path.changed)
+  else
   {
     if(path_dirs)
       list_recycle(path_dirs);
@@ -276,6 +283,9 @@ void path_cache_search(const path_cache_entry ** restrict pep, const char * rest
       break;
     }
   }
+  if(x == path_dirs->size) {
+    pe = 0;
+  }
 
   /* cache the result, positive or negative */
   path_entry_alloc(&pe, file, file_len, fd, pe);
@@ -295,4 +305,56 @@ end:
 void path_cache_reset()
 {
   hashtable_recycle(&path_search_cache);
+}
+
+void path_cache_stats_build(bool reset, bacon_writer * restrict builder_writer)
+{
+
+}
+
+void path_cache_describe(bacon_writer * restrict builder_writer)
+{
+  path_cache_entry *pe;
+  int x;
+
+  { SET
+    { MAPPING
+      STRING("path-cache-env-path")
+      STRING(path_cache_env_path)
+    }
+    for(x = 0; x < path_search_cache.table_size; x++) {
+      if(!(pe = hashtable_table_entry(&path_search_cache, x))) {
+        continue;
+      }
+      { SET
+        { MAPPING
+          STRING("fd")
+          UINT(pe->fd)
+        }
+        {
+          MAPPING
+          STRING("path")
+          if(pe->dir) {
+            LOADF("%.*s//%.*s", (int)pe->dir->len, pe->dir->s, (int)pe->len, pe->s);
+          } else {
+            BYTES(pe->s, pe->len)
+          }
+        }
+      }
+    }
+  }
+}
+
+void path_cache_show(void)
+{
+  bacon_writer writer, *builder_writer;
+
+  bacon_writer_init(&writer);
+  builder_writer = bacon_writer_open(&writer, g_narrator_stdout);
+
+  path_cache_describe(builder_writer);
+
+  bacon_writer_close(&writer);
+  bacon_writer_destroy(&writer);
+  printf("\n");
 }

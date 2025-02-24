@@ -5,7 +5,9 @@
 
 #include "types.h"
 
-struct configuration;
+struct config;
+struct bacon_writer;
+struct moria_vertex;
 
 extern char *path_cache_env_path;   // $PATH, if specified in config
 
@@ -17,16 +19,18 @@ typedef struct path_cache_entry {
   char s[];                         // path fragment, or name
 } path_cache_entry;
 
+extern struct moria_vertex *g_path_cache;
+
 void path_cache_setup(void);
 void path_cache_cleanup(void);
 
 /*
- * reapply path cache configuration
+ * reapply path cache config
  *
  * config - effective config tree
  * dry    - whether to perform a dry-run
  */
-void path_cache_reconfigure(struct configuration * restrict cfg, bool dryrun)
+void path_cache_reconfigure(struct config * restrict cfg, bool dryrun)
   __attribute__((nonnull));
 
 /*
@@ -39,3 +43,10 @@ void path_cache_search(const path_cache_entry ** restrict entry, const char * re
  * reset the path cache
  */
 void path_cache_reset(void);
+
+void path_cache_show(void);
+void path_cache_describe(struct bacon_writer * restrict writer)
+  __attribute__((nonnull));
+
+void path_cache_stats_build(bool reset, struct bacon_writer * restrict)
+  __attribute__((nonnull));
