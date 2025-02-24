@@ -15,18 +15,23 @@
 #include "rule_system.h"
 #include "stats.h"
 #include "walker.h"
-#include "system_state.h"
+#include "system.h"
 #include "filesystem.h"
 #include "meta_edge.h"
 #include "buildplan_entity.h"
-#include "fsent_index.h"
-#include "var.h"
+#include "fsindex.h"
+#include "varset.h"
 #include "plugin_system.h"
 
 #include "atomics.h"
 
+#include "path_cache.h"
+
 uint16_t reconciliation_epoch;
 
+/*
+ * This function is always invoked on the run thread
+ */
 void reconcile()
 {
   graph_invalidation_context invalidation = { };
@@ -42,7 +47,7 @@ void reconcile()
   do {
     /* walk filesystem trees (this can find config files in the ancestry of the project root)
      * it can also invalidate config files */
-    system_state_change(BAM_SYSTEM_STATE_WALKER_RECONCILE);
+    system_state_change(SYSTEM_STATE_WALKER_RECONCILE);
     walker_system_reconcile(&invalidation);
     if(system_error) {
       goto end;
@@ -50,61 +55,74 @@ void reconcile()
 
     /* reload all config files (this can change filesystem invalidation settings)
      * it can also change walker include/exclude settings */
-    system_state_change(BAM_SYSTEM_STATE_CONFIG_SYSTEM_RECONCILE);
+    system_state_change(SYSTEM_STATE_CONFIG_SYSTEM_RECONCILE);
     config_system_reconcile(&work, &invalidation);
     if(system_error) {
       goto end;
     }
   } while(work);
 
-  /* prune filesystem trees no longer referenced */
-  /* refresh fst -> fse assignments */
-  /* refresh fsent_index */
-  /* create directories */
-  system_state_change(BAM_SYSTEM_STATE_FILESYSTEM_RECONCILE);
-  fsent_reconcile(&invalidation);
+  /* prune no-longer-mounted filesystem trees */
+  /* refresh fse -> fst mappings */
+  /* refresh the index */
+  /* refresh inotify watches */
+  system_state_change(SYSTEM_STATE_FILESYSTEM_RECONCILE);
+  fsent_fstree_reconcile(&invalidation);
+  if(system_error) {
+    goto end;
+  }
+
+  /* create directories
+   * resolve symlinks */
+  system_state_change(SYSTEM_STATE_FILESYSTEM_RECONCILE);
   filesystem_reconcile();
   if(system_error) {
     goto end;
   }
 
   /* rebuild modules */
-  system_state_change(BAM_SYSTEM_STATE_MODULE_SYSTEM_RECONCILE);
+  system_state_change(SYSTEM_STATE_MODULE_SYSTEM_RECONCILE);
   module_system_reconcile(&rule_ctx);
   if(system_error) {
     goto end;
   }
 
+  /* refresh fse -> mod assignments */
+  /* no errors */
+  system_state_change(SYSTEM_STATE_FILESYSTEM_RECONCILE);
+  fsent_modules_reconcile();
+
   /* cleanup un-referenced var files */
-  system_state_change(BAM_SYSTEM_STATE_VAR_SYSTEM_RECONCILE);
-  var_system_reconcile(&invalidation);
+  system_state_change(SYSTEM_STATE_VAR_SYSTEM_RECONCILE);
+  varset_system_reconcile(&invalidation);
   if(system_error) {
     goto end;
   }
 
   /* run rules to quiescence */
-  system_state_change(BAM_SYSTEM_STATE_RULE_SYSTEM_RECONCILE);
+  system_state_change(SYSTEM_STATE_RULE_SYSTEM_RECONCILE);
   rule_system_reconcile(&rule_ctx);
   if(system_error) {
     goto end;
   }
 
   /* check for bpe conflicts */
-  system_state_change(BAM_SYSTEM_STATE_BPE_SYSTEM_RECONCILE);
+  system_state_change(SYSTEM_STATE_BPE_SYSTEM_RECONCILE);
   bpe_system_reconcile(&invalidation);
   if(system_error) {
     goto end;
   }
 
   /* parse formula files */
-  system_state_change(BAM_SYSTEM_STATE_FORMULA_SYSTEM_RECONCILE);
+  system_state_change(SYSTEM_STATE_FORMULA_SYSTEM_RECONCILE);
   formula_system_reconcile(&invalidation);
   if(system_error) {
     goto end;
   }
 
-  /* create directories */
-  system_state_change(BAM_SYSTEM_STATE_FILESYSTEM_RECONCILE);
+  /* create directories
+   * resolve symlinks */
+  system_state_change(SYSTEM_STATE_FILESYSTEM_RECONCILE);
   filesystem_reconcile();
   if(system_error) {
     goto end;
@@ -118,6 +136,11 @@ void reconcile()
   if(system_error) {
     goto end;
   }
+
+  /* discard invalidations - no errors possible here */
+  system_state_change(SYSTEM_STATE_FSENT_RECONCILE);
+  fsent_freshen_reconcile();
+  system_state_change(SYSTEM_STATE_OK);
 
 end:
   graph_invalidation_end(&invalidation);
