@@ -13,7 +13,7 @@ struct llist;
 void pattern_class_mk(
     union pattern_segment ** restrict rv
   , const struct yyu_location * restrict loc
-  , struct llist * restrict segments // struct pattern_segments * restrict segments
+  , struct llist * restrict segments
   , bool invert
 )
   __attribute__((nonnull));

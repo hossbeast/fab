@@ -132,10 +132,6 @@ static void graph_test_entry(xunit_test * _test)
   array_create(&visitations, sizeof(visit));
 
   // setup the test graph
-//  uint32_t identity = 0;
-//  if(test->operations)
-//    identity = 1;
-
   moria_graph_init(&g);
   moria_parser_create(&p, &g, 0, 0, moria_operations_dispatch, 0, 0);
   if(test->graph) {

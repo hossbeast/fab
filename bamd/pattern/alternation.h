@@ -13,7 +13,7 @@ struct llist;
 void pattern_alternation_mk(
     union pattern_segment ** restrict rv
   , const struct yyu_location * restrict loc
-  , struct llist * restrict list // struct pattern_segments * restrict segments
+  , struct llist * restrict list
   , bool epsilon
 )
   __attribute__((nonnull));

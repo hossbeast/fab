@@ -134,7 +134,6 @@ void pattern_segment_render(pattern_render_context * restrict ctx)
   pattern_section_render(ctx);
 
 end:
-  //segment_traversal->cursor = segchain;
   segment_traversal->segment = segment;
   segment_traversal->end = end;
 }

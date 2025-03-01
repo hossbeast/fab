@@ -13,7 +13,7 @@ struct llist;
 void pattern_group_mk(
     union pattern_segment ** restrict rv
   , const struct yyu_location * restrict loc
-  , struct llist * restrict segments // struct pattern_segments * restrict chain
+  , struct llist * restrict segments
   , const char * restrict name
   , uint8_t name_len
   , uint16_t group_number

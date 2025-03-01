@@ -21,7 +21,7 @@ void pattern_section_mk(
   , enum pattern_nodeset nodeset
   , enum pattern_graph graph
   , enum pattern_axis axis
-  , struct llist * restrict qualifiers // struct pattern_segments * restrict qualifiers
+  , struct llist * restrict qualifiers
   , bool has_type_qualifiers
 )
   __attribute__((nonnull(1, 2)));
@@ -32,7 +32,7 @@ void pattern_section_say(const struct pattern_section * section, bool first, str
 void pattern_section_describe(const struct pattern_section * section, struct bacon_writer * restrict writer)
   __attribute__((nonnull));
 
-int pattern_sections_cmp(const struct llist *A, const struct llist *B); // const struct pattern_section * A, const struct pattern_section * B);
+int pattern_sections_cmp(const struct llist *A, const struct llist *B);
 int pattern_section_cmp(const struct pattern_section *A, const struct pattern_section *B);
 
 size_t pattern_section_cat(

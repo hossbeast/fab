@@ -152,7 +152,7 @@ bool module_reimport(module * restrict mod, struct rule_run_context * restrict r
 void module_prune(module * restrict mod, struct graph_invalidation_context * restrict invalidation)
   __attribute__((nonnull));
 
-void module_rebuild(module * restrict mod, struct rule_run_context * restrict rule_run_ctx)// struct graph_invalidation_context * restrict invalidation)
+void module_rebuild(module * restrict mod, struct rule_run_context * restrict rule_run_ctx)
   __attribute__((nonnull));
 
 void module_bootstrap(

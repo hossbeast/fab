@@ -79,7 +79,6 @@ static void __attribute__((nonnull(1, 4, 6, 8, 10))) walk(
         if((flags & FTWAT_FOLLOW) != 0)
         {
           /* follow non-dangling symlinks */
-          //r = uxfstatats(dirfd, 0, &stb, path);
           r = fstatat(dirfd, path, &stb, 0);
           if(r == 0) {
             type = (stb.st_mode & S_IFMT) >> 12;

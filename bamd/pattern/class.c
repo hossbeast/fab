@@ -245,7 +245,7 @@ static pattern_segment_vtable vtable = PATTERN_SEGMENT_VTABLE(class, PATTERN_CLA
 void pattern_class_mk(
     pattern_segment ** restrict rv
   , const yyu_location * restrict loc
-  , llist * restrict segments // pattern_segments * restrict segments_head
+  , llist * restrict segments
   , bool invert
 )
 {
@@ -255,7 +255,7 @@ void pattern_class_mk(
   pattern_segment_init(n, &vtable, loc);
 
   llist_init(&n->class.segments);
-  llist_splice_head(&n->class.segments, segments); // n->class.segments_head = segments_head;
+  llist_splice_head(&n->class.segments, segments);
   n->class.invert = invert;
 
   *rv = n;

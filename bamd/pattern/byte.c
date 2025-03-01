@@ -44,9 +44,9 @@ static void byte_render(const pattern_segment * restrict fn, pattern_render_cont
 static void byte_search(const pattern_segment * restrict segment, pattern_search_context * restrict ctx)
 {
   const pattern_byte * byte = &segment->byte;
-  const char * restrict name; // = ctx->node->name.name;
-  uint16_t namel; // = ctx->node->name.namel;
-  uint16_t name_offset; // = ctx->traversal->offset;
+  const char * restrict name;
+  uint16_t namel;
+  uint16_t name_offset;
 
   name = ctx->node->name.name;
   namel = ctx->node->name.namel;

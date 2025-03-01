@@ -9,7 +9,7 @@
 #include "dispatch.h"
 #include "operations.h"
 
-static moria_vertex *identifier_lookup(moria_parser * restrict parser, llist * restrict first, llist * restrict end) // identifier * restrict id)
+static moria_vertex *identifier_lookup(moria_parser * restrict parser, llist * restrict first, llist * restrict end)
 {
   moria_vertex *v;
   moria_vertex *p;

@@ -38,7 +38,6 @@
   yyu_lval yyu;
 
   formula_value * value;
-  //rbtree * set;
 
   // enums
   fsent_property node_property;
