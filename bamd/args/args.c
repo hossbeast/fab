@@ -16,6 +16,8 @@
 #include "filesystem.h"
 #include "common/attrs.h"
 #include "git-state.h"
+#include "times.h"
+#include "fstree.h"
 
 struct g_args_t g_args;
 char *g_argv_base_dir_space;
@@ -70,20 +72,15 @@ static void args_parse(int argc, char ** restrict argv)
       { "help"     , no_argument , &help, 1 }
     , { "version"  , no_argument , &version, 1 }
 #if CONFIG_DEVEL
-    , { "system-config-path"            , required_argument, 0, 0 }
-    , { "user-config-path"              , required_argument, 0, 0 }
-    , { "default-filesystem-invalidate" , required_argument, 0, 0 }
-    , { "sweeper-period-nsec"           , required_argument, 0, 0 }
+    , { "system-config-path"              , required_argument, 0, 0 }
+    , { "user-config-path"                , required_argument, 0, 0 }
+    , { "default-filesystem-invalidation" , required_argument, 0, 0 }
+    , { "sweeper-period-nsec"             , required_argument, 0, 0 }
 #endif
     , { }
   };
 
   const char *switches = "hV";
-
-  g_args.default_filesystem_invalidate = FILESYSTEM_INVALIDATE_DEFAULT;
-  g_args.default_filesystem_indexed = FILESYSTEM_INDEXED_DEFAULT;
-  ixstrdup(&g_args.system_config_path, SYSTEM_CONFIG_PATH);
-  ixstrdup(&g_args.user_config_path, USER_CONFIG_PATH);
 
   // disable getopt error messages
   opterr = 0;
@@ -97,9 +94,9 @@ static void args_parse(int argc, char ** restrict argv)
     } else if(x == 0 && strcmp(longopts[longindex].name, "user-config-path") == 0) {
       ifree(&g_args.user_config_path);
       ixstrdup(&g_args.user_config_path, optarg);
-    } else if(x == 0 && strcmp(longopts[longindex].name, "default-filesystem-invalidate") == 0) {
-      if((g_args.default_filesystem_invalidate = attrs16_value_byname(invalidate_attrs, optarg)) == 0) {
-        fprintf(stderr, "invalid filesystem-invalidate %s\n", optarg);
+    } else if(x == 0 && strcmp(longopts[longindex].name, "default-filesystem-invalidation") == 0) {
+      if((g_args.default_filesystem_invalidation = attrs16_value_byname(invalidation_attrs, optarg)) == 0) {
+        fprintf(stderr, "invalid filesystem-invalidation %s\n", optarg);
         exit(1);
       }
     } else if(x == 0 && strcmp(longopts[longindex].name, "sweeper-period-nsec") == 0) {
@@ -158,10 +155,20 @@ static void args_parse(int argc, char ** restrict argv)
   free(pwd);
 }
 
+void args_init()
+{
+  g_args.default_filesystem_invalidation = FILESYSTEM_INVALIDATION_DEFAULT;
+  g_args.default_filesystem_index = FILESYSTEM_INDEX_DEFAULT;
+  ixstrdup(&g_args.system_config_path, SYSTEM_CONFIG_PATH);
+  ixstrdup(&g_args.user_config_path, USER_CONFIG_PATH);
+  g_args.sweeper_period_nsec = MSEC_AS_NSEC(250);
+}
+
 void args_setup(int argc, char ** argv)
 {
   char space[64];
 
+  args_init();
   args_parse(argc, argv);
 
   snprintf(space, sizeof(space), "%016"PRIx64, g_args.hash);

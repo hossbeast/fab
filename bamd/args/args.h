@@ -9,10 +9,10 @@ extern struct g_args_t {
   /* devel only */
   char *system_config_path;
   char *user_config_path;
-  uint16_t default_filesystem_invalidate;
-  bool default_filesystem_mkdirs;
-  bool default_filesystem_readlinks;
-  bool default_filesystem_indexed;
+  uint16_t default_filesystem_invalidation;
+  bool default_filesystem_mkdir;
+  bool default_filesystem_readlink;
+  bool default_filesystem_index;
   uint64_t sweeper_period_nsec;
 
   uint64_t hash;
@@ -21,5 +21,6 @@ extern struct g_args_t {
 
 extern char *g_argv_base_dir_space;
 
+void args_init(void);
 void args_setup(int argc, char ** argv);
 void args_teardown(void);
