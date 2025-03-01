@@ -5,18 +5,31 @@
 #include <stdio.h>
 #include <inttypes.h>
 
+#include "common/attrs.h"
 #include "xlinux/xstdlib.h"
 #include "xlinux/xstring.h"
 #include "xlinux/xfcntl.h"
 #include "xlinux/xunistd.h"
+#include "bacon/builder.h"
+#include "narrator/fixed.h"
+#include "narrator/units.h"
+#include "moria/vertex.h"
 
 #include "args.h"
 #include "params.h"
+#include "fsent.h"
+#include "timeout_thread.h"
+#include "system.h"
+#include "run_thread.h"
+#include "system.h"
 
 #include "macros.h"
+#include "times.h"
 #include "zcat.h"
 
 struct g_params g_params;
+moria_vertex *g_start_params = (moria_vertex[]) {{ }};
+moria_vertex *g_run_params = (moria_vertex[]) {{ }};
 
 //
 // public
@@ -29,6 +42,7 @@ void params_setup()
   const char *ipc;
 
   g_params.pid = getpid();
+  snprintf(g_params.pid_str, sizeof(g_params.pid_str), "%ld", (unsigned long)g_params.pid);
 
   // get available processors
   if((g_params.procs = sysconf(_SC_NPROCESSORS_ONLN)) == -1)

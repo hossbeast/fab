@@ -6,6 +6,8 @@
 #include <sys/types.h>
 #include <stdint.h>
 
+#include "types.h"
+
 /* non-configurable execution parameters */
 extern struct g_params {
   pid_t           pid;              // process id of this process
@@ -18,6 +20,7 @@ extern struct g_params {
   int             thread_count;     // number of extant threads, other than the monitor/main thread
 
   struct timespec starttime;
+  char            pid_str[32];
 
   long            procs;            // detected number of processors (0 means unknown)
 
