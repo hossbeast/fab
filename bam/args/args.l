@@ -52,18 +52,15 @@
 
 
 <*>[\x00-\x1F\x7F-\xFF]                                 {
-                                                          POPSTATES;
                                                           LOCWRITE;
                                                           yyu_errorf(yyuparser, yylloc, "invalid byte 0x%02hhx", yytext[0]);
                                                           return 0;
                                                         }
 <*>[\x20-\x7E]                                          {
-                                                          POPSTATES;
                                                           LOCWRITE;
                                                           yyu_errorf(yyuparser, yylloc, "character '%1$c'(0x%1$02hhx)", yytext[0]);
                                                           return 0;
                                                         }
 <<EOF>>                                                 {
-                                                          POPSTATES;
                                                           return 0;
                                                         }
