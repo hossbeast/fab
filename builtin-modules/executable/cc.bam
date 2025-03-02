@@ -10,7 +10,7 @@ $SIG{__WARN__} = sub { die @_ };
 
 use POSIX;
 
-die "CC not found" unless $ENV{CC};
+die "cc not found" unless $ENV{cc};
 
 my @libs;
 my @objs;
@@ -24,7 +24,7 @@ for my $obj (@ARGV) {
 
 # exec into the compiler
 my @cmd = (
-    $ENV{CC}
+    $ENV{cc}
   , split(/ /, $ENV{CFLAGS})
   , (map { "-I$_" } split(/ /, $ENV{includes}))
   , "-o", $ENV{bm_target0}
@@ -36,29 +36,35 @@ my @cmd = (
   , split(/ /, $ENV{LFLAGS1} || "")
 );
 
-print(join(" ", @cmd));
+my $s = join(" ", @cmd) . "\n";
+POSIX::write(1001, $s, length($s));
 exec { $cmd[0] } @cmd
 
 __DATA__
 
 envs : {
-  CC : {
-    path-search : cc
+  cc : {
+    lookup : {
+      pattern : bin/cc+(.@)
+      namespace : base-devel
+    }
   }
 
-  includes : [
-    select : [
-      lookup : {
-        path : //module/include
-      }
-      traverse : {
-        direction : down
-        min-distance : 1
-        max-distance : 1
-      }
+  includes : {
+    sequence : [
+      select : [
+        path : {
+          pattern : //module/include
+        }
+        traverse : {
+          direction : down
+          min-distance : 1
+          max-distance : 1
+        }
+      ]
+      property : relpath
     ]
-    property : relpath
-  ]
+  }
 }
 
 args : [

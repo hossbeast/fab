@@ -33,7 +33,7 @@ __DATA__
 envs : {
   ln : {
     lookup : {
-      pattern : bin/ln+(.)
+      pattern : bin/ln+(.@)
       namespace : binutils
     }
   }

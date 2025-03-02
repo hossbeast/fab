@@ -11,11 +11,11 @@ $SIG{__WARN__} = sub { die @_ };
 use File::Basename;
 use POSIX;
 
-die "CC not found" unless $ENV{CC};
+die "cc not found" unless $ENV{cc};
 
 # exec into the compiler
 my @cmd = (
-    $ENV{CC}
+    $ENV{cc}
   , split(/ /, $ENV{CFLAGS})
   , (map { "-I$_" } @ARGV)    # other arguments are include paths
   , $ENV{bm_source0}
@@ -23,20 +23,25 @@ my @cmd = (
   , "-o", $ENV{bm_target0}
 );
 
+my $s = join(" ", @cmd)) . "\n";
+POSIX::write(1001, $s, length($s));
 exec { $cmd[0] } @cmd
 
 __DATA__
 
 envs : {
-  CC : {
-    path-search : cc
+  cc : {
+    lookup : {
+      pattern : bin/cc+(.@)
+      namespace : base-devel
+    }
   }
 }
 args : [
   sequence : [
     select : [
-      lookup : {
-        path : //module/include
+      path : {
+        pattern : //module/include
       }
       traverse : {
         direction : down

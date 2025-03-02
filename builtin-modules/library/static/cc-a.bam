@@ -9,6 +9,7 @@ use warnings;
 $SIG{__WARN__} = sub { die @_ };
 
 use File::Basename;
+use POSIX;
 
 die "ar not found" unless $ENV{ar};
 
@@ -28,42 +29,50 @@ my @cmd = (
 # note that ar actually creates a tempfile then copies from there to the target file
 unlink($ENV{bm_target0});
 
-print(join(" ", @cmd), "\n");
-exec { $cmd[0] } @cmd
+my $s = join(" ", @cmd) . "\n";
+POSIX::write(1001, $s, length($s));
+exec { $cmd[0] } @cmd;
 
 __DATA__
 
 envs : {
   ar : {
-    path-search : ar
+    lookup : {
+      pattern : bin/ar+(.@)
+      namespace : binutils
+    }
   }
 
   # object files for the library
-  objects : [
-    select : [
-      target
-      traverse : {
-        direction : down
-        graph : depends
-        max-distance : 2
-        min-distance : 2
-      }
+  objects : {
+    sequence : [
+      select : [
+        target
+        traverse : {
+          direction : down
+          graph : depends
+          max-distance : 2
+          min-distance : 2
+        }
+      ]
+      property : relpath
     ]
-    property : relpath
-  ]
+  }
 
-  includes : [
-    # include directories matched by the include rule
-    select : [
-      lookup : {
-        path : //module/include
-      }
-      traverse : {
-        direction : down
-        min-distance : 1
-        max-distance : 1
-      }
+  includes : {
+    sequence : [
+      # include directories matched by the include rule
+      select : [
+        path : {
+          pattern : //module/include
+        }
+        traverse : {
+          direction : down
+          min-distance : 1
+          max-distance : 1
+        }
+      ]
+      property : relpath
     ]
-    property : relpath
-  ]
+  }
 }

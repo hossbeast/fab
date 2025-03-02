@@ -110,7 +110,10 @@ __DATA__
 
 envs : {
   git : {
-    path-search : git
+    lookup : {
+      pattern : bin/git+(.@)
+      namespace : base-devel
+    }
   }
 }
 

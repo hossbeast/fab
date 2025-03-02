@@ -8,6 +8,8 @@ use strict;
 use warnings;
 $SIG{__WARN__} = sub { die @_ };
 
+use POSIX;
+
 die "bison not found" unless $ENV{bison};
 
 my $cfile = substr($ENV{bm_target0}, -2) eq ".c" ? $ENV{bm_target0} : $ENV{bm_target1};
@@ -19,12 +21,17 @@ my @cmd = (
   , $ENV{bm_source0}
 );
 
+my $s = join(" ", @cmd) . "\n";
+POSIX::write(1001, $s, length($s));
 exec { $cmd[0] } @cmd;
 
 __DATA__
 
 envs : {
   bison : {
-    path-search : bison
+    lookup : {
+      pattern : bin/bison+(.@)
+      namespace : base-devel
+    }
   }
 }

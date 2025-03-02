@@ -9,8 +9,9 @@ use warnings;
 $SIG{__WARN__} = sub { die @_ };
 
 use File::Basename;
+use POSIX;
 
-die "CC not found" unless $ENV{CC};
+die "cc not found" unless $ENV{cc};
 
 my $name = basename($ENV{bm_target});
 my $dot = index($name, ".");
@@ -18,7 +19,7 @@ my $soname = substr($name, 0, $dot) . ".so";
 my $lnk = $ENV{bm_target} . ".lnk";
 
 my @cmd = (
-    $ENV{CC}
+    $ENV{cc}
   , split(/ /, $ENV{CFLAGS})
   , "-shared"
   # linker script
@@ -31,41 +32,50 @@ my @cmd = (
   , grep { substr($_, -2) eq ".o" } split(/ /, $ENV{objects})
 );
 
-exec { $cmd[0] } @cmd
+my $s = join(" ", @cmd) . "\n";
+POSIX::write(1001, $s, length($s));
+exec { $cmd[0] } @cmd;
 
 __DATA__
 
 envs : {
-  CC : {
-    path-search : cc
+  cc : {
+    lookup : {
+      pattern : bin/cc+(.@)
+      namespace : base-devel
+    }
   }
 
   # object files for the library
   objects : [
-    select : [
-      target
-      traverse : {
-        direction : down
-        graph : depends
-        max-distance : 1
-        min-distance : 1
-      }
+    sequence : [
+      select : [
+        target
+        traverse : {
+          direction : down
+          graph : depends
+          max-distance : 1
+          min-distance : 1
+        }
+      ]
     ]
     property : relpath
   ]
 
   includes : [
-    # include directories matched by the include rule
-    select : [
-      lookup : {
-        path : //module/include
-      }
-      traverse : {
-        direction : down
-        min-distance : 1
-        max-distance : 1
-      }
+    sequence : [
+      # include directories matched by the include rule
+      select : [
+        path : {
+          pattern : //module/include
+        }
+        traverse : {
+          direction : down
+          min-distance : 1
+          max-distance : 1
+        }
+      ]
+      property : relpath
     ]
-    property : relpath
   ]
 }
