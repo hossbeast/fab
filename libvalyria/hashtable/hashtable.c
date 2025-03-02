@@ -298,21 +298,23 @@ void hashtable_ifree(hashtable ** restrict htp)
   *htp = 0;
 }
 
-bool hashtable_search(const hashtable * restrict ht, hashtable_search_context * restrict ctx)
+bool hashtable_search(const hashtable *restrict ht, hashtable_search_context *restrict ctx)
 {
-  if(ctx->hash_fn == 0) {
-    ctx->hash_fn = ht->hash_fn;
+  if(ctx->hash == 0) {
+    if(ctx->hash_fn == 0) {
+      ctx->hash_fn = ht->hash_fn;
+    }
+    ctx->hash = ctx->hash_fn(0, ctx->entry);
   }
   if(ctx->cmp_fn == 0) {
     ctx->cmp_fn = ht->cmp_fn;
   }
 
-  ctx->hash = ctx->hash_fn(0, ctx->entry);
   ctx->probe_result = probe(ht, ctx);
   return ctx->probe_result == 0;
 }
 
-void * hashtable_fetch(const hashtable * restrict ht, hashtable_search_context * restrict ctx)
+void *hashtable_fetch(const hashtable *restrict ht, hashtable_search_context *restrict ctx)
 {
   hashtable_bucket *b;
 
@@ -320,14 +322,14 @@ void * hashtable_fetch(const hashtable * restrict ht, hashtable_search_context *
   return b->p;
 }
 
-void * hashtable_set(hashtable * restrict ht, hashtable_search_context * restrict ctx)
+void *hashtable_set(hashtable *restrict ht, hashtable_search_context *restrict ctx)
 {
   hashtable_bucket *b;
 
   if(ctx->probe_result == -1 && ht->dirty_size == ht->overflow_size)
   {
     rehash(ht);
-    probe(ht, ctx);//ctx->hash, ctx->entry, &ctx->index);
+    probe(ht, ctx);
   }
 
   b = &ht->tab[ctx->index & ht->lm];
@@ -386,7 +388,7 @@ void * hashtable_get(const hashtable * restrict ht, const void * entry)
   return 0;
 }
 
-void * hashtable_put(hashtable * restrict ht, void * entry)
+void *hashtable_put(hashtable * restrict ht, void * entry)
 {
   hashtable_search_context ctx;
 

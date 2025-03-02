@@ -3,7 +3,7 @@
 
 #include "llist.h"
 
-void llist_sort(llist * restrict list, int (*cmp)(llist * restrict A, llist * restrict B))
+void llist_sort(llist * restrict list, int (*cmp)(void *ctx, llist * restrict A, llist * restrict B), void *ctx)
 {
   llist *p;
   llist *q;
@@ -56,7 +56,7 @@ void llist_sort(llist * restrict list, int (*cmp)(llist * restrict A, llist * re
           e = p;
           p = p->next;
           plen--;
-        } else if(cmp(p, q) <= 0) {
+        } else if(cmp(ctx, p, q) <= 0) {
           e = p;
           p = p->next;
           plen--;

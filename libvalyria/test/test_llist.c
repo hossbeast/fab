@@ -314,7 +314,7 @@ static __attribute__((unused)) void test_safe()
   };
 }
 
-static int item_cmp(llist *a, llist *b)
+static int item_cmp(void *ctx, llist *a, llist *b)
 {
   const item *A = containerof(a, item, lln);
   const item *B = containerof(b, item, lln);
@@ -334,7 +334,7 @@ static __attribute__((unused)) void test_sort_ordered_even_small()
   llist_append(&list, &i1.lln);
   llist_append(&list, &i2.lln);
 
-  llist_sort(&list, item_cmp);
+  llist_sort(&list, item_cmp, 0);
 
   assert_eq_zu(2, llist_count(&list));
 
@@ -373,7 +373,7 @@ static void __attribute__((unused)) test_sort_ordered_even_large()
   llist_append(&list, &i7.lln);
   llist_append(&list, &i8.lln);
 
-  llist_sort(&list, item_cmp);
+  llist_sort(&list, item_cmp, 0);
 
   assert_eq_zu(8, llist_count(&list));
 
@@ -402,7 +402,7 @@ static void __attribute__((unused)) test_sort_ordered_odd_small()
   llist_append(&list, &i2.lln);
   llist_append(&list, &i3.lln);
 
-  llist_sort(&list, item_cmp);
+  llist_sort(&list, item_cmp, 0);
 
   assert_eq_zu(3, llist_count(&list));
 
@@ -443,7 +443,7 @@ static __attribute__((unused)) void test_sort_ordered_odd_large()
   llist_append(&list, &i8.lln);
   llist_append(&list, &i9.lln);
 
-  llist_sort(&list, item_cmp);
+  llist_sort(&list, item_cmp, 0);
 
   assert_eq_zu(9, llist_count(&list));
 
@@ -470,7 +470,7 @@ static __attribute__((unused)) void test_sort_unordered_even_small()
   llist_append(&list, &i2.lln);
   llist_append(&list, &i1.lln);
 
-  llist_sort(&list, item_cmp);
+  llist_sort(&list, item_cmp, 0);
 
   assert_eq_zu(2, llist_count(&list));
 
@@ -509,7 +509,7 @@ static __attribute__((unused)) void test_sort_unordered_even_large()
   llist_append(&list, &i1.lln);
   llist_append(&list, &i2.lln);
 
-  llist_sort(&list, item_cmp);
+  llist_sort(&list, item_cmp, 0);
 
   assert_eq_zu(8, llist_count(&list));
 
@@ -538,7 +538,7 @@ static void __attribute__((unused)) test_sort_unordered_odd_small()
   llist_append(&list, &i1.lln);
   llist_append(&list, &i2.lln);
 
-  llist_sort(&list, item_cmp);
+  llist_sort(&list, item_cmp, 0);
 
   assert_eq_zu(3, llist_count(&list));
 
@@ -579,7 +579,7 @@ static __attribute__((unused)) void test_sort_unordered_odd_large()
   llist_append(&list, &i7.lln);
   llist_append(&list, &i8.lln);
 
-  llist_sort(&list, item_cmp);
+  llist_sort(&list, item_cmp, 0);
 
   assert_eq_zu(9, llist_count(&list));
 

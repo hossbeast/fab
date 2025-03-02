@@ -21,9 +21,9 @@ enum rbcolor {
 
 typedef struct rbnode {
   enum rbcolor color;
-  struct rbnode * parent;
-  struct rbnode * left;
-  struct rbnode * right;
+  struct rbnode *parent;
+  struct rbnode *left;
+  struct rbnode *right;
   union {
     uint64_t u64;
     void *p;
@@ -41,7 +41,7 @@ typedef struct rbnode {
 extern rbnode rbleaf;
 
 typedef struct rbtree {
-  struct rbnode * root;
+  struct rbnode *root;
 
 #if RBTREE_SIZE
   size_t size;            // number of active nodes
@@ -51,6 +51,7 @@ typedef struct rbtree {
 #endif
 } rbtree;
 
+#define RBTREE_INITIALIZER (rbtree) { .root = &rbleaf }
 
 /* initialize an rbtree */
 void rbtree_init(rbtree * restrict rb)
@@ -85,7 +86,7 @@ size_t rbtree_count(const rbtree * restrict rb)
  *
  * if the node already exists in the tree, returns the existing node, NULL otherwise
  */
-rbnode * rbtree_put(
+rbnode *rbtree_put(
     rbtree * restrict rb
   , rbnode * restrict n
   , __attribute__((nonnull)) int (*cmp)(const rbnode * restrict, const rbnode * restrict)

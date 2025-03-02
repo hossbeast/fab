@@ -17,11 +17,11 @@ REMARKS
 #include "macros.h"
 
 typedef struct llist {
-  struct llist * next;
-  struct llist * prev;
+  struct llist *next;
+  struct llist *prev;
 } llist;
 
-#define LLIST_INITIALIZER(name) (llist) { next : &(name), prev : &(name) }
+#define LLIST_INITIALIZER(name) (llist) { .next = &(name), .prev = &(name) }
 
 /// llist_init
 //
@@ -201,13 +201,13 @@ static inline llist * __attribute__((nonnull(1))) llist_prev_node(const llist * 
  * merge two lists such that the items in the source list are now first in an enumeration of the
  * destination list
  *
- * the internal order of the two lists is unchanged
+ * the internal order of items is unchanged
  *
  * after this operation, src_head is empty
  *
  * before
- *  src a b c
  *  dst d e f
+ *  src a b c
  *
  * after
  *  dst a b c d e f
@@ -277,5 +277,5 @@ static inline size_t __attribute__((nonnull)) llist_count(const llist * head)
   return size;
 }
 
-void llist_sort(llist * restrict head, int (*cmp)(llist * restrict A, llist * restrict B))
-  __attribute__((nonnull));
+void llist_sort(llist * restrict list, int (*cmp)(void *ctx, llist * restrict A, llist * restrict B), void *ctx)
+  __attribute__((nonnull(1, 2)));
