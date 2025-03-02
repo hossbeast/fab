@@ -24,7 +24,7 @@ set -e
 echo SRC_PATH   $SRC_PATH
 echo BUILD_PATH $BUILD_PATH
 
-# temporary guardrails
+# you can remove these guardrails
 if [ $SRC_PATH != "/home/todd/bam" ]; then
   echo "unexpected SRC_PATH $SRC_PATH" 1>&2
   exit 1

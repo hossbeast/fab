@@ -17,6 +17,7 @@ CFLAGS += -Werror
 CFLAGS += -Wmissing-prototypes
 CFLAGS += -Wno-enum-compare
 CFLAGS += -Wno-array-bounds
+CFLAGS += -Wno-enum-compare
 CFLAGS += -Wno-format-truncation
 CFLAGS += -Wno-misleading-indentation
 CFLAGS += -Wno-trigraphs
@@ -37,13 +38,16 @@ CFLAGS += -I$(SRC_PATH)/libvalyria/include
 CFLAGS += -I$(SRC_PATH)/libyyutil/include
 CFLAGS += -I$(SRC_PATH)/libxlinux/include
 
+CFLAGS += -ggdb3 # for backtrace
+CFLAGS += -include$(SRC_PATH)/include/asan.h
+
 LFLAGS += -Wl,--build-id=sha1
 LFLAGS += -lpthread -lrt
 
 BISONFLAGS += --warnings=error
 
 %.o : %.c
-	$(CC) -o $@ -c $(CFLAGS) $<
+	$(CONFIG_CC) -o $@ -c $(CFLAGS) $<
 
 %.lex.h %.lex.c : %.l
 	flex=`command -v flex` bm_source0=$< bm_target0=$(dir $@)$(notdir $(basename $@)).c bm_target1=$(dir $@)$(notdir $(basename $@)).h $(ROOT_PATH)/builtin-modules/flex/flex.bam
@@ -70,15 +74,16 @@ git-state.c git-state.h :
 	/usr/bin/cc $(CFLAGS) -o $@ $(LFLAGS) -Wl,--start-group $^ -Wl,--end-group $(LDFLAGS)
 
 clean:
-	(                               \
-		find . -type f \(             \
-			   -name '*.o'              \
-			-o -name '*.a'              \
-			-o -name '*.exe'            \
-			-o -name '*.lex.[ch]'       \
-			-o -name '*.tab.[ch]'       \
-			-o -name '*.states.[ch]'    \
-			-o -name '*.tokens.[ch]'    \
-			-o -name 'sigtable.[ch]'    \
-		  \) -print                   \
+	(                                \
+		find . -type f \(              \
+			   -name '*.o'               \
+			-o -name '*.a'               \
+			-o -name '*.exe'             \
+			-o -name '*.lex.[ch]'        \
+			-o -name '*.tab.[ch]'        \
+			-o -name '*.desc.[ch]'       \
+			-o -name '*.states.[ch]'     \
+			-o -name '*.tokens.[ch]'     \
+			-o -name 'sigtable.[ch]'     \
+		  \) -print                    \
 	) | xargs /bin/rm -f

@@ -10,19 +10,23 @@ VPATH=$(SRC_PATH)/libbam
 
 CFLAGS += -I$(SRC_PATH)/libbam
 CFLAGS += -I$(SRC_PATH)/libbam/include/bam
-CFLAGS += -I$(SRC_PATH)/libbam/sigutil
-CFLAGS += -I$(SRC_PATH)/libbam/envs_tell
-CFLAGS += -I$(SRC_PATH)/libbam/config_tell
-CFLAGS += -I$(SRC_PATH)/libbam/client
-CFLAGS += -I$(SRC_PATH)/libbam/events
 CFLAGS += -I$(SRC_PATH)/libbam/build_slot
+CFLAGS += -I$(SRC_PATH)/libbam/client
+CFLAGS += -I$(SRC_PATH)/libbam/config_tell
+CFLAGS += -I$(SRC_PATH)/libbam/envs_tell
+CFLAGS += -I$(SRC_PATH)/libbam/events
+CFLAGS += -I$(SRC_PATH)/libbam/graph
 CFLAGS += -I$(SRC_PATH)/libbam/include
-CFLAGS += -I$(SRC_PATH)/libbam/load
-CFLAGS += -I$(SRC_PATH)/libbam/vars_tell
-CFLAGS += -I$(SRC_PATH)/libbam/list
+CFLAGS += -I$(SRC_PATH)/libbam/include/bam
 CFLAGS += -I$(SRC_PATH)/libbam/ipc
+CFLAGS += -I$(SRC_PATH)/libbam/list
+CFLAGS += -I$(SRC_PATH)/libbam/load
 CFLAGS += -I$(SRC_PATH)/libbam/lockfile
+CFLAGS += -I$(SRC_PATH)/libbam/pipe
 CFLAGS += -I$(SRC_PATH)/libbam/probes
+CFLAGS += -I$(SRC_PATH)/libbam/ring
+CFLAGS += -I$(SRC_PATH)/libbam/sigutil
+CFLAGS += -I$(SRC_PATH)/libbam/vars_tell
 
 CFLAGS += -I$(BUILD_PATH)/bam
 
@@ -37,11 +41,12 @@ libbam.a: bam/config_tell.desc.o
 libbam.a: bam/envs_tell.desc.o
 libbam.a: bam/list.desc.o
 libbam.a: bam/vars_tell.desc.o
-libbam.a: build_slot/build_slot.o
 libbam.a: client/client.o
 libbam.a: events/events.o
 libbam.a: ipc/ipc.o
 libbam.a: load/load.o
 libbam.a: lockfile/lockfile.o
+libbam.a: pipe/pipe.o
 libbam.a: probes/probes.o
+libbam.a: ring/ring.o
 libbam.a: sigutil/sigutil.o

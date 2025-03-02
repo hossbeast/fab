@@ -15,7 +15,6 @@ CFLAGS += -I$(SRC_PATH)/libmoria/edge
 CFLAGS += -I$(SRC_PATH)/libmoria/foreach
 CFLAGS += -I$(SRC_PATH)/libmoria/graph
 CFLAGS += -I$(SRC_PATH)/libmoria/load
-CFLAGS += -I$(SRC_PATH)/libmoria/lookup
 CFLAGS += -I$(SRC_PATH)/libmoria/operations
 CFLAGS += -I$(SRC_PATH)/libmoria/parser
 CFLAGS += -I$(SRC_PATH)/libmoria/probes
@@ -30,7 +29,6 @@ libmoria.a: edge/edge.o
 libmoria.a: foreach/foreach.o
 libmoria.a: graph/graph.o
 libmoria.a: load/load.o
-libmoria.a: lookup/lookup.o
 libmoria.a: operations/operations.o
 libmoria.a: parser/parser.o
 libmoria.a: probes/probes.o

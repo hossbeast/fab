@@ -19,7 +19,7 @@ BUILDDIR=$(realpath .)
 echo SRCDIR   $SRCDIR
 echo BUILDDIR $BUILDDIR
 
-# temporary guardrails
+# you can remove these guardrails
 if [ $SRCDIR != "/home/todd/bam" ]; then
   echo "unexpected SRCDIR $SRCDIR" 1>&2
   exit 1

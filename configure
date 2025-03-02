@@ -8,7 +8,7 @@ INVOCATION="$0 $@"
 ROOT_PATH=$(dirname $(realpath $0))
 SRC_PATH=$ROOT_PATH
 BUILD_PATH=$(realpath .)
-CC=/usr/bin/cc
+CONFIG_CC=/usr/bin/cc
 CONFIG_FINAL=true
 CONFIG_VARIANT=final
 
@@ -56,7 +56,7 @@ echo
 define ROOT_PATH
 define SRC_PATH
 define BUILD_PATH
-define CC
+define CONFIG_CC
 define CONFIG_FINAL
 define CONFIG_VARIANT
 define INSTALLDIR
@@ -74,8 +74,7 @@ setup() {
   ln -fs $SRC_PATH/$1/makefile $BUILD_PATH/$1/makefile
 
   # replicate the directory structure
-  cd $BUILD_PATH/$1
-  (cd $SRC_PATH/$1 ; find . -type d) | xargs mkdir -p
+  (cd $SRC_PATH/$1 ; find . -type d) | (cd $BUILD_PATH/$1 ; xargs mkdir -p)
 }
 
 # setup the build directory
@@ -127,37 +126,76 @@ make -C $BUILD_PATH/libbam \
 make -C $BUILD_PATH/bam \
  args/args.tab.c \
  args/args.lex.c \
+ event_parser/events.tab.c \
+ event_parser/events.lex.c \
  git-state.c
 make -C $BUILD_PATH/bam \
  args/args.tokens.c \
- args/args.states.c
+ args/args.states.c \
+ event_parser/events.tokens.c \
+ event_parser/events.states.c
+make -C $BUILD_PATH/bamd \
+ build/build_stats.desc.h \
+ buildplan/buildplan_stats.desc.h \
+ bpe/stats_bpe.desc.h \
+ configset/stats_configset.desc.h \
+ filesystem/filesystem_stats.desc.h \
+ rcu/rcu_stats.desc.h \
+ formula/stats_formula.desc.h \
+ fstree/stats_fstree.desc.h \
+ client/stats_client.desc.h \
+ fsname/fsname_stats.desc.h \
+ namespace/namespace_stats.desc.h \
+ module/stats_module.desc.h \
+ notify/notify_stats.desc.h \
+ plugin/stats_plugin.desc.h \
+ rule/stats_rule.desc.h \
+ rma/stats_rma.desc.h \
+ ruleset/stats_ruleset.desc.h \
+ fsent_dir/stats_fsent_dir.desc.h \
+ system/system_stats.desc.h \
+ varset/stats_varset.desc.h \
+ vertex/stats_vertex.desc.h
 make -C $BUILD_PATH/bamd \
  configset_parser/configset.tab.c \
+ mak_parser/mak.tab.c \
  formula_parser/formula.tab.c \
+ pattern_parser/attachment_pattern.tab.c \
  pattern_parser/generate_pattern.tab.c \
  pattern_parser/include_pattern.tab.c \
  pattern_parser/lookup_pattern.tab.c \
  pattern_parser/match_pattern.tab.c \
- pattern_parser/reference_pattern.tab.c \
+ pattern_parser/path_pattern.tab.c \
  pattern_parser/search_pattern.tab.c \
  request_parser/request.tab.c \
  ruleset_parser/ruleset.tab.c \
  selector_parser/selector.tab.c \
  git-state.c
 make -C $BUILD_PATH/bamd \
+ configset_parser/configset.lex.c \
+ mak_parser/mak.lex.c \
+ formula_parser/formula.lex.c \
+ pattern_parser/pattern.lex.c \
+ request_parser/request.lex.c \
+ ruleset_parser/ruleset.lex.c \
+ selector_parser/selector.lex.c
+make -C $BUILD_PATH/bamd \
  configset_parser/configset.tokens.c \
+ mak_parser/mak.tokens.c \
  formula_parser/formula.tokens.c \
+ pattern_parser/attachment_pattern.tokens.c \
  pattern_parser/generate_pattern.tokens.c \
  pattern_parser/include_pattern.tokens.c \
  pattern_parser/lookup_pattern.tokens.c \
  pattern_parser/match_pattern.tokens.c \
- pattern_parser/reference_pattern.tokens.c \
+ pattern_parser/path_pattern.tokens.c \
  pattern_parser/search_pattern.tokens.c \
  request_parser/request.tokens.c \
  ruleset_parser/ruleset.tokens.c \
  selector_parser/selector.tokens.c
 make -C $BUILD_PATH/bamd \
  configset_parser/configset.states.c \
+ mak_parser/mak.states.c \
  formula_parser/formula.states.c \
  pattern_parser/pattern.states.c \
  request_parser/request.states.c \

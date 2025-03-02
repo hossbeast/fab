@@ -34,6 +34,7 @@ filesystem : {
   exclude : {
     /home/todd/bam/builtin-modules
     /home/todd/bam/"builtin-modules%devel"
+    /home/todd/bam/builtin-plugins
   }
 
   special : {
