@@ -135,7 +135,6 @@ static int __attribute__((nonnull(1, 5, 7, 9, 11))) walk(
           *pathl = patho;
           path[*pathl] = 0;
 
-          //dd = xopendirat(dirfd, path);
           if((fd = openat(dirfd, path, O_RDONLY | O_DIRECTORY)) == -1) {
             err(FTWAT_OPENDIR, dirinfo, udata, errno);
             rv = -1;

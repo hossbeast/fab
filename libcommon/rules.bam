@@ -4,7 +4,7 @@
 rule *+(/) => [*] //module/include
 
 # build
-rule $^D/*~test/*.o -> libcommon.a
+rule $^D/*/*.o -> libcommon.a
 
 # default targets
 rule libcommon.a -> //targets
