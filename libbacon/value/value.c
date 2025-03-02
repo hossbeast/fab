@@ -120,6 +120,12 @@ void bacon_value_free(bacon_parser * restrict parser, struct bacon_value * restr
   }
 }
 
+void bacon_value_ifree(bacon_parser * restrict parser, struct bacon_value ** restrict v)
+{
+  bacon_value_free(parser, *v);
+  *v = NULL;
+}
+
 bacon_value *bacon_string_alloc(bacon_parser * restrict parser)
 {
   bacon_value * v;

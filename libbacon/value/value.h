@@ -85,6 +85,7 @@ void bacon_value_say_flat(const bacon_value * const restrict val, struct narrato
   __attribute__((nonnull(2)));
 
 void bacon_value_free(struct bacon_parser * restrict parser, struct bacon_value * restrict v);
+void bacon_value_ifree(struct bacon_parser * restrict parser, struct bacon_value ** restrict v);
 
 struct bacon_value *bacon_string_alloc(struct bacon_parser * restrict parser)
   __attribute__((nonnull));
