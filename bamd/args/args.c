@@ -23,8 +23,8 @@ struct g_args_t g_args;
 char *g_argv_base_dir_space;
 
 #if CONFIG_DEVEL
-#define SYSTEM_CONFIG_PATH    "/etc/config.bam+devel"
-#define USER_CONFIG_PATH      "$HOME/.bam/config.bam+devel"
+#define SYSTEM_CONFIG_PATH    "/etc/config.bam%devel"
+#define USER_CONFIG_PATH      "$HOME/.bam/config.bam%devel"
 #else
 #define SYSTEM_CONFIG_PATH    "/etc/config.bam"
 #define USER_CONFIG_PATH      "$HOME/.bam/config.bam"

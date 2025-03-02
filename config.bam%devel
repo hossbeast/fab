@@ -1,0 +1,106 @@
+/* SPDX-License-Identifier: GPL-3.0 */
+/* Copyright (c) 2012-2023 Todd Freed <todd.freed@gmail.com> */
+
+# heuristic based on detected cpus
+build : {
+  concurrency : 16
+}
+
+timeout : {
+  interval : 600  # exit after 10 minutes of inactivity
+}
+
+filesystem : {
+  fstrees : {
+    / : {
+      invalidation : stat
+      mkdir : false
+      mount : false
+    }
+
+    /home/todd/bam : {
+      invalidation : notify
+      mkdir : false
+      mount : true
+      namespaces : {
+        modules
+      }
+    }
+
+    /home/todd/bam-build : {
+      invalidation : notify
+      mkdir : true
+      mount : true
+      namespaces : {
+        modules
+      }
+    }
+
+    $bm_basedir : {
+      invalidation : notify
+      mkdir : true
+      mount : true
+      namespaces : {
+        modules
+      }
+    }
+
+    /home/todd/bam/builtin-plugins%devel : {
+      invalidation : stat
+      mkdir : false
+      mount : true
+      namespaces : {
+        plugins
+      }
+    }
+    /home/todd/bam/usr/share/bam/binutils : {
+      invalidation : stat
+      mkdir : false
+      mount : true
+      namespaces : {
+        formulas
+        binutils
+      }
+    }
+    /home/todd/bam/usr/share/bam/base-devel : {
+      invalidation : stat
+      mkdir : false
+      mount : true
+      namespaces : {
+        formulas
+        base-devel
+      }
+    }
+  }
+
+  exclude : {
+    /home/todd/bam/builtin-modules
+    /home/todd/bam/builtin-plugins
+    /usr/share/bam/modules
+    .git
+  }
+}
+
+plugins : {
+  [
+    {
+      file : {
+        lookup : {
+          pattern : builtin-plugins%devel/autobuild-focus+(.)
+          namespace : plugins
+        }
+      }
+    }
+    {
+      file : {
+        lookup : {
+          pattern : builtin-plugins%devel/invalidate-global+(.)
+          namespace : plugins
+        }
+      }
+      args : [
+        --suffix=h
+      ]
+    }
+  ]
+}

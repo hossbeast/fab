@@ -1,0 +1,6 @@
+/* SPDX-License-Identifier: GPL-3.0 */
+/* Copyright (c) 2012-2023 Todd Freed <todd.freed@gmail.com> */
+
+# object files from c source files
+#  each invocation yields one file from the right-hand-side
+rule **/(*).c -> $^D/$1.o : ./cc.bam%devel+(.)

@@ -1,0 +1,23 @@
+/* SPDX-License-Identifier: GPL-3.0 */
+/* Copyright (c) 2012-2023 Todd Freed <todd.freed@gmail.com> */
+
+use descriptor
+bind descriptor => //descriptor
+
+rule **+(/) => [*] //module/include
+
+# pull in object files in the module, except those under integ
+rule $^D/**~test/*.o -> libbam.a
+
+# default build targets
+rule libbam.a -> //targets
+
+# library dependencies
+rule //artifacts/*/$CONFIG_VARIANT/*.a -> libbam.a
+
+# descriptor .c and .h files are generated
+rule $^A/build_slot/build_slot.h            -> [*] bam/build_slot.desc.[ch] : //descriptor/descriptor.bam%devel
+rule $^A/config_tell/config_tell.h          -> [*] bam/config_tell.desc.[ch] : //descriptor/descriptor.bam%devel
+rule $^A/envs_tell/envs_tell.h              -> [*] bam/envs_tell.desc.[ch] : //descriptor/descriptor.bam%devel
+rule $^A/list/list.h                        -> [*] bam/list.desc.[ch] : //descriptor/descriptor.bam%devel
+rule $^A/vars_tell/vars_tell.h              -> [*] bam/vars_tell.desc.[ch] : //descriptor/descriptor.bam%devel

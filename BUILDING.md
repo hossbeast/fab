@@ -25,18 +25,18 @@ config files separate from those used with the previous release, these use names
 devel tag. The builtin modules are the ones in the repo.
 
 ```
-staging system config @ /etc/fabconfig+devel
-staging user config @ /home/todd/.fab/config+devel
-staging project config @ /home/todd/fab/xunit/xunit/.fab/config+devel
+staging system config @ /etc/fabconfig%devel
+staging user config @ /home/todd/.fab/config%devel
+staging project config @ /home/todd/fab/xunit/xunit/.fab/config%devel
 effective config
 extern : {
   /home/todd/fab
 }
 special : {
-  module : "module.bam+devel"
-  model : "model.bam+devel"
-  var : "var.bam+devel"
-  formula-suffix : ".bam+devel"
+  module : "module.bam%devel"
+  model : "model.bam%devel"
+  var : "var.bam%devel"
+  formula-suffix : ".bam%devel"
 }
 ```
 

@@ -1,0 +1,34 @@
+#!/usr/bin/env perl
+#
+# SPDX-License-Identifier: GPL-3.0
+# Copyright (c) 2012-2023 Todd Freed <todd.freed@gmail.com>
+#
+
+use strict;
+use warnings;
+$SIG{__WARN__} = sub { die @_ };
+
+die "bison not found" unless $ENV{bison};
+
+my $cfile = substr($ENV{bm_target0}, -2) eq ".c" ? $ENV{bm_target0} : $ENV{bm_target1};
+
+my @cmd = (
+    $ENV{bison}
+  , "-o", $cfile
+  , "-d"
+  , $ENV{bm_source0}
+);
+
+print(join(" ", @cmd) . "\n");
+exec { $cmd[0] } @cmd;
+
+__DATA__
+
+envs : {
+  bison : {
+    lookup : {
+      pattern : bin/bison+(.)
+      namespace : base-devel
+    }
+  }
+}

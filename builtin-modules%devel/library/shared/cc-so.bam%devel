@@ -1,0 +1,83 @@
+#!/usr/bin/env perl
+#
+# SPDX-License-Identifier: GPL-3.0
+# Copyright (c) 2012-2023 Todd Freed <todd.freed@gmail.com>
+#
+
+use strict;
+use warnings;
+$SIG{__WARN__} = sub { die @_ };
+
+use File::Basename;
+
+die "CC not found" unless $ENV{CC};
+
+my $name = basename($ENV{bm_target});
+my $dot = index($name, ".");
+my $soname = substr($name, 0, $dot) . ".so";
+my $lnk = $ENV{bm_target} . ".lnk";
+
+# devel soname
+if($ENV{bm_variant} eq "devel.pic.xapi" || $ENV{bm_variant} eq "pic.trace.xapi")
+{
+  $soname = $name;
+}
+
+my @cmd = (
+    $ENV{CC}
+  , split(/ /, $ENV{CFLAGS})
+  , "-shared"
+  # linker script
+  , "-Wl,--version-script=$lnk"
+  # soname
+  , "-Wl,-soname,$soname"
+  , (map { "-I$_" } split(/ /, $ENV{includes}))
+  , "-o", $ENV{bm_target}
+  # object files in this module
+  , grep { substr($_, -2) eq ".o" } split(/ /, $ENV{objects})
+);
+
+use Data::Dumper;
+print Dumper \@cmd;
+
+exec { $cmd[0] } @cmd
+
+__DATA__
+
+envs : {
+  CC : {
+    bind : {
+      pattern : bin/cc
+      namespace : formula
+    }
+  }
+
+  # object files for the library
+  objects : [
+    select : [
+      target
+      traverse : {
+        direction : down
+        graph : depends
+        max-distance : 1
+        min-distance : 1
+      }
+    ]
+    property : relpath
+  ]
+
+  includes : [
+    # include directories matched by the include rule
+    select : [
+      lookup : {
+        path : //module/include
+      }
+      traverse : {
+        direction : down
+        min-distance : 1
+        max-distance : 1
+      }
+    ]
+    property : relpath
+  ]
+}

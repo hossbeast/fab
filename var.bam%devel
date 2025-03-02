@@ -1,0 +1,12 @@
+/* SPDX-License-Identifier: GPL-3.0 */
+/* Copyright (c) 2012-2023 Todd Freed <todd.freed@gmail.com> */
+
+bisonflags   : "--warnings=error"
+CFLAGS       : {
+  -g -m64 -D_GNU_SOURCE -fPIC
+  -Wall -Werror -Wmissing-prototypes -Wno-format-truncation -Wno-misleading-indentation -Wno-trigraphs "-fdiagnostics-color=always" -fno-builtin-log
+  -include/home/todd/bam/include/tracef.h
+  -include/home/todd/bam/include/hexdump.h
+  -include/home/todd/bam/include/backtracef.h
+}
+PATH : /usr/bin

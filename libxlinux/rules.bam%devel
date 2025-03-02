@@ -1,0 +1,14 @@
+/* SPDX-License-Identifier: GPL-3.0 */
+/* Copyright (c) 2012-2023 Todd Freed <todd.freed@gmail.com> */
+
+rule $^A/.+(/) => [*] //module/include
+rule *~xlinux+(/) => [*] //module/include
+
+# pull in object files in the module, except those under integ
+rule $^D/*~integ~build/**/*.o -> libxlinux.a
+
+# default build targets
+rule $^D/libxlinux.a -> //targets
+
+# generated signals table
+rule -- [*] sigtable/sigtable.{c,h} : ./sigtable.bam%devel+(.)

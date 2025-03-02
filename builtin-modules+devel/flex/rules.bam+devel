@@ -1,9 +1,0 @@
-/* SPDX-License-Identifier: GPL-3.0 */
-/* Copyright (c) 2012-2023 Todd Freed <todd.freed@gmail.com> */
-
-# lex.c files from lexer l files
-#  each invocation yields all files on the right-hand-side
-rule **/(*).l -> [*] $^D/$1.lex.{c,h} : ./flex.bam+devel
-
-# states.c / states.h files from .lex.h files
-rule **/(*).lex.h -> [*] $^D/$1.states.{c,h} : ./states.bam+devel

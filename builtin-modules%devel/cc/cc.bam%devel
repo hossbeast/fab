@@ -1,0 +1,56 @@
+#!/usr/bin/env perl
+#
+# SPDX-License-Identifier: GPL-3.0
+# Copyright (c) 2012-2023 Todd Freed <todd.freed@gmail.com>
+#
+
+use strict;
+use warnings;
+$SIG{__WARN__} = sub { die @_ };
+
+use File::Basename;
+use Data::Dumper;
+use POSIX;
+
+die "cc not found" unless $ENV{cc};
+
+# exec into the compiler
+my @cmd = (
+    $ENV{cc}
+  , split(/ /, $ENV{CFLAGS})
+  , (map { "-I$_" } @ARGV)    # other arguments are include paths
+  , $ENV{bm_source0}
+  , "-c"
+  , "-o", $ENV{bm_target0}
+);
+
+print(join(" ", @cmd));
+
+exec { $cmd[0] } @cmd
+
+__DATA__
+
+envs : {
+  cc : {
+    lookup : {
+      pattern : bin/cc+(.)
+      namespace : binutils
+    }
+  }
+}
+
+args : [
+  sequence : [
+    select : [
+      path : {
+        pattern : //module/include
+      }
+      traverse : {
+        direction : down
+        min-distance : 1
+        max-distance : 1
+      }
+    ]
+    property : relpath
+  ]
+]

@@ -1,0 +1,10 @@
+/* SPDX-License-Identifier: GPL-3.0 */
+/* Copyright (c) 2012-2023 Todd Freed <todd.freed@gmail.com> */
+
+rule **+(/) => [*] //module/include
+
+# pull in object files in the module, except those under integ
+rule $^D/*~integ/**/*.o -> libyyutil.a
+
+# default build targets
+rule libyyutil.a -> //targets

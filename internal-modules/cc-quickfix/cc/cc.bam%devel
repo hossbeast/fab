@@ -1,0 +1,193 @@
+#!/usr/bin/env perl
+#
+# SPDX-License-Identifier: GPL-3.0
+# Copyright (c) 2012-2023 Todd Freed <todd.freed@gmail.com>
+#
+
+use strict;
+use warnings;
+$SIG{__WARN__} = sub { die @_ };
+
+use File::Basename;
+use POSIX;
+use Cwd;
+
+die "cc not found" unless $ENV{cc};
+
+# sigchld handler
+my %status_by_pid;
+$SIG{CHLD} = sub {
+  local ($!, $?);
+  while((my $pid = waitpid(-1, WNOHANG)) > 0) {
+    my $exit = $? >> 8;
+    my $sig = $? & 127;
+    $status_by_pid{$pid} = $?;
+
+    # affirmative murder
+    kill 9, $pid;
+  }
+};
+
+# unblock sigchld
+POSIX::sigprocmask(POSIX::SIG_UNBLOCK, POSIX::SigSet->new(SIGCHLD), POSIX::SigSet->new());
+
+sub pr_set_pdeathsig
+{
+  my $sig = shift;
+
+  return unless $^O eq 'linux';
+
+  my(undef, undef, undef, undef, $machine) = POSIX::uname();
+  my $SYS_prctl = undef;
+  $SYS_prctl = 157 if $machine eq "x86_64";
+  $SYS_prctl = 172 if $machine =~ /^i[3456]86$/;
+
+  return unless $SYS_prctl;
+
+  my $PR_SET_PDEATHSIG = 1;   # at least it is on my machine
+
+  syscall($SYS_prctl, $PR_SET_PDEATHSIG, $sig) >= 0 or die "prctl failed : $!";
+}
+
+sub run
+{
+  my @cmd = @_;
+
+  my ($out_rd_fd, $out_wr_fd) = POSIX::pipe() or die $!;
+  my ($err_rd_fd, $err_wr_fd) = POSIX::pipe() or die $!;
+  my $pid = fork();
+  if(!$pid)
+  {
+    POSIX::dup2($out_wr_fd, 1) or die $!;
+    POSIX::dup2($err_wr_fd, 2) or die $!;
+
+    for(my $x = 0; $x < 1024; $x++)
+    {
+      next if $x == 1 || $x == 2;
+      POSIX::close($x);
+    }
+
+    POSIX::open("/dev/null", O_WRONLY);
+
+    pr_set_pdeathsig(9);  # no zombies
+
+    exec { $cmd[0] } @cmd;
+    exit(1);
+  }
+
+  # close write-end of the pipes
+  POSIX::close($out_wr_fd) or die $!;
+  POSIX::close($err_wr_fd) or die $!;
+
+  my $rin = '';
+  vec($rin, $out_rd_fd, 1) = 1;
+  vec($rin, $err_rd_fd, 1) = 1;
+
+  my $buf = '';
+  my $out = '';
+  my $out_len = 0;
+  my $err = '';
+  my $err_len = 0;
+  my $text;
+  while(1)
+  {
+    my $n = select(my $rout = $rin, undef, undef, 0.125);
+    next unless ($n > 0);
+
+    my $or = 0;
+    if(vec($rout, $out_rd_fd, 1) == 1)
+    {
+      $or = POSIX::read($out_rd_fd, $buf, 0xffff);
+      $out_len += $or;
+      if($or)
+      {
+        $text = substr($buf, 0, $or);
+        POSIX::write(1, $text, length($text));
+        $out .= $text;
+      }
+    }
+
+    my $er = 0;
+    if(vec($rout, $err_rd_fd, 1) == 1)
+    {
+      $er = POSIX::read($err_rd_fd, $buf, 0xffff);
+      $err_len += $er;
+      if($er)
+      {
+        $text = substr($buf, 0, $er);
+        POSIX::write(2, $text, length($text));
+        $err .= $text;
+      }
+    }
+
+    #
+    # once the child process has exited (which closes its fds), and pipes are drained
+    #
+    # https://man7.org/linux/man-pages/man7/pipe.7.html
+    #  If all file descriptors referring to the write end of a pipe have
+    #  been closed, then an attempt to read(2) from the pipe will see
+    #  end-of-file (read(2) will return 0).
+    #
+    last if($or == 0 && $er == 0 && exists $status_by_pid{$pid});
+  }
+
+  return $status_by_pid{$pid}, $out, $err;
+}
+
+#  the compiler
+my @cmd = (
+    $ENV{cc}
+  , split(/ /, $ENV{CFLAGS} || '')
+  , (map { "-I$_" } @ARGV)    # other arguments are include paths
+  , $ENV{bm_source0}
+  , "-c"
+  , "-o", $ENV{bm_target0}
+);
+
+print(join(" ", @cmd));
+
+# run the compiler in a subprocess, capture stdout/stderr
+my ($status, $out, $err) = run(@cmd);
+
+# save error file paths
+open EFH, ">/tmp/cc-last-err";
+if($err) {
+  print EFH "$err";
+  open FH, ">/tmp/cc-last-err-location";
+  #$err =~ /((?:\/|[.])[-_a-zA-Z0-9\/.]+[.]c):([0-9]+)/;
+  $err =~ /((?:\/|[.])[-_a-zA-Z0-9\/.]+[.][chy]):([0-9]+):[0-9]+:.*error: /;
+  my $path = $1;
+  my $line = $2;
+  if (substr($path, 0, 1) ne "/") {
+    $path = Cwd::realpath($path);
+  }
+  print FH "$path:$line\n";
+}
+
+exit($status);
+
+__DATA__
+
+envs : {
+  cc : {
+    lookup : {
+      pattern : bin/cc+(.)
+      namespace : binutils
+    }
+  }
+}
+args : [
+  sequence : [
+    select : [
+      path : {
+        pattern : //module/include
+      }
+      traverse : {
+        direction : down
+        min-distance : 1
+        max-distance : 1
+      }
+    ]
+    property : relpath
+  ]
+]

@@ -1,0 +1,231 @@
+#!/usr/bin/env perl
+
+#
+# When autobuild is enabled, bamd will attempt to run the build after any changes are detected.
+# Formulas in the same buildplan stage are executed in parallel, and their results will be received in a
+# non-deterministic order.
+#
+# When you have multiple files with syntax errors, autobuild will tend to flip between errors from different files at
+# the bottom of the output.
+#
+# The autobuild-focus plugin helps in this situation. When autobuild has failed multiple slots in the same stage, pick
+# one of them at random, and re-place the goals to build that one target in particular. Once it succeeds, restore the
+# original goals.
+#
+
+use strict;
+use warnings;
+$SIG{__WARN__} = sub { die @_ };
+
+BEGIN { push @INC, '/home/todd/bam/libbacon/perl' }
+
+use Data::Dumper;
+use POSIX;
+use bacon;
+
+sub tx {
+  my $s = shift;
+  POSIX::write(1001, $s, length($s));
+}
+
+sub err {
+  my $s = shift;
+  POSIX::write(2, $s, length($s));
+}
+
+sub interval {
+  my $ns = shift;
+
+  use integer;
+
+  my $s = $ns / (1000 * 1000 * 1000);
+  $ns -= $s * (1000 * 1000 * 1000);
+
+  my $ms = $ns / (1000 * 1000);
+  $ns -= $ms * (1000 * 1000);
+
+  my $us = $ns / 1000;
+  $ns -= $us * 1000;
+
+  sprintf("%02u.%03u.%03u.%03u", $s, $ms, $us, $ns)
+}
+
+tx(<<MSG);
+eventsub : [
+  goals-set
+  build-start
+  build-end
+  formula-fork
+  formula-wait
+]
+
+MSG
+tx(<<MSG);
+plugin-ready
+
+MSG
+
+sub build_show
+{
+  my $stages = shift;
+
+  for my $stage (@$stages) {
+    for my $slot (@$stage) {
+      my $forked = $$slot{forked};
+      my $path = $$forked{path};
+      my $slash = rindex($path, '/');
+      $path = substr($path, $slash + 1);
+      my $targets = join(", ", @{$$forked{targets}});
+    }
+  }
+}
+
+my $goals_text;
+my $goals_token;
+my %slots;       # build slots for the most recent build
+
+while(1)
+{
+  # messages are separated by two newlines
+  my $text = '';
+  while(1) {
+    my $line = <STDIN>;
+    if(!defined($line)) {
+      exit;
+    }
+    chomp($line);
+    if(length($line) == 0) {
+      last;
+    }
+    $text .= "\n" if($text);
+    $text .= $line;
+  }
+
+  if($text eq 'plugin-ready-request') {
+tx(<<MSG);
+plugin-ready
+
+MSG
+    next;
+  }
+
+  my $msg = bacon_parse($text);
+
+  if($$msg{"goals-set"}) {
+    # autobuild-focus will have provided a label
+    if(!exists($$msg{"goals-set"}{"//goals"}{label})) {
+      next;
+    }
+    # goals from some other source
+    if($$msg{"goals-set"}{"//goals"}{label} eq "autobuild-focus") {
+      next;
+    }
+
+    $goals_token = $$msg{"goals-set"}{"//goals"}{token};
+
+    $goals_text = $text;
+
+    # unwrap from the goals-set event
+    $goals_text =~ s/^\s*goals-set\s+:\s+{//;
+    $goals_text =~ s/\s+}$//;
+
+    # unwrap from the //goals mapping
+    $goals_text =~ s/^\s*\/\/goals\s+:\s+{//;
+    $goals_text =~ s/\s+}$//;
+
+    # elide some unnecessary fields
+    $goals_text =~ s/^\s*duration\s+:\s+"[^"]+"\s*$//m;
+
+    # normalize whitespace
+    $goals_text =~ s/\n\n/\n/gm;
+  } elsif($$msg{forked}) {
+    $slots{$$msg{forked}{pid}} = $msg;
+  } elsif($$msg{waited}) {
+    my $slot = $slots{$$msg{waited}{pid}};
+    $$slot{waited} = $$msg{waited};
+  } elsif($$msg{"build-start"}) {
+    %slots = ();
+  } elsif($$msg{"build-end"}) {
+    my $build_end = $$msg{"build-end"};
+
+    # autobuild-focus will have provided a label
+    if(!exists($$build_end{label})) {
+      next;
+    }
+
+    # goals from some other source
+    if($$build_end{token} != $goals_token) {
+      next;
+    }
+
+    # focus build triggered by this plugin has completed
+    if($$build_end{label} eq "autobuild-focus" && $$build_end{pid} == $$) {
+      # build completed successfully -- restore the old goals
+      if($$build_end{success}) {
+        tx("goals : { $goals_text }\n\n");
+      }
+
+      next;
+    }
+
+    # not autorun triggered
+    if(!$$build_end{autorun}) {
+      next;
+    }
+
+    # build did not fail
+    if($$build_end{success}) {
+      next;
+    }
+
+    my @stages;
+    for my $slot (values %slots) {
+      push @{$stages[$$slot{forked}{stage}]}, $slot;
+    }
+
+    # no-op build
+    if($#stages < 0) {
+      next;
+    }
+
+    # only a single formula ; build was already focused
+    if($#{$stages[$#stages]} < 1) {
+      next;
+    }
+
+    # pick a random failed slot
+    my $x;
+    for($x = 0; $x <= $#{$stages[$#stages]}; $x++) {
+      my $slot = $stages[$#stages][$x];
+      my $success = $$slot{waited}{status} == 0 && $$slot{waited}{"stderr-total"} == 0;
+      if(!$success) {
+        last;
+      }
+    }
+
+    # not expected ; the build failed, by definition there must be a failed slot
+    if($x > $#{$stages[$#stages]}) {
+      next;
+    }
+
+    my $slot = $stages[$#stages][$x];
+    my $token = sprintf("0x%x", $goals_token);
+    my $path = $$slot{forked}{targets}[0];
+
+    # flip the goals to focus on this one target
+    tx(<<MSG);
+goals : {
+  token : $token
+  label : autobuild-focus
+  target-direct : [
+    path : {
+      pattern : $path
+      hidden : true
+    }
+  ]
+  build
+}
+
+MSG
+  }
+}
