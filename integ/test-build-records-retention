@@ -1,0 +1,359 @@
+#!/usr/bin/env perl
+
+#
+# runs the build repeatedly and checking the state of retained builds
+#
+
+use strict;
+use warnings;
+$SIG{__WARN__} = sub { die @_ };
+
+use POSIX;
+use File::Basename;
+use Cwd;
+our $repodir;
+our $bam_basedir;
+our $bam_bamd_id;
+BEGIN { $repodir = dirname(Cwd::realpath("$0/..")) }
+use lib "$repodir/integ/lib";
+use lib "$repodir/perl";
+use lib "$repodir/libbacon/perl";
+use util;
+use tree;
+use bam::bam;
+use integ;
+use bam::bam;
+
+# build out the fstree under /tmp
+init();
+setup(<<'TREE');
+|-- system-config <<
+plugins : {
+  stdin-buffer-size : 4096
+  stdout-buffer-size : 4096
+  stderr-buffer-size : 4096
+  auxout-buffer-size : 4096
+}
+build : {
+  stdout-buffer-size : 4096
+  stderr-buffer-size : 4096
+  auxout-buffer-size : 4096
+  retention : {
+    max-entries : 1
+  }
+}
+>>
+|-- cores.c <<
+foo
+>>
+|-- module.bam%devel <<
+rule cores.c -> cores.o : ./cp.bam+(.)
+rule cores.o -> cores : ./cp.bam+(.)
+rule cores -> //targets
+>>
+|-- cp.bam << 0777
+#!/usr/bin/env perl
+open A, "<", $ENV{bm_source0} or die $!;
+open B, ">", $ENV{bm_target0} or die $!;
+while(<A>)
+{
+  print B "$_";
+}
+>>
+TREE
+
+my $build0_id = bam::identity($bam_bamd_id, undef, "build-record", sprintf("%010u", 0));
+my $build1_id = bam::identity($bam_bamd_id, undef, "build-record", sprintf("%010u", 1));
+my $build2_id = bam::identity($bam_bamd_id, undef, "build-record", sprintf("%010u", 2));
+my $build3_id = bam::identity($bam_bamd_id, undef, "build-record", sprintf("%010u", 3));
+print("build0_id $build0_id\n");
+print("build1_id $build1_id\n");
+print("build2_id $build2_id\n");
+print("build3_id $build3_id\n");
+
+my $fh;
+my $res;
+
+#
+#
+#
+print("\n >> 1 - retain one build record <<\n\n");
+
+assert { stats("cores.c", {
+    type => 'file'
+  , state => 'fresh'
+  , stale => 0
+  , fresh => 1
+})};
+assert { stats("cores.o", {
+    type => 'file'
+  , state => 'uncreated'
+  , stale => 0
+  , fresh => 0
+})};
+assert { stats("cores", {
+    type => 'file'
+  , state => 'uncreated'
+  , stale => 0
+  , fresh => 0
+})};
+
+build();
+
+# one record for the build, one record for each formula exec
+assert { stats(undef, {
+    build_records => 1
+  , formula_records => 2
+})};
+
+assert { eexists ("//bm/build-records/$build0_id") };
+assert { ls("//bm/build-records-by/order/00000", "00000 -> //bm/build-records/$build0_id") };
+assert { enoent ("//bm/build-records-by/order/00001") };
+
+# intermediate and final file were created
+assert_file("$bam_basedir/cores.o", "foo");
+assert_file("$bam_basedir/cores", "foo");
+
+assert { stats("cores.c", {
+    type => 'file'
+  , state => 'fresh'
+  , stale => 0
+  , fresh => 1
+})};
+assert { stats("cores.o", {
+    type => 'file'
+  , state => 'fresh'
+  , stale => 0
+  , fresh => 1
+})};
+assert { stats("cores", {
+    type => 'file'
+  , state => 'fresh'
+  , stale => 0
+  , fresh => 1
+})};
+
+#
+#
+#
+print("\n >> 2 - REBUILD <<\n\n");
+
+# rebuild
+bam_touch();
+reconcile();
+build();
+
+# remaining, one record for the build, and one record for each exec
+#  the previous records were discarded because of the retention limit
+assert { stats(undef, {
+    build_records => 1
+  , formula_records => 2
+})};
+
+assert { enoent ("//bm/build-records/$build0_id") };
+assert { eexists("//bm/build-records/$build1_id") };
+
+assert { ls("//bm/build-records-by/order/00000", "00000 -> //bm/build-records/$build1_id") };
+assert { enoent ("//bm/build-records-by/order/00001") };
+
+assert_file("$bam_basedir/cores.o", "foo");
+assert_file("$bam_basedir/cores", "foo");
+
+assert { stats("cores.c", {
+    type => 'file'
+  , state => 'fresh'
+  , stale => 1
+  , fresh => 2
+})};
+assert { stats("cores.o", {
+    type => 'file'
+  , state => 'fresh'
+  , stale => 1
+  , fresh => 2
+})};
+assert { stats("cores", {
+    type => 'file'
+  , state => 'fresh'
+  , stale => 1
+  , fresh => 2
+})};
+
+#
+#
+#
+print("\n >> 3 - increase to retain two build records <<\n\n");
+
+# increase to retain two build records
+open $fh, ">", "$bam_basedir/system-config" or die $!;
+print $fh <<'TEXT';
+plugins : {
+  stdin-buffer-size : 4096
+  stdout-buffer-size : 4096
+  stderr-buffer-size : 4096
+  auxout-buffer-size : 4096
+}
+build : {
+  stdout-buffer-size : 4096
+  stderr-buffer-size : 4096
+  auxout-buffer-size : 4096
+  retention : {
+    max-entries : 2
+  }
+}
+TEXT
+close $fh;
+
+# rebuild
+bam_touch();
+reconcile();
+build();
+
+assert { stats(undef, {
+    build_records => 2
+  , formula_records => 4
+})};
+
+assert { enoent ("//bm/build-records/$build0_id") };
+assert { eexists("//bm/build-records/$build1_id") };
+assert { eexists("//bm/build-records/$build2_id") };
+
+assert { ls("//bm/build-records-by/order/00000", "00000 -> //bm/build-records/$build2_id") }; # reverse chron
+assert { ls("//bm/build-records-by/order/00001", "00001 -> //bm/build-records/$build1_id") };
+assert { enoent ("//bm/build-records-by/order/00002") };
+
+assert_file("$bam_basedir/cores.o", "foo");
+assert_file("$bam_basedir/cores", "foo");
+
+assert { stats("cores.c", {
+    type => 'file'
+  , state => 'fresh'
+  , stale => 2
+  , fresh => 3
+})};
+assert { stats("cores.o", {
+    type => 'file'
+  , state => 'fresh'
+  , stale => 2
+  , fresh => 3
+})};
+assert { stats("cores", {
+    type => 'file'
+  , state => 'fresh'
+  , stale => 2
+  , fresh => 3
+})};
+
+#
+#
+#
+print("\n >> 4 - REBUILD <<\n\n");
+
+# rebuild
+bam_touch();
+reconcile();
+build();
+
+assert { stats(undef, {
+    build_records => 2
+  , formula_records => 4
+})};
+
+assert { enoent ("//bm/build-records/$build0_id") };
+assert { enoent ("//bm/build-records/$build1_id") };
+assert { eexists("//bm/build-records/$build2_id") };
+assert { eexists("//bm/build-records/$build3_id") };
+
+assert { ls("//bm/build-records-by/order/00000", "00000 -> //bm/build-records/$build3_id") }; # reverse chron
+assert { ls("//bm/build-records-by/order/00001", "00001 -> //bm/build-records/$build2_id") };
+assert { enoent ("//bm/build-records-by/order/00002") };
+
+assert_file("$bam_basedir/cores.o", "foo");
+assert_file("$bam_basedir/cores", "foo");
+
+assert { stats("cores.c", {
+    type => 'file'
+  , state => 'fresh'
+  , stale => 3
+  , fresh => 4
+})};
+assert { stats("cores.o", {
+    type => 'file'
+  , state => 'fresh'
+  , stale => 3
+  , fresh => 4
+})};
+assert { stats("cores", {
+    type => 'file'
+  , state => 'fresh'
+  , stale => 3
+  , fresh => 4
+})};
+
+#
+#
+#
+print("\n >> 5 - reduce build records retention to zero <<\n\n");
+
+open $fh, ">", "$bam_basedir/system-config" or die $!;
+print $fh <<'TEXT';
+plugins : {
+  stdin-buffer-size : 4096
+  stdout-buffer-size : 4096
+  stderr-buffer-size : 4096
+  auxout-buffer-size : 4096
+}
+build : {
+  stdout-buffer-size : 4096
+  stderr-buffer-size : 4096
+  auxout-buffer-size : 4096
+  retention : {
+    max-entries : 0
+  }
+}
+TEXT
+close $fh;
+
+# rebuild
+bam_touch();
+reconcile();
+build();
+
+assert { stats(undef, {
+    build_records => 0
+  , formula_records => 0
+})};
+
+assert { enoent ("//bm/build-records/$build0_id") };
+assert { enoent ("//bm/build-records/$build1_id") };
+assert { enoent ("//bm/build-records/$build2_id") };
+assert { enoent ("//bm/build-records/$build3_id") };
+
+assert { enoent ("//bm/build-records-by/order/00000") };
+assert { enoent ("//bm/build-records-by/order/00001") };
+assert { enoent ("//bm/build-records-by/order/00002") };
+assert { enoent ("//bm/build-records-by/order/00003") };
+assert { enoent ("//bm/build-records-by/order/00004") };
+
+assert_file("$bam_basedir/cores.o", "foo");
+assert_file("$bam_basedir/cores", "foo");
+
+assert { stats("cores.c", {
+    type => 'file'
+  , state => 'fresh'
+  , stale => 4
+  , fresh => 5
+})};
+assert { stats("cores.o", {
+    type => 'file'
+  , state => 'fresh'
+  , stale => 4
+  , fresh => 5
+})};
+assert { stats("cores", {
+    type => 'file'
+  , state => 'fresh'
+  , stale => 4
+  , fresh => 5
+})};
+
+teardown();

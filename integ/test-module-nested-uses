@@ -1,0 +1,125 @@
+#!/usr/bin/env perl
+
+#
+# module where a certain ruleset is included via uses, in multiple rulesets
+#
+
+use strict;
+use warnings;
+$SIG{__WARN__} = sub { die @_ };
+
+use Carp qw(confess);
+$SIG{__DIE__} = 'confess';
+
+use POSIX;
+use File::Basename;
+use Cwd;
+our $bam_basedir;
+our $repodir;
+BEGIN { $repodir = dirname(Cwd::realpath("$0/..")) }
+use lib "$repodir/integ/lib";
+use lib "$repodir/perl";
+use lib "$repodir/libbacon/perl";
+use util;
+use tree;
+use bam::bam;
+use integ;
+
+init(subdir => 'A/B');
+setup(<<TREE);
+|-- A
+|   `-- rules.bam%devel <<
+use C
+>>
+|   `-- B
+|       `-- module.bam%devel <<
+use C
+>>
+|-- C
+|   `-- rules.bam%devel <<
+rule -- foo : $bam_basedir/touch.bam+(.)
+>>
+|-- system-config <<
+namespaces : {
+  coreutils
+}
+filesystem : {
+  fstrees : {
+    $bam_basedir : {
+      mount : true
+      namespaces : {
+        modules
+      }
+    }
+    $repodir/usr/share/bam/coreutils : {
+      mount : true
+      namespaces : {
+        coreutils
+      }
+    }
+  }
+}
+>>
+|-- touch.bam << 0777
+file : {
+  lookup : {
+    namespace : coreutils
+    pattern : bin/touch+(@.)
+  }
+}
+args : [
+  \$bm_target0
+]
+>>
+TREE
+
+# before
+assert {
+  stats(undef, {
+    modules => 1
+  , system_state_ready => 1
+  , modules => 1
+  , rulesets => 3
+})};
+assert {
+  stats("$bam_basedir/A/B", "-S", {
+    type => 'module'
+  , state => 'fresh'
+  , reloaded => 1
+  , rulesets => 3    # self (A/B), A, and C
+  , rmas => 1
+})};
+assert {
+  stats("$bam_basedir/A/B/module.bam%devel", "-S", {
+    type => 'ruleset'
+  , state => 'fresh'
+  , fresh => 1
+  , stale => 1
+  , parse_err => 0
+  , parse_ok => 1
+  , modules => 1
+})};
+assert {
+  stats("$bam_basedir/A/rules.bam%devel", "-S", {
+    type => 'ruleset'
+  , state => 'fresh'
+  , fresh => 1
+  , stale => 1
+  , parse_err => 0
+  , parse_ok => 1
+  , modules => 1
+})};
+assert {
+  stats("$bam_basedir/C/rules.bam%devel", "-S", {
+    type => 'ruleset'
+  , state => 'fresh'
+  , fresh => 1
+  , stale => 1
+  , parse_err => 0
+  , parse_ok => 1
+  , modules => 1
+})};
+
+build();
+
+teardown();

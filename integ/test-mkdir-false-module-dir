@@ -1,0 +1,205 @@
+#!/usr/bin/env perl
+
+#
+# honor the fstree mkdir=false setting to create directories in the module build dir
+#
+
+use strict;
+use warnings;
+$SIG{__WARN__} = sub { die @_ };
+
+use Carp qw(confess);
+$SIG{__DIE__} = 'confess';
+
+use POSIX;
+use File::Basename;
+use Cwd;
+our $repodir;
+our $bam_basedir;
+our $bam_dir;
+BEGIN { $repodir = dirname(Cwd::realpath("$0/..")) }
+use lib "$repodir/integ/lib";
+use lib "$repodir/perl";
+use lib "$repodir/libbacon/perl";
+use util;
+use tree;
+use bam::bam;
+use integ;
+
+init(subdir => 'B');
+setup({expect_error => 1 }, <<"TREE");
+|-- A
+|   `-- foo
+|   `-- rules.bam%devel <<
+rule { name : 1 } foo -> boats/bar : ./cp.bam+(.)
+rule { name : 2 } foo -> \$^D/bar : ./cp.bam+(.)
+rule { name : 3 } **/bar -> //targets
+>>
+|   `-- cp.bam << 0777
+file : {
+  lookup : {
+    namespace : coreutils
+    pattern : bin/cp+(@.)
+  }
+}
+args : [
+  \$bm_source0
+  \$bm_target0
+]
+>>
+|-- B
+|   `-- module.bam%devel <<
+anchor ../A
+>>
+|-- system-config <<
+namespaces : {
+  coreutils
+}
+filesystem : {
+  fstrees : {
+    $bam_basedir : {
+      mount : true
+    }
+    $bam_basedir/B : {
+      mount : true
+      mkdir : false
+    }
+    $repodir/usr/share/bam/coreutils : {
+      mount : true
+      namespaces : {
+        coreutils
+      }
+    }
+  }
+}
+>>
+TREE
+
+my $B_module_id = bam::identity('module', $bam_dir);
+my $B_fstree_id = bam::identity('fstree', $bam_dir);
+my $stats;
+
+# build link points to the right node
+my $result = bam_ls(["//bm/modules/$B_module_id/build", "--no-follow"]);
+my $ref = $$result{out};
+assert { $ref eq "build -> $bam_basedir/B" };
+
+# anchor link points to the right node
+$result = bam_ls(["//bm/modules/$B_module_id/anchor", "--no-follow"]);
+$ref = $$result{out};
+assert { $ref eq "anchor -> $bam_basedir/A" };
+
+# these rules invalidate one another, and the order in which they are run is unstable
+# therefore the assertions are on the total number of rules run, only
+# the number of hits is stable, and reflects only the final run of that rule
+assert {
+  stats("//module/rmas-by/name/1", "--follow", {
+      state => 'fresh'
+    , search_hits => 1
+    , generate_hits => 1
+    , bpes => 1
+    , dirs => 2
+    , formula_hits => 0
+})};
+assert {
+  stats("//module/rmas-by/name/2", "--follow", {
+      state => 'fresh'
+    , search_hits => 1
+    , generate_hits => 1
+    , bpes => 1
+    , dirs => 2
+    , formula_hits => 0
+})};
+assert {
+  stats("//module/rmas-by/name/3", "--follow", {
+      state => 'fresh'
+    , search_hits => 2
+    , generate_hits => 2
+    , bpes => 2
+    , dirs => 3
+    , formula_hits => 0
+})};
+assert {
+  stats(undef, {
+      modules => 1
+    , rule_run => 4
+    , rule_resolve_ok => 4
+    , rule_resolve_err => 0
+})};
+
+# no mkdir was performed
+assert {
+  stats("//bm/sys-filesystem", "--follow", {
+      mkdir_ok => 0
+    , mkdir_err => 0
+    , mkdir_eexist => 0
+})};
+$stats = bam_stats("//bm/sys-filesystem", "--follow");
+assert { $$stats{mkdir_no} > 0 };
+assert {
+  stats("//bm/fstrees/$B_fstree_id", "--follow", {
+      mkdir_ok => 0
+    , mkdir_no => 1
+    , mkdir_err => 0
+    , mkdir_eexist => 0
+})};
+assert {
+  stats("$bam_basedir/B", {
+    type => 'dir'
+  , state => 'fresh'
+  , fresh => 0
+  , stale => 0
+  , mkdir_ok => 0
+  , mkdir_no => 0
+  , mkdir_err => 0
+  , mkdir_eexist => 0
+})};
+assert {
+  stats("$bam_basedir/B/boats", {
+    type => 'dir'
+  , state => 'uncreated'
+  , fresh => 0
+  , stale => 0
+  , mkdir_ok => 0
+  , mkdir_no => 1
+  , mkdir_err => 0
+  , mkdir_eexist => 0
+})};
+assert {
+  stats("$bam_basedir/B/boats/bar", {
+    type => 'file'
+  , state => 'uncreated'
+  , fresh => 0
+  , stale => 0
+})};
+assert {
+  stats("$bam_basedir/A", {
+    type => 'dir'
+  , state => 'fresh'
+  , mkdir_ok => 0
+  , mkdir_no => 0
+  , mkdir_err => 0
+  , mkdir_eexist => 0
+})};
+
+# this fails because reconcile did not complete
+build(expect_error => 1);
+
+assert {
+  info({
+    "system-state" => 'filesystem-reconcile'
+})};
+assert {
+  stats("//bm/sys-build", "--follow", {
+      build => 0
+    , build_ok => 0
+    , build_err => 0
+    , fml_exec_err => 0
+    , fml_exec_ok => 0
+})};
+
+# these could not be created
+assert { enoent("$bam_dir/boats") };
+assert { enoent("$bam_dir/boats/bar") };
+
+teardown();

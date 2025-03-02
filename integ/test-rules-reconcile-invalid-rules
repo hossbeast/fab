@@ -13,61 +13,75 @@ use POSIX;
 use File::Basename;
 use Cwd;
 our $repodir;
-our $bam_projhash;
+our $bam_bamd_id;
 BEGIN { $repodir = dirname(Cwd::realpath("$0/..")) }
 use lib "$repodir/integ/lib";
+use lib "$repodir/perl";
 use lib "$repodir/libbacon/perl";
 use util;
 use tree;
-use bam;
+use bam::bam;
+use integ;
 
-#
-# phase 1
-#
 init();
-setup({ tolerant => 1 }, <<'TREE');
-|-- module.bam+devel <<
+setup({ expect_error => 1 }, <<'TREE');
+|-- module.bam%devel <<
 rule foo
 >>
 TREE
 
-assert { stats(undef, {
+print("\n >> 1 - INITIAL, invalid rule <<\n\n");
+
+assert {
+  stats(undef, {
     modules => 1
   , system_state_ok => 0
 })};
-assert { stats(".", "-S", {
+assert {
+  stats(".", "-S", {
     type => 'module'
   , state => 'stale'
   , reloaded => 0
+})};
+assert {
+  stats("./module.bam%devel", "-S", {
+    type => 'ruleset'
+  , state => 'stale'
   , rules => 0
-  , parse => 1
+  , parse_err => 1
   , parse_ok => 0
 })};
 
-my $result = bam_info();
-my $msg = bacon_parse("{" . $$result{out} . "}");
-assert { $$msg{"system-state"} ne "ok" };
+assert {
+  info({
+    "system-state" => 'module-reconcile'
+})};
 
-#
-# phase 2
-#
+print("\n >> 2 - reconcile, invalid rule <<\n\n");
 reconcile(expect_error => 1);
 
 assert { stats(undef, {
     modules => 1
   , system_state_ok => 0
 })};
-assert { stats(".", "-S", {
+assert {
+  stats(".", "-S", {
     type => 'module'
   , state => 'stale'
   , reloaded => 0
+})};
+assert {
+  stats("./module.bam%devel", "-S", {
+    type => 'ruleset'
+  , state => 'stale'
   , rules => 0
-  , parse => 2
+  , parse_err => 2
   , parse_ok => 0
 })};
 
-$result = bam_info();
-$msg = bacon_parse("{" . $$result{out} . "}");
-assert { $$msg{"system-state"} ne "ok" };
+assert {
+  info({
+    "system-state" => 'module-reconcile'
+})};
 
 teardown();

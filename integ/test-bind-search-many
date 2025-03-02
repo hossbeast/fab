@@ -1,8 +1,7 @@
 #!/usr/bin/env perl
 
 #
-# This test has a one-to-many bind rule whose target is a file. Since only directories are indexed
-# for lookup, the lookup pattern must specify the file-type qualifier (.).
+# bind rule with search pattern on the lhs
 #
 
 use strict;
@@ -13,19 +12,21 @@ use POSIX;
 use File::Basename;
 use Cwd;
 our $bam_basedir;
-our $bam_projdir;
+our $bam_dir;
 our $repodir;
 BEGIN { $repodir = dirname(Cwd::realpath("$0/..")) }
 use lib "$repodir/integ/lib";
+use lib "$repodir/perl";
 use lib "$repodir/libbacon/perl";
 use util;
 use tree;
-use bam;
+use bam::bam;
+use integ;
 
 init(subdir => 'B');
 setup(<<TREE);
 |-- B
-|   `-- module.bam+devel <<
+|   `-- module.bam%devel <<
 rule { name : beef } */foo+(.) => [*] //foo
 >>
 |   `-- A
@@ -34,37 +35,45 @@ rule { name : beef } */foo+(.) => [*] //foo
 filesystem : {
   fstrees : {
     $bam_basedir : {
-      index : true
       mount : true
+      namespaces : {
+        modules
+      }
     }
   }
 }
 >>
 TREE
 
-my $B_A_foo_id = hash64("$bam_basedir/B/A/foo");
+my $modules_ns_id = bam::identity("namespace", "modules");
+my $B_A_foo_id = bam::identity("file", "$bam_basedir/B/A/foo");
 
 # before
 assert { stats(undef, {
     modules => 1
-  , system_state_ok => 1
+  , system_state_ready => 1
   , rule_run => 1
 })};
 assert {
-  stats("//fsindex", {
+  stats("//bm/namespaces/$modules_ns_id", "-S", {
       del => 0
 })};
-assert { stats(".", "-S", {
+assert {
+  stats(".", "-S", {
     type => 'module'
   , state => 'fresh'
   , reloaded => 1
-  , parse => 1
+})};
+assert {
+  stats("./module.bam%devel", "-S", {
+    type => 'ruleset'
+  , state => 'fresh'
+  , parse_err => 0
   , parse_ok => 1
 })};
 assert {
-  stats("//module/rmas-by/name/beef", {
+  stats("//module/rmas-by/name/beef", "--follow", {
       rule_run => 1
-    , rule_run_ok => 1
     , search_hits => 0
     , generate_hits => 0
     , formula_hits => 0

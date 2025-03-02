@@ -19,22 +19,24 @@ our $bam_basedir;
 our $repodir;
 BEGIN { $repodir = dirname(Cwd::realpath("$0/..")) }
 use lib "$repodir/integ/lib";
+use lib "$repodir/perl";
 use lib "$repodir/libbacon/perl";
 use util;
 use tree;
-use bam;
+use bam::bam;
+use integ;
 
 init(subdir => 'B');
 setup(<<TREE);
 |-- A
-|   `-- module.bam+devel <<
+|   `-- module.bam%devel <<
 rule foo -> bar
 >>
 |-- B
-|   `-- module.bam+devel <<
+|   `-- module.bam%devel <<
 import A
 >>
-|-- config.bam+devel <<
+|-- config.bam%devel <<
 filesystem : {
   fstrees : {
     $bam_basedir
@@ -69,7 +71,7 @@ TREE
 # before
 assert { stats(undef, {
     modules => 1          # the imported directory is not vivified
-  , system_state_ok => 1
+  , system_state_ready => 1
 })};
 assert { stats(".", "-S", {
     state => 'fresh'
@@ -79,7 +81,7 @@ assert { stats(".", "-S", {
   , uses_up => 0
   , uses_down => 0
   , rules => 0
-  , parse => 1
+  , parse_err => 0
   , parse_ok => 1
 })};
 assert { stats("..", {
@@ -88,20 +90,20 @@ assert { stats("..", {
 assert { stats("../A", {
     type => 'dir'
 })};
-assert { stats("../A/module.bam+devel", {   # just a file, import does not bootstrap
+assert { stats("../A/module.bam%devel", {   # just a file, import does not bootstrap
     state => 'fresh'
   , type => 'file'
 })};
 
 # delete the contents of the module file
-open my $fh, ">", "$bam_basedir/B/module.bam+devel" or die $!;
+open my $fh, ">", "$bam_basedir/B/module.bam%devel" or die $!;
 close $fh;
 
 # after
 reconcile();
 assert { stats(undef, {
     modules => 1
-  , system_state_ok => 2
+  , system_state_ready => 2
 })};
 assert { stats(".", "-S", {
     reloaded => 2
@@ -111,7 +113,7 @@ assert { stats(".", "-S", {
   , uses_up => 0
   , uses_down => 0
   , rules => 0
-  , parse => 2
+  , parse_err => 0
   , parse_ok => 2
 })};
 assert { stats("..", {
@@ -121,7 +123,7 @@ assert { stats("..", {
 assert { stats("../A", {
     type => 'dir'
 })};
-assert { stats("../A/module.bam+devel", {   # just a file
+assert { stats("../A/module.bam%devel", {   # just a file
     state => 'fresh'
   , type => 'file'
 })};

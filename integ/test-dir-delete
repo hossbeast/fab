@@ -8,6 +8,9 @@ use strict;
 use warnings;
 $SIG{__WARN__} = sub { die @_ };
 
+use Carp qw(confess);
+$SIG{__DIE__} = 'confess';
+
 use POSIX;
 use File::Basename;
 use Cwd;
@@ -16,50 +19,59 @@ our $bam_invalidate;
 our $bam_basedir;
 BEGIN { $repodir = dirname(Cwd::realpath("$0/..")) }
 use lib "$repodir/integ/lib";
+use lib "$repodir/perl";
 use lib "$repodir/libbacon/perl";
 use util;
 use tree;
-use bam;
+use bam::bam;
+use integ;
 
 init();
 setup(<<TREE);
 |-- A
 |   `-- foo
-|-- module.bam+devel
-|-- config.bam+devel <<
+|-- module.bam%devel
+|-- config.bam%devel <<
 filesystem : {
   fstrees : {
     $bam_basedir : {
       mount : true
-      index : false
     }
   }
 }
 >>
 TREE
 
+# /run/user/1000/bam-integ/testdir/user-config
 # /run/user/1000/bam-integ/testdir
 # /run/user/1000/bam-integ/testdir/A
-my $watched_dirs = 2;
-
-my $stats = bam_stats(undef);
-my $fsents_before = $$stats{fsents};
+my $watches = 3;
+my $dir_watches = 2;
+my $file_watches = 0;
+my $symlink_watches = 1;
 
 assert {
-  stats(undef, {
-    modules => 1
-  , notify_index_count => ($bam_invalidate eq "notify") ? $watched_dirs : 0
+  stats("//bm/sys-notify", "--follow", {
+      count => ($bam_invalidate eq "notify") ? $watches : 0
+    , put => ($bam_invalidate eq "notify") ? ($dir_watches + $file_watches + $symlink_watches) : 0
+    , dir_put => ($bam_invalidate eq "notify") ? $dir_watches : 0
+    , file_put => ($bam_invalidate eq "notify") ? $file_watches : 0
+    , symlink_put => ($bam_invalidate eq "notify") ? $symlink_watches : 0
 })};
 assert { stats("$bam_basedir", {
-    type => 'module-dir'
+    type => 'dir'
   , state => 'fresh'
-  , indexed_lookup => 1
+  , fresh => 0
+  , stale => 0
+  , indexed_lookup => 0
   , indexed_notify => ($bam_invalidate eq "notify") ? 1 : 0
 })};
 assert { stats("$bam_basedir/A", {
     type => 'dir'
   , state => 'fresh'
-  , indexed_lookup => 1
+  , fresh => 0
+  , stale => 0
+  , indexed_lookup => 0
   , indexed_notify => ($bam_invalidate eq "notify") ? 1 : 0
 })};
 
@@ -79,17 +91,17 @@ unlink("$bam_basedir/A/foo") or die $!;
 rmdir("$bam_basedir/A") or die $!;
 reconcile();
 
-$stats = bam_stats(undef);
-my $fsents_after = $$stats{fsents};
-
-# directory, file
-assert { $fsents_after == ($fsents_before - 2) };
+assert { enoent("$bam_basedir/A/foo") };
+assert { enoent("$bam_basedir/A") };
 
 assert {
-  stats(undef, {
-    modules => 1
-                      # watch for A was removed
-  , notify_index_count => ($bam_invalidate eq "notify") ? ($watched_dirs - 1) : 0
+  stats("//bm/sys-notify", "--follow", {
+      # watch for testdir/A was removed
+      count => ($bam_invalidate eq "notify") ? ($watches - 1) : 0
+    , put => ($bam_invalidate eq "notify") ? ($dir_watches + $file_watches + $symlink_watches) : 0
+    , dir_put => ($bam_invalidate eq "notify") ? $dir_watches : 0
+    , file_put => ($bam_invalidate eq "notify") ? $file_watches : 0
+    , symlink_put => ($bam_invalidate eq "notify") ? $symlink_watches : 0
 })};
 assert {
   stats($bam_basedir, "-S", {
@@ -99,4 +111,5 @@ assert {
   , stale => 1
   , reloaded => 1
 })};
+
 teardown();

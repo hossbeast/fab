@@ -1,0 +1,216 @@
+#!/usr/bin/env perl
+
+#
+# This test exercises a formula-file with filepath from lookup ref
+#
+
+use strict;
+use warnings;
+$SIG{__WARN__} = sub { die @_ };
+
+use Carp qw(confess);
+$SIG{__DIE__} = 'confess';
+
+use POSIX;
+use File::Basename;
+use Cwd;
+our $repodir;
+our $bam_basedir;
+BEGIN { $repodir = dirname(Cwd::realpath("$0/..")) }
+use lib "$repodir/integ/lib";
+use lib "$repodir/perl";
+use lib "$repodir/libbacon/perl";
+use util;
+use tree;
+use bam::bam;
+use integ;
+use bam::bam;
+
+# build out the fstree under /tmp
+init();
+setup(<<"TREE");
+|-- cores.c <<
+foo
+>>
+|-- module.bam%devel <<
+rule { name : 1 } cores.c -> cores.o : ./cp.bam+(.)
+rule { name : 2 } cores.o -> cores : ./cp.bam+(.)
+rule { name : 3 } cores -> //targets
+>>
+|-- cp.bam << 0777
+file : {
+  lookup : {
+    namespace : coreutils
+    pattern : bin/cp+(.@)
+  }
+}
+args : [
+  \$bm_source0
+  \$bm_target0
+]
+>>
+|-- config.bam%devel <<
+namespaces : {
+  coreutils
+}
+filesystem : {
+  fstrees : {
+    $bam_basedir : {
+      mount : true
+    }
+    $repodir/usr/share/bam/coreutils : {
+      mount : true
+      namespaces : {
+        coreutils
+      }
+    }
+  }
+}
+>>
+TREE
+
+# intermediate and final file were created
+build();
+assert_file("$bam_basedir/cores.o", "foo");
+assert_file("$bam_basedir/cores", "foo");
+
+assert {
+  stats("$bam_basedir/cores.o", {
+    type => 'file'
+  , state => 'fresh'
+  , stale => 0
+  , fresh => 1
+})};
+assert {
+  stats("$bam_basedir/cores", {
+    type => 'file'
+  , state => 'fresh'
+  , stale => 0
+  , fresh => 1
+})};
+assert {
+  stats("$bam_basedir/cp.bam", "-S", {
+      type => 'formula'
+    , state => 'fresh'
+    , stale => 1
+    , fresh => 1
+    , fml_exec_ok => 2
+    , fml_exec_err => 0
+})};
+
+# delete the intermediate file only
+unlink("$bam_basedir/cores.o") or die $!;
+reconcile();
+
+build();
+assert_file("$bam_basedir/cores.o", "foo");
+assert_file("$bam_basedir/cores", "foo");
+
+assert {
+  stats("$bam_basedir/cores.o", {
+    type => 'file'
+  , state => 'fresh'
+  , stale => 1
+  , fresh => 2
+})};
+assert {
+  stats("$bam_basedir/cores", {
+    type => 'file'
+  , state => 'fresh'
+  , stale => 1
+  , fresh => 2
+})};
+assert {
+  stats("$bam_basedir/cp.bam", "-S", {
+      type => 'formula'
+    , state => 'fresh'
+    , stale => 1
+    , fresh => 1
+    , fml_exec_ok => 4
+    , fml_exec_err => 0
+})};
+
+# delete the final file only
+unlink("$bam_basedir/cores") or die $!;
+reconcile();
+build();
+assert_file("$bam_basedir/cores.o", "foo");
+assert_file("$bam_basedir/cores", "foo");
+
+assert {
+  stats("$bam_basedir/cores.o", {
+    type => 'file'
+  , state => 'fresh'
+  , stale => 1
+  , fresh => 2
+})};
+assert {
+  stats("$bam_basedir/cores", {
+    type => 'file'
+  , state => 'fresh'
+  , stale => 2
+  , fresh => 3
+})};
+assert {
+  stats("$bam_basedir/cp.bam", "-S", {
+      type => 'formula'
+    , state => 'fresh'
+    , stale => 1
+    , fresh => 1
+    , fml_exec_ok => 5
+    , fml_exec_err => 0
+})};
+
+# delete both intermediate and final file
+unlink("$bam_basedir/cores.o") or die $!;
+unlink("$bam_basedir/cores") or die $!;
+reconcile();
+build();
+assert_file("$bam_basedir/cores.o", "foo");
+assert_file("$bam_basedir/cores", "foo");
+
+assert {
+  stats("$bam_basedir/cores.o", {
+    type => 'file'
+  , state => 'fresh'
+  , stale => 2
+  , fresh => 3
+})};
+assert {
+  stats("$bam_basedir/cores", {
+    type => 'file'
+  , state => 'fresh'
+  , stale => 3
+  , fresh => 4
+})};
+assert {
+  stats("$bam_basedir/cp.bam", "-S", {
+      type => 'formula'
+    , state => 'fresh'
+    , stale => 1
+    , fresh => 1
+    , fml_exec_ok => 7
+    , fml_exec_err => 0
+})};
+
+# these counters are not going to be stable
+assert {
+  stats("//module/rmas-by/name/1", "--follow", {
+      rule_resolve_err => 0
+#    , rule_run => 2+5
+#    , rule_resolve_ok => 2+5
+})};
+assert {
+  stats("//module/rmas-by/name/2", "--follow", {
+      rule_resolve_err => 0
+#    , rule_run => 1+3
+#    , rule_resolve_ok => 1+3
+})};
+assert {
+  stats("//module/rmas-by/name/3", "--follow", {
+      rule_resolve_err => 0
+#    , rule_run => 1+5
+#    , rule_resolve_ok => 1+5
+})};
+
+teardown();

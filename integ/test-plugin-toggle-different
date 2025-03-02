@@ -1,0 +1,337 @@
+#!/usr/bin/env perl
+
+#
+# enable and disable plugin(s) which resolve to different files
+#
+
+use strict;
+use warnings;
+$SIG{__WARN__} = sub { die @_ };
+
+use Carp qw(confess);
+$SIG{__DIE__} = 'confess';
+
+use POSIX;
+use File::Basename;
+use Cwd;
+our $repodir;
+our $bam_basedir;
+our $bam_dir;
+BEGIN { $repodir = dirname(Cwd::realpath("$0/..")) }
+use lib "$repodir/integ/lib";
+use lib "$repodir/perl";
+use lib "$repodir/libbacon/perl";
+use util;
+use tree;
+use bam::bam;
+use integ;
+
+init();
+setup(<<"TREE");
+|-- module.bam%devel <<
+>>
+|-- config_A <<
+>>
+|-- config_B <<
+plugins : {
+  [
+    {
+      file : {
+        lookup : {
+          pattern : $bam_basedir/plugin_1
+        }
+      }
+    }
+  ]
+}
+>>
+|-- config_C <<
+plugins : {
+  [
+    {
+      file : {
+        lookup : {
+          pattern : $bam_basedir/plugin_1
+        }
+      }
+    }
+    {
+      file : {
+        lookup : {
+          pattern : $bam_basedir/plugin_2
+        }
+      }
+    }
+  ]
+}
+>>
+|-- config_D <<
+plugins : {
+  [
+    {
+      file : {
+        lookup : {
+          pattern : $bam_basedir/plugin_2
+        }
+      }
+    }
+  ]
+}
+>>
+|-- plugin_1 << 0755
+#!/usr/bin/env perl
+use POSIX;
+
+my \$s = <<MSG;
+plugin-ready
+
+MSG
+
+while(1) {
+  POSIX::write(1001, \$s, length(\$s));
+  <STDIN>;
+}
+TEXT
+>>
+|-- plugin_2 << 0755
+#!/usr/bin/env perl
+use POSIX;
+
+my \$s = <<MSG;
+plugin-ready
+
+MSG
+
+while(1) {
+  POSIX::write(1001, \$s, length(\$s));
+  <STDIN>;
+}
+TEXT
+>>
+TREE
+
+my $plugin_1_id = bam::identity("plugin", "$bam_basedir/plugin_1", 'plugin');
+my $plugin_2_id = bam::identity("plugin", "$bam_basedir/plugin_2", 'plugin');
+my $res;
+my $text;
+
+print("plugin_1_id $plugin_1_id\n");
+print("plugin_2_id $plugin_2_id\n");
+
+print("\n >> 0 - no plugins enabled <<\n\n");
+#
+# 0. no plugins configured
+#
+assert {
+  info(undef, {
+    "system-state" => 'ready'
+})};
+assert {
+  stats(undef, {
+      system_state_plugin_reconcile => 1
+    , system_state_ready => 1
+    , system_state_ok => 0
+    , plugins => 0
+})};
+assert { stats("$bam_basedir/plugin_1", {
+    type => 'file'
+  , state => 'fresh'
+  , fresh => 1
+  , stale => 0
+})};
+assert { stats("$bam_basedir/plugin_2", {
+    type => 'file'
+  , state => 'fresh'
+  , fresh => 1
+  , stale => 0
+})};
+assert { enoent("//bm/plugins/$plugin_1_id") };
+assert { enoent("//bm/plugins/$plugin_2_id") };
+
+print("\n >> 1 - enable the first plugin <<\n\n");
+#
+# 1. enable the first plugin in config
+#
+symlinkf("config_B", "$bam_basedir/config.bam%devel");
+reconcile();
+
+assert {
+  info(undef, {
+    "system-state" => 'ready'
+})};
+assert {
+  stats(undef, {
+      system_state_plugin_reconcile => 2
+    , system_state_ready => 2
+    , system_state_ok => 0
+    , plugins => 1
+})};
+assert { stats("//bm/plugins/$plugin_1_id", "-S", {
+    type => 'plugin'
+  , state => 'fresh'
+  , stale => 1
+  , fresh => 1
+  , tx_parse_err => 0
+  , fork => 1
+  , crashed => 0
+  , reap => 0
+  , events => 0
+  , commands => 0
+  , ready => 1
+})};
+assert { stats("$bam_basedir/plugin_2", {
+    type => 'file'
+  , state => 'fresh'
+  , fresh => 1
+  , stale => 0
+})};
+assert { eexists("//bm/plugins/$plugin_1_id") };
+assert { enoent("//bm/plugins/$plugin_2_id") };
+
+# assert on the plugin filepath resolution
+$res = bam_describe(["//bm/plugins/$plugin_1_id", "-S"]);
+assert { index($$res{out}, " file : $bam_basedir/plugin_1") > -1 };
+assert { index($$res{out}, " self : $bam_basedir/plugin_1") > -1 };
+assert { index($$res{out}, " lookup-plugin-file : $bam_basedir/plugin_1") > -1 };
+
+print("\n >> 2 - enable the second plugin <<\n\n");
+#
+# 2. enable the second plugin
+#
+symlinkf("config_C", "$bam_basedir/config.bam%devel");
+reconcile();
+
+assert {
+  info(undef, {
+    "system-state" => 'ready'
+})};
+assert {
+  stats(undef, {
+      system_state_plugin_reconcile => 3
+    , system_state_ready => 3
+    , system_state_ok => 0
+    , plugins => 2
+})};
+assert { stats("//bm/plugins/$plugin_1_id", "-S", {
+    type => 'plugin'
+  , state => 'fresh'
+  , stale => 1
+  , fresh => 1
+  , tx_parse_err => 0
+  , fork => 1
+  , crashed => 0
+  , reap => 0
+  , events => 0
+  , commands => 0
+  , ready => 1
+})};
+assert { stats("//bm/plugins/$plugin_2_id", "-S", {
+    type => 'plugin'
+  , state => 'fresh'
+  , stale => 1
+  , fresh => 1
+  , tx_parse_err => 0
+  , fork => 1
+  , crashed => 0
+  , reap => 0
+  , events => 0
+  , commands => 0
+  , ready => 1
+})};
+assert { eexists("//bm/plugins/$plugin_1_id") };
+assert { eexists("//bm/plugins/$plugin_2_id") };
+
+$res = bam_describe(["//bm/plugins/$plugin_1_id", "-S"]);
+assert { index($$res{out}, " file : $bam_basedir/plugin_1") > -1 };
+assert { index($$res{out}, " self : $bam_basedir/plugin_1") > -1 };
+assert { index($$res{out}, " lookup-plugin-file : $bam_basedir/plugin_1") > -1 };
+
+$res = bam_describe(["//bm/plugins/$plugin_2_id", "-S"]);
+assert { index($$res{out}, " file : $bam_basedir/plugin_2") > -1 };
+assert { index($$res{out}, " self : $bam_basedir/plugin_2") > -1 };
+assert { index($$res{out}, " lookup-plugin-file : $bam_basedir/plugin_2") > -1 };
+
+# some sanity checks for the cli results
+$text = bam_plugins() or die $!;
+assert { $text =~ /$plugin_1_id/ };
+assert { $text =~ /$plugin_2_id/ };
+
+$text = bam_plugin($plugin_1_id) or die $!;
+assert { $text =~ /$plugin_1_id/ };
+$text = bam_plugin($plugin_2_id) or die $!;
+assert { $text =~ /$plugin_2_id/ };
+
+print("\n >> 3 - disable the first plugin <<\n\n");
+#
+# 3. disable the first plugin
+#
+symlinkf("config_D", "$bam_basedir/config.bam%devel");
+reconcile();
+
+assert {
+  info(undef, {
+      "system-state" => 'ready'
+})};
+assert {
+  stats(undef, {
+      system_state_plugin_reconcile => 4
+    , system_state_ready => 4
+    , system_state_ok => 0
+    , plugins => 1
+})};
+assert { stats("$bam_basedir/plugin_1", {
+    type => 'file'
+  , state => 'fresh'
+  , stale => 0
+  , fresh => 1
+})};
+assert { stats("//bm/plugins/$plugin_2_id", "-S", {
+    type => 'plugin'
+  , state => 'fresh'
+  , stale => 1
+  , fresh => 1
+  , tx_parse_err => 0
+  , fork => 1
+  , crashed => 0
+  , reap => 0
+  , events => 0
+  , commands => 0
+  , ready => 1
+})};
+assert { enoent("//bm/plugins/$plugin_1_id") };
+assert { eexists("//bm/plugins/$plugin_2_id") };
+
+print("\n >> 4 - disable the second plugin <<\n\n");
+#
+# 4. disable the second plugin
+#
+unlink("$bam_basedir/config.bam%devel") or die $!;
+reconcile();
+
+assert {
+  info(undef, {
+    "system-state" => 'ready'
+})};
+assert {
+  stats(undef, {
+      system_state_plugin_reconcile => 5
+    , system_state_ready => 5
+    , system_state_ok => 0
+    , plugins => 0
+})};
+assert { stats("$bam_basedir/plugin_1", {
+    type => 'file'
+  , state => 'fresh'
+  , stale => 0
+  , fresh => 1
+})};
+assert { stats("$bam_basedir/plugin_2", {
+    type => 'file'
+  , state => 'fresh'
+  , stale => 0
+  , fresh => 1
+})};
+assert { enoent("//bm/plugins/$plugin_1_id") };
+assert { enoent("//bm/plugins/$plugin_2_id") };
+
+teardown();

@@ -1,0 +1,155 @@
+#!/usr/bin/env perl
+
+#
+# bam kills competing bamd instances before starting bamd
+#  this test starts an inner, and then an outer, bamd instance
+#
+
+use strict;
+use warnings;
+$SIG{__WARN__} = sub { die @_ };
+
+use Carp qw(confess);
+$SIG{__DIE__} = 'confess';
+
+use POSIX;
+use File::Basename;
+use Cwd;
+our $repodir;
+our $bam_bampath;
+our $bam_rundir;
+our $bam_invalidate;
+our $bam_sweeper_period;
+our $bam_basedir;
+BEGIN { $repodir = dirname(Cwd::realpath("$0/..")) }
+use lib "$repodir/integ/lib";
+use lib "$repodir/perl";
+use lib "$repodir/libbacon/perl";
+use util;
+use tree;
+use bam::bam;
+use integ;
+
+init(subdir => 'A/B');
+setup(<<"TREE");
+|-- module.bam%devel <<
+>>
+|-- A
+|   `-- module.bam%devel <<
+>>
+|   `-- B
+|        `-- module.bam%devel <<
+>>
+TREE
+
+my $outer_id = bam::identity_base("$bam_basedir/A");
+my $inner_id = bam::identity_base("$bam_basedir/A/B");
+print("outer $outer_id\n");
+print("inner $inner_id\n");
+
+#
+# initially there is a single instance with an outer and an inner nested module
+#
+print("\n >> 1 - INNNER INSTANCE <<\n\n");
+assert {
+  stats(undef, {
+    modules => 1
+})};
+assert {
+  stats(".", "-S", {
+      type => 'module'
+    , state => 'fresh'
+    , reloaded => 1
+})};
+assert {
+  stats("./module.bam%devel", "-S", {
+      type => 'ruleset'
+    , state => 'fresh'
+    , parse_err => 0
+    , parse_ok => 1
+})};
+
+my $fh;
+my $outer_pid;
+my $inner_pid;
+
+# outer bamd is running
+open $fh, "<$bam_rundir/$outer_id/bamd/lock";
+$outer_pid = 0;
+if(!eof($fh)) {
+  $outer_pid = do { local $/ ; <$fh> };
+  chomp $outer_pid;
+  if(kill(0, $outer_pid) != 1) {
+    $outer_pid = 0;
+  }
+}
+close $fh;
+print("outer $outer_id pid $outer_pid\n");
+
+# no inner bamd running
+open $fh, "<$bam_rundir/$inner_id/bamd/lock";
+$inner_pid = 0;
+if(!eof($fh)) {
+  $inner_pid = do { local $/ ; <$fh> };
+  chomp $inner_pid;
+  if(kill(0, $inner_pid) != 1) {
+    $inner_pid = 0;
+  }
+}
+close $fh;
+print("inner $inner_id pid $inner_pid\n");
+
+assert { $outer_pid == 0; };
+assert { $inner_pid != 0 };
+
+#
+# starting the nested instance kills the outer instance
+#
+print("\n >> 2 - OUTER INSTANCE <<\n\n");
+
+# start the outer bamd instance
+run({ @_, cwd => "$bam_basedir/A" }, $bam_bampath
+  , "reconcile"
+  , "-K"
+  , "--system-config-path", "$bam_basedir/system-config"
+  , "--user-config-path", "$bam_basedir/user-config"
+  , "--default-filesystem-invalidation", $bam_invalidate
+  , "--sweeper-period-nsec", $bam_sweeper_period
+);
+
+# outer bamd running
+open $fh, "<$bam_rundir/$outer_id/bamd/lock";
+$outer_pid = 0;
+if(!eof($fh)) {
+  $outer_pid = do { local $/ ; <$fh> };
+  chomp $outer_pid;
+  if(kill(0, $outer_pid) != 1) {
+    $outer_pid = 0;
+  }
+}
+close $fh;
+print("outer $outer_id pid $outer_pid\n");
+
+# no inner bamd running
+open $fh, "<$bam_rundir/$inner_id/bamd/lock";
+$inner_pid = 0;
+if(!eof($fh)) {
+  $inner_pid = do { local $/ ; <$fh> };
+  chomp $inner_pid;
+  if(kill(0, $inner_pid) != 1) {
+    $inner_pid = 0;
+  }
+}
+close $fh;
+print("inner $inner_id pid $inner_pid\n");
+
+assert { $outer_pid != 0; };
+assert { $inner_pid == 0 };
+
+run({ cwd => "$bam_basedir/A" }
+  , $bam_bampath
+  , "--no-launch"
+  , "kill"
+);
+
+teardown();

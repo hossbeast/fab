@@ -1,0 +1,82 @@
+#!/usr/bin/env perl
+
+#
+# Run an rma on demand
+#
+
+use strict;
+use warnings;
+$SIG{__WARN__} = sub { die @_ };
+
+use Carp qw(confess);
+$SIG{__DIE__} = 'confess';
+
+use POSIX;
+use File::Basename;
+use Cwd;
+our $repodir;
+our $bam_bamd_id;
+our $bam_basedir;
+BEGIN { $repodir = dirname(Cwd::realpath("$0/..")) }
+use lib "$repodir/integ/lib";
+use lib "$repodir/perl";
+use lib "$repodir/libbacon/perl";
+use util;
+use tree;
+use bam::bam;
+use integ;
+
+init();
+setup(<<'TREE');
+|-- a.c
+|-- b.c
+|-- c.c
+|-- module.bam%devel <<
+rule { name : foo } (*).c -> $1.o
+rule *.o -> [*] exe
+TREE
+
+my $result;
+my $mod_id = bam::identity("module", "$bam_basedir");
+my $rule_1_id = bam::identity("ruleset", "$bam_basedir/module.bam%devel", "rule", "1");
+my $rma_1_id = bam::identity("ruleset", "$bam_basedir/module.bam%devel", "rule", "1", "module", "$bam_basedir", "rma");
+my $rule_2_id = bam::identity("ruleset", "$bam_basedir/module.bam%devel", "rule", "2");
+my $rma_2_id = bam::identity("ruleset", "$bam_basedir/module.bam%devel", "rule", "2", "module", "$bam_basedir", "rma");
+
+printf("%10s %s\n", "mod", $mod_id);
+printf("%10s %s\n", "rule 1", $rule_1_id);
+printf("%10s %s\n", "rma 1", $rma_1_id);
+printf("%10s %s\n", "rule 2", $rule_2_id);
+printf("%10s %s\n", "rma 2", $rma_2_id);
+
+assert { stats("a.c", {
+    type => 'file'
+  , state => 'fresh'
+  , stale => 0
+  , fresh => 1
+})};
+assert { stats("a.o", {
+    type => 'file'
+  , state => 'uncreated'
+  , stale => 0
+  , fresh => 0
+})};
+assert { stats("exe", {
+    type => 'file'
+  , state => 'uncreated'
+  , stale => 0
+  , fresh => 0
+})};
+
+# describe rmas by id and name
+$result = bam_rma($rma_1_id);
+assert { index($result, $rule_1_id) > -1 };
+assert { index($result, $rma_1_id) > -1 };
+
+$result = bam(["rma $rma_1_id run"]);
+print("$$result{out}\n");
+
+$result = bam(["rma $rma_2_id run"]);
+print("$$result{out}\n");
+
+teardown();

@@ -1,5 +1,9 @@
 #!/usr/bin/env perl
 
+#
+# change the module file observe that the module is reloaded
+#
+
 use strict;
 use warnings;
 $SIG{__WARN__} = sub { die @_ };
@@ -8,31 +12,43 @@ use POSIX;
 use File::Basename;
 use Cwd;
 our $repodir;
+our $bam_basedir;
 BEGIN { $repodir = dirname(Cwd::realpath("$0/..")) }
 use lib "$repodir/integ/lib";
+use lib "$repodir/perl";
 use lib "$repodir/libbacon/perl";
 use util;
 use tree;
-use bam;
+use bam::bam;
+use integ;
 
 # build out the fstree under /tmp
 init();
-my $testdir = setup(<<'TREE');
-|-- module.bam+devel
+setup(<<'TREE');
+|-- module.bam%devel
 TREE
+
+my $fh;
 
 # before
 assert { stats(undef, { modules => 1 })};
-assert { stats(".", "-S", {
-    reloaded => 1
-  , modules_up => 0
-  , modules_down => 0
-  , parse => 1
+assert {
+  stats(".", "-S", {
+    type => 'module'
+  , state => 'fresh'
+  , reloaded => 1
+  , rulesets => 1
+})};
+assert {
+  stats("./module.bam%devel", "-S", {
+    type => 'ruleset'
+  , state => 'fresh'
+  , parse_err => 0
   , parse_ok => 1
 })};
 
 # change the module file
-open my $fh, ">>", "$testdir/module.bam+devel" or die $!;
+open $fh, ">>", "$bam_basedir/module.bam%devel" or die $!;
 print $fh "\n";
 close $fh;
 
@@ -40,11 +56,18 @@ reconcile();
 
 # after
 assert { stats(undef, { modules => 1 })};
-assert { stats(".", "-S", {
-    reloaded => 2
-  , modules_up => 0
-  , modules_down => 0
-  , parse => 2
+assert {
+  stats(".", "-S", {
+    type => 'module'
+  , state => 'fresh'
+  , reloaded => 2
+  , rulesets => 1
+})};
+assert {
+  stats("./module.bam%devel", "-S", {
+    type => 'ruleset'
+  , state => 'fresh'
+  , parse_err => 0
   , parse_ok => 2
 })};
 

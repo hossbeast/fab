@@ -1,0 +1,71 @@
+#!/usr/bin/env perl
+
+#
+# This test describes symlinks in various states
+#
+
+use strict;
+use warnings;
+$SIG{__WARN__} = sub { die @_ };
+
+use Carp qw(confess);
+$SIG{__DIE__} = 'confess';
+
+use POSIX;
+use File::Basename;
+use Cwd;
+our $repodir;
+our $bam_basedir;
+BEGIN { $repodir = dirname(Cwd::realpath("$0/..")) }
+use lib "$repodir/integ/lib";
+use lib "$repodir/perl";
+use lib "$repodir/libbacon/perl";
+use util;
+use tree;
+use integ;
+use bam::bam;
+
+# build out the fstree under /tmp
+init();
+setup(<<TREE);
+|-- B -> /no/such/file
+|-- module.bam%devel
+TREE
+
+my $base_fstree_id = bam::identity("fstree", $bam_basedir);
+my $res;
+my $msg;
+
+print("\n >> 1 - SETUP <<\n\n");
+assert { stats("//bm/sys-filesystem", "--follow", {
+    readlink_no => 0
+  , readlink_ok => 0
+  , readlink_unresolved => 2
+  , readlink_failed => 0
+  , readlink_err => 0
+})};
+assert { stats("//bm/fstrees/$base_fstree_id", "--follow", {
+    readlink_no => 0
+  , readlink_ok => 0
+  , readlink_unresolved => 2
+  , readlink_failed => 0
+  , readlink_err => 0
+})};
+
+assert { stats("B", {
+    type => 'symlink'
+  , state => 'fresh'
+  , stale => 0
+  , fresh => 1
+  , readlink_no => 0
+  , readlink_ok => 0
+  , readlink_unresolved => 1
+  , readlink_failed => 0
+  , readlink_err => 0
+  , readlink_pending => 0
+})};
+$res = bam_describe(["$bam_basedir/B"]);
+print("$$res{out}\n");
+$msg = bam::bacon::parse($$res{out});
+
+teardown();

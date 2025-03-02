@@ -9,131 +9,164 @@ use strict;
 use warnings;
 $SIG{__WARN__} = sub { die @_ };
 
+use Carp qw(confess);
+$SIG{__DIE__} = 'confess';
+
 use POSIX;
 use File::Basename;
 use Cwd;
 our $bam_basedir;
-our $bam_projdir;
+our $bam_dir;
 our $repodir;
 BEGIN { $repodir = dirname(Cwd::realpath("$0/..")) }
 use lib "$repodir/integ/lib";
+use lib "$repodir/perl";
 use lib "$repodir/libbacon/perl";
 use util;
 use tree;
-use bam;
+use bam::bam;
+use integ;
 
 init(subdir => 'B');
 setup(<<TREE);
 |-- A
-|   `-- rules.bam+devel <<
+|   `-- rules.bam%devel <<
 rule { name : foo } foo -> bar
 >>
 |-- B
 |   `-- foo
-|   `-- module.bam+devel <<
+|   `-- module.bam%devel <<
 use A
 >>
 |   `-- C
-|       `-- module.bam+devel <<
+|       `-- module.bam%devel <<
 bind A => //A
 >>
 |-- system-config <<
 filesystem : {
   fstrees : {
-    $bam_basedir : { mount : true }
+    $bam_basedir : {
+      mount : true
+      namespaces : {
+        modules
+      }
+    }
   }
 }
 >>
 TREE
 
-my $B_id = hash64("$bam_projdir");
+my $B_module_id = bam::identity('module', $bam_dir);
 
 # before
-assert { stats(undef, {
+assert {
+  stats(undef, {
     modules => 2
-  , ruleset_files => 1
-  , system_state_ok => 1
+  , rulesets => 3
+  , system_state_ready => 1
 })};
-assert { stats(".", "-S", {     # B
+assert {
+  stats("$bam_basedir/B", "-S", {
     type => 'module'
   , state => 'fresh'
   , reloaded => 1
-  , modules_up => 0
-  , modules_down => 1
-  , rules => 0
-  , uses_down => 1
-  , parse => 1
-  , parse_ok => 1
+  , rulesets => 2
 })};
-assert { stats(".", {     # B
-    type => 'module-dir'
-  , rules => 1
-})};
-assert { stats("//modules/$B_id/rmas-by/name/foo", {
-    rule_run => 2               # this rule is run twice because it instantiates a new file in the matched directory
-  , rule_run_ok => 2
-})};
-assert { stats("../A/rules.bam+devel", "-S", {
+assert {
+  stats("$bam_basedir/B/module.bam%devel", "-S", {
     type => 'ruleset'
   , state => 'fresh'
-  , parse => 1
+  , rules => 0
+  , parse_err => 0
+  , parse_ok => 1
+})};
+assert { stats("$bam_basedir/B", {
+    type => 'dir'
+  , rules => 1
+})};
+assert { stats("//bm/modules/$B_module_id/rmas-by/name/foo", "--follow", {
+    rule_resolve_ok => 1
+  , rule_resolve_err => 0       # this rule would run twice because it generates a file in the same directory
+  , rule_run => 1               # that it searches in -- except that, an rma cannot invalidate itself
+  , search_hits => 1
+  , generate_hits => 1
+})};
+assert {
+  stats("../A/rules.bam%devel", "-S", {
+    type => 'ruleset'
+  , state => 'fresh'
+  , parse_err => 0
   , parse_ok => 1
   , rules => 1
-  , uses_up => 1
+  , modules => 1
 })};
-assert { stats("C", "-S", {
+assert {
+  stats("C", "-S", {
     type => 'module'
   , state => 'fresh'
   , reloaded => 1
-  , modules_up => 1
-  , modules_down => 0
-  , uses_down => 0
-  , parse => 1
+  , rulesets => 1
+})};
+assert {
+  stats("C/module.bam%devel", "-S", {
+    type => 'ruleset'
+  , state => 'fresh'
+  , parse_err => 0
   , parse_ok => 1
 })};
 assert { stats("C", {
-    type => 'module-dir'
+    type => 'dir'
   , state => 'fresh'
 })};
 
 # delete the contents of the module file
-open my $fh, ">", "$bam_basedir/B/module.bam+devel" or die $!;
+open my $fh, ">", "$bam_basedir/B/module.bam%devel" or die $!;
 close $fh;
 
 # after
 reconcile();
-assert { stats(undef, {
+assert {
+  stats(undef, {
     modules => 2
-  , ruleset_files => 0
-  , system_state_ok => 2
+  , rulesets => 2
+  , system_state_ready => 2
 })};
-assert { stats(".", "-S", {     # B
+assert {
+  stats("$bam_basedir/B", "-S", {
     type => 'module'
   , state => 'fresh'
   , reloaded => 2
-  , modules_up => 0
-  , modules_down => 1
-  , uses_down => 0
+  , rulesets => 1
+})};
+assert {
+  stats("$bam_basedir/B/module.bam%devel", "-S", {
+    type => 'ruleset'
+  , state => 'fresh'
   , rules => 0
-  , parse => 2
+  , parse_err => 0
   , parse_ok => 2
 })};
-assert { stats(".", {     # B
-    type => 'module-dir'
+assert { stats("$bam_basedir/B", {
+    type => 'dir'
+  , state => 'fresh'
   , rules => 0            # B no longer uses A
 })};
 # out-of-tree rules.bam file ; no longer referenced ; its just a file now
-assert { stats("../A/rules.bam+devel", {
+assert { stats("../A/rules.bam%devel", {
     type => 'file'
 })};
-assert { stats("C", "-S", {
+assert {
+  stats("C", "-S", {
     type => 'module'
   , state => 'fresh'
   , reloaded => 1
-  , modules_up => 1
-  , modules_down => 0
-  , uses_down => 0
-  , parse => 1
+  , rulesets => 1
+})};
+assert {
+  stats("C/module.bam%devel", "-S", {
+    type => 'ruleset'
+  , state => 'fresh'
+  , parse_err => 0
   , parse_ok => 1
 })};
 

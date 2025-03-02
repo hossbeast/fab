@@ -1,0 +1,185 @@
+#!/usr/bin/env perl
+
+#
+# Add and remove fstrees
+#
+
+use strict;
+use warnings;
+$SIG{__WARN__} = sub { die @_ };
+
+use POSIX;
+use File::Basename;
+use Cwd;
+our $repodir;
+our $bam_basedir;
+BEGIN { $repodir = dirname(Cwd::realpath("$0/..")) }
+use lib "$repodir/integ/lib";
+use lib "$repodir/perl";
+use lib "$repodir/libbacon/perl";
+use util;
+use tree;
+use bam::bam;
+use integ;
+
+init(subdir => 'A');
+setup(<<"TREE");
+|-- B
+|   `-- C
+|       `-- D
+|-- E
+|   `-- F
+|       `-- G
+|-- A
+|   `-- module.bam%devel <<
+>>
+TREE
+
+my $root_fstree_id = bam::identity("fstree", "/");
+my $shadow_fstree_id = bam::identity("fstree", "//");
+my $system_fstree_id = bam::identity("fstree", $bam_basedir);
+my $base_fstree_id = bam::identity("fstree", "$bam_basedir/A");
+my $B_fstree_id = bam::identity("fstree", "$bam_basedir/B");
+my $E_fstree_id = bam::identity("fstree", "$bam_basedir/E");
+
+#
+# No fstrees enabled in config
+#
+
+assert {
+  stats(undef, {
+      fstrees => 4    # root, shadow, system-config, base
+    , namespaces => 3 # modules, formulas, plugins
+    , modules => 1
+    , fsnames => 0
+    , system_error => 0
+})};
+assert { eexists("//bm/fstrees/$root_fstree_id") };    # from root dir
+assert { eexists("//bm/fstrees/$shadow_fstree_id") };  # from shadow dir
+assert { eexists("//bm/fstrees/$system_fstree_id") };  # from system-config dir
+assert { eexists("//bm/fstrees/$base_fstree_id") };    # from base dir
+assert { enoent("//bm/fstrees/$B_fstree_id") };        # B from config
+assert { enoent("//bm/fstrees/$E_fstree_id") };        # E from conffg
+
+#
+# enable the first fstree
+#
+open my $fh, ">", "$bam_basedir/system-config" or die $!;
+print $fh <<"TEXT";
+filesystem : {
+  fstrees : {
+    $bam_basedir/B : {
+      mount : true
+    }
+  }
+}
+TEXT
+close $fh;
+
+reconcile();
+
+assert {
+  stats(undef, {
+      fstrees => 5    # root, shadow, system-config, base, B from config
+    , namespaces => 3 # modules, formulas, plugins
+    , modules => 1
+    , fsnames => 0
+    , system_error => 0
+})};
+assert { eexists("//bm/fstrees/$root_fstree_id") };    # from root dir
+assert { eexists("//bm/fstrees/$shadow_fstree_id") };  # from shadow dir
+assert { eexists("//bm/fstrees/$system_fstree_id") };  # from system-config dir
+assert { eexists("//bm/fstrees/$base_fstree_id") };    # from base dir
+assert { eexists("//bm/fstrees/$B_fstree_id") };       # B from config
+assert { enoent("//bm/fstrees/$E_fstree_id") };        # E from conffg
+
+#
+# enable the second fstree
+#
+open $fh, ">", "$bam_basedir/system-config" or die $!;
+print $fh <<"TEXT";
+filesystem : {
+  fstrees : {
+    $bam_basedir/B : {
+      mount : true
+    }
+    $bam_basedir/E : {
+      mount : true
+    }
+  }
+}
+TEXT
+close $fh;
+
+reconcile();
+
+assert {
+  stats(undef, {
+      fstrees => 6    # root, shadow, system-config, base, B from config, E from config
+    , namespaces => 3 # modules, formmulas, plugins
+    , modules => 1
+    , fsnames => 0
+    , system_error => 0
+})};
+assert { eexists("//bm/fstrees/$root_fstree_id") };    # from root dir
+assert { eexists("//bm/fstrees/$shadow_fstree_id") };  # from shadow dir
+assert { eexists("//bm/fstrees/$system_fstree_id") };  # from system-config dir
+assert { eexists("//bm/fstrees/$base_fstree_id") };    # from base dir
+assert { eexists("//bm/fstrees/$B_fstree_id") };       # B from config
+assert { eexists("//bm/fstrees/$E_fstree_id") };       # E from conffg
+
+#
+# disable the first fstree
+#
+open $fh, ">", "$bam_basedir/system-config" or die $!;
+print $fh <<"TEXT";
+filesystem : {
+  fstrees : {
+    $bam_basedir/E : {
+      mount : true
+    }
+  }
+}
+TEXT
+close $fh;
+
+reconcile();
+
+assert {
+  stats(undef, {
+      fstrees => 5    # root, shadow, system-config, base, E from config
+    , namespaces => 3 # modules, formulas, plugins
+    , modules => 1
+    , fsnames => 0
+    , system_error => 0
+})};
+assert { eexists("//bm/fstrees/$root_fstree_id") };    # from root dir
+assert { eexists("//bm/fstrees/$shadow_fstree_id") };  # from shadow dir
+assert { eexists("//bm/fstrees/$system_fstree_id") };  # from system-config dir
+assert { eexists("//bm/fstrees/$base_fstree_id") };    # from base dir
+assert { enoent("//bm/fstrees/$B_fstree_id") };        # B from config
+assert { eexists("//bm/fstrees/$E_fstree_id") };       # E from conffg
+
+#
+# disable the second fstree
+#
+unlink("$bam_basedir/system-config") or die $!;
+
+reconcile();
+
+assert {
+  stats(undef, {
+      fstrees => 4    # root, shadow, system-config, base
+    , namespaces => 3 # modules, formulas, plugins
+    , modules => 1
+    , fsnames => 0
+    , system_error => 0
+})};
+assert { eexists("//bm/fstrees/$root_fstree_id") };    # from root dir
+assert { eexists("//bm/fstrees/$shadow_fstree_id") };  # from shadow dir
+assert { eexists("//bm/fstrees/$system_fstree_id") };  # from system-config dir
+assert { eexists("//bm/fstrees/$base_fstree_id") };    # from base dir
+assert { enoent("//bm/fstrees/$B_fstree_id") };        # B from config
+assert { enoent("//bm/fstrees/$E_fstree_id") };        # E from conffg
+
+teardown();

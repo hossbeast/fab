@@ -8,60 +8,93 @@ use POSIX;
 use File::Basename;
 use Cwd;
 our $repodir;
+our $bam_basedir;
 BEGIN { $repodir = dirname(Cwd::realpath("$0/..")) }
 use lib "$repodir/integ/lib";
+use lib "$repodir/perl";
 use lib "$repodir/libbacon/perl";
 use util;
 use tree;
-use bam;
+use bam::bam;
+use integ;
 
 # build out the fstree under /tmp
 init();
-my $testdir = setup(<<TREE);
-|-- module.bam+devel
+setup(<<TREE);
+|-- module.bam%devel
 TREE
 
 # before
 assert { stats(undef, {
     modules => 1
-  , system_state_ok => 1
+  , system_state_ready => 1
 })};
-assert { stats(".", "-S", {
+assert {
+  stats(".", "-S", {
     type => 'module'
   , state => "fresh"
   , reloaded => 1
-  , parse => 1
+})};
+assert {
+  stats("./module.bam%devel", "-S", {
+    type => 'ruleset'
+  , state => "fresh"
+  , parse_err => 0
   , parse_ok => 1
 })};
 
-open my $fh, ">>", "$testdir/varfile" or die $!;
+open my $fh, ">>", "$bam_basedir/varfile" or die $!;
 print $fh <<'TEXT';
 lflags : [
   -lasan -lubsan
 ]
 TEXT
 close $fh;
-symlink("varfile", "$testdir/var.bam+devel") or die;
+symlink("varfile", "$bam_basedir/var.bam%devel") or die;
 
 # after - appearance of var file in same dir has invalidated the module
 reconcile();
 assert { stats(undef, {
     modules => 1
-  , system_state_ok => 2
+  , system_state_ready => 2
 })};
-assert { stats(".", "-S", {
+assert {
+  stats(".", "-S", {
     type => 'module'
   , state => "fresh"
   , reloaded => 2
+})};
+assert {
+  stats("./module.bam%devel", "-S", {
+    type => 'ruleset'
   , state => "fresh"
-  , parse => 1
+  , parse_ok => 1
+  , parse_err => 0
+})};
+assert { stats("var.bam%devel", {
+    type => 'symlink'
+  , state => 'fresh'
+  , fresh => 1
+  , stale => 0
+  , readlink_err => 0
+  , readlink_failed => 0
+  , readlink_no => 0
+  , readlink_ok => 1
+  , readlink_unresolved => 0
+})};
+assert { stats("var.bam%devel", "-S", {
+    type => 'varset'
+  , state => 'fresh'
+  , fresh => 1
+  , stale => 1
+  , parse_err => 0
   , parse_ok => 1
 })};
-assert { stats("var.bam+devel", "-S", {
-    type => 'varset'
-  , state => "fresh"
-  , parse => 1
-  , parse_ok => 1
+assert { stats("varfile", {
+    type => 'file'
+  , state => 'fresh'
+  , fresh => 1
+  , stale => 0
 })};
 
 my $vars = bam_module_vars();

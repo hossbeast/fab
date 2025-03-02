@@ -2,6 +2,7 @@
 # Copyright (c) 2012-2023 Todd Freed <todd.freed@gmail.com>
 
 our $bam_invalidate;
+our $repodir;
 
 sub tree_parse
 {
@@ -101,8 +102,7 @@ sub tree_build
 
   my $root = tree_parse($spec);
 
-  # default user-config file if the spec does not specify
-  # a user config file explicitly
+  # default user-config file
   unless(exists($$root{"user-config"})) {
     $$root{"user-config"} = {
         __perms => 0644

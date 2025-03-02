@@ -1,0 +1,471 @@
+#!/usr/bin/env perl
+
+#
+# exercise the builtin plugin invalidate-primary
+#
+
+use strict;
+use warnings;
+$SIG{__WARN__} = sub { die @_ };
+
+use Carp qw(confess);
+$SIG{__DIE__} = 'confess';
+
+use POSIX;
+use File::Basename;
+use Cwd;
+our $repodir;
+our $bam_basedir;
+our $bam_dir;
+our $bam_invalidate;
+BEGIN { $repodir = dirname(Cwd::realpath("$0/..")) }
+use lib "$repodir/perl";
+use lib "$repodir/libbacon/perl";
+use lib "$repodir/integ/lib";
+use lib "$repodir/perl";
+use integ;
+use util;
+use tree;
+use integ;
+use bam::bam;
+
+init();
+setup(<<TREE);
+|-- module.bam%devel <<
+rule cores.c -> cores.o : ./cp.bam+(.)
+rule cores.o -> cores : ./cp.bam+(.)
+rule cores -> //targets
+>>
+|-- cores.c <<
+foo
+>>
+|-- cp.bam << 0777
+file : {
+  lookup : {
+    namespace : coreutils
+    pattern : bin/cp+(@.)
+  }
+}
+args : [
+  \$bm_source0
+  \$bm_target0
+]
+>>
+|-- system-config <<
+namespaces : {
+  coreutils
+}
+plugins : {
+  [
+    {
+      file : {
+        lookup : {
+          pattern : $repodir/builtin-plugins%devel/invalidate-primary
+        }
+      }
+      args : [
+        --suffix .c
+        --fstree "$bam_basedir"
+      ]
+    }
+  ]
+}
+filesystem : {
+  fstrees : {
+    $bam_basedir : {
+      mount : true
+    }
+    $repodir/builtin-plugins%devel : {
+      mount : true
+    }
+    $repodir/usr/share/bam/coreutils : {
+      mount : true
+      namespaces : {
+        coreutils
+      }
+    }
+  }
+}
+>>
+TREE
+
+my $plugin_id = bam::identity("plugin", "$repodir/builtin-plugins%devel/invalidate-primary", 'plugin');
+
+print("\n >> 1 - SETUP <<\n\n");
+#
+# 1. initial
+#
+
+assert {
+  info(undef, {
+    "system-state" => 'ready'
+})};
+assert { stats(undef, {
+    system_state_plugin_reconcile => 1
+  , system_state_ready => 1
+  , system_state_ok => 0
+  , plugins => 1
+})};
+assert { stats("cores.c", {
+    type => 'file'
+  , state => 'fresh'
+  , stale => 0
+  , fresh => 1
+})};
+assert { stats("cores.o", {
+    type => 'file'
+  , state => 'uncreated'
+  , stale => 0
+  , fresh => 0
+})};
+assert { stats("cores", {
+    type => 'file'
+  , state => 'uncreated'
+  , stale => 0
+  , fresh => 0
+})};
+assert { stats("//bm/plugins/$plugin_id", "-S", {
+    type => 'plugin'
+  , state => 'fresh'
+  , stale => 1
+  , fresh => 1
+  , tx_parse_err => 0
+  , fork => 1
+  , crashed => 0
+  , reap => 0
+  , ready => 1
+  , events => 0
+  , commands => 1 # eventsub
+})};
+
+print("\n >> 2 - BUILD <<\n\n");
+#
+# 2. first build creates the files
+#
+build();
+
+# intermediate and final file were created
+assert_file("$bam_basedir/cores.c", "foo");
+assert_file("$bam_basedir/cores.o", "foo");
+assert_file("$bam_basedir/cores", "foo");
+
+assert { info(undef, {
+  "system-state" => 'ok'
+})};
+assert { stats(undef, {
+    system_state_plugin_reconcile => 2
+  , system_state_ready => 2
+  , system_state_ok => 1
+  , plugins => 1
+})};
+if($bam_invalidate eq 'notify') {
+  assert { stats("//bm/sys-notify", "--follow", {
+      events => 0
+  })};
+} else {
+  assert { stats("//bm/sys-system", "--follow", {
+      vertex_stale => 11
+  })};
+}
+assert { stats("cores.c", {
+    type => 'file'
+  , state => 'fresh'
+  , stale => 0
+  , fresh => 1
+})};
+assert { stats("cores.o", {
+    type => 'file'
+  , state => 'fresh'
+  , stale => 0
+  , fresh => 1
+})};
+assert { stats("cores", {
+    type => 'file'
+  , state => 'fresh'
+  , stale => 0
+  , fresh => 1
+})};
+assert { stats("//targets", {
+    type => 'shadow-file'
+  , state => 'fresh'
+  , stale => 1
+  , fresh => 1
+})};
+assert { stats("//bm/plugins/$plugin_id", "-S", {
+    type => 'plugin'
+  , state => 'fresh'
+  , stale => 1
+  , fresh => 1
+  , tx_parse_err => 0
+  , fork => 1
+  , crashed => 0
+  , reap => 0
+  , ready => 1
+  , events => 0
+  , commands => 1 # eventsub
+})};
+
+print("\n >> 3 - INVALIDATION BY API <<\n\n");
+#
+# 3. direct invalidation by api
+#
+bam_touch("$bam_basedir/cores.c");
+reconcile();
+
+assert { info(undef, {
+  "system-state" => 'ready'
+})};
+assert { stats(undef, {
+    system_state_plugin_reconcile => 3
+  , system_state_ready => 3
+  , system_state_ok => 1
+  , plugins => 1
+})};
+if($bam_invalidate eq 'notify') {
+  assert { stats("//bm/sys-notify", "--follow", {
+      events => 0
+  })};
+} else {
+  assert { stats("//bm/sys-system", "--follow", {
+      vertex_stale => 15
+  })};
+}
+assert { stats("cores.c", {
+    type => 'file'
+  , state => 'fresh'  # primary files refresh during reconcile
+  , stale => 1
+  , fresh => 2
+})};
+assert { stats("cores.o", {
+    type => 'file'
+  , state => 'stale'
+  , stale => 1
+  , fresh => 1
+})};
+assert { stats("cores", {
+    type => 'file'
+  , state => 'stale'
+  , stale => 1
+  , fresh => 1
+})};
+assert { stats("//targets", {
+    type => 'shadow-file'
+  , state => 'stale'
+  , stale => 2
+  , fresh => 1
+})};
+assert { stats("//bm/plugins/$plugin_id", "-S", {
+    type => 'plugin'
+  , state => 'fresh'
+  , stale => 1
+  , fresh => 1
+  , tx_parse_err => 0
+  , fork => 1
+  , crashed => 0
+  , reap => 0
+  , ready => 1
+  , commands => 4 # eventsub, eventsub, modules-invalidate-primary, eventsub
+})};
+
+print("\n >> 4 - BUILD <<\n\n");
+#
+# 4. second build re-creates the files
+#
+build();
+
+assert_file("$bam_basedir/cores.c", "foo");
+assert_file("$bam_basedir/cores.o", "foo");
+assert_file("$bam_basedir/cores", "foo");
+
+assert { info(undef, {
+  "system-state" => 'ok'
+})};
+assert { stats(undef, {
+    system_state_plugin_reconcile => 4
+  , system_state_ready => 4
+  , system_state_ok => 2
+  , plugins => 1
+})};
+if($bam_invalidate eq 'notify') {
+  assert { stats("//bm/sys-notify", "--follow", {
+      events => 0
+  })};
+} else {
+  assert { stats("//bm/sys-system", "--follow", {
+      vertex_stale => 15
+  })};
+}
+assert { stats("cores.c", {
+    type => 'file'
+  , state => 'fresh'  # primary files refresh automatically on reconcile
+  , stale => 1
+  , fresh => 2
+})};
+assert { stats("cores.o", {
+    type => 'file'
+  , state => 'fresh'
+  , stale => 1
+  , fresh => 2
+})};
+assert { stats("cores", {
+    type => 'file'
+  , state => 'fresh'
+  , stale => 1
+  , fresh => 2
+})};
+assert { stats("//targets", {
+    type => 'shadow-file'
+  , state => 'fresh'
+  , stale => 2
+  , fresh => 2
+})};
+assert { stats("//bm/plugins/$plugin_id", "-S", {
+    type => 'plugin'
+  , state => 'fresh'
+  , stale => 1
+  , fresh => 1
+  , tx_parse_err => 0
+  , fork => 1
+  , crashed => 0
+  , reap => 0
+  , ready => 1
+  , commands => 4 # eventsub, eventsub, modules-invalidate-primary, eventsub
+})};
+
+print("\n >> 5 - INVALIDATION BY FS <<\n\n");
+#
+# 5. invalidation by modify time on filesystem (contents unchagned)
+#
+open my $fh, ">$bam_basedir/cores.c";
+print $fh "foo\n";
+close $fh;
+
+reconcile();
+
+assert { info(undef, {
+  "system-state" => 'ready'
+})};
+assert { stats(undef, {
+    system_state_plugin_reconcile => 5
+  , system_state_ready => 5
+  , system_state_ok => 2
+  , plugins => 1
+})};
+if($bam_invalidate eq 'notify') {
+  assert { stats("//bm/sys-notify", "--follow", {
+      events => 1
+  })};
+} else {
+  assert { stats("//bm/sys-system", "--follow", {
+      vertex_stale => 19
+  })};
+}
+assert { stats(undef, {
+    system_state_plugin_reconcile => 5
+  , system_state_ready => 5
+  , system_state_ok => 2
+  , plugins => 1
+})};
+assert { stats("cores.c", {
+    type => 'file'
+  , state => 'fresh'  # primary files refresh automatically on reconcile
+  , stale => 2
+  , fresh => 3
+})};
+assert { stats("cores.o", {
+    type => 'file'
+  , state => 'stale'
+  , stale => 2
+  , fresh => 2
+})};
+assert { stats("cores", {
+    type => 'file'
+  , state => 'stale'
+  , stale => 2
+  , fresh => 2
+})};
+assert { stats("//targets", {
+    type => 'shadow-file'
+  , state => 'stale'
+  , stale => 3
+  , fresh => 2
+})};
+assert { stats("//bm/plugins/$plugin_id", "-S", {
+    type => 'plugin'
+  , state => 'fresh'
+  , stale => 1
+  , fresh => 1
+  , tx_parse_err => 0
+  , fork => 1
+  , crashed => 0
+  , reap => 0
+  , ready => 1
+  , commands => 7 # eventsub, eventsub, modules-invalidate-primary, eventsub, eventsub, modules-invalidate-primary, eventsub
+})};
+
+print("\n >> 6 - BUILD <<\n\n");
+#
+# 6. next build re-creates the files
+#
+build();
+
+assert_file("$bam_basedir/cores.c", "foo");
+assert_file("$bam_basedir/cores.o", "foo");
+assert_file("$bam_basedir/cores", "foo");
+
+assert { info(undef, {
+  "system-state" => 'ok'
+})};
+assert { stats(undef, {
+    system_state_plugin_reconcile => 6
+  , system_state_ready => 6
+  , system_state_ok => 3
+  , plugins => 1
+})};
+if($bam_invalidate eq 'notify') {
+  assert { stats("//bm/sys-notify", "--follow", {
+      events => 1
+  })};
+} else {
+  assert { stats("//bm/sys-system", "--follow", {
+      vertex_stale => 19
+  })};
+}
+assert { stats("cores.c", {
+    type => 'file'
+  , state => 'fresh'  # primary files refresh automatically on reconcile
+  , stale => 2
+  , fresh => 3
+})};
+assert { stats("cores.o", {
+    type => 'file'
+  , state => 'fresh'
+  , stale => 2
+  , fresh => 3
+})};
+assert { stats("cores", {
+    type => 'file'
+  , state => 'fresh'
+  , stale => 2
+  , fresh => 3
+})};
+assert { stats("//targets", {
+    type => 'shadow-file'
+  , state => 'fresh'
+  , stale => 3
+  , fresh => 3
+})};
+assert { stats("//bm/plugins/$plugin_id", "-S", {
+    type => 'plugin'
+  , state => 'fresh'
+  , stale => 1
+  , fresh => 1
+  , tx_parse_err => 0
+  , fork => 1
+  , crashed => 0
+  , reap => 0
+  , ready => 1
+  , commands => 7 # eventsub, eventsub, modules-invalidate-primary, eventsub, eventsub, modules-invalidate-primary, eventsub
+})};
+
+teardown();

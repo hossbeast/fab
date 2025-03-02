@@ -1,0 +1,212 @@
+#!/usr/bin/env perl
+
+#
+# This test sets up a namespace, then adds some names to it
+#
+
+use strict;
+use warnings;
+$SIG{__WARN__} = sub { die @_ };
+
+use Carp qw(confess);
+$SIG{__DIE__} = 'confess';
+
+use POSIX;
+use File::Basename;
+use Cwd;
+our $repodir;
+our $bam_basedir;
+BEGIN { $repodir = dirname(Cwd::realpath("$0/..")) }
+use lib "$repodir/integ/lib";
+use lib "$repodir/perl";
+use lib "$repodir/libbacon/perl";
+use util;
+use tree;
+use bam::bam;
+use integ;
+
+init(subdir => 'A');
+setup(<<"TREE");
+|-- B
+|   `-- C
+|       `-- D
+|-- E
+|   `-- F
+|       `-- G
+|-- A
+|   `-- module.bam%devel <<
+>>
+|-- system-config <<
+namespaces : {
+  ns0
+}
+filesystem : {
+  fstrees : {
+    $bam_basedir/B : {
+      mount : true
+      namespaces : {
+        ns0
+      }
+    }
+  }
+}
+>>
+TREE
+
+my $ns0_namespace_id = bam::identity('namespace', "ns0");
+my $modules_namespace_id = bam::identity('namespace', "modules");
+my $system_fstree_id = bam::identity("fstree", $bam_basedir);
+my $base_fstree_id = bam::identity("fstree", "$bam_basedir/A");
+my $B_fstree_id = bam::identity("fstree", "$bam_basedir/B");
+my $E_fstree_id = bam::identity("fstree", "$bam_basedir/E");
+
+# initially, only the first directory is indexed in the namespace
+assert {
+  stats(undef, {
+      fstrees => 5    # root, shadow
+    , namespaces => 4 # modules, formulas, plugins, ns0
+    , fsnames => 2
+})};
+assert { eexists("//bm/namespaces/$modules_namespace_id") }; # modules namespace always exists
+assert { eexists("//bm/namespaces/$ns0_namespace_id") };
+assert { eexists("//bm/fstrees/$system_fstree_id") };  # from system-config dir
+assert { eexists("//bm/fstrees/$base_fstree_id") };    # from base dir
+assert { eexists("//bm/fstrees/$B_fstree_id") };       # from config
+assert { enoent("//bm/fstrees/$E_fstree_id") };
+
+assert {
+  stats("//bm/namespaces/$ns0_namespace_id", "-S", {
+      type => 'namespace'
+    , count => 2
+    , del => 0
+    , put => 2
+})};
+
+my $names = bam_namespace_fsnames($ns0_namespace_id);
+assert { scalar %$names == 2 };
+assert { $$names{B} };
+assert { $$names{C} };
+
+# add another directory to the namespace
+open my $fh, ">", "$bam_basedir/system-config" or die $!;
+print $fh <<"TEXT";
+namespaces : {
+  ns0
+}
+filesystem : {
+  fstrees : {
+    $bam_basedir/B : {
+      mount : true
+      namespaces : {
+        ns0
+      }
+    }
+    $bam_basedir/E : {
+      mount : true
+      namespaces : {
+        ns0
+      }
+    }
+  }
+}
+TEXT
+close $fh;
+
+reconcile();
+
+assert {
+  stats(undef, {
+      fstrees => 6    # root, shadow
+    , namespaces => 4 # modules, formulas, plugins, ns0 
+    , fsnames => 4
+})};
+assert { eexists("//bm/namespaces/$modules_namespace_id") }; # modules namespace always exists
+assert { eexists("//bm/namespaces/$ns0_namespace_id") };
+assert { eexists("//bm/fstrees/$system_fstree_id") };  # from system-config dir
+assert { eexists("//bm/fstrees/$base_fstree_id") };    # from base dir
+assert { eexists("//bm/fstrees/$B_fstree_id") };       # from config
+assert { eexists("//bm/fstrees/$E_fstree_id") };       # from config
+
+# ns0 still exists, has the same names
+assert {
+  stats("//bm/namespaces/$ns0_namespace_id", "-S", {
+      type => 'namespace'
+    , count => 4
+    , del => 0
+    , put => 4
+})};
+
+$names = bam_namespace_fsnames($ns0_namespace_id);
+assert { scalar %$names == 4 };
+assert { $$names{B} };
+assert { $$names{C} };
+assert { $$names{E} };
+assert { $$names{F} };
+
+# remove the first directory from the namespace
+open $fh, ">", "$bam_basedir/system-config" or die $!;
+print $fh <<"TEXT";
+namespaces : {
+  ns0
+}
+filesystem : {
+  fstrees : {
+    $bam_basedir/E : {
+      mount : true
+      namespaces : {
+        ns0
+      }
+    }
+  }
+}
+TEXT
+close $fh;
+
+reconcile();
+
+assert {
+  stats(undef, {
+      fstrees => 5    # root, shadow
+    , namespaces => 4 # modules, formulas, plugins, ns0
+    , fsnames => 2
+})};
+assert { eexists("//bm/namespaces/$modules_namespace_id") }; # modules namespace always exists
+assert { eexists("//bm/namespaces/$ns0_namespace_id") };
+assert { eexists("//bm/fstrees/$system_fstree_id") };  # from system-config dir
+assert { eexists("//bm/fstrees/$base_fstree_id") };    # from base dir
+assert { enoent("//bm/fstrees/$B_fstree_id") };
+assert { eexists("//bm/fstrees/$E_fstree_id") };       # from config
+
+# ns0 still exists, has the same names
+assert {
+  stats("//bm/namespaces/$ns0_namespace_id", "-S", {
+      type => 'namespace'
+    , count => 2
+    , del => 2
+    , put => 4
+})};
+
+$names = bam_namespace_fsnames($ns0_namespace_id);
+assert { scalar %$names == 2 };
+assert { $$names{E} };
+assert { $$names{F} };
+
+# now remove the second directory from the namespace
+unlink("$bam_basedir/system-config") or die $!;
+
+reconcile();
+
+assert {
+  stats(undef, {
+      fstrees => 4    # root, shadow
+    , namespaces => 3 # modules, formulas, plugins
+    , fsnames => 0
+})};
+assert { eexists("//bm/namespaces/$modules_namespace_id") }; # modules namespace always exists
+assert { enoent("//bm/namespaces/$ns0_namespace_id") };
+assert { eexists("//bm/fstrees/$system_fstree_id") };  # from system-config dir
+assert { eexists("//bm/fstrees/$base_fstree_id") };    # from base dir
+assert { enoent("//bm/fstrees/$B_fstree_id") };
+assert { enoent("//bm/fstrees/$E_fstree_id") };
+
+teardown();

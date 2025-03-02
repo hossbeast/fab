@@ -12,39 +12,51 @@ our $bam_basedir;
 BEGIN { $repodir = dirname(Cwd::realpath("$0/..")) }
 use lib "$repodir/libbacon/perl";
 use lib "$repodir/integ/lib";
+use lib "$repodir/perl";
 use util;
 use tree;
-use bam;
+use bam::bam;
+use integ;
+
+my $fh;
 
 init();
 setup(<<'TREE');
 |-- A
 |   `-- B
-|       `-- module.bam+devel
-|-- module.bam+devel
+|       `-- module.bam%devel
+|-- module.bam%devel
 TREE
 
 # before
 assert { stats(undef, {
     modules => 2
-  , system_state_ok => 1
+  , system_state_ready => 1
 })};
 assert { stats(".", "-S", {
     type => 'module'
   , state => "fresh"
   , reloaded => 1
-  , modules_up => 0
-  , modules_down => 1
+#  , modules_up => 0
+#  , modules_down => 1
   , reloaded => 1
 })};
 assert { stats("A/B", "-S", {
     type => 'module'
   , state => "fresh"
-  , parse => 1
+  , fresh => 1
+  , stale => 1
+})};
+assert { stats("A/B/module.bam%devel", "-S", {
+    type => 'ruleset'
+  , state => "fresh"
+  , fresh => 1
+  , stale => 1
+  , parse_err => 0
   , parse_ok => 1
 })};
 
-open my $fh, ">>", "$bam_basedir/A/B/var.bam+devel" or die $!;
+open $fh, ">>", "$bam_basedir/A/B/var.bam%devel" or die $!;
 print $fh <<'TEXT';
 lflags.devel : foo
 TEXT
@@ -54,31 +66,35 @@ close $fh;
 reconcile();
 assert { stats(undef, {
     modules => 2
-  , system_state_ok => 2
+  , system_state_ready => 2
 })};
 assert { stats(".", "-S", {
     type => 'module'
   , state => "fresh"
   , reloaded => 1
-  , modules_up => 0
-  , modules_down => 1
+#  , modules_up => 0
+#  , modules_down => 1
 })};
 assert { stats("A/B", "-S", {
     type => 'module'
   , state => "fresh"
   , reloaded => 2
-  , parse => 1
+})};
+assert { stats("A/B/module.bam%devel", "-S", {
+    type => 'ruleset'
+  , state => "fresh"
+  , parse_err => 0
   , parse_ok => 1
 })};
-assert { stats("A/B/var.bam+devel", "-S", {
+assert { stats("A/B/var.bam%devel", "-S", {
     type => 'varset'
   , state => "fresh"
-  , parse => 1
+  , parse_err => 0
   , parse_ok => 1
 })};
 
 # create varfile in parent dir
-open $fh, ">>", "$bam_basedir/A/var.bam+devel" or die $!;
+open $fh, ">>", "$bam_basedir/A/var.bam%devel" or die $!;
 print $fh <<'TEXT';
 lflags.devel : bar
 TEXT
@@ -88,36 +104,39 @@ close $fh;
 reconcile();
 assert { stats(undef, {
     modules => 2
-  , system_state_ok => 3
+  , system_state_ready => 3
 })};
 assert { stats(".", "-S", {
     type => 'module'
   , state => "fresh"
   , reloaded => 1
-  , modules_up => 0
-  , modules_down => 1
+#  , modules_up => 0
+#  , modules_down => 1
 })};
 assert { stats("A/B", "-S", {
     type => 'module'
   , state => 'fresh'
   , reloaded => 3
-  , state => "fresh"
-  , parse => 1
+})};
+assert { stats("A/B/module.bam%devel", "-S", {
+    type => 'ruleset'
+  , state => 'fresh'
+  , parse_err => 0
   , parse_ok => 1
 })};
-assert { stats("A/B/var.bam+devel", "-S", {
-    parse => 1
+assert { stats("A/B/var.bam%devel", "-S", {
+    parse_err => 0
   , parse_ok => 1
   , state => "fresh"
 })};
-assert { stats("A/var.bam+devel", "-S", {
-    parse => 1
+assert { stats("A/var.bam%devel", "-S", {
+    parse_err => 0
   , parse_ok => 1
   , state => "fresh"
 })};
 
 # create varfile in grand-parent dir
-open $fh, ">>", "$bam_basedir/var.bam+devel" or die $!;
+open $fh, ">>", "$bam_basedir/var.bam%devel" or die $!;
 print $fh <<'TEXT';
 lflags.devel : baz
 TEXT
@@ -127,33 +146,36 @@ close $fh;
 reconcile();
 assert { stats(undef, {
     modules => 2
-  , system_state_ok => 4
+  , system_state_ready => 4
 })};
 assert { stats(".", "-S", {
     type => 'module'
   , state => "fresh"
   , reloaded => 2
-  , modules_up => 0
-  , modules_down => 1
+#  , modules_up => 0
+#  , modules_down => 1
 })};
 assert { stats("A/B", "-S", {
-    reloaded => 4
-  , state => "fresh"
-  , parse => 1
+    state => "fresh"
+  , reloaded => 4
+})};
+assert { stats("A/B/module.bam%devel", "-S", {
+    state => "fresh"
+  , parse_err => 0
   , parse_ok => 1
 })};
-assert { stats("A/B/var.bam+devel", "-S", {
-    parse => 1
-  , parse_ok => 1
-  , state => "fresh"
-})};
-assert { stats("A/var.bam+devel", "-S", {
-    parse => 1
+assert { stats("A/B/var.bam%devel", "-S", {
+    parse_err => 0
   , parse_ok => 1
   , state => "fresh"
 })};
-assert { stats("var.bam+devel", "-S", {
-    parse => 1
+assert { stats("A/var.bam%devel", "-S", {
+    parse_err => 0
+  , parse_ok => 1
+  , state => "fresh"
+})};
+assert { stats("var.bam%devel", "-S", {
+    parse_err => 0
   , parse_ok => 1
   , state => "fresh"
 })};

@@ -8,18 +8,23 @@ use strict;
 use warnings;
 $SIG{__WARN__} = sub { die @_ };
 
+use Carp qw(confess);
+$SIG{__DIE__} = 'confess';
+
 use POSIX;
 use File::Basename;
 use Cwd;
 our $bam_basedir;
-our $bam_projdir;
+our $bam_dir;
 our $repodir;
 BEGIN { $repodir = dirname(Cwd::realpath("$0/..")) }
 use lib "$repodir/integ/lib";
+use lib "$repodir/perl";
 use lib "$repodir/libbacon/perl";
 use util;
 use tree;
-use bam;
+use bam::bam;
+use integ;
 
 init(subdir => 'C');
 setup(<<TREE);
@@ -27,44 +32,57 @@ setup(<<TREE);
 |   `-- foo
 |       `-- bar
 |-- C
-|   `-- module.bam+devel <<
+|   `-- module.bam%devel <<
 bind { name : 1 } foo => //foo
 >>
 |-- system-config <<
 filesystem : {
   fstrees : {
     $bam_basedir : {
-      index : true
       mount : true
+      namespaces : {
+        modules
+      }
     }
   }
 }
 >>
 TREE
 
+my $modules_ns_id = bam::identity("namespace", "modules");
+
 # num targets : 1
 assert {
   stats(undef, {
     modules => 1
-  , system_state_ok => 1
+  , system_state_ready => 1
+  , system_error => 0
+  , rule_resolve_err => 0
+  , rule_resolve_ok => 1
   , rule_run => 1
 })};
 assert {
-  stats("//fsindex", {
+  stats("//bm/namespaces/$modules_ns_id", "-S", {
       del => 0
+    , put => 3
+    , count => 3
 })};
 assert {
   stats(".", "-S", {
     type => 'module'
   , state => 'fresh'
   , reloaded => 1
-  , parse => 1
+})};
+assert {
+  stats("./module.bam%devel", "-S", {
+    type => 'ruleset'
+  , state => 'fresh'
+  , parse_err => 0
   , parse_ok => 1
 })};
 assert {
-  stats("//module/rmas-by/name/1", {
+  stats("//module/rmas-by/name/1", "--follow", {
       rule_run => 1
-    , rule_run_ok => 1
     , search_hits => 0
     , generate_hits => 0
     , formula_hits => 0
@@ -77,30 +95,41 @@ assert { ls("//foo", "foo -> $bam_basedir/A/foo") };
 # num targets : 0
 unlink("$bam_basedir/A/foo/bar");
 rmdir("$bam_basedir/A/foo");
-reconcile(tolerant => 1);
+reconcile(expect_error => 1);
 
 assert {
   stats(undef, {
     modules => 1
-  , system_state_ok => 1
-  , rule_run => 2
+  , system_state_ready => 1
+  , system_error => 1
+  , rule_resolve_err => 1
+  , rule_resolve_ok => 1
+  , rule_run => 1
 })};
 assert {
-  stats("//fsindex", {
+  stats("//bm/namespaces/$modules_ns_id", "-S", {
       del => 1
+    , put => 3
+    , count => 2
 })};
 assert {
   stats(".", "-S", {
     type => 'module'
   , state => 'fresh'
   , reloaded => 1
-  , parse => 1
+})};
+assert {
+  stats("./module.bam%devel", "-S", {
+    type => 'ruleset'
+  , state => 'fresh'
+  , parse_err => 0
   , parse_ok => 1
 })};
 assert {
-  stats("//module/rmas-by/name/1", {
-      rule_run => 2
-    , rule_run_ok => 1
+  stats("//module/rmas-by/name/1", "--follow", {
+      rule_resolve_err => 1
+    , rule_resolve_ok => 1
+    , rule_run => 1
     , search_hits => 0
     , generate_hits => 0
     , formula_hits => 0

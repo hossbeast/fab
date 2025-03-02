@@ -4,21 +4,27 @@ use strict;
 use warnings;
 $SIG{__WARN__} = sub { die @_ };
 
+use Carp qw(confess);
+$SIG{__DIE__} = 'confess';
+
 use POSIX;
 use File::Basename;
 use Cwd;
 our $repodir;
+our $bam_basedir;
 BEGIN { $repodir = dirname(Cwd::realpath("$0/..")) }
 use lib "$repodir/integ/lib";
+use lib "$repodir/perl";
 use lib "$repodir/libbacon/perl";
 use util;
 use tree;
-use bam;
+use bam::bam;
+use integ;
 
 # build out the fstree under /tmp
 init();
-my $testdir = setup(<<'TREE');
-|-- module.bam+devel <<
+setup(<<'TREE');
+|-- module.bam%devel <<
 rule -- boats : ./foo.bam
 rule boats -> //targets
 >>
@@ -36,10 +42,15 @@ close FH;
 >>
 TREE
 
+my $foo_bam_id = bam::identity("formula", "$bam_basedir/foo.bam");
+my $bar_bam_id = bam::identity("formula", "$bam_basedir/bar.bam");
+
 # before
 assert { stats(undef, {
     modules => 1
-  , system_state_ok => 1
+  , system_state_ready => 1
+  , system_state_ok => 0
+  , formulas => 1
 })};
 assert { stats(".", "-S", {
     type => "module"
@@ -47,17 +58,23 @@ assert { stats(".", "-S", {
   , reloaded => 1
   , state => "fresh"
 })};
-assert { stats("module.bam+devel", "-S", {
-    parse => 1
-  , parse_ok => 1
+assert {
+  stats(".", "-S", {
+    type => "module"
   , state => "fresh"
-  , type => "module"
+})};
+assert {
+  stats("./module.bam%devel", "-S", {
+    type => "ruleset"
+  , state => "fresh"
+  , parse_err => 0
+  , parse_ok => 1
 })};
 assert { stats("foo.bam", "-S", {
     type => "formula"
   , state => "fresh"
   , parse_ok => 1
-  , parse => 1
+  , parse_err => 0
 })};
 assert { stats("bar.bam", {   # not yet referenced by any formula
     state => "fresh"
@@ -67,17 +84,23 @@ assert { stats("boats", {
     state => "uncreated"
 })};
 
+my $res = bam_formulas();
+print("$res\n");
+assert { $res =~ /formula id : $foo_bam_id/ };
+my $nls = ($res =~ tr/\n//);
+assert { $nls <= 1 };
+
 # build - creates the file
 build();
 assert { stats("foo.bam", "-S", {
     type => "formula"
   , state => "fresh"
   , parse_ok => 1
-  , parse => 1
+  , parse_err => 0
 })};
 
 # file was created by the foo formula
-assert_file("$testdir/boats", "foo");
+assert_file("$bam_basedir/boats", "foo");
 assert { stats("boats", {
     type => "file"
   , state => "fresh"
@@ -86,7 +109,7 @@ assert { stats("boats", {
 })};
 
 # change the file to be created by some other formula
-open my $fh, ">", "$testdir/module.bam+devel" or die $!;
+open my $fh, ">", "$bam_basedir/module.bam%devel" or die $!;
 print $fh <<TEXT;
 rule -- boats : ./bar.bam
 rule boats -> //targets
@@ -94,6 +117,11 @@ TEXT
 close $fh;
 
 reconcile();
+
+assert { stats(undef, {
+    modules => 1
+  , formulas => 1
+})};
 
 # boats was invalidated when the other formula was assigned
 assert { stats("boats", {
@@ -110,10 +138,16 @@ assert { stats(".", "-S", {
   , reloaded => 2
   , state => "fresh"
 })};
-assert { stats("module.bam+devel", "-S", {
+assert {
+  stats(".", "-S", {
     type => "module"
   , state => "fresh"
-  , parse => 2
+})};
+assert {
+  stats("./module.bam%devel", "-S", {
+    type => "ruleset"
+  , state => "fresh"
+  , parse_err => 0
   , parse_ok => 2
 })};
 assert { stats("foo.bam", {  # no longer referenced as a formula by any rule
@@ -124,7 +158,7 @@ assert { stats("bar.bam", "-S", {
     type => "formula"
   , state => "fresh"
   , parse_ok => 1
-  , parse => 1
+  , parse_err => 0
 })};
 assert { stats("boats", {
     type => "file"
@@ -132,6 +166,12 @@ assert { stats("boats", {
 })};
 
 # file was created by the foo formula
-assert_file("$testdir/boats", "bar");
+assert_file("$bam_basedir/boats", "bar");
+
+$res = bam_formulas();
+print("$res\n");
+assert { $res =~ /formula id : $bar_bam_id/ };
+$nls = ($res =~ tr/\n//);
+assert { $nls <= 1 };
 
 teardown();

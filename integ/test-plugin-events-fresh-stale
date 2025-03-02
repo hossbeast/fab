@@ -1,0 +1,472 @@
+#!/usr/bin/env perl
+
+#
+# subscribe to and print events, with plugins also subscribed to those events
+#
+
+use strict;
+use warnings;
+$SIG{__WARN__} = sub { die @_ };
+
+use Carp qw(confess);
+$SIG{__DIE__} = 'confess';
+
+use POSIX;
+use File::Basename;
+use Cwd;
+our $repodir;
+our $bam_bampath;
+our $bam_basedir;
+our $bam_dir;
+BEGIN { $repodir = dirname(Cwd::realpath("$0/..")) }
+use lib "$repodir/integ/lib";
+use lib "$repodir/perl";
+use lib "$repodir/libbacon/perl";
+use util;
+use tree;
+use bam::bam;
+use integ;
+
+my $NUMFILES = 10;
+
+init();
+setup(<<'TREE');
+|-- module.bam%devel <<
+rule (*).c -> $1.o : ./cat.bam+(.)
+rule *.o [*] -> blob : ./cat.bam+(.)
+>>
+|-- cat.bam << 0777
+#!/usr/bin/env perl
+open B, ">", $ENV{bm_target0} or die $!;
+for my $f (split(/ /, $ENV{files})) {
+  open A, "<", $f or die $!;
+  while(<A>)
+  {
+    print B "$_";
+  }
+  close A;
+}
+__DATA__
+envs : {
+  files : {
+    sequence : [
+      select : [
+        target
+        traverse : {
+          direction : down
+          graph : depends
+          min-distance : 2
+          max-distance : 2
+        }
+      ]
+      property : relpath
+    ]
+  }
+}
+>>
+|-- plugin << 0755
+#!/usr/bin/env perl
+use POSIX;
+
+my $s = <<MSG;
+plugin-ready
+
+eventsub : [ node-stale node-fresh ]
+
+MSG
+POSIX::write(1001, $s, length($s));
+
+$s = <<MSG;
+plugin-ready
+
+MSG
+
+while(1) {
+  POSIX::write(1001, $s, length($s));
+  <STDIN>;
+}
+>>
+TREE
+
+open FH, ">$bam_basedir/system-config" or die $!;
+print FH <<TEXT;
+filesystem : {
+  fstrees : {
+    $bam_basedir : {
+      mount : true
+    }
+  }
+}
+plugins : {
+  [
+    {
+      file : {
+        lookup : {
+          pattern : $bam_basedir/plugin
+        }
+      }
+      args : [
+        --suffix .c
+      ]
+    }
+  ]
+}
+TEXT
+close FH;
+
+my $child;
+my %stale;
+my %fresh;
+
+print("\n >> 1 - SETUP <<\n\n");
+#
+# 1. initial
+#
+
+assert {
+  info(undef, {
+    "system-state" => 'ready'
+})};
+assert { stats(undef, {
+    system_state_ready => 1
+  , system_state_ok => 0
+  , plugins => 0
+})};
+assert { stats('//bm/sys-build', "--follow", {
+    fml_exec_ok => 0
+  , fml_exec_err => 0
+  , build => 0
+})};
+assert { stats("$bam_basedir/cat.bam", "-S", {
+    type => 'formula'
+  , state => 'fresh'
+  , fresh => 1
+  , stale => 1
+  , fml_exec_ok => 0
+  , fml_exec_err => 0
+})};
+
+#
+# 2. create a bunch of primary files, build
+#
+print("\n >> 2 - CREATE FILES, BUILD <<\n\n");
+
+for(my $x = 0; $x < $NUMFILES; $x++) {
+  open FH, ">$bam_basedir/$x.c";
+  print FH ("$x\n");
+  close FH; 
+}
+
+reconcile();
+
+# fork off an event listener
+$child = spawn({ cwd => $bam_dir }
+  , $bam_bampath
+  , "--no-launch"
+  , "--no-color"
+  , "events"
+  , "stale"
+  , "fresh"
+);
+
+# run the build, which makes fresh each .o, and ./blob
+build();
+
+kill(15, $$child{pid});
+while(1) {
+  poll($child);
+  last if exists $$child{status};
+}
+
+print STDERR ("$$child{pid} [$$child{status} out ".length($$child{out})." err ".length($$child{err})."] " . join(" ", @{$$child{cmd}}) . "\n");
+if(length($$child{err})) {
+  print("$$child{err}\n");
+}
+
+%stale = ();
+%fresh = ();
+for my $line (split(/\n/, $$child{out}))
+{
+  next if $line =~ /^[ ]+$/;
+  my $msg = bam::bacon::parse("{" . $line . "}");
+  if($$msg{"node-fresh"}) {
+    my $path = $$msg{"node-fresh"}{"path"};
+    printf("%3d FRESH %s\n", scalar(keys %fresh), $path);
+    assert { !exists($fresh{$path}) };
+    $fresh{$path} = 1;
+  } elsif($$msg{"node-stale"}) {
+    my $path = $$msg{"node-stale"}{"path"};
+    printf("%3d STALE %s\n", scalar(keys %stale), $path);
+    assert { !exists($stale{$path}) };
+    $stale{$path} = 1;
+  }
+}
+
+assert { scalar(keys %stale) == 0 };
+assert { scalar(keys %fresh) == $NUMFILES+1 }; # each .o, blob
+for(my $x = 0; $x < $NUMFILES; $x++) {
+  assert { $fresh{"$bam_basedir/$x.o"} };
+}
+assert { $fresh{"$bam_basedir/blob"} };
+
+assert {
+  info(undef, {
+    "system-state" => 'ok'
+})};
+assert { stats(undef, {
+    system_state_ready => 3
+  , system_state_ok => 1
+  , plugins => 1
+  , bpes => $NUMFILES+1
+})};
+assert { stats('//bm/sys-build', "--follow", {
+    fml_exec_ok => $NUMFILES+1
+  , fml_exec_err => 0
+  , build => 1
+})};
+assert { stats("$bam_basedir/cat.bam", "-S", {
+    type => 'formula'
+  , state => 'fresh'
+  , fresh => 1
+  , stale => 1
+  , fml_exec_ok => $NUMFILES+1
+  , fml_exec_err => 0
+})};
+
+# verify the contents of the output file
+open FH, "<$bam_basedir/blob" or die $!;
+my @lines;
+while(my $line = <FH>) {
+  chomp $line;
+  push @lines, int($line);
+}
+close FH;
+
+@lines = sort { $a <=> $b } @lines;
+for(my $x = 0; $x < $NUMFILES; $x++) {
+  assert { $lines[$x] == $x }
+}
+
+print("\n >> 3 - INVALIDATE via FS <<\n\n");
+#
+# 3. change a file
+#
+
+# fork off an event listener
+$child = spawn({ cwd => $bam_dir }
+  , $bam_bampath
+  , "--no-launch"
+  , "--no-color"
+  , "events"
+  , "stale"
+  , "fresh"
+);
+
+open FH, ">$bam_basedir/1.c";
+print FH "\n";
+close FH;
+
+reconcile();
+
+kill(15, $$child{pid});
+while(1)
+{
+  poll($child);
+  last if exists $$child{status};
+}
+
+print STDERR ("[$$child{status} out ".length($$child{out})." err ".length($$child{err})."] " . join(" ", @{$$child{cmd}}) . "\n");
+if(length($$child{err})) {
+  print("$$child{err}\n");
+}
+
+%fresh = ();
+%stale = ();
+for my $line (split(/\n/, $$child{out}))
+{
+  next if $line =~ /^[ ]+$/;
+  my $msg = bam::bacon::parse("{" . $line . "}");
+  if($$msg{"node-fresh"}) {
+    my $path = $$msg{"node-fresh"}{"path"};
+    printf("%3d FRESH %s\n", scalar(keys %fresh), $path);
+    assert { !exists($fresh{$path}) };
+    $fresh{$path} = 1;
+  } elsif($$msg{"node-stale"}) {
+    my $path = $$msg{"node-stale"}{"path"};
+    printf("%3d STALE %s\n", scalar(keys %stale), $path);
+    assert { !exists($stale{$path}) };
+    $stale{$path} = 1;
+  }
+}
+
+assert { scalar(keys %stale) == 3};   # .c -> .o -> .blob
+assert { scalar(keys %fresh) == 1 };  # .c
+assert { $stale{"$bam_basedir/1.c"} };
+assert { $stale{"$bam_basedir/1.o"} };
+assert { $stale{"$bam_basedir/blob"} };
+assert { $fresh{"$bam_basedir/1.c"} };
+
+#
+# 4. run the build again
+#
+print("\n >> 4 - BUILD AGAIN <<\n\n");
+
+# fork off an event listener
+$child = spawn({ cwd => $bam_dir }
+  , $bam_bampath
+  , "--no-launch"
+  , "--no-color"
+  , "events"
+  , "stale"
+  , "fresh"
+);
+
+build();
+
+kill(15, $$child{pid});
+while(1)
+{
+  poll($child);
+  last if exists $$child{status};
+}
+
+print STDERR ("[$$child{status} out ".length($$child{out})." err ".length($$child{err})."] " . join(" ", @{$$child{cmd}}) . "\n");
+if(length($$child{err})) {
+  print("$$child{err}\n");
+}
+
+%fresh = ();
+%stale = ();
+for my $line (split(/\n/, $$child{out}))
+{
+  next if $line =~ /^[ ]+$/;
+#print("$line\n");
+  my $msg = bam::bacon::parse("{" . $line . "}");
+  if($$msg{"node-fresh"}) {
+    my $path = $$msg{"node-fresh"}{"path"};
+    printf("%3d FRESH %s\n", scalar(keys %fresh), $path);
+    assert { !exists($fresh{$path}) };
+    $fresh{$path} = 1;
+  } elsif($$msg{"node-stale"}) {
+    my $path = $$msg{"node-stale"}{"path"};
+    printf("%3d STALE %s\n", scalar(keys %stale), $path);
+    assert { !exists($stale{$path}) };
+    $stale{$path} = 1;
+  }
+}
+
+assert { scalar(keys %stale) == 0 };
+assert { scalar(keys %fresh) == 2 };  # .o -> blob
+assert { $fresh{"$bam_basedir/1.o"} };
+assert { $fresh{"$bam_basedir/blob"} };
+
+print("\n >> 5 - INVALIDATE via API <<\n\n");
+#
+# 3. change a file
+#
+
+# fork off an event listener
+$child = spawn({ cwd => $bam_dir }
+  , $bam_bampath
+  , "--no-launch"
+  , "--no-color"
+  , "events"
+  , "stale"
+  , "fresh"
+);
+
+bam_touch("$bam_basedir/2.c");
+reconcile();
+
+kill(15, $$child{pid});
+while(1)
+{
+  poll($child);
+  last if exists $$child{status};
+}
+
+print STDERR ("[$$child{status} out ".length($$child{out})." err ".length($$child{err})."] " . join(" ", @{$$child{cmd}}) . "\n");
+if(length($$child{err})) {
+  print("$$child{err}\n");
+}
+
+%fresh = ();
+%stale = ();
+for my $line (split(/\n/, $$child{out}))
+{
+  next if $line =~ /^[ ]+$/;
+  my $msg = bam::bacon::parse("{" . $line . "}");
+  if($$msg{"node-fresh"}) {
+    my $path = $$msg{"node-fresh"}{"path"};
+    printf("%3d FRESH %s\n", scalar(keys %fresh), $path);
+    assert { !exists($fresh{$path}) };
+    $fresh{$path} = 1;
+  } elsif($$msg{"node-stale"}) {
+    my $path = $$msg{"node-stale"}{"path"};
+    printf("%3d STALE %s\n", scalar(keys %stale), $path);
+    assert { !exists($stale{$path}) };
+    $stale{$path} = 1;
+  }
+}
+
+assert { scalar(keys %stale) == 3};   # .c -> .o -> .blob
+assert { scalar(keys %fresh) == 1 };  # .c
+assert { $stale{"$bam_basedir/2.c"} };
+assert { $stale{"$bam_basedir/2.o"} };
+assert { $stale{"$bam_basedir/blob"} };
+assert { $fresh{"$bam_basedir/2.c"} };
+
+#
+# 6. run the build again
+#
+print("\n >> 6 - BUILD AGAIN <<\n\n");
+
+# fork off an event listener
+$child = spawn({ cwd => $bam_dir }
+  , $bam_bampath
+  , "--no-launch"
+  , "--no-color"
+  , "events"
+  , "stale"
+  , "fresh"
+);
+
+build();
+
+kill(15, $$child{pid});
+while(1)
+{
+  poll($child);
+  last if exists $$child{status};
+}
+
+print STDERR ("[$$child{status} out ".length($$child{out})." err ".length($$child{err})."] " . join(" ", @{$$child{cmd}}) . "\n");
+if(length($$child{err})) {
+  print("$$child{err}\n");
+}
+
+%fresh = ();
+%stale = ();
+for my $line (split(/\n/, $$child{out}))
+{
+  next if $line =~ /^[ ]+$/;
+  my $msg = bam::bacon::parse("{" . $line . "}");
+  if($$msg{"node-fresh"}) {
+    my $path = $$msg{"node-fresh"}{"path"};
+    printf("%3d FRESH %s\n", scalar(keys %fresh), $path);
+    assert { !exists($fresh{$path}) };
+    $fresh{$path} = 1;
+  } elsif($$msg{"node-stale"}) {
+    my $path = $$msg{"node-stale"}{"path"};
+    printf("%3d STALE %s\n", scalar(keys %stale), $path);
+    assert { !exists($stale{$path}) };
+    $stale{$path} = 1;
+  }
+}
+
+assert { scalar(keys %stale) == 0 };
+assert { scalar(keys %fresh) == 2 };  # .o -> blob
+assert { $fresh{"$bam_basedir/2.o"} };
+assert { $fresh{"$bam_basedir/blob"} };
+
+teardown();

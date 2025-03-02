@@ -1,0 +1,154 @@
+#!/usr/bin/env perl
+
+#
+# plugin whose file ref does not resolve
+#
+
+use strict;
+use warnings;
+$SIG{__WARN__} = sub { die @_ };
+
+use Carp qw(confess);
+$SIG{__DIE__} = 'confess';
+
+use POSIX;
+use File::Basename;
+use Cwd;
+our $repodir;
+our $bam_basedir;
+our $bam_dir;
+BEGIN { $repodir = dirname(Cwd::realpath("$0/..")) }
+use lib "$repodir/integ/lib";
+use lib "$repodir/perl";
+use lib "$repodir/libbacon/perl";
+use util;
+use tree;
+use bam::bam;
+use integ;
+
+init();
+setup({ tolerant => 1 }, <<"TREE");
+|-- foo <<
+foo
+>>
+|-- module.bam%devel <<
+>>
+|-- B
+|   `-- plugin << 0755
+#!/usr/bin/env perl
+use POSIX;
+
+my \$s = <<MSG;
+plugin-ready
+
+MSG
+
+while(1) {
+  POSIX::write(1001, \$s, length(\$s));
+  <STDIN>;
+}
+TEXT
+>>
+|-- config.bam%devel <<
+filesystem : {
+  fstrees : {
+    $bam_basedir : {
+      mount : true
+      namespaces : {
+        plugins
+      }
+    }
+  }
+}
+plugins : {
+  [
+    {
+      file : {
+        lookup : {
+          pattern : B/plugin+(.)
+          namespace : foo
+        }
+      }
+    }
+  ]
+}
+>>
+TREE
+
+my $plugin_id = bam::identity("plugin", "$bam_basedir/B/plugin", 'plugin');
+
+assert {
+  info(undef, {
+    "system-state" => 'plugin-reconcile'
+})};
+assert {
+  stats(undef, {
+      system_state_ready => 0
+    , system_state_ok => 0
+    , system_state_plugin_reconcile => 1
+    , plugins => 0
+})};
+assert { stats("$bam_basedir/B/plugin", {
+    type => 'file'
+  , state => 'fresh'
+  , fresh => 1
+  , stale => 0
+})};
+
+# now fix the plugin ref
+open my $fh, ">", "$bam_basedir/config.bam%devel" or die $!;
+print $fh <<"TEXT";
+filesystem : {
+  fstrees : {
+    $bam_basedir : {
+      mount : true
+      namespaces : {
+        plugins
+      }
+    }
+  }
+}
+plugins : {
+  [
+    {
+      file : {
+        lookup : {
+          pattern : B/plugin+(.)
+          namespace : plugins
+        }
+      }
+    }
+  ]
+}
+TEXT
+close $fh;
+
+reconcile();
+
+assert {
+  info(undef, {
+    "system-state" => 'ready'
+})};
+assert {
+  stats(undef, {
+      system_state_ready => 1
+    , system_state_ok => 0
+    , system_state_plugin_reconcile => 2
+    , plugins => 1
+})};
+
+assert { stats("//bm/plugins/$plugin_id", "-S", {
+    type => 'plugin'
+  , state => 'fresh'
+  , stale => 1
+  , fresh => 1
+  , tx_parse_err => 0
+  , fork => 1
+  , crashed => 0
+  , reap => 0
+  , events => 0
+  , commands => 0
+  , ready => 1
+})};
+
+teardown();

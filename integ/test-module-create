@@ -12,50 +12,84 @@ use POSIX;
 use File::Basename;
 use Cwd;
 our $repodir;
+our $bam_basedir;
 BEGIN { $repodir = dirname(Cwd::realpath("$0/..")) }
 use lib "$repodir/integ/lib";
+use lib "$repodir/perl";
 use lib "$repodir/libbacon/perl";
 use util;
 use tree;
-use bam;
+use bam::bam;
+use integ;
 
 init();
-my $testdir = setup(<<'TREE');
+setup(<<'TREE');
 |-- A
 |   `-- foo
-`-- module.bam+devel
+`-- module.bam%devel
 TREE
 
+my $fh;
+
 # before
-assert { stats(undef, { modules => 1 })};
-assert { stats(".", "-S", {
-    reloaded => 1
-  , modules_up => 0
-  , modules_down => 0
-  , parse => 1
+assert {
+  stats(undef, {
+    modules => 1
+})};
+assert {
+  stats(".", "-S", {
+    type => 'module'
+  , state => 'fresh'
+  , stale => 1
+  , fresh => 1
+  , reloaded => 1
+})};
+assert {
+  stats("./module.bam%devel", "-S", {
+    type => 'ruleset'
+  , state => 'fresh'
+  , stale => 1
+  , fresh => 1
+  , parse_err => 0
   , parse_ok => 1
 })};
 
 # create the child module file
-open my $fh, ">>", "$testdir/A/module.bam+devel" or die $!;
+open $fh, ">>", "$bam_basedir/A/module.bam%devel" or die $!;
 print $fh "\n";
 close $fh;
 
 # after
 reconcile();
 assert { stats(undef, { modules => 2 })};
-assert { stats("A", "-S", {
-    reloaded => 1
-  , modules_up => 1
-  , modules_down => 0
-  , parse => 1
+assert {
+  stats(".", "-S", {
+    type => 'module'
+  , state => 'fresh'
+  , fresh => 1
+  , stale => 1
+  , reloaded => 1
+})};
+assert {
+  stats("./module.bam%devel", "-S", {
+    type => 'ruleset'
+  , state => 'fresh'
+  , fresh => 1
+  , stale => 1
+  , parse_err => 0
   , parse_ok => 1
 })};
-assert { stats(".", "-S", {
-    reloaded => 1
-  , modules_up => 0
-  , modules_down => 1
-  , parse => 1
+assert {
+  stats("A", "-S", {
+    type => 'module'
+  , state => 'fresh'
+  , reloaded => 1
+})};
+assert {
+  stats("A/module.bam%devel", "-S", {
+    type => 'ruleset'
+  , state => 'fresh'
+  , parse_err => 0
   , parse_ok => 1
 })};
 

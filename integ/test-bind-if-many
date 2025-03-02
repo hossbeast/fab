@@ -8,6 +8,9 @@ use strict;
 use warnings;
 $SIG{__WARN__} = sub { die @_ };
 
+use Carp qw(confess);
+$SIG{__DIE__} = 'confess';
+
 use POSIX;
 use File::Basename;
 use Cwd;
@@ -15,46 +18,70 @@ our $repodir;
 our $bam_basedir;
 BEGIN { $repodir = dirname(Cwd::realpath("$0/..")) }
 use lib "$repodir/integ/lib";
+use lib "$repodir/perl";
 use lib "$repodir/libbacon/perl";
 use util;
 use tree;
-use bam;
+use bam::bam;
+use integ;
 
 # this conditional has a variable, and it evaluates to true
 init();
-my $testdir = setup(<<'TREE');
-|-- module.bam+devel <<
+setup(<<"TREE");
+|-- module.bam%devel <<
 {
-  if($a)
+  if(\$a)
   bind B => [*] //B
 }
 >>
-|-- var.bam+devel <<
+|-- var.bam%devel <<
 a : true
 >>
 |-- B
 |   |-- foo
+|-- system-config <<
+filesystem : {
+  fstrees : {
+    $bam_basedir : {
+      mount : true
+      namespaces : {
+        modules
+      }
+    }
+  }
+}
 TREE
 
-my $B_id = hash64("$bam_basedir/B");
+my $B_id;
+my $result;
+my $fh;
+
+$B_id = bam::identity("dir", "$bam_basedir/B");
+print("B id $B_id\n");
 
 assert {
   stats(undef, {
     modules => 1
-  , system_state_ok => 1
+  , system_state_ready => 1
 })};
 assert {
   stats(".", "-S", {
     type => 'module'
   , state => 'fresh'
   , reloaded => 1
+  , rulesets => 1
+})};
+assert {
+  stats("./module.bam%devel", "-S", {
+    type => 'ruleset'
+  , state => 'fresh'
   , rules => 1
-  , parse => 1
+  , parse_err => 0
   , parse_ok => 1
 })};
 assert {
-  stats("var.bam+devel", "-S", {
-    parse => 1
+  stats("var.bam%devel", "-S", {
+    parse_err => 0
   , parse_ok => 1
   , state => 'fresh'
 })};
@@ -63,31 +90,44 @@ assert {
 assert { ls("//B", "B - shadow-dir fresh", "--max-distance", 0) };
 assert { ls("//B/$B_id", "$B_id -> $bam_basedir/B") };
 
+$result = bam_describe([$bam_basedir, "-S"]);
+print "$$result{out}\n";
+
 # change the condition to false
-open my $fh, ">", "$testdir/var.bam+devel" or die $!;
+open $fh, ">", "$bam_basedir/var.bam%devel" or die $!;
 print $fh <<'TEXT';
 a : false
 TEXT
 close $fh;
 
 reconcile();
+
+$result = bam_describe([$bam_basedir, "-S"]);
+print "$$result{out}\n";
+
 assert {
   stats(undef, {
     modules => 1
-  , system_state_ok => 2
+  , system_state_ready => 2
 })};
 assert {
   stats(".", "-S", {
     type => 'module'
   , state => 'fresh'
   , reloaded => 2
+  , rulesets => 1
+})};
+assert {
+  stats("./module.bam%devel", "-S", {
+    type => 'ruleset'
+  , state => 'fresh'
   , rules => 1
-  , parse => 1
+  , parse_err => 0
   , parse_ok => 1
 })};
 assert {
-  stats("var.bam+devel", "-S", {
-    parse => 2
+  stats("var.bam%devel", "-S", {
+    parse_err => 0
   , parse_ok => 2
   , state => 'fresh'
 })};
@@ -97,7 +137,7 @@ assert { ls("//B", "B - shadow-dir fresh", "--max-distance", 0) };
 assert { enoent("//B/$B_id") };
 
 # change the condition back to true
-open my $fh, ">", "$testdir/var.bam+devel" or die $!;
+open $fh, ">", "$bam_basedir/var.bam%devel" or die $!;
 print $fh <<'TEXT';
 a : true
 TEXT
@@ -107,20 +147,26 @@ reconcile();
 assert {
   stats(undef, {
     modules => 1
-  , system_state_ok => 3
+  , system_state_ready => 3
 })};
 assert {
   stats(".", "-S", {
     type => 'module'
   , state => 'fresh'
   , reloaded => 3
+  , rulesets => 1
+})};
+assert {
+  stats("./module.bam%devel", "-S", {
+    type => 'ruleset'
+  , state => 'fresh'
   , rules => 1
-  , parse => 1
+  , parse_err => 0
   , parse_ok => 1
 })};
 assert {
-  stats("var.bam+devel", "-S", {
-    parse => 3
+  stats("var.bam%devel", "-S", {
+    parse_err => 0
   , parse_ok => 3
   , state => 'fresh'
 })};

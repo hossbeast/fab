@@ -8,46 +8,54 @@ use strict;
 use warnings;
 $SIG{__WARN__} = sub { die @_ };
 
+use Carp qw(confess);
+$SIG{__DIE__} = 'confess';
+
 use POSIX;
 use File::Basename;
 use Cwd;
 our $repodir;
 our $bam_basedir;
-our $bam_projdir;
+our $bam_dir;
 BEGIN { $repodir = dirname(Cwd::realpath("$0/..")) }
 use lib "$repodir/integ/lib";
+use lib "$repodir/perl";
 use lib "$repodir/libbacon/perl";
 use util;
 use tree;
-use bam;
+use bam::bam;
+use integ;
 
 init();
 setup({ tolerant => 1 }, <<TREE);
 |-- foo <<
 foo
 >>
-|-- module.bam+devel <<
+|-- module.bam%devel <<
 >>
 |-- plugin << 0755
 #!/usr/bin/env perl
 # just loops
 while(1) { }
 >>
-|-- config.bam+devel <<
+|-- config.bam%devel <<
 plugins : {
-  path : {
-    dirs : {
-      $bam_basedir
-    }
-  }
   [
     {
-      path : plugin
+      file : {
+        lookup : {
+          pattern : $bam_basedir/plugin
+        }
+      }
     }
   ]
 }
 >>
 TREE
+
+my $plugin_id = bam::identity("plugin", "$bam_basedir/plugin", 'plugin');
+my $fh;
+my $text;
 
 assert {
   info(undef, {
@@ -58,23 +66,29 @@ assert {
       system_state_ok => 0
     , system_state_plugin_reconcile => 1
 })};
-assert { stats("$bam_basedir/plugin", "-S", {
+assert { stats("//bm/plugins/$plugin_id", "-S", "-S", {
     type => 'plugin'
   , state => 'stale'
   , stale => 1
   , fresh => 0
-  , parse => 0
-  , parse_ok => 0
+  , tx_parse_err => 0
   , fork => 1
   , crashed => 1
   , reap => 1
-  , tx_messages => 0
-  , rx_messages => 0
+  , events => 0
+  , commands => 0
   , ready => 0
 })};
 
+# some sanity checks for the cli results
+$text = bam_plugins() or die $!;
+assert { $text =~ /$plugin_id/ };
+
+$text = bam_plugin($plugin_id) or die $!;
+assert { $text =~ /$plugin_id/ };
+
 # fix the plugin
-open my $fh, ">", "$bam_basedir/plugin" or die $!;
+open $fh, ">", "$bam_basedir/plugin" or die $!;
 print $fh <<'TEXT';
 #!/usr/bin/env perl
 
@@ -85,9 +99,10 @@ plugin-ready
 
 MSG
 
-POSIX::write(1001, $s, length($s));
-
-while(1) { }
+while(1) {
+  POSIX::write(1001, $s, length($s));
+  <STDIN>;
+}
 TEXT
 close $fh;
 
@@ -96,25 +111,24 @@ reconcile();
 
 assert {
   info(undef, {
-    "system-state" => 'ok'
+    "system-state" => 'ready'
 })};
 assert {
   stats(undef, {
-      system_state_ok => 1
+      system_state_ready => 1
     , system_state_plugin_reconcile => 2
 })};
-assert { stats("$bam_basedir/plugin", "-S", {
+assert { stats("//bm/plugins/$plugin_id", "-S", "-S", {
     type => 'plugin'
   , state => 'fresh'
   , stale => 1
   , fresh => 1
-  , parse => 0
-  , parse_ok => 0
+  , tx_parse_err => 0
   , fork => 2
   , crashed => 1
   , reap => 1
-  , tx_messages => 0
-  , rx_messages => 1
+  , events => 0
+  , commands => 0
   , ready => 1
 })};
 

@@ -1,8 +1,7 @@
 #!/usr/bin/env perl
 
 #
-# This test has a one-to-one bind rule whose target is a file. Since only directories are indexed
-# for lookup, the lookup pattern must specify the file-type qualifier (.).
+# search-search rule
 #
 
 use strict;
@@ -13,30 +12,27 @@ use POSIX;
 use File::Basename;
 use Cwd;
 our $bam_basedir;
-our $bam_projdir;
 our $repodir;
 BEGIN { $repodir = dirname(Cwd::realpath("$0/..")) }
 use lib "$repodir/integ/lib";
+use lib "$repodir/perl";
 use lib "$repodir/libbacon/perl";
 use util;
 use tree;
-use bam;
+use bam::bam;
+use integ;
 
 init();
 setup(<<TREE);
 |-- foo
 |-- bar
-|-- module.bam+devel <<
+|-- module.bam%devel <<
 rule { name : 1 } search foo [*] -> [*] search bar
 >>
 |-- system-config <<
 filesystem : {
   fstrees : {
-    / : {
-      index : false
-    }
     $bam_basedir : {
-      index : true
       mount : true
     }
   }
@@ -44,26 +40,31 @@ filesystem : {
 >>
 TREE
 
-my $foo_A_id = hash64("$bam_basedir/A/foo");
-
 # before
-assert { stats(undef, {
+assert {
+  stats(undef, {
     modules => 1
-  , system_state_ok => 1
+  , system_state_ready => 1
   , rule_run => 1
 })};
-assert { stats(".", "-S", {
+assert {
+  stats("$bam_basedir", "-S", {
     type => 'module'
   , state => 'fresh'
   , reloaded => 1
-  , parse => 1
+})};
+assert {
+  stats("$bam_basedir/module.bam%devel", "-S", {
+    type => 'ruleset'
+  , state => 'fresh'
+  , parse_err => 0
   , parse_ok => 1
 })};
 assert {
-  stats("//module/rmas-by/name/1", {
+  stats("//module/rmas-by/name/1", "--follow", {
       rule_run => 1
-    , rule_run_ok => 1
-    , search_hits => 2
+    , search_hits => 1
+    , search_rhs_hits => 1
     , generate_hits => 0
     , formula_hits => 0
     , target_hits => 0

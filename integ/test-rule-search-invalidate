@@ -1,0 +1,291 @@
+#!/usr/bin/env perl
+
+#
+# change the set of bindings at one attachment point
+#
+
+use strict;
+use warnings;
+$SIG{__WARN__} = sub { die @_ };
+
+use Carp qw(confess);
+$SIG{__DIE__} = 'confess';
+
+use POSIX;
+use File::Basename;
+use Cwd;
+our $bam_basedir;
+our $bam_dir;
+our $repodir;
+BEGIN { $repodir = dirname(Cwd::realpath("$0/..")) }
+use lib "$repodir/integ/lib";
+use lib "$repodir/perl";
+use lib "$repodir/libbacon/perl";
+use util;
+use tree;
+use bam::bam;
+use integ;
+
+init(subdir => 'B');
+setup(<<TREE);
+|-- B
+|   `-- a <<
+a
+>>
+|   `-- module.bam%devel <<
+rule //module/obj/* [*] -> baz : $bam_basedir/cat.bam+(.)
+rule {a,b,c} => [*] //module/obj
+>>
+|-- cat.bam << 0777
+#!/usr/bin/env perl
+open B, ">", \$ENV{bm_target0} or die \$!;
+for my \$f (sort split(/ /, \$ENV{files})) {
+  open A, "<", \$f or die \$!;
+  while(<A>)
+  {
+    print B "\$_";
+  }
+  close A;
+}
+__DATA__
+envs : {
+  files : {
+    sequence : [
+      select : [
+        target
+        traverse : {
+          direction : down
+          graph : depends
+          min-distance : 2
+          max-distance : 2
+        }
+      ]
+      property : relpath
+    ]
+  }
+}
+>>
+|-- system-config <<
+filesystem : {
+  fstrees : {
+    $bam_basedir : {
+      mount : true
+      namespaces : {
+        modules
+      }
+    }
+  }
+}
+TREE
+
+my $B_a_id = bam::identity("file", "$bam_basedir/B/a");
+my $B_b_id = bam::identity("file", "$bam_basedir/B/b");
+my $B_c_id = bam::identity("file", "$bam_basedir/B/c");
+my $rma_1_id = bam::identity("ruleset", "$bam_basedir/B/module.bam%devel", "rule", "1", "module", "$bam_basedir/B", "rma");
+my $rma_2_id = bam::identity("ruleset", "$bam_basedir/B/module.bam%devel", "rule", "2", "module", "$bam_basedir/B", "rma");
+my $fh;
+my $res;
+
+print("rma_1_id $rma_1_id\n");
+print("rma_2_id $rma_2_id\n");
+
+print("\n >> 1 - one match <<\n\n");
+assert {
+  stats(undef, {
+    system_state_ready => 1
+  , system_state_ok => 0
+  , modules => 1
+  , rulesets => 1
+  , rules => 2
+  , rule_run => 4
+})};
+assert {
+  stats("//module/obj", {
+      type => 'shadow-dir'
+    , state => 'fresh'
+    , fresh => 0
+    , stale => 0
+    , dentries => 1
+    , rules => 1
+})};
+assert {
+  stats("//bm/rmas/$rma_1_id", "--follow", {
+      type => 'rma'
+    , state => 'fresh'
+    , fresh => 2
+    , stale => 2
+    , dirs => 3
+    , bpes => 1
+    , search_hits => 1
+    , generate_hits => 1
+})};
+assert {
+  stats("//bm/rmas/$rma_2_id", "--follow", {
+      type => 'rma'
+    , state => 'fresh'
+    , fresh => 2
+    , stale => 2
+    , dirs => 1
+    , bpes => 0
+    , search_hits => 1
+    , generate_hits => 0
+})};
+assert {
+  stats("$bam_basedir/B/baz", {
+      type => 'file'
+    , state => 'uncreated'
+    , fresh => 0
+    , stale => 0
+})};
+
+$res = bam_ls(["//module/obj"]);
+print "$$res{out}\n";
+assert { index($$res{out}, $B_a_id) > -1 };
+
+build();
+assert {
+  stats("$bam_basedir/B/baz", {
+      type => 'file'
+    , state => 'fresh'
+    , fresh => 1
+    , stale => 0
+})};
+assert_file("$bam_basedir/B/baz", "a");
+
+#
+#
+#
+print("\n >> 2 - two matches <<\n\n");
+open $fh, ">>", "$bam_basedir/B/b" or die $!;
+print $fh <<TEXT;
+b
+TEXT
+close $fh;
+
+reconcile();
+assert {
+  stats(undef, {
+    system_state_ready => 3
+  , system_state_ok => 1
+  , modules => 1
+  , rulesets => 1
+  , rules => 2
+  , rule_run => 6
+})};
+$res = bam_ls(["//module/obj"]);
+print "$$res{out}\n";
+assert { index($$res{out}, $B_a_id) > -1 };
+assert { index($$res{out}, $B_b_id) > -1 };
+assert {
+  stats("//module/obj", {
+      type => 'shadow-dir'
+    , state => 'fresh'
+    , fresh => 0
+    , stale => 0
+    , dentries => 2
+    , rules => 1
+})};
+assert {
+  stats("$bam_basedir/B/baz", {
+      type => 'file'
+    , state => 'stale'  # invalidated by the rule match change in //module/obj
+    , fresh => 1
+    , stale => 1
+})};
+
+build();
+assert {
+  stats("$bam_basedir/B/baz", {
+      type => 'file'
+    , state => 'fresh'
+    , fresh => 2
+    , stale => 1
+})};
+assert_file("$bam_basedir/B/baz", "a\nb");
+
+#
+#
+#
+print("\n >> 3 - three matches <<\n\n");
+open $fh, ">>", "$bam_basedir/B/c" or die $!;
+print $fh <<TEXT;
+c
+TEXT
+close $fh;
+
+reconcile();
+assert {
+  stats(undef, {
+    system_state_ready => 5
+  , system_state_ok => 2
+  , modules => 1
+  , rulesets => 1
+  , rules => 2
+  , rule_run => 8
+})};
+$res = bam_ls(["//module/obj"]);
+print "$$res{out}\n";
+assert { index($$res{out}, $B_a_id) > -1 };
+assert { index($$res{out}, $B_b_id) > -1 };
+assert { index($$res{out}, $B_c_id) > -1 };
+assert {
+  stats("//module/obj", {
+      type => 'shadow-dir'
+    , state => 'fresh'
+    , fresh => 0
+    , stale => 0
+    , dentries => 3
+    , rules => 1
+})};
+
+build();
+assert {
+  stats("$bam_basedir/B/baz", {
+      type => 'file'
+    , state => 'fresh'
+    , fresh => 3
+    , stale => 2
+})};
+assert_file("$bam_basedir/B/baz", "a\nb\nc");
+
+#
+#
+#
+print("\n >> 4 - back to one match <<\n\n");
+unlink("$bam_basedir/B/a");
+unlink("$bam_basedir/B/b");
+
+reconcile();
+assert {
+  stats(undef, {
+    system_state_ready => 7
+  , system_state_ok => 3
+  , modules => 1
+  , rulesets => 1
+  , rules => 2
+  , rule_run => 10
+})};
+$res = bam_ls(["//module/obj"]);
+print "$$res{out}\n";
+assert { index($$res{out}, $B_c_id) > -1 };
+assert {
+  stats("//module/obj", {
+      type => 'shadow-dir'
+    , state => 'fresh'
+    , fresh => 0
+    , stale => 0
+    , dentries => 1
+    , rules => 1
+})};
+
+build();
+assert {
+  stats("$bam_basedir/B/baz", {
+      type => 'file'
+    , state => 'fresh'
+    , fresh => 4
+    , stale => 3
+})};
+assert_file("$bam_basedir/B/baz", "c");
+
+teardown();

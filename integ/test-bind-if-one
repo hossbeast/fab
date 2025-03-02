@@ -8,6 +8,9 @@ use strict;
 use warnings;
 $SIG{__WARN__} = sub { die @_ };
 
+use Carp qw(confess);
+$SIG{__DIE__} = 'confess';
+
 use POSIX;
 use File::Basename;
 use Cwd;
@@ -15,39 +18,56 @@ our $repodir;
 our $bam_basedir;
 BEGIN { $repodir = dirname(Cwd::realpath("$0/..")) }
 use lib "$repodir/integ/lib";
+use lib "$repodir/perl";
 use lib "$repodir/libbacon/perl";
 use util;
 use tree;
-use bam;
+use bam::bam;
+use integ;
 
-# 1. conditional evaluation, true
 init();
-setup(<<'TREE');
-|-- module.bam+devel <<
+setup(<<"TREE");
+|-- module.bam%devel <<
 {
-  if($a)
+  if(\$a)
   bind B => //B
 }
 >>
-|-- var.bam+devel <<
+|-- var.bam%devel <<
 a : true
 >>
 |-- B
 |   |-- foo
+|-- system-config <<
+filesystem : {
+  fstrees : {
+    $bam_basedir : {
+      mount : true
+      namespaces : {
+        modules
+      }
+    }
+  }
+}
 TREE
 
+print("\n >> 1 - conditional evaluation, true <<\n\n");
 assert {
   stats(undef, {
-    modules => 1
-  , system_state_ok => 1
+    system_state_ready => 1
+  , system_state_ok => 0
+  , system_error => 0
+  , modules => 1
+  , fstrees => 3
+  , namespaces => 3
 })};
 assert {
-  stats("var.bam+devel", "-S", {
+  stats("var.bam%devel", "-S", {
     type => "varset"
   , state => 'fresh'
   , stale => 1
   , fresh => 1
-  , parse => 1
+  , parse_err => 0
   , parse_ok => 1
 })};
 assert {
@@ -57,16 +77,23 @@ assert {
   , stale => 1
   , fresh => 1
   , reloaded => 1
+})};
+assert {
+  stats("./module.bam%devel", "-S", {
+    type => 'ruleset'
+  , state => 'fresh'
+  , stale => 1
+  , fresh => 1
   , rules => 1
-  , parse => 1
+  , parse_err => 0
   , parse_ok => 1
 })};
 
 # binding is present
 assert { ls("//B", "B -> $bam_basedir/B") };
 
-# 2. conditional evaluation, false
-open my $fh, ">", "$bam_basedir/var.bam+devel" or die $!;
+print("\n >> 2 - conditional evaluation, false <<\n\n");
+open my $fh, ">", "$bam_basedir/var.bam%devel" or die $!;
 print $fh <<'TEXT';
 a : false
 TEXT
@@ -74,20 +101,24 @@ close $fh;
 
 reconcile();
 assert { info({
-    "system-state" => 'ok'
+    "system-state" => 'ready'
 })};
 assert {
   stats(undef, {
-    system_state_ok => 2
+    system_state_ready => 2
+  , system_state_ok => 0
+  , system_error => 0
   , modules => 1
+  , fstrees => 3
+  , namespaces => 3
 })};
 assert {
-  stats("var.bam+devel", "-S", {
+  stats("var.bam%devel", "-S", {
     type => "varset"
   , state => 'fresh'
   , stale => 2
   , fresh => 2
-  , parse => 2
+  , parse_err => 0
   , parse_ok => 2
 })};
 assert {
@@ -96,17 +127,25 @@ assert {
   , state => 'fresh'
   , stale => 2
   , fresh => 2
-  , parse => 1
-  , parse_ok => 1
   , reloaded => 2
+  , rulesets => 1
+})};
+assert {
+  stats("./module.bam%devel", "-S", {
+    type => 'ruleset'
+  , state => 'fresh'
+  , stale => 1
+  , fresh => 1
+  , parse_err => 0
+  , parse_ok => 1
   , rules => 1
 })};
 
 # binding is absent
 assert { enoent("//B") };
 
-# 3. conditional evaluation, true
-open $fh, ">", "$bam_basedir/var.bam+devel" or die $!;
+print("\n >> 3 - conditional evaluation, back to true <<\n\n");
+open $fh, ">", "$bam_basedir/var.bam%devel" or die $!;
 print $fh <<'TEXT';
 a : true
 TEXT
@@ -114,20 +153,24 @@ close $fh;
 
 reconcile();
 assert { info({
-    "system-state" => 'ok'
+    "system-state" => 'ready'
 })};
 assert {
   stats(undef, {
-    system_state_ok => 3
+    system_state_ready => 3
+  , system_state_ok => 0
+  , system_error => 0
   , modules => 1
+  , fstrees => 3
+  , namespaces => 3
 })};
 assert {
-  stats("var.bam+devel", "-S", {
+  stats("var.bam%devel", "-S", {
     type => "varset"
   , state => 'fresh'
   , stale => 3
   , fresh => 3
-  , parse => 3
+  , parse_err => 0
   , parse_ok => 3
 })};
 assert {
@@ -136,9 +179,16 @@ assert {
   , state => 'fresh'
   , stale => 3
   , fresh => 3
-  , parse => 1
-  , parse_ok => 1
   , reloaded => 3
+})};
+assert {
+  stats("./module.bam%devel", "-S", {
+    type => 'ruleset'
+  , state => 'fresh'
+  , stale => 1
+  , fresh => 1
+  , parse_err => 0
+  , parse_ok => 1
   , rules => 1
 })};
 

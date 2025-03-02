@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: GPL-3.0
 # Copyright (c) 2012-2023 Todd Freed <todd.freed@gmail.com>
 
-use bacon;
+use bam::bacon;
 use xlinux;
 use Data::Dumper;
 
@@ -31,6 +31,10 @@ sub assert(&)
 
   my $rv = eval { &$block };
   $rv = !!$rv;
+
+  if($@) {
+    print($@);
+  }
 
   if($@ || !$rv)
   {
@@ -69,7 +73,7 @@ sub info
   my $info = {};
   $result = bam_info();
   # info returns mappings only -- parse in set context
-  $msg = bacon_parse("{" . $$result{out} . "}");
+  $msg = bam::bacon::parse("{" . $$result{out} . "}");
 
   while(my($k, $v) = each %$msg) {
     $$info{$k} = $v unless defined $$info{$k};
@@ -93,15 +97,83 @@ sub info
   map { $pkeys{$_} = 1 } keys %$info;
   my @keys = sort keys %pkeys;
 
-  print("info " . ($entity || '-system-') . " >> \n");
+  print("info -system- >> \n");
   for my $k (@keys)
   {
     my $v = $$info{$k};
     printf("%35s : %-12s", $k, $v);
     if(exists($$items{$k}))
     {
-      my $eq = equal($$items{$k}, $$info{$k});# ($$items{$k} || '') eq ($$info{$k} || '');
+      my $eq = equal($$items{$k}, $$info{$k});
       printf("%s %s", ($eq ? "==" : "<>"), $$items{$k});
+    }
+    print("\n");
+  }
+
+  return 0;
+}
+
+sub describe_parse
+{
+  my @args = @_;
+  my $entity = $args[0];
+
+  # special case for no target ; fetch global stats
+  my $result;
+  my $msg;
+  my $object = {};
+  $result = bam_describe(\@args);
+  # there can be multiple values - parse in set context
+  $msg = bam::bacon::parse("{" . $$result{out} . "}");
+
+  # the describe response consists of one top-level key/value pair
+  my @keys = keys(%$msg);
+  $keys[0];
+  $msg = $$msg{$keys[0]};
+
+  # take each of the scalar-valued entries
+  while(my($k, $v) = each %$msg) {
+    next if(ref($v));
+    $$object{$k} = $v unless defined $$object{$k};
+  }
+
+  return $object;
+}
+
+sub describe
+{
+  my $expected = pop;
+  my $entity = $_[0];
+  my $object = describe_parse(@_);
+
+  my $mismatch = 0;
+  for my $k (keys %$expected)
+  {
+    my $v = $$expected{$k};
+    if(!equal($$object{$k}, $v))
+    {
+      $mismatch = 1;
+      last;
+    }
+  }
+
+  return 1 unless $mismatch;
+
+  my %pkeys;
+  map { $pkeys{$_} = 1 } keys %$expected;
+  map { $pkeys{$_} = 1 } keys %$object;
+  my @keys = sort keys %pkeys;
+
+  print("object $entity >> \n");
+  printf("%35s %65s\n", "actual", "expected");
+  for my $k (@keys)
+  {
+    my $v = $$object{$k};
+    printf("%35s : %-62s", $k, $v);
+    if(exists($$expected{$k}))
+    {
+      my $eq = equal($$expected{$k}, $$object{$k});
+      printf(" %s %s", ($eq ? "==" : "<>"), $$expected{$k});
     }
     print("\n");
   }
@@ -111,6 +183,11 @@ sub info
 
 sub stats
 {
+  my $items = pop;
+  my $entity = undef;
+  if($#_ >= 0) {
+    $entity = $_[0];
+  }
   my $stats = bam_stats(@_);
 
   my $mismatch = 0;
@@ -132,13 +209,14 @@ sub stats
   my @keys = sort keys %pkeys;
 
   print("stats " . ($entity || '-system-') . " >> \n");
+  printf("%35s %25s\n", "actual", "expected");
   for my $k (@keys)
   {
     my $v = $$stats{$k};
     printf("%35s : %-12s", $k, $v);
     if(exists($$items{$k}))
     {
-      my $eq = equal($$items{$k}, $$stats{$k});# ($$items{$k} || '') eq ($$stats{$k} || '');
+      my $eq = equal($$items{$k}, $$stats{$k});
       printf("%s %s", ($eq ? "==" : "<>"), $$items{$k});
     }
     print("\n");
@@ -169,13 +247,10 @@ err:
 
 sub enoent
 {
-  my $name = shift;
+  my @args = @_;
 
-  my $result = bam_ls([$name, "--no-follow"], tolerant => 1);
+  my $result = bam_ls(\@args, tolerant => 1);
   if(length($$result{out})) {
-    goto err;
-  }
-  if($$result{err} !~ /not found/) {
     goto err;
   }
   return 1;
@@ -247,7 +322,7 @@ sub ls
   return 0;
 }
 
-sub get_node_identifiers
+sub describe_node_id
 {
   my $path = shift;
   my @args = @_;
@@ -291,18 +366,8 @@ sub assert_file
   my $text = do { local $/ ; <$fh> };
   chomp $text;
   close $fh;
+
   assert { $text eq $expected };
-}
-
-sub assert_system_state
-{
-  my $expected = shift;
-
-  my $md = bam_metadata();
-  return if $$md{"system-state"} eq $expected;
-
-  print Dumper $md;
-  assert { $$md{"system-state"} eq $expected };
 }
 
 my %status_by_pid;
@@ -318,7 +383,7 @@ $SIG{CHLD} = sub {
   }
 };
 
-sub run
+sub spawn
 {
   my $params = shift;
   my @cmd = @_;
@@ -339,6 +404,9 @@ sub run
 
     POSIX::open("/dev/null", O_WRONLY);
 
+    delete $ENV{PWD};
+    delete $ENV{CWD};
+
     if($$params{cwd})
     {
       chdir($$params{cwd}) or die $!;
@@ -349,6 +417,120 @@ sub run
     exec { $cmd[0] } @cmd;
     exit(1);
   }
+
+  # close write-end of the pipes
+  POSIX::close($out_wr_fd) or die $!;
+  POSIX::close($err_wr_fd) or die $!;
+
+  # this is necessary because we need the client to actually
+  # spin up, connect, and register event handlers before proceeding
+  select(undef, undef, undef, .25);
+
+  return {
+      pid => $pid
+    , cmd => \@cmd
+    , out_rd_fd => $out_rd_fd
+    , err_rd_fd => $err_rd_fd
+    , out => ''
+    , err => ''
+  };
+}
+
+sub poll
+{
+  my $child = shift;
+  my %args = @_;
+
+  my $rin = '';
+  vec($rin, $$child{out_rd_fd}, 1) = 1;
+  vec($rin, $$child{err_rd_fd}, 1) = 1;
+
+  my $buf = '';
+  my $out = '';
+  my $err = '';
+  my $txt;
+
+  my $or = 0;
+  my $er = 0;
+
+  my $n = select(my $rout = $rin, undef, undef, 0.125);
+  if($n > 0) {
+    if(vec($rout, $$child{out_rd_fd}, 1) == 1)
+    {
+      $or = xread($$child{out_rd_fd}, $buf, 0xffff);
+      if($or)
+      {
+        $txt = substr($buf, 0, $or);
+        $$child{out} .= $txt;
+        if($args{show} && length($txt)) {
+          print("[$$child{pid} out ".length($txt)."] $txt\n");
+        }
+      }
+    }
+
+    if(vec($rout, $$child{err_rd_fd}, 1) == 1)
+    {
+      $er = xread($$child{err_rd_fd}, $buf, 0xffff);
+      if($er)
+      {
+        $txt = substr($buf, 0, $er);
+        $$child{err} .= $txt;
+        if($args{show} && length($txt)) {
+          print("[$$child{pid} err ".length($txt)."] $txt\n");
+        }
+      }
+    }
+  }
+
+  if($or == 0 && $er == 0 && exists $status_by_pid{$$child{pid}} && !exists $$child{status}) {
+    $$child{status} = $status_by_pid{$$child{pid}};
+
+    if($args{show}) {
+      print("[$$child{pid} status $$child{status}]\n");
+    }
+    return 0;
+  }
+
+  return 1;
+}
+
+sub run
+{
+  my $params = shift;
+  my @cmd = @_;
+  my $s;
+
+  my $show = 0;
+  $show = 1 if $$params{show};
+
+  my ($out_rd_fd, $out_wr_fd) = POSIX::pipe() or die $!;
+  my ($err_rd_fd, $err_wr_fd) = POSIX::pipe() or die $!;
+  my $pid = fork();
+  if(!$pid)
+  {
+    POSIX::dup2($out_wr_fd, 1) or die $!;
+    POSIX::dup2($err_wr_fd, 2) or die $!;
+
+    for(my $x = 0; $x < 1024; $x++)
+    {
+      next if $x == 1 || $x == 2;
+      POSIX::close($x);
+    }
+
+    POSIX::open("/dev/null", O_WRONLY);
+
+    delete $ENV{PWD};
+    if($$params{cwd})
+    {
+      chdir($$params{cwd}) or die $!;
+    }
+
+    pr_set_pdeathsig(9);  # no zombies
+
+    exec { $cmd[0] } @cmd;
+    exit(1);
+  }
+  print("pid $pid\n") if $show;
 
   # close write-end of the pipes
   POSIX::close($out_wr_fd) or die $!;
@@ -372,10 +554,11 @@ sub run
     if(vec($rout, $out_rd_fd, 1) == 1)
     {
       $or = xread($out_rd_fd, $buf, 0xffff);
-      $out_len += $or;
       if($or)
       {
-        $out .= substr($buf, 0, $or);
+        $out_len += $or;
+        $s = substr($buf, 0, $or);
+        $out .= $s;
       }
     }
 
@@ -383,10 +566,11 @@ sub run
     if(vec($rout, $err_rd_fd, 1) == 1)
     {
       $er = xread($err_rd_fd, $buf, 0xffff);
-      $err_len += $er;
       if($er)
       {
-        $err .= substr($buf, 0, $er);
+        $err_len += $er;
+        $s = substr($buf, 0, $er);
+        $err .= $s;
       }
     }
 
@@ -401,24 +585,29 @@ sub run
     last if($or == 0 && $er == 0 && exists $status_by_pid{$pid});
   }
 
+  my $pass = 0;
+
   if($$params{tolerant}) {
-    goto pass;
-  }
-  if(!$$params{expect_error} && $status_by_pid{$pid} == 0 && $err_len == 0) {
-    goto pass;
-  }
-  if($$params{expect_error} && $status_by_pid{$pid} != 0) {
-    goto pass;
+    $pass = 1;
+  } elsif(!$$params{expect_error} && $status_by_pid{$pid} == 0 && $err_len == 0) {
+    $pass = 1;
+  } elsif($$params{expect_error} && $status_by_pid{$pid} != 0) {
+    $pass = 1;
+  } else {
+    $show = 1;
   }
 
-  print STDERR ("pid : $pid\n");
-  if($$params{cwd}) {
-    print STDERR ("cwd : $$params{cwd}\n");
+  if($show) {
+    print STDERR ("pid : $pid\n");
+    if($$params{cwd}) {
+      print STDERR ("cwd : $$params{cwd}\n");
+    }
+    print STDERR ("cmd : " . join(" ", @cmd) . "\n");
+    print STDERR ("status : $status_by_pid{$pid}\n");
+    print STDERR ("stdout : $out_len\n$out\n");
+    print STDERR ("stderr : $err_len\n$err\n");
   }
-  print STDERR ("cmd : " . join(" ", @cmd) . "\n");
-  print STDERR ("status : $status_by_pid{$pid}\n");
-  print STDERR ("stdout : $out_len\n$out\n");
-  print STDERR ("stderr : $err_len\n$err\n");
+  goto pass if $pass;
   die;
 
 pass:

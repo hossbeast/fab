@@ -10,16 +10,22 @@ use strict;
 use warnings;
 $SIG{__WARN__} = sub { die @_ };
 
+use Carp qw(confess);
+$SIG{__DIE__} = 'confess';
+
 use POSIX;
 use File::Basename;
 use Cwd;
 our $repodir;
 BEGIN { $repodir = dirname(Cwd::realpath("$0/..")) }
 use lib "$repodir/integ/lib";
+use lib "$repodir/perl";
 use lib "$repodir/libbacon/perl";
 use util;
 use tree;
-use bam;
+use bam::bam;
+use integ;
+use bam::bam;
 
 init();
 my $testdir = setup(<<'TREE');
@@ -29,12 +35,12 @@ my $testdir = setup(<<'TREE');
 |-- 2 <<
 2
 >>
-|-- module.bam+devel <<
+|-- module.bam%devel <<
 rule 1 -> 3
 rule 2 -> 3
-rule -- 3 : sum.bam
-rule -- 4 : mk4.bam
-rule {1,2,3,4} [*] -> 10 : sum.bam
+rule -- 3 : ./sum.bam+(.)
+rule -- 4 : ./mk4.bam+(.)
+rule {1,2,3,4} [*] -> 10 : ./sum.bam+(.)
 rule 10 -> //targets
 >>
 |-- mk4.bam << 0777

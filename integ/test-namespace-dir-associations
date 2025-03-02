@@ -1,0 +1,521 @@
+#!/usr/bin/env perl
+
+#
+# Change directory <-> namespace associations
+#
+
+use strict;
+use warnings;
+$SIG{__WARN__} = sub { die @_ };
+
+use Carp qw(confess);
+$SIG{__DIE__} = 'confess';
+
+use POSIX;
+use File::Basename;
+use Cwd;
+our $repodir;
+our $bam_basedir;
+BEGIN { $repodir = dirname(Cwd::realpath("$0/..")) }
+use lib "$repodir/integ/lib";
+use lib "$repodir/perl";
+use lib "$repodir/libbacon/perl";
+use util;
+use tree;
+use bam::bam;
+use integ;
+
+init(subdir => 'A');
+setup(<<"TREE");
+|-- A
+|   `-- module.bam%devel
+|-- B
+|   `-- C
+|       `-- x
+|   `-- D
+|       `-- y
+|-- system-config <<
+namespaces : {
+  ns0
+  ns1
+}
+filesystem : {
+  fstrees : {
+    $bam_basedir/B/C : {
+      mount : true
+    }
+    $bam_basedir/B/D : {
+      mount : true
+    }
+  }
+}
+>>
+TREE
+
+my $ns0_id;
+my $ns1_id;
+my $names;
+my $fh;
+
+$ns0_id = bam::identity("namespace", "ns0");
+printf(" ns0 >>> %s <<< \n", $ns0_id);
+$ns1_id = bam::identity("namespace", "ns1");
+printf(" ns1 >>> %s <<< \n", $ns1_id);
+
+# initially unindexed
+print("\n >> 1 - namesets : { } and { } <<\n\n");
+
+assert {
+  stats("//bm/namespaces/$ns0_id", "-S", {
+      type => 'namespace'
+    , count => 0
+    , del => 0
+    , put => 0
+})};
+$names = bam_namespace_fsnames($ns0_id);
+assert { scalar %$names == 0 };
+
+assert {
+  stats("//bm/namespaces/$ns1_id", "-S", {
+      type => 'namespace'
+    , count => 0
+    , del => 0
+    , put => 0
+})};
+$names = bam_namespace_fsnames($ns1_id);
+assert { scalar %$names == 0 };
+
+# another C to ns0
+print("\n >> 2 - nameset { C } and { } <<\n\n");
+open $fh, ">", "$bam_basedir/system-config" or die $!;
+print $fh <<"TEXT";
+namespaces : {
+  ns0
+  ns1
+}
+filesystem : {
+  fstrees : {
+    $bam_basedir/B/C : {
+      mount : true
+      namespaces : {
+        ns0
+      }
+    }
+    $bam_basedir/B/D : {
+      mount : true
+    }
+  }
+}
+TEXT
+close $fh;
+reconcile();
+
+assert {
+  stats("//bm/namespaces/$ns0_id", "-S", {
+      type => 'namespace'
+    , count => 1
+    , del => 0
+    , put => 1
+})};
+
+$names = bam_namespace_fsnames($ns0_id);
+print Dumper $names;
+assert { scalar %$names == 1 };
+assert { $$names{C} };
+
+# add C to ns1
+print("\n >> 3 - nameset { C } and { C } <<\n\n");
+open $fh, ">", "$bam_basedir/system-config" or die $!;
+print $fh <<"TEXT";
+namespaces : {
+  ns0
+  ns1
+}
+filesystem : {
+  fstrees : {
+    $bam_basedir/B/C : {
+      mount : true
+      namespaces : {
+        ns0
+        ns1
+      }
+    }
+    $bam_basedir/B/D : {
+      mount : true
+    }
+  }
+}
+TEXT
+close $fh;
+reconcile();
+
+assert {
+  stats("//bm/namespaces/$ns0_id", "-S", {
+      type => 'namespace'
+    , count => 1
+    , del => 0
+    , put => 1
+})};
+$names = bam_namespace_fsnames($ns0_id);
+assert { scalar %$names == 1 };
+assert { $$names{C} };
+
+assert {
+  stats("//bm/namespaces/$ns1_id", "-S", {
+      type => 'namespace'
+    , count => 1
+    , del => 0
+    , put => 1
+})};
+$names = bam_namespace_fsnames($ns1_id);
+assert { scalar %$names == 1 };
+assert { $$names{C} };
+
+# add D to ns0
+print("\n >> 4 - nameset { C D } and { C } <<\n\n");
+open $fh, ">", "$bam_basedir/system-config" or die $!;
+print $fh <<"TEXT";
+namespaces : {
+  ns0
+  ns1
+}
+filesystem : {
+  fstrees : {
+    $bam_basedir/B/C : {
+      mount : true
+      namespaces : {
+        ns0
+        ns1
+      }
+    }
+    $bam_basedir/B/D : {
+      mount : true
+      namespaces : {
+        ns0
+      }
+    }
+  }
+}
+TEXT
+close $fh;
+reconcile();
+
+assert {
+  stats("//bm/namespaces/$ns0_id", "-S", {
+      type => 'namespace'
+    , count => 2
+    , del => 0
+    , put => 2
+})};
+$names = bam_namespace_fsnames($ns0_id);
+assert { scalar %$names == 2 };
+assert { $$names{C} };
+assert { $$names{D} };
+
+assert {
+  stats("//bm/namespaces/$ns1_id", "-S", {
+      type => 'namespace'
+    , count => 1
+    , del => 0
+    , put => 1
+})};
+$names = bam_namespace_fsnames($ns1_id);
+assert { scalar %$names == 1 };
+assert { $$names{C} };
+
+# add D to ns1
+print("\n >> 5 - nameset { C D } and { C D } <<\n\n");
+open $fh, ">", "$bam_basedir/system-config" or die $!;
+print $fh <<"TEXT";
+namespaces : {
+  ns0
+  ns1
+}
+filesystem : {
+  fstrees : {
+    $bam_basedir/B/C : {
+      mount : true
+      namespaces : {
+        ns0
+        ns1
+      }
+    }
+    $bam_basedir/B/D : {
+      mount : true
+      namespaces : {
+        ns0
+        ns1
+      }
+    }
+  }
+}
+TEXT
+close $fh;
+reconcile();
+
+assert {
+  stats("//bm/namespaces/$ns0_id", "-S", {
+      type => 'namespace'
+    , count => 2
+    , del => 0
+    , put => 2
+})};
+$names = bam_namespace_fsnames($ns0_id);
+assert { scalar %$names == 2 };
+assert { $$names{C} };
+assert { $$names{D} };
+
+assert {
+  stats("//bm/namespaces/$ns1_id", "-S", {
+      type => 'namespace'
+    , count => 2
+    , del => 0
+    , put => 2
+})};
+$names = bam_namespace_fsnames($ns1_id);
+assert { scalar %$names == 2 };
+assert { $$names{C} };
+assert { $$names{D} };
+
+# del C from ns0
+print("\n >> 6 - nameset { D } and { C D } <<\n\n");
+open $fh, ">", "$bam_basedir/system-config" or die $!;
+print $fh <<"TEXT";
+namespaces : {
+  ns0
+  ns1
+}
+filesystem : {
+  fstrees : {
+    $bam_basedir/B/C : {
+      mount : true
+      namespaces : {
+        ns1
+      }
+    }
+    $bam_basedir/B/D : {
+      mount : true
+      namespaces : {
+        ns0
+        ns1
+      }
+    }
+  }
+}
+TEXT
+close $fh;
+reconcile();
+
+$names = bam_namespace_fsnames($ns0_id);
+print Dumper $names;
+
+assert {
+  stats("//bm/namespaces/$ns0_id", "-S", {
+      type => 'namespace'
+    , count => 1
+    , del => 1
+    , put => 2
+})};
+$names = bam_namespace_fsnames($ns0_id);
+assert { scalar %$names == 1 };
+assert { $$names{D} };
+
+assert {
+  stats("//bm/namespaces/$ns1_id", "-S", {
+      type => 'namespace'
+    , count => 2
+    , del => 0
+    , put => 2
+})};
+$names = bam_namespace_fsnames($ns1_id);
+assert { scalar %$names == 2 };
+assert { $$names{C} };
+assert { $$names{D} };
+
+# del C from ns1
+print("\n >> 7 - nameset { D } and { D } <<\n\n");
+open $fh, ">", "$bam_basedir/system-config" or die $!;
+print $fh <<"TEXT";
+namespaces : {
+  ns0
+  ns1
+}
+filesystem : {
+  fstrees : {
+    $bam_basedir/B/C : {
+      mount : true
+    }
+    $bam_basedir/B/D : {
+      mount : true
+      namespaces : {
+        ns0
+        ns1
+      }
+    }
+  }
+}
+TEXT
+close $fh;
+reconcile();
+
+assert {
+  stats("//bm/namespaces/$ns0_id", "-S", {
+      type => 'namespace'
+    , count => 1
+    , del => 1
+    , put => 2
+})};
+$names = bam_namespace_fsnames($ns0_id);
+assert { scalar %$names == 1 };
+assert { $$names{D} };
+
+assert {
+  stats("//bm/namespaces/$ns1_id", "-S", {
+      type => 'namespace'
+    , count => 1
+    , del => 1
+    , put => 2
+})};
+$names = bam_namespace_fsnames($ns1_id);
+assert { scalar %$names == 1 };
+assert { $$names{D} };
+
+# del D from ns0
+print("\n >> 8 - nameset { } and { D } <<\n\n");
+open $fh, ">", "$bam_basedir/system-config" or die $!;
+print $fh <<"TEXT";
+namespaces : {
+  ns0
+  ns1
+}
+filesystem : {
+  fstrees : {
+    $bam_basedir/B/C : {
+      mount : true
+    }
+    $bam_basedir/B/D : {
+      mount : true
+      namespaces : {
+        ns1
+      }
+    }
+  }
+}
+TEXT
+close $fh;
+reconcile();
+
+assert {
+  stats("//bm/namespaces/$ns0_id", "-S", {
+      type => 'namespace'
+    , count => 0
+    , del => 2
+    , put => 2
+})};
+$names = bam_namespace_fsnames($ns0_id);
+assert { scalar %$names == 0 };
+
+assert {
+  stats("//bm/namespaces/$ns1_id", "-S", {
+      type => 'namespace'
+    , count => 1
+    , del => 1
+    , put => 2
+})};
+$names = bam_namespace_fsnames($ns1_id);
+assert { scalar %$names == 1 };
+assert { $$names{D} };
+
+# del D from ns1
+print("\n >> 9 - nameset { } and { } <<\n\n");
+open $fh, ">", "$bam_basedir/system-config" or die $!;
+print $fh <<"TEXT";
+namespaces : {
+  ns0
+  ns1
+}
+filesystem : {
+  fstrees : {
+    $bam_basedir/B/C : {
+      mount : true
+    }
+    $bam_basedir/B/D : {
+      mount : true
+    }
+  }
+}
+TEXT
+close $fh;
+reconcile();
+
+assert {
+  stats("//bm/namespaces/$ns0_id", "-S", {
+      type => 'namespace'
+    , count => 0
+    , del => 2
+    , put => 2
+})};
+$names = bam_namespace_fsnames($ns0_id);
+assert { scalar %$names == 0 };
+
+assert {
+  stats("//bm/namespaces/$ns1_id", "-S", {
+      type => 'namespace'
+    , count => 0
+    , del => 2
+    , put => 2
+})};
+$names = bam_namespace_fsnames($ns1_id);
+assert { scalar %$names == 0 };
+
+# add C and D to ns0 and ns1
+print("\n >> 9 - nameset { C D } and { C D } <<\n\n");
+open $fh, ">", "$bam_basedir/system-config" or die $!;
+print $fh <<"TEXT";
+namespaces : {
+  ns0
+  ns1
+}
+filesystem : {
+  fstrees : {
+    $bam_basedir/B/C : {
+      mount : true
+      namespaces : {
+        ns0
+        ns1
+      }
+    }
+    $bam_basedir/B/D : {
+      mount : true
+      namespaces : {
+        ns0
+        ns1
+      }
+    }
+  }
+}
+TEXT
+close $fh;
+reconcile();
+
+assert {
+  stats("//bm/namespaces/$ns0_id", "-S", {
+      type => 'namespace'
+    , count => 2
+    , del => 2
+    , put => 4
+})};
+$names = bam_namespace_fsnames($ns0_id);
+assert { scalar %$names == 2 };
+
+assert {
+  stats("//bm/namespaces/$ns1_id", "-S", {
+      type => 'namespace'
+    , count => 2
+    , del => 2
+    , put => 4
+})};
+$names = bam_namespace_fsnames($ns1_id);
+assert { scalar %$names == 2 };
+
+teardown();

@@ -1,0 +1,121 @@
+#!/usr/bin/env perl
+
+#
+# Run the build command but some of the targets are not found
+#
+
+use strict;
+use warnings;
+$SIG{__WARN__} = sub { die @_ };
+
+use Carp qw(confess);
+$SIG{__DIE__} = 'confess';
+
+use POSIX;
+use File::Basename;
+use Cwd;
+our $repodir;
+our $bam_basedir;
+BEGIN { $repodir = dirname(Cwd::realpath("$0/..")) }
+use lib "$repodir/integ/lib";
+use lib "$repodir/perl";
+use lib "$repodir/libbacon/perl";
+use util;
+use tree;
+use bam::bam;
+use integ;
+use bam::bam;
+
+# build out the fstree under /tmp
+init();
+setup(<<'TREE');
+|-- cores.c <<
+foo
+>>
+|-- module.bam%devel <<
+rule cores.c -> cores.o : ./cp.bam+(.)
+rule cores.o -> cores : ./cp.bam+(.)
+rule cores -> //targets
+>>
+|-- cp.bam << 0777
+#!/usr/bin/env perl
+open A, "<", $ENV{bm_source0} or die $!;
+open B, ">", $ENV{bm_target0} or die $!;
+while(<A>)
+{
+  print B "$_";
+}
+>>
+TREE
+
+assert { stats("cores.c", {
+    type => 'file'
+  , state => 'fresh'
+  , stale => 0
+  , fresh => 1
+})};
+assert { stats("cores.o", {
+    type => 'file'
+  , state => 'uncreated'
+  , stale => 0
+  , fresh => 0
+})};
+assert { stats("cores", {
+    type => 'file'
+  , state => 'uncreated'
+  , stale => 0
+  , fresh => 0
+})};
+
+assert { stats("//bm/sys-build", "--follow", {
+    build => 0
+  , build_err => 0
+  , build_ok => 0
+})};
+
+my $res = bam_tree([$bam_basedir, "--hidden"]);
+print "$$res{out}\n";
+
+# no such file ; this should print an error and no build should occur
+$res = bam(["build", "foo"], expect_error => 1);
+assert { index($$res{err}, "selector error") > -1 };   # base module still exists
+
+assert { stats("//bm/sys-build", "--follow", {
+    build => 0
+  , build_err => 0
+  , build_ok => 0
+})};
+
+# now build with default targets
+build();
+
+assert { stats("//bm/sys-build", "--follow", {
+    build => 1
+  , build_err => 0
+  , build_ok => 1
+})};
+
+# intermediate and final file were created
+assert_file("$bam_basedir/cores.o", "foo");
+assert_file("$bam_basedir/cores", "foo");
+
+assert { stats("cores.c", {
+    type => 'file'
+  , state => 'fresh'
+  , stale => 0
+  , fresh => 1
+})};
+assert { stats("cores.o", {
+    type => 'file'
+  , state => 'fresh'
+  , stale => 0
+  , fresh => 1
+})};
+assert { stats("cores", {
+    type => 'file'
+  , state => 'fresh'
+  , stale => 0
+  , fresh => 1
+})};
+
+teardown();

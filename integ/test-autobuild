@@ -1,89 +1,266 @@
 #!/usr/bin/env perl
 
 #
-# This test sets up a build with multiple dependent stages, then runs the build in each case
-# of having deleted some, or all of the resulting files
+# exercise the autobuild command - spawn bam autobuild in the background and verify
+# it automatically rebuilds when files change
 #
 
 use strict;
 use warnings;
 $SIG{__WARN__} = sub { die @_ };
 
+use Carp qw(confess);
+$SIG{__DIE__} = 'confess';
+
 use POSIX;
 use File::Basename;
 use Cwd;
 our $repodir;
+our $bam_basedir;
+our $bam_dir;
+our $bam_bampath;
+our $bam_invalidate;
 BEGIN { $repodir = dirname(Cwd::realpath("$0/..")) }
 use lib "$repodir/integ/lib";
+use lib "$repodir/perl";
 use lib "$repodir/libbacon/perl";
 use util;
 use tree;
-use bam;
+use bam::bam;
+use integ;
 
 # build out the fstree under /tmp
 init();
-my $testdir = setup(<<'TREE');
+setup(<<TREE);
 |-- cores.c <<
 foo
 >>
-|-- module.bam+devel <<
-rule cores.c -> cores.o : cp.bam
-rule cores.o -> cores : cp.bam
+|-- module.bam%devel <<
+rule cores.c -> cores.o : ./cp.bam+(.)
+rule cores.o -> cores : ./cp.bam+(.)
 rule cores -> //targets
 >>
 |-- cp.bam << 0777
 #!/usr/bin/env perl
-open A, "<", $ENV{bm_source0} or die $!;
-open B, ">", $ENV{bm_target0} or die $!;
+open A, "<", \$ENV{bm_source0} or die \$!;
+open B, ">", \$ENV{bm_target0} or die \$!;
 while(<A>)
 {
-  print B "$_";
+  print B "\$_";
+}
+>>
+|-- system-config <<
+filesystem : {
+  fstrees : {
+    $bam_basedir : {
+      mount : true
+      invalidation : notify
+    }
+  }
 }
 >>
 TREE
 
-assert { stats("cores.c", {
+# this test only makes sense when the primary files are being monitored with notify
+exit if $bam_invalidate ne "notify";
+
+my $fh;
+my $child;
+my $res;
+my $x;
+my $goals;
+
+sub poll_auto
+{
+  for($x = 0; $x < 5; $x++)
+  {
+    $res = poll($child, show => 1);
+    if(exists($$child{status})) {
+      print("[$$child{pid}] status $$child{status} out ".length($$child{out})." err ".length($$child{err})."] " . join(" ", @{$$child{cmd}}) . "\n");
+      last;
+    }
+  }
+}
+
+#
+# check initial state
+#
+print("\n >> 1 - INITIAL STATE <<\n\n");
+
+assert {
+  stats("cores.c", {
     type => 'file'
   , state => 'fresh'
   , stale => 0
   , fresh => 1
 })};
-assert { stats("cores.o", {
+assert {
+  stats("cores.o", {
     type => 'file'
   , state => 'uncreated'
   , stale => 0
   , fresh => 0
 })};
-assert { stats("cores", {
+assert {
+  stats("cores", {
     type => 'file'
   , state => 'uncreated'
   , stale => 0
   , fresh => 0
 })};
 
-build();
+#
+# spawn autobuild and wait for initial build
+#
+print("\n >> 2 - SPAWN AUTOBUILD <<\n\n");
 
-# intermediate and final file were created
-assert_file("$testdir/cores.o", "foo");
-assert_file("$testdir/cores", "foo");
+$child = spawn({ cwd => $bam_dir }
+  , $bam_bampath
+  , "--no-launch"
+  , "--no-color"
+  , "autobuild"
+);
 
-assert { stats("cores.c", {
+print("[$$child{pid}] " .  join(" ", @{$$child{cmd}}) . "\n");
+poll_auto();
+
+# verify initial build completed
+assert_file("$bam_basedir/cores.o", "foo");
+assert_file("$bam_basedir/cores", "foo");
+
+$goals = bam_goals();
+assert { $$goals{label} eq 'bam-autobuild' };
+
+assert {
+  stats(undef, {
+    system_state_ok => 1
+})};
+assert {
+  stats("cores.c", {
     type => 'file'
   , state => 'fresh'
   , stale => 0
   , fresh => 1
 })};
-assert { stats("cores.o", {
+assert {
+  stats("cores.o", {
     type => 'file'
   , state => 'fresh'
   , stale => 0
   , fresh => 1
 })};
-assert { stats("cores", {
+assert {
+  stats("cores", {
     type => 'file'
   , state => 'fresh'
   , stale => 0
   , fresh => 1
 })};
+
+#
+# modify source file and verify automatic rebuild
+#
+print("\n >> 3 - MODIFY SOURCE <<\n\n");
+
+open $fh, ">", "$bam_basedir/cores.c" or die $!;
+print $fh "bar\n";
+close $fh;
+
+reconcile();
+poll_auto();
+
+assert_file("$bam_basedir/cores.o", "bar");
+assert_file("$bam_basedir/cores", "bar");
+
+assert {
+  stats(undef, {
+    system_state_ok => 2
+})};
+assert {
+  stats("cores.c", {
+    type => 'file'
+  , state => 'fresh'
+  , stale => 1
+  , fresh => 2
+})};
+assert {
+  stats("cores.o", {
+    type => 'file'
+  , state => 'fresh'
+  , stale => 1
+  , fresh => 2
+})};
+assert {
+  stats("cores", {
+    type => 'file'
+  , state => 'fresh'
+  , stale => 1
+  , fresh => 2
+})};
+
+#
+# delete intermediate target and verify rebuild
+#
+print("\n >> 4 - DELETE INTERMEDIATE TARGET <<\n\n");
+
+unlink("$bam_basedir/cores.o") or die $!;
+
+reconcile();
+poll_auto();
+
+assert_file("$bam_basedir/cores.o", "bar");
+assert_file("$bam_basedir/cores", "bar");
+
+assert {
+  stats(undef, {
+    system_state_ok => 3
+})};
+assert {
+  stats("cores.o", {
+    type => 'file'
+  , state => 'fresh'
+  , stale => 2
+  , fresh => 3
+})};
+assert {
+  stats("cores", {
+    type => 'file'
+  , state => 'fresh'
+  , stale => 2
+  , fresh => 3
+})};
+
+#
+# delete final target and verify rebuild
+#
+print("\n >> 5 - DELETE FINAL TARGET <<\n\n");
+
+unlink("$bam_basedir/cores") or die $!;
+
+reconcile();
+poll_auto();
+
+assert_file("$bam_basedir/cores", "bar");
+
+assert {
+  stats(undef, {
+    system_state_ok => 4
+})};
+assert {
+  stats("cores", {
+    type => 'file'
+  , state => 'fresh'
+  , stale => 3
+  , fresh => 4
+})};
+
+#
+# teardown the autobuild client
+#
+print("\n >> 5 - TEARDOWN <<\n\n");
+
+kill(15, $$child{pid}) or die $!;
+poll_auto();
+assert { $$child{status} == 0 };
 
 teardown();

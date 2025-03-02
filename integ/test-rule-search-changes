@@ -1,0 +1,238 @@
+#!/usr/bin/env perl
+
+#
+# change the set of bindings at one attachment point
+#
+
+use strict;
+use warnings;
+$SIG{__WARN__} = sub { die @_ };
+
+use Carp qw(confess);
+$SIG{__DIE__} = 'confess';
+
+use POSIX;
+use File::Basename;
+use Cwd;
+our $bam_basedir;
+our $bam_dir;
+our $repodir;
+BEGIN { $repodir = dirname(Cwd::realpath("$0/..")) }
+use lib "$repodir/integ/lib";
+use lib "$repodir/perl";
+use lib "$repodir/libbacon/perl";
+use util;
+use tree;
+use bam::bam;
+use integ;
+
+init(subdir => 'B');
+setup(<<TREE);
+|-- B
+|   `-- foo <<
+foo
+>>
+|   `-- bar <<
+bar
+>>
+|   `-- module.bam%devel <<
+anchor ../A
+rule //module/obj/* [*] -> baz : $bam_basedir/cat.bam+(.)
+>>
+|   `-- rules.bam%devel -> one
+|   `-- one <<
+rule foo => [*] //module/obj
+rule bar => [*] //module/obj
+>>
+|   `-- two <<
+rule foo => [*] //module/obj
+>>
+|   `-- three <<
+rule bar => [*] //module/obj
+>>
+|-- A
+|   `-- foo
+|       `-- bar
+|-- cat.bam << 0777
+#!/usr/bin/env perl
+open B, ">", \$ENV{bm_target0} or die \$!;
+for my \$f (sort split(/ /, \$ENV{files})) {
+  open A, "<", \$f or die \$!;
+  while(<A>)
+  {
+    print B "\$_";
+  }
+  close A;
+}
+__DATA__
+envs : {
+  files : {
+    sequence : [
+      select : [
+        target
+        traverse : {
+          direction : down
+          graph : depends
+          min-distance : 2
+          max-distance : 2
+        }
+      ]
+      property : relpath
+    ]
+  }
+}
+>>
+|-- system-config <<
+filesystem : {
+  fstrees : {
+    $bam_basedir : {
+      mount : true
+      namespaces : {
+        modules
+      }
+    }
+  }
+}
+TREE
+
+my $res;
+my $A_id = bam::identity("dir", "$bam_basedir/A");
+my $B_foo_id = bam::identity("file", "$bam_basedir/B/foo");
+my $B_bar_id = bam::identity("file", "$bam_basedir/B/bar");
+my $B_id = bam::identity("dir", "$bam_basedir/B");
+my $A_rma_id = bam::identity("ruleset", "$bam_basedir/B/module.bam%devel", "rule", "2", "module", "$bam_basedir/B", "rma");
+
+print("B_foo_id $B_foo_id\n");
+print("B_bar_id $B_bar_id\n");
+
+print("\n >> 1 - two rules <<\n\n");
+assert {
+  stats(undef, {
+    system_state_ready => 1
+  , system_state_ok => 0
+  , modules => 1
+  , rulesets => 2
+  , rules => 3
+  , rule_run => 5
+})};
+$res = bam_ls(["//module/obj"]);
+print "$$res{out}\n";
+assert { index($$res{out}, $B_foo_id) > -1 };
+assert { index($$res{out}, $B_bar_id) > -1 };
+assert {
+  stats("//module/obj", {
+      type => 'shadow-dir'
+    , state => 'fresh'
+    , fresh => 0
+    , stale => 0
+    , dentries => 2
+    , rules => 1
+})};
+assert {
+  stats("//bm/rmas/$A_rma_id", "--follow", {
+      type => 'rma'
+    , state => 'fresh'
+    , fresh => 1
+    , stale => 1
+    , search_hits => 2
+    , generate_hits => 1
+})};
+
+build();
+assert_file("$bam_basedir/B/baz", "bar\nfoo");
+
+#
+#
+#
+print("\n >> 2 - one rule <<\n\n");
+symlinkf("two", "$bam_basedir/B/rules.bam%devel");
+reconcile();
+assert {
+  stats(undef, {
+    system_state_ready => 3
+  , system_state_ok => 1
+  , modules => 1
+  , rulesets => 2
+  , rules => 2
+  , rule_run => 7
+})};
+$res = bam_ls(["//module/obj"]);
+print "$$res{out}\n";
+assert { index($$res{out}, $B_foo_id) > -1 };
+assert {
+  stats("//module/obj", {
+      type => 'shadow-dir'
+    , state => 'fresh'
+    , fresh => 0
+    , stale => 0
+    , dentries => 1
+    , rules => 1
+})};
+
+build();
+assert_file("$bam_basedir/B/baz", "foo");
+
+#
+#
+#
+print("\n >> 3 - one (other) rule <<\n\n");
+symlinkf("three", "$bam_basedir/B/rules.bam%devel");
+reconcile();
+assert {
+  stats(undef, {
+    system_state_ready => 5
+  , system_state_ok => 2
+  , modules => 1
+  , rulesets => 2
+  , rules => 2
+  , rule_run => 9
+})};
+$res = bam_ls(["//module/obj"]);
+print "$$res{out}\n";
+assert { index($$res{out}, $B_bar_id) > -1 };
+assert {
+  stats("//module/obj", {
+      type => 'shadow-dir'
+    , state => 'fresh'
+    , fresh => 0
+    , stale => 0
+    , dentries => 1
+    , rules => 1
+})};
+
+build();
+assert_file("$bam_basedir/B/baz", "bar");
+
+#
+#
+#
+print("\n >> 4 - back to original two rules <<\n\n");
+symlinkf("one", "$bam_basedir/B/rules.bam%devel");
+reconcile();
+assert {
+  stats(undef, {
+    system_state_ready => 7
+  , system_state_ok => 3
+  , modules => 1
+  , rulesets => 2
+  , rules => 3
+  , rule_run => 12
+})};
+$res = bam_ls(["//module/obj"]);
+print "$$res{out}\n";
+assert { index($$res{out}, $B_foo_id) > -1 };
+assert { index($$res{out}, $B_bar_id) > -1 };
+assert {
+  stats("//module/obj", {
+      type => 'shadow-dir'
+    , state => 'fresh'
+    , fresh => 0
+    , stale => 0
+    , dentries => 2
+    , rules => 1
+})};
+
+build();
+assert_file("$bam_basedir/B/baz", "bar\nfoo");
+
+teardown();

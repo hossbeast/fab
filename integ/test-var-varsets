@@ -16,46 +16,63 @@ our $repodir;
 our $bam_basedir;
 BEGIN { $repodir = dirname(Cwd::realpath("$0/..")) }
 use lib "$repodir/integ/lib";
+use lib "$repodir/perl";
 use lib "$repodir/libbacon/perl";
 use util;
 use tree;
-use bam;
+use bam::bam;
+use integ;
 
 # build out the fstree under /tmp
 init();
-my $testdir = setup(<<TREE);
-|-- module.bam+devel <<
-varsets myvar
+setup(<<TREE);
+|-- module.bam%devel <<
+varsets myvar%devel
 >>
-|-- myvar+devel <<
+|-- myvar%devel <<
 a : 42
 >>
 TREE
 
-my $mod_id = hash64("$bam_basedir");
-my $varset_id = hash64("$bam_basedir/myvar+devel");
+my $mod_id = bam::identity('module', "$bam_basedir");
+my $varset_id = bam::identity('varset', "$bam_basedir/myvar%devel");
+my $result;
+my $ref;
+my $res;
+my $nls;
 
 # before
 assert { stats(undef, {
     modules => 1
-  , system_state_ok => 1
+  , system_state_ready => 1
+  , varsets => 1
 })};
 assert { stats(".", "-S", {
     type => 'module'
   , state => "fresh"
   , reloaded => 1
-  , parse => 1
+})};
+assert { stats("./module.bam%devel", "-S", {
+    type => 'ruleset'
+  , state => "fresh"
+  , parse_err => 0
   , parse_ok => 1
 })};
-assert { stats("myvar+devel", "-S", {
+assert { stats("myvar%devel", "-S", {
     type => 'varset'
   , state => "fresh"
-  , parse => 1
+  , parse_err => 0
   , parse_ok => 1
 })};
 
-my $result = bam_ls(["//modules/$mod_id/varsets/$varset_id", "--no-follow"]);
-my $ref = $$result{out};
-assert { $ref eq "$varset_id -> //varsets/$varset_id" };
+$result = bam_ls(["//bm/modules/$mod_id/varsets/$varset_id", "--no-follow"]);
+$ref = $$result{out};
+assert { $ref eq "$varset_id -> //bm/varsets/$varset_id" };
+
+$res = bam_varsets();
+print("$res\n");
+assert { $res =~ /varset id : $varset_id/ };
+$nls = ($res =~ tr/\n//);
+assert { $nls <= 1 };
 
 teardown();

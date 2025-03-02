@@ -16,26 +16,28 @@ our $repodir;
 our $bam_basedir;
 BEGIN { $repodir = dirname(Cwd::realpath("$0/..")) }
 use lib "$repodir/integ/lib";
+use lib "$repodir/perl";
 use lib "$repodir/libbacon/perl";
 use util;
 use tree;
-use bam;
+use bam::bam;
+use integ;
 
 # build out the fstree under /tmp
 init(subdir => 'B');
 setup(<<'TREE');
-|-- var.bam+devel <<
+|-- var.bam%devel <<
 A : 1   # outer
 >>
 |-- B
-|   `-- module.bam+devel
-|   `-- var.bam+devel <<
+|   `-- module.bam%devel
+|   `-- var.bam%devel <<
 B : 1   # inner
 >>
 |-- system-config <<
 filesystem : {
   special : {
-    var.bam+devel
+    var.bam%devel
   }
 }
 >>
@@ -44,25 +46,29 @@ TREE
 # before
 assert { stats(undef, {
     modules => 1
-  , system_state_ok => 1
+  , system_state_ready => 1
 })};
 assert { stats(".", "-S", {
     type => 'module'
   , state => "fresh"
   , reloaded => 1
-  , parse => 1
+})};
+assert { stats("./module.bam%devel", "-S", {
+    type => 'ruleset'
+  , state => "fresh"
+  , parse_err => 0
   , parse_ok => 1
 })};
-assert { stats("$bam_basedir/var.bam+devel", "-S", {
+assert { stats("$bam_basedir/var.bam%devel", "-S", {
     type => 'varset'
   , state => "fresh"
-  , parse => 1
+  , parse_err => 0
   , parse_ok => 1
 })};
-assert { stats("$bam_basedir/B/var.bam+devel", "-S", {
+assert { stats("$bam_basedir/B/var.bam%devel", "-S", {
     type => 'varset'
   , state => "fresh"
-  , parse => 1
+  , parse_err => 0
   , parse_ok => 1
 })};
 
@@ -82,7 +88,7 @@ assert { $text !~ /C/ };
 assert { $text !~ /D/ };
 
 # rewrite the outer var file
-open $fh, ">", "$bam_basedir/var.bam+devel" or die $!;
+open $fh, ">", "$bam_basedir/var.bam%devel" or die $!;
 print $fh <<'TEXT';
 C : 1
 TEXT
@@ -91,41 +97,47 @@ close $fh;
 reconcile();
 assert { stats(undef, {
     modules => 1
-  , system_state_ok => 2
+  , system_state_ready => 2
 })};
-assert { stats("$bam_basedir/var.bam+devel", "-S", {
+assert { stats("$bam_basedir/var.bam%devel", "-S", {
     type => "varset"
   , state => "fresh"
-  , parse => 2
+  , parse_err => 0
   , parse_ok => 2
 })};
-assert { stats("$bam_basedir/B/var.bam+devel", "-S", {
+assert { stats("$bam_basedir/B/var.bam%devel", "-S", {
     type => "varset"
   , state => "fresh"
-  , parse => 1
+  , parse_err => 0
   , parse_ok => 1
 })};
 assert { stats(".", "-S", {
     type => 'module'
   , state => "fresh"
   , reloaded => 2  # invalidation of connected var file induces module reload
-  , parse => 1
+})};
+assert { stats("./module.bam%devel", "-S", {
+    type => 'ruleset'
+  , state => "fresh"
+  , fresh => 1
+  , stale => 1
+  , parse_err => 0
   , parse_ok => 1
 })};
 
 $text = bam_module_vars();
-assert { $text !~ /A/ };
-assert { $text =~ /B/ };
-assert { $text =~ /C/ };
-assert { $text !~ /D/ };
+assert { $text !~ /A :/ };
+assert { $text =~ /B :/ };
+assert { $text =~ /C :/ };
+assert { $text !~ /D :/ };
 $text = bam_module_envs();
-assert { $text !~ /A/ };
-assert { $text =~ /B/ };
-assert { $text =~ /C/ };
-assert { $text !~ /D/ };
+assert { $text !~ /A=/ };
+assert { $text =~ /B=/ };
+assert { $text =~ /C=/ };
+assert { $text !~ /D=/ };
 
 # modify the inner var file
-open $fh, ">", "$bam_basedir/B/var.bam+devel" or die $!;
+open $fh, ">", "$bam_basedir/B/var.bam%devel" or die $!;
 print $fh <<'TEXT';
 D : 1
 TEXT
@@ -134,38 +146,46 @@ close $fh;
 reconcile();
 assert { stats(undef, {
     modules => 1
-  , system_state_ok => 3
+  , system_state_ready => 3
 })};
-assert { stats("$bam_basedir/var.bam+devel", "-S", {
+assert { stats("$bam_basedir/var.bam%devel", "-S", {
     type => "varset"
   , state => "fresh"
-  , parse => 2
+  , parse_err => 0
   , parse_ok => 2
 })};
-assert { stats("$bam_basedir/B/var.bam+devel", "-S", {
+assert { stats("$bam_basedir/B/var.bam%devel", "-S", {
     type => "varset"
   , state => "fresh"
-  , parse => 2
+  , parse_err => 0
   , parse_ok => 2
 })};
 assert { stats(".", "-S", {
     type => 'module'
   , state => "fresh"
   , reloaded => 3  # invalidation of connected var file induces module reload
-  , parse => 1
+})};
+assert { stats("./module.bam%devel", "-S", {
+    type => 'ruleset'
+  , state => "fresh"
+  , fresh => 1
+  , stale => 1
+  , parse_err => 0
   , parse_ok => 1
 })};
 
 $text = bam_module_vars();
-assert { $text !~ /A/ };
-assert { $text !~ /B/ };
-assert { $text =~ /C/ };
-assert { $text =~ /D/ };
+print("$text\n");
+assert { $text !~ /A :/ };
+assert { $text !~ /B :/ };
+assert { $text =~ /C :/ };
+assert { $text =~ /D :/ };
 
 $text = bam_module_envs();
-assert { $text !~ /A/ };
-assert { $text !~ /B/ };
-assert { $text =~ /C/ };
-assert { $text =~ /D/ };
+print("$text\n");
+assert { $text !~ /A=/ };
+assert { $text !~ /B=/ };
+assert { $text =~ /C=/ };
+assert { $text =~ /D=/ };
 
 teardown();

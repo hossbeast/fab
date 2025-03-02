@@ -1,0 +1,123 @@
+#!/usr/bin/env perl
+
+#
+# varset in the config.mak aka env vars format
+#
+
+use strict;
+use warnings;
+$SIG{__WARN__} = sub { die @_ };
+
+use POSIX;
+use File::Basename;
+use Cwd;
+our $repodir;
+our $bam_basedir;
+BEGIN { $repodir = dirname(Cwd::realpath("$0/..")) }
+use lib "$repodir/integ/lib";
+use lib "$repodir/perl";
+use lib "$repodir/libbacon/perl";
+use util;
+use tree;
+use bam::bam;
+use integ;
+
+# build out the fstree under /tmp
+init();
+setup(<<'TREE');
+|-- module.bam%devel
+|-- config.mak <<
+A=B C
+>>
+|-- system-config <<
+modules : {
+  varsets : {
+    config.mak
+  }
+}
+filesystem : {
+  special : {
+    config.mak
+  }
+}
+>>
+TREE
+
+my $vars;
+my $fh;
+
+# before
+assert { stats(undef, {
+    modules => 1
+  , system_state_ready => 1
+})};
+assert {
+  stats("$bam_basedir", "-S", {
+    type => 'module'
+  , state => "fresh"
+  , reloaded => 1
+})};
+assert {
+  stats("$bam_basedir/module.bam%devel", "-S", {
+    type => 'ruleset'
+  , state => "fresh"
+  , parse_err => 0
+  , parse_ok => 1
+})};
+assert {
+  stats("$bam_basedir/config.mak", "-S", {
+    type => "varset"
+  , state => "fresh"
+  , fresh => 1
+  , stale => 1
+  , parse_err => 0
+  , parse_ok => 1
+})};
+
+$vars = bam_module_vars();
+print("$vars\n");
+assert { $vars =~ /B/ };
+assert { $vars =~ /C/ };
+
+# modify the var file
+open $fh, ">>", "$bam_basedir/config.mak" or die $!;
+print $fh <<'TEXT';
+A=B
+TEXT
+close $fh;
+
+# after - var file change in same dir causes the module to be reloaded
+reconcile();
+assert { stats(undef, {
+    modules => 1
+  , system_state_ready => 2
+})};
+assert {
+  stats("$bam_basedir", "-S", {
+    type => 'module'
+  , state => "fresh"
+  , reloaded => 2
+})};
+assert {
+  stats("$bam_basedir/module.bam%devel", "-S", {
+    type => 'ruleset'
+  , state => "fresh"
+  , parse_err => 0
+  , parse_ok => 1
+})};
+assert {
+  stats("$bam_basedir/config.mak", "-S", {
+    type => "varset"
+  , state => "fresh"
+  , fresh => 2
+  , stale => 2
+  , parse_err => 0
+  , parse_ok => 2
+})};
+
+$vars = bam_module_vars();
+print("$vars\n");
+assert { $vars =~ /B/ };
+assert { $vars !~ /C/ };
+
+teardown();

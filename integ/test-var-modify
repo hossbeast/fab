@@ -10,18 +10,20 @@ use Cwd;
 our $repodir;
 BEGIN { $repodir = dirname(Cwd::realpath("$0/..")) }
 use lib "$repodir/integ/lib";
+use lib "$repodir/perl";
 use lib "$repodir/libbacon/perl";
 use util;
 use tree;
-use bam;
+use bam::bam;
+use integ;
 
 # build out the fstree under /tmp
 init();
 my $testdir = setup(<<'TREE');
-|-- module.bam+devel
-|-- var.bam+devel <<
-lflags : [
-  -lasan -lubsan
+|-- module.bam%devel
+|-- var.bam%devel <<
+A : [
+  B C
 ]
 >>
 TREE
@@ -29,28 +31,37 @@ TREE
 # before
 assert { stats(undef, {
     modules => 1
-  , system_state_ok => 1
+  , system_state_ready => 1
 })};
-assert { stats(".", "-S", {
+assert {
+  stats(".", "-S", {
     type => 'module'
   , state => "fresh"
   , reloaded => 1
-  , parse => 1
+})};
+assert {
+  stats("./module.bam%devel", "-S", {
+    type => 'ruleset'
+  , state => "fresh"
+  , parse_err => 0
   , parse_ok => 1
 })};
-assert { stats("var.bam+devel", "-S", {
-    parse => 1
+assert { stats("var.bam%devel", "-S", {
+    parse_err => 0
   , parse_ok => 1
   , state => "fresh"
 })};
 
-print(bam_module_vars(), "\n");
+my $vars = bam_module_vars();
+print("$vars\n");
+assert { $vars =~ /B/ };
+assert { $vars =~ /C/ };
 
 # modify the var file
-open my $fh, ">>", "$testdir/var.bam+devel" or die $!;
+open my $fh, ">>", "$testdir/var.bam%devel" or die $!;
 print $fh <<'TEXT';
-lflags : [
-  -lpcre
+A : [
+  B
 ]
 TEXT
 close $fh;
@@ -59,21 +70,30 @@ close $fh;
 reconcile();
 assert { stats(undef, {
     modules => 1
-  , system_state_ok => 2
+  , system_state_ready => 2
 })};
-assert { stats(".", "-S", {
+assert {
+  stats(".", "-S", {
     type => 'module'
   , state => "fresh"
   , reloaded => 2
-  , parse => 1
+})};
+assert {
+  stats("./module.bam%devel", "-S", {
+    type => 'ruleset'
+  , state => "fresh"
+  , parse_err => 0
   , parse_ok => 1
 })};
-assert { stats("var.bam+devel", "-S", {
-    parse => 2
+assert { stats("var.bam%devel", "-S", {
+    parse_err => 0
   , parse_ok => 2
   , state => "fresh"
 })};
 
-print(bam_module_vars(), "\n");
+$vars = bam_module_vars();
+print("$vars\n");
+assert { $vars =~ /B/ };
+assert { $vars !~ /C/ };
 
 teardown();

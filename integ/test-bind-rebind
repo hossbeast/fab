@@ -1,0 +1,175 @@
+#!/usr/bin/env perl
+
+#
+# change the set of bindings at one attachment point
+#
+
+use strict;
+use warnings;
+$SIG{__WARN__} = sub { die @_ };
+
+use Carp qw(confess);
+$SIG{__DIE__} = 'confess';
+
+use POSIX;
+use File::Basename;
+use Cwd;
+our $bam_basedir;
+our $bam_dir;
+our $repodir;
+BEGIN { $repodir = dirname(Cwd::realpath("$0/..")) }
+use lib "$repodir/integ/lib";
+use lib "$repodir/perl";
+use lib "$repodir/libbacon/perl";
+use util;
+use tree;
+use bam::bam;
+use integ;
+
+init(subdir => 'B');
+setup(<<TREE);
+|-- B
+|   `-- module.bam%devel <<
+anchor ../A
+>>
+|   `-- rules.bam%devel -> one
+|   `-- one <<
+rule \$^A/**+(/) => [*] //module/include
+rule \$^D/**+(/) => [*] //module/include
+>>
+|   `-- two <<
+rule \$^A/**+(/) => [*] //module/include
+>>
+|   `-- three <<
+rule \$^D/**+(/) => [*] //module/include
+>>
+|-- A
+|   `-- foo
+|       `-- bar
+|-- system-config <<
+filesystem : {
+  fstrees : {
+    $bam_basedir : {
+      mount : true
+      namespaces : {
+        modules
+      }
+    }
+  }
+}
+TREE
+
+my $res;
+my $A_id = bam::identity("dir", "$bam_basedir/A");
+my $A_foo_id = bam::identity("dir", "$bam_basedir/A/foo");
+my $B_id = bam::identity("dir", "$bam_basedir/B");
+
+print("\n >> 1 - two rules <<\n\n");
+assert {
+  stats(undef, {
+    system_state_ready => 1
+  , system_state_ok => 0
+  , modules => 1
+  , rulesets => 2
+  , rules => 2
+  , rule_run => 2
+})};
+$res = bam_ls(["//module/include"]);
+print "$$res{out}\n";
+assert { index($$res{out}, $A_id) > -1 };
+assert { index($$res{out}, $A_foo_id) > -1 };
+assert { index($$res{out}, $B_id) > -1 };
+assert {
+  stats("//module/include", {
+      type => 'shadow-dir'
+    , state => 'fresh'
+    , fresh => 0
+    , stale => 0
+})};
+
+#
+#
+#
+print("\n >> 2 - one rule <<\n\n");
+symlinkf("two", "$bam_basedir/B/rules.bam%devel");
+reconcile();
+assert {
+  stats(undef, {
+    system_state_ready => 2
+  , system_state_ok => 0
+  , modules => 1
+  , rulesets => 2
+  , rules => 1
+  , rule_run => 3
+})};
+$res = bam_ls(["//module/include"]);
+print "$$res{out}\n";
+assert { index($$res{out}, $A_id) > -1 };
+assert { index($$res{out}, $A_foo_id) > -1 };
+assert { index($$res{out}, $B_id) == -1 };
+assert {
+  stats("//module/include", {
+      type => 'shadow-dir'
+    , state => 'fresh'
+    , fresh => 0
+    , stale => 0
+})};
+
+#
+#
+#
+print("\n >> 3 - one (other) rule <<\n\n");
+symlinkf("three", "$bam_basedir/B/rules.bam%devel");
+reconcile();
+assert {
+  stats(undef, {
+    system_state_ready => 3
+  , system_state_ok => 0
+  , modules => 1
+  , rulesets => 2
+  , rules => 1
+  , rule_run => 4
+})};
+$res = bam_ls(["//module/include"]);
+print "$$res{out}\n";
+assert { index($$res{out}, $A_id) == -1 };
+assert { index($$res{out}, $A_foo_id) == -1 };
+assert { index($$res{out}, $B_id) > -1 };
+assert {
+  stats("//module/include", {
+      type => 'shadow-dir'
+    , state => 'fresh'
+    , fresh => 0
+    , stale => 0
+    , dentries => 1
+})};
+
+#
+#
+#
+print("\n >> 4 - back to original two rules <<\n\n");
+symlinkf("one", "$bam_basedir/B/rules.bam%devel");
+reconcile();
+assert {
+  stats(undef, {
+    system_state_ready => 4
+  , system_state_ok => 0
+  , modules => 1
+  , rulesets => 2
+  , rules => 2
+  , rule_run => 6
+})};
+$res = bam_ls(["//module/include"]);
+print "$$res{out}\n";
+assert { index($$res{out}, $A_id) > -1 };
+assert { index($$res{out}, $A_foo_id) > -1 };
+assert { index($$res{out}, $B_id) > -1 };
+assert {
+  stats("//module/include", {
+      type => 'shadow-dir'
+    , state => 'fresh'
+    , fresh => 0
+    , stale => 0
+})};
+
+teardown();

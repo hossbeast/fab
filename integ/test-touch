@@ -1,7 +1,7 @@
 #!/usr/bin/env perl
 
 #
-# invalidate a file
+# invalidate a file, observe the build
 #
 
 use strict;
@@ -12,37 +12,54 @@ use POSIX;
 use File::Basename;
 use Cwd;
 our $repodir;
+our $bam_basedir;
 BEGIN { $repodir = dirname(Cwd::realpath("$0/..")) }
 use lib "$repodir/integ/lib";
+use lib "$repodir/perl";
 use lib "$repodir/libbacon/perl";
 use util;
 use tree;
-use bam;
+use bam::bam;
+use integ;
 
 init();
-my $testdir = setup(<<'TREE');
+setup(<<'TREE');
 |-- foo <<
 foo
 >>
-|-- module.bam+devel <<
+|-- module.bam%devel <<
+rule foo -> foo.out : ./cp.bam+(.)
+rule foo.out -> //targets
+>>
+|-- cp.bam << 0777
+#!/usr/bin/env perl
+open A, "<", $ENV{bm_source0} or die $!;
+open B, ">", $ENV{bm_target0} or die $!;
+while(<A>)
+{
+  print B "$_";
+}
 >>
 TREE
 
-assert { stats("foo", {
+assert {
+  stats("foo", {
     type => 'file'
   , state => 'fresh'
   , stale => 0
   , fresh => 1
 })};
+assert { enoent("foo.out") };
 
 # underlying file modified
-open my $fh, ">", "$testdir/foo" or die $!;
+open my $fh, ">", "$bam_basedir/foo" or die $!;
 print $fh <<'TEXT';
 bar
 TEXT
 close $fh;
 
-assert { stats("foo", {
+assert {
+  stats("foo", {
     type => 'file'
   , state => 'fresh'
   , stale => 0
@@ -52,17 +69,20 @@ assert { stats("foo", {
 # at reconcile time, the modification is noticed and the invalidation is processed
 reconcile();
 
-assert { stats("foo", {
+assert {
+  stats("foo", {
     type => 'file'
   , state => 'fresh'
   , stale => 1
   , fresh => 2
 })};
+assert { enoent("foo.out") };
 
 # direct invalidation by api
 bam_touch("foo");
 
-assert { stats("foo", {
+assert {
+  stats("foo", {
     type => 'file'
   , state => 'stale'
   , stale => 2
@@ -72,11 +92,68 @@ assert { stats("foo", {
 # fresh again on reconcile
 reconcile();
 
-assert { stats("foo", {
+assert {
+  stats("foo", {
     type => 'file'
   , state => 'fresh'
   , stale => 2
   , fresh => 3
+})};
+assert { enoent("foo.out") };
+
+# build should succeed
+build();
+
+assert {
+  stats("foo", {
+    type => 'file'
+  , state => 'fresh'
+  , stale => 2
+  , fresh => 3
+})};
+assert {
+  stats("foo.out", {
+    type => 'file'
+  , state => 'fresh'
+  , stale => 0
+  , fresh => 1
+})};
+
+# touch foo again and rebuild
+bam_touch("foo");
+reconcile();
+
+assert {
+  stats("foo", {
+    type => 'file'
+  , state => 'fresh'
+  , stale => 3
+  , fresh => 4
+})};
+assert {
+  stats("foo.out", {
+    type => 'file'
+  , state => 'stale'
+  , stale => 1
+  , fresh => 1
+})};
+
+# second build should succeed
+build();
+
+assert {
+  stats("foo", {
+    type => 'file'
+  , state => 'fresh'
+  , stale => 3
+  , fresh => 4
+})};
+assert {
+  stats("foo.out", {
+    type => 'file'
+  , state => 'fresh'
+  , stale => 1
+  , fresh => 2
 })};
 
 teardown();

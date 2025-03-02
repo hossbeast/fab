@@ -4,40 +4,56 @@ use strict;
 use warnings;
 $SIG{__WARN__} = sub { die @_ };
 
+use Carp qw(confess);
+$SIG{__DIE__} = 'confess';
+
 use POSIX;
 use File::Basename;
 use Cwd;
 our $repodir;
+our $bam_basedir;
 BEGIN { $repodir = dirname(Cwd::realpath("$0/..")) }
 use lib "$repodir/integ/lib";
+use lib "$repodir/perl";
 use lib "$repodir/libbacon/perl";
 use util;
 use tree;
-use bam;
+use bam::bam;
+use integ;
+
+my $vars;
+my $envs;
+my $fh;
 
 # build out the fstree under /tmp
 init();
-my $testdir = setup(<<TREE);
-|-- module.bam+devel
+setup(<<TREE);
+|-- module.bam%devel
 TREE
 
 # before
 assert { stats(undef, {
     modules => 1
-  , system_state_ok => 1
+  , system_state_ready => 1
 })};
 assert { stats(".", "-S", {
     type => 'module'
   , state => "fresh"
+  , stale => 1
+  , fresh => 1
   , reloaded => 1
-  , parse => 1
+})};
+assert { stats("./module.bam%devel", "-S", {
+    type => 'ruleset'
+  , state => "fresh"
+  , parse_err => 0
   , parse_ok => 1
 })};
 
-open my $fh, ">>", "$testdir/var.bam+devel" or die $!;
+open $fh, ">>", "$bam_basedir/var.bam%devel" or die $!;
 print $fh <<'TEXT';
-lflags : [
-  -lasan -lubsan
+A : [
+  B C
 ]
 TEXT
 close $fh;
@@ -46,22 +62,34 @@ close $fh;
 reconcile();
 assert { stats(undef, {
     modules => 1
-  , system_state_ok => 2
+  , system_state_ready => 2
 })};
 assert { stats(".", "-S", {
     type => 'module'
   , state => "fresh"
+  , stale => 2
+  , fresh => 2
   , reloaded => 2       # reloaded with new var
-  , parse => 1
+})};
+assert { stats("./module.bam%devel", "-S", {
+    type => 'ruleset'
+  , state => "fresh"
+  , parse_err => 0
   , parse_ok => 1
 })};
-assert { stats("var.bam+devel", "-S", {
-    parse => 1
+assert { stats("var.bam%devel", "-S", {
+    parse_err => 0
   , parse_ok => 1
   , state => "fresh"
 })};
 
-my $vars = bam_module_vars();
+$vars = bam_module_vars();
 print("$vars\n");
+assert { $vars =~ /B/ };
+assert { $vars =~ /C/ };
+
+$envs = bam_module_envs();
+print("$envs\n");
+assert { $envs =~ /A=B C/ };
 
 teardown();

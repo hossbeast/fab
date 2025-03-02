@@ -8,26 +8,55 @@ use strict;
 use warnings;
 $SIG{__WARN__} = sub { die @_ };
 
+use Carp qw(confess);
+$SIG{__DIE__} = 'confess';
+
 use POSIX;
 use File::Basename;
 use Cwd;
 our $repodir;
-our $bam_projdir;
+our $bam_dir;
+our $bam_basedir;
 BEGIN { $repodir = dirname(Cwd::realpath("$0/..")) }
 use lib "$repodir/integ/lib";
+use lib "$repodir/perl";
+use lib "$repodir/perl";
 use lib "$repodir/libbacon/perl";
 use util;
 use tree;
-use bam;
+use bam::bam;
+use integ;
+use integ;
+use bam::bam;
+use integ;
 
 # build out the fstree under /tmp
 init(subdir => 'B');
-setup(<<'TREE');
+setup(<<"TREE");
 |-- system-config <<
-formula : {
-  path : {
-    dirs : {
-      /usr/bin
+namespaces : {
+  coreutils
+}
+filesystem : {
+  fstrees : {
+    $bam_basedir : {
+      mount : true
+      namespaces : {
+        modules
+      }
+    }
+    $bam_basedir/B : {
+      mount : true
+      namespaces : {
+        modules
+        formulas
+      }
+    }
+    $repodir/usr/share/bam/coreutils : {
+      mount : true
+      namespaces : {
+        coreutils
+      }
     }
   }
 }
@@ -35,119 +64,186 @@ formula : {
 |-- B
 |   `-- cp.bam << 0777
 file : {
-  path-search : cp    # this needs the config to resolve
+  lookup : {
+    namespace : coreutils
+    pattern : bin/cp+(.@)
+  }
 }
 args : [
-  $bm_source0
-  $bm_target0
+  \$bm_source0
+  \$bm_target0
 ]
 >>
-|   `-- rules.bam+devel <<
-rule { name : 1 } (*).c -> $^D/$1.o : cp.bam
+|   `-- rules.bam%devel <<
+rule { name : 1 } (*).c -> \$^D/\$1.o : B/cp.bam+(.)
 >>
-|   `-- module.bam+devel <<
-rule { name : 2 } {foo,bar}.o [*] -> cores : cp.bam
+|   `-- module.bam%devel <<
+rule { name : 2 } {foo,bar}.o [*] -> cores : B/cp.bam+(.)
 rule { name : 3 } cores -> //targets
 >>
 |   `-- foo.c
 |   `-- bar.c
 |   `-- C
-|       `-- module.bam+devel <<
+|       `-- module.bam%devel <<
 rule { name : 4 } baz.o -> //targets
 >>
 |       `-- baz.c
 TREE
 
-assert { stats({ modules => 2 })}; # B, B/C
-assert { stats(".", "-S", "-S", {
+my $B_module_id = bam::identity('module', $bam_dir);
+my $C_module_id = bam::identity('module', "$bam_dir/C");
+
+assert { stats(undef, {
+    modules => 2    # B, B/C
+  , rmas => 5
+  , rules => 4
+  , rulesets => 3
+})};
+assert {
+  stats(".", "-S", {
     type => 'module'
   , state => 'fresh'
   , reloaded => 1
-  , modules_up => 0
-  , modules_down => 1
-  , parse => 1
-  , parse_ok => 1
-  , fresh => 1
+  , rmas => 3
+  , varsets => 0
+})};
+assert {
+  stats("./module.bam%devel", "-S", {
+    type => 'ruleset'
+  , state => 'fresh'
   , stale => 1
+  , fresh => 1
+  , parse_err => 0
+  , parse_ok => 1
   , rules => 2
 })};
-assert { stats(".", {
-    type => 'module-dir'
-  , rules => 3
+
+assert { stats("//bm/modules/$B_module_id/rmas-by/name/1", "--follow", { rule_run => 2 })}; # initial rule executions create fsents in the
+assert { stats("//bm/modules/$B_module_id/rmas-by/name/2", "--follow", { rule_run => 1 })}; # matched dirnode, which invalidate that node and
+assert { stats("//bm/modules/$B_module_id/rmas-by/name/3", "--follow", { rule_run => 1 })}; # cause the rules attached there to be run again
+assert { stats("//bm/modules/$C_module_id/rmas-by/name/1", "--follow", { rule_run => 2 })};
+assert { stats("//bm/modules/$C_module_id/rmas-by/name/4", "--follow", { rule_run => 1 })};
+assert { stats(undef, {
+    modules => 2    # B, B/C
+  , rmas => 5
+  , rules => 4
+  , rulesets => 3
 })};
-
-my $B_id = hash64("$bam_projdir");
-my $C_id = hash64("$bam_projdir/C");
-
-assert { stats("//modules/$B_id/rmas-by/name/1", { rule_run_ok => 2 })}; # initial rule executions create fsents in the
-assert { stats("//modules/$B_id/rmas-by/name/2", { rule_run_ok => 3 })}; # matched dirnode, which invalidate that node and
-assert { stats("//modules/$B_id/rmas-by/name/3", { rule_run_ok => 2 })}; # cause the rules attached there to be run again
-assert { stats("//modules/$C_id/rmas-by/name/4", { rule_run_ok => 2 })};
 
 # intermediate and final file were created
 build();
-
-assert { stats(undef, { modules => 2 })}; # B, B/C
-assert { stats(".", "-S", "-S", {
+assert { stats('//bm/sys-build', "--follow", {
+    fml_exec_err => 0
+  , fml_exec_ok => 4
+  , slot_err => 0
+  , slot_ok => 5
+  , build => 1
+  , build_ok => 1
+  , build_err => 0
+})};
+assert { stats(".", "-S", {
     type => 'module'
   , state => 'fresh'
   , reloaded => 1
-  , modules_up => 0
-  , modules_down => 1
-  , parse => 1
+})};
+assert { stats("./module.bam%devel", "-S", {
+    type => 'ruleset'
+  , state => 'fresh'
   , parse_ok => 1
+  , parse_err => 0
   , fresh => 1
   , stale => 1
   , rules => 2
 })};
 assert { stats(".", {
-    type => 'module-dir'
+    type => 'dir'
   , rules => 3
 })};
 
-assert_file("$bam_projdir/foo.o");
-assert_file("$bam_projdir/bar.o");
-assert_file("$bam_projdir/cores");
-assert_file("$bam_projdir/C/baz.o");
-assert { stats("//modules/$B_id/rmas-by/name/1", { rule_run_ok => 2 })}; # initial rule executions create fsents in the
-assert { stats("//modules/$B_id/rmas-by/name/2", { rule_run_ok => 3 })}; # matched dirnode, which invalidate that node and
-assert { stats("//modules/$B_id/rmas-by/name/3", { rule_run_ok => 2 })}; # cause the rules attached there to be run again
-assert { stats("//modules/$C_id/rmas-by/name/4", { rule_run_ok => 2 })};
+assert_file("$bam_dir/foo.o");
+assert_file("$bam_dir/bar.o");
+assert_file("$bam_dir/cores");
+assert_file("$bam_dir/C/baz.o");
+assert { stats("//bm/modules/$B_module_id/rmas-by/name/1", "--follow", { rule_run => 2 })}; # initial rule executions create fsents in the
+assert { stats("//bm/modules/$B_module_id/rmas-by/name/2", "--follow", { rule_run => 1 })}; # matched dirnode, which invalidate that node and
+assert { stats("//bm/modules/$B_module_id/rmas-by/name/3", "--follow", { rule_run => 1 })}; # cause the rules attached there to be run again
+assert { stats("//bm/modules/$C_module_id/rmas-by/name/1", "--follow", { rule_run => 2 })};
+assert { stats("//bm/modules/$C_module_id/rmas-by/name/4", "--follow", { rule_run => 1 })};
 
 # delete the intermediate files only
-unlink("$bam_projdir/foo.o") or die $!;
-unlink("$bam_projdir/bar.o") or die $!;
-unlink("$bam_projdir/C/baz.o") or die $!;
+unlink("$bam_dir/foo.o") or die $!;
+unlink("$bam_dir/bar.o") or die $!;
+unlink("$bam_dir/C/baz.o") or die $!;
 reconcile();
 
+assert { stats(undef, {
+    modules => 2    # B, B/C
+  , rmas => 5
+  , rules => 4
+  , rulesets => 3
+})};
+
 build();
-assert_file("$bam_projdir/foo.o");
-assert_file("$bam_projdir/bar.o");
-assert_file("$bam_projdir/cores");
-assert_file("$bam_projdir/C/baz.o");
+assert { stats('//bm/sys-build', "--follow", {
+    fml_exec_err => 0
+  , fml_exec_ok => 8
+  , build => 2
+  , build_ok => 2
+  , build_err => 0
+})};
+assert_file("$bam_dir/foo.o");
+assert_file("$bam_dir/bar.o");
+assert_file("$bam_dir/cores");
+assert_file("$bam_dir/C/baz.o");
 
 # delete the final files only
-unlink("$bam_projdir/cores") or die $!;
-unlink("$bam_projdir/C/baz.o") or die $!;
+unlink("$bam_dir/cores") or die $!;
+unlink("$bam_dir/C/baz.o") or die $!;
 reconcile();
+assert { stats(undef, {
+    modules => 2    # B, B/C
+  , rmas => 5
+  , rules => 4
+  , rulesets => 3
+})};
 
 build();
-assert_file("$bam_projdir/foo.o");
-assert_file("$bam_projdir/bar.o");
-assert_file("$bam_projdir/cores");
-assert_file("$bam_projdir/C/baz.o");
+assert { stats('//bm/sys-build', "--follow", {
+    fml_exec_err => 0
+  , fml_exec_ok => 10
+  , build => 3
+  , build_ok => 3
+  , build_err => 0
+})};
+assert_file("$bam_dir/foo.o");
+assert_file("$bam_dir/bar.o");
+assert_file("$bam_dir/cores");
+assert_file("$bam_dir/C/baz.o");
 
 # delete both intermediate and final files
-unlink("$bam_projdir/foo.o") or die $!;
-unlink("$bam_projdir/bar.o") or die $!;
-unlink("$bam_projdir/cores") or die $!;
-unlink("$bam_projdir/C/baz.o") or die $!;
+unlink("$bam_dir/foo.o") or die $!;
+unlink("$bam_dir/bar.o") or die $!;
+unlink("$bam_dir/cores") or die $!;
+unlink("$bam_dir/C/baz.o") or die $!;
 reconcile();
+assert { stats(undef, {
+    modules => 2    # B, B/C
+  , rmas => 5
+  , rules => 4
+  , rulesets => 3
+})};
 
 build();
-assert_file("$bam_projdir/foo.o");
-assert_file("$bam_projdir/bar.o");
-assert_file("$bam_projdir/cores");
-assert_file("$bam_projdir/C/baz.o");
+assert { stats('//bm/sys-build', "--follow", {
+    fml_exec_err => 0
+  , fml_exec_ok => 14
+  , build => 4
+  , build_ok => 4
+  , build_err => 0
+})};
+assert_file("$bam_dir/foo.o");
+assert_file("$bam_dir/bar.o");
+assert_file("$bam_dir/cores");
+assert_file("$bam_dir/C/baz.o");
 
 teardown();

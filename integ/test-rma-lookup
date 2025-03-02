@@ -1,0 +1,95 @@
+#!/usr/bin/env perl
+
+#
+# Address rmas by id and by name
+#
+
+use strict;
+use warnings;
+$SIG{__WARN__} = sub { die @_ };
+
+use Carp qw(confess);
+$SIG{__DIE__} = 'confess';
+
+use POSIX;
+use File::Basename;
+use Cwd;
+our $repodir;
+our $bam_bamd_id;
+our $bam_basedir;
+BEGIN { $repodir = dirname(Cwd::realpath("$0/..")) }
+use lib "$repodir/integ/lib";
+use lib "$repodir/perl";
+use lib "$repodir/libbacon/perl";
+use util;
+use tree;
+use bam::bam;
+use integ;
+
+init();
+setup(<<'TREE');
+|-- cores.c
+|-- module.bam%devel <<
+rule { name : foo } cores.c -> cores.o
+rule cores.o -> cores
+TREE
+
+my $result;
+my $mod_id = bam::identity("module", "$bam_basedir");
+my $rule_1_id = bam::identity("ruleset", "$bam_basedir/module.bam%devel", "rule", "1");
+my $rule_2_id = bam::identity("ruleset", "$bam_basedir/module.bam%devel", "rule", "2");
+my $rma_1_id = bam::identity("ruleset", "$bam_basedir/module.bam%devel", "rule", "1", "module", "$bam_basedir", "rma");
+my $rma_2_id = bam::identity("ruleset", "$bam_basedir/module.bam%devel", "rule", "2", "module", "$bam_basedir", "rma");
+
+printf("%10s %s\n", "mod", $mod_id);
+printf("%10s %s\n", "rule 1", $rule_1_id);
+printf("%10s %s\n", "rule 2", $rule_2_id);
+printf("%10s %s\n", "rma 1", $rma_1_id);
+printf("%10s %s\n", "rma 2", $rma_2_id);
+
+assert { stats("cores.c", {
+    type => 'file'
+  , state => 'fresh'
+  , stale => 0
+  , fresh => 1
+})};
+assert { stats("cores.o", {
+    type => 'file'
+  , state => 'uncreated'
+  , stale => 0
+  , fresh => 0
+})};
+assert { stats("cores", {
+    type => 'file'
+  , state => 'uncreated'
+  , stale => 0
+  , fresh => 0
+})};
+
+# list rules
+$result = bam_rules();
+assert { index($result, $rule_1_id) > -1 };
+assert { index($result, $rule_2_id) > -1 };
+
+# list rmas
+$result = bam_rmas();
+assert { index($result, $rma_1_id) > -1 };
+assert { index($result, $rma_2_id) > -1 };
+
+# describe rules by id and name
+$result = bam_rule($rule_1_id);
+assert { index($result, $rule_1_id) > -1 };
+
+$result = bam_rule("foo");
+assert { index($result, $rule_1_id) > -1 };
+
+# describe rmas by id and name
+$result = bam_rma($rma_1_id);
+assert { index($result, $rule_1_id) > -1 };
+assert { index($result, $rma_1_id) > -1 };
+
+$result = bam_rma("foo");
+assert { index($result, $rule_1_id) > -1 };
+assert { index($result, $rma_1_id) > -1 };
+
+teardown();

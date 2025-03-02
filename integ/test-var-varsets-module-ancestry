@@ -9,6 +9,9 @@ use strict;
 use warnings;
 $SIG{__WARN__} = sub { die @_ };
 
+use Carp qw(confess);
+$SIG{__DIE__} = 'confess';
+
 use POSIX;
 use File::Basename;
 use Cwd;
@@ -16,55 +19,197 @@ our $repodir;
 our $bam_basedir;
 BEGIN { $repodir = dirname(Cwd::realpath("$0/..")) }
 use lib "$repodir/integ/lib";
+use lib "$repodir/perl";
+use lib "$repodir/perl";
 use lib "$repodir/libbacon/perl";
 use util;
 use tree;
-use bam;
+use bam::bam;
+use integ;
+use integ;
 
 # build out the fstree under /tmp
 init(subdir => 'B');
-my $testdir = setup(<<TREE);
+setup(<<TREE);
 |-- B
-|   `-- module.bam+devel <<
-varsets myvar
+|   `-- module.bam%devel <<
+varsets varset.one
 >>
-|-- myvar+devel <<
-a : 42
+|-- varset.one <<
+one : 42
+>>
+|-- varset.two <<
+two : 42
+>>
+|-- varset.three <<
+three : 42
 >>
 |-- system-config <<
 filesystem : {
   special : {
-    myvar+devel
+    varset.one
+    varset.two
+    varset.three
   }
 }
 >>
 TREE
 
-my $mod_id = hash64("$bam_basedir/B");
-my $varset_id = hash64("$bam_basedir/myvar+devel");
+my $mod_id = bam::identity('module', "$bam_basedir/B");
+my $varset_one = bam::identity('varset', "$bam_basedir/varset.one");
+my $varset_two = bam::identity('varset', "$bam_basedir/varset.two");
+my $varset_three = bam::identity('varset', "$bam_basedir/varset.three");
+my $result;
+my $ref;
 
-# before
+# 1. one varset
+print("\n >> 1 - varsets { one } <<\n\n");
 assert { stats(undef, {
     modules => 1
-  , system_state_ok => 1
+  , system_state_ready => 1
+  , varsets => 1
 })};
 assert { stats(".", "-S", {
     type => 'module'
   , state => "fresh"
   , reloaded => 1
-  , parse => 1
+})};
+assert { stats("./module.bam%devel", "-S", {
+    type => 'ruleset'
+  , state => "fresh"
+  , parse_err => 0
   , parse_ok => 1
 })};
-assert { stats("$bam_basedir/myvar+devel", "-S", {
+assert { stats("$bam_basedir/varset.one", "-S", {
     type => "varset"
   , state => "fresh"
-  , parse => 1
+  , parse_err => 0
   , parse_ok => 1
 })};
+assert { stats("$bam_basedir/varset.two", {
+    type => "file"
+  , state => "fresh"
+})};
+assert { stats("$bam_basedir/varset.three", {
+    type => "file"
+  , state => "fresh"
+})};
 
-my $result = bam_ls(["//modules/$mod_id/varsets/$varset_id", "--no-follow"]);
-my $ref = $$result{out};
+$result = bam_ls(["//bm/modules/$mod_id/varsets/$varset_one", "--no-follow"]);
+$ref = $$result{out};
 print("$ref\n");
-assert { $ref eq "$varset_id -> //varsets/$varset_id" };
+assert { $ref eq "$varset_one -> //bm/varsets/$varset_one" };
+
+# 2. zero varsets
+print("\n >> 2 - varsets { } <<\n\n");
+open FH, ">$bam_basedir/B/module.bam%devel";
+close FH;
+reconcile();
+
+assert { stats(undef, {
+    modules => 1
+  , system_state_ready => 2
+  , varsets => 0
+})};
+assert { stats(".", "-S", {
+    type => 'module'
+  , state => "fresh"
+  , reloaded => 2
+})};
+assert { stats("./module.bam%devel", "-S", {
+    type => 'ruleset'
+  , state => "fresh"
+  , parse_err => 0
+  , parse_ok => 2
+})};
+assert { stats("$bam_basedir/varset.one", {
+    type => "file"
+  , state => "fresh"
+})};
+
+# 3. two varsets
+print("\n >> 3 - varsets { one two } <<\n\n");
+open FH, ">$bam_basedir/B/module.bam%devel";
+print FH "varsets varset.one\n";
+print FH "varsets varset.two\n";
+close FH;
+reconcile();
+
+assert { stats(undef, {
+    modules => 1
+  , system_state_ready => 3
+  , varsets => 2
+})};
+assert { stats(".", "-S", {
+    type => 'module'
+  , state => "fresh"
+  , reloaded => 3
+})};
+assert { stats("./module.bam%devel", "-S", {
+    type => 'ruleset'
+  , state => "fresh"
+  , parse_err => 0
+  , parse_ok => 3
+})};
+assert { stats("$bam_basedir/varset.one", "-S", {
+    type => "varset"
+  , state => "fresh"
+  , parse_err => 0
+  , parse_ok => 1
+})};
+assert { stats("$bam_basedir/varset.two", "-S", {
+    type => "varset"
+  , state => "fresh"
+  , parse_err => 0
+  , parse_ok => 1
+})};
+assert { stats("$bam_basedir/varset.three", {
+    type => "file"
+  , state => "fresh"
+})};
+
+# 3. three varsets
+print("\n >> 3 - varsets { one two three } <<\n\n");
+open FH, ">$bam_basedir/B/module.bam%devel";
+print FH "varsets varset.one\n";
+print FH "varsets varset.two\n";
+print FH "varsets varset.three\n";
+close FH;
+reconcile();
+
+assert { stats(undef, {
+    modules => 1
+  , system_state_ready => 4
+  , varsets => 3
+})};
+assert { stats(".", "-S", {
+    type => 'module'
+  , state => "fresh"
+  , reloaded => 4
+})};
+assert { stats("./module.bam%devel", "-S", {
+    type => 'ruleset'
+  , state => "fresh"
+  , parse_err => 0
+  , parse_ok => 4
+})};
+assert { stats("$bam_basedir/varset.one", "-S", {
+    type => "varset"
+  , state => "fresh"
+  , parse_err => 0
+  , parse_ok => 1
+})};
+assert { stats("$bam_basedir/varset.two", "-S", {
+    type => "varset"
+  , state => "fresh"
+  , parse_err => 0
+  , parse_ok => 1
+})};
+assert { stats("$bam_basedir/varset.three", "-S", {
+    type => "varset"
+  , state => "fresh"
+  , parse_err => 0
+  , parse_ok => 1
+})};
 
 teardown();

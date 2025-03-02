@@ -8,18 +8,23 @@ use strict;
 use warnings;
 $SIG{__WARN__} = sub { die @_ };
 
+use Carp qw(confess);
+$SIG{__DIE__} = 'confess';
+
 use POSIX;
 use File::Basename;
 use Cwd;
 our $repodir;
 our $bam_basedir;
-our $bam_projdir;
+our $bam_dir;
 BEGIN { $repodir = dirname(Cwd::realpath("$0/..")) }
 use lib "$repodir/integ/lib";
+use lib "$repodir/perl";
 use lib "$repodir/libbacon/perl";
 use util;
 use tree;
-use bam;
+use bam::bam;
+use integ;
 
 init(subdir => 'B');
 setup(<<"TREE");
@@ -27,13 +32,16 @@ setup(<<"TREE");
 |   `-- foo <<
 qux
 >>
-|   `-- rules.bam+devel <<
-rule foo -> bar : cp.bam
+|   `-- rules.bam%devel <<
+rule foo -> bar : A/cp.bam+(.)
 rule bar -> //targets
 >>
 |   `-- cp.bam << 0777
 file : {
-  path-search : cp    # this needs the config to resolve
+  lookup : {
+    namespace : coreutils
+    pattern : bin/cp+(@.)    # this needs the config to resolve
+  }
 }
 args : [
   \$bm_source0
@@ -42,75 +50,84 @@ args : [
 >>
 |-- B
 |   `-- C
-|       `-- module.bam+devel <<
+|       `-- module.bam%devel <<
 anchor ../../A
 >>
 |   `-- D
-|       `-- module.bam+devel <<
+|       `-- module.bam%devel <<
 anchor ../../A
 >>
 |-- system-config <<
-formula : {
-  path : {
-    dirs : {
-      /usr/bin
-    }
-  }
+namespaces : {
+  coreutils
 }
 filesystem : {
-  exclude : {
-    foo
-  }
   fstrees : {
     $bam_basedir : {
       mount : true
+      namespaces : {
+        modules
+        formulas
+      }
     }
-    / : {
-      mkdir : true
+    $repodir/usr/share/bam/coreutils : {
+      mount : true
+      namespaces : {
+        coreutils
+      }
     }
   }
 }
 >>
 TREE
 
-my $build_C_id = hash64("$bam_projdir/C");
-my $build_D_id = hash64("$bam_projdir/D");
+my $build_C_module_id = bam::identity('module', "$bam_dir/C");
+my $build_D_module_id = bam::identity('module', "$bam_dir/D");
+my $result;
+my $ref;
 
 # C fs link points to the right node
-my $result = bam_ls(["//modules/$build_C_id/base", "--no-follow", "--no-module"]);
-my $ref = $$result{out};
-assert { $ref eq "base -> $bam_basedir/B/C" };
+$result = bam_ls(["//bm/modules/$build_C_module_id/build", "--no-follow", "--no-module"]);
+$ref = $$result{out};
+assert { $ref eq "build -> $bam_basedir/B/C" };
 
 # C ref link points to the right node
-$result = bam_ls(["//modules/$build_C_id/anchor", "--no-follow", "--no-module"]);
+$result = bam_ls(["//bm/modules/$build_C_module_id/anchor", "--no-follow", "--no-module"]);
 $ref = $$result{out};
 assert { $ref eq "anchor -> $bam_basedir/A" };
 
 # D fs link points to the right node
-$result = bam_ls(["//modules/$build_D_id/base", "--no-follow", "--no-module"]);
+$result = bam_ls(["//bm/modules/$build_D_module_id/build", "--no-follow", "--no-module"]);
 $ref = $$result{out};
-assert { $ref eq "base -> $bam_basedir/B/D" };
+assert { $ref eq "build -> $bam_basedir/B/D" };
 
 # D ref link points to the right node
-$result = bam_ls(["//modules/$build_D_id/anchor", "--no-follow", "--no-module"]);
+$result = bam_ls(["//bm/modules/$build_D_module_id/anchor", "--no-follow", "--no-module"]);
 $ref = $$result{out};
 assert { $ref eq "anchor -> $bam_basedir/A" };
 
 # before
 assert {
-  stats("--no-module", "//system", {
+  stats("--no-module", "//bm/sys-system", "--follow", {
     modules => 2          # module B, plus module B/C (anchored to A/C)
 })};
 assert {
-  stats("--no-module", "//filesystem", {
-    mkdir => 0
+  stats("--no-module", "//bm/sys-filesystem", "--follow", {
+      mkdir_err => 0
+    , mkdir_no => 0
+    , mkdir_ok => 0
 })};
 assert {
   stats("./C", "-S", "--no-module", {
     type => 'module'
   , state => 'fresh'
   , reloaded => 1
-  , parse => 1
+})};
+assert {
+  stats("./C/module.bam%devel", "-S", "--no-module", {
+    type => 'ruleset'
+  , state => 'fresh'
+  , parse_err => 0
   , parse_ok => 1
 })};
 assert {
@@ -118,11 +135,16 @@ assert {
     type => 'module'
   , state => 'fresh'
   , reloaded => 1
-  , parse => 1
+})};
+assert {
+  stats("./D/module.bam%devel", "-S", "--no-module", {
+    type => 'ruleset'
+  , state => 'fresh'
+  , parse_err => 0
   , parse_ok => 1
 })};
 
 build();
-assert_file("$bam_projdir/C/bar", "qux");
-assert_file("$bam_projdir/D/bar", "qux");
+assert_file("$bam_dir/C/bar", "qux");
+assert_file("$bam_dir/D/bar", "qux");
 teardown();

@@ -8,6 +8,9 @@ use strict;
 use warnings;
 $SIG{__WARN__} = sub { die @_ };
 
+use Carp qw(confess);
+$SIG{__DIE__} = 'confess';
+
 use POSIX;
 use File::Basename;
 use Cwd;
@@ -15,19 +18,21 @@ our $repodir;
 our $bam_basedir;
 BEGIN { $repodir = dirname(Cwd::realpath("$0/..")) }
 use lib "$repodir/integ/lib";
+use lib "$repodir/perl";
 use lib "$repodir/libbacon/perl";
 use util;
 use tree;
-use bam;
+use bam::bam;
+use integ;
 
 init(subdir => 'B/C');
 setup(<<"TREE");
-|-- module.bam+devel
+|-- module.bam%devel
 |-- A
 |   `-- foo
 |-- B
 |   `-- C
-|       `-- module.bam+devel <<
+|       `-- module.bam%devel <<
 >>
 |-- system-config <<
 filesystem : {
@@ -35,13 +40,14 @@ filesystem : {
     $bam_basedir : {
       invalidation : notify
       mkdir : true
-      index : true
       mount : true
+      namespaces : {
+        modules
+      }
     }
     / : {
       invalidation : notify
       mkdir : true
-      index : false
     }
   }
   exclude : {
@@ -57,11 +63,19 @@ assert {
 })};
 assert {
   stats(".", "-S", {
-      type => 'module'
-    , state => 'fresh'
-    , reloaded => 1
-    , parse => 1
-    , parse_ok => 1
+    type => 'module'
+  , state => 'fresh'
+  , reloaded => 1
+})};
+assert {
+  stats("./module.bam%devel", "-S", {
+    type => 'ruleset'
+  , state => 'fresh'
+  , stale => 1
+  , fresh => 1
+  , parse_err => 0
+  , parse_ok => 1
+  , rules => 0
 })};
 
 my $res = bam_describe(["$bam_basedir/A"]);

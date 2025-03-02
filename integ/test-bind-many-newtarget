@@ -8,18 +8,23 @@ use strict;
 use warnings;
 $SIG{__WARN__} = sub { die @_ };
 
+use Carp qw(confess);
+$SIG{__DIE__} = 'confess';
+
 use POSIX;
 use File::Basename;
 use Cwd;
 our $bam_basedir;
-our $bam_projdir;
+our $bam_dir;
 our $repodir;
 BEGIN { $repodir = dirname(Cwd::realpath("$0/..")) }
 use lib "$repodir/integ/lib";
+use lib "$repodir/perl";
 use lib "$repodir/libbacon/perl";
 use util;
 use tree;
-use bam;
+use bam::bam;
+use integ;
 
 init(subdir => 'C');
 setup({tolerant => 1 }, <<TREE);
@@ -30,26 +35,26 @@ setup({tolerant => 1 }, <<TREE);
 |   `-- foot
 |       `-- bar
 |-- C
-|   `-- module.bam+devel <<
+|   `-- module.bam%devel <<
 bind { name : 1 } foo => [*] //foo
 >>
 |-- system-config <<
 filesystem : {
   fstrees : {
-    / : {
-      index : false
-    }
     $bam_basedir : {
-      index : true
       mount : true
+      namespaces : {
+        modules
+      }
     }
   }
 }
 >>
 TREE
 
-my $foo_A_id = hash64("$bam_basedir/A/foo");
-my $foo_B_id = hash64("$bam_basedir/B/foo");
+my $modules_ns_id = bam::identity("namespace", "modules");
+my $foo_A_id = bam::identity("dir", "$bam_basedir/A/foo");
+my $foo_B_id = bam::identity("dir", "$bam_basedir/B/foo");
 print("foo_A_id $foo_A_id\n");
 print("foo_B_id $foo_B_id\n");
 
@@ -57,15 +62,14 @@ print("foo_B_id $foo_B_id\n");
 assert {
   stats(undef, {
       modules => 1
-    , system_state_ok => 1
+    , system_state_ready => 1
     , rule_run => 1
-    , rule_run_ok => 1
 })};
 assert {
-  stats("//fsindex", {
-      put => 6    # indexed operations
-    , del => 0
-    , count => 6  # number of indexed names
+  stats("//bm/namespaces/$modules_ns_id", "-S", {
+      put => 5    # namespace put operations
+    , del => 0    # namespace del operations
+    , count => 5  # number of indexed names
 })};
 assert {
   stats(".", "-S", {
@@ -74,13 +78,19 @@ assert {
     , fresh => 1
     , stale => 1
     , reloaded => 1
-    , parse => 1
-    , parse_ok => 1
 })};
 assert {
-  stats("//module/rmas-by/name/1", {
+  stats("./module.bam%devel", "-S", {
+      type => 'ruleset'
+    , state => 'fresh'
+    , fresh => 1
+    , stale => 1
+    , parse_ok => 1
+    , parse_err => 0
+})};
+assert {
+  stats("//module/rmas-by/name/1", "--follow", {
       rule_run => 1
-    , rule_run_ok => 1
     , target_hits => 1
     , attachment_hits => 1
     , search_hits => 0
@@ -91,15 +101,15 @@ assert {
 assert { ls("//foo/$foo_A_id", "$foo_A_id -> $bam_basedir/A/foo") };
 assert { enoent("//foo/$foo_B_id") };
 
-# 2. A and B both resolve - this is an error
+# 2. A/foo and B/foo both resolve - an ambiguous reference is an errror
 rename("$bam_basedir/B/foot", "$bam_basedir/B/foo");
 
 reconcile(expect_error => 1);
 assert {
-  stats("//fsindex", {
-    put => 7    # index put operations
-  , del => 1    # index del operations
-  , count => 5  # number of indexed names
+  stats("//bm/namespaces/$modules_ns_id", "-S", {
+    put => 6
+  , del => 1
+  , count => 4
 })};
 assert {
   info({
@@ -107,10 +117,9 @@ assert {
 })};
 assert {
   stats(undef, {
-    system_state_ok => 1
+    system_state_ready => 1
   , modules => 1
-  , rule_run => 2
-  , rule_run_ok => 1
+  , rule_run => 1
 })};
 assert {
   stats(".", "-S", {
@@ -119,14 +128,19 @@ assert {
     , fresh => 1
     , stale => 1
     , reloaded => 1
-    , parse => 1
+})};
+assert {
+  stats("./module.bam%devel", "-S", {
+      type => 'ruleset'
+    , state => 'fresh'
+    , fresh => 1
+    , stale => 1
+    , parse_err => 0
     , parse_ok => 1
 })};
 assert {
-  stats("//module/rmas-by/name/1", {
-      rule_run => 2
-    , rule_run => 2
-    , rule_run_ok => 1
+  stats("//module/rmas-by/name/1", "--follow", {
+      rule_run => 1
     , target_hits => 2
     , attachment_hits => 1
     , search_hits => 0
@@ -134,39 +148,42 @@ assert {
     , formula_hits => 0
 })};
 
-# since reconciliation did not complete
+# the rule did not run successfully, so it has no targets
 assert { enoent("//foo/$foo_A_id") };
 assert { enoent("//foo/$foo_B_id") };
 
-# 3. only B/foo
+# 3. now only B/foo resolves, which is acceptable
 rename("$bam_basedir/A/foo", "$bam_basedir/A/foot");
 
 reconcile();
 assert {
-  stats("//fsindex", {
-    put => 8    # index put operations
-  , del => 2    # index del operations
-  , count => 6  # number of indexed names
+  stats("//bm/namespaces/$modules_ns_id", "-S", {
+    put => 7
+  , del => 2
+  , count => 5
 })};
 assert {
   stats(undef, {
     modules => 1
-  , system_state_ok => 2
-  , rule_run => 3
-  , rule_run_ok => 2
+  , system_state_ready => 2
+  , rule_run => 2
 })};
 assert {
   stats(".", "-S", {
       type => 'module'
     , state => 'fresh'
     , reloaded => 1
-    , parse => 1
-    , parse_ok => 1
 })};
 assert {
-  stats("//module/rmas-by/name/1", {
-      rule_run => 3
-    , rule_run_ok => 2
+  stats("./module.bam%devel", "-S", {
+      type => 'ruleset'
+    , state => 'fresh'
+    , parse_ok => 1
+    , parse_err => 0
+})};
+assert {
+  stats("//module/rmas-by/name/1", "--follow", {
+      rule_run => 2
     , target_hits => 1
     , attachment_hits => 1
     , search_hits => 0
@@ -175,24 +192,25 @@ assert {
 })};
 
 assert { enoent("//foo/$foo_A_id") };
-assert { ls("//foo/$foo_B_id", "$foo_B_id -> $bam_basedir/B/foo") };
+my $result = bam_ls(["//foo/$foo_B_id", "--no-follow"]);
+my $ref = $$result{out};
+assert { $ref eq "$foo_B_id -> $bam_basedir/B/foo" };
 
-# 4. neither A/foo nor B/foo - this is also an error
+# 4. neither A/foo nor B/foo resolve - an unresolved reference is also an errror
 rename("$bam_basedir/B/foo", "$bam_basedir/B/foot");
 
 reconcile(expect_error => 1);
 assert {
-  stats("//fsindex", {
-    put => 9
+  stats("//bm/namespaces/$modules_ns_id", "-S", {
+    put => 8
   , del => 3
-  , count => 5
+  , count => 4
 })};
 assert {
   stats(undef, {
     modules => 1
-  , system_state_ok => 2
-  , rule_run => 4
-  , rule_run_ok => 2
+  , system_state_ready => 2
+  , rule_run => 2
 })};
 assert {
   stats(".", "-S", {
@@ -201,13 +219,19 @@ assert {
     , fresh => 1
     , stale => 1
     , reloaded => 1
-    , parse => 1
-    , parse_ok => 1
 })};
 assert {
-  stats("//module/rmas-by/name/1", {
-      rule_run => 4
-    , rule_run_ok => 2
+  stats("./module.bam%devel", "-S", {
+      type => 'ruleset'
+    , state => 'fresh'
+    , fresh => 1
+    , stale => 1
+    , parse_ok => 1
+    , parse_err => 0
+})};
+assert {
+  stats("//module/rmas-by/name/1", "--follow", {
+      rule_run => 2
     , target_hits => 0
     , attachment_hits => 1
     , search_hits => 0

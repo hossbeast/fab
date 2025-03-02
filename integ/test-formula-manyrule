@@ -4,23 +4,28 @@ use strict;
 use warnings;
 $SIG{__WARN__} = sub { die @_ };
 
+use Carp qw(confess);
+$SIG{__DIE__} = 'confess';
+
 use POSIX;
 use File::Basename;
 use Cwd;
 our $repodir;
 BEGIN { $repodir = dirname(Cwd::realpath("$0/..")) }
 use lib "$repodir/integ/lib";
+use lib "$repodir/perl";
 use lib "$repodir/libbacon/perl";
 use util;
 use tree;
-use bam;
+use bam::bam;
+use integ;
 
 # module file - boats is created by separate rules which each reference the same formula
 init();
 my $testdir = setup({ tolerant => 1 }, <<'TREE');
-|-- module.bam+devel <<
-rule -- boats : foo.bam
-rule -- boats : foo.bam
+|-- module.bam%devel <<
+rule { name : 1 } -- boats : ./foo.bam+(.)
+rule { name : 2 } -- boats : ./foo.bam+(.)
 rule boats -> //targets
 >>
 |-- foo.bam << 0777
@@ -35,32 +40,53 @@ TREE
 assert {
   stats(undef, {
     modules => 1
-  , system_state_ok => 0
+  , system_state_ready => 0
 })};
 assert {
   stats(".", "-S", {
     type => "module"
-  , state => 'fresh'
+  , state => "fresh"
   , reloaded => 1
-  , parse => 1
+})};
+assert {
+  stats("./module.bam%devel", "-S", {
+    type => "ruleset"
+  , state => "fresh"
+  , parse_err => 0
   , parse_ok => 1
 })};
 assert {
   stats("foo.bam",  "-S", {
     type => "formula"
-  , state => "stale"    # not parsed yet since rules did not reconcile
-  , parse => 0
-  , parse_ok => 0
+  , state => "fresh"    # marked fresh when parsed during rule_resolve
+  , parse_err => 0
+  , parse_ok => 1
 })};
 assert {
   stats("boats", {
     state => "uncreated"
 })};
+assert {
+  stats("//module/rmas-by/name/1", "--follow", {
+    stale => 1
+  , fresh => 1
+  , rule_resolve_err => 0
+  , rule_resolve_ok => 1
+  , rule_run => 1
+})};
+assert {
+  stats("//module/rmas-by/name/2", "--follow", {
+    stale => 1
+  , fresh => 1
+  , rule_resolve_err => 0
+  , rule_resolve_ok => 1
+  , rule_run => 1
+})};
 
 # module file - fixed
-open my $fh, ">", "$testdir/module.bam+devel" or die $!;
+open my $fh, ">", "$testdir/module.bam%devel" or die $!;
 print $fh <<TEXT;
-rule -- boats : foo.bam
+rule -- boats : ./foo.bam+(.)
 rule boats -> //targets
 TEXT
 close $fh;
@@ -69,21 +95,26 @@ reconcile();
 assert {
   stats(undef, {
     modules => 1
-  , system_state_ok => 1
+  , system_state_ready => 1
 })};
 assert {
   stats(".", "-S", {
     type => "module"
   , state => 'fresh'
   , reloaded => 2
-  , parse => 2
+})};
+assert {
+  stats("./module.bam%devel", "-S", {
+    type => "ruleset"
+  , state => 'fresh'
+  , parse_err => 0
   , parse_ok => 2
 })};
 assert {
   stats("foo.bam", "-S", {
     type => "formula"
   , state => "fresh"
-  , parse => 1
+  , parse_err => 0
   , parse_ok => 1
 })};
 assert {

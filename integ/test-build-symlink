@@ -1,0 +1,200 @@
+#!/usr/bin/env perl
+
+#
+# build where //targets contains a symlink which is the target of some bpe
+#
+# the symlink does not yet exist
+#
+
+use strict;
+use warnings;
+$SIG{__WARN__} = sub { die @_ };
+
+use Carp qw(confess);
+$SIG{__DIE__} = 'confess';
+
+use POSIX;
+use File::Basename;
+use Cwd;
+our $repodir;
+our $bam_basedir;
+BEGIN { $repodir = dirname(Cwd::realpath("$0/..")) }
+use lib "$repodir/integ/lib";
+use lib "$repodir/perl";
+use lib "$repodir/libbacon/perl";
+use util;
+use tree;
+use integ;
+use bam::bam;
+
+init();
+setup(<<"TREE");
+|-- system-config <<
+namespaces : {
+  coreutils
+}
+filesystem : {
+  fstrees : {
+    $repodir/usr/share/bam/coreutils : {
+      mount : true
+      namespaces : {
+        coreutils
+      }
+    }
+    $repodir/builtin-modules%devel : {
+      mount : true
+      invalidation : notify
+      namespaces : {
+        modules
+        formulas
+      }
+    }
+  }
+}
+>>
+|-- hello.c <<
+hello
+>>
+|-- module.bam%devel <<
+rule hello.c -> hello.o : coreutils/cp.bam%devel+(.)
+rule hello.o -> hello.exe : coreutils/cp.bam%devel+(.)
+rule hello.exe -> hello+(@) : coreutils/symlink.bam%devel+(.)
+rule hello+(@) -> //targets
+>>
+TREE
+
+my $result;
+
+# 1. initial
+assert { stats("hello.c", {
+    type => 'file'
+  , state => 'fresh'
+  , stale => 0
+  , fresh => 1
+})};
+assert { stats("hello.o", {
+    type => 'file'
+  , state => 'uncreated'
+  , stale => 0
+  , fresh => 0
+})};
+assert { stats("hello.exe", {
+    type => 'file'
+  , state => 'uncreated'
+  , stale => 0
+  , fresh => 0
+})};
+assert { stats("hello", {
+    type => 'symlink'
+  , state => 'uncreated'
+  , stale => 0
+  , fresh => 0
+})};
+
+# 2. build creates the symlink
+build();
+
+$result = bam_adhoc('[ select : [ path : { pattern : //bm/sys-plan } ] tell ]');
+print("$$result{out}\n");
+
+assert { stats("hello.c", {
+    type => 'file'
+  , state => 'fresh'
+  , stale => 0
+  , fresh => 1
+})};
+assert { stats("hello.o", {
+    type => 'file'
+  , state => 'fresh'
+  , stale => 0
+  , fresh => 1
+})};
+assert { stats("hello.exe", {
+    type => 'file'
+  , state => 'fresh'
+  , stale => 0
+  , fresh => 1
+})};
+assert { stats("hello", {
+    type => 'symlink'
+  , state => 'fresh'
+  , stale => 0
+  , fresh => 1
+})};
+
+# 3. reconcile and freshen
+reconcile();
+
+assert { stats("hello.c", {
+    type => 'file'
+  , state => 'fresh'
+  , stale => 0
+  , fresh => 1
+})};
+assert { stats("hello.o", {
+    type => 'file'
+  , state => 'fresh'
+  , stale => 0
+  , fresh => 1
+})};
+assert { stats("hello.exe", {
+    type => 'file'
+  , state => 'fresh'
+  , stale => 0
+  , fresh => 1
+})};
+assert { stats("hello", {
+    type => 'symlink'
+  , state => 'fresh'
+  , stale => 0
+  , fresh => 1
+})};
+
+# 4. invalidate the symlink
+bam_touch("hello", "--no-follow");
+
+assert { stats("hello.exe", {
+    type => 'file'
+  , state => 'fresh'
+  , stale => 0
+  , fresh => 1
+})};
+assert { stats("hello", {
+    type => 'symlink'
+  , state => 'stale'
+  , stale => 1
+  , fresh => 1
+})};
+
+# 4. rebuild the symlink
+build();
+
+$result = bam_adhoc('[ select : [ path : { pattern : //bm/sys-plan } ] tell ]');
+print("$$result{out}\n");
+
+assert { stats("hello.c", {
+    type => 'file'
+  , state => 'fresh'
+  , stale => 0
+  , fresh => 1
+})};
+assert { stats("hello.o", {
+    type => 'file'
+  , state => 'fresh'
+  , stale => 0
+  , fresh => 1
+})};
+assert { stats("hello.exe", {
+    type => 'file'
+  , state => 'fresh'
+  , stale => 0
+  , fresh => 1
+})};
+assert { stats("hello", {
+    type => 'symlink'
+  , state => 'fresh'
+  , stale => 1
+  , fresh => 2
+})};
+
+teardown();

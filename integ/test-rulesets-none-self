@@ -1,0 +1,66 @@
+#!/usr/bin/env perl
+
+#
+# This test uses the rulesfiles directive in the module file in order to suppress
+# additional rules file in the same directory
+#
+
+use strict;
+use warnings;
+$SIG{__WARN__} = sub { die @_ };
+
+use POSIX;
+use File::Basename;
+use Cwd;
+our $repodir;
+our $bam_basedir;
+BEGIN { $repodir = dirname(Cwd::realpath("$0/..")) }
+use lib "$repodir/integ/lib";
+use lib "$repodir/perl";
+use lib "$repodir/libbacon/perl";
+use util;
+use tree;
+use bam::bam;
+use integ;
+
+# build out the fstree under /tmp
+init();
+my $testdir = setup(<<TREE);
+|-- module.bam%devel <<
+rulesets
+>>
+|-- rules.bam%devel <<
+rule a -> b
+>>
+TREE
+
+my $mod_id = bam::identity("file", $bam_basedir, "module");
+my $rules_id = bam::identity("file", "$bam_basedir/rules.bam%devel", "ruleset");
+
+# before
+assert { stats(undef, {
+    modules => 1
+  , system_state_ready => 1
+})};
+assert {
+  stats(".", "-S", {
+    type => 'module'
+  , state => "fresh"
+  , reloaded => 1
+})};
+assert {
+  stats("./module.bam%devel", "-S", {
+    type => 'ruleset'
+  , state => "fresh"
+  , parse_err => 0
+  , parse_ok => 1
+})};
+assert { stats("rules.bam%devel", {
+    type => 'file'
+  , state => "fresh"
+})};
+
+assert { enoent("//bm/modules/$mod_id/rulesets/$rules_id") };
+assert { enoent("//bm/rulesets/$rules_id") };
+
+teardown();

@@ -1,0 +1,157 @@
+#!/usr/bin/env perl
+
+#
+# This test exercises namespace entries to symlinks that refer to directories
+#
+
+use strict;
+use warnings;
+$SIG{__WARN__} = sub { die @_ };
+
+use Carp qw(confess);
+$SIG{__DIE__} = 'confess';
+
+use POSIX;
+use File::Basename;
+use Cwd;
+our $repodir;
+our $bam_basedir;
+BEGIN { $repodir = dirname(Cwd::realpath("$0/..")) }
+use lib "$repodir/integ/lib";
+use lib "$repodir/perl";
+use lib "$repodir/libbacon/perl";
+use util;
+use tree;
+use bam::bam;
+use integ;
+
+init(subdir => 'B');
+setup(<<"TREE");
+|-- A
+|   `-- foo
+|-- D
+|   `-- foo
+|-- B
+|   `-- module.bam%devel <<
+>>
+|-- system-config <<
+namespaces : {
+  ns
+}
+filesystem : {
+  fstrees : {
+    $bam_basedir/A : {
+      mkdir : true
+      mount : true
+      readlink : yes
+      namespaces : {
+        ns
+      }
+    }
+    $bam_basedir/D : {
+      mkdir : true
+      mount : true
+      readlink : yes
+      namespaces : {
+        ns
+      }
+    }
+  }
+}
+>>
+TREE
+
+my $ns_namespace_id;
+my $names;
+my $result;
+my $fsname_E_id;
+my $dir_E_id;
+my $msg;
+my $id;
+
+$ns_namespace_id = bam::identity("namespace", "ns");
+printf(" namespace ns >>> %s <<< \n", $ns_namespace_id);
+$fsname_E_id = bam::identity("namespace", "ns", "fsname", "E");
+printf(" fsname E     >>> %s <<< \n", $fsname_E_id);
+$dir_E_id = bam::identity("dir", "$bam_basedir/D/E");
+printf(" dir E        >>> %s <<< \n", $dir_E_id);
+
+# nameset : { A, D }
+print("\n >> 1 - nameset : { A, D } <<\n\n");
+assert {
+  stats("//bm/namespaces/$ns_namespace_id", "-S", {
+      type => 'namespace'
+    , count => 2
+    , del => 0
+    , put => 2
+})};
+
+$names = bam_namespace_fsnames($ns_namespace_id);
+print Dumper $names;
+assert { $$names{A} };
+assert { !$$names{C} };
+assert { $$names{D} };
+assert { !$$names{E} };
+
+# nameset : { A, C, D, E }
+print("\n >> 1 - nameset : { A, C, D, E } <<\n\n");
+mkdir("$bam_basedir/D/E");
+symlink("../D", "$bam_basedir/A/C");
+
+reconcile();
+assert {
+  stats("//bm/namespaces/$ns_namespace_id", "-S", {
+      type => 'namespace'
+    , count => 4
+    , del => 0
+    , put => 4
+})};
+
+$result = bam_tree([$bam_basedir, "--hidden"]);
+print "$$result{out}\n";
+
+$names = bam_namespace_fsnames($ns_namespace_id);
+print Dumper $names;
+assert { $$names{A} };
+assert { $$names{C} };
+assert { $$names{D} };
+assert { $$names{E} };
+
+#
+# critically, the entry for E contains only one reference.
+#  A (dir) indexed / D (dir) indexed / E (dir) indexed
+#
+# E is also reachable via,
+#  A (dir) indexed / C (symlink to D) indexed / E (dir) indexed
+#
+# but because while C, as a symlink, is indexed, it is not traversed
+#
+assert {
+  stats("//bm/namespaces/$ns_namespace_id/fsnames/$fsname_E_id", "--follow", {
+      type => 'fsname'
+    , count => 1
+    , del => 0
+    , put => 1
+})};
+
+# lookup via the E reference, D prefix (dir)
+$result = bam_adhoc('[ select : [ lookup : { pattern : D/E namespace : ns } ] identify ]');
+print("$$result{out}\n");
+$msg = bam::bacon::parse($$result{out});
+$id = (keys %$msg)[0];
+assert { $id eq $dir_E_id };
+
+# lookup via the E reference, C prefix (symlink to D)
+$result = bam_adhoc('[ select : [ lookup : { pattern : A/C/E namespace : ns } ] identify ]');
+print("$$result{out}\n");
+$msg = bam::bacon::parse($$result{out});
+$id = (keys %$msg)[0];
+assert { $id eq $dir_E_id };
+
+$result = bam_adhoc('[ select : [ lookup : { pattern : C/E namespace : ns } ] identify ]');
+print("$$result{out}\n");
+$msg = bam::bacon::parse($$result{out});
+$id = (keys %$msg)[0];
+assert { $id eq $dir_E_id };
+
+teardown();

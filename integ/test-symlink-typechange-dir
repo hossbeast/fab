@@ -1,0 +1,251 @@
+#!/usr/bin/env perl
+
+#
+# This test exercises fsent typechange between symlink and dir
+#
+
+use strict;
+use warnings;
+$SIG{__WARN__} = sub { die @_ };
+
+use Carp qw(confess);
+$SIG{__DIE__} = 'confess';
+
+use POSIX;
+use File::Basename;
+use Cwd;
+our $repodir;
+our $bam_basedir;
+BEGIN { $repodir = dirname(Cwd::realpath("$0/..")) }
+use lib "$repodir/integ/lib";
+use lib "$repodir/perl";
+use lib "$repodir/libbacon/perl";
+use util;
+use tree;
+use integ;
+use bam::bam;
+
+# build out the fstree under /tmp
+init();
+setup(<<TREE);
+|-- A <<
+foo
+>>
+|-- B -> ./A
+|-- module.bam%devel <<
+rule **/{A,B,C,D} [*] -> exe : ./cp.bam+(.)
+>>
+|-- cp.bam << 0777
+#!/usr/bin/env perl
+open B, ">", \$ENV{bm_target0} or die \$!;
+for my \$x (0 .. \$ENV{bm_sources_len}) {
+  open A, "<", \$ENV{"bm_source\${x}"} or die \$!;
+  while(<A>)
+  {
+    print B "\$_";
+  }
+}
+>>
+|-- system-config <<
+filesystem : {
+  fstrees : {
+    $bam_basedir : {
+      mount : true
+      readlink : yes
+    }
+    $repodir/builtin-plugins%devel : {
+      mount : true
+      readlink : no
+    }
+  }
+}
+>>
+TREE
+
+my $fh;
+my $base_fstree_id;
+my $B_id_dir;
+my $B_id_file;
+my $B_id_symlink;
+my $res;
+my $msg;
+
+$base_fstree_id = bam::identity("dir", $bam_basedir, "fstree");
+$B_id_dir = bam::identity("dir", "$bam_basedir/B");
+$B_id_file = bam::identity("file", "$bam_basedir/B");
+$B_id_symlink = bam::identity("symlink", "$bam_basedir/B");
+print("B dir     id $B_id_dir\n");
+print("B file    id $B_id_file\n");
+print("B symlink id $B_id_symlink\n");
+
+print("\n >> 1 - INITIAL symlink <<\n\n");
+build();
+assert { stats("A", {
+    type => 'file'
+  , state => 'fresh'
+  , stale => 0
+  , fresh => 1
+})};
+assert { stats("exe", {
+    type => 'file'
+  , state => 'fresh'
+  , stale => 0
+  , fresh => 1
+})};
+assert { stats("B", {
+    type => 'symlink'
+  , state => 'fresh'
+  , stale => 0
+  , fresh => 1
+  , readlink_no => 0
+  , readlink_ok => 1          # B resolved ok
+  , readlink_unresolved => 0
+  , readlink_failed => 0
+  , readlink_err => 0
+  , readlink_pending => 0
+})};
+$res = bam_describe(["$bam_basedir/B"]);
+$msg = bam::bacon::parse($$res{out});
+assert { $$msg{"$bam_basedir/B"}{id} eq $B_id_symlink };
+assert { $$msg{"$bam_basedir/B"}{target} eq "./A" };          # B retains the correct reference
+assert { $$msg{"$bam_basedir/B"}{ref} eq "$bam_basedir/A" };  # reference resolved to A
+
+# B contents copied from A thru the symlink
+assert_file("$bam_basedir/exe", "foo\nfoo");
+
+# change the symlink to a directory
+print("\n >> 2 - CHANGE TO DIR <<\n\n");
+
+unlink("$bam_basedir/B") or die $!;
+mkdir("$bam_basedir/B") or die $!;
+mkdir("$bam_basedir/B/C") or die $!;
+open $fh, ">", "$bam_basedir/B/C/D" or die $!;
+print $fh <<'TEXT';
+bar
+TEXT
+close $fh;
+reconcile();
+
+assert { stats("A", {
+    type => 'file'
+  , state => 'fresh'
+  , stale => 0
+  , fresh => 1
+})};
+assert { stats("exe", {
+    type => 'file'
+  , state => 'stale'    # invalidated by source-set changing
+  , stale => 1
+  , fresh => 1
+})};
+assert { stats("B", {
+    type => 'dir'
+  , state => 'fresh'
+  , stale => 0
+  , fresh => 0
+})};
+
+$res = bam_describe(["$bam_basedir/B"]);
+$msg = bam::bacon::parse($$res{out});
+assert { $$msg{"$bam_basedir/B"}{id} eq $B_id_dir };
+
+build();
+assert { stats("A", {
+    type => 'file'
+  , state => 'fresh'
+  , stale => 0
+  , fresh => 1
+})};
+assert { stats("exe", {
+    type => 'file'
+  , state => 'fresh'
+  , stale => 1
+  , fresh => 2
+})};
+assert { stats("B", {
+    type => 'dir'
+  , state => 'fresh'
+  , stale => 0
+  , fresh => 0
+})};
+
+$res = bam_describe(["$bam_basedir/B"]);
+$msg = bam::bacon::parse($$res{out});
+assert { $$msg{"$bam_basedir/B"}{id} eq $B_id_dir };
+
+# B contents copied from A thru the symlink
+assert_file("$bam_basedir/exe", "foo\nbar");
+
+# invalidation of the source file propagates via the symlink
+print("\n >> 3 - CHANGE BACK TO SYMLINK <<\n\n");
+unlink("$bam_basedir/B/C/D") or die $!;
+rmdir("$bam_basedir/B/C") or die $!;
+rmdir("$bam_basedir/B") or die $!;
+symlink("./A", "$bam_basedir/B") or die;
+reconcile();
+
+assert { stats("A", {
+    type => 'file'
+  , state => 'fresh'
+  , stale => 0
+  , fresh => 1
+})};
+assert { stats("exe", {
+    type => 'file'
+  , state => 'stale'
+  , stale => 2
+  , fresh => 2
+})};
+assert { stats("B", {
+    type => 'symlink'
+  , state => 'fresh'
+  , stale => 0                # invalidated thru the link
+  , fresh => 1
+  , readlink_no => 0
+  , readlink_ok => 1          # B resolved ok
+  , readlink_unresolved => 0
+  , readlink_failed => 0
+  , readlink_err => 0
+  , readlink_pending => 0
+})};
+
+$res = bam_describe(["$bam_basedir/B"]);
+$msg = bam::bacon::parse($$res{out});
+assert { $$msg{"$bam_basedir/B"}{id} eq $B_id_symlink };
+
+build();
+assert { stats("A", {
+    type => 'file'
+  , state => 'fresh'
+  , stale => 0
+  , fresh => 1
+})};
+assert { stats("exe", {
+    type => 'file'
+  , state => 'fresh'
+  , stale => 2
+  , fresh => 3
+})};
+assert { stats("B", {
+    type => 'symlink'
+  , state => 'fresh'
+  , stale => 0                # invalidated thru the link
+  , fresh => 1
+  , readlink_no => 0
+  , readlink_ok => 1          # B resolved ok
+  , readlink_unresolved => 0
+  , readlink_failed => 0
+  , readlink_err => 0
+  , readlink_pending => 0
+})};
+
+$res = bam_describe(["$bam_basedir/B"]);
+$msg = bam::bacon::parse($$res{out});
+assert { $$msg{"$bam_basedir/B"}{id} eq $B_id_symlink };
+assert { $$msg{"$bam_basedir/B"}{target} eq "./A" };          # B retains the correct reference
+assert { $$msg{"$bam_basedir/B"}{ref} eq "$bam_basedir/A" };  # reference resolved to A
+
+# both are now derived from A
+assert_file("$bam_basedir/exe", "foo\nfoo");
+
+teardown();

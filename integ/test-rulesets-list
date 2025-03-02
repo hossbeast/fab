@@ -1,0 +1,142 @@
+#!/usr/bin/env perl
+
+#
+# list rulesets with the bam cli
+#
+
+use strict;
+use warnings;
+$SIG{__WARN__} = sub { die @_ };
+
+use Carp qw(confess);
+$SIG{__DIE__} = 'confess';
+
+use POSIX;
+use File::Basename;
+use Cwd;
+our $bam_basedir;
+our $bam_dir;
+our $repodir;
+BEGIN { $repodir = dirname(Cwd::realpath("$0/..")) }
+use lib "$repodir/integ/lib";
+use lib "$repodir/perl";
+use lib "$repodir/libbacon/perl";
+use util;
+use tree;
+use bam::bam;
+use integ;
+
+init(subdir => 'B');
+setup(<<TREE);
+|-- A
+|   `-- rules.bam%devel <<
+rule { name : foo } foo -> bar
+>>
+|-- B
+|   `-- foo
+|   `-- module.bam%devel <<
+use A
+>>
+|-- system-config <<
+filesystem : {
+  fstrees : {
+    $bam_basedir : {
+      mount : true
+      namespaces : {
+        modules
+      }
+    }
+  }
+}
+>>
+TREE
+
+my $A_rules_id = bam::identity("ruleset", "$bam_basedir/A/rules.bam%devel");
+my $B_module_id = bam::identity("module", $bam_dir);
+
+# before
+assert {
+  stats(undef, {
+    modules => 1
+  , system_state_ready => 1
+  , rule_run => 1
+  , rulesets => 2
+})};
+assert {
+  stats(".", "-S", {
+    type => 'module'
+  , state => 'fresh'
+  , reloaded => 1
+  , rmas => 1
+})};
+assert {
+  stats("./module.bam%devel", "-S", {
+    type => 'ruleset'
+  , state => 'fresh'
+  , rules => 0
+})};
+assert {
+  stats(".", {
+    type => 'dir'
+  , state => 'fresh'
+  , rules => 1
+})};
+assert {
+  stats("//bm/modules/$B_module_id/rmas-by/name/foo", "--follow", {
+    rule_run => 1
+  , rule_resolve_err => 0
+  , rule_resolve_ok => 1
+  , bpes => 1
+  , dirs => 1
+})};
+assert {
+  stats(".", "-S", {
+    type => 'module'
+  , state => 'fresh'
+})};
+assert {
+  stats("./module.bam%devel", "-S", {
+    type => 'ruleset'
+  , state => 'fresh'
+  , parse_err => 0
+  , parse_ok => 1
+})};
+assert { stats("..", {
+    type => 'dir'
+})};
+assert { stats("../A", {
+    state => 'fresh'
+  , type => 'dir'
+  , rules => 0
+})};
+assert { stats("../A/rules.bam%devel", "-S", {
+    type => 'ruleset'
+  , state => 'fresh'
+  , parse_err => 0
+  , parse_ok => 1
+  , modules => 1
+  , rules => 1
+})};
+
+assert { ls("//module/rulesets/$A_rules_id", "$A_rules_id -> //bm/rulesets/$A_rules_id") };
+assert { ls("//bm/modules/$B_module_id/rulesets/$A_rules_id", "$A_rules_id -> //bm/rulesets/$A_rules_id") };
+
+# one module
+my $res = bam_modules();
+my $nls = ($res =~ tr/\n//);
+assert { $res =~ /module id : $B_module_id/ };
+assert { $nls <= 1 };
+
+# one ruleset
+$res = bam_rulesets();
+$nls = ($res =~ tr/\n//);
+assert { $res =~ /ruleset id : $A_rules_id/ };
+assert { $nls <= 1 };
+
+# one ruleset
+$res = bam_module_rulesets();
+$nls = ($res =~ tr/\n//);
+assert { $res =~ /ruleset id : $A_rules_id/ };
+assert { $nls <= 1 };
+
+teardown();

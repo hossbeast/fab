@@ -8,18 +8,23 @@ use strict;
 use warnings;
 $SIG{__WARN__} = sub { die @_ };
 
+use Carp qw(confess);
+$SIG{__DIE__} = 'confess';
+
 use POSIX;
 use File::Basename;
 use Cwd;
 our $bam_basedir;
-our $bam_projdir;
+our $bam_dir;
 our $repodir;
 BEGIN { $repodir = dirname(Cwd::realpath("$0/..")) }
 use lib "$repodir/integ/lib";
+use lib "$repodir/perl";
 use lib "$repodir/libbacon/perl";
 use util;
 use tree;
-use bam;
+use bam::bam;
+use integ;
 
 init(subdir => 'C');
 setup({tolerant => 1 }, <<TREE);
@@ -30,26 +35,26 @@ setup({tolerant => 1 }, <<TREE);
 |   `-- foo
 |       `-- bar
 |-- C
-|   `-- module.bam+devel <<
+|   `-- module.bam%devel <<
 bind { name : 1 } foo => [*] //foo
 >>
 |-- system-config <<
 filesystem : {
   fstrees : {
-    / : {
-      index : false
-    }
     $bam_basedir : {
-      index : true
       mount : true
+      namespaces : {
+        modules
+      }
     }
   }
 }
 >>
 TREE
 
-my $foo_A_id = hash64("$bam_basedir/A/foo");
-my $foo_B_id = hash64("$bam_basedir/B/foo");
+my $modules_ns_id = bam::identity('namespace', "modules");
+my $foo_A_id = bam::identity("dir", "$bam_basedir/A/foo");
+my $foo_B_id = bam::identity("dir", "$bam_basedir/B/foo");
 
 # 1. ambiguous target between A/foo and B/foo - error
 assert {
@@ -57,31 +62,38 @@ assert {
     "system-state" => 'rule-reconcile'
 })};
 assert {
-  stats("//fsindex", {
-      put => 6  # number of indexed directory nodes
+  stats("//bm/namespaces/$modules_ns_id", "-S", {
+      put => 5  # number of indexed directory nodes
     , del => 0
-    , count => 5
+    , count => 4
 })};
 assert {
   stats(undef, {
       modules => 1          # the imported directory is not vivified
     , system_error => 1
-    , system_state_ok => 0
-    , rule_run => 1
-    , rule_run_ok => 0
+    , system_state_ready => 0
+    , rule_resolve_err => 1
+    , rule_resolve_ok => 0
+    , rule_run => 0
 })};
 assert {
   stats(".", "-S", {
       type => 'module'
     , state => 'fresh'
     , reloaded => 1
-    , parse => 1
+})};
+assert {
+  stats("./module.bam%devel", "-S", {
+      type => 'ruleset'
+    , state => 'fresh'
+    , parse_err => 0
     , parse_ok => 1
 })};
 assert {
-  stats("//module/rmas-by/name/1", {
-      rule_run => 1
-    , rule_run_ok => 0        # bind rule was invalidated, and re-run
+  stats("//module/rmas-by/name/1", "--follow", {
+      rule_resolve_err => 1
+    , rule_resolve_ok => 0
+    , rule_run => 0
     , search_hits => 0
     , generate_hits => 0
     , formula_hits => 0
@@ -98,30 +110,38 @@ rename("$bam_basedir/B/foo", "$bam_basedir/B/baz");
 reconcile();
 
 assert {
-  stats("//fsindex", {
-      put => 7  # number of indexed directory nodes
+  stats("//bm/namespaces/$modules_ns_id", "-S", {
+      put => 6  # number of indexed directory nodes
     , del => 1  # redundant "foo" deleted
-    , count => 6# baz is now indexed
+    , count => 5# baz is now indexed
 })};
 assert {
   stats(undef, {
       modules => 1
-    , system_state_ok => 1
-    , rule_run => 2
+    , system_state_ready => 1
+    , rule_run => 1
+    , rule_resolve_err => 1
+    , rule_resolve_ok => 1
 })};
 assert {
   stats(".", "-S", {
       type => 'module'
     , state => 'fresh'
     , reloaded => 1
-    , parse => 1
+})};
+assert {
+  stats("./module.bam%devel", "-S", {
+      type => 'ruleset'
+    , state => 'fresh'
+    , parse_err => 0
     , parse_ok => 1
 })};
 assert {
-  stats("//module/rmas-by/name/1", {
-      rule_run => 2
-    , rule_run_ok => 1        # bind rule was invalidated, and re-run
-    , target_hits => 1        # nomatch
+  stats("//module/rmas-by/name/1", "--follow", {
+      rule_resolve_err => 1
+    , rule_resolve_ok => 1
+    , rule_run => 1
+    , target_hits => 1        # unambiguous
     , attachment_hits => 1
     , search_hits => 0
     , generate_hits => 0

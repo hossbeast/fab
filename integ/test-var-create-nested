@@ -10,32 +10,40 @@ use Cwd;
 our $repodir;
 BEGIN { $repodir = dirname(Cwd::realpath("$0/..")) }
 use lib "$repodir/integ/lib";
+use lib "$repodir/perl";
 use lib "$repodir/libbacon/perl";
 use util;
 use tree;
-use bam;
+use bam::bam;
+use integ;
 
 init();
 my $testdir = setup(<<TREE);
 |-- A
 |   `-- B
-|-- module.bam+devel
+|-- module.bam%devel
 TREE
 
 # before
 assert { stats(undef, {
     modules => 1
-  , system_state_ok => 1
+  , system_state_ready => 1
 })};
-assert { stats(".", "-S", {
+assert {
+  stats(".", "-S", {
     type => 'module'
   , state => "fresh"
   , reloaded => 1
-  , parse => 1
+})};
+assert {
+  stats("./module.bam%devel", "-S", {
+    type => 'ruleset'
+  , state => "fresh"
+  , parse_err => 0
   , parse_ok => 1
 })};
 
-open my $fh, ">>", "$testdir/A/var.bam+devel" or die $!;
+open my $fh, ">>", "$testdir/A/var.bam%devel" or die $!;
 print $fh <<'TEXT';
 lflags.devel : [
   -lasan -lubsan
@@ -47,18 +55,23 @@ close $fh;
 reconcile();
 assert { stats(undef, {
     modules => 1
-  , system_state_ok => 2
+  , system_state_ready => 2
 })};
-assert { stats(".", "-S", {
+assert {
+  stats(".", "-S", {
     type => 'module'
   , state => "fresh"
   , reloaded => 1
+})};
+assert {
+  stats("./module.bam%devel", "-S", {
+    type => 'ruleset'
   , state => "fresh"
-  , parse => 1
+  , parse_err => 0
   , parse_ok => 1
 })};
 # not loaded by any module
-assert { stats("A/var.bam+devel", {
+assert { stats("A/var.bam%devel", {
     type => "file"
 })};
 teardown();

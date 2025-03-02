@@ -1,0 +1,118 @@
+#!/usr/bin/env perl
+
+#
+# This test exercises various cases of fstree / namespace associations
+#
+
+use strict;
+use warnings;
+$SIG{__WARN__} = sub { die @_ };
+
+use Carp qw(confess);
+$SIG{__DIE__} = 'confess';
+
+use POSIX;
+use File::Basename;
+use Cwd;
+our $repodir;
+our $bam_basedir;
+BEGIN { $repodir = dirname(Cwd::realpath("$0/..")) }
+use lib "$repodir/integ/lib";
+use lib "$repodir/perl";
+use lib "$repodir/libbacon/perl";
+use util;
+use tree;
+use bam::bam;
+use integ;
+
+init(subdir => 'B');
+setup(<<"TREE");
+|-- A
+|   `-- foo
+|-- B
+|   `-- module.bam%devel <<
+>>
+|-- system-config <<
+namespaces : {
+  ns
+}
+filesystem : {
+  fstrees : {
+    $bam_basedir/A : {
+      mkdir : true
+      mount : true
+      namespaces : {
+        ns
+      }
+    }
+  }
+}
+>>
+TREE
+
+my $ns_namespace_id;
+my $fsname_C_id;
+my $names;
+
+$ns_namespace_id = bam::identity("namespace", "ns");
+printf(" namespace ns >>> %s <<< \n", $ns_namespace_id);
+$fsname_C_id = bam::identity("namespace", "ns", "fsname", "C");
+printf(" fsname C     >>> %s <<< \n", $fsname_C_id);
+
+# initially, only one name
+print("\n >> 1 - nameset : { A } <<\n\n");
+assert {
+  stats("//bm/namespaces/$ns_namespace_id", "-S", {
+      type => 'namespace'
+    , count => 1
+    , del => 0
+    , put => 1
+})};
+
+$names = bam_namespace_fsnames($ns_namespace_id);
+assert { scalar %$names == 1 };
+assert { $$names{A} };
+
+# another name to index
+print("\n >> 2 - nameset : { A C } <<\n\n");
+mkdir("$bam_basedir/A/C");
+reconcile();
+
+assert {
+  stats("//bm/namespaces/$ns_namespace_id", "-S", {
+      type => 'namespace'
+    , count => 2
+    , del => 0
+    , put => 2
+})};
+assert {
+  stats("//bm/namespaces/$ns_namespace_id/fsnames/$fsname_C_id", "--follow", {
+      type => 'fsname'
+    , count => 1
+    , del => 0
+    , put => 1
+})};
+
+$names = bam_namespace_fsnames($ns_namespace_id);
+assert { scalar %$names == 2 };
+assert { $$names{A} };
+assert { $$names{C} };
+
+# remove this name
+print("\n >> 3 - nameset : { A } <<\n\n");
+rmdir("$bam_basedir/A/C");
+
+reconcile();
+assert {
+  stats("//bm/namespaces/$ns_namespace_id", "-S", {
+      type => 'namespace'
+    , count => 1
+    , del => 1
+    , put => 2
+})};
+
+$names = bam_namespace_fsnames($ns_namespace_id);
+assert { scalar %$names == 1 };
+assert { $$names{A} };
+
+teardown();

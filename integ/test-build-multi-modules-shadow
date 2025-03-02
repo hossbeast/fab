@@ -1,9 +1,8 @@
 #!/usr/bin/env perl
 
 #
-# Exercises the case where two modules use the same rule, and that rule
-# contains references to shadow nodes which should resolve differently
-# between the two modules
+# Exercises the case where two modules use the same rule, and that rule contains references to shadow nodes which should
+# resolve differently between the two modules
 #
 
 use strict;
@@ -14,48 +13,70 @@ use POSIX;
 use File::Basename;
 use Cwd;
 our $repodir;
-our $bam_projdir;
+our $bam_dir;
+our $bam_basedir;
 BEGIN { $repodir = dirname(Cwd::realpath("$0/..")) }
 use lib "$repodir/integ/lib";
+use lib "$repodir/perl";
+use lib "$repodir/perl";
 use lib "$repodir/libbacon/perl";
 use util;
 use tree;
-use bam;
+use bam::bam;
+use integ;
+use integ;
+use bam::bam;
+use integ;
 
 init();
-my $testdir = setup(<<'TREE');
+setup(<<"TREE");
 |-- system-config <<
-formula : {
-  path : {
-    dirs : {
-      /usr/bin
+namespaces : {
+  coreutils
+}
+filesystem : {
+  fstrees : {
+    $bam_basedir : {
+      mount : true
+      namespaces : {
+        modules
+      }
+    }
+    $repodir/usr/share/bam/coreutils : {
+      mount : true
+      namespaces : {
+        coreutils
+      }
     }
   }
 }
 >>
 |-- cp.bam << 0777
 file : {
-  path-search : cp    # this needs the config to resolve
+  lookup : {
+    namespace : coreutils
+    pattern : bin/cp+(.@)   # this needs the config to resolve
+  }
 }
 args : [
-  $bm_source0
-  $bm_target0
+  \$bm_source0
+  \$bm_target0
 ]
 >>
-|-- rules.bam.devel+devel <<
-rule { name : 1 } //module/base/x -> $^D/y : cp.bam
-rule //module/base/y -> //targets
+|-- rules.bam%devel <<
+rule { name : 1 } //module/build/x -> \$^D/y : ./cp.bam+(.)
+rule //module/build/y -> //targets
 >>
 |-- B
-|   `-- module.bam+devel <<
-rulesets rules.bam.devel
+|   `-- module.bam%devel <<
+rulesets rules.bam%devel
 >>
 |   `-- x <<
 Bx
 >>
 |-- C
-|   `-- module.bam+devel <<
-rulesets rules.bam.devel
+|   `-- module.bam%devel <<
+rulesets rules.bam%devel
 >>
 |   `-- x <<
 Cx
@@ -63,21 +84,22 @@ Cx
 TREE
 
 assert { stats(undef, "--no-module", { modules => 2 })}; # B, C
-assert {
-  stats("B", "-S", "-S", "--no-module", {
-      type => 'module'
-    , state => 'fresh'
-    , reloaded => 1
-    , modules_up => 0
-    , modules_down => 0
-    , parse => 1
-    , parse_ok => 1
-    , fresh => 1
-    , stale => 1
-    , rules => 0      # rules in the modules' rules file
+assert { stats("B", "-S", "--no-module", {
+    type => 'module'
+  , state => 'fresh'
+  , reloaded => 1
+})};
+assert { stats("B/module.bam%devel", "-S", "--no-module", {
+    type => 'ruleset'
+  , state => 'fresh'
+  , parse_ok => 1
+  , parse_err => 0
+  , fresh => 1
+  , stale => 1
+  , rules => 0      # rules in the modules' rules file
 })};
 assert { stats("B", "--no-module", {
-    type => 'module-dir'
+    type => 'dir'
   , state => 'fresh'
   , rules => 2        # rules attached to the directory
 })};
@@ -85,20 +107,24 @@ assert { stats("C", "-S", "-S", "--no-module", {
     type => 'module'
   , state => 'fresh'
   , reloaded => 1
-  , modules_up => 0
-  , modules_down => 0
-  , parse => 1
+})};
+assert { stats("C/module.bam%devel", "-S", "-S", "--no-module", {
+    type => 'ruleset'
+  , state => 'fresh'
   , parse_ok => 1
+  , parse_err => 0
   , fresh => 1
   , stale => 1
   , rules => 0      # rule in the modules' rules file
 })};
 assert { stats("C", "--no-module", {
-    type => 'module-dir'
+    type => 'dir'
   , state => 'fresh'
-  , rules => 2      # rules attached to the module
+  , rules => 2      # rules attached to the directory
 })};
 
 build();
-assert_file("$testdir/B/y", "Bx");
-assert_file("$testdir/C/y", "Cx");
+assert_file("$bam_basedir/B/y", "Bx");
+assert_file("$bam_basedir/C/y", "Cx");
+
+teardown();

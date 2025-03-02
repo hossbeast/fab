@@ -15,26 +15,30 @@ our $repodir;
 our $bam_basedir;
 BEGIN { $repodir = dirname(Cwd::realpath("$0/..")) }
 use lib "$repodir/integ/lib";
+use lib "$repodir/perl";
 use lib "$repodir/libbacon/perl";
 use util;
 use tree;
-use bam;
+use bam::bam;
+use integ;
 
 init(subdir => 'B');
 setup(<<"TREE");
-|-- module.bam+devel
+|-- module.bam%devel
 |-- A
 |   `-- foo
 |       `-- bar
 |   `-- baz
 |       `-- qux
 |-- B
-|   `-- module.bam+devel <<
+|   `-- module.bam%devel <<
 >>
-|-- system-config <<
+|-- config.bam%devel <<
 filesystem : {
   fstrees : {
-    $bam_basedir
+    $bam_basedir : {
+      mount : true
+    }
   }
   exclude : {
     foo
@@ -43,16 +47,16 @@ filesystem : {
 >>
 TREE
 
-## before
-#assert {
-#  stats(undef, {
-#    modules => 1
-#})};
-assert { stats(".", "-S", "-S", {
+assert {
+  stats(".", "-S", "-S", {
     type => 'module'
   , state => 'fresh'
   , reloaded => 1
-  , parse => 1
+})};
+assert {
+  stats("./module.bam%devel", "-S", {
+    type => 'ruleset'
+  , parse_err => 0
   , parse_ok => 1
 })};
 

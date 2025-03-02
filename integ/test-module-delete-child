@@ -9,82 +9,119 @@ use strict;
 use warnings;
 $SIG{__WARN__} = sub { die @_ };
 
+use Carp qw(confess);
+$SIG{__DIE__} = 'confess';
+
 use POSIX;
 use File::Basename;
 use Cwd;
 our $repodir;
 our $bam_basedir;
+our $bam_invalidate;
 BEGIN { $repodir = dirname(Cwd::realpath("$0/..")) }
 use lib "$repodir/integ/lib";
+use lib "$repodir/perl";
 use lib "$repodir/libbacon/perl";
 use util;
 use tree;
-use bam;
+use bam::bam;
+use integ;
 
-our $bam_invalidate;
 init();
-my $testdir = setup(<<TREE);
+setup(<<TREE);
 |-- A
-|   `-- module.bam+devel
-|-- module.bam+devel
+|   `-- module.bam%devel
+|-- module.bam%devel
 TREE
+
+my $watched_dirs;
+my $mod_id;
+my $A_id;
+my $res;
+
+print("\n >> 1 - initial, two modules, nested <<\n\n");
 
 # /run/user/1000/bam-integ/testdir
 # /run/user/1000/bam-integ/testdir/A
-my $watched_dirs = 2;
+$watched_dirs = 3;
+$mod_id = bam::identity("module", $bam_basedir);
+$A_id = bam::identity("module", "$bam_basedir/A");
 
-my $mod_id = hash64($bam_basedir);
-my $A_id = hash64("$bam_basedir/A");
-
-assert { stats(undef, {
+assert {
+  stats(undef, {
     modules => 2
 })};
-assert { stats("//notify", {
+assert { stats("//bm/sys-notify", "--follow", {
     count => ($bam_invalidate eq "notify") ? $watched_dirs : 0
 })};
-assert { stats(".", "-S", {
-    reloaded => 1
-  , modules_up => 0
-  , modules_down => 1
+assert {
+  stats(".", "-S", {
+    type => 'module'
+  , state => 'fresh'
   , fresh => 1
   , stale => 1
-  , parse => 1
+  , reloaded => 1
+})};
+assert {
+  stats("./module.bam%devel", "-S", {
+    type => 'ruleset'
+  , state => 'fresh'
+  , parse_err => 0
   , parse_ok => 1
 })};
-assert { stats("A", "-S", {
-    reloaded => 1
-  , modules_up => 1
-  , modules_down => 0
+assert {
+  stats("A", "-S", {
+    type => 'module'
+  , state => 'fresh'
   , fresh => 1
   , stale => 1
-  , parse => 1
+  , reloaded => 1
+})};
+assert {
+  stats("A/module.bam%devel", "-S", {
+    type => 'ruleset'
+  , state => 'fresh'
+  , fresh => 1
+  , stale => 1
+  , parse_err => 0
   , parse_ok => 1
 })};
+
+print("\n >> 2 - next, delete the child module <<\n\n");
 
 # delete the child module
-unlink("$testdir/A/module.bam+devel") or die $!;
+unlink("$bam_basedir/A/module.bam%devel") or die $!;
 reconcile();
 
-assert { stats(undef, {
+assert {
+  stats(undef, {
     modules => 1    # child module was deleted
 })};
-assert { stats("//notify", {
+assert { stats("//bm/sys-notify", "--follow", {
     count => ($bam_invalidate eq "notify") ? $watched_dirs : 0  # A dirnode not deleted
 })};
 
-my $res = bam_ls(["//modules"]);
+$res = bam_ls(["//bm/modules"]);
 print("\n$$res{out}\n\n");
 assert { index($$res{out}, $mod_id) > -1 };   # base module still exists
 assert { index($$res{out}, $A_id) == -1 };    # child module no longer exists
 
-assert { stats(".", "-S", {
-    reloaded => 1
-  , modules_up => 0
-  , modules_down => 0
+assert {
+  stats(".", "-S", {
+    type => 'module'
+  , state => 'fresh'
+  , fresh => 1
+  , stale => 1
+  , reloaded => 1
+})};
+assert {
+  stats("./module.bam%devel", "-S", {
+    type => 'ruleset'
+  , state => 'fresh'
   , fresh => 1
   , stale => 1
 # reloaded but not reparsed
-  , parse => 1
+  , parse_err => 0
   , parse_ok => 1
 })};
 teardown();

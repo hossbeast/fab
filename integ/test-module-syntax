@@ -8,57 +8,130 @@ use strict;
 use warnings;
 $SIG{__WARN__} = sub { die @_ };
 
+use Carp qw(confess);
+$SIG{__DIE__} = 'confess';
+
 use POSIX;
 use File::Basename;
 use Cwd;
 our $repodir;
+our $bam_basedir;
 BEGIN { $repodir = dirname(Cwd::realpath("$0/..")) }
 use lib "$repodir/integ/lib";
+use lib "$repodir/perl";
 use lib "$repodir/libbacon/perl";
 use util;
 use tree;
-use bam;
+use bam::bam;
+use integ;
 
 # build out the fstree under /tmp
 init();
-my $testdir = setup({ tolerant => 1 }, <<'TREE');
-|-- module.bam+devel << 0777
+setup({ expect_error => 1 }, <<'TREE');
+|-- module.bam%devel << 0777
 rule a -> b
 asdf    # syntax error
 >>
 |-- a
 TREE
 
-# before
+my $fh;
+
+print("\n >> 1 - INITIAL with syntax error <<\n\n");
 assert { stats(undef, {
     modules => 1
+  , system_state_ready => 0
+  , system_state_module_reconcile => 1
   , system_state_ok => 0
+  , system_error => 1
+  , fstrees => 3
+  , namespaces => 3
+  , modules => 1
 })};
-assert { stats(".", "-S", {
-    reloaded => 0
-  , modules_up => 0
-  , modules_down => 0
-  , parse => 1
+assert {
+  info({
+    "system-state" => 'module-reconcile'
+})};
+assert {
+  stats(".", "-S", {
+    type => 'module'
+  , state => 'stale'
+  , reloaded => 0
+  , rulesets => 1
+})};
+assert {
+  stats("./module.bam%devel", "-S", {
+    type => 'ruleset'
+  , state => 'stale'
+  , parse_err => 1
+  , parse_ok => 0
+})};
+
+print("\n >> 2 - RECONCILE with syntax error <<\n\n");
+reconcile(expect_error => 1);
+
+assert { stats(undef, {
+    modules => 1
+  , system_state_module_reconcile => 2
+  , system_state_ready => 0
+  , system_state_ok => 0
+  , system_error => 1
+  , fstrees => 3
+  , namespaces => 3
+  , modules => 1
+})};
+assert {
+  info({
+    "system-state" => 'module-reconcile'
+})};
+assert {
+  stats(".", "-S", {
+    type => 'module'
+  , state => 'stale'
+  , reloaded => 0
+})};
+assert {
+  stats("./module.bam%devel", "-S", {
+    type => 'ruleset'
+  , state => 'stale'
+  , parse_err => 2
   , parse_ok => 0
 })};
 
 # fix the rules
-open my $fh, ">", "$testdir/module.bam+devel" or die $!;
+open $fh, ">", "$bam_basedir/module.bam%devel" or die $!;
 print $fh "rule a -> b\n";
 close $fh;
 
+print("\n >> 3 - RECONCILE with fixed <<\n\n");
 reconcile();
 
 # after
 assert { stats(undef, {
     modules => 1
-  , system_state_ok => 1
+  , system_state_module_reconcile => 3
+  , system_state_ready => 1
+  , system_state_ok => 0
+  , system_error => 0
+  , fstrees => 3
+  , namespaces => 3
+  , modules => 1
 })};
-assert { stats(".", "-S", {
-    reloaded => 1
-  , modules_up => 0
-  , modules_down => 0
-  , parse => 2
+assert {
+  info({
+    "system-state" => 'ready'
+})};
+assert {
+  stats(".", "-S", {
+    type => 'module'
+  , state => 'fresh'
+  , reloaded => 1
+})};
+assert {
+  stats("./module.bam%devel", "-S", {
+    type => 'ruleset'
+  , state => 'fresh'
+  , parse_err => 2
   , parse_ok => 1
 })};
 

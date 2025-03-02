@@ -8,30 +8,38 @@ use strict;
 use warnings;
 $SIG{__WARN__} = sub { die @_ };
 
+use Carp qw(confess);
+$SIG{__DIE__} = 'confess';
+
 use POSIX;
 use File::Basename;
 use Cwd;
 our $repodir;
 our $bam_basedir;
-our $bam_projdir;
+our $bam_dir;
 BEGIN { $repodir = dirname(Cwd::realpath("$0/..")) }
 use lib "$repodir/integ/lib";
+use lib "$repodir/perl";
 use lib "$repodir/libbacon/perl";
 use util;
 use tree;
-use bam;
+use bam::bam;
+use integ;
 
 init(subdir => 'B');
 setup(<<"TREE");
 |-- A
 |   `-- foo
-|   `-- rules.bam+devel <<
-rule foo -> bar : cp.bam
+|   `-- rules.bam%devel <<
+rule foo -> bar : ./cp.bam+(.)
 rule bar -> //targets
 >>
 |   `-- cp.bam << 0777
 file : {
-  path-search : cp    # this needs the config to resolve
+  lookup : {
+    namespace : coreutils
+    pattern : bin/cp+(@.)
+  }
 }
 args : [
   \$bm_source0
@@ -41,62 +49,60 @@ args : [
 |   `-- C
 |       `-- foo
 |       `-- baz
-|       `-- module.bam+devel <<
+|       `-- module.bam%devel <<
 bind A => //A
-rule baz -> qux : //A/cp.bam
+rule baz -> qux : //A/cp.bam+(.)
 rule qux -> //targets
 >>
 |-- B
-|   `-- module.bam+devel <<
+|   `-- module.bam%devel <<
 anchor ../A
 >>
 |-- system-config <<
-formula : {
-  path : {
-    dirs : {
-      /usr/bin
-    }
-  }
+namespaces : {
+  coreutils
 }
 filesystem : {
   exclude : {
     foo
   }
   fstrees : {
+    $repodir/usr/share/bam/coreutils : {
+      mount : true
+      namespaces : {
+        coreutils
+      }
+    }
     $bam_basedir : {
       mount : true
+      namespaces : {
+        modules
+      }
     }
     $bam_basedir/B : {
       mkdir : true
-      index : true
     }
   }
 }
 >>
 TREE
 
-my $B_id = hash64("$bam_basedir/B");
-my $C_id = hash64("$bam_basedir/B/C");
+my $B_module_id;
+my $C_module_id;
+my $B_ruleset_id;
+my $A_ruleset_id;
+my $C_ruleset_id;
+my $result;
+my $ref;
+my $lines;
 
-# C fs link points to the right node
-my $result = bam_ls(["//modules/$B_id/base", "--no-follow"]);
-my $ref = $$result{out};
-assert { $ref eq "base -> $bam_basedir/B" };
-
-# C ref link points to the right node
-$result = bam_ls(["//modules/$B_id/anchor", "--no-follow"]);
+$B_module_id = bam::identity("module", "$bam_basedir/B");
+$C_module_id = bam::identity("module", "$bam_basedir/B/C");
+$B_ruleset_id = bam::identity("ruleset", "$bam_basedir/B/module.bam%devel");
+$A_ruleset_id = bam::identity("ruleset", "$bam_basedir/A/rules.bam%devel");
+$C_ruleset_id = bam::identity("ruleset", "$bam_basedir/A/C/module.bam%devel");
+$result = bam_ls(["//bm/modules/$B_module_id/build", "--no-follow"]);
 $ref = $$result{out};
-assert { $ref eq "anchor -> $bam_basedir/A" };
-
-# D fs link points to the right node
-$result = bam_ls(["//modules/$C_id/base", "--no-follow"]);
-$ref = $$result{out};
-assert { $ref eq "base -> $bam_basedir/B/C" };
-
-# D ref link points to the right node
-$result = bam_ls(["//modules/$C_id/anchor", "--no-follow"]);
-$ref = $$result{out};
-assert { $ref eq "anchor -> $bam_basedir/A/C" };
 
 # before
 assert {
@@ -104,25 +110,62 @@ assert {
     modules => 2          # module B, plus module B/C (anchored to A/C)
 })};
 assert {
-  stats("//filesystem", {
-    mkdir => 1            # B/C
+  stats("//bm/sys-filesystem", "--follow", {
+      mkdir_ok => 1            # B/C
+    , mkdir_err => 0
+    , readlink_err => 0
+    , readlink_no => 0
+    , readlink_ok => 0
+    , unlink_enoent => 0
+    , unlink_err => 0
+    , unlink_no => 0
 })};
 assert {
-  stats(".", "-S", {
+  stats("$bam_basedir/B", "-S", {
     type => 'module'
   , state => 'fresh'
   , reloaded => 1
+  , rulesets => 2
+})};
+assert {
+  stats("$bam_basedir/B/module.bam%devel", "-S", {
+    type => 'ruleset'
   , state => 'fresh'
-  , parse => 1
+  , parse_err => 0
   , parse_ok => 1
 })};
 assert {
-  stats("./C", "-S", {
+  stats("$bam_basedir/B/C", "-S", {
     type => 'module'
   , state => 'fresh'
+  , fresh => 1
+  , stale => 1
+  , rulesets => 2
 })};
+assert { enoent("./C/module.bam%devel", "-S") };
+
+# check B fs links
+assert { ls("//bm/modules/$B_module_id/build", "build -> $bam_basedir/B") };
+assert { ls("//bm/modules/$B_module_id/anchor", "anchor -> $bam_basedir/A") };
+
+$result = bam_ls(["//bm/modules/$B_module_id/rulesets"]);
+$lines = ($$result{out} =~ tr/\n//);
+assert { $$result{out} =~ $B_ruleset_id };
+assert { $$result{out} =~ $A_ruleset_id };
+assert { $lines == 2 };
+
+# check C fs links
+assert { ls("//bm/modules/$C_module_id/build", "build -> $bam_basedir/B/C") };
+assert { ls("//bm/modules/$C_module_id/anchor", "anchor -> $bam_basedir/A/C") };
+
+$result = bam_ls(["//bm/modules/$C_module_id/rulesets"]);
+$lines = ($$result{out} =~ tr/\n//);
+assert { $$result{out} =~ $A_ruleset_id };
+assert { $$result{out} =~ $C_ruleset_id };
+assert { $lines == 2 };
 
 build();
-assert_file("$bam_projdir/bar");        # in module dir
-assert_file("$bam_projdir/C/qux");      # in nested module
+assert_file("$bam_dir/bar");        # in module dir
+assert_file("$bam_dir/C/qux");      # in nested module
+
 teardown();

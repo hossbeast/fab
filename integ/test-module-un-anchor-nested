@@ -1,0 +1,440 @@
+#!/usr/bin/env perl
+
+#
+# module with anchor and nested modules in the anchor, add/remove
+#
+
+use strict;
+use warnings;
+$SIG{__WARN__} = sub { die @_ };
+
+use Carp qw(confess);
+$SIG{__DIE__} = 'confess';
+
+use POSIX;
+use File::Basename;
+use Cwd;
+our $repodir;
+our $bam_basedir;
+our $bam_dir;
+BEGIN { $repodir = dirname(Cwd::realpath("$0/..")) }
+use lib "$repodir/integ/lib";
+use lib "$repodir/perl";
+use lib "$repodir/libbacon/perl";
+use util;
+use tree;
+use bam::bam;
+use integ;
+
+init(subdir => 'B');
+setup(<<"TREE");
+|-- A
+|   `-- module.bam%devel <<
+rule foo -> bar : B/cp.bam+(.)
+rule bar -> //targets
+>>
+|   `-- C
+|       `-- module.bam%devel <<
+rule foo -> baz : B/cp.bam+(.)
+rule baz -> //targets
+>>
+|-- B
+|   `-- foo
+|   `-- module.bam%devel <<
+rule foo -> baz : B/cp.bam+(.)
+rule baz -> //targets
+>>
+|   `-- cp.bam << 0777
+file : {
+  lookup : {
+    namespace : coreutils
+    pattern : bin/cp+(@.)
+  }
+}
+args : [
+  \$bm_source0
+  \$bm_target0
+]
+>>
+|-- system-config <<
+namespaces : {
+  coreutils
+}
+filesystem : {
+  fstrees : {
+    $repodir/usr/share/bam/coreutils : {
+      mount : true
+      namespaces : {
+        coreutils
+      }
+    }
+    $bam_basedir : {
+      mount : true
+      namespaces : {
+        modules
+      }
+    }
+    $bam_basedir/B : {
+      mount : true
+      mkdir : true
+      namespaces : {
+        modules
+        formulas
+      }
+    }
+  }
+}
+>>
+TREE
+
+my $B_module_id;
+my $C_module_id;
+my $A_rule_1_id;
+my $A_rule_2_id;
+my $B_rule_1_id;
+my $B_rule_2_id;
+my $B_rule_3_id;
+my $result;
+my $ref;
+my $lines;
+my $fh;
+
+$B_module_id = bam::identity("module", "$bam_basedir/B");
+$C_module_id = bam::identity("module", "$bam_basedir/B/C");
+$A_rule_1_id = bam::identity("ruleset", "$bam_basedir/A/module.bam%devel", "rule", "1");
+$A_rule_2_id = bam::identity("ruleset", "$bam_basedir/A/module.bam%devel", "rule", "2");
+$B_rule_1_id = bam::identity("ruleset", "$bam_basedir/B/module.bam%devel", "rule", "1");
+$B_rule_2_id = bam::identity("ruleset", "$bam_basedir/B/module.bam%devel", "rule", "2");
+$B_rule_3_id = bam::identity("ruleset", "$bam_basedir/B/module.bam%devel", "rule", "3");
+
+print(" A_rule_1_id $A_rule_1_id\n");
+print(" A_rule_2_id $A_rule_2_id\n");
+print(" B_rule_1_id $B_rule_1_id\n");
+print(" B_rule_2_id $B_rule_2_id\n");
+print(" B_rule_3_id $B_rule_3_id\n");
+
+print("\n >> 1 - initial, no anchor <<\n\n");
+
+assert {
+  stats(undef, {
+    modules => 1
+})};
+assert {
+  stats("//bm/sys-filesystem", "--follow", {
+      mkdir_ok => 0
+    , mkdir_err => 0
+    , mkdir_no => 0
+    , readlink_err => 0
+    , readlink_no => 0
+    , readlink_ok => 0
+    , unlink_enoent => 0
+    , unlink_err => 0
+    , unlink_no => 0
+    , unlink_ok => 0
+})};
+assert {
+  stats("$bam_basedir/B", "-S", {
+    type => 'module'
+  , state => 'fresh'
+  , fresh => 1
+  , stale => 1
+  , reloaded => 1
+  , rulesets => 1
+})};
+assert {
+  stats("$bam_basedir/B/module.bam%devel", "-S", {
+    type => 'ruleset'
+  , state => 'fresh'
+  , fresh => 1
+  , stale => 1
+  , parse_err => 0
+  , parse_ok => 1
+})};
+assert {
+  stats("$bam_basedir/A/module.bam%devel", {
+    type => 'file'
+  , state => 'fresh'
+  , fresh => 1
+  , stale => 0
+})};
+
+# module B ref links
+assert { ls("//bm/modules/$B_module_id/build", "build -> $bam_basedir/B") };
+#assert { ls("//bm/modules/$B_module_id/build-mod", "build-mod -> $bam_basedir/B/module.bam%devel") };
+assert { ls("//bm/modules/$B_module_id/anchor", "anchor -> $bam_basedir/B") };
+assert { enoent("//bm/modules/$B_module_id/anchor-mod") };
+
+# list of rules
+$result = bam_ls(["//bm/modules/$B_module_id/rules"]);
+print("$$result{out}\n");
+$lines = ($$result{out} =~ tr/\n//);
+
+assert { $$result{out} =~ $B_rule_1_id };
+assert { $$result{out} =~ $B_rule_2_id };
+assert { $lines == 2 };
+
+# module C ref links
+assert { enoent("//bm/modules/$C_module_id") };
+
+assert {
+  stats("$bam_dir/foo", {
+    type => 'file'
+  , stale => 0
+  , fresh => 1
+})};
+
+assert { enoent("$bam_dir/bar") };
+assert { enoent("$bam_dir/baz") };
+
+build();
+
+assert {
+  stats("$bam_dir/foo", {
+    type => 'file'
+  , stale => 0
+  , fresh => 1
+})};
+assert { enoent("$bam_dir/bar") };
+assert {
+  stats("$bam_dir/baz", {
+    type => 'file'
+  , stale => 0
+  , fresh => 1
+})};
+
+print("\n >> 2 - add the anchor <<\n\n");
+
+# add the anchor
+open $fh, ">", "$bam_basedir/B/module.bam%devel" or die $!;
+print $fh <<"TEXT";
+anchor ../A
+rule foo -> baz : B/cp.bam+(.)
+rule baz -> //targets
+TEXT
+close $fh;
+
+reconcile();
+
+assert {
+  stats(undef, {
+    modules => 2
+})};
+assert {
+  stats("//bm/sys-filesystem", "--follow", {
+      mkdir_ok => 1
+    , mkdir_err => 0
+    , mkdir_no => 0
+    , readlink_err => 0
+    , readlink_no => 0
+    , readlink_ok => 0
+    , unlink_enoent => 0
+    , unlink_err => 0
+    , unlink_no => 0
+    , unlink_ok => 0
+})};
+assert {
+  stats("$bam_basedir/B", "-S", {
+    type => 'module'
+  , state => 'fresh'
+  , fresh => 2
+  , stale => 2
+  , reloaded => 2
+  , rulesets => 2
+})};
+assert {
+  stats("$bam_basedir/B/module.bam%devel", "-S", {
+    type => 'ruleset'
+  , state => 'fresh'
+  , fresh => 2
+  , stale => 2
+  , parse_err => 0
+  , parse_ok => 2
+})};
+assert {
+  stats("$bam_basedir/A/module.bam%devel", "-S", {
+    type => 'ruleset'
+  , state => 'fresh'
+  , fresh => 1
+  , stale => 1
+  , parse_err => 0
+  , parse_ok => 1
+})};
+
+# module B ref links
+assert { ls("//bm/modules/$B_module_id/build", "build -> $bam_basedir/B") };
+assert { ls("//bm/modules/$B_module_id/anchor", "anchor -> $bam_basedir/A") };
+
+# list of rules
+$result = bam_ls(["//bm/modules/$B_module_id/rules"]);
+print("$$result{out}\n");
+$lines = ($$result{out} =~ tr/\n//);
+
+assert { $$result{out} =~ $A_rule_1_id };
+assert { $$result{out} =~ $A_rule_2_id };
+assert { $$result{out} =~ $B_rule_2_id };
+assert { $$result{out} =~ $B_rule_3_id };
+assert { $lines == 4 };
+
+# module C ref links
+assert { ls("//bm/modules/$C_module_id/build", "build -> $bam_basedir/B/C") };
+assert { ls("//bm/modules/$C_module_id/anchor", "anchor -> $bam_basedir/A/C") };
+
+assert {
+  stats("$bam_dir/foo", {
+    type => 'file'
+  , stale => 0
+  , fresh => 1
+})};
+assert {
+  stats("$bam_dir/baz", {
+    type => 'file'
+  , stale => 1
+  , fresh => 1
+})};
+
+assert { enoent("$bam_dir/bar") };
+
+build();
+
+assert {
+  stats("$bam_dir/foo", {
+    type => 'file'
+  , stale => 0
+  , fresh => 1
+})};
+assert {
+  stats("$bam_dir/bar", {
+    type => 'file'
+  , stale => 0
+  , fresh => 1
+})};
+assert {
+  stats("$bam_dir/baz", {
+    type => 'file'
+  , stale => 1
+  , fresh => 2
+})};
+
+print("\n >> 3 - remove the anchor <<\n\n");
+
+# remove the anchor
+open $fh, ">", "$bam_basedir/B/module.bam%devel" or die $!;
+print $fh <<"TEXT";
+rule foo -> baz : B/cp.bam+(.)
+rule baz -> //targets
+TEXT
+close $fh;
+
+reconcile();
+
+#assert {
+#  stats(undef, {
+#    modules => 1
+#})};
+assert {
+  stats("$bam_basedir/B", "-S", {
+    type => 'module'
+  , state => 'fresh'
+  , fresh => 3
+  , stale => 3
+  , reloaded => 3
+  , rulesets => 1
+})};
+assert {
+  stats("$bam_basedir/B/module.bam%devel", "-S", {
+    type => 'ruleset'
+  , state => 'fresh'
+  , fresh => 3
+  , stale => 3
+  , parse_err => 0
+  , parse_ok => 3
+})};
+assert {
+  stats("$bam_basedir/A/module.bam%devel", {
+    type => 'file'
+  , state => 'fresh'
+  , fresh => 1
+  , stale => 0
+})};
+
+# module B ref links
+assert { ls("//bm/modules/$B_module_id/build", "build -> $bam_basedir/B") };
+#assert { ls("//bm/modules/$B_module_id/build-mod", "build-mod -> $bam_basedir/B/module.bam%devel") };
+assert { ls("//bm/modules/$B_module_id/anchor", "anchor -> $bam_basedir/B") };
+assert { enoent("//bm/modules/$B_module_id/anchor-mod") };
+
+# list of rules
+$result = bam_ls(["//bm/modules/$B_module_id/rules"]);
+print("$$result{out}\n");
+$lines = ($$result{out} =~ tr/\n//);
+
+assert { $$result{out} =~ $B_rule_1_id };
+assert { $$result{out} =~ $B_rule_2_id };
+assert { $lines == 2 };
+
+# module C ref links
+assert { enoent("//bm/modules/$C_module_id") };
+
+print("\n >> 4 - re-add the anchor <<\n\n");
+
+# add the anchor
+open $fh, ">", "$bam_basedir/B/module.bam%devel" or die $!;
+print $fh <<"TEXT";
+anchor ../A
+rule foo -> baz : B/cp.bam+(.)
+rule baz -> //targets
+TEXT
+close $fh;
+
+reconcile();
+
+assert {
+  stats(undef, {
+    modules => 2
+})};
+assert {
+  stats("$bam_basedir/B", "-S", {
+    type => 'module'
+  , state => 'fresh'
+  , fresh => 4
+  , stale => 4
+  , reloaded => 4
+  , rulesets => 2
+})};
+assert {
+  stats("$bam_basedir/B/module.bam%devel", "-S", {
+    type => 'ruleset'
+  , state => 'fresh'
+  , fresh => 4
+  , stale => 4
+  , parse_err => 0
+  , parse_ok => 4
+})};
+assert {
+  stats("$bam_basedir/A/module.bam%devel", {
+    type => 'file'
+  , state => 'fresh'
+  , fresh => 1
+  , stale => 0
+})};
+
+# module B ref links
+assert { ls("//bm/modules/$B_module_id/build", "build -> $bam_basedir/B") };
+assert { ls("//bm/modules/$B_module_id/anchor", "anchor -> $bam_basedir/A") };
+
+# list of rules
+$result = bam_ls(["//bm/modules/$B_module_id/rules"]);
+print("$$result{out}\n");
+$lines = ($$result{out} =~ tr/\n//);
+
+assert { $$result{out} =~ $A_rule_1_id };
+assert { $$result{out} =~ $A_rule_2_id };
+assert { $$result{out} =~ $B_rule_2_id };
+assert { $$result{out} =~ $B_rule_3_id };
+assert { $lines == 4 };
+
+# module C ref links
+assert { ls("//bm/modules/$C_module_id/build", "build -> $bam_basedir/B/C") };
+assert { ls("//bm/modules/$C_module_id/anchor", "anchor -> $bam_basedir/A/C") };
+
+teardown();

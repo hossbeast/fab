@@ -2,7 +2,7 @@
 
 #
 # This test has a rule which references a formula that does not yet exist. Then it creates the formula
-# file, reconciles, and verifies that the rules' formula reference has now resolved.
+# file, reconciles, and verifies that the rules' formula reference has now resolved successfully.
 #
 
 use strict;
@@ -15,17 +15,19 @@ use Cwd;
 our $repodir;
 BEGIN { $repodir = dirname(Cwd::realpath("$0/..")) }
 use lib "$repodir/integ/lib";
+use lib "$repodir/perl";
 use lib "$repodir/libbacon/perl";
 use util;
 use tree;
-use bam;
+use bam::bam;
+use integ;
 
 # build out the fstree
 init();
 my $testdir = setup({ tolerant => 1 }, <<'TREE');
-|-- module.bam+devel <<
+|-- module.bam%devel <<
 # references a non-existent formula
-rule -- boats : foo.bam
+rule -- boats : ./foo.bam+(.)
 rule boats -> //targets
 >>
 TREE
@@ -34,14 +36,19 @@ TREE
 assert {
   stats(undef, {
     modules => 1
-  , system_state_ok => 0
+  , system_state_ready => 0
 })};
 assert {
   stats(".", "-S", {
     type => "module"
   , state => 'fresh'
   , reloaded => 1
-  , parse => 1
+})};
+assert {
+  stats("./module.bam%devel", "-S", {
+    type => "ruleset"
+  , state => 'fresh'
+  , parse_err => 0
   , parse_ok => 1
 })};
 
@@ -60,21 +67,26 @@ reconcile();
 assert {
   stats(undef, {
     modules => 1
-  , system_state_ok => 1
+  , system_state_ready => 1
 })};
 assert {
   stats(".", "-S", {
     type => "module"
   , state => 'fresh'
   , reloaded => 1         # module NOT reloaded
-  , parse => 1
+})};
+assert {
+  stats("./module.bam%devel", "-S", {
+    type => "ruleset"
+  , state => 'fresh'
+  , parse_err => 0
   , parse_ok => 1
 })};
 assert {
   stats("foo.bam", "-S", {
     type => 'formula'
   , state => "fresh"
-  , parse => 1
+  , parse_err => 0
   , parse_ok => 1
 })};
 assert { enoent("boats") };
@@ -85,9 +97,9 @@ assert {
   stats("foo.bam", "-S", {
     type => 'formula'
   , state => "fresh"
-  , parse => 1
+  , parse_err => 0
   , parse_ok => 1
-  , fml_exec => 1
+  , fml_exec_err => 0
   , fml_exec_ok => 1
 })};
 assert { eexists("boats") };

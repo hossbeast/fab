@@ -8,6 +8,9 @@ use strict;
 use warnings;
 $SIG{__WARN__} = sub { die @_ };
 
+use Carp qw(confess);
+$SIG{__DIE__} = 'confess';
+
 use POSIX;
 use File::Basename;
 use Cwd;
@@ -15,73 +18,135 @@ our $bam_basedir;
 our $repodir;
 BEGIN { $repodir = dirname(Cwd::realpath("$0/..")) }
 use lib "$repodir/integ/lib";
+use lib "$repodir/perl";
 use lib "$repodir/libbacon/perl";
 use util;
 use tree;
-use bam;
+use bam::bam;
+use integ;
 
 init(subdir => 'A');
 setup(<<TREE);
 |-- A
-|   `-- module.bam+devel <<
+|   `-- module.bam%devel <<
 use B
 >>
 |-- B
-|   `-- rules.bam+devel <<
+|   `-- rules.bam%devel <<
 use C
 >>
 |-- C
-|   `-- rules.bam+devel <<
+|   `-- rules.bam%devel <<
 use D
 >>
 |-- D
-|   `-- rules.bam+devel <<
-rule foo -> bar
+|   `-- rules.bam%devel <<
+rule -- foo : $bam_basedir/touch.bam+(.)
 >>
 |-- system-config <<
+namespaces : {
+  coreutils
+}
 filesystem : {
   fstrees : {
-    $bam_basedir : { mount : true }
+    $bam_basedir : {
+      mount : true
+      namespaces : {
+        modules
+      }
+    }
+    $repodir/usr/share/bam/coreutils : {
+      mount : true
+      namespaces : {
+        coreutils
+      }
+    }
   }
 }
 >>
+|-- touch.bam << 0777
+file : {
+  lookup : {
+    namespace : coreutils
+    pattern : bin/touch+(@.)
+  }
+}
+args : [
+  \$bm_target0
+]
+>>
 TREE
 
+my $B_id = bam::identity('ruleset', "$bam_basedir/B/rules.bam%devel");
+my $C_id = bam::identity('ruleset', "$bam_basedir/C/rules.bam%devel");
+my $D_id = bam::identity('ruleset', "$bam_basedir/D/rules.bam%devel");
+
 # before
-assert { info({
-    "system-state" => 'ok'
+assert {
+  info({
+    "system-state" => 'ready'
 })};
-assert { stats(undef, {
-    system_state_ok => 1
+assert {
+  stats(undef, {
+    system_state_ready => 1
   , modules => 1
 })};
-assert { stats("$bam_basedir/A", "-S", {
+assert {
+  stats("$bam_basedir/A", "-S", {
     type => 'module'
   , state => 'fresh'
   , stale => 1
   , fresh => 1
-  , parse => 1
-  , parse_ok => 1
   , reloaded => 1
-  , modules_up => 0
-  , modules_down => 0
-  , uses_down => 3    # B, C, D
+  , rulesets => 4    # B, C, D
+  , rmas => 1
 })};
-assert { stats(".", {
-    type => 'module-dir'
-  , rules => 1        # rule from D is active
-})};
-assert { stats("../D/rules.bam+devel", {
-    type => 'ruleset-file'
+assert {
+  stats("$bam_basedir/A/module.bam%devel", "-S", {
+    type => 'ruleset'
   , state => 'fresh'
+  , stale => 1
+  , fresh => 1
+  , parse_err => 0
+  , parse_ok => 1
+})};
+assert {
+  stats("$bam_basedir/B/rules.bam%devel", "-S", {
+    type => 'ruleset'
+  , state => 'fresh'
+  , stale => 1
+  , fresh => 1
+  , parse_err => 0
+  , parse_ok => 1
+  , modules => 1
+})};
+assert {
+  stats("$bam_basedir/C/rules.bam%devel", "-S", {
+    type => 'ruleset'
+  , state => 'fresh'
+  , stale => 1
+  , fresh => 1
+  , parse_err => 0
+  , parse_ok => 1
+  , modules => 1
+})};
+assert {
+  stats("$bam_basedir/D/rules.bam%devel", "-S", {
+    type => 'ruleset'
+  , state => 'fresh'
+  , stale => 1
+  , fresh => 1
+  , parse_err => 0
+  , parse_ok => 1
+  , modules => 1
 })};
 
-my $B_id = hash64("$bam_basedir/B/rules.bam+devel");
-my $C_id = hash64("$bam_basedir/C/rules.bam+devel");
-my $D_id = hash64("$bam_basedir/D/rules.bam+devel");
+assert { ls("//module/rulesets/$B_id", "$B_id -> //bm/rulesets/$B_id", "--max-distance", "0") };
+assert { ls("//module/rulesets/$C_id", "$C_id -> //bm/rulesets/$C_id", "--max-distance", "0") };
+assert { ls("//module/rulesets/$D_id", "$D_id -> //bm/rulesets/$D_id", "--max-distance", "0") };
 
-assert { ls("//module/rulesets/$B_id", "$B_id -> //rulesets/$B_id", "--max-distance", "0") };
-assert { ls("//module/rulesets/$C_id", "$C_id -> //rulesets/$C_id", "--max-distance", "0") };
-assert { ls("//module/rulesets/$D_id", "$D_id -> //rulesets/$D_id", "--max-distance", "0") };
+build();
+
+assert { eexists("$bam_basedir/A/foo") };
 
 teardown();

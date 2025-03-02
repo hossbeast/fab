@@ -10,16 +10,18 @@ use Cwd;
 our $repodir;
 BEGIN { $repodir = dirname(Cwd::realpath("$0/..")) }
 use lib "$repodir/integ/lib";
+use lib "$repodir/perl";
 use lib "$repodir/libbacon/perl";
 use util;
 use tree;
-use bam;
+use bam::bam;
+use integ;
 
 # build out the fstree under /tmp
 init();
 my $testdir = setup(<<'TREE');
-|-- module.bam+devel <<
-rule -- boats : foo.bam
+|-- module.bam%devel <<
+rule -- boats : ./foo.bam+(.)
 rule boats -> //targets
 >>
 |-- foo.bam << 0777
@@ -34,7 +36,7 @@ TREE
 assert {
   stats(undef, {
     modules => 1
-  , system_state_ok => 1
+  , system_state_ready => 1
 })};
 assert {
   stats(".", "-S", {
@@ -42,14 +44,20 @@ assert {
   , state => 'fresh'
   , reloaded => 1
   , state => "fresh"
-  , parse => 1
+})};
+assert {
+  stats("./module.bam%devel", "-S", {
+    type => "ruleset"
+  , state => 'fresh'
+  , state => "fresh"
+  , parse_err => 0
   , parse_ok => 1
 })};
 assert {
   stats("foo.bam", "-S", {
     state => "fresh"
   , parse_ok => 1
-  , parse => 1
+  , parse_err => 0
 })};
 assert {
   stats("boats", {
@@ -64,13 +72,14 @@ build();
 assert {
   stats(undef, {
     modules => 1
-  , system_state_ok => 3      # once for formula-reconcile -> ok, once for build -> ok
+  , system_state_ready => 2      # once for formula-reconcile -> ok, once for build -> ok
+  , system_state_ok => 1         # once for build -> ok
 })};
 assert {
   stats("foo.bam", "-S", {
     type => 'formula'
   , state => "fresh"
-  , parse => 1
+  , parse_err => 0
   , parse_ok => 1
   , fresh => 1
   , stale => 1
@@ -102,21 +111,27 @@ reconcile();
 assert {
   stats(undef, {
     modules => 1
-  , system_state_ok => 4
+  , system_state_ready => 3
+  , system_state_ok => 1
 })};
 assert {
   stats(".", "-S", {
     type => "module"
   , state => 'fresh'
   , reloaded => 1       # module not reloaded
-  , parse => 1
+})};
+assert {
+  stats("./module.bam%devel", "-S", {
+    type => "ruleset"
+  , state => 'fresh'
+  , parse_err => 0
   , parse_ok => 1
 })};
 assert {
   stats("foo.bam", "-S", {
     type => 'formula'
   , state => "fresh"
-  , parse => 2
+  , parse_err => 0
   , parse_ok => 2
   , fresh => 2          # re-loaded
   , stale => 2
@@ -135,7 +150,7 @@ assert {
   stats("foo.bam", "-S", {
     type => 'formula'
   , state => "fresh"
-  , parse => 2
+  , parse_err => 0
   , parse_ok => 2
   , fresh => 2          # re-loaded
   , stale => 2

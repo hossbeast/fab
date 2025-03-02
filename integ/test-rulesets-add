@@ -16,44 +16,52 @@ our $repodir;
 our $bam_basedir;
 BEGIN { $repodir = dirname(Cwd::realpath("$0/..")) }
 use lib "$repodir/integ/lib";
+use lib "$repodir/perl";
 use lib "$repodir/libbacon/perl";
 use util;
 use tree;
-use bam;
+use bam::bam;
+use integ;
 
 # build out the fstree under /tmp
 init();
 my $testdir = setup(<<TREE);
-|-- module.bam+devel <<
-rulesets myrules
+|-- module.bam%devel <<
+rulesets myrules%devel
 >>
-|-- myrules+devel <<
+|-- myrules%devel <<
 rule a -> b
 >>
 TREE
 
-my $mod_id = hash64("$bam_basedir");
-my $rules_id = hash64("$bam_basedir/myrules+devel");
+my $mod_id = bam::identity("module", "$bam_basedir");
+my $rules_id = bam::identity("ruleset", "$bam_basedir/myrules%devel");
 
 # before
 assert { stats(undef, {
     modules => 1
-  , system_state_ok => 1
+  , system_state_ready => 1
 })};
-assert { stats(".", "-S", {
+assert {
+  stats(".", "-S", {
     type => 'module'
   , state => "fresh"
   , reloaded => 1
-  , parse => 1
-  , parse_ok => 1
 })};
-assert { stats("myrules+devel", "-S", {
+assert {
+  stats("./module.bam%devel", "-S", {
     type => 'ruleset'
   , state => "fresh"
-  , parse => 1
+  , parse_err => 0
+  , parse_ok => 1
+})};
+assert { stats("myrules%devel", "-S", {
+    type => 'ruleset'
+  , state => "fresh"
+  , parse_err => 0
   , parse_ok => 1
 })};
 
-assert { ls("//modules/$mod_id/rulesets/$rules_id", "$rules_id -> //rulesets/$rules_id") };
+assert { ls("//bm/modules/$mod_id/rulesets/$rules_id", "$rules_id -> //bm/rulesets/$rules_id") };
 
 teardown();

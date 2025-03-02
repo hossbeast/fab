@@ -9,26 +9,32 @@ use strict;
 use warnings;
 $SIG{__WARN__} = sub { die @_ };
 
+use Carp qw(confess);
+$SIG{__DIE__} = 'confess';
+
 use POSIX;
 use File::Basename;
 use Cwd;
 our $repodir;
+our $bam_basedir;
 BEGIN { $repodir = dirname(Cwd::realpath("$0/..")) }
 use lib "$repodir/integ/lib";
+use lib "$repodir/perl";
 use lib "$repodir/libbacon/perl";
 use util;
 use tree;
-use bam;
+use integ;
+use bam::bam;
 
 # build out the fstree under /tmp
 init();
-my $testdir = setup(<<'TREE');
+setup(<<'TREE');
 |-- cores.c <<
 foo
 >>
-|-- module.bam+devel <<
-rule cores.c -> cores.o : cp.bam
-rule cores.o -> cores : cp.bam
+|-- module.bam%devel <<
+rule cores.c -> cores.o : ./cp.bam+(.)
+rule cores.o -> cores : ./cp.bam+(.)
 rule cores -> //targets
 >>
 |-- cp.bam << 0777
@@ -41,6 +47,8 @@ while(<A>)
 }
 >>
 TREE
+
+my $result;
 
 assert { stats("cores.c", {
     type => 'file'
@@ -61,11 +69,13 @@ assert { stats("cores", {
   , fresh => 0
 })};
 
+$result = bam_tree([$bam_basedir, "--hidden"]);
+print "$$result{out}\n";
 build();
 
 # intermediate and final file were created
-assert_file("$testdir/cores.o", "foo");
-assert_file("$testdir/cores", "foo");
+assert_file("$bam_basedir/cores.o", "foo");
+assert_file("$bam_basedir/cores", "foo");
 
 assert { stats("cores.c", {
     type => 'file'

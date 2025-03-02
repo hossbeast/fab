@@ -10,10 +10,12 @@ use Cwd;
 our $repodir;
 BEGIN { $repodir = dirname(Cwd::realpath("$0/..")) }
 use lib "$repodir/integ/lib";
+use lib "$repodir/perl";
 use lib "$repodir/libbacon/perl";
 use util;
 use tree;
-use bam;
+use bam::bam;
+use integ;
 
 # config file with syntax error
 init();
@@ -21,8 +23,8 @@ my $testdir = setup({tolerant => 1 }, <<'TREE');
 |-- A
 |   `-- B
 |       `-- C
-|-- module.bam+devel
-|-- config.bam+devel <<
+|-- module.bam%devel
+|-- config.bam%devel <<
 goats boats
 >>
 TREE
@@ -33,10 +35,10 @@ assert { stats(undef, {
   , system_state_ok => 0
 })};
 assert {
-  stats("config.bam+devel", "-S", "--no-module", {
+  stats("config.bam%devel", "-S", "--no-module", {
       type => "configset"
     , state => 'stale'
-    , parse => 1
+    , parse_err => 1
     , parse_ok => 0
 })};
 
@@ -45,10 +47,10 @@ assert { stats(undef, {
     modules => 0
   , system_state_ok => 0
 })};
-assert { stats("config.bam+devel", "-S", "--no-module", {
+assert { stats("config.bam%devel", "-S", "--no-module", {
     type => "configset"
   , state => 'stale'
-  , parse => 2
+  , parse_err => 2
   , parse_ok => 0
 })};
 
@@ -57,15 +59,15 @@ assert { stats(undef, {
     modules => 0
   , system_state_ok => 0
 })};
-assert { stats("config.bam+devel", "-S", "--no-module", {
+assert { stats("config.bam%devel", "-S", "--no-module", {
     type => "configset"
   , state => 'stale'
-  , parse => 3
+  , parse_err => 3
   , parse_ok => 0
 })};
 
 # config file syntax fixed
-open my $fh, ">", "$testdir/config.bam+devel" or die $!;
+open my $fh, ">", "$testdir/config.bam%devel" or die $!;
 print $fh <<'TEXT';
 build : {
   concurrency : 42
@@ -77,12 +79,12 @@ close $fh;
 reconcile();
 assert { stats(undef, {
     modules => 1
-  , system_state_ok => 1
+  , system_state_ready => 1
 })};
-assert { stats("config.bam+devel", "-S", {
+assert { stats("config.bam%devel", "-S", {
     type => "configset"
   , state => "fresh"
-  , parse => 4
+  , parse_err => 3
   , parse_ok => 1
 })};
 

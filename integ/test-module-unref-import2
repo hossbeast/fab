@@ -19,19 +19,21 @@ our $bam_basedir;
 our $repodir;
 BEGIN { $repodir = dirname(Cwd::realpath("$0/..")) }
 use lib "$repodir/integ/lib";
+use lib "$repodir/perl";
 use lib "$repodir/libbacon/perl";
 use util;
 use tree;
-use bam;
+use bam::bam;
+use integ;
 
 init(subdir => 'B');
 setup(<<TREE);
 |-- A
-|   `-- module.bam+devel <<
+|   `-- module.bam%devel <<
 rule foo -> bar
 >>
 |-- B
-|   `-- module.bam+devel <<
+|   `-- module.bam%devel <<
 import A
 >>
 |-- system-config <<
@@ -46,7 +48,7 @@ TREE
 # before
 assert_stats(undef, {
     modules => 1          # the imported directory is not vivified
-  , system_state_ok => 1
+  , system_state_ready => 1
 });
 assert_stats(".", "-S", {
     state => 'fresh'
@@ -56,7 +58,7 @@ assert_stats(".", "-S", {
   , uses_up => 0
   , uses_down => 0
   , rules => 0
-  , parse => 1
+  , parse_err => 0
   , parse_ok => 1
 });
 assert_stats("..", {
@@ -65,19 +67,19 @@ assert_stats("..", {
 assert_stats("../A", {
     type => 'dir'
 });
-assert_stats("../A/module.bam+devel", {   # just a file, import does not bootstrap
+assert_stats("../A/module.bam%devel", {   # just a file, import does not bootstrap
     state => 'fresh'
   , type => 'file'
 });
 
 # delete Bs module file
-unlink "$bam_basedir/B/module.bam+devel" or die $!;
+unlink "$bam_basedir/B/module.bam%devel" or die $!;
 
 # after
 reconcile();
 assert_stats(undef, {
     modules => 0
-  , system_state_ok => 2
+  , system_state_ready => 2
 });
 assert_stats(".", {
     type => 'dir'
@@ -89,7 +91,7 @@ assert_stats("..", {
 assert_stats("../A", {
     type => 'dir'
 });
-assert_stats("../A/module.bam+devel", {   # just a file
+assert_stats("../A/module.bam%devel", {   # just a file
     state => 'fresh'
   , type => 'file'
 });

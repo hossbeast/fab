@@ -12,63 +12,75 @@ use POSIX;
 use File::Basename;
 use Cwd;
 our $repodir;
-our $bam_projhash;
+our $bam_bamd_id;
 BEGIN { $repodir = dirname(Cwd::realpath("$0/..")) }
 use lib "$repodir/integ/lib";
+use lib "$repodir/perl";
 use lib "$repodir/libbacon/perl";
 use util;
 use tree;
-use bam;
+use bam::bam;
+use integ;
 
 # this conditional has a variable, and it evaluates to true
 init();
 my $testdir = setup(<<'TREE');
-|-- module.bam+devel <<
+|-- module.bam%devel <<
 {
   if($a)
   rule a -> b
 }
 >>
 |-- a
-|-- var.bam+devel <<
+|-- var.bam%devel <<
 a : true
 >>
 TREE
 
 assert { stats(undef, {
     modules => 1
-  , system_state_ok => 1
+  , system_state_ready => 1
 })};
-assert { stats(".", "-S", {
+assert {
+  stats(".", "-S", {
     type => 'module'
   , state => 'fresh'
   , reloaded => 1
+  , rmas => 1    # the rule exists in the module.bam file
+})};
+assert {
+  stats("./module.bam%devel", "-S", {
+    type => 'ruleset'
+  , state => 'fresh'
   , rules => 1    # the rule exists in the module.bam file
-  , parse => 1
+  , parse_err => 0
   , parse_ok => 1
 })};
-assert { stats(".", {
-    type => 'module-dir'
+assert {
+  stats(".", {
+    type => 'dir'
   , state => 'fresh'
   , rules => 1    # the rule IS applied
 })};
-assert { stats("module.bam+devel", "-S", {
+assert {
+  stats(".", "-S", {
     type => 'module'
   , state => 'fresh'
   , stale => 1
   , fresh => 1
 })};
-assert { stats("var.bam+devel", "-S", {
+assert {
+  stats("var.bam%devel", "-S", {
     type => "varset"
   , state => 'fresh'
-  , parse => 1
+  , parse_err => 0
   , parse_ok => 1
   , stale => 1
   , fresh => 1
 })};
 
 # this conditional has a variable, and it evaluates to false
-open my $fh, ">", "$testdir/var.bam+devel" or die $!;
+open my $fh, ">", "$testdir/var.bam%devel" or die $!;
 print $fh <<'TEXT';
 a : false
 TEXT
@@ -77,30 +89,33 @@ close $fh;
 reconcile();
 assert { stats(undef, {
     modules => 1
-  , system_state_ok => 2
+  , system_state_ready => 2
 })};
-assert { stats(".", "-S", {
-    reloaded => 2
+assert {
+  stats(".", "-S", {
+    type => "module"
   , state => 'fresh'
-  , rules => 1    # the rule exists in the module.bam file
-  , parse => 1
-  , parse_ok => 1
+  , reloaded => 2
 })};
-assert { stats(".", {
-    type => 'module-dir'
+assert {
+  stats("./module.bam%devel", "-S", {
+    type => "ruleset"
+  , state => 'fresh'
+  , parse_err => 0
+  , parse_ok => 1
+  , rules => 1    # the rule exists in the module.bam file
+})};
+assert {
+  stats(".", {
+    type => 'dir'
   , state => 'fresh'
   , rules => 0    # the rule IS NOT applied
 })};
-assert { stats("module.bam+devel", "-S", {
-    type => 'module'
-  , state => 'fresh'
-  , stale => 2
-  , fresh => 2
-})};
-assert { stats("var.bam+devel", "-S", {
+assert {
+  stats("var.bam%devel", "-S", {
     type => "varset"
   , state => 'fresh'
-  , parse => 2
+  , parse_err => 0
   , parse_ok => 2
   , stale => 2
   , fresh => 2

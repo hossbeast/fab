@@ -9,22 +9,27 @@ use strict;
 use warnings;
 $SIG{__WARN__} = sub { die @_ };
 
+use Carp qw(confess);
+$SIG{__DIE__} = 'confess';
+
 use POSIX;
 use File::Basename;
 use Cwd;
 our $repodir;
 BEGIN { $repodir = dirname(Cwd::realpath("$0/..")) }
 use lib "$repodir/integ/lib";
+use lib "$repodir/perl";
 use lib "$repodir/libbacon/perl";
 use util;
 use tree;
-use bam;
+use bam::bam;
+use integ;
 
 # references non-existent formula
 init();
 my $testdir = setup({tolerant => 1 }, <<'TREE');
-|-- module.bam+devel <<
-rule -- boats : foo.bam
+|-- module.bam%devel <<
+rule -- boats : ./foo.bam+(.)
 rule boats -> //targets
 >>
 |-- foo.bam << 0777
@@ -39,7 +44,7 @@ TREE
 assert {
   stats(undef, {
     modules => 1
-  , system_state_ok => 0
+  , system_state_ready => 0
 })};
 assert {
   stats(".", "-S", {
@@ -48,13 +53,13 @@ assert {
   , reloaded => 1
 })};
 assert {
-  stats("module.bam+devel", "-S", {
-    parse => 1
+  stats("module.bam%devel", "-S", {
+    parse_err => 0
   , parse_ok => 1
 })};
 assert {
   stats("foo.bam", "-S", {
-    parse => 1
+    parse_err => 1
   , parse_ok => 0
   , state => "stale"
 })};
@@ -62,9 +67,6 @@ assert {
 # fix the formula
 open my $fh, ">", "$testdir/foo.bam" or die $!;
 print $fh <<'TEXT';
-file : {
-  path-search : date
-}
 TEXT
 close $fh;
 
@@ -72,7 +74,7 @@ reconcile();
 assert {
   stats(undef, {
     modules => 1
-  , system_state_ok => 1
+  , system_state_ready => 1
 })};
 assert {
   stats(".", "-S", {
@@ -82,14 +84,14 @@ assert {
   , state => "fresh"
 })};
 assert {
-  stats("module.bam+devel", "-S", {
-    parse => 1
+  stats("module.bam%devel", "-S", {
+    parse_err => 0
   , parse_ok => 1
   , state => "fresh"
 })};
 assert {
   stats("foo.bam", "-S", {
-    parse => 2
+    parse_err => 1
   , parse_ok => 1
   , state => "fresh"
 })};

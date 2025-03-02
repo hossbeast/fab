@@ -15,10 +15,13 @@ use Cwd;
 our $repodir;
 BEGIN { $repodir = dirname(Cwd::realpath("$0/..")) }
 use lib "$repodir/integ/lib";
+use lib "$repodir/perl";
 use lib "$repodir/libbacon/perl";
 use util;
 use tree;
-use bam;
+use bam::bam;
+use integ;
+use bam::bam;
 
 # build out the fstree under /tmp
 init();
@@ -26,9 +29,9 @@ my $testdir = setup(<<'TREE');
 |-- cores.c <<
 foo
 >>
-|-- module.bam+devel <<
-rule cores.c -> cores.o : cp.bam
-rule cores.o -> cores : cp.bam
+|-- module.bam%devel <<
+rule cores.c -> cores.o : ./cp.bam+(.)
+rule cores.o -> cores : ./cp.bam+(.)
 rule cores -> //targets
 >>
 |-- cp.bam << 0777

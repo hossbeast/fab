@@ -1,0 +1,172 @@
+#!/usr/bin/env perl
+
+#
+# This test exercises namespace/fsname entries to symlinks that refer to directories
+#
+
+use strict;
+use warnings;
+$SIG{__WARN__} = sub { die @_ };
+
+use Carp qw(confess);
+$SIG{__DIE__} = 'confess';
+
+use POSIX;
+use File::Basename;
+use Cwd;
+our $repodir;
+our $bam_basedir;
+BEGIN { $repodir = dirname(Cwd::realpath("$0/..")) }
+use lib "$repodir/integ/lib";
+use lib "$repodir/perl";
+use lib "$repodir/libbacon/perl";
+use util;
+use tree;
+use bam::bam;
+use integ;
+
+init(subdir => 'B');
+setup(<<"TREE");
+|-- A
+|   `-- foo
+|-- B
+|   `-- module.bam%devel <<
+>>
+|-- system-config <<
+namespaces : {
+  ns
+}
+filesystem : {
+  fstrees : {
+    $bam_basedir/A : {
+      mkdir : true
+      mount : true
+      readlink : yes
+      namespaces : {
+        ns
+      }
+    }
+  }
+}
+>>
+TREE
+
+my $ns_namespace_id;
+my $names;
+my $result;
+my $msg;
+my $id;
+my $dir_E_id;
+
+$ns_namespace_id = bam::identity("namespace", "ns");
+printf(" namespace ns >>> %s <<< \n", $ns_namespace_id);
+my $fsname_E_id = bam::identity("namespace", "ns", "fsname", "E");
+printf(" fsname E     >>> %s <<< \n", $fsname_E_id);
+$dir_E_id = bam::identity("dir", "$bam_basedir/A/C/E");
+printf(" dir E        >>> %s <<< \n", $dir_E_id);
+
+# nameset : { A }
+print("\n >> 1 - nameset : { A } <<\n\n");
+assert {
+  stats("//bm/namespaces/$ns_namespace_id", "-S", {
+      type => 'namespace'
+    , count => 1
+    , del => 0
+    , put => 1
+})};
+
+$names = bam_namespace_fsnames($ns_namespace_id);
+print Dumper $names;
+assert { $$names{A} };
+assert { !$$names{C} };
+assert { !$$names{D} };
+assert { !$$names{E} };
+
+# nameset : { A, C, E }
+print("\n >> 2 - nameset : { A, C, E } <<\n\n");
+mkdir("$bam_basedir/A/C");
+mkdir("$bam_basedir/A/C/E");
+reconcile();
+
+$result = bam_tree([$bam_basedir, "--hidden"]);
+print "$$result{out}\n";
+
+assert {
+  stats("//bm/namespaces/$ns_namespace_id", "-S", {
+      type => 'namespace'
+    , count => 3
+    , del => 0
+    , put => 3
+})};
+
+$names = bam_namespace_fsnames($ns_namespace_id);
+print Dumper $names;
+assert { $$names{A} };
+assert { $$names{C} };
+assert { !$$names{D} };
+assert { $$names{E} };
+
+# nameset : { A, C, D, E }
+print("\n >> 3 - nameset : { A, C, D (symlink -> C), E } <<\n\n");
+symlink("C", "$bam_basedir/A/D");
+
+reconcile();
+assert {
+  stats("//bm/namespaces/$ns_namespace_id", "-S", {
+      type => 'namespace'
+    , count => 4
+    , del => 0
+    , put => 4
+})};
+
+$result = bam_tree([$bam_basedir, "--hidden"]);
+print "$$result{out}\n";
+
+$names = bam_namespace_fsnames($ns_namespace_id);
+print Dumper $names;
+assert { $$names{A} };
+assert { $$names{C} };
+assert { $$names{D} };
+assert { $$names{E} };
+
+# critically, the entry for E contains only one reference, even though E is
+# reachable via two paths, only the path thru directories is taken
+#
+# A (dir) indexed / C (dir) indexed / E (dir) indexed
+# A (dir) indexed / D (symlink) indexed but not traveled
+#
+assert {
+  stats("//bm/namespaces/$ns_namespace_id/fsnames/$fsname_E_id", "--follow", {
+      type => 'fsname'
+    , count => 1
+    , del => 0
+    , put => 1
+})};
+
+# lookup via the E reference, C prefix (dir)
+$result = bam_adhoc('[ select : [ lookup : { pattern : A/C/E namespace : ns } ] identify ]');
+print("$$result{out}\n");
+$msg = bam::bacon::parse($$result{out});
+$id = (keys %$msg)[0];
+assert { $id eq $dir_E_id };
+
+$result = bam_adhoc('[ select : [ lookup : { pattern : C/E namespace : ns } ] identify ]');
+print("$$result{out}\n");
+$msg = bam::bacon::parse($$result{out});
+$id = (keys %$msg)[0];
+assert { $id eq $dir_E_id };
+
+# lookup via the E reference, D prefix (symlink to C)
+$result = bam_adhoc('[ select : [ lookup : { pattern : A/D/E namespace : ns } ] identify ]');
+print("$$result{out}\n");
+$msg = bam::bacon::parse($$result{out});
+$id = (keys %$msg)[0];
+assert { $id eq $dir_E_id };
+
+$result = bam_adhoc('[ select : [ lookup : { pattern : D/E namespace : ns } ] identify ]');
+print("$$result{out}\n");
+$msg = bam::bacon::parse($$result{out});
+$id = (keys %$msg)[0];
+assert { $id eq $dir_E_id };
+
+teardown();

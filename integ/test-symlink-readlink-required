@@ -1,0 +1,144 @@
+#!/usr/bin/env perl
+
+#
+# This test exercises symlinks with fstree readlink : required
+#
+
+use strict;
+use warnings;
+$SIG{__WARN__} = sub { die @_ };
+
+use Carp qw(confess);
+$SIG{__DIE__} = 'confess';
+
+use POSIX;
+use File::Basename;
+use Cwd;
+our $repodir;
+our $bam_basedir;
+BEGIN { $repodir = dirname(Cwd::realpath("$0/..")) }
+use lib "$repodir/integ/lib";
+use lib "$repodir/perl";
+use lib "$repodir/libbacon/perl";
+use util;
+use tree;
+use bam::bam;
+use integ;
+
+init(subdir => 'B');
+setup(<<"TREE");
+|-- A
+|   `-- foo
+|-- B
+|   `-- module.bam%devel <<
+>>
+|-- system-config <<
+namespaces : {
+  ns
+}
+filesystem : {
+  fstrees : {
+    $bam_basedir/A : {
+      mkdir : true
+      mount : true
+      readlink : required
+      namespaces : {
+        ns
+      }
+    }
+  }
+}
+>>
+TREE
+
+my $ns_namespace_id;
+my $names;
+my $result;
+my $msg;
+my $id;
+my $fsname_E_id;
+
+$ns_namespace_id = bam::identity("namespace", "ns");
+$fsname_E_id = bam::identity("namespace", "ns", "fsname", "E");
+
+printf(" namespace ns >>> %s <<< \n", $ns_namespace_id);
+printf(" fsname E     >>> %s <<< \n", $fsname_E_id);
+
+# nameset : { A }
+print("\n >> 1 - nameset : { A } <<\n\n");
+assert {
+  stats("//bm/namespaces/$ns_namespace_id", "-S", {
+      type => 'namespace'
+    , count => 1
+    , del => 0
+    , put => 1
+})};
+
+$names = bam_namespace_fsnames($ns_namespace_id);
+print Dumper $names;
+assert { $$names{A} };
+assert { !$$names{C} };
+assert { !$$names{D} };
+assert { !$$names{E} };
+
+# nameset : { A, C, E }
+print("\n >> 2 - nameset : { A, C, E } <<\n\n");
+mkdir("$bam_basedir/A/C");
+mkdir("$bam_basedir/A/C/E");
+symlink("foobar", "$bam_basedir/A/D"); # dangling link
+reconcile(expect_error => 1);
+
+$result = bam_tree([$bam_basedir, "--hidden"]);
+print "$$result{out}\n";
+
+assert {
+  stats("$bam_basedir/A/D", {
+    type => 'symlink'
+  , state => 'stale'
+  , stale => 0
+  , fresh => 0
+  , readlink_no => 0
+  , readlink_ok => 0
+  , readlink_unresolved => 1
+  , readlink_failed => 1
+  , readlink_err => 0
+  , readlink_pending => 1
+})};
+
+unlink("$bam_basedir/A/D");
+symlink("C", "$bam_basedir/A/D");
+reconcile();
+
+$result = bam_tree([$bam_basedir, "--hidden"]);
+print "$$result{out}\n";
+
+assert {
+  stats("$bam_basedir/A/D", {
+    type => 'symlink'
+  , state => 'fresh'
+  , stale => 0
+  , fresh => 1
+  , readlink_no => 0
+  , readlink_ok => 1
+  , readlink_unresolved => 1
+  , readlink_failed => 1
+  , readlink_err => 0
+  , readlink_pending => 0
+})};
+
+assert {
+  stats("//bm/namespaces/$ns_namespace_id", "-S", {
+      type => 'namespace'
+    , count => 4
+    , del => 0
+    , put => 4
+})};
+
+$names = bam_namespace_fsnames($ns_namespace_id);
+print Dumper $names;
+assert { $$names{A} };
+assert { $$names{C} };
+assert { $$names{D} };
+assert { $$names{E} };
+
+teardown();

@@ -13,73 +13,106 @@ use POSIX;
 use File::Basename;
 use Cwd;
 our $repodir;
+our $bam_basedir;
 BEGIN { $repodir = dirname(Cwd::realpath("$0/..")) }
 use lib "$repodir/integ/lib";
+use lib "$repodir/perl";
 use lib "$repodir/libbacon/perl";
 use util;
 use tree;
-use bam;
+use bam::bam;
+use integ;
 
 # unresolved use ref
 init();
-my $testdir = setup({tolerant => 1}, <<'TREE');
+setup({expect_error => 1}, <<"TREE");
 |-- A
 |   `-- B
-`-- module.bam+devel <<
+`-- module.bam%devel <<
 use A
 >>
+|-- system-config <<
+filesystem : {
+  fstrees : {
+    $bam_basedir : {
+      mount : true
+      namespaces : {
+        modules
+      }
+    }
+  }
+}
 TREE
 
+my $fh;
+
 # before - reconciliation did not complete
-assert { stats(undef, {
+assert {
+  stats(undef, {
     modules => 1
-  , ruleset_files => 0
-  , system_state_ok => 0
+  , rulesets => 1
+  , system_state_ready => 0
 })};
 # module was not reloaded
-assert { stats(".", "-S", {
+assert {
+  stats(".", "-S", {
     type => "module"
   , state => "stale"
+  , fresh => 0
+  , stale => 1
   , reloaded => 0
-  , modules_up => 0
-  , modules_down => 0
+})};
+assert {
+  stats("./module.bam%devel", "-S", {
+    type => "ruleset"
+  , state => "fresh"
+  , fresh => 1
+  , stale => 1
 # module file was parse_ok
-  , parse => 1
+  , parse_err => 0
   , parse_ok => 1
 })};
-assert { enoent("A/rules.bam+devel") };
+assert { enoent("A/rules.bam%devel") };
 
 # create the referent
-open my $fh, ">>", "$testdir/A/rules.bam+devel" or die $!;
+open $fh, ">>", "$bam_basedir/A/rules.bam%devel" or die $!;
 close $fh;
 
 # after - reconciliation has completed
 reconcile();
 assert { stats(undef, {
     modules => 1
-  , ruleset_files => 1
-  , system_state_ok => 1
+  , rulesets => 2
+  , system_state_ready => 1
 })};
 # module was reloaded
-assert { stats(".", "-S", {
+assert {
+  stats(".", "-S", {
     type => "module"
   , state => "fresh"
   , reloaded => 1
-  , modules_up => 0
-  , modules_down => 0
-  , uses_down => 1
+  , rulesets => 2
+})};
+assert {
+  stats("./module.bam%devel", "-S", {
+    type => "ruleset"
+  , state => "fresh"
+  , stale => 1
+  , fresh => 1
 # module file was reloaded (and not reparsed)
-  , parse => 1
+  , parse_err => 0
   , parse_ok => 1
 })};
-assert { stats("A/rules.bam+devel", "-S", {
-    parse => 1
+assert {
+  stats("A/rules.bam%devel", "-S", {
+    parse_err => 0
   , parse_ok => 1
   , type => 'ruleset'
   , state => "fresh"
-  , uses_up => 1
+  , modules => 1
 })};
-assert { stats("A", {
+assert {
+  stats("A", {
     type => 'dir'
   , state => "fresh"
 })};

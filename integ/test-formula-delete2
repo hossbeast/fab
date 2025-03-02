@@ -1,0 +1,177 @@
+#!/usr/bin/env perl
+
+#
+# 
+#
+
+use strict;
+use warnings;
+$SIG{__WARN__} = sub { die @_ };
+
+use POSIX;
+use File::Basename;
+use Cwd;
+our $repodir;
+our $bam_module_id;
+our $bam_basedir;
+BEGIN { $repodir = dirname(Cwd::realpath("$0/..")) }
+use lib "$repodir/integ/lib";
+use lib "$repodir/perl";
+use lib "$repodir/libbacon/perl";
+use util;
+use tree;
+use bam::bam;
+use integ;
+
+# build out the fstree under /tmp
+init();
+setup(<<'TREE');
+|-- module.bam%devel <<
+rule { name : 1 } $^D/{a,b} [*] -> boats : ./foo.bam+(.)
+rule boats -> //targets
+>>
+|-- a <<
+>>
+|-- b <<
+>>
+|-- foo.bam << 0777
+#!/usr/bin/env perl
+open FH, ">>", $ENV{bm_target0} or die $!;
+print FH "hi\n";
+close FH;
+>>
+TREE
+
+# before
+assert {
+  stats(undef, {
+    modules => 1
+  , system_error => 0
+  , system_state_ready => 1
+  , system_state_ok => 0
+})};
+assert {
+  stats(".", "-S", {
+    type => "module"
+  , state => "fresh"
+  , stale => 1
+  , fresh => 1
+  , reloaded => 1
+})};
+assert {
+  stats("./module.bam%devel", "-S", {
+    type => "ruleset"
+  , state => "fresh"
+  , stale => 1
+  , fresh => 1
+  , parse_err => 0
+  , parse_ok => 1
+})};
+assert {
+  stats("foo.bam", "-S", {
+    type => 'formula'
+  , state => "fresh"
+  , parse_ok => 1
+  , parse_err => 0
+})};
+assert {
+  stats("boats", {
+      state => "uncreated"
+    , stale => 0    # counting state transitions
+    , fresh => 0
+})};
+assert {
+  stats("//bm/modules/$bam_module_id/rmas-by/name/1", "--follow", {
+    stale => 1
+  , fresh => 1
+  , rule_resolve_err => 0
+  , rule_resolve_ok => 1
+  , rule_run => 1
+})};
+
+# build - creates the file
+build();
+assert {
+  stats(undef, {
+    modules => 1
+  , system_error => 0
+  , system_state_ready => 2   # one for reconcile -> ok
+  , system_state_ok => 1      # one for build -> ok
+})};
+assert {
+  stats("foo.bam", "-S", {
+    state => "fresh"
+  , parse_ok => 1
+  , parse_err => 0
+})};
+assert {
+  stats("boats", {
+      state => "fresh"
+    , stale => 0    # counting state transitions
+    , fresh => 1
+})};
+assert {
+  stats("//bm/modules/$bam_module_id/rmas-by/name/1", "--follow", {
+    stale => 1
+  , fresh => 1
+  , rule_resolve_err => 0
+  , rule_resolve_ok => 1
+  , rule_run => 1
+})};
+
+# delete the formula file - the rule fml ref is now unresolved
+unlink("$bam_basedir/foo.bam") or die $!;
+reconcile(expect_error => 1);
+
+assert {
+  stats(undef, {
+    modules => 1
+  , system_state_ready => 2
+  , system_state_ok => 1
+  , system_error => 1
+})};
+assert {
+  info({
+    "system-state" => 'rule-reconcile'
+})};
+assert { enoent("foo.bam") };
+
+# foo.bam was deleted during filesystem-reconcile, then re-created in the uncreated
+# state during rules-reconcile, since it is the target of the formula ref
+assert {
+  stats(".", "-S", {
+    type => "module"
+  , state => "fresh"      # the module was not invalidated when
+  , stale => 1            # foo.bam was deleted ; some of its rmas were invalidated
+  , fresh => 1
+  , reloaded => 1
+})};
+assert {
+  stats("./module.bam%devel", "-S", {
+    type => "ruleset"
+  , state => "fresh"
+  , stale => 1
+  , fresh => 1
+  , parse_err => 0
+  , parse_ok => 1
+})};
+assert {
+  stats("//bm/modules/$bam_module_id/rmas-by/name/1", "--follow", {
+    stale => 2
+  , fresh => 1
+  , rule_resolve_err => 1
+  , rule_resolve_ok => 1
+  , rule_run => 1
+})};
+
+# boats marked stale when the formula was deleted
+# -> boats dependency removed during subsequent rules reconcile
+# NOTE : boats will be marked fresh during fsent freshen, at the end of the next successful reconcile
+assert {
+  stats("boats", {
+      state => "stale"
+    , stale => 1          # counting state transitions
+    , fresh => 1
+})};
+
+teardown();

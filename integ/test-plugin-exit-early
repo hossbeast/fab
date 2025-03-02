@@ -1,52 +1,69 @@
 #!/usr/bin/env perl
 
 #
-# if a plugin crashes before it signals readiness, reconcile times out and gives an error
+# if a plugin fails to become ready reconcile times out
 #
 
 use strict;
 use warnings;
 $SIG{__WARN__} = sub { die @_ };
 
+use Carp qw(confess);
+$SIG{__DIE__} = 'confess';
+
 use POSIX;
 use File::Basename;
 use Cwd;
 our $repodir;
 our $bam_basedir;
-our $bam_projdir;
+our $bam_dir;
 BEGIN { $repodir = dirname(Cwd::realpath("$0/..")) }
 use lib "$repodir/integ/lib";
+use lib "$repodir/perl";
 use lib "$repodir/libbacon/perl";
 use util;
 use tree;
-use bam;
+use bam::bam;
+use integ;
 
 init();
-setup({ tolerant => 1 }, <<TREE);
-|-- foo <<
-foo
->>
-|-- module.bam+devel <<
+
+# expect error because the plugin does not send plugin-ready
+setup({ expect_error => 1 }, <<TREE);
+|-- module.bam%devel <<
 >>
 |-- plugin << 0755
 #!/usr/bin/env perl
-# does nothing, just exits
+# does nothing, just exits success
+exit(0);
 >>
-|-- config.bam+devel <<
-plugins : {
-  path : {
-    dirs : {
-      $bam_basedir
+|-- config.bam%devel <<
+filesystem : {
+  fstrees : {
+    $bam_basedir : {
+      mount : true
+      namespaces : {
+        formulas
+      }
     }
   }
+}
+plugins : {
   [
     {
-      path : plugin
+      file : {
+        lookup : {
+          pattern : ./plugin+(.)
+          namespace : formulas
+        }
+      }
     }
   ]
 }
 >>
 TREE
+
+my $plugin_id = bam::identity("plugin", "$bam_basedir/plugin", 'plugin');
 
 assert {
   info(undef, {
@@ -55,21 +72,27 @@ assert {
 assert {
   stats(undef, {
       system_state_ok => 0
+    , system_state_ready => 0
     , system_state_plugin_reconcile => 1
 })};
-assert { stats("$bam_basedir/plugin", "-S", {
+assert { stats("$bam_basedir/plugin", {
+    type => 'file'
+  , state => 'fresh'
+  , stale => 0
+  , fresh => 1
+})};
+assert { stats("//bm/plugins/$plugin_id", "-S", {
     type => 'plugin'
   , state => 'stale'
   , stale => 1
   , fresh => 0
-  , parse => 0
-  , parse_ok => 0
-  , fork => 1
+  , commands => 0
   , crashed => 0
-  , reap => 1
-  , tx_messages => 0
-  , rx_messages => 0
+  , events => 0
+  , fork => 1
   , ready => 0
+  , reap => 1
+  , tx_parse_err => 0
 })};
 
 # fix the plugin
@@ -84,9 +107,10 @@ plugin-ready
 
 MSG
 
-POSIX::write(1001, $s, length($s));
-
-while(1) { }
+while(1) {
+  POSIX::write(1001, $s, length($s));
+  <STDIN>;
+}
 TEXT
 close $fh;
 
@@ -95,26 +119,32 @@ reconcile();
 
 assert {
   info(undef, {
-    "system-state" => 'ok'
+    "system-state" => 'ready'
 })};
 assert {
   stats(undef, {
-      system_state_ok => 1
+      system_state_ok => 0
+    , system_state_ready => 1
     , system_state_plugin_reconcile => 2
 })};
-assert { stats("$bam_basedir/plugin", "-S", {
+assert { stats("$bam_basedir/plugin", {
+    type => 'file'
+  , state => 'fresh'
+  , stale => 1
+  , fresh => 2
+})};
+assert { stats("//bm/plugins/$plugin_id", "-S", {
     type => 'plugin'
   , state => 'fresh'
   , stale => 1
   , fresh => 1
-  , parse => 0
-  , parse_ok => 0
-  , fork => 2
+  , commands => 0
   , crashed => 0
-  , reap => 1
-  , tx_messages => 0
-  , rx_messages => 1
+  , events => 0
+  , fork => 2
   , ready => 1
+  , reap => 1
+  , tx_parse_err => 0
 })};
 
 teardown();

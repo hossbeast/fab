@@ -10,16 +10,18 @@ use Cwd;
 our $repodir;
 BEGIN { $repodir = dirname(Cwd::realpath("$0/..")) }
 use lib "$repodir/integ/lib";
+use lib "$repodir/perl";
 use lib "$repodir/libbacon/perl";
 use util;
 use tree;
-use bam;
+use bam::bam;
+use integ;
 
 # module file - reference to not-found formula
 init();
 my $testdir = setup({ tolerant => 1 }, <<'TREE');
-|-- module.bam+devel <<
-rule -- boats : foo.bam
+|-- module.bam%devel <<
+rule -- boats : ./foo.bam+(.)
 rule boats -> //targets
 >>
 TREE
@@ -35,7 +37,12 @@ assert {
     type => "module"
   , state => 'fresh'
   , reloaded => 1
-  , parse => 1
+})};
+assert {
+  stats("./module.bam%devel", "-S", {
+    type => "ruleset"
+  , state => 'fresh'
+  , parse_err => 0
   , parse_ok => 1
 })};
 
@@ -55,21 +62,26 @@ reconcile();
 assert {
   stats(undef, {
     modules => 1
-  , system_state_ok => 1
+  , system_state_ready => 1
 })};
 assert {
   stats(".", "-S", {
     type => "module"
   , state => 'fresh'
   , reloaded => 1
-  , parse => 1
+})};
+assert {
+  stats("./module.bam%devel", "-S", {
+    type => "ruleset"
+  , state => 'fresh'
+  , parse_err => 0
   , parse_ok => 1
 })};
 assert {
   stats("foo.bam", "-S", {
     type => 'formula'
   , state => "fresh"
-  , parse => 1
+  , parse_err => 0
   , parse_ok => 1
 })};
 assert {

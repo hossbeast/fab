@@ -7,6 +7,9 @@ use strict;
 use warnings;
 $SIG{__WARN__} = sub { die @_ };
 
+use Carp qw(confess);
+$SIG{__DIE__} = 'confess';
+
 use POSIX;
 use File::Basename;
 use Cwd;
@@ -14,136 +17,165 @@ our $repodir;
 our $bam_basedir;
 BEGIN { $repodir = dirname(Cwd::realpath("$0/..")) }
 use lib "$repodir/integ/lib";
+use lib "$repodir/perl";
 use lib "$repodir/libbacon/perl";
 use util;
 use tree;
-use bam;
+use bam::bam;
+use integ;
 
 # unresolved use ref
 init(subdir => 'B');
 setup(<<TREE);
 |-- A
-    `-- rules.bam+devel <<
+    `-- rules.bam%devel <<
 rule foo -> bar
 >>
 |-- C
     `-- foo
 |-- B
-    `-- module.bam+devel <<
+    `-- module.bam%devel <<
 use A
 >>
 |-- system-config <<
 filesystem : {
   fstrees : {
-    $bam_basedir : { mount : true }
+    $bam_basedir : {
+      mount : true
+      namespaces : {
+        modules
+      }
+    }
   }
 }
 >>
 TREE
 
-my $A_rules_id = hash64("$bam_basedir/A/rules.bam+devel");
-my $CA_rules_id = hash64("$bam_basedir/C/A/rules.bam+devel");
+my $A_rules_id = bam::identity('ruleset', "$bam_basedir/A/rules.bam%devel");
+my $CA_rules_id = bam::identity('ruleset', "$bam_basedir/C/A/rules.bam%devel");
 
 # 1. A ref resolves -> A
-assert { stats(undef, {
+assert {
+  stats(undef, {
     modules => 1
-  , ruleset_files => 1
-  , system_state_ok => 1
+  , rulesets => 2
+  , system_state_ready => 1
 })};
-assert { stats(".", "-S", {
+assert {
+  stats(".", "-S", {
     type => "module"
   , state => "fresh"
   , fresh => 1
   , stale => 1
-  , parse => 1
-  , parse_ok => 1
   , reloaded => 1
-  , uses_down => 1
-  , modules_up => 0
-  , modules_down => 0
 })};
-assert { stats("$bam_basedir/A/rules.bam+devel", "-S", {
+assert {
+  stats("./module.bam%devel", "-S", {
+    type => "ruleset"
+  , state => "fresh"
+  , fresh => 1
+  , stale => 1
+  , parse_err => 0
+  , parse_ok => 1
+})};
+assert { stats("$bam_basedir/A/rules.bam%devel", "-S", {
     type => 'ruleset'
   , state => "fresh"
   , fresh => 1
   , stale => 1
-  , parse => 1
+  , parse_err => 0
   , parse_ok => 1
-  , uses_up => 1
+  , modules => 1
 })};
 
-assert { ls("//module/rulesets/$A_rules_id", "$A_rules_id -> //rulesets/$A_rules_id") };
+assert { ls("//module/rulesets/$A_rules_id", "$A_rules_id -> //bm/rulesets/$A_rules_id") };
 
 # create a second target for resolving A
-#  creating C/A invalidates B/module through the index-vertex with label A
+#  creating C/A invalidates B/module through the fsname with label A
 mkdirp("$bam_basedir/C/A");
-open my $fh, ">$bam_basedir/C/A/rules.bam+devel";
+open my $fh, ">$bam_basedir/C/A/rules.bam%devel";
 print $fh <<'TEXT';
 rule baz -> qux
 TEXT
 close $fh;
-chmod 0644, "$bam_basedir/C/A/rules.bam+devel" or die $!;
+chmod 0644, "$bam_basedir/C/A/rules.bam%devel" or die $!;
 
-# 2. A ref is now ambiguous
+# 2. the A ref is now ambiguous
 reconcile(expect_error => 1);
-assert { stats(undef, {
+bam_debug();
+assert {
+  stats(undef, {
     modules => 1
-  , ruleset_files => 1
-  , system_state_ok => 1
+  , rulesets => 1
+  , system_state_ready => 1
 })};
+
 # module reload attempted but unsuccessful
-assert { stats(".", "-S", {
+assert {
+  stats(".", "-S", {
     type => "module"
   , state => "stale"
   , fresh => 1
   , stale => 2
-  , modules_up => 0
-  , modules_down => 0
   , reloaded => 1
-  , parse => 1
-  , parse_ok => 1
 })};
-assert { stats("$bam_basedir/A/rules.bam+devel", "-S", {
-    type => 'ruleset'
+assert {
+  stats("./module.bam%devel", "-S", {
+    type => "ruleset"
   , state => "fresh"
   , fresh => 1
-  , stale => 1      # not invalidated by rma-rules disconnect event
-  , parse => 1
+  , stale => 1
+  , parse_err => 0
   , parse_ok => 1
+})};
+
+# since no module is connected, this node has been un-blessed
+assert { stats("$bam_basedir/A/rules.bam%devel", {
+    type => 'file'
+  , state => "fresh"
+  , fresh => 1
+  , stale => 0
 })};
 
 #
 # remove the first target for resolving A -- now the reference is unambiguous
 #
-unlink("$bam_basedir/A/rules.bam+devel") or die $!;
+unlink("$bam_basedir/A/rules.bam%devel") or die $!;
 rmdir("$bam_basedir/A") or die $!;
 
 reconcile();
-assert { stats(undef, {
+assert {
+  stats(undef, {
     modules => 1
-  , ruleset_files => 1
-  , system_state_ok => 2
+  , rulesets => 2
+  , system_state_ready => 2
 })};
-assert { stats(".", "-S", {
+assert {
+  stats(".", "-S", {
     type => "module"
   , state => "fresh"
   , fresh => 2
   , stale => 2
-  , modules_up => 0
-  , modules_down => 0
-  , uses_down => 1
+  , rulesets => 2
   , reloaded => 2
-  , parse => 1
+})};
+assert {
+  stats("./module.bam%devel", "-S", {
+    type => "ruleset"
+  , state => "fresh"
+  , fresh => 1
+  , stale => 1
+  , parse_err => 0
   , parse_ok => 1
 })};
-assert { stats("$bam_basedir/C/A/rules.bam+devel", "-S", {
+assert { stats("$bam_basedir/C/A/rules.bam%devel", "-S", {
     type => 'ruleset'
   , state => "fresh"
   , fresh => 1
-  , stale => 1      # not invalidated by rma-rules disconnect event
-  , parse => 1
+  , stale => 1
+  , parse_err => 0
   , parse_ok => 1
-  , uses_up => 1
+  , modules => 1
 })};
 
 teardown();

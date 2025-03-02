@@ -9,6 +9,9 @@ use strict;
 use warnings;
 $SIG{__WARN__} = sub { die @_ };
 
+use Carp qw(confess);
+$SIG{__DIE__} = 'confess';
+
 use POSIX;
 use File::Basename;
 use Cwd;
@@ -16,21 +19,23 @@ our $repodir;
 our $bam_basedir;
 BEGIN { $repodir = dirname(Cwd::realpath("$0/..")) }
 use lib "$repodir/integ/lib";
+use lib "$repodir/perl";
 use lib "$repodir/libbacon/perl";
 use util;
 use tree;
-use bam;
+use bam::bam;
+use integ;
 
 init(subdir => 'B');
 setup(<<"TREE");
-|-- module.bam+devel
+|-- module.bam%devel
 |-- A
 |   `-- foo
 |       `-- bar
 |   `-- baz
 |       `-- qux
 |-- B
-|   `-- module.bam+devel <<
+|   `-- module.bam%devel <<
 >>
 |-- system-config <<
 filesystem : {
@@ -43,20 +48,51 @@ filesystem : {
 >>
 TREE
 
+my $root_fstree_id = bam::identity("fstree", "/");
+my $shadow_fstree_id = bam::identity("fstree", "//");
+my $system_fstree_id = bam::identity("fstree", $bam_basedir);
+my $base_fstree_id = bam::identity("fstree", "$bam_basedir");
+my $A_foo_fstree_id = bam::identity("fstree", "$bam_basedir/A/foo");
+my $A_fstree_id = bam::identity("fstree", "$bam_basedir/A");
+
 # before
 assert {
   stats(undef, {
-    modules => 1
+      modules => 1
+    , fstrees => 5
 })};
 assert {
   stats(".", "-S", {
-      type => 'module'
-    , state => 'fresh'
-    , reloaded => 1
-    , parse => 1
-    , parse_ok => 1
+    type => 'module'
+  , state => 'fresh'
+  , stale => 1
+  , fresh => 1
+  , reloaded => 1
+  , rmas => 0
+  , varsets => 0
+  , fsnames => 0
+  , rulesets => 1
+})};
+assert {
+  stats("./module.bam%devel", "-S", {
+    type => 'ruleset'
+  , state => 'fresh'
+  , stale => 1
+  , fresh => 1
+  , parse_err => 0
+  , parse_ok => 1
+  , rules => 0
 })};
 
+# expected set of fstrees
+assert { eexists("//bm/fstrees/$root_fstree_id") };    # from root dir
+assert { eexists("//bm/fstrees/$shadow_fstree_id") };  # from shadow dir
+assert { eexists("//bm/fstrees/$system_fstree_id") };  # from system-config dir
+assert { eexists("//bm/fstrees/$base_fstree_id") };    # from base dir
+assert { eexists("//bm/fstrees/$A_foo_fstree_id") };   # from system-config
+assert { enoent("//bm/fstrees/$A_fstree_id") };
+
+# expected set of nodes visible
 assert { eexists("$bam_basedir/A/foo/bar") };
 assert { eexists("$bam_basedir/A/foo") };
 assert { enoent("$bam_basedir/A/baz/qux") };
@@ -67,7 +103,7 @@ print FH <<TREE;
 filesystem : {
   fstrees : {
     $bam_basedir/A : {        # one level higher
-      mount : true
+      mount : true            # A/baz is now visible
     }
   }
 }
@@ -78,16 +114,42 @@ reconcile();
 # after
 assert {
   stats(undef, {
-    modules => 1
+      modules => 1
+    , fstrees => 5
 })};
 assert {
   stats(".", "-S", {
-      type => 'module'
-    , state => 'fresh'
-    , reloaded => 1
-    , parse => 1
-    , parse_ok => 1
+    type => 'module'
+  , state => 'fresh'
+  , stale => 1
+  , fresh => 1
+  , reloaded => 1
+  , rmas => 0
+  , varsets => 0
+  , fsnames => 0
+  , rulesets => 1
 })};
+assert {
+  stats("./module.bam%devel", "-S", {
+    type => 'ruleset'
+  , state => 'fresh'
+  , stale => 1
+  , fresh => 1
+  , parse_err => 0
+  , parse_ok => 1
+  , rules => 0
+})};
+
+
+# expected set of fstrees
+assert { eexists("//bm/fstrees/$root_fstree_id") };    # from root dir
+assert { eexists("//bm/fstrees/$shadow_fstree_id") };  # from shadow dir
+assert { eexists("//bm/fstrees/$system_fstree_id") };  # from system-config dir
+assert { eexists("//bm/fstrees/$base_fstree_id") };    # from base dir
+assert { enoent("//bm/fstrees/$A_foo_fstree_id") };
+assert { eexists("//bm/fstrees/$A_fstree_id") };       # from system-config
+
+# expected set of nodes visible
 assert { eexists("$bam_basedir/A/foo/bar") };
 assert { eexists("$bam_basedir/A/foo") };
 assert { eexists("$bam_basedir/A/baz/qux") };

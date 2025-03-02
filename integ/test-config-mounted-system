@@ -13,72 +13,101 @@ use File::Basename;
 use Cwd;
 our $repodir;
 our $bam_basedir;
+our $bam_dir;
 our $bam_invalidate;
 BEGIN { $repodir = dirname(Cwd::realpath("$0/..")) }
 use lib "$repodir/integ/lib";
+use lib "$repodir/perl";
 use lib "$repodir/libbacon/perl";
 use util;
 use tree;
-use bam;
+use bam::bam;
+use integ;
 
 # notify-specific stats assertions
 init();
 exit 0 if $bam_invalidate ne 'notify';
 
-setup(<<'TREE');
-|-- module.bam+devel
+setup(<<"TREE");
+|-- module.bam%devel
 |-- system-config <<
+filesystem : {
+  fstrees : {
+    $bam_dir : {
+      mount : true
+      namespaces : {
+        modules
+      }
+    }
+  }
+}
 >>
 TREE
 
 # 1. empty system-config file
-assert { info({
-    "system-state" => 'ok'
+assert {
+  info({
+    "system-state" => 'ready'
 })};
-assert { stats(undef, {
-    system_state_ok => 1
-  , configset_files => 1
+assert {
+  stats(undef, {
+    system_state_ready => 1
+  , configsets => 2
 })};
 # system-config is within a mounted fstree and is not watched directly
-assert { stats("//notify", {
-    count => 1
+assert {
+  stats("//bm/sys-notify", "--follow", {
+    count => 2  # test dir, user-config
+  , put => 3
+  , file_put => 1     # system-config
+  , file_del => 1     # system-config
+  , dir_put => 1      # test-dir
+  , symlink_put => 1  # user-config
 })};
-assert { stats(".", {
-    type => 'module-dir'
+assert {
+  stats(".", {
+    type => 'dir'
   , state => 'fresh'
   , indexed_lookup => 1
   , indexed_notify => 1
 })};
 
 assert { eexists("system-config") };
-assert { stats("system-config", {
-    type => 'configset-file'
+assert {
+  stats("system-config", {
+    type => 'file'
   , state => 'fresh'
   , indexed_notify => 0
 })};
-assert { stats("system-config", "-S", {
+assert {
+  stats("system-config", "-S", {
     type => "configset"
   , state => 'fresh'
-  , parse => 1
+  , parse_err => 0
   , parse_ok => 1
 })};
-
-# no user-config file but the node exists as uncreated
-assert { enoent("$bam_basedir/user-config") };
 
 # 2. system-config deleted
 unlink("$bam_basedir/system-config");
 
 reconcile();
-assert { info({
-    "system-state" => 'ok'
+assert {
+  info({
+    "system-state" => 'ready'
 })};
-assert { stats(undef, {
-    system_state_ok => 2
-  , configset_files => 0
+assert {
+  stats(undef, {
+    system_state_ready => 2
+  , configsets => 1   # the default user-config
 })};
-assert { stats("//notify", {
-    count => 1
+assert {
+  stats("//bm/sys-notify", "--follow", {
+    count => 2  # test dir, user-config
+  , put => 3
+  , file_put => 1     # system-config
+  , file_del => 1     # system-config
+  , dir_put => 1      # test-dir
+  , symlink_put => 1  # user-config
 })};
 assert { enoent("system-config") };
 
@@ -90,25 +119,35 @@ close $fh;
 
 reconcile();
 
-assert { info({
-    "system-state" => 'ok'
+assert {
+  info({
+    "system-state" => 'ready'
 })};
-assert { stats(undef, {
-    system_state_ok => 3
-  , configset_files => 1
+assert {
+  stats(undef, {
+    system_state_ready => 3
+  , configsets => 2
 })};
-assert { stats("//notify", {
-    count => 1
+assert {
+  stats("//bm/sys-notify", "--follow", {
+    count => 2  # test dir, user-config
+  , put => 3
+  , file_put => 1     # system-config
+  , file_del => 1     # system-config
+  , dir_put => 1      # test-dir
+  , symlink_put => 1  # user-config
 })};
-assert { stats("system-config", {
-    type => 'configset-file'
+assert {
+  stats("system-config", {
+    type => 'file'
   , state => 'fresh'
   , indexed_notify => 0
 })};
-assert { stats("system-config", "-S", {
+assert {
+  stats("system-config", "-S", {
     type => "configset"
   , state => 'fresh'
-  , parse => 1
+  , parse_err => 0
   , parse_ok => 1
 })};
 
@@ -123,29 +162,36 @@ close $fh;
 
 reconcile();
 
-assert { info({
-    "system-state" => 'ok'
+assert {
+  info({
+    "system-state" => 'ready'
 })};
-assert { stats(undef, {
-    system_state_ok => 4
-  , configset_files => 1
+assert {
+  stats(undef, {
+    system_state_ready => 4
+  , configsets => 2
 })};
-assert { stats("//notify", {
-    count => 1
+assert {
+  stats("//bm/sys-notify", "--follow", {
+    count => 2  # test dir, user-config
+  , put => 3
+  , file_put => 1     # system-config
+  , file_del => 1     # system-config
+  , dir_put => 1      # test-dir
+  , symlink_put => 1  # user-config
 })};
-assert { stats("system-config", {
-    type => 'configset-file'
+assert {
+  stats("system-config", {
+    type => 'file'
   , state => 'fresh'
   , indexed_notify => 0
 })};
-assert { stats("system-config", "-S", {
+assert {
+  stats("system-config", "-S", {
     type => "configset"
   , state => 'fresh'
-  , parse => 2
+  , parse_err => 0
   , parse_ok => 2
 })};
-
-# no user-config file but the node exists as uncreated
-assert { enoent("$bam_basedir/user-config") };
 
 teardown();

@@ -13,57 +13,65 @@ use POSIX;
 use File::Basename;
 use Cwd;
 our $bam_basedir;
-our $bam_projdir;
+our $bam_dir;
 our $repodir;
 BEGIN { $repodir = dirname(Cwd::realpath("$0/..")) }
 use lib "$repodir/integ/lib";
+use lib "$repodir/perl";
 use lib "$repodir/libbacon/perl";
 use util;
 use tree;
-use bam;
+use bam::bam;
+use integ;
 
 init(subdir => 'B');
 setup(<<TREE);
 |-- A
 |   `-- foo
 |-- B
-|   `-- module.bam+devel <<
+|   `-- module.bam%devel <<
 bind { name : 1 } A/foo+(.) => //foo
 >>
 |-- system-config <<
 filesystem : {
   fstrees : {
-    / : {
-      index : false
-    }
     $bam_basedir : {
-      index : true
       mount : true
+      namespaces : {
+        modules
+      }
     }
   }
 }
 >>
 TREE
 
-my $foo_A_id = hash64("$bam_basedir/A/foo");
+my $modules_ns_id = bam::identity("namespace", "modules");
+my $foo_A_id = bam::identity("file", "$bam_basedir/A/foo");
 
 # 1. one target
 assert { stats(undef, {
     modules => 1
-  , system_state_ok => 1
+  , system_state_ready => 1
   , rule_run => 1
 })};
 assert {
-  stats("//fsindex", {
-      put => 3
+  stats("//bm/namespaces/$modules_ns_id", "-S", {
+      put => 2
     , del => 0
-    , count => 3
+    , count => 2
 })};
-assert { stats(".", "-S", {
+assert {
+  stats(".", "-S", {
     type => 'module'
   , state => 'fresh'
   , reloaded => 1
-  , parse => 1
+})};
+assert {
+  stats("./module.bam%devel", "-S", {
+    type => 'ruleset'
+  , state => 'fresh'
+  , parse_err => 0
   , parse_ok => 1
 })};
 assert { stats("../A", {
@@ -73,9 +81,8 @@ assert { stats("../A/foo", {
     type => 'file'
 })};
 assert {
-  stats("//module/rmas-by/name/1", {
+  stats("//module/rmas-by/name/1", "--follow", {
       rule_run => 1
-    , rule_run_ok => 1
     , search_hits => 0
     , generate_hits => 0
     , formula_hits => 0

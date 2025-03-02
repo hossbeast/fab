@@ -8,44 +8,58 @@ use strict;
 use warnings;
 $SIG{__WARN__} = sub { die @_ };
 
+use Carp qw(confess);
+$SIG{__DIE__} = 'confess';
+
 use POSIX;
 use File::Basename;
 use Cwd;
 our $repodir;
+our $bam_basedir;
 BEGIN { $repodir = dirname(Cwd::realpath("$0/..")) }
 use lib "$repodir/integ/lib";
+use lib "$repodir/perl";
 use lib "$repodir/libbacon/perl";
 use util;
 use tree;
-use bam;
+use bam::bam;
+use integ;
 
 # config file with syntax error
 init();
-my $testdir = setup(<<'TREE');
-|-- module.bam+devel
-|-- config.bam+devel <<
+setup(<<'TREE');
+|-- module.bam%devel
+|-- config.bam%devel <<
 >>
 TREE
+
+my $fh;
+my $res;
 
 # 1. empty config.bam file
 assert {
   stats(undef, {
-      system_state_ok => 1
-    , configset_files => 1
+      system_state_ready => 1
+    , configsets => 2
+})};
+assert { stats("//bm/sys-config", "--follow", {
+    reconfigure_no_work => 1
+  , reconfigure_ok => 2
+  , reconfigure_err => 0
 })};
 assert {
   info({
-    "system-state" => 'ok'
+    "system-state" => 'ready'
 })};
-assert { stats("config.bam+devel", "-S", {
+assert { stats("config.bam%devel", "-S", {
     type => "configset"
   , state => 'fresh'
-  , parse => 1
   , parse_ok => 1
+  , parse_err => 0
 })};
 
 # 2. config.bam file changed
-open my $fh, ">", "$testdir/config.bam+devel" or die $!;
+open $fh, ">", "$bam_basedir/config.bam%devel" or die $!;
 print $fh <<'TEXT';
 build : {
   concurrency : 42
@@ -56,20 +70,25 @@ close $fh;
 reconcile();
 assert { stats(undef, {
     modules => 1
-  , system_state_ok => 2
-  , configset_files => 1
+  , system_state_ready => 2
+  , configsets => 2
 })};
-assert { stats("config.bam+devel", "-S", {
+assert { stats("//bm/sys-config", "--follow", {
+    reconfigure_no_work => 2
+  , reconfigure_ok => 3
+  , reconfigure_err => 0
+})};
+assert { stats("config.bam%devel", "-S", {
     type => "configset"
   , state => 'fresh'
-  , parse => 2
   , parse_ok => 2
+  , parse_err => 0
 })};
-my $res = bam_config();
-assert { $$res{out} =~ /concurrency/ };
+$res = bam_config();
+assert { $$res{out} =~ /concurrency : 42/ };
 
 # 3. config.bam file changed
-open $fh, ">", "$testdir/config.bam+devel" or die $!;
+open $fh, ">", "$bam_basedir/config.bam%devel" or die $!;
 print $fh <<'TEXT';
 filesystem : {
   fstrees : {
@@ -84,22 +103,28 @@ close $fh;
 reconcile();
 assert { stats(undef, {
     modules => 1
-  , system_state_ok => 3
-  , configset_files => 1
+  , system_state_ready => 3
+  , configsets => 2
 })};
-assert { stats("config.bam+devel", "-S", {
+assert { stats("//bm/sys-config", "--follow", {
+    reconfigure_no_work => 3
+  , reconfigure_ok => 4
+  , reconfigure_err => 0
+})};
+assert { stats("config.bam%devel", "-S", {
     type => "configset"
   , state => 'fresh'
-  , parse => 3
   , parse_ok => 3
+  , parse_err => 0
 })};
 $res = bam_config();
-assert { $$res{out} !~ /concurrency/ };
+print("$$res{out}\n");
+assert { $$res{out} !~ /concurrency : 42/ };
 assert { $$res{out} =~ /mkdir : false/ };
 assert { $$res{out} !~ /mkdir : true/ };
 
 # 4. config.bam file changed
-open $fh, ">", "$testdir/config.bam+devel" or die $!;
+open $fh, ">", "$bam_basedir/config.bam%devel" or die $!;
 print $fh <<'TEXT';
 filesystem : {
   fstrees : {
@@ -114,17 +139,22 @@ close $fh;
 reconcile();
 assert { stats(undef, {
     modules => 1
-  , system_state_ok => 4
-  , configset_files => 1
+  , system_state_ready => 4
+  , configsets => 2
 })};
-assert { stats("config.bam+devel", "-S", {
+assert { stats("//bm/sys-config", "--follow", {
+    reconfigure_no_work => 4
+  , reconfigure_ok => 5
+  , reconfigure_err => 0
+})};
+assert { stats("config.bam%devel", "-S", {
     type => "configset"
   , state => 'fresh'
-  , parse => 4
+  , parse_err => 0
   , parse_ok => 4
 })};
 $res = bam_config();
-assert { $$res{out} !~ /concurrency/ };
+assert { $$res{out} !~ /concurrency : 42/ };
 assert { $$res{out} !~ /mkdir : false/ };
 assert { $$res{out} =~ /mkdir : true/ };
 

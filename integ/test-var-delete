@@ -4,34 +4,47 @@ use strict;
 use warnings;
 $SIG{__WARN__} = sub { die @_ };
 
+use Carp qw(confess);
+$SIG{__DIE__} = 'confess';
+
 use POSIX;
 use File::Basename;
 use Cwd;
 our $repodir;
-our $bam_projdir;
+our $bam_dir;
+our $bam_basedir;
+our $bam_bamd_id;
+our $bam_ipcdir;
 BEGIN { $repodir = dirname(Cwd::realpath("$0/..")) }
 use lib "$repodir/integ/lib";
+use lib "$repodir/perl";
 use lib "$repodir/libbacon/perl";
 use util;
 use tree;
-use bam;
+use bam::bam;
+use integ;
 
 init(subdir => 'B');
 setup(<<'TREE');
 |-- B
-|   `-- module.bam+devel
-|   `-- var.bam+devel <<
-lflags.devel : [
-  -lasan -lubsan
+|   `-- module.bam%devel
+|   `-- var.bam%devel <<
+A : [
+  B C
 ]
 >>
 TREE
 
+my $module_id = bam::identity("module", "$bam_basedir/B");
+printf("%-15s %s\n", "module_id", $module_id);
+printf("%-15s %s\n", "bamd_id", $bam_bamd_id);
+
 # before
 assert { stats(undef, {
     modules => 1
-  , system_state_ok => 1
-  , varset_files => 1
+  , system_state_ready => 0
+  , system_state_ready => 1
+  , varsets => 1
 })};
 assert { stats(".", "-S", {
     type => 'module'
@@ -39,27 +52,69 @@ assert { stats(".", "-S", {
   , fresh => 1
   , stale => 1
   , reloaded => 1
-  , parse => 1
+})};
+assert { stats("./module.bam%devel", "-S", {
+    type => 'ruleset'
+  , state => "fresh"
+  , fresh => 1
+  , stale => 1
+  , parse_err => 0
   , parse_ok => 1
 })};
 
-unlink("$bam_projdir/var.bam+devel") or die $!;
+my $vars = bam_module_vars();
+print("$vars\n");
+assert { $vars =~ /B/ };
+assert { $vars =~ /C/ };
+
+# also check for some sysvars
+assert { $vars =~ /bm_bamd_id : .$bam_bamd_id/ };
+assert { $vars =~ /bm_module_id :.$module_id/ };
+assert { $vars =~ /bm_ipcdir :.$bam_ipcdir/ };
+
+my $envs = bam_module_envs();
+print("$envs\n");
+assert { $envs =~ /A=B C/ };
+
+# also check for some sysvars
+assert { $envs =~ /bm_bamd_id=$bam_bamd_id/ };
+assert { $envs =~ /bm_module_id=$module_id/ };
+assert { $envs =~ /bm_ipcdir=$bam_ipcdir/ };
+
+unlink("$bam_dir/var.bam%devel") or die $!;
 reconcile();
 
 # after - disappearance of var file in same dir has invalidated the module
 assert { stats(undef, {
     modules => 1
-  , system_state_ok => 2
-  , varset_files => 0        # and deleted the var node
+  , system_state_ready => 0
+  , system_state_ready => 2
+  , varsets => 0        # and deleted the var node
 })};
-assert { enoent("$bam_projdir/var.bam+devel") };
+assert { enoent("$bam_dir/var.bam%devel") };
 assert { stats(".", "-S", {
     type => 'module'
   , state => "fresh"
   , fresh => 2
   , stale => 2
   , reloaded => 2
-  , parse => 1
+})};
+assert { stats("./module.bam%devel", "-S", {
+    type => 'ruleset'
+  , state => "fresh"
+  , fresh => 1
+  , stale => 1
+  , parse_err => 0
   , parse_ok => 1
 })};
+
+$vars = bam_module_vars();
+print("$vars\n");
+assert { $vars !~ /A=.*B/ };
+assert { $vars !~ /A=.*C/ };
+
+$envs = bam_module_envs();
+print("$envs\n");
+assert { $envs !~ /A/ };
+
 teardown();

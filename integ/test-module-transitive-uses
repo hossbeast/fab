@@ -1,12 +1,15 @@
 #!/usr/bin/env perl
 
 #
-# This test verifies that transitive USES are applied
+# This test exercises use statements which are in rulesets which are referenced via use
 #
 
 use strict;
 use warnings;
 $SIG{__WARN__} = sub { die @_ };
+
+use Carp qw(confess);
+$SIG{__DIE__} = 'confess';
 
 use POSIX;
 use File::Basename;
@@ -15,57 +18,125 @@ our $bam_basedir;
 our $repodir;
 BEGIN { $repodir = dirname(Cwd::realpath("$0/..")) }
 use lib "$repodir/integ/lib";
+use lib "$repodir/perl";
 use lib "$repodir/libbacon/perl";
 use util;
 use tree;
-use bam;
+use bam::bam;
+use integ;
 
-init(subdir => 'B');
+init(subdir => 'A');
 setup(<<TREE);
 |-- A
-|   `-- rules.bam+devel <<
-use C
+|   `-- module.bam%devel <<
+use B
+rule -- foo : $bam_basedir/touch.bam+(.)
 >>
 |-- B
-|   `-- foo
-|   `-- module.bam+devel <<
-use A
+|   `-- rules.bam%devel <<
+use C
+rule foo -> bar : $bam_basedir/cp.bam+(.)
 >>
 |-- C
-|   `-- rules.bam+devel <<
-rule foo -> bar
+|   `-- rules.bam%devel <<
+rule bar -> baz : $bam_basedir/cp.bam+(.)
 >>
 |-- system-config <<
+namespaces : {
+  coreutils
+}
 filesystem : {
   fstrees : {
-    $bam_basedir : { mount : true }
+    $bam_basedir : {
+      mount : true
+      namespaces : {
+        modules
+      }
+    }
+    $repodir/usr/share/bam/coreutils : {
+      mount : true
+      namespaces : {
+        coreutils
+      }
+    }
   }
 }
+>>
+|-- cp.bam << 0777
+file : {
+  lookup : {
+    namespace : coreutils
+    pattern : bin/cp+(.@)
+  }
+}
+args : [
+  \$bm_source0
+  \$bm_target0
+]
+>>
+|-- touch.bam << 0777
+file : {
+  lookup : {
+    namespace : coreutils
+    pattern : bin/touch+(@.)
+  }
+}
+args : [
+  \$bm_target0
+]
 >>
 TREE
 
 # before
-assert { stats(undef, {
+assert {
+  stats(undef, {
     modules => 1
-  , system_state_ok => 1
+  , system_state_ready => 1
 })};
-assert { stats(".", "-S", {
+assert {
+  stats("$bam_basedir/A", "-S", {
     type => 'module'
   , state => 'fresh'
   , reloaded => 1
-  , modules_up => 0
-  , modules_down => 0
-  , uses_down => 2    # A, and C
-  , parse => 1
-  , parse_ok => 1
+  , rulesets => 3    # self (B), A, and C via A
+  , rmas => 3
 })};
-assert { stats(".", {
-    type => 'module-dir'
-  , rules => 1        # rule from C is applied
-})};
-assert { stats("../C/rules.bam+devel", {
-    type => 'ruleset-file'
+assert {
+  stats("$bam_basedir/A/module.bam%devel", "-S", {
+    type => 'ruleset'
   , state => 'fresh'
+  , fresh => 1
+  , stale => 1
+  , parse_err => 0
+  , parse_ok => 1
+  , modules => 1
 })};
+assert {
+  stats("$bam_basedir/B/rules.bam%devel", "-S", {
+    type => 'ruleset'
+  , state => 'fresh'
+  , fresh => 1
+  , stale => 1
+  , parse_err => 0
+  , parse_ok => 1
+  , modules => 1
+})};
+assert {
+  stats("$bam_basedir/C/rules.bam%devel", "-S", {
+    type => 'ruleset'
+  , state => 'fresh'
+  , fresh => 1
+  , stale => 1
+  , parse_err => 0
+  , parse_ok => 1
+  , modules => 1
+})};
+assert {
+  stats("$bam_basedir/A", {
+    type => 'dir'
+  , rules => 2        # rules from B, C, match in this dir
+})};
+
+build();
 
 teardown();

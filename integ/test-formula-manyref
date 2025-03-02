@@ -8,19 +8,22 @@ use POSIX;
 use File::Basename;
 use Cwd;
 our $repodir;
+our $bam_basedir;
 BEGIN { $repodir = dirname(Cwd::realpath("$0/..")) }
 use lib "$repodir/integ/lib";
+use lib "$repodir/perl";
 use lib "$repodir/libbacon/perl";
 use util;
 use tree;
-use bam;
+use bam::bam;
+use integ;
 
 # module file - boats is created by separate rules which each reference separate formulas
 init();
-my $testdir = setup({tolerant => 1}, <<'TREE');
-|-- module.bam+devel <<
-rule -- boats : foo.bam
-rule -- boats : bar.bam
+setup({tolerant => 1}, <<'TREE');
+|-- module.bam%devel <<
+rule -- boats : ./foo.bam+(.)
+rule -- boats : ./bar.bam+(.)
 rule boats -> //targets
 >>
 |-- foo.bam << 0777
@@ -39,6 +42,10 @@ TREE
 
 # before
 assert {
+  info(undef, {
+    "system-state" => 'bpe-reconcile'
+})};
+assert {
   stats(undef, {
     modules => 1
   , system_state_ok => 0  # rules didnt reconcile
@@ -48,31 +55,36 @@ assert {
     type => "module"
   , state => 'fresh'
   , reloaded => 1
-  , parse => 1
+})};
+assert {
+  stats("./module.bam%devel", "-S", {
+    type => "ruleset"
+  , state => 'fresh'
+  , parse_err => 0
   , parse_ok => 1
 })};
 assert {
   stats("foo.bam", "-S", {
     type => "formula"
-  , state => "stale"    # not parsed yet, since rules didnt reconcile
-  , parse => 0
-  , parse_ok => 0
+  , state => "fresh"    # even reconciliation did not complete due to the ambiguity the formulas were parsed
+  , parse_err => 0      # during rules-resolve
+  , parse_ok => 1
 })};
 assert {
   stats("bar.bam", "-S", {
     type => "formula"
-  , state => "stale"
-  , parse => 0
-  , parse_ok => 0
+  , state => "fresh"
+  , parse_err => 0
+  , parse_ok => 1
 })};
 assert {
   stats("boats", { state => "uncreated" }
 )};
 
-# module file - fixed
-open my $fh, ">", "$testdir/module.bam+devel" or die $!;
+# module file - ambiguity removed
+open my $fh, ">", "$bam_basedir/module.bam%devel" or die $!;
 print $fh <<TEXT;
-rule -- boats : foo.bam
+rule -- boats : ./foo.bam+(.)
 rule boats -> //targets
 TEXT
 close $fh;
@@ -81,30 +93,37 @@ reconcile();
 assert {
   stats(undef, {
     modules => 1
-  , system_state_ok => 1
+  , system_state_ready => 1
+  , system_state_ok => 0
 })};
 assert {
   stats(".", "-S", {
     type => "module"
   , state => 'fresh'
   , reloaded => 2
-  , parse => 2
+})};
+assert {
+  stats("./module.bam%devel", "-S", {
+    type => "ruleset"
+  , state => 'fresh'
+  , parse_err => 0
   , parse_ok => 2
 })};
 assert {
   stats("foo.bam", "-S", {
     type => "formula"
   , state => "fresh"
-  , parse => 1
+  , parse_err => 0
   , parse_ok => 1
 })};
 assert {
-  stats("bar.bam", {   # no longer referenced by any rule
-    type => "file"
+  stats("bar.bam", {   # as its no longer referenced by any rule this is
+    type => "file"     # now just a normal file
   , state => "fresh"
 })};
 assert {
-  stats("boats", { state => "uncreated" })};
+  stats("boats", { state => "uncreated" })
+};
 
 # build - creates the file
 build();
@@ -115,7 +134,7 @@ assert {
 })};
 
 # file was created by the foo formula
-open $fh, "<", "$testdir/boats" or die $!;
+open $fh, "<", "$bam_basedir/boats" or die $!;
 my $text = do { local $/ ; <$fh> };
 chomp $text;
 close $fh;

@@ -16,26 +16,28 @@ our $repodir;
 our $bam_basedir;
 BEGIN { $repodir = dirname(Cwd::realpath("$0/..")) }
 use lib "$repodir/integ/lib";
+use lib "$repodir/perl";
 use lib "$repodir/libbacon/perl";
 use util;
 use tree;
-use bam;
+use bam::bam;
+use integ;
 
 # build out the fstree under /tmp
 init(subdir => 'B');
 my $testdir = setup(<<TREE);
 |-- A
-|   `-- myvar+devel <<
+|   `-- myvar%devel <<
 >>
 |   `-- C
-|       `-- myvar+devel <<
+|       `-- myvar%devel <<
 >>
 |-- B
-|   `-- module.bam+devel <<
+|   `-- module.bam%devel <<
 anchor ../A/C
-varsets myvar
+varsets myvar%devel
 >>
-|-- myvar+devel <<
+|-- myvar%devel <<
 >>
 |-- system-config <<
 filesystem : {
@@ -48,44 +50,51 @@ filesystem : {
     }
     / : {
       mkdir : true
-      index : true
     }
   }
 }
 >>
 TREE
 
-my $mod_id = hash64("$bam_basedir/B");
-my $var_1_id = hash64("$bam_basedir/A/myvar+devel");
-my $var_2_id = hash64("$bam_basedir/A/C/myvar+devel");
+my $mod_id = bam::identity('module', "$bam_basedir/B");
+my $var_1_id = bam::identity("varset", "$bam_basedir/A/myvar%devel");
+my $var_2_id = bam::identity("varset", "$bam_basedir/A/C/myvar%devel");
+my $result;
+my $ref;
 
 # before
 assert { stats(undef, {
     modules => 1
-  , system_state_ok => 1
+  , system_state_ready => 1
 })};
-assert { stats(".", "-S", {
+assert {
+  stats(".", "-S", {
     type => 'module'
   , state => "fresh"
   , reloaded => 1
-  , parse => 1
+})};
+assert {
+  stats("./module.bam%devel", "-S", {
+    type => 'ruleset'
+  , state => "fresh"
+  , parse_err => 0
   , parse_ok => 1
 })};
-assert { stats("$bam_basedir/myvar+devel", "-S", {
+assert { stats("$bam_basedir/myvar%devel", "-S", {
     type => "varset"
   , state => "fresh"
-  , parse => 1
+  , parse_err => 0
   , parse_ok => 1
 })};
 
-my $result = bam_ls(["//modules/$mod_id/varsets/$var_1_id", "--no-follow"]);
-my $ref = $$result{out};
-print("$ref\n");
-assert { $ref eq "$var_1_id -> //varsets/$var_1_id" };
-
-$result = bam_ls(["//modules/$mod_id/varsets/$var_2_id", "--no-follow"]);
+$result = bam_ls(["//bm/modules/$mod_id/varsets/$var_1_id", "--no-follow"]);
 $ref = $$result{out};
 print("$ref\n");
-assert { $ref eq "$var_2_id -> //varsets/$var_2_id" };
+assert { $ref eq "$var_1_id -> //bm/varsets/$var_1_id" };
+
+$result = bam_ls(["//bm/modules/$mod_id/varsets/$var_2_id", "--no-follow"]);
+$ref = $$result{out};
+print("$ref\n");
+assert { $ref eq "$var_2_id -> //bm/varsets/$var_2_id" };
 
 teardown();

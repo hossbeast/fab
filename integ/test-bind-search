@@ -1,39 +1,47 @@
 #!/usr/bin/env perl
 
 #
-# This test references a file imported from another directory in a rule
+# This test binds a directory from outside the module into the shadow tree with
+# a bind/search rule, then references it from there, with a search rule
 #
 
 use strict;
 use warnings;
 $SIG{__WARN__} = sub { die @_ };
 
+use Carp qw(confess);
+$SIG{__DIE__} = 'confess';
+
 use POSIX;
 use File::Basename;
 use Cwd;
 our $bam_basedir;
-our $bam_projdir;
 our $repodir;
 BEGIN { $repodir = dirname(Cwd::realpath("$0/..")) }
 use lib "$repodir/integ/lib";
+use lib "$repodir/perl";
 use lib "$repodir/libbacon/perl";
 use util;
 use tree;
-use bam;
+use bam::bam;
+use integ;
 
 init(subdir => 'B');
 setup(<<TREE);
 |-- A
 |   `-- foo
 |-- B
-|   `-- module.bam+devel <<
+|   `-- module.bam%devel <<
 bind A => //A
-rule //A/foo -> bar : cp.bam
+rule //A/foo -> bar : ./cp.bam
 rule bar -> //targets
 >>
 |   `-- cp.bam << 0777
 file : {
-  path-search : cp
+  lookup : {
+    namespace : coreutils
+    pattern : bin/cp+(@.)
+  }
 }
 args : [
   \$bm_source0
@@ -41,48 +49,75 @@ args : [
 ]
 >>
 |-- system-config <<
-formula : {
-  path : {
-    dirs : {
-      /usr/bin
-    }
-  }
+namespaces : {
+  coreutils
 }
 filesystem : {
   fstrees : {
     $bam_basedir : {
       mount : true
+      namespaces : {
+        modules
+      }
+    }
+    $repodir/usr/share/bam/coreutils : {
+      mount : true
+      namespaces : {
+        coreutils
+      }
     }
   }
 }
 >>
 TREE
 
-# before
+# setup
 assert {
   stats(undef, {
-    modules => 1          # the imported directory is not vivified
-  , system_state_ok => 1
+    modules => 1
+  , system_state_ready => 1
 })};
 assert {
   stats(".", "-S", {
     type => 'module'
   , state => 'fresh'
   , reloaded => 1
-  , modules_up => 0
-  , modules_down => 0
-  , uses_down => 0
-  , rules => 3
+  , rulesets => 1
+})};
+assert {
+  stats("./module.bam%devel", "-S", {
+    type => 'ruleset'
   , state => 'fresh'
-  , parse => 1
+  , rules => 3
+  , parse_err => 0
   , parse_ok => 1
 })};
 assert {
   stats("../A", {
     type => 'dir'
+  , state => 'fresh'
+  , stale => 0
+  , fresh => 0
+})};
+assert {
+  stats("$bam_basedir/B/bar", {
+    type => 'file'
+  , state => 'uncreated'
+  , stale => 0
+  , fresh => 0
 })};
 
 build();
-assert_file("$bam_projdir/bar");
+
+# after
+assert {
+  stats("$bam_basedir/B/bar", {
+    type => 'file'
+  , state => 'fresh'
+  , stale => 0
+  , fresh => 1
+})};
+
+assert_file("$bam_basedir/B/bar");
 
 teardown();

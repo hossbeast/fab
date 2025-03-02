@@ -1,0 +1,209 @@
+#!/usr/bin/env perl
+
+#
+# search patterns do not traverse module boundaries, build dirs
+#
+
+use strict;
+use warnings;
+$SIG{__WARN__} = sub { die @_ };
+
+use Carp qw(confess);
+$SIG{__DIE__} = 'confess';
+
+use POSIX;
+use File::Basename;
+use Cwd;
+our $bam_basedir;
+our $repodir;
+BEGIN { $repodir = dirname(Cwd::realpath("$0/..")) }
+use lib "$repodir/integ/lib";
+use lib "$repodir/perl";
+use lib "$repodir/libbacon/perl";
+use util;
+use tree;
+use bam::bam;
+use integ;
+
+init(subdir => 'A');
+setup(<<TREE);
+|-- A
+|   `-- foo <<
+A foo
+>>
+|   `-- module.bam%devel <<
+use D
+>>
+|   `-- B
+|       `-- foo <<
+B foo
+>>
+|       `-- module.bam%devel <<
+use D
+>>
+|       `-- C
+|           `-- foo <<
+C foo
+>>
+|           `-- module.bam%devel <<
+use D
+>>
+|-- D
+|   `-- rules.bam%devel <<
+rule **/foo -> \$^D/bar : $bam_basedir/cp.bam+(.)
+>>
+|-- system-config <<
+namespaces : {
+  coreutils
+}
+filesystem : {
+  fstrees : {
+    $bam_basedir : {
+      mount : true
+      namespaces : {
+        modules
+      }
+    }
+    $repodir/usr/share/bam/coreutils : {
+      mount : true
+      namespaces : {
+        coreutils
+      }
+    }
+  }
+}
+>>
+|-- cp.bam << 0777
+file : {
+  lookup : {
+    namespace : coreutils
+    pattern : bin/cp+(.@)
+  }
+}
+args : [
+  \$bm_source0
+  \$bm_target0
+]
+>>
+TREE
+
+my $module_A_id;
+my $module_AB_id;
+my $module_ABC_id;
+
+$module_A_id = bam::identity("module", "$bam_basedir/A");
+$module_AB_id = bam::identity("module", "$bam_basedir/A/B");
+$module_ABC_id = bam::identity("module", "$bam_basedir/A/B/C");
+
+# before
+assert {
+  stats(undef, {
+    system_state_ready => 1
+  , modules => 3
+  , rulesets => 4
+})};
+assert {
+  stats("$bam_basedir/A", "-S", {
+    type => 'module'
+  , state => 'fresh'
+  , reloaded => 1
+  , rulesets => 2    # self, and D
+  , rmas => 1
+})};
+assert {
+  stats("$bam_basedir/A/B", "-S", {
+    type => 'module'
+  , state => 'fresh'
+  , reloaded => 1
+  , rulesets => 2    # self, and D
+  , rmas => 1
+})};
+assert {
+  stats("$bam_basedir/A/B/C", "-S", {
+    type => 'module'
+  , state => 'fresh'
+  , reloaded => 1
+  , rulesets => 2    # self, and D
+  , rmas => 1
+})};
+assert {
+  stats("$bam_basedir/A/module.bam%devel", "-S", {
+    type => 'ruleset'
+  , state => 'fresh'
+  , fresh => 1
+  , stale => 1
+  , parse_err => 0
+  , parse_ok => 1
+  , modules => 1
+})};
+assert {
+  stats("$bam_basedir/A/B/module.bam%devel", "-S", {
+    type => 'ruleset'
+  , state => 'fresh'
+  , fresh => 1
+  , stale => 1
+  , parse_err => 0
+  , parse_ok => 1
+  , modules => 1
+})};
+assert {
+  stats("$bam_basedir/A/B/C/module.bam%devel", "-S", {
+    type => 'ruleset'
+  , state => 'fresh'
+  , fresh => 1
+  , stale => 1
+  , parse_err => 0
+  , parse_ok => 1
+  , modules => 1
+})};
+assert {
+  stats("$bam_basedir/D/rules.bam%devel", "-S", {
+    type => 'ruleset'
+  , state => 'fresh'
+  , fresh => 1
+  , stale => 1
+  , parse_err => 0
+  , parse_ok => 1
+  , modules => 3
+  , rules => 1
+})};
+
+build();
+
+assert_file("$bam_basedir/A/bar", "A foo");
+assert_file("$bam_basedir/A/B/bar", "B foo");
+assert_file("$bam_basedir/A/B/C/bar", "C foo");
+
+sub module_of
+{
+  my $path = shift;
+  my $module_id = shift;
+
+  my $result;
+  my $msg;
+  my $id;
+
+  $result = bam_adhoc("[ select : [ path : { pattern : $path } module-of ] identify ]");
+  print("$$result{out}\n");
+  $msg = bam::bacon::parse($$result{out});
+  $id = (keys %$msg)[0];
+  assert { $id eq $module_id };
+}
+
+# exercise module-of
+module_of("$bam_basedir/A", $module_A_id);
+module_of("$bam_basedir/A/module.bam%devel", $module_A_id);
+module_of("$bam_basedir/A/foo", $module_A_id);
+module_of("$bam_basedir/A/bar", $module_A_id);
+
+module_of("$bam_basedir/A/B", $module_AB_id);
+module_of("$bam_basedir/A/B/module.bam%devel", $module_AB_id);
+module_of("$bam_basedir/A/B/foo", $module_AB_id);
+module_of("$bam_basedir/A/B/bar", $module_AB_id);
+
+module_of("$bam_basedir/A/B/C", $module_ABC_id);
+module_of("$bam_basedir/A/B/C/module.bam%devel", $module_ABC_id);
+module_of("$bam_basedir/A/B/C/foo", $module_ABC_id);
+module_of("$bam_basedir/A/B/C/bar", $module_ABC_id);
+
+teardown();
