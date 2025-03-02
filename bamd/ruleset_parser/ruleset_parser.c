@@ -74,7 +74,7 @@ void ruleset_parser_free(ruleset_parser* const parser)
     return;
   }
 
-  yyu_parser_xdestroy(&parser->yyu);
+  yyu_parser_destroy(&parser->yyu);
   pattern_parser_free(parser->pattern_parser);
   entlist_destroy(&parser->lookup_hits);
 

@@ -198,7 +198,7 @@ void formula_parser_free(formula_parser* const p)
   if(p)
   {
     selector_parser_free(p->selector_parser);
-    yyu_parser_xdestroy(&p->yyu);
+    yyu_parser_destroy(&p->yyu);
   }
 
   free(p);

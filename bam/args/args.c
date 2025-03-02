@@ -225,7 +225,7 @@ void args_parse(int argc, char ** argv)
   }
 
   r = parse(&yyu, argvs, argvsl, "-args-");
-  yyu_parser_xdestroy(&yyu);
+  yyu_parser_destroy(&yyu);
 
   if(r != 0) {
     exit(1);  // error printed earlier

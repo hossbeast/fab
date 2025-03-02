@@ -86,7 +86,7 @@ out:
 // api
 //
 
-void yyu_parser_xdestroy(yyu_parser * const parser)
+void yyu_parser_destroy(yyu_parser * const parser)
 {
   free(parser->last_lval);
   free(parser->token_table_bytoken);

@@ -116,8 +116,8 @@ void moria_parser_free(moria_parser* const p)
   }
 
   map_free(p->vertex_by_id);
-  yyu_parser_xdestroy(&p->graph_yyu);
-  yyu_parser_xdestroy(&p->operations_yyu);
+  yyu_parser_destroy(&p->graph_yyu);
+  yyu_parser_destroy(&p->operations_yyu);
 
   llist_foreach_safe(&p->vertices, v, owner, T) {
     free((void*)v->label);

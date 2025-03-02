@@ -118,12 +118,12 @@ void pattern_parser_free(pattern_parser* const p)
 {
   if(p)
   {
-    yyu_parser_xdestroy(&p->search_yyu);
-    yyu_parser_xdestroy(&p->generate_yyu);
-    yyu_parser_xdestroy(&p->reference_yyu);
-    yyu_parser_xdestroy(&p->lookup_yyu);
-    yyu_parser_xdestroy(&p->include_yyu);
-    yyu_parser_xdestroy(&p->match_yyu);
+    yyu_parser_destroy(&p->search_yyu);
+    yyu_parser_destroy(&p->generate_yyu);
+    yyu_parser_destroy(&p->reference_yyu);
+    yyu_parser_destroy(&p->lookup_yyu);
+    yyu_parser_destroy(&p->include_yyu);
+    yyu_parser_destroy(&p->match_yyu);
   }
 
   free(p);

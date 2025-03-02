@@ -101,10 +101,10 @@ void bacon_parser_destroy(bacon_parser* const parser)
   bacon_location *loc;
   llist *T;
 
-  yyu_parser_xdestroy(&parser->value_yyu);
-  yyu_parser_xdestroy(&parser->value_set_yyu);
-  yyu_parser_xdestroy(&parser->value_list_yyu);
-  yyu_parser_xdestroy(&parser->expr_yyu);
+  yyu_parser_destroy(&parser->value_yyu);
+  yyu_parser_destroy(&parser->value_set_yyu);
+  yyu_parser_destroy(&parser->value_list_yyu);
+  yyu_parser_destroy(&parser->expr_yyu);
 
   llist_foreach_safe(&parser->value_freelist, v, lln, T) {
     free(v);

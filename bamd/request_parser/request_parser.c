@@ -48,7 +48,7 @@ void request_parser_free(request_parser* const p)
 
   request_command_free(p->command);
   selector_parser_free(p->selector_parser);
-  yyu_parser_xdestroy(&p->yyu);
+  yyu_parser_destroy(&p->yyu);
 
   free(p);
 }

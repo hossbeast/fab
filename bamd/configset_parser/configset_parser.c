@@ -60,7 +60,7 @@ void configset_parser_free(configset_parser* const p)
   pattern_parser_free(p->pattern_parser);
   bacon_parser_free(p->bacon_parser);
 
-  yyu_parser_xdestroy(&p->yyu);
+  yyu_parser_destroy(&p->yyu);
 
   free(p);
 }
