@@ -263,6 +263,7 @@ void build(rcu_thread * restrict rcu_self, bool autorun, pid_t pid, uint64_t tok
   uint32_t slot_prep_fail;
   uint32_t slot_fail;
   uint32_t slot_pass;
+  rcu_thread rcu;
 
   build_label_len = zcatw(build_label, sizeof(build_label), label, label_len);
   build_pid = pid;
@@ -276,6 +277,8 @@ void build(rcu_thread * restrict rcu_self, bool autorun, pid_t pid, uint64_t tok
   stage_index_sum_target = -1;
   sn_first = llist_first(&buildplan_selection.list, typeof(*sn_first), lln);
   build_numranks = buildplan_selection.numranks;
+
+  rcu_enter(&rcu);
 
   // signals handled on this thread
   sigfillset(&sigs);
@@ -292,7 +295,7 @@ void build(rcu_thread * restrict rcu_self, bool autorun, pid_t pid, uint64_t tok
   sn = 0;
   while(!g_params.shutdown)
   {
-    rcu_quiesce(rcu_self);
+    rcu_quiesce(&rcu);
 
     /* build is complete */
     if(build_stage == build_numranks) {
@@ -307,7 +310,7 @@ void build(rcu_thread * restrict rcu_self, bool autorun, pid_t pid, uint64_t tok
     // launch up to max concurrency
     while(!g_params.shutdown && build_slots_bypid.size < concurrency)
     {
-      rcu_quiesce(rcu_self);
+      rcu_quiesce(&rcu);
 
       // stage has failed
       if(slot_prep_fail || slot_fail) {
@@ -384,7 +387,7 @@ void build(rcu_thread * restrict rcu_self, bool autorun, pid_t pid, uint64_t tok
     /* read slots */
     for(x = 0; x < rv; x++)
     {
-      rcu_quiesce(rcu_self);
+      rcu_quiesce(&rcu);
 
       slot = events[x].data.u32 >> 16;
       stream = events[x].data.u32 & 0xFFFF;
@@ -396,7 +399,7 @@ void build(rcu_thread * restrict rcu_self, bool autorun, pid_t pid, uint64_t tok
     /* reap children */
     while(!g_params.shutdown)
     {
-      rcu_quiesce(rcu_self);
+      rcu_quiesce(&rcu);
 
       /* NOTE : this thread is competing with any other threads calling wait */
       uxwaitid(P_ALL, tid, &siginfo, WEXITED | WNOHANG | WNOWAIT);
@@ -454,6 +457,7 @@ void build(rcu_thread * restrict rcu_self, bool autorun, pid_t pid, uint64_t tok
   build_event_end(slot_pass, slot_fail, slot_prep_fail);
 
   system_state_change(SYSTEM_STATE_OK);
+  rcu_leave(&rcu);
 }
 
 //

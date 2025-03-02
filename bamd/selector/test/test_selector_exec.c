@@ -65,7 +65,7 @@ static void selector_exec_test_unit_setup(xunit_unit * unit)
   graph_setup();
   fsindex_setup();
 
-  extern __thread bool rcu_is_registered ; rcu_is_registered = true;
+  extern __thread bool rcu_is_reader ; rcu_is_reader = true;
 }
 
 static void selector_exec_test_unit_cleanup(xunit_unit * unit)

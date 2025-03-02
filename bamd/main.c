@@ -191,11 +191,8 @@ int main(int argc, char ** argv)
   uxunlinks("exit");
   uxunlinks("core");
 
-#if CONFIG_DEBUG || CONFIG_DEVEL
-  rcu_is_registered = true;
-#endif
-
   // modules
+  rcu_setup();
   build_setup();
   path_cache_setup();
   formula_setup();
@@ -271,6 +268,12 @@ int main(int argc, char ** argv)
   moria_unload();
   narrator_unload();
   bacon_unload();
+
+/* disable rcu checks for cleanup */
+#if CONFIG_DEBUG || CONFIG_DEVEL
+extern __thread bool rcu_is_reader;
+rcu_is_reader = true;
+#endif
 
   r = 0;
   r |= g_params.handler_error; /* error on another thread */

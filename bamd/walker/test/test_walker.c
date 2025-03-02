@@ -104,7 +104,7 @@ static void walker_test_unit_setup(xunit_unit * unit)
   entlist_setup();
 
   /* suppress rcu-registration checks performed under devel build for events fired from the walker */
-  extern __thread bool rcu_is_registered ; rcu_is_registered = true;
+  extern __thread bool rcu_is_reader ; rcu_is_reader = true;
 
   walker_exclude_list = &exclude_list;
   rbtree_init(walker_exclude_list);

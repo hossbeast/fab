@@ -69,7 +69,7 @@ static void node_lookup_test_unit_setup(xunit_unit * unit)
   events_setup();
 
   /* suppress rcu-registration checks */
-  extern __thread bool rcu_is_registered ; rcu_is_registered = true;
+  extern __thread bool rcu_is_reader ; rcu_is_reader = true;
 }
 
 static void node_lookup_test_unit_cleanup(xunit_unit * unit)

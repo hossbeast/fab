@@ -4,41 +4,98 @@
 #pragma once
 
 /*
-Simple synchronization-counter based read-copy-update. In this program, rcu is used only to mediate
-access to the list of active clients.
+synchronization-counter based read-copy-update. In this program, rcu is used only to mediate
+access to the lists of active channels, and active plugins.
 
-Readers are threads which traverse the active clients list (typically by calling events_publish)
+Readers are threads which traverse the lists (typically by calling events_publish)
  * the monitor thread
- * the build thread
- * the bootstrap thread
  * the sweeper thread
+ * the run thread
+ * a channel thread
+ * a plugin thread
 
-Updaters are threads which call rcu_synchronize
- * handler threads
- * run thread
+Updaters are threads which call rcu_synchronize to reclaim objects from the lists
+ * a channel thread
+ * a plugin thread
 
 A thread may not be both a reader and an updater at the same time.
 */
 
 #include "types.h"
+#include "stats.h"
+#include "descriptor.h"
 #include "barriers.h"
-#include "macros.h"
+
+struct fsent;
+struct bacon_writer;
+struct moria_vertex;
+
+typedef union stats_rcu {
+  struct {
+      uint32_t sync_fast;           /* synchronize called */
+      uint32_t sync_timeout;        /* synchronize called, and experienced a timeout */
+      uint32_t quiesce_nosync;      /* quiesce called and no sync was underway */
+      uint32_t quiesce_sync;        /* quiesce called while sync underway */
+      uint32_t enter;               /* enter called */
+      uint32_t leave;               /* leave called */
+      uint32_t active;              /* active readers */
+
+      uint32_t sync_active_0_3;     /* counts sync events by active readers */
+      uint32_t sync_active_4_7;
+      uint32_t sync_active_8_15;
+      uint32_t sync_active_16_31;
+      uint32_t sync_active_32_63;
+      uint32_t sync_active_64_n;
+      uint32_t sync_active_max;
+
+      uint32_t sync_lat_0_100ms;    /* counts sync events by runtime */
+      uint32_t sync_lat_100_250ms;
+      uint32_t sync_lat_250_500ms;
+      uint32_t sync_lat_500_750ms;
+      uint32_t sync_lat_750_1000ms;
+      uint32_t sync_lat_1_2s;
+      uint32_t sync_lat_2_4s;
+      uint32_t sync_lat_4_8s;
+      uint32_t sync_lat_8s_n;
+      uint64_t sync_lat_ns_max;
+  };
+
+  stats_record record;
+} stats_rcu;
 
 typedef struct rcu_thread {
-  uint16_t n;          // synchronize counter
+  /* uniquely identifies this thread */
+  uint64_t mark;
+
+  /* last sync seen */
+  uint32_t sync;
+
+  union stats_rcu stats;
 } rcu_thread;
+
+extern union stats_rcu rcu_stats;
+extern struct subsys sys_rcu;
+extern descriptor_type descriptor_stats_rcu;
+
+void rcu_sys_stats_build(const struct moria_vertex * restrict, bool reset, struct bacon_writer * restrict builder_writer)
+  __attribute__((nonnull));
+
+void rcu_sys_describe(const struct moria_vertex * restrict, struct bacon_writer * restrict builder_writer)
+  __attribute__((nonnull));
+
+void rcu_setup(void);
 
 /*
  * Make this thread an rcu reader. This is a promise to call rcu_quiesce soon and regularly. This
  * thread is then permitted to read rcu-synchronized objects with rcu_read.
  */
-void rcu_register(rcu_thread * restrict rcu)
+void rcu_enter(rcu_thread * restrict rcu)
   __attribute__((nonnull));
 
 /*
  * Unregister an rcu reader thread, with an implied rcu_quiesce.
  */
-void rcu_unregister(rcu_thread * restrict rcu)
+void rcu_leave(rcu_thread * restrict rcu)
   __attribute__((nonnull));
 
 /*
@@ -66,13 +123,13 @@ void rcu_synchronize(void);
 } while(0)
 
 #if CONFIG_DEBUG || CONFIG_DEVEL
-extern __thread bool rcu_is_registered;
+extern __thread bool rcu_is_reader;
 #endif
 
 static inline bool rcu_registered_check()
 {
 #if CONFIG_DEBUG || CONFIG_DEVEL
-  RUNTIME_ASSERT(rcu_is_registered);
+  RUNTIME_ASSERT(rcu_is_reader);
 #endif
 
   return true;

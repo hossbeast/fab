@@ -388,7 +388,7 @@ static void plugin_thread_fn(plugin_thread * restrict thread)
 {
   sigset_t fsigs;
   sigset_t esigs;
-  rcu_thread rcu_self = { };
+  rcu_thread rcu;
   int r;
   int epfd = -1;
   struct epoll_event ev;
@@ -412,7 +412,7 @@ static void plugin_thread_fn(plugin_thread * restrict thread)
   struct itimerspec its;
   uint32_t aux_len = 0;
 
-  rcu_register(&rcu_self);
+  rcu_enter(&rcu);
 
   // signals handled on this thread
   sigfillset(&fsigs);
@@ -658,7 +658,7 @@ static void plugin_thread_fn(plugin_thread * restrict thread)
 
     /* reap any children */
     /* NOTE : this thread is competing with other threads calling wait (run thread) */
-    rcu_quiesce(&rcu_self);
+    rcu_quiesce(&rcu);
     uxwaitid(P_PID, child, &siginfo, WEXITED | WNOHANG);
     if(siginfo.si_pid == 0) {
       continue;
@@ -680,8 +680,8 @@ static void plugin_thread_fn(plugin_thread * restrict thread)
     }
   }
 
-  rcu_quiesce(&rcu_self);
 
+  rcu_quiesce(&rcu);
   vertex_mark_stale(&thread->plugin->vertex);
 
   /* remove event subscriptions */
@@ -694,7 +694,7 @@ static void plugin_thread_fn(plugin_thread * restrict thread)
   /* discard any unprocessed events */
   event_bacon_free_list(&events_txq);
 
-  rcu_unregister(&rcu_self);
+  rcu_leave(&rcu);
   close(epfd);
   request_parser_free(parser);
   request_destroy(&req);
@@ -705,6 +705,7 @@ static void *plugin_thread_jump(void * arg)
   struct plugin *plugin;
   plugin_thread thread;
   handler_context *handler;
+  rcu_thread rcu;
 
   plugin = arg;
   tid = gettid();
@@ -738,7 +739,7 @@ static void *plugin_thread_jump(void * arg)
   rcu_list_delete(&handler->stk);
   futexlock_release(&handlers_lock);
 
-  rcu_synchronize();
+  rcu_synchronize(&rcu);
 
   plugin->thread = 0;
 

@@ -147,6 +147,7 @@ static inline size_t roundup2(size_t x)
 
 #define ffsll(x)   __builtin_ffsll(x)
 #define clz_u32(x) __builtin_clz(x)
+#define ctzll(x)   __builtin_ctzll(x)
 
 static inline uint32_t align(size_t x, size_t pow2)
 {

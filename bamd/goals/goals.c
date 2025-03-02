@@ -55,6 +55,9 @@ void goals_create_buildplan()
   buildplan_reset();
   fsent *fse;
   moria_vertex_traversal_state *state;
+  rcu_thread rcu;
+
+  rcu_enter(&rcu);
 
   /* targets selector, if any */
   if(goals_target_direct_selector || goals_target_transitive_selector) {
@@ -102,6 +105,8 @@ void goals_create_buildplan()
       buildplan_state = READY;
     }
   }
+
+  rcu_leave(&rcu);
 }
 
 //

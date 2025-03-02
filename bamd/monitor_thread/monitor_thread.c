@@ -27,8 +27,8 @@ void monitor_thread()
   siginfo_t info;
   handler_context *handler;
   plugin_thread *plugin;
-  struct timespec interval;
-  rcu_thread rcu_self = { };
+  struct timespec interval = {};
+  rcu_thread rcu_self = {};
 
   // signals to be handled on this thread
   sigemptyset(&sigs);
@@ -39,7 +39,7 @@ void monitor_thread()
   interval.tv_sec = 0;
   interval.tv_nsec = MSEC_AS_NSEC(125);
 
-  rcu_register(&rcu_self);
+  rcu_enter(&rcu_self);
   while(g_params.thread_count)
   {
     rcu_quiesce(&rcu_self);
@@ -72,5 +72,5 @@ void monitor_thread()
     }
   }
 
-  rcu_unregister(&rcu_self);
+  rcu_leave(&rcu_self);
 }

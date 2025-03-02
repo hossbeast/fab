@@ -69,7 +69,7 @@ static void rule_system_reconcile_test_unit_setup(xunit_unit * unit)
   buildplan_entity_setup();
 
   /* suppress rcu-registration checks */
-  extern __thread bool rcu_is_registered ; rcu_is_registered = true;
+  extern __thread bool rcu_is_reader ; rcu_is_reader = true;
 }
 
 static void rule_system_reconcile_test_unit_cleanup(xunit_unit * unit)

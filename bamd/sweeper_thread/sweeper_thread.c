@@ -155,7 +155,7 @@ static void sweeper_thread()
   sigset_t orig;
   int r;
   uint64_t period;
-  rcu_thread rcu_self = { };
+  rcu_thread rcu_self = {};
 
   // signals handled on this thread
   sigfillset(&sigs);
@@ -166,7 +166,7 @@ static void sweeper_thread()
   xclock_gettime(CLOCK_MONOTONIC, &deadline);
   timespec_add(&deadline, period);
 
-  rcu_register(&rcu_self);
+  rcu_enter(&rcu_self);
   while(!g_params.shutdown)
   {
     rcu_quiesce(&rcu_self);
@@ -198,7 +198,7 @@ static void sweeper_thread()
   }
 
   futexlock_release(&event_queue_lock);
-  rcu_unregister(&rcu_self);
+  rcu_leave(&rcu_self);
 }
 
 static void *sweeper_thread_jump(void * arg)
