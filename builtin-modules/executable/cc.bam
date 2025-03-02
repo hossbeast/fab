@@ -12,6 +12,16 @@ use POSIX;
 
 die "CC not found" unless $ENV{CC};
 
+my @libs;
+my @objs;
+for my $obj (@ARGV) {
+  if(substr($obj, -2) eq ".a") {
+    push @libs, $obj;
+  } else {
+    push @objs, $obj;
+  }
+}
+
 # exec into the compiler
 my @cmd = (
     $ENV{CC}
@@ -19,7 +29,8 @@ my @cmd = (
   , (map { "-I$_" } split(/ /, $ENV{includes}))
   , "-o", $ENV{bm_target0}
   , "-Wl,--start-group"
-  , @ARGV
+  , @objs
+  , @libs
   , "-Wl,--end-group"
   , split(/ /, $ENV{LFLAGS0} || "")
   , split(/ /, $ENV{LFLAGS1} || "")
