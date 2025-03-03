@@ -8,8 +8,20 @@
   __atomic_fetch_add(p, v, __ATOMIC_SEQ_CST);   \
 })
 
+#define atomic_add(p, v) ({                     \
+  __atomic_fetch_add(p, v, __ATOMIC_SEQ_CST);   \
+})
+
 #define atomic_fetch_sub(p, v) ({               \
   __atomic_fetch_sub(p, v, __ATOMIC_SEQ_CST);   \
+})
+
+#define atomic_sub(p, v) ({                     \
+  __atomic_fetch_sub(p, v, __ATOMIC_SEQ_CST);   \
+})
+
+#define atomic_inc(p) ({                        \
+  __atomic_fetch_add(p, 1, __ATOMIC_SEQ_CST);   \
 })
 
 #define atomic_fetch_inc(p) ({                  \

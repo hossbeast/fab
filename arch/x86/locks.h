@@ -12,6 +12,7 @@
 #include "barriers.h"
 #include "macros.h"
 #include "threads.h"
+#include "atomics.h"
 
 struct trylock {
   int32_t i32;
@@ -27,7 +28,7 @@ static inline bool trylock_acquire(struct trylock * restrict lock)
   RUNTIME_ASSERT(tid);
 
   /* the second argument to cas_n is read/write */
-  if(__atomic_compare_exchange_n(&lock->i32, &zero, tid, false, __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST)) {
+  if(atomic_cas(&lock->i32, &zero, tid)) {
     return true;
   }
 
@@ -42,86 +43,37 @@ static inline void trylock_release(struct trylock * restrict lock)
   RUNTIME_ASSERT(tid);
 
   ltid = tid;
-  __atomic_compare_exchange_n(&lock->i32, &ltid, 0, false, __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST);
+  atomic_cas(&lock->i32, &ltid, 0);
 }
 
 /* releases the lock without regard to the current state of the lock */
 static inline void trylock_reset(struct trylock * restrict lock)
 {
-  __atomic_store_n(&lock->i32, 0, __ATOMIC_SEQ_CST);
-}
-
-struct spinlock {
-  int32_t i32;
-};
-
-static inline void spinlock_acquire(struct spinlock * restrict lock)
-{
-  int32_t zero;
-
-  RUNTIME_ASSERT(tid);
-
-  while(1) {
-    zero = 0;
-    if((__atomic_compare_exchange_n(&lock->i32, &zero, tid, false, __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST))) {
-      break;
-    }
-    asm("PAUSE");
-  }
-
-  smp_mb();
-}
-
-static inline void spinlock_release(struct spinlock * restrict lock)
-{
-  int32_t ltid;
-
-  RUNTIME_ASSERT(tid);
-
-  ltid = tid;
-  __atomic_compare_exchange_n(&lock->i32, &ltid, 0, false, __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST);
+  atomic_store(&lock->i32, 0);
 }
 
 struct futexlock {
   int32_t i32;
 };
 
-static inline struct futexlock *futexlock_acquire(struct futexlock * restrict lock)
+static inline void futexlock_acquire(struct futexlock * restrict lock)
 {
-  int zero;
-  int prev;
+  int32_t prev;
 
-  /* uncontended case */
-  zero = 0;
-  if((__atomic_compare_exchange_n(&lock->i32, &zero, 1, false, __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST))) {
-    return lock;
+  RUNTIME_ASSERT(tid);
+
+  /* only overwrites the lock if taken by this thread */
+  prev = 0;
+  while(!atomic_cas(&lock->i32, &prev, tid)) {
+    syscall(SYS_futex, &lock->i32, FUTEX_WAIT, prev, 0, 0, 0);
+    prev = 0;
   }
-
-  while(1)
-  {
-    prev = __atomic_exchange_n(&lock->i32, 2, __ATOMIC_SEQ_CST);
-    if(prev == 0) {
-      break;
-    }
-
-    syscall(SYS_futex, &lock->i32, FUTEX_WAIT, 2, 0, 0, 0);
-  }
-
-  return lock;
 }
 
 static inline void futexlock_release(struct futexlock * restrict lock)
 {
-  int32_t prev;
-
-  prev = __atomic_fetch_sub(&lock->i32, 1, __ATOMIC_SEQ_CST);
-
-  if(prev == 1) {
-    return;
-  }
-
-  __atomic_store_n(&lock->i32, 0, __ATOMIC_SEQ_CST);
+  atomic_store(&lock->i32, 0);
 
   /* wake one lock waiter */
-  syscall(SYS_futex, &lock->i32, FUTEX_WAKE, 1, 0, 0, 0);
+  syscall(SYS_futex, &lock->i32, FUTEX_WAKE, 1);
 }

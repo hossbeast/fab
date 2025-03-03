@@ -35,7 +35,7 @@
 
 static llist event_queue = LLIST_INITIALIZER(event_queue);
 static llist child_event_freelist = LLIST_INITIALIZER(child_event_freelist);
-static struct spinlock event_queue_lock;
+static struct futexlock event_queue_lock;
 static uint32_t event_era;
 
 static void process_event(sweeper_event * restrict ev, graph_invalidation_context * restrict invalidation)
@@ -170,7 +170,7 @@ static void sweeper_thread()
   while(!g_params.shutdown)
   {
     rcu_quiesce(&rcu_self);
-    spinlock_acquire(&event_queue_lock);
+    futexlock_acquire(&event_queue_lock);
     event_era++;
 
     if(!llist_empty(&event_queue))
@@ -182,7 +182,7 @@ static void sweeper_thread()
       }
     }
 
-    spinlock_release(&event_queue_lock);
+    futexlock_release(&event_queue_lock);
 
     /* sleep */
     xpthread_sigmask(SIG_SETMASK, &sigs, &orig);
@@ -197,7 +197,7 @@ static void sweeper_thread()
     timespec_add(&deadline, period);
   }
 
-  spinlock_release(&event_queue_lock);
+  futexlock_release(&event_queue_lock);
   rcu_unregister(&rcu_self);
 }
 
@@ -238,7 +238,7 @@ void sweeper_thread_enqueue(fsent *n, uint32_t mask, const char * restrict name,
   rbtree_search_context search_ctx;
   struct event_rbn_key key;
 
-  spinlock_acquire(&event_queue_lock);
+  futexlock_acquire(&event_queue_lock);
 
   if(name)
   {
@@ -297,7 +297,7 @@ void sweeper_thread_enqueue(fsent *n, uint32_t mask, const char * restrict name,
   llist_delete(&e->lln);
   llist_append(&event_queue, &e->lln);
 
-  spinlock_release(&event_queue_lock);
+  futexlock_release(&event_queue_lock);
 }
 
 void sweeper_thread_launch()
