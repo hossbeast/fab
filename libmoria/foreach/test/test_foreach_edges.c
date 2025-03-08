@@ -23,9 +23,9 @@
 #include "graph.internal.h"
 #include "edge.internal.h"
 #include "vertex.h"
-#include "lookup.h"
 #include "parser.internal.h"
 #include "dispatch.h"
+#include "linear_search.h"
 
 #include "macros.h"
 #include "zcat.h"

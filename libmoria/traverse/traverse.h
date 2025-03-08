@@ -42,13 +42,15 @@ extern struct attrs32 * moria_traverse_attrs;
 #define MORIA_TRAVERSE_EXHAUSTIVE 0x20 // permit entities to be visited multiple times
 #define MORIA_TRAVERSE_NOFOLLOW   0x40 // do not follow link vertices to the referent
 
-/// moria_traversal_criteria
-//
-// SUMMARY
-//  Parameters for selecting vertices and edges to consider during a traversal. An entity (a vertex, or an edge) is said
-//  to be visited when the visitor callback is invoked on it. An entity is said to be traveled when entities on the far
-//  side of it, from the perspective of the traversal, are considered as candidates for visitation.
-//
+/*
+ * Parameters for selecting vertices and edges to consider during a traversal. An entity (a vertex, or an edge) is said
+ * to be visited when the visitor callback is invoked on it. An entity is said to be traveled when entities on the far
+ * side of it, from the perspective of the traversal, are considered as candidates for visitation.
+ *
+ * It follows then, that the travel bits/mask should always apply at least as widely as the visit bits/mask
+ *
+ * visit can be more narrow than travel ; travel more narrow than visit doesnt make sense
+ */
 typedef struct moria_traversal_criteria {
   uint32_t vertex_travel_mask;
   uint32_t vertex_travel;   // bitmask
