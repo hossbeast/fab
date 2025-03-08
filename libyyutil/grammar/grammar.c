@@ -36,6 +36,10 @@ void yyu_aggregate_location(yyu_location * loc, yyu_location * A, yyu_location *
 void yyu_loc_initialize(struct yyu_parser * parser, struct yyu_location * lloc)
 {
   memset(lloc, 0, sizeof(*lloc));
+  lloc->f_lin = parser->loc.f_lin;
+  lloc->f_col = parser->loc.f_col;
+  lloc->l_lin = parser->loc.l_lin;
+  lloc->l_col = parser->loc.l_col;
 }
 
 void yyu_loc_final(struct yyu_parser * parser, struct yyu_location * lloc)

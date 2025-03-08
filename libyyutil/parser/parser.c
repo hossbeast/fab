@@ -47,7 +47,7 @@ static int reduce(yyu_parser * parser, uint16_t attrs)
     parser->error_len += zcatf(
         parser->error_str + parser->error_len
       , sizeof(parser->error_str) - parser->error_len
-      , " location [%d,%d - %d,%d]"
+      , " location [%d,%d - %d,%d"
       , parser->error_loc.f_lin + 1
       , parser->error_loc.f_col + 1
       , parser->error_loc.l_lin + 1
@@ -61,6 +61,11 @@ static int reduce(yyu_parser * parser, uint16_t attrs)
         , parser->fname
       );
     }
+    parser->error_len += zcats(
+        parser->error_str + parser->error_len
+      , sizeof(parser->error_str) - parser->error_len
+      , "]"
+    );
 
     if(parser->gramerr)
     {
