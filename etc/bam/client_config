@@ -13,7 +13,7 @@
 --on-success-show-stderr false
 --on-success-show-stderr-limit-lines 45
 --on-success-show-stderr-limit-bytes 0
---on-success-show-auxout true
+--on-success-show-auxout false
 --on-success-show-auxout-limit-lines 45
 --on-success-show-auxout-limit-bytes 0
 
