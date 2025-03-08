@@ -361,10 +361,9 @@ void xfchdir(int fd)
 
 pid_t gettid()
 {
-  static __thread pid_t self;
+  pid_t self;
 
-  if(!self)
-    self = syscall(SYS_gettid);
+  self = syscall(SYS_gettid);
 
   return self;
 }
