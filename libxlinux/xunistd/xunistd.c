@@ -63,16 +63,17 @@ void axread(int fd, void * restrict buf, size_t count)
 void axwrite(int fd, const void * buf, size_t count)
 {
   size_t actual;
-  ssize_t cur;
+  ssize_t r;
 
   actual = 0;
   while(count - actual)
   {
-    cur = write(fd, ((char*)buf) + actual, count - actual);
-    if(cur <= 0) {
+    r = write(fd, ((char*)buf) + actual, count - actual);
+    if(r == 0) {
       break;
     }
-    actual += cur;
+    RUNTIME_ASSERT(r > 0);
+    actual += r;
   }
 }
 
