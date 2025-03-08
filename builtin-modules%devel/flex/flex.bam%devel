@@ -47,7 +47,7 @@ char ${name}_yyget_hold_char(yyscan_t yyscanner) {
 void ${name}_yyreset_start_stack(yyscan_t yyscanner);
 void ${name}_yyreset_start_stack(yyscan_t yyscanner) {
   struct yyguts_t * yyg = (struct yyguts_t*)yyscanner;
-  yyfree( yyg->yy_start_stack , yyscanner );
+  ${name}_yyfree( yyg->yy_start_stack , yyscanner );
   yyg->yy_start_stack = NULL;
   yyg->yy_start_stack_ptr = 0;
   yyg->yy_start_stack_depth = 0;
