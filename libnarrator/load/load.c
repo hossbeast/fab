@@ -11,7 +11,7 @@ static int handles;
 // api
 //
 
-void API narrator_load()
+void narrator_load()
 {
   if(handles++ == 0)
   {
@@ -20,7 +20,7 @@ void API narrator_load()
   }
 }
 
-void API narrator_unload()
+void narrator_unload()
 {
   if(--handles == 0)
   {

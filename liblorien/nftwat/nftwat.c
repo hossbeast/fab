@@ -147,7 +147,7 @@ end:
   }
 }
 
-void API nftwat(
+void nftwat(
     int dirfd
   , const char * dirpath
   , void (*fn)(int method, ftwinfo * restrict info, void * arg, int * stop)

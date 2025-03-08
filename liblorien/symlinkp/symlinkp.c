@@ -5,13 +5,13 @@
 
 #include "symlinkp.h"
 
-void API symlinkps(const char * const restrict target, const char * const restrict linkpath)
+void symlinkps(const char * const restrict target, const char * const restrict linkpath)
 {
   uxunlinks(linkpath);
   xsymlinks(target, linkpath);
 }
 
-void API symlinkpf(const char * const restrict target_fmt, const char * const restrict linkpath_fmt, ...)
+void symlinkpf(const char * const restrict target_fmt, const char * const restrict linkpath_fmt, ...)
 {
   va_list va;
   va_start(va, linkpath_fmt);
@@ -21,7 +21,7 @@ void API symlinkpf(const char * const restrict target_fmt, const char * const re
   va_end(va);
 }
 
-void API symlinkpvf(const char * const restrict target_fmt, const char * const restrict linkpath_fmt, va_list va)
+void symlinkpvf(const char * const restrict target_fmt, const char * const restrict linkpath_fmt, va_list va)
 {
   va_list va2;
   va_copy(va2, va);

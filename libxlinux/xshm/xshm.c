@@ -5,7 +5,7 @@
 
 #include "xshm.h"
 
-int API uxshmget(key_t key, size_t size, int shmflg)
+int uxshmget(key_t key, size_t size, int shmflg)
 {
   int r;
 
@@ -15,7 +15,7 @@ int API uxshmget(key_t key, size_t size, int shmflg)
   return r;
 }
 
-int API xshmget(key_t key, size_t size, int shmflg)
+int xshmget(key_t key, size_t size, int shmflg)
 {
   int r;
 
@@ -25,12 +25,12 @@ int API xshmget(key_t key, size_t size, int shmflg)
   return r;
 }
 
-void API xshmctl(int shmid, int cmd, struct shmid_ds * const restrict buf)
+void xshmctl(int shmid, int cmd, struct shmid_ds * const restrict buf)
 {
   RUNTIME_ASSERT(shmctl(shmid, cmd, buf) == 0);
 }
 
-void * API xshmat(int shmid, const void * shmaddr, int shmflg)
+void * xshmat(int shmid, const void * shmaddr, int shmflg)
 {
   void *r;
 
@@ -40,7 +40,7 @@ void * API xshmat(int shmid, const void * shmaddr, int shmflg)
   return r;
 }
 
-void API xshmdt(const void * restrict shmaddr)
+void xshmdt(const void * restrict shmaddr)
 {
   if(!shmaddr)
     return;
@@ -48,7 +48,7 @@ void API xshmdt(const void * restrict shmaddr)
   RUNTIME_ASSERT(shmdt(shmaddr) == 0);
 }
 
-void API ixshmdt(void ** shmaddr)
+void ixshmdt(void ** shmaddr)
 {
   xshmdt(*shmaddr);
   *shmaddr = 0;

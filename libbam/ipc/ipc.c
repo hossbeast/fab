@@ -4,7 +4,7 @@
 #include "ipc.h"
 #include "common/attrs.h"
 
-attrs32 * APIDATA bamipc_msg_type_attrs = (attrs32[]) {{
+attrs32 * bamipc_msg_type_attrs = (attrs32[]) {{
 #undef DEF
 #define DEF(x, s, r, y) + 1
     num : 0
@@ -26,7 +26,7 @@ static void __attribute__((constructor)) init()
 // api
 //
 
-bamipc_message * API bamipc_produce(
+bamipc_message * bamipc_produce(
     bamipc_page * restrict pages
   , uint32_t * restrict ring_head
   , uint32_t * restrict ring_tail
@@ -76,7 +76,7 @@ bamipc_message * API bamipc_produce(
   return &page->msg;
 }
 
-void API bamipc_post(
+void bamipc_post(
     bamipc_message * restrict msg
   , uint32_t * restrict producers
   , int32_t * restrict waiters
@@ -93,7 +93,7 @@ void API bamipc_post(
   }
 }
 
-bamipc_message * API bamipc_acquire(
+bamipc_message * bamipc_acquire(
     bamipc_page * restrict pages
   , uint32_t * restrict ring_head
   , uint32_t * restrict ring_tail
@@ -126,7 +126,7 @@ bamipc_message * API bamipc_acquire(
   return 0;
 }
 
-void API bamipc_consume(
+void bamipc_consume(
     bamipc_page * restrict pages
   , uint32_t * restrict ring_head
   , bamipc_message * restrict msg
@@ -165,7 +165,7 @@ waken:
   }
 }
 
-void API bamipc_release(
+void bamipc_release(
     bamipc_page * restrict pages
   , uint32_t * restrict ring_head
   , bamipc_message * restrict msg

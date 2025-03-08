@@ -13,7 +13,7 @@
 
 static int handles;
 
-void API lorien_load()
+void lorien_load()
 {
   if(handles++ == 0)
   {
@@ -21,7 +21,7 @@ void API lorien_load()
   }
 }
 
-void API lorien_unload()
+void lorien_unload()
 {
   if(--handles == 0)
   {

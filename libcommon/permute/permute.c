@@ -21,7 +21,7 @@ static void reverse(uint8_t * const restrict set, size_t i, size_t len)
 // public
 //
 
-bool API permute(uint8_t * const restrict set, size_t setl)
+bool permute(uint8_t * const restrict set, size_t setl)
 {
   int k;
   for(k = setl - 2; k >= 0; k--)

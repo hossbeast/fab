@@ -8,23 +8,23 @@
 
 #include "xtime.h"
 
-void API xlocaltime_r(const time_t * timep, struct tm * result)
+void xlocaltime_r(const time_t * timep, struct tm * result)
 {
   RUNTIME_ASSERT(localtime_r(timep, result) != 0);
 }
 
-void API xclock_gettime(clockid_t clk_id, struct timespec * tp)
+void xclock_gettime(clockid_t clk_id, struct timespec * tp)
 {
   RUNTIME_ASSERT(clock_gettime(clk_id, tp) == 0);
 }
 
 
-void API xclock_nanosleep(clockid_t clock_id, int flags, const struct timespec *request, struct timespec *remain)
+void xclock_nanosleep(clockid_t clock_id, int flags, const struct timespec *request, struct timespec *remain)
 {
   RUNTIME_ASSERT(clock_nanosleep(clock_id, flags, request, remain) != 0);
 }
 
-int API uxclock_nanosleep(clockid_t clock_id, int flags, const struct timespec *request, struct timespec *remain)
+int uxclock_nanosleep(clockid_t clock_id, int flags, const struct timespec *request, struct timespec *remain)
 {
   int r;
 

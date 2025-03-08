@@ -13,8 +13,8 @@
 
 #include "zcat.h"
 
-uint32_t API xunit_assertions_passed;
-uint32_t API xunit_assertions_failed;
+uint32_t xunit_assertions_passed;
+uint32_t xunit_assertions_failed;
 
 //
 // API
@@ -80,7 +80,7 @@ static void infos_trace(void)
   z += sayf(NOCOLOR, "\n");
 }
 
-void API xunit_assertion_evaluate(const xunit_type * const restrict type, uint8_t op, const char * const restrict value, ...)
+void xunit_assertion_evaluate(const xunit_type * const restrict type, uint8_t op, const char * const restrict value, ...)
 {
   va_list va;
   xunit_arg expected;

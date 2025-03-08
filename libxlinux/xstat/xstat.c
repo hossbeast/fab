@@ -10,12 +10,12 @@
 #include "xstat.h"
 #include "fmt.h"
 
-void API xfstatats(int dirfd, int flags, struct stat * restrict buf, const char * restrict path)
+void xfstatats(int dirfd, int flags, struct stat * restrict buf, const char * restrict path)
 {
   RUNTIME_ASSERT(fstatat(dirfd, path, buf, flags) == 0);
 }
 
-void API xfstatatf(int dirfd, int flags, struct stat * restrict buf, const char * restrict path_fmt, ...)
+void xfstatatf(int dirfd, int flags, struct stat * restrict buf, const char * restrict path_fmt, ...)
 {
   va_list va;
   va_start(va, path_fmt);
@@ -24,7 +24,7 @@ void API xfstatatf(int dirfd, int flags, struct stat * restrict buf, const char 
   va_end(va);
 }
 
-void API xfstatatvf(int dirfd, int flags, struct stat * restrict buf, const char * restrict path_fmt, va_list va)
+void xfstatatvf(int dirfd, int flags, struct stat * restrict buf, const char * restrict path_fmt, va_list va)
 {
   char path[PATH_MAX];
 
@@ -32,7 +32,7 @@ void API xfstatatvf(int dirfd, int flags, struct stat * restrict buf, const char
   xfstatats(dirfd, flags, buf, path);
 }
 
-int API uxfstatats(int dirfd, int flags, struct stat * restrict buf, const char * restrict path)
+int uxfstatats(int dirfd, int flags, struct stat * restrict buf, const char * restrict path)
 {
   int r;
 
@@ -46,7 +46,7 @@ int API uxfstatats(int dirfd, int flags, struct stat * restrict buf, const char 
   return r;
 }
 
-int API uxfstatatf(int dirfd, int flags, struct stat * restrict buf, const char * restrict path_fmt, ...)
+int uxfstatatf(int dirfd, int flags, struct stat * restrict buf, const char * restrict path_fmt, ...)
 {
   int r;
   va_list va;
@@ -58,7 +58,7 @@ int API uxfstatatf(int dirfd, int flags, struct stat * restrict buf, const char 
   return r;
 }
 
-int API uxfstatatvf(int dirfd, int flags, struct stat * restrict buf, const char * restrict path_fmt, va_list va)
+int uxfstatatvf(int dirfd, int flags, struct stat * restrict buf, const char * restrict path_fmt, va_list va)
 {
   char path[PATH_MAX];
 
@@ -66,17 +66,17 @@ int API uxfstatatvf(int dirfd, int flags, struct stat * restrict buf, const char
   return uxfstatats(dirfd, flags, buf, path);
 }
 
-void API xfutimens(int fd, const struct timespec times[2])
+void xfutimens(int fd, const struct timespec times[2])
 {
   RUNTIME_ASSERT(futimens(fd, times) == 0);
 }
 
-void API xutimensats(int dirfd, const struct timespec times[2], int flags, const char * const restrict path)
+void xutimensats(int dirfd, const struct timespec times[2], int flags, const char * const restrict path)
 {
   RUNTIME_ASSERT(utimensat(dirfd, path, times, flags) == 0);
 }
 
-int API uxutimensats(int dirfd, const struct timespec times[2], int flags, const char * const restrict path)
+int uxutimensats(int dirfd, const struct timespec times[2], int flags, const char * const restrict path)
 {
   int r;
 
@@ -89,12 +89,12 @@ int API uxutimensats(int dirfd, const struct timespec times[2], int flags, const
   return r;
 }
 
-void API xmkdirs(mode_t mode, const char * path)
+void xmkdirs(mode_t mode, const char * path)
 {
   RUNTIME_ASSERT(mkdir(path, mode) == 0);
 }
 
-void API xmkdirf(mode_t mode, const char * path_fmt, ...)
+void xmkdirf(mode_t mode, const char * path_fmt, ...)
 {
   va_list va;
   va_start(va, path_fmt);
@@ -104,7 +104,7 @@ void API xmkdirf(mode_t mode, const char * path_fmt, ...)
   va_end(va);
 }
 
-void API xmkdirvf(mode_t mode, const char * path_fmt, va_list va)
+void xmkdirvf(mode_t mode, const char * path_fmt, va_list va)
 {
   char path[PATH_MAX];
 
@@ -112,7 +112,7 @@ void API xmkdirvf(mode_t mode, const char * path_fmt, va_list va)
   xmkdirs(mode, path);
 }
 
-int API uxmkdirs(mode_t mode, const char * path)
+int uxmkdirs(mode_t mode, const char * path)
 {
   int r;
 
@@ -122,7 +122,7 @@ int API uxmkdirs(mode_t mode, const char * path)
   return r;
 }
 
-int API uxmkdirf(mode_t mode, const char * path_fmt, ...)
+int uxmkdirf(mode_t mode, const char * path_fmt, ...)
 {
   int r;
   va_list va;
@@ -134,7 +134,7 @@ int API uxmkdirf(mode_t mode, const char * path_fmt, ...)
   return r;
 }
 
-int API uxmkdirvf(mode_t mode, const char * path_fmt, va_list va)
+int uxmkdirvf(mode_t mode, const char * path_fmt, va_list va)
 {
   char path[PATH_MAX];
 
@@ -142,7 +142,7 @@ int API uxmkdirvf(mode_t mode, const char * path_fmt, va_list va)
   return uxmkdirs(mode, path);
 }
 
-void API xfchmod(int fd, mode_t mode)
+void xfchmod(int fd, mode_t mode)
 {
   RUNTIME_ASSERT(fchmod(fd, mode) == 0);
 }

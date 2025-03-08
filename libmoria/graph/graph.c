@@ -230,7 +230,7 @@ void graph_edge_init(moria_graph * const restrict g, moria_edge * const restrict
 // api
 //
 
-void API moria_graph_init(moria_graph * const restrict g)
+void moria_graph_init(moria_graph * const restrict g)
 {
   memset(g, 0, sizeof(*g));
 
@@ -239,7 +239,7 @@ void API moria_graph_init(moria_graph * const restrict g)
   llist_init(&g->states);
 }
 
-void API moria_graph_destroy(moria_graph * const restrict g)
+void moria_graph_destroy(moria_graph * const restrict g)
 {
   traversal_state *state;
   llist *T;
@@ -249,7 +249,7 @@ void API moria_graph_destroy(moria_graph * const restrict g)
   }
 }
 
-void API moria_graph_say(
+void moria_graph_say(
     moria_graph * const restrict g
   , llist ** restrict vertex_lists
   , uint16_t vertex_lists_len

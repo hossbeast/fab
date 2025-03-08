@@ -8,7 +8,7 @@
 
 #include "xfutex.h"
 
-int API uxfutex(
+int uxfutex(
     int32_t * restrict futex_wordp
   , int futex_op
   , int32_t val

@@ -8,7 +8,7 @@
 
 #include "parseint.h"
 
-int API parseint(const char* const s, char* f, intmax_t lo, intmax_t hi, uint8_t min, uint8_t max, void* r, int* rn)
+int parseint(const char* const s, char* f, intmax_t lo, intmax_t hi, uint8_t min, uint8_t max, void* r, int* rn)
 {
   intmax_t  tr = 0;
   int   tn = 0;
@@ -86,7 +86,7 @@ int API parseint(const char* const s, char* f, intmax_t lo, intmax_t hi, uint8_t
   return 0;
 }
 
-int API parseuint(const char* const s, char* f, uintmax_t lo, uintmax_t hi, uint8_t min, uint8_t max, void* r, int* rn)
+int parseuint(const char* const s, char* f, uintmax_t lo, uintmax_t hi, uint8_t min, uint8_t max, void* r, int* rn)
 {
   uintmax_t tr = 0;
   int   tn = 0;

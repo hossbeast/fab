@@ -9,12 +9,12 @@
 #include "xfcntl.h"
 #include "fmt.h"
 
-int API xopens(int flags, const char * path)
+int xopens(int flags, const char * path)
 {
   return xopenats(flags, AT_FDCWD, path);
 }
 
-int API xopenf(int flags, const char * path_fmt, ...)
+int xopenf(int flags, const char * path_fmt, ...)
 {
   int fd;
   va_list va;
@@ -26,12 +26,12 @@ int API xopenf(int flags, const char * path_fmt, ...)
   return fd;
 }
 
-int API xopenvf(int flags, const char * path_fmt, va_list va)
+int xopenvf(int flags, const char * path_fmt, va_list va)
 {
   return xopenatvf(flags, AT_FDCWD, path_fmt, va);
 }
 
-int API xopenats(int flags, int dirfd, const char * path)
+int xopenats(int flags, int dirfd, const char * path)
 {
   int fd;
 
@@ -43,7 +43,7 @@ int API xopenats(int flags, int dirfd, const char * path)
   return fd;
 }
 
-int API xopenatf(int flags, int dirfd, const char * path_fmt, ...)
+int xopenatf(int flags, int dirfd, const char * path_fmt, ...)
 {
   int fd;
   va_list va;
@@ -55,19 +55,19 @@ int API xopenatf(int flags, int dirfd, const char * path_fmt, ...)
   return fd;
 }
 
-int API xopenatvf(int flags, int dirfd, const char * path_fmt, va_list va)
+int xopenatvf(int flags, int dirfd, const char * path_fmt, va_list va)
 {
   char path[PATH_MAX];
   fmt_apply(path, sizeof(path), path_fmt, va);
   return xopenats(flags, dirfd, path);
 }
 
-int API uxopens(int flags, const char * path)
+int uxopens(int flags, const char * path)
 {
   return uxopenats(flags, AT_FDCWD, path);
 }
 
-int API uxopenf(int flags, const char * path_fmt, ...)
+int uxopenf(int flags, const char * path_fmt, ...)
 {
   int fd;
   va_list va;
@@ -79,12 +79,12 @@ int API uxopenf(int flags, const char * path_fmt, ...)
   return fd;
 }
 
-int API uxopenvf(int flags, const char * path_fmt, va_list va)
+int uxopenvf(int flags, const char * path_fmt, va_list va)
 {
   return uxopenatvf(flags, AT_FDCWD, path_fmt, va);
 }
 
-int API uxopenats(int flags, int dirfd, const char * path)
+int uxopenats(int flags, int dirfd, const char * path)
 {
   int fd;
 
@@ -99,7 +99,7 @@ int API uxopenats(int flags, int dirfd, const char * path)
   return fd;
 }
 
-int API uxopenatf(int flags, int dirfd, const char * path_fmt, ...)
+int uxopenatf(int flags, int dirfd, const char * path_fmt, ...)
 {
   int fd;
   va_list va;
@@ -111,7 +111,7 @@ int API uxopenatf(int flags, int dirfd, const char * path_fmt, ...)
   return fd;
 }
 
-int API uxopenatvf(int flags, int dirfd, const char * path_fmt, va_list va)
+int uxopenatvf(int flags, int dirfd, const char * path_fmt, va_list va)
 {
   int fd;
   char path[PATH_MAX];
@@ -123,12 +123,12 @@ int API uxopenatvf(int flags, int dirfd, const char * path_fmt, va_list va)
   return fd;
 }
 
-int API xopen_modes(int flags, mode_t mode, const char * path)
+int xopen_modes(int flags, mode_t mode, const char * path)
 {
   return xopenat_modes(flags, mode, AT_FDCWD, path);
 }
 
-int API xopen_modef(int flags, mode_t mode, const char * path_fmt, ...)
+int xopen_modef(int flags, mode_t mode, const char * path_fmt, ...)
 {
   int fd;
   va_list va;
@@ -140,12 +140,12 @@ int API xopen_modef(int flags, mode_t mode, const char * path_fmt, ...)
   return fd;
 }
 
-int API xopen_modevf(int flags, mode_t mode, const char * path_fmt, va_list va)
+int xopen_modevf(int flags, mode_t mode, const char * path_fmt, va_list va)
 {
   return xopenat_modevf(flags, mode, AT_FDCWD, path_fmt, va);
 }
 
-int API xopenat_modes(int flags, mode_t mode, int dirfd, const char * path)
+int xopenat_modes(int flags, mode_t mode, int dirfd, const char * path)
 {
   int fd;
 
@@ -155,7 +155,7 @@ int API xopenat_modes(int flags, mode_t mode, int dirfd, const char * path)
   return fd;
 }
 
-int API xopenat_modef(int flags, mode_t mode, int dirfd, const char * path_fmt, ...)
+int xopenat_modef(int flags, mode_t mode, int dirfd, const char * path_fmt, ...)
 {
   int fd;
   va_list va;
@@ -167,7 +167,7 @@ int API xopenat_modef(int flags, mode_t mode, int dirfd, const char * path_fmt, 
   return fd;
 }
 
-int API xopenat_modevf(int flags, mode_t mode, int dirfd, const char * path_fmt, va_list va)
+int xopenat_modevf(int flags, mode_t mode, int dirfd, const char * path_fmt, va_list va)
 {
   int fd;
   char path[PATH_MAX];
@@ -179,12 +179,12 @@ int API xopenat_modevf(int flags, mode_t mode, int dirfd, const char * path_fmt,
   return fd;
 }
 
-int API uxopen_modes(int flags, mode_t mode, const char * path)
+int uxopen_modes(int flags, mode_t mode, const char * path)
 {
   return uxopenat_modes(flags, mode, AT_FDCWD, path);
 }
 
-int API uxopen_modef(int flags, mode_t mode, const char * path_fmt, ...)
+int uxopen_modef(int flags, mode_t mode, const char * path_fmt, ...)
 {
   int fd;
   va_list va;
@@ -196,12 +196,12 @@ int API uxopen_modef(int flags, mode_t mode, const char * path_fmt, ...)
   return fd;
 }
 
-int API uxopen_modevf(int flags, mode_t mode, const char * path_fmt, va_list va)
+int uxopen_modevf(int flags, mode_t mode, const char * path_fmt, va_list va)
 {
   return uxopenat_modevf(flags, mode, AT_FDCWD, path_fmt, va);
 }
 
-int API uxopenat_modes(int flags, mode_t mode, int dirfd, const char * path)
+int uxopenat_modes(int flags, mode_t mode, int dirfd, const char * path)
 {
   int fd;
 
@@ -216,7 +216,7 @@ int API uxopenat_modes(int flags, mode_t mode, int dirfd, const char * path)
   return fd;
 }
 
-int API uxopenat_modef(int flags, mode_t mode, int dirfd, const char * path_fmt, ...)
+int uxopenat_modef(int flags, mode_t mode, int dirfd, const char * path_fmt, ...)
 {
   int fd;
   va_list va;
@@ -228,7 +228,7 @@ int API uxopenat_modef(int flags, mode_t mode, int dirfd, const char * path_fmt,
   return fd;
 }
 
-int API uxopenat_modevf(int flags, mode_t mode, int dirfd, const char * path_fmt, va_list va)
+int uxopenat_modevf(int flags, mode_t mode, int dirfd, const char * path_fmt, va_list va)
 {
   int fd;
   char path[PATH_MAX];
@@ -240,7 +240,7 @@ int API uxopenat_modevf(int flags, mode_t mode, int dirfd, const char * path_fmt
   return fd;
 }
 
-ssize_t API xsplice(int fd_in, loff_t *off_in, int fd_out, loff_t *off_out, size_t len, unsigned int flags)
+ssize_t xsplice(int fd_in, loff_t *off_in, int fd_out, loff_t *off_out, size_t len, unsigned int flags)
 {
   ssize_t rv;
 

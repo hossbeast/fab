@@ -9,7 +9,7 @@
 
 #include "xresource.h"
 
-void API xsetrlimit(int resource, const struct rlimit * restrict rlim)
+void xsetrlimit(int resource, const struct rlimit * restrict rlim)
 {
   RUNTIME_ASSERT(setrlimit(resource, rlim) == 0);
 }

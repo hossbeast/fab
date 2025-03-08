@@ -4,7 +4,7 @@
 #include "grow.h"
 #include "assure.h"
 
-void API grow(void * target, size_t es, size_t len, size_t ec, size_t * const restrict ac)
+void grow(void * target, size_t es, size_t len, size_t ec, size_t * const restrict ac)
 {
   assure(target, es, ec + len, ac);
 }

@@ -139,13 +139,13 @@ static void rolling_flush(narrator * restrict N)
 
 #define rolling_seek 0
 #define rolling_read 0
-struct narrator_vtable API narrator_rolling_vtable = NARRATOR_VTABLE(rolling);
+struct narrator_vtable narrator_rolling_vtable = NARRATOR_VTABLE(rolling);
 
 //
 // api
 //
 
-void API narrator_rolling_create(narrator_rolling ** const restrict n, const char * const restrict path_base, mode_t mode, uint32_t threshold, uint16_t max_files)
+void narrator_rolling_create(narrator_rolling ** const restrict n, const char * const restrict path_base, mode_t mode, uint32_t threshold, uint16_t max_files)
 {
   narrator_rolling *rolling;
   size_t path_base_len;
@@ -178,7 +178,7 @@ void API narrator_rolling_create(narrator_rolling ** const restrict n, const cha
   *n = rolling;
 }
 
-void API narrator_rolling_free(narrator_rolling *n)
+void narrator_rolling_free(narrator_rolling *n)
 {
   if(n) {
     narrator_rolling_destroy(n);
@@ -186,7 +186,7 @@ void API narrator_rolling_free(narrator_rolling *n)
   free(n);
 }
 
-void API narrator_rolling_destroy(narrator_rolling * restrict n)
+void narrator_rolling_destroy(narrator_rolling * restrict n)
 {
   free(n->directory);
   free(n->name_base);

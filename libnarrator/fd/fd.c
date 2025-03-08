@@ -13,8 +13,8 @@
 
 #include "macros.h"
 
-narrator * APIDATA g_narrator_stdout;
-narrator * APIDATA g_narrator_stderr;
+narrator * g_narrator_stdout;
+narrator * g_narrator_stderr;
 
 //
 // static
@@ -78,7 +78,7 @@ static void __attribute__((nonnull)) fd_flush(narrator * const restrict N)
 
 }
 
-struct narrator_vtable API narrator_fd_vtable = NARRATOR_VTABLE(fd);
+struct narrator_vtable narrator_fd_vtable = NARRATOR_VTABLE(fd);
 
 //
 // public
@@ -118,7 +118,7 @@ void narrator_fd_destroy(narrator_fd * restrict n)
 
 }
 
-void API narrator_fd_create(narrator_fd ** const restrict n, int fd)
+void narrator_fd_create(narrator_fd ** const restrict n, int fd)
 {
   narrator_fd *nfd;
 
@@ -128,7 +128,7 @@ void API narrator_fd_create(narrator_fd ** const restrict n, int fd)
   *n = nfd;
 }
 
-void API narrator_fd_free(narrator_fd * const restrict n)
+void narrator_fd_free(narrator_fd * const restrict n)
 {
   free(n);
 }

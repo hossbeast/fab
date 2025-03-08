@@ -13,7 +13,7 @@
 
 #include "mkdirp.h"
 
-void API mkdirpw(mode_t mode, const char * const path, size_t pathl)
+void mkdirpw(mode_t mode, const char * const path, size_t pathl)
 {
   char space[256];
   const char * t;
@@ -34,12 +34,12 @@ void API mkdirpw(mode_t mode, const char * const path, size_t pathl)
   }
 }
 
-void API mkdirps(mode_t mode, const char * const path)
+void mkdirps(mode_t mode, const char * const path)
 {
   mkdirpw(mode, path, strlen(path));
 }
 
-void API mkdirpf(mode_t mode, const char * const restrict fmt, ...)
+void mkdirpf(mode_t mode, const char * const restrict fmt, ...)
 {
   va_list va;
   va_start(va, fmt);
@@ -49,7 +49,7 @@ void API mkdirpf(mode_t mode, const char * const restrict fmt, ...)
   va_end(va);
 }
 
-void API mkdirpvf(mode_t mode, const char * const restrict fmt, va_list va)
+void mkdirpvf(mode_t mode, const char * const restrict fmt, va_list va)
 {
   char space[256];
   size_t sz;

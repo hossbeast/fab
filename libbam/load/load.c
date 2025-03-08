@@ -12,7 +12,7 @@ static int handles;
 // api
 //
 
-void API bam_load()
+void bam_load()
 {
   if(handles++ == 0)
   {
@@ -20,7 +20,7 @@ void API bam_load()
   }
 }
 
-void API bam_unload()
+void bam_unload()
 {
   if(--handles == 0)
   {

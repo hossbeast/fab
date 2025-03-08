@@ -9,7 +9,7 @@
 
 #include <string.h>
 
-void * API xmmap(void * addr, size_t length, int prot, int flags, int fd, off_t offset)
+void * xmmap(void * addr, size_t length, int prot, int flags, int fd, off_t offset)
 {
   void *r;
 
@@ -19,7 +19,7 @@ void * API xmmap(void * addr, size_t length, int prot, int flags, int fd, off_t 
   return r;
 }
 
-void API xmunmap(void * addr, size_t length)
+void xmunmap(void * addr, size_t length)
 {
   if(addr == MAP_FAILED)
     return;
@@ -27,7 +27,7 @@ void API xmunmap(void * addr, size_t length)
   RUNTIME_ASSERT(munmap(addr, length) == 0);
 }
 
-void API ixmunmap(void * addr, size_t length)
+void ixmunmap(void * addr, size_t length)
 {
   void **addrp;
 

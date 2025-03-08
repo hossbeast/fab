@@ -12,18 +12,18 @@
 // api
 //
 
-void API narrator_seek(narrator * const restrict n, off_t offset, int whence, off_t * restrict resp)
+void narrator_seek(narrator * const restrict n, off_t offset, int whence, off_t * restrict resp)
 {
   n->vtab->seek(n, offset, whence, resp);
 }
 
-void API narrator_reset(narrator * const restrict n)
+void narrator_reset(narrator * const restrict n)
 {
   n->vtab->seek(n, 0, SEEK_SET, 0);
   n->off = 0;
 }
 
-int API narrator_sayf(narrator * n, const char * const restrict fmt, ...)
+int narrator_sayf(narrator * n, const char * const restrict fmt, ...)
 {
   va_list va;
   int r;
@@ -37,7 +37,7 @@ int API narrator_sayf(narrator * n, const char * const restrict fmt, ...)
   return r;
 }
 
-int API narrator_sayc(narrator * const restrict n, int c)
+int narrator_sayc(narrator * const restrict n, int c)
 {
   char cc = c;
   int r;
@@ -48,7 +48,7 @@ int API narrator_sayc(narrator * const restrict n, int c)
   return r;
 }
 
-int API narrator_sayvf(narrator * const restrict n, const char * const restrict fmt, va_list va)
+int narrator_sayvf(narrator * const restrict n, const char * const restrict fmt, va_list va)
 {
   int r;
 
@@ -58,7 +58,7 @@ int API narrator_sayvf(narrator * const restrict n, const char * const restrict 
   return r;
 }
 
-int API narrator_sayw(narrator * const restrict n, const void * const restrict b, size_t l)
+int narrator_sayw(narrator * const restrict n, const void * const restrict b, size_t l)
 {
   int r;
 
@@ -68,7 +68,7 @@ int API narrator_sayw(narrator * const restrict n, const void * const restrict b
   return r;
 }
 
-int API narrator_says(narrator * const restrict n, const char * const restrict s)
+int narrator_says(narrator * const restrict n, const char * const restrict s)
 {
   int r;
 
@@ -82,12 +82,12 @@ int API narrator_says(narrator * const restrict n, const char * const restrict s
   return r;
 }
 
-void API narrator_read(narrator * restrict n, void * dst, size_t count, size_t * restrict r)
+void narrator_read(narrator * restrict n, void * dst, size_t count, size_t * restrict r)
 {
   n->vtab->read(n, dst, count, r);
 }
 
-void API narrator_flush(narrator * restrict n)
+void narrator_flush(narrator * restrict n)
 {
   n->vtab->flush(n);
 }

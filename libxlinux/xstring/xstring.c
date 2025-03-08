@@ -9,7 +9,7 @@
 #include "xstring.h"
 #include "xstdlib.h"
 
-void API ixstrncat(char ** s1, const char * s2, int s2len)
+void ixstrncat(char ** s1, const char * s2, int s2len)
 {
   char * o = *s1;
   int s1len = 0;
@@ -24,7 +24,7 @@ void API ixstrncat(char ** s1, const char * s2, int s2len)
   memcpy((*s1) + s1len, s2, s2len);
 }
 
-void API ixstrcat(char ** s1, const char * s2)
+void ixstrcat(char ** s1, const char * s2)
 {
   char * o = *s1;
   int s1len = 0;
@@ -42,7 +42,7 @@ void API ixstrcat(char ** s1, const char * s2)
   memcpy((*s1) + s1len, s2, s2len);
 }
 
-void API ixstrcatf(char ** s, char * fmt, ...)
+void ixstrcatf(char ** s, char * fmt, ...)
 {
   va_list va;
 
@@ -64,12 +64,12 @@ void API ixstrcatf(char ** s, char * fmt, ...)
   va_end(va);
 }
 
-void API ixstrdup(char ** s1, const char * s2)
+void ixstrdup(char ** s1, const char * s2)
 {
   return ixstrndup(s1, s2, strlen(s2));
 }
 
-void API ixstrndup(char ** s1, const char * s2, const size_t l)
+void ixstrndup(char ** s1, const char * s2, const size_t l)
 {
   int s1len = 0 ;
   int s2len = l ?: strlen(s2);
@@ -89,7 +89,7 @@ void API ixstrndup(char ** s1, const char * s2, const size_t l)
   }
 }
 
-void API ixsprintf(char ** s, char * fmt, ...)
+void ixsprintf(char ** s, char * fmt, ...)
 {
   va_list va;
   int req;

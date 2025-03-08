@@ -9,7 +9,7 @@
 
 #include "xfile.h"
 
-void API xflock(int fd, int operation)
+void xflock(int fd, int operation)
 {
   RUNTIME_ASSERT(flock(fd, operation) == 0);
 }

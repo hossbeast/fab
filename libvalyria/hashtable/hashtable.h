@@ -133,11 +133,11 @@ void * hashtable_put(hashtable * restrict ht, void * restrict entry)
 void * hashtable_get(const hashtable * restrict ht, const void * restrict entry)
   __attribute__((nonnull(1)));
 
-bool API hashtable_contains(const hashtable * restrict ht, const void * restrict entry)
+bool hashtable_contains(const hashtable * restrict ht, const void * restrict entry)
   __attribute__((nonnull(1)));
 
 /* get the entry at the specified index, if any */
-void * API hashtable_table_entry(const hashtable * restrict ht, size_t x)
+void * hashtable_table_entry(const hashtable * restrict ht, size_t x)
   __attribute__((nonnull));
 
 /*
@@ -182,5 +182,5 @@ void hashtable_splice(hashtable * dst, hashtable * src)
 void hashtable_replicate(hashtable * dst, hashtable * src)
   __attribute__((nonnull));
 
-void API hashtable_enumerate(hashtable * restrict ht, void * restrict _entries, size_t * restrict entriesl)
+void hashtable_enumerate(hashtable * restrict ht, void * restrict _entries, size_t * restrict entriesl)
   __attribute__((nonnull));

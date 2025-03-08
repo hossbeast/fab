@@ -7,12 +7,12 @@
 
 #define DEFAULT_SEED 10
 
-void API assure(void * target, size_t es, size_t len, size_t * const restrict ac)
+void assure(void * target, size_t es, size_t len, size_t * const restrict ac)
 {
   assurex(target, es, len, ac, DEFAULT_SEED);
 }
 
-void API assurex(void * target, size_t es, size_t len, size_t * const restrict ac, size_t seed)
+void assurex(void * target, size_t es, size_t len, size_t * const restrict ac, size_t seed)
 {
   size_t nc;
   void ** p;

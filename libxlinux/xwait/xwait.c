@@ -9,12 +9,12 @@
 
 #include "xwait.h"
 
-void API xwait(int * restrict status)
+void xwait(int * restrict status)
 {
   RUNTIME_ASSERT(wait(status) == 0);
 }
 
-void API xwaitpid(pid_t pid, int * restrict status, int options)
+void xwaitpid(pid_t pid, int * restrict status, int options)
 {
   int r;
 
@@ -22,7 +22,7 @@ void API xwaitpid(pid_t pid, int * restrict status, int options)
   RUNTIME_ASSERT(r == pid);
 }
 
-void API xwaitid(idtype_t idtype, id_t id, siginfo_t *infop, int options)
+void xwaitid(idtype_t idtype, id_t id, siginfo_t *infop, int options)
 {
   int r;
 
@@ -30,7 +30,7 @@ void API xwaitid(idtype_t idtype, id_t id, siginfo_t *infop, int options)
   RUNTIME_ASSERT(r == 0);
 }
 
-void API uxwaitid(idtype_t idtype, id_t id, siginfo_t *infop, int options)
+void uxwaitid(idtype_t idtype, id_t id, siginfo_t *infop, int options)
 {
   int r;
 

@@ -46,7 +46,7 @@ static inline uint64_t final64(uint64_t h)
 // public
 //
 
-uint32_t API strhash32(uint32_t h, const char * restrict s)
+uint32_t strhash32(uint32_t h, const char * restrict s)
 {
   while(*s)
   {
@@ -57,7 +57,7 @@ uint32_t API strhash32(uint32_t h, const char * restrict s)
   return final32(h);
 }
 
-uint32_t API hash32(uint32_t h, const void * restrict v, size_t l)
+uint32_t hash32(uint32_t h, const void * restrict v, size_t l)
 {
   const char *s;
   size_t x;
@@ -69,7 +69,7 @@ uint32_t API hash32(uint32_t h, const void * restrict v, size_t l)
   return final32(h);
 }
 
-uint64_t API strhash64(uint64_t h, const char * restrict s)
+uint64_t strhash64(uint64_t h, const char * restrict s)
 {
   while(*s)
   {
@@ -80,7 +80,7 @@ uint64_t API strhash64(uint64_t h, const char * restrict s)
   return final64(h);
 }
 
-uint64_t API hash64(uint64_t h, const void * const restrict v, size_t l)
+uint64_t hash64(uint64_t h, const void * const restrict v, size_t l)
 {
   const char *s;
   size_t x;

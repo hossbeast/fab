@@ -81,7 +81,7 @@ out:
 // api
 //
 
-void API yyu_parser_xdestroy(yyu_parser * const parser)
+void yyu_parser_xdestroy(yyu_parser * const parser)
 {
   free(parser->last_lval);
   free(parser->token_table_bytoken);
@@ -90,7 +90,7 @@ void API yyu_parser_xdestroy(yyu_parser * const parser)
   }
 }
 
-void API yyu_parser_init(yyu_parser * const restrict parser, const yyu_vtable * const restrict vtable)
+void yyu_parser_init(yyu_parser * const restrict parser, const yyu_vtable * const restrict vtable)
 {
   parser->vtable = vtable;
   parser->last_lval = 0;
@@ -101,7 +101,7 @@ void API yyu_parser_init(yyu_parser * const restrict parser, const yyu_vtable * 
   parser->vtable->yyset_extra(parser, parser->scanner);
 }
 
-void API yyu_parser_init_tokens(yyu_parser * const restrict parser, const yyu_token * restrict token_table, uint16_t token_table_size)
+void yyu_parser_init_tokens(yyu_parser * const restrict parser, const yyu_token * restrict token_table, uint16_t token_table_size)
 {
   int x;
 
@@ -165,7 +165,7 @@ void API yyu_parser_init_tokens(yyu_parser * const restrict parser, const yyu_to
   }
 }
 
-void API yyu_parser_init_states(
+void yyu_parser_init_states(
     yyu_parser * const restrict parser
   , int numstates
   , const int * restrict statenumbers
@@ -177,7 +177,7 @@ void API yyu_parser_init_states(
   parser->statenames = statenames;
 }
 
-int API yyu_parse(
+int yyu_parse(
     yyu_parser * const restrict parser
   , char * const restrict text
   , size_t text_len

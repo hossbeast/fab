@@ -14,7 +14,7 @@
 #define VISIT  1
 #define TRAVEL 2
 
-attrs32 * APIDATA moria_traverse_attrs = (attrs32[]) {{
+attrs32 * moria_traverse_attrs = (attrs32[]) {{
 #undef DEF
 #define DEF(x, r, y) + 1
     .num = 0
@@ -583,7 +583,7 @@ static void traversal_state_reclaim(moria_graph * restrict g, traversal_state * 
 // api
 //
 
-void API moria_traverse_vertices(
+void moria_traverse_vertices(
     moria_graph * const restrict g
   , moria_vertex * const restrict vx
   , void (* visitor)(moria_vertex * restrict, void *, moria_traversal_mode, int, moria_traverse_result * restrict)
@@ -638,7 +638,7 @@ void API moria_traverse_vertices(
   moria_vertex_traversal_end(g, local_state);
 }
 
-void API moria_traverse_vertex_edges(
+void moria_traverse_vertex_edges(
     moria_graph * const restrict g
   , moria_vertex * const restrict vx
   , void (* visitor)(moria_edge * restrict, void *, moria_traversal_mode, int, moria_traverse_result * restrict)
@@ -684,7 +684,7 @@ void API moria_traverse_vertex_edges(
   moria_edge_traversal_end(g, local_state);
 }
 
-void API moria_traverse_edges(
+void moria_traverse_edges(
     moria_graph * const restrict g
   , moria_edge * const restrict ex
   , void (* visitor)(moria_edge * restrict, void *, moria_traversal_mode, int, moria_traverse_result * restrict)
@@ -733,7 +733,7 @@ void API moria_traverse_edges(
   moria_edge_traversal_end(g, local_state);
 }
 
-void API moria_traverse_edge_vertices(
+void moria_traverse_edge_vertices(
     moria_graph * const restrict g
   , moria_edge * const restrict ex
   , void (* visitor)(moria_vertex * restrict, void *, moria_traversal_mode, int, moria_traverse_result * restrict)
@@ -777,7 +777,7 @@ void API moria_traverse_edge_vertices(
   moria_vertex_traversal_end(g, local_state);
 }
 
-void API moria_vertex_traversal_begin(moria_graph * const restrict g, moria_vertex_traversal_state ** restrict vstp)
+void moria_vertex_traversal_begin(moria_graph * const restrict g, moria_vertex_traversal_state ** restrict vstp)
 {
   traversal_state *statep;
 
@@ -786,7 +786,7 @@ void API moria_vertex_traversal_begin(moria_graph * const restrict g, moria_vert
   *vstp = containerof(statep, moria_vertex_traversal_state, st);
 }
 
-void API moria_edge_traversal_begin(moria_graph * const restrict g, moria_edge_traversal_state ** restrict estp)
+void moria_edge_traversal_begin(moria_graph * const restrict g, moria_edge_traversal_state ** restrict estp)
 {
   traversal_state *statep;
 
@@ -795,7 +795,7 @@ void API moria_edge_traversal_begin(moria_graph * const restrict g, moria_edge_t
   *estp = containerof(statep, moria_edge_traversal_state, st);
 }
 
-void API moria_vertex_traversal_end(moria_graph * const restrict g, moria_vertex_traversal_state * restrict state)
+void moria_vertex_traversal_end(moria_graph * const restrict g, moria_vertex_traversal_state * restrict state)
 {
   if(!state) {
     return;
@@ -804,7 +804,7 @@ void API moria_vertex_traversal_end(moria_graph * const restrict g, moria_vertex
   traversal_state_reclaim(g, &state->st);
 }
 
-void API moria_edge_traversal_end(moria_graph * const restrict g, moria_edge_traversal_state * restrict state)
+void moria_edge_traversal_end(moria_graph * const restrict g, moria_edge_traversal_state * restrict state)
 {
   if(!state) {
     return;
@@ -813,14 +813,14 @@ void API moria_edge_traversal_end(moria_graph * const restrict g, moria_edge_tra
   traversal_state_reclaim(g, &state->st);
 }
 
-bool API moria_traversal_vertex_visited(const moria_graph * const restrict g, const moria_vertex * const restrict vx, moria_vertex_traversal_state * restrict state)
+bool moria_traversal_vertex_visited(const moria_graph * const restrict g, const moria_vertex * const restrict vx, moria_vertex_traversal_state * restrict state)
 {
   const moria_vertex * v = vx;
 
   return set(&state->st, VISIT, &v->ent);
 }
 
-bool API moria_traversal_edge_visited(const moria_graph * const restrict g, const moria_edge * const restrict ex, moria_edge_traversal_state * restrict state)
+bool moria_traversal_edge_visited(const moria_graph * const restrict g, const moria_edge * const restrict ex, moria_edge_traversal_state * restrict state)
 {
   const moria_edge * e = ex;
 
@@ -829,27 +829,13 @@ bool API moria_traversal_edge_visited(const moria_graph * const restrict g, cons
 
 /* commonly used visitors */
 
-void API moria_vertex_count(struct moria_vertex * restrict v, void * ctx, moria_traversal_mode mode, int distance, moria_traverse_result * restrict result)
+void moria_vertex_count(struct moria_vertex * restrict v, void * ctx, moria_traversal_mode mode, int distance, moria_traverse_result * restrict result)
 {
   uint32_t *c = ctx;
   (*c)++;
 }
 
-void API moria_vertex_count_once(struct moria_vertex * restrict v, void * ctx, moria_traversal_mode mode, int distance, moria_traverse_result * restrict result)
-{
-  uint32_t *c = ctx;
-  (*c)++;
-
-  result->flags = MORIA_TRAVERSE_PRUNE;
-}
-
-void API moria_edge_count(struct moria_edge * restrict v, void * ctx, moria_traversal_mode mode, int distance, moria_traverse_result * restrict result)
-{
-  uint32_t *c = ctx;
-  (*c)++;
-}
-
-void API moria_edge_count_once(struct moria_edge * restrict v, void * ctx, moria_traversal_mode mode, int distance, moria_traverse_result * restrict result)
+void moria_vertex_count_once(struct moria_vertex * restrict v, void * ctx, moria_traversal_mode mode, int distance, moria_traverse_result * restrict result)
 {
   uint32_t *c = ctx;
   (*c)++;
@@ -857,14 +843,28 @@ void API moria_edge_count_once(struct moria_edge * restrict v, void * ctx, moria
   result->flags = MORIA_TRAVERSE_PRUNE;
 }
 
-void API moria_vertex_first(moria_vertex * restrict v, void * ctx, moria_traversal_mode mode, int distance, moria_traverse_result * restrict result)
+void moria_edge_count(struct moria_edge * restrict v, void * ctx, moria_traversal_mode mode, int distance, moria_traverse_result * restrict result)
+{
+  uint32_t *c = ctx;
+  (*c)++;
+}
+
+void moria_edge_count_once(struct moria_edge * restrict v, void * ctx, moria_traversal_mode mode, int distance, moria_traverse_result * restrict result)
+{
+  uint32_t *c = ctx;
+  (*c)++;
+
+  result->flags = MORIA_TRAVERSE_PRUNE;
+}
+
+void moria_vertex_first(moria_vertex * restrict v, void * ctx, moria_traversal_mode mode, int distance, moria_traverse_result * restrict result)
 {
   moria_vertex **rv = ctx;
   *rv = v;
   result->flags = MORIA_TRAVERSE_PRUNE;
 }
 
-void API moria_vertex_edge_first(moria_edge * restrict v, void * ctx, moria_traversal_mode mode, int distance, moria_traverse_result * restrict result)
+void moria_vertex_edge_first(moria_edge * restrict v, void * ctx, moria_traversal_mode mode, int distance, moria_traverse_result * restrict result)
 {
   moria_edge **rv = ctx;
   *rv = v;

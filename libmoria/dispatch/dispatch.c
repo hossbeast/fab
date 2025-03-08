@@ -158,7 +158,7 @@ void moria_parser_create_vertex(
   *rv = v;
 }
 
-moria_operations_vtable * API moria_operations_dispatch = (moria_operations_vtable[]) {{
+moria_operations_vtable * moria_operations_dispatch = (moria_operations_vtable[]) {{
     .setup = moria_parser_setup
   , .cleanup = moria_parser_cleanup
   , .connect = moria_parser_connect

@@ -108,7 +108,7 @@ static struct narrator_vtable growing_vtable = NARRATOR_VTABLE(growing);
 // api
 //
 
-void API narrator_growing_create(narrator_growing ** const restrict rv)
+void narrator_growing_create(narrator_growing ** const restrict rv)
 {
   narrator_growing * n = 0;
 
@@ -118,7 +118,7 @@ void API narrator_growing_create(narrator_growing ** const restrict rv)
   *rv = n;
 }
 
-void API narrator_growing_free(narrator_growing * restrict n)
+void narrator_growing_free(narrator_growing * restrict n)
 {
   if(n) {
     narrator_growing_destroy(n);
@@ -126,7 +126,7 @@ void API narrator_growing_free(narrator_growing * restrict n)
   free(n);
 }
 
-narrator * API narrator_growing_init_from(narrator_growing * restrict n, char * buf, size_t bufa)
+narrator * narrator_growing_init_from(narrator_growing * restrict n, char * buf, size_t bufa)
 {
   narrator_growing_init(n);
 
@@ -136,7 +136,7 @@ narrator * API narrator_growing_init_from(narrator_growing * restrict n, char * 
   return &n->base;
 }
 
-narrator * API narrator_growing_init(narrator_growing * restrict n)
+narrator * narrator_growing_init(narrator_growing * restrict n)
 {
   n->base.vtab = &growing_vtable;
   n->s = 0;
@@ -148,12 +148,12 @@ narrator * API narrator_growing_init(narrator_growing * restrict n)
   return &n->base;
 }
 
-void API narrator_growing_destroy(narrator_growing * restrict n)
+void narrator_growing_destroy(narrator_growing * restrict n)
 {
   free(n->s);
 }
 
-void API narrator_growing_claim_buffer(narrator_growing * const restrict n, void * bufp, size_t * allocp)
+void narrator_growing_claim_buffer(narrator_growing * const restrict n, void * bufp, size_t * allocp)
 {
   char * s = n->s;
   size_t a = n->a;
@@ -170,7 +170,7 @@ void API narrator_growing_claim_buffer(narrator_growing * const restrict n, void
   n->m = 0;
 }
 
-void API narrator_growing_allocate(narrator_growing * restrict n, size_t size)
+void narrator_growing_allocate(narrator_growing * restrict n, size_t size)
 {
   assure(&n->s, sizeof(*n->s), n->l + size + 1, &n->a);
 }

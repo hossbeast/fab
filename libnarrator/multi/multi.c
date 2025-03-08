@@ -89,7 +89,7 @@ static struct narrator_vtable multi_vtable = NARRATOR_VTABLE(multi);
 // api
 //
 
-void API narrator_multi_init(narrator_multi * restrict n)
+void narrator_multi_init(narrator_multi * restrict n)
 {
   memset(n, 0, sizeof(*n));
 
@@ -99,12 +99,12 @@ void API narrator_multi_init(narrator_multi * restrict n)
   n->base.off = 0;
 }
 
-void API narrator_multi_destroy(narrator_multi * restrict n)
+void narrator_multi_destroy(narrator_multi * restrict n)
 {
   free(n->v);
 }
 
-void API narrator_multi_create(narrator_multi ** const restrict rv)
+void narrator_multi_create(narrator_multi ** const restrict rv)
 {
   narrator_multi * n = 0;
 
@@ -114,7 +114,7 @@ void API narrator_multi_create(narrator_multi ** const restrict rv)
   *rv = n;
 }
 
-void API narrator_multi_free(narrator_multi * restrict n)
+void narrator_multi_free(narrator_multi * restrict n)
 {
   if(n) {
     narrator_multi_destroy(n);
@@ -122,7 +122,7 @@ void API narrator_multi_free(narrator_multi * restrict n)
   free(n);
 }
 
-void API narrator_multi_add(narrator_multi * const restrict n, narrator * const restrict np)
+void narrator_multi_add(narrator_multi * const restrict n, narrator * const restrict np)
 {
   assure(&n->v, sizeof(*n->v), n->l + 1, &n->a);
   n->v[n->l++] = np;

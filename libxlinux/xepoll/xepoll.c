@@ -10,7 +10,7 @@
 // api
 //
 
-int API xepoll_create()
+int xepoll_create()
 {
   int fd;
 
@@ -20,12 +20,12 @@ int API xepoll_create()
   return fd;
 }
 
-void API xepoll_ctl(int epfd, int op, int fd, struct epoll_event *event)
+void xepoll_ctl(int epfd, int op, int fd, struct epoll_event *event)
 {
   RUNTIME_ASSERT(epoll_ctl(epfd, op, fd, event) == 0);
 }
 
-int API xepoll_wait(int epfd, struct epoll_event *events, int maxevents, int timeout)
+int xepoll_wait(int epfd, struct epoll_event *events, int maxevents, int timeout)
 {
   int r;
 
@@ -45,7 +45,7 @@ int uxepoll_wait(int epfd, struct epoll_event *events, int maxevents, int timeou
   return r;
 }
 
-int API xepoll_pwait(int epfd, struct epoll_event *events, int maxevents, int timeout, const sigset_t *sigmask)
+int xepoll_pwait(int epfd, struct epoll_event *events, int maxevents, int timeout, const sigset_t *sigmask)
 {
   int r;
 
@@ -55,7 +55,7 @@ int API xepoll_pwait(int epfd, struct epoll_event *events, int maxevents, int ti
   return r;
 }
 
-int API uxepoll_pwait(int epfd, struct epoll_event *events, int maxevents, int timeout, const sigset_t *sigmask)
+int uxepoll_pwait(int epfd, struct epoll_event *events, int maxevents, int timeout, const sigset_t *sigmask)
 {
   int r;
 

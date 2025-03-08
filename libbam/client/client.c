@@ -43,11 +43,11 @@
 #include "zcat.h"
 
 #if CONFIG_DEVEL
-const char * APIDATA g_bam_client_bamd_path;
-const char * APIDATA g_bam_client_system_config_path;
-const char * APIDATA g_bam_client_user_config_path;
-const char * APIDATA g_bam_client_default_filesystem_invalidation;
-const char * APIDATA g_bam_client_sweeper_period_nsec;
+const char * g_bam_client_bamd_path;
+const char * g_bam_client_system_config_path;
+const char * g_bam_client_user_config_path;
+const char * g_bam_client_default_filesystem_invalidation;
+const char * g_bam_client_sweeper_period_nsec;
 #endif
 
 /* ugo+rwx world read/write/execute */
@@ -286,7 +286,7 @@ int bam_client_solicit(bam_client * restrict client)
   return r;
 }
 
-void API bam_client_attach(bam_client * restrict client, int channel_shmid)
+void bam_client_attach(bam_client * restrict client, int channel_shmid)
 {
   void *shmaddr = 0;
 
@@ -302,7 +302,7 @@ void API bam_client_attach(bam_client * restrict client, int channel_shmid)
   ixclose(&client->lockfd);
 }
 
-void API bam_client_disconnect(bam_client * restrict client)
+void bam_client_disconnect(bam_client * restrict client)
 {
   if(!client->shm) {
     return;
@@ -311,7 +311,7 @@ void API bam_client_disconnect(bam_client * restrict client)
   syscall(SYS_futex, &client->shm->client_ring.waiters, FUTEX_WAKE, INT32_MAX, 0, 0, 0);
 }
 
-bamipc_message * API bam_client_produce(bam_client * restrict client)
+bamipc_message * bam_client_produce(bam_client * restrict client)
 {
   return bamipc_produce(
       client->shm->client_ring.pages
@@ -322,7 +322,7 @@ bamipc_message * API bam_client_produce(bam_client * restrict client)
   );
 }
 
-void API bam_client_post(bam_client * restrict client, bamipc_message * restrict msg)
+void bam_client_post(bam_client * restrict client, bamipc_message * restrict msg)
 {
 #if CONFIG_DEBUG || CONFIG_DEVEL
   RUNTIME_ASSERT(msg->type);
@@ -338,7 +338,7 @@ void API bam_client_post(bam_client * restrict client, bamipc_message * restrict
   );
 }
 
-bamipc_message * API bam_client_acquire(bam_client * restrict client)
+bamipc_message * bam_client_acquire(bam_client * restrict client)
 {
   bamipc_message *msg;
   msg = bamipc_acquire(
@@ -350,7 +350,7 @@ bamipc_message * API bam_client_acquire(bam_client * restrict client)
   return msg;
 }
 
-void API bam_client_consume(bam_client * restrict client, bamipc_message * restrict msg)
+void bam_client_consume(bam_client * restrict client, bamipc_message * restrict msg)
 {
   bamipc_consume(
       client->shm->server_ring.pages
@@ -360,7 +360,7 @@ void API bam_client_consume(bam_client * restrict client, bamipc_message * restr
   );
 }
 
-void API bam_client_release(bam_client * restrict client, bamipc_message * restrict msg)
+void bam_client_release(bam_client * restrict client, bamipc_message * restrict msg)
 {
   bamipc_release(
       client->shm->server_ring.pages

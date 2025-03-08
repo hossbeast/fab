@@ -39,7 +39,7 @@ static void fn(int method, ftwinfo * restrict info, void *arg, int * stop)
 // api
 //
 
-void API rmdirp(const char * const dirpath, int rmself)
+void rmdirp(const char * const dirpath, int rmself)
 {
   nftwat(AT_FDCWD, dirpath, fn, 32, FTWAT_SYMLINKS, &rmself);
 }

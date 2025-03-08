@@ -11,7 +11,7 @@
 
 #include "fmt.h"
 
-int API xvdprintf(int fd, const char * const restrict fmt, va_list va)
+int xvdprintf(int fd, const char * const restrict fmt, va_list va)
 {
   int r;
 
@@ -21,12 +21,12 @@ int API xvdprintf(int fd, const char * const restrict fmt, va_list va)
   return r;
 }
 
-void API xrenames(const char * const restrict old, const char * const restrict new)
+void xrenames(const char * const restrict old, const char * const restrict new)
 {
   RUNTIME_ASSERT(rename(old, new) == 0);
 }
 
-void API xrenamef(const char * const restrict oldfmt, const char * const restrict newfmt, ...)
+void xrenamef(const char * const restrict oldfmt, const char * const restrict newfmt, ...)
 {
   va_list va;
 
@@ -35,7 +35,7 @@ void API xrenamef(const char * const restrict oldfmt, const char * const restric
   va_end(va);
 }
 
-void API xrenamevf(const char * const restrict oldfmt, const char * const restrict newfmt, va_list va)
+void xrenamevf(const char * const restrict oldfmt, const char * const restrict newfmt, va_list va)
 {
   char old[PATH_MAX];
   char new[PATH_MAX];
@@ -46,7 +46,7 @@ void API xrenamevf(const char * const restrict oldfmt, const char * const restri
   xrenames(old, new);
 }
 
-void API uxrenames(const char * const restrict old, const char * const restrict new)
+void uxrenames(const char * const restrict old, const char * const restrict new)
 {
   int r;
 
@@ -54,7 +54,7 @@ void API uxrenames(const char * const restrict old, const char * const restrict 
   RUNTIME_ASSERT(r == 0 || errno == ENOENT || errno == ENOTDIR);
 }
 
-void API uxrenamef(const char * const restrict oldfmt, const char * const restrict newfmt, ...)
+void uxrenamef(const char * const restrict oldfmt, const char * const restrict newfmt, ...)
 {
   va_list va;
 
@@ -63,7 +63,7 @@ void API uxrenamef(const char * const restrict oldfmt, const char * const restri
   va_end(va);
 }
 
-void API uxrenamevf(const char * const restrict oldfmt, const char * const restrict newfmt, va_list va)
+void uxrenamevf(const char * const restrict oldfmt, const char * const restrict newfmt, va_list va)
 {
   char old[PATH_MAX];
   char new[PATH_MAX];

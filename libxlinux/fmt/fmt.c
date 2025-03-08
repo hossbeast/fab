@@ -9,7 +9,7 @@
 // public
 //
 
-void API fmt_apply(char * const restrict dst, size_t dst_size, const char * const restrict fmt, va_list va)
+void fmt_apply(char * const restrict dst, size_t dst_size, const char * const restrict fmt, va_list va)
 {
   int rv;
 

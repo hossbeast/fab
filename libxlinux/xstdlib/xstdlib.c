@@ -19,7 +19,7 @@
 // api
 //
 
-void API xmalloc(void* target, size_t size)
+void xmalloc(void* target, size_t size)
 {
   int r;
 
@@ -29,7 +29,7 @@ void API xmalloc(void* target, size_t size)
   memset(*(void**)target, 0, size);
 }
 
-void API xrealloc(void* target, size_t es, size_t ec, size_t oec)
+void xrealloc(void* target, size_t es, size_t ec, size_t oec)
 {
   void** t;
   void * mem = 0;
@@ -53,7 +53,7 @@ void API xrealloc(void* target, size_t es, size_t ec, size_t oec)
   }
 }
 
-void API ifree(void* target)
+void ifree(void* target)
 {
   void** t = (void**)target;
 
@@ -186,7 +186,7 @@ ssize_t xreadlinkvf(const char * pathname_fmt, char * buf, size_t bufsiz, va_lis
   return uxreadlinkatvf(AT_FDCWD, pathname_fmt, buf, bufsiz, va);
 }
 
-char * API xrealpaths(char * restrict resolved_path, const char * restrict path)
+char * xrealpaths(char * restrict resolved_path, const char * restrict path)
 {
   char *r;
 
@@ -196,7 +196,7 @@ char * API xrealpaths(char * restrict resolved_path, const char * restrict path)
   return r;
 }
 
-char * API xrealpathw(char * restrict resolved_path, const char * restrict path, uint16_t path_len)
+char * xrealpathw(char * restrict resolved_path, const char * restrict path, uint16_t path_len)
 {
   char pathname[PATH_MAX];
   size_t z;
@@ -207,7 +207,7 @@ char * API xrealpathw(char * restrict resolved_path, const char * restrict path,
   return xrealpaths(resolved_path, pathname);
 }
 
-char * API xrealpathf(char * restrict resolved_path, const char * restrict path_fmt, ...)
+char * xrealpathf(char * restrict resolved_path, const char * restrict path_fmt, ...)
 {
   char * r;
   va_list va;
@@ -219,7 +219,7 @@ char * API xrealpathf(char * restrict resolved_path, const char * restrict path_
   return r;
 }
 
-char * API xrealpathvf(char * restrict resolved_path, const char * restrict path_fmt, va_list va)
+char * xrealpathvf(char * restrict resolved_path, const char * restrict path_fmt, va_list va)
 {
   char pathname[PATH_MAX];
 

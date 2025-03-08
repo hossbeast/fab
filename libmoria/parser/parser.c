@@ -46,7 +46,7 @@ llist *parser_llist_alloc(struct moria_parser * restrict parser)
 // API
 //
 
-void API moria_parser_create(
+void moria_parser_create(
     moria_parser ** const parser
   , moria_graph * restrict g
   , llist ** restrict vertex_lists
@@ -105,7 +105,7 @@ void API moria_parser_create(
   *parser = p;
 }
 
-void API moria_parser_free(moria_parser* const p)
+void moria_parser_free(moria_parser* const p)
 {
   moria_vertex* v;
   moria_edge* e;
@@ -145,13 +145,13 @@ void API moria_parser_free(moria_parser* const p)
   free(p);
 }
 
-void API moria_parser_ifree(moria_parser ** const p)
+void moria_parser_ifree(moria_parser ** const p)
 {
   moria_parser_free(*p);
   *p = 0;
 }
 
-int API moria_parser_graph_parse(
+int moria_parser_graph_parse(
     moria_parser * restrict parser
   , char * const restrict text
   , size_t len
@@ -161,7 +161,7 @@ int API moria_parser_graph_parse(
   return yyu_parse(&parser->graph_yyu, text, len, "-graph-", 0, 0, 0);
 }
 
-int API moria_parser_operations_parse(
+int moria_parser_operations_parse(
     moria_parser * restrict parser
   , char * const restrict text
   , size_t len

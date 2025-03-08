@@ -13,7 +13,7 @@
 
 static int handles;
 
-void API moria_load()
+void moria_load()
 {
   if(handles++ == 0)
   {
@@ -21,7 +21,7 @@ void API moria_load()
   }
 }
 
-void API moria_unload()
+void moria_unload()
 {
   if(--handles == 0)
   {

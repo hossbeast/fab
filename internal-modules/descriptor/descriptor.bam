@@ -180,7 +180,7 @@ END
 while(my($name, $def) = each %descriptors)
 {
   print FH <<"END";
-struct descriptor_type API descriptor_${name} = {
+struct descriptor_type descriptor_${name} = {
     id : DESCRIPTOR_ID_${name}
   , name : "$name"
   , name_len : @{[length($name)]}
@@ -217,7 +217,7 @@ while(my($name, $def) = each %descriptors)
       , 4 => "DESCRIPTOR_LIST"
     }->{$$field{code}};
     print FH <<"END";
-struct descriptor_field API descriptor_${name}_$$field{name} = {
+struct descriptor_field descriptor_${name}_$$field{name} = {
     name : "$$field{name}"
   , name_len : @{[length($$field{name})]}
   , code : $codestring

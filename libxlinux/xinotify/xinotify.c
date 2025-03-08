@@ -8,7 +8,7 @@
 
 #include "xinotify.h"
 
-int API xinotify_init(int flags)
+int xinotify_init(int flags)
 {
   int r;
 
@@ -23,7 +23,7 @@ int API xinotify_init(int flags)
 // SUMMARY
 //  proxy for inotify_add_watch
 //
-int API xinotify_add_watch(int id, const char *path, uint32_t mask)
+int xinotify_add_watch(int id, const char *path, uint32_t mask)
 {
   int r;
 

@@ -39,7 +39,7 @@ static bool __attribute__((nonnull)) vertex_down(
 // api
 //
 
-void API moria_vertex_init(moria_vertex * const restrict v, moria_graph * const restrict g, uint32_t attrs)
+void moria_vertex_init(moria_vertex * const restrict v, moria_graph * const restrict g, uint32_t attrs)
 {
   graph_vertex_init(g, v);
   rbtree_init(&v->up);
@@ -47,7 +47,7 @@ void API moria_vertex_init(moria_vertex * const restrict v, moria_graph * const 
   v->attrs = attrs;
 }
 
-void API moria_vertex_initw(moria_vertex * const restrict v, moria_graph * const restrict g, uint32_t attrs, const char * const restrict label, uint16_t label_len)
+void moria_vertex_initw(moria_vertex * const restrict v, moria_graph * const restrict g, uint32_t attrs, const char * const restrict label, uint16_t label_len)
 {
   moria_vertex_init(v, g, attrs);
 
@@ -55,12 +55,12 @@ void API moria_vertex_initw(moria_vertex * const restrict v, moria_graph * const
   v->label_len = label_len;
 }
 
-void API moria_vertex_inits(moria_vertex * const restrict rv, moria_graph * const restrict g, uint32_t attrs, const char * const restrict label)
+void moria_vertex_inits(moria_vertex * const restrict rv, moria_graph * const restrict g, uint32_t attrs, const char * const restrict label)
 {
   moria_vertex_initw(rv, g, attrs, label, strlen(label));
 }
 
-moria_vertex * API moria_vertex_downs(const moria_vertex * restrict v, const char * restrict label)
+moria_vertex * moria_vertex_downs(const moria_vertex * restrict v, const char * restrict label)
 {
   moria_edge * e;
 
@@ -71,7 +71,7 @@ moria_vertex * API moria_vertex_downs(const moria_vertex * restrict v, const cha
   return 0;
 }
 
-moria_vertex * API moria_vertex_downw(const moria_vertex * restrict v, const char * restrict label, uint16_t label_len)
+moria_vertex * moria_vertex_downw(const moria_vertex * restrict v, const char * restrict label, uint16_t label_len)
 {
   moria_edge * e;
 
@@ -82,7 +82,7 @@ moria_vertex * API moria_vertex_downw(const moria_vertex * restrict v, const cha
   return 0;
 }
 
-moria_edge * API moria_vertex_edge_downs(const moria_vertex * restrict v, const char * restrict label)
+moria_edge * moria_vertex_edge_downs(const moria_vertex * restrict v, const char * restrict label)
 {
   moria_edge * e;
 
@@ -93,7 +93,7 @@ moria_edge * API moria_vertex_edge_downs(const moria_vertex * restrict v, const 
   return 0;
 }
 
-moria_edge * API moria_vertex_edge_downw(const moria_vertex * restrict v, const char * restrict label, uint16_t label_len)
+moria_edge * moria_vertex_edge_downw(const moria_vertex * restrict v, const char * restrict label, uint16_t label_len)
 {
   moria_edge * e;
 
@@ -104,7 +104,7 @@ moria_edge * API moria_vertex_edge_downw(const moria_vertex * restrict v, const 
   return 0;
 }
 
-moria_vertex * API moria_vertex_up(const moria_vertex * restrict v)
+moria_vertex * moria_vertex_up(const moria_vertex * restrict v)
 {
  if(v->up_identity) {
     return v->up_identity->A;
@@ -113,7 +113,7 @@ moria_vertex * API moria_vertex_up(const moria_vertex * restrict v)
   return 0;
 }
 
-moria_edge * API moria_vertex_edge_up(const moria_vertex * restrict v)
+moria_edge * moria_vertex_edge_up(const moria_vertex * restrict v)
 {
   if(v->up_identity) {
     return v->up_identity;
@@ -122,7 +122,7 @@ moria_edge * API moria_vertex_edge_up(const moria_vertex * restrict v)
   return 0;
 }
 
-moria_vertex * API moria_vertex_descendw(const moria_vertex * restrict v, const char * restrict path, uint16_t path_len)
+moria_vertex * moria_vertex_descendw(const moria_vertex * restrict v, const char * restrict path, uint16_t path_len)
 {
   const char *name, *next;
   uint16_t name_len, len;
@@ -152,7 +152,7 @@ moria_vertex * API moria_vertex_descendw(const moria_vertex * restrict v, const 
   return (moria_vertex*)v;
 }
 
-moria_vertex * API moria_vertex_descends(const moria_vertex * restrict vx, const char * restrict path)
+moria_vertex * moria_vertex_descends(const moria_vertex * restrict vx, const char * restrict path)
 {
   return moria_vertex_descendw(vx, path, strlen(path));
 }

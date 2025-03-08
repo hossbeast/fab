@@ -21,7 +21,7 @@
 
 #define SIGUTIL_HANDLER_DEBUG 0
 
-bool APIDATA g_sigterm;
+bool g_sigterm;
 
 static void term_handler(int signum, siginfo_t *info, void *ctx)
 {
@@ -35,7 +35,7 @@ static void intr_handler(int signum, siginfo_t * info, void * ctx)
   sigrx_probe(info);
 }
 
-void API sigutil_install_handlers()
+void sigutil_install_handlers()
 {
   struct sigaction intr_act;
   struct sigaction term_act;
@@ -58,7 +58,7 @@ void API sigutil_install_handlers()
   xsigaction(SIGRTMIN, &intr_act, 0);
 }
 
-void API sigutil_wait(const sigset_t * sigs, siginfo_t * info)
+void sigutil_wait(const sigset_t * sigs, siginfo_t * info)
 {
   siginfo_t linfo;
   int r;
@@ -84,7 +84,7 @@ void API sigutil_wait(const sigset_t * sigs, siginfo_t * info)
   sigrx_probe(info);
 }
 
-int API sigutil_timedwait(const sigset_t * restrict sigs, siginfo_t * restrict info, const struct timespec * restrict timeout)
+int sigutil_timedwait(const sigset_t * restrict sigs, siginfo_t * restrict info, const struct timespec * restrict timeout)
 {
   int err;
 
@@ -99,7 +99,7 @@ int API sigutil_timedwait(const sigset_t * restrict sigs, siginfo_t * restrict i
   return err;
 }
 
-void API sigutil_exchange(int sig, pid_t pid, const sigset_t * sigs, siginfo_t * info)
+void sigutil_exchange(int sig, pid_t pid, const sigset_t * sigs, siginfo_t * info)
 {
   // signal target
   xkill(pid, sig);
@@ -108,34 +108,34 @@ void API sigutil_exchange(int sig, pid_t pid, const sigset_t * sigs, siginfo_t *
   sigutil_wait(sigs, info);
 }
 
-void API sigutil_kill(pid_t pid, int signo)
+void sigutil_kill(pid_t pid, int signo)
 {
   sigtx_probe(signo, pid, 0);
   xkill(pid, signo);
 }
 
-int API sigutil_uxkill(pid_t pid, int signo)
+int sigutil_uxkill(pid_t pid, int signo)
 {
   sigtx_probe(signo, pid, 0);
 
   return uxkill(pid, signo);
 }
 
-void API sigutil_tgkill(pid_t pid, pid_t tid, int signo)
+void sigutil_tgkill(pid_t pid, pid_t tid, int signo)
 {
   sigtx_probe(signo, pid, tid);
 
   xtgkill(pid, tid, signo);
 }
 
-int API sigutil_uxtgkill(pid_t pid, pid_t tid, int signo)
+int sigutil_uxtgkill(pid_t pid, pid_t tid, int signo)
 {
   sigtx_probe(signo, pid, tid);
 
   return uxtgkill(pid, tid, signo);
 }
 
-int API sigutil_uxrt_sigqueueinfo(pid_t pid, int signo, union sigval value)
+int sigutil_uxrt_sigqueueinfo(pid_t pid, int signo, union sigval value)
 {
   sigtx_probe(signo, pid, 0);
 
@@ -149,7 +149,7 @@ int API sigutil_uxrt_sigqueueinfo(pid_t pid, int signo, union sigval value)
   return uxrt_sigqueueinfo(pid, signo, &info);
 }
 
-int API sigutil_uxrt_tgsigqueueinfo(pid_t pid, pid_t tid, int signo, union sigval value)
+int sigutil_uxrt_tgsigqueueinfo(pid_t pid, pid_t tid, int signo, union sigval value)
 {
   sigtx_probe(signo, pid, tid);
 

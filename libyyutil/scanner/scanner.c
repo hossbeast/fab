@@ -69,7 +69,7 @@ const char * scanner_statename(const yyu_parser * restrict parser, int state)
 // api
 //
 
-void API yyu_locreset(yyu_location * const lloc, yyu_parser * const xtra, char * const text)
+void yyu_locreset(yyu_location * const lloc, yyu_parser * const xtra, char * const text)
 {
   // assign location for current token
   lloc->fname = xtra->fname;
@@ -88,7 +88,7 @@ void API yyu_locreset(yyu_location * const lloc, yyu_parser * const xtra, char *
   xtra->loc.l_col = 0;
 }
 
-void API yyu_locwrite(
+void yyu_locwrite(
     yyu_location * const lloc
   , yyu_parser * const xtra
   , char * const text
@@ -111,7 +111,7 @@ void API yyu_locwrite(
   lloc->fname = xtra->fname;
 }
 
-void API yyu_pushstate(int next, yyu_parser * const parser)
+void yyu_pushstate(int next, yyu_parser * const parser)
 {
   int prev;
 
@@ -123,7 +123,7 @@ void API yyu_pushstate(int next, yyu_parser * const parser)
   }
 }
 
-void API yyu_popstate(yyu_parser * const parser)
+void yyu_popstate(yyu_parser * const parser)
 {
   int prev;
   int next;
@@ -137,12 +137,12 @@ void API yyu_popstate(yyu_parser * const parser)
   }
 }
 
-int API yyu_nstate(yyu_parser * const xtra, int n)
+int yyu_nstate(yyu_parser * const xtra, int n)
 {
   return (xtra->states_n > n) ? xtra->states[xtra->states_n - n - 1] : -1;
 }
 
-void API yyu_errorf(yyu_parser * restrict parser, const yyu_location * restrict lloc, const char * restrict fmt, ...)
+void yyu_errorf(yyu_parser * restrict parser, const yyu_location * restrict lloc, const char * restrict fmt, ...)
 {
   va_list va;
   va_start(va, fmt);
@@ -166,7 +166,7 @@ void API yyu_errorf(yyu_parser * restrict parser, const yyu_location * restrict 
   va_end(va);
 }
 
-void API yyu_save_error_loc(yyu_parser * const parser, const yyu_location * const lloc)
+void yyu_save_error_loc(yyu_parser * const parser, const yyu_location * const lloc)
 {
   parser->scanerr = 1;
 
@@ -174,7 +174,7 @@ void API yyu_save_error_loc(yyu_parser * const parser, const yyu_location * cons
   memcpy(&parser->error_loc, lloc, sizeof(parser->error_loc));
 }
 
-int API yyu_lexify(
+int yyu_lexify(
     yyu_parser * const restrict xtra
   , void * const restrict lval
   , size_t lvalsz
@@ -207,7 +207,7 @@ int API yyu_lexify(
   return token;
 }
 
-int API yyu_lexify_valtoken(
+int yyu_lexify_valtoken(
     yyu_parser * const restrict xtra
   , void * const restrict _lval
   , size_t lvalsz
@@ -226,7 +226,7 @@ int API yyu_lexify_valtoken(
   return yyu_lexify(xtra, lval, lvalsz, lloc, text, end_line, end_col, bytes, token);
 }
 
-int API yyu_lexify_attrs(
+int yyu_lexify_attrs(
     yyu_parser * const restrict parser
   , void * const restrict lval
   , size_t lvalsz
@@ -251,7 +251,7 @@ int API yyu_lexify_attrs(
   return yyu_lexify(parser, lval, lvalsz, lloc, text, parser->loc.l_lin, parser->loc.l_col + leng, leng, token);
 }
 
-int API yyu_lexify_enum(
+int yyu_lexify_enum(
     yyu_parser * const restrict parser
   , void * const restrict lval
   , size_t lvalsz
@@ -276,7 +276,7 @@ int API yyu_lexify_enum(
   return yyu_lexify(parser, lval, lvalsz, lloc, text, parser->loc.l_lin, parser->loc.l_col + leng, leng, token);
 }
 
-int API yyu_lexify_int(
+int yyu_lexify_int(
     yyu_parser * const restrict parser
   , void * const restrict _lval
   , size_t lvalsz
@@ -387,7 +387,7 @@ int API yyu_lexify_int(
   return yyu_lexify(parser, lval, lvalsz, lloc, text, parser->loc.l_lin, parser->loc.l_col + leng, leng, token);
 }
 
-int API yyu_lexify_cref(
+int yyu_lexify_cref(
     yyu_parser * const restrict parser
   , void * const restrict _lval
   , size_t lvalsz
@@ -427,7 +427,7 @@ int API yyu_lexify_cref(
   return yyu_lexify(parser, lval, lvalsz, lloc, text, parser->loc.l_lin, parser->loc.l_col + leng, leng, token);
 }
 
-int API yyu_lexify_href(
+int yyu_lexify_href(
     yyu_parser * const restrict parser
   , void * const restrict _lval
   , size_t lvalsz
@@ -446,7 +446,7 @@ int API yyu_lexify_href(
   return yyu_lexify(parser, lval, lvalsz, lloc, text, parser->loc.l_lin, parser->loc.l_col + leng, leng, token);
 }
 
-int API yyu_lexify_bool(
+int yyu_lexify_bool(
     yyu_parser * const restrict parser
   , void * const restrict _lval
   , size_t lvalsz
@@ -467,7 +467,7 @@ int API yyu_lexify_bool(
   return yyu_lexify(parser, lval, sizeof(*lval), lloc, text, parser->loc.l_lin, parser->loc.l_col + leng, leng, token);
 }
 
-int API yyu_lexify_float(
+int yyu_lexify_float(
     yyu_parser * const restrict parser
   , void * const restrict _lval
   , size_t lvalsz

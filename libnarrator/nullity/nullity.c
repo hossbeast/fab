@@ -8,7 +8,7 @@
 
 #include "macros.h"
 
-narrator * APIDATA g_narrator_nullity = 0;
+narrator * g_narrator_nullity = 0;
 
 //
 // static
@@ -69,7 +69,7 @@ void nullity_cleanup()
 // api
 //
 
-void API narrator_nullity_create(narrator_nullity ** const restrict rv)
+void narrator_nullity_create(narrator_nullity ** const restrict rv)
 {
   narrator_nullity *n;
 
@@ -80,7 +80,7 @@ void API narrator_nullity_create(narrator_nullity ** const restrict rv)
   *rv = n;
 }
 
-void API narrator_nullity_free(narrator_nullity * restrict n)
+void narrator_nullity_free(narrator_nullity * restrict n)
 {
   nullity_destroy(&n->base);
   free(n);

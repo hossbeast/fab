@@ -309,12 +309,12 @@ int edge_cmp_rbn_down(const rbnode * restrict an, const rbnode * restrict bn)
 // api
 //
 
-void API moria_edge_init(struct moria_edge * const restrict e, struct moria_graph * const restrict g)
+void moria_edge_init(struct moria_edge * const restrict e, struct moria_graph * const restrict g)
 {
   graph_edge_init(g, e);
 }
 
-moria_edge * API moria_edge_between(const moria_vertex * restrict B, const moria_vertex * restrict A)
+moria_edge * moria_edge_between(const moria_vertex * restrict B, const moria_vertex * restrict A)
 {
   rbnode * rbn;
   edge_key key;
@@ -337,7 +337,7 @@ moria_edge * API moria_edge_between(const moria_vertex * restrict B, const moria
   return 0;
 }
 
-moria_edge * API moria_edge_of(
+moria_edge * moria_edge_of(
     moria_vertex ** restrict Bxlist
   , uint16_t Bxlen
   , moria_vertex ** restrict Axlist

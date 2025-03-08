@@ -14,7 +14,7 @@
 // api
 //
 
-void API yyu_aggregate_location(yyu_location * loc, yyu_location * A, yyu_location * B)
+void yyu_aggregate_location(yyu_location * loc, yyu_location * A, yyu_location * B)
 {
   if(A)
   {
@@ -33,19 +33,19 @@ void API yyu_aggregate_location(yyu_location * loc, yyu_location * A, yyu_locati
   }
 }
 
-void API yyu_loc_initialize(struct yyu_parser * parser, struct yyu_location * lloc)
+void yyu_loc_initialize(struct yyu_parser * parser, struct yyu_location * lloc)
 {
   memset(lloc, 0, sizeof(*lloc));
 }
 
-void API yyu_loc_final(struct yyu_parser * parser, struct yyu_location * lloc)
+void yyu_loc_final(struct yyu_parser * parser, struct yyu_location * lloc)
 {
   if(parser->final_loc) {
     memcpy(parser->final_loc, lloc, sizeof(*lloc));
   }
 }
 
-void API yyu_grammar_error(yyu_location * const restrict lloc, void * const restrict scanner, yyu_parser * const restrict parser, char const * err)
+void yyu_grammar_error(yyu_location * const restrict lloc, void * const restrict scanner, yyu_parser * const restrict parser, char const * err)
 {
   char abuf[256];
   char bbuf[256];

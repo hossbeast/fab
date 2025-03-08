@@ -319,7 +319,7 @@ void xpipe(int filedes[2])
 
 /* access */
 
-int API uxeuidaccesss(const char * restrict path, int mode);
+int uxeuidaccesss(const char * restrict path, int mode);
 
 /* pidfd */
 int uxpidfd_open(pid_t pid, unsigned int flags);

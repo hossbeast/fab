@@ -22,7 +22,7 @@
 // api
 //
 
-ssize_t API xread(int fd, void * buf, size_t count)
+ssize_t xread(int fd, void * buf, size_t count)
 {
   ssize_t rv;
 
@@ -32,7 +32,7 @@ ssize_t API xread(int fd, void * buf, size_t count)
   return rv;
 }
 
-ssize_t API uxread(int fd, void * buf, size_t count)
+ssize_t uxread(int fd, void * buf, size_t count)
 {
   ssize_t rv;
 
@@ -46,7 +46,7 @@ ssize_t API uxread(int fd, void * buf, size_t count)
   return rv;
 }
 
-void API axread(int fd, void * restrict buf, size_t count)
+void axread(int fd, void * restrict buf, size_t count)
 {
   size_t actual;
   ssize_t cur;
@@ -60,7 +60,7 @@ void API axread(int fd, void * restrict buf, size_t count)
   }
 }
 
-void API axwrite(int fd, const void * buf, size_t count)
+void axwrite(int fd, const void * buf, size_t count)
 {
   size_t actual;
   ssize_t cur;
@@ -76,7 +76,7 @@ void API axwrite(int fd, const void * buf, size_t count)
   }
 }
 
-char * API xgetcwd(char * buf, size_t size)
+char * xgetcwd(char * buf, size_t size)
 {
   char * res;
 
@@ -86,7 +86,7 @@ char * API xgetcwd(char * buf, size_t size)
   return res;
 }
 
-off_t API xlseek(int fd, off_t offset, int whence)
+off_t xlseek(int fd, off_t offset, int whence)
 {
   off_t res;
 
@@ -96,7 +96,7 @@ off_t API xlseek(int fd, off_t offset, int whence)
   return res;
 }
 
-void API xclose(int fd)
+void xclose(int fd)
 {
   int rv;
 
@@ -108,13 +108,13 @@ void API xclose(int fd)
   RUNTIME_ASSERT(rv == 0);
 }
 
-void API ixclose(int * fd)
+void ixclose(int * fd)
 {
   xclose(*fd);
   *fd = -1;
 }
 
-void API xsymlinks(const char * target, const char * linkpath)
+void xsymlinks(const char * target, const char * linkpath)
 {
   int rv;
 
@@ -123,7 +123,7 @@ void API xsymlinks(const char * target, const char * linkpath)
   RUNTIME_ASSERT(rv == 0);
 }
 
-void API xsymlinkf(const char * restrict target_fmt, const char * restrict linkpath_fmt, ...)
+void xsymlinkf(const char * restrict target_fmt, const char * restrict linkpath_fmt, ...)
 {
   va_list va;
 
@@ -132,7 +132,7 @@ void API xsymlinkf(const char * restrict target_fmt, const char * restrict linkp
   va_end(va);
 }
 
-void API xsymlinkvf(const char * restrict target_fmt, const char * restrict linkpath_fmt, va_list va)
+void xsymlinkvf(const char * restrict target_fmt, const char * restrict linkpath_fmt, va_list va)
 {
   char target[PATH_MAX];
   char linkpath[PATH_MAX];
@@ -143,7 +143,7 @@ void API xsymlinkvf(const char * restrict target_fmt, const char * restrict link
   return xsymlinks(target, linkpath);
 }
 
-int API uxsymlinks(const char * target, const char * linkpath)
+int uxsymlinks(const char * target, const char * linkpath)
 {
   int rv;
 
@@ -153,7 +153,7 @@ int API uxsymlinks(const char * target, const char * linkpath)
   return rv;
 }
 
-int API uxsymlinkf(const char * restrict target_fmt, const char * restrict linkpath_fmt, ...)
+int uxsymlinkf(const char * restrict target_fmt, const char * restrict linkpath_fmt, ...)
 {
   int rv;
   va_list va;
@@ -165,7 +165,7 @@ int API uxsymlinkf(const char * restrict target_fmt, const char * restrict linkp
   return rv;
 }
 
-int API uxsymlinkvf(const char * restrict target_fmt, const char * restrict linkpath_fmt, va_list va)
+int uxsymlinkvf(const char * restrict target_fmt, const char * restrict linkpath_fmt, va_list va)
 {
   char target[PATH_MAX];
   char linkpath[PATH_MAX];
@@ -176,12 +176,12 @@ int API uxsymlinkvf(const char * restrict target_fmt, const char * restrict link
   return uxsymlinks(target, linkpath);
 }
 
-void API xunlinks(const char * paths)
+void xunlinks(const char * paths)
 {
   RUNTIME_ASSERT(unlink(paths) == 0);
 }
 
-void API xunlinkvf(const char * fmt, va_list va)
+void xunlinkvf(const char * fmt, va_list va)
 {
   char space[PATH_MAX];
 
@@ -189,14 +189,14 @@ void API xunlinkvf(const char * fmt, va_list va)
   xunlinks(space);
 }
 
-void API xunlinkf(const char * fmt, ...)
+void xunlinkf(const char * fmt, ...)
 {
   va_list va;
   va_start(va, fmt);
   xunlinkvf(fmt, va);
 }
 
-int API uxunlinks(const char * const restrict path)
+int uxunlinks(const char * const restrict path)
 {
   int rv;
 
@@ -206,7 +206,7 @@ int API uxunlinks(const char * const restrict path)
   return rv;
 }
 
-int API uxunlinkf(const char * const restrict fmt, ...)
+int uxunlinkf(const char * const restrict fmt, ...)
 {
   int rv;
   va_list va;
@@ -218,7 +218,7 @@ int API uxunlinkf(const char * const restrict fmt, ...)
   return rv;
 }
 
-int API uxunlinkvf(const char * const restrict fmt, va_list va)
+int uxunlinkvf(const char * const restrict fmt, va_list va)
 {
   char space[PATH_MAX];
 
@@ -226,7 +226,7 @@ int API uxunlinkvf(const char * const restrict fmt, va_list va)
   return uxunlinks(space);
 }
 
-pid_t API xfork(void)
+pid_t xfork(void)
 {
   pid_t rv;
 
@@ -236,107 +236,107 @@ pid_t API xfork(void)
   return rv;
 }
 
-void API xdup(int oldfd)
+void xdup(int oldfd)
 {
   RUNTIME_ASSERT(dup(oldfd) != -1);
 }
 
-void API xdup2(int oldfd, int newfd)
+void xdup2(int oldfd, int newfd)
 {
   RUNTIME_ASSERT(dup2(oldfd, newfd) != -1);
 }
 
-void API xgetresuid(uid_t * const ruid, uid_t * const euid, uid_t * const suid)
+void xgetresuid(uid_t * const ruid, uid_t * const euid, uid_t * const suid)
 {
   RUNTIME_ASSERT(getresuid(ruid, euid, suid) == 0);
 }
 
-void API xgetresgid(gid_t * const rgid, gid_t * const egid, gid_t * const sgid)
+void xgetresgid(gid_t * const rgid, gid_t * const egid, gid_t * const sgid)
 {
   RUNTIME_ASSERT(getresgid(rgid, egid, sgid) == 0);
 }
 
-void API xsetresuid(uid_t ruid, uid_t euid, uid_t suid)
+void xsetresuid(uid_t ruid, uid_t euid, uid_t suid)
 {
   RUNTIME_ASSERT(setresuid(ruid, euid, suid) == 0);
 }
 
-void API xsetresgid(gid_t rgid, gid_t egid, gid_t sgid)
+void xsetresgid(gid_t rgid, gid_t egid, gid_t sgid)
 {
   RUNTIME_ASSERT(setresgid(rgid, egid, sgid) == 0);
 }
 
-void API xseteuid(uid_t euid)
+void xseteuid(uid_t euid)
 {
   RUNTIME_ASSERT(seteuid(euid) == 0);
 }
 
-void API xsetegid(gid_t egid)
+void xsetegid(gid_t egid)
 {
   RUNTIME_ASSERT(setegid(egid) == 0);
 }
 
-void API xtruncate(const char * path, off_t length)
+void xtruncate(const char * path, off_t length)
 {
   RUNTIME_ASSERT(truncate(path, length) == 0);
 }
 
-void API xftruncate(int fd, off_t length)
+void xftruncate(int fd, off_t length)
 {
   int r;
   r = ftruncate(fd, length);
   RUNTIME_ASSERT(r == 0);
 }
 
-void API xrmdir(const char * pathname)
+void xrmdir(const char * pathname)
 {
   RUNTIME_ASSERT(rmdir(pathname) == 0);
 }
 
-void API xsetpgid(pid_t pid, pid_t pgid)
+void xsetpgid(pid_t pid, pid_t pgid)
 {
   RUNTIME_ASSERT(setpgid(pid, pgid));
 }
 
-void API xsetsid()
+void xsetsid()
 {
   RUNTIME_ASSERT(setsid() != -1);
 }
 
-void API xexecv(const char * path, char * const argv[])
+void xexecv(const char * path, char * const argv[])
 {
   execv(path, argv);
   RTA;
   exit(1);
 }
 
-void API xexecve(const char * path, char * const argv[], char * const envp[])
+void xexecve(const char * path, char * const argv[], char * const envp[])
 {
   execve(path, argv, envp);
   RTA;
   exit(1);
 }
 
-void API xexecvp(const char * file, char * const argv[])
+void xexecvp(const char * file, char * const argv[])
 {
   execvp(file, argv);
   RTA;
   exit(1);
 }
 
-void API xfexecve(int fd, char * const argv[], char * const envp[])
+void xfexecve(int fd, char * const argv[], char * const envp[])
 {
   fexecve(fd, argv, envp);
   RTA;
   exit(1);
 }
 
-void API xchdirs(const char * const restrict path)
+void xchdirs(const char * const restrict path)
 {
   RUNTIME_ASSERT(chdir(path) == 0);
 }
 
-void API xchdirf(const char * const restrict fmt, ...)
+void xchdirf(const char * const restrict fmt, ...)
 {
   va_list va;
 
@@ -345,7 +345,7 @@ void API xchdirf(const char * const restrict fmt, ...)
   va_end(va);
 }
 
-void API xchdirvf(const char * const restrict fmt, va_list va)
+void xchdirvf(const char * const restrict fmt, va_list va)
 {
   char space[PATH_MAX];
 
@@ -353,12 +353,12 @@ void API xchdirvf(const char * const restrict fmt, va_list va)
   xchdirs(space);
 }
 
-void API xfchdir(int fd)
+void xfchdir(int fd)
 {
   RUNTIME_ASSERT(fchdir(fd) == 0);
 }
 
-pid_t API gettid()
+pid_t gettid()
 {
   static __thread pid_t self;
 
@@ -368,12 +368,12 @@ pid_t API gettid()
   return self;
 }
 
-void API xpipe(int filedes[2])
+void xpipe(int filedes[2])
 {
   RUNTIME_ASSERT(pipe(filedes) == 0);
 }
 
-int API uxeuidaccesss(const char * restrict path, int mode)
+int uxeuidaccesss(const char * restrict path, int mode)
 {
   int r;
 

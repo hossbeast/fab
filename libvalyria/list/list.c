@@ -54,7 +54,7 @@ static void list_free_range(list * const restrict li, size_t start, size_t len)
 // api
 //
 
-void API list_initx(list * restrict li, size_t capacity, void (*free_fn)(void *))
+void list_initx(list * restrict li, size_t capacity, void (*free_fn)(void *))
 {
   *li = (typeof(*li)) {
     free_fn : free_fn
@@ -63,18 +63,18 @@ void API list_initx(list * restrict li, size_t capacity, void (*free_fn)(void *)
   assure(&li->v, sizeof(*li->v), capacity ?: DEFAULT_CAPACITY, &li->a);
 }
 
-void API list_init(list * restrict li)
+void list_init(list * restrict li)
 {
   list_initx(li, 0, 0);
 }
 
-void API list_destroy(list * restrict li)
+void list_destroy(list * restrict li)
 {
   list_truncate(li, 0);
   free(li->v);
 }
 
-void API list_createx(
+void list_createx(
     list ** restrict rv
   , size_t capacity
   , void (*free_fn)(void *)
@@ -88,12 +88,12 @@ void API list_createx(
   *rv = li;
 }
 
-void API list_create(list ** restrict li)
+void list_create(list ** restrict li)
 {
   list_createx(li, 0, 0);
 }
 
-void API list_free(list * restrict li)
+void list_free(list * restrict li)
 {
   if(!li) {
     return;
@@ -103,33 +103,33 @@ void API list_free(list * restrict li)
   free(li);
 }
 
-void API list_ifree(list ** restrict li)
+void list_ifree(list ** restrict li)
 {
   list_free(*li);
   *li = 0;
 }
 
-void API list_recycle(list * restrict li)
+void list_recycle(list * restrict li)
 {
   list_truncate(li, 0);
 }
 
-void * API list_get(const list * restrict li, int x)
+void * list_get(const list * restrict li, int x)
 {
   return li->v[x];
 }
 
-void API list_push(list * restrict li, void * item)
+void list_push(list * restrict li, void * item)
 {
   list_push_range(li, &item, 1);
 }
 
-void API list_push_range(list * restrict li, void * items, size_t len)
+void list_push_range(list * restrict li, void * items, size_t len)
 {
   list_insert_range(li, li->size, items, len);
 }
 
-void API list_pop(list * restrict li)
+void list_pop(list * restrict li)
 {
   if(li->size == 0) {
     return;
@@ -139,17 +139,17 @@ void API list_pop(list * restrict li)
   li->size--;
 }
 
-void API list_unshift(list * restrict li, void * el)
+void list_unshift(list * restrict li, void * el)
 {
   list_unshift_range(li, &el, 1);
 }
 
-void API list_unshift_range(list * restrict li, void * items, size_t len)
+void list_unshift_range(list * restrict li, void * items, size_t len)
 {
   list_insert_range(li, 0, items, len);
 }
 
-void API list_shift(list * restrict li)
+void list_shift(list * restrict li)
 {
   if(li->size == 0) {
     return;
@@ -166,12 +166,12 @@ void API list_shift(list * restrict li)
   li->size--;
 }
 
-void API list_insert(list * restrict li, size_t index, void * item)
+void list_insert(list * restrict li, size_t index, void * item)
 {
   list_insert_range(li, index, &item, 1);
 }
 
-void API list_insert_range(list * restrict li, size_t index, void * items, size_t len)
+void list_insert_range(list * restrict li, size_t index, void * items, size_t len)
 {
   // allocate new space if necessary
   assure(&li->v, sizeof(*li->v), li->size + len, &li->a);
@@ -187,23 +187,23 @@ void API list_insert_range(list * restrict li, size_t index, void * items, size_
   li->size += len;
 }
 
-void API list_put(list * restrict li, size_t index, void * item)
+void list_put(list * restrict li, size_t index, void * item)
 {
   list_put_range(li, index, &item, 1);
 }
 
-void API list_put_range(list * restrict li, size_t index, void * items, size_t len)
+void list_put_range(list * restrict li, size_t index, void * items, size_t len)
 {
   list_free_range(li, index, len);
   store(&li->v[index], items, len);
 }
 
-void API list_delete(list * restrict li, size_t index)
+void list_delete(list * restrict li, size_t index)
 {
   list_delete_range(li, index, 1);
 }
 
-void API list_delete_range(list * restrict li, size_t index, size_t len)
+void list_delete_range(list * restrict li, size_t index, size_t len)
 {
   list_free_range(li, index, len);
 
@@ -217,7 +217,7 @@ void API list_delete_range(list * restrict li, size_t index, size_t len)
   li->size -= len;
 }
 
-void API list_splice(list * restrict dst, size_t dst_index, list * restrict src, size_t src_index, int len)
+void list_splice(list * restrict dst, size_t dst_index, list * restrict src, size_t src_index, int len)
 {
   if(len == -1) {
     len = src->size;
@@ -234,7 +234,7 @@ void API list_splice(list * restrict dst, size_t dst_index, list * restrict src,
   src->size -= len;
 }
 
-void API list_replicate(list * restrict dst, size_t dst_index, list * restrict src, size_t src_index, int len)
+void list_replicate(list * restrict dst, size_t dst_index, list * restrict src, size_t src_index, int len)
 {
   if(len == -1) {
     len = src->size;
@@ -260,7 +260,7 @@ void API list_replicate(list * restrict dst, size_t dst_index, list * restrict s
   dst->size += len;
 }
 
-void API list_truncate(list * restrict li, size_t len)
+void list_truncate(list * restrict li, size_t len)
 {
   if(len > li->size) {
     return;
@@ -270,7 +270,7 @@ void API list_truncate(list * restrict li, size_t len)
   li->size = len;
 }
 
-bool API list_equal(list * restrict A, list * restrict B, int (*cmp_fn)(const void * A, const void * B, void *))
+bool list_equal(list * restrict A, list * restrict B, int (*cmp_fn)(const void * A, const void * B, void *))
 {
   int x;
   void *a;
@@ -293,7 +293,7 @@ bool API list_equal(list * restrict A, list * restrict B, int (*cmp_fn)(const vo
   return true;
 }
 
-void API list_sort(list * restrict li, int (*cmp_fn)(const void *A, const void *B, void *))
+void list_sort(list * restrict li, int (*cmp_fn)(const void *A, const void *B, void *))
 {
   qsort_r(li->v, li->size, sizeof(*li->v), cmp_fn, li);
 }

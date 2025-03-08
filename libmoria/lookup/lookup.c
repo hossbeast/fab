@@ -23,7 +23,7 @@
 
 #include "zcat.h"
 
-void API moria_graph_lookup_sentinel(
+void moria_graph_lookup_sentinel(
     void * restrict _context
   , const char ** restrict label
   , uint16_t * restrict label_len
@@ -46,7 +46,7 @@ void API moria_graph_lookup_sentinel(
   }
 }
 
-void API moria_graph_lookup(
+void moria_graph_lookup(
     moria_graph * restrict g
   , const moria_vertex * restrict index
   , moria_graph_lookup_identifier_callback identifier_callback
@@ -138,7 +138,7 @@ void API moria_graph_lookup(
   }
 }
 
-void API moria_graph_linear_search(
+void moria_graph_linear_search(
     llist * restrict vertex_list
   , const char * restrict label
   , uint16_t label_len

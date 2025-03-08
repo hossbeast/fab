@@ -68,13 +68,13 @@ static __attribute__((nonnull)) void record_flush(narrator* restrict N)
 
 }
 
-struct narrator_vtable API narrator_record_vtable = NARRATOR_VTABLE(record);
+struct narrator_vtable narrator_record_vtable = NARRATOR_VTABLE(record);
 
 //
 // api
 //
 
-void API narrator_record_create(narrator_record ** const restrict rv, narrator * const restrict np)
+void narrator_record_create(narrator_record ** const restrict rv, narrator * const restrict np)
 {
   narrator_record * n = 0;
 
@@ -89,7 +89,7 @@ void API narrator_record_create(narrator_record ** const restrict rv, narrator *
   narrator_record_free(n);
 }
 
-void API narrator_record_free(narrator_record * restrict n)
+void narrator_record_free(narrator_record * restrict n)
 {
   if(n) {
     narrator_record_destroy(n);
@@ -97,12 +97,12 @@ void API narrator_record_free(narrator_record * restrict n)
   free(n);
 }
 
-void API narrator_record_destroy(narrator_record * restrict n)
+void narrator_record_destroy(narrator_record * restrict n)
 {
   free(n->s);
 }
 
-void API narrator_record_flush(narrator_record * const restrict n)
+void narrator_record_flush(narrator_record * const restrict n)
 {
   // flush to the underlying narrator and reset
   narrator_sayw(n->n, n->s, n->l);

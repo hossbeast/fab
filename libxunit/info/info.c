@@ -10,9 +10,9 @@
 #include "macros.h"
 
 // per-thread info staging
-__thread info * APIDATA xunit_infos_staging;
-__thread size_t APIDATA xunit_infos_stagingl;
-__thread size_t APIDATA xunit_infos_staginga;
+__thread info * xunit_infos_staging;
+__thread size_t xunit_infos_stagingl;
+__thread size_t xunit_infos_staginga;
 
 //
 // public
@@ -64,17 +64,17 @@ void info_setvf(info * restrict i, const char * restrict key, size_t keyl, const
 // api
 //
 
-void API xunit_info_unstage()
+void xunit_info_unstage()
 {
   xunit_infos_stagingl = 0;
 }
 
-void API xunit_info_inserts(uint16_t index, const char * restrict key, const char * restrict vstr)
+void xunit_info_inserts(uint16_t index, const char * restrict key, const char * restrict vstr)
 {
   xunit_info_insertw(index, key, vstr, strlen(vstr));
 }
 
-void API xunit_info_insertw(uint16_t index, const char * restrict key, const char * restrict vbuf, size_t vlen)
+void xunit_info_insertw(uint16_t index, const char * restrict key, const char * restrict vbuf, size_t vlen)
 {
   size_t keyl;
 
@@ -100,7 +100,7 @@ void API xunit_info_insertw(uint16_t index, const char * restrict key, const cha
   }
 }
 
-void API xunit_info_insertvf(uint16_t index, const char * restrict key, const char * restrict vfmt, va_list va)
+void xunit_info_insertvf(uint16_t index, const char * restrict key, const char * restrict vfmt, va_list va)
 {
   size_t keyl;
 
@@ -127,7 +127,7 @@ void API xunit_info_insertvf(uint16_t index, const char * restrict key, const ch
   }
 }
 
-void API xunit_info_insertf(uint16_t index, const char * restrict key, const char * restrict vfmt, ...)
+void xunit_info_insertf(uint16_t index, const char * restrict key, const char * restrict vfmt, ...)
 {
   va_list va;
   va_start(va, vfmt);
@@ -138,22 +138,22 @@ void API xunit_info_insertf(uint16_t index, const char * restrict key, const cha
 }
 
 
-void API xunit_info_pushs(const char * restrict key, const char * restrict vstr)
+void xunit_info_pushs(const char * restrict key, const char * restrict vstr)
 {
   xunit_info_pushw(key, vstr, strlen(vstr));
 }
 
-void API xunit_info_pushw(const char * restrict key, const char * restrict vbuf, size_t vlen)
+void xunit_info_pushw(const char * restrict key, const char * restrict vbuf, size_t vlen)
 {
   xunit_info_insertw(xunit_infos_stagingl, key, vbuf, vlen);
 }
 
-void API xunit_info_pushvf(const char * restrict key, const char * restrict vfmt, va_list va)
+void xunit_info_pushvf(const char * restrict key, const char * restrict vfmt, va_list va)
 {
   xunit_info_insertvf(xunit_infos_stagingl, key, vfmt, va);
 }
 
-void API xunit_info_pushf(const char * restrict key, const char * restrict vfmt, ...)
+void xunit_info_pushf(const char * restrict key, const char * restrict vfmt, ...)
 {
   va_list va;
   va_start(va, vfmt);
@@ -163,17 +163,17 @@ void API xunit_info_pushf(const char * restrict key, const char * restrict vfmt,
   va_end(va);
 }
 
-void API xunit_info_unshifts(const char * restrict key, const char * restrict vstr)
+void xunit_info_unshifts(const char * restrict key, const char * restrict vstr)
 {
   xunit_info_insertw(xunit_infos_stagingl, key, vstr, strlen(vstr));
 }
 
-void API xunit_info_unshiftw(const char * restrict key, const char * restrict vbuf, size_t vlen)
+void xunit_info_unshiftw(const char * restrict key, const char * restrict vbuf, size_t vlen)
 {
   xunit_info_insertw(xunit_infos_stagingl, key, vbuf, vlen);
 }
 
-void API xunit_info_unshiftvf(const char * restrict key, const char * restrict vfmt, va_list va)
+void xunit_info_unshiftvf(const char * restrict key, const char * restrict vfmt, va_list va)
 {
   size_t keyl;
 
@@ -199,7 +199,7 @@ void API xunit_info_unshiftvf(const char * restrict key, const char * restrict v
   }
 }
 
-void API xunit_info_unshiftf(const char * restrict key, const char * restrict vfmt, ...)
+void xunit_info_unshiftf(const char * restrict key, const char * restrict vfmt, ...)
 {
   va_list va;
   va_start(va, vfmt);

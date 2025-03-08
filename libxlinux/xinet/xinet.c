@@ -8,7 +8,7 @@
 // api
 //
 
-void API xinet_pton(int af, const char * restrict src, void * restrict dst)
+void xinet_pton(int af, const char * restrict src, void * restrict dst)
 {
   int r;
   r = inet_pton(af, src, dst);

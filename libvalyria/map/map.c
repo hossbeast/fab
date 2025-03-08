@@ -172,7 +172,7 @@ static int __attribute__((nonnull)) probe(
 // api
 //
 
-void API map_initx(map * restrict m, size_t capacity, void (*delete_fn)(void*))
+void map_initx(map * restrict m, size_t capacity, void (*delete_fn)(void*))
 {
   memset(m, 0, sizeof(*m));
 
@@ -190,12 +190,12 @@ void API map_initx(map * restrict m, size_t capacity, void (*delete_fn)(void*))
   m->delete_fn = delete_fn;
 }
 
-void API map_init(map * restrict m)
+void map_init(map * restrict m)
 {
   map_initx(m, 0, 0);
 }
 
-void API map_createx(map ** const restrict mp, size_t capacity, void (*delete_fn)(void*))
+void map_createx(map ** const restrict mp, size_t capacity, void (*delete_fn)(void*))
 {
   map * m;
 
@@ -205,7 +205,7 @@ void API map_createx(map ** const restrict mp, size_t capacity, void (*delete_fn
   *mp = m;
 }
 
-void API map_create(map ** restrict m)
+void map_create(map ** restrict m)
 {
   map_createx(m, 0, 0);
 }
@@ -224,7 +224,7 @@ void map_destroy(map * restrict m)
   free(m->tab);
 }
 
-void API map_free(map * restrict m)
+void map_free(map * restrict m)
 {
   if(m) {
     map_destroy(m);
@@ -233,13 +233,13 @@ void API map_free(map * restrict m)
   free(m);
 }
 
-void API map_ifree(map ** restrict m)
+void map_ifree(map ** restrict m)
 {
   map_free(*m);
   *m = 0;
 }
 
-void API map_recycle(map * restrict m)
+void map_recycle(map * restrict m)
 {
   map_entry *b;
   size_t x;
@@ -260,7 +260,7 @@ void API map_recycle(map * restrict m)
   m->hash = 0;
 }
 
-bool API map_search(const map * restrict m, map_search_context * restrict ctx)
+bool map_search(const map * restrict m, map_search_context * restrict ctx)
 {
   ctx->hash = hash32(0, ctx->key, ctx->key_len);
   ctx->probe_result = probe(m, ctx->hash, ctx->key, ctx->key_len, &ctx->index);
@@ -310,7 +310,7 @@ void map_store(map * restrict m, map_search_context * restrict ctx, void * val, 
   }
 }
 
-void API map_put(map * restrict m, const void * k, uint16_t kl, void * v, size_t vl)
+void map_put(map * restrict m, const void * k, uint16_t kl, void * v, size_t vl)
 {
   map_search_context ctx;
 
@@ -323,7 +323,7 @@ void API map_put(map * restrict m, const void * k, uint16_t kl, void * v, size_t
   map_store(m, &ctx, v, vl);
 }
 
-void * API map_get(const map * restrict m, const void * restrict k, uint16_t kl)
+void * map_get(const map * restrict m, const void * restrict k, uint16_t kl)
 {
   map_search_context ctx;
   map_entry *b;
@@ -340,7 +340,7 @@ void * API map_get(const map * restrict m, const void * restrict k, uint16_t kl)
   return 0;
 }
 
-bool API map_get_mapping(const map * restrict m, const void * restrict k, uint16_t kl, void * v, size_t * restrict vl)
+bool map_get_mapping(const map * restrict m, const void * restrict k, uint16_t kl, void * v, size_t * restrict vl)
 {
   map_search_context ctx;
   map_entry *b;
@@ -359,7 +359,7 @@ bool API map_get_mapping(const map * restrict m, const void * restrict k, uint16
   return false;
 }
 
-void API map_splice(map * restrict dst, map * restrict src)
+void map_splice(map * restrict dst, map * restrict src)
 {
   map_entry * b;
   size_t x;
@@ -378,7 +378,7 @@ void API map_splice(map * restrict dst, map * restrict src)
   src->hash = 0;
 }
 
-void API map_replicate(map * restrict dst, map * restrict src)
+void map_replicate(map * restrict dst, map * restrict src)
 {
   map_entry * b;
   size_t x;
@@ -392,7 +392,7 @@ void API map_replicate(map * restrict dst, map * restrict src)
   }
 }
 
-bool API map_equal(map * restrict A, map * restrict B)
+bool map_equal(map * restrict A, map * restrict B)
 {
   map_entry * b;
   size_t x;
@@ -419,7 +419,7 @@ bool API map_equal(map * restrict A, map * restrict B)
   return true;
 }
 
-void API map_delete(map * restrict m, const void * restrict k, uint16_t kl)
+void map_delete(map * restrict m, const void * restrict k, uint16_t kl)
 {
   map_search_context ctx;
   map_entry *b;
@@ -438,7 +438,7 @@ void API map_delete(map * restrict m, const void * restrict k, uint16_t kl)
   m->hash -= b->hash;
 }
 
-void * API map_table_key(const map * restrict m, size_t x)
+void * map_table_key(const map * restrict m, size_t x)
 {
   map_entry * b;
 
@@ -449,7 +449,7 @@ void * API map_table_key(const map * restrict m, size_t x)
   return 0;
 }
 
-void * API map_table_value(const map * restrict m, size_t x)
+void * map_table_value(const map * restrict m, size_t x)
 {
   map_entry * b;
 
@@ -460,7 +460,7 @@ void * API map_table_value(const map * restrict m, size_t x)
   return 0;
 }
 
-bool API map_table_mapping(const map * restrict m, size_t x, void ** restrict k, uint16_t * restrict kl, void * v, size_t * restrict vl)
+bool map_table_mapping(const map * restrict m, size_t x, void ** restrict k, uint16_t * restrict kl, void * v, size_t * restrict vl)
 {
   map_entry * b;
   if((b = entry_get(m, x)))

@@ -9,7 +9,7 @@
 
 #include "xdlfcn.h"
 
-void * API xdlopen(const char * restrict filename, int flag)
+void * xdlopen(const char * restrict filename, int flag)
 {
   void *r;
 
@@ -20,7 +20,7 @@ void * API xdlopen(const char * restrict filename, int flag)
   return r;
 }
 
-void API xdlclose(void * dl)
+void xdlclose(void * dl)
 {
   const char *e;
 
@@ -30,13 +30,13 @@ void API xdlclose(void * dl)
   RUNTIME_ASSERT(e == 0);
 }
 
-void API ixdlclose(void ** dl)
+void ixdlclose(void ** dl)
 {
   xdlclose(*dl);
   *dl = 0;
 }
 
-void * API xdlsym(void * dl, const char * sym)
+void * xdlsym(void * dl, const char * sym)
 {
   void *r;
   const char *e;
@@ -49,7 +49,7 @@ void * API xdlsym(void * dl, const char * sym)
   return r;
 }
 
-void * API uxdlsym(void * dl, const char * sym)
+void * uxdlsym(void * dl, const char * sym)
 {
   void *r;
   const char *e;

@@ -38,12 +38,12 @@ static void snarf(int fd, char ** const restrict dst, size_t * restrict dstlp)
 // public
 //
 
-void API snarfs(char ** const restrict dst, size_t * const restrict dstlp, const char * const restrict path)
+void snarfs(char ** const restrict dst, size_t * const restrict dstlp, const char * const restrict path)
 {
   snarfats(dst, dstlp, AT_FDCWD, path);
 }
 
-void API snarff(char ** const restrict dst, size_t * const restrict dstlp, const char * const restrict path_fmt, ...)
+void snarff(char ** const restrict dst, size_t * const restrict dstlp, const char * const restrict path_fmt, ...)
 {
   va_list va;
 
@@ -52,13 +52,13 @@ void API snarff(char ** const restrict dst, size_t * const restrict dstlp, const
   va_end(va);
 }
 
-void API snarfvf(char ** const restrict dst, size_t * const restrict dstlp, const char * const restrict path_fmt, va_list va)
+void snarfvf(char ** const restrict dst, size_t * const restrict dstlp, const char * const restrict path_fmt, va_list va)
 {
   return snarfatvf(dst, dstlp, AT_FDCWD, path_fmt, va);
 }
 
 
-void API snarfats(char ** const restrict dst, size_t * const restrict dstlp, int dirfd, const char * const restrict path)
+void snarfats(char ** const restrict dst, size_t * const restrict dstlp, int dirfd, const char * const restrict path)
 {
   int fd;
   fd = xopenats(O_RDONLY, dirfd, path);
@@ -66,7 +66,7 @@ void API snarfats(char ** const restrict dst, size_t * const restrict dstlp, int
   xclose(fd);
 }
 
-void API snarfatf(char ** const restrict dst, size_t * const restrict dstlp, int dirfd, const char * const restrict path_fmt, ...)
+void snarfatf(char ** const restrict dst, size_t * const restrict dstlp, int dirfd, const char * const restrict path_fmt, ...)
 {
   va_list va;
 
@@ -75,7 +75,7 @@ void API snarfatf(char ** const restrict dst, size_t * const restrict dstlp, int
   va_end(va);
 }
 
-void API snarfatvf(char ** const restrict dst, size_t * const restrict dstlp, int dirfd, const char * const restrict path_fmt, va_list va)
+void snarfatvf(char ** const restrict dst, size_t * const restrict dstlp, int dirfd, const char * const restrict path_fmt, va_list va)
 {
   char path[PATH_MAX];
 
@@ -85,12 +85,12 @@ void API snarfatvf(char ** const restrict dst, size_t * const restrict dstlp, in
 }
 
 
-void API usnarfs(char ** const restrict dst, size_t * const restrict dstlp, const char * const restrict path)
+void usnarfs(char ** const restrict dst, size_t * const restrict dstlp, const char * const restrict path)
 {
   usnarfats(dst, dstlp, AT_FDCWD, path);
 }
 
-void API usnarff(char ** const restrict dst, size_t * const restrict dstlp, const char * const restrict path_fmt, ...)
+void usnarff(char ** const restrict dst, size_t * const restrict dstlp, const char * const restrict path_fmt, ...)
 {
   va_list va;
 
@@ -98,13 +98,13 @@ void API usnarff(char ** const restrict dst, size_t * const restrict dstlp, cons
   usnarfatvf(dst, dstlp, AT_FDCWD, path_fmt, va);
 }
 
-void API usnarfvf(char ** const restrict dst, size_t * const restrict dstlp, const char * const restrict path_fmt, va_list va)
+void usnarfvf(char ** const restrict dst, size_t * const restrict dstlp, const char * const restrict path_fmt, va_list va)
 {
   usnarfatvf(dst, dstlp, AT_FDCWD, path_fmt, va);
 }
 
 
-void API usnarfats(char ** const restrict dst, size_t * const restrict dstlp, int dirfd, const char * const restrict path)
+void usnarfats(char ** const restrict dst, size_t * const restrict dstlp, int dirfd, const char * const restrict path)
 {
   int fd;
 
@@ -118,7 +118,7 @@ void API usnarfats(char ** const restrict dst, size_t * const restrict dstlp, in
   xclose(fd);
 }
 
-void API usnarfatf(char ** const restrict dst, size_t * const restrict dstlp, int dirfd, const char * const restrict path_fmt, ...)
+void usnarfatf(char ** const restrict dst, size_t * const restrict dstlp, int dirfd, const char * const restrict path_fmt, ...)
 {
   va_list va;
 
@@ -127,7 +127,7 @@ void API usnarfatf(char ** const restrict dst, size_t * const restrict dstlp, in
   va_end(va);
 }
 
-void API usnarfatvf(char ** const restrict dst, size_t * const restrict dstlp, int dirfd, const char * const restrict path_fmt, va_list va)
+void usnarfatvf(char ** const restrict dst, size_t * const restrict dstlp, int dirfd, const char * const restrict path_fmt, va_list va)
 {
   char path[PATH_MAX];
 
@@ -136,7 +136,7 @@ void API usnarfatvf(char ** const restrict dst, size_t * const restrict dstlp, i
   va_end(va);
 }
 
-void API fsnarf(char ** const restrict dst, size_t * const restrict dstlp, int fd)
+void fsnarf(char ** const restrict dst, size_t * const restrict dstlp, int fd)
 {
   snarf(fd, dst, dstlp);
 }

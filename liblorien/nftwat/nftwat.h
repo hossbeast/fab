@@ -9,7 +9,7 @@
 #include "types.h"
 
 #define FTWAT_F       1  // regular file
-#define FTWAT_LNK     2  // regular file
+#define FTWAT_LNK     2  // symlink
 #define FTWAT_D       3  // a directory
 #define FTWAT_PRE     4  // breadth-first
 #define FTWAT_POST    5  // depth-first

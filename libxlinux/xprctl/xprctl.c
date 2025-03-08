@@ -8,7 +8,7 @@
 
 #include "xprctl.h"
 
-void API xprctl(int option, unsigned long arg2, unsigned long arg3, unsigned long arg4, unsigned long arg5)
+void xprctl(int option, unsigned long arg2, unsigned long arg3, unsigned long arg4, unsigned long arg5)
 {
   RUNTIME_ASSERT(prctl(option, arg2, arg3, arg4, arg5) == 0);
 }

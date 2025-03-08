@@ -4,7 +4,7 @@
 #include "stresc.h"
 #include "zcat.h"
 
-size_t API strescw(void * restrict dst, size_t sz, const char * const restrict src, size_t len)
+size_t strescw(void * restrict dst, size_t sz, const char * const restrict src, size_t len)
 {
   size_t z  = 0;
 

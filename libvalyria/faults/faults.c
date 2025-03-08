@@ -21,7 +21,7 @@ typeof(fault_state) fault_state;
 // api
 //
 
-void API valyria_fault_activate(valyria_fault fault, ...)
+void valyria_fault_activate(valyria_fault fault, ...)
 {
   va_list va;
   va_start(va, fault);
@@ -53,7 +53,7 @@ void API valyria_fault_activate(valyria_fault fault, ...)
   va_end(va);
 }
 
-void API valyria_faults_reset()
+void valyria_faults_reset()
 {
   memset(faults, 0, sizeof(faults));
   memset(&fault_state, 0, sizeof(fault_state));

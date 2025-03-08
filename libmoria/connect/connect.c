@@ -5,7 +5,7 @@
 #include "connect.h"
 #include "edge.internal.h"
 
-int API moria_preconnect(
+int moria_preconnect(
     moria_connect_context * restrict ctx
   , moria_graph * restrict g
   , moria_vertex * B
@@ -76,7 +76,7 @@ int API moria_preconnect(
   return MORIA_NOEDGE;
 }
 
-void API moria_connect(
+void moria_connect(
     moria_connect_context * restrict ctx
   , moria_graph * const restrict g
   , moria_edge * const restrict e
@@ -115,7 +115,7 @@ void API moria_connect(
   }
 }
 
-int API moria_preconnect_hyper(
+int moria_preconnect_hyper(
     moria_connect_context * restrict ctx
   , moria_graph * const restrict g
   , moria_vertex ** const restrict Blist
@@ -181,7 +181,7 @@ int API moria_preconnect_hyper(
   return MORIA_NOEDGE;
 }
 
-void API moria_connect_hyper(
+void moria_connect_hyper(
     moria_connect_context * restrict ctx
   , moria_graph * const restrict g
   , moria_edge * const restrict e
@@ -238,7 +238,7 @@ void API moria_connect_hyper(
   }
 }
 
-void API moria_edge_disconnect(
+void moria_edge_disconnect(
     moria_graph * const restrict g
   , moria_edge * const restrict e
 )
@@ -272,7 +272,7 @@ void API moria_edge_disconnect(
   }
 }
 
-void API moria_disconnect(
+void moria_disconnect(
     moria_graph * const restrict g
   , moria_vertex * const restrict B
   , moria_vertex * const restrict A
@@ -285,7 +285,7 @@ void API moria_disconnect(
   }
 }
 
-void API moria_hyperdisconnect(
+void moria_hyperdisconnect(
     moria_graph * restrict g
   , moria_vertex ** restrict Blist
   , uint16_t Blen

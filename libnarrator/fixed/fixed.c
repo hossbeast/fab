@@ -79,7 +79,7 @@ static struct narrator_vtable fixed_vtable = NARRATOR_VTABLE(fixed);
 // api
 //
 
-narrator * API narrator_fixed_init(narrator_fixed * restrict n, char * s, size_t a)
+narrator *narrator_fixed_init(narrator_fixed * restrict n, char * s, size_t a)
 {
   n->base.vtab = &fixed_vtable;
   n->s = s;
@@ -91,7 +91,7 @@ narrator * API narrator_fixed_init(narrator_fixed * restrict n, char * s, size_t
   return &n->base;
 }
 
-void API narrator_fixed_destroy(narrator_fixed * restrict n)
+void narrator_fixed_destroy(narrator_fixed * restrict n)
 {
 
 }

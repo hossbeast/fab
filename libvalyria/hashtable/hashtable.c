@@ -262,12 +262,12 @@ void hashtable_destroy(hashtable * restrict ht)
 // api
 //
 
-void API hashtable_create(hashtable ** restrict ht)
+void hashtable_create(hashtable ** restrict ht)
 {
   hashtable_createx(ht, 0, 0, 0, 0);
 }
 
-void API hashtable_createx(
+void hashtable_createx(
     hashtable ** restrict htp
   , size_t capacity
   , uint32_t (*hash_fn)(uint32_t h, const void * entry)
@@ -283,7 +283,7 @@ void API hashtable_createx(
   *htp = ht;
 }
 
-void API hashtable_free(hashtable * restrict ht)
+void hashtable_free(hashtable * restrict ht)
 {
   if(ht) {
     hashtable_destroy(ht);
@@ -292,13 +292,13 @@ void API hashtable_free(hashtable * restrict ht)
   free(ht);
 }
 
-void API hashtable_ifree(hashtable ** restrict htp)
+void hashtable_ifree(hashtable ** restrict htp)
 {
   hashtable_free(*htp);
   *htp = 0;
 }
 
-bool API hashtable_search(const hashtable * restrict ht, hashtable_search_context * restrict ctx)
+bool hashtable_search(const hashtable * restrict ht, hashtable_search_context * restrict ctx)
 {
   if(ctx->hash_fn == 0) {
     ctx->hash_fn = ht->hash_fn;
@@ -312,7 +312,7 @@ bool API hashtable_search(const hashtable * restrict ht, hashtable_search_contex
   return ctx->probe_result == 0;
 }
 
-void * API hashtable_fetch(const hashtable * restrict ht, hashtable_search_context * restrict ctx)
+void * hashtable_fetch(const hashtable * restrict ht, hashtable_search_context * restrict ctx)
 {
   hashtable_bucket *b;
 
@@ -320,7 +320,7 @@ void * API hashtable_fetch(const hashtable * restrict ht, hashtable_search_conte
   return b->p;
 }
 
-void * API hashtable_set(hashtable * restrict ht, hashtable_search_context * restrict ctx)
+void * hashtable_set(hashtable * restrict ht, hashtable_search_context * restrict ctx)
 {
   hashtable_bucket *b;
 
@@ -351,7 +351,7 @@ void * API hashtable_set(hashtable * restrict ht, hashtable_search_context * res
   return b->p;
 }
 
-void API hashtable_remove(hashtable * restrict ht, hashtable_search_context * restrict ctx)
+void hashtable_remove(hashtable * restrict ht, hashtable_search_context * restrict ctx)
 {
   hashtable_bucket *b;
 
@@ -361,7 +361,7 @@ void API hashtable_remove(hashtable * restrict ht, hashtable_search_context * re
   ht->hash -= b->hash;
 }
 
-bool API hashtable_contains(const hashtable * restrict ht, const void * entry)
+bool hashtable_contains(const hashtable * restrict ht, const void * entry)
 {
   hashtable_search_context ctx;
 
@@ -372,7 +372,7 @@ bool API hashtable_contains(const hashtable * restrict ht, const void * entry)
   return hashtable_search(ht, &ctx);
 }
 
-void * API hashtable_get(const hashtable * restrict ht, const void * entry)
+void * hashtable_get(const hashtable * restrict ht, const void * entry)
 {
   hashtable_search_context ctx;
 
@@ -386,7 +386,7 @@ void * API hashtable_get(const hashtable * restrict ht, const void * entry)
   return 0;
 }
 
-void * API hashtable_put(hashtable * restrict ht, void * entry)
+void * hashtable_put(hashtable * restrict ht, void * entry)
 {
   hashtable_search_context ctx;
 
@@ -397,7 +397,7 @@ void * API hashtable_put(hashtable * restrict ht, void * entry)
   return hashtable_set(ht, &ctx);
 }
 
-bool API hashtable_delete(hashtable * restrict ht, void * entry)
+bool hashtable_delete(hashtable * restrict ht, void * entry)
 {
   hashtable_search_context ctx;
 
@@ -412,7 +412,7 @@ bool API hashtable_delete(hashtable * restrict ht, void * entry)
   return true;
 }
 
-void * API hashtable_table_entry(const hashtable * restrict ht, size_t x)
+void * hashtable_table_entry(const hashtable * restrict ht, size_t x)
 {
   hashtable_bucket *b;
 
@@ -423,7 +423,7 @@ void * API hashtable_table_entry(const hashtable * restrict ht, size_t x)
   return 0;
 }
 
-void API hashtable_splice(hashtable * dst, hashtable * src)
+void hashtable_splice(hashtable * dst, hashtable * src)
 {
   hashtable_bucket * b;
   size_t x;
@@ -442,7 +442,7 @@ void API hashtable_splice(hashtable * dst, hashtable * src)
   src->hash = 0;
 }
 
-void API hashtable_replicate(hashtable * dst, hashtable * src)
+void hashtable_replicate(hashtable * dst, hashtable * src)
 {
   hashtable_bucket * b;
   size_t x;
@@ -456,7 +456,7 @@ void API hashtable_replicate(hashtable * dst, hashtable * src)
   }
 }
 
-bool API hashtable_equal(hashtable * A, hashtable * B)
+bool hashtable_equal(hashtable * A, hashtable * B)
 {
   hashtable_bucket * b;
   size_t x;
@@ -489,7 +489,7 @@ bool API hashtable_equal(hashtable * A, hashtable * B)
   return true;
 }
 
-void API hashtable_recycle(hashtable * restrict ht)
+void hashtable_recycle(hashtable * restrict ht)
 {
   hashtable_bucket *b;
   size_t x;
@@ -510,7 +510,7 @@ void API hashtable_recycle(hashtable * restrict ht)
   ht->hash = 0;
 }
 
-void API hashtable_enumerate(hashtable * restrict ht, void * restrict _entries, size_t * restrict entriesl)
+void hashtable_enumerate(hashtable * restrict ht, void * restrict _entries, size_t * restrict entriesl)
 {
   void *** entries;
   hashtable_bucket *b;

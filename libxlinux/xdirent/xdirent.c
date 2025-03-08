@@ -9,7 +9,7 @@
 #include "xunistd.h"
 
 
-DIR * API xopendir(const char * name)
+DIR * xopendir(const char * name)
 {
   DIR *dd;
 
@@ -19,7 +19,7 @@ DIR * API xopendir(const char * name)
   return dd;
 }
 
-DIR * API uxopendir(const char * name)
+DIR * uxopendir(const char * name)
 {
   DIR *dd;
 
@@ -31,7 +31,7 @@ DIR * API uxopendir(const char * name)
   return dd;
 }
 
-DIR * API xfdopendir(int fd)
+DIR * xfdopendir(int fd)
 {
   DIR *dd;
 
@@ -43,7 +43,7 @@ DIR * API xfdopendir(int fd)
   return dd;
 }
 
-DIR * API xopendirat(int dirfd, const char * const restrict path)
+DIR * xopendirat(int dirfd, const char * const restrict path)
 {
   DIR *dd;
   int fd;
@@ -54,7 +54,7 @@ DIR * API xopendirat(int dirfd, const char * const restrict path)
   return dd;
 }
 
-struct dirent * API xreaddir(DIR * dd)
+struct dirent * xreaddir(DIR * dd)
 {
   struct dirent *result;
 
@@ -67,7 +67,7 @@ struct dirent * API xreaddir(DIR * dd)
   return result;
 }
 
-void API xclosedir(DIR * dd)
+void xclosedir(DIR * dd)
 {
   if(dd == 0) {
     return;
@@ -76,13 +76,13 @@ void API xclosedir(DIR * dd)
   RUNTIME_ASSERT(closedir(dd) == 0);
 }
 
-void API ixclosedir(DIR ** dd)
+void ixclosedir(DIR ** dd)
 {
   xclosedir(*dd);
   *dd = 0;
 }
 
-long API xtelldir(DIR * dd)
+long xtelldir(DIR * dd)
 {
   long loc;
 

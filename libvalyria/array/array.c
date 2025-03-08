@@ -111,7 +111,7 @@ void array_destroy(array * const restrict ar)
 // api
 //
 
-void API array_createx(
+void array_createx(
     array ** const restrict arp
   , size_t esz
   , size_t capacity
@@ -126,12 +126,12 @@ void API array_createx(
   *arp = ar;
 }
 
-void API array_create(array** const restrict ar, size_t esz)
+void array_create(array** const restrict ar, size_t esz)
 {
   array_createx(ar, esz, 0, 0);
 }
 
-void API array_xfree(array * const restrict ar)
+void array_xfree(array * const restrict ar)
 {
   if(ar) {
     array_destroy(ar);
@@ -140,33 +140,33 @@ void API array_xfree(array * const restrict ar)
   free(ar);
 }
 
-void API array_ixfree(array ** const restrict ar)
+void array_ixfree(array ** const restrict ar)
 {
   array_xfree(*ar);
   *ar = 0;
 }
 
-void API array_recycle(array * const restrict ar)
+void array_recycle(array * const restrict ar)
 {
   array_truncate(ar, 0);
 }
 
-void * API array_get(const array * const restrict ar, int x)
+void * array_get(const array * const restrict ar, int x)
 {
   return ar->v + ((x) * ar->esz);
 }
 
-void API array_push(array * const ar, void * const item)
+void array_push(array * const ar, void * const item)
 {
   array_insert_range(ar, ar->size, item, 1);
 }
 
-void API array_push_range(array * const ar, void * items, size_t len)
+void array_push_range(array * const ar, void * items, size_t len)
 {
   array_insert_range(ar, ar->size, items, len);
 }
 
-void API array_pop(array * const restrict ar)
+void array_pop(array * const restrict ar)
 {
   if(ar->size)
   {
@@ -175,17 +175,17 @@ void API array_pop(array * const restrict ar)
   }
 }
 
-void API array_unshift(array * const ar, void * item)
+void array_unshift(array * const ar, void * item)
 {
   array_insert_range(ar, 0, item, 1);
 }
 
-void API array_unshift_range(array * const ar, void * items, size_t len)
+void array_unshift_range(array * const ar, void * items, size_t len)
 {
   array_insert_range(ar, 0, items, len);
 }
 
-void API array_shift(array * const restrict ar)
+void array_shift(array * const restrict ar)
 {
   if(ar->size)
   {
@@ -201,12 +201,12 @@ void API array_shift(array * const restrict ar)
   }
 }
 
-void API array_insert(array * const ar, size_t index, void * item)
+void array_insert(array * const ar, size_t index, void * item)
 {
   array_insert_range(ar, index, item, 1);
 }
 
-void API array_insert_range(array * const ar, size_t index, void * items, size_t len)
+void array_insert_range(array * const ar, size_t index, void * items, size_t len)
 {
   // allocate new space if necessary
   array_assure(ar, ar->size + len);
@@ -222,18 +222,18 @@ void API array_insert_range(array * const ar, size_t index, void * items, size_t
   ar->size += len;
 }
 
-void API array_update(array * const ar, size_t index, void * item)
+void array_update(array * const ar, size_t index, void * item)
 {
   array_update_range(ar, index, item, 1);
 }
 
-void API array_update_range(array * const ar, size_t index, void * items, size_t len)
+void array_update_range(array * const ar, size_t index, void * items, size_t len)
 {
   array_destroy_range(ar, index, len);
   store_items(ar, ar->v + (index * ar->esz), items, len);
 }
 
-void API array_delete(array * const restrict ar, size_t index)
+void array_delete(array * const restrict ar, size_t index)
 {
   array_destroy_range(ar, index, 1);
 
@@ -247,7 +247,7 @@ void API array_delete(array * const restrict ar, size_t index)
   ar->size--;
 }
 
-void API array_delete_range(array * const restrict ar, size_t index, size_t len)
+void array_delete_range(array * const restrict ar, size_t index, size_t len)
 {
   array_destroy_range(ar, index, len);
 
@@ -261,7 +261,7 @@ void API array_delete_range(array * const restrict ar, size_t index, size_t len)
   ar->size -= len;
 }
 
-void API array_splice(array * const restrict dst, size_t dst_index, array * const restrict src, size_t src_index, size_t len)
+void array_splice(array * const restrict dst, size_t dst_index, array * const restrict src, size_t src_index, size_t len)
 {
   if(len == -1) {
     len = src->size;
@@ -278,7 +278,7 @@ void API array_splice(array * const restrict dst, size_t dst_index, array * cons
   src->size -= len;
 }
 
-void API array_replicate(array * const restrict dst, size_t dst_index, array * const restrict src, size_t src_index, size_t len)
+void array_replicate(array * const restrict dst, size_t dst_index, array * const restrict src, size_t src_index, size_t len)
 {
   if(len == -1)
     len = src->size;
@@ -297,7 +297,7 @@ void API array_replicate(array * const restrict dst, size_t dst_index, array * c
   dst->size += len;
 }
 
-void API array_truncate(array * const restrict ar, size_t len)
+void array_truncate(array * const restrict ar, size_t len)
 {
   if(len > ar->size) {
     return;
@@ -307,7 +307,7 @@ void API array_truncate(array * const restrict ar, size_t len)
   ar->size = len;
 }
 
-bool API array_equal(array * const restrict A, array * const restrict B, int (*cmp)(const void * A, size_t Asz, const void * B, size_t Bsz))
+bool array_equal(array * const restrict A, array * const restrict B, int (*cmp)(const void * A, size_t Asz, const void * B, size_t Bsz))
 {
   int x;
   void *a;
@@ -340,7 +340,7 @@ static int sort_cmp(const void * A, const void * B, void * arg)
   return compare_items(ctx->ar, A, B, ctx->cmp);
 }
 
-void API array_sort(const array * const restrict ar, int (*cmp)(const void * A, size_t Asz, const void * B, size_t Bsz))
+void array_sort(const array * const restrict ar, int (*cmp)(const void * A, size_t Asz, const void * B, size_t Bsz))
 {
   struct sort_ctx ctx = { ar : ar, cmp : cmp };
   qsort_r(ar->v, ar->size, ar->esz, sort_cmp, &ctx);
@@ -362,7 +362,7 @@ static int compare(const void * _ctx, const void * item)
   return ctx->lc = compare_items(ctx->ar, ctx->key, item, ctx->cmp);
 };
 
-bool API array_search(
+bool array_search(
     const array * const restrict ar
   , void * key
   , int (*cmp)(const void * A, size_t Asz, const void * B, size_t Bsz)
@@ -374,7 +374,7 @@ bool API array_search(
   return array_search_range(ar, 0, ar->size, key, cmp, item, lx, lc);
 }
 
-bool API array_search_range(
+bool array_search_range(
     const array * const restrict ar
   , size_t index
   , size_t len

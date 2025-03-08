@@ -8,7 +8,7 @@
 
 #include "xgrp.h"
 
-void API uxgetgrgid_r(gid_t gid, struct group * grp, char * buf, size_t buflen, struct group ** result)
+void uxgetgrgid_r(gid_t gid, struct group * grp, char * buf, size_t buflen, struct group ** result)
 {
   if(getgrgid_r(gid, grp, buf, buflen, result) == 0)
   {
@@ -24,7 +24,7 @@ void API uxgetgrgid_r(gid_t gid, struct group * grp, char * buf, size_t buflen, 
   }
 }
 
-struct group * API xgetgrgid(gid_t gid)
+struct group * xgetgrgid(gid_t gid)
 {
   struct group * grp;
 

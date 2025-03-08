@@ -83,7 +83,7 @@ static void __attribute__((nonnull)) compose(unit * cfg, double * parts, narrato
 // api
 //
 
-void API interval_say(time_t seconds, narrator * const restrict N)
+void interval_say(time_t seconds, narrator * const restrict N)
 {
   double parts[6];
 
@@ -138,7 +138,7 @@ void interval_say_ms(uint64_t ns, struct narrator * const restrict N)
   compose(cfg, parts, N);
 }
 
-void API bytesize_say(size_t bytes, narrator * const restrict N)
+void bytesize_say(size_t bytes, narrator * const restrict N)
 {
   double parts[6];
 
@@ -155,7 +155,7 @@ void API bytesize_say(size_t bytes, narrator * const restrict N)
   compose(cfg, parts, N);
 }
 
-void API elapsed_say(const struct timespec * const restrict start, const struct timespec * const restrict end, narrator * const restrict N)
+void elapsed_say(const struct timespec * const restrict start, const struct timespec * const restrict end, narrator * const restrict N)
 {
   double parts[6];
   double nsec;

@@ -12,12 +12,12 @@
 #include "xsignal.h"
 #include "sigtable.h"
 
-void API xkill(pid_t pid, int sig)
+void xkill(pid_t pid, int sig)
 {
   RUNTIME_ASSERT(kill(pid, sig) == 0);
 }
 
-int API uxkill(pid_t pid, int sig)
+int uxkill(pid_t pid, int sig)
 {
   int r;
 
@@ -27,12 +27,12 @@ int API uxkill(pid_t pid, int sig)
   return r;
 }
 
-void API xtgkill(pid_t pid, pid_t tid, int sig)
+void xtgkill(pid_t pid, pid_t tid, int sig)
 {
   RUNTIME_ASSERT(syscall(SYS_tgkill, pid, tid, sig) == 0);
 }
 
-int API uxtgkill(pid_t pid, pid_t tid, int sig)
+int uxtgkill(pid_t pid, pid_t tid, int sig)
 {
   int r;
 
@@ -46,17 +46,17 @@ int API uxtgkill(pid_t pid, pid_t tid, int sig)
   return r;
 }
 
-void API xsigaction(int signum, const struct sigaction * act, struct sigaction * oldact)
+void xsigaction(int signum, const struct sigaction * act, struct sigaction * oldact)
 {
   RUNTIME_ASSERT(sigaction(signum, act, oldact) == 0);
 }
 
-void API xsigprocmask(int how, const sigset_t * set, sigset_t * oldset)
+void xsigprocmask(int how, const sigset_t * set, sigset_t * oldset)
 {
   RUNTIME_ASSERT(sigprocmask(how, set, oldset) == 0);
 }
 
-void API uxsigsuspend(const sigset_t * mask)
+void uxsigsuspend(const sigset_t * mask)
 {
   int r;
 
@@ -64,12 +64,12 @@ void API uxsigsuspend(const sigset_t * mask)
   RUNTIME_ASSERT(r == 0 || errno == EINTR);
 }
 
-void API xsigwaitinfo(const sigset_t * mask, siginfo_t * info)
+void xsigwaitinfo(const sigset_t * mask, siginfo_t * info)
 {
   RUNTIME_ASSERT(sigwaitinfo(mask, info) != -1);
 }
 
-int API uxsigwaitinfo(const sigset_t * mask, siginfo_t * info)
+int uxsigwaitinfo(const sigset_t * mask, siginfo_t * info)
 {
   int r;
 
@@ -79,7 +79,7 @@ int API uxsigwaitinfo(const sigset_t * mask, siginfo_t * info)
   return r;
 }
 
-int API uxsigtimedwait(const sigset_t * restrict set, siginfo_t * restrict info, const struct timespec * restrict timeout)
+int uxsigtimedwait(const sigset_t * restrict set, siginfo_t * restrict info, const struct timespec * restrict timeout)
 {
   int r;
 
@@ -96,12 +96,12 @@ int API uxsigtimedwait(const sigset_t * restrict set, siginfo_t * restrict info,
   return r;
 }
 
-void API xsignal(int signum, sighandler_t handler)
+void xsignal(int signum, sighandler_t handler)
 {
   RUNTIME_ASSERT(signal(signum, handler) != SIG_ERR);
 }
 
-int API uxrt_sigqueueinfo(pid_t tgid, int sig, siginfo_t *info)
+int uxrt_sigqueueinfo(pid_t tgid, int sig, siginfo_t *info)
 {
   int r;
 
@@ -111,7 +111,7 @@ int API uxrt_sigqueueinfo(pid_t tgid, int sig, siginfo_t *info)
   return r;
 }
 
-int API uxrt_tgsigqueueinfo(pid_t tgid, pid_t tid, int sig, siginfo_t *info)
+int uxrt_tgsigqueueinfo(pid_t tgid, pid_t tid, int sig, siginfo_t *info)
 {
   int r;
 
@@ -121,7 +121,7 @@ int API uxrt_tgsigqueueinfo(pid_t tgid, pid_t tid, int sig, siginfo_t *info)
   return r;
 }
 
-const char * API signame(int signo)
+const char * signame(int signo)
 {
   if(signo < 0 || signo > sigtable_max) {
     return 0;
