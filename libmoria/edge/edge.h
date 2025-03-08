@@ -28,3 +28,15 @@ struct moria_edge * moria_edge_of(
 
 void moria_edge_init(struct moria_edge * const restrict e, struct moria_graph * const restrict g)
   __attribute__((nonnull));
+
+/* returns the number of incident vertices from this edge */
+uint32_t moria_edge_degree(const struct moria_edge * const restrict e)
+  __attribute__((nonnull));
+
+/* returns the number of incident vertices from this edge in the upwards direction */
+uint32_t moria_edge_degree_up(const struct moria_edge * const restrict e)
+  __attribute__((nonnull));
+
+/* returns the number of incident vertices from this edge in the downwards direction */
+uint32_t moria_edge_degree_down(const struct moria_edge * const restrict e)
+  __attribute__((nonnull));

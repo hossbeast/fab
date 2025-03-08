@@ -158,7 +158,6 @@ int edge_cmp_rbn_up(const rbnode * restrict an, const rbnode * restrict bn)
   return edge_cmp_up(a, b);
 }
 
-
 int edge_cmp_down(const moria_edge * restrict a, const moria_edge * restrict b)
 {
   int r;
@@ -372,4 +371,43 @@ moria_edge * moria_edge_of(
     return rbn->ud.p;
 
   return 0;
+}
+
+uint32_t moria_edge_degree_up(const struct moria_edge * const restrict e)
+{
+  uint32_t x;
+  uint32_t c;
+
+  c = 0;
+  if((e->attrs & MORIA_EDGE_HYPER)) {
+    for(x = 0; x < e->Alen; x++) {
+      c += !!rbnode_attached(&e->Alist[x].rbn);
+    }
+  } else {
+    c += !!rbnode_attached(&e->rbn_up);
+  }
+
+  return c;
+}
+
+uint32_t moria_edge_degree_down(const struct moria_edge * const restrict e)
+{
+  uint32_t x;
+  uint32_t c;
+
+  c = 0;
+  if((e->attrs & MORIA_EDGE_HYPER)) {
+    for(x = 0; x < e->Blen; x++) {
+      c += !!rbnode_attached(&e->Blist[x].rbn);
+    }
+  } else {
+    c += !!rbnode_attached(&e->rbn_down);
+  }
+
+  return c;
+}
+
+uint32_t moria_edge_degree(const struct moria_edge * const restrict e)
+{
+  return moria_edge_degree_up(e) + moria_edge_degree_down(e);
 }
