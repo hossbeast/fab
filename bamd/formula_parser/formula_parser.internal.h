@@ -9,21 +9,27 @@
 #include "formula_parser.h"
 
 struct selector_parser;
-struct formula_value;
+struct pattern_parser;
+struct bacon_value;
 
 typedef struct formula_parser {
   yyu_parser yyu;
 
   // sub-parsers
-  struct selector_parser * selector_parser;
+  struct selector_parser *selector_parser;
+  struct pattern_parser *pattern_parser;
+  struct bacon_parser *bacon_parser;
 
   // under construction
-  struct formula_operation * set;
+  struct formula_operation *set;
 
   // (returns)
-  struct formula_value * file;  // primitive
-  struct formula_value * args;  // list
-  struct formula_value * envs;  // set of mappings
+  struct bacon_value *file;  // file to execute
+  struct bacon_value *args;  // list
+  struct bacon_value *envs;  // set of mappings
+
+  const char *error;
+  uint16_t error_len;
 } formula_parser;
 
 /* called from tab.o and lex.o */
@@ -35,18 +41,20 @@ void formula_parser_extract(
     const char * restrict text
   , size_t text_len
   , bool * restrict shebang
+  , int * restrict bacon_line
   , char ** restrict baconp
   , size_t * restrict bacon_lenp
 )
   __attribute__((nonnull));
 
 int formula_parser_bacon_parse(
-    formula_parser * restrict parser
-  , char * const restrict vars_text
-  , size_t vars_text_len
-  , const char * restrict fname
-  , struct formula_value ** restrict path
-  , struct formula_value ** restrict args
-  , struct formula_value ** restrict env
+    /* 1 */ formula_parser * restrict parser
+  , /* 2 */ char * const restrict vars_text
+  , /* 3 */ size_t vars_text_len
+  , /* 4 */ const char * restrict fname
+  , /* 5 */ int line
+  , /* 6 */ struct bacon_value ** restrict path
+  , /* 7 */ struct bacon_value ** restrict args
+  , /* 8 */ struct bacon_value ** restrict env
 )
-  __attribute__((nonnull(1, 2, 5, 6, 7)));
+  __attribute__((nonnull(1, 2, 6, 7, 8)));

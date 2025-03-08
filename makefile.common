@@ -15,6 +15,7 @@ CFLAGS += -O3
 CFLAGS += -Wall
 CFLAGS += -Werror
 CFLAGS += -Wmissing-prototypes
+CFLAGS += -Wno-enum-compare
 CFLAGS += -Wno-array-bounds
 CFLAGS += -Wno-format-truncation
 CFLAGS += -Wno-misleading-indentation

@@ -10,7 +10,9 @@
 #include "valyria/hashtable.h"
 #include "bacon/value.h"
 #include "bacon/parser.h"
+#include "bacon/writer.h"
 #include "moria/graph.h"
+#include "moria/parser.h"
 #include "xunit.h"
 #include "xunit/assert.h"
 #include "narrator.h"
@@ -23,19 +25,34 @@
 #include "exec_builder.h"
 #include "exec_render.h"
 #include "formula_parser.internal.h"
-#include "formula_value.h"
+#include "exec_value.h"
 #include "varset.h"
 #include "build_slot.h"
 #include "dependency.h"
 #include "channel.h"
-#include "buildplan_entity.h"
+#include "bpe.h"
+#include "formula.h"
+#include "shadow.h"
+#include "fstree.h"
+#include "node_operations_test.h"
+#include "notify.h"
+#include "config_system.h"
+#include "events/events.h"
+#include "configset_parser.h"
+#include "config.h"
+#include "args.h"
+#include "fsedge.h"
+#include "ref_edge.h"
 
 typedef struct exec_builder_test {
   XUNITTEST;
 
   // inputs
-  char * vars;          // value text
-  char * fml;           // formula bacon text
+  char *config;        // filesystems config
+  char *operations;    // build the node graph
+  char *vars;          // bacon text
+  char *fml;           // formula bacon text
+  char *lookup_cwd;    // cwd to use for lookups
 
   struct env_addf_args {
     const char * name_fmt;
@@ -43,25 +60,78 @@ typedef struct exec_builder_test {
     void ** args;
   } **env_addf_args;
 
-  // outputs
-  char * file;
-  char ** args;
-  char ** envs;
+  struct exec_builder_args** builder_args;
+
+  // expected outputs
+  char *cwd;
+  char *filepath;
+  char **args;
+  char **envs;
 } exec_builder_test;
 
 static void exec_builder_test_unit_setup(xunit_unit * unit)
 {
   bacon_load();
+  args_init();
+
+  fsent_root_setup();
+  shadow_root_setup();
+  fstree_root_setup();
+  shadow_setup();
+  fstree_setup();
+  fsent_base_setup();
+
+  module_setup();
+  graph_setup();
+  namespace_setup();
+  notify_setup();
+  config_system_setup();
+  events_setup();
+  exec_value_setup();
+
+  extern __thread bool rcu_is_reader ; rcu_is_reader = true;
 }
 
 static void exec_builder_test_unit_cleanup(xunit_unit * unit)
 {
   bacon_unload();
+
+  fsent_root_cleanup();
+  module_cleanup();
+  shadow_cleanup();
+  fstree_cleanup();
+  notify_cleanup();
+  fsent_cleanup();
+  graph_cleanup();
+  fsedge_cleanup();
+  ref_edge_cleanup();
 }
 
 //
 // tests
 //
+
+static void resolve_lookup(lookup_store * restrict lookups, const fsent *base, bacon_value * restrict vars, bacon_value * restrict val)
+{
+  lookup_context ctx;
+  exec_value *ev;
+
+  if((int)val->type != EXEC_VALUE_LOOKUP) {
+    return;
+  }
+
+  ev = containerof(val, typeof(*ev), bacon);
+  memset(&ctx, 0, sizeof(ctx));
+  ctx.rctx.base = base;
+  ctx.rctx.vars = vars;
+  ctx.ns_name = ev->lookup.namespace;
+  ctx.ns_name_len = ev->lookup.namespace_len;
+  if(lookup_resolve(&ctx, ev->lookup.pattern) != 1) {
+    RTA;
+  }
+
+  lookup_store_put(lookups, ev, ctx.rctx.vertices[0]);
+}
 
 static void exec_builder_test_entry(xunit_test * _test)
 {
@@ -70,36 +140,83 @@ static void exec_builder_test_entry(xunit_test * _test)
   bacon_parser * parser = 0;
   formula_parser * fml_parser = 0;
   int x;
+  lookup_store lookups;
   exec_builder builder;
+  bacon_value *bv;
   exec_render_context renderer;
-  struct env_addf_args ** argsp;
-  struct env_addf_args * args;
+  struct env_addf_args **argsp, *args;
+  exec_builder_args **builder_argsp, *builder_args;
   size_t nargs;
-  formula_value * fml_file = 0;
-  formula_value * fml_args = 0;
-  formula_value * fml_envs = 0;
-  bacon_value * vars = 0;
+  bacon_value *vars = 0;
   module mod = { 0 };
   buildplan_entity bpe = { 0 };
   build_slot bs = { .bpe = &bpe };
   channel *chan;
   int r;
-  fsent cwd;
+  fsent *cwd;
+  formula fml;
+  graph_invalidation_context invalidation = { };
+  configset_parser *cfg_parser = 0;
+  config *cfg;
+  moria_parser *op_parser = 0;
 
   bacon_parser_alloc(&parser);
   formula_parser_create(&fml_parser);
   exec_builder_init(&builder);
   exec_render_context_init(&renderer);
+  renderer.lookups = &lookups;
   xmalloc(&chan, sizeof(*chan));
+  graph_invalidation_begin(&invalidation);
+  (void)namespace_get(MMS("module"), &invalidation);
+  graph_invalidation_end(&invalidation);
+  lookup_store_init(&lookups);
 
-  // arrange
+  // setup filesystems
+  configset_parser_create(&cfg_parser);
+  config_alloc(&cfg);
+  if(test->config) {
+    if(configset_parser_parse(cfg_parser, test->config, strlen(test->config) + 2, 0, 0, cfg) != 0) {
+      tracef("%.*s", cfg_parser->yyu.error_len, cfg_parser->yyu.error_str);
+      RTA;
+    }
+  }
+
+  graph_invalidation_begin(&invalidation);
+  namespace_reconfigure(cfg, false, &invalidation);
+  fstree_reconfigure(cfg, false);
+  namespace_reconfigure(cfg, true, &invalidation);
+  fstree_reconfigure(cfg, true);
+  graph_invalidation_end(&invalidation);
+
+  // setup initial graph
+  moria_parser_create(&op_parser, &g_graph, (llist *[]) { &fsent_list }, 1, node_operations_test_dispatch, graph_vertex_attrs, graph_edge_attrs);
+  if(test->operations) {
+    if(moria_parser_operations_parse(op_parser, MMS(test->operations)) != 0) {
+      RTA;
+    }
+  }
+
+  /* index fsents */
+  graph_invalidation_begin(&invalidation);
+  fsent_fstree_refresh(&invalidation);
+  namespace_reconcile(&invalidation);
+  graph_invalidation_end(&invalidation);
+
+  if(test->lookup_cwd) {
+    cwd = resolve_fragment(MMS(test->lookup_cwd));
+  }
 
   // act
   if(test->vars)
   {
-    r = bacon_parser_parse(parser, test->vars, strlen(test->vars), "-test-", BACON_TYPE_SET, &vars);
+    if((r = bacon_parser_parse(parser, test->vars, strlen(test->vars), "-test-", BACON_TYPE_SET, &vars)) != 0) {
+      tracef("%.*s", (int)parser->error_len, parser->error);
+    }
     assert_eq_d(0, r);
-    exec_render_context_configure(&renderer, &builder, &cwd, &mod, 0, vars, 0);
+  }
+  exec_render_context_configure(&renderer, &builder, cwd, &mod, 0, vars, &bs);
+
+  if(test->vars) {
     exec_render_env_vars(&renderer);
   }
 
@@ -110,42 +227,75 @@ static void exec_builder_test_entry(xunit_test * _test)
     {
       args = *argsp;
       nargs = sentinel(args->args);
-      if(nargs == 0)
+      if(nargs == 0) {
         exec_builder_env_addf(&builder, args->name_fmt, args->val_fmt);
-      if(nargs == 1)
+      } else if(nargs == 1) {
         exec_builder_env_addf(&builder, args->name_fmt, args->val_fmt, args->args[0]);
-      if(nargs == 2)
+      } else if(nargs == 2) {
         exec_builder_env_addf(&builder, args->name_fmt, args->val_fmt, args->args[0], args->args[1]);
+      }
 
       argsp++;
+    }
+  }
+  if((builder_argsp = test->builder_args))
+  {
+    while(*builder_argsp)
+    {
+      builder_args = *builder_argsp;
+      exec_builder_add(&builder, builder_args);
+      builder_argsp++;
     }
   }
 
   if(test->fml)
   {
-    formula_parser_bacon_parse(fml_parser, test->fml, strlen(test->fml) + 2, "-formula-", &fml_file, &fml_args, &fml_envs);
-
-    exec_render_context_configure(&renderer, &builder, &cwd, &mod, 0, vars, &bs);
-
-    if(fml_file)
-    {
-      exec_render_file(&renderer, fml_file);
+    if((r = formula_parser_bacon_parse(fml_parser, test->fml, strlen(test->fml) + 2, "-formula-", 0, &fml.file, &fml.args, &fml.envs) != 0)) {
+      tracef("%.*s", (int)fml_parser->error_len, fml_parser->error);
     }
+    assert_eq_d(0, r);
+  }
 
-    if(fml_args)
-    {
-      exec_render_args(&renderer, fml_args);
+  /* resolve any lookups */
+  if(test->fml)
+  {
+    if(fml.file) {
+      resolve_lookup(&lookups, cwd, vars, fml.file);
     }
+    if(fml.args) {
+      llist_foreach(&fml.args->list, bv, lln) {
+        resolve_lookup(&lookups, cwd, vars, bv);
+      }
+    }
+    if(fml.envs) {
+      rbtree_foreach(&fml.envs->set, bv, rbn) {
+        resolve_lookup(&lookups, cwd, vars, bv);
+      }
+    }
+  }
 
-    if(fml_envs)
-    {
-      exec_render_envs(&renderer, fml_envs);
+  if(test->fml)
+  {
+    if(fml.file) {
+      exec_render_file(&renderer, fml.file);
+    }
+    if(fml.args) {
+      exec_render_args(&renderer, fml.args);
+    }
+    if(fml.envs) {
+      exec_render_envs(&renderer, fml.envs);
     }
   }
 
   exec_builder_build(&builder, &e);
 
-  assert_eq_s(test->file, e->path);
+  if(test->cwd) {
+    assert_eq_s(test->cwd, e->cwd);
+  }
+
+  if(test->filepath) {
+    assert_eq_s(test->filepath, e->file_path);
+  }
 
   if(test->args)
   {
@@ -158,21 +308,24 @@ static void exec_builder_test_entry(xunit_test * _test)
   if(test->envs)
   {
     assert_eq_d(sentinel(test->envs), sentinel(e->envs));
-    for(x = 0; x < sentinel(test->envs); x++)
-    {
+    for(x = 0; x < sentinel(test->envs); x++) {
       assert_eq_s(test->envs[x], e->envs[x]);
     }
   }
 
-  bacon_value_free(parser, vars);
-  bacon_parser_free(parser);
   formula_parser_free(fml_parser);
   exec_builder_destroy(&builder);
   exec_render_context_destroy(&renderer);
-  formula_value_free(fml_file);
-  formula_value_free(fml_args);
-  formula_value_free(fml_envs);
+  moria_parser_free(op_parser);
+  bacon_value_free(parser, vars);
+  bacon_value_free(parser, fml.file);
+  bacon_value_free(parser, fml.args);
+  bacon_value_free(parser, fml.envs);
+  bacon_parser_free(parser);
+  config_free(cfg, cfg_parser);
+  configset_parser_free(cfg_parser);
   free(chan);
+  lookup_store_destroy(&lookups);
 }
 
 //
@@ -217,11 +370,27 @@ static xunit_unit xunit = {
 
     /* aggregates */
     , (exec_builder_test[]) {{
+          vars : " boats : { foo bar foo }"
+        , envs : (char*[]) {
+              "boats=bar foo"
+            , NULL
+          }
+      }}
+    , (exec_builder_test[]) {{
           vars : " cc : [ goat boat ]"
                  " boats : { foo bar foo }"
         , envs : (char*[]) {
               "boats=bar foo"
             , "cc=goat boat"
+            , NULL
+          }
+      }}
+
+    /* empty-list */
+    , (exec_builder_test[]) {{
+          vars : " A : [ ]"
+        , envs : (char*[]) {
+              "A="
             , NULL
           }
       }}
@@ -536,23 +705,173 @@ static xunit_unit xunit = {
           }
       }}
 
-    /* file */
+    /* cwd */
     , (exec_builder_test[]) {{
-          fml : (char[]) { "file : foo-bar\0\0" }
-        , file : "foo-bar"
-      }}
-    , (exec_builder_test[]) {{
-          fml : (char[]) { "file : 14.92\0\0" }
-        , file : "14.92"
-      }}
-    , (exec_builder_test[]) {{
-          vars : "cc : /usr/bin/gcc"
-        , fml : (char[]) { "file : $cc\0\0" }
-        , file : "/usr/bin/gcc"
-        , envs : (char*[]) {
-              "cc=/usr/bin/gcc"
-            , NULL
+          cwd : "/usr/bin"
+        , builder_args : (exec_builder_args*[]) {
+              (exec_builder_args[]) {{
+                  .item = BUILDER_CWD
+                , .mode = BUILDER_REPLACE
+                , .render_val = BUILDER_STRING
+                , .val.s = "/usr/bin"
+              }}
+            , 0
           }
+      }}
+
+    /* file */
+    /* root-relative */
+    , (exec_builder_test[]) {{
+          operations : "foo"
+        , fml : (char[]) {
+            "file : {"
+            "  lookup : {"
+            "    pattern : /foo"
+            "    namespace : module"
+            "  }"
+            "}"
+            "\0"
+          }
+        , filepath : "/foo"
+        , args : (char*[]) {
+            "foo" , NULL
+          }
+      }}
+    , (exec_builder_test[]) {{
+          operations : "foo/bar"
+        , vars : "baz : bar"
+        , fml : (char[]) {
+            "file : {"
+            "  lookup : {"
+            "    pattern : /foo/$baz"
+            "  }"
+            "}"
+            "\0"
+          }
+        , filepath : "/foo/bar"
+        , args : (char*[]) {
+            "bar" , NULL
+          }
+      }}
+
+    /* shadow-relative */
+    , (exec_builder_test[]) {{
+          operations : "foo"
+        , fml : (char[]) {
+            "file : {"
+            "  lookup : {"
+            "    pattern : //bm/modules"
+            "    namespace : module"
+            "  }"
+            "}"
+            "\0"
+          }
+        , filepath : "//bm/modules"
+      }}
+    , (exec_builder_test[]) {{
+          operations : "foo"
+        , fml : (char[]) {
+            "file : {"
+            "  lookup : {"
+            "    pattern : //bm/modules"
+            "  }"
+            "}"
+            "\0"
+          }
+        , filepath : "//bm/modules"
+      }}
+    /* dot-relative */
+    , (exec_builder_test[]) {{
+          operations : "foo"
+        , lookup_cwd : "foo"
+        , fml : (char[]) {
+            "file : {"
+            "  lookup : {"
+            "    pattern : ."
+            "  }"
+            "}"
+            "\0"
+          }
+        , filepath : "/foo"
+      }}
+    , (exec_builder_test[]) {{
+          operations : "foo/bar"
+        , lookup_cwd : "foo"
+        , fml : (char[]) {
+            "file : {"
+            "  lookup : {"
+            "    pattern : ./bar"
+            "  }"
+            "}"
+            "\0"
+          }
+        , filepath : "/foo/bar"
+      }}
+    /* dot-dot-relative */
+    , (exec_builder_test[]) {{
+          operations : "foo"
+        , lookup_cwd : "foo"
+        , fml : (char[]) {
+            "file : {"
+            "  lookup : {"
+            "    pattern : .."
+            "  }"
+            "}"
+            "\0"
+          }
+        , filepath : "/"
+      }}
+    , (exec_builder_test[]) {{
+          operations : "foo bar"
+        , lookup_cwd : "foo"
+        , fml : (char[]) {
+            "file : {"
+            "  lookup : {"
+            "    pattern : ../bar"
+            "  }"
+            "}"
+            "\0"
+          }
+        , filepath : "/bar"
+      }}
+    , (exec_builder_test[]) {{
+          operations : "foo"
+        , fml : (char[]) {
+            "file : {"
+            "  lookup : {"
+            "    pattern : //bm/modules"
+            "    namespace : module"
+            "  }"
+            "}"
+            "\0"
+          }
+        , filepath : "//bm/modules"
+      }}
+    /* unbound */
+    , (exec_builder_test[]) {{
+          config : (char[]) {
+            "filesystem : {\n"
+            "  fstrees : {\n"
+            "    / : {\n"
+            "      namespaces : {\n"
+            "        module\n"
+            "      }\n"
+            "    }\n"
+            "  }\n"
+            "}\n"
+            "\0\0"
+          }
+        , operations : "foo/bar"
+        , fml : (char[]) {
+            "file : {"
+            "  lookup : {"
+            "    pattern : foo"
+            "    namespace : module"
+            "  }"
+            "}"
+            "\0"
+          }
+        , filepath : "/foo"
       }}
 
     /* sequence/args */
@@ -661,14 +980,13 @@ static xunit_unit xunit = {
             "envs : {"
             "  primary : ["
             "    foo"
-            "    bar"
-            "    prepend : abcd"
+            "    true"
             "  ]"
             "}"
             "\0"
           }
         , envs : (char*[]) {
-              "primary=abcdfoo abcdbar"
+              "primary=foo true"
             , NULL
           }
       }}

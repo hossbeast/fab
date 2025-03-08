@@ -11,16 +11,29 @@
 
   #include "formula_parser.internal.h"
   #include "formula.h"
-  #include "formula_value.internal.h"
+  #include "bacon/make.h"
+  #include "exec_value.h"
   #include "selector.h"
+  #include "pattern.h"
 
   #include "macros.h"
+
+  struct lookup_pattern;
 }
 
 %code top {
   int formula_yylex(void *, void*, void*);
   #define PARSER containerof(parser, formula_parser, yyu)
   #define FORMULA_YYLTYPE yyu_location
+
+  #include "formula_parser.internal.h"
+  #include "bacon/value.h"
+
+  static void replace(formula_parser *parser, struct bacon_value ** dst, struct bacon_value *val)
+  {
+    bacon_value_free(parser->bacon_parser, *dst);
+    *dst = val;
+  }
 }
 
 %define api.pure
@@ -37,13 +50,14 @@
 %union {
   yyu_lval yyu;
 
-  formula_value * value;
+  bacon_value *value;
+  struct lookup_pattern *lookup_pattern;
 
   // enums
   fsent_property node_property;
 
   // delegated
-  struct selector * selector;
+  struct selector *selector;
 }
 
 /* tokens */
@@ -75,12 +89,19 @@
 %token <yyu.imax> INTMAX32      320
 %token <yyu.imax> INTMAX64      321
 
+/* terminals */
+%token <selector> SELECTOR
+%token <lookup_pattern> LOOKUP_PATTERN "lookup-pattern"
+
+/* nonterminals */
 %type <yyu.umax> posint_ugroup
 %type <yyu.imax> posint_igroup
 %type <yyu.imax> negint_igroup
 
-/* terminals */
-%token <selector> SELECTOR
+/* nonterminals */
+%type <lookup_pattern> lookup-pattern
+
+%destructor { pattern_free(&$$->pattern); } <lookup_pattern>
 
 %token
   ARGS          "args"
@@ -89,7 +110,9 @@
   PROPERTY      "property"
   PREPEND       "prepend"
   SELECT        "select"
-  PATH_SEARCH   "path-search"
+  LOOKUP        "lookup"
+  PATTERN       "pattern"
+  NAMESPACE     "namespace"
 
 %token
   ABSDIR        "absdir"
@@ -98,6 +121,7 @@
   EXT           "ext"
   NAME          "name"
   RELDIR        "reldir"
+  ID            "id"
   RELPATH       "relpath"
   SEQUENCE      "sequence"
   SUFFIX        "suffix"
@@ -105,14 +129,17 @@
 /* nonterminals */
 %type <value> string quote_words quote_word quoted_string unquoted_string
 %type <value> primitive boolean float negint posint variable
-%type <value> operation-list operation-list-item operation sequence-operation path-search-operation
+%type <value> operation-list operation-list-item operation sequence-operation lookup-operation
 %type <value> arg-values arg-value
 %type <value> env-var env-var-value
 %type <value> file-value
 %type <value> env-vars
+%type <value> value scalar aggregate mapping
+%type <value> set elements
+%type <value> list items
 %type <node_property> node-property
 
-%destructor { formula_value_free($$); } <value>
+%destructor { bacon_value_free(PARSER->bacon_parser, $$); } <value>
 %destructor { selector_free($$); } <selector>
 
 %%
@@ -135,13 +162,12 @@ section
 file-section
   : FILETOKEN ':' file-value
   {
-    PARSER->file = $3;
+    replace(PARSER, &PARSER->file, $3);
   }
   ;
 
 file-value
-  : primitive
-  | '{' path-search-operation '}'
+  : '{' lookup-operation '}'
   {
     $$ = $2;
   }
@@ -150,60 +176,64 @@ file-value
 args-section
   : ARGS ':' '[' arg-values ']'
   {
-    PARSER->args = $4;
+    replace(PARSER, &PARSER->args, $4);
   }
   ;
 
 arg-values
   : arg-values arg-value
   {
-    formula_value_list_mkv(&@$, $1, &$$, $2);
+    bacon_list_mkv(PARSER->bacon_parser, &@$, $1, &$$, $2);
   }
   | arg-value
   {
-    formula_value_list_mkv(&@$, 0, &$$, $1);
+    bacon_list_mkv(PARSER->bacon_parser, &@$, 0, &$$, $1);
   }
   ;
 
 arg-value
   : primitive
   | sequence-operation
+  | lookup-operation
   ;
 
 envs-section
   : ENVS ':' '{' env-vars '}'
   {
-    PARSER->envs = $4;
+    replace(PARSER, &PARSER->envs, $4);
   }
   ;
 
 env-vars
   : env-vars env-var
   {
-    formula_value_set_mkv(&@$, $1, &$$, $2);
+    bacon_set_mkv(PARSER->bacon_parser, &@$, $1, &$$, $2);
   }
   | env-var
   {
-    formula_value_set_mkv(&@$, 0, &$$, $1);
+    bacon_set_mkv(PARSER->bacon_parser, &@$, 0, &$$, $1);
   }
   ;
 
 env-var
-  : STR ':' env-var-value
+  : unquoted_string ':' env-var-value
   {
-    formula_value_mapping_mk(&@$, &$$, @1.s, @1.l, $3);
+    bacon_mapping_mk(PARSER->bacon_parser, &@$, &$$, $1, $3);
   }
   ;
 
 env-var-value
-  : primitive
-  | '[' operation-list ']'
+  : '{' sequence-operation '}'
   {
     $$ = $2;
   }
-  | '{' path-search-operation '}'
+  | '{' lookup-operation '}'
   {
     $$ = $2;
+  }
+  | value
+  {
+    $$ = $1;
   }
   ;
 
@@ -216,14 +246,76 @@ primitive
   | string
   ;
 
+list
+  : '[' items ']'
+  {
+    $$ = $2;
+  }
+  ;
+
+items
+  : items value
+  {
+    bacon_list_mkv(PARSER->bacon_parser, &@$, $1, &$$, $2);
+  }
+  | value
+  {
+    bacon_list_mkv(PARSER->bacon_parser, &@$, 0, &$$, $1);
+  }
+  ;
+
+value
+  : scalar
+  | aggregate
+  ;
+
+scalar
+  : primitive
+  | mapping
+  ;
+
+aggregate
+  : list
+  | set
+  ;
+
+set
+  : '{' elements '}'
+  {
+    $$ = $2;
+  }
+  | '{' '}'
+  {
+    bacon_set_mkv(PARSER->bacon_parser, &@$, 0, &$$, 0);
+  }
+  ;
+
+elements
+  : elements value
+  {
+    bacon_set_mkv(PARSER->bacon_parser, &@$, $1, &$$, $2);
+  }
+  | value
+  {
+    bacon_set_mkv(PARSER->bacon_parser, &@$, 0, &$$, $1);
+  }
+  ;
+
+mapping
+  : primitive ':' value
+  {
+    bacon_mapping_mk(PARSER->bacon_parser, &@$, &$$, $1, $3);
+  }
+  ;
+
 operation-list
   : operation-list operation-list-item
   {
-    formula_value_sequence_mkv(&@$, $1, &$$, $2);
+    exec_value_sequence_mkv(PARSER->bacon_parser, &@$, $1, &$$, $2);
   }
   | operation-list-item
   {
-    formula_value_sequence_mkv(&@$, 0, &$$, $1);
+    exec_value_sequence_mkv(PARSER->bacon_parser, &@$, 0, &$$, $1);
   }
   ;
 
@@ -242,22 +334,30 @@ sequence-operation
 operation
   : SELECT ':' SELECTOR
   {
-    formula_value_select_mk(&@$, &$$, $3);
+    exec_value_select_mk(PARSER->bacon_parser, &@$, &$$, $3);
   }
   | PROPERTY ':' node-property
   {
-    formula_value_property_mk(&@$, &$$, $3);
+    exec_value_property_mk(PARSER->bacon_parser, &@$, &$$, $3);
   }
   | PREPEND ':' primitive
   {
-    formula_value_prepend_mk(&@$, &$$, $3);
+    exec_value_prepend_mk(PARSER->bacon_parser, &@$, &$$, $3);
   }
   ;
 
-path-search-operation
-  : PATH_SEARCH ':' primitive
+lookup-operation
+  : LOOKUP ':' '{' PATTERN ':' lookup-pattern NAMESPACE ':' STR '}'
   {
-    formula_value_path_search_mk(&@$, &$$, $3);
+    exec_value_lookup_mk(PARSER->bacon_parser, &@$, &$$, $6, @9.s, @9.l);
+  }
+  | LOOKUP ':' '{' NAMESPACE ':' STR PATTERN ':' lookup-pattern '}'
+  {
+    exec_value_lookup_mk(PARSER->bacon_parser, &@$, &$$, $9, @6.s, @6.l);
+  }
+  | LOOKUP ':' '{' PATTERN ':' lookup-pattern '}'
+  {
+    exec_value_lookup_mk(PARSER->bacon_parser, &@$, &$$, $6, 0, 0);
   }
   ;
 
@@ -270,6 +370,7 @@ node-property
   | ABSDIR       { $$ = FSENT_PROPERTY_ABSDIR; }
   | RELPATH      { $$ = FSENT_PROPERTY_RELPATH; }
   | RELDIR       { $$ = FSENT_PROPERTY_RELDIR; }
+  | ID           { $$ = FSENT_PROPERTY_ID; }
   ;
 
 string
@@ -280,7 +381,7 @@ string
 unquoted_string
   : word
   {
-    formula_value_string_mkw(&@$, 0, &$$, @1.s, @1.l);
+    bacon_string_mkw(PARSER->bacon_parser, &@$, 0, &$$, @1.s, @1.l);
   }
   ;
 
@@ -307,8 +408,8 @@ quoted_string
 quote_words
   : quote_words quote_word
   {
-    formula_value_string_mkv(&@$, $1, &$$, $2);
-    formula_value_free($2);
+    bacon_string_mkv(PARSER->bacon_parser, &@$, $1, &$$, $2);
+    bacon_value_free(PARSER->bacon_parser, $2);
   }
   | quote_word
   ;
@@ -316,33 +417,33 @@ quote_words
 quote_word
   : STR
   {
-    formula_value_string_mkw(&@$, 0, &$$, @1.s, @1.l);
+    bacon_string_mkw(PARSER->bacon_parser, &@$, 0, &$$, @1.s, @1.l);
   }
   | CREF
   {
-    formula_value_string_mkc(&@$, 0, &$$, $1);
+    bacon_string_mkc(PARSER->bacon_parser, &@$, 0, &$$, $1);
   }
   | HREF
   {
-    formula_value_string_mkc(&@$, 0, &$$, $1);
+    bacon_string_mkc(PARSER->bacon_parser, &@$, 0, &$$, $1);
   }
   ;
 
 boolean
   : BOOL
   {
-    formula_value_boolean_mk(&@$, &$$, $1);
+    bacon_boolean_mk(PARSER->bacon_parser, &@$, &$$, $1);
   }
   ;
 
 posint
   : posint_ugroup
   {
-    formula_value_posint_mk(&@$, &$$, $1);
+    bacon_integer_mk(PARSER->bacon_parser, &@$, &$$, $1);
   }
   | posint_igroup
   {
-    formula_value_posint_mk(&@$, &$$, $1);
+    bacon_integer_mk(PARSER->bacon_parser, &@$, &$$, $1);
   }
   ;
 
@@ -367,7 +468,7 @@ posint_igroup
 negint
   : negint_igroup
   {
-    formula_value_negint_mk(&@$, &$$, $1);
+    bacon_integer_mk(PARSER->bacon_parser, &@$, &$$, $1);
   }
   ;
 
@@ -381,13 +482,17 @@ negint_igroup
 float
   : FLOAT
   {
-    formula_value_float_mk(&@$, &$$, $1);
+    bacon_float_mk(PARSER->bacon_parser, &@$, &$$, $1);
   }
   ;
 
 variable
   : VARIABLE
   {
-    formula_value_variable_mk(&@$, &$$, $1.s, $1.l);
+    bacon_variable_mkw(PARSER->bacon_parser, &@$, &$$, $1.s, $1.l);
   }
+  ;
+
+lookup-pattern
+  : LOOKUP_PATTERN
   ;

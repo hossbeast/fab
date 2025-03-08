@@ -6,44 +6,46 @@
 /*
 exec_builder - build up the parameters to an exec call, namely
  * file to execute
+ * working directory
  * arguments to the program (argv)
  * program environment (envp)
 */
 
 #include "types.h"
-
 #include "narrator/growing.h"
 #include "fsent.h"
 
 struct exec;
-struct formula_value;
 struct fsent;
 struct narrator;
-struct path_cache_entry;
 struct bacon_value;
 
 /* intermediate state for building an exec */
 typedef struct exec_builder {
-  struct exec * exec;       // points into Nexec
+  struct exec *exec;        // points into Nexec
 
   /* narrator into which the exec strings are accumulated */
   struct narrator_growing Nexec_growing;
-  struct narrator * Nexec;
+  struct narrator *Nexec;
 
-  const struct path_cache_entry *file_pe;
-  uint32_t file;            // offset into the backing buffer, 0 = uninitialized
+  uint32_t filepath;        // offset into the backing buffer - absolute path
+  uint32_t filename;        // offset into the backing buffer - name only
+  uint32_t cwd;             // offset into the backing buffer
+
   uint32_t *args;           // offsets into the backing buffer
   uint16_t args_len;
   size_t args_alloc;
+
   uint32_t *envs;           // offsets into the backing buffer
   uint16_t envs_len;
   size_t envs_alloc;
 
   /* allocations state */
-  char * file_stor;
-  char ** args_stor;
+
+  char **args_stor;
   size_t args_stor_alloc;
-  char ** envs_stor;
+
+  char **envs_stor;
   size_t envs_stor_alloc;
 } exec_builder;
 
@@ -76,32 +78,33 @@ void exec_builder_destroy(exec_builder * restrict builder)
   __attribute__((nonnull));
 
 enum builder_add_mode {
-  BUILDER_PREPEND = 1,    /* if the item already exists, prepend to it */
-  BUILDER_APPEND          /* if the item already exists, append to it */
+    BUILDER_PREPEND = 1     /* if the item already exists, prepend to it */
+  , BUILDER_APPEND          /* if the item already exists, append to it */
+  , BUILDER_REPLACE
 };
 
 enum builder_add_item {
-  BUILDER_FILE = 1,       /* the file to execute */
-  BUILDER_ARGS,           /* the arguments list */
-  BUILDER_ENVS            /* the environment name=value set */
+    BUILDER_FILE = 1        /* the file to execute */
+  , BUILDER_CWD             /* working directory */
+  , BUILDER_ARGS            /* the arguments list */
+  , BUILDER_ENVS            /* the environment name=value set */
 };
 
 enum builder_render_function {
     BUILDER_STRING = 1
-  , BUILDER_FORMULA_VALUE
+  , BUILDER_EXEC_VALUE
   , BUILDER_VALUE
-  , BUILDER_PATH_CACHE_ENTRY
   , BUILDER_PROPERTY
   , BUILDER_FMT
+  , BUILDER_FSENT
 };
 
 union builder_render_function_args {
   const char *s;
-  const struct formula_value * f;
-  const struct bacon_value * v;
-  const struct path_cache_entry *pe;
+  const struct bacon_value *f;
+  const struct bacon_value *v;
   struct {
-    const struct fsent * n;
+    const struct fsent *n;
     fsent_property prop;
     fsent_property_context pctx;
   };
@@ -109,6 +112,7 @@ union builder_render_function_args {
     const char *fmt;
     va_list *va;
   };
+  const struct fsent *fse;
 };
 
 typedef struct exec_builder_args {
@@ -117,7 +121,7 @@ typedef struct exec_builder_args {
 
   /* args / envs */
   int32_t position;   // for argv/envp, index of the item in the collection to modify, -1 to add to the collection
-  const char * name;  // for a new envp, its name
+  const char *name;   // for a new envp, its name
   uint16_t name_len;
 
   /* bacon_value */

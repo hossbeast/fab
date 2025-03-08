@@ -9,6 +9,7 @@
   #include "formula.tab.h"
   #include "formula.tokens.h"
   #include "selector_parser.h"
+  #include "pattern_parser.h"
 
   #define YYSTYPE FORMULA_YYSTYPE
   #define YYLTYPE yyu_location
@@ -24,7 +25,7 @@
         parser->selector_parser                                           \
       , usr                                                               \
       , bufsz                                                             \
-      , "selector"                                                        \
+      , parser->yyu.fname                                                 \
       , &parser->yyu.loc                                                  \
       , &subloc                                                           \
       , &yylval->selector                                                 \
@@ -34,6 +35,29 @@
       r = LEXLOC(formula_SELECTOR, &subloc);                              \
     }                                                                     \
     r;                                                                    \
+  })
+
+  #define PARSE_LOOKUP_PATTERN ({                                          \
+    formula_parser * parser = containerof(yyextra, formula_parser, yyu);   \
+    size_t off = yytext - parser->yyu.yybuffer;                            \
+    char * usr = parser->yyu.usrbuf + off;                                 \
+    size_t bufsz = parser->yyu.usrbufsize - off;                           \
+    yyu_location subloc;                                                   \
+    int r;                                                                 \
+    r = lookup_pattern_parse_partial(                                      \
+        parser->pattern_parser                                             \
+      , usr                                                                \
+      , bufsz                                                              \
+      , parser->yyu.fname                                                  \
+      , &parser->yyu.loc                                                   \
+      , &subloc                                                            \
+      , &yylval->lookup_pattern                                            \
+    );                                                                     \
+    if(r == 0) {                                                           \
+      yyless(subloc.l);                                                    \
+      r = LEXLOC(formula_LOOKUP_PATTERN, &subloc);                         \
+    }                                                                      \
+    r;                                                                     \
   })
 
 static int lexify_variable(
@@ -79,6 +103,7 @@ static int lexify_variable(
 %x multilinecomment
 %x quoted
 %x _select _selector
+%x pattern_lookup lookup
 
 %%
 
@@ -96,10 +121,15 @@ static int lexify_variable(
 <multilinecomment>[\n]                                  { LOCRESET; }
 
  /* whitespace */
+ /*
 <_select,_selector>[\n]                                 |
 <INITIAL>[\n]                                           { LOCRESET; }
 <_select,_selector>[\r\t ]+                             |
 <INITIAL>[\r\t ]+                                       { LOCWRITE; }
+ */
+
+<*>[\n]                                                 { LOCRESET; }
+<*>[\r\t ]+                                             { LOCWRITE; }
 
  /* tokens */
 <INITIAL>[-![\]{}()+:=<>&|/%*^~]                        { return LEX(yytext[0]); }
@@ -118,11 +148,15 @@ static int lexify_variable(
  /* floats */
 <INITIAL>[+-]?[0-9]+[.][0-9]+                           { return LEXF(); }
 
- /* invoke selector sub-parser */
+ /* invoke sub-parser(s) */
 <INITIAL>"select"                                       { PUSHSTATE(_select); return LEX(SELECT); }
-<_select>":"                                            { PUSHSTATE(_selector); return LEX(':'); }
+<_select>":"                                            { PUSHSTATE(_selector); return LEX(yytext[0]); }
  /* consume whitespace in this parser */
 <_selector>[^\n\r\t ][\x00-\xff]+                       { int r = PARSE_SELECTOR; POPSTATE; POPSTATE; return r; }
+
+<INITIAL>"pattern"                                      { PUSHSTATE(pattern_lookup); return LEX(PATTERN); }
+<pattern_lookup>[:]                                     { PUSHSTATE(lookup); return LEX(yytext[0]); }
+<lookup>[^\n\r\t ][\x00-\xff]+                          { int r = PARSE_LOOKUP_PATTERN; POPSTATE; POPSTATE; return r; }
 
  /* strings */
 <INITIAL>[-a-zA-Z0-9_./+=]+                             { return LEXA(); }

@@ -11,9 +11,12 @@
 #include "formula.lex.h"
 #include "formula.states.h"
 #include "selector_parser.h"
+#include "bacon/parser.h"
+
+#include "pattern_parser.internal.h"
 
 /* marks the start of the embedded bacon block */
-static const char * marker = "__DATA__";
+static const char *marker = "__DATA__";
 static size_t marker_len = 8;
 
 static YYU_VTABLE(vtable, formula, formula);
@@ -22,20 +25,29 @@ static YYU_VTABLE(vtable, formula, formula);
 // internal
 //
 
-void formula_parser_extract(const char * restrict text, size_t text_len, bool * restrict shebang, char ** restrict baconp, size_t * restrict bacon_lenp)
+void formula_parser_extract(
+    const char * restrict text
+  , size_t text_len
+  , bool * restrict shebang
+  , int * restrict bacon_linep
+  , char ** restrict baconp
+  , size_t * restrict bacon_lenp
+)
 {
   const char * bacon = 0;
   size_t bacon_len = 0;
+  int bacon_line = 0;
   uint16_t shebang_len = 0;
   const char * s; // start of line
   const char * e; // end of line
   size_t l;
   int x;
   int i;
-  bool first_line = true;
+  int line;
 
   // seek for a line ending with the marker, optionally followed by quotes/double quotes/semicolons
   s = e = text;
+  line = 0;
   for(i = 0; i < text_len; i++, e++)
   {
     /* check if the first line is a valid shebang */
@@ -47,7 +59,7 @@ void formula_parser_extract(const char * restrict text, size_t text_len, bool * 
     {
       shebang_len++;
     }
-    else if(i > 1 && first_line && (
+    else if(i > 1 && line == 0 && (
             (text[i] >= '0' && text[i] <= '9') ||
             (text[i] >= 'a' && text[i] <= 'z') ||
             (text[i] >= 'A' && text[i] <= 'Z') ||
@@ -61,18 +73,19 @@ void formula_parser_extract(const char * restrict text, size_t text_len, bool * 
 
     if(*e == '\n')
     {
-      if(first_line && shebang_len == i && i > 3)
+      if(line == 0 && shebang_len == i && i > 3)
       {
         *shebang = true;
       }
-      else if(first_line)
+      else if(line == 0)
       {
         /* no shebang - start at the beginning */
         *shebang = false;
+        bacon_line = 0;
         bacon = text;
       }
 
-      first_line = false;
+      line++;
       if(!s) {
         continue;
       }
@@ -92,6 +105,7 @@ void formula_parser_extract(const char * restrict text, size_t text_len, bool * 
       x -= (marker_len - 1);
       if(memcmp(s + x, marker, marker_len) == 0)
       {
+        bacon_line = line;
         bacon = e + 1;
         break;
       }
@@ -136,6 +150,7 @@ void formula_parser_extract(const char * restrict text, size_t text_len, bool * 
     bacon_len = e - bacon;
   }
 
+  *bacon_linep = bacon_line;
   *baconp = (char*)bacon;
   *bacon_lenp = bacon_len;
 }
@@ -145,22 +160,43 @@ int formula_parser_bacon_parse(
   , char * const restrict vars_text
   , size_t vars_text_len
   , const char * restrict fname
-  , formula_value ** restrict file
-  , formula_value ** restrict args
-  , formula_value ** restrict envs
+  , int line
+  , bacon_value ** restrict file
+  , bacon_value ** restrict args
+  , bacon_value ** restrict envs
 )
 {
   int r;
+  yyu_location init_loc;
 
   parser->file = 0;
   parser->args = 0;
   parser->envs = 0;
 
-  r = yyu_parse(&parser->yyu, vars_text, vars_text_len, fname, YYU_INPLACE, 0, 0);
+  memset(&init_loc, 0, sizeof(init_loc));
+  init_loc.f_lin = line;
+  init_loc.l_lin = line;
+
+  r = yyu_parse(&parser->yyu, vars_text, vars_text_len, fname, YYU_INPLACE, &init_loc, 0);
 
   *file = parser->file;
   *args = parser->args;
   *envs = parser->envs;
+
+  /* error aggregation */
+  if(r == 0) {
+    parser->error = 0;
+    parser->error_len = 0;
+  } else if(parser->bacon_parser->error) {
+    parser->error = parser->bacon_parser->error;
+    parser->error_len = parser->bacon_parser->error_len;
+  } else if(parser->pattern_parser->error) {
+    parser->error = parser->pattern_parser->error;
+    parser->error_len = parser->pattern_parser->error_len;
+  } else {
+    parser->error = parser->yyu.error_str;
+    parser->error_len = parser->yyu.error_len;
+  }
 
   return r;
 }
@@ -174,10 +210,9 @@ void formula_parser_create(formula_parser ** const rv)
   formula_parser * p = 0;
 
   xmalloc(&p, sizeof(*p));
+
   yyu_parser_init(&p->yyu, &vtable);
-
   yyu_parser_init_tokens(&p->yyu, formula_token_table, formula_TOKEN_TABLE_SIZE);
-
   yyu_parser_init_states(
       &p->yyu
     , formula_numstates
@@ -186,11 +221,10 @@ void formula_parser_create(formula_parser ** const rv)
   );
 
   selector_parser_create(&p->selector_parser);
+  pattern_parser_create(&p->pattern_parser);
+  bacon_parser_alloc(&p->bacon_parser);
 
   *rv = p;
-  p = 0;
-
-  formula_parser_free(p);
 }
 
 void formula_parser_free(formula_parser* const p)
@@ -198,6 +232,8 @@ void formula_parser_free(formula_parser* const p)
   if(p)
   {
     selector_parser_free(p->selector_parser);
+    pattern_parser_free(p->pattern_parser);
+    bacon_parser_free(p->bacon_parser);
     yyu_parser_destroy(&p->yyu);
   }
 
@@ -220,14 +256,15 @@ int formula_parser_parse(
 {
   char * bacon = 0;
   size_t bacon_len = 0;
+  int bacon_line = 0;
   bool shebang;
   int r;
 
-  formula_parser_extract(text, len, &shebang, &bacon, &bacon_len);
+  formula_parser_extract(text, len, &shebang, &bacon_line, &bacon, &bacon_len);
 
   r = 0;
   if(bacon_len) {
-    r = formula_parser_bacon_parse(parser, bacon, bacon_len + 2, fname, &fml->file, &fml->args, &fml->envs);
+    r = formula_parser_bacon_parse(parser, bacon, bacon_len + 2, fname, bacon_line, &fml->file, &fml->args, &fml->envs);
   }
 
   if(r == 0 && !shebang && !fml->file) {

@@ -9,8 +9,7 @@
 
 #include "exec_builder.h"
 #include "exec.h"
-#include "formula_value.internal.h"
-#include "path_cache.h"
+#include "exec_value.h"
 
 #include "common/assure.h"
 #include "common/attrs.h"
@@ -27,20 +26,16 @@ static void render_say(const char * restrict name, enum builder_render_function 
     xsayf(" node %p %s\n", args->n, args->n->name.name);
     xsayf(" prop %s\n", attrs32_name_byvalue(fsent_property_attrs, FSENT_PROPERTY_OPT & args->prop));
   }
-  else if(renderer == BUILDER_PATH_CACHE_ENTRY)
-  {
-    xsayf("render-%s PATH-CACHE-ENTRY\n", name);
-  }
   else if(renderer == BUILDER_STRING)
   {
     xsayf("render-%s STRING\n", name);
     xsayf(" string '%s'\n", args->s);
   }
-  else if(renderer == BUILDER_FORMULA_VALUE)
+  else if(renderer == BUILDER_EXEC_VALUE)
   {
     xsayf("render-%s FORMULA-VALUE\n", name);
     xsays(" formula-value ");
-    formula_value_say(args->f, N);
+    bacon_value_say(args->f, N);
     xsays("\n");
   }
   else if(renderer == BUILDER_VALUE)
@@ -67,30 +62,6 @@ struct def_name_compare_context {
   int lc; // last compare result
 };
 
-int env_def_cmp(const char * restrict name, const char * restrict text)
-{
-  int r;
-
-  while(name && text)
-  {
-    if((r = INTCMP(*name, *text)))
-      return r;
-
-    name++;
-    if(!*name || *name == '=')
-      name = 0;
-
-    text++;
-    if(!*text || *text == '=')
-      text = 0;
-  }
-
-  if(!name && !text)
-    return 0;
-
-  return INTCMP(name, text);
-}
-
 static int def_name_compare(const void * _ctx, const void * _item)
 {
   struct def_name_compare_context * ctx = (typeof(ctx))_ctx;
@@ -107,7 +78,6 @@ static void __attribute__((nonnull)) dispatch_render_function(
   , narrator * restrict N
 )
 {
-  const path_cache_entry *pe;
   const bacon_value *v;
 
   if(func == BUILDER_PROPERTY)
@@ -118,9 +88,9 @@ static void __attribute__((nonnull)) dispatch_render_function(
   {
     narrator_says(N, args->s);
   }
-  else if(func == BUILDER_FORMULA_VALUE)
+  else if(func == BUILDER_EXEC_VALUE)
   {
-    formula_value_render(args->f, N);
+    bacon_value_say(args->f, N);
   }
   else if(func == BUILDER_VALUE)
   {
@@ -135,25 +105,17 @@ static void __attribute__((nonnull)) dispatch_render_function(
   {
     narrator_sayvf(N, args->fmt, *args->va);
   }
-
-  if(func != BUILDER_PATH_CACHE_ENTRY) {
-    return;
+  else if(func == BUILDER_FSENT)
+  {
+    fsent_absolute_path_say(args->fse, N);
   }
-
-  pe = args->pe;
-  if(pe->dir) {
-    narrator_sayw(N, pe->dir->s, pe->dir->len);
-    narrator_says(N, "/");
-  }
-
-  narrator_sayw(N, pe->s, pe->len);
 }
 
 void exec_builder_add(exec_builder * restrict builder, const exec_builder_args *args)
 {
   uint32_t def;
   uint32_t *defp;
-  char * textbase;
+  char *textbase;
   struct def_name_compare_context ctx;
   off_t pos;
   uint32_t start;
@@ -161,28 +123,19 @@ void exec_builder_add(exec_builder * restrict builder, const exec_builder_args *
   size_t len;
   const char *eq;
 
-  /* special case of rendering a path entry to the file - save the pe so that exec can use the fd */
-  if(args->item == BUILDER_FILE && args->render_val == BUILDER_PATH_CACHE_ENTRY)
-  {
-    builder->file_pe = args->val.pe;
-    return;
-  }
-
   // current narrator position
   narrator_seek(builder->Nexec, 0, NARRATOR_SEEK_CUR, &pos);
   start = pos;
 
   def = 0;
-  if(args->item == BUILDER_FILE)
-  {
-    // locate an existing definition if any
-    def = builder->file;
-
-    // new definition goes here
-    builder->file = start;
-  }
-  else if(args->item == BUILDER_ARGS)
-  {
+  if(args->item == BUILDER_FILE) {
+    builder->filepath = start;
+    builder->filename = start;
+    RUNTIME_ASSERT(args->mode == BUILDER_REPLACE);
+  } else if(args->item == BUILDER_CWD) {
+    builder->cwd = start;
+    RUNTIME_ASSERT(args->mode == BUILDER_REPLACE);
+  } else if(args->item == BUILDER_ARGS) {
     if(args->position == -1)
     {
       idx = builder->args_len++;
@@ -196,9 +149,7 @@ void exec_builder_add(exec_builder * restrict builder, const exec_builder_args *
     }
 
     builder->args[idx] = start;
-  }
-  else if(args->item == BUILDER_ENVS)
-  {
+  } else if(args->item == BUILDER_ENVS) {
     // search for an existing definition
     memset(&ctx, 0, sizeof(ctx));
     ctx.lc = -1;
@@ -304,9 +255,39 @@ void exec_builder_add(exec_builder * restrict builder, const exec_builder_args *
     dispatch_render_function(args->render_val, &args->val, builder->Nexec);
     narrator_sayc(builder->Nexec, 0);
   }
+  else if(args->mode == BUILDER_REPLACE)
+  {
+    if(args->item == BUILDER_ENVS)
+    {
+      narrator_sayw(builder->Nexec, args->name, args->name_len);
+      narrator_says(builder->Nexec, "=");
+    }
+
+    // render the value from this definition
+    dispatch_render_function(args->render_val, &args->val, builder->Nexec);
+    narrator_sayc(builder->Nexec, 0);
+  }
   else
   {
     RTA;
+  }
+
+  /* filename points to the start of the last section */
+  if(args->item == BUILDER_FILE)
+  {
+    textbase = builder->Nexec_growing.s;
+    def = UINT32_MAX;
+    for(pos = builder->filepath; 1 ; pos++)
+    {
+      if(textbase[pos] == 0) {
+        break;
+      } else if(textbase[pos] == '/') {
+        def = pos + 1;
+      }
+    }
+    if(def != UINT32_MAX) {
+      builder->filename = def;
+    }
   }
 }
 
@@ -345,7 +326,7 @@ void exec_builder_args_say(const exec_builder * restrict builder, const exec_bui
 void exec_builder_args_say(const exec_builder * restrict builder, const exec_builder_args * restrict args, narrator * restrict N)
 {
   xsayf("builder %p\n", builder);
-  xsayf("item %s\n", args->item == BUILDER_FILE ? "FILE" : args->item == BUILDER_ARGS ? "ARGS" : args->item == BUILDER_ENVS ? "ENVS" : "-wtf-");
+  xsayf("item %s\n", args->item == BUILDER_FILE ? "FILE" : args->item == BUILDER_CWD ? "CWD" : args->item == BUILDER_ARGS ? "ARGS" : args->item == BUILDER_ENVS ? "ENVS" : "-wtf-");
   xsayf("position %d\n", args->position);
   xsayf("name %.*s\n", (int)args->name_len, args->name);
   xsayf("name-len %hu\n", args->name_len);
@@ -358,38 +339,19 @@ void exec_builder_args_say(const exec_builder * restrict builder, const exec_bui
 // public
 //
 
-void exec_builder_take(exec_builder * restrict builder, exec ** restrict envp)
+void exec_builder_take(exec_builder * restrict builder, exec ** restrict execp)
 {
   size_t exec_size;
 
   narrator_growing_claim_buffer(&builder->Nexec_growing, &builder->exec, &exec_size);
 
-  *envp = builder->exec;
+  *execp = builder->exec;
   builder->exec = 0;
 
-  builder->file_stor = 0;
   builder->args_stor = 0;
   builder->args_stor_alloc = 0;
   builder->envs_stor = 0;
   builder->envs_stor_alloc = 0;
-}
-
-void exec_free(exec * e)
-{
-  if(e)
-  {
-    free(e->args);
-    free(e->envs);
-  }
-  free(e);
-}
-
-void exec_ifree(exec ** restrict ep)
-{
-  if(*ep)
-    exec_free(*ep);
-
-  *ep = 0;
 }
 
 void exec_builder_init(exec_builder * restrict builder)
@@ -405,8 +367,8 @@ void exec_builder_init(exec_builder * restrict builder)
 
 void exec_builder_reset(exec_builder * restrict builder)
 {
-  builder->file_pe = 0;
-  builder->file = 0;
+  builder->filepath = 0;
+  builder->filename = 0;
   builder->envs_len = 0;
   builder->args_len = 0;
 
@@ -426,11 +388,10 @@ void exec_builder_destroy(exec_builder * restrict builder)
 void exec_builder_build(exec_builder * restrict builder, exec ** restrict envp)
 {
   int x;
-  char * textbase;
+  int y;
+  char *textbase;
 
-  textbase = builder->Nexec_growing.s;
-  if(textbase == 0)
-  {
+  if((textbase = builder->Nexec_growing.s) == 0) {
     /* nothing has been added to the builder */
     narrator_growing_allocate(&builder->Nexec_growing, sizeof(exec));
     textbase = builder->Nexec_growing.s;
@@ -439,30 +400,43 @@ void exec_builder_build(exec_builder * restrict builder, exec ** restrict envp)
   builder->exec = (typeof(builder->exec))textbase;
   RUNTIME_ASSERT(builder->exec);
 
-  // file - pointer from offset
-  builder->exec->file_pe = builder->file_pe;
-  builder->exec->path = 0;
-  if(builder->file)
-  {
-    builder->file_stor = textbase + builder->file;
-    builder->exec->path = builder->file_stor;
+  /* cwd - pointer from offset
+   *  this is an absolute path */
+  if(builder->cwd) {
+    builder->exec->cwd = textbase + builder->cwd;
+    builder->exec->cwd_len = strlen(builder->exec->cwd);
+  }
+
+  /* file - pointer from offset
+   *  this is an absolute path */
+  if(builder->filepath) {
+    builder->exec->file_path = textbase + builder->filepath;
+    builder->exec->file_path_len = strlen(builder->exec->file_path);
   }
 
   // args - space
-  if(builder->args_stor_alloc < (builder->args_len + 1))
+  if(builder->args_stor_alloc < (builder->args_len + 2))
   {
-    xrealloc(&builder->args_stor, sizeof(*builder->args_stor), builder->args_len + 1, builder->args_stor_alloc);
-    builder->args_stor_alloc = builder->args_len + 1;
+    xrealloc(&builder->args_stor, sizeof(*builder->args_stor), builder->args_len + 2, builder->args_stor_alloc);
+    builder->args_stor_alloc = builder->args_len + 2;
   }
 
-  // args- pointers from offsets
-  for(x = 0; x < builder->args_len; x++) {
-    builder->args_stor[x] = textbase + builder->args[x];
+  /* args - pointers from offsets
+   *  first arg is filename of the file to execute
+   */
+  y = 0;
+  if(builder->filename) {
+    builder->args_stor[y++] = textbase + builder->filename;
   }
-  builder->args_stor[x] = 0;
+  for(x = 0; x < builder->args_len; x++) {
+    builder->args_stor[y++] = textbase + builder->args[x];
+  }
+
+  /* sentinel terminated */
+  builder->args_stor[y] = 0;
 
   builder->exec->args = builder->args_stor;
-  builder->exec->args_size = builder->args_len;
+  builder->exec->args_len = y;
 
   // envs - space
   if(builder->envs_stor_alloc < (builder->envs_len + 1))
@@ -475,10 +449,12 @@ void exec_builder_build(exec_builder * restrict builder, exec ** restrict envp)
   for(x = 0; x < builder->envs_len; x++) {
     builder->envs_stor[x] = textbase + builder->envs[x];
   }
+
+  /* sentinel terminated */
   builder->envs_stor[x] = 0;
 
   builder->exec->envs = builder->envs_stor;
-  builder->exec->envs_size = builder->envs_len;
+  builder->exec->envs_len = builder->envs_len;
 
   // return
   if(envp) {

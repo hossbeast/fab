@@ -44,10 +44,11 @@ static void formula_parser_extract_test_entry(xunit_test * _test)
   char * exp;
   size_t exp_len;
   bool shebang = false;
+  int bacon_line;
 
   formula_parser_extract_test * test = (formula_parser_extract_test *)_test;
 
-  formula_parser_extract(test->formula, strlen(test->formula), &shebang, &bacon, &bacon_len);
+  formula_parser_extract(test->formula, strlen(test->formula), &shebang, &bacon_line, &bacon, &bacon_len);
   if(bacon)
     trim(&bacon, &bacon_len);
 
