@@ -1,0 +1,404 @@
+#!/usr/bin/env perl
+
+#
+# exercise the builtin plugin autobuild-focus
+#
+
+use strict;
+use warnings;
+$SIG{__WARN__} = sub { die @_ };
+
+use Carp qw(confess);
+$SIG{__DIE__} = 'confess';
+
+use POSIX;
+use File::Basename;
+use Cwd;
+our $repodir;
+our $bam_basedir;
+our $bam_dir;
+our $bam_bampath;
+our $bam_invalidate;
+BEGIN { $repodir = dirname(Cwd::realpath("$0/..")) }
+use lib "$repodir/perl";
+use lib "$repodir/libbacon/perl";
+use lib "$repodir/integ/lib";
+use lib "$repodir/perl";
+use integ;
+use util;
+use tree;
+use bam::bam;
+use integ;
+
+init();
+setup(<<TREE);
+|-- module.bam%devel <<
+rule (*).c -> \$1.o : $bam_basedir/cat.bam+(.)
+>>
+|-- a.c <<
+err
+>>
+|-- cp.bam << 0777
+file : {
+  lookup : {
+    namespace : coreutils
+    pattern : bin/cp+(@.)
+  }
+}
+args : [
+  \$bm_source0
+  \$bm_target0
+]
+>>
+|-- cat.bam << 0777
+#!/usr/bin/env perl
+my \@lines;
+for my \$f (sort split(/ /, \$ENV{files})) {
+  open A, "<", \$f or die \$!;
+  while(<A>)
+  {
+    die if \$_ =~ /err/;
+    push \@lines, \$_;
+  }
+  close A;
+}
+
+open B, ">", \$ENV{bm_target0} or die \$!;
+print B \$_ for \@lines;
+__DATA__
+envs : {
+  files : {
+    sequence : [
+      select : [
+        target
+        traverse : {
+          direction : down
+          graph : depends
+          min-distance : 2
+          max-distance : 2
+        }
+      ]
+      property : relpath
+    ]
+  }
+}
+>>
+|-- system-config <<
+namespaces : {
+  coreutils
+}
+plugins : {
+  [
+    {
+      file : {
+        lookup : {
+          pattern : $repodir/builtin-plugins%devel/autobuild-focus
+        }
+      }
+    }
+  ]
+}
+filesystem : {
+  fstrees : {
+    $bam_basedir : {
+      mount : true
+      invalidation : notify
+    }
+    $repodir/builtin-plugins%devel : {
+      mount : true
+      invalidation : stat
+    }
+    $repodir/usr/share/bam/coreutils : {
+      mount : true
+      invalidation : stat
+      namespaces : {
+        coreutils
+      }
+    }
+  }
+}
+>>
+TREE
+
+# this test only makes sense when the primary files are being monitored with notify
+exit if $bam_invalidate ne "notify";
+
+my $plugin_id = bam::identity("plugin", "$repodir/builtin-plugins%devel/autobuild-focus", 'plugin');
+my $fh;
+my $child;
+my $res;
+my $x;
+my $goals;
+my $text;
+
+sub poll_auto
+{
+  for($x = 0; $x < 5; $x++)
+  {
+    $res = poll($child, show => 1);
+    if(exists($$child{status})) {
+      print("[$$child{pid}] status $$child{status} out ".length($$child{out})." err ".length($$child{err})."] " . join(" ", @{$$child{cmd}}) . "\n");
+      last;
+    }
+  }
+}
+
+#
+# initially, single file failing to build
+#
+print("\n >> 1 - INITIAL, one file failing <<\n\n");
+
+assert {
+  info(undef, {
+    "system-state" => 'ready'
+})};
+assert {
+  stats(undef, {
+    system_state_plugin_reconcile => 1
+  , system_state_ready => 1
+  , system_state_ok => 0
+  , plugins => 1
+  , modules => 1
+  , rulesets => 1
+  , namespaces => 4
+  , fstrees => 5
+  , configsets => 2
+})};
+assert {
+  stats("a.c", {
+    type => 'file'
+  , state => 'fresh'
+  , stale => 0
+  , fresh => 1
+})};
+assert {
+  stats("a.o", {
+    type => 'file'
+  , state => 'uncreated'
+  , stale => 0
+  , fresh => 0
+})};
+assert {
+  stats("//bm/plugins/$plugin_id", "-S", {
+    type => 'plugin'
+  , state => 'fresh'
+  , stale => 1
+  , fresh => 1
+  , tx_parse_err => 0
+  , fork => 1
+  , crashed => 0
+  , reap => 0
+  , ready => 1
+  , events => 1   # goals-set
+  , commands => 1 # eventsub
+})};
+
+# fork off an autobuild client
+$child = spawn({ cwd => $bam_dir }
+  , $bam_bampath
+  , "--no-launch"
+  , "--no-color"
+  , "autobuild"
+);
+
+print("[$$child{pid}] " .  join(" ", @{$$child{cmd}}) . "\n");
+poll_auto();
+
+assert_file("$bam_basedir/a.c", "err");
+assert { eexists("$bam_basedir/a.c", "foo") };
+assert { enoent("$bam_basedir/a.o", "foo") };
+
+# single-stage is already focused, no command from the plugin
+assert {
+  stats("//bm/plugins/$plugin_id", "-S", {
+    type => 'plugin'
+  , state => 'fresh'
+  , stale => 1
+  , fresh => 1
+  , tx_parse_err => 0
+  , fork => 1
+  , crashed => 0
+  , reap => 0
+  , ready => 1
+  , events => 6
+  , commands => 1 # eventsub
+})};
+
+#
+# next, two files failing to build
+#
+print("\n >> 2 - two files failing <<\n\n");
+
+open $fh, ">", "$bam_basedir/b.c" or die $!;
+print $fh <<"TEXT";
+err
+TEXT
+close $fh;
+
+reconcile();
+poll_auto();
+
+assert {
+  info(undef, {
+    "system-state" => 'ready'
+})};
+assert {
+  stats(undef, {
+    system_state_plugin_reconcile => 5
+  , system_state_ready => 5
+  , system_state_ok => 0
+  , plugins => 1
+  , modules => 1
+  , rulesets => 1
+  , namespaces => 4
+  , fstrees => 5
+  , configsets => 2
+})};
+assert {
+  stats("a.c", {
+    type => 'file'
+  , state => 'fresh'
+  , stale => 0
+  , fresh => 1
+})};
+assert {
+  stats("a.o", {
+    type => 'file'
+  , state => 'uncreated'
+  , stale => 0
+  , fresh => 0
+})};
+assert {
+  stats("//bm/plugins/$plugin_id", "-S", {
+    type => 'plugin'
+  , state => 'fresh'
+  , stale => 1
+  , fresh => 1
+  , tx_parse_err => 0
+  , fork => 1
+  , crashed => 0
+  , reap => 0
+  , ready => 1
+  , events => 17
+  , commands => 2 # eventsub, goals
+})};
+
+# plugin should have configured the goals to select one
+# of the two primary files at random
+$goals = bam_goals();
+assert { $$goals{label} eq 'autobuild-focus' };
+assert { $$goals{"target-transitive"}[0]{path}{pattern} =~ /^(a|b)[.]o$/ };
+
+assert_file("$bam_basedir/a.c", "err");
+assert_file("$bam_basedir/b.c", "err");
+assert { enoent("$bam_basedir/a.o") };
+assert { enoent("$bam_basedir/b.o") };
+
+#
+# next, fix both files
+#
+print("\n >> 3 - fix the failing files <<\n\n");
+
+open $fh, ">", "$bam_basedir/a.c" or die $!;
+print $fh <<"TEXT";
+TEXT
+close $fh;
+
+open $fh, ">", "$bam_basedir/b.c" or die $!;
+print $fh <<"TEXT";
+TEXT
+close $fh;
+
+reconcile();
+poll_auto();
+
+assert {
+  info(undef, {
+    "system-state" => 'ready'
+})};
+assert {
+  stats(undef, {
+    system_state_plugin_reconcile => 8
+  , system_state_ready => 8
+  , system_state_ok => 2    # build passed
+  , plugins => 1
+  , modules => 1
+  , rulesets => 1
+  , namespaces => 4
+  , fstrees => 5
+  , configsets => 2
+})};
+assert {
+  stats("a.c", {
+    type => 'file'
+  , state => 'fresh'
+  , stale => 1
+  , fresh => 2
+})};
+assert {
+  stats("a.o", {
+    type => 'file'
+  , state => 'fresh'
+  , stale => 0
+  , fresh => 1
+})};
+assert {
+  stats("b.c", {
+    type => 'file'
+  , state => 'fresh'
+  , stale => 1
+  , fresh => 2
+})};
+assert {
+  stats("b.o", {
+    type => 'file'
+  , state => 'fresh'
+  , stale => 0
+  , fresh => 1
+})};
+assert {
+  stats("//bm/plugins/$plugin_id", "-S", {
+    type => 'plugin'
+  , state => 'fresh'
+  , stale => 1
+  , fresh => 1
+  , tx_parse_err => 0
+  , fork => 1
+  , crashed => 0
+  , reap => 0
+  , ready => 1
+  , events => 26
+  , commands => 3 # eventsub, goals, goals
+})};
+
+# plugin should have reconfigured the goals back to what was there before
+$goals = bam_goals();
+assert { $$goals{label} eq 'bam-autobuild' };
+
+assert { eexists("$bam_basedir/a.o") };
+assert { eexists("$bam_basedir/b.o") };
+
+
+# some sanity checks for the cli results
+$text = bam_plugins();
+assert { $text =~ /$plugin_id/ };
+
+$text = bam_plugin($plugin_id);
+assert { $text =~ /$plugin_id/ };
+
+# should run without error
+$text = bam_plugin($plugin_id, "stdin");
+print("$text\n");
+$text = bam_plugin($plugin_id, "stdout");
+print("$text\n");
+$text = bam_plugin($plugin_id, "stderr");
+print("$text\n");
+$text = bam_plugin($plugin_id, "auxout");
+print("$text\n");
+
+# teardown the autobuild client
+kill(15, $$child{pid}) or die $!;
+poll_auto();
+assert { $$child{status} == 0 };
+
+teardown();

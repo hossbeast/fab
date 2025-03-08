@@ -104,7 +104,6 @@ my $line;
 my $slot;
 my $build_end;
 my @stages;
-my $token;
 my $label;
 my $path;
 my $x;
@@ -236,20 +235,20 @@ MSG
     }
 
     $slot = $stages[$#stages][$x];
-    $token = sprintf("0x%x", $autorun_goals_pid);
     $path = $$slot{forked}{targets}[0];
 
     # flip the goals to focus on this one target
     tx(<<MSG);
 goals : {
-  token : $token
+  token : $autorun_goals_token
   label : autobuild-focus
-  target-direct : [
+  target-transitive : [
     path : {
       pattern : $path
       hidden : true
     }
   ]
+  reconcile
   build
 }
 
