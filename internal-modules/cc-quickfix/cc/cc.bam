@@ -152,9 +152,9 @@ my ($status, $out, $err) = run(@cmd);
 # save error file paths
 open EFH, ">/tmp/cc-last-err";
 if($err) {
-  open FH, ">/tmp/cc-last-err-location";
   print EFH "$err";
-  $err =~ /((?:\/|[.])[-_a-zA-Z0-9\/.]+[.]c):([0-9]+)/;
+  open FH, ">/tmp/cc-last-err-location";
+  $err =~ /([.\/][-_a-z0-9.\/]+):([0-9]+):[0-9]+:[^:]+(fatal[^:]+)?(error|warning): /i;
   my $path = $1;
   my $line = $2;
   if (substr($path, 0, 1) ne "/") {
