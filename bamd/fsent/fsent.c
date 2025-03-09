@@ -26,7 +26,7 @@
 #include "config.h"
 #include "configset.h"
 #include "dependency.h"
-#include "events.h"
+#include "events/events.h"
 #include "fstree.h"
 #include "formula.h"
 #include "fsedge.h"

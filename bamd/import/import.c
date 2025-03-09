@@ -21,7 +21,7 @@
 #include "system.h"
 #include "entlist.h"
 #include "selection.h"
-#include "events.h"
+#include "events/events.h"
 #include "generate.h"
 #include "vertex.h"
 #include "fsname.h"

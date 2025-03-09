@@ -19,7 +19,7 @@
 #include "common/hash.h"
 
 #include "system.h"
-#include "events.h"
+#include "events/events.h"
 #include "zcat.h"
 #include "configset.h"
 #include "ruleset.h"

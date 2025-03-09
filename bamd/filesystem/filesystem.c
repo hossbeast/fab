@@ -13,7 +13,7 @@
 #include "fsent.h"
 #include "common/hash.h"
 #include "stats.h"
-#include "events.h"
+#include "events/events.h"
 #include "vertex.h"
 #include "filesystem.h"
 #include "system.h"

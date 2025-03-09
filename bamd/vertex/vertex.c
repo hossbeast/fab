@@ -21,7 +21,7 @@
 #include "varset.h"
 #include "channel.h"
 #include "stats.h"
-#include "events.h"
+#include "events/events.h"
 #include "ruleset.h"
 #include "edge.h"
 #include "rule.h"

@@ -65,7 +65,7 @@
 #include "rcu.h"
 #include "fsname.h"
 #include "plugin.h"
-#include "events.h"
+#include "events/events.h"
 #include "fstree.h"
 #include "namespace.h"
 #include "filesystem.h"

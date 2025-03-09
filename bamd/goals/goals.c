@@ -26,7 +26,7 @@
 #include "vertex.h"
 
 #include "common/attrs.h"
-#include "events.h"
+#include "events/events.h"
 #include "zcat.h"
 #include "times.h"
 #include "params.h"
