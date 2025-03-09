@@ -16,7 +16,6 @@
 #include "narrator/units.h"
 #include "channel.h"
 #include "common/attrs.h"
-#include "common/hash.h"
 
 #include "system.h"
 #include "events/events.h"
@@ -42,6 +41,20 @@
 #include "plugin.h"
 #include "fstree.h"
 #include "request_handler.h"
+#include "build_record.h"
+#include "formula_record.h"
+#include "client.h"
+#include "shadow.h"
+#include "detail.h"
+#include "subsys.h"
+#include "fsedge.h"
+#include "module_edge.h"
+#include "meta_edge.h"
+#include "special_edge.h"
+#include "dependency.h"
+#include "ref_edge.h"
+#include "ns_edge.h"
+#include "dir_rma_edge.h"
 
 #include "times.h"
 
@@ -58,10 +71,14 @@ SYSTEM_STATE_TABLE
   }
 };
 
-union stats_system system_stats;
-moria_vertex *g_system = (moria_vertex[]){{ }};
-char g_system_id[40];
-uint16_t g_system_id_len;
+static bamipc_message system_error_msg;
+static char system_error_msg_text[16384];
+
+union stats_system_objects system_stats_objects;
+union stats_system_states system_stats_states;
+union stats_system_events system_stats_events;
+
+subsys sys_system;
 
 enum system_state system_state = SYSTEM_STATE_BOOTSTRAP;
 bool system_has_error;
@@ -69,12 +86,47 @@ bool system_has_error;
 static void __attribute__((constructor)) init()
 {
   attrs16_init(&system_state_attrs);
+  system_error_msg.text = system_error_msg_text;
+  system_error_msg.size = sizeof(system_error_msg_text);
 }
 
-void system_state_event()
+static void system_stats_collate(void)
+{
+  system_stats_states.system_error = system_has_error;
+  system_stats_states.autorun = run_thread_autorun;
+
+  system_stats_objects.modules = llist_count(&module_list);
+  system_stats_objects.configsets = llist_count(&configset_list);
+  system_stats_objects.rulesets = llist_count(&ruleset_list);
+  system_stats_objects.varsets = llist_count(&varset_list);
+  system_stats_objects.rules = llist_count(&rule_list);
+  system_stats_objects.fsents = llist_count(&fsent_list);
+  system_stats_objects.formulas = llist_count(&formula_list);
+  system_stats_objects.namespaces = llist_count(&namespace_list);
+  system_stats_objects.fsnames = llist_count(&fsname_list);
+  system_stats_objects.bpes = llist_count(&bpe_list);
+  system_stats_objects.rmas = llist_count(&rma_list);
+  system_stats_objects.plugins = llist_count(&plugin_list);
+  system_stats_objects.fstrees = llist_count(&fstree_list);
+  system_stats_objects.clients = llist_count(&client_list);
+  system_stats_objects.build_records = llist_count(&build_record_list);
+  system_stats_objects.formula_records = llist_count(&formula_record_list);
+  system_stats_objects.details = llist_count(&detail_list);
+
+  system_stats_objects.fsedges = llist_count(&fsedge_list);
+  system_stats_objects.dir_rma_edges = llist_count(&drm_list);
+  system_stats_objects.module_edges = llist_count(&module_edge_list);
+  system_stats_objects.meta_edges = llist_count(&meta_edge_list);
+  system_stats_objects.special_edges = llist_count(&special_edge_list);
+  system_stats_objects.dependency_edges = llist_count(&dependency_list);
+  system_stats_objects.ref_edges = llist_count(&ref_edge_list);
+  system_stats_objects.ns_edges = llist_count(&ns_edge_list);
+}
+
+void system_state_event(request_handler * restrict handler)
 {
   events_context ctx;
-  event_bacon *msg;
+  bamipc_message *msg;
   bacon_writer writer, *builder_writer;
   narrator_fixed fixed;
 
@@ -82,13 +134,13 @@ void system_state_event()
     return;
   }
 
-  narrator_fixed_init(&fixed, msg->text, sizeof(msg->text));
+  narrator_fixed_init(&fixed, msg->text, msg->size);
   bacon_writer_init(&writer);
   builder_writer = bacon_writer_open(&writer, &fixed.base);
 
   STRING(attrs16_name_byvalue(&system_state_attrs, system_state));
 
-  msg->size = fixed.l;
+  msg->len = fixed.l;
   events_publish(&ctx);
 }
 
@@ -100,43 +152,55 @@ void system_state_change(enum system_state state)
 
   switch(state) {
     case SYSTEM_STATE_BOOTSTRAP:
-      system_stats.system_state_bootstrap++;
+      system_stats_events.system_state_bootstrap++;
       break;
     case SYSTEM_STATE_CONFIG_SYSTEM_RECONCILE:
-      system_stats.system_state_config_reconcile++;
+      system_stats_events.system_state_config_reconcile++;
       break;
     case SYSTEM_STATE_WALKER_RECONCILE:
-      system_stats.system_state_walker_reconcile++;
+      system_stats_events.system_state_walker_reconcile++;
+      break;
+    case SYSTEM_STATE_NAMESPACE_RECONCILE:
+      system_stats_events.system_state_namespace_reconcile++;
       break;
     case SYSTEM_STATE_VAR_SYSTEM_RECONCILE:
-      system_stats.system_state_var_reconcile++;
+      system_stats_events.system_state_var_reconcile++;
       break;
     case SYSTEM_STATE_MODULE_SYSTEM_RECONCILE:
-      system_stats.system_state_module_reconcile++;
+      system_stats_events.system_state_module_reconcile++;
       break;
     case SYSTEM_STATE_RULE_SYSTEM_RECONCILE:
-      system_stats.system_state_rule_reconcile++;
+      system_stats_events.system_state_rule_reconcile++;
       break;
     case SYSTEM_STATE_BPE_SYSTEM_RECONCILE:
-      system_stats.system_state_bpe_reconcile++;
+      system_stats_events.system_state_bpe_reconcile++;
       break;
     case SYSTEM_STATE_FORMULA_SYSTEM_RECONCILE:
-      system_stats.system_state_formula_reconcile++;
+      system_stats_events.system_state_formula_reconcile++;
+      break;
+    case SYSTEM_STATE_FSTREE_RECONCILE:
+      system_stats_events.system_state_fstree_reconcile++;
       break;
     case SYSTEM_STATE_FILESYSTEM_RECONCILE:
-      system_stats.system_state_filesystem_reconcile++;
+      system_stats_events.system_state_filesystem_reconcile++;
       break;
     case SYSTEM_STATE_PLUGIN_SYSTEM_RECONCILE:
-      system_stats.system_state_plugin_reconcile++;
+      system_stats_events.system_state_plugin_reconcile++;
       break;
     case SYSTEM_STATE_FSENT_RECONCILE:
-      system_stats.system_state_fsent_reconcile++;
+      system_stats_events.system_state_fsent_reconcile++;
+      break;
+    case SYSTEM_STATE_READY:
+      system_stats_events.system_state_ready++;
       break;
     case SYSTEM_STATE_BUILDING:
-      system_stats.system_state_building++;
+      system_stats_events.system_state_building++;
       break;
     case SYSTEM_STATE_OK:
-      system_stats.system_state_ok++;
+      system_stats_events.system_state_ok++;
+      break;
+    case SYSTEM_STATE_ERR:
+      system_stats_events.system_state_err++;
       break;
   }
 
@@ -146,23 +210,28 @@ void system_state_change(enum system_state state)
   );
 
   system_state = state;
-  system_state_event();
+  system_state_event(0);
 }
 
-event_bacon *system_error_event(events_context *ctx)
+bamipc_message *system_error_event(events_context *ctx)
 {
-  event_bacon *msg;
+  bamipc_message *msg;
 
   system_has_error = true;
   if((msg = events_bacon_would(ctx, BAMIPC_EVENT_SYSTEM_STATE_CHANGE))) {
+    msg->flags |= EVENT_SYSTEM_ERROR;
     return msg;
   }
 
   /* unowned event for rendering onto */
-  ctx->chan = 0;
-  ctx->msg = 0;
-  ctx->txq = 0;
-  return ctx->pb = event_bacon_alloc();
+  ctx->channel = 0;
+  ctx->plugin = 0;
+  ctx->msg = &system_error_msg;
+  system_error_msg.len = 0;
+  ctx->msg->flags |= EVENT_SYSTEM_ERROR;
+  ctx->msg->type = BAMIPC_MSG_EVENTS;
+  ctx->msg->evtype = BAMIPC_EVENT_SYSTEM_STATE_CHANGE;
+  return ctx->msg;
 }
 
 void system_error(int code, void (*build)(bacon_writer * restrict builder_writer, void *ctx), const void *ctx)
@@ -188,41 +257,52 @@ void system_error(int code, void (*build)(bacon_writer * restrict builder_writer
 
 void system_setup(void)
 {
-  moria_vertex_initw(g_system, &g_graph, VERTEX_SYSTEM | VERTEX_OK, MMS("(system)"));
-  g_system_id_len = zcatf(g_system_id, sizeof(g_system_id), "%016"PRIx64, hash64(0x3456, MMS("(system)")));
+  subsys_init(&sys_system, VERTEX_SYS_SYSTEM);
+  shadow_mkref(g_shadow_bm, sys_system.vertex.label, sys_system.vertex.label_len, &sys_system.vertex);
 }
 
-void system_stats_build(bool reset, bacon_writer * restrict builder_writer)
+void system_stats_show_fd(int fd)
 {
-  system_stats.system_error = system_has_error;
-  system_stats.autorun = run_thread_autorun;
+  struct descriptor_field *member;
+  int x;
 
-  system_stats.modules = llist_count(&module_list);
-  system_stats.configsets = llist_count(&configset_list);
-  system_stats.rulesets = llist_count(&ruleset_list);
-  system_stats.varsets = llist_count(&varset_list);
-  system_stats.rules = llist_count(&rule_list);
-  system_stats.fsents = llist_count(&fsent_list);
-  system_stats.formulas = llist_count(&formula_list);
-  system_stats.namespaces = llist_count(&namespace_list);
-  system_stats.fsnames = llist_count(&fsname_list);
-  system_stats.bpes = llist_count(&bpe_list);
-  system_stats.rmas = llist_count(&rma_list);
-  system_stats.plugins = llist_count(&plugin_list);
-  system_stats.fstrees = llist_count(&fstree_list);
+  system_stats_collate();
 
-  /* there is always the root, and the shadow, fstree */
-  system_stats.fstrees += 2;
-
-  stats_build(&system_stats.record, &descriptor_stats_system, builder_writer);
+  for(x = 0; x < descriptor_stats_system_objects.members_len; x++)
+  {
+    member = descriptor_stats_system_objects.members[x];
+    switch(member->size) {
+      case 1:
+        dprintf(fd, "%-35.*s %hhu\n", member->name_len, member->name, system_stats_objects.record.u8[member->offset / 1]);
+        break;
+      case 2:
+        dprintf(fd, "%-35.*s %hu\n", member->name_len, member->name, system_stats_objects.record.u16[member->offset / 2]);
+        break;
+      case 4:
+        dprintf(fd, "%-35.*s %"PRIu32"\n", member->name_len, member->name, system_stats_objects.record.u32[member->offset / 4]);
+        break;
+      case 8:
+        dprintf(fd, "%-35.*s %"PRIu64"u\n", member->name_len, member->name, system_stats_objects.record.u64[member->offset / 8]);
+        break;
+    }
+  }
 }
 
-size_t system_id_cat(char * dst, size_t sz)
+void system_stats_show()
 {
-  return zcatw(dst, sz, g_system_id, g_system_id_len);
+  system_stats_show_fd(1);
 }
 
-void system_mappings(struct bacon_writer * restrict builder_writer)
+
+void system_sys_stats_build(const moria_vertex * restrict v, bool reset, bacon_writer * restrict builder_writer)
+{
+  system_stats_collate();
+  stats_build(&system_stats_objects.record, &descriptor_stats_system_objects, builder_writer);
+  stats_build(&system_stats_states.record, &descriptor_stats_system_states, builder_writer);
+  stats_build(&system_stats_events.record, &descriptor_stats_system_events, builder_writer);
+}
+
+void system_sys_mappings(const struct moria_vertex * restrict v, struct bacon_writer * restrict builder_writer)
 {
   struct timespec now;
   uint64_t ns;
@@ -253,40 +333,39 @@ void system_mappings(struct bacon_writer * restrict builder_writer)
   { MAPPING STRING("user-config-path") STRING(g_args.user_config_path) }
 }
 
-void system_describe(struct bacon_writer * restrict builder_writer)
+void system_sys_describe(const moria_vertex * restrict v, struct bacon_writer * restrict builder_writer)
 {
   { MAPPING
-    vertex_path_describe(g_system, builder_writer);
+    vertex_path_describe(v, builder_writer);
     { SET
-      system_mappings(builder_writer);
+      system_sys_mappings(v, builder_writer);
       { MAPPING STRING("stats")
         { SET
-          system_stats_build(false, builder_writer);
+          system_sys_stats_build(v, false, builder_writer);
         }
       }
+      vertex_relations_describe(v, builder_writer);
     }
   }
 }
 
-void system_tell(struct channel * restrict channel)
+void system_sys_tell(const moria_vertex * restrict v, struct request_handler * restrict handler)
 {
   bamipc_message *msg;
   narrator_fixed fixed;
   narrator *N;
   bacon_writer writer;
 
-  msg = channel_produce(channel);
-  msg->type = BAMIPC_MSG_RESULT;
-  msg->attrs = 0;
+  msg = request_handler_tx(handler, BAMIPC_MSG_RESULT, BAMIPC_MSG_BACON, 0);
 
-  N = narrator_fixed_init(&fixed, msg->text, sizeof(msg->text));
+  N = narrator_fixed_init(&fixed, msg->text, msg->size);
   bacon_writer_init(&writer);
   bacon_writer_open(&writer, N);
 
-  system_mappings(&writer);
+  system_sys_mappings(v, &writer);
 
   bacon_writer_close(&writer);
   bacon_writer_destroy(&writer);
-  msg->size = fixed.l;
-  channel_post(channel, msg);
+  msg->len = fixed.l;
+  request_handler_post(handler, msg);
 }
