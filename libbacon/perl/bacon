@@ -1,0 +1,25 @@
+#!/usr/bin/env perl
+
+# SPDX-License-Identifier: GPL-3.0
+# Copyright (c) 2012-2023 Todd Freed <todd.freed@gmail.com>
+
+use strict;
+use warnings;
+
+use File::Basename;
+use Cwd;
+use Data::Dumper;
+
+our $dir;
+BEGIN { $dir = dirname(Cwd::realpath($0)) }
+BEGIN { push @INC, $dir };
+use bacon;
+
+my $msg = bacon_parse(<<'TEXT');
+node-stale : {
+  id : "0631d29da211c606"
+  path : "/run/user/1000/bam-integ/testplugininvalidateglobal%stat/cores.h"
+}
+TEXT
+
+print Dumper $msg;

@@ -79,6 +79,8 @@ sub parse
       last;
     # discard leading whitespace
     } elsif($text =~ /^\s+/) {
+    # discard comments
+    } elsif($text =~ /^#.*/) {
     # value - primitives
     } elsif($text =~ /^0x[0-9a-f]+/) {
       bacon__stackpush(\@stack, hex($&));
@@ -88,12 +90,15 @@ sub parse
       bacon__stackpush(\@stack, 1);
     } elsif($text =~ /^false\b/) {
       bacon__stackpush(\@stack, 0);
-    # unquoted string
-    } elsif($text =~ /^[-_a-zA-Z0-9.\/+=]+/) {
+    # variable
+    } elsif($text =~ /^\$[a-zA-Z_][a-zA-Z_0-9]{0,62}/) {
+      bacon__stackpush(\@stack, "$&");
+    # unquoted string -- see libbacon/parser/value.l
+    } elsif($text =~ /^[-_a-zA-Z0-9.\/+=%\|()@]+/) {
       bacon__stackpush(\@stack, "$&");
     # quoted string
-    } elsif($text =~ /^"([^"]+)"/) {
-      bacon__stackpush(\@stack, $1);
+    } elsif($text =~ /^"(([^\\"])|(\\\\)|(\\[abtnvfrs"])|(\\x[0-9a-fA-F]{2}))+"/) {
+      bacon__stackpush(\@stack, substr($&, 1, -1)); # $1);
     # aggregates - mapping
     } elsif($text =~ /^:\s+/) {
       push @stack, \'bacon__mapping-token';
