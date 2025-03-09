@@ -14,7 +14,7 @@
   #define YYLTYPE yyu_location
 
   #define PARSE_LOOKUP_PATTERN ({                                          \
-    selector_parser * parser = containerof(yyextra, selector_parser, yyu); \
+    selector_parser *parser = containerof(yyextra, selector_parser, yyu);  \
     size_t off = yytext - parser->yyu.yybuffer;                            \
     char * usr = parser->yyu.usrbuf + off;                                 \
     size_t bufsz = parser->yyu.usrbufsize - off;                           \
@@ -27,11 +27,57 @@
       , "-selector-"                                                       \
       , &parser->yyu.loc                                                   \
       , &subloc                                                            \
-      , &yylval->pattern                                                   \
+      , &yylval->lookup_pattern                                            \
     );                                                                     \
     if(r == 0) {                                                           \
       yyless(subloc.l);                                                    \
       r = LEXLOC(selector_LOOKUP_PATTERN, &subloc);                        \
+    }                                                                      \
+    r;                                                                     \
+  })
+
+  #define PARSE_PATH_PATTERN ({                                            \
+    selector_parser *parser = containerof(yyextra, selector_parser, yyu);  \
+    size_t off = yytext - parser->yyu.yybuffer;                            \
+    char * usr = parser->yyu.usrbuf + off;                                 \
+    size_t bufsz = parser->yyu.usrbufsize - off;                           \
+    yyu_location subloc;                                                   \
+    int r;                                                                 \
+    r = path_pattern_parse_partial(                                        \
+        parser->pattern_parser                                             \
+      , usr                                                                \
+      , bufsz                                                              \
+      , "-selector-"                                                       \
+      , &parser->yyu.loc                                                   \
+      , &subloc                                                            \
+      , &yylval->path_pattern                                              \
+    );                                                                     \
+    if(r == 0) {                                                           \
+      yyless(subloc.l);                                                    \
+      r = LEXLOC(selector_PATH_PATTERN, &subloc);                          \
+    }                                                                      \
+    r;                                                                     \
+  })
+
+  #define PARSE_SEARCH_PATTERN ({                                          \
+    selector_parser *parser = containerof(yyextra, selector_parser, yyu);  \
+    size_t off = yytext - parser->yyu.yybuffer;                            \
+    char * usr = parser->yyu.usrbuf + off;                                 \
+    size_t bufsz = parser->yyu.usrbufsize - off;                           \
+    yyu_location subloc;                                                   \
+    int r;                                                                 \
+    r = search_pattern_parse_partial(                                      \
+        parser->pattern_parser                                             \
+      , usr                                                                \
+      , bufsz                                                              \
+      , "-selector-"                                                       \
+      , &parser->yyu.loc                                                   \
+      , &subloc                                                            \
+      , &yylval->search_pattern                                            \
+    );                                                                     \
+    if(r == 0) {                                                           \
+      yyless(subloc.l);                                                    \
+      r = LEXLOC(selector_SEARCH_PATTERN, &subloc);                        \
     }                                                                      \
     r;                                                                     \
   })
@@ -45,7 +91,12 @@
 
 %x multilinecomment
 %x quoted
+%x lookup_selector
 %x pattern_lookup lookup
+%x path_selector
+%x pattern_path path
+%x search_selector
+%x pattern_search search
 
 %%
 
@@ -65,13 +116,29 @@
 <*>[\r\t ]+                                             { LOCWRITE; }
 
  /* tokens */
-<INITIAL>[[\]{}:]                                       { return LEX(yytext[0]); }
+<INITIAL,path_selector,lookup_selector,search_selector>[[\]{:] { return LEX(yytext[0]); }
+<INITIAL>"}"                                            { return LEX(yytext[0]); }
 <INITIAL>(?i:true|false)                                { return LEXB(); }
 
  /* invoke sub-parsers */
-<INITIAL>"pattern"                                      { PUSHSTATE(pattern_lookup); return LEX(PATTERN); }
+<INITIAL>"lookup"                                       { PUSHSTATE(lookup_selector); return LEX(LOOKUP); }
+<INITIAL>"path"                                         { PUSHSTATE(path_selector); return LEX(PATH); }
+<INITIAL>"search"                                       { PUSHSTATE(search_selector); return LEX(SEARCH); }
+
+<path_selector>"pattern"                                { PUSHSTATE(pattern_path); return LEX(PATTERN); }
+<path_selector>"}"                                      { POPSTATE; return LEX(yytext[0]); }
+<pattern_path>[:]                                       { PUSHSTATE(path); return LEX(yytext[0]); }
+<path>[^\n\r\t ][\x00-\xff]+                            { int r = PARSE_PATH_PATTERN; POPSTATE; POPSTATE; POPSTATE; return r; }
+
+<search_selector>"pattern"                              { PUSHSTATE(pattern_search); return LEX(PATTERN); }
+<search_selector>"}"                                    { POPSTATE; return LEX(yytext[0]); }
+<pattern_search>[:]                                     { PUSHSTATE(search); return LEX(yytext[0]); }
+<search>[^\n\r\t ][\x00-\xff]+                          { int r = PARSE_SEARCH_PATTERN; POPSTATE; POPSTATE; POPSTATE; return r; }
+
+<lookup_selector>"pattern"                              { PUSHSTATE(pattern_lookup); return LEX(PATTERN); }
+<lookup_selector>"}"                                    { POPSTATE; return LEX(yytext[0]); }
 <pattern_lookup>[:]                                     { PUSHSTATE(lookup); return LEX(yytext[0]); }
-<lookup>[^\n\r\t ][\x00-\xff]+                          { int r = PARSE_LOOKUP_PATTERN; POPSTATE; POPSTATE; return r; }
+<lookup>[^\n\r\t ][\x00-\xff]+                          { int r = PARSE_LOOKUP_PATTERN; POPSTATE; POPSTATE; POPSTATE; return r; }
 
  /* integers */
 <INITIAL>[-][0-9]+                                      { return LEXI("%"SCNdMAX); }

@@ -53,7 +53,7 @@ static void selector_parser_test_entry(xunit_test * _test)
 
   // act - initial parse
   if(selector_parser_parse_partial(parser, test->text, strlen(test->text) + 2, 0, 0, &loc, &A) != 0) {
-    tracef("%.*s", (int)parser->yyu.error_len, parser->yyu.error_str);
+    tracef("%.*s", (int)parser->error_len, parser->error);
   }
   assert_eq_u32(strlen(test->text), loc.l);
 
@@ -65,8 +65,9 @@ static void selector_parser_test_entry(xunit_test * _test)
   narrator_seek(&N1->base, 0, NARRATOR_SEEK_SET, 0);
   narrator_read(&N1->base, buf, len, 0);
   buf[len] = buf[len + 1] = 0;
+
   if(selector_parser_parse_partial(parser, buf, len + 2, 0, 0, &loc, &B) != 0) {
-    tracef("%.*s", (int)parser->yyu.error_len, parser->yyu.error_str);
+    tracef("%.*s", (int)parser->error_len, parser->error);
   }
   assert_eq_u32(len, loc.l);
 
@@ -97,7 +98,107 @@ static xunit_unit xunit = {
   , xu_tests : (selector_parser_test*[]) {
       (selector_parser_test[]) {{
           text : (char[]) {
-            "pattern : foo/bar/main.o\0\0"
+            "search : {\n"
+            "  pattern : ./foo/bar/main.o\n"
+            "}\0\0"
+          }
+        , expected : (char[]) {
+            "search : {\n"
+            "  pattern : ./foo/bar/main.o\n"
+            "}\0\0"
+          }
+      }}
+    , (selector_parser_test[]) {{
+          text : (char[]) {
+            "search : {\n"
+            "  pattern : //bm/modules/*/anchor\n"
+            "}\0\0"
+          }
+        , expected : (char[]) {
+            "search : {\n"
+            "  pattern : //bm/modules/*/anchor\n"
+            "}\0\0"
+          }
+      }}
+    , (selector_parser_test[]) {{
+          text : (char[]) {
+            "path : {\n"
+            "  pattern : ./foo/bar/main.o\n"
+            "  nofollow : false\n"
+            "  hidden : false\n"
+            "}\0\0"
+          }
+        , expected : (char[]) {
+            "path : {\n"
+            "  pattern : ./foo/bar/main.o\n"
+            "  nofollow : false\n"
+            "  hidden : false\n"
+            "  expect : nonzero\n"
+            "}\0\0"
+          }
+      }}
+    , (selector_parser_test[]) {{
+          text : (char[]) {
+            "path : {\n"
+            "  pattern : ./foo/bar/main.o\n"
+            "  nofollow : false\n"
+            "}\0\0"
+          }
+        , expected : (char[]) {
+            "path : {\n"
+            "  pattern : ./foo/bar/main.o\n"
+            "  nofollow : false\n"
+            "  hidden : false\n"
+            "  expect : nonzero\n"
+            "}\0\0"
+          }
+      }}
+    , (selector_parser_test[]) {{
+          text : (char[]) {
+            "path : {\n"
+            "  pattern : ./foo/bar/main.o\n"
+            "  nofollow : false\n"
+            "  expect : any\n"
+            "}\0\0"
+          }
+        , expected : (char[]) {
+            "path : {\n"
+            "  pattern : ./foo/bar/main.o\n"
+            "  nofollow : false\n"
+            "  hidden : false\n"
+            "  expect : any\n"
+            "}\0\0"
+          }
+      }}
+    , (selector_parser_test[]) {{
+          text : (char[]) {
+            "path : {\n"
+            "  pattern : /foo/bar/main.o\n"
+            "  hidden : false\n"
+            "}\0\0"
+          }
+         , expected : (char[]) {
+            "path : {\n"
+            "  pattern : /foo/bar/main.o\n"
+            "  nofollow : false\n"
+            "  hidden : false\n"
+            "  expect : nonzero\n"
+            "}\0\0"
+          }
+      }}
+    , (selector_parser_test[]) {{
+          text : (char[]) {
+            "lookup : {\n"
+            "  pattern : foo/bar/main.o\n"
+            "  namespace : module\n"
+            "}\0\0"
+          }
+        , expected : (char[]) {
+            "lookup : {\n"
+            "  pattern : foo/bar/main.o\n"
+            "  namespace : module\n"
+            "  expect : nonzero\n"
+            "}\0\0"
           }
       }}
     , (selector_parser_test[]) {{
@@ -118,6 +219,7 @@ static xunit_unit xunit = {
             "  graph : fs\n"
             "  exhaustive : false\n"
             "  cross-module : true\n"
+            "  cross-fstree : true\n"
             "  hidden : false\n"
             "  nofollow : false\n"
             "}\0\0"
@@ -129,7 +231,10 @@ static xunit_unit xunit = {
              "  traverse : {\n"
              "    direction : up\n"
              "  }\n"
-             "  pattern : foo/bar/main.o\n"
+             "  lookup : {\n"
+             "    pattern : foo/bar/main.o\n"
+             "    namespace : module\n"
+             "  }\n"
              "]\0\0"
           }
         , expected : (char[]) {
@@ -140,17 +245,26 @@ static xunit_unit xunit = {
              "    graph : fs\n"
              "    exhaustive : false\n"
              "    cross-module : true\n"
+             "    cross-fstree : true\n"
              "    hidden : false\n"
              "    nofollow : false\n"
              "  }\n"
-             "  pattern : foo/bar/main.o\n"
+             "  lookup : {\n"
+             "    pattern : foo/bar/main.o\n"
+             "    namespace : module\n"
+             "    expect : nonzero\n"
+             "  }\n"
              "]\0\0"
           }
       }}
     , (selector_parser_test[]) {{
           text : (char[]) {
              "union : [\n"
-             "  pattern : foo/bar/main.o\n"
+             "  lookup : {\n"
+             "    pattern : foo/bar/main.o\n"
+             "    namespace : module\n"
+             "    expect : nonzero\n"
+             "  }\n"
              "]\0\0"
           }
       }}
@@ -163,7 +277,10 @@ static xunit_unit xunit = {
              "    direction : down\n"
              "    graph : depends\n"
              "  }\n"
-             "  pattern : foo/bar/main.o\n"
+             "  lookup : {\n"
+             "    pattern : foo/bar/main.o\n"
+             "    namespace : module\n"
+             "  }\n"
              "]\0\0\n"
           }
         /* default min-distance of 1 is omitted */
@@ -176,10 +293,15 @@ static xunit_unit xunit = {
              "    graph : depends\n"
              "    exhaustive : false\n"
              "    cross-module : true\n"
+             "    cross-fstree : true\n"
              "    hidden : false\n"
              "    nofollow : false\n"
              "  }\n"
-             "  pattern : foo/bar/main.o\n"
+             "  lookup : {\n"
+             "    pattern : foo/bar/main.o\n"
+             "    namespace : module\n"
+             "    expect : nonzero\n"
+             "  }\n"
              "]\0\0\n"
       }}
     , (selector_parser_test[]) {{
@@ -214,6 +336,7 @@ static xunit_unit xunit = {
              "    graph : fs\n"
              "    exhaustive : false\n"
              "    cross-module : false\n"
+             "    cross-fstree : true\n"
              "    hidden : false\n"
              "    nofollow : false\n"
              "  }\n"
@@ -225,6 +348,7 @@ static xunit_unit xunit = {
              "    graph : fs\n"
              "    exhaustive : false\n"
              "    cross-module : true\n"
+             "    cross-fstree : true\n"
              "    hidden : false\n"
              "    nofollow : false\n"
              "  }\n"
@@ -236,6 +360,7 @@ static xunit_unit xunit = {
              "    graph : fs\n"
              "    exhaustive : false\n"
              "    cross-module : true\n"
+             "    cross-fstree : true\n"
              "    hidden : false\n"
              "    nofollow : false\n"
              "  }\n"
@@ -247,6 +372,7 @@ static xunit_unit xunit = {
              "    graph : fs\n"
              "    exhaustive : false\n"
              "    cross-module : true\n"
+             "    cross-fstree : true\n"
              "    hidden : false\n"
              "    nofollow : false\n"
              "  }\n"

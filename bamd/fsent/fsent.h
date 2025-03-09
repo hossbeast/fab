@@ -289,20 +289,6 @@ void fsent_path_say(fsent * restrict n, struct narrator * restrict N)
   __attribute__((nonnull));
 
 /*
- * get an fsent by traversing a path
- *
- * nofollow - whether to resolve symlinks
- */
-fsent *fsent_path_lookup(
-    const fsent * restrict base
-  , const struct module * restrict mod
-  , const char * restrict path
-  , uint16_t path_len
-  , bool nofollow
-)
-  __attribute__((nonnull(1, 3)));
-
-/*
  * mark an fsent as VERTEX_FORMULA_FILE and reconcile its formula
  */
 void fsent_formula_bootstrap(fsent * restrict n, struct graph_invalidation_context * restrict invalidation)

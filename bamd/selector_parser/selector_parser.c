@@ -81,20 +81,32 @@ int selector_parser_parse_partial(
   , selector ** restrict rv
 )
 {
-  selector * sel;
-  llist *T;
+  selector *sel;
   int r;
 
   parser->pattern_parser->yyu = 0;
 
   llist_init(&parser->selector_stack);
   r = yyu_parse(&parser->yyu, buf, size, fname, YYU_PARTIAL | YYU_INPLACE, init_loc, used_loc);
-  if(rv) {
+
+  /* error aggregation */
+  if(r == 0) {
+    parser->error = 0;
+    parser->error_len = 0;
+  } else if(parser->pattern_parser->error) {
+    parser->error = parser->pattern_parser->error;
+    parser->error_len = parser->pattern_parser->error_len;
+  } else {
+    parser->error = parser->yyu.error_str;
+    parser->error_len = parser->yyu.error_len;
+  }
+
+  *rv = 0;
+  if(r == 0) {
     *rv = llist_shift(&parser->selector_stack, selector, lln);
   }
 
-  llist_foreach_safe(&parser->selector_stack, sel, lln, T) {
-    llist_delete(&sel->lln);
+  while((sel = llist_shift(&parser->selector_stack, typeof(*sel), lln))) {
     selector_free(sel);
   }
 

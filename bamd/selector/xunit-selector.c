@@ -16,15 +16,13 @@
 #include "selector.internal.h"
 #include "dependency.h"
 #include "fsent.h"
-#include "lookup.h"
 #include "module.h"
 #include "pattern.h"
 #include "request.h"
 #include "channel.h"
 #include "zcat.h"
 #include "system.h"
-#include "events.h"
-
+#include "events/events.h"
 
 static int selector_cmp(selector * A, selector * B)
 {
@@ -42,15 +40,18 @@ static int selector_cmp(selector * A, selector * B)
   if((d = INTCMP(A->type, B->type)))
     return d;
 
-  if(A->type == SELECTOR_PATTERN)
-  {
-    return pattern_cmp(A->pattern, B->pattern);
-  }
-  else if(A->type == SELECTOR_LOOKUP)
+  if(A->type == SELECTOR_LOOKUP)
   {
     return 0
-      ?: memncmp(A->lookup.path, A->lookup.path_len, B->lookup.path, B->lookup.path_len)
-      ?: INTCMP(A->lookup.nofollow, B->lookup.nofollow)
+      ?: pattern_cmp(&A->lookup.pattern->pattern, &B->lookup.pattern->pattern)
+      ?: memncmp(A->lookup.namespace, A->lookup.namespace_len, B->lookup.namespace, B->lookup.namespace_len)
+      ;
+  }
+  else if(A->type == SELECTOR_PATH)
+  {
+    return 0
+      ?: pattern_cmp(&A->path.pattern->pattern, &B->path.pattern->pattern)
+      ?: INTCMP(A->nofollow, B->nofollow)
       ;
   }
   else if(A->type == SELECTOR_TRAVERSE)

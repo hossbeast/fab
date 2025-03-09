@@ -8,9 +8,11 @@
 
 #include "selection.h"
 #include "dependency.h"
-#include "buildplan_entity.h"
+#include "bpe.h"
+#include "locks.h"
 
-static llist selected_entity_freelist = LLIST_INITIALIZER(selected_entity_freelist);
+static llist freelist = LLIST_INITIALIZER(freelist);
+static struct futexlock freelist_lock;
 
 static uint32_t selected_entity_hash(uint32_t h, const void * restrict _val)
 {
@@ -43,8 +45,13 @@ static void __attribute__((nonnull)) selection_add(selection * restrict sel, enu
   }
   else
   {
-    if((sn = llist_shift(&selected_entity_freelist, typeof(*sn), lln)) == 0)
-    {
+    if(!llist_empty(&freelist)) {
+      futexlock_acquire(&freelist_lock);
+      sn = llist_shift(&freelist, typeof(*sn), lln);
+      futexlock_release(&freelist_lock);
+    }
+
+    if(!sn) {
       xmalloc(&sn, sizeof(*sn));
       llist_init(&sn->lln);
     }
@@ -99,9 +106,8 @@ static void __attribute__((nonnull)) selection_add(selection * restrict sel, enu
 void selection_cleanup()
 {
   selected *sel;
-  llist *tmp;
 
-  llist_foreach_safe(&selected_entity_freelist, sel, lln, tmp) {
+  while((sel = llist_shift(&freelist, typeof(*sel), lln))) {
     free(sel);
   }
 }
@@ -151,17 +157,24 @@ void selection_free(selection * restrict sel)
 void selection_reset(selection * restrict sel, selection_iteration_type iteration_type)
 {
   int x;
+  llist list;
 
   hashtable_recycle(&sel->selected_entities);
 
+  llist_init(&list);
   for(x = 0; x < sel->ranks_len; x++) {
-    llist_splice_tail(&selected_entity_freelist, sel->ranks[x]);
+    llist_splice_tail(&list, sel->ranks[x]);
   }
 
   sel->ranks_len = 0;
-  llist_splice_tail(&selected_entity_freelist, &sel->list);
+  llist_splice_tail(&list, &sel->list);
+
+  futexlock_acquire(&freelist_lock);
+  llist_splice_tail(&freelist, &list);
+  futexlock_release(&freelist_lock);
 
   sel->iteration_type = iteration_type;
+  sel->numranks = 0;
 }
 
 void selection_finalize(selection * restrict sel)
@@ -175,8 +188,7 @@ void selection_finalize(selection * restrict sel)
   }
 
   /* concatenate the ranks into one list */
-  for(x = 0; x < sel->ranks_len; x++)
-  {
+  for(x = 0; x < sel->ranks_len; x++) {
     llist_splice_head(&sel->list, sel->ranks[x]);
   }
   sel->ranks_len = 0;
@@ -186,7 +198,6 @@ void selection_finalize(selection * restrict sel)
   }
 
   /* renumber from zero */
-  sel->numranks = 0;
   rank = -1;
   llist_foreach(&sel->list, sn, lln) {
     if(sn->rank != rank) {
@@ -220,7 +231,7 @@ void selection_replicate(selection * restrict dst, selection * restrict src)
       continue;
     }
 
-    if((dsn = llist_shift(&selected_entity_freelist, typeof(*dsn), lln)) == 0)
+    if((dsn = llist_shift(&freelist, typeof(*dsn), lln)) == 0)
     {
       xmalloc(&dsn, sizeof(*dsn));
       llist_init(&dsn->lln);

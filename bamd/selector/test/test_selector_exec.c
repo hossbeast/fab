@@ -23,27 +23,35 @@
 #include "fsent.h"
 #include "node_operations_test.h"
 #include "fstree.h"
-#include "lookup.h"
 #include "selection.h"
 #include "dependency.h"
 #include "module.h"
 #include "channel.h"
-#include "buildplan_entity.h"
+#include "bpe.h"
 #include "args.h"
-#include "fsindex.h"
+#include "namespace.h"
 #include "fsname.h"
 #include "shadow.h"
 #include "notify.h"
-#include "events.h"
+#include "events/events.h"
+#include "configset_parser.h"
+#include "configset.h"
+#include "config.h"
+#include "config_system.h"
+#include "system.h"
+#include "ref_edge.h"
+#include "fsedge.h"
+#include "ns_edge.h"
 
 #include "zcat.h"
 
 typedef struct {
   XUNITTEST;
 
-  char * operations;  // build the node graph
-  char * selector;    // selector
-  char * module;
+  char *config;       // filesystems config
+  char *operations;   // build the node graph
+  char *selector;     // selector
+  char *module;
 
   // outputs
   char * result;      // expected result set
@@ -51,19 +59,19 @@ typedef struct {
 
 static void selector_exec_test_unit_setup(xunit_unit * unit)
 {
-  fsent_name_module = "module.bam";
-
   bacon_load();
-
   args_init();
+
   fsent_root_setup();
+  shadow_root_setup();
+  fstree_root_setup();
   shadow_setup();
   fstree_setup();
-  notify_setup();
-  events_setup();
-
   graph_setup();
-  fsindex_setup();
+  fsent_base_setup();
+
+  notify_setup();
+  config_system_setup();
 
   extern __thread bool rcu_is_reader ; rcu_is_reader = true;
 }
@@ -71,32 +79,39 @@ static void selector_exec_test_unit_setup(xunit_unit * unit)
 static void selector_exec_test_unit_cleanup(xunit_unit * unit)
 {
   bacon_unload();
-  graph_cleanup();
+
   fstree_cleanup();
   fsname_cleanup();
-  fsindex_cleanup();
+  namespace_cleanup();
   shadow_cleanup();
   events_cleanup();
+  fsent_cleanup();
+  graph_cleanup();
+  ref_edge_cleanup();
+  fsedge_cleanup();
+  ns_edge_cleanup();
 }
 
 static int cmp(const void *_A, const void *_B, void *_ctx)
 {
-  const char ** A = (void*)_A;
-  const char ** B = (void*)_B;
+  const char **A = (void*)_A;
+  const char **B = (void*)_B;
 
   return **A - **B;
 };
 
-static void selector_exec_test_entry(xunit_test * _test)
+static void selector_exec_test_entry(xunit_test *_test)
 {
-  selector_exec_test * test = (typeof(test))_test;
+  selector_exec_test *test = (typeof(test))_test;
 
-  selector_parser * parser = 0;
-  selector * sel = 0;
-  moria_parser * op_parser = 0;
-  list * actual_list = 0;
-  char actual[PATH_MAX];
-  selector_context ctx = { 0 };
+  selector_parser *parser = 0;
+  selector *sel = 0;
+  moria_parser *op_parser = 0;
+  configset_parser *cfg_parser = 0;
+  config *cfg;
+  list *actual_list = 0;
+  char selection[PATH_MAX];
+  selector_context ctx;
   int x;
   selected *sn;
   yyu_location loc = { 0 };
@@ -104,16 +119,31 @@ static void selector_exec_test_entry(xunit_test * _test)
   module mod = { };
   fsent *mod_dir_n;
   graph_invalidation_context invalidation = { };
-  channel *chan;
   size_t z;
-  char * c;
+  char *c;
 
   // arrange
   fsent_root_setup();
   list_create(&actual_list);
-  graph_invalidation_begin(&invalidation);
-  xmalloc(&chan, sizeof(*chan));
   selector_context_init(&ctx);
+
+  // setup filesystems
+  configset_parser_create(&cfg_parser);
+  config_alloc(&cfg);
+  if(test->config) {
+    if(configset_parser_parse(cfg_parser, test->config, strlen(test->config) + 2, 0, 0, cfg) != 0) {
+      tracef("%.*s", cfg_parser->yyu.error_len, cfg_parser->yyu.error_str);
+      RTA;
+    }
+  }
+
+  /* setup fstrees and namespaces */
+  graph_invalidation_begin(&invalidation);
+  namespace_reconfigure(cfg, false, &invalidation);
+  fstree_reconfigure(cfg, false);
+  namespace_reconfigure(cfg, true, &invalidation);
+  fstree_reconfigure(cfg, true);
+  graph_invalidation_end(&invalidation);
 
   // setup initial graph
   moria_parser_create(&op_parser, &g_graph,
@@ -123,16 +153,19 @@ static void selector_exec_test_entry(xunit_test * _test)
     , graph_edge_attrs
   );
   moria_parser_operations_parse(op_parser, MMS(test->operations));
-  fsent_fstree_refresh(&invalidation);
 
-  resolve_fragment(MMS(test->module), &mod_dir_n);
-  module_initialize(mod_dir_n, mod_dir_n, containerof(moria_vertex_downs(&mod_dir_n->vertex, "module.bam"), fsent, vertex));
+  /* index fstrees */
+  graph_invalidation_begin(&invalidation);
+  fsent_fstree_refresh(&invalidation);
+  namespace_reconcile(&invalidation);
+  graph_invalidation_end(&invalidation);
+
+  mod_dir_n = resolve_fragment(MMS(test->module));
+  module_initialize(&mod, mod_dir_n);;
 
   // setup the module
-  resolve_fragment(MMS(test->module), &mod.dir_node);
-  mod.dir_node->mod = &mod;
-  snprintf(mod.id, sizeof(mod.id), "%.*s", 15, mod.dir_node->name.name);
-  fsent_module_epoch++;
+  mod.build_dir = resolve_fragment(MMS(test->module));
+  snprintf(mod.id, sizeof(mod.id), "%.*s", 15, mod.build_dir->name.name);
 
   selector_parser_create(&parser);
   if(selector_parser_parse_partial(parser, test->selector, strlen(test->selector) + 2, 0, 0, &loc, &sel) != 0) {
@@ -143,11 +176,10 @@ static void selector_exec_test_entry(xunit_test * _test)
   // act
   ctx.mod = &mod;
   ctx.bpe = bpe;
-  ctx.chan = chan;
-  ctx.cwd = mod.dir_node;
+  ctx.cwd = mod.build_dir;
   ctx.iteration_type = SELECTION_ITERATION_TYPE_ORDER;
   selector_exec(sel, &ctx);
-  assert_eq_b(false, chan->error);
+  assert_eq_b(false, system_has_error);
 
   llist_foreach(&ctx.selection->list, sn, lln) {
     list_push(actual_list, (void*)sn->v->label);
@@ -160,13 +192,13 @@ static void selector_exec_test_entry(xunit_test * _test)
   {
     c = list_get(actual_list, x);
     if(x) {
-      z += zcatc(actual + z, sizeof(actual) - z, ' ');
+      z += zcatc(selection + z, sizeof(selection) - z, ' ');
     }
-    z += zcatc(actual + z, sizeof(actual) - z, *c);
+    z += zcatc(selection + z, sizeof(selection) - z, *c);
   }
-  actual[z] = 0;
+  selection[z] = 0;
 
-  assert_eq_s(test->result, actual);
+  assert_eq_s(test->result, selection);
 
   selector_parser_free(parser);
   selector_free(sel);
@@ -175,7 +207,8 @@ static void selector_exec_test_entry(xunit_test * _test)
   fsent_cleanup();
   moria_parser_free(op_parser);
   graph_invalidation_end(&invalidation);
-  free(chan);
+  config_free(cfg, cfg_parser);
+  configset_parser_free(cfg_parser);
 }
 
 //
@@ -197,8 +230,8 @@ static xunit_unit xunit = {
         , module : "M"
         , selector : (char[]) {
             "["
-            " lookup : {"
-            "   path : /M/A"
+            " path : {"
+            "   pattern : /M/A"
             " }"
             " traverse : {"
              " direction : down"
@@ -216,7 +249,7 @@ static xunit_unit xunit = {
         , module : "M"
         , selector : (char[]) {
             "sequence : ["       // the output of sequence is the output of the last operation
-             " lookup : { path : /M/A/B/C }"
+             " path : { pattern : /M/A/B/C }"
              " traverse : {"
               " min-distance : 0"
               " direction : down"
@@ -235,7 +268,7 @@ static xunit_unit xunit = {
         , module : "M"
         , selector : (char[]) {
             "["
-             " lookup : { path : /M/A/B }"
+             " path : { pattern : /M/A/B }"
              " traverse : {"
               " direction : up"
               " graph : fs"
@@ -255,7 +288,7 @@ static xunit_unit xunit = {
         , module : "M"
         , selector : (char[]) {
             "sequence : ["
-             " lookup : { path : /M/A/B }"
+             " path : { pattern : /M/A/B }"
              " traverse : {"
               " direction : up"
               " graph : fs"
@@ -275,7 +308,7 @@ static xunit_unit xunit = {
         , module : "M"
         , selector : (char[]) {
             "sequence : ["
-             " lookup : { path : /M/A/B }"
+             " path : { pattern : /M/A/B }"
              " traverse : {"
               " direction : up"
               " graph : fs"
@@ -297,7 +330,7 @@ static xunit_unit xunit = {
         , module : "M"
         , selector : (char[]) {
             "["
-            " lookup : { path : /E/F/G }"
+            " path : { pattern : /E/F/G }"
             " traverse : {"
              " direction : up"
              " graph : depends"
@@ -321,7 +354,7 @@ static xunit_unit xunit = {
         , module : "M"
         , selector : (char[]) {
             "["
-            " lookup : { path : /M/A/B/C }"
+            " path : { pattern : /M/A/B/C }"
             " union : ["
               " traverse : {"
                " direction : up"
@@ -344,7 +377,7 @@ static xunit_unit xunit = {
         , module : "M"
         , selector : (char[]) {
             "["
-            " lookup : { path : /M/A/B/C }"
+            " path : { pattern : /M/A/B/C }"
             " union : ["
              " traverse : {"
               " direction : up"
@@ -369,14 +402,14 @@ static xunit_unit xunit = {
         , selector : (char[]) {
             "union : ["
               " sequence : ["
-                " lookup : { path : /M/A/B/C }"
+                " path : { pattern : /M/A/B/C }"
                 " traverse : {"
                   " direction : down"
                   " graph : depends"
                 " }"
               " ]"
               " sequence : ["
-                " lookup : { path : /M/A/B/C }"
+                " path : { pattern : /M/A/B/C }"
                 " traverse : {"
                   " direction : up"
                   " graph : fs"
@@ -397,7 +430,7 @@ static xunit_unit xunit = {
         , selector : (char[]) {
             "sequence : ["
               " sequence : ["
-                " lookup : { path : /M/A/B/C }"
+                " path : { pattern : /M/A/B/C }"
                 " traverse : {"
                   " direction : down"
                   " graph : depends"
@@ -416,7 +449,7 @@ static xunit_unit xunit = {
         , module : "M"
         , selector : (char[]) {
             "["
-            " lookup : { path : /M/A/B }"
+            " path : { pattern : /M/A/B }"
             " union : ["
              " traverse : {"
               " direction : up"
@@ -433,15 +466,32 @@ static xunit_unit xunit = {
           }
         , result : "A C M"
       }}
+
+    /* lookup selelectors */
     , (selector_exec_test[]) {{
-          operations :
+          config : (char[]) {
+            "namespaces : {\n"
+            " module\n"
+            "}\n"
+            "filesystem : {\n"
+            "  fstrees : {\n"
+            "    / : {\n"
+            "      namespaces : {\n"
+            "        module\n"
+            "      }\n"
+            "    }\n"
+            "  }\n"
+            "}\n"
+            "\0\0"
+          }
+        , operations :
            " foo!bpe"
            " +E/F/G:src-bpe:foo"
            " +foo:bpe-tgt:M/A/B/C/D"
         , module : "M"
         , selector : (char[]) {
             "["
-            " pattern : B"
+            " lookup : { pattern : B namespace : module }"
             " union : ["
              " traverse : {"
               " direction : up"

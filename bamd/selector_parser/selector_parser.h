@@ -20,7 +20,9 @@ typedef struct selector_parser {
   llist selector_stack;
 
   /* sub parsers */
-  struct pattern_parser * pattern_parser;
+  struct pattern_parser *pattern_parser;
+  const char *error;
+  uint16_t error_len;
 } selector_parser;
 
 /// selector_parser_create
@@ -66,12 +68,12 @@ void selector_parser_ifree(selector_parser ** const restrict)
 //  partial - permit partial
 //
 int selector_parser_parse_partial(
-    selector_parser * restrict parser
-  , char * const restrict buf
-  , size_t size
-  , const char * restrict fname
-  , struct yyu_location * init_loc
-  , struct yyu_location * used_loc
-  , struct selector ** restrict rv
+    /* 0 */ selector_parser * restrict parser
+  , /* 1 */ char * const restrict buf
+  , /* 2 */ size_t size
+  , /* 3 */ const char * restrict fname
+  , /* 4 */ struct yyu_location * init_loc
+  , /* 5 */ struct yyu_location * used_loc
+  , /* 6 */ struct selector ** restrict rv
 )
-  __attribute__((nonnull(1, 2)));
+  __attribute__((nonnull(1, 2, 6)));

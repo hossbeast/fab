@@ -45,7 +45,7 @@ typedef struct selection {
   hashtable selected_entities;
 
   selection_iteration_type iteration_type;
-  llist ** ranks;
+  llist **ranks;
   uint16_t ranks_len;
   size_t ranks_alloc;
   bool initialized;
