@@ -50,11 +50,11 @@
 #include "meta_edge.h"
 #include "entlist.h"
 #include "walker.h"
-#include "fsindex.h"
+#include "namespace.h"
 #include "plugin.h"
 #include "buildplan_entity.h"
 #include "config_system.h"
-#include "fsindex_edge.h"
+#include "ns_edge.h"
 #include "notify.h"
 
 #include "common/attrs.h"

@@ -16,8 +16,9 @@
 #include "vertex.h"
 #include "filesystem.h"
 #include "edge.h"
-#include "entlist.h"
-#include "fsindex.h"
+#include "edges.h"
+#include "vertices.h"
+#include "namespace.h"
 
 #include "zcat.h"
 

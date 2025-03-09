@@ -1,13 +1,14 @@
 /* SPDX-License-Identifier: GPL-3.0 */
 /* Copyright (c) 2012-2023 Todd Freed <todd.freed@gmail.com> */
 
+#include "moria/connect.h"
 #include "moria/graph.h"
 #include "moria/edge.h"
 #include "xlinux/xstdlib.h"
 #include "bacon/builder.h"
 #include "narrator.h"
 
-#include "fsindex_edge.h"
+#include "ns_edge.h"
 #include "fsent.h"
 #include "vertex.h"
 #include "stats.h"
@@ -16,15 +17,15 @@
 llist index_edge_list = LLIST_INITIALIZER(index_edge_list);                 // active
 static llist index_edge_freelist = LLIST_INITIALIZER(index_edge_freelist);  // free
 
-static void fsindex_edge_dispose(fsindex_edge * restrict se)
+static void ns_edge_dispose(ns_edge * restrict se)
 {
   llist_delete(&se->edge.owner);
   llist_append(&index_edge_freelist, &se->edge.owner);
 }
 
-fsindex_edge *fsindex_edge_alloc()
+ns_edge *ns_edge_alloc()
 {
-  fsindex_edge *se;
+  ns_edge *se;
 
   if((se = llist_shift(&index_edge_freelist, typeof(*se), edge.owner)) == 0) {
     xmalloc(&se, sizeof(*se));
@@ -38,29 +39,51 @@ fsindex_edge *fsindex_edge_alloc()
   return se;
 }
 
-void fsindex_edge_release(fsindex_edge * restrict se)
+void ns_edge_release(ns_edge * restrict se)
 {
   /* this edge must have been previously excised from the graph */
-  RUNTIME_ASSERT(!rbnode_attached(&se->edge.rbn_up));
-  RUNTIME_ASSERT(!rbnode_attached(&se->edge.rbn_down));
+  RUNTIME_ASSERT(moria_edge_degree(&se->edge) == 0);
 
-  fsindex_edge_dispose(se);
+  ns_edge_dispose(se);
 }
 
-void fsindex_edge_setup(void)
+void ns_edge_setup(void)
 {
 }
 
-void fsindex_edge_cleanup(void)
+void ns_edge_cleanup(void)
 {
-  fsindex_edge *se;
+  ns_edge *se;
   llist *T;
 
   llist_foreach_safe(&index_edge_list, se, edge.owner, T) {
-    fsindex_edge_dispose(se);
+    ns_edge_dispose(se);
   }
 
   llist_foreach_safe(&index_edge_freelist, se, edge.owner, T) {
     free(se);
   }
+}
+
+ns_edge *ns_connect(
+    struct moria_vertex * restrict B
+  , struct moria_vertex * restrict A
+  , edge_type type
+)
+{
+  moria_edge *e;
+  ns_edge *nse;
+  moria_connect_context ctx;
+  int r;
+
+  r = moria_preconnect(&ctx, &g_graph, B, A, type, &e);
+  if(r == MORIA_HASEDGE) {
+    nse = containerof(e, typeof(*nse), edge);
+    return nse;
+  }
+  RUNTIME_ASSERT(r == MORIA_NOEDGE);
+  nse = ns_edge_alloc();
+  moria_connect(&ctx, &g_graph, &nse->edge, B, A, type);
+
+  return nse;
 }

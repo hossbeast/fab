@@ -43,7 +43,7 @@
 #include "build.h"
 #include "buildplan.h"
 #include "fstree.h"
-#include "fsindex.h"
+#include "namespace.h"
 #include "notify.h"
 #include "path_cache.h"
 

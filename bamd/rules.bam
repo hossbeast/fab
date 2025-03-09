@@ -44,7 +44,6 @@ rule $^A/rule/rule.h -> [*] rule/stats_rule.desc.[ch] : //descriptor/descriptor.
 rule $^A/rule_module_association/rule_module_association.h -> [*] rule_module_association/stats_rma.desc.[ch] : //descriptor/descriptor.bam
 rule $^A/ruleset/ruleset.h -> [*] ruleset/stats_ruleset.desc.[ch] : //descriptor/descriptor.bam
 rule $^A/stats/stats_fsent_dir.h -> [*] fsent/stats_fsent_dir.desc.[ch] : //descriptor/descriptor.bam
-rule $^A/fsindex/fsindex.h -> [*] fsindex/stats_fsindex.desc.[ch] : //descriptor/descriptor.bam
 rule $^A/fsent/fsent_symlink.h -> [*] fsent/stats_fsent_symlink.desc.[ch] : //descriptor/descriptor.bam
 rule $^A/system/system.h -> [*] system/system_stats.desc.[ch] : //descriptor/descriptor.bam
 rule $^A/varset/varset.h -> [*] varset/stats_varset.desc.[ch] : //descriptor/descriptor.bam

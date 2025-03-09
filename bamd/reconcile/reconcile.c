@@ -18,8 +18,8 @@
 #include "system.h"
 #include "filesystem.h"
 #include "meta_edge.h"
-#include "buildplan_entity.h"
-#include "fsindex.h"
+#include "bpe.h"
+#include "namespace.h"
 #include "varset.h"
 #include "plugin_system.h"
 
