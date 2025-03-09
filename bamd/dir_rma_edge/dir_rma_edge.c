@@ -12,7 +12,7 @@
 #include "rule.h"
 #include "graph.h"
 #include "fsent.h"
-#include "rule_module_association.h"
+#include "rma.h"
 #include "edge.h"
 
 llist drm_list = LLIST_INITIALIZER(drm_list);

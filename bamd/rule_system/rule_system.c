@@ -11,27 +11,33 @@
 #include "valyria/rbtree.h"
 #include "bacon/builder.h"
 #include "moria/foreach.h"
+#include "xlinux/xtime.h"
 
 #include "rule_system.h"
 #include "dependency.h"
 #include "fsent.h"
 #include "module.h"
 #include "rule.h"
-#include "rule_module_association.h"
-#include "buildplan_entity.h"
+#include "rma.h"
+#include "bpe.h"
 #include "channel.h"
 #include "edge.h"
 #include "vertex.h"
 #include "system.h"
-#include "events.h"
+#include "rma/events.h"
+#include "events/events.h"
 #include "zcat.h"
 #include "meta_edge.h"
-#include "entlist.h"
+#include "edges.h"
+#include "vertices.h"
+#include "rma.h"
+#include "disintegrate.h"
+
+#include "times.h"
 
 /* refresh state */
 uint32_t rule_system_epoch;
-static llist work_queue[2];
-static int work_queue_index;
+static llist work_queue;
 
 //
 // public
@@ -39,8 +45,7 @@ static int work_queue_index;
 
 void rule_system_setup()
 {
-  llist_init(&work_queue[0]);
-  llist_init(&work_queue[1]);
+  llist_init(&work_queue);
   rule_system_epoch = 1;
 }
 
@@ -48,84 +53,109 @@ void rule_system_reconcile(rule_run_context * restrict ctx)
 {
   rule_system_work *work;
   rule_module_association *rma;
-  llist *head;
-  graph_invalidation_context invalidation = { };
   moria_foreach_state st;
   moria_edge *edge;
   meta_edge *meta;
-  entlist edges, vertices;
+  struct edges edges;
+  struct vertices unlinking;
+  struct vertices releasing;
 
-  entlist_init(&vertices);
-  entlist_init(&edges);
+  vertices_init(&unlinking);
+  vertices_init(&releasing);
+  edges_init(&edges);
 
-  /* run rules to quiescence */
-  head = &work_queue[work_queue_index];
-  while(!llist_empty(head) && !system_has_error)
-  {
+  /* run to quiescence */
+  while(1) {
+    work = llist_shift(&work_queue, typeof(*work), changed.lln);
+    if(!work) {
+      break;
+    }
+
     rule_system_epoch++;
-    graph_invalidation_end(&invalidation);
-    graph_invalidation_begin(&invalidation);
+    rma = containerof(work, typeof(*rma), work);
 
-    /* flip the rma edges so that invalidations queue up in the other slot */
-    work_queue_index = !work_queue_index;
-    llist_init(&work_queue[work_queue_index]);
+    rma_reset(rma);
+    ctx->rma = rma;
 
-    /* run all queued up rules - this can drive rule invalidations */
-    while((work = llist_shift(head, typeof(*work), changed[!work_queue_index].lln))) {
-      rma = containerof(work, typeof(*rma), work);
-      vertex_mark_fresh(&rma->vertex);
-      if(!system_has_error) {
-        ctx->rma = rma;
-        rule_run(rma->rule, ctx);
-      }
+    /* rma-start */
+    rma_operation_push(ctx);
+    rma_event_start(ctx);
 
-      /* remove edges previously created by running this rma but which were not refreshed during this round */
-      /* this can also drive rule invalidations */
-      moria_foreach_edge(&st, &rma->vertex, edge) {
-        switch(edge_type_get(edge)) {
-          case EDGE_RMA_BPE:
-          case EDGE_FSNAME_RMA:
-          case EDGE_RMA_TGT:
-            break;
-          default:
-            continue;
-        }
-        meta = containerof(edge, typeof(*meta), edge);
-        if(meta->epoch == rule_system_epoch) {
+    rule_resolve(rma->rule, ctx);
+    if(system_has_error) {
+      goto clean;
+    }
+    ctx->fml = ctx->rma->fml;
+
+#define RMA_INVALIDATE_SELF 0
+
+#if RMA_INVALIDATE_SELF
+    /* allow the rma to become invalidated during its execution */
+    vertex_mark_fresh(&rma->vertex);
+#endif
+
+    /* rule-run has no failure cases */
+    rule_run(rma->rule, ctx);
+    RUNTIME_ASSERT(!system_has_error);
+
+    /* resolve bpe exec refs */
+    rma_resolve(rma);
+
+    /* remove edges previously created by running this rma but which were not refreshed during this round */
+    /* this can invalidate other rmas */
+clean:
+    moria_foreach_edge(&st, &rma->vertex, edge) {
+      switch(edge_type_get(edge)) {
+        case EDGE_RMA_BPE:
+        case EDGE_FSNAME_RMA:
+        case EDGE_RMA_BIND:
+          break;
+        default:
           continue;
-        }
-        entlist_push(&edges, &meta->edge);
       }
-      graph_disintegrate_bulk(&edges, &vertices, &invalidation);
-      entlist_destroy(&edges);
-      entlist_destroy(&vertices);
-
-      if(system_has_error) {
-        vertex_mark_stale(&rma->vertex);  // re-enqueue
+      meta = containerof(edge, typeof(*meta), edge);
+      if(meta->epoch == rule_system_epoch) {
         continue;
+      }
+
+      switch(edge_type_get(edge)) {
+        case EDGE_FSNAME_RMA:
+        case EDGE_RMA_BIND:
+          edges_push(&edges, edge);
+        case EDGE_RMA_BPE:
+          vertices_push(&unlinking, edge->A);
+          break;
+        default:
+          continue;
       }
     }
 
-    head = &work_queue[work_queue_index];
+    graph_invalidation_begin(&ctx->invalidation);
+    graph_disintegrate(&edges, &unlinking, &releasing, &ctx->invalidation);
+    graph_invalidation_end(&ctx->invalidation);
+
+    /* rma-end */
+    rma_event_end(ctx);
+    rma_operation_pop(ctx);
+
+    if(system_has_error) {
+#if RMA_INVALIDATE_SELF
+      vertex_invalidate(&rma->vertex, &ctx->invalidation);
+#else
+      llist_push(&work_queue, &rma->work.changed.lln);
+#endif
+      break;
+    }
+
+    vertex_mark_fresh(&rma->vertex);
   }
-
-  graph_invalidation_end(&invalidation);
 }
 
-void rule_system_rma_hit(rule_run_context * restrict ctx, rule_module_association * restrict rma)
+void rule_system_work_enqueue(rule_module_association * restrict rma)
 {
-}
-
-void rule_system_rma_nohit(rule_run_context * restrict ctx, rule_module_association * restrict rma)
-{
-}
-
-void rule_system_work_enqueue(rule_system_work * restrict work)
-{
-  if(work->changed[work_queue_index].epoch == rule_system_epoch) {
+  if(llist_attached(&rma->work.changed.lln)) {
     return;
   }
 
-  llist_push(&work_queue[work_queue_index], &work->changed[work_queue_index].lln);
-  work->changed[work_queue_index].epoch = rule_system_epoch;
+  llist_push(&work_queue, &rma->work.changed.lln);
 }

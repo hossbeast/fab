@@ -14,7 +14,7 @@
 
 #include "vertex.h"
 #include "graph.h"
-#include "rule_module_association.h"
+#include "rma.h"
 #include "dependency.h"
 #include "fsent.h"
 #include "formula.h"
@@ -1195,11 +1195,22 @@ void vertex_tell(const moria_vertex * restrict v, struct channel * restrict chan
     case VERTEX_MODULE_VARS:
       return module_vars_tell(containerof(v, module_vars, vertex), channel);
     case VERTEX_MODULE_ENVS:
-      return module_envs_tell(containerof(v, module_envs, vertex), channel);
-    case VERTEX_SYSTEM:
-      return system_tell(channel);
-
-    case VERTEX_BUILD:
+    case VERTEX_FORMULA_STDIN:
+    case VERTEX_FORMULA_STDOUT:
+    case VERTEX_FORMULA_STDERR:
+    case VERTEX_FORMULA_AUXOUT:
+    case VERTEX_FORMULA_ARGS:
+    case VERTEX_FORMULA_ENVS:
+    case VERTEX_FORMULA_FILE:
+    case VERTEX_FORMULA_CWD:
+    case VERTEX_PLUGIN_STDIN:
+    case VERTEX_PLUGIN_STDOUT:
+    case VERTEX_PLUGIN_STDERR:
+    case VERTEX_PLUGIN_AUXOUT:
+      return detail_tell(containerof(v, detail, vertex), handler);
+    case VERTEX_RULE:
+      return rule_tell(containerof(v, rule, vertex), handler);
+    case VERTEX_NAMESPACE:
     case VERTEX_DIR:
     case VERTEX_MODULE_DIR:
     case VERTEX_FILE:
@@ -1215,9 +1226,6 @@ void vertex_tell(const moria_vertex * restrict v, struct channel * restrict chan
     case VERTEX_SHADOW_LINK:
     case VERTEX_GOALS:
     case VERTEX_CONTEXT_MODULE:
-    case VERTEX_FSINDEX:
-    case VERTEX_NOTIFY:
-    case VERTEX_RULE:
     case VERTEX_MODULE:
     case VERTEX_FORMULA:
     case VERTEX_VARSET:

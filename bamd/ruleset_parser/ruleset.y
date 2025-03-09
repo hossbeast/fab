@@ -14,13 +14,13 @@
 
   #include "rule.h"
   #include "import.h"
-  #include "anchor.h"
   #include "ruleset_parser.h"
   #include "module.h"
   #include "pattern.h"
   #include "block.h"
 
   #include "macros.h"
+  #include "zcat.h"
 
   struct pattern;
   struct bacon_value;
@@ -51,12 +51,16 @@
 %union {
   yyu_lval  yyu;
 
-  struct rule * rule;
+  struct rule *rule;
   struct import *import;
-  struct anchor * anchor;
-  struct pattern * pattern;
-  struct bacon_value * value;
-  struct bacon_expr * expr;
+  struct pattern *anchor;
+  struct lookup_pattern *lookup_pattern;
+  struct match_pattern *match_pattern;
+  struct attachment_pattern *attachment_pattern;
+  struct generate_pattern *generate_pattern;
+  struct search_pattern *search_pattern;
+  struct bacon_value *value;
+  struct bacon_expr *expr;
   bacon_operation oper;
 
   // enums
@@ -102,6 +106,9 @@
  RULE       "rule"
  DASHES     "--"
  STARBOX    "[*]"
+ BINDARROW  "=>"
+ LARROW     "<-"
+ RARROW     "->"
  IF         "if"
  NAME       "name"
  USE        "use"
@@ -111,16 +118,18 @@
  GENERATE   "generate"
  VARSETS    "varsets"
  RULESETS   "rulesets"
+ NAMESPACE  "namespace"
+ MANAGED    "managed"
 
 %token
- <pattern> SEARCH_PATTERN
- <pattern> GENERATE_PATTERN
- <pattern> REFERENCE_PATTERN
- <pattern> LOOKUP_PATTERN
- <pattern> MATCH_PATTERN
+ <search_pattern> SEARCH_PATTERN
+ <generate_pattern> GENERATE_PATTERN
+ <attachment_pattern> ATTACHMENT_PATTERN
+ <lookup_pattern> LOOKUP_PATTERN
+ <match_pattern> MATCH_PATTERN
 
 %type
- <pattern> generate-pattern
+ <generate_pattern> generate-pattern
 
 %token
  LOGAND  "&&"
@@ -128,7 +137,7 @@
  SHL     "<<"
  SHR     ">>"
 
-%type <yyu.t> string quoted-string unquoted-string strpart strparts
+%type <yyu.t> string quoted-string unquoted-string strpart strparts special-name unquoted-special-name unquoted-special-part
 %type <rule> rule rule-form
 %type <rule> bind
 %type <import> import
@@ -136,7 +145,13 @@
 %type <expr> if-statement
 %type <yyu.u16> connector bind-connector
 
-%destructor { pattern_free($$); } <pattern>
+%destructor { pattern_free(&$$->pattern); } <lookup_pattern>
+%destructor { pattern_free(&$$->pattern); } <search_pattern>
+%destructor { pattern_free(&$$->pattern); } <generate_pattern>
+%destructor { pattern_free(&$$->pattern); } <attachment_pattern>
+%destructor { pattern_free(&$$->pattern); } <match_pattern>
+
+%destructor { free($$.s); } <yyu.t>
 
 /* nonterminals */
 %type <value> value
@@ -163,6 +178,25 @@ start
   }
   ;
 
+open-block
+  : %empty
+  {
+    block_alloc(&PARSER->block);
+    llist_push(&PARSER->blocks, &PARSER->block->lln);
+  }
+  ;
+
+close-block
+  : %empty
+  {
+    block *prev;
+    prev = PARSER->block;
+    llist_pop(&PARSER->blocks, block, lln);
+    PARSER->block = llist_last(&PARSER->blocks, block, lln);
+    llist_push(&PARSER->block->blocks, &prev->lln);
+  }
+  ;
+
 declarations
   : declaration-list
   | %empty
@@ -177,27 +211,41 @@ declaration
   : anchor
   | varsets
   | rulesets
+  | MANAGED
+  {
+    PARSER->managed = true;
+  }
   ;
 
 anchor
   : ANCHOR LOOKUP_PATTERN
   {
-    anchor_release(PARSER->anchor);
-    anchor_mk(&PARSER->anchor, $2);
+    pattern_free(&PARSER->anchor->pattern);
+    PARSER->anchor = $2;
   }
   ;
 
 varsets
-  : VARSETS LOOKUP_PATTERN
+  : VARSETS
   {
-    llist_append(&PARSER->varsets, &$2->lln);
+    PARSER->varsets_set = true;
+  }
+  | VARSETS special-name
+  {
+    PARSER->varsets_set = true;
+    ruleset_parser_varsets_append(PARSER, $2.s, $2.l);
   }
   ;
 
 rulesets
-  : RULESETS LOOKUP_PATTERN
+  : RULESETS
   {
-    llist_append(&PARSER->rulesets, &$2->lln);
+    PARSER->rulesets_set = true;
+  }
+  | RULESETS special-name
+  {
+    PARSER->rulesets_set = true;
+    ruleset_parser_rulesets_append(PARSER, $2.s, $2.l);
   }
   ;
 
@@ -266,18 +314,18 @@ import
 
 bind
   /* bind target => attachment */
-  : BIND bind-bacon LOOKUP_PATTERN bind-connector REFERENCE_PATTERN
+  : BIND bind-bacon LOOKUP_PATTERN bind-connector ATTACHMENT_PATTERN
   {
-    $$ = rule_mk(PARSER->g, PARSER->mod, PARSER->rules, 0, 0, 0, $3, $5, 0, &PARSER->bacon, $4, &@$);
+    $$ = rule_mk(PARSER->g, PARSER->container, 0, 0, 0, $3, $5, 0, &PARSER->bacon, $4, &@$);
   }
   ;
 
 bind-connector
-  : '=' '>'                  /* => */
+  : BINDARROW                /* => attachment */
   {
     $$ = RULE_BIND_ONE;
   }
-  | '=' '>' STARBOX          /* => [*] */
+  | BINDARROW STARBOX        /* => [*] attachment */
   {
     $$ = RULE_BIND_MANY;
   }
@@ -300,26 +348,11 @@ bind-bacon-mappings
 bind-bacon-mapping
   : NAME ':' strtok-list
   {
-    PARSER->bacon.name_len = memncpy(PARSER->bacon.name, sizeof(PARSER->bacon.name), @3.s, @3.l);
+    PARSER->bacon.name_len = zcatw(PARSER->bacon.name, sizeof(PARSER->bacon.name), @3.s, @3.l);
   }
-  ;
-
-open-block
-  : %empty
+  | NAMESPACE ':' strtok-list
   {
-    block_alloc(&PARSER->block);
-    llist_push(&PARSER->blocks, &PARSER->block->lln);
-  }
-  ;
-
-close-block
-  : %empty
-  {
-    block *prev;
-    prev = PARSER->block;
-    llist_pop(&PARSER->blocks, block, lln);
-    PARSER->block = llist_last(&PARSER->blocks, block, lln);
-    llist_push(&PARSER->block->blocks, &prev->lln);
+    PARSER->bacon.namespace_len = zcatw(PARSER->bacon.namespace, sizeof(PARSER->bacon.namespace), @3.s, @3.l);
   }
   ;
 
@@ -353,51 +386,51 @@ rule
   ;
 
 rule-form
-  /* (search) antecedent(s), (generate) consequent(s) : (reference) formula */
-  : search-start SEARCH_PATTERN connector generate-pattern ':' REFERENCE_PATTERN
+  /* (search) antecedent(s), (generate) consequent(s) : (lookup) formula */
+  : search-start SEARCH_PATTERN connector generate-pattern ':' LOOKUP_PATTERN
   {
-    $$ = rule_mk(PARSER->g, PARSER->mod, PARSER->rules, $2, $4, $6, 0, 0, 0, &PARSER->bacon, $3, &@$);
+    $$ = rule_mk(PARSER->g, PARSER->container, $2, $4, $6, 0, 0, 0, &PARSER->bacon, $3, &@$);
   }
   | search-start SEARCH_PATTERN connector generate-pattern
   {
-    $$ = rule_mk(PARSER->g, PARSER->mod, PARSER->rules, $2, $4, 0, 0, 0, 0, &PARSER->bacon, $3, &@$);
+    $$ = rule_mk(PARSER->g, PARSER->container, $2, $4, 0, 0, 0, 0, &PARSER->bacon, $3, &@$);
   }
 
-  /* bind */
-  | search-start SEARCH_PATTERN '=' '>' STARBOX generate-pattern
+  /* search / attachment (bind rule) */
+  | search-start SEARCH_PATTERN BINDARROW STARBOX ATTACHMENT_PATTERN
   {
-    $$ = rule_mk(PARSER->g, PARSER->mod, PARSER->rules, $2, 0, 0, 0, $6, 0, &PARSER->bacon, RULE_BIND_MANY, &@$);
+    $$ = rule_mk(PARSER->g, PARSER->container, $2, 0, 0, 0, $5, 0, &PARSER->bacon, RULE_BIND_MANY, &@$);
   }
 
   /* search / search */
-  | search-start SEARCH_PATTERN STARBOX '-' '>' STARBOX SEARCH SEARCH_PATTERN
+  | search-start SEARCH_PATTERN STARBOX RARROW STARBOX SEARCH SEARCH_PATTERN
   {
-    $$ = rule_mk(PARSER->g, PARSER->mod, PARSER->rules, $2, 0, 0, 0, 0, $8, &PARSER->bacon, RULE_SEARCH_SEARCH | RULE_LTR, &@$);
+    $$ = rule_mk(PARSER->g, PARSER->container, $2, 0, 0, 0, 0, $7, &PARSER->bacon, RULE_SEARCH_SEARCH | RULE_LTR, &@$);
   }
-  | search-start SEARCH_PATTERN STARBOX '<' '0' STARBOX SEARCH SEARCH_PATTERN
+  | search-start SEARCH_PATTERN STARBOX LARROW STARBOX SEARCH SEARCH_PATTERN
   {
-    $$ = rule_mk(PARSER->g, PARSER->mod, PARSER->rules, $2, 0, 0, 0, 0, $8, &PARSER->bacon, RULE_SEARCH_SEARCH | RULE_RTL, &@$);
+    $$ = rule_mk(PARSER->g, PARSER->container, $2, 0, 0, 0, 0, $7, &PARSER->bacon, RULE_SEARCH_SEARCH | RULE_RTL, &@$);
   }
 
   /* search -- */
-  | search-start SEARCH_PATTERN DASHES ':' REFERENCE_PATTERN
+  | search-start SEARCH_PATTERN DASHES ':' LOOKUP_PATTERN
   {
-    $$ = rule_mk(PARSER->g, PARSER->mod, PARSER->rules, $2, 0, $5, 0, 0, 0, &PARSER->bacon, RULE_ZERO_TO_ONE | RULE_RTL, &@$);
+    $$ = rule_mk(PARSER->g, PARSER->container, $2, 0, $5, 0, 0, 0, &PARSER->bacon, RULE_ZERO_TO_ONE | RULE_RTL, &@$);
   }
   /* search [*] -- */
-  | search-start SEARCH_PATTERN STARBOX DASHES ':' REFERENCE_PATTERN
+  | search-start SEARCH_PATTERN STARBOX DASHES ':' LOOKUP_PATTERN
   {
-    $$ = rule_mk(PARSER->g, PARSER->mod, PARSER->rules, $2, 0, $6, 0, 0, 0, &PARSER->bacon, RULE_ZERO_TO_MANY | RULE_RTL, &@$);
+    $$ = rule_mk(PARSER->g, PARSER->container, $2, 0, $6, 0, 0, 0, &PARSER->bacon, RULE_ZERO_TO_MANY | RULE_RTL, &@$);
   }
   /* -- generate */
-  | rule-start DASHES generate-pattern ':' REFERENCE_PATTERN
+  | rule-start DASHES generate-pattern ':' LOOKUP_PATTERN
   {
-    $$ = rule_mk(PARSER->g, PARSER->mod, PARSER->rules, 0, $3, $5, 0, 0, 0, &PARSER->bacon, RULE_ZERO_TO_ONE | RULE_LTR, &@$);
+    $$ = rule_mk(PARSER->g, PARSER->container, 0, $3, $5, 0, 0, 0, &PARSER->bacon, RULE_ZERO_TO_ONE | RULE_LTR, &@$);
   }
   /* -- [*] generate */
-  | rule-start DASHES STARBOX generate-pattern ':' REFERENCE_PATTERN
+  | rule-start DASHES STARBOX generate-pattern ':' LOOKUP_PATTERN
   {
-    $$ = rule_mk(PARSER->g, PARSER->mod, PARSER->rules, 0, $4, $6, 0, 0, 0, &PARSER->bacon, RULE_ZERO_TO_MANY | RULE_LTR, &@$);
+    $$ = rule_mk(PARSER->g, PARSER->container, 0, $4, $6, 0, 0, 0, &PARSER->bacon, RULE_ZERO_TO_MANY | RULE_LTR, &@$);
   }
   ;
 
@@ -419,37 +452,69 @@ rule-bacon-mapping
   ;
 
 connector
-  : '<' '-'                  /* <- */
+  : LARROW                 /* <- */
   {
     $$ = RULE_RTL | RULE_ONE_TO_ONE;
   }
-  | '-' '>'                  /* -> */
+  | RARROW                 /* -> */
   {
     $$ = RULE_LTR | RULE_ONE_TO_ONE;
   }
-  | '<' '-' STARBOX          /* <- [*] */
+  | LARROW STARBOX          /* <- [*] */
   {
     $$ = RULE_RTL | RULE_MANY_TO_ONE;
   }
-  | '-' '>' STARBOX          /* -> [*] */
+  | RARROW STARBOX          /* -> [*] */
   {
     $$ = RULE_LTR | RULE_ONE_TO_MANY;
   }
-  | STARBOX '<' '-'          /* [*] <- */
+  | STARBOX LARROW         /* [*] <- */
   {
     $$ = RULE_RTL | RULE_ONE_TO_MANY;
   }
-  | STARBOX '-' '>'          /* [*] -> */
+  | STARBOX RARROW        /* [*] -> */
   {
     $$ = RULE_LTR | RULE_MANY_TO_ONE;
   }
-  | STARBOX '<' '-' STARBOX  /* [*] <- [*] */
+  | STARBOX LARROW STARBOX  /* [*] <- [*] */
   {
     $$ = RULE_RTL | RULE_MANY_TO_MANY;
   }
-  | STARBOX '-' '>' STARBOX  /* [*] -> [*] */
+  | STARBOX RARROW STARBOX  /* [*] -> [*] */
   {
     $$ = RULE_LTR | RULE_MANY_TO_MANY;
+  }
+  ;
+
+special-name
+  : quoted-string
+  | unquoted-special-name
+  ;
+
+unquoted-special-name
+  : unquoted-special-name unquoted-special-part
+  {
+    $$ = $1;
+    ixstrcat(&$$.s, $2.s);
+    $$.l += $2.l;
+    free($2.s);
+  }
+  | unquoted-special-part
+  ;
+
+unquoted-special-part
+  : strpart
+  | '.'
+  {
+    $$.s = 0;
+    ixstrndup(&$$.s, @1.s, @1.l);
+    $$.l = 1;
+  }
+  | '%'
+  {
+    $$.s = 0;
+    ixstrndup(&$$.s, @1.s, @1.l);
+    $$.l = 1;
   }
   ;
 
@@ -479,6 +544,7 @@ strparts
     $$ = $1;
     ixstrcat(&$$.s, $2.s);
     $$.l += $2.l;
+    free($2.s);
   }
   | strpart
   ;

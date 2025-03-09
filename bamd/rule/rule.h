@@ -21,8 +21,13 @@ A rule is connected to each module for which it is run with an EDGE_MOD_RULE edg
 #include "yyutil/grammar.h"
 
 #include "graph.h"
-#include "entlist.h"
+#include "edges.h"
+#include "vertices.h"
 #include "vertex.h"
+#include "namespace.h"
+#include "vertices.h"
+#include "lookup.h"
+#include "resolve.h"
 
 struct attrs16;
 struct module;
@@ -34,6 +39,11 @@ struct fsent;
 struct bacon_value;
 struct rule_module_association;
 struct ruleset;
+struct request_handler;
+struct search_pattern;
+struct generate_pattern;
+struct attachment_pattern;
+struct lookup_pattern;
 
 extern llist rule_list;     // active
 
@@ -78,8 +88,9 @@ extern struct attrs16 * rule_cardinality_attrs;
 
 typedef union stats_rule {
   struct {
-      uint16_t rule_run;      /* rule is run */
-      uint16_t rule_run_ok;   /* rule is run successfully */
+      uint32_t rule_resolve_ok;   /* rule */
+      uint32_t rule_resolve_err;  /* rule */
+      uint32_t rule_run;          /* rule is run */
   };
 
   stats_record record;
@@ -97,48 +108,56 @@ typedef struct rule {
   char id[40];
   uint16_t id_len;
   yyu_location loc;
+  const struct ruleset *container;
 
-  char name[64];             // optional name
+  char name[255];           // optional name
   uint16_t name_len;
 
-  struct module *mod;       // nullable ; module -> module.bam
-  struct ruleset *rules;    // nullable ; ruleset -> rules.bam
+  char namespace[255];      // optional namespace, for bind rules
+  uint16_t namespace_len;
 
   /* rule search -> generate : formula */
-  struct pattern *search;
-  struct pattern *generate;
-  struct pattern *formula;
+  struct search_pattern *search;
+  struct generate_pattern *generate;
+  struct lookup_pattern *formula;
 
   /* bind lookup -> attachment */
-  struct pattern *target;
-  struct pattern *attachment;
+  struct lookup_pattern *target;
+  struct attachment_pattern *attachment;
 
   /* search -> search */
-  struct pattern *search_rhs;
-
-  struct fsedge *links[2];
-  uint32_t link_refmarks[2];
+  struct search_pattern *search_rhs;
 
   rule_direction dir;
   rule_cardinality card;
 } rule;
 
+typedef struct rma_operation {
+  llist lln;
+  struct timespec start_time;
+  struct timespec end_time;
+  int level;
+} rma_operation;
+
 typedef struct rule_run_context {
   struct rule_module_association *rma;
 
+  /* operation state tracking */
+  llist operations;                 // struct rma_operation
+  int level;
+
   /* scratch space */
   struct hashtable search_hits;     // search pattern results
-  struct entlist generate_hits;     // generate pattern results
-  struct entlist target_hits;       // target pattern results
-  struct entlist target_index_hits; // index-vertex lookup nodes visited by the target pattern
+  struct vertices generate_hits;    // generate pattern results
   struct hashtable search_rhs_hits; // rhs search pattern results
+  struct lookup_context lctx;
 
   /* scratch node lists used in rule_run */
   struct moria_vertex **Blist;
   size_t Blist_alloc;
   struct moria_vertex **Alist;
   size_t Alist_alloc;
-  struct pattern_search_node **Mlist;
+  struct pattern_search_hit **Mlist;
   size_t Mlist_alloc;
 
   /* the matched formula, if any */
@@ -154,27 +173,33 @@ void rule_run_context_init(rule_run_context * rule_ctx)
 void rule_run_context_destroy(rule_run_context * rule_ctx)
   __attribute__((nonnull));
 
-/*
- * Run a rule to add nodes and edges to the graph.
- */
+/* run a rule : evaluate the left-hand side, right-hand side and create
+ * or refresh bpes from the matches */
 void rule_run(rule * restrict rule, rule_run_context * restrict ctx)
   __attribute__((nonnull));
 
+/* resolve a rule : resolve references to formulas, and, for bind rules,
+ * the attachment and targets */
+void rule_resolve(rule * restrict rule, rule_run_context * restrict ctx)
+  __attribute__((nonnull));
+
 typedef struct rule_bacon {
-  char name[64];
+  char name[255];
   uint16_t name_len;
+
+  char namespace[255];
+  uint16_t namespace_len;
 } rule_bacon;
 
 rule *rule_mk(
     struct moria_graph * restrict g
-  , struct module * restrict mod
-  , struct ruleset * restrict rules
-  , struct pattern * restrict search
-  , struct pattern * restrict generate
-  , struct pattern * restrict formula
-  , struct pattern * restrict target
-  , struct pattern * restrict attachment
-  , struct pattern * restrict search2
+  , const struct ruleset * restrict container
+  , struct search_pattern * restrict search
+  , struct generate_pattern * restrict generate
+  , struct lookup_pattern * restrict formula
+  , struct lookup_pattern * restrict target
+  , struct attachment_pattern * restrict attachment
+  , struct search_pattern * restrict search2
   , const rule_bacon * restrict bacon
   , uint32_t attrs
   , const struct yyu_location * restrict loc
@@ -205,11 +230,28 @@ int rule_validate(const rule * restrict rule, char * restrict error, size_t erro
 void rule_describe(const rule * restrict r, struct bacon_writer * restrict builder_writer)
   __attribute__((nonnull));
 
-void rule_identity_say(const rule * restrict r, struct narrator * restrict N)
+void rule_identity_describe(const rule * restrict r, struct bacon_writer * restrict)
   __attribute__((nonnull));
 
 size_t rule_path_cat(void * restrict dst, size_t sz, const struct rule * restrict rule)
   __attribute__((nonnull));
 
 void rule_stats_build(rule * restrict, bool reset, struct bacon_writer * restrict)
+  __attribute__((nonnull));
+
+bool rule_reap(struct rule * restrict rule, struct graph_disintegrate_context * restrict ctx)
+  __attribute__((nonnull));
+
+void rule_id(const rule * restrict v, const char ** restrict idp, uint16_t * restrict idl)
+  __attribute__((nonnull));
+
+void rule_compute_id(const rule * restrict rule, struct identity_ctx * restrict id)
+  __attribute__((nonnull));
+
+void rules_show(void);
+
+void rule_unlink(rule * restrict rma, struct graph_disintegrate_context * restrict ctx)
+  __attribute__((nonnull));
+
+void rule_tell(const rule * restrict rule, struct request_handler * restrict handler)
   __attribute__((nonnull));

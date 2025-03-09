@@ -23,13 +23,13 @@
 #include "fsedge.h"
 #include "fsent.h"
 #include "graph.h"
-#include "lookup.h"
+#include "disintegrate.h"
+#include "resolve.h"
 #include "pattern_parser.h"
-#include "render.h"
 #include "selection.h"
 #include "shadow.h"
-#include "anchor.h"
 #include "pattern_parser.internal.h"
+#include "ruleset.h"
 
 static YYU_VTABLE(vtable, ruleset, ruleset);
 
@@ -53,14 +53,15 @@ void ruleset_parser_alloc(ruleset_parser ** rv)
   );
 
   pattern_parser_create(&p->pattern_parser);
-  entlist_init(&p->lookup_hits);
+  vertices_init(&p->lookup_hits);
   p->g = &g_graph;
 
   bacon_parser_alloc(&p->bacon_parser);
 
   llist_init(&p->blocks);
-  llist_init(&p->varsets);
-  llist_init(&p->rulesets);
+  llist_init(&p->varsets_names);
+  llist_init(&p->rulesets_names);
+  p->managed = false;
 
   *rv = p;
   p = 0;
@@ -76,12 +77,12 @@ void ruleset_parser_free(ruleset_parser* const parser)
 
   yyu_parser_destroy(&parser->yyu);
   pattern_parser_free(parser->pattern_parser);
-  entlist_destroy(&parser->lookup_hits);
+  vertices_destroy(&parser->lookup_hits);
 
-  block_release_bulk(parser->bacon_parser, &parser->blocks);
-  pattern_list_free(&parser->varsets);
-  pattern_list_free(&parser->rulesets);
-  anchor_release(parser->anchor);
+  //block_release_bulk(parser->bacon_parser, &parser->blocks);
+  ruleset_special_name_list_free(&parser->varsets_names);
+  ruleset_special_name_list_free(&parser->rulesets_names);
+  pattern_free(&parser->anchor->pattern);
 
   bacon_parser_free(parser->bacon_parser);
   free(parser);
@@ -114,6 +115,27 @@ static int block_validate(block *b, char * restrict error_str, size_t error_str_
   return 0;
 }
 
+static void ruleset_parser_clean(ruleset_parser * restrict parser)
+{
+  struct edges edges;
+  struct vertices unlinking;
+  struct vertices releasing;
+  graph_invalidation_context invalidation = { };
+
+  graph_invalidation_begin(&invalidation);
+  edges_init(&edges);
+  vertices_init(&unlinking);
+  vertices_init(&releasing);
+
+  blocks_gather_rules(&unlinking, &parser->blocks);
+
+  graph_disintegrate(&edges, &unlinking, &releasing, &invalidation);
+
+  graph_invalidation_end(&invalidation);
+
+  block_release_bulk(parser->bacon_parser, &parser->blocks);
+}
+
 int ruleset_parser_parse(
     ruleset_parser * restrict parser
   , char * const restrict buf
@@ -129,24 +151,83 @@ int ruleset_parser_parse(
   parser->bacon_parser->yyu = NULL;
   parser->pattern_parser->yyu = NULL;
 
-  block_release_bulk(parser->bacon_parser, &parser->blocks);
-  pattern_list_free(&parser->varsets);
-  pattern_list_free(&parser->rulesets);
+  //block_release_bulk(parser->bacon_parser, &parser->blocks);
+  parser->varsets_set = false;
+  ruleset_special_name_list_free(&parser->varsets_names);
+  parser->rulesets_set = false;
+  ruleset_special_name_list_free(&parser->rulesets_names);
+  parser->managed = false;
 
-  anchor_release(parser->anchor);
+  pattern_free(&parser->anchor->pattern);
   parser->anchor = 0;
 
-  if((r = yyu_parse(&parser->yyu, buf, size, relpath, YYU_INPLACE, 0, 0)) != 0) {
+  r = yyu_parse(&parser->yyu, buf, size, relpath, YYU_INPLACE, 0, 0);
+
+  /* error aggregation */
+  if(r == 0) {
+    parser->error = 0;
+    parser->error_len = 0;
+  } else if(parser->bacon_parser->error) {
+    parser->error = parser->bacon_parser->error;
+    parser->error_len = parser->bacon_parser->error_len;
+  } else if(parser->pattern_parser->error) {
+    parser->error = parser->pattern_parser->error;
+    parser->error_len = parser->pattern_parser->error_len;
+  } else {
+    parser->error = parser->yyu.error_str;
+    parser->error_len = parser->yyu.error_len;
+  }
+
+  if(r != 0) {
+    ruleset_parser_clean(parser);
     return r;
   }
 
   /* rules validation */
   llist_foreach(&parser->blocks, block, lln) {
     if((r = block_validate(block, parser->yyu.error_str, sizeof(parser->yyu.error_str))) != 0) {
-      parser->yyu.error_len = r;
+      parser->error = parser->yyu.error_str;
+      parser->error_len = r;
+      ruleset_parser_clean(parser);
       return r;
     }
   }
 
   return 0;
+}
+
+void ruleset_parser_varsets_append(ruleset_parser * restrict parser, const char *s, uint16_t len)
+{
+  ruleset_special_name *name;
+
+  xmalloc(&name, sizeof(*name));
+
+  llist_init(&name->lln);
+  name->len = len;
+  name->name = s;
+
+  llist_push(&parser->varsets_names, &name->lln);
+}
+
+void ruleset_parser_rulesets_append(ruleset_parser * restrict parser, const char *s, uint16_t len)
+{
+  ruleset_special_name *name;
+
+  xmalloc(&name, sizeof(*name));
+
+  llist_init(&name->lln);
+  name->len = len;
+  name->name = s;
+
+  llist_push(&parser->rulesets_names, &name->lln);
+}
+
+void ruleset_special_name_list_free(llist * restrict list)
+{
+  ruleset_special_name *name;
+
+  while((name = llist_shift(list, typeof(*name), lln))) {
+    free((void*)name->name);
+    free(name);
+  }
 }

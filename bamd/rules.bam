@@ -41,7 +41,7 @@ rule $^A/module/module.h -> [*] module/stats_module.desc.[ch] : //descriptor/des
 rule $^A/notify/notify.h -> [*] notify/notify_stats.desc.[ch] : //descriptor/descriptor.bam
 rule $^A/plugin/plugin.h -> [*] plugin/stats_plugin.desc.[ch] : //descriptor/descriptor.bam
 rule $^A/rule/rule.h -> [*] rule/stats_rule.desc.[ch] : //descriptor/descriptor.bam
-rule $^A/rule_module_association/rule_module_association.h -> [*] rule_module_association/stats_rma.desc.[ch] : //descriptor/descriptor.bam
+rule $^A/rma/rma.h -> [*] rma/stats_rma.desc.[ch] : //descriptor/descriptor.bam
 rule $^A/ruleset/ruleset.h -> [*] ruleset/stats_ruleset.desc.[ch] : //descriptor/descriptor.bam
 rule $^A/stats/stats_fsent_dir.h -> [*] fsent/stats_fsent_dir.desc.[ch] : //descriptor/descriptor.bam
 rule $^A/fsent/fsent_symlink.h -> [*] fsent/stats_fsent_symlink.desc.[ch] : //descriptor/descriptor.bam

@@ -33,7 +33,7 @@
 #include "channel.h"
 #include "module.h"
 #include "params.h"
-#include "rule_module_association.h"
+#include "rma.h"
 #include "rule_system.h"
 #include "dir_rma_edge.h"
 #include "rule.h"

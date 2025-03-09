@@ -7,7 +7,6 @@
 
 #include "common/assure.h"
 #include "common/attrs.h"
-#include "common/hash.h"
 #include "moria/connect.h"
 #include "moria/edge.h"
 #include "moria/foreach.h"
@@ -18,6 +17,7 @@
 #include "bacon/builder.h"
 
 #include "rule.h"
+#include "rma/events.h"
 #include "dependency.h"
 #include "formula.h"
 #include "fsent.h"
@@ -26,29 +26,33 @@
 #include "generate.h"
 #include "search.internal.h"
 #include "module.h"
-#include "rule_module_association.h"
+#include "rma.h"
 #include "rule_system.h"
 #include "dir_rma_edge.h"
 #include "stats.h"
 #include "probes.h"
 #include "channel.h"
-#include "events.h"
+#include "events/events.h"
 #include "system.h"
-#include "lookup.h"
 #include "selection.h"
 #include "ruleset.h"
 #include "reconcile.h"
-#include "buildplan_entity.h"
+#include "bpe.h"
 #include "meta_edge.h"
-#include "entlist.h"
+#include "edges.h"
+#include "vertices.h"
 #include "shadow.h"
 #include "fsedge.h"
 #include "fsname.h"
+#include "namespace.h"
+#include "identity.h"
+#include "disintegrate.h"
+#include "request_handler.h"
 
 #include "macros.h"
+#include "vertex/probes.h"
 
 #include "pattern/section.h"
-#include "render.h"
 #include "zcat.h"
 #include "marshal.h"
 
@@ -83,93 +87,55 @@ static void __attribute__((constructor)) init()
   attrs16_init(rule_cardinality_attrs);
 }
 
-static formula *formula_resolve(rule * restrict rule, rule_run_context * restrict ctx)
-{
-  fsent *fml_n;
-  formula *fml;
-  events_context ectx;
-  event_bacon *msg;
-  narrator_fixed fixed;
-  bacon_writer writer, *builder_writer;
-  meta_edge *me;
-
-  entlist_destroy(&ctx->generate_hits);
-  pattern_generate(
-      rule->formula
-    , ctx->rma->mod
-    , ctx->rma->dirnode
-    , &ctx->invalidation
-    , 0
-    , &ctx->generate_hits
-    , 0
-  );
-  ctx->rma->rma_stats.formula_hits = llist_count(&ctx->generate_hits.lln);
-
-  RUNTIME_ASSERT(llist_count(&ctx->generate_hits.lln) <= 1);
-  fml_n = entlist_first(&ctx->generate_hits)->p;
-
-  /* formula attachment did not resolve, or resolved to an uncreated fsent, possibly one that
-   * was vivified by running the generate formula */
-  if(!fml_n || !vertex_exists_get(&fml_n->vertex)) {
-    msg = system_error_event(&ectx);
-    narrator_fixed_init(&fixed, msg->text, sizeof(msg->text));
-    bacon_writer_init(&writer);
-    builder_writer = bacon_writer_open(&writer, &fixed.base);
-
-    { MAPPING
-      STRING("unresolved formula ref ")
-      { SET
-        vertex_describe(&ctx->rma->vertex, builder_writer);
-      }
-    }
-    bacon_writer_close(&writer);
-
-    msg->size = fixed.l;
-    msg->code = EINVAL;
-    events_publish(&ectx);
-    return 0;
-  }
-
-  fsent_formula_bootstrap(fml_n, &ctx->invalidation);
-  fml = fml_n->self_fml;
-
-  /* fml -> rma meta-edge */
-  meta_connect(&fml->vertex, &ctx->rma->vertex, EDGE_FML_RMA, &ctx->invalidation, &me);
-  me->epoch = rule_system_epoch;
-
-  return fml;
-}
-
-static void bpe_create(
-    rule_run_context * restrict ctx
-  , struct buildplan_entity_search_context * restrict sctx
-  , buildplan_entity ** restrict bpep
-)
+static buildplan_entity *bpe_create(rule_run_context * restrict ctx, struct buildplan_entity_search_context * restrict sctx)
 {
   buildplan_entity *bpe;
   meta_edge *me;
-  entlist list;
 
-  bpe = buildplan_entity_create_hyper(sctx->Blist, sctx->Blen, sctx->Alist, sctx->Alen, ctx->fml, ctx->rma);
+  bpe = buildplan_entity_create_hyper(sctx->Blist, sctx->Blen, sctx->Alist, sctx->Alen, ctx->fml, ctx->rma, &ctx->invalidation);
 
   /* rma -> bpe meta-edge */
-  meta_connect(&ctx->rma->vertex, &bpe->vertex, EDGE_RMA_BPE, &ctx->invalidation, &me);
+  me = meta_connect(&ctx->rma->vertex, &bpe->vertex, EDGE_RMA_BPE, &ctx->invalidation);
   me->epoch = rule_system_epoch;
 
   /* connect */
   rule_connect_probe(ctx->rma->rule, bpe);
+  if(ctx->fml) {
+    me = meta_connect(&ctx->fml->vertex, &bpe->vertex, EDGE_FML_BPE, &ctx->invalidation);
+    me->epoch = rule_system_epoch;
+  }
 
   /* an fsent with an incoming EDGE_BPE_TGT can become invalidated */
-  buildplan_entity_targets(bpe, &list);
-
-  entlist_destroy(&list);
-
   rule_run_probe(ctx, bpe, true);
 
   buildplan_entity_cache_put(sctx, bpe);
   buildplan_entity_validate_enqueue(bpe);
 
-  *bpep = bpe;
+  return bpe;
+}
+
+static void search_rhs_hit(void *ctxp, const pattern_search_hit *hitp)
+{
+  rule_run_context *ctx = ctxp;
+  pattern_search_hit *hit;
+
+  xmalloc(&hit, sizeof(*hit));
+  memcpy(hit, hitp, sizeof(*hit));
+  hashtable_put(&ctx->search_rhs_hits, hit);
+
+  rma_event_search(ctx, hit);
+}
+
+static void search_hit(void *ctxp, const pattern_search_hit *hitp)
+{
+  rule_run_context *ctx = ctxp;
+  pattern_search_hit *hit;
+
+  xmalloc(&hit, sizeof(*hit));
+  memcpy(hit, hitp, sizeof(*hit));
+  hashtable_put(&ctx->search_hits, hit);
+
+  rma_event_search(ctx, hit);
 }
 
 static void run_search_tracking(rule * restrict rule, rule_run_context * restrict ctx)
@@ -179,51 +145,56 @@ static void run_search_tracking(rule * restrict rule, rule_run_context * restric
   pattern_search(
       rule->search
     , ctx->rma->mod
-    , &ctx->search_hits
+    , search_hit
+    , ctx
     , dir_rma_connect_visit
     , ctx->rma
   );
 
   ctx->rma->rma_stats.search_hits += ctx->search_hits.size;
-  if(ctx->search_hits.size) {
-    rule_system_rma_hit(ctx, ctx->rma);
-  } else {
-    rule_system_rma_nohit(ctx, ctx->rma);
-  }
+}
+
+static void generate_hit(void *ctxp, const struct moria_vertex *hit)
+{
+  rule_run_context *ctx = ctxp;
+
+  vertices_push(&ctx->generate_hits, hit);
+
+  rma_event_generate(ctx, hit);
 }
 
 static void run_generate_tracking(rule * restrict rule, rule_run_context * restrict ctx)
 {
-  entlist_destroy(&ctx->generate_hits);
+  vertices_destroy(&ctx->generate_hits);
   pattern_generate(
       rule->generate
     , ctx->rma->mod
-    , ctx->rma->mod->dir_node
+    , 0
+    , 0
+    , ctx->rma->mod->build_dir
     , &ctx->invalidation
     , 0
-    , &ctx->generate_hits
-    , 0
+    , PATTERN_GENERATE_NOFOLLOW
+    , generate_hit
+    , ctx
   );
 
   ctx->rma->rma_stats.generate_hits += llist_count(&ctx->generate_hits.lln);
-  if(llist_count(&ctx->generate_hits.lln)) {
-    rule_system_rma_hit(ctx, ctx->rma);
-  } else {
-    rule_system_rma_nohit(ctx, ctx->rma);
-  }
 }
 
-
-static void run_generate(rule_run_context * restrict ctx, pattern_search_node * restrict match)
+static void run_generate(rule_run_context * restrict ctx, pattern_search_hit * restrict match)
 {
   pattern_generate(
       ctx->rma->rule->generate
     , ctx->rma->mod
-    , ctx->rma->mod->dir_node
+    , 0
+    , 0
+    , ctx->rma->mod->build_dir
     , &ctx->invalidation
     , match
-    , &ctx->generate_hits
-    , 0
+    , PATTERN_GENERATE_NOFOLLOW
+    , generate_hit
+    , ctx
   );
 
   ctx->rma->rma_stats.generate_hits += llist_count(&ctx->generate_hits.lln);
@@ -231,8 +202,8 @@ static void run_generate(rule_run_context * restrict ctx, pattern_search_node * 
 
 static int pattern_search_compare(const void *a, const void *b)
 {
-  const struct pattern_search_node *A = *(typeof(A)*)a;
-  const struct pattern_search_node *B = *(typeof(B)*)b;
+  const struct pattern_search_hit *A = *(typeof(A)*)a;
+  const struct pattern_search_hit *B = *(typeof(B)*)b;
 
   int r;
   int x;
@@ -255,7 +226,7 @@ static void matches_sorted(rule_run_context * restrict ctx)
 {
   int y;
   size_t Msz;
-  pattern_search_node *match;
+  pattern_search_hit *match;
 
   assure(&ctx->Mlist, sizeof(*ctx->Mlist), ctx->search_hits.size, &ctx->Mlist_alloc);
 
@@ -318,13 +289,14 @@ static void __attribute__((nonnull)) search_zero_to_one(
   , rule_run_context * restrict ctx
 )
 {
-  pattern_search_node *match;
+  pattern_search_hit *match;
   buildplan_entity *bpe;
   moria_vertex *v;
   struct buildplan_entity_search_context sctx;
   int x;
 
   /* run the match pattern */
+  rma_operation_push(ctx);
   run_search_tracking(rule, ctx);
   for(x = 0; x < ctx->search_hits.table_size; x++)
   {
@@ -344,8 +316,9 @@ static void __attribute__((nonnull)) search_zero_to_one(
     if((bpe = bpe_search(ctx, &sctx))) {
       continue;
     }
-    bpe_create(ctx, &sctx, &bpe);
+    bpe = bpe_create(ctx, &sctx);
   }
+  rma_operation_pop(ctx);
 }
 
 /*
@@ -357,11 +330,12 @@ static void __attribute__((nonnull)) generate_zero_to_one(rule * restrict rule, 
   moria_vertex *v;
   fsent *n;
   struct buildplan_entity_search_context sctx;
-  entlist *eln;
+  vertices *eln;
 
+  rma_operation_push(ctx);
   run_generate_tracking(rule, ctx);
-  entlist_foreach(&ctx->generate_hits, n, eln) {
-    v = &n->vertex;
+  vertices_foreach(&ctx->generate_hits, v, eln) {
+    n = containerof(v, typeof(*n), vertex);
     sctx.Blist = 0;
     sctx.Blen = 0;
     sctx.Alist = &v;
@@ -373,8 +347,9 @@ static void __attribute__((nonnull)) generate_zero_to_one(rule * restrict rule, 
     if((bpe = bpe_search(ctx, &sctx))) {
       continue;
     }
-    bpe_create(ctx, &sctx, &bpe);
+    bpe = bpe_create(ctx, &sctx);
   }
+  rma_operation_pop(ctx);
 }
 
 /*
@@ -382,12 +357,13 @@ static void __attribute__((nonnull)) generate_zero_to_one(rule * restrict rule, 
  */
 static void __attribute__((nonnull)) search_zero_to_many(rule * restrict rule, rule_run_context * restrict ctx)
 {
-  pattern_search_node * match = 0;
+  pattern_search_hit * match = 0;
   buildplan_entity *bpe;
   struct buildplan_entity_search_context sctx;
   size_t z;
   int x;
 
+  rma_operation_push(ctx);
   run_search_tracking(rule, ctx);
 
   z = 0;
@@ -402,7 +378,7 @@ static void __attribute__((nonnull)) search_zero_to_many(rule * restrict rule, r
     ctx->Alist[z++] = &match->node->vertex;
   }
   if(z == 0) {
-    return;
+    goto end;
   }
 
   sctx.Blist = 0;
@@ -414,9 +390,12 @@ static void __attribute__((nonnull)) search_zero_to_many(rule * restrict rule, r
   sctx.rma = ctx->rma;
   sctx.fml = ctx->fml;
   if((bpe = bpe_search(ctx, &sctx))) {
-    return;
+    goto end;
   }
-  bpe_create(ctx, &sctx, &bpe);
+  bpe = bpe_create(ctx, &sctx);
+
+end:
+  rma_operation_pop(ctx);
 }
 
 /*
@@ -426,20 +405,22 @@ static void __attribute__((nonnull)) generate_zero_to_many(rule * restrict rule,
 {
   buildplan_entity *bpe;
   struct buildplan_entity_search_context sctx;
-  fsent *n;
+  moria_vertex *v;
   size_t z;
-  entlist *eln;
+  vertices *eln;
 
+  rma_operation_push(ctx);
   run_generate_tracking(rule, ctx);
 
   z = 0;
   assure(&ctx->Alist, sizeof(*ctx->Alist), llist_count(&ctx->generate_hits.lln), &ctx->Alist_alloc);
 
-  entlist_foreach(&ctx->generate_hits, n, eln) {
-    ctx->Alist[z++] = &n->vertex;
+  // unzip
+  vertices_foreach(&ctx->generate_hits, v, eln) {
+    ctx->Alist[z++] = v;
   }
   if(z == 0) {
-    return;
+    goto end;
   }
 
   sctx.Blist = 0;
@@ -451,9 +432,12 @@ static void __attribute__((nonnull)) generate_zero_to_many(rule * restrict rule,
   sctx.rma = ctx->rma;
   sctx.fml = ctx->fml;
   if((bpe = bpe_search(ctx, &sctx))) {
-    return;
+    goto end;
   }
-  bpe_create(ctx, &sctx, &bpe);
+  bpe = bpe_create(ctx, &sctx);
+
+end:
+  rma_operation_pop(ctx);
 }
 
 /*
@@ -461,16 +445,17 @@ static void __attribute__((nonnull)) generate_zero_to_many(rule * restrict rule,
  */
 static void __attribute__((nonnull)) search_one_to_one(rule * restrict rule, rule_run_context * restrict ctx)
 {
-  pattern_search_node * match = 0;
+  pattern_search_hit * match = 0;
   buildplan_entity *bpe;
   int x;
-  fsent * generated;
+  moria_vertex *generated;
   struct buildplan_entity_search_context sctx;
-  entlist *eln;
+  vertices *eln;
 
   assure(&ctx->Alist, sizeof(*ctx->Alist), 1, &ctx->Alist_alloc);
   assure(&ctx->Blist, sizeof(*ctx->Blist), 1, &ctx->Blist_alloc);
 
+  rma_operation_push(ctx);
   run_search_tracking(rule, ctx);
   if(ctx->search_hits.size == 0 && !system_has_error) {
     rule_run_probe(ctx, 0, true);
@@ -482,12 +467,12 @@ static void __attribute__((nonnull)) search_one_to_one(rule * restrict rule, rul
       continue;
     }
 
-    entlist_destroy(&ctx->generate_hits);
+    vertices_destroy(&ctx->generate_hits);
     run_generate(ctx, match);
 
-    entlist_foreach(&ctx->generate_hits, generated, eln) {
+    vertices_foreach(&ctx->generate_hits, generated, eln) {
       ctx->Blist[0] = &match->node->vertex; // source, down
-      ctx->Alist[0] = &generated->vertex;   // target, up
+      ctx->Alist[0] = generated;            // target, up
 
       sctx = (typeof(sctx)) {
           Blist : ctx->Blist
@@ -502,9 +487,11 @@ static void __attribute__((nonnull)) search_one_to_one(rule * restrict rule, rul
       if((bpe = bpe_search(ctx, &sctx))) {
         continue;
       }
-      bpe_create(ctx, &sctx, &bpe);
+      bpe = bpe_create(ctx, &sctx);
     }
   }
+
+  rma_operation_pop(ctx);
 }
 
 /*
@@ -512,13 +499,14 @@ static void __attribute__((nonnull)) search_one_to_one(rule * restrict rule, rul
  */
 static void __attribute__((nonnull)) generate_one_to_one(rule * restrict rule, rule_run_context * restrict ctx)
 {
-  pattern_search_node * match = 0;
+  pattern_search_hit * match = 0;
   buildplan_entity *bpe;
   struct buildplan_entity_search_context sctx;
-  fsent * generated;
-  entlist *eln;
+  moria_vertex *generated;
+  vertices *eln;
   int x;
 
+  rma_operation_push(ctx);
   run_search_tracking(rule, ctx);
   for(x = 0; x < ctx->search_hits.table_size && !system_has_error; x++)
   {
@@ -526,11 +514,11 @@ static void __attribute__((nonnull)) generate_one_to_one(rule * restrict rule, r
       continue;
     }
 
-    entlist_destroy(&ctx->generate_hits);
+    vertices_destroy(&ctx->generate_hits);
     run_generate(ctx, match);
 
-    entlist_foreach(&ctx->generate_hits, generated, eln) {
-      ctx->Blist[0] = &generated->vertex;   // source, down
+    vertices_foreach(&ctx->generate_hits, generated, eln) {
+      ctx->Blist[0] = generated;            // source, down
       ctx->Alist[0] = &match->node->vertex; // target, up
 
       sctx.Blist = ctx->Blist;
@@ -544,9 +532,10 @@ static void __attribute__((nonnull)) generate_one_to_one(rule * restrict rule, r
       if((bpe = bpe_search(ctx, &sctx))) {
         continue;
       }
-      bpe_create(ctx, &sctx, &bpe);
+      bpe = bpe_create(ctx, &sctx);
     }
   }
+  rma_operation_pop(ctx);
 }
 
 /*
@@ -554,16 +543,17 @@ static void __attribute__((nonnull)) generate_one_to_one(rule * restrict rule, r
  */
 static void __attribute__((nonnull)) search_one_to_many(rule * restrict rule, rule_run_context * restrict ctx)
 {
-  pattern_search_node * match = 0;
+  pattern_search_hit * match = 0;
   buildplan_entity *bpe;
   int x;
   size_t Asz;
-  fsent *n = 0;
+  moria_vertex *v;
   struct buildplan_entity_search_context sctx;
-  entlist *eln;
+  vertices *eln;
 
   assure(&ctx->Blist, sizeof(*ctx->Blist), 1, &ctx->Blist_alloc);
 
+  rma_operation_push(ctx);
   run_search_tracking(rule, ctx);
   for(x = 0; x < ctx->search_hits.table_size && !system_has_error; x++)
   {
@@ -573,13 +563,13 @@ static void __attribute__((nonnull)) search_one_to_many(rule * restrict rule, ru
 
     ctx->Blist[0] = &match->node->vertex;
 
-    entlist_destroy(&ctx->generate_hits);
+    vertices_destroy(&ctx->generate_hits);
     run_generate(ctx, match);
 
     assure(&ctx->Alist, sizeof(*ctx->Alist), llist_count(&ctx->generate_hits.lln), &ctx->Alist_alloc);
     Asz = 0;
-    entlist_foreach(&ctx->generate_hits, n, eln) {
-      ctx->Alist[Asz++] = &n->vertex;
+    vertices_foreach(&ctx->generate_hits, v, eln) {
+      ctx->Alist[Asz++] = v;
     }
 
     sctx.Blist = ctx->Blist;
@@ -593,8 +583,9 @@ static void __attribute__((nonnull)) search_one_to_many(rule * restrict rule, ru
     if((bpe = bpe_search(ctx, &sctx))) {
       continue;
     }
-    bpe_create(ctx, &sctx, &bpe);
+    bpe = bpe_create(ctx, &sctx);
   }
+  rma_operation_pop(ctx);
 }
 
 /*
@@ -602,16 +593,17 @@ static void __attribute__((nonnull)) search_one_to_many(rule * restrict rule, ru
  */
 static void __attribute__((nonnull)) generate_one_to_many(rule * restrict rule, rule_run_context * restrict ctx)
 {
-  pattern_search_node * match = 0;
+  pattern_search_hit * match = 0;
   buildplan_entity *bpe;
   size_t Bsz;
-  fsent *n = 0;
+  moria_vertex *v;
   struct buildplan_entity_search_context sctx;
   int x;
-  entlist *eln;
+  vertices *eln;
 
   assure(&ctx->Alist, sizeof(*ctx->Alist), 1, &ctx->Alist_alloc);
 
+  rma_operation_push(ctx);
   run_search_tracking(rule, ctx);
   for(x = 0; x < ctx->search_hits.table_size && !system_has_error; x++)
   {
@@ -621,13 +613,13 @@ static void __attribute__((nonnull)) generate_one_to_many(rule * restrict rule, 
 
     ctx->Alist[0] = &match->node->vertex;
 
-    entlist_destroy(&ctx->generate_hits);
+    vertices_destroy(&ctx->generate_hits);
     run_generate(ctx, match);
 
     assure(&ctx->Blist, sizeof(*ctx->Blist), llist_count(&ctx->generate_hits.lln), &ctx->Blist_alloc);
     Bsz = 0;
-    entlist_foreach(&ctx->generate_hits, n, eln) {
-      ctx->Blist[Bsz++] = &n->vertex;
+    vertices_foreach(&ctx->generate_hits, v, eln) {
+      ctx->Blist[Bsz++] = v;
     }
 
     sctx.Blist = ctx->Blist;
@@ -641,8 +633,9 @@ static void __attribute__((nonnull)) generate_one_to_many(rule * restrict rule, 
     if((bpe = bpe_search(ctx, &sctx))) {
       return;
     }
-    bpe_create(ctx, &sctx, &bpe);
+    bpe = bpe_create(ctx, &sctx);
   }
+  rma_operation_pop(ctx);
 }
 
 /*
@@ -654,9 +647,10 @@ static void __attribute__((nonnull)) search_many_to_one(rule * restrict rule, ru
   buildplan_entity *bpe;
   struct buildplan_entity_search_context sctx;
   int x, y;
-  fsent *n = 0;
-  entlist *eln;
+  moria_vertex *v;
+  vertices *eln;
 
+  rma_operation_push(ctx);
   run_search_tracking(rule, ctx);
   matches_sorted(ctx);
   assure(&ctx->Alist, sizeof(*ctx->Alist), 1, &ctx->Alist_alloc);
@@ -674,11 +668,11 @@ static void __attribute__((nonnull)) search_many_to_one(rule * restrict rule, ru
     }
 
     /* run the generate pattern in context of a match node in the group */
-    entlist_destroy(&ctx->generate_hits);
+    vertices_destroy(&ctx->generate_hits);
     run_generate(ctx, ctx->Mlist[x]);
 
-    entlist_foreach(&ctx->generate_hits, n, eln) {
-      ctx->Alist[0] = &n->vertex;
+    vertices_foreach(&ctx->generate_hits, v, eln) {
+      ctx->Alist[0] = v;
 
       sctx.Blist = ctx->Blist;
       sctx.Blen = Bsz;
@@ -692,12 +686,13 @@ static void __attribute__((nonnull)) search_many_to_one(rule * restrict rule, ru
       if((bpe = bpe_search(ctx, &sctx))) {
         goto next;
       }
-      bpe_create(ctx, &sctx, &bpe);
+      bpe = bpe_create(ctx, &sctx);
     }
 
   next:
     x = y;
   }
+  rma_operation_pop(ctx);
 }
 
 /*
@@ -705,14 +700,15 @@ static void __attribute__((nonnull)) search_many_to_one(rule * restrict rule, ru
  */
 static void __attribute__((nonnull)) generate_many_to_one(rule * restrict rule, rule_run_context * restrict ctx)
 {
-  pattern_search_node * match = 0;
+  pattern_search_hit * match = 0;
   buildplan_entity *bpe;
   struct buildplan_entity_search_context sctx;
   size_t Bsz;
-  fsent *n = 0;
-  entlist *eln;
+  moria_vertex *v;
+  vertices *eln;
   int x;
 
+  rma_operation_push(ctx);
   run_search_tracking(rule, ctx);
 
   for(x = 0; x < ctx->search_hits.table_size && !system_has_error; x++)
@@ -722,13 +718,13 @@ static void __attribute__((nonnull)) generate_many_to_one(rule * restrict rule, 
     }
 
     ctx->Alist[0] = &match->node->vertex;
-    entlist_destroy(&ctx->generate_hits);
+    vertices_destroy(&ctx->generate_hits);
     run_generate(ctx, match);
 
     Bsz = 0;
     assure(&ctx->Blist, sizeof(*ctx->Blist), llist_count(&ctx->generate_hits.lln), &ctx->Blist_alloc);
-    entlist_foreach(&ctx->generate_hits, n, eln) {
-      ctx->Blist[Bsz++] = &n->vertex;
+    vertices_foreach(&ctx->generate_hits, v, eln) {
+      ctx->Blist[Bsz++] = v;
     }
 
     sctx.Blist = ctx->Blist;
@@ -742,8 +738,9 @@ static void __attribute__((nonnull)) generate_many_to_one(rule * restrict rule, 
     if((bpe = bpe_search(ctx, &sctx))) {
       continue;
     }
-    bpe_create(ctx, &sctx, &bpe);
+    bpe = bpe_create(ctx, &sctx);
   }
+  rma_operation_pop(ctx);
 }
 
 /*
@@ -756,11 +753,12 @@ static void __attribute__((nonnull)) search_many_to_many(rule * restrict rule, r
   buildplan_entity *bpe;
   int x;
   int y;
-  fsent *n = 0;
+  moria_vertex *v;
   struct buildplan_entity_search_context sctx;
-  entlist *eln;
+  vertices *eln;
 
   /* run the match pattern */
+  rma_operation_push(ctx);
   run_search_tracking(rule, ctx);
   matches_sorted(ctx);
   assure(&ctx->Blist, sizeof(*ctx->Blist), ctx->search_hits.size, &ctx->Blist_alloc);
@@ -777,13 +775,13 @@ static void __attribute__((nonnull)) search_many_to_many(rule * restrict rule, r
     }
 
     /* run the generate pattern in context of a match node in the group */
-    entlist_destroy(&ctx->generate_hits);
+    vertices_destroy(&ctx->generate_hits);
     run_generate(ctx, ctx->Mlist[x]);
 
     assure(&ctx->Alist, sizeof(*ctx->Alist), llist_count(&ctx->generate_hits.lln), &ctx->Alist_alloc);
     Asz = 0;
-    entlist_foreach(&ctx->generate_hits, n, eln) {
-      ctx->Alist[Asz++] = &n->vertex;
+    vertices_foreach(&ctx->generate_hits, v, eln) {
+      ctx->Alist[Asz++] = v;
     }
 
     sctx.Blist = ctx->Blist;
@@ -797,11 +795,12 @@ static void __attribute__((nonnull)) search_many_to_many(rule * restrict rule, r
     if((bpe = bpe_search(ctx, &sctx))) {
       goto next;
     }
-    bpe_create(ctx, &sctx, &bpe);
+    bpe = bpe_create(ctx, &sctx);
 
   next:
     x = y;
   }
+  rma_operation_pop(ctx);
 }
 
 /*
@@ -815,10 +814,11 @@ static void __attribute__((nonnull)) generate_many_to_many(rule * restrict rule,
   struct buildplan_entity_search_context sctx;
   int x;
   int y;
-  fsent *n;
-  entlist *eln;
+  vertices *eln;
+  moria_vertex *v;
 
   /* run the match pattern */
+  rma_operation_push(ctx);
   run_search_tracking(rule, ctx);
   matches_sorted(ctx);
   assure(&ctx->Alist, sizeof(*ctx->Alist), ctx->search_hits.size, &ctx->Alist_alloc);
@@ -835,13 +835,13 @@ static void __attribute__((nonnull)) generate_many_to_many(rule * restrict rule,
     }
 
     /* run the generate pattern in context of a match node in the group */
-    entlist_destroy(&ctx->generate_hits);
+    vertices_destroy(&ctx->generate_hits);
     run_generate(ctx, ctx->Mlist[x]);
 
     assure(&ctx->Blist, sizeof(*ctx->Blist), llist_count(&ctx->generate_hits.lln), &ctx->Blist_alloc);
     Bsz = 0;
-    entlist_foreach(&ctx->generate_hits, n, eln) {
-      ctx->Blist[Bsz++] = &n->vertex;
+    vertices_foreach(&ctx->generate_hits, v, eln) {
+      ctx->Blist[Bsz++] = v;
     }
 
     sctx.Blist = ctx->Blist;
@@ -855,11 +855,12 @@ static void __attribute__((nonnull)) generate_many_to_many(rule * restrict rule,
     if((bpe = bpe_search(ctx, &sctx))) {
       goto next;
     }
-    bpe_create(ctx, &sctx, &bpe);
+    bpe = bpe_create(ctx, &sctx);
 
   next:
     x = y;
   }
+  rma_operation_pop(ctx);
 }
 
 //
@@ -868,28 +869,19 @@ static void __attribute__((nonnull)) generate_many_to_many(rule * restrict rule,
 
 void rule_dispose(struct rule * restrict rule)
 {
-  pattern_free(rule->search);
-  pattern_free(rule->generate);
-  pattern_free(rule->formula);
-  pattern_free(rule->target);
-  pattern_free(rule->attachment);
-  pattern_free(rule->search_rhs);
+  /* not on any block list */
+  //RUNTIME_ASSERT(!llist_attached(&rule->lln));
 
-  if(rule->links[0]) {
-    if(rule->link_refmarks[0] == rule->links[0]->refmark) {
-      moria_edge_disconnect(&g_graph, &rule->links[0]->edge);
-      fsedge_release(rule->links[0]);
-    }
-  }
-  if(rule->links[1]) {
-    if(rule->link_refmarks[1] == rule->links[1]->refmark) {
-      moria_edge_disconnect(&g_graph, &rule->links[1]->edge);
-      fsedge_release(rule->links[1]);
-    }
-  }
+  pattern_free((void*)rule->search);
+  pattern_free((void*)rule->generate);
+  pattern_free((void*)rule->formula);
+  pattern_free((void*)rule->target);
+  pattern_free((void*)rule->attachment);
+  pattern_free((void*)rule->search_rhs);
 
   llist_delete(&rule->vertex.owner);
   llist_append(&rule_freelist, &rule->vertex.owner);
+  ASAN_TAINT(rule);
 }
 
 void rule_release(rule * restrict r)
@@ -908,13 +900,9 @@ void rule_release(rule * restrict r)
 void rule_cleanup(void)
 {
   rule *r;
-  llist *T;
 
-  llist_foreach_safe(&rule_list, r, vertex.owner, T) {
-    rule_dispose(r);
-  }
-
-  llist_foreach_safe(&rule_freelist, r, vertex.owner, T) {
+  while((r = llist_shift(&rule_freelist, typeof(*r), vertex.owner))) {
+    ASAN_CLEAN(r);
     free(r);
   }
 }
@@ -924,7 +912,7 @@ int rule_validate(const rule * restrict rule, char * restrict error, size_t erro
   /* only those invalid cases which absolutely cannot be detected by the parser
    * should be considered here */
   if(rule->card == RULE_MANY_TO_ONE) {
-    if(rule->search && rule->search->capture_groups_count > 0) {
+    if(rule->search && rule->search->pattern.capture_groups_count > 0) {
       return zcatf(
           error, error_sz, "search pattern in many-to-one rules cannot have capturing groups @ %s [%d,%d - %d,%d]"
         , rule->loc.fname
@@ -940,32 +928,31 @@ int rule_validate(const rule * restrict rule, char * restrict error, size_t erro
 }
 
 rule *rule_mk(
-    moria_graph * restrict g
-  , module * restrict mod
-  , ruleset * restrict rules
-  , pattern * restrict search
-  , pattern * restrict generate
-  , pattern * restrict formula
-  , pattern * restrict target
-  , pattern * restrict attachment
-  , pattern * restrict search2
-  , const rule_bacon * restrict bacon
-  , uint32_t attrs
-  , const yyu_location * restrict loc
+    /*  1 */ moria_graph * restrict g
+  , /*  2 */ const ruleset * restrict container
+  , /*  3 */ search_pattern * restrict search
+  , /*  4 */ generate_pattern * restrict generate
+  , /*  5 */ lookup_pattern * restrict formula
+  , /*  6 */ lookup_pattern * restrict target
+  , /*  7 */ attachment_pattern * restrict attachment
+  , /*  8 */ search_pattern * restrict search2
+  , /*  9 */ const rule_bacon * restrict bacon
+  , /* 10 */ uint32_t attrs
+  , /* 11 */ const yyu_location * restrict loc
 )
 {
-  uint64_t h;
   rule *r;
+  identity_ctx id;
 
-  if((r = llist_shift(&rule_freelist, typeof(*r), vertex.owner)) == 0) {
+  if((r = llist_shift(&rule_freelist, typeof(*r), vertex.owner))) {
+    ASAN_CLEAN(r);
+    memset(r, 0, sizeof(*r));
+  } else {
     xmalloc(&r, sizeof(*r));
   }
 
   moria_vertex_init(&r->vertex, g, VERTEX_RULE | VERTEX_OK);
   llist_append(&rule_list, &r->vertex.owner);
-
-  r->mod = mod;
-  r->rules = rules;
 
   r->search = search;
   r->generate = generate;
@@ -981,28 +968,27 @@ rule *rule_mk(
     memset(&r->loc, 0, sizeof(r->loc));
   }
 
-  /* id */
-  h = 0;
-  if(r->mod) {
-    h = hash64(h, r->mod->id, r->mod->id_len);
-  } else if(r->rules) {
-    h = hash64(h, r->rules->id, r->rules->id_len);
-  }
-  h = hash64(h, &loc->f_lin, sizeof(loc->f_lin));
-  r->id_len = zcatf(r->id, sizeof(r->id), "%016"PRIx64, h);
+  identity_init(&id);
+  r->container = container;
+  rule_compute_id(r, &id);
+  r->id_len = identity_mk(&id, r->id, sizeof(r->id));
 
-  /* name */
   r->name_len = zcatw(r->name, sizeof(r->name), bacon->name, bacon->name_len);
-
-  shadow_link(g_shadow_rules, r->id, r->id_len, &r->vertex, &r->links[0]);
-  r->link_refmarks[0] = r->links[0]->refmark;
-
-  if(r->name_len) {
-    shadow_link(g_shadow_rules_byname, r->name, r->name_len, &r->vertex, &r->links[1]);
-    r->link_refmarks[1] = r->links[1]->refmark;
+  if(bacon->namespace_len) {
+    r->namespace_len = zcatw(r->namespace, sizeof(r->namespace), bacon->namespace, bacon->namespace_len);
   } else {
-    r->links[1] = 0;
+    r->namespace_len = zcats(r->namespace, sizeof(r->namespace), "modules");
   }
+
+  /* uniqueness by id is enforced */
+  shadow_mkref_new(g_shadow_rules, r->id, r->id_len, &r->vertex);
+
+  /* uniqueness of names is not enforced */
+  if(r->name_len) {
+    shadow_mkref(g_shadow_rules_byname, r->name, r->name_len, &r->vertex);
+  }
+
+  vertex_alloc_probe(&r->vertex);
 
   return r;
 }
@@ -1011,23 +997,26 @@ static fsent *resolve_attachment(rule * restrict bind, rule_run_context * restri
 {
   fsent *attachment;
 
-  entlist_destroy(&ctx->generate_hits);
+  vertices_destroy(&ctx->generate_hits);
 
-  pattern_generate(
+  pattern_attachment_generate(
       bind->attachment
     , ctx->rma->mod
-    , ctx->rma->mod->dir_node
+    , 0
+    , 0
+    , ctx->rma->mod->build_dir
     , &ctx->invalidation
     , 0 /* match */
-    , &ctx->generate_hits
     , PATTERN_GENERATE_NOFOLLOW
+    , generate_hit
+    , ctx
   );
 
   RUNTIME_ASSERT(llist_count(&ctx->generate_hits.lln) <= 1);
 
   attachment = 0;
   if(llist_count(&ctx->generate_hits.lln) == 1) {
-    attachment = entlist_first(&ctx->generate_hits)->p;
+    attachment = containerof(vertices_first(&ctx->generate_hits)->p, typeof(*attachment), vertex);
   }
 
   return attachment;
@@ -1035,39 +1024,35 @@ static fsent *resolve_attachment(rule * restrict bind, rule_run_context * restri
 
 static void bind_one_to_one(struct rule * restrict bind, fsent *attachment, rule_run_context * restrict ctx)
 {
-  moria_vertex *target;
+  fsent *target;
   meta_edge *me;
 
-  if(llist_count(&ctx->target_hits.lln) == 0) {
-    bind_run_probe(bind, ctx->rma->mod, 0, 0, 0);
-    return;
-  }
-  RUNTIME_ASSERT(llist_count(&ctx->target_hits.lln) == 1);
-  target = entlist_first(&ctx->target_hits)->p;
+  RUNTIME_ASSERT(ctx->lctx.rctx.r == 1);
+  target = containerof(ctx->lctx.rctx.vertices[0], typeof(*target), vertex);
 
   /* promote the attachment node to a link */
   if(vertex_filetype_get(&attachment->vertex) == VERTEX_FILETYPE_REG) {
-    vertex_filetype_set(&attachment->vertex, VERTEX_FILETYPE_LINK);
+    vertex_filetype_set(&attachment->vertex, VERTEX_FILETYPE_SYMLINK);
     attachment->vertex.attrs |= MORIA_VERTEX_LINK;
   }
   RUNTIME_ASSERT(vertex_type_get(&attachment->vertex) == VERTEX_SHADOW_LINK);
 
-  attachment->vertex.ref = target;
+  attachment->vertex.ref = &target->vertex;
 
-  meta_connect(&ctx->rma->vertex, &attachment->vertex, EDGE_RMA_TGT, &ctx->invalidation, &me);
+  me = meta_connect(&ctx->rma->vertex, &attachment->vertex, EDGE_RMA_BIND, &ctx->invalidation);
   me->epoch = rule_system_epoch;
 
-  bind_run_probe(bind, ctx->rma->mod, 0, attachment, containerof(target, fsent, vertex));
+  rma_event_bind(ctx, attachment, target, 0);
+  bind_run_probe(ctx->rma, attachment, target, 0);
 }
 
 static void bind_one_to_many(struct rule * restrict bind, fsent *attachment, rule_run_context * restrict ctx)
 {
   moria_vertex *v;
   fsent *target;
-  fsent *location;
+  fsent *binding;
   int x;
-  pattern_search_node *match;
-  entlist *eln;
+  pattern_search_hit *match;
   meta_edge *me;
 
   /* promote the attachment node to a directory */
@@ -1077,38 +1062,38 @@ static void bind_one_to_many(struct rule * restrict bind, fsent *attachment, rul
   RUNTIME_ASSERT(vertex_type_get(&attachment->vertex) == VERTEX_SHADOW_DIR);
 
   if(bind->target) {
-    entlist_foreach(&ctx->target_hits, v, eln) {
-      target = containerof(v, typeof(*target), vertex);
+    v = ctx->lctx.rctx.vertices[0];
+    target = containerof(v, typeof(*target), vertex);
 
-      // link @ //module/uses/$name
-      shadow_graft_bind(ctx->rma->mod, target, attachment, &location);
+    /* make a link in the attachment directory ; this needs to propagate from
+     * the directory via EDGE_DEPENDS */
+    shadow_graft_bind(ctx->rma->mod, target, attachment, &binding, &ctx->invalidation);
 
-      meta_connect(&ctx->rma->vertex, &location->vertex, EDGE_RMA_TGT, &ctx->invalidation, &me);
-      me->epoch = rule_system_epoch;
+    me = meta_connect(&ctx->rma->vertex, &binding->vertex, EDGE_RMA_BIND, &ctx->invalidation);
+    me->epoch = rule_system_epoch;
 
-      bind_run_probe(bind, ctx->rma->mod, attachment, location, target);
-    }
-    if(llist_empty(&ctx->target_hits.lln)) {
-      bind_run_probe(bind, ctx->rma->mod, attachment, 0, 0);
-    }
+    rma_event_bind(ctx, attachment, target, binding);
+    bind_run_probe(ctx->rma, attachment, target, binding);
   } else if(bind->search) {
     for(x = 0; x < ctx->search_hits.table_size; x++)
     {
       if(!(match = hashtable_table_entry(&ctx->search_hits, x))) {
         continue;
       }
-
       target = match->node;
-      // link @ //module/uses/$name
-      shadow_graft_bind(ctx->rma->mod, target, attachment, &location);
 
-      meta_connect(&ctx->rma->vertex, &location->vertex, EDGE_RMA_TGT, &ctx->invalidation, &me);
+      // link @ //module/uses/$name
+      shadow_graft_bind(ctx->rma->mod, target, attachment, &binding, &ctx->invalidation);
+
+      me = meta_connect(&ctx->rma->vertex, &binding->vertex, EDGE_RMA_BIND, &ctx->invalidation);
       me->epoch = rule_system_epoch;
 
-      bind_run_probe(bind, ctx->rma->mod, attachment, location, target);
+      rma_event_bind(ctx, attachment, target, binding);
+      bind_run_probe(ctx->rma, attachment, target, binding);
     }
     if(ctx->search_hits.size == 0) {
-      bind_run_probe(bind, ctx->rma->mod, attachment, 0, 0);
+      rma_event_bind(ctx, attachment, 0, 0);
+      bind_run_probe(ctx->rma, attachment, 0, 0);
     }
   }
 }
@@ -1120,9 +1105,10 @@ static void search_search_run(struct rule * restrict rule, rule_run_context * re
   buildplan_entity *bpe;
   struct buildplan_entity_search_context sctx;
   int x;
-  pattern_search_node *match;
+  pattern_search_hit *match;
 
   /* LHS */
+  rma_operation_push(ctx);
   run_search_tracking(rule, ctx);
 
   assure(&ctx->Blist, sizeof(*ctx->Blist), ctx->search_hits.size, &ctx->Blist_alloc);
@@ -1141,11 +1127,12 @@ static void search_search_run(struct rule * restrict rule, rule_run_context * re
   pattern_search(
       rule->search_rhs
     , ctx->rma->mod
-    , &ctx->search_rhs_hits
+    , search_rhs_hit
+    , ctx
     , dir_rma_connect_visit
     , ctx->rma
   );
-  ctx->rma->rma_stats.search_hits += ctx->search_rhs_hits.size;
+  ctx->rma->rma_stats.search_rhs_hits += ctx->search_rhs_hits.size;
 
   assure(&ctx->Alist, sizeof(*ctx->Alist), ctx->search_rhs_hits.size, &ctx->Alist_alloc);
   Asz = 0;
@@ -1166,44 +1153,126 @@ static void search_search_run(struct rule * restrict rule, rule_run_context * re
   sctx.rma = ctx->rma;
   sctx.fml = ctx->fml;
   if((bpe = bpe_search(ctx, &sctx))) {
-    return;
+    goto end;
   }
-  bpe_create(ctx, &sctx, &bpe);
+  bpe = bpe_create(ctx, &sctx);
+
+end:
+  rma_operation_pop(ctx);
+}
+
+static void namespace_lookup_error(struct rule * restrict bind)
+{
+  narrator_fixed fixed;
+  bacon_writer writer, *builder_writer;
+  events_context ectx;
+  bamipc_message *msg;
+  const yyu_location *loc;
+
+  loc = &bind->loc;
+
+  msg = system_error_event(&ectx);
+  narrator_fixed_init(&fixed, msg->text, msg->size);
+  bacon_writer_init(&writer);
+  builder_writer = bacon_writer_open(&writer, &fixed.base);
+
+  { MAPPING
+    STRING("unresolved namespace ref");
+    { SET
+      { MAPPING
+        STRING("location")
+        LOADF("%s [%d,%d - %d,%d]", loc->fname, loc->f_lin + 1, loc->f_col + 1, loc->l_lin + 1, loc->l_col + 1);
+      }
+      { MAPPING STRING("namespace")
+        BYTES(bind->namespace, bind->namespace_len)
+      }
+    }
+  }
+  bacon_writer_close(&writer);
+
+  msg->code = EINVAL;
+  msg->len = fixed.l;
+  events_publish(&ectx);
+}
+
+static void namespace_resolve_error(struct lookup_context * restrict ctx, int r)
+{
+  narrator_fixed fixed;
+  bacon_writer writer, *builder_writer;
+  events_context ectx;
+  bamipc_message *msg;
+
+  msg = system_error_event(&ectx);
+  narrator_fixed_init(&fixed, msg->text, msg->size);
+  bacon_writer_init(&writer);
+  builder_writer = bacon_writer_open(&writer, &fixed.base);
+
+  { MAPPING
+    if(r == 0) {
+      STRING("unresolved bind target")
+    } else {
+      STRING("ambiguous bind target")
+    }
+    lookup_namespace_error_build(builder_writer, ctx);
+  }
+
+  bacon_writer_close(&writer);
+  msg->code = EINVAL;
+  msg->len = fixed.l;
+  events_publish(&ectx);
 }
 
 static void bind_run(struct rule * restrict bind, rule_run_context * restrict ctx)
 {
-  fsname *index;
-  entlist *eln;
   meta_edge *me;
   fsent *attachment;
+  namespace *fsi;
+  int r;
 
-  entlist_destroy(&ctx->target_hits);
-  entlist_destroy(&ctx->target_index_hits);
+  rma_operation_push(ctx);
 
   /* attachment */
   if((attachment = resolve_attachment(bind, ctx)) == 0) {
     ctx->rma->rma_stats.attachment_hits = 0;
-    return;
+    goto end;
   }
   RUNTIME_ASSERT(vertex_state_get(&attachment->vertex) != VERTEX_UNLINKED);
   RUNTIME_ASSERT(vertex_shadow_get(&attachment->vertex));
   ctx->rma->rma_stats.attachment_hits = 1;
 
   if(bind->target) {
-    /* resolve targets pattern */
-    pattern_lookup_indexed(bind->target, ctx->rma->mod->vars, &ctx->target_index_hits, &ctx->target_hits);
-    ctx->rma->rma_stats.target_hits = llist_count(&ctx->target_hits.lln);
-    if(system_has_error) {
+    /* lookup targets pattern namespace */
+    if((fsi = namespace_lookup(bind->namespace, bind->namespace_len)) == NULL) {
+      namespace_lookup_error(bind);
       goto end;
     }
 
-    /* take an edge on each fsname visited during targets resolution */
-    entlist_foreach(&ctx->target_index_hits, index, eln) {
-      meta_connect(&index->vertex, &ctx->rma->vertex, EDGE_FSNAME_RMA, &ctx->invalidation, &me);
+    /* resolve targets pattern */
+    memset(&ctx->lctx, 0, sizeof(ctx->lctx));
+    ctx->lctx.ns = fsi;
+    ctx->lctx.ns_name = fsi->name;
+    ctx->lctx.ns_name_len = fsi->name_len;
+    ctx->lctx.loc = &bind->target->pattern.loc;
+    ctx->lctx.rctx.vars = ctx->rma->mod->vars;
+    if((r = namespace_resolve(&ctx->lctx, bind->target)) != 1) {
+      namespace_resolve_error(&ctx->lctx, r);
+    }
+    ctx->rma->rma_stats.target_hits = r;
+    rma_event_resolve(ctx);
+
+    /* take an edge the fsname visited */
+    if(ctx->lctx.hit) {
+      me = meta_connect(&ctx->lctx.hit->vertex, &ctx->rma->vertex, EDGE_FSNAME_RMA, &ctx->invalidation);
+      me->epoch = rule_system_epoch;
+    } else if(ctx->lctx.miss) {
+      me = meta_connect(&ctx->lctx.miss->vertex, &ctx->rma->vertex, EDGE_FSNAME_RMA, &ctx->invalidation);
       me->epoch = rule_system_epoch;
     }
-    bind_connect_probe(bind, ctx->rma->mod, &ctx->target_index_hits);
+
+    if(r != 1) {
+      bind_run_probe(ctx->rma, attachment, 0, 0);
+      goto end;
+    }
   } else if(bind->search) {
     run_search_tracking(bind, ctx);
   }
@@ -1220,32 +1289,52 @@ static void bind_run(struct rule * restrict bind, rule_run_context * restrict ct
   }
 
 end:
-  entlist_destroy(&ctx->target_index_hits);
+  rma_operation_pop(ctx);
+}
+
+void rule_resolve(rule * restrict rule, rule_run_context * restrict ctx)
+{
+  graph_invalidation_begin(&ctx->invalidation);
+
+  switch(rule->card | rule->dir)
+  {
+    case RULE_BIND_ONE:
+    case RULE_BIND_MANY:
+      bind_run(rule, ctx);
+      break;
+    default:
+      break;
+  }
+
+  ctx->rma->fml = 0;
+  if(ctx->rma->rule->formula) {
+    if((ctx->rma->fml = formula_resolve(ctx->rma->rule->formula, ctx))) {
+      formula_reparse(ctx->rma->fml);
+    }
+  }
+
+  if(system_has_error) {
+    system_stats_events.rule_resolve_err++;
+    ctx->rma->rma_stats.rule_resolve_err++;
+    ctx->rma->rule->rule_stats.rule_resolve_err++;
+  } else {
+    system_stats_events.rule_resolve_ok++;
+    ctx->rma->rma_stats.rule_resolve_ok++;
+    ctx->rma->rule->rule_stats.rule_resolve_ok++;
+  }
+
+  graph_invalidation_end(&ctx->invalidation);
 }
 
 void rule_run(rule * restrict rule, rule_run_context * restrict ctx)
 {
-  system_stats.rule_run++;
+  system_stats_events.rule_run++;
   ctx->rma->rma_stats.rule_run++;
   ctx->rma->rule->rule_stats.rule_run++;
 
   graph_invalidation_begin(&ctx->invalidation);
 
-  /* stats are only posted on success */
-  ctx->rma->rma_stats.target_hits = 0;
-  ctx->rma->rma_stats.attachment_hits = 0;
-  ctx->rma->rma_stats.search_hits = 0;
-  ctx->rma->rma_stats.generate_hits = 0;
-  ctx->rma->rma_stats.formula_hits = 0;
-  ctx->rma->rma_stats.bpe_hits = 0;
-
-  ctx->fml = 0;
-  if(rule->formula) {
-    if((ctx->fml = formula_resolve(rule, ctx)) == 0) {
-      goto end;
-    }
-  }
-
+  rma_operation_push(ctx);
   switch(rule->card | rule->dir)
   {
     case RULE_ZERO_TO_ONE | RULE_LTR:     /*            -- generate     */
@@ -1284,23 +1373,16 @@ void rule_run(rule * restrict rule, rule_run_context * restrict ctx)
     case RULE_MANY_TO_MANY | RULE_RTL:    /* search [*] <- [*] generate */
       generate_many_to_many(rule, ctx);
       break;
-    case RULE_BIND_ONE:
-    case RULE_BIND_MANY:
-      bind_run(rule, ctx);
-      break;
     case RULE_SEARCH_SEARCH | RULE_LTR:
       search_search_run(rule, ctx);
+      break;
+    case RULE_BIND_ONE:
+    case RULE_BIND_MANY:
       break;
     default:
       RTA;
   }
-
-end:
-  if(!system_has_error) {
-    system_stats.rule_run_ok++;
-    ctx->rma->rma_stats.rule_run_ok++;
-    ctx->rma->rule->rule_stats.rule_run_ok++;
-  }
+  rma_operation_pop(ctx);
 
   graph_invalidation_end(&ctx->invalidation);
 }
@@ -1315,9 +1397,9 @@ void rule_say(const rule * restrict r, narrator * restrict N)
       xsays("bind ");
     }
     if(r->target) {
-      pattern_say(r->target, N);
+      pattern_say(&r->target->pattern, N);
     } else if(r->search) {
-      pattern_say(r->search, N);
+      pattern_say(&r->search->pattern, N);
     }
     switch(r->card) {
       case RULE_BIND_ONE:
@@ -1329,7 +1411,7 @@ void rule_say(const rule * restrict r, narrator * restrict N)
       default:
         RTA;
     }
-    pattern_say(r->attachment, N);
+    pattern_say(&r->attachment->pattern, N);
     return;
   }
 
@@ -1345,7 +1427,7 @@ void rule_say(const rule * restrict r, narrator * restrict N)
   }
 
   if(r->search) {
-    pattern_say(r->search, N);
+    pattern_say(&r->search->pattern, N);
   }
 
   switch(CASE2(r->card, r->dir)) {
@@ -1393,14 +1475,14 @@ void rule_say(const rule * restrict r, narrator * restrict N)
 
   if(r->card == RULE_SEARCH_SEARCH) {
     xsays("search ");
-    pattern_say(r->search_rhs, N);
+    pattern_say(&r->search_rhs->pattern, N);
   } else if(r->generate) {
-    pattern_say(r->generate, N);
+    pattern_say(&r->generate->pattern, N);
   }
 
   if(r->formula) {
     narrator_says(N, " : ");
-    pattern_say(r->formula, N);
+    pattern_say(&r->formula->pattern, N);
   }
 }
 
@@ -1424,12 +1506,12 @@ void rule_run_context_init(rule_run_context * restrict ctx)
 
   pattern_search_matches_init(&ctx->search_rhs_hits);
   pattern_search_matches_init(&ctx->search_hits);
-  entlist_init(&ctx->generate_hits);
-  entlist_init(&ctx->target_hits);
-  entlist_init(&ctx->target_index_hits);
+  vertices_init(&ctx->generate_hits);
 
   assure(&ctx->Alist, sizeof(*ctx->Alist), 1, &ctx->Alist_alloc);
   assure(&ctx->Blist, sizeof(*ctx->Blist), 1, &ctx->Blist_alloc);
+
+  llist_init(&ctx->operations);
 }
 
 void rule_run_context_destroy(rule_run_context * restrict ctx)
@@ -1437,12 +1519,12 @@ void rule_run_context_destroy(rule_run_context * restrict ctx)
   graph_invalidation_end(&ctx->invalidation);
   hashtable_destroy(&ctx->search_hits);
   hashtable_destroy(&ctx->search_rhs_hits);
-  entlist_destroy(&ctx->generate_hits);
-  entlist_destroy(&ctx->target_hits);
-  entlist_destroy(&ctx->target_index_hits);
+  vertices_destroy(&ctx->generate_hits);
   free(ctx->Alist);
   free(ctx->Blist);
   free(ctx->Mlist);
+
+  RUNTIME_ASSERT(llist_empty(&ctx->operations));
 }
 
 void rule_stats_build(struct rule * restrict rule, bool reset, bacon_writer * restrict builder_writer)
@@ -1453,9 +1535,8 @@ void rule_stats_build(struct rule * restrict rule, bool reset, bacon_writer * re
 
 void rule_describe(const struct rule * restrict rule, struct bacon_writer * restrict builder_writer)
 {
-  rule_module_association *rma;
-  entlist list, *eln;
-  moria_vertex *v;
+  edges list, *eln;
+  moria_edge *e;
 
   { MAPPING
     bacon_writer_push_string(builder_writer);
@@ -1463,23 +1544,10 @@ void rule_describe(const struct rule * restrict rule, struct bacon_writer * rest
     bacon_writer_pop_string(builder_writer);
 
     { SET
-      { MAPPING STRING("attrs")
-        attrs32_describe(rule->vertex.attrs, graph_vertex_attrs, builder_writer);
-      }
-      { MAPPING STRING("id")
-        BYTES(rule->id, rule->id_len)
-      }
+      vertex_mappings(&rule->vertex, builder_writer);
       if(rule->name_len) {
         MAPPING STRING("name")
         BYTES(rule->name, rule->name_len)
-      }
-      if(rule->mod) {
-        MAPPING STRING("module")
-        vertex_path_describe(&rule->mod->vertex, builder_writer);
-      }
-      if(rule->rules) {
-        MAPPING STRING("ruleset")
-        vertex_path_describe(&rule->rules->vertex, builder_writer);
       }
       { MAPPING STRING("location")
         LOADF("%s [%d,%d - %d,%d]", rule->loc.fname, rule->loc.f_lin + 1, rule->loc.f_col + 1, rule->loc.l_lin + 1, rule->loc.l_col + 1);
@@ -1500,27 +1568,168 @@ void rule_describe(const struct rule * restrict rule, struct bacon_writer * rest
       if(edges_gather_up(&rule->vertex, EDGE_RULE_RMA, &list)) {
         MAPPING STRING("rmas")
         { SET
-          entlist_foreach(&list, v, eln) {
-            rma = containerof(v, typeof(*rma), vertex);
-            LOADF("//rmas/%.*s", rma->id_len, rma->id);
+          edges_foreach(&list, e, eln) {
+            vertex_path_describe(e->A, builder_writer);
           }
         }
-        entlist_destroy(&list);
+        edges_destroy(&list);
+      }
+
+      vertex_relations_describe(&rule->vertex, builder_writer);
+    }
+  }
+}
+
+void rule_identity_describe(const struct rule * restrict rule, bacon_writer * restrict builder_writer)
+{
+  attrs32_describe(rule->vertex.attrs, graph_vertex_attrs, builder_writer);
+
+  { MAPPING
+    STRING("id")
+    BYTES(rule->id, rule->id_len);
+  }
+  if(rule->name_len) {
+    MAPPING STRING("name")
+    BYTES(rule->name, rule->name_len);
+  }
+
+  /* location */
+  bacon_writer_push_string(builder_writer);
+  narrator_says(builder_writer->N, rule->loc.fname);
+  narrator_sayf(builder_writer->N, " [%d,%d - %d,%d] ", rule->loc.f_lin + 1, rule->loc.f_col + 1, rule->loc.l_lin + 1, rule->loc.l_col + 1);
+
+  /* contents */
+  rule_say(rule, builder_writer->N);
+  bacon_writer_pop_string(builder_writer);
+}
+
+size_t rule_path_cat(void * restrict dst, size_t sz, const rule * restrict rule)
+{
+  return zcatf(dst, sz, "//bm/rules/%.*s", rule->id_len, rule->id);
+}
+
+static void rule_tell_describe(const struct rule * restrict rule, struct bacon_writer * restrict builder_writer)
+{
+  { MAPPING
+    bacon_writer_push_string(builder_writer);
+    vertex_path_say(&rule->vertex, builder_writer->N);
+    bacon_writer_pop_string(builder_writer);
+
+    { SET
+      vertex_mappings(&rule->vertex, builder_writer);
+
+      { MAPPING STRING("dir")
+        STRING(attrs16_name_byvalue(rule_direction_attrs, rule->dir))
+      }
+      { MAPPING STRING("cardinality")
+        STRING(attrs16_name_byvalue(rule_cardinality_attrs, rule->card))
+      }
+
+      if(rule->search) {
+        MAPPING STRING("search")
+        pattern_describe(&rule->search->pattern, builder_writer);
+      }
+      if(rule->generate) {
+        MAPPING STRING("generate")
+        pattern_describe(&rule->generate->pattern, builder_writer);
+      }
+      if(rule->formula) {
+        MAPPING STRING("formula")
+        pattern_describe(&rule->formula->pattern, builder_writer);
+      }
+      if(rule->target) {
+        MAPPING STRING("target")
+        pattern_describe(&rule->target->pattern, builder_writer);
+      }
+      if(rule->attachment) {
+        MAPPING STRING("attachment")
+        pattern_describe(&rule->attachment->pattern, builder_writer);
+      }
+      if(rule->search_rhs) {
+        MAPPING STRING("search-rhs")
+        pattern_describe(&rule->search_rhs->pattern, builder_writer);
       }
     }
   }
 }
 
-void rule_identity_say(const struct rule * restrict rule, narrator * restrict N)
+void rule_tell(const rule * restrict rule, struct request_handler * restrict handler)
 {
-  attrs32_say(rule->vertex.attrs, graph_vertex_attrs, N);
-  narrator_sayf(N, " id %.*s", rule->id_len, rule->id);
-  narrator_sayf(N, " %s [%d,%d - %d,%d]", rule->loc.fname, rule->loc.f_lin + 1, rule->loc.f_col + 1, rule->loc.l_lin + 1, rule->loc.l_col + 1);
-  narrator_says(N, " ");
-  rule_say(rule, N);
+  bamipc_message *msg;
+  narrator_fixed fixed;
+  narrator *N;
+  bacon_writer writer, *builder_writer;
+
+  msg = request_handler_tx(handler, BAMIPC_MSG_RESULT, BAMIPC_MSG_BACON, 0);
+  N = narrator_fixed_init(&fixed, msg->text, msg->size);
+  bacon_writer_init(&writer);
+  builder_writer = bacon_writer_open(&writer, N);
+
+  rule_tell_describe(rule, builder_writer);
+
+  bacon_writer_close(&writer);
+  bacon_writer_destroy(&writer);
+  msg->len = fixed.l;
+  request_handler_post(handler, msg);
 }
 
-size_t rule_path_cat(void * restrict dst, size_t sz, const rule * restrict rule)
+void rule_unlink(struct rule * restrict rule, struct graph_disintegrate_context * restrict ctx)
 {
-  return zcatf(dst, sz, "//rules/%.*s", rule->id_len, rule->id);
+  moria_foreach_state st;
+  moria_edge *edge;
+
+  moria_foreach_edge(&st, &rule->vertex, edge) {
+    switch(edge_type_get(edge)) {
+      case EDGE_RULE_RMA:
+        vertices_push(ctx->unlinking, edge->A);
+      case EDGE_RULE_RULESET:
+        edges_push(ctx->edges, edge);
+      default:
+        break;
+    }
+  }
 }
+
+bool rule_reap(struct rule * restrict rule, struct graph_disintegrate_context * restrict ctx)
+{
+  if(edges_check_up(&rule->vertex, EDGE_RULE_RULESET)) {
+    return false;
+  }
+
+  /* if no longer referenced by any rma, then this rule is eligible to be reaped and any
+   * of its edges will be cleaned up */
+  return true;
+}
+
+void rule_id(const struct rule * restrict rule, const char ** restrict id, uint16_t * restrict idl)
+{
+  *id = rule->id;
+  *idl = rule->id_len;
+}
+
+void rule_compute_id(const rule * restrict rule, identity_ctx * restrict id)
+{
+  char str[128];
+
+  /* build.bam file containing this rule */
+  vertex_compute_id(&rule->container->vertex, id);
+  identity_add(id, "\n", 1);
+
+  /* location */
+  zcatf(str, sizeof(str), "%u", rule->loc.f_lin + 1);
+  identity_name(id, VERTEX_RULE, str, strlen(str));
+}
+
+#if CONFIG_DEVEL
+void rules_show(void)
+{
+  struct rule *rule;
+  int x = 0;
+
+  printf("rules, live : %zu free : %zu\n", llist_count(&rule_list), llist_count(&rule_freelist));
+  llist_foreach(&rule_list, rule, vertex.owner) {
+    printf("%3u %p", x++, rule);
+    printf("\n");
+  }
+}
+#endif

@@ -9,7 +9,8 @@ struct buildplan_entity;
 struct module;
 struct rule_run_context;
 struct moria_edge;
-struct entlist;
+struct vertices;
+struct rule_module_association;
 
 void rule_run_probe(
     const struct rule_run_context * restrict ctx
@@ -22,17 +23,16 @@ void rule_connect_probe(const struct rule * restrict rule, const struct buildpla
   __attribute__((nonnull));
 
 void bind_run_probe(
-    const struct rule * restrict bind
-  , const struct module * restrict mod
+    const struct rule_module_association * restrict rma
   , const struct fsent * restrict attachment
-  , const struct fsent * restrict location
   , const struct fsent * restrict target
+  , const struct fsent * restrict binding
 )
-  __attribute__((nonnull(1, 2)));
+  __attribute__((nonnull(1)));
 
 void bind_connect_probe(
     const struct rule * restrict bind
   , const struct module * restrict mod
-  , const struct entlist * restrict points
+  , const struct vertices * restrict points
 )
   __attribute__((nonnull(1, 2)));

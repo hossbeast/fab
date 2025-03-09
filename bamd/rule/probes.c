@@ -19,8 +19,8 @@
 #include "pattern.h"
 #include "fsname.h"
 #include "module.h"
-#include "rule_module_association.h"
-#include "buildplan_entity.h"
+#include "rma.h"
+#include "bpe.h"
 #include "vertex.h"
 
 #include "usdt-sem.h"
@@ -29,7 +29,7 @@
 PROBE_SEM(rule, run) = 0;
 PROBE_SEM(rule, connect) = 0;
 PROBE_SEM(bind, attach) = 0;
-PROBE_SEM(bind, connect) = 0;
+//PROBE_SEM(bind, connect) = 1;
 
 void rule_run_probe(const rule_run_context * restrict ctx, const buildplan_entity * restrict bpe, bool b)
 {
@@ -53,11 +53,15 @@ void rule_run_probe(const rule_run_context * restrict ctx, const buildplan_entit
   { MAPPING
     STRING(__FUNCTION__)
     { SET
-      { MAPPING
-        STRING("epoch")
+      { MAPPING STRING("epoch")
         UINT(rule_system_epoch)
       }
-      vertex_describe(&ctx->rma->vertex, builder_writer);
+      { MAPPING STRING("rule")
+        bacon_writer_push_string(builder_writer);
+        rule_say(ctx->rma->rule, builder_writer->N);
+        bacon_writer_pop_string(builder_writer);
+      }
+//      vertex_describe(&ctx->rma->vertex, builder_writer);
 
       if(bpe) {
         MAPPING
@@ -125,18 +129,16 @@ printf("%.*s\n", (int)growing.l, growing.s);
 }
 
 void bind_run_probe(
-    const struct rule * restrict rule
-  , const module * restrict mod
+    const struct rule_module_association * restrict rma
   , const fsent * restrict attachment
-  , const fsent * restrict location
   , const fsent * restrict target
+  , const fsent * restrict binding
 )
 {
   narrator_growing growing;
   narrator *N;
   bacon_writer writer;
   bacon_writer *builder_writer;
-  const yyu_location *loc;
 
   if(!bind_attach_semaphore) {
     return;
@@ -150,81 +152,34 @@ void bind_run_probe(
   { MAPPING
     STRING(__FUNCTION__)
     { SET
-      bacon_writer_push_string(builder_writer);
-      rule_say(rule, builder_writer->N);
-      loc = &rule->loc;
-      LOADF(" @ %s [%d,%d - %d,%d]", loc->fname, loc->f_lin + 1, loc->f_col + 1, loc->l_lin + 1, loc->l_col + 1)
-      bacon_writer_pop_string(builder_writer);
+      //bacon_writer_push_string(builder_writer);
+      //rule_say(rma->rule, builder_writer->N);
+      //loc = &rma->rule->loc;
+      //LOADF(" @ %s [%d,%d - %d,%d]", loc->fname, loc->f_lin + 1, loc->f_col + 1, loc->l_lin + 1, loc->l_col + 1)
+      //bacon_writer_pop_string(builder_writer);
 
-      { MAPPING
-        STRING("module")
-        vertex_identity_describe(&mod->dir_node->vertex, builder_writer);
+      { MAPPING STRING("rma")
+        vertex_identity_describe(&rma->vertex, builder_writer);
       }
-      if(attachment) {
-        MAPPING
-        STRING("attachment")
-        vertex_identity_describe(&attachment->vertex, builder_writer);
+      { MAPPING STRING("attachment")
+        if(attachment) {
+          vertex_identity_describe(&attachment->vertex, builder_writer);
+        } else {
+          STRING("_")
+        }
       }
-      if(target) {
-        { MAPPING
-          STRING("target")
+      { MAPPING STRING("target")
+        if(target) {
           vertex_identity_describe(&target->vertex, builder_writer);
+        } else {
+          STRING("_")
         }
-        { MAPPING
-          STRING("location")
-          vertex_identity_describe(&location->vertex, builder_writer);
-        }
-      } else {
-        STRING("no-match")
       }
-    }
-  }
-
-printf("%.*s\n", (int)growing.l, growing.s);
-  PROBE1(bind, attach, growing.s);
-  bacon_writer_destroy(&writer);
-  narrator_growing_destroy(&growing);
-}
-
-void bind_connect_probe(
-    const struct rule * restrict rule
-  , const module * restrict mod
-  , const entlist * restrict list
-)
-{
-  narrator_growing growing;
-  narrator *N;
-  bacon_writer writer;
-  bacon_writer *builder_writer;
-  const yyu_location *loc;
-  fsname *index;
-  entlist *eln;
-
-  if(!bind_attach_semaphore) {
-    return;
-  }
-
-  N = narrator_growing_init(&growing);
-  bacon_writer_init(&writer);
-  bacon_writer_open(&writer, N);
-  builder_writer = &writer;
-
-  { MAPPING
-    STRING(__FUNCTION__)
-    { SET
-      bacon_writer_push_string(builder_writer);
-      rule_say(rule, builder_writer->N);
-      loc = &rule->target->loc;
-      LOADF(" @ %s [%d,%d - %d,%d]", rule->target->fname, loc->f_lin + 1, loc->f_col + 1, loc->l_lin + 1, loc->l_col + 1)
-      bacon_writer_pop_string(builder_writer);
-
-      { MAPPING
-        STRING("module")
-        vertex_identity_describe(&mod->dir_node->vertex, builder_writer);
-      }
-      { LIST
-        entlist_foreach(list, index, eln) {
-          vertex_identity_describe(&index->vertex, builder_writer);
+      { MAPPING STRING("binding")
+        if(binding) {
+          vertex_identity_describe(&binding->vertex, builder_writer);
+        } else {
+          STRING("_")
         }
       }
     }

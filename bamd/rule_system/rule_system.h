@@ -17,8 +17,8 @@ void rule_system_setup(void);
 typedef struct rule_system_work {
   struct {
     llist lln;                  // rule_system rma_list
-    uint32_t epoch;
-  } changed[2];
+//    uint32_t epoch;
+  } changed;//[2];
 } rule_system_work;
 
 /*
@@ -32,17 +32,5 @@ void rule_system_reconcile(struct rule_run_context * restrict ctx)
 /*
  * enqueue this rma to be executed during the next reconciliation
  */
-void rule_system_work_enqueue(struct rule_system_work * restrict work)
-  __attribute__((nonnull));
-
-/*
- * track that a rule was run and had matches
- */
-void rule_system_rma_hit(struct rule_run_context * restrict ctx, struct rule_module_association * restrict rma)
-  __attribute__((nonnull));
-
-/*
- * track that a rule was run and had no matches
- */
-void rule_system_rma_nohit(struct rule_run_context * restrict ctx, struct rule_module_association * restrict rma)
+void rule_system_work_enqueue(struct rule_module_association * restrict work)
   __attribute__((nonnull));

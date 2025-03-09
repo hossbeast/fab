@@ -11,23 +11,26 @@
 #include "graph.h"
 #include "block.h"
 #include "rule.h"
-#include "entlist.h"
+#include "edges.h"
+#include "vertices.h"
 
 struct pattern;
 struct pattern_parser;
 struct bacon_parser;
 struct block;
-struct anchor;
+struct ruleset;
 
-typedef struct rulesset_parser {
+typedef struct ruleset_parser {
   yyu_parser yyu;
   llist lln;        // freelist
 
+  //struct module *mod;
+  //struct ruleset *rules;
+  const struct ruleset *container;
+
   // state
   struct moria_graph *g;
-  struct module *mod;
-  struct ruleset *rules;
-  entlist lookup_hits;
+  struct vertices lookup_hits;
   const char *relpath;
   uint16_t relpath_len;
 
@@ -41,9 +44,15 @@ typedef struct rulesset_parser {
 
   // (returns)
   struct block *block;  // top of the stack
-  struct anchor *anchor;
-  llist varsets;        // struct pattern
-  llist rulesets;       // struct pattern
+  struct lookup_pattern *anchor;
+  bool varsets_set;
+  llist varsets_names;    // struct module_special_name
+  bool rulesets_set;
+  llist rulesets_names;   // struct module_special_name
+  bool managed;
+
+  const char *error;
+  uint16_t error_len;
 } ruleset_parser;
 
 /* create a rules parser */
@@ -63,6 +72,15 @@ void ruleset_parser_free(ruleset_parser * restrict);
 //  free a rules parser with ifree semantics
 //
 void ruleset_parser_ifree(ruleset_parser ** restrict)
+  __attribute__((nonnull));
+
+void ruleset_parser_varsets_append(ruleset_parser * restrict, const char *s, uint16_t len)
+  __attribute__((nonnull));
+
+void ruleset_parser_rulesets_append(ruleset_parser * restrict, const char *s, uint16_t len)
+  __attribute__((nonnull));
+
+void ruleset_special_name_list_free(llist * restrict list)
   __attribute__((nonnull));
 
 /// module_parse

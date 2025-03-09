@@ -30,7 +30,7 @@
       , parser->yyu.fname                                                 \
       , &parser->yyu.loc                                                  \
       , &subloc                                                           \
-      , &yylval->pattern                                                  \
+      , &yylval->search_pattern                                           \
     );                                                                    \
     if(r == 0) {                                                          \
       yyless(subloc.l);                                                   \
@@ -53,34 +53,11 @@
       , parser->yyu.fname                                                 \
       , &parser->yyu.loc                                                  \
       , &subloc                                                           \
-      , &yylval->pattern                                                  \
+      , &yylval->generate_pattern                                         \
     );                                                                    \
     if(r == 0) {                                                          \
       yyless(subloc.l);                                                   \
       r = LEXLOC(ruleset_GENERATE_PATTERN, &subloc);                      \
-    }                                                                     \
-    r;                                                                    \
-  })
-
-  #define PARSE_REFERENCE_PATTERN ({                                      \
-    ruleset_parser * parser = containerof(yyextra, ruleset_parser, yyu);  \
-    size_t off = yytext - parser->yyu.yybuffer;                           \
-    char * usr = parser->yyu.usrbuf + off;                                \
-    size_t bufsz = parser->yyu.usrbufsize - off;                          \
-    yyu_location subloc;                                                  \
-    int r;                                                                \
-    r = reference_pattern_parse_partial(                                  \
-        parser->pattern_parser                                            \
-      , usr                                                               \
-      , bufsz                                                             \
-      , parser->yyu.fname                                                 \
-      , &parser->yyu.loc                                                  \
-      , &subloc                                                           \
-      , &yylval->pattern                                                  \
-    );                                                                    \
-    if(r == 0) {                                                          \
-      yyless(subloc.l);                                                   \
-      r = LEXLOC(ruleset_REFERENCE_PATTERN, &subloc);                     \
     }                                                                     \
     r;                                                                    \
   })
@@ -99,11 +76,34 @@
       , parser->yyu.fname                                                 \
       , &parser->yyu.loc                                                  \
       , &subloc                                                           \
-      , &yylval->pattern                                                  \
+      , &yylval->lookup_pattern                                           \
     );                                                                    \
     if(r == 0) {                                                          \
       yyless(subloc.l);                                                   \
       r = LEXLOC(ruleset_LOOKUP_PATTERN, &subloc);                        \
+    }                                                                     \
+    r;                                                                    \
+  })
+
+  #define PARSE_ATTACHMENT_PATTERN ({                                     \
+    ruleset_parser * parser = containerof(yyextra, ruleset_parser, yyu);  \
+    size_t off = yytext - parser->yyu.yybuffer;                           \
+    char * usr = parser->yyu.usrbuf + off;                                \
+    size_t bufsz = parser->yyu.usrbufsize - off;                          \
+    yyu_location subloc;                                                  \
+    int r;                                                                \
+    r = attachment_pattern_parse_partial(                                 \
+        parser->pattern_parser                                            \
+      , usr                                                               \
+      , bufsz                                                             \
+      , parser->yyu.fname                                                 \
+      , &parser->yyu.loc                                                  \
+      , &subloc                                                           \
+      , &yylval->attachment_pattern                                       \
+    );                                                                    \
+    if(r == 0) {                                                          \
+      yyless(subloc.l);                                                   \
+      r = LEXLOC(ruleset_ATTACHMENT_PATTERN, &subloc);                    \
     }                                                                     \
     r;                                                                    \
   })
@@ -119,25 +119,23 @@
 %x quoted
 %x search
 %x generate
-%x reference
 %x lookup
-%x include
-%x include_pattern
-%x exclude
+%x attachment
 %x match_pattern
 %x rule_pre
 %x rule_bacon
 %x rule_lhs
 %x rule_rhs
+%x rule_rhs_bind
 %x rule_search
 %x rule_colon
 %x rule_arrow
 %x rule_starbox
 %x rule_mid
+%x rule_mid_bind
 %x bind_bacon
 %x bind_lookup
 %x bind_arrow
-%x bind_connector
 
 %%
 
@@ -157,18 +155,18 @@
 <*>[\r\t ]                                              { LOCWRITE; }
 
  /* tokens */
-<INITIAL>[+[\]{}():=,$!]                                { return LEX(yytext[0]); }
+<INITIAL>[%.+[\]{}():=,$!]                              { return LEX(yytext[0]); }
 
  /* keywords */
 <INITIAL>"use"                                          { PUSHSTATE(lookup); return LEX(USE); }
 <INITIAL>"anchor"                                       { PUSHSTATE(lookup); return LEX(ANCHOR); }
-<INITIAL>"varsets"                                      { PUSHSTATE(lookup); return LEX(VARSETS); }
-<INITIAL>"rulesets"                                     { PUSHSTATE(lookup); return LEX(RULESETS); }
 
 <INITIAL>"bind"                                         { PUSHSTATE(bind_lookup); return LEX(BIND); }
 <bind_lookup>"{ "                                       { PUSHSTATE(bind_bacon); return LEX('{'); }
-<bind_lookup>[\x00-\xff]                                { POPSTATE; yyless(0); PUSHSTATE(reference); PUSHSTATE(rule_starbox); PUSHSTATE(bind_arrow); PUSHSTATE(lookup); }
-<bind_arrow>[-<>=]                                      { return LEX(yytext[0]); }
+<bind_lookup>[\x00-\xff]                                { POPSTATE; yyless(0); PUSHSTATE(attachment); PUSHSTATE(rule_starbox); PUSHSTATE(bind_arrow); PUSHSTATE(lookup); }
+<bind_arrow>[<][-]                                      { return LEX(LARROW); }
+<bind_arrow>[-][>]                                      { return LEX(RARROW); }
+<bind_arrow>[=][>]                                      { return LEX(BINDARROW); }
 <bind_arrow>[\x00-\xff]                                 { POPSTATE; yyless(0); }
 <bind_bacon>[:]                                         { return LEX(yytext[0]); }
 <bind_bacon>[}]                                         { POPSTATE; return LEX(yytext[0]); }
@@ -184,21 +182,27 @@
 <rule_lhs>"search"                                      { POPSTATE; PUSHSTATE(rule_mid); PUSHSTATE(search); return LEX(SEARCH); }
 <rule_lhs>"-- "                                         { POPSTATE; PUSHSTATE(rule_mid); return LEX(DASHES); }
 <rule_lhs>[\x00-\xff]                                   { POPSTATE; PUSHSTATE(rule_mid); PUSHSTATE(search); yyless(0); }
-<rule_mid>"["[*]"]"                                     { return LEX(STARBOX); }
-<rule_mid>[<>=-]                                        { return LEX(yytext[0]); }
-<rule_mid>"-- "                                         { POPSTATE; PUSHSTATE(rule_colon); return LEX(DASHES); }
+<rule_mid,rule_mid_bind>"["[*]"]"                       { return LEX(STARBOX); }
+<rule_mid>[<][-]                                        { return LEX(LARROW); }
+<rule_mid>[-][>]                                        { return LEX(RARROW); }
+<rule_mid>[=][>]                                        { POPSTATE; PUSHSTATE(rule_mid_bind); return LEX(BINDARROW); }
+<rule_mid,rule_mid_bind>"-- "                           { POPSTATE; PUSHSTATE(rule_colon); return LEX(DASHES); }
 <rule_mid>[\x00-\xff]                                   { POPSTATE; PUSHSTATE(rule_rhs); yyless(0); }
-<rule_search,rule_colon>":"                             { PUSHSTATE(reference); return LEX(':'); }
+<rule_mid_bind>[\x00-\xff]                              { POPSTATE; PUSHSTATE(rule_rhs_bind); yyless(0); }
+<rule_search,rule_colon>":"                             { PUSHSTATE(lookup); return LEX(':'); }
 <rule_search,rule_colon>[\x00-\xff]                     { POPSTATE; yyless(0); }
-<rule_rhs>"search"                                      { POPSTATE; PUSHSTATE(search); return LEX(SEARCH); }
-<rule_rhs>"generate"                                    { POPSTATE; PUSHSTATE(rule_colon); PUSHSTATE(generate); return LEX(GENERATE); }
+<rule_rhs,rule_rhs_bind>"search"                        { POPSTATE; PUSHSTATE(search); return LEX(SEARCH); }
+<rule_rhs,rule_rhs_bind>"generate"                      { POPSTATE; PUSHSTATE(rule_colon); PUSHSTATE(generate); return LEX(GENERATE); }
 <rule_rhs>[\x00-\xff]                                   { POPSTATE; PUSHSTATE(rule_colon); PUSHSTATE(generate); yyless(0); }
+ /* rhs is attachment pattern if arrow was bindarrow */
+ /* otherwise the rhs is a generate pattern */
+<rule_rhs_bind>[\x00-\xff]                              { POPSTATE; PUSHSTATE(rule_colon); PUSHSTATE(attachment); yyless(0); }
 
  /* sub-parsers ; consume whitespace in this parser */
-<search>[^\n\r\t ][\x00-\xff]+                          { int r = PARSE_SEARCH_PATTERN;    POPSTATE; return r; }
-<generate>[^\n\r\t ][\x00-\xff]+                        { int r = PARSE_GENERATE_PATTERN;  POPSTATE; return r; }
-<reference>[^\n\r\t ][\x00-\xff]+                       { int r = PARSE_REFERENCE_PATTERN; POPSTATE; return r; }
-<lookup>[^\n\r\t ][\x00-\xff]+                          { int r = PARSE_LOOKUP_PATTERN;    POPSTATE; return r; }
+<search>[^\n\r\t ][\x00-\xff]+                          { int r = PARSE_SEARCH_PATTERN;     POPSTATE; return r; }
+<generate>[^\n\r\t ][\x00-\xff]+                        { int r = PARSE_GENERATE_PATTERN;   POPSTATE; return r; }
+<lookup>[^\n\r\t ][\x00-\xff]+                          { int r = PARSE_LOOKUP_PATTERN;     POPSTATE; return r; }
+<attachment>[^\n\r\t ][\x00-\xff]+                      { int r = PARSE_ATTACHMENT_PATTERN; POPSTATE; return r; }
 
  /* integers */
 <INITIAL>[-][0-9]+                                      { return LEXI("%"SCNdMAX); }

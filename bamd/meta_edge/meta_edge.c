@@ -14,7 +14,7 @@
 #include "vertex.h"
 #include "reconcile.h"
 #include "edge.h"
-#include "rule_module_association.h"
+#include "rma.h"
 #include "buildplan_entity.h"
 #include "formula.h"
 #include "rule.h"

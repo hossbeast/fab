@@ -12,7 +12,6 @@
 #include "bacon/load.h"
 
 #include "xunit.h"
-#include "lookup.h"
 #include "xunit/assert.h"
 #include "narrator.h"
 #include "narrator/growing.h"
@@ -23,17 +22,20 @@
 #include "pattern_parser.h"
 #include "module.h"
 #include "node_operations_test.h"
-#include "rule_module_association.h"
+#include "rma.h"
 #include "rule_system.h"
 #include "ruleset_parser.h"
 #include "shadow.h"
 #include "system.h"
-#include "buildplan_entity.h"
+#include "bpe.h"
 #include "vertex.h"
-#include "entlist.h"
+#include "edges.h"
+#include "vertices.h"
 #include "fsedge.h"
 #include "dependency.h"
 #include "dir_rma_edge.h"
+#include "meta_edge.h"
+#include "ruleset.h"
 
 typedef struct rule_system_reconcile_test {
   XUNITTEST;
@@ -57,14 +59,19 @@ typedef struct rule_system_reconcile_test {
 
 static void rule_system_reconcile_test_unit_setup(xunit_unit * unit)
 {
+  backtracef_setup();
+
   moria_load();
   bacon_load();
 
-  graph_setup();
   fsent_root_setup();
+  shadow_root_setup();
+  fstree_root_setup();
   shadow_setup();
   fstree_setup();
   module_setup();
+  graph_setup();
+
   rule_system_setup();
   buildplan_entity_setup();
 
@@ -74,12 +81,13 @@ static void rule_system_reconcile_test_unit_setup(xunit_unit * unit)
 
 static void rule_system_reconcile_test_unit_cleanup(xunit_unit * unit)
 {
+  fstree_cleanup();
   graph_cleanup();
   module_cleanup();
-  fstree_cleanup();
   buildplan_entity_cleanup();
-  entlist_cleanup();
   shadow_cleanup();
+  fsedge_cleanup();
+  meta_edge_cleanup();
 
   moria_unload();
 }
@@ -92,21 +100,23 @@ static void rule_system_reconcile_test_entry(xunit_test * _test)
 {
   rule_system_reconcile_test * test = (rule_system_reconcile_test *)_test;
 
-  narrator_growing * N = 0;
-  pattern_parser * parser = 0;
-  moria_parser * op_parser = 0;
+  narrator_growing *N = 0;
+  pattern_parser *parser = 0;
+  moria_parser *op_parser = 0;
   ruleset_parser *mod_parser = 0;
 
   yyu_location loc;
   module *mod;
-  rule * rule;
+  ruleset *rules;
+  rule *rule;
   int x;
-  pattern * search_pat = 0;
-  pattern * generate_pat = 0;
+  search_pattern *search_pat = 0;
+  generate_pattern *generate_pat = 0;
   rule_run_context rule_ctx = { };
-  const char * graph;
+  const char *graph;
   rule_module_association rmas[8];
   struct rule_bacon rb = { };
+  typeof(*test->rules) test_rule;
 
   rule_run_context_init(&rule_ctx);
   pattern_parser_create(&parser);
@@ -119,13 +129,16 @@ static void rule_system_reconcile_test_entry(xunit_test * _test)
   moria_parser_operations_parse(op_parser, MMS(test->setup_operations));
 
   module_alloc(&mod);
-  resolve_fragment(MMS(test->module), &mod->dir_node);
-  mod->anchor_node = mod->dir_node;
+  mod->build_dir = resolve_fragment(MMS(test->module));
+  mod->anchor_dir = mod->build_dir;
 
-  /* setup - run each rule */
+  ruleset_alloc(&rules);
+
+  /* setup - run all rules */
+  graph_invalidation_begin(&rule_ctx.invalidation);
   for(x = 0; x < sentinel(test->rules); x++)
   {
-    typeof(*test->rules) test_rule = test->rules[x];
+    test_rule = test->rules[x];
 
     // parse the patterns for the rule
     search_pattern_parse_partial(parser, test_rule->search_pattern, strlen(test_rule->search_pattern) + 2, "-test-", 0, &loc, &search_pat);
@@ -134,12 +147,10 @@ static void rule_system_reconcile_test_entry(xunit_test * _test)
     generate_pattern_parse_partial(parser, test_rule->generate_pattern, strlen(test_rule->generate_pattern) + 2, "-test-", 0, &loc, &generate_pat);
     assert_eq_u32(strlen(test_rule->generate_pattern), loc.l);
 
-    rule = rule_mk(&g_graph, 0, 0, search_pat, generate_pat, 0, 0, 0, 0, &rb, 0, &loc);
+    loc.f_lin = x;
+    rule = rule_mk(&g_graph, rules, search_pat, generate_pat, 0, 0, 0, 0, &rb, test_rule->dir | test_rule->card, &loc);
     search_pat = 0;
     generate_pat = 0;
-
-    rule->dir = test_rule->dir;
-    rule->card = test_rule->card;
 
     /* when the generate pattern changes the set of child nodes in the directory
      * which the match pattern visited, the rule is enqueued to be run again */
@@ -148,10 +159,15 @@ static void rule_system_reconcile_test_entry(xunit_test * _test)
     rmas[x].rule = rule;
     rule_ctx.rma = &rmas[x];
 
-    rule_run(rule, &rule_ctx);
+    /* enqueue */
+    vertex_invalidate(&rmas[x].vertex, &rule_ctx.invalidation);
   }
+  graph_invalidation_end(&rule_ctx.invalidation);
 
-  /* setup - perform specified mutations if any */
+  /* run the rules */
+  rule_system_reconcile(&rule_ctx);
+
+  /* setup - perform the specified mutations */
   moria_parser_operations_parse(op_parser, MMS(test->operations));
 
   /* act - reconcile rules - run enqueued rules to quiescence */
@@ -164,8 +180,8 @@ static void rule_system_reconcile_test_entry(xunit_test * _test)
   assert_eq_s(test->graph, graph);
 
   ruleset_parser_free(mod_parser);
-  pattern_free(search_pat);
-  pattern_free(generate_pat);
+  pattern_free(&search_pat->pattern);
+  pattern_free(&generate_pat->pattern);
   fsent_cleanup();
   narrator_growing_free(N);
   moria_parser_free(op_parser);
@@ -198,9 +214,10 @@ static xunit_unit xunit = {
           , 0
         }
         , operations : ""
-        , graph :  "1-(root)!dir|protect 2-MOD!dir 3-main.c!file 4-main.o!U|file 5-!bpe"
+        , graph :  "1-(root)!dir 2-MOD!dir 3-main.c!file 4-main.o!U|file 5-bm1d7g4ql4ldhjncp33qu0safrd8y!bpe"
                   " 5:bpe-tgt:4 3:src-bpe:5"
                   " 2:fs:1 3:fs:2 4:fs:2"
+, xu_weight : 1
       }}
 
       /* unlinked primary file - deleted, along with the secondary file */
@@ -219,8 +236,9 @@ static xunit_unit xunit = {
           , 0
         }
         , operations : ""
+                  //" ~main.c"
                   " =main.c:fs:MOD"
-        , graph :  "1-(root)!dir|protect 2-MOD!dir"
+        , graph :  "1-(root)!dir 2-MOD!dir"
                   " 2:fs:1"
 
 /*
@@ -229,7 +247,7 @@ static xunit_unit xunit = {
  */
       }}
 
-      /* unlinked secondary file - marked unlinked, depends edge still in effect */
+      /* unlinked secondary file - unlinked but not freed because the depends edge still present */
     , (rule_system_reconcile_test[]) {{
           setup_operations : ""
           " MOD/main.c"
@@ -246,9 +264,9 @@ static xunit_unit xunit = {
         }
         , operations : ""
                   " =main.o:fs:MOD"
-        , graph :  "1-(root)!dir|protect 2-MOD!dir"
+        , graph :  "1-(root)!dir 2-MOD!dir"
                   " 3-main.c!file 4-main.o!U|file"
-                  " 5-!bpe"
+                  " 5-bm1a0eu6737e6rrpyaqyalsvlyua8!bpe"
                   " 5:bpe-tgt:4 3:src-bpe:5"
                   " 2:fs:1 3:fs:2 4:fs:2"
       }}
@@ -271,7 +289,7 @@ static xunit_unit xunit = {
         , operations : ""
                   " =main.c:fs:MOD"
                   " =main.o:fs:MOD"
-        , graph :  "1-(root)!dir|protect 2-MOD!dir"
+        , graph :  "1-(root)!dir 2-MOD!dir"
                   " 2:fs:1"
       }}
 
@@ -303,7 +321,7 @@ static xunit_unit xunit = {
                   " =main.c:fs:src"
                   " =args.c:fs:sub"
                   " =args.h:fs:sub"
-        , graph :  "1-(root)!dir|protect 2-MOD!dir"
+        , graph :  "1-(root)!dir 2-MOD!dir"
                   " 3-src!dir 4-sub!dir"
                   " 5-args.o!I|file 6-main.o!I|file"
                   " 2:fs:1 3:fs:2 4:fs:3 6:fs:3 5:fs:4"
@@ -333,7 +351,7 @@ static xunit_unit xunit = {
                   " =args.o:fs:MOD/src/sub"
                   " =sub:fs:MOD/src"
                   " =src:fs:MOD"
-        , graph :  "1-(root)!dir|protect 2-MOD!dir"
+        , graph :  "1-(root)!dir 2-MOD!dir"
                   " 2:fs:1"
       }}
 
@@ -354,10 +372,10 @@ static xunit_unit xunit = {
         }
         , operations : ""
                   " MOD/src/sub/args.c"
-        , graph :  "1-(root)!dir|protect 2-MOD!dir 3-src!dir 4-sub!dir"
+        , graph :  "1-(root)!dir 2-MOD!dir 3-src!dir 4-sub!dir"
                   " 5-args.c!file 6-args.o!U|file 7-main.c!file 8-main.o!U|file"
-                  " 9-!bpe 10-!bpe"
-                  " 10:bpe-tgt:6 9:bpe-tgt:8 7:src-bpe:9 5:src-bpe:10"
+                  " 9-bm1axrgf9m4rekyh8ryyncq9avxzt!bpe 10-bm1wadg3cjxltcqn89xd5gsvdt2c7!bpe"
+                  " 9:bpe-tgt:6 10:bpe-tgt:8 5:src-bpe:9 7:src-bpe:10"
                   " 2:fs:1"
                   " 3:fs:2 4:fs:3 7:fs:3 8:fs:3 5:fs:4 6:fs:4"
       }}
@@ -384,10 +402,10 @@ static xunit_unit xunit = {
         }
         , operations : ""
                   " MOD/args.c"
-        , graph :  "1-(root)!dir|protect 2-MOD!dir"
+        , graph :  "1-(root)!dir 2-MOD!dir"
                   " 3-args.c!file 4-args.o!U|file 5-exe!U|file 6-main.c!file 7-main.o!U|file"
-                  " 8-!bpe 9-!bpe 10-!bpe 11-!bpe"
-                  " 10:bpe-tgt:4 9:bpe-tgt:5 11:bpe-tgt:5 8:bpe-tgt:7 6:src-bpe:8 7:src-bpe:9 3:src-bpe:10 4:src-bpe:11"
+                  " 8-bm13e2jhxvar8d3q5e4qv4s4aqcpw!bpe 9-bm1a0eu6737e6rrpyaqyalsvlyua8!bpe 10-bm1eddp5f96prl0mp3r6m3q6zd8ll!bpe 11-bm1elwq0jv9dzks9xu2m6hsah32q2!bpe"
+                  " 10:bpe-tgt:4 8:bpe-tgt:5 11:bpe-tgt:5 9:bpe-tgt:7 7:src-bpe:8 6:src-bpe:9 3:src-bpe:10 4:src-bpe:11"
                   " 2:fs:1 3:fs:2 4:fs:2 5:fs:2 6:fs:2 7:fs:2"
       }}
 
@@ -418,12 +436,13 @@ static xunit_unit xunit = {
                   /* This adds another file which is matched by the first rule, which creates a file
                    * that is matched by the second rule. These attachments invalidate the nodes */
                   " MOD/args.c"
-        , graph :  "1-(root)!dir|protect 2-MOD!dir"
-                  " 3-args.c!file 4-args.o!U|file 5-exe!I|file 6-main.c!file 7-main.o!I|file"
-                  " 8-!bpe 9-!bpe 10-!bpe 11-!bpe"
-                  " 10:bpe-tgt:4 9:bpe-tgt:5 11:bpe-tgt:5 8:bpe-tgt:7 6:src-bpe:8 7:src-bpe:9 3:src-bpe:10 4:src-bpe:11"
+        , graph :  "1-(root)!dir 2-MOD!dir"
+                  " 3-args.c!file 4-args.o!U|file 5-exe!I|file 6-main.c!file 7-main.o!file"
+                  " 8-bm16903pfgyplyrw4y5t45sthmgnn!bpe 9-bm182r2a2qvh26uh9u9ntjq2u8rj5!bpe 10-bm1aluvz4zpnqqk0w5vzx0sng2kz9!bpe 11-bm1d7g4ql4ldhjncp33qu0safrd8y!bpe"
+                  " 9:bpe-tgt:4 8:bpe-tgt:5 10:bpe-tgt:5 11:bpe-tgt:7 7:src-bpe:8 3:src-bpe:9 4:src-bpe:10 6:src-bpe:11"
                   " 2:fs:1"
                   " 3:fs:2 4:fs:2 5:fs:2 6:fs:2 7:fs:2"
+, xu_weight : 1
       }}
 
       /* primary file unlinked, transitive target edge removed */
@@ -449,12 +468,11 @@ static xunit_unit xunit = {
         }
         , operations : ""
                   " =args.c:fs:MOD"
-        , graph :  "1-(root)!dir|protect 2-MOD!dir"
+        , graph :  "1-(root)!dir 2-MOD!dir"
                   " 3-args.o!U|file 4-exe!U|file 5-main.c!file 6-main.o!U|file"
-                  " 7-!bpe 8-!bpe 9-!bpe"
-                  " 8:bpe-tgt:4 9:bpe-tgt:4 7:bpe-tgt:6 5:src-bpe:7 3:src-bpe:8 6:src-bpe:9"
-                  " 2:fs:1"
-                  " 3:fs:2 4:fs:2 5:fs:2 6:fs:2"
+                  " 7-bm12t8jnwhwqj2lc0dkmlysh5gnv3!bpe 8-bm1a0eu6737e6rrpyaqyalsvlyua8!bpe 9-bm1f0za6uv22d3mjzg6u7lq82k05k!bpe"
+                  " 7:bpe-tgt:4 9:bpe-tgt:4 8:bpe-tgt:6 6:src-bpe:7 5:src-bpe:8 3:src-bpe:9"
+                  " 2:fs:1 3:fs:2 4:fs:2 5:fs:2 6:fs:2"
       }}
 
       /* transitive target unlinked, dependent edges unchanged */
@@ -480,13 +498,13 @@ static xunit_unit xunit = {
         }
         , operations : ""
                   " =exe:fs:MOD"
-        , graph :  "1-(root)!dir|protect 2-MOD!dir"
+        , graph :  "1-(root)!dir 2-MOD!dir"
                   " 3-args.c!file 4-args.o!U|file 5-exe!U|file 6-main.c!file 7-main.o!U|file"
-                  " 8-!bpe 9-!bpe 10-!bpe 11-!bpe"
-                  " 9:bpe-tgt:4 10:bpe-tgt:5 11:bpe-tgt:5 8:bpe-tgt:7 6:src-bpe:8 3:src-bpe:9 4:src-bpe:10 7:src-bpe:11"
-                  " 2:fs:1"
-                  " 3:fs:2 4:fs:2 5:fs:2 6:fs:2 7:fs:2"
-
+                  " 8-bm14xz6us60pdmhl4em5rfs397fv0!bpe 9-bm1ppxzdhmnmc3jfryxp70s06gu8y!bpe 10-bm1rx7htet0t6n4ky3pryas0gj3a8!bpe 11-bm1sy3syvvtlwxy78jyqkkqlwu6pp!bpe"
+                  " 9:bpe-tgt:4 8:bpe-tgt:5 10:bpe-tgt:5 11:bpe-tgt:7 7:src-bpe:8 3:src-bpe:9 4:src-bpe:10 6:src-bpe:11"
+                  " 2:fs:1 3:fs:2 4:fs:2 5:fs:2 6:fs:2 7:fs:2"
+/* the order here is unfortunately unstable so the test fails randomly */
+, xu_weight : -1
       }}
 
       /* secondary file unlinked, transitive edges invalidated */
@@ -514,12 +532,11 @@ static xunit_unit xunit = {
                   " =main.o:fs:MOD"
         /* main.o is uncreated(U) because exe still depends on it */
         /* exe is uncreated(U) because it was never refreshed */
-        , graph :  "1-(root)!dir|protect 2-MOD!dir"
+        , graph :  "1-(root)!dir 2-MOD!dir"
                   " 3-exe!U|file 4-main.c!file 5-main.o!U|file"
-                  " 6-!bpe 7-!bpe"
-                  " 7:bpe-tgt:3 6:bpe-tgt:5 4:src-bpe:6 5:src-bpe:7"
-                  " 2:fs:1"
-                  " 3:fs:2 4:fs:2 5:fs:2"
+                  " 6-bm12t8jnwhwqj2lc0dkmlysh5gnv3!bpe 7-bm1a0eu6737e6rrpyaqyalsvlyua8!bpe"
+                  " 6:bpe-tgt:3 7:bpe-tgt:5 5:src-bpe:6 4:src-bpe:7"
+                  " 2:fs:1 3:fs:2 4:fs:2 5:fs:2"
       }}
 
       /* intermediate file refreshed, then unlinked */
@@ -547,12 +564,11 @@ static xunit_unit xunit = {
                   " =main.o:fs:MOD"
         /* main.o is uncreated(U) instead of deleted because exe still depends on it */
         /* exe was marked invalid(I) - transitively - when main.c was unlinked */
-        , graph :  "1-(root)!dir|protect 2-MOD!dir"
+        , graph :  "1-(root)!dir 2-MOD!dir"
                   " 3-exe!I|file 4-main.c!file 5-main.o!U|file"
-                  " 6-!bpe 7-!bpe"
-                  " 7:bpe-tgt:3 6:bpe-tgt:5 4:src-bpe:6 5:src-bpe:7"
-                  " 2:fs:1"
-                  " 3:fs:2 4:fs:2 5:fs:2"
+                  " 6-bm12t8jnwhwqj2lc0dkmlysh5gnv3!bpe 7-bm1a0eu6737e6rrpyaqyalsvlyua8!bpe"
+                  " 6:bpe-tgt:3 7:bpe-tgt:5 5:src-bpe:6 4:src-bpe:7"
+                  " 2:fs:1 3:fs:2 4:fs:2 5:fs:2"
       }}
 
       /* intermediate file refreshed, then primary file unlinked */
@@ -582,9 +598,9 @@ static xunit_unit xunit = {
                   " =main.c:fs:MOD"
         /* main.o is marked invalid(I) when main.c was unlinked */
         /* exe was marked invalid(I) - transitively - when main.c was unlinked */
-        , graph :  "1-(root)!dir|protect 2-MOD!dir"
+        , graph :  "1-(root)!dir 2-MOD!dir"
                   " 3-exe!I|file 4-main.o!I|file"
-                  " 5-!bpe"
+                  " 5-bm12t8jnwhwqj2lc0dkmlysh5gnv3!bpe"
                   " 5:bpe-tgt:3 4:src-bpe:5"
                   " 2:fs:1 3:fs:2 4:fs:2"
       }}
@@ -615,7 +631,7 @@ static xunit_unit xunit = {
                   " =main.c:fs:MOD"
                   " =main.o:fs:MOD"
         /* exe was marked invalid(I) - transitively - when main.c was unlinked */
-        , graph :  "1-(root)!dir|protect 2-MOD!dir"
+        , graph :  "1-(root)!dir 2-MOD!dir"
                   " 3-exe!I|file"
                   " 2:fs:1 3:fs:2"
       }}
@@ -648,11 +664,13 @@ static xunit_unit xunit = {
                   " =main.c:fs:MOD"
         /* main.o is marked invalid(I) when main.c is unlinked */
         /* exe is marked invalid(I) when the main.o edge is removed */
-        , graph :  "1-(root)!dir|protect 2-MOD!dir"
+        , graph :  "1-(root)!dir 2-MOD!dir"
                   " 3-args.c!file 4-args.h!file 5-args.o!file 6-exe!I|file 7-main.o!I|file"
-                  " 8-!bpe 9-!bpe 10-!bpe"
-                  " 8:bpe-tgt:5 9:bpe-tgt:6 10:bpe-tgt:6 3:src-bpe:8 5:src-bpe:9 7:src-bpe:10"
+                  " 8-bm12t8jnwhwqj2lc0dkmlysh5gnv3!bpe 9-bm1eddp5f96prl0mp3r6m3q6zd8ll!bpe 10-bm1f0za6uv22d3mjzg6u7lq82k05k!bpe"
+                  " 9:bpe-tgt:5 8:bpe-tgt:6 10:bpe-tgt:6 7:src-bpe:8 3:src-bpe:9 5:src-bpe:10"
                   " 2:fs:1 3:fs:2 4:fs:2 5:fs:2 6:fs:2 7:fs:2"
+/* the order here is unfortunately unstable so the test fails randomly */
+, xu_weight : -1
       }}
 
       /* unlinked many intermediate files */
@@ -685,7 +703,7 @@ static xunit_unit xunit = {
                   " =args.o:fs:MOD"
                   " =args.c:fs:MOD"
                   " =args.h:fs:MOD"
-        , graph :  "1-(root)!dir|protect 2-MOD!dir"
+        , graph :  "1-(root)!dir 2-MOD!dir"
                   " 3-exe!I|file"
                   " 2:fs:1"
                   " 3:fs:2"

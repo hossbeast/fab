@@ -25,6 +25,8 @@
 #include "pattern.h"
 #include "system.h"
 #include "shadow.h"
+#include "fstree.h"
+#include "ruleset.h"
 
 typedef struct {
   XUNITTEST;
@@ -40,19 +42,27 @@ typedef struct {
 static void rules_parser_test_unit_setup(xunit_unit * unit)
 {
   bacon_load();
-  graph_setup();
-  narrator_load();
-  module_setup();
+
+  fsent_root_setup();
+  shadow_root_setup();
+  fstree_root_setup();
   shadow_setup();
+  fstree_setup();
+  module_setup();
+  graph_setup();
+
+  extern __thread bool rcu_is_reader ; rcu_is_reader = true;
 }
 
 static void rules_parser_test_unit_cleanup(xunit_unit * unit)
 {
-  module_cleanup();
   bacon_unload();
-  graph_cleanup();
-  narrator_unload();
+
   shadow_cleanup();
+  fstree_cleanup();
+  module_cleanup();
+  fsent_cleanup();
+  graph_cleanup();
 }
 
 static void block_say(struct block * restrict block, narrator * restrict N)
@@ -75,14 +85,17 @@ static void rules_parser_test_entry(xunit_test * _test)
 {
   ruleset_parser_test * test = containerof(_test, ruleset_parser_test, xu);
   bacon_value *vars;
-  ruleset_parser * parser = 0;
-  module * mod = 0;
+  ruleset_parser *parser;
+  module *mod;
+  ruleset *rules;
   graph_invalidation_context invalidation = { };
-  bacon_parser *val_parser = 0;
+  bacon_parser *val_parser;
+  fsent build_dir;
   char buf[512];
   narrator_fixed fixed;
-  narrator * N;
+  narrator *N;
   struct block *block;
+  size_t len;
 
   // arrange
   bacon_parser_alloc(&val_parser);
@@ -93,10 +106,16 @@ static void rules_parser_test_entry(xunit_test * _test)
     bacon_parser_parse(val_parser, MMS(test->vars), "-vars-", BACON_TYPE_SET, &vars);
   }
 
-  // parse
+  memset(&build_dir, 0, sizeof(build_dir));
+
   module_alloc(&mod);
+  mod->build_dir = &build_dir;
+  ruleset_alloc(&rules);
+  parser->container = rules;
+
+  /* parse */
   if(ruleset_parser_parse(parser, test->text, strlen(test->text) + 2, MMS("-fname-")) != 0) {
-    tracef("%.*s", parser->yyu.error_len, parser->yyu.error_str);
+    tracef("%.*s", parser->error_len, parser->error);
     RTA;
   }
 
@@ -104,13 +123,31 @@ static void rules_parser_test_entry(xunit_test * _test)
   llist_foreach(&parser->blocks, block, lln) {
     block_say(block, N);
   }
+
+  /* this incredible hack allows the rules in the next parse to have a different id */
+  rules->vertex.attrs += 0xff;
+
+  /* round-trip parse */
+  len = fixed.l;
+  fixed.s[len + 0] = 0;
+  fixed.s[len + 1] = 0;
+  if(ruleset_parser_parse(parser, buf, len + 2, MMS("-fname-")) != 0) {
+    tracef("%.*s", parser->error_len, parser->error);
+    RTA;
+  }
+
+  N = narrator_fixed_init(&fixed, buf, sizeof(buf));
+  llist_foreach(&parser->blocks, block, lln) {
+    block_say(block, N);
+  }
+
   if(test->expected) {
     assert_eq_w(test->expected, strlen(test->expected), fixed.s, fixed.l);
   } else {
     assert_eq_w(test->text, strlen(test->text), fixed.s, fixed.l);
   }
 
-  module_dispose(mod);
+  module_release(mod);
   ruleset_parser_free(parser);
   graph_invalidation_end(&invalidation);
   bacon_parser_free(val_parser);
@@ -291,6 +328,32 @@ static xunit_unit xunit = {
             "search $^D/*~integ/**/*.o -> generate foo : ./bam-cc\0"
           }
         , expected : "rule $^D/*~integ/**/*.o -> foo : ./bam-cc"
+      }}
+
+    /* various formula lookup patterns */
+    , (ruleset_parser_test[]) {{
+          text : (char[]) {
+            "rule -- [*] sigtable/sigtable.{c,h} : ./\"sigtable.bam+devel\"\0"
+          }
+        , expected : "rule -- [*] sigtable/sigtable.{c,h} : ./\"sigtable.bam+devel\""
+      }}
+    , (ruleset_parser_test[]) {{
+          text : (char[]) {
+            "rule a -> b : foo/bar.bam+(.)\0"
+          }
+        , expected : "rule a -> b : foo/bar.bam+(.)"
+      }}
+    , (ruleset_parser_test[]) {{
+          text : (char[]) {
+            "rule a -> b : bar.bam+(.)\0"
+          }
+        , expected : "rule a -> b : bar.bam+(.)"
+      }}
+    , (ruleset_parser_test[]) {{
+          text : (char[]) {
+            "rule a -> b : /bar.bam%devel+(.)\0"
+          }
+        , expected : "rule a -> b : /bar.bam%devel+(.)"
       }}
     , 0
   }
