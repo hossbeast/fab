@@ -3,11 +3,16 @@
 
 #pragma once
 
-#include <signal.h>
+/*
+ * sets a pattern for signal handling to be used by userspace programs, and provides
+ * implemenntations for common operations, and probes which can be activated for tracing
+ */
 
+#include <signal.h>
 #include "types.h"
 
 extern bool g_sigterm;
+extern bool g_sigquit;
 
 void sigutil_install_handlers(void);
 

@@ -19,14 +19,18 @@
 #include "macros.h"
 #include "zcat.h"
 
-#define SIGUTIL_HANDLER_DEBUG 0
-
 bool g_sigterm;
+bool g_sigquit;
+
+static void quit_handler(int signum, siginfo_t *info, void *ctx)
+{
+  g_sigquit = true;
+  sigrx_probe(info);
+}
 
 static void term_handler(int signum, siginfo_t *info, void *ctx)
 {
   g_sigterm = true;
-
   sigrx_probe(info);
 }
 
@@ -38,6 +42,7 @@ static void intr_handler(int signum, siginfo_t * info, void * ctx)
 void sigutil_install_handlers()
 {
   struct sigaction intr_act;
+  struct sigaction quit_act;
   struct sigaction term_act;
 
   memset(&intr_act, 0, sizeof(intr_act));
@@ -48,13 +53,22 @@ void sigutil_install_handlers()
   term_act.sa_flags = SA_SIGINFO;
   term_act.sa_sigaction = term_handler;
 
+  memset(&quit_act, 0, sizeof(quit_act));
+  quit_act.sa_flags = SA_SIGINFO;
+  quit_act.sa_sigaction = quit_handler;
+
+  /* QUIT - interrupt system call if any, then exit immediately */
+  xsigaction(SIGQUIT, &quit_act, 0);
+
+  /* TERM - interrupt system call if any, finish pending work, then exit */
   xsigaction(SIGINT, &term_act, 0);
   xsigaction(SIGTERM, &term_act, 0);
-  xsigaction(SIGQUIT, &term_act, 0);
+
+  /* USR1 - interrupt system call if any */
   xsigaction(SIGCHLD, &intr_act, 0);
   xsigaction(SIGUSR1, &intr_act, 0);
 
-  /* SIGRTMIN - carries int-valued signal from the client */
+  /* SIGRTMIN - carries int-valued signals */
   xsigaction(SIGRTMIN, &intr_act, 0);
 }
 
