@@ -11,11 +11,10 @@
 #include "value.h"
 #include "writer.h"
 #include "zcat.h"
-#include "keywords.h"
 
 #include "macros.h"
 
-static inline void say(const bacon_value * const restrict val, narrator * const restrict N, bool singleline)
+static inline void say(const bacon_value * const restrict val, narrator * const restrict N, bool flat)
 {
   bacon_writer lwriter;
   bacon_writer * writer = 0;
@@ -28,7 +27,7 @@ static inline void say(const bacon_value * const restrict val, narrator * const 
   {
     bacon_writer_init(&lwriter);
     writer = &lwriter;
-    writer->singleline = singleline;
+    writer->flat = flat;
     bacon_writer_open(writer, N);
     bacon_writer_value(writer, val);
     bacon_writer_close(writer);
@@ -44,4 +43,10 @@ void bacon_value_say(const bacon_value * const restrict val, narrator * const re
 void bacon_value_say_flat(const bacon_value * const restrict val, narrator * const restrict N)
 {
   say(val, N, true);
+}
+
+void bacon_value_show(const bacon_value * const restrict val)
+{
+  say(val, g_narrator_stdout, false);
+  printf("\n");
 }

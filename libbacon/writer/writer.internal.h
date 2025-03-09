@@ -3,20 +3,8 @@
 
 #pragma once
 
-#include "types.h"
-
-#include "writer.h"
-
-/// writer_setup
-//
-// SUMMARY
-//  initialize the writer module
-//
+/* teardown the writer module */
 void writer_setup(void);
 
-/// writer_cleanup
-//
-// SUMMARY
-//  teardown the writer module
-//
+/* teardown the writer module */
 void writer_cleanup(void);

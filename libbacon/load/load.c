@@ -5,7 +5,6 @@
 
 #include "value.h"
 #include "load.h"
-#include "keywords.h"
 #include "registry.h"
 
 static int handles;
@@ -21,7 +20,6 @@ void bacon_load()
     narrator_load();
 
     // modules
-    keywords_setup();
     registry_setup();
   }
 }
@@ -31,7 +29,6 @@ void bacon_unload()
   if(--handles == 0)
   {
     // modules
-    keywords_cleanup();
     registry_cleanup();
 
     // dependencies

@@ -109,3 +109,6 @@ struct bacon_value *bacon_set_alloc(struct bacon_parser * restrict parser)
 
 struct bacon_value *bacon_variable_alloc(struct bacon_parser * restrict parser)
   __attribute__((nonnull));
+
+void bacon_value_show(const bacon_value * const restrict val)
+  __attribute__((nonnull));

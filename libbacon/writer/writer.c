@@ -10,10 +10,11 @@
 
 #include "value.h"
 #include "writer.h"
-#include "keywords.h"
 #include "registry.internal.h"
 
 #include "zcat.h"
+
+#include "common/attrs.h"
 
 //
 // static
@@ -26,7 +27,10 @@ static bool should_quote(const char * const restrict s, size_t len)
 {
   int x;
 
-  if(hashtable_contains(&keywords, (struct keyword[]) {{ s : s, len : len }})) {
+  if(memncmp(s, len, MMS("true")) == 0) {
+    return true;
+  }
+  if(memncmp(s, len, MMS("false")) == 0) {
     return true;
   }
 
@@ -54,20 +58,21 @@ static bool should_quote(const char * const restrict s, size_t len)
 
 static void indent(bacon_writer * const restrict writer)
 {
-  if(writer->mapping != 0 && (writer->mapping % 2) == 0)
+  if(writer->mapping != 0 && writer->mapping == 2)
   {
+    /* about to write the value */
     narrator_says(writer->N, " : ");
     writer->mapping -= 2;
   }
   else
   {
-    if((writer->mapping % 2) == 1)
-    {
+    if(writer->mapping == 1) {
+      /* about to write the key */
       writer->mapping++;
     }
 
     if(writer->any) {
-      if(writer->singleline) {
+      if(writer->flat) {
         narrator_sayc(writer->N, ' ');
       } else {
         narrator_sayc(writer->N, '\n');
@@ -75,7 +80,7 @@ static void indent(bacon_writer * const restrict writer)
       }
     }
 
-    if(!writer->singleline) {
+    if(!writer->flat) {
       narrator_sayf(writer->N, "%*s", writer->level * 2, "");
     }
   }
@@ -155,7 +160,7 @@ static void pop(bacon_writer * restrict writer)
 {
   RUNTIME_ASSERT(writer->level != 0);
 
-  if(writer->singleline) {
+  if(writer->flat) {
     narrator_sayc(writer->N, ' ');
   } else {
     narrator_sayc(writer->N, '\n');
@@ -163,7 +168,7 @@ static void pop(bacon_writer * restrict writer)
   }
   writer->level--;
 
-  if(!writer->singleline) {
+  if(!writer->flat) {
     narrator_sayf(writer->N, "%*s", writer->level * 2, "");
   }
 
@@ -223,6 +228,12 @@ void bacon_writer_close(bacon_writer * restrict writer)
     RUNTIME_ASSERT(writer->string == 0);
   }
   writer->N = 0;
+}
+
+void bacon_writer_flat_newline(bacon_writer * const restrict writer)
+{
+  narrator_sayc(writer->N, '\n');
+  writer->any = false;
 }
 
 //
@@ -320,8 +331,13 @@ void bacon_writer_float(bacon_writer * const restrict writer, double f)
   narrator_sayf(writer->N, "%.6f", f);
 }
 
-void bacon_writer_bytes(bacon_writer * const restrict writer, const char * const restrict s, size_t len)
+void bacon_writer_bytes(bacon_writer * const restrict writer, const char * restrict s, size_t len)
 {
+  if((!s || len == 0) && writer->mapping) {
+    s = "_";
+    len = 1;
+  }
+
   if(len == 0) {
     return;
   }
@@ -357,17 +373,22 @@ void bacon_writer_string(bacon_writer * restrict writer, const char * restrict s
   }
 }
 
-void bacon_writef(bacon_writer * restrict writer, const char * restrict fmt, ...)
+void bacon_writevf(bacon_writer * restrict writer, const char * restrict fmt, va_list va)
 {
   char buf[1024];
-  va_list va;
   size_t z;
 
-  va_start(va, fmt);
   z = vsnprintf(buf, sizeof(buf), fmt, va);
-  va_end(va);
-
   bacon_writer_bytes(writer, buf, z);
+}
+
+void bacon_writef(bacon_writer * restrict writer, const char * restrict fmt, ...)
+{
+  va_list va;
+
+  va_start(va, fmt);
+  bacon_writevf(writer, fmt, va);
+  va_end(va);
 }
 
 void bacon_writer_char(bacon_writer * const restrict writer, char c)
@@ -456,13 +477,13 @@ void bacon_writer_pop_list(bacon_writer * restrict writer)
 
 void bacon_writer_push_mapping(bacon_writer * const restrict writer)
 {
-  RUNTIME_ASSERT(writer->mapping >= 0);
+  RUNTIME_ASSERT(writer->mapping == 0);
   writer->mapping++;
 }
 
 void bacon_writer_pop_mapping(bacon_writer * const restrict writer)
 {
-  RUNTIME_ASSERT((writer->mapping % 2) == 0);
+  RUNTIME_ASSERT(writer->mapping == 0);
 }
 
 void bacon_writer_mapping_string_string(bacon_writer * const restrict writer, const char * const restrict k, const char * const restrict s)
@@ -558,4 +579,39 @@ void bacon_writer_commentvf(bacon_writer * const restrict writer, const char *fm
 {
   comment_spacing(writer);
   narrator_sayvf(writer->N, fmt, va);
+}
+
+bool bacon_writer_is_mapping(bacon_writer * const restrict writer)
+{
+  if(writer->mapping) {
+    return true;
+  }
+
+  return false;
+}
+
+bool bacon_writer_in_set(bacon_writer * const restrict writer)
+{
+  if(writer->level == 0) {
+    return false;
+  }
+
+  if(writer->levels[writer->level - 1] != '}') {
+    return false;
+  }
+
+  return true;
+}
+
+bool bacon_writer_in_list(bacon_writer * const restrict writer)
+{
+  if(writer->level == 0) {
+    return false;
+  }
+
+  if(writer->levels[writer->level - 1] != ']') {
+    return false;
+  }
+
+  return true;
 }

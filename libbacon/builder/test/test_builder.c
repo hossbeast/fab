@@ -22,7 +22,7 @@
 typedef struct writer_test {
   XUNITTEST;
   void (*say)(bacon_writer *);
-  bool singleline;
+  bool flat;
   const char *expected;
 } writer_test;
 
@@ -197,7 +197,7 @@ static void test_builder_entry(xunit_test * _test)
   bacon_writer_open(builder_writer, &N->base);
 
   /* act */
-  writer.singleline = test->singleline;
+  writer.flat = test->flat;
   test->say(&writer);
 
   assert_eq_w(test->expected, strlen(test->expected), N->s, N->l);
@@ -225,17 +225,17 @@ static xunit_unit xunit = {
         }}
       , (writer_test[]){{
             .say = say_set_single
-          , .singleline = true
+          , .flat = true
           , .expected = "{ hi there }"
         }}
       , (writer_test[]){{
             .say = say_set_single
-          , .singleline = false
+          , .flat = false
           , .expected = "{\n  hi\n  there\n}"
         }}
       , (writer_test[]){{
             .say = say_set_multi
-          , .singleline = true
+          , .flat = true
           , .expected = "{ { hi there } }"
         }}
       , (writer_test[]){{
@@ -250,22 +250,22 @@ static xunit_unit xunit = {
         }}
       , (writer_test[]){{
             .say = say_set_multi
-          , .singleline = false
+          , .flat = false
           , .expected = "{\n  {\n    hi\n    there\n  }\n}"
         }}
       , (writer_test[]){{
             .say = say_mappings
-          , .singleline = true
+          , .flat = true
           , .expected = "{ hi : there }"
         }}
       , (writer_test[]){{
             .say = say_mappings
-          , .singleline = false
+          , .flat = false
           , .expected = "{\n  hi : there\n}"
         }}
       , (writer_test[]){{
             .say = say_list_set_mapping
-          , .singleline = true
+          , .flat = true
           , .expected = "[ { hi : there } { hi : there } ]"
         }}
       , (writer_test[]){{
@@ -279,22 +279,22 @@ static xunit_unit xunit = {
         }}
       , (writer_test[]){{
             .say = say_set_mapping_list_set
-          , .singleline = true
+          , .flat = true
           , .expected = "{ list : [ { hi } { hi } ] }"
         }}
       , (writer_test[]){{
             .say = say_set_mapping_key_empty
-          , .singleline = true
+          , .flat = true
           , .expected = "{ _ : A list : [ { hi } { hi } ] }"
         }}
       , (writer_test[]){{
             .say = say_set_mapping_val_empty
-          , .singleline = true
+          , .flat = true
           , .expected = "{ A : _ list : [ { hi } { hi } ] }"
         }}
       , (writer_test[]){{
             .say = say_hex
-          , .singleline = true
+          , .flat = true
           , .expected = "[ 0x2a 0xdeadbeef ]"
         }}
     , 0
