@@ -45,7 +45,6 @@
 #include "fstree.h"
 #include "namespace.h"
 #include "notify.h"
-#include "path_cache.h"
 
 #include "module_vars.h"
 #include "module_envs.h"

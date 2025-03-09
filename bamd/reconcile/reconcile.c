@@ -25,7 +25,6 @@
 
 #include "atomics.h"
 
-#include "path_cache.h"
 
 uint16_t reconciliation_epoch;
 

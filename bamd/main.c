@@ -28,7 +28,6 @@
 #include "config_system.h"
 #include "filesystem.h"
 #include "formula.h"
-#include "path_cache.h"
 #include "rule_system.h"
 #include "module.h"
 #include "block.h"
@@ -194,7 +193,6 @@ int main(int argc, char ** argv)
   // modules
   rcu_setup();
   build_setup();
-  path_cache_setup();
   formula_setup();
   buildplan_setup();
   graph_setup();
@@ -236,7 +234,6 @@ int main(int argc, char ** argv)
   notify_thread_cleanup();
   sweeper_thread_cleanup();
   build_cleanup();
-  path_cache_cleanup();
   formula_cleanup();
   varset_cleanup();
   fstree_cleanup();

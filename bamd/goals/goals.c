@@ -21,7 +21,6 @@
 #include "selector.h"
 #include "channel.h"
 #include "handler.h"
-#include "path_cache.h"
 #include "shadow.h"
 #include "vertex.h"
 
@@ -52,7 +51,6 @@ subsys sys_goals;
 
 void goals_create_buildplan()
 {
-  path_cache_reset();
   buildplan_reset();
   fsent *fse;
   moria_vertex_traversal_state *state;
