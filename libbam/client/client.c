@@ -2,6 +2,7 @@
 /* Copyright (c) 2012-2023 Todd Freed <todd.freed@gmail.com> */
 
 #include <sys/syscall.h>
+#include <errno.h>
 #include <stdlib.h>
 #include <inttypes.h>
 #include <stdio.h>
@@ -15,6 +16,7 @@
 #include <linux/futex.h>
 
 #include "xlinux/xunistd.h"
+#include "xlinux/xfutex.h"
 #include "xlinux/xfcntl.h"
 #include "xlinux/xunistd.h"
 #include "xlinux/xstdlib.h"
@@ -35,9 +37,11 @@
 #include "common/sha1.h"
 
 #include "client.h"
-#include "ipc.h"
 #include "lockfile.h"
 #include "sigutil.h"
+#include "ipc.h"
+#include "pipe.h"
+#include "ring.h"
 
 #include "macros.h"
 #include "barriers.h"
@@ -153,7 +157,7 @@ void bam_client_lockfile_query(bam_client * restrict client)
 
   z += zcats(buf + z, sz - z, "/lock");
   buf[z] = 0;
-  bamipc_lockfile_acquire(&client->bamd_pid, &client->lockfd, path);//"%s/bamd/lock", client->ipcdir);
+  bamipc_lockfile_acquire(&client->bamd_pid, &client->lockfd, path);
 }
 
 void bam_client_lockfile_validate(bam_client * restrict client)
@@ -207,7 +211,7 @@ void bam_client_launch(bam_client * restrict client)
     argv[i++] = "bamd";
     argv[i++] = client->bamd_id;
 
-    /* its a hack, but this is a simple way to give bamd a visible place to record the base path */
+    /* its a hack, but these 100 bytes gives bamd a simple way to record/display the base path */
     argv[i++] = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
 
 #if CONFIG_DEVEL
@@ -233,19 +237,6 @@ void bam_client_launch(bam_client * restrict client)
     }
 #endif
     argv[i] = (void*)0;
-#if CONFIG_DEVEL || CONFIG_DEBUG
-#if CONFIG_DEVEL
-    printf("execv(%s", g_bam_client_bamd_path);
-#elif CONFIG_DEBUG
-    printf("execvp(%s", "bamd");
-#endif
-#endif
-#if CONFIG_DEBUG || CONFIG_DEVEL
-    for(x = 0; x < i; x++) {
-      printf(",%s", argv[x]);
-    }
-    printf(")");
-#endif
 
     // reopen standard file descriptors
     xclose(0);
@@ -318,10 +309,11 @@ void bam_client_attach(bam_client * restrict client, int channel_shmid)
   shmaddr = xshmat(channel_shmid, 0, 0);
 
   client->shm = shmaddr;
-  client->shm->client_pulse++;
 
   /* at this point the lockfile, if any, is now held by bamd and no longer needed */
   ixclose(&client->lockfd);
+
+  /* the shm is initialized by the server ahead of time */
 }
 
 void bam_client_disconnect(bam_client * restrict client)
@@ -329,64 +321,27 @@ void bam_client_disconnect(bam_client * restrict client)
   if(!client->shm) {
     return;
   }
+
   client->shm->client_exit = 1;
-  syscall(SYS_futex, &client->shm->client_ring.waiters, FUTEX_WAKE, INT32_MAX, 0, 0, 0);
+  bamipc_wake_tail(&client->shm->tx.ring);
 }
 
-bamipc_message * bam_client_produce(bam_client * restrict client)
+int bam_client_tx(bam_client * restrict client, struct timespec * restrict timeout, struct bamipc_message ** restrict msg)
 {
-  return bamipc_produce(
-      client->shm->client_ring.pages
-    , &client->shm->client_ring.head
-    , &client->shm->client_ring.tail
-    , &client->shm->client_ring.producers
-    , &client->shm->client_ring.waiters
-  );
+  return bamipc_tx(&client->shm->tx, timeout, msg);
 }
 
-void bam_client_post(bam_client * restrict client, bamipc_message * restrict msg)
+void bam_client_publish(bam_client * restrict client, bamipc_message * restrict msg)
 {
-#if CONFIG_DEBUG || CONFIG_DEVEL
-  RUNTIME_ASSERT(msg->type);
-  if(msg->type == BAMIPC_MSG_EVENTS) {
-    RUNTIME_ASSERT(msg->evtype);
-  }
-#endif
-
-  bamipc_post(
-      msg
-    , &client->shm->client_ring.producers
-    , &client->shm->client_ring.waiters
-  );
+  return bamipc_publish(&client->shm->tx, msg);
 }
 
-bamipc_message * bam_client_acquire(bam_client * restrict client)
+int bam_client_rx(bam_client * restrict client, struct timespec * restrict timeout, bamipc_message ** restrict msg)
 {
-  bamipc_message *msg;
-  msg = bamipc_acquire(
-      client->shm->server_ring.pages
-    , &client->shm->server_ring.head
-    , &client->shm->server_ring.tail
-  );
-
-  return msg;
-}
-
-void bam_client_consume(bam_client * restrict client, bamipc_message * restrict msg)
-{
-  bamipc_consume(
-      client->shm->server_ring.pages
-    , &client->shm->server_ring.head
-    , msg
-    , &client->shm->server_ring.waiters
-  );
+  return bamipc_rx(&client->shm->rx, timeout, msg);
 }
 
 void bam_client_release(bam_client * restrict client, bamipc_message * restrict msg)
 {
-  bamipc_release(
-      client->shm->server_ring.pages
-    , &client->shm->server_ring.head
-    , msg
-  );
+  bamipc_release(&client->shm->rx, msg);
 }

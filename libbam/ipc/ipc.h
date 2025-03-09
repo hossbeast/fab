@@ -7,29 +7,34 @@
 #include <sys/syscall.h>
 #include <linux/futex.h>
 
+#include "common/attrs.h"
+
 #include "types.h"
 #include "macros.h"
 #include "barriers.h"
 #include "atomics.h"
 
 struct attrs32;
+struct timespec;
 
-/* allocated size of the channel */
-#define BAMIPC_SHMSIZE          (32 * 1024 * 1024)
-#define BAMIPC_PAGESIZE         16304
-#define BAMIPC_RINGSIZE         1024
+/* size of message payloads, should be page-aligned */
+#define BAMIPC_PAGESIZE 16384
 
-/* max number of concurrent producers without stalling */
-#define BAMIPC_PRODUCERS        16
+/* number of messages in the ring */
+#define BAMIPC_RINGSIZE 512
+
+/* number of pages available to use in the ring */
+#define BAMIPC_NUMPAGES 600
 
 #define BAMIPC_MSG_TYPE_OPT 0xff
-
 #define BAMIPC_MSG_TYPE_TABLE                                                                                  \
-  DEF(BAMIPC_MSG_REQUEST   , "request"  , BAMIPC_MSG_TYPE_OPT, 0x01)  /* request, a bacon-formatted string */  \
-  DEF(BAMIPC_MSG_RESPONSE  , "response" , BAMIPC_MSG_TYPE_OPT, 0x02)  /* end of processing this request */     \
-  DEF(BAMIPC_MSG_RESULT    , "result"   , BAMIPC_MSG_TYPE_OPT, 0x03)  /* result of processing this request */  \
-  DEF(BAMIPC_MSG_EVENTSUB  , "eventsub" , BAMIPC_MSG_TYPE_OPT, 0x06)  /* subscribe to events (additive) */     \
-  DEF(BAMIPC_MSG_EVENTS    , "events"   , BAMIPC_MSG_TYPE_OPT, 0x07)  /* events */                             \
+  DEF(BAMIPC_MSG_PING      , "ping"     , BAMIPC_MSG_TYPE_OPT, 0x02)  /* still alive? */                       \
+  DEF(BAMIPC_MSG_PONG      , "pong"     , BAMIPC_MSG_TYPE_OPT, 0x03)  /* still alive */                        \
+  DEF(BAMIPC_MSG_REQUEST   , "request"  , BAMIPC_MSG_TYPE_OPT, 0x04)  /* request, a bacon-formatted string */  \
+  DEF(BAMIPC_MSG_RESPONSE  , "response" , BAMIPC_MSG_TYPE_OPT, 0x05)  /* end of processing this request */     \
+  DEF(BAMIPC_MSG_RESULT    , "result"   , BAMIPC_MSG_TYPE_OPT, 0x06)  /* result of processing this request */  \
+  DEF(BAMIPC_MSG_EVENTSUB  , "eventsub" , BAMIPC_MSG_TYPE_OPT, 0x07)  /* subscribe to events (additive) */     \
+  DEF(BAMIPC_MSG_EVENTS    , "events"   , BAMIPC_MSG_TYPE_OPT, 0x08)  /* events */                             \
 
 typedef enum bamipc_msg_type {
 #undef DEF
@@ -38,167 +43,148 @@ BAMIPC_MSG_TYPE_TABLE
 #undef DEF
 } bamipc_msg_type;
 
-extern struct attrs32 * bamipc_msg_type_attrs;
+extern struct attrs32 bamipc_msg_type_attrs;
 
-#define BAMIPC_MESSAGE_FIELDS                               \
-  char _pad16[16];  /* application reserved space */        \
-  bamipc_msg_type type;                                     \
-  int32_t code;                                             \
-  uint64_t id;                                              \
-  union {                                                   \
-    uint32_t attrs;                                         \
-    uint32_t evtype;                                        \
-  };                                                        \
-  uint32_t size;              /* size of the text field */  \
+#define BAMIPC_MSG_FORMAT_OPT 0xff
+#define BAMIPC_MSG_FORMAT_TABLE                                                                                \
+  DEF(BAMIPC_MSG_TEXT       , "text/plain"      , BAMIPC_MSG_FORMAT_OPT, 0x03)  /* ascii text */               \
+  DEF(BAMIPC_MSG_BACON      , "text/bacon"      , BAMIPC_MSG_FORMAT_OPT, 0x02)  /* bacon-valued ascii text  */ \
 
-enum bamipc_page_state {
-  BAMIPC_PAGE_STATE_UNUSED,
-  BAMIPC_PAGE_STATE_POSTED,
-  BAMIPC_PAGE_STATE_ACQUIRED,
+typedef enum bamipc_msg_format {
+#undef DEF
+#define DEF(x, s, r, y) x = y,
+BAMIPC_MSG_FORMAT_TABLE
+#undef DEF
+} bamipc_msg_format;
+
+extern struct attrs32 bamipc_msg_format_attrs;
+
+
+#define BAMIPC_MSG_CODE_OPT 0xff
+#define BAMIPC_MSG_CODE_TABLE                                                                                  \
+  DEF(BAMIPC_MSG_SUCCESS  , "SUCCESS" , BAMIPC_MSG_CODE_OPT, 0x00)    /* success */                            \
+  DEF(BAMIPC_MSG_FAILURE  , "FAILURE" , BAMIPC_MSG_CODE_OPT, 0x01)    /* unspecified failure */                \
+  DEF(BAMIPC_MSG_ENOENT   , "ENOENT"  , BAMIPC_MSG_CODE_OPT, 0x02)    /* entity not found */                   \
+
+enum {
+#undef DEF
+#define DEF(x, s, r, y) x = y,
+BAMIPC_MSG_CODE_TABLE
+#undef DEF
 };
 
-/* calculate the offset to text */
-struct _bamipc_page_layout {
-  enum bamipc_page_state state;
-  uint32_t head;
-  struct __attribute__((aligned(8))) {
-    BAMIPC_MESSAGE_FIELDS
-  } msg;
-  char __attribute__((aligned(8))) text[];
+extern struct attrs32 bamipc_msg_code_attrs;
+
+#define BAMIPC_COUNTER_TABLE                                                     \
+  DEF(BAMIPC_COUNTER_TX_FAST       , "tx-fast"         , 0x0f, 0x01)             \
+  DEF(BAMIPC_COUNTER_TX_WAIT       , "tx-wait"         , 0x0f, 0x02)             \
+  DEF(BAMIPC_COUNTER_TX_STALL      , "tx-stall"        , 0x0f, 0x03)             \
+  DEF(BAMIPC_COUNTER_PUBLISH_FAST  , "publish-fast"    , 0xf0, 0x10)             \
+  DEF(BAMIPC_COUNTER_PUBLISH_STALL , "publish-stall"   , 0xf0, 0x20)             \
+
+enum {
+#undef DEF
+#define DEF(x, s, r, y) x = y,
+BAMIPC_COUNTER_TABLE
+#undef DEF
 };
+
+extern struct attrs32 bamipc_counter_attrs;
 
 typedef struct bamipc_message {
-  BAMIPC_MESSAGE_FIELDS
-  char __attribute__((aligned(8))) text[BAMIPC_PAGESIZE - offsetof(struct _bamipc_page_layout, text)];
+  /* application space */
+  char _pad0[8];
+  uint32_t flags;
+  bamipc_msg_type type;
+  int32_t code;
+  uint64_t id;
+  uint32_t format;    // bampipc_msg_format / descriptor id
+  union {
+    uint32_t attrs;
+    uint32_t evtype;  // bamipc_event_type / BAMIPC_EVENT_*
+  };
+  uint32_t slot;
+  uint32_t index;   /* this field is only used in unit tests */
+  char *text;
+  uint32_t size;    /* size of buffer pointed to by text */
+  uint32_t len;     /* portion of text in use */
 } bamipc_message;
 
 typedef struct bamipc_page {
-  union {
-    struct {
-      enum bamipc_page_state state;
-      union {
-        uint32_t head;
-        uint32_t tail;  // not needed - debug only
-      };
-      bamipc_message msg;
-    };
-    char pad[BAMIPC_PAGESIZE];
-  };
+  char text[BAMIPC_PAGESIZE];
 } bamipc_page;
-STATIC_ASSERT(sizeof(bamipc_page) == BAMIPC_PAGESIZE);
 
 /*
- * Channels are created and owned by bamd (server). The channel consists of a multi-producer, single-consumer
- * ring in each direction.
+ * multi-producer, single-consumer, unidirectional
+ *
+ * tx at the tail, produce -> reserve -> post
+ * rx at the head, acquire -> consume
  */
-typedef struct bamipc_channel
-{
+typedef struct bamipc_ring {
+  uint32_t prod;    /* producers synchronize on prod to allocate tail slots */
+  uint32_t tail;    /* produce at tail */
+  uint32_t head;    /* consume at head */
+} bamipc_ring;
+
+/*
+ * multi-producer, single-consumer, unidirectional
+ *
+ * tx -> publish
+ * rx -> release
+ */
+typedef struct bamipc_pipe {
+  bamipc_ring ring;
+  struct bamipc_message messages[BAMIPC_RINGSIZE];
+  struct bamipc_page pages[BAMIPC_NUMPAGES];
+
+  /* counters */
+  struct {
+    /* tx */
+    uint32_t tx_fast;     /* uncontended */
+    uint32_t tx_waits;    /* kernel-mediated wait */
+    uint32_t tx_stalls;   /* spurious wait */
+    /* post */
+    uint32_t publish_fast;    /* uncontended */
+    uint32_t publish_stalls;  /* contended */
+  } stats;
+} bamipc_pipe;
+
+/*
+ * Channels are created and owned by bamd (server).
+ * A channel consists of an rx and a tx pipe for bidirectional communication.
+ */
+typedef struct bamipc_channel {
   int shmid;
+
+  /* populated before client attachment, immutable thereafter */
+  char client_id[40];
+  uint16_t client_id_len;
 
   pid_t client_pid;
   pid_t client_tid;
-  uint16_t client_pulse;  // incremented periodically by the client to signal liveness
-  bool client_exit;       // set to true by the client to affirmatively close the ring
+  bool client_exit;       // set to true by the client to affirmatively close the tx ring
 
   pid_t server_pid;
   pid_t server_tid;
-  uint16_t server_pulse;  // incremented periodically by the client to signal liveness
-  bool server_exit;       // set to true by the server to affirmatively close the ring
+  bool server_exit;       // set to true by the server to affirmatively close the rx ring
 
-  // messages client -> server
-  struct __attribute__((aligned(8))) {
-    struct bamipc_page pages[BAMIPC_RINGSIZE];
-    uint32_t head;          // updated by server when message(s) consumed
-    uint32_t tail;          // updated by client when message(s) posted
-    int32_t __attribute__((aligned(4))) waiters;
-    uint32_t producers;     // active producers
-  } client_ring;
+  // tx. messages client -> server
+  bamipc_pipe tx;
 
-  // messages server -> client
-  struct __attribute__((aligned(8))) {
-    struct bamipc_page pages[BAMIPC_RINGSIZE];
-    uint32_t head;          // updated by client when message(s) consumed
-    uint32_t tail;          // updated by server when message(s) posted
-    int32_t __attribute__((aligned(4))) waiters;
-    uint32_t producers;     // active producers
-  } server_ring;
+  // rx. messages client <- server
+  bamipc_pipe rx;
 } bamipc_channel;
 
-STATIC_ASSERT(sizeof(bamipc_channel) <= BAMIPC_SHMSIZE);
+#define BAMIPC_OK         0
+#define BAMIPC_STALLED    1
+#define BAMIPC_AWOKEN     2
+#define BAMIPC_WAITED     3
+#define BAMIPC_ETIMEDOUT  4
+#define BAMIPC_EINTR      5
+#define BAMIPC_EAGAIN     6
 
-/*
- * Prepare to use the next message at the ring tail. Messages are not visible
- * until posted. Multiple producers are supported.
- *
- * pages      - pointer to the ring pages
- * ring_head  - pointer to ring head
- * ring_tail  - pointer to ring tail
- * producers  - pointer to ring producers
- * waiters    - pointer to ring waiters
- */
-bamipc_message * bamipc_produce(
-    bamipc_page * restrict pages
-  , uint32_t * restrict ring_head
-  , uint32_t * restrict ring_tail
-  , uint32_t * restrict producers
-  , int32_t * restrict waiters
-)
+void bamipc_channel_init(struct bamipc_channel * restrict channel)
   __attribute__((nonnull));
 
-/*
- * Post previously produced messages to the ring.
- *
- * msg        - message to post
- * producers  - pointer to ring producers
- * waiters    - pointer to ring waiters
- */
-void bamipc_post(
-    bamipc_message * restrict msg
-  , uint32_t * restrict producers
-  , int32_t * restrict waiters
-)
-  __attribute__((nonnull));
-
-/*
- * Get the next available message at the ring head. There may be only one consumer.
- *
- * pages      - pointer to ring pages
- * ring_head  - pointer to ring head
- * ring_tail  - pointer to ring tail
- */
-bamipc_message * bamipc_acquire(
-    bamipc_page * restrict pages
-  , uint32_t * restrict ring_head
-  , uint32_t * restrict ring_tail
-)
-  __attribute__((nonnull));
-
-/*
- * Release one previously acquired message.
- *
- * pages      - pointer to ring pages
- * ring_head  - pointer to ring head
- * msg        - message to release
- * waiters    - pointer to ring waiters
- */
-void bamipc_consume(
-    bamipc_page * restrict pages
-  , uint32_t * restrict ring_head
-  , bamipc_message * restrict msg
-  , int32_t * restrict waiters
-)
-  __attribute__((nonnull));
-
-/*
- * Release acquired messages up to and including the specified message.
- *
- * pages      - pointer to ring pages
- * ring_head  - pointer to ring head
- * msg        - message at the end of the batch
- */
-void bamipc_release(
-    bamipc_page * restrict pages
-  , uint32_t * restrict ring_head
-  , bamipc_message * restrict msg
-)
+void bamipc_channel_reset(struct bamipc_channel * restrict channel)
   __attribute__((nonnull));

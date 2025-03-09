@@ -19,6 +19,7 @@ extern const char *g_bam_client_sweeper_period_nsec;
 struct bamipc_channel;
 struct bamipc_message;
 struct __dirstream;
+struct timespec;
 
 typedef struct bam_client {
   /* configuration */
@@ -45,7 +46,9 @@ typedef struct bam_client {
   int64_t bamd_pid;           /* bamd process group id */
   int lockfd;                 /* */
   int32_t futex;
-  uint64_t  msgid;            /* autoinc */
+  uint64_t msgid;             /* autoinc */
+
+  /* the channel */
   struct bamipc_channel *shm;
 } bam_client;
 
@@ -92,8 +95,10 @@ void bam_client_attach(bam_client * restrict client, int channel_id)
 void bam_client_disconnect(bam_client * restrict client)
   __attribute__((nonnull));
 
-/* prepare a message in the shm channel for post */
-struct bamipc_message *bam_client_produce(bam_client * restrict client)
+int bam_client_tx(bam_client * restrict client, struct timespec * restrict timeout, struct bamipc_message ** restrict msg)
+  __attribute__((nonnull(1, 3)));
+
+void bam_client_publish(bam_client * restrict client, struct bamipc_message * restrict msg)
   __attribute__((nonnull));
 
 /* post a message on the shm channel - the peer can now receive it */
@@ -101,12 +106,8 @@ void bam_client_post(bam_client * restrict client, struct bamipc_message * restr
   __attribute__((nonnull));
 
 /* attempt to receive a message posted on the shm channel by the peer */
-struct bamipc_message *bam_client_acquire(bam_client * restrict client)
-  __attribute__((nonnull));
-
-/* release a previously acquired message */
-void bam_client_consume(bam_client * restrict client, struct bamipc_message * restrict msg)
-  __attribute__((nonnull));
+int bam_client_rx(bam_client * restrict client,  struct timespec * restrict timeout, struct bamipc_message ** restrict msg)
+  __attribute__((nonnull(1, 3)));
 
 /* release acquired messages up to and including the specified message */
 void bam_client_release(bam_client * restrict client, struct bamipc_message * restrict msg)
