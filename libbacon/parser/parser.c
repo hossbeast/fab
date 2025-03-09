@@ -134,6 +134,17 @@ void bacon_parser_ifree(bacon_parser ** const parser)
   *parser = 0;
 }
 
+static void errors_aggregate(bacon_parser * restrict parser, int r)
+{
+  if(r == 0) {
+    parser->error = 0;
+    parser->error_len = 0;
+  } else {
+    parser->error = parser->yyu->error_str;
+    parser->error_len = parser->yyu->error_len;
+  }
+}
+
 int bacon_parser_parse(
     bacon_parser * restrict parser
   , char * const restrict text
@@ -159,6 +170,7 @@ int bacon_parser_parse(
   }
 
   r = yyu_parse(parser->yyu, text, len, fname, 0, 0, 0);
+  errors_aggregate(parser, r);
   if(root) {
     *root = parser->value;
   }
@@ -188,6 +200,7 @@ int bacon_parser_parse_partial(
     parser->yyu = &parser->value_set_yyu;
 
   r = yyu_parse(parser->yyu, text, len, fname, YYU_PARTIAL | YYU_INPLACE, init_loc, used_loc);
+  errors_aggregate(parser, r);
   if(root) {
     *root = parser->value;
   }
@@ -209,6 +222,7 @@ int bacon_parser_expr_parse(
   parser->yyu = &parser->expr_yyu;
 
   r = yyu_parse(parser->yyu, text, len, fname, 0, 0, 0);
+  errors_aggregate(parser, r);
   if(expr) {
     *expr = parser->expr;
   }
@@ -231,6 +245,7 @@ int bacon_parser_expr_parse_partial(
   parser->yyu = &parser->expr_yyu;
 
   r = yyu_parse(parser->yyu, text, len, fname, YYU_PARTIAL | YYU_INPLACE, init_loc, used_loc);
+  errors_aggregate(parser, r);
   if(expr) {
     *expr = parser->expr;
   }

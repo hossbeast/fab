@@ -65,6 +65,7 @@ static void test_parser_entry(xunit_test * _test)
   }
   assert_eq_d(test->parse_expected, r);
   bacon_value_say_flat(val0, &N0->base);
+
   if(test->parse_expected) {
   } else if(test->noexpect) {
   } else if(test->expected) {
@@ -87,6 +88,7 @@ static void test_parser_entry(xunit_test * _test)
   }
 
   assert_eq_value(val0, val1);
+
   /* first-pass and second-pass strings can differ, since element order in rbtree is subject to insertion order */
 
   bacon_value_free(parser, val0);
@@ -129,6 +131,8 @@ static xunit_unit xunit = {
     , (parser_test[]) {{ text : "-bar" }}
     , (parser_test[]) {{ text : "-bar-" }}
     , (parser_test[]) {{ text : "-DFABIPCDIR=/var/run/fab" }}
+    , (parser_test[]) {{ text : "123bar" , expected : "\"123bar\"" }}
+    , (parser_test[]) {{ text : "bar123" }}
 
     /* string escapes */
     , (parser_test[]) {{ text : "\"bar\""           , expected : "bar" }}
@@ -151,8 +155,7 @@ static xunit_unit xunit = {
     , (parser_test[]) {{ text : "142 : false" }}
     , (parser_test[]) {{ text : "1.42 : 142"    , expected : "1.420000 : 142" }}
     , (parser_test[]) {{ text : "foo : 1.42"    , expected : "foo : 1.420000" }}
-
-    , (parser_test[]) {{ text : "cflags : -g"    , expected : "cflags : -g" }}
+    , (parser_test[]) {{ text : "cflags : -g"   , expected : "cflags : -g" }}
 
     /* lists */
     , (parser_test[]) {{

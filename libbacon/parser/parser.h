@@ -26,8 +26,11 @@ typedef struct bacon_parser {
   llist expr_freelist;         // struct bacon_expr freelist
   llist location_freelist;     // struct bacon_location freelist
 
+  /* returns */
   struct bacon_value *value;   // (returns) parsed value root
   struct bacon_expr *expr;     // (returns) parsed expr root
+  const char *error;
+  uint16_t error_len;
 } bacon_parser;
 
 void bacon_parser_init(bacon_parser * const restrict p);
