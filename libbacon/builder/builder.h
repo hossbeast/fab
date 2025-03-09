@@ -7,9 +7,25 @@
 
 #include "bacon/writer.h"
 
-void bacon_builder_pop_set(bacon_writer ** restrict writerp);
-void bacon_builder_pop_mapping(bacon_writer ** restrict writerp);
-void bacon_builder_pop_list(bacon_writer ** restrict writerp);
+void bacon_builder_pop_set(bacon_writer ** restrict writerp)
+  __attribute__((nonnull));
+
+void bacon_builder_pop_mapping(bacon_writer ** restrict writerp)
+  __attribute__((nonnull));
+
+void bacon_builder_pop_list(bacon_writer ** restrict writerp)
+  __attribute__((nonnull));
+
+struct bacon_builder_if_mapping {
+  struct bacon_writer *builder_writer;
+  bool b;
+};
+
+bool bacon_builder_push_set_if_mapping(bacon_writer * restrict)
+  __attribute__((nonnull));
+
+void bacon_builder_pop_set_if_mapping(struct bacon_builder_if_mapping * restrict rec)
+  __attribute__((nonnull));
 
 #define _CONCAT(x, y) __CONCAT(x, y)
 #define __CONCAT(x, y) x ## y
@@ -25,6 +41,10 @@ void bacon_builder_pop_list(bacon_writer ** restrict writerp);
 #define LIST \
   __attribute__((cleanup(bacon_builder_pop_list))) bacon_writer *_CONCAT(__builder_list_, __LINE__) = builder_writer; \
   bacon_writer_push_list(builder_writer);
+
+#define SET_IF_MAPPING \
+  __attribute__((cleanup(bacon_builder_pop_set_if_mapping))) struct bacon_builder_if_mapping _CONCAT(__builder_if_mapping, __LINE__) = { \
+    builder_writer, bacon_builder_push_set_if_mapping(builder_writer) }; \
 
 #define BYTES(x, y) bacon_writer_bytes(builder_writer, x, y);
 #define STRING(x) bacon_writer_string(builder_writer, x);
