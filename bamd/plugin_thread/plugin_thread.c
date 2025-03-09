@@ -4,8 +4,12 @@
 #include <unistd.h>
 #include <stdio.h>
 #include <errno.h>
+#include <sys/uio.h>
 
 #include "bam/sigutil.h"
+#include "bam/ipc.h"
+#include "bam/pipe.h"
+#include "bam/ring.h"
 #include "xlinux/xpthread.h"
 #include "xlinux/xunistd.h"
 #include "xlinux/xepoll.h"
@@ -17,12 +21,14 @@
 #include "narrator/fixed.h"
 #include "bacon/builder.h"
 #include "bacon/value.h"
+#include "bacon/parser.h"
+#include "bacon/make.h"
 
 #include "plugin_thread.h"
 #include "plugin.h"
 #include "channel.h"
 #include "reconcile.h"
-#include "handler.h"
+#include "request_handler.h"
 #include "args.h"
 #include "params.h"
 #include "system.h"
@@ -37,16 +43,24 @@
 #include "selector_parser.h"
 #include "run_thread.h"
 #include "pattern_parser.internal.h"
-#include "events.h"
+#include "events/events.h"
 #include "goals.h"
 #include "exec.h"
 #include "exec_builder.h"
+#include "exec_render.h"
 #include "plugin_process.h"
 #include "plugin/probes.h"
+#include "adaptor.h"
+#include "sysvar.h"
+#include "timers.h"
 
 #include "atomics.h"
 #include "threads.h"
 #include "times.h"
+
+#include "subsys.h"
+
+static llist freelist = LLIST_INITIALIZER(freelist);
 
 rcu_list plugin_thread_list = RCU_LIST_INITIALIZER(plugin_thread_list);
 struct futexlock plugin_thread_list_lock;
@@ -56,10 +70,10 @@ static void plugin_exited_event(struct plugin * restrict plugin)
   narrator_fixed fixed;
   bacon_writer writer, *builder_writer;
   events_context ectx;
-  event_bacon *msg;
+  bamipc_message *msg;
 
   msg = system_error_event(&ectx);
-  narrator_fixed_init(&fixed, msg->text, sizeof(msg->text));
+  narrator_fixed_init(&fixed, msg->text, msg->size);
   bacon_writer_init(&writer);
   builder_writer = bacon_writer_open(&writer, &fixed.base);
 
@@ -81,7 +95,7 @@ static void plugin_exited_event(struct plugin * restrict plugin)
   bacon_writer_close(&writer);
 
   msg->code = EINVAL;
-  msg->size = fixed.l;
+  msg->len = fixed.l;
   events_publish(&ectx);
 }
 
@@ -90,10 +104,10 @@ static void plugin_hung_event(struct plugin * restrict plugin)
   narrator_fixed fixed;
   bacon_writer writer, *builder_writer;
   events_context ectx;
-  event_bacon *msg;
+  bamipc_message *msg;
 
   msg = system_error_event(&ectx);
-  narrator_fixed_init(&fixed, msg->text, sizeof(msg->text));
+  narrator_fixed_init(&fixed, msg->text, msg->size);
   bacon_writer_init(&writer);
   builder_writer = bacon_writer_open(&writer, &fixed.base);
 
@@ -111,7 +125,7 @@ static void plugin_hung_event(struct plugin * restrict plugin)
   bacon_writer_close(&writer);
 
   msg->code = EINVAL;
-  msg->size = fixed.l;
+  msg->len = fixed.l;
   events_publish(&ectx);
 }
 
@@ -120,10 +134,10 @@ static void plugin_badrequest_event(struct plugin * restrict plugin, const char 
   narrator_fixed fixed;
   bacon_writer writer, *builder_writer;
   events_context ectx;
-  event_bacon *msg;
+  bamipc_message *msg;
 
   msg = system_error_event(&ectx);
-  narrator_fixed_init(&fixed, msg->text, sizeof(msg->text));
+  narrator_fixed_init(&fixed, msg->text, msg->size);
   bacon_writer_init(&writer);
   builder_writer = bacon_writer_open(&writer, &fixed.base);
 
@@ -145,7 +159,7 @@ static void plugin_badrequest_event(struct plugin * restrict plugin, const char 
   bacon_writer_close(&writer);
 
   msg->code = EINVAL;
-  msg->size = fixed.l;
+  msg->len = fixed.l;
   events_publish(&ectx);
 }
 
@@ -171,7 +185,7 @@ static void __attribute__((noreturn)) plugin_exec(const struct plugin_process * 
     close(x);
   }
 
-  execve(exec->path, exec->args, exec->envs);
+  execve(exec->file_path, exec->args, exec->envs);
 
   /* unreachable */
   dprintf(1, "%s\n", strerror(errno));
@@ -179,111 +193,20 @@ static void __attribute__((noreturn)) plugin_exec(const struct plugin_process * 
   exit(1);
 }
 
-static void plugin_system_envs(struct exec_builder * restrict eb)
-{
-  exec_builder_args ba;
-
-  memset(&ba, 0, sizeof(ba));
-  ba.val.s = g_params.pid_str;
-  ba.name = "bm_pid";
-  ba.name_len = strlen("bm_pid");
-  ba.render_val = BUILDER_STRING;
-  ba.mode = BUILDER_APPEND;
-  ba.item = BUILDER_ENVS;
-  ba.position = -1;
-  exec_builder_add(eb, &ba);
-
-  memset(&ba, 0, sizeof(ba));
-  ba.val.s = g_args.hash_str;
-  ba.name = "bm_hash";
-  ba.name_len = strlen("bm_hash");
-  ba.render_val = BUILDER_STRING;
-  ba.mode = BUILDER_APPEND;
-  ba.item = BUILDER_ENVS;
-  ba.position = -1;
-  exec_builder_add(eb, &ba);
-
-  memset(&ba, 0, sizeof(ba));
-  ba.val.s = g_base_dir;
-  ba.name = "bm_basedir";
-  ba.name_len = strlen("bm_basedir");
-  ba.render_val = BUILDER_STRING;
-  ba.mode = BUILDER_APPEND;
-  ba.item = BUILDER_ENVS;
-  ba.position = -1;
-  exec_builder_add(eb, &ba);
-
-  memset(&ba, 0, sizeof(ba));
-  ba.val.s = g_params.ipcdir;
-  ba.name = "bm_ipcdir";
-  ba.name_len = strlen("bm_ipcdir");
-  ba.render_val = BUILDER_STRING;
-  ba.mode = BUILDER_APPEND;
-  ba.item = BUILDER_ENVS;
-  ba.position = -1;
-  exec_builder_add(eb, &ba);
-
-  memset(&ba, 0, sizeof(ba));
-  ba.val.s = g_params.homedir;
-  ba.name = "bm_homedir";
-  ba.name_len = strlen("bm_homedir");
-  ba.render_val = BUILDER_STRING;
-  ba.mode = BUILDER_APPEND;
-  ba.item = BUILDER_ENVS;
-  ba.position = -1;
-  exec_builder_add(eb, &ba);
-}
-
 static void plugin_fork_and_exec(struct plugin_process *process)
 {
-  struct exec *exec = 0;
-  bacon_value *v;
-  exec_builder_args ba;
+  struct plugin *plugin;
 
-  exec_builder_reset(&process->eb);
-
-  /* path */
-  memset(&ba, 0, sizeof(ba));
-  ba.val.s = process->plugin->self_node_abspath;
-  ba.render_val = BUILDER_STRING;
-  ba.mode = BUILDER_APPEND;
-  ba.item = BUILDER_FILE;
-  exec_builder_add(&process->eb, &ba);
-
-  /* first argument is also the path */
-  memset(&ba, 0, sizeof(ba));
-  ba.val.s = process->plugin->self_node_abspath;
-  ba.render_val = BUILDER_STRING;
-  ba.mode = BUILDER_APPEND;
-  ba.item = BUILDER_ARGS;
-  ba.position = -1;
-  exec_builder_add(&process->eb, &ba);
-
-  /* args */
-  if(process->plugin->args) {
-    llist_foreach(process->plugin->args, v, lln) {
-      memset(&ba, 0, sizeof(ba));
-      ba.val.v = v;
-      ba.render_val = BUILDER_VALUE;
-      ba.mode = BUILDER_APPEND;
-      ba.item = BUILDER_ARGS;
-      ba.position = -1;
-      exec_builder_add(&process->eb, &ba);
-    }
-  }
-
-  /* envs - corresponding to params_describe and to bam metadata */
-  plugin_system_envs(&process->eb);
-
-  exec_builder_build(&process->eb, &exec);
+  plugin = process->plugin;
 
   process->pid = xfork();
   if(process->pid == 0) {
-    plugin_exec(process, exec);
+    plugin_exec(process, plugin->exec);
     /* does not return */
+    RTA;
   }
 
-  plugin_exec_probe(process->plugin, exec);
+  plugin_exec_probe(process->plugin, plugin->exec);
 }
 
 static int parse_request(
@@ -294,94 +217,60 @@ static int parse_request(
   , request * restrict req
 )
 {
-  int exit;
-  char trace[512];
-  size_t size;
-
-  if((exit = request_parser_parse(parser, text, len, "request", req)) == 0) {
+  if((request_parser_parse(parser, text, len, "request", req)) == 0) {
+    plugin->plugin_stats.tx_parse_ok++;
     return 0;
   }
 
-  size = 0;
-  if(parser->selector_parser->pattern_parser->yyu && parser->selector_parser->pattern_parser->yyu->error_len) {
-    size += zcatw(trace, sizeof(trace), parser->selector_parser->pattern_parser->yyu->error_str, parser->selector_parser->pattern_parser->yyu->error_len);
-  } else if(parser->selector_parser->yyu.error_len) {
-    size += zcatw(trace, sizeof(trace), parser->selector_parser->yyu.error_str, parser->selector_parser->yyu.error_len);
-  } else {
-    size += zcatw(trace, sizeof(trace), parser->yyu.error_str, parser->yyu.error_len);
-  }
-
-  plugin_badrequest_event(plugin, trace, size);
+  plugin->plugin_stats.tx_parse_err++;
+  plugin_badrequest_event(plugin, parser->error, parser->error_len);
   return -EINVAL;
 }
 
-/* scan the aux buffer
+/* scan the auxout buffer
  *
  * returns
  *  -1 : parsing error
  *   0 : no request found
  *   1 : request was parsed
  */
-static int scan_aux(plugin_process * restrict process, request_parser * restrict parser, request * restrict req)
+static bool scan_auxout(char * restrict aux, size_t sz, uint32_t *cons, uint32_t tail)
 {
-  int x;
-  int r;
+  uint32_t x;
+  uint32_t x0;
+  uint32_t x1;
 
-  r = 0;
-  for(x = 0; x < process->aux_len; x++)
-  {
-    if(x == 0 || process->aux[x - 1] != '\n' || process->aux[x] != '\n') {
-      continue;
+  x = *cons;
+  do {
+    x++;
+    x0 = x - 1;
+    x0 %= sz;
+    x1 = x;
+    x1 %= sz;
+
+    if(aux[x0] == '\n' && aux[x1] == '\n') {
+      *cons = x + 1;
+      return true;
     }
+  } while(x != tail);
 
-    process->aux[x - 1] = 0;
-    process->aux[x - 0] = 0;
-
-    request_destroy(req);
-    /* negative on error */
-    r = parse_request(process->plugin, process->aux, x + 1, parser, req);
-    if (r == 0) {
-      r = 1;
-    }
-    memmove(
-        &process->aux[0]
-      , &process->aux[x + 1]
-      , process->aux_len - (x + 1)
-    );
-    process->aux_len -= (x + 1);
-    break;
-  }
-
-  return r;
+  *cons = x;
+  return false;
 }
 
-static void timer_put(timer_t * restrict timerid, uint64_t nsec)
+static void plugin_tx(plugin_process * restrict process, struct adaptor * restrict adaptor, const struct iovec *iov, int iovcnt)
 {
-  struct itimerspec its;
-  int r;
+  size_t z;
 
-  /* fires just once */
-  memset(&its, 0, sizeof(its));
-  timespec_add(&its.it_value, nsec);
-  r = timer_settime(*timerid, 0, &its, 0);
-  RUNTIME_ASSERT(r == 0);
-}
+  /* tee a copy off to the visibility buffer */
+  z = adaptor_overwritev(adaptor, iov, iovcnt);
 
-static void timer_once_start(timer_t * restrict timerid, int32_t threadid, uint64_t nsec)
-{
-  struct sigevent evt;
-  int r;
+  (void)!writev(process->stdin_pipe[1], iov, iovcnt);
+  plugin_tx_probe(process->plugin, iov, iovcnt - 1);
 
-  /* create periodic timer to send signals to this thread */
-  memset(&evt, 0, sizeof(evt));
-  evt.sigev_notify = SIGEV_THREAD_ID;
-  evt.sigev_signo = SIGUSR1;
-  evt._sigev_un._tid = threadid;
-  r = timer_create(CLOCK_MONOTONIC, &evt, timerid);
-  RUNTIME_ASSERT(r == 0);
-
-  /* fires just once */
-  timer_put(timerid, nsec);
+  process->in_total += z;
+  process->plugin->plugin_stats.rx_messages++;
+  process->plugin->plugin_stats.in_bytes += z;
 }
 
 static void plugin_thread_fn(plugin_thread * restrict thread)
@@ -393,55 +282,69 @@ static void plugin_thread_fn(plugin_thread * restrict thread)
   int epfd = -1;
   struct epoll_event ev;
   struct plugin_process *process;
-  ssize_t bytes = 0;
   ssize_t rv;
   uint32_t stream;
-  int fd = 0;
-  char *buf = 0;
-  size_t sz = 0;
   siginfo_t siginfo;
   request_parser *parser;
-  request req;
   command *cmd;
-  handler_context *handler;
-  event_bacon *pb;
+  request_handler *handler;
   struct timespec interval;
-  llist events_txq;
   pid_t child;
   timer_t timerid;
   struct itimerspec its;
-  uint32_t aux_len = 0;
+  struct iovec iovs[2];
+  bamipc_message *e;
+  uint32_t delta;
+  adaptor in_adaptor;
+  adaptor out_adaptor;
+  adaptor err_adaptor;
+  adaptor auxout_adaptor;
+  uint32_t auxout_cons;
+  struct plugin *plugin;
 
   rcu_enter(&rcu);
 
   // signals handled on this thread
   sigfillset(&fsigs);
-  sigdelset(&fsigs, SIGUSR1);
+  sigdelset(&fsigs, SIGUSR1); // in-process scheduling
+  sigdelset(&fsigs, SIGUSR2); // timers_once
   sigdelset(&fsigs, SIGCHLD);
 
   sigemptyset(&esigs);
   sigaddset(&esigs, SIGUSR1);
+  sigaddset(&esigs, SIGUSR2);
   sigaddset(&esigs, SIGCHLD);
 
-  interval.tv_sec = 0;
-  interval.tv_nsec = MSEC_AS_NSEC(126);
+  plugin = thread->plugin;
+  process = plugin->process;
 
-  /* setup process state */
-  if(thread->plugin->process) {
-    process = thread->plugin->process;
-    plugin_process_reset(process);
-  } else {
-    process = plugin_process_alloc();
-    thread->plugin->process = process;
-    process->plugin = thread->plugin;
+  xpipe(process->stdin_pipe);
+  xpipe(process->stdout_pipe);
+  xpipe(process->stderr_pipe);
+  xpipe(process->auxout_pipe);
 
-    xpipe(process->stdin_pipe);
-    xpipe(process->stdout_pipe);
-    xpipe(process->stderr_pipe);
-    xpipe(process->auxout_pipe);
-  }
+  in_adaptor.buf = process->in;
+  in_adaptor.sz = process->in_size;
+  in_adaptor.head = &process->in_head;
+  in_adaptor.tail = &process->in_tail;
 
-  handler = thread->handler;
+  out_adaptor.buf = process->out;
+  out_adaptor.sz = process->out_size;
+  out_adaptor.head = &process->out_head;
+  out_adaptor.tail = &process->out_tail;
+
+  err_adaptor.buf = process->err;
+  err_adaptor.sz = process->err_size;
+  err_adaptor.head = &process->err_head;
+  err_adaptor.tail = &process->err_tail;
+
+  auxout_adaptor.buf = process->auxout;
+  auxout_adaptor.sz = process->auxout_size;
+  auxout_adaptor.head = &process->auxout_head;
+  auxout_adaptor.tail = &process->auxout_tail;
+  auxout_cons = 0;
+
+  handler = request_handler_alloc();
 
   /* setup epoll */
   epfd = xepoll_create();
@@ -455,9 +358,8 @@ static void plugin_thread_fn(plugin_thread * restrict thread)
   ev = (typeof(ev)) { .events = EPOLLIN, .data.u32 = 1001  };
   xepoll_ctl(epfd, EPOLL_CTL_ADD, process->auxout_pipe[0], &ev);
 
-  llist_init(&events_txq);
   request_parser_create(&parser);
-  request_init(&req);
+  request_init(&process->last_req);
   cmd = 0;
 
   /* launch plugin process */
@@ -466,21 +368,26 @@ static void plugin_thread_fn(plugin_thread * restrict thread)
 
   process->running = true;
   clock_gettime(CLOCK_MONOTONIC, &process->started_at);
-  thread->plugin->plugin_stats.fork++;
+  plugin->plugin_stats.fork++;
 
-  /* plugin child process has 500ms to respond */
-  timer_once_start(&timerid, tid, MSEC_AS_NSEC(500));
+  /* plugin child process has one second to respond */
+  timers_once_start(&timerid, tid, SEC_AS_NSEC(1), 0, 0);
+
+  interval.tv_sec = 1;
+  interval.tv_nsec = 0;
+
+  plugin->thread_state = PLUGIN_THREAD_UNREADY;
 
   while(!g_params.shutdown && child != -1)
   {
-    rcu_quiesce(&rcu_self);
+    rcu_quiesce(&rcu);
 
     if(!process->ready) {
       timer_gettime(timerid, &its);
       if(its.it_value.tv_sec == 0 && its.it_value.tv_nsec == 0) {
         /* the timer has expired */
         thread->shutdown = true;
-        plugin_hung_event(thread->plugin);
+        plugin_hung_event(plugin);
       }
     }
 
@@ -500,8 +407,7 @@ static void plugin_thread_fn(plugin_thread * restrict thread)
 
     /* process the next command if any */
     if(cmd) {
-      if(cmd->type == COMMAND_GOALS)
-      {
+      if(cmd->type == COMMAND_GOALS) {
         goals_set(
             child
           , cmd->goals.token
@@ -519,145 +425,122 @@ static void plugin_thread_fn(plugin_thread * restrict thread)
 
         /* invalidates //goals which triggers autorun */
         handler->invalidated_any = true;
+      } else if(cmd->type == COMMAND_EVENTSUB) {
+        delta = cmd->mask & ~thread->event_mask;
+        thread->event_mask = cmd->mask;
+        events_trigger(handler, delta);
       } else {
-        handler_process_command(handler, cmd);
+        request_handler_process_command(handler, cmd);
       }
 
       /* unblock the run thread, which should be waiting for this */
       if(!process->ready && cmd->type == COMMAND_PLUGIN_READY) {
-        timer_put(&timerid, 0);
+        timers_once_put(&timerid, 0);
         process->ready = true;
-        vertex_mark_fresh(&thread->plugin->vertex);
-        vertex_mark_fresh(&thread->plugin->self_node->vertex);
-        thread->plugin->plugin_stats.ready++;
+        vertex_mark_fresh(&plugin->vertex);
+        vertex_mark_fresh(&plugin->self_node->vertex);
+        plugin->plugin_stats.ready++;
       }
 
       if(cmd->type == COMMAND_PLUGIN_READY) {
-        thread->ready_reported = true;
-        plugin_ready_probe(thread->plugin);
+        if(plugin->thread_state != PLUGIN_THREAD_READY_RECEIVED) {
+          plugin_ready_probe(plugin);
+        }
+        plugin->thread_state = PLUGIN_THREAD_READY_RECEIVED;
+      } else {
+        plugin->plugin_stats.commands++;
       }
 
-      if((cmd = llist_next(&req.commands, cmd, lln))) {
+      if((cmd = llist_next(&process->last_req.commands, cmd, lln))) {
         /* next command, on the next iteration */
-      } else if(handler->invalidated_any && run_thread_autorun) {
-        /* request completed */
-        run_thread_launch(0, COMMAND_AUTORUN);
+      } else {
+        if(handler->invalidated_any && run_thread_autorun) {
+          run_thread_launch(0, 0, COMMAND_AUTORUN);
+        }
       }
       continue;
-    } else if(process->aux_len != aux_len) {
-      if((r = scan_aux(process, parser, &req)) < 0) {
-        /* parsing error */
-        aux_len = process->aux_len;
+    } else if(auxout_cons != process->auxout_tail) {
+      if(!scan_auxout(process->auxout, process->auxout_size, &auxout_cons, process->auxout_tail)) {
+        /* two-newlines not found in the buffer */
+        continue;
+      }
+
+      process->last_buf_len = adaptor_pop(&auxout_adaptor, auxout_cons, process->last_buf, sizeof(process->last_buf));
+      process->last_buf[process->last_buf_len - 1] = 0; // null out the newlines
+      process->last_buf[process->last_buf_len - 2] = 0;
+
+      request_destroy(&process->last_req);
+      if((r = parse_request(process->plugin, process->last_buf, process->last_buf_len, parser, &process->last_req)) != 0) {
+        /* parsing error - discard any further data */
         thread->shutdown = true;
         continue;
-      } else if(r > 0) {
-        aux_len = 0;
-        thread->plugin->plugin_stats.rx_messages++;
-        cmd = llist_first(&req.commands, typeof(*cmd), lln);
-        continue;
-      } else {
-        /* no request */
-        aux_len = process->aux_len;
       }
+
+      plugin->plugin_stats.tx_messages++;
+      plugin_rx_probe(process->plugin, process->last_buf, process->last_buf_len);
+      cmd = llist_first(&process->last_req.commands, typeof(*cmd), lln);
+      continue;
     }
 
     /* ask for readiness */
-    if(!thread->ready_requested) {
-      thread->ready_requested = true;
-      (void)!write(process->stdin_pipe[1], MMS("plugin-ready-request\n\n"));
-      plugin_unready_probe(thread->plugin);
+    if(plugin->thread_state == PLUGIN_THREAD_UNREADY) {
+      plugin->thread_state = PLUGIN_THREAD_READY_REQUESTED;
+
+      iovs[0].iov_base = "plugin-ready-request";
+      iovs[0].iov_len = strlen(iovs[0].iov_base);
+      iovs[1].iov_base = "\n\n";
+      iovs[1].iov_len = 2;
+      plugin_tx(process, &in_adaptor, iovs, 2);
+      plugin_unready_probe(plugin);
       continue;
     }
 
     /* propagate events */
-    while((pb = llist_shift(&events_txq, typeof(*pb), lln))) {
-      (void)!write(process->stdin_pipe[1], pb->text, pb->size);
-      (void)!write(process->stdin_pipe[1], "\n\n", 2);
-
-      thread->plugin->plugin_stats.tx_messages++;
-      thread->plugin->plugin_stats.in_bytes += pb->size + 2;
-      event_bacon_free(pb);
+    if(bamipc_peek(&thread->pipe->ring) == BAMIPC_OK) {
+      if(bamipc_rx(thread->pipe, &interval, &e) == BAMIPC_OK) {
+        iovs[0].iov_base = e->text;
+        iovs[0].iov_len = e->len;
+        iovs[1].iov_base = "\n\n";
+        iovs[1].iov_len = 2;
+        plugin_tx(process, &in_adaptor, iovs, 2);
+        plugin->plugin_stats.events++;
+        bamipc_release(thread->pipe, e);
+        continue;
+      }
     }
 
-    /* poll the event queue */
-    if(!llist_empty(&handler->events_txq)) {
-      futexlock_acquire(&handler->events_txq_lock);
-      llist_splice_tail(&events_txq, &handler->events_txq);
-      futexlock_release(&handler->events_txq_lock);
-    }
-    if(!llist_empty(&events_txq)) {
-      continue;
-    }
-
-    /* receive events or a signal */
     /* receive a signal, or output from the process */
-    if(thread->ready_reported && !thread->ready_quiescent) {
-      thread->ready_quiescent = true;
-      sigutil_uxtgkill(g_params.pid, g_params.thread_run, SIGUSR1);
-      plugin_quiesce_probe(thread->plugin);
+    if(plugin->thread_state == PLUGIN_THREAD_READY_RECEIVED) {
+      plugin->thread_state = PLUGIN_THREAD_READY_REPORTED;
+      sigutil_uxtgkill(g_params.pid, g_params.thread_run, SIGUSR1); // plugin_system_reconcile on the run thread
     }
-    r = uxepoll_pwait(epfd, &ev, 1, SEC_AS_MSEC(1), &fsigs);
-    rcu_quiesce(&rcu_self);
+    r = uxepoll_pwait(epfd, &ev, 1, MSEC_AS_MSEC(125), &fsigs);
+    rcu_quiesce(&rcu);
     if(r > 0)
     {
       stream = ev.data.u32 & 0xffff;
       switch(stream) {
         case 1:
-          fd = process->stdout_pipe[0];
-          buf = process->out;
-          sz = sizeof(process->out);
-          bytes = process->out_len;
-          break;
-        case 2:
-          fd = process->stderr_pipe[0];
-          buf = process->err;
-          sz = sizeof(process->err);
-          bytes = process->err_len;
-          break;
-        case 1001:
-          fd = process->auxout_pipe[0];
-          buf = process->aux;
-          sz = sizeof(process->aux);
-          bytes = process->aux_len;
-          break;
-      }
-      if(bytes == sz) {
-        /* buffer is full ; discard overflow */
-        rv = xsplice(fd, 0, build_devnull_fd, 0, 0xffff, SPLICE_F_MOVE | SPLICE_F_NONBLOCK);
-      } else {
-        rv = xread(fd, buf + bytes, sz - bytes);
-        switch(stream) {
-          case 1:
-            process->out_len += rv;
-            /* stdout is just retained in the buffer */
-            break;
-          case 2:
-            process->err_len += rv;
-            /* stderr is just retained in the buffer */
-            break;
-          case 1001:
-            process->aux_len += rv;
-            break;
-        }
-      }
-      switch(stream) {
-        case 1:
+          rv = adaptor_push_read(&out_adaptor, process->stdout_pipe[0], UINT32_MAX);
           process->out_total += rv;
-          thread->plugin->plugin_stats.out_bytes += rv;
+          plugin->plugin_stats.out_bytes += rv;
           break;
         case 2:
+          rv = adaptor_push_read(&err_adaptor, process->stderr_pipe[0], UINT32_MAX);
           process->err_total += rv;
-          thread->plugin->plugin_stats.err_bytes += rv;
+          plugin->plugin_stats.err_bytes += rv;
           break;
         case 1001:
-          process->aux_total += rv;
-          thread->plugin->plugin_stats.aux_bytes += rv;
+          rv = adaptor_push_read(&auxout_adaptor, process->auxout_pipe[0], UINT32_MAX);
+          process->auxout_total += rv;
+          plugin->plugin_stats.aux_bytes += rv;
           break;
       }
     }
 
-    /* reap any children */
-    /* NOTE : this thread is competing with other threads calling wait (run thread) */
+    /* NOTE : this thread is competing with other threads calling wait (run_thread)
+     * WEXITED - check for exited child processes
+     * WNOHANG - dont block */
     rcu_quiesce(&rcu);
     uxwaitid(P_PID, child, &siginfo, WEXITED | WNOHANG);
     if(siginfo.si_pid == 0) {
@@ -669,84 +552,82 @@ static void plugin_thread_fn(plugin_thread * restrict thread)
     process->running = false;
     process->status = siginfo.si_status;
     clock_gettime(CLOCK_MONOTONIC, &process->stopped_at);
-    thread->plugin->plugin_stats.reap++;
+    plugin->plugin_stats.reap++;
     if(process->err_total || siginfo.si_status) {
-      thread->plugin->plugin_stats.crashed++;
+      plugin->plugin_stats.crashed++;
     }
-    plugin_reap_probe(thread->plugin);
+    plugin_reap_probe(plugin);
 
     if(!thread->shutdown) {
-      plugin_exited_event(thread->plugin);
+      plugin_exited_event(plugin);
     }
   }
 
-
+  thread->event_mask = 0;
   rcu_quiesce(&rcu);
-  vertex_mark_stale(&thread->plugin->vertex);
-
-  /* remove event subscriptions */
-  handler->event_mask = 0;
-
-  futexlock_acquire(&handler->events_txq_lock);
-  llist_splice_tail(&events_txq, &handler->events_txq);
-  futexlock_release(&handler->events_txq_lock);
-
-  /* discard any unprocessed events */
-  event_bacon_free_list(&events_txq);
+  vertex_mark_stale(&plugin->vertex);
 
   rcu_leave(&rcu);
   close(epfd);
   request_parser_free(parser);
-  request_destroy(&req);
+  request_destroy(&process->last_req);
+  request_handler_release(handler);
+
+  plugin->thread_state = PLUGIN_THREAD_EXITED;
 }
 
 static void *plugin_thread_jump(void * arg)
 {
   struct plugin *plugin;
-  plugin_thread thread;
-  handler_context *handler;
-  rcu_thread rcu;
+  plugin_thread *thread;
+  plugin_process *process;
+  bamipc_pipe *pipe;
 
   plugin = arg;
   tid = gettid();
   errnop = &errno;
 
-  handler_alloc(&handler);
-  handler->events_tid = tid;
+  xmalloc(&pipe, sizeof(*pipe));
+  bamipc_pipe_init(pipe);
 
-  memset(&thread, 0, sizeof(thread));
-  thread.tid = tid;
-  thread.plugin = plugin;
-  thread.handler = handler;
-  plugin->thread = &thread;
-  rcu_list_init(&thread.stk);
+  /* the thread is lazily reclaimed, so that it can be
+   * inspected if necessary before the plugin is restarted */
+  if(plugin->thread) {
+    plugin_thread_release(plugin->thread);
+  }
+  thread = plugin_thread_alloc();
+  thread->tid = tid;
+  thread->plugin = plugin;
+  thread->pipe = pipe;
+  plugin->thread = thread;
 
-  futexlock_acquire(&handlers_lock);
-  rcu_list_push(&g_handlers, &handler->stk);
-  futexlock_release(&handlers_lock);
+  /* the process is lazily reclaimed, so that it can be
+   * inspected if necessary before the plugin is restarted */
+  if(plugin->process) {
+    plugin_process_free(plugin->process);
+  }
+
+  process = plugin_process_alloc();
+  process->plugin = plugin;
+  plugin->process = process;
 
   futexlock_acquire(&plugin_thread_list_lock);
-  rcu_list_push(&plugin_thread_list, &thread.stk);
+  rcu_list_push(&plugin_thread_list, &thread->stk);
   futexlock_release(&plugin_thread_list_lock);
 
-  plugin_thread_fn(&thread);
+  /* plugin_system is waiting for this thread to be added to the list */
+  sigutil_uxtgkill(g_params.pid, g_params.thread_run, SIGUSR1);
 
+  plugin_thread_fn(thread);
+
+  /* plugin_system is waiting until this thread is removed from the list */
   futexlock_acquire(&plugin_thread_list_lock);
-  rcu_list_delete(&thread.stk);
+  rcu_list_delete(&thread->stk);
   futexlock_release(&plugin_thread_list_lock);
 
-  futexlock_acquire(&handlers_lock);
-  rcu_list_delete(&handler->stk);
-  futexlock_release(&handlers_lock);
+  rcu_synchronize();
 
-  rcu_synchronize(&rcu);
-
-  plugin->thread = 0;
-
-  /* discard any remaining events */
-  event_bacon_free_list(&handler->events_txq);
-
-  handler_release(handler);
+  free(pipe);
 
   atomic_fetch_dec(&g_params.thread_count);
   sigutil_uxtgkill(g_params.pid, g_params.thread_monitor, SIGUSR1);
@@ -759,6 +640,37 @@ static void *plugin_thread_jump(void * arg)
 // public
 //
 
+void plugin_thread_cleanup(void)
+{
+  plugin_thread *thread;
+
+  while((thread = llist_shift(&freelist, typeof(*thread), lln))) {
+    free(thread);
+  }
+}
+
+plugin_thread *plugin_thread_alloc()
+{
+  plugin_thread *thread;
+
+  if((thread = llist_shift(&freelist, typeof(*thread), lln)) == 0) {
+    xmalloc(&thread, sizeof(*thread));
+  } else {
+    memset(thread, 0, sizeof(*thread));
+  }
+
+  rcu_list_init(&thread->stk);
+  llist_init(&thread->lln);
+
+  return thread;
+}
+
+void plugin_thread_release(plugin_thread *thread)
+{
+  llist_delete(&thread->lln);
+  llist_append(&freelist, &thread->lln);
+}
+
 void plugin_thread_launch(struct plugin * restrict plugin)
 {
   pthread_t pthread_id;
@@ -766,6 +678,8 @@ void plugin_thread_launch(struct plugin * restrict plugin)
 
   xpthread_attr_init(&attr);
   xpthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
+
+  plugin->thread_state = PLUGIN_THREAD_STARTING;
 
   atomic_fetch_inc(&g_params.thread_count);
   xpthread_create(&pthread_id, &attr, plugin_thread_jump, plugin);
@@ -781,8 +695,9 @@ void plugin_thread_kill(struct plugin_thread * restrict thread)
 
 void plugin_thread_unready(struct plugin_thread * restrict thread)
 {
-  thread->ready_requested = false;
-  thread->ready_reported = false;
-  thread->ready_quiescent = false;
+  struct plugin *plugin;
+
+  plugin = thread->plugin;
+  plugin->thread_state = PLUGIN_THREAD_UNREADY;
   sigutil_uxtgkill(g_params.pid, thread->tid, SIGUSR1);
 }

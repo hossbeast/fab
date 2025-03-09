@@ -146,7 +146,12 @@ void reconcile()
   /* parse plugin files */
   /* re-launch plugins */
   system_state_change(SYSTEM_STATE_PLUGIN_SYSTEM_RECONCILE);
-  plugin_system_reconcile(&invalidation);
+  plugin_system_reconcile(&invalidation, &rcu);
+  rcu_quiesce(&rcu);
+  if(system_has_error) {
+    goto end;
+  }
+
   rcu_quiesce(&rcu);
   if(system_has_error) {
     goto end;

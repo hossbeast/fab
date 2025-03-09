@@ -5,6 +5,9 @@
 #include "xlinux/xfcntl.h"
 #include "xlinux/xunistd.h"
 
+#include "bacon/parser.h"
+
+#include "plugin_system.h"
 #include "plugin_process.h"
 
 plugin_process *plugin_process_alloc(void)
@@ -13,7 +16,18 @@ plugin_process *plugin_process_alloc(void)
 
   xmalloc(&process, sizeof(*process));
 
-  exec_builder_init(&process->eb);
+  xmalloc(&process->in, plugin_system_stdin_size);
+  process->in_size = plugin_system_stdin_size;
+
+  xmalloc(&process->out, plugin_system_stdout_size);
+  process->out_size = plugin_system_stdout_size;
+
+  xmalloc(&process->err, plugin_system_stderr_size);
+  process->err_size = plugin_system_stderr_size;
+
+  xmalloc(&process->auxout, plugin_system_auxout_size);
+  process->auxout_size = plugin_system_auxout_size;
+
   process->pid = -1;
 
   return process;
@@ -34,28 +48,14 @@ void plugin_process_free(plugin_process *process)
   xclose(process->auxout_pipe[0]);
   xclose(process->auxout_pipe[1]);
 
-  exec_builder_destroy(&process->eb);
+  free(process->in);
+  free(process->out);
+  free(process->err);
+  free(process->auxout);
 
   free(process);
 }
 
-void plugin_process_reset(plugin_process *process)
+void plugin_process_cleanup(void)
 {
-  process->pid = -1;
-  exec_builder_reset(&process->eb);
-
-  process->status = 0;
-  process->ready = 0;
-  process->running = 0;
-  process->killed_term = 0;
-  process->killed_waited = 0;
-  process->killed_kill = 0;
-  memset(&process->started_at, 0, sizeof(process->started_at));
-  memset(&process->stopped_at, 0, sizeof(process->stopped_at));
-  process->out_len = 0;
-  process->out_total = 0;
-  process->err_len = 0;
-  process->err_total = 0;
-  process->aux_len = 0;
-  process->aux_total = 0;
 }

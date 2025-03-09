@@ -26,9 +26,6 @@ typedef struct plugin_thread {
   struct bamipc_pipe *pipe;   // for receiving events
   uint32_t event_mask;
   bool shutdown;
-  bool ready_requested;
-  bool ready_reported;
-  bool ready_quiescent;
 } plugin_thread;
 
 extern rcu_list plugin_thread_list;
@@ -43,3 +40,10 @@ void plugin_thread_unready(struct plugin_thread * restrict thread)
 
 void plugin_thread_kill(struct plugin_thread * restrict thread)
   __attribute__((nonnull));
+
+plugin_thread *plugin_thread_alloc(void)
+  __attribute__((nonnull));
+
+void plugin_thread_release(plugin_thread *);
+
+void plugin_thread_cleanup(void);

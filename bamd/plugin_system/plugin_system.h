@@ -7,6 +7,13 @@
 
 struct config;
 struct graph_invalidation_context;
+struct rcu_thread;
+
+extern uint32_t plugin_system_stdin_size;
+extern uint32_t plugin_system_stdout_size;
+extern uint32_t plugin_system_stderr_size;
+extern uint32_t plugin_system_auxout_size;
+extern uint32_t plugin_system_epoch;
 
 /*
  * reapply config to the plugin_system subsystem
@@ -17,5 +24,11 @@ struct graph_invalidation_context;
 void plugin_system_reconfigure(struct config * restrict cfg, bool dryrun, struct graph_invalidation_context * restrict invalidation)
   __attribute__((nonnull));
 
-void plugin_system_reconcile(struct graph_invalidation_context * restrict invalidation)
+void plugin_system_reconcile(struct graph_invalidation_context * restrict invalidation, struct rcu_thread * restrict rcu)
+  __attribute__((nonnull));
+
+void plugin_system_setup(void)
+  __attribute__((nonnull));
+
+void plugin_system_cleanup(void)
   __attribute__((nonnull));
