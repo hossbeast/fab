@@ -51,10 +51,10 @@ static void node_operations_connect(
   fsent *Bn;
 
   if(attrs == MORIA_EDGE_IDENTITY) {
-    attrs = EDGE_FSTREE;
+    attrs = EDGE_FS;
   }
 
-  if((attrs & EDGE_TYPE_OPT) == EDGE_FSTREE)
+  if((attrs & EDGE_TYPE_OPT) == EDGE_FS)
   {
     An = containerof(A, fsent, vertex);
     Bn = containerof(B, fsent, vertex);
@@ -158,7 +158,7 @@ static void create_vertex(
 
   if(b)
   {
-    node_operations_connect(parser, &n->vertex, &b->vertex, EDGE_FSTREE, 0);
+    node_operations_connect(parser, &n->vertex, &b->vertex, EDGE_FS, 0);
   }
 }
 

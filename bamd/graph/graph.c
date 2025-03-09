@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: GPL-3.0 */
 /* Copyright (c) 2012-2023 Todd Freed <todd.freed@gmail.com> */
 
-#include "moria/edge.h"
+#include "moria.h"
 #include "moria/graph.h"
 #include "moria/traverse.h"
 #include "moria/connect.h"
@@ -20,8 +20,8 @@
 #include "module.h"
 #include "formula.h"
 #include "rule.h"
-#include "rule_module_association.h"
-#include "fsindex_edge.h"
+#include "rma.h"
+#include "ns_edge.h"
 #include "fsname.h"
 #include "ruleset.h"
 #include "varset.h"
@@ -31,15 +31,17 @@
 #include "special_edge.h"
 #include "meta_edge.h"
 #include "entlist.h"
-#include "buildplan_entity.h"
+#include "bpe.h"
 #include "configset.h"
 #include "config_system.h"
 
 #include "zcat.h"
 #include "common/attrs.h"
 
-/* fstree is the identity subgraph - moria treats it specially */
-STATIC_ASSERT(EDGE_FSTREE & MORIA_EDGE_IDENTITY);
+#include "graph.h"
+
+/* fs is the identity subgraph - moria treats it specially */
+STATIC_ASSERT(EDGE_FS & MORIA_EDGE_IDENTITY);
 
 moria_graph g_graph = MORIA_GRAPH_INITIALIZER(g_graph);
 
@@ -48,11 +50,9 @@ attrs32 *graph_vertex_attrs = (attrs32[]) {{
 #undef DEF
 #define DEF(x, s, r, y) + 1
       VERTEX_TYPE_TABLE
-      + 1
 #undef DEF
 #define DEF(x, s, n, r, y) + 1
       VERTEX_STATE_TABLE
-      + 1
   , members : (member32[]) {
 #undef DEF
 #define DEF(x, s, r, y) { name : s, value : y, range : r },
@@ -70,11 +70,22 @@ attrs32 *graph_vertex_type_attrs = (attrs32[]) {{
 #define DEF(x, s, r, y) + 1
     num : 0
       VERTEX_TYPE_TABLE
-      + 1
   , members : (member32[]) {
 #undef DEF
 #define DEF(x, s, r, y) { name : s, value : y, range : r },
 VERTEX_TYPE_TABLE
+  }
+}};
+
+attrs32 *graph_filetype_attrs = (attrs32[]) {{
+#undef DEF
+#define DEF(x, s, r, y) + 1
+    num : 0
+      VERTEX_FILETYPE_TABLE
+  , members : (member32[]) {
+#undef DEF
+#define DEF(x, s, r, y) { name : s, value : y, range : r },
+VERTEX_FILETYPE_TABLE
   }
 }};
 
@@ -83,7 +94,6 @@ attrs32 *graph_vertex_state_attrs = (attrs32[]) {{
 #define DEF(x, s, n, r, y) + 1
     num : 0
       VERTEX_STATE_TABLE
-      + 1
   , members : (member32[]) {
 #undef DEF
 #define DEF(x, s, n, r, y) { name : n, value : y, range : r },
@@ -107,6 +117,7 @@ static void __attribute__((constructor)) init()
 {
   attrs32_init(graph_edge_attrs);
   attrs32_init(graph_vertex_attrs);
+  attrs32_init(graph_filetype_attrs);
 }
 
 static void vertex_release(moria_vertex * restrict v, graph_invalidation_context * restrict invalidation)
@@ -226,10 +237,14 @@ static void edge_release(
     case EDGE_DIR_RMA:
     case EDGE_FSNAME_RMA:
     case EDGE_DIR_FSNAME:
-    case EDGE_FSNAME_FSINDEX:
+    case EDGE_FSNAME_NS:
+    case EDGE_FSTREE_NS:
     case EDGE_FSTREE:
+    case EDGE_NS_RMA:
+    case EDGE_LOOKUP:
       break;
     default:
+      edge_show(e);
       RTA;
   }
 
@@ -257,6 +272,8 @@ static void edge_release(
     case EDGE_RMA_TGT:
     case EDGE_RMA_MOD:
     case EDGE_RMA_RULESET:
+    case EDGE_NS_RMA:
+    case EDGE_LOOKUP:
       meta_edge_release(containerof(e, meta_edge, edge));
       break;
     case EDGE_FSTREE:
@@ -267,8 +284,9 @@ static void edge_release(
       dependency_release(containerof(e, dependency, edge));
       break;
     case EDGE_DIR_FSNAME:
-    case EDGE_FSNAME_FSINDEX:
-      fsindex_edge_release(containerof(e, fsindex_edge, edge));
+    case EDGE_FSNAME_NS:
+    case EDGE_FSTREE_NS:
+      ns_edge_release(containerof(e, ns_edge, edge));
       break;
     default:
       RTA;
@@ -302,7 +320,9 @@ void graph_disintegrate_bulk(entlist * restrict edges, entlist * restrict vertic
           /* modules are deleted during system reconciliation */
           break;
         case EDGE_DIR_FSNAME:
-        case EDGE_FSNAME_FSINDEX:
+        case EDGE_FSNAME_NS:
+        case EDGE_FSTREE_NS:
+        case EDGE_NS_RMA:
           break;
         case EDGE_SPECIAL:
         case EDGE_DIR_MOD:
@@ -313,11 +333,13 @@ void graph_disintegrate_bulk(entlist * restrict edges, entlist * restrict vertic
         case EDGE_SRC_BPE:
         case EDGE_DIR_RMA:
         case EDGE_FSNAME_RMA:
+        case EDGE_LOOKUP:
         case EDGE_FSTREE:
           /* greedily proceed to all incident vertices */
           gather_vertices(e, vertices);
           break;
         default:
+          edge_show(e);
           RTA;
       }
 
@@ -338,7 +360,10 @@ void graph_disintegrate_bulk(entlist * restrict edges, entlist * restrict vertic
         case EDGE_DIR_RMA:
         case EDGE_FSNAME_RMA:
         case EDGE_DIR_FSNAME:
-        case EDGE_FSNAME_FSINDEX:
+        case EDGE_FSNAME_NS:
+        case EDGE_FSTREE_NS:
+        case EDGE_NS_RMA:
+        case EDGE_LOOKUP:
           break;
         case EDGE_FSTREE:
           Bn = containerof(e->B, fsent, vertex);
@@ -359,6 +384,7 @@ void graph_disintegrate_bulk(entlist * restrict edges, entlist * restrict vertic
 
           break;
         default:
+          edge_show(e);
           RTA;
       }
 
@@ -373,7 +399,6 @@ void graph_disintegrate_bulk(entlist * restrict edges, entlist * restrict vertic
       any = false;
       moria_foreach_edge_down(&st, v, e) {
         switch(edge_type_get(e)) {
-          case EDGE_FML_RMA:
           case EDGE_SPECIAL:
           case EDGE_DIR_MOD:
           case EDGE_VARSET_MOD:

@@ -393,10 +393,10 @@ void fsent_graft(const char * restrict base, fsent ** restrict rn)
     {
       fsent_create(&child, VERTEX_DIR, VERTEX_OK | VERTEX_PROTECT_BIT, seg, end - seg);
 
-      r = moria_preconnect(&ctx, &g_graph, &child->vertex, &parent->vertex, EDGE_FSTREE, 0);
+      r = moria_preconnect(&ctx, &g_graph, &child->vertex, &parent->vertex, EDGE_FS, 0);
       RUNTIME_ASSERT(r == MORIA_NOEDGE);
       fsedge_alloc(&fse);
-      moria_connect(&ctx, &g_graph, &fse->edge, &child->vertex, &parent->vertex, EDGE_FSTREE);
+      moria_connect(&ctx, &g_graph, &fse->edge, &child->vertex, &parent->vertex, EDGE_FS);
 
       /* compute final identifiers */
       fsent_compute_identifiers(child);
@@ -1021,8 +1021,8 @@ void fsent_fstree_refresh(graph_invalidation_context * restrict invalidation)
     , refresh_fstree_visitor
     , 0
     , (moria_traversal_criteria[]) {{
-          edge_travel: EDGE_FSTREE
-        , edge_visit : EDGE_FSTREE
+          edge_travel: EDGE_FS
+        , edge_visit : EDGE_FS
         , vertex_travel : VERTEX_FILETYPE_DIR
         , vertex_visit : VERTEX_FILETYPE_DIR
         , min_depth : 1
@@ -1165,8 +1165,8 @@ void fsent_modules_reconcile()
     , refresh_modules_visitor
     , 0
     , (moria_traversal_criteria[]) {{
-          edge_travel: EDGE_FSTREE
-        , edge_visit : EDGE_FSTREE
+          edge_travel: EDGE_FS
+        , edge_visit : EDGE_FS
         , vertex_travel : VERTEX_FILETYPE_DIR
         , vertex_visit : VERTEX_FILETYPE_DIR
       }}

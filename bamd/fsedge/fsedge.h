@@ -22,7 +22,7 @@ struct entlist;
 // active list
 extern llist fsedge_list;
 
-/* EDGE_FSTREE */
+/* EDGE_FS */
 typedef struct fsedge {
   moria_edge edge;
   uint32_t refmark;
