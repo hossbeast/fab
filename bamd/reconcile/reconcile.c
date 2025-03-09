@@ -9,7 +9,7 @@
 #include "config_system.h"
 #include "formula.h"
 #include "fsent.h"
-#include "handler.h"
+#include "request_handler.h"
 #include "module.h"
 #include "params.h"
 #include "rule_system.h"

@@ -3,5 +3,5 @@
 
 #pragma once
 
-void describe_handler(struct handler_context * restrict ctx, struct command * restrict cmd)
+void describe_handler(struct request_handler * restrict ctx, struct command * restrict cmd)
   __attribute__((nonnull));

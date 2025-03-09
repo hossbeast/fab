@@ -41,13 +41,13 @@
 #include "params.h"
 #include "args.h"
 #include "request.h"
-#include "server_thread.h"
+#include "channel_server_thread.h"
 #include "dependency.h"
 #include "sweeper_thread.h"
 #include "handler_thread.h"
 #include "reconcile.h"
 #include "channel.h"
-#include "handler.h"
+#include "request_handler.h"
 #include "varset.h"
 #include "goals.h"
 #include "stats.h"
@@ -104,7 +104,7 @@ static void xmain()
   xpthread_sigmask(SIG_SETMASK, &sigs, 0);
 
   notify_thread_launch();
-  server_thread_launch();
+  channel_server_thread_launch();
   sweeper_thread_launch();
   timeout_thread_launch();
 

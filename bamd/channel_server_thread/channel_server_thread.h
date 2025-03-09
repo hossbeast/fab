@@ -3,5 +3,5 @@
 
 #pragma once
 
-/* create the server thread */
-void server_thread_launch(void);
+/* create the channel server thread */
+void channel_server_thread_launch(void);

@@ -10,6 +10,7 @@
 
   #include "request_parser.internal.h"
   #include "request.h"
+  #include "command.h"
   #include "selector.h"
   #include "fsent.h"
 
@@ -37,6 +38,7 @@
 %union {
   yyu_lval yyu;
 
+  struct command *command;
   struct selector *selector;
   struct request *request;
   bamipc_event_type eventtype;
@@ -139,14 +141,14 @@ commands
 allocate-command
   : %empty
   {
-    PARSER->command = request_command_alloc(PARSER->request);
+    PARSER->command = command_alloc();
   }
   ;
 
 command
   : allocate-command command-branch
   {
-    llist_push(&PARSER->request->commands, &PARSER->command->lln);
+    llist_push(&PARSER->commands, &PARSER->command->lln);
     PARSER->command = 0;
   }
   ;

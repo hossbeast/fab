@@ -11,7 +11,7 @@ The goals describe the set of nodes which are to be brought up to date by buildi
 
 #include "types.h"
 
-struct handler_context;
+struct request_handler;
 struct narrator;
 struct selector;
 struct bacon_writer;
@@ -38,7 +38,7 @@ void goals_set(
   , struct selector * restrict target_transitive
 );
 
-void goals_kickoff(struct handler_context * restrict handler)
+void goals_kickoff(struct request_handler * restrict handler)
   __attribute__((nonnull));
 
 void goals_setup(void);

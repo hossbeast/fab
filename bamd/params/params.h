@@ -12,7 +12,7 @@
 extern struct g_params {
   pid_t           pid;              // process id of this process
   pid_t           thread_monitor;   // thread id of the monitor thread
-  pid_t           thread_server;    // thread id of the server thread
+  pid_t           thread_channel_server;  // thread id of the channel server thread
   pid_t           thread_notify;    // thread id of the notify thread
   pid_t           thread_sweeper;   // thread id of the sweeper thread
   pid_t           thread_run;       // thread id of the run thread

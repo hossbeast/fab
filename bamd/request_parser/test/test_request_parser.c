@@ -47,8 +47,9 @@ static void request_parser_test_entry(xunit_test * _test)
   request_parser_create(&parser);
 
   // act - initial parse
+  request_init(&A);
   if((r = request_parser_parse(parser, test->text, strlen(test->text) + 2, 0, &A)) != 0) {
-    tracef("%.*s", (int)parser->yyu.error_len, parser->yyu.error_str);
+    tracef("%.*s", (int)parser->error_len, parser->error);
   }
   assert_eq_d(0, r);
 
@@ -60,6 +61,7 @@ static void request_parser_test_entry(xunit_test * _test)
   narrator_seek(&N1->base, 0, NARRATOR_SEEK_SET, 0);
   narrator_read(&N1->base, buf, len, 0);
   buf[len] = buf[len + 1] = 0;
+  request_init(&B);
   request_parser_parse(parser, buf, len + 2, 0, &B);
 
   narrator_growing_create(&N2);
@@ -88,7 +90,9 @@ static xunit_unit xunit = {
           text : (char[]) {
             " list"
             " select : ["
-              " pattern : foo/bar/main.o"
+              " path : {"
+                " pattern : ./foo/bar/main.o"
+              " }"
               " all"
             " ]"
             " describe"
@@ -108,7 +112,7 @@ static xunit_unit xunit = {
     , (request_parser_test[]) {{
           text : (char[]) {
             "["
-            " select : [ pattern : foo/bar/main.o ]"
+            " select : [ path : { pattern : ./foo/bar/main.o } ]"
             " invalidate"
             "]\0\0"
           }
@@ -117,7 +121,7 @@ static xunit_unit xunit = {
           text : (char[]) {
             "goals : {"
             " build"
-            " target-direct : [ module ]"
+            " target-direct : [ path : { pattern : ./a/b } ]"
             "}\0\0"
           }
       }}

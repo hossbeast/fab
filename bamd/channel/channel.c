@@ -2,9 +2,13 @@
 /* Copyright (c) 2012-2023 Todd Freed <todd.freed@gmail.com> */
 
 #include <stdio.h>
+#include <errno.h>
 
 #include "xlinux/xshm.h"
+#include "xlinux/xstdlib.h"
 #include "bam/ipc.h"
+#include "bam/pipe.h"
+#include "valyria/llist.h"
 
 #include "channel.h"
 #include "configset.h"
@@ -18,55 +22,98 @@
 #include "common/attrs.h"
 #include "channel/probes.h"
 #include "config.h"
+#include "locks.h"
+#include "times.h"
+
+static llist freelist = LLIST_INITIALIZER(freelist);
+static struct futexlock freelist_lock;
 
 //
 // public
 //
 
-void channel_create(channel ** restrict chanp, pid_t thread_id)
+channel *channel_alloc()
 {
-  channel *chan;
+  struct channel *channel = 0;
   int shmid = -1;
   void * shmaddr = 0;
 
-  shmid = xshmget(IPC_PRIVATE, BAMIPC_SHMSIZE, IPC_CREAT | IPC_EXCL | SHMCHANNEL_MODE);
-  shmaddr = xshmat(shmid, 0, 0);
-  xshmctl(shmid, IPC_RMID, 0);
+  if(!llist_empty(&freelist)) {
+    futexlock_acquire(&freelist_lock);
+    channel = llist_shift(&freelist, typeof(*channel), lln);
+    futexlock_release(&freelist_lock);
+  }
 
-  chan = shmaddr;
-  chan->ipc.shmid = shmid;
-  chan->ipc.server_pid = g_params.pid;
-  chan->ipc.server_tid = thread_id;
-  chan->ipc.server_pulse = thread_id;
-  *chanp = chan;
+  if(channel) {
+    ASAN_CLEAN(channel);
+  } else {
+    xmalloc(&channel, sizeof(*channel));
+    llist_init(&channel->lln);
+  }
+
+  if(!channel->ipc) {
+    shmid = xshmget(IPC_PRIVATE, sizeof(*channel->ipc), IPC_CREAT | IPC_EXCL | SHMCHANNEL_MODE);
+    shmaddr = xshmat(shmid, 0, 0);
+    channel->ipc = shmaddr;
+
+    xshmctl(shmid, IPC_RMID, 0);
+    bamipc_channel_init(channel->ipc);
+    channel->ipc->shmid = shmid;
+  }
+
+  bamipc_channel_reset(channel->ipc);
+
+  memset(&channel->_transitory, 0, sizeof(*channel) - offsetof(typeof(*channel), _transitory));
+
+  return channel;
 }
 
-void channel_release(channel * restrict chan)
+static void channel_destroy(channel * restrict chan)
 {
-  shmdt(chan);
+  shmdt(chan->ipc);
+}
+
+void channel_free(struct channel * restrict channel)
+{
+  if(!channel) {
+    return;
+  }
+
+  futexlock_acquire(&freelist_lock);
+  llist_push(&freelist, &channel->lln);
+  futexlock_release(&freelist_lock);
+
+  ASAN_TAINT(channel);
 }
 
 /* TX : produce -> post */
-
-bamipc_message * channel_produce(channel * restrict chan)
+bamipc_message *channel_produce(struct channel * restrict channel, uint64_t msgid)
 {
+  struct timespec timeout;
   bamipc_message *msg;
+  int r;
 
-  msg = bamipc_produce(
-      chan->ipc.server_ring.pages
-    , &chan->ipc.server_ring.head
-    , &chan->ipc.server_ring.tail
-    , &chan->ipc.server_ring.producers
-    , &chan->ipc.server_ring.waiters
-  );
-  RUNTIME_ASSERT(msg);
+  timeout.tv_sec = 0;
+  timeout.tv_nsec = MSEC_AS_NSEC(500);
 
-  msg->id = chan->msgid;
+  switch((r = bamipc_tx(&channel->ipc->rx, &timeout, &msg))) {
+    case BAMIPC_ETIMEDOUT:
+    case BAMIPC_EINTR:
+      channel->fault = true;
+      msg = &channel->fault_msg;  /* the fault message has no payload */
+      RUNTIME_ASSERT(msg->size == 0);
+    case BAMIPC_OK:
+      break;
+    default:
+      RTA;
+  }
 
+  msg->id = msgid;
+  msg->len = 0;
   return msg;
 }
 
-void channel_post(channel * restrict chan, bamipc_message * restrict msg)
+void channel_post(struct channel * restrict channel, bamipc_message * restrict msg)
 {
 #if CONFIG_DEBUG || CONFIG_DEVEL
   RUNTIME_ASSERT(msg->type);
@@ -75,78 +122,57 @@ void channel_post(channel * restrict chan, bamipc_message * restrict msg)
   }
 #endif
 
-  if(msg->type == BAMIPC_MSG_RESPONSE && msg->code != 0) {
-    chan->error = true;
+  if(channel->fault) {
+    return;
   }
 
-  bamipc_post(
-      msg
-    , &chan->ipc.server_ring.producers
-    , &chan->ipc.server_ring.waiters
-  );
-
-  channel_tx_probe(chan, msg);
+  bamipc_publish(&channel->ipc->rx, msg);
+  channel_tx_probe(channel, msg);
 }
 
 /* RX : acquire -> consume */
+int channel_rx(struct channel * restrict channel, struct timespec * restrict timeout, bamipc_message ** restrict msg)
+{
+  int r;
+  r = bamipc_rx(&channel->ipc->tx, timeout, msg);
+  return r;
+}
 
-bamipc_message * channel_acquire(channel * restrict chan)
+void channel_release(channel * restrict channel, bamipc_message * restrict msg)
+{
+  bamipc_release(&channel->ipc->tx, msg);
+}
+
+void channel_response(channel * restrict channel, uint64_t msgid, bool success)
 {
   bamipc_message *msg;
 
-  msg = bamipc_acquire(
-      chan->ipc.client_ring.pages
-    , &chan->ipc.client_ring.head
-    , &chan->ipc.client_ring.tail
-  );
-
-#if CONFIG_DEBUG || CONFIG_DEVEL
-  if (msg) {
-    RUNTIME_ASSERT(msg->type);
-  }
-#endif
-
-  if(msg) {
-    channel_rx_probe(chan, msg);
-  }
-
-  return msg;
-}
-
-void channel_consume(channel * restrict chan, bamipc_message * restrict msg)
-{
-  bamipc_consume(
-      chan->ipc.client_ring.pages
-    , &chan->ipc.client_ring.head
-    , msg
-    , &chan->ipc.client_ring.waiters
-  );
-}
-
-void channel_response(channel * restrict chan, int code)
-{
-  channel_responsew(chan, code, 0, 0);
-}
-
-void channel_responses(channel * restrict chan, int code, const char * restrict text)
-{
-  channel_responsew(chan, code, text, strlen(text));
-}
-
-void channel_responsew(channel * restrict chan, int code, const char * restrict text, uint16_t text_len)
-{
-  bamipc_message *msg;
-
-  msg = channel_produce(chan);
-  msg->id = chan->msgid;
-  msg->size = text_len;
+  msg = channel_produce(channel, msgid);
   msg->type = BAMIPC_MSG_RESPONSE;
-  msg->code = code;
-  if(text_len) {
-    memcpy(msg->text, text, text_len);
+  msg->code = BAMIPC_MSG_SUCCESS;
+  if(!success) {
+    msg->code = BAMIPC_MSG_FAILURE;
   }
 
-  channel_post(chan, msg);
+  channel_post(channel, msg);
+}
+
+void channel_ping(struct channel * restrict channel, uint64_t msgid)
+{
+  bamipc_message *msg;
+
+  msg = channel_produce(channel, msgid);
+  msg->type = BAMIPC_MSG_PING;
+  channel_post(channel, msg);
+}
+
+void channel_pong(struct channel * restrict channel, uint64_t msgid)
+{
+  bamipc_message *msg;
+
+  msg = channel_produce(channel, msgid);
+  msg->type = BAMIPC_MSG_PONG;
+  channel_post(channel, msg);
 }
 
 void channel_setup()
@@ -155,10 +181,17 @@ void channel_setup()
 
 void channel_cleanup()
 {
+  struct channel *channel;
+
+  while((channel = llist_shift(&freelist, typeof(*channel), lln))) {
+    ASAN_CLEAN(channel);
+    channel_destroy(channel);
+    free(channel);
+  }
 }
 
 void channel_reconfigure(config * restrict cfg, bool dry)
 {
-  /* there should be configuration on the max number of possible clients/channels */
+  /* there should be some configuration on the max number of possible clients/channels */
   return;
 }

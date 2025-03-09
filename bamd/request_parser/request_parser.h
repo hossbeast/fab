@@ -5,6 +5,7 @@
 
 #include "types.h"
 #include "yyutil/parser.h"
+#include "valyria/llist.h"
 
 struct request;
 struct selector_parser;
@@ -22,7 +23,9 @@ typedef struct request_parser {
   struct command *command;
 
   // (returns)
-  struct request *request;
+  llist commands;
+  const char *error;
+  uint16_t error_len;
 } request_parser;
 
 /// request_parser_create

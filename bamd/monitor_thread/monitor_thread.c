@@ -14,7 +14,7 @@
 #include "bam/sigutil.h"
 
 #include "monitor_thread.h"
-#include "handler.h"
+#include "channel_thread.h"
 #include "plugin_thread.h"
 #include "params.h"
 #include "threads.h"
@@ -23,9 +23,9 @@
 
 void monitor_thread()
 {
-  sigset_t sigs;
-  siginfo_t info;
-  handler_context *handler;
+  sigset_t sigs = {};
+  siginfo_t info = {};
+  channel_thread *channel;
   plugin_thread *plugin;
   struct timespec interval = {};
   rcu_thread rcu_self = {};
@@ -36,8 +36,9 @@ void monitor_thread()
   sigaddset(&sigs, SIGTERM);
   sigaddset(&sigs, SIGQUIT);
   sigaddset(&sigs, SIGUSR1);
+
   interval.tv_sec = 0;
-  interval.tv_nsec = MSEC_AS_NSEC(125);
+  interval.tv_nsec = MSEC_AS_NSEC(100);
 
   rcu_enter(&rcu_self);
   while(g_params.thread_count)
@@ -55,15 +56,16 @@ void monitor_thread()
       continue;
     }
 
-    uxtgkill(g_params.pid, g_params.thread_server, SIGUSR1);
+    /* cascade signals to everyone */
+    uxtgkill(g_params.pid, g_params.thread_channel_server, SIGUSR1);
     uxtgkill(g_params.pid, g_params.thread_notify, SIGUSR1);
     uxtgkill(g_params.pid, g_params.thread_sweeper, SIGUSR1);
     uxtgkill(g_params.pid, g_params.thread_run, SIGUSR1);
     uxtgkill(g_params.pid, g_params.thread_timeout, SIGUSR1);
 
     /* client threads */
-    rcu_list_foreach(&g_handlers, handler, stk) {
-      uxtgkill(g_params.pid, handler->tid, SIGUSR1);
+    rcu_list_foreach(&channel_thread_list, channel, stk) {
+      uxtgkill(g_params.pid, channel->tid, SIGUSR1);
     }
 
     /* plugin threads */

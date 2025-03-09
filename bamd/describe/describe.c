@@ -5,12 +5,13 @@
 #include "bacon/writer.h"
 #include "narrator/fixed.h"
 
-#include "handler.h"
+#include "request_handler.h"
 #include "request.h"
+#include "command.h"
 #include "describe.h"
 #include "channel.h"
 
-void describe_handler(handler_context * restrict ctx, command * restrict cmd)
+void describe_handler(request_handler * restrict ctx, command * restrict cmd)
 {
   bamipc_message *msg;
   selected *sn;
@@ -18,17 +19,16 @@ void describe_handler(handler_context * restrict ctx, command * restrict cmd)
   narrator_fixed fixed;
 
   llist_foreach(&ctx->selection->list, sn, lln) {
-    msg = channel_produce(ctx->chan);
-    msg->type = BAMIPC_MSG_RESULT;
+    msg = request_handler_tx(ctx, BAMIPC_MSG_RESULT, BAMIPC_MSG_BACON, 0);
 
-    narrator_fixed_init(&fixed, msg->text, sizeof(msg->text));
+    narrator_fixed_init(&fixed, msg->text, msg->size);
     bacon_writer_init(&writer);
     builder_writer = bacon_writer_open(&writer, &fixed.base);
 
     vertex_describe(sn->v, builder_writer);
 
     bacon_writer_destroy(&writer);
-    msg->size = fixed.l;
-    channel_post(ctx->chan, msg);
+    msg->len = fixed.l;
+    request_handler_post(ctx, msg);
   }
 }

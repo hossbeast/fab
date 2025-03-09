@@ -36,6 +36,7 @@ void request_parser_create(request_parser ** const rv)
   );
 
   selector_parser_create(&p->selector_parser);
+  llist_init(&p->commands);
 
   *rv = p;
 }
@@ -46,7 +47,9 @@ void request_parser_free(request_parser* const p)
     return;
   }
 
-  request_command_free(p->command);
+  RUNTIME_ASSERT(p->command == 0);
+  RUNTIME_ASSERT(llist_empty(&p->commands));
+
   selector_parser_free(p->selector_parser);
   yyu_parser_destroy(&p->yyu);
 
@@ -67,12 +70,35 @@ int request_parser_parse(
   , request * restrict req
 )
 {
+  int r;
+
   /* request must end with two null bytes */
   RUNTIME_ASSERT(size >= 2);
   RUNTIME_ASSERT(buf[size - 1] == 0);
   RUNTIME_ASSERT(buf[size - 2] == 0);
 
-  request_init(parser->request = req);
+  r = yyu_parse(&parser->yyu, buf, size, fname, YYU_INPLACE, 0, 0);
 
-  return yyu_parse(&parser->yyu, buf, size, fname, YYU_INPLACE, 0, 0);
+  command_free(parser->command);
+  parser->command = 0;
+
+  /* error aggregation */
+  if(r == 0) {
+    parser->error = 0;
+    parser->error_len = 0;
+  } if(parser->selector_parser->error) {
+    parser->error = parser->selector_parser->error;
+    parser->error_len = parser->selector_parser->error_len;
+  } else {
+    parser->error = parser->yyu.error_str;
+    parser->error_len = parser->yyu.error_len;
+  }
+
+  if(r == 0) {
+    llist_splice_head(&req->commands, &parser->commands);
+  } else {
+    command_free_list(&parser->commands);
+  }
+
+  return r;
 }

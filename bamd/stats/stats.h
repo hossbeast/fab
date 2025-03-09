@@ -7,7 +7,7 @@
 
 struct descriptor_type;
 struct bacon_writer;
-struct handler_context;
+struct request_handler;
 struct command;
 
 typedef union stats_record {
@@ -24,5 +24,5 @@ void stats_build(
 )
   __attribute__((nonnull));
 
-void stats_handler(struct handler_context * restrict ctx, struct command * restrict cmd, bool reset)
+void stats_handler(struct request_handler * restrict ctx, struct command * restrict cmd, bool reset)
   __attribute__((nonnull));

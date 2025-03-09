@@ -20,7 +20,8 @@
 #include "module.h"
 #include "selector.h"
 #include "channel.h"
-#include "handler.h"
+#include "request_handler.h"
+#include "path_cache.h"
 #include "shadow.h"
 #include "vertex.h"
 

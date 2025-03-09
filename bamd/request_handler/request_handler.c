@@ -4,6 +4,7 @@
 #include "common/attrs.h"
 #include "moria/foreach.h"
 #include "bam/ipc.h"
+#include "bam/pipe.h"
 #include "narrator.h"
 #include "narrator/growing.h"
 #include "narrator/fixed.h"
@@ -13,7 +14,7 @@
 #include "bacon/builder.h"
 #include "common/hash.h"
 
-#include "handler.h"
+#include "request_handler.h"
 #include "filesystem.h"
 #include "system.h"
 #include "configset.h"
@@ -29,10 +30,10 @@
 #include "stats.h"
 #include "stats.h"
 #include "dependency.h"
-#include "buildplan_entity.h"
+#include "bpe.h"
 #include "channel.h"
 #include "run_thread.h"
-#include "rule_module_association.h"
+#include "rma.h"
 #include "vertex.h"
 #include "dir_rma_edge.h"
 #include "exec.h"
@@ -44,31 +45,54 @@
 #include "shadow.h"
 #include "buildplan.h"
 #include "tree_list.h"
+#include "events.h"
 
 #include "marshal.h"
 #include "zcat.h"
 
-struct trylock handler_build_lock;
-
-static llist context_freelist = LLIST_INITIALIZER(context_freelist);
-rcu_list g_handlers = RCU_LIST_INITIALIZER(g_handlers);
+static llist freelist = LLIST_INITIALIZER(freelist);
+static struct futexlock freelist_lock;
 
 //
 // handlers
 //
 
-static void handler_context_cmd(handler_context * restrict ctx, command * restrict cmd)
+static void handler_context_cmd(request_handler * restrict ctx, command * restrict cmd)
 {
   moria_vertex *v;
   fsent *fse;
   bamipc_message *msg;
+  narrator_fixed fixed;
+  bacon_writer writer, *builder_writer;
+  const char *code;
 
   if((v = moria_vertex_downw(&g_shadow_modules->vertex, cmd->context.module_id, cmd->context.module_id_len)) == 0) {
-    msg = channel_produce(ctx->chan);
-    msg->code = -1;
+    msg = request_handler_tx(ctx);
+    msg->code = BAMIPC_MSG_ENOENT;
     msg->type = BAMIPC_MSG_RESPONSE;
-    msg->size = zcatf(msg->text, sizeof(msg->text), "module not found %.*s", cmd->context.module_id_len, cmd->context.module_id);
-    channel_post(ctx->chan, msg);
+
+    narrator_fixed_init(&fixed, msg->text, msg->size);
+    bacon_writer_init(&writer);
+    builder_writer = bacon_writer_open(&writer, &fixed.base);
+    { MAPPING
+      STRING("error")
+      { SET
+        { MAPPING STRING("code")
+          if((code = attrs32_name_byvalue(&bamipc_msg_code_attrs, msg->code))) {
+            STRING(code)
+          } else {
+            UINT(msg->code)
+          }
+        }
+        { MAPPING STRING("msg")
+          LOADF("module not found %.*s", cmd->context.module_id_len, cmd->context.module_id)
+        }
+      }
+    }
+    bacon_writer_close(&writer);
+
+    msg->len = fixed.l;
+    request_handler_post(ctx, msg);
     return;
   }
 
@@ -76,12 +100,13 @@ static void handler_context_cmd(handler_context * restrict ctx, command * restri
   ctx->mod = fse->self_mod;
 }
 
-static void handler_select(handler_context * restrict ctx, command * restrict cmd)
+static void handler_select(request_handler * restrict ctx, command * restrict cmd)
 {
   ctx->sel_ctx.bpe = 0;
   ctx->sel_ctx.mod = ctx->mod;
   ctx->sel_ctx.cwd = g_base;
-  ctx->sel_ctx.chan = ctx->chan;
+//  ctx->sel_ctx.channel = ctx->channel;
+  ctx->sel_ctx.handler = ctx;
   ctx->sel_ctx.iteration_type = SELECTION_ITERATION_TYPE_ORDER;
 
   selector_exec(cmd->selector, &ctx->sel_ctx);
@@ -90,47 +115,59 @@ static void handler_select(handler_context * restrict ctx, command * restrict cm
   ctx->selection = ctx->sel_ctx.selection;
 }
 
-static void handler_reset_selection(handler_context * restrict ctx, command * restrict cmd)
+static void handler_reset_selection(request_handler * restrict ctx, command * restrict cmd)
 {
   ctx->selection = 0;
 }
 
-static void handler_list(handler_context * restrict ctx, command * restrict cmd)
+static void handler_list(request_handler * restrict ctx, command * restrict cmd)
 {
   bamipc_message *msg;
   selected *sn;
   bacon_writer writer, *builder_writer;
   narrator_fixed fixed;
+  int x;
 
-  msg = channel_produce(ctx->chan);
-  msg->type = BAMIPC_MSG_RESULT;
-
-  narrator_fixed_init(&fixed, msg->text, sizeof(msg->text));
   bacon_writer_init(&writer);
-  builder_writer = bacon_writer_open(&writer, &fixed.base);
 
-  { SET
-    llist_foreach(&ctx->selection->list, sn, lln) {
-      vertex_identity_describe(sn->v, builder_writer);
+  x = 0;
+  llist_foreach(&ctx->selection->list, sn, lln) {
+    if((x % 64) == 0) {
+      if(x) {
+        bacon_writer_destroy(&writer);
+        msg->type = BAMIPC_MSG_RESULT;
+        msg->len = fixed.l;
+        request_handler_post(ctx, msg);
+      }
+
+      msg = request_handler_tx(ctx);
+      narrator_fixed_init(&fixed, msg->text, msg->size);
+      bacon_writer_init(&writer);
+      builder_writer = bacon_writer_open(&writer, &fixed.base);
     }
+    vertex_identity_describe(sn->v, builder_writer);
+    x++;
+  }
+  if(x) {
+    msg->type = BAMIPC_MSG_RESULT;
+    msg->len = fixed.l;
+    request_handler_post(ctx, msg);
   }
 
   bacon_writer_destroy(&writer);
-  msg->size = fixed.l;
-  channel_post(ctx->chan, msg);
 }
 
-static void handler_identify(handler_context * restrict ctx, command * restrict cmd)
+static void handler_identify(request_handler * restrict ctx, command * restrict cmd)
 {
   bamipc_message *msg;
   selected *sn;
   bacon_writer writer, *builder_writer;
   narrator_fixed fixed;
 
-  msg = channel_produce(ctx->chan);
+  msg = request_handler_tx(ctx);
   msg->type = BAMIPC_MSG_RESULT;
 
-  narrator_fixed_init(&fixed, msg->text, sizeof(msg->text));
+  narrator_fixed_init(&fixed, msg->text, msg->size);
   bacon_writer_init(&writer);
   builder_writer = bacon_writer_open(&writer, &fixed.base);
 
@@ -141,11 +178,11 @@ static void handler_identify(handler_context * restrict ctx, command * restrict 
   }
 
   bacon_writer_destroy(&writer);
-  msg->size = fixed.l;
-  channel_post(ctx->chan, msg);
+  msg->len = fixed.l;
+  request_handler_post(ctx, msg);
 }
 
-static void handler_tell(handler_context * restrict ctx, command * restrict cmd)
+static void handler_tell(request_handler * restrict ctx, command * restrict cmd)
 {
   selected *sn;
   moria_vertex *v;
@@ -162,10 +199,10 @@ static void handler_tell(handler_context * restrict ctx, command * restrict cmd)
     return;
   }
 
-  vertex_tell(v, ctx->chan);
+  vertex_tell(v, ctx);
 }
 
-static void handler_invalidate(handler_context * restrict ctx, command * restrict cmd)
+static void handler_invalidate(request_handler * restrict ctx, command * restrict cmd)
 {
   selected *sn;
   graph_invalidation_context invalidation = { };
@@ -180,10 +217,10 @@ static void handler_invalidate(handler_context * restrict ctx, command * restric
   ctx->invalidated_any |= invalidation.any;
 }
 
-static void handler_invalidate_primary(handler_context * restrict ctx, command * restrict cmd)
+static void handler_invalidate_primary(request_handler * restrict ctx, command * restrict cmd)
 {
   events_context ectx;
-  event_bacon *msg;
+  bamipc_message *msg;
   bacon_writer writer, *builder_writer;
   narrator_fixed fixed;
   uint32_t count;
@@ -199,7 +236,7 @@ static void handler_invalidate_primary(handler_context * restrict ctx, command *
 
   if((msg = events_bacon_would(&ectx, BAMIPC_EVENT_GLOBAL_INVALIDATION)))
   {
-    narrator_fixed_init(&fixed, msg->text, sizeof(msg->text));
+    narrator_fixed_init(&fixed, msg->text, msg->size);
     bacon_writer_init(&writer);
     builder_writer = bacon_writer_open(&writer, &fixed.base);
 
@@ -215,33 +252,12 @@ static void handler_invalidate_primary(handler_context * restrict ctx, command *
 
     bacon_writer_close(&writer);
     msg->id = 0;
-    msg->size = fixed.l;
+    msg->len = fixed.l;
     events_publish(&ectx);
   }
 }
 
-static void handler_eventsub(handler_context * restrict ctx, command * restrict cmd)
-{
-  uint32_t delta;
-
-  delta = cmd->mask & ~ctx->event_mask;
-  ctx->event_mask = cmd->mask;
-
-  /* fire gratuitous events for new subscriptions */
-  if(delta & BAMIPC_EVENT_GOALS_SET) {
-    goals_set_event();
-  }
-
-  if(delta & BAMIPC_EVENT_AUTORUN_SET) {
-    autorun_set_event();
-  }
-
-  if(delta & BAMIPC_EVENT_SYSTEM_STATE_CHANGE) {
-    system_state_event();
-  }
-}
-
-static void handler_destroy(handler_context * restrict ctx)
+static void handler_destroy(request_handler * restrict ctx)
 {
   selector_context_destroy(&ctx->sel_ctx);
   request_parser_free(ctx->request_parser);
@@ -251,7 +267,7 @@ static void handler_destroy(handler_context * restrict ctx)
 // public
 //
 
-void handler_process_command(handler_context * restrict ctx, command * restrict cmd)
+void request_handler_process_command(request_handler * restrict ctx, command * restrict cmd)
 {
   switch(cmd->type) {
     case COMMAND_CONTEXT:
@@ -292,15 +308,13 @@ void handler_process_command(handler_context * restrict ctx, command * restrict 
     case COMMAND_STATS_RESET:
       stats_handler(ctx, cmd, true);
       break;
-    case COMMAND_EVENTSUB:
-      handler_eventsub(ctx, cmd);
-      break;
     case COMMAND_AUTORUN:
       run_thread_autorun_set(cmd->autorun.enabled);
       break;
     case COMMAND_PLUGIN_READY:
       break;
     /* handled directly in handler_thread */
+    case COMMAND_EVENTSUB:
     case COMMAND_GOALS:
     case COMMAND_RECONCILE:
     case COMMAND_RUN:
@@ -309,53 +323,81 @@ void handler_process_command(handler_context * restrict ctx, command * restrict 
   }
 }
 
-void handler_setup()
+void request_handler_setup()
 {
 }
 
-void handler_cleanup()
+void request_handler_cleanup()
 {
-  handler_context *ctx;
-  llist *T;
+  request_handler *handler;
 
-  llist_foreach_safe(&context_freelist, ctx, lln, T) {
-    handler_destroy(ctx);
-    free(ctx);
+  while((handler = llist_shift(&freelist, typeof(*handler), lln))) {
+    handler_destroy(handler);
+    free(handler);
   }
 }
 
-void handler_alloc(handler_context ** restrict rv)
+request_handler *request_handler_alloc()
 {
-  handler_context * ctx;
+  request_handler *handler = 0;
 
-  if((ctx = llist_shift(&context_freelist, typeof(*ctx), lln)) == 0)
-  {
-    xmalloc(&ctx, sizeof(*ctx));
-    llist_init(&ctx->lln);
-    request_parser_create(&ctx->request_parser);
-    selector_context_init(&ctx->sel_ctx);
-  }
-  else
-  {
-    memset(ctx, 0, sizeof(*ctx) - offsetof(typeof(*ctx), scratch_space));
+  if(!llist_empty(&freelist)) {
+    futexlock_acquire(&freelist_lock);
+    handler = llist_shift(&freelist, typeof(*handler), lln);
+    futexlock_release(&freelist_lock);
   }
 
-  llist_init(&ctx->events_txq);
+  if(handler) {
+    memset(handler, 0, sizeof(*handler) - offsetof(typeof(*handler), scratch_space));
+  } else {
+    xmalloc(&handler, sizeof(*handler));
+    llist_init(&handler->lln);
+    request_parser_create(&handler->request_parser);
+    selector_context_init(&handler->sel_ctx);
+  }
 
-  *rv = ctx;
+  //llist_init(&handler->events_txq);
+
+  return handler;
 }
 
-void handler_release(handler_context * restrict ctx)
+void request_handler_release(request_handler * restrict handler)
 {
-  RUNTIME_ASSERT(llist_empty(&ctx->events_txq));
-
-  llist_append(&context_freelist, &ctx->lln);
+  futexlock_acquire(&freelist_lock);
+  llist_push(&freelist, &handler->lln);
+  futexlock_release(&freelist_lock);
 }
 
-void handler_reset(handler_context * restrict handler)
+void request_handler_reset(request_handler * restrict handler)
 {
   handler->selection = 0;
-  handler->running = false;
   handler->mod = 0;
   handler->invalidated_any = false;
+  handler->request_error = false;
+}
+
+struct bamipc_message *request_handler_tx(request_handler * restrict handler)
+{
+  bamipc_message *msg;
+
+  if(handler->channel) {
+    msg = channel_produce(handler->channel, handler->request_msgid);
+  } else {
+    bamipc_tx(handler->pipe, 0, &msg);
+  }
+
+  return msg;
+}
+
+void request_handler_post(request_handler * restrict handler, bamipc_message * restrict msg)
+{
+  if(msg->type == BAMIPC_MSG_RESULT && msg->code != 0) {
+    handler->request_error = true;
+  }
+
+  if(handler->channel) {
+    channel_post(handler->channel, msg);
+  } else {
+    bamipc_publish(handler->pipe, msg);
+  }
 }

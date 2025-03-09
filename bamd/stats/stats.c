@@ -7,8 +7,9 @@
 #include "narrator/fixed.h"
 
 #include "stats.h"
-#include "handler.h"
+#include "request_handler.h"
 #include "request.h"
+#include "command.h"
 #include "channel.h"
 
 //
@@ -46,12 +47,13 @@ void stats_build(
           UINT(record->u8[member->offset / 1]);
           break;
         default:
+          break;
       }
     }
   }
 }
 
-void stats_handler(handler_context * restrict ctx, command * restrict cmd, bool reset)
+void stats_handler(request_handler * restrict ctx, command * restrict cmd, bool reset)
 {
   bamipc_message *msg;
   selected *sn;
@@ -59,17 +61,16 @@ void stats_handler(handler_context * restrict ctx, command * restrict cmd, bool 
   narrator_fixed fixed;
 
   llist_foreach(&ctx->selection->list, sn, lln) {
-    msg = channel_produce(ctx->chan);
-    msg->type = BAMIPC_MSG_RESULT;
+    msg = request_handler_tx(ctx, BAMIPC_MSG_RESULT, BAMIPC_MSG_BACON, 0);
 
-    narrator_fixed_init(&fixed, msg->text, sizeof(msg->text));
+    narrator_fixed_init(&fixed, msg->text, msg->size);
     bacon_writer_init(&writer);
     builder_writer = bacon_writer_open(&writer, &fixed.base);
 
-    vertex_stats_build(sn->v, reset, builder_writer);
+    vertex_stats_describe(sn->v, reset, builder_writer);
 
     bacon_writer_destroy(&writer);
-    msg->size = fixed.l;
-    channel_post(ctx->chan, msg);
+    msg->len = fixed.l;
+    request_handler_post(ctx, msg);
   }
 }

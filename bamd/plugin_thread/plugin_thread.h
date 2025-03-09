@@ -15,13 +15,16 @@ There is up to one plugin thread per plugin
 #include "locks.h"
 #include "valyria/llist.h"
 
-struct handler_context;
+struct request_handler;
+struct bamipc_pipe;
 
 typedef struct plugin_thread {
   struct plugin *plugin;
   pid_t tid;
-  rcu_list stk;
-  struct handler_context *handler;
+  llist lln;      // freelist
+  rcu_list stk;   // thread list
+  struct bamipc_pipe *pipe;   // for receiving events
+  uint32_t event_mask;
   bool shutdown;
   bool ready_requested;
   bool ready_reported;

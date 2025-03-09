@@ -10,8 +10,10 @@ There is up to one run thread
 */
 
 #include "request.h"
+#include "command.h"
 
-struct handler_context;
+struct channel_thread;
+struct request_handler;
 
 extern bool run_thread_autorun;
 
@@ -20,8 +22,8 @@ extern bool run_thread_autorun;
  *
  * [handler] - handler thread to notify if any
  */
-void run_thread_launch(struct handler_context * restrict owner, command_type cmd);
+bool run_thread_launch(struct request_handler * restrict handler, struct channel_thread * restrict owner, command_type cmd);
 
 void run_thread_autorun_set(bool autorun);
 
-void autorun_set_event(void);
+void autorun_set_event(struct request_handler * restrict handler);
