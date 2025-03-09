@@ -52,8 +52,8 @@ typedef struct bacon_value {
     rbtree set;         // set
     llist list;         // list
     struct {            // mapping
-      struct bacon_value * key;
-      struct bacon_value * val;
+      struct bacon_value *key;
+      struct bacon_value *val;
     };
 
     int128_t i;         // signed integer
@@ -66,6 +66,9 @@ typedef struct bacon_value {
     };
   };
 } bacon_value;
+
+void bacon_value_init(bacon_value * restrict v)
+  __attribute__((nonnull));
 
 /* compare two values */
 int bacon_value_cmp(const bacon_value * const restrict A, const bacon_value * const restrict B);

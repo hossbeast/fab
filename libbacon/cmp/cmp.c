@@ -9,6 +9,7 @@
 
 #include "value.h"
 #include "set.h"
+#include "registry.internal.h"
 
 #include "macros.h"
 
@@ -22,6 +23,7 @@ static int cmp(const bacon_value * const restrict A, const bacon_value * const r
   bacon_value *a;
   bacon_value *b;
   rbnode *rbn;
+  const bacon_object *obj;
 
   if(A == 0 || B == 0)
   {
@@ -98,7 +100,9 @@ static int cmp(const bacon_value * const restrict A, const bacon_value * const r
       }
       return bacon_value_cmp(A->val, B->val);
     default:
-      RTA;
+      obj = registry_get(A->type);
+      RUNTIME_ASSERT(obj != NULL);
+      return obj->cmp(A, B);
   }
 
   return 0;

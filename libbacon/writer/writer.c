@@ -11,6 +11,7 @@
 #include "value.h"
 #include "writer.h"
 #include "keywords.h"
+#include "registry.internal.h"
 
 #include "zcat.h"
 
@@ -231,6 +232,7 @@ void bacon_writer_close(bacon_writer * restrict writer)
 void bacon_writer_value(bacon_writer * const restrict writer, const bacon_value * restrict val)
 {
   bacon_value *v;
+  const bacon_object *obj;
 
   switch(val->type)
   {
@@ -276,8 +278,9 @@ void bacon_writer_value(bacon_writer * const restrict writer, const bacon_value 
       bacon_writer_variable(writer, val->s, val->len);
       break;
     default:
-      fprintf(stderr, "type %d\n", val->type);
-      RTA;
+      obj = registry_get(val->type);
+      RUNTIME_ASSERT(obj != NULL);
+      obj->write(writer, val);
   }
 }
 

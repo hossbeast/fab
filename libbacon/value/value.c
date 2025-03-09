@@ -11,6 +11,7 @@
 #include "expr.h"
 #include "value.h"
 #include "location.h"
+#include "registry.internal.h"
 
 #include "common/attrs.h"
 
@@ -30,17 +31,22 @@ static void __attribute__((constructor)) init()
   attrs32_init(&bacon_value_type_attrs);
 }
 
-static bacon_value * value_alloc(llist * restrict freelist, bacon_type type)
+void bacon_value_init(bacon_value * restrict v)
 {
-  bacon_value * v = 0;
+  llist_init(&v->lln);
+  rbnode_init(&v->rbn);
+}
+
+static bacon_value *value_alloc(llist * restrict freelist, bacon_type type)
+{
+  bacon_value *v = 0;
 
   if((v = llist_shift(freelist, typeof(*v), lln)) == 0) {
     xmalloc(&v, sizeof(*v));
   } else {
     memset(v, 0, sizeof(*v));
   }
-  llist_init(&v->lln);
-  rbnode_init(&v->rbn);
+  bacon_value_init(v);
 
   v->type = type;
 
@@ -72,6 +78,8 @@ static void value_set_destroy(bacon_parser * restrict parser, rbtree * restrict 
 
 void bacon_value_free(bacon_parser * restrict parser, struct bacon_value * restrict v)
 {
+  const bacon_object *obj = 0;
+
   if(!v) {
     return;
   }
@@ -96,13 +104,20 @@ void bacon_value_free(bacon_parser * restrict parser, struct bacon_value * restr
     case BACON_TYPE_INTEGER:
       break;
     default:
-      RTA;
+      obj = registry_get(v->type);
+      RUNTIME_ASSERT(obj != NULL);
+      obj->destroy(parser, v);
   }
 
   if(v->loc) {
     bacon_location_free(parser, v->loc);
   }
-  llist_push(&parser->value_freelist, &v->lln);
+
+  if(obj) {
+    obj->reclaim(v);
+  } else {
+    llist_push(&parser->value_freelist, &v->lln);
+  }
 }
 
 bacon_value *bacon_string_alloc(bacon_parser * restrict parser)

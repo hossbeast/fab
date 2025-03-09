@@ -257,7 +257,6 @@ bacon_value * bacon_mapping_mk(
 
   e->key = k;
   e->val = v;
-  e->hash = e->key->hash;
 
   e->hash = 0;
   e->hash = hash32(e->hash, &e->key->hash, sizeof(e->key->hash));

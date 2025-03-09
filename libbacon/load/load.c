@@ -6,8 +6,12 @@
 #include "value.h"
 #include "load.h"
 #include "keywords.h"
+#include "registry.h"
 
 static int handles;
+
+void registry_setup(void);
+void registry_cleanup(void);
 
 void bacon_load()
 {
@@ -18,6 +22,7 @@ void bacon_load()
 
     // modules
     keywords_setup();
+    registry_setup();
   }
 }
 
@@ -27,6 +32,7 @@ void bacon_unload()
   {
     // modules
     keywords_cleanup();
+    registry_cleanup();
 
     // dependencies
     narrator_unload();
