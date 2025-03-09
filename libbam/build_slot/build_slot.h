@@ -17,18 +17,43 @@ typedef struct bam_build_slot_info {
   int32_t pid;            // process id
   uint16_t stage;         // slots in the same stage can execute concurrently
 
-  /* rule info */
+  /* bpe being executed */
+  char *bpe_id;
+  uint16_t bpe_id_len;
+  char *bpe_path;
+  uint16_t bpe_path_len;
+
+  /* rma which created the bpe */
+  char *rma_id;
+  uint16_t rma_id_len;
+  char *rma_path;
+  uint16_t rma_path_len;
+
+  /* rule attached to the rma */
   char *rule_id;
   uint16_t rule_id_len;
-  char *formula_abspath;
-  uint16_t formula_abspath_len;
+  char *rule_path;
+  uint16_t rule_path_len;
 
-  /* exec params */
-  char *path;             // absolute path of file to execute
-  uint16_t path_len;
+  /* module attached to the rma */
+  char *module_id;
+  uint16_t module_id_len;
+  char *module_path;
+  uint16_t module_path_len;
 
-  char *pwd;              // working directory
-  uint16_t pwd_len;
+  /* formula attached to the rma */
+  char *formula_id;
+  uint16_t formula_id_len;
+  char *formula_path;
+  uint16_t formula_path_len;
+
+  /* file being executed, either the formula, or the resolve file parameter */
+  char *exec_path;            // absolute path
+  uint16_t exec_path_len;
+
+  /* normally this is the module dir */
+  char *cwd;                  // absolute path
+  uint16_t cwd_len;
 
   /* struct bam_build_string */
   uint16_t arg_list_count;    // total number of items in arg_list
