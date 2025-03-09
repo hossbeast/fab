@@ -23,9 +23,20 @@
   /* bacon */                                                                                                 \
   DEF(BAMIPC_EVENT_FORMULA_FORK        , "formula-fork"        , 0x00100)  /* formula execution - forked */   \
   DEF(BAMIPC_EVENT_FORMULA_WAIT        , "formula-wait"        , 0x00200)  /* formula execution - waited */   \
+  DEF(BAMIPC_EVENT_FORMULA_REAP        , "formula-reap"        , 0x000002)  /* formula execution - reaped */  \
   /* bacon */                                                                                                 \
   DEF(BAMIPC_EVENT_BUILD_START         , "build-start"         , 0x00400)  /* build has started */            \
   DEF(BAMIPC_EVENT_BUILD_END           , "build-end"           , 0x00800)  /* build has completed */          \
+  /* bacon */                                                                                                   \
+  DEF(BAMIPC_EVENT_RECONCILE_START     , "reconcile-start"     , 0x00001000)  /* reconcile started */           \
+  DEF(BAMIPC_EVENT_RECONCILE_END       , "reconcile-end"       , 0x00002000)  /* reconcile completed */         \
+  /* bacon */                                                                                                   \
+  DEF(BAMIPC_EVENT_RMA_START           , "rma-start"           , 0x00004000)  /* rma run started */             \
+  DEF(BAMIPC_EVENT_RMA_END             , "rma-end"             , 0x00008000)  /* rma run completed */           \
+  DEF(BAMIPC_EVENT_RMA_SEARCH          , "rma-search"          , 0x00010000)  /* rma search */                  \
+  DEF(BAMIPC_EVENT_RMA_GENERATE        , "rma-generate"        , 0x00020000)  /* rma generate */                \
+  DEF(BAMIPC_EVENT_RMA_RESOLVE         , "rma-resolve"         , 0x00040000)  /* rma resolve */                 \
+  DEF(BAMIPC_EVENT_RMA_BIND            , "rma-bind"            , 0x00080000)  /* rma bind */                    \
 
 /*
  * These events contain a message that can potentially be very large. The message is binary.
@@ -35,6 +46,7 @@
   DEF(BAMIPC_EVENT_FORMULA_FORK_BIN   , "formula-fork-bin"     , 0x01000)  /* formula execution - forked */   \
   /* struct bam_build_slot_results */                                                                         \
   DEF(BAMIPC_EVENT_FORMULA_WAIT_BIN   , "formula-wait-bin"     , 0x02000)  /* formula execution - waited */   \
+  DEF(BAMIPC_EVENT_FORMULA_REAP_BIN   , "formula-reap-bin"     , 0x02000)  /* formula execution - reaped */  \
   /* unprocessed binary output from the program */                                                            \
   DEF(BAMIPC_EVENT_FORMULA_STDOUT_BIN , "formula-stdout-bin"   , 0x04000)  /* formula execution - stdout */   \
   DEF(BAMIPC_EVENT_FORMULA_STDERR_BIN , "formula-stderr-bin"   , 0x08000)  /* formula execution - stderr */   \
